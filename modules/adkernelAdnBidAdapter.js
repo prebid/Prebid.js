@@ -1,6 +1,6 @@
-import * as utils from 'src/utils';
-import {registerBidder} from 'src/adapters/bidderFactory';
-import {BANNER, VIDEO} from 'src/mediaTypes';
+import * as utils from '../src/utils';
+import {registerBidder} from '../src/adapters/bidderFactory';
+import {BANNER, VIDEO} from '../src/mediaTypes';
 import includes from 'core-js/library/fn/array/includes';
 
 const DEFAULT_ADKERNEL_DSP_DOMAIN = 'tag.adkernel.com';
@@ -113,6 +113,7 @@ function buildBid(tag) {
 export const spec = {
   code: 'adkernelAdn',
   supportedMediaTypes: [BANNER, VIDEO],
+  aliases: ['engagesimply'],
 
   isBidRequestValid: function(bidRequest) {
     return 'params' in bidRequest && (typeof bidRequest.params.host === 'undefined' || typeof bidRequest.params.host === 'string') &&

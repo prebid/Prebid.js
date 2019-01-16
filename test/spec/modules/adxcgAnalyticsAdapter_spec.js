@@ -1,7 +1,7 @@
 import adxcgAnalyticsAdapter from 'modules/adxcgAnalyticsAdapter';
 import { expect } from 'chai';
+import adapterManager from 'src/adapterManager.js';
 
-let adaptermanager = require('src/adaptermanager');
 let events = require('src/events');
 let constants = require('src/constants.json');
 
@@ -159,13 +159,13 @@ describe('adxcg analytics adapter', function () {
       }]
     };
 
-    adaptermanager.registerAnalyticsAdapter({
+    adapterManager.registerAnalyticsAdapter({
       code: 'adxcg',
       adapter: adxcgAnalyticsAdapter
     });
 
     beforeEach(function () {
-      adaptermanager.enableAnalytics({
+      adapterManager.enableAnalytics({
         provider: 'adxcg',
         options: initOptions
       });

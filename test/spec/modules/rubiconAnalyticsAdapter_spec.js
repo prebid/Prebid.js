@@ -40,7 +40,7 @@ const BID = {
   'mediaType': 'video',
   'statusMessage': 'Bid available',
   'bidId': '2ecff0db240757',
-  'adId': '2ecff0db240757',
+  'adId': 'fake_ad_id',
   'source': 'client',
   'requestId': '2ecff0db240757',
   'currency': 'USD',
@@ -80,7 +80,7 @@ const BID = {
 const BID2 = Object.assign({}, BID, {
   adUnitCode: '/19968336/header-bid-tag1',
   bidId: '3bd4ebb1c900e2',
-  adId: '3bd4ebb1c900e2',
+  adId: 'fake_ad_id',
   requestId: '3bd4ebb1c900e2',
   width: 728,
   height: 90,
@@ -146,7 +146,6 @@ const MOCK = {
         'bidRequestsCount': 1
       }
       ],
-      'auctionStart': 1519767010567,
       'timeout': 3000,
       'refererInfo': {
         'referer': 'http://www.test.com/page.html', 'reachedTop': true, 'numIframes': 0, 'stack': ['http://www.test.com/page.html']
@@ -168,7 +167,7 @@ const MOCK = {
       {
         'bidder': 'rubicon',
         'params': {
-          'accountId': '14062',
+          'accountId': '1001',
           'siteId': '70608',
           'zoneId': '335918',
           'userId': '12346',
@@ -286,6 +285,9 @@ const ANALYTICS_MESSAGE = {
             }
           ],
           'status': 'success',
+          'accountId': 1001,
+          'siteId': 70608,
+          'zoneId': 335918,
           'adserverTargeting': {
             'hb_bidder': 'rubicon',
             'hb_adid': '2ecff0db240757',
@@ -301,7 +303,7 @@ const ANALYTICS_MESSAGE = {
               'source': 'client',
               'clientLatencyMillis': 3214,
               'params': {
-                'accountId': '14062',
+                'accountId': '1001',
                 'siteId': '70608',
                 'zoneId': '335918'
               },
@@ -382,8 +384,10 @@ const ANALYTICS_MESSAGE = {
       'clientLatencyMillis': 3214,
       'samplingFactor': 1,
       'accountId': 1001,
+      'siteId': 70608,
+      'zoneId': 335918,
       'params': {
-        'accountId': '14062',
+        'accountId': '1001',
         'siteId': '70608',
         'zoneId': '335918'
       },
@@ -621,7 +625,7 @@ describe('rubicon analytics adapter', function () {
       rubiconAnalyticsAdapter.enableAnalytics({
         options: {
           endpoint: '//localhost:9999/event',
-          accountId: '1001'
+          accountId: 1001
         }
       });
     });

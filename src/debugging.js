@@ -1,7 +1,7 @@
 
-import { config } from 'src/config';
-import { logMessage as utilsLogMessage, logWarn as utilsLogWarn } from 'src/utils';
-import { addBidResponse } from 'src/auction';
+import { config } from './config';
+import { logMessage as utilsLogMessage, logWarn as utilsLogWarn } from './utils';
+import { addBidResponse } from './auction';
 
 const OVERRIDE_KEY = '$$PREBID_GLOBAL$$:debugging';
 

@@ -1,21 +1,35 @@
-import * as utils from 'src/utils';
+import * as utils from '../src/utils';
 import {
   registerBidder
-} from 'src/adapters/bidderFactory';
+} from '../src/adapters/bidderFactory';
 import {
   BANNER
-} from 'src/mediaTypes';
+} from '../src/mediaTypes';
 import {
   config
-} from 'src/config';
+} from '../src/config';
 
 const BIDDER_CODE = 'emx_digital';
 const ENDPOINT = 'hb.emxdgt.com';
+
+let emxAdapter = {};
+
+emxAdapter.validateSizes = function(sizes) {
+  if (!utils.isArray(sizes) || typeof sizes[0] === 'undefined') {
+    return false;
+  }
+  return sizes.every(size => utils.isArray(size) && size.length === 2);
+}
+
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER],
   isBidRequestValid: function (bid) {
-    return !!(bid.params.tagid);
+    return !!bid.params.tagid &&
+            typeof bid.params.tagid === 'string' &&
+            (typeof bid.params.bidfloor === 'undefined' || typeof bid.params.bidfloor === 'string') &&
+            bid.bidder === BIDDER_CODE &&
+            (emxAdapter.validateSizes(bid.mediaTypes.banner.sizes) || emxAdapter.validateSizes(bid.sizes));
   },
   buildRequests: function (validBidRequests, bidRequests) {
     const {host, href, protocol} = utils.getTopWindowLocation();
@@ -25,24 +39,29 @@ export const spec = {
     const timeout = config.getConfig('bidderTimeout');
     const timestamp = Date.now();
     const url = location.protocol + '//' + ENDPOINT + ('?t=' + timeout + '&ts=' + timestamp);
+    const networkProtocol = protocol.indexOf('https') > -1 ? 1 : 0;
 
     utils._each(validBidRequests, function (bid) {
-      let tagId = String(utils.getBidIdParameter('tagid', bid.params));
-      let bidFloor = utils.getBidIdParameter('bidfloor', bid.params) || 0;
+      let tagId = utils.getBidIdParameter('tagid', bid.params);
+      let bidFloor = parseFloat(utils.getBidIdParameter('bidfloor', bid.params)) || 0;
+      let sizes = bid.mediaTypes.banner.sizes;
+      if (!emxAdapter.validateSizes(sizes)) {
+        sizes = bid.sizes
+      }
       let emxBid = {
         id: bid.bidId,
         tid: bid.transactionId,
         tagid: tagId,
-        secure: protocol === 'https:' ? 1 : 0,
+        secure: networkProtocol,
         banner: {
-          format: bid.sizes.map(function (size) {
+          format: sizes.map(function (size) {
             return {
               w: size[0],
               h: size[1]
             };
           }),
-          w: bid.sizes[0][0],
-          h: bid.sizes[0][1]
+          w: sizes[0][0],
+          h: sizes[0][1]
         }
       }
       if (bidFloor > 0) {

@@ -1,5 +1,5 @@
-import * as utils from 'src/utils';
-import {registerBidder} from 'src/adapters/bidderFactory';
+import * as utils from '../src/utils';
+import {registerBidder} from '../src/adapters/bidderFactory';
 const BIDDER_CODE = 'grid';
 const ENDPOINT_URL = '//grid.bidswitch.net/hb';
 const TIME_TO_LIVE = 360;

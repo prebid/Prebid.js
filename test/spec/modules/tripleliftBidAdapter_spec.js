@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import { tripleliftAdapterSpec } from 'modules/tripleliftBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
 import { deepClone } from 'src/utils';
+import prebid from '../../../package.json';
 
 const ENDPOINT = document.location.protocol + '//tlx.3lift.com/header/auction?';
 
@@ -68,19 +69,42 @@ describe('triplelift adapter', function () {
       }
     ];
 
+    let bidderRequest = {
+      bidderCode: 'triplelift',
+      auctionId: 'a7ebcd1d-66ff-4b5c-a82c-6a21a6ee5a18',
+      bidderRequestId: '5c55612f99bc11',
+      bids: [
+        {
+          imp_id: 0,
+          cpm: 1.062,
+          width: 300,
+          height: 250,
+          ad: 'ad-markup',
+          iurl: 'https://s.adroll.com/a/IYR/N36/IYRN366MFVDITBAGNNT5U6.jpg'
+        }
+      ],
+      refererInfo: {
+        referer: 'http://examplereferer.com'
+      },
+      gdprConsent: {
+        consentString: 'BOONm0NOONm0NABABAENAa-AAAARh7______b9_3__7_9uz_Kv_K7Vf7nnG072lPVA9LTOQ6gEaY',
+        gdprApplies: true
+      }
+    };
+
     it('exists and is an object', function () {
-      const request = tripleliftAdapterSpec.buildRequests(bidRequests);
+      const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
       expect(request).to.exist.and.to.be.a('object');
     });
 
     it('should only parse sizes that are of the proper length and format', function () {
-      const request = tripleliftAdapterSpec.buildRequests(bidRequests);
+      const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
       expect(request.data.imp[0].banner.format).to.have.length(2);
       expect(request.data.imp[0].banner.format).to.deep.equal([{w: 300, h: 250}, {w: 300, h: 600}]);
     });
 
     it('should be a post request and populate the payload', function () {
-      const request = tripleliftAdapterSpec.buildRequests(bidRequests);
+      const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
       const payload = request.data;
       expect(payload).to.exist;
       expect(payload.imp[0].tagid).to.equal('12345');
@@ -89,16 +113,15 @@ describe('triplelift adapter', function () {
     });
 
     it('should return a query string for TL call', function () {
-      const request = tripleliftAdapterSpec.buildRequests(bidRequests);
+      const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
       const url = request.url;
       expect(url).to.exist;
       expect(url).to.be.a('string');
       expect(url).to.match(/(?:tlx.3lift.com\/header\/auction)/)
       expect(url).to.match(/(?:lib=prebid)/)
-      expect(url).to.match(/(?:prebid.version)/)
-      // expect(url).to.match(/(?:fe=)/) //
-      expect(url).to.match(/(?:referrer)/)
-    })
+      expect(url).to.match(new RegExp('(?:' + prebid.version + ')'))
+      expect(url).to.match(/(?:referrer)/);
+    });
   });
 
   describe('interpretResponse', function () {
@@ -130,8 +153,11 @@ describe('triplelift adapter', function () {
           iurl: 'https://s.adroll.com/a/IYR/N36/IYRN366MFVDITBAGNNT5U6.jpg'
         }
       ],
+      refererInfo: {
+        referer: 'http://examplereferer.com'
+      },
       gdprConsent: {
-        consentString: 'BOONm0NOONma-AAAARh7______b9_3__7_9uz_Kv_K7Vf7nnG072lPVOQ6gEaY',
+        consentString: 'BOONm0NOONm0NABABAENAa-AAAARh7______b9_3__7_9uz_Kv_K7Vf7nnG072lPVA9LTOQ6gEaY',
         gdprApplies: true
       }
     };
@@ -201,6 +227,9 @@ describe('triplelift adapter', function () {
             iurl: 'https://s.adroll.com/a/IYR/N36/IYRN366MFVDITBAGNNT5U6.jpg'
           }
         ],
+        refererInfo: {
+          referer: 'http://examplereferer.com'
+        },
         gdprConsent: {
           consentString: 'BOONm0NOONm0NABABAENAa-AAAARh7______b9_3__7_9uz_Kv_K7Vf7nnG072lPVA9LTOQ6gEaY',
           gdprApplies: true

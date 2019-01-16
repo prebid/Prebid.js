@@ -10,9 +10,6 @@ var CONSTANTS = require('./constants.json');
 
 var pbTargetingKeys = [];
 
-export const BID_TARGETING_SET = 'targetingSet';
-export const RENDERED = 'rendered';
-
 const MAX_DFP_KEYLENGTH = 20;
 const TTL_BUFFER = 1000;
 
@@ -21,10 +18,15 @@ export const TARGETING_KEYS = Object.keys(CONSTANTS.TARGETING_KEYS).map(
 );
 
 // return unexpired bids
-export const isBidNotExpired = (bid) => (bid.responseTimestamp + bid.ttl * 1000 + TTL_BUFFER) > timestamp();
+const isBidNotExpired = (bid) => (bid.responseTimestamp + bid.ttl * 1000 + TTL_BUFFER) > timestamp();
 
 // return bids whose status is not set. Winning bid can have status `targetingSet` or `rendered`.
-const isUnusedBid = (bid) => bid && ((bid.status && !includes([BID_TARGETING_SET, RENDERED], bid.status)) || !bid.status);
+const isUnusedBid = (bid) => bid && ((bid.status && !includes([CONSTANTS.BID_STATUS.BID_TARGETING_SET, CONSTANTS.BID_STATUS.RENDERED], bid.status)) || !bid.status);
+
+export let filters = {
+  isBidNotExpired,
+  isUnusedBid
+};
 
 // If two bids are found for same adUnitCode, we will use the highest one to take part in auction
 // This can happen in case of concurrent auctions
@@ -191,8 +193,8 @@ export function newTargeting(auctionManager) {
   function getBidsReceived() {
     const bidsReceived = auctionManager.getBidsReceived()
       .filter(bid => bid.mediaType !== 'banner' || sizeSupported([bid.width, bid.height]))
-      .filter(isUnusedBid)
-      .filter(exports.isBidNotExpired)
+      .filter(filters.isUnusedBid)
+      .filter(filters.isBidNotExpired)
     ;
 
     return getHighestCpmBidsFromBidPool(bidsReceived, getOldestHighestCpmBid);
@@ -205,7 +207,6 @@ export function newTargeting(auctionManager) {
    */
   targeting.getWinningBids = function(adUnitCode, bidsReceived = getBidsReceived()) {
     const adUnitCodes = getAdUnitCodes(adUnitCode);
-
     return bidsReceived
       .filter(bid => includes(adUnitCodes, bid.adUnitCode))
       .filter(bid => bid.cpm > 0)
@@ -234,7 +235,7 @@ export function newTargeting(auctionManager) {
             // pt${n} keys should not be uppercased
             keywordsObj[key] = astTargeting[targetId][key];
           }
-          window.apntag.setKeywords(targetId, keywordsObj);
+          window.apntag.setKeywords(targetId, keywordsObj, { overrideKeyValue: true });
         }
       })
     );

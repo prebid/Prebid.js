@@ -1,6 +1,8 @@
 import { expect } from 'chai';
-import AdapterManager from 'src/adaptermanager';
-import { checkBidRequestSizes } from 'src/adaptermanager';
+import adapterManager, {
+  gdprDataHandler,
+  checkBidRequestSizes
+} from 'src/adapterManager';
 import { getAdUnits } from 'test/fixtures/fixtures';
 import CONSTANTS from 'src/constants.json';
 import * as utils from 'src/utils';
@@ -9,7 +11,7 @@ import { registerBidder } from 'src/adapters/bidderFactory';
 import { setSizeConfig } from 'src/sizeMapping';
 import find from 'core-js/library/fn/array/find';
 import includes from 'core-js/library/fn/array/includes';
-var s2sTesting = require('../../../../modules/s2sTesting');
+import s2sTesting from 'modules/s2sTesting';
 var events = require('../../../../src/events');
 
 const CONFIG = {
@@ -45,17 +47,17 @@ describe('adapterManager tests', function () {
   let orgPrebidServerAdapter;
   let orgRubiconAdapter;
   before(function () {
-    orgAppnexusAdapter = AdapterManager.bidderRegistry['appnexus'];
-    orgAdequantAdapter = AdapterManager.bidderRegistry['adequant'];
-    orgPrebidServerAdapter = AdapterManager.bidderRegistry['prebidServer'];
-    orgRubiconAdapter = AdapterManager.bidderRegistry['rubicon'];
+    orgAppnexusAdapter = adapterManager.bidderRegistry['appnexus'];
+    orgAdequantAdapter = adapterManager.bidderRegistry['adequant'];
+    orgPrebidServerAdapter = adapterManager.bidderRegistry['prebidServer'];
+    orgRubiconAdapter = adapterManager.bidderRegistry['rubicon'];
   });
 
   after(function () {
-    AdapterManager.bidderRegistry['appnexus'] = orgAppnexusAdapter;
-    AdapterManager.bidderRegistry['adequant'] = orgAdequantAdapter;
-    AdapterManager.bidderRegistry['prebidServer'] = orgPrebidServerAdapter;
-    AdapterManager.bidderRegistry['rubicon'] = orgRubiconAdapter;
+    adapterManager.bidderRegistry['appnexus'] = orgAppnexusAdapter;
+    adapterManager.bidderRegistry['adequant'] = orgAdequantAdapter;
+    adapterManager.bidderRegistry['prebidServer'] = orgPrebidServerAdapter;
+    adapterManager.bidderRegistry['rubicon'] = orgRubiconAdapter;
     config.setConfig({s2sConfig: { enabled: false }});
   });
 
@@ -67,12 +69,12 @@ describe('adapterManager tests', function () {
     beforeEach(function () {
       sinon.stub(utils, 'logError');
       appnexusAdapterMock.callBids.reset();
-      AdapterManager.bidderRegistry['appnexus'] = appnexusAdapterMock;
+      adapterManager.bidderRegistry['appnexus'] = appnexusAdapterMock;
     });
 
     afterEach(function () {
       utils.logError.restore();
-      delete AdapterManager.bidderRegistry['appnexus'];
+      delete adapterManager.bidderRegistry['appnexus'];
     });
 
     it('should log an error if a bidder is used that does not exist', function () {
@@ -85,7 +87,7 @@ describe('adapterManager tests', function () {
         ]
       }];
 
-      let bidRequests = AdapterManager.makeBidRequests(adUnits, 1111, 2222, 1000);
+      let bidRequests = adapterManager.makeBidRequests(adUnits, 1111, 2222, 1000);
       expect(bidRequests.length).to.equal(1);
       expect(bidRequests[0].bidderCode).to.equal('appnexus');
       sinon.assert.called(utils.logError);
@@ -127,17 +129,119 @@ describe('adapterManager tests', function () {
           {bidder: 'appnexus', params: {placementId: 'id'}},
         ]
       }];
-      AdapterManager.callBids(adUnits, bidRequests, () => {}, () => {});
+      adapterManager.callBids(adUnits, bidRequests, () => {}, () => {});
       expect(cnt).to.equal(1);
       sinon.assert.calledOnce(appnexusAdapterMock.callBids);
       events.off(CONSTANTS.EVENTS.BID_REQUESTED, count);
     });
   });
 
+  describe('callTimedOutBidders', function () {
+    var criteoSpec = { onTimeout: sinon.stub() }
+    var criteoAdapter = {
+      bidder: 'criteo',
+      getSpec: function() { return criteoSpec; }
+    }
+    before(function () {
+      config.setConfig({s2sConfig: { enabled: false }});
+    });
+
+    beforeEach(function () {
+      adapterManager.bidderRegistry['criteo'] = criteoAdapter;
+    });
+
+    afterEach(function () {
+      delete adapterManager.bidderRegistry['criteo'];
+    });
+
+    it('should call spec\'s onTimeout callback when callTimedOutBidders is called', function () {
+      const adUnits = [{
+        code: 'adUnit-code',
+        sizes: [[728, 90]],
+        bids: [
+          {bidder: 'criteo', params: {placementId: 'id'}},
+        ]
+      }];
+      const timedOutBidders = [{
+        bidId: 'bidId',
+        bidder: 'criteo',
+        adUnitCode: adUnits[0].code,
+        auctionId: 'auctionId',
+      }];
+      adapterManager.callTimedOutBidders(adUnits, timedOutBidders, CONFIG.timeout);
+      sinon.assert.called(criteoSpec.onTimeout);
+    });
+  }); // end callTimedOutBidders
+
+  describe('onBidWon', function () {
+    var criteoSpec = { onBidWon: sinon.stub() }
+    var criteoAdapter = {
+      bidder: 'criteo',
+      getSpec: function() { return criteoSpec; }
+    }
+    before(function () {
+      config.setConfig({s2sConfig: { enabled: false }});
+    });
+
+    beforeEach(function () {
+      adapterManager.bidderRegistry['criteo'] = criteoAdapter;
+    });
+
+    afterEach(function () {
+      delete adapterManager.bidderRegistry['criteo'];
+    });
+
+    it('should call spec\'s onBidWon callback when a bid is won', function () {
+      const bids = [
+        {bidder: 'criteo', params: {placementId: 'id'}},
+      ];
+      const adUnits = [{
+        code: 'adUnit-code',
+        sizes: [[728, 90]],
+        bids
+      }];
+
+      adapterManager.callBidWonBidder(bids[0].bidder, bids[0], adUnits);
+      sinon.assert.called(criteoSpec.onBidWon);
+    });
+  }); // end onBidWon
+
+  describe('onSetTargeting', function () {
+    var criteoSpec = { onSetTargeting: sinon.stub() }
+    var criteoAdapter = {
+      bidder: 'criteo',
+      getSpec: function() { return criteoSpec; }
+    }
+    before(function () {
+      config.setConfig({s2sConfig: { enabled: false }});
+    });
+
+    beforeEach(function () {
+      adapterManager.bidderRegistry['criteo'] = criteoAdapter;
+    });
+
+    afterEach(function () {
+      delete adapterManager.bidderRegistry['criteo'];
+    });
+
+    it('should call spec\'s onSetTargeting callback when setTargeting is called', function () {
+      const bids = [
+        {bidder: 'criteo', params: {placementId: 'id'}},
+      ];
+      const adUnits = [{
+        code: 'adUnit-code',
+        sizes: [[728, 90]],
+        bids
+      }];
+      adapterManager.callSetTargetingBidder(bids[0].bidder, bids[0], adUnits);
+      sinon.assert.called(criteoSpec.onSetTargeting);
+    });
+  }); // end onSetTargeting
+
   describe('S2S tests', function () {
     beforeEach(function () {
       config.setConfig({s2sConfig: CONFIG});
-      AdapterManager.bidderRegistry['prebidServer'] = prebidServerAdapterMock;
+      adapterManager.bidderRegistry['prebidServer'] = prebidServerAdapterMock;
       prebidServerAdapterMock.callBids.reset();
     });
 
@@ -279,7 +383,7 @@ describe('adapterManager tests', function () {
         'start': 1462918897460
       }];
 
-      AdapterManager.callBids(
+      adapterManager.callBids(
         getAdUnits(),
         bidRequests,
         () => {},
@@ -443,7 +547,7 @@ describe('adapterManager tests', function () {
         'start': 1462918897460
       }];
 
-      AdapterManager.callBids(
+      adapterManager.callBids(
         adUnits,
         bidRequests,
         () => {},
@@ -473,25 +577,25 @@ describe('adapterManager tests', function () {
           adUnit.bids = adUnit.bids.filter(bid => includes(['appnexus'], bid.bidder));
           return adUnit;
         })
-        let bidRequests = AdapterManager.makeBidRequests(adUnits, 1111, 2222, 1000);
-        AdapterManager.callBids(adUnits, bidRequests, () => {}, () => {});
+        let bidRequests = adapterManager.makeBidRequests(adUnits, 1111, 2222, 1000);
+        adapterManager.callBids(adUnits, bidRequests, () => {}, () => {});
         expect(cnt).to.equal(1);
         sinon.assert.calledOnce(prebidServerAdapterMock.callBids);
       });
 
       it('should fire for simultaneous s2s and client requests', function () {
-        AdapterManager.bidderRegistry['adequant'] = adequantAdapterMock;
+        adapterManager.bidderRegistry['adequant'] = adequantAdapterMock;
         let adUnits = utils.deepClone(getAdUnits()).map(adUnit => {
           adUnit.bids = adUnit.bids.filter(bid => includes(['adequant', 'appnexus'], bid.bidder));
           return adUnit;
         })
-        let bidRequests = AdapterManager.makeBidRequests(adUnits, 1111, 2222, 1000);
-        AdapterManager.callBids(adUnits, bidRequests, () => {}, () => {});
+        let bidRequests = adapterManager.makeBidRequests(adUnits, 1111, 2222, 1000);
+        adapterManager.callBids(adUnits, bidRequests, () => {}, () => {});
         expect(cnt).to.equal(2);
         sinon.assert.calledOnce(prebidServerAdapterMock.callBids);
         sinon.assert.calledOnce(adequantAdapterMock.callBids);
         adequantAdapterMock.callBids.reset();
-        delete AdapterManager.bidderRegistry['adequant'];
+        delete adapterManager.bidderRegistry['adequant'];
       });
     });
   }); // end s2s tests
@@ -510,8 +614,8 @@ describe('adapterManager tests', function () {
     }
 
     function callBids(adUnits = getTestAdUnits()) {
-      let bidRequests = AdapterManager.makeBidRequests(adUnits, 1111, 2222, 1000);
-      AdapterManager.callBids(adUnits, bidRequests, doneStub, ajaxStub);
+      let bidRequests = adapterManager.makeBidRequests(adUnits, 1111, 2222, 1000);
+      adapterManager.callBids(adUnits, bidRequests, doneStub, ajaxStub);
     }
 
     function checkServerCalled(numAdUnits, numBids) {
@@ -539,10 +643,10 @@ describe('adapterManager tests', function () {
 
     beforeEach(function () {
       config.setConfig({s2sConfig: TESTING_CONFIG});
-      AdapterManager.bidderRegistry['prebidServer'] = prebidServerAdapterMock;
-      AdapterManager.bidderRegistry['adequant'] = adequantAdapterMock;
-      AdapterManager.bidderRegistry['appnexus'] = appnexusAdapterMock;
-      AdapterManager.bidderRegistry['rubicon'] = rubiconAdapterMock;
+      adapterManager.bidderRegistry['prebidServer'] = prebidServerAdapterMock;
+      adapterManager.bidderRegistry['adequant'] = adequantAdapterMock;
+      adapterManager.bidderRegistry['appnexus'] = appnexusAdapterMock;
+      adapterManager.bidderRegistry['rubicon'] = rubiconAdapterMock;
 
       stubGetSourceBidderMap = sinon.stub(s2sTesting, 'getSourceBidderMap');
 
@@ -654,10 +758,10 @@ describe('adapterManager tests', function () {
     it('calls client and server adapters for bidders that go to both', function () {
       stubGetSourceBidderMap.returns({[s2sTesting.CLIENT]: ['appnexus', 'adequant'], [s2sTesting.SERVER]: []});
       var adUnits = getTestAdUnits();
-      adUnits[0].bids[0].finalSource = s2sTesting.BOTH;
-      adUnits[0].bids[1].finalSource = s2sTesting.BOTH;
-      adUnits[1].bids[0].finalSource = s2sTesting.BOTH;
-      adUnits[1].bids[1].finalSource = s2sTesting.BOTH;
+      // adUnits[0].bids[0].finalSource = s2sTesting.BOTH;
+      // adUnits[0].bids[1].finalSource = s2sTesting.BOTH;
+      // adUnits[1].bids[0].finalSource = s2sTesting.BOTH;
+      // adUnits[1].bids[1].finalSource = s2sTesting.BOTH;
       callBids(adUnits);
 
       // server adapter
@@ -710,9 +814,9 @@ describe('adapterManager tests', function () {
         let thisSpec = Object.assign(spec, { supportedMediaTypes: ['video'] });
         registerBidder(thisSpec);
         const alias = 'aliasBidder';
-        AdapterManager.aliasBidAdapter(CODE, alias);
-        expect(AdapterManager.bidderRegistry).to.have.property(alias);
-        expect(AdapterManager.videoAdapters).to.include(alias);
+        adapterManager.aliasBidAdapter(CODE, alias);
+        expect(adapterManager.bidderRegistry).to.have.property(alias);
+        expect(adapterManager.videoAdapters).to.include(alias);
       });
     });
 
@@ -731,8 +835,8 @@ describe('adapterManager tests', function () {
         testS2sConfig.bidders = ['s2sAlias'];
         config.setConfig({s2sConfig: testS2sConfig});
 
-        AdapterManager.aliasBidAdapter('s2sBidder', 's2sAlias');
-        expect(AdapterManager.aliasRegistry).to.have.property('s2sAlias');
+        adapterManager.aliasBidAdapter('s2sBidder', 's2sAlias');
+        expect(adapterManager.aliasRegistry).to.have.property('s2sAlias');
       });
 
       it('should throw an error if alias + bidder are unknown and not part of s2sConfig.bidders', function () {
@@ -740,9 +844,9 @@ describe('adapterManager tests', function () {
         testS2sConfig.bidders = ['s2sAlias'];
         config.setConfig({s2sConfig: testS2sConfig});
 
-        AdapterManager.aliasBidAdapter('s2sBidder1', 's2sAlias1');
+        adapterManager.aliasBidAdapter('s2sBidder1', 's2sAlias1');
         sinon.assert.calledOnce(utils.logError);
-        expect(AdapterManager.aliasRegistry).to.not.have.property('s2sAlias1');
+        expect(adapterManager.aliasRegistry).to.not.have.property('s2sAlias1');
       });
     });
   });
@@ -759,7 +863,7 @@ describe('adapterManager tests', function () {
     it('should make separate bidder request objects for each bidder', () => {
       adUnits = [utils.deepClone(getAdUnits()[0])];
 
-      let bidRequests = AdapterManager.makeBidRequests(
+      let bidRequests = adapterManager.makeBidRequests(
         adUnits,
         Date.now(),
         utils.getUniqueIdentifierStr(),
@@ -788,7 +892,7 @@ describe('adapterManager tests', function () {
 
       it('setting to `random` uses shuffled order of adUnits', function () {
         config.setConfig({ bidderSequence: 'random' });
-        let bidRequests = AdapterManager.makeBidRequests(
+        let bidRequests = adapterManager.makeBidRequests(
           adUnits,
           Date.now(),
           utils.getUniqueIdentifierStr(),
@@ -811,7 +915,7 @@ describe('adapterManager tests', function () {
       });
 
       it('should not filter bids w/ no labels', function () {
-        let bidRequests = AdapterManager.makeBidRequests(
+        let bidRequests = adapterManager.makeBidRequests(
           adUnits,
           Date.now(),
           utils.getUniqueIdentifierStr(),
@@ -847,7 +951,7 @@ describe('adapterManager tests', function () {
           'labels': ['tablet', 'phone']
         }]);
 
-        let bidRequests = AdapterManager.makeBidRequests(
+        let bidRequests = adapterManager.makeBidRequests(
           adUnits,
           Date.now(),
           utils.getUniqueIdentifierStr(),
@@ -870,7 +974,7 @@ describe('adapterManager tests', function () {
           'labels': ['tablet', 'phone']
         }]);
 
-        bidRequests = AdapterManager.makeBidRequests(
+        bidRequests = adapterManager.makeBidRequests(
           adUnits,
           Date.now(),
           utils.getUniqueIdentifierStr(),
@@ -888,7 +992,7 @@ describe('adapterManager tests', function () {
         adUnits[1].bids[0].labelAny = ['mobile'];
         adUnits[1].bids[1].labelAll = ['desktop'];
 
-        let bidRequests = AdapterManager.makeBidRequests(
+        let bidRequests = adapterManager.makeBidRequests(
           adUnits,
           Date.now(),
           utils.getUniqueIdentifierStr(),
@@ -913,7 +1017,7 @@ describe('adapterManager tests', function () {
         TESTING_CONFIG.bidders = ['appnexus', 'rubicon'];
         config.setConfig({ s2sConfig: TESTING_CONFIG });
 
-        let bidRequests = AdapterManager.makeBidRequests(
+        let bidRequests = adapterManager.makeBidRequests(
           adUnits,
           Date.now(),
           utils.getUniqueIdentifierStr(),
@@ -933,12 +1037,12 @@ describe('adapterManager tests', function () {
 
     describe('gdpr consent module', function () {
       it('inserts gdprConsent object to bidRequest only when module was enabled', function () {
-        AdapterManager.gdprDataHandler.setConsentData({
+        gdprDataHandler.setConsentData({
           consentString: 'abc123def456',
           consentRequired: true
         });
 
-        let bidRequests = AdapterManager.makeBidRequests(
+        let bidRequests = adapterManager.makeBidRequests(
           adUnits,
           Date.now(),
           utils.getUniqueIdentifierStr(),
@@ -948,9 +1052,9 @@ describe('adapterManager tests', function () {
         expect(bidRequests[0].gdprConsent.consentString).to.equal('abc123def456');
         expect(bidRequests[0].gdprConsent.consentRequired).to.be.true;
 
-        AdapterManager.gdprDataHandler.setConsentData(null);
+        gdprDataHandler.setConsentData(null);
 
-        bidRequests = AdapterManager.makeBidRequests(
+        bidRequests = adapterManager.makeBidRequests(
           adUnits,
           Date.now(),
           utils.getUniqueIdentifierStr(),

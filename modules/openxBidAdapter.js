@@ -1,14 +1,14 @@
-import {config} from 'src/config';
-import {registerBidder} from 'src/adapters/bidderFactory';
-import * as utils from 'src/utils';
-import {userSync} from 'src/userSync';
-import {BANNER, VIDEO} from 'src/mediaTypes';
-import {parse} from 'src/url';
+import {config} from '../src/config';
+import {registerBidder} from '../src/adapters/bidderFactory';
+import * as utils from '../src/utils';
+import {userSync} from '../src/userSync';
+import {BANNER, VIDEO} from '../src/mediaTypes';
+import {parse} from '../src/url';
 
 const SUPPORTED_AD_TYPES = [BANNER, VIDEO];
 const BIDDER_CODE = 'openx';
 const BIDDER_CONFIG = 'hb_pb';
-const BIDDER_VERSION = '2.1.5';
+const BIDDER_VERSION = '2.1.6';
 
 let shouldSendBoPixel = true;
 
@@ -20,11 +20,12 @@ export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: SUPPORTED_AD_TYPES,
   isBidRequestValid: function (bidRequest) {
-    if (utils.deepAccess(bidRequest, 'mediaTypes.banner') && bidRequest.params.delDomain) {
+    const hasDelDomainOrPlatform = bidRequest.params.delDomain || bidRequest.params.platform;
+    if (utils.deepAccess(bidRequest, 'mediaTypes.banner') && hasDelDomainOrPlatform) {
       return !!bidRequest.params.unit || utils.deepAccess(bidRequest, 'mediaTypes.banner.sizes.length') > 0;
     }
 
-    return !!(bidRequest.params.unit && bidRequest.params.delDomain);
+    return !!(bidRequest.params.unit && hasDelDomainOrPlatform);
   },
   buildRequests: function (bidRequests, bidderRequest) {
     if (bidRequests.length === 0) {
@@ -54,12 +55,13 @@ export const spec = {
       : createBannerBidResponses(oxResponseObj, serverRequest.payload);
   },
   getUserSyncs: function (syncOptions, responses) {
-    if (syncOptions.iframeEnabled) {
+    if (syncOptions.iframeEnabled || syncOptions.pixelEnabled) {
+      let pixelType = syncOptions.iframeEnabled ? 'iframe' : 'image';
       let url = utils.deepAccess(responses, '0.body.ads.pixels') ||
         utils.deepAccess(responses, '0.body.pixels') ||
         '//u.openx.net/w/1.0/pd';
       return [{
-        type: 'iframe',
+        type: pixelType,
         url: url
       }];
     }
@@ -206,6 +208,10 @@ function buildCommonQueryParamsFromBids(bids, bidderRequest) {
     nocache: new Date().getTime()
   };
 
+  if (bids[0].params.platform) {
+    defaultParams.ph = bids[0].params.platform;
+  }
+
   if (utils.deepAccess(bidderRequest, 'gdprConsent')) {
     let gdprConsentConfig = bidderRequest.gdprConsent;
 
@@ -277,7 +283,10 @@ function buildOXBannerRequest(bids, bidderRequest) {
     queryParams.aumfs = customFloorsForAllBids.join(',');
   }
 
-  let url = `//${bids[0].params.delDomain}/w/1.0/arj`;
+  let url = queryParams.ph
+    ? `//u.openx.net/w/1.0/arj`
+    : `//${bids[0].params.delDomain}/w/1.0/arj`;
+
   return {
     method: 'GET',
     url: url,
@@ -287,8 +296,10 @@ function buildOXBannerRequest(bids, bidderRequest) {
 }
 
 function buildOXVideoRequest(bid, bidderRequest) {
-  let url = `//${bid.params.delDomain}/v/1.0/avjp`;
   let oxVideoParams = generateVideoParameters(bid, bidderRequest);
+  let url = oxVideoParams.ph
+    ? `//u.openx.net/v/1.0/avjp`
+    : `//${bid.params.delDomain}/v/1.0/avjp`;
   return {
     method: 'GET',
     url: url,
