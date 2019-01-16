@@ -144,8 +144,14 @@ export const spec = {
         slotData.language = params.video.language;
       }
 
+      // Frank expects the vales in each inventory and visitor fpd to be an array. so params.inventory.something === [] of some sort, otherwise it 400s
       if (params.inventory && typeof params.inventory === 'object') {
-        slotData.inventory = params.inventory;
+        slotData.inventory = {};
+        Object.keys(params.inventory).forEach(function(key) {
+          if (Array.isArray(params.inventory[key])) {
+            slotData.inventory[key] = params.inventory[key]
+          }
+        })
       }
 
       if (params.keywords && Array.isArray(params.keywords)) {
@@ -153,7 +159,12 @@ export const spec = {
       }
 
       if (params.visitor && typeof params.visitor === 'object') {
-        slotData.visitor = params.visitor;
+        slotData.visitor = {};
+        Object.keys(params.visitor).forEach(function(key) {
+          if (Array.isArray(params.visitor[key])) {
+            slotData.visitor[key] = params.visitor[key]
+          }
+        })
       }
 
       data.slots.push(slotData);
