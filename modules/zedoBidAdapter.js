@@ -290,7 +290,7 @@ function getLoggingData(eid, data) {
   data = (utils.isArray(data) && data) || [];
 
   let params = {};
-  let channel, network, dim, adunitCode, timeToRespond, cpm;
+  let channel, network, dim, publisher, adunitCode, timeToRespond, cpm;
   data.map((adunit) => {
     adunitCode = adunit.adUnitCode;
     channel = utils.deepAccess(adunit, 'params.0.channelCode') || 0;
