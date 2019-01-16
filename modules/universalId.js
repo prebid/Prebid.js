@@ -397,7 +397,8 @@ export function init (config, allSubmodules) {
       submoduleConfigs = getValidSubmoduleConfigs(usersync.universalIds, allSubmodules);
       submodules = getValidSubmodules(allSubmodules, submoduleConfigs);
       if (submodules.length) {
-        $$PREBID_GLOBAL$$.requestBids.addHook(requestBidHook);
+        // priority set to load after consentManagement (50) but before default priority 10
+        $$PREBID_GLOBAL$$.requestBids.addHook(requestBidHook, 40);
       }
     }
   });
