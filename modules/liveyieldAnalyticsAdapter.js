@@ -32,7 +32,7 @@ const adapterConfig = {
    * human friendly value.
    */
   getPlacementOrAdUnitCode: function(bid, version) {
-    return version[1] === '0' ? bid.placementCode : bid.adUnitCode;
+    return version[0] === '0' ? bid.placementCode : bid.adUnitCode;
   }
 };
 
