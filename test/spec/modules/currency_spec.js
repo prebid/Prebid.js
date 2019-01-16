@@ -26,6 +26,7 @@ describe('currency', function () {
 
   afterEach(function () {
     fakeCurrencyFileServer.restore();
+    setConfig({});
   });
 
   describe('setConfig', function () {
