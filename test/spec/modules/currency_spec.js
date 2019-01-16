@@ -34,7 +34,7 @@ describe('currency', function () {
   describe('setConfig', function () {
     beforeEach(function() {
       sandbox = sinon.sandbox.create();
-      clock = sinon.useFakeTimers(1047010195974);
+      clock = sinon.useFakeTimers(1046952000000); // 2003-03-06T12:00:00Z
     });
 
     afterEach(function () {
