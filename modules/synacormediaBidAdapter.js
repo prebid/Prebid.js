@@ -1,9 +1,9 @@
 'use strict';
 
-import { getAdUnitSizes, logWarn } from 'src/utils';
-import { registerBidder } from 'src/adapters/bidderFactory';
-import { BANNER } from 'src/mediaTypes';
-import { REPO_AND_VERSION } from 'src/constants';
+import { getAdUnitSizes, logWarn } from '../src/utils';
+import { registerBidder } from '../src/adapters/bidderFactory';
+import { BANNER } from '../src/mediaTypes';
+import { REPO_AND_VERSION } from '../src/constants';
 
 const SYNACOR_URL = '//prebid.technoratimedia.com';
 export const spec = {

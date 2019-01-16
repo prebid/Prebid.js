@@ -1,6 +1,6 @@
-import {detectReferer} from 'src/refererDetection';
-import {ajax} from 'src/ajax';
-import {registerBidder} from 'src/adapters/bidderFactory';
+import {detectReferer} from '../src/refererDetection';
+import {ajax} from '../src/ajax';
+import {registerBidder} from '../src/adapters/bidderFactory';
 
 export const spec = {
   code: 'orbidder',
@@ -70,7 +70,11 @@ export const spec = {
     const getRefererInfo = detectReferer(window);
     const refererInfo = getRefererInfo();
     winObj.pageUrl = refererInfo.referer;
-    ajax(`${this.orbidderHost}/win`, null, JSON.stringify(winObj));
+    spec.ajaxCall(`${this.orbidderHost}/win`, JSON.stringify(winObj));
+  },
+
+  ajaxCall(endpoint, data) {
+    ajax(endpoint, null, data);
   }
 };
 
