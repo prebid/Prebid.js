@@ -1,8 +1,8 @@
-import * as utils from 'src/utils';
-import {ajax} from 'src/ajax';
-import adapter from 'src/AnalyticsAdapter';
-import CONSTANTS from 'src/constants.json';
-import adaptermanager from 'src/adaptermanager';
+import * as utils from '../src/utils';
+import {ajax} from '../src/ajax';
+import adapter from '../src/AnalyticsAdapter';
+import CONSTANTS from '../src/constants.json';
+import adapterManager from '../src/adapterManager';
 
 const ANALYTICSTYPE = 'endpoint';
 const URL = '//lwadm.com/analytics/10';
@@ -214,7 +214,7 @@ function getTimeouts() {
   return timeouts;
 }
 
-adaptermanager.registerAnalyticsAdapter({
+adapterManager.registerAnalyticsAdapter({
   adapter: livewrappedAnalyticsAdapter,
   code: 'livewrapped'
 });

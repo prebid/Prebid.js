@@ -1,10 +1,9 @@
 import { expect } from 'chai';
-import { targeting as targetingInstance } from 'src/targeting';
+import { targeting as targetingInstance, filters } from 'src/targeting';
 import { config } from 'src/config';
 import { getAdUnits, createBidReceived } from 'test/fixtures/fixtures';
 import CONSTANTS from 'src/constants.json';
 import { auctionManager } from 'src/auctionManager';
-import * as targetingModule from 'src/targeting';
 import * as utils from 'src/utils';
 
 const bid1 = {
@@ -133,7 +132,7 @@ describe('targeting tests', function () {
       amGetAdUnitsStub = sandbox.stub(auctionManager, 'getAdUnitCodes').callsFake(function() {
         return ['/123456/header-bid-tag-0'];
       });
-      bidExpiryStub = sandbox.stub(targetingModule, 'isBidNotExpired').returns(true);
+      bidExpiryStub = sandbox.stub(filters, 'isBidNotExpired').returns(true);
     });
 
     describe('when hb_deal is present in bid.adserverTargeting', function () {
@@ -187,13 +186,7 @@ describe('targeting tests', function () {
       amGetAdUnitsStub = sandbox.stub(auctionManager, 'getAdUnitCodes').callsFake(function() {
         return ['/123456/header-bid-tag-0'];
       });
-      bidExpiryStub = sandbox.stub(targetingModule, 'isBidNotExpired').returns(true);
-    });
-
-    afterEach(function () {
-      auctionManager.getBidsReceived.restore();
-      auctionManager.getAdUnitCodes.restore();
-      targetingModule.isBidNotExpired.restore();
+      bidExpiryStub = sandbox.stub(filters, 'isBidNotExpired').returns(true);
     });
 
     it('returns targetingSet correctly', function () {
@@ -209,7 +202,7 @@ describe('targeting tests', function () {
       let bidExpiryStub;
       let auctionManagerStub;
       beforeEach(function () {
-        bidExpiryStub = sandbox.stub(targetingModule, 'isBidNotExpired').returns(true);
+        bidExpiryStub = sandbox.stub(filters, 'isBidNotExpired').returns(true);
         auctionManagerStub = sandbox.stub(auctionManager, 'getBidsReceived');
       });
 
