@@ -9,7 +9,21 @@ const {
 
 const prebidVersion = '$prebid.version$';
 
+const prebid = window['$$PREBID_GLOBAL$$'];
+
 const adapterConfig = {
+  googletag: false,
+
+  // user-provided function to distinct between prebid and non-prebid ad impression win
+  adImpressionWinDifference: function(slot) {
+    return null;
+  },
+
+  // function which returns proper adUnit
+  getAdById: function() {
+    return null;
+  },
+
   /** Name of the `rta` function, override only when instructed. */
   rtaFunctionName: 'rta',
 
@@ -32,7 +46,7 @@ const adapterConfig = {
    * human friendly value.
    */
   getPlacementOrAdUnitCode: function(bid, version) {
-    return version[1] === '0' ? bid.placementCode : bid.adUnitCode;
+    return version[0] === '0' ? bid.placementCode : bid.adUnitCode;
   }
 };
 
@@ -69,31 +83,33 @@ const liveyield = Object.assign(adapter({ analyticsType: 'bundle' }), {
         window[adapterConfig.rtaFunctionName]('biddersTimeout', args);
         break;
       case BID_WON:
-        const ad = adapterConfig.getAdUnitName(
-          adapterConfig.getPlacementOrAdUnitCode(args, prebidVersion)
-        );
-        if (!ad) {
-          utils.logError('Cannot find ad by unit name: ' +
+        if (!adapterConfig.googletag) {
+          const ad = adapterConfig.getAdUnitName(
+            adapterConfig.getPlacementOrAdUnitCode(args, prebidVersion)
+          );
+          if (!ad) {
+            utils.logError('Cannot find ad by unit name: ' +
+                adapterConfig.getAdUnitName(
+                  adapterConfig.getPlacementOrAdUnitCode(args, prebidVersion)
+                ));
+            return;
+          }
+          if (!args.bidderCode || !args.cpm) {
+            utils.logError('Bidder code or cpm is not valid');
+            return;
+          }
+          window[adapterConfig.rtaFunctionName](
+            'resolveSlot',
             adapterConfig.getAdUnitName(
               adapterConfig.getPlacementOrAdUnitCode(args, prebidVersion)
-            ));
-          return;
+            ),
+            {
+              prebidWon: true,
+              prebidPartner: args.bidderCode,
+              prebidValue: cpmToMicroUSD(args.cpm)
+            }
+          );
         }
-        if (!args.bidderCode || !args.cpm) {
-          utils.logError('Bidder code or cpm is not valid');
-          return;
-        }
-        window[adapterConfig.rtaFunctionName](
-          'resolveSlot',
-          adapterConfig.getAdUnitName(
-            adapterConfig.getPlacementOrAdUnitCode(args, prebidVersion)
-          ),
-          {
-            prebidWon: true,
-            prebidPartner: args.bidderCode,
-            prebidValue: cpmToMicroUSD(args.cpm)
-          }
-        );
         break;
     }
   }
@@ -188,8 +204,97 @@ liveyield.enableAnalytics = function(config) {
     config.options.sessionTimezoneOffset,
     additionalParams
   );
-
   liveyield.originEnableAnalytics(config);
+
+  if (adapterConfig.googletag) {
+    adapterConfig.googletag.pubads().addEventListener('slotRenderEnded', function(e) {
+      handler(e.slot);
+    });
+  };
+};
+
+var handler = function(slot) {
+  var ad = adapterConfig.getAdById(slot.getSlotElementId());
+  if (!ad) {
+    utils.logError('Cannot find ad by slot element id: ', slot.getSlotElementId());
+    return;
+  }
+  adapterConfig.adImpressionWinDifference(slot);
+  window[adapterConfig.rtaFunctionName]('resolveSlot', ad, resolve(ad, slot));
+};
+
+function resolve(ad, slot) {
+  var resolution = { targetings: [] };
+  var hbTargeting;
+
+  var responseInformation = slot.getResponseInformation();
+  if (responseInformation) {
+    resolution.dfpAdvertiserId = responseInformation.advertiserId;
+    resolution.dfpLineItemId = responseInformation.sourceAgnosticLineItemId;
+    resolution.dfpCreativeId = responseInformation.creativeId;
+  }
+
+  var hbAdId = slot.getTargetingMap().hb_adid;
+  var creative = getCreative(slot);
+  if (creative &&
+        creative.indexOf(prebid.renderAd) !== -1 &&
+        creative.indexOf(hbAdId) != -1) {
+    resolution.prebidWon = true;
+  }
+
+  if (prebidVersion[0] === '0') {
+    hbTargeting = prebid.getAdserverTargetingForAdUnitCode(ad.id);
+  } else {
+    var winningBid = prebid.getHighestCpmBids(ad.id);
+    if (winningBid[0]) {
+      hbTargeting = winningBid[0].adserverTargeting
+    }
+  }
+
+  if (hbTargeting) {
+    resolution.prebidPartner = hbTargeting.hb_bidder;
+    resolution.prebidValue = cpmToMicroUSD(parseFloat(hbTargeting.hb_pb));
+  }
+
+  if (resolution.prebidWon && !hbTargeting) {
+    resolution.lost = true;
+  }
+
+  var openxVal = openxTargeting(slot);
+  if (openxVal) {
+    resolution.targetings.push({ key: 'oxb', val: openxVal });
+  }
+  return resolution;
+};
+
+function openxTargeting(slot) {
+  var targeting = slot.getTargeting('oxb');
+  var keys = [];
+  for (var i = 0; i < targeting.length; i++) {
+    var t = targeting[i];
+    if (typeof (t) === 'string' || t instanceof String) {
+      keys = keys.concat(t.split(','));
+    }
+  }
+
+  for (var j = 0; j < keys.length; j++) {
+    var k = keys[j];
+    if (k.indexOf('hb-bid') !== -1) { continue; }
+    return k;
+  }
+
+  return null;
+};
+
+function getCreative(slot) {
+  for (var property in slot) {
+    if (slot.hasOwnProperty(property)) {
+      if (slot[property] !== null && typeof (slot[property]._html_) !== 'undefined') {
+        return slot[property]._html_;
+      }
+    }
+  }
+  return null;
 };
 
 adaptermanager.registerAnalyticsAdapter({
