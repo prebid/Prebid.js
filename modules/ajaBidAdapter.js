@@ -1,7 +1,7 @@
-import { Renderer } from 'src/Renderer';
-import * as utils from 'src/utils';
-import { registerBidder } from 'src/adapters/bidderFactory';
-import { VIDEO, BANNER } from 'src/mediaTypes';
+import { Renderer } from '../src/Renderer';
+import * as utils from '../src/utils';
+import { registerBidder } from '../src/adapters/bidderFactory';
+import { VIDEO, BANNER } from '../src/mediaTypes';
 
 const BIDDER_CODE = 'aja';
 const URL = '//ad.as.amanad.adtdp.com/v2/prebid';

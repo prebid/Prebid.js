@@ -1,4 +1,4 @@
-import { registerBidder } from 'src/adapters/bidderFactory';
+import { registerBidder } from '../src/adapters/bidderFactory';
 
 const VERSION = '3.0.1';
 const BIDDER_CODE = 'sharethrough';

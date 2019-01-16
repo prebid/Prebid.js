@@ -4,8 +4,8 @@ import { flatten, getBidderCodes, getDefinedParams, shuffle, timestamp, getBidde
 import { getLabels, resolveStatus } from './sizeMapping';
 import { processNativeAdUnitParams, nativeAdapters } from './native';
 import { newBidder } from './adapters/bidderFactory';
-import { ajaxBuilder } from 'src/ajax';
-import { config, RANDOM } from 'src/config';
+import { ajaxBuilder } from './ajax';
+import { config, RANDOM } from './config';
 import includes from 'core-js/library/fn/array/includes';
 import find from 'core-js/library/fn/array/find';
 import { adunitCounter } from './adUnits';
@@ -17,9 +17,10 @@ var CONSTANTS = require('./constants.json');
 var events = require('./events');
 let s2sTestingModule; // store s2sTesting module if it's loaded
 
-var _bidderRegistry = {};
-exports.bidderRegistry = _bidderRegistry;
-exports.aliasRegistry = {};
+let adapterManager = {};
+
+let _bidderRegistry = adapterManager.bidderRegistry = {};
+let _aliasRegistry = adapterManager.aliasRegistry = {};
 
 let _s2sConfig = {};
 config.getConfig('s2sConfig', config => {
@@ -149,20 +150,20 @@ function getAdUnitCopyForClientAdapters(adUnits) {
   return adUnitsClientCopy;
 }
 
-exports.gdprDataHandler = {
+export let gdprDataHandler = {
   consentData: null,
   setConsentData: function(consentInfo) {
-    this.consentData = consentInfo;
+    gdprDataHandler.consentData = consentInfo;
   },
   getConsentData: function() {
-    return this.consentData;
+    return gdprDataHandler.consentData;
   }
 };
 
-exports.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTimeout, labels) {
+adapterManager.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTimeout, labels) {
   let bidRequests = [];
 
-  adUnits = exports.checkAdUnitSetup(adUnits);
+  adUnits = checkAdUnitSetup(adUnits);
 
   let bidderCodes = getBidderCodes(adUnits);
   if (config.getConfig('bidderSequence') === RANDOM) {
@@ -246,15 +247,15 @@ exports.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTimeout, 
     }
   });
 
-  if (exports.gdprDataHandler.getConsentData()) {
+  if (gdprDataHandler.getConsentData()) {
     bidRequests.forEach(bidRequest => {
-      bidRequest['gdprConsent'] = exports.gdprDataHandler.getConsentData();
+      bidRequest['gdprConsent'] = gdprDataHandler.getConsentData();
     });
   }
   return bidRequests;
 };
 
-exports.checkAdUnitSetup = createHook('asyncSeries', function (adUnits) {
+export const checkAdUnitSetup = createHook('asyncSeries', function (adUnits) {
   function isArrayOfNums(val) {
     return Array.isArray(val) && val.length === 2 && utils.isInteger(val[0]) && utils.isInteger(val[1]);
   }
@@ -314,7 +315,7 @@ exports.checkAdUnitSetup = createHook('asyncSeries', function (adUnits) {
   return adUnits;
 }, 'checkAdUnitSetup');
 
-exports.callBids = (adUnits, bidRequests, addBidResponse, doneCb, requestCallbacks, requestBidsTimeout) => {
+adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, requestCallbacks, requestBidsTimeout) => {
   if (!bidRequests.length) {
     utils.logWarn('callBids executed with no bidRequests.  Were they filtered by labels or sizing?');
     return;
@@ -395,20 +396,20 @@ function doingS2STesting() {
 
 function getSupportedMediaTypes(bidderCode) {
   let result = [];
-  if (includes(exports.videoAdapters, bidderCode)) result.push('video');
+  if (includes(adapterManager.videoAdapters, bidderCode)) result.push('video');
   if (includes(nativeAdapters, bidderCode)) result.push('native');
   return result;
 }
 
-exports.videoAdapters = []; // added by adapterLoader for now
+adapterManager.videoAdapters = []; // added by adapterLoader for now
 
-exports.registerBidAdapter = function (bidAdaptor, bidderCode, {supportedMediaTypes = []} = {}) {
+adapterManager.registerBidAdapter = function (bidAdaptor, bidderCode, {supportedMediaTypes = []} = {}) {
   if (bidAdaptor && bidderCode) {
     if (typeof bidAdaptor.callBids === 'function') {
       _bidderRegistry[bidderCode] = bidAdaptor;
 
       if (includes(supportedMediaTypes, 'video')) {
-        exports.videoAdapters.push(bidderCode);
+        adapterManager.videoAdapters.push(bidderCode);
       }
       if (includes(supportedMediaTypes, 'native')) {
         nativeAdapters.push(bidderCode);
@@ -421,7 +422,7 @@ exports.registerBidAdapter = function (bidAdaptor, bidderCode, {supportedMediaTy
   }
 };
 
-exports.aliasBidAdapter = function (bidderCode, alias) {
+adapterManager.aliasBidAdapter = function (bidderCode, alias) {
   let existingAlias = _bidderRegistry[alias];
 
   if (typeof existingAlias === 'undefined') {
@@ -432,9 +433,9 @@ exports.aliasBidAdapter = function (bidderCode, alias) {
       const s2sBidders = s2sConfig && s2sConfig.bidders;
 
       if (!(s2sBidders && includes(s2sBidders, alias))) {
-        utils.logError('bidderCode "' + bidderCode + '" is not an existing bidder.', 'adaptermanager.aliasBidAdapter');
+        utils.logError('bidderCode "' + bidderCode + '" is not an existing bidder.', 'adapterManager.aliasBidAdapter');
       } else {
-        exports.aliasRegistry[alias] = bidderCode;
+        _aliasRegistry[alias] = bidderCode;
       }
     } else {
       try {
@@ -448,13 +449,13 @@ exports.aliasBidAdapter = function (bidderCode, alias) {
         } else {
           let spec = bidAdaptor.getSpec();
           newAdapter = newBidder(Object.assign({}, spec, { code: alias }));
-          exports.aliasRegistry[alias] = bidderCode;
+          _aliasRegistry[alias] = bidderCode;
         }
-        this.registerBidAdapter(newAdapter, alias, {
+        adapterManager.registerBidAdapter(newAdapter, alias, {
           supportedMediaTypes
         });
       } catch (e) {
-        utils.logError(bidderCode + ' bidder does not currently support aliasing.', 'adaptermanager.aliasBidAdapter');
+        utils.logError(bidderCode + ' bidder does not currently support aliasing.', 'adapterManager.aliasBidAdapter');
       }
     }
   } else {
@@ -462,7 +463,7 @@ exports.aliasBidAdapter = function (bidderCode, alias) {
   }
 };
 
-exports.registerAnalyticsAdapter = function ({adapter, code}) {
+adapterManager.registerAnalyticsAdapter = function ({adapter, code}) {
   if (adapter && code) {
     if (typeof adapter.enableAnalytics === 'function') {
       adapter.code = code;
@@ -476,7 +477,7 @@ exports.registerAnalyticsAdapter = function ({adapter, code}) {
   }
 };
 
-exports.enableAnalytics = function (config) {
+adapterManager.enableAnalytics = function (config) {
   if (!utils.isArray(config)) {
     config = [config];
   }
@@ -492,15 +493,15 @@ exports.enableAnalytics = function (config) {
   });
 };
 
-exports.getBidAdapter = function(bidder) {
+adapterManager.getBidAdapter = function(bidder) {
   return _bidderRegistry[bidder];
 };
 
 // the s2sTesting module is injected when it's loaded rather than being imported
 // importing it causes the packager to include it even when it's not explicitly included in the build
-exports.setS2STestingModule = function (module) {
+export function setS2STestingModule(module) {
   s2sTestingModule = module;
-};
+}
 
 function tryCallBidderMethod(bidder, method, param) {
   try {
@@ -515,7 +516,7 @@ function tryCallBidderMethod(bidder, method, param) {
   }
 }
 
-exports.callTimedOutBidders = function(adUnits, timedOutBidders, cbTimeout) {
+adapterManager.callTimedOutBidders = function(adUnits, timedOutBidders, cbTimeout) {
   timedOutBidders = timedOutBidders.map((timedOutBidder) => {
     // Adding user configured params & timeout to timeout event data
     timedOutBidder.params = utils.getUserConfiguredParams(adUnits, timedOutBidder.adUnitCode, timedOutBidder.bidder);
@@ -529,12 +530,14 @@ exports.callTimedOutBidders = function(adUnits, timedOutBidders, cbTimeout) {
   });
 }
 
-exports.callBidWonBidder = function(bidder, bid, adUnits) {
+adapterManager.callBidWonBidder = function(bidder, bid, adUnits) {
   // Adding user configured params to bidWon event data
   bid.params = utils.getUserConfiguredParams(adUnits, bid.adUnitCode, bid.bidder);
   tryCallBidderMethod(bidder, 'onBidWon', bid);
 };
 
-exports.callSetTargetingBidder = function(bidder, bid) {
+adapterManager.callSetTargetingBidder = function(bidder, bid) {
   tryCallBidderMethod(bidder, 'onSetTargeting', bid);
 };
+
+export default adapterManager;

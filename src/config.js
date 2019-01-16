@@ -10,7 +10,7 @@
 import { isValidPriceConfig } from './cpmBucketManager';
 import find from 'core-js/library/fn/array/find';
 import includes from 'core-js/library/fn/array/includes';
-import { createHook } from 'src/hook';
+import { createHook } from './hook';
 const utils = require('./utils');
 
 const DEFAULT_DEBUG = false;
