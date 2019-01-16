@@ -259,11 +259,12 @@ function videoRenderer(bid) {
   bid.renderer.push(() => {
     let channelCode = utils.deepAccess(bid, 'params.0.channelCode') || 0;
     let dimId = utils.deepAccess(bid, 'params.0.dimId') || 0;
+    let publisher = utils.deepAccess(bid, 'params.0.pubId') || 0;
     let options = utils.deepAccess(bid, 'params.0.options') || {};
     let channel = (channelCode > 0) ? (channelCode - (bid.network * 1000000)) : 0;
     var rndr = new ZdPBTag(bid.adUnitCode, bid.network, bid.width, bid.height, bid.adType, bid.vastXml, channel, dimId,
       (encodeURI(utils.getTopWindowUrl()) || ''), options);
-    rndr.renderAd();
+    rndr.renderAd(publisher);
   });
 }
 
