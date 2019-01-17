@@ -95,6 +95,17 @@ export const adapter = {
     return isInvalidResponse
       ? noBidsResponse
       : buildPrebidResponseAndInstallRenderer(serverResponseBody.bids);
+  },
+
+  getUserSyncs: function(syncOptions) {
+    const syncs = []
+    if (syncOptions.iframeEnabled) {
+      syncs.push({
+        type: 'iframe',
+        url: 'https://video.unrulymedia.com/iframes/third-party-iframes.html'
+      });
+    }
+    return syncs;
   }
 };
 
