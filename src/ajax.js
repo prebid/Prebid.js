@@ -73,7 +73,7 @@ export function ajaxBuilder(timeout = 3000, {
         url = formatURL(urlInfo);
       }
 
-      x.open(method, url);
+      x.open(method, url, true);
       // IE needs timoeut to be set after open - see #1410
       // Disabled timeout temporarily to avoid xhr failed requests. https://github.com/prebid/Prebid.js/issues/2648
       if (!config.getConfig('disableAjaxTimeout')) {

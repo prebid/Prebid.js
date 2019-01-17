@@ -1,7 +1,19 @@
 import { expect } from 'chai'
-import { spec } from 'modules/justpremiumBidAdapter'
+import { spec, pixel } from 'modules/justpremiumBidAdapter'
 
-describe('justpremium adapter', () => {
+describe('justpremium adapter', function () {
+  let sandbox;
+  let pixelStub;
+
+  beforeEach(function() {
+    sandbox = sinon.sandbox.create();
+    pixelStub = sandbox.stub(pixel, 'fire');
+  });
+
+  afterEach(function() {
+    sandbox.restore();
+  });
+
   let adUnits = [
     {
       adUnitCode: 'div-gpt-ad-1471513102552-1',
@@ -21,12 +33,12 @@ describe('justpremium adapter', () => {
     },
   ]
 
-  describe('isBidRequestValid', () => {
-    it('Verifies bidder code', () => {
+  describe('isBidRequestValid', function () {
+    it('Verifies bidder code', function () {
       expect(spec.code).to.equal('justpremium')
     })
 
-    it('Verify build request', () => {
+    it('Verify build request', function () {
       expect(spec.isBidRequestValid({bidder: 'justpremium', params: {}})).to.equal(false)
       expect(spec.isBidRequestValid({})).to.equal(false)
       expect(spec.isBidRequestValid(adUnits[0])).to.equal(true)
@@ -34,8 +46,8 @@ describe('justpremium adapter', () => {
     })
   })
 
-  describe('buildRequests', () => {
-    it('Verify build request and parameters', () => {
+  describe('buildRequests', function () {
+    it('Verify build request and parameters', function () {
       const request = spec.buildRequests(adUnits)
       expect(request.method).to.equal('POST')
       expect(request.url).to.match(/pre.ads.justpremium.com\/v\/2.0\/t\/xhr/)
@@ -53,13 +65,13 @@ describe('justpremium adapter', () => {
       expect(jpxRequest.id).to.equal(adUnits[0].params.zone)
       expect(jpxRequest.sizes).to.not.equal('undefined')
       expect(jpxRequest.version.prebid).to.equal('$prebid.version$')
-      expect(jpxRequest.version.jp_adapter).to.equal('1.2')
+      expect(jpxRequest.version.jp_adapter).to.equal('1.3')
     })
   })
 
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     const request = spec.buildRequests(adUnits)
-    it('Verify server response', () => {
+    it('Verify server response', function () {
       let response = {
         'bid': {
           '28313': [{
@@ -107,7 +119,7 @@ describe('justpremium adapter', () => {
       expect(result[0].format).to.equal('lb')
     })
 
-    it('Verify wrong server response', () => {
+    it('Verify wrong server response', function () {
       let response = {
         'bid': {
           '28313': []
@@ -122,8 +134,8 @@ describe('justpremium adapter', () => {
     })
   })
 
-  describe('getUserSyncs', () => {
-    it('Verifies sync options', () => {
+  describe('getUserSyncs', function () {
+    it('Verifies sync options', function () {
       const options = spec.getUserSyncs({iframeEnabled: true})
       expect(options).to.not.be.undefined
       expect(options[0].type).to.equal('iframe')
@@ -131,8 +143,8 @@ describe('justpremium adapter', () => {
     })
   })
 
-  describe('onTimeout', () => {
-    it('onTimeout', (done) => {
+  describe('onTimeout', function () {
+    it('onTimeout', function(done) {
       spec.onTimeout([{
         'bidId': '25cd3ec3fd6ed7',
         'bidder': 'justpremium',
@@ -153,7 +165,9 @@ describe('justpremium adapter', () => {
           'zone': 21521
         }],
         'timeout': 1
-      }])
+      }]);
+
+      expect(pixelStub.calledOnce).to.equal(true);
 
       done()
     })

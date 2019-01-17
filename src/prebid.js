@@ -1,17 +1,18 @@
 /** @module pbjs */
 
 import { getGlobal } from './prebidGlobal';
-import { flatten, uniques, isGptPubadsDefined, adUnitsFilter, removeRequestId } from './utils';
+import { flatten, uniques, isGptPubadsDefined, adUnitsFilter, removeRequestId, getLatestHighestCpmBid } from './utils';
 import { listenMessagesFromCreative } from './secureCreatives';
 import { userSync } from 'src/userSync.js';
 import { loadScript } from './adloader';
 import { config } from './config';
 import { auctionManager } from './auctionManager';
-import { targeting, RENDERED, BID_TARGETING_SET } from './targeting';
+import { targeting, getHighestCpmBidsFromBidPool } from './targeting';
 import { createHook } from 'src/hook';
 import { sessionLoader } from 'src/debugging';
 import includes from 'core-js/library/fn/array/includes';
 import { adunitCounter } from './adUnits';
+import { isRendererRequired, executeRenderer } from './Renderer';
 
 const $$PREBID_GLOBAL$$ = getGlobal();
 const CONSTANTS = require('./constants.json');
@@ -34,9 +35,6 @@ sessionLoader();
 
 /* Public vars */
 $$PREBID_GLOBAL$$.bidderSettings = $$PREBID_GLOBAL$$.bidderSettings || {};
-
-// current timeout set in `requestBids` or to default `bidderTimeout`
-$$PREBID_GLOBAL$$.cbTimeout = $$PREBID_GLOBAL$$.cbTimeout || 200;
 
 // let the world know we are loaded
 $$PREBID_GLOBAL$$.libLoaded = true;
@@ -116,15 +114,8 @@ $$PREBID_GLOBAL$$.getAdserverTargeting = function (adUnitCode) {
   return targeting.getAllTargeting(adUnitCode);
 };
 
-/**
- * This function returns the bid responses at the given moment.
- * @alias module:pbjs.getBidResponses
- * @return {Object}            map | object that contains the bidResponses
- */
-
-$$PREBID_GLOBAL$$.getBidResponses = function () {
-  utils.logInfo('Invoking $$PREBID_GLOBAL$$.getBidResponses', arguments);
-  const responses = auctionManager.getBidsReceived()
+function getBids(type) {
+  const responses = auctionManager[type]()
     .filter(adUnitsFilter.bind(this, auctionManager.getAdUnitCodes()));
 
   // find the last auction id to get responses for most recent auction only
@@ -141,6 +132,28 @@ $$PREBID_GLOBAL$$.getBidResponses = function () {
       };
     })
     .reduce((a, b) => Object.assign(a, b), {});
+}
+
+/**
+ * This function returns the bids requests involved in an auction but not bid on
+ * @alias module:pbjs.getNoBids
+ * @return {Object}            map | object that contains the bidRequests
+ */
+
+$$PREBID_GLOBAL$$.getNoBids = function () {
+  utils.logInfo('Invoking $$PREBID_GLOBAL$$.getNoBids', arguments);
+  return getBids('getNoBids');
+};
+
+/**
+ * This function returns the bid responses at the given moment.
+ * @alias module:pbjs.getBidResponses
+ * @return {Object}            map | object that contains the bidResponses
+ */
+
+$$PREBID_GLOBAL$$.getBidResponses = function () {
+  utils.logInfo('Invoking $$PREBID_GLOBAL$$.getBidResponses', arguments);
+  return getBids('getBidsReceived');
 };
 
 /**
@@ -182,7 +195,7 @@ $$PREBID_GLOBAL$$.setTargetingForGPTAsync = function (adUnit, customSlotMatching
   Object.keys(targetingSet).forEach((adUnitCode) => {
     Object.keys(targetingSet[adUnitCode]).forEach((targetingKey) => {
       if (targetingKey === 'hb_adid') {
-        auctionManager.setStatusForBids(targetingSet[adUnitCode][targetingKey], BID_TARGETING_SET);
+        auctionManager.setStatusForBids(targetingSet[adUnitCode][targetingKey], CONSTANTS.BID_STATUS.BID_TARGETING_SET);
       }
     });
   });
@@ -236,7 +249,7 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
       // lookup ad by ad Id
       const bid = auctionManager.findBidByAdId(id);
       if (bid) {
-        bid.status = RENDERED;
+        bid.status = CONSTANTS.BID_STATUS.RENDERED;
         // replace macros according to openRTB with price paid = bid.cpm
         bid.ad = utils.replaceAuctionPrice(bid.ad, bid.cpm);
         bid.adUrl = utils.replaceAuctionPrice(bid.adUrl, bid.cpm);
@@ -251,8 +264,8 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
         const creativeComment = document.createComment(`Creative ${bid.creativeId} served by ${bid.bidder} Prebid.js Header Bidding`);
         utils.insertElement(creativeComment, doc, 'body');
 
-        if (renderer && renderer.url) {
-          renderer.render(bid);
+        if (isRendererRequired(renderer)) {
+          executeRenderer(renderer, bid);
         } else if ((doc === document && !utils.inIframe()) || mediaType === 'video') {
           const message = `Error trying to write ad. Ad render call ad id ${id} was prevented from writing to the main document.`;
           emitAdRenderFail(PREVENT_WRITING_ON_MAIN_DOCUMENT, message, bid);
@@ -350,9 +363,7 @@ $$PREBID_GLOBAL$$.requestBids = createHook('asyncSeries', function ({ bidsBackHa
       return !includes(s2sBidders, bidder);
     }) : allBidders;
 
-    if (!adUnit.transactionId) {
-      adUnit.transactionId = utils.generateUUID();
-    }
+    adUnit.transactionId = utils.generateUUID();
 
     bidders.forEach(bidder => {
       const adapter = bidderRegistry[bidder];
@@ -588,7 +599,7 @@ $$PREBID_GLOBAL$$.getAllWinningBids = function () {
  */
 $$PREBID_GLOBAL$$.getAllPrebidWinningBids = function () {
   return auctionManager.getBidsReceived()
-    .filter(bid => bid.status === BID_TARGETING_SET)
+    .filter(bid => bid.status === CONSTANTS.BID_STATUS.BID_TARGETING_SET)
     .map(removeRequestId);
 };
 
@@ -600,7 +611,8 @@ $$PREBID_GLOBAL$$.getAllPrebidWinningBids = function () {
  * @return {Array} array containing highest cpm bid object(s)
  */
 $$PREBID_GLOBAL$$.getHighestCpmBids = function (adUnitCode) {
-  return targeting.getWinningBids(adUnitCode)
+  let bidsReceived = getHighestCpmBidsFromBidPool(auctionManager.getBidsReceived(), getLatestHighestCpmBid);
+  return targeting.getWinningBids(adUnitCode, bidsReceived)
     .map(removeRequestId);
 };
 
@@ -627,7 +639,7 @@ $$PREBID_GLOBAL$$.markWinningBidAsUsed = function (markBidRequest) {
   }
 
   if (bids.length > 0) {
-    bids[0].status = RENDERED;
+    bids[0].status = CONSTANTS.BID_STATUS.RENDERED;
   }
 };
 
@@ -669,7 +681,6 @@ $$PREBID_GLOBAL$$.getConfig = config.getConfig;
  * @param {boolean} options.enableSendAllBids Turn "send all bids" mode on/off.  Example: `pbjs.setConfig({ enableSendAllBids: true })`.
  * @param {number} options.bidderTimeout Set a global bidder timeout, in milliseconds.  Example: `pbjs.setConfig({ bidderTimeout: 3000 })`.  Note that it's still possible for a bid to get into the auction that responds after this timeout. This is due to how [`setTimeout`](https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/setTimeout) works in JS: it queues the callback in the event loop in an approximate location that should execute after this time but it is not guaranteed.  For more information about the asynchronous event loop and `setTimeout`, see [How JavaScript Timers Work](https://johnresig.com/blog/how-javascript-timers-work/).
  * @param {string} options.publisherDomain The publisher's domain where Prebid is running, for cross-domain iFrame communication.  Example: `pbjs.setConfig({ publisherDomain: "https://www.theverge.com" })`.
- * @param {number} options.cookieSyncDelay A delay (in milliseconds) for requesting cookie sync to stay out of the critical path of page load.  Example: `pbjs.setConfig({ cookieSyncDelay: 100 })`.
  * @param {Object} options.s2sConfig The configuration object for [server-to-server header bidding](http://prebid.org/dev-docs/get-started-with-prebid-server.html).  Example:
  * @alias module:pbjs.setConfig
  * ```

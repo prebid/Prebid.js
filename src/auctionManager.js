@@ -39,15 +39,20 @@ export function newAuctionManager() {
     } else {
       utils.logWarn(`Auction not found when adding winning bid`);
     }
-  }
+  };
 
   auctionManager.getAllWinningBids = function() {
     return _auctions.map(auction => auction.getWinningBids())
       .reduce(flatten, []);
-  }
+  };
 
   auctionManager.getBidsRequested = function() {
     return _auctions.map(auction => auction.getBidRequests())
+      .reduce(flatten, []);
+  };
+
+  auctionManager.getNoBids = function() {
+    return _auctions.map(auction => auction.getNoBids())
       .reduce(flatten, []);
   };
 
@@ -91,6 +96,11 @@ export function newAuctionManager() {
   auctionManager.setStatusForBids = function(adId, status) {
     let bid = auctionManager.findBidByAdId(adId);
     if (bid) bid.status = status;
+
+    if (bid && status === CONSTANTS.BID_STATUS.BID_TARGETING_SET) {
+      const auction = find(_auctions, auction => auction.getAuctionId() === bid.auctionId);
+      if (auction) auction.setBidTargeting(bid);
+    }
   }
 
   function _addAuction(auction) {
