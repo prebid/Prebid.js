@@ -3,8 +3,7 @@ import { BANNER, NATIVE, VIDEO } from 'src/mediaTypes';
 import * as utils from 'src/utils';
 
 const BIDDER_CODE = 'advenue';
-const URL = '//supply.advenuemedia.co.uk/?c=o&m=multi';
-const URL_SYNC = '//supply.advenuemedia.co.uk/?c=o&m=cookie';
+const URL_MULTI = '//ssp.advenuemedia.co.uk/?c=o&m=multi';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -40,7 +39,7 @@ export const spec = {
       winTop = window;
     };
 
-    const location = winTop.location;
+    const location = bidderRequest ? new URL(bidderRequest.refererInfo.referer) : winTop.location;
     const placements = [];
     const request = {
       'secure': (location.protocol === 'https:') ? 1 : 0,
@@ -63,7 +62,7 @@ export const spec = {
     }
     return {
       method: 'POST',
-      url: URL,
+      url: URL_MULTI,
       data: request
     };
   },
@@ -82,13 +81,6 @@ export const spec = {
     };
     return serverResponse;
   },
-
-  getUserSyncs: () => {
-    return [{
-      type: 'image',
-      url: URL_SYNC
-    }];
-  }
 };
 
 registerBidder(spec);
