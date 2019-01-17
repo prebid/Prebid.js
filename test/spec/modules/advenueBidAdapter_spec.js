@@ -104,15 +104,4 @@ describe('AdvenueAdapter', function () {
       });
     });
   });
-
-  describe('getUserSyncs', function () {
-    let userSync = spec.getUserSyncs();
-    it('Returns valid URL and `', function () {
-      expect(userSync).to.be.an('array').with.lengthOf(1);
-      expect(userSync[0].type).to.exist;
-      expect(userSync[0].url).to.exist;
-      expect(userSync[0].type).to.be.equal('image');
-      expect(userSync[0].url).to.be.equal('//supply.advenuemedia.co.uk/?c=o&m=cookie');
-    });
-  });
 });
