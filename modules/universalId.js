@@ -6,7 +6,7 @@ import { config } from '../src/config.js';
 import events from '../src/events.js';
 import * as utils from '../src/utils.js';
 import find from 'core-js/library/fn/array/find';
-import { gdprDataHandler } from '../src/adaptermanager.js';
+import { gdprDataHandler } from '../src/adapterManager.js';
 
 const CONSTANTS = require('../src/constants.json');
 
