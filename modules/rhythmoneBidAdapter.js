@@ -65,7 +65,7 @@ function RhythmOneBidAdapter() {
     data.bidder_version = version;
     if (gdprConsent) {
       data.gdpr_consent = gdprConsent.consentString;
-      data.gdpr = (typeof gdprConsent.gdprApplies === 'boolean') ? gdprConsent.gdprApplies : true;
+      data.gdpr = (typeof gdprConsent.gdprApplies === 'boolean') ? gdprConsent.gdprApplies : false;
     }
 
     for (let k in data) {
@@ -194,7 +194,7 @@ function RhythmOneBidAdapter() {
       tmax: 1000,
       regs: {
         ext: {
-          gdpr: utils.deepAccess(bidderRequest, 'gdprConsent.gdprApplies') ? Boolean(bidderRequest.gdprConsent.gdprApplies & 1) : true
+          gdpr: utils.deepAccess(bidderRequest, 'gdprConsent.gdprApplies') ? Boolean(bidderRequest.gdprConsent.gdprApplies & 1) : false
         }
       }
     };

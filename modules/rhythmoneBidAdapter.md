@@ -23,10 +23,10 @@ const adUnits = [{
       bidder: 'rhythmone',
       params: 
       { 
-        placementId: '411806', // REQUIRED
+        placementId: '80184', // REQUIRED
         zone: '1r', // OPTIONAL
         path: 'mvo', // OPTIONAL
-        endpoint: "//tag.1rx.io/rmp/72721/0/mvo?z=1r" // OPTIONAL, only required for testing.  this api guarantees no 204 responses
+        endpoint: "//tag.1rx.io/rmp/80184/0/mvo?z=1r" // OPTIONAL, only required for testing.  this api guarantees no 204 responses
       }
     }
   ]
