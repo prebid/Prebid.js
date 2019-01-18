@@ -40,7 +40,7 @@ describe('Publisher Common ID', function () {
 
       innerAdUnits1.forEach((unit) => {
         unit.bids.forEach((bid) => {
-          expect(bid).to.have.deep.property('crumbs.pubcid');
+          expect(bid).to.have.deep.nested.property('crumbs.pubcid');
           expect(bid.crumbs.pubcid).to.equal(pubcid);
         });
       });
@@ -62,7 +62,7 @@ describe('Publisher Common ID', function () {
 
       innerAdUnits1.forEach((unit) => {
         unit.bids.forEach((bid) => {
-          expect(bid).to.have.deep.property('crumbs.pubcid');
+          expect(bid).to.have.deep.nested.property('crumbs.pubcid');
           expect(bid.crumbs.pubcid).to.equal(pubcid1);
         });
       });
@@ -72,7 +72,7 @@ describe('Publisher Common ID', function () {
 
       innerAdUnits2.forEach((unit) => {
         unit.bids.forEach((bid) => {
-          expect(bid).to.have.deep.property('crumbs.pubcid');
+          expect(bid).to.have.deep.nested.property('crumbs.pubcid');
           expect(bid.crumbs.pubcid).to.equal(pubcid2);
         });
       });
@@ -89,7 +89,7 @@ describe('Publisher Common ID', function () {
       requestBidHook((config) => { innerAdUnits = config.adUnits }, {adUnits});
       innerAdUnits.forEach((unit) => {
         unit.bids.forEach((bid) => {
-          expect(bid).to.have.deep.property('crumbs.pubcid');
+          expect(bid).to.have.deep.nested.property('crumbs.pubcid');
           expect(bid.crumbs.pubcid).to.equal(pubcid);
         });
       });
@@ -106,7 +106,7 @@ describe('Publisher Common ID', function () {
       let pubcid = getCookie(COOKIE_NAME);
       innerAdUnits.forEach((unit) => {
         unit.bids.forEach((bid) => {
-          expect(bid).to.have.deep.property('crumbs.pubcid');
+          expect(bid).to.have.deep.nested.property('crumbs.pubcid');
           expect(bid.crumbs.pubcid).to.equal(pubcid);
         });
       });
@@ -126,7 +126,7 @@ describe('Publisher Common ID', function () {
       requestBidHook((config) => { innerAdUnits = config.adUnits }, {adUnits});
       innerAdUnits.forEach((unit) => {
         unit.bids.forEach((bid) => {
-          expect(bid).to.have.deep.property('crumbs.pubcid');
+          expect(bid).to.have.deep.nested.property('crumbs.pubcid');
         });
       });
     });
@@ -140,7 +140,7 @@ describe('Publisher Common ID', function () {
       requestBidHook((config) => { innerAdUnits = config.adUnits }, {adUnits});
       innerAdUnits.every((unit) => {
         unit.bids.forEach((bid) => {
-          expect(bid).to.have.deep.property('crumbs.pubcid');
+          expect(bid).to.have.deep.nested.property('crumbs.pubcid');
         });
       })
     });
@@ -187,7 +187,7 @@ describe('Publisher Common ID', function () {
       $$PREBID_GLOBAL$$.requestBids({adUnits});
       adUnits.forEach((unit) => {
         unit.bids.forEach((bid) => {
-          expect(bid).to.have.deep.property('crumbs.pubcid');
+          expect(bid).to.have.deep.nested.property('crumbs.pubcid');
         });
       });
     });

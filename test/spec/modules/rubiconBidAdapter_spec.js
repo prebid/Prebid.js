@@ -1130,7 +1130,7 @@ describe('the rubicon adapter', function () {
             .that.equals('15');
 
           expect(post).to.have.property('slots')
-            .with.length.of(1);
+            .with.a.lengthOf(1);
 
           let slot = post.slots[0];
 
@@ -1194,7 +1194,7 @@ describe('the rubicon adapter', function () {
             .that.equals('15');
 
           expect(post).to.have.property('slots')
-            .with.length.of(1);
+            .with.a.lengthOf(1);
 
           let slot = post.slots[0];
 

@@ -146,7 +146,7 @@ describe('AolAdapter', function () {
     describe('Marketplace', function () {
       it('should not return request when no bids are present', function () {
         let [request] = spec.buildRequests([]);
-        expect(request).to.be.empty;
+        expect(request).to.be.undefined;
       });
 
       it('should return request for Marketplace endpoint', function () {
@@ -206,7 +206,7 @@ describe('AolAdapter', function () {
         });
 
         let [request] = spec.buildRequests(bidRequest.bids);
-        expect(request).to.be.empty;
+        expect(request).to.be.undefined;
       });
 
       it('should return Marketplace URL for eu region', function () {
@@ -398,7 +398,7 @@ describe('AolAdapter', function () {
           params: getMarketplaceBidParams()
         });
         let [request] = spec.buildRequests(bidRequest.bids);
-        expect(request).to.be.empty;
+        expect(request).to.be.undefined;
       });
 
       it('should return One Mobile url with required params - dcn & pos', function () {
@@ -462,7 +462,7 @@ describe('AolAdapter', function () {
           }
         });
         let [request] = spec.buildRequests(bidRequest.bids);
-        expect(request).to.be.empty;
+        expect(request).to.be.undefined;
       });
     });
   });
