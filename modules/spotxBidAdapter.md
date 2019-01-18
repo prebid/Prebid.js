@@ -25,10 +25,10 @@ This adapter requires setup and approval from the SpotX team.
         bids: [{
             bidder: 'spotx',
             params: {
-                channel_id: 79391,
+                channel_id: 85394,
                 ad_unit: 'outstream',
                 outstream_options: { // Needed for the default outstream renderer - fields video_slot/content_width/content_height are mandatory
-                    video_slot: 'video1',
+                    slot: 'adSlot1',
                     content_width: 300,
                     content_height: 250
                 }
@@ -50,34 +50,21 @@ This adapter requires setup and approval from the SpotX team.
         bids: [{
             bidder: 'spotx',
             params: {
-                channel_id: 79391,
+                channel_id: 85394,
                 ad_unit: 'outstream',
                 outstream_options: {
-                    video_slot: 'video1',
+                    slot: 'adSlot1',
                     content_width: 300,
                     content_height: 250,
-                    custom_override: [{ // This option is not mandatory though used to override default renderer parameters using EASI player options in here: https://developer.spotxchange.com/content/local/docs/sdkDocs/EASI/README.md
-                        name: 'collapse',
-                        value: '1'
-                    }, {
-                        name: 'hide_fullscreen',
-                        value: '1'
-                    }, {
-                        name: 'unmute_on_mouse',
-                        value: '1'
-                    }, {
-                        name: 'click_to_replay',
-                        value: '1'
-                    }, {
-                        name: 'continue_out_of_view',
-                        value: '1'
-                    }, {
-                        name: 'ad_volume',
-                        value: '100'
-                    }, {
-                        name: 'content_container_id',
-                        value: 'video1'
-                    }]
+                    custom_override: { // This option is not mandatory though used to override default renderer parameters using EASI player options in here: https://developer.spotxchange.com/content/local/docs/sdkDocs/EASI/README.md
+                        collapse: '1',
+                        hide_fullscreen: '1',
+                        unmute_on_mouse: '1',
+                        click_to_replay: '1',
+                        continue_out_of_view: '1',
+                        ad_volume: '100',
+                        content_container_id: 'video1'
+                    }
                 }
             }
         }]

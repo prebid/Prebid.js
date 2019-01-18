@@ -242,9 +242,9 @@ export const spec = {
           }
 
           /**
-          * Make sure currency and price are the right ones
-          * TODO: what about the pre_market_bid partners sizes?
-          */
+           * Make sure currency and price are the right ones
+           * TODO: what about the pre_market_bid partners sizes?
+           */
           utils._each(currentBidRequest.params.pre_market_bids, function(pmb) {
             if (pmb.deal_id == spotxBid.id) {
               spotxBid.price = pmb.price;
@@ -314,79 +314,84 @@ export const spec = {
   }
 }
 
+function createOutstreamScript(bid) {
+  const slot = utils.getBidIdParameter('slot', bid.renderer.config.outstream_options);
+  utils.logMessage('[SPOTX][renderer] Handle SpotX outstream renderer');
+  const script = window.document.createElement('script');
+  script.type = 'text/javascript';
+  script.src = '//js.spotx.tv/easi/v1/' + bid.channel_id + '.js';
+  let dataSpotXParams = {};
+  dataSpotXParams['data-spotx_channel_id'] = '' + bid.channel_id;
+  dataSpotXParams['data-spotx_vast_url'] = '' + bid.vastUrl;
+  dataSpotXParams['data-spotx_content_page_url'] = bid.renderer.config.content_page_url;
+  dataSpotXParams['data-spotx_ad_unit'] = 'incontent';
+
+  utils.logMessage('[SPOTX][renderer] Default beahavior');
+  if (utils.getBidIdParameter('ad_mute', bid.renderer.config.outstream_options)) {
+    dataSpotXParams['data-spotx_ad_mute'] = '0';
+  }
+  dataSpotXParams['data-spotx_collapse'] = '0';
+  dataSpotXParams['data-spotx_autoplay'] = '1';
+  dataSpotXParams['data-spotx_blocked_autoplay_override_mode'] = '1';
+  dataSpotXParams['data-spotx_video_slot_can_autoplay'] = '1';
+
+  const playersizeAutoAdapt = utils.getBidIdParameter('playersize_auto_adapt', bid.renderer.config.outstream_options);
+  if (playersizeAutoAdapt && utils.isBoolean(playersizeAutoAdapt) && playersizeAutoAdapt === true) {
+    if (bid.width && utils.isNumber(bid.width) && bid.height && utils.isNumber(bid.height)) {
+      const ratio = bid.width / bid.height;
+      const slotClientWidth = window.document.getElementById(slot).clientWidth;
+      let playerWidth = bid.renderer.config.player_width;
+      let playerHeight = bid.renderer.config.player_height;
+      let contentWidth = 0;
+      let contentHeight = 0;
+      if (slotClientWidth < playerWidth) {
+        playerWidth = slotClientWidth;
+        playerHeight = playerWidth / ratio;
+      }
+      if (ratio <= 1) {
+        contentWidth = Math.round(playerHeight * ratio);
+        contentHeight = playerHeight;
+      } else {
+        contentWidth = playerWidth;
+        contentHeight = Math.round(playerWidth / ratio);
+      }
+
+      dataSpotXParams['data-spotx_content_width'] = '' + contentWidth;
+      dataSpotXParams['data-spotx_content_height'] = '' + contentHeight;
+    } else {
+      utils.logWarn('[SPOTX][renderer] PlayerSize auto adapt: bid.width and bid.height are incorrect');
+    }
+  }
+
+  const customOverride = utils.getBidIdParameter('custom_override', bid.renderer.config.outstream_options);
+  if (customOverride && utils.isPlainObject(customOverride)) {
+    utils.logMessage('[SPOTX][renderer] Custom beahavior.');
+    for (let name in customOverride) {
+      if (customOverride.hasOwnProperty(name)) {
+        if (name === 'channel_id' || name === 'vast_url' || name === 'content_page_url' || name === 'ad_unit') {
+          utils.logWarn('[SPOTX][renderer] Custom beahavior: following option cannot be overrided: ' + name);
+        } else {
+          dataSpotXParams['data-spotx_' + name] = customOverride[name];
+        }
+      }
+    }
+  }
+
+  for (let key in dataSpotXParams) {
+    if (dataSpotXParams.hasOwnProperty(key)) {
+      script.setAttribute(key, dataSpotXParams[key]);
+    }
+  }
+
+  return script;
+}
+
 function outstreamRender(bid) {
+  const script = createOutstreamScript(bid);
   if (bid.renderer.config.outstream_function != null && typeof bid.renderer.config.outstream_function === 'function') {
-    bid.renderer.config.outstream_function(bid);
+    bid.renderer.config.outstream_function(bid, script);
   } else {
     try {
-      const slot = utils.getBidIdParameter('slot', bid.renderer.config.outstream_options);
-      utils.logMessage('[SPOTX][renderer] Handle SpotX outstream renderer');
-      const script = window.document.createElement('script');
-      script.type = 'text/javascript';
-      script.src = '//js.spotx.tv/easi/v1/' + bid.channel_id + '.js';
-      let dataSpotXParams = {};
-      dataSpotXParams['data-spotx_channel_id'] = '' + bid.channel_id;
-      dataSpotXParams['data-spotx_vast_url'] = '' + bid.vastUrl;
-      dataSpotXParams['data-spotx_content_page_url'] = bid.renderer.config.content_page_url;
-      dataSpotXParams['data-spotx_ad_unit'] = 'incontent';
-
-      utils.logMessage('[SPOTX][renderer] Default beahavior');
-      if (utils.getBidIdParameter('ad_mute', bid.renderer.config.outstream_options)) {
-        dataSpotXParams['data-spotx_ad_mute'] = '0';
-      }
-      dataSpotXParams['data-spotx_collapse'] = '0';
-      dataSpotXParams['data-spotx_autoplay'] = '1';
-      dataSpotXParams['data-spotx_blocked_autoplay_override_mode'] = '1';
-      dataSpotXParams['data-spotx_video_slot_can_autoplay'] = '1';
-
-      const playersizeAutoAdapt = utils.getBidIdParameter('playersize_auto_adapt', bid.renderer.config.outstream_options);
-      if (playersizeAutoAdapt && utils.isBoolean(playersizeAutoAdapt) && playersizeAutoAdapt === true) {
-        if (bid.width && utils.isNumber(bid.width) && bid.height && utils.isNumber(bid.height)) {
-          const ratio = bid.width / bid.height;
-          const slotClientWidth = window.document.getElementById(slot).clientWidth;
-          let playerWidth = bid.renderer.config.player_width;
-          let playerHeight = bid.renderer.config.player_height;
-          let contentWidth = 0;
-          let contentHeight = 0;
-          if (slotClientWidth < playerWidth) {
-            playerWidth = slotClientWidth;
-            playerHeight = playerWidth / ratio;
-          }
-          if (ratio <= 1) {
-            contentWidth = Math.round(playerHeight * ratio);
-            contentHeight = playerHeight;
-          } else {
-            contentWidth = playerWidth;
-            contentHeight = Math.round(playerWidth / ratio);
-          }
-
-          dataSpotXParams['data-spotx_content_width'] = '' + contentWidth;
-          dataSpotXParams['data-spotx_content_height'] = '' + contentHeight;
-        } else {
-          utils.logWarn('[SPOTX][renderer] PlayerSize auto adapt: bid.width and bid.height are incorrect');
-        }
-      }
-
-      const customOverride = utils.getBidIdParameter('custom_override', bid.renderer.config.outstream_options);
-      if (customOverride && utils.isPlainObject(customOverride)) {
-        utils.logMessage('[SPOTX][renderer] Custom beahavior.');
-        for (let name in customOverride) {
-          if (customOverride.hasOwnProperty(name)) {
-            if (name === 'channel_id' || name === 'vast_url' || name === 'content_page_url' || name === 'ad_unit') {
-              utils.logWarn('[SPOTX][renderer] Custom beahavior: following option cannot be overrided: ' + name);
-            } else {
-              dataSpotXParams['data-spotx_' + name] = customOverride[name];
-            }
-          }
-        };
-      }
-
-      for (let key in dataSpotXParams) {
-        if (dataSpotXParams.hasOwnProperty(key)) {
-          script.setAttribute(key, dataSpotXParams[key]);
-        }
-      }
-
       const inIframe = utils.getBidIdParameter('in_iframe', bid.renderer.config.outstream_options);
       if (inIframe && window.document.getElementById(inIframe).nodeName == 'IFRAME') {
         const rawframe = window.document.getElementById(inIframe);
@@ -396,6 +401,7 @@ function outstreamRender(bid) {
         }
         framedoc.body.appendChild(script);
       } else {
+        const slot = utils.getBidIdParameter('slot', bid.renderer.config.outstream_options);
         if (slot && window.document.getElementById(slot)) {
           window.document.getElementById(slot).appendChild(script);
         } else {
