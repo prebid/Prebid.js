@@ -24,14 +24,16 @@ var adUnits = [
     bids: [{
       bidder: 'open8',
       params: {
-        slotId: 4
+        slotKey: '504c2e89'
       }
     }]
   }, 
   // Video outstream adUnit 
   {
     code: 'video-outstream',
-    sizes: [[300, 250]],
+    sizes: [
+        [640, 360]
+      ],
     mediaTypes: {
       video: {
         context: 'outstream'
@@ -40,7 +42,7 @@ var adUnits = [
     bids: [{
       bidder: 'open8',
       params: {
-        slotId: 2
+        slotKey: '2ae5a533'
       }
     }]
   }];
