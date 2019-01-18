@@ -18,6 +18,11 @@ export const hooks = hook.hooks;
 
 /**
  * An adapter from old API to new fun-hooks API
+ *
+ * @deprecated The hooks API has been updated and this function will be removed in a future version of Prebid.  Rather
+ * than `createHook`, `hook` should be used above.  Once a function has been hooked with `hook` above, the hooked
+ * functions should use `before` and `after` to attach hooks rather than `addHook`.
+ *
  * @param {string} type The method for applying all attached hooks when this hooked function is called
  * @param {function()} fn The function to make hookable
  * @param {string} hookName If provided this allows you to register a name for a global hook to have easy access to
