@@ -57,9 +57,6 @@ export function newAuctionManager() {
   };
 
   auctionManager.getBidsReceived = function() {
-    // As of now, an old bid which is not used in auction 1 can be used in auction n.
-    // To prevent this, bid.ttl (time to live) will be added to this logic and bid pool will also be added
-    // As of now none of the adapters are sending back bid.ttl
     return _auctions.map((auction) => {
       if (auction.getAuctionStatus() === AUCTION_COMPLETED) {
         return auction.getBidsReceived();
