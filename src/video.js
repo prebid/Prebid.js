@@ -30,7 +30,7 @@ export const hasNonVideoBidder = adUnit =>
  * @param {BidRequest[]} bidRequests All bid requests for an auction
  * @return {Boolean} If object is valid
  */
-export const isValidVideoBid = createHook('asyncSeries', function(bid, bidRequests) {
+export function isValidVideoBid(bid, bidRequests) {
   const bidRequest = getBidRequest(bid.adId, bidRequests);
 
   const videoMediaType =
@@ -39,6 +39,10 @@ export const isValidVideoBid = createHook('asyncSeries', function(bid, bidReques
 
   // if context not defined assume default 'instream' for video bids
   // instream bids require a vast url or vast xml content
+  return checkVideoBidSetup(bid, bidRequest, videoMediaType, context);
+}
+
+const checkVideoBidSetup = createHook('asyncSeries', function(bid, bidRequest, videoMediaType, context) {
   if (!bidRequest || (videoMediaType && context !== OUTSTREAM)) {
     // xml-only video bids require a prebid cache url
     if (!config.getConfig('cache.url') && bid.vastXml && !bid.vastUrl) {
@@ -58,4 +62,4 @@ export const isValidVideoBid = createHook('asyncSeries', function(bid, bidReques
   }
 
   return true;
-}, 'isValidVideoBid');
+}, 'checkVideoBidSetup');
