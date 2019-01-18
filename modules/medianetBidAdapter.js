@@ -1,7 +1,7 @@
-import { registerBidder } from 'src/adapters/bidderFactory';
-import * as utils from 'src/utils';
-import { config } from 'src/config';
-import * as url from 'src/url';
+import { registerBidder } from '../src/adapters/bidderFactory';
+import * as utils from '../src/utils';
+import { config } from '../src/config';
+import * as url from '../src/url';
 
 const BIDDER_CODE = 'medianet';
 const BID_URL = '//prebid.media.net/rtb/prebid';

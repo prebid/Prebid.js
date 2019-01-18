@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import adapterManager from 'src/adaptermanager';
+import adapterManager from 'src/adapterManager';
 import {spec, masSizeOrdering, resetUserSync, hasVideoMediaType, FASTLANE_ENDPOINT} from 'modules/rubiconBidAdapter';
 import {parse as parseQuery} from 'querystring';
 import {newBidder} from 'src/adapters/bidderFactory';
