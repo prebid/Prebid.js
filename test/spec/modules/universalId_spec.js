@@ -7,11 +7,11 @@ import {
   initializedSubmodules,
   syncDelay,
   requestBidHook, setStoredValue,
-} from 'modules/universalId';
+} from '../../../modules/universalId.js';
 import {expect} from 'chai'
 import sinon from 'sinon'
-import {config} from '../../../src/config';
-import * as utils from '../../../src/utils';
+import {config} from '../../../src/config.js';
+import * as utils from '../../../src/utils.js';
 
 describe('Universal ID', function () {
   let sandbox;
