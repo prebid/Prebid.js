@@ -15,7 +15,7 @@ function RhythmOneBidAdapter() {
   let SUPPORTED_VIDEO_API = [1, 2, 5];
   let slotsToBids = {};
   let that = this;
-  let version = '1.0.2.0';
+  let version = '1.0.2.1';
   let loadStart = Date.now();
   var win = typeof window !== 'undefined' ? window : {};
 
