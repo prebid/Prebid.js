@@ -1,6 +1,6 @@
-import {ajax} from 'src/ajax';
-import adapter from 'src/AnalyticsAdapter';
-import adaptermanager from 'src/adaptermanager';
+import {ajax} from '../src/ajax';
+import adapter from '../src/AnalyticsAdapter';
+import adapterManager from '../src/adapterManager';
 
 /****
  * Mars Media Analytics
@@ -44,7 +44,7 @@ var marsmediaAnalyticsAdapter = Object.assign(adapter(
 }
 );
 
-adaptermanager.registerAnalyticsAdapter({
+adapterManager.registerAnalyticsAdapter({
   adapter: marsmediaAnalyticsAdapter,
   code: 'marsmedia'
 });

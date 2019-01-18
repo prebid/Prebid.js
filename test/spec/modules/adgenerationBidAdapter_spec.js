@@ -3,6 +3,7 @@ import {spec} from 'modules/adgenerationBidAdapter';
 import {newBidder} from 'src/adapters/bidderFactory';
 import {NATIVE} from 'src/mediaTypes';
 import {config} from 'src/config';
+import prebid from '../../../package.json';
 
 describe('AdgenerationAdapter', function () {
   const adapter = newBidder(spec);
@@ -91,9 +92,9 @@ describe('AdgenerationAdapter', function () {
       }
     };
     const data = {
-      banner: `posall=SSPLOC&id=58278&sdktype=0&hb=true&t=json3&sizes=300x250%2C320x100&currency=JPY&pbver=%24prebid.version%24&sdkname=prebidjs&adapterver=1.0.1&imark=1&tp=http%3A%2F%2Fexample.com`,
-      bannerUSD: `posall=SSPLOC&id=58278&sdktype=0&hb=true&t=json3&sizes=300x250%2C320x100&currency=USD&pbver=%24prebid.version%24&sdkname=prebidjs&adapterver=1.0.1&imark=1&tp=http%3A%2F%2Fexample.com`,
-      native: 'posall=SSPLOC&id=58278&sdktype=0&hb=true&t=json3&sizes=1x1&currency=JPY&pbver=%24prebid.version%24&sdkname=prebidjs&adapterver=1.0.1&tp=http%3A%2F%2Fexample.com'
+      banner: `posall=SSPLOC&id=58278&sdktype=0&hb=true&t=json3&sizes=300x250%2C320x100&currency=JPY&pbver=${prebid.version}&sdkname=prebidjs&adapterver=1.0.1&imark=1&tp=http%3A%2F%2Fexample.com`,
+      bannerUSD: `posall=SSPLOC&id=58278&sdktype=0&hb=true&t=json3&sizes=300x250%2C320x100&currency=USD&pbver=${prebid.version}&sdkname=prebidjs&adapterver=1.0.1&imark=1&tp=http%3A%2F%2Fexample.com`,
+      native: 'posall=SSPLOC&id=58278&sdktype=0&hb=true&t=json3&sizes=1x1&currency=JPY&pbver=' + prebid.version + '&sdkname=prebidjs&adapterver=1.0.1&tp=http%3A%2F%2Fexample.com'
     };
     it('sends bid request to ENDPOINT via GET', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest)[0];

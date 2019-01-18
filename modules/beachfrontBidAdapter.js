@@ -1,9 +1,9 @@
-import * as utils from 'src/utils';
-import { parse as parseUrl } from 'src/url';
-import { config } from 'src/config';
-import { registerBidder } from 'src/adapters/bidderFactory';
-import { Renderer } from 'src/Renderer';
-import { VIDEO, BANNER } from 'src/mediaTypes';
+import * as utils from '../src/utils';
+import { parse as parseUrl } from '../src/url';
+import { config } from '../src/config';
+import { registerBidder } from '../src/adapters/bidderFactory';
+import { Renderer } from '../src/Renderer';
+import { VIDEO, BANNER } from '../src/mediaTypes';
 import find from 'core-js/library/fn/array/find';
 import includes from 'core-js/library/fn/array/includes';
 

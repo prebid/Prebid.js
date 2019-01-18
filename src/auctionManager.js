@@ -17,7 +17,7 @@
  */
 
 import { uniques, flatten } from './utils';
-import { newAuction, getStandardBidderSettings, AUCTION_COMPLETED } from 'src/auction';
+import { newAuction, getStandardBidderSettings, AUCTION_COMPLETED } from './auction';
 import find from 'core-js/library/fn/array/find';
 
 const CONSTANTS = require('./constants.json');
@@ -39,15 +39,20 @@ export function newAuctionManager() {
     } else {
       utils.logWarn(`Auction not found when adding winning bid`);
     }
-  }
+  };
 
   auctionManager.getAllWinningBids = function() {
     return _auctions.map(auction => auction.getWinningBids())
       .reduce(flatten, []);
-  }
+  };
 
   auctionManager.getBidsRequested = function() {
     return _auctions.map(auction => auction.getBidRequests())
+      .reduce(flatten, []);
+  };
+
+  auctionManager.getNoBids = function() {
+    return _auctions.map(auction => auction.getNoBids())
       .reduce(flatten, []);
   };
 

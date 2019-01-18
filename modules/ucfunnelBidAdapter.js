@@ -1,6 +1,6 @@
-import * as utils from 'src/utils';
-import {registerBidder} from 'src/adapters/bidderFactory';
-import {BANNER, VIDEO, NATIVE} from 'src/mediaTypes';
+import * as utils from '../src/utils';
+import {registerBidder} from '../src/adapters/bidderFactory';
+import {BANNER, VIDEO, NATIVE} from '../src/mediaTypes';
 
 const VER = 'ADGENT_PREBID-2018011501';
 const BIDDER_CODE = 'ucfunnel';
@@ -68,7 +68,7 @@ export const spec = {
       dealId: ad.deal || null,
       currency: 'USD',
       netRevenue: true,
-      ttl: 1000
+      ttl: 1800
     };
 
     if (ad.creative_type) {

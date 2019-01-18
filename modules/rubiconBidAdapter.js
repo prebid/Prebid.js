@@ -1,7 +1,7 @@
-import * as utils from 'src/utils';
-import {registerBidder} from 'src/adapters/bidderFactory';
-import {config} from 'src/config';
-import {BANNER, VIDEO} from 'src/mediaTypes';
+import * as utils from '../src/utils';
+import {registerBidder} from '../src/adapters/bidderFactory';
+import {config} from '../src/config';
+import {BANNER, VIDEO} from '../src/mediaTypes';
 
 const INTEGRATION = 'pbjs_lite_v$prebid.version$';
 
@@ -50,6 +50,7 @@ var sizeMap = {
   61: '1000x1000',
   64: '580x500',
   65: '640x480',
+  66: '930x600',
   67: '320x480',
   68: '1800x1000',
   72: '320x320',
@@ -63,14 +64,17 @@ var sizeMap = {
   101: '480x320',
   102: '768x1024',
   103: '480x280',
+  105: '250x800',
   108: '320x240',
   113: '1000x300',
   117: '320x100',
   125: '800x250',
   126: '200x600',
   144: '980x600',
+  145: '980x150',
   159: '320x250',
   195: '600x300',
+  198: '640x360',
   199: '640x200',
   213: '1030x590',
   214: '980x360',

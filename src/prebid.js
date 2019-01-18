@@ -3,22 +3,22 @@
 import { getGlobal } from './prebidGlobal';
 import { flatten, uniques, isGptPubadsDefined, adUnitsFilter, removeRequestId, getLatestHighestCpmBid } from './utils';
 import { listenMessagesFromCreative } from './secureCreatives';
-import { userSync } from 'src/userSync.js';
+import { userSync } from './userSync.js';
 import { loadScript } from './adloader';
 import { config } from './config';
 import { auctionManager } from './auctionManager';
 import { targeting, getHighestCpmBidsFromBidPool } from './targeting';
-import { createHook } from 'src/hook';
-import { sessionLoader } from 'src/debugging';
+import { createHook } from './hook';
+import { sessionLoader } from './debugging';
 import includes from 'core-js/library/fn/array/includes';
 import { adunitCounter } from './adUnits';
 import { isRendererRequired, executeRenderer } from './Renderer';
+import { createBid } from './bidfactory';
 
 const $$PREBID_GLOBAL$$ = getGlobal();
 const CONSTANTS = require('./constants.json');
 const utils = require('./utils.js');
-const adaptermanager = require('./adaptermanager');
-const bidfactory = require('./bidfactory');
+const adapterManager = require('./adapterManager').default;
 const events = require('./events');
 const { triggerUserSyncs } = userSync;
 
@@ -114,15 +114,8 @@ $$PREBID_GLOBAL$$.getAdserverTargeting = function (adUnitCode) {
   return targeting.getAllTargeting(adUnitCode);
 };
 
-/**
- * This function returns the bid responses at the given moment.
- * @alias module:pbjs.getBidResponses
- * @return {Object}            map | object that contains the bidResponses
- */
-
-$$PREBID_GLOBAL$$.getBidResponses = function () {
-  utils.logInfo('Invoking $$PREBID_GLOBAL$$.getBidResponses', arguments);
-  const responses = auctionManager.getBidsReceived()
+function getBids(type) {
+  const responses = auctionManager[type]()
     .filter(adUnitsFilter.bind(this, auctionManager.getAdUnitCodes()));
 
   // find the last auction id to get responses for most recent auction only
@@ -139,6 +132,28 @@ $$PREBID_GLOBAL$$.getBidResponses = function () {
       };
     })
     .reduce((a, b) => Object.assign(a, b), {});
+}
+
+/**
+ * This function returns the bids requests involved in an auction but not bid on
+ * @alias module:pbjs.getNoBids
+ * @return {Object}            map | object that contains the bidRequests
+ */
+
+$$PREBID_GLOBAL$$.getNoBids = function () {
+  utils.logInfo('Invoking $$PREBID_GLOBAL$$.getNoBids', arguments);
+  return getBids('getNoBids');
+};
+
+/**
+ * This function returns the bid responses at the given moment.
+ * @alias module:pbjs.getBidResponses
+ * @return {Object}            map | object that contains the bidResponses
+ */
+
+$$PREBID_GLOBAL$$.getBidResponses = function () {
+  utils.logInfo('Invoking $$PREBID_GLOBAL$$.getBidResponses', arguments);
+  return getBids('getBidsReceived');
 };
 
 /**
@@ -340,7 +355,7 @@ $$PREBID_GLOBAL$$.requestBids = createHook('asyncSeries', function ({ bidsBackHa
 
     // get the bidder's mediaTypes
     const allBidders = adUnit.bids.map(bid => bid.bidder);
-    const bidderRegistry = adaptermanager.bidderRegistry;
+    const bidderRegistry = adapterManager.bidderRegistry;
 
     const s2sConfig = config.getConfig('s2sConfig');
     const s2sBidders = s2sConfig && s2sConfig.bidders;
@@ -449,7 +464,7 @@ $$PREBID_GLOBAL$$.offEvent = function (event, handler, id) {
 };
 
 /*
- * Wrapper to register bidderAdapter externally (adaptermanager.registerBidAdapter())
+ * Wrapper to register bidderAdapter externally (adapterManager.registerBidAdapter())
  * @param  {Function} bidderAdaptor [description]
  * @param  {string} bidderCode [description]
  * @alias module:pbjs.registerBidAdapter
@@ -457,21 +472,21 @@ $$PREBID_GLOBAL$$.offEvent = function (event, handler, id) {
 $$PREBID_GLOBAL$$.registerBidAdapter = function (bidderAdaptor, bidderCode) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.registerBidAdapter', arguments);
   try {
-    adaptermanager.registerBidAdapter(bidderAdaptor(), bidderCode);
+    adapterManager.registerBidAdapter(bidderAdaptor(), bidderCode);
   } catch (e) {
     utils.logError('Error registering bidder adapter : ' + e.message);
   }
 };
 
 /**
- * Wrapper to register analyticsAdapter externally (adaptermanager.registerAnalyticsAdapter())
+ * Wrapper to register analyticsAdapter externally (adapterManager.registerAnalyticsAdapter())
  * @param  {Object} options [description]
  * @alias module:pbjs.registerAnalyticsAdapter
  */
 $$PREBID_GLOBAL$$.registerAnalyticsAdapter = function (options) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.registerAnalyticsAdapter', arguments);
   try {
-    adaptermanager.registerAnalyticsAdapter(options);
+    adapterManager.registerAnalyticsAdapter(options);
   } catch (e) {
     utils.logError('Error registering analytics adapter : ' + e.message);
   }
@@ -485,7 +500,7 @@ $$PREBID_GLOBAL$$.registerAnalyticsAdapter = function (options) {
  */
 $$PREBID_GLOBAL$$.createBid = function (statusCode) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.createBid', arguments);
-  return bidfactory.createBid(statusCode);
+  return createBid(statusCode);
 };
 
 /**
@@ -516,7 +531,7 @@ $$PREBID_GLOBAL$$.loadScript = function (tagSrc, callback, useCache) {
 $$PREBID_GLOBAL$$.enableAnalytics = function (config) {
   if (config && !utils.isEmpty(config)) {
     utils.logInfo('Invoking $$PREBID_GLOBAL$$.enableAnalytics for: ', config);
-    adaptermanager.enableAnalytics(config);
+    adapterManager.enableAnalytics(config);
   } else {
     utils.logError('$$PREBID_GLOBAL$$.enableAnalytics should be called with option {}');
   }
@@ -528,7 +543,7 @@ $$PREBID_GLOBAL$$.enableAnalytics = function (config) {
 $$PREBID_GLOBAL$$.aliasBidder = function (bidderCode, alias) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.aliasBidder', arguments);
   if (bidderCode && alias) {
-    adaptermanager.aliasBidAdapter(bidderCode, alias);
+    adapterManager.aliasBidAdapter(bidderCode, alias);
   } else {
     utils.logError('bidderCode and alias must be passed as arguments', '$$PREBID_GLOBAL$$.aliasBidder');
   }
@@ -739,3 +754,5 @@ $$PREBID_GLOBAL$$.processQueue = function() {
   processQueue($$PREBID_GLOBAL$$.que);
   processQueue($$PREBID_GLOBAL$$.cmd);
 };
+
+export default $$PREBID_GLOBAL$$;

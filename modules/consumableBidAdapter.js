@@ -1,5 +1,5 @@
-import * as utils from 'src/utils';
-import { registerBidder } from 'src/adapters/bidderFactory';
+import * as utils from '../src/utils';
+import { registerBidder } from '../src/adapters/bidderFactory';
 
 const BIDDER_CODE = 'consumable';
 
@@ -111,7 +111,7 @@ export const spec = {
           bid.ad = retrieveAd(decision, bid.unitId, bid.unitName);
           bid.currency = 'USD';
           bid.creativeId = decision.adId;
-          bid.ttl = 360;
+          bid.ttl = 30;
           bid.netRevenue = true;
           bid.referrer = utils.getTopWindowUrl();
 
