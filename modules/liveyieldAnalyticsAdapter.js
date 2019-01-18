@@ -9,19 +9,57 @@ const {
 
 const prebidVersion = '$prebid.version$';
 
-const prebid = window['$$PREBID_GLOBAL$$'];
-
 const adapterConfig = {
-  googletag: false,
+  googlePublisherTag: false,
 
   // user-provided function to distinct between prebid and non-prebid ad impression win
-  adImpressionWinDifference: function(slot) {
+  isPrebidImpression: function(googleSlot) {
     return null;
   },
 
-  // function which returns proper adUnit
-  getAdById: function() {
+  returnAdSize: function(slot) {
+    var targeting = slot.getTargeting('oxb');
+    var keys = [];
+    for (var i = 0; i < targeting.length; i++) {
+      var t = targeting[i];
+      if (typeof (t) === 'string' || t instanceof String) {
+        keys = keys.concat(t.split(','));
+      }
+    }
+
+    for (var j = 0; j < keys.length; j++) {
+      var k = keys[j];
+      if (k.indexOf('hb-bid') !== -1) { continue; }
+      return k;
+    }
+
     return null;
+  },
+
+  ifPrebidWon: function(slot) {
+    var hbAdId = slot.getTargetingMap().hb_adid;
+    for (var property in slot) {
+      if (slot.hasOwnProperty(property)) {
+        if (slot[property] !== null && typeof (slot[property]._html_) !== 'undefined') {
+          var creative = slot[property]._html_;
+          if (creative.indexOf(pbjs.renderAd) !== -1 && creative.indexOf(hbAdId) != -1) {
+            return true;
+          }
+        }
+      }
+    }
+    return null;
+  },
+
+  wireGooglePublisherTag: function(gpt, cb) {
+    gpt.pubads().addEventListener('slotRenderEnded', function(event) {
+      cb(event.slot);
+    });
+  },
+
+  // function which returns proper adUnit
+  getAdUnit: function(propertyName, propertyValue) {
+    return propertyValue;
   },
 
   /** Name of the `rta` function, override only when instructed. */
@@ -48,6 +86,7 @@ const adapterConfig = {
   getPlacementOrAdUnitCode: function(bid, version) {
     return version[0] === '0' ? bid.placementCode : bid.adUnitCode;
   }
+
 };
 
 const cpmToMicroUSD = v => (isNaN(v) ? 0 : Math.round(v * 1000));
@@ -83,33 +122,34 @@ const liveyield = Object.assign(adapter({ analyticsType: 'bundle' }), {
         window[adapterConfig.rtaFunctionName]('biddersTimeout', args);
         break;
       case BID_WON:
-        if (!adapterConfig.googletag) {
-          const ad = adapterConfig.getAdUnitName(
-            adapterConfig.getPlacementOrAdUnitCode(args, prebidVersion)
-          );
-          if (!ad) {
-            utils.logError('Cannot find ad by unit name: ' +
+        if (adapterConfig.googlePublisherTag) {
+          break;
+        };
+        const ad = adapterConfig.getAdUnitName(
+          adapterConfig.getPlacementOrAdUnitCode(args, prebidVersion)
+        );
+        if (!ad) {
+          utils.logError('Cannot find ad by unit name: ' +
                 adapterConfig.getAdUnitName(
                   adapterConfig.getPlacementOrAdUnitCode(args, prebidVersion)
                 ));
-            return;
-          }
-          if (!args.bidderCode || !args.cpm) {
-            utils.logError('Bidder code or cpm is not valid');
-            return;
-          }
-          window[adapterConfig.rtaFunctionName](
-            'resolveSlot',
-            adapterConfig.getAdUnitName(
-              adapterConfig.getPlacementOrAdUnitCode(args, prebidVersion)
-            ),
-            {
-              prebidWon: true,
-              prebidPartner: args.bidderCode,
-              prebidValue: cpmToMicroUSD(args.cpm)
-            }
-          );
+          return;
         }
+        if (!args.bidderCode || !args.cpm) {
+          utils.logError('Bidder code or cpm is not valid');
+          return;
+        }
+        window[adapterConfig.rtaFunctionName](
+          'resolveSlot',
+          adapterConfig.getAdUnitName(
+            adapterConfig.getPlacementOrAdUnitCode(args, prebidVersion)
+          ),
+          {
+            prebidWon: true,
+            prebidPartner: args.bidderCode,
+            prebidValue: cpmToMicroUSD(args.cpm)
+          }
+        );
         break;
     }
   }
@@ -206,20 +246,18 @@ liveyield.enableAnalytics = function(config) {
   );
   liveyield.originEnableAnalytics(config);
 
-  if (adapterConfig.googletag) {
-    adapterConfig.googletag.pubads().addEventListener('slotRenderEnded', function(e) {
-      handler(e.slot);
-    });
-  };
+  if (adapterConfig.googlePublisherTag) {
+    adapterConfig.wireGooglePublisherTag(adapterConfig.googlePublisherTag, onSlotRenderEnded);
+  }
 };
 
-var handler = function(slot) {
-  var ad = adapterConfig.getAdById(slot.getSlotElementId());
+var onSlotRenderEnded = function(slot) {
+  var ad = adapterConfig.getAdUnit('id', slot.getSlotElementId());
   if (!ad) {
     utils.logError('Cannot find ad by slot element id: ', slot.getSlotElementId());
     return;
   }
-  adapterConfig.adImpressionWinDifference(slot);
+  adapterConfig.isPrebidImpression(slot);
   window[adapterConfig.rtaFunctionName]('resolveSlot', ad, resolve(ad, slot));
 };
 
@@ -234,18 +272,15 @@ function resolve(ad, slot) {
     resolution.dfpCreativeId = responseInformation.creativeId;
   }
 
-  var hbAdId = slot.getTargetingMap().hb_adid;
-  var creative = getCreative(slot);
-  if (creative &&
-        creative.indexOf(prebid.renderAd) !== -1 &&
-        creative.indexOf(hbAdId) != -1) {
+  var creative = adapterConfig.ifPrebidWon(slot);
+  if (creative) {
     resolution.prebidWon = true;
   }
 
   if (prebidVersion[0] === '0') {
-    hbTargeting = prebid.getAdserverTargetingForAdUnitCode(ad.id);
+    hbTargeting = pbjs.getAdserverTargetingForAdUnitCode(ad.id);
   } else {
-    var winningBid = prebid.getHighestCpmBids(ad.id);
+    var winningBid = pbjs.getHighestCpmBids(ad.id);
     if (winningBid[0]) {
       hbTargeting = winningBid[0].adserverTargeting
     }
@@ -260,41 +295,11 @@ function resolve(ad, slot) {
     resolution.lost = true;
   }
 
-  var openxVal = openxTargeting(slot);
+  var openxVal = adapterConfig.returnAdSize(slot);
   if (openxVal) {
     resolution.targetings.push({ key: 'oxb', val: openxVal });
   }
   return resolution;
-};
-
-function openxTargeting(slot) {
-  var targeting = slot.getTargeting('oxb');
-  var keys = [];
-  for (var i = 0; i < targeting.length; i++) {
-    var t = targeting[i];
-    if (typeof (t) === 'string' || t instanceof String) {
-      keys = keys.concat(t.split(','));
-    }
-  }
-
-  for (var j = 0; j < keys.length; j++) {
-    var k = keys[j];
-    if (k.indexOf('hb-bid') !== -1) { continue; }
-    return k;
-  }
-
-  return null;
-};
-
-function getCreative(slot) {
-  for (var property in slot) {
-    if (slot.hasOwnProperty(property)) {
-      if (slot[property] !== null && typeof (slot[property]._html_) !== 'undefined') {
-        return slot[property]._html_;
-      }
-    }
-  }
-  return null;
 };
 
 adaptermanager.registerAnalyticsAdapter({

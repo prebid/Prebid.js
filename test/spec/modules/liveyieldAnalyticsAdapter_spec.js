@@ -91,7 +91,7 @@ describe('liveyield analytics adapter', function() {
           customerId: 'd6a6f8da-190f-47d6-ae11-f1a4469083fa',
           customerName: 'pubocean',
           customerSite: 'scribol.com',
-          sessionTimezoneOffset: 12
+          sessionTimezoneOffset: 12,
         }
       });
       expect(rtaCalls[0].callArgs['0']).to.match(/create/);
@@ -113,7 +113,7 @@ describe('liveyield analytics adapter', function() {
           customerId: 'd6a6f8da-190f-47d6-ae11-f1a4469083fa',
           customerName: 'test',
           customerSite: 'scribol.com',
-          sessionTimezoneOffset: 25
+          sessionTimezoneOffset: 25,
         }
       });
 
@@ -394,6 +394,100 @@ describe('liveyield analytics adapter', function() {
       };
       events.emit(BID_WON, bidWon);
       expect(rtaCalls[1]).to.be.undefined;
+    });
+  });
+  describe('googletag use case', function() {
+    beforeEach(function() {
+      rtaCalls.length = 0;
+    });
+    afterEach(function() {
+      liveyield.disableAnalytics();
+    });
+    it('should ignore BID_WON events when googlePublisherTag is provided', function() {
+      const options = {
+        provider: 'liveyield',
+        options: {
+          customerId: 'd6a6f8da-190f-47d6-ae11-f1a4469083fa',
+          customerName: 'pubocean',
+          customerSite: 'scribol.com',
+          sessionTimezoneOffset: 12,
+          googlePublisherTag: true,
+          wireGooglePublisherTag: function() {
+            return null;
+          }
+        }
+      };
+      liveyield.enableAnalytics(options);
+      const bidWon = {
+        adId: '4587fec4900b81',
+        mediaType: 'banner',
+        requestId: '4587fec4900b81',
+        cpm: 1.962,
+        creativeId: 2126,
+        currency: 'EUR',
+        netRevenue: true,
+        ttl: 302,
+        auctionId: '914bedad-b145-4e46-ba58-51365faea6cb',
+        statusMessage: 'Bid available',
+        responseTimestamp: 1530628534437,
+        requestTimestamp: 1530628534219,
+        bidderCode: 'testbidder4',
+        adUnitCode: 'div-gpt-ad-1438287399331-0',
+        timeToRespond: 218,
+        size: '300x250',
+        status: 'rendered'
+      };
+      events.emit(BID_WON, bidWon);
+      expect(rtaCalls.length).to.equal(1);
+    });
+    it('should subscribe to slotRenderEnded', function() {
+      var googletag;
+      var callback;
+      const options = {
+        provider: 'liveyield',
+        options: {
+          customerId: 'd6a6f8da-190f-47d6-ae11-f1a4469083fa',
+          customerName: 'pubocean',
+          customerSite: 'scribol.com',
+          sessionTimezoneOffset: 12,
+          googlePublisherTag: 'testGPT',
+          wireGooglePublisherTag: function(gpt, cb) {
+            googletag = gpt;
+            callback = cb;
+          }
+        }
+      };
+      liveyield.enableAnalytics(options);
+      expect(googletag).to.equal('testGPT');
+      expect(typeof callback).to.equal('function');
+    });
+    it('should invoke user provided function', function() {
+      let gptHandler;
+      var result;
+      const slot = {
+        getSlotElementId: function() { return 1 },
+        val: 5
+      }
+      const options = {
+        provider: 'liveyield',
+        options: {
+          customerId: 'd6a6f8da-190f-47d6-ae11-f1a4469083fa',
+          customerName: 'pubocean',
+          customerSite: 'scribol.com',
+          sessionTimezoneOffset: 12,
+          googlePublisherTag: true,
+          isPrebidImpression: function(arg) {
+            arg.val += 5;
+            result = arg.val;
+          },
+          wireGooglePublisherTag: function(gpt, cb) {
+            gptHandler = cb;
+          }
+        }
+      };
+      liveyield.enableAnalytics(options);
+      should.Throw(function() { gptHandler(slot) }, TypeError, 'slot.getResponseInformation is not a function')
+      expect(result).to.equal(10);
     });
   });
 });
