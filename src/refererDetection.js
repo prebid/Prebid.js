@@ -1,3 +1,12 @@
+/**
+ * The referer detection module attempts to gather referer information from the current page that prebid.js resides in.
+ * The information that it tries to collect includes:
+ * The detected top url in the nav bar,
+ * Whether it was able to reach the top most window (if for example it was embedded in several iframes),
+ * The number of iframes it was embedded in if applicable,
+ * A list of the domains of each embedded window if applicable.
+ */
+
 import { logWarn } from './utils';
 
 export function detectReferer(win) {
