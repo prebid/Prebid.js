@@ -1,12 +1,12 @@
 /**
  * This module adds Universal ID support to prebid.js
  */
-import { ajax } from '../src/ajax';
-import { config } from '../src/config';
-import events from '../src/events';
-import * as utils from '../src/utils';
+import { ajax } from '../src/ajax.js';
+import { config } from '../src/config.js';
+import events from '../src/events.js';
+import * as utils from '../src/utils.js';
 import find from 'core-js/library/fn/array/find';
-import { gdprDataHandler } from '../src/adaptermanager';
+import { gdprDataHandler } from '../src/adaptermanager.js';
 
 const CONSTANTS = require('../src/constants.json');
 
