@@ -203,4 +203,21 @@ describe('UnrulyAdapter', () => {
       expect(supplyMode).to.equal('prebid');
     });
   });
+
+  describe('getUserSyncs', () => {
+    it('should push user sync iframe if enabled', () => {
+      const syncOptions = { iframeEnabled: true }
+      const syncs = adapter.getUserSyncs(syncOptions)
+      expect(syncs[0]).to.deep.equal({
+        type: 'iframe',
+        url: 'https://video.unrulymedia.com/iframes/third-party-iframes.html'
+      })
+    })
+
+    it('should not push user sync iframe if not enabled', () => {
+      const syncOptions = { iframeEnabled: false }
+      const syncs = adapter.getUserSyncs(syncOptions)
+      expect(syncs).to.be.empty
+    })
+  })
 });
