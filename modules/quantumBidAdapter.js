@@ -1,6 +1,6 @@
-import * as utils from 'src/utils';
-import { BANNER, NATIVE } from 'src/mediaTypes';
-import {registerBidder} from 'src/adapters/bidderFactory';
+import * as utils from '../src/utils';
+import { BANNER, NATIVE } from '../src/mediaTypes';
+import {registerBidder} from '../src/adapters/bidderFactory';
 
 const BIDDER_CODE = 'quantum';
 const ENDPOINT_URL = '//s.sspqns.com/hb';
