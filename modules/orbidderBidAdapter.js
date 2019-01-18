@@ -4,6 +4,7 @@ import {registerBidder} from '../src/adapters/bidderFactory';
 
 export const spec = {
   code: 'orbidder',
+  bidParams: {},
   orbidderHost: (() => {
     let ret = 'https://orbidder.otto.de';
     try {
@@ -14,7 +15,10 @@ export const spec = {
   })(),
 
   isBidRequestValid(bid) {
-    return !!(bid.sizes && bid.bidId);
+    return !!(bid.sizes && bid.bidId && bid.params &&
+      (bid.params.accountId && (typeof bid.params.accountId === 'string')) &&
+      (bid.params.placementId && (typeof bid.params.placementId === 'string')) &&
+      ((typeof bid.params.keyValues === 'undefined') || (typeof bid.params.keyValues === 'object')));
   },
 
   buildRequests(validBidRequests, bidderRequest) {
@@ -36,6 +40,7 @@ export const spec = {
           params: bidRequest.params
         }
       };
+      spec.bidParams[bidRequest.bidId] = bidRequest.params;
       if (bidRequest && bidRequest.gdprConsent) {
         ret.data.gdprConsent = {
           consentString: bidRequest.gdprConsent.consentString,
@@ -68,8 +73,12 @@ export const spec = {
 
   onBidWon(winObj) {
     const getRefererInfo = detectReferer(window);
-    const refererInfo = getRefererInfo();
-    winObj.pageUrl = refererInfo.referer;
+
+    winObj.pageUrl = getRefererInfo().referer;
+    if (spec.bidParams[winObj.adId]) {
+      winObj.params = spec.bidParams[winObj.adId];
+    }
+
     spec.ajaxCall(`${this.orbidderHost}/win`, JSON.stringify(winObj));
   },
 
