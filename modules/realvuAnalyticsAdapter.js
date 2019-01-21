@@ -1,9 +1,9 @@
 // RealVu Analytics Adapter
-import adapter from 'src/AnalyticsAdapter';
-import adaptermanager from 'src/adaptermanager';
-import CONSTANTS from 'src/constants.json';
+import adapter from '../src/AnalyticsAdapter';
+import adapterManager from '../src/adapterManager';
+import CONSTANTS from '../src/constants.json';
 
-const utils = require('src/utils.js');
+const utils = require('../src/utils.js');
 
 let realvuAnalyticsAdapter = adapter({
   global: 'realvuAnalytics',
@@ -20,8 +20,8 @@ try {
 } catch (e) {
   /* continue regardless of error */
 }
-window.top1.realvu_aa_fifo = window.top1.realvu_aa_fifo || [];
-window.top1.realvu_aa = window.top1.realvu_aa || {
+
+export let lib = {
   ads: [],
   x1: 0,
   y1: 0,
@@ -35,6 +35,7 @@ window.top1.realvu_aa = window.top1.realvu_aa || {
   c: '', // owner id
   sr: '', //
   beacons: [], // array of beacons to collect while 'conf' is not responded
+  defer: [],
   init: function () {
     let z = this;
     let u = navigator.userAgent;
@@ -75,13 +76,10 @@ window.top1.realvu_aa = window.top1.realvu_aa || {
   },
 
   add_evt: function (elem, evtType, func) {
-    if (elem.addEventListener) {
-      elem.addEventListener(evtType, func, true);
-    } else if (elem.attachEvent) {
-      elem.attachEvent('on' + evtType, func);
-    } else {
-      elem['on' + evtType] = func;
-    }
+    elem.addEventListener(evtType, func, true);
+    this.defer.push(function() {
+      elem.removeEventListener(evtType, func, true);
+    });
   },
 
   update: function () {
@@ -356,15 +354,15 @@ window.top1.realvu_aa = window.top1.realvu_aa || {
           }
           if (a.riff === '') {
             a.riff = a.r;
-            let vr_score = z.score(a, 'v:r');
-            if (vr_score != null) {
-              if (a.r == 'no' && vr_score > 75) {
+            let vrScore = z.score(a, 'v:r');
+            if (vrScore != null) {
+              if (a.r == 'no' && vrScore > 75) {
                 a.riff = 'yes';
               }
             }
-            let vv0_score = z.score(a, 'v:v0');
-            if (vv0_score != null) {
-              if (a.r == 'yes' && vv0_score < (30 + 25 * Math.random())) {
+            let vv0Score = z.score(a, 'v:v0');
+            if (vv0Score != null) {
+              if (a.r == 'yes' && vv0Score < (30 + 25 * Math.random())) {
                 a.riff = 'no';
               }
             }
@@ -439,20 +437,20 @@ window.top1.realvu_aa = window.top1.realvu_aa || {
         return par.offsetParent;
       }
     }
-    let not_friendly = false;
+    let notFriendly = false;
     let ain = null;
     let tn = a.tagName;
     if (tn == 'HEAD' || tn == 'SCRIPT') return null;
     if (tn == 'IFRAME') {
       ain = this.doc(a);
       if (ain == null) {
-        not_friendly = true;
+        notFriendly = true;
       } else {
         a = ain;
         tn = a.tagName;
       }
     }
-    if (not_friendly || tn == 'OBJECT' || tn == 'IMG' || tn == 'EMBED' || tn == 'SVG' || tn == 'CANVAS' ||
+    if (notFriendly || tn == 'OBJECT' || tn == 'IMG' || tn == 'EMBED' || tn == 'SVG' || tn == 'CANVAS' ||
       (tn == 'DIV' && a.style.backgroundImage)) {
       let w1 = a.offsetWidth;
       let h1 = a.offsetHeight;
@@ -658,12 +656,12 @@ window.top1.realvu_aa = window.top1.realvu_aa || {
     return null;
   },
   // API functions
-  addUnitById: function (partner_id, unit_id, callback, delay) {
-    let p1 = partner_id;
+  addUnitById: function (partnerId, unitId, callback, delay) {
+    let p1 = partnerId;
     if (typeof (p1) == 'string') {
       p1 = {
-        partner_id: partner_id,
-        unit_id: unit_id,
+        partner_id: partnerId,
+        unit_id: unitId,
         callback: callback,
         delay: delay
       };
@@ -676,25 +674,25 @@ window.top1.realvu_aa = window.top1.realvu_aa || {
     // b==true - add/update, b==false - update only
     if (args.cpm == 0) return; // collect only bids submitted
     const boost = window.top1.realvu_aa;
-    let push_bid = false;
+    let pushBid = false;
     let adi = null;
     if (!b) { // update only if already checked in by xyzBidAdapter
       for (let i = 0; i < boost.ads.length; i++) {
         adi = boost.ads[i];
         if (adi.unit_id == args.adUnitCode) {
-          push_bid = true;
+          pushBid = true;
           break;
         }
       }
     } else {
-      push_bid = true;
+      pushBid = true;
       adi = window.top1.realvu_aa.check({
         unit_id: args.adUnitCode,
         size: args.size,
         partner_id: partnerId
       });
     }
-    if (push_bid) {
+    if (pushBid) {
       let pb = {
         bidder: args.bidder,
         cpm: args.cpm,
@@ -715,10 +713,10 @@ window.top1.realvu_aa = window.top1.realvu_aa || {
   checkBidWon: function(partnerId, args, b) {
     // b==true - add/update, b==false - update only
     const z = this;
-    const unit_id = args.adUnitCode;
+    const unitId = args.adUnitCode;
     for (let i = 0; i < z.ads.length; i++) {
       let adi = z.ads[i];
-      if (adi.unit_id == unit_id) {
+      if (adi.unit_id == unitId) {
         for (let j = 0; j < adi.bids.length; j++) {
           let bj = adi.bids[j];
           if (bj.adId == args.adId) {
@@ -754,10 +752,10 @@ window.top1.realvu_aa = window.top1.realvu_aa || {
     return rpt;
   },
 
-  getStatusById: function (unit_id) { // return status object
+  getStatusById: function (unitId) { // return status object
     for (let i = 0; i < this.ads.length; i++) {
       let adi = this.ads[i];
-      if (adi.unit_id == unit_id) return this.fmt(adi);
+      if (adi.unit_id == unitId) return this.fmt(adi);
     }
     return null;
   },
@@ -849,6 +847,9 @@ window.top1.realvu_aa = window.top1.realvu_aa || {
   }
 };
 
+window.top1.realvu_aa_fifo = window.top1.realvu_aa_fifo || [];
+window.top1.realvu_aa = window.top1.realvu_aa || lib;
+
 if (typeof (window.top1.boost_poll) == 'undefined') {
   window.top1.realvu_aa.init();
   window.top1.boost_poll = setInterval(function () {
@@ -937,9 +938,17 @@ realvuAnalyticsAdapter.isInView = function (adUnitCode) {
   return r;
 };
 
-adaptermanager.registerAnalyticsAdapter({
+let disableAnalyticsSuper = realvuAnalyticsAdapter.disableAnalytics;
+realvuAnalyticsAdapter.disableAnalytics = function () {
+  while (lib.defer.length) {
+    lib.defer.pop()();
+  }
+  disableAnalyticsSuper.apply(this, arguments);
+};
+
+adapterManager.registerAnalyticsAdapter({
   adapter: realvuAnalyticsAdapter,
   code: 'realvuAnalytics'
 });
 
-module.exports = realvuAnalyticsAdapter;
+export default realvuAnalyticsAdapter;

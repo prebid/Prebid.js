@@ -1,5 +1,6 @@
-import * as utils from 'src/utils';
-import {registerBidder} from 'src/adapters/bidderFactory';
+import * as utils from '../src/utils';
+import {config} from '../src/config';
+import {registerBidder} from '../src/adapters/bidderFactory';
 
 // use protocol relative urls for http or https
 const MADVERTISE_ENDPOINT = 'https://mobile.mng-ads.com/';
@@ -29,9 +30,10 @@ export const spec = {
   },
   /**
    * @param {BidRequest[]} bidRequests
+   * @param bidderRequest
    * @return ServerRequest[]
    */
-  buildRequests: function (bidRequests) {
+  buildRequests: function (bidRequests, bidderRequest) {
     return bidRequests.map(bidRequest => {
       bidRequest.startTime = new Date().getTime();
 
@@ -48,6 +50,10 @@ export const spec = {
 
       if (typeof bidRequest.params.u == 'undefined') {
         src = src + '&u=' + navigator.userAgent;
+      }
+
+      if (bidderRequest && bidderRequest.gdprConsent) {
+        src = src + '&gdpr=' + (bidderRequest.gdprConsent.gdprApplies ? '1' : '0') + '&consent[0][format]=' + config.getConfig('consentManagement.cmpApi') + '&consent[0][value]=' + bidderRequest.gdprConsent.consentString;
       }
 
       return {

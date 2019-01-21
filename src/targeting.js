@@ -1,7 +1,8 @@
-import { uniques, isGptPubadsDefined, getHighestCpm, groupBy, isAdUnitCodeMatchingSlot, timestamp } from './utils';
+import { uniques, isGptPubadsDefined, getHighestCpm, getOldestHighestCpmBid, groupBy, isAdUnitCodeMatchingSlot, timestamp } from './utils';
 import { config } from './config';
 import { NATIVE_TARGETING_KEYS } from './native';
 import { auctionManager } from './auctionManager';
+import { sizeSupported } from './sizeMapping';
 import includes from 'core-js/library/fn/array/includes';
 
 const utils = require('./utils.js');
@@ -9,29 +10,36 @@ var CONSTANTS = require('./constants.json');
 
 var pbTargetingKeys = [];
 
-export const BID_TARGETING_SET = 'targetingSet';
-export const RENDERED = 'rendered';
-
 const MAX_DFP_KEYLENGTH = 20;
 const TTL_BUFFER = 1000;
 
+export const TARGETING_KEYS = Object.keys(CONSTANTS.TARGETING_KEYS).map(
+  key => CONSTANTS.TARGETING_KEYS[key]
+);
+
 // return unexpired bids
-export const isBidExpired = (bid) => (bid.responseTimestamp + bid.ttl * 1000 + TTL_BUFFER) > timestamp();
+const isBidNotExpired = (bid) => (bid.responseTimestamp + bid.ttl * 1000 + TTL_BUFFER) > timestamp();
 
 // return bids whose status is not set. Winning bid can have status `targetingSet` or `rendered`.
-const isUnusedBid = (bid) => bid && ((bid.status && !includes([BID_TARGETING_SET, RENDERED], bid.status)) || !bid.status);
+const isUnusedBid = (bid) => bid && ((bid.status && !includes([CONSTANTS.BID_STATUS.BID_TARGETING_SET, CONSTANTS.BID_STATUS.RENDERED], bid.status)) || !bid.status);
 
-// If two bids are found for same adUnitCode, we will use the latest one to take part in auction
+export let filters = {
+  isBidNotExpired,
+  isUnusedBid
+};
+
+// If two bids are found for same adUnitCode, we will use the highest one to take part in auction
 // This can happen in case of concurrent auctions
-export const getOldestBid = function(bid, i, arr) {
-  let oldestBid = true;
-  arr.forEach((val, j) => {
-    if (i === j) return;
-    if (bid.bidder === val.bidder && bid.adUnitCode === val.adUnitCode && bid.responseTimestamp > val.responseTimestamp) {
-      oldestBid = false;
-    }
+export function getHighestCpmBidsFromBidPool(bidsReceived, highestCpmCallback) {
+  const bids = [];
+  // bucket by adUnitcode
+  let buckets = groupBy(bidsReceived, 'adUnitCode');
+  // filter top bid for each bucket by bidder
+  Object.keys(buckets).forEach(bucketKey => {
+    let bidsByBidder = groupBy(buckets[bucketKey], 'bidderCode');
+    Object.keys(bidsByBidder).forEach(key => bids.push(bidsByBidder[key].reduce(highestCpmCallback)));
   });
-  return oldestBid;
+  return bids;
 }
 
 /**
@@ -45,6 +53,11 @@ export const getOldestBid = function(bid, i, arr) {
 
 export function newTargeting(auctionManager) {
   let targeting = {};
+  let latestAuctionForAdUnit = {};
+
+  targeting.setLatestAuctionForAdUnit = function(adUnitCode, auctionId) {
+    latestAuctionForAdUnit[adUnitCode] = auctionId;
+  };
 
   targeting.resetPresetTargeting = function(adUnitCode) {
     if (isGptPubadsDefined()) {
@@ -90,6 +103,15 @@ export function newTargeting(auctionManager) {
     });
 
     targeting = flattenTargeting(targeting);
+
+    // make sure at least there is a entry per adUnit code in the targetingSet so receivers of SET_TARGETING call's can know what ad units are being invoked
+
+    adUnitCodes.forEach(code => {
+      if (!targeting[code]) {
+        targeting[code] = {};
+      }
+    });
+
     return targeting;
   };
 
@@ -141,9 +163,9 @@ export function newTargeting(auctionManager) {
    * Sets targeting for DFP
    * @param {Object.<string,Object.<string,string>>} targetingConfig
    */
-  targeting.setTargetingForGPT = function(targetingConfig) {
+  targeting.setTargetingForGPT = function(targetingConfig, customSlotMatching) {
     window.googletag.pubads().getSlots().forEach(slot => {
-      Object.keys(targetingConfig).filter(isAdUnitCodeMatchingSlot(slot))
+      Object.keys(targetingConfig).filter(customSlotMatching ? customSlotMatching(slot) : isAdUnitCodeMatchingSlot(slot))
         .forEach(targetId =>
           Object.keys(targetingConfig[targetId]).forEach(key => {
             let valueArr = targetingConfig[targetId][key].split(',');
@@ -174,11 +196,19 @@ export function newTargeting(auctionManager) {
   }
 
   function getBidsReceived() {
-    return auctionManager.getBidsReceived()
-      .filter(isUnusedBid)
-      .filter(exports.isBidExpired)
-      .filter(getOldestBid)
+    let bidsReceived = auctionManager.getBidsReceived();
+
+    if (!config.getConfig('useBidCache')) {
+      bidsReceived = bidsReceived.filter(bid => latestAuctionForAdUnit[bid.adUnitCode] === bid.auctionId)
+    }
+
+    bidsReceived = bidsReceived
+      .filter(bid => bid.mediaType !== 'banner' || sizeSupported([bid.width, bid.height]))
+      .filter(filters.isUnusedBid)
+      .filter(filters.isBidNotExpired)
     ;
+
+    return getHighestCpmBidsFromBidPool(bidsReceived, getOldestHighestCpmBid);
   }
 
   /**
@@ -188,7 +218,6 @@ export function newTargeting(auctionManager) {
    */
   targeting.getWinningBids = function(adUnitCode, bidsReceived = getBidsReceived()) {
     const adUnitCodes = getAdUnitCodes(adUnitCode);
-
     return bidsReceived
       .filter(bid => includes(adUnitCodes, bid.adUnitCode))
       .filter(bid => bid.cpm > 0)
@@ -196,7 +225,7 @@ export function newTargeting(auctionManager) {
       .filter(uniques)
       .map(adUnitCode => bidsReceived
         .filter(bid => bid.adUnitCode === adUnitCode ? bid : null)
-        .reduce(getHighestCpm, getEmptyBid(adUnitCode)));
+        .reduce(getHighestCpm));
   };
 
   /**
@@ -217,7 +246,7 @@ export function newTargeting(auctionManager) {
             // pt${n} keys should not be uppercased
             keywordsObj[key] = astTargeting[targetId][key];
           }
-          window.apntag.setKeywords(targetId, keywordsObj);
+          window.apntag.setKeywords(targetId, keywordsObj, { overrideKeyValue: true });
         }
       })
     );
@@ -239,9 +268,16 @@ export function newTargeting(auctionManager) {
             typeof winner.sendStandardTargeting === 'undefined' ||
             winner.sendStandardTargeting ||
             standardKeys.indexOf(key) === -1)
-          .map(key => ({
-            [(key === 'hb_deal') ? `${key}_${winner.bidderCode}`.substring(0, MAX_DFP_KEYLENGTH) : key.substring(0, MAX_DFP_KEYLENGTH)]: [winner.adserverTargeting[key]]
-          }))
+          .reduce((acc, key) => {
+            const targetingValue = [winner.adserverTargeting[key]];
+            const targeting = { [key.substring(0, MAX_DFP_KEYLENGTH)]: targetingValue };
+            if (key === CONSTANTS.TARGETING_KEYS.DEAL) {
+              const bidderCodeTargetingKey = `${key}_${winner.bidderCode}`.substring(0, MAX_DFP_KEYLENGTH);
+              const bidderCodeTargeting = { [bidderCodeTargetingKey]: targetingValue };
+              return [...acc, targeting, bidderCodeTargeting];
+            }
+            return [...acc, targeting];
+          }, [])
       };
     });
 
@@ -251,7 +287,7 @@ export function newTargeting(auctionManager) {
   function getStandardKeys() {
     return auctionManager.getStandardBidderAdServerTargeting() // in case using a custom standard key set
       .map(targeting => targeting.key)
-      .concat(CONSTANTS.TARGETING_KEYS).filter(uniques); // standard keys defined in the library.
+      .concat(TARGETING_KEYS).filter(uniques); // standard keys defined in the library.
   }
 
   /**
@@ -333,15 +369,10 @@ export function newTargeting(auctionManager) {
    * @return {targetingArray}   all non-winning bids targeting
    */
   function getBidLandscapeTargeting(adUnitCodes, bidsReceived) {
-    const standardKeys = CONSTANTS.TARGETING_KEYS.concat(NATIVE_TARGETING_KEYS);
-    const bids = [];
-    // bucket by adUnitcode
-    let buckets = groupBy(bidsReceived, 'adUnitCode');
-    // filter top bid for each bucket by bidder
-    Object.keys(buckets).forEach(bucketKey => {
-      let bidsByBidder = groupBy(buckets[bucketKey], 'bidderCode');
-      Object.keys(bidsByBidder).forEach(key => bids.push(bidsByBidder[key].reduce(getHighestCpm, getEmptyBid())));
-    });
+    const standardKeys = TARGETING_KEYS.concat(NATIVE_TARGETING_KEYS);
+
+    const bids = getHighestCpmBidsFromBidPool(bidsReceived, getHighestCpm);
+
     // populate targeting keys for the remaining bids
     return bids.map(bid => {
       if (
@@ -372,14 +403,6 @@ export function newTargeting(auctionManager) {
     }
   };
 
-  function getEmptyBid(adUnitCode) {
-    return {
-      adUnitCode: adUnitCode,
-      cpm: 0,
-      adserverTargeting: {},
-      timeToRespond: 0
-    };
-  }
   return targeting;
 }
 

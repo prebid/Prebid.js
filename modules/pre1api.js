@@ -31,8 +31,8 @@
  features of PBJS 1.0 as is required to emulate the old API.
  */
 
-import {config} from 'src/config';
-import {logWarn, logInfo} from 'src/utils';
+import {config} from '../src/config';
+import {logWarn, logInfo} from '../src/utils';
 
 const MODULE_NAME = 'pre-1.0 API';
 

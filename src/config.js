@@ -10,16 +10,17 @@
 import { isValidPriceConfig } from './cpmBucketManager';
 import find from 'core-js/library/fn/array/find';
 import includes from 'core-js/library/fn/array/includes';
-import { createHook } from 'src/hook';
+import { createHook } from './hook';
 const utils = require('./utils');
 
 const DEFAULT_DEBUG = false;
 const DEFAULT_BIDDER_TIMEOUT = 3000;
 const DEFAULT_PUBLISHER_DOMAIN = window.location.origin;
-const DEFAULT_COOKIESYNC_DELAY = 100;
 const DEFAULT_ENABLE_SEND_ALL_BIDS = true;
+const DEFAULT_DISABLE_AJAX_TIMEOUT = false;
+const DEFAULT_BID_CACHE = true;
 
-const DEFAULT_TIMEOUTBUFFER = 200;
+const DEFAULT_TIMEOUTBUFFER = 400;
 
 export const RANDOM = 'random';
 const FIXED = 'fixed';
@@ -83,15 +84,6 @@ export function newConfig() {
         this._publisherDomain = val;
       },
 
-      // delay to request cookie sync to stay out of critical path
-      _cookieSyncDelay: DEFAULT_COOKIESYNC_DELAY,
-      get cookieSyncDelay() {
-        return $$PREBID_GLOBAL$$.cookieSyncDelay || this._cookieSyncDelay;
-      },
-      set cookieSyncDelay(val) {
-        this._cookieSyncDelay = val;
-      },
-
       // calls existing function which may be moved after deprecation
       _priceGranularity: GRANULARITY_OPTIONS.MEDIUM,
       set priceGranularity(val) {
@@ -142,6 +134,14 @@ export function newConfig() {
         this._sendAllBids = val;
       },
 
+      _useBidCache: DEFAULT_BID_CACHE,
+      get useBidCache() {
+        return this._useBidCache;
+      },
+      set useBidCache(val) {
+        this._useBidCache = val;
+      },
+
       _bidderSequence: DEFAULT_BIDDER_SEQUENCE,
       get bidderSequence() {
         return this._bidderSequence;
@@ -155,12 +155,20 @@ export function newConfig() {
       },
 
       // timeout buffer to adjust for bidder CDN latency
-      _timoutBuffer: DEFAULT_TIMEOUTBUFFER,
+      _timeoutBuffer: DEFAULT_TIMEOUTBUFFER,
       get timeoutBuffer() {
-        return this._timoutBuffer;
+        return this._timeoutBuffer;
       },
       set timeoutBuffer(val) {
-        this._timoutBuffer = val;
+        this._timeoutBuffer = val;
+      },
+
+      _disableAjaxTimeout: DEFAULT_DISABLE_AJAX_TIMEOUT,
+      get disableAjaxTimeout() {
+        return this._disableAjaxTimeout;
+      },
+      set disableAjaxTimeout(val) {
+        this._disableAjaxTimeout = val;
       },
 
     };

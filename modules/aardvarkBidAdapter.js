@@ -1,5 +1,5 @@
-import * as utils from 'src/utils';
-import {registerBidder} from 'src/adapters/bidderFactory';
+import * as utils from '../src/utils';
+import {registerBidder} from '../src/adapters/bidderFactory';
 
 const BIDDER_CODE = 'aardvark';
 const DEFAULT_ENDPOINT = 'bidder.rtk.io';
@@ -28,9 +28,12 @@ export const spec = {
     var referer = utils.getTopWindowUrl();
     var pageCategories = [];
 
-    if (window.top.rtkcategories && Array.isArray(window.top.rtkcategories)) {
-      pageCategories = window.top.rtkcategories;
-    }
+    // This reference to window.top can cause issues when loaded in an iframe if not protected with a try/catch.
+    try {
+      if (window.top.rtkcategories && Array.isArray(window.top.rtkcategories)) {
+        pageCategories = window.top.rtkcategories;
+      }
+    } catch (e) {}
 
     utils._each(validBidRequests, function(b) {
       var rMap = requestsMap[b.params.ai];
@@ -100,9 +103,15 @@ export const spec = {
     }
 
     utils._each(serverResponse.body, function(rawBid) {
+      var cpm = +(rawBid.cpm || 0);
+
+      if (!cpm) {
+        return;
+      }
+
       var bidResponse = {
         requestId: rawBid.cid,
-        cpm: rawBid.cpm || 0,
+        cpm: cpm,
         width: rawBid.width || 0,
         height: rawBid.height || 0,
         currency: rawBid.currency ? rawBid.currency : AARDVARK_CURRENCY,

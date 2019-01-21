@@ -1,5 +1,5 @@
-import * as utils from 'src/utils';
-import { registerBidder } from 'src/adapters/bidderFactory';
+import * as utils from '../src/utils';
+import { registerBidder } from '../src/adapters/bidderFactory';
 
 const BIDDER_CODE = 'eplanning';
 const rnd = Math.random();
@@ -17,6 +17,7 @@ export const spec = {
   isBidRequestValid: function(bid) {
     return Boolean(bid.params.ci) || Boolean(bid.params.t);
   },
+
   buildRequests: function(bidRequests) {
     const method = 'GET';
     const dfpClientId = '1';
@@ -24,6 +25,7 @@ export const spec = {
     let url;
     let params;
     const urlConfig = getUrlConfig(bidRequests);
+    const pcrs = getCharset();
 
     if (urlConfig.t) {
       url = urlConfig.isv + '/layers/t_pbjs_2.json';
@@ -40,6 +42,11 @@ export const spec = {
         pbv: '$prebid.version$',
         ncb: '1'
       };
+
+      if (pcrs) {
+        params.crs = pcrs;
+      }
+
       if (referrerUrl) {
         params.fr = referrerUrl;
       }
@@ -105,7 +112,7 @@ export const spec = {
 }
 
 function cleanName(name) {
-  return name.replace(/_|\.|-|\//g, '').replace(/\)\(|\(|\)/g, '_').replace(/^_+|_+$/g, '');
+  return name.replace(/_|\.|-|\//g, '').replace(/\)\(|\(|\)|:/g, '_').replace(/^_+|_+$/g, '');
 }
 function getUrlConfig(bidRequests) {
   if (isTestRequest(bidRequests)) {
@@ -147,6 +154,15 @@ function getSpacesString(bids) {
 
   return spacesString;
 }
+
+function getCharset() {
+  try {
+    return window.top.document.charset || window.top.document.characterSet;
+  } catch (e) {
+    return document.charset || document.characterSet;
+  }
+}
+
 function getBidIdMap(bidRequests) {
   let map = {};
   bidRequests.forEach(bid => map[cleanName(bid.adUnitCode)] = bid.bidId);
