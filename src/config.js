@@ -18,6 +18,7 @@ const DEFAULT_BIDDER_TIMEOUT = 3000;
 const DEFAULT_PUBLISHER_DOMAIN = window.location.origin;
 const DEFAULT_ENABLE_SEND_ALL_BIDS = true;
 const DEFAULT_DISABLE_AJAX_TIMEOUT = false;
+const DEFAULT_BID_CACHE = true;
 
 const DEFAULT_TIMEOUTBUFFER = 400;
 
@@ -131,6 +132,14 @@ export function newConfig() {
       },
       set enableSendAllBids(val) {
         this._sendAllBids = val;
+      },
+
+      _useBidCache: DEFAULT_BID_CACHE,
+      get useBidCache() {
+        return this._useBidCache;
+      },
+      set useBidCache(val) {
+        this._useBidCache = val;
       },
 
       _bidderSequence: DEFAULT_BIDDER_SEQUENCE,
