@@ -111,6 +111,14 @@ function findGdprStatus(gdprApplies, gdprData) {
   return status;
 }
 
+function removePartnerNameFromAdUnitCode(adUnitCode) {
+  adUnitCode = adUnitCode.toString();
+  if (adUnitCode && adUnitCode.indexOf('@teads') > -1) {
+    adUnitCode = adUnitCode.split('@teads')[0];
+  }
+  return adUnitCode;
+}
+
 function buildRequestObject(bid) {
   const reqObj = {};
   let placementId = utils.getValue(bid.params, 'placementId');
@@ -121,7 +129,7 @@ function buildRequestObject(bid) {
   reqObj.bidderRequestId = utils.getBidIdParameter('bidderRequestId', bid);
   reqObj.placementId = parseInt(placementId, 10);
   reqObj.pageId = parseInt(pageId, 10);
-  reqObj.adUnitCode = utils.getBidIdParameter('adUnitCode', bid);
+  reqObj.adUnitCode = removePartnerNameFromAdUnitCode(utils.getBidIdParameter('adUnitCode', bid));
   reqObj.auctionId = utils.getBidIdParameter('auctionId', bid);
   reqObj.transactionId = utils.getBidIdParameter('transactionId', bid);
   return reqObj;
