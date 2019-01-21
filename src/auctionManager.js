@@ -17,7 +17,7 @@
  */
 
 import { uniques, flatten } from './utils';
-import { newAuction, getStandardBidderSettings, AUCTION_COMPLETED } from 'src/auction';
+import { newAuction, getStandardBidderSettings, AUCTION_COMPLETED } from './auction';
 import find from 'core-js/library/fn/array/find';
 
 const CONSTANTS = require('./constants.json');

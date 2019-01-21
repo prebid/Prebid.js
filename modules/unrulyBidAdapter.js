@@ -1,7 +1,7 @@
-import * as utils from 'src/utils'
-import { Renderer } from 'src/Renderer'
-import { registerBidder } from 'src/adapters/bidderFactory'
-import { VIDEO } from 'src/mediaTypes'
+import * as utils from '../src/utils'
+import { Renderer } from '../src/Renderer'
+import { registerBidder } from '../src/adapters/bidderFactory'
+import { VIDEO } from '../src/mediaTypes'
 
 function configureUniversalTag (exchangeRenderer) {
   parent.window.unruly = parent.window.unruly || {};

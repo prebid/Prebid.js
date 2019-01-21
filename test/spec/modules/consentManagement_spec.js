@@ -1,5 +1,5 @@
 import {setConfig, requestBidsHook, resetConsentData, userCMP, consentTimeout, allowAuction, staticConsentData} from 'modules/consentManagement';
-import {gdprDataHandler} from 'src/adaptermanager';
+import {gdprDataHandler} from 'src/adapterManager';
 import * as utils from 'src/utils';
 import { config } from 'src/config';
 
