@@ -99,8 +99,8 @@ function bidResponseAvailable(bidRequest, bidResponse) {
       const bid = {
         requestId: id,
         cpm: idToBidMap[id].price,
-        creative_id: id,
-        creativeId: id,
+        creative_id: idToBidMap[id].crid,
+        creativeId: idToBidMap[id].crid,
         adId: id,
         ttl: DEFAULT_BID_TTL,
         netRevenue: DEFAULT_NET_REVENUE,
