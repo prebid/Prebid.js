@@ -1,8 +1,8 @@
 # Overview
 
-**Module Name**: Innity Bidder Adapter
+**Module Name**: Open8 Bidder Adapter
 **Module Type**: Bidder Adapter
-**Maintainer**:  engtat@innity.com
+**Maintainer**:  tdd-adtech@open8.com
 
  # Description
 
