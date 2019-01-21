@@ -1,17 +1,17 @@
-import adapter from "src/AnalyticsAdapter";
-import adaptermanager from "src/adaptermanager";
-import CONSTANTS from "src/constants.json";
-import * as utils from "src/utils";
+import adapter from 'src/AnalyticsAdapter';
+import adaptermanager from 'src/adaptermanager';
+import CONSTANTS from 'src/constants.json';
+import * as utils from 'src/utils';
 
 const {
   EVENTS: { BID_REQUESTED, BID_TIMEOUT, BID_RESPONSE, BID_WON }
 } = CONSTANTS;
 
-const prebidVersion = "$prebid.version$";
+const prebidVersion = '$prebid.version$';
 
 const adapterConfig = {
   /** Name of the `rta` function, override only when instructed. */
-  rtaFunctionName: "rta",
+  rtaFunctionName: 'rta',
 
   /** This is optional but highly recommended. The value returned by the
    *  function will be used as ad impression ad unit attribute value.
@@ -32,7 +32,7 @@ const adapterConfig = {
    * human friendly value.
    */
   getPlacementOrAdUnitCode: function(bid, version) {
-    return version[0] === "0" ? bid.placementCode : bid.adUnitCode;
+    return version[0] === '0' ? bid.placementCode : bid.adUnitCode;
   },
 
   /**
@@ -45,7 +45,7 @@ const adapterConfig = {
    * the event that triggers the ad impression event.
    */
   wireGooglePublisherTag: function(gpt, cb) {
-    gpt.pubads().addEventListener("slotRenderEnded", function(event) {
+    gpt.pubads().addEventListener('slotRenderEnded', function(event) {
       cb(event.slot);
     });
   },
@@ -56,19 +56,19 @@ const adapterConfig = {
    * Required when when googlePublisherTag is defined.
    */
   isPrebidAdImpression: slot => {
-    throw "Required when googlePublisherTag is defined.";
+    throw 'Required when googlePublisherTag is defined.';
   },
 
   getHighestPrebidAdImpressionPartner: (slot, version) => {
-    throw "Required when googlePublisherTag is defined.";
+    throw 'Required when googlePublisherTag is defined.';
   },
 
   getHighestPrebidAdImpressionValue: (slot, version) => {
-    throw "Required when googlePublisherTag is defined.";
+    throw 'Required when googlePublisherTag is defined.';
   },
 
   getAdUnitNameByGooglePublisherTagSlot: (slot, version) => {
-    throw "Required when googlePublisherTag is defined.";
+    throw 'Required when googlePublisherTag is defined.';
   },
 
   postProcessResolution: (resolution, slot, hbPartner, hbValue, version) => {
@@ -78,13 +78,13 @@ const adapterConfig = {
 
 const cpmToMicroUSD = v => (isNaN(v) ? 0 : Math.round(v * 1000));
 
-const liveyield = Object.assign(adapter({ analyticsType: "bundle" }), {
+const liveyield = Object.assign(adapter({ analyticsType: 'bundle' }), {
   track({ eventType, args }) {
     switch (eventType) {
       case BID_REQUESTED:
         args.bids.forEach(function(b) {
           window[adapterConfig.rtaFunctionName](
-            "bidRequested",
+            'bidRequested',
             adapterConfig.getAdUnitName(
               adapterConfig.getPlacementOrAdUnitCode(b, prebidVersion)
             ),
@@ -93,20 +93,20 @@ const liveyield = Object.assign(adapter({ analyticsType: "bundle" }), {
         });
         break;
       case BID_RESPONSE:
-        var cpm = args.statusMessage === "Bid available" ? args.cpm : null;
+        var cpm = args.statusMessage === 'Bid available' ? args.cpm : null;
         window[adapterConfig.rtaFunctionName](
-          "addBid",
+          'addBid',
           adapterConfig.getAdUnitName(
             adapterConfig.getPlacementOrAdUnitCode(args, prebidVersion)
           ),
-          args.bidder || "unknown",
+          args.bidder || 'unknown',
           cpmToMicroUSD(cpm),
-          typeof args.bidder === "undefined",
-          args.statusMessage !== "Bid available"
+          typeof args.bidder === 'undefined',
+          args.statusMessage !== 'Bid available'
         );
         break;
       case BID_TIMEOUT:
-        window[adapterConfig.rtaFunctionName]("biddersTimeout", args);
+        window[adapterConfig.rtaFunctionName]('biddersTimeout', args);
         break;
       case BID_WON:
         if (adapterConfig.googlePublisherTag) {
@@ -117,7 +117,7 @@ const liveyield = Object.assign(adapter({ analyticsType: "bundle" }), {
         );
         if (!ad) {
           utils.logError(
-            "Cannot find ad by unit name: " +
+            'Cannot find ad by unit name: ' +
               adapterConfig.getAdUnitName(
                 adapterConfig.getPlacementOrAdUnitCode(args, prebidVersion)
               )
@@ -125,11 +125,11 @@ const liveyield = Object.assign(adapter({ analyticsType: "bundle" }), {
           break;
         }
         if (!args.bidderCode || !args.cpm) {
-          utils.logError("Bidder code or cpm is not valid");
+          utils.logError('Bidder code or cpm is not valid');
           break;
         }
         window[adapterConfig.rtaFunctionName](
-          "resolveSlot",
+          'resolveSlot',
           adapterConfig.getAdUnitName(
             adapterConfig.getPlacementOrAdUnitCode(args, prebidVersion)
           ),
@@ -166,32 +166,32 @@ liveyield.originEnableAnalytics = liveyield.enableAnalytics;
  * ```
  */
 liveyield.enableAnalytics = function(config) {
-  if (!config || !config.provider || config.provider !== "liveyield") {
-    utils.logError("expected config.provider to equal liveyield");
+  if (!config || !config.provider || config.provider !== 'liveyield') {
+    utils.logError('expected config.provider to equal liveyield');
     return;
   }
   if (!config.options) {
-    utils.logError("options must be defined");
+    utils.logError('options must be defined');
     return;
   }
   if (!config.options.customerId) {
-    utils.logError("options.customerId is required");
+    utils.logError('options.customerId is required');
     return;
   }
   if (!config.options.customerName) {
-    utils.logError("options.customerName is required");
+    utils.logError('options.customerName is required');
     return;
   }
   if (!config.options.customerSite) {
-    utils.logError("options.customerSite is required");
+    utils.logError('options.customerSite is required');
     return;
   }
   if (!config.options.sessionTimezoneOffset) {
-    utils.logError("options.sessionTimezoneOffset is required");
+    utils.logError('options.sessionTimezoneOffset is required');
     return;
   }
   Object.assign(adapterConfig, config.options);
-  if (typeof window[adapterConfig.rtaFunctionName] !== "function") {
+  if (typeof window[adapterConfig.rtaFunctionName] !== 'function') {
     utils.logError(
       `Function ${adapterConfig.rtaFunctionName} is not defined.` +
         `Make sure that LiveYield snippet in included before the Prebid Analytics configuration.`
@@ -234,7 +234,7 @@ liveyield.enableAnalytics = function(config) {
   );
 
   window[adapterConfig.rtaFunctionName](
-    "create",
+    'create',
     config.options.customerId,
     config.options.customerName,
     config.options.customerSite,
@@ -282,13 +282,13 @@ const onSlotRenderEnded = slot => {
   const resolutionToUse = adapterConfig.postProcessResolution(
     resolution,
     slot,
-    highestPrebidAdImpPartner,
-    highestPrebidAdImpValue,
+    resolution.highestPrebidAdImpPartner,
+    resolution.highestPrebidAdImpValue,
     prebidVersion
   );
 
   window[adapterConfig.rtaFunctionName](
-    "resolveSlot",
+    'resolveSlot',
     adapterConfig.getAdUnitNameByGooglePublisherTagSlot(slot),
     resolutionToUse
   );
@@ -296,7 +296,7 @@ const onSlotRenderEnded = slot => {
 
 adaptermanager.registerAnalyticsAdapter({
   adapter: liveyield,
-  code: "liveyield"
+  code: 'liveyield'
 });
 
 export default liveyield;

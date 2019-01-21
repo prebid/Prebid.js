@@ -461,12 +461,17 @@ describe('liveyield analytics adapter', function() {
       expect(googletag).to.equal('testGPT');
       expect(typeof callback).to.equal('function');
     });
-    it('should invoke user provided function', function() {
-      let gptHandler;
-      var result;
+    it('should handle BID_WON event', function() {
+      var call;
       const slot = {
-        getSlotElementId: function() { return 1 },
-        val: 5
+        getResponseInformation: function() {
+          const dfpInfo = {
+            dfpAdvertiserId: 1,
+            dfpLineItemId: 2,
+            dfpCreativeId: 3
+          }
+          return dfpInfo;
+        }
       }
       const options = {
         provider: 'liveyield',
@@ -475,19 +480,33 @@ describe('liveyield analytics adapter', function() {
           customerName: 'pubocean',
           customerSite: 'scribol.com',
           sessionTimezoneOffset: 12,
-          googlePublisherTag: true,
-          isPrebidImpression: function(arg) {
-            arg.val += 5;
-            result = arg.val;
-          },
+          googlePublisherTag: 'testGPT',
           wireGooglePublisherTag: function(gpt, cb) {
-            gptHandler = cb;
+            call = cb;
+          },
+          getHighestPrebidAdImpressionPartner: function(slot, version) {
+            return 'testbidder4';
+          },
+          highestPrebidAdImpValue: function(slot, version) {
+            return 12;
+          },
+          postProcessResolution: function(slot, version) {
+            return slot.prebidPartner;
+          },
+          getAdUnitNameByGooglePublisherTagSlot: function(slot, version) {
+            return 'testUnit';
+          },
+          isPrebidAdImpression: function(slot) {
+            return true;
           }
         }
       };
       liveyield.enableAnalytics(options);
-      should.Throw(function() { gptHandler(slot) }, TypeError, 'slot.getResponseInformation is not a function')
-      expect(result).to.equal(10);
+      call(slot);
+      expect(rtaCalls.length).to.equal(2);
+      expect(rtaCalls[1].callArgs[0]).to.equal('resolveSlot');
+      expect(rtaCalls[1].callArgs[1]).to.equal('testUnit');
+      expect(rtaCalls[1].callArgs[2]).to.equal('testbidder4');
     });
   });
 });
