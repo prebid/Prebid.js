@@ -111,6 +111,11 @@ function findGdprStatus(gdprApplies, gdprData) {
   return status;
 }
 
+// Below is hack for openwrap:
+// Description : Teads expect code to be a div and it replaces the code value in script
+// In OpenWrap we create adUnit as Div@partnerid@sizes(eg. div1@teads@300x250) which is causing trouble for them as
+// it tries to find element with div1@teads so removing @teads from adUnit code in case of openwrap.
+// TODO : Need to have a proper solution for the same which can be pushed to prebid.
 function removePartnerNameFromAdUnitCode(adUnitCode) {
   adUnitCode = adUnitCode.toString();
   if (adUnitCode && adUnitCode.indexOf('@teads') > -1) {
