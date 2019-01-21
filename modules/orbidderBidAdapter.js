@@ -28,7 +28,7 @@ export const spec = {
         referer = bidderRequest.refererInfo.referer || '';
       }
       const ret = {
-        url: `${this.orbidderHost}/bid`,
+        url: `${spec.orbidderHost}/bid`,
         method: 'POST',
         data: {
           pageUrl: referer,
@@ -79,7 +79,7 @@ export const spec = {
       winObj.params = spec.bidParams[winObj.adId];
     }
 
-    spec.ajaxCall(`${this.orbidderHost}/win`, JSON.stringify(winObj));
+    spec.ajaxCall(`${spec.orbidderHost}/win`, JSON.stringify(winObj));
   },
 
   ajaxCall(endpoint, data) {
