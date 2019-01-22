@@ -1,5 +1,5 @@
-import * as utils from 'src/utils';
-import { registerBidder } from 'src/adapters/bidderFactory';
+import * as utils from '../src/utils';
+import { registerBidder } from '../src/adapters/bidderFactory';
 
 const ENDPOINT = 'hb.gammaplatform.com';
 const BIDDER_CODE = 'gamma';

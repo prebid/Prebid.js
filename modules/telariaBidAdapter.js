@@ -1,8 +1,8 @@
-import * as utils from 'src/utils';
-import * as bidfactory from 'src/bidfactory';
-import {registerBidder} from 'src/adapters/bidderFactory';
+import * as utils from '../src/utils';
+import {createBid as createBidFactory} from '../src/bidfactory';
+import {registerBidder} from '../src/adapters/bidderFactory';
 import {VIDEO} from '../src/mediaTypes';
-import {STATUS} from 'src/constants';
+import {STATUS} from '../src/constants';
 
 const BIDDER_CODE = 'telaria';
 const ENDPOINT = '.ads.tremorhub.com/ad/tag';
@@ -170,7 +170,7 @@ function generateUrl(bid, bidderRequest) {
  * @param bidderCode
  */
 function createBid(status, reqBid, response, width, height, bidderCode) {
-  let bid = bidfactory.createBid(status, reqBid);
+  let bid = createBidFactory(status, reqBid);
 
   // TTL 5 mins by default, future support for extended imp wait time
   if (response) {

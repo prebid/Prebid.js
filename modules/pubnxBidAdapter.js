@@ -1,5 +1,5 @@
-import * as utils from 'src/utils';
-import { registerBidder } from 'src/adapters/bidderFactory';
+import * as utils from '../src/utils';
+import { registerBidder } from '../src/adapters/bidderFactory';
 const BIDDER_CODE = 'pubnx';
 const BASE_URI = '//hb.pubnxserv.com/vzhbidder/bid?';
 

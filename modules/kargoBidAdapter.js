@@ -1,6 +1,6 @@
-import * as utils from 'src/utils';
-import {config} from 'src/config';
-import {registerBidder} from 'src/adapters/bidderFactory';
+import * as utils from '../src/utils';
+import {config} from '../src/config';
+import {registerBidder} from '../src/adapters/bidderFactory';
 const BIDDER_CODE = 'kargo';
 const HOST = 'https://krk.kargo.com';
 const SYNC = 'https://crb.kargo.com/api/v1/initsyncrnd/{UUID}?seed={SEED}&idx={INDEX}';
