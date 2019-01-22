@@ -194,7 +194,7 @@ export function requestBidsHook(fn, reqBidsConfigObj) {
   // preserves all module related variables for the current auction instance (used primiarily for concurrent auctions)
   const hookConfig = {
     context: this,
-    args: arguments,
+    args: [reqBidsConfigObj],
     nextFn: fn,
     adUnits: reqBidsConfigObj.adUnits || $$PREBID_GLOBAL$$.adUnits,
     bidsBackHandler: reqBidsConfigObj.bidsBackHandler,
