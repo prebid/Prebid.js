@@ -57,7 +57,7 @@ export function setConfig(config) {
   if (typeof config.rates === 'object') {
     currencyRates.conversions = config.rates;
     currencyRatesLoaded = true;
-    needToCallForCurrencyFile=false; // don't call if rates are already specified
+    needToCallForCurrencyFile = false; // don't call if rates are already specified
   }
 
   if (typeof config.defaultRates === 'object') {
@@ -126,7 +126,7 @@ function initCurrency(url) {
 
   // call for the file if we haven't already
   if (needToCallForCurrencyFile) {
-    needToCallForCurrencyFile=false;
+    needToCallForCurrencyFile = false;
     ajax(url,
       {
         success: function (response) {

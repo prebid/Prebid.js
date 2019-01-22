@@ -64,6 +64,9 @@ describe('currency', function () {
       fakeCurrencyFileServer.respond();
       expect(fakeCurrencyFileServer.requests[0].url).to.equal('https://cdn.jsdelivr.net/gh/prebid/currency-file@1/latest.json?date=20030306');
 
+      // RESET to request currency file (specifically url value for this test)
+      setConfig({ 'adServerCurrency': undefined });
+
       // date macro should not modify 'conversionRateFile' if TOKEN is not found
       setConfig({
         'adServerCurrency': 'JPY',
@@ -72,6 +75,9 @@ describe('currency', function () {
       fakeCurrencyFileServer.respond();
       expect(fakeCurrencyFileServer.requests[1].url).to.equal('http://test.net/currency.json?date=foobar');
 
+      // RESET to request currency file (specifically url value for this test)
+      setConfig({ 'adServerCurrency': undefined });
+
       // date macro should replace $$TODAY$$ with date for 'conversionRateFile' is configured
       setConfig({
         'adServerCurrency': 'JPY',
@@ -79,6 +85,9 @@ describe('currency', function () {
       });
       fakeCurrencyFileServer.respond();
       expect(fakeCurrencyFileServer.requests[2].url).to.equal('http://test.net/currency.json?date=20030306');
+
+      // RESET to request currency file (specifically url value for this test)
+      setConfig({ 'adServerCurrency': undefined });
 
       // MULTIPLE TOKENS used in a url is not supported. Only the TOKEN at left-most position is REPLACED
       setConfig({
@@ -220,6 +229,7 @@ describe('currency', function () {
 
     it('should result in NO_BID when currency support is not enabled and fromCurrency is not USD', function () {
       setConfig({});
+
       var bid = { 'cpm': 1, 'currency': 'GBP' };
       var innerBid;
       addBidResponseHook('elementId', bid, function(adCodeId, bid) {
@@ -241,6 +251,9 @@ describe('currency', function () {
     });
 
     it('should result in NO_BID when fromCurrency is not supported in file', function () {
+      // RESET to request currency file (specifically url value for this test)
+      setConfig({ 'adServerCurrency': undefined });
+
       fakeCurrencyFileServer.respondWith(JSON.stringify(getCurrencyRates()));
       setConfig({ 'adServerCurrency': 'JPY' });
       fakeCurrencyFileServer.respond();
