@@ -320,6 +320,10 @@ const LEGACY_PROTOCOL = {
       request.digiTrust = digiTrust;
     }
 
+    if (s2sBidRequest.universalID && s2sBidRequest.universalID.tdid && typeof s2sBidRequest.universalID.tdid === 'string') {
+      request.tpid_tdid = s2sBidRequest.universalID.tdid;
+    }
+
     return request;
   },
 
@@ -490,6 +494,10 @@ const OPEN_RTB_PROTOCOL = {
     const digiTrust = _getDigiTrustQueryParams();
     if (digiTrust) {
       request.user = { ext: { digitrust: digiTrust } };
+    }
+
+    if (s2sBidRequest.universalID && s2sBidRequest.universalID.tdid && typeof s2sBidRequest.universalID.tdid === 'string') {
+      request.tpid_tdid = s2sBidRequest.universalID.tdid;
     }
 
     if (!utils.isEmpty(aliases)) {
