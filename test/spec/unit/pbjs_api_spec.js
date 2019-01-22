@@ -1361,6 +1361,29 @@ describe('Unit: Prebid Module', function () {
           .and.to.match(/[a-f0-9\-]{36}/i);
       });
 
+      it('should notify targeting of the latest auction for each adUnit', function () {
+        let latestStub = sinon.stub(targeting, 'setLatestAuctionForAdUnit');
+        let getAuctionStub = sinon.stub(auction, 'getAuctionId').returns(2);
+
+        $$PREBID_GLOBAL$$.requestBids({
+          adUnits: [
+            {
+              code: 'test1',
+              bids: []
+            }, {
+              code: 'test2',
+              bids: []
+            }
+          ]
+        });
+
+        expect(latestStub.firstCall.calledWith('test1', 2)).to.equal(true);
+        expect(latestStub.secondCall.calledWith('test2', 2)).to.equal(true);
+
+        latestStub.restore();
+        getAuctionStub.restore();
+      });
+
       it('should execute callback immediately if adUnits is empty', function () {
         var bidsBackHandler = function bidsBackHandlerCallback() {};
         var spyExecuteCallback = sinon.spy(bidsBackHandler);
