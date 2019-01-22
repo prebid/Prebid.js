@@ -22,7 +22,7 @@ describe('Universal ID', function () {
     getId: function (submoduleConfig, consentData, syncDelay) {}
   }, {
     name: 'unifiedId',
-    decode: function (value) { return { 'pubcid': value } },
+    decode: function (value) { return { 'ttid': value } },
     getId: function (data, consentData, syncDelay) {}
   }];
 
