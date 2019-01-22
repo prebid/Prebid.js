@@ -320,10 +320,6 @@ const LEGACY_PROTOCOL = {
       request.digiTrust = digiTrust;
     }
 
-    if (s2sBidRequest.universalID && s2sBidRequest.universalID.tdid && typeof s2sBidRequest.universalID.tdid === 'string') {
-      request.tpid_tdid = s2sBidRequest.universalID.tdid;
-    }
-
     return request;
   },
 
@@ -496,12 +492,16 @@ const OPEN_RTB_PROTOCOL = {
       request.user = { ext: { digitrust: digiTrust } };
     }
 
-    if (s2sBidRequest.universalID && s2sBidRequest.universalID.tdid && typeof s2sBidRequest.universalID.tdid === 'string') {
-      request.tpid_tdid = s2sBidRequest.universalID.tdid;
-    }
-
     if (!utils.isEmpty(aliases)) {
       request.ext = { prebid: { aliases } };
+    }
+
+    if (s2sBidRequest.universalID && typeof s2sBidRequest.universalID === 'object') {
+      Object.keys(s2sBidRequest.universalID).forEach(key => {
+        if (s2sBidRequest.universalID[key]) {
+          request.ext.tpid[key] = s2sBidRequest.universalID[key];
+        }
+      });
     }
 
     if (bidRequests && bidRequests[0].gdprConsent) {
