@@ -1,5 +1,5 @@
 import adapter from '../src/AnalyticsAdapter';
-import adaptermanager from '../src/adaptermanager';
+import adaptermanager from '../src/adapterManager';
 import CONSTANTS from '../src/constants.json';
 import * as utils from '../src/utils';
 
