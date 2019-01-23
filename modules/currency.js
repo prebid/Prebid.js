@@ -1,9 +1,9 @@
-import bidfactory from 'src/bidfactory';
-import { STATUS } from 'src/constants';
-import { ajax } from 'src/ajax';
-import * as utils from 'src/utils';
-import { config } from 'src/config';
-import { hooks } from 'src/hook.js';
+import { createBid } from '../src/bidfactory';
+import { STATUS } from '../src/constants';
+import { ajax } from '../src/ajax';
+import * as utils from '../src/utils';
+import { config } from '../src/config';
+import { hooks } from '../src/hook.js';
 
 const DEFAULT_CURRENCY_RATE_URL = 'https://cdn.jsdelivr.net/gh/prebid/currency-file@1/latest.json?date=$$TODAY$$';
 const CURRENCY_RATE_PRECISION = 4;
@@ -11,6 +11,7 @@ const CURRENCY_RATE_PRECISION = 4;
 var bidResponseQueue = [];
 var conversionCache = {};
 var currencyRatesLoaded = false;
+var needToCallForCurrencyFile = true;
 var adServerCurrency = 'USD';
 
 export var currencySupportEnabled = false;
@@ -56,6 +57,7 @@ export function setConfig(config) {
   if (typeof config.rates === 'object') {
     currencyRates.conversions = config.rates;
     currencyRatesLoaded = true;
+    needToCallForCurrencyFile = false; // don't call if rates are already specified
   }
 
   if (typeof config.defaultRates === 'object') {
@@ -122,7 +124,9 @@ function initCurrency(url) {
 
   hooks['addBidResponse'].addHook(addBidResponseHook, 100);
 
-  if (!currencyRates.conversions) {
+  // call for the file if we haven't already
+  if (needToCallForCurrencyFile) {
+    needToCallForCurrencyFile = false;
     ajax(url,
       {
         success: function (response) {
@@ -150,6 +154,7 @@ function resetCurrency() {
   conversionCache = {};
   currencySupportEnabled = false;
   currencyRatesLoaded = false;
+  needToCallForCurrencyFile = true;
   currencyRates = {};
   bidderCurrencyDefault = {};
 }
@@ -215,7 +220,7 @@ function wrapFunction(fn, context, params) {
         }
       } catch (e) {
         utils.logWarn('Returning NO_BID, getCurrencyConversion threw error: ', e);
-        params[1] = bidfactory.createBid(STATUS.NO_BID, {
+        params[1] = createBid(STATUS.NO_BID, {
           bidder: bid.bidderCode || bid.bidder,
           bidId: bid.adId
         });

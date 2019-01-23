@@ -1,7 +1,7 @@
-import * as utils from 'src/utils';
-import { registerBidder } from 'src/adapters/bidderFactory';
-import { BANNER, VIDEO } from 'src/mediaTypes';
-import { Renderer } from 'src/Renderer';
+import * as utils from '../src/utils';
+import { registerBidder } from '../src/adapters/bidderFactory';
+import { BANNER, VIDEO } from '../src/mediaTypes';
+import { Renderer } from '../src/Renderer';
 
 const pixKey = 'utrk';
 
