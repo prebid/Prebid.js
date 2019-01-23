@@ -62,6 +62,8 @@ export const spec = {
 
     if (deepAccess(validBidRequests[0], 'crumbs.pubcid') || deepAccess(validBidRequests[0], 'params.hfa')) {
       payload.hfa = deepAccess(validBidRequests[0], 'params.hfa') ? deepAccess(validBidRequests[0], 'params.hfa') : `PRE-${deepAccess(validBidRequests[0], 'crumbs.pubcid')}`;
+    } else if (deepAccess(validBidRequests[0], 'universalID.pubcid')) {
+      payload.hfa = `PRE-${deepAccess(validBidRequests[0], 'universalID.pubcid')}`;
     }
 
     if (validBidRequests[0].params.referrer) {
