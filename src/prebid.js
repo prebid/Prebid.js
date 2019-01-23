@@ -752,6 +752,7 @@ function processQueue(queue) {
  * @alias module:pbjs.processQueue
  */
 $$PREBID_GLOBAL$$.processQueue = function() {
+  hook.ready();
   processQueue($$PREBID_GLOBAL$$.que);
   processQueue($$PREBID_GLOBAL$$.cmd);
 };
