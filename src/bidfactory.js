@@ -51,6 +51,6 @@ function Bid(statusCode, bidRequest) {
 }
 
 // Bid factory function.
-exports.createBid = function (statusCode, bidRequest) {
+export function createBid(statusCode, bidRequest) {
   return new Bid(statusCode, bidRequest);
-};
+}

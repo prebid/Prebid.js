@@ -4,9 +4,9 @@
  * and make it available for any GDPR supported adapters to read/pass this information to
  * their system.
  */
-import * as utils from 'src/utils';
-import { config } from 'src/config';
-import { gdprDataHandler } from 'src/adaptermanager';
+import * as utils from '../src/utils';
+import { config } from '../src/config';
+import { gdprDataHandler } from '../src/adapterManager';
 import includes from 'core-js/library/fn/array/includes';
 import strIncludes from 'core-js/library/fn/string/includes';
 
@@ -185,7 +185,7 @@ function lookupIabConsent(cmpSuccess, cmpError, hookConfig) {
 /**
  * If consentManagement module is enabled (ie included in setConfig), this hook function will attempt to fetch the
  * user's encoded consent string from the supported CMP.  Once obtained, the module will store this
- * data as part of a gdprConsent object which gets transferred to adaptermanager's gdprDataHandler object.
+ * data as part of a gdprConsent object which gets transferred to adapterManager's gdprDataHandler object.
  * This information is later added into the bidRequest object for any supported adapters to read/pass along to their system.
  * @param {object} reqBidsConfigObj required; This is the same param that's used in pbjs.requestBids.
  * @param {function} fn required; The next function in the chain, used by hook.js

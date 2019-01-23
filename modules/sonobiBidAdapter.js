@@ -1,4 +1,4 @@
-import { registerBidder } from 'src/adapters/bidderFactory';
+import { registerBidder } from '../src/adapters/bidderFactory';
 import { parseSizesInput, logError, generateUUID, isEmpty, deepAccess } from '../src/utils';
 import { BANNER, VIDEO } from '../src/mediaTypes';
 import { config } from '../src/config';
