@@ -43,57 +43,69 @@ const liveyield = Object.assign(adapter({ analyticsType: 'bundle' }), {
     switch (eventType) {
       case BID_REQUESTED:
         args.bids.forEach(function(b) {
-          window[adapterConfig.rtaFunctionName](
-            'bidRequested',
-            adapterConfig.getAdUnitName(
-              adapterConfig.getPlacementOrAdUnitCode(b, prebidVersion)
-            ),
-            args.bidderCode
-          );
+          try {
+            window[adapterConfig.rtaFunctionName](
+              'bidRequested',
+              adapterConfig.getAdUnitName(
+                adapterConfig.getPlacementOrAdUnitCode(b, prebidVersion)
+              ),
+              args.bidderCode
+            );
+          } catch (e) {
+            utils.logError(e);
+          }
         });
         break;
       case BID_RESPONSE:
         var cpm = args.statusMessage === 'Bid available' ? args.cpm : null;
-        window[adapterConfig.rtaFunctionName](
-          'addBid',
-          adapterConfig.getAdUnitName(
-            adapterConfig.getPlacementOrAdUnitCode(args, prebidVersion)
-          ),
-          args.bidder || 'unknown',
-          cpmToMicroUSD(cpm),
-          typeof args.bidder === 'undefined',
-          args.statusMessage !== 'Bid available'
-        );
+        try {
+          window[adapterConfig.rtaFunctionName](
+            'addBid',
+            adapterConfig.getAdUnitName(
+              adapterConfig.getPlacementOrAdUnitCode(args, prebidVersion)
+            ),
+            args.bidder || 'unknown',
+            cpmToMicroUSD(cpm),
+            typeof args.bidder === 'undefined',
+            args.statusMessage !== 'Bid available'
+          )
+        } catch (e) {
+          utils.logError(e);
+        }
         break;
       case BID_TIMEOUT:
         window[adapterConfig.rtaFunctionName]('biddersTimeout', args);
         break;
       case BID_WON:
-        const ad = adapterConfig.getAdUnitName(
-          adapterConfig.getPlacementOrAdUnitCode(args, prebidVersion)
-        );
-        if (!ad) {
-          utils.logError('Cannot find ad by unit name: ' +
+        try {
+          const ad = adapterConfig.getAdUnitName(
+            adapterConfig.getPlacementOrAdUnitCode(args, prebidVersion)
+          );
+          if (!ad) {
+            utils.logError('Cannot find ad by unit name: ' +
             adapterConfig.getAdUnitName(
               adapterConfig.getPlacementOrAdUnitCode(args, prebidVersion)
             ));
-          return;
-        }
-        if (!args.bidderCode || !args.cpm) {
-          utils.logError('Bidder code or cpm is not valid');
-          return;
-        }
-        window[adapterConfig.rtaFunctionName](
-          'resolveSlot',
-          adapterConfig.getAdUnitName(
-            adapterConfig.getPlacementOrAdUnitCode(args, prebidVersion)
-          ),
-          {
-            prebidWon: true,
-            prebidPartner: args.bidderCode,
-            prebidValue: cpmToMicroUSD(args.cpm)
+            break;
           }
-        );
+          if (!args.bidderCode || !args.cpm) {
+            utils.logError('Bidder code or cpm is not valid');
+            break;
+          }
+          window[adapterConfig.rtaFunctionName](
+            'resolveSlot',
+            adapterConfig.getAdUnitName(
+              adapterConfig.getPlacementOrAdUnitCode(args, prebidVersion)
+            ),
+            {
+              prebidWon: true,
+              prebidPartner: args.bidderCode,
+              prebidValue: cpmToMicroUSD(args.cpm)
+            }
+          )
+        } catch (e) {
+          utils.logError(e);
+        }
         break;
     }
   }
