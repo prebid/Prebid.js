@@ -101,6 +101,8 @@ export const spec = {
 
       if (bid.crumbs && bid.crumbs.pubcid) {
         pubcid = bid.crumbs.pubcid;
+      } else if (bid.universalID && bid.universalID.pubcid) {
+        pubcid = bid.universalID.pubcid;
       }
 
       return imp;
