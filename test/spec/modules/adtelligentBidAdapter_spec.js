@@ -121,15 +121,15 @@ const displayEqResponse = [{
   cpm: 0.9
 }];
 
-describe('adtelligentBidAdapter', function () { // todo remove only
+describe.only('adtelligentBidAdapter', function () { // todo remove only
   const adapter = newBidder(spec);
 
   describe('user syncs as image', function () {
     it('should be returned if pixel enabled', function () {
       const syncs = spec.getUserSyncs({pixelEnabled: true}, [{body: SERVER_DISPLAY_RESPONSE_WITH_MIXED_SYNCS}]);
 
-      expect(syncs.map(s => s.url)).to.deep.equal(SERVER_DISPLAY_RESPONSE_WITH_MIXED_SYNCS.cookieURLs);
-      expect(syncs.map(s => s.type)).to.deep.equal(['image', 'image']);
+      expect(syncs.map(s => s.url)).to.deep.equal([SERVER_DISPLAY_RESPONSE_WITH_MIXED_SYNCS.cookieURLs[0]]);
+      expect(syncs.map(s => s.type)).to.deep.equal(['image']);
     })
   })
 
@@ -137,14 +137,17 @@ describe('adtelligentBidAdapter', function () { // todo remove only
     it('should be returned if pixel enabled', function () {
       const syncs = spec.getUserSyncs({iframeEnabled: true}, [{body: SERVER_DISPLAY_RESPONSE_WITH_MIXED_SYNCS}]);
 
-      expect(syncs.map(s => s.url)).to.deep.equal(SERVER_DISPLAY_RESPONSE_WITH_MIXED_SYNCS.cookieURLs);
-      expect(syncs.map(s => s.type)).to.deep.equal(['iframe', 'iframe']);
+      expect(syncs.map(s => s.url)).to.deep.equal([SERVER_DISPLAY_RESPONSE_WITH_MIXED_SYNCS.cookieURLs[1]]);
+      expect(syncs.map(s => s.type)).to.deep.equal(['iframe']);
     })
   })
 
   describe('user syncs with both types', function () {
     it('should be returned if pixel enabled', function () {
-      const syncs = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: true}, [{body: SERVER_DISPLAY_RESPONSE_WITH_MIXED_SYNCS}]);
+      const syncs = spec.getUserSyncs({
+        iframeEnabled: true,
+        pixelEnabled: true
+      }, [{body: SERVER_DISPLAY_RESPONSE_WITH_MIXED_SYNCS}]);
 
       expect(syncs.map(s => s.url)).to.deep.equal(SERVER_DISPLAY_RESPONSE_WITH_MIXED_SYNCS.cookieURLs);
       expect(syncs.map(s => s.type)).to.deep.equal(SERVER_DISPLAY_RESPONSE_WITH_MIXED_SYNCS.cookieURLSTypes);

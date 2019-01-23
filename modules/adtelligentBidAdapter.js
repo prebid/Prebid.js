@@ -28,10 +28,9 @@ export const spec = {
         uris.forEach((uri, i) => {
           let type = types[i] || 'image';
 
-          if (syncOptions.pixelEnabled && !syncOptions.iframeEnabled) {
-            type = 'image';
-          } else if (!syncOptions.pixelEnabled && syncOptions.iframeEnabled) {
-            type = 'iframe';
+          if ((!syncOptions.pixelEnabled && type == 'image') ||
+            (!syncOptions.iframeEnabled && type == 'iframe')) {
+            return;
           }
 
           syncs.push({
