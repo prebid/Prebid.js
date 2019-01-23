@@ -128,11 +128,9 @@ function _createImpressionObject(bid, conf) {
     banner: {
       pos: 0,
       topframe: utils.inIframe() ? 0 : 1,
-      w: bid.sizes[0][0],
-      h: bid.sizes[0][1],
       format: (function() {
         let arr = [];
-        for (let i = 1, l = bid.sizes.length; i < l; i++) {
+        for (let i = 0, l = bid.sizes.length; i < l; i++) {
           arr.push({
             w: bid.sizes[i][0],
             h: bid.sizes[i][1]
