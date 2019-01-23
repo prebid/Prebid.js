@@ -1093,6 +1093,19 @@ describe('the rubicon adapter', function () {
             expect(serverRequests).that.is.an('array').of.length(3);
           });
         });
+
+        describe('universal id config', function() {
+          it('should send tpid_tdid when universalID defines tdid', function () {
+            const clonedBids = clone(bidderRequest.bids);
+            clonedBids[0].universalID = {
+              tdid: 'abcd-efgh-ijkl-mnop-1234'
+            };
+            let [request] = spec.buildRequests(clonedBids, bidderRequest);
+            let data = parseQuery(request.data);
+
+            expect(data['tpid_tdid']).to.equal('abcd-efgh-ijkl-mnop-1234');
+          });
+        })
       });
 
       describe('for video requests', function () {
