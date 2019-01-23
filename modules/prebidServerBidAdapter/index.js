@@ -496,12 +496,17 @@ const OPEN_RTB_PROTOCOL = {
       request.ext = { prebid: { aliases } };
     }
 
-    if (s2sBidRequest.universalID && typeof s2sBidRequest.universalID === 'object') {
-      Object.keys(s2sBidRequest.universalID).forEach(key => {
-        if (s2sBidRequest.universalID[key]) {
-          request.ext.tpid[key] = s2sBidRequest.universalID[key];
-        }
-      });
+    if (bidRequests && bidRequests[0].universalID && typeof bidRequests[0].universalID === 'object' && Object.keys(bidRequests[0].universalID).length) {
+      if (!request.user) {
+        request.user = {};
+      }
+      if (!request.user.ext) {
+        request.user.ext = {}
+      }
+      if (!request.user.ext.tpid) {
+        request.user.ext.tpid = {}
+      }
+      Object.assign(request.user.ext.tpid, bidRequests[0].universalID);
     }
 
     if (bidRequests && bidRequests[0].gdprConsent) {
