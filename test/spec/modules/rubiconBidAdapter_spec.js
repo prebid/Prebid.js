@@ -1096,11 +1096,11 @@ describe('the rubicon adapter', function () {
 
         describe('universal id config', function() {
           it('should send tpid_tdid when universalID defines tdid', function () {
-            const clonedBids = clone(bidderRequest.bids);
-            clonedBids[0].universalID = {
+            const clonedBid = clone(bidderRequest.bids[0]);
+            clonedBid.universalID = {
               tdid: 'abcd-efgh-ijkl-mnop-1234'
             };
-            let [request] = spec.buildRequests(clonedBids, bidderRequest);
+            let [request] = spec.buildRequests([clonedBid], bidderRequest);
             let data = parseQuery(request.data);
 
             expect(data['tpid_tdid']).to.equal('abcd-efgh-ijkl-mnop-1234');
