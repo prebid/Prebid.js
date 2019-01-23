@@ -1,6 +1,6 @@
 /* eslint dot-notation:0, quote-props:0 */
-import {logError, getTopWindowLocation} from 'src/utils';
-import { registerBidder } from 'src/adapters/bidderFactory';
+import * as utils from '../src/utils';
+import { registerBidder } from '../src/adapters/bidderFactory';
 
 const NATIVE_DEFAULTS = {
   TITLE_LEN: 100,
@@ -237,7 +237,7 @@ function site(bidderRequest) {
         id: pubId.toString(),
       },
       ref: referrer(),
-      page: getTopWindowLocation().href,
+      page: utils.getTopWindowLocation().href,
     }
   }
   return null;
@@ -293,7 +293,7 @@ function parse(rawResponse) {
       return JSON.parse(rawResponse);
     }
   } catch (ex) {
-    logError('pulsepointLite.safeParse', 'ERROR', ex);
+    utils.logError('pulsepointLite.safeParse', 'ERROR', ex);
   }
   return null;
 }

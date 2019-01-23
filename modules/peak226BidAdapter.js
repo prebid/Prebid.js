@@ -1,6 +1,6 @@
-import { registerBidder } from 'src/adapters/bidderFactory';
-import { BANNER } from 'src/mediaTypes';
-import { getTopWindowUrl, logWarn } from 'src/utils';
+import { registerBidder } from '../src/adapters/bidderFactory';
+import { BANNER } from '../src/mediaTypes';
+import { getTopWindowUrl, logWarn } from '../src/utils';
 
 const BIDDER_CODE = 'peak226';
 const URL = '//a.ad216.com/header_bid';

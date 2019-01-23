@@ -1,6 +1,6 @@
-import * as utils from 'src/utils';
-import { BANNER, NATIVE } from 'src/mediaTypes';
-import {registerBidder} from 'src/adapters/bidderFactory';
+import * as utils from '../src/utils';
+import { BANNER, NATIVE } from '../src/mediaTypes';
+import {registerBidder} from '../src/adapters/bidderFactory';
 
 const BIDDER_CODE = 'quantum';
 const ENDPOINT_URL = '//s.sspqns.com/hb';
@@ -106,7 +106,7 @@ export const spec = {
       if (serverBody.cobj) {
         bid.cobj = serverBody.cobj;
       }
-      if (bidRequest.sizes) {
+      if (!utils.isEmpty(bidRequest.sizes)) {
         bid.width = bidRequest.sizes[0][0];
         bid.height = bidRequest.sizes[0][1];
       }

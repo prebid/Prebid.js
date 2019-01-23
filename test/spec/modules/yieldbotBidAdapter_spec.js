@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import find from 'core-js/library/fn/array/find';
 import { newBidder } from 'src/adapters/bidderFactory';
-import AdapterManager from 'src/adaptermanager';
+import AdapterManager from 'src/adapterManager';
 import { newAuctionManager } from 'src/auctionManager';
 import * as utils from 'src/utils';
 import * as urlUtils from 'src/url';
@@ -1058,6 +1058,16 @@ describe('Yieldbot Adapter Unit Tests', function() {
       const containsRegex = new RegExp(protocol + '\/\/close\.edge\.adserver\.com\/');
       expect(edgeServerUrlPrefix).to.match(beginsRegex);
       expect(responses[0].ad).to.match(containsRegex);
+    });
+
+    it('should not use document.open() in ad markup', function() {
+      FIXTURE_SERVER_RESPONSE.body.url_prefix = 'http://close.edge.adserver.com/';
+      const responses = YieldbotAdapter.interpretResponse(
+        FIXTURE_SERVER_RESPONSE,
+        FIXTURE_BID_REQUEST
+      );
+      expect(responses[0].ad).to.not.match(/var innerFrameDoc=innerFrame\.contentWindow\.document;innerFrameDoc\.open\(\);innerFrameDoc\.write\(iframeHtml\);innerFrameDoc\.close\(\);/);
+      expect(responses[0].ad).to.match(/var innerFrameDoc=innerFrame\.contentWindow\.document;innerFrameDoc\.write\(iframeHtml\);innerFrameDoc\.close\(\);/);
     });
   });
 

@@ -2,19 +2,20 @@ import { expect } from 'chai';
 import { tripleliftAdapterSpec } from 'modules/tripleliftBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
 import { deepClone } from 'src/utils';
+import prebid from '../../../package.json';
 
 const ENDPOINT = document.location.protocol + '//tlx.3lift.com/header/auction?';
 
-describe('triplelift adapter', () => {
+describe('triplelift adapter', function () {
   const adapter = newBidder(tripleliftAdapterSpec);
 
-  describe('inherited functions', () => {
-    it('exists and is a function', () => {
+  describe('inherited functions', function () {
+    it('exists and is a function', function () {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
   });
 
-  describe('isBidRequestValid', () => {
+  describe('isBidRequestValid', function () {
     let bid = {
       bidder: 'triplelift',
       params: {
@@ -28,11 +29,11 @@ describe('triplelift adapter', () => {
       'auctionId': '1d1a030790a475',
     };
 
-    it('should return true for valid bid request', () => {
+    it('should return true for valid bid request', function () {
       expect(tripleliftAdapterSpec.isBidRequestValid(bid)).to.equal(true);
     });
 
-    it('should return true when required params found', () => {
+    it('should return true when required params found', function () {
       let bid = Object.assign({}, bid);
       delete bid.params;
       bid.params = {
@@ -42,7 +43,7 @@ describe('triplelift adapter', () => {
       expect(tripleliftAdapterSpec.isBidRequestValid(bid)).to.equal(true);
     });
 
-    it('should return false when required params are not passed', () => {
+    it('should return false when required params are not passed', function () {
       let bid = Object.assign({}, bid);
       delete bid.params;
       bid.params = {
@@ -52,7 +53,7 @@ describe('triplelift adapter', () => {
     });
   });
 
-  describe('buildRequests', () => {
+  describe('buildRequests', function () {
     let bidRequests = [
       {
         bidder: 'triplelift',
@@ -68,19 +69,42 @@ describe('triplelift adapter', () => {
       }
     ];
 
-    it('exists and is an object', () => {
-      const request = tripleliftAdapterSpec.buildRequests(bidRequests);
+    let bidderRequest = {
+      bidderCode: 'triplelift',
+      auctionId: 'a7ebcd1d-66ff-4b5c-a82c-6a21a6ee5a18',
+      bidderRequestId: '5c55612f99bc11',
+      bids: [
+        {
+          imp_id: 0,
+          cpm: 1.062,
+          width: 300,
+          height: 250,
+          ad: 'ad-markup',
+          iurl: 'https://s.adroll.com/a/IYR/N36/IYRN366MFVDITBAGNNT5U6.jpg'
+        }
+      ],
+      refererInfo: {
+        referer: 'http://examplereferer.com'
+      },
+      gdprConsent: {
+        consentString: 'BOONm0NOONm0NABABAENAa-AAAARh7______b9_3__7_9uz_Kv_K7Vf7nnG072lPVA9LTOQ6gEaY',
+        gdprApplies: true
+      }
+    };
+
+    it('exists and is an object', function () {
+      const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
       expect(request).to.exist.and.to.be.a('object');
     });
 
-    it('should only parse sizes that are of the proper length and format', () => {
-      const request = tripleliftAdapterSpec.buildRequests(bidRequests);
+    it('should only parse sizes that are of the proper length and format', function () {
+      const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
       expect(request.data.imp[0].banner.format).to.have.length(2);
       expect(request.data.imp[0].banner.format).to.deep.equal([{w: 300, h: 250}, {w: 300, h: 600}]);
     });
 
-    it('should be a post request and populate the payload', () => {
-      const request = tripleliftAdapterSpec.buildRequests(bidRequests);
+    it('should be a post request and populate the payload', function () {
+      const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
       const payload = request.data;
       expect(payload).to.exist;
       expect(payload.imp[0].tagid).to.equal('12345');
@@ -88,20 +112,19 @@ describe('triplelift adapter', () => {
       expect(payload.imp[0].banner.format).to.deep.equal([{w: 300, h: 250}, {w: 300, h: 600}]);
     });
 
-    it('should return a query string for TL call', () => {
-      const request = tripleliftAdapterSpec.buildRequests(bidRequests);
+    it('should return a query string for TL call', function () {
+      const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
       const url = request.url;
       expect(url).to.exist;
       expect(url).to.be.a('string');
       expect(url).to.match(/(?:tlx.3lift.com\/header\/auction)/)
       expect(url).to.match(/(?:lib=prebid)/)
-      expect(url).to.match(/(?:prebid.version)/)
-      // expect(url).to.match(/(?:fe=)/) //
-      expect(url).to.match(/(?:referrer)/)
-    })
+      expect(url).to.match(new RegExp('(?:' + prebid.version + ')'))
+      expect(url).to.match(/(?:referrer)/);
+    });
   });
 
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     let response = {
       body: {
         bids: [
@@ -130,13 +153,16 @@ describe('triplelift adapter', () => {
           iurl: 'https://s.adroll.com/a/IYR/N36/IYRN366MFVDITBAGNNT5U6.jpg'
         }
       ],
+      refererInfo: {
+        referer: 'http://examplereferer.com'
+      },
       gdprConsent: {
-        consentString: 'BOONm0NOONma-AAAARh7______b9_3__7_9uz_Kv_K7Vf7nnG072lPVOQ6gEaY',
+        consentString: 'BOONm0NOONm0NABABAENAa-AAAARh7______b9_3__7_9uz_Kv_K7Vf7nnG072lPVA9LTOQ6gEaY',
         gdprApplies: true
       }
     };
 
-    it('should get correct bid response', () => {
+    it('should get correct bid response', function () {
       let expectedResponse = [
         {
           requestId: '3db3773286ee59',
@@ -156,7 +182,7 @@ describe('triplelift adapter', () => {
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
     });
 
-    it('should return multile responses to support SRA', () => {
+    it('should return multile responses to support SRA', function () {
       let response = {
         body: {
           bids: [
@@ -201,6 +227,9 @@ describe('triplelift adapter', () => {
             iurl: 'https://s.adroll.com/a/IYR/N36/IYRN366MFVDITBAGNNT5U6.jpg'
           }
         ],
+        refererInfo: {
+          referer: 'http://examplereferer.com'
+        },
         gdprConsent: {
           consentString: 'BOONm0NOONm0NABABAENAa-AAAARh7______b9_3__7_9uz_Kv_K7Vf7nnG072lPVA9LTOQ6gEaY',
           gdprApplies: true

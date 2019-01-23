@@ -17,7 +17,7 @@
  */
 
 import { uniques, flatten } from './utils';
-import { newAuction, getStandardBidderSettings, AUCTION_COMPLETED } from 'src/auction';
+import { newAuction, getStandardBidderSettings, AUCTION_COMPLETED } from './auction';
 import find from 'core-js/library/fn/array/find';
 
 const CONSTANTS = require('./constants.json');
@@ -39,22 +39,24 @@ export function newAuctionManager() {
     } else {
       utils.logWarn(`Auction not found when adding winning bid`);
     }
-  }
+  };
 
   auctionManager.getAllWinningBids = function() {
     return _auctions.map(auction => auction.getWinningBids())
       .reduce(flatten, []);
-  }
+  };
 
   auctionManager.getBidsRequested = function() {
     return _auctions.map(auction => auction.getBidRequests())
       .reduce(flatten, []);
   };
 
+  auctionManager.getNoBids = function() {
+    return _auctions.map(auction => auction.getNoBids())
+      .reduce(flatten, []);
+  };
+
   auctionManager.getBidsReceived = function() {
-    // As of now, an old bid which is not used in auction 1 can be used in auction n.
-    // To prevent this, bid.ttl (time to live) will be added to this logic and bid pool will also be added
-    // As of now none of the adapters are sending back bid.ttl
     return _auctions.map((auction) => {
       if (auction.getAuctionStatus() === AUCTION_COMPLETED) {
         return auction.getBidsReceived();
@@ -91,6 +93,11 @@ export function newAuctionManager() {
   auctionManager.setStatusForBids = function(adId, status) {
     let bid = auctionManager.findBidByAdId(adId);
     if (bid) bid.status = status;
+
+    if (bid && status === CONSTANTS.BID_STATUS.BID_TARGETING_SET) {
+      const auction = find(_auctions, auction => auction.getAuctionId() === bid.auctionId);
+      if (auction) auction.setBidTargeting(bid);
+    }
   }
 
   function _addAuction(auction) {
