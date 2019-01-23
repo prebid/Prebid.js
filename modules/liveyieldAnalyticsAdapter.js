@@ -1,5 +1,5 @@
 import adapter from '../src/AnalyticsAdapter';
-import adaptermanager from '../src/adapterManager';
+import adapterManager from '../src/adapterManager';
 import CONSTANTS from '../src/constants.json';
 import * as utils from '../src/utils';
 
@@ -204,7 +204,7 @@ liveyield.enableAnalytics = function(config) {
   liveyield.originEnableAnalytics(config);
 };
 
-adaptermanager.registerAnalyticsAdapter({
+adapterManager.registerAnalyticsAdapter({
   adapter: liveyield,
   code: 'liveyield'
 });
