@@ -53,24 +53,48 @@ const adapterConfig = {
   /**
    * Decides if the slot contains prebid ad impression or not.
    *
-   * Required when when googlePublisherTag is defined.
+   * Required when googlePublisherTag is defined.
    */
   isPrebidAdImpression: slot => {
     throw 'Required when googlePublisherTag is defined.';
   },
 
+  /**
+   * If isPrebidAdImpression decide that slot contain prebid ad impression,
+   * this function should return prebids highest ad impression partner for that slot.
+   *
+   * Required when googlePublisherTag is defined.
+  */
   getHighestPrebidAdImpressionPartner: (slot, version) => {
     throw 'Required when googlePublisherTag is defined.';
   },
 
+  /**
+   * If isPrebidAdImpression decide that slot contain prebid ad impression,
+   * this function should return prebids highest ad impression value for that slot.
+   *
+   * Required when googlePublisherTag is defined.
+  */
   getHighestPrebidAdImpressionValue: (slot, version) => {
     throw 'Required when googlePublisherTag is defined.';
   },
 
+  /**
+  * This function should return proper ad unit name for slot given as a parameter.
+  * Unit names returned by this function should be meaningful, for example 'FOO_728x90_TOP'.
+  *
+  * Required when googlePublisherTag is defined.
+  */
   getAdUnitNameByGooglePublisherTagSlot: (slot, version) => {
     throw 'Required when googlePublisherTag is defined.';
   },
 
+  /**
+  * Function used to prepare and return parameters provided to rta.
+  * More information will be in docs given by LiveYield team.
+  *
+  * Required when googlePublisherTag is defined.
+  */
   postProcessResolution: (resolution, slot, hbPartner, hbValue, version) => {
     return resolution;
   }
