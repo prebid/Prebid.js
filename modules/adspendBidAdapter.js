@@ -39,7 +39,7 @@ export const spec = {
     return !!(adServerCur &&
       bid.params &&
       bid.params.bidfloor &&
-      bid.crumbs.pubcid &&
+      (bid.crumbs.pubcid || (bid.universalID && bid.universalID.pubcid)) &&
       utils.checkCookieSupport() &&
       utils.cookiesAreEnabled()
     );
@@ -49,7 +49,8 @@ export const spec = {
     const req = bidRequests[Math.floor(Math.random() * bidRequests.length)];
     const bidId = req.bidId;
     const at = FIRST_PRICE;
-    const site = { id: req.crumbs.pubcid, domain: document.domain };
+    const universalID = req.universalID || {};
+    const site = { id: universalID.pubcid || req.crumbs.pubcid, domain: document.domain };
     const device = { ua: navigator.userAgent, ip: '' };
     const user = { id: getUserID() }
     const cur = [ RUB ];
