@@ -298,4 +298,11 @@ describe('AdkernelAdn adapter', function () {
       expect(syncs).to.have.length(0);
     });
   });
+
+  describe('adapter configuration', () => {
+    it('should have aliases', () => {
+      expect(spec.aliases).to.have.lengthOf(1);
+      expect(spec.aliases[0]).to.be.equal('engagesimply');
+    });
+  });
 });

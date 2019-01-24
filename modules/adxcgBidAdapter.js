@@ -1,8 +1,8 @@
-import { config } from 'src/config'
-import * as utils from 'src/utils'
-import * as url from 'src/url'
-import { registerBidder } from 'src/adapters/bidderFactory'
-import { BANNER, NATIVE, VIDEO } from 'src/mediaTypes'
+import { config } from '../src/config'
+import * as utils from '../src/utils'
+import * as url from '../src/url'
+import { registerBidder } from '../src/adapters/bidderFactory'
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes'
 import includes from 'core-js/library/fn/array/includes'
 
 /**

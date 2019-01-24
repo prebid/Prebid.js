@@ -1,6 +1,6 @@
-import * as utils from 'src/utils';
-import {config} from 'src/config';
-import {registerBidder} from 'src/adapters/bidderFactory';
+import * as utils from '../src/utils';
+import {config} from '../src/config';
+import {registerBidder} from '../src/adapters/bidderFactory';
 const BIDDER_CODE = 'kargo';
 const HOST = 'https://krk.kargo.com';
 const SYNC = 'https://crb.kargo.com/api/v1/initsyncrnd/{UUID}?seed={SEED}&idx={INDEX}';
@@ -50,6 +50,7 @@ export const spec = {
         ad: adUnit.adm,
         ttl: 300,
         creativeId: adUnit.id,
+        dealId: adUnit.targetingCustom,
         netRevenue: true,
         currency: bidRequest.currency
       });
@@ -76,8 +77,8 @@ export const spec = {
     let nameEquals = `${name}=`;
     let cookies = document.cookie.split(';');
 
-    for (let key in cookies) {
-      let cookie = cookies[key];
+    for (let i = 0; i < cookies.length; i++) {
+      let cookie = cookies[i];
       while (cookie.charAt(0) === ' ') {
         cookie = cookie.substring(1, cookie.length);
       }
