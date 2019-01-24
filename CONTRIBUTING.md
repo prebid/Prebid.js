@@ -55,7 +55,7 @@ When you are adding code to Prebid.js, or modifying code that isn't covered by a
 Prebid.js already has many tests. Read them to see how Prebid.js is tested, and for inspiration:
 
 - Look in `test/spec` and its subdirectories
-- Tests for bidder adaptors are located in `test/spec/adapters`
+- Tests for bidder adaptors are located in `test/spec/modules`
 
 A test module might have the following general structure:
 
@@ -64,8 +64,8 @@ A test module might have the following general structure:
 import { expect } from 'chai';  // may prefer 'assert' in place of 'expect'
 import adapter from 'src/adapters/<adapter>';
 
-describe('<Adapter>', () => {
-  it('<description of unit or feature being tested>', () => {
+describe('<Adapter>', function () {
+  it('<description of unit or feature being tested>', function () {
     // Arrange - set up preconditions and inputs
     // Act - call or act on the code under test
     // Assert - use chai to check that expected results have occurred

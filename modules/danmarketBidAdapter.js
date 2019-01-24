@@ -1,5 +1,5 @@
-import * as utils from 'src/utils';
-import {registerBidder} from 'src/adapters/bidderFactory';
+import * as utils from '../src/utils';
+import {registerBidder} from '../src/adapters/bidderFactory';
 const BIDDER_CODE = 'danmarket';
 const ENDPOINT_URL = '//ads.danmarketplace.com/hb';
 const TIME_TO_LIVE = 360;
@@ -30,7 +30,7 @@ export const spec = {
     return !!bid.params.uid;
   },
 
-  buildRequests: function(validBidRequests) {
+  buildRequests: function(validBidRequests, bidderRequest) {
     const auids = [];
     const bidsMap = {};
     const bids = validBidRequests || [];
@@ -56,6 +56,15 @@ export const spec = {
       auids: auids.join(','),
       r: reqId,
     };
+
+    if (bidderRequest && bidderRequest.gdprConsent) {
+      if (bidderRequest.gdprConsent.consentString) {
+        payload.gdpr_consent = bidderRequest.gdprConsent.consentString;
+      }
+      payload.gdpr_applies =
+        (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean')
+          ? Number(bidderRequest.gdprConsent.gdprApplies) : 1;
+    }
 
     return {
       method: 'GET',
@@ -87,11 +96,20 @@ export const spec = {
     return bidResponses;
   },
 
-  getUserSyncs: function(syncOptions) {
+  getUserSyncs: function(syncOptions, serverResponses, gdprConsent) {
     if (syncOptions.pixelEnabled) {
+      var query = [];
+      if (gdprConsent) {
+        if (gdprConsent.consentString) {
+          query.push('gdpr_consent=' + encodeURIComponent(gdprConsent.consentString));
+        }
+        query.push('gdpr_applies=' + encodeURIComponent(
+          (typeof gdprConsent.gdprApplies === 'boolean')
+            ? Number(gdprConsent.gdprApplies) : 1));
+      }
       return [{
         type: 'image',
-        url: ADAPTER_SYNC_URL
+        url: ADAPTER_SYNC_URL + (query.length ? '?' + query.join('&') : '')
       }];
     }
   }

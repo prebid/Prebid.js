@@ -31,8 +31,8 @@
  features of PBJS 1.0 as is required to emulate the old API.
  */
 
-import {config} from 'src/config';
-import {logWarn, logInfo} from 'src/utils';
+import {config} from '../src/config';
+import {logWarn, logInfo} from '../src/utils';
 
 const MODULE_NAME = 'pre-1.0 API';
 
@@ -124,7 +124,7 @@ pbjs.requestBids.addHook((config, next = config) => {
   } else {
     logWarn(`${MODULE_NAME} module: concurrency has been disabled and "$$PREBID_GLOBAL$$.requestBids" call was queued`);
   }
-}, 100);
+}, 5);
 
 Object.keys(auctionPropMap).forEach(prop => {
   if (prop === 'allBidsAvailable') {

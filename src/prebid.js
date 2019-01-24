@@ -1,40 +1,40 @@
 /** @module pbjs */
 
 import { getGlobal } from './prebidGlobal';
-import { flatten, uniques, isGptPubadsDefined, adUnitsFilter, removeRequestId } from './utils';
+import { flatten, uniques, isGptPubadsDefined, adUnitsFilter, removeRequestId, getLatestHighestCpmBid } from './utils';
 import { listenMessagesFromCreative } from './secureCreatives';
-import { userSync } from 'src/userSync.js';
+import { userSync } from './userSync.js';
 import { loadScript } from './adloader';
 import { config } from './config';
 import { auctionManager } from './auctionManager';
-import { targeting } from './targeting';
-import { createHook } from 'src/hook';
+import { targeting, getHighestCpmBidsFromBidPool } from './targeting';
+import { createHook } from './hook';
+import { sessionLoader } from './debugging';
 import includes from 'core-js/library/fn/array/includes';
+import { adunitCounter } from './adUnits';
+import { isRendererRequired, executeRenderer } from './Renderer';
+import { createBid } from './bidfactory';
 
-var $$PREBID_GLOBAL$$ = getGlobal();
-
+const $$PREBID_GLOBAL$$ = getGlobal();
 const CONSTANTS = require('./constants.json');
-var utils = require('./utils.js');
-var adaptermanager = require('./adaptermanager');
-var bidfactory = require('./bidfactory');
-var events = require('./events');
+const utils = require('./utils.js');
+const adapterManager = require('./adapterManager').default;
+const events = require('./events');
 const { triggerUserSyncs } = userSync;
 
 /* private variables */
-
-const RENDERED = 'rendered';
 const { ADD_AD_UNITS, BID_WON, REQUEST_BIDS, SET_TARGETING, AD_RENDER_FAILED } = CONSTANTS.EVENTS;
 const { PREVENT_WRITING_ON_MAIN_DOCUMENT, NO_AD, EXCEPTION, CANNOT_FIND_AD, MISSING_DOC_OR_ADID } = CONSTANTS.AD_RENDER_FAILED_REASON;
 
-var eventValidators = {
+const eventValidators = {
   bidWon: checkDefinedPlacement
 };
 
+// initialize existing debugging sessions if present
+sessionLoader();
+
 /* Public vars */
 $$PREBID_GLOBAL$$.bidderSettings = $$PREBID_GLOBAL$$.bidderSettings || {};
-
-// current timeout set in `requestBids` or to default `bidderTimeout`
-$$PREBID_GLOBAL$$.cbTimeout = $$PREBID_GLOBAL$$.cbTimeout || 200;
 
 // let the world know we are loaded
 $$PREBID_GLOBAL$$.libLoaded = true;
@@ -111,18 +111,11 @@ $$PREBID_GLOBAL$$.getAdserverTargetingForAdUnitCode = function(adUnitCode) {
 
 $$PREBID_GLOBAL$$.getAdserverTargeting = function (adUnitCode) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.getAdserverTargeting', arguments);
-  return targeting.getAllTargeting(adUnitCode, auctionManager.getBidsReceived());
+  return targeting.getAllTargeting(adUnitCode);
 };
 
-/**
- * This function returns the bid responses at the given moment.
- * @alias module:pbjs.getBidResponses
- * @return {Object}            map | object that contains the bidResponses
- */
-
-$$PREBID_GLOBAL$$.getBidResponses = function () {
-  utils.logInfo('Invoking $$PREBID_GLOBAL$$.getBidResponses', arguments);
-  const responses = auctionManager.getBidsReceived()
+function getBids(type) {
+  const responses = auctionManager[type]()
     .filter(adUnitsFilter.bind(this, auctionManager.getAdUnitCodes()));
 
   // find the last auction id to get responses for most recent auction only
@@ -139,6 +132,28 @@ $$PREBID_GLOBAL$$.getBidResponses = function () {
       };
     })
     .reduce((a, b) => Object.assign(a, b), {});
+}
+
+/**
+ * This function returns the bids requests involved in an auction but not bid on
+ * @alias module:pbjs.getNoBids
+ * @return {Object}            map | object that contains the bidRequests
+ */
+
+$$PREBID_GLOBAL$$.getNoBids = function () {
+  utils.logInfo('Invoking $$PREBID_GLOBAL$$.getNoBids', arguments);
+  return getBids('getNoBids');
+};
+
+/**
+ * This function returns the bid responses at the given moment.
+ * @alias module:pbjs.getBidResponses
+ * @return {Object}            map | object that contains the bidResponses
+ */
+
+$$PREBID_GLOBAL$$.getBidResponses = function () {
+  utils.logInfo('Invoking $$PREBID_GLOBAL$$.getBidResponses', arguments);
+  return getBids('getBidsReceived');
 };
 
 /**
@@ -158,9 +173,10 @@ $$PREBID_GLOBAL$$.getBidResponsesForAdUnitCode = function (adUnitCode) {
 /**
  * Set query string targeting on one or more GPT ad units.
  * @param {(string|string[])} adUnit a single `adUnit.code` or multiple.
+ * @param {function(object)} customSlotMatching gets a GoogleTag slot and returns a filter function for adUnitCode, so you can decide to match on either eg. return slot => { return adUnitCode => { return slot.getSlotElementId() === 'myFavoriteDivId'; } };
  * @alias module:pbjs.setTargetingForGPTAsync
  */
-$$PREBID_GLOBAL$$.setTargetingForGPTAsync = function (adUnit) {
+$$PREBID_GLOBAL$$.setTargetingForGPTAsync = function (adUnit, customSlotMatching) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.setTargetingForGPTAsync', arguments);
   if (!isGptPubadsDefined()) {
     utils.logError('window.googletag is not defined on the page');
@@ -168,16 +184,24 @@ $$PREBID_GLOBAL$$.setTargetingForGPTAsync = function (adUnit) {
   }
 
   // get our ad unit codes
-  var targetingSet = targeting.getAllTargeting(adUnit);
+  let targetingSet = targeting.getAllTargeting(adUnit);
 
   // first reset any old targeting
   targeting.resetPresetTargeting(adUnit);
 
   // now set new targeting keys
-  targeting.setTargetingForGPT(targetingSet);
+  targeting.setTargetingForGPT(targetingSet, customSlotMatching);
+
+  Object.keys(targetingSet).forEach((adUnitCode) => {
+    Object.keys(targetingSet[adUnitCode]).forEach((targetingKey) => {
+      if (targetingKey === 'hb_adid') {
+        auctionManager.setStatusForBids(targetingSet[adUnitCode][targetingKey], CONSTANTS.BID_STATUS.BID_TARGETING_SET);
+      }
+    });
+  });
 
   // emit event
-  events.emit(SET_TARGETING);
+  events.emit(SET_TARGETING, targetingSet);
 };
 
 /**
@@ -194,7 +218,7 @@ $$PREBID_GLOBAL$$.setTargetingForAst = function() {
   targeting.setTargetingForAst();
 
   // emit event
-  events.emit(SET_TARGETING);
+  events.emit(SET_TARGETING, targeting.getAllTargeting());
 };
 
 function emitAdRenderFail(reason, message, bid) {
@@ -225,7 +249,7 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
       // lookup ad by ad Id
       const bid = auctionManager.findBidByAdId(id);
       if (bid) {
-        bid.status = RENDERED;
+        bid.status = CONSTANTS.BID_STATUS.RENDERED;
         // replace macros according to openRTB with price paid = bid.cpm
         bid.ad = utils.replaceAuctionPrice(bid.ad, bid.cpm);
         bid.adUrl = utils.replaceAuctionPrice(bid.adUrl, bid.cpm);
@@ -240,8 +264,8 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
         const creativeComment = document.createComment(`Creative ${bid.creativeId} served by ${bid.bidder} Prebid.js Header Bidding`);
         utils.insertElement(creativeComment, doc, 'body');
 
-        if (renderer && renderer.url) {
-          renderer.render(bid);
+        if (isRendererRequired(renderer)) {
+          executeRenderer(renderer, bid);
         } else if ((doc === document && !utils.inIframe()) || mediaType === 'video') {
           const message = `Error trying to write ad. Ad render call ad id ${id} was prevented from writing to the main document.`;
           emitAdRenderFail(PREVENT_WRITING_ON_MAIN_DOCUMENT, message, bid);
@@ -330,12 +354,20 @@ $$PREBID_GLOBAL$$.requestBids = createHook('asyncSeries', function ({ bidsBackHa
     const adUnitMediaTypes = Object.keys(adUnit.mediaTypes || {'banner': 'banner'});
 
     // get the bidder's mediaTypes
-    const bidders = adUnit.bids.map(bid => bid.bidder);
-    const bidderRegistry = adaptermanager.bidderRegistry;
+    const allBidders = adUnit.bids.map(bid => bid.bidder);
+    const bidderRegistry = adapterManager.bidderRegistry;
+
+    const s2sConfig = config.getConfig('s2sConfig');
+    const s2sBidders = s2sConfig && s2sConfig.bidders;
+    const bidders = (s2sBidders) ? allBidders.filter(bidder => {
+      return !includes(s2sBidders, bidder);
+    }) : allBidders;
+
+    adUnit.transactionId = utils.generateUUID();
 
     bidders.forEach(bidder => {
       const adapter = bidderRegistry[bidder];
-      const spec = adapter && adapter.getSpec && adapter.getSpec()
+      const spec = adapter && adapter.getSpec && adapter.getSpec();
       // banner is default if not specified in spec
       const bidderMediaTypes = (spec && spec.supportedMediaTypes) || ['banner'];
 
@@ -347,6 +379,7 @@ $$PREBID_GLOBAL$$.requestBids = createHook('asyncSeries', function ({ bidsBackHa
         adUnit.bids = adUnit.bids.filter(bid => bid.bidder !== bidder);
       }
     });
+    adunitCounter.incrementCounter(adUnit.code);
   });
 
   if (!adUnits || adUnits.length === 0) {
@@ -363,6 +396,7 @@ $$PREBID_GLOBAL$$.requestBids = createHook('asyncSeries', function ({ bidsBackHa
   }
 
   const auction = auctionManager.createAuction({adUnits, adUnitCodes, callback: bidsBackHandler, cbTimeout, labels});
+  adUnitCodes.forEach(code => targeting.setLatestAuctionForAdUnit(code, auction.getAuctionId()));
   auction.callBids();
   return auction;
 });
@@ -376,13 +410,8 @@ $$PREBID_GLOBAL$$.requestBids = createHook('asyncSeries', function ({ bidsBackHa
 $$PREBID_GLOBAL$$.addAdUnits = function (adUnitArr) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.addAdUnits', arguments);
   if (utils.isArray(adUnitArr)) {
-    // generate transactionid for each new adUnits
-    // Append array to existing
-    adUnitArr.forEach(adUnit => adUnit.transactionId = utils.generateUUID());
     $$PREBID_GLOBAL$$.adUnits.push.apply($$PREBID_GLOBAL$$.adUnits, adUnitArr);
   } else if (typeof adUnitArr === 'object') {
-    // Generate the transaction id for the adunit
-    adUnitArr.transactionId = utils.generateUUID();
     $$PREBID_GLOBAL$$.adUnits.push(adUnitArr);
   }
   // emit event
@@ -436,7 +465,7 @@ $$PREBID_GLOBAL$$.offEvent = function (event, handler, id) {
 };
 
 /*
- * Wrapper to register bidderAdapter externally (adaptermanager.registerBidAdapter())
+ * Wrapper to register bidderAdapter externally (adapterManager.registerBidAdapter())
  * @param  {Function} bidderAdaptor [description]
  * @param  {string} bidderCode [description]
  * @alias module:pbjs.registerBidAdapter
@@ -444,21 +473,21 @@ $$PREBID_GLOBAL$$.offEvent = function (event, handler, id) {
 $$PREBID_GLOBAL$$.registerBidAdapter = function (bidderAdaptor, bidderCode) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.registerBidAdapter', arguments);
   try {
-    adaptermanager.registerBidAdapter(bidderAdaptor(), bidderCode);
+    adapterManager.registerBidAdapter(bidderAdaptor(), bidderCode);
   } catch (e) {
     utils.logError('Error registering bidder adapter : ' + e.message);
   }
 };
 
 /**
- * Wrapper to register analyticsAdapter externally (adaptermanager.registerAnalyticsAdapter())
+ * Wrapper to register analyticsAdapter externally (adapterManager.registerAnalyticsAdapter())
  * @param  {Object} options [description]
  * @alias module:pbjs.registerAnalyticsAdapter
  */
 $$PREBID_GLOBAL$$.registerAnalyticsAdapter = function (options) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.registerAnalyticsAdapter', arguments);
   try {
-    adaptermanager.registerAnalyticsAdapter(options);
+    adapterManager.registerAnalyticsAdapter(options);
   } catch (e) {
     utils.logError('Error registering analytics adapter : ' + e.message);
   }
@@ -472,11 +501,11 @@ $$PREBID_GLOBAL$$.registerAnalyticsAdapter = function (options) {
  */
 $$PREBID_GLOBAL$$.createBid = function (statusCode) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.createBid', arguments);
-  return bidfactory.createBid(statusCode);
+  return createBid(statusCode);
 };
 
 /**
- * Wrapper to adloader.loadScript
+ * @deprecated this function will be removed in the next release. Prebid has deprected external JS loading.
  * @param  {string} tagSrc [description]
  * @param  {Function} callback [description]
  * @alias module:pbjs.loadScript
@@ -503,7 +532,7 @@ $$PREBID_GLOBAL$$.loadScript = function (tagSrc, callback, useCache) {
 $$PREBID_GLOBAL$$.enableAnalytics = function (config) {
   if (config && !utils.isEmpty(config)) {
     utils.logInfo('Invoking $$PREBID_GLOBAL$$.enableAnalytics for: ', config);
-    adaptermanager.enableAnalytics(config);
+    adapterManager.enableAnalytics(config);
   } else {
     utils.logError('$$PREBID_GLOBAL$$.enableAnalytics should be called with option {}');
   }
@@ -515,7 +544,7 @@ $$PREBID_GLOBAL$$.enableAnalytics = function (config) {
 $$PREBID_GLOBAL$$.aliasBidder = function (bidderCode, alias) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.aliasBidder', arguments);
   if (bidderCode && alias) {
-    adaptermanager.aliasBidAdapter(bidderCode, alias);
+    adapterManager.aliasBidAdapter(bidderCode, alias);
   } else {
     utils.logError('bidderCode and alias must be passed as arguments', '$$PREBID_GLOBAL$$.aliasBidder');
   }
@@ -557,11 +586,21 @@ $$PREBID_GLOBAL$$.aliasBidder = function (bidderCode, alias) {
 */
 
 /**
- * Get all of the bids that have won their respective auctions.  Useful for [troubleshooting your integration](http://prebid.org/dev-docs/prebid-troubleshooting-guide.html).
- * @return {Array<AdapterBidResponse>} A list of bids that have won their respective auctions.
+ * Get all of the bids that have been rendered.  Useful for [troubleshooting your integration](http://prebid.org/dev-docs/prebid-troubleshooting-guide.html).
+ * @return {Array<AdapterBidResponse>} A list of bids that have been rendered.
 */
 $$PREBID_GLOBAL$$.getAllWinningBids = function () {
   return auctionManager.getAllWinningBids()
+    .map(removeRequestId);
+};
+
+/**
+ * Get all of the bids that have won their respective auctions.
+ * @return {Array<AdapterBidResponse>} A list of bids that have won their respective auctions.
+ */
+$$PREBID_GLOBAL$$.getAllPrebidWinningBids = function () {
+  return auctionManager.getBidsReceived()
+    .filter(bid => bid.status === CONSTANTS.BID_STATUS.BID_TARGETING_SET)
     .map(removeRequestId);
 };
 
@@ -573,8 +612,36 @@ $$PREBID_GLOBAL$$.getAllWinningBids = function () {
  * @return {Array} array containing highest cpm bid object(s)
  */
 $$PREBID_GLOBAL$$.getHighestCpmBids = function (adUnitCode) {
-  return targeting.getWinningBids(adUnitCode, auctionManager.getBidsReceived())
+  let bidsReceived = getHighestCpmBidsFromBidPool(auctionManager.getBidsReceived(), getLatestHighestCpmBid);
+  return targeting.getWinningBids(adUnitCode, bidsReceived)
     .map(removeRequestId);
+};
+
+/**
+ * Mark the winning bid as used, should only be used in conjunction with video
+ * @typedef {Object} MarkBidRequest
+ * @property {string} adUnitCode The ad unit code
+ * @property {string} adId The id representing the ad we want to mark
+ *
+ * @alias module:pbjs.markWinningBidAsUsed
+*/
+$$PREBID_GLOBAL$$.markWinningBidAsUsed = function (markBidRequest) {
+  let bids = [];
+
+  if (markBidRequest.adUnitCode && markBidRequest.adId) {
+    bids = auctionManager.getBidsReceived()
+      .filter(bid => bid.adId === markBidRequest.adId && bid.adUnitCode === markBidRequest.adUnitCode);
+  } else if (markBidRequest.adUnitCode) {
+    bids = targeting.getWinningBids(markBidRequest.adUnitCode);
+  } else if (markBidRequest.adId) {
+    bids = auctionManager.getBidsReceived().filter(bid => bid.adId === markBidRequest.adId);
+  } else {
+    utils.logWarn('Inproper usage of markWinningBidAsUsed. It\'ll need an adUnitCode and/or adId to function.');
+  }
+
+  if (bids.length > 0) {
+    bids[0].status = CONSTANTS.BID_STATUS.RENDERED;
+  }
 };
 
 /**
@@ -615,7 +682,6 @@ $$PREBID_GLOBAL$$.getConfig = config.getConfig;
  * @param {boolean} options.enableSendAllBids Turn "send all bids" mode on/off.  Example: `pbjs.setConfig({ enableSendAllBids: true })`.
  * @param {number} options.bidderTimeout Set a global bidder timeout, in milliseconds.  Example: `pbjs.setConfig({ bidderTimeout: 3000 })`.  Note that it's still possible for a bid to get into the auction that responds after this timeout. This is due to how [`setTimeout`](https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/setTimeout) works in JS: it queues the callback in the event loop in an approximate location that should execute after this time but it is not guaranteed.  For more information about the asynchronous event loop and `setTimeout`, see [How JavaScript Timers Work](https://johnresig.com/blog/how-javascript-timers-work/).
  * @param {string} options.publisherDomain The publisher's domain where Prebid is running, for cross-domain iFrame communication.  Example: `pbjs.setConfig({ publisherDomain: "https://www.theverge.com" })`.
- * @param {number} options.cookieSyncDelay A delay (in milliseconds) for requesting cookie sync to stay out of the critical path of page load.  Example: `pbjs.setConfig({ cookieSyncDelay: 100 })`.
  * @param {Object} options.s2sConfig The configuration object for [server-to-server header bidding](http://prebid.org/dev-docs/get-started-with-prebid-server.html).  Example:
  * @alias module:pbjs.setConfig
  * ```
@@ -689,3 +755,5 @@ $$PREBID_GLOBAL$$.processQueue = function() {
   processQueue($$PREBID_GLOBAL$$.que);
   processQueue($$PREBID_GLOBAL$$.cmd);
 };
+
+export default $$PREBID_GLOBAL$$;

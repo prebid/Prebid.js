@@ -1,5 +1,5 @@
-import * as utils from 'src/utils';
-import {registerBidder} from 'src/adapters/bidderFactory';
+import * as utils from '../src/utils';
+import {registerBidder} from '../src/adapters/bidderFactory';
 
 const BIDDER_CODE = 'admixer';
 const ENDPOINT_URL = '//inv-nets.admixer.net/prebid.1.0.aspx';
@@ -25,7 +25,7 @@ export const spec = {
   buildRequests: function (bidderRequest) {
     const payload = {
       imps: [],
-      referrer: utils.getTopWindowUrl(),
+      referrer: encodeURIComponent(utils.getTopWindowUrl()),
     };
     bidderRequest.forEach((bid) => {
       if (bid.bidder === BIDDER_CODE) {

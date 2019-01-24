@@ -1,5 +1,5 @@
 import find from 'core-js/library/fn/array/find';
-const utils = require('src/utils');
+const utils = require('./utils');
 
 const _defaultPrecision = 2;
 const _lgPriceConfig = {
@@ -124,7 +124,13 @@ function getCpmTarget(cpm, bucket, granularityMultiplier) {
   const bucketMin = bucket.min * granularityMultiplier;
 
   // start increments at the bucket min and then add bucket min back to arrive at the correct rounding
-  let cpmTarget = ((Math.floor((cpm - bucketMin) / increment)) * increment) + bucketMin;
+  // note - we're padding the values to avoid using decimals in the math prior to flooring
+  // this is done as JS can return values slightly below the expected mark which would skew the price bucket target
+  //   (eg 4.01 / 0.01 = 400.99999999999994)
+  // min precison should be 2 to move decimal place over.
+  let pow = Math.pow(10, precision + 2);
+  let cpmToFloor = ((cpm * pow) - (bucketMin * pow)) / (increment * pow);
+  let cpmTarget = ((Math.floor(cpmToFloor)) * increment) + bucketMin;
   // force to 10 decimal places to deal with imprecise decimal/binary conversions
   //    (for example 0.1 * 3 = 0.30000000000000004)
   cpmTarget = Number(cpmTarget.toFixed(10));

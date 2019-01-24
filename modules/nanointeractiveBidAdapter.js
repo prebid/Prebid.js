@@ -1,4 +1,4 @@
-import * as utils from 'src/utils';
+import * as utils from '../src/utils';
 import { registerBidder } from '../src/adapters/bidderFactory';
 import { BANNER } from '../src/mediaTypes';
 
@@ -9,17 +9,21 @@ export const DATA_PARTNER_PIXEL_ID = 'pid';
 export const NQ = 'nq';
 export const NQ_NAME = 'name';
 export const CATEGORY = 'category';
+export const CATEGORY_NAME = 'categoryName';
+export const SUB_ID = 'subId';
+export const REF = 'ref';
+export const LOCATION = 'loc';
 
 export const spec = {
 
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER],
 
-  isBidRequestValid(bid) {
+  isBidRequestValid (bid) {
     const pid = bid.params[DATA_PARTNER_PIXEL_ID];
     return !!(pid);
   },
-  buildRequests(bidRequests) {
+  buildRequests (bidRequests) {
     let payload = [];
     bidRequests.forEach(bid => payload.push(createSingleBidRequest(bid)));
     return {
@@ -28,7 +32,7 @@ export const spec = {
       data: JSON.stringify(payload)
     };
   },
-  interpretResponse(serverResponse) {
+  interpretResponse (serverResponse) {
     const bids = [];
     serverResponse.body.forEach(serverBid => {
       if (isEngineResponseValid(serverBid)) {
@@ -39,17 +43,21 @@ export const spec = {
   }
 };
 
-function createSingleBidRequest(bid) {
+function createSingleBidRequest (bid) {
   return {
     [DATA_PARTNER_PIXEL_ID]: bid.params[DATA_PARTNER_PIXEL_ID],
-    [NQ]: [createNqParam(bid), createCategoryParam(bid)],
+    [NQ]: [createNqParam(bid)],
+    [CATEGORY]: [createCategoryParam(bid)],
+    [SUB_ID]: createSubIdParam(bid),
+    [REF]: createRefParam(bid),
     sizes: bid.sizes.map(value => value[0] + 'x' + value[1]),
     bidId: bid.bidId,
-    cors: utils.getOrigin()
+    cors: utils.getOrigin(),
+    [LOCATION]: createLocationParam(),
   };
 }
 
-function createSingleBidResponse(serverBid) {
+function createSingleBidResponse (serverBid) {
   return {
     requestId: serverBid.id,
     cpm: serverBid.cpm,
@@ -63,15 +71,27 @@ function createSingleBidResponse(serverBid) {
   };
 }
 
-function createNqParam(bid) {
+function createNqParam (bid) {
   return bid.params[NQ_NAME] ? utils.getParameterByName(bid.params[NQ_NAME]) : bid.params[NQ] || null;
 }
 
-function createCategoryParam(bid) {
-  return bid.params[CATEGORY] || null;
+function createCategoryParam (bid) {
+  return bid.params[CATEGORY_NAME] ? utils.getParameterByName(bid.params[CATEGORY_NAME]) : bid.params[CATEGORY] || null;
 }
 
-function isEngineResponseValid(response) {
+function createSubIdParam (bid) {
+  return bid.params[SUB_ID] || null;
+}
+
+function createRefParam (bid) {
+  return bid.params[REF] ? null : utils.getTopWindowReferrer() || null;
+}
+
+function createLocationParam () {
+  return utils.getTopWindowLocation().href;
+}
+
+function isEngineResponseValid (response) {
   return !!response.cpm && !!response.ad;
 }
 

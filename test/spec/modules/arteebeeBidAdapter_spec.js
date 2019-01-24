@@ -1,9 +1,9 @@
 import {expect} from 'chai';
 import {spec} from 'modules/arteebeeBidAdapter';
 
-describe('Arteebee adapater', () => {
-  describe('Test validate req', () => {
-    it('should accept minimum valid bid', () => {
+describe('Arteebee adapater', function () {
+  describe('Test validate req', function () {
+    it('should accept minimum valid bid', function () {
       let bid = {
         bidder: 'arteebee',
         params: {
@@ -16,7 +16,7 @@ describe('Arteebee adapater', () => {
       expect(isValid).to.equal(true);
     });
 
-    it('should reject missing pub', () => {
+    it('should reject missing pub', function () {
       let bid = {
         bidder: 'arteebee',
         params: {
@@ -28,7 +28,7 @@ describe('Arteebee adapater', () => {
       expect(isValid).to.equal(false);
     });
 
-    it('should reject missing source', () => {
+    it('should reject missing source', function () {
       let bid = {
         bidder: 'arteebee',
         params: {
@@ -41,8 +41,8 @@ describe('Arteebee adapater', () => {
     });
   });
 
-  describe('Test build request', () => {
-    it('minimum request', () => {
+  describe('Test build request', function () {
+    it('minimum request', function () {
       let bid = {
         bidder: 'arteebee',
         params: {
@@ -59,7 +59,7 @@ describe('Arteebee adapater', () => {
       expect(req.imp[0]).to.not.have.property('secure');
     });
 
-    it('make test request', () => {
+    it('make test request', function () {
       let bid = {
         bidder: 'arteebee',
         params: {
@@ -77,7 +77,7 @@ describe('Arteebee adapater', () => {
       expect(req.imp[0]).to.not.have.property('secure');
     });
 
-    it('test coppa', () => {
+    it('test coppa', function () {
       let bid = {
         bidder: 'arteebee',
         params: {
@@ -94,10 +94,38 @@ describe('Arteebee adapater', () => {
       expect(req).to.not.have.property('test');
       expect(req.imp[0]).to.not.have.property('secure');
     });
+
+    it('test gdpr', function () {
+      let bid = {
+        bidder: 'arteebee',
+        params: {
+          pub: 'prebidtest',
+          source: 'prebidtest'
+        },
+        sizes: [[300, 250]]
+      };
+      let consentString = 'ABCD';
+      let bidderRequest = {
+        'gdprConsent': {
+          consentString: consentString,
+          gdprApplies: true
+        }
+      };
+
+      const req = JSON.parse(spec.buildRequests([bid], bidderRequest)[0].data);
+
+      expect(req.regs).to.exist;
+      expect(req.regs.ext).to.exist;
+      expect(req.regs.ext).to.have.property('gdpr', 1);
+
+      expect(req.user).to.exist;
+      expect(req.user.ext).to.exist;
+      expect(req.user.ext).to.have.property('consent', consentString);
+    });
   });
 
-  describe('Test interpret response', () => {
-    it('General banner response', () => {
+  describe('Test interpret response', function () {
+    it('General banner response', function () {
       let resp = spec.interpretResponse({
         body: {
           id: 'abcd',

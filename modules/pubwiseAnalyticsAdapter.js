@@ -1,8 +1,8 @@
-import {ajax} from 'src/ajax';
-import adapter from 'src/AnalyticsAdapter';
-import adaptermanager from 'src/adaptermanager';
-import CONSTANTS from 'src/constants.json';
-const utils = require('src/utils');
+import {ajax} from '../src/ajax';
+import adapter from '../src/AnalyticsAdapter';
+import adapterManager from '../src/adapterManager';
+import CONSTANTS from '../src/constants.json';
+const utils = require('../src/utils');
 
 /****
  * PubWise.io Analytics
@@ -88,9 +88,9 @@ function sendEvent(eventType, data) {
     debug: configOptions.debug ? 1 : 0,
   };
 
+  dataBag = enrichWithMetrics(dataBag);
   // for certain events, track additional info
   if (eventType == CONSTANTS.EVENTS.AUCTION_INIT) {
-    dataBag = enrichWithMetrics(dataBag);
     dataBag = enrichWithUTM(dataBag);
   }
 
@@ -120,7 +120,7 @@ pubwiseAnalytics.enableAnalytics = function (config) {
   pubwiseAnalytics.adapterEnableAnalytics(config);
 };
 
-adaptermanager.registerAnalyticsAdapter({
+adapterManager.registerAnalyticsAdapter({
   adapter: pubwiseAnalytics,
   code: 'pubwise'
 });

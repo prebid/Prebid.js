@@ -1,6 +1,6 @@
 /* eslint dot-notation:0, quote-props:0 */
-import {logError, getTopWindowLocation} from 'src/utils';
-import { registerBidder } from 'src/adapters/bidderFactory';
+import * as utils from '../src/utils';
+import { registerBidder } from '../src/adapters/bidderFactory';
 
 const NATIVE_DEFAULTS = {
   TITLE_LEN: 100,
@@ -34,7 +34,7 @@ export const spec = {
     !!(bid && bid.params && bid.params.cp && bid.params.ct)
   ),
 
-  buildRequests: bidRequests => {
+  buildRequests: (bidRequests, bidderRequest) => {
     const request = {
       id: bidRequests[0].bidderRequestId,
       imp: bidRequests.map(slot => impression(slot)),
@@ -42,6 +42,7 @@ export const spec = {
       app: app(bidRequests),
       device: device(),
     };
+    applyGdpr(bidderRequest, request);
     return {
       method: 'POST',
       url: '//bid.contextweb.com/header/ortb',
@@ -65,8 +66,14 @@ export const spec = {
         url: '//bh.contextweb.com/visitormatch/prebid'
       }];
     }
+  },
+  transformBidParams: function(params, isOpenRtb) {
+    return utils.convertTypes({
+      'cf': 'string',
+      'cp': 'number',
+      'ct': 'number'
+    }, params);
   }
-
 };
 
 /**
@@ -230,7 +237,7 @@ function site(bidderRequest) {
         id: pubId.toString(),
       },
       ref: referrer(),
-      page: getTopWindowLocation().href,
+      page: utils.getTopWindowLocation().href,
     }
   }
   return null;
@@ -286,7 +293,7 @@ function parse(rawResponse) {
       return JSON.parse(rawResponse);
     }
   } catch (ex) {
-    logError('pulsepointLite.safeParse', 'ERROR', ex);
+    utils.logError('pulsepointLite.safeParse', 'ERROR', ex);
   }
   return null;
 }
@@ -302,6 +309,16 @@ function adSize(slot) {
     return [width, height];
   }
   return [1, 1];
+}
+
+/**
+ * Applies GDPR parameters to request.
+ */
+function applyGdpr(bidderRequest, ortbRequest) {
+  if (bidderRequest && bidderRequest.gdprConsent) {
+    ortbRequest.regs = { ext: { gdpr: bidderRequest.gdprConsent.gdprApplies ? 1 : 0 } };
+    ortbRequest.user = { ext: { consent: bidderRequest.gdprConsent.consentString } };
+  }
 }
 
 /**

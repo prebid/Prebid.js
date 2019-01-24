@@ -1,10 +1,10 @@
-import { videoAdapters } from './adaptermanager';
+import adapterManager from './adapterManager';
 import { getBidRequest, deepAccess, logError } from './utils';
 import { config } from '../src/config';
 import includes from 'core-js/library/fn/array/includes';
 
 const VIDEO_MEDIA_TYPE = 'video';
-const OUTSTREAM = 'outstream';
+export const OUTSTREAM = 'outstream';
 
 /**
  * Helper functions for working with video-enabled adUnits
@@ -14,7 +14,7 @@ export const videoAdUnit = adUnit => {
   const mediaTypes = deepAccess(adUnit, 'mediaTypes.video');
   return mediaType || mediaTypes;
 };
-export const videoBidder = bid => includes(videoAdapters, bid.bidder);
+export const videoBidder = bid => includes(adapterManager.videoAdapters, bid.bidder);
 export const hasNonVideoBidder = adUnit =>
   adUnit.bids.filter(bid => !videoBidder(bid)).length;
 
