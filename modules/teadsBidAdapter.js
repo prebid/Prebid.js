@@ -1,5 +1,5 @@
-import {registerBidder} from 'src/adapters/bidderFactory';
-const utils = require('src/utils');
+import {registerBidder} from '../src/adapters/bidderFactory';
+const utils = require('../src/utils');
 const BIDDER_CODE = 'teads';
 const ENDPOINT_URL = '//a.teads.tv/hb/bid-request';
 const gdprStatus = {
@@ -116,7 +116,7 @@ function buildRequestObject(bid) {
   let placementId = utils.getValue(bid.params, 'placementId');
   let pageId = utils.getValue(bid.params, 'pageId');
 
-  reqObj.sizes = utils.parseSizesInput(bid.sizes);
+  reqObj.sizes = getSizes(bid);
   reqObj.bidId = utils.getBidIdParameter('bidId', bid);
   reqObj.bidderRequestId = utils.getBidIdParameter('bidderRequestId', bid);
   reqObj.placementId = parseInt(placementId, 10);
@@ -125,6 +125,33 @@ function buildRequestObject(bid) {
   reqObj.auctionId = utils.getBidIdParameter('auctionId', bid);
   reqObj.transactionId = utils.getBidIdParameter('transactionId', bid);
   return reqObj;
+}
+
+function getSizes(bid) {
+  return utils.parseSizesInput(concatSizes(bid));
+}
+
+function concatSizes(bid) {
+  let playerSize = utils.deepAccess(bid, 'mediaTypes.video.playerSize');
+  let videoSizes = utils.deepAccess(bid, 'mediaTypes.video.sizes');
+  let bannerSizes = utils.deepAccess(bid, 'mediaTypes.banner.sizes');
+
+  if (utils.isArray(bannerSizes) || utils.isArray(playerSize) || utils.isArray(videoSizes)) {
+    let mediaTypesSizes = [bannerSizes, videoSizes, playerSize];
+    return mediaTypesSizes
+      .reduce(function(acc, currSize) {
+        if (utils.isArray(currSize)) {
+          if (utils.isArray(currSize[0])) {
+            currSize.forEach(function (childSize) { acc.push(childSize) })
+          } else {
+            acc.push(currSize);
+          }
+        }
+        return acc;
+      }, [])
+  } else {
+    return bid.sizes;
+  }
 }
 
 function _validateId(id) {

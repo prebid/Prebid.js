@@ -1,5 +1,5 @@
-import * as utils from 'src/utils';
-import {registerBidder} from 'src/adapters/bidderFactory';
+import * as utils from '../src/utils';
+import {registerBidder} from '../src/adapters/bidderFactory';
 const BIDDER_CODE = 'fairtrade';
 const ENDPOINT_URL = '//pool.fair-trademedia.com/hb';
 const TIME_TO_LIVE = 360;

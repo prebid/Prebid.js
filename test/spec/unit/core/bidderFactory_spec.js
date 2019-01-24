@@ -1,5 +1,5 @@
 import { newBidder, registerBidder } from 'src/adapters/bidderFactory';
-import adaptermanager from 'src/adaptermanager';
+import adapterManager from 'src/adapterManager';
 import * as ajax from 'src/ajax';
 import { expect } from 'chai';
 import { STATUS } from 'src/constants';
@@ -534,8 +534,8 @@ describe('registerBidder', function () {
   let aliasBidAdapterStub;
 
   beforeEach(function () {
-    registerBidAdapterStub = sinon.stub(adaptermanager, 'registerBidAdapter');
-    aliasBidAdapterStub = sinon.stub(adaptermanager, 'aliasBidAdapter');
+    registerBidAdapterStub = sinon.stub(adapterManager, 'registerBidAdapter');
+    aliasBidAdapterStub = sinon.stub(adapterManager, 'aliasBidAdapter');
   });
 
   afterEach(function () {
