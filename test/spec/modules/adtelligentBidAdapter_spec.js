@@ -121,7 +121,7 @@ const displayEqResponse = [{
   cpm: 0.9
 }];
 
-describe.only('adtelligentBidAdapter', function () { // todo remove only
+describe('adtelligentBidAdapter', function () { // todo remove only
   const adapter = newBidder(spec);
 
   describe('user syncs as image', function () {
