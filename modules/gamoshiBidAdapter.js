@@ -128,10 +128,11 @@ export const spec = {
     }
 
     const bids = response.seatbid.reduce((acc, seatBid) => acc.concat(seatBid.bid), []);
-    const outBids = [];
+    let outBids = [];
 
     bids.forEach(bid => {
       const outBid = {
+        adId: bidRequest.bidRequest.adUnitCode,
         requestId: bidRequest.bidRequest.bidId,
         cpm: bid.price,
         width: bid.w,
