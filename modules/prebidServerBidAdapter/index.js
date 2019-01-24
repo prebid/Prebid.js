@@ -483,6 +483,7 @@ const OPEN_RTB_PROTOCOL = {
       tmax: _s2sConfig.timeout,
       imp: imps,
       test: getConfig('debug') ? 1 : 0,
+      // ext.prebid.targeting.includewinners is always true for openrtb endpoints
       ext: {
         prebid: {
           targeting: {
@@ -492,6 +493,7 @@ const OPEN_RTB_PROTOCOL = {
       }
     };
 
+    // s2sConfig video.ext.prebid is passed through openrtb to PBS
     if (utils.deepAccess(_s2sConfig, 'video.ext.prebid')) {
       request.video = {
         ext: {
