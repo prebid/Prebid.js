@@ -3,16 +3,6 @@ import {registerBidder} from 'src/adapters/bidderFactory';
 import * as bidfactory from '../src/bidfactory';
 var CONSTANTS = require('src/constants.json');
 const BIDDER_CODE = 'tim';
-var bidsRequested;
-
-function find(array, property, value) {
-  for (let i = 0; i < array.length; i++) {
-    if (array[i][property] == value) {
-      return array[i];
-    }
-  }
-  return {};
-}
 
 function parseBidRequest(bidRequest) {
   let params = bidRequest.url.split('?')[1];
@@ -63,7 +53,6 @@ export const spec = {
   },
 
   buildRequests: function(validBidRequests, bidderRequest) {
-    bidsRequested = bidderRequest;
     var requests = [];
     for (var i = 0; i < validBidRequests.length; i++) {
       requests.push(this.createRTBRequestURL(validBidRequests[i]));
@@ -131,16 +120,13 @@ export const spec = {
       (!bidResp.seatbid || bidResp.seatbid.length === 0 || !bidResp.seatbid[0].bid || bidResp.seatbid[0].bid.length === 0)) {
       return [];
     }
-
     bidResp.seatbid[0].bid.forEach(function (bidderBid) {
       var responseCPM;
       var placementCode = '';
-      var bidSet = bidsRequested;
-      var bidRequested = find(bidSet.bids, 'bidId', bidderBid.impid);
-      if (bidRequested) {
+      if (bidRequest) {
         var bidResponse = bidfactory.createBid(1);
-        placementCode = bidRequested.placementCode;
-        bidRequested.status = CONSTANTS.STATUS.GOOD;
+        placementCode = bidRequest.placementCode;
+        bidRequest.status = CONSTANTS.STATUS.GOOD;
         responseCPM = parseFloat(bidderBid.price);
         if (responseCPM === 0) {
           var bid = bidfactory.createBid(2);
@@ -149,7 +135,7 @@ export const spec = {
           return bidResponses;
         }
         bidResponse.placementCode = placementCode;
-        bidResponse.size = bidRequested.sizes;
+        bidResponse.size = bidRequest.sizes;
         bidResponse.creativeId = bidderBid.id;
         bidResponse.bidderCode = BIDDER_CODE;
         bidResponse.cpm = responseCPM;
