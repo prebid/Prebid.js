@@ -650,13 +650,10 @@ describe('S2S Adapter', function () {
 
       const requestBid = JSON.parse(requests[0].requestBody);
 
-      expect(requestBid.ext).to.deep.equal({
-        prebid: {
-          aliases: {
-            brealtime: 'appnexus'
-          }
-        }
-      });
+      expect(requestBid.ext.prebid).to.hasOwnProperty('aliases');
+      expect(requestBid.ext.prebid.aliases).to.deep.equal({
+        brealtime: 'appnexus'
+      })
     });
 
     it('adds dynamic aliases to request', function () {
@@ -680,13 +677,10 @@ describe('S2S Adapter', function () {
 
       const requestBid = JSON.parse(requests[0].requestBody);
 
-      expect(requestBid.ext).to.deep.equal({
-        prebid: {
-          aliases: {
-            [alias]: 'appnexus'
-          }
-        }
-      });
+      expect(requestBid.ext.prebid).to.hasOwnProperty('aliases');
+      expect(requestBid.ext.prebid.aliases).to.deep.equal({
+        [alias]: 'appnexus'
+      })
     });
 
     it('converts appnexus params to expected format for PBS', function () {
@@ -801,6 +795,29 @@ describe('S2S Adapter', function () {
       const requestBid = JSON.parse(requests[0].requestBody);
       expect(requestBid.imp[0].ext.appnexus).to.haveOwnProperty('key');
       expect(requestBid.imp[0].ext.appnexus.key).to.be.equal('value')
+    });
+
+    it('always add ext.prebid.targeting.includewinners: true for ORTB', function () {
+      const s2sConfig = Object.assign({}, CONFIG, {
+        endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction',
+        adapterOptions: {
+          appnexus: {
+            key: 'value'
+          }
+        }
+      });
+      const _config = {
+        s2sConfig: s2sConfig,
+        device: { ifa: '6D92078A-8246-4BA4-AE5B-76104861E7DC' },
+        app: { bundle: 'com.test.app' },
+      };
+
+      config.setConfig(_config);
+      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      const requestBid = JSON.parse(requests[0].requestBody);
+
+      expect(requestBid.ext.prebid.targeting).to.haveOwnProperty('includewinners');
+      expect(requestBid.ext.prebid.targeting.includewinners).to.equal(true);
     });
   });
 
