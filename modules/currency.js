@@ -11,6 +11,7 @@ const CURRENCY_RATE_PRECISION = 4;
 var bidResponseQueue = [];
 var conversionCache = {};
 var currencyRatesLoaded = false;
+var needToCallForCurrencyFile = true;
 var adServerCurrency = 'USD';
 
 export var currencySupportEnabled = false;
@@ -56,6 +57,7 @@ export function setConfig(config) {
   if (typeof config.rates === 'object') {
     currencyRates.conversions = config.rates;
     currencyRatesLoaded = true;
+    needToCallForCurrencyFile = false; // don't call if rates are already specified
   }
 
   if (typeof config.defaultRates === 'object') {
@@ -122,7 +124,9 @@ function initCurrency(url) {
 
   hooks['addBidResponse'].addHook(addBidResponseHook, 100);
 
-  if (!currencyRates.conversions) {
+  // call for the file if we haven't already
+  if (needToCallForCurrencyFile) {
+    needToCallForCurrencyFile = false;
     ajax(url,
       {
         success: function (response) {
@@ -150,6 +154,7 @@ function resetCurrency() {
   conversionCache = {};
   currencySupportEnabled = false;
   currencyRatesLoaded = false;
+  needToCallForCurrencyFile = true;
   currencyRates = {};
   bidderCurrencyDefault = {};
 }
