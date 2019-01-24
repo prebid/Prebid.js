@@ -483,6 +483,13 @@ const OPEN_RTB_PROTOCOL = {
       tmax: _s2sConfig.timeout,
       imp: imps,
       test: getConfig('debug') ? 1 : 0,
+      ext: {
+        prebid: {
+          targeting: {
+            includewinners: true
+          }
+        }
+      }
     };
 
     _appendSiteAppDevice(request);
@@ -493,7 +500,7 @@ const OPEN_RTB_PROTOCOL = {
     }
 
     if (!utils.isEmpty(aliases)) {
-      request.ext = { prebid: { aliases } };
+      request.ext.prebid.aliases = aliases;
     }
 
     if (bidRequests && bidRequests[0].gdprConsent) {
