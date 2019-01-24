@@ -819,6 +819,34 @@ describe('S2S Adapter', function () {
       expect(requestBid.ext.prebid.targeting).to.haveOwnProperty('includewinners');
       expect(requestBid.ext.prebid.targeting.includewinners).to.equal(true);
     });
+
+    it('adds s2sConfig video.ext.prebid to request for ORTB', function () {
+      const s2sConfig = Object.assign({}, CONFIG, {
+        endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction',
+        video: {
+          ext: {
+            prebid: {
+              foo: 'bar'
+            }
+          }
+        }
+      });
+      const _config = {
+        s2sConfig: s2sConfig,
+        device: { ifa: '6D92078A-8246-4BA4-AE5B-76104861E7DC' },
+        app: { bundle: 'com.test.app' },
+      };
+
+      config.setConfig(_config);
+      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      const requestBid = JSON.parse(requests[0].requestBody);
+
+      expect(requestBid.video).to.haveOwnProperty('ext');
+      expect(requestBid.video.ext).to.haveOwnProperty('prebid');
+      expect(requestBid.video.ext.prebid).to.deep.equal({
+        foo: 'bar'
+      });
+    });
   });
 
   describe('response handler', function () {

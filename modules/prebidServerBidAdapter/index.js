@@ -492,6 +492,14 @@ const OPEN_RTB_PROTOCOL = {
       }
     };
 
+    if (utils.deepAccess(_s2sConfig, 'video.ext.prebid')) {
+      request.video = {
+        ext: {
+          prebid: utils.deepAccess(_s2sConfig, 'video.ext.prebid')
+        }
+      }
+    }
+
     _appendSiteAppDevice(request);
 
     const digiTrust = _getDigiTrustQueryParams();
