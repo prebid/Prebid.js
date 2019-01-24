@@ -739,63 +739,6 @@ describe('S2S Adapter', function () {
       }]);
     });
 
-    it('s2sConfig \'video.ext.prebid\' is passed through openrtb to PBS', function () {
-      const s2sConfig = Object.assign({}, CONFIG, {
-        endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
-      });
-      config.setConfig({s2sConfig: s2sConfig});
-
-      const myRequest = utils.deepClone(REQUEST);
-      adapter.callBids(myRequest, BID_REQUESTS, addBidResponse, done, ajax);
-      const requestBid = JSON.parse(requests[0].requestBody);
-    });
-
-    it('converts rubicon params to expected format for PBS', function () {
-      const s2sConfig = Object.assign({}, CONFIG, {
-        endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
-      });
-      config.setConfig({s2sConfig: s2sConfig});
-
-      const myRequest = utils.deepClone(REQUEST);
-      myRequest.ad_units[0].bids[0].params.usePaymentRule = true;
-
-      adapter.callBids(myRequest, BID_REQUESTS, addBidResponse, done, ajax);
-      const requestBid = JSON.parse(requests[0].requestBody);
-
-      expect(requestBid.imp[0].ext.appnexus).to.exist;
-      expect(requestBid.imp[0].ext.appnexus.placement_id).to.exist.and.to.equal(10433394);
-      expect(requestBid.imp[0].ext.appnexus.use_pmt_rule).to.exist.and.to.be.true;
-      expect(requestBid.imp[0].ext.appnexus.member).to.exist;
-      expect(requestBid.imp[0].ext.appnexus.keywords).to.exist.and.to.deep.equal([{
-        key: 'foo',
-        value: ['bar', 'baz']
-      }, {
-        key: 'fizz',
-        value: ['buzz']
-      }]);
-
-      config.resetConfig();
-      const oldS2sConfig = Object.assign({}, CONFIG);
-      config.setConfig({s2sConfig: oldS2sConfig});
-
-      const myRequest2 = utils.deepClone(REQUEST);
-      myRequest2.ad_units[0].bids[0].params.keywords = {
-        foo: ['bar', 'baz'],
-        fizz: ['buzz']
-      };
-
-      adapter.callBids(myRequest2, BID_REQUESTS, addBidResponse, done, ajax);
-      const requestBid2 = JSON.parse(requests[1].requestBody);
-
-      expect(requestBid2.ad_units[0].bids[0].params.keywords).to.exist.and.to.deep.equal([{
-        key: 'foo',
-        value: ['bar', 'baz']
-      }, {
-        key: 'fizz',
-        value: ['buzz']
-      }]);
-    });
-
     it('adds limit to the cookie_sync request if userSyncLimit is greater than 0', function () {
       let cookieSyncConfig = utils.deepClone(CONFIG);
       cookieSyncConfig.syncEndpoint = 'https://prebid.adnxs.com/pbs/v1/cookie_sync';
