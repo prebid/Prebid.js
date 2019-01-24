@@ -1,9 +1,9 @@
-import {config} from 'src/config';
-import {registerBidder} from 'src/adapters/bidderFactory';
-import * as utils from 'src/utils';
-import {userSync} from 'src/userSync';
-import {BANNER, VIDEO} from 'src/mediaTypes';
-import {parse} from 'src/url';
+import {config} from '../src/config';
+import {registerBidder} from '../src/adapters/bidderFactory';
+import * as utils from '../src/utils';
+import {userSync} from '../src/userSync';
+import {BANNER, VIDEO} from '../src/mediaTypes';
+import {parse} from '../src/url';
 
 const SUPPORTED_AD_TYPES = [BANNER, VIDEO];
 const BIDDER_CODE = 'openx';
