@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import { spec } from 'modules/appnexusBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
 import { deepClone } from 'src/utils';
+import { config } from 'src/config';
 
 const ENDPOINT = '//ib.adnxs.com/ut/v3/prebid';
 
@@ -226,6 +227,21 @@ describe('AppNexusAdapter', function () {
 
       expect(tagsWith15.length).to.equal(10);
       expect(tagsWith30.length).to.equal(10);
+    });
+
+    it('adds brand_category_exclusion to request when set', function() {
+      let bidRequest = Object.assign({}, bidRequests[0]);
+      sinon
+        .stub(config, 'getConfig')
+        .withArgs('adpod.brandCategoryExclusion')
+        .returns(true);
+
+      const request = spec.buildRequests([bidRequest]);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.brand_cat_uniqueness).to.equal(true);
+
+      config.getConfig.restore();
     });
 
     it('should attach native params to the request', function () {

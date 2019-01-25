@@ -1,5 +1,6 @@
 import { Renderer } from '../src/Renderer';
 import * as utils from '../src/utils';
+import { config } from '../src/config';
 import { registerBidder } from '../src/adapters/bidderFactory';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes';
 import find from 'core-js/library/fn/array/find';
@@ -134,6 +135,10 @@ export const spec = {
     const adPodBid = find(bidRequests, hasAdPod);
     if (adPodBid) {
       payload.tags = createAdPodRequest(tags, adPodBid);
+    }
+
+    if (config.getConfig('adpod.brandCategoryExclusion')) {
+      payload.brand_cat_uniqueness = true;
     }
 
     if (debugObjParams.enabled) {
