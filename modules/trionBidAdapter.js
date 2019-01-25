@@ -1,5 +1,5 @@
-import * as utils from 'src/utils';
-import {registerBidder} from 'src/adapters/bidderFactory';
+import * as utils from '../src/utils';
+import {registerBidder} from '../src/adapters/bidderFactory';
 
 const BID_REQUEST_BASE_URL = 'https://in-appadvertising.com/api/bidRequest';
 const USER_SYNC_URL = 'https://in-appadvertising.com/api/userSync.html';

@@ -1,9 +1,9 @@
-import * as utils from 'src/utils';
-import { registerBidder } from 'src/adapters/bidderFactory';
-import { BANNER, VIDEO } from 'src/mediaTypes';
+import * as utils from '../src/utils';
+import { registerBidder } from '../src/adapters/bidderFactory';
+import { BANNER, VIDEO } from '../src/mediaTypes';
 import find from 'core-js/library/fn/array/find';
-import { Renderer } from 'src/Renderer';
-import * as url from 'src/url';
+import { Renderer } from '../src/Renderer';
+import * as url from '../src/url';
 
 const BIDDER_CODE = 'zedo';
 const URL = '//z2.zedo.com/asw/fmh.json';

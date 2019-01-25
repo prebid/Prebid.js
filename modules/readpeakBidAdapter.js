@@ -1,7 +1,7 @@
-import { logError, getTopWindowLocation, replaceAuctionPrice, getTopWindowReferrer } from 'src/utils';
-import { registerBidder } from 'src/adapters/bidderFactory';
-import { config } from 'src/config';
-import { NATIVE } from 'src/mediaTypes';
+import { logError, getTopWindowLocation, replaceAuctionPrice, getTopWindowReferrer } from '../src/utils';
+import { registerBidder } from '../src/adapters/bidderFactory';
+import { config } from '../src/config';
+import { NATIVE } from '../src/mediaTypes';
 
 export const ENDPOINT = '//app.readpeak.com/header/prebid';
 
