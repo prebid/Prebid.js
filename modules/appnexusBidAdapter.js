@@ -119,6 +119,7 @@ export const spec = {
         version: '$prebid.version$'
       }
     };
+
     if (member > 0) {
       payload.member_id = member;
     }
@@ -128,6 +129,14 @@ export const spec = {
     }
     if (appIdObjBid) {
       payload.app = appIdObj;
+    }
+
+    const adPodBid = find(bidRequests, hasAdPod);
+    if (adPodBid) {
+      const numberOfPlacements = utils.getAdPodPlacementNumber(adPodBid.mediaTypes.video);
+      const maxDuration = utils.getAdPodMaxDuration(adPodBid.mediaTypes.video);
+      payload.tags = utils.fill(...tags, numberOfPlacements);
+      payload.tags.map(tag => setMaxDuration(tag, maxDuration));
     }
 
     if (debugObjParams.enabled) {
@@ -517,6 +526,19 @@ function hasAppId(bid) {
 
 function hasDebug(bid) {
   return !!bid.debug
+}
+
+function hasAdPod(bid) {
+  return (
+    bid.mediaTypes &&
+    bid.mediaTypes.video &&
+    bid.mediaTypes.video.context === 'adpod'
+  );
+}
+
+function setMaxDuration(tag, duration) {
+  if (utils.isEmpty(tag.video)) { tag.video = {}; }
+  tag.video.maxduration = duration;
 }
 
 function getRtbBid(tag) {
