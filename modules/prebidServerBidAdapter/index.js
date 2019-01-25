@@ -575,6 +575,11 @@ const OPEN_RTB_PROTOCOL = {
             bidRequest.serverResponseTimeMs = serverResponseTimeMs;
           }
 
+          // making response.ext.prebid.cache values available to prebid core, renderers, and analytics adapters
+          if (typeof utils.deepAccess(response, 'ext.prebid.cache') === 'object') {
+            bidObject.cache = utils.deepAccess(response, 'ext.prebid.cache');
+          }
+
           if (utils.deepAccess(bid, 'ext.prebid.type') === VIDEO) {
             bidObject.mediaType = VIDEO;
             if (bid.adm) { bidObject.vastXml = bid.adm; }
