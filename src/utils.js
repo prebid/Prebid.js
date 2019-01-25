@@ -1198,22 +1198,17 @@ export function fill(value, length) {
   let newArray = [];
 
   for (let i = 0; i < length; i++) {
-    newArray.push(value);
+    let valueToPush = isPlainObject(value) ? deepClone(value) : value;
+    newArray.push(valueToPush);
   }
 
   return newArray;
 }
 
-/**
- *
- */
-export function getAdPodPlacementNumber(videoParams) {
-  return videoParams.adPodDuration / Math.min(...videoParams.durationRange);
+export function getMinValueFromArray(array) {
+  return Math.min(...array);
 }
 
-/**
- *
- */
-export function getAdPodMaxDuration(videoParams) {
-  return Math.max(...videoParams.durationRange);
+export function getMaxValueFromArray(array) {
+  return Math.max(...array);
 }

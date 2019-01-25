@@ -133,10 +133,7 @@ export const spec = {
 
     const adPodBid = find(bidRequests, hasAdPod);
     if (adPodBid) {
-      const numberOfPlacements = utils.getAdPodPlacementNumber(adPodBid.mediaTypes.video);
-      const maxDuration = utils.getAdPodMaxDuration(adPodBid.mediaTypes.video);
-      payload.tags = utils.fill(...tags, numberOfPlacements);
-      payload.tags.map(tag => setMaxDuration(tag, maxDuration));
+      payload.tags = createAdPodRequest(tags, adPodBid);
     }
 
     if (debugObjParams.enabled) {
@@ -536,9 +533,44 @@ function hasAdPod(bid) {
   );
 }
 
-function setMaxDuration(tag, duration) {
+function createAdPodRequest(tags, adPodBid) {
+  const { durationRange, requireExactDuration } = adPodBid.mediaTypes.video;
+  const numberOfPlacements = getAdPodPlacementNumber(adPodBid.mediaTypes.video);
+  const maxDuration = utils.getMaxValueFromArray(durationRange);
+
+  let request = utils.fill(...tags, numberOfPlacements);
+
+  if (requireExactDuration) {
+    const divider = numberOfPlacements / durationRange.length;
+
+    for (let i = 1; i <= durationRange.length; i++) {
+      const end = i * divider;
+
+      request.slice(end - divider, end).map(tag => {
+        setVideoProperty(tag, 'minduration', durationRange[i - 1]);
+        setVideoProperty(tag, 'maxduration', durationRange[i - 1]);
+      });
+    }
+  } else {
+    request.map(tag => setVideoProperty(tag, 'maxduration', maxDuration));
+  }
+
+  return request;
+}
+
+function getAdPodPlacementNumber(videoParams, requireExactDuration) {
+  const { adPodDuration, durationRange } = videoParams;
+  const minAllowedDuration = utils.getMinValueFromArray(durationRange);
+  const numberOfPlacements = adPodDuration / minAllowedDuration;
+
+  return requireExactDuration
+    ? Math.max(numberOfPlacements, adPodDuration.length)
+    : numberOfPlacements;
+}
+
+function setVideoProperty(tag, key, value) {
   if (utils.isEmpty(tag.video)) { tag.video = {}; }
-  tag.video.maxduration = duration;
+  tag.video[key] = value;
 }
 
 function getRtbBid(tag) {
