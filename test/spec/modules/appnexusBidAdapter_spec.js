@@ -197,6 +197,37 @@ describe('AppNexusAdapter', function () {
       expect(payload.tags[0].video.maxduration).to.equal(30);
     });
 
+    it('should duplicate adpod placements when requireExactDuration is set', function() {
+      let bidRequest = Object.assign({},
+        bidRequests[0],
+        {
+          params: { placementId: '14542875' }
+        },
+        {
+          mediaTypes: {
+            video: {
+              context: 'adpod',
+              playerSize: [640, 480],
+              adPodDuration: 300,
+              durationRange: [15, 30],
+              requireExactDuration: true,
+            }
+          }
+        }
+      );
+
+      const request = spec.buildRequests([bidRequest]);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.tags.length).to.equal(20);
+
+      const tagsWith15 = payload.tags.filter(tag => tag.video.maxduration === 15);
+      const tagsWith30 = payload.tags.filter(tag => tag.video.maxduration === 30);
+
+      expect(tagsWith15.length).to.equal(10);
+      expect(tagsWith30.length).to.equal(10);
+    });
+
     it('should attach native params to the request', function () {
       let bidRequest = Object.assign({},
         bidRequests[0],
