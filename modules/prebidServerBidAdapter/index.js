@@ -494,12 +494,8 @@ const OPEN_RTB_PROTOCOL = {
     };
 
     // s2sConfig video.ext.prebid is passed through openrtb to PBS
-    if (utils.deepAccess(_s2sConfig, 'video.ext.prebid')) {
-      request.video = {
-        ext: {
-          prebid: utils.deepAccess(_s2sConfig, 'video.ext.prebid')
-        }
-      }
+    if (typeof utils.deepAccess(_s2sConfig, 'video.ext.prebid') === 'object') {
+      request.ext.prebid = utils.deepAccess(_s2sConfig, 'video.ext.prebid')
     }
 
     _appendSiteAppDevice(request);

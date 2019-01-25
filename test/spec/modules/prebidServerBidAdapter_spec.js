@@ -841,9 +841,9 @@ describe('S2S Adapter', function () {
       adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
       const requestBid = JSON.parse(requests[0].requestBody);
 
-      expect(requestBid.video).to.haveOwnProperty('ext');
-      expect(requestBid.video.ext).to.haveOwnProperty('prebid');
-      expect(requestBid.video.ext.prebid).to.deep.equal({
+      expect(requestBid).to.haveOwnProperty('ext');
+      expect(requestBid.ext).to.haveOwnProperty('prebid');
+      expect(requestBid.ext.prebid).to.deep.equal({
         foo: 'bar'
       });
     });
