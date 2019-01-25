@@ -45,6 +45,38 @@ var adUnits = [
         asi: 'Kp2O2tFig'
       }
     }]
+  },
+  // Native adUnit
+  {
+    code: 'prebid_native',
+    mediaTypes: {
+      native: {
+        image: {
+            required: true
+        },
+        title: {
+            required: true
+        },
+        sponsoredBy: {
+            required: true
+        },
+        clickUrl: {
+            required: true
+        },
+        body: {
+            required: true
+        },
+        icon: {
+            required: true
+        }
+      }
+    },
+    bids: [{
+      bidder: 'aja',
+      params: {
+        asi: 'tduu7HBmR'
+      }
+    }]
   }
 ];
 ```
