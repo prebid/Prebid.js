@@ -844,7 +844,10 @@ describe('S2S Adapter', function () {
       expect(requestBid).to.haveOwnProperty('ext');
       expect(requestBid.ext).to.haveOwnProperty('prebid');
       expect(requestBid.ext.prebid).to.deep.equal({
-        foo: 'bar'
+        foo: 'bar',
+        targeting: {
+          includewinners: true
+        }
       });
     });
   });
