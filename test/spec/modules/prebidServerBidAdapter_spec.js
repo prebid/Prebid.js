@@ -850,6 +850,38 @@ describe('S2S Adapter', function () {
         }
       });
     });
+
+    it('overrides request.ext.prebid properties using s2sConfig video.ext.prebid values for ORTB', function () {
+      const s2sConfig = Object.assign({}, CONFIG, {
+        endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction',
+        video: {
+          ext: {
+            prebid: {
+              targeting: {
+                includewinners: false
+              }
+            }
+          }
+        }
+      });
+      const _config = {
+        s2sConfig: s2sConfig,
+        device: { ifa: '6D92078A-8246-4BA4-AE5B-76104861E7DC' },
+        app: { bundle: 'com.test.app' },
+      };
+
+      config.setConfig(_config);
+      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      const requestBid = JSON.parse(requests[0].requestBody);
+
+      expect(requestBid).to.haveOwnProperty('ext');
+      expect(requestBid.ext).to.haveOwnProperty('prebid');
+      expect(requestBid.ext.prebid).to.deep.equal({
+        targeting: {
+          includewinners: false
+        }
+      });
+    });
   });
 
   describe('response handler', function () {
