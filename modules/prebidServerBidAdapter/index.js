@@ -571,15 +571,22 @@ const OPEN_RTB_PROTOCOL = {
             bidRequest.serverResponseTimeMs = serverResponseTimeMs;
           }
 
-          // making response.ext.prebid.cache values available to prebid core, renderers, and analytics adapters
-          if (typeof utils.deepAccess(response, 'ext.prebid.cache') === 'object') {
-            bidObject.cache = utils.deepAccess(response, 'ext.prebid.cache');
-          }
-
           if (utils.deepAccess(bid, 'ext.prebid.type') === VIDEO) {
             bidObject.mediaType = VIDEO;
+
+            // try to get cache values from 'response.ext.prebid.cache'
+            // else try 'bid.ext.prebid.targeting' as fallback
+            if (bid.ext.prebid.cache && typeof bid.ext.prebid.cache.vastXml === 'object' && bid.ext.prebid.cache.vastXml.cacheId && bid.ext.prebid.cache.vastXml.url) {
+              bidObject.videoCacheKey = bid.ext.prebid.cache.vastXml.cacheId;
+              bidObject.vastUrl = bid.ext.prebid.cache.vastXml.url;
+            } else if (typeof bid.ext.prebid.targeting === 'object' && bid.ext.prebid.targeting.hb_uuid && bid.ext.prebid.targeting.hb_cache_hostpath) {
+              bidObject.videoCacheKey = bid.ext.prebid.targeting.hb_uuid;
+              // build url using key and cache host
+              bidObject.vastUrl = `${bid.ext.prebid.targeting.hb_cache_hostpath}?uuid=${bid.ext.prebid.targeting.hb_uuid}`;
+            }
+
             if (bid.adm) { bidObject.vastXml = bid.adm; }
-            if (bid.nurl) { bidObject.vastUrl = bid.nurl; }
+            if (!bidObject.vastUrl && bid.nurl) { bidObject.vastUrl = bid.nurl; }
           } else { // banner
             if (bid.adm && bid.nurl) {
               bidObject.ad = bid.adm;

@@ -1118,22 +1118,54 @@ describe('S2S Adapter', function () {
       expect(response).to.have.property('cpm', 10);
     });
 
-    it('handles response cache object ext.prebid.cache', function () {
+    it('handles response cache from ext.prebid.cache.vastXml', function () {
       const s2sConfig = Object.assign({}, CONFIG, {
         endpoint: 'https://prebidserverurl/openrtb2/auction?querystring=param'
       });
       config.setConfig({s2sConfig});
-      const cacheResponse = utils.deepClone(RESPONSE_OPENRTB)
-      cacheResponse.ext.prebid = { cache: { cachedurl: 'https://foo.com/1234567890' } }
+      const cacheResponse = utils.deepClone(RESPONSE_OPENRTB_VIDEO);
+      cacheResponse.seatbid.forEach(item => {
+        item.bid[0].ext.prebid.cache = {
+          vastXml: {
+            cacheId: 'abcd1234',
+            url: 'https://prebid-cache.net/cache?uuid=abcd1234'
+          }
+        }
+      });
       server.respondWith(JSON.stringify(cacheResponse));
       adapter.callBids(VIDEO_REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
       server.respond();
 
       sinon.assert.calledOnce(addBidResponse);
       const response = addBidResponse.firstCall.args[1];
-      expect(response).to.haveOwnProperty('cache');
-      expect(typeof response.cache).to.equal('object');
-      expect(response.cache).to.deep.equal({ cachedurl: 'https://foo.com/1234567890' })
+
+      expect(response).to.have.property('statusMessage', 'Bid available');
+      expect(response).to.have.property('videoCacheKey', 'abcd1234');
+      expect(response).to.have.property('vastUrl', 'https://prebid-cache.net/cache?uuid=abcd1234');
+    });
+
+    it('handles response cache from ext.prebid.targeting', function () {
+      const s2sConfig = Object.assign({}, CONFIG, {
+        endpoint: 'https://prebidserverurl/openrtb2/auction?querystring=param'
+      });
+      config.setConfig({s2sConfig});
+      const cacheResponse = utils.deepClone(RESPONSE_OPENRTB_VIDEO);
+      cacheResponse.seatbid.forEach(item => {
+        item.bid[0].ext.prebid.targeting = {
+          hb_uuid: 'a5ad3993',
+          hb_cache_hostpath: 'https://prebid-cache.net/cache'
+        }
+      });
+      server.respondWith(JSON.stringify(cacheResponse));
+      adapter.callBids(VIDEO_REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      server.respond();
+
+      sinon.assert.calledOnce(addBidResponse);
+      const response = addBidResponse.firstCall.args[1];
+
+      expect(response).to.have.property('statusMessage', 'Bid available');
+      expect(response).to.have.property('videoCacheKey', 'a5ad3993');
+      expect(response).to.have.property('vastUrl', 'https://prebid-cache.net/cache?uuid=a5ad3993');
     });
 
     it('should log warning for unsupported bidder', function () {
