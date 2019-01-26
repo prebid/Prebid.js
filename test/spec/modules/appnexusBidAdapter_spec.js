@@ -617,6 +617,43 @@ describe('AppNexusAdapter', function () {
       expect(result[0]).to.have.property('mediaType', 'video');
     });
 
+    it('handles adpod responses', function () {
+      let response = {
+        'tags': [{
+          'uuid': '84ab500420319d',
+          'ads': [{
+            'ad_type': 'video',
+            'brand_category_id': 10,
+            'cpm': 0.500000,
+            'notify_url': 'imptracker.com',
+            'rtb': {
+              'video': {
+                'content': '<!-- Creative -->',
+                'duration_ms': 30000,
+              }
+            }
+          }]
+        }]
+      };
+
+      let bidderRequest = {
+        bids: [{
+          bidId: '84ab500420319d',
+          adUnitCode: 'code',
+          mediaTypes: {
+            video: {
+              context: 'adpod'
+            }
+          }
+        }]
+      };
+
+      let result = spec.interpretResponse({ body: response }, {bidderRequest});
+      expect(result[0].meta.primaryCatId).to.equal(10);
+      expect(result[0].video.context).to.equal('adpod');
+      expect(result[0].video.durationSeconds).to.equal(30);
+    });
+
     it('handles native responses', function () {
       let response1 = deepClone(response);
       response1.tags[0].ads[0].ad_type = 'native';

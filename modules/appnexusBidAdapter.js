@@ -327,6 +327,22 @@ function newBid(serverBid, rtbBid, bidderRequest) {
       vastImpUrl: rtbBid.notify_url,
       ttl: 3600
     });
+
+    const videoContext = utils.deepAccess(
+      bidderRequest.bids[0],
+      'mediaTypes.video.context'
+    );
+    if (videoContext === 'adpod') {
+      bid.meta = {
+        primaryCatId: rtbBid.brand_category_id
+      };
+
+      bid.video = {
+        context: 'adpod',
+        durationSeconds: rtbBid.rtb.video.duration_ms / 1000,
+      };
+    }
+
     // This supports Outstream Video
     if (rtbBid.renderer_url) {
       const rendererOptions = utils.deepAccess(
