@@ -72,6 +72,7 @@ export const spec = {
         bidfloorcur: 'USD',
         secure: startsWith(utils.getTopWindowUrl().toLowerCase(), 'http://') ? 0 : 1
       };
+
       if (!bidRequest.mediaTypes || bidRequest.mediaTypes.banner) {
         imp.banner = {
           w: bidRequest.sizes.length ? bidRequest.sizes[0][0] : 300,
@@ -79,7 +80,9 @@ export const spec = {
           pos: bidRequest.params.pos || 0,
           topframe: topFrame
         };
-      } else if (bidRequest.mediaTypes.video) {
+      }
+
+      if (bidRequest.mediaTypes.video) {
         imp.video = {
           w: bidRequest.sizes.length ? bidRequest.sizes[0][0] : 300,
           h: bidRequest.sizes.length ? bidRequest.sizes[0][1] : 250,
@@ -87,9 +90,12 @@ export const spec = {
           pos: bidRequest.params.pos || 0,
           topframe: topFrame
         };
-      } else {
+      }
+
+      if(!imp.banner && !imp.video){
         return;
       }
+
       req.imp.push(imp);
       return {
         method: 'POST',
@@ -115,9 +121,12 @@ export const spec = {
           netRevenue: true,
           currency: bid.cur || serverResponse.body.cur
         };
+
         if (!bidRequest.bidRequest.mediaTypes || bidRequest.bidRequest.mediaTypes.banner) {
           outBids.push(Object.assign({}, outBid, { mediaType: 'banner', ad: bid.adm }));
-        } else if (bidRequest.bidRequest.mediaTypes.video) {
+        }
+
+        if (bidRequest.bidRequest.mediaTypes.video) {
           const context = utils.deepAccess(bidRequest.bidRequest, 'mediaTypes.video.context');
           outBids.push(Object.assign({}, outBid, {
             mediaType: 'video',

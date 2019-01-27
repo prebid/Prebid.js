@@ -293,6 +293,7 @@ describe('YieldNexusAdapter', () => {
       expect(ad1.vastXml).to.equal(rtbResponse.seatbid[ 1 ].bid[ 0 ].adm);
       expect(ad1.vastUrl).to.equal(rtbResponse.seatbid[ 1 ].bid[ 0 ].ext.vast_url);
     });
+
     it('applies user-syncs', () => {
       const response = spec.getUserSyncs({}, [ { body: rtbResponse } ]);
       expect(Array.isArray(response)).to.equal(true);
@@ -305,6 +306,117 @@ describe('YieldNexusAdapter', () => {
       expect(response[ 2 ].url).to.equal(rtbResponse.seatbid[ 0 ].bid[ 0 ].ext.utrk[ 0 ].url + '?gc=missing');
       expect(response[ 3 ].type).to.equal(rtbResponse.seatbid[ 1 ].bid[ 0 ].ext.utrk[ 0 ].type);
       expect(response[ 3 ].url).to.equal(rtbResponse.seatbid[ 1 ].bid[ 0 ].ext.utrk[ 0 ].url + '?gc=missing');
+    });
+
+    it('supports outstream renderers', function () {
+      const videoResponse = {
+        'id': '64f32497-b2f7-48ec-9205-35fc39894d44',
+        'bidid': 'imp_5c24924de4b0d106447af333',
+        'cur': 'USD',
+        'seatbid': [
+          {
+            'seat': '3668',
+            'group': 0,
+            'bid': [
+              {
+                'id': 'gb_1',
+                'impid': 'afbb5852-7cea-4a81-aa9a-a41aab505c23',
+                'price': 5.0,
+                'adid': '1274',
+                'nurl': 'https://rtb.gamoshi.io/pix/1275/win_notice/imp_5c24924de4b0d106447af333/im.gif?r=imp_5c24924de4b0d106447af333&i=afbb5852-7cea-4a81-aa9a-a41aab505c23&a=1274&b=gb_1&p=${AUCTION_PRICE}',
+                'adomain': [],
+                'adm': '<?xml version=\"1.0\" encoding=\"UTF-8\"?><VAST version=\"2.0\">\n<Ad id=\"afbb5852-7cea-4a81-aa9a-a41aab505c23\">\n<Wrapper>\n<AdSystem version=\"2.0\"><![CDATA[gamoshi.io]]></AdSystem>\n<VASTAdTagURI><![CDATA[https://static.gambid.io/demo/vast.xml]]></VASTAdTagURI>\n<Error><![CDATA[https://rtb.gamoshi.io/pix/1275/verror/imp_5c24924de4b0d106447af333/im.gif?r=imp_5c24924de4b0d106447af333&i=afbb5852-7cea-4a81-aa9a-a41aab505c23&a=1274&b=gb_1&error=[ERRORCODE]]]></Error>\n<Impression><![CDATA[https://rtb.gamoshi.io/pix/1275/vimp/imp_5c24924de4b0d106447af333/im.gif?r=imp_5c24924de4b0d106447af333&i=afbb5852-7cea-4a81-aa9a-a41aab505c23&a=1274&b=gb_1]]></Impression>\n<Creatives>\n<Creative AdID=\"1274\">\n<Linear>\n<TrackingEvents>\n<Tracking event=\"start\"><![CDATA[https://rtb.gamoshi.io/pix/1275/start/imp_5c24924de4b0d106447af333/im.gif?r=imp_5c24924de4b0d106447af333&i=afbb5852-7cea-4a81-aa9a-a41aab505c23&a=1274&b=gb_1]]></Tracking>\n<Tracking event=\"firstQuartile\"><![CDATA[https://rtb.gamoshi.io/pix/1275/fq/imp_5c24924de4b0d106447af333/im.gif?r=imp_5c24924de4b0d106447af333&i=afbb5852-7cea-4a81-aa9a-a41aab505c23&a=1274&b=gb_1]]></Tracking>\n<Tracking event=\"midpoint\"><![CDATA[https://rtb.gamoshi.io/pix/1275/mp/imp_5c24924de4b0d106447af333/im.gif?r=imp_5c24924de4b0d106447af333&i=afbb5852-7cea-4a81-aa9a-a41aab505c23&a=1274&b=gb_1]]></Tracking>\n<Tracking event=\"thirdQuartile\"><![CDATA[https://rtb.gamoshi.io/pix/1275/tq/imp_5c24924de4b0d106447af333/im.gif?r=imp_5c24924de4b0d106447af333&i=afbb5852-7cea-4a81-aa9a-a41aab505c23&a=1274&b=gb_1]]></Tracking>\n<Tracking event=\"complete\"><![CDATA[https://rtb.gamoshi.io/pix/1275/comp/imp_5c24924de4b0d106447af333/im.gif?r=imp_5c24924de4b0d106447af333&i=afbb5852-7cea-4a81-aa9a-a41aab505c23&a=1274&b=gb_1]]></Tracking>\n</TrackingEvents>\n</Linear>\n</Creative>\n</Creatives>\n</Wrapper>\n</Ad>\n</VAST>\n',
+                'cid': '3668',
+                'crid': '1274',
+                'cat': [],
+                'attr': [],
+                'h': 250,
+                'w': 300,
+                'ext': {
+                  'vast_url': 'https://rtb.gamoshi.io/pix/1275/vast_o/imp_5c24924de4b0d106447af333/im.xml?r=imp_5c24924de4b0d106447af333&i=afbb5852-7cea-4a81-aa9a-a41aab505c23&a=1274&b=gb_1&w=300&h=250&vatu=aHR0cHM6Ly9zdGF0aWMuZ2FtYmlkLmlvL2RlbW8vdmFzdC54bWw&vwarv',
+                  'imptrackers': [
+                    'https://rtb.gamoshi.io/pix/1275/imp/imp_5c24924de4b0d106447af333/im.gif?r=imp_5c24924de4b0d106447af333&i=afbb5852-7cea-4a81-aa9a-a41aab505c23&a=1274&b=gb_1']
+                }
+              }
+            ]
+          }
+        ],
+        'ext': {
+          'utrk': [{
+            'type': 'image',
+            'url': 'https://rtb.gamoshi.io/pix/1275/scm?cb=1545900621675'
+          }]
+        }
+      };
+      const videoRequest = utils.deepClone(videoBidRequest);
+      videoRequest.mediaTypes.video.context = 'outstream';
+      const result = spec.interpretResponse({body: videoResponse}, {bidRequest: videoRequest});
+      expect(result[0].renderer).to.not.equal(undefined);
+    });
+
+    it('supports gdpr consent', function () {
+      let videoResponse = {
+        'id': '64f32497-b2f7-48ec-9205-35fc39894d44',
+        'bidid': 'imp_5c24924de4b0d106447af333',
+        'cur': 'USD',
+        'seatbid': [
+          {
+            'seat': '3668',
+            'group': 0,
+            'bid': [
+              {
+                'id': 'gb_1',
+                'impid': 'afbb5852-7cea-4a81-aa9a-a41aab505c23',
+                'price': 5.0,
+                'adid': '1274',
+                'nurl': 'https://rtb.gamoshi.io/pix/1275/win_notice/imp_5c24924de4b0d106447af333/im.gif?r=imp_5c24924de4b0d106447af333&i=afbb5852-7cea-4a81-aa9a-a41aab505c23&a=1274&b=gb_1&p=${AUCTION_PRICE}',
+                'adomain': [],
+                'adm': '<?xml version=\"1.0\" encoding=\"UTF-8\"?><VAST version=\"2.0\">\n<Ad id=\"afbb5852-7cea-4a81-aa9a-a41aab505c23\">\n<Wrapper>\n<AdSystem version=\"2.0\"><![CDATA[gamoshi.io]]></AdSystem>\n<VASTAdTagURI><![CDATA[https://static.gambid.io/demo/vast.xml]]></VASTAdTagURI>\n<Error><![CDATA[https://rtb.gamoshi.io/pix/1275/verror/imp_5c24924de4b0d106447af333/im.gif?r=imp_5c24924de4b0d106447af333&i=afbb5852-7cea-4a81-aa9a-a41aab505c23&a=1274&b=gb_1&error=[ERRORCODE]]]></Error>\n<Impression><![CDATA[https://rtb.gamoshi.io/pix/1275/vimp/imp_5c24924de4b0d106447af333/im.gif?r=imp_5c24924de4b0d106447af333&i=afbb5852-7cea-4a81-aa9a-a41aab505c23&a=1274&b=gb_1]]></Impression>\n<Creatives>\n<Creative AdID=\"1274\">\n<Linear>\n<TrackingEvents>\n<Tracking event=\"start\"><![CDATA[https://rtb.gamoshi.io/pix/1275/start/imp_5c24924de4b0d106447af333/im.gif?r=imp_5c24924de4b0d106447af333&i=afbb5852-7cea-4a81-aa9a-a41aab505c23&a=1274&b=gb_1]]></Tracking>\n<Tracking event=\"firstQuartile\"><![CDATA[https://rtb.gamoshi.io/pix/1275/fq/imp_5c24924de4b0d106447af333/im.gif?r=imp_5c24924de4b0d106447af333&i=afbb5852-7cea-4a81-aa9a-a41aab505c23&a=1274&b=gb_1]]></Tracking>\n<Tracking event=\"midpoint\"><![CDATA[https://rtb.gamoshi.io/pix/1275/mp/imp_5c24924de4b0d106447af333/im.gif?r=imp_5c24924de4b0d106447af333&i=afbb5852-7cea-4a81-aa9a-a41aab505c23&a=1274&b=gb_1]]></Tracking>\n<Tracking event=\"thirdQuartile\"><![CDATA[https://rtb.gamoshi.io/pix/1275/tq/imp_5c24924de4b0d106447af333/im.gif?r=imp_5c24924de4b0d106447af333&i=afbb5852-7cea-4a81-aa9a-a41aab505c23&a=1274&b=gb_1]]></Tracking>\n<Tracking event=\"complete\"><![CDATA[https://rtb.gamoshi.io/pix/1275/comp/imp_5c24924de4b0d106447af333/im.gif?r=imp_5c24924de4b0d106447af333&i=afbb5852-7cea-4a81-aa9a-a41aab505c23&a=1274&b=gb_1]]></Tracking>\n</TrackingEvents>\n</Linear>\n</Creative>\n</Creatives>\n</Wrapper>\n</Ad>\n</VAST>\n',
+                'cid': '3668',
+                'crid': '1274',
+                'cat': [],
+                'attr': [],
+                'h': 250,
+                'w': 300,
+                'ext': {
+                  'vast_url': 'https://rtb.gamoshi.io/pix/1275/vast_o/imp_5c24924de4b0d106447af333/im.xml?r=imp_5c24924de4b0d106447af333&i=afbb5852-7cea-4a81-aa9a-a41aab505c23&a=1274&b=gb_1&w=300&h=250&vatu=aHR0cHM6Ly9zdGF0aWMuZ2FtYmlkLmlvL2RlbW8vdmFzdC54bWw&vwarv',
+                  'imptrackers': [
+                    'https://rtb.gamoshi.io/pix/1275/imp/imp_5c24924de4b0d106447af333/im.gif?r=imp_5c24924de4b0d106447af333&i=afbb5852-7cea-4a81-aa9a-a41aab505c23&a=1274&b=gb_1']
+                }
+              }
+            ]
+          }
+        ],
+        'ext': {
+          'utrk': [{
+            'type': 'image',
+            'url': 'https://rtb.gamoshi.io/pix/1275/scm?cb=1545900621675'
+          }]
+        }
+      };
+      let gdprConsent = {
+        gdprApplies: true,
+        consentString: 'consent string'
+      };
+      let result = spec.getUserSyncs({}, [{body: videoResponse}], gdprConsent);
+      expect(result).to.be.an('array');
+      expect(result.length).to.equal(1);
+      expect(result[0].type).to.equal('image');
+      expect(result[0].url).to.equal('https://rtb.gamoshi.io/pix/1275/scm?cb=1545900621675&gc=consent%20string');
+
+      gdprConsent.gdprApplies = false;
+      result = spec.getUserSyncs({}, [{body: videoResponse}], gdprConsent);
+      expect(result).to.be.an('array');
+      expect(result.length).to.equal(1);
+      expect(result[0].type).to.equal('image');
+      expect(result[0].url).to.equal('https://rtb.gamoshi.io/pix/1275/scm?cb=1545900621675&gc=missing');
+
+      videoResponse.ext.utrk[0].url = 'https://rtb.gamoshi.io/pix/1275/scm';
+      result = spec.getUserSyncs({}, [{body: videoResponse}], gdprConsent);
+      expect(result).to.be.an('array');
+      expect(result.length).to.equal(1);
+      expect(result[0].type).to.equal('image');
+      expect(result[0].url).to.equal('https://rtb.gamoshi.io/pix/1275/scm?gc=missing');
     });
   });
 });
