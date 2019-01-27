@@ -10,26 +10,28 @@ export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
-  isBidRequestValid ({ bidId, params }) {
-    return Boolean(bidId && params && !isNaN(params.placementId))
+  isBidRequestValid: function (opts) {
+    return Boolean(opts.bidId && opts.params && !isNaN(opts.params.placementId))
   },
 
-  buildRequests (validBidRequests = []) {
+  buildRequests: function (validBidRequests) {
+    validBidRequests = validBidRequests || []
     let winTop = window
     try {
       window.top.location.toString()
       winTop = window.top
-    }
-    catch (e) { utils.logMessage(e) }
+    } catch (e) { utils.logMessage(e) }
 
     const location = utils.getTopWindowLocation()
     const placements = []
 
-    for (const { bidId, params } of validBidRequests) {
+    for (let i = 0; i < validBidRequests.length; i++) {
+      const p = validBidRequests[i]
+
       placements.push({
-        placementId: params.placementId,
-        bidId: bidId,
-        traffic: params.traffic || BANNER
+        placementId: p.params.placementId,
+        bidId: p.bidId,
+        traffic: p.params.traffic || BANNER
       })
     }
 
@@ -48,10 +50,12 @@ export const spec = {
     }
   },
 
-  interpretResponse ({ body }) {
+  interpretResponse: function (opts) {
+    const body = opts.body
     const response = []
 
-    for (const item of body) {
+    for (let i = 0; i < body.length; i++) {
+      const item = body[i]
       if (isBidResponseValid(item)) {
         delete item.mediaType
         response.push(item)
@@ -61,10 +65,9 @@ export const spec = {
     return response
   },
 
-  getUserSyncs (syncOptions, serverResponses) {
+  getUserSyncs: function (syncOptions, serverResponses) {
     return [{ type: 'image', url: URL_SYNC }]
   }
-
 }
 
 registerBidder(spec)
