@@ -262,7 +262,7 @@ describe('GamoshiAdapter', function () {
               'price': 2.016,
               'adid': '579ef31bfa788b9d2000d562',
               'nurl': 'https://rtb.gamoshi.io/pix/monitoring/win_notice/imp_5b05b9fde4b09084267a556f/im.gif?r=imp_5b05b9fde4b09084267a556f&i=1&a=579ef31bfa788b9d2000d562&b=0&p=${AUCTION_PRICE}',
-              'adm': '<img width="300px" height="250px" src="https://dummyimage.com/300x250/030d00/52b31e.gif&text=Gamoshi+Demo" onclick="window.open(\'https://www.gamoshi.com\')"> <img width="0px" height="0px" src="https://rtb.gamoshi.io/pix/monitoring/imp/imp_5b05b9fde4b09084267a556f/im.gif?r=imp_5b05b9fde4b09084267a556f&i=1&a=579ef31bfa788b9d2000d562&b=0"/>',
+              'adm': '<?xml version="1.0" encoding="UTF-8"?><VAST version="2.0">↵<Ad id="99aaef40-bbc0-4829-8599-f5313ea27ee9">↵<Wrapper>↵<AdSystem version="2.0"><![CDATA[gamoshi.io]]></AdSystem>↵<VASTAdTagURI><![CDATA[https://static.gambid.io/demo/vast.xml]]></VASTAdTagURI>↵<Error><![CDATA[https://rtb.gamoshi.io/pix/1707/verror/imp_5c4dcd32e4b044440442782e/im.gif?r=imp_5c4dcd32e4b044440442782e&i=99aaef40-bbc0-4829-8599-f5313ea27ee9&a=1274&b=gb_1&error=[ERRORCODE]]]></Error>↵<Impression><![CDATA[https://rtb.gamoshi.io/pix/1707/vimp/imp_5c4dcd32e4b044440442782e/im.gif?r=imp_5c4dcd32e4b044440442782e&i=99aaef40-bbc0-4829-8599-f5313ea27ee9&a=1274&b=gb_1]]></Impression>↵<Creatives>↵<Creative AdID="1274">↵<Linear>↵<TrackingEvents>↵<Tracking event="start"><![CDATA[https://rtb.gamoshi.io/pix/1707/start/imp_5c4dcd32e4b044440442782e/im.gif?r=imp_5c4dcd32e4b044440442782e&i=99aaef40-bbc0-4829-8599-f5313ea27ee9&a=1274&b=gb_1]]></Tracking>↵<Tracking event="firstQuartile"><![CDATA[https://rtb.gamoshi.io/pix/1707/fq/imp_5c4dcd32e4b044440442782e/im.gif?r=imp_5c4dcd32e4b044440442782e&i=99aaef40-bbc0-4829-8599-f5313ea27ee9&a=1274&b=gb_1]]></Tracking>↵<Tracking event="midpoint"><![CDATA[https://rtb.gamoshi.io/pix/1707/mp/imp_5c4dcd32e4b044440442782e/im.gif?r=imp_5c4dcd32e4b044440442782e&i=99aaef40-bbc0-4829-8599-f5313ea27ee9&a=1274&b=gb_1]]></Tracking>↵<Tracking event="thirdQuartile"><![CDATA[https://rtb.gamoshi.io/pix/1707/tq/imp_5c4dcd32e4b044440442782e/im.gif?r=imp_5c4dcd32e4b044440442782e&i=99aaef40-bbc0-4829-8599-f5313ea27ee9&a=1274&b=gb_1]]></Tracking>↵<Tracking event="complete"><![CDATA[https://rtb.gamoshi.io/pix/1707/comp/imp_5c4dcd32e4b044440442782e/im.gif?r=imp_5c4dcd32e4b044440442782e&i=99aaef40-bbc0-4829-8599-f5313ea27ee9&a=1274&b=gb_1]]></Tracking>↵</TrackingEvents>↵</Linear>↵</Creative>↵</Creatives>↵</Wrapper></Ad>↵</VAST>',
               'adomain': ['aaa.com'],
               'cid': '579ef268fa788b9d2000d55c',
               'crid': '579ef31bfa788b9d2000d562',
@@ -321,38 +321,28 @@ describe('GamoshiAdapter', function () {
     it('aggregates banner bids from all seat bids', function () {
       const response = spec.interpretResponse({body: rtbResponse}, {bidRequest: bannerBidRequest});
       expect(Array.isArray(response)).to.equal(true);
-      expect(response.length).to.equal(2);
+      expect(response.length).to.equal(1);
 
       const ad0 = response[0], ad1 = response[1];
       expect(ad0.requestId).to.equal(bannerBidRequest.bidId);
-      expect(ad0.cpm).to.equal(rtbResponse.seatbid[0].bid[0].price);
-      expect(ad0.width).to.equal(rtbResponse.seatbid[0].bid[0].w);
-      expect(ad0.height).to.equal(rtbResponse.seatbid[0].bid[0].h);
+      expect(ad0.cpm).to.equal(rtbResponse.seatbid[1].bid[0].price);
+      expect(ad0.width).to.equal(rtbResponse.seatbid[1].bid[0].w);
+      expect(ad0.height).to.equal(rtbResponse.seatbid[1].bid[0].h);
       expect(ad0.ttl).to.equal(60 * 10);
-      expect(ad0.creativeId).to.equal(rtbResponse.seatbid[0].bid[0].crid);
+      expect(ad0.creativeId).to.equal(rtbResponse.seatbid[1].bid[0].crid);
       expect(ad0.netRevenue).to.equal(true);
-      expect(ad0.currency).to.equal(rtbResponse.seatbid[0].bid[0].cur || rtbResponse.cur || 'USD');
-      expect(ad0.ad).to.equal(rtbResponse.seatbid[0].bid[0].adm);
+      expect(ad0.currency).to.equal(rtbResponse.seatbid[1].bid[0].cur || rtbResponse.cur || 'USD');
+      expect(ad0.ad).to.equal(rtbResponse.seatbid[1].bid[0].adm);
       expect(ad0.vastXml).to.be.an('undefined');
-
-      expect(ad1.requestId).to.equal(bannerBidRequest.bidId);
-      expect(ad1.cpm).to.equal(rtbResponse.seatbid[1].bid[0].price);
-      expect(ad1.width).to.equal(rtbResponse.seatbid[1].bid[0].w);
-      expect(ad1.height).to.equal(rtbResponse.seatbid[1].bid[0].h);
-      expect(ad1.ttl).to.equal(60 * 10);
-      expect(ad1.creativeId).to.equal(rtbResponse.seatbid[1].bid[0].crid);
-      expect(ad1.netRevenue).to.equal(true);
-      expect(ad1.currency).to.equal(rtbResponse.seatbid[1].bid[0].cur || rtbResponse.cur || 'USD');
-      expect(ad1.ad).to.equal(rtbResponse.seatbid[1].bid[0].adm);
-      expect(ad1.vastXml).to.be.an('undefined');
+      expect(ad0.vastUrl).to.be.an('undefined');
     });
 
     it('aggregates video bids from all seat bids', function () {
       const response = spec.interpretResponse({body: rtbResponse}, {bidRequest: videoBidRequest});
       expect(Array.isArray(response)).to.equal(true);
-      expect(response.length).to.equal(2);
+      expect(response.length).to.equal(1);
 
-      const ad0 = response[0], ad1 = response[1];
+      const ad0 = response[0];
       expect(ad0.requestId).to.equal(videoBidRequest.bidId);
       expect(ad0.cpm).to.equal(rtbResponse.seatbid[0].bid[0].price);
       expect(ad0.width).to.equal(rtbResponse.seatbid[0].bid[0].w);
@@ -364,18 +354,6 @@ describe('GamoshiAdapter', function () {
       expect(ad0.ad).to.be.an('undefined');
       expect(ad0.vastXml).to.equal(rtbResponse.seatbid[0].bid[0].adm);
       expect(ad0.vastUrl).to.equal(rtbResponse.seatbid[0].bid[0].ext.vast_url);
-
-      expect(ad1.requestId).to.equal(videoBidRequest.bidId);
-      expect(ad1.cpm).to.equal(rtbResponse.seatbid[1].bid[0].price);
-      expect(ad1.width).to.equal(rtbResponse.seatbid[1].bid[0].w);
-      expect(ad1.height).to.equal(rtbResponse.seatbid[1].bid[0].h);
-      expect(ad1.ttl).to.equal(60 * 10);
-      expect(ad1.creativeId).to.equal(rtbResponse.seatbid[1].bid[0].crid);
-      expect(ad1.netRevenue).to.equal(true);
-      expect(ad1.currency).to.equal(rtbResponse.seatbid[1].bid[0].cur || rtbResponse.cur || 'USD');
-      expect(ad1.ad).to.be.an('undefined');
-      expect(ad1.vastXml).to.equal(rtbResponse.seatbid[1].bid[0].adm);
-      expect(ad1.vastUrl).to.equal(rtbResponse.seatbid[1].bid[0].ext.vast_url);
     });
 
     it('aggregates user-sync pixels', function () {

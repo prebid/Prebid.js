@@ -23,6 +23,19 @@ export const helper = {
   getTopWindowDomain: function (url) {
     const domainStart = url.indexOf('://') + '://'.length;
     return url.substring(domainStart, url.indexOf('/', domainStart) < 0 ? url.length : url.indexOf('/', domainStart));
+  },
+
+  getMediaType: function (bid) {
+    if (bid.ext) {
+      if (bid.ext.media_type) {
+        return bid.ext.media_type;
+      } else if (bid.ext.vast_url) {
+        return 'video';
+      } else {
+        return 'banner';
+      }
+    }
+    return 'banner';
   }
 };
 
@@ -141,18 +154,22 @@ export const spec = {
         creativeId: bid.crid,
         netRevenue: true,
         currency: bid.cur || response.cur,
-        adUnitCode: bidRequest.bidRequest.adUnitCode
+        adUnitCode: bidRequest.bidRequest.adUnitCode,
+        mediaType: helper.getMediaType(bid)
+
       };
-      if (!bidRequest.bidRequest.mediaTypes || bidRequest.bidRequest.mediaTypes.banner) {
-        outBids.push(Object.assign({}, outBid, {mediaType: 'banner', ad: bid.adm}));
-      } else if (bidRequest.bidRequest.mediaTypes.video) {
-        const context = utils.deepAccess(bidRequest.bidRequest, 'mediaTypes.video.context');
-        outBids.push(Object.assign({}, outBid, {
-          mediaType: 'video',
-          vastUrl: bid.ext.vast_url,
-          vastXml: bid.adm,
-          renderer: context === 'outstream' ? newRenderer(bidRequest.bidRequest, bid) : undefined
-        }));
+
+      if (utils.deepAccess(bidRequest.bidRequest, 'mediaTypes.' + outBid.mediaType)) {
+        if (outBid.mediaType === 'banner') {
+          outBids.push(Object.assign({}, outBid, {ad: bid.adm}));
+        } else if (outBid.mediaType === 'video') {
+          const context = utils.deepAccess(bidRequest.bidRequest, 'mediaTypes.video.context');
+          outBids.push(Object.assign({}, outBid, {
+            vastUrl: bid.ext.vast_url,
+            vastXml: bid.adm,
+            renderer: context === 'outstream' ? newRenderer(bidRequest.bidRequest, bid) : undefined
+          }));
+        }
       }
     });
     return outBids;
