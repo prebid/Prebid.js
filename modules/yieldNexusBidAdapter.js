@@ -9,6 +9,19 @@ function startsWith(str, search) {
   return str.substr(0, search.length) === search;
 }
 
+function getMediaType(bid) {
+  if (bid.ext) {
+    if (bid.ext.media_type) {
+      return bid.ext.media_type.toLowerCase();
+    } else if (bid.ext.vast_url) {
+      return VIDEO;
+    } else {
+      return BANNER;
+    }
+  }
+  return BANNER;
+}
+
 export const spec = {
   code: 'yieldnexus',
   aliases: [],
@@ -119,19 +132,21 @@ export const spec = {
           ttl: 15 * 60,
           creativeId: bid.crid,
           netRevenue: true,
-          currency: bid.cur || serverResponse.body.cur
+          currency: bid.cur || serverResponse.body.cur,
+          mediaType: getMediaType(bid)
         };
 
-        if (bidRequest.bidRequest.mediaTypes.video) {
-          const context = utils.deepAccess(bidRequest.bidRequest, 'mediaTypes.video.context');
-          outBids.push(Object.assign({}, outBid, {
-            mediaType: 'video',
-            vastUrl: bid.ext.vast_url,
-            vastXml: bid.adm,
-            renderer: context === 'outstream' ? newRenderer(bidRequest.bidRequest, bid) : undefined
-          }));
-        } else if (!bidRequest.bidRequest.mediaTypes || bidRequest.bidRequest.mediaTypes.banner) {
-          outBids.push(Object.assign({}, outBid, {mediaType: 'banner', ad: bid.adm}));
+        if (utils.deepAccess(bidRequest.bidRequest, 'mediaTypes.' + outBid.mediaType)) {
+          if (outBid.mediaType === VIDEO) {
+            const context = utils.deepAccess(bidRequest.bidRequest, 'mediaTypes.video.context');
+            outBids.push(Object.assign({}, outBid, {
+              vastUrl: bid.ext.vast_url,
+              vastXml: bid.adm,
+              renderer: context === 'outstream' ? newRenderer(bidRequest.bidRequest, bid) : undefined
+            }));
+          } else if (outBid.mediaType === BANNER) {
+            outBids.push(Object.assign({}, outBid, {ad: bid.adm}));
+          }
         }
       });
     }
