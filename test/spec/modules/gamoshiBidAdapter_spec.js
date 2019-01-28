@@ -323,7 +323,7 @@ describe('GamoshiAdapter', function () {
       expect(Array.isArray(response)).to.equal(true);
       expect(response.length).to.equal(1);
 
-      const ad0 = response[0], ad1 = response[1];
+      const ad0 = response[0];
       expect(ad0.requestId).to.equal(bannerBidRequest.bidId);
       expect(ad0.cpm).to.equal(rtbResponse.seatbid[1].bid[0].price);
       expect(ad0.width).to.equal(rtbResponse.seatbid[1].bid[0].w);

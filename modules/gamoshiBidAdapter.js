@@ -2,6 +2,7 @@ import * as utils from '../src/utils';
 import {registerBidder} from '../src/adapters/bidderFactory';
 import {config} from '../src/config';
 import {Renderer} from '../src/Renderer';
+import {BANNER, VIDEO} from "../src/mediaTypes";
 
 const ENDPOINTS = {
   'cleanmedia': 'https://bidder.cleanmediaads.com',
@@ -28,14 +29,14 @@ export const helper = {
   getMediaType: function (bid) {
     if (bid.ext) {
       if (bid.ext.media_type) {
-        return bid.ext.media_type;
+        return bid.ext.media_type.toLowerCase();
       } else if (bid.ext.vast_url) {
-        return 'video';
+        return VIDEO;
       } else {
-        return 'banner';
+        return BANNER;
       }
     }
-    return 'banner';
+    return BANNER;
   }
 };
 
@@ -160,9 +161,9 @@ export const spec = {
       };
 
       if (utils.deepAccess(bidRequest.bidRequest, 'mediaTypes.' + outBid.mediaType)) {
-        if (outBid.mediaType === 'banner') {
+        if (outBid.mediaType === BANNER) {
           outBids.push(Object.assign({}, outBid, {ad: bid.adm}));
-        } else if (outBid.mediaType === 'video') {
+        } else if (outBid.mediaType === VIDEO) {
           const context = utils.deepAccess(bidRequest.bidRequest, 'mediaTypes.video.context');
           outBids.push(Object.assign({}, outBid, {
             vastUrl: bid.ext.vast_url,
