@@ -134,7 +134,7 @@ describe('adtelligentBidAdapter', function () { // todo remove only
   })
 
   describe('user syncs as iframe', function () {
-    it('should be returned if pixel enabled', function () {
+    it('should be returned if iframe enabled', function () {
       const syncs = spec.getUserSyncs({iframeEnabled: true}, [{body: SERVER_DISPLAY_RESPONSE_WITH_MIXED_SYNCS}]);
 
       expect(syncs.map(s => s.url)).to.deep.equal([SERVER_DISPLAY_RESPONSE_WITH_MIXED_SYNCS.cookieURLs[1]]);
@@ -143,7 +143,7 @@ describe('adtelligentBidAdapter', function () { // todo remove only
   })
 
   describe('user syncs with both types', function () {
-    it('should be returned if pixel enabled', function () {
+    it('should be returned if pixel and iframe enabled', function () {
       const syncs = spec.getUserSyncs({
         iframeEnabled: true,
         pixelEnabled: true
