@@ -144,16 +144,24 @@ export const spec = {
         slotData.language = params.video.language;
       }
 
-      if (params.inventory && typeof params.inventory === 'object') {
-        slotData.inventory = params.inventory;
-      }
+      // Add visitor and inventory FPD values
+      // Frank expects the vales in each inventory and visitor fpd to be an array. so params.inventory.something === [] of some sort, otherwise it 400s
+      ['inventory', 'visitor'].forEach(function(key) {
+        if (params[key] && typeof params[key] === 'object') {
+          slotData[key] = {};
+          Object.keys(params[key]).forEach(function(fpdKey) {
+            let value = params[key][fpdKey];
+            if (Array.isArray(value)) {
+              slotData[key][fpdKey] = value;
+            } else if ((typeof value === 'string' && value !== '') || typeof value === 'number') {
+              slotData[key][fpdKey] = [value];
+            }
+          });
+        }
+      });
 
       if (params.keywords && Array.isArray(params.keywords)) {
         slotData.keywords = params.keywords;
-      }
-
-      if (params.visitor && typeof params.visitor === 'object') {
-        slotData.visitor = params.visitor;
       }
 
       data.slots.push(slotData);

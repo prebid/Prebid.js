@@ -274,7 +274,7 @@ describe('the rubicon adapter', function () {
             userId: '12346',
             keywords: ['a', 'b', 'c'],
             inventory: {
-              rating: '5-star',
+              rating: '5-star', // This actually should not be sent to frank!! causes 400
               prodtype: ['tech', 'mobile']
             },
             visitor: {
@@ -1146,7 +1146,7 @@ describe('the rubicon adapter', function () {
           expect(slot.size_id).to.equal(201);
 
           expect(slot).to.have.property('inventory').that.is.an('object');
-          expect(slot.inventory).to.have.property('rating').that.equals('5-star');
+          expect(slot.inventory).to.have.property('rating').that.deep.equals(['5-star']);
           expect(slot.inventory).to.have.property('prodtype').that.deep.equals(['tech', 'mobile']);
 
           expect(slot).to.have.property('keywords')
@@ -1155,8 +1155,8 @@ describe('the rubicon adapter', function () {
             .that.deep.equals(['a', 'b', 'c']);
 
           expect(slot).to.have.property('visitor').that.is.an('object');
-          expect(slot.visitor).to.have.property('ucat').that.equals('new');
-          expect(slot.visitor).to.have.property('lastsearch').that.equals('iphone');
+          expect(slot.visitor).to.have.property('ucat').that.deep.equals(['new']);
+          expect(slot.visitor).to.have.property('lastsearch').that.deep.equals(['iphone']);
           expect(slot.visitor).to.have.property('likes').that.deep.equals(['sports', 'video games']);
         });
 
@@ -1210,7 +1210,7 @@ describe('the rubicon adapter', function () {
           expect(slot.size_id).to.equal(201);
 
           expect(slot).to.have.property('inventory').that.is.an('object');
-          expect(slot.inventory).to.have.property('rating').that.equals('5-star');
+          expect(slot.inventory).to.have.property('rating').that.deep.equals(['5-star']);
           expect(slot.inventory).to.have.property('prodtype').that.deep.equals(['tech', 'mobile']);
 
           expect(slot).to.have.property('keywords')
@@ -1219,8 +1219,8 @@ describe('the rubicon adapter', function () {
             .that.deep.equals(['a', 'b', 'c']);
 
           expect(slot).to.have.property('visitor').that.is.an('object');
-          expect(slot.visitor).to.have.property('ucat').that.equals('new');
-          expect(slot.visitor).to.have.property('lastsearch').that.equals('iphone');
+          expect(slot.visitor).to.have.property('ucat').that.deep.equals(['new']);
+          expect(slot.visitor).to.have.property('lastsearch').that.deep.equals(['iphone']);
           expect(slot.visitor).to.have.property('likes').that.deep.equals(['sports', 'video games']);
         });
 
