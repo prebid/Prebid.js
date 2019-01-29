@@ -172,7 +172,7 @@ describe('AppNexusAdapter', function () {
       });
     });
 
-    it('should duplicate adpod placements and set correct maxduration', function() {
+    it('should duplicate adpod placements into batches and set correct maxduration', function() {
       let bidRequest = Object.assign({},
         bidRequests[0],
         {
@@ -191,11 +191,18 @@ describe('AppNexusAdapter', function () {
       );
 
       const request = spec.buildRequests([bidRequest]);
-      const payload = JSON.parse(request.data);
+      const payload1 = JSON.parse(request[0].data);
+      const payload2 = JSON.parse(request[1].data);
 
-      expect(payload.tags.length).to.equal(20);
-      expect(payload.tags[0]).to.deep.equal(payload.tags[1]);
-      expect(payload.tags[0].video.maxduration).to.equal(30);
+      // 300 / 15 = 20 total
+      expect(payload1.tags.length).to.equal(15);
+      expect(payload2.tags.length).to.equal(5);
+
+      expect(payload1.tags[0]).to.deep.equal(payload1.tags[1]);
+      expect(payload1.tags[0].video.maxduration).to.equal(30);
+
+      expect(payload2.tags[0]).to.deep.equal(payload1.tags[1]);
+      expect(payload2.tags[0].video.maxduration).to.equal(30);
     });
 
     it('should duplicate adpod placements when requireExactDuration is set', function() {
@@ -217,16 +224,55 @@ describe('AppNexusAdapter', function () {
         }
       );
 
+      // 20 total placements with 15 max impressions = 2 requests
       const request = spec.buildRequests([bidRequest]);
-      const payload = JSON.parse(request.data);
+      expect(request.length).to.equal(2);
 
-      expect(payload.tags.length).to.equal(20);
+      // 20 spread over 2 requests = 15 in first request, 5 in second
+      const payload1 = JSON.parse(request[0].data);
+      const payload2 = JSON.parse(request[1].data);
+      expect(payload1.tags.length).to.equal(15);
+      expect(payload2.tags.length).to.equal(5);
 
-      const tagsWith15 = payload.tags.filter(tag => tag.video.maxduration === 15);
-      const tagsWith30 = payload.tags.filter(tag => tag.video.maxduration === 30);
+      // 10 placements should have max/min at 15
+      // 10 placemenst should have max/min at 30
+      const payload1tagsWith15 = payload1.tags.filter(tag => tag.video.maxduration === 15);
+      const payload1tagsWith30 = payload1.tags.filter(tag => tag.video.maxduration === 30);
+      expect(payload1tagsWith15.length).to.equal(10);
+      expect(payload1tagsWith30.length).to.equal(5);
 
-      expect(tagsWith15.length).to.equal(10);
-      expect(tagsWith30.length).to.equal(10);
+      // 5 placemenst with min/max at 30 were in the first request
+      // so 5 remaining should be in the second
+      const payload2tagsWith30 = payload2.tags.filter(tag => tag.video.maxduration === 30);
+      expect(payload2tagsWith30.length).to.equal(5);
+    });
+
+    it('should break adpod request into batches', function() {
+      let bidRequest = Object.assign({},
+        bidRequests[0],
+        {
+          params: { placementId: '14542875' }
+        },
+        {
+          mediaTypes: {
+            video: {
+              context: 'adpod',
+              playerSize: [640, 480],
+              adPodDuration: 225,
+              durationRange: [5],
+            }
+          }
+        }
+      );
+
+      const request = spec.buildRequests([bidRequest]);
+      const payload1 = JSON.parse(request[0].data);
+      const payload2 = JSON.parse(request[1].data);
+      const payload3 = JSON.parse(request[2].data);
+
+      expect(payload1.tags.length).to.equal(15);
+      expect(payload2.tags.length).to.equal(15);
+      expect(payload3.tags.length).to.equal(15);
     });
 
     it('adds brand_category_exclusion to request when set', function() {

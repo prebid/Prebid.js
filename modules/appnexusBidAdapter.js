@@ -33,6 +33,7 @@ const NATIVE_MAPPING = {
   displayUrl: 'displayurl'
 };
 const SOURCE = 'pbjs';
+const MAX_IMPS_PER_REQUEST = 15;
 
 export const spec = {
   code: BIDDER_CODE,
@@ -132,11 +133,6 @@ export const spec = {
       payload.app = appIdObj;
     }
 
-    const adPodBid = find(bidRequests, hasAdPod);
-    if (adPodBid) {
-      payload.tags = createAdPodRequest(tags, adPodBid);
-    }
-
     if (config.getConfig('adpod.brandCategoryExclusion')) {
       payload.brand_cat_uniqueness = true;
     }
@@ -164,13 +160,15 @@ export const spec = {
       payload.referrer_detection = refererinfo;
     }
 
-    const payloadString = JSON.stringify(payload);
-    return {
-      method: 'POST',
-      url: URL,
-      data: payloadString,
-      bidderRequest
-    };
+    const adPodBid = find(bidRequests, hasAdPod);
+    if (adPodBid) {
+      const adPodTags = createAdPodRequest(tags, adPodBid);
+      const nonAdPodTags = payload.tags.filter(tag => tag.uuid !== adPodBid.bidId);
+      payload.tags = [...nonAdPodTags, ...adPodTags];
+    }
+
+    const request = formatRequest(payload, bidderRequest);
+    return request;
   },
 
   /**
@@ -268,6 +266,35 @@ function deleteValues(keyPairObj) {
   }
 }
 
+function formatRequest(payload, bidderRequest) {
+  let request = [];
+
+  if (payload.tags.length > MAX_IMPS_PER_REQUEST) {
+    const clonedPayload = utils.deepClone(payload);
+
+    utils.chunk(payload.tags, MAX_IMPS_PER_REQUEST).forEach(tags => {
+      clonedPayload.tags = tags;
+      const payloadString = JSON.stringify(clonedPayload);
+      request.push({
+        method: 'POST',
+        url: URL,
+        data: payloadString,
+        bidderRequest
+      });
+    });
+  } else {
+    const payloadString = JSON.stringify(payload);
+    request = {
+      method: 'POST',
+      url: URL,
+      data: payloadString,
+      bidderRequest
+    };
+  }
+
+  return request;
+}
+
 function newRenderer(adUnitCode, rtbBid, rendererOptions = {}) {
   const renderer = Renderer.install({
     id: rtbBid.renderer_id,
@@ -328,6 +355,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
       ttl: 3600
     });
 
+    // TODO: check bidRequest variable instead of [0]
     const videoContext = utils.deepAccess(
       bidderRequest.bids[0],
       'mediaTypes.video.context'
@@ -559,7 +587,8 @@ function createAdPodRequest(tags, adPodBid) {
   const numberOfPlacements = getAdPodPlacementNumber(adPodBid.mediaTypes.video);
   const maxDuration = utils.getMaxValueFromArray(durationRange);
 
-  let request = utils.fill(...tags, numberOfPlacements);
+  const tagToDuplicate = tags.filter(tag => tag.uuid === adPodBid.bidId);
+  let request = utils.fill(...tagToDuplicate, numberOfPlacements);
 
   if (requireExactDuration) {
     const divider = numberOfPlacements / durationRange.length;
