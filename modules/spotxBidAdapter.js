@@ -1,7 +1,7 @@
-import * as utils from 'src/utils';
-import { Renderer } from 'src/Renderer';
-import { registerBidder } from 'src/adapters/bidderFactory';
-import { VIDEO } from 'src/mediaTypes';
+import * as utils from '../src/utils';
+import { Renderer } from '../src/Renderer';
+import { registerBidder } from '../src/adapters/bidderFactory';
+import { VIDEO } from '../src/mediaTypes';
 
 const BIDDER_CODE = 'spotx';
 const URL = '//search.spotxchange.com/openrtb/2.3/dados/';
