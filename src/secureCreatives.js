@@ -63,7 +63,7 @@ function sendAdToCreative(adObject, remoteDomain, source) {
     source.postMessage(JSON.stringify({
       message: 'Prebid Response',
       ad: replaceAuctionPrice(ad, cpm),
-      adUrl,
+      adUrl: replaceAuctionPrice(adUrl, cpm),
       adId,
       width,
       height
