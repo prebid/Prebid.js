@@ -155,6 +155,22 @@ window.apntag = {
         }
       })
     }
+  },
+  getTag: function(tagId) {
+    return this.tags[tagId];
+  },
+  modifyTag: function(tagId, params) {
+    var output = {};
+
+    utils._each(this.tags[tagId], function(tag, id) {
+      output[id] = tag;
+    });
+
+    utils._each(params, function(param, id) {
+      output[id] = param;
+    });
+
+    this.tags[tagId] = output;
   }
 }
 
@@ -2060,6 +2076,27 @@ describe('Unit: Prebid Module', function () {
       }
       targeting.setTargetingForAst();
       expect(newAdserverTargeting).to.deep.equal(window.apntag.tags[adUnitCode].keywords);
+    });
+
+    it('should reset targeting for appnexus apntag object', function () {
+      const bids = auctionManagerInstance.getBidsReceived();
+      const adUnitCode = '/19968336/header-bid-tag-0';
+
+      var expectedAdserverTargeting = bids[0].adserverTargeting;
+      var newAdserverTargeting = {};
+      let regex = /pt[0-9]/;
+
+      for (var key in expectedAdserverTargeting) {
+        if (key.search(regex) < 0) {
+          newAdserverTargeting[key.toUpperCase()] = expectedAdserverTargeting[key];
+        } else {
+          newAdserverTargeting[key] = expectedAdserverTargeting[key];
+        }
+      }
+      targeting.setTargetingForAst();
+      expect(newAdserverTargeting).to.deep.equal(window.apntag.tags[adUnitCode].keywords);
+      targeting.resetPresetTargetingAST();
+      expect(window.apntag.tags[adUnitCode].keywords).to.deep.equal({});
     });
 
     it('should not find ' + CONSTANTS.TARGETING_KEYS.AD_ID + ' key in lowercase for all bidders', function() {
