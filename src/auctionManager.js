@@ -101,7 +101,7 @@ export function newAuctionManager() {
   }
 
   auctionManager.getLastAuctionId = function() {
-    return _auctions[_auctions.length - 1].getAuctionId()
+    return _auctions.length && _auctions[_auctions.length - 1].getAuctionId()
   };
 
   function _addAuction(auction) {
