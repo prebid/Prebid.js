@@ -1039,6 +1039,10 @@ export function getAdUnits() {
   ];
 };
 
+export function getLastAuctionId() {
+  return '654321';
+}
+
 export function getBidResponsesFromAPI() {
   return {
     '/19968336/header-bid-tag-0': {
