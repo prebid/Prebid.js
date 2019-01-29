@@ -1,7 +1,7 @@
 // see http://prebid.org/dev-docs/integrate-with-the-prebid-analytics-api.html
 import adapter from 'src/AnalyticsAdapter';
 import CONSTANTS from 'src/constants.json';
-import * as adaptermanager from 'src/adaptermanager';
+import adapterManager from 'src/adapterManager';
 import * as utils from 'src/utils';
 import {ajax} from 'src/ajax';
 
@@ -72,22 +72,24 @@ function sendAll() {
   let events = analyticsAdapter.context.queue.popAll();
   if (isValid(events)) {
     let req = Object.assign({}, analyticsAdapter.context.requestTemplate, {hb_ev: events});
-    ajax(
-      `${analyticsAdapter.context.ajaxUrl}/commercial/api/hb`,
-      () => {
-      },
-      JSON.stringify(req),
-      {
-        method: 'POST',
-        contentType: 'text/plain; charset=utf-8'
-      }
-    );
+    analyticsAdapter.ajaxCall(JSON.stringify(req));
   }
 }
 
 function isValid(events) {
   return events.length > 0 && (events[0].ev === 'init' || events[0].ev === 'bidwon');
 }
+
+analyticsAdapter.ajaxCall = function ajaxCall(data) {
+  const url = `${analyticsAdapter.context.ajaxUrl}/commercial/api/hb`;
+  const callback = () => {
+  };
+  const options = {
+    method: 'POST',
+    contentType: 'text/plain; charset=utf-8'
+  };
+  ajax(url, callback, data, options);
+};
 
 function trackBidWon(args) {
   const event = {ev: 'bidwon'};
@@ -105,14 +107,17 @@ function trackAuctionInit(args) {
 }
 
 function trackBidRequest(args) {
-  return args.bids.map(bid => {
-    const event = {ev: 'request'};
-    setSafely(event, 'n', args.bidderCode);
-    setSafely(event, 'sid', bid.adUnitCode);
-    setSafely(event, 'bid', bid.bidId);
-    setSafely(event, 'st', args.start);
-    return event;
-  });
+  if (args.bids) {
+    return args.bids.map(bid => {
+      const event = {ev: 'request'};
+      setSafely(event, 'n', args.bidderCode);
+      setSafely(event, 'sid', bid.adUnitCode);
+      setSafely(event, 'bid', bid.bidId);
+      setSafely(event, 'st', args.start);
+      return event;
+    });
+  }
+  return null;
 }
 
 function trackBidResponse(args) {
@@ -204,7 +209,7 @@ analyticsAdapter.enableAnalytics = (config) => {
   analyticsAdapter.originEnableAnalytics(config);
 };
 
-adaptermanager.registerAnalyticsAdapter({
+adapterManager.registerAnalyticsAdapter({
   adapter: analyticsAdapter,
   code: 'gu'
 });

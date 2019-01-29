@@ -1,13 +1,13 @@
-import Adapter from 'src/adapter';
-import bidfactory from 'src/bidfactory';
-import * as utils from 'src/utils';
-import { ajax } from 'src/ajax';
-import { STATUS, S2S, EVENTS } from 'src/constants';
-import adaptermanager from 'src/adaptermanager';
-import { config } from 'src/config';
-import { VIDEO } from 'src/mediaTypes';
-import { isValid } from 'src/adapters/bidderFactory';
-import events from 'src/events';
+import Adapter from '../../src/adapter';
+import { createBid } from '../../src/bidfactory';
+import * as utils from '../../src/utils';
+import { ajax } from '../../src/ajax';
+import { STATUS, S2S, EVENTS } from '../../src/constants';
+import adapterManager from '../../src/adapterManager';
+import { config } from '../../src/config';
+import { VIDEO } from '../../src/mediaTypes';
+import { isValid } from '../../src/adapters/bidderFactory';
+import events from '../../src/events';
 import includes from 'core-js/library/fn/array/includes';
 import { S2S_VENDORS } from './config.js';
 
@@ -21,11 +21,39 @@ const DEFAULT_S2S_NETREVENUE = true;
 
 let _s2sConfig;
 
+/**
+ * @typedef {Object} AdapterOptions
+ * @summary s2sConfig parameter that adds arguments to resulting OpenRTB payload that goes to Prebid Server
+ * @example
+ * // example of multiple bidder configuration
+ * pbjs.setConfig({
+ *    s2sConfig: {
+ *       adapterOptions: {
+ *          rubicon: {singleRequest: false}
+ *          appnexus: {key: "value"}
+ *       }
+ *    }
+ * });
+ */
+
+/**
+ * @typedef {Object} S2SDefaultConfig
+ * @property {boolean} enabled
+ * @property {number} timeout
+ * @property {number} maxBids
+ * @property {string} adapter
+ * @property {AdapterOptions} adapterOptions
+ */
+
+/**
+ * @type {S2SDefaultConfig}
+ */
 const s2sDefaultConfig = {
   enabled: false,
   timeout: 1000,
   maxBids: 1,
-  adapter: 'prebidServer'
+  adapter: 'prebidServer',
+  adapterOptions: {}
 };
 
 config.setDefaults({
@@ -43,6 +71,7 @@ config.setDefaults({
  * @property {boolean} [cacheMarkup] whether to cache the adm result
  * @property {string} [adapter] adapter code to use for S2S
  * @property {string} [syncEndpoint] endpoint URL for syncing cookies
+ * @property {AdapterOptions} [adapterOptions] adds arguments to resulting OpenRTB payload to Prebid Server
  */
 function setS2sConfig(options) {
   if (options.defaultVendor) {
@@ -100,6 +129,11 @@ function queueSync(bidderCodes, gdprConsent) {
     account: _s2sConfig.accountId
   };
 
+  let userSyncLimit = _s2sConfig.userSyncLimit;
+  if (utils.isNumber(userSyncLimit) && userSyncLimit > 0) {
+    payload['limit'] = userSyncLimit;
+  }
+
   if (gdprConsent) {
     // only populate gdpr field if we know CMP returned consent information (ie didn't timeout or have an error)
     if (typeof gdprConsent.consentString !== 'undefined') {
@@ -116,7 +150,7 @@ function queueSync(bidderCodes, gdprConsent) {
     (response) => {
       try {
         response = JSON.parse(response);
-        response.bidder_status.forEach(bidder => doBidderSync(bidder.usersync.type, bidder.usersync.url, bidder.bidder));
+        doAllSyncs(response.bidder_status);
       } catch (e) {
         utils.logError(e);
       }
@@ -128,24 +162,40 @@ function queueSync(bidderCodes, gdprConsent) {
     });
 }
 
+function doAllSyncs(bidders) {
+  if (bidders.length === 0) {
+    return;
+  }
+
+  const thisSync = bidders.pop();
+  if (thisSync.no_cookie) {
+    doBidderSync(thisSync.usersync.type, thisSync.usersync.url, thisSync.bidder, doAllSyncs.bind(null, bidders));
+  } else {
+    doAllSyncs(bidders);
+  }
+}
+
 /**
  * Run a cookie sync for the given type, url, and bidder
  *
  * @param {string} type the type of sync, "image", "redirect", "iframe"
  * @param {string} url the url to sync
  * @param {string} bidder name of bidder doing sync for
+ * @param {function} done an exit callback; to signify this pixel has either: finished rendering or something went wrong
  */
-function doBidderSync(type, url, bidder) {
+function doBidderSync(type, url, bidder, done) {
   if (!url) {
     utils.logError(`No sync url for bidder "${bidder}": ${url}`);
+    done();
   } else if (type === 'image' || type === 'redirect') {
     utils.logMessage(`Invoking image pixel user sync for bidder: "${bidder}"`);
-    utils.triggerPixel(url);
+    utils.triggerPixel(url, done);
   } else if (type == 'iframe') {
     utils.logMessage(`Invoking iframe user sync for bidder: "${bidder}"`);
-    utils.insertUserSyncIframe(url);
+    utils.insertUserSyncIframe(url, done);
   } else {
     utils.logError(`User sync type "${type}" not supported for bidder: "${bidder}"`);
+    done();
   }
 }
 
@@ -156,7 +206,7 @@ function doBidderSync(type, url, bidder) {
  */
 function doClientSideSyncs(bidders) {
   bidders.forEach(bidder => {
-    let clientAdapter = adaptermanager.getBidAdapter(bidder);
+    let clientAdapter = adapterManager.getBidAdapter(bidder);
     if (clientAdapter && clientAdapter.registerSyncs) {
       clientAdapter.registerSyncs([]);
     }
@@ -230,7 +280,7 @@ const LEGACY_PROTOCOL = {
   buildRequest(s2sBidRequest, bidRequests, adUnits) {
     adUnits.forEach(adUnit => {
       adUnit.bids.forEach(bid => {
-        const adapter = adaptermanager.bidderRegistry[bid.bidder];
+        const adapter = adapterManager.bidderRegistry[bid.bidder];
         if (adapter && adapter.getSpec().transformBidParams) {
           bid.params = adapter.getSpec().transformBidParams(bid.params, isOpenRtb());
         }
@@ -296,7 +346,7 @@ const LEGACY_PROTOCOL = {
           const bidRequest = utils.getBidRequest(bidObj.bid_id, bidderRequests);
           const cpm = bidObj.price;
           const status = cpm !== 0 ? STATUS.GOOD : STATUS.NO_BID;
-          let bidObject = bidfactory.createBid(status, bidRequest);
+          let bidObject = createBid(status, bidRequest);
 
           bidObject.source = TYPE;
           bidObject.creative_id = bidObj.creative_id;
@@ -376,8 +426,8 @@ const OPEN_RTB_PROTOCOL = {
         bidIdMap[`${adUnit.code}${bid.bidder}`] = bid.bid_id;
 
         // check for and store valid aliases to add to the request
-        if (adaptermanager.aliasRegistry[bid.bidder]) {
-          aliases[bid.bidder] = adaptermanager.aliasRegistry[bid.bidder];
+        if (adapterManager.aliasRegistry[bid.bidder]) {
+          aliases[bid.bidder] = adapterManager.aliasRegistry[bid.bidder];
         }
       });
 
@@ -411,11 +461,11 @@ const OPEN_RTB_PROTOCOL = {
 
       // get bidder params in form { <bidder code>: {...params} }
       const ext = adUnit.bids.reduce((acc, bid) => {
-        const adapter = adaptermanager.bidderRegistry[bid.bidder];
+        const adapter = adapterManager.bidderRegistry[bid.bidder];
         if (adapter && adapter.getSpec().transformBidParams) {
           bid.params = adapter.getSpec().transformBidParams(bid.params, isOpenRtb());
         }
-        acc[bid.bidder] = bid.params;
+        acc[bid.bidder] = (_s2sConfig.adapterOptions && _s2sConfig.adapterOptions[bid.bidder]) ? Object.assign({}, bid.params, _s2sConfig.adapterOptions[bid.bidder]) : bid.params;
         return acc;
       }, {});
 
@@ -496,7 +546,7 @@ const OPEN_RTB_PROTOCOL = {
 
           const cpm = bid.price;
           const status = cpm !== 0 ? STATUS.GOOD : STATUS.NO_BID;
-          let bidObject = bidfactory.createBid(status, bidRequest || {
+          let bidObject = createBid(status, bidRequest || {
             bidder: seatbid.seat,
             src: TYPE
           });
@@ -646,4 +696,4 @@ export function PrebidServer() {
   });
 }
 
-adaptermanager.registerBidAdapter(new PrebidServer(), 'prebidServer');
+adapterManager.registerBidAdapter(new PrebidServer(), 'prebidServer');
