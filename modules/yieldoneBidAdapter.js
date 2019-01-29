@@ -1,7 +1,7 @@
-import * as utils from 'src/utils';
-import {config} from 'src/config';
-import {registerBidder} from 'src/adapters/bidderFactory';
-import { BANNER, VIDEO } from 'src/mediaTypes';
+import * as utils from '../src/utils';
+import {config} from '../src/config';
+import {registerBidder} from '../src/adapters/bidderFactory';
+import { BANNER, VIDEO } from '../src/mediaTypes';
 
 const BIDDER_CODE = 'yieldone';
 const ENDPOINT_URL = '//y.one.impact-ad.jp/h_bid';

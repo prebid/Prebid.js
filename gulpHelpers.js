@@ -66,7 +66,7 @@ module.exports = {
     try {
       var absoluteModulePath = path.join(__dirname, MODULE_PATH);
       internalModules = fs.readdirSync(absoluteModulePath)
-        .filter(file => !(/(^|\/)\.[^\/\.]/g).test(file))
+        .filter(file => (/^[^\.]+(\.js)?$/).test(file))
         .reduce((memo, file) => {
           var moduleName = file.split(new RegExp('[.\\' + path.sep + ']'))[0];
           var modulePath = path.join(absoluteModulePath, file);

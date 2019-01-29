@@ -3,8 +3,8 @@
  * stored in the page's domain.  When the module is included, an id is generated if needed,
  * persisted as a cookie, and automatically appended to all the bidRequest as bid.crumbs.pubcid.
  */
-import * as utils from 'src/utils'
-import { config } from 'src/config';
+import * as utils from '../src/utils'
+import { config } from '../src/config';
 
 const COOKIE_NAME = '_pubcid';
 const DEFAULT_EXPIRES = 2628000; // 5-year worth of minutes
