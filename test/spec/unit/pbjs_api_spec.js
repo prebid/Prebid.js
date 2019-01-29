@@ -790,6 +790,12 @@ describe('Unit: Prebid Module', function () {
   });
 
   describe('getBidResponses', function () {
+    it('should return empty obj when last auction Id had no responses', function () {
+      auctionManager.getLastAuctionId = () => 999994;
+      var result = $$PREBID_GLOBAL$$.getBidResponses();
+      assert.deepEqual(result, {}, 'expected bid responses are returned');
+    });
+
     it('should return expected bid responses when not passed an adunitCode', function () {
       auctionManager.getLastAuctionId = () => 654321;
       var result = $$PREBID_GLOBAL$$.getBidResponses();
