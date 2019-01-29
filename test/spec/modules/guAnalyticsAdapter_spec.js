@@ -1,7 +1,6 @@
 import analyticsAdapter, {AnalyticsQueue} from 'modules/guAnalyticsAdapter';
 import {expect} from 'chai';
 import adaptermanager from 'src/adaptermanager';
-import * as ajax from 'src/ajax';
 import CONSTANTS from 'src/constants.json';
 
 const events = require('../../../src/events');
@@ -144,29 +143,9 @@ describe('Gu analytics adapter', () => {
 
   before(() => {
     sandbox = sinon.sandbox.create();
-    ajaxStub = sandbox.stub(ajax, 'ajax');
+    ajaxStub = sandbox.stub(analyticsAdapter, 'ajaxCall');
     timer = sandbox.useFakeTimers(0);
-  });
 
-  after(() => {
-    timer.restore();
-    sandbox.restore();
-    analyticsAdapter.disableAnalytics();
-  });
-
-  beforeEach(() => {
-    sandbox.stub(events, 'getEvents').callsFake(() => {
-      return []
-    });
-  });
-
-  afterEach(() => {
-    analyticsAdapter.context.queue = new AnalyticsQueue();
-    ajaxStub.reset();
-    events.getEvents.restore();
-  });
-
-  it('should be configurable', () => {
     adaptermanager.registerAnalyticsAdapter({
       code: 'gu',
       adapter: analyticsAdapter
@@ -179,7 +158,27 @@ describe('Gu analytics adapter', () => {
         pv: 'pv1234567'
       }
     });
+  });
 
+  after(() => {
+    timer.restore();
+    sandbox.restore();
+    analyticsAdapter.disableAnalytics();
+  });
+
+  beforeEach(() => {
+    sandbox.stub(events, 'getEvents').callsFake(() => {
+      return []
+    });
+    ajaxStub.reset();
+  });
+
+  afterEach(() => {
+    analyticsAdapter.context.queue = new AnalyticsQueue();
+    events.getEvents.restore();
+  });
+
+  it('should be configurable', () => {
     expect(analyticsAdapter.context).to.have.property('ajaxUrl', '//localhost:9000');
     expect(analyticsAdapter.context).to.have.property('pv', 'pv1234567');
   });
@@ -283,7 +282,7 @@ describe('Gu analytics adapter', () => {
     let ev = analyticsAdapter.context.queue.peekAll();
     expect(ev).to.have.length(0);
     expect(ajaxStub.called).to.be.equal(true);
-    const payload = JSON.parse(ajaxStub.firstCall.args[2]);
+    const payload = JSON.parse(ajaxStub.firstCall.args);
     ev = payload.hb_ev;
     expect(ev[4]).to.be.eql({ev: 'end', aid: '5018eb39-f900-4370-b71e-3bb5b48d324f', ttr: 447});
   });
@@ -292,7 +291,7 @@ describe('Gu analytics adapter', () => {
     events.emit(CONSTANTS.EVENTS.BID_WON, BIDWONEXAMPLE);
     let ev = analyticsAdapter.context.queue.peekAll();
     expect(ev).to.have.length(0); // The queue has been flushed.
-    const payload = JSON.parse(ajaxStub.firstCall.args[2]);
+    const payload = JSON.parse(ajaxStub.firstCall.args);
     ev = payload.hb_ev;
     expect(ev[0]).to.be.eql({ev: 'bidwon', aid: 'bc1becdf-bbe5-4280-9427-8cc66d196e15', bid: '24a5288f9d6d6b'});
   });
@@ -318,14 +317,14 @@ describe('Gu analytics adapter', () => {
 
   it('should have a version number', () => {
     events.emit(CONSTANTS.EVENTS.BID_WON, BIDWONEXAMPLE);
-    const payload = JSON.parse(ajaxStub.firstCall.args[2]);
+    const payload = JSON.parse(ajaxStub.firstCall.args);
     expect(payload.v).to.be.equal(4);
   });
 
   it('should ignore responses sent with bid won event', () => {
     events.emit(CONSTANTS.EVENTS.BID_RESPONSE, RESPONSE);
     events.emit(CONSTANTS.EVENTS.BID_WON, BIDWONEXAMPLE);
-    const payload = JSON.parse(ajaxStub.firstCall.args[2]);
+    const payload = JSON.parse(ajaxStub.firstCall.args);
     const ev = payload.hb_ev;
     expect(ev).to.be.eql([{
       ev: 'bidwon',
