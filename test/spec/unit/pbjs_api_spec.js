@@ -42,7 +42,7 @@ var bidsBackHandler = function() {};
 const timeout = 2000;
 var auction = auctionManager.createAuction({adUnits, adUnitCodes, callback: bidsBackHandler, cbTimeout: timeout});
 auction.getBidRequests = getBidRequests;
-auction.getLastAuctionId = getLastAuctionId;
+auction.getBidsReceived = getBidResponses;
 auction.getAdUnits = getAdUnits;
 auction.getAuctionStatus = function() { return auctionModule.AUCTION_COMPLETED }
 
