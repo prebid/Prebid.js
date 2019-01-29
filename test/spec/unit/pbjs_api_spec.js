@@ -6,8 +6,7 @@ import {
   getTargetingKeys,
   getTargetingKeysBidLandscape,
   getAdUnits,
-  createBidReceived,
-  getLastAuctionId
+  createBidReceived
 } from 'test/fixtures/fixtures';
 import { auctionManager, newAuctionManager } from 'src/auctionManager';
 import { targeting, newTargeting, filters } from 'src/targeting';
@@ -43,7 +42,6 @@ var bidsBackHandler = function() {};
 const timeout = 2000;
 var auction = auctionManager.createAuction({adUnits, adUnitCodes, callback: bidsBackHandler, cbTimeout: timeout});
 auction.getBidRequests = getBidRequests;
-auction.getBidsReceived = getBidResponses;
 auction.getLastAuctionId = getLastAuctionId;
 auction.getAdUnits = getAdUnits;
 auction.getAuctionStatus = function() { return auctionModule.AUCTION_COMPLETED }
@@ -791,8 +789,9 @@ describe('Unit: Prebid Module', function () {
     });
   });
 
-  xdescribe('getBidResponses', function () {
+  describe('getBidResponses', function () {
     it('should return expected bid responses when not passed an adunitCode', function () {
+      auctionManager.getLastAuctionId = () => 654321;
       var result = $$PREBID_GLOBAL$$.getBidResponses();
       var compare = getBidResponsesFromAPI();
       assert.deepEqual(result, compare, 'expected bid responses are returned');
