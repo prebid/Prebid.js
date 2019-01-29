@@ -66,7 +66,8 @@ function sendAdToCreative(adObject, remoteDomain, source) {
       adUrl,
       adId,
       width,
-      height
+      height,
+      cpm
     }), remoteDomain);
   }
 }
