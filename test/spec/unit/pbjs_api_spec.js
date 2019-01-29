@@ -176,13 +176,15 @@ window.apntag = {
 
 describe('Unit: Prebid Module', function () {
   let bidExpiryStub;
-  before(function () {
+  beforeEach(function () {
     bidExpiryStub = sinon.stub(filters, 'isBidNotExpired').callsFake(() => true);
+    configObj.setConfig({ useBidCache: true });
   });
 
-  after(function() {
+  afterEach(function() {
     $$PREBID_GLOBAL$$.adUnits = [];
     bidExpiryStub.restore();
+    configObj.setConfig({ useBidCache: false });
   });
 
   describe('getAdserverTargetingForAdUnitCodeStr', function () {
