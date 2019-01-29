@@ -6,7 +6,7 @@
 import events from './events';
 import { fireNativeTrackers } from './native';
 import { EVENTS } from './constants';
-import { isSlotMatchingAdUnitCode, logWarn } from './utils';
+import { isSlotMatchingAdUnitCode, logWarn, replaceAuctionPrice } from './utils';
 import { auctionManager } from './auctionManager';
 import find from 'core-js/library/fn/array/find';
 import { isRendererRequired, executeRenderer } from './Renderer';
@@ -54,7 +54,7 @@ function receiveMessage(ev) {
 }
 
 function sendAdToCreative(adObject, remoteDomain, source) {
-  const { adId, ad, adUrl, width, height, renderer } = adObject;
+  const { adId, ad, adUrl, width, height, renderer, cpm } = adObject;
   // rendering for outstream safeframe
   if (isRendererRequired(renderer)) {
     executeRenderer(renderer, adObject);
@@ -62,11 +62,12 @@ function sendAdToCreative(adObject, remoteDomain, source) {
     resizeRemoteCreative(adObject);
     source.postMessage(JSON.stringify({
       message: 'Prebid Response',
-      ad,
+      ad: replaceAuctionPrice(ad, cpm),
       adUrl,
       adId,
       width,
-      height
+      height,
+      cpm
     }), remoteDomain);
   }
 }
