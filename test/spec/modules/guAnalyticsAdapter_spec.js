@@ -1,6 +1,6 @@
 import analyticsAdapter, {AnalyticsQueue} from 'modules/guAnalyticsAdapter';
 import {expect} from 'chai';
-import adaptermanager from 'src/adaptermanager';
+import adapterManager from 'src/adapterManager';
 import CONSTANTS from 'src/constants.json';
 
 const events = require('../../../src/events');
@@ -146,12 +146,12 @@ describe('Gu analytics adapter', () => {
     ajaxStub = sandbox.stub(analyticsAdapter, 'ajaxCall');
     timer = sandbox.useFakeTimers(0);
 
-    adaptermanager.registerAnalyticsAdapter({
+    adapterManager.registerAnalyticsAdapter({
       code: 'gu',
       adapter: analyticsAdapter
     });
 
-    adaptermanager.enableAnalytics({
+    adapterManager.enableAnalytics({
       provider: 'gu',
       options: {
         ajaxUrl: '//localhost:9000',
