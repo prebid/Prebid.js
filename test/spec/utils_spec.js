@@ -913,15 +913,6 @@ describe('Utils', function () {
         key: 'test2',
         value: ['']
       }]);
-
-      describe('insertElement', function () {
-        it('returns a node at bottom of head if no target is given', function () {
-          const toInsert = document.createElement('div');
-          const head = document.getElementsByTagName('head')[0];
-          const inserted = utils.insertElement(toInsert);
-          expect(inserted).to.equal(head.lastChild);
-        });
-      });
     });
 
     describe('insertElement', function () {
