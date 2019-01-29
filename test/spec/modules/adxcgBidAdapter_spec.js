@@ -91,7 +91,7 @@ describe('AdxcgAdapter', function () {
       expect(query.pbjs).to.equal('$prebid.version$')
       expect(query.adzoneid).to.equal('1')
       expect(query.format).to.equal('300x250|640x360|1x1')
-      expect(query.jsonp).to.be.empty
+      expect(query.jsonp).to.be.undefined
       expect(query.prebidBidIds).to.equal('84ab500420319d')
     })
   })
@@ -128,8 +128,8 @@ describe('AdxcgAdapter', function () {
       let parsedRequestUrl = url.parse(request.url)
       let query = parsedRequestUrl.search
 
-      expect(query.gdpr).to.be.empty
-      expect(query.gdpr_consent).to.be.empty
+      expect(query.gdpr).to.be.undefined
+      expect(query.gdpr_consent).to.be.undefined
     })
   })
 
