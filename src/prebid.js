@@ -119,7 +119,7 @@ function getBids(type) {
     .filter(adUnitsFilter.bind(this, auctionManager.getAdUnitCodes()));
 
   // find the last auction id to get responses for most recent auction only
-  const currentAuctionId = responses && responses.length && responses[responses.length - 1].auctionId;
+  const currentAuctionId = auctionManager.getLastAuctionId();
 
   return responses
     .map(bid => bid.adUnitCode)
