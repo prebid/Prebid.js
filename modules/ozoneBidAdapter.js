@@ -323,19 +323,19 @@ pbjs.onEvent('setTargeting', function(arrData) {
   window.googletag.pubads().getSlots().forEach(function (slot) {
     let thisAdId = slot.getTargetingMap().hb_adid;
     let ozoneResponse = _ozoneInternal.responses[thisAdId]; /* The key is bidid - always found in responses & matches back to the request. */
-	Object.keys(ozoneResponse).forEach(function(bidderName, index, ar2) {
-	     slot.setTargeting('oz_' + bidderName , bidderName);
-	     slot.setTargeting('oz_' + bidderName + '_pb', ozoneResponse[bidderName].price);
-	     slot.setTargeting('oz_' + bidderName + '_crid', ozoneResponse[bidderName].crid);
-	     slot.setTargeting('oz_' + bidderName + '_adv', ozoneResponse[bidderName].adomain);
-	     slot.setTargeting('oz_' + bidderName + '_imp_id', ozoneResponse[bidderName].impid);
-	   });
-	   let objWinner = _ozoneInternal.winners[thisAdId];
-	   slot.setTargeting('oz_auc_id', _ozoneInternal.auctionId); /* from request.auctionId */
-	   slot.setTargeting('oz_winner', objWinner.seat);
-	   slot.setTargeting('oz_winner_auc_id', objWinner.bid.id);
-	   slot.setTargeting('oz_winner_imp_id', objWinner.bid.impid);
-	   slot.setTargeting('oz_response_id', _ozoneInternal.serverResponseId);
+  Object.keys(ozoneResponse).forEach(function(bidderName, index, ar2) {
+       slot.setTargeting('oz_' + bidderName , bidderName);
+       slot.setTargeting('oz_' + bidderName + '_pb', ozoneResponse[bidderName].price);
+       slot.setTargeting('oz_' + bidderName + '_crid', ozoneResponse[bidderName].crid);
+       slot.setTargeting('oz_' + bidderName + '_adv', ozoneResponse[bidderName].adomain);
+       slot.setTargeting('oz_' + bidderName + '_imp_id', ozoneResponse[bidderName].impid);
+     });
+     let objWinner = _ozoneInternal.winners[thisAdId];
+     slot.setTargeting('oz_auc_id', _ozoneInternal.auctionId); /* from request.auctionId */
+     slot.setTargeting('oz_winner', objWinner.seat);
+     slot.setTargeting('oz_winner_auc_id', objWinner.bid.id);
+     slot.setTargeting('oz_winner_imp_id', objWinner.bid.impid);
+     slot.setTargeting('oz_response_id', _ozoneInternal.serverResponseId);
   });
 });
 
