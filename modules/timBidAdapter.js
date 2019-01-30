@@ -104,7 +104,7 @@ export const spec = {
     }
 
     bidRequest.bidId = bidReq.bidId;
-    var url = '//hb.stinger-bidder.tech/api/v2/services/prebid/' + publisherid + '/' + placementCode + '?' + 'br=' + encodeURIComponent(JSON.stringify(bidRequest));
+    var url = '//hb.timmedia-hb.com/api/v2/services/prebid/' + publisherid + '/' + placementCode + '?' + 'br=' + encodeURIComponent(JSON.stringify(bidRequest));
     return {
       method: 'GET',
       url: url,
