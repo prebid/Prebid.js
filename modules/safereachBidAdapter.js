@@ -1,5 +1,4 @@
 import { registerBidder } from 'src/adapters/bidderFactory';
-import { BANNER, NATIVE, VIDEO } from 'src/mediaTypes';
 import * as utils from 'src/utils';
 
 const BIDDER_CODE = 'safereach';
