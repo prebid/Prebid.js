@@ -39,7 +39,7 @@ function createTrackPixelHtml(url) {
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['tim'],
+  aliases: ['timmedia'],
 
   isBidRequestValid: function(bid) {
     if (bid.params && bid.params.publisherid && bid.params.placementCode) {
