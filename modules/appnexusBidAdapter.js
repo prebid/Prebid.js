@@ -355,11 +355,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
       ttl: 3600
     });
 
-    // TODO: check bidRequest variable instead of [0]
-    const videoContext = utils.deepAccess(
-      bidderRequest.bids[0],
-      'mediaTypes.video.context'
-    );
+    const videoContext = utils.deepAccess(bidRequest, 'mediaTypes.video.context');
     if (videoContext === 'adpod') {
       bid.meta = {
         primaryCatId: rtbBid.brand_category_id
