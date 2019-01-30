@@ -60,17 +60,17 @@ describe('timAdapterTests', function () {
 
     it('bidRequest url', function () {
       const requests = spec.buildRequests(validBidRequests);
-      expect(requests[0].url).to.exists;
+      expect(requests[0].url).to.exist;
     });
 
     it('bidRequest data', function () {
       const requests = spec.buildRequests(validBidRequests);
-      expect(requests[0].data).to.exists;
+      expect(requests[0].data).to.exist;
     });
 
     it('bidRequest options', function () {
       const requests = spec.buildRequests(validBidRequests);
-      expect(requests[0].options).to.exists;
+      expect(requests[0].options).to.exist;
     });
   });
 
