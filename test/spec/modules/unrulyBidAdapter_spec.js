@@ -152,8 +152,8 @@ describe('UnrulyAdapter', function () {
     });
 
     it('should initialize and set the renderer', function () {
-      expect(Renderer.install).not.to.have.been.called;
-      expect(fakeRenderer.setRender).not.to.have.been.called;
+      expect(Renderer.install.called).to.be.false;
+      expect(fakeRenderer.setRender.called).to.be.false;
 
       const mockReturnedBid = createOutStreamExchangeBid({adUnitCode: 'video1', bidId: 'mockBidId'});
       const mockRenderer = { url: 'value: mockRendererURL' };
@@ -162,7 +162,7 @@ describe('UnrulyAdapter', function () {
 
       adapter.interpretResponse(mockServerResponse);
 
-      expect(Renderer.install).to.have.been.calledOnce;
+      expect(Renderer.install.calledOnce).to.be.true;
       sinon.assert.calledWithExactly(
         Renderer.install,
         Object.assign({}, mockRenderer, {callback: sinon.match.func})
@@ -181,7 +181,7 @@ describe('UnrulyAdapter', function () {
       sinon.assert.calledOnce(fakeRenderer.setRender);
       fakeRenderer.setRender.firstCall.args[0]();
 
-      expect(window.top).to.have.deep.property('unruly.native.prebid.uq');
+      expect(window.top).to.have.deep.nested.property('unruly.native.prebid.uq');
 
       const uq = window.top.unruly.native.prebid.uq;
       const sentRendererConfig = uq[0][1];
