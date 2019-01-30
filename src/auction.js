@@ -396,15 +396,15 @@ export function addBidToAuction(auctionInstance, bidResponse) {
 function tryAddVideoBid(auctionInstance, bidResponse, bidRequests, afterBidAdded) {
   let addBid = true;
 
-  const bidRequest = getBidRequest(bidResponse.adId, [bidRequests]);
+  const bidderRequest = getBidRequest(bidResponse.adId, [bidRequests]);
   const videoMediaType =
-    bidRequest && deepAccess(bidRequest, 'mediaTypes.video');
+  bidderRequest && deepAccess(bidderRequest, 'mediaTypes.video');
   const context = videoMediaType && deepAccess(videoMediaType, 'context');
 
   if (config.getConfig('cache.url') && context !== OUTSTREAM) {
     if (!bidResponse.videoCacheKey) {
       addBid = false;
-      callPrebidCache(auctionInstance, bidResponse, afterBidAdded, context);
+      callPrebidCache(auctionInstance, bidResponse, afterBidAdded, bidderRequest);
     } else if (!bidResponse.vastUrl) {
       utils.logError('videoCacheKey specified but not required vastUrl for video bid');
       addBid = false;
@@ -416,7 +416,7 @@ function tryAddVideoBid(auctionInstance, bidResponse, bidRequests, afterBidAdded
   }
 }
 
-const callPrebidCache = createHook('asyncSeries', function(auctionInstance, bidResponse, afterBidAdded, context) {
+const callPrebidCache = hook('async', function(auctionInstance, bidResponse, afterBidAdded, bidderRequest) {
   store([bidResponse], function (error, cacheIds) {
     if (error) {
       utils.logWarn(`Failed to save to the video cache: ${error}. Video bid must be discarded.`);

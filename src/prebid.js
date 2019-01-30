@@ -1,7 +1,7 @@
 /** @module pbjs */
 
 import { getGlobal } from './prebidGlobal';
-import { flatten, uniques, isGptPubadsDefined, adUnitsFilter, removeRequestId, getLatestHighestCpmBid } from './utils';
+import { flatten, uniques, isGptPubadsDefined, adUnitsFilter, removeRequestId, getLatestHighestCpmBid, isArrayOfNums } from './utils';
 import { listenMessagesFromCreative } from './secureCreatives';
 import { userSync } from './userSync.js';
 import { loadScript } from './adloader';
@@ -69,11 +69,7 @@ function setRenderSize(doc, width, height) {
   }
 }
 
-const checkAdUnitSetup = createHook('asyncSeries', function (adUnits) {
-  function isArrayOfNums(val) {
-    return Array.isArray(val) && val.length === 2 && utils.isInteger(val[0]) && utils.isInteger(val[1]);
-  }
-
+const checkAdUnitSetup = hook('async', function (adUnits) {
   adUnits.forEach((adUnit) => {
     const mediaTypes = adUnit.mediaTypes;
     const normalizedSize = utils.getAdUnitSizes(adUnit);
@@ -96,9 +92,9 @@ const checkAdUnitSetup = createHook('asyncSeries', function (adUnits) {
     if (mediaTypes && mediaTypes.video) {
       const video = mediaTypes.video;
       if (video.playerSize) {
-        if (Array.isArray(video.playerSize) && video.playerSize.length === 1 && video.playerSize.every(isArrayOfNums)) {
+        if (Array.isArray(video.playerSize) && video.playerSize.length === 1 && video.playerSize.every(plySize => isArrayOfNums(plySize, 2))) {
           adUnit.sizes = video.playerSize;
-        } else if (isArrayOfNums(video.playerSize)) {
+        } else if (isArrayOfNums(video.playerSize, 2)) {
           let newPlayerSize = [];
           newPlayerSize.push(video.playerSize);
           utils.logInfo(`Transforming video.playerSize from [${video.playerSize}] to [[${newPlayerSize}]] so it's in the proper format.`);

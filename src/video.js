@@ -2,7 +2,7 @@ import adapterManager from './adapterManager';
 import { getBidRequest, deepAccess, logError } from './utils';
 import { config } from '../src/config';
 import includes from 'core-js/library/fn/array/includes';
-import { createHook } from '../src/hook';
+import { hook } from './hook';
 
 const VIDEO_MEDIA_TYPE = 'video';
 export const OUTSTREAM = 'outstream';
@@ -42,7 +42,7 @@ export function isValidVideoBid(bid, bidRequests) {
   return checkVideoBidSetup(bid, bidRequest, videoMediaType, context);
 }
 
-const checkVideoBidSetup = createHook('asyncSeries', function(bid, bidRequest, videoMediaType, context) {
+const checkVideoBidSetup = hook('async', function(bid, bidRequest, videoMediaType, context) {
   if (!bidRequest || (videoMediaType && context !== OUTSTREAM)) {
     // xml-only video bids require a prebid cache url
     if (!config.getConfig('cache.url') && bid.vastXml && !bid.vastUrl) {
