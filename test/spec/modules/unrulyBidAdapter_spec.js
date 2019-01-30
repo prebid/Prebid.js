@@ -207,7 +207,7 @@ describe('UnrulyAdapter', () => {
   describe('getUserSyncs', () => {
     it('should push user sync iframe if enabled', () => {
       const syncOptions = { iframeEnabled: true }
-      const syncs = adapter.getUserSyncs(syncOptions)
+      const syncs = adapter.getUserSyncs(syncOptions, {}, {})
       expect(syncs[0]).to.deep.equal({
         type: 'iframe',
         url: 'https://video.unrulymedia.com/iframes/third-party-iframes.html'
@@ -216,8 +216,44 @@ describe('UnrulyAdapter', () => {
 
     it('should not push user sync iframe if not enabled', () => {
       const syncOptions = { iframeEnabled: false }
-      const syncs = adapter.getUserSyncs(syncOptions);
+      const syncs = adapter.getUserSyncs(syncOptions, {}, {});
       expect(syncs).to.be.empty;
     });
   });
+
+  it('should not append consent params if gdpr does not apply', () => {
+    const mockConsent = {}
+    const syncOptions = { iframeEnabled: true }
+    const syncs = adapter.getUserSyncs(syncOptions, {}, mockConsent)
+    expect(syncs[0]).to.deep.equal({
+      type: 'iframe',
+      url: 'https://video.unrulymedia.com/iframes/third-party-iframes.html'
+    })
+  })
+
+  it('should append consent params if gdpr does apply and consent is given', () => {
+    const mockConsent = {
+      gdprApplies: true,
+      consentString: 'hello'
+    }
+    const syncOptions = { iframeEnabled: true }
+    const syncs = adapter.getUserSyncs(syncOptions, {}, mockConsent)
+    expect(syncs[0]).to.deep.equal({
+      type: 'iframe',
+      url: 'https://video.unrulymedia.com/iframes/third-party-iframes.html?gdpr=1&gdpr_consent=hello'
+    })
+  })
+
+  it('should append consent param if gdpr applies and no consent is given', () => {
+    const mockConsent = {
+      gdprApplies: true,
+      consentString: {}
+    }
+    const syncOptions = { iframeEnabled: true }
+    const syncs = adapter.getUserSyncs(syncOptions, {}, mockConsent)
+    expect(syncs[0]).to.deep.equal({
+      type: 'iframe',
+      url: 'https://video.unrulymedia.com/iframes/third-party-iframes.html?gdpr=0'
+    })
+  })
 });

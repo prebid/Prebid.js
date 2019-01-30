@@ -97,12 +97,21 @@ export const adapter = {
       : buildPrebidResponseAndInstallRenderer(serverResponseBody.bids);
   },
 
-  getUserSyncs: function(syncOptions) {
+  getUserSyncs: function(syncOptions, {}, gdprConsent) {
+    let params = '';
+    if (gdprConsent && 'gdprApplies' in gdprConsent) {
+      if (gdprConsent.gdprApplies && typeof gdprConsent.consentString === 'string') {
+        params += `?gdpr=1&gdpr_consent=${gdprConsent.consentString}`;
+      } else {
+        params += `?gdpr=0`;
+      }
+    }
+
     const syncs = []
     if (syncOptions.iframeEnabled) {
       syncs.push({
         type: 'iframe',
-        url: 'https://video.unrulymedia.com/iframes/third-party-iframes.html'
+        url: 'https://video.unrulymedia.com/iframes/third-party-iframes.html' + params
       });
     }
     return syncs;
