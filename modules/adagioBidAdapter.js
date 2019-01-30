@@ -111,13 +111,15 @@ function _getGdprConsent(bidderRequest) {
 
 // Extra data returned by Adagio SSP Engine
 function _setData(data) {
-  if (window.top.ADAGIO && window.top.ADAGIO.queue) {
-    window.top.ADAGIO.queue.push({
-      action: 'ssp-data',
-      ts: Date.now(),
-      data: data,
-    });
-  }
+  window.top.ADAGIO = window.top.ADAGIO || {};
+  window.top.ADAGIO.queue = window.top.ADAGIO.queue || [];
+  // if (window.top.ADAGIO && window.top.ADAGIO.queue) {
+  window.top.ADAGIO.queue.push({
+    action: 'ssp-data',
+    ts: Date.now(),
+    data: data,
+  });
+  // }
 }
 
 export const spec = {

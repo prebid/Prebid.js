@@ -153,6 +153,10 @@ describe('adagioAdapter', () => {
       }
     };
 
+    afterEach(function () {
+      delete window.top._ADAGIO;
+    });
+
     it('groups requests by siteId', () => {
       const requests = spec.buildRequests(bidRequests);
       expect(requests).to.have.lengthOf(2);
@@ -177,6 +181,24 @@ describe('adagioAdapter', () => {
       expect(requests).to.have.lengthOf(2);
       const request = requests[0];
       const expected = {};
+      expect(request.data.adUnits[0].features).to.deep.equal(expected);
+    });
+
+    it('features params must be an object if featurejs is loaded', () => {
+      window.top._ADAGIO = window.top._ADAGIO || {};
+      window.top._ADAGIO.features = window.top._ADAGIO.features || {};
+      window.top._ADAGIO.features.getFeatures = function() {
+        return {
+          prop1: 'one',
+          prop2: 'two'
+        }
+      }
+      const requests = spec.buildRequests(bidRequests);
+      const request = requests[0];
+      const expected = {
+        prop1: 'one',
+        prop2: 'two'
+      };
       expect(request.data.adUnits[0].features).to.deep.equal(expected);
     });
 
@@ -225,6 +247,9 @@ describe('adagioAdapter', () => {
   describe('interpretResponse', () => {
     let serverResponse = {
       body: {
+        data: {
+          pred: 1
+        },
         bids: [
           {
             ad: '<div style="background-color:red; height:250px; width:300px"></div>',
@@ -276,6 +301,10 @@ describe('adagioAdapter', () => {
       }
     };
 
+    beforeEach(function () {
+      delete (window.top.ADAGIO);
+    });
+
     it('Should returns empty response if body is empty', () => {
       expect(spec.interpretResponse(emptyBodyServerResponse, bidRequest)).to.be.an('array').length(0);
       expect(spec.interpretResponse({body: {}}, bidRequest)).to.be.an('array').length(0);
@@ -305,6 +334,13 @@ describe('adagioAdapter', () => {
       }];
       expect(spec.interpretResponse(serverResponse, bidRequest)).to.be.an('array');
       expect(spec.interpretResponse(serverResponse, bidRequest)).to.deep.equal(expectedResponse);
+    });
+
+    it('Should populate ADAGIO queue with ssp-data', () => {
+      spec.interpretResponse(serverResponse, bidRequest);
+      expect(window.top.ADAGIO).ok;
+      expect(window.top.ADAGIO.queue).to.be.an('array');
+      expect(window.top.ADAGIO.queue).length(1);
     });
   });
 
