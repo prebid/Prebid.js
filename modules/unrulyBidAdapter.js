@@ -97,7 +97,7 @@ export const adapter = {
       : buildPrebidResponseAndInstallRenderer(serverResponseBody.bids);
   },
 
-  getUserSyncs: function(syncOptions, {}, gdprConsent) {
+  getUserSyncs: function(syncOptions, response, gdprConsent) {
     let params = '';
     if (gdprConsent && 'gdprApplies' in gdprConsent) {
       if (gdprConsent.gdprApplies && typeof gdprConsent.consentString === 'string') {

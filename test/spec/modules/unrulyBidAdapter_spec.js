@@ -206,8 +206,10 @@ describe('UnrulyAdapter', () => {
 
   describe('getUserSyncs', () => {
     it('should push user sync iframe if enabled', () => {
+      const mockConsent = {}
+      const response = {}
       const syncOptions = { iframeEnabled: true }
-      const syncs = adapter.getUserSyncs(syncOptions, {}, {})
+      const syncs = adapter.getUserSyncs(syncOptions, response, mockConsent)
       expect(syncs[0]).to.deep.equal({
         type: 'iframe',
         url: 'https://video.unrulymedia.com/iframes/third-party-iframes.html'
@@ -215,16 +217,19 @@ describe('UnrulyAdapter', () => {
     })
 
     it('should not push user sync iframe if not enabled', () => {
+      const mockConsent = {}
+      const response = {}
       const syncOptions = { iframeEnabled: false }
-      const syncs = adapter.getUserSyncs(syncOptions, {}, {});
+      const syncs = adapter.getUserSyncs(syncOptions, response, mockConsent);
       expect(syncs).to.be.empty;
     });
   });
 
   it('should not append consent params if gdpr does not apply', () => {
     const mockConsent = {}
+    const response = {}
     const syncOptions = { iframeEnabled: true }
-    const syncs = adapter.getUserSyncs(syncOptions, {}, mockConsent)
+    const syncs = adapter.getUserSyncs(syncOptions, response, mockConsent)
     expect(syncs[0]).to.deep.equal({
       type: 'iframe',
       url: 'https://video.unrulymedia.com/iframes/third-party-iframes.html'
@@ -236,8 +241,9 @@ describe('UnrulyAdapter', () => {
       gdprApplies: true,
       consentString: 'hello'
     }
+    const response = {}
     const syncOptions = { iframeEnabled: true }
-    const syncs = adapter.getUserSyncs(syncOptions, {}, mockConsent)
+    const syncs = adapter.getUserSyncs(syncOptions, response, mockConsent)
     expect(syncs[0]).to.deep.equal({
       type: 'iframe',
       url: 'https://video.unrulymedia.com/iframes/third-party-iframes.html?gdpr=1&gdpr_consent=hello'
@@ -249,8 +255,9 @@ describe('UnrulyAdapter', () => {
       gdprApplies: true,
       consentString: {}
     }
+    const response = {}
     const syncOptions = { iframeEnabled: true }
-    const syncs = adapter.getUserSyncs(syncOptions, {}, mockConsent)
+    const syncs = adapter.getUserSyncs(syncOptions, response, mockConsent)
     expect(syncs[0]).to.deep.equal({
       type: 'iframe',
       url: 'https://video.unrulymedia.com/iframes/third-party-iframes.html?gdpr=0'
