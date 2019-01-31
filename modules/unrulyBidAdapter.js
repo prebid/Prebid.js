@@ -80,7 +80,7 @@ export const adapter = {
       bidRequests: validBidRequests,
       bidderRequest
     };
-    const options = { contentType: 'application/json' };
+    const options = { contentType: 'text/plain' };
 
     return {
       url,
