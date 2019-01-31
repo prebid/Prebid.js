@@ -1,4 +1,5 @@
 import { registerBidder } from 'src/adapters/bidderFactory';
+import { BANNER, NATIVE, VIDEO } from 'src/mediaTypes';
 import * as utils from 'src/utils';
 
 const BIDDER_CODE = 'safereach';
@@ -6,7 +7,8 @@ const URL_MULTI = '//server3-safereach.com/?c=o&m=multi';
 
 export const spec = {
   code: BIDDER_CODE,
-  
+  supportedMediaTypes: [BANNER, VIDEO, NATIVE],
+
   /**
    * Determines whether or not the given bid request is valid.
    *
@@ -16,7 +18,8 @@ export const spec = {
   isBidRequestValid: (bid) => {
     return Boolean(bid.bidId &&
         bid.params &&
-        !isNaN(bid.params.placementId)
+        !isNaN(bid.params.placementId) &&
+        spec.supportedMediaTypes.indexOf(bid.params.traffic) !== -1
     );
   },
 
