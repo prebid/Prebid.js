@@ -33,6 +33,12 @@ export function ajaxBuilder(timeout = 3000, {request, done} = {}) {
         }
       };
 
+      if (typeof callbacks.timeout !== 'function') {
+        callbacks.timeout = function (e) {
+          utils.logError('xhr timeout after ', x.timeout, 'ms');
+        }
+      }
+
       if (typeof callback === 'function') {
         callbacks.success = callback;
       }
@@ -55,9 +61,7 @@ export function ajaxBuilder(timeout = 3000, {request, done} = {}) {
 
       // Disabled timeout temporarily to avoid xhr failed requests. https://github.com/prebid/Prebid.js/issues/2648
       if (!config.getConfig('disableAjaxTimeout')) {
-        x.ontimeout = function () {
-          utils.logError('  xhr timeout after ', x.timeout, 'ms');
-        };
+        x.ontimeout = callbacks.timeout;
       }
 
       if (method === 'GET' && data) {
