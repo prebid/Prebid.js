@@ -1,16 +1,5 @@
 import {expect} from 'chai';
-import adapterManager from 'src/adapterManager';
-import {spec, outstreamRender} from 'modules/spotxBidAdapter';
-import {parse as parseQuery} from 'querystring';
-import {newBidder} from 'src/adapters/bidderFactory';
-import {userSync} from 'src/userSync';
-import {config} from 'src/config';
-import * as utils from 'src/utils';
-import find from 'core-js/library/fn/array/find';
-
-var CONSTANTS = require('src/constants.json');
-
-const INTEGRATION = `pbjs_lite_v$prebid.version$`; // $prebid.version$ will be substituted in by gulp in built prebid
+import {spec} from 'modules/spotxBidAdapter';
 
 describe('the spotx adapter', function () {
   function getValidBidObject() {
@@ -62,6 +51,18 @@ describe('the spotx adapter', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
+    it('should succeed with ad_unit outstream and outstream function set', function() {
+      bid.params.ad_unit = 'outstream';
+      bid.params.outstream_function = function() {};
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
+    });
+
+    it('should succeed with ad_unit outstream, options set for outstream and slot provided', function() {
+      bid.params.ad_unit = 'outstream';
+      bid.params.outstream_options = {slot: 'ad_container_id'};
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
+    });
+
     it('should fail without a channel_id', function() {
       delete bid.params.channel_id;
       expect(spec.isBidRequestValid(bid)).to.equal(false);
@@ -74,6 +75,17 @@ describe('the spotx adapter', function () {
 
     it('should fail without video', function() {
       delete bid.mediaTypes.video;
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
+
+    it('should fail with ad_unit outstream but no options set for outstream', function() {
+      bid.params.ad_unit = 'outstream';
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
+
+    it('should fail with ad_unit outstream, options set for outstream but no slot provided', function() {
+      bid.params.ad_unit = 'outstream';
+      bid.params.outstream_options = {};
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
   });
@@ -128,7 +140,9 @@ describe('the spotx adapter', function () {
         ad_unit: 'incontent',
         outstream_options: {foo: 'bar'},
         outstream_function: '987',
-        custom: {bar: 'foo'}
+        custom: {bar: 'foo'},
+        price_floor: 123,
+        start_delay: true
       };
 
       request = spec.buildRequests([bid], bidRequestObj)[0];
@@ -142,6 +156,8 @@ describe('the spotx adapter', function () {
         sdk_name: 'Prebid 1+',
         versionOrtb: '2.3'
       });
+      expect(request.data.imp.video.startdelay).to.equal(1);
+      expect(request.data.imp.bidfloor).to.equal(123);
     });
 
     it('should process premarket bids', function() {
@@ -357,6 +373,38 @@ describe('the spotx adapter', function () {
       sinon.stub(window.document, 'getElementById').returns({
         appendChild: sinon.stub().callsFake(function(script) { scriptTag = script })
       });
+      var responses = spec.interpretResponse(serverResponse, bidderRequestObj);
+
+      responses[0].renderer.render(responses[0]);
+
+      expect(scriptTag.getAttribute('type')).to.equal('text/javascript');
+      expect(scriptTag.getAttribute('src')).to.equal('//js.spotx.tv/easi/v1/12345.js');
+      expect(scriptTag.getAttribute('data-spotx_channel_id')).to.equal('12345');
+      expect(scriptTag.getAttribute('data-spotx_vast_url')).to.equal('//search.spotxchange.com/ad/vast.html?key=cache123');
+      expect(scriptTag.getAttribute('data-spotx_ad_unit')).to.equal('incontent');
+      expect(scriptTag.getAttribute('data-spotx_collapse')).to.equal('0');
+      expect(scriptTag.getAttribute('data-spotx_autoplay')).to.equal('1');
+      expect(scriptTag.getAttribute('data-spotx_blocked_autoplay_override_mode')).to.equal('1');
+      expect(scriptTag.getAttribute('data-spotx_video_slot_can_autoplay')).to.equal('1');
+      expect(scriptTag.getAttribute('data-spotx_digitrust_opt_out')).to.equal('1');
+      expect(scriptTag.getAttribute('data-spotx_content_width')).to.equal('400');
+      expect(scriptTag.getAttribute('data-spotx_content_height')).to.equal('300');
+      window.document.getElementById.restore();
+    });
+
+    it('should append into an iframe', function() {
+      var scriptTag;
+      sinon.stub(window.document, 'getElementById').returns({
+        nodeName: 'IFRAME',
+        contentDocument: {
+          body: {
+            appendChild: sinon.stub().callsFake(function(script) { scriptTag = script })
+          }
+        }
+      });
+
+      bidderRequestObj.bidRequest.bids[0].params.outstream_options.in_iframe = 'iframeId';
+
       var responses = spec.interpretResponse(serverResponse, bidderRequestObj);
 
       responses[0].renderer.render(responses[0]);
