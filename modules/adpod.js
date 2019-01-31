@@ -3,7 +3,6 @@ import { addBidToAuction, doCallbacksIfTimedout } from '../src/auction';
 import { store } from '../src/videoCache';
 import { hooks } from '../src/hook';
 import { config } from '../src/config';
-import find from 'core-js/library/fn/array/find';
 import Set from 'core-js/library/fn/set';
 
 const from = require('core-js/library/fn/array/from');
@@ -15,7 +14,6 @@ let queueTimeDelay = 50;
 let queueSizeLimit = 5;
 let bidCacheRegistry = createBidCacheRegistry();
 
-// NEED TO FIX THE SET.... failures in IE/Safari even with polyfill/package
 function createBidCacheRegistry() {
   let registry = {};
   return {
@@ -58,7 +56,7 @@ function createDispatcher(timeoutDuration) {
 
     clearTimeout(timeout);
 
-    // want to fire off the queue if either: size limit is reached or time has passed
+    // want to fire off the queue if either: size limit is reached or time has passed since last call to dispatcher
     if (counter === queueSizeLimit) {
       counter = 1;
       callbackFn();
@@ -69,13 +67,13 @@ function createDispatcher(timeoutDuration) {
   };
 }
 
-function updateBidQueue(auctionInstance, bidResponse, afterBidAdded, key) {
+function updateBidQueue(auctionInstance, bidResponse, afterBidAdded) {
   let bidListIter = bidCacheRegistry.getBids(bidResponse);
 
   if (bidListIter) {
     let bidListArr = from(bidListIter);
     let callDispatcher = bidCacheRegistry.getQueueDispatcher(bidResponse);
-    callDispatcher(auctionInstance, bidListArr, afterBidAdded, key);
+    callDispatcher(auctionInstance, bidListArr, afterBidAdded);
   } else {
     utils.logWarn('Attempted to cache a bid from an unkonwn auction. Bid:', bidResponse);
   }
@@ -87,8 +85,11 @@ function removeBidsFromStorage(bidResponses) {
   }
 }
 
-function firePrebidCacheCall(auctionInstance, bidList, afterBidAdded, key) {
-  let bidListCopy = bidList.slice(); // is making a copy really needed?
+function firePrebidCacheCall(auctionInstance, bidList, afterBidAdded) {
+  // note to reviewers - doing this to ensure the variable wouldn't be malformed by the additional incoming bids
+  // while the current list is being processed by PBC and the store callback
+  // ...but is this copy really needed?
+  let bidListCopy = bidList.slice();
 
   // remove entries now so other incoming bids won't accidentally have a stale version of the list while PBC is processing the current submitted list
   removeBidsFromStorage(bidListCopy);
@@ -102,8 +103,8 @@ function firePrebidCacheCall(auctionInstance, bidList, afterBidAdded, key) {
     } else {
       for (let i = 0; i < cacheIds.length; i++) {
         // when uuid in response is empty string then the key already existed, so this bid wasn't cached
-        // TODO - should we throw warning here?
-        // TODO - verify the cacheKey is one of the expected values?
+        // TODO - should we throw warning here?  should we call the afterBidAdded() anyway to decrement the internal bid counter?
+        // TODO - verify the cacheKey is one of the expected values (eg in case PBC returns generic UUID)?
         if (cacheIds[i].uuid !== '') {
           // bidListCopy[i].videoCacheKey = cacheIds[i].uuid; // remove later
           addBidToAuction(auctionInstance, bidListCopy[i]);
@@ -114,63 +115,15 @@ function firePrebidCacheCall(auctionInstance, bidList, afterBidAdded, key) {
   });
 }
 
-function attachCustomCacheKeyToBid(bid) {
-  let cpmFixed = bid.cpm.toFixed(2);
-  // TODO - check internally on field name for FW category
-  // TODO - remove backup values later (once adapter code is worked in for testing)
-  let category = (bid.meta && bid.meta.primaryCatId) || 'testCategory';
-  let duration = (bid.video && bid.video.durationSeconds) || randomGen(60);
-  let pid = `${cpmFixed}_${category}_${duration}s`;
-  let initialCacheKey = bidCacheRegistry.getInitialCacheKey(bid);
-
-  if (!bid.adserverTargeting) {
-    bid.adserverTargeting = {};
-  }
-  bid.adserverTargeting.hb_uuid = initialCacheKey;
-  bid.adserverTargeting.hb_price_industry_duration = pid;
-  bid.customCacheKey = `${pid}_${initialCacheKey}`;
-}
-
 export function callPrebidCacheHook(fn, auctionInstance, bidResponse, afterBidAdded, bidderRequest) {
   let videoConfig = bidderRequest.mediaTypes && bidderRequest.mediaTypes.video;
   // if (videoConfig && videoConfig.context === 'instream') { //remove later
   if (videoConfig && videoConfig.context === ADPOD) {
-    let allowBidToCache = true;
-    // TODO - move this code and the custom cache key to a separate hooked function in Jaimin's FW PR; this stuff is FW specific and doesn't belong here
-    if (videoConfig.requireExactDuration) {
-      let bidDuration = bidResponse.video.durationSeconds;
-      let ranges = videoConfig.durationRangeSec;
-
-      ranges.sort((a, b) => a - b); // ensure the ranges are sorted in numeric order
-
-      // if bidDuration is not an exact match to a listed range value, round bidDuration to closest highest range
-      if (!ranges.some(range => range === bidDuration)) {
-        let nextHighestRange = find(ranges, (value) => value > bidDuration);
-
-        if (nextHighestRange) {
-          bidResponse.video.durationSeconds = nextHighestRange;
-        } else {
-          allowBidToCache = false;
-          utils.logWarn(`Detected a bid with a duration value higher than any accepted range found in mediaTypes.video.durationRangeSec.  Rejecting bid: `, bidResponse);
-          afterBidAdded();
-        }
-      }
-    }
-
-    if (allowBidToCache) {
-      bidCacheRegistry.addBid(bidResponse);
-      attachCustomCacheKeyToBid(bidResponse);
-
-      updateBidQueue(auctionInstance, bidResponse, afterBidAdded, bidResponse.customCacheKey);
-    }
+    bidCacheRegistry.addBid(bidResponse);
+    updateBidQueue(auctionInstance, bidResponse, afterBidAdded);
   } else {
     fn.call(this, auctionInstance, bidResponse, afterBidAdded, bidderRequest);
   }
-}
-
-// TODO remove later - just for dev work
-function randomGen(max) {
-  return Math.floor(Math.random() * Math.floor(max));
 }
 
 export function checkAdUnitSetupHook(fn, adUnits) {
@@ -194,7 +147,7 @@ export function checkAdUnitSetupHook(fn, adUnits) {
     return true;
   });
   adUnits = goodAdUnits;
-  return fn.apply(this, adUnits);
+  fn.call(this, adUnits);
 }
 
 export function checkVideoBidSetupHook(fn, bid, bidRequest, videoMediaType, context) {
@@ -224,7 +177,7 @@ export function checkVideoBidSetupHook(fn, bid, bidRequest, videoMediaType, cont
 
     return true;
   } else {
-    return fn.call(this, bid, bidRequest, videoMediaType, context);
+    fn.call(this, bid, bidRequest, videoMediaType, context);
   }
 }
 
