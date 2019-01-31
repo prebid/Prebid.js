@@ -74,7 +74,7 @@ describe('adpod.js', function () {
         }
       }
 
-      callPrebidCacheHook(this, bid, function () {}, bidderRequest, callbackFn);
+      callPrebidCacheHook(callbackFn, this, bid, function () {}, bidderRequest);
       expect(callbackResult).to.equal(true);
     });
 
@@ -127,8 +127,8 @@ describe('adpod.js', function () {
         }
       };
 
-      callPrebidCacheHook(this, bidResponse1, afterBidAddedSpy, bidderRequest, callbackFn);
-      callPrebidCacheHook(this, bidResponse2, afterBidAddedSpy, bidderRequest, callbackFn);
+      callPrebidCacheHook(callbackFn, this, bidResponse1, afterBidAddedSpy, bidderRequest);
+      callPrebidCacheHook(callbackFn, this, bidResponse2, afterBidAddedSpy, bidderRequest);
 
       expect(callbackResult).to.be.null;
       expect(afterBidAddedSpy.calledTwice).to.equal(true);
@@ -180,7 +180,7 @@ describe('adpod.js', function () {
         }
       };
 
-      callPrebidCacheHook(this, bidResponse, afterBidAddedSpy, bidderRequest, callbackFn);
+      callPrebidCacheHook(callbackFn, this, bidResponse, afterBidAddedSpy, bidderRequest);
       clock.tick(31);
 
       expect(callbackResult).to.be.null;
@@ -256,9 +256,9 @@ describe('adpod.js', function () {
         }
       };
 
-      callPrebidCacheHook(this, bidResponse1, afterBidAddedSpy, bidderRequest, callbackFn);
-      callPrebidCacheHook(this, bidResponse2, afterBidAddedSpy, bidderRequest, callbackFn);
-      callPrebidCacheHook(this, bidResponse3, afterBidAddedSpy, bidderRequest, callbackFn);
+      callPrebidCacheHook(callbackFn, this, bidResponse1, afterBidAddedSpy, bidderRequest);
+      callPrebidCacheHook(callbackFn, this, bidResponse2, afterBidAddedSpy, bidderRequest);
+      callPrebidCacheHook(callbackFn, this, bidResponse3, afterBidAddedSpy, bidderRequest);
       clock.next();
 
       expect(callbackResult).to.be.null;
@@ -335,8 +335,8 @@ describe('adpod.js', function () {
         }
       };
 
-      callPrebidCacheHook(this, bidResponse1, afterBidAddedSpy, bidderRequest, callbackFn);
-      callPrebidCacheHook(this, bidResponse2, afterBidAddedSpy, bidderRequest, callbackFn);
+      callPrebidCacheHook(callbackFn, this, bidResponse1, afterBidAddedSpy, bidderRequest);
+      callPrebidCacheHook(callbackFn, this, bidResponse2, afterBidAddedSpy, bidderRequest);
 
       expect(callbackResult).to.be.null;
       expect(afterBidAddedSpy.calledOnce).to.equal(true);
@@ -402,8 +402,8 @@ describe('adpod.js', function () {
         }
       };
 
-      callPrebidCacheHook(this, bidResponse1, afterBidAddedSpy, bidderRequest, callbackFn);
-      callPrebidCacheHook(this, bidResponse2, afterBidAddedSpy, bidderRequest, callbackFn);
+      callPrebidCacheHook(callbackFn, this, bidResponse1, afterBidAddedSpy, bidderRequest);
+      callPrebidCacheHook(callbackFn, this, bidResponse2, afterBidAddedSpy, bidderRequest);
 
       expect(doCallbacksIfTimedoutStub.calledTwice).to.equal(true);
       expect(logWarnStub.calledOnce).to.equal(true);
@@ -412,8 +412,14 @@ describe('adpod.js', function () {
   });
 
   describe('checkAdUnitSetupHook', function () {
+    let results;
+    let callbackFn = function (adUnits) {
+      results = adUnits;
+    };
+
     beforeEach(function () {
       logWarnStub = sinon.stub(utils, 'logWarn');
+      results = null;
     });
 
     afterEach(function() {
@@ -421,7 +427,6 @@ describe('adpod.js', function () {
     });
 
     it('removes an incorrectly setup adpod adunit', function() {
-      let results;
       let adUnits = [{
         code: 'test1',
         mediaTypes: {
@@ -438,9 +443,7 @@ describe('adpod.js', function () {
         }
       }];
 
-      checkAdUnitSetupHook(adUnits, function (adUnits) {
-        results = adUnits;
-      });
+      checkAdUnitSetupHook(callbackFn, adUnits);
 
       expect(results).to.deep.equal([{
         code: 'test2',
@@ -454,7 +457,6 @@ describe('adpod.js', function () {
     });
 
     it('accepts mixed set of adunits', function() {
-      let results;
       let adUnits = [{
         code: 'test3',
         mediaTypes: {
@@ -474,9 +476,7 @@ describe('adpod.js', function () {
         }
       }];
 
-      checkAdUnitSetupHook(adUnits, function (adUnits) {
-        results = adUnits;
-      });
+      checkAdUnitSetupHook(callbackFn, adUnits);
 
       expect(results).to.deep.equal(adUnits);
       expect(logWarnStub.called).to.equal(false);
@@ -485,6 +485,9 @@ describe('adpod.js', function () {
 
   describe('checkVideoBidSetupHook', function () {
     let callbackResult;
+    let callbackFn = function (bid) {
+      callbackResult = bid;
+    };
     const adpodTestBid = {
       video: {
         context: ADPOD,
@@ -510,9 +513,7 @@ describe('adpod.js', function () {
       let bannerTestBid = {
         mediaType: 'video'
       };
-      let hookReturnValue = checkVideoBidSetupHook(bannerTestBid, {}, {}, 'instream', function (bid) {
-        callbackResult = bid;
-      });
+      let hookReturnValue = checkVideoBidSetupHook(callbackFn, bannerTestBid, {}, {}, 'instream');
       expect(callbackResult).to.deep.equal(bannerTestBid);
       expect(hookReturnValue).to.be.undefined;
       expect(logErrorStub.called).to.equal(false);
@@ -526,9 +527,7 @@ describe('adpod.js', function () {
       });
 
       let goodBid = utils.deepClone(adpodTestBid);
-      let hookReturnValue = checkVideoBidSetupHook(goodBid, {}, {}, ADPOD, function (bid) {
-        callbackResult = bid;
-      });
+      let hookReturnValue = checkVideoBidSetupHook(callbackFn, goodBid, {}, {}, ADPOD);
       expect(callbackResult).to.be.null;
       expect(hookReturnValue).to.equal(true);
       expect(logErrorStub.called).to.equal(false);
@@ -536,9 +535,7 @@ describe('adpod.js', function () {
 
     it('returns false when a required property from an adpod bid is missing', function() {
       function testInvalidAdpodBid(badTestBid, shouldErrorBeLogged) {
-        let hookReturnValue = checkVideoBidSetupHook(badTestBid, {}, {}, ADPOD, function(bid) {
-          callbackResult = bid;
-        });
+        let hookReturnValue = checkVideoBidSetupHook(callbackFn, badTestBid, {}, {}, ADPOD);
         expect(callbackResult).to.be.null;
         expect(hookReturnValue).to.equal(false);
         expect(logErrorStub.called).to.equal(shouldErrorBeLogged);
