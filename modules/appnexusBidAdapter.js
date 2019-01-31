@@ -578,8 +578,14 @@ function hasAdPod(bid) {
   );
 }
 
+/**
+ * Expand an adpod placement into a set of request objects according to the
+ * total adpod duration and the range of duration seconds. Sets minduration/
+ * maxduration video property according to requireExactDuration configuration
+ */
 function createAdPodRequest(tags, adPodBid) {
   const { durationRange, requireExactDuration } = adPodBid.mediaTypes.video;
+
   const numberOfPlacements = getAdPodPlacementNumber(adPodBid.mediaTypes.video);
   const maxDuration = utils.getMaxValueFromArray(durationRange);
 
@@ -588,16 +594,17 @@ function createAdPodRequest(tags, adPodBid) {
 
   if (requireExactDuration) {
     const divider = numberOfPlacements / durationRange.length;
+    const chunked = utils.chunk(request, divider);
 
-    for (let i = 1; i <= durationRange.length; i++) {
-      const end = i * divider;
-
-      request.slice(end - divider, end).map(tag => {
-        setVideoProperty(tag, 'minduration', durationRange[i - 1]);
-        setVideoProperty(tag, 'maxduration', durationRange[i - 1]);
+    // each configured duration is set as min/maxduration for a subset of requests
+    durationRange.forEach((duration, index) => {
+      chunked[index].map(tag => {
+        setVideoProperty(tag, 'minduration', duration);
+        setVideoProperty(tag, 'maxduration', duration);
       });
-    }
+    });
   } else {
+    // all maxdurations should be the same
     request.map(tag => setVideoProperty(tag, 'maxduration', maxDuration));
   }
 
