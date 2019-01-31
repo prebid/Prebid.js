@@ -288,12 +288,11 @@ export function requestBidHook(config, next) {
 
           // no syncDelay; delay auction until callback que is complete
           if (syncDelay > 0) {
-            return processAsyncSubmoduleQue(asynchronousSubmodules, function (submodulesWithIdData) {
+            return processAsyncSubmoduleQue(asynchronousSubmodules, function (submodulesWithIds) {
               // append id data to be added to bids
-              submodulesWithIdData.forEach(item => { extendBidData.push(item.idObj); });
+              submodulesWithIds.forEach(item => { extendBidData.push(item.idObj); });
 
               // EXIT: done processing, append id data to bids and continue with auction
-              initializedSubmodules.length = 0;
               addIdDataToAdUnitBids(config.adUnits || $$PREBID_GLOBAL$$.adUnits, extendBidData);
               return next.apply(this, arguments);
             });
@@ -304,19 +303,12 @@ export function requestBidHook(config, next) {
               processAsyncSubmoduleQue(asynchronousSubmodules, function (submodulesWithIdData) {
                 // append id data to be added to bids
                 submodulesWithIdData.forEach(item => { extendBidData.push(item.idObj); });
-                // clear initialized submodules array since thre is no more processing
-                initializedSubmodules.length = 0;
               });
             }, syncDelay);
           }
         }
-
         // listen for auction complete since sync delay is set
         events.on(CONSTANTS.EVENTS.AUCTION_END, auctionEndHandler);
-      } else if (synchronousSubmodules.length){
-        // no submodules with callbacks, but there are submodules with ids,
-        // clear initialized submodules array since thre is no more processing
-        initializedSubmodules.length = 0;
       }
     }
 
