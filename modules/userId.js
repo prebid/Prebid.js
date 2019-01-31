@@ -69,7 +69,7 @@ const CONSTANTS = require('../src/constants.json');
  * @property {getId} getId - performs action to obtain id and return a value in the callback's response argument.
  */
 
-const UNIVERSAL_ID = 'UniversalId';
+const MODULE_NAME = 'UserId';
 const COOKIE = 'cookie';
 const LOCAL_STORAGE = 'html5';
 const OPT_OUT_COOKIE = '_pbjs_id_optout';
@@ -85,45 +85,22 @@ export let extendBidData;
  */
 export const unifiedIdSubmodule = {
   name: 'unifiedId',
-  decode: function (value) {
-    return { 'tdid': value };
-  },
-  getId: function (submoduleConfig, consentData, syncDelay) {
+  decode(value) { return { 'tdid': value } },
+  getId(submoduleConfig, consentData) {
     const partner = (submoduleConfig.params && typeof submoduleConfig.params.partner === 'string') ? submoduleConfig.params.partner : 'prebid';
     const url = (submoduleConfig.params && typeof submoduleConfig.params.url === 'string') ? submoduleConfig.params.url : `http://match.adsrvr.org/track/rid?ttd_pid=${partner}&fmt=json`;
-
-    function auctionEndHandler() {
-      events.off(CONSTANTS.EVENTS.AUCTION_END, auctionEndHandler);
-      setTimeout(callEndpoint, syncDelay);
-    }
-
-    function callEndpoint () {
+    return function (callback) {
       ajax(url, response => {
+        let responseObj;
         if (response) {
           try {
-            const responseObj = JSON.parse(response);
-            if (responseObj.TDID) {
-              setStoredValue(submoduleConfig.storage, responseObj.TDID, responseObj.expires || submoduleConfig.storage.expires || 60);
-              extendBidData.push(unifiedIdSubmodule.decode(responseObj.TDID))
-            } else {
-              utils.logError(`${UNIVERSAL_ID}: unifiedId - getId() TDID value undefined in response`);
-            }
+            responseObj = JSON.parse(response);
           } catch (error) {
             utils.logError(error);
           }
-        } else {
-          utils.logError(`${UNIVERSAL_ID}: unifiedId - getId() request returned empty response`);
         }
+        callback(responseObj);
       }, undefined, { method: 'GET' });
-    }
-
-    // if no sync delay call endpoint immediately,
-    if (!syncDelay) {
-      callEndpoint();
-    } else {
-      // else wait for auction end to create timer to call endpoint
-      utils.logInfo(`${UNIVERSAL_ID}: unifiedId - getId() wait ${syncDelay} after auction ends to perform sync `);
-      events.on(CONSTANTS.EVENTS.AUCTION_END, auctionEndHandler);
     }
   }
 };
@@ -133,14 +110,8 @@ export const unifiedIdSubmodule = {
  */
 export const pubCommonIdSubmodule = {
   name: 'pubCommonId',
-  decode: function(value) {
-    return { 'pubcid': value }
-  },
-  getId: function(submoduleConfig, consentData, syncDelay) {
-    const pubId = utils.generateUUID();
-    setStoredValue(submoduleConfig.storage, pubId, submoduleConfig.storage.expires || 60);
-    extendBidData.push(this.decode(pubId))
-  }
+  decode(value) { return { 'pubcid': value } },
+  getId() { return utils.generateUUID() }
 };
 
 /**
@@ -198,9 +169,9 @@ export function setStoredValue(storage, value, expires) {
     } else if (storage.type === LOCAL_STORAGE) {
       localStorage.setItem(storage.name, value);
     }
-    utils.logInfo(`${UNIVERSAL_ID} - setStoredValue() ${storage.name}=${value} using ${storage.type}`);
+    utils.logInfo(`${MODULE_NAME} - setStoredValue() ${storage.name}=${value} using ${storage.type}`);
   } catch (error) {
-    utils.logError(`${UNIVERSAL_ID} - setStoredValue() failed ${error}`);
+    utils.logError(`${MODULE_NAME} - setStoredValue() failed ${error}`);
   }
 }
 
@@ -215,7 +186,7 @@ export function getStoredValue(storage) {
   } else if (storage.type === LOCAL_STORAGE) {
     storedValue = localStorage.getItem(storage.name);
   }
-  utils.logInfo(`${UNIVERSAL_ID} - get stored value ${storage.name} from ${storage.type}`);
+  utils.logInfo(`${MODULE_NAME} - get stored value ${storage.name} from ${storage.type}`);
   return storedValue;
 }
 
@@ -237,25 +208,43 @@ export function hasGDPRConsent (consentData) {
 }
 
 /**
- * This function is called when bids are requested, but before the bids are passed to bid adapters.
- * 1.) retrieving gdpr consentData and then passing it to submodule.getId functions if necessary
- * 2.) adding universal id data to bid request objects for use in bid adapters
- * Note: the priority value of the hook function must be less than the value set for the consentManagement module, or consentData will not available
- *   consentData is REQUIRED if submodule.getId needs to be called
- *   responsible for handling:
- * @param {{}} config
- * @param next
- * @returns {*}
+ * @param {Object[]} submoduleContainers
+ * @param {function} queCompleteCallback - called when all queued callbacks have completed
  */
-export function requestBidHook(config, next) {
-  // initialize submodules
-  if (typeof initializedSubmodules === 'undefined' && submodules && submoduleConfigs) {
-    initializedSubmodules = initSubmodules(submodules, submoduleConfigs, gdprDataHandler.getConsentData());
-  }
+export function processAsyncSubmoduleQue (submoduleContainers, queCompleteCallback) {
+  utils.logInfo(`${MODULE_NAME} - process submodule callback que (${submoduleContainers.length})`);
 
-  // check for and pass universalId data if it exists to bid adapters
+  submoduleContainers.forEach(function(submoduleContainer) {
+    submoduleContainer.callback(function callbackCompleted (idObj) {
+      // clear callbac (since has completed)
+      submoduleContainer.callback = undefined;
+      // if idObj is valid:
+      //   1. set in local storage
+      //   2. set id data to submoduleContainer.idObj (id data will be added to bids in the queCompleteCallback function)
+      if (idObj) {
+        setStoredValue(submoduleContainer.config.storage, idObj, submoduleContainer.config.storage.expires);
+        submoduleContainer.idObj = submoduleContainer.submodule.decode(idObj);
+      } else {
+        utils.logError(`${MODULE_NAME}: ${submoduleContainer.submodule.name} - request id responded with an empty value`);
+      }
+      // check if all callbacks have completed, then:
+      //   1. call queCompletedCallback with 'submoduleContainers' (each item's idObj prop should contain id data if it was successful)
+      if (submoduleContainers.every(item => typeof item.callback === 'undefined')) {
+        // Note: only submodules with valid idObj values are passed
+        const submoduleContainersWithIds = submoduleContainers.filter(item => typeof item.idObj !== 'undefined');
+        utils.logInfo(`${MODULE_NAME}: process submodule callback que completed and returned id data (${submoduleContainersWithIds.length})`);
+        queCompleteCallback(submoduleContainersWithIds);
+      }
+    })
+  });
+}
+
+/**
+ * @param {Object[]} adUnits
+ * @param {Object[]} extendBidData
+ */
+export function addIdDataToAdUnitBids (adUnits, extendBidData) {
   if (extendBidData.length) {
-    const adUnits = config.adUnits || $$PREBID_GLOBAL$$.adUnits;
     if (adUnits) {
       adUnits.forEach(adUnit => {
         adUnit.bids.forEach(bid => {
@@ -268,6 +257,73 @@ export function requestBidHook(config, next) {
       });
     }
   }
+}
+
+/**
+ * This function is called when bids are requested, but before the bids are passed to bid adapters.
+ * 1.) retrieving gdpr consentData and then passing it to submodule.getId functions if necessary
+ * 2.) adding User id data to bid request objects for use in bid adapters
+ * Note: the priority value of the hook function must be less than the value set for the consentManagement module, or consentData will not available
+ *   consentData is REQUIRED if submodule.getId needs to be called
+ *   responsible for handling:
+ * @param {{}} config
+ * @param next
+ * @returns {*}
+ */
+export function requestBidHook(config, next) {
+  // initialize submodules
+  if (typeof initializedSubmodules === 'undefined' && submodules && submoduleConfigs) {
+    initializedSubmodules = initSubmodules(submodules, submoduleConfigs, gdprDataHandler.getConsentData());
+
+    if (initializedSubmodules.length) {
+      const synchronousSubmodules = initializedSubmodules.filter(item => typeof item.idObj !== 'undefined');
+      // append id data to be added to bids
+      synchronousSubmodules.forEach(item => { extendBidData.push(item.idObj) });
+
+      const asynchronousSubmodules = initializedSubmodules.filter(item => typeof item.callback === 'function');
+      if (asynchronousSubmodules.length) {
+        // async submodule callbacks have all be completed, so any universalId data should be passed to bid adapters now
+        const auctionEndHandler = function (event) {
+          events.off(CONSTANTS.EVENTS.AUCTION_END, auctionEndHandler);
+
+          // no syncDelay; delay auction until callback que is complete
+          if (syncDelay > 0) {
+            return processAsyncSubmoduleQue(asynchronousSubmodules, function (submodulesWithIdData) {
+              // append id data to be added to bids
+              submodulesWithIdData.forEach(item => { extendBidData.push(item.idObj); });
+
+              // EXIT: done processing, append id data to bids and continue with auction
+              initializedSubmodules.length = 0;
+              addIdDataToAdUnitBids(config.adUnits || $$PREBID_GLOBAL$$.adUnits, extendBidData);
+              return next.apply(this, arguments);
+            });
+          } else {
+            // syncDelay exits wait until auction completes before processing callback que
+            utils.logInfo(`${MODULE_NAME}: wait ${syncDelay} after auction ends to perform sync `);
+            setTimeout(function (){
+              processAsyncSubmoduleQue(asynchronousSubmodules, function (submodulesWithIdData) {
+                // append id data to be added to bids
+                submodulesWithIdData.forEach(item => { extendBidData.push(item.idObj); });
+                // clear initialized submodules array since thre is no more processing
+                initializedSubmodules.length = 0;
+              });
+            }, syncDelay);
+          }
+        }
+
+        // listen for auction complete since sync delay is set
+        events.on(CONSTANTS.EVENTS.AUCTION_END, auctionEndHandler);
+      } else if (synchronousSubmodules.length){
+        // no submodules with callbacks, but there are submodules with ids,
+        // clear initialized submodules array since thre is no more processing
+        initializedSubmodules.length = 0;
+      }
+    }
+
+    // no async submodule callbacks are queued, so any universalId data should be passed to bid adapters now
+    addIdDataToAdUnitBids(config.adUnits || $$PREBID_GLOBAL$$.adUnits, extendBidData);
+  }
+
   // calling next() allows prebid to continue processing
   return next.apply(this, arguments);
 }
@@ -279,31 +335,49 @@ export function requestBidHook(config, next) {
  * @returns {string[]} initialized submodules
  */
 export function initSubmodules (submodules, submoduleConfigs, consentData) {
+  // if no gdpr consent, exit immediately
+  if (!hasGDPRConsent(consentData)) {
+    utils.logWarn(`${MODULE_NAME} - gdpr permission not valid for local storage, exit module`);
+    return [];
+  }
+
   return submodules.reduce((carry, submodule) => {
     const submoduleConfig = find(submoduleConfigs, submoduleConfig => submoduleConfig.name === submodule.name);
+    /**
+     * when callback is defined and idObj is undefined, callback needs to be called to obtain the id object,
+     * on callback complete set idObj with the value from callback's responseIdObj arg
+     * the callback request has completed if idObject has been set when callback is defined (eliminates using extra flag variable)
+     */
+    const submoduleContainer = {
+      submodule,
+      config
+    };
 
     // STORAGE configuration, storage must be loaded from cookies/localStorage and decoded before adding to bid requests
     if (submoduleConfig && submoduleConfig.storage) {
       const storedId = getStoredValue(submoduleConfig.storage);
       if (storedId) {
         // use stored value
-        extendBidData.push(submodule.decode(storedId));
-        carry.push(submodule.name + '-storage-decode');
+        submoduleContainer.idObj = submodule.decode(storedId);
       } else {
         // call getId
-        if (hasGDPRConsent(consentData)) {
-          submodule.getId(submoduleConfig, consentData, syncDelay);
-          carry.push(submodule.name + '-storage-getId');
+        const getIdResult = submodule.getId(submoduleConfig, consentData);
+        if (typeof getIdResult === 'function') {
+          // add endpoint function to command que if getId returns a function
+          submoduleContainer.callback = getIdResult;
         } else {
-          utils.logWarn(`${UNIVERSAL_ID}: ${submodule.name} - initSubmodules getId, no gdpr permission: ignore`);
+          // getId return non-functin, so ran synchronously, and is a valid id object
+          submoduleContainer.idObj = submodule.decode(getIdResult);
+          setStoredValue(submoduleConfig.storage, getIdResult, submoduleConfig.storage.expires);
         }
       }
     }
-    // VALUE configuration, value is added directly to bid requests (DOES NOT REQUIRE DECODING)
-    if (submoduleConfig.value) {
-      extendBidData.push(submoduleConfig.value);
-      carry.push(submodule.name + '-value');
+    else if (submoduleConfig.value) {
+      submoduleContainer.idObj = submoduleConfig.value;
     }
+
+    // configured (storage-found / storage-not-found-que-callback / value-found) submoduleContainer
+    carry.push(submoduleContainer);
     return carry;
   }, []);
 }
@@ -384,14 +458,14 @@ export function init (config, allSubmodules) {
 
   if (utils.cookiesAreEnabled()) {
     if (document.cookie.indexOf(OPT_OUT_COOKIE) !== -1) {
-      utils.logInfo(`${UNIVERSAL_ID} - opt-out cookie found, exit module`);
+      utils.logInfo(`${MODULE_NAME} - opt-out cookie found, exit module`);
       return;
     }
   }
   // listen for config userSyncs to be set
   config.getConfig('usersync', ({usersync}) => {
     if (usersync) {
-      utils.logInfo(`${UNIVERSAL_ID} - usersync config updated`);
+      utils.logInfo(`${MODULE_NAME} - usersync config updated`);
 
       syncDelay = usersync.syncDelay || 0;
       submoduleConfigs = getValidSubmoduleConfigs(usersync.universalIds, allSubmodules);
