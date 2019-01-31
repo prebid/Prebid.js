@@ -1,5 +1,5 @@
 /**
- * This module adds Universal ID support to prebid.js
+ * This module adds User ID support to prebid.js
  */
 import { ajax } from '../src/ajax.js';
 import { config } from '../src/config.js';
