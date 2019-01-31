@@ -4,7 +4,7 @@
 pbjs.setConfig({
     debug: true,
     usersync: {
-        universalIds: [{
+        userIds: [{
             name: "unifiedId",
             params: {
                 partner: "prebid",

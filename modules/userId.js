@@ -30,7 +30,7 @@ const CONSTANTS = require('../src/constants.json');
 
 /**
  * @typedef {Object} IdSubmoduleConfig
- * @property {string} name - the universalId submodule name
+ * @property {string} name - the userId submodule name
  * @property {StorageConfig} storage - browser storage config
  * @property {ParamsConfig} params - params config for use by the submodule.getId function
  * @property {ValueConfig} value - id data added directly to bids
@@ -248,8 +248,8 @@ export function addIdDataToAdUnitBids (adUnits, extendBidData) {
     if (adUnits) {
       adUnits.forEach(adUnit => {
         adUnit.bids.forEach(bid => {
-          // append the universalID property to bid
-          bid.universalID = extendBidData.reduce((carry, item) => {
+          // append the userId property to bid
+          bid.userId = extendBidData.reduce((carry, item) => {
             Object.keys(item).forEach(key => { carry[key] = item[key]; });
             return carry;
           }, {});
@@ -282,7 +282,7 @@ export function requestBidHook(config, next) {
 
       const asynchronousSubmodules = initializedSubmodules.filter(item => typeof item.callback === 'function');
       if (asynchronousSubmodules.length) {
-        // async submodule callbacks have all be completed, so any universalId data should be passed to bid adapters now
+        // async submodule callbacks have all be completed, so any userId data should be passed to bid adapters now
         const auctionEndHandler = function (event) {
           events.off(CONSTANTS.EVENTS.AUCTION_END, auctionEndHandler);
 
@@ -312,7 +312,7 @@ export function requestBidHook(config, next) {
       }
     }
 
-    // no async submodule callbacks are queued, so any universalId data should be passed to bid adapters now
+    // no async submodule callbacks are queued, so any userId data should be passed to bid adapters now
     addIdDataToAdUnitBids(config.adUnits || $$PREBID_GLOBAL$$.adUnits, extendBidData);
   }
 
@@ -459,8 +459,8 @@ export function init (config, allSubmodules) {
     if (usersync) {
       utils.logInfo(`${MODULE_NAME} - usersync config updated`);
 
-      syncDelay = usersync.syncDelay || 0;
-      submoduleConfigs = getValidSubmoduleConfigs(usersync.universalIds, allSubmodules);
+      syncDelay = usersync.syncDelay || 500;
+      submoduleConfigs = getValidSubmoduleConfigs(usersync.userIds, allSubmodules);
       submodules = getValidSubmodules(allSubmodules, submoduleConfigs);
       if (submodules.length) {
         // priority set to load after consentManagement (50) but before default priority 10
