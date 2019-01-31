@@ -7,8 +7,6 @@ import { callPrebidCacheHook, checkAdUnitSetupHook, checkVideoBidSetupHook, adpo
 
 let expect = require('chai').expect;
 
-// TODO - need to update the bidResponses to include the targting keys/UUID; update store stubs?
-
 describe('adpod.js', function () {
   let logErrorStub;
   let logWarnStub;
@@ -21,6 +19,7 @@ describe('adpod.js', function () {
     let storeStub;
     let afterBidAddedSpy;
     let auctionBids = [];
+    let uuid;
 
     let callbackFn = function() {
       callbackResult = true;
@@ -34,6 +33,7 @@ describe('adpod.js', function () {
 
     beforeEach(function() {
       callbackResult = null;
+      uuid = utils.generateUUID();
       afterBidAddedSpy = sinon.spy();
       storeStub = sinon.stub(videoCache, 'store');
       logWarnStub = sinon.stub(utils, 'logWarn');
@@ -98,7 +98,12 @@ describe('adpod.js', function () {
         video: {
           context: ADPOD,
           durationSeconds: 30
-        }
+        },
+        adserverTargeting: {
+          hb_price_industry_duration: '10.00_airline_30s',
+          hb_uuid: uuid
+        },
+        customCacheKey: `10.00_airline_30s_${uuid}`
       };
       let bidResponse2 = {
         adId: 'adId234',
@@ -111,7 +116,12 @@ describe('adpod.js', function () {
         video: {
           context: ADPOD,
           durationSeconds: 30
-        }
+        },
+        adserverTargeting: {
+          hb_price_industry_duration: '15.00_airline_30s',
+          hb_uuid: uuid
+        },
+        customCacheKey: `15.00_airline_30s_${uuid}`
       };
       let bidderRequest = {
         adUnitCode: 'adpod_1',
@@ -136,7 +146,7 @@ describe('adpod.js', function () {
       expect(auctionBids[0].adId).to.equal('adId123');
       expect(auctionBids[0].customCacheKey).to.exist.and.to.match(/^10\.00_airline_30s_.*/);
       expect(auctionBids[0].adserverTargeting.hb_price_industry_duration).to.equal('10.00_airline_30s');
-      expect(auctionBids[0].adserverTargeting.hb_uuid).to.exist;
+      expect(auctionBids[0].adserverTargeting.hb_uuid).to.equal(uuid);
       expect(auctionBids[1].adId).to.equal('adId234');
       expect(auctionBids[1].customCacheKey).to.exist.and.to.match(/^15\.00_airline_30s_.*/);
       expect(auctionBids[1].adserverTargeting.hb_price_industry_duration).to.equal('15.00_airline_30s');
@@ -164,7 +174,12 @@ describe('adpod.js', function () {
         video: {
           context: ADPOD,
           durationSeconds: 30
-        }
+        },
+        adserverTargeting: {
+          hb_price_industry_duration: '15.00_airline_30s',
+          hb_uuid: uuid
+        },
+        customCacheKey: `15.00_airline_30s_${uuid}`
       };
       let bidderRequest = {
         adUnitCode: 'adpod_2',
@@ -213,7 +228,12 @@ describe('adpod.js', function () {
         video: {
           context: ADPOD,
           durationSeconds: 15
-        }
+        },
+        adserverTargeting: {
+          hb_price_industry_duration: '15.00_airline_15s',
+          hb_uuid: uuid
+        },
+        customCacheKey: `15.00_airline_15s_${uuid}`
       };
       let bidResponse2 = {
         adId: 'multi_ad2',
@@ -226,7 +246,12 @@ describe('adpod.js', function () {
         video: {
           context: ADPOD,
           durationSeconds: 15
-        }
+        },
+        adserverTargeting: {
+          hb_price_industry_duration: '15.00_news_15s',
+          hb_uuid: uuid
+        },
+        customCacheKey: `15.00_news_15s_${uuid}`
       };
       let bidResponse3 = {
         adId: 'multi_ad3',
@@ -239,7 +264,12 @@ describe('adpod.js', function () {
         video: {
           context: ADPOD,
           durationSeconds: 15
-        }
+        },
+        adserverTargeting: {
+          hb_price_industry_duration: '10.00_sports_15s',
+          hb_uuid: uuid
+        },
+        customCacheKey: `10.00_sports_15s_${uuid}`
       };
 
       let bidderRequest = {
@@ -306,7 +336,12 @@ describe('adpod.js', function () {
         video: {
           context: ADPOD,
           durationSeconds: 45
-        }
+        },
+        adserverTargeting: {
+          hb_price_industry_duration: '5.00_tech_45s',
+          hb_uuid: uuid
+        },
+        customCacheKey: `5.00_tech_45s_${uuid}`
       };
       let bidResponse2 = {
         adId: 'dup_ad_2',
@@ -319,7 +354,12 @@ describe('adpod.js', function () {
         video: {
           context: ADPOD,
           durationSeconds: 45
-        }
+        },
+        adserverTargeting: {
+          hb_price_industry_duration: '5.00_tech_45s',
+          hb_uuid: uuid
+        },
+        customCacheKey: `5.00_tech_45s_${uuid}`
       };
       let bidderRequest = {
         adUnitCode: 'adpod_4',
@@ -373,7 +413,12 @@ describe('adpod.js', function () {
         video: {
           context: ADPOD,
           durationSeconds: 30
-        }
+        },
+        adserverTargeting: {
+          hb_price_industry_duration: '5.00_tech_30s',
+          hb_uuid: uuid
+        },
+        customCacheKey: `5.00_tech_30s_${uuid}`
       };
       let bidResponse2 = {
         adId: 'err_ad_2',
@@ -386,7 +431,12 @@ describe('adpod.js', function () {
         video: {
           context: ADPOD,
           durationSeconds: 30
-        }
+        },
+        adserverTargeting: {
+          hb_price_industry_duration: '5.00_tech_30s',
+          hb_uuid: uuid
+        },
+        customCacheKey: `5.00_tech_30s_${uuid}`
       };
       let bidderRequest = {
         adUnitCode: 'adpod_5',
