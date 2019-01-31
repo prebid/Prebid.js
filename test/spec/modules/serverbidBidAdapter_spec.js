@@ -241,7 +241,7 @@ describe('Serverbid BidAdapter', function () {
     it('handles empty sync options', function () {
       let opts = spec.getUserSyncs({});
 
-      expect(opts).to.be.empty;
+      expect(opts).to.be.undefined;
     });
 
     it('should return a sync url if iframe syncs are enabled', function () {

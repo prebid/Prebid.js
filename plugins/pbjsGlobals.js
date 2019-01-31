@@ -2,17 +2,17 @@
 let t = require('@babel/core').types;
 let prebid = require('../package.json');
 
-let replace = {
-  '$prebid.version$': prebid.version,
-  '$$PREBID_GLOBAL$$': prebid.globalVarName,
-  '$$REPO_AND_VERSION$$': `${prebid.repository.url.split('/')[3]}_prebid_${prebid.version}`
-};
+module.exports = function(api, options) {
+  let replace = {
+    '$prebid.version$': prebid.version,
+    '$$PREBID_GLOBAL$$': options.globalVarName || prebid.globalVarName,
+    '$$REPO_AND_VERSION$$': `${prebid.repository.url.split('/')[3]}_prebid_${prebid.version}`
+  };
 
-let identifierToStringLiteral = [
-  '$$REPO_AND_VERSION$$'
-];
+  let identifierToStringLiteral = [
+    '$$REPO_AND_VERSION$$'
+  ];
 
-module.exports = function() {
   return {
     visitor: {
       StringLiteral(path) {

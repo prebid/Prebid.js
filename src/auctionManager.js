@@ -29,8 +29,8 @@ const CONSTANTS = require('./constants.json');
  * @returns {AuctionManager} auctionManagerInstance
  */
 export function newAuctionManager() {
-  let _auctions = [];
-  let auctionManager = {};
+  const _auctions = [];
+  const auctionManager = {};
 
   auctionManager.addWinningBid = function(bid) {
     const auction = find(_auctions, auction => auction.getAuctionId() === bid.auctionId);
@@ -99,6 +99,10 @@ export function newAuctionManager() {
       if (auction) auction.setBidTargeting(bid);
     }
   }
+
+  auctionManager.getLastAuctionId = function() {
+    return _auctions.length && _auctions[_auctions.length - 1].getAuctionId()
+  };
 
   function _addAuction(auction) {
     _auctions.push(auction);
