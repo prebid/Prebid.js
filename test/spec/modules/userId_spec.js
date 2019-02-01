@@ -7,7 +7,7 @@ import {
   initializedSubmodules,
   syncDelay,
   requestBidHook, setStoredValue,
-} from '../../../modules/universalId';
+} from '../../../modules/userId';
 import {expect} from 'chai'
 import sinon from 'sinon'
 import {config} from '../../../src/config';
