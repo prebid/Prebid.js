@@ -6,7 +6,9 @@ import { registerVideoSupport } from '../src/adServerManager';
 import { auctionManager } from '../src/auctionManager';
 import { groupBy, deepAccess } from '../src/utils';
 import { config } from '../src/config';
+// import { ADPOD, initAdpodHooks } from './adpod';
 
+const ADPOD = 'adpod'; // remove later when adpod module is merged; use above commented import instead
 const adPodTargetingKey = 'hb_price_industry_duration';
 
 /**
@@ -57,7 +59,7 @@ export default function getTargeting({codes} = {}) {
  */
 function getAdPodAdUnits(codes) {
   return $$PREBID_GLOBAL$$.adUnits
-    .filter((adUnit) => deepAccess(adUnit, 'mediaTypes.video.context') === 'adpod')
+    .filter((adUnit) => deepAccess(adUnit, 'mediaTypes.video.context') === ADPOD)
     .filter((adUnit) => (codes.length > 0) ? codes.indexOf(adUnit.code) != -1 : true);
 }
 
@@ -100,6 +102,7 @@ function getBidsForAdpod(bidsReceived, adPodAdUnits) {
     .filter((bid) => adUnitCodes.indexOf(bid.adUnitCode) != -1)
 }
 
+// initAdpodHooks();
 registerVideoSupport('freewheel', {
   getTargeting: getTargeting
 });
