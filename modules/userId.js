@@ -284,6 +284,9 @@ export function addIdDataToAdUnitBids (adUnits, submodules) {
  * This function is called when bids are requested, but before the bids are passed to bid adapters.
  * 1.) retrieving gdpr consentData and then passing it to submodule.getId functions if necessary
  * 2.) adding User id data to bid request objects for use in bid adapters
+ * Note: the priority value of the hook function must be less than the value set for the consentManagement module, or consentData will not available
+ *   consentData is REQUIRED if submodule.getId needs to be called
+ *   responsible for handling:
  * @param {{}} config
  * @param next
  * @returns {*}
@@ -301,10 +304,11 @@ export function requestBidHook(config, next) {
 
           // no syncDelay; delay auction until callback que is complete
           if (syncDelay > 0) {
-            return processAsyncSubmoduleQue(submodulesWithCallbacks, function (submodulesWithIds) {
-              // EXIT: done processing, append id data to bids and continue with auction
-              addIdDataToAdUnitBids(config.adUnits || $$PREBID_GLOBAL$$.adUnits, initializedSubmodules);
-              return next.apply(this, arguments);
+            processAsyncSubmoduleQue(submodulesWithCallbacks, function (submodulesWithIds) {
+              utils.logInfo(`${MODULE_NAME}: delayed sync completed for: ${submodulesWithIdData.reduce((carry, item) => {
+                carry.push(item.submodule.name);
+                return carry;
+              }).join()}`);
             });
           } else {
             // syncDelay exits wait until auction completes before processing callback que
