@@ -68,9 +68,9 @@ const MODULE_NAME = 'UserId';
 const COOKIE = 'cookie';
 const LOCAL_STORAGE = 'html5';
 const OPT_OUT_COOKIE = '_pbjs_id_optout';
-const DEFAULT_SYNC_DELAY = 500;
+const DEFAULT_SYNC_DELAY = 0;
 
-export let syncDelay = DEFAULT_SYNC_DELAY;
+export let syncDelay;
 export let submodules;
 export let initializedSubmodules;
 
@@ -90,7 +90,6 @@ export const unifiedIdSubmodule = {
 
     return function (callback) {
       ajax(url, response => {
-        // {"TDID":"c1ec56ba-ec54-4815-89ea-673cd615fa94","TDID_LOOKUP":"FALSE","TDID_CREATED_AT":"2019-02-01T21:16:33"}
         let responseObj;
         if (response) {
           try {
