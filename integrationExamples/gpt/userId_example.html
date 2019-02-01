@@ -131,17 +131,17 @@
                             url: "http://match.adsrvr.org/track/rid?ttd_pid=prebid&fmt=json"
                         },
                         storage: {
-                            type: "cookie",
+                            type: "html5",
                             name: "unifiedid",
-                            expires: 60
+                            expires: 30
                         },
                         
                     }, {
                         name: "pubCommonId",
                         storage: {
-                            type: "html5",
+                            type: "cookie",
                             name: "pubcid",
-                            expires: 60
+                            expires: 365
                         },
                         value: {
                             foo: '9879878907987',

@@ -128,10 +128,12 @@ export const pubCommonIdSubmodule = {
 export function setStoredValue(storage, value, expires) {
   try {
     const valueStr = (typeof value === 'object') ? JSON.stringify(value) : value;
+    const expiresStr = (new Date(Date.now() + (expires * (60 * 60 * 24 * 1000)))).toUTCString();
+
     if (storage.type === COOKIE) {
-      utils.setCookie(storage.name, valueStr, (new Date((expires * 60 * 24 * 1000) + Date.now())).toUTCString());
+      utils.setCookie(storage.name, valueStr, expiresStr);
     } else if (storage.type === LOCAL_STORAGE) {
-      localStorage.setItem(`${storage.name}_exp`, (new Date((expires * 60 * 24 * 1000) + Date.now())).toUTCString());
+      localStorage.setItem(`${storage.name}_exp`, expiresStr);
       localStorage.setItem(storage.name, encodeURIComponent(valueStr));
     }
   } catch (error) {
