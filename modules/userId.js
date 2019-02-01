@@ -64,7 +64,6 @@ const CONSTANTS = require('../src/constants.json');
  * @returns {Object}
  */
 
-
 const MODULE_NAME = 'UserId';
 const COOKIE = 'cookie';
 const LOCAL_STORAGE = 'html5';
@@ -121,64 +120,20 @@ export const pubCommonIdSubmodule = {
 };
 
 /**
- * @returns {boolean}
- */
-export function browserSupportsLocalStorage () {
-  try {
-    if (typeof localStorage !== 'object') {
-      return false;
-    }
-    localStorage.setItem('prebid.cookieTest', '1');
-    return localStorage.getItem('prebid.cookieTest') === '1';
-  } catch (error) {
-    return false;
-  }
-}
-
-/**
- * @param {string} key
- * @returns {string | null}
- */
-export function getCookie(key) {
-  return decodeURIComponent(document.cookie.replace(new RegExp('(?:(?:^|.*;)\\s*' + encodeURIComponent(key).replace(/[\\\-\.\+\*]/g, '\\$&') + '\\s*\\=\\s*([^;]*).*$)|^.*$'), '$1')) || null;
-}
-
-/**
- * @param {string} key
- * @param {string} value
- * @param {string|number} expires
- */
-export function setCookie (key, value, expires) {
-  document.cookie = `${key}=${encodeURIComponent(value)}${(expires !== '') ? `; expires=${expires}` : ''}; path=/`;
-}
-
-/**
  * @param {SubmoduleStorage} storage
  * @param {string} value
  * @param {number|string} expires
  */
 export function setStoredValue(storage, value, expires) {
-  let sExpires = '';
-  if (expires) {
-    switch (expires.constructor) {
-      case Number:
-        sExpires = expires === Infinity ? 'Fri, 31 Dec 9999 23:59:59 GMT' : (new Date((expires * 60 * 24 * 1000) + Date.now())).toUTCString();
-        break;
-      case String:
-        sExpires = expires;
-        break;
-    }
-  }
   try {
     if (storage.type === COOKIE) {
-      setCookie(storage.name, value, sExpires);
+      utils.setCookie(storage.name, value, (new Date((expires * 60 * 24 * 1000) + Date.now())).toUTCString());
     } else if (storage.type === LOCAL_STORAGE) {
       localStorage.setItem(storage.name, value);
-      localStorage.setItem(`${storage.name}_exp`, sExpires);
+      localStorage.setItem(`${storage.name}_exp`, (new Date((expires * 60 * 24 * 1000) + Date.now())).toUTCString());
     }
-    utils.logInfo(`${MODULE_NAME} - setStoredValue() ${storage.name}=${value} using ${storage.type}`);
   } catch (error) {
-    utils.logError(`${MODULE_NAME} - setStoredValue() failed ${error}`);
+    utils.logError(error);
   }
 }
 
@@ -189,20 +144,18 @@ export function setStoredValue(storage, value, expires) {
 export function getStoredValue(storage) {
   let storedValue;
   if (storage.type === COOKIE) {
-    storedValue = getCookie(storage.name);
+    storedValue = utils.getCookie(storage.name);
   } else if (storage.type === LOCAL_STORAGE) {
     const storedValueExp = localStorage.getItem(`${storage.name}_exp`);
-    // empty string no exp
+    // empty string means no expiration set
     if (storedValueExp === '') {
       storedValue = localStorage.getItem(storage.name);
     } else if (storedValueExp) {
-      const diff = Date.now() - (new Date(storedValueExp)).getTime();
-      if (diff) {
+      if ((new Date(storedValueExp)).getTime() - Date.now() > 0) {
         storedValue = localStorage.getItem(storage.name);
       }
     }
   }
-  utils.logInfo(`${MODULE_NAME} - get stored value ${storage.name} from ${storage.type}`);
   return storedValue;
 }
 
@@ -225,31 +178,31 @@ export function hasGDPRConsent (consentData) {
 
 /**
  * @param {Object[]} submodules
- * @param {function} queCompleteCallback - called when all queued callbacks have completed
+ * @param {function} [queFinished] - called when all queued callbacks have completed
  */
-export function processAsyncSubmoduleQue (submodules, queCompleteCallback) {
+export function processSubmoduleCallbacks (submodules, queFinished) {
   utils.logInfo(`${MODULE_NAME} - process submodule callback que (${submodules.length})`);
 
-  submodules.forEach(function(submoduleContainer) {
-    submoduleContainer.callback(function callbackCompleted (idObj) {
+  submodules.forEach(function(submodule) {
+    submodule.callback(function callbackCompleted (idObj) {
       // clear callbac (since has completed)
-      submoduleContainer.callback = undefined;
+      submodule.callback = undefined;
       // if idObj is valid:
       //   1. set in local storage
       //   2. set id data to submoduleContainer.idObj (id data will be added to bids in the queCompleteCallback function)
       if (idObj) {
-        setStoredValue(submoduleContainer.config.storage, idObj, submoduleContainer.config.storage.expires);
-        submoduleContainer.idObj = submoduleContainer.submodule.decode(idObj);
+        setStoredValue(submodule.config.storage, idObj, submodule.config.storage.expires);
+        submodule.idObj = submodule.submodule.decode(idObj);
       } else {
-        utils.logError(`${MODULE_NAME}: ${submoduleContainer.submodule.name} - request id responded with an empty value`);
+        utils.logError(`${MODULE_NAME}: ${submodule.submodule.name} - request id responded with an empty value`);
       }
       // check if all callbacks have completed, then:
       //   1. call queCompletedCallback with 'submoduleContainers' (each item's idObj prop should contain id data if it was successful)
-      if (submodules.every(item => typeof item.callback === 'undefined')) {
+      if (typeof queFinished === 'function' && submodules.every(item => typeof item.callback === 'undefined')) {
         // Note: only submodules with valid idObj values are passed
         const submoduleContainersWithIds = submodules.filter(item => typeof item.idObj !== 'undefined');
-        utils.logInfo(`${MODULE_NAME}: process submodule callback que completed and returned id data (${submoduleContainersWithIds.length})`);
-        queCompleteCallback(submoduleContainersWithIds);
+        utils.logInfo(`${MODULE_NAME}: process submodule callback que completed`);
+        queFinished(submoduleContainersWithIds);
       }
     })
   });
@@ -293,34 +246,24 @@ export function addIdDataToAdUnitBids (adUnits, submodules) {
  */
 export function requestBidHook(config, next) {
   // initialize submodules only when undefined
-  if (typeof initializedSubmodules === 'undefined' && submodules.length) {
+  if (typeof initializedSubmodules === 'undefined') {
     initializedSubmodules = initSubmodules(submodules, gdprDataHandler.getConsentData());
     if (initializedSubmodules.length) {
+      // list of sumodules that have callbacks that need to be executed
       const submodulesWithCallbacks = initializedSubmodules.filter(item => typeof item.callback === 'function');
       if (submodulesWithCallbacks.length) {
-        // async submodule callbacks have all be completed, so any userId data should be passed to bid adapters now
-        const auctionEndHandler = function (event) {
+        // need to wait for auction complete handler to process the submodules with callbacks
+        const auctionEndHandler = function() {
+          // this handler should only be listened to once
           events.off(CONSTANTS.EVENTS.AUCTION_END, auctionEndHandler);
 
-          // no syncDelay; delay auction until callback que is complete
+          // if syncDelay is zero, process callbacks now, otherwise dealy process with a setTimeout
           if (syncDelay === 0) {
-            processAsyncSubmoduleQue(submodulesWithCallbacks, function (submodulesWithIds) {
-              utils.logInfo(`${MODULE_NAME}: delayed sync completed for: ${submodulesWithIdData.reduce((carry, item) => {
-                carry.push(item.submodule.name);
-                return carry;
-              }).join()}`);
-            });
+            processSubmoduleCallbacks(submodulesWithCallbacks);
           } else {
-            // syncDelay exits wait until auction completes before processing callback que
             utils.logInfo(`${MODULE_NAME}: wait ${syncDelay} after auction ends to perform sync `);
-
-            setTimeout(function (){
-              processAsyncSubmoduleQue(submodulesWithCallbacks, function (submodulesWithIdData) {
-                utils.logInfo(`${MODULE_NAME}: delayed sync completed for: ${submodulesWithIdData.reduce((carry, item) => {
-                  carry.push(item.submodule.name);
-                  return carry;
-                }).join()}`);
-              });
+            setTimeout(function() {
+              processSubmoduleCallbacks(submodulesWithCallbacks);
             }, syncDelay);
           }
         }
@@ -347,7 +290,6 @@ export function initSubmodules (submodules, consentData) {
     utils.logWarn(`${MODULE_NAME} - gdpr permission not valid for local storage, exit module`);
     return [];
   }
-
   return submodules.reduce((carry, item) => {
     // STORAGE configuration, storage must be loaded from cookies/localStorage and decoded before adding to bid requests
     if (item.config && item.config.storage) {
@@ -367,11 +309,9 @@ export function initSubmodules (submodules, consentData) {
           setStoredValue(item.config.storage, getIdResult, item.config.storage.expires);
         }
       }
-    }
-    else if (item.config.value) {
+    } else if (item.config.value) {
       item.idObj = item.config.value;
     }
-
     // configured (storage-found / storage-not-found-que-callback / value-found) submoduleContainer
     carry.push(item);
     return carry;
@@ -389,54 +329,27 @@ export function getValidSubmoduleConfigs(submoduleConfigs, submodules) {
   }
   // get all enabled storage types to validate submoduleConfig.storage.type
   const storageTypes = [];
-  if (browserSupportsLocalStorage()) {
+  // if (browserSupportsLocalStorage()) {
+  if (utils.localStorageIsEnabled()) {
     storageTypes.push(LOCAL_STORAGE);
   }
   if (utils.cookiesAreEnabled()) {
     storageTypes.push(COOKIE);
   }
-  // create list of submodule names to validate submoduleConfig.name against
-  const submoduleNames = submodules.reduce((carry, submodule) => {
-    carry.push(submodule.name);
-    return carry;
-  }, []);
-
   return submoduleConfigs.reduce((carry, submoduleConfig) => {
-    if (!submoduleConfig || typeof submoduleConfig !== 'object' ||
-      typeof submoduleConfig.name !== 'string' || submoduleConfig.name.length === 0 || submoduleNames.indexOf(submoduleConfig.name) === -1) {
-      // invalid
+    // config must be an object with a name with at least one character
+    if (!submoduleConfig || typeof submoduleConfig !== 'object' || typeof submoduleConfig.name !== 'string' || submoduleConfig.name.length === 0) {
       return carry;
     }
-
+    // 1. valid if 'storage' object has 'type' and 'name' props with at least 1 character, and 'type' must be either 'cookie' or 'html5'
+    // 2. valid if 'value' object not empty
     if (submoduleConfig.storage && typeof submoduleConfig.storage === 'object' &&
       typeof submoduleConfig.storage.type === 'string' && submoduleConfig.storage.type.length &&
       typeof submoduleConfig.storage.name === 'string' && submoduleConfig.storage.name.length &&
       storageTypes.indexOf(submoduleConfig.storage.type) !== -1) {
-      // valid
       carry.push(submoduleConfig);
-    } else if (submoduleConfig.value && typeof submoduleConfig.value === 'object' && Object.keys(submoduleConfig.value).length) {
-      // valid
+    } else if (submoduleConfig.value !== null && typeof submoduleConfig.value === 'object') {
       carry.push(submoduleConfig);
-    }
-    return carry;
-  }, []);
-}
-
-/**
- * @param {Submodule[]} submodules
- * @param {SubmoduleConfig[]} submoduleConfigs
- * @returns {Object[]}
- */
-export function getValidSubmodules(submodules, submoduleConfigs) {
-  if (submoduleConfigs.length === 0) {
-    return [];
-  }
-  return submodules.reduce((carry, submodule) => {
-    const config = find(submoduleConfigs, submoduleConfig => submoduleConfig.name === submodule.name);
-    // valid if a userid submodule config is matches a submodule.name
-    if (config) {
-      // create submodule container to link submodule, config, extra data for holding state
-      carry.push({ submodule, config });
     }
     return carry;
   }, []);
@@ -464,7 +377,28 @@ export function init (config, enabledSubmodules) {
       if (typeof usersync.syncDelay !== 'undefined') {
         syncDelay = usersync.syncDelay;
       }
-      submodules = getValidSubmodules(enabledSubmodules, getValidSubmoduleConfigs(usersync.userIds, enabledSubmodules));
+
+      // filter any invalid configs out
+      const validatedConfigs = getValidSubmoduleConfigs(usersync.userIds, enabledSubmodules);
+      // Exit immediately if valid configurations are not found
+      if (validatedConfigs.length === 0) {
+        return;
+      }
+
+      // get list of submodules that have configurations
+      submodules = enabledSubmodules.reduce((carry, submodule) => {
+        // try to get a configuration that matches the submodule
+        const config = find(validatedConfigs, submoduleConfig => submoduleConfig.name === submodule.name);
+        if (config) {
+          // add submodule container object for submodule, config, extra data for holding state
+          carry.push({
+            submodule,
+            config
+          });
+        }
+        return carry;
+      }, [])
+
       if (submodules.length) {
         // priority set to load after consentManagement (50) but before default priority 10
         $$PREBID_GLOBAL$$.requestBids.addHook(requestBidHook, 40);

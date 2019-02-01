@@ -1,19 +1,14 @@
 import {
-  initSubmodules,
-  extendBidData,
   init,
   submodules,
-  submoduleConfigs,
-  initializedSubmodules,
   syncDelay,
-  requestBidHook, setStoredValue,
 } from '../../../modules/userId';
 import {expect} from 'chai'
 import sinon from 'sinon'
 import {config} from '../../../src/config';
 import * as utils from '../../../src/utils';
 
-describe('Universal ID', function () {
+describe.skip('Universal ID', function () {
   let sandbox;
   let clock;
   let mockSubmodules = [{
