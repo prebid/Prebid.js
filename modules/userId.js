@@ -80,10 +80,15 @@ export let initializedSubmodules;
  */
 export const unifiedIdSubmodule = {
   name: 'unifiedId',
-  decode(value) { return { 'tdid': value } },
+  decode(value) {
+    return {
+      'tdid': value
+    }
+  },
   getId(submoduleConfig, consentData) {
     const partner = (submoduleConfig.params && typeof submoduleConfig.params.partner === 'string') ? submoduleConfig.params.partner : 'prebid';
     const url = (submoduleConfig.params && typeof submoduleConfig.params.url === 'string') ? submoduleConfig.params.url : `http://match.adsrvr.org/track/rid?ttd_pid=${partner}&fmt=json`;
+
     return function (callback) {
       ajax(url, response => {
         let responseObj;
@@ -105,8 +110,14 @@ export const unifiedIdSubmodule = {
  */
 export const pubCommonIdSubmodule = {
   name: 'pubCommonId',
-  decode(value) { return { 'pubcid': value } },
-  getId() { return utils.generateUUID() }
+  decode(value) {
+    return {
+      'pubcid': value
+    }
+  },
+  getId() {
+    return utils.generateUUID()
+  }
 };
 
 /**
@@ -213,13 +224,13 @@ export function hasGDPRConsent (consentData) {
 }
 
 /**
- * @param {Object[]} submoduleContainers
+ * @param {Object[]} submodules
  * @param {function} queCompleteCallback - called when all queued callbacks have completed
  */
-export function processAsyncSubmoduleQue (submoduleContainers, queCompleteCallback) {
-  utils.logInfo(`${MODULE_NAME} - process submodule callback que (${submoduleContainers.length})`);
+export function processAsyncSubmoduleQue (submodules, queCompleteCallback) {
+  utils.logInfo(`${MODULE_NAME} - process submodule callback que (${submodules.length})`);
 
-  submoduleContainers.forEach(function(submoduleContainer) {
+  submodules.forEach(function(submoduleContainer) {
     submoduleContainer.callback(function callbackCompleted (idObj) {
       // clear callbac (since has completed)
       submoduleContainer.callback = undefined;
@@ -234,9 +245,9 @@ export function processAsyncSubmoduleQue (submoduleContainers, queCompleteCallba
       }
       // check if all callbacks have completed, then:
       //   1. call queCompletedCallback with 'submoduleContainers' (each item's idObj prop should contain id data if it was successful)
-      if (submoduleContainers.every(item => typeof item.callback === 'undefined')) {
+      if (submodules.every(item => typeof item.callback === 'undefined')) {
         // Note: only submodules with valid idObj values are passed
-        const submoduleContainersWithIds = submoduleContainers.filter(item => typeof item.idObj !== 'undefined');
+        const submoduleContainersWithIds = submodules.filter(item => typeof item.idObj !== 'undefined');
         utils.logInfo(`${MODULE_NAME}: process submodule callback que completed and returned id data (${submoduleContainersWithIds.length})`);
         queCompleteCallback(submoduleContainersWithIds);
       }
@@ -273,9 +284,6 @@ export function addIdDataToAdUnitBids (adUnits, submodules) {
  * This function is called when bids are requested, but before the bids are passed to bid adapters.
  * 1.) retrieving gdpr consentData and then passing it to submodule.getId functions if necessary
  * 2.) adding User id data to bid request objects for use in bid adapters
- * Note: the priority value of the hook function must be less than the value set for the consentManagement module, or consentData will not available
- *   consentData is REQUIRED if submodule.getId needs to be called
- *   responsible for handling:
  * @param {{}} config
  * @param next
  * @returns {*}
