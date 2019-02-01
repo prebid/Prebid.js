@@ -22,7 +22,8 @@ describe('OneVideoBidAdapter', function () {
           api: [2],
           position: 1,
           delivery: [2],
-          playbackmethod: [1, 5]
+          playbackmethod: [1, 5],
+          placement: 123
         },
         site: {
           id: 1,
@@ -57,6 +58,7 @@ describe('OneVideoBidAdapter', function () {
           position: 1,
           delivery: [2],
           playbackmethod: [1, 5],
+          placement: 123
         }
       };
       expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
@@ -72,6 +74,7 @@ describe('OneVideoBidAdapter', function () {
           position: 1,
           delivery: [2],
           playbackmethod: [1, 5],
+          placement: 123
         },
         pubId: 'brxd'
       };
@@ -100,8 +103,10 @@ describe('OneVideoBidAdapter', function () {
       const requests = spec.buildRequests([ bidRequest ]);
       const data = requests[0].data;
       const [ width, height ] = bidRequest.sizes;
+      const placement = bidRequest.params.video.placement;
       expect(data.imp[0].video.w).to.equal(width);
       expect(data.imp[0].video.h).to.equal(height);
+      expect(data.imp[0].ext.placement).to.equal(placement);
       expect(data.imp[0].bidfloor).to.equal(bidRequest.params.bidfloor);
     });
 

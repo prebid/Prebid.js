@@ -154,7 +154,7 @@ function getRequestData(bid, consentData) {
       },
       ext: {
         hb: 1,
-      },
+      }
     }],
     site: {
       page: page,
@@ -163,7 +163,7 @@ function getRequestData(bid, consentData) {
     device: {
       ua: navigator.userAgent
     },
-    tmax: 200,
+    tmax: 200
   };
 
   if (bid.params.video.maxbitrate) {
