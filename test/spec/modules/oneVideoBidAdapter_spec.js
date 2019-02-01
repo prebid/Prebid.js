@@ -21,7 +21,8 @@ describe('OneVideoBidAdapter', function () {
           protocols: [2, 5],
           api: [2],
           position: 1,
-          delivery: [2]
+          delivery: [2],
+          playbackmethod: [1, 5]
         },
         site: {
           id: 1,
@@ -54,10 +55,27 @@ describe('OneVideoBidAdapter', function () {
           protocols: [2, 5],
           api: [2],
           position: 1,
-          delivery: [2]
+          delivery: [2],
+          playbackmethod: [1, 5],
         }
       };
       expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
+    });
+    it('should return true when the "pubId" param is missing', function () {
+      bidRequest.params = {
+        video: {
+          playerWidth: 480,
+          playerHeight: 640,
+          mimes: ['video/mp4', 'application/javascript'],
+          protocols: [2, 5],
+          api: [2],
+          position: 1,
+          delivery: [2],
+          playbackmethod: [1, 5],
+        },
+        pubId: 'brxd'
+      };
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
     });
 
     it('should return false when no bid params are passed', function () {
