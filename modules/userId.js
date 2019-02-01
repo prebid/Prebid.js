@@ -81,7 +81,7 @@ export const unifiedIdSubmodule = {
   name: 'unifiedId',
   decode(value) {
     return {
-      'tdid': value
+      'tdid': value['TDID']
     }
   },
   getId(submoduleConfig, consentData) {
@@ -90,6 +90,7 @@ export const unifiedIdSubmodule = {
 
     return function (callback) {
       ajax(url, response => {
+        // {"TDID":"c1ec56ba-ec54-4815-89ea-673cd615fa94","TDID_LOOKUP":"FALSE","TDID_CREATED_AT":"2019-02-01T21:16:33"}
         let responseObj;
         if (response) {
           try {
@@ -126,11 +127,12 @@ export const pubCommonIdSubmodule = {
  */
 export function setStoredValue(storage, value, expires) {
   try {
+    const valueStr = (typeof value === 'object') ? JSON.stringify(value) : value;
     if (storage.type === COOKIE) {
-      utils.setCookie(storage.name, value, (new Date((expires * 60 * 24 * 1000) + Date.now())).toUTCString());
+      utils.setCookie(storage.name, valueStr, (new Date((expires * 60 * 24 * 1000) + Date.now())).toUTCString());
     } else if (storage.type === LOCAL_STORAGE) {
-      localStorage.setItem(storage.name, value);
       localStorage.setItem(`${storage.name}_exp`, (new Date((expires * 60 * 24 * 1000) + Date.now())).toUTCString());
+      localStorage.setItem(storage.name, encodeURIComponent(valueStr));
     }
   } catch (error) {
     utils.logError(error);
@@ -143,18 +145,27 @@ export function setStoredValue(storage, value, expires) {
  */
 export function getStoredValue(storage) {
   let storedValue;
-  if (storage.type === COOKIE) {
-    storedValue = utils.getCookie(storage.name);
-  } else if (storage.type === LOCAL_STORAGE) {
-    const storedValueExp = localStorage.getItem(`${storage.name}_exp`);
-    // empty string means no expiration set
-    if (storedValueExp === '') {
-      storedValue = localStorage.getItem(storage.name);
-    } else if (storedValueExp) {
-      if ((new Date(storedValueExp)).getTime() - Date.now() > 0) {
+  try {
+    if (storage.type === COOKIE) {
+      storedValue = utils.getCookie(storage.name);
+    } else if (storage.type === LOCAL_STORAGE) {
+      const storedValueExp = localStorage.getItem(`${storage.name}_exp`);
+      // empty string means no expiration set
+      if (storedValueExp === '') {
         storedValue = localStorage.getItem(storage.name);
+      } else if (storedValueExp) {
+        if ((new Date(storedValueExp)).getTime() - Date.now() > 0) {
+          storedValue = decodeURIComponent(localStorage.getItem(storage.name));
+        }
       }
     }
+    // we support storing either a string or a stringified object,
+    // so we test if the string contains an stringified object, and if so convert to an object
+    if (typeof storedValue === 'string' && storedValue.charAt(0) === '{') {
+      storedValue = JSON.parse(storedValue);
+    }
+  } catch (e) {
+    utils.logError(e);
   }
   return storedValue;
 }
@@ -178,10 +189,10 @@ export function hasGDPRConsent (consentData) {
 
 /**
  * @param {Object[]} submodules
- * @param {function} [queFinished] - called when all queued callbacks have completed
+ * @param {function} [processSubmoduleCallbacksComplete] - not required, called when all queued callbacks have completed
  */
-export function processSubmoduleCallbacks (submodules, queFinished) {
-  utils.logInfo(`${MODULE_NAME} - process submodule callback que (${submodules.length})`);
+export function processSubmoduleCallbacks (submodules, processSubmoduleCallbacksComplete) {
+  utils.logInfo(`${MODULE_NAME} - process submodule callback que`, submodules);
 
   submodules.forEach(function(submodule) {
     submodule.callback(function callbackCompleted (idObj) {
@@ -196,13 +207,13 @@ export function processSubmoduleCallbacks (submodules, queFinished) {
       } else {
         utils.logError(`${MODULE_NAME}: ${submodule.submodule.name} - request id responded with an empty value`);
       }
-      // check if all callbacks have completed, then:
-      //   1. call queCompletedCallback with 'submoduleContainers' (each item's idObj prop should contain id data if it was successful)
-      if (typeof queFinished === 'function' && submodules.every(item => typeof item.callback === 'undefined')) {
-        // Note: only submodules with valid idObj values are passed
-        const submoduleContainersWithIds = submodules.filter(item => typeof item.idObj !== 'undefined');
+
+      // check if all callbacks have completed, then execute the queFinished to notify completion
+      if (submodules.every(item => typeof item.callback === 'undefined')) {
         utils.logInfo(`${MODULE_NAME}: process submodule callback que completed`);
-        queFinished(submoduleContainersWithIds);
+        if (typeof processSubmoduleCallbacksComplete === 'function') {
+          processSubmoduleCallbacksComplete();
+        }
       }
     })
   });
