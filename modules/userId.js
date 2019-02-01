@@ -303,7 +303,7 @@ export function requestBidHook(config, next) {
           events.off(CONSTANTS.EVENTS.AUCTION_END, auctionEndHandler);
 
           // no syncDelay; delay auction until callback que is complete
-          if (syncDelay > 0) {
+          if (syncDelay === 0) {
             processAsyncSubmoduleQue(submodulesWithCallbacks, function (submodulesWithIds) {
               utils.logInfo(`${MODULE_NAME}: delayed sync completed for: ${submodulesWithIdData.reduce((carry, item) => {
                 carry.push(item.submodule.name);
