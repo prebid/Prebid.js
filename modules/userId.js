@@ -1,5 +1,5 @@
 /**
- * This module adds User ID support to prebid.js
+ * This module adds UserID support to prebid.js
  */
 import { ajax } from '../src/ajax.js';
 import { config } from '../src/config.js';
@@ -16,19 +16,6 @@ const CONSTANTS = require('../src/constants.json');
  * @property {SubmoduleStorage} storage - browser storage config
  * @property {SubmoduleParams} params - params config for use by the submodule.getId function
  * @property {Object} value - all object properties will be appended to the userId bid data
- * @example
- * {
- *   name: "unifiedId",
- *   params: {
- *     partner: "prebid",
- *     url: "http://match.adsrvr.org/track/rid?ttd_pid=prebid&fmt=json"
- *   },
- *   storage: {
- *     type: "cookie",
- *     name: "unifiedid",
- *     expires: 60
- *   }
- * }
  */
 
 /**
