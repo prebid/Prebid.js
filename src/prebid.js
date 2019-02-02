@@ -23,7 +23,7 @@ const events = require('./events');
 const { triggerUserSyncs } = userSync;
 
 /* private variables */
-const { ADD_AD_UNITS, BID_WON, REQUEST_BIDS, SET_TARGETING, AD_RENDER_FAILED } = CONSTANTS.EVENTS;
+const { ADD_AD_UNITS, REMOVE_AD_UNIT, BID_WON, REQUEST_BIDS, SET_TARGETING, AD_RENDER_FAILED } = CONSTANTS.EVENTS;
 const { PREVENT_WRITING_ON_MAIN_DOCUMENT, NO_AD, EXCEPTION, CANNOT_FIND_AD, MISSING_DOC_OR_ADID } = CONSTANTS.AD_RENDER_FAILED_REASON;
 
 const eventValidators = {
@@ -317,6 +317,8 @@ $$PREBID_GLOBAL$$.removeAdUnit = function (adUnitCode) {
       }
     }
   }
+
+  events.emit(REMOVE_AD_UNIT, adUnitCode);
 };
 
 /**
@@ -329,7 +331,7 @@ $$PREBID_GLOBAL$$.removeAdUnit = function (adUnitCode) {
  * @alias module:pbjs.requestBids
  */
 $$PREBID_GLOBAL$$.requestBids = hook('async', function ({ bidsBackHandler, timeout, adUnits, adUnitCodes, labels } = {}) {
-  events.emit(REQUEST_BIDS);
+  events.emit(REQUEST_BIDS, adUnits);
   const cbTimeout = timeout || config.getConfig('bidderTimeout');
   adUnits = adUnits || $$PREBID_GLOBAL$$.adUnits;
 
@@ -415,7 +417,7 @@ $$PREBID_GLOBAL$$.addAdUnits = function (adUnitArr) {
     $$PREBID_GLOBAL$$.adUnits.push(adUnitArr);
   }
   // emit event
-  events.emit(ADD_AD_UNITS);
+  events.emit(ADD_AD_UNITS, adUnitArr);
 };
 
 /**

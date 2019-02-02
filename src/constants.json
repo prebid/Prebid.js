@@ -35,6 +35,7 @@
     "SET_TARGETING": "setTargeting",
     "REQUEST_BIDS": "requestBids",
     "ADD_AD_UNITS": "addAdUnits",
+    "REMOVE_AD_UNIT": "removeAdUnit",
     "AD_RENDER_FAILED" : "adRenderFailed"
   },
   "AD_RENDER_FAILED_REASON" : {
