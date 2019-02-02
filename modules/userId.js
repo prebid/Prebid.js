@@ -163,7 +163,7 @@ export function getStoredValue(storage) {
  * @param {Object} consentData
  * @returns {boolean}
  */
-export function hasGDPRConsent (consentData) {
+export function hasGDPRConsent(consentData) {
   if (consentData && typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies) {
     if (!consentData.consentString) {
       return false;
@@ -179,7 +179,7 @@ export function hasGDPRConsent (consentData) {
  * @param {Object[]} submodules
  * @param {function} [processCompleted] - not required, executed when all callbacks have returned responses
  */
-export function processSubmoduleCallbacks (submodules, processCompleted) {
+export function processSubmoduleCallbacks(submodules, processCompleted) {
   submodules.forEach(function(submodule) {
     submodule.callback(function callbackCompleted (idObj) {
       // clear callback, this prop is used to test if all submodule callbacks are complete below
@@ -188,6 +188,7 @@ export function processSubmoduleCallbacks (submodules, processCompleted) {
       // if valid, id data should be saved to cookie/html storage
       if (idObj) {
         setStoredValue(submodule.config.storage, idObj, submodule.config.storage.expires);
+
         // cache decoded value (this is copied to every adUnit bid)
         submodule.idObj = submodule.submodule.decode(idObj);
       } else {
@@ -209,7 +210,7 @@ export function processSubmoduleCallbacks (submodules, processCompleted) {
  * @param {Object[]} adUnits
  * @param {Object[]} submodules
  */
-export function addIdDataToAdUnitBids (adUnits, submodules) {
+export function addIdDataToAdUnitBids(adUnits, submodules) {
   if (submodules.length) {
     if (adUnits) {
       adUnits.forEach(adUnit => {
@@ -231,11 +232,8 @@ export function addIdDataToAdUnitBids (adUnits, submodules) {
 
 /**
  * This function is called when bids are requested, but before the bids are passed to bid adapters.
- * 1.) retrieving gdpr consentData and then passing it to submodule.getId functions if necessary
- * 2.) adding User id data to bid request objects for use in bid adapters
- * Note: the priority value of the hook function must be less than the value set for the consentManagement module, or consentData will not available
- *   consentData is REQUIRED if submodule.getId needs to be called
- *   responsible for handling:
+ * 1. read gdpr consentData and initialize submodules
+ * 2. appending available user id data to adUnit bids for use in adapters
  * @param {{}} config
  * @param next
  * @returns {*}
@@ -250,21 +248,22 @@ export function requestBidHook(config, next) {
       if (submodulesWithCallbacks.length) {
         // wait for auction complete before processing submodule callbacks
         events.on(CONSTANTS.EVENTS.AUCTION_END, function auctionEndHandler() {
-          // remove event listener so it's not called again
+          // remove because this should only be executed once
           events.off(CONSTANTS.EVENTS.AUCTION_END, auctionEndHandler);
 
           // when syncDelay is zero, process callbacks now, otherwise dealy process with a setTimeout
-          if (syncDelay === 0) {
-            processSubmoduleCallbacks(submodulesWithCallbacks);
-          } else {
+          if (syncDelay > 0) {
             setTimeout(function() {
               processSubmoduleCallbacks(submodulesWithCallbacks);
             }, syncDelay);
+          } else {
+            processSubmoduleCallbacks(submodulesWithCallbacks);
           }
         });
       }
     }
-    // no async submodule callbacks are queued, so any userId data should be passed to bid adapters now
+
+    // pass available user id data to bid adapters
     addIdDataToAdUnitBids(config.adUnits || $$PREBID_GLOBAL$$.adUnits, initializedSubmodules);
   }
 
@@ -278,29 +277,31 @@ export function requestBidHook(config, next) {
  * @returns {string[]} initialized submodules
  */
 export function initSubmodules (submodules, consentData) {
-  // if no gdpr consent, exit immediately
+  // gdpr consent with purpose one is required, otherwise exit immediately
   if (!hasGDPRConsent(consentData)) {
     utils.logWarn(`${MODULE_NAME} - gdpr permission not valid for local storage, exit module`);
     return [];
   }
   return submodules.reduce((carry, item) => {
-    // There are two valid submodule configurations: storage or value
-    // 1. storage: try to get userid from cookie/html storage or call the submodule's getId function to retrieve
-    // 2. value: pass directly to bids, vaulue is not to be stored locally
+    // There are two submodule configuration types to handle: storage or value
+    // 1. storage: retrieve user id data from cookie/html storage or with the submodule's getId method
+    // 2. value: pass directly to bids
     if (item.config && item.config.storage) {
       const storedId = getStoredValue(item.config.storage);
       if (storedId) {
         // cache decoded value (this is copied to every adUnit bid)
         item.idObj = item.submodule.decode(storedId);
       } else {
-        // call getId
+        // getId will return user id data or a function that will load the data
         const getIdResult = item.submodule.getId(item.config, consentData);
+
         // If the getId result has a type of function, it is asynchronous and cannot be called until later
         if (typeof getIdResult === 'function') {
           item.callback = getIdResult;
         } else {
           // A getId result that is not a function is assumed to be valid user id data, which should be saved to users local storage
           setStoredValue(item.config.storage, getIdResult, item.config.storage.expires);
+
           // cache decoded value (this is copied to every adUnit bid)
           item.idObj = item.submodule.decode(getIdResult);
         }
@@ -309,6 +310,7 @@ export function initSubmodules (submodules, consentData) {
       // cache decoded value (this is copied to every adUnit bid)
       item.idObj = item.config.value;
     }
+
     carry.push(item);
     return carry;
   }, []);
@@ -323,7 +325,8 @@ export function getValidSubmoduleConfigs(submoduleConfigs, submodules) {
   if (!Array.isArray(submoduleConfigs)) {
     return [];
   }
-  // get all enabled storage types to validate submoduleConfig.storage.type
+
+  // all enabled storage types
   const storageTypes = [];
   if (utils.localStorageIsEnabled()) {
     storageTypes.push(LOCAL_STORAGE);
@@ -331,19 +334,28 @@ export function getValidSubmoduleConfigs(submoduleConfigs, submodules) {
   if (utils.cookiesAreEnabled()) {
     storageTypes.push(COOKIE);
   }
+
   return submoduleConfigs.reduce((carry, submoduleConfig) => {
     // config must be an object with a name with at least one character
     if (!submoduleConfig || typeof submoduleConfig !== 'object' || typeof submoduleConfig.name !== 'string' || submoduleConfig.name.length === 0) {
       return carry;
     }
-    // 1. valid if 'storage' object has 'type' and 'name' props with at least 1 character, and 'type' must be either 'cookie' or 'html5'
-    // 2. valid if 'value' object not empty
+
+    // Next, there are two possible submodule configuration paths: 'storage' or 'value'
+    // 1. storage tested first as its preferred over value
+    // 2. value is checked if the storage test failed
+
+    // check for valid storage configuration:
+    // * storage object must have 'type' and 'name' properties with values that are non-empty strings
+    // * also the 'type' value must exist in 'storageTypes'
     if (submoduleConfig.storage && typeof submoduleConfig.storage === 'object' &&
       typeof submoduleConfig.storage.type === 'string' && submoduleConfig.storage.type.length &&
       typeof submoduleConfig.storage.name === 'string' && submoduleConfig.storage.name.length &&
       storageTypes.indexOf(submoduleConfig.storage.type) !== -1) {
       carry.push(submoduleConfig);
     } else if (submoduleConfig.value !== null && typeof submoduleConfig.value === 'object') {
+      // value config was found
+      // * value object with at least one property
       carry.push(submoduleConfig);
     }
     return carry;
