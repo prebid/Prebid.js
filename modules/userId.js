@@ -6,6 +6,7 @@ import { config } from '../src/config.js';
 import events from '../src/events.js';
 import * as utils from '../src/utils.js';
 import find from 'core-js/library/fn/array/find';
+import includes from 'core-js/library/fn/array/includes';
 import { gdprDataHandler } from '../src/adapterManager.js';
 
 const CONSTANTS = require('../src/constants.json');
@@ -62,24 +63,21 @@ const CONSTANTS = require('../src/constants.json');
 const MODULE_NAME = 'UserId';
 const COOKIE = 'cookie';
 const LOCAL_STORAGE = 'html5';
-const OPT_OUT_COOKIE = '_pbjs_id_optout';
 const DEFAULT_SYNC_DELAY = 500;
 
+// @type {number} delay after auction to make webrequests for id data
 export let syncDelay;
 
-/**
- * @type {SubmoduleContainer[]}
- */
+// @type {SubmoduleContainer[]}
 export let submodules;
 
-/**
- * @type {SubmoduleContainer[]}
- */
+// @type {SubmoduleContainer[]}
 export let initializedSubmodules;
 
-/**
- * @type {Submodule}
- */
+// @type {boolean} - flag to enforce initialization only happens once
+export let moduleInitialized = false;
+
+// @type {Submodule}
 export const unifiedIdSubmodule = {
   name: 'unifiedId',
   decode(value) {
@@ -107,9 +105,7 @@ export const unifiedIdSubmodule = {
   }
 };
 
-/**
- * @type {Submodule}
- */
+// @type {Submodule}
 export const pubCommonIdSubmodule = {
   name: 'pubCommonId',
   decode(value) {
@@ -247,24 +243,25 @@ export function addIdDataToAdUnitBids(adUnits, submodules) {
 }
 
 /**
- * This function is called when bids are requested, but before the bids are passed to bid adapters.
- * 1. read gdpr consentData and initialize submodules
- * 2. appending available user id data to adUnit bids for use in adapters
- * @param {{}} config
- * @param next
- * @returns {*}
+ * Hook is executed before adapters, but after consentManagement. Consent data is requied because
+ * this module requires GDPR consent with Purpose #1 to save data locally.
+ * The two main actions handled by the hook are:
+ * 1. check gdpr consentData and handle submodule initialization.
+ * 2. append user id data (loaded from cookied/html or from the getId method) to bids to be accessed in adapters.
+ * @param {object} reqBidsConfigObj required; This is the same param that's used in pbjs.requestBids.
+ * @param {function} fn required; The next function in the chain, used by hook.js
  */
-export function requestBidHook(config, next) {
+export function requestBidsHook(fn, reqBidsConfigObj) {
   // initialize submodules only when undefined
   if (typeof initializedSubmodules === 'undefined') {
     initializedSubmodules = initSubmodules(submodules, gdprDataHandler.getConsentData());
     if (initializedSubmodules.length) {
       // list of sumodules that have callbacks that need to be executed
       const submodulesWithCallbacks = initializedSubmodules.filter(item => typeof item.callback === 'function');
+
       if (submodulesWithCallbacks.length) {
         // wait for auction complete before processing submodule callbacks
         events.on(CONSTANTS.EVENTS.AUCTION_END, function auctionEndHandler() {
-          // remove because this should only be executed once
           events.off(CONSTANTS.EVENTS.AUCTION_END, auctionEndHandler);
 
           // when syncDelay is zero, process callbacks now, otherwise dealy process with a setTimeout
@@ -278,13 +275,11 @@ export function requestBidHook(config, next) {
         });
       }
     }
-
     // pass available user id data to bid adapters
-    addIdDataToAdUnitBids(config.adUnits || $$PREBID_GLOBAL$$.adUnits, initializedSubmodules);
+    addIdDataToAdUnitBids(reqBidsConfigObj.adUnits || $$PREBID_GLOBAL$$.adUnits, initializedSubmodules);
   }
-
   // calling next() allows prebid to continue processing
-  return next.apply(this, arguments);
+  return fn.apply(this, [reqBidsConfigObj]);
 }
 
 /**
@@ -366,7 +361,7 @@ export function getValidSubmoduleConfigs(submoduleConfigs, submodules) {
     if (submoduleConfig.storage &&
       typeof submoduleConfig.storage.type === 'string' && submoduleConfig.storage.type &&
       typeof submoduleConfig.storage.name === 'string' && submoduleConfig.storage.name &&
-      ~validStorageTypes.indexOf(submoduleConfig.storage.type)) {
+      includes(validStorageTypes, submoduleConfig.storage.type)) {
       carry.push(submoduleConfig);
     } else if (submoduleConfig.value !== null && typeof submoduleConfig.value === 'object') {
       // Validate value config
@@ -383,32 +378,30 @@ export function getValidSubmoduleConfigs(submoduleConfigs, submodules) {
  */
 export function init (config, enabledSubmodules) {
   // exit immediately if opt out cookie exists
-  if (utils.cookiesAreEnabled() && ~document.cookie.indexOf(OPT_OUT_COOKIE)) {
+  if (utils.cookiesAreEnabled() && !!utils.getCookie('_pubcid_optout')) {
     utils.logInfo(`${MODULE_NAME} - opt-out cookie found, exit module`);
     return;
   }
 
   // listen for config userSyncs to be set
   config.getConfig('usersync', ({usersync}) => {
-    if (usersync) {
-      utils.logInfo(`${MODULE_NAME} - usersync config updated`, usersync);
-
+    if (usersync && !moduleInitialized) {
+      moduleInitialized = true;
       syncDelay = (typeof usersync.syncDelay === 'number') ? usersync.syncDelay : DEFAULT_SYNC_DELAY;
 
       // filter any invalid configs out
-      const validatedConfigs = getValidSubmoduleConfigs(usersync.userIds, enabledSubmodules);
-
-      // exit immediately if no valid configurations exist
-      if (validatedConfigs.length === 0) {
+      const submoduleConfigs = getValidSubmoduleConfigs(usersync.userIds, enabledSubmodules);
+      if (submoduleConfigs.length === 0) {
+        // exit module, if no valid configurations exist
         return;
       }
 
       // get list of submodules with valid configurations
       submodules = enabledSubmodules.reduce((carry, submodule) => {
-        // try to get a configuration that matches the submodule
-        const config = find(validatedConfigs, submoduleConfig => submoduleConfig.name === submodule.name);
+        // try to find submodule configuration for submodule, if config exists it should be enabled
+        const config = find(submoduleConfigs, submoduleConfig => submoduleConfig.name === submodule.name);
         if (config) {
-          // add {SubmoduleContainer} with valid submodule and config
+          // append {SubmoduleContainer} containing the submodule and config
           carry.push({
             submodule,
             config,
@@ -421,8 +414,10 @@ export function init (config, enabledSubmodules) {
       // complete initialization if any submodules exist
       if (submodules.length) {
         // priority has been set so it loads after consentManagement (which has a priority of 50)
-        $$PREBID_GLOBAL$$.requestBids.addHook(requestBidHook, 40);
+        $$PREBID_GLOBAL$$.requestBids.before(requestBidsHook, 40);
       }
+
+      utils.logInfo(`${MODULE_NAME} - usersync config updated`, usersync);
     }
   });
 }
