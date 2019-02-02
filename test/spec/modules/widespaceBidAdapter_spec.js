@@ -153,7 +153,7 @@ describe('+widespaceAdatperTest', function () {
     });
 
     it('-bidRequest data exist', function () {
-      expect(request[0].data).to.exists;
+      expect(request[0].data).to.exist;
     });
 
     it('-bidRequest data is form data', function () {
@@ -161,7 +161,7 @@ describe('+widespaceAdatperTest', function () {
     });
 
     it('-bidRequest options have header type', function () {
-      expect(request[0].options.contentType).to.exists;
+      expect(request[0].options.contentType).to.exist;
     });
 
     it('-cookie test for wsCustomData ', function () {

@@ -30,14 +30,14 @@ describe('bid overrides', function () {
         enabled: true
       });
 
-      expect(addBidResponse.hasHook(boundHook)).to.equal(true);
+      expect(addBidResponse.getHooks().some(hook => hook.hook === boundHook)).to.equal(true);
     });
 
     it('should happen when configuration found in sessionStorage', function () {
       sessionLoader({
         getItem: () => ('{"enabled": true}')
       });
-      expect(addBidResponse.hasHook(boundHook)).to.equal(true);
+      expect(addBidResponse.getHooks().some(hook => hook.hook === boundHook)).to.equal(true);
     });
 
     it('should not throw if sessionStorage is inaccessible', function () {
@@ -80,9 +80,10 @@ describe('bid overrides', function () {
 
     function run(overrides) {
       mockBids.forEach(bid => {
-        addBidResponseHook(overrides, bid.adUnitCode, bid, (adUnitCode, bid) => {
+        let next = (adUnitCode, bid) => {
           bids.push(bid);
-        })
+        };
+        addBidResponseHook.bind(overrides)(next, bid.adUnitCode, bid)
       });
     }
 

@@ -4,6 +4,7 @@ import { BANNER } from '../src/mediaTypes';
 
 const BIDDER_CODE = 'adlive';
 const ENDPOINT_URL = 'https://api.publishers.adlive.io/get?pbjs=1';
+
 const CURRENCY = 'USD';
 const TIME_TO_LIVE = 360;
 
@@ -43,19 +44,17 @@ export const spec = {
       const bidResponses = [];
 
       utils._each(response, function(bidResponse) {
-        if (!bidResponse.is_passback) {
-          bidResponses.push({
-            requestId: bidRequest.bidId,
-            cpm: bidResponse.price,
-            width: bidResponse.size[0],
-            height: bidResponse.size[1],
-            creativeId: bidResponse.hash,
-            currency: CURRENCY,
-            netRevenue: false,
-            ttl: TIME_TO_LIVE,
-            ad: bidResponse.content
-          });
-        }
+        bidResponses.push({
+          requestId: bidRequest.bidId,
+          cpm: bidResponse.is_passback ? 0 : bidResponse.price,
+          width: bidResponse.size[0],
+          height: bidResponse.size[1],
+          creativeId: bidResponse.hash,
+          currency: CURRENCY,
+          netRevenue: false,
+          ttl: TIME_TO_LIVE,
+          ad: bidResponse.content
+        });
       });
 
       return bidResponses;
