@@ -325,7 +325,6 @@ export function getValidSubmoduleConfigs(submoduleConfigs, submodules) {
   }
   // get all enabled storage types to validate submoduleConfig.storage.type
   const storageTypes = [];
-  // if (browserSupportsLocalStorage()) {
   if (utils.localStorageIsEnabled()) {
     storageTypes.push(LOCAL_STORAGE);
   }
