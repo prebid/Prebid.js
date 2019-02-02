@@ -51,14 +51,30 @@ const CONSTANTS = require('../src/constants.json');
  * @returns {Object}
  */
 
+/**
+ * @typedef {Object} SubmoduleContainer
+ * @property {Submodule} submodule
+ * @property {SubmoduleConfig} submoduleConfig
+ * @property {Object} idObj - decoded userid data that will be appended to bids
+ * @property {function} callback
+ */
+
 const MODULE_NAME = 'UserId';
 const COOKIE = 'cookie';
 const LOCAL_STORAGE = 'html5';
 const OPT_OUT_COOKIE = '_pbjs_id_optout';
-const DEFAULT_SYNC_DELAY = 0;
+const DEFAULT_SYNC_DELAY = 500;
 
 export let syncDelay;
+
+/**
+ * @type {SubmoduleContainer[]}
+ */
 export let submodules;
+
+/**
+ * @type {SubmoduleContainer[]}
+ */
 export let initializedSubmodules;
 
 /**
@@ -276,7 +292,7 @@ export function requestBidHook(config, next) {
  * @param {Object} consentData
  * @returns {string[]} initialized submodules
  */
-export function initSubmodules (submodules, consentData) {
+export function initSubmodules(submodules, consentData) {
   // gdpr consent with purpose one is required, otherwise exit immediately
   if (!hasGDPRConsent(consentData)) {
     utils.logWarn(`${MODULE_NAME} - gdpr permission not valid for local storage, exit module`);
@@ -317,6 +333,9 @@ export function initSubmodules (submodules, consentData) {
 }
 
 /**
+ * list of submodule configurations with valid 'storage' or 'value' obj definitions
+ * * storage config: contains values for storing/retrieving userid data in browser storage
+ * * value config: object properties that are copied to bids (without saving to storage)
  * @param {SubmoduleConfig[]} submoduleConfigs
  * @param {Submodule[]} submodules
  * @returns {SubmoduleConfig[]}
@@ -326,36 +345,32 @@ export function getValidSubmoduleConfigs(submoduleConfigs, submodules) {
     return [];
   }
 
-  // all enabled storage types
-  const storageTypes = [];
+  // list of browser enabled storage types
+  const validStorageTypes = [];
   if (utils.localStorageIsEnabled()) {
-    storageTypes.push(LOCAL_STORAGE);
+    validStorageTypes.push(LOCAL_STORAGE);
   }
   if (utils.cookiesAreEnabled()) {
-    storageTypes.push(COOKIE);
+    validStorageTypes.push(COOKIE);
   }
 
   return submoduleConfigs.reduce((carry, submoduleConfig) => {
-    // config must be an object with a name with at least one character
-    if (!submoduleConfig || typeof submoduleConfig !== 'object' || typeof submoduleConfig.name !== 'string' || submoduleConfig.name.length === 0) {
+    // every submodule config obj must contain a valid 'name'
+    if (!submoduleConfig || typeof submoduleConfig.name !== 'string' || !submoduleConfig.name) {
       return carry;
     }
 
-    // Next, there are two possible submodule configuration paths: 'storage' or 'value'
-    // 1. storage tested first as its preferred over value
-    // 2. value is checked if the storage test failed
-
-    // check for valid storage configuration:
-    // * storage object must have 'type' and 'name' properties with values that are non-empty strings
-    // * also the 'type' value must exist in 'storageTypes'
-    if (submoduleConfig.storage && typeof submoduleConfig.storage === 'object' &&
-      typeof submoduleConfig.storage.type === 'string' && submoduleConfig.storage.type.length &&
-      typeof submoduleConfig.storage.name === 'string' && submoduleConfig.storage.name.length &&
-      storageTypes.indexOf(submoduleConfig.storage.type) !== -1) {
+    // Validate storage config
+    // contains 'type' and 'name' properties with non-empty string values
+    // 'type' must be a value currently enabled in the browser
+    if (submoduleConfig.storage &&
+      typeof submoduleConfig.storage.type === 'string' && submoduleConfig.storage.type &&
+      typeof submoduleConfig.storage.name === 'string' && submoduleConfig.storage.name &&
+      ~validStorageTypes.indexOf(submoduleConfig.storage.type)) {
       carry.push(submoduleConfig);
     } else if (submoduleConfig.value !== null && typeof submoduleConfig.value === 'object') {
-      // value config was found
-      // * value object with at least one property
+      // Validate value config
+      // must be valid object with at least one property
       carry.push(submoduleConfig);
     }
     return carry;
@@ -367,46 +382,43 @@ export function getValidSubmoduleConfigs(submoduleConfigs, submodules) {
  * @param {Submodule[]} enabledSubmodules
  */
 export function init (config, enabledSubmodules) {
-  syncDelay = DEFAULT_SYNC_DELAY;
-  submodules = [];
-  initializedSubmodules = undefined;
-
-  if (utils.cookiesAreEnabled()) {
-    if (document.cookie.indexOf(OPT_OUT_COOKIE) !== -1) {
-      utils.logInfo(`${MODULE_NAME} - opt-out cookie found, exit module`);
-      return;
-    }
+  // exit immediately if opt out cookie exists
+  if (utils.cookiesAreEnabled() && ~document.cookie.indexOf(OPT_OUT_COOKIE)) {
+    utils.logInfo(`${MODULE_NAME} - opt-out cookie found, exit module`);
+    return;
   }
+
   // listen for config userSyncs to be set
   config.getConfig('usersync', ({usersync}) => {
     if (usersync) {
-      utils.logInfo(`${MODULE_NAME} - usersync config`, usersync);
-      if (typeof usersync.syncDelay !== 'undefined') {
-        syncDelay = usersync.syncDelay;
-      }
+      utils.logInfo(`${MODULE_NAME} - usersync config updated`, usersync);
+
+      syncDelay = (typeof usersync.syncDelay === 'number') ? usersync.syncDelay : DEFAULT_SYNC_DELAY;
 
       // filter any invalid configs out
       const validatedConfigs = getValidSubmoduleConfigs(usersync.userIds, enabledSubmodules);
-      // Exit immediately if no valid configurations exist
+
+      // exit immediately if no valid configurations exist
       if (validatedConfigs.length === 0) {
         return;
       }
 
-      // bulid list of submodules that have a valid configuration associated
+      // get list of submodules with valid configurations
       submodules = enabledSubmodules.reduce((carry, submodule) => {
         // try to get a configuration that matches the submodule
         const config = find(validatedConfigs, submoduleConfig => submoduleConfig.name === submodule.name);
         if (config) {
-          // add submodule container object for submodule, config, extra data for holding state
+          // add {SubmoduleContainer} with valid submodule and config
           carry.push({
             submodule,
-            config
+            config,
+            idObj: undefined
           });
         }
         return carry;
-      }, [])
+      }, []);
 
-      // only complete initialization if at least one submodule exists
+      // complete initialization if any submodules exist
       if (submodules.length) {
         // priority has been set so it loads after consentManagement (which has a priority of 50)
         $$PREBID_GLOBAL$$.requestBids.addHook(requestBidHook, 40);
