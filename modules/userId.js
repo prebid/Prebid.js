@@ -177,33 +177,31 @@ export function hasGDPRConsent (consentData) {
 
 /**
  * @param {Object[]} submodules
- * @param {function} [processSubmoduleCallbacksComplete] - not required, called when all queued callbacks have completed
+ * @param {function} [processCompleted] - not required, executed when all callbacks have returned responses
  */
-export function processSubmoduleCallbacks (submodules, processSubmoduleCallbacksComplete) {
-  utils.logInfo(`${MODULE_NAME} - process submodule callback que`, submodules);
-
+export function processSubmoduleCallbacks (submodules, processCompleted) {
   submodules.forEach(function(submodule) {
     submodule.callback(function callbackCompleted (idObj) {
-      // clear callbac (since has completed)
+      // clear callback, this prop is used to test if all submodule callbacks are complete below
       submodule.callback = undefined;
-      // if idObj is valid:
-      //   1. set in local storage
-      //   2. set id data to submoduleContainer.idObj (id data will be added to bids in the queCompleteCallback function)
+
+      // if valid, id data should be saved to cookie/html storage
       if (idObj) {
         setStoredValue(submodule.config.storage, idObj, submodule.config.storage.expires);
+        // cache decoded value (this is copied to every adUnit bid)
         submodule.idObj = submodule.submodule.decode(idObj);
       } else {
         utils.logError(`${MODULE_NAME}: ${submodule.submodule.name} - request id responded with an empty value`);
       }
 
-      // check if all callbacks have completed, then execute the queFinished to notify completion
+      // Done when every submodule callback is set to 'undefined'
       if (submodules.every(item => typeof item.callback === 'undefined')) {
-        utils.logInfo(`${MODULE_NAME}: process submodule callback que completed`);
-        if (typeof processSubmoduleCallbacksComplete === 'function') {
-          processSubmoduleCallbacksComplete();
+        // Notify done through calling processCompleted
+        if (typeof processCompleted === 'function') {
+          processCompleted();
         }
       }
-    })
+    });
   });
 }
 
@@ -251,23 +249,20 @@ export function requestBidHook(config, next) {
       // list of sumodules that have callbacks that need to be executed
       const submodulesWithCallbacks = initializedSubmodules.filter(item => typeof item.callback === 'function');
       if (submodulesWithCallbacks.length) {
-        // need to wait for auction complete handler to process the submodules with callbacks
-        const auctionEndHandler = function() {
-          // this handler should only be listened to once
+        // wait for auction complete before processing submodule callbacks
+        events.on(CONSTANTS.EVENTS.AUCTION_END, function auctionEndHandler() {
+          // remove event listener so it's not called again
           events.off(CONSTANTS.EVENTS.AUCTION_END, auctionEndHandler);
 
-          // if syncDelay is zero, process callbacks now, otherwise dealy process with a setTimeout
+          // when syncDelay is zero, process callbacks now, otherwise dealy process with a setTimeout
           if (syncDelay === 0) {
             processSubmoduleCallbacks(submodulesWithCallbacks);
           } else {
-            utils.logInfo(`${MODULE_NAME}: wait ${syncDelay} after auction ends to perform sync `);
             setTimeout(function() {
               processSubmoduleCallbacks(submodulesWithCallbacks);
             }, syncDelay);
           }
-        }
-        // listen for auction complete since sync delay is set
-        events.on(CONSTANTS.EVENTS.AUCTION_END, auctionEndHandler);
+        });
       }
     }
     // no async submodule callbacks are queued, so any userId data should be passed to bid adapters now
@@ -290,28 +285,31 @@ export function initSubmodules (submodules, consentData) {
     return [];
   }
   return submodules.reduce((carry, item) => {
-    // STORAGE configuration, storage must be loaded from cookies/localStorage and decoded before adding to bid requests
+    // There are two valid submodule configurations: storage or value
+    // 1. storage: try to get userid from cookie/html storage or call the submodule's getId function to retrieve
+    // 2. value: pass directly to bids, vaulue is not to be stored locally
     if (item.config && item.config.storage) {
       const storedId = getStoredValue(item.config.storage);
       if (storedId) {
-        // use stored value
+        // cache decoded value (this is copied to every adUnit bid)
         item.idObj = item.submodule.decode(storedId);
       } else {
         // call getId
         const getIdResult = item.submodule.getId(item.config, consentData);
+        // If the getId result has a type of function, it is asynchronous and cannot be called until later
         if (typeof getIdResult === 'function') {
-          // add endpoint function to command que if getId returns a function
           item.callback = getIdResult;
         } else {
-          // getId return non-functin, so ran synchronously, and is a valid id object
-          item.idObj = item.submodule.decode(getIdResult);
+          // A getId result that is not a function is assumed to be valid user id data, which should be saved to users local storage
           setStoredValue(item.config.storage, getIdResult, item.config.storage.expires);
+          // cache decoded value (this is copied to every adUnit bid)
+          item.idObj = item.submodule.decode(getIdResult);
         }
       }
     } else if (item.config.value) {
+      // cache decoded value (this is copied to every adUnit bid)
       item.idObj = item.config.value;
     }
-    // configured (storage-found / storage-not-found-que-callback / value-found) submoduleContainer
     carry.push(item);
     return carry;
   }, []);
@@ -372,19 +370,19 @@ export function init (config, enabledSubmodules) {
   // listen for config userSyncs to be set
   config.getConfig('usersync', ({usersync}) => {
     if (usersync) {
-      utils.logInfo(`${MODULE_NAME} - usersync config updated`);
+      utils.logInfo(`${MODULE_NAME} - usersync config`, usersync);
       if (typeof usersync.syncDelay !== 'undefined') {
         syncDelay = usersync.syncDelay;
       }
 
       // filter any invalid configs out
       const validatedConfigs = getValidSubmoduleConfigs(usersync.userIds, enabledSubmodules);
-      // Exit immediately if valid configurations are not found
+      // Exit immediately if no valid configurations exist
       if (validatedConfigs.length === 0) {
         return;
       }
 
-      // get list of submodules that have configurations
+      // bulid list of submodules that have a valid configuration associated
       submodules = enabledSubmodules.reduce((carry, submodule) => {
         // try to get a configuration that matches the submodule
         const config = find(validatedConfigs, submoduleConfig => submoduleConfig.name === submodule.name);
@@ -398,8 +396,9 @@ export function init (config, enabledSubmodules) {
         return carry;
       }, [])
 
+      // only complete initialization if at least one submodule exists
       if (submodules.length) {
-        // priority set to load after consentManagement (50) but before default priority 10
+        // priority has been set so it loads after consentManagement (which has a priority of 50)
         $$PREBID_GLOBAL$$.requestBids.addHook(requestBidHook, 40);
       }
     }
