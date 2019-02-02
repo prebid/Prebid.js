@@ -217,7 +217,7 @@ export function addIdDataToAdUnitBids(adUnits, submodules) {
         adUnit.bids.forEach(bid => {
           // append the userId property to bid
           bid.userId = submodules.reduce((carry, item) => {
-            if (typeof item.idObj === 'object' || item.idObj !== null) {
+            if (typeof item.idObj === 'object' && item.idObj !== null) {
               Object.keys(item.idObj).forEach(key => {
                 carry[key] = item.idObj[key];
               });
