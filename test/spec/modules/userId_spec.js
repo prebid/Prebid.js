@@ -16,6 +16,8 @@ let assert = require('chai').assert;
 let expect = require('chai').expect;
 
 describe('User ID', function() {
+  const expiredDateStr = 'Thu, 01 Jan 1970 00:00:01 GMT';
+
   function createStorageConfig(name = 'pubCommonId', key = 'pubcid', type = 'cookie', expires = 30) {
     return { name: name, storage: { name: key, type: type, expires: expires } }
   }
@@ -31,8 +33,14 @@ describe('User ID', function() {
   });
 
   describe('Decorate Ad Units', function() {
+    beforeEach(function() {
+      utils.setCookie('pubcid', '', expiredDateStr);
+      utils.setCookie('pubcid_alt', 'altpubcid200000', (new Date(Date.now() + 5000).toUTCString()));
+    });
+
     after(function() {
-      utils.setCookie('pubcid', '', -1);
+      utils.setCookie('pubcid', '', expiredDateStr);
+      utils.setCookie('pubcid_alt', '', expiredDateStr);
     });
 
     it('Check same cookie behavior', function () {
@@ -73,7 +81,7 @@ describe('User ID', function() {
       config.setConfig({ usersync: { syncDelay: 0, userIds: [ createStorageConfig() ] } });
       requestBidsHook((config) => { innerAdUnits1 = config.adUnits }, {adUnits: adUnits1});
       pubcid1 = utils.getCookie('pubcid'); // get first cookie
-      utils.setCookie('pubcid', '', -1); // erase cookie
+      utils.setCookie('pubcid', '', expiredDateStr); // erase cookie
 
       innerAdUnits1.forEach((unit) => {
         unit.bids.forEach((bid) => {
@@ -101,17 +109,18 @@ describe('User ID', function() {
     it('Check new cookie', function () {
       let adUnits = getAdUnits();
       let innerAdUnits;
-      let pubcid = utils.generateUUID();
-
-      utils.setCookie('pubcid', pubcid, 1000);
 
       init(config, [pubCommonIdSubmodule, unifiedIdSubmodule]);
-      config.setConfig({ usersync: { syncDelay: 0, userIds: [ createStorageConfig() ] } });
+      config.setConfig({
+        usersync: {
+          syncDelay: 0,
+          userIds: [createStorageConfig('pubCommonId', 'pubcid_alt', 'cookie')]}
+      });
       requestBidsHook((config) => { innerAdUnits = config.adUnits }, {adUnits});
       innerAdUnits.forEach((unit) => {
         unit.bids.forEach((bid) => {
           expect(bid).to.have.deep.nested.property('userId.pubcid');
-          expect(bid.userId.pubcid).to.equal(pubcid);
+          expect(bid.userId.pubcid).to.equal('altpubcid200000');
         });
       });
     });
@@ -119,16 +128,16 @@ describe('User ID', function() {
 
   describe('Opt out', function () {
     before(function () {
-      utils.setCookie('_pbjs_id_optout', '1', 1000);
+      utils.setCookie('_pbjs_id_optout', '1', (new Date(Date.now() + 5000).toUTCString()));
     });
 
     after(function () {
-      utils.setCookie('_pbjs_id_optout', '', -1);
+      utils.setCookie('_pbjs_id_optout', '', expiredDateStr);
     });
 
     afterEach(function () {
       // removed cookie
-      utils.setCookie('_pbjs_id_optout', '', -1);
+      utils.setCookie('_pbjs_id_optout', '', expiredDateStr);
     });
 
     it('fails initialization if opt out cookie exists', function () {
@@ -243,19 +252,12 @@ describe('User ID', function() {
       getUserSyncs: () => {}
     };
 
-    after(function() {
-      utils.setCookie('pubcid', '', -1);
-      utils.setCookie('unifiedid', '', -1);
-      localStorage.removeItem('unifiedid_alt');
-      localStorage.removeItem('unifiedid_alt_exp');
-    });
-
     beforeEach(function () {
       // simulate existing browser cookie values
-      utils.setCookie('pubcid', `testpubcid${storageResetCount}`, 1000);
+      utils.setCookie('pubcid', `testpubcid${storageResetCount}`, (new Date(Date.now() + 5000).toUTCString()));
       utils.setCookie('unifiedid', JSON.stringify({
         'TDID': `testunifiedid${storageResetCount}`
-      }), 1000);
+      }), (new Date(Date.now() + 5000).toUTCString()));
 
       // simulate existing browser local storage values
       localStorage.setItem('unifiedid_alt', JSON.stringify({
@@ -285,6 +287,10 @@ describe('User ID', function() {
     });
 
     afterEach(function () {
+      utils.setCookie('pubcid', '', expiredDateStr);
+      utils.setCookie('unifiedid', '', expiredDateStr);
+      localStorage.removeItem('unifiedid_alt');
+      localStorage.removeItem('unifiedid_alt_exp');
       auctionModule.newAuction.restore();
       storageResetCount++;
     });
