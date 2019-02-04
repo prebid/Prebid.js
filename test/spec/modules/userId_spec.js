@@ -103,7 +103,7 @@ describe('User ID', function() {
       let innerAdUnits;
       let pubcid = utils.generateUUID();
 
-      utils.setCookie('pubcid', pubcid, 1);
+      utils.setCookie('pubcid', pubcid, 1000);
 
       init(config, [pubCommonIdSubmodule, unifiedIdSubmodule]);
       config.setConfig({ usersync: { syncDelay: 0, userIds: [ createStorageConfig() ] } });
@@ -119,7 +119,7 @@ describe('User ID', function() {
 
   describe('Opt out', function () {
     before(function () {
-      utils.setCookie('_pbjs_id_optout', '1', 1);
+      utils.setCookie('_pbjs_id_optout', '1', 1000);
     });
 
     after(function () {
@@ -252,10 +252,10 @@ describe('User ID', function() {
 
     beforeEach(function () {
       // simulate existing browser cookie values
-      utils.setCookie('pubcid', `testpubcid${storageResetCount}`, 1);
+      utils.setCookie('pubcid', `testpubcid${storageResetCount}`, 1000);
       utils.setCookie('unifiedid', JSON.stringify({
         'TDID': `testunifiedid${storageResetCount}`
-      }), 1);
+      }), 1000);
 
       // simulate existing browser local storage values
       localStorage.setItem('unifiedid_alt', JSON.stringify({
