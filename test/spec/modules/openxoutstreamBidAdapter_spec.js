@@ -128,6 +128,7 @@ describe('OpenXOutstreamAdapter', function () {
       expect(request[0].data.vwd).to.not.equal(`${bidRequestsWithUnitIds[0].params.width}`);
       expect(request[0].data.vht).to.equal('300');
       expect(request[0].data.vwd).to.equal('400');
+      expect(request[0].data.aus).to.equal('400x300%7C304x184%7C412x184%7C375x184%7C414x184');
     });
 
     describe('interpretResponse', function () {
