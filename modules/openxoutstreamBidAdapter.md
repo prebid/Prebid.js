@@ -18,7 +18,7 @@ This bid adapter supports Banner.
 var adUnits = [
   {
     code: 'test-div',
-    sizes: [[300, 250][640,480]],  // a display size
+    sizes: [[300, 250],[640,480]],  // a display size
     mediaTypes: {'banner': {}},
     bids: [
       {
