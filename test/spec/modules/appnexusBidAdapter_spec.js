@@ -695,7 +695,6 @@ describe('AppNexusAdapter', function () {
       };
 
       let result = spec.interpretResponse({ body: response }, {bidderRequest});
-      expect(result[0].meta.primaryCatId).to.equal(10);
       expect(result[0].video.context).to.equal('adpod');
       expect(result[0].video.durationSeconds).to.equal(30);
     });
