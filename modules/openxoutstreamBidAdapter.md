@@ -20,7 +20,7 @@ var adUnits = [
     code: 'test-div',
     mediaTypes: {
       'banner': {
-        sizes: [[300, 400],  // a display size
+        sizes: [[400, 300],  // a display size
       }
     },
     bids: [
