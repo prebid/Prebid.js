@@ -59,6 +59,7 @@ export const spec = {
         traffic: params.traffic
       });
     }
+    
     return {
       method: 'POST',
       url: URL_MULTI,
