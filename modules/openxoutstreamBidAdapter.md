@@ -18,8 +18,11 @@ This bid adapter supports Banner.
 var adUnits = [
   {
     code: 'test-div',
-    sizes: [[300, 250],[640,480]],  // a display size
-    mediaTypes: {'banner': {}},
+    mediaTypes: {
+      'banner': {
+        sizes: [[300, 400],  // a display size
+      }
+    },
     bids: [
       {
         bidder: 'openxoutstream',
