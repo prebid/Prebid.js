@@ -71,7 +71,7 @@ export let syncDelay;
 export let submodules;
 
 // @type {SubmoduleContainer[]}
-export let initializedSubmodules;
+let initializedSubmodules;
 
 // @type {Submodule}
 export const unifiedIdSubmodule = {
