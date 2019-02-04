@@ -183,8 +183,8 @@ describe('AppNexusAdapter', function () {
             video: {
               context: 'adpod',
               playerSize: [640, 480],
-              adPodDuration: 300,
-              durationRange: [15, 30],
+              adPodDurationSec: 300,
+              durationRangeSec: [15, 30],
             }
           }
         }
@@ -216,8 +216,8 @@ describe('AppNexusAdapter', function () {
             video: {
               context: 'adpod',
               playerSize: [640, 480],
-              adPodDuration: 300,
-              durationRange: [15, 30],
+              adPodDurationSec: 300,
+              durationRangeSec: [15, 30],
               requireExactDuration: true,
             }
           }
@@ -258,8 +258,8 @@ describe('AppNexusAdapter', function () {
             video: {
               context: 'adpod',
               playerSize: [640, 480],
-              adPodDuration: 225,
-              durationRange: [5],
+              adPodDurationSec: 225,
+              durationRangeSec: [5],
             }
           }
         }

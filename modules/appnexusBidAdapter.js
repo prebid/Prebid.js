@@ -584,20 +584,20 @@ function hasAdPod(bid) {
  * maxduration video property according to requireExactDuration configuration
  */
 function createAdPodRequest(tags, adPodBid) {
-  const { durationRange, requireExactDuration } = adPodBid.mediaTypes.video;
+  const { durationRangeSec, requireExactDuration } = adPodBid.mediaTypes.video;
 
   const numberOfPlacements = getAdPodPlacementNumber(adPodBid.mediaTypes.video);
-  const maxDuration = utils.getMaxValueFromArray(durationRange);
+  const maxDuration = utils.getMaxValueFromArray(durationRangeSec);
 
   const tagToDuplicate = tags.filter(tag => tag.uuid === adPodBid.bidId);
   let request = utils.fill(...tagToDuplicate, numberOfPlacements);
 
   if (requireExactDuration) {
-    const divider = numberOfPlacements / durationRange.length;
+    const divider = numberOfPlacements / durationRangeSec.length;
     const chunked = utils.chunk(request, divider);
 
     // each configured duration is set as min/maxduration for a subset of requests
-    durationRange.forEach((duration, index) => {
+    durationRangeSec.forEach((duration, index) => {
       chunked[index].map(tag => {
         setVideoProperty(tag, 'minduration', duration);
         setVideoProperty(tag, 'maxduration', duration);
@@ -612,12 +612,12 @@ function createAdPodRequest(tags, adPodBid) {
 }
 
 function getAdPodPlacementNumber(videoParams, requireExactDuration) {
-  const { adPodDuration, durationRange } = videoParams;
-  const minAllowedDuration = utils.getMinValueFromArray(durationRange);
-  const numberOfPlacements = adPodDuration / minAllowedDuration;
+  const { adPodDurationSec, durationRangeSec } = videoParams;
+  const minAllowedDuration = utils.getMinValueFromArray(durationRangeSec);
+  const numberOfPlacements = adPodDurationSec / minAllowedDuration;
 
   return requireExactDuration
-    ? Math.max(numberOfPlacements, adPodDuration.length)
+    ? Math.max(numberOfPlacements, durationRangeSec.length)
     : numberOfPlacements;
 }
 
