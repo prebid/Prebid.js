@@ -8,7 +8,12 @@ import { isValidVideoBid } from '../video';
 import CONSTANTS from '../constants.json';
 import events from '../events';
 import includes from 'core-js/library/fn/array/includes';
-import { logWarn, logError, parseQueryStringParameters, delayExecution, parseSizesInput, getBidderRequest } from '../utils';
+import { ajax } from '../ajax';
+import { logWarn, logError, parseQueryStringParameters, delayExecution, parseSizesInput, getBidderRequest, flatten, uniques, timestamp, setDataInLocalStorage, getDataFromLocalStorage, deepAccess } from '../utils';
+import { hooks } from '../hook';
+// import { ADPOD } from './adpod';
+
+const ADPOD = 'adpod'; // TODO remove once ADPOD const is imported
 
 /**
  * This file aims to support Adapters during the Prebid 0.x -> 1.x transition.
@@ -339,6 +344,47 @@ export function newBidder(spec) {
     }
     return true;
   }
+}
+
+if (hooks['checkAdUnitSetup']) {
+  hooks['checkAdUnitSetup'].before(preloadBidderMappingFile);
+}
+
+export function preloadBidderMappingFile(adUnits) {
+  let adPodBidders = adUnits
+    .filter((adUnit) => deepAccess(adUnit, 'mediaTypes.video.context') === ADPOD)
+    .map((adUnit) => adUnit.bids.map((bid) => bid.bidder))
+    .reduce(flatten, [])
+    .filter(uniques);
+
+  adPodBidders.forEach(bidder => {
+    let bidderSpec = adapterManager.getBidAdapter(bidder);
+    if (bidderSpec.getMappingFileInfo) {
+      let info = bidderSpec.getMappingFileInfo();
+      let mappingData = getDataFromLocalStorage(info.key);
+      if (!mappingData || timestamp() < mappingData.lastUpdated + info.refreshInDays * 24 * 60 * 60 * 1000) {
+        ajax(info.url,
+          {
+            success: (response) => {
+              try {
+                response = JSON.parse(response);
+                let mapping = {
+                  lastUpdated: timestamp(),
+                  mapping: response.mapping
+                }
+                setDataInLocalStorage(info.key, JSON.stringify(mapping));
+              } catch (error) {
+                logError(`Failed to parse ${bidder} bidder translation mapping file`);
+              }
+            },
+            error: () => {
+              logError(`Failed to load ${bidder} bidder translation file`)
+            }
+          },
+        );
+      }
+    }
+  });
 }
 
 // check that the bid has a width and height set

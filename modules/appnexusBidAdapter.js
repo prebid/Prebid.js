@@ -7,6 +7,7 @@ import includes from 'core-js/library/fn/array/includes';
 
 const BIDDER_CODE = 'appnexus';
 const URL = '//ib.adnxs.com/ut/v3/prebid';
+const mappingFileUrl = 'http://sample.com/mappnig.json';
 const VIDEO_TARGETING = ['id', 'mimes', 'minduration', 'maxduration',
   'startdelay', 'skippable', 'playback_method', 'frameworks'];
 const USER_PARAMS = ['age', 'external_uid', 'segments', 'gender', 'dnt', 'language'];
@@ -207,6 +208,14 @@ export const spec = {
     }
 
     return bids;
+  },
+
+  getMappingFileInfo: function() {
+    return {
+      url: mappingFileUrl,
+      refreshInDays: 7,
+      key: `${spec.code}MappingFile`
+    }
   },
 
   getUserSyncs: function(syncOptions) {

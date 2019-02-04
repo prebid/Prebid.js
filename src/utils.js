@@ -1183,3 +1183,19 @@ export function convertTypes(types, params) {
   });
   return params;
 }
+
+export function setDataInLocalStorage(key, value) {
+  if (hasLocalStorage()) {
+    window.localStorage.setItem(key, value);
+  }
+}
+
+export function getDataFromLocalStorage(key) {
+  if (hasLocalStorage()) {
+    window.localStorage.getItem(key);
+  }
+}
+
+export function hasLocalStorage() {
+  return !!window.localStorage;
+}
