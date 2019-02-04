@@ -207,7 +207,7 @@ describe('AjaAdapter', function () {
               'width': 50,
               'height': 50
             },
-            'clickUrl': 'https%3A%2F%2Fexample.com%2Flp%3Fk%3Dv',
+            'clickUrl': 'https://example.com/lp?k=v',
             'impressionTrackers': [
               'https://example.com/imp'
             ]

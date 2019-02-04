@@ -101,7 +101,7 @@ export const spec = {
           body: assets.description,
           cta: assets.cta_text,
           sponsoredBy: assets.sponsor,
-          clickUrl: encodeURIComponent(assets.lp_link),
+          clickUrl: assets.lp_link,
           impressionTrackers: nativeAd.imps,
         };
 
