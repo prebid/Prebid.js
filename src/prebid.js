@@ -107,16 +107,16 @@ const checkAdUnitSetup = hook('sync', function (adUnits) {
     }
 
     if (mediaTypes && mediaTypes.native) {
-      const native = mediaTypes.native;
-      if (native.image && native.image.sizes && !Array.isArray(native.image.sizes)) {
+      const nativeObj = mediaTypes.native;
+      if (nativeObj.image && nativeObj.image.sizes && !Array.isArray(nativeObj.image.sizes)) {
         utils.logError('Please use an array of sizes for native.image.sizes field.  Removing invalid mediaTypes.native.image.sizes property from request.');
         delete adUnit.mediaTypes.native.image.sizes;
       }
-      if (native.image && native.image.aspect_ratios && !Array.isArray(native.image.aspect_ratios)) {
+      if (nativeObj.image && nativeObj.image.aspect_ratios && !Array.isArray(nativeObj.image.aspect_ratios)) {
         utils.logError('Please use an array of sizes for native.image.aspect_ratios field.  Removing invalid mediaTypes.native.image.aspect_ratios property from request.');
         delete adUnit.mediaTypes.native.image.aspect_ratios;
       }
-      if (native.icon && native.icon.sizes && !Array.isArray(native.icon.sizes)) {
+      if (nativeObj.icon && nativeObj.icon.sizes && !Array.isArray(nativeObj.icon.sizes)) {
         utils.logError('Please use an array of sizes for native.icon.sizes field.  Removing invalid mediaTypes.native.icon.sizes property from request.');
         delete adUnit.mediaTypes.native.icon.sizes;
       }
