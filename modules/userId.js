@@ -6,7 +6,6 @@ import { config } from '../src/config.js';
 import events from '../src/events.js';
 import * as utils from '../src/utils.js';
 import find from 'core-js/library/fn/array/find';
-import includes from 'core-js/library/fn/array/includes';
 import { gdprDataHandler } from '../src/adapterManager.js';
 
 const CONSTANTS = require('../src/constants.json');
@@ -29,26 +28,26 @@ const CONSTANTS = require('../src/constants.json');
 /**
  * @typedef {Object} SubmoduleParams
  * @property {string} partner - partner url param value
- * @property {string} url - webservice request url used to load Id data. The response data from the url is saved to browser storage
- * and will be passed to bid adapters on subsequent auctions
+ * @property {string} url - webservice request url used to load Id data
  */
 
 /**
  * @typedef {Object} Submodule
- * @property {string} name - submodule and config have matching name prop.
- * @property {decode} decode - decode a stored value for passing to bid requests.
- * @property {getId} getId - performs action to obtain id and return a value in the callback's response argument.
+ * @property {string} name - submodule and config have matching name prop
+ * @property {decode} decode - decode a stored value for passing to bid requests
+ * @property {getId} getId - performs action to obtain id and return a value in the callback's response argument
  */
 
 /**
  * @callback getId
- * @param {Object} submoduleConfig
- * @param {Object} consentData
+ * @param {SubmoduleParams} [submoduleConfigParams]
+ * @param {Object} [consentData]
+ * @returns {(Function|Object|string)}
  */
 
 /**
  * @callback decode
- * @param {Object|string|number} idData
+ * @param {Object|string} idData
  * @returns {Object}
  */
 
@@ -74,9 +73,6 @@ export let submodules;
 // @type {SubmoduleContainer[]}
 export let initializedSubmodules;
 
-// @type {boolean} - flag to enforce initialization only happens once
-export let moduleInitialized = false;
-
 // @type {Submodule}
 export const unifiedIdSubmodule = {
   name: 'unifiedId',
@@ -85,9 +81,9 @@ export const unifiedIdSubmodule = {
       'tdid': value['TDID']
     }
   },
-  getId(submoduleConfig, consentData) {
-    const partner = (submoduleConfig.params && typeof submoduleConfig.params.partner === 'string') ? submoduleConfig.params.partner : 'prebid';
-    const url = (submoduleConfig.params && typeof submoduleConfig.params.url === 'string') ? submoduleConfig.params.url : `http://match.adsrvr.org/track/rid?ttd_pid=${partner}&fmt=json`;
+  getId(submoduleConfigParams, consentData) {
+    const partner = (submoduleConfigParams && typeof submoduleConfigParams.partner === 'string') ? submoduleConfigParams.partner : 'prebid';
+    const url = (submoduleConfigParams && typeof submoduleConfigParams.url === 'string') ? submoduleConfigParams.url : `http://match.adsrvr.org/track/rid?ttd_pid=${partner}&fmt=json`;
 
     return function (callback) {
       ajax(url, response => {
@@ -114,7 +110,12 @@ export const pubCommonIdSubmodule = {
     }
   },
   getId() {
-    return utils.generateUUID()
+    // If the page includes its own pubcid object, then use that instead.
+    if (typeof window['PublisherCommonId'] === 'object') {
+      return window['PublisherCommonId'].getId();
+    }
+    // Otherwise get the existing cookie or create a new id.
+    return utils.generateUUID();
   }
 };
 
@@ -275,11 +276,13 @@ export function requestBidsHook(fn, reqBidsConfigObj) {
         });
       }
     }
-    // pass available user id data to bid adapters
-    addIdDataToAdUnitBids(reqBidsConfigObj.adUnits || $$PREBID_GLOBAL$$.adUnits, initializedSubmodules);
   }
-  // calling next() allows prebid to continue processing
-  return fn.apply(this, [reqBidsConfigObj]);
+
+  // pass available user id data to bid adapters
+  addIdDataToAdUnitBids(reqBidsConfigObj.adUnits || $$PREBID_GLOBAL$$.adUnits, initializedSubmodules);
+
+  // calling fn allows prebid to continue processing
+  return fn.call(this, reqBidsConfigObj);
 }
 
 /**
@@ -304,7 +307,7 @@ export function initSubmodules(submodules, consentData) {
         item.idObj = item.submodule.decode(storedId);
       } else {
         // getId will return user id data or a function that will load the data
-        const getIdResult = item.submodule.getId(item.config, consentData);
+        const getIdResult = item.submodule.getId(item.config.params, consentData);
 
         // If the getId result has a type of function, it is asynchronous and cannot be called until later
         if (typeof getIdResult === 'function') {
@@ -332,10 +335,10 @@ export function initSubmodules(submodules, consentData) {
  * * storage config: contains values for storing/retrieving userid data in browser storage
  * * value config: object properties that are copied to bids (without saving to storage)
  * @param {SubmoduleConfig[]} submoduleConfigs
- * @param {Submodule[]} submodules
+ * @param {Submodule[]} enabledSubmodules
  * @returns {SubmoduleConfig[]}
  */
-export function getValidSubmoduleConfigs(submoduleConfigs, submodules) {
+export function getValidSubmoduleConfigs(submoduleConfigs, enabledSubmodules) {
   if (!Array.isArray(submoduleConfigs)) {
     return [];
   }
@@ -361,7 +364,7 @@ export function getValidSubmoduleConfigs(submoduleConfigs, submodules) {
     if (submoduleConfig.storage &&
       typeof submoduleConfig.storage.type === 'string' && submoduleConfig.storage.type &&
       typeof submoduleConfig.storage.name === 'string' && submoduleConfig.storage.name &&
-      includes(validStorageTypes, submoduleConfig.storage.type)) {
+      validStorageTypes.indexOf(submoduleConfig.storage.type) !== -1) {
       carry.push(submoduleConfig);
     } else if (submoduleConfig.value !== null && typeof submoduleConfig.value === 'object') {
       // Validate value config
@@ -377,17 +380,21 @@ export function getValidSubmoduleConfigs(submoduleConfigs, submodules) {
  * @param {Submodule[]} enabledSubmodules
  */
 export function init (config, enabledSubmodules) {
+  submodules = [];
+  initializedSubmodules = undefined;
+
   // exit immediately if opt out cookie exists
-  if (utils.cookiesAreEnabled() && !!utils.getCookie('_pubcid_optout')) {
-    utils.logInfo(`${MODULE_NAME} - opt-out cookie found, exit module`);
-    return;
+  if (utils.cookiesAreEnabled()) {
+    if (utils.getCookie('_pbjs_id_optout')) {
+      utils.logInfo(`${MODULE_NAME} - opt-out cookie found, exit module`);
+      return;
+    }
   }
 
   // listen for config userSyncs to be set
   config.getConfig('usersync', ({usersync}) => {
-    if (usersync && !moduleInitialized) {
-      moduleInitialized = true;
-      syncDelay = (typeof usersync.syncDelay === 'number') ? usersync.syncDelay : DEFAULT_SYNC_DELAY;
+    if (usersync) {
+      syncDelay = (typeof usersync.syncDelay !== 'undefined') ? usersync.syncDelay : DEFAULT_SYNC_DELAY;
 
       // filter any invalid configs out
       const submoduleConfigs = getValidSubmoduleConfigs(usersync.userIds, enabledSubmodules);
@@ -397,14 +404,15 @@ export function init (config, enabledSubmodules) {
       }
 
       // get list of submodules with valid configurations
-      submodules = enabledSubmodules.reduce((carry, submodule) => {
+      submodules = enabledSubmodules.reduce((carry, enabledSubmodule) => {
         // try to find submodule configuration for submodule, if config exists it should be enabled
-        const config = find(submoduleConfigs, submoduleConfig => submoduleConfig.name === submodule.name);
-        if (config) {
+        const submoduleConfig = find(submoduleConfigs, item => item.name === enabledSubmodule.name);
+
+        if (submoduleConfig) {
           // append {SubmoduleContainer} containing the submodule and config
           carry.push({
-            submodule,
-            config,
+            submodule: enabledSubmodule,
+            config: submoduleConfig,
             idObj: undefined
           });
         }
@@ -415,9 +423,8 @@ export function init (config, enabledSubmodules) {
       if (submodules.length) {
         // priority has been set so it loads after consentManagement (which has a priority of 50)
         $$PREBID_GLOBAL$$.requestBids.before(requestBidsHook, 40);
+        utils.logInfo(`${MODULE_NAME} - usersync config updated for ${submodules.length} submodules`);
       }
-
-      utils.logInfo(`${MODULE_NAME} - usersync config updated`, usersync);
     }
   });
 }
