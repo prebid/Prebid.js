@@ -1,12 +1,12 @@
 /**
  * This module adds UserID support to prebid.js
  */
-import { ajax } from '../src/ajax.js';
-import { config } from '../src/config.js';
+import {ajax} from '../src/ajax.js';
+import {config} from '../src/config.js';
 import events from '../src/events.js';
 import * as utils from '../src/utils.js';
 import find from 'core-js/library/fn/array/find';
-import { gdprDataHandler } from '../src/adapterManager.js';
+import {gdprDataHandler} from '../src/adapterManager.js';
 
 const CONSTANTS = require('../src/constants.json');
 
@@ -181,7 +181,7 @@ export function hasGDPRConsent(consentData) {
     if (!consentData.consentString) {
       return false;
     }
-    if (consentData.vendorData && consentData.vendorData.purposeConsents && consentData.vendorData.purposeConsents[1] === false) {
+    if (consentData.vendorData && consentData.vendorData.purposeConsents && consentData.vendorData.purposeConsents['1'] === false) {
       return false;
     }
   }
@@ -224,17 +224,16 @@ export function processSubmoduleCallbacks(submodules, processCompleted) {
  * @param {Object[]} submodules
  */
 export function addIdDataToAdUnitBids(adUnits, submodules) {
-  if (submodules.length) {
+  const submodulesWithIds = submodules.filter(item => typeof item.idObj === 'object' && item.idObj !== null);
+  if (submodulesWithIds.length) {
     if (adUnits) {
       adUnits.forEach(adUnit => {
         adUnit.bids.forEach(bid => {
           // append the userId property to bid
-          bid.userId = submodules.reduce((carry, item) => {
-            if (typeof item.idObj === 'object' && item.idObj !== null) {
-              Object.keys(item.idObj).forEach(key => {
-                carry[key] = item.idObj[key];
-              });
-            }
+          bid.userId = submodulesWithIds.reduce((carry, item) => {
+            Object.keys(item.idObj).forEach(key => {
+              carry[key] = item.idObj[key];
+            });
             return carry;
           }, {});
         });
