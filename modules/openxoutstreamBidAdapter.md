@@ -13,6 +13,8 @@ Module that connects to OpenX's demand sources for outstream to Yieldmo.
 
 This bid adapter supports Banner.
 
+Note that the only supported size for demand is currently 400 x 300.
+
 # Example
 ```javascript
 var adUnits = [
