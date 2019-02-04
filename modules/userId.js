@@ -1,5 +1,5 @@
 /**
- * This module adds UserID support to prebid.js
+ * This module adds User ID support to prebid.js
  */
 import {ajax} from '../src/ajax.js';
 import {config} from '../src/config.js';
@@ -12,10 +12,10 @@ const CONSTANTS = require('../src/constants.json');
 
 /**
  * @typedef {Object} SubmoduleConfig
- * @property {string} name - the userId submodule name
+ * @property {string} name - the User ID submodule name
  * @property {SubmoduleStorage} storage - browser storage config
  * @property {SubmoduleParams} params - params config for use by the submodule.getId function
- * @property {Object} value - all object properties will be appended to the userId bid data
+ * @property {Object} value - all object properties will be appended to the User ID bid data
  */
 
 /**
@@ -55,11 +55,11 @@ const CONSTANTS = require('../src/constants.json');
  * @typedef {Object} SubmoduleContainer
  * @property {Submodule} submodule
  * @property {SubmoduleConfig} submoduleConfig
- * @property {Object} idObj - decoded userid data that will be appended to bids
+ * @property {Object} idObj - decoded User ID data that will be appended to bids
  * @property {function} callback
  */
 
-const MODULE_NAME = 'UserId';
+const MODULE_NAME = 'User ID';
 const COOKIE = 'cookie';
 const LOCAL_STORAGE = 'html5';
 const DEFAULT_SYNC_DELAY = 500;
@@ -229,7 +229,7 @@ export function addIdDataToAdUnitBids(adUnits, submodules) {
     if (adUnits) {
       adUnits.forEach(adUnit => {
         adUnit.bids.forEach(bid => {
-          // append the userId property to bid
+          // append the User ID property to bid
           bid.userId = submodulesWithIds.reduce((carry, item) => {
             Object.keys(item.idObj).forEach(key => {
               carry[key] = item.idObj[key];
@@ -331,7 +331,7 @@ export function initSubmodules(submodules, consentData) {
 
 /**
  * list of submodule configurations with valid 'storage' or 'value' obj definitions
- * * storage config: contains values for storing/retrieving userid data in browser storage
+ * * storage config: contains values for storing/retrieving User ID data in browser storage
  * * value config: object properties that are copied to bids (without saving to storage)
  * @param {SubmoduleConfig[]} submoduleConfigs
  * @param {Submodule[]} enabledSubmodules

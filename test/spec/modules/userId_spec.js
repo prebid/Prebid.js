@@ -16,31 +16,26 @@ let assert = require('chai').assert;
 let expect = require('chai').expect;
 
 describe('User ID', function() {
-  const expiredDateStr = 'Thu, 01 Jan 1970 00:00:01 GMT';
+  const EXPIRED_COOKIE_DATE = 'Thu, 01 Jan 1970 00:00:01 GMT';
 
   function createStorageConfig(name = 'pubCommonId', key = 'pubcid', type = 'cookie', expires = 30) {
     return { name: name, storage: { name: key, type: type, expires: expires } }
   }
 
-  beforeEach(function () {
-    sinon.stub(utils, 'logInfo');
-  });
-
-  afterEach(function () {
-    $$PREBID_GLOBAL$$.requestBids.removeAll();
-    utils.logInfo.restore();
-    config.resetConfig();
-  });
-
   describe('Decorate Ad Units', function() {
     beforeEach(function() {
-      utils.setCookie('pubcid', '', expiredDateStr);
+      utils.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
       utils.setCookie('pubcid_alt', 'altpubcid200000', (new Date(Date.now() + 5000).toUTCString()));
     });
 
+    afterEach(function () {
+      $$PREBID_GLOBAL$$.requestBids.removeAll();
+      config.resetConfig();
+    });
+
     after(function() {
-      utils.setCookie('pubcid', '', expiredDateStr);
-      utils.setCookie('pubcid_alt', '', expiredDateStr);
+      utils.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
+      utils.setCookie('pubcid_alt', '', EXPIRED_COOKIE_DATE);
     });
 
     it('Check same cookie behavior', function () {
@@ -81,7 +76,7 @@ describe('User ID', function() {
       config.setConfig({ usersync: { syncDelay: 0, userIds: [ createStorageConfig() ] } });
       requestBidsHook((config) => { innerAdUnits1 = config.adUnits }, {adUnits: adUnits1});
       pubcid1 = utils.getCookie('pubcid'); // get first cookie
-      utils.setCookie('pubcid', '', expiredDateStr); // erase cookie
+      utils.setCookie('pubcid', '', EXPIRED_COOKIE_DATE); // erase cookie
 
       innerAdUnits1.forEach((unit) => {
         unit.bids.forEach((bid) => {
@@ -131,33 +126,50 @@ describe('User ID', function() {
       utils.setCookie('_pbjs_id_optout', '1', (new Date(Date.now() + 5000).toUTCString()));
     });
 
-    after(function () {
-      utils.setCookie('_pbjs_id_optout', '', expiredDateStr);
+    beforeEach(function () {
+      sinon.stub(utils, 'logInfo');
     });
 
     afterEach(function () {
       // removed cookie
-      utils.setCookie('_pbjs_id_optout', '', expiredDateStr);
+      utils.setCookie('_pbjs_id_optout', '', EXPIRED_COOKIE_DATE);
+      $$PREBID_GLOBAL$$.requestBids.removeAll();
+      utils.logInfo.restore();
+      config.resetConfig();
+    });
+
+    after(function () {
+      utils.setCookie('_pbjs_id_optout', '', EXPIRED_COOKIE_DATE);
     });
 
     it('fails initialization if opt out cookie exists', function () {
       init(config, [pubCommonIdSubmodule, unifiedIdSubmodule]);
       config.setConfig({ usersync: { syncDelay: 0, userIds: [ createStorageConfig() ] } });
-      expect(utils.logInfo.args[0][0]).to.exist.and.to.equal('UserId - opt-out cookie found, exit module');
+      expect(utils.logInfo.args[0][0]).to.exist.and.to.equal('User ID - opt-out cookie found, exit module');
     });
 
     it('initializes if no opt out cookie exists', function () {
       init(config, [pubCommonIdSubmodule, unifiedIdSubmodule]);
       config.setConfig({ usersync: { syncDelay: 0, userIds: [ createStorageConfig() ] } });
-      expect(utils.logInfo.args[0][0]).to.exist.and.to.equal('UserId - usersync config updated for 1 submodules');
+      expect(utils.logInfo.args[0][0]).to.exist.and.to.equal('User ID - usersync config updated for 1 submodules');
     });
   });
 
   describe('Handle variations of config values', function () {
+    beforeEach(function () {
+      sinon.stub(utils, 'logInfo');
+    });
+
+    afterEach(function () {
+      $$PREBID_GLOBAL$$.requestBids.removeAll();
+      utils.logInfo.restore();
+      config.resetConfig();
+    });
+
     it('handles config with no usersync object', function () {
       init(config, [pubCommonIdSubmodule, unifiedIdSubmodule]);
       config.setConfig({});
-      // usersync is undefined, and no logInfo message for 'UniversalId - usersync config updated'
+      // usersync is undefined, and no logInfo message for 'User ID - usersync config updated'
       expect(typeof utils.logInfo.args[0]).to.equal('undefined');
     });
 
@@ -204,7 +216,7 @@ describe('User ID', function() {
           }]
         }
       });
-      expect(utils.logInfo.args[0][0]).to.exist.and.to.equal('UserId - usersync config updated for 1 submodules');
+      expect(utils.logInfo.args[0][0]).to.exist.and.to.equal('User ID - usersync config updated for 1 submodules');
     });
 
     it('config with 2 configurations should result in 2 submodules add', function () {
@@ -220,7 +232,7 @@ describe('User ID', function() {
           }]
         }
       });
-      expect(utils.logInfo.args[0][0]).to.exist.and.to.equal('UserId - usersync config updated for 2 submodules');
+      expect(utils.logInfo.args[0][0]).to.exist.and.to.equal('User ID - usersync config updated for 2 submodules');
     });
 
     it('config syncDelay updates module correctly', function () {
@@ -287,12 +299,15 @@ describe('User ID', function() {
     });
 
     afterEach(function () {
-      utils.setCookie('pubcid', '', expiredDateStr);
-      utils.setCookie('unifiedid', '', expiredDateStr);
+      storageResetCount++;
+
+      utils.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
+      utils.setCookie('unifiedid', '', EXPIRED_COOKIE_DATE);
       localStorage.removeItem('unifiedid_alt');
       localStorage.removeItem('unifiedid_alt_exp');
       auctionModule.newAuction.restore();
-      storageResetCount++;
+      $$PREBID_GLOBAL$$.requestBids.removeAll();
+      config.resetConfig();
     });
 
     it('test hook from pubcommonid cookie', function() {

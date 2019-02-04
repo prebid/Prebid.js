@@ -1,5 +1,5 @@
+## User ID Example Configuration
 
-## Example Configurations
 ```
 pbjs.setConfig({
     debug: true,

@@ -114,13 +114,18 @@
                 debug: true,
                 consentManagement: {
                     cmpApi: 'iab',
-                    timeout: 5000,
+                    timeout: 1000,
                     allowAuctionWithoutConsent: true
                 },
                 // consentManagement: {
                 //     cmpApi: 'static',
                 //     consentData: {
                 //         consentString: 'BOEFEAyOEFEAyAHABDENAI4AAAB9vABAASA'
+                //         vendorData: {
+                //             purposeConsents: {
+                //                 '1': true
+                //             }
+                //         }
                 //     }
                 // },
                 usersync: {
@@ -143,10 +148,10 @@
                             name: "pubcid",
                             expires: 365
                         },
-                        value: {
-                            foo: '9879878907987',
-                            bar:'93939'
-                        }
+                        // value: {
+                        //     foo: '9879878907987',
+                        //     bar:'93939'
+                        // }
                     }],
                     syncDelay: 5000
                 }
