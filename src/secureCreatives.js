@@ -32,7 +32,7 @@ function receiveMessage(ev) {
     });
 
     if (data.message === 'Prebid Request') {
-      sendAdToCreative(adObject, data.adServerDomain, ev.source);
+      _sendAdToCreative(adObject, data.adServerDomain, ev.source);
 
       // save winning bids
       auctionManager.addWinningBid(adObject);
@@ -53,7 +53,7 @@ function receiveMessage(ev) {
   }
 }
 
-function sendAdToCreative(adObject, remoteDomain, source) {
+export function _sendAdToCreative(adObject, remoteDomain, source) {
   const { adId, ad, adUrl, width, height, renderer, cpm } = adObject;
   // rendering for outstream safeframe
   if (isRendererRequired(renderer)) {
