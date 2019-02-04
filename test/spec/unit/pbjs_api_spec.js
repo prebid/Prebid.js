@@ -155,18 +155,36 @@ window.apntag = {
         }
       })
     }
+  },
+  getTag: function(tagId) {
+    return this.tags[tagId];
+  },
+  modifyTag: function(tagId, params) {
+    var output = {};
+
+    utils._each(this.tags[tagId], function(tag, id) {
+      output[id] = tag;
+    });
+
+    utils._each(params, function(param, id) {
+      output[id] = param;
+    });
+
+    this.tags[tagId] = output;
   }
 }
 
 describe('Unit: Prebid Module', function () {
   let bidExpiryStub;
-  before(function () {
+  beforeEach(function () {
     bidExpiryStub = sinon.stub(filters, 'isBidNotExpired').callsFake(() => true);
+    configObj.setConfig({ useBidCache: true });
   });
 
-  after(function() {
+  afterEach(function() {
     $$PREBID_GLOBAL$$.adUnits = [];
     bidExpiryStub.restore();
+    configObj.setConfig({ useBidCache: false });
   });
 
   describe('getAdserverTargetingForAdUnitCodeStr', function () {
@@ -774,13 +792,20 @@ describe('Unit: Prebid Module', function () {
   });
 
   describe('getBidResponses', function () {
+    it('should return empty obj when last auction Id had no responses', function () {
+      auctionManager.getLastAuctionId = () => 999994;
+      var result = $$PREBID_GLOBAL$$.getBidResponses();
+      assert.deepEqual(result, {}, 'expected bid responses are returned');
+    });
+
     it('should return expected bid responses when not passed an adunitCode', function () {
+      auctionManager.getLastAuctionId = () => 654321;
       var result = $$PREBID_GLOBAL$$.getBidResponses();
       var compare = getBidResponsesFromAPI();
       assert.deepEqual(result, compare, 'expected bid responses are returned');
     });
 
-    it('should return bid responses for most recent requestId only', function () {
+    it('should return bid responses for most recent auctionId only', function () {
       const responses = $$PREBID_GLOBAL$$.getBidResponses();
       assert.equal(responses[Object.keys(responses)[0]].bids.length, 4);
     });
@@ -1359,6 +1384,29 @@ describe('Unit: Prebid Module', function () {
           .and.not.to.equal('d0676a3c-ff32-45a5-af65-8175a8e7ddca');
         expect(auctionArgs.adUnits[1]).to.have.property('transactionId')
           .and.to.match(/[a-f0-9\-]{36}/i);
+      });
+
+      it('should notify targeting of the latest auction for each adUnit', function () {
+        let latestStub = sinon.stub(targeting, 'setLatestAuctionForAdUnit');
+        let getAuctionStub = sinon.stub(auction, 'getAuctionId').returns(2);
+
+        $$PREBID_GLOBAL$$.requestBids({
+          adUnits: [
+            {
+              code: 'test1',
+              bids: []
+            }, {
+              code: 'test2',
+              bids: []
+            }
+          ]
+        });
+
+        expect(latestStub.firstCall.calledWith('test1', 2)).to.equal(true);
+        expect(latestStub.secondCall.calledWith('test2', 2)).to.equal(true);
+
+        latestStub.restore();
+        getAuctionStub.restore();
       });
 
       it('should execute callback immediately if adUnits is empty', function () {
@@ -2037,6 +2085,27 @@ describe('Unit: Prebid Module', function () {
       }
       targeting.setTargetingForAst();
       expect(newAdserverTargeting).to.deep.equal(window.apntag.tags[adUnitCode].keywords);
+    });
+
+    it('should reset targeting for appnexus apntag object', function () {
+      const bids = auctionManagerInstance.getBidsReceived();
+      const adUnitCode = '/19968336/header-bid-tag-0';
+
+      var expectedAdserverTargeting = bids[0].adserverTargeting;
+      var newAdserverTargeting = {};
+      let regex = /pt[0-9]/;
+
+      for (var key in expectedAdserverTargeting) {
+        if (key.search(regex) < 0) {
+          newAdserverTargeting[key.toUpperCase()] = expectedAdserverTargeting[key];
+        } else {
+          newAdserverTargeting[key] = expectedAdserverTargeting[key];
+        }
+      }
+      targeting.setTargetingForAst();
+      expect(newAdserverTargeting).to.deep.equal(window.apntag.tags[adUnitCode].keywords);
+      targeting.resetPresetTargetingAST();
+      expect(window.apntag.tags[adUnitCode].keywords).to.deep.equal({});
     });
 
     it('should not find ' + CONSTANTS.TARGETING_KEYS.AD_ID + ' key in lowercase for all bidders', function() {

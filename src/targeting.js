@@ -53,6 +53,11 @@ export function getHighestCpmBidsFromBidPool(bidsReceived, highestCpmCallback) {
 
 export function newTargeting(auctionManager) {
   let targeting = {};
+  let latestAuctionForAdUnit = {};
+
+  targeting.setLatestAuctionForAdUnit = function(adUnitCode, auctionId) {
+    latestAuctionForAdUnit[adUnitCode] = auctionId;
+  };
 
   targeting.resetPresetTargeting = function(adUnitCode) {
     if (isGptPubadsDefined()) {
@@ -70,6 +75,23 @@ export function newTargeting(auctionManager) {
         });
       });
     }
+  };
+
+  targeting.resetPresetTargetingAST = function(adUnitCode) {
+    const adUnitCodes = getAdUnitCodes(adUnitCode);
+    adUnitCodes.forEach(function(unit) {
+      const astTag = window.apntag.getTag(unit);
+      if (astTag && astTag.keywords) {
+        const currentKeywords = Object.keys(astTag.keywords);
+        const newKeywords = {};
+        currentKeywords.forEach((key) => {
+          if (!includes(pbTargetingKeys, key.toLowerCase())) {
+            newKeywords[key] = astTag.keywords[key];
+          }
+        })
+        window.apntag.modifyTag(unit, { keywords: newKeywords })
+      }
+    });
   };
 
   /**
@@ -191,7 +213,13 @@ export function newTargeting(auctionManager) {
   }
 
   function getBidsReceived() {
-    const bidsReceived = auctionManager.getBidsReceived()
+    let bidsReceived = auctionManager.getBidsReceived();
+
+    if (!config.getConfig('useBidCache')) {
+      bidsReceived = bidsReceived.filter(bid => latestAuctionForAdUnit[bid.adUnitCode] === bid.auctionId)
+    }
+
+    bidsReceived = bidsReceived
       .filter(bid => bid.mediaType !== 'banner' || sizeSupported([bid.width, bid.height]))
       .filter(filters.isUnusedBid)
       .filter(filters.isBidNotExpired)
@@ -222,6 +250,13 @@ export function newTargeting(auctionManager) {
    */
   targeting.setTargetingForAst = function() {
     let astTargeting = targeting.getAllTargeting();
+
+    try {
+      targeting.resetPresetTargetingAST();
+    } catch (e) {
+      utils.logError('unable to reset targeting for AST' + e)
+    }
+
     Object.keys(astTargeting).forEach(targetId =>
       Object.keys(astTargeting[targetId]).forEach(key => {
         utils.logMessage(`Attempting to set targeting for targetId: ${targetId} key: ${key} value: ${astTargeting[targetId][key]}`);
