@@ -205,9 +205,9 @@ function _getDataFromImpArray (impData, id, key) {
         case 'requestId':
           return impData[index].id;
         case 'width':
-          return impData[index].banner.w;
+          return impData[index].banner.format[0].w;
         case 'height':
-          return impData[index].banner.h;
+          return impData[index].banner.format[0].h;
       }
     }
   }
@@ -407,8 +407,8 @@ export const spec = {
                             bidderCode: BIDDER_CODE,
                             originalBidder: summary.bidder,
                             pubmaticServerErrorCode: summary.errorCode,
-                            width: impObj.banner.w,
-                            height: impObj.banner.h,
+                            width: impObj.banner.format[0].w,
+                            height: impObj.banner.format[0].h,
                             creativeId: 0,
                             dealId: '',
                             currency: CURRENCY,
