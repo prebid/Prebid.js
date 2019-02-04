@@ -92,7 +92,7 @@ describe('OpenXOutstreamAdapter', function () {
         'bidder': BIDDER,
         'params': {
           'unit': '540141567',
-          'height': '300',
+          'height': '200',
           'width': '250',
           'delDomain': 'test-del-domain'
         },
@@ -124,8 +124,10 @@ describe('OpenXOutstreamAdapter', function () {
       }];
       const request = spec.buildRequests(bidRequestsWithUnitIds);
       expect(request[0].data.auid).to.equal(`${bidRequestsWithUnitIds[0].params.unit}`);
-      expect(request[0].data.vht).to.equal(`${bidRequestsWithUnitIds[0].params.height}`);
-      expect(request[0].data.vwd).to.equal(`${bidRequestsWithUnitIds[0].params.width}`);
+      expect(request[0].data.vht).to.not.equal(`${bidRequestsWithUnitIds[0].params.height}`);
+      expect(request[0].data.vwd).to.not.equal(`${bidRequestsWithUnitIds[0].params.width}`);
+      expect(request[0].data.vht).to.equal('300');
+      expect(request[0].data.vwd).to.equal('400');
     });
 
     describe('interpretResponse', function () {
@@ -207,7 +209,8 @@ describe('OpenXOutstreamAdapter', function () {
   }
   const getTemplateAdResponse = (vastUrl) => {
     return {
-      availability_zone: 'us-east-1a',
+      loader: 'openxoutstream',
+      availability_zone: '',
       data: [
         {
           ads: [
