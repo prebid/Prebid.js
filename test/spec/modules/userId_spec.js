@@ -8,20 +8,18 @@ import {
 } from 'modules/userId';
 import {config} from 'src/config';
 import * as utils from 'src/utils';
+import * as auctionModule from 'src/auction';
 import {getAdUnits} from 'test/fixtures/fixtures';
 import {registerBidder} from 'src/adapters/bidderFactory';
-import * as auctionModule from '../../../src/auction';
-import { gdprDataHandler } from '../../../src/adapterManager.js';
-import {expect} from 'chai'
-import sinon from 'sinon'
+import {gdprDataHandler} from 'src/adapterManager';
 
-const TIMEOUT = 2000;
-
-function createStorageConfig(name = 'pubCommonId', key = 'pubcid', type = 'cookie', expires = 30) {
-  return { name: name, storage: { name: key, type: type, expires: expires } }
-}
+var assert = require('chai').assert;
+var expect = require('chai').expect;
 
 describe('User ID', function() {
+  function createStorageConfig(name = 'pubCommonId', key = 'pubcid', type = 'cookie', expires = 30) {
+    return { name: name, storage: { name: key, type: type, expires: expires } }
+  }
   let clock;
   let sandbox;
 
@@ -296,7 +294,7 @@ describe('User ID', function() {
         ]
       }];
       adUnitCodes = ['adUnit-code'];
-      let auction = auctionModule.newAuction({adUnits, adUnitCodes, callback: function() {}, cbTimeout: TIMEOUT});
+      let auction = auctionModule.newAuction({adUnits, adUnitCodes, callback: function() {}, cbTimeout: 2000});
       createAuctionStub = sinon.stub(auctionModule, 'newAuction');
       createAuctionStub.returns(auction);
 
