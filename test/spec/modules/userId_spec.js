@@ -11,37 +11,16 @@ import * as utils from 'src/utils';
 import * as auctionModule from 'src/auction';
 import {getAdUnits} from 'test/fixtures/fixtures';
 import {registerBidder} from 'src/adapters/bidderFactory';
-import {gdprDataHandler} from 'src/adapterManager';
 
-var assert = require('chai').assert;
-var expect = require('chai').expect;
+let assert = require('chai').assert;
+let expect = require('chai').expect;
 
 describe('User ID', function() {
   function createStorageConfig(name = 'pubCommonId', key = 'pubcid', type = 'cookie', expires = 30) {
     return { name: name, storage: { name: key, type: type, expires: expires } }
   }
-  let clock;
-  let sandbox;
-
-  before(function () {
-    clock = sinon.useFakeTimers(Date.now());
-  });
-
-  after(function () {
-    clock.restore();
-  });
 
   beforeEach(function () {
-    sandbox = sinon.sandbox.create();
-    sandbox.stub(gdprDataHandler, 'getConsentData').returns({
-      consentString: 'consenttest1',
-      vendorData: {
-        purposeConsents: {
-          '1': true
-        }
-      },
-      gdprApplies: true
-    });
     sinon.stub(utils, 'logInfo');
   });
 
@@ -49,8 +28,6 @@ describe('User ID', function() {
     $$PREBID_GLOBAL$$.requestBids.removeAll();
     utils.logInfo.restore();
     config.resetConfig();
-    // events.getEvents.restore();
-    sandbox.restore();
   });
 
   describe('Decorate Ad Units', function() {
@@ -140,9 +117,13 @@ describe('User ID', function() {
     });
   });
 
-  describe('opt out', function () {
+  describe('Opt out', function () {
     before(function () {
       utils.setCookie('_pbjs_id_optout', '1', 1);
+    });
+
+    after(function () {
+      utils.setCookie('_pbjs_id_optout', '', -1);
     });
 
     afterEach(function () {
@@ -163,7 +144,7 @@ describe('User ID', function() {
     });
   });
 
-  describe('handle variations of config values', function () {
+  describe('Handle variations of config values', function () {
     it('handles config with no usersync object', function () {
       init(config, [pubCommonIdSubmodule, unifiedIdSubmodule]);
       config.setConfig({});
