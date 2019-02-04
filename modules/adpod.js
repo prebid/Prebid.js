@@ -328,7 +328,14 @@ config.getConfig('adpod', config => adpodSetConfig(config.adpod));
  * This function initializes the adpod module's hooks.  This is called by the corresponding adserver video module.
  */
 export function initAdpodHooks() {
-  hooks['callPrebidCache'].before(callPrebidCacheHook, 15);
-  hooks['checkAdUnitSetup'].before(checkAdUnitSetupHook, 15);
-  hooks['checkVideoBidSetup'].before(checkVideoBidSetupHook, 15);
+  function setupHookFnOnce(hookId, hookFn, priority = 15) {
+    let result = hooks[hookId].getHooks({hook: hookFn});
+    if (result.length === 0) {
+      hooks[hookId].before(hookFn, priority);
+    }
+  }
+
+  setupHookFnOnce('callPrebidCache', callPrebidCacheHook);
+  setupHookFnOnce('checkAdUnitSetup', checkAdUnitSetupHook);
+  setupHookFnOnce('checkVideoBidSetup', checkVideoBidSetupHook);
 }
