@@ -1,7 +1,6 @@
 import { expect } from 'chai';
 import adapterManager, {
-  gdprDataHandler,
-  checkAdUnitSetup
+  gdprDataHandler
 } from 'src/adapterManager';
 import { getAdUnits } from 'test/fixtures/fixtures';
 import CONSTANTS from 'src/constants.json';
