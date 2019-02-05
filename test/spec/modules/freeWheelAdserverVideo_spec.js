@@ -5,11 +5,10 @@ import { config } from 'src/config';
 
 describe('freeWheel adserver module', function() {
   let amStub;
-  let originalAdUnits;
+  let amGetAdUnitsStub;
 
   before(function () {
-    originalAdUnits = $$PREBID_GLOBAL$$.adUnits;
-    $$PREBID_GLOBAL$$.adUnits = [{
+    let adUnits = [{
       code: 'preroll_1',
       mediaTypes: {
         video: {
@@ -48,6 +47,9 @@ describe('freeWheel adserver module', function() {
         }
       ]
     }];
+
+    amGetAdUnitsStub = sinon.stub(auctionManager, 'getAdUnits');
+    amGetAdUnitsStub.returns(adUnits);
     amStub = sinon.stub(auctionManager, 'getBidsReceived');
     config.setConfig({
       adpod: {
@@ -61,7 +63,7 @@ describe('freeWheel adserver module', function() {
   });
 
   after(function () {
-    $$PREBID_GLOBAL$$.adUnits = originalAdUnits;
+    amGetAdUnitsStub.restore();
     amStub.restore();
   });
 
@@ -79,6 +81,29 @@ describe('freeWheel adserver module', function() {
 
     expect(targeting['preroll_1']).to.exist;
     expect(targeting['midroll_1']).to.not.exist;
+  });
+
+  it('should only use adpod bids', function() {
+    let bannerBid = [{
+      'ad': 'creative',
+      'cpm': '1.99',
+      'width': 300,
+      'height': 250,
+      'requestId': '1',
+      'creativeId': 'some-id',
+      'currency': 'USD',
+      'netRevenue': true,
+      'ttl': 360,
+      'bidderCode': 'appnexus',
+      'statusMessage': 'Bid available',
+      'adId': '28f24ced14586c',
+      'adUnitCode': 'preroll_1'
+    }];
+    amStub.returns(getBidsReceived().concat(bannerBid));
+    let targeting = getTargeting();
+
+    expect(targeting['preroll_1'].length).to.equal(3);
+    expect(targeting['midroll_1'].length).to.equal(2);
   });
 
   it('should return unique category bids when competitive exclusion is enabled', function() {
@@ -117,7 +142,7 @@ function getBidsReceived() {
   ]
 }
 
-function createBid(cpm, adUnitCode, durationSeconds, priceIndustryDuration, uuid, industry) {
+function createBid(cpm, adUnitCode, durationBucket, priceIndustryDuration, uuid, industry) {
   return {
     'bidderCode': 'appnexus',
     'width': 640,
@@ -135,7 +160,7 @@ function createBid(cpm, adUnitCode, durationSeconds, priceIndustryDuration, uuid
     'adUnitCode': adUnitCode,
     'video': {
       'context': 'adpod',
-      'durationSeconds': durationSeconds
+      'durationBucket': durationBucket
     },
     'appnexus': {
       'buyerMemberId': 9325
@@ -167,7 +192,7 @@ function createBid(cpm, adUnitCode, durationSeconds, priceIndustryDuration, uuid
     'customCacheKey': `${priceIndustryDuration}_${uuid}`,
     'meta': {
       'primaryCatId': 1,
-      'freewheelPrimaryCatId': industry
+      'adServerCatId': industry
     },
     'videoCacheKey': '4cf395af-8fee-4960-af0e-88d44e399f14'
   }

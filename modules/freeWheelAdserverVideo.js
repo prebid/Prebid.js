@@ -6,10 +6,12 @@ import { registerVideoSupport } from '../src/adServerManager';
 import { auctionManager } from '../src/auctionManager';
 import { groupBy, deepAccess } from '../src/utils';
 import { config } from '../src/config';
-// import { ADPOD, initAdpodHooks } from './adpod';
+// TODO import { ADPOD, initAdpodHooks, TARGETING_KEY_PB_CAT_DUR, TARGETING_KEY_CACHE_ID } from './adpod';
 
-const ADPOD = 'adpod'; // remove later when adpod module is merged; use above commented import instead
-const adPodTargetingKey = 'hb_price_industry_duration';
+// TODO Remove these constants later when adpod module is merged; use above commented import instead
+const ADPOD = 'adpod';
+const TARGETING_KEY_PB_CAT_DUR = 'hb_pb_cat_dur';
+const TARGETING_KEY_CACHE_ID = 'hb_cache_id';
 
 /**
  * This function returns targeting keyvalue pairs for freewheel adserver module
@@ -35,15 +37,15 @@ export default function getTargeting({codes} = {}) {
     bids
       .filter((bid) => bid.adUnitCode === adUnit.code)
       .forEach((bid, index, arr) => {
-        if (bid.video.durationSeconds <= adPodDurationSeconds) {
+        if (bid.video.durationBucket <= adPodDurationSeconds) {
           adPodTargeting.push({
-            [adPodTargetingKey]: bid.adserverTargeting[adPodTargetingKey]
+            [TARGETING_KEY_PB_CAT_DUR]: bid.adserverTargeting[TARGETING_KEY_PB_CAT_DUR]
           });
-          adPodDurationSeconds -= bid.video.durationSeconds;
+          adPodDurationSeconds -= bid.video.durationBucket;
         }
         if (index === arr.length - 1 && adPodTargeting.length > 0) {
           adPodTargeting.push({
-            'hb_uuid': bid.adserverTargeting.hb_uuid
+            [TARGETING_KEY_CACHE_ID]: bid.adserverTargeting[TARGETING_KEY_CACHE_ID]
           });
         }
       });
@@ -58,7 +60,7 @@ export default function getTargeting({codes} = {}) {
  * @returns {Array[Object]} adunits of mediaType adpod
  */
 function getAdPodAdUnits(codes) {
-  return $$PREBID_GLOBAL$$.adUnits
+  return auctionManager.getAdUnits()
     .filter((adUnit) => deepAccess(adUnit, 'mediaTypes.video.context') === ADPOD)
     .filter((adUnit) => (codes.length > 0) ? codes.indexOf(adUnit.code) != -1 : true);
 }
@@ -80,12 +82,12 @@ function compare(a, b) {
  */
 function getExclusiveBids(bidsReceived) {
   let bids = bidsReceived
-    .map((bid) => Object.assign({}, bid, {freewheelPrimaryCatId: bid.meta.freewheelPrimaryCatId}));
-  bids = groupBy(bids, 'freewheelPrimaryCatId');
+    .map((bid) => Object.assign({}, bid, {adServerCatId: bid.meta.adServerCatId}));
+  bids = groupBy(bids, 'adServerCatId');
   let filteredBids = [];
-  Object.keys(bids).forEach((freewheelPrimaryCatId) => {
-    bids[freewheelPrimaryCatId].sort(compare);
-    filteredBids.push(bids[freewheelPrimaryCatId][0]);
+  Object.keys(bids).forEach((adServerCatId) => {
+    bids[adServerCatId].sort(compare);
+    filteredBids.push(bids[adServerCatId][0]);
   });
   return filteredBids;
 }
@@ -99,7 +101,7 @@ function getExclusiveBids(bidsReceived) {
 function getBidsForAdpod(bidsReceived, adPodAdUnits) {
   let adUnitCodes = adPodAdUnits.map((adUnit) => adUnit.code);
   return bidsReceived
-    .filter((bid) => adUnitCodes.indexOf(bid.adUnitCode) != -1)
+    .filter((bid) => adUnitCodes.indexOf(bid.adUnitCode) != -1 && (bid.video && bid.video.context === ADPOD))
 }
 
 // initAdpodHooks();
