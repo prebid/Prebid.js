@@ -19,7 +19,7 @@ Module that adds ad placement visibility scores for DFP.
                     {
                         bidder: 'optimera',
                         params: {
-                              clientID: '0'
+                              clientID: '9999'
                         }
                     }]
             },{
@@ -29,7 +29,7 @@ Module that adds ad placement visibility scores for DFP.
                     {
                         bidder: 'optimera',
                         params: {
-                              clientID: '0'
+                              clientID: '9999'
                         }
                     }]
             }];

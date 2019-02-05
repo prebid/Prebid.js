@@ -10,8 +10,6 @@ import {
   currencyRates
 } from 'modules/currency';
 
-import { createHook } from 'src/hook';
-
 var assert = require('chai').assert;
 var expect = require('chai').expect;
 
@@ -21,7 +19,6 @@ describe('currency', function () {
   let clock;
 
   let fn = sinon.spy();
-  let hookFn = createHook('asyncSeries', fn, 'addBidResponse');
 
   beforeEach(function () {
     fakeCurrencyFileServer = sinon.fakeServer.create();
@@ -29,6 +26,7 @@ describe('currency', function () {
 
   afterEach(function () {
     fakeCurrencyFileServer.restore();
+    setConfig({});
   });
 
   describe('setConfig', function () {
@@ -140,9 +138,9 @@ describe('currency', function () {
         }
       });
 
-      addBidResponseHook('elementId', bid, function(adCodeId, bid) {
-      	innerBid = bid;
-      });
+      addBidResponseHook(function(adCodeId, bid) {
+        innerBid = bid;
+      }, 'elementId', bid);
 
       expect(innerBid.currency).to.equal('GBP');
       expect(typeof innerBid.getCpmInNewCurrency).to.equal('function');
@@ -162,9 +160,9 @@ describe('currency', function () {
         }
       });
 
-      addBidResponseHook('elementId', bid, function(adCodeId, bid) {
-      	innerBid = bid;
-      });
+      addBidResponseHook(function(adCodeId, bid) {
+        innerBid = bid;
+      }, 'elementId', bid);
 
       expect(innerBid.currency).to.equal('JPY');
       expect(typeof innerBid.getCpmInNewCurrency).to.equal('function');
@@ -184,9 +182,9 @@ describe('currency', function () {
       var bid = { cpm: 100, currency: 'JPY', bidder: 'rubicon' };
       var innerBid;
 
-      addBidResponseHook('elementId', bid, function(adCodeId, bid) {
-      	innerBid = bid;
-      });
+      addBidResponseHook(function(adCodeId, bid) {
+        innerBid = bid;
+      }, 'elementId', bid);
 
       expect(innerBid.cpm).to.equal('1.0000');
       expect(typeof innerBid.getCpmInNewCurrency).to.equal('function');
@@ -211,9 +209,9 @@ describe('currency', function () {
       var bid = { cpm: 100, currency: 'JPY', bidder: 'rubicon' };
       var innerBid;
 
-      addBidResponseHook('elementId', bid, function(adCodeId, bid) {
-      	innerBid = bid;
-      });
+      addBidResponseHook(function(adCodeId, bid) {
+        innerBid = bid;
+      }, 'elementId', bid);
 
       expect(innerBid.cpm).to.equal('1.0000');
       expect(typeof innerBid.getCpmInNewCurrency).to.equal('function');
@@ -232,9 +230,9 @@ describe('currency', function () {
       setConfig({ 'adServerCurrency': 'JPY' });
 
       var marker = false;
-      addBidResponseHook('elementId', bid, function() {
-      	marker = true;
-      });
+      addBidResponseHook(function() {
+        marker = true;
+      }, 'elementId', bid);
 
       expect(marker).to.equal(false);
 
@@ -248,9 +246,9 @@ describe('currency', function () {
       setConfig({});
       var bid = { 'cpm': 1, 'currency': 'USD' };
       var innerBid;
-      addBidResponseHook('elementId', bid, function(adCodeId, bid) {
-      	innerBid = bid;
-      });
+      addBidResponseHook(function(adCodeId, bid) {
+        innerBid = bid;
+      }, 'elementId', bid);
       expect(innerBid.cpm).to.equal(1);
     });
 
@@ -259,9 +257,9 @@ describe('currency', function () {
 
       var bid = { 'cpm': 1, 'currency': 'GBP' };
       var innerBid;
-      addBidResponseHook('elementId', bid, function(adCodeId, bid) {
-      	innerBid = bid;
-      });
+      addBidResponseHook(function(adCodeId, bid) {
+        innerBid = bid;
+      }, 'elementId', bid);
       expect(innerBid.statusMessage).to.equal('Bid returned empty or error response');
     });
 
@@ -271,9 +269,9 @@ describe('currency', function () {
       });
       var bid = { 'cpm': 1, 'currency': 'USD' };
       var innerBid;
-      addBidResponseHook('elementId', bid, function(adCodeId, bid) {
-      	innerBid = bid;
-      });
+      addBidResponseHook(function(adCodeId, bid) {
+        innerBid = bid;
+      }, 'elementId', bid);
       expect(bid).to.equal(innerBid);
     });
 
@@ -286,9 +284,9 @@ describe('currency', function () {
       fakeCurrencyFileServer.respond();
       var bid = { 'cpm': 1, 'currency': 'ABC' };
       var innerBid;
-      addBidResponseHook('elementId', bid, function(adCodeId, bid) {
-      	innerBid = bid;
-      });
+      addBidResponseHook(function(adCodeId, bid) {
+        innerBid = bid;
+      }, 'elementId', bid);
       expect(innerBid.statusMessage).to.equal('Bid returned empty or error response');
     });
 
@@ -298,9 +296,9 @@ describe('currency', function () {
       fakeCurrencyFileServer.respond();
       var bid = { 'cpm': 1, 'currency': 'GBP' };
       var innerBid;
-      addBidResponseHook('elementId', bid, function(adCodeId, bid) {
-      	innerBid = bid;
-      });
+      addBidResponseHook(function(adCodeId, bid) {
+        innerBid = bid;
+      }, 'elementId', bid);
       expect(innerBid.statusMessage).to.equal('Bid returned empty or error response');
     });
 
@@ -310,9 +308,9 @@ describe('currency', function () {
       fakeCurrencyFileServer.respond();
       var bid = { 'cpm': 1, 'currency': 'JPY' };
       var innerBid;
-      addBidResponseHook('elementId', bid, function(adCodeId, bid) {
-      	innerBid = bid;
-      });
+      addBidResponseHook(function(adCodeId, bid) {
+        innerBid = bid;
+      }, 'elementId', bid);
       expect(innerBid.cpm).to.equal(1);
       expect(innerBid.currency).to.equal('JPY');
     });
@@ -323,9 +321,9 @@ describe('currency', function () {
       fakeCurrencyFileServer.respond();
       var bid = { 'cpm': 1, 'currency': 'USD' };
       var innerBid;
-      addBidResponseHook('elementId', bid, function(adCodeId, bid) {
-      	innerBid = bid;
-      });
+      addBidResponseHook(function(adCodeId, bid) {
+        innerBid = bid;
+      }, 'elementId', bid);
       expect(innerBid.cpm).to.equal('0.7798');
       expect(innerBid.currency).to.equal('GBP');
     });
@@ -336,9 +334,9 @@ describe('currency', function () {
       fakeCurrencyFileServer.respond();
       var bid = { 'cpm': 1, 'currency': 'CNY' };
       var innerBid;
-      addBidResponseHook('elementId', bid, function(adCodeId, bid) {
-      	innerBid = bid;
-      });
+      addBidResponseHook(function(adCodeId, bid) {
+        innerBid = bid;
+      }, 'elementId', bid);
       expect(innerBid.cpm).to.equal('0.1133');
       expect(innerBid.currency).to.equal('GBP');
     });
@@ -349,9 +347,9 @@ describe('currency', function () {
       fakeCurrencyFileServer.respond();
       var bid = { 'cpm': 1, 'currency': 'JPY' };
       var innerBid;
-      addBidResponseHook('elementId', bid, function(adCodeId, bid) {
-      	innerBid = bid;
-      });
+      addBidResponseHook(function(adCodeId, bid) {
+        innerBid = bid;
+      }, 'elementId', bid);
       expect(innerBid.cpm).to.equal('0.0623');
       expect(innerBid.currency).to.equal('CNY');
     });
