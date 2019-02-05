@@ -1,6 +1,6 @@
 import * as utils from '../src/utils';
 import {registerBidder} from '../src/adapters/bidderFactory';
-// import { config } from 'src/config';
+
 const BIDDER_CODE = 'admedia';
 const ENDPOINT_URL = '//prebid.admedia.com/bidder/';
 
