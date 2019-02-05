@@ -338,4 +338,3 @@ describe('Rich Audience adapter tests', function () {
     expect(syncs).to.have.lengthOf(1);
   });
 });
-
