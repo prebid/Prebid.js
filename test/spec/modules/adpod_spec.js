@@ -464,6 +464,28 @@ describe('adpod.js', function () {
       expect(logWarnStub.calledOnce).to.equal(true);
     });
 
+    it('removes an incorrectly setup adpod adunit - attempting to use multi-format adUnit', function() {
+      let adUnits = [{
+        code: 'multi_test1',
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 250], [300, 600]]
+          },
+          video: {
+            context: 'adpod',
+            playerSize: [300, 250],
+            durationRangeSec: [15, 30, 45],
+            adPodDurationSec: 300
+          }
+        }
+      }];
+
+      checkAdUnitSetupHook(callbackFn, adUnits);
+
+      expect(results).to.deep.equal([]);
+      expect(logWarnStub.calledOnce).to.equal(true);
+    });
+
     it('accepts mixed set of adunits', function() {
       let adUnits = [{
         code: 'test3',

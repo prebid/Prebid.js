@@ -212,8 +212,15 @@ export function callPrebidCacheHook(fn, auctionInstance, bidResponse, afterBidAd
  */
 export function checkAdUnitSetupHook(fn, adUnits) {
   let goodAdUnits = adUnits.filter(adUnit => {
-    let videoConfig = adUnit.mediaTypes && adUnit.mediaTypes.video;
+    let mediaTypes = adUnit.mediaTypes;
+    let videoConfig = mediaTypes && mediaTypes.video;
     if (videoConfig && videoConfig.context === ADPOD) {
+      // run check to see if other mediaTypes are defined (ie multi-format); reject adUnit if so
+      if (Object.keys(mediaTypes).length > 1) {
+        utils.logWarn(`Detected more than one mediaType in adUnitCode: ${adUnit.code} while attempting to define an 'adpod' video adUnit.  'adpod' adUnits cannot be mixed with other mediaTypes.  This adUnit will be removed from the auction.`);
+        return false;
+      }
+
       let errMsg = `Detected missing or incorrectly setup fields for an adpod adUnit.  Please review the following fields of adUnitCode: ${adUnit.code}.  This adUnit will be removed from the auction.`;
 
       let playerSize = !!(videoConfig.playerSize && utils.isArrayOfNums(videoConfig.playerSize));
