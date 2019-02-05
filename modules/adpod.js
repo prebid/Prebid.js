@@ -1,3 +1,17 @@
+/**
+ * This module houses the functionality to evaluate and process adpod adunits/bids.  Specifically there are several hooked functions,
+ * that either supplement the base function (ie to check something additional unique to adpod objects) or to replace the base funtion
+ * entirely when appropriate.
+ *
+ * Brief outline of each hook:
+ * - `callPrebidCacheHook` - for any adpod bids, this function will temporarily hold them in a queue in order to send the bids to Prebid Cache in bulk
+ * - `checkAdUnitSetupHook` - evaluates the adUnits to ensure that required fields for adpod adUnits are present.  Invalid adpod adUntis are removed from the array.
+ * - `checkVideoBidSetupHook` - evaluates the adpod bid returned from an adaptor/bidder to ensure required fields are populated; also initializes duration bucket field.
+ *
+ * To initialize the module, there is an `initAdpodHooks()` function that should be imported and executed by a corresponding `...AdServerVideo`
+ * module that designed to support adpod video type ads.  This import process allows this module to effectively act as a sub-module.
+ */
+
 import * as utils from '../src/utils';
 import { addBidToAuction, doCallbacksIfTimedout, AUCTION_IN_PROGRESS } from '../src/auction';
 import { store } from '../src/videoCache';
