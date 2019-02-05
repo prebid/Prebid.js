@@ -134,7 +134,7 @@ function updateBidQueue(auctionInstance, bidResponse, afterBidAdded) {
     let killQueue = !!(auctionInstance.getAuctionStatus() !== AUCTION_IN_PROGRESS);
     callDispatcher(auctionInstance, bidListArr, afterBidAdded, killQueue);
   } else {
-    utils.logWarn('Attempted to cache a bid from an unkonwn auction. Bid:', bidResponse);
+    utils.logWarn('Attempted to cache a bid from an unknown auction. Bid:', bidResponse);
   }
 }
 
