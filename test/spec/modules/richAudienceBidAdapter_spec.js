@@ -9,7 +9,7 @@ import * as utils from 'src/utils';
 
 describe('Rich Audience adapter tests', function () {
   var DEFAULT_PARAMS = [{
-    adUnitCode: '/19968336/header-bid-tag-0',
+    adUnitCode: 'test-div',
     bidId: '2c7c8e9c900244',
     sizes: [
       [300, 250],
@@ -20,7 +20,6 @@ describe('Rich Audience adapter tests', function () {
     bidder: 'richaudience',
     params: {
       bidfloor: 0.5,
-      ifa: '234234234234234',
       pid: 'ADb1f40rmi',
       supplyType: 'site'
     },
@@ -31,7 +30,7 @@ describe('Rich Audience adapter tests', function () {
   }];
 
   var DEFAULT_PARAMS_APP = [{
-    adUnitCode: '/19968336/header-bid-tag-0',
+    adUnitCode: 'test-div',
     bidId: '2c7c8e9c900244',
     sizes: [
       [300, 250],
@@ -42,7 +41,7 @@ describe('Rich Audience adapter tests', function () {
     bidder: 'richaudience',
     params: {
       bidfloor: 0.5,
-      ifa: '234234234234234',
+      ifa: 'AAAAAAAAA-BBBB-CCCC-1111-222222220000',
       pid: 'ADb1f40rmi',
       supplyType: 'app',
     },
@@ -53,7 +52,7 @@ describe('Rich Audience adapter tests', function () {
   }];
 
   var DEFAULT_PARAMS_WO_OPTIONAL = [{
-    adUnitCode: '/19968336/header-bid-tag-0',
+    adUnitCode: 'test-div',
     bidId: '2c7c8e9c900244',
     sizes: [
       [300, 250],
@@ -75,15 +74,15 @@ describe('Rich Audience adapter tests', function () {
   var BID_RESPONSE = {
     body: {
       cpm: 1.50,
-      adm: '< --- script -->',
+      adm: '<!-- script -->',
       media_type: 'js',
       width: 300,
       height: 250,
-      creative_id: 'aaaabb',
-      netRevenue: 'false',
+      creative_id: '189198063',
+      netRevenue: true,
       currency: 'USD',
-      ttl: 360,
-      cSyncUrl: 'http://fake.url.com',
+      ttl: 300,
+      consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA'
     }
   };
 
@@ -91,18 +90,16 @@ describe('Rich Audience adapter tests', function () {
     body: {
       cpm: 1.50,
       media_type: 'video',
-      width: 300,
-      height: 250,
-      creative_id: 'aaaabb',
-      netRevenue: 'false',
+      width: 1,
+      height: 1,
+      creative_id: '189198063',
+      netRevenue: true,
       currency: 'USD',
-      ttl: 360,
-      cSyncUrl: 'http://fake.url.com',
-      vastXML: '<VAST></VAST>'
+      ttl: 300,
+      vastXML: '<VAST></VAST>',
+      consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA'
     }
   };
-
-  var BID_RESPONSE_EMPTY = {};
 
   it('Verify build request', function () {
     config.setConfig({
@@ -111,13 +108,20 @@ describe('Rich Audience adapter tests', function () {
       }
     });
 
-    const request = spec.buildRequests(DEFAULT_PARAMS);
+    const request = spec.buildRequests(DEFAULT_PARAMS, {
+      gdprConsent: {
+        consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
+        gdprApplies: true
+      },
+      refererInfo: {
+        referer: 'http://domain.com',
+        numIframes: 0
+      }
+    });
 
-    // expect(request[0]).to.have.property('url').and.to.equal('https://pre.richaudience.com/hb/');
     expect(request[0]).to.have.property('method').and.to.equal('POST');
     const requestContent = JSON.parse(request[0].data);
     expect(requestContent).to.have.property('bidfloor').and.to.equal(0.5);
-    expect(requestContent).to.have.property('ifa').and.to.equal('234234234234234');
     expect(requestContent).to.have.property('pid').and.to.equal('ADb1f40rmi');
     expect(requestContent).to.have.property('supplyType').and.to.equal('site');
     expect(requestContent).to.have.property('auctionId').and.to.equal('0cb3144c-d084-4686-b0d6-f5dbe917c563');
@@ -125,7 +129,8 @@ describe('Rich Audience adapter tests', function () {
     expect(requestContent).to.have.property('BidRequestsCount').and.to.equal(1);
     expect(requestContent).to.have.property('bidder').and.to.equal('richaudience');
     expect(requestContent).to.have.property('bidderRequestId').and.to.equal('1858b7382993ca');
-    expect(requestContent).to.have.property('tagId').and.to.equal('/19968336/header-bid-tag-0');
+    expect(requestContent).to.have.property('tagId').and.to.equal('test-div');
+    expect(requestContent).to.have.property('referer').and.to.equal('http%3A%2F%2Fdomain.com');
     expect(requestContent).to.have.property('sizes');
     expect(requestContent.sizes[0]).to.have.property('w').and.to.equal(300);
     expect(requestContent.sizes[0]).to.have.property('h').and.to.equal(250);
@@ -147,18 +152,32 @@ describe('Rich Audience adapter tests', function () {
           allowAuctionWithoutConsent: true
         }
       });
+
       const request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, {
         gdprConsent: {
-          consentString: 'BOKAVy4OKAVy4ABAB8AAAAAZ+A==',
+          consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
           gdprApplies: true
+        },
+        refererInfo: {
+          referer: 'http://domain.com',
+          numIframes: 0
         }
       });
       const requestContent = JSON.parse(request[0].data);
-      expect(requestContent).to.have.property('gdpr_consent').and.to.equal('BOKAVy4OKAVy4ABAB8AAAAAZ+A==');
+      expect(requestContent).to.have.property('gdpr_consent').and.to.equal('BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA');
     });
 
     it('Verify adding ifa when supplyType equal to app', function () {
-      const request = spec.buildRequests(DEFAULT_PARAMS_APP);
+      const request = spec.buildRequests(DEFAULT_PARAMS_APP, {
+        gdprConsent: {
+          consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
+          gdprApplies: true
+        },
+        refererInfo: {
+          referer: 'http://domain.com',
+          numIframes: 0
+        }
+      });
     });
 
     it('Verify build request with GDPR without gdprApplies', function () {
@@ -175,32 +194,56 @@ describe('Rich Audience adapter tests', function () {
       });
       const request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, {
         gdprConsent: {
-          consentString: 'BOKAVy4OKAVy4ABAB8AAAAAZ+A=='
+          consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA'
+        },
+        refererInfo: {
+          referer: 'http://domain.com',
+          numIframes: 0
         }
       });
       const requestContent = JSON.parse(request[0].data);
-      expect(requestContent).to.have.property('gdpr_consent').and.to.equal('BOKAVy4OKAVy4ABAB8AAAAAZ+A==');
+      expect(requestContent).to.have.property('gdpr_consent').and.to.equal('BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA');
     });
   });
 
   it('Verify interprete response', function () {
-    const request = spec.buildRequests(DEFAULT_PARAMS);
+    const request = spec.buildRequests(DEFAULT_PARAMS, {
+      gdprConsent: {
+        consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
+        gdprApplies: true
+      },
+      refererInfo: {
+        referer: 'http://domain.com',
+        numIframes: 0
+      }
+    });
+
     const bids = spec.interpretResponse(BID_RESPONSE, request[0]);
     expect(bids).to.have.lengthOf(1);
     const bid = bids[0];
     expect(bid.cpm).to.equal(1.50);
-    expect(bid.ad).to.equal('< --- script -->');
+    expect(bid.ad).to.equal('<!-- script -->');
     expect(bid.mediaType).to.equal('js');
     expect(bid.width).to.equal(300);
     expect(bid.height).to.equal(250);
-    expect(bid.creativeId).to.equal('aaaabb');
-    expect(bid.netRevenue).to.equal('false');
+    expect(bid.creativeId).to.equal('189198063');
+    expect(bid.netRevenue).to.equal(true);
     expect(bid.currency).to.equal('USD');
-    expect(bid.ttl).to.equal(360);
+    expect(bid.ttl).to.equal(300);
   });
 
   it('no banner media response', function () {
-    const request = spec.buildRequests(DEFAULT_PARAMS);
+    const request = spec.buildRequests(DEFAULT_PARAMS, {
+      gdprConsent: {
+        consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
+        gdprApplies: true
+      },
+      refererInfo: {
+        referer: 'http://domain.com',
+        numIframes: 0
+      }
+    });
+
     const bids = spec.interpretResponse(BID_RESPONSE_VIDEO, request[0]);
     const bid = bids[0];
     expect(bid.vastXml).to.equal('<VAST></VAST>');
@@ -252,22 +295,20 @@ describe('Rich Audience adapter tests', function () {
     expect(spec.isBidRequestValid({
       params: {
         pid: 'ADb1f40rmi',
-        supplyType: 'site',
-        ifa: '234234234234234',
+        supplyType: 'site'
       }
     })).to.equal(true);
     expect(spec.isBidRequestValid({
       params: {
         pid: 'ADb1f40rmi',
         supplyType: 'app',
-        ifa: '234234234234234',
+        ifa: 'AAAAAAAAA-BBBB-CCCC-1111-222222220000',
       }
     })).to.equal(true);
     expect(spec.isBidRequestValid({
       params: {
         pid: 'ADb1f40rmi',
         supplyType: 'site',
-        ifa: '234234234234234',
         bidfloor: 0.50,
       }
     })).to.equal(true);
@@ -275,7 +316,6 @@ describe('Rich Audience adapter tests', function () {
       params: {
         pid: 'ADb1f40rmi',
         supplyType: 'site',
-        ifa: '234234234234234',
         bidfloor: 0.50,
       }
     })).to.equal(true);
@@ -287,7 +327,6 @@ describe('Rich Audience adapter tests', function () {
     }, [BID_RESPONSE]);
     expect(syncs).to.have.lengthOf(1);
     expect(syncs[0].type).to.equal('iframe');
-    // expect(syncs[0].url).to.equal('http://fake.url.com');
     syncs = spec.getUserSyncs({
       iframeEnabled: false
     }, [BID_RESPONSE]);
@@ -296,16 +335,7 @@ describe('Rich Audience adapter tests', function () {
     syncs = spec.getUserSyncs({
       iframeEnabled: true
     }, []);
-    expect(syncs).to.have.lengthOf(0);
+    expect(syncs).to.have.lengthOf(1);
   });
-
-  // it('Verifies when Response is empty', function () {
-  //   var syncs = spec.getUserSyncs({
-  //     iframeEnabled: true,
-  //     pixelEnabled: true,
-  //   }, [BID_RESPONSE_EMPTY]);
-  //
-  //   expect(syncs).to.have.lengthOf(0);
-  // });
 });
 
