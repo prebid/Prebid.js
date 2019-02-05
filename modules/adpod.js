@@ -9,6 +9,9 @@ import find from 'core-js/library/fn/array/find';
 const from = require('core-js/library/fn/array/from');
 export const ADPOD = 'adpod';
 
+const TARGETING_KEY_PB_CAT_DUR = 'hb_pb_cat_dur';
+const TARGETING_KEY_CACHE_ID = 'hb_cache_id'
+
 // NOTE - are these good defaults?
 let queueTimeDelay = 50;
 let queueSizeLimit = 5;
@@ -91,14 +94,14 @@ function attachPriceIndustryDurationKeyToBid(bid) {
   let cpmFixed = bid.cpm.toFixed(2);
   let initialCacheKey = bidCacheRegistry.getInitialCacheKey(bid);
   // TODO? - add check to verify all above values are populated and throw error if not?
-  let pid = `${cpmFixed}_${category}_${duration}s`;
+  let pcd = `${cpmFixed}_${category}_${duration}s`;
 
   if (!bid.adserverTargeting) {
     bid.adserverTargeting = {};
   }
-  bid.adserverTargeting.hb_price_industry_duration = pid;
-  bid.adserverTargeting.hb_uuid = initialCacheKey;
-  bid.customCacheKey = `${pid}_${initialCacheKey}`;
+  bid.adserverTargeting[TARGETING_KEY_PB_CAT_DUR] = pcd;
+  bid.adserverTargeting[TARGETING_KEY_CACHE_ID] = initialCacheKey;
+  bid.customCacheKey = `${pcd}_${initialCacheKey}`;
 }
 
 /**
