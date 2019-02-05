@@ -66,9 +66,9 @@ function getViewportDimensions(isIfr) {
 function buildCommonQueryParamsFromBids(bid, bidderRequest) {
   const isInIframe = utils.inIframe();
   let defaultParams;
-  const height = '300';
-  const width = '400';
-  const aus = '400x300%7C304x184%7C412x184%7C375x184%7C414x184';
+  const height = '184';
+  const width = '414';
+  const aus = '304x184%7C412x184%7C375x184%7C414x184';
   defaultParams = {
     ju: config.getConfig('pageUrl') || utils.getTopWindowUrl(),
     jr: utils.getTopWindowReferrer(),
