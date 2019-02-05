@@ -52,56 +52,81 @@ const adapterConfig = {
   },
 
   /**
+   * Map which keeps BID_WON events. Keyed by adId property.
+   */
+  prebidWinnersCache: {},
+
+  /**
+   * Map which keeps all BID_RESPONSE events. Keyed by adId property.
+   */
+  prebidBidResponsesCache: {},
+
+  /**
    * Decides if the GPT slot contains prebid ad impression or not.
    *
-   * Required when googlePublisherTag is defined.
+   * When BID_WON event is emitted adid is added to prebidWinnersCache,
+   * then we check if prebidWinnersCache contains slot.hb_adid.
+   *
+   * This function is optional and used only when googlePublisherTag is provided.
+   *
+   * Default implementation uses slot's `hb_adid` targeting parameter.
    *
    * @param slot the gpt slot
    */
-  isPrebidAdImpression: slot => {
-    throw 'Required when googlePublisherTag is defined.';
+  isPrebidAdImpression: function(slot) {
+    const hbAdIdTargeting = slot.getTargeting('hb_adid');
+    if (hbAdIdTargeting.length > 0) {
+      const hbAdId = hbAdIdTargeting[0];
+      return typeof this.prebidWinnersCache[hbAdId] !== 'undefined';
+    }
+    return false;
   },
 
   /**
-   * If isPrebidAdImpression decide that slot contain prebid ad impression, this
-   * function should return prebids highest ad impression partner for that slot.
+   * If isPrebidAdImpression decides that slot contain prebid ad impression,
+   * this function should return prebids highest ad impression partner for that
+   * slot.
    *
-   * Required when googlePublisherTag is defined.
+   * Default implementation uses slot's `hb_adid` targeting value to find
+   * highest bid response and when present then returns `bidder`.
    *
-   * Default implementation uses slot's `hb_bidder` targeting parameter.
-   *
+   * @param instanceConfig merged analytics adapter instance configuration
    * @param slot the gpt slot for which the name of the highest bidder shall be
    * returned
    * @param version the version of the prebid.js library
    */
-  getHighestPrebidAdImpressionPartner: function(slot, version) {
-    var partners = slot.getTargeting('hb_bidder');
-    if (partners.length == 0) {
-      utils.logWarn('Cannot get prebid ad impression partner for slot: ', slot);
-      return null;
-    }
-    return partners[0];
+  getHighestPrebidAdImpressionPartner: function(instanceConfig, slot, version) {
+    const bid = getHighestPrebidBidResponseBySlotTargeting(
+      instanceConfig,
+      slot,
+      version
+    );
+
+    // this is bid response event has `bidder` while bid won has bidderCode property
+    return bid ? bid.bidderCode || bid.bidder : null;
   },
 
   /**
-   * If isPrebidAdImpression decide that slot contain prebid ad impression, this
-   * function should return prebids highest ad impression value for that slot.
+   * If isPrebidAdImpression decides that slot contain prebid ad impression,
+   * this function should return prebids highest ad impression value for that
+   * slot.
    *
-   * Required when googlePublisherTag is defined.
+   * Default implementation uses slot's `hb_adid` targeting value to find
+   * highest bid response and when present then returns `cpm`.
    *
-   * Default implementation uses slot's `hb_pb` targeting parameter.
-   *
+   * @param instanceConfig merged analytics adapter instance configuration
    * @param slot the gpt slot for which the highest ad impression value shall be
    * returned
    * @param version the version of the prebid.js library
    */
-  getHighestPrebidAdImpressionValue: function(slot, version) {
-    var values = slot.getTargeting('hb_pb');
-    if (values.length == 0) {
-      utils.logWarn('Cannot get prebid ad impression value for slot: ', slot);
-      return null;
-    }
-    return values[0];
+  getHighestPrebidAdImpressionValue: function(instanceConfig, slot, version) {
+    const bid = getHighestPrebidBidResponseBySlotTargeting(
+      instanceConfig,
+      slot,
+      version
+    );
+
+    return bid ? bid.cpm : null;
   },
 
   /**
@@ -140,16 +165,35 @@ const adapterConfig = {
 
 const cpmToMicroUSD = v => (isNaN(v) ? 0 : Math.round(v * 1000));
 
+const getHighestPrebidBidResponseBySlotTargeting = function(
+  instanceConfig,
+  slot,
+  version
+) {
+  const hbAdIdTargeting = slot.getTargeting('hb_adid');
+  if (hbAdIdTargeting.length > 0) {
+    const hbAdId = hbAdIdTargeting[0];
+    return (
+      instanceConfig.prebidWinnersCache[hbAdId] ||
+      instanceConfig.prebidBidResponsesCache[hbAdId]
+    );
+  }
+  return null;
+};
+
 const liveyield = Object.assign(adapter({ analyticsType: 'bundle' }), {
   track({ eventType, args }) {
     switch (eventType) {
       case BID_REQUESTED:
         args.bids.forEach(function(b) {
           try {
-            window[adapterConfig.rtaFunctionName](
+            window[liveyield.instanceConfig.rtaFunctionName](
               'bidRequested',
-              adapterConfig.getAdUnitName(
-                adapterConfig.getPlacementOrAdUnitCode(b, prebidVersion)
+              liveyield.instanceConfig.getAdUnitName(
+                liveyield.instanceConfig.getPlacementOrAdUnitCode(
+                  b,
+                  prebidVersion
+                )
               ),
               args.bidderCode
             );
@@ -159,12 +203,16 @@ const liveyield = Object.assign(adapter({ analyticsType: 'bundle' }), {
         });
         break;
       case BID_RESPONSE:
+        liveyield.instanceConfig.prebidBidResponsesCache[args.adId] = args;
         var cpm = args.statusMessage === 'Bid available' ? args.cpm : null;
         try {
-          window[adapterConfig.rtaFunctionName](
+          window[liveyield.instanceConfig.rtaFunctionName](
             'addBid',
-            adapterConfig.getAdUnitName(
-              adapterConfig.getPlacementOrAdUnitCode(args, prebidVersion)
+            liveyield.instanceConfig.getAdUnitName(
+              liveyield.instanceConfig.getPlacementOrAdUnitCode(
+                args,
+                prebidVersion
+              )
             ),
             args.bidder || 'unknown',
             cpmToMicroUSD(cpm),
@@ -176,21 +224,32 @@ const liveyield = Object.assign(adapter({ analyticsType: 'bundle' }), {
         }
         break;
       case BID_TIMEOUT:
-        window[adapterConfig.rtaFunctionName]('biddersTimeout', args);
+        window[liveyield.instanceConfig.rtaFunctionName](
+          'biddersTimeout',
+          args
+        );
         break;
       case BID_WON:
-        if (adapterConfig.googlePublisherTag) {
+        liveyield.instanceConfig.prebidWinnersCache[args.adId] = args;
+        if (liveyield.instanceConfig.googlePublisherTag) {
           break;
         }
+
         try {
-          const ad = adapterConfig.getAdUnitName(
-            adapterConfig.getPlacementOrAdUnitCode(args, prebidVersion)
+          const ad = liveyield.instanceConfig.getAdUnitName(
+            liveyield.instanceConfig.getPlacementOrAdUnitCode(
+              args,
+              prebidVersion
+            )
           );
           if (!ad) {
             utils.logError(
               'Cannot find ad by unit name: ' +
-                adapterConfig.getAdUnitName(
-                  adapterConfig.getPlacementOrAdUnitCode(args, prebidVersion)
+                liveyield.instanceConfig.getAdUnitName(
+                  liveyield.instanceConfig.getPlacementOrAdUnitCode(
+                    args,
+                    prebidVersion
+                  )
                 )
             );
             break;
@@ -203,17 +262,20 @@ const liveyield = Object.assign(adapter({ analyticsType: 'bundle' }), {
           resolution.prebidWon = true;
           resolution.prebidPartner = args.bidderCode;
           resolution.prebidValue = cpmToMicroUSD(parseFloat(args.cpm));
-          const resolutionToUse = adapterConfig.postProcessResolution(
+          const resolutionToUse = liveyield.instanceConfig.postProcessResolution(
             resolution,
             null,
             resolution.prebidPartner,
             resolution.prebidValue,
             prebidVersion
           );
-          window[adapterConfig.rtaFunctionName](
+          window[liveyield.instanceConfig.rtaFunctionName](
             'resolveSlot',
-            adapterConfig.getAdUnitName(
-              adapterConfig.getPlacementOrAdUnitCode(args, prebidVersion)
+            liveyield.instanceConfig.getAdUnitName(
+              liveyield.instanceConfig.getPlacementOrAdUnitCode(
+                args,
+                prebidVersion
+              )
             ),
             resolutionToUse
           );
@@ -271,18 +333,23 @@ liveyield.enableAnalytics = function(config) {
     utils.logError('options.sessionTimezoneOffset is required');
     return;
   }
-  Object.assign(adapterConfig, config.options);
-  if (typeof window[adapterConfig.rtaFunctionName] !== 'function') {
+  liveyield.instanceConfig = Object.assign(
+    { prebidWinnersCache: {}, prebidBidResponsesCache: {} },
+    adapterConfig,
+    config.options
+  );
+
+  if (typeof window[liveyield.instanceConfig.rtaFunctionName] !== 'function') {
     utils.logError(
-      `Function ${adapterConfig.rtaFunctionName} is not defined.` +
+      `Function ${liveyield.instanceConfig.rtaFunctionName} is not defined.` +
         `Make sure that LiveYield snippet in included before the Prebid Analytics configuration.`
     );
     return;
   }
-  if (adapterConfig.googlePublisherTag) {
-    adapterConfig.wireGooglePublisherTag(
-      adapterConfig.googlePublisherTag,
-      onSlotRenderEnded
+  if (liveyield.instanceConfig.googlePublisherTag) {
+    liveyield.instanceConfig.wireGooglePublisherTag(
+      liveyield.instanceConfig.googlePublisherTag,
+      onSlotRenderEnded(liveyield.instanceConfig)
     );
   }
 
@@ -314,7 +381,7 @@ liveyield.enableAnalytics = function(config) {
     key => additionalParams[key] == null && delete additionalParams[key]
   );
 
-  window[adapterConfig.rtaFunctionName](
+  window[liveyield.instanceConfig.rtaFunctionName](
     'create',
     config.options.customerId,
     config.options.customerName,
@@ -325,53 +392,58 @@ liveyield.enableAnalytics = function(config) {
   liveyield.originEnableAnalytics(config);
 };
 
-const addDfpDetails = (resolution, slot) => {
-  const responseInformation = slot.getResponseInformation();
-  if (responseInformation) {
-    resolution.dfpAdvertiserId = responseInformation.advertiserId;
-    resolution.dfpLineItemId = responseInformation.sourceAgnosticLineItemId;
-    resolution.dfpCreativeId = responseInformation.creativeId;
-  }
-};
+const onSlotRenderEnded = function(instanceConfig) {
+  const addDfpDetails = (resolution, slot) => {
+    const responseInformation = slot.getResponseInformation();
+    if (responseInformation) {
+      resolution.dfpAdvertiserId = responseInformation.advertiserId;
+      resolution.dfpLineItemId = responseInformation.sourceAgnosticLineItemId;
+      resolution.dfpCreativeId = responseInformation.creativeId;
+    }
+  };
 
-const addPrebidDetails = (resolution, slot) => {
-  if (adapterConfig.isPrebidAdImpression(slot)) {
-    resolution.prebidWon = true;
-  }
-  const highestPrebidAdImpPartner = adapterConfig.getHighestPrebidAdImpressionPartner(
-    slot,
-    prebidVersion
-  );
-  const highestPrebidAdImpValue = adapterConfig.getHighestPrebidAdImpressionValue(
-    slot,
-    prebidVersion
-  );
-  if (highestPrebidAdImpPartner) {
-    resolution.prebidPartner = highestPrebidAdImpPartner;
-  }
-  if (highestPrebidAdImpValue) {
-    resolution.prebidValue = cpmToMicroUSD(parseFloat(highestPrebidAdImpValue));
-  }
-};
+  const addPrebidDetails = (resolution, slot) => {
+    if (instanceConfig.isPrebidAdImpression(slot)) {
+      resolution.prebidWon = true;
+    }
+    const highestPrebidAdImpPartner = instanceConfig.getHighestPrebidAdImpressionPartner(
+      instanceConfig,
+      slot,
+      prebidVersion
+    );
+    const highestPrebidAdImpValue = instanceConfig.getHighestPrebidAdImpressionValue(
+      instanceConfig,
+      slot,
+      prebidVersion
+    );
+    if (highestPrebidAdImpPartner) {
+      resolution.prebidPartner = highestPrebidAdImpPartner;
+    }
+    if (highestPrebidAdImpValue) {
+      resolution.prebidValue = cpmToMicroUSD(
+        parseFloat(highestPrebidAdImpValue)
+      );
+    }
+  };
+  return slot => {
+    const resolution = { targetings: [] };
 
-const onSlotRenderEnded = slot => {
-  const resolution = { targetings: [] };
+    addDfpDetails(resolution, slot);
+    addPrebidDetails(resolution, slot);
 
-  addDfpDetails(resolution, slot);
-  addPrebidDetails(resolution, slot);
-
-  const resolutionToUse = adapterConfig.postProcessResolution(
-    resolution,
-    slot,
-    resolution.highestPrebidAdImpPartner,
-    resolution.highestPrebidAdImpValue,
-    prebidVersion
-  );
-  window[adapterConfig.rtaFunctionName](
-    'resolveSlot',
-    adapterConfig.getAdUnitNameByGooglePublisherTagSlot(slot, prebidVersion),
-    resolutionToUse
-  );
+    const resolutionToUse = instanceConfig.postProcessResolution(
+      resolution,
+      slot,
+      resolution.highestPrebidAdImpPartner,
+      resolution.highestPrebidAdImpValue,
+      prebidVersion
+    );
+    window[instanceConfig.rtaFunctionName](
+      'resolveSlot',
+      instanceConfig.getAdUnitNameByGooglePublisherTagSlot(slot, prebidVersion),
+      resolutionToUse
+    );
+  };
 };
 
 adapterManager.registerAnalyticsAdapter({

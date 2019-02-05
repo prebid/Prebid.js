@@ -20,6 +20,7 @@ describe('liveyield analytics adapter', function() {
   afterEach(function() {
     events.getEvents.restore();
   });
+
   describe('initialization', function() {
     afterEach(function() {
       rtaCalls.length = 0;
@@ -190,6 +191,7 @@ describe('liveyield analytics adapter', function() {
       };
 
       events.emit(BID_REQUESTED, bidRequest);
+
       expect(rtaCalls[1].callArgs['0']).to.equal('bidRequested');
       expect(rtaCalls[1].callArgs['1']).to.equal('div-gpt-ad-1438287399331-0');
       expect(rtaCalls[1].callArgs['2']).to.equal('appnexus');
@@ -402,7 +404,7 @@ describe('liveyield analytics adapter', function() {
     afterEach(function() {
       liveyield.disableAnalytics();
     });
-    it('should ignore BID_WON events when googlePublisherTag is provided', function() {
+    it('should ignore BID_WON events when gpt is provided', function() {
       const options = {
         provider: 'liveyield',
         options: {
@@ -417,8 +419,9 @@ describe('liveyield analytics adapter', function() {
         }
       };
       liveyield.enableAnalytics(options);
+
       const bidWon = {
-        adId: '4587fec4900b81',
+        adId: 'ignore_me',
         mediaType: 'banner',
         requestId: '4587fec4900b81',
         cpm: 1.962,
@@ -430,13 +433,14 @@ describe('liveyield analytics adapter', function() {
         statusMessage: 'Bid available',
         responseTimestamp: 1530628534437,
         requestTimestamp: 1530628534219,
-        bidderCode: 'testbidder4',
+        bidderCode: 'hello',
         adUnitCode: 'div-gpt-ad-1438287399331-0',
         timeToRespond: 218,
         size: '300x250',
         status: 'rendered'
       };
       events.emit(BID_WON, bidWon);
+
       expect(rtaCalls.length).to.equal(1);
     });
     it('should subscribe to slotRenderEnded', function() {
@@ -460,8 +464,63 @@ describe('liveyield analytics adapter', function() {
       expect(googletag).to.equal('testGPT');
       expect(typeof callback).to.equal('function');
     });
-    it('should handle BID_WON event', function() {
+    it('should handle BID_WON event for prebid', function() {
       var call;
+      const slot = {
+        getResponseInformation: function() {
+          const dfpInfo = {
+            dfpAdvertiserId: 1,
+            dfpLineItemId: 2,
+            dfpCreativeId: 3
+          };
+          return dfpInfo;
+        },
+        getTargeting: function(v) {
+          return ['4587fec4900b81'];
+        }
+      };
+      const options = {
+        provider: 'liveyield',
+        options: {
+          customerId: 'd6a6f8da-190f-47d6-ae11-f1a4469083fa',
+          customerName: 'pubocean',
+          customerSite: 'scribol.com',
+          sessionTimezoneOffset: 12,
+          googlePublisherTag: 'testGPT',
+          wireGooglePublisherTag: function(gpt, cb) {
+            call = cb;
+          },
+          getHighestPrebidAdImpressionPartner: function(slot, version) {
+            return 'testbidder4';
+          },
+          getHighestPrebidAdImpressionValue: function(slot, version) {
+            return 12;
+          },
+          postProcessResolution: function(
+            resolution,
+            slot,
+            hbPartner,
+            hbValue,
+            version
+          ) {
+            return resolution;
+          },
+          getAdUnitNameByGooglePublisherTagSlot: function(slot, version) {
+            return 'testUnit';
+          }
+        }
+      };
+      liveyield.enableAnalytics(options);
+      const bidWon = {
+        adId: '4587fec4900b81'
+      };
+      events.emit(BID_WON, bidWon);
+      call(slot);
+      expect(rtaCalls[1].callArgs['2'].prebidWon).to.equal.true;
+      expect(rtaCalls[1].callArgs['2'].prebidPartner).to.equal('testbidder4');
+    });
+    it('should handle BID_WON event for dfp', function() {
+      let call;
       const slot = {
         getResponseInformation: function() {
           const dfpInfo = {
@@ -490,7 +549,7 @@ describe('liveyield analytics adapter', function() {
             return 12;
           },
           postProcessResolution: function(slot, version) {
-            return {partner: slot.prebidPartner, value: slot.prebidValue};
+            return { partner: slot.prebidPartner, value: slot.prebidValue };
           },
           getAdUnitNameByGooglePublisherTagSlot: function(slot, version) {
             return 'testUnit';
@@ -507,6 +566,139 @@ describe('liveyield analytics adapter', function() {
       expect(rtaCalls[1].callArgs[1]).to.equal('testUnit');
       expect(rtaCalls[1].callArgs[2].partner).to.equal('testbidder4');
       expect(rtaCalls[1].callArgs[2].value).to.equal(12000);
+    });
+    it('should work with defaults: prebid won', () => {
+      let call;
+      const options = {
+        provider: 'liveyield',
+        options: {
+          customerId: 'd6a6f8da-190f-47d6-ae11-f1a4469083fa',
+          customerName: 'pubocean',
+          customerSite: 'scribol.com',
+          sessionTimezoneOffset: 12,
+          googlePublisherTag: 'testGPT',
+          wireGooglePublisherTag: (gpt, cb) => (call = cb),
+          getAdUnitName: adUnitCode =>
+            adUnitCode === 'PREBID_UNIT' ? 'ADUNIT' : null,
+          getAdUnitNameByGooglePublisherTagSlot: slot =>
+            slot.getSlotElementId() === 'div-gpt-ad-1438287399331-0'
+              ? 'ADUNIT'
+              : null
+        }
+      };
+      liveyield.enableAnalytics(options);
+
+      const bidResponse = {
+        adId: 'defaults_with_cache',
+        statusMessage: 'Bid available',
+        cpm: 0.5,
+        bidder: 'appnexus',
+        adUnitCode: 'PREBID_UNIT'
+      };
+      events.emit(BID_RESPONSE, bidResponse);
+
+      const bidWon = {
+        adId: bidResponse.adId,
+        cpm: 1.962, // adjusted, this one shall be used, not the one from bidResponse
+        bidderCode: 'appnexus_from_bid_won_event',
+        adUnitCode: 'PREBID_UNIT'
+      };
+      events.emit(BID_WON, bidWon);
+
+      const slot = {
+        getTargeting: key => (key === 'hb_adid' ? [bidResponse.adId] : []),
+        getResponseInformation: () => null,
+        getSlotElementId: () => 'div-gpt-ad-1438287399331-0'
+      };
+      call(slot);
+
+      expect(rtaCalls[2].callArgs[0]).to.equal('resolveSlot');
+      expect(rtaCalls[2].callArgs[1]).to.equal('ADUNIT');
+      expect(rtaCalls[2].callArgs[2]).to.deep.equal({
+        targetings: [],
+        prebidWon: true,
+        prebidPartner: 'appnexus_from_bid_won_event',
+        prebidValue: 1962
+      });
+    });
+    it('should work with defaults: dfp won, prebid bid response', () => {
+      let call;
+      const options = {
+        provider: 'liveyield',
+        options: {
+          customerId: 'd6a6f8da-190f-47d6-ae11-f1a4469083fa',
+          customerName: 'pubocean',
+          customerSite: 'scribol.com',
+          sessionTimezoneOffset: 12,
+          googlePublisherTag: 'testGPT',
+          wireGooglePublisherTag: (gpt, cb) => (call = cb),
+          getAdUnitName: adUnitCode =>
+            adUnitCode === 'PREBID_UNIT' ? 'ADUNIT' : null,
+          getAdUnitNameByGooglePublisherTagSlot: slot =>
+            slot.getSlotElementId() === 'div-gpt-ad-1438287399331-0'
+              ? 'ADUNIT'
+              : null
+        }
+      };
+      liveyield.enableAnalytics(options);
+
+      const bidResponse = {
+        adId: 'defaults_with_cache_no_prebid_win',
+        statusMessage: 'Bid available',
+        cpm: 0.5,
+        bidder: 'appnexus',
+        adUnitCode: 'PREBID_UNIT'
+      };
+      events.emit(BID_RESPONSE, bidResponse);
+
+      const slot = {
+        getTargeting: key => (key === 'hb_adid' ? [bidResponse.adId] : []),
+        getResponseInformation: () => null,
+        getSlotElementId: () => 'div-gpt-ad-1438287399331-0'
+      };
+      call(slot);
+
+      expect(rtaCalls[2].callArgs[0]).to.equal('resolveSlot');
+      expect(rtaCalls[2].callArgs[1]).to.equal('ADUNIT');
+      expect(rtaCalls[2].callArgs[2]).to.deep.equal({
+        targetings: [],
+        prebidPartner: 'appnexus',
+        prebidValue: 500
+      });
+    });
+    it('should work with defaults: dfp won, without prebid', () => {
+      let call;
+      const options = {
+        provider: 'liveyield',
+        options: {
+          customerId: 'd6a6f8da-190f-47d6-ae11-f1a4469083fa',
+          customerName: 'pubocean',
+          customerSite: 'scribol.com',
+          sessionTimezoneOffset: 12,
+          googlePublisherTag: 'testGPT',
+          wireGooglePublisherTag: (gpt, cb) => (call = cb),
+          getAdUnitName: adUnitCode =>
+            adUnitCode === 'PREBID_UNIT' ? 'ADUNIT' : null,
+          getAdUnitNameByGooglePublisherTagSlot: slot =>
+            slot.getSlotElementId() === 'div-gpt-ad-1438287399331-0'
+              ? 'ADUNIT'
+              : null
+        }
+      };
+      liveyield.enableAnalytics(options);
+
+      const slot = {
+        getTargeting: key => (key === 'hb_adid' ? ['does-not-exist'] : []),
+        getResponseInformation: () => null,
+        getSlotElementId: () => 'div-gpt-ad-1438287399331-0'
+      };
+      call(slot);
+
+      expect(rtaCalls[1].callArgs[0]).to.equal('resolveSlot');
+      expect(rtaCalls[1].callArgs[1]).to.equal('ADUNIT');
+      expect(rtaCalls[1].callArgs[2]).to.deep.equal({
+        targetings: []
+      });
     });
   });
 });
