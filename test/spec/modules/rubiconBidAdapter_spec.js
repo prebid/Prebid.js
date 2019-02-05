@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import adapterManager from 'src/adaptermanager';
+import adapterManager from 'src/adapterManager';
 import {spec, masSizeOrdering, resetUserSync, hasVideoMediaType, FASTLANE_ENDPOINT} from 'modules/rubiconBidAdapter';
 import {parse as parseQuery} from 'querystring';
 import {newBidder} from 'src/adapters/bidderFactory';
@@ -274,7 +274,7 @@ describe('the rubicon adapter', function () {
             userId: '12346',
             keywords: ['a', 'b', 'c'],
             inventory: {
-              rating: '5-star',
+              rating: '5-star', // This actually should not be sent to frank!! causes 400
               prodtype: ['tech', 'mobile']
             },
             visitor: {
@@ -1130,7 +1130,7 @@ describe('the rubicon adapter', function () {
             .that.equals('15');
 
           expect(post).to.have.property('slots')
-            .with.length.of(1);
+            .with.a.lengthOf(1);
 
           let slot = post.slots[0];
 
@@ -1146,7 +1146,7 @@ describe('the rubicon adapter', function () {
           expect(slot.size_id).to.equal(201);
 
           expect(slot).to.have.property('inventory').that.is.an('object');
-          expect(slot.inventory).to.have.property('rating').that.equals('5-star');
+          expect(slot.inventory).to.have.property('rating').that.deep.equals(['5-star']);
           expect(slot.inventory).to.have.property('prodtype').that.deep.equals(['tech', 'mobile']);
 
           expect(slot).to.have.property('keywords')
@@ -1155,8 +1155,8 @@ describe('the rubicon adapter', function () {
             .that.deep.equals(['a', 'b', 'c']);
 
           expect(slot).to.have.property('visitor').that.is.an('object');
-          expect(slot.visitor).to.have.property('ucat').that.equals('new');
-          expect(slot.visitor).to.have.property('lastsearch').that.equals('iphone');
+          expect(slot.visitor).to.have.property('ucat').that.deep.equals(['new']);
+          expect(slot.visitor).to.have.property('lastsearch').that.deep.equals(['iphone']);
           expect(slot.visitor).to.have.property('likes').that.deep.equals(['sports', 'video games']);
         });
 
@@ -1194,7 +1194,7 @@ describe('the rubicon adapter', function () {
             .that.equals('15');
 
           expect(post).to.have.property('slots')
-            .with.length.of(1);
+            .with.a.lengthOf(1);
 
           let slot = post.slots[0];
 
@@ -1210,7 +1210,7 @@ describe('the rubicon adapter', function () {
           expect(slot.size_id).to.equal(201);
 
           expect(slot).to.have.property('inventory').that.is.an('object');
-          expect(slot.inventory).to.have.property('rating').that.equals('5-star');
+          expect(slot.inventory).to.have.property('rating').that.deep.equals(['5-star']);
           expect(slot.inventory).to.have.property('prodtype').that.deep.equals(['tech', 'mobile']);
 
           expect(slot).to.have.property('keywords')
@@ -1219,8 +1219,8 @@ describe('the rubicon adapter', function () {
             .that.deep.equals(['a', 'b', 'c']);
 
           expect(slot).to.have.property('visitor').that.is.an('object');
-          expect(slot.visitor).to.have.property('ucat').that.equals('new');
-          expect(slot.visitor).to.have.property('lastsearch').that.equals('iphone');
+          expect(slot.visitor).to.have.property('ucat').that.deep.equals(['new']);
+          expect(slot.visitor).to.have.property('lastsearch').that.deep.equals(['iphone']);
           expect(slot.visitor).to.have.property('likes').that.deep.equals(['sports', 'video games']);
         });
 
@@ -1312,8 +1312,13 @@ describe('the rubicon adapter', function () {
           expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
         });
 
-        it('should not validate bid request when a invalid video object and no banner object is passed in', function () {
-          createVideoBidderRequestNoVideo();
+        it('should not validate bid request when a params.video object is present but no context instream or outstream is passed in', function () {
+          let bid = bidderRequest.bids[0];
+          bid.mediaTypes = {
+            video: {}
+          }
+          bid.params.video = {};
+
           sandbox.stub(Date, 'now').callsFake(() =>
             bidderRequest.auctionStart + 100
           );
@@ -1321,20 +1326,23 @@ describe('the rubicon adapter', function () {
           const bidRequestCopy = clone(bidderRequest.bids[0]);
           expect(spec.isBidRequestValid(bidRequestCopy)).to.equal(false);
 
-          bidRequestCopy.params.video = {};
+          bidRequestCopy.params.video = {sizeId: 201};
           expect(spec.isBidRequestValid(bidRequestCopy)).to.equal(false);
 
-          bidRequestCopy.params.video = undefined;
+          bidRequestCopy.mediaTypes.video = {context: undefined};
           expect(spec.isBidRequestValid(bidRequestCopy)).to.equal(false);
 
-          bidRequestCopy.params.video = 123;
+          bidRequestCopy.mediaTypes.video = {context: ''};
           expect(spec.isBidRequestValid(bidRequestCopy)).to.equal(false);
 
-          bidRequestCopy.params.video = {size_id: undefined};
+          bidRequestCopy.mediaTypes.video = {context: 'random'};
           expect(spec.isBidRequestValid(bidRequestCopy)).to.equal(false);
 
-          delete bidRequestCopy.params.video;
-          expect(spec.isBidRequestValid(bidRequestCopy)).to.equal(false);
+          bidRequestCopy.mediaTypes.video = {context: 'instream'};
+          expect(spec.isBidRequestValid(bidRequestCopy)).to.equal(true);
+
+          bidRequestCopy.mediaTypes.video = {context: 'outstream'};
+          expect(spec.isBidRequestValid(bidRequestCopy)).to.equal(true);
         });
 
         it('should not validate bid request when an invalid video object is passed in with legacy config mediaType', function () {
@@ -1344,19 +1352,20 @@ describe('the rubicon adapter', function () {
           );
 
           const bidderRequestCopy = clone(bidderRequest);
-          expect(spec.isBidRequestValid(bidderRequestCopy.bids[0])).to.equal(false);
-
           bidderRequestCopy.bids[0].params.video = {};
           expect(spec.isBidRequestValid(bidderRequestCopy.bids[0])).to.equal(false);
 
-          bidderRequestCopy.bids[0].params.video = undefined;
+          bidderRequestCopy.bids[0].params.video = {size_id: undefined};
           expect(spec.isBidRequestValid(bidderRequestCopy.bids[0])).to.equal(false);
 
-          bidderRequestCopy.bids[0].params.video = NaN;
+          bidderRequestCopy.bids[0].params.video = {size_id: 'size'};
           expect(spec.isBidRequestValid(bidderRequestCopy.bids[0])).to.equal(false);
 
-          delete bidderRequestCopy.bids[0].params.video;
-          expect(spec.isBidRequestValid(bidderRequestCopy.bids[0])).to.equal(false);
+          bidderRequestCopy.bids[0].params.video = {size_id: '201'};
+          expect(spec.isBidRequestValid(bidderRequestCopy.bids[0])).to.equal(true);
+
+          bidderRequestCopy.bids[0].params.video = {size_id: 201};
+          expect(spec.isBidRequestValid(bidderRequestCopy.bids[0])).to.equal(true);
         });
 
         it('bid request is valid when video context is outstream', function () {
@@ -1370,6 +1379,36 @@ describe('the rubicon adapter', function () {
           let [request] = spec.buildRequests(bidRequestCopy.bids, bidRequestCopy);
           expect(spec.isBidRequestValid(bidderRequest.bids[0])).to.equal(true);
           expect(request.data.slots[0].size_id).to.equal(203);
+        });
+
+        it('should send banner request when outstream or instream video included but no rubicon video obect is present', function () {
+          let bid = bidderRequest.bids[0];
+          // add banner and video mediaTypes
+          bidderRequest.mediaTypes = {
+            banner: {
+              sizes: [[300, 250]]
+            },
+            video: {
+              context: 'outstream'
+            }
+          };
+          // no video object in rubicon params, so we should see one call made for banner
+
+          sandbox.stub(Date, 'now').callsFake(() =>
+            bidderRequest.auctionStart + 100
+          );
+
+          let requests = spec.buildRequests(bidderRequest.bids, bidderRequest);
+
+          expect(requests.length).to.equal(1);
+          expect(requests[0].url).to.equal(FASTLANE_ENDPOINT);
+
+          bidderRequest.mediaTypes.video.context = 'instream';
+
+          requests = spec.buildRequests(bidderRequest.bids, bidderRequest);
+
+          expect(requests.length).to.equal(1);
+          expect(requests[0].url).to.equal(FASTLANE_ENDPOINT);
         });
 
         it('should send request as banner when invalid video bid in multiple mediaType bidRequest', function () {

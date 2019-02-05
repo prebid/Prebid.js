@@ -1,10 +1,9 @@
 import { expect } from 'chai';
-import { targeting as targetingInstance } from 'src/targeting';
+import { targeting as targetingInstance, filters } from 'src/targeting';
 import { config } from 'src/config';
 import { getAdUnits, createBidReceived } from 'test/fixtures/fixtures';
 import CONSTANTS from 'src/constants.json';
 import { auctionManager } from 'src/auctionManager';
-import * as targetingModule from 'src/targeting';
 import * as utils from 'src/utils';
 
 const bid1 = {
@@ -99,42 +98,75 @@ const bid3 = {
 };
 
 describe('targeting tests', function () {
+  let sandbox;
+  let enableSendAllBids = false;
+  let useBidCache;
+
+  beforeEach(function() {
+    sandbox = sinon.sandbox.create();
+
+    useBidCache = true;
+    // enableSendAllBids = false;
+
+    let origGetConfig = config.getConfig;
+    sandbox.stub(config, 'getConfig').callsFake(function (key) {
+      if (key === 'enableSendAllBids') {
+        return enableSendAllBids;
+      }
+      if (key === 'useBidCache') {
+        return useBidCache;
+      }
+      return origGetConfig.apply(config, arguments);
+    });
+  });
+
+  afterEach(function () {
+    sandbox.restore();
+  });
+
   describe('getAllTargeting', function () {
     let amBidsReceivedStub;
     let amGetAdUnitsStub;
     let bidExpiryStub;
+    let bidsReceived;
 
     beforeEach(function () {
-      $$PREBID_GLOBAL$$._sendAllBids = false;
-      amBidsReceivedStub = sinon.stub(auctionManager, 'getBidsReceived').callsFake(function() {
-        return [bid1, bid2, bid3];
+      bidsReceived = [bid1, bid2, bid3];
+
+      amBidsReceivedStub = sandbox.stub(auctionManager, 'getBidsReceived').callsFake(function() {
+        return bidsReceived;
       });
-      amGetAdUnitsStub = sinon.stub(auctionManager, 'getAdUnitCodes').callsFake(function() {
+      amGetAdUnitsStub = sandbox.stub(auctionManager, 'getAdUnitCodes').callsFake(function() {
         return ['/123456/header-bid-tag-0'];
       });
-      bidExpiryStub = sinon.stub(targetingModule, 'isBidNotExpired').returns(true);
-    });
-
-    afterEach(function () {
-      auctionManager.getBidsReceived.restore();
-      auctionManager.getAdUnitCodes.restore();
-      targetingModule.isBidNotExpired.restore();
+      bidExpiryStub = sandbox.stub(filters, 'isBidNotExpired').returns(true);
     });
 
     describe('when hb_deal is present in bid.adserverTargeting', function () {
+      let bid4;
+
+      beforeEach(function() {
+        bid4 = utils.deepClone(bid1);
+        bid4.adserverTargeting['hb_bidder'] = bid4.bidder = bid4.bidderCode = 'appnexus';
+        bid4.cpm = 0;
+        enableSendAllBids = true;
+
+        bidsReceived.push(bid4);
+      });
+
       it('returns targeting with both hb_deal and hb_deal_{bidder_code}', function () {
         const targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0']);
 
         // We should add both keys rather than one or the other
-        expect(targeting['/123456/header-bid-tag-0']).to.contain.keys('hb_deal', `hb_deal_${bid1.bidderCode}`);
+        expect(targeting['/123456/header-bid-tag-0']).to.contain.keys('hb_deal', `hb_deal_${bid1.bidderCode}`, `hb_deal_${bid4.bidderCode}`);
 
         // We should assign both keys the same value
         expect(targeting['/123456/header-bid-tag-0']['hb_deal']).to.deep.equal(targeting['/123456/header-bid-tag-0'][`hb_deal_${bid1.bidderCode}`]);
       });
     });
 
-    it('selects the top bid when _sendAllBids true', function () {
-      config.setConfig({ enableSendAllBids: true });
+    it('selects the top bid when enableSendAllBids true', function () {
+      enableSendAllBids = true;
       let targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0']);
 
       // we should only get the targeting data for the one requested adunit
@@ -155,20 +187,13 @@ describe('targeting tests', function () {
     let bidExpiryStub;
 
     beforeEach(function () {
-      $$PREBID_GLOBAL$$._sendAllBids = false;
-      amBidsReceivedStub = sinon.stub(auctionManager, 'getBidsReceived').callsFake(function() {
+      amBidsReceivedStub = sandbox.stub(auctionManager, 'getBidsReceived').callsFake(function() {
         return [];
       });
-      amGetAdUnitsStub = sinon.stub(auctionManager, 'getAdUnitCodes').callsFake(function() {
+      amGetAdUnitsStub = sandbox.stub(auctionManager, 'getAdUnitCodes').callsFake(function() {
         return ['/123456/header-bid-tag-0'];
       });
-      bidExpiryStub = sinon.stub(targetingModule, 'isBidNotExpired').returns(true);
-    });
-
-    afterEach(function () {
-      auctionManager.getBidsReceived.restore();
-      auctionManager.getAdUnitCodes.restore();
-      targetingModule.isBidNotExpired.restore();
+      bidExpiryStub = sandbox.stub(filters, 'isBidNotExpired').returns(true);
     });
 
     it('returns targetingSet correctly', function () {
@@ -184,13 +209,8 @@ describe('targeting tests', function () {
       let bidExpiryStub;
       let auctionManagerStub;
       beforeEach(function () {
-        bidExpiryStub = sinon.stub(targetingModule, 'isBidNotExpired').returns(true);
-        auctionManagerStub = sinon.stub(auctionManager, 'getBidsReceived');
-      });
-
-      afterEach(function () {
-        bidExpiryStub.restore();
-        auctionManagerStub.restore();
+        bidExpiryStub = sandbox.stub(filters, 'isBidNotExpired').returns(true);
+        auctionManagerStub = sandbox.stub(auctionManager, 'getBidsReceived');
       });
 
       it('should use bids from pool to get Winning Bid', function () {
@@ -207,6 +227,30 @@ describe('targeting tests', function () {
         expect(bids.length).to.equal(2);
         expect(bids[0].adId).to.equal('adid-1');
         expect(bids[1].adId).to.equal('adid-2');
+      });
+
+      it('should honor useBidCache', function() {
+        useBidCache = true;
+
+        auctionManagerStub.returns([
+          createBidReceived({bidder: 'appnexus', cpm: 7, auctionId: 1, responseTimestamp: 100, adUnitCode: 'code-0', adId: 'adid-1'}),
+          createBidReceived({bidder: 'appnexus', cpm: 5, auctionId: 2, responseTimestamp: 102, adUnitCode: 'code-0', adId: 'adid-2'}),
+        ]);
+
+        let adUnitCodes = ['code-0'];
+        targetingInstance.setLatestAuctionForAdUnit('code-0', 2);
+
+        let bids = targetingInstance.getWinningBids(adUnitCodes);
+
+        expect(bids.length).to.equal(1);
+        expect(bids[0].adId).to.equal('adid-1');
+
+        useBidCache = false;
+
+        bids = targetingInstance.getWinningBids(adUnitCodes);
+
+        expect(bids.length).to.equal(1);
+        expect(bids[0].adId).to.equal('adid-2');
       });
 
       it('should not use rendered bid to get winning bid', function () {
@@ -248,14 +292,10 @@ describe('targeting tests', function () {
       let auctionManagerStub;
       let timestampStub;
       beforeEach(function () {
-        auctionManagerStub = sinon.stub(auctionManager, 'getBidsReceived');
-        timestampStub = sinon.stub(utils, 'timestamp');
+        auctionManagerStub = sandbox.stub(auctionManager, 'getBidsReceived');
+        timestampStub = sandbox.stub(utils, 'timestamp');
       });
 
-      afterEach(function () {
-        auctionManagerStub.restore();
-        timestampStub.restore();
-      });
       it('should not include expired bids in the auction', function () {
         timestampStub.returns(200000);
         // Pool is having 4 bids from 2 auctions. All the bids are expired and only bid #3 is passing the bidExpiry check.

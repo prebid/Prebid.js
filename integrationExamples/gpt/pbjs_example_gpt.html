@@ -312,8 +312,15 @@
                           width:  '300',
                           height: '250',
                       }
-                    }
-
+                    },
+		    {
+                        bidder: 'adikteev',
+                        params: {
+                            placementId: 12345,
+			    currency: 'EUR',
+			    bidFloorPrice: 0.1,
+                        }
+                    },
                 ]
             }, {
                 code: 'div-gpt-ad-12345678-1',
@@ -411,7 +418,8 @@
                     {
                         bidder: 'gumgum',
                         params: {
-                            inScreen: 'ggumtest' // REQUIRED str Tracking Id
+                            inScreen: 'ggumtest', // REQUIRED str Tracking Id
+                            bidfloor: 0.01        // OPTIONAL number CPM bid
                         }
                     },
                     {

@@ -1,6 +1,6 @@
 import find from 'core-js/library/fn/array/find';
-import * as utils from 'src/utils';
-import { registerBidder } from 'src/adapters/bidderFactory';
+import * as utils from '../src/utils';
+import { registerBidder } from '../src/adapters/bidderFactory';
 
 const BIDDER_CODE = 'adagio';
 const VERSION = '1.0.0';

@@ -1,7 +1,6 @@
 import {expect} from 'chai';
 import {spec} from 'modules/adkernelBidAdapter';
 import * as utils from 'src/utils';
-import {parse as parseUrl} from 'src/url';
 
 describe('Adkernel adapter', function () {
   const bid1_zone1 = {
@@ -9,37 +8,61 @@ describe('Adkernel adapter', function () {
       bidId: 'Bid_01',
       params: {zoneId: 1, host: 'rtb.adkernel.com'},
       adUnitCode: 'ad-unit-1',
-      sizes: [[300, 250], [300, 200]]
+      mediaTypes: {
+        banner: {
+          sizes: [[300, 250], [300, 200]]
+        }
+      }
     }, bid2_zone2 = {
       bidder: 'adkernel',
       bidId: 'Bid_02',
       params: {zoneId: 2, host: 'rtb.adkernel.com'},
       adUnitCode: 'ad-unit-2',
-      sizes: [728, 90]
+      mediaTypes: {
+        banner: {
+          sizes: [728, 90]
+        }
+      }
     }, bid3_host2 = {
       bidder: 'adkernel',
       bidId: 'Bid_02',
       params: {zoneId: 1, host: 'rtb-private.adkernel.com'},
       adUnitCode: 'ad-unit-2',
-      sizes: [[728, 90]]
+      mediaTypes: {
+        banner: {
+          sizes: [[728, 90]]
+        }
+      }
     }, bid_without_zone = {
       bidder: 'adkernel',
       bidId: 'Bid_W',
       params: {host: 'rtb-private.adkernel.com'},
       adUnitCode: 'ad-unit-1',
-      sizes: [[728, 90]]
+      mediaTypes: {
+        banner: {
+          sizes: [[728, 90]]
+        }
+      }
     }, bid_without_host = {
       bidder: 'adkernel',
       bidId: 'Bid_W',
       params: {zoneId: 1},
       adUnitCode: 'ad-unit-1',
-      sizes: [[728, 90]]
+      mediaTypes: {
+        banner: {
+          sizes: [[728, 90]]
+        }
+      }
     }, bid_with_wrong_zoneId = {
       bidder: 'adkernel',
       bidId: 'Bid_02',
       params: {zoneId: 'wrong id', host: 'rtb.adkernel.com'},
       adUnitCode: 'ad-unit-2',
-      sizes: [[728, 90]]
+      mediaTypes: {
+        banner: {
+          sizes: [[728, 90]]
+        }
+      }
     }, bid_video = {
       bidder: 'adkernel',
       transactionId: '866394b8-5d37-4d49-803e-f1bdb595f73e',
@@ -113,17 +136,15 @@ describe('Adkernel adapter', function () {
       }
     };
 
-  function buildRequest(bidRequests, bidderRequest = {}, url = 'https://example.com/index.html', dnt = true) {
-    let wmock = sinon.stub(utils, 'getTopWindowLocation').callsFake(() => {
-      let loc = parseUrl(url);
-      loc.protocol += ':';
-      return loc;
-    });
+  function buildBidderRequest(url = 'https://example.com/index.html', params = {}) {
+    return Object.assign({}, params, {refererInfo: {referer: url, reachedTop: true}})
+  }
+  const DEFAULT_BIDDER_REQUEST = buildBidderRequest();
+  function buildRequest(bidRequests, bidderRequest = DEFAULT_BIDDER_REQUEST, dnt = true) {
     let dntmock = sinon.stub(utils, 'getDNT').callsFake(() => dnt);
     let pbRequests = spec.buildRequests(bidRequests, bidderRequest);
-    wmock.restore();
     dntmock.restore();
-    let rtbRequests = pbRequests.map(r => JSON.parse(r.data.r));
+    let rtbRequests = pbRequests.map(r => JSON.parse(r.data));
     return [pbRequests, rtbRequests];
   }
 
@@ -195,7 +216,8 @@ describe('Adkernel adapter', function () {
 
     it('should contain gdpr-related information if consent is configured', function () {
       let [_, bidRequests] = buildRequest([bid1_zone1],
-        {gdprConsent: {gdprApplies: true, consentString: 'test-consent-string', vendorData: {}}});
+        buildBidderRequest('http://example.com/index.html',
+          {gdprConsent: {gdprApplies: true, consentString: 'test-consent-string', vendorData: {}}}));
       let bidRequest = bidRequests[0];
       expect(bidRequest).to.have.property('regs');
       expect(bidRequest.regs.ext).to.be.eql({'gdpr': 1});
@@ -204,7 +226,7 @@ describe('Adkernel adapter', function () {
     });
 
     it('should\'t contain consent string if gdpr isn\'t applied', function () {
-      let [_, bidRequests] = buildRequest([bid1_zone1], {gdprConsent: {gdprApplies: false}});
+      let [_, bidRequests] = buildRequest([bid1_zone1], buildBidderRequest('https://example.com/index.html', {gdprConsent: {gdprApplies: false}}));
       let bidRequest = bidRequests[0];
       expect(bidRequest).to.have.property('regs');
       expect(bidRequest.regs.ext).to.be.eql({'gdpr': 0});
@@ -212,7 +234,7 @@ describe('Adkernel adapter', function () {
     });
 
     it('should\'t pass dnt if state is unknown', function () {
-      let [_, bidRequests] = buildRequest([bid1_zone1], {}, 'https://example.com/index.html', false);
+      let [_, bidRequests] = buildRequest([bid1_zone1], DEFAULT_BIDDER_REQUEST, false);
       expect(bidRequests[0].device).to.not.have.property('dnt');
     });
   });
@@ -248,8 +270,8 @@ describe('Adkernel adapter', function () {
     it('should issue a request for each zone', function () {
       let [pbRequests, _] = buildRequest([bid1_zone1, bid2_zone2]);
       expect(pbRequests).to.have.length(2);
-      expect(pbRequests[0].data.zone).to.be.equal(bid1_zone1.params.zoneId);
-      expect(pbRequests[1].data.zone).to.be.equal(bid2_zone2.params.zoneId);
+      expect(pbRequests[0].url).to.include(`zone=${bid1_zone1.params.zoneId}`);
+      expect(pbRequests[1].url).to.include(`zone=${bid2_zone2.params.zoneId}`);
     });
   });
 
@@ -300,6 +322,13 @@ describe('Adkernel adapter', function () {
       expect(syncs).to.have.length(1);
       expect(syncs[0]).to.have.property('type', 'iframe');
       expect(syncs[0]).to.have.property('url', 'http://adk.sync.com/sync');
+    });
+  });
+
+  describe('adapter configuration', () => {
+    it('should have aliases', () => {
+      expect(spec.aliases).to.have.lengthOf(1);
+      expect(spec.aliases[0]).to.be.equal('headbidding');
     });
   });
 });
