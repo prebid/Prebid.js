@@ -358,7 +358,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
     const videoContext = utils.deepAccess(bidRequest, 'mediaTypes.video.context');
     if (videoContext === 'adpod') {
       bid.meta = {
-        iabSubCatId: null // translate rtbBid.brand_category_id to iab when translation module ready
+        iabSubCatId: null // utils.getIabSubCategory('key', rtbBid.brand_category_id) after translation module/mapping file merged
       };
 
       bid.video = {
