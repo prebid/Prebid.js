@@ -205,6 +205,29 @@ describe('AppNexusAdapter', function () {
       expect(payload2.tags[0].video.maxduration).to.equal(30);
     });
 
+    it('should round down adpod placements when numbers are uneven', function() {
+      let bidRequest = Object.assign({},
+        bidRequests[0],
+        {
+          params: { placementId: '14542875' }
+        },
+        {
+          mediaTypes: {
+            video: {
+              context: 'adpod',
+              playerSize: [640, 480],
+              adPodDurationSec: 123,
+              durationRangeSec: [45],
+            }
+          }
+        }
+      );
+
+      const request = spec.buildRequests([bidRequest]);
+      const payload = JSON.parse(request.data);
+      expect(payload.tags.length).to.equal(2);
+    });
+
     it('should duplicate adpod placements when requireExactDuration is set', function() {
       let bidRequest = Object.assign({},
         bidRequests[0],

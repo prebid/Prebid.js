@@ -614,7 +614,7 @@ function createAdPodRequest(tags, adPodBid) {
 function getAdPodPlacementNumber(videoParams, requireExactDuration) {
   const { adPodDurationSec, durationRangeSec } = videoParams;
   const minAllowedDuration = utils.getMinValueFromArray(durationRangeSec);
-  const numberOfPlacements = adPodDurationSec / minAllowedDuration;
+  const numberOfPlacements = Math.floor(adPodDurationSec / minAllowedDuration);
 
   return requireExactDuration
     ? Math.max(numberOfPlacements, durationRangeSec.length)
