@@ -571,6 +571,11 @@ const OPEN_RTB_PROTOCOL = {
             bidRequest.serverResponseTimeMs = serverResponseTimeMs;
           }
 
+          // if ext.prebid.targeting exists append adserverTargeting
+          if (utils.deepAccess(bid, 'ext.prebid.targeting')) {
+            bidObject.adserverTargeting = bid.ext.prebid.targeting;
+          }
+
           if (utils.deepAccess(bid, 'ext.prebid.type') === VIDEO) {
             bidObject.mediaType = VIDEO;
 
