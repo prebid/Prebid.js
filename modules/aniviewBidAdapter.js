@@ -109,7 +109,7 @@ function buildRequests(validBidRequests, bidderRequest) {
         method: 'GET',
         url: serverUrl,
         data: s2sParams,
-          bidRequest
+        bidRequest
       });
     }
   }
@@ -167,8 +167,7 @@ function interpretResponse(serverResponse, bidRequest) {
               bidResponse.vastUrl = window.URL.createObjectURL(blob);
               bidResponse.vastXml = xmlStr;
               bidResponse.mediaType = VIDEO;
-              if(bidRequest.bidRequest && bidRequest.bidRequest.mediaTypes && bidRequest.bidRequest.mediaTypes.video && bidRequest.bidRequest.mediaTypes.video.context === "outstream")
-                bidResponse.renderer = newRenderer(bidRequest);
+              if (bidRequest.bidRequest && bidRequest.bidRequest.mediaTypes && bidRequest.bidRequest.mediaTypes.video && bidRequest.bidRequest.mediaTypes.video.context === 'outstream') { bidResponse.renderer = newRenderer(bidRequest); }
 
               bidResponses.push(bidResponse);
             }
