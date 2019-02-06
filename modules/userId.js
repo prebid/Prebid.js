@@ -172,7 +172,7 @@ export function getStoredValue(storage) {
 }
 
 /**
- * test if consent module is present, applies, and is valid for local storage (purpose 1)
+ * test if consent module is present, applies, and is valid for local storage or cookies (purpose 1)
  * @param {Object} consentData
  * @returns {boolean}
  */
@@ -292,7 +292,7 @@ export function requestBidsHook(fn, reqBidsConfigObj) {
 export function initSubmodules(submodules, consentData) {
   // gdpr consent with purpose one is required, otherwise exit immediately
   if (!hasGDPRConsent(consentData)) {
-    utils.logWarn(`${MODULE_NAME} - gdpr permission not valid for local storage, exit module`);
+    utils.logWarn(`${MODULE_NAME} - gdpr permission not valid for local storage or cookies, exit module`);
     return [];
   }
   return submodules.reduce((carry, item) => {
@@ -312,7 +312,7 @@ export function initSubmodules(submodules, consentData) {
         if (typeof getIdResult === 'function') {
           item.callback = getIdResult;
         } else {
-          // A getId result that is not a function is assumed to be valid user id data, which should be saved to users local storage
+          // A getId result that is not a function is assumed to be valid user id data, which should be saved to users local storage or cookies
           setStoredValue(item.config.storage, getIdResult, item.config.storage.expires);
 
           // cache decoded value (this is copied to every adUnit bid)
@@ -383,11 +383,9 @@ export function init (config, enabledSubmodules) {
   initializedSubmodules = undefined;
 
   // exit immediately if opt out cookie exists
-  if (utils.cookiesAreEnabled()) {
-    if (utils.getCookie('_pbjs_id_optout')) {
-      utils.logInfo(`${MODULE_NAME} - opt-out cookie found, exit module`);
-      return;
-    }
+  if (utils.getCookie('_pbjs_id_optout')) {
+    utils.logInfo(`${MODULE_NAME} - opt-out cookie found, exit module`);
+    return;
   }
 
   // listen for config userSyncs to be set
