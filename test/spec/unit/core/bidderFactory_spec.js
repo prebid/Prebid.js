@@ -639,7 +639,7 @@ describe('validate bid response: ', function () {
   it('should add native bids that do have required assets', function () {
     let bidRequest = {
       bids: [{
-        bidId: 1,
+        bidId: '1',
         auctionId: 'first-bid-id',
         adUnitCode: 'mock/placement',
         params: {
@@ -676,7 +676,7 @@ describe('validate bid response: ', function () {
   it('should not add native bids that do not have required assets', function () {
     let bidRequest = {
       bids: [{
-        bidId: 1,
+        bidId: '1',
         auctionId: 'first-bid-id',
         adUnitCode: 'mock/placement',
         params: {
@@ -712,7 +712,7 @@ describe('validate bid response: ', function () {
   it('should add bid when renderer is present on outstream bids', function () {
     let bidRequest = {
       bids: [{
-        bidId: 1,
+        bidId: '1',
         auctionId: 'first-bid-id',
         adUnitCode: 'mock/placement',
         params: {
@@ -747,7 +747,7 @@ describe('validate bid response: ', function () {
     let bidRequest = {
       bids: [{
         bidder: CODE,
-        bidId: 1,
+        bidId: '1',
         auctionId: 'first-bid-id',
         adUnitCode: 'mock/placement',
         params: {
