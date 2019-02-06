@@ -1144,6 +1144,33 @@ describe('S2S Adapter', function () {
       expect(response).to.have.property('vastUrl', 'https://prebid-cache.net/cache?uuid=abcd1234');
     });
 
+    it('add adserverTargeting object to bids when ext.prebid.targeting is defined', function () {
+      const s2sConfig = Object.assign({}, CONFIG, {
+        endpoint: 'https://prebidserverurl/openrtb2/auction?querystring=param'
+      });
+      config.setConfig({s2sConfig});
+      const cacheResponse = utils.deepClone(RESPONSE_OPENRTB_VIDEO);
+      const targetingTestData = {
+        hb_cache_path: 'hb-cachepath',
+        hb_cache_host: 'hb-cachehost',
+        hb_cache_path_foo: 'hb-cachepath-rubicon',
+        hb_cache_host_foo: 'hb-cachehost-rubicon'
+      };
+
+      cacheResponse.seatbid.forEach(item => {
+        item.bid[0].ext.prebid.targeting = targetingTestData
+      });
+      server.respondWith(JSON.stringify(cacheResponse));
+      adapter.callBids(VIDEO_REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      server.respond();
+
+      sinon.assert.calledOnce(addBidResponse);
+      const response = addBidResponse.firstCall.args[1];
+
+      expect(response).to.have.property('adserverTargeting');
+      expect(response.adserverTargeting).to.deep.equal(targetingTestData);
+    });
+
     it('handles response cache from ext.prebid.targeting', function () {
       const s2sConfig = Object.assign({}, CONFIG, {
         endpoint: 'https://prebidserverurl/openrtb2/auction?querystring=param'
