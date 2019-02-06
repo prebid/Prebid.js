@@ -37,7 +37,7 @@ export const helper = {
 export const spec = {
   code: 'cleanmedianet',
   aliases: [],
-  supportedMediaTypes: ['banner', 'video'],
+  supportedMediaTypes: [BANNER, VIDEO],
 
   isBidRequestValid: function (bid) {
     return !!bid.params.supplyPartnerId &&

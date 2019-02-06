@@ -3,7 +3,7 @@
 ```
 Module Name:  Clean Media Adapter
 Module Type:  Bidder Adapter
-Maintainer:
+Maintainer:   dev@cleanmedia.net
 ```
 
 # Description
