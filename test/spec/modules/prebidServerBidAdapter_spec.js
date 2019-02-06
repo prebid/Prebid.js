@@ -406,7 +406,7 @@ describe('S2S Adapter', function () {
     describe('gdpr tests', function () {
       afterEach(function () {
         config.resetConfig();
-        $$PREBID_GLOBAL$$.requestBids.removeHook(requestBidsHook);
+        $$PREBID_GLOBAL$$.requestBids.removeAll();
       });
 
       it('adds gdpr consent information to ortb2 request depending on presence of module', function () {
