@@ -1,5 +1,6 @@
-import * as utils from 'src/utils';
-import { registerBidder } from 'src/adapters/bidderFactory';
+import * as utils from '../src/utils';
+import { registerBidder } from '../src/adapters/bidderFactory';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes';
 
 const BIDDER_CODE = 'ozone';
 
@@ -133,14 +134,43 @@ export const spec = {
       obj.id = ozoneBidRequest.bidId;
       obj.tagid = (ozoneBidRequest.params.placementId).toString();
       obj.secure = window.location.protocol === 'https:' ? 1 : 0;
-      obj.banner = {
-        topframe: 1,
-        w: ozoneBidRequest.sizes[0][0] || 0,
-        h: ozoneBidRequest.sizes[0][1] || 0,
-        format: ozoneBidRequest.sizes.map(s => {
-          return {w: s[0], h: s[1]};
-        })
-      };
+      // is there a banner (or nothing declared, so banner is the default)?
+      let arrBannerSizes = [];
+      /* NOTE - if there is sizes element in the config root then there will be a mediaTypes.banner element automatically generated for us, so this code is deprecated */
+      if (!ozoneBidRequest.hasOwnProperty('mediaTypes')) {
+        if (ozoneBidRequest.hasOwnProperty('sizes')) {
+          utils.logInfo('no mediaTypes detected - will use the sizes array in the config root');
+          arrBannerSizes = ozoneBidRequest.sizes;
+        } else {
+          utils.logInfo('no mediaTypes detected, no sizes array in the config root either. Cannot set sizes for banner type');
+        }
+      } else {
+        if (ozoneBidRequest.mediaTypes.hasOwnProperty(BANNER)) {
+          arrBannerSizes = ozoneBidRequest.mediaTypes[BANNER].sizes; /* Note - if there is a sizes element in the config root it will be pushed into here */
+          utils.logInfo('setting banner size from the mediaTypes.banner element: ', arrBannerSizes);
+        }
+        // Video integration is not complete yet
+        if (ozoneBidRequest.mediaTypes.hasOwnProperty(VIDEO)) {
+          obj.video = ozoneBidRequest.mediaTypes[VIDEO];
+          utils.logInfo('setting video object from the mediaTypes.video element: ', obj.video);
+        }
+        // Native integration is not complete yet
+        if (ozoneBidRequest.mediaTypes.hasOwnProperty(NATIVE)) {
+          obj.native = ozoneBidRequest.mediaTypes[NATIVE];
+          utils.logInfo('setting native object from the mediaTypes.native element: ', obj.native);
+        }
+      }
+      // build the banner request using banner sizes we found in either possible location:
+      if (arrBannerSizes.length > 0) {
+        obj.banner = {
+          topframe: 1,
+          w: arrBannerSizes[0][0] || 0,
+          h: arrBannerSizes[0][1] || 0,
+          format: arrBannerSizes.map(s => {
+            return {w: s[0], h: s[1]};
+          })
+        };
+      }
       if (ozoneBidRequest.params.hasOwnProperty('placementId')) {
         obj.placementId = (ozoneBidRequest.params.placementId).toString();
       }
@@ -151,7 +181,7 @@ export const spec = {
         obj.siteId = (ozoneBidRequest.params.siteId).toString();
       }
       // build the imp['ext'] object
-      obj.ext = {'prebid': {'storedrequest': {'id': (ozoneBidRequest.params.placementId).toString()}}, 'ozone':{}};
+      obj.ext = {'prebid': {'storedrequest': {'id': (ozoneBidRequest.params.placementId).toString()}}, 'ozone': {}};
       if (ozoneBidRequest.params.hasOwnProperty('customData')) {
         obj.ext.ozone.customData = ozoneBidRequest.params.customData;
       }
@@ -320,22 +350,28 @@ pbjs.onEvent('setTargeting', function(arrData) {
   Set new targeting for this key by calling setTargeting() on each window.googletag.pubads().getSlots() array.
   */
   // iterate over the slot objects, adding custom targeting parameters
+  utils.logInfo('going to iterate slots: ', window.googletag.pubads().getSlots());
   window.googletag.pubads().getSlots().forEach(function (slot) {
     let thisAdId = slot.getTargetingMap().hb_adid;
+    if (!_ozoneInternal.responses.hasOwnProperty(thisAdId)) {
+      // there were no responses for this ad ID
+      utils.logInfo('There were no responses for adId ' + thisAdId + ' - will not try to set additional oz targeting');
+      ; return;
+    }
     let ozoneResponse = _ozoneInternal.responses[thisAdId]; /* The key is bidid - always found in responses & matches back to the request. */
-  Object.keys(ozoneResponse).forEach(function(bidderName, index, ar2) {
-       slot.setTargeting('oz_' + bidderName , bidderName);
-       slot.setTargeting('oz_' + bidderName + '_pb', ozoneResponse[bidderName].price);
-       slot.setTargeting('oz_' + bidderName + '_crid', ozoneResponse[bidderName].crid);
-       slot.setTargeting('oz_' + bidderName + '_adv', ozoneResponse[bidderName].adomain);
-       slot.setTargeting('oz_' + bidderName + '_imp_id', ozoneResponse[bidderName].impid);
-     });
-     let objWinner = _ozoneInternal.winners[thisAdId];
-     slot.setTargeting('oz_auc_id', _ozoneInternal.auctionId); /* from request.auctionId */
-     slot.setTargeting('oz_winner', objWinner.seat);
-     slot.setTargeting('oz_winner_auc_id', objWinner.bid.id);
-     slot.setTargeting('oz_winner_imp_id', objWinner.bid.impid);
-     slot.setTargeting('oz_response_id', _ozoneInternal.serverResponseId);
+    Object.keys(ozoneResponse).forEach(function(bidderName, index, ar2) {
+      slot.setTargeting('oz_' + bidderName, bidderName);
+      slot.setTargeting('oz_' + bidderName + '_pb', ozoneResponse[bidderName].price);
+      slot.setTargeting('oz_' + bidderName + '_crid', ozoneResponse[bidderName].crid);
+      slot.setTargeting('oz_' + bidderName + '_adv', ozoneResponse[bidderName].adomain);
+      slot.setTargeting('oz_' + bidderName + '_imp_id', ozoneResponse[bidderName].impid);
+    });
+    let objWinner = _ozoneInternal.winners[thisAdId];
+    slot.setTargeting('oz_auc_id', _ozoneInternal.auctionId); /* from request.auctionId */
+    slot.setTargeting('oz_winner', objWinner.seat);
+    slot.setTargeting('oz_winner_auc_id', objWinner.bid.id);
+    slot.setTargeting('oz_winner_imp_id', objWinner.bid.impid);
+    slot.setTargeting('oz_response_id', _ozoneInternal.serverResponseId);
   });
 });
 
