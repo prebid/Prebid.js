@@ -320,6 +320,16 @@ $$PREBID_GLOBAL$$.removeAdUnit = function (adUnitCode) {
 };
 
 /**
+ * Remove all adUnits from the $$PREBID_GLOBAL$$ configuration
+ * @alias module:pbjs.removeAllAdUnits
+ */
+$$PREBID_GLOBAL$$.removeAllAdUnits = function () {
+  utils.logInfo('Invoking $$PREBID_GLOBAL$$.removeAllAdUnits');
+
+  $$PREBID_GLOBAL$$.adUnits = [];
+};
+
+/**
  * @param {Object} requestOptions
  * @param {function} requestOptions.bidsBackHandler
  * @param {number} requestOptions.timeout

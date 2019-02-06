@@ -118,4 +118,10 @@ describe('Publisher API _ AdUnits', function () {
       assert.strictEqual(bids2[1].params.placementId, '827326', 'adUnit2 bids2 params.placementId');
     });
   });
+  describe('removeAllAdUnits', function () {
+    it('should remove all add units', function () {
+      $$PREBID_GLOBAL$$.removeAllAdUnits();
+      assert.deepEqual($$PREBID_GLOBAL$$.adUnits, [], 'removeAllAdUnits code');
+    });
+  });
 });
