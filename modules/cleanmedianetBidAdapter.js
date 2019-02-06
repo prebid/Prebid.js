@@ -221,7 +221,7 @@ function newRenderer(bidRequest, bid, rendererOptions = {}) {
 function renderOutstream(bid) {
   bid.renderer.push(() => {
     const unitId = bid.adUnitCode + '/' + bid.adId;
-    window['CleanMediaPlayer'].renderAd({
+    window['GamoshiPlayer'].renderAd({
       id: unitId,
       debug: window.location.href.indexOf('pbjsDebug') >= 0,
       placement: document.getElementById(bid.adUnitCode),
@@ -229,7 +229,7 @@ function renderOutstream(bid) {
       height: bid.height,
       events: {
         ALL_ADS_COMPLETED: () => window.setTimeout(() => {
-          window['CleanMediaPlayer'].removeAd(unitId);
+          window['GamoshiPlayer'].removeAd(unitId);
         }, 300)
       },
       vastUrl: bid.vastUrl,
