@@ -1437,7 +1437,6 @@ describe('OpenxAdapter', function () {
       const expectedResponse = [
         {
           'requestId': '30b31c1838de1e',
-          'bidderCode': 'openx',
           'cpm': 1,
           'width': '640',
           'height': '480',
@@ -1458,7 +1457,6 @@ describe('OpenxAdapter', function () {
       const expectedResponse = [
         {
           'requestId': '30b31c1838de1e',
-          'bidderCode': 'openx',
           'cpm': 1,
           'width': '640',
           'height': '480',

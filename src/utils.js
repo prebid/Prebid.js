@@ -750,6 +750,9 @@ export function flatten(a, b) {
 }
 
 export function getBidRequest(id, bidderRequests) {
+  if (!id) {
+    return;
+  }
   let bidRequest;
   bidderRequests.some(bidderRequest => {
     let result = find(bidderRequest.bids, bid => ['bidId', 'adId', 'bid_id'].some(type => bid[type] === id));

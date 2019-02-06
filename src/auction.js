@@ -396,7 +396,7 @@ export function addBidToAuction(auctionInstance, bidResponse) {
 function tryAddVideoBid(auctionInstance, bidResponse, bidRequests, afterBidAdded) {
   let addBid = true;
 
-  const bidderRequest = getBidRequest(bidResponse.adId, [bidRequests]);
+  const bidderRequest = getBidRequest(bidResponse.requestId, [bidRequests]);
   const videoMediaType =
   bidderRequest && deepAccess(bidderRequest, 'mediaTypes.video');
   const context = videoMediaType && deepAccess(videoMediaType, 'context');

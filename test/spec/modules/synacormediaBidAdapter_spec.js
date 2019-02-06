@@ -35,7 +35,7 @@ describe('synacormediaBidAdapter ', function () {
   describe('buildRequests', function () {
     let validBidRequest = {
       bidId: '9876abcd',
-      sizes: [[300, 250]],
+      sizes: [[300, 250], [300, 600]],
       params: {
         seatId: 'prebid',
         placementId: '1234'
@@ -49,13 +49,22 @@ describe('synacormediaBidAdapter ', function () {
       }
     };
 
-    let expectedDataImp = {
+    let expectedDataImp1 = {
       banner: {
         h: 250,
         pos: 0,
         w: 300,
       },
-      id: '9876abcd',
+      id: '9876abcd~300x250',
+      tagid: '1234'
+    };
+    let expectedDataImp2 = {
+      banner: {
+        h: 600,
+        pos: 0,
+        w: 300,
+      },
+      id: '9876abcd~300x600',
       tagid: '1234'
     };
 
@@ -67,7 +76,7 @@ describe('synacormediaBidAdapter ', function () {
       expect(req.url).to.contain('//prebid.technoratimedia.com/openrtb/bids/prebid?');
       expect(req.data).to.exist.and.to.be.an('object');
       expect(req.data.id).to.equal('xyz123');
-      expect(req.data.imp).to.eql([expectedDataImp]);
+      expect(req.data.imp).to.eql([expectedDataImp1, expectedDataImp2]);
     });
 
     it('should return multiple bids when multiple valid requests with the same seatId are used', function () {
@@ -85,13 +94,13 @@ describe('synacormediaBidAdapter ', function () {
       expect(req).to.have.property('url');
       expect(req.url).to.contain('//prebid.technoratimedia.com/openrtb/bids/prebid?');
       expect(req.data.id).to.equal('xyz123');
-      expect(req.data.imp).to.eql([expectedDataImp, {
+      expect(req.data.imp).to.eql([expectedDataImp1, expectedDataImp2, {
         banner: {
           h: 600,
           pos: 0,
           w: 300,
         },
-        id: 'foobar',
+        id: 'foobar~300x600',
         tagid: '5678'
       }]);
     });
@@ -117,7 +126,7 @@ describe('synacormediaBidAdapter ', function () {
             pos: 0,
             w: 300,
           },
-          id: 'foobar',
+          id: 'foobar~300x250',
           tagid: '5678'
         }
       ]);
@@ -132,12 +141,18 @@ describe('synacormediaBidAdapter ', function () {
   describe('interpretResponse', function () {
     let bidResponse = {
       id: '10865933907263896~9998~0',
-      impid: '9876abcd',
+      impid: '9876abcd~300x250',
       price: 0.13,
       crid: '1022-250',
       adm: '<script src=\"//uat-net.technoratimedia.com/openrtb/tags?AUCTION_ID=${AUCTION_ID}&AUCTION_BID_ID=${AUCTION_BID_ID}&AUCTION_SEAT_ID=${AUCTION_SEAT_ID}&AUCTION_PRICE=${AUCTION_PRICE}&AUCTION_IMP_ID=${AUCTION_IMP_ID}&SOMETHING=${UNSUPPORTED_MACRO}&AUCTION_CURRENCY=${AUCTION_CURRENCY}\"></script>'
     };
-    spec.sizeMap['9876abcd'] = [300, 250];
+    let bidResponse2 = {
+      id: '10865933907263800~9999~0',
+      impid: '9876abcd~300x600',
+      price: 1.99,
+      crid: '9993-013',
+      adm: '<script src=\"//uat-net.technoratimedia.com/openrtb/tags?AUCTION_ID=${AUCTION_ID}&AUCTION_BID_ID=${AUCTION_BID_ID}&AUCTION_SEAT_ID=${AUCTION_SEAT_ID}&AUCTION_PRICE=${AUCTION_PRICE}&AUCTION_IMP_ID=${AUCTION_IMP_ID}&SOMETHING=${UNSUPPORTED_MACRO}&AUCTION_CURRENCY=${AUCTION_CURRENCY}\"></script>'
+    };
 
     let serverResponse;
     beforeEach(function() {
@@ -151,12 +166,13 @@ describe('synacormediaBidAdapter ', function () {
         }
       };
     });
-    it('should return a bid when bid is in the response', function () {
+    it('should return 1 bid when 1 bid is in the response', function () {
       serverResponse.body.seatbid[0].bid.push(bidResponse);
       let resp = spec.interpretResponse(serverResponse);
-      expect(resp).to.be.an('array').that.is.not.empty;
+      expect(resp).to.be.an('array').to.have.lengthOf(1);
       expect(resp[0]).to.eql({
         requestId: '9876abcd',
+        adId: '10865933907263896-9998-0',
         cpm: 0.13,
         width: 300,
         height: 250,
@@ -164,7 +180,43 @@ describe('synacormediaBidAdapter ', function () {
         currency: 'USD',
         netRevenue: true,
         mediaType: BANNER,
-        ad: '<script src=\"//uat-net.technoratimedia.com/openrtb/tags?AUCTION_ID=abc123&AUCTION_BID_ID=10865933907263896~9998~0&AUCTION_SEAT_ID=9998&AUCTION_PRICE=0.13&AUCTION_IMP_ID=9876abcd&SOMETHING=${UNSUPPORTED_MACRO}&AUCTION_CURRENCY=USD\"></script>',
+        ad: '<script src=\"//uat-net.technoratimedia.com/openrtb/tags?AUCTION_ID=abc123&AUCTION_BID_ID=10865933907263896~9998~0&AUCTION_SEAT_ID=9998&AUCTION_PRICE=0.13&AUCTION_IMP_ID=9876abcd~300x250&SOMETHING=${UNSUPPORTED_MACRO}&AUCTION_CURRENCY=USD\"></script>',
+        ttl: 60
+      });
+    });
+
+    it('should return 2 bids when 2 bids are in the response', function () {
+      serverResponse.body.seatbid[0].bid.push(bidResponse);
+      serverResponse.body.seatbid.push({
+        seat: '9999',
+        bid: [bidResponse2],
+      });
+      let resp = spec.interpretResponse(serverResponse);
+      expect(resp).to.be.an('array').to.have.lengthOf(2);
+      expect(resp[0]).to.eql({
+        requestId: '9876abcd',
+        adId: '10865933907263896-9998-0',
+        cpm: 0.13,
+        width: 300,
+        height: 250,
+        creativeId: '9998~1022-250',
+        currency: 'USD',
+        netRevenue: true,
+        mediaType: BANNER,
+        ad: '<script src=\"//uat-net.technoratimedia.com/openrtb/tags?AUCTION_ID=abc123&AUCTION_BID_ID=10865933907263896~9998~0&AUCTION_SEAT_ID=9998&AUCTION_PRICE=0.13&AUCTION_IMP_ID=9876abcd~300x250&SOMETHING=${UNSUPPORTED_MACRO}&AUCTION_CURRENCY=USD\"></script>',
+        ttl: 60
+      });
+      expect(resp[1]).to.eql({
+        requestId: '9876abcd',
+        adId: '10865933907263800-9999-0',
+        cpm: 1.99,
+        width: 300,
+        height: 600,
+        creativeId: '9999~9993-013',
+        currency: 'USD',
+        netRevenue: true,
+        mediaType: BANNER,
+        ad: '<script src=\"//uat-net.technoratimedia.com/openrtb/tags?AUCTION_ID=abc123&AUCTION_BID_ID=10865933907263800~9999~0&AUCTION_SEAT_ID=9999&AUCTION_PRICE=1.99&AUCTION_IMP_ID=9876abcd~300x600&SOMETHING=${UNSUPPORTED_MACRO}&AUCTION_CURRENCY=USD\"></script>',
         ttl: 60
       });
     });
