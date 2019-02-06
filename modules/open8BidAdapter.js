@@ -1,4 +1,5 @@
 import { Renderer } from 'src/Renderer';
+import {ajax} from '../src/ajax';
 import * as utils from 'src/utils';
 import { registerBidder } from 'src/adapters/bidderFactory';
 import { VIDEO, BANNER } from 'src/mediaTypes';
@@ -51,12 +52,18 @@ export const spec = {
       userId: bidderResponse.userId,
       impId: bidderResponse.impId,
       media: bidderResponse.media,
+      ds: ad.ds,
+      spd: ad.spd,
+      fa: ad.fa,
+      pr: ad.pr,
+      mr: ad.mr,
+      nurl: ad.nurl,
       requestId: ad.bidId,
       cpm: ad.price,
       creativeId: ad.creativeId,
       dealId: ad.dealId,
       currency: ad.currency || 'JPY',
-      netRevenue: true, // TODO
+      netRevenue: true,
       ttl: 360, // 6 minutes
     }
 
@@ -116,6 +123,13 @@ export const spec = {
     }
     return syncs;
   },
+  onBidWon: function(bid) {
+    const winUrl = bid.nurl.replace(
+      /\$\{AUCTION_PRICE\}/,
+      bid.cpm
+    );
+    ajax(winUrl, null);
+  }
 }
 
 function generateImpId() {
@@ -154,6 +168,11 @@ function outstreamRender(bid) {
       impId: bid.impId,
       userId: bid.userId,
       media: bid.media,
+      ds: bid.ds,
+      spd: bid.spd,
+      fa: bid.fa,
+      pr: bid.pr,
+      mr: bid.mr,
       adResponse: bid.adResponse,
       mediaType: bid.mediaType
     });
