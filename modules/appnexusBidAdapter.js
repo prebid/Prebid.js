@@ -2,7 +2,7 @@ import { Renderer } from '../src/Renderer';
 import * as utils from '../src/utils';
 import { config } from '../src/config';
 import { registerBidder } from '../src/adapters/bidderFactory';
-import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes';
+import { BANNER, NATIVE, VIDEO, ADPOD } from '../src/mediaTypes';
 import find from 'core-js/library/fn/array/find';
 import includes from 'core-js/library/fn/array/includes';
 
@@ -359,13 +359,13 @@ function newBid(serverBid, rtbBid, bidderRequest) {
     });
 
     const videoContext = utils.deepAccess(bidRequest, 'mediaTypes.video.context');
-    if (videoContext === 'adpod') {
+    if (videoContext === ADPOD) {
       bid.meta = {
         iabSubCatId: null // utils.getIabSubCategory('key', rtbBid.brand_category_id) after translation module/mapping file merged
       };
 
       bid.video = {
-        context: 'adpod',
+        context: ADPOD,
         durationSeconds: Math.ceil(rtbBid.rtb.video.duration_ms / 1000),
       };
     }
@@ -577,7 +577,7 @@ function hasAdPod(bid) {
   return (
     bid.mediaTypes &&
     bid.mediaTypes.video &&
-    bid.mediaTypes.video.context === 'adpod'
+    bid.mediaTypes.video.context === ADPOD
   );
 }
 
