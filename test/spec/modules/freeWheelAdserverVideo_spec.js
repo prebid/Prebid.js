@@ -112,18 +112,23 @@ describe('freeWheel adserver module', function() {
         brandCategoryExclusion: true
       }
     });
-    amStub.returns(getBidsReceived());
+    amStub.returns([
+      createBid(10, 'preroll_1', 30, '10.00_airline_30s', '123', 'airline'),
+      createBid(15, 'preroll_1', 30, '15.00_airline_30s', '123', 'airline'),
+      createBid(15, 'midroll_1', 60, '15.00_travel_60s', '123', 'travel'),
+      createBid(10, 'preroll_1', 30, '10.00_airline_30s', '123', 'airline')
+    ]);
     let targeting = getTargeting();
 
-    expect(targeting['preroll_1'].length).to.equal(2);
+    expect(targeting['preroll_1'].length).to.equal(3);
     expect(targeting['midroll_1'].length).to.equal(2);
   });
 
   it('should only select bids less than adpod duration', function() {
     amStub.returns([
-      createBid(10, 'preroll_1', 90, '10.00_airline_90', '123', 'airline'),
-      createBid(15, 'preroll_1', 90, '15.00_airline_90', '123', 'airline'),
-      createBid(15, 'midroll_1', 90, '15.00_travel_90', '123', 'travel')
+      createBid(10, 'preroll_1', 90, '10.00_airline_90s', '123', 'airline'),
+      createBid(15, 'preroll_1', 90, '15.00_airline_90s', '123', 'airline'),
+      createBid(15, 'midroll_1', 90, '15.00_travel_90s', '123', 'travel')
     ]);
     let targeting = getTargeting();
 
@@ -134,11 +139,11 @@ describe('freeWheel adserver module', function() {
 
 function getBidsReceived() {
   return [
-    createBid(10, 'preroll_1', 15, '10.00_airline_15', '123', 'airline'),
-    createBid(15, 'preroll_1', 15, '15.00_airline_15', '123', 'airline'),
-    createBid(15, 'midroll_1', 30, '15.00_travel_30', '123', 'travel'),
-    createBid(5, 'midroll_1', 5, '5.00_travel_5', '123', 'travel'),
-    createBid(20, 'midroll_1', 60, '20.00_travel_60', '123', 'travel'),
+    createBid(10, 'preroll_1', 15, '10.00_airline_15s', '123', 'airline'),
+    createBid(15, 'preroll_1', 15, '15.00_airline_15s', '123', 'airline'),
+    createBid(15, 'midroll_1', 30, '15.00_travel_30s', '123', 'travel'),
+    createBid(5, 'midroll_1', 5, '5.00_travel_5s', '123', 'travel'),
+    createBid(20, 'midroll_1', 60, '20.00_travel_60s', '123', 'travel'),
   ]
 }
 
@@ -186,12 +191,12 @@ function createBid(cpm, adUnitCode, durationBucket, priceIndustryDuration, uuid,
       'hb_size': '640x360',
       'hb_source': 'client',
       'hb_format': 'video',
-      'hb_price_industry_duration': priceIndustryDuration,
-      'hb_uuid': uuid
+      'hb_pb_cat_dur': priceIndustryDuration,
+      'hb_cache_id': uuid
     },
     'customCacheKey': `${priceIndustryDuration}_${uuid}`,
     'meta': {
-      'primaryCatId': 1,
+      'iabSubCatId': 'iab-1',
       'adServerCatId': industry
     },
     'videoCacheKey': '4cf395af-8fee-4960-af0e-88d44e399f14'

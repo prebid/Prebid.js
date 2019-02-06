@@ -6,10 +6,10 @@ import { registerVideoSupport } from '../src/adServerManager';
 import { auctionManager } from '../src/auctionManager';
 import { groupBy, deepAccess } from '../src/utils';
 import { config } from '../src/config';
-// TODO import { ADPOD, initAdpodHooks, TARGETING_KEY_PB_CAT_DUR, TARGETING_KEY_CACHE_ID } from './adpod';
+import { ADPOD } from '../src/mediaTypes';
+// TODO import { initAdpodHooks, TARGETING_KEY_PB_CAT_DUR, TARGETING_KEY_CACHE_ID } from './adpod';
 
 // TODO Remove these constants later when adpod module is merged; use above commented import instead
-const ADPOD = 'adpod';
 const TARGETING_KEY_PB_CAT_DUR = 'hb_pb_cat_dur';
 const TARGETING_KEY_CACHE_ID = 'hb_cache_id';
 
@@ -27,7 +27,7 @@ export default function getTargeting({codes} = {}) {
 
   let bids = getBidsForAdpod(bidsReceived, adPodAdUnits);
   bids = (competiveExclusionEnabled) ? getExclusiveBids(bids) : bids;
-  bids.sort(compare);
+  bids.sort(compareOn('cpm'));
 
   let targeting = {};
   adPodAdUnits.forEach((adUnit) => {
@@ -65,14 +65,16 @@ function getAdPodAdUnits(codes) {
     .filter((adUnit) => (codes.length > 0) ? codes.indexOf(adUnit.code) != -1 : true);
 }
 
-function compare(a, b) {
-  if (a.cpm < b.cpm) {
-    return 1;
+function compareOn(property) {
+  return function compare(a, b) {
+    if (a[property] < b[property]) {
+      return 1;
+    }
+    if (a[property] > b[property]) {
+      return -1;
+    }
+    return 0;
   }
-  if (a.cpm > b.cpm) {
-    return -1;
-  }
-  return 0;
 }
 
 /**
@@ -82,12 +84,12 @@ function compare(a, b) {
  */
 function getExclusiveBids(bidsReceived) {
   let bids = bidsReceived
-    .map((bid) => Object.assign({}, bid, {adServerCatId: bid.meta.adServerCatId}));
-  bids = groupBy(bids, 'adServerCatId');
+    .map((bid) => Object.assign({}, bid, {[TARGETING_KEY_PB_CAT_DUR]: bid.adserverTargeting[TARGETING_KEY_PB_CAT_DUR]}));
+  bids = groupBy(bids, TARGETING_KEY_PB_CAT_DUR);
   let filteredBids = [];
-  Object.keys(bids).forEach((adServerCatId) => {
-    bids[adServerCatId].sort(compare);
-    filteredBids.push(bids[adServerCatId][0]);
+  Object.keys(bids).forEach((targetingKey) => {
+    bids[targetingKey].sort(compareOn('responseTimestamp'));
+    filteredBids.push(bids[targetingKey][0]);
   });
   return filteredBids;
 }
