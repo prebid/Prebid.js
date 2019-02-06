@@ -42,7 +42,6 @@ export const spec = {
   isBidRequestValid: function (bid) {
     return !!bid.params.supplyPartnerId &&
       typeof bid.params.supplyPartnerId === 'string' &&
-      (typeof bid.params['rtbEndpoint'] === 'undefined' || typeof bid.params['rtbEndpoint'] === 'string') &&
       (typeof bid.params.bidfloor === 'undefined' || typeof bid.params.bidfloor === 'number') &&
       (typeof bid.params['adpos'] === 'undefined' || typeof bid.params['adpos'] === 'number') &&
       (typeof bid.params['protocols'] === 'undefined' || Array.isArray(bid.params['protocols'])) &&
@@ -52,7 +51,7 @@ export const spec = {
   buildRequests: function (validBidRequests, bidderRequest) {
     return validBidRequests.map(bidRequest => {
       const {adUnitCode, auctionId, mediaTypes, params, sizes, transactionId} = bidRequest;
-      const baseEndpoint = params['rtbEndpoint'] || 'https://bidder.cleanmediaads.com';
+      const baseEndpoint = 'https://bidder.cleanmediaads.com';
       const rtbEndpoint = `${baseEndpoint}/r/${params.supplyPartnerId}/bidr?rformat=open_rtb&reqformat=rtb_json&bidder=prebid` + (params.query ? '&' + params.query : '');
       let url = config.getConfig('pageUrl') || bidderRequest.refererInfo.referer;
 
@@ -222,7 +221,7 @@ function newRenderer(bidRequest, bid, rendererOptions = {}) {
 function renderOutstream(bid) {
   bid.renderer.push(() => {
     const unitId = bid.adUnitCode + '/' + bid.adId;
-    window['GamoshiPlayer'].renderAd({
+    window['CleanMediaPlayer'].renderAd({
       id: unitId,
       debug: window.location.href.indexOf('pbjsDebug') >= 0,
       placement: document.getElementById(bid.adUnitCode),
@@ -230,7 +229,7 @@ function renderOutstream(bid) {
       height: bid.height,
       events: {
         ALL_ADS_COMPLETED: () => window.setTimeout(() => {
-          window['GamoshiPlayer'].removeAd(unitId);
+          window['CleanMediaPlayer'].removeAd(unitId);
         }, 300)
       },
       vastUrl: bid.vastUrl,

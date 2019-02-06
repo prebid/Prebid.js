@@ -35,17 +35,6 @@ describe('CleanmedianetAdapter', function () {
       expect(spec.isBidRequestValid({params: {supplyPartnerId: '123'}})).to.equal(true);
     });
 
-    it('should validate RTB endpoint', function () {
-      expect(spec.isBidRequestValid({params: {supplyPartnerId: '123'}})).to.equal(true); // RTB endpoint has a default
-      expect(spec.isBidRequestValid({params: {supplyPartnerId: '123', rtbEndpoint: 123}})).to.equal(false);
-      expect(spec.isBidRequestValid({
-        params: {
-          supplyPartnerId: '123',
-          rtbEndpoint: 'https://some.url.com'
-        }
-      })).to.equal(true);
-    });
-
     it('should validate bid floor', function () {
       expect(spec.isBidRequestValid({params: {supplyPartnerId: '123'}})).to.equal(true); // bidfloor has a default
       expect(spec.isBidRequestValid({params: {supplyPartnerId: '123', bidfloor: '123'}})).to.equal(false);
@@ -99,18 +88,6 @@ describe('CleanmedianetAdapter', function () {
       response = spec.buildRequests([adUnit1, adUnit2], bidRequest);
       expect(Array.isArray(response)).to.equal(true);
       expect(response.length).to.equal(2);
-    });
-
-    it('targets correct endpoint', function () {
-      let response;
-      response = spec.buildRequests([bidRequest], bidRequest)[0];
-      expect(response.method).to.equal('POST');
-      expect(response.url).to.match(new RegExp(`^https://bidder\\.cleanmediaads\\.com/r/${supplyPartnerId}/bidr\\?rformat=open_rtb&reqformat=rtb_json&bidder=prebid$`, 'g'));
-      expect(response.data.id).to.equal(bidRequest.auctionId);
-      const bidRequestWithEndpoint = utils.deepClone(bidRequest);
-      bidRequestWithEndpoint.params.rtbEndpoint = 'https://bidder.cleanmediaads.com/a12';
-      response = spec.buildRequests([bidRequestWithEndpoint], bidRequest)[0];
-      expect(response.url).to.match(new RegExp(`^https://bidder\\.cleanmediaads\\.com/a12/r/${supplyPartnerId}/bidr\\?rformat=open_rtb&reqformat=rtb_json&bidder=prebid$`, 'g'));
     });
 
     it('builds request correctly', function () {
