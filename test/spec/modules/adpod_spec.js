@@ -2,8 +2,9 @@ import * as utils from 'src/utils';
 import { config } from 'src/config';
 import * as videoCache from 'src/videoCache';
 import * as auction from 'src/auction';
+import { ADPOD } from 'src/mediaTypes';
 
-import { callPrebidCacheHook, checkAdUnitSetupHook, checkVideoBidSetupHook, adpodSetConfig, ADPOD } from 'modules/adpod';
+import { callPrebidCacheHook, checkAdUnitSetupHook, checkVideoBidSetupHook, adpodSetConfig } from 'modules/adpod';
 
 let expect = require('chai').expect;
 
@@ -22,13 +23,19 @@ describe('adpod.js', function () {
 
     let callbackFn = function() {
       callbackResult = true;
+    };
+
+    let auctionInstance = {
+      getAuctionStatus: function() {
+        return auction.AUCTION_IN_PROGRESS;
+      }
     }
 
     const fakeStoreFn = function(bids, callback) {
       let payload = [];
       bids.forEach(bid => payload.push({uuid: bid.customCacheKey}));
       callback(null, payload);
-    }
+    };
 
     beforeEach(function() {
       callbackResult = null;
@@ -72,7 +79,7 @@ describe('adpod.js', function () {
         }
       }
 
-      callPrebidCacheHook(callbackFn, this, bid, function () {}, bidderRequest);
+      callPrebidCacheHook(callbackFn, auctionInstance, bid, function () {}, bidderRequest);
       expect(callbackResult).to.equal(true);
     });
 
@@ -127,8 +134,8 @@ describe('adpod.js', function () {
         }
       };
 
-      callPrebidCacheHook(callbackFn, this, bidResponse1, afterBidAddedSpy, bidderRequest);
-      callPrebidCacheHook(callbackFn, this, bidResponse2, afterBidAddedSpy, bidderRequest);
+      callPrebidCacheHook(callbackFn, auctionInstance, bidResponse1, afterBidAddedSpy, bidderRequest);
+      callPrebidCacheHook(callbackFn, auctionInstance, bidResponse2, afterBidAddedSpy, bidderRequest);
 
       expect(callbackResult).to.be.null;
       expect(afterBidAddedSpy.calledTwice).to.equal(true);
@@ -181,7 +188,7 @@ describe('adpod.js', function () {
         }
       };
 
-      callPrebidCacheHook(callbackFn, this, bidResponse, afterBidAddedSpy, bidderRequest);
+      callPrebidCacheHook(callbackFn, auctionInstance, bidResponse, afterBidAddedSpy, bidderRequest);
       clock.tick(31);
 
       expect(callbackResult).to.be.null;
@@ -260,9 +267,9 @@ describe('adpod.js', function () {
         }
       };
 
-      callPrebidCacheHook(callbackFn, this, bidResponse1, afterBidAddedSpy, bidderRequest);
-      callPrebidCacheHook(callbackFn, this, bidResponse2, afterBidAddedSpy, bidderRequest);
-      callPrebidCacheHook(callbackFn, this, bidResponse3, afterBidAddedSpy, bidderRequest);
+      callPrebidCacheHook(callbackFn, auctionInstance, bidResponse1, afterBidAddedSpy, bidderRequest);
+      callPrebidCacheHook(callbackFn, auctionInstance, bidResponse2, afterBidAddedSpy, bidderRequest);
+      callPrebidCacheHook(callbackFn, auctionInstance, bidResponse3, afterBidAddedSpy, bidderRequest);
       clock.next();
 
       expect(callbackResult).to.be.null;
@@ -276,11 +283,11 @@ describe('adpod.js', function () {
       expect(auctionBids[1].adId).to.equal('multi_ad2');
       expect(auctionBids[1].customCacheKey).to.exist.and.to.match(/^15\.00_news_15s_.*/);
       expect(auctionBids[1].adserverTargeting.hb_pb_cat_dur).to.equal('15.00_news_15s');
-      expect(auctionBids[1].adserverTargeting.hb_cache_id).to.exist.and.to.equal(auctionBids[0].adserverTargeting.hb_uuid);
+      expect(auctionBids[1].adserverTargeting.hb_cache_id).to.exist.and.to.equal(auctionBids[0].adserverTargeting.hb_cache_id);
       expect(auctionBids[2].adId).to.equal('multi_ad3');
       expect(auctionBids[2].customCacheKey).to.exist.and.to.match(/^10\.00_sports_15s_.*/);
       expect(auctionBids[2].adserverTargeting.hb_pb_cat_dur).to.equal('10.00_sports_15s');
-      expect(auctionBids[2].adserverTargeting.hb_cache_id).to.exist.and.to.equal(auctionBids[0].adserverTargeting.hb_uuid);
+      expect(auctionBids[2].adserverTargeting.hb_cache_id).to.exist.and.to.equal(auctionBids[0].adserverTargeting.hb_cache_id);
     });
 
     it('should not add bid to auction when Prebid Cache detects an existing key', function () {
@@ -341,8 +348,8 @@ describe('adpod.js', function () {
         }
       };
 
-      callPrebidCacheHook(callbackFn, this, bidResponse1, afterBidAddedSpy, bidderRequest);
-      callPrebidCacheHook(callbackFn, this, bidResponse2, afterBidAddedSpy, bidderRequest);
+      callPrebidCacheHook(callbackFn, auctionInstance, bidResponse1, afterBidAddedSpy, bidderRequest);
+      callPrebidCacheHook(callbackFn, auctionInstance, bidResponse2, afterBidAddedSpy, bidderRequest);
 
       expect(callbackResult).to.be.null;
       expect(afterBidAddedSpy.calledOnce).to.equal(true);
@@ -410,8 +417,8 @@ describe('adpod.js', function () {
         }
       };
 
-      callPrebidCacheHook(callbackFn, this, bidResponse1, afterBidAddedSpy, bidderRequest);
-      callPrebidCacheHook(callbackFn, this, bidResponse2, afterBidAddedSpy, bidderRequest);
+      callPrebidCacheHook(callbackFn, auctionInstance, bidResponse1, afterBidAddedSpy, bidderRequest);
+      callPrebidCacheHook(callbackFn, auctionInstance, bidResponse2, afterBidAddedSpy, bidderRequest);
 
       expect(doCallbacksIfTimedoutStub.calledTwice).to.equal(true);
       expect(logWarnStub.calledOnce).to.equal(true);
