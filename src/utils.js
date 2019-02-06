@@ -1192,10 +1192,27 @@ export function setDataInLocalStorage(key, value) {
 
 export function getDataFromLocalStorage(key) {
   if (hasLocalStorage()) {
-    window.localStorage.getItem(key);
+    return window.localStorage.getItem(key);
   }
 }
 
 export function hasLocalStorage() {
   return !!window.localStorage;
+}
+
+/**
+ * Reads the data stored in localstorage and returns iab subcategory
+ * @param {string} localStorageKey key to get data from local storage
+ * @param {string} category bidders category
+ */
+export function getIabSubCategory(localStorageKey, category) {
+  let data = getDataFromLocalStorage(localStorageKey);
+  if (data) {
+    try {
+      data = JSON.parse(data);
+    } catch (error) {
+      logError(`Failed to parse translation data stored in local storage`);
+    }
+    return (data.mapping[category]) ? data.mapping[category] : null;
+  }
 }

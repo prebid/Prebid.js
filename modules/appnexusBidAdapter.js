@@ -7,7 +7,6 @@ import includes from 'core-js/library/fn/array/includes';
 
 const BIDDER_CODE = 'appnexus';
 const URL = '//ib.adnxs.com/ut/v3/prebid';
-const mappingFileUrl = 'http://sample.com/mappnig.json';
 const VIDEO_TARGETING = ['id', 'mimes', 'minduration', 'maxduration',
   'startdelay', 'skippable', 'playback_method', 'frameworks'];
 const USER_PARAMS = ['age', 'external_uid', 'segments', 'gender', 'dnt', 'language'];
@@ -33,6 +32,10 @@ const NATIVE_MAPPING = {
   displayUrl: 'displayurl'
 };
 const SOURCE = 'pbjs';
+const mappingFileInfo = Object.freeze({
+  mappingFileUrl: 'http://sample.com/mappnig.json',
+  uniqueKey: utils.getUniqueIdentifierStr()
+});
 
 export const spec = {
   code: BIDDER_CODE,
@@ -210,11 +213,22 @@ export const spec = {
     return bids;
   },
 
+  /**
+   * @typedef {Object} mappingFileInfo
+   * @property {string} url  mapping file json url
+   * @property {number} refreshInDays prebid stores mapping data in localstorage so you can return in how many days you want to update value stored in localstorage.
+   * @property {string} localStorageKey unique key to store your mapping json in localstorage
+   */
+
+  /**
+   * Returns mapping file info. This info will be used by bidderFactory to preload mapping file and store data in local storage
+   * @returns {mappingFileInfo}
+   */
   getMappingFileInfo: function() {
     return {
-      url: mappingFileUrl,
+      url: mappingFileInfo.mappingFileUrl,
       refreshInDays: 7,
-      key: `${spec.code}MappingFile`
+      localStorageKey: `${spec.code}_${mappingFileInfo.uniqueKey}`
     }
   },
 

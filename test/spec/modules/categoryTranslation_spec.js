@@ -1,4 +1,4 @@
-import { getFreeWheelCategoryHook, initTranslation } from 'modules/categoryTranslation';
+import { getAdserverCategoryHook, initTranslation } from 'modules/categoryTranslation';
 import { config } from 'src/config';
 import * as utils from 'src/utils';
 import { expect } from 'chai';
@@ -28,7 +28,7 @@ describe('category translation', function () {
         iabSubCatId: 'iab-1'
       }
     }
-    getFreeWheelCategoryHook(sinon.spy(), 'code', bid);
+    getAdserverCategoryHook(sinon.spy(), 'code', bid);
     expect(bid.meta.adServerCatId).to.equal('1');
   });
 

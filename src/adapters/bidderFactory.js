@@ -365,7 +365,7 @@ export function preloadBidderMappingFile(adUnits) {
     let bidderSpec = adapterManager.getBidAdapter(bidder);
     if (bidderSpec.getMappingFileInfo) {
       let info = bidderSpec.getMappingFileInfo();
-      let mappingData = getDataFromLocalStorage(info.key);
+      let mappingData = getDataFromLocalStorage(info.localStorageKey);
       if (!mappingData || timestamp() < mappingData.lastUpdated + info.refreshInDays * 24 * 60 * 60 * 1000) {
         ajax(info.url,
           {
@@ -376,7 +376,7 @@ export function preloadBidderMappingFile(adUnits) {
                   lastUpdated: timestamp(),
                   mapping: response.mapping
                 }
-                setDataInLocalStorage(info.key, JSON.stringify(mapping));
+                setDataInLocalStorage(info.localStorageKey, JSON.stringify(mapping));
               } catch (error) {
                 logError(`Failed to parse ${bidder} bidder translation mapping file`);
               }

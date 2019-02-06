@@ -21,7 +21,7 @@ const DEFAULT_TRANSLATION_FILE_URL = 'https://api.myjson.com/bins/j5d0k';
 const DEFAULT_IAB_TO_FW_MAPPING_KEY = 'iabToFwMappingkey';
 const refreshInDays = 1;
 
-export function getFreeWheelCategoryHook(fn, adUnitCode, bid) {
+export function getAdserverCategoryHook(fn, adUnitCode, bid) {
   if (!bid) {
     return fn.call(this, adUnitCode); // if no bid, call original and let it display warnings
   }
@@ -41,11 +41,11 @@ export function getFreeWheelCategoryHook(fn, adUnitCode, bid) {
       logError('Translation mapping data not found in local storage');
     }
   }
-  return fn.call(this, adUnitCode, bid);
+  fn.call(this, adUnitCode, bid);
 }
 
 export function initTranslation() {
-  hooks['addBidResponse'].before(getFreeWheelCategoryHook, 50);
+  hooks['addBidResponse'].before(getAdserverCategoryHook, 50);
   let pubTranslationFile = config.getConfig('brandCategoryTranslation.translationFile');
   let url = (typeof pubTranslationFile !== 'undefined') ? pubTranslationFile : DEFAULT_TRANSLATION_FILE_URL;
 
