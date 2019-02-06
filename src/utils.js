@@ -1186,3 +1186,7 @@ export function convertTypes(types, params) {
   });
   return params;
 }
+
+export function isArrayOfNums(val, size) {
+  return (isArray(val)) && ((size) ? val.length === size : true) && (val.every(v => isInteger(v)));
+}
