@@ -45,7 +45,7 @@ function isBidRequestValid(bid) {
   return true;
 }
 
-function buildRequests(validBidRequests) {
+function buildRequests(validBidRequests, bidderRequest) {
   let bidRequests = [];
 
   for (let i = 0; i < validBidRequests.length; i++) {
@@ -95,24 +95,48 @@ function buildRequests(validBidRequests) {
       s2sParams.bidWidth = playerWidth;
       s2sParams.bidHeight = playerHeight;
 
-      if (bidRequest && bidRequest.gdprConsent) {
-        if (bidRequest.gdprConsent.gdprApplies) {
+      if (bidderRequest && bidderRequest.gdprConsent) {
+        if (bidderRequest.gdprConsent.gdprApplies) {
           AV_GDPR = 1;
-          AV_CONSENT = bidRequest.gdprConsent.consentString
+          AV_CONSENT = bidderRequest.gdprConsent.consentString
         }
       }
 
+      let serverDomain = bidRequest.params && bidRequest.params.serverDomain ? bidRequest.params.serverDomain : 'gov.aniview.com';
+      let serverUrl = 'https://' + serverDomain + '/api/adserver/vast3/';
+
       bidRequests.push({
         method: 'GET',
-        url: 'https://gov.aniview.com/api/adserver/vast3/',
-        data: s2sParams
+        url: serverUrl,
+        data: s2sParams,
+          bidRequest
       });
     }
   }
 
   return bidRequests;
 }
-
+function getCpmData(xml) {
+  let ret = {cpm: 0, currency: 'USD'};
+  if (xml) {
+    let ext = xml.getElementsByTagName('Extensions');
+    if (ext && ext.length > 0) {
+      ext = ext[0].getElementsByTagName('Extension');
+      if (ext && ext.length > 0) {
+        for (var i = 0; i < ext.length; i++) {
+          if (ext[i].getAttribute('type') == 'ANIVIEW') {
+            let price = ext[i].getElementsByTagName('Cpm');
+            if (price && price.length == 1) {
+              ret.cpm = price[0].textContent;
+            }
+            break;
+          }
+        }
+      }
+    }
+  }
+  return ret;
+}
 function interpretResponse(serverResponse, bidRequest) {
   let bidResponses = [];
   if (serverResponse && serverResponse.body) {
@@ -125,25 +149,29 @@ function interpretResponse(serverResponse, bidRequest) {
           let xmlStr = serverResponse.body;
           let xml = new window.DOMParser().parseFromString(xmlStr, 'text/xml');
           if (xml && xml.getElementsByTagName('parsererror').length == 0) {
-            bidResponse.requestId = bidRequest.data.bidId;
-            bidResponse.bidderCode = BIDDER_CODE;
-            bidResponse.ad = '';
-            bidResponse.cpm = '1'; // xml.getElementsByTagName('Pricing')[0].textContent);
-            bidResponse.width = bidRequest.data.AV_WIDTH;
-            bidResponse.height = bidRequest.data.AV_HEIGHT;
-            bidResponse.ttl = TTL;
-            bidResponse.creativeId = xml.getElementsByTagName('Ad')[0].getAttribute('id') || '1';
-            bidResponse.currency = 'USD'; // xml.getElementsByTagName('Pricing')[0].getAttribute('currency');
-            bidResponse.netRevenue = true;
-            var blob = new Blob([xmlStr], {
-              type: 'application/xml'
-            });
-            bidResponse.vastUrl = window.URL.createObjectURL(blob);
-            bidResponse.vastXml = xmlStr;
-            bidResponse.mediaType = VIDEO;
-            bidResponse.renderer = newRenderer(bidRequest);
+            let cpmData = getCpmData(xml);
+            if (cpmData && cpmData.cpm > 0) {
+              bidResponse.requestId = bidRequest.data.bidId;
+              bidResponse.bidderCode = BIDDER_CODE;
+              bidResponse.ad = '';
+              bidResponse.cpm = cpmData.cpm;
+              bidResponse.width = bidRequest.data.AV_WIDTH;
+              bidResponse.height = bidRequest.data.AV_HEIGHT;
+              bidResponse.ttl = TTL;
+              bidResponse.creativeId = xml.getElementsByTagName('Ad') && xml.getElementsByTagName('Ad')[0] && xml.getElementsByTagName('Ad')[0].getAttribute('id') ? xml.getElementsByTagName('Ad')[0].getAttribute('id') : 'creativeId';
+              bidResponse.currency = cpmData.currency;
+              bidResponse.netRevenue = true;
+              var blob = new Blob([xmlStr], {
+                type: 'application/xml'
+              });
+              bidResponse.vastUrl = window.URL.createObjectURL(blob);
+              bidResponse.vastXml = xmlStr;
+              bidResponse.mediaType = VIDEO;
+              if(bidRequest.bidRequest && bidRequest.bidRequest.mediaTypes && bidRequest.bidRequest.mediaTypes.video && bidRequest.bidRequest.mediaTypes.video.context === "outstream")
+                bidResponse.renderer = newRenderer(bidRequest);
 
-            bidResponses.push(bidResponse);
+              bidResponses.push(bidResponse);
+            }
           } else {}
         } else {}
       } catch (e) {}
