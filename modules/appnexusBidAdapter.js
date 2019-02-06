@@ -160,11 +160,14 @@ export const spec = {
       payload.referrer_detection = refererinfo;
     }
 
-    const adPodBid = find(bidRequests, hasAdPod);
-    if (adPodBid) {
-      const adPodTags = createAdPodRequest(tags, adPodBid);
-      const nonAdPodTags = payload.tags.filter(tag => tag.uuid !== adPodBid.bidId);
-      payload.tags = [...nonAdPodTags, ...adPodTags];
+    const hasAdPodBid = find(bidRequests, hasAdPod);
+    if (hasAdPodBid) {
+      bidRequests.filter(hasAdPod).forEach(adPodBid => {
+        const adPodTags = createAdPodRequest(tags, adPodBid);
+        // don't need the original adpod placement because it's in adPodTags
+        const nonPodTags = payload.tags.filter(tag => tag.uuid !== adPodBid.bidId);
+        payload.tags = [...nonPodTags, ...adPodTags];
+      });
     }
 
     const request = formatRequest(payload, bidderRequest);
