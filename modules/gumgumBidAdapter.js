@@ -47,7 +47,7 @@ function _getBrowserParams() {
     pu: topUrl,
     ce: utils.cookiesAreEnabled(),
     dpr: topWindow.devicePixelRatio || 1,
-    jcsi: JSON.stringify({ t: 0, rq: 7 })
+    jcsi: JSON.stringify({ t: 0, rq: 8 })
   }
 
   ns = getNetworkSpeed()
