@@ -15,3 +15,5 @@ export const NATIVE = 'native';
 export const VIDEO = 'video';
 /** @type MediaType */
 export const BANNER = 'banner';
+/** @type MediaType */
+export const ADPOD = 'adpod';
