@@ -17,11 +17,11 @@ import { addBidToAuction, doCallbacksIfTimedout, AUCTION_IN_PROGRESS } from '../
 import { store } from '../src/videoCache';
 import { hooks } from '../src/hook';
 import { config } from '../src/config';
+import { ADPOD } from '../src/mediaTypes';
 import Set from 'core-js/library/fn/set';
 import find from 'core-js/library/fn/array/find';
 const from = require('core-js/library/fn/array/from');
 
-export const ADPOD = 'adpod';
 export const TARGETING_KEY_PB_CAT_DUR = 'hb_pb_cat_dur';
 export const TARGETING_KEY_CACHE_ID = 'hb_cache_id'
 
