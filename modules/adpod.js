@@ -25,7 +25,6 @@ const from = require('core-js/library/fn/array/from');
 export const TARGETING_KEY_PB_CAT_DUR = 'hb_pb_cat_dur';
 export const TARGETING_KEY_CACHE_ID = 'hb_cache_id'
 
-// NOTE - are these good defaults?
 let queueTimeDelay = 50;
 let queueSizeLimit = 5;
 let bidCacheRegistry = createBidCacheRegistry();
@@ -102,11 +101,10 @@ function createDispatcher(timeoutDuration) {
  * @param {Object} bid bid object to update
  */
 function attachPriceIndustryDurationKeyToBid(bid) {
-  let category = bid.meta && bid.meta.adServerCatId;
-  let duration = bid.video && bid.video.durationBucket;
+  let category = utils.deepAccess(bid, 'meta.adServerCatId');
+  let duration = utils.deepAccess(bid, 'video.durationBucket');
   let cpmFixed = bid.cpm.toFixed(2);
   let initialCacheKey = bidCacheRegistry.getInitialCacheKey(bid);
-  // TODO? - add check to verify all above values are populated and throw error if not?
   let pcd = `${cpmFixed}_${category}_${duration}s`;
 
   if (!bid.adserverTargeting) {
@@ -154,15 +152,10 @@ function removeBidsFromStorage(bidResponses) {
  * @param {Function} afterBidAdded callback function used when Prebid Cache responds
  */
 function firePrebidCacheCall(auctionInstance, bidList, afterBidAdded) {
-  // note to reviewers - was doing this to ensure the variable wouldn't be malformed by the additional incoming bids
-  // while the current list is being processed by PBC and the store callback
-  // ...but is this copy really needed?
-  let bidListCopy = bidList.slice();
-
   // remove entries now so other incoming bids won't accidentally have a stale version of the list while PBC is processing the current submitted list
-  removeBidsFromStorage(bidListCopy);
+  removeBidsFromStorage(bidList);
 
-  store(bidListCopy, function (error, cacheIds) {
+  store(bidList, function (error, cacheIds) {
     if (error) {
       utils.logWarn(`Failed to save to the video cache: ${error}. Video bid(s) must be discarded.`);
       for (let i = 0; i < bidList.length; i++) {
@@ -171,12 +164,10 @@ function firePrebidCacheCall(auctionInstance, bidList, afterBidAdded) {
     } else {
       for (let i = 0; i < cacheIds.length; i++) {
         // when uuid in response is empty string then the key already existed, so this bid wasn't cached
-        // TODO? - should we throw warning here?  should we call the afterBidAdded() anyway to decrement the internal bid counter?
-        // TODO? - verify the cacheKey is one of the expected values (eg in case PBC returns generic UUID)?
         if (cacheIds[i].uuid !== '') {
-          addBidToAuction(auctionInstance, bidListCopy[i]);
-          afterBidAdded();
+          addBidToAuction(auctionInstance, bidList[i]);
         }
+        afterBidAdded();
       }
     }
   });
@@ -191,7 +182,7 @@ function firePrebidCacheCall(auctionInstance, bidList, afterBidAdded) {
  * @param {Object} bidderRequest copy of bid's associated bidderRequest object
  */
 export function callPrebidCacheHook(fn, auctionInstance, bidResponse, afterBidAdded, bidderRequest) {
-  let videoConfig = bidderRequest.mediaTypes && bidderRequest.mediaTypes.video;
+  let videoConfig = utils.deepAccess(bidderRequest, 'mediaTypes.video');
   if (videoConfig && videoConfig.context === ADPOD) {
     bidCacheRegistry.addBid(bidResponse);
     attachPriceIndustryDurationKeyToBid(bidResponse);
@@ -211,8 +202,8 @@ export function callPrebidCacheHook(fn, auctionInstance, bidResponse, afterBidAd
  */
 export function checkAdUnitSetupHook(fn, adUnits) {
   let goodAdUnits = adUnits.filter(adUnit => {
-    let mediaTypes = adUnit.mediaTypes;
-    let videoConfig = mediaTypes && mediaTypes.video;
+    let mediaTypes = utils.deepAccess(adUnit, 'mediaTypes');
+    let videoConfig = utils.deepAccess(mediaTypes, 'video');
     if (videoConfig && videoConfig.context === ADPOD) {
       // run check to see if other mediaTypes are defined (ie multi-format); reject adUnit if so
       if (Object.keys(mediaTypes).length > 1) {
@@ -254,8 +245,8 @@ export function checkAdUnitSetupHook(fn, adUnits) {
  * @returns {boolean} return false if bid duration is deemed invalid as per adUnit configuration; return true if fine
 */
 function checkBidDuration(bidderRequest, bidResponse) {
-  let bidDuration = bidResponse.video && bidResponse.video.durationSeconds;
-  let videoConfig = bidderRequest.mediaTypes && bidderRequest.mediaTypes.video;
+  let bidDuration = utils.deepAccess(bidResponse, 'video.durationSeconds');
+  let videoConfig = utils.deepAccess(bidderRequest, 'mediaTypes.video');
   let adUnitRanges = videoConfig.durationRangeSec;
   adUnitRanges.sort((a, b) => a - b); // ensure the ranges are sorted in numeric order
 
@@ -329,7 +320,6 @@ export function checkVideoBidSetupHook(fn, bid, bidRequest, videoMediaType, cont
 export function adpodSetConfig(config) {
   if (config.bidQueueTimeDelay !== undefined) {
     if (typeof config.bidQueueTimeDelay === 'number' && config.bidQueueTimeDelay > 0) {
-    // add check to see if config setting is too high?
       queueTimeDelay = config.bidQueueTimeDelay;
     } else {
       utils.logWarn(`Detected invalid value for adpod.bidQueueTimeDelay in setConfig; must be a positive number.  Using default: ${queueTimeDelay}`)
@@ -338,7 +328,6 @@ export function adpodSetConfig(config) {
 
   if (config.bidQueueSizeLimit !== undefined) {
     if (typeof config.bidQueueSizeLimit === 'number' && config.bidQueueSizeLimit > 0) {
-    // add check to see if config setting is too high? too low?
       queueSizeLimit = config.bidQueueSizeLimit;
     } else {
       utils.logWarn(`Detected invalid value for adpod.bidQueueSizeLimit in setConfig; must be a positive number.  Using default: ${queueSizeLimit}`)

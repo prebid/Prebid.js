@@ -352,7 +352,7 @@ describe('adpod.js', function () {
       callPrebidCacheHook(callbackFn, auctionInstance, bidResponse2, afterBidAddedSpy, bidderRequest);
 
       expect(callbackResult).to.be.null;
-      expect(afterBidAddedSpy.calledOnce).to.equal(true);
+      expect(afterBidAddedSpy.calledTwice).to.equal(true);
       expect(storeStub.calledOnce).to.equal(true);
       expect(auctionBids.length).to.equal(1);
       expect(auctionBids[0].adId).to.equal('dup_ad_1');
