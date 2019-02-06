@@ -593,7 +593,7 @@ function createAdPodRequest(tags, adPodBid) {
   let request = utils.fill(...tagToDuplicate, numberOfPlacements);
 
   if (requireExactDuration) {
-    const divider = numberOfPlacements / durationRangeSec.length;
+    const divider = Math.ceil(numberOfPlacements / durationRangeSec.length);
     const chunked = utils.chunk(request, divider);
 
     // each configured duration is set as min/maxduration for a subset of requests
@@ -611,8 +611,8 @@ function createAdPodRequest(tags, adPodBid) {
   return request;
 }
 
-function getAdPodPlacementNumber(videoParams, requireExactDuration) {
-  const { adPodDurationSec, durationRangeSec } = videoParams;
+function getAdPodPlacementNumber(videoParams) {
+  const { adPodDurationSec, durationRangeSec, requireExactDuration } = videoParams;
   const minAllowedDuration = utils.getMinValueFromArray(durationRangeSec);
   const numberOfPlacements = Math.floor(adPodDurationSec / minAllowedDuration);
 
