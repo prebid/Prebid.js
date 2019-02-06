@@ -843,7 +843,6 @@ describe('S2S Adapter', function () {
       const response = addBidResponse.firstCall.args[1];
       expect(response).to.have.property('statusMessage', 'Bid available');
       expect(response).to.have.property('cpm', 0.5);
-      expect(response).to.have.property('adId', '123');
       expect(response).to.have.property('requestId', '123');
       expect(response).to.not.have.property('videoCacheKey');
       expect(response).to.have.property('cache_id', '7654321');
@@ -862,7 +861,6 @@ describe('S2S Adapter', function () {
       const response = addBidResponse.firstCall.args[1];
       expect(response).to.have.property('statusMessage', 'Bid available');
       expect(response).to.have.property('cpm', 0.5);
-      expect(response).to.have.property('adId', '123');
       expect(response).to.have.property('requestId', '123');
       expect(response).to.have.property('videoCacheKey', 'video_cache_id');
       expect(response).to.have.property('cache_id', 'video_cache_id');
@@ -915,7 +913,7 @@ describe('S2S Adapter', function () {
 
       expect(addBidResponse.firstCall.args[0]).to.equal('div-gpt-ad-1460505748561-0');
 
-      expect(addBidResponse.firstCall.args[1]).to.have.property('adId', '123');
+      expect(addBidResponse.firstCall.args[1]).to.have.property('requestId', '123');
 
       expect(addBidResponse.firstCall.args[1])
         .to.have.property('statusMessage', 'Bid available');
@@ -994,7 +992,7 @@ describe('S2S Adapter', function () {
       expect(response).to.have.property('source', 's2s');
 
       const bid_request_passed = addBidResponse.firstCall.args[1];
-      expect(bid_request_passed).to.have.property('adId', '123');
+      expect(bid_request_passed).to.have.property('requestId', '123');
     });
 
     it('handles OpenRTB responses and call BIDDER_DONE', function () {
@@ -1016,7 +1014,6 @@ describe('S2S Adapter', function () {
       const response = addBidResponse.firstCall.args[1];
       expect(response).to.have.property('statusMessage', 'Bid available');
       expect(response).to.have.property('bidderCode', 'appnexus');
-      expect(response).to.have.property('adId', '123');
       expect(response).to.have.property('requestId', '123');
       expect(response).to.have.property('cpm', 0.5);
     });
@@ -1037,7 +1034,6 @@ describe('S2S Adapter', function () {
       expect(response).to.have.property('vastXml', RESPONSE_OPENRTB_VIDEO.seatbid[0].bid[0].adm);
       expect(response).to.have.property('mediaType', 'video');
       expect(response).to.have.property('bidderCode', 'appnexus');
-      expect(response).to.have.property('adId', '123');
       expect(response).to.have.property('requestId', '123');
       expect(response).to.have.property('cpm', 10);
     });

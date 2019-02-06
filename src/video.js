@@ -30,7 +30,7 @@ export const hasNonVideoBidder = adUnit =>
  * @return {Boolean} If object is valid
  */
 export function isValidVideoBid(bid, bidRequests) {
-  const bidRequest = getBidRequest(bid.adId, bidRequests);
+  const bidRequest = getBidRequest(bid.requestId, bidRequests);
 
   const videoMediaType =
     bidRequest && deepAccess(bidRequest, 'mediaTypes.video');
