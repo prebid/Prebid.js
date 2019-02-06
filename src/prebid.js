@@ -1,7 +1,7 @@
 /** @module pbjs */
 
 import { getGlobal } from './prebidGlobal';
-import { flatten, uniques, isGptPubadsDefined, adUnitsFilter, removeRequestId, getLatestHighestCpmBid } from './utils';
+import { flatten, uniques, isGptPubadsDefined, adUnitsFilter, removeRequestId, getLatestHighestCpmBid, isArrayOfNums } from './utils';
 import { listenMessagesFromCreative } from './secureCreatives';
 import { userSync } from './userSync.js';
 import { loadScript } from './adloader';
@@ -68,6 +68,62 @@ function setRenderSize(doc, width, height) {
     doc.defaultView.frameElement.height = height;
   }
 }
+
+const checkAdUnitSetup = hook('sync', function (adUnits) {
+  adUnits.forEach((adUnit) => {
+    const mediaTypes = adUnit.mediaTypes;
+    const normalizedSize = utils.getAdUnitSizes(adUnit);
+
+    if (mediaTypes && mediaTypes.banner) {
+      const banner = mediaTypes.banner;
+      if (banner.sizes) {
+        // make sure we always send [[h,w]] format
+        banner.sizes = normalizedSize;
+        adUnit.sizes = normalizedSize;
+      } else {
+        utils.logError('Detected a mediaTypes.banner object did not include sizes.  This is a required field for the mediaTypes.banner object.  Removing invalid mediaTypes.banner object from request.');
+        delete adUnit.mediaTypes.banner;
+      }
+    } else if (adUnit.sizes) {
+      utils.logWarn('Usage of adUnits.sizes will eventually be deprecated.  Please define size dimensions within the corresponding area of the mediaTypes.<object> (eg mediaTypes.banner.sizes).');
+      adUnit.sizes = normalizedSize;
+    }
+
+    if (mediaTypes && mediaTypes.video) {
+      const video = mediaTypes.video;
+      if (video.playerSize) {
+        if (Array.isArray(video.playerSize) && video.playerSize.length === 1 && video.playerSize.every(plySize => isArrayOfNums(plySize, 2))) {
+          adUnit.sizes = video.playerSize;
+        } else if (isArrayOfNums(video.playerSize, 2)) {
+          let newPlayerSize = [];
+          newPlayerSize.push(video.playerSize);
+          utils.logInfo(`Transforming video.playerSize from [${video.playerSize}] to [[${newPlayerSize}]] so it's in the proper format.`);
+          adUnit.sizes = video.playerSize = newPlayerSize;
+        } else {
+          utils.logError('Detected incorrect configuration of mediaTypes.video.playerSize.  Please specify only one set of dimensions in a format like: [[640, 480]]. Removing invalid mediaTypes.video.playerSize property from request.');
+          delete adUnit.mediaTypes.video.playerSize;
+        }
+      }
+    }
+
+    if (mediaTypes && mediaTypes.native) {
+      const nativeObj = mediaTypes.native;
+      if (nativeObj.image && nativeObj.image.sizes && !Array.isArray(nativeObj.image.sizes)) {
+        utils.logError('Please use an array of sizes for native.image.sizes field.  Removing invalid mediaTypes.native.image.sizes property from request.');
+        delete adUnit.mediaTypes.native.image.sizes;
+      }
+      if (nativeObj.image && nativeObj.image.aspect_ratios && !Array.isArray(nativeObj.image.aspect_ratios)) {
+        utils.logError('Please use an array of sizes for native.image.aspect_ratios field.  Removing invalid mediaTypes.native.image.aspect_ratios property from request.');
+        delete adUnit.mediaTypes.native.image.aspect_ratios;
+      }
+      if (nativeObj.icon && nativeObj.icon.sizes && !Array.isArray(nativeObj.icon.sizes)) {
+        utils.logError('Please use an array of sizes for native.icon.sizes field.  Removing invalid mediaTypes.native.icon.sizes property from request.');
+        delete adUnit.mediaTypes.native.icon.sizes;
+      }
+    }
+  });
+  return adUnits;
+}, 'checkAdUnitSetup');
 
 /// ///////////////////////////////
 //                              //
@@ -342,6 +398,8 @@ $$PREBID_GLOBAL$$.requestBids = hook('async', function ({ bidsBackHandler, timeo
     // otherwise derive adUnitCodes from adUnits
     adUnitCodes = adUnits && adUnits.map(unit => unit.code);
   }
+
+  adUnits = checkAdUnitSetup(adUnits);
 
   /*
    * for a given adunit which supports a set of mediaTypes
