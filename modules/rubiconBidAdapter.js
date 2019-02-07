@@ -441,6 +441,11 @@ export const spec = {
             if (bid.nurl) {
               bidObject.vastUrl = bid.nurl;
             }
+
+            if (utils.deepAccess(bid, 'ext.prebid.targeting')) {
+              bidObject.adserverTargeting = bid.ext.prebid.targeting;
+            }
+
             const videoCacheKey = utils.deepAccess(bid, 'ext.prebid.targeting.hb_uuid');
             if (videoCacheKey) {
               bidObject.vastUrl = videoCacheKey;
