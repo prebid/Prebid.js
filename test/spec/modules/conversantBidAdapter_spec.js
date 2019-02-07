@@ -375,13 +375,13 @@ describe('Conversant adapter tests', function() {
     expect(payload).to.have.deep.nested.property('user.ext.fpc', 12345);
   });
 
-  it('Verify UniversalID publisher commond id support', function() {
+  it('Verify User ID publisher commond id support', function() {
     // clone bidRequests
     let requests = utils.deepClone(bidRequests)
 
     // add pubcid to every entry
     requests.forEach((unit) => {
-      Object.assign(unit, {universalID: {pubcid: 67890}});
+      Object.assign(unit, {userId: {pubcid: 67890}});
     });
     //  construct http post payload
     const payload = spec.buildRequests(requests).data;
