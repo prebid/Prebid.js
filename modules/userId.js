@@ -111,11 +111,14 @@ export const pubCommonIdSubmodule = {
   },
   getId() {
     // If the page includes its own pubcid object, then use that instead.
-    if (typeof window['PublisherCommonId'] === 'object') {
-      return window['PublisherCommonId'].getId();
+    try {
+      if (typeof window['PublisherCommonId'] === 'object') {
+        return window['PublisherCommonId'].getId();
+      }
+    } catch (e) {
+      // Otherwise create a new id.
+      return utils.generateUUID();
     }
-    // Otherwise get the existing cookie or create a new id.
-    return utils.generateUUID();
   }
 };
 
@@ -190,9 +193,8 @@ export function hasGDPRConsent(consentData) {
 
 /**
  * @param {Object[]} submodules
- * @param {function} [processCompleted] - not required, executed when all callbacks have returned responses
  */
-export function processSubmoduleCallbacks(submodules, processCompleted) {
+export function processSubmoduleCallbacks(submodules) {
   submodules.forEach(function(submodule) {
     submodule.callback(function callbackCompleted (idObj) {
       // clear callback, this prop is used to test if all submodule callbacks are complete below
@@ -206,14 +208,6 @@ export function processSubmoduleCallbacks(submodules, processCompleted) {
         submodule.idObj = submodule.submodule.decode(idObj);
       } else {
         utils.logError(`${MODULE_NAME}: ${submodule.submodule.name} - request id responded with an empty value`);
-      }
-
-      // Done when every submodule callback is set to 'undefined'
-      if (submodules.every(item => typeof item.callback === 'undefined')) {
-        // Notify done through calling processCompleted
-        if (typeof processCompleted === 'function') {
-          processCompleted();
-        }
       }
     });
   });
