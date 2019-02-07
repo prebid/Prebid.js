@@ -11,6 +11,7 @@ let expect = require('chai').expect;
 describe('adpod.js', function () {
   let logErrorStub;
   let logWarnStub;
+  let logInfoStub;
 
   describe('callPrebidCacheHook', function () {
     let callbackResult;
@@ -42,6 +43,7 @@ describe('adpod.js', function () {
       afterBidAddedSpy = sinon.spy();
       storeStub = sinon.stub(videoCache, 'store');
       logWarnStub = sinon.stub(utils, 'logWarn');
+      logInfoStub = sinon.stub(utils, 'logInfo');
       addBidToAuctionStub = sinon.stub(auction, 'addBidToAuction').callsFake(function (auctionInstance, bid) {
         auctionBids.push(bid);
       });
@@ -57,6 +59,7 @@ describe('adpod.js', function () {
     afterEach(function() {
       storeStub.restore();
       logWarnStub.restore();
+      logInfoStub.restore();
       addBidToAuctionStub.restore();
       doCallbacksIfTimedoutStub.restore();
       clock.restore();
@@ -354,6 +357,7 @@ describe('adpod.js', function () {
       expect(callbackResult).to.be.null;
       expect(afterBidAddedSpy.calledTwice).to.equal(true);
       expect(storeStub.calledOnce).to.equal(true);
+      expect(logInfoStub.calledOnce).to.equal(true);
       expect(auctionBids.length).to.equal(1);
       expect(auctionBids[0].adId).to.equal('dup_ad_1');
       expect(auctionBids[0].customCacheKey).to.exist.and.to.match(/^5\.00_tech_45s_.*/);

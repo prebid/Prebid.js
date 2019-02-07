@@ -166,6 +166,8 @@ function firePrebidCacheCall(auctionInstance, bidList, afterBidAdded) {
         // when uuid in response is empty string then the key already existed, so this bid wasn't cached
         if (cacheIds[i].uuid !== '') {
           addBidToAuction(auctionInstance, bidList[i]);
+        } else {
+          utils.logInfo(`Detected a bid was not cached because the custom key was already registered.  Attempted to use key: ${bidList[i].customCacheKey}. Bid was: `, bidList[i]);
         }
         afterBidAdded();
       }
