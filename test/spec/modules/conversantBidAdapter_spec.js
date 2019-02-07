@@ -385,7 +385,7 @@ describe('Conversant adapter tests', function() {
     });
     //  construct http post payload
     const payload = spec.buildRequests(requests).data;
-    expect(payload).to.have.deep.property('user.ext.fpc', 67890);
+    expect(payload).to.have.deep.nested.property('user.ext.fpc', 67890);
   });
 
   it('Verify GDPR bid request', function() {

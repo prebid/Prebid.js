@@ -99,10 +99,10 @@ export const spec = {
         imp.banner = banner;
       }
 
-      if (bid.crumbs && bid.crumbs.pubcid) {
-        pubcid = bid.crumbs.pubcid;
-      } else if (bid.userId && bid.userId.pubcid) {
+      if (bid.userId && bid.userId.pubcid) {
         pubcid = bid.userId.pubcid;
+      } else if (bid.crumbs && bid.crumbs.pubcid) {
+        pubcid = bid.crumbs.pubcid;
       }
 
       return imp;
