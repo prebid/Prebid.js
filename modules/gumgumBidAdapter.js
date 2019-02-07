@@ -1,7 +1,7 @@
-import * as utils from 'src/utils'
+import * as utils from '../src/utils'
 
-import { config } from 'src/config'
-import { registerBidder } from 'src/adapters/bidderFactory'
+import { config } from '../src/config'
+import { registerBidder } from '../src/adapters/bidderFactory'
 import includes from 'core-js/library/fn/array/includes';
 
 const BIDDER_CODE = 'gumgum'
@@ -19,6 +19,12 @@ function _getBrowserParams() {
   let topScreen
   let topUrl
   let ggad
+  let ns
+  function getNetworkSpeed () {
+    const connection = window.navigator && (window.navigator.connection || window.navigator.mozConnection || window.navigator.webkitConnection)
+    const Mbps = connection && (connection.downlink || connection.bandwidth)
+    return Mbps ? Math.round(Mbps * 1024) : null // 1 megabit -> 1024 kilobits
+  }
   if (browserParams.vw) {
     // we've already initialized browserParams, just return it.
     return browserParams
@@ -41,11 +47,14 @@ function _getBrowserParams() {
     pu: topUrl,
     ce: utils.cookiesAreEnabled(),
     dpr: topWindow.devicePixelRatio || 1,
-    jcsi: {
-      t: 0,
-      rq: 7
-    }
+    jcsi: JSON.stringify({ t: 0, rq: 8 })
   }
+
+  ns = getNetworkSpeed()
+  if (ns) {
+    browserParams.ns = ns
+  }
+
   ggad = (topUrl.match(/#ggad=(\w+)$/) || [0, 0])[1]
   if (ggad) {
     browserParams[isNaN(ggad) ? 'eAdBuyId' : 'adBuyId'] = ggad
@@ -94,6 +103,12 @@ function isBidRequestValid (bid) {
       utils.logWarn(`[GumGum] No product selected for the placement ${adUnitCode}, please check your implementation.`);
       return false;
   }
+
+  if (params.bidfloor && !(typeof params.bidfloor === 'number' && isFinite(params.bidfloor))) {
+    utils.logWarn('[GumGum] bidfloor must be a Number');
+    return false;
+  }
+
   return true;
 }
 
@@ -116,6 +131,9 @@ function buildRequests (validBidRequests, bidderRequest) {
     const data = {}
     if (pageViewId) {
       data.pv = pageViewId
+    }
+    if (params.bidfloor) {
+      data.fp = params.bidfloor;
     }
     if (params.inScreen) {
       data.t = params.inScreen;

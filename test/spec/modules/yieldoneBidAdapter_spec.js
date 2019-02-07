@@ -210,7 +210,7 @@ describe('yieldoneBidAdapter', function() {
 
   describe('getUserSyncs', function () {
     it('handles empty sync options', function () {
-      expect(spec.getUserSyncs({})).to.be.empty;
+      expect(spec.getUserSyncs({})).to.be.undefined;
     });
 
     it('should return a sync url if iframe syncs are enabled', function () {

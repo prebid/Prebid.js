@@ -225,7 +225,7 @@ describe('RTBHouseAdapter', () => {
             }
           }
         }));
-        expect(imp.banner).to.be.empty;
+        expect(imp.banner).to.be.undefined;
       });
 
       describe('image sizes', () => {

@@ -4,6 +4,8 @@ import {parse as parseQuery} from 'querystring';
 import {config} from 'src/config';
 import find from 'core-js/library/fn/array/find';
 
+var CONSTANTS = require('src/constants.json');
+
 const INTEGRATION = `pbjs_lite_v$prebid.version$`; // $prebid.version$ will be substituted in by gulp in built prebid
 
 describe('the rubicon adapter', function () {
@@ -236,7 +238,7 @@ describe('the rubicon adapter', function () {
             userId: '12346',
             keywords: ['a', 'b', 'c'],
             inventory: {
-              rating: '5-star',
+              rating: '5-star', // This actually should not be sent to frank!! causes 400
               prodtype: ['tech', 'mobile']
             },
             visitor: {
