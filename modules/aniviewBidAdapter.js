@@ -97,8 +97,8 @@ function buildRequests(validBidRequests, bidderRequest) {
 
       if (bidderRequest && bidderRequest.gdprConsent) {
         if (bidderRequest.gdprConsent.gdprApplies) {
-          AV_GDPR = 1;
-          AV_CONSENT = bidderRequest.gdprConsent.consentString
+          s2sParams.AV_GDPR = 1;
+          s2sParams.AV_CONSENT = bidderRequest.gdprConsent.consentString
         }
       }
 
