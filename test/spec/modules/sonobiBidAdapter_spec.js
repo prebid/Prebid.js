@@ -302,6 +302,8 @@ describe('SonobiBidAdapter', function () {
       expect(bidRequests.data.ref).not.to.be.empty
       expect(bidRequests.data.s).not.to.be.empty
       expect(bidRequests.data.hfa).to.equal('PRE-abcd-efg-0101');
+      delete bidRequest[0].userId;
+      delete bidRequest[1].userId;
     })
 
     it('should return a properly formatted request with hfa preferred over commonid', function () {
