@@ -232,8 +232,6 @@ function buildCommonQueryParamsFromBids(bids, bidderRequest) {
     defaultParams.pubcid = bids[0].userId.pubcid;
   } else if (bids[0].crumbs && bids[0].crumbs.pubcid) {
     defaultParams.pubcid = bids[0].crumbs.pubcid;
-  } else if ((bids[0].universalID && bids[0].universalID.pubcid)) {
-    defaultParams.pubcid = bids[0].universalID.pubcid;
   }
 
   return defaultParams;
