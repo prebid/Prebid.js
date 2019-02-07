@@ -30,7 +30,7 @@ const cannedValidBidRequests = [{
   bidder: 'adikteev',
   bidderRequestId: '1203b39fecc6a5',
   crumbs: {pubcid: 'f3371d16-4e8b-42b5-a770-7e5be1fdf03d'},
-  params: {placementId: 4567},
+  params: {adSpaceId: 5084},
   sizes: [[300, 250], [250, 300], [300, 600]],
   transactionId: '58dbd732-7a39-45f1-b23e-1c24051a941c',
 }];
@@ -123,7 +123,7 @@ describe('adikteevBidAdapter', () => {
       const validBid = {
         bidder: 'adikteev',
         params: {
-          placementId: 12345,
+          adSpaceId: 12345,
         },
         mediaTypes: {
           banner: {
@@ -138,7 +138,7 @@ describe('adikteevBidAdapter', () => {
       expect(spec.isBidRequestValid({
         bidder: '', // invalid bidder
         params: {
-          placementId: 12345,
+          adSpaceId: 12345,
         },
         mediaTypes: {
           banner: {
@@ -149,7 +149,7 @@ describe('adikteevBidAdapter', () => {
       expect(spec.isBidRequestValid({
         bidder: 'adikteev',
         params: {
-          placementId: '', // invalid placementId
+          adSpaceId: '', // invalid adSpaceId
         },
         mediaTypes: {
           banner: {
@@ -160,7 +160,7 @@ describe('adikteevBidAdapter', () => {
       expect(spec.isBidRequestValid({
         bidder: 'adikteev',
         params: {
-          placementId: 12345,
+          adSpaceId: 12345,
         },
         mediaTypes: {
           banner: {

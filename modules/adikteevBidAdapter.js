@@ -163,7 +163,7 @@ export const spec = {
     return !!(
       bid &&
       bid.params &&
-      bid.params.placementId &&
+      bid.params.adSpaceId &&
       bid.bidder === BIDDER_CODE &&
       validateSizes(bid.mediaTypes.banner.sizes)
     );
