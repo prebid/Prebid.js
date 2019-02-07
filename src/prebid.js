@@ -8,12 +8,13 @@ import { loadScript } from './adloader';
 import { config } from './config';
 import { auctionManager } from './auctionManager';
 import { targeting, getHighestCpmBidsFromBidPool } from './targeting';
-import { hook } from './hook';
+import { hook, hooks } from './hook';
 import { sessionLoader } from './debugging';
 import includes from 'core-js/library/fn/array/includes';
 import { adunitCounter } from './adUnits';
 import { isRendererRequired, executeRenderer } from './Renderer';
 import { createBid } from './bidfactory';
+import { preloadBidderMappingFile } from './adapters/bidderFactory';
 
 const $$PREBID_GLOBAL$$ = getGlobal();
 const CONSTANTS = require('./constants.json');
@@ -124,6 +125,8 @@ const checkAdUnitSetup = hook('sync', function (adUnits) {
   });
   return adUnits;
 }, 'checkAdUnitSetup');
+
+hooks['checkAdUnitSetup'].before(preloadBidderMappingFile);
 
 /// ///////////////////////////////
 //                              //

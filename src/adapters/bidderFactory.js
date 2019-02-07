@@ -10,10 +10,7 @@ import events from '../events';
 import includes from 'core-js/library/fn/array/includes';
 import { ajax } from '../ajax';
 import { logWarn, logError, parseQueryStringParameters, delayExecution, parseSizesInput, getBidderRequest, flatten, uniques, timestamp, setDataInLocalStorage, getDataFromLocalStorage, deepAccess } from '../utils';
-import { hooks } from '../hook';
-// import { ADPOD } from './adpod';
-
-const ADPOD = 'adpod'; // TODO remove once ADPOD const is imported
+import { ADPOD } from '../mediaTypes';
 
 /**
  * This file aims to support Adapters during the Prebid 0.x -> 1.x transition.
@@ -350,11 +347,7 @@ export function newBidder(spec) {
   }
 }
 
-if (hooks['checkAdUnitSetup']) {
-  hooks['checkAdUnitSetup'].before(preloadBidderMappingFile);
-}
-
-export function preloadBidderMappingFile(adUnits) {
+export function preloadBidderMappingFile(fn, adUnits) {
   let adPodBidders = adUnits
     .filter((adUnit) => deepAccess(adUnit, 'mediaTypes.video.context') === ADPOD)
     .map((adUnit) => adUnit.bids.map((bid) => bid.bidder))
@@ -389,6 +382,7 @@ export function preloadBidderMappingFile(adUnits) {
       }
     }
   });
+  fn.call(this, adUnits);
 }
 
 // check that the bid has a width and height set

@@ -819,7 +819,7 @@ describe('preload mapping url hook', function() {
         }
       },
     });
-    preloadBidderMappingFile(adUnits);
+    preloadBidderMappingFile(sinon.spy(), adUnits);
     expect(fakeTranslationServer.requests.length).to.equal(1);
   });
 
@@ -865,7 +865,7 @@ describe('preload mapping url hook', function() {
         }
       },
     });
-    preloadBidderMappingFile(adUnits);
+    preloadBidderMappingFile(sinon.spy(), adUnits);
     expect(fakeTranslationServer.requests.length).to.equal(2);
   });
 });
