@@ -1094,10 +1094,10 @@ describe('the rubicon adapter', function () {
           });
         });
 
-        describe('universal id config', function() {
-          it('should send tpid_tdid when universalID defines tdid', function () {
+        describe('user id config', function() {
+          it('should send tpid_tdid when userId defines tdid', function () {
             const clonedBid = clone(bidderRequest.bids[0]);
-            clonedBid.universalID = {
+            clonedBid.userId = {
               tdid: 'abcd-efgh-ijkl-mnop-1234'
             };
             let [request] = spec.buildRequests([clonedBid], bidderRequest);
