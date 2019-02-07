@@ -111,14 +111,14 @@ export const pubCommonIdSubmodule = {
   },
   getId() {
     // If the page includes its own pubcid object, then use that instead.
+    let pubcid;
     try {
       if (typeof window['PublisherCommonId'] === 'object') {
-        return window['PublisherCommonId'].getId();
+        pubcid = window['PublisherCommonId'].getId();
       }
-    } catch (e) {
-      // Otherwise create a new id.
-      return utils.generateUUID();
-    }
+    } catch (e) {}
+    // check pubcid and return if valid was otherwise create a new id
+    return (pubcid) || utils.generateUUID();
   }
 };
 
