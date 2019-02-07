@@ -60,10 +60,12 @@ export const spec = {
       payload.us = config.getConfig('userSync').syncsPerBidder;
     }
 
-    if (deepAccess(validBidRequests[0], 'userId.pubcid') || deepAccess(validBidRequests[0], 'params.hfa')) {
-      payload.hfa = deepAccess(validBidRequests[0], 'params.hfa') ? validBidRequests[0].params.hfa : `PRE-${validBidRequests[0].userId.pubcid}`;
-    } else if (deepAccess(validBidRequests[0], 'crumbs.pubcid') || deepAccess(validBidRequests[0], 'params.hfa')) {
-      payload.hfa = deepAccess(validBidRequests[0], 'params.hfa') ? validBidRequests[0].params.hfa : `PRE-${validBidRequests[0].crumbs.pubcid}`;
+    if (deepAccess(validBidRequests[0], 'params.hfa')) {
+      payload.hfa = deepAccess(validBidRequests[0], 'params.hfa');
+    } else if (deepAccess(validBidRequests[0], 'userId.pubcid')) {
+      payload.hfa = `PRE-${validBidRequests[0].userId.pubcid}`;
+    } else if (deepAccess(validBidRequests[0], 'crumbs.pubcid')) {
+      payload.hfa = `PRE-${validBidRequests[0].crumbs.pubcid}`;
     }
 
     if (validBidRequests[0].params.referrer) {
