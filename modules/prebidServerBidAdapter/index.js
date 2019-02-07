@@ -496,7 +496,7 @@ const OPEN_RTB_PROTOCOL = {
       request.ext = { prebid: { aliases } };
     }
 
-    if (bidRequests && bidRequests[0].universalID && typeof bidRequests[0].universalID === 'object' && Object.keys(bidRequests[0].universalID).length) {
+    if (bidRequests && bidRequests[0].userId && typeof bidRequests[0].userId === 'object') {
       if (!request.user) {
         request.user = {};
       }
@@ -506,7 +506,7 @@ const OPEN_RTB_PROTOCOL = {
       if (!request.user.ext.tpid) {
         request.user.ext.tpid = {}
       }
-      Object.assign(request.user.ext.tpid, bidRequests[0].universalID);
+      Object.assign(request.user.ext.tpid, bidRequests[0].userId);
     }
 
     if (bidRequests && bidRequests[0].gdprConsent) {
