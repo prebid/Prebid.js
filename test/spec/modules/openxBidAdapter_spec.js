@@ -941,14 +941,14 @@ describe('OpenxAdapter', function () {
         expect(request[0].data.pubcid).to.equal('c4a4c843-2368-4b5e-b3b1-6ee4702b9ad6');
       });
 
-      it('should send a pubcid query param when universalID.pubcid is defined in the bid requests', function () {
+      it('should send a pubcid query param when userId.pubcid is defined in the bid requests', function () {
         const bidRequestsWithPubcid = [{
           bidder: 'openx',
           params: {
             unit: '11',
             delDomain: 'test-del-domain'
           },
-          universalID: {
+          userId: {
             pubcid: 'c1a4c843-2368-4b5e-b3b1-6ee4702b9ad6'
           },
           adUnitCode: 'adunit-code',
