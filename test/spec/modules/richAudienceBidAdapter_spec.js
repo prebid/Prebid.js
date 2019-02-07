@@ -81,8 +81,7 @@ describe('Rich Audience adapter tests', function () {
       creative_id: '189198063',
       netRevenue: true,
       currency: 'USD',
-      ttl: 300,
-      consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA'
+      ttl: 300
     }
   };
 
@@ -96,8 +95,7 @@ describe('Rich Audience adapter tests', function () {
       netRevenue: true,
       currency: 'USD',
       ttl: 300,
-      vastXML: '<VAST></VAST>',
-      consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA'
+      vastXML: '<VAST></VAST>'
     }
   };
 
@@ -324,17 +322,23 @@ describe('Rich Audience adapter tests', function () {
   it('Verifies user sync', function () {
     var syncs = spec.getUserSyncs({
       iframeEnabled: true
-    }, [BID_RESPONSE]);
+    }, [BID_RESPONSE] , {
+      consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
+      gdprApplies: true
+    });
     expect(syncs).to.have.lengthOf(1);
     expect(syncs[0].type).to.equal('iframe');
     syncs = spec.getUserSyncs({
       iframeEnabled: false
-    }, [BID_RESPONSE]);
+    }, [BID_RESPONSE], {
+      consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
+      gdprApplies: true
+    });
     expect(syncs).to.have.lengthOf(0);
 
     syncs = spec.getUserSyncs({
       iframeEnabled: true
-    }, []);
+    }, [],{consentString:"",gdprApplies:false});
     expect(syncs).to.have.lengthOf(1);
   });
 });

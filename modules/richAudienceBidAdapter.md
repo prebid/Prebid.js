@@ -20,7 +20,7 @@ Please reach out to your account manager for more information.
     var adUnits = [
                 {
                     code: 'test-div1',
-                    sizes: [[300, 250],[300, 600]]
+                    sizes: [[300, 250],[300, 600]],
                     bids: [{
                         bidder: 'richaudience',
                         params: {
@@ -32,7 +32,7 @@ Please reach out to your account manager for more information.
                 },
                 {
                     code: 'test-div2',
-                    sizes: [[728, 90],[970, 250]]
+                    sizes: [[728, 90],[970, 250]],
                     bids: [{
                         bidder: 'richaudience',
                         params: {
@@ -50,7 +50,7 @@ Please reach out to your account manager for more information.
     var adUnits = [
                     {
                         code: 'test-div1',
-                        sizes: [[300, 250],[300, 600]]
+                        sizes: [[300, 250],[300, 600]],
                         bids: [{
                             bidder: 'richaudience',
                             params: {
@@ -63,7 +63,7 @@ Please reach out to your account manager for more information.
                     },
                     {
                         code: 'test-div2',
-                        sizes: [[728, 90],[970, 250]]
+                        sizes: [[728, 90],[970, 250]],
                         },
                         bids: [{
                             bidder: 'richaudience',

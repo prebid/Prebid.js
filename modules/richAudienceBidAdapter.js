@@ -102,7 +102,7 @@ export const spec = {
         bidResponses.push(bidResponse);
       }
     } catch (error) {
-      utils.logError('Error while parsing smart server response', error);
+      utils.logError('Error while parsing Rich Audience response', error);
     }
     return bidResponses
   },
@@ -111,16 +111,17 @@ export const spec = {
      *
      * @param {syncOptions} Publisher prebid configuration
      * @param {serverResponses} Response from the server
+     * @param {gdprConsent} GPDR consent object
      * @returns {Array}
      */
-  getUserSyncs: function (syncOptions, serverResponses) {
+  getUserSyncs: function (syncOptions, serverResponses, gdprConsent) {
     const syncs = [];
 
     var rand = Math.floor(Math.random() * 9999999999);
     var syncUrl = '';
 
-    if (serverResponses.length > 0) {
-      syncUrl = 'https://sync.richaudience.com/dcf3528a0b8aa83634892d50e91c306e/?ord=' + rand + '&pubconsent=' + serverResponses[0].body.consentString + '&euconsent=' + serverResponses[0].body.consentString;
+    if (gdprConsent && typeof gdprConsent.consentString === 'string') {
+      syncUrl = 'https://sync.richaudience.com/dcf3528a0b8aa83634892d50e91c306e/?ord=' + rand + '&pubconsent=' + gdprConsent.consentString + '&euconsent=' + gdprConsent.consentString;
     } else {
       syncUrl = 'https://sync.richaudience.com/dcf3528a0b8aa83634892d50e91c306e/?ord=' + rand;
     }
