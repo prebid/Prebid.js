@@ -1040,6 +1040,7 @@ describe('Unit: Prebid Module', function () {
       });
       adResponse.ad = "<script type='text/javascript' src='http://server.example.com/ad/ad.js'></script>";
       $$PREBID_GLOBAL$$.renderAd(doc, bidId);
+      assert.ok(doc.open, 'open method called');
       assert.ok(doc.write.calledWith(adResponse.ad), 'ad was written to doc');
       assert.ok(doc.close.called, 'close method called');
     });
