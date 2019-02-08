@@ -1,226 +1,233 @@
 import { expect } from 'chai';
-import adLoader from '../../../src/adloader';
-import bidManager from '../../../src/bidmanager';
-import Adapter from '../../../modules/widespaceBidAdapter';
+import { spec } from 'modules/widespaceBidAdapter';
+import includes from 'core-js/library/fn/array/includes';
 
-const ENDPOINT = '//engine.widespace.com/map/engine/hb/dynamic';
+describe('+widespaceAdatperTest', function () {
+  // Dummy bid request
+  const bidRequest = [{
+    'adUnitCode': 'div-gpt-ad-1460505748561-0',
+    'auctionId': 'bf1e57ee-fff2-4304-8143-91aaf423a948',
+    'bidId': '4045696e2278cd',
+    'bidder': 'widespace',
+    'params': {
+      sid: '7b6589bf-95c8-4656-90b9-af9737bb9ad3',
+      currency: 'EUR',
+      demo: {
+        gender: 'M',
+        country: 'Sweden',
+        region: 'Stockholm',
+        postal: '15115',
+        city: 'Stockholm',
+        yob: '1984'
+      }
+    },
+    'bidderRequestId': '37a5f053efef34',
+    'sizes': [[320, 320], [300, 250], [300, 300]],
+    'transactionId': '4f68b713-04ba-4d7f-8df9-643bcdab5efb'
+  }, {
+    'adUnitCode': 'div-gpt-ad-1460505748561-1',
+    'auctionId': 'bf1e57ee-fff2-4304-8143-91aaf423a944',
+    'bidId': '4045696e2278ab',
+    'bidder': 'widespace',
+    'params': {
+      sid: '7b6589bf-95c8-4656-90b9-af9737bb9ad4',
+      demo: {
+        gender: 'M',
+        country: 'Sweden',
+        region: 'Stockholm',
+        postal: '15115',
+        city: 'Stockholm',
+        yob: '1984'
+      }
+    },
+    'bidderRequestId': '37a5f053efef34',
+    'sizes': [[300, 300]],
+    'transactionId': '4f68b713-04ba-4d7f-8df9-643bcdab5efv'
+  }];
 
-const TEST = {
-  BIDDER_CODE: 'widespace',
-  CPM: 2.0,
-  PLACEMENT_CODE: 'aPlacementCode',
-  SID: 'f666bfaf-69cf-4ed9-9262-08247bb274e4',
-  CUR: 'EUR'
-};
-
-const BID_REQUEST = {
-  'bidderCode': TEST.BIDDER_CODE,
-  'requestId': 'e155185b-3eac-4f3c-8182-cdb57a69df3c',
-  'bidderRequestId': '38993e482321e7',
-  'bids': [
-    {
-      'bidder': TEST.BIDDER_CODE,
-      'params': {
-        'sid': TEST.SID,
-        'cur': TEST.CUR
-      },
-      'placementCode': TEST.PLACEMENT_CODE,
-      'sizes': [
-        [320, 320],
-        [320, 250]
-      ],
-      'bidId': '45c7f5afb996c1',
-      'bidderRequestId': '7101db09af0db3',
-      'requestId': 'e155185b-3eac-4f3c-8182-cdb57a69df3d'
+  // Dummy bidderRequest object
+  const bidderRequest = {
+    auctionId: 'bf1e57ee-fff2-4304-8143-91aaf423a944',
+    auctionStart: 1527418994278,
+    bidderCode: 'widespace',
+    bidderRequestId: '37a5f053efef34',
+    timeout: 3000,
+    gdprConsent: {
+      consentString: 'consentString',
+      gdprApplies: true,
+      vendorData: {
+        hasGlobalScope: false
+      }
     }
-  ],
-  'start': 1479664180396,
-  'timeout': 5000
-};
+  };
 
-let bidRequestWithDemoData = BID_REQUEST;
+  // Dummy bid response with ad code
+  const bidResponse = {
+    body: [{
+      'adId': '12345',
+      'bidId': '67890',
+      'code': '<div></div>',
+      'cpm': 6.6,
+      'currency': 'EUR',
+      'height': 300,
+      'netRev': true,
+      'reqId': '224804081406',
+      'status': 'ad',
+      'ttl': 30,
+      'width': 300,
+      'syncPixels': ['https://url1.com/url', 'https://url2.com/url']
+    }],
+    headers: {}
+  };
 
-const BID_RESPONSE = [{
-  	'status': 'ok',
-  	'reqId': '140590112507',
-  	'adId': 13963,
-  	'width': 320,
-  	'height': 320,
-  	'cpm': 2.0,
-  	'currency': 'EUR',
-  	'code': '<p>This is a banner</p>',
-  	'callbackUid': '45c7f5afb996c1',
-  	'callback': 'pbjs.widespaceHandleCB'
-}];
+  // Dummy bid response of noad
+  const bidResponseNoAd = {
+    body: [{
+      'status': 'noad',
+    }],
+    headers: {}
+  };
 
-const BID_NOAD_RESPONSE = [{
-  'status': 'noad',
-  'reqId': '143509454349',
-  'adId': 22,
-  'width': 1,
-  'height': 1,
-  'cpm': 0.0,
-  'currency': 'EUR',
-  'code': '',
-  'callbackUid': '45c7f5afb996c1',
-  'callback': 'pbjs.widespaceHandleCB'
-}]
+  // Appending a div with id of adUnitCode so we can calculate vol
+  const div1 = document.createElement('div');
+  div1.id = bidRequest[0].adUnitCode;
+  document.body.appendChild(div1);
+  const div2 = document.createElement('div');
+  div2.id = bidRequest[0].adUnitCode;
+  document.body.appendChild(div2);
 
-describe('WidespaceAdapter', () => {
-  let adapter;
-  let sandbox;
+  // Adding custom data cookie se we can test cookie is readable
+  const theDate = new Date();
+  const expDate = new Date(theDate.setMonth(theDate.getMonth() + 1)).toGMTString();
+  window.document.cookie = `wsCustomData1={id: test};path=/;expires=${expDate};`;
+  const PERF_DATA = JSON.stringify({perf_status: 'OK', perf_reqid: '226920425154', perf_ms: '747'});
+  window.document.cookie = `wsPerfData123=${PERF_DATA};path=/;expires=${expDate};`;
 
-  beforeEach(() => {
-    adapter = new Adapter();
-    sandbox = sinon.sandbox.create();
-  });
+  // Connect dummy data test
+  const CONNECTION = navigator.connection || navigator.webkitConnection;
+  if (CONNECTION && CONNECTION.type && CONNECTION.downlinkMax) {
+    navigator.connection.downlinkMax = 80;
+    navigator.connection.type = 'wifi';
+  }
 
-  afterEach(() => {
-    sandbox.restore();
-  });
-
-  describe('callBids', () => {
-    it('should exists and be a function', () => {
-      expect(adapter.callBids).to.exist.and.to.be.a('function');
+  describe('+bidRequestValidity', function () {
+    it('bidRequest with sid and currency params', function () {
+      expect(spec.isBidRequestValid({
+        bidder: 'widespace',
+        params: {
+          sid: '7b6589bf-95c8-4656-90b9-af9737bb9ad3',
+          currency: 'EUR'
+        }
+      })).to.equal(true);
     });
 
-    describe('with valid request parameters', () => {
-      beforeEach(() => {
-        sandbox.stub(adLoader, 'loadScript');
-        adapter.callBids(BID_REQUEST);
-      });
-
-      it('should call the endpoint once per valid bid', () => {
-        sinon.assert.callCount(adLoader.loadScript, 1);
-      });
-
-      it('should include required request parameters', () => {
-        const endpointRequest = expect(adLoader.loadScript.firstCall.args[0]);
-        endpointRequest.to.include('sid');
-        endpointRequest.to.include('hb');
-        endpointRequest.to.include('hb.ver');
-        endpointRequest.to.include('hb.callbackUid');
-        endpointRequest.to.include('hb.callback');
-        endpointRequest.to.include('hb.sizes');
-        endpointRequest.to.include('hb.name');
-      });
+    it('-bidRequest with missing sid', function () {
+      expect(spec.isBidRequestValid({
+        bidder: 'widespace',
+        params: {
+          currency: 'EUR'
+        }
+      })).to.equal(false);
     });
 
-    describe('with valid request parameters (demo data)', () => {
-      beforeEach(() => {
-        sandbox.stub(adLoader, 'loadScript');
-        bidRequestWithDemoData = BID_REQUEST;
-      });
-
-      it('should include required request parameters', () => {
-        bidRequestWithDemoData.bids[0].params.demo = {
-          gender: 'F',
-          country: 'UK',
-          region: 'Greater London',
-          postal: 'W1U 8EW',
-          city: 'London',
-          yob: 1981
-        };
-
-        adapter.callBids(bidRequestWithDemoData);
-
-        const endpointRequest = expect(adLoader.loadScript.firstCall.args[0]);
-        endpointRequest.to.include('hb.demo.gender');
-        endpointRequest.to.include('hb.demo.country');
-        endpointRequest.to.include('hb.demo.region');
-        endpointRequest.to.include('hb.demo.postal');
-        endpointRequest.to.include('hb.demo.city');
-        endpointRequest.to.include('hb.demo.yob');
-      });
-
-      it('should not include "hb.demo.gender" as a request parameter, if it hasn\'t been specified', () => {
-        bidRequestWithDemoData.bids[0].params.demo = {
-          country: 'UK',
-          region: 'Greater London',
-          postal: 'W1U 8EW',
-          city: 'London',
-          yob: 1981
-        };
-
-        adapter.callBids(bidRequestWithDemoData);
-
-        const endpointRequest = expect(adLoader.loadScript.firstCall.args[0]);
-        endpointRequest.to.not.include('hb.demo.gender');
-      });
-    });
-
-    describe('with unvalid request parameters', () => {
-      beforeEach(() => {
-        sandbox.stub(adLoader, 'loadScript');
-      });
-
-      it('should not call the endpoint with if there is no request parameters', () => {
-        adapter.callBids({});
-        sinon.assert.callCount(adLoader.loadScript, 0);
-      });
+    it('-bidRequest with missing currency', function () {
+      expect(spec.isBidRequestValid({
+        bidder: 'widespace',
+        params: {
+          sid: '7b6589bf-95c8-4656-90b9-af9737bb9ad3'
+        }
+      })).to.equal(true);
     });
   });
 
-  describe('widespaceHandleCB', () => {
-    it('should exist and be a function', () => {
-      expect($$PREBID_GLOBAL$$.widespaceHandleCB).to.exist.and.to.be.a('function');
+  describe('+bidRequest', function () {
+    const request = spec.buildRequests(bidRequest, bidderRequest);
+    const UrlRegExp = /^((ftp|http|https):)?\/\/[^ "]+$/;
+
+    it('-bidRequest method is POST', function () {
+      expect(request[0].method).to.equal('POST');
+    });
+
+    it('-bidRequest url is valid', function () {
+      expect(UrlRegExp.test(request[0].url)).to.equal(true);
+    });
+
+    it('-bidRequest data exist', function () {
+      expect(request[0].data).to.exist;
+    });
+
+    it('-bidRequest data is form data', function () {
+      expect(typeof request[0].data).to.equal('string');
+    });
+
+    it('-bidRequest options have header type', function () {
+      expect(request[0].options.contentType).to.exist;
+    });
+
+    it('-cookie test for wsCustomData ', function () {
+      expect(request[0].data.indexOf('hb.cd') > -1).to.equal(true);
     });
   });
 
-  describe('respond with a successful bid', () => {
-    let successfulBid,
-      placementCode;
+  describe('+interpretResponse', function () {
+    it('-required params available in response', function () {
+      const result = spec.interpretResponse(bidResponse, bidRequest);
+      let requiredKeys = [
+        'requestId',
+        'cpm',
+        'width',
+        'height',
+        'creativeId',
+        'currency',
+        'netRevenue',
+        'ttl',
+        'referrer',
+        'ad'
+      ];
+      const resultKeys = Object.keys(result[0]);
+      requiredKeys.forEach((key) => {
+        expect(includes(resultKeys, key)).to.equal(true);
+      });
 
-    beforeEach(() => {
-      sandbox.stub(bidManager, 'addBidResponse');
-      sandbox.stub(adLoader, 'loadScript');
-
-      adapter.callBids(BID_REQUEST);
-      $$PREBID_GLOBAL$$._bidsRequested.push(BID_REQUEST);
-      $$PREBID_GLOBAL$$.widespaceHandleCB(BID_RESPONSE);
-
-      successfulBid = bidManager.addBidResponse.firstCall.args[1];
-      placementCode = bidManager.addBidResponse.firstCall.args[0];
+      // Each value except referrer should not be empty|null|undefined
+      result.forEach((res) => {
+        Object.keys(res).forEach((resKey) => {
+          if (resKey !== 'referrer') {
+            expect(res[resKey]).to.not.be.null;
+            expect(res[resKey]).to.not.be.undefined;
+            expect(res[resKey]).to.not.equal('');
+          }
+        });
+      });
     });
 
-    it('should add one bid', () => {
-      sinon.assert.calledOnce(bidManager.addBidResponse);
+    it('-empty result if noad responded', function () {
+      const noAdResult = spec.interpretResponse(bidResponseNoAd, bidRequest);
+      expect(noAdResult.length).to.equal(0);
     });
 
-    it('should use the CPM returned by the server', () => {
-      expect(successfulBid).to.have.property('cpm', TEST.CPM);
-    });
-
-    it('should have an OK statusCode', () => {
-      expect(successfulBid.getStatusCode()).to.eql(1);
-    });
-
-    it('should have a valid size', () => {
-      const bidSize = [successfulBid.width, successfulBid.height]
-      expect(bidSize).to.eql(BID_REQUEST.bids[0].sizes[0]);
-    });
-
-    it('should recive right placementCode', () => {
-      expect(placementCode).to.eql(TEST.PLACEMENT_CODE);
+    it('-empty response should not breake anything in adapter', function () {
+      const noResponse = spec.interpretResponse({}, bidRequest);
+      expect(noResponse.length).to.equal(0);
     });
   });
 
-  describe('respond with a no-ad', () => {
-    let noadBid;
+  describe('+getUserSyncs', function () {
+    it('-always return an array', function () {
+      const userSync_test1 = spec.getUserSyncs({}, [bidResponse]);
+      expect(Array.isArray(userSync_test1)).to.equal(true);
 
-    beforeEach(() => {
-      sandbox.stub(bidManager, 'addBidResponse');
-      sandbox.stub(adLoader, 'loadScript');
+      const userSync_test2 = spec.getUserSyncs({}, [bidResponseNoAd]);
+      expect(Array.isArray(userSync_test2)).to.equal(true);
 
-      adapter.callBids(BID_REQUEST);
-      $$PREBID_GLOBAL$$._bidsRequested.push(BID_REQUEST);
-      $$PREBID_GLOBAL$$.widespaceHandleCB(BID_NOAD_RESPONSE);
+      const userSync_test3 = spec.getUserSyncs({}, [bidResponse, bidResponseNoAd]);
+      expect(Array.isArray(userSync_test3)).to.equal(true);
 
-      noadBid = bidManager.addBidResponse.firstCall.args[1];
-    });
+      const userSync_test4 = spec.getUserSyncs();
+      expect(Array.isArray(userSync_test4)).to.equal(true);
 
-    it('should have an error statusCode', () => {
-      expect(noadBid.getStatusCode()).to.eql(2);
+      const userSync_test5 = spec.getUserSyncs({}, []);
+      expect(Array.isArray(userSync_test5)).to.equal(true);
     });
   });
 });

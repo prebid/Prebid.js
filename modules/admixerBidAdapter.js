@@ -1,88 +1,74 @@
-var bidfactory = require('src/bidfactory.js');
-var bidmanager = require('src/bidmanager.js');
-var Ajax = require('src/ajax');
-var utils = require('src/utils.js');
-var adaptermanager = require('src/adaptermanager');
+import * as utils from '../src/utils';
+import {registerBidder} from '../src/adapters/bidderFactory';
 
-/**
- * Adapter for requesting bids from Admixer.
- *
- * @returns {{callBids: _callBids,responseCallback: _responseCallback}}
- */
-var AdmixerAdapter = function AdmixerAdapter() {
-  var invUrl = '//inv-nets.admixer.net/prebid.aspx';
-  var invVastUrl = '//inv-nets.admixer.net/videoprebid.aspx';
-
-  function _callBids(data) {
-    var bids = data.bids || [];
-    for (var i = 0, ln = bids.length; i < ln; i++) {
-      var bid = bids[i];
-      var params = {
-        'sizes': utils.parseSizesInput(bid.sizes).join('-'),
-        'zone': bid.params && bid.params.zone,
-        'callback_uid': bid.placementCode
-      };
-      if (params.zone) {
-        if (bid.mediaType === 'video') {
-          var videoParams = {};
-          if (typeof bid.video === 'object') {
-            Object.assign(videoParams, bid.video);
-          }
-          Object.assign(videoParams, params);
-          _requestBid(invVastUrl, params);
-        } else {
-          _requestBid(invUrl, params);
-        }
-      } else {
-        var bidObject = bidfactory.createBid(2);
-        bidObject.bidderCode = 'admixer';
-        bidmanager.addBidResponse(params.callback_uid, bidObject);
+const BIDDER_CODE = 'admixer';
+const ENDPOINT_URL = '//inv-nets.admixer.net/prebid.1.0.aspx';
+export const spec = {
+  code: BIDDER_CODE,
+  aliases: [],
+  supportedMediaTypes: ['banner', 'video'],
+  /**
+   * Determines whether or not the given bid request is valid.
+   *
+   * @param {BidRequest} bid The bid params to validate.
+   * @return boolean True if this is a valid bid, and false otherwise.
+   */
+  isBidRequestValid: function (bid) {
+    return !!bid.params.zone;
+  },
+  /**
+   * Make a server request from the list of BidRequests.
+   *
+   * @param {bidderRequest} - bidderRequest.bids[] is an array of AdUnits and bids
+   * @return ServerRequest Info describing the request to the server.
+   */
+  buildRequests: function (bidderRequest) {
+    const payload = {
+      imps: [],
+      referrer: encodeURIComponent(utils.getTopWindowUrl()),
+    };
+    bidderRequest.forEach((bid) => {
+      if (bid.bidder === BIDDER_CODE) {
+        payload.imps.push(bid);
       }
-    }
-  }
-
-  function _requestBid(url, params) {
-    Ajax.ajax(url, _responseCallback, params, {method: 'GET', withCredentials: true});
-  }
-
-  function _responseCallback(adUnit) {
+    });
+    const payloadString = JSON.stringify(payload);
+    return {
+      method: 'GET',
+      url: ENDPOINT_URL,
+      data: `data=${payloadString}`,
+    };
+  },
+  /**
+   * Unpack the response from the server into a list of bids.
+   *
+   * @param {*} serverResponse A successful response from the server.
+   * @return {Bid[]} An array of bids which were nested inside the server.
+   */
+  interpretResponse: function (serverResponse, bidRequest) {
+    const bidResponses = [];
+    // loop through serverResponses {
     try {
-      adUnit = JSON.parse(adUnit);
-    } catch (_error) {
-      adUnit = {result: {cpm: 0}};
-      utils.logError(_error);
+      serverResponse = serverResponse.body;
+      serverResponse.forEach((bidResponse) => {
+        const bidResp = {
+          requestId: bidResponse.bidId,
+          cpm: bidResponse.cpm,
+          width: bidResponse.width,
+          height: bidResponse.height,
+          ad: bidResponse.ad,
+          ttl: bidResponse.ttl,
+          creativeId: bidResponse.creativeId,
+          netRevenue: bidResponse.netRevenue,
+          currency: bidResponse.currency,
+          vastUrl: bidResponse.vastUrl,
+        };
+        bidResponses.push(bidResp);
+      });
+    } catch (e) {
+      utils.logError(e);
     }
-    var adUnitCode = adUnit.callback_uid;
-    var bid = adUnit.result;
-    var bidObject;
-    if (bid.cpm > 0) {
-      bidObject = bidfactory.createBid(1);
-      bidObject.bidderCode = 'admixer';
-      bidObject.cpm = bid.cpm;
-      if (bid.vastUrl) {
-        bidObject.mediaType = 'video';
-        bidObject.vastUrl = bid.vastUrl;
-        bidObject.descriptionUrl = bid.vastUrl;
-      } else {
-        bidObject.ad = bid.ad;
-      }
-      bidObject.width = bid.width;
-      bidObject.height = bid.height;
-    } else {
-      bidObject = bidfactory.createBid(2);
-      bidObject.bidderCode = 'admixer';
-    }
-    bidmanager.addBidResponse(adUnitCode, bidObject);
+    return bidResponses;
   }
-
-  return {
-    callBids: _callBids,
-    responseCallback: _responseCallback
-  };
 };
-
-adaptermanager.registerBidAdapter(new AdmixerAdapter(), 'admixer', {
-  supportedMediaTypes: ['video']
-});
-
-module.exports = AdmixerAdapter;
+registerBidder(spec);

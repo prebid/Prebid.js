@@ -1,15 +1,9 @@
-import { getBidRequest } from 'src/utils';
+import * as utils from '../src/utils';
+import {registerBidder} from '../src/adapters/bidderFactory';
+import {config} from '../src/config';
 
-let CONSTANTS = require('src/constants');
-let bidmanager = require('src/bidmanager');
-let bidfactory = require('src/bidfactory');
-let adloader = require('src/adloader');
-let utils = require('src/utils');
-let adaptermanager = require('src/adaptermanager');
-let Adapter = require('src/adapter').default;
-
-let ORBITSOFT_BIDDERCODE = 'orbitsoft';
-let styleParamsToFieldsMap = {
+const BIDDER_CODE = 'orbitsoft';
+let styleParamsMap = {
   'title.family': 'f1', // headerFont
   'title.size': 'fs1', // headerFontSize
   'title.weight': 'w1', // headerWeight
@@ -29,200 +23,125 @@ let styleParamsToFieldsMap = {
   'colors.border': 'c1', // borderColor
   'colors.link': 'c6', // lnkColor
 };
-
-let OrbitsoftAdapter = function OrbitsoftAdapter() {
-  let baseAdapter = new Adapter(ORBITSOFT_BIDDERCODE);
-
-  baseAdapter.callBids = function(params) {
-    let bids = params.bids || [];
-
-    for (let i = 0; i < bids.length; i++) {
-      let bidRequest = bids[i];
-      let callbackId = bidRequest.bidId;
-      let jptCall = buildJPTCall(bidRequest, callbackId);
-
-      if (jptCall) {
-        adloader.loadScript(jptCall);
-      } else {
-        // indicate that there is no bid for this placement
-        let bid = bidfactory.createBid(CONSTANTS.STATUS.NO_BID, bidRequest);
-        bid.bidderCode = params.bidderCode;
-        bidmanager.addBidResponse(bidRequest.placementCode, bid);
+export const spec = {
+  code: BIDDER_CODE,
+  aliases: ['oas', '152media'], // short code and customer aliases
+  isBidRequestValid: function (bid) {
+    switch (true) {
+      case !('params' in bid):
+        utils.logError(bid.bidder + ': No required params');
+        return false;
+      case !(bid.params.placementId):
+        utils.logError(bid.bidder + ': No required param placementId');
+        return false;
+      case !(bid.params.requestUrl):
+        utils.logError(bid.bidder + ': No required param requestUrl');
+        return false;
+    }
+    return true;
+  },
+  buildRequests: function (validBidRequests) {
+    let bidRequest;
+    let serverRequests = [];
+    for (let i = 0; i < validBidRequests.length; i++) {
+      bidRequest = validBidRequests[i];
+      let bidRequestParams = bidRequest.params;
+      let callbackId = utils.getUniqueIdentifierStr();
+      let placementId = utils.getBidIdParameter('placementId', bidRequestParams);
+      let requestUrl = utils.getBidIdParameter('requestUrl', bidRequestParams);
+      let referrer = utils.getBidIdParameter('ref', bidRequestParams);
+      let location = utils.getBidIdParameter('loc', bidRequestParams);
+      // Append location & referrer
+      if (location === '') {
+        location = utils.getTopWindowUrl();
       }
-    }
-  }
-
-  function buildJPTCall(bid, callbackId) {
-    // Determine tag params
-    let placementId = utils.getBidIdParameter('placementId', bid.params);
-
-    let referrer = utils.getBidIdParameter('ref', bid.params);
-    let location = utils.getBidIdParameter('loc', bid.params);
-    let jptCall = utils.getBidIdParameter('requestUrl', bid.params);
-    if (jptCall.length === 0) {
-      // No param requestUrl
-      // @if NODE_ENV='debug'
-      utils.logMessage('No param requestUrl');
-      // @endif
-      return null;
-    } else {
-      jptCall += '?';
-    }
-
-    jptCall = utils.tryAppendQueryString(jptCall, 'callback', '$$PREBID_GLOBAL$$.handleOASCB');
-    jptCall = utils.tryAppendQueryString(jptCall, 'callback_uid', callbackId);
-    jptCall = utils.tryAppendQueryString(jptCall, 'scid', placementId);
-
-    // Sizes takes a bit more logic
-    let sizeQueryString;
-    let parsedSizes = utils.parseSizesInput(bid.sizes);
-
-    // Combine string into proper query string
-    let parsedSizesLength = parsedSizes.length;
-    if (parsedSizesLength > 0) {
-      // First value should be "size"
-      sizeQueryString = 'size=' + parsedSizes[0];
-      jptCall += sizeQueryString + '&';
-    }
-
-    // Append custom attributes:
-    let paramsCopy = Object.assign({}, bid.params);
-
-    // Delete attributes already used
-    delete paramsCopy.placementId;
-    delete paramsCopy.referrer;
-    delete paramsCopy.style;
-    delete paramsCopy.customParams;
-
-    // Get the reminder
-    jptCall += utils.parseQueryStringParameters(paramsCopy);
-
-    // Append location & referrer
-    if (location === '') {
-      location = utils.getTopWindowUrl();
-    }
-    if (referrer === '') {
-      referrer = window.top.document.referrer;
-    }
-    jptCall = utils.tryAppendQueryString(jptCall, 'loc', location);
-    jptCall = utils.tryAppendQueryString(jptCall, 'ref', referrer);
-
-    // Remove the trailing "&"
-    jptCall = removeTrailingAmp(jptCall);
-
-    // @if NODE_ENV='debug'
-    utils.logMessage('jpt request built: ' + jptCall);
-    // @endif
-
-    // Append a timer here to track latency
-    bid.startTime = new Date().getTime();
-
-    return jptCall;
-  }
-
-  // Remove the trailing "&"
-  function removeTrailingAmp(url) {
-    if (url.lastIndexOf('&') === url.length - 1) {
-      url = url.substring(0, url.length - 1);
-    }
-    return url;
-  }
-
-  // Expose the callback to the global object
-  $$PREBID_GLOBAL$$.handleOASCB = function (jptResponseObj) {
-    let bidCode;
-
-    if (jptResponseObj && jptResponseObj.callback_uid) {
-      let responseCPM;
-      let id = jptResponseObj.callback_uid;
-      let placementCode = '';
-      let bidObj = getBidRequest(id);
-      if (bidObj) {
-        bidCode = bidObj.bidder;
-
-        placementCode = bidObj.placementCode;
-
-        // Set the status
-        bidObj.status = CONSTANTS.STATUS.GOOD;
+      if (referrer === '') {
+        referrer = utils.getTopWindowReferrer();
       }
 
-      // @if NODE_ENV='debug'
-      utils.logMessage('JSONP callback function called for ad ID: ' + id);
-      // @endif
-
-      let bid = [];
-      if (jptResponseObj.cpm && jptResponseObj.cpm !== 0) {
-        // Store bid response
-        responseCPM = jptResponseObj.cpm;
-        // Bid status is good (indicating 1)
-        bid = bidfactory.createBid(CONSTANTS.STATUS.GOOD, bidObj);
-        bid.bidderCode = bidCode;
-        bid.cpm = responseCPM;
-        bid.adUrl = jptResponseObj.content_url;
-        bid.width = jptResponseObj.width;
-        bid.height = jptResponseObj.height;
-
-        // Styles params
-        let styles = utils.getBidIdParameter('style', bidObj.params);
-        let stylesParams = {};
-        for (let currentValue in styles) {
-          if (styles.hasOwnProperty(currentValue)) {
-            let currentStyle = styles[currentValue];
-            for (let field in currentStyle) {
-              if (currentStyle.hasOwnProperty(field)) {
-                let styleField = styleParamsToFieldsMap[currentValue + '.' + field];
-                if (styleField !== undefined) {
-                  stylesParams[styleField] = currentStyle[field];
-                }
+      // Styles params
+      let stylesParams = utils.getBidIdParameter('style', bidRequestParams);
+      let stylesParamsArray = {};
+      for (let currentValue in stylesParams) {
+        if (stylesParams.hasOwnProperty(currentValue)) {
+          let currentStyle = stylesParams[currentValue];
+          for (let field in currentStyle) {
+            if (currentStyle.hasOwnProperty(field)) {
+              let styleField = styleParamsMap[currentValue + '.' + field];
+              if (typeof styleField !== 'undefined') {
+                stylesParamsArray[styleField] = currentStyle[field];
               }
             }
           }
         }
-        bid.adUrl += '&' + utils.parseQueryStringParameters(stylesParams);
-
-        // Custom params
-        let customParams = utils.getBidIdParameter('customParams', bidObj.params);
-        let customParamsArray = {};
-        for (let customField in customParams) {
-          if (customParams.hasOwnProperty(customField)) {
-            customParamsArray['c.' + customField] = customParams[customField];
-          }
-        }
-        let customParamsLink = utils.parseQueryStringParameters(customParamsArray);
-        if (customParamsLink) {
-          // Don't append a "&" here, we have already done it in parseQueryStringParameters
-          bid.adUrl += customParamsLink;
-        }
-
-        // Remove the trailing "&"
-        bid.adUrl = removeTrailingAmp(bid.adUrl);
-
-        bidmanager.addBidResponse(placementCode, bid);
-      } else {
-        // No response data
-        // @if NODE_ENV='debug'
-        utils.logMessage('No prebid response from Orbitsoft for placement code ' + placementCode);
-        // @endif
-        // indicate that there is no bid for this placement
-        bid = bidfactory.createBid(CONSTANTS.STATUS.NO_BID, bidObj);
-        bid.bidderCode = bidCode;
-        bidmanager.addBidResponse(placementCode, bid);
       }
-    } else {
-      // No response data
-      // @if NODE_ENV='debug'
-      utils.logMessage('No prebid response for placement');
-      // @endif
+      // Custom params
+      let customParams = utils.getBidIdParameter('customParams', bidRequestParams);
+      let customParamsArray = {};
+      for (let customField in customParams) {
+        if (customParams.hasOwnProperty(customField)) {
+          customParamsArray['c.' + customField] = customParams[customField];
+        }
+      }
+
+      // Sizes params (not supports by server, for future features)
+      let sizesParams = bidRequest.sizes;
+      let parsedSizes = utils.parseSizesInput(sizesParams);
+
+      serverRequests.push({
+        method: 'GET',
+        url: requestUrl,
+        data: Object.assign({
+          'scid': placementId,
+          'callback_uid': callbackId,
+          'loc': location,
+          'ref': referrer,
+          'size': parsedSizes
+        }, stylesParamsArray, customParamsArray),
+        options: {withCredentials: false},
+        bidRequest: bidRequest
+      });
     }
-  };
+    return serverRequests;
+  },
+  interpretResponse: function (serverResponse, request) {
+    let bidResponses = [];
+    if (!serverResponse || serverResponse.error) {
+      utils.logError(BIDDER_CODE + ': Server response error');
+      return bidResponses;
+    }
 
-  return Object.assign(this, {
-    callBids: baseAdapter.callBids,
-    setBidderCode: baseAdapter.setBidderCode,
-    buildJPTCall: buildJPTCall
-  });
+    const serverBody = serverResponse.body;
+    if (!serverBody) {
+      utils.logError(BIDDER_CODE + ': Empty bid response');
+      return bidResponses;
+    }
+
+    const CPM = serverBody.cpm;
+    const WIDTH = serverBody.width;
+    const HEIGHT = serverBody.height;
+    const CREATIVE = serverBody.content_url;
+    const CALLBACK_UID = serverBody.callback_uid;
+    const TIME_TO_LIVE = config.getConfig('_bidderTimeout');
+    const REFERER = utils.getTopWindowUrl();
+    let bidRequest = request.bidRequest;
+    if (CPM > 0 && WIDTH > 0 && HEIGHT > 0) {
+      let bidResponse = {
+        requestId: bidRequest.bidId,
+        cpm: CPM,
+        width: WIDTH,
+        height: HEIGHT,
+        creativeId: CALLBACK_UID,
+        ttl: TIME_TO_LIVE,
+        referrer: REFERER,
+        currency: 'USD',
+        netRevenue: true,
+        adUrl: CREATIVE
+      };
+      bidResponses.push(bidResponse);
+    }
+
+    return bidResponses;
+  }
 };
-
-adaptermanager.registerBidAdapter(new OrbitsoftAdapter(), ORBITSOFT_BIDDERCODE);
-
-module.exports = OrbitsoftAdapter;
+registerBidder(spec);

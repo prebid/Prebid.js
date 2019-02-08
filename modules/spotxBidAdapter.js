@@ -1,143 +1,417 @@
-import Adapter from 'src/adapter';
-import bidfactory from 'src/bidfactory';
-import bidmanager from 'src/bidmanager';
-import adLoader from 'src/adloader';
-import * as utils from 'src/utils';
-import { STATUS } from 'src/constants';
-import adaptermanager from 'src/adaptermanager';
+import * as utils from '../src/utils';
+import { Renderer } from '../src/Renderer';
+import { registerBidder } from '../src/adapters/bidderFactory';
+import { VIDEO } from '../src/mediaTypes';
 
-function Spotx() {
-  let baseAdapter = new Adapter('Spotx');
-  let bidReq;
-  let KVP_Object;
+const BIDDER_CODE = 'spotx';
+const URL = '//search.spotxchange.com/openrtb/2.3/dados/';
+const ORTB_VERSION = '2.3';
 
-  const _defaultBidderSettings = {
-    alwaysUseBid: true,
-    adserverTargeting: [
-      {
-        key: 'hb_adid',
-        val: function (bidResponse) {
-          return bidResponse.spotx_ad_key;
+export const spec = {
+  code: BIDDER_CODE,
+  aliases: ['spotx'],
+  supportedMediaTypes: [VIDEO],
+
+  /**
+   * Determines whether or not the given bid request is valid.
+   * From Prebid.js: isBidRequestValid - Verify the the AdUnits.bids, respond with true (valid) or false (invalid).
+   *
+   * @param {object} bid The bid to validate.
+   * @return boolean True if this is a valid bid, and false otherwise.
+   */
+  isBidRequestValid: function(bid) {
+    if (bid && typeof bid.params !== 'object') {
+      utils.logError(BIDDER_CODE + ': params is not defined or is incorrect in the bidder settings.');
+      return false;
+    }
+
+    if (!utils.deepAccess(bid, 'mediaTypes.video')) {
+      utils.logError(BIDDER_CODE + ': mediaTypes.video is not present in the bidder settings.');
+      return false;
+    }
+
+    const playerSize = utils.deepAccess(bid, 'mediaTypes.video.playerSize');
+    if (!playerSize || !utils.isArray(playerSize)) {
+      utils.logError(BIDDER_CODE + ': mediaTypes.video.playerSize is not defined in the bidder settings.');
+      return false;
+    }
+
+    if (!utils.getBidIdParameter('channel_id', bid.params)) {
+      utils.logError(BIDDER_CODE + ': channel_id is not present in bidder params');
+      return false;
+    }
+
+    if (utils.deepAccess(bid, 'mediaTypes.video.context') == 'outstream' || utils.deepAccess(bid, 'params.ad_unit') == 'outstream') {
+      if (!utils.getBidIdParameter('outstream_function', bid.params)) {
+        if (!utils.getBidIdParameter('outstream_options', bid.params)) {
+          utils.logError(BIDDER_CODE + ': please define outstream_options parameter or override the default SpotX outstream rendering by defining your own Outstream function using field outstream_function.');
+          return false;
+        }
+        if (!utils.getBidIdParameter('slot', bid.params.outstream_options)) {
+          utils.logError(BIDDER_CODE + ': please define parameters slot outstream_options object in the configuration.');
+          return false;
         }
       }
-    ]
-  };
-
-  bidmanager.registerDefaultBidderSetting('spotx', _defaultBidderSettings);
-
-  baseAdapter.callBids = function(bidRequest) {
-    if (!bidRequest || !bidRequest.bids || bidRequest.bids.length === 0) {
-      return;
-    }
-    bidReq = bidRequest.bids[0] || [];
-
-    if (!validateParams(bidReq)) {
-      console.log('Bid Request does not contain valid parameters.');
-      return;
     }
 
-    loadDSDK();
-  };
-
-  // Load the SpotX Direct AdOS SDK onto the page
-  function loadDSDK() {
-    var channelId = bidReq.params.video.channel_id;
-    adLoader.loadScript('//js.spotx.tv/directsdk/v1/' + channelId + '.js', initDSDK, true);
-  }
-
-  // We have a Direct AdOS SDK! Set options and initialize it!
-  function initDSDK() {
-    var options = bidReq.params.video;
-
-    // If we are passed a id string set the slot and video slot to the element using that id.
-    if (typeof options.slot === 'string') {
-      options.slot = document.getElementById(bidReq.params.video.slot);
-    }
-    if (typeof options.video_slot === 'string') {
-      options.video_slot = document.getElementById(bidReq.params.video.video_slot);
-    }
-
-    var directAdOS = new SpotX.DirectAdOS(options);
-
-    directAdOS.getAdServerKVPs().then(function(adServerKVPs) {
-      // Got an ad back. Build a successful response.
-      var resp = {
-        bids: []
-      };
-      var bid = {};
-
-      bid.cmpID = bidReq.params.video.channel_id;
-      bid.cpm = adServerKVPs.spotx_bid;
-      bid.url = adServerKVPs.spotx_ad_key;
-      bid.cur = 'USD';
-      bid.bidderCode = 'spotx';
-      var sizes = utils.isArray(bidReq.sizes[0]) ? bidReq.sizes[0] : bidReq.sizes;
-      bid.height = sizes[1];
-      bid.width = sizes[0];
-      resp.bids.push(bid);
-      KVP_Object = adServerKVPs;
-      handleResponse(resp);
-    }, function() {
-      // No ad...
-      handleResponse()
-    });
-  }
-
-  function createBid(status) {
-    var bid = bidfactory.createBid(status, utils.getBidRequest(bidReq.bidId));
-
-    // Stuff we have no matter what
-    bid.bidderCode = bidReq.bidder;
-    bid.placementCode = bidReq.placementCode;
-    bid.requestId = bidReq.requestId;
-    bid.code = bidReq.bidder;
-
-    // Stuff we only get with a successful response
-    if (status === STATUS.GOOD && KVP_Object) {
-      let url = '//search.spotxchange.com/ad/vast.html?key=' + KVP_Object.spotx_ad_key;
-      bid.mediaType = 'video';
-
-      bid.cpm = KVP_Object.spotx_bid;
-      bid.vastUrl = url;
-      bid.spotx_ad_key = KVP_Object.spotx_ad_key;
-
-      var sizes = utils.isArray(bidReq.sizes[0]) ? bidReq.sizes[0] : bidReq.sizes;
-      bid.height = sizes[1];
-      bid.width = sizes[0];
-    }
-
-    return bid;
-  }
-
-  /* Notify Prebid of bid responses so bids can get in the auction */
-  function handleResponse(response) {
-    if (!response || !response.bids || !response.bids.length) {
-      bidmanager.addBidResponse(bidReq.placementCode, createBid(STATUS.NO_BID));
-    } else {
-      bidmanager.addBidResponse(bidReq.placementCode, createBid(STATUS.GOOD, response.bids[0]));
-    }
-  }
-
-  function validateParams(request) {
-    if (typeof request.params !== 'object' && typeof request.params.video !== 'object') {
-      return false;
-    }
-
-    // Check that all of our required parameters are defined.
-    if (bidReq.params.video.channel_id === undefined || bidReq.params.video.slot === undefined || bidReq.params.video.video_slot === undefined) {
-      return false;
-    }
     return true;
-  }
+  },
 
-  return Object.assign(this, {
-    callBids: baseAdapter.callBids,
-    setBidderCode: baseAdapter.setBidderCode
-  });
+  /**
+   * Make a server request from the list of BidRequests.
+   * from Prebid.js: buildRequests - Takes an array of valid bid requests, all of which are guaranteed to have passed the isBidRequestValid() test.
+   *
+   * @param {BidRequest[]} bidRequests A non-empty list of bid requests which should be sent to the Server.
+   * @return ServerRequest Info describing the request to the server.
+   */
+  buildRequests: function(bidRequests, bidderRequest) {
+    const page = bidderRequest.refererInfo.referer;
+    const isPageSecure = !!page.match(/^https:/)
+
+    const siteId = '';
+    const spotxRequests = bidRequests.map(function(bid) {
+      const channelId = utils.getBidIdParameter('channel_id', bid.params);
+      let pubcid = null;
+
+      const playerSize = utils.deepAccess(bid, 'mediaTypes.video.playerSize');
+      const contentWidth = playerSize[0][0];
+      const contentHeight = playerSize[0][1];
+
+      const secure = isPageSecure || (utils.getBidIdParameter('secure', bid.params) ? 1 : 0);
+
+      const ext = {
+        sdk_name: 'Prebid 1+',
+        versionOrtb: ORTB_VERSION
+      };
+
+      if (utils.getBidIdParameter('ad_volume', bid.params) != '') {
+        ext.ad_volume = utils.getBidIdParameter('ad_volume', bid.params);
+      }
+
+      if (utils.getBidIdParameter('ad_unit', bid.params) != '') {
+        ext.ad_unit = utils.getBidIdParameter('ad_unit', bid.params);
+      }
+
+      if (utils.getBidIdParameter('outstream_options', bid.params) != '') {
+        ext.outstream_options = utils.getBidIdParameter('outstream_options', bid.params);
+      }
+
+      if (utils.getBidIdParameter('outstream_function', bid.params) != '') {
+        ext.outstream_function = utils.getBidIdParameter('outstream_function', bid.params);
+      }
+
+      if (utils.getBidIdParameter('custom', bid.params) != '') {
+        ext.custom = utils.getBidIdParameter('custom', bid.params);
+      }
+
+      if (utils.getBidIdParameter('pre_market_bids', bid.params) != '' && utils.isArray(utils.getBidIdParameter('pre_market_bids', bid.params))) {
+        const preMarketBids = utils.getBidIdParameter('pre_market_bids', bid.params);
+        ext.pre_market_bids = [];
+        for (let i in preMarketBids) {
+          const preMarketBid = preMarketBids[i];
+          let vastStr = '';
+          if (preMarketBid['vast_url']) {
+            vastStr = '<?xml version="1.0" encoding="utf-8"?><VAST version="2.0"><Ad><Wrapper><VASTAdTagURI>' + preMarketBid['vast_url'] + '</VASTAdTagURI></Wrapper></Ad></VAST>';
+          } else if (preMarketBid['vast_string']) {
+            vastStr = preMarketBid['vast_string'];
+          }
+          ext.pre_market_bids.push({
+            id: preMarketBid['deal_id'],
+            seatbid: [{
+              bid: [{
+                impid: Date.now(),
+                dealid: preMarketBid['deal_id'],
+                price: preMarketBid['price'],
+                adm: vastStr
+              }]
+            }],
+            cur: preMarketBid['currency'],
+            ext: {
+              event_log: [{}]
+            }
+          });
+        }
+      }
+
+      const mimes = utils.getBidIdParameter('mimes', bid.params) || ['application/javascript', 'video/mp4', 'video/webm'];
+
+      const spotxReq = {
+        id: bid.bidId,
+        secure: secure,
+        video: {
+          w: contentWidth,
+          h: contentHeight,
+          ext: ext,
+          mimes: mimes
+        }
+      };
+
+      if (utils.getBidIdParameter('price_floor', bid.params) != '') {
+        spotxReq.bidfloor = utils.getBidIdParameter('price_floor', bid.params);
+      }
+
+      if (utils.getBidIdParameter('start_delay', bid.params) != '') {
+        spotxReq.video.startdelay = 0 + Boolean(utils.getBidIdParameter('start_delay', bid.params));
+      }
+
+      if (bid.crumbs && bid.crumbs.pubcid) {
+        pubcid = bid.crumbs.pubcid;
+      }
+
+      const language = navigator.language ? 'language' : 'userLanguage';
+      const device = {
+        h: screen.height,
+        w: screen.width,
+        dnt: utils.getDNT() ? 1 : 0,
+        language: navigator[language].split('-')[0],
+        make: navigator.vendor ? navigator.vendor : '',
+        ua: navigator.userAgent
+      };
+
+      const requestPayload = {
+        id: channelId,
+        imp: spotxReq,
+        site: {
+          id: siteId,
+          page: page,
+          content: 'content',
+        },
+        device: device,
+        ext: {
+          wrap_response: 1
+        }
+      };
+
+      if (utils.getBidIdParameter('number_of_ads', bid.params)) {
+        requestPayload['ext']['number_of_ads'] = utils.getBidIdParameter('number_of_ads', bid.params);
+      }
+
+      const userExt = {};
+
+      // Add GDPR flag and consent string
+      if (bidderRequest && bidderRequest.gdprConsent) {
+        userExt.consent = bidderRequest.gdprConsent.consentString;
+
+        if (typeof bidderRequest.gdprConsent.gdprApplies !== 'undefined') {
+          requestPayload.regs = {
+            ext: {
+              gdpr: (bidderRequest.gdprConsent.gdprApplies ? 1 : 0)
+            }
+          };
+        }
+      }
+
+      // Add common id if available
+      if (pubcid) {
+        userExt.fpc = pubcid;
+      }
+
+      // Only add the user object if it's not empty
+      if (!utils.isEmpty(userExt)) {
+        requestPayload.user = { ext: userExt };
+      }
+      return {
+        method: 'POST',
+        url: URL + channelId,
+        data: requestPayload,
+        bidRequest: bidderRequest
+      };
+    });
+
+    return spotxRequests;
+  },
+
+  /**
+   * Unpack the response from the server into a list of bids.
+   *
+   * @param {*} serverResponse A successful response from the server.
+   * @return {Bid[]} An array of bids which were nested inside the server.
+   */
+  interpretResponse: function(serverResponse, bidderRequest) {
+    const bidResponses = [];
+    const serverResponseBody = serverResponse.body;
+
+    if (serverResponseBody && utils.isArray(serverResponseBody.seatbid)) {
+      utils._each(serverResponseBody.seatbid, function(bids) {
+        utils._each(bids.bid, function(spotxBid) {
+          let currentBidRequest = {};
+          for (let i in bidderRequest.bidRequest.bids) {
+            if (spotxBid.impid == bidderRequest.bidRequest.bids[i].bidId) {
+              currentBidRequest = bidderRequest.bidRequest.bids[i];
+            }
+          }
+
+          /**
+           * Make sure currency and price are the right ones
+           * TODO: what about the pre_market_bid partners sizes?
+           */
+          utils._each(currentBidRequest.params.pre_market_bids, function(pmb) {
+            if (pmb.deal_id == spotxBid.id) {
+              spotxBid.price = pmb.price;
+              serverResponseBody.cur = pmb.currency;
+            }
+          });
+
+          const bid = {
+            requestId: currentBidRequest.bidId,
+            currency: serverResponseBody.cur || 'USD',
+            cpm: spotxBid.price,
+            creativeId: spotxBid.crid || '',
+            ttl: 360,
+            netRevenue: true,
+            channel_id: serverResponseBody.id,
+            cache_key: spotxBid.ext.cache_key,
+            vastUrl: '//search.spotxchange.com/ad/vast.html?key=' + spotxBid.ext.cache_key,
+            mediaType: VIDEO,
+            width: spotxBid.w,
+            height: spotxBid.h
+          };
+
+          const context1 = utils.deepAccess(currentBidRequest, 'mediaTypes.video.context');
+          const context2 = utils.deepAccess(currentBidRequest, 'params.ad_unit');
+          if (context1 == 'outstream' || context2 == 'outstream') {
+            const playersize = utils.deepAccess(currentBidRequest, 'mediaTypes.video.playerSize');
+            const renderer = Renderer.install({
+              id: 0,
+              url: '//',
+              config: {
+                adText: 'SpotX Outstream Video Ad via Prebid.js',
+                player_width: playersize[0][0],
+                player_height: playersize[0][1],
+                content_page_url: utils.deepAccess(bidderRequest, 'data.site.page'),
+                ad_mute: +!!utils.deepAccess(currentBidRequest, 'params.ad_mute'),
+                hide_skin: +!!utils.deepAccess(currentBidRequest, 'params.hide_skin'),
+                outstream_options: utils.deepAccess(currentBidRequest, 'params.outstream_options'),
+                outstream_function: utils.deepAccess(currentBidRequest, 'params.outstream_function')
+              }
+            });
+
+            try {
+              renderer.setRender(outstreamRender);
+              renderer.setEventHandlers({
+                impression: function impression() {
+                  return utils.logMessage('SpotX outstream video impression event');
+                },
+                loaded: function loaded() {
+                  return utils.logMessage('SpotX outstream video loaded event');
+                },
+                ended: function ended() {
+                  utils.logMessage('SpotX outstream renderer video event');
+                }
+              });
+            } catch (err) {
+              utils.logWarn('Prebid Error calling setRender or setEve,tHandlers on renderer', err);
+            }
+            bid.renderer = renderer;
+          }
+
+          bidResponses.push(bid);
+        })
+      });
+    }
+
+    return bidResponses;
+  }
 }
 
-adaptermanager.registerBidAdapter(new Spotx(), 'spotx', {
-  supportedMediaTypes: ['video']
-});
+function createOutstreamScript(bid) {
+  const slot = utils.getBidIdParameter('slot', bid.renderer.config.outstream_options);
+  utils.logMessage('[SPOTX][renderer] Handle SpotX outstream renderer');
+  const script = window.document.createElement('script');
+  script.type = 'text/javascript';
+  script.src = '//js.spotx.tv/easi/v1/' + bid.channel_id + '.js';
+  let dataSpotXParams = {};
+  dataSpotXParams['data-spotx_channel_id'] = '' + bid.channel_id;
+  dataSpotXParams['data-spotx_vast_url'] = '' + bid.vastUrl;
+  dataSpotXParams['data-spotx_content_page_url'] = bid.renderer.config.content_page_url;
+  dataSpotXParams['data-spotx_ad_unit'] = 'incontent';
 
-module.exports = Spotx;
+  utils.logMessage('[SPOTX][renderer] Default beahavior');
+  if (utils.getBidIdParameter('ad_mute', bid.renderer.config.outstream_options)) {
+    dataSpotXParams['data-spotx_ad_mute'] = '0';
+  }
+  dataSpotXParams['data-spotx_collapse'] = '0';
+  dataSpotXParams['data-spotx_autoplay'] = '1';
+  dataSpotXParams['data-spotx_blocked_autoplay_override_mode'] = '1';
+  dataSpotXParams['data-spotx_video_slot_can_autoplay'] = '1';
+
+  const playersizeAutoAdapt = utils.getBidIdParameter('playersize_auto_adapt', bid.renderer.config.outstream_options);
+  if (playersizeAutoAdapt && utils.isBoolean(playersizeAutoAdapt) && playersizeAutoAdapt === true) {
+    if (bid.width && utils.isNumber(bid.width) && bid.height && utils.isNumber(bid.height)) {
+      const ratio = bid.width / bid.height;
+      const slotClientWidth = window.document.getElementById(slot).clientWidth;
+      let playerWidth = bid.renderer.config.player_width;
+      let playerHeight = bid.renderer.config.player_height;
+      let contentWidth = 0;
+      let contentHeight = 0;
+      if (slotClientWidth < playerWidth) {
+        playerWidth = slotClientWidth;
+        playerHeight = playerWidth / ratio;
+      }
+      if (ratio <= 1) {
+        contentWidth = Math.round(playerHeight * ratio);
+        contentHeight = playerHeight;
+      } else {
+        contentWidth = playerWidth;
+        contentHeight = Math.round(playerWidth / ratio);
+      }
+
+      dataSpotXParams['data-spotx_content_width'] = '' + contentWidth;
+      dataSpotXParams['data-spotx_content_height'] = '' + contentHeight;
+    } else {
+      utils.logWarn('[SPOTX][renderer] PlayerSize auto adapt: bid.width and bid.height are incorrect');
+    }
+  }
+
+  const customOverride = utils.getBidIdParameter('custom_override', bid.renderer.config.outstream_options);
+  if (customOverride && utils.isPlainObject(customOverride)) {
+    utils.logMessage('[SPOTX][renderer] Custom beahavior.');
+    for (let name in customOverride) {
+      if (customOverride.hasOwnProperty(name)) {
+        if (name === 'channel_id' || name === 'vast_url' || name === 'content_page_url' || name === 'ad_unit') {
+          utils.logWarn('[SPOTX][renderer] Custom beahavior: following option cannot be overrided: ' + name);
+        } else {
+          dataSpotXParams['data-spotx_' + name] = customOverride[name];
+        }
+      }
+    }
+  }
+
+  for (let key in dataSpotXParams) {
+    if (dataSpotXParams.hasOwnProperty(key)) {
+      script.setAttribute(key, dataSpotXParams[key]);
+    }
+  }
+
+  return script;
+}
+
+function outstreamRender(bid) {
+  const script = createOutstreamScript(bid);
+  if (bid.renderer.config.outstream_function != null && typeof bid.renderer.config.outstream_function === 'function') {
+    bid.renderer.config.outstream_function(bid, script);
+  } else {
+    try {
+      const inIframe = utils.getBidIdParameter('in_iframe', bid.renderer.config.outstream_options);
+      if (inIframe && window.document.getElementById(inIframe).nodeName == 'IFRAME') {
+        const rawframe = window.document.getElementById(inIframe);
+        let framedoc = rawframe.contentDocument;
+        if (!framedoc && rawframe.contentWindow) {
+          framedoc = rawframe.contentWindow.document;
+        }
+        framedoc.body.appendChild(script);
+      } else {
+        const slot = utils.getBidIdParameter('slot', bid.renderer.config.outstream_options);
+        if (slot && window.document.getElementById(slot)) {
+          window.document.getElementById(slot).appendChild(script);
+        } else {
+          window.document.getElementsByTagName('head')[0].appendChild(script);
+        }
+      }
+    } catch (err) {
+      utils.logError('[SPOTX][renderer] Error:' + err.message)
+    }
+  }
+}
+
+registerBidder(spec);

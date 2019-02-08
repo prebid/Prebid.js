@@ -1,13 +1,14 @@
-import Adapter from 'src/adapter';
-import adaptermanager from 'src/adaptermanager';
-import { config } from 'src/config';
-import { ajax } from 'src/ajax';
-import bidmanager from 'src/bidmanager';
-import bidfactory from 'src/bidfactory';
-import { STATUS } from 'src/constants';
-import { userSync } from 'src/userSync';
-
-import { logWarn, logError, parseQueryStringParameters, delayExecution } from 'src/utils';
+import Adapter from '../adapter';
+import adapterManager from '../adapterManager';
+import { config } from '../config';
+import { createBid } from '../bidfactory';
+import { userSync } from '../userSync';
+import { nativeBidIsValid } from '../native';
+import { isValidVideoBid } from '../video';
+import CONSTANTS from '../constants.json';
+import events from '../events';
+import includes from 'core-js/library/fn/array/includes';
+import { logWarn, logError, parseQueryStringParameters, delayExecution, parseSizesInput, getBidderRequest } from '../utils';
 
 /**
  * This file aims to support Adapters during the Prebid 0.x -> 1.x transition.
@@ -51,6 +52,8 @@ import { logWarn, logError, parseQueryStringParameters, delayExecution } from 's
  *   from the server, determine which user syncs should occur. The argument array will contain every element
  *   which has been sent through to interpretResponse. The order of syncs in this array matters. The most
  *   important ones should come first, since publishers may limit how many are dropped on their page.
+ * @property {function(object): object} transformBidParams Updates bid params before creating bid request
+ }}
  */
 
 /**
@@ -94,6 +97,10 @@ import { logWarn, logError, parseQueryStringParameters, delayExecution } from 's
  * @property {number} height The height of the ad, in pixels.
  * @property {number} width The width of the ad, in pixels.
  *
+ * @property {object} [native] Object for storing native creative assets
+ * @property {object} [video] Object for storing video response data
+ * @property {object} [meta] Object for storing bid meta data
+ * @property {string} [meta.iabSubCatId] The IAB subcategory ID
  * @property [Renderer] renderer A Renderer which can be used as a default for this bid,
  *   if the publisher doesn't override it. This is only relevant for Outstream Video bids.
  */
@@ -122,7 +129,7 @@ const COMMON_BID_RESPONSE_KEYS = ['requestId', 'cpm', 'ttl', 'creativeId', 'netR
 /**
  * Register a bidder with prebid, using the given spec.
  *
- * If possible, Adapter modules should use this function instead of adaptermanager.registerBidAdapter().
+ * If possible, Adapter modules should use this function instead of adapterManager.registerBidAdapter().
  *
  * @param {BidderSpec} spec An object containing the bare-bones functions we need to make a Bidder.
  */
@@ -132,12 +139,13 @@ export function registerBidder(spec) {
     : undefined;
   function putBidder(spec) {
     const bidder = newBidder(spec);
-    adaptermanager.registerBidAdapter(bidder, spec.code, mediaTypes);
+    adapterManager.registerBidAdapter(bidder, spec.code, mediaTypes);
   }
 
   putBidder(spec);
   if (Array.isArray(spec.aliases)) {
     spec.aliases.forEach(alias => {
+      adapterManager.aliasRegistry[alias] = spec.code;
       putBidder(Object.assign({}, spec, { code: alias }));
     });
   }
@@ -155,48 +163,26 @@ export function newBidder(spec) {
       return Object.freeze(spec);
     },
     registerSyncs,
-    callBids: function(bidderRequest) {
+    callBids: function(bidderRequest, addBidResponse, done, ajax) {
       if (!Array.isArray(bidderRequest.bids)) {
         return;
       }
 
-      // callBids must add a NO_BID response for _every_ AdUnit code, in order for the auction to
-      // end properly. This map stores placement codes which we've made _real_ bids on.
-      //
-      // As we add _real_ bids to the bidmanager, we'll log the ad unit codes here too. Once all the real
-      // bids have been added, fillNoBids() can be called to add NO_BID bids for any extra ad units, which
-      // will end the auction.
-      //
-      // In Prebid 1.0, this will be simplified to use the `addBidResponse` and `done` callbacks.
       const adUnitCodesHandled = {};
       function addBidWithCode(adUnitCode, bid) {
         adUnitCodesHandled[adUnitCode] = true;
-        addBid(adUnitCode, bid);
-      }
-      function fillNoBids() {
-        bidderRequest.bids
-          .map(bidRequest => bidRequest.placementCode)
-          .forEach(adUnitCode => {
-            if (adUnitCode && !adUnitCodesHandled[adUnitCode]) {
-              addBid(adUnitCode, newEmptyBid());
-            }
-          });
-      }
-
-      function addBid(code, bid) {
-        try {
-          bidmanager.addBidResponse(code, bid);
-        } catch (err) {
-          logError('Error adding bid', code, err);
+        if (isValid(adUnitCode, bid, [bidderRequest])) {
+          addBidResponse(adUnitCode, bid);
         }
       }
 
-      // After all the responses have come back, fill up the "no bid" bids and
+      // After all the responses have come back, call done() and
       // register any required usersync pixels.
       const responses = [];
       function afterAllResponses() {
-        fillNoBids();
-        registerSyncs(responses);
+        done();
+        events.emit(CONSTANTS.EVENTS.BIDDER_DONE, bidderRequest);
+        registerSyncs(responses, bidderRequest.gdprConsent);
       }
 
       const validBidRequests = bidderRequest.bids.filter(filterAndWarn);
@@ -222,7 +208,7 @@ export function newBidder(spec) {
         requests = [requests];
       }
 
-      // Callbacks don't compose as nicely as Promises. We should call fillNoBids() once _all_ the
+      // Callbacks don't compose as nicely as Promises. We should call done() once _all_ the
       // Server requests have returned and been processed. Since `ajax` accepts a single callback,
       // we need to rig up a function which only executes after all the requests have been responded.
       const onResponse = delayExecution(afterAllResponses, requests.length)
@@ -274,7 +260,7 @@ export function newBidder(spec) {
 
         // If the server responds successfully, use the adapter code to unpack the Bids from it.
         // If the adapter code fails, no bids should be added. After all the bids have been added, make
-        // sure to call the `onResponse` function so that we're one step closer to calling fillNoBids().
+        // sure to call the `onResponse` function so that we're one step closer to calling done().
         function onSuccess(response, responseObj) {
           try {
             response = JSON.parse(response);
@@ -303,20 +289,15 @@ export function newBidder(spec) {
               addBidUsingRequestMap(bids);
             }
           }
-          onResponse();
+          onResponse(bids);
 
           function addBidUsingRequestMap(bid) {
-            // In Prebid 1.0 all the validation logic from bidmanager will move here, as of now we are only validating new params so that adapters dont miss adding them.
-            if (hasValidKeys(bid)) {
-              const bidRequest = bidRequestMap[bid.requestId];
-              if (bidRequest) {
-                const prebidBid = Object.assign(bidfactory.createBid(STATUS.GOOD, bidRequest), bid);
-                addBidWithCode(bidRequest.placementCode, prebidBid);
-              } else {
-                logWarn(`Bidder ${spec.code} made bid for unknown request ID: ${bid.requestId}. Ignoring.`);
-              }
+            const bidRequest = bidRequestMap[bid.requestId];
+            if (bidRequest) {
+              const prebidBid = Object.assign(createBid(CONSTANTS.STATUS.GOOD, bidRequest), bid);
+              addBidWithCode(bidRequest.adUnitCode, prebidBid);
             } else {
-              logError(`Bidder ${spec.code} is missing required params. Check http://prebid.org/dev-docs/bidder-adapter-1.html for list of params.`);
+              logWarn(`Bidder ${spec.code} made bid for unknown request ID: ${bid.requestId}. Ignoring.`);
             }
           }
 
@@ -328,7 +309,7 @@ export function newBidder(spec) {
         }
 
         // If the server responds with an error, there's not much we can do. Log it, and make sure to
-        // call onResponse() so that we're one step closer to calling fillNoBids().
+        // call onResponse() so that we're one step closer to calling done().
         function onFailure(err) {
           logError(`Server call for ${spec.code} failed: ${err}. Continuing without bids.`);
           onResponse();
@@ -337,12 +318,13 @@ export function newBidder(spec) {
     }
   });
 
-  function registerSyncs(responses) {
+  function registerSyncs(responses, gdprConsent) {
     if (spec.getUserSyncs) {
+      let filterConfig = config.getConfig('userSync.filterSettings');
       let syncs = spec.getUserSyncs({
-        iframeEnabled: config.getConfig('userSync.iframeEnabled'),
-        pixelEnabled: config.getConfig('userSync.pixelEnabled'),
-      }, responses);
+        iframeEnabled: !!(config.getConfig('userSync.iframeEnabled') || (filterConfig && (filterConfig.iframe || filterConfig.all))),
+        pixelEnabled: !!(config.getConfig('userSync.pixelEnabled') || (filterConfig && (filterConfig.image || filterConfig.all))),
+      }, responses, gdprConsent);
       if (syncs) {
         if (!Array.isArray(syncs)) {
           syncs = [syncs];
@@ -361,16 +343,69 @@ export function newBidder(spec) {
     }
     return true;
   }
+}
 
-  function hasValidKeys(bid) {
+// check that the bid has a width and height set
+function validBidSize(adUnitCode, bid, bidRequests) {
+  if ((bid.width || bid.width === 0) && (bid.height || bid.height === 0)) {
+    return true;
+  }
+
+  const adUnit = getBidderRequest(bidRequests, bid.bidderCode, adUnitCode);
+
+  const sizes = adUnit && adUnit.bids && adUnit.bids[0] && adUnit.bids[0].sizes;
+  const parsedSizes = parseSizesInput(sizes);
+
+  // if a banner impression has one valid size, we assign that size to any bid
+  // response that does not explicitly set width or height
+  if (parsedSizes.length === 1) {
+    const [ width, height ] = parsedSizes[0].split('x');
+    bid.width = width;
+    bid.height = height;
+    return true;
+  }
+
+  return false;
+}
+
+// Validate the arguments sent to us by the adapter. If this returns false, the bid should be totally ignored.
+export function isValid(adUnitCode, bid, bidRequests) {
+  function hasValidKeys() {
     let bidKeys = Object.keys(bid);
-    return COMMON_BID_RESPONSE_KEYS.every(key => bidKeys.includes(key));
+    return COMMON_BID_RESPONSE_KEYS.every(key => includes(bidKeys, key) && !includes([undefined, null], bid[key]));
   }
 
-  function newEmptyBid() {
-    const bid = bidfactory.createBid(STATUS.NO_BID);
-    bid.code = spec.code;
-    bid.bidderCode = spec.code;
-    return bid;
+  function errorMessage(msg) {
+    return `Invalid bid from ${bid.bidderCode}. Ignoring bid: ${msg}`;
   }
+
+  if (!adUnitCode) {
+    logWarn('No adUnitCode was supplied to addBidResponse.');
+    return false;
+  }
+
+  if (!bid) {
+    logWarn(`Some adapter tried to add an undefined bid for ${adUnitCode}.`);
+    return false;
+  }
+
+  if (!hasValidKeys()) {
+    logError(errorMessage(`Bidder ${bid.bidderCode} is missing required params. Check http://prebid.org/dev-docs/bidder-adapter-1.html for list of params.`));
+    return false;
+  }
+
+  if (bid.mediaType === 'native' && !nativeBidIsValid(bid, bidRequests)) {
+    logError(errorMessage('Native bid missing some required properties.'));
+    return false;
+  }
+  if (bid.mediaType === 'video' && !isValidVideoBid(bid, bidRequests)) {
+    logError(errorMessage(`Video bid does not have required vastUrl or renderer property`));
+    return false;
+  }
+  if (bid.mediaType === 'banner' && !validBidSize(adUnitCode, bid, bidRequests)) {
+    logError(errorMessage(`Banner bids require a width and height`));
+    return false;
+  }
+
+  return true;
 }

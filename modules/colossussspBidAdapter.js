@@ -1,174 +1,111 @@
-import Adapter from 'src/adapter';
-import bidfactory from 'src/bidfactory';
-import bidmanager from 'src/bidmanager';
-import * as utils from 'src/utils';
-import {ajax} from 'src/ajax';
-import {STATUS} from 'src/constants';
-import adaptermanager from 'src/adaptermanager';
+import { registerBidder } from '../src/adapters/bidderFactory';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes';
+import * as utils from '../src/utils';
 
-var BIDDER_CODE = 'colossusssp';
+const BIDDER_CODE = 'colossusssp';
+const URL = '//colossusssp.com/?c=o&m=multi';
+const URL_SYNC = '//colossusssp.com/?c=o&m=cookie';
 
-var sizeObj = {
-  1: '468x60',
-  2: '728x90',
-  10: '300x600',
-  15: '300x250',
-  19: '300x100',
-  43: '320x50',
-  44: '300x50',
-  48: '300x300',
-  54: '300x1050',
-  55: '970x90',
-  57: '970x250',
-  58: '1000x90',
-  59: '320x80',
-  65: '640x480',
-  67: '320x480',
-  72: '320x320',
-  73: '320x160',
-  83: '480x300',
-  94: '970x310',
-  96: '970x210',
-  101: '480x320',
-  102: '768x1024',
-  113: '1000x300',
-  117: '320x100',
-  118: '800x250',
-  119: '200x600'
-};
-
-utils._each(sizeObj, (item, key) => sizeObj[item] = key);
-
-function ColossusSspAdapter() {
-  function _callBids(bidderRequest) {
-    var bids = bidderRequest.bids || [];
-
-    bids.forEach((bid) => {
-      function bidCallback(responseText) {
-        try {
-          utils.logMessage('XHR callback function called for ad ID: ' + bid.bidId);
-          handleRpCB(responseText, bid);
-        } catch (err) {
-          if (typeof err === 'string') {
-            utils.logWarn(`${err} when processing colossus response for placement code ${bid.placementCode}`);
-          } else {
-            utils.logError('Error processing colossus response for placement code ' + bid.placementCode, null, err);
-          }
-          var badBid = bidfactory.createBid(STATUS.NO_BID, bid);
-          badBid.bidderCode = bid.bidder;
-          badBid.error = err;
-          bidmanager.addBidResponse(bid.placementCode, badBid);
-        }
-      }
-
-      try {
-        ajax(buildOptimizedCall(bid), bidCallback, undefined, { withCredentials: true });
-      } catch (err) {
-        utils.logError('Error sending colossus request for placement code ' + bid.placementCode, null, err);
-      }
-    });
+function isBidResponseValid(bid) {
+  if (!bid.requestId || !bid.cpm || !bid.creativeId || !bid.ttl || !bid.currency) {
+    return false;
   }
 
-  function buildOptimizedCall(bid) {
-    bid.startTime = (new Date()).getTime();
-
-    var parsedSizes = ColossusSspAdapter.masSizeOrdering(
-      Array.isArray(bid.params.sizes) ? bid.params.sizes.map(size => (sizeObj[size] || '').split('x')) : bid.sizes
-    );
-
-    if (parsedSizes.length < 1) {
-      throw 'no valid sizes';
-    }
-
-    var secure = 0;
-    var win;
-    try {
-      win = window.top;
-    } catch (e) {
-      win = window;
-    }
-
-    if (win.location.protocol !== 'http:') {
-      secure = 1;
-    }
-
-    var host = win.location.host;
-    var page = win.location.pathname;
-    var language = navigator.language;
-    var deviceWidth = win.screen.width;
-    var deviceHeight = win.screen.height;
-
-    var queryString = [
-      'banner_id', bid.params.placement_id,
-      'size_ad', parsedSizes[0],
-      'alt_size_ad', parsedSizes.slice(1).join(',') || [],
-      'host', host,
-      'page', page,
-      'language', language,
-      'deviceWidth', deviceWidth,
-      'deviceHeight', deviceHeight,
-      'secure', secure,
-      'bidId', bid.bidId,
-      'checkOn', 'rf'
-    ];
-
-    return queryString.reduce(
-      (memo, curr, index) =>
-        index % 2 === 0 && queryString[index + 1] !== undefined
-          ? memo + curr + '=' + encodeURIComponent(queryString[index + 1]) + '&'
-          : memo,
-      '//colossusssp.com/?'
-    ).slice(0, -1);
+  switch (bid.mediaType) {
+    case BANNER:
+      return Boolean(bid.width && bid.height && bid.ad);
+    case VIDEO:
+      return Boolean(bid.vastUrl);
+    case NATIVE:
+      return Boolean(bid.native);
+    default:
+      return false;
   }
-
-  function handleRpCB(responseText, bidRequest) {
-    var ad = JSON.parse(responseText);
-
-    var bid = bidfactory.createBid(STATUS.GOOD, bidRequest);
-    bid.creative_id = ad.ad_id;
-    bid.bidderCode = bidRequest.bidder;
-    bid.cpm = ad.cpm || 0;
-    bid.ad = ad.adm;
-    bid.width = ad.width;
-    bid.height = ad.height;
-    bid.dealId = ad.deal;
-
-    bidmanager.addBidResponse(bidRequest.placementCode, bid);
-  }
-
-  return Object.assign(new Adapter(BIDDER_CODE), { // BIDDER_CODE colossusssp
-    callBids: _callBids
-  });
 }
 
-ColossusSspAdapter.masSizeOrdering = function (sizes) {
-  var MAS_SIZE_PRIORITY = [15, 2, 9];
-  return utils.parseSizesInput(sizes)
-    .reduce((result, size) => {
-      var mappedSize = parseInt(sizeObj[size], 10);
-      if (mappedSize) {
-        result.push(mappedSize);
-      }
-      return result;
-    }, [])
-    .sort((first, second) => {
-      var firstPriority = MAS_SIZE_PRIORITY.indexOf(first);
-      var secondPriority = MAS_SIZE_PRIORITY.indexOf(second);
+export const spec = {
+  code: BIDDER_CODE,
+  supportedMediaTypes: [BANNER, VIDEO, NATIVE],
+  /**
+   * Determines whether or not the given bid request is valid.
+   *
+   * @param {object} bid The bid to validate.
+   * @return boolean True if this is a valid bid, and false otherwise.
+   */
+  isBidRequestValid: (bid) => {
+    return Boolean(bid.bidId && bid.params && !isNaN(bid.params.placement_id));
+  },
 
-      if (firstPriority > -1 || secondPriority > -1) {
-        if (firstPriority === -1) {
-          return 1;
-        }
-        if (secondPriority === -1) {
-          return -1;
-        }
-        return firstPriority - secondPriority;
-      }
+  /**
+   * Make a server request from the list of BidRequests.
+   *
+   * @param {BidRequest[]} validBidRequests A non-empty list of valid bid requests that should be sent to the Server.
+   * @return ServerRequest Info describing the request to the server.
+   */
+  buildRequests: (validBidRequests) => {
+    let winTop = window;
+    try {
+      window.top.location.toString();
+      winTop = window.top;
+    } catch (e) {
+      utils.logMessage(e);
+    };
+    let location = utils.getTopWindowLocation();
+    let placements = [];
+    let request = {
+      'deviceWidth': winTop.screen.width,
+      'deviceHeight': winTop.screen.height,
+      'language': (navigator && navigator.language) ? navigator.language : '',
+      'secure': location.protocol === 'https:' ? 1 : 0,
+      'host': location.host,
+      'page': location.pathname,
+      'placements': placements
+    };
+    for (let i = 0; i < validBidRequests.length; i++) {
+      let bid = validBidRequests[i];
+      let placement = {
+        placementId: bid.params.placement_id,
+        bidId: bid.bidId,
+        sizes: bid.sizes,
+        traffic: bid.params.traffic || BANNER
+      };
+      placements.push(placement);
+    }
+    return {
+      method: 'POST',
+      url: URL,
+      data: request
+    };
+  },
 
-      return first - second;
-    });
+  /**
+   * Unpack the response from the server into a list of bids.
+   *
+   * @param {*} serverResponse A successful response from the server.
+   * @return {Bid[]} An array of bids which were nested inside the server.
+   */
+  interpretResponse: (serverResponse) => {
+    let response = [];
+    try {
+      serverResponse = serverResponse.body;
+      for (let i = 0; i < serverResponse.length; i++) {
+        let resItem = serverResponse[i];
+        if (isBidResponseValid(resItem)) {
+          response.push(resItem);
+        }
+      }
+    } catch (e) {
+      utils.logMessage(e);
+    };
+    return response;
+  },
+
+  getUserSyncs: () => {
+    return [{
+      type: 'image',
+      url: URL_SYNC
+    }];
+  }
 };
 
-adaptermanager.registerBidAdapter(new ColossusSspAdapter(), BIDDER_CODE);
-
-module.exports = ColossusSspAdapter;
+registerBidder(spec);

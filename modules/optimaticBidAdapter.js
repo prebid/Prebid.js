@@ -1,9 +1,11 @@
-import * as utils from 'src/utils';
-import { config } from 'src/config';
-import { registerBidder } from 'src/adapters/bidderFactory';
+import * as utils from '../src/utils';
+import { registerBidder } from '../src/adapters/bidderFactory';
 export const ENDPOINT = '//mg-bid.optimatic.com/adrequest/';
 
 export const spec = {
+
+  version: '1.0.4',
+
   code: 'optimatic',
 
   supportedMediaTypes: ['video'],
@@ -34,7 +36,7 @@ export const spec = {
     } catch (e) {
       response = null;
     }
-    if (!response || !bid || !bid.adm || !bid.price) {
+    if (!response || !bid || (!bid.adm && !bid.nurl) || !bid.price) {
       utils.logWarn(`No valid bids from ${spec.code} bidder`);
       return [];
     }
@@ -44,7 +46,6 @@ export const spec = {
       bidderCode: spec.code,
       cpm: bid.price,
       creativeId: bid.id,
-      vastXml: bid.adm,
       width: size.width,
       height: size.height,
       mediaType: 'video',
@@ -52,6 +53,11 @@ export const spec = {
       ttl: 300,
       netRevenue: true
     };
+    if (bid.nurl) {
+      bidResponse.vastUrl = bid.nurl;
+    } else if (bid.adm) {
+      bidResponse.vastXml = bid.adm;
+    }
     return bidResponse;
   }
 };
@@ -76,8 +82,8 @@ function getData (bid) {
       bidfloor: bid.params.bidfloor,
       video: {
         mimes: ['video/mp4', 'video/ogg', 'video/webm', 'video/x-flv', 'application/javascript', 'application/x-shockwave-flash'],
-        width: size.width,
-        height: size.height
+        w: size.width,
+        h: size.height
       }
     }],
     site: {
@@ -97,5 +103,4 @@ function getData (bid) {
   };
 }
 
-config.setConfig({ usePrebidCache: true });
 registerBidder(spec);

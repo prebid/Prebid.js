@@ -1,5 +1,5 @@
-import * as utils from 'src/utils';
-import {registerBidder} from 'src/adapters/bidderFactory';
+import * as utils from '../src/utils';
+import {registerBidder} from '../src/adapters/bidderFactory';
 const BIDDER_CODE = 'trustx';
 const ENDPOINT_URL = '//sofia.trustx.org/hb';
 const TIME_TO_LIVE = 360;
@@ -30,18 +30,21 @@ export const spec = {
    * Make a server request from the list of BidRequests.
    *
    * @param {BidRequest[]} validBidRequests - an array of bids
+   * @param {bidderRequest} - bidder request object
    * @return ServerRequest Info describing the request to the server.
    */
-  buildRequests: function(validBidRequests) {
+  buildRequests: function(validBidRequests, bidderRequest) {
     const auids = [];
     const bidsMap = {};
     const bids = validBidRequests || [];
     let priceType = 'net';
+    let reqId;
 
     bids.forEach(bid => {
       if (bid.params.priceType === 'gross') {
         priceType = 'gross';
       }
+      reqId = bid.bidderRequestId;
       if (!bidsMap[bid.params.uid]) {
         bidsMap[bid.params.uid] = [bid];
         auids.push(bid.params.uid);
@@ -54,12 +57,27 @@ export const spec = {
       u: utils.getTopWindowUrl(),
       pt: priceType,
       auids: auids.join(','),
+      r: reqId
     };
+
+    if (bidderRequest) {
+      if (bidderRequest.timeout) {
+        payload.wtimeout = bidderRequest.timeout;
+      }
+      if (bidderRequest.gdprConsent) {
+        if (bidderRequest.gdprConsent.consentString) {
+          payload.gdpr_consent = bidderRequest.gdprConsent.consentString;
+        }
+        payload.gdpr_applies =
+          (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean')
+            ? Number(bidderRequest.gdprConsent.gdprApplies) : 1;
+      }
+    }
 
     return {
       method: 'GET',
       url: ENDPOINT_URL,
-      data: payload,
+      data: utils.parseQueryStringParameters(payload).replace(/\&$/, ''),
       bidsMap: bidsMap,
     };
   },
@@ -71,7 +89,7 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function(serverResponse, bidRequest) {
-    serverResponse = serverResponse && serverResponse.body
+    serverResponse = serverResponse && serverResponse.body;
     const bidResponses = [];
     const bidsMap = bidRequest.bidsMap;
     const priceType = bidRequest.data.pt;

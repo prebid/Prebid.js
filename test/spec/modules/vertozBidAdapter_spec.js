@@ -1,140 +1,112 @@
-import {expect} from 'chai';
-import {assert} from 'chai';
-import Adapter from '../../../modules/vertozBidAdapter';
-import bidManager from '../../../src/bidmanager';
-import adLoader from '../../../src/adloader';
+import { expect } from 'chai';
+import { spec } from 'modules/vertozBidAdapter';
+import { newBidder } from 'src/adapters/bidderFactory';
 
-describe('Vertoz Adapter', () => {
-  let adapter;
-  let sandbox;
-  let bidsRequestBuff;
-  const bidderRequest = {
-    bidderCode: 'vertoz',
-    bids: [{
-      bidId: 'bidId1',
-      bidder: 'vertoz',
-      placementCode: 'foo',
-      sizes: [
-        [300, 250]
-      ],
-      params: {
-        placementId: 'VZ-HB-123'
-      }
-    }, {
-      bidId: 'bidId2',
-      bidder: 'vertoz',
-      placementCode: 'bar',
-      sizes: [
-        [728, 90]
-      ],
-      params: {
-        placementId: 'VZ-HB-456'
-      }
-    }, {
-      bidId: 'bidId3',
-      bidder: 'vertoz',
-      placementCode: 'coo',
-      sizes: [
-        [300, 600]
-      ],
-      params: {
-        placementId: ''
-      }
-    }]
-  };
+const BASE_URI = '//hb.vrtzads.com/vzhbidder/bid?';
 
-  beforeEach(() => {
-    adapter = new Adapter();
-    sandbox = sinon.sandbox.create();
-    bidsRequestBuff = $$PREBID_GLOBAL$$._bidsRequested;
-    $$PREBID_GLOBAL$$._bidsRequested = [];
-  });
+describe('VertozAdapter', function () {
+  const adapter = newBidder(spec);
 
-  afterEach(() => {
-    sandbox.restore();
-    $$PREBID_GLOBAL$$._bidsRequested = bidsRequestBuff;
-  });
-
-  describe('callBids', () => {
-    beforeEach(() => {
-      sandbox.stub(adLoader, 'loadScript');
-      adapter.callBids(bidderRequest);
-    });
-
-    it('should be called twice', () => {
-      sinon.assert.calledTwice(adLoader.loadScript);
+  describe('inherited functions', function () {
+    it('exists and is a function', function () {
+      expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
   });
 
-  describe('Bid response', () => {
-    let vzBidRequest;
-    let bidderReponse = {
-      'vzhPlacementId': 'VZ-HB-123',
-      'bid': '0fac1b8a-6ba0-4641-bd57-2899b1bedeae_0',
-      'adWidth': '300',
-      'adHeight': '250',
-      'cpm': '1.00000000000000',
-      'ad': '<div></div>',
-      'slotBidId': 'bidId1',
-      'nurl': '<img></img>',
-      'statusText': 'vertoz:success'
+  describe('isBidRequestValid', function () {
+    let bid = {
+      'bidder': 'vertoz',
+      'params': {
+        'placementId': 'VZ-HB-B784382V6C6G3C'
+      },
+      'adUnitCode': 'adunit-code',
+      'sizes': [[300, 250], [300, 600]],
+      'bidId': '30b31c1838de1e',
+      'bidderRequestId': '22edbae2733bf6',
+      'auctionId': '1d1a030790a475',
     };
 
-    beforeEach(() => {
-      $$PREBID_GLOBAL$$._bidsRequested.push(bidderRequest);
+    it('should return true when required params found', function () {
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
-    describe('success', () => {
-      let firstBidReg;
-      let adSpaceId;
-
-      beforeEach(() => {
-        sandbox.stub(bidManager, 'addBidResponse');
-        $$PREBID_GLOBAL$$.vzResponse(bidderReponse);
-        firstBidReg = bidManager.addBidResponse.firstCall.args[1];
-        adSpaceId = bidManager.addBidResponse.firstCall.args[0];
-      });
-
-      it('cpm to have property 1.000000', () => {
-        expect(firstBidReg).to.have.property('cpm', 1.00);
-      });
-      it('adSpaceId should exist and be equal to placementCode', () => {
-        expect(adSpaceId).to.equal('foo');
-      });
-      it('should have property ad', () => {
-        expect(firstBidReg).to.have.property('ad');
-      });
-      it('should include the size to the bid object', () => {
-        expect(firstBidReg).to.have.property('width', '300');
-        expect(firstBidReg).to.have.property('height', '250');
-      });
+    it('should return false when required params are not passed', function () {
+      let bid = Object.assign({}, bid);
+      delete bid.params;
+      bid.params = {
+        'placementId': 0
+      };
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
+  });
 
-    describe('failure', () => {
-      let secondBidReg;
-      let adSpaceId;
-      let bidderResponse = {
-        'vzhPlacementId': 'VZ-HB-456',
-        'slotBidId': 'bidId2',
-        'statusText': 'vertoz:NO_BIDS'
+  describe('buildRequests', function () {
+    let bidRequests = [
+      {
+        'bidder': 'vertoz',
+        'params': {
+          'placementId': '10433394'
+        },
+        'adUnitCode': 'adunit-code',
+        'sizes': [[300, 250], [300, 600]],
+        'bidId': '30b31c1838de1e',
+        'bidderRequestId': '22edbae2733bf6',
+        'auctionId': '1d1a030790a475',
       }
+    ];
 
-      beforeEach(() => {
-        sandbox.stub(bidManager, 'addBidResponse');
-        $$PREBID_GLOBAL$$.vzResponse(bidderResponse);
-        secondBidReg = bidManager.addBidResponse.firstCall.args[1];
-        adSpaceId = bidManager.addBidResponse.firstCall.args[0];
-      });
+    it('sends bid request to ENDPOINT via POST', function () {
+      const request = spec.buildRequests(bidRequests)[0];
+      expect(request.url).to.equal(BASE_URI);
+      expect(request.method).to.equal('POST');
+    });
+  });
 
-      it('should not have cpm property', () => {
-        expect(secondBidReg.cpm).to.be.undefined;
-      });
-      it('adSpaceId should exist and be equal to placementCode', () => {
-        expect(adSpaceId).to.equal('bar');
-      });
-      it('should not have ad property', () => {
-        expect(secondBidReg.ad).to.be.undefined;
-      });
+  describe('interpretResponse', function () {
+    let response = {
+      'vzhPlacementId': 'VZ-HB-B784382V6C6G3C',
+      'bid': '76021e56-adaf-4114-b68d-ccacd1b3e551_1',
+      'adWidth': '300',
+      'adHeight': '250',
+      'cpm': '0.16312590000000002',
+      'ad': '<!-- Creative -->',
+      'slotBidId': '44b3fcfd24aa93',
+      'nurl': '<!-- Pixelurl -->',
+      'statusText': 'Vertoz:Success'
+    };
+
+    it('should get correct bid response', function () {
+      let expectedResponse = [
+        {
+          'requestId': '44b3fcfd24aa93',
+          'cpm': 0.16312590000000002,
+          'width': 300,
+          'height': 250,
+          'netRevenue': true,
+          'mediaType': 'banner',
+          'currency': 'USD',
+          'dealId': null,
+          'creativeId': null,
+          'ttl': 300,
+          'ad': '<!-- Creative -->'
+        }
+      ];
+      let bidderRequest;
+      let result = spec.interpretResponse({body: response});
+      expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
+      expect(result[0].cpm).to.not.equal(null);
+    });
+
+    it('handles nobid responses', function () {
+      let response = {
+        'vzhPlacementId': 'VZ-HB-I617046VBGE3EH',
+        'slotBidId': 'f00412ac86b79',
+        'statusText': 'NO_BIDS'
+      };
+      let bidderRequest;
+
+      let result = spec.interpretResponse({body: response});
+      expect(result.length).to.equal(0);
     });
   });
 });

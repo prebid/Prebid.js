@@ -1,5 +1,5 @@
-import { registerBidder } from 'src/adapters/bidderFactory';
-import * as utils from 'src/utils';
+import { registerBidder } from '../src/adapters/bidderFactory';
+import * as utils from '../src/utils';
 
 const BIDDER_CODE = 'huddledmasses';
 const URL = '//huddledmassessupply.com/?c=o&m=multi';
@@ -70,7 +70,7 @@ export const spec = {
     let request = {
       'deviceWidth': winTop.screen.width,
       'deviceHeight': winTop.screen.height,
-      'language': navigator ? navigator.language : '',
+      'language': (navigator && navigator.language) ? navigator.language : '',
       'secure': location.protocol === 'https:' ? 1 : 0,
       'host': location.host,
       'page': location.pathname,

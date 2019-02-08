@@ -1,238 +1,39 @@
-describe('Orbitsoft Adapter tests', function () {
-  const expect = require('chai').expect;
-  const assert = require('chai').assert;
-  const OrbitsoftAdapter = require('modules/orbitsoftBidAdapter');
-  const bidmanager = require('src/bidmanager');
-  const adloader = require('src/adloader');
-  const CONSTANTS = require('src/constants.json');
+import {expect} from 'chai';
+import {spec} from 'modules/orbitsoftBidAdapter';
 
-  const contentCallEndPoint = 'http://orbitsoft.com/ads/show/content?';
-  const jptCallEndPoint = 'http://orbitsoft.com/ads/show/hb?';
-
-  before(() => sinon.stub(document.body, 'appendChild'));
-  after(() => document.body.appendChild.restore());
-
-  describe('test orbitsoft callback response', function () {
-    it('should exist and be a function', function () {
-      expect($$PREBID_GLOBAL$$.handleOASCB).to.exist.and.to.be.a('function');
-    });
-
-    it('should add empty bid responses if no bids returned', function () {
-      let stubAddBidResponse = sinon.stub(bidmanager, 'addBidResponse');
-      let adapter = new OrbitsoftAdapter();
-
-      let bidderRequest = {
-        bidderCode: 'orbitsoft',
-        bids: [
-          {
-            bidId: 'bidIdOrbitsoft1',
+const ENDPOINT_URL = 'https://orbitsoft.com/php/ads/hb.phps';
+describe('Orbitsoft adapter', function () {
+  describe('implementation', function () {
+    describe('for requests', function () {
+      it('should accept valid bid', function () {
+        let validBid = {
             bidder: 'orbitsoft',
             params: {
-              placementId: '16',
-              requestUrl: jptCallEndPoint
-            },
-            sizes: [[300, 250]],
-            placementCode: 'test-div-12345'
-          }
-        ]
-      };
-
-      // Empty bid response
-      let response = {
-        callback_uid: 'bidIdOrbitsoft1',
-        cpm: 0
-      };
-
-      $$PREBID_GLOBAL$$._bidsRequested.push(bidderRequest);
-      $$PREBID_GLOBAL$$.handleOASCB(response);
-
-      let bidPlacementCode1 = stubAddBidResponse.getCall(0).args[0];
-      let bidResponse1 = stubAddBidResponse.getCall(0).args[1];
-      expect(bidPlacementCode1).to.equal('test-div-12345');
-      expect(bidResponse1.getStatusCode()).to.equal(CONSTANTS.STATUS.NO_BID);
-      expect(bidResponse1.bidderCode).to.equal('orbitsoft');
-      stubAddBidResponse.restore();
-    });
-
-    it('should add empty bid responses if no bidId returned', function () {
-      let stubAddBidResponse = sinon.stub(bidmanager, 'addBidResponse');
-      let adapter = new OrbitsoftAdapter();
-
-      let bidderRequest = {
-        bidderCode: 'orbitsoft',
-        bids: [
-          {
-            bidId: 'bidIdOrbitsoft1',
-            bidder: 'orbitsoft',
-            params: {
-              placementId: '16',
-              requestUrl: jptCallEndPoint
-            },
-            sizes: [[300, 250]],
-            placementCode: 'test-div-12345'
-          }
-        ]
-      };
-
-      // Empty bid response
-      let response = {
-        cpm: 0
-      };
-
-      $$PREBID_GLOBAL$$._bidsRequested.push(bidderRequest);
-      $$PREBID_GLOBAL$$.handleOASCB(response);
-
-      expect(stubAddBidResponse.getCall(0)).to.equal(null);
-      stubAddBidResponse.restore();
-    });
-  });
-
-  it('should add bid responses if bids are returned', function () {
-    let stubAddBidResponse = sinon.stub(bidmanager, 'addBidResponse');
-    let adapter = new OrbitsoftAdapter();
-
-    let bidderRequest = {
-      bidderCode: 'orbitsoft',
-      bids: [
-        {
-          bidId: 'bidIdOrbitsoft1',
-          bidder: 'orbitsoft',
-          params: {
-            placementId: '16',
-            requestUrl: jptCallEndPoint
+              placementId: '123',
+              requestUrl: ENDPOINT_URL
+            }
           },
-          sizes: [[300, 250]],
-          placementCode: 'test-div-12345'
-        }
-      ]
-    };
+          isValid = spec.isBidRequestValid(validBid);
 
-    // Bid response
-    let response = {
-      callback_uid: 'bidIdOrbitsoft1',
-      content_url: contentCallEndPoint + 'id=1_201707031440_56069e8e70318303e5869fad86722cb0',
-      cpm: 0.03,
-      width: 300,
-      height: 250
-    };
+        expect(isValid).to.equal(true);
+      });
 
-    $$PREBID_GLOBAL$$._bidsRequested.push(bidderRequest);
-    $$PREBID_GLOBAL$$.handleOASCB(response);
+      it('should reject invalid bid', function () {
+        let invalidBid = {
+            bidder: 'orbitsoft'
+          },
+          isValid = spec.isBidRequestValid(invalidBid);
 
-    let bidPlacementCode1 = stubAddBidResponse.getCall(0).args[0];
-    let bidResponse1 = stubAddBidResponse.getCall(0).args[1];
-    let bid1width = 300;
-    let bid1height = 250;
-    let cpm = 0.03;
-    let content_url = contentCallEndPoint + 'id=1_201707031440_56069e8e70318303e5869fad86722cb0';
-    expect(bidPlacementCode1).to.equal('test-div-12345');
-    expect(bidResponse1.getStatusCode()).to.equal(CONSTANTS.STATUS.GOOD);
-    expect(bidResponse1.bidderCode).to.equal('orbitsoft');
-    expect(bidResponse1.width).to.equal(bid1width);
-    expect(bidResponse1.height).to.equal(bid1height);
-    expect(bidResponse1.cpm).to.equal(cpm);
-    expect(bidResponse1.adUrl).to.equal(content_url);
-    stubAddBidResponse.restore();
-  });
-
-  it('should call loadscript with the correct params', function () {
-    let adapter = new OrbitsoftAdapter();
-    let spyLoadScript = sinon.spy(adloader, 'loadScript');
-    let params = {
-      bids: [
-        {
-          sizes: [[300, 250], [300, 600]],
-          params: {
-            placementId: '16',
-            requestUrl: jptCallEndPoint
-          }
-        }
-      ]
-    };
-    adapter.callBids(params);
-
-    sinon.assert.calledOnce(spyLoadScript);
-
-    let bidUrl = spyLoadScript.getCall(0).args[0];
-    expect(bidUrl).to.include(jptCallEndPoint);
-    expect(bidUrl).to.include('scid=16');
-    expect(bidUrl).to.include('size=300x250');
-    expect(bidUrl).to.include('loc');
-    spyLoadScript.restore();
-  });
-
-  describe('test orbitsoft callback with params', function () {
-    it('should not call loadscript when inputting with empty params', function () {
-      let adapter = new OrbitsoftAdapter();
-      let spyLoadScript = sinon.spy(adloader, 'loadScript');
-      adapter.callBids({});
-      assert(!spyLoadScript.called);
-      spyLoadScript.restore();
+        expect(isValid).to.equal(false);
+      });
     });
-
-    it('should not call loadscript when inputting without requestUrl param ', function () {
-      let adapter = new OrbitsoftAdapter();
-      let spyLoadScript = sinon.spy(adloader, 'loadScript');
-      let params = {
-        bids: [
-          {
-            params: {
-              placementId: '16'
-            }
-          }
-        ]
-      };
-      adapter.callBids(params);
-      assert(!spyLoadScript.called);
-      spyLoadScript.restore();
-    });
-
-    it('should not call loadscript when inputting with empty params by string ', function () {
-      let adapter = new OrbitsoftAdapter();
-      let spyLoadScript = sinon.spy(adloader, 'loadScript');
-      adapter.callBids('');
-      assert(!spyLoadScript.called);
-      spyLoadScript.restore();
-    });
-
-    it('should call loadscript without size in params', function () {
-      let adapter = new OrbitsoftAdapter();
-      let spyLoadScript = sinon.spy(adloader, 'loadScript');
-      let params = {
-        bids: [
-          {
-            params: {
-              placementId: '16',
-              requestUrl: jptCallEndPoint
-            }
-          }
-        ]
-      };
-      adapter.callBids(params);
-
-      sinon.assert.calledOnce(spyLoadScript);
-
-      let bidUrl = spyLoadScript.getCall(0).args[0];
-      expect(bidUrl).to.include(jptCallEndPoint);
-      expect(bidUrl).to.include('scid=16');
-      expect(bidUrl).to.not.include('size=');
-      expect(bidUrl).to.include('loc');
-      spyLoadScript.restore();
-    });
-
-    it('should add style params to adUrl if bids are returned', function () {
-      let stubAddBidResponse = sinon.stub(bidmanager, 'addBidResponse');
-      let adapter = new OrbitsoftAdapter();
-
-      let bidderRequest = {
-        bidderCode: 'orbitsoft',
-        bids: [
-          {
-            bidId: 'bidIdOrbitsoft2',
+    describe('for requests', function () {
+      it('should accept valid bid with styles', function () {
+        let validBid = {
             bidder: 'orbitsoft',
             params: {
-              placementId: '16',
-              requestUrl: jptCallEndPoint,
+              placementId: '123',
+              requestUrl: ENDPOINT_URL,
               style: {
                 title: {
                   family: 'Tahoma',
@@ -261,94 +62,187 @@ describe('Orbitsoft Adapter tests', function () {
                   link: '5B99FE'
                 }
               }
-            },
-            sizes: [[300, 250]],
-            placementCode: 'test-div-12345'
-          }
-        ]
-      };
+            }
+          },
+          isValid = spec.isBidRequestValid(validBid);
+        expect(isValid).to.equal(true);
 
-      // Bid response with content_url
-      let response = {
-        callback_uid: 'bidIdOrbitsoft2',
-        content_url: contentCallEndPoint + 'id=1_201707031440_56069e8e70318303e5869fad86722cb0',
-        cpm: 0.03,
-        width: 300,
-        height: 250
-      };
+        let buildRequest = spec.buildRequests([validBid])[0];
+        let requestUrl = buildRequest.url;
+        let requestUrlParams = buildRequest.data;
+        expect(requestUrl).to.equal(ENDPOINT_URL);
+        expect(requestUrlParams).have.property('f1', 'Tahoma');
+        expect(requestUrlParams).have.property('fs1', 'medium');
+        expect(requestUrlParams).have.property('w1', 'normal');
+        expect(requestUrlParams).have.property('s1', 'normal');
+        expect(requestUrlParams).have.property('c3', '0053F9');
+        expect(requestUrlParams).have.property('f2', 'Tahoma');
+        expect(requestUrlParams).have.property('fs2', 'medium');
+        expect(requestUrlParams).have.property('w2', 'normal');
+        expect(requestUrlParams).have.property('s2', 'normal');
+        expect(requestUrlParams).have.property('c4', '0053F9');
+        expect(requestUrlParams).have.property('f3', 'Tahoma');
+        expect(requestUrlParams).have.property('fs3', 'medium');
+        expect(requestUrlParams).have.property('w3', 'normal');
+        expect(requestUrlParams).have.property('s3', 'normal');
+        expect(requestUrlParams).have.property('c5', '0053F9');
+        expect(requestUrlParams).have.property('c2', 'ffffff');
+        expect(requestUrlParams).have.property('c1', 'E0E0E0');
+        expect(requestUrlParams).have.property('c6', '5B99FE');
+      });
 
-      $$PREBID_GLOBAL$$._bidsRequested.push(bidderRequest);
-
-      $$PREBID_GLOBAL$$.handleOASCB(response);
-
-      let bidResponse1 = stubAddBidResponse.getCall(0).args[1];
-      let adUrl = bidResponse1.adUrl;
-      let content_url = contentCallEndPoint + 'id=1_201707031440_56069e8e70318303e5869fad86722cb0';
-      expect(adUrl).to.include(content_url);
-      expect(adUrl).to.include('f1=Tahoma');
-      expect(adUrl).to.include('fs1=medium');
-      expect(adUrl).to.include('w1=normal');
-      expect(adUrl).to.include('s1=normal');
-      expect(adUrl).to.include('c3=0053F9');
-      expect(adUrl).to.include('f2=Tahoma');
-      expect(adUrl).to.include('fs2=medium');
-      expect(adUrl).to.include('w2=normal');
-      expect(adUrl).to.include('s2=normal');
-      expect(adUrl).to.include('c4=0053F9');
-      expect(adUrl).to.include('f3=Tahoma');
-      expect(adUrl).to.include('fs3=medium');
-      expect(adUrl).to.include('w3=normal');
-      expect(adUrl).to.include('s3=normal');
-      expect(adUrl).to.include('c5=0053F9');
-      expect(adUrl).to.include('c2=ffffff');
-      expect(adUrl).to.include('c1=E0E0E0');
-      expect(adUrl).to.include('c6=5B99FE');
-
-      stubAddBidResponse.restore();
-    });
-
-    it('should add custom params to adUrl if bids are returned', function () {
-      let stubAddBidResponse = sinon.stub(bidmanager, 'addBidResponse');
-      let adapter = new OrbitsoftAdapter();
-
-      let bidderRequest = {
-        bidderCode: 'orbitsoft',
-        bids: [
-          {
-            bidId: 'bidIdOrbitsoft3',
+      it('should accept valid bid with custom params', function () {
+        let validBid = {
             bidder: 'orbitsoft',
             params: {
-              placementId: '16',
-              requestUrl: jptCallEndPoint,
+              placementId: '123',
+              requestUrl: ENDPOINT_URL,
               customParams: {
-                macro_name: 'macro_value'
+                cacheBuster: 'bf4d7c1',
+                clickUrl: 'http://testclickurl.com'
               }
-            },
-            sizes: [[300, 250]],
-            placementCode: 'test-div-12345'
+            }
+          },
+          isValid = spec.isBidRequestValid(validBid);
+        expect(isValid).to.equal(true);
+
+        let buildRequest = spec.buildRequests([validBid])[0];
+        let requestUrlCustomParams = buildRequest.data;
+        expect(requestUrlCustomParams).have.property('c.cacheBuster', 'bf4d7c1');
+        expect(requestUrlCustomParams).have.property('c.clickUrl', 'http://testclickurl.com');
+      });
+
+      it('should reject invalid bid without requestUrl', function () {
+        let invalidBid = {
+            bidder: 'orbitsoft',
+            params: {
+              placementId: '123'
+            }
+          },
+          isValid = spec.isBidRequestValid(invalidBid);
+
+        expect(isValid).to.equal(false);
+      });
+
+      it('should reject invalid bid without placementId', function () {
+        let invalidBid = {
+            bidder: 'orbitsoft',
+            params: {
+              requestUrl: ENDPOINT_URL
+            }
+          },
+          isValid = spec.isBidRequestValid(invalidBid);
+
+        expect(isValid).to.equal(false);
+      });
+    });
+    describe('bid responses', function () {
+      it('should return complete bid response', function () {
+        let serverResponse = {
+          body: {
+            callback_uid: '265b29b70cc106',
+            cpm: 0.5,
+            width: 240,
+            height: 240,
+            content_url: 'https://orbitsoft.com/php/ads/hb.html',
           }
-        ]
-      };
+        };
 
-      // Bid response with custom params
-      let response = {
-        callback_uid: 'bidIdOrbitsoft3',
-        content_url: contentCallEndPoint + 'id=1_201707031440_56069e8e70318303e5869fad86722cb0',
-        cpm: 0.03,
-        width: 300,
-        height: 250
-      };
+        let bidRequests = [
+          {
+            bidder: 'orbitsoft',
+            params: {
+              placementId: '123',
+              requestUrl: ENDPOINT_URL
+            }
+          }
+        ];
+        let bids = spec.interpretResponse(serverResponse, {'bidRequest': bidRequests[0]});
+        expect(bids).to.be.lengthOf(1);
+        expect(bids[0].cpm).to.equal(0.5);
+        expect(bids[0].width).to.equal(240);
+        expect(bids[0].height).to.equal(240);
+        expect(bids[0].currency).to.equal('USD');
+        expect(bids[0].netRevenue).to.equal(true);
+        expect(bids[0].adUrl).to.have.length.above(1);
+        expect(bids[0].adUrl).to.have.string('https://orbitsoft.com/php/ads/hb.html');
+      });
 
-      $$PREBID_GLOBAL$$._bidsRequested.push(bidderRequest);
-      $$PREBID_GLOBAL$$.handleOASCB(response);
+      it('should return empty bid response', function () {
+        let bidRequests = [
+          {
+            bidder: 'orbitsoft',
+            params: {
+              placementId: '123',
+              requestUrl: ENDPOINT_URL
+            }
+          }
+        ];
+        let serverResponse = {
+            body: {
+              callback_uid: '265b29b70cc106',
+              cpm: 0
+            }
+          },
+          bids = spec.interpretResponse(serverResponse, {'bidRequest': bidRequests[0]});
 
-      let bidResponse1 = stubAddBidResponse.getCall(0).args[1];
-      let adUrl = bidResponse1.adUrl;
-      let content_url = contentCallEndPoint + 'id=1_201707031440_56069e8e70318303e5869fad86722cb0';
-      expect(adUrl).to.include(content_url);
-      expect(adUrl).to.include('c.macro_name=macro_value');
+        expect(bids).to.be.lengthOf(0);
+      });
 
-      stubAddBidResponse.restore();
+      it('should return empty bid response on incorrect size', function () {
+        let bidRequests = [
+          {
+            bidder: 'orbitsoft',
+            params: {
+              placementId: '123',
+              requestUrl: ENDPOINT_URL
+            }
+          }
+        ];
+        let serverResponse = {
+            body: {
+              callback_uid: '265b29b70cc106',
+              cpm: 1.5,
+              width: 0,
+              height: 0
+            }
+          },
+          bids = spec.interpretResponse(serverResponse, {'bidRequest': bidRequests[0]});
+
+        expect(bids).to.be.lengthOf(0);
+      });
+
+      it('should return empty bid response with error', function () {
+        let bidRequests = [
+          {
+            bidder: 'orbitsoft',
+            params: {
+              placementId: '123',
+              requestUrl: ENDPOINT_URL
+            }
+          }
+        ];
+        let serverResponse = {error: 'error'},
+          bids = spec.interpretResponse(serverResponse, {'bidRequest': bidRequests[0]});
+
+        expect(bids).to.be.lengthOf(0);
+      });
+
+      it('should return empty bid response on empty body', function () {
+        let bidRequests = [
+          {
+            bidder: 'orbitsoft',
+            params: {
+              placementId: '123',
+              requestUrl: ENDPOINT_URL
+            }
+          }
+        ];
+        let serverResponse = {},
+          bids = spec.interpretResponse(serverResponse, {'bidRequest': bidRequests[0]});
+
+        expect(bids).to.be.lengthOf(0);
+      });
     });
   });
 });

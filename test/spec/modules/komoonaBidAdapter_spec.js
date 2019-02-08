@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { spec } from 'modules/komoonaBidAdapter';
 
-describe('Komoona.com Adapter Tests', () => {
+describe('Komoona.com Adapter Tests', function () {
   const bidsRequest = [
     {
       bidder: 'komoona',
@@ -16,7 +16,7 @@ describe('Komoona.com Adapter Tests', () => {
       ],
       bidId: '2faedf1095f815',
       bidderRequestId: '18065867f8ae39',
-      requestId: '529e1518-b872-45cf-807c-2d41dfa5bcd3'
+      auctionId: '529e1518-b872-45cf-807c-2d41dfa5bcd3'
     },
     {
       bidder: 'komoona',
@@ -32,7 +32,7 @@ describe('Komoona.com Adapter Tests', () => {
       ],
       bidId: '3c34e2367a3f59',
       bidderRequestId: '18065867f8ae39',
-      requestId: '529e1518-b872-45cf-807c-2d41dfa5bcd3'
+      auctionId: '529e1518-b872-45cf-807c-2d41dfa5bcd3'
     }];
 
   const bidsResponse = {
@@ -54,11 +54,11 @@ describe('Komoona.com Adapter Tests', () => {
     }
   };
 
-  it('Verifies komoonaAdapter bidder code', () => {
+  it('Verifies komoonaAdapter bidder code', function () {
     expect(spec.code).to.equal('komoona');
   });
 
-  it('Verifies komoonaAdapter bid request validation', () => {
+  it('Verifies komoonaAdapter bid request validation', function () {
     expect(spec.isBidRequestValid(bidsRequest[0])).to.equal(true);
     expect(spec.isBidRequestValid(bidsRequest[1])).to.equal(true);
     expect(spec.isBidRequestValid({})).to.equal(false);
@@ -69,7 +69,7 @@ describe('Komoona.com Adapter Tests', () => {
     expect(spec.isBidRequestValid({ params: { hbid: 12345, placementId: 67890, floorPrice: 0.8 } })).to.equal(true);
   });
 
-  it('Verify komoonaAdapter build request', () => {
+  it('Verify komoonaAdapter build request', function () {
     var startTime = new Date().getTime();
 
     const request = spec.buildRequests(bidsRequest);
@@ -127,7 +127,7 @@ describe('Komoona.com Adapter Tests', () => {
     expect(kbConf.hb_placements[1]).to.equal(bids[1].placementid);
   });
 
-  it('Verify komoonaAdapter build response', () => {
+  it('Verify komoonaAdapter build response', function () {
     const request = spec.buildRequests(bidsRequest);
     const bids = spec.interpretResponse(bidsResponse, request);
 
@@ -150,7 +150,7 @@ describe('Komoona.com Adapter Tests', () => {
     expect(bid.creativeId).to.equal(responseBids[0].creativeId);
   });
 
-  it('Verifies komoonaAdapter sync options', () => {
+  it('Verifies komoonaAdapter sync options', function () {
     // user sync disabled
     expect(spec.getUserSyncs({})).to.be.undefined;
     expect(spec.getUserSyncs({ iframeEnabled: false })).to.be.undefined;

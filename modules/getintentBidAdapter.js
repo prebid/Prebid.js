@@ -1,4 +1,5 @@
-import { registerBidder } from 'src/adapters/bidderFactory';
+import { registerBidder } from '../src/adapters/bidderFactory';
+import { isInteger } from '../src/utils';
 
 const BIDDER_CODE = 'getintent';
 const IS_NET_REVENUE = true;
@@ -10,7 +11,7 @@ const VIDEO_PROPERTIES = [
   'protocols', 'mimes', 'min_dur', 'max_dur', 'min_btr', 'max_btr', 'vi_format', 'api', 'skippable'
 ];
 const OPTIONAL_PROPERTIES = [
-  'cur', 'floor'
+  'cur', 'floor', 'sid'
 ];
 
 export const spec = {
@@ -49,7 +50,7 @@ export const spec = {
    * Callback for bids, after the call to DSP completes.
    * Parse the response from the server into a list of bids.
    *
-   * @param {object} serverResponse A response from the server.
+   * @param {object} serverResponse A response from the GetIntent's server.
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function(serverResponse) {
@@ -98,7 +99,8 @@ function buildGiBidRequest(bidRequest) {
     tid: bidRequest.params.tid, // required
     known: bidRequest.params.known || 1,
     is_video: bidRequest.mediaType === 'video',
-    resp_type: 'JSON'
+    resp_type: 'JSON',
+    provider: 'direct.prebidjs'
   };
   if (bidRequest.sizes) {
     giBidRequest.size = produceSize(bidRequest.sizes);
@@ -127,16 +129,31 @@ function addOptional(params, request, props) {
   }
 }
 
+/**
+ * @param {String} s The string representing a size (e.g. "300x250").
+ * @return {Number[]} An array with two elements: [width, height] (e.g.: [300, 250]).
+ * */
 function parseSize(s) {
   return s.split('x').map(Number);
 }
 
-function produceSize(sizes) {
-  // TODO: add support for multiple sizes
-  if (Array.isArray(sizes[0])) {
-    return sizes[0].join('x');
+/**
+ * @param {Array} sizes An array of sizes/numbers to be joined into single string.
+ *                      May be an array (e.g. [300, 250]) or array of arrays (e.g. [[300, 250], [640, 480]].
+ * @return {String} The string with sizes, e.g. array of sizes [[50, 50], [80, 80]] becomes "50x50,80x80" string.
+ * */
+function produceSize (sizes) {
+  function sizeToStr(s) {
+    if (Array.isArray(s) && s.length === 2 && isInteger(s[0]) && isInteger(s[1])) {
+      return s.join('x');
+    } else {
+      throw "Malformed parameter 'sizes'";
+    }
+  }
+  if (Array.isArray(sizes) && Array.isArray(sizes[0])) {
+    return sizes.map(sizeToStr).join(',');
   } else {
-    return sizes.join('x');
+    return sizeToStr(sizes);
   }
 }
 

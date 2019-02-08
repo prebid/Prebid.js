@@ -1,157 +1,100 @@
-describe('innity adapter tests', function () {
-  var expect = require('chai').expect;
-  var urlParse = require('url-parse');
-  var querystringify = require('querystringify');
-  var adapter = require('modules/innityBidAdapter');
-  var adLoader = require('src/adloader');
-  var bidmanager = require('src/bidmanager');
+import { expect } from 'chai';
+import { spec } from 'modules/innityBidAdapter';
 
-  var stubLoadScript;
+describe('innityAdapterTest', function () {
+  describe('bidRequestValidity', function () {
+    it('bidRequest with pub ID and zone ID param', function () {
+      expect(spec.isBidRequestValid({
+        bidder: 'innity',
+        params: {
+          'pub': 267,
+          'zone': 62546
+        },
+      })).to.equal(true);
+    });
 
-  beforeEach(function () {
-    stubLoadScript = sinon.stub(adLoader, 'loadScript');
-  });
-
-  afterEach(function () {
-    stubLoadScript.restore();
-  });
-
-  describe('creation of bid url', function () {
-    if (typeof ($$PREBID_GLOBAL$$._bidsReceived) === 'undefined') {
-      $$PREBID_GLOBAL$$._bidsReceived = [];
-    }
-    if (typeof ($$PREBID_GLOBAL$$._bidsRequested) === 'undefined') {
-      $$PREBID_GLOBAL$$._bidsRequested = [];
-    }
-
-    it('bid request for single placement', function () {
-      var params = {
-        bids: [{
-          placementCode: '/19968336/header-bid-tag-0',
-          sizes: [[300, 250]],
-          bidId: 'b12345',
-          bidder: 'innity',
-          params: { pub: '267', zone: '62546' }
-        }]
-      };
-
-      adapter().callBids(params);
-
-      var bidUrl = stubLoadScript.getCall(0).args[0];
-
-      sinon.assert.calledOnce(stubLoadScript);
-
-      var parsedBidUrl = urlParse(bidUrl);
-      var parsedBidUrlQueryString = querystringify.parse(parsedBidUrl.query);
-
-      expect(parsedBidUrlQueryString).to.have.property('pub').and.to.equal('267');
-      expect(parsedBidUrlQueryString).to.have.property('zone').and.to.equal('62546');
-      expect(parsedBidUrlQueryString).to.have.property('width').and.to.equal('300');
-      expect(parsedBidUrlQueryString).to.have.property('height').and.to.equal('250');
+    it('bidRequest with no required params', function () {
+      expect(spec.isBidRequestValid({
+        bidder: 'innity',
+        params: {
+        },
+      })).to.equal(false);
     });
   });
 
-  describe('handling bid response', function () {
-    it('should return complete bid response', function() {
-      var stubAddBidResponse = sinon.stub(bidmanager, 'addBidResponse');
+  describe('bidRequest', function () {
+    const bidRequests = [{
+      'bidder': 'innity',
+      'params': {
+        'pub': 267,
+        'zone': 62546
+      },
+      'adUnitCode': 'div-gpt-ad-1460505748561-0',
+      'transactionId': 'd7b773de-ceaa-484d-89ca-d9f51b8d61ec',
+      'sizes': [300, 250],
+      'bidId': '51ef8751f9aead',
+      'bidderRequestId': '418b37f85e772c',
+      'auctionId': '18fd8b8b0bd757'
+    }];
 
-      var params = {
-        bids: [{
-          placementCode: '/19968336/header-bid-tag-0',
-          sizes: [[300, 250]],
-          bidId: 'b12345',
-          bidder: 'innity',
-          params: { pub: '267', zone: '62546' }
-        }]
-      };
-
-      var response = {
-        cpm: 100,
-        width: 300,
-        height: 250,
-        callback_uid: 'b12345',
-        tag: '<script>document.write("this is a campaign banner");<\/script>'
-      };
-
-      adapter().callBids(params);
-
-      var adUnits = [];
-      var unit = {};
-      unit.bids = params.bids;
-      unit.code = '/123456/header-bid-tag-1';
-      unit.sizes = [[300, 250]];
-      adUnits.push(unit);
-
-      if (typeof ($$PREBID_GLOBAL$$._bidsRequested) === 'undefined') {
-        $$PREBID_GLOBAL$$._bidsRequested = [params];
-      } else {
-        $$PREBID_GLOBAL$$._bidsRequested.push(params);
-      }
-
-      $$PREBID_GLOBAL$$.adUnits = adUnits;
-
-      $$PREBID_GLOBAL$$._doInnityCallback(response);
-
-      var bidPlacementCode1 = stubAddBidResponse.getCall(0).args[0];
-      var bidObject1 = stubAddBidResponse.getCall(0).args[1];
-
-      expect(bidPlacementCode1).to.equal('/19968336/header-bid-tag-0');
-      expect(bidObject1.bidderCode).to.equal('innity');
-      expect(bidObject1.cpm).to.equal(1);
-      expect(bidObject1.width).to.equal(300);
-      expect(bidObject1.height).to.equal(250);
-      expect(bidObject1.ad).to.have.length.above(1);
-
-      stubAddBidResponse.restore();
+    it('bidRequest HTTP method', function () {
+      const requests = spec.buildRequests(bidRequests);
+      requests.forEach(function(requestItem) {
+        expect(requestItem.method).to.equal('GET');
+      });
     });
 
-    it('should return no bid response', function() {
-      var stubAddBidResponse = sinon.stub(bidmanager, 'addBidResponse');
+    it('bidRequest data', function () {
+      const requests = spec.buildRequests(bidRequests);
+      expect(requests[0].data.pub).to.equal(267);
+      expect(requests[0].data.zone).to.equal(62546);
+      expect(requests[0].data.width).to.equal('300');
+      expect(requests[0].data.height).to.equal('250');
+      expect(requests[0].data.callback_uid).to.equal('51ef8751f9aead');
+    });
+  });
 
-      var params = {
-        bids: [{
-          placementCode: '/19968336/header-bid-tag-0',
-          sizes: [[300, 250]],
-          bidId: 'b12345',
-          bidder: 'innity',
-          params: { pub: '267', zone: '7958' }
-        }]
-      };
-
-      var response = {
-        cpm: 0,
-        width: 300,
-        height: 250,
-        callback_uid: 'b12345',
-        tag: '<script>document.write("this is a default banner");<\/script>'
-      };
-
-      adapter().callBids(params);
-
-      var adUnits = [];
-      var unit = {};
-      unit.bids = params.bids;
-      unit.code = '/123456/header-bid-tag-1';
-      unit.sizes = [[300, 250]];
-      adUnits.push(unit);
-
-      if (typeof ($$PREBID_GLOBAL$$._bidsRequested) === 'undefined') {
-        $$PREBID_GLOBAL$$._bidsRequested = [params];
-      } else {
-        $$PREBID_GLOBAL$$._bidsRequested.push(params);
+  describe('interpretResponse', function () {
+    const bidRequest = {
+      'method': 'GET',
+      'url': 'https://as.innity.com/synd/?',
+      'data': {
+        'ver': 2,
+        'hb': 1,
+        'output': 'js',
+        'pub': 267,
+        'zone': 62546,
+        'width': '300',
+        'height': '250',
+        'callback': 'json',
+        'callback_uid': '51ef8751f9aead',
+        'url': 'https://example.com',
+        'cb': '',
       }
+    };
 
-      $$PREBID_GLOBAL$$.adUnits = adUnits;
+    const bidResponse = {
+      body: {
+        'cpm': 100,
+        'width': '300',
+        'height': '250',
+        'creative_id': '148186',
+        'callback_uid': '51ef8751f9aead',
+        'tag': '<script>innity=true;</script>',
+      },
+      headers: {}
+    };
 
-      $$PREBID_GLOBAL$$._doInnityCallback(response);
-
-      var bidPlacementCode1 = stubAddBidResponse.getCall(0).args[0];
-      var bidObject1 = stubAddBidResponse.getCall(0).args[1];
-
-      expect(bidPlacementCode1).to.equal('/19968336/header-bid-tag-0');
-      expect(bidObject1.bidderCode).to.equal('innity');
-
-      stubAddBidResponse.restore();
+    it('result is correct', function () {
+      const result = spec.interpretResponse(bidResponse, bidRequest);
+      expect(result[0].requestId).to.equal('51ef8751f9aead');
+      expect(result[0].cpm).to.equal(1);
+      expect(result[0].width).to.equal('300');
+      expect(result[0].height).to.equal('250');
+      expect(result[0].creativeId).to.equal('148186');
+      expect(result[0].currency).to.equal('USD');
+      expect(result[0].ttl).to.equal(60);
+      expect(result[0].ad).to.equal('<script src="http://cdn.innity.net/frame_util.js"></script><script>innity=true;</script>');
     });
   });
 });

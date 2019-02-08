@@ -1,6 +1,6 @@
-import {registerBidder} from 'src/adapters/bidderFactory';
+import {registerBidder} from '../src/adapters/bidderFactory';
 
-const utils = require('src/utils.js');
+const utils = require('../src/utils.js');
 const BIDDER_CODE = 'mobfox';
 const BID_REQUEST_BASE_URL = 'https://my.mobfox.com/request.php';
 const CPM_HEADER = 'X-Pricing-CPM';
@@ -9,7 +9,7 @@ export const spec = {
   code: BIDDER_CODE,
   aliases: ['mf'], // short code
   isBidRequestValid: function (bid) {
-    return bid.params.s !== null && bid.params.s !== undefined && bid.requestId !== null && bid.requestId !== undefined;
+    return bid.params.s !== null && bid.params.s !== undefined;
   },
   buildRequests: function (validBidRequests) {
     if (validBidRequests.length > 1) {

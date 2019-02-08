@@ -1,5 +1,4 @@
-var fs = require('fs');
-var mkpath = require('mkpath');
+var fs = require('fs.extra');
 var path = require('path');
 var ejs = require('ejs');
 
@@ -56,7 +55,7 @@ module.exports = new function() {
 
     if (pathParts.length) {
       output_folder = path.join(output_folder, pathParts.join(path.sep));
-      mkpath.sync(output_folder);
+      fs.mkdirpSync(output_folder);
     }
 
     var filename = path.join(output_folder, opts.filename_prefix + moduleName + '.xml');

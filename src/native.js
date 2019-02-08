@@ -1,19 +1,12 @@
-import { deepAccess, getBidRequest, logError, triggerPixel } from './utils';
+import { deepAccess, getBidRequest, logError, triggerPixel, insertHtmlIntoIframe } from './utils';
+import includes from 'core-js/library/fn/array/includes';
+
+const CONSTANTS = require('./constants.json');
 
 export const nativeAdapters = [];
 
-export const NATIVE_KEYS = {
-  title: 'hb_native_title',
-  body: 'hb_native_body',
-  sponsoredBy: 'hb_native_brand',
-  image: 'hb_native_image',
-  icon: 'hb_native_icon',
-  clickUrl: 'hb_native_linkurl',
-  cta: 'hb_native_cta',
-};
-
-export const NATIVE_TARGETING_KEYS = Object.keys(NATIVE_KEYS).map(
-  key => NATIVE_KEYS[key]
+export const NATIVE_TARGETING_KEYS = Object.keys(CONSTANTS.NATIVE_KEYS).map(
+  key => CONSTANTS.NATIVE_KEYS[key]
 );
 
 const IMAGE = {
@@ -46,7 +39,7 @@ export function processNativeAdUnitParams(params) {
  * Check if the native type specified in the adUnit is supported by Prebid.
  */
 function typeIsSupported(type) {
-  if (!(type && Object.keys(SUPPORTED_TYPES).includes(type))) {
+  if (!(type && includes(Object.keys(SUPPORTED_TYPES), type))) {
     logError(`${type} nativeParam is not supported`);
     return false;
   }
@@ -64,23 +57,36 @@ export const nativeAdUnit = adUnit => {
   const mediaTypes = deepAccess(adUnit, 'mediaTypes.native');
   return mediaType || mediaTypes;
 }
-export const nativeBidder = bid => nativeAdapters.includes(bid.bidder);
+export const nativeBidder = bid => includes(nativeAdapters, bid.bidder);
 export const hasNonNativeBidder = adUnit =>
   adUnit.bids.filter(bid => !nativeBidder(bid)).length;
 
-/*
+/**
  * Validate that the native assets on this bid contain all assets that were
  * marked as required in the adUnit configuration.
+ * @param {Bid} bid Native bid to validate
+ * @param {BidRequest[]} bidRequests All bid requests for an auction
+ * @return {Boolean} If object is valid
  */
-export function nativeBidIsValid(bid) {
-  const bidRequest = getBidRequest(bid.adId);
-  if (!bidRequest) {
-    return false;
-  }
+export function nativeBidIsValid(bid, bidRequests) {
+  const bidRequest = getBidRequest(bid.requestId, bidRequests);
+  if (!bidRequest) { return false; }
 
   // all native bid responses must define a landing page url
   if (!deepAccess(bid, 'native.clickUrl')) {
     return false;
+  }
+
+  if (deepAccess(bid, 'native.image')) {
+    if (!deepAccess(bid, 'native.image.height') || !deepAccess(bid, 'native.image.width')) {
+      return false;
+    }
+  }
+
+  if (deepAccess(bid, 'native.icon')) {
+    if (!deepAccess(bid, 'native.icon.height') || !deepAccess(bid, 'native.icon.width')) {
+      return false;
+    }
   }
 
   const requestedAssets = bidRequest.nativeParams;
@@ -95,7 +101,7 @@ export function nativeBidIsValid(bid) {
     key => bid['native'][key]
   );
 
-  return requiredAssets.every(asset => returnedAssets.includes(asset));
+  return requiredAssets.every(asset => includes(returnedAssets, asset));
 }
 
 /*
@@ -131,13 +137,17 @@ export function fireNativeTrackers(message, adObject) {
     trackers = adObject['native'] && adObject['native'].clickTrackers;
   } else {
     trackers = adObject['native'] && adObject['native'].impressionTrackers;
+
+    if (adObject['native'] && adObject['native'].javascriptTrackers) {
+      insertHtmlIntoIframe(adObject['native'].javascriptTrackers);
+    }
   }
 
   (trackers || []).forEach(triggerPixel);
 }
 
 /**
- * Gets native targeting key-value paris
+ * Gets native targeting key-value pairs
  * @param {Object} bid
  * @return {Object} targeting
  */
@@ -145,9 +155,15 @@ export function getNativeTargeting(bid) {
   let keyValues = {};
 
   Object.keys(bid['native']).forEach(asset => {
-    const key = NATIVE_KEYS[asset];
-    const value = bid['native'][asset];
-    if (key) {
+    const key = CONSTANTS.NATIVE_KEYS[asset];
+    let value = bid['native'][asset];
+
+    // native image-type assets can be a string or an object with a url prop
+    if (typeof value === 'object' && value.url) {
+      value = value.url;
+    }
+
+    if (key && value) {
       keyValues[key] = value;
     }
   });

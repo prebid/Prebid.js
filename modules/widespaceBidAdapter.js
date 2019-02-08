@@ -1,127 +1,250 @@
+import { config } from '../src/config';
+import { registerBidder } from '../src/adapters/bidderFactory';
+import {
+  cookiesAreEnabled,
+  parseQueryStringParameters,
+  parseSizesInput,
+  getTopWindowReferrer
+} from '../src/utils';
+import includes from 'core-js/library/fn/array/includes';
+import find from 'core-js/library/fn/array/find';
 
-const utils = require('src/utils.js');
-const adloader = require('src/adloader.js');
-const bidmanager = require('src/bidmanager.js');
-const bidfactory = require('src/bidfactory.js');
-const adaptermanager = require('src/adaptermanager');
-const WS_ADAPTER_VERSION = '1.0.3';
+const BIDDER_CODE = 'widespace';
+const WS_ADAPTER_VERSION = '2.0.1';
+const LOCAL_STORAGE_AVAILABLE = window.localStorage;
+const COOKIE_ENABLED = cookiesAreEnabled();
+const LS_KEYS = {
+  PERF_DATA: 'wsPerfData',
+  LC_UID: 'wsLcuid',
+  CUST_DATA: 'wsCustomData'
+};
 
-function WidespaceAdapter() {
-  const useSSL = document.location.protocol === 'https:';
-  const baseURL = (useSSL ? 'https:' : 'http:') + '//engine.widespace.com/map/engine/hb/dynamic?';
-  const callbackName = '$$PREBID_GLOBAL$$.widespaceHandleCB';
+let preReqTime = 0;
 
-  function _callBids(params) {
-    let bids = (params && params.bids) || [];
+export const spec = {
+  code: BIDDER_CODE,
 
-    for (var i = 0; i < bids.length; i++) {
-      const bid = bids[i];
-      const callbackUid = bid.bidId;
-      const sid = bid.params.sid;
-      const currency = bid.params.cur || bid.params.currency;
+  supportedMediaTypes: ['banner'],
 
-      // Handle Sizes string
-      let sizeQueryString = '';
-      let parsedSizes = utils.parseSizesInput(bid.sizes);
+  isBidRequestValid: function(bid) {
+    if (bid.params && bid.params.sid) {
+      return true;
+    }
+    return false;
+  },
 
-      sizeQueryString = parsedSizes.reduce((prev, curr) => {
-        return prev ? `${prev},${curr}` : curr;
-      }, sizeQueryString);
+  buildRequests: function(validBidRequests, bidderRequest) {
+    let serverRequests = [];
+    const REQUEST_SERVER_URL = getEngineUrl();
+    const DEMO_DATA_PARAMS = ['gender', 'country', 'region', 'postal', 'city', 'yob'];
+    const PERF_DATA = getData(LS_KEYS.PERF_DATA).map(perfData => JSON.parse(perfData));
+    const CUST_DATA = getData(LS_KEYS.CUST_DATA, false)[0];
+    const LC_UID = getLcuid();
 
-      let requestURL = baseURL;
-      requestURL = utils.tryAppendQueryString(requestURL, 'hb.ver', WS_ADAPTER_VERSION);
+    let isInHostileIframe = false;
+    try {
+      window.top.location.toString();
+      isInHostileIframe = false;
+    } catch (e) {
+      isInHostileIframe = true;
+    }
 
-      const params = {
+    validBidRequests.forEach((bid, i) => {
+      let data = {
+        'screenWidthPx': screen && screen.width,
+        'screenHeightPx': screen && screen.height,
+        'adSpaceHttpRefUrl': getTopWindowReferrer(),
+        'referer': (isInHostileIframe ? window : window.top).location.href.split('#')[0],
+        'inFrame': 1,
+        'sid': bid.params.sid,
+        'lcuid': LC_UID,
+        'vol': isInHostileIframe ? '' : visibleOnLoad(document.getElementById(bid.adUnitCode)),
+        'gdprCmp': bidderRequest && bidderRequest.gdprConsent ? 1 : 0,
         'hb': '1',
-        'hb.name': 'prebidjs',
-        'hb.callback': callbackName,
-        'hb.callbackUid': callbackUid,
-        'hb.sizes': sizeQueryString,
-        'hb.currency': currency,
-        'sid': sid
+        'hb.cd': CUST_DATA ? encodedParamValue(CUST_DATA) : '',
+        'hb.floor': bid.bidfloor || '',
+        'hb.spb': i === 0 ? pixelSyncPossibility() : -1,
+        'hb.ver': WS_ADAPTER_VERSION,
+        'hb.name': 'prebidjs-$prebid.version$',
+        'hb.bidId': bid.bidId,
+        'hb.sizes': parseSizesInput(bid.sizes).join(','),
+        'hb.currency': bid.params.cur || bid.params.currency || ''
       };
 
+      // Include demo data
       if (bid.params.demo) {
-        let demoFields = ['gender', 'country', 'region', 'postal', 'city', 'yob'];
-        for (let i = 0; i < demoFields.length; i++) {
-          if (!bid.params.demo[demoFields[i]]) {
-            continue;
+        DEMO_DATA_PARAMS.forEach((key) => {
+          if (bid.params.demo[key]) {
+            data[key] = bid.params.demo[key];
           }
-          params['hb.demo.' + demoFields[i]] = bid.params.demo[demoFields[i]];
+        });
+      }
+
+      // Include performance data
+      if (PERF_DATA[i]) {
+        Object.keys(PERF_DATA[i]).forEach((perfDataKey) => {
+          data[perfDataKey] = PERF_DATA[i][perfDataKey];
+        });
+      }
+
+      // Include connection info if available
+      const CONNECTION = navigator.connection || navigator.webkitConnection;
+      if (CONNECTION && CONNECTION.type && CONNECTION.downlinkMax) {
+        data['netinfo.type'] = CONNECTION.type;
+        data['netinfo.downlinkMax'] = CONNECTION.downlinkMax;
+      }
+
+      // Include debug data when available
+      if (!isInHostileIframe) {
+        const DEBUG_AD = (find(window.top.location.hash.split('&'),
+          val => includes(val, 'WS_DEBUG_FORCEADID')
+        ) || '').split('=')[1];
+        data.forceAdId = DEBUG_AD;
+      }
+
+      // GDPR Consent info
+      if (data.gdprCmp) {
+        const { gdprApplies, consentString, vendorData } = bidderRequest.gdprConsent;
+        const hasGlobalScope = vendorData && vendorData.hasGlobalScope;
+        data.gdprApplies = gdprApplies ? 1 : gdprApplies === undefined ? '' : 0;
+        data.gdprConsentData = consentString;
+        data.gdprHasGlobalScope = hasGlobalScope ? 1 : hasGlobalScope === undefined ? '' : 0;
+      }
+
+      // Remove empty params
+      Object.keys(data).forEach((key) => {
+        if (data[key] === '' || data[key] === undefined) {
+          delete data[key];
         }
+      });
+
+      serverRequests.push({
+        method: 'POST',
+        options: {
+          contentType: 'application/x-www-form-urlencoded'
+        },
+        url: REQUEST_SERVER_URL,
+        data: parseQueryStringParameters(data)
+      });
+    });
+    preReqTime = Date.now();
+    return serverRequests;
+  },
+
+  interpretResponse: function(serverResponse, request) {
+    const responseTime = Date.now() - preReqTime;
+    const successBids = serverResponse.body || [];
+    let bidResponses = [];
+    successBids.forEach((bid) => {
+      storeData({
+        'perf_status': 'OK',
+        'perf_reqid': bid.reqId,
+        'perf_ms': responseTime
+      }, `${LS_KEYS.PERF_DATA}${bid.reqId}`);
+      if (bid.status === 'ad') {
+        bidResponses.push({
+          requestId: bid.bidId,
+          cpm: bid.cpm,
+          width: bid.width,
+          height: bid.height,
+          creativeId: bid.adId,
+          currency: bid.currency,
+          netRevenue: Boolean(bid.netRev),
+          ttl: bid.ttl,
+          referrer: getTopWindowReferrer(),
+          ad: bid.code
+        });
       }
+    });
 
-      requestURL += '#';
+    return bidResponses
+  },
 
-      var paramKeys = Object.keys(params);
-
-      for (var k = 0; k < paramKeys.length; k++) {
-        var key = paramKeys[k];
-        requestURL += key + '=' + params[key] + '&';
+  getUserSyncs: function(syncOptions, serverResponses = []) {
+    let userSyncs = [];
+    userSyncs = serverResponses.reduce((allSyncPixels, response) => {
+      if (response && response.body && response.body[0]) {
+        (response.body[0].syncPixels || []).forEach((url) => {
+          allSyncPixels.push({type: 'image', url});
+        });
       }
-
-      // Expose the callback
-      $$PREBID_GLOBAL$$.widespaceHandleCB = window[callbackName] = handleCallback;
-
-      adloader.loadScript(requestURL);
-    }
+      return allSyncPixels;
+    }, []);
+    return userSyncs;
   }
+};
 
-  // Handle our callback
-  var handleCallback = function handleCallback(bidsArray) {
-    if (!bidsArray) { return; }
-
-    let bidObject;
-    let bidCode = 'widespace';
-
-    for (var i = 0, l = bidsArray.length; i < l; i++) {
-      const bid = bidsArray[i];
-      let placementCode = '';
-      let validSizes = [];
-
-      bid.sizes = {height: bid.height, width: bid.width};
-
-      var inBid = utils.getBidRequest(bid.callbackUid);
-
-      if (inBid) {
-        bidCode = inBid.bidder;
-        placementCode = inBid.placementCode;
-        validSizes = inBid.sizes;
-      }
-
-      if (bid && bid.callbackUid && bid.status !== 'noad' && verifySize(bid.sizes, validSizes)) {
-        bidObject = bidfactory.createBid(1);
-        bidObject.bidderCode = bidCode;
-        bidObject.cpm = bid.cpm;
-        bidObject.cur = bid.currency;
-        bidObject.creative_id = bid.adId;
-        bidObject.ad = bid.code;
-        bidObject.width = bid.width;
-        bidObject.height = bid.height;
-        bidmanager.addBidResponse(placementCode, bidObject);
-      } else {
-        bidObject = bidfactory.createBid(2);
-        bidObject.bidderCode = bidCode;
-        bidmanager.addBidResponse(placementCode, bidObject);
-      }
-    }
-
-    function verifySize(bid, validSizes) {
-      for (var j = 0, k = validSizes.length; j < k; j++) {
-        if (bid.width === validSizes[j][0] &&
-          bid.height === validSizes[j][1]) {
-          return true;
-        }
-      }
-      return false;
-    }
-  };
-
-  return {
-    callBids: _callBids
-  };
+function storeData(data, name, stringify = true) {
+  const value = stringify ? JSON.stringify(data) : data;
+  if (LOCAL_STORAGE_AVAILABLE) {
+    localStorage.setItem(name, value);
+    return true;
+  } else if (COOKIE_ENABLED) {
+    const theDate = new Date();
+    const expDate = new Date(theDate.setMonth(theDate.getMonth() + 12)).toGMTString();
+    window.document.cookie = `${name}=${value};path=/;expires=${expDate}`;
+    return true;
+  }
 }
 
-adaptermanager.registerBidAdapter(new WidespaceAdapter(), 'widespace');
+function getData(name, remove = true) {
+  let data = [];
+  if (LOCAL_STORAGE_AVAILABLE) {
+    Object.keys(localStorage).filter((key) => {
+      if (key.indexOf(name) > -1) {
+        data.push(localStorage.getItem(key));
+        if (remove) {
+          localStorage.removeItem(key);
+        }
+      }
+    });
+  }
 
-module.exports = WidespaceAdapter;
+  if (COOKIE_ENABLED) {
+    document.cookie.split(';').forEach((item) => {
+      let value = item.split('=');
+      if (value[0].indexOf(name) > -1) {
+        data.push(value[1]);
+        if (remove) {
+          document.cookie = `${value[0]}=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;`;
+        }
+      }
+    });
+  }
+  return data;
+}
+
+function pixelSyncPossibility() {
+  const userSync = config.getConfig('userSync');
+  return userSync && userSync.pixelEnabled && userSync.syncEnabled ? userSync.syncsPerBidder : -1;
+}
+
+function visibleOnLoad(element) {
+  if (element && element.getBoundingClientRect) {
+    const topPos = element.getBoundingClientRect().top;
+    return topPos < screen.height && topPos >= window.top.pageYOffset ? 1 : 0;
+  };
+  return '';
+}
+
+function getLcuid() {
+  let lcuid = getData(LS_KEYS.LC_UID, false)[0];
+  if (!lcuid) {
+    const random = ('4' + new Date().getTime() + String(Math.floor(Math.random() * 1000000000))).substring(0, 18);
+    storeData(random, LS_KEYS.LC_UID, false);
+    lcuid = getData(LS_KEYS.LC_UID, false)[0];
+  }
+  return lcuid;
+}
+
+function encodedParamValue(value) {
+  const requiredStringify = typeof JSON.parse(JSON.stringify(value)) === 'object';
+  return encodeURIComponent(requiredStringify ? JSON.stringify(value) : value);
+}
+
+function getEngineUrl() {
+  const ENGINE_URL = 'https://engine.widespace.com/map/engine/dynadreq';
+  return window.wisp && window.wisp.ENGINE_URL ? window.wisp.ENGINE_URL : ENGINE_URL;
+}
+
+registerBidder(spec);

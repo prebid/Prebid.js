@@ -1,128 +1,230 @@
-import { expect } from 'chai';
-import Adapter from '../../../modules/smartyadsBidAdapter';
-import adapterManager from 'src/adaptermanager';
-import bidManager from 'src/bidmanager';
-import CONSTANTS from 'src/constants.json';
+import {expect} from 'chai';
+import {spec} from '../../../modules/smartyadsBidAdapter';
 
-describe('Smartyads adapter tests', function () {
-  let sandbox;
-  const adUnit = { // TODO CHANGE
-    code: 'smartyads',
-    sizes: [[300, 250], [300, 600], [320, 80]],
-    bids: [{
-      bidder: 'smartyads',
-      params: {
-        banner_id: 0
-      }
-    }]
+describe('SmartyadsAdapter', function () {
+  let bid = {
+    bidId: '23fhj33i987f',
+    bidder: 'smartyads',
+    params: {
+      placementId: 0,
+      traffic: 'banner'
+    }
   };
 
-  const response = {
-    ad_id: 0,
-    adm: '<span>Test Response</span>',
-    cpm: 0.5,
-    deal: 'bf063e2e025c',
-    height: 240,
-    width: 360
-  };
-
-  beforeEach(() => {
-    sandbox = sinon.sandbox.create();
-  });
-
-  afterEach(() => {
-    sandbox.restore();
-  });
-
-  describe('Smartyads callBids validation', () => {
-    let bids,
-      server;
-
-    beforeEach(() => {
-      bids = [];
-      server = sinon.fakeServer.create();
-
-      sandbox.stub(bidManager, 'addBidResponse', (elemId, bid) => {
-        bids.push(bid);
-      });
+  describe('isBidRequestValid', function () {
+    it('Should return true if there are bidId, params and placementId parameters present', function () {
+      expect(spec.isBidRequestValid(bid)).to.be.true;
     });
-
-    afterEach(() => {
-      server.restore();
-    });
-
-    let adapter = adapterManager.bidderRegistry['smartyads'];
-
-    it('Valid bid-request', () => {
-      sandbox.stub(adapter, 'callBids');
-      adapterManager.callBids({
-        adUnits: [clone(adUnit)]
-      });
-
-      let bidderRequest = adapter.callBids.getCall(0).args[0];
-
-      expect(bidderRequest).to.have.property('bids')
-        .that.is.an('array')
-        .with.lengthOf(1);
-
-      expect(bidderRequest).to.have.deep.property('bids[0]')
-        .to.have.property('bidder', 'smartyads');
-
-      expect(bidderRequest).to.have.deep.property('bids[0]')
-        .with.property('sizes')
-        .that.is.an('array')
-        .with.lengthOf(3)
-        .that.deep.equals(adUnit.sizes);
-      expect(bidderRequest).to.have.deep.property('bids[0]')
-        .with.property('params')
-        .to.have.property('banner_id', 0);
-    });
-
-    it('Valid bid-response', () => {
-      server.respondWith(JSON.stringify(
-        response
-      ));
-      adapterManager.callBids({
-        adUnits: [clone(adUnit)]
-      });
-      server.respond();
-
-      expect(bids).to.be.lengthOf(1);
-      expect(bids[0].getStatusCode()).to.equal(CONSTANTS.STATUS.GOOD);
-      expect(bids[0].bidderCode).to.equal('smartyads');
-      expect(bids[0].width).to.equal(360);
-      expect(bids[0].height).to.equal(240);
-      expect(bids[0].cpm).to.equal(0.5);
-      expect(bids[0].dealId).to.equal('bf063e2e025c');
+    it('Should return false if at least one of parameters is not present', function () {
+      delete bid.params.placementId;
+      expect(spec.isBidRequestValid(bid)).to.be.false;
     });
   });
 
-  describe('MAS mapping / ordering', () => {
-    let masSizeOrdering = Adapter.masSizeOrdering;
-
-    it('should not include values without a proper mapping', () => {
-      let ordering = masSizeOrdering([[320, 50], [42, 42], [300, 250], [640, 480], [1, 1], [336, 280]]);
-      expect(ordering).to.deep.equal([15, 16, 43, 65]);
+  describe('buildRequests', function () {
+    let serverRequest = spec.buildRequests([bid]);
+    it('Creates a ServerRequest object with method, URL and data', function () {
+      expect(serverRequest).to.exist;
+      expect(serverRequest.method).to.exist;
+      expect(serverRequest.url).to.exist;
+      expect(serverRequest.data).to.exist;
     });
-
-    it('should sort values without any MAS priority sizes in regular ascending order', () => {
-      let ordering = masSizeOrdering([[320, 50], [640, 480], [336, 280], [200, 600]]);
-      expect(ordering).to.deep.equal([16, 43, 65, 126]);
+    it('Returns POST method', function () {
+      expect(serverRequest.method).to.equal('POST');
     });
+    it('Returns valid URL', function () {
+      expect(serverRequest.url).to.equal('//ssp-nj.webtradehub.com/?c=o&m=multi');
+    });
+    it('Returns valid data if array of bids is valid', function () {
+      let data = serverRequest.data;
+      expect(data).to.be.an('object');
+      expect(data).to.have.all.keys('deviceWidth', 'deviceHeight', 'language', 'secure', 'host', 'page', 'placements');
+      expect(data.deviceWidth).to.be.a('number');
+      expect(data.deviceHeight).to.be.a('number');
+      expect(data.language).to.be.a('string');
+      expect(data.secure).to.be.within(0, 1);
+      expect(data.host).to.be.a('string');
+      expect(data.page).to.be.a('string');
+      let placement = data['placements'][0];
+      expect(placement).to.have.keys('placementId', 'bidId', 'traffic');
+      expect(placement.placementId).to.equal(0);
+      expect(placement.bidId).to.equal('23fhj33i987f');
+      expect(placement.traffic).to.equal('banner');
+    });
+    it('Returns empty data if no valid requests are passed', function () {
+      serverRequest = spec.buildRequests([]);
+      let data = serverRequest.data;
+      expect(data.placements).to.be.an('array').that.is.empty;
+    });
+  });
+  describe('interpretResponse', function () {
+    it('Should interpret banner response', function () {
+      const banner = {
+        body: [{
+          mediaType: 'banner',
+          width: 300,
+          height: 250,
+          cpm: 0.4,
+          ad: 'Test',
+          requestId: '23fhj33i987f',
+          ttl: 120,
+          creativeId: '2',
+          netRevenue: true,
+          currency: 'USD',
+          dealId: '1'
+        }]
+      };
+      let bannerResponses = spec.interpretResponse(banner);
+      expect(bannerResponses).to.be.an('array').that.is.not.empty;
+      let dataItem = bannerResponses[0];
+      expect(dataItem).to.have.all.keys('requestId', 'cpm', 'width', 'height', 'ad', 'ttl', 'creativeId',
+        'netRevenue', 'currency', 'dealId');
+      expect(dataItem.requestId).to.equal('23fhj33i987f');
+      expect(dataItem.cpm).to.equal(0.4);
+      expect(dataItem.width).to.equal(300);
+      expect(dataItem.height).to.equal(250);
+      expect(dataItem.ad).to.equal('Test');
+      expect(dataItem.ttl).to.equal(120);
+      expect(dataItem.creativeId).to.equal('2');
+      expect(dataItem.netRevenue).to.be.true;
+      expect(dataItem.currency).to.equal('USD');
+    });
+    it('Should interpret video response', function () {
+      const video = {
+        body: [{
+          vastUrl: 'test.com',
+          mediaType: 'video',
+          cpm: 0.5,
+          requestId: '23fhj33i987f',
+          ttl: 120,
+          creativeId: '2',
+          netRevenue: true,
+          currency: 'USD',
+          dealId: '1'
+        }]
+      };
+      let videoResponses = spec.interpretResponse(video);
+      expect(videoResponses).to.be.an('array').that.is.not.empty;
 
-    it('should sort MAS priority sizes in the proper order w/ rest ascending', () => {
-      let ordering = masSizeOrdering([[320, 50], [160, 600], [640, 480], [300, 250], [336, 280], [200, 600]]);
-      expect(ordering).to.deep.equal([15, 9, 16, 43, 65, 126]);
+      let dataItem = videoResponses[0];
+      expect(dataItem).to.have.all.keys('requestId', 'cpm', 'vastUrl', 'ttl', 'creativeId',
+        'netRevenue', 'currency', 'dealId');
+      expect(dataItem.mediaType).to.not.exist;
+      expect(dataItem.requestId).to.equal('23fhj33i987f');
+      expect(dataItem.cpm).to.equal(0.5);
+      expect(dataItem.vastUrl).to.equal('test.com');
+      expect(dataItem.ttl).to.equal(120);
+      expect(dataItem.creativeId).to.equal('2');
+      expect(dataItem.netRevenue).to.be.true;
+      expect(dataItem.currency).to.equal('USD');
+    });
+    it('Should interpret native response', function () {
+      const native = {
+        body: [{
+          mediaType: 'native',
+          clickUrl: 'test.com',
+          title: 'Test',
+          image: 'test.com',
+          impressionTrackers: ['test.com'],
+          ttl: 120,
+          cpm: 0.4,
+          requestId: '23fhj33i987f',
+          creativeId: '2',
+          netRevenue: true,
+          currency: 'USD',
+        }]
+      };
+      let nativeResponses = spec.interpretResponse(native);
+      expect(nativeResponses).to.be.an('array').that.is.not.empty;
 
-      ordering = masSizeOrdering([[320, 50], [300, 250], [160, 600], [640, 480], [336, 280], [200, 600], [728, 90]]);
-      expect(ordering).to.deep.equal([15, 2, 9, 16, 43, 65, 126]);
+      let dataItem = nativeResponses[0];
+      expect(dataItem).to.have.keys('requestId', 'cpm', 'clickUrl', 'impressionTrackers', 'title', 'image', 'ttl', 'creativeId', 'netRevenue', 'currency');
+      expect(dataItem.mediaType).to.not.exist;
+      expect(dataItem.requestId).to.equal('23fhj33i987f');
+      expect(dataItem.cpm).to.equal(0.4);
+      expect(dataItem.clickUrl).to.equal('test.com');
+      expect(dataItem.title).to.equal('Test');
+      expect(dataItem.image).to.equal('test.com');
+      expect(dataItem.impressionTrackers).to.be.an('array').that.is.not.empty;
+      expect(dataItem.impressionTrackers[0]).to.equal('test.com');
+      expect(dataItem.ttl).to.equal(120);
+      expect(dataItem.creativeId).to.equal('2');
+      expect(dataItem.netRevenue).to.be.true;
+      expect(dataItem.currency).to.equal('USD');
+    });
+    it('Should return an empty array if invalid banner response is passed', function () {
+      const invBanner = {
+        body: [{
+          width: 300,
+          cpm: 0.4,
+          ad: 'Test',
+          requestId: '23fhj33i987f',
+          ttl: 120,
+          creativeId: '2',
+          netRevenue: true,
+          currency: 'USD',
+          dealId: '1'
+        }]
+      };
 
-      ordering = masSizeOrdering([[120, 600], [320, 50], [160, 600], [640, 480], [336, 280], [200, 600], [728, 90]]);
-      expect(ordering).to.deep.equal([2, 9, 8, 16, 43, 65, 126]);
-    })
+      let serverResponses = spec.interpretResponse(invBanner);
+      expect(serverResponses).to.be.an('array').that.is.empty;
+    });
+    it('Should return an empty array if invalid video response is passed', function () {
+      const invVideo = {
+        body: [{
+          mediaType: 'video',
+          cpm: 0.5,
+          requestId: '23fhj33i987f',
+          ttl: 120,
+          creativeId: '2',
+          netRevenue: true,
+          currency: 'USD',
+          dealId: '1'
+        }]
+      };
+      let serverResponses = spec.interpretResponse(invVideo);
+      expect(serverResponses).to.be.an('array').that.is.empty;
+    });
+    it('Should return an empty array if invalid native response is passed', function () {
+      const invNative = {
+        body: [{
+          mediaType: 'native',
+          clickUrl: 'test.com',
+          title: 'Test',
+          impressionTrackers: ['test.com'],
+          ttl: 120,
+          requestId: '23fhj33i987f',
+          creativeId: '2',
+          netRevenue: true,
+          currency: 'USD',
+        }]
+      };
+      let serverResponses = spec.interpretResponse(invNative);
+      expect(serverResponses).to.be.an('array').that.is.empty;
+    });
+    it('Should return an empty array if invalid response is passed', function () {
+      const invalid = {
+        body: [{
+          ttl: 120,
+          creativeId: '2',
+          netRevenue: true,
+          currency: 'USD',
+          dealId: '1'
+        }]
+      };
+      let serverResponses = spec.interpretResponse(invalid);
+      expect(serverResponses).to.be.an('array').that.is.empty;
+    });
+  });
+  describe('getUserSyncs', function () {
+    let userSync = spec.getUserSyncs();
+    it('Returns valid URL and type', function () {
+      expect(userSync).to.be.an('array').with.lengthOf(1);
+      expect(userSync[0].type).to.exist;
+      expect(userSync[0].url).to.exist;
+      expect(userSync[0].type).to.be.equal('image');
+      expect(userSync[0].url).to.be.equal('//ssp-nj.webtradehub.com/?c=o&m=cookie');
+    });
   });
 });
-
-function clone(obj) {
-  return JSON.parse(JSON.stringify(obj));
-}

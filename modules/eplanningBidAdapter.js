@@ -1,310 +1,172 @@
-var bidfactory = require('src/bidfactory.js');
-var bidmanager = require('src/bidmanager.js');
-var adaptermanager = require('src/adaptermanager');
+import * as utils from '../src/utils';
+import { registerBidder } from '../src/adapters/bidderFactory';
 
-function EPlanningAdapter() {
-  (function() {
-    const win = window;
-    const doc = win.document;
-    const pbjsVar = win.$$PREBID_GLOBAL$$;
-    const _global = {};
-    const _default = { 'sv': 'ads.us.e-planning.net', 't': 0 };
-    var rnd;
-    const FILE = 'file';
-    const CALLBACK_FUNCTION = 'hbpb.rH';
-    const NULL_SIZE = '1x1';
-    const _csRequested = [];
-    const PROTO = location.protocol === 'https:' ? 'https:' : 'http:';
-    const ISV = 'aklc.img.e-planning.net';
-    function Hbpb() {
-      var slots = (function() {
-        var _data = [];
-        function Slot(slotId) {
-          var data = _data[slotId];
-          function hasAds() {
-            return _data[slotId].ads.length;
-          }
-          function getSizes() {
-            return data.sizes;
-          }
-          function getSizesString() {
-            const s = [];
-            var i;
-            const sizes = getSizes();
-            if (sizes && sizes.length) {
-              if (typeof sizes[0] === 'object') {
-                for (i = 0; i < sizes.length; i++) {
-                  s.push(sizes[i][0] + 'x' + sizes[i][1]);
-                }
-              } else {
-                s.push(sizes[0] + 'x' + sizes[1]);
-              }
-            } else {
-              return NULL_SIZE;
-            }
-            return s.join(',');
-          }
-          return {
-            getPlacementCode: function() {
-              return data.placementCode;
-            },
-            getString: function() {
-              return this.getPlacementCode() + ':' + getSizesString();
-            },
-            addAd: function(ad) {
-              _data[slotId].ads.push(ad);
-            },
-            getFormatedResponse: function() {
-              var ad;
-              const that = this;
-              if (hasAds()) {
-                ad = data.ads[0];
-                return {
-                  'placementCode': that.getPlacementCode(),
-                  'ad': {
-                    'ad': ad.adm,
-                    'cpm': ad.pr,
-                    'width': ad.size.w,
-                    'height': ad.size.h
-                  }
-                };
-              } else {
-                return { 'placementCode': that.getPlacementCode() };
-              }
-            }
-          };
-        }
-        function findAll() {
-          var i = 0;
-          const r = [];
-          for (i = 0; i < _data.length; i++) {
-            r.push(new Slot(i));
-          }
-          return r;
-        }
-        return {
-          add: function(slot) {
-            slot.ads = [];
-            _data.push(slot);
-          },
-          get: function(slotId) {
-            return new Slot(slotId);
-          },
-          getString: function() {
-            const _slots = [];
-            var i;
-            var slot;
-            for (i = 0; i < _data.length; i++) {
-              slot = this.get(i);
-              _slots.push(slot.getString());
-            }
-            return _slots.join('+');
-          },
-          findByPlacementCode: function(placementCode) {
-            var i;
-            const _slots = findAll();
-            for (i = 0; i < _slots.length; i++) {
-              if (_slots[i].getPlacementCode() === placementCode) {
-                return _slots[i];
-              }
-            }
-          },
-          getFormatedResponse: function() {
-            const _slots = findAll();
-            var i;
-            const r = [];
-            for (i = 0; i < _slots.length; i++) {
-              r.push(_slots[i].getFormatedResponse());
-            }
-            return {
-              'bids': r
-            };
-          }
-        };
-      })();
-      function call(params) {
-        var i;
-        const bids = params.bids;
-        for (i = 0; i < bids.length; i++) {
-          slots.add({
-            _raw: bids[i],
-            placementCode: bids[i].placementCode,
-            sizes: bids[i].sizes
-          });
-          setGlobalParam('sv', bids[i]);
-          setGlobalParam('ci', bids[i]);
-          setGlobalParam('t', bids[i]);
-        }
-        doRequest();
-      }
-      function setGlobalParam(param, bid) {
-        if (!_global[param]) {
-          if (bid && bid.params && bid.params[param]) {
-            _global[param] = bid.params[param];
-          }
-        }
-      }
-      function getGlobalParam(param) {
-        return (_global[param] || _default[param]);
-      }
-      function getRandom() {
-        if (!rnd) {
-          rnd = Math.random();
-        }
-        return rnd;
-      }
-      function getDocURL() {
-        return escape(win.location.href || FILE);
-      }
-      function getReferrerURL() {
-        return doc.referrer;
-      }
-      function getCallbackFunction() {
-        return CALLBACK_FUNCTION;
-      }
-      function doRequest() {
-        const clienteId = getGlobalParam('ci');
-        var url;
-        const dfpClienteId = '1';
-        const sec = 'ROS';
-        const params = [];
-        const t = getGlobalParam('t');
-        if (clienteId && !t) {
-          url = PROTO + '//' + getGlobalParam('sv') + '/hb/1/' + clienteId + '/' + dfpClienteId + '/' + (win.location.hostname || FILE) + '/' + sec + '?';
-          params.push('rnd=' + getRandom());
-          params.push('e=' + slots.getString());
-          if (getDocURL()) {
-            params.push('ur=' + getDocURL());
-          }
-          if (getReferrerURL()) {
-            params.push('fr=' + getReferrerURL());
-          }
-          params.push('cb=' + getCallbackFunction());
-          params.push('r=pbjs');
-          url += params.join('&');
-          load(url);
-        } else if (t) {
-          url = PROTO + '//' + ISV + '/layers/t_pbjs_' + t + '.js';
-          load(url);
-        }
-      }
-      function load(url) {
-        var script = doc.createElement('script');
-        script.src = url;
-        doc.body.appendChild(script);
-      }
-      function callback(response) {
-        if (pbjsVar && pbjsVar.processEPlanningResponse && typeof pbjsVar.processEPlanningResponse === 'function') {
-          pbjsVar.processEPlanningResponse(response);
-        }
-      }
-      function syncUsers(cs) {
-        var i, e, d;
-        for (i = 0; i < cs.length; i++) {
-          if (typeof cs[i] === 'string' && _csRequested.indexOf(cs[i]) === -1) {
-            (new Image()).src = cs[i];
-            _csRequested.push(cs[i]);
-          } else if (typeof cs[i] === 'object' && _csRequested.indexOf(cs[i].u) === -1) {
-            if (cs[i].j) {
-              e = doc.createElement('script');
-              e.src = cs[i].u;
-            } else if (cs[i].ifr) {
-              e = doc.createElement('iframe');
-              e.src = cs[i].u;
-              e.style.width = e.style.height = '1px';
-              e.display = 'none';
-            }
-            if (cs[i].data) {
-              for (d in cs[i].data) {
-                if (cs[i].data.hasOwnProperty(d)) {
-                  e.setAttribute('data-' + d, cs[i].data[d]);
-                }
-              }
-            }
-            doc.body.appendChild(e);
-            _csRequested.push(cs[i].u);
-          }
-        }
-      }
-      function rH(response) {
-        var slot, i, o;
-        if (response && response.sp && response.sp.length) {
-          for (i = 0; i < response.sp.length; i++) {
-            if (response.sp[i].a) {
-              slot = slots.findByPlacementCode(response.sp[i].k);
-              if (slot) {
-                for (o = 0; o < response.sp[i].a.length; o++) {
-                  slot.addAd({
-                    'adm': response.sp[i].a[o].adm,
-                    'pr': response.sp[i].a[o].pr,
-                    'size': {
-                      'w': response.sp[i].a[o].w,
-                      'h': response.sp[i].a[o].h
-                    }
-                  });
-                }
-              }
-            }
-          }
-          callback(slots.getFormatedResponse());
-        }
-        if (response && response.cs && response.cs.length) {
-          syncUsers(response.cs);
-        }
-      }
-      return {
-        call: function(params) {
-          return call(params);
-        },
-        rH: function(response) {
-          return rH(response);
-        }
+const BIDDER_CODE = 'eplanning';
+const rnd = Math.random();
+const DEFAULT_SV = 'ads.us.e-planning.net';
+const DEFAULT_ISV = 'i.e-planning.net';
+const PARAMS = ['ci', 'sv', 't'];
+const DOLLARS = 'USD';
+const NET_REVENUE = true;
+const TTL = 120;
+const NULL_SIZE = '1x1';
+const FILE = 'file';
+
+export const spec = {
+  code: BIDDER_CODE,
+  isBidRequestValid: function(bid) {
+    return Boolean(bid.params.ci) || Boolean(bid.params.t);
+  },
+
+  buildRequests: function(bidRequests) {
+    const method = 'GET';
+    const dfpClientId = '1';
+    const sec = 'ROS';
+    let url;
+    let params;
+    const urlConfig = getUrlConfig(bidRequests);
+    const pcrs = getCharset();
+
+    if (urlConfig.t) {
+      url = urlConfig.isv + '/layers/t_pbjs_2.json';
+      params = {};
+    } else {
+      url = '//' + (urlConfig.sv || DEFAULT_SV) + '/hb/1/' + urlConfig.ci + '/' + dfpClientId + '/' + (utils.getTopWindowLocation().hostname || FILE) + '/' + sec;
+      const referrerUrl = utils.getTopWindowReferrer();
+      const spacesString = getSpacesString(bidRequests);
+      params = {
+        rnd: rnd,
+        e: spacesString,
+        ur: utils.getTopWindowUrl() || FILE,
+        r: 'pbjs',
+        pbv: '$prebid.version$',
+        ncb: '1'
       };
-    }
-    win.hbpb = win.hbpb || new Hbpb();
-  })();
 
-  window.$$PREBID_GLOBAL$$ = window.$$PREBID_GLOBAL$$ || {};
-  window.$$PREBID_GLOBAL$$.processEPlanningResponse = function(response) {
-    var bids, bidObject, i;
-    if (response) {
-      bids = response.bids;
-      for (i = 0; i < bids.length; i++) {
-        if (bids[i].ad) {
-          bidObject = getBidObject(bids[i]);
-          bidmanager.addBidResponse(bids[i].placementCode, bidObject);
-        } else {
-          bidObject = bidfactory.createBid(2);
-          bidObject.bidderCode = 'eplanning';
-          bidmanager.addBidResponse(bids[i].placementCode, bidObject);
+      if (pcrs) {
+        params.crs = pcrs;
+      }
+
+      if (referrerUrl) {
+        params.fr = referrerUrl;
+      }
+    }
+
+    return {
+      method: method,
+      url: url,
+      data: params,
+      adUnitToBidId: getBidIdMap(bidRequests),
+    };
+  },
+  interpretResponse: function(serverResponse, request) {
+    const response = serverResponse.body;
+    let bidResponses = [];
+
+    if (response && !utils.isEmpty(response.sp)) {
+      response.sp.forEach(space => {
+        if (!utils.isEmpty(space.a)) {
+          space.a.forEach(ad => {
+            const bidResponse = {
+              requestId: request.adUnitToBidId[space.k],
+              cpm: ad.pr,
+              width: ad.w,
+              height: ad.h,
+              ad: ad.adm,
+              ttl: TTL,
+              creativeId: ad.crid,
+              netRevenue: NET_REVENUE,
+              currency: DOLLARS,
+            };
+            bidResponses.push(bidResponse);
+          });
         }
-      }
+      });
     }
-  };
 
-  function getBidObject(bid) {
-    const bidObject = bidfactory.createBid(1);
-    var i;
-    bidObject.bidderCode = 'eplanning';
-    for (i in bid.ad) {
-      if (bid.ad.hasOwnProperty(i)) {
-        bidObject[i] = bid.ad[i];
-      }
+    return bidResponses;
+  },
+  getUserSyncs: function(syncOptions, serverResponses) {
+    const syncs = [];
+    const response = !utils.isEmpty(serverResponses) && serverResponses[0].body;
+
+    if (response && !utils.isEmpty(response.cs)) {
+      const responseSyncs = response.cs;
+      responseSyncs.forEach(sync => {
+        if (typeof sync === 'string' && syncOptions.pixelEnabled) {
+          syncs.push({
+            type: 'image',
+            url: sync,
+          });
+        } else if (typeof sync === 'object' && sync.ifr && syncOptions.iframeEnabled) {
+          syncs.push({
+            type: 'iframe',
+            url: sync.u,
+          })
+        }
+      });
     }
-    return bidObject;
-  }
 
-  function _callBids(params) {
-    if (window.hbpb) {
-      window.hbpb.call(params);
-    }
-  }
-
-  return {
-    callBids: _callBids
-  };
+    return syncs;
+  },
 }
 
-adaptermanager.registerBidAdapter(new EPlanningAdapter(), 'eplanning');
+function cleanName(name) {
+  return name.replace(/_|\.|-|\//g, '').replace(/\)\(|\(|\)|:/g, '_').replace(/^_+|_+$/g, '');
+}
+function getUrlConfig(bidRequests) {
+  if (isTestRequest(bidRequests)) {
+    return getTestConfig(bidRequests.filter(br => br.params.t));
+  }
 
-module.exports = EPlanningAdapter;
+  let config = {};
+  bidRequests.forEach(bid => {
+    PARAMS.forEach(param => {
+      if (bid.params[param] && !config[param]) {
+        config[param] = bid.params[param];
+      }
+    });
+  });
+
+  if (config.sv) {
+    config.sv = '//' + config.sv;
+  }
+
+  return config;
+}
+function isTestRequest(bidRequests) {
+  let isTest = false;
+  bidRequests.forEach(bid => isTest = bid.params.t);
+  return isTest;
+}
+function getTestConfig(bidRequests) {
+  let isv;
+  bidRequests.forEach(br => isv = isv || br.params.isv);
+  return {
+    t: true,
+    isv: '//' + (isv || DEFAULT_ISV)
+  };
+}
+function getSpacesString(bids) {
+  const spacesString = bids.map(bid =>
+    cleanName(bid.adUnitCode) + ':' + (bid.sizes && bid.sizes.length ? utils.parseSizesInput(bid.sizes).join(',') : NULL_SIZE)
+  ).join('+');
+
+  return spacesString;
+}
+
+function getCharset() {
+  try {
+    return window.top.document.charset || window.top.document.characterSet;
+  } catch (e) {
+    return document.charset || document.characterSet;
+  }
+}
+
+function getBidIdMap(bidRequests) {
+  let map = {};
+  bidRequests.forEach(bid => map[cleanName(bid.adUnitCode)] = bid.bidId);
+  return map;
+}
+
+registerBidder(spec);

@@ -1,5 +1,7 @@
-import {logError, getTopWindowLocation} from 'src/utils';
-import { registerBidder } from 'src/adapters/bidderFactory';
+import { logError, getTopWindowLocation, replaceAuctionPrice, getTopWindowReferrer } from '../src/utils';
+import { registerBidder } from '../src/adapters/bidderFactory';
+import { config } from '../src/config';
+import { NATIVE } from '../src/mediaTypes';
 
 export const ENDPOINT = '//app.readpeak.com/header/prebid';
 
@@ -18,20 +20,30 @@ export const spec = {
 
   code: BIDDER_CODE,
 
-  supportedMediaTypes: ['native'],
+  supportedMediaTypes: [NATIVE],
 
   isBidRequestValid: bid => (
     !!(bid && bid.params && bid.params.publisherId && bid.nativeParams)
   ),
 
   buildRequests: bidRequests => {
+    const currencyObj = config.getConfig('currency');
+    const currency = (currencyObj && currencyObj.adServerCurrency) || 'USD';
+
     const request = {
       id: bidRequests[0].bidderRequestId,
       imp: bidRequests.map(slot => impression(slot)).filter(imp => imp.native != null),
       site: site(bidRequests),
       app: app(bidRequests),
       device: device(),
-      isPrebid: true,
+      cur: [currency],
+      source: {
+        fd: 1,
+        tid: bidRequests[0].transactionId,
+        ext: {
+          prebid: '$prebid.version$',
+        },
+      },
     }
 
     return {
@@ -70,7 +82,7 @@ function bidResponseAvailable(bidRequest, bidResponse) {
         creativeId: idToBidMap[id].crid,
         ttl: 300,
         netRevenue: true,
-        mediaType: 'native',
+        mediaType: NATIVE,
         currency: bidResponse.cur,
         native: nativeResponse(idToImpMap[id], idToBidMap[id]),
       };
@@ -93,7 +105,7 @@ function nativeImpression(slot) {
   if (slot.nativeParams) {
     const assets = [];
     addAsset(assets, titleAsset(1, slot.nativeParams.title, NATIVE_DEFAULTS.TITLE_LEN));
-    addAsset(assets, imageAsset(2, slot.nativeParams.image, 3, NATIVE_DEFAULTS.IMG_MIN, NATIVE_DEFAULTS.IMG_MIN));
+    addAsset(assets, imageAsset(2, slot.nativeParams.image, 3, slot.nativeParams.wmin || NATIVE_DEFAULTS.IMG_MIN, slot.nativeParams.hmin || NATIVE_DEFAULTS.IMG_MIN));
     addAsset(assets, dataAsset(3, slot.nativeParams.sponsoredBy, 1, NATIVE_DEFAULTS.SPONSORED_BY_LEN));
     addAsset(assets, dataAsset(4, slot.nativeParams.body, 2, NATIVE_DEFAULTS.DESCR_LEN));
     addAsset(assets, dataAsset(5, slot.nativeParams.cta, 12, NATIVE_DEFAULTS.CTA_LEN));
@@ -149,19 +161,21 @@ function dataAsset(id, params, type, defaultLen) {
 
 function site(bidderRequest) {
   const pubId = bidderRequest && bidderRequest.length > 0 ? bidderRequest[0].params.publisherId : '0';
+  const siteId = bidderRequest && bidderRequest.length > 0 ? bidderRequest[0].params.siteId : '0';
   const appParams = bidderRequest[0].params.app;
   if (!appParams) {
     return {
       publisher: {
         id: pubId.toString(),
+        domain: config.getConfig('publisherDomain'),
       },
-      id: pubId.toString(),
-      ref: referrer(),
-      page: getTopWindowLocation().href,
+      id: siteId ? siteId.toString() : pubId.toString(),
+      ref: getTopWindowReferrer(),
+      page: config.getConfig('pageUrl') || getTopWindowLocation().href,
       domain: getTopWindowLocation().hostname
     }
   }
-  return null;
+  return undefined;
 }
 
 function app(bidderRequest) {
@@ -177,21 +191,22 @@ function app(bidderRequest) {
       domain: appParams.domain,
     }
   }
-  return null;
+  return undefined;
 }
 
-function referrer() {
-  try {
-    return window.top.document.referrer;
-  } catch (e) {
-    return document.referrer;
-  }
+function isMobile() {
+  return (/(ios|ipod|ipad|iphone|android)/i).test(global.navigator.userAgent);
+}
+
+function isConnectedTV() {
+  return (/(smart[-]?tv|hbbtv|appletv|googletv|hdmi|netcast\.tv|viera|nettv|roku|\bdtv\b|sonydtv|inettvbrowser|\btv\b)/i).test(global.navigator.userAgent);
 }
 
 function device() {
   return {
     ua: navigator.userAgent,
     language: (navigator.language || navigator.browserLanguage || navigator.userLanguage || navigator.systemLanguage),
+    devicetype: isMobile() ? 1 : isConnectedTV() ? 3 : 2
   };
 }
 
@@ -219,13 +234,19 @@ function nativeResponse(imp, bid) {
         keys.title = asset.title ? asset.title.text : keys.title;
         keys.body = asset.data && asset.id === 4 ? asset.data.value : keys.body;
         keys.sponsoredBy = asset.data && asset.id === 3 ? asset.data.value : keys.sponsoredBy;
-        keys.image = asset.img && asset.id === 2 ? asset.img.url : keys.image;
+        keys.image = asset.img && asset.id === 2 ? {
+          url: asset.img.url,
+          width: asset.img.w || 750,
+          height: asset.img.h || 500,
+        } : keys.image;
         keys.cta = asset.data && asset.id === 5 ? asset.data.value : keys.cta;
       });
       if (nativeAd.link) {
         keys.clickUrl = encodeURIComponent(nativeAd.link.url);
       }
-      keys.impressionTrackers = nativeAd.imptrackers;
+      const trackers = nativeAd.imptrackers || [];
+      trackers.unshift(replaceAuctionPrice(bid.burl, bid.price));
+      keys.impressionTrackers = trackers;
       return keys;
     }
   }

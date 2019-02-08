@@ -1,209 +1,162 @@
-import {expect} from 'chai';
-import Adapter from '../../../modules/yieldmoBidAdapter';
-import bidManager from '../../../src/bidmanager';
-import adLoader from '../../../src/adloader';
-import {parse as parseURL} from '../../../src/url';
+import { expect } from 'chai';
+import { spec } from 'modules/yieldmoBidAdapter';
+import {newBidder} from 'src/adapters/bidderFactory';
+import * as utils from 'src/utils';
 
-describe('Yieldmo adapter', () => {
-  let bidsRequestedOriginal;
-  let adapter;
-  let sandbox;
+describe('YieldmoAdapter', function () {
+  const adapter = newBidder(spec);
+  const ENDPOINT = 'https://ads.yieldmo.com/exchange/prebid';
 
-  const bidderRequest = {
-    bidderCode: 'yieldmo',
-    bids: [
-      {
-        bidId: 'bidId1',
-        bidder: 'yieldmo',
-        placementCode: 'foo',
-        sizes: [[728, 90]]
-      },
-      {
-        bidId: 'bidId2',
-        bidder: 'yieldmo',
-        placementCode: 'bar',
-        sizes: [[300, 600], [300, 250]]
-      }
-    ]
+  let bid = {
+    bidder: 'yieldmo',
+    params: {},
+    adUnitCode: 'adunit-code',
+    sizes: [[300, 250], [300, 600]],
+    bidId: '30b31c1838de1e',
+    bidderRequestId: '22edbae2733bf6',
+    auctionId: '1d1a030790a475'
   };
+  let bidArray = [bid];
 
-  beforeEach(() => {
-    bidsRequestedOriginal = $$PREBID_GLOBAL$$._bidsRequested;
-    $$PREBID_GLOBAL$$._bidsRequested = [];
-
-    adapter = new Adapter();
-    sandbox = sinon.sandbox.create();
-  });
-
-  afterEach(() => {
-    sandbox.restore();
-
-    $$PREBID_GLOBAL$$._bidsRequested = bidsRequestedOriginal;
-  });
-
-  describe('callBids', () => {
-    let bidRequestURL;
-
-    beforeEach(() => {
-      sandbox.stub(adLoader, 'loadScript');
-      adapter.callBids(bidderRequest);
-
-      bidRequestURL = adLoader.loadScript.firstCall.args[0];
+  describe('isBidRequestValid', function () {
+    it('should return true when necessary information is found', function () {
+      expect(spec.isBidRequestValid(bid)).to.be.true;
     });
 
-    it('should load a script with passed bid params', () => {
-      let route = 'http://ads.yieldmo.com/exchange/prebid?';
-      let requestParams = parseURL(bidRequestURL).search;
-      let parsedPlacementParams = JSON.parse(decodeURIComponent(requestParams.p));
+    it('should return false when necessary information is not found', function () {
+      // empty bid
+      expect(spec.isBidRequestValid({})).to.be.false;
 
-      sinon.assert.calledOnce(adLoader.loadScript);
-      expect(bidRequestURL).to.contain(route);
+      // empty bidId
+      bid.bidId = '';
+      expect(spec.isBidRequestValid(bid)).to.be.false;
 
-      // placement 1
-      expect(parsedPlacementParams[0]).to.have.property('callback_id', 'bidId1');
-      expect(parsedPlacementParams[0]).to.have.property('placement_id', 'foo');
-      expect(parsedPlacementParams[0].sizes[0][0]).to.equal(728);
-      expect(parsedPlacementParams[0].sizes[0][1]).to.equal(90);
+      // empty adUnitCode
+      bid.bidId = '30b31c1838de1e';
+      bid.adUnitCode = '';
+      expect(spec.isBidRequestValid(bid)).to.be.false;
 
-      // placement 2
-      expect(parsedPlacementParams[1]).to.have.property('callback_id', 'bidId2');
-      expect(parsedPlacementParams[1]).to.have.property('placement_id', 'bar');
-      expect(parsedPlacementParams[1].sizes[0][0]).to.equal(300);
-      expect(parsedPlacementParams[1].sizes[0][1]).to.equal(600);
-      expect(parsedPlacementParams[1].sizes[1][0]).to.equal(300);
-      expect(parsedPlacementParams[1].sizes[1][1]).to.equal(250);
-
-      // impression information
-      expect(requestParams).to.have.property('callback', '$$PREBID_GLOBAL$$.YMCB');
-      expect(requestParams).to.have.property('page_url');
+      bid.adUnitCode = 'adunit-code';
     });
   });
 
-  describe('YMCB', () => {
-    it('should exist and be a function', () => {
-      expect($$PREBID_GLOBAL$$.YMCB).to.exist.and.to.be.a('function');
+  describe('buildRequests', function () {
+    it('should attempt to send bid requests to the endpoint via GET', function () {
+      const request = spec.buildRequests(bidArray);
+      expect(request.method).to.equal('GET');
+      expect(request.url).to.be.equal(ENDPOINT);
+    });
+
+    it('should place bid information into the p parameter of data', function () {
+      let placementInfo = spec.buildRequests(bidArray).data.p;
+      expect(placementInfo).to.equal('[{"placement_id":"adunit-code","callback_id":"30b31c1838de1e","sizes":[[300,250],[300,600]]}]');
+
+      bidArray.push({
+        bidder: 'yieldmo',
+        params: {},
+        adUnitCode: 'adunit-code-1',
+        sizes: [[300, 250], [300, 600]],
+        bidId: '123456789',
+        bidderRequestId: '987654321',
+        auctionId: '0246810'
+      });
+
+      // multiple placements
+      placementInfo = spec.buildRequests(bidArray).data.p;
+      expect(placementInfo).to.equal('[{"placement_id":"adunit-code","callback_id":"30b31c1838de1e","sizes":[[300,250],[300,600]]},{"placement_id":"adunit-code-1","callback_id":"123456789","sizes":[[300,250],[300,600]]}]');
+    });
+
+    it('should add placement id if given', function () {
+      bidArray[0].params.placementId = 'ym_1293871298';
+      let placementInfo = spec.buildRequests(bidArray).data.p;
+      expect(placementInfo).to.include('"ym_placement_id":"ym_1293871298"}');
+      expect(placementInfo).not.to.include('"ym_placement_id":"ym_0987654321"}');
+
+      bidArray[1].params.placementId = 'ym_0987654321';
+      placementInfo = spec.buildRequests(bidArray).data.p;
+      expect(placementInfo).to.include('"ym_placement_id":"ym_1293871298"}');
+      expect(placementInfo).to.include('"ym_placement_id":"ym_0987654321"}');
+    });
+
+    it('should add additional information to data parameter of request', function () {
+      const data = spec.buildRequests(bidArray).data;
+      expect(data.hasOwnProperty('page_url')).to.be.true;
+      expect(data.hasOwnProperty('bust')).to.be.true;
+      expect(data.hasOwnProperty('pr')).to.be.true;
+      expect(data.hasOwnProperty('scrd')).to.be.true;
+      expect(data.dnt).to.be.false;
+      expect(data.e).to.equal(90);
+      expect(data.hasOwnProperty('description')).to.be.true;
+      expect(data.hasOwnProperty('title')).to.be.true;
+      expect(data.hasOwnProperty('h')).to.be.true;
+      expect(data.hasOwnProperty('w')).to.be.true;
+    })
+  });
+
+  describe('interpretResponse', function () {
+    let serverResponse;
+
+    beforeEach(function () {
+      serverResponse = {
+        body: [{
+          callback_id: '21989fdbef550a',
+          cpm: 3.45455,
+          width: 300,
+          height: 250,
+          ad: '<html><head></head><body><script>//GEX ad object</script><div id=\"ym_123\" class=\"ym\"></div><script>//js code</script></body></html>',
+          creative_id: '9874652394875'
+        }],
+        header: 'header?'
+      };
+    })
+
+    it('should correctly reorder the server response', function () {
+      const newResponse = spec.interpretResponse(serverResponse);
+      expect(newResponse.length).to.be.equal(1);
+      expect(newResponse[0]).to.deep.equal({
+        requestId: '21989fdbef550a',
+        cpm: 3.45455,
+        width: 300,
+        height: 250,
+        creativeId: '9874652394875',
+        currency: 'USD',
+        netRevenue: true,
+        ttl: 300,
+        ad: '<html><head></head><body><script>//GEX ad object</script><div id=\"ym_123\" class=\"ym\"></div><script>//js code</script></body></html>'
+      });
+    });
+
+    it('should not add responses if the cpm is 0 or null', function () {
+      serverResponse.body[0].cpm = 0;
+      let response = spec.interpretResponse(serverResponse);
+      expect(response).to.deep.equal([]);
+
+      serverResponse.body[0].cpm = null;
+      response = spec.interpretResponse(serverResponse);
+      expect(response).to.deep.equal([])
     });
   });
 
-  describe('add bids to the manager', () => {
-    let firstBid;
-    let secondBid;
+  describe('getUserSync', function () {
+    const SYNC_ENDPOINT = 'https://static.yieldmo.com/blank.min.html?orig=';
+    let options = {
+      iframeEnabled: true,
+      pixelEnabled: true
+    };
 
-    beforeEach(() => {
-      sandbox.stub(bidManager, 'addBidResponse');
+    it('should return a tracker with type and url as parameters', function () {
+      if (/iPhone|iPad|iPod/i.test(window.navigator.userAgent)) {
+        expect(spec.getUserSync(options)).to.deep.equal([{
+          type: 'iframe',
+          url: SYNC_ENDPOINT + utils.getOrigin()
+        }]);
 
-      $$PREBID_GLOBAL$$._bidsRequested.push(bidderRequest);
-
-      // respond
-      let bidderReponse = [{
-        'cpm': 3.45455,
-        'width': 300,
-        'height': 250,
-        'callback_id': 'bidId1',
-        'ad': '<html><head></head><body>HELLO YIELDMO AD</body></html>'
-      }, {
-        'cpm': 4.35455,
-        'width': 400,
-        'height': 350,
-        'callback_id': 'bidId2',
-        'ad': '<html><head></head><body>HELLO YIELDMO AD</body></html>'
-      }];
-
-      $$PREBID_GLOBAL$$.YMCB(bidderReponse);
-
-      firstBid = bidManager.addBidResponse.firstCall.args[1];
-      secondBid = bidManager.addBidResponse.secondCall.args[1];
-    });
-
-    it('should add a bid object for each bid', () => {
-      sinon.assert.calledTwice(bidManager.addBidResponse);
-    });
-
-    it('should pass the correct placement code as first param', () => {
-      let firstPlacementCode = bidManager.addBidResponse.firstCall.args[0];
-      let secondPlacementCode = bidManager.addBidResponse.secondCall.args[0];
-
-      expect(firstPlacementCode).to.eql('foo');
-      expect(secondPlacementCode).to.eql('bar');
-    });
-
-    it('should have a good statusCode', () => {
-      expect(firstBid.getStatusCode()).to.eql(1);
-      expect(secondBid.getStatusCode()).to.eql(1);
-    });
-
-    it('should add the CPM to the bid object', () => {
-      expect(firstBid).to.have.property('cpm', 3.45455);
-      expect(secondBid).to.have.property('cpm', 4.35455);
-    });
-
-    it('should add the bidder code to the bid object', () => {
-      expect(firstBid).to.have.property('bidderCode', 'yieldmo');
-      expect(secondBid).to.have.property('bidderCode', 'yieldmo');
-    });
-
-    it('should include the ad on the bid object', () => {
-      expect(firstBid).to.have.property('ad');
-      expect(secondBid).to.have.property('ad');
-    });
-
-    it('should include the size on the bid object', () => {
-      expect(firstBid).to.have.property('width', 300);
-      expect(firstBid).to.have.property('height', 250);
-      expect(secondBid).to.have.property('width', 400);
-      expect(secondBid).to.have.property('height', 350);
-    });
-  });
-
-  describe('add empty bids if no bid returned', () => {
-    let firstBid;
-    let secondBid;
-
-    beforeEach(() => {
-      sandbox.stub(bidManager, 'addBidResponse');
-
-      $$PREBID_GLOBAL$$._bidsRequested.push(bidderRequest);
-
-      // respond
-      let bidderReponse = [{
-        'status': 'no_bid',
-        'callback_id': 'bidId1'
-      }, {
-        'status': 'no_bid',
-        'callback_id': 'bidId2'
-      }];
-
-      $$PREBID_GLOBAL$$.YMCB(bidderReponse);
-
-      firstBid = bidManager.addBidResponse.firstCall.args[1];
-      secondBid = bidManager.addBidResponse.secondCall.args[1];
-    });
-
-    it('should add a bid object for each bid', () => {
-      sinon.assert.calledTwice(bidManager.addBidResponse);
-    });
-
-    it('should include the bid request bidId as the adId', () => {
-      expect(firstBid).to.have.property('adId', 'bidId1');
-      expect(secondBid).to.have.property('adId', 'bidId2');
-    });
-
-    it('should have an error statusCode', () => {
-      expect(firstBid.getStatusCode()).to.eql(2);
-      expect(secondBid.getStatusCode()).to.eql(2);
-    });
-
-    it('should pass the correct placement code as first param', () => {
-      let firstPlacementCode = bidManager.addBidResponse.firstCall.args[0];
-      let secondPlacementCode = bidManager.addBidResponse.secondCall.args[0];
-
-      expect(firstPlacementCode).to.eql('foo');
-      expect(secondPlacementCode).to.eql('bar');
-    });
-
-    it('should add the bidder code to the bid object', () => {
-      expect(firstBid).to.have.property('bidderCode', 'yieldmo');
-      expect(secondBid).to.have.property('bidderCode', 'yieldmo');
+        options.iframeEnabled = false;
+        expect(spec.getUserSync(options)).to.deep.equal([]);
+      } else {
+        // not ios, so tracker will fail
+        expect(spec.getUserSync(options)).to.deep.equal([]);
+      }
     });
   });
 });

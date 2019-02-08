@@ -1,166 +1,159 @@
-const bidfactory = require('src/bidfactory.js');
-const bidmanager = require('src/bidmanager');
-const utils = require('src/utils.js');
-const adloader = require('src/adloader');
-const adaptermanager = require('src/adaptermanager');
+import * as utils from '../src/utils';
+import {registerBidder} from '../src/adapters/bidderFactory';
+import { BANNER, VIDEO } from '../src/mediaTypes';
 
-const LifestreetAdapter = function LifestreetAdapter() {
-  const BIDDER_CODE = 'lifestreet';
-  const ADAPTER_VERSION = 'prebidJS-1.0';
-  const SLOTS_LOAD_MAP = {};
-  const PREBID_REQUEST_MESSAGE = 'LSMPrebid Request';
-  const PREBID_RESPONSE_MESSAGE = 'LSMPrebid Response';
+const BIDDER_CODE = 'lifestreet';
+const ADAPTER_VERSION = 'prebidJS-2.0';
 
-  function _callBids(params) {
-    utils._each(params.bids, bid => {
-      const jstagUrl = bid.params.jstag_url;
-      const slot = bid.params.slot;
-      const adkey = bid.params.adkey;
-      const adSize = bid.params.ad_size;
-      let timeout = 700;
-      if (bid.params.timeout) {
-        timeout = bid.params.timeout;
-      }
-      let shouldRequest = false;
-      if (jstagUrl && jstagUrl.length > 0 && slot && slot.length > 0 &&
-          adkey && adkey.length > 0 && adSize && adSize.length > 0) {
-        let adSizeArray = adSize.split('x');
-        for (let i = 0; i < adSizeArray.length; ++i) {
-          adSizeArray[i] = +adSizeArray[i];
-        }
-        if (bid.sizes && (bid.sizes instanceof Array) && bid.sizes.length > 0 && adSizeArray.length > 1) {
-          bid.sizes = !(bid.sizes[0] instanceof Array) ? [ bid.sizes ] : bid.sizes;
-          for (let i = 0; i < bid.sizes.length; ++i) {
-            let size = bid.sizes[i];
-            if (size.length > 1) {
-              if (size[0] === adSizeArray[0] && size[1] === adSizeArray[1]) {
-                shouldRequest = true;
-                break;
-              }
-            }
-          }
-        } else {
-          shouldRequest = true;
-        }
-      }
-      if (shouldRequest) {
-        _callJSTag(bid, jstagUrl, timeout);
-      } else {
-        _addSlotBidResponse(bid, 0, null, 0, 0);
-      }
-    });
-  }
+const urlTemplate = template`//ads.lfstmedia.com/gate/${'adapter'}/${'slot'}?adkey=${'adkey'}&ad_size=${'ad_size'}&__location=${'location'}&__referrer=${'referrer'}&__wn=${'wn'}&__sf=${'sf'}&__fif=${'fif'}&__if=${'if'}&__stamp=${'stamp'}&__pp=1&__hb=1&_prebid_json=1&__gz=1&deferred_format=vast_2_0,vast_3_0&__hbver=${'hbver'}`;
 
-  function _callJSTag(bid, jstagUrl, timeout) {
-    adloader.loadScript(jstagUrl, () => {
-      /* global LSM_Slot */
-      if (LSM_Slot && typeof LSM_Slot === 'function') {
-        let slotTagParams = {
-          _preload: 'wait',
-          _hb_request: ADAPTER_VERSION,
-          _timeout: timeout,
-          _onload: (slot, action, cpm, width, height) => {
-            if (slot.state() !== 'error') {
-              let slotName = slot.getSlotObjectName();
-              $$PREBID_GLOBAL$$[slotName] = slot;
-              if (slotName && !SLOTS_LOAD_MAP[slotName]) {
-                SLOTS_LOAD_MAP[slotName] = true;
-                let ad = _constructLSMAd(jstagUrl, slotName);
-                _addSlotBidResponse(bid, cpm, ad, width, height);
-              } else {
-                slot.show();
-              }
-            } else {
-              _addSlotBidResponse(bid, 0, null, 0, 0);
-            }
-          }
-        };
-        for (let property in bid.params) {
-          if (property === 'jstag_url' || property === 'timeout') {
-            continue;
-          }
-          if (bid.params.hasOwnProperty(property)) {
-            slotTagParams[property] = bid.params[property];
-          }
-        }
-        LSM_Slot(slotTagParams);
-        window.addEventListener('message', (ev) => {
-          let key = ev.message ? 'message' : 'data';
-          let object = {};
-          try {
-            object = JSON.parse(ev[key]);
-          } catch (e) {
-            return;
-          }
-          if (object.message && object.message === PREBID_REQUEST_MESSAGE && object.slotName &&
-              window.$$PREBID_GLOBAL$$[object.slotName]) {
-            ev.source.postMessage(JSON.stringify({
-              message: PREBID_RESPONSE_MESSAGE,
-              slotObject: window.$$PREBID_GLOBAL$$[object.slotName]
-            }), '*');
-            window.$$PREBID_GLOBAL$$[object.slotName].destroy();
-            window.$$PREBID_GLOBAL$$[object.slotName] = null;
-          }
-        }, false);
-      } else {
-        _addSlotBidResponse(bid, 0, null, 0, 0);
-      }
-    });
-  }
+/**
+ * Creates a bid requests for a given bid.
+ *
+ * @param {BidRequest} bid The bid params to use for formatting a request
+ */
+function formatBidRequest(bid, bidderRequest) {
+  let url = urlTemplate({
+    adapter: 'prebid',
+    slot: bid.params.slot,
+    adkey: bid.params.adkey,
+    ad_size: bid.params.ad_size,
+    location: encodeURIComponent(utils.getTopWindowLocation()),
+    referrer: encodeURIComponent(utils.getTopWindowReferrer()),
+    wn: boolToString(/fb_http/i.test(window.name)),
+    sf: boolToString(window['sfAPI'] || window['$sf']),
+    fif: boolToString(window['inDapIF'] === true),
+    if: boolToString(window !== window.top),
+    stamp: new Date().getTime(),
+    hbver: ADAPTER_VERSION
+  });
 
-  function _addSlotBidResponse(bid, cpm, ad, width, height) {
-    let hasResponse = cpm && ad && ad.length > 0;
-    let bidObject = bidfactory.createBid(hasResponse ? 1 : 2, bid);
-    bidObject.bidderCode = BIDDER_CODE;
-    if (hasResponse) {
-      bidObject.cpm = cpm;
-      bidObject.ad = ad;
-      bidObject.width = width;
-      bidObject.height = height;
+  if (bidderRequest && bidderRequest.gdprConsent) {
+    if (bidderRequest.gdprConsent.gdprApplies !== undefined) {
+      const gdpr = '&__gdpr=' + (bidderRequest.gdprConsent.gdprApplies ? '1' : '0');
+      url += gdpr;
     }
-    bidmanager.addBidResponse(bid.placementCode, bidObject);
-  }
-
-  function _constructLSMAd(jsTagUrl, slotName) {
-    if (jsTagUrl && slotName) {
-      return `<div id="LSM_AD"></div>
-             <script type="text/javascript" src='` + jsTagUrl + `'></script>
-             <script>
-              function receivedLSMMessage(ev) {
-                var key = ev.message ? 'message' : 'data';
-                var object = {};
-                try {
-                  object = JSON.parse(ev[key]);
-                } catch (e) {
-                  return;
-                }
-                if (object.message === '` + PREBID_RESPONSE_MESSAGE + `' && object.slotObject) {
-                  var slot  = object.slotObject;
-                  slot.__proto__ = slotapi.Slot.prototype;
-                  slot.getProperties()['_onload'] = function(slot) {
-                    if (slot.state() !== 'error') {
-                      slot.show();
-                    }
-                  };
-                  window[slot.getSlotObjectName()] = slot;
-                  slot.showInContainer(document.getElementById("LSM_AD"));
-                }
-              }
-              window.addEventListener('message', receivedLSMMessage, false);
-              window.parent.postMessage(JSON.stringify({
-                message: '` + PREBID_REQUEST_MESSAGE + `',
-                slotName: '` + slotName + `'
-              }), '*');
-            </script>`;
+    if (bidderRequest.gdprConsent.consentString !== undefined) {
+      url += '&__consent=' + bidderRequest.gdprConsent.consentString;
     }
-    return null;
   }
 
   return {
-    callBids: _callBids
+    method: 'GET',
+    url: url,
+    bidId: bid.bidId
   };
+}
+
+/**
+ * A helper function to form URL from the template
+ */
+function template(strings, ...keys) {
+  return function(...values) {
+    let dict = values[values.length - 1] || {};
+    let result = [strings[0]];
+    keys.forEach(function(key, i) {
+      let value = isInteger(key) ? values[key] : dict[key];
+      result.push(value, strings[i + 1]);
+    });
+    return result.join('');
+  };
+}
+
+/**
+ * A helper function for template to generate string from boolean
+ */
+function boolToString(value) {
+  return value ? '1' : '0';
+}
+
+/**
+ * A helper function for template
+ */
+function isInteger(value) {
+  return typeof value === 'number' &&
+    isFinite(value) && Math.floor(value) === value;
+}
+
+/**
+ * Validates response from Lifestreet AD server
+ */
+function isResponseValid(response) {
+  return !/^\s*\{\s*"advertisementAvailable"\s*:\s*false/i.test(response.content) &&
+    response.content.indexOf('<VAST version="2.0"></VAST>') === -1 && (typeof response.cpm !== 'undefined') &&
+    response.status === 1;
+}
+
+export const spec = {
+  code: BIDDER_CODE,
+  aliases: ['lsm'], // short code
+  supportedMediaTypes: [BANNER, VIDEO], // Lifestreet supports banner and video media types
+
+  /**
+   * Determines whether or not the given bid request is valid.
+   *
+   * @param {BidRequest} bid The bid params to validate.
+   * @return boolean True if this is a valid bid, and false otherwise.
+  */
+  isBidRequestValid: function(bid) {
+    return !!(bid.params.slot && bid.params.adkey && bid.params.ad_size);
+  },
+
+  /**
+   * Make a server request from the list of BidRequests.
+   *
+   * @param {validBidRequests[]} - an array of bids
+   * @return ServerRequest Info describing the request to the server.
+  */
+  buildRequests: function(validBidRequests, bidderRequest) {
+    return validBidRequests.map(bid => {
+      return formatBidRequest(bid, bidderRequest)
+    });
+  },
+
+  /**
+   * Unpack the response from the server into a list of bids.
+   *
+   * @param {ServerResponse} serverResponse A successful response from the server.
+   * @return {Bid[]} An array of bids which were nested inside the server.
+  */
+  interpretResponse: function(serverResponse, bidRequest) {
+    const bidResponses = [];
+    let response = serverResponse.body;
+    if (!isResponseValid(response)) {
+      return bidResponses;
+    }
+
+    const bidResponse = {
+      requestId: bidRequest.bidId,
+      cpm: response.cpm,
+      width: response.width,
+      height: response.height,
+      creativeId: response.creativeId,
+      currency: response.currency ? response.currency : 'USD',
+      netRevenue: response.netRevenue ? response.netRevenue : true,
+      ttl: response.ttl ? response.ttl : 86400
+    };
+
+    if (response.hasOwnProperty('dealId')) {
+      bidResponse.dealId = response.dealId;
+    }
+
+    if (response.content_type.indexOf('vast') > -1) {
+      if (typeof response.vastUrl !== 'undefined') {
+        bidResponse.vastUrl = response.vastUrl;
+      } else {
+        bidResponse.vastXml = response.content;
+      }
+      bidResponse.mediaType = VIDEO;
+    } else {
+      bidResponse.ad = response.content;
+      bidResponse.mediaType = BANNER;
+    }
+
+    bidResponses.push(bidResponse);
+    return bidResponses;
+  }
 };
 
-adaptermanager.registerBidAdapter(new LifestreetAdapter(), 'lifestreet');
-
-module.exports = LifestreetAdapter;
+registerBidder(spec);

@@ -1,65 +1,54 @@
-var bidfactory = require('src/bidfactory.js');
-var bidmanager = require('src/bidmanager.js');
-var adloader = require('src/adloader.js');
-var utils = require('src/utils.js');
-var CONSTANTS = require('src/constants.json');
-var adaptermanager = require('src/adaptermanager');
+import * as utils from '../src/utils';
+import { registerBidder } from '../src/adapters/bidderFactory';
 
-var InnityAdapter = function InnityAdapter() {
-  function _callBids(params) {
-    var bidURL;
-    const bids = params.bids || [];
-    const requestURL = window.location.protocol + '//as.innity.com/synd/?cb=' + new Date().getTime() + '&ver=2&hb=1&output=js&';
-    for (var i = 0; i < bids.length; i++) {
-      const requestParams = {};
-      const bid = bids[i];
-      requestParams.pub = bid.params.pub;
-      requestParams.zone = bid.params.zone;
-      // Page URL
-      requestParams.url = utils.getTopWindowUrl();
-      // Sizes
-      const parseSized = utils.parseSizesInput(bid.sizes);
-      const arrSize = parseSized[0].split('x');
-      requestParams.width = arrSize[0];
-      requestParams.height = arrSize[1];
-      // Callback function
-      requestParams.callback = '$$PREBID_GLOBAL$$._doInnityCallback';
-      // Callback ID
-      requestParams.callback_uid = bid.bidId;
-      // Load Bidder URL
-      bidURL = requestURL + utils.parseQueryStringParameters(requestParams);
-      utils.logMessage('Innity.prebid, Bid ID: ' + bid.bidId + ', Pub ID: ' + bid.params.pub + ', Zone ID: ' + bid.params.zone + ', URL: ' + bidURL);
-      adloader.loadScript(bidURL);
-    }
+const BIDDER_CODE = 'innity';
+const ENDPOINT = location.protocol + '//as.innity.com/synd/';
+
+export const spec = {
+  code: BIDDER_CODE,
+  isBidRequestValid: function(bid) {
+    return !!(bid.params && bid.params.pub && bid.params.zone);
+  },
+  buildRequests: function(validBidRequests) {
+    return validBidRequests.map(bidRequest => {
+      let parseSized = utils.parseSizesInput(bidRequest.sizes);
+      let arrSize = parseSized[0].split('x');
+      return {
+        method: 'GET',
+        url: ENDPOINT,
+        data: {
+          cb: utils.timestamp(),
+          ver: 2,
+          hb: 1,
+          output: 'js',
+          pub: bidRequest.params.pub,
+          zone: bidRequest.params.zone,
+          url: encodeURIComponent(utils.getTopWindowUrl()),
+          width: arrSize[0],
+          height: arrSize[1],
+          vpw: window.screen.width,
+          vph: window.screen.height,
+          callback: 'json',
+          callback_uid: bidRequest.bidId,
+          auction: bidRequest.auctionId,
+        },
+      };
+    });
+  },
+  interpretResponse: function(serverResponse, request) {
+    const res = serverResponse.body;
+    const bidResponse = {
+      requestId: res.callback_uid,
+      cpm: parseFloat(res.cpm) / 100,
+      width: res.width,
+      height: res.height,
+      creativeId: res.creative_id,
+      currency: 'USD',
+      netRevenue: true,
+      ttl: 60,
+      ad: '<script src="' + location.protocol + '//cdn.innity.net/frame_util.js"></script>' + res.tag,
+    };
+    return [bidResponse];
   }
-
-  $$PREBID_GLOBAL$$._doInnityCallback = function(response) {
-    var bidObject;
-    var bidRequest;
-    var callbackID;
-    var libURL = window.location.protocol + '//cdn.innity.net/frame_util.js';
-    callbackID = response.callback_uid;
-    bidRequest = utils.getBidRequest(callbackID);
-    if (response.cpm > 0) {
-      bidObject = bidfactory.createBid(CONSTANTS.STATUS.GOOD, bidRequest);
-      bidObject.bidderCode = 'innity';
-      bidObject.cpm = parseFloat(response.cpm) / 100;
-      bidObject.ad = '<script src="' + libURL + '"></script>' + response.tag;
-      bidObject.width = response.width;
-      bidObject.height = response.height;
-    } else {
-      bidObject = bidfactory.createBid(CONSTANTS.STATUS.NO_BID, bidRequest);
-      bidObject.bidderCode = 'innity';
-      utils.logMessage('No Bid response from Innity request: ' + callbackID);
-    }
-    bidmanager.addBidResponse(bidRequest.placementCode, bidObject);
-  };
-
-  return {
-    callBids: _callBids
-  };
-};
-
-adaptermanager.registerBidAdapter(new InnityAdapter(), 'innity');
-
-module.exports = InnityAdapter;
+}
+registerBidder(spec);

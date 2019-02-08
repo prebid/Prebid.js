@@ -1,8 +1,8 @@
-import {ajax} from 'src/ajax';
-import adapter from 'src/AnalyticsAdapter';
-import adaptermanager from 'src/adaptermanager';
-import CONSTANTS from 'src/constants.json';
-const utils = require('src/utils');
+import {ajax} from '../src/ajax';
+import adapter from '../src/AnalyticsAdapter';
+import adapterManager from '../src/adapterManager';
+import CONSTANTS from '../src/constants.json';
+const utils = require('../src/utils');
 
 /****
  * PubWise.io Analytics
@@ -23,7 +23,8 @@ const utils = require('src/utils');
 const analyticsType = 'endpoint';
 const analyticsName = 'PubWise Analytics: ';
 let defaultUrl = 'https://api.pubwise.io/api/v4/event/default/';
-let pubwiseVersion = '2.2';
+let pubwiseVersion = '3.0';
+let pubwiseSchema = 'AVOCET';
 let configOptions = {site: '', endpoint: 'https://api.pubwise.io/api/v4/event/default/', debug: ''};
 let pwAnalyticsEnabled = false;
 let utmKeys = {utm_source: '', utm_medium: '', utm_campaign: '', utm_term: '', utm_content: ''};
@@ -49,8 +50,7 @@ function enrichWithUTM(dataBag) {
   let newUtm = false;
   try {
     for (let prop in utmKeys) {
-      let urlValue = utils.getParameterByName(prop);
-      utmKeys[prop] = urlValue;
+      utmKeys[prop] = utils.getParameterByName(prop);
       if (utmKeys[prop] != '') {
         newUtm = true;
         dataBag[prop] = utmKeys[prop];
@@ -84,12 +84,13 @@ function sendEvent(eventType, data) {
     eventType: eventType,
     args: data,
     target_site: configOptions.site,
+    pubwiseSchema: pubwiseSchema,
     debug: configOptions.debug ? 1 : 0,
   };
 
+  dataBag = enrichWithMetrics(dataBag);
   // for certain events, track additional info
   if (eventType == CONSTANTS.EVENTS.AUCTION_INIT) {
-    dataBag = enrichWithMetrics(dataBag);
     dataBag = enrichWithUTM(dataBag);
   }
 
@@ -119,7 +120,7 @@ pubwiseAnalytics.enableAnalytics = function (config) {
   pubwiseAnalytics.adapterEnableAnalytics(config);
 };
 
-adaptermanager.registerAnalyticsAdapter({
+adapterManager.registerAnalyticsAdapter({
   adapter: pubwiseAnalytics,
   code: 'pubwise'
 });
