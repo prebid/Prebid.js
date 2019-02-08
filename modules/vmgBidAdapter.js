@@ -24,10 +24,17 @@ export const spec = {
    */
   buildRequests: function (validBidRequests, bidderRequest) {
     let bidRequests = [];
+    let referer = window.location.href;
+    try {
+      referer = typeof bidderRequest.refererInfo === 'undefined'
+        ? window.top.location.href
+        : bidderRequest.refererInfo.referer;
+    } catch (e) {}
+
     validBidRequests.forEach(function(validBidRequest) {
       bidRequests.push({
         adUnitCode: validBidRequest.adUnitCode,
-        referer: bidderRequest.refererInfo.referer,
+        referer: referer,
         bidId: validBidRequest.bidId
       });
     });
