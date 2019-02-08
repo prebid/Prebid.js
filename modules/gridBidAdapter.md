@@ -7,6 +7,7 @@ Maintainer: grid-tech@themediagrid.com
 # Description
 
 Module that connects to Grid demand source to fetch bids.
+Grid bid adapter supports Banner and Video (instream and outstream).
 
 # Test Parameters
 ```

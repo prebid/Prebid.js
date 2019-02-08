@@ -163,6 +163,7 @@ describe('TheMediaGrid Adapter', function () {
           'ad': '<div>test content 1</div>',
           'bidderCode': 'grid',
           'currency': 'USD',
+          'mediaType': 'banner',
           'netRevenue': false,
           'ttl': 360,
         }
@@ -220,6 +221,7 @@ describe('TheMediaGrid Adapter', function () {
           'ad': '<div>test content 1</div>',
           'bidderCode': 'grid',
           'currency': 'USD',
+          'mediaType': 'banner',
           'netRevenue': false,
           'ttl': 360,
         },
@@ -233,6 +235,7 @@ describe('TheMediaGrid Adapter', function () {
           'ad': '<div>test content 1</div>',
           'bidderCode': 'grid',
           'currency': 'USD',
+          'mediaType': 'banner',
           'netRevenue': false,
           'ttl': 360,
         },
@@ -246,12 +249,58 @@ describe('TheMediaGrid Adapter', function () {
           'ad': '<div>test content 2</div>',
           'bidderCode': 'grid',
           'currency': 'USD',
+          'mediaType': 'banner',
           'netRevenue': false,
           'ttl': 360,
         }
       ];
 
       const result = spec.interpretResponse({'body': {'seatbid': [responses[0], responses[1]]}}, request);
+      expect(result).to.deep.equal(expectedResponse);
+    });
+
+    it('should get correct video bid response', function () {
+      const bidRequests = [
+        {
+          'bidder': 'grid',
+          'params': {
+            'uid': '1'
+          },
+          'adUnitCode': 'adunit-code-1',
+          'sizes': [[300, 250], [300, 600]],
+          'bidId': '659423fff799cb',
+          'bidderRequestId': '5f2009617a7c0a',
+          'auctionId': '1cbd2feafe5e8b',
+          'mediaTypes': {
+            'video': {
+              'context': 'instream'
+            }
+          }
+        }
+      ];
+      const response = {'bid': [{'price': 1.15, 'adm': '<VAST version=\"3.0\">\n<Ad id=\"21341234\"><\/Ad>\n<\/VAST>', 'auid': 1}], 'seat': '1'};
+      const request = spec.buildRequests(bidRequests);
+      const expectedResponse = [
+        {
+          'requestId': '659423fff799cb',
+          'cpm': 1.15,
+          'creativeId': 1,
+          'dealId': undefined,
+          'width': undefined,
+          'height': undefined,
+          'bidderCode': 'grid',
+          'currency': 'USD',
+          'mediaType': 'video',
+          'netRevenue': false,
+          'ttl': 360,
+          'vastXml': '<VAST version=\"3.0\">\n<Ad id=\"21341234\"><\/Ad>\n<\/VAST>',
+          'adResponse': {
+            'content': '<VAST version=\"3.0\">\n<Ad id=\"21341234\"><\/Ad>\n<\/VAST>'
+          }
+        }
+      ];
+
+      const result = spec.interpretResponse({'body': {'seatbid': [response]}}, request);
       expect(result).to.deep.equal(expectedResponse);
     });
 
