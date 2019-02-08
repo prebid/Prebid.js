@@ -284,20 +284,21 @@ function checkBidDuration(bidderRequest, bidResponse) {
  */
 export function checkVideoBidSetupHook(fn, bid, bidRequest, videoMediaType, context) {
   if (context === ADPOD) {
+    let result = true;
     if (!utils.deepAccess(bid, 'meta.iabSubCatId')) {
-      return false;
+      result = false;
     }
 
     if (utils.deepAccess(bid, 'video')) {
       if (!utils.deepAccess(bid, 'video.context') || bid.video.context !== ADPOD) {
-        return false;
+        result = false;
       }
 
       if (!utils.deepAccess(bid, 'video.durationSeconds') || bid.video.durationSeconds <= 0) {
-        return false;
+        result = false;
       } else {
         let isBidGood = checkBidDuration(bidRequest, bid);
-        if (!isBidGood) return false;
+        if (!isBidGood) result = false;
       }
     }
 
@@ -306,10 +307,10 @@ export function checkVideoBidSetupHook(fn, bid, bidRequest, videoMediaType, cont
         This bid contains only vastXml and will not work when a prebid cache url is not specified.
         Try enabling prebid cache with pbjs.setConfig({ cache: {url: "..."} });
       `);
-      return false;
+      result = false;
     };
 
-    return true;
+    fn.bail(result);
   } else {
     fn.call(this, bid, bidRequest, videoMediaType, context);
   }

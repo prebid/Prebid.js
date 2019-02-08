@@ -527,9 +527,15 @@ describe('adpod.js', function () {
 
   describe('checkVideoBidSetupHook', function () {
     let callbackResult;
-    const callbackFn = function (bid) {
-      callbackResult = bid;
-    };
+    let bailResult;
+    const callbackFn = {
+      call: function(context, bid) {
+        callbackResult = bid;
+      },
+      bail: function(result) {
+        bailResult = result;
+      }
+    }
     const adpodTestBid = {
       video: {
         context: ADPOD,
@@ -566,6 +572,7 @@ describe('adpod.js', function () {
 
     beforeEach(function() {
       callbackResult = null;
+      bailResult = null;
       config.setConfig({
         cache: {
           url: 'http://test.cache.url/endpoint'
@@ -585,28 +592,27 @@ describe('adpod.js', function () {
       let bannerTestBid = {
         mediaType: 'video'
       };
-      let hookReturnValue = checkVideoBidSetupHook(callbackFn, bannerTestBid, {}, {}, 'instream');
+      checkVideoBidSetupHook(callbackFn, bannerTestBid, {}, {}, 'instream');
       expect(callbackResult).to.deep.equal(bannerTestBid);
-      expect(hookReturnValue).to.be.undefined;
+      expect(bailResult).to.be.null;
       expect(logErrorStub.called).to.equal(false);
     });
 
     it('returns true when adpod bid is properly setup', function() {
       let goodBid = utils.deepClone(adpodTestBid);
-      let hookReturnValue = checkVideoBidSetupHook(callbackFn, goodBid, bidderRequestNoExact, {}, ADPOD);
+      checkVideoBidSetupHook(callbackFn, goodBid, bidderRequestNoExact, {}, ADPOD);
       expect(callbackResult).to.be.null;
-      expect(hookReturnValue).to.equal(true);
+      expect(bailResult).to.equal(true);
       expect(logErrorStub.called).to.equal(false);
     });
 
     it('returns false when a required property from an adpod bid is missing', function() {
       function testInvalidAdpodBid(badTestBid, shouldErrorBeLogged) {
-        let hookReturnValue = checkVideoBidSetupHook(callbackFn, badTestBid, bidderRequestNoExact, {}, ADPOD);
+        checkVideoBidSetupHook(callbackFn, badTestBid, bidderRequestNoExact, {}, ADPOD);
         expect(callbackResult).to.be.null;
-        expect(hookReturnValue).to.equal(false);
+        expect(bailResult).to.equal(false);
         expect(logErrorStub.called).to.equal(shouldErrorBeLogged);
       }
-      config.resetConfig();
 
       let noCatBid = utils.deepClone(adpodTestBid);
       delete noCatBid.meta;
@@ -624,6 +630,7 @@ describe('adpod.js', function () {
       delete noDurationBid.video.durationSeconds;
       testInvalidAdpodBid(noDurationBid, false);
 
+      config.resetConfig();
       let noCacheUrlBid = utils.deepClone(adpodTestBid);
       testInvalidAdpodBid(noCacheUrlBid, true);
     });
@@ -642,29 +649,29 @@ describe('adpod.js', function () {
 
       it('when requireExactDuration is true', function() {
         let goodBid = utils.deepClone(basicBid);
-        let hookReturnValue = checkVideoBidSetupHook(callbackFn, goodBid, bidderRequestWithExact, {}, ADPOD);
+        checkVideoBidSetupHook(callbackFn, goodBid, bidderRequestWithExact, {}, ADPOD);
 
         expect(callbackResult).to.be.null;
         expect(goodBid.video.durationBucket).to.equal(30);
-        expect(hookReturnValue).to.equal(true);
+        expect(bailResult).to.equal(true);
         expect(logWarnStub.called).to.equal(false);
 
         let badBid = utils.deepClone(basicBid);
         badBid.video.durationSeconds = 14;
-        hookReturnValue = checkVideoBidSetupHook(callbackFn, badBid, bidderRequestWithExact, {}, ADPOD);
+        checkVideoBidSetupHook(callbackFn, badBid, bidderRequestWithExact, {}, ADPOD);
 
         expect(callbackResult).to.be.null;
         expect(badBid.video.durationBucket).to.be.undefined;
-        expect(hookReturnValue).to.equal(false);
+        expect(bailResult).to.equal(false);
         expect(logWarnStub.calledOnce).to.equal(true);
       });
 
       it('when requireExactDuration is false and bids are bucketed properly', function() {
         function testRoundingForGoodBId(bid, bucketValue) {
-          let hookReturnValue = checkVideoBidSetupHook(callbackFn, bid, bidderRequestNoExact, {}, ADPOD);
+          checkVideoBidSetupHook(callbackFn, bid, bidderRequestNoExact, {}, ADPOD);
           expect(callbackResult).to.be.null;
           expect(bid.video.durationBucket).to.equal(bucketValue);
-          expect(hookReturnValue).to.equal(true);
+          expect(bailResult).to.equal(true);
           expect(logWarnStub.called).to.equal(false);
         }
 
@@ -685,10 +692,10 @@ describe('adpod.js', function () {
         let badBid100 = utils.deepClone(basicBid);
         badBid100.video.durationSeconds = 100;
 
-        let hookReturnValue = checkVideoBidSetupHook(callbackFn, badBid100, bidderRequestNoExact, {}, ADPOD);
+        checkVideoBidSetupHook(callbackFn, badBid100, bidderRequestNoExact, {}, ADPOD);
         expect(callbackResult).to.be.null;
         expect(badBid100.video.durationBucket).to.be.undefined;
-        expect(hookReturnValue).to.equal(false);
+        expect(bailResult).to.equal(false);
         expect(logWarnStub.called).to.equal(true);
       });
     });
