@@ -1206,7 +1206,7 @@ describe('S2S Adapter', function () {
       const cacheResponse = utils.deepClone(RESPONSE_OPENRTB_VIDEO);
       const targetingTestData = {
         hb_cache_path: '/cache',
-        hb_cache_host: 'https://prebid-cache.testurl.com'
+        hb_cache_host: 'prebid-cache.testurl.com'
       };
 
       cacheResponse.seatbid.forEach(item => {
@@ -1222,7 +1222,7 @@ describe('S2S Adapter', function () {
       expect(response).to.have.property('adserverTargeting');
       expect(response.adserverTargeting).to.deep.equal({
         'hb_cache_path': '/cache',
-        'hb_cache_host': 'https://prebid-cache.testurl.com'
+        'hb_cache_host': 'prebid-cache.testurl.com'
       });
     });
 
@@ -1235,7 +1235,8 @@ describe('S2S Adapter', function () {
       cacheResponse.seatbid.forEach(item => {
         item.bid[0].ext.prebid.targeting = {
           hb_uuid: 'a5ad3993',
-          hb_cache_hostpath: 'https://prebid-cache.net/cache'
+          hb_cache_host: 'prebid-cache.net',
+          hb_cache_path: '/cache'
         }
       });
       server.respondWith(JSON.stringify(cacheResponse));

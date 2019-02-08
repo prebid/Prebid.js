@@ -589,10 +589,10 @@ const OPEN_RTB_PROTOCOL = {
             if (bid.ext.prebid.cache && typeof bid.ext.prebid.cache.vastXml === 'object' && bid.ext.prebid.cache.vastXml.cacheId && bid.ext.prebid.cache.vastXml.url) {
               bidObject.videoCacheKey = bid.ext.prebid.cache.vastXml.cacheId;
               bidObject.vastUrl = bid.ext.prebid.cache.vastXml.url;
-            } else if (extPrebidTargeting && extPrebidTargeting.hb_uuid && extPrebidTargeting.hb_cache_hostpath) {
+            } else if (extPrebidTargeting && extPrebidTargeting.hb_uuid && extPrebidTargeting.hb_cache_host && extPrebidTargeting.hb_cache_path) {
               bidObject.videoCacheKey = extPrebidTargeting.hb_uuid;
               // build url using key and cache host
-              bidObject.vastUrl = `${extPrebidTargeting.hb_cache_hostpath}?uuid=${extPrebidTargeting.hb_uuid}`;
+              bidObject.vastUrl = `https://${extPrebidTargeting.hb_cache_host}${extPrebidTargeting.hb_cache_path}?uuid=${extPrebidTargeting.hb_uuid}`;
             }
 
             if (bid.adm) { bidObject.vastXml = bid.adm; }
