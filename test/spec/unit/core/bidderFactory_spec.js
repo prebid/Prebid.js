@@ -811,13 +811,17 @@ describe('preload mapping url hook', function() {
     }];
     getLocalStorageStub.returns(null);
     adapterManagerStub.withArgs('sampleBidder1').returns({
-      getMappingFileInfo: function() {
+      getSpec: function() {
         return {
-          url: 'http://sample.com',
-          refreshInDays: 7,
-          key: `sampleBidder1MappingFile`
+          'getMappingFileInfo': function() {
+            return {
+              url: 'http://sample.com',
+              refreshInDays: 7,
+              key: `sampleBidder1MappingFile`
+            }
+          }
         }
-      },
+      }
     });
     preloadBidderMappingFile(sinon.spy(), adUnits);
     expect(fakeTranslationServer.requests.length).to.equal(1);
@@ -848,22 +852,30 @@ describe('preload mapping url hook', function() {
     }];
     getLocalStorageStub.returns(null);
     adapterManagerStub.withArgs('sampleBidder1').returns({
-      getMappingFileInfo: function() {
+      getSpec: function() {
         return {
-          url: 'http://sample.com',
-          refreshInDays: 7,
-          key: `sampleBidder1MappingFile`
+          'getMappingFileInfo': function() {
+            return {
+              url: 'http://sample.com',
+              refreshInDays: 7,
+              key: `sampleBidder1MappingFile`
+            }
+          }
         }
-      },
+      }
     });
     adapterManagerStub.withArgs('sampleBidder2').returns({
-      getMappingFileInfo: function() {
+      getSpec: function() {
         return {
-          url: 'http://sample2.com',
-          refreshInDays: 7,
-          key: `sampleBidder2MappingFile`
+          'getMappingFileInfo': function() {
+            return {
+              url: 'http://sample.com',
+              refreshInDays: 7,
+              key: `sampleBidder2MappingFile`
+            }
+          }
         }
-      },
+      }
     });
     preloadBidderMappingFile(sinon.spy(), adUnits);
     expect(fakeTranslationServer.requests.length).to.equal(2);

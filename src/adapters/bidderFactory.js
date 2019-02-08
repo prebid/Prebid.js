@@ -356,8 +356,8 @@ export function preloadBidderMappingFile(fn, adUnits) {
 
   adPodBidders.forEach(bidder => {
     let bidderSpec = adapterManager.getBidAdapter(bidder);
-    if (bidderSpec.getMappingFileInfo) {
-      let info = bidderSpec.getMappingFileInfo();
+    if (bidderSpec.getSpec().getMappingFileInfo) {
+      let info = bidderSpec.getSpec().getMappingFileInfo();
       let mappingData = getDataFromLocalStorage(info.localStorageKey);
       if (!mappingData || timestamp() < mappingData.lastUpdated + info.refreshInDays * 24 * 60 * 60 * 1000) {
         ajax(info.url,
