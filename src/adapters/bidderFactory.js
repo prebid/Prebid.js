@@ -66,9 +66,10 @@ import { logWarn, logError, parseQueryStringParameters, delayExecution, parseSiz
 /**
  * @typedef {object} ServerRequest
  *
- * @property {('GET'|'POST')} method The type of request which this is.
+ * @property {('GET'|'POST'|'PROMISE')} method The type of request which this is.
  * @property {string} url The endpoint for the request. For example, "//bids.example.com".
  * @property {string|object} data Data to be sent in the request.
+ * @property {Promise} promise The Promise when the method is 'PROMISE'.
  * @property {object} options Content-Type set in the header of the bid request, overrides default 'text/plain'.
  *   If this is a GET request, they'll become query params. If it's a POST request, they'll be added to the body.
  *   Strings will be added as-is. Objects will be unpacked into query params based on key/value mappings, or
@@ -228,7 +229,7 @@ export function newBidder(spec) {
             ajax(
               `${request.url}${formatGetParameters(request.data)}`,
               {
-                success: onSuccess,
+                success: onXhrSuccess,
                 error: onFailure
               },
               undefined,
@@ -242,7 +243,7 @@ export function newBidder(spec) {
             ajax(
               request.url,
               {
-                success: onSuccess,
+                success: onXhrSuccess,
                 error: onFailure
               },
               typeof request.data === 'string' ? request.data : JSON.stringify(request.data),
@@ -253,6 +254,13 @@ export function newBidder(spec) {
               }, request.options)
             );
             break;
+          case 'PROMISE':
+            try {
+              request.promise.then(onSuccess)
+            } catch (e) {
+              onFailure(e);
+            }
+            break;
           default:
             logWarn(`Skipping invalid request from ${spec.code}. Request type ${request.type} must be GET or POST`);
             onResponse();
@@ -261,16 +269,27 @@ export function newBidder(spec) {
         // If the server responds successfully, use the adapter code to unpack the Bids from it.
         // If the adapter code fails, no bids should be added. After all the bids have been added, make
         // sure to call the `onResponse` function so that we're one step closer to calling done().
-        function onSuccess(response, responseObj) {
+        function onXhrSuccess(response, responseObj) {
           try {
             response = JSON.parse(response);
-          } catch (e) { /* response might not be JSON... that's ok. */ }
+          } catch (e) { /* response might not be JSON... that's ok. */
+          }
 
           // Make response headers available for #1742. These are lazy-loaded because most adapters won't need them.
           response = {
             body: response,
             headers: headerParser(responseObj)
           };
+
+          function headerParser() {
+            return {
+              get: responseObj.getResponseHeader.bind(responseObj)
+            };
+          }
+          onSuccess(response);
+        }
+
+        function onSuccess(response) {
           responses.push(response);
 
           let bids;
@@ -301,11 +320,7 @@ export function newBidder(spec) {
             }
           }
 
-          function headerParser(xmlHttpResponse) {
-            return {
-              get: responseObj.getResponseHeader.bind(responseObj)
-            };
-          }
+
         }
 
         // If the server responds with an error, there's not much we can do. Log it, and make sure to
