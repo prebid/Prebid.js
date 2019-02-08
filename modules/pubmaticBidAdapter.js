@@ -92,7 +92,7 @@ function _parseAdSlot(bid) {
   bid.params.adUnitIndex = '0';
   bid.params.width = 0;
   bid.params.height = 0;
-  var sizesArrayExists = (bid.hasOwnProperty('sizes') && utils.isArray(bid.sizes) && bid.sizes.length >= 1);
+  var sizesArrayExists = (bid.hasOwnProperty('sizes') && utils.isArray(bid.sizes) && bid.sizes.length >= 1) || (bid.hasOwnProperty('mediaTypes') && bid.mediaTypes.hasOwnProperty('banner') && bid.mediaTypes.banner.hasOwnProperty('sizes') && bid.mediaTypes.banner.sizes.length >= 1);
   bid.params.adSlot = _cleanSlot(bid.params.adSlot);
 
   var slot = bid.params.adSlot;
@@ -109,7 +109,7 @@ function _parseAdSlot(bid) {
       }
       bid.params.width = parseInt(splits[0]);
       bid.params.height = parseInt(splits[1]);
-      delete bid.sizes;
+      // delete bid.sizes;
     } else {
       if (!(sizesArrayExists)) {
         utils.logWarn('AdSlot Error: adSlot not in required format');
@@ -220,8 +220,8 @@ function _createImpressionObject(bid, conf) {
   var impObj = {};
   var bannerObj = {};
   var videoObj = {};
-  var sizes = bid.hasOwnProperty('sizes') ? bid.sizes : [];
-
+  // var sizes = bid.hasOwnProperty('sizes') ? bid.sizes : [];
+  var sizes = bid.hasOwnProperty('sizes') ? bid.sizes : bid.hasOwnProperty('mediaTypes') && bid.mediaTypes.hasOwnProperty('banner') && bid.mediaTypes.banner.hasOwnProperty('sizes') ? bid.mediaTypes.banner.sizes : [];
   impObj = {
     id: bid.bidId,
     tagid: bid.params.adUnit,

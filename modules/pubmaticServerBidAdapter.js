@@ -128,11 +128,9 @@ function _createImpressionObject(bid, conf) {
     banner: {
       pos: 0,
       topframe: utils.inIframe() ? 0 : 1,
-      w: bid.sizes[0][0],
-      h: bid.sizes[0][1],
       format: (function() {
         let arr = [];
-        for (let i = 1, l = bid.sizes.length; i < l; i++) {
+        for (let i = 0, l = bid.sizes.length; i < l; i++) {
           arr.push({
             w: bid.sizes[i][0],
             h: bid.sizes[i][1]
@@ -207,9 +205,9 @@ function _getDataFromImpArray (impData, id, key) {
         case 'requestId':
           return impData[index].id;
         case 'width':
-          return impData[index].banner.w;
+          return impData[index].banner.format[0].w;
         case 'height':
-          return impData[index].banner.h;
+          return impData[index].banner.format[0].h;
       }
     }
   }
@@ -409,8 +407,8 @@ export const spec = {
                             bidderCode: BIDDER_CODE,
                             originalBidder: summary.bidder,
                             pubmaticServerErrorCode: summary.errorCode,
-                            width: impObj.banner.w,
-                            height: impObj.banner.h,
+                            width: impObj.banner.format[0].w,
+                            height: impObj.banner.format[0].h,
                             creativeId: 0,
                             dealId: '',
                             currency: CURRENCY,
