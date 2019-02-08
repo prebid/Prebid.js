@@ -990,6 +990,7 @@ describe('Unit: Prebid Module', function () {
 
     beforeEach(function () {
       doc = {
+        open: sinon.spy(),
         write: sinon.spy(),
         close: sinon.spy(),
         defaultView: {
