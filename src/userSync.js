@@ -61,7 +61,7 @@ export function newUserSync(userSyncDependencies) {
    * @private
    */
   function fireSyncs() {
-    if (!usConfig.syncEnabled || !userSyncDependencies.browserSupportsCookies || hasFired) {
+    if (!usConfig.syncEnabled || !userSyncDependencies.browserSupportsCookies || (!usConfig.enableOverride && hasFired)) {
       return;
     }
 
