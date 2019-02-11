@@ -368,7 +368,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
 
       bid.video = {
         context: ADPOD,
-        durationSeconds: Math.ceil(rtbBid.rtb.video.duration_ms / 1000),
+        durationSeconds: Math.floor(rtbBid.rtb.video.duration_ms / 1000),
       };
     }
 
