@@ -5,6 +5,7 @@ const BIDDER_CODE = 'customBidAdapter';
 
 export const spec = {
   code: BIDDER_CODE,
+  alias: 'custom',
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   /**
@@ -29,7 +30,7 @@ export const spec = {
   buildRequests: function (bidRequests, bidderRequest) {
     const { handlers = {} } = bidderRequest;
     if (typeof handlers.buildRequests !== 'function') return [];
-    return handlers.buildRequests(bidRequests, bidRequest).filter(isPromise);
+    return handlers.buildRequests(bidRequests, bidderRequest);
   },
 
   /**
@@ -40,15 +41,11 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function (serverResponse, serverRequest) {
-    const { handlers = {} } = bidderRequest;
+    const { handlers = {} } = serverRequest;
     if (typeof handlers.interpretResponse !== 'function') return [];
     return handlers.interpretResponse(serverResponse, serverRequest);
   },
 
 };
-
-function isPromise(obj) {
-  return typeof obj === 'object' && obj.then && typeof obj.then === 'function';
-}
 
 registerBidder(spec);
