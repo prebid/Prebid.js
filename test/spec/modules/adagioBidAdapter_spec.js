@@ -184,23 +184,23 @@ describe('adagioAdapter', () => {
       expect(request.data.adUnits[0].features).to.deep.equal(expected);
     });
 
-    it('features params must be an object if featurejs is loaded', () => {
-      window.top._ADAGIO = window.top._ADAGIO || {};
-      window.top._ADAGIO.features = window.top._ADAGIO.features || {};
-      window.top._ADAGIO.features.getFeatures = function() {
-        return {
-          prop1: 'one',
-          prop2: 'two'
-        }
-      }
-      const requests = spec.buildRequests(bidRequests);
-      const request = requests[0];
-      const expected = {
-        prop1: 'one',
-        prop2: 'two'
-      };
-      expect(request.data.adUnits[0].features).to.deep.equal(expected);
-    });
+    // it('features params must be an object if featurejs is loaded', () => {
+    //   window.top._ADAGIO = window.top._ADAGIO || {};
+    //   window.top._ADAGIO.features = window.top._ADAGIO.features || {};
+    //   window.top._ADAGIO.features.getFeatures = function() {
+    //     return {
+    //       prop1: 'one',
+    //       prop2: 'two'
+    //     }
+    //   }
+    //   const requests = spec.buildRequests(bidRequests);
+    //   const request = requests[0];
+    //   const expected = {
+    //     prop1: 'one',
+    //     prop2: 'two'
+    //   };
+    //   expect(request.data.adUnits[0].features).to.deep.equal(expected);
+    // });
 
     it('GDPR consent is applied', () => {
       const requests = spec.buildRequests(bidRequests, bidderRequest);
