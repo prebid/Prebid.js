@@ -1,7 +1,7 @@
 import { Renderer } from '../src/Renderer';
 import * as utils from '../src/utils';
-import { registerBidder } from '../src/adapters/bidderFactory';
-import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes';
+import { registerBidder, getIabSubCategory } from '../src/adapters/bidderFactory';
+import { BANNER, NATIVE, VIDEO, ADPOD } from '../src/mediaTypes';
 import find from 'core-js/library/fn/array/find';
 import includes from 'core-js/library/fn/array/includes';
 
@@ -32,10 +32,7 @@ const NATIVE_MAPPING = {
   displayUrl: 'displayurl'
 };
 const SOURCE = 'pbjs';
-const mappingFileInfo = Object.freeze({
-  mappingFileUrl: 'http://sample.com/mappnig.json',
-  uniqueKey: utils.getUniqueIdentifierStr()
-});
+const mappingFileUrl = 'https://api.myjson.com/bins/11f7yo';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -226,9 +223,8 @@ export const spec = {
    */
   getMappingFileInfo: function() {
     return {
-      url: mappingFileInfo.mappingFileUrl,
-      refreshInDays: 7,
-      localStorageKey: `${spec.code}_${mappingFileInfo.uniqueKey}`
+      url: mappingFileUrl,
+      refreshInDays: 7
     }
   },
 
@@ -339,6 +335,21 @@ function newBid(serverBid, rtbBid, bidderRequest) {
       vastImpUrl: rtbBid.notify_url,
       ttl: 3600
     });
+
+    const videoContext = utils.deepAccess(bidRequest, 'mediaTypes.video.context');
+    if (videoContext === ADPOD) {
+      const iabSubCatId = getIabSubCategory(bidRequest.bidder, rtbBid.brand_category_id);
+
+      bid.meta = {
+        iabSubCatId
+      };
+
+      bid.video = {
+        context: ADPOD,
+        durationSeconds: Math.ceil(rtbBid.rtb.video.duration_ms / 1000),
+      };
+    }
+
     // This supports Outstream Video
     if (rtbBid.renderer_url) {
       const rendererOptions = utils.deepAccess(

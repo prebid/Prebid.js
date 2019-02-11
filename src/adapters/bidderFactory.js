@@ -358,7 +358,8 @@ export function preloadBidderMappingFile(fn, adUnits) {
     let bidderSpec = adapterManager.getBidAdapter(bidder);
     if (bidderSpec.getSpec().getMappingFileInfo) {
       let info = bidderSpec.getSpec().getMappingFileInfo();
-      let mappingData = getDataFromLocalStorage(info.localStorageKey);
+      let key = (info.localStorageKey) ? info.localStorageKey : bidderSpec.getSpec().code;
+      let mappingData = getDataFromLocalStorage(key);
       if (!mappingData || timestamp() < mappingData.lastUpdated + info.refreshInDays * 24 * 60 * 60 * 1000) {
         ajax(info.url,
           {
@@ -369,7 +370,7 @@ export function preloadBidderMappingFile(fn, adUnits) {
                   lastUpdated: timestamp(),
                   mapping: response.mapping
                 }
-                setDataInLocalStorage(info.localStorageKey, JSON.stringify(mapping));
+                setDataInLocalStorage(key, JSON.stringify(mapping));
               } catch (error) {
                 logError(`Failed to parse ${bidder} bidder translation mapping file`);
               }
@@ -383,6 +384,28 @@ export function preloadBidderMappingFile(fn, adUnits) {
     }
   });
   fn.call(this, adUnits);
+}
+
+/**
+ * Reads the data stored in localstorage and returns iab subcategory
+ * @param {string} bidderCode bidderCode
+ * @param {string} category bidders category
+ */
+export function getIabSubCategory(bidderCode, category) {
+  let bidderSpec = adapterManager.getBidAdapter(bidderCode);
+  if (bidderSpec.getSpec().getMappingFileInfo) {
+    let info = bidderSpec.getSpec().getMappingFileInfo();
+    let key = (info.localStorageKey) ? info.localStorageKey : bidderSpec.getBidderCode();
+    let data = getDataFromLocalStorage(key);
+    if (data) {
+      try {
+        data = JSON.parse(data);
+      } catch (error) {
+        logError(`Failed to parse ${bidderCode} mapping data stored in local storage`);
+      }
+      return (data.mapping[category]) ? data.mapping[category] : null;
+    }
+  }
 }
 
 // check that the bid has a width and height set
