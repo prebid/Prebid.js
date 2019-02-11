@@ -7,11 +7,21 @@ import { auctionManager } from '../src/auctionManager';
 import { groupBy, deepAccess } from '../src/utils';
 import { config } from '../src/config';
 import { ADPOD } from '../src/mediaTypes';
+import { hooks } from '../src/hook';
 // TODO import { initAdpodHooks, TARGETING_KEY_PB_CAT_DUR, TARGETING_KEY_CACHE_ID } from './adpod';
 
 // TODO Remove these constants later when adpod module is merged; use above commented import instead
 const TARGETING_KEY_PB_CAT_DUR = 'hb_pb_cat_dur';
 const TARGETING_KEY_CACHE_ID = 'hb_cache_id';
+
+// TODO remove if check when merged
+if (hooks['registerAdserver']) {
+  hooks['registerAdserver'].before(notifyTranslationModule);
+}
+
+export function notifyTranslationModule(fn) {
+  fn.call(this, 'freewheel');
+}
 
 /**
  * This function returns targeting keyvalue pairs for freewheel adserver module
