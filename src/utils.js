@@ -45,9 +45,9 @@ export let bind = function(a, b) { return b; }.bind(null, 1, uniqueRef)() === un
   ? Function.prototype.bind
   : function(bind) {
     var self = this;
-    var args = rest(arguments, 1);
+    var args = Array.prototype.slice.call(arguments, 1);
     return function() {
-      return self.apply(bind, args.concat(rest(arguments)));
+      return self.apply(bind, args.concat(Array.prototype.slice.call(arguments)));
     };
   };
 
