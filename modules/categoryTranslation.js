@@ -35,11 +35,14 @@ export function getAdserverCategoryHook(fn, adUnitCode, bid) {
     registerAdserver();
   }
 
+  let localStorageKey = (config.getConfig('brandCategoryTranslation.translationFile')) ? DEFAULT_IAB_TO_FW_MAPPING_KEY_PUB : DEFAULT_IAB_TO_FW_MAPPING_KEY;
+
   if (bid.meta && !bid.meta.adServerCatId) {
-    let mapping = getDataFromLocalStorage(DEFAULT_IAB_TO_FW_MAPPING_KEY);
+    let mapping = getDataFromLocalStorage(localStorageKey);
     if (mapping) {
       try {
         mapping = JSON.parse(mapping);
+        mapping = mapping['data'];
       } catch (error) {
         logError('Failed to parse translation mapping file');
       }
@@ -72,7 +75,7 @@ export function initTranslation(...args) {
             response = JSON.parse(response);
             let mapping = {
               lastUpdated: timestamp(),
-              mapping: response.mapping
+              data: response
             }
             setDataInLocalStorage(localStorageKey, JSON.stringify(mapping));
           } catch (error) {

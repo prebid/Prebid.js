@@ -25,9 +25,11 @@ describe('category translation', function () {
     }
 
     getLocalStorageStub.returns(JSON.stringify({
-      'freewheel': {
-        mapping: {
-          'iab-1': '1'
+      'data': {
+        'freewheel': {
+          mapping: {
+            'iab-1': '1'
+          }
         }
       }
     }));
