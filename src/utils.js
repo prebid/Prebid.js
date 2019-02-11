@@ -40,6 +40,17 @@ export const internal = {
   logInfo
 };
 
+var uniqueRef = {};
+export let bind = function(a, b) { return b; }.bind(null, 1, uniqueRef)() === uniqueRef
+  ? Function.prototype.bind
+  : function(bind) {
+    var self = this;
+    var args = rest(arguments, 1);
+    return function() {
+      return self.apply(bind, args.concat(rest(arguments)));
+    };
+  };
+
 /*
  *   Substitutes into a string from a given map using the token
  *   Usage
