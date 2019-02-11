@@ -2,6 +2,7 @@ import { getAdserverCategoryHook, initTranslation } from 'modules/categoryTransl
 import { config } from 'src/config';
 import * as utils from 'src/utils';
 import { expect } from 'chai';
+import { hooks } from 'src/hook';
 
 describe('category translation', function () {
   let fakeTranslationServer;
@@ -18,9 +19,16 @@ describe('category translation', function () {
   });
 
   it('should translate iab category to adserver category', function () {
+    hooks['registerAdserver'].before(notifyTranslationModule);
+    function notifyTranslationModule(fn) {
+      fn.call(this, 'freewheel');
+    }
+
     getLocalStorageStub.returns(JSON.stringify({
-      mapping: {
-        'iab-1': '1'
+      'freewheel': {
+        mapping: {
+          'iab-1': '1'
+        }
       }
     }));
     let bid = {
@@ -60,7 +68,7 @@ describe('category translation', function () {
     });
     getLocalStorageStub.returns(null);
     initTranslation();
-    expect(fakeTranslationServer.requests.length).to.equal(1);
+    expect(fakeTranslationServer.requests.length).to.equal(2);
     expect(fakeTranslationServer.requests[0].url).to.equal('http://sample.com');
   });
 });
