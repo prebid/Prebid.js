@@ -106,10 +106,11 @@ export const spec = {
 
       if (mediaTypes && mediaTypes.video) {
         if (!hasFavoredMediaType || params.favoredMediaType === VIDEO) {
+          const videoPlayerSize = mediaTypes.video.playerSize;
           const videoImp = Object.assign({}, imp, {
             video: {
-              w: sizes.length ? sizes[0][0] : 300,
-              h: sizes.length ? sizes[0][1] : 250,
+              w: videoPlayerSize ? videoPlayerSize[0][0] : 300,
+              h: videoPlayerSize ? videoPlayerSize[0][1] : 250,
               protocols: params.protocols || [1, 2, 3, 4, 5, 6],
               pos: params.pos || 0,
               ext: {

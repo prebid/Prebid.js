@@ -143,12 +143,12 @@ describe('CleanmedianetAdapter', function () {
       const bidRequestWithVideo = utils.deepClone(bidRequest);
       bidRequestWithVideo.mediaTypes = {
         video: {
-          sizes: [[300, 250], [120, 600]]
+          playerSize: [[120, 600]]
         }
       };
       response = spec.buildRequests([bidRequestWithVideo], bidRequest)[0];
-      expect(response.data.imp[0].video.w).to.equal(bidRequestWithVideo.mediaTypes.video.sizes[0][0]);
-      expect(response.data.imp[0].video.h).to.equal(bidRequestWithVideo.mediaTypes.video.sizes[0][1]);
+      expect(response.data.imp[0].video.w).to.equal(bidRequestWithVideo.mediaTypes.video.playerSize[0][0]);
+      expect(response.data.imp[0].video.h).to.equal(bidRequestWithVideo.mediaTypes.video.playerSize[0][1]);
       expect(response.data.imp[0].video.pos).to.equal(0);
       const bidRequestWithPosEquals1 = utils.deepClone(bidRequestWithVideo);
       bidRequestWithPosEquals1.params.pos = 1;
