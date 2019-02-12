@@ -533,7 +533,7 @@ describe('bidders created by newBidder', function () {
     it('should call spec.interpretResponse() with the resolve data', function () {
 
       const promiseData = { cpm: 1.37 };
-      const promise = new Promise(resolve => resolve(promiseData));
+      const promise = { then: fn => fn(promiseData) };
 
       spec.isBidRequestValid.returns(true);
       spec.buildRequests.returns([{
