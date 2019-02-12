@@ -36,37 +36,11 @@ setTimeout(function() {
   utils.insertElement(script);
 }, LOCALSTORE_TIMEOUT);
 
-/*
- * Custom Adagio Mapping:
- * ---------------------
- * print_number        | private | defaults to 1
- * page_dimensions     | private | e.g. "5490x954"
- * viewport_dimensions | private | e.g. "1680x954"
- * dom_loading         | private | Navigation Timing "DOM Loading", in milliseconds
- * layout              | private | Responsive layout code. e.g. "AA1"
- * adunit_position     | private | Position of the slot. e.g. "1000x45"
- * user_timestamp      | private | User timestamp. Server-side, this unix timestamp is parsed a UTC timestamp - ex: 1518197208
- * device              | private | IAB device type code: "5" for tablet, "4" for mobile, "2" for others
- * url                 | private | Current URL, (without query string and/or hash)
- * browser             | private | Current Browser name. e.g. "edge", "chrome", etc…
- * os                  | private | Current OS name : "linux", "windows", "mac"
- */
-
 const _features = {
-  /**
-   * Returns the print number of an element
-   * The print number is used only in case of an element is Refreshed
-   * @todo implement this if needed
-   * @returns number - default 1
-   */
   getPrintNumber: function() {
     return 1;
   },
 
-  /**
-   * Returns the page dimensions
-   * @returns {string} width x height. e.g. 1920x2105
-   */
   getPageDimensions: function() {
     const viewportDims = _features.getViewPortDimensions().split('x');
     const body = document.body;
@@ -83,19 +57,12 @@ const _features = {
     return viewportDims[0] + 'x' + pageHeight;
   },
 
-  /**
-   * Returns the viewport dimensions
-   * @returns {string} width x height. e.g. 1920x1024
-   */
   getViewPortDimensions: function() {
     let viewPortWidth;
     let viewPortHeight;
     const w = window;
     const d = document;
 
-    // the more standards compliant browsers (mozilla/netscape/opera/IE7) use w.innerWidth and w.innerHeight
-    // then try IE6 in standards compliant mode (i.e. with a valid doctype as the first line in the document)
-    // finish with older versions of IE
     if (w.innerWidth != null) {
       viewPortWidth = w.innerWidth;
       viewPortHeight = w.innerHeight;
@@ -112,10 +79,6 @@ const _features = {
     return viewPortWidth + 'x' + viewPortHeight;
   },
 
-  /**
-   * Returns the navigation timing "DOM Loading", in milliseconds
-   * @returns {number}
-   */
   isDomLoading: function() {
     const w = window;
     let performance = w.performance || w.msPerformance || w.webkitPerformance || w.mozPerformance;
@@ -128,17 +91,11 @@ const _features = {
     return domLoading;
   },
 
-  /**
-   * Returns the position of an element in the page
-   * @param {HTMLElement} element
-   * @returns {string} x-axis x y-axis. e.g. 1200x324
-   */
   getSlotPosition: function(element) {
     const w = window;
     const d = document;
     const el = element;
 
-    // Source: http://stackoverflow.com/a/26230989 & https://github.com/timoxley/offset/blob/master/index.js
     let box = el.getBoundingClientRect();
     const docEl = d.documentElement;
     const body = d.body;
@@ -147,7 +104,6 @@ const _features = {
     const scrollTop = w.pageYOffset || docEl.scrollTop || body.scrollTop;
     const scrollLeft = w.pageXOffset || docEl.scrollLeft || body.scrollLeft;
 
-    // We need to display an hidden element before we can get his position
     const elComputedStyle = w.getComputedStyle(el, null);
     const elComputedDisplay = elComputedStyle.display || 'block';
     const mustDisplayElement = elComputedDisplay === 'none';
@@ -166,42 +122,27 @@ const _features = {
     return position.x + 'x' + position.y;
   },
 
-  /**
-   * Returns the user timestamp.
-   * Server-side, this unix timestamp is parsed a UTC timestamp, e.g. 1518197208
-   * @returns {number}
-   */
   getTimestamp: function() {
     return Math.floor(new Date().getTime() / 1000) - new Date().getTimezoneOffset() * 60;
   },
 
-  /**
-   * Returns the device type, as an IAB code.
-   * Based on https://github.com/ua-parser/uap-cpp/blob/master/UaParser.cpp#L331, with the following updates:
-   * - replaced `mobile` by `mobi` in the table regexp, so Opera Mobile on phones is not detected as a tablet.
-   * @returns {number}
-   */
   getDevice: function() {
     const ua = navigator.userAgent;
 
-    // Tablets must be checked before phones.
     if ((/(tablet|ipad|playbook|silk)|(android(?!.*mobi))/i).test(ua)) {
       return 5; // "tablet"
     }
     if ((/Mobile|iP(hone|od|ad)|Android|BlackBerry|IEMobile|Kindle|NetFront|Silk-Accelerated|(hpw|web)OS|Fennec|Minimo|Opera M(obi|ini)|Blazer|Dolfin|Dolphin|Skyfire|Zune/).test(ua)) {
       return 4; // "phone"
     }
-    // Consider that all other devices are personal computers
-    return 2;
+    return 2; // personal computers
   },
 
-  // Browser detection
   getBrowser: function() {
     const userAgentLoweCase = navigator.userAgent.toLowerCase();
     return /Edge\/\d./i.test(navigator.userAgent) ? 'edge' : userAgentLoweCase.indexOf('chrome') > 0 ? 'chrome' : userAgentLoweCase.indexOf('firefox') > 0 ? 'firefox' : userAgentLoweCase.indexOf('safari') > 0 ? 'safari' : userAgentLoweCase.indexOf('opera') > 0 ? 'opera' : userAgentLoweCase.indexOf('msie') > 0 || window.top.MSStream ? 'ie' : 'unknow';
   },
 
-  // OS detection
   getOS: function() {
     const userAgentLoweCase = navigator.userAgent.toLowerCase();
     return userAgentLoweCase.indexOf('linux') > 0 ? 'linux' : userAgentLoweCase.indexOf('mac') > 0 ? 'mac' : userAgentLoweCase.indexOf('win') > 0 ? 'windows' : '';
@@ -266,7 +207,7 @@ function _getFeatures(bidRequest) {
     version: FEATURES_VERSION
   };
 
-  _setData({
+  _setFeatures({
     features: adUnitFeature
   });
 
@@ -295,6 +236,16 @@ function _setData(data) {
   window.top.ADAGIO.queue = window.top.ADAGIO.queue || [];
   window.top.ADAGIO.queue.push({
     action: 'ssp-data',
+    ts: Date.now(),
+    data: data,
+  });
+}
+
+function _setFeatures(data) {
+  window.top.ADAGIO = window.top.ADAGIO || {};
+  window.top.ADAGIO.queue = window.top.ADAGIO.queue || [];
+  window.top.ADAGIO.queue.push({
+    action: 'features',
     ts: Date.now(),
     data: data,
   });
@@ -340,7 +291,8 @@ export const spec = {
           pageviewId: pageviewId,
           adUnits: groupedAdUnits[organizationId],
           gdpr: gdprConsent,
-          adapterVersion: VERSION
+          adapterVersion: VERSION,
+          featuresVersion: FEATURES_VERSION
         },
         options: {
           contentType: 'application/json'
