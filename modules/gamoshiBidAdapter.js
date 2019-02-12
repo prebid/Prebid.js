@@ -2,9 +2,10 @@ import * as utils from '../src/utils';
 import {registerBidder} from '../src/adapters/bidderFactory';
 import {config} from '../src/config';
 import {Renderer} from '../src/Renderer';
-import {BANNER, VIDEO} from "../src/mediaTypes";
+import {BANNER, VIDEO} from '../src/mediaTypes';
 
 const ENDPOINTS = {
+  'viewdeos': 'https://rtb.viewdeos.com',
   'cleanmedia': 'https://bidder.cleanmediaads.com',
   'gamoshi': 'https://rtb.gamoshi.io',
   'gambid': 'https://rtb.gamoshi.io',
@@ -42,7 +43,7 @@ export const helper = {
 
 export const spec = {
   code: 'gamoshi',
-  aliases: ['gambid', 'cleanmedia'],
+  aliases: ['gambid', 'cleanmedia', 'viewdeos'],
   supportedMediaTypes: ['banner', 'video'],
 
   isBidRequestValid: function (bid) {
@@ -76,7 +77,9 @@ export const spec = {
         'ext': {}
       };
 
-      if (bidderRequest.gdprConsent) {
+      if (bidderRequest.gdprConsent &&
+        bidderRequest.gdprConsent.consentString &&
+        bidderRequest.gdprConsent.gdprApplies) {
         rtbBidRequest.ext.gdpr_consent = {
           consent_string: bidderRequest.gdprConsent.consentString,
           consent_required: bidderRequest.gdprConsent.gdprApplies
@@ -96,7 +99,7 @@ export const spec = {
         params.favoredMediaType && this.supportedMediaTypes.includes(params.favoredMediaType);
 
       if ((!mediaTypes || mediaTypes.banner)) {
-        if (!hasFavoredMediaType || params.favoredMediaType === 'banner') {
+        if (!hasFavoredMediaType || params.favoredMediaType === BANNER) {
           const bannerImp = Object.assign({}, imp, {
             banner: {
               w: sizes.length ? sizes[0][0] : 300,
@@ -110,7 +113,7 @@ export const spec = {
       }
 
       if (mediaTypes && mediaTypes.video) {
-        if (!hasFavoredMediaType || params.favoredMediaType === 'video') {
+        if (!hasFavoredMediaType || params.favoredMediaType === VIDEO) {
           const videoImp = Object.assign({}, imp, {
             video: {
               w: sizes.length ? sizes[0][0] : 300,
