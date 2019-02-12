@@ -36,6 +36,19 @@ Grid bid adapter supports Banner and Video (instream and outstream).
                        }
                    }
                ]
-           }
+           },
+           {
+               code: 'test-div',
+               sizes: [[728, 90]],
+               mediaTypes: { video: {} },
+               bids: [
+                   {
+                       bidder: "grid",
+                       params: {
+                           uid: 11
+                       }
+                   }
+               ]
+          }
        ];
 ```
