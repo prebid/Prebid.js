@@ -1,12 +1,14 @@
 import { registerBidder } from '../src/adapters/bidderFactory';
-import { parseSizesInput, logError, generateUUID, isEmpty, deepAccess } from '../src/utils';
+import { parseSizesInput, logError, generateUUID, isEmpty, deepAccess, logWarn, logMessage, getBidRequest } from '../src/utils';
 import { BANNER, VIDEO } from '../src/mediaTypes';
 import { config } from '../src/config';
+import { Renderer } from '../src/Renderer';
 
 const BIDDER_CODE = 'sonobi';
 const STR_ENDPOINT = 'https://apex.go.sonobi.com/trinity.json';
 const PAGEVIEW_ID = generateUUID();
 const SONOBI_DIGITRUST_KEY = 'fhnS5drwmH';
+const OUTSTREAM_REDNERER_URL = 'https://mtrx.go.sonobi.com/outstream.js';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -107,7 +109,6 @@ export const spec = {
     const bidResponse = serverResponse.body;
     const bidsReturned = [];
     const referrer = bidderRequest.data.ref;
-
     if (Object.keys(bidResponse.slots).length === 0) {
       return bidsReturned;
     }
@@ -115,7 +116,20 @@ export const spec = {
     Object.keys(bidResponse.slots).forEach(slot => {
       const bid = bidResponse.slots[slot];
       const bidId = _getBidIdFromTrinityKey(slot);
-      const mediaType = (bid.sbi_ct === 'video') ? 'video' : null;
+      const bidRequest = bidderRequest.bidderRequests.find(bid => bid.bidId === bidId);
+
+      let mediaType = null;
+      if(bid.sbi_ct === 'video') {
+        const context = deepAccess(bidRequest, 'mediaTypes.video.context');
+        if(context) {
+          if(context === 'outstream') {
+            mediaType = 'outstream';
+          } else {
+            mediaType = 'video';
+          }
+        }
+      }
+
       const createCreative = _creative(mediaType, referrer);
       if (bid.sbi_aid && bid.sbi_mouse && bid.sbi_size) {
         const [
@@ -145,6 +159,22 @@ export const spec = {
           delete bids.ad;
           delete bids.width;
           delete bids.height;
+        }
+
+        if(mediaType === 'outstream' && bidRequest) {
+          bids.mediaType = 'video';
+          bids.vastUrl = createCreative(bidResponse.sbi_dc, bid.sbi_aid);
+          bids.renderer = newRenderer(bidRequest.adUnitCode, bids, deepAccess(
+            bidRequest,
+            'renderer.options'
+          ));
+          let videoSize = deepAccess(bidRequest, 'mediaTypes.video.size');
+          if(videoSize) {
+            videoSize = videoSize.split('x');
+            bids.width = Number(videoSize[0]);
+            bids.height = Number(videoSize[1]);
+          }
+
         }
         bidsReturned.push(bids);
       }
@@ -192,7 +222,7 @@ function _validateFloor (bid) {
 }
 
 const _creative = (mediaType, referer) => (sbiDc, sbiAid) => {
-  if (mediaType === 'video') {
+  if (mediaType === 'video' || mediaType === 'outstream') {
     return _videoCreative(sbiDc, sbiAid, referer)
   }
   const src = `https://${sbiDc}apex.go.sonobi.com/sbi.js?aid=${sbiAid}&as=null&ref=${encodeURIComponent(referer)}`;
@@ -245,6 +275,49 @@ function _getDigiTrustObject(key) {
     return null;
   }
   return digiTrustId;
+}
+
+function newRenderer(adUnitCode, bid, rendererOptions = {}) {
+  const renderer = Renderer.install({
+    id: bid.aid,
+    url: OUTSTREAM_REDNERER_URL,
+    config: rendererOptions,
+    loaded: true,
+    adUnitCode
+  });
+
+  try {
+    renderer.setRender(outstreamRender);
+  } catch (err) {
+    logWarn('Prebid Error calling setRender on renderer', err);
+  }
+
+  renderer.setEventHandlers({
+    impression: () => logMessage('Sonobi outstream video impression event'),
+    loaded: () => logMessage('Sonobi outstream video loaded event'),
+    ended: () => {
+      logMessage('Sonobi outstream renderer video event');
+      // document.querySelector(`#${adUnitCode}`).style.display = 'none';
+    }
+  });
+  return renderer;
+}
+
+function outstreamRender(bid) {
+  // push to render queue because SbiOutstreamRenderer may not be loaded yet
+  bid.renderer.push(() => {
+    const [
+      width,
+      height
+    ] = bid.getSize().split('x');
+    const renderer = new window.SbiOutstreamRenderer();
+    renderer.init({
+      vastUrl: bid.vastUrl,
+      height,
+      width,
+    });
+    renderer.setRootElement(bid.adUnitCode);
+  });
 }
 
 registerBidder(spec);
