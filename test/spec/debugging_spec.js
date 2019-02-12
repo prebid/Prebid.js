@@ -4,43 +4,43 @@ import { sessionLoader, addBidResponseHook, getConfig, disableOverrides, boundHo
 import { addBidResponse } from 'src/auction';
 import { config } from 'src/config';
 
-describe('bid overrides', () => {
+describe('bid overrides', function () {
   let sandbox;
 
-  beforeEach(() => {
+  beforeEach(function () {
     sandbox = sinon.sandbox.create();
   });
 
-  afterEach(() => {
+  afterEach(function () {
     window.sessionStorage.clear();
     sandbox.restore();
   });
 
-  describe('initialization', () => {
-    beforeEach(() => {
+  describe('initialization', function () {
+    beforeEach(function () {
       sandbox.stub(config, 'setConfig');
     });
 
-    afterEach(() => {
+    afterEach(function () {
       disableOverrides();
     });
 
-    it('should happen when enabled with setConfig', () => {
+    it('should happen when enabled with setConfig', function () {
       getConfig({
         enabled: true
       });
 
-      expect(addBidResponse.hasHook(boundHook)).to.equal(true);
+      expect(addBidResponse.getHooks().some(hook => hook.hook === boundHook)).to.equal(true);
     });
 
-    it('should happen when configuration found in sessionStorage', () => {
+    it('should happen when configuration found in sessionStorage', function () {
       sessionLoader({
         getItem: () => ('{"enabled": true}')
       });
-      expect(addBidResponse.hasHook(boundHook)).to.equal(true);
+      expect(addBidResponse.getHooks().some(hook => hook.hook === boundHook)).to.equal(true);
     });
 
-    it('should not throw if sessionStorage is inaccessible', () => {
+    it('should not throw if sessionStorage is inaccessible', function () {
       expect(() => {
         sessionLoader({
           getItem() {
@@ -51,11 +51,11 @@ describe('bid overrides', () => {
     });
   });
 
-  describe('hook', () => {
+  describe('hook', function () {
     let mockBids;
     let bids;
 
-    beforeEach(() => {
+    beforeEach(function () {
       let baseBid = {
         'bidderCode': 'rubicon',
         'width': 970,
@@ -80,13 +80,14 @@ describe('bid overrides', () => {
 
     function run(overrides) {
       mockBids.forEach(bid => {
-        addBidResponseHook(overrides, bid.adUnitCode, bid, (adUnitCode, bid) => {
+        let next = (adUnitCode, bid) => {
           bids.push(bid);
-        })
+        };
+        addBidResponseHook.bind(overrides)(next, bid.adUnitCode, bid)
       });
     }
 
-    it('should allow us to exclude bidders', () => {
+    it('should allow us to exclude bidders', function () {
       run({
         enabled: true,
         bidders: ['appnexus']
@@ -96,7 +97,7 @@ describe('bid overrides', () => {
       expect(bids[0].bidderCode).to.equal('appnexus');
     });
 
-    it('should allow us to override all bids', () => {
+    it('should allow us to override all bids', function () {
       run({
         enabled: true,
         bids: [{
@@ -109,7 +110,7 @@ describe('bid overrides', () => {
       expect(bids[1].cpm).to.equal(2);
     });
 
-    it('should allow us to override bids by bidder', () => {
+    it('should allow us to override bids by bidder', function () {
       run({
         enabled: true,
         bids: [{
@@ -123,7 +124,7 @@ describe('bid overrides', () => {
       expect(bids[1].cpm).to.equal(0.5);
     });
 
-    it('should allow us to override bids by adUnitCode', () => {
+    it('should allow us to override bids by adUnitCode', function () {
       mockBids[1].adUnitCode = 'test';
 
       run({

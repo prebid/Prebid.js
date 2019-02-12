@@ -1,48 +1,48 @@
 import yuktamediaAnalyticsAdapter from 'modules/yuktamediaAnalyticsAdapter';
 import { expect } from 'chai';
-let adaptermanager = require('src/adaptermanager');
+let adapterManager = require('src/adapterManager').default;
 let events = require('src/events');
 let constants = require('src/constants.json');
 
-describe('YuktaMedia analytics adapter', () => {
+describe('YuktaMedia analytics adapter', function () {
   let xhr;
   let requests;
 
-  beforeEach(() => {
+  beforeEach(function () {
     xhr = sinon.useFakeXMLHttpRequest();
     requests = [];
     xhr.onCreate = request => requests.push(request);
     sinon.stub(events, 'getEvents').returns([]);
   });
 
-  afterEach(() => {
+  afterEach(function () {
     xhr.restore();
     events.getEvents.restore();
   });
 
-  describe('track', () => {
+  describe('track', function () {
     let initOptions = {
       pubId: '1',
       pubKey: 'ZXlKaGJHY2lPaUpJVXpJMU5pSjkuT=='
     };
 
-    adaptermanager.registerAnalyticsAdapter({
+    adapterManager.registerAnalyticsAdapter({
       code: 'yuktamedia',
       adapter: yuktamediaAnalyticsAdapter
     });
 
-    beforeEach(() => {
-      adaptermanager.enableAnalytics({
+    beforeEach(function () {
+      adapterManager.enableAnalytics({
         provider: 'yuktamedia',
         options: initOptions
       });
     });
 
-    afterEach(() => {
+    afterEach(function () {
       yuktamediaAnalyticsAdapter.disableAnalytics();
     });
 
-    it('builds and sends auction data', () => {
+    it('builds and sends auction data', function () {
       let auctionTimestamp = 1496510254313;
       let bidRequest = {
         'bidderCode': 'appnexus',

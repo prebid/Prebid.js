@@ -3,13 +3,13 @@ import { spec } from 'modules/eplanningBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
 import * as utils from 'src/utils';
 
-describe('E-Planning Adapter', () => {
+describe('E-Planning Adapter', function () {
   const adapter = newBidder('spec');
   const CI = '12345';
-  const ADUNIT_CODE = 'adunit-code';
+  const ADUNIT_CODE = 'adunit-co:de';
   const ADUNIT_CODE2 = 'adunit-code-dos';
   const CLEAN_ADUNIT_CODE2 = 'adunitcodedos';
-  const CLEAN_ADUNIT_CODE = 'adunitcode';
+  const CLEAN_ADUNIT_CODE = 'adunitco_de';
   const BID_ID = '123456789';
   const BID_ID2 = '987654321';
   const CPM = 1.3;
@@ -167,55 +167,55 @@ describe('E-Planning Adapter', () => {
     }
   };
 
-  describe('inherited functions', () => {
-    it('exists and is a function', () => {
+  describe('inherited functions', function () {
+    it('exists and is a function', function () {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
   });
 
-  describe('isBidRequestValid', () => {
-    it('should return true when bid has ci parameter', () => {
+  describe('isBidRequestValid', function () {
+    it('should return true when bid has ci parameter', function () {
       expect(spec.isBidRequestValid(validBid)).to.equal(true);
     });
 
-    it('should return false when bid does not have ci parameter and is not a test bid', () => {
+    it('should return false when bid does not have ci parameter and is not a test bid', function () {
       expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
 
-    it('should return true when bid does not have ci parameter but is a test bid', () => {
+    it('should return true when bid does not have ci parameter but is a test bid', function () {
       expect(spec.isBidRequestValid(testBid)).to.equal(true);
     });
   });
 
-  describe('buildRequests', () => {
+  describe('buildRequests', function () {
     let bidRequests = [validBid];
 
-    it('should create the url correctly', () => {
+    it('should create the url correctly', function () {
       const url = spec.buildRequests(bidRequests).url;
       expect(url).to.equal('//ads.us.e-planning.net/hb/1/' + CI + '/1/localhost/ROS');
     });
 
-    it('should return GET method', () => {
+    it('should return GET method', function () {
       const method = spec.buildRequests(bidRequests).method;
       expect(method).to.equal('GET');
     });
 
-    it('should return r parameter with value pbjs', () => {
+    it('should return r parameter with value pbjs', function () {
       const r = spec.buildRequests(bidRequests).data.r;
       expect(r).to.equal('pbjs');
     });
 
-    it('should return pbv parameter with value prebid version', () => {
+    it('should return pbv parameter with value prebid version', function () {
       const pbv = spec.buildRequests(bidRequests).data.pbv;
       expect(pbv).to.equal('$prebid.version$');
     });
 
-    it('should return e parameter with value according to the adunit sizes', () => {
+    it('should return e parameter with value according to the adunit sizes', function () {
       const e = spec.buildRequests(bidRequests).data.e;
       expect(e).to.equal(CLEAN_ADUNIT_CODE + ':300x250,300x600');
     });
 
-    it('should return correct e parameter with more than one adunit', () => {
+    it('should return correct e parameter with more than one adunit', function () {
       const NEW_CODE = ADUNIT_CODE + '2';
       const CLEAN_NEW_CODE = CLEAN_ADUNIT_CODE + '2';
       const anotherBid = {
@@ -232,7 +232,7 @@ describe('E-Planning Adapter', () => {
       expect(e).to.equal(CLEAN_ADUNIT_CODE + ':300x250,300x600+' + CLEAN_NEW_CODE + ':100x100');
     });
 
-    it('should return correct e parameter when the adunit has no size', () => {
+    it('should return correct e parameter when the adunit has no size', function () {
       const noSizeBid = {
         'bidder': 'eplanning',
         'params': {
@@ -245,12 +245,12 @@ describe('E-Planning Adapter', () => {
       expect(e).to.equal(CLEAN_ADUNIT_CODE + ':1x1');
     });
 
-    it('should return ur parameter with current window url', () => {
+    it('should return ur parameter with current window url', function () {
       const ur = spec.buildRequests(bidRequests).data.ur;
       expect(ur).to.equal(utils.getTopWindowUrl());
     });
 
-    it('should return fr parameter when there is a referrer', () => {
+    it('should return fr parameter when there is a referrer', function () {
       const referrer = 'thisisafakereferrer';
       const stubGetReferrer = sinon.stub(utils, 'getTopWindowReferrer');
       stubGetReferrer.returns(referrer);
@@ -259,7 +259,7 @@ describe('E-Planning Adapter', () => {
       stubGetReferrer.restore()
     });
 
-    it('should return crs parameter with document charset', () => {
+    it('should return crs parameter with document charset', function () {
       let expected;
       try {
         expected = window.top.document.characterSet;
@@ -272,30 +272,30 @@ describe('E-Planning Adapter', () => {
       expect(chset).to.equal(expected);
     });
 
-    it('should return the testing url when the request has the t parameter', () => {
+    it('should return the testing url when the request has the t parameter', function () {
       const url = spec.buildRequests([testBid]).url;
       const expectedUrl = '//' + TEST_ISV + '/layers/t_pbjs_2.json';
       expect(url).to.equal(expectedUrl);
     });
 
-    it('should return the parameter ncb with value 1', () => {
+    it('should return the parameter ncb with value 1', function () {
       const ncb = spec.buildRequests(bidRequests).data.ncb;
       expect(ncb).to.equal('1');
     });
   });
 
-  describe('interpretResponse', () => {
-    it('should return an empty array when there is no ads in the response', () => {
+  describe('interpretResponse', function () {
+    it('should return an empty array when there is no ads in the response', function () {
       const bidResponses = spec.interpretResponse(responseWithNoAd);
       expect(bidResponses).to.be.empty;
     });
 
-    it('should return an empty array when there is no spaces in the response', () => {
+    it('should return an empty array when there is no spaces in the response', function () {
       const bidResponses = spec.interpretResponse(responseWithNoSpace);
       expect(bidResponses).to.be.empty;
     });
 
-    it('should correctly map the parameters in the response', () => {
+    it('should correctly map the parameters in the response', function () {
       const bidResponse = spec.interpretResponse(response, { adUnitToBidId: { [CLEAN_ADUNIT_CODE]: BID_ID } })[0];
       const expectedResponse = {
         requestId: BID_ID,
@@ -312,7 +312,7 @@ describe('E-Planning Adapter', () => {
     });
   });
 
-  describe('getUserSyncs', () => {
+  describe('getUserSyncs', function () {
     const sOptionsAllEnabled = {
       pixelEnabled: true,
       iframeEnabled: true
@@ -330,30 +330,30 @@ describe('E-Planning Adapter', () => {
       iframeEnabled: true
     };
 
-    it('should return an empty array if the response has no syncs', () => {
+    it('should return an empty array if the response has no syncs', function () {
       const noSyncsResponse = { cs: [] };
       const syncs = spec.getUserSyncs(sOptionsAllEnabled, [noSyncsResponse]);
       expect(syncs).to.be.empty;
     });
 
-    it('should return an empty array if there is no sync options enabled', () => {
+    it('should return an empty array if there is no sync options enabled', function () {
       const syncs = spec.getUserSyncs(sOptionsAllDisabled, [response]);
       expect(syncs).to.be.empty;
     });
 
-    it('should only return pixels if iframe is not enabled', () => {
+    it('should only return pixels if iframe is not enabled', function () {
       const syncs = spec.getUserSyncs(sOptionsOnlyPixel, [response]);
       syncs.forEach(sync => expect(sync.type).to.equal('image'));
     });
 
-    it('should only return iframes if pixel is not enabled', () => {
+    it('should only return iframes if pixel is not enabled', function () {
       const syncs = spec.getUserSyncs(sOptionsOnlyIframe, [response]);
       syncs.forEach(sync => expect(sync.type).to.equal('iframe'));
     });
   });
 
-  describe('adUnits mapping to bidId', () => {
-    it('should correctly map the bidId to the adunit', () => {
+  describe('adUnits mapping to bidId', function () {
+    it('should correctly map the bidId to the adunit', function () {
       const requests = spec.buildRequests([validBid, validBid2]);
       const responses = spec.interpretResponse(responseWithTwoAdunits, requests);
       expect(responses[0].requestId).to.equal(BID_ID);

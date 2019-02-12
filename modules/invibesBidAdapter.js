@@ -1,5 +1,5 @@
-import * as utils from 'src/utils';
-import { registerBidder } from 'src/adapters/bidderFactory';
+import * as utils from '../src/utils';
+import { registerBidder } from '../src/adapters/bidderFactory';
 
 const CONSTANTS = {
   BIDDER_CODE: 'invibes',
@@ -8,7 +8,8 @@ const CONSTANTS = {
   TIME_TO_LIVE: 300,
   DEFAULT_CURRENCY: 'EUR',
   PREBID_VERSION: 1,
-  METHOD: 'GET'
+  METHOD: 'GET',
+  INVIBES_VENDOR_ID: 436
 };
 
 export const spec = {
@@ -23,9 +24,7 @@ export const spec = {
    * @param bidderRequest
    * @return ServerRequest[]
    */
-  buildRequests: function (bidRequests, bidderRequest) {
-    return buildRequest(bidRequests, bidderRequest != null ? bidderRequest.auctionStart : null);
-  },
+  buildRequests: buildRequest,
   /**
    * @param {*} responseObj
    * @param {requestParams} bidRequests
@@ -55,6 +54,11 @@ let invibes = topWin.invibes = topWin.invibes || {};
 let _customUserSync;
 
 function isBidRequestValid(bid) {
+  if (invibes && typeof invibes.bidResponse === 'object') {
+    utils.logInfo('Invibes Adapter - Bid response already received. Invibes only responds to one bid request per user visit');
+    return false;
+  }
+
   if (typeof bid.params !== 'object') {
     return false;
   }
@@ -67,11 +71,11 @@ function isBidRequestValid(bid) {
   return true;
 }
 
-function buildRequest(bidRequests, auctionStart) {
-  // invibes only responds to 1 bid request for each user visit
+function buildRequest(bidRequests, bidderRequest) {
+  bidderRequest = bidderRequest || {};
   const _placementIds = [];
   let _loginId, _customEndpoint;
-  let _ivAuctionStart = auctionStart || Date.now();
+  let _ivAuctionStart = bidderRequest.auctionStart || Date.now();
 
   bidRequests.forEach(function (bidRequest) {
     bidRequest.startTime = new Date().getTime();
@@ -85,9 +89,9 @@ function buildRequest(bidRequests, auctionStart) {
 
   cookieDomain = detectTopmostCookieDomain();
   invibes.noCookies = invibes.noCookies || invibes.getCookie('ivNoCookie');
-  invibes.optIn = invibes.optIn || invibes.getCookie('ivOptIn');
+  invibes.optIn = invibes.optIn || invibes.getCookie('ivOptIn') || readGdprConsent(bidderRequest.gdprConsent);
 
-  initDomainId();
+  initDomainId(invibes.domainOptions);
 
   const currentQueryStringParams = parseQueryStringParams();
 
@@ -96,7 +100,6 @@ function buildRequest(bidRequests, auctionStart) {
     videoAdHtmlId: generateRandomId(),
     showFallback: currentQueryStringParams['advs'] === '0',
     ivbsCampIdsLocal: invibes.getCookie('IvbsCampIdsLocal'),
-    lId: invibes.dom.id,
 
     bidParamsJson: JSON.stringify({
       placementIds: _placementIds,
@@ -110,11 +113,12 @@ function buildRequest(bidRequests, auctionStart) {
     width: topWin.innerWidth,
     height: topWin.innerHeight,
 
-    noc: !cookieDomain
+    noc: !cookieDomain,
+    oi: invibes.optIn
   };
 
-  if (invibes.optIn) {
-    data.oi = 1;
+  if (invibes.dom.id) {
+    data.lId = invibes.dom.id;
   }
 
   const parametersToPassForward = 'videoaddebug,advs,bvci,bvid,istop,trybvid,trybvci'.split(',');
@@ -323,10 +327,7 @@ function initLogger() {
 function buildSyncUrl() {
   let syncUrl = _customUserSync || CONSTANTS.SYNC_ENDPOINT;
   syncUrl += '?visitId=' + invibes.visitId;
-
-  if (invibes.optIn) {
-    syncUrl += '&optIn=1';
-  }
+  syncUrl += '&optIn=' + invibes.optIn;
 
   const did = invibes.getCookie('ivbsdid');
   if (did) {
@@ -356,6 +357,14 @@ function acceptPostMessage(e) {
   } else if (msg.ivbscd === 2) {
     invibes.dom.graduate();
   }
+}
+
+function readGdprConsent(gdprConsent) {
+  if (gdprConsent && gdprConsent.vendorData && gdprConsent.vendorData.vendorConsents) {
+    return !!gdprConsent.vendorData.vendorConsents[CONSTANTS.INVIBES_VENDOR_ID.toString(10)] === true ? 2 : -2;
+  }
+
+  return 0;
 }
 
 const ivLogger = initLogger();
@@ -400,9 +409,9 @@ invibes.setCookie = function (name, value, exdays, domain) {
 
 let detectTopmostCookieDomain = function () {
   let testCookie = invibes.Uid.generate();
-  let hostParts = location.host.split('.');
+  let hostParts = location.hostname.split('.');
   if (hostParts.length === 1) {
-    return location.host;
+    return location.hostname;
   }
   for (let i = hostParts.length - 1; i >= 0; i--) {
     let domain = '.' + hostParts.slice(i).join('.');
@@ -463,8 +472,8 @@ let initDomainId = function (options) {
 
   let setId = function () {
     invibes.dom = {
-      id: !state.cr && invibes.optIn ? state.id : undefined,
-      tempId: invibes.optIn ? state.id : undefined,
+      id: (!state.cr && invibes.optIn > 0) ? state.id : undefined,
+      tempId: (invibes.optIn > 0) ? state.id : undefined,
       graduate: graduate
     };
   };
@@ -481,7 +490,7 @@ let initDomainId = function (options) {
     if (state.hc < minHC) {
       state.hc++;
     }
-    if (state.hc >= minHC && validGradTime(state)) {
+    if ((state.hc >= minHC && validGradTime(state)) || options.skipGraduation) {
       graduate();
     }
   }
@@ -496,4 +505,11 @@ export function resetInvibes() {
   invibes.noCookies = undefined;
   invibes.dom = undefined;
   invibes.bidResponse = undefined;
+  invibes.domainOptions = undefined;
+}
+
+export function stubDomainOptions(persistence) {
+  invibes.domainOptions = {
+    persistence: persistence
+  };
 }

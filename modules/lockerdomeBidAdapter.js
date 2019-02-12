@@ -1,6 +1,6 @@
-import * as utils from 'src/utils';
-import {BANNER} from 'src/mediaTypes';
-import {registerBidder} from 'src/adapters/bidderFactory';
+import * as utils from '../src/utils';
+import {BANNER} from '../src/mediaTypes';
+import {registerBidder} from '../src/adapters/bidderFactory';
 
 export const spec = {
   code: 'lockerdome',
@@ -12,6 +12,7 @@ export const spec = {
     const adUnitBidRequests = bidRequests.map(function (bid) {
       return {
         requestId: bid.bidId,
+        adUnitCode: bid.adUnitCode,
         adUnitId: utils.getBidIdParameter('adUnitId', bid.params),
         sizes: bid.sizes
       }

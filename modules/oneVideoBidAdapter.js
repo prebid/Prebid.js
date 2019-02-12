@@ -1,5 +1,5 @@
-import * as utils from 'src/utils';
-import {registerBidder} from 'src/adapters/bidderFactory';
+import * as utils from '../src/utils';
+import {registerBidder} from '../src/adapters/bidderFactory';
 const BIDDER_CODE = 'oneVideo';
 export const spec = {
   code: 'oneVideo',
@@ -36,15 +36,17 @@ export const spec = {
    * Make a server request from the list of BidRequests.
    *
    * @param {validBidRequests[]} - an array of bids
+   * @param bidderRequest
    * @return ServerRequest Info describing the request to the server.
    */
-  buildRequests: function(bids) {
+  buildRequests: function(bids, bidRequest) {
+    let consentData = bidRequest ? bidRequest.gdprConsent : null;
+
     return bids.map(bid => {
       return {
         method: 'POST',
         url: location.protocol + spec.ENDPOINT + bid.params.pubId,
-        data: getRequestData(bid),
-        options: {contentType: 'application/json'},
+        data: getRequestData(bid, consentData),
         bidRequest: bid
       }
     })
@@ -127,9 +129,12 @@ function getSize(sizes) {
   };
 }
 
-function getRequestData(bid) {
+function isConsentRequired(consentData) {
+  return !!(consentData && consentData.gdprApplies);
+}
+
+function getRequestData(bid, consentData) {
   let loc = utils.getTopWindowLocation();
-  let global = (window.top) ? window.top : window;
   let page = (bid.params.site && bid.params.site.page) ? (bid.params.site.page) : (loc.href);
   let ref = (bid.params.site && bid.params.site.referrer) ? bid.params.site.referrer : utils.getTopWindowReferrer();
   let bidData = {
@@ -146,6 +151,9 @@ function getRequestData(bid) {
         h: bid.params.video.playerHeight,
         linearity: 1,
         protocols: bid.params.video.protocols || [2, 5]
+      },
+      ext: {
+        hb: 1,
       }
     }],
     site: {
@@ -153,7 +161,7 @@ function getRequestData(bid) {
       ref: ref
     },
     device: {
-      ua: global.navigator.userAgent
+      ua: navigator.userAgent
     },
     tmax: 200
   };
@@ -176,9 +184,32 @@ function getRequestData(bid) {
   if (bid.params.video.position) {
     bidData.imp[0].video.pos = bid.params.video.position
   }
+  if (bid.params.video.playbackmethod) {
+    bidData.imp[0].video.playbackmethod = bid.params.video.playbackmethod
+  }
+  if (bid.params.video.placement) {
+    bidData.imp[0].ext.placement = bid.params.video.placement
+  }
   if (bid.params.site && bid.params.site.id) {
     bidData.site.id = bid.params.site.id
   }
+
+  if (isConsentRequired(consentData)) {
+    bidData.regs = {
+      ext: {
+        gdpr: 1
+      }
+    };
+
+    if (consentData.consentString) {
+      bidData.user = {
+        ext: {
+          consent: consentData.consentString
+        }
+      };
+    }
+  }
+
   return bidData;
 }
 

@@ -1,9 +1,9 @@
 // RealVu Analytics Adapter
-import adapter from 'src/AnalyticsAdapter';
-import adaptermanager from 'src/adaptermanager';
-import CONSTANTS from 'src/constants.json';
+import adapter from '../src/AnalyticsAdapter';
+import adapterManager from '../src/adapterManager';
+import CONSTANTS from '../src/constants.json';
 
-const utils = require('src/utils.js');
+const utils = require('../src/utils.js');
 
 let realvuAnalyticsAdapter = adapter({
   global: 'realvuAnalytics',
@@ -20,8 +20,8 @@ try {
 } catch (e) {
   /* continue regardless of error */
 }
-window.top1.realvu_aa_fifo = window.top1.realvu_aa_fifo || [];
-window.top1.realvu_aa = window.top1.realvu_aa || {
+
+export let lib = {
   ads: [],
   x1: 0,
   y1: 0,
@@ -35,6 +35,7 @@ window.top1.realvu_aa = window.top1.realvu_aa || {
   c: '', // owner id
   sr: '', //
   beacons: [], // array of beacons to collect while 'conf' is not responded
+  defer: [],
   init: function () {
     let z = this;
     let u = navigator.userAgent;
@@ -75,13 +76,10 @@ window.top1.realvu_aa = window.top1.realvu_aa || {
   },
 
   add_evt: function (elem, evtType, func) {
-    if (elem.addEventListener) {
-      elem.addEventListener(evtType, func, true);
-    } else if (elem.attachEvent) {
-      elem.attachEvent('on' + evtType, func);
-    } else {
-      elem['on' + evtType] = func;
-    }
+    elem.addEventListener(evtType, func, true);
+    this.defer.push(function() {
+      elem.removeEventListener(evtType, func, true);
+    });
   },
 
   update: function () {
@@ -849,6 +847,9 @@ window.top1.realvu_aa = window.top1.realvu_aa || {
   }
 };
 
+window.top1.realvu_aa_fifo = window.top1.realvu_aa_fifo || [];
+window.top1.realvu_aa = window.top1.realvu_aa || lib;
+
 if (typeof (window.top1.boost_poll) == 'undefined') {
   window.top1.realvu_aa.init();
   window.top1.boost_poll = setInterval(function () {
@@ -937,9 +938,17 @@ realvuAnalyticsAdapter.isInView = function (adUnitCode) {
   return r;
 };
 
-adaptermanager.registerAnalyticsAdapter({
+let disableAnalyticsSuper = realvuAnalyticsAdapter.disableAnalytics;
+realvuAnalyticsAdapter.disableAnalytics = function () {
+  while (lib.defer.length) {
+    lib.defer.pop()();
+  }
+  disableAnalyticsSuper.apply(this, arguments);
+};
+
+adapterManager.registerAnalyticsAdapter({
   adapter: realvuAnalyticsAdapter,
   code: 'realvuAnalytics'
 });
 
-module.exports = realvuAnalyticsAdapter;
+export default realvuAnalyticsAdapter;

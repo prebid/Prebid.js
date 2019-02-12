@@ -1,9 +1,9 @@
 import { expect } from 'chai';
-import spec from 'modules/my6senseBidAdapter';
+import { spec } from 'modules/my6senseBidAdapter';
 
-describe('My6sense Bid adapter test', () => {
+describe('My6sense Bid adapter test', function () {
   let bidRequests, serverResponses;
-  beforeEach(() => {
+  beforeEach(function () {
     bidRequests = [
       {
         // valid 1
@@ -99,29 +99,29 @@ describe('My6sense Bid adapter test', () => {
     ]
   });
 
-  describe('test if requestIsValid function', () => {
-    it('with valid data 1', () => {
+  describe('test if requestIsValid function', function () {
+    it('with valid data 1', function () {
       expect(spec.isBidRequestValid(bidRequests[0])).to.equal(true);
     });
-    it('with invalid data 2', () => {
+    it('with invalid data 2', function () {
       expect(spec.isBidRequestValid(bidRequests[1])).to.equal(false);
     });
-    it('with invalid data 3', () => {
+    it('with invalid data 3', function () {
       expect(spec.isBidRequestValid(bidRequests[2])).to.equal(false);
     });
-    it('with invalid data 3', () => {
+    it('with invalid data 3', function () {
       expect(spec.isBidRequestValid(bidRequests[3])).to.equal(false);
     });
   });
 
-  describe('test if buildRequests function', () => {
-    it('normal', () => {
+  describe('test if buildRequests function', function () {
+    it('normal', function () {
       var requests = spec.buildRequests([bidRequests[0]]);
       expect(requests).to.be.lengthOf(1);
     });
   });
-  describe('test bid responses', () => {
-    it('success 1', () => {
+  describe('test bid responses', function () {
+    it('success 1', function () {
       var bids = spec.interpretResponse(serverResponses[0], {'bidRequest': bidRequests[0]});
       expect(bids).to.be.lengthOf(1);
       expect(bids[0].cpm).to.equal(1.5);
@@ -129,7 +129,7 @@ describe('My6sense Bid adapter test', () => {
       expect(bids[0].height).to.equal(250);
       expect(bids[0].adm).to.have.length.above(1);
     });
-    it('success 2', () => {
+    it('success 2', function () {
       var bids = spec.interpretResponse(serverResponses[3]);
       expect(bids).to.be.lengthOf(1);
       expect(bids[0].cpm).to.equal(5);
@@ -139,11 +139,11 @@ describe('My6sense Bid adapter test', () => {
       expect(bids[0].ttl).to.equal(360);
       expect(bids[0].currency).to.equal('USD');
     });
-    it('fail 1 (cpm=0)', () => {
+    it('fail 1 (cpm=0)', function () {
       var bids = spec.interpretResponse(serverResponses[1]);
       expect(bids).to.be.lengthOf(1);
     });
-    it('fail 2 (no response)', () => {
+    it('fail 2 (no response)', function () {
       var bids = spec.interpretResponse([]);
       expect(bids).to.be.lengthOf(0);
     });
