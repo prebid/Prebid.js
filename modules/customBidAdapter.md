@@ -52,7 +52,6 @@ Module that connects allow Publishers custom requests/responses
           document.body.appendChild(iframe);
           ads.forEach(ad => pbjs.renderAd(iframe.contentWindow.document, ad.adId));
         });
-        console.log('****', responses);
       },
       timeout: 3000,
     });   
