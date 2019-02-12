@@ -90,6 +90,62 @@ describe('adagioAdapter', () => {
   });
 
   describe('buildRequests', () => {
+    let sandbox;
+    let sdbxStuGetComputedStyle;
+
+    beforeEach(function () {
+      sandbox = sinon.sandbox.create();
+
+      let element = {
+        x: 0,
+        y: 0,
+        width: 200,
+        height: 300,
+        getBoundingClientRect: () => {
+          return {
+            width: element.width,
+            height: element.height,
+            left: element.x,
+            top: element.y,
+            right: element.x + element.width,
+            bottom: element.y + element.height
+          };
+        },
+      };
+
+      let element2 = {
+        x: 0,
+        y: 0,
+        width: 200,
+        height: 300,
+        getBoundingClientRect: () => {
+          return {
+            width: element2.width,
+            height: element2.height,
+            left: element2.x,
+            top: element2.y,
+            right: element2.x + element2.width,
+            bottom: element2.y + element2.height
+          };
+        },
+      };
+
+      let cptedStyleBlock = {
+        display: 'block'
+      };
+
+      const sdbxStub = sandbox.stub(document, 'getElementById');
+      sdbxStuGetComputedStyle = sandbox.stub(window, 'getComputedStyle');
+      sdbxStub.withArgs('banner-atf-123').returns(element);
+      sdbxStub.withArgs('banner-atf-456').returns(element2);
+      sdbxStuGetComputedStyle.returns(cptedStyleBlock);
+    });
+
+    afterEach(function () {
+      // delete window.top._ADAGIO;
+      sandbox.restore();
+    });
+
     let bidRequests = [
       // organization 123
       {
@@ -153,10 +209,6 @@ describe('adagioAdapter', () => {
       }
     };
 
-    afterEach(function () {
-      delete window.top._ADAGIO;
-    });
-
     it('groups requests by siteId', () => {
       const requests = spec.buildRequests(bidRequests);
       expect(requests).to.have.lengthOf(2);
@@ -176,31 +228,19 @@ describe('adagioAdapter', () => {
       expect(request.url).to.equal(ENDPOINT);
     });
 
-    it('features params must be an empty object if featurejs is not loaded', () => {
-      const requests = spec.buildRequests(bidRequests);
-      expect(requests).to.have.lengthOf(2);
-      const request = requests[0];
-      const expected = {};
-      expect(request.data.adUnits[0].features).to.deep.equal(expected);
-    });
-
-    // it('features params must be an object if featurejs is loaded', () => {
-    //   window.top._ADAGIO = window.top._ADAGIO || {};
-    //   window.top._ADAGIO.features = window.top._ADAGIO.features || {};
-    //   window.top._ADAGIO.features.getFeatures = function() {
-    //     return {
-    //       prop1: 'one',
-    //       prop2: 'two'
-    //     }
-    //   }
+    // it('features params must be an empty object if featurejs is not loaded', () => {
     //   const requests = spec.buildRequests(bidRequests);
+    //   expect(requests).to.have.lengthOf(2);
     //   const request = requests[0];
-    //   const expected = {
-    //     prop1: 'one',
-    //     prop2: 'two'
-    //   };
+    //   const expected = {};
     //   expect(request.data.adUnits[0].features).to.deep.equal(expected);
     // });
+
+    it('features params must be an object if featurejs is loaded', () => {
+      let requests = spec.buildRequests(bidRequests);
+      let request = requests[0];
+      expect(request.data.adUnits[0].features).to.exist;
+    });
 
     it('GDPR consent is applied', () => {
       const requests = spec.buildRequests(bidRequests, bidderRequest);
