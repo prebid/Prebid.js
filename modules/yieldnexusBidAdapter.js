@@ -87,9 +87,10 @@ export const spec = {
       };
 
       if (bidRequest.mediaTypes && bidRequest.mediaTypes.video) {
+        const videoPlayerSize = bidRequest.mediaTypes.video.playerSize;
         imp.video = {
-          w: bidRequest.sizes.length ? bidRequest.sizes[0][0] : 300,
-          h: bidRequest.sizes.length ? bidRequest.sizes[0][1] : 250,
+          w: videoPlayerSize ? videoPlayerSize[0][0] : 300,
+          h: videoPlayerSize ? videoPlayerSize[0][1] : 250,
           protocols: bidRequest.params.protocols || [1, 2, 3, 4, 5, 6],
           pos: bidRequest.params.pos || 0,
           topframe: topFrame
