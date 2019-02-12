@@ -360,29 +360,33 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
 };
 
 /**
- * Remove adUnit from the $$PREBID_GLOBAL$$ configuration
- * @param  {string} adUnitCode the adUnitCode to remove
+ * Remove adUnit from the $$PREBID_GLOBAL$$ configuration, if there are no addUnitCode(s) it will remove all
+ * @param  {string| Array} adUnitCode the adUnitCode(s) to remove
  * @alias module:pbjs.removeAdUnit
  */
 $$PREBID_GLOBAL$$.removeAdUnit = function (adUnitCode) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.removeAdUnit', arguments);
-  if (adUnitCode) {
+
+  if (!adUnitCode) {
+    $$PREBID_GLOBAL$$.adUnits = [];
+    return;
+  }
+
+  var adUnitCodes;
+
+  if (utils.isArray(adUnitCode)) {
+    adUnitCodes = adUnitCode;
+  } else {
+    adUnitCodes = [adUnitCode];
+  }
+
+  adUnitCodes.forEach((adUnitCode) => {
     for (var i = 0; i < $$PREBID_GLOBAL$$.adUnits.length; i++) {
       if ($$PREBID_GLOBAL$$.adUnits[i].code === adUnitCode) {
         $$PREBID_GLOBAL$$.adUnits.splice(i, 1);
       }
     }
-  }
-};
-
-/**
- * Remove all adUnits from the $$PREBID_GLOBAL$$ configuration
- * @alias module:pbjs.removeAllAdUnits
- */
-$$PREBID_GLOBAL$$.removeAllAdUnits = function () {
-  utils.logInfo('Invoking $$PREBID_GLOBAL$$.removeAllAdUnits');
-
-  $$PREBID_GLOBAL$$.adUnits = [];
+  })
 };
 
 /**

@@ -59,10 +59,6 @@ describe('Publisher API', function () {
       assert.isFunction($$PREBID_GLOBAL$$.removeAdUnit);
     });
 
-    it('should have function $$PREBID_GLOBAL$$.removeAllAdUnits', function () {
-      assert.isFunction($$PREBID_GLOBAL$$.removeAllAdUnits);
-    });
-
     it('should have function $$PREBID_GLOBAL$$.requestBids', function () {
       assert.isFunction($$PREBID_GLOBAL$$.requestBids);
     });
