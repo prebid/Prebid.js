@@ -496,6 +496,19 @@ const OPEN_RTB_PROTOCOL = {
       request.ext = { prebid: { aliases } };
     }
 
+    if (bidRequests && bidRequests[0].userId && typeof bidRequests[0].userId === 'object') {
+      if (!request.user) {
+        request.user = {};
+      }
+      if (!request.user.ext) {
+        request.user.ext = {}
+      }
+      if (!request.user.ext.tpid) {
+        request.user.ext.tpid = {}
+      }
+      Object.assign(request.user.ext.tpid, bidRequests[0].userId);
+    }
+
     if (bidRequests && bidRequests[0].gdprConsent) {
       // note - gdprApplies & consentString may be undefined in certain use-cases for consentManagement module
       let gdprApplies;
