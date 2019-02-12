@@ -102,7 +102,8 @@ describe('validate native', function () {
   }];
 
   let validBid = {
-    adId: 'test_bid_id',
+    adId: 'abc123',
+    requestId: 'test_bid_id',
     adUnitCode: '123/prebid_native_adunit',
     bidder: 'test_bidder',
     native: {
@@ -126,7 +127,8 @@ describe('validate native', function () {
   };
 
   let noIconDimBid = {
-    adId: 'test_bid_id',
+    adId: 'abc234',
+    requestId: 'test_bid_id',
     adUnitCode: '123/prebid_native_adunit',
     bidder: 'test_bidder',
     native: {
@@ -150,7 +152,8 @@ describe('validate native', function () {
   };
 
   let noImgDimBid = {
-    adId: 'test_bid_id',
+    adId: 'abc345',
+    requestId: 'test_bid_id',
     adUnitCode: '123/prebid_native_adunit',
     bidder: 'test_bidder',
     native: {
