@@ -282,7 +282,7 @@ function newRenderer(adUnitCode, bid, rendererOptions = {}) {
     id: bid.aid,
     url: OUTSTREAM_REDNERER_URL,
     config: rendererOptions,
-    loaded: true,
+    loaded: false,
     adUnitCode
   });
 
