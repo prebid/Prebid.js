@@ -175,17 +175,17 @@ export const spec = {
         akPbjsVersion: AK_PBJS_VERSION,
         bidRequests: validBidRequests.map(conformBidRequest),
         currency: config.getConfig('currency'),
-        debug: akDebug(utils.getParameterByName('akDebug'), config.getConfig('akDebug')),
+        debug: akDebug(utils.getParameterByName('akDebug'), config.getConfig('adikteev.debug')),
         language: navigator.language,
         refererInfo: bidderRequest.refererInfo,
         deviceInfo: getDeviceInfo(getDeviceDimensions(), getViewDimensions(), getDocumentDimensions(), isWebGLEnabled()),
         userAgent: navigator.userAgent,
       },
-      akOverrides(utils.getParameterByName('akOverrides'), config.getConfig('akOverrides')));
+      akOverrides(utils.getParameterByName('akOverrides'), config.getConfig('adikteev.overrides')));
 
     return {
       method: 'POST',
-      url: endpointUrl(utils.getParameterByName('akEnv'), config.getConfig('akEnv')),
+      url: endpointUrl(utils.getParameterByName('akEnv'), config.getConfig('adikteev.env')),
       data: JSON.stringify(payload),
     };
   },
@@ -193,8 +193,8 @@ export const spec = {
   interpretResponse: (serverResponse) => serverResponse.body,
 
   getUserSyncs: (syncOptions, serverResponses) => {
-    const parameterAkEnv = utils.getParameterByName('akEnv');
-    const configAkEnv = config.getConfig('akEnv');
+    const parameterAkEnv = utils.getParameterByName('adikteev.env');
+    const configAkEnv = config.getConfig('adikteev.env');
     const syncs = [];
     if (syncOptions.iframeEnabled) {
       syncs.push({

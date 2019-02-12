@@ -20,7 +20,7 @@ import {
   userSyncImageUrl,
 } from 'modules/adikteevBidAdapter';
 import {newBidder} from 'src/adapters/bidderFactory';
-import {config} from '../../../src/config';
+import {config} from 'src/config';
 
 const cannedValidBidRequests = [{
   adUnitCode: '/19968336/header-bid-tag-1',
@@ -93,8 +93,8 @@ describe('adikteevBidAdapter', () => {
   describe('akDebug', () => expect(akDebug(JSON.stringify(true), null)).to.deep.equal(true));
 
   describe('akEnv', () => expect(akEnv(null, null)).to.deep.equal(DEFAULT_ENV));
-  describe('akEnv', () => expect(akEnv(null, 'staging')).to.deep.equal(STAGING));
-  describe('akEnv', () => expect(akEnv('staging', null)).to.deep.equal(STAGING));
+  describe('akEnv', () => expect(akEnv(null, STAGING)).to.deep.equal(STAGING));
+  describe('akEnv', () => expect(akEnv(STAGING, null)).to.deep.equal(STAGING));
 
   describe('akOverrides', () => expect(akOverrides(null, null)).to.deep.equal({}));
   describe('akOverrides', () => expect(akOverrides(JSON.stringify({a: 1}), null)).to.deep.equal({a: 1}));
@@ -103,20 +103,20 @@ describe('adikteevBidAdapter', () => {
 
   describe('akUrl', () => expect(akUrl(null)).to.deep.equal(AK_BASE_URL));
   describe('akUrl', () => expect(akUrl('anything')).to.deep.equal(AK_BASE_URL));
-  describe('akUrl', () => expect(akUrl('staging')).to.deep.equal(AK_BASE_URL_STAGING));
+  describe('akUrl', () => expect(akUrl(STAGING)).to.deep.equal(AK_BASE_URL_STAGING));
   describe('akUrl', () => expect(akUrl('production')).to.deep.equal(AK_BASE_URL));
 
   describe('endpointUrl', () => expect(endpointUrl(null, null)).to.deep.equal(AK_BASE_URL.concat(ENDPOINT_PATH)));
-  describe('endpointUrl', () => expect(endpointUrl(null, 'staging')).to.deep.equal(AK_BASE_URL_STAGING.concat(ENDPOINT_PATH)));
-  describe('endpointUrl', () => expect(endpointUrl('staging', null)).to.deep.equal(AK_BASE_URL_STAGING.concat(ENDPOINT_PATH)));
+  describe('endpointUrl', () => expect(endpointUrl(null, STAGING)).to.deep.equal(AK_BASE_URL_STAGING.concat(ENDPOINT_PATH)));
+  describe('endpointUrl', () => expect(endpointUrl(STAGING, null)).to.deep.equal(AK_BASE_URL_STAGING.concat(ENDPOINT_PATH)));
 
   describe('userSyncIframeUrl', () => expect(userSyncIframeUrl(null, null)).to.deep.equal(AK_BASE_URL.concat(USER_SYNC_IFRAME_URL_PATH)));
-  describe('userSyncIframeUrl', () => expect(userSyncIframeUrl(null, 'staging')).to.deep.equal(AK_BASE_URL_STAGING.concat(USER_SYNC_IFRAME_URL_PATH)));
-  describe('userSyncIframeUrl', () => expect(userSyncIframeUrl('staging', null)).to.deep.equal(AK_BASE_URL_STAGING.concat(USER_SYNC_IFRAME_URL_PATH)));
+  describe('userSyncIframeUrl', () => expect(userSyncIframeUrl(null, STAGING)).to.deep.equal(AK_BASE_URL_STAGING.concat(USER_SYNC_IFRAME_URL_PATH)));
+  describe('userSyncIframeUrl', () => expect(userSyncIframeUrl(STAGING, null)).to.deep.equal(AK_BASE_URL_STAGING.concat(USER_SYNC_IFRAME_URL_PATH)));
 
   describe('userSyncImageUrl', () => expect(userSyncImageUrl(null, null)).to.deep.equal(AK_BASE_URL.concat(USER_SYNC_IMAGE_URL_PATH)));
-  describe('userSyncImageUrl', () => expect(userSyncImageUrl(null, 'staging')).to.deep.equal(AK_BASE_URL_STAGING.concat(USER_SYNC_IMAGE_URL_PATH)));
-  describe('userSyncImageUrl', () => expect(userSyncImageUrl('staging', null)).to.deep.equal(AK_BASE_URL_STAGING.concat(USER_SYNC_IMAGE_URL_PATH)));
+  describe('userSyncImageUrl', () => expect(userSyncImageUrl(null, STAGING)).to.deep.equal(AK_BASE_URL_STAGING.concat(USER_SYNC_IMAGE_URL_PATH)));
+  describe('userSyncImageUrl', () => expect(userSyncImageUrl(STAGING, null)).to.deep.equal(AK_BASE_URL_STAGING.concat(USER_SYNC_IMAGE_URL_PATH)));
 
   describe('isBidRequestValid', () => {
     it('should return true when required params found', () => {
@@ -174,70 +174,74 @@ describe('adikteevBidAdapter', () => {
   describe('buildRequests', () => {
     const
       currency = 'EUR',
-      akEnv = 'staging',
+      akEnv = STAGING,
       akDebug = true,
       akOverrides = {
         iAmOverride: 'iAmOverride'
       };
-    config.setConfig({
+    config.setConfig({ // asynchronous
       currency,
-      akEnv,
-      akDebug,
-      akOverrides
+      adikteev: {
+        env: STAGING,
+        debug: akDebug,
+        overrides: akOverrides
+      }
     });
 
-    const request = spec.buildRequests(cannedValidBidRequests, cannedBidderRequest);
+    config.getConfig('adikteev', () => {
+      const request = spec.buildRequests(cannedValidBidRequests, cannedBidderRequest);
 
-    it('creates a request object with correct method, url and data', () => {
-      expect(request).to.exist.and.have.all.keys(
-        'method',
-        'url',
-        'data',
-      );
-      expect(request.method).to.equal('POST');
-      expect(request.url).to.equal(endpointUrl('staging', 'staging'));
+      it('creates a request object with correct method, url and data', () => {
+        expect(request).to.exist.and.have.all.keys(
+          'method',
+          'url',
+          'data',
+        );
+        expect(request.method).to.equal('POST');
+        expect(request.url).to.equal(endpointUrl(akEnv, akEnv));
 
-      let requestData = JSON.parse(request.data);
-      expect(requestData).to.exist.and.have.all.keys(
-        'akPbjsVersion',
-        'bidRequests',
-        'currency',
-        'debug',
-        'iAmOverride',
-        'language',
-        'refererInfo',
-        'deviceInfo',
-        'userAgent',
-      );
+        let requestData = JSON.parse(request.data);
+        expect(requestData).to.exist.and.have.all.keys(
+          'akPbjsVersion',
+          'bidRequests',
+          'currency',
+          'debug',
+          'iAmOverride',
+          'language',
+          'refererInfo',
+          'deviceInfo',
+          'userAgent',
+        );
 
-      expect(requestData.bidRequests[0]).to.exist.and.have.all.keys(
-        'params',
-        'crumbs',
-        'sizes',
-        'bidId',
-        'bidderRequestId',
-      );
+        expect(requestData.bidRequests[0]).to.exist.and.have.all.keys(
+          'params',
+          'crumbs',
+          'sizes',
+          'bidId',
+          'bidderRequestId',
+        );
 
-      expect(requestData.akPbjsVersion).to.deep.equal(AK_PBJS_VERSION);
-      expect(requestData.bidRequests[0].params).to.deep.equal(cannedValidBidRequests[0].params);
-      expect(requestData.bidRequests[0].crumbs).to.deep.equal(cannedValidBidRequests[0].crumbs);
-      expect(requestData.bidRequests[0].mediaTypes).to.deep.equal(cannedValidBidRequests[0].mediaTypes);
-      expect(requestData.bidRequests[0].bidId).to.deep.equal(cannedValidBidRequests[0].bidId);
-      expect(requestData.bidRequests[0].bidderRequestId).to.deep.equal(cannedValidBidRequests[0].bidderRequestId);
-      expect(requestData.currency).to.deep.equal(currency);
-      expect(requestData.debug).to.deep.equal(akDebug);
-      expect(requestData.iAmOverride).to.deep.equal('iAmOverride');
-      expect(requestData.language).to.deep.equal(navigator.language);
-      expect(requestData.deviceInfo).to.exist.and.have.all.keys(
-        'browserWidth',
-        'browserHeight',
-        'deviceWidth',
-        'deviceHeight',
-        'documentWidth',
-        'documentHeight',
-        'webGL',
-      );
-      expect(requestData.userAgent).to.deep.equal(navigator.userAgent);
+        expect(requestData.akPbjsVersion).to.deep.equal(AK_PBJS_VERSION);
+        expect(requestData.bidRequests[0].params).to.deep.equal(cannedValidBidRequests[0].params);
+        expect(requestData.bidRequests[0].crumbs).to.deep.equal(cannedValidBidRequests[0].crumbs);
+        expect(requestData.bidRequests[0].mediaTypes).to.deep.equal(cannedValidBidRequests[0].mediaTypes);
+        expect(requestData.bidRequests[0].bidId).to.deep.equal(cannedValidBidRequests[0].bidId);
+        expect(requestData.bidRequests[0].bidderRequestId).to.deep.equal(cannedValidBidRequests[0].bidderRequestId);
+        expect(requestData.currency).to.deep.equal(currency);
+        expect(requestData.debug).to.deep.equal(akDebug);
+        expect(requestData.iAmOverride).to.deep.equal('iAmOverride');
+        expect(requestData.language).to.deep.equal(navigator.language);
+        expect(requestData.deviceInfo).to.exist.and.have.all.keys(
+          'browserWidth',
+          'browserHeight',
+          'deviceWidth',
+          'deviceHeight',
+          'documentWidth',
+          'documentHeight',
+          'webGL',
+        );
+        expect(requestData.userAgent).to.deep.equal(navigator.userAgent);
+      });
     });
   });
 
