@@ -278,14 +278,10 @@ export function newBidder(spec) {
           // Make response headers available for #1742. These are lazy-loaded because most adapters won't need them.
           response = {
             body: response,
-            headers: headerParser(responseObj)
+            headers: {
+              get: responseObj.getResponseHeader.bind(responseObj),
+            },
           };
-
-          function headerParser() {
-            return {
-              get: responseObj.getResponseHeader.bind(responseObj)
-            };
-          }
           onSuccess(response);
         }
 
@@ -319,8 +315,6 @@ export function newBidder(spec) {
               logWarn(`Bidder ${spec.code} made bid for unknown request ID: ${bid.requestId}. Ignoring.`);
             }
           }
-
-
         }
 
         // If the server responds with an error, there's not much we can do. Log it, and make sure to

@@ -527,7 +527,37 @@ describe('bidders created by newBidder', function () {
       expect(doneStub.calledOnce).to.equal(true);
     });
   });
+
+  describe('when the request is a promise', () => {
+
+    it('should call spec.interpretResponse() with the resolve data', function () {
+
+      const promiseData = { cpm: 1.37 };
+      const promise = new Promise(resolve => resolve(promiseData));
+
+      spec.isBidRequestValid.returns(true);
+      spec.buildRequests.returns([{
+        method: 'PROMISE',
+        promise: promise,
+      }]);
+      spec.getUserSyncs.returns([]);
+      spec.interpretResponse.returns();
+
+      const bidder = newBidder(spec);
+
+
+      bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub);
+      expect(spec.buildRequests.calledOnce).to.equal(true);
+
+      promise.then(() => {
+        expect(spec.interpretResponse.calledOnce).to.equal(true);
+        expect(spec.interpretResponse.firstCall.args[0]).to.equal(promiseData);
+      });
+    });
+
+  });
 });
+
 
 describe('registerBidder', function () {
   let registerBidAdapterStub;

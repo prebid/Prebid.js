@@ -21,26 +21,21 @@ describe('customBidApater', () => {
     });
 
     it('should call the handler provided with the same args', () => {
-
-      const spyArguments = [];
-      const spy = (...args) => {
-        spyArguments.push(args);
-        return true;
-      };
-
       const validBid = {
         bidder: 'customBidAdapter',
         params: {
           zoneId: 'zone-42',
         },
         handlers: {
-          isBidRequestValid: spy,
+          isBidRequestValid: sinon.stub(),
         }
       };
+      validBid.handlers.isBidRequestValid.returns(true);
+
       expect(spec.isBidRequestValid(validBid)).to.equal(true);
-      console.log(spyArguments);
-      expect(spyArguments).to.have.lengthOf(1);
-      expect(spyArguments[0][0]).be.equal(validBid);
+      expect(validBid.handlers.isBidRequestValid.calledOnce);
+      expect(validBid.handlers.isBidRequestValid.firstCall.args).to.have.lengthOf(1);
+      expect(validBid.handlers.isBidRequestValid.firstCall.args[0]).be.equal(validBid);
 
     });
 
@@ -79,30 +74,20 @@ describe('customBidApater', () => {
     });
 
     it('should call the handler provided with the same args', () => {
-      const spyArguments = [];
-      const spy = (...args) => {
-        spyArguments.push(args);
-        return args[0].map(a => ({
-          method: 'PROMISE',
-          promise: new Promise(resolve => resolve(a)),
-        }));
-      };
-
       const bidderRequest = {
         handlers: {
-          buildRequests: spy,
+          buildRequests: sinon.stub(),
         }
       };
 
-      const serverRequest = spec.buildRequests(validBidRequests, bidderRequest);
-      expect(serverRequest).to.be.a('array').and.to.have.lengthOf(2);
-      expect(spyArguments).to.have.lengthOf(1);
-      expect(spyArguments[0][0]).be.equal(validBidRequests);
-      expect(spyArguments[0][1]).be.equal(bidderRequest);
-      serverRequest.forEach(request => {
-        expect(request.method).to.equal('PROMISE');
-        expect(Promise.resolve(request)).to.be.a('promise');
-      });
+
+      spec.buildRequests(validBidRequests, bidderRequest);
+
+      expect(bidderRequest.handlers.buildRequests.calledOnce);
+      expect(bidderRequest.handlers.buildRequests.firstCall.args).to.have.lengthOf(2);
+      expect(bidderRequest.handlers.buildRequests.firstCall.args[0]).be.equal(validBidRequests);
+      expect(bidderRequest.handlers.buildRequests.firstCall.args[1]).be.equal(bidderRequest);
+
     });
   });
 
@@ -123,23 +108,17 @@ describe('customBidApater', () => {
     });
 
     it('should call the handler provided with the same args', () => {
-      const spyArguments = [];
-      const spy = (...args) => {
-        spyArguments.push(args);
-        return args[0];
-      };
 
       const serverRequest = {
-        handlers: {
-          interpretResponse: spy,
-        }
+        handlers: { interpretResponse: sinon.stub() }
       };
 
-      const responses = spec.interpretResponse(serverResponse, serverRequest);
-      expect(responses).to.be.a('array').and.to.have.lengthOf(serverResponse.length);
-      expect(spyArguments).to.have.lengthOf(1);
-      expect(spyArguments[0][0]).be.equal(serverResponse);
-      expect(spyArguments[0][1]).be.equal(serverRequest);
+      spec.interpretResponse(serverResponse, serverRequest);
+
+      expect(serverRequest.handlers.interpretResponse.calledOnce);
+      expect(serverRequest.handlers.interpretResponse.firstCall.args).to.have.lengthOf(2);
+      expect(serverRequest.handlers.interpretResponse.firstCall.args[0]).be.equal(serverResponse);
+      expect(serverRequest.handlers.interpretResponse.firstCall.args[1]).be.equal(serverRequest);
     });
   });
 });
