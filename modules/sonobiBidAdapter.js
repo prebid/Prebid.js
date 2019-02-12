@@ -1,5 +1,5 @@
 import { registerBidder } from '../src/adapters/bidderFactory';
-import { parseSizesInput, logError, generateUUID, isEmpty, deepAccess, logWarn, logMessage, getBidRequest } from '../src/utils';
+import { parseSizesInput, logError, generateUUID, isEmpty, deepAccess, logWarn, logMessage } from '../src/utils';
 import { BANNER, VIDEO } from '../src/mediaTypes';
 import { config } from '../src/config';
 import { Renderer } from '../src/Renderer';
