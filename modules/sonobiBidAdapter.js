@@ -8,7 +8,7 @@ const BIDDER_CODE = 'sonobi';
 const STR_ENDPOINT = 'https://apex.go.sonobi.com/trinity.json';
 const PAGEVIEW_ID = generateUUID();
 const SONOBI_DIGITRUST_KEY = 'fhnS5drwmH';
-const OUTSTREAM_REDNERER_URL = 'https://mtrx.go.sonobi.com/outstream.js';
+const OUTSTREAM_REDNERER_URL = 'https://mtrx.go.sonobi.com/outstream_renderer.js';
 
 export const spec = {
   code: BIDDER_CODE,
