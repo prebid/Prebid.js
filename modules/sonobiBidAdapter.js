@@ -119,15 +119,10 @@ export const spec = {
       const bidRequest = bidderRequest.bidderRequests.find(bid => bid.bidId === bidId);
       let mediaType = null;
       if (bid.sbi_ct === 'video') {
+        mediaType = 'video';
         const context = deepAccess(bidRequest, 'mediaTypes.video.context');
-        if (context) {
-          if (context === 'outstream') {
-            mediaType = 'outstream';
-          } else {
-            mediaType = 'video';
-          }
-        } else {
-          mediaType = 'video';
+        if (context === 'outstream') {
+          mediaType = 'outstream';
         }
       }
 
