@@ -57,7 +57,15 @@ export function getAdserverCategoryHook(fn, adUnitCode, bid) {
 }
 
 export function initTranslation(url, localStorageKey) {
-  hooks['addBidResponse'].before(getAdserverCategoryHook, 50);
+  // TODO use function from adpod module
+  function setupHookFnOnce(hookId, hookFn, priority = 15) {
+    let result = hooks[hookId].getHooks({hook: hookFn});
+    if (result.length === 0) {
+      hooks[hookId].before(hookFn, priority);
+    }
+  }
+
+  setupHookFnOnce('addBidResponse', getAdserverCategoryHook, 50);
   let mappingData = getDataFromLocalStorage(localStorageKey);
   if (!mappingData || timestamp() < mappingData.lastUpdated + refreshInDays * 24 * 60 * 60 * 1000) {
     ajax(url,
