@@ -116,7 +116,7 @@ export const spec = {
     Object.keys(bidResponse.slots).forEach(slot => {
       const bid = bidResponse.slots[slot];
       const bidId = _getBidIdFromTrinityKey(slot);
-      const bidRequest = bidderRequest.bidderRequests.find(bid => bid.bidId === bidId);
+      const bidRequest = _findBidderRequest(bidderRequest.bidderRequests, bidId);
       let mediaType = null;
       if (bid.sbi_ct === 'video') {
         mediaType = 'video';
@@ -194,6 +194,16 @@ export const spec = {
     return syncs;
   }
 };
+
+function _findBidderRequest(bidderRequests, bidId) {
+
+  for(const bidderRequest of bidderRequests) {
+    if(bidderRequest.bidId === bidId) {
+      return bidderRequest
+    }
+  }
+
+}
 
 function _validateSize (bid) {
   if (bid.params.sizes) {
