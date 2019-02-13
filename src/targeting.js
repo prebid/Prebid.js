@@ -77,6 +77,23 @@ export function newTargeting(auctionManager) {
     }
   };
 
+  targeting.resetPresetTargetingAST = function(adUnitCode) {
+    const adUnitCodes = getAdUnitCodes(adUnitCode);
+    adUnitCodes.forEach(function(unit) {
+      const astTag = window.apntag.getTag(unit);
+      if (astTag && astTag.keywords) {
+        const currentKeywords = Object.keys(astTag.keywords);
+        const newKeywords = {};
+        currentKeywords.forEach((key) => {
+          if (!includes(pbTargetingKeys, key.toLowerCase())) {
+            newKeywords[key] = astTag.keywords[key];
+          }
+        })
+        window.apntag.modifyTag(unit, { keywords: newKeywords })
+      }
+    });
+  };
+
   /**
    * Returns all ad server targeting for all ad units.
    * @param {string=} adUnitCode
@@ -233,6 +250,13 @@ export function newTargeting(auctionManager) {
    */
   targeting.setTargetingForAst = function() {
     let astTargeting = targeting.getAllTargeting();
+
+    try {
+      targeting.resetPresetTargetingAST();
+    } catch (e) {
+      utils.logError('unable to reset targeting for AST' + e)
+    }
+
     Object.keys(astTargeting).forEach(targetId =>
       Object.keys(astTargeting[targetId]).forEach(key => {
         utils.logMessage(`Attempting to set targeting for targetId: ${targetId} key: ${key} value: ${astTargeting[targetId][key]}`);

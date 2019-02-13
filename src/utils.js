@@ -750,6 +750,9 @@ export function flatten(a, b) {
 }
 
 export function getBidRequest(id, bidderRequests) {
+  if (!id) {
+    return;
+  }
   let bidRequest;
   bidderRequests.some(bidderRequest => {
     let result = find(bidderRequest.bids, bid => ['bidId', 'adId', 'bid_id'].some(type => bid[type] === id));
@@ -1182,4 +1185,8 @@ export function convertTypes(types, params) {
     }
   });
   return params;
+}
+
+export function isArrayOfNums(val, size) {
+  return (isArray(val)) && ((size) ? val.length === size : true) && (val.every(v => isInteger(v)));
 }
