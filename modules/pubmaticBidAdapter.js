@@ -207,37 +207,36 @@ function _parseAdSlot(bid) {
   bid.params.adUnitIndex = '0';
   bid.params.width = 0;
   bid.params.height = 0;
-  var sizesArrayExists = (bid.hasOwnProperty('sizes') && utils.isArray(bid.sizes) && bid.sizes.length >= 1);
+  var sizesArrayExists = (bid.hasOwnProperty('sizes') && utils.isArray(bid.sizes) && bid.sizes.length >= 1) || (bid.hasOwnProperty('mediaTypes') && bid.mediaTypes.hasOwnProperty('banner') && bid.mediaTypes.banner.hasOwnProperty('sizes') && bid.mediaTypes.banner.sizes.length >= 1);
   bid.params.adSlot = _cleanSlot(bid.params.adSlot);
 
   var slot = bid.params.adSlot;
-  var splits = slot.split(':');
-
-  slot = splits[0];
-  if (splits.length == 2) {
-    bid.params.adUnitIndex = splits[1];
-  }
-  // check if size is mentioned in sizes array. in that case do not check for @ in adslot
-  splits = slot.split('@');
-  if (splits.length != 2) {
-    if (!(sizesArrayExists)) {
-      utils.logWarn('AdSlot Error: adSlot not in required format');
-      return;
+  try {
+    var splits = slot.split('@');
+    // check if size is mentioned in sizes array. in that case do not check for @ in adslot
+    slot = splits[0];
+    if (splits.length == 2) {
+      bid.params.adUnitIndex = splits[1].split(':').length == 2 ? splits[1].split(':')[1] : '0';
+      splits = splits[1].split(':')[0].split('x');
+      if (splits.length != 2) {
+        utils.logWarn('AdSlot Error: adSlot not in required format');
+        return;
+      }
+      bid.params.width = parseInt(splits[0]);
+      bid.params.height = parseInt(splits[1]);
+      // delete bid.sizes;
+    } else {
+      if (!(sizesArrayExists)) {
+        utils.logWarn('AdSlot Error: adSlot not in required format');
+        return;
+      }
+      bid.params.width = parseInt(bid.sizes[0][0]);
+      bid.params.height = parseInt(bid.sizes[0][1]);
+      bid.params.adUnitIndex = slot.split(':').length > 1 ? slot.split(':')[slot.split(':').length - 1] : '0';
     }
-  }
-  bid.params.adUnit = splits[0];
-  if (splits.length > 1) { // i.e size is specified in adslot, so consider that and ignore sizes array
-    splits = splits[1].split('x');
-    if (splits.length != 2) {
-      utils.logWarn('AdSlot Error: adSlot not in required format');
-      return;
-    }
-    bid.params.width = parseInt(splits[0]);
-    bid.params.height = parseInt(splits[1]);
-    delete bid.sizes;
-  } else if (sizesArrayExists) {
-    bid.params.width = parseInt(bid.sizes[0][0]);
-    bid.params.height = parseInt(bid.sizes[0][1]);
+    bid.params.adUnit = slot;
+  } catch (e) {
+    utils.logWarn('AdSlot Error: adSlot not in required format');
   }
 }
 
@@ -590,8 +589,8 @@ function _createImpressionObject(bid, conf) {
   var impObj = {};
   var bannerObj = {};
   var videoObj = {};
-  var sizes = bid.hasOwnProperty('sizes') ? bid.sizes : [];
-
+  // var sizes = bid.hasOwnProperty('sizes') ? bid.sizes : [];
+  var sizes = bid.hasOwnProperty('sizes') ? bid.sizes : bid.hasOwnProperty('mediaTypes') && bid.mediaTypes.hasOwnProperty('banner') && bid.mediaTypes.banner.hasOwnProperty('sizes') ? bid.mediaTypes.banner.sizes : [];
   impObj = {
     id: bid.bidId,
     tagid: bid.params.adUnit,
@@ -918,6 +917,9 @@ export const spec = {
       } else {
         utils.logWarn(BIDDER_CODE + ': dctr value not found in 1st adunit, ignoring values from subsequent adunits');
       }
+    } else {
+      // Commenting out for prebid 1.21 release. Needs to be uncommented and changes from Prebid PR2941 to be pulled in.
+      // utils.logWarn(BIDDER_CODE + ': dctr value not found in 1st adunit, ignoring values from subsequent adunits');
     }
 
     _handleEids(payload);
@@ -938,10 +940,27 @@ export const spec = {
     const bidResponses = [];
     var respCur = DEFAULT_CURRENCY;
     try {
+      let requestData = JSON.parse(request.data);
+      if (requestData && requestData.imp && requestData.imp.length > 0) {
+        requestData.imp.forEach(impData => {
+          bidResponses.push({
+            requestId: impData.id,
+            width: 0,
+            height: 0,
+            ttl: 300,
+            ad: '',
+            creativeId: 0,
+            netRevenue: NET_REVENUE,
+            cpm: 0,
+            currency: respCur,
+            referrer: utils.getTopWindowUrl()
+          })
+        });
+      }
       if (response.body && response.body.seatbid && utils.isArray(response.body.seatbid)) {
         // Supporting multiple bid responses for same adSize
-        respCur = response.body.cur || respCur;
         response.body.seatbid.forEach(seatbidder => {
+          respCur = response.body.cur || respCur;
           seatbidder.bid &&
             utils.isArray(seatbidder.bid) &&
             seatbidder.bid.forEach(bid => {

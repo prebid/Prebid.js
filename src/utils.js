@@ -292,6 +292,16 @@ export function getTopWindowUrl() {
   return href;
 }
 
+exports.getTopWindowHostName = function () {
+  let hostname;
+  try {
+    hostname = this.getTopWindowLocation().hostname;
+  } catch (e) {
+    hostname = '';
+  }
+  return hostname;
+};
+
 /**
  * @deprecated This function will be removed soon. Use http://prebid.org/dev-docs/bidder-adaptor.html#referrers
  */
