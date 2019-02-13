@@ -655,9 +655,9 @@ describe('S2S Adapter', function () {
           aliases: {
             brealtime: 'appnexus'
           },
-          'targeting': {
-            'includebidderkeys': false,
-            'includewinners': true
+          targeting: {
+            includebidderkeys: false,
+            includewinners: true
           }
         }
       });
@@ -689,9 +689,9 @@ describe('S2S Adapter', function () {
           aliases: {
             [alias]: 'appnexus'
           },
-          'targeting': {
-            'includebidderkeys': false,
-            'includewinners': true
+          targeting: {
+            includebidderkeys: false,
+            includewinners: true
           }
         }
       });
