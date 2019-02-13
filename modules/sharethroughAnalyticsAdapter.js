@@ -1,6 +1,6 @@
-import adapter from 'src/AnalyticsAdapter';
-import adaptermanager from 'src/adaptermanager';
-const utils = require('src/utils');
+import adapter from '../src/AnalyticsAdapter';
+import adapterManager from '../src/adapterManager';
+const utils = require('../src/utils');
 
 const emptyUrl = '';
 const analyticsType = 'endpoint';
@@ -63,7 +63,7 @@ var sharethroughAdapter = Object.assign(adapter(
   }
 });
 
-adaptermanager.registerAnalyticsAdapter({
+adapterManager.registerAnalyticsAdapter({
   adapter: sharethroughAdapter,
   code: 'sharethrough'
 });

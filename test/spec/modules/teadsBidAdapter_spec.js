@@ -3,7 +3,7 @@ import {spec} from 'modules/teadsBidAdapter';
 import {newBidder} from 'src/adapters/bidderFactory';
 
 const ENDPOINT = '//a.teads.tv/hb/bid-request';
-const AD_SCRIPT = '<script type="text/javascript" class="teads" async="true" src="http://a.teads.tv/hb/bid-request/hb/getAdSettings"></script>"';
+const AD_SCRIPT = '<script type="text/javascript" class="teads" async="true" src="http://a.teads.tv/hb/getAdSettings"></script>"';
 
 describe('teadsBidAdapter', function() {
   const adapter = newBidder(spec);
@@ -96,13 +96,14 @@ describe('teadsBidAdapter', function() {
       }
     ];
 
+    let bidderResquestDefault = {
+      'auctionId': '1d1a030790a475',
+      'bidderRequestId': '22edbae2733bf6',
+      'timeout': 3000
+    };
+
     it('sends bid request to ENDPOINT via POST', function() {
-      let bidderRequest = {
-        'auctionId': '1d1a030790a475',
-        'bidderRequestId': '22edbae2733bf6',
-        'timeout': 3000
-      };
-      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const request = spec.buildRequests(bidRequests, bidderResquestDefault);
 
       expect(request.url).to.equal(ENDPOINT);
       expect(request.method).to.equal('POST');
@@ -129,7 +130,7 @@ describe('teadsBidAdapter', function() {
       expect(payload.gdpr_iab).to.exist;
       expect(payload.gdpr_iab.consent).to.equal(consentString);
       expect(payload.gdpr_iab.status).to.equal(12);
-    })
+    });
 
     it('should send GDPR to endpoint with 11 status', function() {
       let consentString = 'JRJ8RKfDeBNsERRDCSAAZ+A==';
@@ -152,7 +153,7 @@ describe('teadsBidAdapter', function() {
       expect(payload.gdpr_iab).to.exist;
       expect(payload.gdpr_iab.consent).to.equal(consentString);
       expect(payload.gdpr_iab.status).to.equal(11);
-    })
+    });
 
     it('should send GDPR to endpoint with 22 status', function() {
       let consentString = 'JRJ8RKfDeBNsERRDCSAAZ+A==';
@@ -173,7 +174,7 @@ describe('teadsBidAdapter', function() {
       expect(payload.gdpr_iab).to.exist;
       expect(payload.gdpr_iab.consent).to.equal('');
       expect(payload.gdpr_iab.status).to.equal(22);
-    })
+    });
 
     it('should send GDPR to endpoint with 0 status', function() {
       let consentString = 'JRJ8RKfDeBNsERRDCSAAZ+A==';
@@ -196,7 +197,68 @@ describe('teadsBidAdapter', function() {
       expect(payload.gdpr_iab).to.exist;
       expect(payload.gdpr_iab.consent).to.equal(consentString);
       expect(payload.gdpr_iab.status).to.equal(0);
-    })
+    });
+
+    it('should use good mediaTypes video playerSizes', function() {
+      const mediaTypesPlayerSize = {
+        'mediaTypes': {
+          'video': {
+            'playerSize': [32, 34]
+          }
+        }
+      };
+      checkMediaTypesSizes(mediaTypesPlayerSize, '32x34')
+    });
+
+    it('should use good mediaTypes video sizes', function() {
+      const mediaTypesVideoSizes = {
+        'mediaTypes': {
+          'video': {
+            'sizes': [12, 14]
+          }
+        }
+      };
+      checkMediaTypesSizes(mediaTypesVideoSizes, '12x14')
+    });
+
+    it('should use good mediaTypes banner sizes', function() {
+      const mediaTypesBannerSize = {
+        'mediaTypes': {
+          'banner': {
+            'sizes': [46, 48]
+          }
+        }
+      };
+      checkMediaTypesSizes(mediaTypesBannerSize, '46x48')
+    });
+
+    it('should use good mediaTypes for both video and banner sizes', function() {
+      const hybridMediaTypes = {
+        'mediaTypes': {
+          'banner': {
+            'sizes': [46, 48]
+          },
+          'video': {
+            'sizes': [[50, 34], [45, 45]]
+          }
+        }
+      };
+      checkMediaTypesSizes(hybridMediaTypes, ['46x48', '50x34', '45x45'])
+    });
+
+    function checkMediaTypesSizes(mediaTypes, expectedSizes) {
+      const bidRequestWithBannerSizes = Object.assign(bidRequests[0], mediaTypes);
+      const requestWithBannerSizes = spec.buildRequests([bidRequestWithBannerSizes], bidderResquestDefault);
+      const payloadWithBannerSizes = JSON.parse(requestWithBannerSizes.data);
+
+      return payloadWithBannerSizes.data.forEach(bid => {
+        if (Array.isArray(expectedSizes)) {
+          expect(JSON.stringify(bid.sizes)).to.equal(JSON.stringify(expectedSizes));
+        } else {
+          expect(bid.sizes[0]).to.equal(expectedSizes);
+        }
+      });
+    }
   });
 
   describe('interpretResponse', function() {
