@@ -953,49 +953,50 @@ export const spec = {
             netRevenue: NET_REVENUE,
             cpm: 0,
             currency: respCur,
-            referrer: utils.getTopWindowUrl()
+            referrer: requestData.site && requestData.site.ref ? requestData.site.ref : '',
           })
         });
       }
       if (response.body && response.body.seatbid && utils.isArray(response.body.seatbid)) {
         // Supporting multiple bid responses for same adSize
+        respCur = response.body.cur || respCur;
         response.body.seatbid.forEach(seatbidder => {
-          respCur = response.body.cur || respCur;
           seatbidder.bid &&
             utils.isArray(seatbidder.bid) &&
             seatbidder.bid.forEach(bid => {
-              let parsedRequest = JSON.parse(request.data);
-              let newBid = {
-                requestId: bid.impid,
-                cpm: (parseFloat(bid.price) || 0).toFixed(2),
-                width: bid.w,
-                height: bid.h,
-                creativeId: bid.crid || bid.id,
-                dealId: bid.dealid,
-                currency: respCur,
-                netRevenue: NET_REVENUE,
-                ttl: 300,
-                referrer: parsedRequest.site && parsedRequest.site.ref ? parsedRequest.site.ref : '',
-                ad: bid.adm
-              };
-              if (parsedRequest.imp && parsedRequest.imp.length > 0) {
-                parsedRequest.imp.forEach(req => {
-                  if (bid.impid === req.id && req.hasOwnProperty('video')) {
-                    newBid.mediaType = 'video';
-                    newBid.width = bid.hasOwnProperty('w') ? bid.w : req.video.w;
-                    newBid.height = bid.hasOwnProperty('h') ? bid.h : req.video.h;
-                    newBid.vastXml = bid.adm;
+              bidResponses.forEach(br => {
+                if (br.requestId == bid.impid) {
+                  // br = {
+                  br.requestId = bid.impid;
+                  br.cpm = (parseFloat(bid.price) || 0).toFixed(2);
+                  br.width = bid.w;
+                  br.height = bid.h;
+                  br.creativeId = bid.crid || bid.id;
+                  br.dealId = bid.dealid;
+                  br.currency = respCur;
+                  br.netRevenue = NET_REVENUE;
+                  br.ttl = 300;
+                  br.referrer = requestData.site && requestData.site.ref ? requestData.site.ref : '';
+                  br.ad = bid.adm;
+                  // };
+                  if (requestData.imp && requestData.imp.length > 0) {
+                    requestData.imp.forEach(req => {
+                      if (bid.impid === req.id && req.hasOwnProperty('video')) {
+                        br.mediaType = 'video';
+                        br.width = bid.hasOwnProperty('w') ? bid.w : req.video.w;
+                        br.height = bid.hasOwnProperty('h') ? bid.h : req.video.h;
+                        br.vastXml = bid.adm;
+                      }
+                      if (bid.impid === req.id && req.hasOwnProperty('native')) {
+                        _parseNativeResponse(bid, br);
+                      }
+                    });
                   }
-                  if (bid.impid === req.id && req.hasOwnProperty('native')) {
-                    _parseNativeResponse(bid, newBid);
+                  if (bid.ext && bid.ext.deal_channel) {
+                    br['dealChannel'] = dealChannelValues[bid.ext.deal_channel] || null;
                   }
-                });
-              }
-              if (bid.ext && bid.ext.deal_channel) {
-                newBid['dealChannel'] = dealChannelValues[bid.ext.deal_channel] || null;
-              }
-
-              bidResponses.push(newBid);
+                }
+              });
             });
         });
       }

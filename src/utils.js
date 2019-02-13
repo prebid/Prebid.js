@@ -292,7 +292,7 @@ export function getTopWindowUrl() {
   return href;
 }
 
-exports.getTopWindowHostName = function () {
+export function getTopWindowHostName() {
   let hostname;
   try {
     hostname = this.getTopWindowLocation().hostname;

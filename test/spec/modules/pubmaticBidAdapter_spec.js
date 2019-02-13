@@ -52,7 +52,6 @@ describe('PubMatic adapter', function () {
       transactionId: '92489f71-1bf2-49a0-adf9-000cea934729'
     };
 
-
     secoundBid = JSON.parse(JSON.stringify(firstBid));
     secoundBid.bidId = '22bddb28db77e';
 
@@ -314,6 +313,7 @@ describe('PubMatic adapter', function () {
     emptyBidResponse = {
       'body': ''
     };
+
     nativeBidResponse = {
       'body': {
         'id': '1544691825939',
@@ -334,31 +334,31 @@ describe('PubMatic adapter', function () {
         }],
         'cur': 'USD'
       }
-    }
+    };
 
     validnativeBidImpression = {
       'native': {
         'request': '{"assets":[{"id":1,"required":1,"title":{"len":80}},{"id":2,"required":1,"img":{"type":3,"w":300,"h":250}},{"id":4,"required":1,"data":{"type":1}}]}'
       }
-    }
+    };
 
     nativeBidImpressionWithoutRequiredParams = {
       'native': {
         'request': '{"assets":[{"id":4,"required":1,"data":{"type":1}}]}'
       }
-    }
+    };
 
     validnativeBidImpressionWithRequiredParam = {
       'native': {
         'request': '{"assets":[{"id":1,"required":0,"title":{"len":80}},{"id":2,"required":0,"img":{"type":3,"w":300,"h":250}},{"id":4,"required":1,"data":{"type":1}}]}'
       }
-    }
+    };
 
     validnativeBidImpressionWithAllParams = {
       native: {
         'request': '{"assets":[{"id":1,"required":1,"title":{"len":80,"ext":{"title1":"title2"}}},{"id":3,"required":1,"img":{"type":1,"w":50,"h":50}},{"id":2,"required":1,"img":{"type":3,"w":728,"h":90,"mimes":["image/png","image/gif"],"ext":{"image1":"image2"}}},{"id":4,"required":1,"data":{"type":1,"len":10,"ext":{"sponsor1":"sponsor2"}}},{"id":5,"required":1,"data":{"type":2,"len":10,"ext":{"body1":"body2"}}},{"id":13,"required":1,"data":{"type":3,"len":10,"ext":{"rating1":"rating2"}}},{"id":14,"required":1,"data":{"type":4,"len":10,"ext":{"likes1":"likes2"}}},{"id":15,"required":1,"data":{"type":5,"len":10,"ext":{"downloads1":"downloads2"}}},{"id":16,"required":1,"data":{"type":6,"len":10,"ext":{"price1":"price2"}}},{"id":17,"required":1,"data":{"type":7,"len":10,"ext":{"saleprice1":"saleprice2"}}},{"id":18,"required":1,"data":{"type":8,"len":10,"ext":{"phone1":"phone2"}}},{"id":19,"required":1,"data":{"type":9,"len":10,"ext":{"address1":"address2"}}},{"id":20,"required":1,"data":{"type":10,"len":10,"ext":{"desc21":"desc22"}}},{"id":21,"required":1,"data":{"type":11,"len":10,"ext":{"displayurl1":"displayurl2"}}}]}'
       }
-    }
+    };
   });
 
   describe('implementation', function () {
@@ -1189,7 +1189,7 @@ describe('PubMatic adapter', function () {
         expect(data.imp[1]['video']['w']).to.equal(multipleMediaRequests[1].mediaTypes.video.playerSize[0]);
         expect(data.imp[1]['video']['h']).to.equal(multipleMediaRequests[1].mediaTypes.video.playerSize[1]);
       });
-      
+
       it('invalid adslot', () => {
         firstBid.params.adSlot = '/15671365/DMDemo';
         firstBid.params.sizes = [];
@@ -1237,89 +1237,89 @@ describe('PubMatic adapter', function () {
         expect(data.imp[0]['native']['request']).to.exist.and.to.be.an('string');
         expect(data.imp[0]['native']['request']).to.exist.and.to.equal(validnativeBidImpressionWithAllParams.native.request);
       });
-  	});
 
-    it('Request params dctr check', function () {
-      let multipleBidRequests = [
-        {
-          bidder: 'pubmatic',
-          params: {
-            publisherId: '301',
-            adSlot: '/15671365/DMDemo@300x250:0',
-            kadfloor: '1.2',
-            pmzoneid: 'aabc, ddef',
-            kadpageurl: 'www.publisher.com',
-            yob: '1986',
-            gender: 'M',
-            lat: '12.3',
-            lon: '23.7',
-            wiid: '1234567890',
-            profId: '100',
-            verId: '200',
-            currency: 'AUD',
-            dctr: 'key1=val1|key2=val2,!val3'
+      it('Request params dctr check', function () {
+        let multipleBidRequests = [
+          {
+            bidder: 'pubmatic',
+            params: {
+              publisherId: '301',
+              adSlot: '/15671365/DMDemo@300x250:0',
+              kadfloor: '1.2',
+              pmzoneid: 'aabc, ddef',
+              kadpageurl: 'www.publisher.com',
+              yob: '1986',
+              gender: 'M',
+              lat: '12.3',
+              lon: '23.7',
+              wiid: '1234567890',
+              profId: '100',
+              verId: '200',
+              currency: 'AUD',
+              dctr: 'key1=val1|key2=val2,!val3'
+            },
+            placementCode: '/19968336/header-bid-tag-1',
+            sizes: [[300, 250], [300, 600]],
+            bidId: '23acc48ad47af5',
+            requestId: '0fb4905b-9456-4152-86be-c6f6d259ba99',
+            bidderRequestId: '1c56ad30b9b8ca8',
+            transactionId: '92489f71-1bf2-49a0-adf9-000cea934729'
           },
-          placementCode: '/19968336/header-bid-tag-1',
-          sizes: [[300, 250], [300, 600]],
-          bidId: '23acc48ad47af5',
-          requestId: '0fb4905b-9456-4152-86be-c6f6d259ba99',
-          bidderRequestId: '1c56ad30b9b8ca8',
-          transactionId: '92489f71-1bf2-49a0-adf9-000cea934729'
-        },
-        {
-          bidder: 'pubmatic',
-          params: {
-            publisherId: '301',
-            adSlot: '/15671365/DMDemo@300x250:0',
-            kadfloor: '1.2',
-            pmzoneid: 'aabc, ddef',
-            kadpageurl: 'www.publisher.com',
-            yob: '1986',
-            gender: 'M',
-            lat: '12.3',
-            lon: '23.7',
-            wiid: '1234567890',
-            profId: '100',
-            verId: '200',
-            currency: 'GBP',
-            dctr: 'key1=val3|key2=val1,!val3|key3=val123'
-          },
-          placementCode: '/19968336/header-bid-tag-1',
-          sizes: [[300, 250], [300, 600]],
-          bidId: '23acc48ad47af5',
-          requestId: '0fb4905b-9456-4152-86be-c6f6d259ba99',
-          bidderRequestId: '1c56ad30b9b8ca8',
-          transactionId: '92489f71-1bf2-49a0-adf9-000cea934729'
-        }
-      ];
+          {
+            bidder: 'pubmatic',
+            params: {
+              publisherId: '301',
+              adSlot: '/15671365/DMDemo@300x250:0',
+              kadfloor: '1.2',
+              pmzoneid: 'aabc, ddef',
+              kadpageurl: 'www.publisher.com',
+              yob: '1986',
+              gender: 'M',
+              lat: '12.3',
+              lon: '23.7',
+              wiid: '1234567890',
+              profId: '100',
+              verId: '200',
+              currency: 'GBP',
+              dctr: 'key1=val3|key2=val1,!val3|key3=val123'
+            },
+            placementCode: '/19968336/header-bid-tag-1',
+            sizes: [[300, 250], [300, 600]],
+            bidId: '23acc48ad47af5',
+            requestId: '0fb4905b-9456-4152-86be-c6f6d259ba99',
+            bidderRequestId: '1c56ad30b9b8ca8',
+            transactionId: '92489f71-1bf2-49a0-adf9-000cea934729'
+          }
+        ];
 
-      let request = spec.buildRequests(multipleBidRequests);
-      let data = JSON.parse(request.data);
+        let request = spec.buildRequests(multipleBidRequests);
+        let data = JSON.parse(request.data);
 
-      /* case 1 -
-        dctr is found in adunit[0]
-      */
+        /* case 1 -
+          dctr is found in adunit[0]
+        */
 
-      expect(data.site.ext).to.exist.and.to.be.an('object'); // dctr parameter
-      expect(data.site.ext.key_val).to.exist.and.to.equal(multipleBidRequests[0].params.dctr);
+        expect(data.site.ext).to.exist.and.to.be.an('object'); // dctr parameter
+        expect(data.site.ext.key_val).to.exist.and.to.equal(multipleBidRequests[0].params.dctr);
 
-      /* case 2 -
-        dctr not present in adunit[0]
-      */
-      delete multipleBidRequests[0].params.dctr;
-      request = spec.buildRequests(multipleBidRequests);
-      data = JSON.parse(request.data);
+        /* case 2 -
+          dctr not present in adunit[0]
+        */
+        delete multipleBidRequests[0].params.dctr;
+        request = spec.buildRequests(multipleBidRequests);
+        data = JSON.parse(request.data);
 
-      expect(data.site.ext).to.not.exist;
+        expect(data.site.ext).to.not.exist;
 
-      /* case 3 -
-        dctr is present in adunit[0], but is not a string value
-      */
-      multipleBidRequests[0].params.dctr = 123;
-      request = spec.buildRequests(multipleBidRequests);
-      data = JSON.parse(request.data);
+        /* case 3 -
+          dctr is present in adunit[0], but is not a string value
+        */
+        multipleBidRequests[0].params.dctr = 123;
+        request = spec.buildRequests(multipleBidRequests);
+        data = JSON.parse(request.data);
 
-      expect(data.site.ext).to.not.exist;
+        expect(data.site.ext).to.not.exist;
+      });
     });
 
     describe('Response checking', function () {
@@ -1399,7 +1399,7 @@ describe('PubMatic adapter', function () {
         expect(response[0].netRevenue).to.equal(false);
         expect(response[0].cpm).to.equal(0);
         expect(response[0].currency).to.equal('USD');
-        expect(response[0].referrer).to.equal(utils.getTopWindowUrl());
+        expect(response[0].referrer).to.equal(request.site && request.site.ref ? request.site.ref : '');
       });
 
       it('should add one dummy & one original bid if partial response come from hbopenbid', () => {
@@ -1427,7 +1427,7 @@ describe('PubMatic adapter', function () {
         expect(response[0].currency).to.equal('USD');
         expect(response[0].netRevenue).to.equal(false);
         expect(response[0].ttl).to.equal(300);
-        expect(response[0].referrer).to.include(utils.getTopWindowUrl());
+        expect(response[0].referrer).to.include(request.site && request.site.ref ? request.site.ref : '');
         expect(response[0].ad).to.equal(bidResponses.body.seatbid[0].bid[0].adm);
 
         expect(response[1].requestId).to.equal(request.imp[1].id);
@@ -1439,7 +1439,7 @@ describe('PubMatic adapter', function () {
         expect(response[1].netRevenue).to.equal(false);
         expect(response[1].cpm).to.equal(0);
         expect(response[1].currency).to.equal('USD');
-        expect(response[1].referrer).to.equal(utils.getTopWindowUrl());
+        expect(response[1].referrer).to.equal(request.site && request.site.ref ? request.site.ref : '');
       });
 
       it('should responsed bid if partial response come from hbopenbid', () => {
@@ -1461,9 +1461,10 @@ describe('PubMatic adapter', function () {
         expect(response[0].currency).to.equal('USD');
         expect(response[0].netRevenue).to.equal(false);
         expect(response[0].ttl).to.equal(300);
-        expect(response[0].referrer).to.include(utils.getTopWindowUrl());
+        expect(response[0].referrer).to.include(request.site && request.site.ref ? request.site.ref : '');
         expect(response[0].ad).to.equal(bidResponses.body.seatbid[0].bid[0].adm);
       });
+
       it('should have a valid native bid response', function() {
         let request = spec.buildRequests(nativeBidRequests);
         let data = JSON.parse(request.data);
