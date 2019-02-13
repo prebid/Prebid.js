@@ -77,10 +77,10 @@ describe('finteza analytics adapter', function () {
         const url = parseURL(requests[0].url);
 
         expect(url.protocol).to.equal('https');
-        expect(url.host).to.equal('content.mql5.com');
+        expect(url.hostname).to.equal('content.mql5.com');
         expect(url.pathname).to.equal('/tr');
         expect(url.search.id).to.equal(clientId);
-        expect(url.search.event).to.equal(encodeURIComponent(`Bid Request ${bidderCode.toUpperCase()}`));
+        expect(decodeURIComponent(url.search.event)).to.equal(`Bid Request ${bidderCode.toUpperCase()}`);
 
         sinon.assert.callCount(fntzAnalyticsAdapter.track, 1);
       });
@@ -118,10 +118,10 @@ describe('finteza analytics adapter', function () {
         const url = parseURL(requests[0].url);
 
         expect(url.protocol).to.equal('https');
-        expect(url.host).to.equal('content.mql5.com');
+        expect(url.hostname).to.equal('content.mql5.com');
         expect(url.pathname).to.equal('/tr');
         expect(url.search.id).to.equal(clientId);
-        expect(url.search.event).to.equal(encodeURIComponent(`Bid Response ${bidderCode.toLowerCase()}`));
+        expect(decodeURIComponent(url.search.event)).to.equal(`Bid Response ${bidderCode.toLowerCase()}`);
         expect(url.search.c1_value).to.equal(String(timeToRespond));
         expect(url.search.c1_unit).to.equal('ms');
         expect(url.search.c2_value).to.equal(String(cpm));
@@ -158,10 +158,10 @@ describe('finteza analytics adapter', function () {
         const url = parseURL(requests[0].url);
 
         expect(url.protocol).to.equal('https');
-        expect(url.host).to.equal('content.mql5.com');
+        expect(url.hostname).to.equal('content.mql5.com');
         expect(url.pathname).to.equal('/tr');
         expect(url.search.id).to.equal(clientId);
-        expect(url.search.event).to.equal(encodeURIComponent(`Bid Won ${bidderCode.toUpperCase()}`));
+        expect(decodeURIComponent(url.search.event)).to.equal(`Bid Won ${bidderCode.toUpperCase()}`);
         expect(url.search.c1_value).to.equal(String(cpm));
         expect(url.search.c1_unit).to.equal('usd');
 
@@ -195,10 +195,10 @@ describe('finteza analytics adapter', function () {
         const url = parseURL(requests[0].url);
 
         expect(url.protocol).to.equal('https');
-        expect(url.host).to.equal('content.mql5.com');
+        expect(url.hostname).to.equal('content.mql5.com');
         expect(url.pathname).to.equal('/tr');
         expect(url.search.id).to.equal(clientId);
-        expect(url.search.event).to.equal(encodeURIComponent(`Bid Timeout Bidder789`));
+        expect(decodeURIComponent(url.search.event)).to.equal(`Bid Timeout Bidder789`);
         expect(url.search.c1_value).to.equal(String(timeout));
         expect(url.search.c1_unit).to.equal('ms');
 

@@ -231,11 +231,9 @@ function getTrackRequestLastTime() {
     }
 
     cookie = parseCookies(document.cookie);
+    cookie = cookie[ TRACK_TIME_KEY ];
     if (cookie) {
-      cookie = cookie[ TRACK_TIME_KEY ];
-      if (cookie) {
-        return parseInt(cookie, 10);
-      }
+      return parseInt(cookie, 10);
     }
   } catch (e) {}
 

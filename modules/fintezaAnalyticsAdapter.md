@@ -18,7 +18,7 @@ For more information, visit the [official Finteza website](https://www.finteza.c
 {
   provider: 'finteza',
   options: {
-    id:               'xxxxx', // Client ID (required)
+    id:               'xxxxx', // Website ID (required)
     bidRequestTrack:  'Bid Request %BIDDER%',
     bidResponseTrack: 'Bid Response %BIDDER%',
     bidTimeoutTrack:  'Bid Timeout %BIDDER%',
