@@ -126,6 +126,8 @@ export const spec = {
           } else {
             mediaType = 'video';
           }
+        } else {
+          mediaType = 'video';
         }
       }
 
