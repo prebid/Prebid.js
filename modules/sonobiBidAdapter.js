@@ -196,13 +196,11 @@ export const spec = {
 };
 
 function _findBidderRequest(bidderRequests, bidId) {
-
-  for(const bidderRequest of bidderRequests) {
-    if(bidderRequest.bidId === bidId) {
-      return bidderRequest
+  for (let i = 0; i < bidderRequests.length; i++) {
+    if (bidderRequests[i].bidId === bidId) {
+      return bidderRequests[i];
     }
   }
-
 }
 
 function _validateSize (bid) {
