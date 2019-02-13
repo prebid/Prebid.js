@@ -117,12 +117,11 @@ export const spec = {
       const bid = bidResponse.slots[slot];
       const bidId = _getBidIdFromTrinityKey(slot);
       const bidRequest = bidderRequest.bidderRequests.find(bid => bid.bidId === bidId);
-
       let mediaType = null;
-      if(bid.sbi_ct === 'video') {
+      if (bid.sbi_ct === 'video') {
         const context = deepAccess(bidRequest, 'mediaTypes.video.context');
-        if(context) {
-          if(context === 'outstream') {
+        if (context) {
+          if (context === 'outstream') {
             mediaType = 'outstream';
           } else {
             mediaType = 'video';
@@ -159,9 +158,7 @@ export const spec = {
           delete bids.ad;
           delete bids.width;
           delete bids.height;
-        }
-
-        if(mediaType === 'outstream' && bidRequest) {
+        } else if (mediaType === 'outstream' && bidRequest) {
           bids.mediaType = 'video';
           bids.vastUrl = createCreative(bidResponse.sbi_dc, bid.sbi_aid);
           bids.renderer = newRenderer(bidRequest.adUnitCode, bids, deepAccess(
@@ -169,14 +166,13 @@ export const spec = {
             'renderer.options'
           ));
           let videoSize = deepAccess(bidRequest, 'params.sizes');
-          if(Array.isArray(videoSize) && Array.isArray(videoSize[0])) { // handle case of multiple sizes
+          if (Array.isArray(videoSize) && Array.isArray(videoSize[0])) { // handle case of multiple sizes
             videoSize = videoSize[0] // Only take the first size for outstream
           }
-          if(videoSize) {
+          if (videoSize) {
             bids.width = videoSize[0];
             bids.height = videoSize[1];
           }
-
         }
         bidsReturned.push(bids);
       }
