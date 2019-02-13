@@ -168,7 +168,10 @@ export const spec = {
             bidRequest,
             'renderer.options'
           ));
-          let videoSize = deepAccess(bidRequest, 'mediaTypes.video.size');
+          let videoSize = deepAccess(bidRequest, 'params.sizes');
+          if(Array.isArray(videoSize) && videoSize[0]) {
+            videoSize = videoSize[0] // Only take the first size for outstream
+          }
           if(videoSize) {
             videoSize = videoSize.split('x');
             bids.width = Number(videoSize[0]);
