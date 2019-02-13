@@ -14,23 +14,15 @@ describe('category translation', function () {
   });
 
   afterEach(function() {
+    fakeTranslationServer.reset();
     getLocalStorageStub.restore();
     config.resetConfig();
   });
 
   it('should translate iab category to adserver category', function () {
-    hooks['registerAdserver'].before(notifyTranslationModule);
-    function notifyTranslationModule(fn) {
-      fn.call(this, 'freewheel');
-    }
-
     getLocalStorageStub.returns(JSON.stringify({
-      'data': {
-        'freewheel': {
-          mapping: {
-            'iab-1': '1'
-          }
-        }
+      'mapping': {
+        'iab-1': '1'
       }
     }));
     let bid = {
@@ -57,9 +49,9 @@ describe('category translation', function () {
 
   it('should use default mapping file if publisher has not defined in config', function () {
     getLocalStorageStub.returns(null);
-    initTranslation();
+    initTranslation('http://sample.com', 'somekey');
     expect(fakeTranslationServer.requests.length).to.equal(1);
-    expect(fakeTranslationServer.requests[0].url).to.equal('https://api.myjson.com/bins/j5d0k');
+    expect(fakeTranslationServer.requests[0].url).to.equal('http://sample.com');
   });
 
   it('should use publisher defined defined mapping file', function () {
@@ -69,7 +61,7 @@ describe('category translation', function () {
       }
     });
     getLocalStorageStub.returns(null);
-    initTranslation();
+    initTranslation('http://sample.com', 'somekey');
     expect(fakeTranslationServer.requests.length).to.equal(2);
     expect(fakeTranslationServer.requests[0].url).to.equal('http://sample.com');
   });
