@@ -169,13 +169,12 @@ export const spec = {
             'renderer.options'
           ));
           let videoSize = deepAccess(bidRequest, 'params.sizes');
-          if(Array.isArray(videoSize) && videoSize[0]) {
+          if(Array.isArray(videoSize) && Array.isArray(videoSize[0])) { // handle case of multiple sizes
             videoSize = videoSize[0] // Only take the first size for outstream
           }
           if(videoSize) {
-            videoSize = videoSize.split('x');
-            bids.width = Number(videoSize[0]);
-            bids.height = Number(videoSize[1]);
+            bids.width = videoSize[0];
+            bids.height = videoSize[1];
           }
 
         }
