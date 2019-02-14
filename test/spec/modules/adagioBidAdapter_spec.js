@@ -5,6 +5,7 @@ import { spec } from 'modules/adagioBidAdapter';
 describe('adagioAdapter', () => {
   const adapter = newBidder(spec);
   const ENDPOINT = 'https://mp.4dex.io/prebid';
+  const VERSION = '1.1.0';
 
   describe('inherited functions', () => {
     it('exists and is a function', () => {
@@ -282,6 +283,12 @@ describe('adagioAdapter', () => {
       expect(request.data.gdpr).to.exist;
       expect(request.data.gdpr).to.be.empty;
     });
+
+    it('should expose version in window', () => {
+      expect(window.top.ADAGIO).ok;
+      expect(window.top.ADAGIO.versions).ok;
+      expect(window.top.ADAGIO.versions.adagioBidderAdapter).to.eq(VERSION);
+    });
   });
 
   describe('interpretResponse', () => {
@@ -342,7 +349,7 @@ describe('adagioAdapter', () => {
     };
 
     beforeEach(function () {
-      delete (window.top.ADAGIO);
+      // delete (window.top.ADAGIO);
     });
 
     it('Should returns empty response if body is empty', () => {
@@ -380,7 +387,7 @@ describe('adagioAdapter', () => {
       spec.interpretResponse(serverResponse, bidRequest);
       expect(window.top.ADAGIO).ok;
       expect(window.top.ADAGIO.queue).to.be.an('array');
-      expect(window.top.ADAGIO.queue).length(1);
+      expect(window.top.ADAGIO.queue).not.empty;
     });
   });
 

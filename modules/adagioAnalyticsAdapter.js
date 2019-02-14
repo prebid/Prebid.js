@@ -9,6 +9,7 @@ import CONSTANTS from 'src/constants.json';
 const emptyUrl = '';
 const analyticsType = 'endpoint';
 const events = Object.keys(CONSTANTS.EVENTS).map(key => CONSTANTS.EVENTS[key]);
+const VERSION = '1.1.0';
 
 const ADSRV_EVENTS = {
   GPT: {
@@ -34,6 +35,8 @@ const ADSRV_EVENTS = {
 
 window.top.ADAGIO = window.top.ADAGIO || {};
 window.top.ADAGIO.queue = window.top.ADAGIO.queue || [];
+window.top.ADAGIO.versions = window.top.ADAGIO.versions || {};
+window.top.ADAGIO.versions.adagioAnalyticsAdapter = VERSION;
 
 const adagioEnqueue = function adagioEnqueue(action, data) {
   window.top.ADAGIO.queue.push({ action, data, ts: Date.now() });
