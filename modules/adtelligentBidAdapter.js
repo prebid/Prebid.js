@@ -25,7 +25,7 @@ export const spec = {
    */
   buildRequests: function (bidRequests, bidderRequest) {
     return {
-      data: bidToTag(bidRequests),
+      data: bidToTag(bidRequests, bidderRequest),
       bidderRequest,
       method: 'GET',
       url: URL
@@ -83,10 +83,15 @@ function parseRTBResponse(serverResponse, bidderRequest) {
   return bids;
 }
 
-function bidToTag(bidRequests) {
+function bidToTag(bidRequests, bidderRequest) {
   let tag = {
     domain: utils.getTopWindowLocation().hostname
   };
+
+  if (bidderRequest && bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies) {
+    tag.gdpr = 1;
+    tag.gdpr_consent = bidderRequest.gdprConsent.consentString;
+  }
 
   for (let i = 0, length = bidRequests.length; i < length; i++) {
     Object.assign(tag, prepareRTBRequestParams(i, bidRequests[i]));
