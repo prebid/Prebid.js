@@ -143,6 +143,47 @@ describe('SonobiBidAdapter', function () {
         'stack': ['http://example.com']
       }
     };
+    it('should include the digitrust id and keyv', () => {
+      window.DigiTrust = {
+        getUser: function () {
+        }
+      };
+      let sandbox = sinon.sandbox.create();
+      sandbox.stub(window.DigiTrust, 'getUser').callsFake(() =>
+        ({
+          success: true,
+          identity: {
+            id: 'Vb0YJIxTMJV4W0GHRdJ3MwyiOVYJjYEgc2QYdBSG',
+            keyv: 4,
+            version: 2,
+            privacy: {}
+          }
+        })
+      );
+      const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
+      expect(bidRequests.data.digid).to.equal('Vb0YJIxTMJV4W0GHRdJ3MwyiOVYJjYEgc2QYdBSG');
+      expect(bidRequests.data.digkeyv).to.equal(4);
+      sandbox.restore();
+      delete window.DigiTrust;
+    });
+
+    it('should not include the digitrust id and keyv', () => {
+      window.DigiTrust = {
+        getUser: function () {
+        }
+      };
+      let sandbox = sinon.sandbox.create();
+      sandbox.stub(window.DigiTrust, 'getUser').callsFake(() =>
+        ({
+          success: false
+        })
+      );
+      const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
+      expect(bidRequests.data.digid).to.be.undefined;
+      expect(bidRequests.data.digkeyv).to.be.undefined;
+      sandbox.restore();
+      delete window.DigiTrust;
+    })
 
     it('should return a properly formatted request', function () {
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
@@ -235,6 +276,32 @@ describe('SonobiBidAdapter', function () {
     it('should return null if there is nothing to bid on', function () {
       const bidRequests = spec.buildRequests([{params: {}}], bidderRequests)
       expect(bidRequests).to.equal(null);
+    })
+
+    it('should return a properly formatted request with commonid as hfa', function () {
+      delete bidRequest[0].params.hfa;
+      delete bidRequest[1].params.hfa;
+      bidRequest[0].crumbs = {'pubcid': 'abcd-efg-0101'};
+      bidRequest[1].crumbs = {'pubcid': 'abcd-efg-0101'};
+      const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
+      expect(bidRequests.url).to.equal('https://apex.go.sonobi.com/trinity.json')
+      expect(bidRequests.method).to.equal('GET')
+      expect(bidRequests.data.ref).not.to.be.empty
+      expect(bidRequests.data.s).not.to.be.empty
+      expect(bidRequests.data.hfa).to.equal('PRE-abcd-efg-0101');
+    })
+
+    it('should return a properly formatted request with hfa preferred over commonid', function () {
+      bidRequest[0].params.hfa = 'hfakey';
+      bidRequest[1].params.hfa = 'hfakey';
+      bidRequest[0].crumbs = {'pubcid': 'abcd-efg-0101'};
+      bidRequest[1].crumbs = {'pubcid': 'abcd-efg-0101'};
+      const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
+      expect(bidRequests.url).to.equal('https://apex.go.sonobi.com/trinity.json')
+      expect(bidRequests.method).to.equal('GET')
+      expect(bidRequests.data.ref).not.to.be.empty
+      expect(bidRequests.data.s).not.to.be.empty
+      expect(bidRequests.data.hfa).to.equal('hfakey')
     })
   })
 

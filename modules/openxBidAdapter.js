@@ -1,9 +1,9 @@
-import {config} from 'src/config';
-import {registerBidder} from 'src/adapters/bidderFactory';
-import * as utils from 'src/utils';
-import {userSync} from 'src/userSync';
-import {BANNER, VIDEO} from 'src/mediaTypes';
-import {parse} from 'src/url';
+import {config} from '../src/config';
+import {registerBidder} from '../src/adapters/bidderFactory';
+import * as utils from '../src/utils';
+import {userSync} from '../src/userSync';
+import {BANNER, VIDEO} from '../src/mediaTypes';
+import {parse} from '../src/url';
 
 const SUPPORTED_AD_TYPES = [BANNER, VIDEO];
 const BIDDER_CODE = 'openx';
@@ -296,8 +296,10 @@ function buildOXBannerRequest(bids, bidderRequest) {
 }
 
 function buildOXVideoRequest(bid, bidderRequest) {
-  let url = `//${bid.params.delDomain}/v/1.0/avjp`;
   let oxVideoParams = generateVideoParameters(bid, bidderRequest);
+  let url = oxVideoParams.ph
+    ? `//u.openx.net/v/1.0/avjp`
+    : `//${bid.params.delDomain}/v/1.0/avjp`;
   return {
     method: 'GET',
     url: url,
@@ -360,7 +362,6 @@ function createVideoBidResponses(response, {bid, startTime}) {
     let vastQueryParams = parse(response.vastUrl).search || {};
     let bidResponse = {};
     bidResponse.requestId = bid.bidId;
-    bidResponse.bidderCode = BIDDER_CODE;
     // default 5 mins
     bidResponse.ttl = 300;
     // true is net, false is gross

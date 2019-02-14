@@ -1,7 +1,7 @@
-import * as utils from 'src/utils';
-import { registerBidder } from 'src/adapters/bidderFactory';
+import * as utils from '../src/utils';
+import { registerBidder } from '../src/adapters/bidderFactory';
 import includes from 'core-js/library/fn/array/includes';
-import {BANNER, VIDEO} from 'src/mediaTypes';
+import {BANNER, VIDEO} from '../src/mediaTypes';
 
 const VIDEO_TARGETING = ['mimes', 'minduration', 'maxduration', 'protocols',
   'startdelay', 'linearity', 'skip', 'delivery',

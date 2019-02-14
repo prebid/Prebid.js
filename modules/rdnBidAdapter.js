@@ -1,6 +1,6 @@
-import { registerBidder } from 'src/adapters/bidderFactory'
-import * as utils from 'src/utils'
-import { BANNER } from 'src/mediaTypes'
+import { registerBidder } from '../src/adapters/bidderFactory'
+import * as utils from '../src/utils'
+import { BANNER } from '../src/mediaTypes'
 
 const BIDDER_CODE = 'rdn'
 const ENDPOINT = 'https://s-bid.rmp.rakuten.co.jp/h'

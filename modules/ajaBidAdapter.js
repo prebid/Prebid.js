@@ -1,7 +1,7 @@
-import { Renderer } from 'src/Renderer';
-import * as utils from 'src/utils';
-import { registerBidder } from 'src/adapters/bidderFactory';
-import { VIDEO, BANNER } from 'src/mediaTypes';
+import { Renderer } from '../src/Renderer';
+import * as utils from '../src/utils';
+import { registerBidder } from '../src/adapters/bidderFactory';
+import { VIDEO, BANNER } from '../src/mediaTypes';
 
 const BIDDER_CODE = 'aja';
 const URL = '//ad.as.amanad.adtdp.com/v2/prebid';
@@ -93,16 +93,28 @@ export const spec = {
 
   getUserSyncs: function(syncOptions, serverResponses) {
     const syncs = [];
-    if (syncOptions.pixelEnabled && serverResponses.length) {
-      const bidderResponseBody = serverResponses[0].body;
-      if (bidderResponseBody.syncs) {
-        bidderResponseBody.syncs.forEach(sync => {
-          syncs.push({
-            type: 'image',
-            url: sync
-          });
+    if (!serverResponses.length) {
+      return syncs;
+    }
+
+    const bidderResponseBody = serverResponses[0].body;
+
+    if (syncOptions.pixelEnabled && bidderResponseBody.syncs) {
+      bidderResponseBody.syncs.forEach(sync => {
+        syncs.push({
+          type: 'image',
+          url: sync
         });
-      }
+      });
+    }
+
+    if (syncOptions.iframeEnabled && bidderResponseBody.sync_htmls) {
+      bidderResponseBody.sync_htmls.forEach(sync => {
+        syncs.push({
+          type: 'iframe',
+          url: sync
+        });
+      });
     }
 
     return syncs;

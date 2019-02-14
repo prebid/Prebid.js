@@ -20,7 +20,10 @@ function newWebpackConfig(codeCoverage) {
     webpackConfig.module.rules.push({
       enforce: 'post',
       exclude: /(node_modules)|(test)|(integrationExamples)|(build)|polyfill.js|(src\/adapters\/analytics\/ga.js)/,
-      loader: 'istanbul-instrumenter-loader',
+      use: {
+        loader: 'istanbul-instrumenter-loader',
+        options: { esModules: true }
+      },
       test: /\.js$/
     })
   }
@@ -34,7 +37,6 @@ function newPluginsArray(browserstack) {
     'karma-es5-shim',
     'karma-mocha',
     'karma-chai',
-    'karma-requirejs',
     'karma-sinon',
     'karma-sourcemap-loader',
     'karma-spec-reporter',
@@ -125,6 +127,7 @@ module.exports = function(codeCoverage, browserstack, watchMode, file) {
 
     webpack: webpackConfig,
     webpackMiddleware: {
+      stats: 'errors-only',
       noInfo: true
     },
     // frameworks to use

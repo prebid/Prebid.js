@@ -1,5 +1,5 @@
-import * as utils from 'src/utils';
-import { registerBidder } from 'src/adapters/bidderFactory';
+import * as utils from '../src/utils';
+import { registerBidder } from '../src/adapters/bidderFactory';
 
 const BIDDER_CODE = 'ozone';
 
@@ -64,49 +64,30 @@ export const spec = {
     return true;
   },
   /**
+   * Interpret the response if the array contains BIDDER elements, in the format: [ [bidder1 bid 1, bidder1 bid 2], [bidder2 bid 1, bidder2 bid 2] ]
    * @param serverResponse
    * @param request
    * @returns {*}
    */
   interpretResponse(serverResponse, request) {
+    utils.logInfo('ozone interpretResponse version 2018-12-05 16:46');
     serverResponse = serverResponse.body || {};
     if (serverResponse.seatbid) {
       if (utils.isArray(serverResponse.seatbid)) {
-        const {seatbid: arrSeatbid} = serverResponse;
-        let winnerAds = arrSeatbid.reduce((bid, ads) => {
-          var _seat = ads.seat;
-          let ad = ads.bid.reduce(function(currentWinningBid, considerBid) {
-            if (currentWinningBid.price < considerBid.price) {
-              const bid = matchRequest(considerBid.impid, request);
-              const {width, height} = defaultSize(bid);
-              considerBid.cpm = considerBid.price;
-              considerBid.bidId = considerBid.impid;
-              considerBid.requestId = considerBid.impid;
-              considerBid.width = considerBid.w || width;
-              considerBid.height = considerBid.h || height;
-              considerBid.ad = considerBid.adm;
-              considerBid.netRevenue = true;
-              considerBid.creativeId = considerBid.crid;
-              considerBid.currency = 'USD';
-              considerBid.ttl = 60;
-              considerBid.seat = _seat;
-
-              return considerBid;
-            } else {
-              currentWinningBid.cpm = currentWinningBid.price;
-              return currentWinningBid;
-            }
-          }, {price: 0});
-          if (ad.adm) {
-            bid.push(ad)
+        // serverResponse seems good, let's get the list of bids from the request object:
+        let arrRequestBids = request.bidderRequest.bids;
+        // build up a list of winners, one for each bidId in arrBidIds
+        let arrWinners = [];
+        for (let i = 0; i < arrRequestBids.length; i++) {
+          let winner = ozoneGetWinnerForRequestBid(arrRequestBids[i], serverResponse.seatbid);
+          if (winner !== null) {
+            const {defaultWidth, defaultHeight} = defaultSize(arrRequestBids[i]);
+            winner = ozoneAddStandardProperties(winner, defaultWidth, defaultHeight);
+            arrWinners.push(winner);
           }
-          return bid;
-        }, [])
-        let winnersClean = winnerAds.filter(w => {
-          if (w.bidId) {
-            return true;
-          }
-          return false;
+        }
+        let winnersClean = arrWinners.filter(w => {
+          return (w.bidId); // will be cast to boolean
         });
         utils.logInfo(['going to return winnersClean:', winnersClean]);
         return winnersClean;
@@ -132,9 +113,9 @@ export const spec = {
       bidderRequest.publisherId = (bidderRequest.publisherId).toString();
     }
 
-    if (!ozoneRequest.test) {
-      delete ozoneRequest.test;
-    }
+    // if (!ozoneRequest.test) {
+    delete ozoneRequest.test; // don't allow test to be set in the config - ONLY use $_GET['pbjs_debug']
+    // }
     if (bidderRequest.gdprConsent) {
       ozoneRequest.regs = {};
       ozoneRequest.regs.ext = {};
@@ -143,38 +124,40 @@ export const spec = {
         ozoneRequest.regs.ext.consent = bidderRequest.gdprConsent.consentString;
       }
     }
-    let tosendtags = validBidRequests.map(ozone => {
+    let tosendtags = validBidRequests.map(ozoneBidRequest => {
       var obj = {};
-      obj.id = ozone.bidId;
-      obj.tagid = String(ozone.params.ozoneid);
+      obj.id = ozoneBidRequest.bidId;
+      obj.tagid = String(ozoneBidRequest.params.ozoneid);
       obj.secure = window.location.protocol === 'https:' ? 1 : 0;
       obj.banner = {
         topframe: 1,
-        w: ozone.sizes[0][0] || 0,
-        h: ozone.sizes[0][1] || 0,
-        format: ozone.sizes.map(s => {
+        w: ozoneBidRequest.sizes[0][0] || 0,
+        h: ozoneBidRequest.sizes[0][1] || 0,
+        format: ozoneBidRequest.sizes.map(s => {
           return {w: s[0], h: s[1]};
         })
       };
-      if (ozone.params.hasOwnProperty('customData')) {
-        obj.customData = ozone.params.customData;
+      if (ozoneBidRequest.params.hasOwnProperty('customData')) {
+        obj.customData = ozoneBidRequest.params.customData;
       }
-      if (ozone.params.hasOwnProperty('ozoneData')) {
-        obj.ozoneData = ozone.params.ozoneData;
+      if (ozoneBidRequest.params.hasOwnProperty('ozoneData')) {
+        obj.ozoneData = ozoneBidRequest.params.ozoneData;
       }
-      if (ozone.params.hasOwnProperty('lotameData')) {
-        obj.lotameData = ozone.params.lotameData;
+      if (ozoneBidRequest.params.hasOwnProperty('lotameData')) {
+        obj.lotameData = ozoneBidRequest.params.lotameData;
       }
-      if (ozone.params.hasOwnProperty('publisherId')) {
-        obj.publisherId = (ozone.params.publisherId).toString();
+      if (ozoneBidRequest.params.hasOwnProperty('publisherId')) {
+        obj.publisherId = (ozoneBidRequest.params.publisherId).toString();
       }
-      if (ozone.params.hasOwnProperty('siteId')) {
-        obj.siteId = (ozone.params.siteId).toString();
+      if (ozoneBidRequest.params.hasOwnProperty('siteId')) {
+        obj.siteId = (ozoneBidRequest.params.siteId).toString();
       }
-      obj.ext = {'prebid': {'storedrequest': {'id': (ozone.params.placementId).toString()}}};
+      obj.ext = {'prebid': {'storedrequest': {'id': (ozoneBidRequest.params.placementId).toString()}}};
       return obj;
     });
     ozoneRequest.imp = tosendtags;
+    ozoneRequest.site = {'publisher': {'id': ozoneRequest.publisherId}, 'page': document.location.href};
+    ozoneRequest.test = parseInt(getTestQuerystringValue()); // will be 1 or 0
     var ret = {
       method: 'POST',
       url: OZONEURI,
@@ -184,6 +167,7 @@ export const spec = {
     utils.logInfo(['buildRequests going to return', ret]);
     return ret;
   },
+
   getUserSyncs(optionsType, serverResponse) {
     if (!serverResponse || serverResponse.length === 0) {
       return [];
@@ -226,8 +210,68 @@ export function checkDeepArray(Arr) {
 export function defaultSize(thebidObj) {
   const {sizes} = thebidObj;
   const returnObject = {};
-  returnObject.width = checkDeepArray(sizes)[0];
-  returnObject.height = checkDeepArray(sizes)[1];
+  returnObject.defaultWidth = checkDeepArray(sizes)[0];
+  returnObject.defaultHeight = checkDeepArray(sizes)[1];
   return returnObject;
 }
+
+/**
+ * Do the messy searching for the best bid response in the serverResponse.seatbid array matching the requestBid.bidId
+ * @param requestBid
+ * @param serverResponseSeatBid
+ * @returns {*} bid object
+ */
+export function ozoneGetWinnerForRequestBid(requestBid, serverResponseSeatBid) {
+  let thisBidWinner = null;
+  for (let j = 0; j < serverResponseSeatBid.length; j++) {
+    let theseBids = serverResponseSeatBid[j].bid;
+    let thisSeat = serverResponseSeatBid[j].seat;
+    for (let k = 0; k < theseBids.length; k++) {
+      if (theseBids[k].impid === requestBid.bidId) { // we've found a matching server response bid for this request bid
+        if ((thisBidWinner == null) || (thisBidWinner.price < theseBids[k].price)) {
+          thisBidWinner = theseBids[k];
+          thisBidWinner.seat = thisSeat; // we need to add this here - it's the name of the winning bidder, not guaranteed to be available in the bid object.
+        }
+      }
+    }
+  }
+  return thisBidWinner;
+}
+
+/**
+ * We expect to be able to find a standard set of properties on winning bid objects; add them here.
+ * @param seatBid
+ * @returns {*}
+ */
+export function ozoneAddStandardProperties(seatBid, defaultWidth, defaultHeight) {
+  seatBid.cpm = seatBid.price;
+  seatBid.bidId = seatBid.impid;
+  seatBid.requestId = seatBid.impid;
+  seatBid.width = seatBid.w || defaultWidth;
+  seatBid.height = seatBid.h || defaultHeight;
+  seatBid.ad = seatBid.adm;
+  seatBid.netRevenue = true;
+  seatBid.creativeId = seatBid.crid;
+  seatBid.currency = 'USD';
+  seatBid.ttl = 60;
+  return seatBid;
+}
+
+/**
+ * we need to add test=1 or test=0 to the get params sent to the server.
+ * Get the value set as pbjs_debug= in the url, OR 0.
+ * @returns {*}
+ */
+export function getTestQuerystringValue() {
+  let searchString = window.location.search.substring(1);
+  let params = searchString.split('&');
+  for (let i = 0; i < params.length; i++) {
+    let val = params[i].split('=');
+    if (val[0] === 'pbjs_debug') {
+      return val[1] === 'true' ? 1 : 0;
+    }
+  }
+  return 0;
+}
+
 registerBidder(spec);
