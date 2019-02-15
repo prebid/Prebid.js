@@ -7,6 +7,7 @@ import { nativeBidIsValid } from '../native';
 import { isValidVideoBid } from '../video';
 import CONSTANTS from '../constants.json';
 import events from '../events';
+import { hookManager } from '../hook';
 import includes from 'core-js/library/fn/array/includes';
 import { logWarn, logError, parseQueryStringParameters, delayExecution, parseSizesInput, getBidderRequest } from '../utils';
 
@@ -343,6 +344,12 @@ export function newBidder(spec) {
     }
     return true;
   }
+}
+
+hookManager.subscribeHookFunc('checkAdUnitSetup', 'before', quickTest, 5);
+function quickTest(fn, adUnits) {
+  console.log(`This is a hook... these are the adUnits object ${adUnits}`);
+  fn.call(this, adUnits);
 }
 
 // check that the bid has a width and height set

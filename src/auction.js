@@ -55,7 +55,8 @@ import { getCacheUrl, store } from './videoCache';
 import { Renderer } from './Renderer';
 import { config } from './config';
 import { userSync } from './userSync';
-import { hook } from './hook';
+// import { hook } from './hook';
+import { hookManager } from './hook';
 import find from 'core-js/library/fn/array/find';
 import includes from 'core-js/library/fn/array/includes';
 import { OUTSTREAM } from './video';
@@ -318,7 +319,8 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
   }
 }
 
-export const addBidResponse = hook('async', function(adUnitCode, bid) {
+// export const addBidResponse = hook('async', function(adUnitCode, bid) {
+export const addBidResponse = hookManager.registerHook('async', function(adUnitCode, bid) {
   this.dispatch.call(this.bidderRequest, adUnitCode, bid);
 }, 'addBidResponse');
 
@@ -416,7 +418,8 @@ function tryAddVideoBid(auctionInstance, bidResponse, bidRequests, afterBidAdded
   }
 }
 
-const callPrebidCache = hook('async', function(auctionInstance, bidResponse, afterBidAdded, bidderRequest) {
+// const callPrebidCache = hook('async', function(auctionInstance, bidResponse, afterBidAdded, bidderRequest) {
+const callPrebidCache = hookManager.registerHook('async', function(auctionInstance, bidResponse, afterBidAdded, bidderRequest) {
   store([bidResponse], function (error, cacheIds) {
     if (error) {
       utils.logWarn(`Failed to save to the video cache: ${error}. Video bid must be discarded.`);

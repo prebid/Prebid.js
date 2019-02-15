@@ -3,7 +3,8 @@ import { STATUS } from '../src/constants';
 import { ajax } from '../src/ajax';
 import * as utils from '../src/utils';
 import { config } from '../src/config';
-import { hooks } from '../src/hook.js';
+// import { hooks } from '../src/hook.js';
+import { hookManager } from '../src/hook.js';
 
 const DEFAULT_CURRENCY_RATE_URL = 'https://cdn.jsdelivr.net/gh/prebid/currency-file@1/latest.json?date=$$TODAY$$';
 const CURRENCY_RATE_PRECISION = 4;
@@ -122,7 +123,8 @@ function initCurrency(url) {
 
   utils.logInfo('Installing addBidResponse decorator for currency module', arguments);
 
-  hooks['addBidResponse'].before(addBidResponseHook, 100);
+  // hooks['addBidResponse'].before(addBidResponseHook, 100);
+  hookManager.subscribeHookFunc('addBidResponse', 'before', addBidResponseHook, 100);
 
   // call for the file if we haven't already
   if (needToCallForCurrencyFile) {
@@ -148,7 +150,8 @@ function initCurrency(url) {
 function resetCurrency() {
   utils.logInfo('Uninstalling addBidResponse decorator for currency module', arguments);
 
-  hooks['addBidResponse'].getHooks({hook: addBidResponseHook}).remove();
+  // hooks['addBidResponse'].getHooks({hook: addBidResponseHook}).remove();
+  hookManager.removeHook('addBidResponse', addBidResponseHook);
 
   adServerCurrency = 'USD';
   conversionCache = {};

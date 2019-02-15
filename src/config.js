@@ -10,7 +10,8 @@
 import { isValidPriceConfig } from './cpmBucketManager';
 import find from 'core-js/library/fn/array/find';
 import includes from 'core-js/library/fn/array/includes';
-import { hook } from './hook';
+// import { hook } from './hook';
+import { hookManager } from './hook';
 const utils = require('./utils');
 
 const DEFAULT_DEBUG = false;
@@ -231,7 +232,8 @@ export function newConfig() {
    * Sets configuration given an object containing key-value pairs and calls
    * listeners that were added by the `subscribe` function
    */
-  let setConfig = hook('async', function setConfig(options) {
+  // let setConfig = hook('async', function setConfig(options) {
+  let setConfig = hookManager.registerHook('async', function setConfig(options) {
     if (typeof options !== 'object') {
       utils.logError('setConfig options must be an object');
       return;

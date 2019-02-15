@@ -7,6 +7,7 @@
 import * as utils from '../src/utils';
 import { config } from '../src/config';
 import { gdprDataHandler } from '../src/adapterManager';
+// import { hookManager } from '../src/hook';
 import includes from 'core-js/library/fn/array/includes';
 import strIncludes from 'core-js/library/fn/string/includes';
 
@@ -376,6 +377,7 @@ export function setConfig(config) {
   }
   if (!addedConsentHook) {
     $$PREBID_GLOBAL$$.requestBids.before(requestBidsHook, 50);
+    // hookManager.subscribeHookFunc('requestBids', 'before', requestBidsHook, 50);
   }
   addedConsentHook = true;
 }

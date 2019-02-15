@@ -5,6 +5,7 @@
  */
 import * as utils from '../src/utils'
 import { config } from '../src/config';
+// import { hookManager } from '../src/hook';
 
 const COOKIE_NAME = '_pubcid';
 const DEFAULT_EXPIRES = 2628000; // 5-year worth of minutes
@@ -95,6 +96,7 @@ export function initPubcid() {
   if (utils.cookiesAreEnabled()) {
     if (!getCookie('_pubcid_optout')) {
       $$PREBID_GLOBAL$$.requestBids.before(requestBidHook);
+      // hookManager.subscribeHookFunc('requestBids', 'before', requestBidHook);
     }
   }
 }
