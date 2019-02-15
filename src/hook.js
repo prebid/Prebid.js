@@ -35,14 +35,12 @@ function createHookManager() {
    * Attempts to add a hook function onto a registered hook point.  If the hook point doesn't exist,
    * the hook function (and related information) will be stored in `listener` array so that it can be
    * loaded once the hook point has been registered.
-   * @param {*} alias
+   * @param {*} hookPoint
    * @param {*} type
    * @param {*} hookFn
    * @param {*} priority
    */
   function subscribeHookFunc (hookPoint, type, hookFn, priority) {
-    let test = hooks;
-    if (test) {}
     let hookPointType = typeof hookPoint;
 
     let doesHookPointExist;
