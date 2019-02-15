@@ -182,6 +182,9 @@ function prebidBid(serverBid, cur) {
 }
 
 function extractDomainFromHost(pageHost) {
+  if (pageHost == 'localhost') {
+    return 'localhost'
+  }
   let domain = null;
   try {
     let domains = /[-\w]+\.([-\w]+|[-\w]{3,}|[-\w]{1,3}\.[-\w]{2})$/i.exec(pageHost);
