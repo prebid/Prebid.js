@@ -19,7 +19,11 @@ globalsupport@rubiconproject.com for more information.
     var adUnits = [
            {
                code: 'test-div',
-               sizes: [[300, 250]],
+               mediaTypes: {
+                   banner: {
+                       sizes: [[300, 250]]
+                   }
+               },
                bids: [
                    {
                        bidder: "rubicon",
@@ -32,7 +36,11 @@ globalsupport@rubiconproject.com for more information.
                ]
            },{
                code: 'test-div',
-               sizes: [[300, 50]],
+               mediaTypes: {
+                   banner: {
+                       sizes: [[300, 50]]
+                   }
+               },
                bids: [
                    {
                        bidder: "rubicon",
