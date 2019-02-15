@@ -1,5 +1,7 @@
 import {expect} from 'chai';
 import {spec} from 'modules/mgidBidAdapter';
+import * as utils from '../../../src/utils';
+import * as urlUtils from '../../../src/url';
 
 describe('Mgid bid adapter', function () {
   let sandbox;
@@ -20,7 +22,6 @@ describe('Mgid bid adapter', function () {
     lang = '';
   }
   const secure = window.location.protocol === 'https:' ? 1 : 0;
-  const domain = window.location.hostname;
 
   describe('isBidRequestValid', function () {
     let bid = {
@@ -153,6 +154,8 @@ describe('Mgid bid adapter', function () {
         }
       };
       let bidRequests = [bid];
+      const referer = utils.deepAccess(bidRequests, 'refererInfo.referer');
+      const domain = urlUtils.parse(referer).hostname || 'localhost';
       const request = spec.buildRequests(bidRequests);
       expect(request.url).deep.equal('//dsp.mgid.com/prebid/1');
       expect(request.method).deep.equal('POST');
@@ -166,7 +169,7 @@ describe('Mgid bid adapter', function () {
       expect(data.device.language).to.deep.equal(lang);
       expect(data.imp[0].tagid).to.deep.equal('2');
       expect(data.imp[0].banner).to.deep.equal({w: 300, h: 250, format: []});
-      expect(data.imp[0].secure).to.deep.equal(1);
+      expect(data.imp[0].secure).to.deep.equal(secure);
       expect(request).to.deep.equal({
         'method': 'POST',
         'url': '//dsp.mgid.com/prebid/1',
@@ -182,6 +185,23 @@ describe('Mgid bid adapter', function () {
       };
       let bidRequests = [bid];
       const request = spec.buildRequests(bidRequests);
+
+      const referer = utils.deepAccess(bidRequests, 'refererInfo.referer');
+      const domain = urlUtils.parse(referer).hostname || 'localhost';
+      expect(request.url).deep.equal('//dsp.mgid.com/prebid/1');
+      expect(request.method).deep.equal('POST');
+      const data = JSON.parse(request.data);
+      expect(data.site.domain).to.deep.equal(domain);
+      expect(data.cur).to.deep.equal(['USD']);
+      expect(data.device.ua).to.deep.equal(ua);
+      expect(data.device.dnt).equal(dnt);
+      expect(data.device.h).equal(screenHeight);
+      expect(data.device.w).equal(screenWidth);
+      expect(data.device.language).to.deep.equal(lang);
+      expect(data.imp[0].tagid).to.deep.equal('2');
+      expect(data.imp[0].banner).to.deep.equal({w: 300, h: 600, format: [{w: 300, h: 600}, {w: 300, h: 250}]});
+      expect(data.imp[0].secure).to.deep.equal(secure);
+
       expect(request).to.deep.equal({
         'method': 'POST',
         'url': '//dsp.mgid.com/prebid/1',
