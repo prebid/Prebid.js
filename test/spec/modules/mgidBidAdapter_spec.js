@@ -154,7 +154,7 @@ describe('Mgid bid adapter', function () {
         }
       };
       let bidRequests = [bid];
-      const referer = utils.deepAccess(bidRequests, 'refererInfo.referer');
+      const referer = utils.deepAccess(bidRequests, 'refererInfo.referer') || 'http://localhost';
       const domain = urlUtils.parse(referer).hostname || 'localhost';
       const request = spec.buildRequests(bidRequests);
       expect(request.url).deep.equal('//dsp.mgid.com/prebid/1');
@@ -186,12 +186,12 @@ describe('Mgid bid adapter', function () {
       let bidRequests = [bid];
       const request = spec.buildRequests(bidRequests);
 
-      const referer = utils.deepAccess(bidRequests, 'refererInfo.referer');
+      const referer = utils.deepAccess(bidRequests, 'refererInfo.referer') || 'http://localhost';
       const domain = urlUtils.parse(referer).hostname || 'localhost';
       expect(request.url).deep.equal('//dsp.mgid.com/prebid/1');
       expect(request.method).deep.equal('POST');
       const data = JSON.parse(request.data);
-      expect(data.site.domain).to.deep.equal(referer);
+      expect(data.site.domain).to.deep.equal(domain);
       expect(data.cur).to.deep.equal(['USD']);
       expect(data.device.ua).to.deep.equal(ua);
       expect(data.device.dnt).equal(dnt);
