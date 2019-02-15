@@ -136,9 +136,16 @@ describe('Gu analytics adapter', () => {
     timeToRespond: 443,
     size: '300x250',
     dealId: 'd12345',
+    meta: {
+      networkId: 57,
+      buyerId: 36069,
+      brandId: 101,
+      brandName: 'biscuit',
+      clickUrl: 'blackrock.com'
+    },
     dspId: 57,
     advertiserId: 36069,
-    advertiserDomain: 'blackrock.com',
+    advertiserDomain: 'blackrock.com'
   };
 
   before(() => {
@@ -237,6 +244,8 @@ describe('Gu analytics adapter', () => {
       adv: 36069,
       dsp: 57,
       add: 'blackrock.com',
+      bri: 101,
+      brn: 'biscuit'
     });
   });
 
@@ -318,7 +327,7 @@ describe('Gu analytics adapter', () => {
   it('should have a version number', () => {
     events.emit(CONSTANTS.EVENTS.BID_WON, BIDWONEXAMPLE);
     const payload = JSON.parse(ajaxStub.firstCall.args);
-    expect(payload.v).to.be.equal(4);
+    expect(payload.v).to.be.equal(5);
   });
 
   it('should ignore responses sent with bid won event', () => {
