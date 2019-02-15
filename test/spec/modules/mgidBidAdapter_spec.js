@@ -14,6 +14,11 @@ describe('Mgid bid adapter', function () {
   const screenHeight = screen.height;
   const screenWidth = screen.width;
   const dnt = (navigator.doNotTrack == 'yes' || navigator.doNotTrack == '1' || navigator.msDoNotTrack == '1') ? 1 : 0;
+  const language = navigator.language ? 'language' : 'userLanguage';
+  let lang = navigator[language].split('-')[0];
+  if (lang.length != 2 && lang.length != 3) {
+    lang = '';
+  }
 
   describe('isBidRequestValid', function () {
     let bid = {
@@ -150,7 +155,7 @@ describe('Mgid bid adapter', function () {
       expect(request).to.deep.equal({
         'method': 'POST',
         'url': '//dsp.mgid.com/prebid/1',
-        'data': '{\"site\":{\"domain\":\"localhost\"},\"cur\":[\"USD\"],\"device\":{\"ua\":\"' + ua + '\",\"js\":1,\"dnt\":' + dnt + ',\"h\":' + screenHeight + ',\"w\":' + screenWidth + ',\"language\":\"en\"},\"ext\":{\"ver\":\"1.0\"},\"imp\":[{\"tagid\":\"2\",\"banner\":{\"w\":300,\"h\":250,\"format\":[]},\"secure\":0}]}',
+        'data': '{\"site\":{\"domain\":\"localhost\"},\"cur\":[\"USD\"],\"device\":{\"ua\":\"' + ua + '\",\"js\":1,\"dnt\":' + dnt + ',\"h\":' + screenHeight + ',\"w\":' + screenWidth + ',\"language\":\"' + lang + '\"},\"ext\":{\"ver\":\"1.0\"},\"imp\":[{\"tagid\":\"2\",\"banner\":{\"w\":300,\"h\":250,\"format\":[]},\"secure\":0}]}',
       });
     });
     it('should return proper request', function () {
@@ -165,7 +170,7 @@ describe('Mgid bid adapter', function () {
       expect(request).to.deep.equal({
         'method': 'POST',
         'url': '//dsp.mgid.com/prebid/1',
-        'data': '{\"site\":{\"domain\":\"localhost\"},\"cur\":[\"USD\"],\"device\":{\"ua\":\"' + ua + '\",\"js\":1,\"dnt\":' + dnt + ',\"h\":' + screenHeight + ',\"w\":' + screenWidth + ',\"language\":\"en\"},\"ext\":{\"ver\":\"1.0\"},\"imp\":[{\"tagid\":\"2\",\"banner\":{\"w\":300,\"h\":600,\"format\":[{\"w\":300,\"h\":600},{\"w\":300,\"h\":250}]},\"secure\":0}]}',
+        'data': '{\"site\":{\"domain\":\"localhost\"},\"cur\":[\"USD\"],\"device\":{\"ua\":\"' + ua + '\",\"js\":1,\"dnt\":' + dnt + ',\"h\":' + screenHeight + ',\"w\":' + screenWidth + ',\"language\":\"' + lang + '\"},\"ext\":{\"ver\":\"1.0\"},\"imp\":[{\"tagid\":\"2\",\"banner\":{\"w\":300,\"h\":600,\"format\":[{\"w\":300,\"h\":600},{\"w\":300,\"h\":250}]},\"secure\":0}]}',
       });
     });
   });
