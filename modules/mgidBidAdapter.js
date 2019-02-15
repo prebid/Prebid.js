@@ -22,7 +22,7 @@ export const spec = {
     const sizes = utils.deepAccess(banner, 'sizes');
     let sizesOk = typeof (sizes) == 'object' && sizes.length > 0;
     for (let f = 0; sizesOk && f < sizes.length; f++) {
-      sizesOk = sizesOk && sizes[f].length == 2;
+      sizesOk = sizes[f].length == 2;
     }
     return typeof (bid.params) == 'object' && !!bid.params.accountId && !!bid.params.placementId &&
       typeof (bid.params.accountId) == 'string' && typeof (bid.params.placementId) == 'string' &&

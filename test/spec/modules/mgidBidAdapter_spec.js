@@ -52,7 +52,7 @@ describe('Mgid bid adapter', function () {
       delete bid.params;
       bid.params = {accountId: '1', placementId: '1'};
       bid.mediaTypes = {
-      }
+      };
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
@@ -62,7 +62,7 @@ describe('Mgid bid adapter', function () {
       bid.params = {accountId: '1', placementId: '1'};
       bid.mediaTypes = {
         sizes: []
-      }
+      };
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
@@ -72,7 +72,7 @@ describe('Mgid bid adapter', function () {
       bid.params = {accountId: '1', placementId: '1'};
       bid.mediaTypes = {
         sizes: [300, 250]
-      }
+      };
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
@@ -84,7 +84,7 @@ describe('Mgid bid adapter', function () {
         banner: {
           sizes: [[300, 250]]
         }
-      }
+      };
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
   });
@@ -103,7 +103,7 @@ describe('Mgid bid adapter', function () {
         banner: {
           sizes: [[300, 250]]
         }
-      }
+      };
       let bidRequests = [bid];
       const request = spec.buildRequests(bidRequests);
       expect(request).to.exist.and.to.be.a('object');
@@ -120,7 +120,7 @@ describe('Mgid bid adapter', function () {
         banner: {
           sizes: [[300, 250]]
         }
-      }
+      };
       let bidRequests = [bid];
       const request = spec.buildRequests(bidRequests);
       expect(request.url).to.include('//newbidurl.com/1');
@@ -141,13 +141,13 @@ describe('Mgid bid adapter', function () {
         banner: {
           sizes: [[300, 250]]
         }
-      }
+      };
       let bidRequests = [bid];
       const request = spec.buildRequests(bidRequests);
       expect(request).to.deep.equal({
-        'data': '{\"site\":{\"domain\":\"localhost\"},\"cur\":[\"USD\"],\"device\":{\"ua\":\"' + ua + '\",\"js\":1,\"dnt\":0,\"h\":900,\"w\":1440,\"language\":\"en\"},\"ext\":{\"ver\":\"1.0\"},\"imp\":[{\"tagid\":\"2\",\"banner\":{\"w\":300,\"h\":250,\"format\":[]},\"secure\":0}]}',
         'method': 'POST',
         'url': '//dsp.mgid.com/prebid/1',
+        'data': '{\"site\":{\"domain\":\"localhost\"},\"cur\":[\"USD\"],\"device\":{\"ua\":\"' + ua + '\",\"js\":1,\"dnt\":0,\"h\":900,\"w\":1440,\"language\":\"en\"},\"ext\":{\"ver\":\"1.0\"},\"imp\":[{\"tagid\":\"2\",\"banner\":{\"w\":300,\"h\":250,\"format\":[]},\"secure\":0}]}',
       });
     });
     it('should return proper request', function () {
@@ -156,13 +156,13 @@ describe('Mgid bid adapter', function () {
         banner: {
           sizes: [[300, 600], [300, 250]],
         }
-      }
+      };
       let bidRequests = [bid];
       const request = spec.buildRequests(bidRequests);
       expect(request).to.deep.equal({
-        'data': '{\"site\":{\"domain\":\"localhost\"},\"cur\":[\"USD\"],\"device\":{\"ua\":\"' + ua + '\",\"js\":1,\"dnt\":0,\"h\":900,\"w\":1440,\"language\":\"en\"},\"ext\":{\"ver\":\"1.0\"},\"imp\":[{\"tagid\":\"2\",\"banner\":{\"w\":300,\"h\":600,\"format\":[{\"w\":300,\"h\":600},{\"w\":300,\"h\":250}]},\"secure\":0}]}',
         'method': 'POST',
         'url': '//dsp.mgid.com/prebid/1',
+        'data': '{\"site\":{\"domain\":\"localhost\"},\"cur\":[\"USD\"],\"device\":{\"ua\":\"' + ua + '\",\"js\":1,\"dnt\":0,\"h\":900,\"w\":1440,\"language\":\"en\"},\"ext\":{\"ver\":\"1.0\"},\"imp\":[{\"tagid\":\"2\",\"banner\":{\"w\":300,\"h\":600,\"format\":[{\"w\":300,\"h\":600},{\"w\":300,\"h\":250}]},\"secure\":0}]}',
       });
     });
   });
