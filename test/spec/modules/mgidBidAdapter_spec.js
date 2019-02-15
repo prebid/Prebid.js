@@ -154,6 +154,19 @@ describe('Mgid bid adapter', function () {
       };
       let bidRequests = [bid];
       const request = spec.buildRequests(bidRequests);
+      expect(request.url).deep.equal('//dsp.mgid.com/prebid/1');
+      expect(request.method).deep.equal('POST');
+      const data = JSON.parse(request.data);
+      expect(data.site.domain).to.deep.equal(domain);
+      expect(data.cur).to.deep.equal(['USD']);
+      expect(data.device.ua).to.deep.equal(ua);
+      expect(data.device.dnt).equal(dnt);
+      expect(data.device.h).equal(screenHeight);
+      expect(data.device.w).equal(screenWidth);
+      expect(data.device.language).to.deep.equal(lang);
+      expect(data.imp[0].tagid).to.deep.equal('2');
+      expect(data.imp[0].banner).to.deep.equal({w: 300, h: 250, format: []});
+      expect(data.imp[0].secure).to.deep.equal(1);
       expect(request).to.deep.equal({
         'method': 'POST',
         'url': '//dsp.mgid.com/prebid/1',
