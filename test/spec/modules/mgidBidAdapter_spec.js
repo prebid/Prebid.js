@@ -191,7 +191,7 @@ describe('Mgid bid adapter', function () {
       expect(request.url).deep.equal('//dsp.mgid.com/prebid/1');
       expect(request.method).deep.equal('POST');
       const data = JSON.parse(request.data);
-      expect(data.site.domain).to.deep.equal(domain);
+      expect(data.site.domain).to.deep.equal(referer);
       expect(data.cur).to.deep.equal(['USD']);
       expect(data.device.ua).to.deep.equal(ua);
       expect(data.device.dnt).equal(dnt);
