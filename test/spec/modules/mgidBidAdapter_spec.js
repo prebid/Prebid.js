@@ -19,6 +19,8 @@ describe('Mgid bid adapter', function () {
   if (lang.length != 2 && lang.length != 3) {
     lang = '';
   }
+  const secure = window.location.protocol === 'https:' ? 1 : 0;
+  const domain = window.location.hostname;
 
   describe('isBidRequestValid', function () {
     let bid = {
@@ -155,7 +157,7 @@ describe('Mgid bid adapter', function () {
       expect(request).to.deep.equal({
         'method': 'POST',
         'url': '//dsp.mgid.com/prebid/1',
-        'data': '{\"site\":{\"domain\":\"localhost\"},\"cur\":[\"USD\"],\"device\":{\"ua\":\"' + ua + '\",\"js\":1,\"dnt\":' + dnt + ',\"h\":' + screenHeight + ',\"w\":' + screenWidth + ',\"language\":\"' + lang + '\"},\"ext\":{\"ver\":\"1.0\"},\"imp\":[{\"tagid\":\"2\",\"banner\":{\"w\":300,\"h\":250,\"format\":[]},\"secure\":0}]}',
+        'data': '{\"site\":{\"domain\":\"' + domain + '\"},\"cur\":[\"USD\"],\"device\":{\"ua\":\"' + ua + '\",\"js\":1,\"dnt\":' + dnt + ',\"h\":' + screenHeight + ',\"w\":' + screenWidth + ',\"language\":\"' + lang + '\"},\"ext\":{\"ver\":\"1.0\"},\"imp\":[{\"tagid\":\"2\",\"banner\":{\"w\":300,\"h\":250,\"format\":[]},\"secure\":' + secure + '}]}',
       });
     });
     it('should return proper request', function () {
@@ -170,7 +172,7 @@ describe('Mgid bid adapter', function () {
       expect(request).to.deep.equal({
         'method': 'POST',
         'url': '//dsp.mgid.com/prebid/1',
-        'data': '{\"site\":{\"domain\":\"localhost\"},\"cur\":[\"USD\"],\"device\":{\"ua\":\"' + ua + '\",\"js\":1,\"dnt\":' + dnt + ',\"h\":' + screenHeight + ',\"w\":' + screenWidth + ',\"language\":\"' + lang + '\"},\"ext\":{\"ver\":\"1.0\"},\"imp\":[{\"tagid\":\"2\",\"banner\":{\"w\":300,\"h\":600,\"format\":[{\"w\":300,\"h\":600},{\"w\":300,\"h\":250}]},\"secure\":0}]}',
+        'data': '{\"site\":{\"domain\":\"' + domain + '\"},\"cur\":[\"USD\"],\"device\":{\"ua\":\"' + ua + '\",\"js\":1,\"dnt\":' + dnt + ',\"h\":' + screenHeight + ',\"w\":' + screenWidth + ',\"language\":\"' + lang + '\"},\"ext\":{\"ver\":\"1.0\"},\"imp\":[{\"tagid\":\"2\",\"banner\":{\"w\":300,\"h\":600,\"format\":[{\"w\":300,\"h\":600},{\"w\":300,\"h\":250}]},\"secure\":' + secure + '}]}',
       });
     });
   });
