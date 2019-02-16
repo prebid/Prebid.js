@@ -4,9 +4,9 @@ import * as urlUtils from '../src/url';
 import { BANNER } from 'src/mediaTypes';
 const BIDDER_CODE = 'mgid';
 const ENDPOINT_URL = '//dsp.mgid.com/prebid/';
-const VERSION = '1.0';
 
 export const spec = {
+  VERSION: '1.0',
   code: BIDDER_CODE,
   aliases: ['mgid'], // short code
   supportedMediaTypes: [BANNER],
@@ -75,6 +75,19 @@ export const spec = {
       };
     });
 
+    let ext = {mgid_ver: spec.VERSION, prebid_ver: $$PREBID_GLOBAL$$.version};
+    let user = {};
+    let regs = {};
+    if (bidderRequest && bidderRequest.gdprConsent) {
+      user.ext = {
+        consent: bidderRequest.gdprConsent.consentString
+      };
+
+      regs.ext = {
+        gdpr: (bidderRequest.gdprConsent.gdprApplies ? 1 : 0)
+      };
+    }
+
     const request = {
       id: utils.deepAccess(bidderRequest, 'bidderRequestId'),
       site: { domain, page },
@@ -87,7 +100,9 @@ export const spec = {
         w: screen.width,
         language: getLanguage()
       },
-      ext: {ver: VERSION},
+      user,
+      regs,
+      ext,
       imp
     };
     utils.logInfo(`MGID DEBUG: buildRequests\n${request}`);

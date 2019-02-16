@@ -22,6 +22,8 @@ describe('Mgid bid adapter', function () {
     lang = '';
   }
   const secure = window.location.protocol === 'https:' ? 1 : 0;
+  const mgid_ver = spec.VERSION;
+  const prebid_ver = $$PREBID_GLOBAL$$.version;
 
   describe('isBidRequestValid', function () {
     let bid = {
@@ -173,7 +175,7 @@ describe('Mgid bid adapter', function () {
       expect(request).to.deep.equal({
         'method': 'POST',
         'url': '//dsp.mgid.com/prebid/1',
-        'data': '{\"site\":{\"domain\":\"' + domain + '\"},\"cur\":[\"USD\"],\"device\":{\"ua\":\"' + ua + '\",\"js\":1,\"dnt\":' + dnt + ',\"h\":' + screenHeight + ',\"w\":' + screenWidth + ',\"language\":\"' + lang + '\"},\"ext\":{\"ver\":\"1.0\"},\"imp\":[{\"tagid\":\"2\",\"banner\":{\"w\":300,\"h\":250,\"format\":[]},\"secure\":' + secure + '}]}',
+        'data': '{\"site\":{\"domain\":\"' + domain + '\"},\"cur\":[\"USD\"],\"device\":{\"ua\":\"' + ua + '\",\"js\":1,\"dnt\":' + dnt + ',\"h\":' + screenHeight + ',\"w\":' + screenWidth + ',\"language\":\"' + lang + '\"},\"user\":{},\"regs\":{},\"ext\":{\"mgid_ver\":\"' + mgid_ver + '\",\"prebid_ver\":\"' + prebid_ver + '\"},\"imp\":[{\"tagid\":\"2\",\"banner\":{\"w\":300,\"h\":250,\"format\":[]},\"secure\":' + secure + '}]}',
       });
     });
     it('should return proper request', function () {
@@ -205,7 +207,7 @@ describe('Mgid bid adapter', function () {
       expect(request).to.deep.equal({
         'method': 'POST',
         'url': '//dsp.mgid.com/prebid/1',
-        'data': '{\"site\":{\"domain\":\"' + domain + '\"},\"cur\":[\"USD\"],\"device\":{\"ua\":\"' + ua + '\",\"js\":1,\"dnt\":' + dnt + ',\"h\":' + screenHeight + ',\"w\":' + screenWidth + ',\"language\":\"' + lang + '\"},\"ext\":{\"ver\":\"1.0\"},\"imp\":[{\"tagid\":\"2\",\"banner\":{\"w\":300,\"h\":600,\"format\":[{\"w\":300,\"h\":600},{\"w\":300,\"h\":250}]},\"secure\":' + secure + '}]}',
+        'data': '{\"site\":{\"domain\":\"' + domain + '\"},\"cur\":[\"USD\"],\"device\":{\"ua\":\"' + ua + '\",\"js\":1,\"dnt\":' + dnt + ',\"h\":' + screenHeight + ',\"w\":' + screenWidth + ',\"language\":\"' + lang + '\"},\"user\":{},\"regs\":{},\"ext\":{\"mgid_ver\":\"' + mgid_ver + '\",\"prebid_ver\":\"' + prebid_ver + '\"},\"imp\":[{\"tagid\":\"2\",\"banner\":{\"w\":300,\"h\":600,\"format\":[{\"w\":300,\"h\":600},{\"w\":300,\"h\":250}]},\"secure\":' + secure + '}]}',
       });
     });
   });
