@@ -3,6 +3,7 @@ import CONSTANTS from 'src/constants.json';
 import { config } from 'src/config';
 
 let events = require('src/events');
+let utils = require('src/utils');
 let adapterManager = require('src/adapterManager').default;
 
 const {
@@ -43,9 +44,19 @@ const BID2 = Object.assign({}, BID1, {
   adId: '3ecff0db240757',
 });
 
+const BID3 = {
+  bidId: '4ecff0db240757',
+  adId: '4ecff0db240757',
+  auctionId: '25c6d7f5-699a-4bfc-87c9-996f915341fa',
+  getStatusCode() {
+    return CONSTANTS.STATUS.NO_BID;
+  }
+};
+
 const MOCK = {
   AUCTION_INIT: {
     'auctionId': '25c6d7f5-699a-4bfc-87c9-996f915341fa',
+    'timestamp': 1519149562216
   },
   BID_REQUESTED: {
     'bidder': 'livewrapped',
@@ -61,6 +72,11 @@ const MOCK = {
         'bidder': 'livewrapped',
         'adUnitCode': 'box_d_1',
         'bidId': '3ecff0db240757',
+      },
+      {
+        'bidder': 'livewrapped',
+        'adUnitCode': 'box_d_2',
+        'bidId': '4ecff0db240757',
       }
     ],
     'start': 1519149562216
@@ -83,7 +99,8 @@ const MOCK = {
     'bidderCode': 'livewrapped',
     'bids': [
       BID1,
-      BID2
+      BID2,
+      BID3
     ]
   },
   BID_TIMEOUT: [
@@ -104,6 +121,11 @@ const ANALYTICS_MESSAGE = {
     },
     {
       adUnit: 'box_d_1',
+      bidder: 'livewrapped',
+      timeStamp: 1519149562216
+    },
+    {
+      adUnit: 'box_d_2',
       bidder: 'livewrapped',
       timeStamp: 1519149562216
     }
@@ -128,6 +150,13 @@ const ANALYTICS_MESSAGE = {
       cpm: 2.2,
       ttr: 300,
       IsBid: true
+    },
+    {
+      timeStamp: 1519149562216,
+      adUnit: 'box_d_2',
+      bidder: 'livewrapped',
+      ttr: 200,
+      IsBid: false
     }
   ],
   timeouts: [],
@@ -177,6 +206,7 @@ describe('Livewrapped analytics adapter', function () {
     xhr.onCreate = request => requests.push(request);
 
     sandbox.stub(events, 'getEvents').returns([]);
+    sandbox.stub(utils, 'timestamp').returns(1519149562416);
 
     clock = sandbox.useFakeTimers(1519767013781);
   });
