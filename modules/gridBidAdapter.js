@@ -130,19 +130,24 @@ function _addBidResponse(serverBid, bidsMap, bidResponses) {
     const awaitingBids = bidsMap[serverBid.auid];
     if (awaitingBids) {
       awaitingBids.forEach(bid => {
+        const size = bid.sizes[0];
+        if (serverBid.w && serverBid.h) {
+          size[0] = serverBid.w;
+          size[1] = serverBid.h;
+        }
         const bidResponse = {
           requestId: bid.bidId, // bid.bidderRequestId,
           bidderCode: spec.code,
           cpm: serverBid.price,
-          width: serverBid.w,
-          height: serverBid.h,
+          width: size[0],
+          height: size[1],
           creativeId: serverBid.auid, // bid.bidId,
           currency: 'USD',
           netRevenue: false,
           ttl: TIME_TO_LIVE,
           dealId: serverBid.dealid
         };
-        if (!serverBid.w && !serverBid.h) {
+        if (serverBid.content_type === 'video') {
           bidResponse.vastXml = serverBid.adm;
           bidResponse.mediaType = VIDEO;
           bidResponse.adResponse = {
