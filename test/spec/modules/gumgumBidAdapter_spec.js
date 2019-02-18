@@ -17,7 +17,8 @@ describe('gumgumAdapter', function () {
     let bid = {
       'bidder': 'gumgum',
       'params': {
-        'inScreen': '10433394'
+        'inScreen': '10433394',
+        'bidfloor': 0.05
       },
       'adUnitCode': 'adunit-code',
       'sizes': [[300, 250], [300, 600], [1, 1]],
@@ -40,11 +41,21 @@ describe('gumgumAdapter', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
-    it('should return false when required params are not passed', function () {
+    it('should return false when no unit type is specified', function () {
       let bid = Object.assign({}, bid);
       delete bid.params;
       bid.params = {
         'placementId': 0
+      };
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
+
+    it('should return false when bidfloor is not a number', function () {
+      let bid = Object.assign({}, bid);
+      delete bid.params;
+      bid.params = {
+        'inSlot': '789',
+        'bidfloor': '0.50'
       };
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
