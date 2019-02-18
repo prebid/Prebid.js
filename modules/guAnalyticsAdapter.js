@@ -38,6 +38,9 @@ let analyticsAdapter = Object.assign(adapter({analyticsType}),
         case CONSTANTS.EVENTS.BID_RESPONSE:
           handler = trackBidResponse;
           break;
+        case CONSTANTS.EVENTS.NO_BID:
+          handler = trackNoBid;
+          break;
         case CONSTANTS.EVENTS.AUCTION_END:
           handler = trackAuctionEnd;
           break;
@@ -141,6 +144,14 @@ function trackBidResponse(args) {
     return [event];
   }
   return null;
+}
+
+function trackNoBid(args) {
+  const event = { ev: 'nobid' };
+  setSafely(event, 'n', args.bidder);
+  setSafely(event, 'bid', args.bidId);
+  setSafely(event, 'sid', args.adUnitCode);
+  return [event];
 }
 
 function trackAuctionEnd(args) {
