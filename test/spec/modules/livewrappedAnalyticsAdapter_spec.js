@@ -28,6 +28,7 @@ const BID1 = {
   cpm: 1.1,
   timeToRespond: 200,
   bidId: '2ecff0db240757',
+  requestId: '2ecff0db240757',
   adId: '2ecff0db240757',
   auctionId: '25c6d7f5-699a-4bfc-87c9-996f915341fa',
   getStatusCode() {
@@ -41,11 +42,13 @@ const BID2 = Object.assign({}, BID1, {
   cpm: 2.2,
   timeToRespond: 300,
   bidId: '3ecff0db240757',
+  requestId: '3ecff0db240757',
   adId: '3ecff0db240757',
 });
 
 const BID3 = {
   bidId: '4ecff0db240757',
+  requestId: '4ecff0db240757',
   adId: '4ecff0db240757',
   auctionId: '25c6d7f5-699a-4bfc-87c9-996f915341fa',
   getStatusCode() {
@@ -89,10 +92,12 @@ const MOCK = {
   },
   BID_WON: [
     Object.assign({}, BID1, {
-      'status': 'rendered'
+      'status': 'rendered',
+      'requestId': '2ecff0db240757'
     }),
     Object.assign({}, BID2, {
-      'status': 'rendered'
+      'status': 'rendered',
+      'requestId': '3ecff0db240757'
     })
   ],
   BIDDER_DONE: {

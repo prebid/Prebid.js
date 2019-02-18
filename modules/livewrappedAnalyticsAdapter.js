@@ -51,7 +51,7 @@ let livewrappedAnalyticsAdapter = Object.assign(adapter({EMPTYURL, ANALYTICSTYPE
       case CONSTANTS.EVENTS.BID_RESPONSE:
         utils.logInfo('LIVEWRAPPED_BID_RESPONSE:', args);
 
-        let bidResponse = cache.auctions[args.auctionId].bids[args.adId || args.requestId];
+        let bidResponse = cache.auctions[args.auctionId].bids[args.requestId];
         bidResponse.isBid = args.getStatusCode() === CONSTANTS.STATUS.GOOD;
         bidResponse.width = args.width;
         bidResponse.height = args.height;
@@ -74,7 +74,7 @@ let livewrappedAnalyticsAdapter = Object.assign(adapter({EMPTYURL, ANALYTICSTYPE
         break;
       case CONSTANTS.EVENTS.BID_WON:
         utils.logInfo('LIVEWRAPPED_BID_WON:', args);
-        let wonBid = cache.auctions[args.auctionId].bids[args.adId];
+        let wonBid = cache.auctions[args.auctionId].bids[args.requestId];
         wonBid.won = true;
         if (wonBid.sendStatus != 0) {
           livewrappedAnalyticsAdapter.sendEvents();
