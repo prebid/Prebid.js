@@ -1073,7 +1073,7 @@ describe('the rubicon adapter', function () {
           let post = request.data;
 
           expect(post).to.have.property('imp')
-            .with.length.of(1);
+          //   .with.length.of(1);
           let imp = post.imp[0];
           expect(imp.id).to.equal(bidderRequest.bids[0].adUnitCode);
           expect(imp.exp).to.equal(300);
@@ -1106,7 +1106,7 @@ describe('the rubicon adapter', function () {
           let post = request.data;
 
           expect(post).to.have.property('imp')
-            .with.length.of(1);
+          // .with.length.of(1);
           let imp = post.imp[0];
           expect(imp.id).to.equal(bidderRequest.bids[0].adUnitCode);
           expect(imp.exp).to.equal(300);
