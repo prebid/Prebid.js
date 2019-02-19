@@ -29,7 +29,7 @@ var adUnits = [{
     bidder: 'mgid',
     params : {
       accountId : "219", //test accountId, please replace after test
-      placementId : "331675" // 300x600 test placementId, please replace after test
+      placementId : "331749" // 300x600 test placementId, please replace after test
     }
   }]
 }];
@@ -49,7 +49,7 @@ var adUnits = [{
     bidder: 'mgid',
     params : {
       accountId : "219", //test accountId, please replace after test
-      placementId : "331671" // 300x250 test placementId, please replace after test
+      placementId : "331748" // 300x250 test placementId, please replace after test
     }
   }]
 }];
