@@ -9,7 +9,7 @@ import {ajax} from 'src/ajax';
  * Update whenever you want to make sure you're sending the right version of analytics.
  * This is useful when some browsers are using old code and some new, for example.
  */
-const VERSION = 4;
+const VERSION = 5;
 
 const analyticsType = 'endpoint';
 const SENDALL_ON = {};
@@ -37,6 +37,9 @@ let analyticsAdapter = Object.assign(adapter({analyticsType}),
           break;
         case CONSTANTS.EVENTS.BID_RESPONSE:
           handler = trackBidResponse;
+          break;
+        case CONSTANTS.EVENTS.NO_BID:
+          handler = trackNoBid;
           break;
         case CONSTANTS.EVENTS.AUCTION_END:
           handler = trackAuctionEnd;
@@ -141,6 +144,15 @@ function trackBidResponse(args) {
     return [event];
   }
   return null;
+}
+
+function trackNoBid(args) {
+  const event = { ev: 'nobid' };
+  setSafely(event, 'n', args.bidder);
+  setSafely(event, 'bid', args.bidId);
+  setSafely(event, 'sid', args.adUnitCode);
+  setSafely(event, 'aid', args.auctionId);
+  return [event];
 }
 
 function trackAuctionEnd(args) {
