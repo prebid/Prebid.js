@@ -12,6 +12,49 @@ One of the easiest way to gain access to MGID demand sources  - MGID header bidd
 
 MGID header bidding adapter connects with MGID demand sources to fetch bids for display placements
 
+# Test Parameters
+
+
+300x600 banner test
+```
+var adUnits = [{
+  code: 'div-prebid',
+  mediaTypes: {
+    banner: {
+      sizes: [[300, 600]]
+    }
+  },
+  // Replace this object to test a new Adapter!
+  bids: [{
+    bidder: 'mgid',
+    params : {
+      accountId : "219", //test accountId, please replace after test
+      placementId : "331675" // 300x600 test placementId, please replace after test
+    }
+  }]
+}];
+```
+
+300x250 banner test
+```
+var adUnits = [{
+  code: 'div-prebid',
+  mediaTypes: {
+    banner: {
+      sizes: [[300, 250]]
+    }
+  },
+  // Replace this object to test a new Adapter!
+  bids: [{
+    bidder: 'mgid',
+    params : {
+      accountId : "219", //test accountId, please replace after test
+      placementId : "331671" // 300x250 test placementId, please replace after test
+    }
+  }]
+}];
+```
+
 # Bid Parameters
 ## Banner
 
