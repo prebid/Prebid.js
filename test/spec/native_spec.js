@@ -4,6 +4,7 @@ import CONSTANTS from 'src/constants.json';
 const utils = require('src/utils');
 
 const bid = {
+  adId: '123',
   native: {
     title: 'Native Creative',
     body: 'Cool description great stuff',
@@ -48,6 +49,22 @@ describe('native.js', function () {
     expect(targeting[CONSTANTS.NATIVE_KEYS.title]).to.equal(bid.native.title);
     expect(targeting[CONSTANTS.NATIVE_KEYS.body]).to.equal(bid.native.body);
     expect(targeting[CONSTANTS.NATIVE_KEYS.clickUrl]).to.equal(bid.native.clickUrl);
+  });
+
+  it('sends placeholders for configured assets', function () {
+    const bidRequest = {
+      mediaTypes: {
+        native: {
+          body: { usePlaceholder: true },
+          clickUrl: { usePlaceholder: true },
+        }
+      }
+    };
+    const targeting = getNativeTargeting(bid, bidRequest);
+
+    expect(targeting[CONSTANTS.NATIVE_KEYS.title]).to.equal(bid.native.title);
+    expect(targeting[CONSTANTS.NATIVE_KEYS.body]).to.equal('hb_native_body:123');
+    expect(targeting[CONSTANTS.NATIVE_KEYS.clickUrl]).to.equal('hb_native_linkurl:123');
   });
 
   it('should only include native targeting keys with values', function () {

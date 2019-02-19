@@ -151,7 +151,7 @@ export function fireNativeTrackers(message, adObject) {
  * @param {Object} bid
  * @return {Object} targeting
  */
-export function getNativeTargeting(bid) {
+export function getNativeTargeting(bid, bidReq) {
   let keyValues = {};
 
   Object.keys(bid['native']).forEach(asset => {
@@ -161,6 +161,16 @@ export function getNativeTargeting(bid) {
     // native image-type assets can be a string or an object with a url prop
     if (typeof value === 'object' && value.url) {
       value = value.url;
+    }
+
+    const sendPlaceholder = deepAccess(
+      bidReq,
+      `mediaTypes.native.${asset}.usePlaceholder`
+    );
+
+    if (sendPlaceholder) {
+      const placeholder = `${key}:${bid.adId}`;
+      value = placeholder;
     }
 
     if (key && value) {
