@@ -32,7 +32,7 @@ const NATIVE_MAPPING = {
   displayUrl: 'displayurl'
 };
 const SOURCE = 'pbjs';
-const mappingFileUrl = 'http://acdn.adnxs.com/prebid/test/jp/appnexus-mapping.json';
+const mappingFileUrl = '//acdn.adnxs.com/prebid/appnexus-mapping/mappings.json';
 
 export const spec = {
   code: BIDDER_CODE,
