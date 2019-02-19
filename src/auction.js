@@ -431,11 +431,6 @@ const callPrebidCache = hook('async', function(auctionInstance, bidResponse, aft
         doCallbacksIfTimedout(auctionInstance, bidResponse);
       } else {
         bidResponse.videoCacheKey = cacheIds[0].uuid;
-        let cacheTargetKeys = {
-          hb_uuid: cacheIds[0].uuid,
-          hb_cache_id: cacheIds[0].uuid
-        };
-        bidResponse.adserverTargeting = Object.assign(bidResponse.adserverTargeting || {}, cacheTargetKeys);
 
         if (!bidResponse.vastUrl) {
           bidResponse.vastUrl = getCacheUrl(bidResponse.videoCacheKey);
@@ -502,8 +497,14 @@ function setupBidTargeting(bidObject) {
     keyValues = getKeyValueTargetingPairs(bidObject.bidderCode, bidObject);
   }
 
+  let cacheTargetKeys = {};
+  if (bidObject.videoCacheKey) {
+    cacheTargetKeys.hb_uuid = bidObject.videoCacheKey;
+    cacheTargetKeys.hb_cache_id = bidObject.videoCacheKey;
+  }
+
   // use any targeting provided as defaults, otherwise just set from getKeyValueTargetingPairs
-  bidObject.adserverTargeting = Object.assign(bidObject.adserverTargeting || {}, keyValues);
+  bidObject.adserverTargeting = Object.assign(bidObject.adserverTargeting || {}, cacheTargetKeys, keyValues);
 }
 
 export function getStandardBidderSettings(mediaType) {
