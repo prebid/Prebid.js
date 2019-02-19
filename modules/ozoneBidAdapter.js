@@ -1,12 +1,13 @@
 import * as utils from '../src/utils';
 import { registerBidder } from '../src/adapters/bidderFactory';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes';
+import { targeting } from '../src/targeting';
 
 const BIDDER_CODE = 'ozone';
 
 const OZONEURI = 'https://elb.the-ozone-project.com/openrtb2/auction';
 const OZONECOOKIESYNC = 'https://elb.the-ozone-project.com/static/load-cookie.html';
-
+const OZONEVERSION = '1.4.3';
 export const spec = {
   code: BIDDER_CODE,
 
@@ -71,7 +72,7 @@ export const spec = {
    * @returns {*}
    */
   interpretResponse(serverResponse, request) {
-    utils.logInfo('ozone interpretResponse', serverResponse, request);
+    utils.logInfo('ozone v' + OZONEVERSION + ' interpretResponse', serverResponse, request);
     serverResponse = serverResponse.body || {};
     _ozoneInternal.serverResponseId = serverResponse.id; /* this is sent to the ads request as requestId */
     if (serverResponse.seatbid) {
@@ -84,10 +85,13 @@ export const spec = {
         let arrWinners = [];
         for (let i = 0; i < arrRequestBids.length; i++) {
           let thisBid = arrRequestBids[i];
+          let ozoneInternalKey = thisBid.bidId;
+          // let ozoneInternalKey = thisBid.adUnitCode;
           let {seat: winningSeat, bid: winningBid} = ozoneGetWinnerForRequestBid(thisBid, serverResponse.seatbid);
-          utils.logInfo('adding all bids to _ozoneInternal for key: ', thisBid.bidId);
-          _ozoneInternal.responses[thisBid.bidId] = ozoneGetAllBidsForBidId(thisBid.bidId, serverResponse.seatbid);
-          _ozoneInternal.winners[thisBid.bidId] = {'seat': winningSeat, 'bid': winningBid};
+
+          utils.logInfo('adding all bids to _ozoneInternal for key: ', ozoneInternalKey);
+          _ozoneInternal.responses[ozoneInternalKey] = ozoneGetAllBidsForBidId(ozoneInternalKey, serverResponse.seatbid);
+          _ozoneInternal.winners[ozoneInternalKey] = {'seat': winningSeat, 'bid': winningBid};
           if (winningBid !== null) {
             const {defaultWidth, defaultHeight} = defaultSize(arrRequestBids[i]);
             winningBid = ozoneAddStandardProperties(winningBid, defaultWidth, defaultHeight);
@@ -112,13 +116,14 @@ export const spec = {
     }
   },
   buildRequests(validBidRequests, bidderRequest) {
-    utils.logInfo('validBidRequests', validBidRequests, 'bidderRequest', bidderRequest);
+    utils.logInfo('ozone v' + OZONEVERSION + ' validBidRequests', validBidRequests, 'bidderRequest', bidderRequest);
     utils.logInfo('buildRequests setting auctionId', bidderRequest.auctionId);
     _ozoneInternal.auctionId = bidderRequest.auctionId;
     let htmlParams = validBidRequests[0].params; // the html page config params will be included in each element
     let ozoneRequest = {}; // we only want to set specific properties on this, not validBidRequests[0].params
-    ozoneRequest['id'] = utils.generateUUID();
-    ozoneRequest['auctionId'] = bidderRequest['auctionId'];
+    //    ozoneRequest['id'] = utils.generateUUID();
+    ozoneRequest['id'] = bidderRequest.auctionId; // Unique ID of the bid request, provided by the exchange.
+    ozoneRequest['auctionId'] = bidderRequest['auctionId']; // not sure if this should be here?
 
     delete ozoneRequest.test; // don't allow test to be set in the config - ONLY use $_GET['pbjs_debug']
     if (bidderRequest.gdprConsent) {
@@ -131,7 +136,8 @@ export const spec = {
     }
     let tosendtags = validBidRequests.map(ozoneBidRequest => {
       var obj = {};
-      obj.id = ozoneBidRequest.bidId;
+      obj.id = ozoneBidRequest.bidId; // this causes a failure if we change it to something else
+      // obj.id = ozoneBidRequest.adUnitCode; // (eg. 'mpu' or 'leaderboard') A unique identifier for this impression within the context of the bid request (typically, starts with 1 and increments.
       obj.tagid = (ozoneBidRequest.params.placementId).toString();
       obj.secure = window.location.protocol === 'https:' ? 1 : 0;
       // is there a banner (or nothing declared, so banner is the default)?
@@ -182,6 +188,9 @@ export const spec = {
       }
       // build the imp['ext'] object
       obj.ext = {'prebid': {'storedrequest': {'id': (ozoneBidRequest.params.placementId).toString()}}, 'ozone': {}};
+      obj.ext.ozone.adUnitCode = ozoneBidRequest.adUnitCode; // eg. 'mpu'
+      obj.ext.ozone.transactionId = ozoneBidRequest.transactionId; // this is the transactionId PER adUnit, common across bidders for this unit
+      _ozoneInternal.adUnitCodes[obj.id] = ozoneBidRequest.adUnitCode; // we need to map this here as the adUnitCode doesnt come into the response
       if (ozoneBidRequest.params.hasOwnProperty('customData')) {
         obj.ext.ozone.customData = ozoneBidRequest.params.customData;
       }
@@ -191,18 +200,25 @@ export const spec = {
       if (ozoneBidRequest.params.hasOwnProperty('lotameData')) {
         obj.ext.ozone.lotameData = ozoneBidRequest.params.lotameData;
       }
+      if (ozoneBidRequest.hasOwnProperty('crumbs') && ozoneBidRequest.crumbs.hasOwnProperty('pubcid')) {
+        obj.ext.ozone.pubcid = ozoneBidRequest.crumbs.pubcid;
+      }
+
       return obj;
     });
     ozoneRequest.imp = tosendtags;
-    ozoneRequest.source = {'tid': bidderRequest.auctionId};
+    ozoneRequest.source = {'tid': bidderRequest.auctionId}; // RTB 2.5 : tid is Transaction ID that must be common across all participants in this bid request (e.g., potentially multiple exchanges).
     ozoneRequest.site = {'publisher': {'id': htmlParams.publisherId}, 'page': document.location.href};
     ozoneRequest.test = parseInt(getTestQuerystringValue()); // will be 1 or 0
+
     var ret = {
       method: 'POST',
       url: OZONEURI,
       data: JSON.stringify(ozoneRequest),
       bidderRequest: bidderRequest
     };
+    utils.logInfo('_ozoneInternal is', _ozoneInternal);
+    utils.logInfo('buildRequests ozoneRequest for ret = ', ozoneRequest);
     utils.logInfo('buildRequests going to return', ret);
     return ret;
   },
@@ -218,21 +234,6 @@ export const spec = {
       }];
     }
   }
-}
-
-/**
- * Function matchRequest(id: string, BidRequest: object)
- * @param id
- * @type string
- * @param bidRequest
- * @type Object
- * @returns Object
- *
- */
-export function matchRequest(id, bidRequest) {
-  const {bids} = bidRequest.bidderRequest;
-  const [returnValue] = bids.filter(bid => bid.bidId === id);
-  return returnValue;
 }
 
 export function checkDeepArray(Arr) {
@@ -268,6 +269,7 @@ export function ozoneGetWinnerForRequestBid(requestBid, serverResponseSeatBid) {
     let thisSeat = serverResponseSeatBid[j].seat;
     for (let k = 0; k < theseBids.length; k++) {
       if (theseBids[k].impid === requestBid.bidId) { // we've found a matching server response bid for this request bid
+        // if (theseBids[k].impid === requestBid.adUnitCode) { // we've found a matching server response bid for this request bid
         if ((thisBidWinner == null) || (thisBidWinner.price < theseBids[k].price)) {
           thisBidWinner = theseBids[k];
           winningSeat = thisSeat;
@@ -344,38 +346,45 @@ export function getTestQuerystringValue() {
 // We will now try to add custom targeting data - auction ID and all losing bidders.
 // we will use this instead of having to use in the html page: pbjs.bidderSettings = { ozone: { ... } } - see http://prebid.org/dev-docs/publisher-api-reference.html
 pbjs.onEvent('setTargeting', function(arrData) {
-  utils.logInfo('In the setTargeting event handler. Adding custom k/v to the ad request. _ozoneInternal = ', _ozoneInternal);
+  utils.logInfo('In the setTargeting event handler. Adding custom k/v to the ad request. _ozoneInternal = ', _ozoneInternal, arrData);
   /*
   In order to add a custom key/value pair you fundamentally need to do one thing:
   Set new targeting for this key by calling setTargeting() on each window.googletag.pubads().getSlots() array.
   */
-  // iterate over the slot objects, adding custom targeting parameters
-  utils.logInfo('going to iterate slots: ', window.googletag.pubads().getSlots());
-  window.googletag.pubads().getSlots().forEach(function (slot) {
-    let thisAdId = slot.getTargetingMap().hb_adid;
+  // iterate over each adUnit in arrData, adding in keys & values we need.
+  let arrAditionalTargeting = {};
+  for (let adUnitCode in arrData) {
+    let thisAdId = arrData[adUnitCode].hb_adid;
     if (!_ozoneInternal.responses.hasOwnProperty(thisAdId)) {
       // there were no responses for this ad ID
       utils.logInfo('There were no responses for adId ' + thisAdId + ' - will not try to set additional oz targeting');
-      ; return;
+      continue;
     }
+    arrAditionalTargeting[adUnitCode] = {};
     let ozoneResponse = _ozoneInternal.responses[thisAdId]; /* The key is bidid - always found in responses & matches back to the request. */
     Object.keys(ozoneResponse).forEach(function(bidderName, index, ar2) {
-      slot.setTargeting('oz_' + bidderName, bidderName);
-      slot.setTargeting('oz_' + bidderName + '_pb', ozoneResponse[bidderName].price);
-      slot.setTargeting('oz_' + bidderName + '_crid', ozoneResponse[bidderName].crid);
-      slot.setTargeting('oz_' + bidderName + '_adv', ozoneResponse[bidderName].adomain);
-      slot.setTargeting('oz_' + bidderName + '_imp_id', ozoneResponse[bidderName].impid);
+      arrAditionalTargeting[adUnitCode]['oz_' + bidderName] = bidderName;
+      arrAditionalTargeting[adUnitCode]['oz_' + bidderName + '_pb'] = String(ozoneResponse[bidderName].price);
+      arrAditionalTargeting[adUnitCode]['oz_' + bidderName + '_crid'] = String(ozoneResponse[bidderName].crid);
+      arrAditionalTargeting[adUnitCode]['oz_' + bidderName + '_adv'] = String(ozoneResponse[bidderName].adomain);
+      arrAditionalTargeting[adUnitCode]['oz_' + bidderName + '_imp_id'] = String(ozoneResponse[bidderName].impid);
     });
     let objWinner = _ozoneInternal.winners[thisAdId];
-    slot.setTargeting('oz_auc_id', _ozoneInternal.auctionId); /* from request.auctionId */
-    slot.setTargeting('oz_winner', objWinner.seat);
-    slot.setTargeting('oz_winner_auc_id', objWinner.bid.id);
-    slot.setTargeting('oz_winner_imp_id', objWinner.bid.impid);
-    slot.setTargeting('oz_response_id', _ozoneInternal.serverResponseId);
-  });
+    arrAditionalTargeting[adUnitCode]['oz_auc_id'] = String(_ozoneInternal.auctionId); /* from request.auctionId */
+    arrAditionalTargeting[adUnitCode]['oz_winner'] = String(objWinner.seat);
+    arrAditionalTargeting[adUnitCode]['oz_winner_auc_id'] = String(objWinner.bid.id);
+    arrAditionalTargeting[adUnitCode]['oz_winner_imp_id'] = String(objWinner.bid.impid);
+    arrAditionalTargeting[adUnitCode]['oz_response_id'] = String(_ozoneInternal.serverResponseId);
+  }
+
+  utils.logInfo('Going to set additional ad targeting for ozone : ', arrAditionalTargeting);
+  targeting.setTargetingForGPT(arrAditionalTargeting);
+
+  utils.logInfo('ozone setTargeting listener going to finish.');
 });
 
 // declare a variable to hold data about the responses & auction ID which we will use in our setTargeting event handler
-var _ozoneInternal = { 'responses': {}, 'winners': {}, 'auctionId': 'not_set', 'serverResponseId': 'not_set' }; // this will hold the response from ozone server call. We use this data to send non-winning bidders to the ad request
+var _ozoneInternal = { 'responses': {}, 'adUnitCodes': {}, 'winners': {}, 'auctionId': 'not_set', 'serverResponseId': 'not_set' }; // this will hold the response from ozone server call. We use this data to send non-winning bidders to the ad request
 
 registerBidder(spec);
+utils.logInfo('ozoneBidAdapter ended');
