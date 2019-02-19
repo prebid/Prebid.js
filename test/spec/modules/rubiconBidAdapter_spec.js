@@ -4,8 +4,6 @@ import {parse as parseQuery} from 'querystring';
 import {config} from 'src/config';
 import find from 'core-js/library/fn/array/find';
 
-var CONSTANTS = require('src/constants.json');
-
 const INTEGRATION = `pbjs_lite_v$prebid.version$`; // $prebid.version$ will be substituted in by gulp in built prebid
 
 describe('the rubicon adapter', function () {
@@ -1077,6 +1075,8 @@ describe('the rubicon adapter', function () {
           expect(imp.ext.rubicon.video.playerHeight).to.equal(320);
           expect(imp.ext.rubicon.video.size_id).to.equal(201);
           expect(imp.ext.rubicon.video.language).to.equal('en');
+          // Also want it to be in post.site.content.language
+          expect(post.site.content.language).to.equal('en');
           expect(imp.ext.rubicon.video.skip).to.equal(1);
           expect(imp.ext.rubicon.video.skipafter).to.equal(15);
           expect(post.user.ext.consent).to.equal('BOJ/P2HOJ/P2HABABMAAAAAZ+A==');
@@ -1084,9 +1084,9 @@ describe('the rubicon adapter', function () {
           expect(post).to.have.property('ext').that.is.an('object');
           expect(post.ext.prebid.targeting.includewinners).to.equal(true);
           expect(post.ext.prebid).to.have.property('cache').that.is.an('object')
-          expect(post.ext.prebid.cache).to.have.property('vastXml').that.is.an('object')
-          expect(post.ext.prebid.cache.vastXml).to.have.property('returnCreative').that.is.an('boolean')
-          expect(post.ext.prebid.cache.vastXml.returnCreative).to.equal(false)
+          expect(post.ext.prebid.cache).to.have.property('vastxml').that.is.an('object')
+          expect(post.ext.prebid.cache.vastxml).to.have.property('returnCreative').that.is.an('boolean')
+          expect(post.ext.prebid.cache.vastxml.returnCreative).to.equal(false)
         });
 
         it('should make a well-formed video request', function () {
@@ -1117,6 +1117,8 @@ describe('the rubicon adapter', function () {
           expect(imp.ext.rubicon.video.playerHeight).to.equal(480);
           expect(imp.ext.rubicon.video.size_id).to.equal(201);
           expect(imp.ext.rubicon.video.language).to.equal('en');
+          // Also want it to be in post.site.content.language
+          expect(post.site.content.language).to.equal('en');
           expect(imp.ext.rubicon.video.skip).to.equal(1);
           expect(imp.ext.rubicon.video.skipafter).to.equal(15);
           expect(post.user.ext.consent).to.equal('BOJ/P2HOJ/P2HABABMAAAAAZ+A==');
@@ -1124,9 +1126,9 @@ describe('the rubicon adapter', function () {
           expect(post).to.have.property('ext').that.is.an('object');
           expect(post.ext.prebid.targeting.includewinners).to.equal(true);
           expect(post.ext.prebid).to.have.property('cache').that.is.an('object')
-          expect(post.ext.prebid.cache).to.have.property('vastXml').that.is.an('object')
-          expect(post.ext.prebid.cache.vastXml).to.have.property('returnCreative').that.is.an('boolean')
-          expect(post.ext.prebid.cache.vastXml.returnCreative).to.equal(false)
+          expect(post.ext.prebid.cache).to.have.property('vastxml').that.is.an('object')
+          expect(post.ext.prebid.cache.vastxml).to.have.property('returnCreative').that.is.an('boolean')
+          expect(post.ext.prebid.cache.vastxml.returnCreative).to.equal(false)
         });
 
         it('should send request with proper ad position', function () {

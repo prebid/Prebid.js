@@ -135,7 +135,7 @@ export const spec = {
         ext: {
           prebid: {
             cache: {
-              vastXml: {
+              vastxml: {
                 returnCreative: false // don't return the VAST
               }
             },
@@ -685,6 +685,14 @@ function appendSiteAppDevice(data, bidRequest, bidderRequest) {
   }
   if (typeof config.getConfig('device') === 'object') {
     data.device = config.getConfig('device');
+  }
+  // Add language to site and device objects if there
+  if (bidRequest.params.video.language) {
+    ['site', 'device'].forEach(function(param) {
+      if (data[param]) {
+        data[param].content = Object.assign({language: bidRequest.params.video.language}, data[param].content)
+      }
+    });
   }
 }
 
