@@ -1,8 +1,14 @@
 import {expect} from 'chai';
+import adapterManager from 'src/adapterManager';
 import {spec, masSizeOrdering, resetUserSync, hasVideoMediaType, FASTLANE_ENDPOINT} from 'modules/rubiconBidAdapter';
 import {parse as parseQuery} from 'querystring';
+import {newBidder} from 'src/adapters/bidderFactory';
+import {userSync} from 'src/userSync';
 import {config} from 'src/config';
+import * as utils from 'src/utils';
 import find from 'core-js/library/fn/array/find';
+
+var CONSTANTS = require('src/constants.json');
 
 const INTEGRATION = `pbjs_lite_v$prebid.version$`; // $prebid.version$ will be substituted in by gulp in built prebid
 
