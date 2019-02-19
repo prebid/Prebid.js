@@ -18,14 +18,14 @@ Module that connects to Adikteev's demand sources
             code: 'test-div',
             mediaTypes: {
                 banner: {
-                    sizes: [[750, 200]],
+                    sizes: [[300, 250]],
                 }
             },
             bids: [
                 {
                     bidder: 'adikteev',
                     params: {
-                        placementId: 12345
+                        adSpaceId: 5084
                     }
                 }
             ]
