@@ -134,7 +134,7 @@ export const spec = {
     }
 
     if (config.getConfig('adpod.brandCategoryExclusion')) {
-      payload.brand_cat_uniqueness = true;
+      payload.brand_category_uniqueness = true;
     }
 
     if (debugObjParams.enabled) {

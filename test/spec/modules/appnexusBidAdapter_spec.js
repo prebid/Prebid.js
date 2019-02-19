@@ -341,7 +341,7 @@ describe('AppNexusAdapter', function () {
       const request = spec.buildRequests([bidRequest]);
       const payload = JSON.parse(request.data);
 
-      expect(payload.brand_cat_uniqueness).to.equal(true);
+      expect(payload.brand_category_uniqueness).to.equal(true);
 
       config.getConfig.restore();
     });
