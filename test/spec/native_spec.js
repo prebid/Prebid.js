@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { fireNativeTrackers, getNativeTargeting, nativeBidIsValid } from 'src/native';
+import { fireNativeTrackers, getNativeTargeting, nativeBidIsValid, getAssetMessage } from 'src/native';
 import CONSTANTS from 'src/constants.json';
 const utils = require('src/utils');
 
@@ -88,6 +88,18 @@ describe('native.js', function () {
     fireNativeTrackers({ action: 'click' }, bid);
     sinon.assert.calledOnce(triggerPixelStub);
     sinon.assert.calledWith(triggerPixelStub, bid.native.clickTrackers[0]);
+  });
+
+  it('creates native asset message', function() {
+    const messageRequest = {
+      message: 'Prebid Native',
+      action: 'requestAssets',
+      adId: '123',
+      assets: ['hb_native_body', 'hb_native_linkurl'],
+    };
+
+    const message = getAssetMessage(messageRequest, bid);
+    expect(message.assets.length).to.equal(2);
   });
 });
 

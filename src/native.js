@@ -180,3 +180,33 @@ export function getNativeTargeting(bid, bidReq) {
 
   return keyValues;
 }
+
+/**
+ *
+ */
+export function getAssetMessage(data, adObject) {
+  const message = {
+    message: 'gotLink',
+    adId: data.adId,
+    assets: [],
+  };
+
+  data.assets.forEach(nativeKey => {
+    const key = getNativeField(nativeKey);
+    const value = adObject.native[key];
+    message.assets.push({ key, value });
+  });
+
+  return message;
+}
+
+/**
+ *
+ */
+function getNativeField(key) {
+  for (let i in CONSTANTS.NATIVE_KEYS) {
+    if (CONSTANTS.NATIVE_KEYS[i] === key) {
+      return i;
+    }
+  }
+}
