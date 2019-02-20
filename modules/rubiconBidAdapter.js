@@ -141,14 +141,8 @@ export const spec = {
             },
             targeting: {
               includewinners: true,
-              priceGranularity: (function getPriceGranularity() {
-                const priceGranularity = config.getConfig('priceGranularity');
-                if (priceGranularity === 'custom') {
-                  return config.getConfig('customPriceGranularity').buckets;
-                } else {
-                  return priceGranularity
-                }
-              })()
+              priceGranularity: (config.getConfig('priceGranularity') === 'custom') ?
+                config.getConfig('customPriceGranularity').buckets : config.getConfig('priceGranularity')
             }
           }
         }
