@@ -326,6 +326,7 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
           const message = `Error trying to write ad. Ad render call ad id ${id} was prevented from writing to the main document.`;
           emitAdRenderFail(PREVENT_WRITING_ON_MAIN_DOCUMENT, message, bid);
         } else if (ad) {
+          doc.open('text/html', 'replace');
           doc.write(ad);
           doc.close();
           setRenderSize(doc, width, height);
