@@ -260,7 +260,7 @@ describe('Gu analytics adapter', () => {
     });
   });
 
-  it('should handler no_bid events', () => {
+  it('should handle no_bid events', () => {
     events.emit(CONSTANTS.EVENTS.AUCTION_INIT, {
       auctionId: '5018eb39-f900-4370-b71e-3bb5b48d324f',
       config: {},
@@ -271,7 +271,9 @@ describe('Gu analytics adapter', () => {
     events.emit(CONSTANTS.EVENTS.NO_BID, NOBID_EVENT);
     const ev = analyticsAdapter.context.queue.peekAll();
     expect(ev).to.have.length(4);
-    expect(ev[3]).to.be.eql({
+    const nobidEv = ev[3];
+    expect(nobidEv).to.have.property('ttr');
+    expect(nobidEv).to.include({
       ev: 'nobid',
       n: 'trustx',
       bid: '41cba721ab11b',
@@ -358,7 +360,7 @@ describe('Gu analytics adapter', () => {
   it('should have a version number', () => {
     events.emit(CONSTANTS.EVENTS.BID_WON, BIDWONEXAMPLE);
     const payload = JSON.parse(ajaxStub.firstCall.args);
-    expect(payload.v).to.be.equal(5);
+    expect(payload.v).to.be.equal(6);
   });
 
   it('should ignore responses sent with bid won event', () => {
