@@ -9,7 +9,7 @@ import {ajax} from 'src/ajax';
  * Update whenever you want to make sure you're sending the right version of analytics.
  * This is useful when some browsers are using old code and some new, for example.
  */
-const VERSION = 5;
+const VERSION = 6;
 
 const analyticsType = 'endpoint';
 const SENDALL_ON = {};
@@ -147,11 +147,13 @@ function trackBidResponse(args) {
 }
 
 function trackNoBid(args) {
+  const duration = Date.now() - analyticsAdapter.context.auctionTimeStart;
   const event = { ev: 'nobid' };
   setSafely(event, 'n', args.bidder);
   setSafely(event, 'bid', args.bidId);
   setSafely(event, 'sid', args.adUnitCode);
   setSafely(event, 'aid', args.auctionId);
+  setSafely(event, 'ttr', duration);
   return [event];
 }
 
@@ -163,10 +165,12 @@ function trackAuctionEnd(args) {
   return [event];
 }
 
+// Protect against setting undefined or null values
 function setSafely(obj, key, value) {
-  if (value) {
-    Object.assign(obj, {[key]: value});
+  if (value === undefined || value === null) {
+    return;
   }
+  Object.assign(obj, {[key]: value});
 }
 
 export function AnalyticsQueue() {
