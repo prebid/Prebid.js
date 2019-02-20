@@ -1,4 +1,4 @@
-import { deepAccess, getBidRequest, logError, triggerPixel, insertHtmlIntoIframe } from './utils';
+import { deepAccess, getBidRequest, getKeyByValue, insertHtmlIntoIframe, logError, triggerPixel } from './utils';
 import includes from 'core-js/library/fn/array/includes';
 
 const CONSTANTS = require('./constants.json');
@@ -182,31 +182,22 @@ export function getNativeTargeting(bid, bidReq) {
 }
 
 /**
- *
+ * Constructs a message object containing asset values for each of the
+ * requested data keys.
  */
 export function getAssetMessage(data, adObject) {
   const message = {
-    message: 'gotLink',
+    message: 'assetResponse',
     adId: data.adId,
     assets: [],
   };
 
-  data.assets.forEach(nativeKey => {
-    const key = getNativeField(nativeKey);
+  data.assets.forEach(asset => {
+    const key = getKeyByValue(CONSTANTS.NATIVE_KEYS, asset);
     const value = adObject.native[key];
+
     message.assets.push({ key, value });
   });
 
   return message;
-}
-
-/**
- *
- */
-function getNativeField(key) {
-  for (let i in CONSTANTS.NATIVE_KEYS) {
-    if (CONSTANTS.NATIVE_KEYS[i] === key) {
-      return i;
-    }
-  }
 }

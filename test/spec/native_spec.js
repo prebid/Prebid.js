@@ -93,13 +93,22 @@ describe('native.js', function () {
   it('creates native asset message', function() {
     const messageRequest = {
       message: 'Prebid Native',
-      action: 'requestAssets',
+      action: 'assetRequest',
       adId: '123',
       assets: ['hb_native_body', 'hb_native_linkurl'],
     };
 
     const message = getAssetMessage(messageRequest, bid);
+
     expect(message.assets.length).to.equal(2);
+    expect(message.assets).to.deep.include({
+      key: 'body',
+      value: bid.native.body
+    });
+    expect(message.assets).to.deep.include({
+      key: 'clickUrl',
+      value: bid.native.clickUrl
+    });
   });
 });
 

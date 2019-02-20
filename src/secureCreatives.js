@@ -46,7 +46,7 @@ function receiveMessage(ev) {
     //   adId: '%%PATTERN:hb_adid%%'
     // }), '*');
     if (data.message === 'Prebid Native') {
-      if (data.action === 'requestAssets') {
+      if (data.action === 'assetRequest') {
         const message = getAssetMessage(data, adObject);
         ev.source.postMessage(JSON.stringify(message), ev.origin);
         return;
