@@ -1089,6 +1089,7 @@ describe('the rubicon adapter', function () {
           expect(post.regs.ext.gdpr).to.equal(1);
           expect(post).to.have.property('ext').that.is.an('object');
           expect(post.ext.prebid.targeting.includewinners).to.equal(true);
+          expect(post.ext.prebid.targeting.priceGranularity).to.equal('medium');
           expect(post.ext.prebid).to.have.property('cache').that.is.an('object')
           expect(post.ext.prebid.cache).to.have.property('vastxml').that.is.an('object')
           expect(post.ext.prebid.cache.vastxml).to.have.property('returnCreative').that.is.an('boolean')

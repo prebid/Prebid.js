@@ -141,8 +141,9 @@ export const spec = {
             },
             targeting: {
               includewinners: true,
-              priceGranularity: (config.getConfig('priceGranularity') === 'custom') ?
-                config.getConfig('customPriceGranularity').buckets : config.getConfig('priceGranularity')
+              priceGranularity: (config.getConfig('priceGranularity') === 'custom') ? {
+                ranges: config.getConfig('customPriceGranularity').buckets
+              } : config.getConfig('priceGranularity')
             }
           }
         }
