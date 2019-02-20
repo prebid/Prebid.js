@@ -445,19 +445,6 @@ describe('TrustXAdapter', function () {
           'currency': 'USD',
           'netRevenue': true,
           'ttl': 360,
-        },
-        {
-          'requestId': '1751cd90161',
-          'cpm': 0.5,
-          'creativeId': 44,
-          'dealId': undefined,
-          'width': 350,
-          'height': 600,
-          'ad': '<div>test content 5</div>',
-          'bidderCode': 'trustx',
-          'currency': 'USD',
-          'netRevenue': true,
-          'ttl': 360,
         }
       ];
 
