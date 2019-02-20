@@ -683,20 +683,35 @@ describe('adpod.js', function () {
         goodBid30.video.durationSeconds = 30;
         testRoundingForGoodBId(goodBid30, 45);
 
-        let goodBid14 = utils.deepClone(basicBid);
-        goodBid14.video.durationSeconds = 14;
-        testRoundingForGoodBId(goodBid14, 15);
+        let goodBid10 = utils.deepClone(basicBid);
+        goodBid10.video.durationSeconds = 10;
+        testRoundingForGoodBId(goodBid10, 15);
+
+        let goodBid16 = utils.deepClone(basicBid);
+        goodBid16.video.durationSeconds = 16;
+        testRoundingForGoodBId(goodBid16, 15);
+
+        let goodBid47 = utils.deepClone(basicBid);
+        goodBid47.video.durationSeconds = 47;
+        testRoundingForGoodBId(goodBid47, 45);
       });
 
       it('when requireExactDuration is false and bid duration exceeds listed buckets', function() {
+        function testRoundingForBadBid(bid) {
+          checkVideoBidSetupHook(callbackFn, bid, bidderRequestNoExact, {}, ADPOD);
+          expect(callbackResult).to.be.null;
+          expect(bid.video.durationBucket).to.be.undefined;
+          expect(bailResult).to.equal(false);
+          expect(logWarnStub.called).to.equal(true);
+        }
+
         let badBid100 = utils.deepClone(basicBid);
         badBid100.video.durationSeconds = 100;
+        testRoundingForBadBid(badBid100);
 
-        checkVideoBidSetupHook(callbackFn, badBid100, bidderRequestNoExact, {}, ADPOD);
-        expect(callbackResult).to.be.null;
-        expect(badBid100.video.durationBucket).to.be.undefined;
-        expect(bailResult).to.equal(false);
-        expect(logWarnStub.called).to.equal(true);
+        let badBid48 = utils.deepClone(basicBid);
+        badBid48.video.durationSeconds = 48;
+        testRoundingForBadBid(badBid48);
       });
     });
   });

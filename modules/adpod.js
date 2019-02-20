@@ -1,6 +1,6 @@
 /**
  * This module houses the functionality to evaluate and process adpod adunits/bids.  Specifically there are several hooked functions,
- * that either supplement the base function (ie to check something additional unique to adpod objects) or to replace the base funtion
+ * that either supplement the base function (ie to check something additional or unique to adpod objects) or to replace the base funtion
  * entirely when appropriate.
  *
  * Brief outline of each hook:
@@ -63,7 +63,7 @@ function createBidCacheRegistry() {
 
 /**
  * Creates a function that when called updates the bid queue and extends the running timer (when called subsequently).
- * Once the threshold for the queue (defined by queueSizeLimit), the queue will be flushed by calling the `firePrebidCacheCall` function.
+ * Once the time threshold for the queue (defined by queueSizeLimit) is reached, the queue will be flushed by calling the `firePrebidCacheCall` function.
  * If there is a long enough time between calls (based on timeoutDration), the queue will automatically flush itself.
  * @param {Number} timeoutDuration number of milliseconds to pass before timer expires and current bid queue is flushed
  * @returns {Function}
@@ -146,7 +146,9 @@ function removeBidsFromStorage(bidResponses) {
 }
 
 /**
- *
+ * This function will send a list of bids to Prebid Cache.  It also removes the same bids from the internal bidCacheRegistry
+ * to maintain which bids are in queue.
+ * If the bids are successfully cached, they will be added to the respective auction.
  * @param {*} auctionInstance running context of the auction
  * @param {Array[Object]} bidList list of bid objects that need to be sent to Prebid Cache
  * @param {Function} afterBidAdded callback function used when Prebid Cache responds
@@ -196,7 +198,7 @@ export function callPrebidCacheHook(fn, auctionInstance, bidResponse, afterBidAd
 }
 
 /**
- * This hook function will review the adUnit setup and verify certain required are present in any adpod adUnits.
+ * This hook function will review the adUnit setup and verify certain required values are present in any adpod adUnits.
  * If the fields are missing or incorrectly setup, the adUnit is removed from the list.
  * @param {Function} fn reference to original function (used by hook logic)
  * @param {Array[Object]} adUnits list of adUnits to be evaluated
@@ -239,14 +241,16 @@ export function checkAdUnitSetupHook(fn, adUnits) {
  *  - only bids that exactly match those listed values are accepted (don't round at all).
  *  - populate the `bid.video.durationBucket` field with the matching duration value
  * when adUnit.mediaTypes.video.requireExactDuration is false
- *  - round the duration to the next highest specified duration value based on adunit (eg if range was [5, 15, 30] -> 3s is rounded to 5s; 16s is rounded to 30s)
- *  - if the bid is above the range of thje listed durations, reject the bid
+ *  - round the duration to the next highest specified duration value based on adunit.  If the duration is above a range within a set buffer, that bid falls down into that bucket.
+ *      (eg if range was [5, 15, 30] -> 2s is rounded to 5s; 17s is rounded back to 15s; 18s is rounded up to 30s)
+ *  - if the bid is above the range of the listed durations (and outside the buffer), reject the bid
  *  - set the rounded duration value in the `bid.video.durationBucket` field for accepted bids
  * @param {Object} bidderRequest copy of the bidderRequest object associated to bidResponse
  * @param {Object} bidResponse incoming bidResponse being evaluated by bidderFactory
  * @returns {boolean} return false if bid duration is deemed invalid as per adUnit configuration; return true if fine
 */
 function checkBidDuration(bidderRequest, bidResponse) {
+  const buffer = 2;
   let bidDuration = utils.deepAccess(bidResponse, 'video.durationSeconds');
   let videoConfig = utils.deepAccess(bidderRequest, 'mediaTypes.video');
   let adUnitRanges = videoConfig.durationRangeSec;
@@ -254,8 +258,8 @@ function checkBidDuration(bidderRequest, bidResponse) {
 
   if (!videoConfig.requireExactDuration) {
     let max = Math.max(...adUnitRanges);
-    if (bidDuration <= max) {
-      let nextHighestRange = find(adUnitRanges, range => range >= bidDuration);
+    if (bidDuration <= (max + buffer)) {
+      let nextHighestRange = find(adUnitRanges, range => (range + buffer) >= bidDuration);
       bidResponse.video.durationBucket = nextHighestRange;
     } else {
       utils.logWarn(`Detected a bid with a duration value outside the accepted ranges specified in adUnit.mediaTypes.video.durationRangeSec.  Rejecting bid: `, bidResponse);
@@ -274,7 +278,7 @@ function checkBidDuration(bidderRequest, bidResponse) {
 
 /**
  * This hooked function evaluates an adpod bid and determines if the required fields are present.
- * If it's found to not be an adpod bid, it return to original function via hook logic
+ * If it's found to not be an adpod bid, it will return to original function via hook logic
  * @param {Function} fn reference to original function (used by hook logic)
  * @param {Object} bid incoming bid object
  * @param {Object} bidRequest bidRequest object of associated bid
