@@ -27,7 +27,7 @@ export const spec = {
       var slotKey = utils.getBidIdParameter('slotKey', bid.params);
       queryString = utils.tryAppendQueryString(queryString, 'slot_key', slotKey);
       queryString = utils.tryAppendQueryString(queryString, 'imp_id', generateImpId());
-      queryString = utils.tryAppendQueryString(queryString, 'bid_id', bid.bidId);
+      queryString += ('bid_id=' + bid.bidId);
 
       requests.push({
         method: 'GET',
@@ -85,13 +85,15 @@ export const spec = {
         ad: bannerAd.adm,
         mediaType: BANNER
       });
-      try {
-        bannerAd.imps.forEach(impTrackUrl => {
-          const tracker = utils.createTrackPixelHtml(impTrackUrl);
-          bid.ad += tracker;
-        });
-      } catch (error) {
-        utils.logError('Error appending imp tracking pixel', error);
+      if (bannerAd.imps) {
+        try {
+          bannerAd.imps.forEach(impTrackUrl => {
+            const tracker = utils.createTrackPixelHtml(impTrackUrl);
+            bid.ad += tracker;
+          });
+        } catch (error) {
+          utils.logError('Error appending imp tracking pixel', error);
+        }
       }
     }
     return [bid];
@@ -124,6 +126,7 @@ export const spec = {
     return syncs;
   },
   onBidWon: function(bid) {
+    if (!bid.nurl) { return; }
     const winUrl = bid.nurl.replace(
       /\$\{AUCTION_PRICE\}/,
       bid.cpm
