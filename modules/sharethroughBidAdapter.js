@@ -1,4 +1,4 @@
-import { registerBidder } from 'src/adapters/bidderFactory';
+import { registerBidder } from '../src/adapters/bidderFactory';
 
 const VERSION = '3.0.1';
 const BIDDER_CODE = 'sharethrough';
@@ -122,7 +122,7 @@ function generateAd(body, req) {
       <script>
         (function() {
           if (!(window.STR && window.STR.Tag) && !(window.top.STR && window.top.STR.Tag)) {
-            const sfp_js = document.createElement('script');
+            var sfp_js = document.createElement('script');
             sfp_js.src = "//native.sharethrough.com/assets/sfp.js";
             sfp_js.type = 'text/javascript';
             sfp_js.charset = 'utf-8';

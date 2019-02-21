@@ -1,5 +1,5 @@
-import { config } from 'src/config';
-import {logWarn, isPlainObject, deepAccess, deepClone} from 'src/utils';
+import { config } from './config';
+import {logWarn, isPlainObject, deepAccess, deepClone} from './utils';
 import includes from 'core-js/library/fn/array/includes';
 
 let sizeConfig = [];
