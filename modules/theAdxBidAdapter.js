@@ -4,15 +4,15 @@ import {
   NATIVE,
   VIDEO
 } from '../src/mediaTypes';
-import { config } from '../src/config';
-import * as url from '../src/url';
 import {
   registerBidder
 } from '../src/adapters/bidderFactory';
+import {
+  parse as parseUrl
+} from '../src/url';
 
 const BIDDER_CODE = 'theadx';
 const ENDPOINT_URL = '//ssp.theadx.com/request';
-const EVENT_PIXEL_URL = '//ssp.theadx.com/log';
 
 const NATIVEASSETNAMES = {
   0: 'title',
@@ -128,9 +128,10 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
+    utils.logInfo('theadx.isBidRequestValid', bid);
     let res = false;
     if (bid && bid.params) {
-      res = !!(bid.params.pid && bid.params.tagId && bid.params.url);
+      res = !!(bid.params.pid && bid.params.tagId);
     }
 
     return res;
@@ -142,7 +143,8 @@ export const spec = {
    * @param {validBidRequests[]} - an array of bids
    * @return ServerRequest Info describing the request to the server.
    */
-  buildRequests: function (validBidRequests, requestRoot) {
+  buildRequests: function (validBidRequests, bidderRequest) {
+    utils.logInfo('theadx.buildRequests', 'validBidRequests', validBidRequests, 'bidderRequest', bidderRequest);
     let results = [];
     const requestType = 'POST';
     if (!utils.isEmpty(validBidRequests)) {
@@ -156,10 +158,10 @@ export const spec = {
               withCredentials: true,
             },
             bidder: 'theadx',
-            //  bids: validBidRequests,
-            data: generatePayload(bidRequest),
+            referrer: encodeURIComponent(bidderRequest.refererInfo.referer),
+            data: generatePayload(bidRequest, bidderRequest),
             mediaTypes: bidRequest['mediaTypes'],
-            requestId: requestRoot.bidderRequestId,
+            requestId: bidderRequest.bidderRequestId,
             bidId: bidRequest.bidId,
             adUnitCode: bidRequest['adUnitCode'],
             auctionId: bidRequest['auctionId'],
@@ -177,6 +179,8 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: (serverResponse, request) => {
+    utils.logInfo('theadx.interpretResponse', 'serverResponse', serverResponse, ' request', request);
+
     let responses = [];
 
     if (serverResponse.body) {
@@ -210,7 +214,6 @@ export const spec = {
           mediaType = VIDEO;
         } else if (request.mediaTypes && request.mediaTypes.banner) {
           mediaType = BANNER;
-          // let price = parseFloat(bid.price);
           creative = bid.adm;
         } else if (request.mediaTypes && request.mediaTypes.native) {
           mediaType = NATIVE;
@@ -280,89 +283,61 @@ export const spec = {
    * @return {UserSync[]} The user syncs which should be dropped.
    */
   getUserSyncs: function (syncOptions, serverResponses) {
+    utils.logInfo('theadx.getUserSyncs', 'syncOptions', syncOptions, 'serverResponses', serverResponses)
     const syncs = [];
-    if (syncOptions.iframeEnabled) {
-      syncs.push({
-        type: 'iframe',
-        url: '//ssp.theadx.com/async_usersync_iframe.html'
-      });
+
+    if (!syncOptions.iframeEnabled && !syncOptions.pixelEnabled) {
+      return syncs;
     }
+
+    serverResponses.forEach(resp => {
+      const syncIframeUrls = utils.deepAccess(resp, 'body.ext.sync.iframe');
+      const syncImageUrls = utils.deepAccess(resp, 'body.ext.sync.image');
+      if (syncOptions.iframeEnabled && syncIframeUrls) {
+        syncIframeUrls.forEach(syncIframeUrl => {
+          syncs.push({
+            type: 'iframe',
+            url: syncIframeUrl
+          });
+        });
+      }
+      if (syncOptions.pixelEnabled && syncImageUrls) {
+        syncImageUrls.forEach(syncImageUrl => {
+          syncs.push({
+            type: 'image',
+            url: syncImageUrl
+          });
+        });
+      }
+    });
 
     return syncs;
   },
 
-  /**
-   * @param {TimedOutBid} timeoutData
-   */
-  onTimeout: (timeoutData) => {
-    try {
-      let eventData = {
-        name: 'TIMEOUT',
-        value: timeoutData.length,
-        related_data: timeoutData[0].timeout || config.getConfig('bidderTimeout')
-      };
-      logEvent(eventData, timeoutData);
-    } catch (e) {}
-  },
-
-  /**
-   * @param {TimedOutBid} timeoutData
-   */
-  onBidWon: (bid) => {
-    try {
-      let eventData = {
-        name: 'BID_WON',
-        value: bid.cpm
-      };
-      logEvent(eventData, [bid]);
-    } catch (e) {}
-  },
-
 }
 
-function getLoggingData(event, data) {
-  data = (utils.isArray(data) && data) || [];
-  let params = {};
-  params.project = 'prebid';
-  params.acid = utils.deepAccess(data, '0.auctionId') || '';
-  params.rid = utils.deepAccess(data, '0.requestId') || '';
-  params.ttr = utils.deepAccess(data, '0.timeToRespond') || 0;
-  params.tagId = data.map((adunit) => {
-    return `tag-${utils.deepAccess(adunit, 'params.0.tagId') || 0}:${adunit.adUnitCode}`
-  }).join('|');
-  params.adunit_count = data.length || 0;
-  params.dn = utils.getTopWindowLocation().host || '';
-  params.requrl = utils.getTopWindowUrl() || '';
-  params.event = event.name || '';
-  params.value = event.value || '';
-  if (event.related_data) {
-    params.rd = event.related_data || ''
-  };
-
-  return params;
-}
-
-function logEvent (event, data) {
-  let getParams = {
-    protocol: 'https',
-    hostname: EVENT_PIXEL_URL,
-    search: getLoggingData(event, data)
-  };
-  utils.triggerPixel(url.format(getParams));
-}
-
-let buildSiteComponent = (bidRequest) => {
-  let topLocation = utils.getTopWindowLocation();
+let buildSiteComponent = (bidRequest, bidderRequest) => {
+  let loc = parseUrl(bidderRequest.refererInfo.referer, {
+    decodeSearchAsString: true
+  });
 
   let site = {
-    domain: topLocation.hostname,
-    page: topLocation.href,
-    ref: topLocation.origin,
+    domain: loc.hostname,
+    page: loc.href,
     id: bidRequest.params.wid,
     publisher: {
       id: bidRequest.params.pid,
     }
   };
+  if (loc.search) {
+    site.search = loc.search;
+  }
+  if (document) {
+    let keywords = document.getElementsByTagName('meta')['keywords'];
+    if (keywords && keywords.content) {
+      site.keywords = keywords.content;
+    }
+  }
 
   return site;
 }
@@ -375,7 +350,7 @@ function isConnectedTV() {
   return (/(smart[-]?tv|hbbtv|appletv|googletv|hdmi|netcast\.tv|viera|nettv|roku|\bdtv\b|sonydtv|inettvbrowser|\btv\b)/i).test(navigator.userAgent);
 }
 
-let buildDeviceComponent = (bidRequest) => {
+let buildDeviceComponent = (bidRequest, bidderRequest) => {
   let device = {
     js: 1,
     language: ('language' in navigator) ? navigator.language : null,
@@ -395,11 +370,11 @@ let buildDeviceComponent = (bidRequest) => {
   return device;
 };
 
-let determineOptimalRequestId = (bidRequest) => {
+let determineOptimalRequestId = (bidRequest, bidderRequest) => {
   return bidRequest.bidId;
 }
 
-let extractValidSize = (bidRequest) => {
+let extractValidSize = (bidRequest, bidderRequest) => {
   let width = null;
   let height = null;
 
@@ -432,7 +407,7 @@ let extractValidSize = (bidRequest) => {
   };
 };
 
-let generateVideoComponent = (bidRequest) => {
+let generateVideoComponent = (bidRequest, bidderRequest) => {
   let impSize = extractValidSize(bidRequest);
 
   return {
@@ -441,7 +416,7 @@ let generateVideoComponent = (bidRequest) => {
   }
 }
 
-let generateBannerComponent = (bidRequest) => {
+let generateBannerComponent = (bidRequest, bidderRequest) => {
   let impSize = extractValidSize(bidRequest);
 
   return {
@@ -450,7 +425,7 @@ let generateBannerComponent = (bidRequest) => {
   }
 }
 
-let generateNativeComponent = (bidRequest) => {
+let generateNativeComponent = (bidRequest, bidderRequest) => {
   const assets = utils._map(bidRequest.mediaTypes.native, (bidParams, key) => {
     const props = NATIVEPROBS[key];
     const asset = {
@@ -475,20 +450,19 @@ let generateNativeComponent = (bidRequest) => {
   }
 }
 
-let generateImpBody = (bidRequest) => {
+let generateImpBody = (bidRequest, bidderRequest) => {
   let mediaTypes = bidRequest.mediaTypes;
 
   let banner = null;
   let video = null;
   let native = null;
 
-  // Assume banner if the mediatype is not included
   if (mediaTypes && mediaTypes.video) {
-    video = generateVideoComponent(bidRequest);
+    video = generateVideoComponent(bidRequest, bidderRequest);
   } else if (mediaTypes && mediaTypes.banner) {
-    banner = generateBannerComponent(bidRequest);
+    banner = generateBannerComponent(bidRequest, bidderRequest);
   } else if (mediaTypes && mediaTypes.native) {
-    native = generateNativeComponent(bidRequest);
+    native = generateNativeComponent(bidRequest, bidderRequest);
   }
 
   const result = {
@@ -508,14 +482,14 @@ let generateImpBody = (bidRequest) => {
   return result;
 }
 
-let generatePayload = (bidRequest) => {
+let generatePayload = (bidRequest, bidderRequest) => {
   // Generate the expected OpenRTB payload
 
   let payload = {
-    id: determineOptimalRequestId(bidRequest),
-    site: buildSiteComponent(bidRequest),
-    device: buildDeviceComponent(bidRequest),
-    imp: [generateImpBody(bidRequest)],
+    id: determineOptimalRequestId(bidRequest, bidderRequest),
+    site: buildSiteComponent(bidRequest, bidderRequest),
+    device: buildDeviceComponent(bidRequest, bidderRequest),
+    imp: [generateImpBody(bidRequest, bidderRequest)],
   };
   // return payload;
   return JSON.stringify(payload);

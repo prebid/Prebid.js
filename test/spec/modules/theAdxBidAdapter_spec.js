@@ -14,12 +14,29 @@ describe('TheAdxAdapter', function () {
 
   describe('getUserSyncs', () => {
     const USER_SYNC_IFRAME_URL = '//ssp.theadx.com/async_usersync_iframe.html'
+    const USER_SYNC_IMAGE_URL = '//ssp.theadx.com/async_usersync_image.gif'
+
     expect(spec.getUserSyncs({
-      iframeEnabled: true
-    }, [{}])).to.deep.equal([{
+      iframeEnabled: true,
+      pixelEnabled: true,
+    }, [{
+      body: {
+        ext: {
+          sync: {
+            iframe: [USER_SYNC_IFRAME_URL],
+            image: [USER_SYNC_IMAGE_URL],
+          }
+        }
+      }
+    }])).to.deep.equal([{
       type: 'iframe',
       url: USER_SYNC_IFRAME_URL
-    }]);
+    },
+    {
+      type: 'image',
+      url: USER_SYNC_IMAGE_URL
+    },
+    ]);
   });
 
   describe('bid validator', function () {
@@ -33,7 +50,6 @@ describe('TheAdxAdapter', function () {
         params: {
           pid: '1',
           tagId: '1',
-          url: 'http://domain.com',
         }
       };
 
@@ -49,7 +65,6 @@ describe('TheAdxAdapter', function () {
       'params': {
         'pid': '1',
         'tagId': '1',
-        'url': 'http://domain.com'
       },
       'adUnitCode': 'div-gpt-ad-sample',
       'transactionId': 'd7b773de-ceaa-484d-89ca-d9f51b8d61ec',
@@ -69,18 +84,20 @@ describe('TheAdxAdapter', function () {
       }
     };
 
+    const sampleBidderRequest = {
+      bidderRequestId: 'sample',
+      refererInfo: {
+        canonicalUrl: 'http://domain.com/to',
+        referer: 'http://domain.com/from'
+      }
+    }
+
     it('successfully generates a URL', function () {
       const placementId = '1';
 
-      let bidRequests = [{
-        'params': {
-          'tagId': placementId
-        }
-      }];
+      const bidRequests = [sampleBidRequest];
 
-      let results = spec.buildRequests(bidRequests, {
-        bidderRequestId: 'sample'
-      });
+      let results = spec.buildRequests(bidRequests, sampleBidderRequest);
       let result = results.pop();
 
       expect(result.url).to.not.be.undefined;
@@ -96,9 +113,7 @@ describe('TheAdxAdapter', function () {
         sampleBidRequest
       ];
 
-      let results = spec.buildRequests(bidRequests, {
-        bidderRequestId: 'sample'
-      });
+      let results = spec.buildRequests(bidRequests, sampleBidderRequest);
       let result = results.pop();
 
       // Double encoded JSON
@@ -113,9 +128,7 @@ describe('TheAdxAdapter', function () {
         sampleBidRequest
       ];
 
-      let results = spec.buildRequests(bidRequests, {
-        bidderRequestId: 'sample'
-      });
+      let results = spec.buildRequests(bidRequests, sampleBidderRequest);
       let result = results.pop();
 
       // Double encoded JSON
@@ -138,9 +151,7 @@ describe('TheAdxAdapter', function () {
         secondBidRequest
       ];
 
-      let results = spec.buildRequests(bidRequests, {
-        bidderRequestId: 'sample'
-      });
+      let results = spec.buildRequests(bidRequests, sampleBidderRequest);
 
       expect(results instanceof Array).to.be.true;
       expect(results.length).to.equal(2);
@@ -174,9 +185,7 @@ describe('TheAdxAdapter', function () {
       // clone the sample for stability
       let localBidRequest = JSON.parse(JSON.stringify(sampleBidRequest));
 
-      let results = spec.buildRequests([localBidRequest], {
-        bidderRequestId: 'sample'
-      });
+      let results = spec.buildRequests([localBidRequest], sampleBidderRequest);
       let result = results.pop();
 
       // Double encoded JSON
@@ -204,9 +213,7 @@ describe('TheAdxAdapter', function () {
         banner: {}
       };
 
-      let results = spec.buildRequests([localBidRequest], {
-        bidderRequestId: 'sample'
-      });
+      let results = spec.buildRequests([localBidRequest], sampleBidderRequest);
       let result = results.pop();
 
       // Double encoded JSON
@@ -237,9 +244,7 @@ describe('TheAdxAdapter', function () {
         }
       };
 
-      let results = spec.buildRequests([localBidRequest], {
-        bidderRequestId: 'sample'
-      });
+      let results = spec.buildRequests([localBidRequest], sampleBidderRequest);
       let result = results.pop();
 
       // Double encoded JSON
@@ -271,9 +276,7 @@ describe('TheAdxAdapter', function () {
         }
       };
 
-      let results = spec.buildRequests([localBidRequest], {
-        bidderRequestId: 'sample'
-      });
+      let results = spec.buildRequests([localBidRequest], sampleBidderRequest);
       let result = results.pop();
 
       // Double encoded JSON
@@ -322,9 +325,7 @@ describe('TheAdxAdapter', function () {
         }
       };
 
-      let results = spec.buildRequests([localBidRequest], {
-        bidderRequestId: 'sample'
-      });
+      let results = spec.buildRequests([localBidRequest], sampleBidderRequest);
       let result = results.pop();
 
       // Double encoded JSON
@@ -346,9 +347,7 @@ describe('TheAdxAdapter', function () {
         video: {}
       };
 
-      let results = spec.buildRequests([localBidRequest], {
-        bidderRequestId: 'sample'
-      });
+      let results = spec.buildRequests([localBidRequest], sampleBidderRequest);
       let result = results.pop();
 
       let mediaTypes = result.mediaTypes;
@@ -427,12 +426,10 @@ describe('TheAdxAdapter', function () {
         },
         requestId: incomingRequestId
       };
-
-      let result = spec.interpretResponse({
+      let serverResponse = {
         body: sampleResponse
-      },
-      sampleRequest
-      );
+      }
+      let result = spec.interpretResponse(serverResponse, sampleRequest);
 
       expect(result.length).to.equal(1);
 
@@ -640,35 +637,6 @@ describe('TheAdxAdapter', function () {
       expect(processedBid.currency).to.equal(responseCurrency);
       expect(processedBid.native.impressionTrackers[0]).to.equal(nurl);
       expect(processedBid.native.clickUrl).to.equal(linkUrl);
-    });
-
-    it('should trigger a log', function () {
-      const bid = {
-        'bidderCode': 'theadx',
-        'width': '300',
-        'height': '250',
-        'statusMessage': 'Bid available',
-        'adId': '1234567890',
-        'cpm': 8.0,
-        'ad': 'dummy_ad_data',
-        'ad_id': '12345',
-        'sizeId': '15',
-        'params': [{
-          'pid': '1',
-          'tagId': '3',
-          'url': 'http://domain.com',
-          'wid': '1',
-        }],
-        'timeout': 1,
-        'requestTimestamp': 1549959312639,
-        'responseTimestamp': 1549959312969,
-        'timeToRespond': 130,
-        'adUnitCode': 'div-gpt-ad-abd-0',
-        'bidder': 'theadx',
-        'size': '300x250',
-      };
-      spec.onBidWon(bid);
-      spec.onTimeout(bid);
     });
   });
 });
