@@ -148,6 +148,26 @@ describe('Gu analytics adapter', () => {
     advertiserDomain: 'blackrock.com'
   };
 
+  // Taken from the example ./integrationExamples/gpt/hello_world.html
+  const NOBID_EVENT = {
+    'bidder': 'trustx',
+    'params': {'uid': '44', 'priceType': 'gross'},
+    'crumbs': {'pubcid': 'd0d37b6b-eb05-499f-9e8b-9f65b5e94937'},
+    'mediaTypes': {
+      'banner': {
+        'sizes': [[300, 250], [300, 600]]
+      }
+    },
+    'adUnitCode': 'div-gpt-ad-1460505748561-0',
+    'transactionId': '19418397-5674-4b94-b110-1ccb5ec7e58f',
+    'sizes': [[300, 250], [300, 600]],
+    'bidId': '41cba721ab11b',
+    'bidderRequestId': '208750227436c1',
+    'auctionId': '5018eb39-f900-4370-b71e-3bb5b48d324f',
+    'src': 'client',
+    'bidRequestsCount': 1
+  };
+
   before(() => {
     sandbox = sinon.sandbox.create();
     ajaxStub = sandbox.stub(analyticsAdapter, 'ajaxCall');
@@ -249,6 +269,28 @@ describe('Gu analytics adapter', () => {
     });
   });
 
+  it('should handle no_bid events', () => {
+    events.emit(CONSTANTS.EVENTS.AUCTION_INIT, {
+      auctionId: '5018eb39-f900-4370-b71e-3bb5b48d324f',
+      config: {},
+      timeout: 3000
+    });
+    events.emit(CONSTANTS.EVENTS.BID_REQUESTED, REQUEST1);
+    events.emit(CONSTANTS.EVENTS.BID_REQUESTED, REQUEST2);
+    events.emit(CONSTANTS.EVENTS.NO_BID, NOBID_EVENT);
+    const ev = analyticsAdapter.context.queue.peekAll();
+    expect(ev).to.have.length(4);
+    const nobidEv = ev[3];
+    expect(nobidEv).to.have.property('ttr');
+    expect(nobidEv).to.include({
+      ev: 'nobid',
+      n: 'trustx',
+      bid: '41cba721ab11b',
+      sid: 'div-gpt-ad-1460505748561-0',
+      aid: '5018eb39-f900-4370-b71e-3bb5b48d324f'
+    });
+  });
+
   it('should handle bid response event when buyer data absent', () => {
     events.emit(CONSTANTS.EVENTS.AUCTION_INIT, {
       auctionId: '5018eb39-f900-4370-b71e-3bb5b48d324f',
@@ -327,7 +369,7 @@ describe('Gu analytics adapter', () => {
   it('should have a version number', () => {
     events.emit(CONSTANTS.EVENTS.BID_WON, BIDWONEXAMPLE);
     const payload = JSON.parse(ajaxStub.firstCall.args);
-    expect(payload.v).to.be.equal(5);
+    expect(payload.v).to.be.equal(7);
   });
 
   it('should ignore responses sent with bid won event', () => {
