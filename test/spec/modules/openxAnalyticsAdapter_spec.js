@@ -59,7 +59,8 @@ describe('openx analytics adapter', function() {
     };
 
     const bidResponseOpenX = {
-      adId: '2f0c647b904e25',
+      requestId: '2f0c647b904e25',
+      adId: '33dddbb61d359a',
       adUnitCode: 'div-1',
       auctionId: 'add5eb0f-587d-441d-86ec-bbb722c70f79',
       cpm: 0.5,
@@ -69,7 +70,8 @@ describe('openx analytics adapter', function() {
     };
 
     const bidResponseCloseX = {
-      adId: '43d454020e9409',
+      requestId: '43d454020e9409',
+      adId: '43dddbb61d359a',
       adUnitCode: 'div-1',
       auctionId: 'add5eb0f-587d-441d-86ec-bbb722c70f79',
       cpm: 0.3,
@@ -95,13 +97,15 @@ describe('openx analytics adapter', function() {
     };
 
     const bidWonOpenX = {
-      adId: '2f0c647b904e25',
+      requestId: '2f0c647b904e25',
+      adId: '33dddbb61d359a',
       adUnitCode: 'div-1',
       auctionId: 'add5eb0f-587d-441d-86ec-bbb722c70f79'
     };
 
     const bidWonCloseX = {
-      adId: '43d454020e9409',
+      requestId: '43d454020e9409',
+      adId: '43dddbb61d359a',
       adUnitCode: 'div-1',
       auctionId: 'add5eb0f-587d-441d-86ec-bbb722c70f79'
     };

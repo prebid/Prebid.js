@@ -40,18 +40,19 @@ export const spec = {
         seatId = bid.params.seatId;
       }
       let placementId = bid.params.placementId;
-      let size = getAdUnitSizes(bid)[0];
-      this.sizeMap[bid.bidId] = size;
-      openRtbBidRequest.imp.push({
-        id: bid.bidId,
-        tagid: placementId,
-        banner: {
-          w: size[0],
-          h: size[1],
-          pos: 0
-        }
+      getAdUnitSizes(bid).forEach((size, i) => {
+        openRtbBidRequest.imp.push({
+          id: bid.bidId + '~' + size[0] + 'x' + size[1],
+          tagid: placementId,
+          banner: {
+            w: size[0],
+            h: size[1],
+            pos: 0
+          }
+        });
       });
     });
+
     if (openRtbBidRequest.imp.length && seatId) {
       return {
         method: 'POST',
@@ -74,7 +75,6 @@ export const spec = {
     if (id && seatbids) {
       seatbids.forEach(seatbid => {
         seatbid.bid.forEach(bid => {
-          let size = this.sizeMap[bid.impid] || [0, 0];
           let price = parseFloat(bid.price);
           let creative = bid.adm.replace(/\${([^}]*)}/g, (match, key) => {
             switch (key) {
@@ -87,11 +87,13 @@ export const spec = {
             }
             return match;
           });
+          let [, impid, width, height] = bid.impid.match(/^(.*)~(.*)x(.*)$/);
           bids.push({
-            requestId: bid.impid,
+            requestId: impid,
+            adId: bid.id.replace(/~/g, '-'),
             cpm: price,
-            width: size[0],
-            height: size[1],
+            width: parseInt(width, 10),
+            height: parseInt(height, 10),
             creativeId: seatbid.seat + '~' + bid.crid,
             currency: 'USD',
             netRevenue: true,

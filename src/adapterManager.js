@@ -95,7 +95,7 @@ function getBids({bidderCode, auctionId, bidderRequestId, adUnits, labels, src})
             bids.push(Object.assign({}, bid, {
               adUnitCode: adUnit.code,
               transactionId: adUnit.transactionId,
-              sizes: utils.deepAccess(mediaTypes, 'banner.sizes') || [],
+              sizes: utils.deepAccess(mediaTypes, 'banner.sizes') || utils.deepAccess(mediaTypes, 'video.playerSize') || [],
               bidId: bid.bid_id || utils.getUniqueIdentifierStr(),
               bidderRequestId,
               auctionId,
@@ -161,8 +161,6 @@ export let gdprDataHandler = {
 
 adapterManager.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTimeout, labels) {
   let bidRequests = [];
-
-  adUnits = checkBidRequestSizes(adUnits);
 
   let bidderCodes = getBidderCodes(adUnits);
   if (config.getConfig('bidderSequence') === RANDOM) {
@@ -253,66 +251,6 @@ adapterManager.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTi
   }
   return bidRequests;
 };
-
-export function checkBidRequestSizes(adUnits) {
-  function isArrayOfNums(val) {
-    return Array.isArray(val) && val.length === 2 && utils.isInteger(val[0]) && utils.isInteger(val[1]);
-  }
-
-  adUnits.forEach((adUnit) => {
-    const mediaTypes = adUnit.mediaTypes;
-    const normalizedSize = utils.getAdUnitSizes(adUnit);
-
-    if (mediaTypes && mediaTypes.banner) {
-      const banner = mediaTypes.banner;
-      if (banner.sizes) {
-        // make sure we always send [[h,w]] format
-        banner.sizes = normalizedSize;
-        adUnit.sizes = normalizedSize;
-      } else {
-        utils.logError('Detected a mediaTypes.banner object did not include sizes.  This is a required field for the mediaTypes.banner object.  Removing invalid mediaTypes.banner object from request.');
-        delete adUnit.mediaTypes.banner;
-      }
-    } else if (adUnit.sizes) {
-      utils.logWarn('Usage of adUnits.sizes will eventually be deprecated.  Please define size dimensions within the corresponding area of the mediaTypes.<object> (eg mediaTypes.banner.sizes).');
-      adUnit.sizes = normalizedSize;
-    }
-
-    if (mediaTypes && mediaTypes.video) {
-      const video = mediaTypes.video;
-      if (video.playerSize) {
-        if (Array.isArray(video.playerSize) && video.playerSize.length === 1 && video.playerSize.every(isArrayOfNums)) {
-          adUnit.sizes = video.playerSize;
-        } else if (isArrayOfNums(video.playerSize)) {
-          let newPlayerSize = [];
-          newPlayerSize.push(video.playerSize);
-          utils.logInfo(`Transforming video.playerSize from ${video.playerSize} to ${newPlayerSize} so it's in the proper format.`);
-          adUnit.sizes = video.playerSize = newPlayerSize;
-        } else {
-          utils.logError('Detected incorrect configuration of mediaTypes.video.playerSize.  Please specify only one set of dimensions in a format like: [[640, 480]]. Removing invalid mediaTypes.video.playerSize property from request.');
-          delete adUnit.mediaTypes.video.playerSize;
-        }
-      }
-    }
-
-    if (mediaTypes && mediaTypes.native) {
-      const native = mediaTypes.native;
-      if (native.image && native.image.sizes && !Array.isArray(native.image.sizes)) {
-        utils.logError('Please use an array of sizes for native.image.sizes field.  Removing invalid mediaTypes.native.image.sizes property from request.');
-        delete adUnit.mediaTypes.native.image.sizes;
-      }
-      if (native.image && native.image.aspect_ratios && !Array.isArray(native.image.aspect_ratios)) {
-        utils.logError('Please use an array of sizes for native.image.aspect_ratios field.  Removing invalid mediaTypes.native.image.aspect_ratios property from request.');
-        delete adUnit.mediaTypes.native.image.aspect_ratios;
-      }
-      if (native.icon && native.icon.sizes && !Array.isArray(native.icon.sizes)) {
-        utils.logError('Please use an array of sizes for native.icon.sizes field.  Removing invalid mediaTypes.native.icon.sizes property from request.');
-        delete adUnit.mediaTypes.native.icon.sizes;
-      }
-    }
-  });
-  return adUnits;
-}
 
 adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, requestCallbacks, requestBidsTimeout) => {
   if (!bidRequests.length) {

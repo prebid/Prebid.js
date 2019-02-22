@@ -28,6 +28,7 @@ module.exports = {
         use: [
           {
             loader: 'babel-loader',
+            options: helpers.getAnalyticsOptions(),
           }
         ]
       },
