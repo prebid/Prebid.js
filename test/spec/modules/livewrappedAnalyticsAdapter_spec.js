@@ -59,7 +59,6 @@ const BID3 = {
 const MOCK = {
   AUCTION_INIT: {
     'auctionId': '25c6d7f5-699a-4bfc-87c9-996f915341fa',
-    'timestamp': 1519149562216
   },
   BID_REQUESTED: {
     'bidder': 'livewrapped',

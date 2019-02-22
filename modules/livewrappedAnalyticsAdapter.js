@@ -27,10 +27,11 @@ let livewrappedAnalyticsAdapter = Object.assign(adapter({EMPTYURL, ANALYTICSTYPE
     switch (eventType) {
       case CONSTANTS.EVENTS.AUCTION_INIT:
         utils.logInfo('LIVEWRAPPED_AUCTION_INIT:', args);
-        cache.auctions[args.auctionId] = {bids: {}, timeStamp: args.timestamp};
+        cache.auctions[args.auctionId] = {bids: {}};
         break;
       case CONSTANTS.EVENTS.BID_REQUESTED:
         utils.logInfo('LIVEWRAPPED_BID_REQUESTED:', args);
+        cache.auctions[args.auctionId].timeStamp = args.start;
 
         args.bids.forEach(function(bidRequest) {
           cache.auctions[args.auctionId].bids[bidRequest.bidId] = {
