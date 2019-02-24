@@ -1,29 +1,14 @@
 import * as utils from '../src/utils';
+import { parse } from '../src/url';
 import { registerBidder } from '../src/adapters/bidderFactory';
 import { config } from '../src/config';
 import { Renderer } from '../src/Renderer';
 import { BANNER, VIDEO } from '../src/mediaTypes';
 
 export const helper = {
-  getTopFrame: function() {
-    try {
-      return window.top === window ? 1 : 0;
-    } catch (e) {}
-    return 0;
-  },
   startsWith: function(str, search) {
     return str.substr(0, search.length) === search;
   },
-  getTopWindowDomain: function(url) {
-    const domainStart = url.indexOf('://') + '://'.length;
-    return url.substring(
-      domainStart,
-      url.indexOf('/', domainStart) < 0
-        ? url.length
-        : url.indexOf('/', domainStart)
-    );
-  },
-
   getMediaType: function(bid) {
     if (bid.ext) {
       if (bid.ext.media_type) {
@@ -81,7 +66,7 @@ export const spec = {
       const rtbBidRequest = {
         id: auctionId,
         site: {
-          domain: helper.getTopWindowDomain(url),
+          domain: parse(url).hostname,
           page: url,
           ref: bidderRequest.refererInfo.referer
         },
@@ -128,7 +113,7 @@ export const spec = {
               w: sizes.length ? sizes[0][0] : 300,
               h: sizes.length ? sizes[0][1] : 250,
               pos: params.pos || 0,
-              topframe: helper.getTopFrame()
+              topframe: bidderRequest.refererInfo.reachedTop
             }
           });
           rtbBidRequest.imp.push(bannerImp);
