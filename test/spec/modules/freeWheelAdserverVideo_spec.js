@@ -2,10 +2,12 @@ import { expect } from 'chai';
 import getTargeting from 'modules/freeWheelAdserverVideo';
 import { auctionManager } from 'src/auctionManager';
 import { config } from 'src/config';
+// TODO import * as adpod from 'modules/adpod';
 
 describe('freeWheel adserver module', function() {
   let amStub;
   let amGetAdUnitsStub;
+  let pbcStub;
 
   before(function () {
     let adUnits = [{
@@ -51,12 +53,20 @@ describe('freeWheel adserver module', function() {
     amGetAdUnitsStub = sinon.stub(auctionManager, 'getAdUnits');
     amGetAdUnitsStub.returns(adUnits);
     amStub = sinon.stub(auctionManager, 'getBidsReceived');
+    // TODO uncomment this code after adpod module is merged
+    // pbcStub = sinon.stub(adpod, 'callPrebidCacheAfterAuction').callsFake(function (...args) {
+    //   args[1](null, getBidsReceived());
+    // });
+  });
+
+  beforeEach(function () {
     config.setConfig({
       adpod: {
-        brandCategoryExclusion: false
+        brandCategoryExclusion: false,
+        deferCaching: false
       }
     });
-  });
+  })
 
   afterEach(function() {
     config.resetConfig();
@@ -69,7 +79,12 @@ describe('freeWheel adserver module', function() {
 
   it('should return targeting for all adunits', function() {
     amStub.returns(getBidsReceived());
-    let targeting = getTargeting();
+    let targeting;
+    getTargeting({
+      pubCallback: function(errorMsg, targetingResult) {
+        targeting = targetingResult;
+      }
+    });
 
     expect(targeting['preroll_1'].length).to.equal(3);
     expect(targeting['midroll_1'].length).to.equal(2);
@@ -77,7 +92,13 @@ describe('freeWheel adserver module', function() {
 
   it('should return targeting for passed adunit code', function() {
     amStub.returns(getBidsReceived());
-    let targeting = getTargeting({codes: ['preroll_1']});
+    let targeting;
+    getTargeting({
+      codes: ['preroll_1'],
+      pubCallback: function(errorMsg, targetingResult) {
+        targeting = targetingResult;
+      }
+    });
 
     expect(targeting['preroll_1']).to.exist;
     expect(targeting['midroll_1']).to.not.exist;
@@ -100,7 +121,12 @@ describe('freeWheel adserver module', function() {
       'adUnitCode': 'preroll_1'
     }];
     amStub.returns(getBidsReceived().concat(bannerBid));
-    let targeting = getTargeting();
+    let targeting;
+    getTargeting({
+      pubCallback: function(errorMsg, targetingResult) {
+        targeting = targetingResult;
+      }
+    });
 
     expect(targeting['preroll_1'].length).to.equal(3);
     expect(targeting['midroll_1'].length).to.equal(2);
@@ -109,7 +135,8 @@ describe('freeWheel adserver module', function() {
   it('should return unique category bids when competitive exclusion is enabled', function() {
     config.setConfig({
       adpod: {
-        brandCategoryExclusion: true
+        brandCategoryExclusion: true,
+        deferCaching: false
       }
     });
     amStub.returns([
@@ -118,7 +145,12 @@ describe('freeWheel adserver module', function() {
       createBid(15, 'midroll_1', 60, '15.00_travel_60s', '123', 'travel'),
       createBid(10, 'preroll_1', 30, '10.00_airline_30s', '123', 'airline')
     ]);
-    let targeting = getTargeting();
+    let targeting;
+    getTargeting({
+      pubCallback: function(errorMsg, targetingResult) {
+        targeting = targetingResult;
+      }
+    });
 
     expect(targeting['preroll_1'].length).to.equal(3);
     expect(targeting['midroll_1'].length).to.equal(2);
@@ -130,11 +162,36 @@ describe('freeWheel adserver module', function() {
       createBid(15, 'preroll_1', 90, '15.00_airline_90s', '123', 'airline'),
       createBid(15, 'midroll_1', 90, '15.00_travel_90s', '123', 'travel')
     ]);
-    let targeting = getTargeting();
+    let targeting;
+    getTargeting({
+      pubCallback: function(errorMsg, targetingResult) {
+        targeting = targetingResult;
+      }
+    });
 
     expect(targeting['preroll_1']).to.be.empty;
     expect(targeting['midroll_1']).to.be.empty;
   });
+
+  // TODO re-activate this unit test when adpod module is merged
+  // it('should select bids when deferCaching is enabled', function() {
+  //   config.setConfig({
+  //     adpod: {
+  //       deferCaching: true
+  //     }
+  //   });
+  //   amStub.returns(getBidsReceived());
+  //   let targeting;
+  //   getTargeting({
+  //     pubCallback: function(errorMsg, targetingResult) {
+  //       targeting = targetingResult;
+  //     }
+  //   });
+
+  //   expect(pbcStub.called).to.equal(true);
+  //   expect(targeting['preroll_1'].length).to.equal(3);
+  //   expect(targeting['midroll_1'].length).to.equal(4);
+  // });
 });
 
 function getBidsReceived() {

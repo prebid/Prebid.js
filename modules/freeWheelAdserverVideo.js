@@ -4,11 +4,11 @@
 
 import { registerVideoSupport } from '../src/adServerManager';
 import { auctionManager } from '../src/auctionManager';
-import { groupBy, deepAccess } from '../src/utils';
+import { groupBy, deepAccess, logError } from '../src/utils';
 import { config } from '../src/config';
 import { ADPOD } from '../src/mediaTypes';
 import { hooks } from '../src/hook';
-// TODO import { initAdpodHooks, TARGETING_KEY_PB_CAT_DUR, TARGETING_KEY_CACHE_ID } from './adpod';
+// TODO import { initAdpodHooks, TARGETING_KEY_PB_CAT_DUR, TARGETING_KEY_CACHE_ID, callPrebidCacheAfterAuction } from './adpod';
 
 // TODO Remove these constants later when adpod module is merged; use above commented import instead
 const TARGETING_KEY_PB_CAT_DUR = 'hb_pb_cat_dur';
@@ -29,38 +29,90 @@ export function notifyTranslationModule(fn) {
  * @param {Array[string]} codes
  * @returns targeting kvs for adUnitCodes
  */
-export default function getTargeting({codes} = {}) {
+export default function getTargeting({codes, pubCallback} = {}) {
+  if (!pubCallback) {
+    logError('No callback function was defined in the getTargeting call.  Aborting getTargeting().');
+    return;
+  }
   codes = codes || [];
   const adPodAdUnits = getAdPodAdUnits(codes);
   const bidsReceived = auctionManager.getBidsReceived();
   const competiveExclusionEnabled = config.getConfig('adpod.brandCategoryExclusion');
+  const deferCachingSetting = config.getConfig('adpod.deferCaching');
+  const deferCachingEnabled = (typeof deferCachingSetting === 'boolean') ? deferCachingSetting : true;
 
   let bids = getBidsForAdpod(bidsReceived, adPodAdUnits);
-  bids = (competiveExclusionEnabled) ? getExclusiveBids(bids) : bids;
+  bids = (competiveExclusionEnabled || deferCachingEnabled) ? getExclusiveBids(bids) : bids;
   bids.sort(compareOn('cpm'));
 
   let targeting = {};
-  adPodAdUnits.forEach((adUnit) => {
-    let adPodTargeting = [];
-    let adPodDurationSeconds = deepAccess(adUnit, 'mediaTypes.video.adPodDurationSec');
+  if (deferCachingEnabled === false) {
+    adPodAdUnits.forEach((adUnit) => {
+      let adPodTargeting = [];
+      let adPodDurationSeconds = deepAccess(adUnit, 'mediaTypes.video.adPodDurationSec');
 
-    bids
-      .filter((bid) => bid.adUnitCode === adUnit.code)
-      .forEach((bid, index, arr) => {
-        if (bid.video.durationBucket <= adPodDurationSeconds) {
-          adPodTargeting.push({
-            [TARGETING_KEY_PB_CAT_DUR]: bid.adserverTargeting[TARGETING_KEY_PB_CAT_DUR]
-          });
-          adPodDurationSeconds -= bid.video.durationBucket;
-        }
-        if (index === arr.length - 1 && adPodTargeting.length > 0) {
-          adPodTargeting.push({
-            [TARGETING_KEY_CACHE_ID]: bid.adserverTargeting[TARGETING_KEY_CACHE_ID]
-          });
-        }
-      });
-    targeting[adUnit.code] = adPodTargeting;
-  });
+      bids
+        .filter((bid) => bid.adUnitCode === adUnit.code)
+        .forEach((bid, index, arr) => {
+          if (bid.video.durationBucket <= adPodDurationSeconds) {
+            adPodTargeting.push({
+              [TARGETING_KEY_PB_CAT_DUR]: bid.adserverTargeting[TARGETING_KEY_PB_CAT_DUR]
+            });
+            adPodDurationSeconds -= bid.video.durationBucket;
+          }
+          if (index === arr.length - 1 && adPodTargeting.length > 0) {
+            adPodTargeting.push({
+              [TARGETING_KEY_CACHE_ID]: bid.adserverTargeting[TARGETING_KEY_CACHE_ID]
+            });
+          }
+        });
+      targeting[adUnit.code] = adPodTargeting;
+    });
+
+    pubCallback(null, targeting);
+  } else {
+    let bidsToCache = [];
+    adPodAdUnits.forEach((adUnit) => {
+      let adPodDurationSeconds = deepAccess(adUnit, 'mediaTypes.video.adPodDurationSec');
+
+      bids
+        .filter((bid) => bid.adUnitCode === adUnit.code)
+        .forEach((bid) => {
+          if (bid.video.durationBucket <= adPodDurationSeconds) {
+            bidsToCache.push(bid);
+            adPodDurationSeconds -= bid.video.durationBucket;
+          }
+        });
+    });
+
+    // TODO uncomment this after adpod module is merged
+    // callPrebidCacheAfterAuction(bidsToCache, function(error, bidsSuccessfullyCached) {
+    //   if (error) {
+    //     pubCallback(error, null);
+    //   } else {
+    //     adPodAdUnits.forEach((adUnit) => {
+    //       let adPodTargeting = [];
+
+    //       bidsSuccessfullyCached
+    //         .filter((bid) => bid.adUnitCode === adUnit.code)
+    //         .forEach((bid, index, arr) => {
+    //           adPodTargeting.push({
+    //             [TARGETING_KEY_PB_CAT_DUR]: bid.adserverTargeting[TARGETING_KEY_PB_CAT_DUR]
+    //           });
+
+    //           if (index === arr.length - 1 && adPodTargeting.length > 0) {
+    //             adPodTargeting.push({
+    //               [TARGETING_KEY_CACHE_ID]: bid.adserverTargeting[TARGETING_KEY_CACHE_ID]
+    //             });
+    //           }
+    //         });
+    //       targeting[adUnit.code] = adPodTargeting;
+    //     });
+
+    //     pubCallback(null, targeting);
+    //   }
+    // });
+  }
   return targeting;
 }
 
