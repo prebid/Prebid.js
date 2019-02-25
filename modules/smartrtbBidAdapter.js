@@ -1,6 +1,17 @@
 import * as utils from 'src/utils';
 import {registerBidder} from 'src/adapters/bidderFactory';
 const BIDDER_CODE = 'smartrtb';
+
+function getDomain () {
+  if (!utils.inIframe()) {
+    return window.location.hostname
+  }
+  let origins = window.document.location.ancestorOrigins
+  if (origins && origins.length > 0) {
+    return origins[origins.length - 1]
+  }
+}
+
 export const spec = {
   code: BIDDER_CODE,
   aliases: ['smrtb'],
@@ -8,15 +19,6 @@ export const spec = {
     return (bid.params.pubId !== null &&
       bid.params.medId !== null &&
       bid.params.zoneId !== null);
-  },
-  getDomain: function () {
-    if (!utils.inIframe()) {
-      return window.location.hostname
-    }
-    var origins = window.document.location.ancestorOrigins
-    if (origins && origins.length > 0) {
-      return origins[origins.length - 1]
-    }
   },
   buildRequests: function(validBidRequests, bidderRequest) {
     let stack = (bidderRequest.refererInfo &&
@@ -28,7 +30,7 @@ export const spec = {
       tmax: 120,
       language: window.navigator.userLanguage || window.navigator.language,
       site: {
-        domain: this.getDomain(),
+        domain: getDomain(),
         iframe: !bidderRequest.refererInfo.reachedTop,
         url: stack && stack.length > 0 ? [stack.length - 1] : null,
         https: (window.location.protocol === 'https:'),
@@ -44,7 +46,9 @@ export const spec = {
       };
     }
 
-    for (let req of validBidRequests) {
+    for (let x = 0; x < validBidRequests.length; x++) {
+      let req = validBidRequests[x]
+
       payload.imps.push({
         pub_id: req.params.pubId,
         med_id: req.params.medId,
@@ -69,7 +73,9 @@ export const spec = {
       return []
     }
 
-    for (let bid of serverResponse.body.bids) {
+    for (let x = 0; x < serverResponse.body.bids.length; x++) {
+      let bid = serverResponse.body.bids[x]
+
       bidResponses.push({
         requestId: bid.bid_id,
         cpm: bid.cpm,

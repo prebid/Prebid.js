@@ -65,7 +65,7 @@ describe('SmartRTBBidAdapter', function () {
       let res = {
         body: {
           bids: [{
-            bid_id: 123,
+            bid_id: '123',
             cpm: 1.23,
             w: 300,
             h: 250,
@@ -80,7 +80,7 @@ describe('SmartRTBBidAdapter', function () {
       expect(ir.length).to.equal(1)
 
       let en = ir[0]
-      
+
       expect(en.requestId != null &&
             en.cpm != null && typeof en.cpm === 'number' &&
             en.width != null && typeof en.width === 'number' &&
