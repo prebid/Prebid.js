@@ -516,7 +516,7 @@ describe('liveyield analytics adapter', function() {
       };
       events.emit(BID_WON, bidWon);
       call(slot);
-      expect(rtaCalls[1].callArgs['2'].prebidWon).to.equal.true;
+      expect(rtaCalls[1].callArgs['2'].prebidWon).to.equal(true);
       expect(rtaCalls[1].callArgs['2'].prebidPartner).to.equal('testbidder4');
     });
     it('should handle BID_WON event for dfp', function() {
