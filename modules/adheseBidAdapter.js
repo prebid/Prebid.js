@@ -52,16 +52,19 @@ export const spec = {
       .map(item => adResponse(item.bid, item.ad));
   },
 
-  getUserSyncs: function(syncOptions, serverResponse, gdprConsent) {
-    const account = serverResponse.account || '';
-    if (syncOptions.iframeEnabled) {
-      let syncurl = USER_SYNC_BASE_URL + '?account=' + account;
-      if (gdprConsent) {
-        syncurl += '&gdpr=' + (gdprConsent.gdprApplies ? 1 : 0);
-        syncurl += '&consentString=' + encodeURIComponent(gdprConsent.consentString || '');
+  getUserSyncs: function(syncOptions, serverResponses, gdprConsent) {
+    if (syncOptions.iframeEnabled && serverResponses.length > 0) {
+      const account = serverResponses[0].account;
+      if (account) {
+        let syncurl = USER_SYNC_BASE_URL + '?account=' + account;
+        if (gdprConsent) {
+          syncurl += '&gdpr=' + (gdprConsent.gdprApplies ? 1 : 0);
+          syncurl += '&consentString=' + encodeURIComponent(gdprConsent.consentString || '');
+        }
+        return [{type: 'iframe', url: syncurl}];
       }
-      return [{ type: 'iframe', url: syncurl }];
     }
+    return [];
   }
 };
 

@@ -7,6 +7,7 @@
 
 /**
  * @typedef {('native'|'video'|'banner')} MediaType
+ * @typedef {('adpod')} VideoContext
  */
 
 /** @type MediaType */
@@ -15,3 +16,5 @@ export const NATIVE = 'native';
 export const VIDEO = 'video';
 /** @type MediaType */
 export const BANNER = 'banner';
+/** @type VideoContext */
+export const ADPOD = 'adpod';
