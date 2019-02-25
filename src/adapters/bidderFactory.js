@@ -176,7 +176,7 @@ export function newBidder(spec) {
       // After all the responses have come back, call done() and
       // register any required usersync pixels.
       const responses = [];
-      function afterAllResponses(bids) {
+      function afterAllResponses() {
         done();
         events.emit(CONSTANTS.EVENTS.BIDDER_DONE, bidderRequest);
         registerSyncs(responses, bidderRequest.gdprConsent);

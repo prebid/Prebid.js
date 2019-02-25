@@ -61,7 +61,7 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function (serverResponse, serverRequest) {
-    if (!serverResponse.body || !Array.isArray(serverResponse.body)) {
+    if (!Array.isArray(serverResponse.body)) {
       return [];
     }
     // server response body is an array of bid results

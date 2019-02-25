@@ -738,6 +738,48 @@ describe('S2S Adapter', function () {
         value: ['buzz']
       }]);
     });
+
+    it('adds limit to the cookie_sync request if userSyncLimit is greater than 0', function () {
+      let cookieSyncConfig = utils.deepClone(CONFIG);
+      cookieSyncConfig.syncEndpoint = 'https://prebid.adnxs.com/pbs/v1/cookie_sync';
+      cookieSyncConfig.userSyncLimit = 1;
+
+      config.setConfig({ s2sConfig: cookieSyncConfig });
+
+      let bidRequest = utils.deepClone(BID_REQUESTS);
+      adapter.callBids(REQUEST, bidRequest, addBidResponse, done, ajax);
+      let requestBid = JSON.parse(requests[0].requestBody);
+
+      expect(requestBid.bidders).to.contain('appnexus').and.to.have.lengthOf(1);
+      expect(requestBid.account).is.equal('1');
+      expect(requestBid.limit).is.equal(1);
+    });
+
+    it('does not add limit to cooke_sync request if userSyncLimit is missing or 0', function () {
+      let cookieSyncConfig = utils.deepClone(CONFIG);
+      cookieSyncConfig.syncEndpoint = 'https://prebid.adnxs.com/pbs/v1/cookie_sync';
+      config.setConfig({ s2sConfig: cookieSyncConfig });
+
+      let bidRequest = utils.deepClone(BID_REQUESTS);
+      adapter.callBids(REQUEST, bidRequest, addBidResponse, done, ajax);
+      let requestBid = JSON.parse(requests[0].requestBody);
+
+      expect(requestBid.bidders).to.contain('appnexus').and.to.have.lengthOf(1);
+      expect(requestBid.account).is.equal('1');
+      expect(requestBid.limit).is.undefined;
+
+      cookieSyncConfig.userSyncLimit = 0;
+      config.resetConfig();
+      config.setConfig({ s2sConfig: cookieSyncConfig });
+
+      bidRequest = utils.deepClone(BID_REQUESTS);
+      adapter.callBids(REQUEST, bidRequest, addBidResponse, done, ajax);
+      requestBid = JSON.parse(requests[0].requestBody);
+
+      expect(requestBid.bidders).to.contain('appnexus').and.to.have.lengthOf(1);
+      expect(requestBid.account).is.equal('1');
+      expect(requestBid.limit).is.undefined;
+    });
   });
 
   describe('response handler', function () {
