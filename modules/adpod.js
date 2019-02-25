@@ -35,14 +35,19 @@ let bidCacheRegistry = createBidCacheRegistry();
  */
 function createBidCacheRegistry() {
   let registry = {};
+
+  function setupRegistrySlot(auctionId) {
+    registry[auctionId] = {};
+    registry[auctionId].bidStorage = new Set();
+    registry[auctionId].queueDispatcher = createDispatcher(queueTimeDelay);
+    registry[auctionId].initialCacheKey = utils.generateUUID();
+  }
+
   return {
     addBid: function (bid) {
       // create parent level object based on auction ID (in case there are concurrent auctions running) to store objects for that auction
       if (!registry[bid.auctionId]) {
-        registry[bid.auctionId] = {};
-        registry[bid.auctionId].bidStorage = new Set();
-        registry[bid.auctionId].queueDispatcher = createDispatcher(queueTimeDelay);
-        registry[bid.auctionId].initialCacheKey = utils.generateUUID();
+        setupRegistrySlot(bid.auctionId);
       }
       registry[bid.auctionId].bidStorage.add(bid);
     },
@@ -54,6 +59,12 @@ function createBidCacheRegistry() {
     },
     getQueueDispatcher: function(bid) {
       return registry[bid.auctionId] && registry[bid.auctionId].queueDispatcher;
+    },
+    setupInitialCacheKey: function(bid) {
+      if (!registry[bid.auctionId]) {
+        registry[bid.auctionId] = {};
+        registry[bid.auctionId].initialCacheKey = utils.generateUUID();
+      }
     },
     getInitialCacheKey: function(bid) {
       return registry[bid.auctionId] && registry[bid.auctionId].initialCacheKey;
@@ -188,10 +199,20 @@ function firePrebidCacheCall(auctionInstance, bidList, afterBidAdded) {
 export function callPrebidCacheHook(fn, auctionInstance, bidResponse, afterBidAdded, bidderRequest) {
   let videoConfig = utils.deepAccess(bidderRequest, 'mediaTypes.video');
   if (videoConfig && videoConfig.context === ADPOD) {
-    bidCacheRegistry.addBid(bidResponse);
-    attachPriceIndustryDurationKeyToBid(bidResponse);
+    if (config.getConfig('adpod.deferCaching') === false) {
+      bidCacheRegistry.addBid(bidResponse);
+      attachPriceIndustryDurationKeyToBid(bidResponse);
 
-    updateBidQueue(auctionInstance, bidResponse, afterBidAdded);
+      updateBidQueue(auctionInstance, bidResponse, afterBidAdded);
+    } else {
+      // generate targeting keys for bid
+      bidCacheRegistry.setupInitialCacheKey(bidResponse);
+      attachPriceIndustryDurationKeyToBid(bidResponse);
+
+      // add bid to auction
+      addBidToAuction(auctionInstance, bidResponse);
+      afterBidAdded();
+    }
   } else {
     fn.call(this, auctionInstance, bidResponse, afterBidAdded, bidderRequest);
   }
@@ -357,4 +378,27 @@ export function initAdpodHooks() {
   setupHookFnOnce('callPrebidCache', callPrebidCacheHook);
   setupHookFnOnce('checkAdUnitSetup', checkAdUnitSetupHook);
   setupHookFnOnce('checkVideoBidSetup', checkVideoBidSetupHook);
+}
+
+/**
+ *
+ * @param {Array[Object]} bids list of 'winning' bids that need to be cached
+ * @param {Function} callback send the cached bids (or error) back to adserverVideoModule for further processing
+ }}
+ */
+export function callPrebidCacheAfterAuction(bids, callback) {
+  // will call PBC here and execute cb param to initialize player code
+  store(bids, function(error, cacheIds) {
+    if (error) {
+      callback(error, null);
+    } else {
+      let successfulCachedBids = [];
+      for (let i = 0; i < cacheIds.length; i++) {
+        if (cacheIds[i] !== '') {
+          successfulCachedBids.push(bids[i]);
+        }
+      }
+      callback(null, successfulCachedBids);
+    }
+  })
 }

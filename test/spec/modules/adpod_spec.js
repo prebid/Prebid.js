@@ -86,12 +86,83 @@ describe('adpod.js', function () {
       expect(callbackResult).to.equal(true);
     });
 
+    it('should immediately add the adpod bid to auction if adpod.deferCaching in config is true', function() {
+      config.setConfig({
+        adpod: {
+          deferCaching: true
+        }
+      });
+
+      let bidResponse1 = {
+        adId: 'adId01277',
+        auctionId: 'no_defer_123',
+        mediaType: 'video',
+        cpm: 5,
+        meta: {
+          adServerCatId: 'test'
+        },
+        video: {
+          context: ADPOD,
+          durationSeconds: 15,
+          durationBucket: 15
+        }
+      };
+
+      let bidResponse2 = {
+        adId: 'adId46547',
+        auctionId: 'no_defer_123',
+        mediaType: 'video',
+        cpm: 12,
+        meta: {
+          adServerCatId: 'value'
+        },
+        video: {
+          context: ADPOD,
+          durationSeconds: 15,
+          durationBucket: 15
+        }
+      };
+
+      let bidderRequest = {
+        adUnitCode: 'adpod_1',
+        auctionId: 'no_defer_123',
+        mediaTypes: {
+          video: {
+            context: ADPOD,
+            playerSize: [300, 300],
+            adPodDurationSec: 300,
+            durationRangeSec: [15, 30, 45],
+            requireExactDuration: false
+          }
+        },
+      };
+
+      callPrebidCacheHook(callbackFn, auctionInstance, bidResponse1, afterBidAddedSpy, bidderRequest);
+      callPrebidCacheHook(callbackFn, auctionInstance, bidResponse2, afterBidAddedSpy, bidderRequest);
+
+      // check if bid adsereverTargeting is setup
+      expect(callbackResult).to.be.null;
+      expect(storeStub.called).to.equal(false);
+      expect(afterBidAddedSpy.calledTwice).to.equal(true);
+      expect(auctionBids.length).to.equal(2);
+      expect(auctionBids[0].adId).to.equal(bidResponse1.adId);
+      expect(auctionBids[0].customCacheKey).to.exist.and.to.match(/^5\.00_test_15s_.*/);
+      expect(auctionBids[0].adserverTargeting.hb_pb_cat_dur).to.equal('5.00_test_15s');
+      expect(auctionBids[0].adserverTargeting.hb_cache_id).to.exist;
+      expect(auctionBids[1].adId).to.equal(bidResponse2.adId);
+      expect(auctionBids[1].customCacheKey).to.exist.and.to.match(/^12\.00_value_15s_.*/);
+      expect(auctionBids[1].adserverTargeting.hb_pb_cat_dur).to.equal('12.00_value_15s');
+      expect(auctionBids[1].adserverTargeting.hb_cache_id).to.exist;
+      expect(auctionBids[1].adserverTargeting.hb_cache_id).to.equal(auctionBids[0].adserverTargeting.hb_cache_id);
+    });
+
     it('should send prebid cache call once bid queue is full', function () {
       storeStub.callsFake(fakeStoreFn);
 
       config.setConfig({
         adpod: {
-          bidQueueSizeLimit: 2
+          bidQueueSizeLimit: 2,
+          deferCaching: false
         }
       });
 
@@ -159,7 +230,8 @@ describe('adpod.js', function () {
       config.setConfig({
         adpod: {
           bidQueueSizeLimit: 2,
-          bidQueueTimeDelay: 30
+          bidQueueTimeDelay: 30,
+          deferCaching: false
         }
       });
 
@@ -209,7 +281,8 @@ describe('adpod.js', function () {
       config.setConfig({
         adpod: {
           bidQueueSizeLimit: 2,
-          bidQueueTimeDelay: 30
+          bidQueueTimeDelay: 30,
+          deferCaching: false
         }
       });
 
@@ -305,7 +378,8 @@ describe('adpod.js', function () {
 
       config.setConfig({
         adpod: {
-          bidQueueSizeLimit: 2
+          bidQueueSizeLimit: 2,
+          deferCaching: false
         }
       });
 
@@ -375,7 +449,8 @@ describe('adpod.js', function () {
 
       config.setConfig({
         adpod: {
-          bidQueueSizeLimit: 2
+          bidQueueSizeLimit: 2,
+          deferCaching: false
         }
       });
 
