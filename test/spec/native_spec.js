@@ -55,8 +55,8 @@ describe('native.js', function () {
     const bidRequest = {
       mediaTypes: {
         native: {
-          body: { usePlaceholder: true },
-          clickUrl: { usePlaceholder: true },
+          body: { sendId: true },
+          clickUrl: { sendId: true },
         }
       }
     };

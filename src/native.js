@@ -165,7 +165,7 @@ export function getNativeTargeting(bid, bidReq) {
 
     const sendPlaceholder = deepAccess(
       bidReq,
-      `mediaTypes.native.${asset}.usePlaceholder`
+      `mediaTypes.native.${asset}.sendId`
     );
 
     if (sendPlaceholder) {
