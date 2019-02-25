@@ -12,12 +12,13 @@ export const sharethroughAdapterSpec = {
   buildRequests: (bidRequests, bidderRequest) => {
     return bidRequests.map(bid => {
       let query = {
-        bidId: bid.bidId,
         placement_key: bid.params.pkey,
-        hbVersion: '$prebid.version$',
-        strVersion: VERSION,
+        bidId: bid.bidId,
+        consent_required: false,
+        instant_play_capable: canAutoPlayHTML5Video(),
         hbSource: 'prebid',
-        consent_required: false
+        hbVersion: '$prebid.version$',
+        strVersion: VERSION
       };
 
       if (bidderRequest && bidderRequest.gdprConsent && bidderRequest.gdprConsent.consentString) {
@@ -146,6 +147,27 @@ function b64EncodeUnicode(str) {
       function toSolidBytes(match, p1) {
         return String.fromCharCode('0x' + p1);
       }));
+}
+
+function canAutoPlayHTML5Video() {
+  var userAgent = navigator.userAgent;
+  if (!userAgent) return false;
+
+  var isAndroid = /Android/i.test(userAgent);
+  var isiOS = /iPhone|iPad|iPod/i.test(userAgent);
+  var chromeVersion = parseInt((/Chrome\/([0-9]+)/.exec(userAgent) || [0, 0])[1]);
+  var chromeiOSVersion = parseInt((/CriOS\/([0-9]+)/.exec(userAgent) || [0, 0])[1]);
+  var safariVersion = parseInt((/Version\/([0-9]+)/.exec(userAgent) || [0, 0])[1]);
+
+  if (
+    (isAndroid && chromeVersion >= 53) ||
+    (isiOS && (safariVersion >= 10 || chromeiOSVersion >= 53)) ||
+    !(isAndroid || isiOS)
+  ) {
+    return true;
+  } else {
+    return false;
+  }
 }
 
 registerBidder(sharethroughAdapterSpec);
