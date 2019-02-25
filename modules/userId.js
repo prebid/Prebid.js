@@ -77,13 +77,14 @@ let initializedSubmodules;
 export const unifiedIdSubmodule = {
   name: 'unifiedId',
   decode(value) {
-    return {
-      'tdid': value['TDID']
-    }
+    return (value && typeof value['TDID'] === 'string') ? { 'tdid': value['TDID'] } : undefined;
   },
   getId(submoduleConfigParams, consentData) {
-    const partner = (submoduleConfigParams && typeof submoduleConfigParams.partner === 'string') ? submoduleConfigParams.partner : 'prebid';
-    const url = (submoduleConfigParams && typeof submoduleConfigParams.url === 'string') ? submoduleConfigParams.url : `http://match.adsrvr.org/track/rid?ttd_pid=${partner}&fmt=json`;
+    if (!submoduleConfigParams || (typeof submoduleConfigParams.partner !== 'string' && typeof submoduleConfigParams.url !== 'string')) {
+      utils.logError(`${MODULE_NAME} - unifiedId submodule requires either partner or url to be defined`);
+      return;
+    }
+    const url = submoduleConfigParams.url || `http://match.adsrvr.org/track/rid?ttd_pid=${submoduleConfigParams.partner}&fmt=json`;
 
     return function (callback) {
       ajax(url, response => {

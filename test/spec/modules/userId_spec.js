@@ -390,11 +390,13 @@ describe('User ID', function() {
       });
     });
 
-    it('test that hook does not add a userId property if not submodule data was available', function() {
+    it('test that hook does not add a userId property if no submodule data was available', function() {
+      const unifiedIdConfig = createStorageConfig('unifiedId', 'unifiedid', 'html5')
+      unifiedIdConfig.params = {partner: 'prebid'}
       config.setConfig({
         usersync: {
           syncDelay: 0,
-          userIds: [createStorageConfig('unifiedId', 'unifiedid', 'html5')]}
+          userIds: [unifiedIdConfig]}
       });
 
       $$PREBID_GLOBAL$$.requestBids({adUnits});
