@@ -110,13 +110,20 @@ function createDispatcher(timeoutDuration) {
 /**
  * This function reads certain fields from the bid to generate a specific key used for caching the bid in Prebid Cache
  * @param {Object} bid bid object to update
+ * @param {Boolean} brandCategoryExclusion value read from setConfig; influences whether category is required or not
  */
-function attachPriceIndustryDurationKeyToBid(bid) {
-  let category = utils.deepAccess(bid, 'meta.adServerCatId');
+function attachPriceIndustryDurationKeyToBid(bid, brandCategoryExclusion) {
+  let initialCacheKey = bidCacheRegistry.getInitialCacheKey(bid);
   let duration = utils.deepAccess(bid, 'video.durationBucket');
   let cpmFixed = bid.cpm.toFixed(2);
-  let initialCacheKey = bidCacheRegistry.getInitialCacheKey(bid);
-  let pcd = `${cpmFixed}_${category}_${duration}s`;
+  let pcd;
+
+  if (brandCategoryExclusion) {
+    let category = utils.deepAccess(bid, 'meta.adServerCatId');
+    pcd = `${cpmFixed}_${category}_${duration}s`;
+  } else {
+    pcd = `${cpmFixed}_${duration}s`;
+  }
 
   if (!bid.adserverTargeting) {
     bid.adserverTargeting = {};
@@ -199,15 +206,22 @@ function firePrebidCacheCall(auctionInstance, bidList, afterBidAdded) {
 export function callPrebidCacheHook(fn, auctionInstance, bidResponse, afterBidAdded, bidderRequest) {
   let videoConfig = utils.deepAccess(bidderRequest, 'mediaTypes.video');
   if (videoConfig && videoConfig.context === ADPOD) {
+    let brandCategoryExclusion = config.getConfig('adpod.brandCategoryExclusion');
+    let adServerCatId = utils.deepAccess(bidResponse, 'meta.adServerCatId');
+    if (!adServerCatId && brandCategoryExclusion) {
+      utils.logWarn('Detected a bid without meta.adServerCatId while setConfig({adpod.brandCategoryExclusion}) was enabled.  This bid has been rejected:', bidResponse)
+      afterBidAdded();
+    }
+
     if (config.getConfig('adpod.deferCaching') === false) {
       bidCacheRegistry.addBid(bidResponse);
-      attachPriceIndustryDurationKeyToBid(bidResponse);
+      attachPriceIndustryDurationKeyToBid(bidResponse, brandCategoryExclusion);
 
       updateBidQueue(auctionInstance, bidResponse, afterBidAdded);
     } else {
       // generate targeting keys for bid
       bidCacheRegistry.setupInitialCacheKey(bidResponse);
-      attachPriceIndustryDurationKeyToBid(bidResponse);
+      attachPriceIndustryDurationKeyToBid(bidResponse, brandCategoryExclusion);
 
       // add bid to auction
       addBidToAuction(auctionInstance, bidResponse);
