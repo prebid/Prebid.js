@@ -1,8 +1,7 @@
 import { expect } from 'chai';
 import { spec } from 'modules/appnexusBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
-// TODO remove comment on merge
-// import * as bidderFactory from 'src/adapters/bidderFactory';
+import * as bidderFactory from 'src/adapters/bidderFactory';
 import { deepClone } from 'src/utils';
 import { config } from 'src/config';
 
@@ -600,15 +599,14 @@ describe('AppNexusAdapter', function () {
   })
 
   describe('interpretResponse', function () {
-    // TODO remove comments on merge
-    // let bfStub;
-    // before(function() {
-    //   bfStub = sinon.stub(bidderFactory, 'getIabSubCategory');
-    // });
+    let bfStub;
+    before(function() {
+      bfStub = sinon.stub(bidderFactory, 'getIabSubCategory');
+    });
 
-    // after(function() {
-    //   bfStub.restore();
-    // });
+    after(function() {
+      bfStub.restore();
+    });
 
     let response = {
       'version': '3.0.0',
@@ -759,8 +757,7 @@ describe('AppNexusAdapter', function () {
           }
         }]
       };
-      // TODO remove on merge
-      // bfStub.returns('1');
+      bfStub.returns('1');
 
       let result = spec.interpretResponse({ body: response }, {bidderRequest});
       expect(result[0].video.context).to.equal('adpod');
