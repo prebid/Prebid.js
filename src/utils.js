@@ -1200,7 +1200,11 @@ export function getDataFromLocalStorage(key) {
 }
 
 export function hasLocalStorage() {
-  return !!window.localStorage;
+  try {
+    return !!window.localStorage;
+  } catch (e) {
+    logError('Local storage api disabled');
+  }
 }
 
 export function isArrayOfNums(val, size) {
