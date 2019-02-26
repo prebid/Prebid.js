@@ -12,6 +12,7 @@
     "criteoBidAdapter",
     "districtmDMXBidAdapter",
     "emx_digitalBidAdapter",
+    "eplanningBidAdapter",
     "freestarAnalyticsAdapter",
     "freestarBidAdapter",
     "ffaBidAdapter",
