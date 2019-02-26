@@ -4,6 +4,16 @@ import { BANNER } from 'src/mediaTypes';
 
 const LOOPME_ENDPOINT = 'https://loopme.me/api/hb';
 
+const entries = (obj) => {
+  let output = [];
+  for (let key in obj) {
+    if (obj.hasOwnProperty(key)) {
+      output.push([key, obj[key]])
+    }
+  }
+  return output;
+}
+
 export const spec = {
   code: 'loopme',
   supportedMediaTypes: [BANNER],
@@ -32,7 +42,7 @@ export const spec = {
         payload.user_consent = bidderRequest.gdprConsent.consentString;
       }
 
-      let queryString = Object.entries(payload)
+      let queryString = entries(payload)
         .map(item => `${item[0]}=${encodeURI(item[1])}`)
         .join('&');
 
