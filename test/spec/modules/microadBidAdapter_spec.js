@@ -67,8 +67,8 @@ describe('microadBidAdapter', () => {
     };
     const expectedResultTemplate = {
       spot: 'spot-code',
-      url: encodeURIComponent('http://example.com/to'),
-      referrer: encodeURIComponent('http://example.com/from'),
+      url: 'http://example.com/to',
+      referrer: 'http://example.com/from',
       bid_id: 'bid-id',
       transaction_id: 'transaction-id',
       media_types: 1
@@ -135,7 +135,7 @@ describe('microadBidAdapter', () => {
         expect(request.data).to.deep.equal(
           Object.assign({}, expectedResultTemplate, {
             cbt: request.data.cbt,
-            url: encodeURIComponent(window.location.href)
+            url: window.location.href
           })
         );
       });

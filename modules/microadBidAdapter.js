@@ -49,9 +49,9 @@ export const spec = {
     validBidRequests.forEach(bid => {
       const bidParams = bid.params;
       const params = {
-        spot: encodeURIComponent(bidParams.spot),
-        url: encodeURIComponent(bidderRequest.refererInfo.canonicalUrl || window.location.href),
-        referrer: encodeURIComponent(bidderRequest.refererInfo.referer),
+        spot: bidParams.spot,
+        url: bidderRequest.refererInfo.canonicalUrl || window.location.href,
+        referrer: bidderRequest.refererInfo.referer,
         bid_id: bid.bidId,
         transaction_id: bid.transactionId,
         media_types: convertMediaTypes(bid),
