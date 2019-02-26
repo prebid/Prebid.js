@@ -8,7 +8,7 @@
  *      'translationFile': 'http://sample.com'
  *    }
  * });
- * If publisher has not defined translation file than prebid will use default prebid translation file provided here <TODO add url once it is uploaded on cdn>
+ * If publisher has not defined translation file than prebid will use default prebid translation file provided here //cdn.jsdelivr.net/gh/prebid/category-mapping-file@1/freewheel-mapping.json
  */
 
 import { config } from '../src/config';
@@ -16,8 +16,7 @@ import { hooks, hook } from '../src/hook';
 import { ajax } from '../src/ajax';
 import { timestamp, logError, setDataInLocalStorage, getDataFromLocalStorage } from '../src/utils';
 
-// TODO udpate url once it is uploaded on jsDelivr
-const DEFAULT_TRANSLATION_FILE_URL = '//api.myjson.com/bins/dw1tm';
+const DEFAULT_TRANSLATION_FILE_URL = '//cdn.jsdelivr.net/gh/prebid/category-mapping-file@1/freewheel-mapping.json';
 const DEFAULT_IAB_TO_FW_MAPPING_KEY = 'iabToFwMappingkey';
 const DEFAULT_IAB_TO_FW_MAPPING_KEY_PUB = 'iabToFwMappingkeyPub';
 const refreshInDays = 1;

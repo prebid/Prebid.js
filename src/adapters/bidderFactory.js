@@ -128,6 +128,8 @@ import { ADPOD } from '../mediaTypes';
 // common params for all mediaTypes
 const COMMON_BID_RESPONSE_KEYS = ['requestId', 'cpm', 'ttl', 'creativeId', 'netRevenue', 'currency'];
 
+const DEFAULT_REFRESHIN_DAYS = 1;
+
 /**
  * Register a bidder with prebid, using the given spec.
  *
@@ -361,9 +363,10 @@ export function preloadBidderMappingFile(fn, adUnits) {
     let bidderSpec = adapterManager.getBidAdapter(bidder);
     if (bidderSpec.getSpec().getMappingFileInfo) {
       let info = bidderSpec.getSpec().getMappingFileInfo();
+      let refreshInDays = (info.refreshInDays) ? info.refreshInDays : DEFAULT_REFRESHIN_DAYS;
       let key = (info.localStorageKey) ? info.localStorageKey : bidderSpec.getSpec().code;
       let mappingData = getDataFromLocalStorage(key);
-      if (!mappingData || timestamp() < mappingData.lastUpdated + info.refreshInDays * 24 * 60 * 60 * 1000) {
+      if (!mappingData || timestamp() < mappingData.lastUpdated + refreshInDays * 24 * 60 * 60 * 1000) {
         ajax(info.url,
           {
             success: (response) => {

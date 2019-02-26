@@ -2,7 +2,6 @@ import { getAdserverCategoryHook, initTranslation } from 'modules/categoryTransl
 import { config } from 'src/config';
 import * as utils from 'src/utils';
 import { expect } from 'chai';
-import { hooks } from 'src/hook';
 
 describe('category translation', function () {
   let fakeTranslationServer;
