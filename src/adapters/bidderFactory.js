@@ -11,7 +11,7 @@ import includes from 'core-js/library/fn/array/includes';
 import { ajax } from '../ajax';
 import { logWarn, logError, parseQueryStringParameters, delayExecution, parseSizesInput, getBidderRequest, flatten, uniques, timestamp, setDataInLocalStorage, getDataFromLocalStorage, deepAccess } from '../utils';
 import { ADPOD } from '../mediaTypes';
-
+import { getHook } from '../hook';
 /**
  * This file aims to support Adapters during the Prebid 0.x -> 1.x transition.
  *
@@ -413,6 +413,7 @@ export function getIabSubCategory(bidderCode, category) {
     }
   }
 }
+getHook('checkAdUnitSetup').before(preloadBidderMappingFile);
 
 // check that the bid has a width and height set
 function validBidSize(adUnitCode, bid, bidRequests) {

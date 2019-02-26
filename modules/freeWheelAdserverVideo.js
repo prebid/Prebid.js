@@ -8,9 +8,9 @@ import { groupBy, deepAccess, logError } from '../src/utils';
 import { config } from '../src/config';
 import { ADPOD } from '../src/mediaTypes';
 import { initAdpodHooks, TARGETING_KEY_PB_CAT_DUR, TARGETING_KEY_CACHE_ID, callPrebidCacheAfterAuction } from './adpod';
-import { hooks } from '../src/hook';
+import { getHook } from '../src/hook';
 
-hooks['registerAdserver'].before(notifyTranslationModule);
+getHook('registerAdserver').before(notifyTranslationModule);
 
 export function notifyTranslationModule(fn) {
   fn.call(this, 'freewheel');

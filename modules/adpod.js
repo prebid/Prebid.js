@@ -13,9 +13,11 @@
  */
 
 import * as utils from '../src/utils';
-import { addBidToAuction, doCallbacksIfTimedout, AUCTION_IN_PROGRESS } from '../src/auction';
+import { addBidToAuction, doCallbacksIfTimedout, AUCTION_IN_PROGRESS, callPrebidCache } from '../src/auction';
 import { store } from '../src/videoCache';
-import { hooks } from '../src/hook';
+// import { getHook } from '../src/hook';
+import { checkAdUnitSetup } from '../src/prebid';
+import { checkVideoBidSetup } from '../src/video';
 import { config } from '../src/config';
 import { ADPOD } from '../src/mediaTypes';
 import Set from 'core-js/library/fn/set';
@@ -382,16 +384,16 @@ config.getConfig('adpod', config => adpodSetConfig(config.adpod));
  * This function initializes the adpod module's hooks.  This is called by the corresponding adserver video module.
  */
 export function initAdpodHooks() {
-  function setupHookFnOnce(hookId, hookFn, priority = 15) {
-    let result = hooks[hookId].getHooks({hook: hookFn});
+  function setupHookFnOnce(baseFn, hookFn, priority = 15) {
+    let result = baseFn.getHooks({hook: hookFn});
     if (result.length === 0) {
-      hooks[hookId].before(hookFn, priority);
+      baseFn.before(hookFn, priority);
     }
   }
 
-  setupHookFnOnce('callPrebidCache', callPrebidCacheHook);
-  setupHookFnOnce('checkAdUnitSetup', checkAdUnitSetupHook);
-  setupHookFnOnce('checkVideoBidSetup', checkVideoBidSetupHook);
+  setupHookFnOnce(callPrebidCache, callPrebidCacheHook);
+  setupHookFnOnce(checkAdUnitSetup, checkAdUnitSetupHook);
+  setupHookFnOnce(checkVideoBidSetup, checkVideoBidSetupHook);
 }
 
 /**

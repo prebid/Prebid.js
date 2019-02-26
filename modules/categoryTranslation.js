@@ -12,8 +12,9 @@
  */
 
 import { config } from '../src/config';
-import { hooks, hook } from '../src/hook';
+import { hook } from '../src/hook';
 import { ajax } from '../src/ajax';
+import { addBidResponse } from '../src/auction';
 import { timestamp, logError, setDataInLocalStorage, getDataFromLocalStorage } from '../src/utils';
 
 const DEFAULT_TRANSLATION_FILE_URL = '//cdn.jsdelivr.net/gh/prebid/category-mapping-file@1/freewheel-mapping.json';
@@ -64,14 +65,14 @@ export function getAdserverCategoryHook(fn, adUnitCode, bid) {
 
 export function initTranslation(url, localStorageKey) {
   // TODO use function from adpod module
-  function setupHookFnOnce(hookId, hookFn, priority = 15) {
-    let result = hooks[hookId].getHooks({hook: hookFn});
+  function setupHookFnOnce(baseFn, hookFn, priority = 15) {
+    let result = baseFn.getHooks({hook: hookFn});
     if (result.length === 0) {
-      hooks[hookId].before(hookFn, priority);
+      baseFn.before(hookFn, priority);
     }
   }
 
-  setupHookFnOnce('addBidResponse', getAdserverCategoryHook, 50);
+  setupHookFnOnce(addBidResponse, getAdserverCategoryHook, 50);
   let mappingData = getDataFromLocalStorage(localStorageKey);
   if (!mappingData || timestamp() < mappingData.lastUpdated + refreshInDays * 24 * 60 * 60 * 1000) {
     ajax(url,
