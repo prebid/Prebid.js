@@ -7,17 +7,10 @@ import { auctionManager } from '../src/auctionManager';
 import { groupBy, deepAccess, logError } from '../src/utils';
 import { config } from '../src/config';
 import { ADPOD } from '../src/mediaTypes';
+import { initAdpodHooks, TARGETING_KEY_PB_CAT_DUR, TARGETING_KEY_CACHE_ID, callPrebidCacheAfterAuction } from './adpod';
 import { hooks } from '../src/hook';
-// TODO import { initAdpodHooks, TARGETING_KEY_PB_CAT_DUR, TARGETING_KEY_CACHE_ID, callPrebidCacheAfterAuction } from './adpod';
 
-// TODO Remove these constants later when adpod module is merged; use above commented import instead
-const TARGETING_KEY_PB_CAT_DUR = 'hb_pb_cat_dur';
-const TARGETING_KEY_CACHE_ID = 'hb_cache_id';
-
-// TODO remove if check when merged
-if (hooks['registerAdserver']) {
-  hooks['registerAdserver'].before(notifyTranslationModule);
-}
+hooks['registerAdserver'].before(notifyTranslationModule);
 
 export function notifyTranslationModule(fn) {
   fn.call(this, 'freewheel');
@@ -27,10 +20,11 @@ export function notifyTranslationModule(fn) {
  * This function returns targeting keyvalue pairs for freewheel adserver module
  * @param {Object} options
  * @param {Array[string]} codes
+ * @param {function} callback
  * @returns targeting kvs for adUnitCodes
  */
-export default function getTargeting({codes, pubCallback} = {}) {
-  if (!pubCallback) {
+export function getTargeting({codes, callback} = {}) {
+  if (!callback) {
     logError('No callback function was defined in the getTargeting call.  Aborting getTargeting().');
     return;
   }
@@ -69,7 +63,7 @@ export default function getTargeting({codes, pubCallback} = {}) {
       targeting[adUnit.code] = adPodTargeting;
     });
 
-    pubCallback(null, targeting);
+    callback(null, targeting);
   } else {
     let bidsToCache = [];
     adPodAdUnits.forEach((adUnit) => {
@@ -85,33 +79,31 @@ export default function getTargeting({codes, pubCallback} = {}) {
         });
     });
 
-    // TODO uncomment this after adpod module is merged
-    // callPrebidCacheAfterAuction(bidsToCache, function(error, bidsSuccessfullyCached) {
-    //   if (error) {
-    //     pubCallback(error, null);
-    //   } else {
-    //     adPodAdUnits.forEach((adUnit) => {
-    //       let adPodTargeting = [];
+    callPrebidCacheAfterAuction(bidsToCache, function(error, bidsSuccessfullyCached) {
+      if (error) {
+        callback(error, null);
+      } else {
+        let groupedBids = groupBy(bidsSuccessfullyCached, 'adUnitCode');
+        Object.keys(groupedBids).forEach((adUnitCode) => {
+          let adPodTargeting = [];
 
-    //       bidsSuccessfullyCached
-    //         .filter((bid) => bid.adUnitCode === adUnit.code)
-    //         .forEach((bid, index, arr) => {
-    //           adPodTargeting.push({
-    //             [TARGETING_KEY_PB_CAT_DUR]: bid.adserverTargeting[TARGETING_KEY_PB_CAT_DUR]
-    //           });
+          groupedBids[adUnitCode].forEach((bid, index, arr) => {
+            adPodTargeting.push({
+              [TARGETING_KEY_PB_CAT_DUR]: bid.adserverTargeting[TARGETING_KEY_PB_CAT_DUR]
+            });
 
-    //           if (index === arr.length - 1 && adPodTargeting.length > 0) {
-    //             adPodTargeting.push({
-    //               [TARGETING_KEY_CACHE_ID]: bid.adserverTargeting[TARGETING_KEY_CACHE_ID]
-    //             });
-    //           }
-    //         });
-    //       targeting[adUnit.code] = adPodTargeting;
-    //     });
+            if (index === arr.length - 1 && adPodTargeting.length > 0) {
+              adPodTargeting.push({
+                [TARGETING_KEY_CACHE_ID]: bid.adserverTargeting[TARGETING_KEY_CACHE_ID]
+              });
+            }
+          });
+          targeting[adUnitCode] = adPodTargeting;
+        });
 
-    //     pubCallback(null, targeting);
-    //   }
-    // });
+        callback(null, targeting);
+      }
+    });
   }
   return targeting;
 }
@@ -168,7 +160,7 @@ function getBidsForAdpod(bidsReceived, adPodAdUnits) {
     .filter((bid) => adUnitCodes.indexOf(bid.adUnitCode) != -1 && (bid.video && bid.video.context === ADPOD))
 }
 
-// initAdpodHooks();
+initAdpodHooks();
 registerVideoSupport('freewheel', {
   getTargeting: getTargeting
 });

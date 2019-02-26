@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import getTargeting from 'modules/freeWheelAdserverVideo';
 import { auctionManager } from 'src/auctionManager';
 import { config } from 'src/config';
-// TODO import * as adpod from 'modules/adpod';
+import * as adpod from 'modules/adpod';
 
 describe('freeWheel adserver module', function() {
   let amStub;
@@ -53,10 +53,9 @@ describe('freeWheel adserver module', function() {
     amGetAdUnitsStub = sinon.stub(auctionManager, 'getAdUnits');
     amGetAdUnitsStub.returns(adUnits);
     amStub = sinon.stub(auctionManager, 'getBidsReceived');
-    // TODO uncomment this code after adpod module is merged
-    // pbcStub = sinon.stub(adpod, 'callPrebidCacheAfterAuction').callsFake(function (...args) {
-    //   args[1](null, getBidsReceived());
-    // });
+    pbcStub = sinon.stub(adpod, 'callPrebidCacheAfterAuction').callsFake(function (...args) {
+      args[1](null, getBidsReceived());
+    });
   });
 
   beforeEach(function () {
@@ -81,7 +80,7 @@ describe('freeWheel adserver module', function() {
     amStub.returns(getBidsReceived());
     let targeting;
     getTargeting({
-      pubCallback: function(errorMsg, targetingResult) {
+      callback: function(errorMsg, targetingResult) {
         targeting = targetingResult;
       }
     });
@@ -95,7 +94,7 @@ describe('freeWheel adserver module', function() {
     let targeting;
     getTargeting({
       codes: ['preroll_1'],
-      pubCallback: function(errorMsg, targetingResult) {
+      callback: function(errorMsg, targetingResult) {
         targeting = targetingResult;
       }
     });
@@ -123,7 +122,7 @@ describe('freeWheel adserver module', function() {
     amStub.returns(getBidsReceived().concat(bannerBid));
     let targeting;
     getTargeting({
-      pubCallback: function(errorMsg, targetingResult) {
+      callback: function(errorMsg, targetingResult) {
         targeting = targetingResult;
       }
     });
@@ -147,7 +146,7 @@ describe('freeWheel adserver module', function() {
     ]);
     let targeting;
     getTargeting({
-      pubCallback: function(errorMsg, targetingResult) {
+      callback: function(errorMsg, targetingResult) {
         targeting = targetingResult;
       }
     });
@@ -164,7 +163,7 @@ describe('freeWheel adserver module', function() {
     ]);
     let targeting;
     getTargeting({
-      pubCallback: function(errorMsg, targetingResult) {
+      callback: function(errorMsg, targetingResult) {
         targeting = targetingResult;
       }
     });
@@ -173,25 +172,24 @@ describe('freeWheel adserver module', function() {
     expect(targeting['midroll_1']).to.be.empty;
   });
 
-  // TODO re-activate this unit test when adpod module is merged
-  // it('should select bids when deferCaching is enabled', function() {
-  //   config.setConfig({
-  //     adpod: {
-  //       deferCaching: true
-  //     }
-  //   });
-  //   amStub.returns(getBidsReceived());
-  //   let targeting;
-  //   getTargeting({
-  //     pubCallback: function(errorMsg, targetingResult) {
-  //       targeting = targetingResult;
-  //     }
-  //   });
+  it('should select bids when deferCaching is enabled', function() {
+    config.setConfig({
+      adpod: {
+        deferCaching: true
+      }
+    });
+    amStub.returns(getBidsReceived());
+    let targeting;
+    getTargeting({
+      callback: function(errorMsg, targetingResult) {
+        targeting = targetingResult;
+      }
+    });
 
-  //   expect(pbcStub.called).to.equal(true);
-  //   expect(targeting['preroll_1'].length).to.equal(3);
-  //   expect(targeting['midroll_1'].length).to.equal(4);
-  // });
+    expect(pbcStub.called).to.equal(true);
+    expect(targeting['preroll_1'].length).to.equal(3);
+    expect(targeting['midroll_1'].length).to.equal(4);
+  });
 });
 
 function getBidsReceived() {
