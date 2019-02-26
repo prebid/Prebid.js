@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import getTargeting from 'modules/freeWheelAdserverVideo';
+import { getTargeting } from 'modules/freeWheelAdserverVideo';
 import { auctionManager } from 'src/auctionManager';
 import { config } from 'src/config';
 import * as adpod from 'modules/adpod';
