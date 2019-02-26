@@ -1,8 +1,9 @@
-import { uniques, isGptPubadsDefined, getHighestCpm, getOldestHighestCpmBid, groupBy, isAdUnitCodeMatchingSlot, timestamp } from './utils';
+import { uniques, isGptPubadsDefined, getHighestCpm, getOldestHighestCpmBid, groupBy, isAdUnitCodeMatchingSlot, timestamp, deepAccess } from './utils';
 import { config } from './config';
 import { NATIVE_TARGETING_KEYS } from './native';
 import { auctionManager } from './auctionManager';
 import { sizeSupported } from './sizeMapping';
+import { ADPOD } from './mediaTypes';
 import includes from 'core-js/library/fn/array/includes';
 
 const utils = require('./utils.js');
@@ -220,6 +221,7 @@ export function newTargeting(auctionManager) {
     }
 
     bidsReceived = bidsReceived
+      .filter(bid => deepAccess(bid, 'video.context') !== ADPOD)
       .filter(bid => bid.mediaType !== 'banner' || sizeSupported([bid.width, bid.height]))
       .filter(filters.isUnusedBid)
       .filter(filters.isBidNotExpired)
