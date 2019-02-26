@@ -20,9 +20,17 @@ describe('category translation', function () {
   });
 
   it('should translate iab category to adserver category', function () {
+    config.setConfig({
+      'adpod': {
+        'brandCategoryExclusion': true
+      }
+    });
     getLocalStorageStub.returns(JSON.stringify({
       'mapping': {
-        'iab-1': '1'
+        'iab-1': {
+          'id': 1,
+          'name': 'sample'
+        }
       }
     }));
     let bid = {
@@ -31,7 +39,30 @@ describe('category translation', function () {
       }
     }
     getAdserverCategoryHook(sinon.spy(), 'code', bid);
-    expect(bid.meta.adServerCatId).to.equal('1');
+    expect(bid.meta.adServerCatId).to.equal(1);
+  });
+
+  it('should set adserverCatId to undefined if not found in mapping file', function() {
+    config.setConfig({
+      'adpod': {
+        'brandCategoryExclusion': true
+      }
+    });
+    getLocalStorageStub.returns(JSON.stringify({
+      'mapping': {
+        'iab-1': {
+          'id': 1,
+          'name': 'sample'
+        }
+      }
+    }));
+    let bid = {
+      meta: {
+        iabSubCatId: 'iab-2'
+      }
+    }
+    getAdserverCategoryHook(sinon.spy(), 'code', bid);
+    expect(bid.meta.adServerCatId).to.equal(undefined);
   });
 
   it('should not make ajax call to update mapping file if data found in localstorage and is not expired', function () {

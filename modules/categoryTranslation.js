@@ -16,8 +16,8 @@ import { hooks, hook } from '../src/hook';
 import { ajax } from '../src/ajax';
 import { timestamp, logError, setDataInLocalStorage, getDataFromLocalStorage } from '../src/utils';
 
-// TODO udpate url once it is uploaded on cdn
-const DEFAULT_TRANSLATION_FILE_URL = 'http://acdn.adnxs.com/prebid/test/jp/freewheel-mapping.json';
+// TODO udpate url once it is uploaded on jsDelivr
+const DEFAULT_TRANSLATION_FILE_URL = '//api.myjson.com/bins/dw1tm';
 const DEFAULT_IAB_TO_FW_MAPPING_KEY = 'iabToFwMappingkey';
 const DEFAULT_IAB_TO_FW_MAPPING_KEY_PUB = 'iabToFwMappingkeyPub';
 const refreshInDays = 1;
@@ -36,6 +36,10 @@ export function getAdserverCategoryHook(fn, adUnitCode, bid) {
     return fn.call(this, adUnitCode); // if no bid, call original and let it display warnings
   }
 
+  if (!config.getConfig('adpod.brandCategoryExclusion')) {
+    return fn.call(this, adUnitCode, bid);
+  }
+
   let localStorageKey = (config.getConfig('brandCategoryTranslation.translationFile')) ? DEFAULT_IAB_TO_FW_MAPPING_KEY_PUB : DEFAULT_IAB_TO_FW_MAPPING_KEY;
 
   if (bid.meta && !bid.meta.adServerCatId) {
@@ -46,8 +50,11 @@ export function getAdserverCategoryHook(fn, adUnitCode, bid) {
       } catch (error) {
         logError('Failed to parse translation mapping file');
       }
-      if (bid.meta) {
-        bid.meta.adServerCatId = (bid.meta.iabSubCatId && mapping['mapping']) ? mapping['mapping'][bid.meta.iabSubCatId] : undefined;
+      if (bid.meta.iabSubCatId && mapping['mapping'] && mapping['mapping'][bid.meta.iabSubCatId]) {
+        bid.meta.adServerCatId = mapping['mapping'][bid.meta.iabSubCatId]['id'];
+      } else {
+        // This bid will be automatically ignored by adpod module as adServerCatId was not found
+        bid.meta.adServerCatId = undefined;
       }
     } else {
       logError('Translation mapping data not found in local storage');

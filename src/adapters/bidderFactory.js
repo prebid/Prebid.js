@@ -348,6 +348,9 @@ export function newBidder(spec) {
 }
 
 export function preloadBidderMappingFile(fn, adUnits) {
+  if (!config.getConfig('adpod.brandCategoryExclusion')) {
+    return fn.call(this, adUnits);
+  }
   let adPodBidders = adUnits
     .filter((adUnit) => deepAccess(adUnit, 'mediaTypes.video.context') === ADPOD)
     .map((adUnit) => adUnit.bids.map((bid) => bid.bidder))

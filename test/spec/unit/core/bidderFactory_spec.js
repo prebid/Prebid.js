@@ -790,9 +790,15 @@ describe('preload mapping url hook', function() {
   afterEach(function() {
     getLocalStorageStub.restore();
     adapterManagerStub.restore();
+    config.resetConfig();
   });
 
   it('should preload mapping url file', function() {
+    config.setConfig({
+      'adpod': {
+        'brandCategoryExclusion': true
+      }
+    });
     let adUnits = [{
       code: 'midroll_1',
       mediaTypes: {
@@ -828,6 +834,11 @@ describe('preload mapping url hook', function() {
   });
 
   it('should preload mapping url file for all bidders', function() {
+    config.setConfig({
+      'adpod': {
+        'brandCategoryExclusion': true
+      }
+    });
     let adUnits = [{
       code: 'midroll_1',
       mediaTypes: {
@@ -875,6 +886,14 @@ describe('preload mapping url hook', function() {
             }
           }
         }
+      }
+    });
+    preloadBidderMappingFile(sinon.spy(), adUnits);
+    expect(fakeTranslationServer.requests.length).to.equal(2);
+
+    config.setConfig({
+      'adpod': {
+        'brandCategoryExclusion': false
       }
     });
     preloadBidderMappingFile(sinon.spy(), adUnits);
