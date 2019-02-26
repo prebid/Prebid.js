@@ -169,7 +169,7 @@ function doAllSyncs(bidders) {
 
   const thisSync = bidders.pop();
   if (thisSync.no_cookie) {
-    doBidderSync(thisSync.usersync.type, thisSync.usersync.url, thisSync.bidder, doAllSyncs.bind(null, bidders));
+    doBidderSync(thisSync.usersync.type, thisSync.usersync.url, thisSync.bidder, utils.bind.call(doAllSyncs, null, bidders));
   } else {
     doAllSyncs(bidders);
   }
