@@ -7,7 +7,7 @@ const BIDDER_CODE = 'ozone';
 
 const OZONEURI = 'https://elb.the-ozone-project.com/openrtb2/auction';
 const OZONECOOKIESYNC = 'https://elb.the-ozone-project.com/static/load-cookie.html';
-const OZONEVERSION = '1.4.4';
+const OZONEVERSION = '1.4.5';
 export const spec = {
   code: BIDDER_CODE,
 
@@ -81,9 +81,11 @@ export const spec = {
       ozoneRequest.regs.ext = {};
       ozoneRequest.regs.ext.gdpr = bidderRequest.gdprConsent.gdprApplies === true ? 1 : 0;
       if (ozoneRequest.regs.ext.gdpr) {
-        ozoneRequest.regs.ext.consent = bidderRequest.gdprConsent.consentString;
+        ozoneRequest.user = {};
+        ozoneRequest.user.ext = {'consent': bidderRequest.gdprConsent.consentString};
       }
     }
+    ozoneRequest.device = {"w": window.innerWidth, "h": window.innerHeight};
     let tosendtags = validBidRequests.map(ozoneBidRequest => {
       var obj = {};
       obj.id = ozoneBidRequest.bidId; // this causes a failure if we change it to something else
