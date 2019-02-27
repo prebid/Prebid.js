@@ -53,9 +53,7 @@ describe('gjirafaAdapterTest', function () {
       'sizes': [[728, 90], [980, 200], [980, 150], [970, 90], [970, 250]],
       'bidId': '10bdc36fe0b48c8',
       'bidderRequestId': '70deaff71c281d',
-      'auctionId': 'f9012acc-b6b7-4748-9098-97252914f9dc',
-	  'consent_string': 'consentString',
-	  'consent_required': 'true'
+      'auctionId': 'f9012acc-b6b7-4748-9098-97252914f9dc'
     },
     {
       'bidder': 'gjirafa',
@@ -69,10 +67,16 @@ describe('gjirafaAdapterTest', function () {
       'sizes': [[300, 250]],
       'bidId': '81a6dcb65e2bd9',
       'bidderRequestId': '70deaff71c281d',
-      'auctionId': 'f9012acc-b6b7-4748-9098-97252914f9dc',
-	  'consent_string': 'consentString',
-	  'consent_required': 'true'
+      'auctionId': 'f9012acc-b6b7-4748-9098-97252914f9dc'
     }];
+
+    const bidderRequest = {
+      'bids': bidRequests,
+      'gdprConsent': {
+        'consentString': 'consentString',
+        'gdprApplies': true
+      }
+    };
 
     it('bidRequest HTTP method', function () {
       const requests = spec.buildRequests(bidRequests);
@@ -92,7 +96,7 @@ describe('gjirafaAdapterTest', function () {
     it('bidRequest data', function () {
       const requests = spec.buildRequests(bidRequests);
       requests.forEach(function(requestItem) {
-        expect(requestItem.data).to.exists;
+        expect(requestItem.data).to.exist;
       });
     });
 
@@ -103,11 +107,11 @@ describe('gjirafaAdapterTest', function () {
     });
 
     it('should add GDPR data', function () {
-      const requests = spec.buildRequests(bidRequests);
-	  expect(requests[0].data.consent_string).to.exists;
-	  expect(requests[0].data.consent_required).to.exists;
-	  expect(requests[1].data.consent_string).to.exists;
-	  expect(requests[1].data.consent_required).to.exists;
+      const requests = spec.buildRequests(bidRequests, bidderRequest);
+	  expect(requests[0].data.consent_string).to.exist;
+	  expect(requests[0].data.consent_required).to.exist;
+	  expect(requests[1].data.consent_string).to.exist;
+	  expect(requests[1].data.consent_required).to.exist;
     });
   });
 

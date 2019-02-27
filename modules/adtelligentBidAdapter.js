@@ -20,26 +20,36 @@ export const spec = {
   getUserSyncs: function (syncOptions, serverResponses) {
     var syncs = [];
 
-    function addSyncs(_s) {
-      if (_s && _s.length) {
-        _s.forEach(s => {
+    function addSyncs(bid) {
+      const uris = bid.cookieURLs;
+      const types = bid.cookieURLSTypes || [];
+
+      if (uris && uris.length) {
+        uris.forEach((uri, i) => {
+          let type = types[i] || 'image';
+
+          if ((!syncOptions.pixelEnabled && type == 'image') ||
+            (!syncOptions.iframeEnabled && type == 'iframe')) {
+            return;
+          }
+
           syncs.push({
-            type: 'image',
-            url: s
+            type: type,
+            url: uri
           })
         })
       }
     }
 
-    if (syncOptions.pixelEnabled) {
+    if (syncOptions.pixelEnabled || syncOptions.iframeEnabled) {
       serverResponses && serverResponses.length && serverResponses.forEach((response) => {
         if (response.body) {
           if (utils.isArray(response.body)) {
             response.body.forEach(b => {
-              addSyncs(b.cookieURLs);
+              addSyncs(b);
             })
           } else {
-            addSyncs(response.body.cookieURLs)
+            addSyncs(response.body)
           }
         }
       })
@@ -116,7 +126,7 @@ function bidToTag(bidRequests, bidderRequest) {
     domain: utils.getTopWindowLocation().hostname
   };
 
-  if (bidderRequest && bidderRequest.gdprConsent) {
+  if (bidderRequest && bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies) {
     tag.gdpr = 1;
     tag.gdpr_consent = bidderRequest.gdprConsent.consentString;
   }
