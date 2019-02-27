@@ -8,9 +8,9 @@ describe('advangelistsBidAdapter', function () {
   let bidRequestsVid;
 
   beforeEach(function () {
-    bidRequests = [{'bidder': 'avng', 'params': {'pubid': '0cf8d6d643e13d86a5b6374148a4afac', 'placement': 1234}, 'crumbs': {'pubcid': '979fde13-c71e-4ac2-98b7-28c90f99b449'}, 'mediaTypes': {'banner': {'sizes': [[300, 250]]}}, 'adUnitCode': 'div-gpt-ad-1460505748561-0', 'transactionId': 'f72931e6-2b0e-4e37-a2bc-1ea912141f81', 'sizes': [[300, 250]], 'bidId': '2aa73f571eaf29', 'bidderRequestId': '1bac84515a7af3', 'auctionId': '5dbc60fa-1aa1-41ce-9092-e6bbd4d478f7', 'src': 'client', 'bidRequestsCount': 1}];
+    bidRequests = [{'bidder': 'avng', 'params': {'pubid': '0cf8d6d643e13d86a5b6374148a4afac', 'placement': 1234}, 'crumbs': {'pubcid': '979fde13-c71e-4ac2-98b7-28c90f99b449'}, 'mediaTypes': {'banner': {'sizes': [[300, 250]]}}, 'adUnitCode': 'div-gpt-ad-1460505748561-0', 'transactionId': 'f72931e6-2b0e-4e37-a2bc-1ea912141f81', 'sizes': [[300, 250]], 'bidId': '2aa73f571eaf29', 'bidderRequestId': '1bac84515a7af3', 'auctionId': '5dbc60fa-1aa1-41ce-9092-e6bbd4d478f7', 'src': 'client', 'bidRequestsCount': 1, 'pageurl': 'http://google.com'}];
 
-    bidRequestsVid = [{'bidder': 'avng', 'params': {'pubid': '8537f00948fc37cc03c5f0f88e198a76', 'placement': 1234, 'video': {'id': 123, 'skip': 1, 'mimes': ['video/mp4', 'application/javascript'], 'playbackmethod': [2, 6], 'maxduration': 30}}, 'crumbs': {'pubcid': '979fde13-c71e-4ac2-98b7-28c90f99b449'}, 'mediaTypes': {'video': {'playerSize': [[320, 480]], 'context': 'instream'}}, 'adUnitCode': 'video1', 'transactionId': '8b060952-93f7-4863-af44-bb8796b97c42', 'sizes': [], 'bidId': '25c6ab92aa0e81', 'bidderRequestId': '1d420b73a013fc', 'auctionId': '9a69741c-34fb-474c-83e1-cfa003aaee17', 'src': 'client', 'bidRequestsCount': 1}];
+    bidRequestsVid = [{'bidder': 'avng', 'params': {'pubid': '8537f00948fc37cc03c5f0f88e198a76', 'placement': 1234, 'video': {'id': 123, 'skip': 1, 'mimes': ['video/mp4', 'application/javascript'], 'playbackmethod': [2, 6], 'maxduration': 30}}, 'crumbs': {'pubcid': '979fde13-c71e-4ac2-98b7-28c90f99b449'}, 'mediaTypes': {'video': {'playerSize': [[320, 480]], 'context': 'instream'}}, 'adUnitCode': 'video1', 'transactionId': '8b060952-93f7-4863-af44-bb8796b97c42', 'sizes': [], 'bidId': '25c6ab92aa0e81', 'bidderRequestId': '1d420b73a013fc', 'auctionId': '9a69741c-34fb-474c-83e1-cfa003aaee17', 'src': 'client', 'bidRequestsCount': 1, 'pageurl': 'http://google.com'}];
   });
 
   describe('spec.isBidRequestValid', function () {
@@ -60,7 +60,9 @@ describe('advangelistsBidAdapter', function () {
     it('should have domain in request', function () {
       const bidRequest = bidRequests[0];
       const requests = spec.buildRequests([ bidRequest ]);
-      expect(Object.keys(requests[0].data.site.domain).length !== 0);
+      console.log(requests[0].data.site.domain);
+      // expect(Object.keys(requests[0].data.site.domain).length !== 0);
+      expect(requests[0].data.site.domain).length !== 0;
     });
   });
 
