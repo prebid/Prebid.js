@@ -160,6 +160,9 @@ function getCustParams(bid, options) {
   let customParams = Object.assign({},
     allTargetingData,
     adserverTargeting,
+    { hb_uuid: bid && bid.videoCacheKey },
+    // hb_uuid will be deprecated and replaced by hb_cache_id
+    { hb_cache_id: bid && bid.videoCacheKey },
     optCustParams,
   );
   return encodeURIComponent(formatQS(customParams));

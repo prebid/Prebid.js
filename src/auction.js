@@ -386,8 +386,6 @@ export function doCallbacksIfTimedout(auctionInstance, bidResponse) {
 
 // Add a bid to the auction.
 export function addBidToAuction(auctionInstance, bidResponse) {
-  setupBidTargeting(bidResponse);
-
   events.emit(CONSTANTS.EVENTS.BID_RESPONSE, bidResponse);
   auctionInstance.addBidReceived(bidResponse);
 
@@ -431,7 +429,6 @@ export const callPrebidCache = hook('async', function(auctionInstance, bidRespon
         doCallbacksIfTimedout(auctionInstance, bidResponse);
       } else {
         bidResponse.videoCacheKey = cacheIds[0].uuid;
-
         if (!bidResponse.vastUrl) {
           bidResponse.vastUrl = getCacheUrl(bidResponse.videoCacheKey);
         }
@@ -488,23 +485,16 @@ function getPreparedBidForAuction({adUnitCode, bid, bidderRequest, auctionId}) {
   bidObject.pbDg = priceStringsObj.dense;
   bidObject.pbCg = priceStringsObj.custom;
 
-  return bidObject;
-}
-
-function setupBidTargeting(bidObject) {
-  let keyValues;
+  // if there is any key value pairs to map do here
+  var keyValues;
   if (bidObject.bidderCode && (bidObject.cpm > 0 || bidObject.dealId)) {
     keyValues = getKeyValueTargetingPairs(bidObject.bidderCode, bidObject, bidReq);
   }
 
-  let cacheTargetKeys = {};
-  if (bidObject.videoCacheKey) {
-    cacheTargetKeys.hb_uuid = bidObject.videoCacheKey;
-    cacheTargetKeys.hb_cache_id = bidObject.videoCacheKey;
-  }
-
   // use any targeting provided as defaults, otherwise just set from getKeyValueTargetingPairs
-  bidObject.adserverTargeting = Object.assign(bidObject.adserverTargeting || {}, cacheTargetKeys, keyValues);
+  bidObject.adserverTargeting = Object.assign(bidObject.adserverTargeting || {}, keyValues);
+
+  return bidObject;
 }
 
 export function getStandardBidderSettings(mediaType) {
