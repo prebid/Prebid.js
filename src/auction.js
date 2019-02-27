@@ -494,7 +494,7 @@ function getPreparedBidForAuction({adUnitCode, bid, bidderRequest, auctionId}) {
 function setupBidTargeting(bidObject) {
   let keyValues;
   if (bidObject.bidderCode && (bidObject.cpm > 0 || bidObject.dealId)) {
-    keyValues = getKeyValueTargetingPairs(bidObject.bidderCode, bidObject);
+    keyValues = getKeyValueTargetingPairs(bidObject.bidderCode, bidObject, bidReq);
   }
 
   let cacheTargetKeys = {};
@@ -573,7 +573,7 @@ export function getStandardBidderSettings(mediaType) {
   return bidderSettings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD];
 }
 
-export function getKeyValueTargetingPairs(bidderCode, custBidObj) {
+export function getKeyValueTargetingPairs(bidderCode, custBidObj, bidReq) {
   if (!custBidObj) {
     return {};
   }
@@ -596,7 +596,7 @@ export function getKeyValueTargetingPairs(bidderCode, custBidObj) {
 
   // set native key value targeting
   if (custBidObj['native']) {
-    keyValues = Object.assign({}, keyValues, getNativeTargeting(custBidObj));
+    keyValues = Object.assign({}, keyValues, getNativeTargeting(custBidObj, bidReq));
   }
 
   return keyValues;
