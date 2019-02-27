@@ -997,7 +997,7 @@ export function getDefinedParams(object, params) {
  */
 export function isValidMediaTypes(mediaTypes) {
   const SUPPORTED_MEDIA_TYPES = ['banner', 'native', 'video'];
-  const SUPPORTED_STREAM_TYPES = ['instream', 'outstream'];
+  const SUPPORTED_STREAM_TYPES = ['instream', 'outstream', 'adpod'];
 
   const types = Object.keys(mediaTypes);
 
@@ -1220,4 +1220,46 @@ export function hasLocalStorage() {
 
 export function isArrayOfNums(val, size) {
   return (isArray(val)) && ((size) ? val.length === size : true) && (val.every(v => isInteger(v)));
+}
+
+/**
+ * Creates an array of n length and fills each item with the given value
+ */
+export function fill(value, length) {
+  let newArray = [];
+
+  for (let i = 0; i < length; i++) {
+    let valueToPush = isPlainObject(value) ? deepClone(value) : value;
+    newArray.push(valueToPush);
+  }
+
+  return newArray;
+}
+
+/**
+ * http://npm.im/chunk
+ * Returns an array with *size* chunks from given array
+ *
+ * Example:
+ * ['a', 'b', 'c', 'd', 'e'] chunked by 2 =>
+ * [['a', 'b'], ['c', 'd'], ['e']]
+ */
+export function chunk(array, size) {
+  let newArray = [];
+
+  for (let i = 0; i < Math.ceil(array.length / size); i++) {
+    let start = i * size;
+    let end = start + size;
+    newArray.push(array.slice(start, end));
+  }
+
+  return newArray;
+}
+
+export function getMinValueFromArray(array) {
+  return Math.min(...array);
+}
+
+export function getMaxValueFromArray(array) {
+  return Math.max(...array);
 }
