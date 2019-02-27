@@ -172,7 +172,7 @@ $$PREBID_GLOBAL$$.getAdserverTargeting = function (adUnitCode) {
 
 function getBids(type) {
   const responses = auctionManager[type]()
-    .filter(adUnitsFilter.bind(this, auctionManager.getAdUnitCodes()));
+    .filter(utils.bind.call(adUnitsFilter, this, auctionManager.getAdUnitCodes()));
 
   // find the last auction id to get responses for most recent auction only
   const currentAuctionId = auctionManager.getLastAuctionId();
