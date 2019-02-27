@@ -5,7 +5,7 @@ import { spec } from 'modules/adagioBidAdapter';
 describe('adagioAdapter', () => {
   const adapter = newBidder(spec);
   const ENDPOINT = 'https://mp.4dex.io/prebid';
-  const VERSION = '1.1.0';
+  const VERSION = '1.1.1';
 
   describe('inherited functions', () => {
     it('exists and is a function', () => {
@@ -243,6 +243,28 @@ describe('adagioAdapter', () => {
       expect(request.data.adUnits[0].features).to.exist;
     });
 
+    it('generates a pageviewId if missing', () => {
+      window.top.ADAGIO = window.top.ADAGIO || {};
+      delete window.top.ADAGIO.pageviewId;
+
+      const requests = spec.buildRequests(bidRequests);
+      expect(requests).to.have.lengthOf(2);
+
+      expect(requests[0].data.pageviewId).to.exist.and.to.not.equal('_').and.to.not.equal('');
+      expect(requests[0].data.pageviewId).to.equal(requests[1].data.pageviewId);
+    });
+
+    it('uses an existing pageviewId if present', () => {
+      window.top.ADAGIO = window.top.ADAGIO || {};
+      window.top.ADAGIO.pageviewId = 'abc';
+
+      const requests = spec.buildRequests(bidRequests);
+      expect(requests).to.have.lengthOf(2);
+
+      expect(requests[0].data.pageviewId).to.equal('abc');
+      expect(requests[1].data.pageviewId).to.equal('abc');
+    });
+
     it('GDPR consent is applied', () => {
       const requests = spec.buildRequests(bidRequests, bidderRequest);
       expect(requests).to.have.lengthOf(2);
@@ -343,6 +365,7 @@ describe('adagioAdapter', () => {
             'bidId': 'c180kg4267tyqz',
             'bidderRequestId': '8vfscuixrovn8i',
             'auctionId': 'lel4fhp239i9km',
+            'pageviewId': 'd8c4fl2k39i0wn',
           }
         ]
       }

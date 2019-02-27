@@ -3,7 +3,7 @@ import * as utils from 'src/utils';
 import { registerBidder } from 'src/adapters/bidderFactory';
 
 const BIDDER_CODE = 'adagio';
-const VERSION = '1.1.0';
+const VERSION = '1.1.1';
 const FEATURES_VERSION = '1';
 const ENDPOINT = 'https://mp.4dex.io/prebid';
 const SUPPORTED_MEDIA_TYPES = ['banner'];
@@ -180,7 +180,8 @@ function _getSite() {
 };
 
 function _getPageviewId() {
-  return (!window.top.ADAGIO || !window.top.ADAGIO.pageviewId) ? '_' : window.top.ADAGIO.pageviewId;
+  window.top.ADAGIO.pageviewId = window.top.ADAGIO.pageviewId || utils.generateUUID();
+  return window.top.ADAGIO.pageviewId;
 };
 
 /**
