@@ -1,4 +1,4 @@
-import { deepAccess, getBidRequest, logError, triggerPixel, insertHtmlIntoIframe } from './utils';
+import { deepAccess, getBidRequest, getKeyByValue, insertHtmlIntoIframe, logError, triggerPixel } from './utils';
 import includes from 'core-js/library/fn/array/includes';
 
 const CONSTANTS = require('./constants.json');
@@ -151,7 +151,7 @@ export function fireNativeTrackers(message, adObject) {
  * @param {Object} bid
  * @return {Object} targeting
  */
-export function getNativeTargeting(bid) {
+export function getNativeTargeting(bid, bidReq) {
   let keyValues = {};
 
   Object.keys(bid['native']).forEach(asset => {
@@ -163,10 +163,41 @@ export function getNativeTargeting(bid) {
       value = value.url;
     }
 
+    const sendPlaceholder = deepAccess(
+      bidReq,
+      `mediaTypes.native.${asset}.sendId`
+    );
+
+    if (sendPlaceholder) {
+      const placeholder = `${key}:${bid.adId}`;
+      value = placeholder;
+    }
+
     if (key && value) {
       keyValues[key] = value;
     }
   });
 
   return keyValues;
+}
+
+/**
+ * Constructs a message object containing asset values for each of the
+ * requested data keys.
+ */
+export function getAssetMessage(data, adObject) {
+  const message = {
+    message: 'assetResponse',
+    adId: data.adId,
+    assets: [],
+  };
+
+  data.assets.forEach(asset => {
+    const key = getKeyByValue(CONSTANTS.NATIVE_KEYS, asset);
+    const value = adObject.native[key];
+
+    message.assets.push({ key, value });
+  });
+
+  return message;
 }
