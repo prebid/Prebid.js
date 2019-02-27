@@ -779,6 +779,9 @@ describe('adpod.js', function () {
       config.setConfig({
         cache: {
           url: 'http://test.cache.url/endpoint'
+        },
+        adpod: {
+          brandCategoryExclusion: true
         }
       });
       logWarnStub = sinon.stub(utils, 'logWarn');
@@ -802,6 +805,24 @@ describe('adpod.js', function () {
     });
 
     it('returns true when adpod bid is properly setup', function() {
+      config.setConfig({
+        cache: {
+          url: 'http://test.cache.url/endpoint'
+        },
+        adpod: {
+          brandCategoryExclusion: false
+        }
+      });
+
+      let goodBid = utils.deepClone(adpodTestBid);
+      goodBid.meta.iabSubCatId = undefined;
+      checkVideoBidSetupHook(callbackFn, goodBid, bidderRequestNoExact, {}, ADPOD);
+      expect(callbackResult).to.be.null;
+      expect(bailResult).to.equal(true);
+      expect(logErrorStub.called).to.equal(false);
+    });
+
+    it('returns true when adpod bid is missing iab category while brandCategoryExclusion in config is false', function() {
       let goodBid = utils.deepClone(adpodTestBid);
       checkVideoBidSetupHook(callbackFn, goodBid, bidderRequestNoExact, {}, ADPOD);
       expect(callbackResult).to.be.null;
@@ -818,7 +839,7 @@ describe('adpod.js', function () {
       }
 
       let noCatBid = utils.deepClone(adpodTestBid);
-      delete noCatBid.meta;
+      noCatBid.meta.iabSubCatId = undefined;
       testInvalidAdpodBid(noCatBid, false);
 
       let noContextBid = utils.deepClone(adpodTestBid);

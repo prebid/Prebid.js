@@ -69,7 +69,7 @@ function setRenderSize(doc, width, height) {
   }
 }
 
-const checkAdUnitSetup = hook('sync', function (adUnits) {
+export const checkAdUnitSetup = hook('sync', function (adUnits) {
   adUnits.forEach((adUnit) => {
     const mediaTypes = adUnit.mediaTypes;
     const normalizedSize = utils.getAdUnitSizes(adUnit);

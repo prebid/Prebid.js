@@ -10,3 +10,10 @@ export let hook = funHooks({
  * @type {{}}
  */
 export const hooks = hook.hooks;
+
+export function setupBeforeHookFnOnce(baseFn, hookFn, priority = 15) {
+  let result = baseFn.getHooks({hook: hookFn});
+  if (result.length === 0) {
+    baseFn.before(hookFn, priority);
+  }
+}
