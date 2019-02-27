@@ -11,7 +11,8 @@ import includes from 'core-js/library/fn/array/includes';
 import { ajax } from '../ajax';
 import { logWarn, logError, parseQueryStringParameters, delayExecution, parseSizesInput, getBidderRequest, flatten, uniques, timestamp, setDataInLocalStorage, getDataFromLocalStorage, deepAccess } from '../utils';
 import { ADPOD } from '../mediaTypes';
-import { checkAdUnitSetup } from '../src/prebid';
+import { getHook } from '../hook';
+
 /**
  * This file aims to support Adapters during the Prebid 0.x -> 1.x transition.
  *
@@ -392,7 +393,7 @@ export function preloadBidderMappingFile(fn, adUnits) {
   fn.call(this, adUnits);
 }
 
-checkAdUnitSetup.before(preloadBidderMappingFile);
+getHook('checkAdUnitSetup').before(preloadBidderMappingFile);
 
 /**
  * Reads the data stored in localstorage and returns iab subcategory
