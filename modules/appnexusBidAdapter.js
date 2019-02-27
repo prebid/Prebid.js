@@ -1,7 +1,7 @@
 import { Renderer } from '../src/Renderer';
 import * as utils from '../src/utils';
-import { registerBidder } from '../src/adapters/bidderFactory';
-import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes';
+import { registerBidder, getIabSubCategory } from '../src/adapters/bidderFactory';
+import { BANNER, NATIVE, VIDEO, ADPOD } from '../src/mediaTypes';
 import find from 'core-js/library/fn/array/find';
 import includes from 'core-js/library/fn/array/includes';
 
@@ -32,6 +32,7 @@ const NATIVE_MAPPING = {
   displayUrl: 'displayurl'
 };
 const SOURCE = 'pbjs';
+const mappingFileUrl = '//acdn.adnxs.com/prebid/appnexus-mapping/mappings.json';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -209,6 +210,24 @@ export const spec = {
     return bids;
   },
 
+  /**
+   * @typedef {Object} mappingFileInfo
+   * @property {string} url  mapping file json url
+   * @property {number} refreshInDays prebid stores mapping data in localstorage so you can return in how many days you want to update value stored in localstorage.
+   * @property {string} localStorageKey unique key to store your mapping json in localstorage
+   */
+
+  /**
+   * Returns mapping file info. This info will be used by bidderFactory to preload mapping file and store data in local storage
+   * @returns {mappingFileInfo}
+   */
+  getMappingFileInfo: function() {
+    return {
+      url: mappingFileUrl,
+      refreshInDays: 7
+    }
+  },
+
   getUserSyncs: function(syncOptions) {
     if (syncOptions.iframeEnabled) {
       return [{
@@ -316,6 +335,21 @@ function newBid(serverBid, rtbBid, bidderRequest) {
       vastImpUrl: rtbBid.notify_url,
       ttl: 3600
     });
+
+    const videoContext = utils.deepAccess(bidRequest, 'mediaTypes.video.context');
+    if (videoContext === ADPOD) {
+      const iabSubCatId = getIabSubCategory(bidRequest.bidder, rtbBid.brand_category_id);
+
+      bid.meta = {
+        iabSubCatId
+      };
+
+      bid.video = {
+        context: ADPOD,
+        durationSeconds: Math.ceil(rtbBid.rtb.video.duration_ms / 1000),
+      };
+    }
+
     // This supports Outstream Video
     if (rtbBid.renderer_url) {
       const rendererOptions = utils.deepAccess(
