@@ -12,9 +12,10 @@
  */
 
 import { config } from '../src/config';
-import { hooks, hook } from '../src/hook';
+import { setupBeforeHookFnOnce, hook } from '../src/hook';
 import { ajax } from '../src/ajax';
 import { timestamp, logError, setDataInLocalStorage, getDataFromLocalStorage } from '../src/utils';
+import { addBidResponse } from '../src/auction';
 
 const DEFAULT_TRANSLATION_FILE_URL = '//cdn.jsdelivr.net/gh/prebid/category-mapping-file@1/freewheel-mapping.json';
 const DEFAULT_IAB_TO_FW_MAPPING_KEY = 'iabToFwMappingkey';
@@ -63,15 +64,7 @@ export function getAdserverCategoryHook(fn, adUnitCode, bid) {
 }
 
 export function initTranslation(url, localStorageKey) {
-  // TODO use function from adpod module
-  function setupHookFnOnce(hookId, hookFn, priority = 15) {
-    let result = hooks[hookId].getHooks({hook: hookFn});
-    if (result.length === 0) {
-      hooks[hookId].before(hookFn, priority);
-    }
-  }
-
-  setupHookFnOnce('addBidResponse', getAdserverCategoryHook, 50);
+  setupBeforeHookFnOnce(addBidResponse, getAdserverCategoryHook, 50);
   let mappingData = getDataFromLocalStorage(localStorageKey);
   if (!mappingData || timestamp() < mappingData.lastUpdated + refreshInDays * 24 * 60 * 60 * 1000) {
     ajax(url,
