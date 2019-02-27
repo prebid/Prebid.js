@@ -128,7 +128,7 @@ describe('TheMediaGrid Adapter', function () {
 
   describe('interpretResponse', function () {
     const responses = [
-      {'bid': [{'price': 1.15, 'adm': '<div>test content 1</div>', 'auid': 1, 'h': 250, 'w': 300}], 'seat': '1'},
+      {'bid': [{'price': 1.15, 'adm': '<div>test content 1</div>', 'auid': 1, 'h': 250, 'w': 300, dealid: 11}], 'seat': '1'},
       {'bid': [{'price': 0.5, 'adm': '<div>test content 2</div>', 'auid': 2, 'h': 90, 'w': 728}], 'seat': '1'},
       {'bid': [{'price': 0, 'auid': 3, 'h': 250, 'w': 300}], 'seat': '1'},
       {'bid': [{'price': 0, 'adm': '<div>test content 4</div>', 'h': 250, 'w': 300}], 'seat': '1'},
@@ -157,12 +157,13 @@ describe('TheMediaGrid Adapter', function () {
           'requestId': '659423fff799cb',
           'cpm': 1.15,
           'creativeId': 1,
-          'dealId': undefined,
+          'dealId': 11,
           'width': 300,
           'height': 250,
           'ad': '<div>test content 1</div>',
           'bidderCode': 'grid',
           'currency': 'USD',
+          'mediaType': 'banner',
           'netRevenue': false,
           'ttl': 360,
         }
@@ -214,12 +215,13 @@ describe('TheMediaGrid Adapter', function () {
           'requestId': '300bfeb0d71a5b',
           'cpm': 1.15,
           'creativeId': 1,
-          'dealId': undefined,
+          'dealId': 11,
           'width': 300,
           'height': 250,
           'ad': '<div>test content 1</div>',
           'bidderCode': 'grid',
           'currency': 'USD',
+          'mediaType': 'banner',
           'netRevenue': false,
           'ttl': 360,
         },
@@ -227,12 +229,13 @@ describe('TheMediaGrid Adapter', function () {
           'requestId': '5703af74d0472a',
           'cpm': 1.15,
           'creativeId': 1,
-          'dealId': undefined,
+          'dealId': 11,
           'width': 300,
           'height': 250,
           'ad': '<div>test content 1</div>',
           'bidderCode': 'grid',
           'currency': 'USD',
+          'mediaType': 'banner',
           'netRevenue': false,
           'ttl': 360,
         },
@@ -246,12 +249,94 @@ describe('TheMediaGrid Adapter', function () {
           'ad': '<div>test content 2</div>',
           'bidderCode': 'grid',
           'currency': 'USD',
+          'mediaType': 'banner',
           'netRevenue': false,
           'ttl': 360,
         }
       ];
 
       const result = spec.interpretResponse({'body': {'seatbid': [responses[0], responses[1]]}}, request);
+      expect(result).to.deep.equal(expectedResponse);
+    });
+
+    it('should get correct video bid response', function () {
+      const bidRequests = [
+        {
+          'bidder': 'grid',
+          'params': {
+            'uid': '1'
+          },
+          'adUnitCode': 'adunit-code-1',
+          'sizes': [[300, 250], [300, 600]],
+          'bidId': '659423fff799cb',
+          'bidderRequestId': '5f2009617a7c0a',
+          'auctionId': '1cbd2feafe5e8b',
+          'mediaTypes': {
+            'video': {
+              'context': 'instream'
+            }
+          }
+        },
+        {
+          'bidder': 'grid',
+          'params': {
+            'uid': '2'
+          },
+          'adUnitCode': 'adunit-code-1',
+          'sizes': [[300, 250], [300, 600]],
+          'bidId': '2bc598e42b6a',
+          'bidderRequestId': '5f2009617a7c0a',
+          'auctionId': '1cbd2feafe5e8b',
+          'mediaTypes': {
+            'video': {
+              'context': 'instream'
+            }
+          }
+        }
+      ];
+      const response = [
+        {'bid': [{'price': 1.15, 'adm': '<VAST version=\"3.0\">\n<Ad id=\"21341234\"><\/Ad>\n<\/VAST>', 'auid': 1, content_type: 'video', w: 300, h: 600}], 'seat': '2'},
+        {'bid': [{'price': 1.00, 'adm': '<VAST version=\"3.0\">\n<Ad id=\"21331274\"><\/Ad>\n<\/VAST>', 'auid': 2, content_type: 'video'}], 'seat': '2'}
+      ];
+      const request = spec.buildRequests(bidRequests);
+      const expectedResponse = [
+        {
+          'requestId': '659423fff799cb',
+          'cpm': 1.15,
+          'creativeId': 1,
+          'dealId': undefined,
+          'width': 300,
+          'height': 600,
+          'bidderCode': 'grid',
+          'currency': 'USD',
+          'mediaType': 'video',
+          'netRevenue': false,
+          'ttl': 360,
+          'vastXml': '<VAST version=\"3.0\">\n<Ad id=\"21341234\"><\/Ad>\n<\/VAST>',
+          'adResponse': {
+            'content': '<VAST version=\"3.0\">\n<Ad id=\"21341234\"><\/Ad>\n<\/VAST>'
+          }
+        },
+        {
+          'requestId': '2bc598e42b6a',
+          'cpm': 1.00,
+          'creativeId': 2,
+          'dealId': undefined,
+          'width': 300,
+          'height': 250,
+          'bidderCode': 'grid',
+          'currency': 'USD',
+          'mediaType': 'video',
+          'netRevenue': false,
+          'ttl': 360,
+          'vastXml': '<VAST version=\"3.0\">\n<Ad id=\"21331274\"><\/Ad>\n<\/VAST>',
+          'adResponse': {
+            'content': '<VAST version=\"3.0\">\n<Ad id=\"21331274\"><\/Ad>\n<\/VAST>'
+          }
+        }
+      ];
+
+      const result = spec.interpretResponse({'body': {'seatbid': response}}, request);
       expect(result).to.deep.equal(expectedResponse);
     });
 
