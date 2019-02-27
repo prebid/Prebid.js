@@ -91,6 +91,7 @@ const displayBidderRequestWithGdpr = {
   bidderCode: 'bidderCode',
   bids: [{bidId: '2e41f65424c87c'}],
   gdprConsent: {
+    gdprApplies: true,
     consentString: 'test'
   }
 };

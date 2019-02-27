@@ -802,6 +802,26 @@ describe('S2S Adapter', function () {
       expect(requestBid.imp[0].ext.appnexus).to.haveOwnProperty('key');
       expect(requestBid.imp[0].ext.appnexus.key).to.be.equal('value')
     });
+
+    it('when userId is defined on bids, it\'s properties should be copied to user.ext.tpid properties', function () {
+      let ortb2Config = utils.deepClone(CONFIG);
+      ortb2Config.endpoint = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
+
+      let consentConfig = { s2sConfig: ortb2Config };
+      config.setConfig(consentConfig);
+
+      let userIdBidRequest = utils.deepClone(BID_REQUESTS);
+      userIdBidRequest[0].userId = {
+        foo: 'abc123',
+        unifiedid: '1234'
+      };
+
+      adapter.callBids(REQUEST, userIdBidRequest, addBidResponse, done, ajax);
+      let requestBid = JSON.parse(requests[0].requestBody);
+      expect(typeof requestBid.user.ext.tpid).is.equal('object');
+      expect(requestBid.user.ext.tpid.foo).is.equal('abc123');
+      expect(requestBid.user.ext.tpid.unifiedid).is.equal('1234');
+    })
   });
 
   describe('response handler', function () {
