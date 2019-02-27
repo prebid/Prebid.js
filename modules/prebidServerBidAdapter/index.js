@@ -169,7 +169,7 @@ function doAllSyncs(bidders) {
 
   const thisSync = bidders.pop();
   if (thisSync.no_cookie) {
-    doBidderSync(thisSync.usersync.type, thisSync.usersync.url, thisSync.bidder, doAllSyncs.bind(null, bidders));
+    doBidderSync(thisSync.usersync.type, thisSync.usersync.url, thisSync.bidder, utils.bind.call(doAllSyncs, null, bidders));
   } else {
     doAllSyncs(bidders);
   }
@@ -494,6 +494,19 @@ const OPEN_RTB_PROTOCOL = {
 
     if (!utils.isEmpty(aliases)) {
       request.ext = { prebid: { aliases } };
+    }
+
+    if (bidRequests && bidRequests[0].userId && typeof bidRequests[0].userId === 'object') {
+      if (!request.user) {
+        request.user = {};
+      }
+      if (!request.user.ext) {
+        request.user.ext = {}
+      }
+      if (!request.user.ext.tpid) {
+        request.user.ext.tpid = {}
+      }
+      Object.assign(request.user.ext.tpid, bidRequests[0].userId);
     }
 
     if (bidRequests && bidRequests[0].gdprConsent) {

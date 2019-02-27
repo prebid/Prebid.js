@@ -34,6 +34,7 @@ const NATIVE_MAPPING = {
 };
 const SOURCE = 'pbjs';
 const MAX_IMPS_PER_REQUEST = 15;
+const mappingFileUrl = '//acdn.adnxs.com/prebid/appnexus-mapping/mappings.json';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -219,6 +220,24 @@ export const spec = {
     }
 
     return bids;
+  },
+
+  /**
+   * @typedef {Object} mappingFileInfo
+   * @property {string} url  mapping file json url
+   * @property {number} refreshInDays prebid stores mapping data in localstorage so you can return in how many days you want to update value stored in localstorage.
+   * @property {string} localStorageKey unique key to store your mapping json in localstorage
+   */
+
+  /**
+   * Returns mapping file info. This info will be used by bidderFactory to preload mapping file and store data in local storage
+   * @returns {mappingFileInfo}
+   */
+  getMappingFileInfo: function() {
+    return {
+      url: mappingFileUrl,
+      refreshInDays: 7
+    }
   },
 
   getUserSyncs: function(syncOptions) {

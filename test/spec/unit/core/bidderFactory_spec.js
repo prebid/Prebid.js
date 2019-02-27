@@ -1,4 +1,4 @@
-import { newBidder, registerBidder } from 'src/adapters/bidderFactory';
+import { newBidder, registerBidder, preloadBidderMappingFile } from 'src/adapters/bidderFactory';
 import adapterManager from 'src/adapterManager';
 import * as ajax from 'src/ajax';
 import { expect } from 'chai';
@@ -773,5 +773,130 @@ describe('validate bid response: ', function () {
     expect(addBidResponseStub.calledOnce).to.equal(true);
     expect(addBidResponseStub.firstCall.args[0]).to.equal('mock/placement');
     expect(logErrorSpy.callCount).to.equal(0);
+  });
+});
+
+describe('preload mapping url hook', function() {
+  let fakeTranslationServer;
+  let getLocalStorageStub;
+  let adapterManagerStub;
+
+  beforeEach(function () {
+    fakeTranslationServer = sinon.fakeServer.create();
+    getLocalStorageStub = sinon.stub(utils, 'getDataFromLocalStorage');
+    adapterManagerStub = sinon.stub(adapterManager, 'getBidAdapter');
+  });
+
+  afterEach(function() {
+    getLocalStorageStub.restore();
+    adapterManagerStub.restore();
+    config.resetConfig();
+  });
+
+  it('should preload mapping url file', function() {
+    config.setConfig({
+      'adpod': {
+        'brandCategoryExclusion': true
+      }
+    });
+    let adUnits = [{
+      code: 'midroll_1',
+      mediaTypes: {
+        video: {
+          context: 'adpod'
+        }
+      },
+      bids: [
+        {
+          bidder: 'sampleBidder1',
+          params: {
+            placementId: 14542875,
+          }
+        }
+      ]
+    }];
+    getLocalStorageStub.returns(null);
+    adapterManagerStub.withArgs('sampleBidder1').returns({
+      getSpec: function() {
+        return {
+          'getMappingFileInfo': function() {
+            return {
+              url: 'http://sample.com',
+              refreshInDays: 7,
+              key: `sampleBidder1MappingFile`
+            }
+          }
+        }
+      }
+    });
+    preloadBidderMappingFile(sinon.spy(), adUnits);
+    expect(fakeTranslationServer.requests.length).to.equal(1);
+  });
+
+  it('should preload mapping url file for all bidders', function() {
+    config.setConfig({
+      'adpod': {
+        'brandCategoryExclusion': true
+      }
+    });
+    let adUnits = [{
+      code: 'midroll_1',
+      mediaTypes: {
+        video: {
+          context: 'adpod'
+        }
+      },
+      bids: [
+        {
+          bidder: 'sampleBidder1',
+          params: {
+            placementId: 14542875,
+          }
+        },
+        {
+          bidder: 'sampleBidder2',
+          params: {
+            placementId: 123456,
+          }
+        }
+      ]
+    }];
+    getLocalStorageStub.returns(null);
+    adapterManagerStub.withArgs('sampleBidder1').returns({
+      getSpec: function() {
+        return {
+          'getMappingFileInfo': function() {
+            return {
+              url: 'http://sample.com',
+              refreshInDays: 7,
+              key: `sampleBidder1MappingFile`
+            }
+          }
+        }
+      }
+    });
+    adapterManagerStub.withArgs('sampleBidder2').returns({
+      getSpec: function() {
+        return {
+          'getMappingFileInfo': function() {
+            return {
+              url: 'http://sample.com',
+              refreshInDays: 7,
+              key: `sampleBidder2MappingFile`
+            }
+          }
+        }
+      }
+    });
+    preloadBidderMappingFile(sinon.spy(), adUnits);
+    expect(fakeTranslationServer.requests.length).to.equal(2);
+
+    config.setConfig({
+      'adpod': {
+        'brandCategoryExclusion': false
+      }
+    });
+    preloadBidderMappingFile(sinon.spy(), adUnits);
+    expect(fakeTranslationServer.requests.length).to.equal(2);
   });
 });

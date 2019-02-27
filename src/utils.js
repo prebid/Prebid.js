@@ -40,6 +40,17 @@ export const internal = {
   logInfo
 };
 
+var uniqueRef = {};
+export let bind = function(a, b) { return b; }.bind(null, 1, uniqueRef)() === uniqueRef
+  ? Function.prototype.bind
+  : function(bind) {
+    var self = this;
+    var args = Array.prototype.slice.call(arguments, 1);
+    return function() {
+      return self.apply(bind, args.concat(Array.prototype.slice.call(arguments)));
+    };
+  };
+
 /*
  *   Substitutes into a string from a given map using the token
  *   Usage
@@ -1185,6 +1196,26 @@ export function convertTypes(types, params) {
     }
   });
   return params;
+}
+
+export function setDataInLocalStorage(key, value) {
+  if (hasLocalStorage()) {
+    window.localStorage.setItem(key, value);
+  }
+}
+
+export function getDataFromLocalStorage(key) {
+  if (hasLocalStorage()) {
+    return window.localStorage.getItem(key);
+  }
+}
+
+export function hasLocalStorage() {
+  try {
+    return !!window.localStorage;
+  } catch (e) {
+    logError('Local storage api disabled');
+  }
 }
 
 export function isArrayOfNums(val, size) {
