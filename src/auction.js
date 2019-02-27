@@ -157,7 +157,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
 
         const adUnitCodes = _adUnitCodes;
         const bids = _bidsReceived
-          .filter(adUnitsFilter.bind(this, adUnitCodes))
+          .filter(utils.bind.call(adUnitsFilter, this, adUnitCodes))
           .reduce(groupByPlacement, {});
         _callback.apply($$PREBID_GLOBAL$$, [bids, timedOut]);
       } catch (e) {
@@ -418,7 +418,7 @@ function tryAddVideoBid(auctionInstance, bidResponse, bidRequests, afterBidAdded
   }
 }
 
-const callPrebidCache = hook('async', function(auctionInstance, bidResponse, afterBidAdded, bidderRequest) {
+export const callPrebidCache = hook('async', function(auctionInstance, bidResponse, afterBidAdded, bidderRequest) {
   store([bidResponse], function (error, cacheIds) {
     if (error) {
       utils.logWarn(`Failed to save to the video cache: ${error}. Video bid must be discarded.`);
