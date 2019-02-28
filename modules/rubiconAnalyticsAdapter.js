@@ -1,9 +1,9 @@
-import adapter from 'src/AnalyticsAdapter';
-import adaptermanager from 'src/adaptermanager';
-import CONSTANTS from 'src/constants.json';
-import { ajax } from 'src/ajax';
-import { config } from 'src/config';
-import * as utils from 'src/utils';
+import adapter from '../src/AnalyticsAdapter';
+import adapterManager from '../src/adapterManager';
+import CONSTANTS from '../src/constants.json';
+import { ajax } from '../src/ajax';
+import { config } from '../src/config';
+import * as utils from '../src/utils';
 
 const {
   EVENTS: {
@@ -322,7 +322,7 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
     switch (eventType) {
       case AUCTION_INIT:
         // set the rubicon aliases
-        setRubiconAliases(adaptermanager.aliasRegistry);
+        setRubiconAliases(adapterManager.aliasRegistry);
         let cacheEntry = _pick(args, [
           'timestamp',
           'timeout'
@@ -406,7 +406,11 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
         }, {}));
         break;
       case BID_RESPONSE:
-        let bid = cache.auctions[args.auctionId].bids[args.adId];
+        let bid = cache.auctions[args.auctionId].bids[args.requestId];
+        if (!bid) {
+          utils.logError('Rubicon Anlytics Adapter Error: Could not find associated bid request for bid response with requestId: ', args.requestId);
+          break;
+        }
         bid.source = formatSource(bid.source || args.source);
         switch (args.getStatusCode()) {
           case GOOD:
@@ -428,7 +432,7 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
         break;
       case BIDDER_DONE:
         args.bids.forEach(bid => {
-          let cachedBid = cache.auctions[bid.auctionId].bids[bid.bidId || bid.adId];
+          let cachedBid = cache.auctions[bid.auctionId].bids[bid.bidId || bid.requestId];
           if (typeof bid.serverResponseTimeMs !== 'undefined') {
             cachedBid.serverLatencyMillis = bid.serverResponseTimeMs;
           }
@@ -445,11 +449,11 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
         break;
       case BID_WON:
         let auctionCache = cache.auctions[args.auctionId];
-        auctionCache.bidsWon[args.adUnitCode] = args.adId;
+        auctionCache.bidsWon[args.adUnitCode] = args.requestId;
 
         // check if this BID_WON missed the boat, if so send by itself
         if (auctionCache.sent === true) {
-          sendMessage.call(this, args.auctionId, args.adId);
+          sendMessage.call(this, args.auctionId, args.requestId);
         } else if (Object.keys(auctionCache.bidsWon).reduce((memo, adUnitCode) => {
           // only send if we've received bidWon events for all adUnits in auction
           memo = memo && auctionCache.bidsWon[adUnitCode];
@@ -470,7 +474,7 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
       case BID_TIMEOUT:
         args.forEach(badBid => {
           let auctionCache = cache.auctions[badBid.auctionId];
-          let bid = auctionCache.bids[badBid.bidId || badBid.adId];
+          let bid = auctionCache.bids[badBid.bidId || badBid.requestId];
           bid.status = 'error';
           bid.error = {
             code: 'timeout-error'
@@ -481,7 +485,7 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
   }
 });
 
-adaptermanager.registerAnalyticsAdapter({
+adapterManager.registerAnalyticsAdapter({
   adapter: rubiconAdapter,
   code: 'rubicon'
 });
