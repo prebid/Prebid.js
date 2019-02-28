@@ -83,7 +83,7 @@ function sendQueue(auctionId) {
   let data = Array.from(auction.queue);
   auction.queue = [];
   auction.qTimeout = false;
-  sendData(auction, data);
+  sonobiAdapter.sendData(auction, data);
 }
 function addToAuctionQueue(auctionId, id) {
   let auction = auctionCache[auctionId];
@@ -234,7 +234,7 @@ sonobiAdapter.initConfig = function (config) {
 
   initOptions.server = DEFAULT_EVENT_URL;
   initOptions.host = initOptions.options.host || window.location.hostname;
-
+  this.initOptions = initOptions;
   return isCorrectConfig;
 };
 
@@ -242,15 +242,15 @@ sonobiAdapter.getOptions = function () {
   return initOptions;
 };
 
-function sendData(auction, data) {
-  let url = 'https://' + initOptions.server + '?pubId=' + initOptions.pubId + '&siteId=' + initOptions.siteId + '&pageviewid=' + auction.id + '&corscred=1';
+sonobiAdapter.sendData = function (auction, data) {
+  let url = 'https://' + initOptions.server + '?pageviewid=' + auction.id + '&corscred=1&pubId=' + initOptions.pubId + '&siteId=' + initOptions.siteId ;
   ajax(
     url,
     function () { logInfo('Auction [' + auction.id + '] sent ', data); },
     JSON.stringify(data),
     {
       method: 'POST',
-      withCredentials: true,
+      //withCredentials: true,
       contentType: 'text/plain'
     }
   );
