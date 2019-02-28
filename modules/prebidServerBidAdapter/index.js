@@ -169,7 +169,7 @@ function doAllSyncs(bidders) {
 
   const thisSync = bidders.pop();
   if (thisSync.no_cookie) {
-    doBidderSync(thisSync.usersync.type, thisSync.usersync.url, thisSync.bidder, doAllSyncs.bind(null, bidders));
+    doBidderSync(thisSync.usersync.type, thisSync.usersync.url, thisSync.bidder, utils.bind.call(doAllSyncs, null, bidders));
   } else {
     doAllSyncs(bidders);
   }
@@ -389,7 +389,7 @@ const LEGACY_PROTOCOL = {
           if (bidObj.deal_id) {
             bidObject.dealId = bidObj.deal_id;
           }
-          bidObject.requestId = bidObj.bid_id;
+          bidObject.requestId = bidRequest.bidId || bidRequest.bid_Id;
           bidObject.creativeId = bidObj.creative_id;
 
           // TODO: Remove when prebid-server returns ttl, currency and netRevenue
@@ -496,6 +496,19 @@ const OPEN_RTB_PROTOCOL = {
       request.ext = { prebid: { aliases } };
     }
 
+    if (bidRequests && bidRequests[0].userId && typeof bidRequests[0].userId === 'object') {
+      if (!request.user) {
+        request.user = {};
+      }
+      if (!request.user.ext) {
+        request.user.ext = {}
+      }
+      if (!request.user.ext.tpid) {
+        request.user.ext.tpid = {}
+      }
+      Object.assign(request.user.ext.tpid, bidRequests[0].userId);
+    }
+
     if (bidRequests && bidRequests[0].gdprConsent) {
       // note - gdprApplies & consentString may be undefined in certain use-cases for consentManagement module
       let gdprApplies;
@@ -576,7 +589,7 @@ const OPEN_RTB_PROTOCOL = {
           bidObject.width = bid.w;
           bidObject.height = bid.h;
           if (bid.dealid) { bidObject.dealId = bid.dealid; }
-          bidObject.requestId = bid.id;
+          bidObject.requestId = bidRequest.bidId || bidRequest.bid_Id;
           bidObject.creative_id = bid.crid;
           bidObject.creativeId = bid.crid;
           if (bid.burl) { bidObject.burl = bid.burl; }

@@ -2,6 +2,7 @@ import adapterManager from './adapterManager';
 import { getBidRequest, deepAccess, logError } from './utils';
 import { config } from '../src/config';
 import includes from 'core-js/library/fn/array/includes';
+import { hook } from './hook';
 
 const VIDEO_MEDIA_TYPE = 'video';
 export const OUTSTREAM = 'outstream';
@@ -30,7 +31,7 @@ export const hasNonVideoBidder = adUnit =>
  * @return {Boolean} If object is valid
  */
 export function isValidVideoBid(bid, bidRequests) {
-  const bidRequest = getBidRequest(bid.adId, bidRequests);
+  const bidRequest = getBidRequest(bid.requestId, bidRequests);
 
   const videoMediaType =
     bidRequest && deepAccess(bidRequest, 'mediaTypes.video');
@@ -38,6 +39,10 @@ export function isValidVideoBid(bid, bidRequests) {
 
   // if context not defined assume default 'instream' for video bids
   // instream bids require a vast url or vast xml content
+  return checkVideoBidSetup(bid, bidRequest, videoMediaType, context);
+}
+
+export const checkVideoBidSetup = hook('sync', function(bid, bidRequest, videoMediaType, context) {
   if (!bidRequest || (videoMediaType && context !== OUTSTREAM)) {
     // xml-only video bids require a prebid cache url
     if (!config.getConfig('cache.url') && bid.vastXml && !bid.vastUrl) {
@@ -57,4 +62,4 @@ export function isValidVideoBid(bid, bidRequests) {
   }
 
   return true;
-}
+}, 'checkVideoBidSetup');
