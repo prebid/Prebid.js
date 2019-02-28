@@ -21,14 +21,22 @@ export const spec = {
       const cb = Math.floor(Math.random() * 99999999999);
       const referrer = encodeURIComponent(utils.getTopWindowUrl());
       const bidId = bidRequest.bidId;
+      const unitCode = bidRequest.adUnitCode;
       const payload = {
         v: 'hb1',
         p: placementId,
         cb: cb,
         r: referrer,
         uid: bidId,
+        uc: unitCode,
         t: 'i'
       };
+
+      if (window.PREBID_TIMEOUT) {
+        payload.tmax = window.PREBID_TIMEOUT;
+      } else if (window.pbjsTimeout) {
+        payload.tmax = window.pbjsTimeout;
+      }
 
       const videoMediaType = utils.deepAccess(bidRequest, 'mediaTypes.video');
       if (bidRequest.mediaType === VIDEO || videoMediaType) {
