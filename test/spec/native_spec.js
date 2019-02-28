@@ -1,9 +1,10 @@
 import { expect } from 'chai';
-import { fireNativeTrackers, getNativeTargeting, nativeBidIsValid } from 'src/native';
+import { fireNativeTrackers, getNativeTargeting, nativeBidIsValid, getAssetMessage } from 'src/native';
 import CONSTANTS from 'src/constants.json';
 const utils = require('src/utils');
 
 const bid = {
+  adId: '123',
   native: {
     title: 'Native Creative',
     body: 'Cool description great stuff',
@@ -50,6 +51,22 @@ describe('native.js', function () {
     expect(targeting[CONSTANTS.NATIVE_KEYS.clickUrl]).to.equal(bid.native.clickUrl);
   });
 
+  it('sends placeholders for configured assets', function () {
+    const bidRequest = {
+      mediaTypes: {
+        native: {
+          body: { sendId: true },
+          clickUrl: { sendId: true },
+        }
+      }
+    };
+    const targeting = getNativeTargeting(bid, bidRequest);
+
+    expect(targeting[CONSTANTS.NATIVE_KEYS.title]).to.equal(bid.native.title);
+    expect(targeting[CONSTANTS.NATIVE_KEYS.body]).to.equal('hb_native_body:123');
+    expect(targeting[CONSTANTS.NATIVE_KEYS.clickUrl]).to.equal('hb_native_linkurl:123');
+  });
+
   it('should only include native targeting keys with values', function () {
     const targeting = getNativeTargeting(bidWithUndefinedFields);
 
@@ -71,6 +88,27 @@ describe('native.js', function () {
     fireNativeTrackers({ action: 'click' }, bid);
     sinon.assert.calledOnce(triggerPixelStub);
     sinon.assert.calledWith(triggerPixelStub, bid.native.clickTrackers[0]);
+  });
+
+  it('creates native asset message', function() {
+    const messageRequest = {
+      message: 'Prebid Native',
+      action: 'assetRequest',
+      adId: '123',
+      assets: ['hb_native_body', 'hb_native_linkurl'],
+    };
+
+    const message = getAssetMessage(messageRequest, bid);
+
+    expect(message.assets.length).to.equal(2);
+    expect(message.assets).to.deep.include({
+      key: 'body',
+      value: bid.native.body
+    });
+    expect(message.assets).to.deep.include({
+      key: 'clickUrl',
+      value: bid.native.clickUrl
+    });
   });
 });
 
