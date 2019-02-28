@@ -1,7 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/advangelistsBidAdapter';
 import { BANNER, VIDEO } from 'src/mediaTypes';
-import * as utils from 'src/utils';
 
 describe('advangelistsBidAdapter', function () {
   let bidRequests;
@@ -37,9 +36,7 @@ describe('advangelistsBidAdapter', function () {
     });
 
     it('should return false when a bid request is not passed', function () {
-      console.log('from spec - no bid request');
       expect(spec.isBidRequestValid()).to.equal(false);
-      console.log('from spec blank object');
       expect(spec.isBidRequestValid({})).to.equal(false);
     });
   });
@@ -60,8 +57,6 @@ describe('advangelistsBidAdapter', function () {
     it('should have domain in request', function () {
       const bidRequest = bidRequests[0];
       const requests = spec.buildRequests([ bidRequest ]);
-      console.log(requests[0].data.site.domain);
-      // expect(Object.keys(requests[0].data.site.domain).length !== 0);
       expect(requests[0].data.site.domain).length !== 0;
     });
   });
@@ -96,7 +91,6 @@ describe('advangelistsBidAdapter', function () {
         const bidResponseVid = spec.interpretResponse({ body: serverResponseVid }, avngbidreqVid);
         delete bidResponseVid['vastUrl'];
         delete bidResponseVid['ad'];
-        // bidResponseVid['mediaType'] = 'video';
         expect(bidResponseVid).to.deep.equal({
           requestId: bidRequestsVid[0].bidId,
           bidderCode: 'avng',
