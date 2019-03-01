@@ -1,5 +1,7 @@
 import { expect } from 'chai';
 import { cryptoVerify, spec, FAST_BID_PUBKEY } from 'modules/criteoBidAdapter';
+import { createBid } from 'src/bidfactory';
+import CONSTANTS from 'src/constants.json';
 import * as utils from 'src/utils';
 
 describe('The Criteo bidding adapter', function () {
@@ -241,6 +243,7 @@ describe('The Criteo bidding adapter', function () {
         body: {
           slots: [{
             impid: 'test-requestId',
+            bidId: 'abc123',
             cpm: 1.23,
             creative: 'test-ad',
             width: 728,
@@ -261,6 +264,7 @@ describe('The Criteo bidding adapter', function () {
       const bids = spec.interpretResponse(response, request);
       expect(bids).to.have.lengthOf(1);
       expect(bids[0].requestId).to.equal('test-bidId');
+      expect(bids[0].adId).to.equal('abc123');
       expect(bids[0].cpm).to.equal(1.23);
       expect(bids[0].ad).to.equal('test-ad');
       expect(bids[0].width).to.equal(728);
@@ -297,6 +301,40 @@ describe('The Criteo bidding adapter', function () {
       expect(bids[0].width).to.equal(728);
       expect(bids[0].height).to.equal(90);
     });
+
+    it('should generate unique adIds if none are returned by the endpoint', function () {
+      const response = {
+        body: {
+          slots: [{
+            impid: 'test-requestId',
+            cpm: 1.23,
+            creative: 'test-ad',
+            width: 300,
+            height: 250,
+          }, {
+            impid: 'test-requestId',
+            cpm: 4.56,
+            creative: 'test-ad',
+            width: 728,
+            height: 90,
+          }],
+        },
+      };
+      const request = {
+        bidRequests: [{
+          adUnitCode: 'test-requestId',
+          bidId: 'test-bidId',
+          sizes: [[300, 250], [728, 90]],
+          params: {
+            networkId: 456,
+          }
+        }]
+      };
+      const bids = spec.interpretResponse(response, request);
+      expect(bids).to.have.lengthOf(2);
+      const prebidBids = bids.map(bid => Object.assign(createBid(CONSTANTS.STATUS.GOOD, request.bidRequests[0]), bid));
+      expect(prebidBids[0].adId).to.not.equal(prebidBids[1].adId);
+    });
   });
 
   describe('cryptoVerify', function () {
@@ -312,7 +350,7 @@ describe('The Criteo bidding adapter', function () {
 
     it('should return undefined with incompatible browsers', function () {
       // Here use a null hash to make the call to crypto library fail and simulate a browser failure
-      expect(cryptoVerify(FAST_BID_PUBKEY, null, 'test')).to.equal.undefined;
+      expect(cryptoVerify(FAST_BID_PUBKEY, null, 'test')).to.be.false;
     });
   });
 });
