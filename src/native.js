@@ -144,6 +144,7 @@ export function fireNativeTrackers(message, adObject) {
   }
 
   (trackers || []).forEach(triggerPixel);
+  return message.action;
 }
 
 /**

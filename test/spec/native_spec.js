@@ -85,7 +85,8 @@ describe('native.js', function () {
   });
 
   it('fires click trackers', function () {
-    fireNativeTrackers({ action: 'click' }, bid);
+    const trackerType = fireNativeTrackers({ action: 'click' }, bid);
+    expect(trackerType).to.equal('click');
     sinon.assert.calledOnce(triggerPixelStub);
     sinon.assert.calledWith(triggerPixelStub, bid.native.clickTrackers[0]);
   });
