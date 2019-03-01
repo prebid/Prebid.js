@@ -9,7 +9,7 @@ import {ajax} from 'src/ajax';
  * Update whenever you want to make sure you're sending the right version of analytics.
  * This is useful when some browsers are using old code and some new, for example.
  */
-const VERSION = 7;
+const VERSION = 8;
 
 const analyticsType = 'endpoint';
 const SENDALL_ON = {};
@@ -140,17 +140,12 @@ function trackBidResponse(args) {
     setSafely(event, 'lid', args.dealId);
 
     if (args.meta) {
+      setSafely(event, 'dsp', args.meta.networkId);
+      setSafely(event, 'adv', args.meta.buyerId);
       setSafely(event, 'bri', args.meta.brandId);
       setSafely(event, 'brn', args.meta.brandName);
+      setSafely(event, 'add', args.meta.clickUrl);
     }
-
-    // transitioning from old fields to new
-    const dspId = args.meta && args.meta.networkId ? args.meta.networkId : args.dspId;
-    setSafely(event, 'dsp', dspId);
-    const buyerId = args.meta && args.meta.buyerId ? args.meta.buyerId : args.advertiserId;
-    setSafely(event, 'adv', buyerId);
-    const clickUrl = args.meta && args.meta.clickUrl ? args.meta.clickUrl : args.advertiserDomain;
-    setSafely(event, 'add', clickUrl);
 
     return [event];
   }
