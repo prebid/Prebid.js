@@ -610,6 +610,22 @@ const OPEN_RTB_PROTOCOL = {
 
             if (bid.adm) { bidObject.vastXml = bid.adm; }
             if (!bidObject.vastUrl && bid.nurl) { bidObject.vastUrl = bid.nurl; }
+
+            // create 'hb_cache_host' and/or 'hb_cache_path' using cache url if not defined
+            if (utils.deepAccess(_s2sConfig, 'cache.url')) {
+              const parsedURL = document.createElement('a');
+              parsedURL.href = _s2sConfig.cache.url;
+
+              if (!bidObject.adserverTargeting) {
+                bidObject.adserverTargeting = {}
+              }
+              if (!bidObject.adserverTargeting.hb_cache_host) {
+                bidObject.adserverTargeting.hb_cache_host = parsedURL.hostname;
+              }
+              if (!bidObject.adserverTargeting.hb_cache_path) {
+                bidObject.adserverTargeting.hb_cache_path = parsedURL.pathname;
+              }
+            }
           } else { // banner
             if (bid.adm && bid.nurl) {
               bidObject.ad = bid.adm;
