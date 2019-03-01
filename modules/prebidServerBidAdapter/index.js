@@ -612,7 +612,7 @@ const OPEN_RTB_PROTOCOL = {
             if (!bidObject.vastUrl && bid.nurl) { bidObject.vastUrl = bid.nurl; }
 
             // create 'hb_cache_host' and/or 'hb_cache_path' using cache url if not defined
-            if (utils.deepAccess(_s2sConfig, 'cache.url')) {
+            if (bidObject.vastUrl && utils.deepAccess(_s2sConfig, 'cache.url')) {
               const parsedURL = document.createElement('a');
               parsedURL.href = _s2sConfig.cache.url;
 
