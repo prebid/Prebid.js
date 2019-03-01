@@ -386,7 +386,9 @@ export function doCallbacksIfTimedout(auctionInstance, bidResponse) {
 
 // Add a bid to the auction.
 export function addBidToAuction(auctionInstance, bidResponse) {
-  setupBidTargeting(bidResponse);
+  let bidderRequests = auctionInstance.getBidRequests();
+  let bidderRequest = find(bidderRequests, bidderRequest => bidderRequest.bidderCode === bidResponse.bidderCode);
+  setupBidTargeting(bidResponse, bidderRequest);
 
   events.emit(CONSTANTS.EVENTS.BID_RESPONSE, bidResponse);
   auctionInstance.addBidReceived(bidResponse);
@@ -491,9 +493,10 @@ function getPreparedBidForAuction({adUnitCode, bid, bidderRequest, auctionId}) {
   return bidObject;
 }
 
-function setupBidTargeting(bidObject) {
+function setupBidTargeting(bidObject, bidderRequest) {
   let keyValues;
   if (bidObject.bidderCode && (bidObject.cpm > 0 || bidObject.dealId)) {
+    let bidReq = find(bidderRequest.bids, bid => bid.adUnitCode === bidObject.adUnitCode);
     keyValues = getKeyValueTargetingPairs(bidObject.bidderCode, bidObject, bidReq);
   }
 
