@@ -1,4 +1,4 @@
-import { loadScript } from './adloader';
+import { loadExternalScript } from './adloader';
 import * as utils from './utils';
 import find from 'core-js/library/fn/array/find';
 
@@ -38,7 +38,7 @@ export function Renderer(options) {
 
   if (!isRendererDefinedOnAdUnit(adUnitCode)) {
     // we expect to load a renderer url once only so cache the request to load script
-    loadScript(url, this.callback, true);
+    loadExternalScript(url, adUnitCode, this.callback);
   } else {
     utils.logWarn(`External Js not loaded by Renderer since renderer url and callback is already defined on adUnit ${adUnitCode}`);
   }

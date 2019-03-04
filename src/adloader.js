@@ -11,8 +11,9 @@ const _vendorWhitelist = [
  * Each unique URL will be loaded at most 1 time.
  * @param {string} url the url to load
  * @param {string} moduleCode bidderCode or module code of the module requesting this resource
+ * @param {function} callback callback function to be called after the script is loaded.
  */
-export function loadExternalScript(url, moduleCode) {
+export function loadExternalScript(url, moduleCode, callback) {
   if (!moduleCode || !url) {
     utils.logError('cannot load external script without url and moduleCode');
     return;
@@ -31,6 +32,22 @@ export function loadExternalScript(url, moduleCode) {
   script.type = 'text/javascript';
   script.async = true;
   script.src = url;
+
+  // Execute a callback if necessary
+  if (callback && typeof callback === 'function') {
+    if (script.readyState) {
+      script.onreadystatechange = function () {
+        if (script.readyState === 'loaded' || script.readyState === 'complete') {
+          script.onreadystatechange = null;
+          callback();
+        }
+      };
+    } else {
+      script.onload = function () {
+        callback();
+      };
+    }
+  }
 
   utils.insertElement(script);
   _requestCache[url] = true;
