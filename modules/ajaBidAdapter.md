@@ -52,22 +52,28 @@ var adUnits = [
     mediaTypes: {
       native: {
         image: {
-          required: true
+          required: true,
+          sendId: false
         },
         title: {
-          required: true
+          required: true,
+          sendId: true
         },
         sponsoredBy: {
-          required: false
+          required: false,
+          sendId: true
         },
         clickUrl: {
-          required: false
+          required: false,
+          sendId: true
         },
         body: {
-          required: false
+          required: false,
+          sendId: true
         },
         icon: {
-          required: false
+          required: false,
+          sendId: false
         }
       }
     },
