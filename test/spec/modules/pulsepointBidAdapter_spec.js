@@ -84,7 +84,8 @@ describe('PulsePoint Adapter Tests', function () {
         bid: [{
           impid: ortbRequest.imp[0].id,
           price: 1.25,
-          adm: 'This is an Ad'
+          adm: 'This is an Ad',
+          crid: 'Creative#123'
         }]
       }]
     };
@@ -97,8 +98,8 @@ describe('PulsePoint Adapter Tests', function () {
     expect(bid.width).to.equal(300);
     expect(bid.height).to.equal(250);
     expect(bid.adId).to.equal('bid12345');
-    expect(bid.creative_id).to.equal('bid12345');
-    expect(bid.creativeId).to.equal('bid12345');
+    expect(bid.creative_id).to.equal('Creative#123');
+    expect(bid.creativeId).to.equal('Creative#123');
     expect(bid.netRevenue).to.equal(true);
     expect(bid.currency).to.equal('USD');
     expect(bid.ttl).to.equal(20);

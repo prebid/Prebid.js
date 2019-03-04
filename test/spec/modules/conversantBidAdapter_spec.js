@@ -8,6 +8,7 @@ describe('Conversant adapter tests', function() {
   const siteId = '108060';
 
   const bidRequests = [
+    // banner with single size
     {
       bidder: 'conversant',
       params: {
@@ -23,19 +24,27 @@ describe('Conversant adapter tests', function() {
       bidId: 'bid000',
       bidderRequestId: '117d765b87bed38',
       auctionId: 'req000'
-    }, {
+    },
+    // banner with sizes in mediaTypes.banner.sizes
+    {
       bidder: 'conversant',
       params: {
         site_id: siteId,
         secure: false
       },
+      mediaTypes: {
+        banner: {
+          sizes: [[728, 90], [468, 60]]
+        }
+      },
       placementCode: 'pcode001',
       transactionId: 'tx001',
-      sizes: [[468, 60]],
       bidId: 'bid001',
       bidderRequestId: '117d765b87bed38',
       auctionId: 'req000'
-    }, {
+    },
+    // banner with tag id and position
+    {
       bidder: 'conversant',
       params: {
         site_id: siteId,
@@ -49,7 +58,9 @@ describe('Conversant adapter tests', function() {
       bidId: 'bid002',
       bidderRequestId: '117d765b87bed38',
       auctionId: 'req000'
-    }, {
+    },
+    // video with single size
+    {
       bidder: 'conversant',
       params: {
         site_id: siteId,
@@ -68,6 +79,47 @@ describe('Conversant adapter tests', function() {
       transactionId: 'tx003',
       sizes: [640, 480],
       bidId: 'bid003',
+      bidderRequestId: '117d765b87bed38',
+      auctionId: 'req000'
+    },
+    // video with playerSize
+    {
+      bidder: 'conversant',
+      params: {
+        site_id: siteId,
+        maxduration: 30,
+        api: [2, 3]
+      },
+      mediaTypes: {
+        video: {
+          context: 'instream',
+          playerSize: [1024, 768],
+          api: [1, 2],
+          protocols: [1, 2, 3],
+          mimes: ['video/mp4', 'video/x-flv']
+        }
+      },
+      placementCode: 'pcode004',
+      transactionId: 'tx004',
+      bidId: 'bid004',
+      bidderRequestId: '117d765b87bed38',
+      auctionId: 'req000'
+    },
+    // video without sizes
+    {
+      bidder: 'conversant',
+      params: {
+        site_id: siteId
+      },
+      mediaTypes: {
+        video: {
+          context: 'instream',
+          mimes: ['video/mp4', 'video/x-flv']
+        }
+      },
+      placementCode: 'pcode005',
+      transactionId: 'tx005',
+      bidId: 'bid005',
       bidderRequestId: '117d765b87bed38',
       auctionId: 'req000'
     }];
@@ -129,6 +181,8 @@ describe('Conversant adapter tests', function() {
     expect(spec.isBidRequestValid(bidRequests[1])).to.be.true;
     expect(spec.isBidRequestValid(bidRequests[2])).to.be.true;
     expect(spec.isBidRequestValid(bidRequests[3])).to.be.true;
+    expect(spec.isBidRequestValid(bidRequests[4])).to.be.true;
+    expect(spec.isBidRequestValid(bidRequests[5])).to.be.true;
 
     const simpleVideo = JSON.parse(JSON.stringify(bidRequests[3]));
     simpleVideo.params.site_id = 123;
@@ -151,7 +205,7 @@ describe('Conversant adapter tests', function() {
     expect(payload).to.have.property('id', 'req000');
     expect(payload).to.have.property('at', 1);
     expect(payload).to.have.property('imp');
-    expect(payload.imp).to.be.an('array').with.lengthOf(4);
+    expect(payload.imp).to.be.an('array').with.lengthOf(6);
 
     expect(payload.imp[0]).to.have.property('id', 'bid000');
     expect(payload.imp[0]).to.have.property('secure', 0);
@@ -169,18 +223,18 @@ describe('Conversant adapter tests', function() {
     expect(payload.imp[1]).to.have.property('secure', 0);
     expect(payload.imp[1]).to.have.property('bidfloor', 0);
     expect(payload.imp[1]).to.have.property('displaymanager', 'Prebid.js');
-    expect(payload.imp[0]).to.have.property('displaymanagerver').that.matches(/^\d+\.\d+\.\d+$/);
+    expect(payload.imp[1]).to.have.property('displaymanagerver').that.matches(/^\d+\.\d+\.\d+$/);
     expect(payload.imp[1]).to.not.have.property('tagid');
     expect(payload.imp[1]).to.have.property('banner');
     expect(payload.imp[1].banner).to.not.have.property('pos');
     expect(payload.imp[1].banner).to.have.property('format');
-    expect(payload.imp[1].banner.format).to.deep.equal([{w: 468, h: 60}]);
+    expect(payload.imp[1].banner.format).to.deep.equal([{w: 728, h: 90}, {w: 468, h: 60}]);
 
     expect(payload.imp[2]).to.have.property('id', 'bid002');
     expect(payload.imp[2]).to.have.property('secure', 0);
     expect(payload.imp[2]).to.have.property('bidfloor', 0);
     expect(payload.imp[2]).to.have.property('displaymanager', 'Prebid.js');
-    expect(payload.imp[0]).to.have.property('displaymanagerver').that.matches(/^\d+\.\d+\.\d+$/);
+    expect(payload.imp[2]).to.have.property('displaymanagerver').that.matches(/^\d+\.\d+\.\d+$/);
     expect(payload.imp[2]).to.have.property('banner');
     expect(payload.imp[2].banner).to.have.property('pos', 2);
     expect(payload.imp[2].banner).to.have.property('format');
@@ -190,7 +244,7 @@ describe('Conversant adapter tests', function() {
     expect(payload.imp[3]).to.have.property('secure', 0);
     expect(payload.imp[3]).to.have.property('bidfloor', 0);
     expect(payload.imp[3]).to.have.property('displaymanager', 'Prebid.js');
-    expect(payload.imp[0]).to.have.property('displaymanagerver').that.matches(/^\d+\.\d+\.\d+$/);
+    expect(payload.imp[3]).to.have.property('displaymanagerver').that.matches(/^\d+\.\d+\.\d+$/);
     expect(payload.imp[3]).to.not.have.property('tagid');
     expect(payload.imp[3]).to.have.property('video');
     expect(payload.imp[3].video).to.not.have.property('pos');
@@ -204,6 +258,42 @@ describe('Conversant adapter tests', function() {
     expect(payload.imp[3].video.api).to.deep.equal([2]);
     expect(payload.imp[3].video).to.have.property('maxduration', 30);
     expect(payload.imp[3]).to.not.have.property('banner');
+
+    expect(payload.imp[4]).to.have.property('id', 'bid004');
+    expect(payload.imp[4]).to.have.property('secure', 0);
+    expect(payload.imp[4]).to.have.property('bidfloor', 0);
+    expect(payload.imp[4]).to.have.property('displaymanager', 'Prebid.js');
+    expect(payload.imp[4]).to.have.property('displaymanagerver').that.matches(/^\d+\.\d+\.\d+$/);
+    expect(payload.imp[4]).to.not.have.property('tagid');
+    expect(payload.imp[4]).to.have.property('video');
+    expect(payload.imp[4].video).to.not.have.property('pos');
+    expect(payload.imp[4].video).to.have.property('w', 1024);
+    expect(payload.imp[4].video).to.have.property('h', 768);
+    expect(payload.imp[4].video).to.have.property('mimes');
+    expect(payload.imp[4].video.mimes).to.deep.equal(['video/mp4', 'video/x-flv']);
+    expect(payload.imp[4].video).to.have.property('protocols');
+    expect(payload.imp[4].video.protocols).to.deep.equal([1, 2, 3]);
+    expect(payload.imp[4].video).to.have.property('api');
+    expect(payload.imp[4].video.api).to.deep.equal([2, 3]);
+    expect(payload.imp[4].video).to.have.property('maxduration', 30);
+    expect(payload.imp[4]).to.not.have.property('banner');
+
+    expect(payload.imp[5]).to.have.property('id', 'bid005');
+    expect(payload.imp[5]).to.have.property('secure', 0);
+    expect(payload.imp[5]).to.have.property('bidfloor', 0);
+    expect(payload.imp[5]).to.have.property('displaymanager', 'Prebid.js');
+    expect(payload.imp[5]).to.have.property('displaymanagerver').that.matches(/^\d+\.\d+\.\d+$/);
+    expect(payload.imp[5]).to.not.have.property('tagid');
+    expect(payload.imp[5]).to.have.property('video');
+    expect(payload.imp[5].video).to.not.have.property('pos');
+    expect(payload.imp[5].video).to.not.have.property('w');
+    expect(payload.imp[5].video).to.not.have.property('h');
+    expect(payload.imp[5].video).to.have.property('mimes');
+    expect(payload.imp[5].video.mimes).to.deep.equal(['video/mp4', 'video/x-flv']);
+    expect(payload.imp[5].video).to.not.have.property('protocols');
+    expect(payload.imp[5].video).to.not.have.property('api');
+    expect(payload.imp[5].video).to.not.have.property('maxduration');
+    expect(payload.imp[5]).to.not.have.property('banner');
 
     expect(payload).to.have.property('site');
     expect(payload.site).to.have.property('id', siteId);
@@ -282,7 +372,7 @@ describe('Conversant adapter tests', function() {
     });
     //  construct http post payload
     const payload = spec.buildRequests(requests).data;
-    expect(payload).to.have.deep.property('user.ext.fpc', 12345);
+    expect(payload).to.have.deep.nested.property('user.ext.fpc', 12345);
   });
 
   it('Verify GDPR bid request', function() {
@@ -295,8 +385,8 @@ describe('Conversant adapter tests', function() {
     };
 
     const payload = spec.buildRequests(bidRequests, bidRequest).data;
-    expect(payload).to.have.deep.property('user.ext.consent', 'BOJObISOJObISAABAAENAA4AAAAAoAAA');
-    expect(payload).to.have.deep.property('regs.ext.gdpr', 1);
+    expect(payload).to.have.deep.nested.property('user.ext.consent', 'BOJObISOJObISAABAAENAA4AAAAAoAAA');
+    expect(payload).to.have.deep.nested.property('regs.ext.gdpr', 1);
   });
 
   it('Verify GDPR bid request without gdprApplies', function() {
@@ -308,7 +398,7 @@ describe('Conversant adapter tests', function() {
     };
 
     const payload = spec.buildRequests(bidRequests, bidRequest).data;
-    expect(payload).to.have.deep.property('user.ext.consent', '');
-    expect(payload).to.not.have.deep.property('regs.ext.gdpr');
+    expect(payload).to.have.deep.nested.property('user.ext.consent', '');
+    expect(payload).to.not.have.deep.nested.property('regs.ext.gdpr');
   });
 })

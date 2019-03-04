@@ -1,24 +1,24 @@
 /** @module pbjs */
 
 import { getGlobal } from './prebidGlobal';
-import { flatten, uniques, isGptPubadsDefined, adUnitsFilter, removeRequestId, getLatestHighestCpmBid } from './utils';
+import { flatten, uniques, isGptPubadsDefined, adUnitsFilter, removeRequestId, getLatestHighestCpmBid, isArrayOfNums } from './utils';
 import { listenMessagesFromCreative } from './secureCreatives';
-import { userSync } from 'src/userSync.js';
+import { userSync } from './userSync.js';
 import { loadScript } from './adloader';
 import { config } from './config';
 import { auctionManager } from './auctionManager';
 import { targeting, getHighestCpmBidsFromBidPool } from './targeting';
-import { createHook } from 'src/hook';
-import { sessionLoader } from 'src/debugging';
+import { hook } from './hook';
+import { sessionLoader } from './debugging';
 import includes from 'core-js/library/fn/array/includes';
 import { adunitCounter } from './adUnits';
 import { isRendererRequired, executeRenderer } from './Renderer';
+import { createBid } from './bidfactory';
 
 const $$PREBID_GLOBAL$$ = getGlobal();
 const CONSTANTS = require('./constants.json');
 const utils = require('./utils.js');
-const adaptermanager = require('./adaptermanager');
-const bidfactory = require('./bidfactory');
+const adapterManager = require('./adapterManager').default;
 const events = require('./events');
 const { triggerUserSyncs } = userSync;
 
@@ -68,6 +68,62 @@ function setRenderSize(doc, width, height) {
     doc.defaultView.frameElement.height = height;
   }
 }
+
+const checkAdUnitSetup = hook('sync', function (adUnits) {
+  adUnits.forEach((adUnit) => {
+    const mediaTypes = adUnit.mediaTypes;
+    const normalizedSize = utils.getAdUnitSizes(adUnit);
+
+    if (mediaTypes && mediaTypes.banner) {
+      const banner = mediaTypes.banner;
+      if (banner.sizes) {
+        // make sure we always send [[h,w]] format
+        banner.sizes = normalizedSize;
+        adUnit.sizes = normalizedSize;
+      } else {
+        utils.logError('Detected a mediaTypes.banner object did not include sizes.  This is a required field for the mediaTypes.banner object.  Removing invalid mediaTypes.banner object from request.');
+        delete adUnit.mediaTypes.banner;
+      }
+    } else if (adUnit.sizes) {
+      utils.logWarn('Usage of adUnits.sizes will eventually be deprecated.  Please define size dimensions within the corresponding area of the mediaTypes.<object> (eg mediaTypes.banner.sizes).');
+      adUnit.sizes = normalizedSize;
+    }
+
+    if (mediaTypes && mediaTypes.video) {
+      const video = mediaTypes.video;
+      if (video.playerSize) {
+        if (Array.isArray(video.playerSize) && video.playerSize.length === 1 && video.playerSize.every(plySize => isArrayOfNums(plySize, 2))) {
+          adUnit.sizes = video.playerSize;
+        } else if (isArrayOfNums(video.playerSize, 2)) {
+          let newPlayerSize = [];
+          newPlayerSize.push(video.playerSize);
+          utils.logInfo(`Transforming video.playerSize from [${video.playerSize}] to [[${newPlayerSize}]] so it's in the proper format.`);
+          adUnit.sizes = video.playerSize = newPlayerSize;
+        } else {
+          utils.logError('Detected incorrect configuration of mediaTypes.video.playerSize.  Please specify only one set of dimensions in a format like: [[640, 480]]. Removing invalid mediaTypes.video.playerSize property from request.');
+          delete adUnit.mediaTypes.video.playerSize;
+        }
+      }
+    }
+
+    if (mediaTypes && mediaTypes.native) {
+      const nativeObj = mediaTypes.native;
+      if (nativeObj.image && nativeObj.image.sizes && !Array.isArray(nativeObj.image.sizes)) {
+        utils.logError('Please use an array of sizes for native.image.sizes field.  Removing invalid mediaTypes.native.image.sizes property from request.');
+        delete adUnit.mediaTypes.native.image.sizes;
+      }
+      if (nativeObj.image && nativeObj.image.aspect_ratios && !Array.isArray(nativeObj.image.aspect_ratios)) {
+        utils.logError('Please use an array of sizes for native.image.aspect_ratios field.  Removing invalid mediaTypes.native.image.aspect_ratios property from request.');
+        delete adUnit.mediaTypes.native.image.aspect_ratios;
+      }
+      if (nativeObj.icon && nativeObj.icon.sizes && !Array.isArray(nativeObj.icon.sizes)) {
+        utils.logError('Please use an array of sizes for native.icon.sizes field.  Removing invalid mediaTypes.native.icon.sizes property from request.');
+        delete adUnit.mediaTypes.native.icon.sizes;
+      }
+    }
+  });
+  return adUnits;
+}, 'checkAdUnitSetup');
 
 /// ///////////////////////////////
 //                              //
@@ -119,7 +175,7 @@ function getBids(type) {
     .filter(adUnitsFilter.bind(this, auctionManager.getAdUnitCodes()));
 
   // find the last auction id to get responses for most recent auction only
-  const currentAuctionId = responses && responses.length && responses[responses.length - 1].auctionId;
+  const currentAuctionId = auctionManager.getLastAuctionId();
 
   return responses
     .map(bid => bid.adUnitCode)
@@ -328,7 +384,7 @@ $$PREBID_GLOBAL$$.removeAdUnit = function (adUnitCode) {
  * @param {Array} requestOptions.labels
  * @alias module:pbjs.requestBids
  */
-$$PREBID_GLOBAL$$.requestBids = createHook('asyncSeries', function ({ bidsBackHandler, timeout, adUnits, adUnitCodes, labels } = {}) {
+$$PREBID_GLOBAL$$.requestBids = hook('async', function ({ bidsBackHandler, timeout, adUnits, adUnitCodes, labels } = {}) {
   events.emit(REQUEST_BIDS);
   const cbTimeout = timeout || config.getConfig('bidderTimeout');
   adUnits = adUnits || $$PREBID_GLOBAL$$.adUnits;
@@ -343,6 +399,8 @@ $$PREBID_GLOBAL$$.requestBids = createHook('asyncSeries', function ({ bidsBackHa
     adUnitCodes = adUnits && adUnits.map(unit => unit.code);
   }
 
+  adUnits = checkAdUnitSetup(adUnits);
+
   /*
    * for a given adunit which supports a set of mediaTypes
    * and a given bidder which supports a set of mediaTypes
@@ -355,7 +413,7 @@ $$PREBID_GLOBAL$$.requestBids = createHook('asyncSeries', function ({ bidsBackHa
 
     // get the bidder's mediaTypes
     const allBidders = adUnit.bids.map(bid => bid.bidder);
-    const bidderRegistry = adaptermanager.bidderRegistry;
+    const bidderRegistry = adapterManager.bidderRegistry;
 
     const s2sConfig = config.getConfig('s2sConfig');
     const s2sBidders = s2sConfig && s2sConfig.bidders;
@@ -396,6 +454,7 @@ $$PREBID_GLOBAL$$.requestBids = createHook('asyncSeries', function ({ bidsBackHa
   }
 
   const auction = auctionManager.createAuction({adUnits, adUnitCodes, callback: bidsBackHandler, cbTimeout, labels});
+  adUnitCodes.forEach(code => targeting.setLatestAuctionForAdUnit(code, auction.getAuctionId()));
   auction.callBids();
   return auction;
 });
@@ -464,7 +523,7 @@ $$PREBID_GLOBAL$$.offEvent = function (event, handler, id) {
 };
 
 /*
- * Wrapper to register bidderAdapter externally (adaptermanager.registerBidAdapter())
+ * Wrapper to register bidderAdapter externally (adapterManager.registerBidAdapter())
  * @param  {Function} bidderAdaptor [description]
  * @param  {string} bidderCode [description]
  * @alias module:pbjs.registerBidAdapter
@@ -472,21 +531,21 @@ $$PREBID_GLOBAL$$.offEvent = function (event, handler, id) {
 $$PREBID_GLOBAL$$.registerBidAdapter = function (bidderAdaptor, bidderCode) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.registerBidAdapter', arguments);
   try {
-    adaptermanager.registerBidAdapter(bidderAdaptor(), bidderCode);
+    adapterManager.registerBidAdapter(bidderAdaptor(), bidderCode);
   } catch (e) {
     utils.logError('Error registering bidder adapter : ' + e.message);
   }
 };
 
 /**
- * Wrapper to register analyticsAdapter externally (adaptermanager.registerAnalyticsAdapter())
+ * Wrapper to register analyticsAdapter externally (adapterManager.registerAnalyticsAdapter())
  * @param  {Object} options [description]
  * @alias module:pbjs.registerAnalyticsAdapter
  */
 $$PREBID_GLOBAL$$.registerAnalyticsAdapter = function (options) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.registerAnalyticsAdapter', arguments);
   try {
-    adaptermanager.registerAnalyticsAdapter(options);
+    adapterManager.registerAnalyticsAdapter(options);
   } catch (e) {
     utils.logError('Error registering analytics adapter : ' + e.message);
   }
@@ -500,7 +559,7 @@ $$PREBID_GLOBAL$$.registerAnalyticsAdapter = function (options) {
  */
 $$PREBID_GLOBAL$$.createBid = function (statusCode) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.createBid', arguments);
-  return bidfactory.createBid(statusCode);
+  return createBid(statusCode);
 };
 
 /**
@@ -531,7 +590,7 @@ $$PREBID_GLOBAL$$.loadScript = function (tagSrc, callback, useCache) {
 $$PREBID_GLOBAL$$.enableAnalytics = function (config) {
   if (config && !utils.isEmpty(config)) {
     utils.logInfo('Invoking $$PREBID_GLOBAL$$.enableAnalytics for: ', config);
-    adaptermanager.enableAnalytics(config);
+    adapterManager.enableAnalytics(config);
   } else {
     utils.logError('$$PREBID_GLOBAL$$.enableAnalytics should be called with option {}');
   }
@@ -543,7 +602,7 @@ $$PREBID_GLOBAL$$.enableAnalytics = function (config) {
 $$PREBID_GLOBAL$$.aliasBidder = function (bidderCode, alias) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.aliasBidder', arguments);
   if (bidderCode && alias) {
-    adaptermanager.aliasBidAdapter(bidderCode, alias);
+    adapterManager.aliasBidAdapter(bidderCode, alias);
   } else {
     utils.logError('bidderCode and alias must be passed as arguments', '$$PREBID_GLOBAL$$.aliasBidder');
   }
@@ -751,6 +810,9 @@ function processQueue(queue) {
  * @alias module:pbjs.processQueue
  */
 $$PREBID_GLOBAL$$.processQueue = function() {
+  hook.ready();
   processQueue($$PREBID_GLOBAL$$.que);
   processQueue($$PREBID_GLOBAL$$.cmd);
 };
+
+export default $$PREBID_GLOBAL$$;
