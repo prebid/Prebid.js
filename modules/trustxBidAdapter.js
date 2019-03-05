@@ -36,6 +36,8 @@ export const spec = {
   buildRequests: function(validBidRequests, bidderRequest) {
     const auids = [];
     const bidsMap = {};
+    const slotsMapByUid = {};
+    const sizeMap = {};
     const bids = validBidRequests || [];
     let priceType = 'net';
     let reqId;
@@ -45,18 +47,41 @@ export const spec = {
         priceType = 'gross';
       }
       reqId = bid.bidderRequestId;
-      if (!bidsMap[bid.params.uid]) {
-        bidsMap[bid.params.uid] = [bid];
-        auids.push(bid.params.uid);
-      } else {
-        bidsMap[bid.params.uid].push(bid);
+      const {params: {uid}, adUnitCode} = bid;
+      auids.push(uid);
+      const sizesId = utils.parseSizesInput(bid.sizes);
+
+      if (!slotsMapByUid[uid]) {
+        slotsMapByUid[uid] = {};
       }
+      const slotsMap = slotsMapByUid[uid];
+      if (!slotsMap[adUnitCode]) {
+        slotsMap[adUnitCode] = {adUnitCode, bids: [bid], parents: []};
+      } else {
+        slotsMap[adUnitCode].bids.push(bid);
+      }
+      const slot = slotsMap[adUnitCode];
+
+      sizesId.forEach((sizeId) => {
+        sizeMap[sizeId] = true;
+        if (!bidsMap[uid]) {
+          bidsMap[uid] = {};
+        }
+
+        if (!bidsMap[uid][sizeId]) {
+          bidsMap[uid][sizeId] = [slot];
+        } else {
+          bidsMap[uid][sizeId].push(slot);
+        }
+        slot.parents.push({parent: bidsMap[uid], key: sizeId, uid});
+      });
     });
 
     const payload = {
       u: utils.getTopWindowUrl(),
       pt: priceType,
       auids: auids.join(','),
+      sizes: utils.getKeys(sizeMap).join(','),
       r: reqId
     };
 
@@ -138,8 +163,12 @@ function _addBidResponse(serverBid, bidsMap, priceType, bidResponses) {
   else {
     const awaitingBids = bidsMap[serverBid.auid];
     if (awaitingBids) {
-      awaitingBids.forEach(bid => {
-        const bidResponse = {
+      const sizeId = `${serverBid.w}x${serverBid.h}`;
+      if (awaitingBids[sizeId]) {
+        const slot = awaitingBids[sizeId][0];
+
+        const bid = slot.bids.shift();
+        bidResponses.push({
           requestId: bid.bidId, // bid.bidderRequestId,
           bidderCode: spec.code,
           cpm: serverBid.price,
@@ -151,9 +180,23 @@ function _addBidResponse(serverBid, bidsMap, priceType, bidResponses) {
           ttl: TIME_TO_LIVE,
           ad: serverBid.adm,
           dealId: serverBid.dealid
-        };
-        bidResponses.push(bidResponse);
-      });
+        });
+
+        if (!slot.bids.length) {
+          slot.parents.forEach(({parent, key, uid}) => {
+            const index = parent[key].indexOf(slot);
+            if (index > -1) {
+              parent[key].splice(index, 1);
+            }
+            if (!parent[key].length) {
+              delete parent[key];
+              if (!utils.getKeys(parent).length) {
+                delete bidsMap[uid];
+              }
+            }
+          });
+        }
+      }
     } else {
       errorMessage = LOG_ERROR_MESS.noPlacementCode + serverBid.auid;
     }
