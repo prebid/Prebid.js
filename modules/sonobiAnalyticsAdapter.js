@@ -80,7 +80,7 @@ function buildItem(data, response, phase = 1) {
 }
 function sendQueue(auctionId) {
   let auction = auctionCache[auctionId];
-  let data = Array.from(auction.queue);
+  let data = auction.queue;
   auction.queue = [];
   auction.qTimeout = false;
   sonobiAdapter.sendData(auction, data);
