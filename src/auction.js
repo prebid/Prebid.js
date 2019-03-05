@@ -500,14 +500,8 @@ function setupBidTargeting(bidObject, bidderRequest) {
     keyValues = getKeyValueTargetingPairs(bidObject.bidderCode, bidObject, bidReq);
   }
 
-  let cacheTargetKeys = {};
-  if (bidObject.videoCacheKey) {
-    cacheTargetKeys.hb_uuid = bidObject.videoCacheKey;
-    cacheTargetKeys.hb_cache_id = bidObject.videoCacheKey;
-  }
-
   // use any targeting provided as defaults, otherwise just set from getKeyValueTargetingPairs
-  bidObject.adserverTargeting = Object.assign(bidObject.adserverTargeting || {}, cacheTargetKeys, keyValues);
+  bidObject.adserverTargeting = Object.assign(bidObject.adserverTargeting || {}, keyValues);
 }
 
 export function getStandardBidderSettings(mediaType) {
