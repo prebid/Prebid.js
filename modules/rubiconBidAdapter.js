@@ -869,19 +869,22 @@ export function getPriceGranularity(config) {
 // Function to validate the required video params
 export function hasValidVideoParams(bid) {
   let isValid = true;
+  // incase future javascript changes the string represenation of the array or number classes!
+  let arrayType = Object.prototype.toString.call([]);
+  let numberType = Object.prototype.toString.call(0);
   // required params and their associated object type
   var requiredParams = {
-    mimes: '[object Array]',
-    protocols: '[object Array]',
-    maxduration: '[object Number]',
-    linearity: '[object Number]',
-    api: '[object Array]'
+    mimes: arrayType,
+    protocols: arrayType,
+    maxduration: numberType,
+    linearity: numberType,
+    api: arrayType
   }
   // loop through each param and verify it has the correct
   Object.keys(requiredParams).forEach(function(param) {
     if (Object.prototype.toString.call(utils.deepAccess(bid, 'mediaTypes.video.' + param)) !== requiredParams[param]) {
       isValid = false;
-      utils.logError('Rubicon Bid Adapter: mediaTypes.video.' + param + ' is required and must be of type:' + requiredParams[param].substring(requiredParams[param].indexOf(' '), requiredParams[param].indexOf(']')));
+      utils.logError('Rubicon Bid Adapter: mediaTypes.video.' + param + ' is required and must be of type: ' + requiredParams[param]);
     }
   })
   return isValid;
