@@ -102,7 +102,15 @@ export const spec = {
         return false
       }
     }
-    return !!bidType(bid, true);
+    let bidFormat = bidType(bid, true);
+    // bidType is undefined? Return false
+    if (!bidFormat) {
+      return false;
+    } else if (bidFormat === 'video') { // bidType is video, make sure it has required params
+      return hasValidVideoParams(bid);
+    }
+    // bidType is banner? return true
+    return true;
   },
   /**
    * @param {BidRequest[]} bidRequests
@@ -718,9 +726,6 @@ function addVideoParameters(data, bidRequest) {
   if (typeof data.imp[0].video === 'object' && data.imp[0].video.pos === undefined) {
     data.imp[0].video.pos = bidRequest.params.position === 'atf' ? 1 : (bidRequest.params.position === 'btf' ? 3 : 0);
   }
-  if (data.imp[0].bidfloor === undefined) {
-    data.imp[0].bidfloor = parseFloat(bidRequest.params.floor) > 0.01 ? bidRequest.params.floor : 0.01;
-  }
 
   const size = parseSizes(bidRequest, 'video')
   data.imp[0].video.w = size[0]
@@ -753,7 +758,7 @@ export function hasVideoMediaType(bidRequest) {
   if (typeof utils.deepAccess(bidRequest, 'params.video') !== 'object') {
     return false;
   }
-  return (bidRequest.mediaType === VIDEO || typeof utils.deepAccess(bidRequest, `mediaTypes.${VIDEO}`) !== 'undefined');
+  return (typeof utils.deepAccess(bidRequest, `mediaTypes.${VIDEO}`) !== 'undefined');
 }
 
 /**
@@ -765,27 +770,15 @@ export function hasVideoMediaType(bidRequest) {
 function bidType(bid, log = false) {
   // Is it considered video ad unit by rubicon
   if (hasVideoMediaType(bid)) {
-    // legacy mediaType or the new mediaTypes
-    // this is the preffered "new" way to define mediaTypes
-    if (typeof utils.deepAccess(bid, `mediaTypes.${VIDEO}`) !== 'undefined') {
-      // We require either context as instream or outstream
-      if (['outstream', 'instream'].indexOf(utils.deepAccess(bid, `mediaTypes.${VIDEO}.context`)) === -1) {
-        if (log) {
-          utils.logError('Rubicon bid adapter requires mediaTypes.video.context to be one of outstream or instream');
-        }
-        return;
-      }
-    } else { // Otherwise its the legacy way where mediaType == 'video'
+    // Removed legacy mediaType support. new way using mediaTypes.video object is now required
+    // We require either context as instream or outstream
+    if (['outstream', 'instream'].indexOf(utils.deepAccess(bid, `mediaTypes.${VIDEO}.context`)) === -1) {
       if (log) {
-        utils.logWarn('Rubicon video bid requested using legacy `adUnit.mediaType = `video``\nThis is deprecated\nPlease move towards the PBJS standard using mediaTypes object!');
+        utils.logError('Rubicon bid adapter requires mediaTypes.video.context to be one of outstream or instream');
       }
-      if (isNaN(parseInt(utils.deepAccess(bid, 'params.video.size_id')))) {
-        if (log) {
-          utils.logError('Rubicon bid adapter needs params.video.size_id to be declared and an integer in order to process a legacy video request using mediaType == video');
-        }
-        return;
-      }
+      return;
     }
+
     // we require playerWidth and playerHeight to come from one of params.playerWidth/playerHeight or mediaTypes.video.playerSize or adUnit.sizes
     if (parseSizes(bid, 'video').length < 2) {
       if (log) {
@@ -871,6 +864,27 @@ export function getPriceGranularity(config) {
   } else {
     return {ranges: granularityMappings[config.getConfig('priceGranularity')]}
   }
+}
+
+// Function to validate the required video params
+export function hasValidVideoParams(bid) {
+  let isValid = true;
+  // required params and their associated object type
+  var requiredParams = {
+    mimes: '[object Array]',
+    protocols: '[object Array]',
+    maxduration: '[object Number]',
+    linearity: '[object Number]',
+    api: '[object Array]'
+  }
+  // loop through each param and verify it has the correct
+  Object.keys(requiredParams).forEach(function(param) {
+    if (Object.prototype.toString.call(utils.deepAccess(bid, 'mediaTypes.video.' + param)) !== requiredParams[param]) {
+      isValid = false;
+      utils.logError('Rubicon Bid Adapter: mediaTypes.video.' + param + ' is required and must be of type:' + requiredParams[param].substring(requiredParams[param].indexOf(' '), requiredParams[param].indexOf(']')));
+    }
+  })
+  return isValid;
 }
 
 var hasSynced = false;

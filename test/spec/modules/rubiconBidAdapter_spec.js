@@ -151,12 +151,13 @@ describe('the rubicon adapter', function () {
       video: {
         context: 'instream',
         mimes: ['video/mp4', 'video/x-flv'],
+        api: [2],
         minduration: 15,
+        playerSize: [640, 480],
         maxduration: 30,
         startdelay: 0,
         playbackmethod: [2],
-        w: 640,
-        h: 480,
+        linearity: 1,
         skip: 1,
         skipafter: 15,
         pos: 1,
@@ -173,22 +174,6 @@ describe('the rubicon adapter', function () {
     };
   }
 
-  function createLegacyVideoBidderRequest() {
-    createGdprBidderRequest(true);
-
-    let bid = bidderRequest.bids[0];
-    // Legacy property (Prebid <1.0)
-    bid.mediaType = 'video';
-    bid.params.video = {
-      'language': 'en',
-      'skip': 1,
-      'skipafter': 15,
-      'playerHeight': 320,
-      'playerWidth': 640,
-      'size_id': 201,
-    };
-  }
-
   function createVideoBidderRequestNoVideo() {
     let bid = bidderRequest.bids[0];
     bid.mediaTypes = {
@@ -199,17 +184,23 @@ describe('the rubicon adapter', function () {
     bid.params.video = '';
   }
 
-  function createLegacyVideoBidderRequestNoVideo() {
-    let bid = bidderRequest.bids[0];
-    bid.mediaType = 'video';
-    bid.params.video = '';
-  }
-
   function createVideoBidderRequestOutstream() {
     let bid = bidderRequest.bids[0];
     bid.mediaTypes = {
       video: {
-        context: 'outstream'
+        context: 'outstream',
+        mimes: ['video/mp4', 'video/x-flv'],
+        api: [2],
+        minduration: 15,
+        playerSize: [640, 480],
+        maxduration: 30,
+        startdelay: 0,
+        playbackmethod: [2],
+        linearity: 1,
+        skip: 1,
+        skipafter: 15,
+        pos: 1,
+        protocols: [1, 2, 3, 4, 5, 6]
       },
     };
     bid.params.accountId = 14062;
@@ -1040,7 +1031,17 @@ describe('the rubicon adapter', function () {
             bidderRequest.bids.push(bidCopy3);
 
             const bidCopy4 = clone(bidderRequest.bids[0]);
-            bidCopy4.mediaType = 'video';
+            bidCopy4.mediaTypes = {
+              video: {
+                context: 'instream',
+                playerSize: [640, 480],
+                mimes: ['video/mp4', 'video/x-ms-wmv'],
+                protocols: [2, 5],
+                maxduration: 30,
+                linearity: 1,
+                api: [2]
+              }
+            };
             bidCopy4.params.video = {
               'language': 'en',
               'p_aso.video.ext.skip': true,
@@ -1062,41 +1063,6 @@ describe('the rubicon adapter', function () {
       });
 
       describe('for video requests', function () {
-        it('should make a well-formed video request with legacy mediaType config', function () {
-          createLegacyVideoBidderRequest();
-
-          sandbox.stub(Date, 'now').callsFake(() =>
-            bidderRequest.auctionStart + 100
-          );
-
-          let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
-          let post = request.data;
-
-          expect(post).to.have.property('imp')
-          //   .with.length.of(1);
-          let imp = post.imp[0];
-          expect(imp.id).to.equal(bidderRequest.bids[0].adUnitCode);
-          expect(imp.exp).to.equal(300);
-          expect(imp.ext.rubicon.video.playerWidth).to.equal(640);
-          expect(imp.ext.rubicon.video.playerHeight).to.equal(320);
-          expect(imp.ext.rubicon.video.size_id).to.equal(201);
-          expect(imp.ext.rubicon.video.language).to.equal('en');
-          // Also want it to be in post.site.content.language
-          expect(post.site.content.language).to.equal('en');
-          expect(imp.ext.rubicon.video.skip).to.equal(1);
-          expect(imp.ext.rubicon.video.skipafter).to.equal(15);
-          expect(post.user.ext.consent).to.equal('BOJ/P2HOJ/P2HABABMAAAAAZ+A==');
-          expect(post.regs.ext.gdpr).to.equal(1);
-          expect(post).to.have.property('ext').that.is.an('object');
-          expect(post.ext.prebid.targeting.includewinners).to.equal(true);
-          // should equal medium price granularity value
-          expect(post.ext.prebid.targeting.priceGranularity).to.deep.equal({ 'ranges': [{max: 20.00, increment: 0.10}] });
-          expect(post.ext.prebid).to.have.property('cache').that.is.an('object')
-          expect(post.ext.prebid.cache).to.have.property('vastxml').that.is.an('object')
-          expect(post.ext.prebid.cache.vastxml).to.have.property('returnCreative').that.is.an('boolean')
-          expect(post.ext.prebid.cache.vastxml.returnCreative).to.equal(false)
-        });
-
         it('should make a well-formed video request', function () {
           createVideoBidderRequest();
 
@@ -1174,36 +1140,17 @@ describe('the rubicon adapter', function () {
           expect(request.data.imp[0].video.pos).to.equal(0);
         });
 
-        it('should validate bid request with invalid video if a mediaTypes banner property is defined', function () {
-          const bidRequest = {
-            mediaTypes: {
-              video: {
-                context: 'instream'
-              },
-              banner: {
-                sizes: [[300, 250]]
-              }
-            },
-            params: {
-              accountId: 1001,
-              siteId: 100,
-              zoneId: 200,
-              video: {
-                size_id: 201
-              }
-            },
-            sizes: [[300, 250]]
-          }
-          sandbox.stub(Date, 'now').callsFake(() =>
-            bidderRequest.auctionStart + 100
-          );
-          expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
-        });
-
-        it('should not validate bid request when a params.video object is present but no context instream or outstream is passed in', function () {
+        it('should properly enforce video.context to be either instream or outstream', function () {
           let bid = bidderRequest.bids[0];
           bid.mediaTypes = {
-            video: {}
+            video: {
+              context: 'instream',
+              mimes: ['video/mp4', 'video/x-ms-wmv'],
+              protocols: [2, 5],
+              maxduration: 30,
+              linearity: 1,
+              api: [2]
+            }
           }
           bid.params.video = {};
 
@@ -1212,48 +1159,83 @@ describe('the rubicon adapter', function () {
           );
 
           const bidRequestCopy = clone(bidderRequest.bids[0]);
-          expect(spec.isBidRequestValid(bidRequestCopy)).to.equal(false);
-
-          bidRequestCopy.params.video = {sizeId: 201};
-          expect(spec.isBidRequestValid(bidRequestCopy)).to.equal(false);
-
-          bidRequestCopy.mediaTypes.video = {context: undefined};
-          expect(spec.isBidRequestValid(bidRequestCopy)).to.equal(false);
-
-          bidRequestCopy.mediaTypes.video = {context: ''};
-          expect(spec.isBidRequestValid(bidRequestCopy)).to.equal(false);
-
-          bidRequestCopy.mediaTypes.video = {context: 'random'};
-          expect(spec.isBidRequestValid(bidRequestCopy)).to.equal(false);
-
-          bidRequestCopy.mediaTypes.video = {context: 'instream'};
           expect(spec.isBidRequestValid(bidRequestCopy)).to.equal(true);
 
-          bidRequestCopy.mediaTypes.video = {context: 'outstream'};
+          // change context to outstream, still true
+          bidRequestCopy.mediaTypes.video.context = 'outstream';
           expect(spec.isBidRequestValid(bidRequestCopy)).to.equal(true);
+
+          // change context to random, false now
+          bidRequestCopy.mediaTypes.video.context = 'random';
+          expect(spec.isBidRequestValid(bidRequestCopy)).to.equal(false);
+
+          // change context to undefined, still false
+          bidRequestCopy.mediaTypes.video.context = undefined;
+          expect(spec.isBidRequestValid(bidRequestCopy)).to.equal(false);
+
+          // remove context, still false
+          delete bidRequestCopy.mediaTypes.video.context;
+          expect(spec.isBidRequestValid(bidRequestCopy)).to.equal(false);
         });
 
-        it('should not validate bid request when an invalid video object is passed in with legacy config mediaType', function () {
-          createLegacyVideoBidderRequestNoVideo();
+        it('should enforce the new required mediaTypes.video params', function () {
+          createVideoBidderRequest();
+
           sandbox.stub(Date, 'now').callsFake(() =>
             bidderRequest.auctionStart + 100
           );
 
-          const bidderRequestCopy = clone(bidderRequest);
-          bidderRequestCopy.bids[0].params.video = {};
-          expect(spec.isBidRequestValid(bidderRequestCopy.bids[0])).to.equal(false);
+          expect(spec.isBidRequestValid(bidderRequest.bids[0])).to.equal(true);
 
-          bidderRequestCopy.bids[0].params.video = {size_id: undefined};
-          expect(spec.isBidRequestValid(bidderRequestCopy.bids[0])).to.equal(false);
+          // change mimes to a non array, no good
+          createVideoBidderRequest();
+          bidderRequest.bids[0].mediaTypes.video.mimes = 'video/mp4';
+          expect(spec.isBidRequestValid(bidderRequest.bids[0])).to.equal(false);
 
-          bidderRequestCopy.bids[0].params.video = {size_id: 'size'};
-          expect(spec.isBidRequestValid(bidderRequestCopy.bids[0])).to.equal(false);
+          // delete mimes, no good
+          createVideoBidderRequest();
+          delete bidderRequest.bids[0].mediaTypes.video.mimes;
+          expect(spec.isBidRequestValid(bidderRequest.bids[0])).to.equal(false);
 
-          bidderRequestCopy.bids[0].params.video = {size_id: '201'};
-          expect(spec.isBidRequestValid(bidderRequestCopy.bids[0])).to.equal(true);
+          // change protocols to an int not array of ints, no good
+          createVideoBidderRequest();
+          bidderRequest.bids[0].mediaTypes.video.protocols = 1;
+          expect(spec.isBidRequestValid(bidderRequest.bids[0])).to.equal(false);
 
-          bidderRequestCopy.bids[0].params.video = {size_id: 201};
-          expect(spec.isBidRequestValid(bidderRequestCopy.bids[0])).to.equal(true);
+          // delete protocols, no good
+          createVideoBidderRequest();
+          delete bidderRequest.bids[0].mediaTypes.video.protocols;
+          expect(spec.isBidRequestValid(bidderRequest.bids[0])).to.equal(false);
+
+          // change maxduration to an string, no good
+          createVideoBidderRequest();
+          bidderRequest.bids[0].mediaTypes.video.maxduration = 'string';
+          expect(spec.isBidRequestValid(bidderRequest.bids[0])).to.equal(false);
+
+          // delete maxduration, no good
+          createVideoBidderRequest();
+          delete bidderRequest.bids[0].mediaTypes.video.maxduration;
+          expect(spec.isBidRequestValid(bidderRequest.bids[0])).to.equal(false);
+
+          // change linearity to an string, no good
+          createVideoBidderRequest();
+          bidderRequest.bids[0].mediaTypes.video.linearity = 'string';
+          expect(spec.isBidRequestValid(bidderRequest.bids[0])).to.equal(false);
+
+          // delete linearity, no good
+          createVideoBidderRequest();
+          delete bidderRequest.bids[0].mediaTypes.video.linearity;
+          expect(spec.isBidRequestValid(bidderRequest.bids[0])).to.equal(false);
+
+          // change api to an string, no good
+          createVideoBidderRequest();
+          bidderRequest.bids[0].mediaTypes.video.api = 'string';
+          expect(spec.isBidRequestValid(bidderRequest.bids[0])).to.equal(false);
+
+          // delete api, no good
+          createVideoBidderRequest();
+          delete bidderRequest.bids[0].mediaTypes.video.api;
+          expect(spec.isBidRequestValid(bidderRequest.bids[0])).to.equal(false);
         });
 
         it('bid request is valid when video context is outstream', function () {
@@ -1390,14 +1372,12 @@ describe('the rubicon adapter', function () {
           expect(legacyVideoTypeBidRequest).is.equal(true);
         });
 
-        it('should return false if mediaType is video and size_id is not defined', function () {
-          expect(spec.isBidRequestValid({
-            bid: 99,
-            mediaType: 'video',
-            params: {
-              video: {}
-            }
-          })).is.equal(false);
+        it('should return false if trying to use legacy mediaType with video', function () {
+          createVideoBidderRequest();
+          delete bidderRequest.bids[0].mediaTypes;
+          bidderRequest.bids[0].mediaType = 'video';
+          const legacyVideoTypeBidRequest = hasVideoMediaType(bidderRequest.bids[0]);
+          expect(legacyVideoTypeBidRequest).is.equal(false);
         });
 
         it('should return false if bidRequest.mediaType is not equal to video', function () {
