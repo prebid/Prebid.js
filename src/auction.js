@@ -559,6 +559,17 @@ export function getStandardBidderSettings(mediaType) {
         }
       },
     ]
+
+    if (mediaType === 'video') {
+      [CONSTANTS.TARGETING_KEYS.UUID, CONSTANTS.TARGETING_KEYS.CACHE_ID].forEach(item => {
+        bidderSettings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD][CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING].push({
+          key: item,
+          val: function val(bidResponse) {
+            return bidResponse.videoCacheKey;
+          }
+        })
+      });
+    }
   }
   return bidderSettings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD];
 }
