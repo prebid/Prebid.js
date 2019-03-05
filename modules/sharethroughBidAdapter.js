@@ -150,14 +150,14 @@ function b64EncodeUnicode(str) {
 }
 
 function canAutoPlayHTML5Video() {
-  var userAgent = navigator.userAgent;
+  const userAgent = navigator.userAgent;
   if (!userAgent) return false;
 
-  var isAndroid = /Android/i.test(userAgent);
-  var isiOS = /iPhone|iPad|iPod/i.test(userAgent);
-  var chromeVersion = parseInt((/Chrome\/([0-9]+)/.exec(userAgent) || [0, 0])[1]);
-  var chromeiOSVersion = parseInt((/CriOS\/([0-9]+)/.exec(userAgent) || [0, 0])[1]);
-  var safariVersion = parseInt((/Version\/([0-9]+)/.exec(userAgent) || [0, 0])[1]);
+  const isAndroid = /Android/i.test(userAgent);
+  const isiOS = /iPhone|iPad|iPod/i.test(userAgent);
+  const chromeVersion = parseInt((/Chrome\/([0-9]+)/.exec(userAgent) || [0, 0])[1]);
+  const chromeiOSVersion = parseInt((/CriOS\/([0-9]+)/.exec(userAgent) || [0, 0])[1]);
+  const safariVersion = parseInt((/Version\/([0-9]+)/.exec(userAgent) || [0, 0])[1]);
 
   if (
     (isAndroid && chromeVersion >= 53) ||
