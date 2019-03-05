@@ -36,7 +36,7 @@ function getSiteName(referrer) {
 }
 
 function generateRandomId() {
-  return Math.random().toString(16).substr(2);
+  return Math.random().toString(16).substring(2);
 }
 
 export const spec = {
