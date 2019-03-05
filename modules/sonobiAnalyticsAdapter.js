@@ -121,6 +121,7 @@ function handlerBidRequested(args) {
   let phase = 1;
   let response = 1;
   args.bids.forEach(function (bidRequest) {
+    auction = auctionCache[bidRequest.auctionId]
     let built = buildItem(bidRequest, response, phase);
     auction.stats[built.bidid] = {id: built.bidid, adUnitCode: bidRequest.adUnitCode, data: built};
     addToAuctionQueue(args.auctionId, built.bidid);
@@ -243,14 +244,14 @@ sonobiAdapter.getOptions = function () {
 };
 
 sonobiAdapter.sendData = function (auction, data) {
-  let url = 'https://' + initOptions.server + '?pageviewid=' + auction.id + '&corscred=1&pubId=' + initOptions.pubId + '&siteId=' + initOptions.siteId ;
+  let url = 'https://' + initOptions.server + '?pageviewid=' + auction.id + '&corscred=1&pubId=' + initOptions.pubId + '&siteId=' + initOptions.siteId;
   ajax(
     url,
     function () { logInfo('Auction [' + auction.id + '] sent ', data); },
     JSON.stringify(data),
     {
       method: 'POST',
-      //withCredentials: true,
+      // withCredentials: true,
       contentType: 'text/plain'
     }
   );

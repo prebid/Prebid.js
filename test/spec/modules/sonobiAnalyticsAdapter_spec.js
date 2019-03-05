@@ -5,21 +5,23 @@ let adapterManager = require('src/adapterManager').default;
 let constants = require('src/constants.json');
 
 describe('Sonobi Prebid Analytic', function () {
-  let sendDataStub;
   let xhr;
   let requests = [];
+  var clock;
+
   describe('enableAnalytics', function () {
     beforeEach(function () {
-		requests = [];
-      // sendDataStub = sinon.stub(sonobiAnalytics, 'sendData');
+      requests = [];
       xhr = sinon.useFakeXMLHttpRequest();
       xhr.onCreate = request => requests.push(request);
       sinon.stub(events, 'getEvents').returns([]);
+      clock = sinon.useFakeTimers(Date.now());
     });
 
     afterEach(function () {
-    xhr.restore();
+      xhr.restore();
       events.getEvents.restore();
+      clock.restore();
     });
 
     after(function () {
@@ -27,16 +29,13 @@ describe('Sonobi Prebid Analytic', function () {
     });
 
     it('should catch all events', function (done) {
-      adapterManager.registerAnalyticsAdapter({
-        code: 'sonobi',
-        adapter: sonobiAnalytics
-      });
-
       const initOptions = {
         pubId: 'A3B254F',
         siteId: '1234',
         delay: 100
       };
+
+      sonobiAnalytics.enableAnalytics(initOptions)
 
       const bid = {
         bidderCode: 'sonobi_test_bid',
@@ -52,7 +51,7 @@ describe('Sonobi Prebid Analytic', function () {
         adUnitCode: 'dom-sample-id',
         timeToRespond: 100,
         placementCode: 'placementtest'
-      }
+      };
 
       // Step 1: Initialize adapter
       adapterManager.enableAnalytics({
@@ -61,40 +60,30 @@ describe('Sonobi Prebid Analytic', function () {
       });
 
       // Step 2: Send init auction event
-      events.emit(constants.EVENTS.AUCTION_INIT, {config: initOptions, auctionId: '13'});
+      events.emit(constants.EVENTS.AUCTION_INIT, {config: initOptions, auctionId: '13', timestamp: Date.now()});
 
       expect(sonobiAnalytics.initOptions).to.have.property('pubId', 'A3B254F');
       expect(sonobiAnalytics.initOptions).to.have.property('siteId', '1234');
       expect(sonobiAnalytics.initOptions).to.have.property('delay', 100);
       // Step 3: Send bid requested event
-      events.emit(constants.EVENTS.BID_REQUESTED, { bids: [bid] });
+      events.emit(constants.EVENTS.BID_REQUESTED, { bids: [bid], auctionId: '13' });
 
       // Step 4: Send bid response event
       events.emit(constants.EVENTS.BID_RESPONSE, bid);
 
-      // expect(sonobiAnalytics.bucketEvents.length).to.equal(2);
-
       // Step 5: Send bid won event
       events.emit(constants.EVENTS.BID_WON, bid);
-
-      // expect(sonobiAnalytics.bucketEvents.length).to.equal(2);
 
       // Step 6: Send bid timeout event
       events.emit(constants.EVENTS.BID_TIMEOUT, {auctionId: '13'});
 
-      // expect(sonobiAnalytics.currentContext.timeouted).to.equal(true);
-
       // Step 7: Send auction end event
-      var clock = sinon.useFakeTimers();
       events.emit(constants.EVENTS.AUCTION_END, {auctionId: '13', bidsReceived: [bid]});
 
-      setTimeout(function() {
-        expect(requests).to.have.length(3);
-        done();
-      }, 3000);
-
       clock.tick(5000);
-      clock.restore();
+      expect(requests).to.have.length(1);
+      expect(JSON.parse(requests[0].requestBody)).to.have.length(3)
+      done();
     });
   });
 });
