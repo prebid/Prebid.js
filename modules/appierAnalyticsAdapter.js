@@ -1,11 +1,11 @@
-import {ajax} from 'src/ajax'; // ajaxBuilder()
+import {ajax} from 'src/ajax';
 import adapter from '../src/AnalyticsAdapter';
 import CONSTANTS from '../src/constants.json';
 import adapterManager from '../src/adapterManager';
 
 const utils = require('../src/utils');
 const analyticsType = 'endpoint';
-const DEFAULT_SERVER = 'analytics.c.apx.appier.net.dummy';
+const DEFAULT_SERVER = 'https://analytics.c.apx.appier.net.dummy';
 const {
   EVENTS: {
     AUCTION_INIT,
@@ -31,11 +31,10 @@ const BIDDER_STATUS = {
   'BID_WON': 'bidWon'
 };
 
-let analyticsOptions = {};
-
+const analyticsOptions = {};
 const eventCache = {};
 
-function detectDevice() { // Need Unit testing
+function detectDevice() {
   if ((/ipad|android 3.0|xoom|sch-i800|playbook|tablet|kindle/i.test(navigator.userAgent.toLowerCase()))) {
     return 'tablet';
   }
@@ -46,8 +45,7 @@ function detectDevice() { // Need Unit testing
 }
 
 let appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, analyticsType}), {
-  version: '1.0.1903', // TODO: make this const?
-
+  version: '1.0.190305',
   initConfig(config) {
     /**
      * Required option: affiliateId  // TODO: May not need this
@@ -59,7 +57,7 @@ let appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, analyticsTyp
      * Optional option: autoPick
      * @type {boolean}
      */
-    analyticsOptions.options = utils.deepClone(config.options); // Make a copy so we can access it later
+    analyticsOptions.options = utils.deepClone(config.options);
     analyticsOptions.affiliateId = config.options.affiliateId || (config.options.affiliateId[0]) || null;
     if (!analyticsOptions.affiliateId) {
       console.log('"options.affiliateId" is required.');
@@ -80,16 +78,21 @@ let appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, analyticsTyp
 
     return true;
   },
+  parseBidderCode(bidResponse) {
+    return bidResponse.bidderCode.toLowerCase();
+  },
+  parseAdUnitCode(bidResponse) {
+    return bidResponse.adUnitCode.toLowerCase();
+  },
   initCommonMessageHeader(auction, cache) {
-    console.log('initCommonMessageHeader');
-    cache[auction.auctionId] = cache[auction.auctionId] || {};
-    return cache[auction.auctionId].header = {
+    cache[auction.auctionId] = {};
+    cache[auction.auctionId].header = {
       'eventId': auction.auctionId,
-      'version': appierAnalyticsAdapter.version, // AnalyticsAdapter version
+      'version': appierAnalyticsAdapter.version,
       'affiliateId': analyticsOptions.affiliateId, // TODO: This may not required
       'configId': analyticsOptions.configId,
       'referrer': window.location.href,
-      'device': detectDevice(), // TODO: May not need this, append UA at beacon
+      'device': detectDevice(), // TODO: May not need this, use UA at beacon instead?
       'sampling': analyticsOptions.options.sampling,
       'cr_sampling': analyticsOptions.options.cr_sampling, // TODO: need a better name OR remove
       'prebid': '$prebid.version$',
@@ -98,7 +101,6 @@ let appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, analyticsTyp
     };
   },
   initAuctionEventMessage(auction, cache) {
-    console.log('initAuctionEventMessage');
     cache[auction.auctionId].bids = {
       'start': auction.timestamp || Date.now(),
       'finish': 0,
@@ -109,56 +111,49 @@ let appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, analyticsTyp
         'adUnits': {}
       };
     }
-    let adUnits = cache[auction.auctionId].bids.adUnits;
+    let adUnitCache = cache[auction.auctionId].bids.adUnits;
     let adUnitStatus = cache[auction.auctionId].status = {};
 
     // build nested object structure of bids within adUnits
     for (let bidderRequest of auction.bidderRequests) {
+      let bidderCode = this.parseBidderCode(bidderRequest);
       for (let bid of bidderRequest.bids) {
-        let adUnitCode = bid.adUnitCode.toLowerCase();
-        let bidderCode = bidderRequest.bidderCode.toLowerCase();
-        adUnits[adUnitCode] = adUnits[adUnitCode] || {};
-        adUnits[adUnitCode][bidderCode] = {};
+        let adUnitCode = this.parseAdUnitCode(bid);
+        adUnitCache[adUnitCode] = adUnitCache[adUnitCode] || {};
+        adUnitCache[adUnitCode][bidderCode] = {};
         adUnitStatus[adUnitCode] = AUCTION_STATUS.IN_PROGRESS;
       }
     }
-    console.log('initAuctionEventMessage OK');
   },
   updateBidRequestedMessage(bidRequested, cache) {
-    console.log('updateBidRequestedMessage');
-    // build nested object structure of bids within adUnits
-    let bidderCode = bidRequested.bidderCode.toLowerCase();
+    let bidderCode = this.parseBidderCode(bidRequested);
     let adUnitsCache = cache[bidRequested.auctionId].bids.adUnits;
     for (let bid of bidRequested.bids) {
-      let adUnitCode = bid.adUnitCode.toLowerCase();
+      let adUnitCode = this.parseAdUnitCode(bid);
       Object.assign(adUnitsCache[adUnitCode][bidderCode], {
-        'status': BIDDER_STATUS.REQUESTED, // Default to NO_BID until response occurs
+        'status': BIDDER_STATUS.REQUESTED,
         'isTimeout': cache[bidRequested.auctionId].status[adUnitCode] === true // First set to true to wait response
+        // TODO: Other default values
       });
     }
-    console.log('updateBidRequestedMessage OK');
   },
   updateBidderDoneMessage(bidRequested, cache) {
-    console.log('updateBidRequestedMessage');
-    // build nested object structure of bids within adUnits
-    let bidderCode = bidRequested.bidderCode.toLowerCase();
+    let bidderCode = this.parseBidderCode(bidRequested);
     let adUnitsCache = cache[bidRequested.auctionId].bids.adUnits;
     for (let bid of bidRequested.bids) {
-      let adUnitCode = bid.adUnitCode.toLowerCase();
+      let adUnitCode = this.parseAdUnitCode(bid);
       Object.assign(adUnitsCache[adUnitCode][bidderCode], {
         'isTimeout': cache[bidRequested.auctionId].status[adUnitCode] === AUCTION_STATUS.COMPLETED
       });
     }
-    console.log('updateBidRequestedMessage OK');
   },
   updateBidResponseMessage(bidResponse, cache) {
-    console.log('updateBidResponseMessage');
-    let adUnitCode = bidResponse.adUnitCode.toLowerCase();
-    let bidderCode = bidResponse.bidderCode.toLowerCase();
-    // console.log('# RESPONSE requestTimestamp: ' + (Date.now() - bidResponse.requestTimestamp));
-    Object.assign(cache[bidResponse.auctionId].bids.adUnits[adUnitCode][bidderCode], {
+    let adUnitCode = this.parseAdUnitCode(bidResponse);
+    let bidderCode = this.parseBidderCode(bidResponse);
+    let adUnitsCache = cache[bidResponse.auctionId].bids.adUnits;
+    Object.assign(adUnitsCache[adUnitCode][bidderCode], {
       'time': bidResponse.timeToRespond,
-      'latency': Date.now() - bidResponse.requestTimestamp - bidResponse.timeToRespond, // rubicon did this
+      'latency': Date.now() - bidResponse.requestTimestamp - bidResponse.timeToRespond,
       'status': BIDDER_STATUS.BID,
       'cpm': bidResponse.cpm,
       'currency': bidResponse.currency,
@@ -166,75 +161,67 @@ let appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, analyticsTyp
       'originalCurrency': bidResponse.originalCurrency || bidResponse.currency,
       'isTimeout': cache[bidResponse.auctionId].status[adUnitCode] === AUCTION_STATUS.FINISHED
     });
-    console.log('updateBidResponseMessage OK');
   },
   updateBidTimeoutMessage(bidTimeoutResponse, cache) {
-    console.log('updateBidTimeoutMessage');
     for (let bidTimeout of bidTimeoutResponse) {
-      let adUnitCode = bidTimeout.adUnitCode.toLowerCase();
-      let bidderCode = bidTimeout.bidderCode.toLowerCase();
-      Object.assign(cache[bidTimeout.auctionId].bids.adUnits[adUnitCode][bidderCode], {
+      let adUnitCode = this.parseAdUnitCode(bidTimeoutResponse);
+      let bidderCode = this.parseBidderCode(bidTimeoutResponse);
+      let adUnitsCache = cache[bidTimeout.auctionId].bids.adUnits;
+      Object.assign(adUnitsCache[adUnitCode][bidderCode], {
         'status': BIDDER_STATUS.TIMEOUT,
         'isTimeout': true
-      })
+      });
     }
-    console.log('updateBidTimeoutMessage OK');
   },
   updateBidCreativeMessage(bidResponse, cache) {
-    console.log('updateBidCreativeMessage');
-    let adUnitCode = bidResponse.adUnitCode.toLowerCase();
-    let bidderCode = bidResponse.bidderCode.toLowerCase();
+    let adUnitCode = this.parseAdUnitCode(bidResponse);
+    let bidderCode = this.parseBidderCode(bidResponse);
     let adUnits = cache[bidResponse.auctionId].crs.adUnits;
-
     adUnits[adUnitCode] = adUnits[adUnitCode] || {};
     adUnits[adUnitCode][bidderCode] = {
       'ads': bidResponse.ad
     };
-    console.log('updateBidCreativeMessage OK');
   },
   updateAuctionEndMessage(auction, cache) {
-    console.log('updateAuctionEndMessage');
+    cache[auction.auctionId].bids.finish = auction.auctionEnd || Date.now();
 
-    Object.assign(cache[auction.auctionId]['bids'], {
-      'finish': auction.auctionEnd || Date.now(),
-    });
-    // let adUnits = cache[auction.auctionId]['bids']['adUnits'];
-    let adUnitStatus = cache[auction.auctionId]['status'] = {};
-
-    // build nested object structure of bids within adUnits
-    for (let bidderRequest of auction.bidderRequests) {
-      for (let bid of bidderRequest.bids) {
-        let adUnitCode = bid.adUnitCode.toLowerCase();
-        adUnitStatus[adUnitCode] = AUCTION_STATUS.COMPLETED;
-      }
+    // Update cached auction status
+    let adUnitStatus = cache[auction.auctionId].status;
+    for (let adUnit of auction.adUnits) {
+      let adUnitCode = adUnit.code.toLowerCase();
+      adUnitStatus[adUnitCode] = AUCTION_STATUS.COMPLETED;
     }
 
-    console.log('updateAuctionEndMessage OK');
+    // Update no-bids in bidCache
+    let adUnitsCache = cache[auction.auctionId].bids.adUnits;
+    for (let noBid of auction.noBids) {
+      let adUnitCode = this.parseAdUnitCode(noBid);
+      let bidderCode = noBid.bidder.toLowerCase();
+      adUnitsCache[adUnitCode][bidderCode].status = BIDDER_STATUS.NO_BID;
+    }
   },
-  buildBidWonMessage(bidWonResponse, cache) {
-    console.log('buildBidWonMessage');
-    let adUnitCode = bidWonResponse.adUnitCode.toLowerCase();
-    let bidderCode = bidWonResponse.bidderCode.toLowerCase();
+  buildBidWonMessage(bidWonResponse) {
+    let adUnitCode = this.parseAdUnitCode(bidWonResponse);
+    let bidderCode = this.parseBidderCode(bidWonResponse);
     let message = {
       'adUnits': {}
     };
     message.adUnits[adUnitCode] = {};
     message.adUnits[adUnitCode][bidderCode] = {
       'time': bidWonResponse.timeToRespond,
-      'latency': Date.now() - bidWonResponse.requestTimestamp - bidWonResponse.timeToRespond, // rubicon did this
-      'status': BIDDER_STATUS.BID,
+      'status': BIDDER_STATUS.BID_WON,
       'cpm': bidWonResponse.cpm,
       'currency': bidWonResponse.currency,
       'originalCpm': bidWonResponse.originalCpm || bidWonResponse.cpm,
       'originalCurrency': bidWonResponse.originalCurrency || bidWonResponse.currency,
-      'isTimeout': cache[bidWonResponse.auctionId].status[adUnitCode] === false
+      'isTimeout': false
     };
     console.log('buildBidWonMessage OK');
     return message;
   },
   sendEventMessage (endPoint, data) {
     console.log(`AJAX: ${endPoint}: ` + JSON.stringify(data));
-    ajax(`//${analyticsOptions.server}/${endPoint}`, null, JSON.stringify(data), {
+    ajax(`${analyticsOptions.server}/${endPoint}`, null, JSON.stringify(data), {
       contentType: 'application/json'
     });
   },
@@ -245,34 +232,25 @@ let appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, analyticsTyp
           // init auction, always the first event
           this.initCommonMessageHeader(args, eventCache);
           this.initAuctionEventMessage(args, eventCache);
-          // console.log('AUCTION_INIT: ' + JSON.stringify(args));
           break;
         case BID_REQUESTED:
           // init bid request
           this.updateBidRequestedMessage(args, eventCache);
-          console.log(`BID_REQUESTED: ${args.bidderCode}`);
-          // console.log(`BID_REQUESTED: ${args.bidderCode}: ` + JSON.stringify(args));
           break;
         case BID_ADJUSTMENT:
           // adjust the final price, use the higher one
           // TODO: update the adjusted price
           console.log(`BID_ADJUSTMENT: ${args.bidderCode}`);
-          // console.log(`BID_ADJUSTMENT: ${args.bidderCode}: ` + JSON.stringify(args));
           break;
-
         case BID_RESPONSE:
           // bid response if has bid
           this.updateBidResponseMessage(args, eventCache);
           if (analyticsOptions.cr_sampled) {
             this.updateBidCreativeMessage(args, eventCache);
           }
-          console.log(`BID_RESPONSE: ${args.bidderCode}`);
-          // console.log(`BID_RESPONSE: ${args.bidderCode}: ` + JSON.stringify(args));
           break;
         case BIDDER_DONE:
           this.updateBidderDoneMessage(args, eventCache);
-          console.log(`BIDDER_DONE: ${args.bidderCode}`);
-          // console.log(`BIDDER_DONE: ${args.bidderCode}: ` + JSON.stringify(args));
           break;
         case BID_WON:
           // only appear when bid won and has impression
@@ -280,19 +258,14 @@ let appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, analyticsTyp
           this.sendEventMessage('imp', Object.assign(
             {}, eventCache[args.auctionId].header, bidWonMessage
           ));
-          console.log('BID_WON: ' + JSON.stringify(args));
           break;
         case BID_TIMEOUT:
           // get a list of bid timeout, not always present
-          console.log('BID_TIMEOUT: ' + JSON.stringify(args));
           this.updateBidTimeoutMessage(args, eventCache);
           break;
         case AUCTION_END:
           // auction end, response after this means timeout
           this.updateAuctionEndMessage(args, eventCache);
-          console.log(`AUCTION_END`);
-          // console.log(`AUCTION_END: ` + JSON.stringify(args));
-          // console.log(`FINAL CACHE: ` + JSON.stringify(eventCache));
           this.sendEventMessage('bids', Object.assign(
             {}, eventCache[args.auctionId].header, eventCache[args.auctionId].bids)
           );
@@ -305,7 +278,6 @@ let appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, analyticsTyp
       }
     }
   }
-
 });
 
 // save the base class function
