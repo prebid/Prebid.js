@@ -5,7 +5,10 @@ import adapterManager from '../src/adapterManager';
 
 const utils = require('../src/utils');
 const analyticsType = 'endpoint';
+
 const DEFAULT_SERVER = 'https://analytics.c.apx.appier.net.dummy';
+const ANALYTICS_VERSION = '1.0.190305';
+
 const {
   EVENTS: {
     AUCTION_INIT,
@@ -45,7 +48,7 @@ function detectDevice() {
 }
 
 let appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, analyticsType}), {
-  version: '1.0.190305',
+
   initConfig(config) {
     /**
      * Required option: affiliateId  // TODO: May not need this
@@ -53,27 +56,32 @@ let appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, analyticsTyp
      *
      * Optional option: server
      * Optional option: sampling
-     * Optional option: cr_sampling   // TODO: Need a better name
+     * Optional option: crSampling   // TODO: Need a better name
      * Optional option: autoPick
      * @type {boolean}
      */
     analyticsOptions.options = utils.deepClone(config.options);
-    analyticsOptions.affiliateId = config.options.affiliateId || (config.options.affiliateId[0]) || null;
-    if (!analyticsOptions.affiliateId) {
+    if (typeof config.options.affiliateId !== 'string' || config.options.affiliateId.length < 1) {
       console.log('"options.affiliateId" is required.');
       return false;
     }
-    analyticsOptions.configId = config.options.configId || (config.options.configId[0]) || null;
-    if (!analyticsOptions.configId) {
+    if (typeof config.options.configId !== 'string' || config.options.configId.length < 1) {
       console.log('"options.configId" is required.');
       return false;
     }
 
+    analyticsOptions.affiliateId = config.options.affiliateId;
+    analyticsOptions.configId = config.options.configId;
     analyticsOptions.server = config.options.server || DEFAULT_SERVER;
-    analyticsOptions.sampled = typeof config.options.sampling === 'undefined' ||
-      Math.random() < parseFloat(config.options.sampling);
-    analyticsOptions.cr_sampled = typeof config.options.cr_sampling === 'undefined' ||
-      Math.random() < parseFloat(config.options.cr_sampling);
+
+    analyticsOptions.sampled = true; // Default is to collect bids data
+    if (typeof config.options.sampling === 'number') {
+      analyticsOptions.sampled = Math.random() < parseFloat(config.options.sampling);
+    }
+    analyticsOptions.crSampled = false; // Default is *NOT* to collect creative
+    if (typeof config.options.sampling === 'number') {
+      analyticsOptions.crSampled = Math.random() < parseFloat(config.options.crSampling);
+    }
     analyticsOptions.autoPick = config.options.autoPick || null;
 
     return true;
@@ -85,19 +93,20 @@ let appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, analyticsTyp
     return bidResponse.adUnitCode.toLowerCase();
   },
   initCommonMessageHeader(auction, cache) {
-    cache[auction.auctionId] = {};
-    cache[auction.auctionId].header = {
-      'eventId': auction.auctionId,
-      'version': appierAnalyticsAdapter.version,
-      'affiliateId': analyticsOptions.affiliateId, // TODO: This may not required
-      'configId': analyticsOptions.configId,
-      'referrer': window.location.href,
-      'device': detectDevice(), // TODO: May not need this, use UA at beacon instead?
-      'sampling': analyticsOptions.options.sampling,
-      'cr_sampling': analyticsOptions.options.cr_sampling, // TODO: need a better name OR remove
-      'prebid': '$prebid.version$',
-      'autoPick': analyticsOptions.options.autoPick,
-      'timeout': auction.timeout
+    cache[auction.auctionId] = {
+      'header': {
+        'eventId': auction.auctionId,
+        'version': ANALYTICS_VERSION,
+        'affiliateId': analyticsOptions.affiliateId,
+        'configId': analyticsOptions.configId,
+        'referrer': window.location.href,
+        'device': detectDevice(), // TODO: May not need this, use UA at beacon instead?
+        'sampling': analyticsOptions.options.sampling,
+        'crSampling': analyticsOptions.options.crSampling, // TODO: need a better name OR remove
+        'prebid': '$prebid.version$',
+        'autoPick': analyticsOptions.options.autoPick,
+        'timeout': auction.timeout
+      }
     };
   },
   initAuctionEventMessage(auction, cache) {
@@ -106,7 +115,7 @@ let appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, analyticsTyp
       'finish': 0,
       'adUnits': {}
     };
-    if (analyticsOptions.cr_sampled) {
+    if (analyticsOptions.crSampled) {
       cache[auction.auctionId].crs = {
         'adUnits': {}
       };
@@ -245,7 +254,7 @@ let appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, analyticsTyp
         case BID_RESPONSE:
           // bid response if has bid
           this.updateBidResponseMessage(args, eventCache);
-          if (analyticsOptions.cr_sampled) {
+          if (analyticsOptions.crSampled) {
             this.updateBidCreativeMessage(args, eventCache);
           }
           break;
@@ -266,10 +275,10 @@ let appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, analyticsTyp
         case AUCTION_END:
           // auction end, response after this means timeout
           this.updateAuctionEndMessage(args, eventCache);
-          this.sendEventMessage('bids', Object.assign(
+          this.sendEventMessage('bid', Object.assign(
             {}, eventCache[args.auctionId].header, eventCache[args.auctionId].bids)
           );
-          if (analyticsOptions.cr_sampled) {
+          if (analyticsOptions.crSampled) {
             this.sendEventMessage('cr', Object.assign(
               {}, eventCache[args.auctionId].header, eventCache[args.auctionId].crs)
             );
