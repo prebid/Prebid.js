@@ -8,6 +8,7 @@ const analyticsType = 'endpoint';
 
 const DEFAULT_SERVER = 'https://analytics.c.apx.appier.net.dummy';
 const ANALYTICS_VERSION = '1.0.190305';
+const SEND_TIMEOUT = 200;
 
 const {
   EVENTS: {
@@ -47,7 +48,7 @@ function detectDevice() {
   return 'desktop';
 }
 
-let appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, analyticsType}), {
+const appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, analyticsType}), {
 
   initConfig(config) {
     /**
@@ -141,7 +142,7 @@ let appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, analyticsTyp
       let adUnitCode = this.parseAdUnitCode(bid);
       Object.assign(adUnitsCache[adUnitCode][bidderCode], {
         'status': BIDDER_STATUS.REQUESTED,
-        'isTimeout': cache[bidRequested.auctionId].status[adUnitCode] === true // First set to true to wait response
+        'isTimeout': true // First set to true to wait response
         // TODO: Other default values
       });
     }
@@ -160,6 +161,7 @@ let appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, analyticsTyp
     let adUnitCode = this.parseAdUnitCode(bidResponse);
     let bidderCode = this.parseBidderCode(bidResponse);
     let adUnitsCache = cache[bidResponse.auctionId].bids.adUnits;
+    let adUnitStatus = cache[bidResponse.auctionId].status;
     Object.assign(adUnitsCache[adUnitCode][bidderCode], {
       'time': bidResponse.timeToRespond,
       'latency': Date.now() - bidResponse.requestTimestamp - bidResponse.timeToRespond,
@@ -167,9 +169,21 @@ let appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, analyticsTyp
       'cpm': bidResponse.cpm,
       'currency': bidResponse.currency,
       'originalCpm': bidResponse.originalCpm || bidResponse.cpm,
+      'cpmUsd': '',
       'originalCurrency': bidResponse.originalCurrency || bidResponse.currency,
-      'isTimeout': cache[bidResponse.auctionId].status[adUnitCode] === AUCTION_STATUS.FINISHED
+      'isTimeout': adUnitStatus[adUnitCode] === AUCTION_STATUS.FINISHED,
+      'prebidWon': false
     });
+  },
+  updateBidAdjustmentMessage(bidAdjustmentMessage, cache) {
+    let adUnitCode = this.parseAdUnitCode(bidAdjustmentMessage);
+    let bidderCode = this.parseBidderCode(bidAdjustmentMessage);
+    let adUnitsCache = cache[bidAdjustmentMessage.auctionId].bids.adUnits;
+    if (bidAdjustmentMessage.cpm > adUnitsCache[adUnitCode][bidderCode].cpm) {
+      adUnitsCache[adUnitCode][bidderCode].cpm = bidAdjustmentMessage.cpm;
+      // bidAdjustment has no original CPM, Leave it as it was
+      // TODO: update adjusted cpmUsd
+    }
   },
   updateBidTimeoutMessage(bidTimeoutResponse, cache) {
     for (let bidTimeout of bidTimeoutResponse) {
@@ -205,8 +219,16 @@ let appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, analyticsTyp
     let adUnitsCache = cache[auction.auctionId].bids.adUnits;
     for (let noBid of auction.noBids) {
       let adUnitCode = this.parseAdUnitCode(noBid);
-      let bidderCode = noBid.bidder.toLowerCase();
+      let bidderCode = noBid.bidder.toLowerCase(); // TODO: noBid response has no bidderCode, need to check.
       adUnitsCache[adUnitCode][bidderCode].status = BIDDER_STATUS.NO_BID;
+    }
+  },
+  updatePrebidWonMessage(prebidWonBids, cache) {
+    for (let prebidWonBid of prebidWonBids) {
+      let adUnitsCache = cache[prebidWonBid.auctionId].bids.adUnits;
+      let adUnitCode = this.parseAdUnitCode(prebidWonBid);
+      let bidderCode = this.parseBidderCode(prebidWonBid);
+      adUnitsCache[adUnitCode][bidderCode].prebidWon = true;
     }
   },
   buildBidWonMessage(bidWonResponse) {
@@ -247,9 +269,8 @@ let appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, analyticsTyp
           this.updateBidRequestedMessage(args, eventCache);
           break;
         case BID_ADJUSTMENT:
-          // adjust the final price, use the higher one
-          // TODO: update the adjusted price
-          console.log(`BID_ADJUSTMENT: ${args.bidderCode}`);
+          // adjust the final cpm price, use the higher one
+          this.updateBidAdjustmentMessage(args, eventCache);
           break;
         case BID_RESPONSE:
           // bid response if has bid
@@ -274,15 +295,19 @@ let appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, analyticsTyp
           break;
         case AUCTION_END:
           // auction end, response after this means timeout
-          this.updateAuctionEndMessage(args, eventCache);
-          this.sendEventMessage('bid', Object.assign(
-            {}, eventCache[args.auctionId].header, eventCache[args.auctionId].bids)
-          );
-          if (analyticsOptions.crSampled) {
-            this.sendEventMessage('cr', Object.assign(
-              {}, eventCache[args.auctionId].header, eventCache[args.auctionId].crs)
+          // TODO: add a flag to record messages has sent
+          setTimeout(() => {
+            this.updateAuctionEndMessage(args, eventCache);
+            this.updatePrebidWonMessage(pbjs.getHighestCpmBids(), eventCache);
+            this.sendEventMessage('bid', Object.assign(
+              {}, eventCache[args.auctionId].header, eventCache[args.auctionId].bids)
             );
-          }
+            if (analyticsOptions.crSampled) {
+              this.sendEventMessage('cr', Object.assign(
+                {}, eventCache[args.auctionId].header, eventCache[args.auctionId].crs)
+              );
+            }
+          }, SEND_TIMEOUT);
           break;
       }
     }
