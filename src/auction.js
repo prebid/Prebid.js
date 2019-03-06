@@ -500,14 +500,8 @@ function setupBidTargeting(bidObject, bidderRequest) {
     keyValues = getKeyValueTargetingPairs(bidObject.bidderCode, bidObject, bidReq);
   }
 
-  let cacheTargetKeys = {};
-  if (bidObject.videoCacheKey) {
-    cacheTargetKeys.hb_uuid = bidObject.videoCacheKey;
-    cacheTargetKeys.hb_cache_id = bidObject.videoCacheKey;
-  }
-
   // use any targeting provided as defaults, otherwise just set from getKeyValueTargetingPairs
-  bidObject.adserverTargeting = Object.assign(bidObject.adserverTargeting || {}, cacheTargetKeys, keyValues);
+  bidObject.adserverTargeting = Object.assign(bidObject.adserverTargeting || {}, keyValues);
 }
 
 export function getStandardBidderSettings(mediaType) {
@@ -572,6 +566,17 @@ export function getStandardBidderSettings(mediaType) {
         }
       },
     ]
+
+    if (mediaType === 'video') {
+      [CONSTANTS.TARGETING_KEYS.UUID, CONSTANTS.TARGETING_KEYS.CACHE_ID].forEach(item => {
+        bidderSettings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD][CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING].push({
+          key: item,
+          val: function val(bidResponse) {
+            return bidResponse.videoCacheKey;
+          }
+        })
+      });
+    }
   }
   return bidderSettings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD];
 }
