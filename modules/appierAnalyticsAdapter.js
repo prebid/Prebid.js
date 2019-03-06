@@ -7,7 +7,7 @@ const utils = require('../src/utils');
 const analyticsType = 'endpoint';
 
 const DEFAULT_SERVER = 'https://analytics.c.apx.appier.net.dummy';
-const ANALYTICS_VERSION = '1.0.190305';
+const ANALYTICS_VERSION = '0.1.0';
 const SEND_TIMEOUT = 200;
 
 const {
@@ -35,9 +35,6 @@ const BIDDER_STATUS = {
   'BID_WON': 'bidWon'
 };
 
-const analyticsOptions = {};
-const eventCache = {};
-
 function detectDevice() {
   if ((/ipad|android 3.0|xoom|sch-i800|playbook|tablet|kindle/i.test(navigator.userAgent.toLowerCase()))) {
     return 'tablet';
@@ -47,6 +44,60 @@ function detectDevice() {
   }
   return 'desktop';
 }
+
+const analyticsOptions = {};
+const cacheManager = {
+  cache: {},
+  initAuction(auctionId) {
+    this.cache[auctionId] = {
+      header: {},
+      bids: {
+        adUnits: {}
+      },
+      crs: {
+        adUnits: {}
+      },
+      status: {},
+      bidsWon: {
+        adUnits: {}
+      }
+    }
+  },
+  setCachedHeader(auctionId, newObject) {
+    this.cache[auctionId].header = newObject;
+  },
+  updateCachedHeader(auctionId, newObject) {
+    Object.assign(this.cache[auctionId].header, newObject)
+  },
+  getBidsCache(auctionId, adUnitCode, bidderCode) {
+    return this.cache[auctionId].bids[adUnitCode][bidderCode];
+  },
+  initBidsCache(auctionId, adUnitCode, bidderCode) {
+    const bidsCacheSection = this.cache[auctionId].bids.adUnits;
+    bidsCacheSection[adUnitCode] = bidsCacheSection[adUnitCode] || {};
+    bidsCacheSection[adUnitCode][bidderCode] = bidsCacheSection[adUnitCode][bidderCode] || {};
+  },
+  updateBidsCache(auctionId, adUnitCode, bidderCode, newObject) {
+    const bidsCacheSection = this.cache[auctionId].bids.adUnits;
+    Object.assign(bidsCacheSection[adUnitCode][bidderCode], newObject)
+  },
+  getStatus(auctionId, adUnitCode) {
+    return this.cache[auctionId].status[adUnitCode];
+  },
+  setStatus(auctionId, adUnitCode, newValue) {
+    this.cache[auctionId].status[adUnitCode] = newValue;
+  },
+  setCrsCache(auctionId, adUnitCode, bidderCode, newObject) {
+    const crsCacheSection = this.cache[auctionId].crs.adUnits;
+    crsCacheSection[adUnitCode] = crsCacheSection[adUnitCode] || {};
+    crsCacheSection[adUnitCode][bidderCode] = newObject;
+  },
+  setBidWonCache(auctionId, adUnitCode, bidderCode, newObject) {
+    const bidsWonCacheSection = this.cache[auctionId].bidsWon.adUnits;
+    bidsWonCacheSection[adUnitCode] = bidsWonCacheSection[adUnitCode] || {};
+    bidsWonCacheSection[adUnitCode][bidderCode] = newObject;
+  }
+};
 
 const appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, analyticsType}), {
 
@@ -80,7 +131,7 @@ const appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, analyticsT
       analyticsOptions.sampled = Math.random() < parseFloat(config.options.sampling);
     }
     analyticsOptions.crSampled = false; // Default is *NOT* to collect creative
-    if (typeof config.options.sampling === 'number') {
+    if (typeof config.options.crSampling === 'number') {
       analyticsOptions.crSampled = Math.random() < parseFloat(config.options.crSampling);
     }
     analyticsOptions.autoPick = config.options.autoPick || null;
@@ -93,152 +144,132 @@ const appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, analyticsT
   parseAdUnitCode(bidResponse) {
     return bidResponse.adUnitCode.toLowerCase();
   },
-  initCommonMessageHeader(auction, cache) {
-    cache[auction.auctionId] = {
-      'header': {
-        'eventId': auction.auctionId,
-        'version': ANALYTICS_VERSION,
-        'affiliateId': analyticsOptions.affiliateId,
-        'configId': analyticsOptions.configId,
-        'referrer': window.location.href,
-        'device': detectDevice(), // TODO: May not need this, use UA at beacon instead?
-        'sampling': analyticsOptions.options.sampling,
-        'crSampling': analyticsOptions.options.crSampling, // TODO: need a better name OR remove
-        'prebid': '$prebid.version$',
-        'autoPick': analyticsOptions.options.autoPick,
-        'timeout': auction.timeout
-      }
-    };
-  },
-  initAuctionEventMessage(auction, cache) {
-    cache[auction.auctionId].bids = {
+  initCommonMessageHeader(auction) {
+    cacheManager.setCachedHeader(auction.auctionId, {
+      'eventId': auction.auctionId,
+      'version': ANALYTICS_VERSION,
+      'affiliateId': analyticsOptions.affiliateId,
+      'configId': analyticsOptions.configId,
+      'referrer': window.location.href,
+      'device': detectDevice(), // TODO: May not need this, use UA at beacon instead?
+      'sampling': analyticsOptions.options.sampling,
+      'crSampling': analyticsOptions.options.crSampling, // TODO: need a better name OR remove
+      'prebid': '$prebid.version$',
+      'autoPick': analyticsOptions.options.autoPick,
+      'timeout': auction.timeout,
       'start': auction.timestamp || Date.now(),
       'finish': 0,
-      'adUnits': {}
-    };
-    if (analyticsOptions.crSampled) {
-      cache[auction.auctionId].crs = {
-        'adUnits': {}
-      };
-    }
-    let adUnitCache = cache[auction.auctionId].bids.adUnits;
-    let adUnitStatus = cache[auction.auctionId].status = {};
-
+    });
+  },
+  initAuctionEventMessage(auction) {
     // build nested object structure of bids within adUnits
     for (let bidderRequest of auction.bidderRequests) {
-      let bidderCode = this.parseBidderCode(bidderRequest);
+      const bidderCode = this.parseBidderCode(bidderRequest);
       for (let bid of bidderRequest.bids) {
-        let adUnitCode = this.parseAdUnitCode(bid);
-        adUnitCache[adUnitCode] = adUnitCache[adUnitCode] || {};
-        adUnitCache[adUnitCode][bidderCode] = {};
-        adUnitStatus[adUnitCode] = AUCTION_STATUS.IN_PROGRESS;
+        const adUnitCode = this.parseAdUnitCode(bid);
+        cacheManager.initBidsCache(auction.auctionId, adUnitCode, bidderCode);
+        cacheManager.setStatus(auction.auctionId, adUnitCode, AUCTION_STATUS.IN_PROGRESS);
       }
     }
   },
-  updateBidRequestedMessage(bidRequested, cache) {
-    let bidderCode = this.parseBidderCode(bidRequested);
-    let adUnitsCache = cache[bidRequested.auctionId].bids.adUnits;
+  updateBidRequestedMessage(bidRequested) {
+    const bidderCode = this.parseBidderCode(bidRequested);
     for (let bid of bidRequested.bids) {
-      let adUnitCode = this.parseAdUnitCode(bid);
-      Object.assign(adUnitsCache[adUnitCode][bidderCode], {
+      const adUnitCode = this.parseAdUnitCode(bid);
+      cacheManager.updateBidsCache(bidRequested.auctionId, adUnitCode, bidderCode, {
         'status': BIDDER_STATUS.REQUESTED,
         'isTimeout': true // First set to true to wait response
         // TODO: Other default values
       });
     }
   },
-  updateBidderDoneMessage(bidRequested, cache) {
-    let bidderCode = this.parseBidderCode(bidRequested);
-    let adUnitsCache = cache[bidRequested.auctionId].bids.adUnits;
+  updateBidderDoneMessage(bidRequested) {
+    const bidderCode = this.parseBidderCode(bidRequested);
     for (let bid of bidRequested.bids) {
-      let adUnitCode = this.parseAdUnitCode(bid);
-      Object.assign(adUnitsCache[adUnitCode][bidderCode], {
-        'isTimeout': cache[bidRequested.auctionId].status[adUnitCode] === AUCTION_STATUS.COMPLETED
+      const adUnitCode = this.parseAdUnitCode(bid);
+      cacheManager.updateBidsCache(bidRequested.auctionId, adUnitCode, bidderCode, {
+        'isTimeout': cacheManager.getStatus(bidRequested.auctionId, adUnitCode) === AUCTION_STATUS.COMPLETED
       });
     }
   },
-  updateBidResponseMessage(bidResponse, cache) {
-    let adUnitCode = this.parseAdUnitCode(bidResponse);
-    let bidderCode = this.parseBidderCode(bidResponse);
-    let adUnitsCache = cache[bidResponse.auctionId].bids.adUnits;
-    let adUnitStatus = cache[bidResponse.auctionId].status;
-    Object.assign(adUnitsCache[adUnitCode][bidderCode], {
+  updateBidResponseMessage(bidResponse) {
+    const adUnitCode = this.parseAdUnitCode(bidResponse);
+    const bidderCode = this.parseBidderCode(bidResponse);
+    cacheManager.updateBidsCache(bidResponse.auctionId, adUnitCode, bidderCode, {
       'time': bidResponse.timeToRespond,
-      'latency': Date.now() - bidResponse.requestTimestamp - bidResponse.timeToRespond,
+      // 'latency': Date.now() - bidResponse.requestTimestamp - bidResponse.timeToRespond,
       'status': BIDDER_STATUS.BID,
       'cpm': bidResponse.cpm,
       'currency': bidResponse.currency,
       'originalCpm': bidResponse.originalCpm || bidResponse.cpm,
-      'cpmUsd': '',
+      'cpmUsd': 'TBD', // TODO: fill this
       'originalCurrency': bidResponse.originalCurrency || bidResponse.currency,
-      'isTimeout': adUnitStatus[adUnitCode] === AUCTION_STATUS.FINISHED,
+      'isTimeout': cacheManager.getStatus(bidResponse.auctionId, adUnitCode) === AUCTION_STATUS.FINISHED,
       'prebidWon': false
     });
   },
-  updateBidAdjustmentMessage(bidAdjustmentMessage, cache) {
-    let adUnitCode = this.parseAdUnitCode(bidAdjustmentMessage);
-    let bidderCode = this.parseBidderCode(bidAdjustmentMessage);
-    let adUnitsCache = cache[bidAdjustmentMessage.auctionId].bids.adUnits;
-    if (bidAdjustmentMessage.cpm > adUnitsCache[adUnitCode][bidderCode].cpm) {
-      adUnitsCache[adUnitCode][bidderCode].cpm = bidAdjustmentMessage.cpm;
-      // bidAdjustment has no original CPM, Leave it as it was
-      // TODO: update adjusted cpmUsd
+  updateBidAdjustmentMessage(bidAdjustmentMessage) {
+    const auctionId = bidAdjustmentMessage.auctionId;
+    const adUnitCode = this.parseAdUnitCode(bidAdjustmentMessage);
+    const bidderCode = this.parseBidderCode(bidAdjustmentMessage);
+    if (bidAdjustmentMessage.cpm > cacheManager.getBidsCache(auctionId, adUnitCode, bidderCode).cpm) {
+      cacheManager.updateBidsCache(auctionId, adUnitCode, bidderCode, {
+        'cpm': bidAdjustmentMessage.cpm
+        // bidAdjustment has no original CPM, Leave it as it was
+        // TODO: update adjusted cpmUsd
+      });
     }
   },
-  updateBidTimeoutMessage(bidTimeoutResponse, cache) {
+  updateBidTimeoutMessage(bidTimeoutResponse) {
     for (let bidTimeout of bidTimeoutResponse) {
-      let adUnitCode = this.parseAdUnitCode(bidTimeoutResponse);
-      let bidderCode = this.parseBidderCode(bidTimeoutResponse);
-      let adUnitsCache = cache[bidTimeout.auctionId].bids.adUnits;
-      Object.assign(adUnitsCache[adUnitCode][bidderCode], {
+      const auctionId = bidTimeout.auctionId;
+      const adUnitCode = this.parseAdUnitCode(bidTimeout);
+      const bidderCode = this.parseBidderCode(bidTimeout);
+      cacheManager.updateBidsCache(auctionId, adUnitCode, bidderCode, {
         'status': BIDDER_STATUS.TIMEOUT,
         'isTimeout': true
       });
     }
   },
-  updateBidCreativeMessage(bidResponse, cache) {
-    let adUnitCode = this.parseAdUnitCode(bidResponse);
-    let bidderCode = this.parseBidderCode(bidResponse);
-    let adUnits = cache[bidResponse.auctionId].crs.adUnits;
-    adUnits[adUnitCode] = adUnits[adUnitCode] || {};
-    adUnits[adUnitCode][bidderCode] = {
+  updateBidCreativeMessage(bidResponse) {
+    const adUnitCode = this.parseAdUnitCode(bidResponse);
+    const bidderCode = this.parseBidderCode(bidResponse);
+    cacheManager.setCrsCache(bidResponse.auctionId, adUnitCode, bidderCode, {
       'ads': bidResponse.ad
-    };
+    });
   },
-  updateAuctionEndMessage(auction, cache) {
-    cache[auction.auctionId].bids.finish = auction.auctionEnd || Date.now();
-
+  updateAuctionEndMessage(auction) {
+    // Set finished time
+    cacheManager.updateCachedHeader(auction.auctionId, {
+      'finish': auction.auctionEnd || Date.now()
+    });
     // Update cached auction status
-    let adUnitStatus = cache[auction.auctionId].status;
     for (let adUnit of auction.adUnits) {
-      let adUnitCode = adUnit.code.toLowerCase();
-      adUnitStatus[adUnitCode] = AUCTION_STATUS.COMPLETED;
+      const adUnitCode = adUnit.code.toLowerCase();
+      cacheManager.setStatus(auction.auctionId, adUnitCode, AUCTION_STATUS.COMPLETED);
     }
-
     // Update no-bids in bidCache
-    let adUnitsCache = cache[auction.auctionId].bids.adUnits;
     for (let noBid of auction.noBids) {
-      let adUnitCode = this.parseAdUnitCode(noBid);
-      let bidderCode = noBid.bidder.toLowerCase(); // TODO: noBid response has no bidderCode, need to check.
-      adUnitsCache[adUnitCode][bidderCode].status = BIDDER_STATUS.NO_BID;
+      const adUnitCode = this.parseAdUnitCode(noBid);
+      const bidderCode = noBid.bidder.toLowerCase(); // TODO: noBid response has no bidderCode, need to check.
+      cacheManager.updateBidsCache(auction.auctionId, adUnitCode, bidderCode, {
+        'status': BIDDER_STATUS.NO_BID
+      });
     }
   },
-  updatePrebidWonMessage(prebidWonBids, cache) {
+  updatePrebidWonMessage(prebidWonBids) {
     for (let prebidWonBid of prebidWonBids) {
-      let adUnitsCache = cache[prebidWonBid.auctionId].bids.adUnits;
-      let adUnitCode = this.parseAdUnitCode(prebidWonBid);
-      let bidderCode = this.parseBidderCode(prebidWonBid);
-      adUnitsCache[adUnitCode][bidderCode].prebidWon = true;
+      const adUnitCode = this.parseAdUnitCode(prebidWonBid);
+      const bidderCode = this.parseBidderCode(prebidWonBid);
+      cacheManager.updateBidsCache(prebidWonBid.auctionId, adUnitCode, bidderCode, {
+        'prebidWon': true
+      });
     }
   },
   buildBidWonMessage(bidWonResponse) {
-    let adUnitCode = this.parseAdUnitCode(bidWonResponse);
-    let bidderCode = this.parseBidderCode(bidWonResponse);
-    let message = {
-      'adUnits': {}
-    };
-    message.adUnits[adUnitCode] = {};
-    message.adUnits[adUnitCode][bidderCode] = {
+    const adUnitCode = this.parseAdUnitCode(bidWonResponse);
+    const bidderCode = this.parseBidderCode(bidWonResponse);
+    cacheManager.setBidWonCache(bidWonResponse.auctionId, adUnitCode, bidderCode, {
       'time': bidWonResponse.timeToRespond,
       'status': BIDDER_STATUS.BID_WON,
       'cpm': bidWonResponse.cpm,
@@ -246,9 +277,7 @@ const appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, analyticsT
       'originalCpm': bidWonResponse.originalCpm || bidWonResponse.cpm,
       'originalCurrency': bidWonResponse.originalCurrency || bidWonResponse.currency,
       'isTimeout': false
-    };
-    console.log('buildBidWonMessage OK');
-    return message;
+    });
   },
   sendEventMessage (endPoint, data) {
     console.log(`AJAX: ${endPoint}: ` + JSON.stringify(data));
@@ -261,51 +290,57 @@ const appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, analyticsT
       switch (eventType) {
         case AUCTION_INIT:
           // init auction, always the first event
-          this.initCommonMessageHeader(args, eventCache);
-          this.initAuctionEventMessage(args, eventCache);
+          cacheManager.initAuction(args.auctionId);
+          this.initCommonMessageHeader(args);
+          this.initAuctionEventMessage(args);
           break;
         case BID_REQUESTED:
           // init bid request
-          this.updateBidRequestedMessage(args, eventCache);
+          this.updateBidRequestedMessage(args);
           break;
         case BID_ADJUSTMENT:
           // adjust the final cpm price, use the higher one
-          this.updateBidAdjustmentMessage(args, eventCache);
+          this.updateBidAdjustmentMessage(args);
           break;
         case BID_RESPONSE:
           // bid response if has bid
-          this.updateBidResponseMessage(args, eventCache);
+          this.updateBidResponseMessage(args);
           if (analyticsOptions.crSampled) {
-            this.updateBidCreativeMessage(args, eventCache);
+            this.updateBidCreativeMessage(args);
           }
           break;
         case BIDDER_DONE:
-          this.updateBidderDoneMessage(args, eventCache);
+          this.updateBidderDoneMessage(args);
           break;
         case BID_WON:
           // only appear when bid won and has impression
-          let bidWonMessage = this.buildBidWonMessage(args, eventCache);
-          this.sendEventMessage('imp', Object.assign(
-            {}, eventCache[args.auctionId].header, bidWonMessage
+          console.log('############ BID WON!! ############');
+          this.buildBidWonMessage(args);
+          this.sendEventMessage('imp', Object.assign({},
+            cacheManager.cache[args.auctionId].header,
+            cacheManager.cache[args.auctionId].bidsWon
           ));
           break;
         case BID_TIMEOUT:
           // get a list of bid timeout, not always present
-          this.updateBidTimeoutMessage(args, eventCache);
+          this.updateBidTimeoutMessage(args);
           break;
         case AUCTION_END:
           // auction end, response after this means timeout
           // TODO: add a flag to record messages has sent
+          console.log(`AUCTION_END: ` + JSON.stringify(args));
           setTimeout(() => {
-            this.updateAuctionEndMessage(args, eventCache);
-            this.updatePrebidWonMessage(pbjs.getHighestCpmBids(), eventCache);
-            this.sendEventMessage('bid', Object.assign(
-              {}, eventCache[args.auctionId].header, eventCache[args.auctionId].bids)
-            );
+            this.updateAuctionEndMessage(args);
+            this.updatePrebidWonMessage(pbjs.getHighestCpmBids());
+            this.sendEventMessage('bid', Object.assign({},
+              cacheManager.cache[args.auctionId].header,
+              cacheManager.cache[args.auctionId].bids
+            ));
             if (analyticsOptions.crSampled) {
-              this.sendEventMessage('cr', Object.assign(
-                {}, eventCache[args.auctionId].header, eventCache[args.auctionId].crs)
-              );
+              this.sendEventMessage('cr', Object.assign({},
+                cacheManager.cache[args.auctionId].header,
+                cacheManager.cache[args.auctionId].crs
+              ));
             }
           }, SEND_TIMEOUT);
           break;
