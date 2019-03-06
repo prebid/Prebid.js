@@ -65,7 +65,7 @@ describe('TrustXAdapter', function () {
           'uid': '43'
         },
         'adUnitCode': 'adunit-code-2',
-        'sizes': [[728, 90]],
+        'sizes': [[728, 90], [300, 250]],
         'bidId': '3150ccb55da321',
         'bidderRequestId': '22edbae2733bf6',
         'auctionId': '1d1a030790a475',
@@ -90,16 +90,18 @@ describe('TrustXAdapter', function () {
       expect(payload).to.have.property('u').that.is.a('string');
       expect(payload).to.have.property('pt', 'net');
       expect(payload).to.have.property('auids', '43');
+      expect(payload).to.have.property('sizes', '300x250,300x600');
       expect(payload).to.have.property('r', '22edbae2733bf6');
     });
 
-    it('auids must not be duplicated', function () {
+    it('sizes must not be duplicated', function () {
       const request = spec.buildRequests(bidRequests);
       expect(request.data).to.be.an('string');
       const payload = parseRequest(request.data);
       expect(payload).to.have.property('u').that.is.a('string');
       expect(payload).to.have.property('pt', 'net');
-      expect(payload).to.have.property('auids', '43,45');
+      expect(payload).to.have.property('auids', '43,43,45');
+      expect(payload).to.have.property('sizes', '300x250,300x600,728x90');
       expect(payload).to.have.property('r', '22edbae2733bf6');
     });
 
@@ -110,7 +112,8 @@ describe('TrustXAdapter', function () {
       const payload = parseRequest(request.data);
       expect(payload).to.have.property('u').that.is.a('string');
       expect(payload).to.have.property('pt', 'gross');
-      expect(payload).to.have.property('auids', '43,45');
+      expect(payload).to.have.property('auids', '43,43,45');
+      expect(payload).to.have.property('sizes', '300x250,300x600,728x90');
       expect(payload).to.have.property('r', '22edbae2733bf6');
       delete bidRequests[1].params.priceType;
     });
@@ -122,7 +125,8 @@ describe('TrustXAdapter', function () {
       const payload = parseRequest(request.data);
       expect(payload).to.have.property('u').that.is.a('string');
       expect(payload).to.have.property('pt', 'net');
-      expect(payload).to.have.property('auids', '43,45');
+      expect(payload).to.have.property('auids', '43,43,45');
+      expect(payload).to.have.property('sizes', '300x250,300x600,728x90');
       expect(payload).to.have.property('r', '22edbae2733bf6');
       delete bidRequests[1].params.priceType;
     });
@@ -155,9 +159,10 @@ describe('TrustXAdapter', function () {
   describe('interpretResponse', function () {
     const responses = [
       {'bid': [{'price': 1.15, 'adm': '<div>test content 1</div>', 'auid': 43, 'h': 250, 'w': 300}], 'seat': '1'},
-      {'bid': [{'price': 0.5, 'adm': '<div>test content 2</div>', 'auid': 44, 'h': 90, 'w': 728}], 'seat': '1'},
+      {'bid': [{'price': 0.5, 'adm': '<div>test content 2</div>', 'auid': 44, 'h': 600, 'w': 300}], 'seat': '1'},
+      {'bid': [{'price': 0.15, 'adm': '<div>test content 3</div>', 'auid': 43, 'h': 90, 'w': 728}], 'seat': '1'},
       {'bid': [{'price': 0, 'auid': 45, 'h': 250, 'w': 300}], 'seat': '1'},
-      {'bid': [{'price': 0, 'adm': '<div>test content 4</div>', 'h': 250, 'w': 300}], 'seat': '1'},
+      {'bid': [{'price': 0, 'adm': '<div>test content 5</div>', 'h': 250, 'w': 300}], 'seat': '1'},
       undefined,
       {'bid': [], 'seat': '1'},
       {'seat': '1'},
@@ -250,26 +255,26 @@ describe('TrustXAdapter', function () {
           'ttl': 360,
         },
         {
-          'requestId': '5703af74d0472a',
-          'cpm': 1.15,
-          'creativeId': 43,
+          'requestId': '4dff80cc4ee346',
+          'cpm': 0.5,
+          'creativeId': 44,
           'dealId': undefined,
           'width': 300,
-          'height': 250,
-          'ad': '<div>test content 1</div>',
+          'height': 600,
+          'ad': '<div>test content 2</div>',
           'bidderCode': 'trustx',
           'currency': 'USD',
           'netRevenue': true,
           'ttl': 360,
         },
         {
-          'requestId': '4dff80cc4ee346',
-          'cpm': 0.5,
-          'creativeId': 44,
+          'requestId': '5703af74d0472a',
+          'cpm': 0.15,
+          'creativeId': 43,
           'dealId': undefined,
           'width': 728,
           'height': 90,
-          'ad': '<div>test content 2</div>',
+          'ad': '<div>test content 3</div>',
           'bidderCode': 'trustx',
           'currency': 'USD',
           'netRevenue': true,
@@ -277,7 +282,7 @@ describe('TrustXAdapter', function () {
         }
       ];
 
-      const result = spec.interpretResponse({'body': {'seatbid': [responses[0], responses[1]]}}, request);
+      const result = spec.interpretResponse({'body': {'seatbid': responses.slice(0, 3)}}, request);
       expect(result).to.deep.equal(expectedResponse);
     });
 
@@ -318,8 +323,207 @@ describe('TrustXAdapter', function () {
         }
       ];
       const request = spec.buildRequests(bidRequests);
-      const result = spec.interpretResponse({'body': {'seatbid': responses.slice(2)}}, request);
+      const result = spec.interpretResponse({'body': {'seatbid': responses.slice(3)}}, request);
       expect(result.length).to.equal(0);
+    });
+
+    it('complicated case', function () {
+      const fullResponse = [
+        {'bid': [{'price': 1.15, 'adm': '<div>test content 1</div>', 'auid': 43, 'h': 250, 'w': 300}], 'seat': '1'},
+        {'bid': [{'price': 0.5, 'adm': '<div>test content 2</div>', 'auid': 44, 'h': 600, 'w': 300}], 'seat': '1'},
+        {'bid': [{'price': 0.15, 'adm': '<div>test content 3</div>', 'auid': 43, 'h': 90, 'w': 728}], 'seat': '1'},
+        {'bid': [{'price': 0.15, 'adm': '<div>test content 4</div>', 'auid': 43, 'h': 600, 'w': 300}], 'seat': '1'},
+        {'bid': [{'price': 0.5, 'adm': '<div>test content 5</div>', 'auid': 44, 'h': 600, 'w': 350}], 'seat': '1'},
+      ];
+      const bidRequests = [
+        {
+          'bidder': 'trustx',
+          'params': {
+            'uid': '43'
+          },
+          'adUnitCode': 'adunit-code-1',
+          'sizes': [[300, 250], [300, 600]],
+          'bidId': '2164be6358b9',
+          'bidderRequestId': '106efe3247',
+          'auctionId': '32a1f276cb87cb8',
+        },
+        {
+          'bidder': 'trustx',
+          'params': {
+            'uid': '43'
+          },
+          'adUnitCode': 'adunit-code-1',
+          'sizes': [[300, 250], [300, 600]],
+          'bidId': '326bde7fbf69',
+          'bidderRequestId': '106efe3247',
+          'auctionId': '32a1f276cb87cb8',
+        },
+        {
+          'bidder': 'trustx',
+          'params': {
+            'uid': '44'
+          },
+          'adUnitCode': 'adunit-code-1',
+          'sizes': [[300, 250], [300, 600]],
+          'bidId': '4e111f1b66e4',
+          'bidderRequestId': '106efe3247',
+          'auctionId': '32a1f276cb87cb8',
+        },
+        {
+          'bidder': 'trustx',
+          'params': {
+            'uid': '43'
+          },
+          'adUnitCode': 'adunit-code-2',
+          'sizes': [[728, 90]],
+          'bidId': '26d6f897b516',
+          'bidderRequestId': '106efe3247',
+          'auctionId': '32a1f276cb87cb8',
+        },
+        {
+          'bidder': 'trustx',
+          'params': {
+            'uid': '44'
+          },
+          'adUnitCode': 'adunit-code-2',
+          'sizes': [[728, 90]],
+          'bidId': '1751cd90161',
+          'bidderRequestId': '106efe3247',
+          'auctionId': '32a1f276cb87cb8',
+        }
+      ];
+      const request = spec.buildRequests(bidRequests);
+      const expectedResponse = [
+        {
+          'requestId': '2164be6358b9',
+          'cpm': 1.15,
+          'creativeId': 43,
+          'dealId': undefined,
+          'width': 300,
+          'height': 250,
+          'ad': '<div>test content 1</div>',
+          'bidderCode': 'trustx',
+          'currency': 'USD',
+          'netRevenue': true,
+          'ttl': 360,
+        },
+        {
+          'requestId': '4e111f1b66e4',
+          'cpm': 0.5,
+          'creativeId': 44,
+          'dealId': undefined,
+          'width': 300,
+          'height': 600,
+          'ad': '<div>test content 2</div>',
+          'bidderCode': 'trustx',
+          'currency': 'USD',
+          'netRevenue': true,
+          'ttl': 360,
+        },
+        {
+          'requestId': '26d6f897b516',
+          'cpm': 0.15,
+          'creativeId': 43,
+          'dealId': undefined,
+          'width': 728,
+          'height': 90,
+          'ad': '<div>test content 3</div>',
+          'bidderCode': 'trustx',
+          'currency': 'USD',
+          'netRevenue': true,
+          'ttl': 360,
+        },
+        {
+          'requestId': '326bde7fbf69',
+          'cpm': 0.15,
+          'creativeId': 43,
+          'dealId': undefined,
+          'width': 300,
+          'height': 600,
+          'ad': '<div>test content 4</div>',
+          'bidderCode': 'trustx',
+          'currency': 'USD',
+          'netRevenue': true,
+          'ttl': 360,
+        }
+      ];
+
+      const result = spec.interpretResponse({'body': {'seatbid': fullResponse}}, request);
+      expect(result).to.deep.equal(expectedResponse);
+    });
+
+    it('dublicate uids and sizes in one slot', function () {
+      const fullResponse = [
+        {'bid': [{'price': 1.15, 'adm': '<div>test content 1</div>', 'auid': 43, 'h': 250, 'w': 300}], 'seat': '1'},
+        {'bid': [{'price': 0.5, 'adm': '<div>test content 2</div>', 'auid': 43, 'h': 250, 'w': 300}], 'seat': '1'},
+      ];
+      const bidRequests = [
+        {
+          'bidder': 'trustx',
+          'params': {
+            'uid': '43'
+          },
+          'adUnitCode': 'adunit-code-1',
+          'sizes': [[300, 250], [300, 600]],
+          'bidId': '5126e301f4be',
+          'bidderRequestId': '171c5405a390',
+          'auctionId': '35bcbc0f7e79c',
+        },
+        {
+          'bidder': 'trustx',
+          'params': {
+            'uid': '43'
+          },
+          'adUnitCode': 'adunit-code-1',
+          'sizes': [[300, 250], [300, 600]],
+          'bidId': '57b2ebe70e16',
+          'bidderRequestId': '171c5405a390',
+          'auctionId': '35bcbc0f7e79c',
+        },
+        {
+          'bidder': 'trustx',
+          'params': {
+            'uid': '43'
+          },
+          'adUnitCode': 'adunit-code-1',
+          'sizes': [[300, 250], [300, 600]],
+          'bidId': '225fcd44b18c',
+          'bidderRequestId': '171c5405a390',
+          'auctionId': '35bcbc0f7e79c',
+        }
+      ];
+      const request = spec.buildRequests(bidRequests);
+      const expectedResponse = [
+        {
+          'requestId': '5126e301f4be',
+          'cpm': 1.15,
+          'creativeId': 43,
+          'dealId': undefined,
+          'width': 300,
+          'height': 250,
+          'ad': '<div>test content 1</div>',
+          'bidderCode': 'trustx',
+          'currency': 'USD',
+          'netRevenue': true,
+          'ttl': 360,
+        },
+        {
+          'requestId': '57b2ebe70e16',
+          'cpm': 0.5,
+          'creativeId': 43,
+          'dealId': undefined,
+          'width': 300,
+          'height': 250,
+          'ad': '<div>test content 2</div>',
+          'bidderCode': 'trustx',
+          'currency': 'USD',
+          'netRevenue': true,
+          'ttl': 360,
+        }
+      ];
+
+      const result = spec.interpretResponse({'body': {'seatbid': fullResponse}}, request);
+      expect(result).to.deep.equal(expectedResponse);
     });
   });
 });

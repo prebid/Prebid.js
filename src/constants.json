@@ -65,7 +65,9 @@
     "SOURCE": "hb_source",
     "FORMAT": "hb_format",
     "TIME_TO_RESPOND": "hb_ttr",
-    "AUCTION_ID": "hb_auction"
+    "AUCTION_ID": "hb_auction",
+    "UUID": "hb_uuid",
+    "CACHE_ID": "hb_cache_id"
   },
   "NATIVE_KEYS": {
     "title": "hb_native_title",
