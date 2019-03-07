@@ -56,8 +56,18 @@ describe('smilewantedBidAdapterTests', function () {
     expect(requestContent.sizes[0]).to.have.property('h').and.to.equal(250);
     expect(requestContent.sizes[1]).to.have.property('w').and.to.equal(300);
     expect(requestContent.sizes[1]).to.have.property('h').and.to.equal(200);
-    expect(requestContent).to.have.property('pageDomain').and.to.equal(utils.getTopWindowUrl());
+    // expect(requestContent).to.have.property('pageDomain').and.to.equal('http://localhost/Prebid.js/integrationExamples/gpt/hello_world.html');
     expect(requestContent).to.have.property('transactionId').and.to.not.equal(null).and.to.not.be.undefined;
+  });
+
+  it('SmileWanted - Verify build request with referrer', function () {
+    const request = spec.buildRequests(DEFAULT_PARAMS, {
+      refererInfo: {
+        referer: 'http://localhost/Prebid.js/integrationExamples/gpt/hello_world.html'
+      }
+    });
+    const requestContent = JSON.parse(request[0].data);
+    expect(requestContent).to.have.property('pageDomain').and.to.equal('http://localhost/Prebid.js/integrationExamples/gpt/hello_world.html');
   });
 
   describe('gdpr tests', function () {
@@ -127,7 +137,6 @@ describe('smilewantedBidAdapterTests', function () {
     expect(bid.netRevenue).to.equal(true);
     expect(bid.ttl).to.equal(300);
     expect(bid.requestId).to.equal(DEFAULT_PARAMS[0].bidId);
-    expect(bid.referrer).to.equal(utils.getTopWindowUrl());
 
     expect(function () {
       spec.interpretResponse(BID_RESPONSE, {
