@@ -439,10 +439,10 @@ export const callPrebidCache = hook('async', function(auctionInstance, bidRespon
         }
 
         // try to use s2sConfig.cache.url to add hb_cache_host and hb_cache_path to targeting
-        const s2sConfig = config.getConfig('s2sConfig');
-        if (s2sConfig && utils.deepAccess(s2sConfig, 'cache.url')) {
+        const cacheUrl = config.getConfig('cache.url')
+        if (cacheUrl && typeof cacheUrl === 'string') {
           const parsedURL = document.createElement('a');
-          parsedURL.href = s2sConfig.cache.url;
+          parsedURL.href = cacheUrl;
 
           if (!bidResponse.adserverTargeting) {
             bidResponse.adserverTargeting = {}
