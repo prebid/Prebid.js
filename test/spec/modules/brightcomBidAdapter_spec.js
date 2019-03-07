@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import * as utils from 'src/utils';
-import { spec } from 'modules/brightcomBidAdaper';
+import { spec } from 'modules/brightcomBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
 
 const URL = 'https://brightcombid.marphezis.com/hb';
