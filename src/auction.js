@@ -438,7 +438,7 @@ export const callPrebidCache = hook('async', function(auctionInstance, bidRespon
           bidResponse.vastUrl = getCacheUrl(bidResponse.videoCacheKey);
         }
 
-        // try to use s2sConfig.cache.url to add hb_cache_host and hb_cache_path to targeting
+        // try to use cache.url to add hb_cache_host and hb_cache_path to targeting
         const cacheUrl = config.getConfig('cache.url');
         if (cacheUrl && typeof cacheUrl === 'string') {
           const parsedURL = document.createElement('a');
