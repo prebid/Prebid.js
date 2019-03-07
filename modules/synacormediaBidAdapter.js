@@ -3,9 +3,9 @@
 import { getAdUnitSizes, logWarn } from '../src/utils';
 import { registerBidder } from '../src/adapters/bidderFactory';
 import { BANNER } from '../src/mediaTypes';
-import { REPO_AND_VERSION } from '../src/constants';
 
-const SYNACOR_URL = '//prebid.technoratimedia.com';
+const BID_HOST = '//prebid.technoratimedia.com';
+const USER_SYNC_HOST = '//ad-cdn.technoratimedia.com';
 export const spec = {
   code: 'synacormedia',
   supportedMediaTypes: [ BANNER ],
@@ -69,7 +69,7 @@ export const spec = {
     if (openRtbBidRequest.imp.length && seatId) {
       return {
         method: 'POST',
-        url: `${SYNACOR_URL}/openrtb/bids/${seatId}?src=${REPO_AND_VERSION}`,
+        url: `${BID_HOST}/openrtb/bids/${seatId}?src=$$REPO_AND_VERSION$$`,
         data: openRtbBidRequest,
         options: {
           contentType: 'application/json',
@@ -124,7 +124,7 @@ export const spec = {
     if (syncOptions.iframeEnabled) {
       syncs.push({
         type: 'iframe',
-        url: `${SYNACOR_URL}/usersync/html?src=${REPO_AND_VERSION}`
+        url: `${USER_SYNC_HOST}/html/usersync.html?src=$$REPO_AND_VERSION$$`
       });
     } else {
       logWarn('Synacormedia: Please enable iframe based user sync.');
