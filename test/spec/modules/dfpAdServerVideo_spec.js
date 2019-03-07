@@ -10,7 +10,10 @@ import { targeting } from 'src/targeting';
 
 const bid = {
   videoCacheKey: 'abc',
-  adserverTargeting: { },
+  adserverTargeting: {
+    hb_uuid: 'abc',
+    hb_cache_id: 'abc',
+  },
 };
 
 describe('The DFP video support module', function () {
@@ -40,7 +43,7 @@ describe('The DFP video support module', function () {
   });
 
   it('can take an adserver url as a parameter', function () {
-    const bidCopy = Object.assign({ }, bid);
+    const bidCopy = utils.deepClone(bid);
     bidCopy.vastUrl = 'vastUrl.example';
 
     const url = parse(buildDfpVideoUrl({
@@ -90,10 +93,10 @@ describe('The DFP video support module', function () {
   });
 
   it('should include the cache key and adserver targeting in cust_params', function () {
-    const bidCopy = Object.assign({ }, bid);
-    bidCopy.adserverTargeting = {
+    const bidCopy = utils.deepClone(bid);
+    bidCopy.adserverTargeting = Object.assign(bidCopy.adserverTargeting, {
       hb_adid: 'ad_id',
-    };
+    });
 
     const url = parse(buildDfpVideoUrl({
       adUnit: adUnit,
@@ -160,10 +163,10 @@ describe('The DFP video support module', function () {
         }
       });
 
-      const bidCopy = Object.assign({ }, bid);
-      bidCopy.adserverTargeting = {
+      const bidCopy = utils.deepClone(bid);
+      bidCopy.adserverTargeting = Object.assign(bidCopy.adserverTargeting, {
         hb_adid: 'ad_id',
-      };
+      });
 
       const url = parse(buildDfpVideoUrl({
         adUnit: adUnitsCopy,
@@ -184,10 +187,10 @@ describe('The DFP video support module', function () {
   });
 
   it('should merge the user-provided cust_params with the default ones', function () {
-    const bidCopy = Object.assign({ }, bid);
-    bidCopy.adserverTargeting = {
+    const bidCopy = utils.deepClone(bid);
+    bidCopy.adserverTargeting = Object.assign(bidCopy.adserverTargeting, {
       hb_adid: 'ad_id',
-    };
+    });
 
     const url = parse(buildDfpVideoUrl({
       adUnit: adUnit,
@@ -207,10 +210,10 @@ describe('The DFP video support module', function () {
   });
 
   it('should merge the user-provided cust-params with the default ones when using url object', function () {
-    const bidCopy = Object.assign({ }, bid);
-    bidCopy.adserverTargeting = {
+    const bidCopy = utils.deepClone(bid);
+    bidCopy.adserverTargeting = Object.assign(bidCopy.adserverTargeting, {
       hb_adid: 'ad_id',
-    };
+    });
 
     const url = parse(buildDfpVideoUrl({
       adUnit: adUnit,
@@ -229,7 +232,7 @@ describe('The DFP video support module', function () {
   });
 
   it('should not overwrite an existing description_url for object input and cache disabled', function () {
-    const bidCopy = Object.assign({}, bid);
+    const bidCopy = utils.deepClone(bid);
     bidCopy.vastUrl = 'vastUrl.example';
 
     const url = parse(buildDfpVideoUrl({

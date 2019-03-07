@@ -132,6 +132,7 @@ function attachPriceIndustryDurationKeyToBid(bid, brandCategoryExclusion) {
   }
   bid.adserverTargeting[TARGETING_KEY_PB_CAT_DUR] = pcd;
   bid.adserverTargeting[TARGETING_KEY_CACHE_ID] = initialCacheKey;
+  bid.videoCacheKey = initialCacheKey;
   bid.customCacheKey = `${pcd}_${initialCacheKey}`;
 }
 

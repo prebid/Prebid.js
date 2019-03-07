@@ -508,6 +508,9 @@ function bidToTag(bid) {
 
   if (bid.mediaType === NATIVE || utils.deepAccess(bid, `mediaTypes.${NATIVE}`)) {
     tag.ad_types.push(NATIVE);
+    if (tag.sizes.length === 0) {
+      tag.sizes = transformSizes([1, 1]);
+    }
 
     if (bid.nativeParams) {
       const nativeRequest = buildNativeRequest(bid.nativeParams);

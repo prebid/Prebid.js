@@ -71,6 +71,7 @@ config.setDefaults({
  * @property {boolean} [cacheMarkup] whether to cache the adm result
  * @property {string} [adapter] adapter code to use for S2S
  * @property {string} [syncEndpoint] endpoint URL for syncing cookies
+ * @property {Object} [extPrebid] properties will be merged into request.ext.prebid
  * @property {AdapterOptions} [adapterOptions] adds arguments to resulting OpenRTB payload to Prebid Server
  */
 function setS2sConfig(options) {
@@ -483,7 +484,22 @@ const OPEN_RTB_PROTOCOL = {
       tmax: _s2sConfig.timeout,
       imp: imps,
       test: getConfig('debug') ? 1 : 0,
+      ext: {
+        prebid: {
+          targeting: {
+            // includewinners is always true for openrtb
+            includewinners: true,
+            // includebidderkeys always false for openrtb
+            includebidderkeys: false
+          }
+        }
+      }
     };
+
+    // s2sConfig video.ext.prebid is passed through openrtb to PBS
+    if (_s2sConfig.extPrebid && typeof _s2sConfig.extPrebid === 'object') {
+      request.ext.prebid = Object.assign(request.ext.prebid, _s2sConfig.extPrebid);
+    }
 
     _appendSiteAppDevice(request);
 
@@ -493,7 +509,7 @@ const OPEN_RTB_PROTOCOL = {
     }
 
     if (!utils.isEmpty(aliases)) {
-      request.ext = { prebid: { aliases } };
+      request.ext.prebid.aliases = aliases;
     }
 
     if (bidRequests && bidRequests[0].userId && typeof bidRequests[0].userId === 'object') {
@@ -571,10 +587,29 @@ const OPEN_RTB_PROTOCOL = {
             bidRequest.serverResponseTimeMs = serverResponseTimeMs;
           }
 
+          const extPrebidTargeting = utils.deepAccess(bid, 'ext.prebid.targeting');
+
+          // If ext.prebid.targeting exists, add it as a property value named 'adserverTargeting'
+          if (extPrebidTargeting && typeof extPrebidTargeting === 'object') {
+            bidObject.adserverTargeting = extPrebidTargeting;
+          }
+
           if (utils.deepAccess(bid, 'ext.prebid.type') === VIDEO) {
             bidObject.mediaType = VIDEO;
+
+            // try to get cache values from 'response.ext.prebid.cache'
+            // else try 'bid.ext.prebid.targeting' as fallback
+            if (bid.ext.prebid.cache && typeof bid.ext.prebid.cache.vastXml === 'object' && bid.ext.prebid.cache.vastXml.cacheId && bid.ext.prebid.cache.vastXml.url) {
+              bidObject.videoCacheKey = bid.ext.prebid.cache.vastXml.cacheId;
+              bidObject.vastUrl = bid.ext.prebid.cache.vastXml.url;
+            } else if (extPrebidTargeting && extPrebidTargeting.hb_uuid && extPrebidTargeting.hb_cache_host && extPrebidTargeting.hb_cache_path) {
+              bidObject.videoCacheKey = extPrebidTargeting.hb_uuid;
+              // build url using key and cache host
+              bidObject.vastUrl = `https://${extPrebidTargeting.hb_cache_host}${extPrebidTargeting.hb_cache_path}?uuid=${extPrebidTargeting.hb_uuid}`;
+            }
+
             if (bid.adm) { bidObject.vastXml = bid.adm; }
-            if (bid.nurl) { bidObject.vastUrl = bid.nurl; }
+            if (!bidObject.vastUrl && bid.nurl) { bidObject.vastUrl = bid.nurl; }
           } else { // banner
             if (bid.adm && bid.nurl) {
               bidObject.ad = bid.adm;
