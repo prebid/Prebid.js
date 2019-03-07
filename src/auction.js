@@ -432,6 +432,23 @@ const callPrebidCache = hook('async', function(auctionInstance, bidResponse, aft
         if (!bidResponse.vastUrl) {
           bidResponse.vastUrl = getCacheUrl(bidResponse.videoCacheKey);
         }
+
+        // try to use s2sConfig.cache.url to add hb_cache_host and hb_cache_path to targeting
+        const s2sConfig = config.getConfig('s2sConfig');
+        if (s2sConfig && utils.deepAccess(s2sConfig, 'cache.url')) {
+          const parsedURL = document.createElement('a');
+          parsedURL.href = s2sConfig.cache.url;
+
+          if (!bidResponse.adserverTargeting) {
+            bidResponse.adserverTargeting = {}
+          }
+          if (!bidResponse.adserverTargeting.hb_cache_host) {
+            bidResponse.adserverTargeting.hb_cache_host = parsedURL.hostname;
+          }
+          if (!bidResponse.adserverTargeting.hb_cache_path) {
+            bidResponse.adserverTargeting.hb_cache_path = parsedURL.pathname;
+          }
+        }
         addBidToAuction(auctionInstance, bidResponse);
         afterBidAdded();
       }

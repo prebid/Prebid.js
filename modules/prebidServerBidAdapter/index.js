@@ -170,7 +170,7 @@ function doAllSyncs(bidders) {
 
   const thisSync = bidders.pop();
   if (thisSync.no_cookie) {
-    doBidderSync(thisSync.usersync.type, thisSync.usersync.url, thisSync.bidder, doAllSyncs.bind(null, bidders));
+    doBidderSync(thisSync.usersync.type, thisSync.usersync.url, thisSync.bidder, utils.bind.call(doAllSyncs, null, bidders));
   } else {
     doAllSyncs(bidders);
   }
@@ -610,22 +610,6 @@ const OPEN_RTB_PROTOCOL = {
 
             if (bid.adm) { bidObject.vastXml = bid.adm; }
             if (!bidObject.vastUrl && bid.nurl) { bidObject.vastUrl = bid.nurl; }
-
-            // create 'hb_cache_host' and/or 'hb_cache_path' using cache url if not defined
-            if (bidObject.vastUrl && utils.deepAccess(_s2sConfig, 'cache.url')) {
-              const parsedURL = document.createElement('a');
-              parsedURL.href = _s2sConfig.cache.url;
-
-              if (!bidObject.adserverTargeting) {
-                bidObject.adserverTargeting = {}
-              }
-              if (!bidObject.adserverTargeting.hb_cache_host) {
-                bidObject.adserverTargeting.hb_cache_host = parsedURL.hostname;
-              }
-              if (!bidObject.adserverTargeting.hb_cache_path) {
-                bidObject.adserverTargeting.hb_cache_path = parsedURL.pathname;
-              }
-            }
           } else { // banner
             if (bid.adm && bid.nurl) {
               bidObject.ad = bid.adm;
