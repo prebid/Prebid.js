@@ -1,4 +1,5 @@
 import * as utils from '../src/utils';
+import * as url from '../src/url';
 import { registerBidder } from '../src/adapters/bidderFactory';
 import { BANNER } from '../src/mediaTypes';
 import { config } from '../src/config';
@@ -17,7 +18,10 @@ export const spec = {
 
 function buildRequests(bidReqs, bidderRequest) {
   try {
-    const loc = utils.getTopWindowLocation();
+    let referrer = '';
+    if (bidderRequest && bidderRequest.refererInfo) {
+      referrer = bidderRequest.refererInfo.referer;
+    }
     const brightcomImps = [];
     const publisherId = utils.getBidIdParameter('publisherId', bidReqs[0].params);
     utils._each(bidReqs, function (bid) {
@@ -52,8 +56,8 @@ function buildRequests(bidReqs, bidderRequest) {
       id: utils.getUniqueIdentifierStr(),
       imp: brightcomImps,
       site: {
-        domain: loc.host,
-        page: loc.href,
+        domain: url.parse(referrer).host,
+        page: referrer,
         publisher: {
           id: publisherId
         }
