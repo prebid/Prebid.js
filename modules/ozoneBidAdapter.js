@@ -7,7 +7,7 @@ const BIDDER_CODE = 'ozone';
 
 const OZONEURI = 'https://elb.the-ozone-project.com/openrtb2/auction';
 const OZONECOOKIESYNC = 'https://elb.the-ozone-project.com/static/load-cookie.html';
-const OZONEVERSION = '1.4.5';
+const OZONEVERSION = '1.4.6';
 export const spec = {
   code: BIDDER_CODE,
 
@@ -69,6 +69,7 @@ export const spec = {
     utils.logInfo('ozone v' + OZONEVERSION + ' validBidRequests', validBidRequests, 'bidderRequest', bidderRequest);
     utils.logInfo('buildRequests setting auctionId', bidderRequest.auctionId);
     let singleRequest = config.getConfig('ozone.singleRequest');
+
     singleRequest = singleRequest !== false; // undefined & true will be true
     utils.logInfo('config ozone.singleRequest : ', singleRequest);
     let htmlParams = validBidRequests[0].params; // the html page config params will be included in each element
@@ -77,6 +78,7 @@ export const spec = {
 
     delete ozoneRequest.test; // don't allow test to be set in the config - ONLY use $_GET['pbjs_debug']
     if (bidderRequest.gdprConsent) {
+      utils.logInfo('ADDING GDPR');
       ozoneRequest.regs = {};
       ozoneRequest.regs.ext = {};
       ozoneRequest.regs.ext.gdpr = bidderRequest.gdprConsent.gdprApplies === true ? 1 : 0;
@@ -84,8 +86,10 @@ export const spec = {
         ozoneRequest.user = {};
         ozoneRequest.user.ext = {'consent': bidderRequest.gdprConsent.consentString};
       }
+    } else {
+      utils.logInfo('WILL NOT ADD GDPR');
     }
-    ozoneRequest.device = {"w": window.innerWidth, "h": window.innerHeight};
+    ozoneRequest.device = {'w': window.innerWidth, 'h': window.innerHeight};
     let tosendtags = validBidRequests.map(ozoneBidRequest => {
       var obj = {};
       obj.id = ozoneBidRequest.bidId; // this causes a failure if we change it to something else
@@ -129,15 +133,10 @@ export const spec = {
           })
         };
       }
-      if (ozoneBidRequest.params.hasOwnProperty('placementId')) {
-        obj.placementId = (ozoneBidRequest.params.placementId).toString();
-      }
-      if (ozoneBidRequest.params.hasOwnProperty('publisherId')) {
-        obj.publisherId = (ozoneBidRequest.params.publisherId).toString();
-      }
-      if (ozoneBidRequest.params.hasOwnProperty('siteId')) {
-        obj.siteId = (ozoneBidRequest.params.siteId).toString();
-      }
+      // these 3 MUST exist - we check them in the validation method
+      obj.placementId = (ozoneBidRequest.params.placementId).toString();
+      obj.publisherId = (ozoneBidRequest.params.publisherId).toString();
+      obj.siteId = (ozoneBidRequest.params.siteId).toString();
       // build the imp['ext'] object
       obj.ext = {'prebid': {'storedrequest': {'id': (ozoneBidRequest.params.placementId).toString()}}, 'ozone': {}};
       obj.ext.ozone.adUnitCode = ozoneBidRequest.adUnitCode; // eg. 'mpu'
