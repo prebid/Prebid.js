@@ -461,7 +461,7 @@ const OPEN_RTB_PROTOCOL = {
       }
 
       // get bidder params in form { <bidder code>: {...params} }
-      const ext = adUnit.bids.reduce((acc, bid) => {
+      const ext = adUnit.bids.reduce((acc, bid, ind) => {
         const adapter = adapterManager.bidderRegistry[bid.bidder];
         if (adapter && adapter.getSpec().transformBidParams) {
           bid.params = adapter.getSpec().transformBidParams(bid.params, isOpenRtb());
