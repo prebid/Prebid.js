@@ -644,7 +644,7 @@ describe('S2S Adapter', function () {
       };
 
       const request = utils.deepClone(REQUEST);
-      request.ad_units[0].push(aliasBidder);
+      request.ad_units[0].bids.push(aliasBidder);
 
       adapter.callBids(request, BID_REQUESTS, addBidResponse, done, ajax);
 
