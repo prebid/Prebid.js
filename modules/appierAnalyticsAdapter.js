@@ -6,7 +6,7 @@ import adapterManager from '../src/adapterManager';
 const utils = require('../src/utils');
 const analyticsType = 'endpoint';
 
-const DEFAULT_SERVER = 'https://analytics.c.apx.appier.net.dummy';
+const DEFAULT_SERVER = 'https://analytics.prebid.c.appier.net';
 const ANALYTICS_VERSION = '0.1.0';
 const SEND_TIMEOUT = 200;
 
@@ -63,10 +63,10 @@ const cacheManager = {
       }
     }
   },
-  setCachedHeader(auctionId, newObject) {
+  setHeaderCache(auctionId, newObject) {
     this.cache[auctionId].header = newObject;
   },
-  updateCachedHeader(auctionId, newObject) {
+  updateHeaderCache(auctionId, newObject) {
     Object.assign(this.cache[auctionId].header, newObject)
   },
   getBidsCache(auctionId, adUnitCode, bidderCode) {
@@ -145,7 +145,7 @@ const appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, analyticsT
     return bidResponse.adUnitCode.toLowerCase();
   },
   initCommonMessageHeader(auction) {
-    cacheManager.setCachedHeader(auction.auctionId, {
+    cacheManager.setHeaderCache(auction.auctionId, {
       'eventId': auction.auctionId,
       'version': ANALYTICS_VERSION,
       'affiliateId': analyticsOptions.affiliateId,
@@ -153,7 +153,7 @@ const appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, analyticsT
       'referrer': window.location.href,
       'device': detectDevice(), // TODO: May not need this, use UA at beacon instead?
       'sampling': analyticsOptions.options.sampling,
-      'crSampling': analyticsOptions.options.crSampling, // TODO: need a better name OR remove
+      'crSampling': analyticsOptions.options.crSampling,
       'prebid': '$prebid.version$',
       'autoPick': analyticsOptions.options.autoPick,
       'timeout': auction.timeout,
@@ -240,7 +240,7 @@ const appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, analyticsT
   },
   updateAuctionEndMessage(auction) {
     // Set finished time
-    cacheManager.updateCachedHeader(auction.auctionId, {
+    cacheManager.updateHeaderCache(auction.auctionId, {
       'finish': auction.auctionEnd || Date.now()
     });
     // Update cached auction status
