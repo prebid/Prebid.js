@@ -466,7 +466,13 @@ const OPEN_RTB_PROTOCOL = {
         if (adapter && adapter.getSpec().transformBidParams) {
           bid.params = adapter.getSpec().transformBidParams(bid.params, isOpenRtb());
         }
-        acc[bid.bidder] = (_s2sConfig.adapterOptions && _s2sConfig.adapterOptions[bid.bidder]) ? Object.assign({}, bid.params, _s2sConfig.adapterOptions[bid.bidder]) : bid.params;
+        if (acc.hasOwnProperty(bid.bidder)) {
+          var aliasesBidder = bid.bidder + 'Alias_' + ind;
+          aliases[aliasesBidder] = bid.bidder;
+          acc[aliasesBidder] = (_s2sConfig.adapterOptions && _s2sConfig.adapterOptions[bid.bidder]) ? Object.assign({}, bid.params, _s2sConfig.adapterOptions[bid.bidder]) : bid.params;
+        } else {
+          acc[bid.bidder] = (_s2sConfig.adapterOptions && _s2sConfig.adapterOptions[bid.bidder]) ? Object.assign({}, bid.params, _s2sConfig.adapterOptions[bid.bidder]) : bid.params;
+        }
         return acc;
       }, {});
 
