@@ -632,6 +632,37 @@ describe('S2S Adapter', function () {
       expect(requestBid.site.page).to.exist.and.to.be.a('string');
     });
 
+    it('adds 2 appnexus bids to request', function () {
+      const s2sConfig = Object.assign({}, CONFIG, {
+        endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
+      });
+      config.setConfig({s2sConfig: s2sConfig});
+
+      const aliasBidder = {
+        bidder: 'appnexus',
+        params: { placementId: '123456' }
+      };
+
+      const request = utils.deepClone(REQUEST);
+      request.ad_units[0].push(aliasBidder);
+
+      adapter.callBids(request, BID_REQUESTS, addBidResponse, done, ajax);
+
+      const requestBid = JSON.parse(requests[0].requestBody);
+
+      expect(requestBid.ext).to.deep.equal({
+        prebid: {
+          aliases: {
+            'appnexusAlias_1': 'appnexus'
+          },
+          targeting: {
+            includebidderkeys: false,
+            includewinners: true
+          }
+        }
+      });
+    });
+
     it('adds appnexus aliases to request', function () {
       const s2sConfig = Object.assign({}, CONFIG, {
         endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
