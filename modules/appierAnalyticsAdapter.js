@@ -63,7 +63,7 @@ const cacheManager = {
       bids: {
         adUnits: {}
       },
-      crs: {
+      ads: {
         adUnits: {}
       },
       status: {},
@@ -96,8 +96,8 @@ const cacheManager = {
   setStatus(auctionId, adUnitCode, newValue) {
     this.cache[auctionId].status[adUnitCode] = newValue;
   },
-  setCrsCache(auctionId, adUnitCode, bidderCode, newObject) {
-    const crsCacheSection = this.cache[auctionId].crs.adUnits;
+  setAdCache(auctionId, adUnitCode, bidderCode, newObject) {
+    const crsCacheSection = this.cache[auctionId].ads.adUnits;
     crsCacheSection[adUnitCode] = crsCacheSection[adUnitCode] || {};
     crsCacheSection[adUnitCode][bidderCode] = newObject;
   },
@@ -112,12 +112,12 @@ const appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, analyticsT
 
   initConfig(config) {
     /**
-     * Required option: affiliateId  // TODO: May not need this
+     * Required option: affiliateId
      * Required option: configId
      *
      * Optional option: server
      * Optional option: sampling
-     * Optional option: crSampling   // TODO: Need a better name
+     * Optional option: adSampling
      * Optional option: autoPick
      * @type {boolean}
      */
@@ -139,9 +139,9 @@ const appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, analyticsT
     if (typeof config.options.sampling === 'number') {
       analyticsOptions.sampled = Math.random() < parseFloat(config.options.sampling);
     }
-    analyticsOptions.crSampled = false; // Default is *NOT* to collect creative
-    if (typeof config.options.crSampling === 'number') {
-      analyticsOptions.crSampled = Math.random() < parseFloat(config.options.crSampling);
+    analyticsOptions.adSampled = false; // Default is *NOT* to collect creative
+    if (typeof config.options.adSampling === 'number') {
+      analyticsOptions.adSampled = Math.random() < parseFloat(config.options.adSampling);
     }
     analyticsOptions.autoPick = config.options.autoPick || null;
 
@@ -163,7 +163,7 @@ const appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, analyticsT
       'referrer': window.location.href,
       'device': detectDevice(), // TODO: May not need this, use UA at beacon instead?
       'sampling': analyticsOptions.options.sampling,
-      'crSampling': analyticsOptions.options.crSampling,
+      'adSampling': analyticsOptions.options.adSampling,
       'prebid': '$prebid.version$',
       'autoPick': analyticsOptions.options.autoPick,
       'timeout': auction.timeout,
@@ -189,9 +189,6 @@ const appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, analyticsT
       cacheManager.updateBidsCache(bid.auctionId, adUnitCode, bidderCode, {
         'status': BIDDER_STATUS.REQUESTED,
         'isTimeout': true, // First set to true to wait response
-        // Other default values
-        'time': 0,
-        'cpm': 0
       });
     }
   },
@@ -243,7 +240,7 @@ const appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, analyticsT
   updateBidCreativeMessage(bid) {
     const adUnitCode = this.parseAdUnitCode(bid);
     const bidderCode = this.parseBidderCode(bid);
-    cacheManager.setCrsCache(bid.auctionId, adUnitCode, bidderCode, {
+    cacheManager.setAdCache(bid.auctionId, adUnitCode, bidderCode, {
       'ads': bid.ad
     });
   },
@@ -354,7 +351,7 @@ const appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, analyticsT
             if (analyticsOptions.crSampled) {
               this.sendEventMessage('cr', Object.assign({},
                 cacheManager.cache[args.auctionId].header,
-                cacheManager.cache[args.auctionId].crs
+                cacheManager.cache[args.auctionId].ads
               ));
             }
           }, SEND_TIMEOUT);
