@@ -161,7 +161,7 @@ const appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, analyticsT
       'affiliateId': analyticsOptions.affiliateId,
       'configId': analyticsOptions.configId,
       'referrer': window.location.href,
-      'device': detectDevice(), // TODO: May not need this, use UA at beacon instead?
+      'device': detectDevice(),
       'sampling': analyticsOptions.options.sampling,
       'adSampling': analyticsOptions.options.adSampling,
       'prebid': '$prebid.version$',
@@ -237,7 +237,7 @@ const appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, analyticsT
       });
     }
   },
-  updateBidCreativeMessage(bid) {
+  updateBidAdMessage(bid) {
     const adUnitCode = this.parseAdUnitCode(bid);
     const bidderCode = this.parseBidderCode(bid);
     cacheManager.setAdCache(bid.auctionId, adUnitCode, bidderCode, {
@@ -321,8 +321,8 @@ const appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, analyticsT
         case BID_RESPONSE:
           // bid response if has bid
           this.updateBidResponseMessage(args);
-          if (analyticsOptions.crSampled) {
-            this.updateBidCreativeMessage(args);
+          if (analyticsOptions.adSampled) {
+            this.updateBidAdMessage(args);
           }
           break;
         case BIDDER_DONE:
@@ -348,7 +348,7 @@ const appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, analyticsT
               cacheManager.cache[args.auctionId].header,
               cacheManager.cache[args.auctionId].bids
             ));
-            if (analyticsOptions.crSampled) {
+            if (analyticsOptions.adSampled) {
               this.sendEventMessage('cr', Object.assign({},
                 cacheManager.cache[args.auctionId].header,
                 cacheManager.cache[args.auctionId].ads
