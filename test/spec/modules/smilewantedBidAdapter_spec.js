@@ -56,7 +56,6 @@ describe('smilewantedBidAdapterTests', function () {
     expect(requestContent.sizes[0]).to.have.property('h').and.to.equal(250);
     expect(requestContent.sizes[1]).to.have.property('w').and.to.equal(300);
     expect(requestContent.sizes[1]).to.have.property('h').and.to.equal(200);
-    // expect(requestContent).to.have.property('pageDomain').and.to.equal('http://localhost/Prebid.js/integrationExamples/gpt/hello_world.html');
     expect(requestContent).to.have.property('transactionId').and.to.not.equal(null).and.to.not.be.undefined;
   });
 
