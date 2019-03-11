@@ -117,6 +117,11 @@ function createBannerBidResponses(oxResponseObj, {bids, startTime}) {
     }
     bidResponse.ts = adUnit.ts;
 
+    bidResponse.meta = {};
+    if (adUnit.brand_id) {
+      bidResponse.meta.brandId = adUnit.brand_id;
+    }
+
     bidResponses.push(bidResponse);
 
     registerBeacon(BANNER, adUnit, startTime);
