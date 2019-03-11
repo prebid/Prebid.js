@@ -32,12 +32,6 @@ export const spec = {
         t: 'i'
       };
 
-      if (window.PREBID_TIMEOUT) {
-        payload.tmax = window.PREBID_TIMEOUT;
-      } else if (window.pbjsTimeout) {
-        payload.tmax = window.pbjsTimeout;
-      }
-
       const videoMediaType = utils.deepAccess(bidRequest, 'mediaTypes.video');
       if (bidRequest.mediaType === VIDEO || videoMediaType) {
         const sizes = utils.deepAccess(bidRequest, 'mediaTypes.video.playerSize') || bidRequest.sizes;
