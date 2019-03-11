@@ -358,6 +358,12 @@ const appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, analyticsT
           break;
       }
     }
+  },
+  getAnalyticsOptions: function () {
+    return analyticsOptions;
+  },
+  getCacheManager: function () {
+    return cacheManager;
   }
 });
 
@@ -367,7 +373,6 @@ appierAnalyticsAdapter.originEnableAnalytics = appierAnalyticsAdapter.enableAnal
 // override enableAnalytics so we can get access to the config passed in from the page
 appierAnalyticsAdapter.enableAnalytics = function (config) {
   if (this.initConfig(config)) {
-    console.log('AppierAnalyticsAdapter enabled.');
     appierAnalyticsAdapter.originEnableAnalytics(config); // call the base class function
   }
 };
@@ -376,3 +381,5 @@ adapterManager.registerAnalyticsAdapter({
   adapter: appierAnalyticsAdapter,
   code: 'appierAnalytics'
 });
+
+export default appierAnalyticsAdapter;
