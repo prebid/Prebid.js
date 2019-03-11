@@ -584,7 +584,7 @@ export function getStandardBidderSettings(mediaType) {
         var parsedURL = document.createElement('a');
         parsedURL.href = cacheUrl;
         [[CONSTANTS.TARGETING_KEYS.CACHE_HOST, parsedURL.hostname],
-        [CONSTANTS.TARGETING_KEYS.CACHE_PATH, parsedURL.pathname]].forEach(item => {
+          [CONSTANTS.TARGETING_KEYS.CACHE_PATH, parsedURL.pathname]].forEach(item => {
           bidderSettings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD][CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING].push({
             key: item[0],
             val: function val(bidResponse) {
