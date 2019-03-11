@@ -40,8 +40,12 @@ export const spec = {
         seatId = bid.params.seatId;
       }
       let placementId = bid.params.placementId;
+      let bidFloor = bid.params.bidfloor ? parseFloat(bid.params.bidfloor) : null;
+      if (isNaN(bidFloor)) {
+        logWarn(`Synacormedia: there is an invalid bid floor: ${bid.params.bidfloor}`);
+      }
       getAdUnitSizes(bid).forEach((size, i) => {
-        openRtbBidRequest.imp.push({
+        let request = {
           id: bid.bidId + '~' + size[0] + 'x' + size[1],
           tagid: placementId,
           banner: {
@@ -49,7 +53,11 @@ export const spec = {
             h: size[1],
             pos: 0
           }
-        });
+        };
+        if (bidFloor !== null && !isNaN(bidFloor)) {
+          request.bidfloor = bidFloor;
+        }
+        openRtbBidRequest.imp.push(request);
       });
     });
 

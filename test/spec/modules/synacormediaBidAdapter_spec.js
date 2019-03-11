@@ -38,7 +38,8 @@ describe('synacormediaBidAdapter ', function () {
       sizes: [[300, 250], [300, 600]],
       params: {
         seatId: 'prebid',
-        placementId: '1234'
+        placementId: '1234',
+        bidfloor: '0.50'
       }
     };
 
@@ -56,7 +57,8 @@ describe('synacormediaBidAdapter ', function () {
         w: 300,
       },
       id: '9876abcd~300x250',
-      tagid: '1234'
+      tagid: '1234',
+      bidfloor: 0.5
     };
     let expectedDataImp2 = {
       banner: {
@@ -65,7 +67,8 @@ describe('synacormediaBidAdapter ', function () {
         w: 300,
       },
       id: '9876abcd~300x600',
-      tagid: '1234'
+      tagid: '1234',
+      bidfloor: 0.5
     };
 
     it('should return valid request when valid bids are used', function () {
@@ -85,7 +88,8 @@ describe('synacormediaBidAdapter ', function () {
         sizes: [[300, 600]],
         params: {
           seatId: validBidRequest.params.seatId,
-          placementId: '5678'
+          placementId: '5678',
+          bidfloor: '0.50'
         }
       };
       let req = spec.buildRequests([validBidRequest, secondBidRequest], bidderRequest);
@@ -101,7 +105,8 @@ describe('synacormediaBidAdapter ', function () {
           w: 300,
         },
         id: 'foobar~300x600',
-        tagid: '5678'
+        tagid: '5678',
+        bidfloor: 0.5
       }]);
     });
 
@@ -111,7 +116,8 @@ describe('synacormediaBidAdapter ', function () {
         sizes: [[300, 250]],
         params: {
           seatId: 'somethingelse',
-          placementId: '5678'
+          placementId: '5678',
+          bidfloor: '0.50'
         }
       };
       let req = spec.buildRequests([mismatchedSeatBidRequest, validBidRequest], bidderRequest);
@@ -127,7 +133,63 @@ describe('synacormediaBidAdapter ', function () {
             w: 300,
           },
           id: 'foobar~300x250',
-          tagid: '5678'
+          tagid: '5678',
+          bidfloor: 0.5
+        }
+      ]);
+    });
+
+    it('should not use bidfloor when the value is not a number', function () {
+      let badFloorBidRequest = {
+        bidId: '9876abcd',
+        sizes: [[300, 250]],
+        params: {
+          seatId: 'prebid',
+          placementId: '1234',
+          bidfloor: 'abcd'
+        }
+      };
+      let req = spec.buildRequests([badFloorBidRequest], bidderRequest);
+      expect(req).to.have.property('method', 'POST');
+      expect(req).to.have.property('url');
+      expect(req.url).to.contain('//prebid.technoratimedia.com/openrtb/bids/prebid?src=undefined');
+      expect(req.data.id).to.equal('xyz123');
+      expect(req.data.imp).to.eql([
+        {
+          banner: {
+            h: 250,
+            pos: 0,
+            w: 300,
+          },
+          id: '9876abcd~300x250',
+          tagid: '1234',
+        }
+      ]);
+    });
+
+    it('should not use bidfloor when there is no value', function () {
+      let badFloorBidRequest = {
+        bidId: '9876abcd',
+        sizes: [[300, 250]],
+        params: {
+          seatId: 'prebid',
+          placementId: '1234'
+        }
+      };
+      let req = spec.buildRequests([badFloorBidRequest], bidderRequest);
+      expect(req).to.have.property('method', 'POST');
+      expect(req).to.have.property('url');
+      expect(req.url).to.contain('//prebid.technoratimedia.com/openrtb/bids/prebid?src=undefined');
+      expect(req.data.id).to.equal('xyz123');
+      expect(req.data.imp).to.eql([
+        {
+          banner: {
+            h: 250,
+            pos: 0,
+            w: 300,
+          },
+          id: '9876abcd~300x250',
+          tagid: '1234',
         }
       ]);
     });
