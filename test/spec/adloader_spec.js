@@ -27,5 +27,11 @@ describe('adLoader', function () {
       expect(utilsLogErrorStub.called).to.be.false;
       expect(utilsinsertElementStub.called).to.be.true;
     });
+
+    it('callback function can be passed to the function', function() {
+      let callback = function() {};
+      adLoader.loadExternalScript('someURL1', 'criteo', callback);
+      expect(utilsinsertElementStub.called).to.be.true;
+    })
   });
 });

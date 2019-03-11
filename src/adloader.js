@@ -2,7 +2,8 @@ import includes from 'core-js/library/fn/array/includes';
 import * as utils from './utils';
 
 const _requestCache = {};
-const _vendorWhitelist = [
+// The below list contains modules or vendors whom Prebid allows to load external JS.
+const _approvedLoadExternalJSList = [
   'criteo',
   'outstream'
 ]
@@ -19,7 +20,7 @@ export function loadExternalScript(url, moduleCode, callback) {
     utils.logError('cannot load external script without url and moduleCode');
     return;
   }
-  if (!includes(_vendorWhitelist, moduleCode)) {
+  if (!includes(_approvedLoadExternalJSList, moduleCode)) {
     utils.logError(`${moduleCode} not whitelisted for loading external JavaScript`);
     return;
   }
