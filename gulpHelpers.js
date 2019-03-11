@@ -61,6 +61,21 @@ module.exports = {
 
     return modules;
   },
+
+  getModulesToInclude() {
+    let modules;
+    const moduleFile = 'modules.json';
+    try {
+      modules = JSON.parse(fs.readFileSync(moduleFile, 'utf8'));
+    } catch (e) {
+      throw new gutil.PluginError({
+        plugin: 'modules',
+        message: 'failed reading: ' + moduleFile
+      });
+    }
+    return modules;
+  },
+
   getModules: _.memoize(function(externalModules) {
     externalModules = externalModules || [];
     var internalModules;

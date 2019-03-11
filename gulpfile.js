@@ -148,7 +148,7 @@ function makeWebpackPkg() {
   var cloned = _.cloneDeep(webpackConfig);
   delete cloned.devtool;
 
-  var externalModules = helpers.getArgModules();
+  var externalModules = helpers.getModulesToInclude();
 
   const analyticsSources = helpers.getAnalyticsSources();
   const moduleSources = helpers.getModulePaths(externalModules);
