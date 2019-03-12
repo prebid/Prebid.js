@@ -46,7 +46,7 @@ function detectDevice() {
 }
 
 // used for analytics
-const getCpmInUsd = function(bid) {
+const getCpmInUsd = function (bid) {
   if (bid.currency === 'USD') {
     return bid.cpm;
   } else {
@@ -295,8 +295,10 @@ const appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, analyticsT
       }
     };
   },
-  sendEventMessage (endPoint, data) {
-    console.log(`AJAX: ${endPoint}: ` + JSON.stringify(data));
+  sendEventMessage(endPoint, data) {
+    if (utils.debugTurnedOn()) {
+      console.log(`AJAX: ${endPoint}: ` + JSON.stringify(data));
+    }
     ajax(`${analyticsOptions.server}/${endPoint}`, null, JSON.stringify(data), {
       contentType: 'application/json'
     });
@@ -359,10 +361,10 @@ const appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, analyticsT
       }
     }
   },
-  getAnalyticsOptions: function () {
+  getAnalyticsOptions() {
     return analyticsOptions;
   },
-  getCacheManager: function () {
+  getCacheManager() {
     return cacheManager;
   }
 });

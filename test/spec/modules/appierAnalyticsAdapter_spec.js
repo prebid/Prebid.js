@@ -4,67 +4,89 @@ import {expect} from 'chai';
 const events = require('src/events');
 const constants = require('src/constants.json');
 
+const affiliateId = 'WhctHaViHtI';
+const configId = 'd9cc9a9b-e9b2-40ed-a17c-f1c9a8a4b29c';
+const serverUrl = 'https://analytics.server.url/v1';
+const autoPick = 'none';
+const hzid = 'WhctHaV9';
 const auctionId = 'b0b39610-b941-4659-a87c-de9f62d3e13e';
 const bidderCode = 'appier';
-const timeout = 1000;
+const timeout = 2000;
+const auctionStart = Date.now();
 
-const BID1 = {
-  'auctionId': auctionId,
-  'adUnitCode': '/12345678/adunit_1',
-  'bidder': bidderCode,
-  'width': 300,
-  'height': 250,
-  'cpm': 0.59878,
-  'currency': 'USD',
-  'originalCpm': 18.26179,
-  'originalCurrency': 'TWD',
-  'ad': '<html></html>',
-  'responseTimestamp': 1519149629415,
-  'requestTimestamp': 1519149628471,
-  'timeToRespond': 944,
+const MOCK_BIDS = {
+  'BID1': {
+    'auctionId': auctionId,
+    'adUnitCode': '/12345678/adunit_1',
+    'bidder': bidderCode,
+    'width': 300,
+    'height': 250,
+    'cpm': 0.59878,
+    'currency': 'USD',
+    'originalCpm': 18.26179,
+    'originalCurrency': 'TWD',
+    'ad': '<html lang="en"></html>',
+    'responseTimestamp': auctionStart,
+    'requestTimestamp': auctionStart + 600,
+    'timeToRespond': 600,
+    'bidId': 'xxxxx',
+  },
+  'BID1_ADJUSTMENT': Object.assign({}, this.BID1, {
+    'cpm': 0.61590,
+    'currency': 'USD',
+    'originalCpm': 18.78495,
+    'originalCurrency': 'TWD',
+  }),
+  'BID2': Object.assign({}, this.BID1, {
+    'adUnitCode': '/12345678/adunit_2',
+    'cpm': 0.43125,
+    'currency': 'USD',
+    'originalCpm': 13.15313,
+    'originalCurrency': 'TWD',
+  })
+
 };
 
-const BID1_ADJUSTMENT = Object.assign({}, BID1, {
-  adUnitCode: '/12345678/adunit_1',
-  'cpm': 0.61590,
-  'currency': 'USD',
-  'originalCpm': 18.78495,
-  'originalCurrency': 'TWD',
-});
-
-const BID2 = Object.assign({}, BID1, {
-  adUnitCode: '/12345678/adunit_2',
-  'cpm': 0.43125,
-  'currency': 'USD',
-  'originalCpm': 13.15313,
-  'originalCurrency': 'TWD',
-});
-
-const MOCK = {
+const MOCK_EVENT = {
   AUCTION_INIT: {
     'auctionId': auctionId,
-    'timestamp': 1519767010567,
+    'timestamp': auctionStart,
     'auctionStatus': 'inProgress',
     'adUnits': [{
       'code': '/12345678/adunit_1',
       'bids': [{
         'bidder': bidderCode,
         'params': {
-          'hzid': 'WhctHaViHtI'
+          'hzid': hzid
+        }
+      }]
+    }, {
+      'code': '/12345678/adunit_2',
+      'bids': [{
+        'bidder': bidderCode,
+        'params': {
+          'hzid': hzid
         }
       }]
     }
     ],
-    'adUnitCodes': ['/12345678/adunit_1'],
+    'adUnitCodes': ['/12345678/adunit_1', '/12345678/adunit_2'],
     'bidderRequests': [{
       'bidderCode': bidderCode,
       'auctionId': auctionId,
       'bids': [{
         'bidder': bidderCode,
         'params': {
-          'hzid': 'WhctHaViHtI'
+          'hzid': hzid
         },
         'adUnitCode': '/12345678/adunit_1',
+        'auctionId': auctionId,
+      }, {
+        'bidder': bidderCode,
+        'params': {
+          'hzid': hzid
+        },
+        'adUnitCode': '/12345678/adunit_2',
         'auctionId': auctionId,
       }
       ],
@@ -75,8 +97,8 @@ const MOCK = {
     'winningBids': [],
     'timeout': timeout,
     'config': {
-      'affiliateId': 'WhctHaViHtI',
-      'configId': '5bc06509-129f-4204-b214-dd85089fe0d9'
+      'affiliateId': affiliateId,
+      'configId': configId
     }
   },
   BID_REQUESTED: {
@@ -86,40 +108,47 @@ const MOCK = {
       {
         'bidder': bidderCode,
         'params': {
-          'hzid': 'WhctHaViHtI'
+          'hzid': hzid
         },
         'adUnitCode': '/12345678/adunit_1',
         'auctionId': auctionId
-      },
-      {
+      }, {
         'bidder': bidderCode,
         'params': {
-          'hzid': 'WhctHaViHtI'
+          'hzid': hzid
         },
         'adUnitCode': '/12345678/adunit_2',
         'auctionId': auctionId
-      },
+      }
     ],
-    'auctionStart': 1519149536560,
+    'auctionStart': auctionStart,
     'timeout': timeout,
-    'start': 1519149562216
+    'start': auctionStart + 50
   },
   BID_RESPONSE: [
-    BID1,
-    BID2
+    MOCK_BIDS.BID1,
+    MOCK_BIDS.BID2
   ],
   BID_ADJUSTMENT: [
-    BID1_ADJUSTMENT
+    MOCK_BIDS.BID1_ADJUSTMENT
   ],
   AUCTION_END: {
     'auctionId': auctionId,
-    'finish': 1519767011567,
+    'finish': auctionStart + 900,
     'adUnits': [{
       'code': '/12345678/adunit_1',
       'bids': [{
         'bidder': bidderCode,
         'params': {
-          'hzid': 'WhctHaViHtI'
+          'hzid': hzid
+        }
+      }]
+    }, {
+      'code': '/12345678/adunit_2',
+      'bids': [{
+        'bidder': bidderCode,
+        'params': {
+          'hzid': hzid
         }
       }]
     }
@@ -129,18 +158,18 @@ const MOCK = {
 
   },
   BID_WON: [
-    Object.assign({}, BID1, {
+    Object.assign({}, MOCK_BIDS.BID1, {
       'status': 'rendered'
     }),
-    Object.assign({}, BID2, {
+    Object.assign({}, MOCK_BIDS.BID2, {
       'status': 'rendered'
     })
   ],
   BIDDER_DONE: {
     'bidderCode': bidderCode,
     'bids': [
-      BID1,
-      BID2
+      MOCK_BIDS.BID1,
+      MOCK_BIDS.BID2
     ]
   },
   BID_TIMEOUT: [
@@ -152,77 +181,9 @@ const MOCK = {
   ]
 };
 
-const expectedCacheBids = {
-  'adUnits': {
-    '/12345678/adunit_1': {
-      'appier': {
-        'status': 'timeout',
-        'isTimeout': true,
-        'time': 944,
-        'cpm': 0.59878,
-        'currency': 'USD',
-        'originalCpm': 18.26179,
-        'cpmUsd': 0.59878,
-        'originalCurrency': 'TWD',
-        'prebidWon': false
-      }
-    }
-  }
-};
-
-const expectedCacheHeader = {
-  'eventId': auctionId,
-  'version': '0.1.0',
-  'affiliateId': 'WhctHaViHtI',
-  'configId': 'd9cc9a9b-e9b2-40ed-a17c-f1c9a8a4b29c',
-  'referrer': 'http://localhost:9876/context.html',
-  'device': 'desktop',
-  'sampling': 1,
-  'adSampling': 1,
-  'prebid': '2.4.0-pre',
-  'timeout': 1000,
-  'start': 1519767010567,
-  'finish': 1552273100841
-};
-
-const expectedCacheAds = {
-  'adUnits': {
-    '/12345678/adunit_1': {
-      'appier': {
-        'ads': '<html></html>'
-      }
-    }
-  }
-};
-
-const expectedCacheBidsWon = {
-  'adUnits': {
-    '/12345678/adunit_1': {
-      'appier': {
-        'time': 944,
-        'status': 'bidWon',
-        'cpm': 0.59878,
-        'currency': 'USD',
-        'originalCpm': 18.26179,
-        'originalCurrency': 'TWD',
-        'cpmUsd': 0.59878,
-        'isTimeout': false,
-        'prebidWon': true
-      }
-    }
-  }
-};
-
 describe('Appier Prebid AnalyticsAdapter', function () {
-  const affiliateId = 'WhctHaViHtI';
-  const configId = 'd9cc9a9b-e9b2-40ed-a17c-f1c9a8a4b29c';
-  const serverUrl = 'https://analytics.server.url/v1';
-  const autoPick = 'none';
-
   let xhr;
   let requests;
-
-  // let auctionStart = Date.now();
 
   before(function () {
     xhr = sinon.useFakeXMLHttpRequest();
@@ -236,13 +197,17 @@ describe('Appier Prebid AnalyticsAdapter', function () {
     beforeEach(function () {
       requests = [];
       sinon.stub(events, 'getEvents').returns([]);
+      // getHighestCpmBids = sinon.stub(pbjs, 'getHighestCpmBids').returns([MOCK_BIDS.BID1]);
+      // ajaxStub = sinon.stub(ajax, 'ajax').returns({"code": 200});
     });
     afterEach(function () {
       appierAnalyticsAdapter.disableAnalytics();
       events.getEvents.restore();
+      // getHighestCpmBids.restore();
+      // ajaxStub.restore();
     });
 
-    it('should build message correctly', function () {
+    it('should build message correctly for regular bids', function () {
       appierAnalyticsAdapter.enableAnalytics({
         provider: 'appierAnalytics',
         options: {
@@ -253,25 +218,72 @@ describe('Appier Prebid AnalyticsAdapter', function () {
         }
       });
 
-      events.emit(constants.EVENTS.AUCTION_INIT, MOCK.AUCTION_INIT);
-      events.emit(constants.EVENTS.BID_REQUESTED, MOCK.BID_REQUESTED);
-      events.emit(constants.EVENTS.BID_ADJUSTMENT, MOCK.BID_ADJUSTMENT);
-      events.emit(constants.EVENTS.BID_RESPONSE, MOCK.BID_RESPONSE[0]);
-      events.emit(constants.EVENTS.BID_RESPONSE, MOCK.BID_RESPONSE[1]);
-      events.emit(constants.EVENTS.BID_TIMEOUT, MOCK.BID_TIMEOUT);
-
-      // events.emit(constants.EVENTS.AUCTION_END, MOCK.AUCTION_END);
-      appierAnalyticsAdapter.updateAuctionEndMessage(MOCK.AUCTION_END);
-
-      events.emit(constants.EVENTS.BIDDER_DONE, MOCK.BIDDER_DONE);
-      events.emit(constants.EVENTS.BID_WON, MOCK.BID_WON[0]);
+      events.emit(constants.EVENTS.AUCTION_INIT, MOCK_EVENT.AUCTION_INIT);
+      events.emit(constants.EVENTS.BID_REQUESTED, MOCK_EVENT.BID_REQUESTED);
+      events.emit(constants.EVENTS.BID_RESPONSE, MOCK_EVENT.BID_RESPONSE[0]);
+      events.emit(constants.EVENTS.BID_RESPONSE, MOCK_EVENT.BID_RESPONSE[1]);
+      events.emit(constants.EVENTS.BIDDER_DONE, MOCK_EVENT.BIDDER_DONE);
+      // events.emit(constants.EVENTS.AUCTION_END, MOCK_EVENT.AUCTION_END);
+      appierAnalyticsAdapter.updateAuctionEndMessage(MOCK_EVENT.AUCTION_END);
+      events.emit(constants.EVENTS.BID_WON, MOCK_EVENT.BID_WON[0]);
 
       const cache = appierAnalyticsAdapter.getCacheManager();
 
-      expect(cache.cache[auctionId].header).to.include.all.keys(Object.keys(expectedCacheHeader));
-      expect(cache.cache[auctionId].bids).to.deep.equal(expectedCacheBids);
-      expect(cache.cache[auctionId].ads).to.deep.equal(expectedCacheAds);
-      expect(cache.cache[auctionId].bidsWon).to.deep.equal(expectedCacheBidsWon);
+      expect(cache.cache[auctionId].header).to.include.all.keys(
+        ['eventId', 'version', 'affiliateId', 'configId', 'referrer', 'device',
+          'sampling', 'adSampling', 'prebid', 'timeout', 'start', 'finish']
+      );
+
+      expect(cache.cache[auctionId].bids).to.deep.equal({
+        'adUnits': {
+          '/12345678/adunit_1': {
+            'appier': {
+              'status': 'bid',
+              'isTimeout': false,
+              'time': 600,
+              'cpm': 0.59878,
+              'currency': 'USD',
+              'cpmUsd': 0.59878,
+              'originalCpm': 18.26179,
+              'originalCurrency': 'TWD',
+              'prebidWon': false
+            }
+          },
+          '/12345678/adunit_2': {
+            'appier': {
+              'status': 'requested',
+              'isTimeout': true,
+            }
+          }
+        }
+      });
+      expect(cache.cache[auctionId].ads).to.deep.equal({
+        'adUnits': {
+          '/12345678/adunit_1': {
+            'appier': {
+              'ads': '<html lang="en"></html>'
+            }
+          }
+        }
+      });
+
+      expect(cache.cache[auctionId].bidsWon).to.deep.equal({
+        'adUnits': {
+          '/12345678/adunit_1': {
+            'appier': {
+              'time': 600,
+              'status': 'bidWon',
+              'cpm': 0.59878,
+              'currency': 'USD',
+              'originalCpm': 18.26179,
+              'originalCurrency': 'TWD',
+              'cpmUsd': 0.59878,
+              'isTimeout': false,
+              'prebidWon': true
+            }
+          }
+        }
+      });
     });
   });
 
@@ -336,9 +348,7 @@ describe('Appier Prebid AnalyticsAdapter', function () {
           configId: configId
         }
       };
-
       let validConfig = appierAnalyticsAdapter.initConfig(configOptions);
-
       expect(validConfig).to.equal(false);
     });
 
@@ -348,10 +358,26 @@ describe('Appier Prebid AnalyticsAdapter', function () {
           affiliateId: affiliateId
         }
       };
-
       let validConfig = appierAnalyticsAdapter.initConfig(configOptions);
-
       expect(validConfig).to.equal(false);
+    });
+
+    it('should fall back to default value when sampling factor is not number', function () {
+      let configOptions = {
+        options: {
+          affiliateId: affiliateId,
+          configId: configId,
+          sampling: 'string',
+          adSampling: 'string'
+        }
+      };
+      appierAnalyticsAdapter.enableAnalytics({
+        provider: 'appierAnalytics',
+        options: configOptions
+      });
+
+      expect(appierAnalyticsAdapter.getAnalyticsOptions().sampled).to.equal(false);
+      expect(appierAnalyticsAdapter.getAnalyticsOptions().adSampled).to.equal(true);
     });
   });
 });
