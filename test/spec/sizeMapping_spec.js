@@ -60,6 +60,13 @@ describe('sizeMapping', function () {
 
     matchMediaOverride = {matches: false};
 
+    sandbox.stub(utils.getWindowTop(), 'matchMedia').callsFake((...args) => {
+      if (typeof matchMediaOverride === 'function') {
+        return matchMediaOverride.apply(utils.getWindowTop(), args);
+      }
+      return matchMediaOverride;
+    });
+
     sandbox.stub(window, 'matchMedia').callsFake((...args) => {
       if (typeof matchMediaOverride === 'function') {
         return matchMediaOverride.apply(window, args);

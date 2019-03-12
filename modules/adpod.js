@@ -132,6 +132,7 @@ function attachPriceIndustryDurationKeyToBid(bid, brandCategoryExclusion) {
   }
   bid.adserverTargeting[TARGETING_KEY_PB_CAT_DUR] = pcd;
   bid.adserverTargeting[TARGETING_KEY_CACHE_ID] = initialCacheKey;
+  bid.videoCacheKey = initialCacheKey;
   bid.customCacheKey = `${pcd}_${initialCacheKey}`;
 }
 
@@ -411,4 +412,19 @@ export function callPrebidCacheAfterAuction(bids, callback) {
       callback(null, successfulCachedBids);
     }
   })
+}
+
+/**
+ * Compare function to be used in sorting long-form bids. This will compare bids on price per second.
+ * @param {Object} bid
+ * @param {Object} bid
+ */
+export function sortByPricePerSecond(a, b) {
+  if (a.cpm / a.video.durationBucket < b.cpm / b.video.durationBucket) {
+    return 1;
+  }
+  if (a.cpm / a.video.durationBucket > b.cpm / b.video.durationBucket) {
+    return -1;
+  }
+  return 0;
 }

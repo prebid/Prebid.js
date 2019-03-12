@@ -386,6 +386,10 @@ export function doCallbacksIfTimedout(auctionInstance, bidResponse) {
 
 // Add a bid to the auction.
 export function addBidToAuction(auctionInstance, bidResponse) {
+  let bidderRequests = auctionInstance.getBidRequests();
+  let bidderRequest = find(bidderRequests, bidderRequest => bidderRequest.bidderCode === bidResponse.bidderCode);
+  setupBidTargeting(bidResponse, bidderRequest);
+
   events.emit(CONSTANTS.EVENTS.BID_RESPONSE, bidResponse);
   auctionInstance.addBidReceived(bidResponse);
 
@@ -429,6 +433,7 @@ export const callPrebidCache = hook('async', function(auctionInstance, bidRespon
         doCallbacksIfTimedout(auctionInstance, bidResponse);
       } else {
         bidResponse.videoCacheKey = cacheIds[0].uuid;
+
         if (!bidResponse.vastUrl) {
           bidResponse.vastUrl = getCacheUrl(bidResponse.videoCacheKey);
         }
@@ -485,16 +490,18 @@ function getPreparedBidForAuction({adUnitCode, bid, bidderRequest, auctionId}) {
   bidObject.pbDg = priceStringsObj.dense;
   bidObject.pbCg = priceStringsObj.custom;
 
-  // if there is any key value pairs to map do here
-  var keyValues;
+  return bidObject;
+}
+
+function setupBidTargeting(bidObject, bidderRequest) {
+  let keyValues;
   if (bidObject.bidderCode && (bidObject.cpm > 0 || bidObject.dealId)) {
+    let bidReq = find(bidderRequest.bids, bid => bid.adUnitCode === bidObject.adUnitCode);
     keyValues = getKeyValueTargetingPairs(bidObject.bidderCode, bidObject, bidReq);
   }
 
   // use any targeting provided as defaults, otherwise just set from getKeyValueTargetingPairs
   bidObject.adserverTargeting = Object.assign(bidObject.adserverTargeting || {}, keyValues);
-
-  return bidObject;
 }
 
 export function getStandardBidderSettings(mediaType) {
@@ -559,6 +566,17 @@ export function getStandardBidderSettings(mediaType) {
         }
       },
     ]
+
+    if (mediaType === 'video') {
+      [CONSTANTS.TARGETING_KEYS.UUID, CONSTANTS.TARGETING_KEYS.CACHE_ID].forEach(item => {
+        bidderSettings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD][CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING].push({
+          key: item,
+          val: function val(bidResponse) {
+            return bidResponse.videoCacheKey;
+          }
+        })
+      });
+    }
   }
   return bidderSettings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD];
 }
