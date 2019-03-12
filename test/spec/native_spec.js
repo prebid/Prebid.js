@@ -9,6 +9,16 @@ const bid = {
     title: 'Native Creative',
     body: 'Cool description great stuff',
     cta: 'Do it',
+    image: {
+      url: 'http://cdn.example.com/p/creative-image/image.png',
+      height: 83,
+      width: 127
+    },
+    icon: {
+      url: 'http://cdn.example.com/p/creative-image/icon.jpg',
+      height: 742,
+      width: 989
+    },
     sponsoredBy: 'AppNexus',
     clickUrl: 'https://www.link.example',
     clickTrackers: ['https://tracker.example'],
@@ -85,7 +95,8 @@ describe('native.js', function () {
   });
 
   it('fires click trackers', function () {
-    fireNativeTrackers({ action: 'click' }, bid);
+    const trackerType = fireNativeTrackers({ action: 'click' }, bid);
+    expect(trackerType).to.equal('click');
     sinon.assert.calledOnce(triggerPixelStub);
     sinon.assert.calledWith(triggerPixelStub, bid.native.clickTrackers[0]);
   });
@@ -95,15 +106,19 @@ describe('native.js', function () {
       message: 'Prebid Native',
       action: 'assetRequest',
       adId: '123',
-      assets: ['hb_native_body', 'hb_native_linkurl'],
+      assets: ['hb_native_body', 'hb_native_image', 'hb_native_linkurl'],
     };
 
     const message = getAssetMessage(messageRequest, bid);
 
-    expect(message.assets.length).to.equal(2);
+    expect(message.assets.length).to.equal(3);
     expect(message.assets).to.deep.include({
       key: 'body',
       value: bid.native.body
+    });
+    expect(message.assets).to.deep.include({
+      key: 'image',
+      value: bid.native.image.url
     });
     expect(message.assets).to.deep.include({
       key: 'clickUrl',

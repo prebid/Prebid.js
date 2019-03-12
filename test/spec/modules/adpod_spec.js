@@ -4,7 +4,7 @@ import * as videoCache from 'src/videoCache';
 import * as auction from 'src/auction';
 import { ADPOD } from 'src/mediaTypes';
 
-import { callPrebidCacheHook, checkAdUnitSetupHook, checkVideoBidSetupHook, adpodSetConfig } from 'modules/adpod';
+import { callPrebidCacheHook, checkAdUnitSetupHook, checkVideoBidSetupHook, adpodSetConfig, sortByPricePerSecond } from 'modules/adpod';
 
 let expect = require('chai').expect;
 
@@ -150,11 +150,13 @@ describe('adpod.js', function () {
       expect(auctionBids[0].customCacheKey).to.exist.and.to.match(/^5\.00_test_15s_.*/);
       expect(auctionBids[0].adserverTargeting.hb_pb_cat_dur).to.equal('5.00_test_15s');
       expect(auctionBids[0].adserverTargeting.hb_cache_id).to.exist;
+      expect(auctionBids[0].videoCacheKey).to.exist.and.to.equal(auctionBids[0].adserverTargeting.hb_cache_id)
       expect(auctionBids[1].adId).to.equal(bidResponse2.adId);
       expect(auctionBids[1].customCacheKey).to.exist.and.to.match(/^12\.00_value_15s_.*/);
       expect(auctionBids[1].adserverTargeting.hb_pb_cat_dur).to.equal('12.00_value_15s');
       expect(auctionBids[1].adserverTargeting.hb_cache_id).to.exist;
       expect(auctionBids[1].adserverTargeting.hb_cache_id).to.equal(auctionBids[0].adserverTargeting.hb_cache_id);
+      expect(auctionBids[1].videoCacheKey).to.exist.and.to.equal(auctionBids[0].adserverTargeting.hb_cache_id);
     });
 
     it('should send prebid cache call once bid queue is full', function () {
@@ -220,10 +222,12 @@ describe('adpod.js', function () {
       expect(auctionBids[0].customCacheKey).to.exist.and.to.match(/^10\.00_airline_30s_.*/);
       expect(auctionBids[0].adserverTargeting.hb_pb_cat_dur).to.equal('10.00_airline_30s');
       expect(auctionBids[0].adserverTargeting.hb_cache_id).to.exist;
+      expect(auctionBids[0].videoCacheKey).to.exist.and.to.equal(auctionBids[0].adserverTargeting.hb_cache_id)
       expect(auctionBids[1].adId).to.equal('adId234');
       expect(auctionBids[1].customCacheKey).to.exist.and.to.match(/^15\.00_airline_30s_.*/);
       expect(auctionBids[1].adserverTargeting.hb_pb_cat_dur).to.equal('15.00_airline_30s');
       expect(auctionBids[1].adserverTargeting.hb_cache_id).to.exist;
+      expect(auctionBids[1].videoCacheKey).to.exist.and.to.equal(auctionBids[0].adserverTargeting.hb_cache_id)
     });
 
     it('should send prebid cache call after set period of time (even if queue is not full)', function () {
@@ -276,6 +280,7 @@ describe('adpod.js', function () {
       expect(auctionBids[0].customCacheKey).to.exist.and.to.match(/^15\.00_airline_30s_.*/);
       expect(auctionBids[0].adserverTargeting.hb_pb_cat_dur).to.equal('15.00_airline_30s');
       expect(auctionBids[0].adserverTargeting.hb_cache_id).to.exist;
+      expect(auctionBids[0].videoCacheKey).to.exist.and.to.equal(auctionBids[0].adserverTargeting.hb_cache_id)
     });
 
     it('should execute multiple prebid cache calls when number of bids exceeds queue size', function () {
@@ -360,14 +365,17 @@ describe('adpod.js', function () {
       expect(auctionBids[0].customCacheKey).to.exist.and.to.match(/^15\.00_airline_15s_.*/);
       expect(auctionBids[0].adserverTargeting.hb_pb_cat_dur).to.equal('15.00_airline_15s');
       expect(auctionBids[0].adserverTargeting.hb_cache_id).to.exist;
+      expect(auctionBids[0].videoCacheKey).to.exist.and.to.equal(auctionBids[0].adserverTargeting.hb_cache_id)
       expect(auctionBids[1].adId).to.equal('multi_ad2');
       expect(auctionBids[1].customCacheKey).to.exist.and.to.match(/^15\.00_news_15s_.*/);
       expect(auctionBids[1].adserverTargeting.hb_pb_cat_dur).to.equal('15.00_news_15s');
       expect(auctionBids[1].adserverTargeting.hb_cache_id).to.exist.and.to.equal(auctionBids[0].adserverTargeting.hb_cache_id);
+      expect(auctionBids[1].videoCacheKey).to.exist.and.to.equal(auctionBids[0].adserverTargeting.hb_cache_id)
       expect(auctionBids[2].adId).to.equal('multi_ad3');
       expect(auctionBids[2].customCacheKey).to.exist.and.to.match(/^10\.00_sports_15s_.*/);
       expect(auctionBids[2].adserverTargeting.hb_pb_cat_dur).to.equal('10.00_sports_15s');
       expect(auctionBids[2].adserverTargeting.hb_cache_id).to.exist.and.to.equal(auctionBids[0].adserverTargeting.hb_cache_id);
+      expect(auctionBids[2].videoCacheKey).to.exist.and.to.equal(auctionBids[0].adserverTargeting.hb_cache_id)
     });
 
     it('should cache the bids with a shortened custom key when adpod.brandCategoryExclusion is false', function() {
@@ -436,10 +444,12 @@ describe('adpod.js', function () {
       expect(auctionBids[0].customCacheKey).to.exist.and.to.match(/^10\.00_15s_.*/);
       expect(auctionBids[0].adserverTargeting.hb_pb_cat_dur).to.equal('10.00_15s');
       expect(auctionBids[0].adserverTargeting.hb_cache_id).to.exist;
+      expect(auctionBids[0].videoCacheKey).to.exist.and.to.equal(auctionBids[0].adserverTargeting.hb_cache_id)
       expect(auctionBids[1].adId).to.equal('nocat_ad2');
       expect(auctionBids[1].customCacheKey).to.exist.and.to.match(/^15\.00_15s_.*/);
       expect(auctionBids[1].adserverTargeting.hb_pb_cat_dur).to.equal('15.00_15s');
       expect(auctionBids[1].adserverTargeting.hb_cache_id).to.exist.and.to.equal(auctionBids[0].adserverTargeting.hb_cache_id);
+      expect(auctionBids[1].videoCacheKey).to.exist.and.to.equal(auctionBids[0].adserverTargeting.hb_cache_id)
     });
 
     it('should not add bid to auction when config adpod.brandCategoryExclusion is true but bid is missing adServerCatId', function() {
@@ -564,6 +574,7 @@ describe('adpod.js', function () {
       expect(auctionBids[0].customCacheKey).to.exist.and.to.match(/^5\.00_tech_45s_.*/);
       expect(auctionBids[0].adserverTargeting.hb_pb_cat_dur).to.equal('5.00_tech_45s');
       expect(auctionBids[0].adserverTargeting.hb_cache_id).to.exist;
+      expect(auctionBids[0].videoCacheKey).to.exist.and.to.equal(auctionBids[0].adserverTargeting.hb_cache_id)
     });
 
     it('should not add bids to auction if PBC returns an error', function() {
@@ -979,4 +990,63 @@ describe('adpod.js', function () {
       expect(logWarnStub.called).to.equal(false);
     })
   });
+
+  describe('adpod utils', function() {
+    it('should sort bids array', function() {
+      let bids = [{
+        cpm: 10.12345,
+        video: {
+          durationBucket: 15
+        }
+      }, {
+        cpm: 15,
+        video: {
+          durationBucket: 15
+        }
+      }, {
+        cpm: 15.00,
+        video: {
+          durationBucket: 30
+        }
+      }, {
+        cpm: 5.45,
+        video: {
+          durationBucket: 5
+        }
+      }, {
+        cpm: 20.1234567,
+        video: {
+          durationBucket: 60
+        }
+      }]
+      bids.sort(sortByPricePerSecond);
+      let sortedBids = [{
+        cpm: 5.45,
+        video: {
+          durationBucket: 5
+        }
+      }, {
+        cpm: 15,
+        video: {
+          durationBucket: 15
+        }
+      }, {
+        cpm: 10.12345,
+        video: {
+          durationBucket: 15
+        }
+      }, {
+        cpm: 15.00,
+        video: {
+          durationBucket: 30
+        }
+      }, {
+        cpm: 20.1234567,
+        video: {
+          durationBucket: 60
+        }
+      }]
+      expect(bids).to.include.deep.ordered.members(sortedBids);
+    });
+  })
 });
