@@ -1,139 +1,374 @@
-import { expect } from 'chai';
-import { spec } from 'modules/viBidAdapter';
-import { newBidder } from 'src/adapters/bidderFactory';
+import {
+  ratioToPercentageCeil,
+  merge,
+  getRectCuts,
+  get
+} from 'modules/viBidAdapter';
 
-const ENDPOINT = `//pb.vi-serve.com/prebid/bid`;
+describe('ratioToPercentageCeil', () => {
+  it('1 converts to percentage', () =>
+    expect(ratioToPercentageCeil(0.01)).to.equal(1));
+  it('2 converts to percentage', () =>
+    expect(ratioToPercentageCeil(0.00000000001)).to.equal(1));
+  it('3 converts to percentage', () =>
+    expect(ratioToPercentageCeil(0.5)).to.equal(50));
+  it('4 converts to percentage', () =>
+    expect(ratioToPercentageCeil(1)).to.equal(100));
+  it('5 converts to percentage', () =>
+    expect(ratioToPercentageCeil(0.99)).to.equal(99));
+  it('6 converts to percentage', () =>
+    expect(ratioToPercentageCeil(0.990000000000001)).to.equal(100));
+});
 
-describe('viBidAdapter', function() {
-  newBidder(spec);
+describe('mergeWith', () => {
+  it('merges two objects', () => {
+    expect(
+      merge({ a: 1, b: 2, d: 0 }, { a: 2, b: 2, c: 3 }, (a, b) => a + b)
+    ).to.deep.equal({ a: 3, b: 4, c: 3, d: 0 });
+  });
+});
 
-  describe('isBidRequestValid', function () {
-    let bid = {
-      'bidder': 'vi',
-      'params': {
-        'pubId': 'sb_test',
-        'lang': 'en-US',
-        'cat': 'IAB1',
-        'bidFloor': 0.05
+describe('getCuts without vCuts', () => {
+  const cases = {
+    'completely in view 1': {
+      top: 0,
+      bottom: 200,
+      right: 200,
+      left: 0,
+      vw: 300,
+      vh: 300,
+      expected: {
+        top: 0,
+        right: 0,
+        bottom: 0,
+        left: 0
+      }
+    },
+    'completely in view 2': {
+      top: 100,
+      bottom: 200,
+      right: 200,
+      left: 0,
+      vw: 300,
+      vh: 300,
+      expected: {
+        top: 0,
+        right: 0,
+        bottom: 0,
+        left: 0
+      }
+    },
+    'half cut from the top': {
+      top: -200,
+      bottom: 200,
+      right: 200,
+      left: 0,
+      vw: 300,
+      vh: 300,
+      expected: {
+        top: -200,
+        right: 0,
+        bottom: 0,
+        left: 0
+      }
+    },
+    'half cut from the bottom': {
+      top: 0,
+      bottom: 600,
+      right: 200,
+      left: 0,
+      vw: 300,
+      vh: 300,
+      expected: {
+        top: 0,
+        right: 0,
+        bottom: -300,
+        left: 0
+      }
+    },
+    'quarter cut from top and bottom': {
+      top: -25,
+      bottom: 75,
+      right: 200,
+      left: 0,
+      vw: 300,
+      vh: 50,
+      expected: {
+        top: -25,
+        right: 0,
+        bottom: -25,
+        left: 0
+      }
+    },
+    'out of view top': {
+      top: -200,
+      bottom: -5,
+      right: 200,
+      left: 0,
+      vw: 300,
+      vh: 200,
+      expected: {
+        top: -200,
+        right: 0,
+        bottom: 0,
+        left: 0
+      }
+    },
+    'out of view bottom': {
+      top: 250,
+      bottom: 500,
+      right: 200,
+      left: 0,
+      vw: 300,
+      vh: 200,
+      expected: {
+        top: 0,
+        right: 0,
+        bottom: -300,
+        left: 0
+      }
+    },
+    'half cut from left': {
+      top: 0,
+      bottom: 200,
+      left: -200,
+      right: 200,
+      vw: 300,
+      vh: 300,
+      expected: {
+        top: 0,
+        right: 0,
+        bottom: 0,
+        left: -200
+      }
+    },
+    'half cut from left and top': {
+      top: -100,
+      bottom: 100,
+      left: -200,
+      right: 200,
+      vw: 300,
+      vh: 300,
+      expected: {
+        top: -100,
+        right: 0,
+        bottom: 0,
+        left: -200
+      }
+    },
+    'quarter cut from all sides': {
+      top: -100,
+      left: -100,
+      bottom: 300,
+      right: 300,
+      vw: 200,
+      vh: 200,
+      expected: {
+        top: -100,
+        right: -100,
+        bottom: -100,
+        left: -100
+      }
+    }
+  };
+  for (let descr in cases) {
+    it(descr, () => {
+      const { expected, vh, vw, ...rect } = cases[descr];
+      expect(getRectCuts(rect, vh, vw)).to.deep.equal(expected);
+    });
+  }
+});
+
+describe('getCuts with vCuts', () => {
+  const cases = {
+    'completely in view 1, half-cut viewport from top': {
+      top: 0,
+      right: 200,
+      bottom: 200,
+      left: 0,
+      vw: 200,
+      vh: 200,
+      vCuts: {
+        top: -100,
+        right: 0,
+        bottom: 0,
+        left: 0
       },
-      'adUnitCode': 'adunit-code',
-      'sizes': [
-        [320, 480]
-      ],
-      'bidId': '29b891ad542377',
-      'bidderRequestId': '1dc9a08206a57b',
-      'requestId': '24176695-e3f0-44db-815b-ed97cf5ad49b',
-      'placementCode': 'div-gpt-ad-1460505748561-0',
-      'transactionId': '474da635-9cf0-4188-a3d9-58961be8f905'
-    };
-
-    it('should return true when required params found', function () {
-      expect(spec.isBidRequestValid(bid)).to.equal(true);
-    });
-
-    it('should return false when pubId not passed', function () {
-      bid.params.pubId = undefined;
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
-    });
-  });
-
-  describe('buildRequests', function () {
-    let bidRequests = [{
-      'bidder': 'vi',
-      'params': {
-        'pubId': 'sb_test',
-        'lang': 'en-US',
-        'cat': 'IAB1',
-        'bidFloor': 0.05
+      expected: {
+        top: -100,
+        right: 0,
+        bottom: 0,
+        left: 0
+      }
+    },
+    'completely in view 2, half-cut viewport from bottom': {
+      top: 100,
+      bottom: 200,
+      right: 200,
+      left: 0,
+      vw: 300,
+      vh: 300,
+      vCuts: {
+        top: 0,
+        right: 0,
+        bottom: -150,
+        left: 0
       },
-      'adUnitCode': 'adunit-code',
-      'sizes': [
-        [320, 480]
-      ],
-      'bidId': '29b891ad542377',
-      'bidderRequestId': '1dc9a08206a57b',
-      'requestId': '24176695-e3f0-44db-815b-ed97cf5ad49b',
-      'placementCode': 'div-gpt-ad-1460505748561-0',
-      'transactionId': '474da635-9cf0-4188-a3d9-58961be8f905'
-    }];
-
-    const request = spec.buildRequests(bidRequests);
-
-    it('POST bid request to vi', function () {
-      expect(request.method).to.equal('POST');
-    });
-
-    it('check endpoint URL', function () {
-      expect(request.url).to.equal(ENDPOINT)
-    });
-  });
-
-  describe('buildRequests can handle size in 1-dim array', function () {
-    let bidRequests = [{
-      'bidder': 'vi',
-      'params': {
-        'pubId': 'sb_test',
-        'lang': 'en-US',
-        'cat': 'IAB1',
-        'bidFloor': 0.05
+      expected: {
+        top: 0,
+        right: 0,
+        bottom: -50,
+        left: 0
+      }
+    },
+    'half cut from the top, 1/3 viewport cut from the bottom': {
+      top: -200,
+      bottom: 200,
+      right: 200,
+      left: 0,
+      vw: 300,
+      vh: 300,
+      vCuts: {
+        top: 0,
+        right: 0,
+        bottom: -100,
+        left: 0
       },
-      'adUnitCode': 'adunit-code',
-      'sizes': [320, 480],
-      'bidId': '29b891ad542377',
-      'bidderRequestId': '1dc9a08206a57b',
-      'requestId': '24176695-e3f0-44db-815b-ed97cf5ad49b',
-      'placementCode': 'div-gpt-ad-1460505748561-0',
-      'transactionId': '474da635-9cf0-4188-a3d9-58961be8f905'
-    }];
-
-    const request = spec.buildRequests(bidRequests);
-
-    it('POST bid request to vi', function () {
-      expect(request.method).to.equal('POST');
+      expected: {
+        top: -200,
+        right: 0,
+        bottom: 0,
+        left: 0
+      }
+    },
+    'half cut from the bottom': {
+      top: 0,
+      bottom: 600,
+      right: 200,
+      left: 0,
+      vw: 300,
+      vh: 300,
+      expected: {
+        top: 0,
+        right: 0,
+        bottom: -300,
+        left: 0
+      }
+    },
+    'quarter cut from top and bottom': {
+      top: -25,
+      bottom: 75,
+      right: 200,
+      left: 0,
+      vw: 300,
+      vh: 50,
+      expected: {
+        top: -25,
+        right: 0,
+        bottom: -25,
+        left: 0
+      }
+    },
+    'out of view top': {
+      top: -200,
+      bottom: -5,
+      right: 200,
+      left: 0,
+      vw: 300,
+      vh: 200,
+      expected: {
+        top: -200,
+        right: 0,
+        bottom: 0,
+        left: 0
+      }
+    },
+    'out of view bottom': {
+      top: 250,
+      bottom: 500,
+      right: 200,
+      left: 0,
+      vw: 300,
+      vh: 200,
+      expected: {
+        top: 0,
+        right: 0,
+        bottom: -300,
+        left: 0
+      }
+    },
+    'half cut from left': {
+      top: 0,
+      bottom: 200,
+      left: -200,
+      right: 200,
+      vw: 300,
+      vh: 300,
+      expected: {
+        top: 0,
+        right: 0,
+        bottom: 0,
+        left: -200
+      }
+    },
+    'half cut from left and top': {
+      top: -100,
+      bottom: 100,
+      left: -200,
+      right: 200,
+      vw: 300,
+      vh: 300,
+      expected: {
+        top: -100,
+        right: 0,
+        bottom: 0,
+        left: -200
+      }
+    },
+    'quarter cut from all sides': {
+      top: -100,
+      left: -100,
+      bottom: 300,
+      right: 300,
+      vw: 200,
+      vh: 200,
+      expected: {
+        top: -100,
+        right: -100,
+        bottom: -100,
+        left: -100
+      }
+    }
+  };
+  for (let descr in cases) {
+    it(descr, () => {
+      const { expected, vh, vw, vCuts, ...rect } = cases[descr];
+      expect(getRectCuts(rect, vh, vw, vCuts)).to.deep.equal(expected);
     });
+  }
+});
 
-    it('check endpoint URL', function () {
-      expect(request.url).to.equal(ENDPOINT)
-    });
-  });
-
-  describe('interpretResponse', function () {
-    let response = {
-      body: [{
-        'id': '29b891ad542377',
-        'price': 0.1,
-        'width': 320,
-        'height': 480,
-        'ad': '<!-- Real ad markup -->',
-        'creativeId': 'dZsPGv'
-      }]
-    };
-
-    it('should get the correct bid response', function () {
-      let expectedResponse = [{
-        'requestId': '29b891ad542377',
-        'cpm': 0.1,
-        'width': 320,
-        'height': 480,
-        'creativeId': 'dZsPGv',
-        'dealId': null,
-        'currency': 'USD',
-        'netRevenue': true,
-        'mediaType': 'banner',
-        'ad': decodeURIComponent(`<!-- Creative -->`),
-        'ttl': 60000
-      }];
-
-      let result = spec.interpretResponse(response);
-      expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse[0]));
-    });
-
-    it('handles empty bid response', function () {
-      let response = {
-        body: []
-      };
-      let result = spec.interpretResponse(response);
-      expect(result.length).to.equal(0);
-    });
-  });
+describe('get', () => {
+  it('returns a property in a nested object 1', () =>
+    expect(get(['a'], { a: 1 })).to.equal(1));
+  it('returns a property in a nested object 2', () =>
+    expect(get(['a', 'b'], { a: { b: 1 } })).to.equal(1));
+  it('returns a property in a nested object 3', () =>
+    expect(get(['a', 'b'], { a: { b: 1 } })).to.equal(1));
+  it('returns undefined if property does not exist', () =>
+    expect(get(['a', 'b'], { b: 1 })).to.equal(undefined));
+  it('returns undefined if property does not exist', () =>
+    expect(get(['a', 'b'], undefined)).to.equal(undefined));
+  it('returns undefined if property does not exist', () =>
+    expect(get(['a', 'b'], 1213)).to.equal(undefined));
+  const DEFAULT = -5;
+  it('returns defaultValue if property does not exist', () =>
+    expect(get(['a', 'b'], { b: 1 }, DEFAULT)).to.equal(DEFAULT));
+  it('returns defaultValue if property does not exist', () =>
+    expect(get(['a', 'b'], undefined, DEFAULT)).to.equal(DEFAULT));
+  it('returns defaultValue if property does not exist', () =>
+    expect(get(['a', 'b'], 1213, DEFAULT)).to.equal(DEFAULT));
+  it('can work with arrays 1', () => expect(get([0, 1], [[1, 2]])).to.equal(2));
+  it('can work with arrays 2', () =>
+    expect(get([0, 'a'], [{ a: 42 }])).to.equal(42));
 });
