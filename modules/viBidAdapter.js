@@ -44,10 +44,6 @@ export function getDocumentHeight(curDocument = document) {
   );
 }
 
-function getWindowHeight(curWindow = window) {
-  return curWindow.innerHeight;
-}
-
 function getOffset(element) {
   const rect = element.getBoundingClientRect();
   const elementWindow = getElementWindow(element);
@@ -233,7 +229,7 @@ function getOffsetToView(element) {
   if (!elemWindow) throw new Error("cannot get element window");
   const topWindow = getTopmostReachableWindow(elemWindow);
   const { top, bottom } = getOffsetTopDocument(element);
-  const topWindowHeight = getWindowHeight(topWindow);
+  const topWindowHeight = topWindow.innerHeight;
 
   if (bottom < topWindow.scrollY) return bottom - topWindow.scrollY;
 
