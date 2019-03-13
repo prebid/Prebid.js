@@ -1,5 +1,6 @@
 [
   "consentManagement",
+  "pubCommonId",
 
   "guAnalyticsAdapter",
 
@@ -11,5 +12,6 @@
   "sonobiBidAdapter",
   "trustxBidAdapter",
   "openxBidAdapter",
+  "ozoneBidAdapter",
   "pubmaticBidAdapter"
 ]
