@@ -1,11 +1,14 @@
 import * as utils from '../src/utils';
 import {config} from '../src/config';
 import {registerBidder} from '../src/adapters/bidderFactory';
+import { Renderer } from 'src/Renderer';
 import { BANNER, VIDEO } from '../src/mediaTypes';
 
 const BIDDER_CODE = 'yieldone';
 const ENDPOINT_URL = '//y.one.impact-ad.jp/h_bid';
 const USER_SYNC_URL = '//y.one.impact-ad.jp/push_sync';
+// TODO: have to change this debug url
+const VIDEO_PLAYER_URL = '//webdemo.dac.co.jp/kusapan/hb/video/render/dac-video-prebid.js';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -82,6 +85,7 @@ export const spec = {
       } else if (response.adm) {
         bidResponse.mediaType = VIDEO;
         bidResponse.vastXml = response.adm;
+        bidResponse.renderer = newRenderer(response);
       }
 
       bidResponses.push(bidResponse);
@@ -95,6 +99,29 @@ export const spec = {
         url: USER_SYNC_URL
       }];
     }
-  }
+  },
 }
+
+function newRenderer(response) {
+  const renderer = Renderer.install({
+    id: response.uid,
+    url: VIDEO_PLAYER_URL,
+    loaded: false,
+  });
+
+  try {
+    renderer.setRender(outstreamRender);
+  } catch (err) {
+    utils.logWarn('Prebid Error calling setRender on newRenderer', err);
+  }
+
+  return renderer;
+}
+
+function outstreamRender(bid) {
+  bid.renderer.push(() => {
+    window.DACIVTPREBID.renderPrebid(bid);
+  });
+}
+
 registerBidder(spec);

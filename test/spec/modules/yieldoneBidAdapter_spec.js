@@ -190,7 +190,8 @@ describe('yieldoneBidAdapter', function() {
         'ttl': 3000,
         'referrer': '',
         'mediaType': 'video',
-        'vastXml': '<!-- vast -->'
+        'vastXml': '<!-- vast -->',
+        'renderer': ''
       }];
       let result = spec.interpretResponse(serverResponseVideo, bidRequestVideo[0]);
       expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse[0]));
