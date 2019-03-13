@@ -21,12 +21,14 @@ export const spec = {
       const cb = Math.floor(Math.random() * 99999999999);
       const referrer = encodeURIComponent(utils.getTopWindowUrl());
       const bidId = bidRequest.bidId;
+      const unitCode = bidRequest.adUnitCode;
       const payload = {
         v: 'hb1',
         p: placementId,
         cb: cb,
         r: referrer,
         uid: bidId,
+        uc: unitCode,
         t: 'i'
       };
 
