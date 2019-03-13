@@ -7,7 +7,7 @@ describe('Improve Digital Adapter Tests', function () {
   let idClient = new ImproveDigitalAdServerJSClient('hb');
 
   const METHOD = 'GET';
-  const URL = '//ad.360yield.com/hb';
+  const URL = '//ice.360yield.com/hb';
   const PARAM_PREFIX = 'jsonp=';
 
   const simpleBidRequest = {
