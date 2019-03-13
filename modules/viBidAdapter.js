@@ -236,7 +236,9 @@ function getOffsetToView(element) {
 
   if (bottom < topWindow.scrollY) return bottom - topWindow.scrollY;
 
-  if (top > topWindow.scrollY + topWindowHeight) { return top - topWindow.scrollY - topWindowHeight; }
+  if (top > topWindow.scrollY + topWindowHeight) {
+    return top - topWindow.scrollY - topWindowHeight;
+  }
 
   return 0;
 }
@@ -298,10 +300,11 @@ const spec = {
       url: '//localhost:3000/bid',
       data: {
         bidRequests: bidRequests
-          .map(({ adUnitCode, sizes }) => {
+          .map(({ bidId, adUnitCode, sizes }) => {
             const slot = document.getElementById(adUnitCode);
             return (
               slot && {
+                bidId,
                 sizes,
                 ...getViewabilityDescription(slot)
               }
@@ -316,7 +319,7 @@ const spec = {
     };
   },
 
-  interpretResponse({ body }, bidRequest) {
+  interpretResponse({ body }) {
     return body;
   }
 };
