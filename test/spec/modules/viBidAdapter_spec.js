@@ -3,6 +3,7 @@ import {
   merge,
   getDocumentHeight,
   getOffset,
+  getWindowParents,
   getRectCuts,
   get
 } from "modules/viBidAdapter";
@@ -127,6 +128,18 @@ describe("getOffset", () => {
         })
       })
     ).to.throw());
+});
+
+describe("getWindowParents", () => {
+  const win = {};
+  win.top = win;
+  win.parent = win;
+  const win1 = { top: win, parent: win };
+  const win2 = { top: win, parent: win1 };
+  const win3 = { top: win, parent: win2 };
+
+  it("get parents up to the top", () =>
+    expect(getWindowParents(win3)).to.be.deep.equal([win2, win1, win]));
 });
 
 describe("getCuts without vCuts", () => {

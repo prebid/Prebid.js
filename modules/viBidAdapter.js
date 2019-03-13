@@ -68,7 +68,7 @@ var IframeType;
   IframeType["hostile"] = "hostile";
 })(IframeType || (IframeType = {}));
 
-function getWindowParents(curWindow = window) {
+export function getWindowParents(curWindow = window) {
   const parents = [];
 
   while (curWindow && curWindow.parent && curWindow !== curWindow.parent) {
