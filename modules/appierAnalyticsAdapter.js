@@ -182,7 +182,7 @@ export const appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, ana
       }
     }
   },
-  updateBidRequestedMessage(bid) {
+  handleBidRequestedMessage(bid) {
     const bidderCode = this.parseBidderCode(bid);
     for (let bid of bid.bids) {
       const adUnitCode = this.parseAdUnitCode(bid);
@@ -192,7 +192,7 @@ export const appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, ana
       });
     }
   },
-  updateBidderDoneMessage(bid) {
+  handleBidderDoneMessage(bid) {
     const bidderCode = this.parseBidderCode(bid);
     for (let bid of bid.bids) {
       const adUnitCode = this.parseAdUnitCode(bid);
@@ -201,7 +201,7 @@ export const appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, ana
       });
     }
   },
-  updateBidResponseMessage(bid) {
+  handleBidResponseMessage(bid) {
     const adUnitCode = this.parseAdUnitCode(bid);
     const bidderCode = this.parseBidderCode(bid);
     cacheManager.updateBidsCache(bid.auctionId, adUnitCode, bidderCode, {
@@ -217,7 +217,7 @@ export const appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, ana
       'prebidWon': false
     });
   },
-  updateBidAdjustmentMessage(bid) {
+  handleBidAdjustmentMessage(bid) {
     const adUnitCode = this.parseAdUnitCode(bid);
     const bidderCode = this.parseBidderCode(bid);
     if (bid.cpm > cacheManager.getBidsCache(bid.auctionId, adUnitCode, bidderCode).cpm) {
@@ -227,7 +227,7 @@ export const appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, ana
       });
     }
   },
-  updateBidTimeoutMessage(bidTimeoutList) {
+  handleBidTimeoutMessage(bidTimeoutList) {
     for (let bidTimeout of bidTimeoutList) {
       const adUnitCode = this.parseAdUnitCode(bidTimeout);
       const bidderCode = this.parseBidderCode(bidTimeout);
@@ -237,7 +237,7 @@ export const appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, ana
       });
     }
   },
-  updateBidAdMessage(bid) {
+  handleBidAdMessage(bid) {
     const adUnitCode = this.parseAdUnitCode(bid);
     const bidderCode = this.parseBidderCode(bid);
     cacheManager.setAdCache(bid.auctionId, adUnitCode, bidderCode, {
@@ -263,7 +263,7 @@ export const appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, ana
       });
     }
   },
-  updatePrebidWonMessage(prebidWonBids) {
+  handlePrebidWonMessage(prebidWonBids) {
     for (let prebidWonBid of prebidWonBids) {
       const adUnitCode = this.parseAdUnitCode(prebidWonBid);
       const bidderCode = this.parseBidderCode(prebidWonBid);
@@ -272,10 +272,10 @@ export const appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, ana
       });
     }
   },
-  handleAuctionEnd(args, highestCpmBids) {
+  handleAuctionEndMessage(args, highestCpmBids) {
     setTimeout(() => {
       this.updateAuctionEndMessage(args);
-      this.updatePrebidWonMessage(highestCpmBids);
+      this.handlePrebidWonMessage(highestCpmBids);
       this.sendEventMessage('bid', Object.assign({},
         cacheManager.cache[args.auctionId].header,
         cacheManager.cache[args.auctionId].bids
@@ -287,6 +287,12 @@ export const appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, ana
         ));
       }
     }, SEND_TIMEOUT);
+  },
+  handleBidWonMessage(bidWonMessage) {
+    const payload = this.buildBidWonMessage(bidWonMessage);
+    this.sendEventMessage('imp', Object.assign({},
+      cacheManager.cache[args.auctionId].header, payload
+    ));
   },
   buildBidWonMessage(bid) {
     const adUnitCode = this.parseAdUnitCode(bid);
@@ -321,43 +327,33 @@ export const appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, ana
     if (analyticsOptions.sampled) {
       switch (eventType) {
         case AUCTION_INIT:
-          // init auction, always the first event
           cacheManager.initAuction(args.auctionId);
           this.initCommonMessageHeader(args);
           this.initAuctionEventMessage(args);
           break;
         case BID_REQUESTED:
-          // init bid request
-          this.updateBidRequestedMessage(args);
+          this.handleBidRequestedMessage(args);
           break;
         case BID_ADJUSTMENT:
-          // adjust the final cpm price, use the higher one
-          this.updateBidAdjustmentMessage(args);
+          this.handleBidAdjustmentMessage(args);
           break;
         case BID_RESPONSE:
-          // bid response if has bid
-          this.updateBidResponseMessage(args);
+          this.handleBidResponseMessage(args);
           if (analyticsOptions.adSampled) {
-            this.updateBidAdMessage(args);
+            this.handleBidAdMessage(args);
           }
           break;
         case BIDDER_DONE:
-          this.updateBidderDoneMessage(args);
+          this.handleBidderDoneMessage(args);
           break;
         case BID_WON:
-          // only appear when bid won and has impression
-          const bidWonMessage = this.buildBidWonMessage(args);
-          this.sendEventMessage('imp', Object.assign({},
-            cacheManager.cache[args.auctionId].header, bidWonMessage
-          ));
+          this.handleBidWonMessage(args);
           break;
         case BID_TIMEOUT:
-          // get a list of bid timeout, not always present
-          this.updateBidTimeoutMessage(args);
+          this.handleBidTimeoutMessage(args);
           break;
         case AUCTION_END:
-          // auction end, response after this means timeout
-          this.handleAuctionEnd(args, pbjs.getHighestCpmBids());
+          this.handleAuctionEndMessage(args, pbjs.getHighestCpmBids());
           break;
       }
     }
