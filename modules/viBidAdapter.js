@@ -1,7 +1,7 @@
-import { registerBidder } from '../src/adapters/bidderFactory';
+import { registerBidder } from "../src/adapters/bidderFactory";
 
 export function get(path, obj, notFound) {
-  path = typeof path === 'string' ? path.split('.') : path;
+  path = typeof path === "string" ? path.split(".") : path;
 
   while (path.length) {
     const [key] = path;
@@ -33,13 +33,14 @@ export function ratioToPercentageCeil(x) {
   return Math.ceil(x * 100);
 }
 
-function getDocumentHeight(curDocument = document) {
+export function getDocumentHeight(curDocument = document) {
   return Math.max(
-    curDocument.body.scrollHeight,
-    curDocument.body.offsetHeight,
-    get('documentElement.clientHeight', document),
-    get('documentElement.scrollHeight', document),
-    get('documentElement.offsetHeight', document)
+    get("body.clientHeight", curDocument, 0),
+    get("body.scrollHeight", curDocument, 0),
+    get("body.offsetHeight", curDocument, 0),
+    get("documentElement.clientHeight", curDocument, 0),
+    get("documentElement.scrollHeight", curDocument, 0),
+    get("documentElement.offsetHeight", curDocument, 0)
   );
 }
 
@@ -50,11 +51,11 @@ function getWindowHeight(curWindow = window) {
 function getOffset(element) {
   const rect = element.getBoundingClientRect();
   const elementWindow = getElementWindow(element);
-  if (!elementWindow) throw new Error('cannot get element window');
+  if (!elementWindow) throw new Error("cannot get element window");
   const scrollLeft =
-    elementWindow.pageXOffset || get('documentElement.scrollLeft', document, 0);
+    elementWindow.pageXOffset || get("documentElement.scrollLeft", document, 0);
   const scrollTop =
-    elementWindow.pageYOffset || get('documentElement.scrollTop', document, 0);
+    elementWindow.pageYOffset || get("documentElement.scrollTop", document, 0);
   return {
     top: rect.top + scrollTop,
     right: rect.right + scrollLeft,
@@ -66,9 +67,9 @@ function getOffset(element) {
 var IframeType;
 
 (function(IframeType) {
-  IframeType['safeframe'] = 'safeframe';
-  IframeType['friendly'] = 'friendly';
-  IframeType['hostile'] = 'hostile';
+  IframeType["safeframe"] = "safeframe";
+  IframeType["friendly"] = "friendly";
+  IframeType["hostile"] = "hostile";
 })(IframeType || (IframeType = {}));
 
 function getWindowParents(curWindow = window) {
@@ -218,7 +219,7 @@ function getOffsetTopDocument(element) {
 
 function getOffsetTopDocumentPercentage(element) {
   const elementWindow = getElementWindow(element);
-  if (!elementWindow) throw new Error('cannot get element window');
+  if (!elementWindow) throw new Error("cannot get element window");
   if (!topDocumentIsReachable()) throw new Error("top window isn't reachable");
   const topWindow = getTopmostReachableWindow(elementWindow);
   const documentHeight = getDocumentHeight(topWindow.document);
@@ -229,7 +230,7 @@ function getOffsetTopDocumentPercentage(element) {
 
 function getOffsetToView(element) {
   const elemWindow = getElementWindow(element);
-  if (!elemWindow) throw new Error('cannot get element window');
+  if (!elemWindow) throw new Error("cannot get element window");
   const topWindow = getTopmostReachableWindow(elemWindow);
   const { top, bottom } = getOffsetTopDocument(element);
   const topWindowHeight = getWindowHeight(topWindow);
@@ -287,8 +288,8 @@ function getViewabilityDescription(element) {
 }
 
 const spec = {
-  code: 'vi',
-  supportedMediaTypes: ['banner'],
+  code: "vi",
+  supportedMediaTypes: ["banner"],
 
   isBidRequestValid({ adUnitCode }) {
     return !!document.getElementById(adUnitCode);
@@ -296,8 +297,8 @@ const spec = {
 
   buildRequests(bidRequests) {
     return {
-      method: 'POST',
-      url: '//localhost:3000/bid',
+      method: "POST",
+      url: "//localhost:3000/bid",
       data: {
         bidRequests: bidRequests
           .map(({ bidId, adUnitCode, sizes }) => {
@@ -313,7 +314,7 @@ const spec = {
           .filter(Boolean)
       },
       options: {
-        contentType: 'application/json',
+        contentType: "application/json",
         withCredentials: false
       }
     };
