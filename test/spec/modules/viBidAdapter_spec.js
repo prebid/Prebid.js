@@ -1,36 +1,89 @@
 import {
   ratioToPercentageCeil,
   merge,
+  getDocumentHeight,
   getRectCuts,
   get
-} from 'modules/viBidAdapter';
+} from "modules/viBidAdapter";
 
-describe('ratioToPercentageCeil', () => {
-  it('1 converts to percentage', () =>
+describe("ratioToPercentageCeil", () => {
+  it("1 converts to percentage", () =>
     expect(ratioToPercentageCeil(0.01)).to.equal(1));
-  it('2 converts to percentage', () =>
+  it("2 converts to percentage", () =>
     expect(ratioToPercentageCeil(0.00000000001)).to.equal(1));
-  it('3 converts to percentage', () =>
+  it("3 converts to percentage", () =>
     expect(ratioToPercentageCeil(0.5)).to.equal(50));
-  it('4 converts to percentage', () =>
+  it("4 converts to percentage", () =>
     expect(ratioToPercentageCeil(1)).to.equal(100));
-  it('5 converts to percentage', () =>
+  it("5 converts to percentage", () =>
     expect(ratioToPercentageCeil(0.99)).to.equal(99));
-  it('6 converts to percentage', () =>
+  it("6 converts to percentage", () =>
     expect(ratioToPercentageCeil(0.990000000000001)).to.equal(100));
 });
 
-describe('mergeWith', () => {
-  it('merges two objects', () => {
+describe("merge", () => {
+  it("merges two objects", () => {
     expect(
       merge({ a: 1, b: 2, d: 0 }, { a: 2, b: 2, c: 3 }, (a, b) => a + b)
     ).to.deep.equal({ a: 3, b: 4, c: 3, d: 0 });
   });
 });
 
-describe('getCuts without vCuts', () => {
+describe("getDocumentHeight", () => {
+  [
+    {
+      curDocument: {
+        body: {
+          clientHeight: 0,
+          offsetHeight: 0,
+          scrollHeight: 0
+        },
+        documentElement: {
+          clientHeight: 0,
+          offsetHeight: 0,
+          scrollHeight: 0
+        }
+      },
+      expected: 0
+    },
+    {
+      curDocument: {
+        body: {
+          clientHeight: 0,
+          offsetHeight: 13,
+          scrollHeight: 24
+        },
+        documentElement: {
+          clientHeight: 0,
+          offsetHeight: 0,
+          scrollHeight: 0
+        }
+      },
+      expected: 24
+    },
+    {
+      curDocument: {
+        body: {
+          clientHeight: 0,
+          offsetHeight: 13,
+          scrollHeight: 24
+        },
+        documentElement: {
+          clientHeight: 100,
+          offsetHeight: 50,
+          scrollHeight: 30
+        }
+      },
+      expected: 100
+    }
+  ].forEach(({ curDocument, expected }) =>
+    expect(getDocumentHeight(curDocument)).to.be.equal(expected)
+  );
+});
+
+describe("getCuts without vCuts", () => {
   const cases = {
-    'completely in view 1': {
+    "completely in view 1": {
       top: 0,
       bottom: 200,
       right: 200,
@@ -44,7 +97,7 @@ describe('getCuts without vCuts', () => {
         left: 0
       }
     },
-    'completely in view 2': {
+    "completely in view 2": {
       top: 100,
       bottom: 200,
       right: 200,
@@ -58,7 +111,7 @@ describe('getCuts without vCuts', () => {
         left: 0
       }
     },
-    'half cut from the top': {
+    "half cut from the top": {
       top: -200,
       bottom: 200,
       right: 200,
@@ -72,7 +125,7 @@ describe('getCuts without vCuts', () => {
         left: 0
       }
     },
-    'half cut from the bottom': {
+    "half cut from the bottom": {
       top: 0,
       bottom: 600,
       right: 200,
@@ -86,7 +139,7 @@ describe('getCuts without vCuts', () => {
         left: 0
       }
     },
-    'quarter cut from top and bottom': {
+    "quarter cut from top and bottom": {
       top: -25,
       bottom: 75,
       right: 200,
@@ -100,7 +153,7 @@ describe('getCuts without vCuts', () => {
         left: 0
       }
     },
-    'out of view top': {
+    "out of view top": {
       top: -200,
       bottom: -5,
       right: 200,
@@ -114,7 +167,7 @@ describe('getCuts without vCuts', () => {
         left: 0
       }
     },
-    'out of view bottom': {
+    "out of view bottom": {
       top: 250,
       bottom: 500,
       right: 200,
@@ -128,7 +181,7 @@ describe('getCuts without vCuts', () => {
         left: 0
       }
     },
-    'half cut from left': {
+    "half cut from left": {
       top: 0,
       bottom: 200,
       left: -200,
@@ -142,7 +195,7 @@ describe('getCuts without vCuts', () => {
         left: -200
       }
     },
-    'half cut from left and top': {
+    "half cut from left and top": {
       top: -100,
       bottom: 100,
       left: -200,
@@ -156,7 +209,7 @@ describe('getCuts without vCuts', () => {
         left: -200
       }
     },
-    'quarter cut from all sides': {
+    "quarter cut from all sides": {
       top: -100,
       left: -100,
       bottom: 300,
@@ -179,9 +232,9 @@ describe('getCuts without vCuts', () => {
   }
 });
 
-describe('getCuts with vCuts', () => {
+describe("getCuts with vCuts", () => {
   const cases = {
-    'completely in view 1, half-cut viewport from top': {
+    "completely in view 1, half-cut viewport from top": {
       top: 0,
       right: 200,
       bottom: 200,
@@ -201,7 +254,7 @@ describe('getCuts with vCuts', () => {
         left: 0
       }
     },
-    'completely in view 2, half-cut viewport from bottom': {
+    "completely in view 2, half-cut viewport from bottom": {
       top: 100,
       bottom: 200,
       right: 200,
@@ -221,7 +274,7 @@ describe('getCuts with vCuts', () => {
         left: 0
       }
     },
-    'half cut from the top, 1/3 viewport cut from the bottom': {
+    "half cut from the top, 1/3 viewport cut from the bottom": {
       top: -200,
       bottom: 200,
       right: 200,
@@ -241,7 +294,7 @@ describe('getCuts with vCuts', () => {
         left: 0
       }
     },
-    'half cut from the bottom': {
+    "half cut from the bottom": {
       top: 0,
       bottom: 600,
       right: 200,
@@ -255,7 +308,7 @@ describe('getCuts with vCuts', () => {
         left: 0
       }
     },
-    'quarter cut from top and bottom': {
+    "quarter cut from top and bottom": {
       top: -25,
       bottom: 75,
       right: 200,
@@ -269,7 +322,7 @@ describe('getCuts with vCuts', () => {
         left: 0
       }
     },
-    'out of view top': {
+    "out of view top": {
       top: -200,
       bottom: -5,
       right: 200,
@@ -283,7 +336,7 @@ describe('getCuts with vCuts', () => {
         left: 0
       }
     },
-    'out of view bottom': {
+    "out of view bottom": {
       top: 250,
       bottom: 500,
       right: 200,
@@ -297,7 +350,7 @@ describe('getCuts with vCuts', () => {
         left: 0
       }
     },
-    'half cut from left': {
+    "half cut from left": {
       top: 0,
       bottom: 200,
       left: -200,
@@ -311,7 +364,7 @@ describe('getCuts with vCuts', () => {
         left: -200
       }
     },
-    'half cut from left and top': {
+    "half cut from left and top": {
       top: -100,
       bottom: 100,
       left: -200,
@@ -325,7 +378,7 @@ describe('getCuts with vCuts', () => {
         left: -200
       }
     },
-    'quarter cut from all sides': {
+    "quarter cut from all sides": {
       top: -100,
       left: -100,
       bottom: 300,
@@ -348,27 +401,27 @@ describe('getCuts with vCuts', () => {
   }
 });
 
-describe('get', () => {
-  it('returns a property in a nested object 1', () =>
-    expect(get(['a'], { a: 1 })).to.equal(1));
-  it('returns a property in a nested object 2', () =>
-    expect(get(['a', 'b'], { a: { b: 1 } })).to.equal(1));
-  it('returns a property in a nested object 3', () =>
-    expect(get(['a', 'b'], { a: { b: 1 } })).to.equal(1));
-  it('returns undefined if property does not exist', () =>
-    expect(get(['a', 'b'], { b: 1 })).to.equal(undefined));
-  it('returns undefined if property does not exist', () =>
-    expect(get(['a', 'b'], undefined)).to.equal(undefined));
-  it('returns undefined if property does not exist', () =>
-    expect(get(['a', 'b'], 1213)).to.equal(undefined));
+describe("get", () => {
+  it("returns a property in a nested object 1", () =>
+    expect(get(["a"], { a: 1 })).to.equal(1));
+  it("returns a property in a nested object 2", () =>
+    expect(get(["a", "b"], { a: { b: 1 } })).to.equal(1));
+  it("returns a property in a nested object 3", () =>
+    expect(get(["a", "b"], { a: { b: 1 } })).to.equal(1));
+  it("returns undefined if property does not exist", () =>
+    expect(get(["a", "b"], { b: 1 })).to.equal(undefined));
+  it("returns undefined if property does not exist", () =>
+    expect(get(["a", "b"], undefined)).to.equal(undefined));
+  it("returns undefined if property does not exist", () =>
+    expect(get(["a", "b"], 1213)).to.equal(undefined));
   const DEFAULT = -5;
-  it('returns defaultValue if property does not exist', () =>
-    expect(get(['a', 'b'], { b: 1 }, DEFAULT)).to.equal(DEFAULT));
-  it('returns defaultValue if property does not exist', () =>
-    expect(get(['a', 'b'], undefined, DEFAULT)).to.equal(DEFAULT));
-  it('returns defaultValue if property does not exist', () =>
-    expect(get(['a', 'b'], 1213, DEFAULT)).to.equal(DEFAULT));
-  it('can work with arrays 1', () => expect(get([0, 1], [[1, 2]])).to.equal(2));
-  it('can work with arrays 2', () =>
-    expect(get([0, 'a'], [{ a: 42 }])).to.equal(42));
+  it("returns defaultValue if property does not exist", () =>
+    expect(get(["a", "b"], { b: 1 }, DEFAULT)).to.equal(DEFAULT));
+  it("returns defaultValue if property does not exist", () =>
+    expect(get(["a", "b"], undefined, DEFAULT)).to.equal(DEFAULT));
+  it("returns defaultValue if property does not exist", () =>
+    expect(get(["a", "b"], 1213, DEFAULT)).to.equal(DEFAULT));
+  it("can work with arrays 1", () => expect(get([0, 1], [[1, 2]])).to.equal(2));
+  it("can work with arrays 2", () =>
+    expect(get([0, "a"], [{ a: 42 }])).to.equal(42));
 });
