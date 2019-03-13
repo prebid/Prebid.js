@@ -5,8 +5,11 @@ import {
   getOffset,
   getWindowParents,
   getRectCuts,
-  get,
-  getTopmostReachableWindow
+  getTopmostReachableWindow,
+  topDocumentIsReachable,
+  isInsideIframe,
+  isInsideSafeframe,
+  get
 } from "modules/viBidAdapter";
 
 describe("ratioToPercentageCeil", () => {
@@ -153,6 +156,33 @@ describe("getTopmostReachableWindow", () => {
 
   it("get parents up to the top", () =>
     expect(getTopmostReachableWindow(win3)).to.be.equal(win));
+});
+
+describe("topDocumentIsReachable", () => {
+  const win = { document };
+  win.top = win;
+  win.parent = win;
+  const win1 = { top: win, parent: win };
+  const win2 = { top: win, parent: win1 };
+  const win3 = { top: win, parent: win2 };
+
+  it("returns true if it can access top document", () =>
+    expect(topDocumentIsReachable(win3)).to.be.true);
+});
+
+describe("isInsideIframe", () => {
+  const topWin = {};
+  topWin.top = topWin;
+  it("returns true if window !== window.top", () =>
+    expect(isInsideIframe(topWin)).to.be.false);
+  const frameWin = { top: topWin };
+  it("returns true if window !== window.top", () =>
+    expect(isInsideIframe(frameWin)).to.be.true);
+});
+
+describe("isInsideSafeframe", () => {
+  it("returns true if top window is not reachable and window.$sf is defined", () =>
+    expect(isInsideSafeframe({ $sf: {} })).to.be.true);
 });
 
 describe("getCuts without vCuts", () => {

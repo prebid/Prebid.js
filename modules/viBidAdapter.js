@@ -97,22 +97,22 @@ export function topDocumentIsReachable(curWindow = window) {
   }
 }
 
-function isInsideIframe(curWindow = window) {
+export function isInsideIframe(curWindow = window) {
   return curWindow !== curWindow.top;
 }
 
-function isInsideSafeframe(curWindow = window) {
+export function isInsideSafeframe(curWindow = window) {
   return !topDocumentIsReachable(curWindow) && !!curWindow.$sf;
 }
 
-function isInsideFriendlyIframe() {
-  return isInsideIframe() && topDocumentIsReachable();
+export function isInsideFriendlyIframe(curWindow = window) {
+  return isInsideIframe(curWindow) && topDocumentIsReachable(curWindow);
 }
 
-function getIframeType() {
-  if (!isInsideIframe()) return;
-  if (isInsideSafeframe()) return IframeType.safeframe;
-  if (isInsideFriendlyIframe()) return IframeType.friendly;
+export function getIframeType(curWindow = window) {
+  if (!isInsideIframe(curWindow)) return;
+  if (isInsideSafeframe(curWindow)) return IframeType.safeframe;
+  if (isInsideFriendlyIframe(curWindow)) return IframeType.friendly;
   return IframeType.hostile;
 }
 
