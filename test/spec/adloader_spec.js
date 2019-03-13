@@ -28,10 +28,15 @@ describe('adLoader', function () {
       expect(utilsinsertElementStub.called).to.be.true;
     });
 
+    it('should not load cached script again', function() {
+      adLoader.loadExternalScript('someURL', 'criteo');
+      expect(utilsinsertElementStub.called).to.be.false;
+    });
+
     it('callback function can be passed to the function', function() {
       let callback = function() {};
       adLoader.loadExternalScript('someURL1', 'criteo', callback);
       expect(utilsinsertElementStub.called).to.be.true;
-    })
+    });
   });
 });

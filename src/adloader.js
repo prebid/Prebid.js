@@ -26,33 +26,36 @@ export function loadExternalScript(url, moduleCode, callback) {
   }
   // only load each asset once
   if (_requestCache[url]) {
+    if (callback && typeof callback === 'function') {
+      if (_requestCache[url].loaded) {
+        // invokeCallbacks immediately
+        callback();
+      } else {
+        // queue the callback
+        _requestCache[url].callbacks.push(callback);
+      }
+    }
     return;
+  }
+  _requestCache[url] = {
+    loaded: false,
+    callbacks: []
+  };
+  if (callback && typeof callback === 'function') {
+    _requestCache[url].callbacks.push(callback);
   }
 
   utils.logWarn(`module ${moduleCode} is loading external JavaScript`);
-  const script = document.createElement('script');
-  script.type = 'text/javascript';
-  script.async = true;
-  script.src = url;
-
-  // Execute a callback if necessary
-  if (callback && typeof callback === 'function') {
-    if (script.readyState) {
-      script.onreadystatechange = function () {
-        if (script.readyState === 'loaded' || script.readyState === 'complete') {
-          script.onreadystatechange = null;
-          callback();
-        }
-      };
-    } else {
-      script.onload = function () {
-        callback();
-      };
+  requestResource(url, function () {
+    _requestCache[url].loaded = true;
+    try {
+      for (let i = 0; i < _requestCache[url].callbacks.length; i++) {
+        _requestCache[url].callbacks[i]();
+      }
+    } catch (e) {
+      utils.logError('Error executing callback', 'adloader.js:loadScript', e);
     }
-  }
-
-  utils.insertElement(script);
-  _requestCache[url] = true;
+  });
 };
 
 /**
@@ -130,10 +133,5 @@ function requestResource(tagSrc, callback) {
   jptScript.src = tagSrc;
 
   // add the new script tag to the page
-  var elToAppend = document.getElementsByTagName('head');
-  elToAppend = elToAppend.length ? elToAppend : document.getElementsByTagName('body');
-  if (elToAppend.length) {
-    elToAppend = elToAppend[0];
-    elToAppend.insertBefore(jptScript, elToAppend.firstChild);
-  }
+  utils.insertElement(jptScript);
 }
