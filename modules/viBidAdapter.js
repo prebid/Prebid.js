@@ -1,7 +1,7 @@
-import { registerBidder } from '../src/adapters/bidderFactory';
+import { registerBidder } from "../src/adapters/bidderFactory";
 
 export function get(path, obj, notFound) {
-  path = typeof path === 'string' ? path.split('.') : path;
+  path = typeof path === "string" ? path.split(".") : path;
 
   while (path.length) {
     const [key] = path;
@@ -34,7 +34,13 @@ export function ratioToPercentageCeil(x) {
 }
 
 function getDocumentHeight(curDocument = document) {
-  return Math.max(curDocument.body.scrollHeight, curDocument.body.offsetHeight, get('documentElement.clientHeight', document), get('documentElement.scrollHeight', document), get('documentElement.offsetHeight', document));
+  return Math.max(
+    curDocument.body.scrollHeight,
+    curDocument.body.offsetHeight,
+    get("documentElement.clientHeight", document),
+    get("documentElement.scrollHeight", document),
+    get("documentElement.offsetHeight", document)
+  );
 }
 
 function getWindowHeight(curWindow = window) {
@@ -44,9 +50,11 @@ function getWindowHeight(curWindow = window) {
 function getOffset(element) {
   const rect = element.getBoundingClientRect();
   const elementWindow = getElementWindow(element);
-  if (!elementWindow) throw new Error('cannot get element window');
-  const scrollLeft = elementWindow.pageXOffset || get('documentElement.scrollLeft', document, 0);
-  const scrollTop = elementWindow.pageYOffset || get('documentElement.scrollTop', document, 0);
+  if (!elementWindow) throw new Error("cannot get element window");
+  const scrollLeft =
+    elementWindow.pageXOffset || get("documentElement.scrollLeft", document, 0);
+  const scrollTop =
+    elementWindow.pageYOffset || get("documentElement.scrollTop", document, 0);
   return {
     top: rect.top + scrollTop,
     right: rect.right + scrollLeft,
@@ -57,10 +65,10 @@ function getOffset(element) {
 
 var IframeType;
 
-(function (IframeType) {
-  IframeType['safeframe'] = 'safeframe';
-  IframeType['friendly'] = 'friendly';
-  IframeType['hostile'] = 'hostile';
+(function(IframeType) {
+  IframeType["safeframe"] = "safeframe";
+  IframeType["friendly"] = "friendly";
+  IframeType["hostile"] = "hostile";
 })(IframeType || (IframeType = {}));
 
 function getWindowParents(curWindow = window) {
@@ -112,7 +120,9 @@ function getIframeType() {
 }
 
 function getElementWindow(element) {
-  return element.ownerDocument ? element.ownerDocument.defaultView : element.defaultView;
+  return element.ownerDocument
+    ? element.ownerDocument.defaultView
+    : element.defaultView;
 }
 
 const NO_CUTS = {
@@ -122,14 +132,8 @@ const NO_CUTS = {
   left: 0
 };
 export function getRectCuts(rect, vh, vw, vCuts = NO_CUTS) {
-  let {
-    top,
-    left
-  } = rect;
-  const {
-    bottom,
-    right
-  } = rect;
+  let { top, left } = rect;
+  const { bottom, right } = rect;
   top = top + vCuts.top;
   left = left + vCuts.left;
   vh = vh + vCuts.bottom;
@@ -147,7 +151,9 @@ function getFrameElements(curWindow = window) {
 
   while (curWindow && curWindow.frameElement) {
     frameElements.unshift(curWindow.frameElement);
-    curWindow = curWindow.frameElement.ownerDocument && curWindow.frameElement.ownerDocument.defaultView;
+    curWindow =
+      curWindow.frameElement.ownerDocument &&
+      curWindow.frameElement.ownerDocument.defaultView;
   }
 
   return frameElements;
@@ -155,28 +161,40 @@ function getFrameElements(curWindow = window) {
 
 function getElementCuts(element, vCuts) {
   const window = getElementWindow(element);
-  return getRectCuts(element.getBoundingClientRect(), window ? window.innerHeight : 0, window ? window.innerWidth : 0, vCuts);
+  return getRectCuts(
+    element.getBoundingClientRect(),
+    window ? window.innerHeight : 0,
+    window ? window.innerWidth : 0,
+    vCuts
+  );
 }
 
 function area(width, height, areaCuts = NO_CUTS) {
-  const {
-    top,
-    right,
-    bottom,
-    left
-  } = areaCuts;
+  const { top, right, bottom, left } = areaCuts;
   return Math.max(0, (width + left + right) * (height + top + bottom));
 }
 
 export function getInViewRatio(element) {
   const elements = [...getFrameElements(), element];
-  const vCuts = elements.reduce((vCuts, element) => getElementCuts(element, vCuts), NO_CUTS);
-  return area(element.offsetWidth, element.offsetHeight, vCuts) / area(element.offsetWidth, element.offsetHeight);
+  const vCuts = elements.reduce(
+    (vCuts, element) => getElementCuts(element, vCuts),
+    NO_CUTS
+  );
+  return (
+    area(element.offsetWidth, element.offsetHeight, vCuts) /
+    area(element.offsetWidth, element.offsetHeight)
+  );
 }
 export function getInViewRatioInsideTopFrame(element) {
   const elements = [...getFrameElements().slice(1), element];
-  const vCuts = elements.reduce((vCuts, element) => getElementCuts(element, vCuts), NO_CUTS);
-  return area(element.offsetWidth, element.offsetHeight, vCuts) / area(element.offsetWidth, element.offsetHeight);
+  const vCuts = elements.reduce(
+    (vCuts, element) => getElementCuts(element, vCuts),
+    NO_CUTS
+  );
+  return (
+    area(element.offsetWidth, element.offsetHeight, vCuts) /
+    area(element.offsetWidth, element.offsetHeight)
+  );
 }
 
 export function getMayBecomeVisible(element) {
@@ -187,42 +205,48 @@ export function getInViewPercentage(element) {
 }
 
 function getOffsetTopDocument(element) {
-  return [...getFrameElements(getElementWindow(element)), element].reduce((acc, elem) => merge(acc, getOffset(elem), (a, b) => a + b), {
-    top: 0,
-    right: 0,
-    bottom: 0,
-    left: 0
-  });
+  return [...getFrameElements(getElementWindow(element)), element].reduce(
+    (acc, elem) => merge(acc, getOffset(elem), (a, b) => a + b),
+    {
+      top: 0,
+      right: 0,
+      bottom: 0,
+      left: 0
+    }
+  );
 }
 
 function getOffsetTopDocumentPercentage(element) {
   const elementWindow = getElementWindow(element);
-  if (!elementWindow) throw new Error('cannot get element window');
+  if (!elementWindow) throw new Error("cannot get element window");
   if (!topDocumentIsReachable()) throw new Error("top window isn't reachable");
   const topWindow = getTopmostReachableWindow(elementWindow);
   const documentHeight = getDocumentHeight(topWindow.document);
-  return ratioToPercentageCeil(getOffsetTopDocument(element).top / documentHeight);
+  return ratioToPercentageCeil(
+    getOffsetTopDocument(element).top / documentHeight
+  );
 }
 
 function getOffsetToView(element) {
   const elemWindow = getElementWindow(element);
-  if (!elemWindow) throw new Error('cannot get element window');
+  if (!elemWindow) throw new Error("cannot get element window");
   const topWindow = getTopmostReachableWindow(elemWindow);
-  const {
-    top,
-    bottom
-  } = getOffsetTopDocument(element);
+  const { top, bottom } = getOffsetTopDocument(element);
   const topWindowHeight = getWindowHeight(topWindow);
 
   if (bottom < topWindow.scrollY) return bottom - topWindow.scrollY;
 
-  if (top > topWindow.scrollY + topWindowHeight) return top - topWindow.scrollY - topWindowHeight;
+  if (top > topWindow.scrollY + topWindowHeight)
+    return top - topWindow.scrollY - topWindowHeight;
 
   return 0;
 }
 
 export function getOffsetToViewPercentage(element) {
-  return ratioToPercentageCeil(getOffsetToView(element) / getDocumentHeight(getTopmostReachableWindow().document));
+  return ratioToPercentageCeil(
+    getOffsetToView(element) /
+      getDocumentHeight(getTopmostReachableWindow().document)
+  );
 }
 
 function getViewabilityDescription(element) {
@@ -262,41 +286,39 @@ function getViewabilityDescription(element) {
 }
 
 const spec = {
-  code: 'vi',
-  supportedMediaTypes: ['banner'],
+  code: "vi",
+  supportedMediaTypes: ["banner"],
 
-  isBidRequestValid({
-    adUnitCode
-  }) {
+  isBidRequestValid({ adUnitCode }) {
     return !!document.getElementById(adUnitCode);
   },
 
   buildRequests(bidRequests) {
     return {
-      method: 'POST',
+      method: "POST",
       url: `//pb.vi-serve.com/prebid/bid`,
-      data: bidRequests.map(({
-        adUnitCode,
-        sizes
-      }) => {
-        const slot = document.getElementById(adUnitCode);
-        return slot && {
-          sizes,
-          ...getViewabilityDescription(slot)
-        };
-      }).filter(Boolean),
+      data: {
+        bidRequests: bidRequests
+          .map(({ adUnitCode, sizes }) => {
+            const slot = document.getElementById(adUnitCode);
+            return (
+              slot && {
+                sizes,
+                ...getViewabilityDescription(slot)
+              }
+            );
+          })
+          .filter(Boolean)
+      },
       options: {
-        contentType: 'application/json',
+        contentType: "application/json",
         withCredentials: false
       }
     };
   },
 
-  interpretResponse({
-    body
-  }, bidRequest) {
+  interpretResponse({ body }, bidRequest) {
     return body;
   }
-
 };
 registerBidder(spec);
