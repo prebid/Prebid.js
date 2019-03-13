@@ -35,11 +35,11 @@ const BIDDER_STATUS = {
   'BID_WON': 'bidWon'
 };
 
-function detectDevice() {
-  if ((/ipad|android 3.0|xoom|sch-i800|playbook|tablet|kindle/i.test(navigator.userAgent.toLowerCase()))) {
+export function detectDevice(userAgent) {
+  if ((/ipad|android 3.0|xoom|sch-i800|playbook|tablet|kindle/i.test(userAgent))) {
     return 'tablet';
   }
-  if ((/iphone|ipod|android|blackberry|opera|mini|windows\sce|palm|smartphone|iemobile/i.test(navigator.userAgent.toLowerCase()))) {
+  if ((/iphone|ipod|android|blackberry|opera|mini|windows\sce|palm|smartphone|iemobile/i.test(userAgent))) {
     return 'mobile';
   }
   return 'desktop';
@@ -108,7 +108,7 @@ const cacheManager = {
   }
 };
 
-const appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, analyticsType}), {
+export const appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, analyticsType}), {
 
   initConfig(config) {
     /**
@@ -161,7 +161,7 @@ const appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, analyticsT
       'affiliateId': analyticsOptions.affiliateId,
       'configId': analyticsOptions.configId,
       'referrer': window.location.href,
-      'device': detectDevice(),
+      'device': detectDevice(navigator.userAgent.toLowerCase()),
       'sampling': analyticsOptions.options.sampling,
       'adSampling': analyticsOptions.options.adSampling,
       'prebid': '$prebid.version$',
@@ -272,6 +272,22 @@ const appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, analyticsT
       });
     }
   },
+  handleAuctionEnd(args, highestCpmBids) {
+    setTimeout(() => {
+      this.updateAuctionEndMessage(args);
+      this.updatePrebidWonMessage(highestCpmBids);
+      this.sendEventMessage('bid', Object.assign({},
+        cacheManager.cache[args.auctionId].header,
+        cacheManager.cache[args.auctionId].bids
+      ));
+      if (analyticsOptions.adSampled) {
+        this.sendEventMessage('cr', Object.assign({},
+          cacheManager.cache[args.auctionId].header,
+          cacheManager.cache[args.auctionId].ads
+        ));
+      }
+    }, SEND_TIMEOUT);
+  },
   buildBidWonMessage(bid) {
     const adUnitCode = this.parseAdUnitCode(bid);
     const bidderCode = this.parseBidderCode(bid);
@@ -296,9 +312,7 @@ const appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, analyticsT
     };
   },
   sendEventMessage(endPoint, data) {
-    if (utils.debugTurnedOn()) {
-      console.log(`AJAX: ${endPoint}: ` + JSON.stringify(data));
-    }
+    console.log(`AJAX: ${endPoint}: ` + JSON.stringify(data));
     ajax(`${analyticsOptions.server}/${endPoint}`, null, JSON.stringify(data), {
       contentType: 'application/json'
     });
@@ -343,20 +357,7 @@ const appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, analyticsT
           break;
         case AUCTION_END:
           // auction end, response after this means timeout
-          setTimeout(() => {
-            this.updateAuctionEndMessage(args);
-            this.updatePrebidWonMessage(pbjs.getHighestCpmBids());
-            this.sendEventMessage('bid', Object.assign({},
-              cacheManager.cache[args.auctionId].header,
-              cacheManager.cache[args.auctionId].bids
-            ));
-            if (analyticsOptions.adSampled) {
-              this.sendEventMessage('cr', Object.assign({},
-                cacheManager.cache[args.auctionId].header,
-                cacheManager.cache[args.auctionId].ads
-              ));
-            }
-          }, SEND_TIMEOUT);
+          this.handleAuctionEnd(args, pbjs.getHighestCpmBids());
           break;
       }
     }
@@ -383,5 +384,3 @@ adapterManager.registerAnalyticsAdapter({
   adapter: appierAnalyticsAdapter,
   code: 'appierAnalytics'
 });
-
-export default appierAnalyticsAdapter;
