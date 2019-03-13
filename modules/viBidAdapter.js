@@ -1,7 +1,7 @@
-import { registerBidder } from "../src/adapters/bidderFactory";
+import { registerBidder } from '../src/adapters/bidderFactory';
 
 export function get(path, obj, notFound) {
-  path = typeof path === "string" ? path.split(".") : path;
+  path = typeof path === 'string' ? path.split('.') : path;
 
   while (path.length) {
     const [key] = path;
@@ -37,9 +37,9 @@ function getDocumentHeight(curDocument = document) {
   return Math.max(
     curDocument.body.scrollHeight,
     curDocument.body.offsetHeight,
-    get("documentElement.clientHeight", document),
-    get("documentElement.scrollHeight", document),
-    get("documentElement.offsetHeight", document)
+    get('documentElement.clientHeight', document),
+    get('documentElement.scrollHeight', document),
+    get('documentElement.offsetHeight', document)
   );
 }
 
@@ -50,11 +50,11 @@ function getWindowHeight(curWindow = window) {
 function getOffset(element) {
   const rect = element.getBoundingClientRect();
   const elementWindow = getElementWindow(element);
-  if (!elementWindow) throw new Error("cannot get element window");
+  if (!elementWindow) throw new Error('cannot get element window');
   const scrollLeft =
-    elementWindow.pageXOffset || get("documentElement.scrollLeft", document, 0);
+    elementWindow.pageXOffset || get('documentElement.scrollLeft', document, 0);
   const scrollTop =
-    elementWindow.pageYOffset || get("documentElement.scrollTop", document, 0);
+    elementWindow.pageYOffset || get('documentElement.scrollTop', document, 0);
   return {
     top: rect.top + scrollTop,
     right: rect.right + scrollLeft,
@@ -66,9 +66,9 @@ function getOffset(element) {
 var IframeType;
 
 (function(IframeType) {
-  IframeType["safeframe"] = "safeframe";
-  IframeType["friendly"] = "friendly";
-  IframeType["hostile"] = "hostile";
+  IframeType['safeframe'] = 'safeframe';
+  IframeType['friendly'] = 'friendly';
+  IframeType['hostile'] = 'hostile';
 })(IframeType || (IframeType = {}));
 
 function getWindowParents(curWindow = window) {
@@ -181,8 +181,8 @@ export function getInViewRatio(element) {
     NO_CUTS
   );
   return (
-    area(element.offsetWidth, element.offsetHeight, vCuts) /
-    area(element.offsetWidth, element.offsetHeight)
+    area(element.offsetWidth || 1, element.offsetHeight || 1, vCuts) /
+    area(element.offsetWidth || 1, element.offsetHeight || 1)
   );
 }
 export function getInViewRatioInsideTopFrame(element) {
@@ -218,7 +218,7 @@ function getOffsetTopDocument(element) {
 
 function getOffsetTopDocumentPercentage(element) {
   const elementWindow = getElementWindow(element);
-  if (!elementWindow) throw new Error("cannot get element window");
+  if (!elementWindow) throw new Error('cannot get element window');
   if (!topDocumentIsReachable()) throw new Error("top window isn't reachable");
   const topWindow = getTopmostReachableWindow(elementWindow);
   const documentHeight = getDocumentHeight(topWindow.document);
@@ -229,15 +229,14 @@ function getOffsetTopDocumentPercentage(element) {
 
 function getOffsetToView(element) {
   const elemWindow = getElementWindow(element);
-  if (!elemWindow) throw new Error("cannot get element window");
+  if (!elemWindow) throw new Error('cannot get element window');
   const topWindow = getTopmostReachableWindow(elemWindow);
   const { top, bottom } = getOffsetTopDocument(element);
   const topWindowHeight = getWindowHeight(topWindow);
 
   if (bottom < topWindow.scrollY) return bottom - topWindow.scrollY;
 
-  if (top > topWindow.scrollY + topWindowHeight)
-    return top - topWindow.scrollY - topWindowHeight;
+  if (top > topWindow.scrollY + topWindowHeight) { return top - topWindow.scrollY - topWindowHeight; }
 
   return 0;
 }
@@ -286,8 +285,8 @@ function getViewabilityDescription(element) {
 }
 
 const spec = {
-  code: "vi",
-  supportedMediaTypes: ["banner"],
+  code: 'vi',
+  supportedMediaTypes: ['banner'],
 
   isBidRequestValid({ adUnitCode }) {
     return !!document.getElementById(adUnitCode);
@@ -295,8 +294,8 @@ const spec = {
 
   buildRequests(bidRequests) {
     return {
-      method: "POST",
-      url: `//pb.vi-serve.com/prebid/bid`,
+      method: 'POST',
+      url: '//localhost:3000/bid',
       data: {
         bidRequests: bidRequests
           .map(({ adUnitCode, sizes }) => {
@@ -311,7 +310,7 @@ const spec = {
           .filter(Boolean)
       },
       options: {
-        contentType: "application/json",
+        contentType: 'application/json',
         withCredentials: false
       }
     };
