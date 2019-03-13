@@ -79,7 +79,7 @@ export function getWindowParents(curWindow = window) {
   return parents;
 }
 
-function getTopmostReachableWindow(curWindow = window) {
+export function getTopmostReachableWindow(curWindow = window) {
   const parents = getWindowParents(curWindow);
   return parents.length ? parents[parents.length - 1] : curWindow;
 }

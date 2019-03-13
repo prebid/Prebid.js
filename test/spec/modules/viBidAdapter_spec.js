@@ -5,7 +5,8 @@ import {
   getOffset,
   getWindowParents,
   getRectCuts,
-  get
+  get,
+  getTopmostReachableWindow
 } from "modules/viBidAdapter";
 
 describe("ratioToPercentageCeil", () => {
@@ -140,6 +141,18 @@ describe("getWindowParents", () => {
 
   it("get parents up to the top", () =>
     expect(getWindowParents(win3)).to.be.deep.equal([win2, win1, win]));
+});
+
+describe("getTopmostReachableWindow", () => {
+  const win = {};
+  win.top = win;
+  win.parent = win;
+  const win1 = { top: win, parent: win };
+  const win2 = { top: win, parent: win1 };
+  const win3 = { top: win, parent: win2 };
+
+  it("get parents up to the top", () =>
+    expect(getTopmostReachableWindow(win3)).to.be.equal(win));
 });
 
 describe("getCuts without vCuts", () => {
