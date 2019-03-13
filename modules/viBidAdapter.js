@@ -44,7 +44,7 @@ export function getDocumentHeight(curDocument = document) {
   );
 }
 
-function getOffset(element) {
+export function getOffset(element) {
   const rect = element.getBoundingClientRect();
   const elementWindow = getElementWindow(element);
   if (!elementWindow) throw new Error("cannot get element window");

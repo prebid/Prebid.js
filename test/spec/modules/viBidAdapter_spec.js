@@ -2,6 +2,7 @@ import {
   ratioToPercentageCeil,
   merge,
   getDocumentHeight,
+  getOffset,
   getRectCuts,
   get
 } from "modules/viBidAdapter";
@@ -79,6 +80,53 @@ describe("getDocumentHeight", () => {
   ].forEach(({ curDocument, expected }) =>
     expect(getDocumentHeight(curDocument)).to.be.equal(expected)
   );
+});
+
+describe("getOffset", () => {
+  [
+    {
+      element: {
+        ownerDocument: {
+          defaultView: {
+            pageXOffset: 0,
+            pageYOffset: 0
+          }
+        },
+        getBoundingClientRect: () => ({
+          top: 0,
+          right: 0,
+          bottom: 0,
+          left: 0
+        })
+      },
+      expected: {
+        top: 0,
+        right: 0,
+        bottom: 0,
+        left: 0
+      }
+    }
+  ].forEach(({ description, element, expected }, i) =>
+    it(
+      "returns element offsets from the document edges (including scroll): " +
+        i,
+      () => expect(getOffset(element)).to.be.deep.equal(expected)
+    )
+  );
+  it("Throws when there is no window", () =>
+    expect(
+      getOffset.bind(null, {
+        ownerDocument: {
+          defaultView: null
+        },
+        getBoundingClientRect: () => ({
+          top: 0,
+          right: 0,
+          bottom: 0,
+          left: 0
+        })
+      })
+    ).to.throw());
 });
 
 describe("getCuts without vCuts", () => {
