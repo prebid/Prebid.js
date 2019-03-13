@@ -9,6 +9,7 @@ import {
   topDocumentIsReachable,
   isInsideIframe,
   isInsideSafeframe,
+  getIframeType,
   get
 } from "modules/viBidAdapter";
 
@@ -158,31 +159,43 @@ describe("getTopmostReachableWindow", () => {
     expect(getTopmostReachableWindow(win3)).to.be.equal(win));
 });
 
-describe("topDocumentIsReachable", () => {
-  const win = { document };
-  win.top = win;
-  win.parent = win;
-  const win1 = { top: win, parent: win };
-  const win2 = { top: win, parent: win1 };
-  const win3 = { top: win, parent: win2 };
+const topWindow = { document };
+topWindow.top = topWindow;
+topWindow.parent = topWindow;
+const frameWindow1 = { top: topWindow, parent: topWindow };
+const frameWindow2 = { top: topWindow, parent: frameWindow1 };
+const frameWindow3 = { top: topWindow, parent: frameWindow2 };
 
+describe("topDocumentIsReachable", () => {
   it("returns true if it can access top document", () =>
-    expect(topDocumentIsReachable(win3)).to.be.true);
+    expect(topDocumentIsReachable(frameWindow3)).to.be.true);
 });
 
 describe("isInsideIframe", () => {
-  const topWin = {};
-  topWin.top = topWin;
   it("returns true if window !== window.top", () =>
-    expect(isInsideIframe(topWin)).to.be.false);
-  const frameWin = { top: topWin };
+    expect(isInsideIframe(topWindow)).to.be.false);
   it("returns true if window !== window.top", () =>
-    expect(isInsideIframe(frameWin)).to.be.true);
+    expect(isInsideIframe(frameWindow1)).to.be.true);
 });
+
+const safeframeWindow = { $sf: {} };
 
 describe("isInsideSafeframe", () => {
   it("returns true if top window is not reachable and window.$sf is defined", () =>
-    expect(isInsideSafeframe({ $sf: {} })).to.be.true);
+    expect(isInsideSafeframe(safeframeWindow)).to.be.true);
+});
+
+const hostileFrameWindow = {}
+
+describe("getIframeType", () => {
+  it("returns undefined when is not inside iframe", () =>
+    expect(getIframeType(topWindow)).to.be.undefined);
+  it("returns 'safeframe' when inside sf", () =>
+    expect(getIframeType(safeframeWindow)).to.be.equal("safeframe"));
+  it("returns 'friendly' when inside friendly iframe and can reach top window", () =>
+    expect(getIframeType(frameWindow3)).to.be.equal("friendly"));
+  it("returns 'hostile' when cannot get top window", () =>
+    expect(getIframeType(hostileFrameWindow)).to.be.equal("hostile"));
 });
 
 describe("getCuts without vCuts", () => {
