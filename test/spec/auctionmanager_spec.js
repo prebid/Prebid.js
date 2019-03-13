@@ -270,6 +270,11 @@ describe('auctionmanager.js', function () {
                 return bidResponse.adId;
               }
             }, {
+              key: CONSTANTS.TARGETING_KEYS.CPM,
+              val: function (bidResponse) {
+                return bidResponse.cpm;
+              }
+            }, {
               key: CONSTANTS.TARGETING_KEYS.PRICE_BUCKET,
               val: function (bidResponse) {
                 return bidResponse.pbMg;
@@ -303,7 +308,19 @@ describe('auctionmanager.js', function () {
               val: function (bidResponse) {
                 return bidResponse.videoCacheKey;
               }
-            }
+            },
+            {
+              key: CONSTANTS.TARGETING_KEYS.TIME_TO_RESPOND,
+              val: function (bidResponse) {
+                return bidResponse.timeToRespond;
+              }
+            },
+            {
+              key: CONSTANTS.TARGETING_KEYS.AUCTION_ID,
+              val: function (bidResponse) {
+                return bidResponse.auctionId;
+              }
+            },
           ]
 
         }
