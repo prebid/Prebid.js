@@ -83,7 +83,7 @@ function lint(done) {
     return file.eslint != null && file.eslint.fixed;
   }
   return gulp.src(['src/**/*.js', 'modules/**/*.js', 'test/**/*.js'], {base: './'})
-    .pipe(eslint({fix: true}))
+    .pipe(gulpif(argv.nolintfix, eslint(), eslint({fix: true})))
     .pipe(eslint.format('stylish'))
     .pipe(eslint.failAfterError())
     .pipe(gulpif(isFixed, gulp.dest('./')));
