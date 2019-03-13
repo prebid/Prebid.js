@@ -34,7 +34,7 @@ const MOCK_BIDS = {
   'BID1_ADJUSTMENT': {
     'cpm': 0.61590,
     'currency': 'USD',
-    'originalCpm': 18.78495,
+    'originalCpm': 18.26179,
     'originalCurrency': 'TWD',
   },
   'BID1_TIMEOUT': {
@@ -209,6 +209,7 @@ const MOCK_EVENT = {
 
 describe('Appier Prebid AnalyticsAdapter', function () {
   let requests;
+  let cache;
 
   describe('event tracking and message cache manager', function () {
     let ajaxStub;
@@ -250,7 +251,7 @@ describe('Appier Prebid AnalyticsAdapter', function () {
       appierAnalyticsAdapter.handleAuctionEndMessage(MOCK_EVENT.AUCTION_END_REGULAR, []);
       events.emit(constants.EVENTS.BID_WON, MOCK_EVENT.BID_WON[0]);
 
-      const cache = appierAnalyticsAdapter.getCacheManager().cache;
+      cache = appierAnalyticsAdapter.getCache();
 
       expect(cache[auctionId].header).to.include.all.keys(
         ['eventId', 'version', 'affiliateId', 'configId', 'referrer', 'device',
@@ -338,7 +339,7 @@ describe('Appier Prebid AnalyticsAdapter', function () {
       events.emit(constants.EVENTS.BIDDER_DONE, MOCK_EVENT.BIDDER_DONE);
       appierAnalyticsAdapter.handleAuctionEndMessage(MOCK_EVENT.AUCTION_END_REGULAR, []);
 
-      const cache = appierAnalyticsAdapter.getCacheManager().cache;
+      cache = appierAnalyticsAdapter.getCache();
 
       expect(cache[auctionId].bids).to.deep.equal({
         'adUnits': {
@@ -347,9 +348,9 @@ describe('Appier Prebid AnalyticsAdapter', function () {
               'status': 'bid',
               'isTimeout': false,
               'time': 600,
-              'cpm': 0.59878,
+              'cpm': 0.61590,
               'currency': 'USD',
-              'cpmUsd': 0.59878,
+              'cpmUsd': 0.61590,
               'originalCpm': 18.26179,
               'originalCurrency': 'TWD',
               'prebidWon': false
@@ -381,7 +382,7 @@ describe('Appier Prebid AnalyticsAdapter', function () {
       events.emit(constants.EVENTS.BID_TIMEOUT, MOCK_EVENT.BID_TIMEOUT);
       appierAnalyticsAdapter.handleAuctionEndMessage(MOCK_EVENT.AUCTION_END_REGULAR, []);
 
-      const cache = appierAnalyticsAdapter.getCacheManager().cache;
+      cache = appierAnalyticsAdapter.getCache();
 
       expect(cache[auctionId].bids).to.deep.equal({
         'adUnits': {
@@ -394,6 +395,41 @@ describe('Appier Prebid AnalyticsAdapter', function () {
           '/12345678/adunit_2': {
             'appier': {
               'status': 'timeout',
+              'isTimeout': true,
+            }
+          }
+        }
+      });
+    });
+
+    it('should build message correctly for no-bids', function () {
+      appierAnalyticsAdapter.enableAnalytics({
+        provider: 'appierAnalytics',
+        options: {
+          affiliateId: affiliateId,
+          configId: configId,
+          sampling: 1,
+          adSampling: 1
+        }
+      });
+
+      events.emit(constants.EVENTS.AUCTION_INIT, MOCK_EVENT.AUCTION_INIT);
+      events.emit(constants.EVENTS.BID_REQUESTED, MOCK_EVENT.BID_REQUESTED);
+      appierAnalyticsAdapter.handleAuctionEndMessage(MOCK_EVENT.AUCTION_END_NOBID, []);
+
+      cache = appierAnalyticsAdapter.getCache();
+
+      expect(cache[auctionId].bids).to.deep.equal({
+        'adUnits': {
+          '/12345678/adunit_1': {
+            'appier': {
+              'status': 'requested',
+              'isTimeout': true
+            }
+          },
+          '/12345678/adunit_2': {
+            'appier': {
+              'status': 'noBid',
               'isTimeout': true,
             }
           }

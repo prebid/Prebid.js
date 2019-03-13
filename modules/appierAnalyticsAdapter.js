@@ -8,7 +8,7 @@ const analyticsType = 'endpoint';
 
 const DEFAULT_SERVER = 'https://prebid-analytics.c.appier.net/v1';
 const ANALYTICS_VERSION = '0.1.0';
-const SEND_TIMEOUT = 200;
+const SEND_TIMEOUT = 100;
 
 const {
   EVENTS: {
@@ -45,7 +45,6 @@ export function detectDevice(userAgent) {
   return 'desktop';
 }
 
-// used for analytics
 const getCpmInUsd = function (bid) {
   if (bid.currency === 'USD') {
     return bid.cpm;
@@ -79,7 +78,7 @@ const cacheManager = {
     Object.assign(this.cache[auctionId].header, newObject)
   },
   getBidsCache(auctionId, adUnitCode, bidderCode) {
-    return this.cache[auctionId].bids[adUnitCode][bidderCode];
+    return this.cache[auctionId].bids.adUnits[adUnitCode][bidderCode];
   },
   initBidsCache(auctionId, adUnitCode, bidderCode) {
     const bidsCacheSection = this.cache[auctionId].bids.adUnits;
@@ -206,7 +205,6 @@ export const appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, ana
     const bidderCode = this.parseBidderCode(bid);
     cacheManager.updateBidsCache(bid.auctionId, adUnitCode, bidderCode, {
       'time': bid.timeToRespond,
-      // 'latency': Date.now() - bidResponse.requestTimestamp - bidResponse.timeToRespond,
       'status': BIDDER_STATUS.BID,
       'cpm': bid.cpm,
       'currency': bid.currency,
@@ -273,25 +271,23 @@ export const appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, ana
     }
   },
   handleAuctionEndMessage(args, highestCpmBids) {
-    setTimeout(() => {
-      this.updateAuctionEndMessage(args);
-      this.handlePrebidWonMessage(highestCpmBids);
-      this.sendEventMessage('bid', Object.assign({},
+    this.updateAuctionEndMessage(args);
+    this.handlePrebidWonMessage(highestCpmBids);
+    this.sendEventMessage('bid', Object.assign({},
+      cacheManager.cache[args.auctionId].header,
+      cacheManager.cache[args.auctionId].bids
+    ));
+    if (analyticsOptions.adSampled) {
+      this.sendEventMessage('cr', Object.assign({},
         cacheManager.cache[args.auctionId].header,
-        cacheManager.cache[args.auctionId].bids
+        cacheManager.cache[args.auctionId].ads
       ));
-      if (analyticsOptions.adSampled) {
-        this.sendEventMessage('cr', Object.assign({},
-          cacheManager.cache[args.auctionId].header,
-          cacheManager.cache[args.auctionId].ads
-        ));
-      }
-    }, SEND_TIMEOUT);
+    }
   },
   handleBidWonMessage(bidWonMessage) {
     const payload = this.buildBidWonMessage(bidWonMessage);
     this.sendEventMessage('imp', Object.assign({},
-      cacheManager.cache[args.auctionId].header, payload
+      cacheManager.cache[bidWonMessage.auctionId].header, payload
     ));
   },
   buildBidWonMessage(bid) {
@@ -318,7 +314,7 @@ export const appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, ana
     };
   },
   sendEventMessage(endPoint, data) {
-    console.log(`AJAX: ${endPoint}: ` + JSON.stringify(data));
+    // console.log(`AJAX: ${endPoint}: ` + JSON.stringify(data));
     ajax(`${analyticsOptions.server}/${endPoint}`, null, JSON.stringify(data), {
       contentType: 'application/json'
     });
@@ -353,7 +349,9 @@ export const appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, ana
           this.handleBidTimeoutMessage(args);
           break;
         case AUCTION_END:
-          this.handleAuctionEndMessage(args, pbjs.getHighestCpmBids());
+          setTimeout(() => {
+            this.handleAuctionEndMessage(args, pbjs.getHighestCpmBids());
+          }, SEND_TIMEOUT);
           break;
       }
     }
@@ -361,8 +359,8 @@ export const appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, ana
   getAnalyticsOptions() {
     return analyticsOptions;
   },
-  getCacheManager() {
-    return cacheManager;
+  getCache() {
+    return cacheManager.cache;
   }
 });
 
