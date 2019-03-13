@@ -84,25 +84,25 @@ export function getTopmostReachableWindow(curWindow = window) {
   return parents.length ? parents[parents.length - 1] : curWindow;
 }
 
-function topDocumentIsReachable() {
-  if (!isInsideIframe()) return true;
-  const windowParents = getWindowParents();
+export function topDocumentIsReachable(curWindow = window) {
+  if (!isInsideIframe(curWindow)) return true;
+  const windowParents = getWindowParents(curWindow);
 
   try {
     const topWindow = windowParents[windowParents.length - 1];
 
-    return topWindow === window.top && !!window.top.document;
+    return topWindow === curWindow.top && !!curWindow.top.document;
   } catch (e) {
     return false;
   }
 }
 
-function isInsideIframe() {
-  return window !== window.top;
+function isInsideIframe(curWindow = window) {
+  return curWindow !== curWindow.top;
 }
 
-function isInsideSafeframe() {
-  return !topDocumentIsReachable() && !!window.$sf;
+function isInsideSafeframe(curWindow = window) {
+  return !topDocumentIsReachable(curWindow) && !!curWindow.$sf;
 }
 
 function isInsideFriendlyIframe() {
