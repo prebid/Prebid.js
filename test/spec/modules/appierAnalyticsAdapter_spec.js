@@ -334,7 +334,7 @@ describe('Appier Prebid AnalyticsAdapter', function () {
       events.emit(constants.EVENTS.AUCTION_INIT, MOCK_EVENT.AUCTION_INIT);
       events.emit(constants.EVENTS.BID_REQUESTED, MOCK_EVENT.BID_REQUESTED);
       events.emit(constants.EVENTS.BID_RESPONSE, MOCK_EVENT.BID_RESPONSE_REGULAR[0]);
-      events.emit(constants.EVENTS.BID_ADJUSTMENT, MOCK_EVENT.BID_ADJUSTMENT);
+      events.emit(constants.EVENTS.BID_ADJUSTMENT, MOCK_EVENT.BID_ADJUSTMENT[0]);
       events.emit(constants.EVENTS.BIDDER_DONE, MOCK_EVENT.BIDDER_DONE);
       appierAnalyticsAdapter.handleAuctionEndMessage(MOCK_EVENT.AUCTION_END_REGULAR, []);
 
