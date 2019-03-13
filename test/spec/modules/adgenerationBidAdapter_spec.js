@@ -238,7 +238,7 @@ describe('AdgenerationAdapter', function () {
             {
               data: {
                 label: 'optout_url',
-                value: 'https://supership.jp/optout/'
+                value: 'https://supership.jp/optout/#'
               },
               id: 502
             },
@@ -350,6 +350,7 @@ describe('AdgenerationAdapter', function () {
           sponsoredBy: 'Sponsored',
           body: 'Description',
           cta: 'CTA',
+          privacyLink: 'https://supership.jp/optout/#',
           clickUrl: 'https://supership.jp',
           clickTrackers: ['https://s3-ap-northeast-1.amazonaws.com/adg-dummy-dsp/1x1_clicktracker_access.gif'],
           impressionTrackers: ['https://s3-ap-northeast-1.amazonaws.com/adg-dummy-dsp/1x1.gif']
@@ -396,6 +397,7 @@ describe('AdgenerationAdapter', function () {
       expect(result.native.sponsoredBy).to.equal(bidResponses.native.native.sponsoredBy);
       expect(result.native.body).to.equal(bidResponses.native.native.body);
       expect(result.native.cta).to.equal(bidResponses.native.native.cta);
+      expect(decodeURIComponent(result.native.privacyLink)).to.equal(bidResponses.native.native.privacyLink);
       expect(result.native.clickUrl).to.equal(bidResponses.native.native.clickUrl);
       expect(result.native.impressionTrackers[0]).to.equal(bidResponses.native.native.impressionTrackers[0]);
       expect(result.native.clickTrackers[0]).to.equal(bidResponses.native.native.clickTrackers[0]);
