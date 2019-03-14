@@ -69,7 +69,7 @@ export const hasNonNativeBidder = adUnit =>
  * @return {Boolean} If object is valid
  */
 export function nativeBidIsValid(bid, bidRequests) {
-  const bidRequest = getBidRequest(bid.adId, bidRequests);
+  const bidRequest = getBidRequest(bid.requestId, bidRequests);
   if (!bidRequest) { return false; }
 
   // all native bid responses must define a landing page url

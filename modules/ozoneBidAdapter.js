@@ -1,5 +1,5 @@
-import * as utils from 'src/utils';
-import { registerBidder } from 'src/adapters/bidderFactory';
+import * as utils from '../src/utils';
+import { registerBidder } from '../src/adapters/bidderFactory';
 
 const BIDDER_CODE = 'ozone';
 
@@ -113,9 +113,9 @@ export const spec = {
       bidderRequest.publisherId = (bidderRequest.publisherId).toString();
     }
 
-    if (!ozoneRequest.test) {
-      delete ozoneRequest.test;
-    }
+    // if (!ozoneRequest.test) {
+    delete ozoneRequest.test; // don't allow test to be set in the config - ONLY use $_GET['pbjs_debug']
+    // }
     if (bidderRequest.gdprConsent) {
       ozoneRequest.regs = {};
       ozoneRequest.regs.ext = {};
@@ -124,38 +124,40 @@ export const spec = {
         ozoneRequest.regs.ext.consent = bidderRequest.gdprConsent.consentString;
       }
     }
-    let tosendtags = validBidRequests.map(ozone => {
+    let tosendtags = validBidRequests.map(ozoneBidRequest => {
       var obj = {};
-      obj.id = ozone.bidId;
-      obj.tagid = String(ozone.params.ozoneid);
+      obj.id = ozoneBidRequest.bidId;
+      obj.tagid = String(ozoneBidRequest.params.ozoneid);
       obj.secure = window.location.protocol === 'https:' ? 1 : 0;
       obj.banner = {
         topframe: 1,
-        w: ozone.sizes[0][0] || 0,
-        h: ozone.sizes[0][1] || 0,
-        format: ozone.sizes.map(s => {
+        w: ozoneBidRequest.sizes[0][0] || 0,
+        h: ozoneBidRequest.sizes[0][1] || 0,
+        format: ozoneBidRequest.sizes.map(s => {
           return {w: s[0], h: s[1]};
         })
       };
-      if (ozone.params.hasOwnProperty('customData')) {
-        obj.customData = ozone.params.customData;
+      if (ozoneBidRequest.params.hasOwnProperty('customData')) {
+        obj.customData = ozoneBidRequest.params.customData;
       }
-      if (ozone.params.hasOwnProperty('ozoneData')) {
-        obj.ozoneData = ozone.params.ozoneData;
+      if (ozoneBidRequest.params.hasOwnProperty('ozoneData')) {
+        obj.ozoneData = ozoneBidRequest.params.ozoneData;
       }
-      if (ozone.params.hasOwnProperty('lotameData')) {
-        obj.lotameData = ozone.params.lotameData;
+      if (ozoneBidRequest.params.hasOwnProperty('lotameData')) {
+        obj.lotameData = ozoneBidRequest.params.lotameData;
       }
-      if (ozone.params.hasOwnProperty('publisherId')) {
-        obj.publisherId = (ozone.params.publisherId).toString();
+      if (ozoneBidRequest.params.hasOwnProperty('publisherId')) {
+        obj.publisherId = (ozoneBidRequest.params.publisherId).toString();
       }
-      if (ozone.params.hasOwnProperty('siteId')) {
-        obj.siteId = (ozone.params.siteId).toString();
+      if (ozoneBidRequest.params.hasOwnProperty('siteId')) {
+        obj.siteId = (ozoneBidRequest.params.siteId).toString();
       }
-      obj.ext = {'prebid': {'storedrequest': {'id': (ozone.params.placementId).toString()}}};
+      obj.ext = {'prebid': {'storedrequest': {'id': (ozoneBidRequest.params.placementId).toString()}}};
       return obj;
     });
     ozoneRequest.imp = tosendtags;
+    ozoneRequest.site = {'publisher': {'id': ozoneRequest.publisherId}, 'page': document.location.href};
+    ozoneRequest.test = parseInt(getTestQuerystringValue()); // will be 1 or 0
     var ret = {
       method: 'POST',
       url: OZONEURI,
@@ -253,6 +255,23 @@ export function ozoneAddStandardProperties(seatBid, defaultWidth, defaultHeight)
   seatBid.currency = 'USD';
   seatBid.ttl = 60;
   return seatBid;
+}
+
+/**
+ * we need to add test=1 or test=0 to the get params sent to the server.
+ * Get the value set as pbjs_debug= in the url, OR 0.
+ * @returns {*}
+ */
+export function getTestQuerystringValue() {
+  let searchString = window.location.search.substring(1);
+  let params = searchString.split('&');
+  for (let i = 0; i < params.length; i++) {
+    let val = params[i].split('=');
+    if (val[0] === 'pbjs_debug') {
+      return val[1] === 'true' ? 1 : 0;
+    }
+  }
+  return 0;
 }
 
 registerBidder(spec);

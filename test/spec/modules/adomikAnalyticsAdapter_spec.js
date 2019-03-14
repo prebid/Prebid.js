@@ -1,7 +1,7 @@
 import adomikAnalytics from 'modules/adomikAnalyticsAdapter';
 import {expect} from 'chai';
 let events = require('src/events');
-let adaptermanager = require('src/adaptermanager');
+let adapterManager = require('src/adapterManager').default;
 let constants = require('src/constants.json');
 
 describe('Adomik Prebid Analytic', function () {
@@ -28,7 +28,7 @@ describe('Adomik Prebid Analytic', function () {
     });
 
     it('should catch all events', function (done) {
-      adaptermanager.registerAnalyticsAdapter({
+      adapterManager.registerAnalyticsAdapter({
         code: 'adomik',
         adapter: adomikAnalytics
       });
@@ -55,7 +55,7 @@ describe('Adomik Prebid Analytic', function () {
       }
 
       // Step 1: Initialize adapter
-      adaptermanager.enableAnalytics({
+      adapterManager.enableAnalytics({
         provider: 'adomik',
         options: initOptions
       });

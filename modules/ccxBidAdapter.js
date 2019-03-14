@@ -1,6 +1,6 @@
-import * as utils from 'src/utils'
-import { registerBidder } from 'src/adapters/bidderFactory'
-import { config } from 'src/config'
+import * as utils from '../src/utils'
+import { registerBidder } from '../src/adapters/bidderFactory'
+import { config } from '../src/config'
 const BIDDER_CODE = 'ccx'
 const BID_URL = 'https://delivery.clickonometrics.pl/ortb/prebid/bid'
 const SUPPORTED_VIDEO_PROTOCOLS = [2, 3, 5, 6]
