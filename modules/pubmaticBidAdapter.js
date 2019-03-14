@@ -58,7 +58,7 @@ const NATIVE_ASSETS = {
   'IMAGE': {
     ID: 2,
     KEY: 'image',
-    TYPE: 0    
+    TYPE: 0
   },
 
   'ICON': {
@@ -227,29 +227,6 @@ const NATIVE_ASSET_REVERSE_ID = {
   20: 'desc2',
   21: 'displayurl',
   22: 'cta'
-}
-
-const NATIVE_ASSET_KEY = {
-  'TITLE': 'title',
-  'IMAGE': 'image',
-  'ICON': 'icon',
-  'SPONSOREDBY': 'sponsoredBy',
-  'BODY': 'body',
-  'VIDEO': 'video',
-  'EXT': 'ext',
-  'DATA': 'data',
-  'LOGO': 'logo',
-  'DESC': 'desc',
-  'RATING': 'rating',
-  'LIKES': 'likes',
-  'DOWNLOADS': 'downloads',
-  'PRICE': 'price',
-  'SALEPRICE': 'saleprice',
-  'PHONE': 'phone',
-  'ADDRESS': 'address',
-  'DESC2': 'desc2',
-  'DISPLAYURL': 'displayurl',
-  'CTA': 'cta'
 }
 
 const NATIVE_ASSET_IMAGE_TYPE = {
@@ -480,7 +457,7 @@ function _createNativeRequest(params) {
       var assetObj = {};
       if (!(nativeRequestObject.assets && nativeRequestObject.assets.length > 0 && nativeRequestObject.assets.hasOwnProperty(key))) {
         switch (key) {
-          case NATIVE_ASSET_KEY.TITLE:
+          case NATIVE_ASSETS.TITLE.KEY:
             if (params[key].len || params[key].length) {
               assetObj = {
                 id: NATIVE_ASSET_ID.TITLE,
@@ -494,7 +471,7 @@ function _createNativeRequest(params) {
               utils.logWarn(LOG_WARN_PREFIX + 'Error: Title Length is required for native ad: ' + JSON.stringify(params));
             }
             break;
-          case NATIVE_ASSET_KEY.IMAGE:
+          case NATIVE_ASSETS.IMAGE.KEY:
             if (params[key].sizes && params[key].sizes.length > 0) {
               assetObj = {
                 id: NATIVE_ASSET_ID.IMAGE,
@@ -514,7 +491,7 @@ function _createNativeRequest(params) {
               utils.logWarn(LOG_WARN_PREFIX + 'Error: Image sizes is required for native ad: ' + JSON.stringify(params));
             }
             break;
-          case NATIVE_ASSET_KEY.ICON:
+          case NATIVE_ASSETS.ICON.KEY:
             if (params[key].sizes && params[key].sizes.length > 0) {
               assetObj = {
                 id: NATIVE_ASSET_ID.ICON,
@@ -530,7 +507,7 @@ function _createNativeRequest(params) {
               utils.logWarn(LOG_WARN_PREFIX + 'Error: Icon sizes is required for native ad: ' + JSON.stringify(params));
             };
             break;
-          case NATIVE_ASSET_KEY.SPONSOREDBY:
+          case NATIVE_ASSETS.SPONSOREDBY.KEY:
             assetObj = {
               id: NATIVE_ASSET_ID.SPONSOREDBY,
               required: params[key].required ? 1 : 0,
@@ -541,7 +518,7 @@ function _createNativeRequest(params) {
               }
             };
             break;
-          case NATIVE_ASSET_KEY.BODY:
+          case NATIVE_ASSETS.BODY.KEY:
             assetObj = {
               id: NATIVE_ASSET_ID.BODY,
               required: params[key].required ? 1 : 0,
@@ -552,7 +529,7 @@ function _createNativeRequest(params) {
               }
             };
             break;
-          case NATIVE_ASSET_KEY.VIDEO:
+          case NATIVE_ASSETS.VIDEO.KEY:
             assetObj = {
               id: NATIVE_ASSET_ID.VIDEO,
               required: params[key].required ? 1 : 0,
@@ -565,13 +542,13 @@ function _createNativeRequest(params) {
               }
             };
             break;
-          case NATIVE_ASSET_KEY.EXT:
+          case NATIVE_ASSETS.EXT.KEY:
             assetObj = {
               id: NATIVE_ASSET_ID.EXT,
               required: params[key].required ? 1 : 0,
             };
             break;
-          case NATIVE_ASSET_KEY.LOGO:
+          case NATIVE_ASSETS.LOGO.KEY:
             assetObj = {
               id: NATIVE_ASSET_ID.LOGO,
               required: params[key].required ? 1 : 0,
@@ -582,7 +559,7 @@ function _createNativeRequest(params) {
               }
             };
             break;
-          case NATIVE_ASSET_KEY.RATING:
+          case NATIVE_ASSETS.RATING.KEY:
             assetObj = {
               id: NATIVE_ASSET_ID.RATING,
               required: params[key].required ? 1 : 0,
@@ -593,7 +570,7 @@ function _createNativeRequest(params) {
               }
             };
             break;
-          case NATIVE_ASSET_KEY.LIKES:
+          case NATIVE_ASSETS.LIKES.KEY:
             assetObj = {
               id: NATIVE_ASSET_ID.LIKES,
               required: params[key].required ? 1 : 0,
@@ -604,7 +581,7 @@ function _createNativeRequest(params) {
               }
             };
             break;
-          case NATIVE_ASSET_KEY.DOWNLOADS:
+          case NATIVE_ASSETS.DOWNLOADS.KEY:
             assetObj = {
               id: NATIVE_ASSET_ID.DOWNLOADS,
               required: params[key].required ? 1 : 0,
@@ -615,7 +592,7 @@ function _createNativeRequest(params) {
               }
             };
             break;
-          case NATIVE_ASSET_KEY.PRICE:
+          case NATIVE_ASSETS.PRICE.KEY:
             assetObj = {
               id: NATIVE_ASSET_ID.PRICE,
               required: params[key].required ? 1 : 0,
@@ -626,7 +603,7 @@ function _createNativeRequest(params) {
               }
             };
             break;
-          case NATIVE_ASSET_KEY.SALEPRICE:
+          case NATIVE_ASSETS.SALEPRICE.KEY:
             assetObj = {
               id: NATIVE_ASSET_ID.SALEPRICE,
               required: params[key].required ? 1 : 0,
@@ -637,7 +614,7 @@ function _createNativeRequest(params) {
               }
             };
             break;
-          case NATIVE_ASSET_KEY.PHONE:
+          case NATIVE_ASSETS.PHONE.KEY:
             assetObj = {
               id: NATIVE_ASSET_ID.PHONE,
               required: params[key].required ? 1 : 0,
@@ -648,7 +625,7 @@ function _createNativeRequest(params) {
               }
             };
             break;
-          case NATIVE_ASSET_KEY.ADDRESS:
+          case NATIVE_ASSETS.ADDRESS.KEY:
             assetObj = {
               id: NATIVE_ASSET_ID.ADDRESS,
               required: params[key].required ? 1 : 0,
@@ -659,7 +636,7 @@ function _createNativeRequest(params) {
               }
             };
             break;
-          case NATIVE_ASSET_KEY.DESC2:
+          case NATIVE_ASSETS.DESC2.KEY:
             assetObj = {
               id: NATIVE_ASSET_ID.DESC2,
               required: params[key].required ? 1 : 0,
@@ -670,7 +647,7 @@ function _createNativeRequest(params) {
               }
             };
             break;
-          case NATIVE_ASSET_KEY.DISPLAYURL:
+          case NATIVE_ASSETS.DISPLAYURL.KEY:
             assetObj = {
               id: NATIVE_ASSET_ID.DISPLAYURL,
               required: params[key].required ? 1 : 0,
@@ -681,7 +658,7 @@ function _createNativeRequest(params) {
               }
             };
             break;
-          case NATIVE_ASSET_KEY.CTA:
+          case NATIVE_ASSETS.CTA.KEY:
             assetObj = {
               id: NATIVE_ASSET_ID.CTA,
               required: params[key].required ? 1 : 0,
