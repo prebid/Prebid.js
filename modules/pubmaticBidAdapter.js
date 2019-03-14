@@ -210,21 +210,6 @@ const NATIVE_ASSET_IMAGE_TYPE = {
   'IMAGE': 3
 }
 
-const NATIVE_ASSET_DATA_TYPE = {
-  'SPONSORED': 1,
-  'DESC': 2,
-  'RATING': 3,
-  'LIKES': 4,
-  'DOWNLOADS': 5,
-  'PRICE': 6,
-  'SALEPRICE': 7,
-  'PHONE': 8,
-  'ADDRESS': 9,
-  'DESC2': 10,
-  'DISPLAYURL': 11,
-  'CTA': 12
-}
-
 // check if title, image can be added with mandatory field default values
 const NATIVE_MINIMUM_REQUIRED_IMAGE_ASSETS = [
   {
@@ -487,7 +472,7 @@ function _createNativeRequest(params) {
               id: NATIVE_ASSETS.SPONSOREDBY.ID,
               required: params[key].required ? 1 : 0,
               data: {
-                type: NATIVE_ASSET_DATA_TYPE.SPONSORED,
+                type: NATIVE_ASSETS.SPONSORED.TYPE,
                 len: params[key].len,
                 ext: params[key].ext
               }
@@ -498,7 +483,7 @@ function _createNativeRequest(params) {
               id: NATIVE_ASSETS.BODY.ID,
               required: params[key].required ? 1 : 0,
               data: {
-                type: NATIVE_ASSET_DATA_TYPE.DESC,
+                type: NATIVE_ASSETS.DESC.TYPE,
                 len: params[key].len,
                 ext: params[key].ext
               }
@@ -539,7 +524,7 @@ function _createNativeRequest(params) {
               id: NATIVE_ASSETS.RATING.ID,
               required: params[key].required ? 1 : 0,
               data: {
-                type: NATIVE_ASSET_DATA_TYPE.RATING,
+                type: NATIVE_ASSETS.RATING.TYPE,
                 len: params[key].len,
                 ext: params[key].ext
               }
@@ -550,7 +535,7 @@ function _createNativeRequest(params) {
               id: NATIVE_ASSETS.LIKES.ID,
               required: params[key].required ? 1 : 0,
               data: {
-                type: NATIVE_ASSET_DATA_TYPE.LIKES,
+                type: NATIVE_ASSETS.LIKES.TYPE,
                 len: params[key].len,
                 ext: params[key].ext
               }
@@ -561,7 +546,7 @@ function _createNativeRequest(params) {
               id: NATIVE_ASSETS.DOWNLOADS.ID,
               required: params[key].required ? 1 : 0,
               data: {
-                type: NATIVE_ASSET_DATA_TYPE.DOWNLOADS,
+                type: NATIVE_ASSETS.DOWNLOADS.TYPE,
                 len: params[key].len,
                 ext: params[key].ext
               }
@@ -572,7 +557,7 @@ function _createNativeRequest(params) {
               id: NATIVE_ASSETS.PRICE.ID,
               required: params[key].required ? 1 : 0,
               data: {
-                type: NATIVE_ASSET_DATA_TYPE.PRICE,
+                type: NATIVE_ASSETS.PRICE.TYPE,
                 len: params[key].len,
                 ext: params[key].ext
               }
@@ -583,7 +568,7 @@ function _createNativeRequest(params) {
               id: NATIVE_ASSETS.SALEPRICE.ID,
               required: params[key].required ? 1 : 0,
               data: {
-                type: NATIVE_ASSET_DATA_TYPE.SALEPRICE,
+                type: NATIVE_ASSETS.SALEPRICE.TYPE,
                 len: params[key].len,
                 ext: params[key].ext
               }
@@ -594,7 +579,7 @@ function _createNativeRequest(params) {
               id: NATIVE_ASSETS.PHONE.ID,
               required: params[key].required ? 1 : 0,
               data: {
-                type: NATIVE_ASSET_DATA_TYPE.PHONE,
+                type: NATIVE_ASSETS.PHONE.TYPE,
                 len: params[key].len,
                 ext: params[key].ext
               }
@@ -605,7 +590,7 @@ function _createNativeRequest(params) {
               id: NATIVE_ASSETS.ADDRESS.ID,
               required: params[key].required ? 1 : 0,
               data: {
-                type: NATIVE_ASSET_DATA_TYPE.ADDRESS,
+                type: NATIVE_ASSETS.ADDRESS.TYPE,
                 len: params[key].len,
                 ext: params[key].ext
               }
@@ -616,7 +601,7 @@ function _createNativeRequest(params) {
               id: NATIVE_ASSETS.DESC2.ID,
               required: params[key].required ? 1 : 0,
               data: {
-                type: NATIVE_ASSET_DATA_TYPE.DESC2,
+                type: NATIVE_ASSETS.DESC2.TYPE,
                 len: params[key].len,
                 ext: params[key].ext
               }
@@ -627,7 +612,7 @@ function _createNativeRequest(params) {
               id: NATIVE_ASSETS.DISPLAYURL.ID,
               required: params[key].required ? 1 : 0,
               data: {
-                type: NATIVE_ASSET_DATA_TYPE.DISPLAYURL,
+                type: NATIVE_ASSETS.DISPLAYURL.TYPE,
                 len: params[key].len,
                 ext: params[key].ext
               }
@@ -638,7 +623,7 @@ function _createNativeRequest(params) {
               id: NATIVE_ASSETS.CTA.ID,
               required: params[key].required ? 1 : 0,
               data: {
-                type: NATIVE_ASSET_DATA_TYPE.CTA,
+                type: NATIVE_ASSETS.CTA.TYPE,
                 len: params[key].len,
                 ext: params[key].ext
               }
