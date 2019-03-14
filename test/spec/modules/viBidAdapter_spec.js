@@ -10,7 +10,8 @@ import {
   isInsideIframe,
   isInsideSafeframe,
   getIframeType,
-  get
+  get,
+  getFrameElements
 } from "modules/viBidAdapter";
 
 describe("ratioToPercentageCeil", () => {
@@ -159,12 +160,39 @@ describe("getTopmostReachableWindow", () => {
     expect(getTopmostReachableWindow(win3)).to.be.equal(win));
 });
 
-const topWindow = { document };
+const topWindow = { document, frameElement: 0 };
 topWindow.top = topWindow;
 topWindow.parent = topWindow;
-const frameWindow1 = { top: topWindow, parent: topWindow };
-const frameWindow2 = { top: topWindow, parent: frameWindow1 };
-const frameWindow3 = { top: topWindow, parent: frameWindow2 };
+const topFrameElement = {
+  ownerDocument: {
+    defaultView: topWindow
+  }
+};
+const frameWindow1 = {
+  top: topWindow,
+  parent: topWindow,
+  frameElement: topFrameElement
+};
+const frameElement1 = {
+  ownerDocument: {
+    defaultView: frameWindow1
+  }
+};
+const frameWindow2 = {
+  top: topWindow,
+  parent: frameWindow1,
+  frameElement: frameElement1
+};
+const frameElement2 = {
+  ownerDocument: {
+    defaultView: frameWindow2
+  }
+};
+const frameWindow3 = {
+  top: topWindow,
+  parent: frameWindow2,
+  frameElement: frameElement2
+};
 
 describe("topDocumentIsReachable", () => {
   it("returns true if it can access top document", () =>
@@ -185,7 +213,7 @@ describe("isInsideSafeframe", () => {
     expect(isInsideSafeframe(safeframeWindow)).to.be.true);
 });
 
-const hostileFrameWindow = {}
+const hostileFrameWindow = {};
 
 describe("getIframeType", () => {
   it("returns undefined when is not inside iframe", () =>
@@ -196,6 +224,16 @@ describe("getIframeType", () => {
     expect(getIframeType(frameWindow3)).to.be.equal("friendly"));
   it("returns 'nonfriendly' when cannot get top window", () =>
     expect(getIframeType(hostileFrameWindow)).to.be.equal("nonfriendly"));
+});
+
+describe("getFrameElements", () => {
+  it("it returns a list iframe elements up to the top, topmost goes first", () => {
+    expect(getFrameElements(frameWindow3)).to.be.deep.equal([
+      topFrameElement,
+      frameElement1,
+      frameElement2
+    ]);
+  });
 });
 
 describe("getCuts without vCuts", () => {
