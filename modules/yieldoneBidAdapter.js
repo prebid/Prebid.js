@@ -7,8 +7,7 @@ import { BANNER, VIDEO } from '../src/mediaTypes';
 const BIDDER_CODE = 'yieldone';
 const ENDPOINT_URL = '//y.one.impact-ad.jp/h_bid';
 const USER_SYNC_URL = '//y.one.impact-ad.jp/push_sync';
-// TODO: have to change this debug url
-const VIDEO_PLAYER_URL = '//webdemo.dac.co.jp/kusapan/hb/video/render/dac-video-prebid.js';
+const VIDEO_PLAYER_URL = '//img.ak.impact-ad.jp/ic/pone/ivt/firstview/js/dac-video-prebid.min.js';
 
 export const spec = {
   code: BIDDER_CODE,
