@@ -254,32 +254,26 @@ function _createOrtbTemplate(conf) {
 // similar functionality as parseSlotParam. Check if the 2 functions can be clubbed.
 function _checkParamDataType(key, value, datatype) {
   var errMsg = 'PubMatic: Ignoring param key: ' + key + ', expects ' + datatype + ', found ' + typeof value;
+  var functionToExecute;
   switch (datatype) {
     case DATA_TYPES.BOOLEAN:
-      if (!utils.isBoolean(value)) {
-        utils.logWarn(LOG_WARN_PREFIX + errMsg);
-        return UNDEFINED;
-      }
-      return value;
+      functionToExecute = utils.isBoolean;
+      break;
     case DATA_TYPES.NUMBER:
-      if (!utils.isNumber(value)) {
-        utils.logWarn(LOG_WARN_PREFIX + errMsg);
-        return UNDEFINED;
-      }
-      return value;
+      functionToExecute = utils.isNumber;
+      break;
     case DATA_TYPES.STRING:
-      if (!utils.isStr(value)) {
-        utils.logWarn(LOG_WARN_PREFIX + errMsg);
-        return UNDEFINED;
-      }
-      return value;
+      functionToExecute = utils.isStr;
+      break;
     case DATA_TYPES.ARRAY:
-      if (!utils.isArray(value)) {
-        utils.logWarn(LOG_WARN_PREFIX + errMsg);
-        return UNDEFINED;
-      }
-      return value;
+      functionToExecute = utils.isArray;
+      break;
   }
+  if (functionToExecute(value)) {
+    return value;
+  }
+  utils.logWarn(LOG_WARN_PREFIX + errMsg);
+  return UNDEFINED;
 }
 
 function _commonNativeRequestObject(nativeAsset, params) {
