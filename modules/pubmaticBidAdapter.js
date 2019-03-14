@@ -73,11 +73,6 @@ const NATIVE_ASSETS = {
   'CTA': { ID: 22, KEY: 'cta', TYPE: 12 }
 };
 
-var NATIVE_ASSET_ID_TO_KEY_MAP = {};
-utils._each(NATIVE_ASSETS, function(anAsset) {
-  NATIVE_ASSET_ID_TO_KEY_MAP[anAsset.ID] = anAsset.KEY;
-});
-
 const NATIVE_ASSET_IMAGE_TYPE = {
   'ICON': 1,
   'LOGO': 2,
@@ -112,6 +107,10 @@ const dealChannelValues = {
 
 let publisherId = 0;
 let isInvalidNativeRequest = false;
+let NATIVE_ASSET_ID_TO_KEY_MAP = {};
+utils._each(NATIVE_ASSETS, function(anAsset) {
+  NATIVE_ASSET_ID_TO_KEY_MAP[anAsset.ID] = anAsset.KEY;
+});
 
 function _getDomainFromURL(url) {
   let anchor = document.createElement('a');
