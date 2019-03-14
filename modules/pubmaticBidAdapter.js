@@ -108,8 +108,16 @@ const dealChannelValues = {
 let publisherId = 0;
 let isInvalidNativeRequest = false;
 let NATIVE_ASSET_ID_TO_KEY_MAP = {};
+let NATIVE_ASSET_KEY_TO_ASSET_MAP = {};
+
+// loading NATIVE_ASSET_ID_TO_KEY_MAP
 utils._each(NATIVE_ASSETS, function(anAsset) {
   NATIVE_ASSET_ID_TO_KEY_MAP[anAsset.ID] = anAsset.KEY;
+});
+
+// loading NATIVE_ASSET_KEY_TO_ASSET_MAP
+utils._each(NATIVE_ASSETS, function(anAsset) {
+  NATIVE_ASSET_KEY_TO_ASSET_MAP[anAsset.KEY] = anAsset;
 });
 
 function _getDomainFromURL(url) {
@@ -347,12 +355,6 @@ function _createNativeRequest(params) {
               utils.logWarn(LOG_WARN_PREFIX + 'Error: Icon sizes is required for native ad: ' + JSON.stringify(params));
             };
             break;
-          case NATIVE_ASSETS.SPONSOREDBY.KEY:
-            assetObj = _commonNativeRequestObject(NATIVE_ASSETS.SPONSOREDBY, params);
-            break;
-          case NATIVE_ASSETS.BODY.KEY:
-            assetObj = _commonNativeRequestObject(NATIVE_ASSETS.BODY, params); ;
-            break;
           case NATIVE_ASSETS.VIDEO.KEY:
             assetObj = {
               id: NATIVE_ASSETS.VIDEO.ID,
@@ -383,35 +385,19 @@ function _createNativeRequest(params) {
               }
             };
             break;
+          case NATIVE_ASSETS.SPONSOREDBY.KEY:
+          case NATIVE_ASSETS.BODY.KEY:  
           case NATIVE_ASSETS.RATING.KEY:
-            assetObj = _commonNativeRequestObject(NATIVE_ASSETS.RATING, params); ;
-            break;
           case NATIVE_ASSETS.LIKES.KEY:
-            assetObj = _commonNativeRequestObject(NATIVE_ASSETS.LIKES, params); ;
-            break;
           case NATIVE_ASSETS.DOWNLOADS.KEY:
-            assetObj = _commonNativeRequestObject(NATIVE_ASSETS.DOWNLOADS, params); ;
-            break;
           case NATIVE_ASSETS.PRICE.KEY:
-            assetObj = _commonNativeRequestObject(NATIVE_ASSETS.PRICE, params); ;
-            break;
           case NATIVE_ASSETS.SALEPRICE.KEY:
-            assetObj = _commonNativeRequestObject(NATIVE_ASSETS.SALEPRICE, params); ;
-            break;
           case NATIVE_ASSETS.PHONE.KEY:
-            assetObj = _commonNativeRequestObject(NATIVE_ASSETS.PHONE, params); ;
-            break;
           case NATIVE_ASSETS.ADDRESS.KEY:
-            assetObj = _commonNativeRequestObject(NATIVE_ASSETS.ADDRESS, params); ;
-            break;
           case NATIVE_ASSETS.DESC2.KEY:
-            assetObj = _commonNativeRequestObject(NATIVE_ASSETS.DESC2, params); ;
-            break;
           case NATIVE_ASSETS.DISPLAYURL.KEY:
-            assetObj = _commonNativeRequestObject(NATIVE_ASSETS.DISPLAYURL, params); ;
-            break;
           case NATIVE_ASSETS.CTA.KEY:
-            assetObj = _commonNativeRequestObject(NATIVE_ASSETS.CTA, params); ;
+            assetObj = _commonNativeRequestObject(NATIVE_ASSET_KEY_TO_ASSET_MAP[key], params);
             break;
         }
       }
