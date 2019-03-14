@@ -231,7 +231,7 @@ describe('Appier Prebid AnalyticsAdapter', function () {
       ajaxStub.restore();
     });
 
-    it('should build message correctly for regular bids', function () {
+    it('should build message correctly for regular bids and prebid won', function () {
       appierAnalyticsAdapter.enableAnalytics({
         provider: 'appierAnalytics',
         options: {
@@ -248,7 +248,7 @@ describe('Appier Prebid AnalyticsAdapter', function () {
       events.emit(constants.EVENTS.BID_RESPONSE, MOCK_EVENT.BID_RESPONSE_REGULAR[1]);
       events.emit(constants.EVENTS.BIDDER_DONE, MOCK_EVENT.BIDDER_DONE[0]);
       events.emit(constants.EVENTS.BIDDER_DONE, MOCK_EVENT.BIDDER_DONE[1]);
-      appierAnalyticsAdapter.handleAuctionEndMessage(MOCK_EVENT.AUCTION_END_REGULAR, []);
+      appierAnalyticsAdapter.handleAuctionEndMessage(MOCK_EVENT.AUCTION_END_REGULAR, [MOCK_BIDS.BID1]);
       events.emit(constants.EVENTS.BID_WON, MOCK_EVENT.BID_WON[0]);
 
       cache = appierAnalyticsAdapter.getCache();
@@ -270,7 +270,7 @@ describe('Appier Prebid AnalyticsAdapter', function () {
               'cpmUsd': 0.59878,
               'originalCpm': 18.26179,
               'originalCurrency': 'TWD',
-              'prebidWon': false
+              'prebidWon': true
             }
           },
           '/12345678/adunit_2': {
@@ -366,7 +366,7 @@ describe('Appier Prebid AnalyticsAdapter', function () {
       });
     });
 
-    it('should build message correctly for timeout bids', function () {
+    it('should build message correctly for timeout bids and no-response bids', function () {
       appierAnalyticsAdapter.enableAnalytics({
         provider: 'appierAnalytics',
         options: {
@@ -425,6 +425,50 @@ describe('Appier Prebid AnalyticsAdapter', function () {
             'appier': {
               'status': 'requested',
               'isTimeout': true
+            }
+          },
+          '/12345678/adunit_2': {
+            'appier': {
+              'status': 'noBid',
+              'isTimeout': true,
+            }
+          }
+        }
+      });
+    });
+
+    it('should build message correctly for bids after auction end', function () {
+      appierAnalyticsAdapter.enableAnalytics({
+        provider: 'appierAnalytics',
+        options: {
+          affiliateId: affiliateId,
+          configId: configId,
+          sampling: 1,
+          adSampling: 1
+        }
+      });
+
+      events.emit(constants.EVENTS.AUCTION_INIT, MOCK_EVENT.AUCTION_INIT);
+      events.emit(constants.EVENTS.BID_REQUESTED, MOCK_EVENT.BID_REQUESTED);
+      appierAnalyticsAdapter.handleAuctionEndMessage(MOCK_EVENT.AUCTION_END_NOBID, []);
+      events.emit(constants.EVENTS.BID_RESPONSE, MOCK_EVENT.BID_RESPONSE_REGULAR[0]);
+      events.emit(constants.EVENTS.BIDDER_DONE, MOCK_EVENT.BIDDER_DONE[0]);
+
+      cache = appierAnalyticsAdapter.getCache();
+
+      expect(cache[auctionId].bids).to.deep.equal({
+        'adUnits': {
+          '/12345678/adunit_1': {
+            'appier': {
+              'status': 'bid',
+              'isTimeout': true,
+              'time': 600,
+              'cpm': 0.59878,
+              'currency': 'USD',
+              'cpmUsd': 0.59878,
+              'originalCpm': 18.26179,
+              'originalCurrency': 'TWD',
+              'prebidWon': false
             }
           },
           '/12345678/adunit_2': {
