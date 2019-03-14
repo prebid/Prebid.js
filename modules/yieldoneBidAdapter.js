@@ -36,15 +36,15 @@ export const spec = {
       };
 
       const videoMediaType = utils.deepAccess(bidRequest, 'mediaTypes.video');
-      if (bidRequest.mediaType === VIDEO || videoMediaType) {
+      if ((utils.isEmpty(bidRequest.mediaType) && utils.isEmpty(bidRequest.mediaTypes)) ||
+      (bidRequest.mediaType === BANNER || (bidRequest.mediaTypes && bidRequest.mediaTypes[BANNER]))) {
+        const sizes = utils.deepAccess(bidRequest, 'mediaTypes.banner.sizes') || bidRequest.sizes;
+        payload.sz = utils.parseSizesInput(sizes).join(',');
+      } else if (bidRequest.mediaType === VIDEO || videoMediaType) {
         const sizes = utils.deepAccess(bidRequest, 'mediaTypes.video.playerSize') || bidRequest.sizes;
         const size = utils.parseSizesInput(sizes)[0];
         payload.w = size.split('x')[0];
         payload.h = size.split('x')[1];
-      } else if ((utils.isEmpty(bidRequest.mediaType) && utils.isEmpty(bidRequest.mediaTypes)) ||
-      (bidRequest.mediaType === BANNER || (bidRequest.mediaTypes && bidRequest.mediaTypes[BANNER]))) {
-        const sizes = utils.deepAccess(bidRequest, 'mediaTypes.banner.sizes') || bidRequest.sizes;
-        payload.sz = utils.parseSizesInput(sizes).join(',');
       }
 
       return {
