@@ -743,9 +743,7 @@ export const spec = {
     payload.user.geo.lat = _parseSlotParam('lat', conf.lat);
     payload.user.geo.lon = _parseSlotParam('lon', conf.lon);
     payload.user.yob = _parseSlotParam('yob', conf.yob);
-    payload.device.geo = {};
-    payload.device.geo.lat = _parseSlotParam('lat', conf.lat);
-    payload.device.geo.lon = _parseSlotParam('lon', conf.lon);
+    payload.device.geo = payload.user.geo;
     payload.site.page = conf.kadpageurl.trim() || payload.site.page.trim();
     payload.site.domain = _getDomainFromURL(payload.site.page);
 
