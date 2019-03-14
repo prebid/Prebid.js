@@ -386,7 +386,7 @@ function _createNativeRequest(params) {
             };
             break;
           case NATIVE_ASSETS.SPONSOREDBY.KEY:
-          case NATIVE_ASSETS.BODY.KEY:  
+          case NATIVE_ASSETS.BODY.KEY:
           case NATIVE_ASSETS.RATING.KEY:
           case NATIVE_ASSETS.LIKES.KEY:
           case NATIVE_ASSETS.DOWNLOADS.KEY:
