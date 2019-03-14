@@ -143,7 +143,7 @@ export function getRectCuts(rect, vh, vw, vCuts = NO_CUTS) {
   };
 }
 
-function getFrameElements(curWindow = window) {
+export function getFrameElements(curWindow = window) {
   const frameElements = [];
 
   while (curWindow && curWindow.frameElement) {
@@ -248,9 +248,14 @@ export function getOffsetToViewPercentage(element) {
 }
 
 function getViewabilityDescription(element) {
-  const iframeType = getIframeType();
-
+  let iframeType;
   try {
+    if (!element) {
+      return {
+        error: "no element"
+      };
+    }
+    iframeType = getIframeType(getElementWindow(element));
     const inViewPercentage = getInViewPercentage(element);
 
     switch (iframeType) {
@@ -278,7 +283,7 @@ function getViewabilityDescription(element) {
   } catch (error) {
     return {
       iframeType,
-      error
+      error: error.message
     };
   }
 }
@@ -287,25 +292,36 @@ const spec = {
   code: "vi",
   supportedMediaTypes: ["banner"],
 
-  isBidRequestValid({ adUnitCode }) {
-    return !!document.getElementById(adUnitCode);
+  isBidRequestValid({ adUnitCode, params: { pubId, lang, cat } = {} }) {
+    return [pubId, lang, cat].every(x => typeof x === "string");
   },
+
+  /**
+   *
+   bidId, +
+   pubId +
+   cat, +
+   lang +
+   domain
+   page
+   referrer
+   */
 
   buildRequests(bidRequests) {
     return {
       method: "POST",
       url: "//localhost:3000/bid",
       data: {
+        refererInfo: bidRequests[0] && bidRequests[0].refererInfo,
         imps: bidRequests
-          .map(({ bidId, adUnitCode, sizes }) => {
+          .map(({ bidId, adUnitCode, sizes, params }) => {
             const slot = document.getElementById(adUnitCode);
-            return (
-              slot && {
-                bidId,
-                sizes,
-                ...getViewabilityDescription(slot)
-              }
-            );
+            return {
+              bidId,
+              sizes,
+              ...getViewabilityDescription(slot),
+              ...params
+            };
           })
           .filter(Boolean)
       },
