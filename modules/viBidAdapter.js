@@ -65,7 +65,7 @@ var IframeType;
 (function(IframeType) {
   IframeType["safeframe"] = "safeframe";
   IframeType["friendly"] = "friendly";
-  IframeType["hostile"] = "hostile";
+  IframeType["nonfriendly"] = "nonfriendly";
 })(IframeType || (IframeType = {}));
 
 export function getWindowParents(curWindow = window) {
@@ -113,7 +113,7 @@ export function getIframeType(curWindow = window) {
   if (!isInsideIframe(curWindow)) return;
   if (isInsideSafeframe(curWindow)) return IframeType.safeframe;
   if (isInsideFriendlyIframe(curWindow)) return IframeType.friendly;
-  return IframeType.hostile;
+  return IframeType.nonfriendly;
 }
 
 function getElementWindow(element) {
@@ -265,7 +265,7 @@ function getViewabilityDescription(element) {
         };
 
       case IframeType.safeframe:
-      case IframeType.hostile:
+      case IframeType.nonfriendly:
         return {
           iframeType
         };
@@ -296,7 +296,7 @@ const spec = {
       method: "POST",
       url: "//localhost:3000/bid",
       data: {
-        bidRequests: bidRequests
+        imps: bidRequests
           .map(({ bidId, adUnitCode, sizes }) => {
             const slot = document.getElementById(adUnitCode);
             return (

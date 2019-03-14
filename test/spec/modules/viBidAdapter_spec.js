@@ -194,8 +194,8 @@ describe("getIframeType", () => {
     expect(getIframeType(safeframeWindow)).to.be.equal("safeframe"));
   it("returns 'friendly' when inside friendly iframe and can reach top window", () =>
     expect(getIframeType(frameWindow3)).to.be.equal("friendly"));
-  it("returns 'hostile' when cannot get top window", () =>
-    expect(getIframeType(hostileFrameWindow)).to.be.equal("hostile"));
+  it("returns 'nonfriendly' when cannot get top window", () =>
+    expect(getIframeType(hostileFrameWindow)).to.be.equal("nonfriendly"));
 });
 
 describe("getCuts without vCuts", () => {
