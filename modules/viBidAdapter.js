@@ -216,7 +216,8 @@ export function getOffsetTopDocument(element) {
 export function getOffsetTopDocumentPercentage(element) {
   const elementWindow = getElementWindow(element);
   if (!elementWindow) throw new Error("cannot get element window");
-  if (!topDocumentIsReachable()) throw new Error("top window isn't reachable");
+  if (!topDocumentIsReachable(elementWindow))
+    throw new Error("top window isn't reachable");
   const topWindow = getTopmostReachableWindow(elementWindow);
   const documentHeight = getDocumentHeight(topWindow.document);
   return ratioToPercentageCeil(
@@ -224,7 +225,7 @@ export function getOffsetTopDocumentPercentage(element) {
   );
 }
 
-function getOffsetToView(element) {
+export function getOffsetToView(element) {
   const elemWindow = getElementWindow(element);
   if (!elemWindow) throw new Error("cannot get element window");
   const topWindow = getTopmostReachableWindow(elemWindow);
@@ -243,11 +244,13 @@ function getOffsetToView(element) {
 export function getOffsetToViewPercentage(element) {
   return ratioToPercentageCeil(
     getOffsetToView(element) /
-      getDocumentHeight(getTopmostReachableWindow().document)
+      getDocumentHeight(
+        getTopmostReachableWindow(getElementWindow(element)).document
+      )
   );
 }
 
-function getViewabilityDescription(element) {
+export function getViewabilityDescription(element) {
   let iframeType;
   try {
     if (!element) {
@@ -256,30 +259,19 @@ function getViewabilityDescription(element) {
       };
     }
     iframeType = getIframeType(getElementWindow(element));
-    const inViewPercentage = getInViewPercentage(element);
-
-    switch (iframeType) {
-      case undefined:
-      case IframeType.friendly:
-        return {
-          inView: inViewPercentage,
-          hidden: !inViewPercentage && !getMayBecomeVisible(element),
-          offsetTop: getOffsetTopDocumentPercentage(element),
-          offsetView: getOffsetToViewPercentage(element),
-          iframeType
-        };
-
-      case IframeType.safeframe:
-      case IframeType.nonfriendly:
-        return {
-          iframeType
-        };
-
-      default:
-        return {
-          iframeType
-        };
+    if (!iframeType || iframeType === IframeType.friendly) {
+      const inViewPercentage = getInViewPercentage(element);
+      return {
+        inView: inViewPercentage,
+        hidden: !inViewPercentage && !getMayBecomeVisible(element),
+        offsetTop: getOffsetTopDocumentPercentage(element),
+        offsetView: getOffsetToViewPercentage(element),
+        iframeType
+      };
     }
+    return {
+      iframeType
+    };
   } catch (error) {
     return {
       iframeType,

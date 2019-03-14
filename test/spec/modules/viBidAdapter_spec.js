@@ -13,11 +13,16 @@ import {
   getFrameElements,
   getElementCuts,
   getInViewRatio,
+  getMayBecomeVisible,
+  getInViewPercentage,
   getInViewRatioInsideTopFrame,
   getOffsetTopDocument,
   getOffsetTopDocumentPercentage,
+  getOffsetToView,
+  getOffsetToViewPercentage,
   area,
-  get
+  get,
+  getViewabilityDescription
 } from "modules/viBidAdapter";
 
 describe("ratioToPercentageCeil", () => {
@@ -201,6 +206,8 @@ const frameWindow3 = {
 };
 
 describe("topDocumentIsReachable", () => {
+  it("returns true if it no inside iframe", () =>
+    expect(topDocumentIsReachable(topWindow)).to.be.true);
   it("returns true if it can access top document", () =>
     expect(topDocumentIsReachable(frameWindow3)).to.be.true);
 });
@@ -301,6 +308,54 @@ describe("getInViewRatio", () => {
     ).to.be.deep.equal(1));
 });
 
+describe("getMayBecomeVisible", () => {
+  it("returns true if not inside iframe of visible inside the iframe", () =>
+    expect(
+      getMayBecomeVisible({
+        ownerDocument: {
+          defaultView: {
+            innerHeight: 1000,
+            innerWidth: 1000
+          }
+        },
+        offsetWidth: 200,
+        offsetHeight: 200,
+        getBoundingClientRect() {
+          return {
+            top: 0,
+            right: 200,
+            bottom: 200,
+            left: 0
+          };
+        }
+      })
+    ).to.be.true);
+});
+
+describe("getInViewPercentage", () => {
+  it("returns inViewRatioPercentage", () =>
+    expect(
+      getInViewPercentage({
+        ownerDocument: {
+          defaultView: {
+            innerHeight: 1000,
+            innerWidth: 1000
+          }
+        },
+        offsetWidth: 200,
+        offsetHeight: 200,
+        getBoundingClientRect() {
+          return {
+            top: 0,
+            right: 200,
+            bottom: 200,
+            left: 0
+          };
+        }
+      })
+    ).to.be.deep.equal(100));
+});
+
 describe("getInViewRatioInsideTopFrame", () => {
   it("returns inViewRatio", () =>
     expect(
@@ -351,19 +406,22 @@ describe("getOffsetTopDocument", () => {
 });
 
 describe("getOffsetTopDocumentPercentage", () => {
-  it("returns offset from the top as a percentage of the page length", () =>
+  it("returns offset from the top as a percentage of the page length", () => {
+    const topWindow = {
+      pageXOffset: 0,
+      pageYOffset: 100,
+      document: {
+        body: {
+          clientHeight: 1000
+        }
+      }
+    };
+    topWindow.top = topWindow;
+    topWindow.parent = topWindow;
     expect(
       getOffsetTopDocumentPercentage({
         ownerDocument: {
-          defaultView: {
-            pageXOffset: 0,
-            pageYOffset: 100,
-            document: {
-              body: {
-                clientHeight: 1000
-              }
-            }
-          }
+          defaultView: topWindow
         },
         getBoundingClientRect: () => ({
           top: 100,
@@ -372,7 +430,71 @@ describe("getOffsetTopDocumentPercentage", () => {
           left: 0
         })
       })
-    ).to.be.equal(20));
+    ).to.be.equal(20);
+  });
+  it("throws when cannot get window", () =>
+    expect(() =>
+      getOffsetTopDocumentPercentage({
+        ownerDocument: {}
+      })
+    ).to.throw());
+  it("throw when top document isn't reachable", () => {
+    const topWindow = { ...topWindow, document: null };
+    expect(() =>
+      getOffsetTopDocumentPercentage({
+        ownerDocument: {
+          defaultView: {
+            top: topWindow
+          }
+        }
+      })
+    ).to.throw();
+  });
+});
+
+describe("getOffsetToView", () => {
+  expect(
+    getOffsetToView({
+      ownerDocument: {
+        defaultView: {
+          scrollY: 0,
+          pageXOffset: 0,
+          pageYOffset: 0
+        }
+      },
+      getBoundingClientRect: () => ({
+        top: 0,
+        right: 0,
+        bottom: 0,
+        left: 0
+      })
+    })
+  ).to.be.equal(0);
+});
+
+describe("getOffsetToView", () => {
+  expect(
+    getOffsetToViewPercentage({
+      ownerDocument: {
+        defaultView: {
+          scrollY: 0,
+          pageXOffset: 0,
+          pageYOffset: 0,
+          document: {
+            body: {
+              clientHeight: 1000
+            }
+          }
+        }
+      },
+      getBoundingClientRect: () => ({
+        top: 0,
+        right: 0,
+        bottom: 0,
+        left: 0
+      })
+    })
+  ).to.be.equal(0);
 });
 
 describe("getCuts without vCuts", () => {
@@ -718,4 +840,36 @@ describe("get", () => {
   it("can work with arrays 1", () => expect(get([0, 1], [[1, 2]])).to.equal(2));
   it("can work with arrays 2", () =>
     expect(get([0, "a"], [{ a: 42 }])).to.equal(42));
+});
+
+describe("getViewabilityDescription", () => {
+  it("returns error when there is no element", () => {
+    expect(getViewabilityDescription(null)).to.deep.equal({
+      error: "no element"
+    });
+  });
+  it("returns only iframe type for nonfrienly iframe", () => {
+    expect(
+      getViewabilityDescription({
+        ownerDocument: {
+          defaultView: {}
+        }
+      })
+    ).to.deep.equal({
+      iframeType: "nonfriendly"
+    });
+  });
+  it("returns only iframe type for safeframe iframe", () => {
+    expect(
+      getViewabilityDescription({
+        ownerDocument: {
+          defaultView: {
+            $sf: true
+          }
+        }
+      })
+    ).to.deep.equal({
+      iframeType: "safeframe"
+    });
+  });
 });
