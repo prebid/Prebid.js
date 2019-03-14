@@ -46,6 +46,7 @@ const SERVER_VIDEO_RESPONSE = {
   }
   ]
 };
+
 const SERVER_DISPLAY_RESPONSE = {
   'source': {'aid': 12345, 'pubId': 54321},
   'bids': [{
@@ -57,7 +58,23 @@ const SERVER_DISPLAY_RESPONSE = {
     'cur': 'USD',
     'width': 300,
     'cpm': 0.9
-  }]
+  }],
+  'cookieURLs': ['link1', 'link2']
+};
+const SERVER_DISPLAY_RESPONSE_WITH_MIXED_SYNCS = {
+  'source': {'aid': 12345, 'pubId': 54321},
+  'bids': [{
+    'ad': '<!-- Creative -->',
+    'requestId': '2e41f65424c87c',
+    'creative_id': 342516,
+    'cmpId': 342516,
+    'height': 250,
+    'cur': 'USD',
+    'width': 300,
+    'cpm': 0.9
+  }],
+  'cookieURLs': ['link1', 'link2'],
+  'cookieURLSTypes': ['image', 'iframe']
 };
 
 const videoBidderRequest = {
@@ -68,6 +85,15 @@ const videoBidderRequest = {
 const displayBidderRequest = {
   bidderCode: 'bidderCode',
   bids: [{bidId: '2e41f65424c87c'}]
+};
+
+const displayBidderRequestWithGdpr = {
+  bidderCode: 'bidderCode',
+  bids: [{bidId: '2e41f65424c87c'}],
+  gdprConsent: {
+    gdprApplies: true,
+    consentString: 'test'
+  }
 };
 
 const videoEqResponse = [{
@@ -96,8 +122,46 @@ const displayEqResponse = [{
   cpm: 0.9
 }];
 
-describe('adtelligentBidAdapter', function () {
+describe('adtelligentBidAdapter', function () { // todo remove only
   const adapter = newBidder(spec);
+
+  describe('user syncs as image', function () {
+    it('should be returned if pixel enabled', function () {
+      const syncs = spec.getUserSyncs({pixelEnabled: true}, [{body: SERVER_DISPLAY_RESPONSE_WITH_MIXED_SYNCS}]);
+
+      expect(syncs.map(s => s.url)).to.deep.equal([SERVER_DISPLAY_RESPONSE_WITH_MIXED_SYNCS.cookieURLs[0]]);
+      expect(syncs.map(s => s.type)).to.deep.equal(['image']);
+    })
+  })
+
+  describe('user syncs as iframe', function () {
+    it('should be returned if iframe enabled', function () {
+      const syncs = spec.getUserSyncs({iframeEnabled: true}, [{body: SERVER_DISPLAY_RESPONSE_WITH_MIXED_SYNCS}]);
+
+      expect(syncs.map(s => s.url)).to.deep.equal([SERVER_DISPLAY_RESPONSE_WITH_MIXED_SYNCS.cookieURLs[1]]);
+      expect(syncs.map(s => s.type)).to.deep.equal(['iframe']);
+    })
+  })
+
+  describe('user syncs with both types', function () {
+    it('should be returned if pixel and iframe enabled', function () {
+      const syncs = spec.getUserSyncs({
+        iframeEnabled: true,
+        pixelEnabled: true
+      }, [{body: SERVER_DISPLAY_RESPONSE_WITH_MIXED_SYNCS}]);
+
+      expect(syncs.map(s => s.url)).to.deep.equal(SERVER_DISPLAY_RESPONSE_WITH_MIXED_SYNCS.cookieURLs);
+      expect(syncs.map(s => s.type)).to.deep.equal(SERVER_DISPLAY_RESPONSE_WITH_MIXED_SYNCS.cookieURLSTypes);
+    })
+  })
+
+  describe('user syncs', function () {
+    it('should not be returned if pixel not set', function () {
+      const syncs = spec.getUserSyncs({}, [{body: SERVER_DISPLAY_RESPONSE_WITH_MIXED_SYNCS}]);
+
+      expect(syncs).to.be.empty;
+    })
+  })
 
   describe('inherited functions', function () {
     it('exists and is a function', function () {
@@ -210,6 +274,13 @@ describe('adtelligentBidAdapter', function () {
       eqResponse = displayEqResponse;
 
       bidServerResponseCheck();
+    });
+
+    it('should set gdpr data correctly', function () {
+      const builtRequestData = spec.buildRequests([DISPLAY_REQUEST], displayBidderRequestWithGdpr);
+
+      expect(builtRequestData.data.gdpr).to.be.equal(1);
+      expect(builtRequestData.data.gdpr_consent).to.be.equal(displayBidderRequestWithGdpr.gdprConsent.consentString);
     });
 
     function bidServerResponseCheck() {

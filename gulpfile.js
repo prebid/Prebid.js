@@ -11,7 +11,7 @@ var uglify = require('gulp-uglify');
 var gulpClean = require('gulp-clean');
 var KarmaServer = require('karma').Server;
 var karmaConfMaker = require('./karma.conf.maker');
-var opens = require('open');
+var opens = require('opn');
 var webpackConfig = require('./webpack.conf');
 var helpers = require('./gulpHelpers');
 var concat = require('gulp-concat');
@@ -30,7 +30,6 @@ var jsEscape = require('gulp-js-escape');
 var prebid = require('./package.json');
 var dateString = 'Updated : ' + (new Date()).toISOString().substring(0, 10);
 var banner = '/* <%= prebid.name %> v<%= prebid.version %>\n' + dateString + ' */\n';
-var analyticsDirectory = '../analytics';
 var port = 9999;
 
 // these modules must be explicitly listed in --modules to be included in the build, won't be part of "all" modules
@@ -80,10 +79,14 @@ function lint(done) {
   if (argv.nolint) {
     return done();
   }
-  return gulp.src(['src/**/*.js', 'modules/**/*.js', 'test/**/*.js'])
-    .pipe(eslint())
+  const isFixed = function(file) {
+    return file.eslint != null && file.eslint.fixed;
+  }
+  return gulp.src(['src/**/*.js', 'modules/**/*.js', 'test/**/*.js'], {base: './'})
+    .pipe(gulpif(argv.nolintfix, eslint(), eslint({fix: true})))
     .pipe(eslint.format('stylish'))
-    .pipe(eslint.failAfterError());
+    .pipe(eslint.failAfterError())
+    .pipe(gulpif(isFixed, gulp.dest('./')));
 };
 
 // View the code coverage report in the browser.
@@ -98,6 +101,7 @@ function viewCoverage(done) {
   opens('http://localhost:' + coveragePort);
   done();
 };
+
 viewCoverage.displayName = 'view-coverage';
 
 // Watch Task with Live Reload
@@ -130,36 +134,32 @@ function makeDevpackPkg() {
   cloned.devtool = 'source-map';
   var externalModules = helpers.getArgModules();
 
-  const analyticsSources = helpers.getAnalyticsSources(analyticsDirectory);
+  const analyticsSources = helpers.getAnalyticsSources();
   const moduleSources = helpers.getModulePaths(externalModules);
 
   return gulp.src([].concat(moduleSources, analyticsSources, 'src/prebid.js'))
     .pipe(helpers.nameModules(externalModules))
     .pipe(webpackStream(cloned, webpack))
-    .pipe(replace('$prebid.version$', prebid.version))
     .pipe(gulp.dest('build/dev'))
     .pipe(connect.reload());
 }
 
 function makeWebpackPkg() {
   var cloned = _.cloneDeep(webpackConfig);
-
   delete cloned.devtool;
 
   var externalModules = helpers.getArgModules();
 
-  const analyticsSources = helpers.getAnalyticsSources(analyticsDirectory);
+  const analyticsSources = helpers.getAnalyticsSources();
   const moduleSources = helpers.getModulePaths(externalModules);
 
   return gulp.src([].concat(moduleSources, analyticsSources, 'src/prebid.js'))
     .pipe(helpers.nameModules(externalModules))
     .pipe(webpackStream(cloned, webpack))
-    .pipe(replace('$prebid.version$', prebid.version))
     .pipe(uglify())
     .pipe(gulpif(file => file.basename === 'prebid-core.js', header(banner, { prebid: prebid })))
     .pipe(optimizejs())
-    .pipe(gulp.dest('build/dist'))
-    .pipe(connect.reload());
+    .pipe(gulp.dest('build/dist'));
 }
 
 function gulpBundle(dev) {
@@ -227,12 +227,7 @@ function newKarmaCallback(done) {
     if (exitCode) {
       done(new Error('Karma tests failed with exit code ' + exitCode));
     } else {
-      if (argv.browserstack) {
-        // process.exit(0);
-        done(); // test this with travis (or circleci)
-      } else {
-        done();
-      }
+      done();
     }
   }
 }
@@ -272,26 +267,6 @@ function coveralls() { // 2nd arg is a dependency: 'test' must be finished
   // have to read it.
     .pipe(shell('cat build/coverage/lcov.info | node_modules/coveralls/bin/coveralls.js'));
 }
-
-// Watch Task with Live Reload
-gulp.task('watch', function () {
-  gulp.watch([
-    'src/**/*.js',
-    'modules/**/*.js',
-    'test/spec/**/*.js',
-    '!test/spec/loaders/**/*.js'
-  ], ['build-bundle-dev', 'test']);
-  gulp.watch([
-    'loaders/**/*.js',
-    'test/spec/loaders/**/*.js'
-  ], ['lint']);
-  connect.server({
-    https: argv.https,
-    port: port,
-    root: './',
-    livereload: true
-  });
-});
 
 function e2eTest() {
   var cmdQueue = [];

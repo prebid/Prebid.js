@@ -107,10 +107,10 @@ describe('UnrulyAdapter', function () {
       const mockBidRequests = ['mockBid'];
       expect(adapter.buildRequests(mockBidRequests).method).to.equal('POST');
     });
-    it('should ensure contentType is `application/json`', function () {
+    it('should ensure contentType is `text/plain`', function () {
       const mockBidRequests = ['mockBid'];
       expect(adapter.buildRequests(mockBidRequests).options).to.deep.equal({
-        contentType: 'application/json'
+        contentType: 'text/plain'
       });
     });
     it('should return a server request with valid payload', function () {
@@ -146,14 +146,15 @@ describe('UnrulyAdapter', function () {
           creativeId: 'mockBidId',
           ttl: 360,
           currency: 'USD',
-          renderer: fakeRenderer
+          renderer: fakeRenderer,
+          mediaType: 'video'
         }
       ])
     });
 
     it('should initialize and set the renderer', function () {
-      expect(Renderer.install).not.to.have.been.called;
-      expect(fakeRenderer.setRender).not.to.have.been.called;
+      expect(Renderer.install.called).to.be.false;
+      expect(fakeRenderer.setRender.called).to.be.false;
 
       const mockReturnedBid = createOutStreamExchangeBid({adUnitCode: 'video1', bidId: 'mockBidId'});
       const mockRenderer = { url: 'value: mockRendererURL' };
@@ -162,7 +163,7 @@ describe('UnrulyAdapter', function () {
 
       adapter.interpretResponse(mockServerResponse);
 
-      expect(Renderer.install).to.have.been.calledOnce;
+      expect(Renderer.install.calledOnce).to.be.true;
       sinon.assert.calledWithExactly(
         Renderer.install,
         Object.assign({}, mockRenderer, {callback: sinon.match.func})
@@ -181,7 +182,7 @@ describe('UnrulyAdapter', function () {
       sinon.assert.calledOnce(fakeRenderer.setRender);
       fakeRenderer.setRender.firstCall.args[0]();
 
-      expect(window.top).to.have.deep.property('unruly.native.prebid.uq');
+      expect(window.top).to.have.deep.nested.property('unruly.native.prebid.uq');
 
       const uq = window.top.unruly.native.prebid.uq;
       const sentRendererConfig = uq[0][1];
@@ -205,4 +206,64 @@ describe('UnrulyAdapter', function () {
       expect(supplyMode).to.equal('prebid');
     });
   });
+
+  describe('getUserSyncs', () => {
+    it('should push user sync iframe if enabled', () => {
+      const mockConsent = {}
+      const response = {}
+      const syncOptions = { iframeEnabled: true }
+      const syncs = adapter.getUserSyncs(syncOptions, response, mockConsent)
+      expect(syncs[0]).to.deep.equal({
+        type: 'iframe',
+        url: 'https://video.unrulymedia.com/iframes/third-party-iframes.html'
+      });
+    })
+
+    it('should not push user sync iframe if not enabled', () => {
+      const mockConsent = {}
+      const response = {}
+      const syncOptions = { iframeEnabled: false }
+      const syncs = adapter.getUserSyncs(syncOptions, response, mockConsent);
+      expect(syncs).to.be.empty;
+    });
+  });
+
+  it('should not append consent params if gdpr does not apply', () => {
+    const mockConsent = {}
+    const response = {}
+    const syncOptions = { iframeEnabled: true }
+    const syncs = adapter.getUserSyncs(syncOptions, response, mockConsent)
+    expect(syncs[0]).to.deep.equal({
+      type: 'iframe',
+      url: 'https://video.unrulymedia.com/iframes/third-party-iframes.html'
+    })
+  })
+
+  it('should append consent params if gdpr does apply and consent is given', () => {
+    const mockConsent = {
+      gdprApplies: true,
+      consentString: 'hello'
+    }
+    const response = {}
+    const syncOptions = { iframeEnabled: true }
+    const syncs = adapter.getUserSyncs(syncOptions, response, mockConsent)
+    expect(syncs[0]).to.deep.equal({
+      type: 'iframe',
+      url: 'https://video.unrulymedia.com/iframes/third-party-iframes.html?gdpr=1&gdpr_consent=hello'
+    })
+  })
+
+  it('should append consent param if gdpr applies and no consent is given', () => {
+    const mockConsent = {
+      gdprApplies: true,
+      consentString: {}
+    }
+    const response = {}
+    const syncOptions = { iframeEnabled: true }
+    const syncs = adapter.getUserSyncs(syncOptions, response, mockConsent)
+    expect(syncs[0]).to.deep.equal({
+      type: 'iframe',
+      url: 'https://video.unrulymedia.com/iframes/third-party-iframes.html?gdpr=0'
+    })
+  })
 });

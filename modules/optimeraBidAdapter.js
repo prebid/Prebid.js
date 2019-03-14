@@ -1,6 +1,7 @@
-import {registerBidder} from 'src/adapters/bidderFactory';
+import { registerBidder } from 'src/adapters/bidderFactory';
+
 const BIDDER_CODE = 'optimera';
-const SCORES_BASE_URL = 'https://s3.amazonaws.com/elasticbeanstalk-us-east-1-397719490216/json/client/';
+const SCORES_BASE_URL = 'https://dyv1bugovvq1g.cloudfront.net/';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -29,7 +30,6 @@ export const spec = {
   buildRequests: function (validBidRequests) {
     let optimeraHost = window.location.host;
     let optimeraPathName = window.location.pathname;
-    let timestamp = Math.round(new Date().getTime() / 1000);
     if (typeof validBidRequests[0].params.clientID !== 'undefined') {
       let clientID = validBidRequests[0].params.clientID;
       let scoresURL = SCORES_BASE_URL + clientID + '/' + optimeraHost + optimeraPathName + '.js';
@@ -37,7 +37,6 @@ export const spec = {
         method: 'GET',
         url: scoresURL,
         payload: validBidRequests,
-        data: {'t': timestamp}
       };
     }
   },

@@ -1,9 +1,9 @@
-import adapter from 'src/AnalyticsAdapter';
-import CONSTANTS from 'src/constants.json';
-import adaptermanager from 'src/adaptermanager';
-import { config } from 'src/config';
-import { ajax } from 'src/ajax';
-import * as utils from 'src/utils';
+import adapter from '../src/AnalyticsAdapter';
+import CONSTANTS from '../src/constants.json';
+import adapterManager from '../src/adapterManager';
+import { config } from '../src/config';
+import { ajax } from '../src/ajax';
+import * as utils from '../src/utils';
 
 const {
   EVENTS: { AUCTION_INIT, BID_REQUESTED, BID_RESPONSE, BID_TIMEOUT, BID_WON }
@@ -47,11 +47,12 @@ function onBidRequested({ auctionId, auctionStart, bids, start }) {
 function onBidResponse({
   auctionId,
   adUnitCode,
-  adId: bidId,
+  requestId: bidId,
   cpm,
   creativeId,
   responseTimestamp,
-  ts
+  ts,
+  adId
 }) {
   const adUnit = auctionMap[auctionId]['adUnitMap'][adUnitCode];
   const bid = adUnit['bidMap'][bidId];
@@ -59,6 +60,7 @@ function onBidResponse({
   bid.creativeId = creativeId;
   bid.responseTimestamp = responseTimestamp;
   bid.ts = ts;
+  bid.adId = adId;
 }
 
 function onBidTimeout(args) {
@@ -71,7 +73,7 @@ function onBidTimeout(args) {
     });
 }
 
-function onBidWon({ auctionId, adUnitCode, adId: bidId }) {
+function onBidWon({ auctionId, adUnitCode, requestId: bidId }) {
   const adUnit = auctionMap[auctionId]['adUnitMap'][adUnitCode];
   const bid = adUnit['bidMap'][bidId];
   bid.won = true;
@@ -87,9 +89,12 @@ function onSlotLoaded({ slot }) {
     targeting
   );
 
-  const bidId = slot.getTargeting('hb_adid')[0];
-  const adUnit = getAdUnitByBidId(bidId);
+  const adId = slot.getTargeting('hb_adid')[0];
+  if (!adId) {
+    return;
+  }
 
+  const adUnit = getAdUnitByAdId(adId);
   if (!adUnit) {
     return;
   }
@@ -106,14 +111,16 @@ function onSlotLoaded({ slot }) {
   sendEvent(data);
 }
 
-function getAdUnitByBidId(bidId) {
+function getAdUnitByAdId(adId) {
   let result;
 
   utils._map(auctionMap, value => value).forEach(auction => {
     utils._map(auction.adUnitMap, value => value).forEach(adUnit => {
-      if (bidId in adUnit.bidMap) {
-        result = adUnit;
-      }
+      utils._map(adUnit.bidMap, value => value).forEach(bid => {
+        if (adId === bid.adId) {
+          result = adUnit;
+        }
+      })
     });
   });
 
@@ -245,7 +252,7 @@ openxAdapter.reset = function() {
   auctionMap = {};
 };
 
-adaptermanager.registerAnalyticsAdapter({
+adapterManager.registerAnalyticsAdapter({
   adapter: openxAdapter,
   code: 'openx'
 });

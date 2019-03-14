@@ -1,5 +1,5 @@
-import * as utils from 'src/utils';
-import {registerBidder} from 'src/adapters/bidderFactory';
+import * as utils from '../src/utils';
+import {registerBidder} from '../src/adapters/bidderFactory';
 const BIDDER_CODE = 'oneVideo';
 export const spec = {
   code: 'oneVideo',
@@ -47,7 +47,6 @@ export const spec = {
         method: 'POST',
         url: location.protocol + spec.ENDPOINT + bid.params.pubId,
         data: getRequestData(bid, consentData),
-        options: {contentType: 'application/json'},
         bidRequest: bid
       }
     })
@@ -152,6 +151,9 @@ function getRequestData(bid, consentData) {
         h: bid.params.video.playerHeight,
         linearity: 1,
         protocols: bid.params.video.protocols || [2, 5]
+      },
+      ext: {
+        hb: 1,
       }
     }],
     site: {
@@ -181,6 +183,12 @@ function getRequestData(bid, consentData) {
   }
   if (bid.params.video.position) {
     bidData.imp[0].video.pos = bid.params.video.position
+  }
+  if (bid.params.video.playbackmethod) {
+    bidData.imp[0].video.playbackmethod = bid.params.video.playbackmethod
+  }
+  if (bid.params.video.placement) {
+    bidData.imp[0].ext.placement = bid.params.video.placement
   }
   if (bid.params.site && bid.params.site.id) {
     bidData.site.id = bid.params.site.id
