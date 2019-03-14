@@ -10,8 +10,9 @@ import {
   isInsideIframe,
   isInsideSafeframe,
   getIframeType,
-  get,
-  getFrameElements
+  getFrameElements,
+  area,
+  get
 } from "modules/viBidAdapter";
 
 describe("ratioToPercentageCeil", () => {
@@ -234,6 +235,14 @@ describe("getFrameElements", () => {
       frameElement2
     ]);
   });
+});
+
+describe("area", () => {
+  it("calculates area", () => expect(area(10, 10)).to.be.equal(100));
+  it("calculates area", () =>
+    expect(
+      area(10, 10, { top: -2, left: -2, bottom: 0, right: 0 })
+    ).to.be.equal(64));
 });
 
 describe("getCuts without vCuts", () => {

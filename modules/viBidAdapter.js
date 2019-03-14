@@ -166,7 +166,7 @@ function getElementCuts(element, vCuts) {
   );
 }
 
-function area(width, height, areaCuts = NO_CUTS) {
+export function area(width, height, areaCuts = NO_CUTS) {
   const { top, right, bottom, left } = areaCuts;
   return Math.max(0, (width + left + right) * (height + top + bottom));
 }
