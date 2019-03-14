@@ -182,31 +182,6 @@ const NATIVE_ASSETS = {
   }
 };
 
-const NATIVE_ASSET_ID = {
-  'TITLE': 1,
-  'IMAGE': 2,
-  'ICON': 3,
-  'SPONSOREDBY': 4,
-  'BODY': 5,
-  'CLICKURL': 6,
-  'VIDEO': 7,
-  'EXT': 8,
-  'DATA': 9,
-  'LOGO': 10,
-  'SPONSORED': 11,
-  'DESC': 12,
-  'RATING': 13,
-  'LIKES': 14,
-  'DOWNLOADS': 15,
-  'PRICE': 16,
-  'SALEPRICE': 17,
-  'PHONE': 18,
-  'ADDRESS': 19,
-  'DESC2': 20,
-  'DISPLAYURL': 21,
-  'CTA': 22
-}
-
 const NATIVE_ASSET_REVERSE_ID = {
   4: 'sponsoredBy',
   5: 'body',
@@ -253,18 +228,18 @@ const NATIVE_ASSET_DATA_TYPE = {
 // check if title, image can be added with mandatory field default values
 const NATIVE_MINIMUM_REQUIRED_IMAGE_ASSETS = [
   {
-    id: NATIVE_ASSET_ID.SPONSOREDBY,
+    id: NATIVE_ASSETS.SPONSOREDBY.ID,
     required: true,
     data: {
       type: 1
     }
   },
   {
-    id: NATIVE_ASSET_ID.TITLE,
+    id: NATIVE_ASSETS.TITLE.ID,
     required: true,
   },
   {
-    id: NATIVE_ASSET_ID.IMAGE,
+    id: NATIVE_ASSETS.IMAGE.ID,
     required: true,
   }
 ]
@@ -460,7 +435,7 @@ function _createNativeRequest(params) {
           case NATIVE_ASSETS.TITLE.KEY:
             if (params[key].len || params[key].length) {
               assetObj = {
-                id: NATIVE_ASSET_ID.TITLE,
+                id: NATIVE_ASSETS.TITLE.ID,
                 required: params[key].required ? 1 : 0,
                 title: {
                   len: params[key].len || params[key].length,
@@ -474,7 +449,7 @@ function _createNativeRequest(params) {
           case NATIVE_ASSETS.IMAGE.KEY:
             if (params[key].sizes && params[key].sizes.length > 0) {
               assetObj = {
-                id: NATIVE_ASSET_ID.IMAGE,
+                id: NATIVE_ASSETS.IMAGE.ID,
                 required: params[key].required ? 1 : 0,
                 img: {
                   type: NATIVE_ASSET_IMAGE_TYPE.IMAGE,
@@ -494,7 +469,7 @@ function _createNativeRequest(params) {
           case NATIVE_ASSETS.ICON.KEY:
             if (params[key].sizes && params[key].sizes.length > 0) {
               assetObj = {
-                id: NATIVE_ASSET_ID.ICON,
+                id: NATIVE_ASSETS.ICON.ID,
                 required: params[key].required ? 1 : 0,
                 img: {
                   type: NATIVE_ASSET_IMAGE_TYPE.ICON,
@@ -509,7 +484,7 @@ function _createNativeRequest(params) {
             break;
           case NATIVE_ASSETS.SPONSOREDBY.KEY:
             assetObj = {
-              id: NATIVE_ASSET_ID.SPONSOREDBY,
+              id: NATIVE_ASSETS.SPONSOREDBY.ID,
               required: params[key].required ? 1 : 0,
               data: {
                 type: NATIVE_ASSET_DATA_TYPE.SPONSORED,
@@ -520,7 +495,7 @@ function _createNativeRequest(params) {
             break;
           case NATIVE_ASSETS.BODY.KEY:
             assetObj = {
-              id: NATIVE_ASSET_ID.BODY,
+              id: NATIVE_ASSETS.BODY.ID,
               required: params[key].required ? 1 : 0,
               data: {
                 type: NATIVE_ASSET_DATA_TYPE.DESC,
@@ -531,7 +506,7 @@ function _createNativeRequest(params) {
             break;
           case NATIVE_ASSETS.VIDEO.KEY:
             assetObj = {
-              id: NATIVE_ASSET_ID.VIDEO,
+              id: NATIVE_ASSETS.VIDEO.ID,
               required: params[key].required ? 1 : 0,
               video: {
                 minduration: params[key].minduration,
@@ -544,13 +519,13 @@ function _createNativeRequest(params) {
             break;
           case NATIVE_ASSETS.EXT.KEY:
             assetObj = {
-              id: NATIVE_ASSET_ID.EXT,
+              id: NATIVE_ASSETS.EXT.ID,
               required: params[key].required ? 1 : 0,
             };
             break;
           case NATIVE_ASSETS.LOGO.KEY:
             assetObj = {
-              id: NATIVE_ASSET_ID.LOGO,
+              id: NATIVE_ASSETS.LOGO.ID,
               required: params[key].required ? 1 : 0,
               img: {
                 type: NATIVE_ASSET_IMAGE_TYPE.LOGO,
@@ -561,7 +536,7 @@ function _createNativeRequest(params) {
             break;
           case NATIVE_ASSETS.RATING.KEY:
             assetObj = {
-              id: NATIVE_ASSET_ID.RATING,
+              id: NATIVE_ASSETS.RATING.ID,
               required: params[key].required ? 1 : 0,
               data: {
                 type: NATIVE_ASSET_DATA_TYPE.RATING,
@@ -572,7 +547,7 @@ function _createNativeRequest(params) {
             break;
           case NATIVE_ASSETS.LIKES.KEY:
             assetObj = {
-              id: NATIVE_ASSET_ID.LIKES,
+              id: NATIVE_ASSETS.LIKES.ID,
               required: params[key].required ? 1 : 0,
               data: {
                 type: NATIVE_ASSET_DATA_TYPE.LIKES,
@@ -583,7 +558,7 @@ function _createNativeRequest(params) {
             break;
           case NATIVE_ASSETS.DOWNLOADS.KEY:
             assetObj = {
-              id: NATIVE_ASSET_ID.DOWNLOADS,
+              id: NATIVE_ASSETS.DOWNLOADS.ID,
               required: params[key].required ? 1 : 0,
               data: {
                 type: NATIVE_ASSET_DATA_TYPE.DOWNLOADS,
@@ -594,7 +569,7 @@ function _createNativeRequest(params) {
             break;
           case NATIVE_ASSETS.PRICE.KEY:
             assetObj = {
-              id: NATIVE_ASSET_ID.PRICE,
+              id: NATIVE_ASSETS.PRICE.ID,
               required: params[key].required ? 1 : 0,
               data: {
                 type: NATIVE_ASSET_DATA_TYPE.PRICE,
@@ -605,7 +580,7 @@ function _createNativeRequest(params) {
             break;
           case NATIVE_ASSETS.SALEPRICE.KEY:
             assetObj = {
-              id: NATIVE_ASSET_ID.SALEPRICE,
+              id: NATIVE_ASSETS.SALEPRICE.ID,
               required: params[key].required ? 1 : 0,
               data: {
                 type: NATIVE_ASSET_DATA_TYPE.SALEPRICE,
@@ -616,7 +591,7 @@ function _createNativeRequest(params) {
             break;
           case NATIVE_ASSETS.PHONE.KEY:
             assetObj = {
-              id: NATIVE_ASSET_ID.PHONE,
+              id: NATIVE_ASSETS.PHONE.ID,
               required: params[key].required ? 1 : 0,
               data: {
                 type: NATIVE_ASSET_DATA_TYPE.PHONE,
@@ -627,7 +602,7 @@ function _createNativeRequest(params) {
             break;
           case NATIVE_ASSETS.ADDRESS.KEY:
             assetObj = {
-              id: NATIVE_ASSET_ID.ADDRESS,
+              id: NATIVE_ASSETS.ADDRESS.ID,
               required: params[key].required ? 1 : 0,
               data: {
                 type: NATIVE_ASSET_DATA_TYPE.ADDRESS,
@@ -638,7 +613,7 @@ function _createNativeRequest(params) {
             break;
           case NATIVE_ASSETS.DESC2.KEY:
             assetObj = {
-              id: NATIVE_ASSET_ID.DESC2,
+              id: NATIVE_ASSETS.DESC2.ID,
               required: params[key].required ? 1 : 0,
               data: {
                 type: NATIVE_ASSET_DATA_TYPE.DESC2,
@@ -649,7 +624,7 @@ function _createNativeRequest(params) {
             break;
           case NATIVE_ASSETS.DISPLAYURL.KEY:
             assetObj = {
-              id: NATIVE_ASSET_ID.DISPLAYURL,
+              id: NATIVE_ASSETS.DISPLAYURL.ID,
               required: params[key].required ? 1 : 0,
               data: {
                 type: NATIVE_ASSET_DATA_TYPE.DISPLAYURL,
@@ -660,7 +635,7 @@ function _createNativeRequest(params) {
             break;
           case NATIVE_ASSETS.CTA.KEY:
             assetObj = {
-              id: NATIVE_ASSET_ID.CTA,
+              id: NATIVE_ASSETS.CTA.ID,
               required: params[key].required ? 1 : 0,
               data: {
                 type: NATIVE_ASSET_DATA_TYPE.CTA,
@@ -836,35 +811,35 @@ function _parseNativeResponse(bid, newBid) {
       newBid.mediaType = 'native';
       for (let i = 0, len = adm.native.assets.length; i < len; i++) {
         switch (adm.native.assets[i].id) {
-          case NATIVE_ASSET_ID.TITLE:
+          case NATIVE_ASSETS.TITLE.ID:
             newBid.native.title = adm.native.assets[i].title && adm.native.assets[i].title.text;
             break;
-          case NATIVE_ASSET_ID.IMAGE:
+          case NATIVE_ASSETS.IMAGE.ID:
             newBid.native.image = {
               url: adm.native.assets[i].img && adm.native.assets[i].img.url,
               height: adm.native.assets[i].img && adm.native.assets[i].img.h,
               width: adm.native.assets[i].img && adm.native.assets[i].img.w,
             };
             break;
-          case NATIVE_ASSET_ID.ICON:
+          case NATIVE_ASSETS.ICON.ID:
             newBid.native.icon = {
               url: adm.native.assets[i].img && adm.native.assets[i].img.url,
               height: adm.native.assets[i].img && adm.native.assets[i].img.h,
               width: adm.native.assets[i].img && adm.native.assets[i].img.w,
             };
             break;
-          case NATIVE_ASSET_ID.SPONSOREDBY:
-          case NATIVE_ASSET_ID.BODY:
-          case NATIVE_ASSET_ID.LIKES:
-          case NATIVE_ASSET_ID.DOWNLOADS:
-          case NATIVE_ASSET_ID.PRICE:
-          case NATIVE_ASSET_ID.SALEPRICE:
-          case NATIVE_ASSET_ID.PHONE:
-          case NATIVE_ASSET_ID.ADDRESS:
-          case NATIVE_ASSET_ID.DESC2:
-          case NATIVE_ASSET_ID.CTA:
-          case NATIVE_ASSET_ID.RATING:
-          case NATIVE_ASSET_ID.DISPLAYURL:
+          case NATIVE_ASSETS.SPONSOREDBY.ID:
+          case NATIVE_ASSETS.BODY.ID:
+          case NATIVE_ASSETS.LIKES.ID:
+          case NATIVE_ASSETS.DOWNLOADS.ID:
+          case NATIVE_ASSETS.PRICE:
+          case NATIVE_ASSETS.SALEPRICE.ID:
+          case NATIVE_ASSETS.PHONE.ID:
+          case NATIVE_ASSETS.ADDRESS.ID:
+          case NATIVE_ASSETS.DESC2.ID:
+          case NATIVE_ASSETS.CTA.ID:
+          case NATIVE_ASSETS.RATING.ID:
+          case NATIVE_ASSETS.DISPLAYURL.ID:
             //  Remove Redundant code
             newBid.native[NATIVE_ASSET_REVERSE_ID[adm.native.assets[i].id]] = adm.native.assets[i].data && adm.native.assets[i].data.value;
             break;
