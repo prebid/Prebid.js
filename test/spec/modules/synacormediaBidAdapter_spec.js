@@ -194,6 +194,60 @@ describe('synacormediaBidAdapter ', function () {
       ]);
     });
 
+    it('should use the pos given by the bid request', function () {
+      let newPosBidRequest = {
+        bidId: '9876abcd',
+        sizes: [[300, 250]],
+        params: {
+          seatId: 'prebid',
+          placementId: '1234',
+          pos: 1
+        }
+      };
+      let req = spec.buildRequests([newPosBidRequest], bidderRequest);
+      expect(req).to.have.property('method', 'POST');
+      expect(req).to.have.property('url');
+      expect(req.url).to.contain('//prebid.technoratimedia.com/openrtb/bids/prebid?src=undefined');
+      expect(req.data.id).to.equal('xyz123');
+      expect(req.data.imp).to.eql([
+        {
+          banner: {
+            h: 250,
+            w: 300,
+            pos: 1,
+          },
+          id: '9876abcd~300x250',
+          tagid: '1234'
+        }
+      ]);
+    });
+
+    it('should use the default pos if none in bid request', function () {
+      let newPosBidRequest = {
+        bidId: '9876abcd',
+        sizes: [[300, 250]],
+        params: {
+          seatId: 'prebid',
+          placementId: '1234',
+        }
+      };
+      let req = spec.buildRequests([newPosBidRequest], bidderRequest);
+      expect(req).to.have.property('method', 'POST');
+      expect(req).to.have.property('url');
+      expect(req.url).to.contain('//prebid.technoratimedia.com/openrtb/bids/prebid?src=undefined');
+      expect(req.data.id).to.equal('xyz123');
+      expect(req.data.imp).to.eql([
+        {
+          banner: {
+            h: 250,
+            w: 300,
+            pos: 0,
+          },
+          id: '9876abcd~300x250',
+          tagid: '1234'
+        }
+      ]);
+    });
     it('should not return a request when no valid bid request used', function () {
       expect(spec.buildRequests([], bidderRequest)).to.be.undefined;
       expect(spec.buildRequests([validBidRequest], null)).to.be.undefined;

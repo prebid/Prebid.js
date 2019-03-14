@@ -44,6 +44,11 @@ export const spec = {
       if (isNaN(bidFloor)) {
         logWarn(`Synacormedia: there is an invalid bid floor: ${bid.params.bidfloor}`);
       }
+      let pos = parseInt(bid.params.pos);
+      if (isNaN(pos)) {
+        logWarn(`Synacormedia: there is an invalid POS: ${bid.params.pos}`);
+        pos = 0;
+      }
       getAdUnitSizes(bid).forEach((size, i) => {
         let request = {
           id: bid.bidId + '~' + size[0] + 'x' + size[1],
@@ -51,7 +56,7 @@ export const spec = {
           banner: {
             w: size[0],
             h: size[1],
-            pos: 0
+            pos
           }
         };
         if (bidFloor !== null && !isNaN(bidFloor)) {
