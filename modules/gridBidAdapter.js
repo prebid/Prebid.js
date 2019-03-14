@@ -41,22 +41,47 @@ export const spec = {
   buildRequests: function(validBidRequests, bidderRequest) {
     const auids = [];
     const bidsMap = {};
+    const slotsMapByUid = {};
+    const sizeMap = {};
     const bids = validBidRequests || [];
     let reqId;
 
     bids.forEach(bid => {
       reqId = bid.bidderRequestId;
-      if (!bidsMap[bid.params.uid]) {
-        bidsMap[bid.params.uid] = [bid];
-        auids.push(bid.params.uid);
-      } else {
-        bidsMap[bid.params.uid].push(bid);
+      const {params: {uid}, adUnitCode} = bid;
+      auids.push(uid);
+      const sizesId = utils.parseSizesInput(bid.sizes);
+
+      if (!slotsMapByUid[uid]) {
+        slotsMapByUid[uid] = {};
       }
+      const slotsMap = slotsMapByUid[uid];
+      if (!slotsMap[adUnitCode]) {
+        slotsMap[adUnitCode] = {adUnitCode, bids: [bid], parents: []};
+      } else {
+        slotsMap[adUnitCode].bids.push(bid);
+      }
+      const slot = slotsMap[adUnitCode];
+
+      sizesId.forEach((sizeId) => {
+        sizeMap[sizeId] = true;
+        if (!bidsMap[uid]) {
+          bidsMap[uid] = {};
+        }
+
+        if (!bidsMap[uid][sizeId]) {
+          bidsMap[uid][sizeId] = [slot];
+        } else {
+          bidsMap[uid][sizeId].push(slot);
+        }
+        slot.parents.push({parent: bidsMap[uid], key: sizeId, uid});
+      });
     });
 
     const payload = {
       u: utils.getTopWindowUrl(),
       auids: auids.join(','),
+      sizes: utils.getKeys(sizeMap).join(','),
       r: reqId
     };
 
@@ -108,7 +133,7 @@ export const spec = {
     if (errorMessage) utils.logError(errorMessage);
     return bidResponses;
   }
-}
+};
 
 function _getBidFromResponse(respItem) {
   if (!respItem) {
@@ -129,24 +154,25 @@ function _addBidResponse(serverBid, bidsMap, bidResponses) {
   else {
     const awaitingBids = bidsMap[serverBid.auid];
     if (awaitingBids) {
-      awaitingBids.forEach(bid => {
-        const size = bid.sizes[0];
-        if (serverBid.w && serverBid.h) {
-          size[0] = serverBid.w;
-          size[1] = serverBid.h;
-        }
+      const sizeId = `${serverBid.w}x${serverBid.h}`;
+      if (awaitingBids[sizeId]) {
+        const slot = awaitingBids[sizeId][0];
+
+        const bid = slot.bids.shift();
+
         const bidResponse = {
           requestId: bid.bidId, // bid.bidderRequestId,
           bidderCode: spec.code,
           cpm: serverBid.price,
-          width: size[0],
-          height: size[1],
+          width: serverBid.w,
+          height: serverBid.h,
           creativeId: serverBid.auid, // bid.bidId,
           currency: 'USD',
           netRevenue: false,
           ttl: TIME_TO_LIVE,
           dealId: serverBid.dealid
         };
+
         if (serverBid.content_type === 'video') {
           bidResponse.vastXml = serverBid.adm;
           bidResponse.mediaType = VIDEO;
@@ -164,7 +190,22 @@ function _addBidResponse(serverBid, bidsMap, bidResponses) {
           bidResponse.mediaType = BANNER;
         }
         bidResponses.push(bidResponse);
-      });
+
+        if (!slot.bids.length) {
+          slot.parents.forEach(({parent, key, uid}) => {
+            const index = parent[key].indexOf(slot);
+            if (index > -1) {
+              parent[key].splice(index, 1);
+            }
+            if (!parent[key].length) {
+              delete parent[key];
+              if (!utils.getKeys(parent).length) {
+                delete bidsMap[uid];
+              }
+            }
+          });
+        }
+      }
     } else {
       errorMessage = LOG_ERROR_MESS.noPlacementCode + serverBid.auid;
     }
