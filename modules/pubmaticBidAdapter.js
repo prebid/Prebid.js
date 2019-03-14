@@ -73,9 +73,9 @@ const NATIVE_ASSETS = {
   'CTA': { ID: 22, KEY: 'cta', TYPE: 12 }
 };
 
-var NATIVE_ASSET_REVERSE_ID = {};
+var NATIVE_ASSET_ID_TO_KEY_MAP = {};
 utils._each(NATIVE_ASSETS, function(anAsset) {
-  NATIVE_ASSET_REVERSE_ID[anAsset.ID] = anAsset.KEY;
+  NATIVE_ASSET_ID_TO_KEY_MAP[anAsset.ID] = anAsset.KEY;
 });
 
 const NATIVE_ASSET_IMAGE_TYPE = {
@@ -617,7 +617,7 @@ function _parseNativeResponse(bid, newBid) {
           case NATIVE_ASSETS.RATING.ID:
           case NATIVE_ASSETS.DISPLAYURL.ID:
             //  Remove Redundant code
-            newBid.native[NATIVE_ASSET_REVERSE_ID[adm.native.assets[i].id]] = adm.native.assets[i].data && adm.native.assets[i].data.value;
+            newBid.native[NATIVE_ASSET_ID_TO_KEY_MAP[adm.native.assets[i].id]] = adm.native.assets[i].data && adm.native.assets[i].data.value;
             break;
         }
       }
