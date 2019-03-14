@@ -156,7 +156,7 @@ export function getFrameElements(curWindow = window) {
   return frameElements;
 }
 
-function getElementCuts(element, vCuts) {
+export function getElementCuts(element, vCuts) {
   const window = getElementWindow(element);
   return getRectCuts(
     element.getBoundingClientRect(),
@@ -172,7 +172,7 @@ export function area(width, height, areaCuts = NO_CUTS) {
 }
 
 export function getInViewRatio(element) {
-  const elements = [...getFrameElements(), element];
+  const elements = [...getFrameElements(getElementWindow(element)), element];
   const vCuts = elements.reduce(
     (vCuts, element) => getElementCuts(element, vCuts),
     NO_CUTS
@@ -201,7 +201,7 @@ export function getInViewPercentage(element) {
   return ratioToPercentageCeil(getInViewRatio(element));
 }
 
-function getOffsetTopDocument(element) {
+export function getOffsetTopDocument(element) {
   return [...getFrameElements(getElementWindow(element)), element].reduce(
     (acc, elem) => merge(acc, getOffset(elem), (a, b) => a + b),
     {
@@ -213,7 +213,7 @@ function getOffsetTopDocument(element) {
   );
 }
 
-function getOffsetTopDocumentPercentage(element) {
+export function getOffsetTopDocumentPercentage(element) {
   const elementWindow = getElementWindow(element);
   if (!elementWindow) throw new Error("cannot get element window");
   if (!topDocumentIsReachable()) throw new Error("top window isn't reachable");

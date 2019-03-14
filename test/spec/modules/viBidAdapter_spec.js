@@ -11,6 +11,11 @@ import {
   isInsideSafeframe,
   getIframeType,
   getFrameElements,
+  getElementCuts,
+  getInViewRatio,
+  getInViewRatioInsideTopFrame,
+  getOffsetTopDocument,
+  getOffsetTopDocumentPercentage,
   area,
   get
 } from "modules/viBidAdapter";
@@ -243,6 +248,131 @@ describe("area", () => {
     expect(
       area(10, 10, { top: -2, left: -2, bottom: 0, right: 0 })
     ).to.be.equal(64));
+});
+
+describe("getElementCuts", () => {
+  it("returns element cuts", () =>
+    expect(
+      getElementCuts({
+        getBoundingClientRect() {
+          return {
+            top: 0,
+            right: 200,
+            bottom: 200,
+            left: 0
+          };
+        },
+        ownerDocument: {
+          defaultView: {
+            innerHeight: 1000,
+            innerWidth: 1000
+          }
+        }
+      })
+    ).to.be.deep.equal({
+      top: 0,
+      right: 0,
+      bottom: 0,
+      left: 0
+    }));
+});
+
+describe("getInViewRatio", () => {
+  it("returns inViewRatio", () =>
+    expect(
+      getInViewRatio({
+        ownerDocument: {
+          defaultView: {
+            innerHeight: 1000,
+            innerWidth: 1000
+          }
+        },
+        offsetWidth: 200,
+        offsetHeight: 200,
+        getBoundingClientRect() {
+          return {
+            top: 0,
+            right: 200,
+            bottom: 200,
+            left: 0
+          };
+        }
+      })
+    ).to.be.deep.equal(1));
+});
+
+describe("getInViewRatioInsideTopFrame", () => {
+  it("returns inViewRatio", () =>
+    expect(
+      getInViewRatioInsideTopFrame({
+        ownerDocument: {
+          defaultView: {
+            innerHeight: 1000,
+            innerWidth: 1000
+          }
+        },
+        offsetWidth: 200,
+        offsetHeight: 200,
+        getBoundingClientRect() {
+          return {
+            top: 0,
+            right: 200,
+            bottom: 200,
+            left: 0
+          };
+        }
+      })
+    ).to.be.deep.equal(1));
+});
+
+describe("getOffsetTopDocument", () => {
+  it("returns offset relative to the top document", () =>
+    expect(
+      getOffsetTopDocument({
+        ownerDocument: {
+          defaultView: {
+            pageXOffset: 0,
+            pageYOffset: 0
+          }
+        },
+        getBoundingClientRect: () => ({
+          top: 0,
+          right: 0,
+          bottom: 0,
+          left: 0
+        })
+      })
+    ).to.be.deep.equal({
+      top: 0,
+      right: 0,
+      bottom: 0,
+      left: 0
+    }));
+});
+
+describe("getOffsetTopDocumentPercentage", () => {
+  it("returns offset from the top as a percentage of the page length", () =>
+    expect(
+      getOffsetTopDocumentPercentage({
+        ownerDocument: {
+          defaultView: {
+            pageXOffset: 0,
+            pageYOffset: 100,
+            document: {
+              body: {
+                clientHeight: 1000
+              }
+            }
+          }
+        },
+        getBoundingClientRect: () => ({
+          top: 100,
+          right: 0,
+          bottom: 0,
+          left: 0
+        })
+      })
+    ).to.be.equal(20));
 });
 
 describe("getCuts without vCuts", () => {
