@@ -73,27 +73,10 @@ const NATIVE_ASSETS = {
   'CTA': { ID: 22, KEY: 'cta', TYPE: 12 }
 };
 
-const NATIVE_ASSET_REVERSE_ID = {
-  4: 'sponsoredBy',
-  5: 'body',
-  6: 'clickUrl',
-  7: 'video',
-  8: 'ext',
-  9: 'data',
-  10: 'logo',
-  11: 'sponsored',
-  12: 'desc',
-  13: 'rating',
-  14: 'likes',
-  15: 'downloads',
-  16: 'price',
-  17: 'saleprice',
-  18: 'phone',
-  19: 'address',
-  20: 'desc2',
-  21: 'displayurl',
-  22: 'cta'
-}
+var NATIVE_ASSET_REVERSE_ID = {};
+utils._each(NATIVE_ASSETS, function(anAsset) {
+  NATIVE_ASSET_REVERSE_ID[anAsset.ID] = anAsset.KEY;
+});
 
 const NATIVE_ASSET_IMAGE_TYPE = {
   'ICON': 1,
