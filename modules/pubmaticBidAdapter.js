@@ -70,13 +70,13 @@ const NATIVE_ASSETS = {
   'SPONSOREDBY': {
     ID: 4,
     KEY: 'sponsoredBy',
-    TYPE: 0
+    TYPE: 1 // please note that type of SPONSORED is also 1
   },
 
   'BODY': {
     ID: 5,
     KEY: 'body',
-    TYPE: 0
+    TYPE: 2 // please note that type of DESC is also set to 2
   },
 
   'CLICKURL': {
@@ -112,13 +112,13 @@ const NATIVE_ASSETS = {
   'SPONSORED': {
     ID: 11,
     KEY: 'sponsored',
-    TYPE: 1
+    TYPE: 1 // please note that type of SPONSOREDBY is also set to 1
   },
 
   'DESC': {
     ID: 12,
     KEY: 'data',
-    TYPE: 2
+    TYPE: 2 // please note that type of BODY is also set to 2
   },
 
   'RATING': {
@@ -408,6 +408,19 @@ function _checkParamDataType(key, value, datatype) {
   }
 }
 
+function _commonNativeRequestObject(nativeAsset, params) {
+  var key = nativeAsset.KEY;
+  return {
+    id: nativeAsset.ID,
+    required: params[key].required ? 1 : 0,
+    data: {
+      type: nativeAsset.TYPE,
+      len: params[key].len,
+      ext: params[key].ext
+    }
+  };
+}
+
 function _createNativeRequest(params) {
   var nativeRequestObject = {
     assets: []
@@ -468,26 +481,10 @@ function _createNativeRequest(params) {
             };
             break;
           case NATIVE_ASSETS.SPONSOREDBY.KEY:
-            assetObj = {
-              id: NATIVE_ASSETS.SPONSOREDBY.ID,
-              required: params[key].required ? 1 : 0,
-              data: {
-                type: NATIVE_ASSETS.SPONSORED.TYPE,
-                len: params[key].len,
-                ext: params[key].ext
-              }
-            };
+            assetObj = _commonNativeRequestObject(NATIVE_ASSETS.SPONSOREDBY, params);
             break;
           case NATIVE_ASSETS.BODY.KEY:
-            assetObj = {
-              id: NATIVE_ASSETS.BODY.ID,
-              required: params[key].required ? 1 : 0,
-              data: {
-                type: NATIVE_ASSETS.DESC.TYPE,
-                len: params[key].len,
-                ext: params[key].ext
-              }
-            };
+            assetObj = _commonNativeRequestObject(NATIVE_ASSETS.BODY, params); ;
             break;
           case NATIVE_ASSETS.VIDEO.KEY:
             assetObj = {
@@ -520,114 +517,34 @@ function _createNativeRequest(params) {
             };
             break;
           case NATIVE_ASSETS.RATING.KEY:
-            assetObj = {
-              id: NATIVE_ASSETS.RATING.ID,
-              required: params[key].required ? 1 : 0,
-              data: {
-                type: NATIVE_ASSETS.RATING.TYPE,
-                len: params[key].len,
-                ext: params[key].ext
-              }
-            };
+            assetObj = _commonNativeRequestObject(NATIVE_ASSETS.RATING, params); ;
             break;
           case NATIVE_ASSETS.LIKES.KEY:
-            assetObj = {
-              id: NATIVE_ASSETS.LIKES.ID,
-              required: params[key].required ? 1 : 0,
-              data: {
-                type: NATIVE_ASSETS.LIKES.TYPE,
-                len: params[key].len,
-                ext: params[key].ext
-              }
-            };
+            assetObj = _commonNativeRequestObject(NATIVE_ASSETS.LIKES, params); ;
             break;
           case NATIVE_ASSETS.DOWNLOADS.KEY:
-            assetObj = {
-              id: NATIVE_ASSETS.DOWNLOADS.ID,
-              required: params[key].required ? 1 : 0,
-              data: {
-                type: NATIVE_ASSETS.DOWNLOADS.TYPE,
-                len: params[key].len,
-                ext: params[key].ext
-              }
-            };
+            assetObj = _commonNativeRequestObject(NATIVE_ASSETS.DOWNLOADS, params); ;
             break;
           case NATIVE_ASSETS.PRICE.KEY:
-            assetObj = {
-              id: NATIVE_ASSETS.PRICE.ID,
-              required: params[key].required ? 1 : 0,
-              data: {
-                type: NATIVE_ASSETS.PRICE.TYPE,
-                len: params[key].len,
-                ext: params[key].ext
-              }
-            };
+            assetObj = _commonNativeRequestObject(NATIVE_ASSETS.PRICE, params); ;
             break;
           case NATIVE_ASSETS.SALEPRICE.KEY:
-            assetObj = {
-              id: NATIVE_ASSETS.SALEPRICE.ID,
-              required: params[key].required ? 1 : 0,
-              data: {
-                type: NATIVE_ASSETS.SALEPRICE.TYPE,
-                len: params[key].len,
-                ext: params[key].ext
-              }
-            };
+            assetObj = _commonNativeRequestObject(NATIVE_ASSETS.SALEPRICE, params); ;
             break;
           case NATIVE_ASSETS.PHONE.KEY:
-            assetObj = {
-              id: NATIVE_ASSETS.PHONE.ID,
-              required: params[key].required ? 1 : 0,
-              data: {
-                type: NATIVE_ASSETS.PHONE.TYPE,
-                len: params[key].len,
-                ext: params[key].ext
-              }
-            };
+            assetObj = _commonNativeRequestObject(NATIVE_ASSETS.PHONE, params); ;
             break;
           case NATIVE_ASSETS.ADDRESS.KEY:
-            assetObj = {
-              id: NATIVE_ASSETS.ADDRESS.ID,
-              required: params[key].required ? 1 : 0,
-              data: {
-                type: NATIVE_ASSETS.ADDRESS.TYPE,
-                len: params[key].len,
-                ext: params[key].ext
-              }
-            };
+            assetObj = _commonNativeRequestObject(NATIVE_ASSETS.ADDRESS, params); ;
             break;
           case NATIVE_ASSETS.DESC2.KEY:
-            assetObj = {
-              id: NATIVE_ASSETS.DESC2.ID,
-              required: params[key].required ? 1 : 0,
-              data: {
-                type: NATIVE_ASSETS.DESC2.TYPE,
-                len: params[key].len,
-                ext: params[key].ext
-              }
-            };
+            assetObj = _commonNativeRequestObject(NATIVE_ASSETS.DESC2, params); ;
             break;
           case NATIVE_ASSETS.DISPLAYURL.KEY:
-            assetObj = {
-              id: NATIVE_ASSETS.DISPLAYURL.ID,
-              required: params[key].required ? 1 : 0,
-              data: {
-                type: NATIVE_ASSETS.DISPLAYURL.TYPE,
-                len: params[key].len,
-                ext: params[key].ext
-              }
-            };
+            assetObj = _commonNativeRequestObject(NATIVE_ASSETS.DISPLAYURL, params); ;
             break;
           case NATIVE_ASSETS.CTA.KEY:
-            assetObj = {
-              id: NATIVE_ASSETS.CTA.ID,
-              required: params[key].required ? 1 : 0,
-              data: {
-                type: NATIVE_ASSETS.CTA.TYPE,
-                len: params[key].len,
-                ext: params[key].ext
-              }
-            };
+            assetObj = _commonNativeRequestObject(NATIVE_ASSETS.CTA, params); ;
             break;
         }
       }
