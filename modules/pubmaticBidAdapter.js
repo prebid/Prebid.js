@@ -258,7 +258,6 @@ function _createOrtbTemplate(conf) {
   };
 }
 
-// similar functionality as parseSlotParam. Check if the 2 functions can be clubbed.
 function _checkParamDataType(key, value, datatype) {
   var errMsg = 'PubMatic: Ignoring param key: ' + key + ', expects ' + datatype + ', found ' + typeof value;
   var functionToExecute;
@@ -335,7 +334,6 @@ function _createNativeRequest(params) {
                 }
               };
             } else {
-              // Log Warn
               utils.logWarn(LOG_WARN_PREFIX + 'Error: Image sizes is required for native ad: ' + JSON.stringify(params));
             }
             break;
@@ -351,7 +349,6 @@ function _createNativeRequest(params) {
                 }
               };
             } else {
-              // Log Warn
               utils.logWarn(LOG_WARN_PREFIX + 'Error: Icon sizes is required for native ad: ' + JSON.stringify(params));
             };
             break;
@@ -595,7 +592,6 @@ function _parseNativeResponse(bid, newBid) {
           case NATIVE_ASSETS.CTA.ID:
           case NATIVE_ASSETS.RATING.ID:
           case NATIVE_ASSETS.DISPLAYURL.ID:
-            //  Remove Redundant code
             newBid.native[NATIVE_ASSET_ID_TO_KEY_MAP[adm.native.assets[i].id]] = adm.native.assets[i].data && adm.native.assets[i].data.value;
             break;
         }
