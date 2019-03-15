@@ -4,7 +4,7 @@
  */
 
 import events from './events';
-import { fireNativeTrackers } from './native';
+import { fireNativeTrackers, getAssetMessage } from './native';
 import { EVENTS } from './constants';
 import { isSlotMatchingAdUnitCode, logWarn, replaceAuctionPrice } from './utils';
 import { auctionManager } from './auctionManager';
@@ -46,7 +46,15 @@ function receiveMessage(ev) {
     //   adId: '%%PATTERN:hb_adid%%'
     // }), '*');
     if (data.message === 'Prebid Native') {
-      fireNativeTrackers(data, adObject);
+      if (data.action === 'assetRequest') {
+        const message = getAssetMessage(data, adObject);
+        ev.source.postMessage(JSON.stringify(message), ev.origin);
+        return;
+      }
+
+      const trackerType = fireNativeTrackers(data, adObject);
+      if (trackerType === 'click') { return; }
+
       auctionManager.addWinningBid(adObject);
       events.emit(BID_WON, adObject);
     }
