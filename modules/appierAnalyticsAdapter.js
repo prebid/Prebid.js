@@ -2,6 +2,7 @@ import {ajax} from 'src/ajax';
 import adapter from '../src/AnalyticsAdapter';
 import CONSTANTS from '../src/constants.json';
 import adapterManager from '../src/adapterManager';
+import {logError, logInfo} from '../src/utils';
 
 const utils = require('../src/utils');
 const analyticsType = 'endpoint';
@@ -122,11 +123,11 @@ export const appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, ana
      */
     analyticsOptions.options = utils.deepClone(config.options);
     if (typeof config.options.affiliateId !== 'string' || config.options.affiliateId.length < 1) {
-      console.log('"options.affiliateId" is required.');
+      logError('"options.affiliateId" is required.');
       return false;
     }
     if (typeof config.options.configId !== 'string' || config.options.configId.length < 1) {
-      console.log('"options.configId" is required.');
+      logError('"options.configId" is required.');
       return false;
     }
 
@@ -314,7 +315,8 @@ export const appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, ana
     };
   },
   sendEventMessage(endPoint, data) {
-    // console.log(`AJAX: ${endPoint}: ` + JSON.stringify(data));
+    logInfo(`AJAX: ${endPoint}: ` + JSON.stringify(data));
+
     ajax(`${analyticsOptions.server}/${endPoint}`, null, JSON.stringify(data), {
       contentType: 'application/json'
     });
