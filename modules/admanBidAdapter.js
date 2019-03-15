@@ -5,6 +5,7 @@ const BIDDER_CODE = 'adman';
 
 export const spec = {
   code: BIDDER_CODE,
+  supportedMediaTypes: ['video', 'banner'],
   isBidRequestValid: function(bid) {
     let isValid = false;
     if (typeof bid.params !== 'undefined') {
