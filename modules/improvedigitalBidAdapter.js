@@ -191,16 +191,12 @@ function getNormalizedBidRequest(bid) {
     normalizedBidRequest.keyValues = keyValues;
   }
 
-  // If a single-size filter is set in the bid.params, use it.
-  // Otherwise request all ad unit sizes.
-  if (singleSizeFilter && singleSizeFilter.w && singleSizeFilter.h) {
+  if (config.getConfig('improvedigital.usePrebidSizes') === true && bid.sizes && bid.sizes.length > 0) {
+    normalizedBidRequest.format = bid.sizes;
+  } else if (singleSizeFilter && singleSizeFilter.w && singleSizeFilter.h) {
     normalizedBidRequest.size = {};
     normalizedBidRequest.size.h = singleSizeFilter.h;
     normalizedBidRequest.size.w = singleSizeFilter.w;
-  } else {
-    if (bid.sizes && bid.sizes.length > 0) {
-      normalizedBidRequest.format = bid.sizes;
-    }
   }
 
   if (bidId) {

@@ -102,12 +102,7 @@ describe('Improve Digital Adapter Tests', function () {
           id: '33e9500b21129f',
           pid: 1053688,
           tid: 'f183e871-fbed-45f0-a427-c8a63c4c01eb',
-          banner: {
-            format: [
-              { w: 300, h: 250 },
-              { w: 160, h: 600 }
-            ]
-          }
+          banner: {}
         }
       ]);
     });
@@ -181,6 +176,40 @@ describe('Improve Digital Adapter Tests', function () {
       ]);
       expect(requests).to.be.an('array');
       expect(requests.length).to.equal(1);
+      getConfigStub.restore();
+    });
+
+    it('should set Prebid sizes in bid request', function () {
+      const getConfigStub = sinon.stub(config, 'getConfig');
+      getConfigStub.withArgs('improvedigital.usePrebidSizes').returns(true);
+      const request = spec.buildRequests([simpleBidRequest])[0];
+      const params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
+      expect(params.bid_request.imp[0].banner).to.deep.equal({
+        format: [
+          { w: 300, h: 250 },
+          { w: 160, h: 600 }
+        ]
+      });
+      getConfigStub.restore();
+    });
+
+    it('should not add single size filter when using Prebid sizes', function () {
+      const getConfigStub = sinon.stub(config, 'getConfig');
+      getConfigStub.withArgs('improvedigital.usePrebidSizes').returns(true);
+      const bidRequest = Object.assign({}, simpleBidRequest);
+      const size = {
+        w: 800,
+        h: 600
+      };
+      bidRequest.params.size = size;
+      const request = spec.buildRequests([bidRequest])[0];
+      const params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
+      expect(params.bid_request.imp[0].banner).to.deep.equal({
+        format: [
+          { w: 300, h: 250 },
+          { w: 160, h: 600 }
+        ]
+      });
       getConfigStub.restore();
     });
   });
