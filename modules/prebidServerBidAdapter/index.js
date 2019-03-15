@@ -687,7 +687,10 @@ export function PrebidServer() {
 
     if (_s2sConfig && _s2sConfig.syncEndpoint) {
       let consent = (Array.isArray(bidRequests) && bidRequests.length > 0) ? bidRequests[0].gdprConsent : undefined;
-      queueSync(_s2sConfig.bidders, consent);
+      let syncBidders = _s2sConfig.bidders.map((bidder) => adaptermanager.aliasRegistry[bidder] || bidder);
+
+      syncBidders = syncBidders.filter((bidder, index) => (syncBidders.indexOf(bidder) === index));
+      queueSync(syncBidders, consent);
     }
 
     const request = protocolAdapter().buildRequest(s2sBidRequest, bidRequests, adUnitsWithSizes);
