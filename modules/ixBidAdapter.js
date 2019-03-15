@@ -77,6 +77,7 @@ function parseBid(rawBid, currency) {
   bid.currency = currency;
   bid.creativeId = rawBid.hasOwnProperty('crid') ? rawBid.crid : '-';
   bid.ix = {
+    dspid: utils.deepAccess(rawBid, 'ext.dspid'),
     advbrandid: utils.deepAccess(rawBid, 'ext.advbrandid'),
     advbrand: utils.deepAccess(rawBid, 'ext.advbrand'),
     adomain: rawBid.adomain

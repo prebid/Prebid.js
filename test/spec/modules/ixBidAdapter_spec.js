@@ -426,6 +426,7 @@ describe('IndexexchangeAdapter', function () {
           netRevenue: true,
           dealId: undefined,
           ix: {
+            dspid: 50,
             advbrandid: 303325,
             advbrand: 'OECTA',
             adomain: ['www.abc.com']
@@ -452,6 +453,7 @@ describe('IndexexchangeAdapter', function () {
           netRevenue: true,
           dealId: undefined,
           ix: {
+            dspid: 50,
             advbrandid: 303325,
             advbrand: 'OECTA',
             adomain: ['www.abc.com']
@@ -478,6 +480,7 @@ describe('IndexexchangeAdapter', function () {
           netRevenue: true,
           dealId: undefined,
           ix: {
+            dspid: 50,
             advbrandid: 303325,
             advbrand: 'OECTA',
             adomain: ['www.abc.com']
@@ -504,6 +507,7 @@ describe('IndexexchangeAdapter', function () {
           netRevenue: true,
           dealId: 'deal',
           ix: {
+            dspid: 50,
             advbrandid: 303325,
             advbrand: 'OECTA',
             adomain: ['www.abc.com']
