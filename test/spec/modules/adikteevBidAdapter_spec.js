@@ -67,17 +67,17 @@ const serverResponse =
     ]
   };
 
-describe('adikteevBidAdapter', () => {
+describe('adikteevBidAdapter', function () {
   const adapter = newBidder(spec);
 
-  describe('inherited functions', () => {
-    it('exists and is a function', () => {
+  describe('inherited functions', function () {
+    it('exists and is a function', function () {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
   });
 
-  describe('conformBidRequest', () => {
-    it('returns a bid-request', () => {
+  describe('conformBidRequest', function () {
+    it('returns a bid-request', function () {
       expect(conformBidRequest(cannedValidBidRequests[0])).to.deep.equal({
         params: cannedValidBidRequests[0].params,
         crumbs: cannedValidBidRequests[0].crumbs,
@@ -88,38 +88,84 @@ describe('adikteevBidAdapter', () => {
     })
   });
 
-  describe('akDebug', () => expect(akDebug(null, null)).to.deep.equal(false));
-  describe('akDebug', () => expect(akDebug(null, true)).to.deep.equal(true));
-  describe('akDebug', () => expect(akDebug(JSON.stringify(true), null)).to.deep.equal(true));
+  describe('akDebug', function () {
+    expect(akDebug(null, null)).to.deep.equal(false)
+  });
+  describe('akDebug', function () {
+    expect(akDebug(null, true)).to.deep.equal(true)
+  });
+  describe('akDebug', function () {
+    expect(akDebug(JSON.stringify(true), null)).to.deep.equal(true)
+  });
 
-  describe('akEnv', () => expect(akEnv(null, null)).to.deep.equal(DEFAULT_ENV));
-  describe('akEnv', () => expect(akEnv(null, STAGING)).to.deep.equal(STAGING));
-  describe('akEnv', () => expect(akEnv(STAGING, null)).to.deep.equal(STAGING));
+  describe('akEnv', function () {
+    expect(akEnv(null, null)).to.deep.equal(DEFAULT_ENV)
+  });
+  describe('akEnv', function () {
+    expect(akEnv(null, STAGING)).to.deep.equal(STAGING)
+  });
+  describe('akEnv', function () {
+    expect(akEnv(STAGING, null)).to.deep.equal(STAGING)
+  });
 
-  describe('akOverrides', () => expect(akOverrides(null, null)).to.deep.equal({}));
-  describe('akOverrides', () => expect(akOverrides(JSON.stringify({a: 1}), null)).to.deep.equal({a: 1}));
-  describe('akOverrides', () => expect(akOverrides('incorrect', null)).to.deep.equal({})); // expect no exception
-  describe('akOverrides', () => expect(akOverrides(null, {a: 1})).to.deep.equal({a: 1}));
+  describe('akOverrides', function () {
+    expect(akOverrides(null, null)).to.deep.equal({})
+  });
+  describe('akOverrides', function () {
+    expect(akOverrides(JSON.stringify({a: 1}), null)).to.deep.equal({a: 1})
+  });
+  describe('akOverrides', function () {
+    expect(akOverrides('incorrect', null)).to.deep.equal({})
+  }); // expect no exception
+  describe('akOverrides', function () {
+    expect(akOverrides(null, {a: 1})).to.deep.equal({a: 1})
+  });
 
-  describe('akUrl', () => expect(akUrl(null)).to.deep.equal(AK_BASE_URL));
-  describe('akUrl', () => expect(akUrl('anything')).to.deep.equal(AK_BASE_URL));
-  describe('akUrl', () => expect(akUrl(STAGING)).to.deep.equal(AK_BASE_URL_STAGING));
-  describe('akUrl', () => expect(akUrl('production')).to.deep.equal(AK_BASE_URL));
+  describe('akUrl', function () {
+    expect(akUrl(null)).to.deep.equal(AK_BASE_URL)
+  });
+  describe('akUrl', function () {
+    expect(akUrl('anything')).to.deep.equal(AK_BASE_URL)
+  });
+  describe('akUrl', function () {
+    expect(akUrl(STAGING)).to.deep.equal(AK_BASE_URL_STAGING)
+  });
+  describe('akUrl', function () {
+    expect(akUrl('production')).to.deep.equal(AK_BASE_URL)
+  });
 
-  describe('endpointUrl', () => expect(endpointUrl(null, null)).to.deep.equal(AK_BASE_URL.concat(ENDPOINT_PATH)));
-  describe('endpointUrl', () => expect(endpointUrl(null, STAGING)).to.deep.equal(AK_BASE_URL_STAGING.concat(ENDPOINT_PATH)));
-  describe('endpointUrl', () => expect(endpointUrl(STAGING, null)).to.deep.equal(AK_BASE_URL_STAGING.concat(ENDPOINT_PATH)));
+  describe('endpointUrl', function () {
+    expect(endpointUrl(null, null)).to.deep.equal(AK_BASE_URL.concat(ENDPOINT_PATH))
+  });
+  describe('endpointUrl', function () {
+    expect(endpointUrl(null, STAGING)).to.deep.equal(AK_BASE_URL_STAGING.concat(ENDPOINT_PATH))
+  });
+  describe('endpointUrl', function () {
+    expect(endpointUrl(STAGING, null)).to.deep.equal(AK_BASE_URL_STAGING.concat(ENDPOINT_PATH))
+  });
 
-  describe('userSyncIframeUrl', () => expect(userSyncIframeUrl(null, null)).to.deep.equal(AK_BASE_URL.concat(USER_SYNC_IFRAME_URL_PATH)));
-  describe('userSyncIframeUrl', () => expect(userSyncIframeUrl(null, STAGING)).to.deep.equal(AK_BASE_URL_STAGING.concat(USER_SYNC_IFRAME_URL_PATH)));
-  describe('userSyncIframeUrl', () => expect(userSyncIframeUrl(STAGING, null)).to.deep.equal(AK_BASE_URL_STAGING.concat(USER_SYNC_IFRAME_URL_PATH)));
+  describe('userSyncIframeUrl', function () {
+    expect(userSyncIframeUrl(null, null)).to.deep.equal(AK_BASE_URL.concat(USER_SYNC_IFRAME_URL_PATH))
+  });
+  describe('userSyncIframeUrl', function () {
+    expect(userSyncIframeUrl(null, STAGING)).to.deep.equal(AK_BASE_URL_STAGING.concat(USER_SYNC_IFRAME_URL_PATH))
+  });
+  describe('userSyncIframeUrl', function () {
+    expect(userSyncIframeUrl(STAGING, null)).to.deep.equal(AK_BASE_URL_STAGING.concat(USER_SYNC_IFRAME_URL_PATH))
+  });
 
-  describe('userSyncImageUrl', () => expect(userSyncImageUrl(null, null)).to.deep.equal(AK_BASE_URL.concat(USER_SYNC_IMAGE_URL_PATH)));
-  describe('userSyncImageUrl', () => expect(userSyncImageUrl(null, STAGING)).to.deep.equal(AK_BASE_URL_STAGING.concat(USER_SYNC_IMAGE_URL_PATH)));
-  describe('userSyncImageUrl', () => expect(userSyncImageUrl(STAGING, null)).to.deep.equal(AK_BASE_URL_STAGING.concat(USER_SYNC_IMAGE_URL_PATH)));
+  describe('userSyncImageUrl', function () {
+    expect(userSyncImageUrl(null, null)).to.deep.equal(AK_BASE_URL.concat(USER_SYNC_IMAGE_URL_PATH))
+  });
+  describe('userSyncImageUrl', function () {
+    expect(userSyncImageUrl(null, STAGING)).to.deep.equal(AK_BASE_URL_STAGING.concat(USER_SYNC_IMAGE_URL_PATH))
+  });
+  describe('userSyncImageUrl', function () {
+    expect(userSyncImageUrl(STAGING, null)).to.deep.equal(AK_BASE_URL_STAGING.concat(USER_SYNC_IMAGE_URL_PATH))
+  });
 
-  describe('isBidRequestValid', () => {
-    it('should return true when required params found', () => {
+  describe('isBidRequestValid', function () {
+    it('should return true when required params found', function () {
       const validBid = {
         bidder: 'adikteev',
         params: {
@@ -134,7 +180,7 @@ describe('adikteevBidAdapter', () => {
       expect(spec.isBidRequestValid(validBid)).to.equal(true);
     });
 
-    it('should return false when required params are invalid', () => {
+    it('should return false when required params are invalid', function () {
       expect(spec.isBidRequestValid({
         bidder: '', // invalid bidder
         params: {
@@ -171,7 +217,7 @@ describe('adikteevBidAdapter', () => {
     });
   });
 
-  describe('buildRequests', () => {
+  describe('buildRequests', function () {
     const
       currency = 'EUR',
       akEnv = STAGING,
@@ -188,10 +234,10 @@ describe('adikteevBidAdapter', () => {
       }
     });
 
-    config.getConfig('adikteev', () => {
+    config.getConfig('adikteev', function () {
       const request = spec.buildRequests(cannedValidBidRequests, cannedBidderRequest);
 
-      it('creates a request object with correct method, url and data', () => {
+      it('creates a request object with correct method, url and data', function () {
         expect(request).to.exist.and.have.all.keys(
           'method',
           'url',
@@ -245,8 +291,8 @@ describe('adikteevBidAdapter', () => {
     });
   });
 
-  describe('interpretResponse', () => {
-    it('bid objects from response', () => {
+  describe('interpretResponse', function () {
+    it('bid objects from response', function () {
       const bidResponses = spec.interpretResponse(serverResponse);
       expect(bidResponses).to.be.an('array').that.is.not.empty; // yes, syntax is correct
       expect(bidResponses[0]).to.have.all.keys(
@@ -273,7 +319,7 @@ describe('adikteevBidAdapter', () => {
     });
   });
 
-  describe('getUserSyncs', () => {
+  describe('getUserSyncs', function () {
     config.setConfig({akEnv: PRODUCTION});
     expect(spec.getUserSyncs({
       iframeEnabled: true
