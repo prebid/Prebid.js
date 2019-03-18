@@ -3,7 +3,7 @@
 ```
 Module Name: Emoteev Bidder Adapter
 Module Type: Bidder Adapter
-Maintainer: engineering@emoteev.com
+Maintainer: engineering@emoteev.io
 ```
 
 # Description
