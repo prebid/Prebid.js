@@ -235,6 +235,14 @@ describe('AdxcgAdapter', function () {
                 'label': 'SPONSORED',
                 'value': 'sponsoredByContent'
               }
+            }, {
+              'id': 5,
+              'required': 0,
+              'icon': {
+                'url': 'iconContent',
+                'w': 400,
+                'h': 400
+              }
             }],
             'link': {
               'url': 'linkContent'
@@ -307,7 +315,15 @@ describe('AdxcgAdapter', function () {
       expect(result[0].native.clickUrl).to.equal('linkContent')
       expect(result[0].native.impressionTrackers).to.deep.equal(['impressionTracker1', 'impressionTracker2'])
       expect(result[0].native.title).to.equal('titleContent')
-      expect(result[0].native.image).to.equal('imageContent')
+
+      expect(result[0].native.image.url).to.equal('imageContent')
+      expect(result[0].native.image.height).to.equal(600)
+      expect(result[0].native.image.width).to.equal(600)
+
+      expect(result[0].native.icon.url).to.equal('iconContent')
+      expect(result[0].native.icon.height).to.equal(400)
+      expect(result[0].native.icon.width).to.equal(400)
+
       expect(result[0].native.body).to.equal('descriptionContent')
       expect(result[0].native.sponsoredBy).to.equal('sponsoredByContent')
     })

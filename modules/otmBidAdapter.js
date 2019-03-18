@@ -1,5 +1,5 @@
-import {BANNER} from '../src/mediaTypes';
-import {registerBidder} from '../src/adapters/bidderFactory';
+import {BANNER} from 'src/mediaTypes';
+import {registerBidder} from 'src/adapters/bidderFactory';
 
 export const spec = {
   code: 'otm',
@@ -9,10 +9,11 @@ export const spec = {
   },
   buildRequests: function (bidRequests) {
     const requests = bidRequests.map(function (bid) {
+      const size = getMaxPrioritySize(bid.sizes);
       const params = {
         tz: getTz(),
-        w: bid.sizes[0][0],
-        h: bid.sizes[0][1],
+        w: size[0],
+        h: size[1],
         s: bid.params.tid,
         bidid: bid.bidId,
         transactionid: bid.transactionId,
@@ -55,6 +56,40 @@ export const spec = {
 
 function getTz() {
   return new Date().getTimezoneOffset();
+}
+
+function getMaxPrioritySize(sizes) {
+  var maxPrioritySize = null;
+
+  const sizesByPriority = [
+    [300, 250],
+    [240, 400],
+    [728, 90],
+    [300, 600],
+    [970, 250],
+    [300, 50],
+    [320, 100]
+  ];
+
+  const sizeToString = (size) => {
+    return size[0] + 'x' + size[1];
+  };
+
+  const sizesAsString = sizes.map(sizeToString);
+
+  sizesByPriority.forEach(size => {
+    if (!maxPrioritySize) {
+      if (sizesAsString.indexOf(sizeToString(size)) !== -1) {
+        maxPrioritySize = size;
+      }
+    }
+  });
+
+  if (maxPrioritySize) {
+    return maxPrioritySize;
+  } else {
+    return sizes[0];
+  }
 }
 
 registerBidder(spec);
