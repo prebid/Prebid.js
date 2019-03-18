@@ -413,3 +413,18 @@ export function callPrebidCacheAfterAuction(bids, callback) {
     }
   })
 }
+
+/**
+ * Compare function to be used in sorting long-form bids. This will compare bids on price per second.
+ * @param {Object} bid
+ * @param {Object} bid
+ */
+export function sortByPricePerSecond(a, b) {
+  if (a.cpm / a.video.durationBucket < b.cpm / b.video.durationBucket) {
+    return 1;
+  }
+  if (a.cpm / a.video.durationBucket > b.cpm / b.video.durationBucket) {
+    return -1;
+  }
+  return 0;
+}
