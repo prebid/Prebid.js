@@ -2,19 +2,16 @@ import * as utils from '../src/utils';
 import { parse as parseUrl } from '../src/url';
 import { config } from '../src/config';
 import { registerBidder } from '../src/adapters/bidderFactory';
-// import { Renderer } from '../src/Renderer';
 import { VIDEO, BANNER } from '../src/mediaTypes';
 import find from 'core-js/library/fn/array/find';
 import includes from 'core-js/library/fn/array/includes';
 
 const ADAPTER_VERSION = '1.0';
 const BIDDER_CODE = 'avng';
-// const OUTSTREAM = 'outstream';
 
 export const VIDEO_ENDPOINT = '//nep.advangelists.com/xp/get?pubid=';// 0cf8d6d643e13d86a5b6374148a4afac';
 export const BANNER_ENDPOINT = '//nep.advangelists.com/xp/get?pubid=';// 0cf8d6d643e13d86a5b6374148a4afac';
 export const OUTSTREAM_SRC = '//player-cdn.beachfrontmedia.com/playerapi/loader/outstream.js';
-
 export const VIDEO_TARGETING = ['mimes', 'playbackmethod', 'maxduration', 'skip'];
 export const DEFAULT_MIMES = ['video/mp4', 'application/javascript'];
 
@@ -55,8 +52,6 @@ export const spec = {
         bidRequest: bid
       });
     });
-
-    console.log(requests);
     return requests;
   },
 
@@ -64,7 +59,6 @@ export const spec = {
     let response = serverResponse.body;
     if (response !== null && utils.isEmpty(response) == false) {
       if (isVideoBid(bidRequest)) {
-        console.log('About to create final response for video')
         let bidResponse = {
           requestId: response.id,
           bidderCode: BIDDER_CODE,
@@ -89,7 +83,6 @@ export const spec = {
 
         return bidResponse;
       } else {
-        console.log('About to create final respsone for banner')
         return {
           requestId: response.id,
           bidderCode: BIDDER_CODE,
@@ -106,38 +99,6 @@ export const spec = {
       }
     }
   }
-/*,
-
-  getUserSyncs(syncOptions, serverResponses = [], gdprConsent = {}) {
-    let syncs = [];
-    let { gdprApplies, consentString } = gdprConsent;
-    let bannerResponse = find(serverResponses, (res) => utils.isArray(res.body));
-
-    if (bannerResponse) {
-      if (syncOptions.iframeEnabled) {
-        bannerResponse.body
-          .filter(bid => bid.sync)
-          .forEach(bid => {
-            syncs.push({
-              type: 'iframe',
-              url: bid.sync
-            });
-          });
-      }
-    } else if (syncOptions.iframeEnabled) {
-      syncs.push({
-        type: 'iframe',
-        url: `//sync.bfmio.com/sync_iframe?ifg=1&id=${appId}&gdpr=${gdprApplies ? 1 : 0}&gc=${consentString || ''}&gce=1`
-      });
-    } else if (syncOptions.pixelEnabled) {
-      syncs.push({
-        type: 'image',
-        url: `//sync.bfmio.com/syncb?pid=144&id=${appId}&gdpr=${gdprApplies ? 1 : 0}&gc=${consentString || ''}&gce=1`
-      });
-    }
-
-    return syncs;
-  } */
 };
 
 function isBannerBid(bid) {
@@ -186,31 +147,6 @@ function findAndFillParam(o, key, value) {
   } catch (ex) {}
 }
 
-/*
-function createRenderer(bidRequest) {
-  const renderer = Renderer.install({
-    id: bidRequest.bidId,
-    url: OUTSTREAM_SRC,
-    loaded: false
-  });
-
-  renderer.setRender(outstreamRender);
-
-  return renderer;
-}
-
-function outstreamRender(bid) {
-  bid.renderer.push(() => {
-    window.Beachfront.Player(bid.adUnitCode, {
-      ad_tag_url: bid.vastUrl,
-      width: bid.width,
-      height: bid.height,
-      expand_in_view: false,
-      collapse_on_complete: true
-    });
-  });
-}
-*/
 function getOsVersion() {
   let clientStrings = [
     { s: 'Android', r: /Android/ },
@@ -279,7 +215,7 @@ function createVideoRequestData(bid, bidderRequest) {
   let firstSize = getFirstSize(sizes);
 
   let video = getVideoTargetingParams(bid);
-  var o = {
+  const o = {
     'device': {
       'langauge': (global.navigator.language).split('-')[0],
       'dnt': (global.navigator.doNotTrack === 1 ? 1 : 0),
@@ -309,7 +245,7 @@ function createVideoRequestData(bid, bidderRequest) {
   o.site['domain'] = topLocation.hostname;
   o.site['ref'] = topReferrer;
   o.site['mobile'] = isMobile() ? 1 : 0;
-  var secure = topLocation.protocol.indexOf('https') === 0 ? 1 : 0;
+  const secure = topLocation.protocol.indexOf('https') === 0 ? 1 : 0;
 
   o.device['dnt'] = getDoNotTrack() ? 1 : 0;
 
@@ -366,7 +302,7 @@ function createBannerRequestData(bid, bidderRequest) {
 
   let sizes = getBannerSizes(bid);
 
-  var o = {
+  const o = {
     'device': {
       'langauge': (global.navigator.language).split('-')[0],
       'dnt': (global.navigator.doNotTrack === 1 ? 1 : 0),
@@ -395,7 +331,7 @@ function createBannerRequestData(bid, bidderRequest) {
   o.site['domain'] = topLocation.hostname;
   o.site['ref'] = topReferrer;
   o.site['mobile'] = isMobile() ? 1 : 0;
-  var secure = topLocation.protocol.indexOf('https') === 0 ? 1 : 0;
+  const secure = topLocation.protocol.indexOf('https') === 0 ? 1 : 0;
 
   o.device['dnt'] = getDoNotTrack() ? 1 : 0;
 
