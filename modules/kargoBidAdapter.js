@@ -73,16 +73,53 @@ export const spec = {
   },
 
   // PRIVATE
-  _getCrb() {
+  _readCookie(name) {
+    let nameEquals = `${name}=`;
+    let cookies = document.cookie.split(';');
+
+    for (let i = 0; i < cookies.length; i++) {
+      let cookie = cookies[i];
+      while (cookie.charAt(0) === ' ') {
+        cookie = cookie.substring(1, cookie.length);
+      }
+
+      if (cookie.indexOf(nameEquals) === 0) {
+        return cookie.substring(nameEquals.length, cookie.length);
+      }
+    }
+
+    return null;
+  },
+
+  _getCrbFromCookie() {
     try {
-      const crb = JSON.parse(atob(spec._getLocalStorageSafely('krg_crb')));
-      if (crb) {
-        return crb;
+      const crb = JSON.parse(decodeURIComponent(spec._readCookie('krg_crb')));
+      if (crb && crb.v) {
+        let vParsed = JSON.parse(atob(crb.v));
+        if (vParsed) {
+          return vParsed;
+        }
       }
       return {};
     } catch (e) {
       return {};
     }
+  },
+
+  _getCrbFromLocalStorage() {
+    try {
+      return JSON.parse(atob(spec._getLocalStorageSafely('krg_crb')));
+    } catch (e) {
+      return {};
+    }
+  },
+
+  _getCrb() {
+    let localStorageCrb = spec._getCrbFromLocalStorage();
+    if (Object.keys(localStorageCrb).length) {
+      return localStorageCrb;
+    }
+    return spec._getCrbFromCookie();
   },
 
   _getKruxUserId() {
@@ -135,7 +172,8 @@ export const spec = {
       userIDs: spec._getUserIds(),
       krux: spec._getKrux(),
       pageURL: window.location.href,
-      rawCRB: spec._getLocalStorageSafely('krg_crb')
+      rawCRB: spec._readCookie('krg_crb'),
+      rawCRBLocalStorage: spec._getLocalStorageSafely('krg_crb')
     };
   },
 
