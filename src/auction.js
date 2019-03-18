@@ -438,22 +438,6 @@ export const callPrebidCache = hook('async', function(auctionInstance, bidRespon
           bidResponse.vastUrl = getCacheUrl(bidResponse.videoCacheKey);
         }
 
-        // try to use cache.url to add hb_cache_host and hb_cache_path to targeting
-        const cacheUrl = config.getConfig('cache.url');
-        if (cacheUrl && typeof cacheUrl === 'string') {
-          const parsedURL = document.createElement('a');
-          parsedURL.href = cacheUrl;
-
-          if (!bidResponse.adserverTargeting) {
-            bidResponse.adserverTargeting = {};
-          }
-          if (!bidResponse.adserverTargeting.hb_cache_host) {
-            bidResponse.adserverTargeting.hb_cache_host = parsedURL.hostname;
-          }
-          if (!bidResponse.adserverTargeting.hb_cache_path) {
-            bidResponse.adserverTargeting.hb_cache_path = parsedURL.pathname;
-          }
-        }
         addBidToAuction(auctionInstance, bidResponse);
         afterBidAdded();
       }
@@ -585,6 +569,7 @@ export function getStandardBidderSettings(mediaType) {
     ]
 
     if (mediaType === 'video') {
+      // Adding hb_uuid + hb_cache_id
       [CONSTANTS.TARGETING_KEYS.UUID, CONSTANTS.TARGETING_KEYS.CACHE_ID].forEach(item => {
         bidderSettings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD][CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING].push({
           key: item,
@@ -593,6 +578,21 @@ export function getStandardBidderSettings(mediaType) {
           }
         })
       });
+      // adding hb_cache_host + hb_cache_path
+      var cacheUrl = config.getConfig('cache.url');
+      if (cacheUrl && typeof cacheUrl === 'string') {
+        var parsedURL = document.createElement('a');
+        parsedURL.href = cacheUrl;
+        [[CONSTANTS.TARGETING_KEYS.CACHE_HOST, parsedURL.hostname],
+          [CONSTANTS.TARGETING_KEYS.CACHE_PATH, parsedURL.pathname]].forEach(item => {
+          bidderSettings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD][CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING].push({
+            key: item[0],
+            val: function val(bidResponse) {
+              return utils.deepAccess(bidResponse, 'adserverTargeting.' + item[0]) ? bidResponse.adserverTargeting[item[0]] : item[1];
+            }
+          })
+        })
+      }
     }
   }
   return bidderSettings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD];
