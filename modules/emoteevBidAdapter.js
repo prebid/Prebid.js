@@ -3,12 +3,12 @@ import {BANNER} from '../src/mediaTypes';
 import * as utils from '../src/utils';
 import {config} from '../src/config';
 
-export const BIDDER_CODE = 'adikteev';
+export const BIDDER_CODE = 'emoteev';
 export const AK_PBJS_VERSION = '1.35.0';
 
-export const AK_BASE_URL = 'https://prebid.adikteev.com';
-export const AK_BASE_URL_STAGING = 'https://prebid-staging.adikteev.com';
-export const AK_BASE_URL_DEVELOPMENT = 'http://localhost:3000';
+export const EMOTEEV_BASE_URL = 'https://prebid.emoteev.io';
+export const EMOTEEV_BASE_URL_STAGING = 'https://prebid-staging.emoteev.io';
+export const EMOTEEV_BASE_URL_DEVELOPMENT = 'http://localhost:3000';
 
 export const ENDPOINT_PATH = '/api/prebid/bid';
 export const USER_SYNC_IFRAME_URL_PATH = '/api/prebid/sync-iframe';
@@ -29,46 +29,46 @@ export const conformBidRequest = bidRequest => {
   };
 };
 
-export const akDebug = (parameterDebug, configDebug) => {
+export const emoteevDebug = (parameterDebug, configDebug) => {
   if (parameterDebug && parameterDebug.length && parameterDebug.length > 0) return JSON.parse(parameterDebug);
   else if (configDebug) return configDebug;
   else return false;
 };
 
-export const akEnv = (parameterAkEnv, configAkEnv) => {
-  if (utils.contains([PRODUCTION, STAGING, DEVELOPMENT], parameterAkEnv)) return parameterAkEnv;
-  else if (utils.contains([PRODUCTION, STAGING, DEVELOPMENT], configAkEnv)) return configAkEnv;
+export const emoteevEnv = (parameteremoteevEnv, configemoteevEnv) => {
+  if (utils.contains([PRODUCTION, STAGING, DEVELOPMENT], parameteremoteevEnv)) return parameteremoteevEnv;
+  else if (utils.contains([PRODUCTION, STAGING, DEVELOPMENT], configemoteevEnv)) return configemoteevEnv;
   else return DEFAULT_ENV;
 };
 
-export const akOverrides = (parameterAkOverrides, configAkOverrides) => {
-  if (parameterAkOverrides && parameterAkOverrides.length !== 0) {
+export const emoteevOverrides = (parameteremoteevOverrides, configemoteevOverrides) => {
+  if (parameteremoteevOverrides && parameteremoteevOverrides.length !== 0) {
     let parsedParams = null;
     try {
-      parsedParams = JSON.parse(parameterAkOverrides);
+      parsedParams = JSON.parse(parameteremoteevOverrides);
     } catch (error) {
       parsedParams = null;
     }
     if (parsedParams) return parsedParams;
   }
-  if (configAkOverrides && Object.keys(configAkOverrides).length !== 0) return configAkOverrides;
+  if (configemoteevOverrides && Object.keys(configemoteevOverrides).length !== 0) return configemoteevOverrides;
   else return {};
 };
 
 export const akUrl = (environment) => {
   switch (environment) {
     case DEVELOPMENT:
-      return AK_BASE_URL_DEVELOPMENT;
+      return EMOTEEV_BASE_URL_DEVELOPMENT;
     case STAGING:
-      return AK_BASE_URL_STAGING;
+      return EMOTEEV_BASE_URL_STAGING;
     default:
-      return AK_BASE_URL;
+      return EMOTEEV_BASE_URL;
   }
 };
 
-export const endpointUrl = (parameterAkEnv, configAkEnv) => akUrl(akEnv(parameterAkEnv, configAkEnv)).concat(ENDPOINT_PATH);
-export const userSyncIframeUrl = (parameterAkEnv, configAkEnv) => akUrl(akEnv(parameterAkEnv, configAkEnv)).concat(USER_SYNC_IFRAME_URL_PATH);
-export const userSyncImageUrl = (parameterAkEnv, configAkEnv) => akUrl(akEnv(parameterAkEnv, configAkEnv)).concat(USER_SYNC_IMAGE_URL_PATH);
+export const endpointUrl = (parameteremoteevEnv, configemoteevEnv) => akUrl(emoteevEnv(parameteremoteevEnv, configemoteevEnv)).concat(ENDPOINT_PATH);
+export const userSyncIframeUrl = (parameteremoteevEnv, configemoteevEnv) => akUrl(emoteevEnv(parameteremoteevEnv, configemoteevEnv)).concat(USER_SYNC_IFRAME_URL_PATH);
+export const userSyncImageUrl = (parameteremoteevEnv, configemoteevEnv) => akUrl(emoteevEnv(parameteremoteevEnv, configemoteevEnv)).concat(USER_SYNC_IMAGE_URL_PATH);
 
 export const getViewDimensions = () => {
   let w = window;
@@ -175,17 +175,17 @@ export const spec = {
         akPbjsVersion: AK_PBJS_VERSION,
         bidRequests: validBidRequests.map(conformBidRequest),
         currency: config.getConfig('currency'),
-        debug: akDebug(utils.getParameterByName('akDebug'), config.getConfig('adikteev.debug')),
+        debug: emoteevDebug(utils.getParameterByName('emoteevDebug'), config.getConfig('emoteev.debug')),
         language: navigator.language,
         refererInfo: bidderRequest.refererInfo,
         deviceInfo: getDeviceInfo(getDeviceDimensions(), getViewDimensions(), getDocumentDimensions(), isWebGLEnabled()),
         userAgent: navigator.userAgent,
       },
-      akOverrides(utils.getParameterByName('akOverrides'), config.getConfig('adikteev.overrides')));
+      emoteevOverrides(utils.getParameterByName('emoteevOverrides'), config.getConfig('emoteev.overrides')));
 
     return {
       method: 'POST',
-      url: endpointUrl(utils.getParameterByName('akEnv'), config.getConfig('adikteev.env')),
+      url: endpointUrl(utils.getParameterByName('emoteevEnv'), config.getConfig('emoteev.env')),
       data: JSON.stringify(payload),
     };
   },
@@ -193,19 +193,19 @@ export const spec = {
   interpretResponse: (serverResponse) => serverResponse.body,
 
   getUserSyncs: (syncOptions, serverResponses) => {
-    const parameterAkEnv = utils.getParameterByName('adikteev.env');
-    const configAkEnv = config.getConfig('adikteev.env');
+    const parameteremoteevEnv = utils.getParameterByName('emoteev.env');
+    const configemoteevEnv = config.getConfig('emoteev.env');
     const syncs = [];
     if (syncOptions.iframeEnabled) {
       syncs.push({
         type: 'iframe',
-        url: userSyncIframeUrl(parameterAkEnv, configAkEnv),
+        url: userSyncIframeUrl(parameteremoteevEnv, configemoteevEnv),
       });
     }
     if (syncOptions.pixelEnabled && serverResponses.length > 0) {
       syncs.push({
         type: 'image',
-        url: userSyncImageUrl(parameterAkEnv, configAkEnv),
+        url: userSyncImageUrl(parameteremoteevEnv, configemoteevEnv),
       });
     }
     return syncs;
