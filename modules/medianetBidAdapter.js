@@ -13,7 +13,8 @@ const SLOT_VISIBILITY = {
 };
 const EVENTS = {
   TIMEOUT_EVENT_NAME: 'client_timeout',
-  BID_WON_EVENT_NAME: 'client_bid_won'
+  BID_WON_EVENT_NAME: 'client_bid_won',
+  RENDER_FAILED_EVENT_NAME: 'client_ad_render_failed'
 };
 const EVENT_PIXEL_URL = 'qsearch-a.akamaihd.net/log';
 
@@ -368,9 +369,6 @@ export const spec = {
     } catch (e) {}
   },
 
-  /**
-   * @param {TimedOutBid} timeoutData
-   */
   onBidWon: (bid) => {
     try {
       let eventData = {
@@ -378,6 +376,17 @@ export const spec = {
         value: bid.cpm
       };
       logEvent(eventData, [bid]);
+    } catch (e) {}
+  },
+
+  onRenderFail: (bidData) => {
+    try {
+      let eventData = {
+        name: EVENTS.RENDER_FAILED_EVENT_NAME,
+        value: bidData.bid.cpm,
+        related_data: bidData.reason + ',' + bidData.message
+      };
+      logEvent(eventData, [bidData.bid]);
     } catch (e) {}
   },
 

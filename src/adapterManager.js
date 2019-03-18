@@ -467,6 +467,10 @@ adapterManager.callTimedOutBidders = function(adUnits, timedOutBidders, cbTimeou
   });
 }
 
+adapterManager.callRenderFailBidder = function(bidder, bidInfo) {
+  tryCallBidderMethod(bidder, 'onRenderFail', bidInfo);
+}
+
 adapterManager.callBidWonBidder = function(bidder, bid, adUnits) {
   // Adding user configured params to bidWon event data
   bid.params = utils.getUserConfiguredParams(adUnits, bid.adUnitCode, bid.bidder);

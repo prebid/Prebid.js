@@ -284,8 +284,8 @@ function emitAdRenderFail(reason, message, bid) {
   data.message = message;
   if (bid) {
     data.bid = bid;
+    adapterManager.callRenderFailBidder(bid.bidder, data);
   }
-
   utils.logError(message);
   events.emit(AD_RENDER_FAILED, data);
 }
