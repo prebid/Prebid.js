@@ -315,7 +315,6 @@ describe('AdxcgAdapter', function () {
       expect(result[0].native.clickUrl).to.equal('linkContent')
       expect(result[0].native.impressionTrackers).to.deep.equal(['impressionTracker1', 'impressionTracker2'])
       expect(result[0].native.title).to.equal('titleContent')
-      // expect(result[0].native.image).to.equal('imageContent')
 
       expect(result[0].native.image.url).to.equal('imageContent')
       expect(result[0].native.image.height).to.equal(600)
