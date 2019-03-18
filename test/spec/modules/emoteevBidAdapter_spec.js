@@ -1,11 +1,11 @@
 import {expect} from 'chai';
 import {
   AK_PBJS_VERSION,
-  AK_BASE_URL,
-  AK_BASE_URL_STAGING,
-  akDebug,
-  akEnv,
-  akOverrides,
+  EMOTEEV_BASE_URL,
+  EMOTEEV_BASE_URL_STAGING,
+  emoteevDebug,
+  emoteevEnv,
+  emoteevOverrides,
   akUrl,
   conformBidRequest,
   DEFAULT_ENV,
@@ -18,7 +18,7 @@ import {
   USER_SYNC_IMAGE_URL_PATH,
   userSyncIframeUrl,
   userSyncImageUrl,
-} from 'modules/adikteevBidAdapter';
+} from 'modules/emoteevBidAdapter';
 import {newBidder} from 'src/adapters/bidderFactory';
 import {config} from 'src/config';
 
@@ -27,7 +27,7 @@ const cannedValidBidRequests = [{
   auctionId: 'fcbf2b27-a951-496f-b5bb-1324ce7c0558',
   bidId: '2b8de6572e8193',
   bidRequestsCount: 1,
-  bidder: 'adikteev',
+  bidder: 'emoteev',
   bidderRequestId: '1203b39fecc6a5',
   crumbs: {pubcid: 'f3371d16-4e8b-42b5-a770-7e5be1fdf03d'},
   params: {adSpaceId: 5084},
@@ -37,15 +37,15 @@ const cannedValidBidRequests = [{
 const cannedBidderRequest = {
   auctionId: 'fcbf2b27-a951-496f-b5bb-1324ce7c0558',
   auctionStart: 1544200122837,
-  bidderCode: 'adikteev',
+  bidderCode: 'emoteev',
   bidderRequestId: '1203b39fecc6a5',
   doneCbCallCount: 0,
   refererInfo: {
     canonicalUrl: undefined,
     numIframes: 0,
     reachedTop: true,
-    referer: 'http://localhost:9999/integrationExamples/gpt/hello_world_adikteev.html',
-    stack: ['http://localhost:9999/integrationExamples/gpt/hello_world_adikteev.html']
+    referer: 'http://localhost:9999/integrationExamples/gpt/hello_world_emoteev.html',
+    stack: ['http://localhost:9999/integrationExamples/gpt/hello_world_emoteev.html']
   },
   start: 1544200012839,
   timeout: 3000
@@ -67,7 +67,7 @@ const serverResponse =
     ]
   };
 
-describe('adikteevBidAdapter', function () {
+describe('emoteevBidAdapter', function () {
   const adapter = newBidder(spec);
 
   describe('inherited functions', function () {
@@ -88,86 +88,86 @@ describe('adikteevBidAdapter', function () {
     })
   });
 
-  describe('akDebug', function () {
-    expect(akDebug(null, null)).to.deep.equal(false)
+  describe('emoteevDebug', function () {
+    expect(emoteevDebug(null, null)).to.deep.equal(false)
   });
-  describe('akDebug', function () {
-    expect(akDebug(null, true)).to.deep.equal(true)
+  describe('emoteevDebug', function () {
+    expect(emoteevDebug(null, true)).to.deep.equal(true)
   });
-  describe('akDebug', function () {
-    expect(akDebug(JSON.stringify(true), null)).to.deep.equal(true)
-  });
-
-  describe('akEnv', function () {
-    expect(akEnv(null, null)).to.deep.equal(DEFAULT_ENV)
-  });
-  describe('akEnv', function () {
-    expect(akEnv(null, STAGING)).to.deep.equal(STAGING)
-  });
-  describe('akEnv', function () {
-    expect(akEnv(STAGING, null)).to.deep.equal(STAGING)
+  describe('emoteevDebug', function () {
+    expect(emoteevDebug(JSON.stringify(true), null)).to.deep.equal(true)
   });
 
-  describe('akOverrides', function () {
-    expect(akOverrides(null, null)).to.deep.equal({})
+  describe('emoteevEnv', function () {
+    expect(emoteevEnv(null, null)).to.deep.equal(DEFAULT_ENV)
   });
-  describe('akOverrides', function () {
-    expect(akOverrides(JSON.stringify({a: 1}), null)).to.deep.equal({a: 1})
+  describe('emoteevEnv', function () {
+    expect(emoteevEnv(null, STAGING)).to.deep.equal(STAGING)
   });
-  describe('akOverrides', function () {
-    expect(akOverrides('incorrect', null)).to.deep.equal({})
+  describe('emoteevEnv', function () {
+    expect(emoteevEnv(STAGING, null)).to.deep.equal(STAGING)
+  });
+
+  describe('emoteevOverrides', function () {
+    expect(emoteevOverrides(null, null)).to.deep.equal({})
+  });
+  describe('emoteevOverrides', function () {
+    expect(emoteevOverrides(JSON.stringify({a: 1}), null)).to.deep.equal({a: 1})
+  });
+  describe('emoteevOverrides', function () {
+    expect(emoteevOverrides('incorrect', null)).to.deep.equal({})
   }); // expect no exception
-  describe('akOverrides', function () {
-    expect(akOverrides(null, {a: 1})).to.deep.equal({a: 1})
+  describe('emoteevOverrides', function () {
+    expect(emoteevOverrides(null, {a: 1})).to.deep.equal({a: 1})
   });
 
   describe('akUrl', function () {
-    expect(akUrl(null)).to.deep.equal(AK_BASE_URL)
+    expect(akUrl(null)).to.deep.equal(EMOTEEV_BASE_URL)
   });
   describe('akUrl', function () {
-    expect(akUrl('anything')).to.deep.equal(AK_BASE_URL)
+    expect(akUrl('anything')).to.deep.equal(EMOTEEV_BASE_URL)
   });
   describe('akUrl', function () {
-    expect(akUrl(STAGING)).to.deep.equal(AK_BASE_URL_STAGING)
+    expect(akUrl(STAGING)).to.deep.equal(EMOTEEV_BASE_URL_STAGING)
   });
   describe('akUrl', function () {
-    expect(akUrl('production')).to.deep.equal(AK_BASE_URL)
+    expect(akUrl('production')).to.deep.equal(EMOTEEV_BASE_URL)
   });
 
   describe('endpointUrl', function () {
-    expect(endpointUrl(null, null)).to.deep.equal(AK_BASE_URL.concat(ENDPOINT_PATH))
+    expect(endpointUrl(null, null)).to.deep.equal(EMOTEEV_BASE_URL.concat(ENDPOINT_PATH))
   });
   describe('endpointUrl', function () {
-    expect(endpointUrl(null, STAGING)).to.deep.equal(AK_BASE_URL_STAGING.concat(ENDPOINT_PATH))
+    expect(endpointUrl(null, STAGING)).to.deep.equal(EMOTEEV_BASE_URL_STAGING.concat(ENDPOINT_PATH))
   });
   describe('endpointUrl', function () {
-    expect(endpointUrl(STAGING, null)).to.deep.equal(AK_BASE_URL_STAGING.concat(ENDPOINT_PATH))
+    expect(endpointUrl(STAGING, null)).to.deep.equal(EMOTEEV_BASE_URL_STAGING.concat(ENDPOINT_PATH))
   });
 
   describe('userSyncIframeUrl', function () {
-    expect(userSyncIframeUrl(null, null)).to.deep.equal(AK_BASE_URL.concat(USER_SYNC_IFRAME_URL_PATH))
+    expect(userSyncIframeUrl(null, null)).to.deep.equal(EMOTEEV_BASE_URL.concat(USER_SYNC_IFRAME_URL_PATH))
   });
   describe('userSyncIframeUrl', function () {
-    expect(userSyncIframeUrl(null, STAGING)).to.deep.equal(AK_BASE_URL_STAGING.concat(USER_SYNC_IFRAME_URL_PATH))
+    expect(userSyncIframeUrl(null, STAGING)).to.deep.equal(EMOTEEV_BASE_URL_STAGING.concat(USER_SYNC_IFRAME_URL_PATH))
   });
   describe('userSyncIframeUrl', function () {
-    expect(userSyncIframeUrl(STAGING, null)).to.deep.equal(AK_BASE_URL_STAGING.concat(USER_SYNC_IFRAME_URL_PATH))
+    expect(userSyncIframeUrl(STAGING, null)).to.deep.equal(EMOTEEV_BASE_URL_STAGING.concat(USER_SYNC_IFRAME_URL_PATH))
   });
 
   describe('userSyncImageUrl', function () {
-    expect(userSyncImageUrl(null, null)).to.deep.equal(AK_BASE_URL.concat(USER_SYNC_IMAGE_URL_PATH))
+    expect(userSyncImageUrl(null, null)).to.deep.equal(EMOTEEV_BASE_URL.concat(USER_SYNC_IMAGE_URL_PATH))
   });
   describe('userSyncImageUrl', function () {
-    expect(userSyncImageUrl(null, STAGING)).to.deep.equal(AK_BASE_URL_STAGING.concat(USER_SYNC_IMAGE_URL_PATH))
+    expect(userSyncImageUrl(null, STAGING)).to.deep.equal(EMOTEEV_BASE_URL_STAGING.concat(USER_SYNC_IMAGE_URL_PATH))
   });
   describe('userSyncImageUrl', function () {
-    expect(userSyncImageUrl(STAGING, null)).to.deep.equal(AK_BASE_URL_STAGING.concat(USER_SYNC_IMAGE_URL_PATH))
+    expect(userSyncImageUrl(STAGING, null)).to.deep.equal(EMOTEEV_BASE_URL_STAGING.concat(USER_SYNC_IMAGE_URL_PATH))
   });
 
   describe('isBidRequestValid', function () {
     it('should return true when required params found', function () {
       const validBid = {
-        bidder: 'adikteev',
+        bidder: 'emoteev',
         params: {
           adSpaceId: 12345,
         },
@@ -193,7 +193,7 @@ describe('adikteevBidAdapter', function () {
         },
       })).to.equal(false);
       expect(spec.isBidRequestValid({
-        bidder: 'adikteev',
+        bidder: 'emoteev',
         params: {
           adSpaceId: '', // invalid adSpaceId
         },
@@ -204,7 +204,7 @@ describe('adikteevBidAdapter', function () {
         },
       })).to.equal(false);
       expect(spec.isBidRequestValid({
-        bidder: 'adikteev',
+        bidder: 'emoteev',
         params: {
           adSpaceId: 12345,
         },
@@ -220,21 +220,21 @@ describe('adikteevBidAdapter', function () {
   describe('buildRequests', function () {
     const
       currency = 'EUR',
-      akEnv = STAGING,
-      akDebug = true,
-      akOverrides = {
+      emoteevEnv = STAGING,
+      emoteevDebug = true,
+      emoteevOverrides = {
         iAmOverride: 'iAmOverride'
       };
     config.setConfig({ // asynchronous
       currency,
-      adikteev: {
+      emoteev: {
         env: STAGING,
-        debug: akDebug,
-        overrides: akOverrides
+        debug: emoteevDebug,
+        overrides: emoteevOverrides
       }
     });
 
-    config.getConfig('adikteev', function () {
+    config.getConfig('emoteev', function () {
       const request = spec.buildRequests(cannedValidBidRequests, cannedBidderRequest);
 
       it('creates a request object with correct method, url and data', function () {
@@ -244,7 +244,7 @@ describe('adikteevBidAdapter', function () {
           'data',
         );
         expect(request.method).to.equal('POST');
-        expect(request.url).to.equal(endpointUrl(akEnv, akEnv));
+        expect(request.url).to.equal(endpointUrl(emoteevEnv, emoteevEnv));
 
         let requestData = JSON.parse(request.data);
         expect(requestData).to.exist.and.have.all.keys(
@@ -274,7 +274,7 @@ describe('adikteevBidAdapter', function () {
         expect(requestData.bidRequests[0].bidId).to.deep.equal(cannedValidBidRequests[0].bidId);
         expect(requestData.bidRequests[0].bidderRequestId).to.deep.equal(cannedValidBidRequests[0].bidderRequestId);
         expect(requestData.currency).to.deep.equal(currency);
-        expect(requestData.debug).to.deep.equal(akDebug);
+        expect(requestData.debug).to.deep.equal(emoteevDebug);
         expect(requestData.iAmOverride).to.deep.equal('iAmOverride');
         expect(requestData.language).to.deep.equal(navigator.language);
         expect(requestData.deviceInfo).to.exist.and.have.all.keys(
@@ -320,19 +320,19 @@ describe('adikteevBidAdapter', function () {
   });
 
   describe('getUserSyncs', function () {
-    config.setConfig({akEnv: PRODUCTION});
+    config.setConfig({emoteevEnv: PRODUCTION});
     expect(spec.getUserSyncs({
       iframeEnabled: true
     }, [{}])).to.deep.equal([{
       type: 'iframe',
-      url: AK_BASE_URL.concat(USER_SYNC_IFRAME_URL_PATH)
+      url: EMOTEEV_BASE_URL.concat(USER_SYNC_IFRAME_URL_PATH)
     }]);
 
     expect(spec.getUserSyncs({
       pixelEnabled: true
     }, [{}])).to.deep.equal([{
       type: 'image',
-      url: AK_BASE_URL.concat(USER_SYNC_IMAGE_URL_PATH)
+      url: EMOTEEV_BASE_URL.concat(USER_SYNC_IMAGE_URL_PATH)
     }]);
 
     expect(spec.getUserSyncs({
@@ -340,10 +340,10 @@ describe('adikteevBidAdapter', function () {
       pixelEnabled: true
     }, [{}])).to.deep.equal([{
       type: 'iframe',
-      url: AK_BASE_URL.concat(USER_SYNC_IFRAME_URL_PATH)
+      url: EMOTEEV_BASE_URL.concat(USER_SYNC_IFRAME_URL_PATH)
     }, {
       type: 'image',
-      url: AK_BASE_URL.concat(USER_SYNC_IMAGE_URL_PATH)
+      url: EMOTEEV_BASE_URL.concat(USER_SYNC_IMAGE_URL_PATH)
     }]);
   });
 });

@@ -1,14 +1,14 @@
 # Overview
 
 ```
-Module Name: Adikteev Bidder Adapter
+Module Name: Emoteev Bidder Adapter
 Module Type: Bidder Adapter
-Maintainer: adnetwork@adikteev.com
+Maintainer: engineering@emoteev.com
 ```
 
 # Description
 
-Module that connects to Adikteev's demand sources
+Module that connects to Emoteev's demand sources
 
 # Test Parameters
 
@@ -23,7 +23,7 @@ Module that connects to Adikteev's demand sources
             },
             bids: [
                 {
-                    bidder: 'adikteev',
+                    bidder: 'emoteev',
                     params: {
                         adSpaceId: 5084
                     }
