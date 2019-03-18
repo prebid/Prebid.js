@@ -142,6 +142,8 @@ describe('auctionmanager.js', function () {
       if (bid.mediaType === 'video') {
         expected[ CONSTANTS.TARGETING_KEYS.UUID ] = bid.videoCacheKey;
         expected[ CONSTANTS.TARGETING_KEYS.CACHE_ID ] = bid.videoCacheKey;
+        expected[ CONSTANTS.TARGETING_KEYS.CACHE_HOST ] = 'prebid.adnxs.com';
+        expected[ CONSTANTS.TARGETING_KEYS.CACHE_PATH ] = '/pbc/v1/cache';
       }
       if (!keys) {
         return expected;
@@ -167,6 +169,11 @@ describe('auctionmanager.js', function () {
     });
 
     it('No bidder level configuration defined - default for video', function () {
+      config.setConfig({
+        cache: {
+          url: 'https://prebid.adnxs.com/pbc/v1/cache'
+        }
+      });
       $$PREBID_GLOBAL$$.bidderSettings = {};
       let videoBid = utils.deepClone(bid);
       videoBid.mediaType = 'video';
@@ -229,6 +236,11 @@ describe('auctionmanager.js', function () {
     });
 
     it('Custom configuration for all bidders with video bid', function () {
+      config.setConfig({
+        cache: {
+          url: 'https://prebid.adnxs.com/pbc/v1/cache'
+        }
+      });
       let videoBid = utils.deepClone(bid);
       videoBid.mediaType = 'video';
       videoBid.videoCacheKey = 'abc123def';
@@ -288,6 +300,10 @@ describe('auctionmanager.js', function () {
       };
 
       let expected = getDefaultExpected(videoBid);
+      // Since we are effectively overwriting the bidderSettings above...
+      // we are not including the new host / path logic. So we will expect them to be gone.
+      delete expected['hb_cache_host'];
+      delete expected['hb_cache_path'];
       let response = getKeyValueTargetingPairs(videoBid.bidderCode, videoBid);
       assert.deepEqual(response, expected);
     });
