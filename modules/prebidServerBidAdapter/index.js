@@ -186,7 +186,7 @@ function doAllSyncs(bidders) {
  * @param {function} done an exit callback; to signify this pixel has either: finished rendering or something went wrong
  */
 function doPreBidderSync(type, url, bidder, done) {
-  if (typeof _s2sConfig.syncUrlModifier[bidder] === 'function') {
+  if (_s2sConfig.syncUrlModifier && typeof _s2sConfig.syncUrlModifier[bidder] === 'function') {
     const newSyncUrl = _s2sConfig.syncUrlModifier[bidder](type, url, bidder);
     doBidderSync(type, newSyncUrl, bidder, done)
   } else {
