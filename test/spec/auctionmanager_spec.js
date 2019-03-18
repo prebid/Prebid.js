@@ -305,9 +305,6 @@ describe('auctionmanager.js', function () {
       delete expected['hb_cache_host'];
       delete expected['hb_cache_path'];
       let response = getKeyValueTargetingPairs(videoBid.bidderCode, videoBid);
-
-      console.log('EXPECTED: \n', JSON.stringify(expected, null, 2))
-      console.log('response: \n', JSON.stringify(response, null, 2))
       assert.deepEqual(response, expected);
     });
 
