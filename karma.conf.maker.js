@@ -145,6 +145,8 @@ module.exports = function(codeCoverage, browserstack, watchMode, file) {
     // web server port
     port: 9876,
 
+    exclude: ['./test/spec/lfe2e'],
+
     // enable / disable colors in the output (reporters and logs)
     colors: true,
 
