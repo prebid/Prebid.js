@@ -7,12 +7,7 @@ export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: ['video', 'banner'],
   isBidRequestValid: function(bid) {
-    let isValid = false;
-    if (typeof bid.params !== 'undefined') {
-      let isValidId = _validateId(utils.getValue(bid.params, 'id'));
-      isValid = isValidId;
-    }
-
+    const isValid = _validateId(utils.deepAccess(bid, 'params.id'));
     if (!isValid) {
       utils.logError('Adman id parameter is required. Bid aborted.');
     }
@@ -28,12 +23,14 @@ export const spec = {
     };
 
     if (bidderRequest && bidderRequest.gdprConsent) {
-      payload.gdpr = {};
-      payload.gdpr.consent = bidderRequest.gdprConsent.consentString;
-      payload.gdpr.applies = bidderRequest.gdprConsent.gdprApplies;
+      payload.gdpr = {
+        consent: bidderRequest.gdprConsent.consentString,
+        applies: bidderRequest.gdprConsent.gdprApplies
+      };
     } else {
-      payload.gdpr.consent = '';
-      payload.gdpr = null;
+      payload.gdpr = {
+        consent: ''
+      }
     }
 
     const payloadString = JSON.stringify(payload);
@@ -45,9 +42,12 @@ export const spec = {
   },
   interpretResponse: function(serverResponse) {
     serverResponse = serverResponse.body;
-    return serverResponse.bids;
+    if (serverResponse && typeof serverResponse.bids === 'object') {
+      return serverResponse.bids;
+    }
+    return [];
   },
-  getUserSyncs: function(syncOptions, responses, gdprApplies) {
+  getUserSyncs: function(syncOptions) {
     if (syncOptions.iframeEnabled) {
       return [{
         type: 'iframe',
@@ -58,18 +58,18 @@ export const spec = {
 };
 
 function buildRequestObject(bid) {
-  const reqObj = {};
-
-  reqObj.params = {};
-  reqObj.params.id = utils.getValue(bid.params, 'id');
-  reqObj.params.bidId = bid.bidId;
-  reqObj.sizes = bid.sizes;
-  reqObj.bidId = utils.getBidIdParameter('bidId', bid);
-  reqObj.bidderRequestId = utils.getBidIdParameter('bidderRequestId', bid);
-  reqObj.adUnitCode = utils.getBidIdParameter('adUnitCode', bid);
-  reqObj.auctionId = utils.getBidIdParameter('auctionId', bid);
-  reqObj.transactionId = utils.getBidIdParameter('transactionId', bid);
-  return reqObj;
+  return {
+    params: {
+      id: utils.getValue(bid.params, 'id'),
+      bidId: bid.bidId
+    },
+    sizes: bid.sizes,
+    bidId: utils.getBidIdParameter('bidId', bid),
+    bidderRequestId: utils.getBidIdParameter('bidderRequestId', bid),
+    adUnitCode: utils.getBidIdParameter('adUnitCode', bid),
+    auctionId: utils.getBidIdParameter('auctionId', bid),
+    transactionId: utils.getBidIdParameter('transactionId', bid)
+  };
 }
 
 function _validateId(id = '') {
