@@ -7,6 +7,14 @@
     "device": null,
     "os": "Windows"
   },
+  "bs_ie_11_windows_10": {
+    "base": "BrowserStack",
+    "os_version": "10",
+    "browser": "ie",
+    "browser_version": "11.0",
+    "device": null,
+    "os": "Windows"
+  },
   "bs_chrome_62_windows_10": {
     "base": "BrowserStack",
     "os_version": "10",
@@ -39,27 +47,19 @@
     "device": null,
     "os": "Windows"
   },
-  "bs_safari_12_mac_mojave": {
+  "bs_safari_9.1_mac_elcapitan": {
     "base": "BrowserStack",
-    "os_version": "Mojave",
+    "os_version": "El Capitan",
     "browser": "safari",
-    "browser_version": "12.0",
+    "browser_version": "9.1",
     "device": null,
     "os": "OS X"
   },
-  "bs_safari_11_mac_high_sierra": {
+  "bs_safari_8_mac_yosemite": {
     "base": "BrowserStack",
-    "os_version": "High Sierra",
+    "os_version": "Yosemite",
     "browser": "safari",
-    "browser_version": "11.0",
-    "device": null,
-    "os": "OS X"
-  },
-  "bs_safari_10_mac_sierra": {
-    "base": "BrowserStack",
-    "os_version": "Sierra",
-    "browser": "safari",
-    "browser_version": "10.0",
+    "browser_version": "8.0",
     "device": null,
     "os": "OS X"
   }

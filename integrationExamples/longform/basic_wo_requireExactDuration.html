@@ -153,7 +153,7 @@
     function loadKv(targetingArr) {
       var div = document.getElementById('collapseThree').children[0];
       var html = '<table class="table"><tbody>';
-      Object.keys(targetingArr).forEach(adUnitCode => {
+      Object.keys(targetingArr).forEach(function(adUnitCode) {
         targetingArr[adUnitCode].forEach(function (targeting) {
           Object.keys(targeting).forEach(function (key) {
             html += '<tr id=' + targeting[key] + '><td>' + key + '</td><td>' + targeting[key] + '</td></tr>'
@@ -168,7 +168,7 @@
       var div = document.getElementById('collapseTwo').children[0];
       var html = '<table class="table"><thead><tr><th>#</th><th>CPM</th><th>Industry</th><th>Duration</th><th>Status</th><th>Comm Break #</th></tr></thead><tbody>';
       var index = 1;
-      Object.keys(targetingArr).forEach(adUnitCode => {
+      Object.keys(targetingArr).forEach(function(adUnitCode) {
         targetingArr[adUnitCode].forEach(function (targeting) {
           Object.keys(targeting).forEach(function (key) {
             if (key !== 'hb_cache_id') {
