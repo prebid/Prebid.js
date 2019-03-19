@@ -111,14 +111,9 @@ let NATIVE_ASSET_ID_TO_KEY_MAP = {};
 let NATIVE_ASSET_KEY_TO_ASSET_MAP = {};
 
 // loading NATIVE_ASSET_ID_TO_KEY_MAP
-utils._each(NATIVE_ASSETS, function(anAsset) {
-  NATIVE_ASSET_ID_TO_KEY_MAP[anAsset.ID] = anAsset.KEY;
-});
-
+utils._each(NATIVE_ASSETS, anAsset => { NATIVE_ASSET_ID_TO_KEY_MAP[anAsset.ID] = anAsset.KEY });
 // loading NATIVE_ASSET_KEY_TO_ASSET_MAP
-utils._each(NATIVE_ASSETS, function(anAsset) {
-  NATIVE_ASSET_KEY_TO_ASSET_MAP[anAsset.KEY] = anAsset;
-});
+utils._each(NATIVE_ASSETS, anAsset => { NATIVE_ASSET_KEY_TO_ASSET_MAP[anAsset.KEY] = anAsset });
 
 function _getDomainFromURL(url) {
   let anchor = document.createElement('a');
