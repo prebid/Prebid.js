@@ -638,7 +638,7 @@ function _checkMediaType(adm, newBid) {
       newBid.mediaType = NATIVE;
     }
   } catch (e) {
-
+    utils.logWarn(LOG_WARN_PREFIX + 'Error: Cannot parse native reponse for ad response: ' + adm);
   }
 }
 
