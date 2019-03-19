@@ -197,7 +197,7 @@ function _parseAdSlot(bid) {
       bid.params.height = parseInt(bid.mediaTypes.banner.sizes[0][1]);
       bid.mediaTypes.banner.sizes = bid.mediaTypes.banner.sizes.splice(1, bid.mediaTypes.banner.sizes.length - 1);
     } else {
-      utils.logWarn(BIDDER_CODE + ' error: Missing mediaTypes.banner in adSlot: ' + bid.params.adSlot);
+      utils.logWarn(LOG_WARN_PREFIX + 'Error: Missing mediaTypes.banner in adSlot: ' + bid.params.adSlot);
     }
   } /* else if (sizesArrayExists) {
     bid.params.width = parseInt(bid.sizes[0][0]);
@@ -461,7 +461,7 @@ function _createBannerRequest(bid) {
     bannerObj.pos = 0;
     bannerObj.topframe = utils.inIframe() ? 0 : 1;
   } else {
-    utils.logWarn(BIDDER_CODE + 'Error: mediaTypes.banner.size missing for adunit: ' + bid.params.adUnit + '. Ignoring the banner impression in the adunit.');
+    utils.logWarn(LOG_WARN_PREFIX + 'Error: mediaTypes.banner.size missing for adunit: ' + bid.params.adUnit + '. Ignoring the banner impression in the adunit.');
     bannerObj = undefined;
   }
   return bannerObj;
@@ -493,7 +493,7 @@ function _createVideoRequest(bid) {
     }
   } else {
     videoObj = undefined;
-    utils.logWarn(BIDDER_CODE + 'Error: Video config params missing for adunit: ' + bid.params.adUnit + ' with mediaType set as video. Ignoring video impression in the adunit.');
+    utils.logWarn(LOG_WARN_PREFIX + 'Error: Video config params missing for adunit: ' + bid.params.adUnit + ' with mediaType set as video. Ignoring video impression in the adunit.');
   }
   return videoObj;
 }
@@ -532,7 +532,7 @@ function _createImpressionObject(bid, conf) {
           if (!isInvalidNativeRequest) {
             impObj.native = nativeObj;
           } else {
-            utils.logWarn(BIDDER_CODE + 'Error: Error in Native adunit ' + bid.params.adUnit + '. Ignoring the adunit. Refer to ' + PREBID_NATIVE_HELP_LINK + ' for more details.');
+            utils.logWarn(LOG_WARN_PREFIX + 'Error: Error in Native adunit ' + bid.params.adUnit + '. Ignoring the adunit. Refer to ' + PREBID_NATIVE_HELP_LINK + ' for more details.');
           }
           break;
         case VIDEO:
