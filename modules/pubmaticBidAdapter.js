@@ -336,10 +336,10 @@ function _createNativeRequest(params) {
                 required: params[key].required ? 1 : 0,
                 img: {
                   type: NATIVE_ASSET_IMAGE_TYPE.IMAGE,
-                  w: params[key].w || params[key].width || (params[key].sizes ? params[key].sizes[0] : undefined),
-                  h: params[key].h || params[key].height || (params[key].sizes ? params[key].sizes[1] : undefined),
-                  wmin: params[key].wmin || params[key].minimumWidth || (params[key].minsizes ? params[key].minsizes[0] : undefined),
-                  hmin: params[key].hmin || params[key].minimumHeight || (params[key].minsizes ? params[key].minsizes[1] : undefined),
+                  w: params[key].w || params[key].width || (params[key].sizes ? params[key].sizes[0] : UNDEFINED),
+                  h: params[key].h || params[key].height || (params[key].sizes ? params[key].sizes[1] : UNDEFINED),
+                  wmin: params[key].wmin || params[key].minimumWidth || (params[key].minsizes ? params[key].minsizes[0] : UNDEFINED),
+                  hmin: params[key].hmin || params[key].minimumHeight || (params[key].minsizes ? params[key].minsizes[1] : UNDEFINED),
                   mimes: params[key].mimes,
                   ext: params[key].ext,
                 }
@@ -355,8 +355,8 @@ function _createNativeRequest(params) {
                 required: params[key].required ? 1 : 0,
                 img: {
                   type: NATIVE_ASSET_IMAGE_TYPE.ICON,
-                  w: params[key].w || params[key].width || (params[key].sizes ? params[key].sizes[0] : undefined),
-                  h: params[key].h || params[key].height || (params[key].sizes ? params[key].sizes[1] : undefined),
+                  w: params[key].w || params[key].width || (params[key].sizes ? params[key].sizes[0] : UNDEFINED),
+                  h: params[key].h || params[key].height || (params[key].sizes ? params[key].sizes[1] : UNDEFINED),
                 }
               };
             } else {
@@ -388,8 +388,8 @@ function _createNativeRequest(params) {
               required: params[key].required ? 1 : 0,
               img: {
                 type: NATIVE_ASSET_IMAGE_TYPE.LOGO,
-                w: params[key].w || params[key].width || (params[key].sizes ? params[key].sizes[0] : undefined),
-                h: params[key].h || params[key].height || (params[key].sizes ? params[key].sizes[1] : undefined)
+                w: params[key].w || params[key].width || (params[key].sizes ? params[key].sizes[0] : UNDEFINED),
+                h: params[key].h || params[key].height || (params[key].sizes ? params[key].sizes[1] : UNDEFINED)
               }
             };
             break;
@@ -441,7 +441,7 @@ function _createBannerRequest(bid) {
   var format = [];
   var bannerObj;
 
-  if (sizes !== undefined && utils.isArray(sizes)) {
+  if (sizes !== UNDEFINED && utils.isArray(sizes)) {
     bannerObj = {};
     if (!bid.params.width && !bid.params.height) {
       bannerObj.w = parseInt(sizes[0][0]);
@@ -462,7 +462,7 @@ function _createBannerRequest(bid) {
     bannerObj.topframe = utils.inIframe() ? 0 : 1;
   } else {
     utils.logWarn(LOG_WARN_PREFIX + 'Error: mediaTypes.banner.size missing for adunit: ' + bid.params.adUnit + '. Ignoring the banner impression in the adunit.');
-    bannerObj = undefined;
+    bannerObj = UNDEFINED;
   }
   return bannerObj;
 }
@@ -471,7 +471,7 @@ function _createVideoRequest(bid) {
   var videoData = bid.params.video;
   var videoObj;
 
-  if (videoData !== undefined) {
+  if (videoData !== UNDEFINED) {
     videoObj = {};
     for (var key in VIDEO_CUSTOM_PARAMS) {
       if (videoData.hasOwnProperty(key)) {
@@ -492,7 +492,7 @@ function _createVideoRequest(bid) {
       };
     }
   } else {
-    videoObj = undefined;
+    videoObj = UNDEFINED;
     utils.logWarn(LOG_WARN_PREFIX + 'Error: Video config params missing for adunit: ' + bid.params.adUnit + ' with mediaType set as video. Ignoring video impression in the adunit.');
   }
   return videoObj;
@@ -523,7 +523,7 @@ function _createImpressionObject(bid, conf) {
       switch (mediaTypes) {
         case BANNER:
           bannerObj = _createBannerRequest(bid);
-          if (bannerObj !== undefined) {
+          if (bannerObj !== UNDEFINED) {
             impObj.banner = bannerObj;
           }
           break;
@@ -537,7 +537,7 @@ function _createImpressionObject(bid, conf) {
           break;
         case VIDEO:
           videoObj = _createVideoRequest(bid);
-          if (videoObj !== undefined) {
+          if (videoObj !== UNDEFINED) {
             impObj.video = videoObj;
           }
           break;
@@ -567,7 +567,7 @@ function _createImpressionObject(bid, conf) {
 
   return impObj.hasOwnProperty(BANNER) ||
           impObj.hasOwnProperty(NATIVE) ||
-            impObj.hasOwnProperty(VIDEO) ? impObj : undefined;
+            impObj.hasOwnProperty(VIDEO) ? impObj : UNDEFINED;
 }
 
 function _getDigiTrustObject(key) {
@@ -770,7 +770,7 @@ export const spec = {
       conf = _handleCustomParams(bid.params, conf);
       conf.transactionId = bid.transactionId;
       if (bidCurrency === '') {
-        bidCurrency = bid.params.currency || undefined;
+        bidCurrency = bid.params.currency || UNDEFINED;
       } else if (bid.params.hasOwnProperty('currency') && bidCurrency !== bid.params.currency) {
         utils.logWarn(LOG_WARN_PREFIX + 'Currency specifier ignored. Only one currency permitted.');
       }
