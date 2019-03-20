@@ -155,7 +155,6 @@ function _parseAdSlot(bid) {
   bid.params.adUnitIndex = '0';
   bid.params.width = 0;
   bid.params.height = 0;
-  // var sizesArrayExists = (bid.hasOwnProperty('sizes') && utils.isArray(bid.sizes) && bid.sizes.length >= 1);
   bid.params.adSlot = _cleanSlot(bid.params.adSlot);
 
   var slot = bid.params.adSlot;
@@ -167,12 +166,6 @@ function _parseAdSlot(bid) {
   }
   // check if size is mentioned in sizes array. in that case do not check for @ in adslot
   splits = slot.split('@');
-  /* if (splits.length != 2) {
-    if (!sizesArrayExists) {
-      utils.logWarn('AdSlot Error: adSlot not in required format');
-      return;
-    }
-  } */
   bid.params.adUnit = splits[0];
   if (splits.length > 1) {
     // i.e size is specified in adslot, so consider that and ignore sizes array
@@ -183,21 +176,15 @@ function _parseAdSlot(bid) {
     }
     bid.params.width = parseInt(splits[0]);
     bid.params.height = parseInt(splits[1]);
-    // delete bid.sizes;
-  } else {
-    if (bid.hasOwnProperty('mediaTypes') &&
+  } else if (bid.hasOwnProperty('mediaTypes') &&
          bid.mediaTypes.hasOwnProperty(BANNER) &&
           bid.mediaTypes.banner.hasOwnProperty('sizes')) {
-      bid.params.width = parseInt(bid.mediaTypes.banner.sizes[0][0]);
-      bid.params.height = parseInt(bid.mediaTypes.banner.sizes[0][1]);
-      bid.mediaTypes.banner.sizes = bid.mediaTypes.banner.sizes.splice(1, bid.mediaTypes.banner.sizes.length - 1);
-    } else {
-      utils.logWarn(LOG_WARN_PREFIX + 'Error: Missing mediaTypes.banner in adSlot: ' + bid.params.adSlot);
-    }
-  } /* else if (sizesArrayExists) {
-    bid.params.width = parseInt(bid.sizes[0][0]);
-    bid.params.height = parseInt(bid.sizes[0][1]);
-  } */
+    bid.params.width = parseInt(bid.mediaTypes.banner.sizes[0][0]);
+    bid.params.height = parseInt(bid.mediaTypes.banner.sizes[0][1]);
+    bid.mediaTypes.banner.sizes = bid.mediaTypes.banner.sizes.splice(1, bid.mediaTypes.banner.sizes.length - 1);
+  } else {
+    utils.logWarn(LOG_WARN_PREFIX + 'Error: Missing mediaTypes.banner in adSlot: ' + bid.params.adSlot);
+  }
 }
 
 function _initConf(refererInfo) {
@@ -265,7 +252,7 @@ function _createOrtbTemplate(conf) {
 }
 
 function _checkParamDataType(key, value, datatype) {
-  var errMsg = 'PubMatic: Ignoring param key: ' + key + ', expects ' + datatype + ', found ' + typeof value;
+  var errMsg = 'Ignoring param key: ' + key + ', expects ' + datatype + ', found ' + typeof value;
   var functionToExecute;
   switch (datatype) {
     case DATA_TYPES.BOOLEAN:
@@ -618,11 +605,12 @@ function _handleEids(payload) {
     payload.user.eids = eids;
   }
 }
-// TODO: need a better way to identify mediaType from response.
+
 function _checkMediaType(adm, newBid) {
   // Create a regex here to check the strings
   var admStr = '';
-  if (adm.indexOf('VAST version') >= 0) {
+  var videoRegex = new RegExp(/VAST\s+version/);
+  if (videoRegex.test(adm)) {
     newBid.mediaType = VIDEO;
   } else if (adm.indexOf('span class="PubAPIAd"') >= 0) {
     newBid.mediaType = BANNER;
