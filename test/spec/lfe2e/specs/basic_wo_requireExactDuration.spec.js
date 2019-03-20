@@ -8,6 +8,7 @@ const customKeyRegex = /\d{2}\.\d{2}_\d{1,3}_\d{2}s/;
 const uuidRegex = /(\d|\w){8}-((\d|\w){4}-){3}(\d|\w){12}/;
 
 describe('longform ads not using requireExactDuration field', function() {
+  this.retries(3);
   it('process the bids successfully', function() {
     browser
       .url('http://test.localhost:9999/integrationExamples/longform/basic_wo_requireExactDuration.html?pbjs_debug=true')
