@@ -1,6 +1,7 @@
 import { expect } from 'chai'
 import { spec, _getPlatform } from 'modules/sonobiBidAdapter'
 import { newBidder } from 'src/adapters/bidderFactory'
+import {userSync} from '../../../src/userSync';
 
 describe('SonobiBidAdapter', function () {
   const adapter = newBidder(spec)
@@ -101,6 +102,12 @@ describe('SonobiBidAdapter', function () {
   })
 
   describe('.buildRequests', function () {
+    beforeEach(function() {
+      sinon.stub(userSync, '_shouldBidderBeBlocked');
+    });
+    afterEach(function() {
+      userSync._shouldBidderBeBlocked.restore();
+    });
     let bidRequest = [{
       'bidder': 'sonobi',
       'params': {
@@ -303,6 +310,18 @@ describe('SonobiBidAdapter', function () {
       expect(bidRequests.data.s).not.to.be.empty
       expect(bidRequests.data.hfa).to.equal('hfakey')
     })
+
+    it('should set ius as 0 if Sonobi cannot drop iframe pixels', function () {
+      userSync._shouldBidderBeBlocked.returns(true);
+      const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
+      expect(bidRequests.data.ius).to.equal(0);
+    });
+
+    it('should set ius as 1 if Sonobi can drop iframe pixels', function() {
+      userSync._shouldBidderBeBlocked.returns(false);
+      const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
+      expect(bidRequests.data.ius).to.equal(1);
+    });
   })
 
   describe('.interpretResponse', function () {

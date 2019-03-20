@@ -262,6 +262,8 @@ export function newUserSync(userSyncDependencies) {
     }
   };
 
+  publicApi._shouldBidderBeBlocked = shouldBidderBeBlocked;
+
   return publicApi;
 }
 

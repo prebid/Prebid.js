@@ -3,6 +3,7 @@ import { parseSizesInput, logError, generateUUID, isEmpty, deepAccess, logWarn, 
 import { BANNER, VIDEO } from '../src/mediaTypes';
 import { config } from '../src/config';
 import { Renderer } from '../src/Renderer';
+import { userSync } from '../src/userSync';
 
 const BIDDER_CODE = 'sonobi';
 const STR_ENDPOINT = 'https://apex.go.sonobi.com/trinity.json';
@@ -60,6 +61,13 @@ export const spec = {
 
     if (config.getConfig('userSync') && config.getConfig('userSync').syncsPerBidder) {
       payload.us = config.getConfig('userSync').syncsPerBidder;
+    }
+
+    // use userSync's internal function to determine if we can drop an iframe sync pixel
+    if (userSync._shouldBidderBeBlocked('iframe', BIDDER_CODE)) {
+      payload.ius = 0;
+    } else {
+      payload.ius = 1;
     }
 
     if (deepAccess(validBidRequests[0], 'crumbs.pubcid') || deepAccess(validBidRequests[0], 'params.hfa')) {
