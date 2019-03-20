@@ -274,7 +274,6 @@ function buildPostbid() {
 
 function setupE2e(done) {
   argv.lfe2e = true;
-  // argv.https = true;
   done();
 }
 
