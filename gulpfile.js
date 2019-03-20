@@ -237,8 +237,6 @@ function test(done) {
       wdioConf
     ];
     return execa(wdioCmd, wdioOpts, { stdio: 'inherit' });
-    // execa.sync(wdioCmd, wdioOpts, { stdio: 'inherit' });
-    // done();
   } else {
     var karmaConf = karmaConfMaker(false, argv.browserstack, argv.watch, argv.file);
 
