@@ -208,7 +208,7 @@ export function newUserSync(userSyncDependencies) {
    * @returns {boolean} true => config is setup correctly, false => setup incorrectly or filterConfig[type] is not present
    */
   function isFilterConfigValid(filterConfig, type) {
-    if(!filterConfig) {
+    if (!filterConfig) {
       return false;
     }
 
