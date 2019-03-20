@@ -83,7 +83,6 @@ describe('admanBidAdapter', function() {
       expect(request.method).to.equal('POST');
 
       const payload = JSON.parse(request.data);
-      console.log('>>payload', payload);
       expect(payload.gdpr).to.exist;
 
       expect(payload.bids).to.exist.and.to.be.an('array').and.to.have.lengthOf(1);
