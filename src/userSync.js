@@ -208,6 +208,10 @@ export function newUserSync(userSyncDependencies) {
    * @returns {boolean} true => config is setup correctly, false => setup incorrectly or filterConfig[type] is not present
    */
   function isFilterConfigValid(filterConfig, type) {
+    if(!filterConfig) {
+      return false;
+    }
+
     if (filterConfig.all && filterConfig[type]) {
       utils.logWarn(`Detected presence of the "filterSettings.all" and "filterSettings.${type}" in userSync config.  You cannot mix "all" with "iframe/image" configs; they are mutually exclusive.`);
       return false;
