@@ -64,10 +64,10 @@ export const spec = {
     }
 
     // use userSync's internal function to determine if we can drop an iframe sync pixel
-    if (userSync._shouldBidderBeBlocked('iframe', BIDDER_CODE)) {
-      payload.ius = 0;
-    } else {
+    if (_iframeAllowed()) {
       payload.ius = 1;
+    } else {
+      payload.ius = 0;
     }
 
     if (deepAccess(validBidRequests[0], 'crumbs.pubcid') || deepAccess(validBidRequests[0], 'params.hfa')) {
@@ -329,6 +329,10 @@ function outstreamRender(bid) {
     });
     renderer.setRootElement(bid.adUnitCode);
   });
+}
+
+function _iframeAllowed() {
+  return userSync.canBidderRegisterSync('iframe', BIDDER_CODE);
 }
 
 registerBidder(spec);

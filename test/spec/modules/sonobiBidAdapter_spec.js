@@ -103,10 +103,10 @@ describe('SonobiBidAdapter', function () {
 
   describe('.buildRequests', function () {
     beforeEach(function() {
-      sinon.stub(userSync, '_shouldBidderBeBlocked');
+      sinon.stub(userSync, 'canBidderRegisterSync');
     });
     afterEach(function() {
-      userSync._shouldBidderBeBlocked.restore();
+      userSync.canBidderRegisterSync.restore();
     });
     let bidRequest = [{
       'bidder': 'sonobi',
@@ -312,13 +312,13 @@ describe('SonobiBidAdapter', function () {
     })
 
     it('should set ius as 0 if Sonobi cannot drop iframe pixels', function () {
-      userSync._shouldBidderBeBlocked.returns(true);
+      userSync.canBidderRegisterSync.returns(false);
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
       expect(bidRequests.data.ius).to.equal(0);
     });
 
     it('should set ius as 1 if Sonobi can drop iframe pixels', function() {
-      userSync._shouldBidderBeBlocked.returns(false);
+      userSync.canBidderRegisterSync.returns(true);
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
       expect(bidRequests.data.ius).to.equal(1);
     });
