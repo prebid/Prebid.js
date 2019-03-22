@@ -717,7 +717,7 @@ function _blockedIabCategoriesValidation(payload, blockedIabCategories) {
       }
     });
   if (blockedIabCategories.length > 1) {
-    utils.logWarn(LOG_WARN_PREFIX + 'bcat: ', blockedIabCategories);
+    utils.logWarn(LOG_WARN_PREFIX + 'bcat: selected: ', blockedIabCategories);
     payload.bcat = blockedIabCategories;
   }
 }
