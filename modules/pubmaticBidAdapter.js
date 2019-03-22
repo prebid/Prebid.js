@@ -704,7 +704,7 @@ function _blockedIabCategoriesValidation(payload, blockedIabCategories) {
       if (typeof category === 'string') { // only strings
         return true;
       } else {
-        utils.logWarn(LOG_WARN_PREFIX + 'bcat: should be a string, ignoring category: ' + category);
+        utils.logWarn(LOG_WARN_PREFIX + 'bcat: Each category should be a string, ignoring category: ' + category);
         return false;
       }
     })
@@ -713,11 +713,11 @@ function _blockedIabCategoriesValidation(payload, blockedIabCategories) {
       if (category.length > 3) {
         return arr.indexOf(category) === index; // unique value only
       } else {
-        utils.logWarn(LOG_WARN_PREFIX + 'bcat: category should have value of length more than 3 characters, ignoring category: ' + category)
+        utils.logWarn(LOG_WARN_PREFIX + 'bcat: Each category should have a value of a length of more than 3 characters, ignoring category: ' + category)
       }
     });
   if (blockedIabCategories.length > 1) {
-    utils.logWarn(LOG_WARN_PREFIX + 'bcat: selected: ', blockedIabCategories);
+    utils.logWarn(LOG_WARN_PREFIX + 'bcat: Selected: ', blockedIabCategories);
     payload.bcat = blockedIabCategories;
   }
 }
