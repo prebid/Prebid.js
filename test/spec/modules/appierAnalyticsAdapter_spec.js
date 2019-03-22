@@ -437,6 +437,50 @@ describe('Appier Prebid AnalyticsAdapter', function () {
       });
     });
 
+    it('should build message correctly for delayed bid responses', function () {
+      appierAnalyticsAdapter.enableAnalytics({
+        provider: 'appierAnalytics',
+        options: {
+          affiliateId: affiliateId,
+          configId: configId,
+          sampling: 1,
+          adSampling: 1
+        }
+      });
+
+      events.emit(constants.EVENTS.AUCTION_INIT, MOCK_EVENT.AUCTION_INIT);
+      events.emit(constants.EVENTS.BID_REQUESTED, MOCK_EVENT.BID_REQUESTED);
+      events.emit(constants.EVENTS.BID_TIMEOUT, MOCK_EVENT.BID_TIMEOUT);
+      events.emit(constants.EVENTS.BID_RESPONSE, MOCK_EVENT.BID_RESPONSE_REGULAR[1]);
+      appierAnalyticsAdapter.handleAuctionEndMessage(MOCK_EVENT.AUCTION_END_NOBID, []);
+
+      cache = appierAnalyticsAdapter.getCache();
+
+      expect(cache[auctionId].bids).to.deep.equal({
+        'adUnits': {
+          '/12345678/adunit_1': {
+            'appier': {
+              'status': 'requested',
+              'isTimeout': true
+            }
+          },
+          '/12345678/adunit_2': {
+            'appier': {
+              'status': 'timeout',
+              'isTimeout': true,
+              'time': 600,
+              'cpm': 0.43125,
+              'currency': 'USD',
+              'cpmUsd': 0.43125,
+              'originalCpm': 13.15313,
+              'originalCurrency': 'TWD',
+              'prebidWon': false,
+            }
+          }
+        }
+      });
+    });
+
     it('should build message correctly for bids after auction end', function () {
       appierAnalyticsAdapter.enableAnalytics({
         provider: 'appierAnalytics',
