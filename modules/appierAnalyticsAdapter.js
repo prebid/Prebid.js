@@ -196,8 +196,10 @@ export const appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, ana
     const bidderCode = this.parseBidderCode(bid);
     for (let bid of bid.bids) {
       const adUnitCode = this.parseAdUnitCode(bid);
+      const cachedBid = cacheManager.getBidsCache(bid.auctionId, adUnitCode, bidderCode);
       cacheManager.updateBidsCache(bid.auctionId, adUnitCode, bidderCode, {
-        'isTimeout': cacheManager.getStatus(bid.auctionId, adUnitCode) === AUCTION_STATUS.COMPLETED
+        'isTimeout': cacheManager.getStatus(bid.auctionId, adUnitCode) === AUCTION_STATUS.COMPLETED ||
+          cachedBid.status === BIDDER_STATUS.TIMEOUT
       });
     }
   },
@@ -213,8 +215,8 @@ export const appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, ana
       'originalCpm': bid.originalCpm || bid.cpm,
       'cpmUsd': getCpmInUsd(bid),
       'originalCurrency': bid.originalCurrency || bid.currency,
-      'isTimeout': cacheManager.getStatus(bid.auctionId, adUnitCode) === AUCTION_STATUS.FINISHED ||
-        cacheManager.getBidsCache(bid.auctionId, adUnitCode, bidderCode).status === BIDDER_STATUS.TIMEOUT,
+      'isTimeout': cacheManager.getStatus(bid.auctionId, adUnitCode) === AUCTION_STATUS.COMPLETED ||
+        cachedBid.status === BIDDER_STATUS.TIMEOUT,
       'prebidWon': false
     });
   },
@@ -260,9 +262,18 @@ export const appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, ana
       const adUnitCode = this.parseAdUnitCode(noBid);
       const bidderCode = this.parseBidderCode(noBid);
       const cachedBid = cacheManager.getBidsCache(auction.auctionId, adUnitCode, bidderCode);
-      cacheManager.updateBidsCache(auction.auctionId, adUnitCode, bidderCode, {
-        'status': (cachedBid.status === BIDDER_STATUS.TIMEOUT) ? BIDDER_STATUS.TIMEOUT : BIDDER_STATUS.NO_BID,
-      });
+      if (cachedBid.status === BIDDER_STATUS.TIMEOUT ||
+        cacheManager.getStatus(auction.auctionId, adUnitCode) === AUCTION_STATUS.COMPLETED) {
+        cacheManager.updateBidsCache(auction.auctionId, adUnitCode, bidderCode, {
+          'status': BIDDER_STATUS.TIMEOUT,
+          'isTimeout': true
+        });
+      } else {
+        cacheManager.updateBidsCache(auction.auctionId, adUnitCode, bidderCode, {
+          'status': BIDDER_STATUS.NO_BID,
+          'isTimeout': false
+        });
+      }
     }
   },
   handlePrebidWonMessage(prebidWonBids) {

@@ -430,7 +430,7 @@ describe('Appier Prebid AnalyticsAdapter', function () {
           '/12345678/adunit_2': {
             'appier': {
               'status': 'noBid',
-              'isTimeout': true,
+              'isTimeout': false,
             }
           }
         }
@@ -518,7 +518,7 @@ describe('Appier Prebid AnalyticsAdapter', function () {
           '/12345678/adunit_2': {
             'appier': {
               'status': 'noBid',
-              'isTimeout': true,
+              'isTimeout': false,
             }
           }
         }
