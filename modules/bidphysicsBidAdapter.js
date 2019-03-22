@@ -94,17 +94,19 @@ export const spec = {
     serverResponses.forEach(resp => {
       const userSync = utils.deepAccess(resp, 'body.ext.usersync');
       if (userSync) {
-        Object.values(userSync).filter(value => value.syncs && value.syncs.length)
-          .reduce((prev, curr) => {
-            prev = prev.concat(curr.syncs);
-            return prev;
-          }, [])
-          .forEach(syncDetails => {
-            syncs.push({
-              type: syncDetails.type === 'iframe' ? 'iframe' : 'image',
-              url: syncDetails.url
-            });
+        let syncDetails = [];
+        Object.keys(userSync).forEach(key => {
+          const value = userSync[key];
+          if (value.syncs && value.syncs.length) {
+            syncDetails = syncDetails.concat(value.syncs);
+          }
+        });
+        syncDetails.forEach(syncDetails => {
+          syncs.push({
+            type: syncDetails.type === 'iframe' ? 'iframe' : 'image',
+            url: syncDetails.url
           });
+        });
 
         if (!syncOptions.iframeEnabled) {
           syncs = syncs.filter(s => s.type !== 'iframe')
