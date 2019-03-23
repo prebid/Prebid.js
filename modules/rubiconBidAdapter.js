@@ -844,24 +844,24 @@ export function determineRubiconVideoSizeId(bid) {
 }
 
 export function getPriceGranularity(config) {
-  const granularityMappings = {
-    low: [{max: 5.00, increment: 0.50}],
-    medium: [{max: 20.00, increment: 0.10}],
-    high: [{max: 20.00, increment: 0.01}],
-    auto: [
-      {max: 5.00, increment: 0.05},
-      {min: 5.00, max: 10.00, increment: 0.10},
-      {min: 10.00, max: 20.00, increment: 0.50}
-    ],
-    dense: [
-      {max: 3.00, increment: 0.01},
-      {min: 3.00, max: 8.00, increment: 0.05},
-      {min: 8.00, max: 20.00, increment: 0.50}
-    ]
-  }
   if (config.getConfig('priceGranularity') === 'custom') {
-    return {ranges: config.getConfig('customPriceGranularity').buckets}
+    return {ranges: config.getConfig('customPriceBucket').buckets}
   } else {
+    const granularityMappings = {
+      low: [{max: 5.00, increment: 0.50}],
+      medium: [{max: 20.00, increment: 0.10}],
+      high: [{max: 20.00, increment: 0.01}],
+      auto: [
+        {max: 5.00, increment: 0.05},
+        {min: 5.00, max: 10.00, increment: 0.10},
+        {min: 10.00, max: 20.00, increment: 0.50}
+      ],
+      dense: [
+        {max: 3.00, increment: 0.01},
+        {min: 3.00, max: 8.00, increment: 0.05},
+        {min: 8.00, max: 20.00, increment: 0.50}
+      ]
+    }
     return {ranges: granularityMappings[config.getConfig('priceGranularity')]}
   }
 }
