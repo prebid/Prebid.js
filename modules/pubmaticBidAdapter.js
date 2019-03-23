@@ -977,6 +977,17 @@ export const spec = {
                 newBid['dealChannel'] = dealChannelValues[bid.ext.deal_channel] || null;
               }
 
+              newBid.meta = {};
+              if (bid.ext && bid.ext.dspid) {
+                newBid.meta.networkId = bid.ext.dspid;
+              }
+              if (bid.ext && bid.ext.advid) {
+                newBid.meta.buyerId = bid.ext.advid;
+              }
+              if (bid.adomain && bid.adomain.length > 0) {
+                newBid.meta.clickUrl = bid.adomain[0];
+              }
+
               bidResponses.push(newBid);
             });
         });
