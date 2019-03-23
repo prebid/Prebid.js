@@ -1,6 +1,6 @@
 import {expect} from 'chai';
 import adapterManager from 'src/adapterManager';
-import {spec, masSizeOrdering, resetUserSync, hasVideoMediaType, FASTLANE_ENDPOINT} from 'modules/rubiconBidAdapter';
+import {spec, getPriceGranularity, masSizeOrdering, resetUserSync, hasVideoMediaType, FASTLANE_ENDPOINT} from 'modules/rubiconBidAdapter';
 import {parse as parseQuery} from 'querystring';
 import {newBidder} from 'src/adapters/bidderFactory';
 import {userSync} from 'src/userSync';
@@ -2039,6 +2039,40 @@ describe('the rubicon adapter', function () {
     it('should pass no params if gdpr is not defined', function () {
       expect(spec.getUserSyncs({ iframeEnabled: true }, {}, undefined)).to.deep.equal({
         type: 'iframe', url: `${emilyUrl}`
+      });
+    });
+  });
+
+  describe('get price granularity', function() {
+    it('should return correct buckets for all price granularity values', function() {
+      const CUSTOM_PRICE_BUCKET_ITEM = {min: 0, max: 5, increment: 0.5};
+
+      const mockConfig = {
+        priceGranularity: undefined,
+        customPriceBucket: {
+          buckets: [CUSTOM_PRICE_BUCKET_ITEM]
+        }
+      };
+      sandbox.stub(config, 'getConfig').callsFake(key => {
+        return mockConfig[key];
+      });
+
+      [
+        {key: 'low', val: {max: 5.00, increment: 0.50}},
+        {key: 'medium', val: {max: 20.00, increment: 0.10}},
+        {key: 'high', val: {max: 20.00, increment: 0.01}},
+        {key: 'auto', val: {max: 5.00, increment: 0.05}},
+        {key: 'dense', val: {max: 3.00, increment: 0.01}},
+        {key: 'custom', val: CUSTOM_PRICE_BUCKET_ITEM},
+
+      ].forEach(kvPair => {
+        mockConfig.priceGranularity = kvPair.key;
+        const result = getPriceGranularity(config);
+        expect(typeof result).to.equal('object');
+        expect(result).to.haveOwnProperty('ranges');
+        expect(Array.isArray(result.ranges)).to.equal(true);
+        expect(result.ranges.length).to.be.greaterThan(0)
+        expect(result.ranges[0]).to.deep.equal(kvPair.val);
       });
     });
   });
