@@ -843,11 +843,13 @@ export function determineRubiconVideoSizeId(bid) {
   return utils.deepAccess(bid, `mediaTypes.${VIDEO}.context`) === 'outstream' ? 203 : 201;
 }
 
+/**
+ * @param {PrebidConfig} config
+ * @returns {{ranges: {ranges: Object[]}}}
+ */
 export function getPriceGranularity(config) {
-  if (config.getConfig('priceGranularity') === 'custom') {
-    return {ranges: config.getConfig('customPriceBucket').buckets}
-  } else {
-    const granularityMappings = {
+  return {
+    ranges: {
       low: [{max: 5.00, increment: 0.50}],
       medium: [{max: 20.00, increment: 0.10}],
       high: [{max: 20.00, increment: 0.01}],
@@ -860,10 +862,10 @@ export function getPriceGranularity(config) {
         {max: 3.00, increment: 0.01},
         {min: 3.00, max: 8.00, increment: 0.05},
         {min: 8.00, max: 20.00, increment: 0.50}
-      ]
-    }
-    return {ranges: granularityMappings[config.getConfig('priceGranularity')]}
-  }
+      ],
+      custom: config.getConfig('priceGranularity') === 'custom' ? config.getConfig('customPriceBucket').buckets : undefined
+    }[config.getConfig('priceGranularity')]
+  };
 }
 
 // Function to validate the required video params
