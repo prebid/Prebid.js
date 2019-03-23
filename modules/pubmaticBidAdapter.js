@@ -504,7 +504,7 @@ function _createImpressionObject(bid, conf) {
 
   impObj = {
     id: bid.bidId,
-    tagid: bid.params.adUnit,
+    tagid: bid.params.adUnit || undefined,
     bidfloor: _parseSlotParam('kadfloor', bid.params.kadfloor),
     secure: window.location.protocol === 'https:' ? 1 : 0,
     ext: {
