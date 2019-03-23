@@ -519,6 +519,7 @@ export function getStandardBidderSettings(mediaType) {
         }
     };
   }
+  const TARGETING_KEYS = CONSTANTS.TARGETING_KEYS;
   // Use the config value 'mediaTypeGranularity' if it has been set for mediaType, else use 'priceGranularity'
   const mediaTypeGranularity = config.getConfig(`mediaTypePriceGranularity.${mediaType}`);
   const granularity = (typeof mediaType === 'string' && mediaTypeGranularity) ? ((typeof mediaTypeGranularity === 'string') ? mediaTypeGranularity : 'custom') : config.getConfig('priceGranularity');
@@ -528,8 +529,6 @@ export function getStandardBidderSettings(mediaType) {
     bidderSettings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD] = {};
   }
   if (!bidderSettings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD][CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING]) {
-    const TARGETING_KEYS = CONSTANTS.TARGETING_KEYS;
-
     bidderSettings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD][CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING] = [
       createKeyVal(TARGETING_KEYS.BIDDER, 'bidderCode'),
       createKeyVal(TARGETING_KEYS.AD_ID, 'adId'),
@@ -553,27 +552,26 @@ export function getStandardBidderSettings(mediaType) {
       createKeyVal(TARGETING_KEYS.SOURCE, 'source'),
       createKeyVal(TARGETING_KEYS.FORMAT, 'mediaType'),
     ]
+  }
 
-    if (mediaType === 'video') {
-      // Adding hb_uuid + hb_cache_id
-      [TARGETING_KEYS.UUID, TARGETING_KEYS.CACHE_ID].forEach(targetingKey => {
-        bidderSettings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD][CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING].push(createKeyVal(targetingKey, 'videoCacheKey'));
-      });
+  if (mediaType === 'video') {
+    const adserverTargeting = bidderSettings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD][CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING];
 
-      // Adding hb_cache_host + hb_cache_path
-      if (config.getConfig('cache.url')) {
-        const urlInfo = parseURL(config.getConfig('cache.url'));
+    // Adding hb_uuid + hb_cache_id
+    [TARGETING_KEYS.UUID, TARGETING_KEYS.CACHE_ID].forEach(targetingKeyVal => {
+      if (typeof find(adserverTargeting, kvPair => kvPair.key === targetingKeyVal) === 'undefined') {
+        adserverTargeting.push(createKeyVal(targetingKeyVal, 'videoCacheKey'));
+      }
+    });
 
-        bidderSettings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD][CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING].push(createKeyVal(TARGETING_KEYS.CACHE_HOST, function(bidResponse) {
+    // Adding hb_cache_host
+    if (config.getConfig('cache.url')) {
+      const urlInfo = parseURL(config.getConfig('cache.url'));
+
+      if (typeof find(adserverTargeting, targetingKeyVal => targetingKeyVal.key === TARGETING_KEYS.CACHE_HOST) === 'undefined') {
+        adserverTargeting.push(createKeyVal(TARGETING_KEYS.CACHE_HOST, function(bidResponse) {
           return utils.deepAccess(bidResponse, `adserverTargeting.${TARGETING_KEYS.CACHE_HOST}`)
-            ? bidResponse.adserverTargeting[TARGETING_KEYS.CACHE_HOST]
-            : urlInfo.hostname;
-        }));
-
-        bidderSettings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD][CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING].push(createKeyVal(TARGETING_KEYS.CACHE_PATH, function(bidResponse) {
-          return utils.deepAccess(bidResponse, `adserverTargeting.${TARGETING_KEYS.CACHE_PATH}`)
-            ? bidResponse.adserverTargeting[TARGETING_KEYS.CACHE_PATH]
-            : urlInfo.pathname;
+            ? bidResponse.adserverTargeting[TARGETING_KEYS.CACHE_HOST] : urlInfo.hostname;
         }));
       }
     }
