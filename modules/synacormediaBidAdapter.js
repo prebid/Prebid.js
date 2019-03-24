@@ -3,9 +3,9 @@
 import { getAdUnitSizes, logWarn } from '../src/utils';
 import { registerBidder } from '../src/adapters/bidderFactory';
 import { BANNER } from '../src/mediaTypes';
-import { REPO_AND_VERSION } from '../src/constants';
 
-const SYNACOR_URL = '//prebid.technoratimedia.com';
+const BID_HOST = '//prebid.technoratimedia.com';
+const USER_SYNC_HOST = '//ad-cdn.technoratimedia.com';
 export const spec = {
   code: 'synacormedia',
   supportedMediaTypes: [ BANNER ],
@@ -40,23 +40,36 @@ export const spec = {
         seatId = bid.params.seatId;
       }
       let placementId = bid.params.placementId;
+      let bidFloor = bid.params.bidfloor ? parseFloat(bid.params.bidfloor) : null;
+      if (isNaN(bidFloor)) {
+        logWarn(`Synacormedia: there is an invalid bid floor: ${bid.params.bidfloor}`);
+      }
+      let pos = parseInt(bid.params.pos);
+      if (isNaN(pos)) {
+        logWarn(`Synacormedia: there is an invalid POS: ${bid.params.pos}`);
+        pos = 0;
+      }
       getAdUnitSizes(bid).forEach((size, i) => {
-        openRtbBidRequest.imp.push({
+        let request = {
           id: bid.bidId + '~' + size[0] + 'x' + size[1],
           tagid: placementId,
           banner: {
             w: size[0],
             h: size[1],
-            pos: 0
+            pos
           }
-        });
+        };
+        if (bidFloor !== null && !isNaN(bidFloor)) {
+          request.bidfloor = bidFloor;
+        }
+        openRtbBidRequest.imp.push(request);
       });
     });
 
     if (openRtbBidRequest.imp.length && seatId) {
       return {
         method: 'POST',
-        url: `${SYNACOR_URL}/openrtb/bids/${seatId}?src=${REPO_AND_VERSION}`,
+        url: `${BID_HOST}/openrtb/bids/${seatId}?src=$$REPO_AND_VERSION$$`,
         data: openRtbBidRequest,
         options: {
           contentType: 'application/json',
@@ -111,7 +124,7 @@ export const spec = {
     if (syncOptions.iframeEnabled) {
       syncs.push({
         type: 'iframe',
-        url: `${SYNACOR_URL}/usersync/html?src=${REPO_AND_VERSION}`
+        url: `${USER_SYNC_HOST}/html/usersync.html?src=$$REPO_AND_VERSION$$`
       });
     } else {
       logWarn('Synacormedia: Please enable iframe based user sync.');
