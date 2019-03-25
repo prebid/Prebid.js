@@ -436,7 +436,7 @@ function validBidSize(adUnitCode, bid, bidRequests) {
   if (parsedSizes.length === 1) {
     const [ width, height ] = parsedSizes[0].split('x');
     bid.width = parseInt(width, 10);
-    bid.height = parsrInt(height, 10);
+    bid.height = parseInt(height, 10);
     return true;
   }
 
