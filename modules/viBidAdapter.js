@@ -221,8 +221,9 @@ export function getOffsetTopDocument(element) {
 export function getOffsetTopDocumentPercentage(element) {
   const elementWindow = getElementWindow(element);
   if (!elementWindow) throw new Error("cannot get element window");
-  if (!topDocumentIsReachable(elementWindow))
+  if (!topDocumentIsReachable(elementWindow)) {
     throw new Error("top window isn't reachable");
+  }
   const topWindow = getTopmostReachableWindow(elementWindow);
   const documentHeight = getDocumentHeight(topWindow.document);
   return ratioToPercentageCeil(
@@ -257,7 +258,7 @@ export function getOffsetToViewPercentage(element) {
 
 export function getViUserId(localStorage) {
   try {
-    return localStorage.getItem("ViUserId");
+    return (localStorage || window.top.localStorage).getItem("ViUserId");
   } catch (e) {}
 }
 
@@ -302,6 +303,7 @@ const spec = {
   /**
    *
    * @param bidRequests
+   * @param bidderRequest
    * @return {
    * {method: string,
    * data: {
@@ -330,13 +332,13 @@ const spec = {
     },
    * options: {withCredentials: boolean, contentType: string}, url: string}}
    */
-  buildRequests(bidRequests) {
+  buildRequests(bidRequests, bidderRequest) {
     return {
       method: "POST",
       url: "//my-ad-server.herokuapp.com/bid",
       data: {
         userId: getViUserId(),
-        refererInfo: bidRequests[0] && bidRequests[0].refererInfo,
+        refererInfo: bidderRequest.refererInfo,
         imps: bidRequests.map(({ bidId, adUnitCode, sizes, params }) => {
           const slot = document.getElementById(adUnitCode);
           return {
