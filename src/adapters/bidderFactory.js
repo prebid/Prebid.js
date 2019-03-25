@@ -421,7 +421,7 @@ export function getIabSubCategory(bidderCode, category) {
 function validBidSize(adUnitCode, bid, bidRequests) {
   bid.width = parseInt(bid.width, 10) || 0;
   bid.height = parseInt(bid.height, 10) || 0;
-  
+
   if (bid.width && bid.height) {
     return true;
   }
