@@ -568,7 +568,7 @@ describe('emoteevBidAdapter', function () {
     it('handles no webgl', function () {
       const
         document = new Document(),
-        canvas = {};
+        canvas = document.createElement('canvas');
       canvas.getContext = (_) => undefined;
       sinon.stub(document, 'createElement').withArgs('canvas').returns(canvas);
       sinon.stub(canvas, 'getContext');
@@ -580,7 +580,7 @@ describe('emoteevBidAdapter', function () {
     it('handles webgl exception', function () {
       const
         document = new Document(),
-        canvas = {};
+        canvas = document.createElement('canvas');
       canvas.getContext = (_) => undefined;
       sinon.stub(document, 'createElement').withArgs('canvas').returns(canvas);
       sinon.stub(canvas, 'getContext');
@@ -591,7 +591,7 @@ describe('emoteevBidAdapter', function () {
     it('handles experimental webgl', function () {
       const
         document = new Document(),
-        canvas = {};
+        canvas = document.createElement('canvas');
       canvas.getContext = (_) => undefined;
       sinon.stub(document, 'createElement').withArgs('canvas').returns(canvas);
       sinon.stub(canvas, 'getContext');
@@ -603,7 +603,7 @@ describe('emoteevBidAdapter', function () {
     it('handles experimental webgl exception', function () {
       const
         document = new Document(),
-        canvas = {};
+        canvas = document.createElement('canvas');
       canvas.getContext = (_) => undefined;
       sinon.stub(document, 'createElement').withArgs('canvas').returns(canvas);
       sinon.stub(canvas, 'getContext');
@@ -615,7 +615,7 @@ describe('emoteevBidAdapter', function () {
     it('handles webgl', function () {
       const
         document = new Document(),
-        canvas = {};
+        canvas = document.createElement('canvas');
       canvas.getContext = (_) => undefined;
       sinon.stub(document, 'createElement').withArgs('canvas').returns(canvas);
       sinon.stub(canvas, 'getContext');
