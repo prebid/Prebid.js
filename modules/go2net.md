@@ -18,7 +18,7 @@ Please use ```go2net``` as the bidder code.
                sizes: [[300, 250]],  // a display size
                bids: [
                    {
-                       bidder: "admixer",
+                       bidder: "go2net",
                        params: {
                            zone: '00000000-0000-0000-0000-000000000000'
                        }
