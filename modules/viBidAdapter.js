@@ -12,6 +12,7 @@ export function get(path, obj, notFound) {
 
   return obj;
 }
+
 export function merge(a, b, fn = a => a) {
   const res = {};
 
@@ -29,6 +30,7 @@ export function merge(a, b, fn = a => a) {
 
   return res;
 }
+
 export function ratioToPercentageCeil(x) {
   return Math.ceil(x * 100);
 }
@@ -128,6 +130,7 @@ const NO_CUTS = {
   bottom: 0,
   left: 0
 };
+
 export function getRectCuts(rect, vh, vw, vCuts = NO_CUTS) {
   let { top, left } = rect;
   const { bottom, right } = rect;
@@ -182,6 +185,7 @@ export function getInViewRatio(element) {
     area(element.offsetWidth || 1, element.offsetHeight || 1)
   );
 }
+
 export function getInViewRatioInsideTopFrame(element) {
   const elements = [...getFrameElements().slice(1), element];
   const vCuts = elements.reduce(
@@ -197,6 +201,7 @@ export function getInViewRatioInsideTopFrame(element) {
 export function getMayBecomeVisible(element) {
   return !isInsideIframe() || !!getInViewRatioInsideTopFrame(element);
 }
+
 export function getInViewPercentage(element) {
   return ratioToPercentageCeil(getInViewRatio(element));
 }
@@ -250,6 +255,12 @@ export function getOffsetToViewPercentage(element) {
   );
 }
 
+export function getViUserId(localStorage) {
+  try {
+    return localStorage.getItem("ViUserId");
+  } catch (e) {}
+}
+
 export function getViewabilityDescription(element) {
   let iframeType;
   try {
@@ -290,32 +301,52 @@ const spec = {
 
   /**
    *
-   bidId, +
-   pubId +
-   cat, +
-   lang +
-   domain
-   page
-   referrer
+   * @param bidRequests
+   * @return {
+   * {method: string,
+   * data: {
+      imps: {
+        bidId: string,
+        adUnitCode: string,
+        sizes: [[number, number]],
+        pubId: string,
+        lang: string,
+        cat: string,
+        iframeType: string | undefined,
+        error: string | null,
+        inView: number,
+        offsetTop: number,
+        offsetView: number,
+        hidden: boolean,
+        bidFloor: number
+      }[],
+      refererInfo: {
+      referer: string
+      reachedTop: boolean,
+      numIframes: number,
+      stack: string[]
+      canonicalUrl: string
+      }
+    },
+   * options: {withCredentials: boolean, contentType: string}, url: string}}
    */
-
   buildRequests(bidRequests) {
     return {
       method: "POST",
-      url: "//localhost:3000/bid",
+      url: "//my-ad-server.herokuapp.com/bid",
       data: {
+        userId: getViUserId(),
         refererInfo: bidRequests[0] && bidRequests[0].refererInfo,
-        imps: bidRequests
-          .map(({ bidId, adUnitCode, sizes, params }) => {
-            const slot = document.getElementById(adUnitCode);
-            return {
-              bidId,
-              sizes,
-              ...getViewabilityDescription(slot),
-              ...params
-            };
-          })
-          .filter(Boolean)
+        imps: bidRequests.map(({ bidId, adUnitCode, sizes, params }) => {
+          const slot = document.getElementById(adUnitCode);
+          return {
+            bidId,
+            adUnitCode,
+            sizes,
+            ...getViewabilityDescription(slot),
+            ...params
+          };
+        })
       },
       options: {
         contentType: "application/json",

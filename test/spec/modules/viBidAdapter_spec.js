@@ -22,7 +22,8 @@ import {
   getOffsetToViewPercentage,
   area,
   get,
-  getViewabilityDescription
+  getViewabilityDescription,
+  getViUserId
 } from "modules/viBidAdapter";
 
 describe("ratioToPercentageCeil", () => {
@@ -871,5 +872,17 @@ describe("getViewabilityDescription", () => {
     ).to.deep.equal({
       iframeType: "safeframe"
     });
+  });
+});
+
+describe("getViUserId", () => {
+  it("retrieves user id from localStorage", () => {
+    expect(
+      getViUserId({
+        getItem() {
+          return "viUserId";
+        }
+      })
+    ).to.be.equal("viUserId");
   });
 });
