@@ -252,7 +252,7 @@ const spec = {
         width: ad.width,
         height: ad.height,
         ad: ad.html,
-        ttl: 86400,
+        ttl: ad.ttl || serverResponse.body.ttl || 86400,
         creativeId: ad.view,
         netRevenue: true,
         currency: 'USD'
