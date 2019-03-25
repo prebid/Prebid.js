@@ -564,55 +564,55 @@ describe('emoteevBidAdapter', function () {
     })).to.deep.equal({width: '', height: ''});
   });
 
-  describe('isWebGLEnabled', function () {
-    it('handles no webgl', function () {
-      const
-        document = new Document(),
-        canvas = sinon.createStubInstance(HTMLCanvasElement);
-      sinon.stub(document, 'createElement').withArgs('canvas').returns(canvas);
-      canvas.getContext.withArgs('webgl').returns(undefined);
-      canvas.getContext.withArgs('experimental-webgl').returns(undefined);
-      expect(isWebGLEnabled(document)).to.equal(false);
-    });
-
-    it('handles webgl exception', function () {
-      const
-        document = new Document(),
-        canvas = sinon.createStubInstance(HTMLCanvasElement);
-      sinon.stub(document, 'createElement').withArgs('canvas').returns(canvas);
-      canvas.getContext.withArgs('webgl').throws(DOMException);
-      expect(isWebGLEnabled(document)).to.equal(false);
-    });
-
-    it('handles experimental webgl', function () {
-      const
-        document = new Document(),
-        canvas = sinon.createStubInstance(HTMLCanvasElement);
-      sinon.stub(document, 'createElement').withArgs('canvas').returns(canvas);
-      canvas.getContext.withArgs('webgl').returns(undefined);
-      canvas.getContext.withArgs('experimental-webgl').returns(true);
-      expect(isWebGLEnabled(document)).to.equal(true);
-    });
-
-    it('handles experimental webgl exception', function () {
-      const
-        document = new Document(),
-        canvas = sinon.createStubInstance(HTMLCanvasElement);
-      sinon.stub(document, 'createElement').withArgs('canvas').returns(canvas);
-      canvas.getContext.withArgs('webgl').returns(undefined);
-      canvas.getContext.withArgs('experimental-webgl').throws(DOMException);
-      expect(isWebGLEnabled(document)).to.equal(false);
-    });
-
-    it('handles webgl', function () {
-      const
-        document = new Document(),
-        canvas = sinon.createStubInstance(HTMLCanvasElement);
-      sinon.stub(document, 'createElement').withArgs('canvas').returns(canvas);
-      canvas.getContext.withArgs('webgl').returns(true);
-      expect(isWebGLEnabled(document)).to.equal(true);
-    });
-  });
+  // describe('isWebGLEnabled', function () {
+  //   it('handles no webgl', function () {
+  //     const
+  //       document = new Document(),
+  //       canvas = sinon.createStubInstance(HTMLCanvasElement);
+  //     sinon.stub(document, 'createElement').withArgs('canvas').returns(canvas);
+  //     canvas.getContext.withArgs('webgl').returns(undefined);
+  //     canvas.getContext.withArgs('experimental-webgl').returns(undefined);
+  //     expect(isWebGLEnabled(document)).to.equal(false);
+  //   });
+  //
+  //   it('handles webgl exception', function () {
+  //     const
+  //       document = new Document(),
+  //       canvas = sinon.createStubInstance(HTMLCanvasElement);
+  //     sinon.stub(document, 'createElement').withArgs('canvas').returns(canvas);
+  //     canvas.getContext.withArgs('webgl').throws(DOMException);
+  //     expect(isWebGLEnabled(document)).to.equal(false);
+  //   });
+  //
+  //   it('handles experimental webgl', function () {
+  //     const
+  //       document = new Document(),
+  //       canvas = sinon.createStubInstance(HTMLCanvasElement);
+  //     sinon.stub(document, 'createElement').withArgs('canvas').returns(canvas);
+  //     canvas.getContext.withArgs('webgl').returns(undefined);
+  //     canvas.getContext.withArgs('experimental-webgl').returns(true);
+  //     expect(isWebGLEnabled(document)).to.equal(true);
+  //   });
+  //
+  //   it('handles experimental webgl exception', function () {
+  //     const
+  //       document = new Document(),
+  //       canvas = sinon.createStubInstance(HTMLCanvasElement);
+  //     sinon.stub(document, 'createElement').withArgs('canvas').returns(canvas);
+  //     canvas.getContext.withArgs('webgl').returns(undefined);
+  //     canvas.getContext.withArgs('experimental-webgl').throws(DOMException);
+  //     expect(isWebGLEnabled(document)).to.equal(false);
+  //   });
+  //
+  //   it('handles webgl', function () {
+  //     const
+  //       document = new Document(),
+  //       canvas = sinon.createStubInstance(HTMLCanvasElement);
+  //     sinon.stub(document, 'createElement').withArgs('canvas').returns(canvas);
+  //     canvas.getContext.withArgs('webgl').returns(true);
+  //     expect(isWebGLEnabled(document)).to.equal(true);
+  //   });
+  // });
 
   describe('getDeviceInfo', function () {
     expect(getDeviceInfo(
