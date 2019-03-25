@@ -568,10 +568,8 @@ describe('emoteevBidAdapter', function () {
     it('handles no webgl', function () {
       const
         document = new Document(),
-        canvas = document.createElement('canvas');
-      canvas.getContext = (_) => undefined;
+        canvas = sinon.createStubInstance(HTMLCanvasElement);
       sinon.stub(document, 'createElement').withArgs('canvas').returns(canvas);
-      sinon.stub(canvas, 'getContext');
       canvas.getContext.withArgs('webgl').returns(undefined);
       canvas.getContext.withArgs('experimental-webgl').returns(undefined);
       expect(isWebGLEnabled(document)).to.equal(false);
@@ -580,10 +578,8 @@ describe('emoteevBidAdapter', function () {
     it('handles webgl exception', function () {
       const
         document = new Document(),
-        canvas = document.createElement('canvas');
-      canvas.getContext = (_) => undefined;
+        canvas = sinon.createStubInstance(HTMLCanvasElement);
       sinon.stub(document, 'createElement').withArgs('canvas').returns(canvas);
-      sinon.stub(canvas, 'getContext');
       canvas.getContext.withArgs('webgl').throws(DOMException);
       expect(isWebGLEnabled(document)).to.equal(false);
     });
@@ -591,10 +587,8 @@ describe('emoteevBidAdapter', function () {
     it('handles experimental webgl', function () {
       const
         document = new Document(),
-        canvas = document.createElement('canvas');
-      canvas.getContext = (_) => undefined;
+        canvas = sinon.createStubInstance(HTMLCanvasElement);
       sinon.stub(document, 'createElement').withArgs('canvas').returns(canvas);
-      sinon.stub(canvas, 'getContext');
       canvas.getContext.withArgs('webgl').returns(undefined);
       canvas.getContext.withArgs('experimental-webgl').returns(true);
       expect(isWebGLEnabled(document)).to.equal(true);
@@ -603,10 +597,8 @@ describe('emoteevBidAdapter', function () {
     it('handles experimental webgl exception', function () {
       const
         document = new Document(),
-        canvas = document.createElement('canvas');
-      canvas.getContext = (_) => undefined;
+        canvas = sinon.createStubInstance(HTMLCanvasElement);
       sinon.stub(document, 'createElement').withArgs('canvas').returns(canvas);
-      sinon.stub(canvas, 'getContext');
       canvas.getContext.withArgs('webgl').returns(undefined);
       canvas.getContext.withArgs('experimental-webgl').throws(DOMException);
       expect(isWebGLEnabled(document)).to.equal(false);
@@ -615,10 +607,8 @@ describe('emoteevBidAdapter', function () {
     it('handles webgl', function () {
       const
         document = new Document(),
-        canvas = document.createElement('canvas');
-      canvas.getContext = (_) => undefined;
+        canvas = sinon.createStubInstance(HTMLCanvasElement);
       sinon.stub(document, 'createElement').withArgs('canvas').returns(canvas);
-      sinon.stub(canvas, 'getContext');
       canvas.getContext.withArgs('webgl').returns(true);
       expect(isWebGLEnabled(document)).to.equal(true);
     });
