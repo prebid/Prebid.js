@@ -19,7 +19,8 @@ describe('Improve Digital Adapter Tests', function () {
     transactionId: 'f183e871-fbed-45f0-a427-c8a63c4c01eb',
     bidId: '33e9500b21129f',
     bidderRequestId: '2772c1e566670b',
-    auctionId: '192721e36a0239'
+    auctionId: '192721e36a0239',
+    sizes: [[300, 250], [160, 600], ['blah', 150], [-1, 300], [300, -5]]
   };
 
   const simpleSmartTagBidRequest = {
@@ -92,7 +93,7 @@ describe('Improve Digital Adapter Tests', function () {
       expect(request.url).to.equal(URL);
       expect(request.data.substring(0, PARAM_PREFIX.length)).to.equal(PARAM_PREFIX);
 
-      const params = JSON.parse(request.data.substring(PARAM_PREFIX.length));
+      const params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
       expect(params.bid_request).to.be.an('object');
       expect(params.bid_request.id).to.be.a('string');
       expect(params.bid_request.version).to.equal(`${spec.version}-${idClient.CONSTANTS.CLIENT_VERSION}`);
@@ -108,7 +109,7 @@ describe('Improve Digital Adapter Tests', function () {
 
     it('should set placementKey and publisherId for smart tags', function () {
       const requests = spec.buildRequests([simpleSmartTagBidRequest]);
-      const params = JSON.parse(requests[0].data.substring(PARAM_PREFIX.length));
+      const params = JSON.parse(decodeURIComponent(requests[0].data.substring(PARAM_PREFIX.length)));
       expect(params.bid_request.imp[0].pubid).to.equal(1032);
       expect(params.bid_request.imp[0].pkey).to.equal('data_team_test_hb_smoke_test');
     });
@@ -122,11 +123,11 @@ describe('Improve Digital Adapter Tests', function () {
       };
       bidRequest.params.keyValues = keyValues;
       const request = spec.buildRequests([bidRequest])[0];
-      const params = JSON.parse(request.data.substring(PARAM_PREFIX.length));
+      const params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
       expect(params.bid_request.imp[0].kvw).to.deep.equal(keyValues);
     });
 
-    it('should add size', function () {
+    it('should add single size filter', function () {
       let bidRequest = Object.assign({}, simpleBidRequest);
       const size = {
         w: 800,
@@ -134,15 +135,18 @@ describe('Improve Digital Adapter Tests', function () {
       };
       bidRequest.params.size = size;
       const request = spec.buildRequests([bidRequest])[0];
-      const params = JSON.parse(request.data.substring(PARAM_PREFIX.length));
+      const params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
       expect(params.bid_request.imp[0].banner).to.deep.equal(size);
+      // When single size filter is set, format shouldn't be populated. This
+      // is to maintain backward compatibily
+      expect(params.bid_request.imp[0].banner.format).to.not.exist;
     });
 
     it('should add currency', function () {
       const bidRequest = Object.assign({}, simpleBidRequest);
       const getConfigStub = sinon.stub(config, 'getConfig').returns('JPY');
       const request = spec.buildRequests([bidRequest])[0];
-      const params = JSON.parse(request.data.substring(PARAM_PREFIX.length));
+      const params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
       expect(params.bid_request.imp[0].currency).to.equal('JPY');
       getConfigStub.restore();
     });
@@ -150,7 +154,7 @@ describe('Improve Digital Adapter Tests', function () {
     it('should add GDPR consent string', function () {
       const bidRequest = Object.assign({}, simpleBidRequest);
       const request = spec.buildRequests([bidRequest], bidderRequest)[0];
-      const params = JSON.parse(request.data.substring(PARAM_PREFIX.length));
+      const params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
       expect(params.bid_request.gdpr).to.equal('BOJ/P2HOJ/P2HABABMAAAAAZ+A==');
     });
 
@@ -161,6 +165,52 @@ describe('Improve Digital Adapter Tests', function () {
       ]);
       expect(requests).to.be.an('array');
       expect(requests.length).to.equal(2);
+    });
+
+    it('should return one request in a single request mode', function () {
+      const getConfigStub = sinon.stub(config, 'getConfig');
+      getConfigStub.withArgs('improvedigital.singleRequest').returns(true);
+      const requests = spec.buildRequests([
+        simpleBidRequest,
+        simpleSmartTagBidRequest
+      ]);
+      expect(requests).to.be.an('array');
+      expect(requests.length).to.equal(1);
+      getConfigStub.restore();
+    });
+
+    it('should set Prebid sizes in bid request', function () {
+      const getConfigStub = sinon.stub(config, 'getConfig');
+      getConfigStub.withArgs('improvedigital.usePrebidSizes').returns(true);
+      const request = spec.buildRequests([simpleBidRequest])[0];
+      const params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
+      expect(params.bid_request.imp[0].banner).to.deep.equal({
+        format: [
+          { w: 300, h: 250 },
+          { w: 160, h: 600 }
+        ]
+      });
+      getConfigStub.restore();
+    });
+
+    it('should not add single size filter when using Prebid sizes', function () {
+      const getConfigStub = sinon.stub(config, 'getConfig');
+      getConfigStub.withArgs('improvedigital.usePrebidSizes').returns(true);
+      const bidRequest = Object.assign({}, simpleBidRequest);
+      const size = {
+        w: 800,
+        h: 600
+      };
+      bidRequest.params.size = size;
+      const request = spec.buildRequests([bidRequest])[0];
+      const params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
+      expect(params.bid_request.imp[0].banner).to.deep.equal({
+        format: [
+          { w: 300, h: 250 },
+          { w: 160, h: 600 }
+        ]
+      });
+      getConfigStub.restore();
     });
   });
 
@@ -218,6 +268,100 @@ describe('Improve Digital Adapter Tests', function () {
     }
   };
 
+  const serverResponseNative = {
+    body: {
+      id: '687a06c541d8d1',
+      site_id: 191642,
+      bid: [
+        {
+          isNet: false,
+          id: '33e9500b21129f',
+          advid: '5279',
+          price: 1.45888594164456,
+          nurl: 'http://ad.360yield.com/imp_pixel?ic=wVm',
+          h: 290,
+          pid: 1053688,
+          sync: [
+            'http://link1',
+            'http://link2'
+          ],
+          crid: '422031',
+          w: 600,
+          cid: '99006',
+          native: {
+            assets: [
+              {
+                title: {
+                  text: 'Native title'
+                }
+              },
+              {
+                data: {
+                  type: 1,
+                  value: 'Improve Digital'
+                }
+              },
+              {
+                data: {
+                  type: 2,
+                  value: 'Native body'
+                }
+              },
+              {
+                data: {
+                  type: 3,
+                  value: 'Should get ignored'
+                }
+              },
+              {
+                data: {
+                  type: 12,
+                  value: 'Do it'
+                }
+              },
+              {
+                img: {
+                  type: 1,
+                  url: 'Should get ignored',
+                  h: 300,
+                  w: 400
+                }
+              },
+              {
+                img: {
+                  type: 2,
+                  url: 'http://blah.com/icon.jpg',
+                  h: 30,
+                  w: 40
+                }
+              },
+              {
+                img: {
+                  type: 3,
+                  url: 'http://blah.com/image.jpg',
+                  h: 200,
+                  w: 800
+                }
+              }
+            ],
+            link: {
+              url: 'http://advertiser.com',
+              clicktrackers: [
+                'http://click.tracker.com/click?impid=123'
+              ]
+            },
+            imptrackers: [
+              'http://imptrack1.com',
+              'http://imptrack2.com'
+            ],
+            jstracker: '<script src=\"http://www.foobar.js\"></script>'
+          }
+        }
+      ],
+      debug: ''
+    }
+  };
+
   describe('interpretResponse', function () {
     let expectedBid = [
       {
@@ -227,6 +371,7 @@ describe('Improve Digital Adapter Tests', function () {
         'cpm': 1.45888594164456,
         'currency': 'USD',
         'height': 290,
+        'mediaType': 'banner',
         'netRevenue': false,
         'requestId': '33e9500b21129f',
         'ttl': 300,
@@ -243,10 +388,50 @@ describe('Improve Digital Adapter Tests', function () {
         'cpm': 1.23,
         'currency': 'USD',
         'height': 400,
+        'mediaType': 'banner',
         'netRevenue': true,
         'requestId': '1234',
         'ttl': 300,
         'width': 700
+      }
+    ];
+
+    let expectedBidNative = [
+      {
+        mediaType: 'native',
+        adId: '33e9500b21129f',
+        creativeId: '422031',
+        cpm: 1.45888594164456,
+        currency: 'USD',
+        height: 290,
+        netRevenue: false,
+        requestId: '33e9500b21129f',
+        ttl: 300,
+        width: 600,
+        native: {
+          title: 'Native title',
+          body: 'Native body',
+          cta: 'Do it',
+          sponsoredBy: 'Improve Digital',
+          icon: {
+            url: 'http://blah.com/icon.jpg',
+            height: 30,
+            width: 40
+          },
+          image: {
+            url: 'http://blah.com/image.jpg',
+            height: 200,
+            width: 800
+          },
+          clickUrl: 'http://advertiser.com',
+          clickTrackers: ['http://click.tracker.com/click?impid=123'],
+          impressionTrackers: [
+            'http://ad.360yield.com/imp_pixel?ic=wVm',
+            'http://imptrack1.com',
+            'http://imptrack2.com'
+          ],
+          javascriptTrackers: '<script src=\"http://www.foobar.js\"></script>'
+        }
       }
     ];
 
@@ -328,18 +513,12 @@ describe('Improve Digital Adapter Tests', function () {
       bids = spec.interpretResponse(response);
       expect(bids).to.deep.equal([]);
 
-      // Adm missing or bad
+      // adm and native missing
       response = JSON.parse(JSON.stringify(serverResponse));
       delete response.body.bid[0].adm;
       bids = spec.interpretResponse(response);
       expect(bids).to.deep.equal([]);
       response.body.bid[0].adm = null;
-      bids = spec.interpretResponse(response);
-      expect(bids).to.deep.equal([]);
-      response.body.bid[0].adm = 1234;
-      bids = spec.interpretResponse(response);
-      expect(bids).to.deep.equal([]);
-      response.body.bid[0].adm = {};
       bids = spec.interpretResponse(response);
       expect(bids).to.deep.equal([]);
     });
@@ -349,6 +528,12 @@ describe('Improve Digital Adapter Tests', function () {
       response.body.bid[0].isNet = true;
       const bids = spec.interpretResponse(response);
       expect(bids[0].netRevenue).to.equal(true);
+    });
+
+    // Native ads
+    it('should return a well-formed native ad bid', function () {
+      const bids = spec.interpretResponse(serverResponseNative);
+      expect(bids).to.deep.equal(expectedBidNative);
     });
   });
 

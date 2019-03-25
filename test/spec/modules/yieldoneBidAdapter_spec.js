@@ -88,6 +88,11 @@ describe('yieldoneBidAdapter', function() {
       expect(request[0].data.w).to.equal('300');
       expect(request[0].data.h).to.equal('250');
     });
+
+    it('adUnitCode should be sent as uc parameters on any requests', function () {
+      expect(request[0].data.uc).to.equal('adunit-code1');
+      expect(request[1].data.uc).to.equal('adunit-code2');
+    });
   });
 
   describe('interpretResponse', function () {
@@ -210,7 +215,7 @@ describe('yieldoneBidAdapter', function() {
 
   describe('getUserSyncs', function () {
     it('handles empty sync options', function () {
-      expect(spec.getUserSyncs({})).to.be.empty;
+      expect(spec.getUserSyncs({})).to.be.undefined;
     });
 
     it('should return a sync url if iframe syncs are enabled', function () {

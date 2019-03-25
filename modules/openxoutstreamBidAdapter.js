@@ -1,7 +1,7 @@
-import { config } from 'src/config';
-import { registerBidder } from 'src/adapters/bidderFactory';
-import * as utils from 'src/utils';
-import { BANNER } from 'src/mediaTypes';
+import { config } from '../src/config';
+import { registerBidder } from '../src/adapters/bidderFactory';
+import * as utils from '../src/utils';
+import { BANNER } from '../src/mediaTypes';
 
 const SUPPORTED_AD_TYPES = [BANNER];
 const BIDDER_CODE = 'openxoutstream';
