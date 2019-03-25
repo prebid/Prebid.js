@@ -610,18 +610,19 @@ function _checkMediaType(adm, newBid) {
   // Create a regex here to check the strings
   var admStr = '';
   var videoRegex = new RegExp(/VAST\s+version/);
-  if (videoRegex.test(adm)) {
-    newBid.mediaType = VIDEO;
-  } else if (adm.indexOf('span class="PubAPIAd"') >= 0) {
+  if (adm.indexOf('span class="PubAPIAd"') >= 0) {
     newBid.mediaType = BANNER;
-  }
-  try {
-    admStr = JSON.parse(adm.replace(/\\/g, ''));
-    if (admStr && admStr.native) {
-      newBid.mediaType = NATIVE;
+  } else if (videoRegex.test(adm)) {
+    newBid.mediaType = VIDEO;
+  } else {
+    try {
+      admStr = JSON.parse(adm.replace(/\\/g, ''));
+      if (admStr && admStr.native) {
+        newBid.mediaType = NATIVE;
+      }
+    } catch (e) {
+      utils.logWarn(LOG_WARN_PREFIX + 'Error: Cannot parse native reponse for ad response: ' + adm);
     }
-  } catch (e) {
-    utils.logWarn(LOG_WARN_PREFIX + 'Error: Cannot parse native reponse for ad response: ' + adm);
   }
 }
 
