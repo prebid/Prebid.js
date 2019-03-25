@@ -168,7 +168,7 @@ function buildMantisUrl(path, data, domain) {
     tz: new Date().getTimezoneOffset(),
     buster: new Date().getTime(),
     secure: isSecure(),
-    version: 8
+    version: 9
   };
   if (!inIframe() || isAmp()) {
     params.mobile = !isAmp() && isDesktop(true) ? 'false' : 'true';
