@@ -267,7 +267,7 @@ describe('TheMediaGrid Adapter', function () {
         {
           'bidder': 'grid',
           'params': {
-            'uid': '1'
+            'uid': '11'
           },
           'adUnitCode': 'adunit-code-1',
           'sizes': [[300, 250], [300, 600]],
@@ -283,7 +283,7 @@ describe('TheMediaGrid Adapter', function () {
         {
           'bidder': 'grid',
           'params': {
-            'uid': '2'
+            'uid': '12'
           },
           'adUnitCode': 'adunit-code-1',
           'sizes': [[300, 250], [300, 600]],
