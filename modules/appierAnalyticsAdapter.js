@@ -108,12 +108,12 @@ const cacheManager = {
   }
 };
 
-const parseBidderCode = function(bid) {
+const parseBidderCode = function (bid) {
   let bidderCode = bid.bidderCode || bid.bidder;
   return bidderCode.toLowerCase();
 };
 
-const parseAdUnitCode = function(bidResponse) {
+const parseAdUnitCode = function (bidResponse) {
   return bidResponse.adUnitCode.toLowerCase();
 };
 
