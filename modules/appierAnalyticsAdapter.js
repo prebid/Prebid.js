@@ -8,7 +8,7 @@ const utils = require('../src/utils');
 const analyticsType = 'endpoint';
 
 const DEFAULT_SERVER = 'https://prebid-analytics.c.appier.net/v1';
-const ANALYTICS_VERSION = '0.1.0';
+const ANALYTICS_VERSION = '0.1.0-beta';
 const SEND_TIMEOUT = 100;
 
 const {
