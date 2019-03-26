@@ -550,7 +550,7 @@ describe('OpenxAdapter', function () {
           params: {
             'unit': '12345678',
             'delDomain': 'test-del-domain',
-            'customFloor': 1.5
+            'customFloor': 1.500001
           }
         }
       );
