@@ -863,7 +863,7 @@ export function getPriceGranularity(config) {
         {min: 3.00, max: 8.00, increment: 0.05},
         {min: 8.00, max: 20.00, increment: 0.50}
       ],
-      custom: config.getConfig('priceGranularity') === 'custom' ? config.getConfig('customPriceBucket').buckets : undefined
+      custom: config.getConfig('customPriceBucket').buckets
     }[config.getConfig('priceGranularity')]
   };
 }
