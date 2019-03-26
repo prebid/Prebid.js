@@ -27,23 +27,37 @@ describe('reklamstoreBidAdapterTests', function() {
   });
 
   it('validate_generated_params', function() {
-    request = spec.buildRequests(bidRequestData.bids);
+    let bidderRequest = {
+      refererInfo: {
+        referer: 'http://reklamstore.com'
+      }
+    };
+    request = spec.buildRequests(bidRequestData.bids, bidderRequest);
     let req_data = request[0].data;
 
     expect(req_data.regionId).to.equal(532211);
   });
 
-  it('validate_response_params', function() {
-    let serverResponse = {
-      body:
+  const serverResponse = {
+    body:
+      {
+        cpm: 1.2,
+        ad: 'Ad html',
+        w: 300,
+        h: 250,
+        syncs: [{
+          type: 'image',
+          url: 'http://link1'
+        },
         {
-          cpm: 1.2,
-          ad: 'Ad html',
-          w: 300,
-          h: 250
+          type: 'iframe',
+          url: 'http://link2'
         }
-    };
+        ]
+      }
+  };
 
+  it('validate_response_params', function() {
     let bids = spec.interpretResponse(serverResponse, bidRequestData.bids[0]);
     expect(bids).to.have.lengthOf(1);
 
@@ -53,5 +67,19 @@ describe('reklamstoreBidAdapterTests', function() {
     expect(bid.width).to.equal(300);
     expect(bid.height).to.equal(250);
     expect(bid.currency).to.equal('USD');
+  });
+
+  it('should return no syncs when pixel syncing is disabled', function () {
+    const syncs = spec.getUserSyncs({ pixelEnabled: false }, [serverResponse]);
+    expect(syncs).to.deep.equal([]);
+  });
+
+  it('should return user syncs', function () {
+    const syncs = spec.getUserSyncs({pixelEnabled: true, iframeEnabled: true}, [serverResponse]);
+    const expected = [
+      { type: 'image', url: 'http://link1' },
+      { type: 'iframe', url: 'http://link2' },
+    ];
+    expect(syncs).to.deep.equal(expected);
   });
 });
