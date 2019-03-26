@@ -504,7 +504,7 @@ describe('Appier Prebid AnalyticsAdapter', function () {
         'adUnits': {
           '/12345678/adunit_1': {
             'appier': {
-              'status': 'bid',
+              'status': 'timeout',
               'isTimeout': true,
               'time': 600,
               'cpm': 0.59878,

@@ -90,10 +90,10 @@ const cacheManager = {
     const bidsCacheSection = this.cache[auctionId].bids.adUnits;
     Object.assign(bidsCacheSection[adUnitCode][bidderCode], newObject)
   },
-  getStatus(auctionId, adUnitCode) {
+  getAuctionStatus(auctionId, adUnitCode) {
     return this.cache[auctionId].status[adUnitCode];
   },
-  setStatus(auctionId, adUnitCode, newValue) {
+  setAuctionStatus(auctionId, adUnitCode, newValue) {
     this.cache[auctionId].status[adUnitCode] = newValue;
   },
   setAdCache(auctionId, adUnitCode, bidderCode, newObject) {
@@ -105,6 +105,11 @@ const cacheManager = {
     const bidsWonCacheSection = this.cache[auctionId].bidsWon.adUnits;
     bidsWonCacheSection[adUnitCode] = bidsWonCacheSection[adUnitCode] || {};
     bidsWonCacheSection[adUnitCode][bidderCode] = newObject;
+  },
+  isBidderTimeout(auctionId, adUnitCode, bidderCode) {
+    const bid = cacheManager.getBidsCache(auctionId, adUnitCode, bidderCode);
+    return this.getAuctionStatus(auctionId, adUnitCode) === AUCTION_STATUS.COMPLETED ||
+      bid.status === BIDDER_STATUS.TIMEOUT
   }
 };
 
@@ -180,7 +185,7 @@ export const appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, ana
       bidderRequest.bids.forEach(function (bid) {
         const adUnitCode = parseAdUnitCode(bid);
         cacheManager.initBidsCache(auction.auctionId, adUnitCode, bidderCode);
-        cacheManager.setStatus(auction.auctionId, adUnitCode, AUCTION_STATUS.IN_PROGRESS);
+        cacheManager.setAuctionStatus(auction.auctionId, adUnitCode, AUCTION_STATUS.IN_PROGRESS);
       });
     });
   },
@@ -198,27 +203,24 @@ export const appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, ana
     const bidderCode = parseBidderCode(bidMessage);
     bidMessage.bids.forEach(function (bid) {
       const adUnitCode = parseAdUnitCode(bid);
-      const cachedBid = cacheManager.getBidsCache(bid.auctionId, adUnitCode, bidderCode);
       cacheManager.updateBidsCache(bid.auctionId, adUnitCode, bidderCode, {
-        'isTimeout': cacheManager.getStatus(bid.auctionId, adUnitCode) === AUCTION_STATUS.COMPLETED ||
-          cachedBid.status === BIDDER_STATUS.TIMEOUT
+        'isTimeout': cacheManager.isBidderTimeout(bid.auctionId, adUnitCode, bidderCode)
       });
     });
   },
   handleBidResponseMessage(bid) {
     const adUnitCode = parseAdUnitCode(bid);
     const bidderCode = parseBidderCode(bid);
-    const cachedBid = cacheManager.getBidsCache(bid.auctionId, adUnitCode, bidderCode);
+    const isBidderTimeout = cacheManager.isBidderTimeout(bid.auctionId, adUnitCode, bidderCode);
     cacheManager.updateBidsCache(bid.auctionId, adUnitCode, bidderCode, {
       'time': bid.timeToRespond,
-      'status': (cachedBid.status === BIDDER_STATUS.TIMEOUT) ? BIDDER_STATUS.TIMEOUT : BIDDER_STATUS.BID,
+      'status': (isBidderTimeout) ? BIDDER_STATUS.TIMEOUT : BIDDER_STATUS.BID,
       'cpm': bid.cpm,
       'currency': bid.currency,
       'originalCpm': bid.originalCpm || bid.cpm,
       'cpmUsd': getCpmInUsd(bid),
       'originalCurrency': bid.originalCurrency || bid.currency,
-      'isTimeout': cacheManager.getStatus(bid.auctionId, adUnitCode) === AUCTION_STATUS.COMPLETED ||
-        cachedBid.status === BIDDER_STATUS.TIMEOUT,
+      'isTimeout': isBidderTimeout,
       'prebidWon': false
     });
   },
@@ -257,15 +259,13 @@ export const appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, ana
     // Update cached auction status
     auction.adUnits.forEach(function (adUnit) {
       const adUnitCode = adUnit.code.toLowerCase();
-      cacheManager.setStatus(auction.auctionId, adUnitCode, AUCTION_STATUS.COMPLETED);
+      cacheManager.setAuctionStatus(auction.auctionId, adUnitCode, AUCTION_STATUS.COMPLETED);
     });
     // Update no-bids in bidCache
     auction.noBids.forEach(function (noBid) {
       const adUnitCode = parseAdUnitCode(noBid);
       const bidderCode = parseBidderCode(noBid);
-      const cachedBid = cacheManager.getBidsCache(auction.auctionId, adUnitCode, bidderCode);
-      if (cachedBid.status === BIDDER_STATUS.TIMEOUT ||
-        cacheManager.getStatus(auction.auctionId, adUnitCode) === AUCTION_STATUS.COMPLETED) {
+      if (cacheManager.isBidderTimeout(auction.auctionId, adUnitCode, bidderCode)) {
         cacheManager.updateBidsCache(auction.auctionId, adUnitCode, bidderCode, {
           'status': BIDDER_STATUS.TIMEOUT,
           'isTimeout': true
