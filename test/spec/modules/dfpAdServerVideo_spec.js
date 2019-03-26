@@ -256,4 +256,44 @@ describe('The DFP video support module', function () {
 
     expect(url).to.be.a('string');
   });
+
+  it('should include hb_uuid and hb_cache_id in cust_params when both keys are exluded from overwritten bidderSettings', function () {
+    const bidCopy = utils.deepClone(bid);
+    delete bidCopy.adserverTargeting.hb_uuid;
+    delete bidCopy.adserverTargeting.hb_cache_id;
+
+    const url = parse(buildDfpVideoUrl({
+      adUnit: adUnit,
+      bid: bidCopy,
+      params: {
+        'iu': 'my/adUnit'
+      }
+    }));
+    const queryObject = parseQS(url.query);
+    const customParams = parseQS('?' + decodeURIComponent(queryObject.cust_params));
+
+    expect(customParams).to.have.property('hb_uuid', bid.videoCacheKey);
+    expect(customParams).to.have.property('hb_cache_id', bid.videoCacheKey);
+  });
+
+  it('should include hb_uuid and hb_cache_id in cust params from overwritten standard bidderSettings', function () {
+    const bidCopy = utils.deepClone(bid);
+    bidCopy.adserverTargeting = Object.assign(bidCopy.adserverTargeting, {
+      hb_uuid: 'def',
+      hb_cache_id: 'def'
+    });
+
+    const url = parse(buildDfpVideoUrl({
+      adUnit: adUnit,
+      bid: bidCopy,
+      params: {
+        'iu': 'my/adUnit'
+      }
+    }));
+    const queryObject = parseQS(url.query);
+    const customParams = parseQS('?' + decodeURIComponent(queryObject.cust_params));
+
+    expect(customParams).to.have.property('hb_uuid', 'def');
+    expect(customParams).to.have.property('hb_cache_id', 'def');
+  });
 });
