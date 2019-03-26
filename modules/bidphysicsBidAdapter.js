@@ -120,11 +120,5 @@ export const spec = {
     return syncs;
   },
 
-  onTimeout: function (timeoutData) {
-    // optional log
-  },
-  onBidWon: function (bid) {
-    // optional log
-  },
 };
 registerBidder(spec);
