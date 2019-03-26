@@ -419,7 +419,9 @@ export function getIabSubCategory(bidderCode, category) {
 
 // check that the bid has a width and height set
 function validBidSize(adUnitCode, bid, bidRequests) {
-  if ((bid.width || bid.width === 0) && (bid.height || bid.height === 0)) {
+  if ((bid.width || parseInt(bid.width, 10) === 0) && (bid.height || parseInt(bid.height, 10) === 0)) {
+    bid.width = parseInt(bid.width, 10);
+    bid.height = parseInt(bid.height, 10);
     return true;
   }
 
@@ -432,8 +434,8 @@ function validBidSize(adUnitCode, bid, bidRequests) {
   // response that does not explicitly set width or height
   if (parsedSizes.length === 1) {
     const [ width, height ] = parsedSizes[0].split('x');
-    bid.width = width;
-    bid.height = height;
+    bid.width = parseInt(width, 10);
+    bid.height = parseInt(height, 10);
     return true;
   }
 

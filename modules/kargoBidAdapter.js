@@ -91,38 +91,35 @@ export const spec = {
     return null;
   },
 
-  _getCrbIds() {
+  _getCrbFromCookie() {
     try {
       const crb = JSON.parse(decodeURIComponent(spec._readCookie('krg_crb')));
-      let syncIds = {};
-
       if (crb && crb.v) {
         let vParsed = JSON.parse(atob(crb.v));
-
-        if (vParsed && vParsed.syncIds) {
-          syncIds = vParsed.syncIds;
+        if (vParsed) {
+          return vParsed;
         }
       }
-
-      return syncIds;
+      return {};
     } catch (e) {
       return {};
     }
   },
 
-  _getUid() {
+  _getCrbFromLocalStorage() {
     try {
-      const uid = JSON.parse(decodeURIComponent(spec._readCookie('krg_uid')));
-      let vData = {};
-
-      if (uid && uid.v) {
-        vData = uid.v;
-      }
-
-      return vData;
+      return JSON.parse(atob(spec._getLocalStorageSafely('krg_crb')));
     } catch (e) {
       return {};
     }
+  },
+
+  _getCrb() {
+    let localStorageCrb = spec._getCrbFromLocalStorage();
+    if (Object.keys(localStorageCrb).length) {
+      return localStorageCrb;
+    }
+    return spec._getCrbFromCookie();
   },
 
   _getKruxUserId() {
@@ -156,20 +153,18 @@ export const spec = {
   },
 
   _getUserIds() {
-    const uid = spec._getUid();
-    const crbIds = spec._getCrbIds();
-
+    const crb = spec._getCrb();
     return {
-      kargoID: uid.userId,
-      clientID: uid.clientId,
-      crbIDs: crbIds,
-      optOut: uid.optOut
+      kargoID: crb.userId,
+      clientID: crb.clientId,
+      crbIDs: crb.syncIds || {},
+      optOut: crb.optOut
     };
   },
 
   _getClientId() {
-    const uid = spec._getUid();
-    return uid.clientId;
+    const crb = spec._getCrb();
+    return crb.clientId;
   },
 
   _getAllMetadata() {
@@ -177,7 +172,8 @@ export const spec = {
       userIDs: spec._getUserIds(),
       krux: spec._getKrux(),
       pageURL: window.location.href,
-      rawCRB: spec._readCookie('krg_crb')
+      rawCRB: spec._readCookie('krg_crb'),
+      rawCRBLocalStorage: spec._getLocalStorageSafely('krg_crb')
     };
   },
 

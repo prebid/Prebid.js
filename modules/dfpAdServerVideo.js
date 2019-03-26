@@ -158,6 +158,10 @@ function getCustParams(bid, options) {
 
   const optCustParams = deepAccess(options, 'params.cust_params');
   let customParams = Object.assign({},
+    // Why are we adding standard keys here ? Refer https://github.com/prebid/Prebid.js/issues/3664
+    { hb_uuid: bid && bid.videoCacheKey },
+    // hb_uuid will be deprecated and replaced by hb_cache_id
+    { hb_cache_id: bid && bid.videoCacheKey },
     allTargetingData,
     adserverTargeting,
     optCustParams,
