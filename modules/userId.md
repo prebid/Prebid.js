@@ -19,7 +19,7 @@ pbjs.setConfig({
             name: "pubCommonId",
             storage: {
                 type: "cookie",
-                name: "pubcid",
+                name: "_pubcid",
                 expires: 60
             }
         }],
