@@ -1,5 +1,6 @@
 import * as utils from 'src/utils';
 import { registerBidder } from 'src/adapters/bidderFactory';
+import { BANNER } from 'src/mediaTypes';
 
 const BIDDER_CODE = 'reklamstore';
 const ENDPOINT_URL = '//ads.rekmob.com/m/prebid';
@@ -8,7 +9,7 @@ const TIME_TO_LIVE = 360;
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['reklamstore'],
+  supportedMediaTypes: [BANNER],
   /**
   * Determines whether or not the given bid request is valid.
   *
@@ -24,9 +25,9 @@ export const spec = {
   * @param {validBidRequests[]} - an array of bids
   * @return ServerRequest Info describing the request to the server.
   */
-  buildRequests: function (validBidRequests) {
+  buildRequests: function (validBidRequests, bidderRequest) {
+    const url = bidderRequest.refererInfo.referer;
     let requests = [];
-    let loc = utils.getTopWindowLocation();
     utils._each(validBidRequests, function(bid) {
       requests.push({
         method: 'GET',
@@ -36,14 +37,13 @@ export const spec = {
           dt: getDeviceType(),
           os: getOS(),
           dbg: 1,
-          ref: loc.hostname,
+          ref: extractDomain(url),
           _: (new Date().getTime()),
           mobile_web: 1
         },
         bidId: bid.bidId
       });
     });
-
     return requests;
   },
 
@@ -70,7 +70,6 @@ export const spec = {
           ad: bidResponse.ad
         });
       }
-
       return bidResponses;
     } catch (err) {
       utils.logError(err);
@@ -78,11 +77,11 @@ export const spec = {
     }
   },
   /**
-     * Register the user sync pixels which should be dropped after the auction.
-     *
-     * @param {SyncOptions} syncOptions Which user syncs are allowed?
-     * @param {ServerResponse[]} serverResponses List of server's responses.
-     * @return {UserSync[]} The user syncs which should be dropped.
+  * Register the user sync pixels which should be dropped after the auction.
+  *
+  * @param {SyncOptions} syncOptions Which user syncs are allowed?
+  * @param {ServerResponse[]} serverResponses List of server's responses.
+  * @return {UserSync[]} The user syncs which should be dropped.
   */
   getUserSyncs: function(syncOptions, serverResponses) {
     const syncs = [];
@@ -101,16 +100,15 @@ export const spec = {
         }
       });
     });
-
     return syncs;
   }
 }
 registerBidder(spec);
 
 function getDeviceType() {
-  var PHONE = 0;
-  var TABLET = 2;
-  var DESKTOP = 3;
+  let PHONE = 0;
+  let TABLET = 2;
+  let DESKTOP = 3;
   if (isPhone()) {
     return PHONE;
   } else if (isTablet()) {
@@ -138,4 +136,14 @@ function getOS() {
   } else {
     return '3';
   }
+}
+function extractDomain(url) {
+  var domain;
+  if (url.indexOf('://') > -1) {
+    domain = url.split('/')[2];
+  } else {
+    domain = url.split('/')[0];
+  }
+  domain = domain.split(':')[0];
+  return domain;
 }
