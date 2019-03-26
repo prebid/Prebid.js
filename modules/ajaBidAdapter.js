@@ -103,6 +103,7 @@ export const spec = {
           sponsoredBy: assets.sponsor,
           clickUrl: assets.lp_link,
           impressionTrackers: nativeAd.imps,
+          privacyLink: assets.adchoice_url,
         };
 
         if (assets.img_main !== undefined) {

@@ -74,7 +74,11 @@ var adUnits = [
         icon: {
           required: false,
           sendId: false
-        }
+        },
+        privacyLink: {
+          required: true,
+          sendId: true
+        },
       }
     },
     bids: [{
