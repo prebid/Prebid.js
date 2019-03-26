@@ -377,8 +377,8 @@ export function init (config, enabledSubmodules) {
   submodules = [];
   initializedSubmodules = undefined;
 
-  // exit immediately if opt out cookie exists
-  if (utils.getCookie('_pbjs_id_optout')) {
+  // exit immediately if opt out cookie exists. _pubcid_optout is checked for compatiblility with pubCommonId module opt out
+  if (utils.getCookie('_pbjs_id_optout') || utils.getCookie('_pubcid_optout')) {
     utils.logInfo(`${MODULE_NAME} - opt-out cookie found, exit module`);
     return;
   }
