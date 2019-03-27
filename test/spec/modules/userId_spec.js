@@ -22,6 +22,10 @@ describe('User ID', function() {
     return { name: name, storage: { name: key, type: type, expires: expires } }
   }
 
+  before(function() {
+    utils.setCookie('_pubcid_optout', '', EXPIRED_COOKIE_DATE);
+  });
+
   describe('Decorate Ad Units', function() {
     beforeEach(function() {
       utils.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
