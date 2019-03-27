@@ -179,11 +179,17 @@ function _parseAdSlot(bid) {
   } else if (bid.hasOwnProperty('mediaTypes') &&
          bid.mediaTypes.hasOwnProperty(BANNER) &&
           bid.mediaTypes.banner.hasOwnProperty('sizes')) {
-    if (bid.mediaTypes.banner.sizes[0].length > 1) { // i.e. size is not set as fluid
-      bid.params.width = parseInt(bid.mediaTypes.banner.sizes[0][0]);
-      bid.params.height = parseInt(bid.mediaTypes.banner.sizes[0][1]);
-      bid.mediaTypes.banner.sizes = bid.mediaTypes.banner.sizes.splice(1, bid.mediaTypes.banner.sizes.length - 1);
-    } else {
+    var i = 0;
+    var sizeArray = [];
+    for (;i < bid.mediaTypes.banner.sizes.length; i++) {
+      if (bid.mediaTypes.banner.sizes[i].length === 2) { // i.e size is not set in [w,h] format, so skip that size
+        sizeArray.push(bid.mediaTypes.banner.sizes[i]);
+      }
+    }
+    bid.mediaTypes.banner.sizes = sizeArray;
+    if (bid.mediaTypes.banner.sizes.length >= 1) {
+      bid.params.width = bid.mediaTypes.banner.sizes[0][0];
+      bid.params.height = bid.mediaTypes.banner.sizes[0][1];
       bid.mediaTypes.banner.sizes = bid.mediaTypes.banner.sizes.splice(1, bid.mediaTypes.banner.sizes.length - 1);
     }
   }
@@ -428,9 +434,14 @@ function _createBannerRequest(bid) {
   if (sizes !== UNDEFINED && utils.isArray(sizes)) {
     bannerObj = {};
     if (!bid.params.width && !bid.params.height) {
-      bannerObj.w = parseInt(sizes[0][0]);
-      bannerObj.h = parseInt(sizes[0][1]);
-      sizes = sizes.splice(1, sizes.length - 1);
+      if (sizes.length === 0) { // i.e. since bid.params does not have width or height, and length of sizes is 0, need to ignore this banner imp
+        bannerObj = UNDEFINED;
+        return bannerObj;
+      } else {
+        bannerObj.w = parseInt(sizes[0][0]);
+        bannerObj.h = parseInt(sizes[0][1]);
+        sizes = sizes.splice(1, sizes.length - 1);
+      }
     } else {
       bannerObj.w = bid.params.width;
       bannerObj.h = bid.params.height;
@@ -751,7 +762,11 @@ export const spec = {
           return;
         }
       } else {
-        if (!(bid.params.adSlot && bid.params.adUnit && bid.params.adUnitIndex && bid.params.width && bid.params.height)) {
+        if (!(bid.params.adSlot && bid.params.adUnit && bid.params.adUnitIndex)) {
+          utils.logWarn(LOG_WARN_PREFIX + 'Skipping the non-standard adslot: ', bid.params.adSlot, JSON.stringify(bid));
+          return;
+        }
+        if (!(bid.hasOwnProperty('mediaTypes') && bid.mediaTypes.hasOwnProperty(NATIVE)) && bid.params.width === 0 && bid.params.height === 0) {
           utils.logWarn(LOG_WARN_PREFIX + 'Skipping the non-standard adslot: ', bid.params.adSlot, JSON.stringify(bid));
           return;
         }
