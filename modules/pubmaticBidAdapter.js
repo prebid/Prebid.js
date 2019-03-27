@@ -179,9 +179,13 @@ function _parseAdSlot(bid) {
   } else if (bid.hasOwnProperty('mediaTypes') &&
          bid.mediaTypes.hasOwnProperty(BANNER) &&
           bid.mediaTypes.banner.hasOwnProperty('sizes')) {
-    bid.params.width = parseInt(bid.mediaTypes.banner.sizes[0][0]);
-    bid.params.height = parseInt(bid.mediaTypes.banner.sizes[0][1]);
-    bid.mediaTypes.banner.sizes = bid.mediaTypes.banner.sizes.splice(1, bid.mediaTypes.banner.sizes.length - 1);
+    if (bid.mediaTypes.banner.sizes[0].length > 1) { // i.e. size is not set as fluid
+      bid.params.width = parseInt(bid.mediaTypes.banner.sizes[0][0]);
+      bid.params.height = parseInt(bid.mediaTypes.banner.sizes[0][1]);
+      bid.mediaTypes.banner.sizes = bid.mediaTypes.banner.sizes.splice(1, bid.mediaTypes.banner.sizes.length - 1);
+    } else {
+      bid.mediaTypes.banner.sizes = bid.mediaTypes.banner.sizes.splice(1, bid.mediaTypes.banner.sizes.length - 1);
+    }
   }
 }
 
@@ -434,9 +438,13 @@ function _createBannerRequest(bid) {
     if (sizes.length > 0) {
       format = [];
       sizes.forEach(function (size) {
-        format.push({ w: size[0], h: size[1] });
+        if (size.length > 1) {
+          format.push({ w: size[0], h: size[1] });
+        }
       });
-      bannerObj.format = format;
+      if (format.length > 0) {
+        bannerObj.format = format;
+      }
     }
     bannerObj.pos = 0;
     bannerObj.topframe = utils.inIframe() ? 0 : 1;
