@@ -182,8 +182,6 @@ function _parseAdSlot(bid) {
     bid.params.width = parseInt(bid.mediaTypes.banner.sizes[0][0]);
     bid.params.height = parseInt(bid.mediaTypes.banner.sizes[0][1]);
     bid.mediaTypes.banner.sizes = bid.mediaTypes.banner.sizes.splice(1, bid.mediaTypes.banner.sizes.length - 1);
-  } else {
-    utils.logWarn(LOG_WARN_PREFIX + 'Error: Missing mediaTypes.banner in adSlot: ' + bid.params.adSlot);
   }
 }
 
