@@ -22,6 +22,7 @@ export const spec = {
       const referrer = encodeURIComponent(utils.getTopWindowUrl());
       const bidId = bidRequest.bidId;
       const unitCode = bidRequest.adUnitCode;
+      const timeout = config.getConfig('bidderTimeout');
       const payload = {
         v: 'hb1',
         p: placementId,
@@ -29,6 +30,7 @@ export const spec = {
         r: referrer,
         uid: bidId,
         uc: unitCode,
+        tmax: timeout,
         t: 'i'
       };
 
