@@ -387,6 +387,7 @@ function _createNativeRequest(params) {
                   type: NATIVE_ASSET_IMAGE_TYPE.ICON,
                   w: params[key].w || params[key].width || (params[key].sizes ? params[key].sizes[0] : undefined),
                   h: params[key].h || params[key].height || (params[key].sizes ? params[key].sizes[1] : undefined),
+                  ext: params[key].ext
                 }
               };
             } else {
@@ -442,7 +443,8 @@ function _createNativeRequest(params) {
               img: {
                 type: NATIVE_ASSET_IMAGE_TYPE.LOGO,
                 w: params[key].w || params[key].width || (params[key].sizes ? params[key].sizes[0] : undefined),
-                h: params[key].h || params[key].height || (params[key].sizes ? params[key].sizes[1] : undefined)
+                h: params[key].h || params[key].height || (params[key].sizes ? params[key].sizes[1] : undefined),
+                ext: params[key].ext
               }
             };
             break;
