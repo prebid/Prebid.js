@@ -7,6 +7,7 @@ import events from '../src/events.js';
 import * as utils from '../src/utils.js';
 import find from 'core-js/library/fn/array/find';
 import {gdprDataHandler} from '../src/adapterManager.js';
+import { getGlobal } from 'src/prebidGlobal';
 
 const CONSTANTS = require('../src/constants.json');
 
@@ -120,6 +121,33 @@ export const pubCommonIdSubmodule = {
     } catch (e) {}
     // check pubcid and return if valid was otherwise create a new id
     return (pubcid) || utils.generateUUID();
+  }
+};
+
+/**
+ * Fetch a registered Id system loader from GLOBAL.idsys
+ * @param {any} name
+ */
+function fetchIdSysLoader(name) {
+  let pbjs = getGlobal();
+  if (pbjs && pbjs.idsys && pbjs.idsys[name]) {
+    return pbjs.idsys[name];
+  }
+  return null;
+}
+
+// @type {Submodule}
+export const digitrustIdSubmodule = {
+  name: 'digitrust',
+  decode(value) {
+    return {
+      'digitrustid': value
+    }
+  },
+  loaderEnabled: -1,
+  getId() {
+    // Initialize to noop. Will be reinitialized if digitrustLoader is defined
+    return null;
   }
 };
 
@@ -399,6 +427,21 @@ export function init (config, enabledSubmodules) {
       submodules = enabledSubmodules.reduce((carry, enabledSubmodule) => {
         // try to find submodule configuration for submodule, if config exists it should be enabled
         const submoduleConfig = find(submoduleConfigs, item => item.name === enabledSubmodule.name);
+        if (enabledSubmodule.loaderEnabled != null && enabledSubmodule.loaderEnabled == -1) {
+          let val = config.getConfig('digitrustId');
+          enabledSubmodule.loaderEnabled = val;
+          if (!enabledSubmodule.loaderEnabled) {
+            return carry;
+          }
+          let idModule = fetchIdSysLoader(enabledSubmodule.name);
+          if (idModule) {
+            enabledSubmodule.getId = idModule.getId;
+            enabledSubmodule.decode = idModule.decode;
+            if (submoduleConfig && submoduleConfig.params && idModule.init) {
+              idModule.init(submoduleConfig.params);
+            }
+          }
+        }
 
         if (submoduleConfig) {
           // append {SubmoduleContainer} containing the submodule and config
@@ -421,4 +464,4 @@ export function init (config, enabledSubmodules) {
   });
 }
 
-init(config, [pubCommonIdSubmodule, unifiedIdSubmodule]);
+init(config, [pubCommonIdSubmodule, unifiedIdSubmodule, digitrustIdSubmodule]);
