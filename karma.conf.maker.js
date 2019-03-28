@@ -85,7 +85,8 @@ function setBrowsers(karmaConf, browserstack) {
   if (browserstack) {
     karmaConf.browserStack = {
       username: process.env.BROWSERSTACK_USERNAME,
-      accessKey: process.env.BROWSERSTACK_ACCESS_KEY
+      accessKey: process.env.BROWSERSTACK_ACCESS_KEY,
+      build: 'Prebidjs Unit Tests ' + new Date().toLocaleString()
     }
     if (process.env.TRAVIS) {
       karmaConf.browserStack.startTunnel = false;
@@ -144,8 +145,6 @@ module.exports = function(codeCoverage, browserstack, watchMode, file) {
 
     // web server port
     port: 9876,
-
-    exclude: ['./test/spec/lfe2e'],
 
     // enable / disable colors in the output (reporters and logs)
     colors: true,
