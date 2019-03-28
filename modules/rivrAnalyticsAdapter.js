@@ -1,7 +1,7 @@
-import {ajax} from 'src/ajax';
-import adapter from 'src/AnalyticsAdapter';
+import {ajax} from '../src/ajax';
+import adapter from '../src/AnalyticsAdapter';
 import adapterManager from '../src/adapterManager';
-import * as utils from 'src/utils';
+import * as utils from '../src/utils';
 
 const analyticsType = 'endpoint';
 

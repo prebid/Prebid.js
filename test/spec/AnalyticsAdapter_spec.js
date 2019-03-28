@@ -7,7 +7,6 @@ const BID_RESPONSE = CONSTANTS.EVENTS.BID_RESPONSE;
 const BID_WON = CONSTANTS.EVENTS.BID_WON;
 const BID_TIMEOUT = CONSTANTS.EVENTS.BID_TIMEOUT;
 const AD_RENDER_FAILED = CONSTANTS.EVENTS.AD_RENDER_FAILED;
-const ADD_AD_UNITS = CONSTANTS.EVENTS.ADD_AD_UNITS;
 
 const AnalyticsAdapter = require('src/AnalyticsAdapter').default;
 const config = {
@@ -85,17 +84,6 @@ FEATURE: Analytics Adapters API
 
       let result = JSON.parse(requests[0].requestBody);
       expect(result).to.deep.equal({args: {call: 'adRenderFailed'}, eventType: 'adRenderFailed'});
-    });
-
-    it('SHOULD call global when an addAdUnits event occurs', function () {
-      const eventType = ADD_AD_UNITS;
-      const args = { call: 'addAdUnits' };
-
-      adapter.enableAnalytics();
-      events.emit(eventType, args);
-
-      let result = JSON.parse(requests[0].requestBody);
-      expect(result).to.deep.equal({args: {call: 'addAdUnits'}, eventType: 'addAdUnits'});
     });
 
     it('SHOULD call global when a bidRequest event occurs', function () {
