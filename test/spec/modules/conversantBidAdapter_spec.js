@@ -60,7 +60,8 @@ describe('Conversant adapter tests', function() {
       },
       mediaTypes: {
         video: {
-          context: 'instream'
+          context: 'instream',
+          playerSize: [632, 499],
         }
       },
       placementCode: 'pcode003',
@@ -193,8 +194,8 @@ describe('Conversant adapter tests', function() {
     expect(payload.imp[3]).to.not.have.property('tagid');
     expect(payload.imp[3]).to.have.property('video');
     expect(payload.imp[3].video).to.not.have.property('pos');
-    expect(payload.imp[3].video).to.have.property('w', 640);
-    expect(payload.imp[3].video).to.have.property('h', 480);
+    expect(payload.imp[3].video).to.have.property('w', 632);
+    expect(payload.imp[3].video).to.have.property('h', 499);
     expect(payload.imp[3].video).to.have.property('mimes');
     expect(payload.imp[3].video.mimes).to.deep.equal(['video/mp4', 'video/x-flv']);
     expect(payload.imp[3].video).to.have.property('protocols');
@@ -254,8 +255,8 @@ describe('Conversant adapter tests', function() {
     expect(bid).to.have.property('currency', 'USD');
     expect(bid).to.have.property('cpm', 3.99);
     expect(bid).to.have.property('creativeId', '1003');
-    expect(bid).to.have.property('width', 640);
-    expect(bid).to.have.property('height', 480);
+    expect(bid).to.have.property('width', 632);
+    expect(bid).to.have.property('height', 499);
     expect(bid).to.have.property('vastUrl', 'markup003');
     expect(bid).to.have.property('mediaType', 'video');
     expect(bid).to.have.property('ttl', 300);

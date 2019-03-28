@@ -74,7 +74,7 @@ export const spec = {
         mediaType: 'banner',
         currency: 'USD',
         dealId: null,
-        creativeId: null,
+        creativeId: bidRespObj.bid,
         ttl: 300,
         ad: bidRespObj.ad + utils.createTrackPixelHtml(decodeURIComponent(bidRespObj.nurl))
       };

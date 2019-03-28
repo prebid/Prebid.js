@@ -20,7 +20,7 @@ var adUnits = [
       {
         bidder: 'gumgum',
         params: {
-          inSlot: '9' // GumGum Slot ID given to the client
+          inSlot: '15901' // GumGum Slot ID given to the client
         }
       }
     ]
@@ -31,7 +31,7 @@ var adUnits = [
       {
         bidder: 'gumgum',
         params: {
-          inScreen: 'ggumtest' // GumGum Zone ID given to the client
+          inScreen: 'dc9d6be1' // GumGum Zone ID given to the client
         }
       }
     ]

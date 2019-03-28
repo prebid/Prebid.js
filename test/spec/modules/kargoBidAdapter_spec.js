@@ -6,12 +6,12 @@ import {config} from 'src/config';
 describe('kargo adapter tests', function () {
   var sandbox, clock, frozenNow = new Date();
 
-  beforeEach(() => {
+  beforeEach(function () {
     sandbox = sinon.sandbox.create();
     clock = sinon.useFakeTimers(frozenNow.getTime());
   });
 
-  afterEach(() => {
+  afterEach(function () {
     sandbox.restore();
     clock.restore();
   });
@@ -35,12 +35,20 @@ describe('kargo adapter tests', function () {
   });
 
   describe('build request', function() {
-    var bids, cookies = [], localStorageItems = [];
+    var bids, undefinedCurrency, noAdServerCurrency, cookies = [], localStorageItems = [];
 
-    beforeEach(() => {
+    beforeEach(function () {
+      undefinedCurrency = false;
+      noAdServerCurrency = false;
       sandbox.stub(config, 'getConfig').callsFake(function(key) {
         if (key === 'currency') {
-          return 'USD';
+          if (undefinedCurrency) {
+            return undefined;
+          }
+          if (noAdServerCurrency) {
+            return {};
+          }
+          return {adServerCurrency: 'USD'};
         }
         throw new Error(`Config stub incomplete! Missing key "${key}"`)
       });
@@ -67,7 +75,7 @@ describe('kargo adapter tests', function () {
       ];
     });
 
-    afterEach(() => {
+    afterEach(function () {
       for (let key in cookies) {
         let cookie = cookies[key];
         removeCookie(cookie);
@@ -107,6 +115,16 @@ describe('kargo adapter tests', function () {
 
     function simulateNoLocalStorage() {
       return sandbox.stub(localStorage, 'getItem').throws();
+    }
+
+    function simulateNoCurrencyObject() {
+      undefinedCurrency = true;
+      noAdServerCurrency = false;
+    }
+
+    function simulateNoAdServerCurrency() {
+      undefinedCurrency = false;
+      noAdServerCurrency = true;
     }
 
     function initializeKruxUser() {
@@ -308,6 +326,24 @@ describe('kargo adapter tests', function () {
       initializeInvalidKrgCrbType3();
       testBuildRequests(getExpectedKrakenParams({crb: true}, undefined, getInvalidKrgCrbType3()));
     });
+
+    it('handles a non-existant currency object on the config', function() {
+      simulateNoCurrencyObject();
+      initializeKruxUser();
+      initializeKruxSegments();
+      initializeKrgUid();
+      initializeKrgCrb();
+      testBuildRequests(getExpectedKrakenParams(undefined, undefined, getKrgCrb()));
+    });
+
+    it('handles no ad server currency being set on the currency object in the config', function() {
+      simulateNoAdServerCurrency();
+      initializeKruxUser();
+      initializeKruxSegments();
+      initializeKrgUid();
+      initializeKrgCrb();
+      testBuildRequests(getExpectedKrakenParams(undefined, undefined, getKrgCrb()));
+    });
   });
 
   describe('response handler', function() {
@@ -325,7 +361,8 @@ describe('kargo adapter tests', function () {
           cpm: 2.5,
           adm: '<div id="2"></div>',
           width: 300,
-          height: 250
+          height: 250,
+          targetingCustom: 'dmpmptest1234'
         },
         3: {
           id: 'bar',
@@ -361,6 +398,7 @@ describe('kargo adapter tests', function () {
         ad: '<div id="1"></div>',
         ttl: 300,
         creativeId: 'foo',
+        dealId: undefined,
         netRevenue: true,
         currency: 'USD'
       }, {
@@ -371,6 +409,7 @@ describe('kargo adapter tests', function () {
         ad: '<div id="2"></div>',
         ttl: 300,
         creativeId: 'bar',
+        dealId: 'dmpmptest1234',
         netRevenue: true,
         currency: 'USD'
       }, {
@@ -381,10 +420,104 @@ describe('kargo adapter tests', function () {
         ad: '<div id="2"></div>',
         ttl: 300,
         creativeId: 'bar',
+        dealId: undefined,
         netRevenue: true,
         currency: 'USD'
       }];
       expect(resp).to.deep.equal(expectation);
+    });
+  });
+
+  describe('user sync handler', function() {
+    const clientId = '74c81cbb-7d07-46d9-be9b-68ccb291c949';
+    var shouldSimulateOutdatedBrowser, uid, isActuallyOutdatedBrowser;
+
+    beforeEach(() => {
+      uid = {};
+      shouldSimulateOutdatedBrowser = false;
+      isActuallyOutdatedBrowser = false;
+
+      // IE11 fails these tests in the Prebid test suite. Since this
+      // browser won't support any of this stuff we expect all user
+      // syncing to fail gracefully. Kargo is mobile only, so this
+      // doesn't really matter.
+      if (!window.crypto) {
+        isActuallyOutdatedBrowser = true;
+      } else {
+        sandbox.stub(crypto, 'getRandomValues').callsFake(function(buf) {
+          if (shouldSimulateOutdatedBrowser) {
+            throw new Error('Could not generate random values');
+          }
+          var bytes = [50, 5, 232, 133, 141, 55, 49, 57, 244, 126, 248, 44, 255, 38, 128, 0];
+          for (var i = 0; i < bytes.length; i++) {
+            buf[i] = bytes[i];
+          }
+          return buf;
+        });
+      }
+
+      sandbox.stub(spec, '_getUid').callsFake(function() {
+        return uid;
+      });
+    });
+
+    function getUserSyncsWhenAllowed() {
+      return spec.getUserSyncs({iframeEnabled: true});
+    }
+
+    function getUserSyncsWhenForbidden() {
+      return spec.getUserSyncs({});
+    }
+
+    function turnOnClientId() {
+      uid.clientId = clientId;
+    }
+
+    function simulateOutdatedBrowser() {
+      shouldSimulateOutdatedBrowser = true;
+    }
+
+    function getSyncUrl(index) {
+      return {
+        type: 'iframe',
+        url: `https://crb.kargo.com/api/v1/initsyncrnd/${clientId}?seed=3205e885-8d37-4139-b47e-f82cff268000&idx=${index}`
+      };
+    }
+
+    function getSyncUrls() {
+      var syncs = [];
+      for (var i = 0; i < 5; i++) {
+        syncs[i] = getSyncUrl(i);
+      }
+      return syncs;
+    }
+
+    function safelyRun(runExpectation) {
+      if (isActuallyOutdatedBrowser) {
+        expect(getUserSyncsWhenAllowed()).to.be.an('array').that.is.empty;
+      } else {
+        runExpectation();
+      }
+    }
+
+    it('handles user syncs when there is a client id', function() {
+      turnOnClientId();
+      safelyRun(() => expect(getUserSyncsWhenAllowed()).to.deep.equal(getSyncUrls()));
+    });
+
+    it('no user syncs when there is no client id', function() {
+      safelyRun(() => expect(getUserSyncsWhenAllowed()).to.be.an('array').that.is.empty);
+    });
+
+    it('no user syncs when there is outdated browser', function() {
+      turnOnClientId();
+      simulateOutdatedBrowser();
+      safelyRun(() => expect(getUserSyncsWhenAllowed()).to.be.an('array').that.is.empty);
+    });
+
+    it('no user syncs when no iframe syncing allowed', function() {
+      turnOnClientId();
+      safelyRun(() => expect(getUserSyncsWhenForbidden()).to.be.an('array').that.is.empty);
     });
   });
 });

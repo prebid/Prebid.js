@@ -68,7 +68,7 @@ export const spec = {
       dealId: ad.deal || null,
       currency: 'USD',
       netRevenue: true,
-      ttl: 1000
+      ttl: 1800
     };
 
     if (ad.creative_type) {

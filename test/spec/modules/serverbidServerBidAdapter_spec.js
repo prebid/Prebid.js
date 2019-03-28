@@ -184,51 +184,55 @@ const REQUEST_TWO_UNITS = {
   ]
 };
 
-describe('ServerBid S2S Adapter', () => {
+describe('ServerBid S2S Adapter', function () {
   let adapter,
     addBidResponse = sinon.spy(),
     done = sinon.spy();
 
-  beforeEach(() => adapter = new Adapter());
+  beforeEach(function () {
+    adapter = new Adapter()
+  });
 
-  afterEach(() => {
+  afterEach(function () {
     addBidResponse.resetHistory();
     done.resetHistory();
   });
 
-  describe('request function', () => {
+  describe('request function', function () {
     let xhr;
     let requests;
 
-    beforeEach(() => {
+    beforeEach(function () {
       xhr = sinon.useFakeXMLHttpRequest();
       requests = [];
       xhr.onCreate = request => requests.push(request);
     });
 
-    afterEach(() => xhr.restore());
+    afterEach(function () {
+      xhr.restore();
+    });
 
-    it('exists and is a function', () => {
+    it('exists and is a function', function () {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
   });
 
-  describe('response handler', () => {
+  describe('response handler', function () {
     let server;
 
-    beforeEach(() => {
+    beforeEach(function () {
       server = sinon.fakeServer.create();
       sinon.stub(utils, 'getBidRequest').returns({
         bidId: '123'
       });
     });
 
-    afterEach(() => {
+    afterEach(function () {
       server.restore();
       utils.getBidRequest.restore();
     });
 
-    it('registers bids', () => {
+    it('registers bids', function () {
       server.respondWith(JSON.stringify(RESPONSE));
 
       config.setConfig(CONFIG_ARG);
@@ -242,7 +246,7 @@ describe('ServerBid S2S Adapter', () => {
       expect(response).to.have.property('adId', '123');
     });
 
-    it('registers no-bid response when ad unit not set', () => {
+    it('registers no-bid response when ad unit not set', function () {
       server.respondWith(JSON.stringify(RESPONSE_NO_BID_NO_UNIT));
 
       config.setConfig(CONFIG_ARG);
@@ -260,7 +264,7 @@ describe('ServerBid S2S Adapter', () => {
       expect(bid_request_passed).to.have.property('adId', '123');
     });
 
-    it('registers no-bid response when ad unit is set', () => {
+    it('registers no-bid response when ad unit is set', function () {
       server.respondWith(JSON.stringify(RESPONSE_NO_BID_NO_UNIT));
 
       config.setConfig(CONFIG_ARG);
@@ -275,7 +279,7 @@ describe('ServerBid S2S Adapter', () => {
       expect(response).to.have.property('statusMessage', 'Bid returned empty or error response');
     });
 
-    it('registers no-bid response when there are less bids than requests', () => {
+    it('registers no-bid response when there are less bids than requests', function () {
       server.respondWith(JSON.stringify(RESPONSE));
 
       config.setConfig(CONFIG_ARG);

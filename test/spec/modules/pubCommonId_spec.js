@@ -18,7 +18,7 @@ const COOKIE_NAME = '_pubcid';
 const TIMEOUT = 2000;
 
 describe('Publisher Common ID', function () {
-  afterEach(() => {
+  afterEach(function () {
     $$PREBID_GLOBAL$$.requestBids.removeHook(requestBidHook);
   });
   describe('Decorate adUnits', function () {
@@ -159,7 +159,7 @@ describe('Publisher Common ID', function () {
       getUserSyncs: () => {}
     };
 
-    beforeEach(() => {
+    beforeEach(function () {
       adUnits = [{
         code: 'adUnit-code',
         mediaTypes: {
@@ -179,7 +179,7 @@ describe('Publisher Common ID', function () {
       registerBidder(sampleSpec);
     });
 
-    afterEach(() => {
+    afterEach(function () {
       auctionModule.newAuction.restore();
     });
 

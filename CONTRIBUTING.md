@@ -64,8 +64,8 @@ A test module might have the following general structure:
 import { expect } from 'chai';  // may prefer 'assert' in place of 'expect'
 import adapter from 'src/adapters/<adapter>';
 
-describe('<Adapter>', () => {
-  it('<description of unit or feature being tested>', () => {
+describe('<Adapter>', function () {
+  it('<description of unit or feature being tested>', function () {
     // Arrange - set up preconditions and inputs
     // Act - call or act on the code under test
     // Assert - use chai to check that expected results have occurred

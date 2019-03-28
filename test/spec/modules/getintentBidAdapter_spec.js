@@ -1,7 +1,7 @@
 import { expect } from 'chai'
 import { spec } from 'modules/getintentBidAdapter'
 
-describe('GetIntent Adapter Tests:', () => {
+describe('GetIntent Adapter Tests:', function () {
   const bidRequests = [{
     bidId: 'bid12345',
     params: {
@@ -34,7 +34,7 @@ describe('GetIntent Adapter Tests:', () => {
     mediaType: 'video'
   };
 
-  it('Verify build request', () => {
+  it('Verify build request', function () {
     const serverRequests = spec.buildRequests(bidRequests);
     let serverRequest = serverRequests[0];
     expect(serverRequest.url).to.equal('//px.adhigh.net/rtb/direct_banner');
@@ -48,7 +48,7 @@ describe('GetIntent Adapter Tests:', () => {
     expect(serverRequest.data.size).to.equal('50x50,100x100');
   });
 
-  it('Verify build video request', () => {
+  it('Verify build video request', function () {
     const serverRequests = spec.buildRequests([videoBidRequest]);
     let serverRequest = serverRequests[0];
     expect(serverRequest.url).to.equal('//px.adhigh.net/rtb/direct_vast');
@@ -64,7 +64,7 @@ describe('GetIntent Adapter Tests:', () => {
     expect(serverRequest.data.skippable).to.equal(true);
   });
 
-  it('Verify parse response', () => {
+  it('Verify parse response', function () {
     const serverResponse = {
       body: {
         bid_id: 'bid12345',
@@ -90,7 +90,7 @@ describe('GetIntent Adapter Tests:', () => {
     expect(bid.ad).to.equal('Ad markup');
   });
 
-  it('Verify parse video response', () => {
+  it('Verify parse video response', function () {
     const serverResponse = {
       body: {
         bid_id: 'bid789',
@@ -116,22 +116,22 @@ describe('GetIntent Adapter Tests:', () => {
     expect(bid.vastUrl).to.equal('//vast.xml/url');
   });
 
-  it('Verify bidder code', () => {
+  it('Verify bidder code', function () {
     expect(spec.code).to.equal('getintent');
   });
 
-  it('Verify bidder aliases', () => {
+  it('Verify bidder aliases', function () {
     expect(spec.aliases).to.have.lengthOf(1);
     expect(spec.aliases[0]).to.equal('getintentAdapter');
   });
 
-  it('Verify supported media types', () => {
+  it('Verify supported media types', function () {
     expect(spec.supportedMediaTypes).to.have.lengthOf(2);
     expect(spec.supportedMediaTypes[0]).to.equal('video');
     expect(spec.supportedMediaTypes[1]).to.equal('banner');
   });
 
-  it('Verify if bid request valid', () => {
+  it('Verify if bid request valid', function () {
     expect(spec.isBidRequestValid(bidRequests[0])).to.equal(true);
     expect(spec.isBidRequestValid(bidRequests[1])).to.equal(true);
     expect(spec.isBidRequestValid({})).to.equal(false);

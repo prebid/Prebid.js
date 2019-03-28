@@ -2,18 +2,18 @@
 import { expect } from 'chai';
 import { createHook, hooks } from 'src/hook';
 
-describe('the hook module', () => {
+describe('the hook module', function () {
   let sandbox;
 
-  beforeEach(() => {
+  beforeEach(function () {
     sandbox = sinon.sandbox.create();
   });
 
-  afterEach(() => {
+  afterEach(function () {
     sandbox.restore();
   });
 
-  it('should call all sync hooks attached to a function', () => {
+  it('should call all sync hooks attached to a function', function () {
     let called = [];
     let calledWith;
 
@@ -63,7 +63,7 @@ describe('the hook module', () => {
     ]);
   });
 
-  it('should allow context to be passed to hooks, but keep bound contexts', () => {
+  it('should allow context to be passed to hooks, but keep bound contexts', function () {
     let context;
     let fn = function() {
       context = this;
@@ -85,8 +85,8 @@ describe('the hook module', () => {
     expect(calledBoundContext).to.equal(boundContext);
   });
 
-  describe('asyncSeries', () => {
-    it('should call function as normal if no hooks attached', () => {
+  describe('asyncSeries', function () {
+    it('should call function as normal if no hooks attached', function () {
       let fn = sandbox.spy();
       let hookFn = createHook('asyncSeries', fn);
 
@@ -96,7 +96,7 @@ describe('the hook module', () => {
       expect(fn.firstCall.args[0]).to.equal(1);
     });
 
-    it('should call hooks correctly applied in asyncSeries', () => {
+    it('should call hooks correctly applied in asyncSeries', function () {
       let called = [];
 
       let testFn = (called) => {
@@ -124,7 +124,7 @@ describe('the hook module', () => {
       ]);
     });
 
-    it('should allow context to be passed to hooks, but keep bound contexts', () => {
+    it('should allow context to be passed to hooks, but keep bound contexts', function () {
       let context;
       let fn = function() {
         context = this;

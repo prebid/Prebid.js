@@ -302,8 +302,25 @@
                             channelCode: 2264002816,   //REQUIRED
                             dimId: 9 //REQUIRED
                         }
-                    }
-
+                    },
+                    {
+                      bidder: 'openxoutstream',
+                      params: {
+                          unit: '53943996499',
+                          delDomain: 'se-demo-d.openx.net',
+                          publisher_page_url: 'yieldmo.com',
+                          width:  '300',
+                          height: '250',
+                      }
+                    },
+		    {
+                        bidder: 'adikteev',
+                        params: {
+                            placementId: 12345,
+			    currency: 'EUR',
+			    bidFloorPrice: 0.1,
+                        }
+                    },
                 ]
             }, {
                 code: 'div-gpt-ad-12345678-1',

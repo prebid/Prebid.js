@@ -7,7 +7,7 @@ const ENDPOINT = `//pb.vi-serve.com/prebid/bid`;
 describe('viBidAdapter', function() {
   newBidder(spec);
 
-  describe('isBidRequestValid', () => {
+  describe('isBidRequestValid', function () {
     let bid = {
       'bidder': 'vi',
       'params': {
@@ -27,17 +27,17 @@ describe('viBidAdapter', function() {
       'transactionId': '474da635-9cf0-4188-a3d9-58961be8f905'
     };
 
-    it('should return true when required params found', () => {
+    it('should return true when required params found', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
-    it('should return false when pubId not passed', () => {
+    it('should return false when pubId not passed', function () {
       bid.params.pubId = undefined;
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
   });
 
-  describe('buildRequests', () => {
+  describe('buildRequests', function () {
     let bidRequests = [{
       'bidder': 'vi',
       'params': {
@@ -59,16 +59,16 @@ describe('viBidAdapter', function() {
 
     const request = spec.buildRequests(bidRequests);
 
-    it('POST bid request to vi', () => {
+    it('POST bid request to vi', function () {
       expect(request.method).to.equal('POST');
     });
 
-    it('check endpoint URL', () => {
+    it('check endpoint URL', function () {
       expect(request.url).to.equal(ENDPOINT)
     });
   });
 
-  describe('buildRequests can handle size in 1-dim array', () => {
+  describe('buildRequests can handle size in 1-dim array', function () {
     let bidRequests = [{
       'bidder': 'vi',
       'params': {
@@ -88,16 +88,16 @@ describe('viBidAdapter', function() {
 
     const request = spec.buildRequests(bidRequests);
 
-    it('POST bid request to vi', () => {
+    it('POST bid request to vi', function () {
       expect(request.method).to.equal('POST');
     });
 
-    it('check endpoint URL', () => {
+    it('check endpoint URL', function () {
       expect(request.url).to.equal(ENDPOINT)
     });
   });
 
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     let response = {
       body: [{
         'id': '29b891ad542377',
@@ -109,7 +109,7 @@ describe('viBidAdapter', function() {
       }]
     };
 
-    it('should get the correct bid response', () => {
+    it('should get the correct bid response', function () {
       let expectedResponse = [{
         'requestId': '29b891ad542377',
         'cpm': 0.1,
@@ -128,7 +128,7 @@ describe('viBidAdapter', function() {
       expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse[0]));
     });
 
-    it('handles empty bid response', () => {
+    it('handles empty bid response', function () {
       let response = {
         body: []
       };

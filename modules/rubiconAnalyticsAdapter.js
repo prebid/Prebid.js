@@ -131,6 +131,8 @@ function sendMessage(auctionId, bidWonId) {
       adserverTargeting: stringProperties(cache.targeting[bid.adUnit.adUnitCode] || {}),
       bidwonStatus: 'success', // hard-coded for now
       accountId,
+      siteId: bid.siteId,
+      zoneId: bid.zoneId,
       samplingFactor
     });
   }
@@ -157,6 +159,15 @@ function sendMessage(auctionId, bidWonId) {
         adUnit.bids = [];
       }
 
+      // Add site and zone id if not there and if we found a rubicon bidder
+      if ((!adUnit.siteId || !adUnit.zoneId) && rubiconAliases.indexOf(bid.bidder) !== -1) {
+        if (utils.deepAccess(bid, 'params.accountId') == accountId) {
+          adUnit.accountId = parseInt(accountId);
+          adUnit.siteId = parseInt(utils.deepAccess(bid, 'params.siteId'));
+          adUnit.zoneId = parseInt(utils.deepAccess(bid, 'params.zoneId'));
+        }
+      }
+
       if (bid.videoAdFormat && !adUnit.videoAdFormat) {
         adUnit.videoAdFormat = bid.videoAdFormat;
       }
@@ -171,6 +182,13 @@ function sendMessage(auctionId, bidWonId) {
 
       return adUnits;
     }, {});
+
+    // We need to mark each cached bid response with its appropriate rubicon site-zone id
+    // This allows the bidWon events to have these params even in the case of a delayed render
+    Object.keys(auctionCache.bids).forEach(function (bidId) {
+      let adCode = auctionCache.bids[bidId].adUnit.adUnitCode;
+      Object.assign(auctionCache.bids[bidId], _pick(adUnitMap[adCode], ['accountId', 'siteId', 'zoneId']));
+    });
 
     let auction = {
       clientTimeoutMillis: auctionCache.timeout,
@@ -217,7 +235,7 @@ function sendMessage(auctionId, bidWonId) {
 function parseBidResponse(bid) {
   return _pick(bid, [
     'getCpmInNewCurrency as bidPriceUSD', (fn) => {
-      if (bid.currency === 'USD') {
+      if (typeof bid.currency === 'string' && bid.currency.toUpperCase() === 'USD') {
         return Number(bid.cpm);
       }
       // use currency conversion function if present
@@ -238,6 +256,21 @@ function parseBidResponse(bid) {
 
 let samplingFactor = 1;
 let accountId;
+// List of known rubicon aliases
+// This gets updated on auction init to account for any custom aliases present
+let rubiconAliases = ['rubicon'];
+
+/*
+  Checks the alias registry for any entries of the rubicon bid adapter.
+  adds to the rubiconAliases list if found
+*/
+function setRubiconAliases(aliasRegistry) {
+  Object.keys(aliasRegistry).forEach(function (alias) {
+    if (aliasRegistry[alias] === 'rubicon') {
+      rubiconAliases.push(alias);
+    }
+  });
+}
 
 let baseAdapter = adapter({analyticsType: 'endpoint'});
 let rubiconAdapter = Object.assign({}, baseAdapter, {
@@ -288,6 +321,8 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
   track({eventType, args}) {
     switch (eventType) {
       case AUCTION_INIT:
+        // set the rubicon aliases
+        setRubiconAliases(adaptermanager.aliasRegistry);
         let cacheEntry = _pick(args, [
           'timestamp',
           'timeout'

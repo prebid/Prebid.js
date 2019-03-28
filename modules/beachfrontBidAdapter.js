@@ -1,11 +1,13 @@
 import * as utils from 'src/utils';
+import { parse as parseUrl } from 'src/url';
+import { config } from 'src/config';
 import { registerBidder } from 'src/adapters/bidderFactory';
 import { Renderer } from 'src/Renderer';
 import { VIDEO, BANNER } from 'src/mediaTypes';
 import find from 'core-js/library/fn/array/find';
 import includes from 'core-js/library/fn/array/includes';
 
-const ADAPTER_VERSION = '1.2';
+const ADAPTER_VERSION = '1.4';
 const ADAPTER_NAME = 'BFIO_PREBID';
 const OUTSTREAM = 'outstream';
 
@@ -13,7 +15,7 @@ export const VIDEO_ENDPOINT = '//reachms.bfmio.com/bid.json?exchange_id=';
 export const BANNER_ENDPOINT = '//display.bfmio.com/prebid_display';
 export const OUTSTREAM_SRC = '//player-cdn.beachfrontmedia.com/playerapi/loader/outstream.js';
 
-export const VIDEO_TARGETING = ['mimes'];
+export const VIDEO_TARGETING = ['mimes', 'playbackmethod', 'maxduration'];
 export const DEFAULT_MIMES = ['video/mp4', 'application/javascript'];
 
 let appId = '';
@@ -237,6 +239,19 @@ function isBannerBidValid(bid) {
   return isBannerBid(bid) && getBannerBidParam(bid, 'appId') && getBannerBidParam(bid, 'bidfloor');
 }
 
+function getTopWindowLocation(bidderRequest) {
+  let url = bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer;
+  return parseUrl(config.getConfig('pageUrl') || url, { decodeSearchAsString: true });
+}
+
+function getTopWindowReferrer() {
+  try {
+    return window.top.document.referrer;
+  } catch (e) {
+    return '';
+  }
+}
+
 function getVideoTargetingParams(bid) {
   return Object.keys(Object(bid.params.video))
     .filter(param => includes(VIDEO_TARGETING, param))
@@ -252,7 +267,7 @@ function createVideoRequestData(bid, bidderRequest) {
   let video = getVideoTargetingParams(bid);
   let appId = getVideoBidParam(bid, 'appId');
   let bidfloor = getVideoBidParam(bid, 'bidfloor');
-  let topLocation = utils.getTopWindowLocation();
+  let topLocation = getTopWindowLocation(bidderRequest);
   let payload = {
     isPrebid: true,
     appId: appId,
@@ -294,8 +309,8 @@ function createVideoRequestData(bid, bidderRequest) {
 }
 
 function createBannerRequestData(bids, bidderRequest) {
-  let topLocation = utils.getTopWindowLocation();
-  let referrer = utils.getTopWindowReferrer();
+  let topLocation = getTopWindowLocation(bidderRequest);
+  let topReferrer = getTopWindowReferrer();
   let slots = bids.map(bid => {
     return {
       slot: bid.adUnitCode,
@@ -309,8 +324,8 @@ function createBannerRequestData(bids, bidderRequest) {
     page: topLocation.href,
     domain: topLocation.hostname,
     search: topLocation.search,
-    secure: topLocation.protocol === 'https:' ? 1 : 0,
-    referrer: referrer,
+    secure: topLocation.protocol.indexOf('https') === 0 ? 1 : 0,
+    referrer: topReferrer,
     ua: navigator.userAgent,
     deviceOs: getOsVersion(),
     isMobile: isMobile() ? 1 : 0,

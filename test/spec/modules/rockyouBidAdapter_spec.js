@@ -2,16 +2,16 @@ import { expect } from 'chai';
 import { spec, internals } from 'modules/rockyouBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
 
-describe('RockYouAdapter', () => {
+describe('RockYouAdapter', function () {
   const adapter = newBidder(spec);
 
-  describe('bid validator', () => {
-    it('rejects a bid that is missing the placementId', () => {
+  describe('bid validator', function () {
+    it('rejects a bid that is missing the placementId', function () {
       let testBid = {};
       expect(spec.isBidRequestValid(testBid)).to.be.false;
     });
 
-    it('accepts a bid with all the expected parameters', () => {
+    it('accepts a bid with all the expected parameters', function () {
       let testBid = {
         params: {
           placementId: 'f39ba81609'
@@ -22,7 +22,7 @@ describe('RockYouAdapter', () => {
     });
   });
 
-  describe('request builder', () => {
+  describe('request builder', function () {
     // Taken from the docs, so used as much as is valid
     const sampleBidRequest = {
       'bidder': 'tests',
@@ -43,7 +43,7 @@ describe('RockYouAdapter', () => {
       }
     };
 
-    it('successfully generates a URL', () => {
+    it('successfully generates a URL', function () {
       const placementId = 'ZZZPLACEMENTZZZ';
 
       let bidRequests = [
@@ -65,7 +65,7 @@ describe('RockYouAdapter', () => {
       expect(result.url).to.include('/servlet/rotator/' + placementId + '/0/vo?z=')
     });
 
-    it('uses the bidId id as the openRtb request ID', () => {
+    it('uses the bidId id as the openRtb request ID', function () {
       const bidId = '51ef8751f9aead';
 
       let bidRequests = [
@@ -84,7 +84,7 @@ describe('RockYouAdapter', () => {
       expect(payload.id).to.equal(bidId);
     });
 
-    it('generates the device payload as expected', () => {
+    it('generates the device payload as expected', function () {
       let bidRequests = [
         sampleBidRequest
       ];
@@ -103,7 +103,7 @@ describe('RockYouAdapter', () => {
       expect(userData).to.not.be.null;
     });
 
-    it('generates multiple requests with single imp bodies', () => {
+    it('generates multiple requests with single imp bodies', function () {
       const SECOND_PLACEMENT_ID = 'YYYPLACEMENTIDYYY';
       let firstBidRequest = JSON.parse(JSON.stringify(sampleBidRequest));
       let secondBidRequest = JSON.parse(JSON.stringify(sampleBidRequest));
@@ -146,7 +146,7 @@ describe('RockYouAdapter', () => {
       expect(secondRequest.url.indexOf(SECOND_PLACEMENT_ID)).to.be.gt(0);
     });
 
-    it('generates a banner request as expected', () => {
+    it('generates a banner request as expected', function () {
       // clone the sample for stability
       let localBidRequest = JSON.parse(JSON.stringify(sampleBidRequest));
 
@@ -172,7 +172,7 @@ describe('RockYouAdapter', () => {
       expect(bannerData.h).to.equal(50);
     });
 
-    it('generates a banner request using a singular adSize instead of an array', () => {
+    it('generates a banner request using a singular adSize instead of an array', function () {
       // clone the sample for stability
       let localBidRequest = JSON.parse(JSON.stringify(sampleBidRequest));
       localBidRequest.sizes = [320, 50];
@@ -200,7 +200,7 @@ describe('RockYouAdapter', () => {
       expect(bannerData.h).to.equal(50);
     });
 
-    it('fails gracefully on an invalid size', () => {
+    it('fails gracefully on an invalid size', function () {
       // clone the sample for stability
       let localBidRequest = JSON.parse(JSON.stringify(sampleBidRequest));
       localBidRequest.sizes = ['x', 'w'];
@@ -229,7 +229,7 @@ describe('RockYouAdapter', () => {
       expect(bannerData.h).to.equal(null);
     });
 
-    it('generates a video request as expected', () => {
+    it('generates a video request as expected', function () {
       // clone the sample for stability
       let localBidRequest = JSON.parse(JSON.stringify(sampleBidRequest));
 
@@ -259,7 +259,7 @@ describe('RockYouAdapter', () => {
       expect(videoData.h).to.equal(56);
     });
 
-    it('propagates the mediaTypes object in the built request', () => {
+    it('propagates the mediaTypes object in the built request', function () {
       let localBidRequest = JSON.parse(JSON.stringify(sampleBidRequest));
 
       localBidRequest.mediaTypes = { video: {} };
@@ -278,8 +278,8 @@ describe('RockYouAdapter', () => {
     });
   });
 
-  describe('response interpreter', () => {
-    it('returns an empty array when no bids present', () => {
+  describe('response interpreter', function () {
+    it('returns an empty array when no bids present', function () {
       // an empty JSON body indicates no ad was found
 
       let result = spec.interpretResponse({ body: '' }, {})
@@ -287,13 +287,13 @@ describe('RockYouAdapter', () => {
       expect(result).to.eql([]);
     });
 
-    it('gracefully fails when a non-JSON body is present', () => {
+    it('gracefully fails when a non-JSON body is present', function () {
       let result = spec.interpretResponse({ body: 'THIS IS NOT <JSON/>' }, {})
 
       expect(result).to.eql([]);
     });
 
-    it('returns a valid bid response on sucessful banner request', () => {
+    it('returns a valid bid response on sucessful banner request', function () {
       let incomingRequestId = 'XXtestingXX';
       let responsePrice = 3.14
 
@@ -365,7 +365,7 @@ describe('RockYouAdapter', () => {
       expect(processedBid.currency).to.equal(responseCurrency);
     });
 
-    it('returns an valid bid response on sucessful video request', () => {
+    it('returns an valid bid response on sucessful video request', function () {
       let incomingRequestId = 'XXtesting-275XX';
       let responsePrice = 6
 
@@ -438,7 +438,7 @@ describe('RockYouAdapter', () => {
       expect(processedBid.vastXml).to.equal(responseCreative);
     });
 
-    it('generates event callbacks as expected', () => {
+    it('generates event callbacks as expected', function () {
       let tally = {};
       let renderer = {
         handleVideoEvent: (eventObject) => {
@@ -466,7 +466,7 @@ describe('RockYouAdapter', () => {
       expect(tally['ended']).to.equal(2);
     });
 
-    it('generates a renderer that will hide on complete', () => {
+    it('generates a renderer that will hide on complete', function () {
       let elementName = 'test_element_id';
       let selector = `#${elementName}`;
 

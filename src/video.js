@@ -4,7 +4,7 @@ import { config } from '../src/config';
 import includes from 'core-js/library/fn/array/includes';
 
 const VIDEO_MEDIA_TYPE = 'video';
-const OUTSTREAM = 'outstream';
+export const OUTSTREAM = 'outstream';
 
 /**
  * Helper functions for working with video-enabled adUnits

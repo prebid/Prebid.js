@@ -5,23 +5,23 @@ let adaptermanager = require('src/adaptermanager');
 let events = require('src/events');
 let constants = require('src/constants.json');
 
-describe('adxcg analytics adapter', () => {
+describe('adxcg analytics adapter', function () {
   let xhr;
   let requests;
 
-  beforeEach(() => {
+  beforeEach(function () {
     xhr = sinon.useFakeXMLHttpRequest();
     requests = [];
     xhr.onCreate = request => requests.push(request);
     sinon.stub(events, 'getEvents').returns([]);
   });
 
-  afterEach(() => {
+  afterEach(function () {
     xhr.restore();
     events.getEvents.restore();
   });
 
-  describe('track', () => {
+  describe('track', function () {
     let initOptions = {
       publisherId: '42'
     };
@@ -164,18 +164,18 @@ describe('adxcg analytics adapter', () => {
       adapter: adxcgAnalyticsAdapter
     });
 
-    beforeEach(() => {
+    beforeEach(function () {
       adaptermanager.enableAnalytics({
         provider: 'adxcg',
         options: initOptions
       });
     });
 
-    afterEach(() => {
+    afterEach(function () {
       adxcgAnalyticsAdapter.disableAnalytics();
     });
 
-    it('builds and sends auction data', () => {
+    it('builds and sends auction data', function () {
       // Step 1: Send auction init event
       events.emit(constants.EVENTS.AUCTION_INIT, {
         timestamp: auctionTimestamp

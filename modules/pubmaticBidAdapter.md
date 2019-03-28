@@ -33,8 +33,8 @@ var adUnits = [
         kadpageurl: 'www.test.com',          // optional							
         gender: 'M',                         // optional
         kadfloor: '0.50',                    // optional
-        currency: 'AUD'                      // optional
-        dctr: 'key1=123|key2=345'            // optional
+        currency: 'AUD'                      // optional (Value configured only in the 1st adunit will be passed on. < br/> Values if present in subsequent adunits, will be ignored.)
+        dctr: 'key1=123|key2=345'            // optional (Value configured only in the 1st adunit will be passed on. < br/> Values if present in subsequent adunits, will be ignored.)
       }
     }]
 }];

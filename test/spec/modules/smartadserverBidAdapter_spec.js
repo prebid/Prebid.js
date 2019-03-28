@@ -14,7 +14,7 @@ import * as utils from 'src/utils';
 import { requestBidsHook } from 'modules/consentManagement';
 
 // Default params with optional ones
-describe('Smart bid adapter tests', () => {
+describe('Smart bid adapter tests', function () {
   var DEFAULT_PARAMS = [{
     adUnitCode: 'sas_42',
     bidId: 'abcd1234',
@@ -71,7 +71,7 @@ describe('Smart bid adapter tests', () => {
     }
   };
 
-  it('Verify build request', () => {
+  it('Verify build request', function () {
     config.setConfig({
       'currency': {
         'adServerCurrency': 'EUR'
@@ -100,13 +100,13 @@ describe('Smart bid adapter tests', () => {
     expect(requestContent).to.have.property('ckid').and.to.equal(42);
   });
 
-  describe('gdpr tests', () => {
-    afterEach(() => {
+  describe('gdpr tests', function () {
+    afterEach(function () {
       config.resetConfig();
       $$PREBID_GLOBAL$$.requestBids.removeHook(requestBidsHook);
     });
 
-    it('Verify build request with GDPR', () => {
+    it('Verify build request with GDPR', function () {
       config.setConfig({
         'currency': {
           'adServerCurrency': 'EUR'
@@ -129,7 +129,7 @@ describe('Smart bid adapter tests', () => {
       expect(requestContent).to.have.property('gdpr_consent').and.to.equal('BOKAVy4OKAVy4ABAB8AAAAAZ+A==');
     });
 
-    it('Verify build request with GDPR without gdprApplies', () => {
+    it('Verify build request with GDPR without gdprApplies', function () {
       config.setConfig({
         'currency': {
           'adServerCurrency': 'EUR'
@@ -152,7 +152,7 @@ describe('Smart bid adapter tests', () => {
     });
   });
 
-  it('Verify parse response', () => {
+  it('Verify parse response', function () {
     const request = spec.buildRequests(DEFAULT_PARAMS);
     const bids = spec.interpretResponse(BID_RESPONSE, request[0]);
     expect(bids).to.have.lengthOf(1);
@@ -176,16 +176,16 @@ describe('Smart bid adapter tests', () => {
     }).to.not.throw();
   });
 
-  it('Verifies bidder code', () => {
+  it('Verifies bidder code', function () {
     expect(spec.code).to.equal('smartadserver');
   });
 
-  it('Verifies bidder aliases', () => {
+  it('Verifies bidder aliases', function () {
     expect(spec.aliases).to.have.lengthOf(1);
     expect(spec.aliases[0]).to.equal('smart');
   });
 
-  it('Verifies if bid request valid', () => {
+  it('Verifies if bid request valid', function () {
     expect(spec.isBidRequestValid(DEFAULT_PARAMS[0])).to.equal(true);
     expect(spec.isBidRequestValid(DEFAULT_PARAMS_WO_OPTIONAL[0])).to.equal(true);
     expect(spec.isBidRequestValid({})).to.equal(false);
@@ -243,7 +243,7 @@ describe('Smart bid adapter tests', () => {
     })).to.equal(false);
   });
 
-  it('Verifies user sync', () => {
+  it('Verifies user sync', function () {
     var syncs = spec.getUserSyncs({
       iframeEnabled: true
     }, [BID_RESPONSE]);

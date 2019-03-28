@@ -64,10 +64,10 @@ describe('nanointeractive adapter tests', function () {
     };
   }
 
-  describe('NanoAdapter', () => {
+  describe('NanoAdapter', function () {
     let nanoBidAdapter = spec;
 
-    describe('Methods', () => {
+    describe('Methods', function () {
       it('Test isBidRequestValid() with valid param(s): pid', function () {
         expect(nanoBidAdapter.isBidRequestValid(getBidRequest({
           [DATA_PARTNER_PIXEL_ID]: DATA_PARTNER_PIXEL_ID_VALUE,

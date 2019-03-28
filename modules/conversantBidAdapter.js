@@ -62,7 +62,7 @@ export const spec = {
       siteId = utils.getBidIdParameter('site_id', bid.params);
       requestId = bid.auctionId;
 
-      const format = convertSizes(bid.sizes);
+      let format = convertSizes(bid.sizes);
 
       const imp = {
         id: bid.bidId,
@@ -75,6 +75,10 @@ export const spec = {
       copyOptProperty(bid.params, 'tag_id', imp, 'tagid');
 
       if (isVideoRequest(bid)) {
+        if (bid.mediaTypes.video.playerSize) {
+          format = convertSizes(bid.mediaTypes.video.playerSize);
+        }
+
         const video = {
           w: format[0].w,
           h: format[0].h

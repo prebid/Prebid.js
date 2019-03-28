@@ -2,16 +2,16 @@ import {expect} from 'chai';
 import {spec} from 'modules/somoaudienceBidAdapter';
 import * as utils from 'src/utils';
 
-describe('Somo Audience Adapter Tests', () => {
-  describe('isBidRequestValid', () => {
-    it('should return false when given an invalid bid', () => {
+describe('Somo Audience Adapter Tests', function () {
+  describe('isBidRequestValid', function () {
+    it('should return false when given an invalid bid', function () {
       const bid = {
         bidder: 'somoaudience',
       };
       const isValid = spec.isBidRequestValid(bid);
       expect(isValid).to.equal(false);
     });
-    it('should return true when given a placementId bid', () => {
+    it('should return true when given a placementId bid', function () {
       const bid = {
         bidder: 'somoaudience',
         params: {
@@ -23,9 +23,9 @@ describe('Somo Audience Adapter Tests', () => {
     });
   });
 
-  describe('buildRequests', () => {
-    describe('buildBannerRequests', () => {
-      it('should properly build a banner request with type not defined and sizes not defined', () => {
+  describe('buildRequests', function () {
+    describe('buildBannerRequests', function () {
+      it('should properly build a banner request with type not defined and sizes not defined', function () {
         const bidRequests = [{
           bidder: 'somoaudience',
           params: {
@@ -47,7 +47,7 @@ describe('Somo Audience Adapter Tests', () => {
         expect(ortbRequest.imp[0].banner).to.not.equal(null);
       });
 
-      it('should properly build a banner request with sizes defined in 2d array', () => {
+      it('should properly build a banner request with sizes defined in 2d array', function () {
         const bidRequests = [{
           bidder: 'somoaudience',
           sizes: [[300, 250]],
@@ -69,7 +69,7 @@ describe('Somo Audience Adapter Tests', () => {
         expect(ortbRequest.imp[0].banner.w).to.equal(300);
         expect(ortbRequest.imp[0].banner.h).to.equal(250);
       });
-      it('should properly build a banner request with sizes defined in 1d array', () => {
+      it('should properly build a banner request with sizes defined in 1d array', function () {
         const bidRequests = [{
           bidder: 'somoaudience',
           sizes: [300, 250],
@@ -96,7 +96,7 @@ describe('Somo Audience Adapter Tests', () => {
         expect(ortbRequest.imp[0].banner.battr).to.equal(undefined);
       });
 
-      it('should populate optional banner parameters', () => {
+      it('should populate optional banner parameters', function () {
         const bidRequests = [
           {
             bidder: 'somoaudience',
@@ -125,8 +125,8 @@ describe('Somo Audience Adapter Tests', () => {
       });
     });
 
-    describe('buildVideoRequests', () => {
-      it('should properly build a video request with sizes defined', () => {
+    describe('buildVideoRequests', function () {
+      it('should properly build a video request with sizes defined', function () {
         const bidRequests = [{
           bidder: 'somoaudience',
           mediaTypes: {
@@ -149,7 +149,7 @@ describe('Somo Audience Adapter Tests', () => {
         expect(ortbRequest.imp[0].video.h).to.equal(300);
       });
 
-      it('should properly build a video request with sizes defined in 2d array', () => {
+      it('should properly build a video request with sizes defined in 2d array', function () {
         const bidRequests = [{
           bidder: 'somoaudience',
           mediaTypes: {
@@ -171,7 +171,7 @@ describe('Somo Audience Adapter Tests', () => {
         expect(ortbRequest.imp[0].video.w).to.equal(200);
         expect(ortbRequest.imp[0].video.h).to.equal(300);
       });
-      it('should properly build a video request with sizes not defined', () => {
+      it('should properly build a video request with sizes not defined', function () {
         const bidRequests = [{
           bidder: 'somoaudience',
           mediaType: 'video',
@@ -196,7 +196,7 @@ describe('Somo Audience Adapter Tests', () => {
         expect(ortbRequest.imp[0].video.battr).to.equal(undefined);
       });
 
-      it('should populate optional video parameters', () => {
+      it('should populate optional video parameters', function () {
         const bidRequests = [
           {
             bidder: 'somoaudience',
@@ -239,8 +239,8 @@ describe('Somo Audience Adapter Tests', () => {
       });
     });
 
-    describe('buildSiteRequests', () => {
-      it('should fill in basic site parameters', () => {
+    describe('buildSiteRequests', function () {
+      it('should fill in basic site parameters', function () {
         const bidRequests = [{
           bidder: 'somoaudience',
           params: {
@@ -256,7 +256,7 @@ describe('Somo Audience Adapter Tests', () => {
         expect(ortbRequest.site.domain).to.not.be.undefined;
       });
 
-      it('should fill in optional site parameters', () => {
+      it('should fill in optional site parameters', function () {
         const bidRequests = [{
           bidder: 'somoaudience',
           params: {
@@ -282,8 +282,8 @@ describe('Somo Audience Adapter Tests', () => {
       })
     });
 
-    describe('buildAppRequests', () => {
-      it('should fill in app parameters', () => {
+    describe('buildAppRequests', function () {
+      it('should fill in app parameters', function () {
         const bidRequests = [{
           bidder: 'somoaudience',
           params: {
@@ -315,7 +315,7 @@ describe('Somo Audience Adapter Tests', () => {
       });
     });
 
-    describe('buildGDPRRequests', () => {
+    describe('buildGDPRRequests', function () {
       const bidderRequest = {
         gdprConsent: {
           gdprApplies: true,
@@ -323,7 +323,7 @@ describe('Somo Audience Adapter Tests', () => {
         },
       };
 
-      it('should properly build request with gdpr consent', () => {
+      it('should properly build request with gdpr consent', function () {
         const bidRequests = [{
           bidder: 'somoaudience',
           params: {
@@ -339,7 +339,7 @@ describe('Somo Audience Adapter Tests', () => {
         expect(ortbRequest.user.ext).to.not.equal(undefined);
         expect(ortbRequest.user.ext.consent).to.equal('test');
       });
-      it('should properly build request with gdpr not applies', () => {
+      it('should properly build request with gdpr not applies', function () {
         bidderRequest.gdprConsent.gdprApplies = false;
         const bidRequests = [{
           bidder: 'somoaudience',
@@ -358,8 +358,8 @@ describe('Somo Audience Adapter Tests', () => {
       });
     });
 
-    describe('buildExtraArgsRequests', () => {
-      it('should populate optional parameters', () => {
+    describe('buildExtraArgsRequests', function () {
+      it('should populate optional parameters', function () {
         const bidRequests = [
           {
             bidder: 'somoaudience',
@@ -385,8 +385,8 @@ describe('Somo Audience Adapter Tests', () => {
     });
   });
 
-  describe('interpretResponse', () => {
-    it('Verify banner parse response', () => {
+  describe('interpretResponse', function () {
+    it('Verify banner parse response', function () {
       const bidRequests = [
         {
           bidder: 'somoaudience',
@@ -414,7 +414,7 @@ describe('Somo Audience Adapter Tests', () => {
       expect(bid.ad).to.equal('Somo Test Ad');
     });
 
-    it('Verify video parse response', () => {
+    it('Verify video parse response', function () {
       const bidRequests = [
         {
           bidder: 'somoaudience',
@@ -447,8 +447,8 @@ describe('Somo Audience Adapter Tests', () => {
     });
   });
 
-  describe('user sync', () => {
-    it('should register the pixel sync url', () => {
+  describe('user sync', function () {
+    it('should register the pixel sync url', function () {
       let syncs = spec.getUserSyncs({
         pixelEnabled: true
       });
@@ -457,7 +457,7 @@ describe('Somo Audience Adapter Tests', () => {
       expect(syncs[0].type).to.equal('image');
     });
 
-    it('should pass gdpr params', () => {
+    it('should pass gdpr params', function () {
       let syncs = spec.getUserSyncs({ pixelEnabled: true }, {}, {
         gdprApplies: false, consentString: 'test'
       });
@@ -467,7 +467,7 @@ describe('Somo Audience Adapter Tests', () => {
       expect(syncs[0].url).to.contains('gdpr=0');
     });
 
-    it('should pass gdpr applies params', () => {
+    it('should pass gdpr applies params', function () {
       let syncs = spec.getUserSyncs({ pixelEnabled: true }, {}, {
         gdprApplies: true, consentString: 'test'
       });

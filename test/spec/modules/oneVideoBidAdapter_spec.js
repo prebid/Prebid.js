@@ -1,11 +1,14 @@
 import { expect } from 'chai';
 import { spec } from 'modules/oneVideoBidAdapter';
 import * as utils from 'src/utils';
+import {config} from 'src/config';
 
-describe('OneVideoBidAdapter', () => {
+describe('OneVideoBidAdapter', function () {
   let bidRequest;
+  let bidderRequest;
+  let mockConfig;
 
-  beforeEach(() => {
+  beforeEach(function () {
     bidRequest = {
       bidder: 'oneVideo',
       sizes: [640, 480],
@@ -30,19 +33,19 @@ describe('OneVideoBidAdapter', () => {
     };
   });
 
-  describe('spec.isBidRequestValid', () => {
-    it('should return true when the required params are passed', () => {
+  describe('spec.isBidRequestValid', function () {
+    it('should return true when the required params are passed', function () {
       expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
     });
 
-    it('should return false when the "video" param is missing', () => {
+    it('should return false when the "video" param is missing', function () {
       bidRequest.params = {
         pubId: 'brxd'
       };
       expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
     });
 
-    it('should return false when the "pubId" param is missing', () => {
+    it('should return false when the "pubId" param is missing', function () {
       bidRequest.params = {
         video: {
           playerWidth: 480,
@@ -57,25 +60,25 @@ describe('OneVideoBidAdapter', () => {
       expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
     });
 
-    it('should return false when no bid params are passed', () => {
+    it('should return false when no bid params are passed', function () {
       bidRequest.params = {};
       expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
     });
   });
 
-  describe('spec.buildRequests', () => {
-    it('should create a POST request for every bid', () => {
+  describe('spec.buildRequests', function () {
+    it('should create a POST request for every bid', function () {
       const requests = spec.buildRequests([ bidRequest ]);
       expect(requests[0].method).to.equal('POST');
       expect(requests[0].url).to.equal(location.protocol + spec.ENDPOINT + bidRequest.params.pubId);
     });
 
-    it('should attach the bid request object', () => {
+    it('should attach the bid request object', function () {
       const requests = spec.buildRequests([ bidRequest ]);
       expect(requests[0].bidRequest).to.equal(bidRequest);
     });
 
-    it('should attach request data', () => {
+    it('should attach request data', function () {
       const requests = spec.buildRequests([ bidRequest ]);
       const data = requests[0].data;
       const [ width, height ] = bidRequest.sizes;
@@ -84,7 +87,7 @@ describe('OneVideoBidAdapter', () => {
       expect(data.imp[0].bidfloor).to.equal(bidRequest.params.bidfloor);
     });
 
-    it('must parse bid size from a nested array', () => {
+    it('must parse bid size from a nested array', function () {
       const width = 640;
       const height = 480;
       bidRequest.sizes = [[ width, height ]];
@@ -95,25 +98,25 @@ describe('OneVideoBidAdapter', () => {
     });
   });
 
-  describe('spec.interpretResponse', () => {
-    it('should return no bids if the response is not valid', () => {
+  describe('spec.interpretResponse', function () {
+    it('should return no bids if the response is not valid', function () {
       const bidResponse = spec.interpretResponse({ body: null }, { bidRequest });
       expect(bidResponse.length).to.equal(0);
     });
 
-    it('should return no bids if the response "nurl" and "adm" are missing', () => {
+    it('should return no bids if the response "nurl" and "adm" are missing', function () {
       const serverResponse = {seatbid: [{bid: [{price: 6.01}]}]};
       const bidResponse = spec.interpretResponse({ body: serverResponse }, { bidRequest });
       expect(bidResponse.length).to.equal(0);
     });
 
-    it('should return no bids if the response "price" is missing', () => {
+    it('should return no bids if the response "price" is missing', function () {
       const serverResponse = {seatbid: [{bid: [{adm: '<VAST></VAST>'}]}]};
       const bidResponse = spec.interpretResponse({ body: serverResponse }, { bidRequest });
       expect(bidResponse.length).to.equal(0);
     });
 
-    it('should return a valid bid response with just "adm"', () => {
+    it('should return a valid bid response with just "adm"', function () {
       const serverResponse = {seatbid: [{bid: [{id: 1, price: 6.01, adm: '<VAST></VAST>'}]}], cur: 'USD'};
       const bidResponse = spec.interpretResponse({ body: serverResponse }, { bidRequest });
       let o = {
@@ -130,6 +133,35 @@ describe('OneVideoBidAdapter', () => {
         netRevenue: true
       };
       expect(bidResponse).to.deep.equal(o);
+    });
+  });
+
+  describe('when GDPR applies', function () {
+    beforeEach(function () {
+      bidderRequest = {
+        gdprConsent: {
+          consentString: 'test-gdpr-consent-string',
+          gdprApplies: true
+        }
+      };
+
+      mockConfig = {
+        consentManagement: {
+          cmpApi: 'iab',
+          timeout: 1111,
+          allowAuctionWithoutConsent: 'cancel'
+        }
+      };
+    });
+
+    it('should send a signal to specify that GDPR applies to this request', function () {
+      const request = spec.buildRequests([ bidRequest ], bidderRequest);
+      expect(request[0].data.regs.ext.gdpr).to.equal(1);
+    });
+
+    it('should send the consent string', function () {
+      const request = spec.buildRequests([ bidRequest ], bidderRequest);
+      expect(request[0].data.user.ext.consent).to.equal(bidderRequest.gdprConsent.consentString);
     });
   });
 });

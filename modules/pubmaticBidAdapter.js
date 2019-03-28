@@ -92,7 +92,7 @@ function _parseAdSlot(bid) {
   bid.params.adUnitIndex = '0';
   bid.params.width = 0;
   bid.params.height = 0;
-  var sizesArrayExists = (bid.hasOwnProperty('sizes') && utils.isArray(bid.sizes) && bid.sizes.length >= 1);
+  var sizesArrayExists = (bid.hasOwnProperty('sizes') && utils.isArray(bid.sizes) && bid.sizes.length >= 1) || (bid.hasOwnProperty('mediaTypes') && bid.mediaTypes.hasOwnProperty('banner') && bid.mediaTypes.banner.hasOwnProperty('sizes') && bid.mediaTypes.banner.sizes.length >= 1);
   bid.params.adSlot = _cleanSlot(bid.params.adSlot);
 
   var slot = bid.params.adSlot;
@@ -109,7 +109,7 @@ function _parseAdSlot(bid) {
       }
       bid.params.width = parseInt(splits[0]);
       bid.params.height = parseInt(splits[1]);
-      delete bid.sizes;
+      // delete bid.sizes;
     } else {
       if (!(sizesArrayExists)) {
         utils.logWarn('AdSlot Error: adSlot not in required format');
@@ -220,8 +220,8 @@ function _createImpressionObject(bid, conf) {
   var impObj = {};
   var bannerObj = {};
   var videoObj = {};
-  var sizes = bid.hasOwnProperty('sizes') ? bid.sizes : [];
-
+  // var sizes = bid.hasOwnProperty('sizes') ? bid.sizes : [];
+  var sizes = bid.hasOwnProperty('sizes') ? bid.sizes : bid.hasOwnProperty('mediaTypes') && bid.mediaTypes.hasOwnProperty('banner') && bid.mediaTypes.banner.hasOwnProperty('sizes') ? bid.mediaTypes.banner.sizes : [];
   impObj = {
     id: bid.bidId,
     tagid: bid.params.adUnit,
@@ -448,26 +448,30 @@ export const spec = {
     payload.site.domain = _getDomainFromURL(payload.site.page);
 
     // set dctr value in site.ext, if present in validBidRequests[0], else ignore
-    if (validBidRequests[0].params.hasOwnProperty('dctr')) {
-      dctr = validBidRequests[0].params.dctr;
-      if (utils.isStr(dctr) && dctr.length > 0) {
-        var arr = dctr.split('|');
-        dctr = '';
-        arr.forEach(val => {
-          dctr += (val.length > 0) ? (val.trim() + '|') : '';
-        });
-        dctrLen = dctr.length;
-        if (dctr.substring(dctrLen, dctrLen - 1) === '|') {
-          dctr = dctr.substring(0, dctrLen - 1);
+    if (dctrArr.length > 0) {
+      if (validBidRequests[0].params.hasOwnProperty('dctr')) {
+        dctr = validBidRequests[0].params.dctr;
+        if (utils.isStr(dctr) && dctr.length > 0) {
+          var arr = dctr.split('|');
+          dctr = '';
+          arr.forEach(val => {
+            dctr += (val.length > 0) ? (val.trim() + '|') : '';
+          });
+          dctrLen = dctr.length;
+          if (dctr.substring(dctrLen, dctrLen - 1) === '|') {
+            dctr = dctr.substring(0, dctrLen - 1);
+          }
+          payload.site.ext = {
+            key_val: dctr.trim()
+          }
+        } else {
+          utils.logWarn(BIDDER_CODE + ': Ignoring param : dctr with value : ' + dctr + ', expects string-value, found empty or non-string value');
         }
-        payload.site.ext = {
-          key_val: dctr.trim()
+        if (dctrArr.length > 1) {
+          utils.logWarn(BIDDER_CODE + ': dctr value found in more than 1 adunits. Value from 1st adunit will be picked. Ignoring values from subsequent adunits');
         }
       } else {
-        utils.logWarn(BIDDER_CODE + ': Ignoring param : dctr with value : ' + dctr + ', expects string-value, found empty or non-string value');
-      }
-      if (dctrArr.length > 1) {
-        utils.logWarn(BIDDER_CODE + ': dctr value found in more than 1 adunits. Value from 1st adunit will be picked. Ignoring values from subsequent adunits');
+        utils.logWarn(BIDDER_CODE + ': dctr value not found in 1st adunit, ignoring values from subsequent adunits');
       }
     } else {
       // Commenting out for prebid 1.21 release. Needs to be uncommented and changes from Prebid PR2941 to be pulled in.
