@@ -1537,6 +1537,77 @@ describe('PubMatic adapter', function () {
         expect(data.video.h).to.equal(bannerAndVideoBidRequests[0].mediaTypes.video.playerSize[1]);
       });
 
+      it('Request params - banner and video req in single adslot - should ignore banner imp if banner size is set to fluid and send video imp object', function () {
+        /* Adslot configured for banner and video.
+           banner size is set to [['fluid'], [300, 250]]
+           adslot specifies a size as 300x250
+           => banner imp object should have primary w and h set to 300 and 250. fluid is ignored
+        */
+        bannerAndVideoBidRequests[0].mediaTypes.banner.sizes = [['fluid'], [160, 600]];
+
+        let request = spec.buildRequests(bannerAndVideoBidRequests);
+        let data = JSON.parse(request.data);
+        data = data.imp[0];
+
+        expect(data.banner).to.exist;
+        expect(data.banner.w).to.equal(300);
+        expect(data.banner.h).to.equal(250);
+        expect(data.banner.format).to.exist;
+        expect(data.banner.format[0].w).to.equal(160);
+        expect(data.banner.format[0].h).to.equal(600);
+
+        /* Adslot configured for banner and video.
+           banner size is set to [['fluid'], [300, 250]]
+           adslot does not specify any size
+           => banner imp object should have primary w and h set to 300 and 250. fluid is ignored
+        */
+        bannerAndVideoBidRequests[0].mediaTypes.banner.sizes = [['fluid'], [160, 600]];
+        bannerAndVideoBidRequests[0].params.adSlot = '/15671365/DMDemo';
+
+        request = spec.buildRequests(bannerAndVideoBidRequests);
+        data = JSON.parse(request.data);
+        data = data.imp[0];
+
+        expect(data.banner).to.exist;
+        expect(data.banner.w).to.equal(160);
+        expect(data.banner.h).to.equal(600);
+        expect(data.banner.format).to.not.exist;
+
+        /* Adslot configured for banner and video.
+           banner size is set to [[728 90], ['fluid'], [300, 250]]
+           adslot does not specify any size
+           => banner imp object should have primary w and h set to 728 and 90.
+              banner.format should have 300, 250 set in it
+              fluid is ignore
+        */
+
+        bannerAndVideoBidRequests[0].mediaTypes.banner.sizes = [[728, 90], ['fluid'], [300, 250]];
+        request = spec.buildRequests(bannerAndVideoBidRequests);
+        data = JSON.parse(request.data);
+        data = data.imp[0];
+
+        expect(data.banner).to.exist;
+        expect(data.banner.w).to.equal(728);
+        expect(data.banner.h).to.equal(90);
+        expect(data.banner.format).to.exist;
+        expect(data.banner.format[0].w).to.equal(300);
+        expect(data.banner.format[0].h).to.equal(250);
+
+        /* Adslot configured for banner and video.
+           banner size is set to [['fluid']]
+           adslot does not specify any size
+           => banner object should not be sent in the request. only video should be sent.
+        */
+
+        bannerAndVideoBidRequests[0].mediaTypes.banner.sizes = [['fluid']];
+        request = spec.buildRequests(bannerAndVideoBidRequests);
+        data = JSON.parse(request.data);
+        data = data.imp[0];
+
+        expect(data.banner).to.not.exist;
+        expect(data.video).to.exist;
+      });
+
       it('Request params - should not contain banner imp if mediaTypes.banner is not present and sizes is specified in bid.sizes', function() {
         delete bannerAndVideoBidRequests[0].mediaTypes.banner;
         bannerAndVideoBidRequests[0].params.sizes = [300, 250];
