@@ -62,6 +62,11 @@ describe('AppNexusAdapter', function () {
           'placementId': '10433394'
         },
         'adUnitCode': 'adunit-code',
+        'mediaTypes': {
+          'banner': {
+            'sizes': [[300, 250], [300, 600]]
+          }
+        },
         'sizes': [[300, 250], [300, 600]],
         'bidId': '30b31c1838de1e',
         'bidderRequestId': '22edbae2733bf6',
@@ -443,11 +448,15 @@ describe('AppNexusAdapter', function () {
       });
     });
 
-    it('should always populated tags[].sizes with 1,1 for native if otherwise not defined', function () {
+    it('should always populate tags[].sizes with 1,1 for native', function () {
       let bidRequest = Object.assign({},
         bidRequests[0],
         {
-          mediaType: 'native',
+          mediaTypes: {
+            native: {
+              image: { required: true }
+            }
+          },
           nativeParams: {
             image: { required: true }
           }
@@ -457,7 +466,7 @@ describe('AppNexusAdapter', function () {
 
       let request = spec.buildRequests([bidRequest]);
       let payload = JSON.parse(request.data);
-      expect(payload.tags[0].sizes).to.deep.equal([{width: 150, height: 100}, {width: 300, height: 250}]);
+      expect(payload.tags[0].sizes).to.deep.equal([{width: 1, height: 1}]);
 
       delete bidRequest.sizes;
 
@@ -465,6 +474,54 @@ describe('AppNexusAdapter', function () {
       payload = JSON.parse(request.data);
 
       expect(payload.tags[0].sizes).to.deep.equal([{width: 1, height: 1}]);
+    });
+
+    it('should always populate tags[].sizes with playerSize or 1,1 for video', function() {
+      let bidRequest = Object.assign({},
+        bidRequests[0],
+        {
+          mediaTypes: {
+            video: {
+              context: 'instream',
+              playerSize: [600, 400]
+            }
+          }
+        }
+      );
+
+      let request = spec.buildRequests([bidRequest]);
+      let payload = JSON.parse(request.data);
+      expect(payload.tags[0].sizes).to.deep.equal([{width: 600, height: 400}]);
+
+      delete bidRequest.mediaTypes.video.playerSize;
+      request = spec.buildRequests([bidRequest]);
+      payload = JSON.parse(request.data);
+      expect(payload.tags[0].sizes).to.deep.equal([{width: 1, height: 1}]);
+    });
+
+    it('should generate distinct tag objects when bidRequest has multiple mediaTypes', function() {
+      let bidRequest = Object.assign({},
+        bidRequests[0],
+        {
+          mediaTypes: {
+            banner: {
+              sizes: [[300, 250], [300, 600]]
+            },
+            video: {
+              context: 'outstream',
+              playerSize: [600, 400]
+            }
+          }
+        }
+      );
+
+      let request = spec.buildRequests([bidRequest]);
+      let payload = JSON.parse(request.data);
+      expect(payload.tags.length).to.equal(2);
+      expect(payload.tags[0].sizes).to.deep.equal([{width: 300, height: 250}, {width: 300, height: 600}]);
+      expect(payload.tags[0].ad_types).to.deep.equal(['banner']);
+      expect(payload.tags[1].sizes).to.deep.equal([{width: 600, height: 400}]);
+      expect(payload.tags[1].ad_types).to.deep.equal(['video']);
     });
 
     it('should convert keyword params to proper form and attaches to request', function () {
