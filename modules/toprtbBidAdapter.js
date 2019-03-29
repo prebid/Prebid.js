@@ -1,7 +1,7 @@
 import * as utils from '../src/utils';
 import {registerBidder} from '../src/adapters/bidderFactory';
 const BIDDER_CODE = 'toprtb';
-const ENDPOINT_URL = 'http://192.168.1.5:6091/ssp/ReqAd?ref=www.google.com&adUnitId=';
+const ENDPOINT_URL = 'http://192.168.1.5:6091/ssp/rest/ReqAd?ref=www.google.com&hbid=1&adUnitId=';
 export const spec = {
   code: BIDDER_CODE,
 
@@ -31,7 +31,7 @@ export const spec = {
           cpm: response.cpm,
           width: response.width,
           height: response.height,
-          ad: response.mediadata + spec.addTrackingPixels(response.tracking),
+          ad: response.mediadata,
           ttl: response.ttl,
           creativeId: response.id,
           netRevenue: true,
@@ -41,18 +41,6 @@ export const spec = {
       }
     });
     return bidResponses;
-  },
-
-  addTrackingPixels: function (trackingPixels) {
-    var trackingPixelMarkup = '';
-    utils._each(trackingPixels, function (pixelURL) {
-      var trackingPixel = '<img height="0" width="0" border="0" style="display:none;" src="';
-      trackingPixel += pixelURL;
-      trackingPixel += '"/>';
-
-      trackingPixelMarkup += trackingPixel;
-    });
-    return trackingPixelMarkup;
   }
 };
 
