@@ -1,4 +1,6 @@
-import {appierAnalyticsAdapter, detectDevice} from 'modules/appierAnalyticsAdapter';
+import {
+  appierAnalyticsAdapter, ANALYTICS_VERSION, BIDDER_STATUS
+} from 'modules/appierAnalyticsAdapter';
 import {expect} from 'chai';
 import * as ajax from 'src/ajax';
 
@@ -15,198 +17,6 @@ const bidderCode = 'appier';
 const timeout = 2000;
 const auctionStart = Date.now();
 
-const MOCK_BIDS = {
-  'BID1': {
-    'auctionId': auctionId,
-    'adUnitCode': '/12345678/adunit_1',
-    'bidder': bidderCode,
-    'width': 300,
-    'height': 250,
-    'cpm': 0.59878,
-    'currency': 'USD',
-    'originalCpm': 18.26179,
-    'originalCurrency': 'TWD',
-    'ad': '<html lang="en"></html>',
-    'responseTimestamp': auctionStart,
-    'requestTimestamp': auctionStart + 600,
-    'timeToRespond': 600
-  },
-  'BID1_ADJUSTMENT': {
-    'cpm': 0.61590,
-    'currency': 'USD',
-    'originalCpm': 18.26179,
-    'originalCurrency': 'TWD',
-  },
-  'BID1_TIMEOUT': {
-    'cpm': 0.43125,
-    'currency': 'USD',
-    'originalCpm': 13.15313,
-    'originalCurrency': 'TWD',
-    'timeToRespond': 2200
-  },
-  'BID2': {
-    'adUnitCode': '/12345678/adunit_2',
-    'cpm': 0.43125,
-    'currency': 'USD',
-    'originalCpm': 13.15313,
-    'originalCurrency': 'TWD',
-  }
-};
-
-const MOCK_EVENT = {
-  AUCTION_INIT: {
-    'auctionId': auctionId,
-    'timestamp': auctionStart,
-    'auctionStatus': 'inProgress',
-    'adUnits': [{
-      'code': '/12345678/adunit_1',
-      'bids': [{
-        'bidder': bidderCode,
-        'params': {
-          'hzid': hzid
-        }
-      }]
-    }, {
-      'code': '/12345678/adunit_2',
-      'bids': [{
-        'bidder': bidderCode,
-        'params': {
-          'hzid': hzid
-        }
-      }]
-    }
-    ],
-    'adUnitCodes': ['/12345678/adunit_1', '/12345678/adunit_2'],
-    'bidderRequests': [{
-      'bidderCode': bidderCode,
-      'auctionId': auctionId,
-      'bids': [{
-        'bidder': bidderCode,
-        'params': {
-          'hzid': hzid
-        },
-        'adUnitCode': '/12345678/adunit_1',
-        'auctionId': auctionId,
-      }, {
-        'bidder': bidderCode,
-        'params': {
-          'hzid': hzid
-        },
-        'adUnitCode': '/12345678/adunit_2',
-        'auctionId': auctionId,
-      }
-      ],
-      'timeout': timeout,
-    }
-    ],
-    'bidsReceived': [],
-    'winningBids': [],
-    'timeout': timeout
-  },
-  BID_REQUESTED: {
-    'bidder': bidderCode,
-    'auctionId': auctionId,
-    'bids': [
-      {
-        'bidder': bidderCode,
-        'params': {
-          'hzid': hzid
-        },
-        'adUnitCode': '/12345678/adunit_1',
-        'auctionId': auctionId
-      }, {
-        'bidder': bidderCode,
-        'params': {
-          'hzid': hzid
-        },
-        'adUnitCode': '/12345678/adunit_2',
-        'auctionId': auctionId
-      }
-    ],
-    'auctionStart': auctionStart,
-    'timeout': timeout,
-    'start': auctionStart + 50
-  },
-  BID_RESPONSE_REGULAR: [
-    MOCK_BIDS.BID1,
-    Object.assign({}, MOCK_BIDS.BID1, MOCK_BIDS.BID2)
-  ],
-  BID_RESPONSE_TIMEOUT: [
-    Object.assign({}, MOCK_BIDS.BID1, MOCK_BIDS.BID1_TIMEOUT)
-  ],
-  BID_ADJUSTMENT: [
-    Object.assign({}, MOCK_BIDS.BID1, MOCK_BIDS.BID1_ADJUSTMENT)
-  ],
-  AUCTION_END_REGULAR: {
-    'auctionId': auctionId,
-    'finish': auctionStart + 900,
-    'adUnits': [{
-      'code': '/12345678/adunit_1',
-      'bids': [{
-        'bidder': bidderCode,
-        'params': {
-          'hzid': hzid
-        }
-      }]
-    }, {
-      'code': '/12345678/adunit_2',
-      'bids': [{
-        'bidder': bidderCode,
-        'params': {
-          'hzid': hzid
-        }
-      }]
-    }],
-    'noBids': [],
-    'bidsReceived': [],
-  },
-  AUCTION_END_NOBID: {
-    'auctionId': auctionId,
-    'finish': auctionStart + 900,
-    'adUnits': [{
-      'code': '/12345678/adunit_1',
-      'bids': [{
-        'bidder': bidderCode,
-        'params': {
-          'hzid': hzid
-        }
-      }]
-    }
-    ],
-    'noBids': [{
-      'bidder': bidderCode,
-      'adUnitCode': '/12345678/adunit_2',
-    }],
-    'bidsReceived': [],
-  },
-  BID_WON: [
-    Object.assign({}, MOCK_BIDS.BID1, {
-      'status': 'rendered'
-    }),
-    Object.assign({}, MOCK_BIDS.BID2, {
-      'status': 'rendered'
-    })
-  ],
-  BIDDER_DONE: [{
-    'bidderCode': bidderCode,
-    'bids': [
-      MOCK_BIDS.BID1
-    ]
-  }, {
-    'bidderCode': bidderCode,
-    'bids': [
-      MOCK_BIDS.BID2
-    ]
-  }],
-  BID_TIMEOUT: [
-    {
-      'bidder': bidderCode,
-      'adUnitCode': '/12345678/adunit_2',
-      'auctionId': auctionId
-    }
-  ]
-};
-
 describe('Appier Prebid AnalyticsAdapter', function () {
   let requests;
   let cache;
@@ -215,6 +25,20 @@ describe('Appier Prebid AnalyticsAdapter', function () {
     let ajaxStub;
 
     beforeEach(function () {
+      const configOptions = {
+        affiliateId: affiliateId,
+        configId: configId,
+        server: serverUrl,
+        autoPick: autoPick,
+        sampling: 0,
+        adSampling: 1,
+      };
+
+      appierAnalyticsAdapter.enableAnalytics({
+        provider: 'appierAnalytics',
+        options: configOptions
+      });
+
       requests = [];
       sinon.stub(events, 'getEvents').returns([]);
 
@@ -231,297 +55,283 @@ describe('Appier Prebid AnalyticsAdapter', function () {
       ajaxStub.restore();
     });
 
-    it('should build message correctly for regular bids and prebid won', function () {
-      appierAnalyticsAdapter.enableAnalytics({
-        provider: 'appierAnalytics',
-        options: {
-          affiliateId: affiliateId,
-          configId: configId,
-          sampling: 1,
-          adSampling: 1
-        }
+    describe('#getCachedAuction()', function() {
+      const existing = {timeoutBids: [{}]};
+      appierAnalyticsAdapter.cachedAuctions['test_auction_id'] = existing;
+
+      it('should get the existing cached object if it exists', function() {
+        const result = appierAnalyticsAdapter.getCachedAuction('test_auction_id');
+
+        expect(Object.is(result, existing)).to.be.true;
       });
 
-      events.emit(constants.EVENTS.AUCTION_INIT, MOCK_EVENT.AUCTION_INIT);
-      events.emit(constants.EVENTS.BID_REQUESTED, MOCK_EVENT.BID_REQUESTED);
-      events.emit(constants.EVENTS.BID_RESPONSE, MOCK_EVENT.BID_RESPONSE_REGULAR[0]);
-      events.emit(constants.EVENTS.BID_RESPONSE, MOCK_EVENT.BID_RESPONSE_REGULAR[1]);
-      events.emit(constants.EVENTS.BIDDER_DONE, MOCK_EVENT.BIDDER_DONE[0]);
-      events.emit(constants.EVENTS.BIDDER_DONE, MOCK_EVENT.BIDDER_DONE[1]);
-      appierAnalyticsAdapter.handleAuctionEndMessage(MOCK_EVENT.AUCTION_END_REGULAR, [MOCK_BIDS.BID1]);
-      events.emit(constants.EVENTS.BID_WON, MOCK_EVENT.BID_WON[0]);
+      it('should create a new object and store it in the cache on cache miss', function() {
+        const result = appierAnalyticsAdapter.getCachedAuction('no_such_id');
 
-      cache = appierAnalyticsAdapter.getCache();
-
-      expect(cache[auctionId].header).to.include.all.keys(
-        ['eventId', 'version', 'affiliateId', 'configId', 'referrer', 'device',
-          'sampling', 'adSampling', 'prebid', 'timeout', 'start', 'finish']
-      );
-
-      expect(cache[auctionId].bids).to.deep.equal({
-        'adUnits': {
-          '/12345678/adunit_1': {
-            'appier': {
-              'status': 'bid',
-              'isTimeout': false,
-              'time': 600,
-              'cpm': 0.59878,
-              'currency': 'USD',
-              'cpmUsd': 0.59878,
-              'originalCpm': 18.26179,
-              'originalCurrency': 'TWD',
-              'prebidWon': true
-            }
-          },
-          '/12345678/adunit_2': {
-            'appier': {
-              'status': 'bid',
-              'isTimeout': false,
-              'time': 600,
-              'cpm': 0.43125,
-              'currency': 'USD',
-              'cpmUsd': 0.43125,
-              'originalCpm': 13.15313,
-              'originalCurrency': 'TWD',
-              'prebidWon': false,
-            }
-          }
-        }
-      });
-      expect(cache[auctionId].ads).to.deep.equal({
-        'adUnits': {
-          '/12345678/adunit_1': {
-            'appier': {
-              'ads': '<html lang="en"></html>'
-            }
-          },
-          '/12345678/adunit_2': {
-            'appier': {
-              'ads': '<html lang="en"></html>'
-            }
-          }
-        }
-      });
-      expect(cache[auctionId].bidsWon).to.deep.equal({
-        'adUnits': {
-          '/12345678/adunit_1': {
-            'appier': {
-              'time': 600,
-              'status': 'bidWon',
-              'cpm': 0.59878,
-              'currency': 'USD',
-              'originalCpm': 18.26179,
-              'originalCurrency': 'TWD',
-              'cpmUsd': 0.59878,
-              'isTimeout': false,
-              'prebidWon': true
-            }
-          }
-        }
+        expect(result).to.deep.include({
+          timeoutBids: []
+        });
       });
     });
 
-    it('should build message correctly for adjusted bids', function () {
-      appierAnalyticsAdapter.enableAnalytics({
-        provider: 'appierAnalytics',
-        options: {
+    describe('when formatting JSON payload sent to backend', function() {
+      const receivedBids = [
+        {
+          auctionId: auctionId,
+          adUnitCode: 'adunit_1',
+          bidder: 'appier',
+          bidderCode: 'appier',
+          requestId: 'a1b2c3d4',
+          timeToRespond: 72,
+          cpm: 0.1,
+          currency: 'USD',
+          originalCpm: 0.1,
+          originalCurrency: 'USD',
+          ad: '<html>fake ad1</html>'
+        },
+        {
+          auctionId: auctionId,
+          adUnitCode: 'adunit_1',
+          bidder: 'reippa',
+          bidderCode: 'reippa',
+          requestId: 'b2c3d4e5',
+          timeToRespond: 100,
+          cpm: 0.08,
+          currency: 'USD',
+          originalCpm: 0.08,
+          originalCurrency: 'USD',
+          ad: '<html>fake ad2</html>'
+        },
+        {
+          auctionId: auctionId,
+          adUnitCode: 'adunit_2',
+          bidder: 'appier',
+          bidderCode: 'appier',
+          requestId: 'c3d4e5f6',
+          timeToRespond: 120,
+          cpm: 0.09,
+          currency: 'USD',
+          originalCpm: 0.09,
+          originalCurrency: 'USD',
+          ad: '<html>fake ad3</html>'
+        },
+      ];
+      const highestCpmBids = [
+        {
+          auctionId: auctionId,
+          adUnitCode: 'adunit_1',
+          bidder: 'appier',
+          bidderCode: 'appier',
+          // No requestId
+          timeToRespond: 72,
+          cpm: 0.1,
+          currency: 'USD',
+          originalCpm: 0.1,
+          originalCurrency: 'USD',
+          ad: '<html>fake ad1</html>'
+        }
+      ];
+      const noBids = [
+        {
+          auctionId: auctionId,
+          adUnitCode: 'adunit_2',
+          bidder: 'appier',
+          bidderCode: 'appier',
+          bidId: 'a1b2c3d4',
+        }
+      ];
+      const timeoutBids = [
+        {
+          auctionId: auctionId,
+          adUnitCode: 'adunit_2',
+          bidder: 'reippa',
+          bidderCode: 'reippa',
+          bidId: '00123d4c',
+        }
+      ];
+
+      function assertHavingRequiredMessageFields(message) {
+        expect(message).to.include({
+          version: ANALYTICS_VERSION,
+          auctionId: auctionId,
           affiliateId: affiliateId,
           configId: configId,
-          sampling: 1,
-          adSampling: 1
-        }
+          // referrer: window.location.href,
+          sampling: 0,
+          adSampling: 1,
+          prebid: '$prebid.version$',
+          // autoPick: 'manual',
+        });
+      }
+
+      describe('#newCommonMessageBody', function() {
+        it('should correctly serialize some common fields', function() {
+          const message = appierAnalyticsAdapter.newCommonMessageBody(auctionId);
+
+          assertHavingRequiredMessageFields(message);
+        });
       });
 
-      events.emit(constants.EVENTS.AUCTION_INIT, MOCK_EVENT.AUCTION_INIT);
-      events.emit(constants.EVENTS.BID_REQUESTED, MOCK_EVENT.BID_REQUESTED);
-      events.emit(constants.EVENTS.BID_RESPONSE, MOCK_EVENT.BID_RESPONSE_REGULAR[0]);
-      events.emit(constants.EVENTS.BID_ADJUSTMENT, MOCK_EVENT.BID_ADJUSTMENT[0]);
-      events.emit(constants.EVENTS.BIDDER_DONE, MOCK_EVENT.BIDDER_DONE);
-      appierAnalyticsAdapter.handleAuctionEndMessage(MOCK_EVENT.AUCTION_END_REGULAR, []);
+      describe('#serializeBidResponse', function() {
 
-      cache = appierAnalyticsAdapter.getCache();
+        it('should handle BID properly and serialize bid price related fields', function() {
+          const result = appierAnalyticsAdapter.serializeBidResponse(receivedBids[0], BIDDER_STATUS.BID);
 
-      expect(cache[auctionId].bids).to.deep.equal({
-        'adUnits': {
-          '/12345678/adunit_1': {
-            'appier': {
-              'status': 'bid',
-              'isTimeout': false,
-              'time': 600,
-              'cpm': 0.61590,
-              'currency': 'USD',
-              'cpmUsd': 0.61590,
-              'originalCpm': 18.26179,
-              'originalCurrency': 'TWD',
-              'prebidWon': false
-            }
-          },
-          '/12345678/adunit_2': {
-            'appier': {
-              'status': 'requested',
-              'isTimeout': true,
-            }
-          }
-        }
-      });
-    });
+          expect(result).to.include({
+            prebidWon: false,
+            isTimeout: false,
+            status: BIDDER_STATUS.BID,
+            time: 72,
+            cpm: 0.1,
+            currency: 'USD',
+            originalCpm: 0.1,
+            originalCurrency: 'USD',
+            cpmUsd: 0.1,
+          });
+        });
 
-    it('should build message correctly for timeout bids and no-response bids', function () {
-      appierAnalyticsAdapter.enableAnalytics({
-        provider: 'appierAnalytics',
-        options: {
-          affiliateId: affiliateId,
-          configId: configId,
-          sampling: 1,
-          adSampling: 1
-        }
-      });
+        it('should handle NO_BID properly and set status to noBid', function() {
+          const result = appierAnalyticsAdapter.serializeBidResponse(noBids[0], BIDDER_STATUS.NO_BID);
 
-      events.emit(constants.EVENTS.AUCTION_INIT, MOCK_EVENT.AUCTION_INIT);
-      events.emit(constants.EVENTS.BID_REQUESTED, MOCK_EVENT.BID_REQUESTED);
-      events.emit(constants.EVENTS.BID_TIMEOUT, MOCK_EVENT.BID_TIMEOUT);
-      appierAnalyticsAdapter.handleAuctionEndMessage(MOCK_EVENT.AUCTION_END_REGULAR, []);
+          expect(result).to.include({
+            prebidWon: false,
+            isTimeout: false,
+            status: BIDDER_STATUS.NO_BID,
+          });
+        });
 
-      cache = appierAnalyticsAdapter.getCache();
+        it('should handle BID_WON properly and serialize bid price related fields', function() {
+          const result = appierAnalyticsAdapter.serializeBidResponse(receivedBids[0], BIDDER_STATUS.BID_WON);
 
-      expect(cache[auctionId].bids).to.deep.equal({
-        'adUnits': {
-          '/12345678/adunit_1': {
-            'appier': {
-              'status': 'requested',
-              'isTimeout': true
-            }
-          },
-          '/12345678/adunit_2': {
-            'appier': {
-              'status': 'timeout',
-              'isTimeout': true,
-            }
-          }
-        }
-      });
-    });
+          expect(result).to.include({
+            prebidWon: true,
+            isTimeout: false,
+            status: BIDDER_STATUS.BID_WON,
+            time: 72,
+            cpm: 0.1,
+            currency: 'USD',
+            originalCpm: 0.1,
+            originalCurrency: 'USD',
+            cpmUsd: 0.1,
+          });
+        });
 
-    it('should build message correctly for no-bids', function () {
-      appierAnalyticsAdapter.enableAnalytics({
-        provider: 'appierAnalytics',
-        options: {
-          affiliateId: affiliateId,
-          configId: configId,
-          sampling: 1,
-          adSampling: 1
-        }
+        it('should handle TIMEOUT properly and set status to timeout and isTimeout to true', function() {
+          const result = appierAnalyticsAdapter.serializeBidResponse(noBids[0], BIDDER_STATUS.TIMEOUT);
+
+          expect(result).to.include({
+            prebidWon: false,
+            isTimeout: true,
+            status: BIDDER_STATUS.TIMEOUT,
+          });
+        });
       });
 
-      events.emit(constants.EVENTS.AUCTION_INIT, MOCK_EVENT.AUCTION_INIT);
-      events.emit(constants.EVENTS.BID_REQUESTED, MOCK_EVENT.BID_REQUESTED);
-      appierAnalyticsAdapter.handleAuctionEndMessage(MOCK_EVENT.AUCTION_END_NOBID, []);
+      describe('#newAuctionMessageBody()', function() {
+        it('should format auction message sent to the backend', function() {
+          const args = {
+            auctionId: auctionId,
+            timestamp: 1234567890,
+            timeout: 3000,
+            auctionEnd: 1234567990,
+            adUnitCodes: ['adunit_1', 'adunit_2'],
+            bidsReceived: receivedBids,
+            noBids: noBids
+          };
 
-      cache = appierAnalyticsAdapter.getCache();
+          const result = appierAnalyticsAdapter.newAuctionMessageBody(args, highestCpmBids, timeoutBids);
 
-      expect(cache[auctionId].bids).to.deep.equal({
-        'adUnits': {
-          '/12345678/adunit_1': {
-            'appier': {
-              'status': 'requested',
-              'isTimeout': true
+          assertHavingRequiredMessageFields(result);
+          expect(result).to.deep.include({
+            auctionElapsed: 100,
+            timeout: 3000,
+            adUnits: {
+              'adunit_1': {
+                'appier': {
+                  prebidWon: true,
+                  isTimeout: false,
+                  status: BIDDER_STATUS.BID,
+                  time: 72,
+                  cpm: 0.1,
+                  currency: 'USD',
+                  originalCpm: 0.1,
+                  originalCurrency: 'USD',
+                  cpmUsd: 0.1,
+                },
+                'reippa': {
+                  prebidWon: false,
+                  isTimeout: false,
+                  status: BIDDER_STATUS.BID,
+                  time: 100,
+                  cpm: 0.08,
+                  currency: 'USD',
+                  originalCpm: 0.08,
+                  originalCurrency: 'USD',
+                  cpmUsd: 0.08,
+                }
+              },
+              'adunit_2': {
+                'appier': {
+                  prebidWon: false,
+                  isTimeout: false,
+                  status: BIDDER_STATUS.NO_BID,
+                },
+                'reippa': {
+                  prebidWon: false,
+                  isTimeout: true,
+                  status: BIDDER_STATUS.TIMEOUT,
+                }
+              }
             }
-          },
-          '/12345678/adunit_2': {
-            'appier': {
-              'status': 'noBid',
-              'isTimeout': false,
-            }
-          }
-        }
-      });
-    });
-
-    it('should build message correctly for delayed bid responses', function () {
-      appierAnalyticsAdapter.enableAnalytics({
-        provider: 'appierAnalytics',
-        options: {
-          affiliateId: affiliateId,
-          configId: configId,
-          sampling: 1,
-          adSampling: 1
-        }
-      });
-
-      events.emit(constants.EVENTS.AUCTION_INIT, MOCK_EVENT.AUCTION_INIT);
-      events.emit(constants.EVENTS.BID_REQUESTED, MOCK_EVENT.BID_REQUESTED);
-      events.emit(constants.EVENTS.BID_TIMEOUT, MOCK_EVENT.BID_TIMEOUT);
-      events.emit(constants.EVENTS.BID_RESPONSE, MOCK_EVENT.BID_RESPONSE_REGULAR[1]);
-      appierAnalyticsAdapter.handleAuctionEndMessage(MOCK_EVENT.AUCTION_END_NOBID, []);
-
-      cache = appierAnalyticsAdapter.getCache();
-
-      expect(cache[auctionId].bids).to.deep.equal({
-        'adUnits': {
-          '/12345678/adunit_1': {
-            'appier': {
-              'status': 'requested',
-              'isTimeout': true
-            }
-          },
-          '/12345678/adunit_2': {
-            'appier': {
-              'status': 'timeout',
-              'isTimeout': true,
-              'time': 600,
-              'cpm': 0.43125,
-              'currency': 'USD',
-              'cpmUsd': 0.43125,
-              'originalCpm': 13.15313,
-              'originalCurrency': 'TWD',
-              'prebidWon': false,
-            }
-          }
-        }
-      });
-    });
-
-    it('should build message correctly for bids after auction end', function () {
-      appierAnalyticsAdapter.enableAnalytics({
-        provider: 'appierAnalytics',
-        options: {
-          affiliateId: affiliateId,
-          configId: configId,
-          sampling: 1,
-          adSampling: 1
-        }
+          });
+        });
       });
 
-      events.emit(constants.EVENTS.AUCTION_INIT, MOCK_EVENT.AUCTION_INIT);
-      events.emit(constants.EVENTS.BID_REQUESTED, MOCK_EVENT.BID_REQUESTED);
-      appierAnalyticsAdapter.handleAuctionEndMessage(MOCK_EVENT.AUCTION_END_NOBID, []);
-      events.emit(constants.EVENTS.BID_RESPONSE, MOCK_EVENT.BID_RESPONSE_REGULAR[0]);
-      events.emit(constants.EVENTS.BIDDER_DONE, MOCK_EVENT.BIDDER_DONE[0]);
+      describe('#newImpressionMessageBody()', function() {
+        it('should format message sent to the backend with the bid result', function() {
+          const bid = receivedBids[0];
+          const result = appierAnalyticsAdapter.newImpressionMessageBody(bid);
 
-      cache = appierAnalyticsAdapter.getCache();
+          assertHavingRequiredMessageFields(result);
+          expect(result.adUnits).to.deep.include({
+            'adunit_1': {
+              'appier': {
+                prebidWon: true,
+                isTimeout: false,
+                status: BIDDER_STATUS.BID_WON,
+                time: 72,
+                cpm: 0.1,
+                currency: 'USD',
+                originalCpm: 0.1,
+                originalCurrency: 'USD',
+                cpmUsd: 0.1,
+              }
+            }
+          });
+        });
+      });
 
-      expect(cache[auctionId].bids).to.deep.equal({
-        'adUnits': {
-          '/12345678/adunit_1': {
-            'appier': {
-              'status': 'timeout',
-              'isTimeout': true,
-              'time': 600,
-              'cpm': 0.59878,
-              'currency': 'USD',
-              'cpmUsd': 0.59878,
-              'originalCpm': 18.26179,
-              'originalCurrency': 'TWD',
-              'prebidWon': false
+      describe('#newCreativeMessageBody()', function() {
+        it('should generate message sent to the backend with ad html grouped by adunit and bidder', function() {
+          const result = appierAnalyticsAdapter.newCreativeMessageBody(auctionId, receivedBids);
+
+          assertHavingRequiredMessageFields(result);
+          expect(result.adUnits).to.deep.include({
+            'adunit_1': {
+              'appier': {
+                ad: '<html>fake ad1</html>'
+              },
+              'reippa': {
+                ad: '<html>fake ad2</html>'
+              },
+            },
+            'adunit_2': {
+              'appier': {
+                ad: '<html>fake ad3</html>'
+              }
             }
-          },
-          '/12345678/adunit_2': {
-            'appier': {
-              'status': 'noBid',
-              'isTimeout': false,
-            }
-          }
-        }
+          });
+        });
       });
     });
   });
@@ -617,34 +427,6 @@ describe('Appier Prebid AnalyticsAdapter', function () {
 
       expect(appierAnalyticsAdapter.getAnalyticsOptions().sampled).to.equal(false);
       expect(appierAnalyticsAdapter.getAnalyticsOptions().adSampled).to.equal(true);
-    });
-  });
-
-  describe('device detector', function () {
-    it('should correctly parse user agents', function () {
-      const userAgentsDesktop = [
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.109 Safari/537.36',
-        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_3) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/12.0.3 Safari/605.1.15',
-        'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:65.0) Gecko/20100101 Firefox/65.0',
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/64.0.3282.140 Safari/537.36 Edge/18.17763',
-      ];
-      const userAgentsMobile = [
-        'Mozilla/5.0 (iPhone; CPU iPhone OS 11_2_6 like Mac OS X) AppleWebKit/604.5.6 (KHTML, like Gecko) Version/11.0 Mobile/15D100 Safari/604.1',
-        'Mozilla/5.0 (Linux; Android 6.0.1; SM-G532G Build/MMB29T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.83 Mobile Safari/537.36',
-      ];
-      const userAgentsTablet = [
-        'Mozilla/5.0 (iPad; CPU OS 9_3_5 like Mac OS X) AppleWebKit/601.1.46 (KHTML, like Gecko) Version/9.0 Mobile/13G36 Safari/601.1',
-      ];
-
-      for (let ua of userAgentsDesktop) {
-        expect(detectDevice(ua)).to.deep.equal('desktop');
-      }
-      for (let ua of userAgentsMobile) {
-        expect(detectDevice(ua)).to.deep.equal('mobile');
-      }
-      for (let ua of userAgentsTablet) {
-        expect(detectDevice(ua)).to.deep.equal('tablet');
-      }
     });
   });
 });
