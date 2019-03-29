@@ -448,7 +448,7 @@ describe('AppNexusAdapter', function () {
       });
     });
 
-    it('should always populate tags[].sizes with 1,1 for native', function () {
+    it('should populate tags[].sizes with 1x1 for native in most scenarios', function () {
       let bidRequest = Object.assign({},
         bidRequests[0],
         {
@@ -464,19 +464,28 @@ describe('AppNexusAdapter', function () {
       );
       bidRequest.sizes = [[150, 100], [300, 250]];
 
+      // set 1x1 by default regardless of base sizes in request object
       let request = spec.buildRequests([bidRequest]);
       let payload = JSON.parse(request.data);
       expect(payload.tags[0].sizes).to.deep.equal([{width: 1, height: 1}]);
 
+      // set 1x1 by default if no sizes are defined in request
       delete bidRequest.sizes;
-
       request = spec.buildRequests([bidRequest]);
       payload = JSON.parse(request.data);
 
       expect(payload.tags[0].sizes).to.deep.equal([{width: 1, height: 1}]);
+
+      // keep sizes when params.splitMultiFormat is false and sizes is populated
+      bidRequest.sizes = [[150, 100], [300, 250]];
+      bidRequest.params.splitMultiFormat = false;
+      request = spec.buildRequests([bidRequest]);
+      payload = JSON.parse(request.data);
+
+      expect(payload.tags[0].sizes).to.deep.equal([{width: 150, height: 100}, {width: 300, height: 250}]);
     });
 
-    it('should always populate tags[].sizes with playerSize or 1,1 for video', function() {
+    it('should populate tags[].sizes with playerSize or 1,1 for video', function () {
       let bidRequest = Object.assign({},
         bidRequests[0],
         {
@@ -485,6 +494,9 @@ describe('AppNexusAdapter', function () {
               context: 'instream',
               playerSize: [600, 400]
             }
+          },
+          params: {
+            splitMultiFormat: true
           }
         }
       );
@@ -499,7 +511,7 @@ describe('AppNexusAdapter', function () {
       expect(payload.tags[0].sizes).to.deep.equal([{width: 1, height: 1}]);
     });
 
-    it('should generate distinct tag objects when bidRequest has multiple mediaTypes', function() {
+    it('should generate distinct tag objects when bidRequest has multiple mediaTypes and splitMultiFormat is not false', function () {
       let bidRequest = Object.assign({},
         bidRequests[0],
         {
@@ -511,17 +523,48 @@ describe('AppNexusAdapter', function () {
               context: 'outstream',
               playerSize: [600, 400]
             }
+          },
+          params: {
+            splitMultiFormat: true
           }
         }
       );
 
       let request = spec.buildRequests([bidRequest]);
       let payload = JSON.parse(request.data);
+
       expect(payload.tags.length).to.equal(2);
       expect(payload.tags[0].sizes).to.deep.equal([{width: 300, height: 250}, {width: 300, height: 600}]);
       expect(payload.tags[0].ad_types).to.deep.equal(['banner']);
       expect(payload.tags[1].sizes).to.deep.equal([{width: 600, height: 400}]);
       expect(payload.tags[1].ad_types).to.deep.equal(['video']);
+    });
+
+    it('should not generate distinct tag object when bidRequest has multiple mediaTypes and splitMultiFormat is false', function () {
+      let bidRequest = Object.assign({},
+        bidRequests[0],
+        {
+          mediaTypes: {
+            banner: {
+              sizes: [[300, 250], [300, 600]]
+            },
+            video: {
+              context: 'outstream',
+              playerSize: [600, 400]
+            }
+          },
+          params: {
+            splitMultiFormat: false
+          }
+        }
+      );
+
+      let request = spec.buildRequests([bidRequest]);
+      let payload = JSON.parse(request.data);
+
+      expect(payload.tags.length).to.equal(1);
+      expect(payload.tags[0].sizes).to.deep.equal([{width: 300, height: 250}, {width: 300, height: 600}]);
+      expect(payload.tags[0].ad_types).to.deep.equal(['video', 'banner']);
     });
 
     it('should convert keyword params to proper form and attaches to request', function () {

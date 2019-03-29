@@ -61,7 +61,7 @@ export const spec = {
     const tags = [];
     bidRequests.forEach(bidRequest => {
       let mediaTypes = (utils.deepAccess(bidRequest, 'mediaTypes')) ? Object.keys(bidRequest.mediaTypes) : [];
-      if (mediaTypes.length > 1) {
+      if (bidRequest.params.splitMultiFormat !== false && mediaTypes.length > 1) {
         // make copies of the bidRequest, splitting it apart by the mediaTypes
         mediaTypes.forEach(mediaType => {
           let copyBidRequest = utils.deepClone(bidRequest);
@@ -523,8 +523,10 @@ function bidToTag(bid) {
 
   if (bid.mediaType === NATIVE || utils.deepAccess(bid, `mediaTypes.${NATIVE}`)) {
     tag.ad_types.push(NATIVE);
-    tag.sizes = transformSizes([1, 1]);
-    tag.primary_size = tag.sizes[0];
+    if (bid.params.splitMultiFormat !== false || (bid.params.splitMultiFormat === false && tag.sizes.length === 0)) {
+      tag.sizes = transformSizes([1, 1]);
+      tag.primary_size = tag.sizes[0];
+    }
 
     if (bid.nativeParams) {
       const nativeRequest = buildNativeRequest(bid.nativeParams);
@@ -536,13 +538,15 @@ function bidToTag(bid) {
   const context = utils.deepAccess(bid, 'mediaTypes.video.context');
 
   if (bid.mediaType === VIDEO || videoMediaType) {
-    let playerSize = utils.deepAccess(bid, 'mediaTypes.video.playerSize');
-    if (playerSize) {
-      tag.sizes = transformSizes(playerSize);
-    } else {
-      tag.sizes = transformSizes([1, 1]);
+    if (bid.params.splitMultiFormat !== false) {
+      let playerSize = utils.deepAccess(bid, 'mediaTypes.video.playerSize');
+      if (playerSize) {
+        tag.sizes = transformSizes(playerSize);
+      } else {
+        tag.sizes = transformSizes([1, 1]);
+      }
+      tag.primary_size = tag.sizes[0];
     }
-    tag.primary_size = tag.sizes[0];
 
     tag.ad_types.push(VIDEO);
   }
