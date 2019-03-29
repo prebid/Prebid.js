@@ -505,7 +505,12 @@ function setupBidTargeting(bidObject, bidderRequest) {
   bidObject.adserverTargeting = Object.assign(bidObject.adserverTargeting || {}, keyValues);
 }
 
-export function getStandardBidderSettings(mediaType) {
+/**
+ * @param {string} mediaType
+ * @param {string} bidderCode
+ * @returns {*}
+ */
+export function getStandardBidderSettings(mediaType, bidderCode) {
   // factory for key value objs
   function createKeyVal(key, value) {
     return {
@@ -565,7 +570,7 @@ export function getStandardBidderSettings(mediaType) {
     });
 
     // Adding hb_cache_host
-    if (config.getConfig('cache.url')) {
+    if (config.getConfig('cache.url') && utils.deepAccess(bidderSettings, `${bidderCode}.sendStandardTargeting`) !== false) {
       const urlInfo = parseURL(config.getConfig('cache.url'));
 
       if (typeof find(adserverTargeting, targetingKeyVal => targetingKeyVal.key === TARGETING_KEYS.CACHE_HOST) === 'undefined') {
@@ -590,7 +595,7 @@ export function getKeyValueTargetingPairs(bidderCode, custBidObj, bidReq) {
   // 1) set the keys from "standard" setting or from prebid defaults
   if (bidderSettings) {
     // initialize default if not set
-    const standardSettings = getStandardBidderSettings(custBidObj.mediaType);
+    const standardSettings = getStandardBidderSettings(custBidObj.mediaType, bidderCode);
     setKeys(keyValues, standardSettings, custBidObj);
 
     // 2) set keys from specific bidder setting override if they exist

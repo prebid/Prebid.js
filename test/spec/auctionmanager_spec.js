@@ -163,6 +163,8 @@ describe('auctionmanager.js', function () {
     it('No bidder level configuration defined - default', function () {
       $$PREBID_GLOBAL$$.bidderSettings = {};
       let expected = getDefaultExpected(bid);
+      // remove hb_cache_host from expected
+      delete expected.hb_cache_host;
       let response = getKeyValueTargetingPairs(bid.bidderCode, bid);
       assert.deepEqual(response, expected);
     });
