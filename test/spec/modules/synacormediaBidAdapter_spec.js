@@ -447,7 +447,7 @@ describe('synacormediaBidAdapter ', function () {
                 {
                   id: '11339128001692337~9999~0',
                   impid: 'v2da7322b2df61f-640x480',
-                  price: 0.44965476623267026,
+                  price: 0.45,
                   nurl: 'https://uat-net.technoratimedia.com/openrtb/tags?ID=QVVDVElPTl9JRD1lOTBhYWU1My1hZDkwLTRkNDEtYTQxMC1lZDY1MjIxMDc0ZGMmQVVDVElPTl9CSURfSUQ9MTEzMzkxMjgwMDE2OTIzMzd-OTk5OX4wJkFVQ1RJT05fU0VBVF9JRD05OTk5JkFVQ1RJT05fSU1QX0lEPXYyZGE3MzIyYjJkZjYxZi02NDB4NDgwJkFDVE9SX1JFRj1ha2thLnRjcDovL2F3cy1lYXN0MUBhZHMxMy5jYXAtdXNlMS5zeW5hY29yLmNvbToyNTUxL3VzZXIvJGNMYmZiIy0xOTk4NTIzNTk3JlNFQVRfSUQ9cHJlYmlk&AUCTION_PRICE=${AUCTION_PRICE}',
                   adm: '<?xml version="1.0" encoding="UTF-8"?>\n<VAST version="3.0">\n<Ad id="11339128001692337~9999~0">\n<Wrapper>\n<AdSystem>Synacor Media Ad Server - 9999</AdSystem>\n<VASTAdTagURI>https://uat-net.technoratimedia.com/openrtb/tags?ID=QVVDVElPTl9JRD1lOTBhYWU1My1hZDkwLTRkNDEtYTQxMC1lZDY1MjIxMDc0ZGMmQVVDVElPTl9CSURfSUQ9MTEzMzkxMjgwMDE2OTIzMzd-OTk5OX4wJkFVQ1RJT05fU0VBVF9JRD05OTk5JkFVQ1RJT05fSU1QX0lEPXYyZGE3MzIyYjJkZjYxZi02NDB4NDgwJkFDVE9SX1JFRj1ha2thLnRjcDovL2F3cy1lYXN0MUBhZHMxMy5jYXAtdXNlMS5zeW5hY29yLmNvbToyNTUxL3VzZXIvJGNMYmZiIy0xOTk4NTIzNTk3JlNFQVRfSUQ9cHJlYmlk&AUCTION_PRICE=${AUCTION_PRICE}</VASTAdTagURI>\n</Wrapper>\n</Ad>\n</VAST>',
                   adomain: [ 'psacentral.org' ],
@@ -468,17 +468,17 @@ describe('synacormediaBidAdapter ', function () {
       expect(resp[0]).to.eql({
         requestId: '2da7322b2df61f',
         adId: '11339128001692337-9999-0',
-        cpm: 0.44965476623267026,
+        cpm: 0.45,
         width: 640,
         height: 480,
         creativeId: '9999_bidder-cid',
         currency: 'USD',
         netRevenue: true,
         mediaType: 'video',
-        ad: '<?xml version="1.0" encoding="UTF-8"?>\n<VAST version="3.0">\n<Ad id="11339128001692337~9999~0">\n<Wrapper>\n<AdSystem>Synacor Media Ad Server - 9999</AdSystem>\n<VASTAdTagURI>https://uat-net.technoratimedia.com/openrtb/tags?ID=QVVDVElPTl9JRD1lOTBhYWU1My1hZDkwLTRkNDEtYTQxMC1lZDY1MjIxMDc0ZGMmQVVDVElPTl9CSURfSUQ9MTEzMzkxMjgwMDE2OTIzMzd-OTk5OX4wJkFVQ1RJT05fU0VBVF9JRD05OTk5JkFVQ1RJT05fSU1QX0lEPXYyZGE3MzIyYjJkZjYxZi02NDB4NDgwJkFDVE9SX1JFRj1ha2thLnRjcDovL2F3cy1lYXN0MUBhZHMxMy5jYXAtdXNlMS5zeW5hY29yLmNvbToyNTUxL3VzZXIvJGNMYmZiIy0xOTk4NTIzNTk3JlNFQVRfSUQ9cHJlYmlk&AUCTION_PRICE=0.44965476623267026</VASTAdTagURI>\n</Wrapper>\n</Ad>\n</VAST>',
+        ad: '<?xml version="1.0" encoding="UTF-8"?>\n<VAST version="3.0">\n<Ad id="11339128001692337~9999~0">\n<Wrapper>\n<AdSystem>Synacor Media Ad Server - 9999</AdSystem>\n<VASTAdTagURI>https://uat-net.technoratimedia.com/openrtb/tags?ID=QVVDVElPTl9JRD1lOTBhYWU1My1hZDkwLTRkNDEtYTQxMC1lZDY1MjIxMDc0ZGMmQVVDVElPTl9CSURfSUQ9MTEzMzkxMjgwMDE2OTIzMzd-OTk5OX4wJkFVQ1RJT05fU0VBVF9JRD05OTk5JkFVQ1RJT05fSU1QX0lEPXYyZGE3MzIyYjJkZjYxZi02NDB4NDgwJkFDVE9SX1JFRj1ha2thLnRjcDovL2F3cy1lYXN0MUBhZHMxMy5jYXAtdXNlMS5zeW5hY29yLmNvbToyNTUxL3VzZXIvJGNMYmZiIy0xOTk4NTIzNTk3JlNFQVRfSUQ9cHJlYmlk&AUCTION_PRICE=0.45</VASTAdTagURI>\n</Wrapper>\n</Ad>\n</VAST>',
         ttl: 60,
         videoCacheKey: 'QVVDVElPTl9JRD1lOTBhYWU1My1hZDkwLTRkNDEtYTQxMC1lZDY1MjIxMDc0ZGMmQVVDVElPTl9CSURfSUQ9MTEzMzkxMjgwMDE2OTIzMzd-OTk5OX4wJkFVQ1RJT05fU0VBVF9JRD05OTk5JkFVQ1RJT05fSU1QX0lEPXYyZGE3MzIyYjJkZjYxZi02NDB4NDgwJkFDVE9SX1JFRj1ha2thLnRjcDovL2F3cy1lYXN0MUBhZHMxMy5jYXAtdXNlMS5zeW5hY29yLmNvbToyNTUxL3VzZXIvJGNMYmZiIy0xOTk4NTIzNTk3JlNFQVRfSUQ9cHJlYmlk',
-        vastUrl: 'https://uat-net.technoratimedia.com/openrtb/tags?ID=QVVDVElPTl9JRD1lOTBhYWU1My1hZDkwLTRkNDEtYTQxMC1lZDY1MjIxMDc0ZGMmQVVDVElPTl9CSURfSUQ9MTEzMzkxMjgwMDE2OTIzMzd-OTk5OX4wJkFVQ1RJT05fU0VBVF9JRD05OTk5JkFVQ1RJT05fSU1QX0lEPXYyZGE3MzIyYjJkZjYxZi02NDB4NDgwJkFDVE9SX1JFRj1ha2thLnRjcDovL2F3cy1lYXN0MUBhZHMxMy5jYXAtdXNlMS5zeW5hY29yLmNvbToyNTUxL3VzZXIvJGNMYmZiIy0xOTk4NTIzNTk3JlNFQVRfSUQ9cHJlYmlk&AUCTION_PRICE=0.44965476623267026'
+        vastUrl: 'https://uat-net.technoratimedia.com/openrtb/tags?ID=QVVDVElPTl9JRD1lOTBhYWU1My1hZDkwLTRkNDEtYTQxMC1lZDY1MjIxMDc0ZGMmQVVDVElPTl9CSURfSUQ9MTEzMzkxMjgwMDE2OTIzMzd-OTk5OX4wJkFVQ1RJT05fU0VBVF9JRD05OTk5JkFVQ1RJT05fSU1QX0lEPXYyZGE3MzIyYjJkZjYxZi02NDB4NDgwJkFDVE9SX1JFRj1ha2thLnRjcDovL2F3cy1lYXN0MUBhZHMxMy5jYXAtdXNlMS5zeW5hY29yLmNvbToyNTUxL3VzZXIvJGNMYmZiIy0xOTk4NTIzNTk3JlNFQVRfSUQ9cHJlYmlk&AUCTION_PRICE=0.45'
       });
     });
 
