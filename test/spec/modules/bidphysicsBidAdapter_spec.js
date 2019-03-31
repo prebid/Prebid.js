@@ -135,7 +135,7 @@ const RESPONSE = {
 
 describe('BidPhysics bid adapter', function () {
   describe('isBidRequestValid', function () {
-    it('should accept valid bid requests', function () {
+    it('should accept request if only unitId is passed', function () {
       let bid = {
         bidder: 'bidphysics',
         params: {
@@ -144,7 +144,7 @@ describe('BidPhysics bid adapter', function () {
       };
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
-    it('should accept network without init id', function () {
+    it('should accept request if only networkId is passed', function () {
       let bid = {
         bidder: 'bidphysics',
         params: {
@@ -153,8 +153,17 @@ describe('BidPhysics bid adapter', function () {
       };
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
+    it('should accept request if only publisherId is passed', function () {
+      let bid = {
+        bidder: 'bidphysics',
+        params: {
+          publisherId: 'publisherId',
+        }
+      };
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
+    });
 
-    it('reject requests without unitId', function () {
+    it('reject requests without params', function () {
       let bid = {
         bidder: 'bidphysics',
         params: {}

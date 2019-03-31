@@ -14,13 +14,17 @@ export const spec = {
   supportedMediaTypes: [BANNER],
 
   isBidRequestValid: function (bid) {
-    return (!!bid.params.unitId && typeof bid.params.unitId === 'string') || (!!bid.params.networkId && typeof bid.params.networkId === 'string');
+    return (!!bid.params.unitId && typeof bid.params.unitId === 'string') ||
+      (!!bid.params.networkId && typeof bid.params.networkId === 'string') ||
+      (!!bid.params.publisherId && typeof bid.params.publisherId === 'string');
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
     if (!validBidRequests || !bidderRequest) {
       return;
     }
+    const publisherId = validBidRequests[0].params.publisherId;
+    const networkId = validBidRequests[0].params.networkId;
     const impressions = validBidRequests.map(bidRequest => ({
       id: bidRequest.bidId,
       banner: {
@@ -37,13 +41,19 @@ export const spec = {
     }));
 
     const openrtbRequest = {
-      'id': bidderRequest.auctionId,
-      'imp': impressions,
-      'site': {
-        'domain': window.location.hostname,
-        'page': window.location.href,
-        'ref': bidderRequest.refererInfo ? bidderRequest.refererInfo.referer || null : null// check http://prebid.org/dev-docs/bidder-adaptor.html#referrers
+      id: bidderRequest.auctionId,
+      imp: impressions,
+      site: {
+        domain: window.location.hostname,
+        page: window.location.href,
+        ref: bidderRequest.refererInfo ? bidderRequest.refererInfo.referer || null : null
       },
+      ext: {
+        bidphysics: {
+          publisherId: publisherId,
+          networkId: networkId,
+        }
+      }
     };
 
     // apply gdpr
