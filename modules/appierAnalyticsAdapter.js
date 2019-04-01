@@ -144,8 +144,16 @@ export const appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, ana
       message.adUnits[adUnitCode] = {};
     });
 
-    bidsReceived.forEach(bid => this.addBidResponseToMessage(message, bid, BIDDER_STATUS.BID));
+    // We handled noBids first because when currency conversion is enabled, a bid with a foreign currency
+    // will be set to NO_BID initially, and then set to BID after the currency rate json file is fully loaded.
+    // In this situation, the bid exists in both noBids and bids arrays.
     noBids.forEach(bid => this.addBidResponseToMessage(message, bid, BIDDER_STATUS.NO_BID));
+
+    // This array may contain some timeout bids (responses come back after auction timeout)
+    bidsReceived.forEach(bid => this.addBidResponseToMessage(message, bid, BIDDER_STATUS.BID));
+
+    // We handle timeout after bids since it's possible that a bid has a response, but the response comes back
+    // after auction end. In this case, the bid exists in both bidsReceived and timeoutBids arrays.
     timeoutBids.forEach(bid => this.addBidResponseToMessage(message, bid, BIDDER_STATUS.TIMEOUT));
 
     // mark the winning bids with prebidWon = true
