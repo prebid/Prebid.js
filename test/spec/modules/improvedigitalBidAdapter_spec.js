@@ -19,7 +19,8 @@ describe('Improve Digital Adapter Tests', function () {
     transactionId: 'f183e871-fbed-45f0-a427-c8a63c4c01eb',
     bidId: '33e9500b21129f',
     bidderRequestId: '2772c1e566670b',
-    auctionId: '192721e36a0239'
+    auctionId: '192721e36a0239',
+    sizes: [[300, 250], [160, 600], ['blah', 150], [-1, 300], [300, -5]]
   };
 
   const simpleSmartTagBidRequest = {
@@ -126,7 +127,7 @@ describe('Improve Digital Adapter Tests', function () {
       expect(params.bid_request.imp[0].kvw).to.deep.equal(keyValues);
     });
 
-    it('should add size', function () {
+    it('should add single size filter', function () {
       let bidRequest = Object.assign({}, simpleBidRequest);
       const size = {
         w: 800,
@@ -136,6 +137,9 @@ describe('Improve Digital Adapter Tests', function () {
       const request = spec.buildRequests([bidRequest])[0];
       const params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
       expect(params.bid_request.imp[0].banner).to.deep.equal(size);
+      // When single size filter is set, format shouldn't be populated. This
+      // is to maintain backward compatibily
+      expect(params.bid_request.imp[0].banner.format).to.not.exist;
     });
 
     it('should add currency', function () {
@@ -172,6 +176,40 @@ describe('Improve Digital Adapter Tests', function () {
       ]);
       expect(requests).to.be.an('array');
       expect(requests.length).to.equal(1);
+      getConfigStub.restore();
+    });
+
+    it('should set Prebid sizes in bid request', function () {
+      const getConfigStub = sinon.stub(config, 'getConfig');
+      getConfigStub.withArgs('improvedigital.usePrebidSizes').returns(true);
+      const request = spec.buildRequests([simpleBidRequest])[0];
+      const params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
+      expect(params.bid_request.imp[0].banner).to.deep.equal({
+        format: [
+          { w: 300, h: 250 },
+          { w: 160, h: 600 }
+        ]
+      });
+      getConfigStub.restore();
+    });
+
+    it('should not add single size filter when using Prebid sizes', function () {
+      const getConfigStub = sinon.stub(config, 'getConfig');
+      getConfigStub.withArgs('improvedigital.usePrebidSizes').returns(true);
+      const bidRequest = Object.assign({}, simpleBidRequest);
+      const size = {
+        w: 800,
+        h: 600
+      };
+      bidRequest.params.size = size;
+      const request = spec.buildRequests([bidRequest])[0];
+      const params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
+      expect(params.bid_request.imp[0].banner).to.deep.equal({
+        format: [
+          { w: 300, h: 250 },
+          { w: 160, h: 600 }
+        ]
+      });
       getConfigStub.restore();
     });
   });
