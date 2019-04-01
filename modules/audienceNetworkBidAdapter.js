@@ -3,7 +3,7 @@
  */
 import { registerBidder } from 'src/adapters/bidderFactory';
 import { formatQS } from 'src/url';
-import { generateUUID, getTopWindowUrl, isSafariBrowser, convertTypes } from 'src/utils';
+import { generateUUID, getTopWindowUrl, convertTypes } from 'src/utils';
 import findIndex from 'core-js/library/fn/array/find-index';
 import includes from 'core-js/library/fn/array/includes';
 
@@ -18,8 +18,7 @@ const ttl = 600;
 const videoTtl = 3600;
 const platver = '$prebid.version$';
 const platform = '2078522619030089';
-const adapterver = '1.0.1';
-
+const adapterver = '1.1.0';
 /**
  * Does this bid request contain valid parameters?
  * @param {Object} bid
@@ -72,6 +71,22 @@ const isValidSizeAndFormat = (size, format) =>
   (isFullWidth(format) && flattenSize(size) === '300x250') ||
   isValidNonSizedFormat(format) ||
   isValidSize(flattenSize(size));
+
+/**
+ * Find a preferred entry, if any, from an array of valid sizes.
+ * @param {Array<String>} acc
+ * @param {String} cur
+ */
+const sortByPreferredSize = (acc, cur) =>
+  (cur === '300x250') ? [cur, ...acc] : [...acc, cur];
+
+/**
+ * Map any deprecated size/formats to new values.
+ * @param {String} size
+ * @param {String} format
+ */
+const mapDeprecatedSizeAndFormat = (size, format) =>
+  isFullWidth(format) ? ['300x250', null] : [size, format];
 
 /**
  * Is this a video format?
@@ -142,9 +157,9 @@ const getTopWindowUrlEncoded = () => encodeURIComponent(getTopWindowUrl());
  * @param {Object} bids[].params
  * @param {String} bids[].params.placementId - Audience Network placement identifier
  * @param {String} bids[].params.platform - Audience Network platform identifier (optional)
- * @param {String} bids[].params.format - Optional format, one of 'video', 'native' or 'fullwidth' if set
+ * @param {String} bids[].params.format - Optional format, one of 'video' or 'native' if set
  * @param {Array} bids[].sizes - list of desired advert sizes
- * @param {Array} bids[].sizes[] - Size arrays [h,w]: should include one of [300, 250], [320, 50]: first matched size is used
+ * @param {Array} bids[].sizes[] - Size arrays [h,w]: should include one of [300, 250], [320, 50]
  * @returns {Array<Object>} List of URLs to fetch, plus formats and sizes for later use with interpretResponse
  */
 const buildRequests = bids => {
@@ -159,12 +174,14 @@ const buildRequests = bids => {
   bids.forEach(bid => bid.sizes
     .map(flattenSize)
     .filter(size => isValidSizeAndFormat(size, bid.params.format))
+    .reduce(sortByPreferredSize, [])
     .slice(0, 1)
-    .forEach(size => {
+    .forEach(preferredSize => {
+      const [size, format] = mapDeprecatedSizeAndFormat(preferredSize, bid.params.format);
       placementids.push(bid.params.placementId);
-      adformats.push(bid.params.format || size);
+      adformats.push(format || size);
       sizes.push(size);
-      sdk.push(sdkVersion(bid.params.format));
+      sdk.push(sdkVersion(format));
       platforms.push(bid.params.platform);
       requestIds.push(bid.bidId);
     })
@@ -174,6 +191,7 @@ const buildRequests = bids => {
   const testmode = isTestmode();
   const pageurl = getTopWindowUrlEncoded();
   const platform = findPlatform(platforms);
+  const cb = generateUUID();
   const search = {
     placementids,
     adformats,
@@ -182,14 +200,12 @@ const buildRequests = bids => {
     sdk,
     adapterver,
     platform,
-    platver
+    platver,
+    cb
   };
   const video = findIndex(adformats, isVideo);
   if (video !== -1) {
     [search.playerwidth, search.playerheight] = expandSize(sizes[video]);
-  }
-  if (isSafariBrowser()) {
-    search.cb = generateUUID();
   }
   const data = formatQS(search);
 

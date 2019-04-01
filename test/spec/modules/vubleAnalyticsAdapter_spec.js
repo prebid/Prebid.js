@@ -6,21 +6,21 @@ let constants = require('src/constants.json');
 
 describe('Vuble Prebid Analytic', function () {
   let xhr;
-  before(() => {
+  before(function () {
     xhr = sinon.useFakeXMLHttpRequest();
   });
-  after(() => {
+  after(function () {
     vubleAnalytics.disableAnalytics();
     xhr.restore();
   });
 
   describe('enableAnalytics', function () {
-    beforeEach(() => {
+    beforeEach(function () {
       sinon.spy(vubleAnalytics, 'track');
       sinon.stub(events, 'getEvents').returns([]);
     });
 
-    afterEach(() => {
+    afterEach(function () {
       vubleAnalytics.track.restore();
       events.getEvents.restore();
     });

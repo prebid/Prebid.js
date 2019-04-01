@@ -12,15 +12,15 @@ describe('s2sTesting', function () {
   let mathRandomStub;
   let randomNumber = 0;
 
-  beforeEach(() => {
+  beforeEach(function () {
     mathRandomStub = sinon.stub(Math, 'random').callsFake(() => { return randomNumber; });
   });
 
-  afterEach(() => {
+  afterEach(function () {
     mathRandomStub.restore();
   });
 
-  describe('getSource', () => {
+  describe('getSource', function () {
     // helper function to set random number and get the source
     function getExpectedSource(randNumber, sourceWeights, sources) {
       // set random number for testing
@@ -28,18 +28,18 @@ describe('s2sTesting', function () {
       return getSource(sourceWeights, sources);
     }
 
-    it('returns undefined if no sources', () => {
+    it('returns undefined if no sources', function () {
       expect(getExpectedSource(0, {})).to.be.undefined;
       expect(getExpectedSource(0.5, {})).to.be.undefined;
       expect(getExpectedSource(0.9999, {})).to.be.undefined;
     });
 
-    it('returns undefined if no weights', () => {
+    it('returns undefined if no weights', function () {
       expect(getExpectedSource(0, {server: 0, client: 0})).to.be.undefined;
       expect(getExpectedSource(0.5, {client: 0})).to.be.undefined;
     });
 
-    it('gets the expected source from 3 sources', () => {
+    it('gets the expected source from 3 sources', function () {
       var sources = ['server', 'client', 'both'];
       expect(getExpectedSource(0, {server: 1, client: 1, both: 2}, sources)).to.equal('server');
       expect(getExpectedSource(0.2499999, {server: 1, client: 1, both: 2}, sources)).to.equal('server');
@@ -49,7 +49,7 @@ describe('s2sTesting', function () {
       expect(getExpectedSource(0.99999, {server: 1, client: 1, both: 2}, sources)).to.equal('both');
     });
 
-    it('gets the expected source from 2 sources', () => {
+    it('gets the expected source from 2 sources', function () {
       expect(getExpectedSource(0, {server: 2, client: 3})).to.equal('server');
       expect(getExpectedSource(0.39999, {server: 2, client: 3})).to.equal('server');
       expect(getExpectedSource(0.4, {server: 2, client: 3})).to.equal('client');
@@ -61,19 +61,19 @@ describe('s2sTesting', function () {
       expect(getExpectedSource(0.9, {server: 2, client: 3}, sources)).to.equal('client');
     });
 
-    it('gets the expected source from 1 source', () => {
+    it('gets the expected source from 1 source', function () {
       expect(getExpectedSource(0, {client: 2})).to.equal('client');
       expect(getExpectedSource(0.5, {client: 2})).to.equal('client');
       expect(getExpectedSource(0.99999, {client: 2})).to.equal('client');
     });
 
-    it('ignores an invalid source', () => {
+    it('ignores an invalid source', function () {
       expect(getExpectedSource(0, {client: 2, cache: 2})).to.equal('client');
       expect(getExpectedSource(0.3333, {server: 1, cache: 1, client: 2})).to.equal('server');
       expect(getExpectedSource(0.34, {server: 1, cache: 1, client: 2})).to.equal('client');
     });
 
-    it('ignores order of sources', () => {
+    it('ignores order of sources', function () {
       var sources = ['server', 'client', 'both'];
       expect(getExpectedSource(0, {client: 1, server: 1, both: 2}, sources)).to.equal('server');
       expect(getExpectedSource(0.2499999, {both: 2, client: 1, server: 1}, sources)).to.equal('server');
@@ -82,21 +82,21 @@ describe('s2sTesting', function () {
       expect(getExpectedSource(0.5, {both: 2, server: 1, client: 1}, sources)).to.equal('both');
     });
 
-    it('accepts an array of sources', () => {
+    it('accepts an array of sources', function () {
       expect(getExpectedSource(0.3333, {second: 2, first: 1}, ['first', 'second'])).to.equal('first');
       expect(getExpectedSource(0.34, {second: 2, first: 1}, ['first', 'second'])).to.equal('second');
       expect(getExpectedSource(0.9999, {second: 2, first: 1}, ['first', 'second'])).to.equal('second');
     });
   });
 
-  describe('getSourceBidderMap', () => {
-    describe('setting source through s2sConfig', () => {
-      beforeEach(() => {
+  describe('getSourceBidderMap', function () {
+    describe('setting source through s2sConfig', function () {
+      beforeEach(function () {
         // set random number for testing
         randomNumber = 0.7;
       });
 
-      it('does not work if testing is "false"', () => {
+      it('does not work if testing is "false"', function () {
         config.setConfig({s2sConfig: {
           bidders: ['rubicon'],
           testing: false,
@@ -108,7 +108,7 @@ describe('s2sTesting', function () {
         });
       });
 
-      it('sets one client bidder', () => {
+      it('sets one client bidder', function () {
         config.setConfig({s2sConfig: {
           bidders: ['rubicon'],
           testing: true,
@@ -120,7 +120,7 @@ describe('s2sTesting', function () {
         });
       });
 
-      it('sets one server bidder', () => {
+      it('sets one server bidder', function () {
         config.setConfig({s2sConfig: {
           bidders: ['rubicon'],
           testing: true,
@@ -132,7 +132,7 @@ describe('s2sTesting', function () {
         });
       });
 
-      it('defaults to server', () => {
+      it('defaults to server', function () {
         config.setConfig({s2sConfig: {
           bidders: ['rubicon'],
           testing: true
@@ -143,7 +143,7 @@ describe('s2sTesting', function () {
         });
       });
 
-      it('sets two bidders', () => {
+      it('sets two bidders', function () {
         config.setConfig({s2sConfig: {
           bidders: ['rubicon', 'appnexus'],
           testing: true,
@@ -157,15 +157,15 @@ describe('s2sTesting', function () {
       });
     });
 
-    describe('setting source through adUnits', () => {
-      beforeEach(() => {
+    describe('setting source through adUnits', function () {
+      beforeEach(function () {
         // reset s2sconfig bid sources
         config.setConfig({s2sConfig: {testing: true}});
         // set random number for testing
         randomNumber = 0.7;
       });
 
-      it('sets one bidder source from one adUnit', () => {
+      it('sets one bidder source from one adUnit', function () {
         var adUnits = [
           {bids: [
             {bidder: 'rubicon', bidSource: {server: 4, client: 1}}
@@ -193,7 +193,7 @@ describe('s2sTesting', function () {
         expect(adUnits[0].bids[0].finalSource).to.equal('client');
       });
 
-      it('defaults to client if no bidSource', () => {
+      it('defaults to client if no bidSource', function () {
         var adUnits = [
           {bids: [
             {bidder: 'rubicon', bidSource: {}}
@@ -208,7 +208,7 @@ describe('s2sTesting', function () {
         expect(adUnits[0].bids[0].finalSource).to.equal('client');
       });
 
-      it('sets multiple bidders sources from one adUnit', () => {
+      it('sets multiple bidders sources from one adUnit', function () {
         var adUnits = [
           {bids: [
             {bidder: 'rubicon', bidSource: {server: 2, client: 1}},
@@ -225,7 +225,7 @@ describe('s2sTesting', function () {
         expect(adUnits[0].bids[1].finalSource).to.equal('server');
       });
 
-      it('sets multiple bidders sources from multiple adUnits', () => {
+      it('sets multiple bidders sources from multiple adUnits', function () {
         var adUnits = [
           {bids: [
             {bidder: 'rubicon', bidSource: {server: 2, client: 1}},
@@ -251,7 +251,7 @@ describe('s2sTesting', function () {
         expect(adUnits[1].bids[1].finalSource).to.equal('client');
       });
 
-      it('should reuse calculated sources', () => {
+      it('should reuse calculated sources', function () {
         var adUnits = [
           {bids: [
             {bidder: 'rubicon', calcSource: 'client', bidSource: {server: 4, client: 1}},
@@ -275,15 +275,15 @@ describe('s2sTesting', function () {
       });
     });
 
-    describe('setting source through s2sconfig and adUnits', () => {
-      beforeEach(() => {
+    describe('setting source through s2sconfig and adUnits', function () {
+      beforeEach(function () {
         // reset s2sconfig bid sources
         config.setConfig({s2sConfig: {testing: true}});
         // set random number for testing
         randomNumber = 0.7;
       });
 
-      it('should get sources from  both', () => {
+      it('should get sources from  both', function () {
         // set rubicon: server and appnexus: client
         var adUnits = [
           {bids: [

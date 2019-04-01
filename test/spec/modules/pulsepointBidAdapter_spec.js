@@ -4,7 +4,7 @@ import {spec} from 'modules/pulsepointBidAdapter';
 import {getTopWindowLocation} from 'src/utils';
 import {newBidder} from 'src/adapters/bidderFactory';
 
-describe('PulsePoint Adapter Tests', () => {
+describe('PulsePoint Adapter Tests', function () {
   const slotConfigs = [{
     placementCode: '/DfpAccount1/slot1',
     bidId: 'bid12345',
@@ -49,7 +49,7 @@ describe('PulsePoint Adapter Tests', () => {
     }
   }];
 
-  it('Verify build request', () => {
+  it('Verify build request', function () {
     const request = spec.buildRequests(slotConfigs);
     expect(request.url).to.equal('//bid.contextweb.com/header/ortb');
     expect(request.method).to.equal('POST');
@@ -76,7 +76,7 @@ describe('PulsePoint Adapter Tests', () => {
     expect(ortbRequest.imp[1].banner.h).to.equal(90);
   });
 
-  it('Verify parse response', () => {
+  it('Verify parse response', function () {
     const request = spec.buildRequests(slotConfigs);
     const ortbRequest = JSON.parse(request.data);
     const ortbResponse = {
@@ -104,7 +104,7 @@ describe('PulsePoint Adapter Tests', () => {
     expect(bid.ttl).to.equal(20);
   });
 
-  it('Verify use ttl in ext', () => {
+  it('Verify use ttl in ext', function () {
     const request = spec.buildRequests(slotConfigs);
     const ortbRequest = JSON.parse(request.data);
     const ortbResponse = {
@@ -130,13 +130,13 @@ describe('PulsePoint Adapter Tests', () => {
     expect(bid.currency).to.equal('INR');
   });
 
-  it('Verify full passback', () => {
+  it('Verify full passback', function () {
     const request = spec.buildRequests(slotConfigs);
     const bids = spec.interpretResponse({ body: null }, request)
     expect(bids).to.have.lengthOf(0);
   });
 
-  it('Verify Native request', () => {
+  it('Verify Native request', function () {
     const request = spec.buildRequests(nativeSlotConfig);
     expect(request.url).to.equal('//bid.contextweb.com/header/ortb');
     expect(request.method).to.equal('POST');
@@ -174,7 +174,7 @@ describe('PulsePoint Adapter Tests', () => {
     expect(nativeRequest.assets[2].img.type).to.equal(3);
   });
 
-  it('Verify Native response', () => {
+  it('Verify Native response', function () {
     const request = spec.buildRequests(nativeSlotConfig);
     expect(request.url).to.equal('//bid.contextweb.com/header/ortb');
     expect(request.method).to.equal('POST');
@@ -217,22 +217,22 @@ describe('PulsePoint Adapter Tests', () => {
     expect(nativeBid.impressionTrackers[1]).to.equal('http://imp1.contextweb.com/');
   });
 
-  it('Verifies bidder code', () => {
+  it('Verifies bidder code', function () {
     expect(spec.code).to.equal('pulsepoint');
   });
 
-  it('Verifies bidder aliases', () => {
+  it('Verifies bidder aliases', function () {
     expect(spec.aliases).to.have.lengthOf(2);
     expect(spec.aliases[0]).to.equal('pulseLite');
     expect(spec.aliases[1]).to.equal('pulsepointLite');
   });
 
-  it('Verifies supported media types', () => {
+  it('Verifies supported media types', function () {
     expect(spec.supportedMediaTypes).to.have.lengthOf(2);
     expect(spec.supportedMediaTypes[1]).to.equal('native');
   });
 
-  it('Verifies if bid request valid', () => {
+  it('Verifies if bid request valid', function () {
     expect(spec.isBidRequestValid(slotConfigs[0])).to.equal(true);
     expect(spec.isBidRequestValid(slotConfigs[1])).to.equal(true);
     expect(spec.isBidRequestValid(nativeSlotConfig[0])).to.equal(true);
@@ -243,7 +243,7 @@ describe('PulsePoint Adapter Tests', () => {
     expect(spec.isBidRequestValid({ params: { ct: 123, cp: 234 } })).to.equal(true);
   });
 
-  it('Verifies sync options', () => {
+  it('Verifies sync options', function () {
     expect(spec.getUserSyncs({})).to.be.undefined;
     expect(spec.getUserSyncs({ iframeEnabled: false })).to.be.undefined;
     const options = spec.getUserSyncs({ iframeEnabled: true });
@@ -253,7 +253,7 @@ describe('PulsePoint Adapter Tests', () => {
     expect(options[0].url).to.equal('//bh.contextweb.com/visitormatch');
   });
 
-  it('Verifies image pixel sync', () => {
+  it('Verifies image pixel sync', function () {
     const options = spec.getUserSyncs({ pixelEnabled: true });
     expect(options).to.not.be.undefined;
     expect(options).to.have.lengthOf(1);
@@ -261,7 +261,7 @@ describe('PulsePoint Adapter Tests', () => {
     expect(options[0].url).to.equal('//bh.contextweb.com/visitormatch/prebid');
   });
 
-  it('Verify app requests', () => {
+  it('Verify app requests', function () {
     const request = spec.buildRequests(appSlotConfig);
     const ortbRequest = JSON.parse(request.data);
     // site object
@@ -274,7 +274,7 @@ describe('PulsePoint Adapter Tests', () => {
     expect(ortbRequest.app.domain).to.equal('pulsepoint.com');
   });
 
-  it('Verify GDPR', () => {
+  it('Verify GDPR', function () {
     const bidderRequest = {
       gdprConsent: {
         gdprApplies: true,

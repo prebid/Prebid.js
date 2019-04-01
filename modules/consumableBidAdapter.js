@@ -111,7 +111,7 @@ export const spec = {
           bid.ad = retrieveAd(decision, bid.unitId, bid.unitName);
           bid.currency = 'USD';
           bid.creativeId = decision.adId;
-          bid.ttl = 360;
+          bid.ttl = 30;
           bid.netRevenue = true;
           bid.referrer = utils.getTopWindowUrl();
 
@@ -127,7 +127,7 @@ export const spec = {
     if (syncOptions.iframeEnabled) {
       return [{
         type: 'iframe',
-        url: '//s.zkcdn.net/ss/' + siteId + '.html'
+        url: '//sync.serverbid.com/ss/' + siteId + '.html'
       }];
     } else {
       utils.logWarn(bidder + ': Please enable iframe based user syncing.');

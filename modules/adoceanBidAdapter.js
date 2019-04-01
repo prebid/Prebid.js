@@ -15,21 +15,28 @@ function buildEndpointUrl(emiter, payload) {
   return 'https://' + emiter + '/ad.json?' + payloadString;
 }
 
-function buildRequest(masterBidRequests, masterId) {
-  const firstBid = masterBidRequests[0];
+function buildRequest(masterBidRequests, masterId, gdprConsent) {
+  let emiter;
   const payload = {
     id: masterId,
   };
+  if (gdprConsent) {
+    payload.gdpr_consent = gdprConsent.consentString || undefined;
+    payload.gdpr = gdprConsent.gdprApplies ? 1 : 0;
+  }
 
   const bidIdMap = {};
 
-  utils._each(masterBidRequests, function(v) {
-    bidIdMap[v.params.slaveId] = v.bidId;
+  utils._each(masterBidRequests, function(bid, slaveId) {
+    if (!emiter) {
+      emiter = bid.params.emiter;
+    }
+    bidIdMap[slaveId] = bid.bidId;
   });
 
   return {
     method: 'GET',
-    url: buildEndpointUrl(firstBid.params.emiter, payload),
+    url: buildEndpointUrl(emiter, payload),
     data: {},
     bidIdMap: bidIdMap
   };
@@ -37,8 +44,16 @@ function buildRequest(masterBidRequests, masterId) {
 
 function assignToMaster(bidRequest, bidRequestsByMaster) {
   const masterId = bidRequest.params.masterId;
-  bidRequestsByMaster[masterId] = bidRequestsByMaster[masterId] || [];
-  bidRequestsByMaster[masterId].push(bidRequest);
+  const slaveId = bidRequest.params.slaveId;
+  const masterBidRequests = bidRequestsByMaster[masterId] = bidRequestsByMaster[masterId] || [{}];
+  let i = 0;
+  while (masterBidRequests[i] && masterBidRequests[i][slaveId]) {
+    i++;
+  }
+  if (!masterBidRequests[i]) {
+    masterBidRequests[i] = {};
+  }
+  masterBidRequests[i][slaveId] = bidRequest;
 }
 
 function interpretResponse(placementResponse, bidRequest, bids) {
@@ -72,15 +87,18 @@ export const spec = {
     return !!(bid.params.slaveId && bid.params.masterId && bid.params.emiter);
   },
 
-  buildRequests: function(validBidRequests) {
+  buildRequests: function(validBidRequests, bidderRequest) {
     const bidRequestsByMaster = {};
     let requests = [];
 
-    utils._each(validBidRequests, function(v) {
-      assignToMaster(v, bidRequestsByMaster);
+    utils._each(validBidRequests, function(bidRequest) {
+      assignToMaster(bidRequest, bidRequestsByMaster);
     });
-    requests = utils._map(bidRequestsByMaster, function(v, k) {
-      return buildRequest(v, k);
+
+    utils._each(bidRequestsByMaster, function(masterRequests, masterId) {
+      utils._each(masterRequests, function(instanceRequests) {
+        requests.push(buildRequest(instanceRequests, masterId, bidderRequest.gdprConsent));
+      });
     });
 
     return requests;

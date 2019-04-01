@@ -1,28 +1,28 @@
 import * as utils from 'src/utils';
-import * as adLoader from 'src/adloader';
+import * as adLoader from 'test/mocks/adloaderStub';
 
 describe('adLoader', function () {
   let utilsinsertElementStub;
   let utilsLogErrorStub;
 
-  beforeEach(() => {
+  beforeEach(function () {
     utilsinsertElementStub = sinon.stub(utils, 'insertElement');
     utilsLogErrorStub = sinon.stub(utils, 'logError');
   });
 
-  afterEach(() => {
+  afterEach(function () {
     utilsinsertElementStub.restore();
     utilsLogErrorStub.restore();
   });
 
-  describe('loadExternalScript', () => {
-    it('requires moduleCode to be included on the request', () => {
+  describe('loadExternalScript', function () {
+    it('requires moduleCode to be included on the request', function () {
       adLoader.loadExternalScript('someURL');
       expect(utilsLogErrorStub.called).to.be.true;
       expect(utilsinsertElementStub.called).to.be.false;
     });
 
-    it('only allows whitelisted vendors to load scripts', () => {
+    it('only allows whitelisted vendors to load scripts', function () {
       adLoader.loadExternalScript('someURL', 'criteo');
       expect(utilsLogErrorStub.called).to.be.false;
       expect(utilsinsertElementStub.called).to.be.true;

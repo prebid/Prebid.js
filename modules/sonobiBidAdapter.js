@@ -1,7 +1,6 @@
 import { registerBidder } from 'src/adapters/bidderFactory';
-import { getTopWindowLocation, parseSizesInput, logError, generateUUID, deepAccess, isEmpty } from '../src/utils';
+import { parseSizesInput, logError, generateUUID, isEmpty, deepAccess } from '../src/utils';
 import { BANNER, VIDEO } from '../src/mediaTypes';
-import find from 'core-js/library/fn/array/find';
 import { config } from '../src/config';
 
 const BIDDER_CODE = 'sonobi';
@@ -47,7 +46,7 @@ export const spec = {
 
     const payload = {
       'key_maker': JSON.stringify(data),
-      'ref': getTopWindowLocation().href,
+      'ref': bidderRequest.refererInfo.referer,
       's': generateUUID(),
       'pv': PAGEVIEW_ID,
       'vp': _getPlatform(),
@@ -60,14 +59,12 @@ export const spec = {
       payload.us = config.getConfig('userSync').syncsPerBidder;
     }
 
-    if (validBidRequests[0].params.hfa) {
-      payload.hfa = validBidRequests[0].params.hfa;
+    if (deepAccess(validBidRequests[0], 'crumbs.pubcid') || deepAccess(validBidRequests[0], 'params.hfa')) {
+      payload.hfa = deepAccess(validBidRequests[0], 'params.hfa') ? deepAccess(validBidRequests[0], 'params.hfa') : `PRE-${deepAccess(validBidRequests[0], 'crumbs.pubcid')}`;
     }
+
     if (validBidRequests[0].params.referrer) {
       payload.ref = validBidRequests[0].params.referrer;
-    }
-    if (validBidRequests[0].params.render) {
-      payload.render = validBidRequests[0].params.render;
     }
 
     // Apply GDPR parameters to request.
@@ -95,24 +92,23 @@ export const spec = {
    * Unpack the response from the server into a list of bids.
    *
    * @param {*} serverResponse A successful response from the server.
-   * @param {*} bidderRequests - Info describing the request to the server.
+   * @param {*} bidderRequest - Info describing the request to the server.
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
-  interpretResponse: (serverResponse, { bidderRequests }) => {
+  interpretResponse: (serverResponse, bidderRequest) => {
     const bidResponse = serverResponse.body;
     const bidsReturned = [];
+    const referrer = bidderRequest.data.ref;
 
     if (Object.keys(bidResponse.slots).length === 0) {
       return bidsReturned;
     }
 
     Object.keys(bidResponse.slots).forEach(slot => {
-      const bidId = _getBidIdFromTrinityKey(slot);
-      const bidRequest = find(bidderRequests, bidReqest => bidReqest.bidId === bidId);
-      const videoMediaType = deepAccess(bidRequest, 'mediaTypes.video');
-      const mediaType = bidRequest.mediaType || (videoMediaType ? 'video' : null);
-      const createCreative = _creative(mediaType);
       const bid = bidResponse.slots[slot];
+      const bidId = _getBidIdFromTrinityKey(slot);
+      const mediaType = (bid.sbi_ct === 'video') ? 'video' : null;
+      const createCreative = _creative(mediaType, referrer);
       if (bid.sbi_aid && bid.sbi_mouse && bid.sbi_size) {
         const [
           width = 1,
@@ -135,8 +131,7 @@ export const spec = {
           bids.dealId = bid.sbi_dozer;
         }
 
-        const creativeType = bid.sbi_ct;
-        if (creativeType && (creativeType === 'video' || creativeType === 'outstream')) {
+        if (mediaType === 'video') {
           bids.mediaType = 'video';
           bids.vastUrl = createCreative(bidResponse.sbi_dc, bid.sbi_aid);
           delete bids.ad;
@@ -188,16 +183,16 @@ function _validateFloor (bid) {
   return '';
 }
 
-const _creative = (mediaType) => (sbiDc, sbiAid) => {
+const _creative = (mediaType, referer) => (sbiDc, sbiAid) => {
   if (mediaType === 'video') {
-    return _videoCreative(sbiDc, sbiAid)
+    return _videoCreative(sbiDc, sbiAid, referer)
   }
-  const src = 'https://' + sbiDc + 'apex.go.sonobi.com/sbi.js?aid=' + sbiAid + '&as=null' + '&ref=' + getTopWindowLocation().href;
+  const src = `https://${sbiDc}apex.go.sonobi.com/sbi.js?aid=${sbiAid}&as=null&ref=${encodeURIComponent(referer)}`;
   return '<script type="text/javascript" src="' + src + '"></script>';
 };
 
-function _videoCreative(sbiDc, sbiAid) {
-  return `https://${sbiDc}apex.go.sonobi.com/vast.xml?vid=${sbiAid}&ref=${getTopWindowLocation().href}`
+function _videoCreative(sbiDc, sbiAid, referer) {
+  return `https://${sbiDc}apex.go.sonobi.com/vast.xml?vid=${sbiAid}&ref=${encodeURIComponent(referer)}`
 }
 
 function _getBidIdFromTrinityKey (key) {

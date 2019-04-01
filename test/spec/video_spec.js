@@ -1,7 +1,7 @@
 import { isValidVideoBid } from 'src/video';
 
-describe('video.js', () => {
-  it('validates valid instream bids', () => {
+describe('video.js', function () {
+  it('validates valid instream bids', function () {
     const bid = {
       adId: '123abc',
       vastUrl: 'http://www.example.com/vastUrl'
@@ -19,7 +19,7 @@ describe('video.js', () => {
     expect(valid).to.equal(true);
   });
 
-  it('catches invalid instream bids', () => {
+  it('catches invalid instream bids', function () {
     const bid = {
       adId: '123abc'
     };
@@ -36,7 +36,7 @@ describe('video.js', () => {
     expect(valid).to.equal(false);
   });
 
-  it('catches invalid bids when prebid-cache is disabled', () => {
+  it('catches invalid bids when prebid-cache is disabled', function () {
     const bidRequests = [{
       bids: [{
         bidder: 'vastOnlyVideoBidder',
@@ -49,7 +49,7 @@ describe('video.js', () => {
     expect(valid).to.equal(false);
   });
 
-  it('validates valid outstream bids', () => {
+  it('validates valid outstream bids', function () {
     const bid = {
       adId: '123abc',
       renderer: {
@@ -70,7 +70,7 @@ describe('video.js', () => {
     expect(valid).to.equal(true);
   });
 
-  it('catches invalid outstream bids', () => {
+  it('catches invalid outstream bids', function () {
     const bid = {
       adId: '123abc'
     };

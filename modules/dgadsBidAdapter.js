@@ -3,6 +3,7 @@ import * as utils from 'src/utils';
 import { BANNER, NATIVE } from 'src/mediaTypes';
 
 const BIDDER_CODE = 'dgads';
+const UID_NAME = 'dgads_uid';
 const ENDPOINT = 'https://ads-tr.bigmining.com/ad/p/bid';
 
 export const spec = {
@@ -27,13 +28,15 @@ export const spec = {
       const params = bidRequest.params;
       const data = {};
 
-      data['location_id'] = params.location_id;
-      data['site_id'] = params.site_id;
+      data['_loc'] = params.location_id;
+      data['_medium'] = params.site_id;
       data['transaction_id'] = bidRequest.transactionId;
       data['bid_id'] = bidRequest.bidId;
+      data['referer'] = utils.getTopWindowUrl();
+      data['_uid'] = getCookieUid(UID_NAME);
 
       return {
-        method: 'POST',
+        method: 'GET',
         url: ENDPOINT,
         data,
       };
@@ -83,6 +86,18 @@ function setNativeResponse(ad) {
   nativeResponce.clickTrackers = ad.clickTrackers || [];
   nativeResponce.impressionTrackers = ad.impressionTrackers || [];
   return nativeResponce;
+}
+export function getCookieUid(uidName) {
+  if (utils.cookiesAreEnabled()) {
+    let cookies = document.cookie.split(';');
+    for (let i = 0; i < cookies.length; i++) {
+      let value = cookies[i].split('=');
+      if (value[0].indexOf(uidName) > -1) {
+        return value[1];
+      }
+    }
+  }
+  return '';
 }
 
 registerBidder(spec);

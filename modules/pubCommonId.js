@@ -93,7 +93,9 @@ export function initPubcid() {
   config.getConfig('pubcid', config => setConfig(config.pubcid));
 
   if (utils.cookiesAreEnabled()) {
-    $$PREBID_GLOBAL$$.requestBids.addHook(requestBidHook);
+    if (!getCookie('_pubcid_optout')) {
+      $$PREBID_GLOBAL$$.requestBids.addHook(requestBidHook);
+    }
   }
 }
 
