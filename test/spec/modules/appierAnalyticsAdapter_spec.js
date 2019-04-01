@@ -5,21 +5,14 @@ import {expect} from 'chai';
 import * as ajax from 'src/ajax';
 
 const events = require('src/events');
-const constants = require('src/constants.json');
 
 const affiliateId = 'WhctHaViHtI';
 const configId = 'd9cc9a9b-e9b2-40ed-a17c-f1c9a8a4b29c';
 const serverUrl = 'https://analytics.server.url/v1';
 const autoPick = 'none';
-const hzid = 'WhctHaV9';
 const auctionId = 'b0b39610-b941-4659-a87c-de9f62d3e13e';
-const bidderCode = 'appier';
-const timeout = 2000;
-const auctionStart = Date.now();
 
 describe('Appier Prebid AnalyticsAdapter', function () {
-  let requests;
-  let cache;
 
   describe('event tracking and message cache manager', function () {
     let ajaxStub;
@@ -39,7 +32,6 @@ describe('Appier Prebid AnalyticsAdapter', function () {
         options: configOptions
       });
 
-      requests = [];
       sinon.stub(events, 'getEvents').returns([]);
 
       ajaxStub = sinon.stub(ajax, 'ajax').callsFake(function (url, callbacks) {
@@ -338,7 +330,6 @@ describe('Appier Prebid AnalyticsAdapter', function () {
 
   describe('enableAnalytics and config parser', function () {
     beforeEach(function () {
-      requests = [];
       sinon.stub(events, 'getEvents').returns([]);
     });
 
