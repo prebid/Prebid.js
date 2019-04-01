@@ -77,7 +77,7 @@ describe('ccxAdapter', function () {
   });
   describe('buildRequests', function () {
     it('No valid bids', function () {
-      expect(spec.buildRequests([])).to.be.empty;
+      expect(spec.buildRequests([])).to.be.undefined;
     });
 
     it('Valid bid request - default', function () {

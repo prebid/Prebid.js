@@ -1,5 +1,4 @@
 var prebid = require('./package.json');
-var StringReplacePlugin = require('string-replace-webpack-plugin');
 var path = require('path');
 var webpack = require('webpack');
 var helpers = require('./gulpHelpers');
@@ -29,6 +28,7 @@ module.exports = {
         use: [
           {
             loader: 'babel-loader',
+            options: helpers.getAnalyticsOptions(),
           }
         ]
       },
@@ -40,47 +40,10 @@ module.exports = {
             loader: 'babel-loader',
           }
         ],
-      },
-      {
-        test: /\.json$/,
-        loader: 'json-loader'
-      },
-      {
-        test: /\.md$/,
-        loader: 'ignore-loader'
-      },
-      {
-        test: /constants.json$/,
-        include: /(src)/,
-        loader: StringReplacePlugin.replace({
-          replacements: [
-            {
-              pattern: /%%REPO_AND_VERSION%%/g,
-              replacement: function (match, p1, offset, string) {
-                return `${prebid.repository.url.split('/')[3]}_prebid_${prebid.version}`;
-              }
-            }
-          ]
-        })
-      },
-      {
-        test: /\.js$/,
-        include: /(src|test|modules|integrationExamples)/,
-        loader: StringReplacePlugin.replace({
-          replacements: [
-            {
-              pattern: /\$\$PREBID_GLOBAL\$\$/g,
-              replacement: function (match, p1, offset, string) {
-                return prebid.globalVarName;
-              }
-            }
-          ]
-        })
       }
     ]
   },
   plugins: [
-    new StringReplacePlugin(),
     new RequireEnsureWithoutJsonp(),
 
     // this plugin must be last so it can be easily removed for karma unit tests

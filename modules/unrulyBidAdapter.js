@@ -1,7 +1,7 @@
-import * as utils from 'src/utils'
-import { Renderer } from 'src/Renderer'
-import { registerBidder } from 'src/adapters/bidderFactory'
-import { VIDEO } from 'src/mediaTypes'
+import * as utils from '../src/utils'
+import { Renderer } from '../src/Renderer'
+import { registerBidder } from '../src/adapters/bidderFactory'
+import { VIDEO } from '../src/mediaTypes'
 
 function configureUniversalTag (exchangeRenderer) {
   parent.window.unruly = parent.window.unruly || {};
@@ -29,7 +29,8 @@ const serverResponseToBid = (bid, rendererInstance) => ({
   creativeId: bid.bidId,
   ttl: 360,
   currency: 'USD',
-  renderer: rendererInstance
+  renderer: rendererInstance,
+  mediaType: VIDEO
 });
 
 const buildPrebidResponseAndInstallRenderer = bids =>
@@ -80,7 +81,7 @@ export const adapter = {
       bidRequests: validBidRequests,
       bidderRequest
     };
-    const options = { contentType: 'application/json' };
+    const options = { contentType: 'text/plain' };
 
     return {
       url,
@@ -98,6 +99,26 @@ export const adapter = {
     return isInvalidResponse
       ? noBidsResponse
       : buildPrebidResponseAndInstallRenderer(serverResponseBody.bids);
+  },
+
+  getUserSyncs: function(syncOptions, response, gdprConsent) {
+    let params = '';
+    if (gdprConsent && 'gdprApplies' in gdprConsent) {
+      if (gdprConsent.gdprApplies && typeof gdprConsent.consentString === 'string') {
+        params += `?gdpr=1&gdpr_consent=${gdprConsent.consentString}`;
+      } else {
+        params += `?gdpr=0`;
+      }
+    }
+
+    const syncs = []
+    if (syncOptions.iframeEnabled) {
+      syncs.push({
+        type: 'iframe',
+        url: 'https://video.unrulymedia.com/iframes/third-party-iframes.html' + params
+      });
+    }
+    return syncs;
   }
 };
 

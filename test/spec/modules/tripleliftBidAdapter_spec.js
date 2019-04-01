@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import { tripleliftAdapterSpec } from 'modules/tripleliftBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
 import { deepClone } from 'src/utils';
+import prebid from '../../../package.json';
 
 const ENDPOINT = document.location.protocol + '//tlx.3lift.com/header/auction?';
 
@@ -118,7 +119,7 @@ describe('triplelift adapter', function () {
       expect(url).to.be.a('string');
       expect(url).to.match(/(?:tlx.3lift.com\/header\/auction)/)
       expect(url).to.match(/(?:lib=prebid)/)
-      expect(url).to.match(/(?:prebid.version)/)
+      expect(url).to.match(new RegExp('(?:' + prebid.version + ')'))
       expect(url).to.match(/(?:referrer)/);
     });
   });

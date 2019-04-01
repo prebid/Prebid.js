@@ -1,8 +1,8 @@
-import * as utils from 'src/utils';
-import { ajax } from 'src/ajax'
-import { config } from 'src/config';
-import { registerBidder } from 'src/adapters/bidderFactory';
-import { BANNER } from 'src/mediaTypes';
+import * as utils from '../src/utils';
+import { ajax } from '../src/ajax'
+import { config } from '../src/config';
+import { registerBidder } from '../src/adapters/bidderFactory';
+import { BANNER } from '../src/mediaTypes';
 
 const BIDDER_CODE = 'adspend';
 const BID_URL = '//rtb.com.ru/headerbidding-bid';

@@ -21,8 +21,7 @@ About us : http://otm-r.com
                 {
                     bidder: "otm",
                     params: {
-                        pid: 1,
-                        tid: "demo",
+                        tid: "99",
                         bidfloor: 20
                     }
                 }
@@ -33,6 +32,5 @@ About us : http://otm-r.com
 
 Where:
 
-* pid - Publisher id
 * tid - A tag id (should have low cardinality)
 * bidfloor - Floor price

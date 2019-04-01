@@ -1,7 +1,7 @@
-import * as utils from 'src/utils'
+import * as utils from '../src/utils'
 
-import { config } from 'src/config'
-import { registerBidder } from 'src/adapters/bidderFactory'
+import { config } from '../src/config'
+import { registerBidder } from '../src/adapters/bidderFactory'
 import includes from 'core-js/library/fn/array/includes';
 
 const BIDDER_CODE = 'gumgum'
@@ -47,7 +47,7 @@ function _getBrowserParams() {
     pu: topUrl,
     ce: utils.cookiesAreEnabled(),
     dpr: topWindow.devicePixelRatio || 1,
-    jcsi: JSON.stringify({ t: 0, rq: 7 })
+    jcsi: JSON.stringify({ t: 0, rq: 8 })
   }
 
   ns = getNetworkSpeed()
@@ -103,6 +103,12 @@ function isBidRequestValid (bid) {
       utils.logWarn(`[GumGum] No product selected for the placement ${adUnitCode}, please check your implementation.`);
       return false;
   }
+
+  if (params.bidfloor && !(typeof params.bidfloor === 'number' && isFinite(params.bidfloor))) {
+    utils.logWarn('[GumGum] bidfloor must be a Number');
+    return false;
+  }
+
   return true;
 }
 
@@ -125,6 +131,9 @@ function buildRequests (validBidRequests, bidderRequest) {
     const data = {}
     if (pageViewId) {
       data.pv = pageViewId
+    }
+    if (params.bidfloor) {
+      data.fp = params.bidfloor;
     }
     if (params.inScreen) {
       data.t = params.inScreen;

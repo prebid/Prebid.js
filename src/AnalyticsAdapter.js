@@ -11,6 +11,7 @@ const {
     BID_REQUESTED,
     BID_TIMEOUT,
     BID_RESPONSE,
+    NO_BID,
     BID_WON,
     BID_ADJUSTMENT,
     BIDDER_DONE,
@@ -100,6 +101,7 @@ export default function AnalyticsAdapter({ url, analyticsType, global, handler }
       _handlers = {
         [BID_REQUESTED]: args => this.enqueue({ eventType: BID_REQUESTED, args }),
         [BID_RESPONSE]: args => this.enqueue({ eventType: BID_RESPONSE, args }),
+        [NO_BID]: args => this.enqueue({ eventType: NO_BID, args }),
         [BID_TIMEOUT]: args => this.enqueue({ eventType: BID_TIMEOUT, args }),
         [BID_WON]: args => this.enqueue({ eventType: BID_WON, args }),
         [BID_ADJUSTMENT]: args => this.enqueue({ eventType: BID_ADJUSTMENT, args }),

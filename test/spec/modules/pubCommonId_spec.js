@@ -19,7 +19,7 @@ const TIMEOUT = 2000;
 
 describe('Publisher Common ID', function () {
   afterEach(function () {
-    $$PREBID_GLOBAL$$.requestBids.removeHook(requestBidHook);
+    $$PREBID_GLOBAL$$.requestBids.removeAll();
   });
   describe('Decorate adUnits', function () {
     before(function() {
@@ -35,16 +35,16 @@ describe('Publisher Common ID', function () {
 
       expect(pubcid).to.be.null; // there should be no cookie initially
 
-      requestBidHook({adUnits: adUnits1}, (config) => { innerAdUnits1 = config.adUnits });
+      requestBidHook((config) => { innerAdUnits1 = config.adUnits }, {adUnits: adUnits1});
       pubcid = getCookie(COOKIE_NAME); // cookies is created after requestbidHook
 
       innerAdUnits1.forEach((unit) => {
         unit.bids.forEach((bid) => {
-          expect(bid).to.have.deep.property('crumbs.pubcid');
+          expect(bid).to.have.deep.nested.property('crumbs.pubcid');
           expect(bid.crumbs.pubcid).to.equal(pubcid);
         });
       });
-      requestBidHook({adUnits: adUnits2}, (config) => { innerAdUnits2 = config.adUnits });
+      requestBidHook((config) => { innerAdUnits2 = config.adUnits }, {adUnits: adUnits2});
       assert.deepEqual(innerAdUnits1, innerAdUnits2);
     });
 
@@ -56,23 +56,23 @@ describe('Publisher Common ID', function () {
       let pubcid1;
       let pubcid2;
 
-      requestBidHook({adUnits: adUnits1}, (config) => { innerAdUnits1 = config.adUnits });
+      requestBidHook((config) => { innerAdUnits1 = config.adUnits }, {adUnits: adUnits1});
       pubcid1 = getCookie(COOKIE_NAME); // get first cookie
       setCookie(COOKIE_NAME, '', -1); // erase cookie
 
       innerAdUnits1.forEach((unit) => {
         unit.bids.forEach((bid) => {
-          expect(bid).to.have.deep.property('crumbs.pubcid');
+          expect(bid).to.have.deep.nested.property('crumbs.pubcid');
           expect(bid.crumbs.pubcid).to.equal(pubcid1);
         });
       });
 
-      requestBidHook({adUnits: adUnits2}, (config) => { innerAdUnits2 = config.adUnits });
+      requestBidHook((config) => { innerAdUnits2 = config.adUnits }, {adUnits: adUnits2});
       pubcid2 = getCookie(COOKIE_NAME); // get second cookie
 
       innerAdUnits2.forEach((unit) => {
         unit.bids.forEach((bid) => {
-          expect(bid).to.have.deep.property('crumbs.pubcid');
+          expect(bid).to.have.deep.nested.property('crumbs.pubcid');
           expect(bid.crumbs.pubcid).to.equal(pubcid2);
         });
       });
@@ -86,10 +86,10 @@ describe('Publisher Common ID', function () {
       let pubcid = utils.generateUUID();
 
       setCookie(COOKIE_NAME, pubcid, 600);
-      requestBidHook({adUnits}, (config) => { innerAdUnits = config.adUnits });
+      requestBidHook((config) => { innerAdUnits = config.adUnits }, {adUnits});
       innerAdUnits.forEach((unit) => {
         unit.bids.forEach((bid) => {
-          expect(bid).to.have.deep.property('crumbs.pubcid');
+          expect(bid).to.have.deep.nested.property('crumbs.pubcid');
           expect(bid.crumbs.pubcid).to.equal(pubcid);
         });
       });
@@ -102,11 +102,11 @@ describe('Publisher Common ID', function () {
       setConfig({});
       let adUnits = getAdUnits();
       let innerAdUnits;
-      requestBidHook({adUnits}, (config) => { innerAdUnits = config.adUnits });
+      requestBidHook((config) => { innerAdUnits = config.adUnits }, {adUnits});
       let pubcid = getCookie(COOKIE_NAME);
       innerAdUnits.forEach((unit) => {
         unit.bids.forEach((bid) => {
-          expect(bid).to.have.deep.property('crumbs.pubcid');
+          expect(bid).to.have.deep.nested.property('crumbs.pubcid');
           expect(bid.crumbs.pubcid).to.equal(pubcid);
         });
       });
@@ -119,14 +119,14 @@ describe('Publisher Common ID', function () {
       let unmodified = getAdUnits();
       let innerAdUnits;
       expect(isPubcidEnabled()).to.be.false;
-      requestBidHook({adUnits}, (config) => { innerAdUnits = config.adUnits });
+      requestBidHook((config) => { innerAdUnits = config.adUnits }, {adUnits});
       expect(getCookie(COOKIE_NAME)).to.be.null;
       assert.deepEqual(innerAdUnits, unmodified);
       setConfig({enable: true}); // reset
-      requestBidHook({adUnits}, (config) => { innerAdUnits = config.adUnits });
+      requestBidHook((config) => { innerAdUnits = config.adUnits }, {adUnits});
       innerAdUnits.forEach((unit) => {
         unit.bids.forEach((bid) => {
-          expect(bid).to.have.deep.property('crumbs.pubcid');
+          expect(bid).to.have.deep.nested.property('crumbs.pubcid');
         });
       });
     });
@@ -137,10 +137,10 @@ describe('Publisher Common ID', function () {
       expect(getExpInterval()).to.equal(100);
       let adUnits = getAdUnits();
       let innerAdUnits;
-      requestBidHook({adUnits}, (config) => { innerAdUnits = config.adUnits });
+      requestBidHook((config) => { innerAdUnits = config.adUnits }, {adUnits});
       innerAdUnits.every((unit) => {
         unit.bids.forEach((bid) => {
-          expect(bid).to.have.deep.property('crumbs.pubcid');
+          expect(bid).to.have.deep.nested.property('crumbs.pubcid');
         });
       })
     });
@@ -187,7 +187,7 @@ describe('Publisher Common ID', function () {
       $$PREBID_GLOBAL$$.requestBids({adUnits});
       adUnits.forEach((unit) => {
         unit.bids.forEach((bid) => {
-          expect(bid).to.have.deep.property('crumbs.pubcid');
+          expect(bid).to.have.deep.nested.property('crumbs.pubcid');
         });
       });
     });

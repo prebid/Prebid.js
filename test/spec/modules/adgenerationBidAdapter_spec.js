@@ -3,6 +3,7 @@ import {spec} from 'modules/adgenerationBidAdapter';
 import {newBidder} from 'src/adapters/bidderFactory';
 import {NATIVE} from 'src/mediaTypes';
 import {config} from 'src/config';
+import prebid from '../../../package.json';
 
 describe('AdgenerationAdapter', function () {
   const adapter = newBidder(spec);
@@ -91,9 +92,9 @@ describe('AdgenerationAdapter', function () {
       }
     };
     const data = {
-      banner: `posall=SSPLOC&id=58278&sdktype=0&hb=true&t=json3&sizes=300x250%2C320x100&currency=JPY&pbver=%24prebid.version%24&sdkname=prebidjs&adapterver=1.0.1&imark=1&tp=http%3A%2F%2Fexample.com`,
-      bannerUSD: `posall=SSPLOC&id=58278&sdktype=0&hb=true&t=json3&sizes=300x250%2C320x100&currency=USD&pbver=%24prebid.version%24&sdkname=prebidjs&adapterver=1.0.1&imark=1&tp=http%3A%2F%2Fexample.com`,
-      native: 'posall=SSPLOC&id=58278&sdktype=0&hb=true&t=json3&sizes=1x1&currency=JPY&pbver=%24prebid.version%24&sdkname=prebidjs&adapterver=1.0.1&tp=http%3A%2F%2Fexample.com'
+      banner: `posall=SSPLOC&id=58278&sdktype=0&hb=true&t=json3&sizes=300x250%2C320x100&currency=JPY&pbver=${prebid.version}&sdkname=prebidjs&adapterver=1.0.1&imark=1&tp=http%3A%2F%2Fexample.com`,
+      bannerUSD: `posall=SSPLOC&id=58278&sdktype=0&hb=true&t=json3&sizes=300x250%2C320x100&currency=USD&pbver=${prebid.version}&sdkname=prebidjs&adapterver=1.0.1&imark=1&tp=http%3A%2F%2Fexample.com`,
+      native: 'posall=SSPLOC&id=58278&sdktype=0&hb=true&t=json3&sizes=1x1&currency=JPY&pbver=' + prebid.version + '&sdkname=prebidjs&adapterver=1.0.1&tp=http%3A%2F%2Fexample.com'
     };
     it('sends bid request to ENDPOINT via GET', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest)[0];
@@ -237,7 +238,7 @@ describe('AdgenerationAdapter', function () {
             {
               data: {
                 label: 'optout_url',
-                value: 'https://supership.jp/optout/'
+                value: 'https://supership.jp/optout/#'
               },
               id: 502
             },
@@ -349,6 +350,7 @@ describe('AdgenerationAdapter', function () {
           sponsoredBy: 'Sponsored',
           body: 'Description',
           cta: 'CTA',
+          privacyLink: 'https://supership.jp/optout/#',
           clickUrl: 'https://supership.jp',
           clickTrackers: ['https://s3-ap-northeast-1.amazonaws.com/adg-dummy-dsp/1x1_clicktracker_access.gif'],
           impressionTrackers: ['https://s3-ap-northeast-1.amazonaws.com/adg-dummy-dsp/1x1.gif']
@@ -395,6 +397,7 @@ describe('AdgenerationAdapter', function () {
       expect(result.native.sponsoredBy).to.equal(bidResponses.native.native.sponsoredBy);
       expect(result.native.body).to.equal(bidResponses.native.native.body);
       expect(result.native.cta).to.equal(bidResponses.native.native.cta);
+      expect(decodeURIComponent(result.native.privacyLink)).to.equal(bidResponses.native.native.privacyLink);
       expect(result.native.clickUrl).to.equal(bidResponses.native.native.clickUrl);
       expect(result.native.impressionTrackers[0]).to.equal(bidResponses.native.native.impressionTrackers[0]);
       expect(result.native.clickTrackers[0]).to.equal(bidResponses.native.native.clickTrackers[0]);

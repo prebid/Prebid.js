@@ -1,7 +1,7 @@
-import * as utils from 'src/utils';
-import {BANNER} from 'src/mediaTypes';
-import {registerBidder} from 'src/adapters/bidderFactory';
-import {config} from 'src/config';
+import * as utils from '../src/utils';
+import {BANNER} from '../src/mediaTypes';
+import {registerBidder} from '../src/adapters/bidderFactory';
+import {config} from '../src/config';
 
 const BIDDER_CODE = 'arteebee';
 
