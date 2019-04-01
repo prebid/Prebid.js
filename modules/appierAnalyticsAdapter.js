@@ -10,7 +10,6 @@ const analyticsType = 'endpoint';
 export const ANALYTICS_VERSION = '0.2.0-beta';
 
 const DEFAULT_SERVER = 'https://prebid-analytics.c.appier.net/v1';
-const SEND_TIMEOUT = 100;
 
 const {
   EVENTS: {
@@ -219,9 +218,7 @@ export const appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, ana
           this.handleBidTimeout(args);
           break;
         case AUCTION_END:
-          setTimeout(() => {
-            this.handleAuctionEnd(args);
-          }, SEND_TIMEOUT);
+          this.handleAuctionEnd(args);
           break;
       }
     }
