@@ -217,6 +217,25 @@ describe('Appier Prebid AnalyticsAdapter', function () {
         });
       });
 
+      describe('#addBidResponseToMessage()', function() {
+        it('should add a bid response in the output message, grouped by adunit_id and bidder', function() {
+          const message = {
+            adUnits: {}
+          };
+          appierAnalyticsAdapter.addBidResponseToMessage(message, noBids[0], BIDDER_STATUS.NO_BID);
+
+          expect(message.adUnits).to.deep.include({
+            'adunit_2': {
+              'appier': {
+                prebidWon: false,
+                isTimeout: false,
+                status: BIDDER_STATUS.NO_BID,
+              }
+            }
+          });
+        });
+      });
+
       describe('#createBidMessage()', function() {
         it('should format auction message sent to the backend', function() {
           const args = {
