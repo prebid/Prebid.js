@@ -570,7 +570,7 @@ export function getStandardBidderSettings(mediaType, bidderCode) {
     });
 
     // Adding hb_cache_host
-    if (config.getConfig('cache.url') && utils.deepAccess(bidderSettings, `${bidderCode}.sendStandardTargeting`) !== false) {
+    if (config.getConfig('cache.url') && (!bidderCode || utils.deepAccess(bidderSettings, `${bidderCode}.sendStandardTargeting`) !== false)) {
       const urlInfo = parseURL(config.getConfig('cache.url'));
 
       if (typeof find(adserverTargeting, targetingKeyVal => targetingKeyVal.key === TARGETING_KEYS.CACHE_HOST) === 'undefined') {
