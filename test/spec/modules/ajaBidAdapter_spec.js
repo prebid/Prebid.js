@@ -210,7 +210,8 @@ describe('AjaAdapter', function () {
             'clickUrl': 'https://example.com/lp?k=v',
             'impressionTrackers': [
               'https://example.com/imp'
-            ]
+            ],
+            'privacyLink': 'https://aja-kk.co.jp/optout',
           }
         }
       ];

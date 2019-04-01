@@ -24,7 +24,9 @@ Please reach out to your account manager for more information.
           bidder: "synacormedia",
           params: {
               seatId: "prebid",
-              placementId: "81416"
+              placementId: "81416",
+              bidfloor: "0.10",
+              pos: 1
           }
       }]
   },{
@@ -37,6 +39,8 @@ Please reach out to your account manager for more information.
           params: {
               seatId: "prebid",
               placementId: "demo2"
+              bidfloor: "0.10",
+              pos: 1
           }
       }]
   }];
