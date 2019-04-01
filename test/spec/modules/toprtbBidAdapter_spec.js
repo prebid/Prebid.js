@@ -6,7 +6,7 @@ describe('toprtbBidAdapterTests', function () {
     expect(spec.isBidRequestValid({
       bidder: 'toprtb',
       params: {
-        adUnitId: '1b92aa181561481b8a36fdebb89bae29'
+        adUnitId: 'cd95dffec6b645afbc4e5aa9f68f2ff3'
       }
     })).to.equal(true);
   });
@@ -16,22 +16,19 @@ describe('toprtbBidAdapterTests', function () {
       bidId: 'bid12345',
       bidder: 'toprtb',
       params: {
-        adUnitId: '1b92aa181561481b8a36fdebb89bae29'
+        adUnitId: 'cd95dffec6b645afbc4e5aa9f68f2ff3'
       },
       sizes: [[728, 90]]
     }];
 
     let request = spec.buildRequests(bidRequestData);
-    // let req_data = new URLSearchParams(request);
-    //  console.log(req_data.get('adUnitId'));
     console.log(request);
-    // const current_url = new URL('http://192.168.1.5:6091/ssp/ReqAd?ref=www.google.com&adUnitId=1b92aa181561481b8a36fdebb89bae29_bid12345');
     const current_url = new URL(request.url);
     const search_params = current_url.searchParams;
 
     const id = search_params.get('adUnitId');
     console.log(search_params.get('adUnitId'));
-    expect(id).to.equal('1b92aa181561481b8a36fdebb89bae29_bid12345');
+    expect(id).to.equal('cd95dffec6b645afbc4e5aa9f68f2ff3_bid12345');
   });
 
   it('validate_response_params', function () {
@@ -44,13 +41,12 @@ describe('toprtbBidAdapterTests', function () {
     let serverResponse = {
       body: [{
         'cpm': 1,
-        'mediadata': "<a href='http:\/\/192.168.1.60:8080\/bidder\/click?url=W5kMUTnR5PEqBE2YKWXzXpSA9kWRXWVLB53PI%2F8iqPk%3D&details=NQ%2FBNKEC0r7rY2HYaFLgeLf7lry1FbBYdfDpCTkf3uS8tlou2LnDD5ohqIyUurqdreTssR1991Lu0rJgT3bvqN%2FgM8X%2BaD86LQ4Ch7DKnDTptoi0IKo8JSPk9J6W0yuxJeNR%2FE8c%2FaLS9fpTLbZqAlkxWW5Co6iAveb9Onaz0DY%3D' target='_blank'><img src='http:\/\/192.168.1.104\/uploads\/c06bfdf2660e4e929fa4270d0d85c607\/1548136911_7214_798_0_11232_1551242217224_728x90.jpg' alt='Test_test1' width='728' height='90' \/><\/a><img src='http:\/\/192.168.1.60:8080\/bidder\/impression?id=e5d7789682014e64901f7a529fc10e23&impid=1' width='1' height='1' alt=''\/>",
+        'mediadata': "<a href='http://13.125.21.204:8080/bidder/click?url=xaCQyxrEJsY7XQj4dRGD2RVQiVaLJ%2Bar%2BVDhwhlpnR%2FSQG%2B9%2FtSmvV4X45AM9mMl%2BOSaJzKXTKN82WHc1li3gCzibhr%2ByfcqPIl%2FQHJjBKS7bznHEwRh1kZShVVnSpp3DBjS5I5WSmSD4Qbyo61IJq3LFc9OpHKmJeMgATc4bHK00MqW7atQStUWWSTuhlGO&details=l5G4hDG5UmRmJ%2BB9AdG7v2OpwH%2Bio9Y2oIETI6KooMoo7lJ4Yo7pTbfVGhA5Vn%2BaPCoBX4779c1Jqok45%2FL2ZUP0nc7F0IDfRpLdtoX%2B7Hr2tqmK2Suide0LIsB0woVDXBiq62%2BfneGrTnCi6Nq6GDIBFpmFH8CFinYL%2F%2BB33V8%3D' target='_blank'><img src='http://www.toprtb.com/uploads/d037c2d94369417ab9aea6e712723235/728-90_1546872001356_728x90.gif' alt='Banner 728x90' width='728' height='90' /></a><img src='http://13.125.21.204:8080/bidder/impression?id=e1fb1fbdb97643189827b1b4d2b51acc&impid=1' width='1' height='1' alt=''/></a><img src='http://13.124.144.40:8080/ssp/impression?id=e1fb1fbdb97643189827b1b4d2b51acc&impid=1' width='1' height='1' alt=''/>",
         'width': 728,
         'currency': 'USD',
-        'id': '1b92aa181561481b8a36fdebb89bae29',
+        'id': 'cd95dffec6b645afbc4e5aa9f68f2ff3',
         'type': 'RICHMEDIA',
         'ttl': 4000,
-        'tracking': ['http:\/\/www.google.com?tracking=prebidResponse_728_90_1'],
         'bidId': 'bid12345',
         'status': 'success',
         'height': 90}]
