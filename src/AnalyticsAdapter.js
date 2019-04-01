@@ -8,6 +8,7 @@ const {
   EVENTS: {
     AUCTION_INIT,
     AUCTION_END,
+    REQUEST_BIDS,
     BID_REQUESTED,
     BID_TIMEOUT,
     BID_RESPONSE,
@@ -100,6 +101,7 @@ export default function AnalyticsAdapter({ url, analyticsType, global, handler }
       // Next register event listeners to send data immediately
 
       _handlers = {
+        [REQUEST_BIDS]: args => this.enqueue({ eventType: REQUEST_BIDS, args }),
         [BID_REQUESTED]: args => this.enqueue({ eventType: BID_REQUESTED, args }),
         [BID_RESPONSE]: args => this.enqueue({ eventType: BID_RESPONSE, args }),
         [NO_BID]: args => this.enqueue({ eventType: NO_BID, args }),
