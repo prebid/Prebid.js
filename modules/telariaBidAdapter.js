@@ -154,7 +154,17 @@ function generateUrl(bid, bidderRequest) {
     }
 
     url += ('&transactionId=' + bid.transactionId + '&hb=1');
-    url += ('&referrer=' + encodeURIComponent(bidderRequest.refererInfo.referer));
+
+    if (bidderRequest) {
+      if (bidderRequest.gdprConsent) {
+        url += ('&gdpr=' + (bidderRequest.gdprConsent.gdprApplies ? 1 : 0));
+        url += ('&gdpr_consent=' + bidderRequest.gdprConsent.consentString);
+      }
+
+      if (bidderRequest.refererInfo && bidderRequest.refererInfo.referer) {
+        url += ('&referrer=' + encodeURIComponent(bidderRequest.refererInfo.referer));
+      }
+    }
 
     return (url + '&fmt=json');
   }
