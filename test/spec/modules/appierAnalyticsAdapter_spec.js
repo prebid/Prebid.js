@@ -5,22 +5,14 @@ import {expect} from 'chai';
 import * as ajax from 'src/ajax';
 
 const events = require('src/events');
-const constants = require('src/constants.json');
 
 const affiliateId = 'WhctHaViHtI';
 const configId = 'd9cc9a9b-e9b2-40ed-a17c-f1c9a8a4b29c';
 const serverUrl = 'https://analytics.server.url/v1';
 const autoPick = 'none';
-const hzid = 'WhctHaV9';
 const auctionId = 'b0b39610-b941-4659-a87c-de9f62d3e13e';
-const bidderCode = 'appier';
-const timeout = 2000;
-const auctionStart = Date.now();
 
 describe('Appier Prebid AnalyticsAdapter', function () {
-  let requests;
-  let cache;
-
   describe('event tracking and message cache manager', function () {
     let ajaxStub;
 
@@ -39,7 +31,6 @@ describe('Appier Prebid AnalyticsAdapter', function () {
         options: configOptions
       });
 
-      requests = [];
       sinon.stub(events, 'getEvents').returns([]);
 
       ajaxStub = sinon.stub(ajax, 'ajax').callsFake(function (url, callbacks) {
@@ -164,16 +155,15 @@ describe('Appier Prebid AnalyticsAdapter', function () {
         });
       }
 
-      describe('#newCommonMessageBody', function() {
+      describe('#createCommonMessage', function() {
         it('should correctly serialize some common fields', function() {
-          const message = appierAnalyticsAdapter.newCommonMessageBody(auctionId);
+          const message = appierAnalyticsAdapter.createCommonMessage(auctionId);
 
           assertHavingRequiredMessageFields(message);
         });
       });
 
       describe('#serializeBidResponse', function() {
-
         it('should handle BID properly and serialize bid price related fields', function() {
           const result = appierAnalyticsAdapter.serializeBidResponse(receivedBids[0], BIDDER_STATUS.BID);
 
@@ -227,7 +217,26 @@ describe('Appier Prebid AnalyticsAdapter', function () {
         });
       });
 
-      describe('#newAuctionMessageBody()', function() {
+      describe('#addBidResponseToMessage()', function() {
+        it('should add a bid response in the output message, grouped by adunit_id and bidder', function() {
+          const message = {
+            adUnits: {}
+          };
+          appierAnalyticsAdapter.addBidResponseToMessage(message, noBids[0], BIDDER_STATUS.NO_BID);
+
+          expect(message.adUnits).to.deep.include({
+            'adunit_2': {
+              'appier': {
+                prebidWon: false,
+                isTimeout: false,
+                status: BIDDER_STATUS.NO_BID,
+              }
+            }
+          });
+        });
+      });
+
+      describe('#createBidMessage()', function() {
         it('should format auction message sent to the backend', function() {
           const args = {
             auctionId: auctionId,
@@ -239,7 +248,7 @@ describe('Appier Prebid AnalyticsAdapter', function () {
             noBids: noBids
           };
 
-          const result = appierAnalyticsAdapter.newAuctionMessageBody(args, highestCpmBids, timeoutBids);
+          const result = appierAnalyticsAdapter.createBidMessage(args, highestCpmBids, timeoutBids);
 
           assertHavingRequiredMessageFields(result);
           expect(result).to.deep.include({
@@ -287,10 +296,10 @@ describe('Appier Prebid AnalyticsAdapter', function () {
         });
       });
 
-      describe('#newImpressionMessageBody()', function() {
+      describe('#createImpressionMessage()', function() {
         it('should format message sent to the backend with the bid result', function() {
           const bid = receivedBids[0];
-          const result = appierAnalyticsAdapter.newImpressionMessageBody(bid);
+          const result = appierAnalyticsAdapter.createImpressionMessage(bid);
 
           assertHavingRequiredMessageFields(result);
           expect(result.adUnits).to.deep.include({
@@ -311,9 +320,9 @@ describe('Appier Prebid AnalyticsAdapter', function () {
         });
       });
 
-      describe('#newCreativeMessageBody()', function() {
+      describe('#createCreativeMessage()', function() {
         it('should generate message sent to the backend with ad html grouped by adunit and bidder', function() {
-          const result = appierAnalyticsAdapter.newCreativeMessageBody(auctionId, receivedBids);
+          const result = appierAnalyticsAdapter.createCreativeMessage(auctionId, receivedBids);
 
           assertHavingRequiredMessageFields(result);
           expect(result.adUnits).to.deep.include({
@@ -338,7 +347,6 @@ describe('Appier Prebid AnalyticsAdapter', function () {
 
   describe('enableAnalytics and config parser', function () {
     beforeEach(function () {
-      requests = [];
       sinon.stub(events, 'getEvents').returns([]);
     });
 

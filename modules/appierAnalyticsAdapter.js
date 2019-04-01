@@ -94,7 +94,7 @@ export const appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, ana
       contentType: 'application/json'
     });
   },
-  newCommonMessageBody(auctionId) {
+  createCommonMessage(auctionId) {
     return {
       version: ANALYTICS_VERSION,
       auctionId: auctionId,
@@ -126,9 +126,16 @@ export const appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, ana
     }
     return result;
   },
-  newAuctionMessageBody(auctionEndArgs, winningBids, timeoutBids) {
+  addBidResponseToMessage(message, bid, status) {
+    const adUnitCode = parseAdUnitCode(bid);
+    message.adUnits[adUnitCode] = message.adUnits[adUnitCode] || {};
+    const bidder = parseBidderCode(bid);
+    const bidResponse = this.serializeBidResponse(bid, status);
+    message.adUnits[adUnitCode][bidder] = bidResponse;
+  },
+  createBidMessage(auctionEndArgs, winningBids, timeoutBids) {
     const {auctionId, timestamp, timeout, auctionEnd, adUnitCodes, bidsReceived, noBids} = auctionEndArgs;
-    const message = this.newCommonMessageBody(auctionId);
+    const message = this.createCommonMessage(auctionId);
 
     message.auctionElapsed = (auctionEnd - timestamp);
     message.timeout = timeout;
@@ -137,26 +144,9 @@ export const appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, ana
       message.adUnits[adUnitCode] = {};
     });
 
-    bidsReceived.forEach((bid) => {
-      const adUnitCode = parseAdUnitCode(bid);
-      const bidder = parseBidderCode(bid);
-      const bidResponse = this.serializeBidResponse(bid, BIDDER_STATUS.BID);
-      message.adUnits[adUnitCode][bidder] = bidResponse;
-    });
-
-    noBids.forEach((bid) => {
-      const adUnitCode = parseAdUnitCode(bid);
-      const bidder = parseBidderCode(bid);
-      const bidResponse = this.serializeBidResponse(bid, BIDDER_STATUS.NO_BID);
-      message.adUnits[adUnitCode][bidder] = bidResponse;
-    });
-
-    timeoutBids.forEach((bid) => {
-      const adUnitCode = parseAdUnitCode(bid);
-      const bidder = parseBidderCode(bid);
-      const bidResponse = this.serializeBidResponse(bid, BIDDER_STATUS.TIMEOUT);
-      message.adUnits[adUnitCode][bidder] = bidResponse;
-    });
+    bidsReceived.forEach(bid => this.addBidResponseToMessage(message, bid, BIDDER_STATUS.BID));
+    noBids.forEach(bid => this.addBidResponseToMessage(message, bid, BIDDER_STATUS.NO_BID));
+    timeoutBids.forEach(bid => this.addBidResponseToMessage(message, bid, BIDDER_STATUS.TIMEOUT));
 
     // mark the winning bids with prebidWon = true
     winningBids.forEach(bid => {
@@ -166,17 +156,13 @@ export const appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, ana
     });
     return message;
   },
-  newImpressionMessageBody(bid) {
-    const message = this.newCommonMessageBody(bid.auctionId);
-    const adUnitCode = parseAdUnitCode(bid);
-    message.adUnits[adUnitCode] = {};
-    const bidder = parseBidderCode(bid);
-    const bidResponse = this.serializeBidResponse(bid, BIDDER_STATUS.BID_WON);
-    message.adUnits[adUnitCode][bidder] = bidResponse;
+  createImpressionMessage(bid) {
+    const message = this.createCommonMessage(bid.auctionId);
+    this.addBidResponseToMessage(message, bid, BIDDER_STATUS.BID_WON);
     return message;
   },
-  newCreativeMessageBody(auctionId, bids) {
-    const message = this.newCommonMessageBody(auctionId);
+  createCreativeMessage(auctionId, bids) {
+    const message = this.createCommonMessage(auctionId);
     bids.forEach((bid) => {
       const adUnitCode = parseAdUnitCode(bid);
       const bidder = parseBidderCode(bid);
@@ -196,13 +182,13 @@ export const appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, ana
     const highestCpmBids = pbjs.getHighestCpmBids();
 
     this.sendEventMessage('bid',
-      this.newAuctionMessageBody(auctionEndArgs, highestCpmBids, cachedAuction.timeoutBids)
+      this.createBidMessage(auctionEndArgs, highestCpmBids, cachedAuction.timeoutBids)
     );
 
     if (analyticsOptions.adSampled) {
       // FIXME: do not send the message if there are no creatives at all to safe bandwidth
       this.sendEventMessage('cr',
-        this.newCreativeMessageBody(auctionEndArgs.auctionId, auctionEndArgs.bidsReceived)
+        this.createCreativeMessage(auctionEndArgs.auctionId, auctionEndArgs.bidsReceived)
       );
     }
   },
@@ -213,7 +199,7 @@ export const appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, ana
     });
   },
   handleBidWon(bidWonArgs) {
-    this.sendEventMessage('imp', this.newImpressionMessageBody(bidWonArgs));
+    this.sendEventMessage('imp', this.createImpressionMessage(bidWonArgs));
   },
   track({eventType, args}) {
     if (analyticsOptions.sampled) {
