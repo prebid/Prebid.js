@@ -147,6 +147,7 @@ export const spec = {
     setupGlobalNamespace(anyBid);
 
     const bidRequestWithSsat = find(validBidRequests, bidRequest => bidRequest.params.ssat);
+    const bidRequestWithYl2 = find(validBidRequests, bidRequest => bidRequest.params.yl2);
 
     const payload = {
       id: bidderRequest.auctionId,
@@ -155,7 +156,8 @@ export const spec = {
       ssl: isSecureWindow(),
       mpa: isMainPageAccessible(),
       timeout: bidderRequest.timeout - (Date.now() - bidderRequest.auctionStart),
-      ssat: bidRequestWithSsat ? bidRequestWithSsat.params.ssat : 2
+      ssat: bidRequestWithSsat ? bidRequestWithSsat.params.ssat : 2,
+      yl2: bidRequestWithYl2 ? bidRequestWithYl2.params.yl2 : (localStorage.sdgYieldtest === '1')
     };
 
     const gdprConsent = bidderRequest.gdprConsent;
