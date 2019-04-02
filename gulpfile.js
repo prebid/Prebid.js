@@ -78,13 +78,14 @@ function lint(done) {
 // View the code coverage report in the browser.
 function viewCoverage(done) {
   var coveragePort = 1999;
+  var mylocalhost = (argv.host) ? argv.host : 'localhost';
 
   connect.server({
     port: coveragePort,
     root: 'build/coverage/karma_html',
     livereload: false
   });
-  opens('http://localhost:' + coveragePort);
+  opens('http://' + mylocalhost + ':' + coveragePort);
   done();
 };
 
@@ -277,6 +278,20 @@ function setupE2e(done) {
   done();
 }
 
+function replaceLocalhost() {
+  if (!argv.host) {
+    throw new gutil.PluginError({
+      plugin: 'E2E test',
+      message: gutil.colors.red('Host should be defined e.g. ap.localhost, anlocalhost. localhost cannot be used as safari browserstack is not able to connect to localhost')
+    });
+  }
+  var userLocalhost = argv.host;
+  return gulp.src('./test/helpers/setupLocalhost.js', {base: './'})
+    .pipe(replace(/(?<=.*mylocalhost\s\=\s').+(?=';)/, userLocalhost))  //ignore the eslint error here; the regex is fine
+    .pipe(gulp.dest('./'));
+}
+gulp.task(replaceLocalhost);
+
 // support tasks
 gulp.task(lint);
 gulp.task(watch);
@@ -302,7 +317,7 @@ gulp.task('build-postbid', gulp.series(escapePostbidConfig, buildPostbid));
 gulp.task('serve', gulp.series(clean, lint, gulp.parallel('build-bundle-dev', watch, test)));
 gulp.task('default', gulp.series(clean, makeWebpackPkg));
 
-gulp.task('lfe2e', gulp.series(clean, gulp.parallel('build-bundle-dev', watch, setupE2e), test))
+gulp.task('lfe2e', gulp.series(clean, setupE2e, replaceLocalhost, gulp.parallel('build-bundle-dev', watch), test))
 // other tasks
 gulp.task(bundleToStdout);
 gulp.task('bundle', gulpBundle.bind(null, false)); // used for just concatenating pre-built files with no build step

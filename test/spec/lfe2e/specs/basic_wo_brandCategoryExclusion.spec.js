@@ -1,16 +1,17 @@
 const includes = require('core-js/library/fn/array/includes');
 const expect = require('chai').expect;
+const lochost = require('../../../helpers/setupLocalhost').mylocalhost;
 
 const ACCEPTED_DURAS = ['15s', '30s'];
 const ACCEPTED_CPMS = ['15.00', '14.00', '13.00', '10.00'];
 const customKeyRegex = /\d{2}\.\d{2}_\d{2}s/;
 const uuidRegex = /(\d|\w){8}-((\d|\w){4}-){3}(\d|\w){12}/;
 
-describe('longform ads using requireExactDuration field', function() {
+describe('longform ads without using brandCategoryExclusion', function() {
   this.retries(3);
   it('process the bids successfully', function() {
     browser
-      .url('http://test.localhost:9999/integrationExamples/longform/basic_wo_brandCategoryExclusion.html?pbjs_debug=true')
+      .url('http://' + lochost + ':9999/integrationExamples/longform/basic_wo_brandCategoryExclusion.html?pbjs_debug=true')
       .pause(10000);
 
     const loadPrebidBtnXpath = '//*[@id="loadPrebidRequestBtn"]';

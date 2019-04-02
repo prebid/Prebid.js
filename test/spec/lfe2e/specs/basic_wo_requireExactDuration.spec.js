@@ -1,5 +1,6 @@
 const includes = require('core-js/library/fn/array/includes');
 const expect = require('chai').expect;
+const lochost = require('../../../helpers/setupLocalhost').mylocalhost;
 
 const ACCEPTED_DURAS = ['15s', '30s'];
 const ACCEPTED_CATS = ['Food', 'Retail Stores/Chains', 'Pet Food/Supplies', 'Travel/Hotels/Airlines', 'Automotive', 'Health Care Services'];
@@ -11,7 +12,7 @@ describe('longform ads not using requireExactDuration field', function() {
   this.retries(3);
   it('process the bids successfully', function() {
     browser
-      .url('http://test.localhost:9999/integrationExamples/longform/basic_wo_requireExactDuration.html?pbjs_debug=true')
+      .url('http://' + lochost + ':9999/integrationExamples/longform/basic_wo_requireExactDuration.html?pbjs_debug=true')
       .pause(10000);
 
     const loadPrebidBtnXpath = '//*[@id="loadPrebidRequestBtn"]';
