@@ -2,7 +2,7 @@
 
 **Module Name**: Finn.no bidder adapter
 **Module Type**: Bidder Adapter
-**Maintainer**:  @finn.no
+**Maintainer**:  jan.schoepp@finn.no
 
 # Description
 
