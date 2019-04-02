@@ -725,7 +725,7 @@ function _blockedIabCategoriesValidation(payload, blockedIabCategories) {
         utils.logWarn(LOG_WARN_PREFIX + 'bcat: Each category should have a value of a length of more than 3 characters, ignoring category: ' + category)
       }
     });
-  if (blockedIabCategories.length > 1) {
+  if (blockedIabCategories.length > 0) {
     utils.logWarn(LOG_WARN_PREFIX + 'bcat: Selected: ', blockedIabCategories);
     payload.bcat = blockedIabCategories;
   }
