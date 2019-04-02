@@ -28,18 +28,18 @@ export const spec = {
     var i, l, bid, reqParams, netRevenue, gdprObject;
     var request = [];
     var bids = JSON.parse(JSON.stringify(validBidRequests));
-    var lastContry = 'sk';
+    var lastCountry = 'sk';
     for (i = 0, l = bids.length; i < l; i++) {
       bid = bids[i];
       if (countryMap[bid.params.country]) {
-        lastContry = countryMap[bid.params.country];
+        lastCountry = countryMap[bid.params.country];
       }
       reqParams = bid.params;
       reqParams.transactionId = bid.transactionId;
       request.push(formRequestUrl(reqParams));
     }
 
-    request.unshift('//' + lastContry + '.search.etargetnet.com/hb/?hbget=1');
+    request.unshift('//' + lastCountry + '.search.etargetnet.com/hb/?hbget=1');
     netRevenue = 'net';
 
     if (bidderRequest && bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies) {
