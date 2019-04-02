@@ -13,14 +13,11 @@ export const spec = {
    */
   isBidRequestValid: bidRequest =>
     (typeof bidRequest !== 'undefined' &&
-      typeof bidRequest.bids !== 'undefined' &&
-      bidRequest.bids.length > 0 &&
-      typeof bidRequest.bids[0].adUnitCode !== 'undefined' &&
-      typeof bidRequest.bids[0].auctionId !== 'undefined' &&
-      typeof bidRequest.bids[0].bidId !== 'undefined' &&
-      typeof bidRequest.bids[0].bidderRequestId !== 'undefined' &&
-      typeof bidRequest.bids[0].sizes !== 'undefined' &&
-      typeof bidRequest.bids[0].transactionId !== 'undefined'),
+        typeof bidRequest.bidder !== 'undefined' &&
+        typeof bidRequest.adUnitCode !== 'undefined' &&
+        typeof bidRequest.transactionId !== 'undefined' &&
+        typeof bidRequest.sizes !== 'undefined' &&
+        typeof bidRequest.bidId !== 'undefined'),
 
   /**
    * Make a server request from the list of BidRequests.
@@ -57,34 +54,36 @@ export const spec = {
     };
   },
   /**
-   * Unpack the response from the server into a list of bids.
-   *
-   * @return {Bid[]} An array of bids which were nested inside the server.
-   * @param finnResponseObject
-   * @param bidRequest
-   */
-  interpretResponse: (finnResponseObject, bidRequest) => {
-    const bidResponses = [];
-    if (finnResponseObject.body && finnResponseObject.body.constructor === Array) {
-      finnResponseObject.body.forEach(bidResponse => {
-        bidResponses.push({
-          requestId: bidResponse.bidId,
-          cpm: bidResponse.price || 0,
-          width: bidResponse.width,
-          height: bidResponse.height,
-          creativeId: bidResponse.creativeId,
-          dealId: bidResponse.deal || null,
-          currency: 'NOK',
-          netRevenue: bidResponse.priceType,
-          ttl: bidResponse.ttl,
-          mediaType: BANNER,
-          ad: bidResponse.creative
-        });
-      });
-    }
+     * Unpack the response from the server into a list of bids.
+     *
+     * @return {Bid[]} An array of bids which were nested inside the server.
+     * @param finnResponseObject
+     * @param bidRequest
+     */
+  interpretResponse:
+      (finnResponseObject, bidRequest) => {
+        const bidResponses = [];
+        if (finnResponseObject.body && finnResponseObject.body.constructor === Array) {
+          finnResponseObject.body.forEach(bidResponse => {
+            bidResponses.push({
+              requestId: bidResponse.bidId,
+              cpm: bidResponse.price || 0,
+              width: bidResponse.width,
+              height: bidResponse.height,
+              creativeId: bidResponse.creativeId,
+              dealId: bidResponse.deal || null,
+              currency: 'NOK',
+              netRevenue: bidResponse.priceType,
+              ttl: bidResponse.ttl,
+              mediaType: BANNER,
+              ad: bidResponse.creative
+            });
+          });
+        }
 
-    return bidResponses;
-  },
-};
+        return bidResponses;
+      },
+}
+;
 
 registerBidder(spec);

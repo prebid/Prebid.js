@@ -3,6 +3,14 @@ import {spec} from 'modules/finnBidAdapter';
 import {newBidder} from 'src/adapters/bidderFactory';
 
 describe('FinnAdapter', () => {
+  let req = {
+    bidder: 'finn',
+    adUnitCode: 'div-gpt-ad-1460505748561-0',
+    transactionId: 'acdbf6d8-fc51-4b2b-a1b2-aba86ffeeb05',
+    sizes: [[300, 250], [300, 600]],
+    bidId: '2b49dcfee699a5',
+  };
+
   let bidderRequest = {
     auctionId: 'c45dd708-a418-42ec-b8a7-b70a6c6fab0a',
     bidderCode: 'finn',
@@ -48,7 +56,7 @@ describe('FinnAdapter', () => {
 
   describe('isBidRequestValid', () => {
     it('should return true for valid bidRequests ', () => {
-      expect(spec.isBidRequestValid(bidderRequest)).to.equal(true);
+      expect(spec.isBidRequestValid(req)).to.equal(true);
     });
     it('should return false for bidRequests with no bids', () => {
       let badRequest = {
