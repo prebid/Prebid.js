@@ -9,6 +9,9 @@ describe('PubMatic adapter', function () {
   let videoBidRequests;
   let multipleMediaRequests;
   let bidResponses;
+  let emptyBidResponse;
+  let firstResponse, secoundResponse;
+  let firstBid, secoundBid;
   let nativeBidRequests;
   let nativeBidRequestsWithAllParams;
   let nativeBidRequestsWithoutAsset;
@@ -19,118 +22,146 @@ describe('PubMatic adapter', function () {
   let nativeBidImpressionWithoutRequiredParams;
   let validnativeBidImpressionWithAllParams;
 
-  beforeEach(function () {
-    bidRequests = [
-      {
-        bidder: 'pubmatic',
-        params: {
-          publisherId: '301',
-          adSlot: '/15671365/DMDemo@300x250:0',
-          kadfloor: '1.2',
-    		  pmzoneid: 'aabc, ddef',
-    		  kadpageurl: 'www.publisher.com',
-    		  yob: '1986',
-    		  gender: 'M',
-    		  lat: '12.3',
-    		  lon: '23.7',
-    		  wiid: '1234567890',
-    		  profId: '100',
-    		  verId: '200',
-          currency: 'AUD',
-          dctr: 'key1:val1,val2|key2:val1'
-        },
-        placementCode: '/19968336/header-bid-tag-1',
-        sizes: [[300, 250], [300, 600]],
-        bidId: '23acc48ad47af5',
-        requestId: '0fb4905b-9456-4152-86be-c6f6d259ba99',
-        bidderRequestId: '1c56ad30b9b8ca8',
-        transactionId: '92489f71-1bf2-49a0-adf9-000cea934729'
-      }
-    ];
+  beforeEach(() => {
+    firstBid = {
+      bidder: 'pubmatic',
+      params: {
+        publisherId: '301',
+        adSlot: '/15671365/DMDemo@300x250:0',
+        kadfloor: '1.2',
+        pmzoneid: 'aabc, ddef',
+        kadpageurl: 'www.publisher.com',
+        yob: '1986',
+        gender: 'M',
+        lat: '12.3',
+        lon: '23.7',
+        wiid: '1234567890',
+        profId: '100',
+        verId: '200',
+        currency: 'AUD',
+        dctr: 'key1:val1,val2|key2:val1'
+      },
+      placementCode: '/19968336/header-bid-tag-1',
+      sizes: [
+        [300, 250],
+        [300, 600]
+      ],
+      bidId: '23acc48ad47af5',
+      requestId: '0fb4905b-9456-4152-86be-c6f6d259ba99',
+      bidderRequestId: '1c56ad30b9b8ca8',
+      transactionId: '92489f71-1bf2-49a0-adf9-000cea934729'
+    };
 
-    videoBidRequests =
-    [
-      {
-        code: 'video1',
-        mediaTypes: {
-          video: {
-            playerSize: [640, 480],
-            context: 'instream'
-          }
-        },
-        bidder: 'pubmatic',
-        params: {
-          publisherId: '5890',
-          adSlot: 'Div1@0x0', // ad_id or tagid
-          video: {
-            mimes: ['video/mp4', 'video/x-flv'],
-            skippable: true,
-            minduration: 5,
-            maxduration: 30,
-            startdelay: 5,
-            playbackmethod: [1, 3],
-            api: [1, 2],
-            protocols: [2, 3],
-            battr: [13, 14],
-            linearity: 1,
-            placement: 2,
-            minbitrate: 10,
-            maxbitrate: 10
-          }
+    secoundBid = JSON.parse(JSON.stringify(firstBid));
+    secoundBid.bidId = '22bddb28db77e';
+
+    bidRequests = [firstBid, secoundBid];
+
+    firstResponse = {
+      'bid': [{
+        'id': '74858439-49D7-4169-BA5D-44A046315B2F',
+        'impid': '23acc48ad47af5',
+        'price': 1.3,
+        'adm': 'image3.pubmatic.com Layer based creative',
+        'h': 250,
+        'w': 300,
+        'ext': {
+          'deal_channel': 6
         }
-      }
-    ];
+      }]
+    };
+    secoundResponse = {
+      'bid': [{
+        'id': '74858439-49D7-4169-BA5D-44A046315BEF',
+        'impid': '22bddb28db77e',
+        'price': 1.7,
+        'adm': 'image3.pubmatic.com Layer based creative',
+        'h': 250,
+        'w': 300,
+        'ext': {
+          'deal_channel': 5
+        }
+      }]
+    };
 
-    multipleMediaRequests =
-    [
-      {
-        bidder: 'pubmatic',
-        params: {
-          publisherId: '301',
-          adSlot: '/15671365/DMDemo@300x250:0',
-          kadfloor: '1.2',
-          pmzoneid: 'aabc, ddef',
-          kadpageurl: 'www.publisher.com',
-          yob: '1986',
-          gender: 'M',
-          lat: '12.3',
-          lon: '23.7',
-          wiid: '1234567890',
-          profId: '100',
-          verId: '200'
+    videoBidRequests = [{
+      code: 'video1',
+      mediaTypes: {
+        video: {
+          playerSize: [640, 480],
+          context: 'instream'
         }
       },
-      {
-        code: 'div-instream',
-        mediaTypes: {
-          video: {
-            context: 'instream',
-            playerSize: [300, 250]
-          },
-        },
-        bidder: 'pubmatic',
-        params: {
-          publisherId: '5890',
-          adSlot: 'Div1@640x480', // ad_id or tagid
-          video: {
-            mimes: ['video/mp4', 'video/x-flv'],
-            skippable: true,
-            minduration: 5,
-            maxduration: 30,
-            startdelay: 15,
-            playbackmethod: [1, 3],
-            api: [1, 2],
-            protocols: [2, 3],
-            w: 640,
-            h: 480,
-            battr: [13, 14],
-            linearity: 1,
-            placement: 2,
-            minbitrate: 100,
-            maxbitrate: 4096
-          }
+      bidder: 'pubmatic',
+      params: {
+        publisherId: '5890',
+        adSlot: 'Div1@0x0', // ad_id or tagid
+        video: {
+          mimes: ['video/mp4', 'video/x-flv'],
+          skippable: true,
+          minduration: 5,
+          maxduration: 30,
+          startdelay: 5,
+          playbackmethod: [1, 3],
+          api: [1, 2],
+          protocols: [2, 3],
+          battr: [13, 14],
+          linearity: 1,
+          placement: 2,
+          minbitrate: 10,
+          maxbitrate: 10
         }
       }
+    }];
+
+    multipleMediaRequests = [{
+      bidder: 'pubmatic',
+      params: {
+        publisherId: '301',
+        adSlot: '/15671365/DMDemo@300x250:0',
+        kadfloor: '1.2',
+        pmzoneid: 'aabc, ddef',
+        kadpageurl: 'www.publisher.com',
+        yob: '1986',
+        gender: 'M',
+        lat: '12.3',
+        lon: '23.7',
+        wiid: '1234567890',
+        profId: '100',
+        verId: '200'
+      }
+    },
+    {
+      code: 'div-instream',
+      mediaTypes: {
+        video: {
+          context: 'instream',
+          playerSize: [300, 250]
+        },
+      },
+      bidder: 'pubmatic',
+      params: {
+        publisherId: '5890',
+        adSlot: 'Div1@640x480', // ad_id or tagid
+        video: {
+          mimes: ['video/mp4', 'video/x-flv'],
+          skippable: true,
+          minduration: 5,
+          maxduration: 30,
+          startdelay: 15,
+          playbackmethod: [1, 3],
+          api: [1, 2],
+          protocols: [2, 3],
+          w: 640,
+          h: 480,
+          battr: [13, 14],
+          linearity: 1,
+          placement: 2,
+          minbitrate: 100,
+          maxbitrate: 4096
+        }
+      }
+    }
     ];
 
     nativeBidRequests = [{
@@ -275,38 +306,12 @@ describe('PubMatic adapter', function () {
     bidResponses = {
       'body': {
         'id': '93D3BAD6-E2E2-49FB-9D89-920B1761C865',
-        'seatbid': [{
-          'bid': [{
-            'id': '74858439-49D7-4169-BA5D-44A046315B2F',
-            'impid': '22bddb28db77d',
-            'price': 1.3,
-            'adm': 'image3.pubmatic.com Layer based creative',
-            'adomain': ['blackrock.com'],
-            'h': 250,
-            'w': 300,
-            'ext': {
-              'deal_channel': 6,
-              'advid': 976,
-              'dspid': 123
-            }
-          }]
-        }, {
-          'bid': [{
-            'id': '74858439-49D7-4169-BA5D-44A046315BEF',
-            'impid': '22bddb28db77e',
-            'price': 1.7,
-            'adm': 'image3.pubmatic.com Layer based creative',
-            'adomain': ['hivehome.com'],
-            'h': 250,
-            'w': 300,
-            'ext': {
-              'deal_channel': 5,
-              'advid': 832,
-              'dspid': 422
-            }
-          }]
-        }]
+        'seatbid': [firstResponse, secoundResponse]
       }
+    };
+
+    emptyBidResponse = {
+      'body': ''
     };
 
     nativeBidResponse = {
@@ -329,31 +334,31 @@ describe('PubMatic adapter', function () {
         }],
         'cur': 'USD'
       }
-    }
+    };
 
     validnativeBidImpression = {
       'native': {
         'request': '{"assets":[{"id":1,"required":1,"title":{"len":80}},{"id":2,"required":1,"img":{"type":3,"w":300,"h":250}},{"id":4,"required":1,"data":{"type":1}}]}'
       }
-    }
+    };
 
     nativeBidImpressionWithoutRequiredParams = {
       'native': {
         'request': '{"assets":[{"id":4,"required":1,"data":{"type":1}}]}'
       }
-    }
+    };
 
     validnativeBidImpressionWithRequiredParam = {
       'native': {
         'request': '{"assets":[{"id":1,"required":0,"title":{"len":80}},{"id":2,"required":0,"img":{"type":3,"w":300,"h":250}},{"id":4,"required":1,"data":{"type":1}}]}'
       }
-    }
+    };
 
     validnativeBidImpressionWithAllParams = {
       native: {
-        'request': '{"assets":[{"id":1,"required":1,"title":{"len":80,"ext":{"title1":"title2"}}},{"id":3,"required":1,"img":{"type":1,"w":50,"h":50}},{"id":2,"required":1,"img":{"type":3,"w":728,"h":90,"mimes":["image/png","image/gif"],"ext":{"image1":"image2"}}},{"id":4,"required":1,"data":{"type":1,"len":10,"ext":{"sponsor1":"sponsor2"}}},{"id":5,"required":1,"data":{"type":2,"len":10,"ext":{"body1":"body2"}}},{"id":13,"required":1,"data":{"type":3,"len":10,"ext":{"rating1":"rating2"}}},{"id":14,"required":1,"data":{"type":4,"len":10,"ext":{"likes1":"likes2"}}},{"id":15,"required":1,"data":{"type":5,"len":10,"ext":{"downloads1":"downloads2"}}},{"id":16,"required":1,"data":{"type":6,"len":10,"ext":{"price1":"price2"}}},{"id":17,"required":1,"data":{"type":7,"len":10,"ext":{"saleprice1":"saleprice2"}}},{"id":18,"required":1,"data":{"type":8,"len":10,"ext":{"phone1":"phone2"}}},{"id":19,"required":1,"data":{"type":9,"len":10,"ext":{"address1":"address2"}}},{"id":20,"required":1,"data":{"type":10,"len":10,"ext":{"desc21":"desc22"}}},{"id":21,"required":1,"data":{"type":11,"len":10,"ext":{"displayurl1":"displayurl2"}}}]}'
+        'request': '{"assets":[{"id":1,"required":1,"title":{"len":80,"ext":{"title1":"title2"}}},{"id":3,"required":1,"img":{"type":1,"w":50,"h":50,"ext":{"icon1":"icon2"}}},{"id":2,"required":1,"img":{"type":3,"w":728,"h":90,"mimes":["image/png","image/gif"],"ext":{"image1":"image2"}}},{"id":4,"required":1,"data":{"type":1,"len":10,"ext":{"sponsor1":"sponsor2"}}},{"id":5,"required":1,"data":{"type":2,"len":10,"ext":{"body1":"body2"}}},{"id":13,"required":1,"data":{"type":3,"len":10,"ext":{"rating1":"rating2"}}},{"id":14,"required":1,"data":{"type":4,"len":10,"ext":{"likes1":"likes2"}}},{"id":15,"required":1,"data":{"type":5,"len":10,"ext":{"downloads1":"downloads2"}}},{"id":16,"required":1,"data":{"type":6,"len":10,"ext":{"price1":"price2"}}},{"id":17,"required":1,"data":{"type":7,"len":10,"ext":{"saleprice1":"saleprice2"}}},{"id":18,"required":1,"data":{"type":8,"len":10,"ext":{"phone1":"phone2"}}},{"id":19,"required":1,"data":{"type":9,"len":10,"ext":{"address1":"address2"}}},{"id":20,"required":1,"data":{"type":10,"len":10,"ext":{"desc21":"desc22"}}},{"id":21,"required":1,"data":{"type":11,"len":10,"ext":{"displayurl1":"displayurl2"}}}]}'
       }
-    }
+    };
   });
 
   describe('implementation', function () {
@@ -1185,6 +1190,13 @@ describe('PubMatic adapter', function () {
         expect(data.imp[1]['video']['h']).to.equal(multipleMediaRequests[1].mediaTypes.video.playerSize[1]);
       });
 
+      it('invalid adslot', () => {
+        firstBid.params.adSlot = '/15671365/DMDemo';
+        firstBid.params.sizes = [];
+        let request = spec.buildRequests([]);
+        expect(request).to.equal(undefined);
+      });
+
       it('Request params should have valid native bid request for all valid params', function () {
         let request = spec.buildRequests(nativeBidRequests);
         let data = JSON.parse(request.data);
@@ -1225,89 +1237,89 @@ describe('PubMatic adapter', function () {
         expect(data.imp[0]['native']['request']).to.exist.and.to.be.an('string');
         expect(data.imp[0]['native']['request']).to.exist.and.to.equal(validnativeBidImpressionWithAllParams.native.request);
       });
-  	});
 
-    it('Request params dctr check', function () {
-      let multipleBidRequests = [
-        {
-          bidder: 'pubmatic',
-          params: {
-            publisherId: '301',
-            adSlot: '/15671365/DMDemo@300x250:0',
-            kadfloor: '1.2',
-            pmzoneid: 'aabc, ddef',
-            kadpageurl: 'www.publisher.com',
-            yob: '1986',
-            gender: 'M',
-            lat: '12.3',
-            lon: '23.7',
-            wiid: '1234567890',
-            profId: '100',
-            verId: '200',
-            currency: 'AUD',
-            dctr: 'key1=val1|key2=val2,!val3'
+      it('Request params dctr check', function () {
+        let multipleBidRequests = [
+          {
+            bidder: 'pubmatic',
+            params: {
+              publisherId: '301',
+              adSlot: '/15671365/DMDemo@300x250:0',
+              kadfloor: '1.2',
+              pmzoneid: 'aabc, ddef',
+              kadpageurl: 'www.publisher.com',
+              yob: '1986',
+              gender: 'M',
+              lat: '12.3',
+              lon: '23.7',
+              wiid: '1234567890',
+              profId: '100',
+              verId: '200',
+              currency: 'AUD',
+              dctr: 'key1=val1|key2=val2,!val3'
+            },
+            placementCode: '/19968336/header-bid-tag-1',
+            sizes: [[300, 250], [300, 600]],
+            bidId: '23acc48ad47af5',
+            requestId: '0fb4905b-9456-4152-86be-c6f6d259ba99',
+            bidderRequestId: '1c56ad30b9b8ca8',
+            transactionId: '92489f71-1bf2-49a0-adf9-000cea934729'
           },
-          placementCode: '/19968336/header-bid-tag-1',
-          sizes: [[300, 250], [300, 600]],
-          bidId: '23acc48ad47af5',
-          requestId: '0fb4905b-9456-4152-86be-c6f6d259ba99',
-          bidderRequestId: '1c56ad30b9b8ca8',
-          transactionId: '92489f71-1bf2-49a0-adf9-000cea934729'
-        },
-        {
-          bidder: 'pubmatic',
-          params: {
-            publisherId: '301',
-            adSlot: '/15671365/DMDemo@300x250:0',
-            kadfloor: '1.2',
-            pmzoneid: 'aabc, ddef',
-            kadpageurl: 'www.publisher.com',
-            yob: '1986',
-            gender: 'M',
-            lat: '12.3',
-            lon: '23.7',
-            wiid: '1234567890',
-            profId: '100',
-            verId: '200',
-            currency: 'GBP',
-            dctr: 'key1=val3|key2=val1,!val3|key3=val123'
-          },
-          placementCode: '/19968336/header-bid-tag-1',
-          sizes: [[300, 250], [300, 600]],
-          bidId: '23acc48ad47af5',
-          requestId: '0fb4905b-9456-4152-86be-c6f6d259ba99',
-          bidderRequestId: '1c56ad30b9b8ca8',
-          transactionId: '92489f71-1bf2-49a0-adf9-000cea934729'
-        }
-      ];
+          {
+            bidder: 'pubmatic',
+            params: {
+              publisherId: '301',
+              adSlot: '/15671365/DMDemo@300x250:0',
+              kadfloor: '1.2',
+              pmzoneid: 'aabc, ddef',
+              kadpageurl: 'www.publisher.com',
+              yob: '1986',
+              gender: 'M',
+              lat: '12.3',
+              lon: '23.7',
+              wiid: '1234567890',
+              profId: '100',
+              verId: '200',
+              currency: 'GBP',
+              dctr: 'key1=val3|key2=val1,!val3|key3=val123'
+            },
+            placementCode: '/19968336/header-bid-tag-1',
+            sizes: [[300, 250], [300, 600]],
+            bidId: '23acc48ad47af5',
+            requestId: '0fb4905b-9456-4152-86be-c6f6d259ba99',
+            bidderRequestId: '1c56ad30b9b8ca8',
+            transactionId: '92489f71-1bf2-49a0-adf9-000cea934729'
+          }
+        ];
 
-      let request = spec.buildRequests(multipleBidRequests);
-      let data = JSON.parse(request.data);
+        let request = spec.buildRequests(multipleBidRequests);
+        let data = JSON.parse(request.data);
 
-      /* case 1 -
-        dctr is found in adunit[0]
-      */
+        /* case 1 -
+          dctr is found in adunit[0]
+        */
 
-      expect(data.site.ext).to.exist.and.to.be.an('object'); // dctr parameter
-      expect(data.site.ext.key_val).to.exist.and.to.equal(multipleBidRequests[0].params.dctr);
+        expect(data.site.ext).to.exist.and.to.be.an('object'); // dctr parameter
+        expect(data.site.ext.key_val).to.exist.and.to.equal(multipleBidRequests[0].params.dctr);
 
-      /* case 2 -
-        dctr not present in adunit[0]
-      */
-      delete multipleBidRequests[0].params.dctr;
-      request = spec.buildRequests(multipleBidRequests);
-      data = JSON.parse(request.data);
+        /* case 2 -
+          dctr not present in adunit[0]
+        */
+        delete multipleBidRequests[0].params.dctr;
+        request = spec.buildRequests(multipleBidRequests);
+        data = JSON.parse(request.data);
 
-      expect(data.site.ext).to.not.exist;
+        expect(data.site.ext).to.not.exist;
 
-      /* case 3 -
-        dctr is present in adunit[0], but is not a string value
-      */
-      multipleBidRequests[0].params.dctr = 123;
-      request = spec.buildRequests(multipleBidRequests);
-      data = JSON.parse(request.data);
+        /* case 3 -
+          dctr is present in adunit[0], but is not a string value
+        */
+        multipleBidRequests[0].params.dctr = 123;
+        request = spec.buildRequests(multipleBidRequests);
+        data = JSON.parse(request.data);
 
-      expect(data.site.ext).to.not.exist;
+        expect(data.site.ext).to.not.exist;
+      });
     });
 
     describe('Response checking', function () {
@@ -1358,7 +1370,11 @@ describe('PubMatic adapter', function () {
       it('should check for dealChannel value selection', function () {
         let request = spec.buildRequests(bidRequests);
         let response = spec.interpretResponse(bidResponses, request);
+
+        request = JSON.parse(request.data);
+
         expect(response).to.be.an('array').with.length.above(0);
+        expect(response[0].requestId).to.equal(request.imp[0].id);
         expect(response[0].dealChannel).to.equal('PMPG');
         expect(response[1].dealChannel).to.equal('PREF');
       });
@@ -1372,6 +1388,87 @@ describe('PubMatic adapter', function () {
 
         expect(response).to.be.an('array').with.length.above(0);
         expect(response[0].dealChannel).to.equal(null);
+      });
+
+      it('should add a dummy bid when, empty bid is returned by hbopenbid', () => {
+        let request = spec.buildRequests(bidRequests);
+        let response = spec.interpretResponse(emptyBidResponse, request);
+
+        request = JSON.parse(request.data);
+        expect(response).to.exist.and.be.an('array').with.length.above(0);
+        expect(response[0].requestId).to.equal(request.imp[0].id);
+        expect(response[0].width).to.equal(0);
+        expect(response[0].height).to.equal(0);
+        expect(response[0].ttl).to.equal(300);
+        expect(response[0].ad).to.equal('');
+        expect(response[0].creativeId).to.equal(0);
+        expect(response[0].netRevenue).to.equal(false);
+        expect(response[0].cpm).to.equal(0);
+        expect(response[0].currency).to.equal('USD');
+        expect(response[0].referrer).to.equal(request.site && request.site.ref ? request.site.ref : '');
+      });
+
+      it('should add one dummy & one original bid if partial response come from hbopenbid', () => {
+        let request = spec.buildRequests([firstBid, secoundBid]);
+        let response = spec.interpretResponse({
+          'body': {
+            'id': '93D3BAD6-E2E2-49FB-9D89-920B1761C865',
+            'seatbid': [firstResponse]
+          }
+        }, request);
+
+        request = JSON.parse(request.data);
+        expect(response).to.exist.and.be.an('array').with.length.above(0);
+        expect(response.length).to.equal(2);
+        expect(response[0].requestId).to.equal(bidResponses.body.seatbid[0].bid[0].impid);
+        expect(response[0].cpm).to.equal((bidResponses.body.seatbid[0].bid[0].price).toFixed(2));
+        expect(response[0].width).to.equal(bidResponses.body.seatbid[0].bid[0].w);
+        expect(response[0].height).to.equal(bidResponses.body.seatbid[0].bid[0].h);
+        if (bidResponses.body.seatbid[0].bid[0].crid) {
+          expect(response[0].creativeId).to.equal(bidResponses.body.seatbid[0].bid[0].crid);
+        } else {
+          expect(response[0].creativeId).to.equal(bidResponses.body.seatbid[0].bid[0].id);
+        }
+        expect(response[0].dealId).to.equal(bidResponses.body.seatbid[0].bid[0].dealid);
+        expect(response[0].currency).to.equal('USD');
+        expect(response[0].netRevenue).to.equal(false);
+        expect(response[0].ttl).to.equal(300);
+        expect(response[0].referrer).to.include(request.site && request.site.ref ? request.site.ref : '');
+        expect(response[0].ad).to.equal(bidResponses.body.seatbid[0].bid[0].adm);
+
+        expect(response[1].requestId).to.equal(request.imp[1].id);
+        expect(response[1].width).to.equal(0);
+        expect(response[1].height).to.equal(0);
+        expect(response[1].ttl).to.equal(300);
+        expect(response[1].ad).to.equal('');
+        expect(response[1].creativeId).to.equal(0);
+        expect(response[1].netRevenue).to.equal(false);
+        expect(response[1].cpm).to.equal(0);
+        expect(response[1].currency).to.equal('USD');
+        expect(response[1].referrer).to.equal(request.site && request.site.ref ? request.site.ref : '');
+      });
+
+      it('should responsed bid if partial response come from hbopenbid', () => {
+        let request = spec.buildRequests([firstBid]);
+        let response = spec.interpretResponse(bidResponses, request);
+
+        request = JSON.parse(request.data);
+        expect(response.length).to.equal(1);
+        expect(response[0].requestId).to.equal(bidResponses.body.seatbid[0].bid[0].impid);
+        expect(response[0].cpm).to.equal((bidResponses.body.seatbid[0].bid[0].price).toFixed(2));
+        expect(response[0].width).to.equal(bidResponses.body.seatbid[0].bid[0].w);
+        expect(response[0].height).to.equal(bidResponses.body.seatbid[0].bid[0].h);
+        if (bidResponses.body.seatbid[0].bid[0].crid) {
+          expect(response[0].creativeId).to.equal(bidResponses.body.seatbid[0].bid[0].crid);
+        } else {
+          expect(response[0].creativeId).to.equal(bidResponses.body.seatbid[0].bid[0].id);
+        }
+        expect(response[0].dealId).to.equal(bidResponses.body.seatbid[0].bid[0].dealid);
+        expect(response[0].currency).to.equal('USD');
+        expect(response[0].netRevenue).to.equal(false);
+        expect(response[0].ttl).to.equal(300);
+        expect(response[0].referrer).to.include(request.site && request.site.ref ? request.site.ref : '');
+        expect(response[0].ad).to.equal(bidResponses.body.seatbid[0].bid[0].adm);
       });
 
       it('should have a valid native bid response', function() {
