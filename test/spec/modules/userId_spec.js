@@ -414,7 +414,7 @@ describe('User ID', function() {
       $$PREBID_GLOBAL$$.requestBids({
         adUnits,
         timeout: 1999,
-        bidsBackHandler:function() {
+        bidsBackHandler: function() {
           // unifiedId configured to execute callback to load user id data after the auction ends
           const submodulesWithCallbacks = submodules.filter(item => (typeof item.callback === 'function' && typeof item.idObj === 'undefined'));
           expect(submodulesWithCallbacks.length).to.equal(1);
