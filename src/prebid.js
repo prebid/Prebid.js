@@ -70,11 +70,6 @@ function setRenderSize(doc, width, height) {
 }
 
 export const checkAdUnitSetup = hook('sync', function (adUnits) {
-  let adUnitsLen = adUnits.length;
-  if (adUnitsLen > 15) {
-    utils.logInfo(`Current auction contains ${adUnitsLen} adUnits.`);
-  }
-
   adUnits.forEach((adUnit) => {
     const mediaTypes = adUnit.mediaTypes;
     const normalizedSize = utils.getAdUnitSizes(adUnit);
@@ -474,6 +469,12 @@ $$PREBID_GLOBAL$$.requestBids = hook('async', function ({ bidsBackHandler, timeo
   }
 
   const auction = auctionManager.createAuction({adUnits, adUnitCodes, callback: bidsBackHandler, cbTimeout, labels});
+
+  let adUnitsLen = adUnits.length;
+  if (adUnitsLen > 15) {
+    utils.logInfo(`Current auction ${auction.getAuctionId()} contains ${adUnitsLen} adUnits.`, adUnits);
+  }
+
   adUnitCodes.forEach(code => targeting.setLatestAuctionForAdUnit(code, auction.getAuctionId()));
   auction.callBids();
   return auction;
