@@ -1292,3 +1292,20 @@ export function getMinValueFromArray(array) {
 export function getMaxValueFromArray(array) {
   return Math.max(...array);
 }
+
+/**
+ * This function will create compare function to sort on object property
+ * @param {string} property
+ * @returns {function} compare function to be used in sorting
+ */
+export function compareOn(property) {
+  return function compare(a, b) {
+    if (a[property] < b[property]) {
+      return 1;
+    }
+    if (a[property] > b[property]) {
+      return -1;
+    }
+    return 0;
+  }
+}

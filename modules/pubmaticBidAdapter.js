@@ -4,6 +4,7 @@ import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes';
 import {config} from '../src/config';
 
 const BIDDER_CODE = 'pubmatic';
+const LOG_WARN_PREFIX = 'PubMatic: ';
 const ENDPOINT = '//hbopenbid.pubmatic.com/translator?source=prebid-client';
 const USYNCURL = '//ads.pubmatic.com/AdServer/js/showad.js#PIX&kdntuid=1&p=';
 const DEFAULT_CURRENCY = 'USD';
@@ -175,7 +176,7 @@ function _getDomainFromURL(url) {
 
 function _parseSlotParam(paramName, paramValue) {
   if (!utils.isStr(paramValue)) {
-    paramValue && utils.logWarn('PubMatic: Ignoring param key: ' + paramName + ', expects string-value, found ' + typeof paramValue);
+    paramValue && utils.logWarn(LOG_WARN_PREFIX + 'Ignoring param key: ' + paramName + ', expects string-value, found ' + typeof paramValue);
     return UNDEFINED;
   }
 
@@ -221,7 +222,7 @@ function _parseAdSlot(bid) {
   splits = slot.split('@');
   if (splits.length != 2) {
     if (!(sizesArrayExists)) {
-      utils.logWarn('AdSlot Error: adSlot not in required format');
+      utils.logWarn(LOG_WARN_PREFIX + 'AdSlot Error: adSlot not in required format');
       return;
     }
   }
@@ -229,7 +230,7 @@ function _parseAdSlot(bid) {
   if (splits.length > 1) { // i.e size is specified in adslot, so consider that and ignore sizes array
     splits = splits[1].split('x');
     if (splits.length != 2) {
-      utils.logWarn('AdSlot Error: adSlot not in required format');
+      utils.logWarn(LOG_WARN_PREFIX + 'AdSlot Error: adSlot not in required format');
       return;
     }
     bid.params.width = parseInt(splits[0]);
@@ -273,7 +274,7 @@ function _handleCustomParams(params, conf) {
         if (utils.isStr(value)) {
           conf[key] = value;
         } else {
-          utils.logWarn('PubMatic: Ignoring param : ' + key + ' with value : ' + CUSTOM_PARAMS[key] + ', expects string-value, found ' + typeof value);
+          utils.logWarn(LOG_WARN_PREFIX + 'Ignoring param : ' + key + ' with value : ' + CUSTOM_PARAMS[key] + ', expects string-value, found ' + typeof value);
         }
       }
     }
@@ -311,25 +312,25 @@ function _checkParamDataType(key, value, datatype) {
   switch (datatype) {
     case DATA_TYPES.BOOLEAN:
       if (!utils.isBoolean(value)) {
-        utils.logWarn(errMsg);
+        utils.logWarn(LOG_WARN_PREFIX + errMsg);
         return UNDEFINED;
       }
       return value;
     case DATA_TYPES.NUMBER:
       if (!utils.isNumber(value)) {
-        utils.logWarn(errMsg);
+        utils.logWarn(LOG_WARN_PREFIX + errMsg);
         return UNDEFINED;
       }
       return value;
     case DATA_TYPES.STRING:
       if (!utils.isStr(value)) {
-        utils.logWarn(errMsg);
+        utils.logWarn(LOG_WARN_PREFIX + errMsg);
         return UNDEFINED;
       }
       return value;
     case DATA_TYPES.ARRAY:
       if (!utils.isArray(value)) {
-        utils.logWarn(errMsg);
+        utils.logWarn(LOG_WARN_PREFIX + errMsg);
         return UNDEFINED;
       }
       return value;
@@ -356,7 +357,7 @@ function _createNativeRequest(params) {
                 }
               };
             } else {
-              utils.logWarn(BIDDER_CODE + ' Error: Title Length is required for native ad: ' + JSON.stringify(params));
+              utils.logWarn(LOG_WARN_PREFIX + 'Error: Title Length is required for native ad: ' + JSON.stringify(params));
             }
             break;
           case NATIVE_ASSET_KEY.IMAGE:
@@ -376,7 +377,7 @@ function _createNativeRequest(params) {
               };
             } else {
               // Log Warn
-              utils.logWarn(BIDDER_CODE + ' Error: Image sizes is required for native ad: ' + JSON.stringify(params));
+              utils.logWarn(LOG_WARN_PREFIX + 'Error: Image sizes is required for native ad: ' + JSON.stringify(params));
             }
             break;
           case NATIVE_ASSET_KEY.ICON:
@@ -392,7 +393,7 @@ function _createNativeRequest(params) {
               };
             } else {
               // Log Warn
-              utils.logWarn(BIDDER_CODE + ' Error: Icon sizes is required for native ad: ' + JSON.stringify(params));
+              utils.logWarn(LOG_WARN_PREFIX + 'Error: Icon sizes is required for native ad: ' + JSON.stringify(params));
             };
             break;
           case NATIVE_ASSET_KEY.SPONSOREDBY:
@@ -650,7 +651,7 @@ function _createImpressionObject(bid, conf) {
     impObj.banner = bannerObj;
   }
   if (isInvalidNativeRequest && impObj.hasOwnProperty('native')) {
-    utils.logWarn(BIDDER_CODE + ': Call to OpenBid will not be sent for  native ad unit as it does not contain required valid native params.' + JSON.stringify(bid) + ' Refer:' + PREBID_NATIVE_HELP_LINK);
+    utils.logWarn(LOG_WARN_PREFIX + 'Call to OpenBid will not be sent for  native ad unit as it does not contain required valid native params.' + JSON.stringify(bid) + ' Refer:' + PREBID_NATIVE_HELP_LINK);
     return;
   }
   return impObj;
@@ -717,7 +718,7 @@ function _parseNativeResponse(bid, newBid) {
     try {
       adm = JSON.parse(bid.adm.replace(/\\/g, ''));
     } catch (ex) {
-      utils.logWarn(BIDDER_CODE + ' Error: Cannot parse native reponse for ad response: ' + newBid.adm);
+      utils.logWarn(LOG_WARN_PREFIX + 'Error: Cannot parse native reponse for ad response: ' + newBid.adm);
       return;
     }
     if (adm && adm.native && adm.native.assets && adm.native.assets.length > 0) {
@@ -784,17 +785,17 @@ export const spec = {
   isBidRequestValid: bid => {
     if (bid && bid.params) {
       if (!utils.isStr(bid.params.publisherId)) {
-        utils.logWarn(BIDDER_CODE + ' Error: publisherId is mandatory and cannot be numeric. Call to OpenBid will not be sent for ad unit: ' + JSON.stringify(bid));
+        utils.logWarn(LOG_WARN_PREFIX + 'Error: publisherId is mandatory and cannot be numeric. Call to OpenBid will not be sent for ad unit: ' + JSON.stringify(bid));
         return false;
       }
       if (!utils.isStr(bid.params.adSlot)) {
-        utils.logWarn(BIDDER_CODE + ': adSlotId is mandatory and cannot be numeric. Call to OpenBid will not be sent for ad unit: ' + JSON.stringify(bid));
+        utils.logWarn(LOG_WARN_PREFIX + 'Error: adSlotId is mandatory and cannot be numeric. Call to OpenBid will not be sent for ad unit: ' + JSON.stringify(bid));
         return false;
       }
       // video ad validation
       if (bid.params.hasOwnProperty('video')) {
         if (!bid.params.video.hasOwnProperty('mimes') || !utils.isArray(bid.params.video.mimes) || bid.params.video.mimes.length === 0) {
-          utils.logWarn(BIDDER_CODE + ': For video ads, mimes is mandatory and must specify atlease 1 mime value. Call to OpenBid will not be sent for ad unit:' + JSON.stringify(bid));
+          utils.logWarn(LOG_WARN_PREFIX + 'Error: For video ads, mimes is mandatory and must specify atlease 1 mime value. Call to OpenBid will not be sent for ad unit:' + JSON.stringify(bid));
           return false;
         }
       }
@@ -826,12 +827,12 @@ export const spec = {
       _parseAdSlot(bid);
       if (bid.params.hasOwnProperty('video')) {
         if (!(bid.params.adSlot && bid.params.adUnit && bid.params.adUnitIndex)) {
-          utils.logWarn(BIDDER_CODE + ': Skipping the non-standard adslot: ', bid.params.adSlot, JSON.stringify(bid));
+          utils.logWarn(LOG_WARN_PREFIX + 'Skipping the non-standard adslot: ', bid.params.adSlot, JSON.stringify(bid));
           return;
         }
       } else {
         if (!(bid.params.adSlot && bid.params.adUnit && bid.params.adUnitIndex && bid.params.width && bid.params.height)) {
-          utils.logWarn(BIDDER_CODE + ': Skipping the non-standard adslot: ', bid.params.adSlot, JSON.stringify(bid));
+          utils.logWarn(LOG_WARN_PREFIX + 'Skipping the non-standard adslot: ', bid.params.adSlot, JSON.stringify(bid));
           return;
         }
       }
@@ -841,7 +842,7 @@ export const spec = {
       if (bidCurrency === '') {
         bidCurrency = bid.params.currency || undefined;
       } else if (bid.params.hasOwnProperty('currency') && bidCurrency !== bid.params.currency) {
-        utils.logWarn(BIDDER_CODE + ': Currency specifier ignored. Only one currency permitted.');
+        utils.logWarn(LOG_WARN_PREFIX + 'Currency specifier ignored. Only one currency permitted.');
       }
       bid.params.currency = bidCurrency;
       // check if dctr is added to more than 1 adunit
@@ -910,13 +911,13 @@ export const spec = {
             key_val: dctr.trim()
           }
         } else {
-          utils.logWarn(BIDDER_CODE + ': Ignoring param : dctr with value : ' + dctr + ', expects string-value, found empty or non-string value');
+          utils.logWarn(LOG_WARN_PREFIX + 'Ignoring param : dctr with value : ' + dctr + ', expects string-value, found empty or non-string value');
         }
         if (dctrArr.length > 1) {
-          utils.logWarn(BIDDER_CODE + ': dctr value found in more than 1 adunits. Value from 1st adunit will be picked. Ignoring values from subsequent adunits');
+          utils.logWarn(LOG_WARN_PREFIX + 'dctr value found in more than 1 adunits. Value from 1st adunit will be picked. Ignoring values from subsequent adunits');
         }
       } else {
-        utils.logWarn(BIDDER_CODE + ': dctr value not found in 1st adunit, ignoring values from subsequent adunits');
+        utils.logWarn(LOG_WARN_PREFIX + 'dctr value not found in 1st adunit, ignoring values from subsequent adunits');
       }
     }
 
@@ -976,6 +977,17 @@ export const spec = {
                 newBid['dealChannel'] = dealChannelValues[bid.ext.deal_channel] || null;
               }
 
+              newBid.meta = {};
+              if (bid.ext && bid.ext.dspid) {
+                newBid.meta.networkId = bid.ext.dspid;
+              }
+              if (bid.ext && bid.ext.advid) {
+                newBid.meta.buyerId = bid.ext.advid;
+              }
+              if (bid.adomain && bid.adomain.length > 0) {
+                newBid.meta.clickUrl = bid.adomain[0];
+              }
+
               bidResponses.push(newBid);
             });
         });
@@ -1004,7 +1016,7 @@ export const spec = {
         url: syncurl
       }];
     } else {
-      utils.logWarn('PubMatic: Please enable iframe based user sync.');
+      utils.logWarn(LOG_WARN_PREFIX + 'Please enable iframe based user sync.');
     }
   },
 

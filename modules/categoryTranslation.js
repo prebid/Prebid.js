@@ -17,7 +17,7 @@ import { ajax } from '../src/ajax';
 import { timestamp, logError, setDataInLocalStorage, getDataFromLocalStorage } from '../src/utils';
 import { addBidResponse } from '../src/auction';
 
-const DEFAULT_TRANSLATION_FILE_URL = '//cdn.jsdelivr.net/gh/prebid/category-mapping-file@1/freewheel-mapping.json';
+const DEFAULT_TRANSLATION_FILE_URL = 'https://cdn.jsdelivr.net/gh/prebid/category-mapping-file@1/freewheel-mapping.json';
 const DEFAULT_IAB_TO_FW_MAPPING_KEY = 'iabToFwMappingkey';
 const DEFAULT_IAB_TO_FW_MAPPING_KEY_PUB = 'iabToFwMappingkeyPub';
 const refreshInDays = 1;

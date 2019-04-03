@@ -4,10 +4,10 @@
 
 import { registerVideoSupport } from '../src/adServerManager';
 import { auctionManager } from '../src/auctionManager';
-import { groupBy, deepAccess, logError } from '../src/utils';
+import { groupBy, deepAccess, logError, compareOn } from '../src/utils';
 import { config } from '../src/config';
 import { ADPOD } from '../src/mediaTypes';
-import { initAdpodHooks, TARGETING_KEY_PB_CAT_DUR, TARGETING_KEY_CACHE_ID, callPrebidCacheAfterAuction } from './adpod';
+import { initAdpodHooks, TARGETING_KEY_PB_CAT_DUR, TARGETING_KEY_CACHE_ID, callPrebidCacheAfterAuction, sortByPricePerSecond } from './adpod';
 import { getHook } from '../src/hook';
 
 export function notifyTranslationModule(fn) {
@@ -37,7 +37,7 @@ export function getTargeting({codes, callback} = {}) {
 
   let bids = getBidsForAdpod(bidsReceived, adPodAdUnits);
   bids = (competiveExclusionEnabled || deferCachingEnabled) ? getExclusiveBids(bids) : bids;
-  bids.sort(compareOn('cpm'));
+  bids.sort(sortByPricePerSecond);
 
   let targeting = {};
   if (deferCachingEnabled === false) {
@@ -117,18 +117,6 @@ function getAdPodAdUnits(codes) {
   return auctionManager.getAdUnits()
     .filter((adUnit) => deepAccess(adUnit, 'mediaTypes.video.context') === ADPOD)
     .filter((adUnit) => (codes.length > 0) ? codes.indexOf(adUnit.code) != -1 : true);
-}
-
-function compareOn(property) {
-  return function compare(a, b) {
-    if (a[property] < b[property]) {
-      return 1;
-    }
-    if (a[property] > b[property]) {
-      return -1;
-    }
-    return 0;
-  }
 }
 
 /**

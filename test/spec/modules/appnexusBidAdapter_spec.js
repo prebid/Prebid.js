@@ -443,6 +443,30 @@ describe('AppNexusAdapter', function () {
       });
     });
 
+    it('should always populated tags[].sizes with 1,1 for native if otherwise not defined', function () {
+      let bidRequest = Object.assign({},
+        bidRequests[0],
+        {
+          mediaType: 'native',
+          nativeParams: {
+            image: { required: true }
+          }
+        }
+      );
+      bidRequest.sizes = [[150, 100], [300, 250]];
+
+      let request = spec.buildRequests([bidRequest]);
+      let payload = JSON.parse(request.data);
+      expect(payload.tags[0].sizes).to.deep.equal([{width: 150, height: 100}, {width: 300, height: 250}]);
+
+      delete bidRequest.sizes;
+
+      request = spec.buildRequests([bidRequest]);
+      payload = JSON.parse(request.data);
+
+      expect(payload.tags[0].sizes).to.deep.equal([{width: 1, height: 1}]);
+    });
+
     it('should convert keyword params to proper form and attaches to request', function () {
       let bidRequest = Object.assign({},
         bidRequests[0],
