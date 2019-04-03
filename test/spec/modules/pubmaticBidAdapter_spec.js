@@ -63,10 +63,13 @@ describe('PubMatic adapter', function () {
         'impid': '23acc48ad47af5',
         'price': 1.3,
         'adm': 'image3.pubmatic.com Layer based creative',
+        'adomain': ['blackrock.com'],
         'h': 250,
         'w': 300,
         'ext': {
-          'deal_channel': 6
+          'deal_channel': 6,
+          'advid': 976,
+          'dspid': 123
         }
       }]
     };
@@ -76,10 +79,13 @@ describe('PubMatic adapter', function () {
         'impid': '22bddb28db77e',
         'price': 1.7,
         'adm': 'image3.pubmatic.com Layer based creative',
+        'adomain': ['hivehome.com'],
         'h': 250,
         'w': 300,
         'ext': {
-          'deal_channel': 5
+          'deal_channel': 5,
+          'advid': 832,
+          'dspid': 422
         }
       }]
     };
