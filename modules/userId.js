@@ -341,7 +341,7 @@ export function getValidSubmoduleConfigs(submoduleConfigs, enabledSubmodules) {
   const validStorageTypes = [];
   if (utils.localStorageIsEnabled()) {
     // check if optout exists in local storage (null if returned if key does not exist)
-    if (!localStorage.getItem('_pbjs_id_optout') || !localStorage.getItem('_pubcid_optout')) {
+    if (!localStorage.getItem('_pbjs_id_optout') && !localStorage.getItem('_pubcid_optout')) {
       validStorageTypes.push(LOCAL_STORAGE);
     } else {
       utils.logInfo(`${MODULE_NAME} - opt-out localStorage found, exit module`);
