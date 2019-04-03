@@ -40,6 +40,17 @@ export const internal = {
   logInfo
 };
 
+var uniqueRef = {};
+export let bind = function(a, b) { return b; }.bind(null, 1, uniqueRef)() === uniqueRef
+  ? Function.prototype.bind
+  : function(bind) {
+    var self = this;
+    var args = Array.prototype.slice.call(arguments, 1);
+    return function() {
+      return self.apply(bind, args.concat(Array.prototype.slice.call(arguments)));
+    };
+  };
+
 /*
  *   Substitutes into a string from a given map using the token
  *   Usage
@@ -782,6 +793,19 @@ export function getValue(obj, key) {
   return obj[key];
 }
 
+/**
+ * Get the key of an object for a given value
+ */
+export function getKeyByValue(obj, value) {
+  for (let prop in obj) {
+    if (obj.hasOwnProperty(prop)) {
+      if (obj[prop] === value) {
+        return prop;
+      }
+    }
+  }
+}
+
 export function getBidderCodes(adUnits = $$PREBID_GLOBAL$$.adUnits) {
   // this could memoize adUnits
   return adUnits.map(unit => unit.bids.map(bid => bid.bidder)
@@ -996,7 +1020,7 @@ export function getDefinedParams(object, params) {
  */
 export function isValidMediaTypes(mediaTypes) {
   const SUPPORTED_MEDIA_TYPES = ['banner', 'native', 'video'];
-  const SUPPORTED_STREAM_TYPES = ['instream', 'outstream'];
+  const SUPPORTED_STREAM_TYPES = ['instream', 'outstream', 'adpod'];
 
   const types = Object.keys(mediaTypes);
 
@@ -1197,6 +1221,85 @@ export function convertTypes(types, params) {
   return params;
 }
 
+export function setDataInLocalStorage(key, value) {
+  if (hasLocalStorage()) {
+    window.localStorage.setItem(key, value);
+  }
+}
+
+export function getDataFromLocalStorage(key) {
+  if (hasLocalStorage()) {
+    return window.localStorage.getItem(key);
+  }
+}
+
+export function hasLocalStorage() {
+  try {
+    return !!window.localStorage;
+  } catch (e) {
+    logError('Local storage api disabled');
+  }
+}
+
 export function isArrayOfNums(val, size) {
   return (isArray(val)) && ((size) ? val.length === size : true) && (val.every(v => isInteger(v)));
+}
+
+/**
+ * Creates an array of n length and fills each item with the given value
+ */
+export function fill(value, length) {
+  let newArray = [];
+
+  for (let i = 0; i < length; i++) {
+    let valueToPush = isPlainObject(value) ? deepClone(value) : value;
+    newArray.push(valueToPush);
+  }
+
+  return newArray;
+}
+
+/**
+ * http://npm.im/chunk
+ * Returns an array with *size* chunks from given array
+ *
+ * Example:
+ * ['a', 'b', 'c', 'd', 'e'] chunked by 2 =>
+ * [['a', 'b'], ['c', 'd'], ['e']]
+ */
+export function chunk(array, size) {
+  let newArray = [];
+
+  for (let i = 0; i < Math.ceil(array.length / size); i++) {
+    let start = i * size;
+    let end = start + size;
+    newArray.push(array.slice(start, end));
+  }
+
+  return newArray;
+}
+
+export function getMinValueFromArray(array) {
+  return Math.min(...array);
+}
+
+export function getMaxValueFromArray(array) {
+  return Math.max(...array);
+}
+
+/**
+ * This function will create compare function to sort on object property
+ * @param {string} property
+ * @returns {function} compare function to be used in sorting
+ */
+export function compareOn(property) {
+  return function compare(a, b) {
+    if (a[property] < b[property]) {
+      return 1;
+    }
+    if (a[property] > b[property]) {
+      return -1;
+    }
+    return 0;
+  }
 }

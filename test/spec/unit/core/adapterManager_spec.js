@@ -910,7 +910,7 @@ describe('adapterManager tests', function () {
         setSizeConfig([]);
       });
 
-      it('should not filter bids w/ no labels', function () {
+      it('should not filter banner bids w/ no labels', function () {
         let bidRequests = adapterManager.makeBidRequests(
           adUnits,
           Date.now(),
@@ -928,6 +928,85 @@ describe('adapterManager tests', function () {
         expect(appnexusBidRequests.bids.length).to.equal(2);
         expect(appnexusBidRequests.bids[0].sizes).to.deep.equal(find(adUnits, adUnit => adUnit.code === appnexusBidRequests.bids[0].adUnitCode).sizes);
         expect(appnexusBidRequests.bids[1].sizes).to.deep.equal(find(adUnits, adUnit => adUnit.code === appnexusBidRequests.bids[1].adUnitCode).sizes);
+      });
+
+      it('should not filter video bids', function () {
+        setSizeConfig([{
+          'mediaQuery': '(min-width: 768px) and (max-width: 1199px)',
+          'sizesSupported': [
+            [728, 90],
+            [300, 250]
+          ],
+          'labels': ['tablet', 'phone']
+        }]);
+
+        let videoAdUnits = [{
+          code: 'test_video',
+          mediaTypes: {
+            video: {
+              playerSize: [300, 300],
+              context: 'outstream'
+            }
+          },
+          bids: [{
+            bidder: 'appnexus',
+            params: {
+              placementId: 13232385,
+              video: {
+                skippable: true,
+                playback_method: ['auto_play_sound_off']
+              }
+            }
+          }]
+        }];
+        let bidRequests = adapterManager.makeBidRequests(
+          videoAdUnits,
+          Date.now(),
+          utils.getUniqueIdentifierStr(),
+          function callback() {},
+          []
+        );
+        expect(bidRequests[0].bids[0].sizes).to.deep.equal([300, 300]);
+      });
+
+      it('should not filter native bids', function () {
+        setSizeConfig([{
+          'mediaQuery': '(min-width: 768px) and (max-width: 1199px)',
+          'sizesSupported': [
+            [728, 90],
+            [300, 250]
+          ],
+          'labels': ['tablet', 'phone']
+        }]);
+
+        let nativeAdUnits = [{
+          code: 'test_native',
+          sizes: [[1, 1]],
+          mediaTypes: {
+            native: {
+              title: { required: true },
+              body: { required: false },
+              image: { required: true },
+              icon: { required: false },
+              sponsoredBy: { required: true },
+              clickUrl: { required: true },
+            },
+          },
+          bids: [
+            {
+              bidder: 'appnexus',
+              params: { placementId: 13232354 }
+            },
+          ]
+        }];
+        let bidRequests = adapterManager.makeBidRequests(
+          nativeAdUnits,
+          Date.now(),
+          utils.getUniqueIdentifierStr(),
+          function callback() {},
+          []
+        );
+        expect(bidRequests[0].bids[0].sizes).to.deep.equal([]);
       });
 
       it('should filter sizes using size config', function () {
