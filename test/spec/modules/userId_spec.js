@@ -411,21 +411,24 @@ describe('User ID', function() {
           userIds: [unifiedIdConfig]}
       });
 
-      $$PREBID_GLOBAL$$.requestBids({adUnits});
-      clock.tick(2000);
+      $$PREBID_GLOBAL$$.requestBids({
+        adUnits,
+        timeout: 1999,
+        bidsBackHandler:function() {
+          // unifiedId configured to execute callback to load user id data after the auction ends
+          const submodulesWithCallbacks = submodules.filter(item => (typeof item.callback === 'function' && typeof item.idObj === 'undefined'));
+          expect(submodulesWithCallbacks.length).to.equal(1);
+          expect(submodulesWithCallbacks[0].submodule).to.equal(unifiedIdSubmodule);
 
-      // unifiedId configured to execute callback to load user id data after the auction ends
-      const submodulesWithCallbacks = submodules.filter(item => (typeof item.callback === 'function' && typeof item.idObj === 'undefined'));
-      expect(submodulesWithCallbacks.length).to.equal(1);
-      expect(submodulesWithCallbacks[0].submodule).to.equal(unifiedIdSubmodule);
-
-      adUnits.forEach((unit) => {
-        unit.bids.forEach((bid) => {
-          expect(typeof bid.userId).to.equal('undefined');
-        });
+          adUnits.forEach((unit) => {
+            unit.bids.forEach((bid) => {
+              expect(typeof bid.userId).to.equal('undefined');
+            });
+          });
+          done();
+        }
       });
-
-      done();
+      clock.tick(2000);
     });
   });
 });
