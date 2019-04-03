@@ -267,8 +267,11 @@ describe('User ID', function() {
       interpretResponse: () => {},
       getUserSyncs: () => {}
     };
+    let clock;
 
     beforeEach(function () {
+      clock = sinon.useFakeTimers();
+
       // simulate existing browser cookie values
       utils.setCookie('pubcid', `testpubcid${storageResetCount}`, (new Date(Date.now() + 5000).toUTCString()));
       utils.setCookie('unifiedid', JSON.stringify({
@@ -312,6 +315,7 @@ describe('User ID', function() {
       auctionModule.newAuction.restore();
       $$PREBID_GLOBAL$$.requestBids.removeAll();
       config.resetConfig();
+      clock.restore();
     });
 
     it('test hook from pubcommonid cookie', function() {
@@ -323,6 +327,7 @@ describe('User ID', function() {
       });
 
       $$PREBID_GLOBAL$$.requestBids({adUnits});
+      clock.tick(2000);
 
       adUnits.forEach((unit) => {
         unit.bids.forEach((bid) => {
@@ -343,6 +348,7 @@ describe('User ID', function() {
       });
 
       $$PREBID_GLOBAL$$.requestBids({adUnits});
+      clock.tick(2000);
 
       adUnits.forEach((unit) => {
         unit.bids.forEach((bid) => {
@@ -360,6 +366,7 @@ describe('User ID', function() {
       });
 
       $$PREBID_GLOBAL$$.requestBids({adUnits});
+      clock.tick(2000);
 
       adUnits.forEach((unit) => {
         unit.bids.forEach((bid) => {
@@ -380,6 +387,7 @@ describe('User ID', function() {
       });
 
       $$PREBID_GLOBAL$$.requestBids({adUnits});
+      clock.tick(2000);
 
       adUnits.forEach((unit) => {
         unit.bids.forEach((bid) => {
@@ -394,7 +402,7 @@ describe('User ID', function() {
       });
     });
 
-    it.skip('test that hook does not add a userId property if no submodule data was available', function() {
+    it('test that hook does not add a userId property if no submodule data was available', function() {
       const unifiedIdConfig = createStorageConfig('unifiedId', 'unifiedid', 'html5')
       unifiedIdConfig.params = {partner: 'prebid'}
       config.setConfig({
@@ -404,6 +412,7 @@ describe('User ID', function() {
       });
 
       $$PREBID_GLOBAL$$.requestBids({adUnits});
+      clock.tick(2000);
 
       // unifiedId configured to execute callback to load user id data after the auction ends
       const submodulesWithCallbacks = submodules.filter(item => (typeof item.callback === 'function' && typeof item.idObj === 'undefined'));
