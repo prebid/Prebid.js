@@ -340,7 +340,12 @@ export function getValidSubmoduleConfigs(submoduleConfigs, enabledSubmodules) {
   // list of browser enabled storage types
   const validStorageTypes = [];
   if (utils.localStorageIsEnabled()) {
-    validStorageTypes.push(LOCAL_STORAGE);
+    // check if optout exists in local storage (null if returned if key does not exist)
+    if (!localStorage.getItem('_pbjs_id_optout') || !localStorage.getItem('_pubcid_optout')) {
+      validStorageTypes.push(LOCAL_STORAGE);
+    } else {
+      utils.logInfo(`${MODULE_NAME} - opt-out localStorage found, exit module`);
+    }
   }
   if (utils.cookiesAreEnabled()) {
     validStorageTypes.push(COOKIE);
@@ -378,7 +383,7 @@ export function init (config, enabledSubmodules) {
   initializedSubmodules = undefined;
 
   // exit immediately if opt out cookie exists. _pubcid_optout is checked for compatiblility with pubCommonId module opt out
-  if (utils.getCookie('_pbjs_id_optout') || utils.getCookie('_pubcid_optout')) {
+  if (utils.getCookie('_pbjs_id_optout')) {
     utils.logInfo(`${MODULE_NAME} - opt-out cookie found, exit module`);
     return;
   }
