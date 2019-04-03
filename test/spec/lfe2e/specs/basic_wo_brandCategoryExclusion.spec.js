@@ -1,9 +1,12 @@
 const includes = require('core-js/library/fn/array/includes');
 const expect = require('chai').expect;
-const lochost = require('../../../helpers/setupLocalhost').mylocalhost;
+const testServer = require('../../../helpers/testing-utils');
 
-const ACCEPTED_DURAS = ['15s', '30s'];
-const ACCEPTED_CPMS = ['15.00', '14.00', '13.00', '10.00'];
+const host = testServer.host;
+const protocol = testServer.protocol;
+
+const validDurations = ['15s', '30s'];
+const validCpms = ['15.00', '14.00', '13.00', '10.00'];
 const customKeyRegex = /\d{2}\.\d{2}_\d{2}s/;
 const uuidRegex = /(\d|\w){8}-((\d|\w){4}-){3}(\d|\w){12}/;
 
@@ -11,7 +14,7 @@ describe('longform ads without using brandCategoryExclusion', function() {
   this.retries(3);
   it('process the bids successfully', function() {
     browser
-      .url('http://' + lochost + ':9999/integrationExamples/longform/basic_wo_brandCategoryExclusion.html?pbjs_debug=true')
+      .url(protocol + '://' + host + ':9999/integrationExamples/longform/basic_wo_brandCategoryExclusion.html?pbjs_debug=true')
       .pause(10000);
 
     const loadPrebidBtnXpath = '//*[@id="loadPrebidRequestBtn"]';
@@ -31,8 +34,8 @@ describe('longform ads without using brandCategoryExclusion', function() {
     for (let i = 0; i < listOfCpms.length; i++) {
       let cpm = listOfCpms[i].getText();
       let dura = listOfDuras[i].getText();
-      expect(includes(ACCEPTED_CPMS, cpm), `Could not find CPM ${cpm} in accepted list`).to.equal(true);
-      expect(includes(ACCEPTED_DURAS, dura), `Could not find Duration ${dura} in accepted list`).to.equal(true);
+      expect(includes(validCpms, cpm), `Could not find CPM ${cpm} in accepted list`).to.equal(true);
+      expect(includes(validDurations, dura), `Could not find Duration ${dura} in accepted list`).to.equal(true);
     }
   });
 

@@ -1,1 +1,0 @@
-exports.mylocalhost = 'test.localhost';

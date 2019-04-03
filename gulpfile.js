@@ -274,23 +274,19 @@ function buildPostbid() {
 }
 
 function setupE2e(done) {
-  argv.lfe2e = true;
-  done();
-}
-
-function replaceLocalhost() {
   if (!argv.host) {
     throw new gutil.PluginError({
       plugin: 'E2E test',
       message: gutil.colors.red('Host should be defined e.g. ap.localhost, anlocalhost. localhost cannot be used as safari browserstack is not able to connect to localhost')
     });
   }
-  var userLocalhost = argv.host;
-  return gulp.src('./test/helpers/setupLocalhost.js', {base: './'})
-    .pipe(replace(/(?<=.*mylocalhost\s\=\s').+(?=';)/, userLocalhost))  //ignore the eslint error here; the regex is fine
-    .pipe(gulp.dest('./'));
+  process.env.TEST_SERVER_HOST = argv.host;
+  if (argv.https) {
+    process.env.TEST_SERVER_PROTOCOL = argv.https;
+  }
+  argv.lfe2e = true;
+  done();
 }
-gulp.task(replaceLocalhost);
 
 // support tasks
 gulp.task(lint);
@@ -317,7 +313,7 @@ gulp.task('build-postbid', gulp.series(escapePostbidConfig, buildPostbid));
 gulp.task('serve', gulp.series(clean, lint, gulp.parallel('build-bundle-dev', watch, test)));
 gulp.task('default', gulp.series(clean, makeWebpackPkg));
 
-gulp.task('lfe2e', gulp.series(clean, setupE2e, replaceLocalhost, gulp.parallel('build-bundle-dev', watch), test))
+gulp.task('lfe2e', gulp.series(clean, setupE2e, gulp.parallel('build-bundle-dev', watch), test))
 // other tasks
 gulp.task(bundleToStdout);
 gulp.task('bundle', gulpBundle.bind(null, false)); // used for just concatenating pre-built files with no build step
