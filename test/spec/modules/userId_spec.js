@@ -402,7 +402,7 @@ describe('User ID', function() {
       });
     });
 
-    it('test that hook does not add a userId property if no submodule data was available', function() {
+    it('test that hook does not add a userId property if no submodule data was available', function(done) {
       const unifiedIdConfig = createStorageConfig('unifiedId', 'unifiedid', 'html5')
       unifiedIdConfig.params = {partner: 'prebid'}
       config.setConfig({
@@ -424,6 +424,8 @@ describe('User ID', function() {
           expect(typeof bid.userId).to.equal('undefined');
         });
       });
+
+      done();
     });
   });
 });
