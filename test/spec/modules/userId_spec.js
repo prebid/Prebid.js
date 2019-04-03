@@ -259,7 +259,6 @@ describe('User ID', function() {
     let createAuctionStub;
     let adUnits;
     let adUnitCodes;
-    let capturedReqs;
     let sampleSpec = {
       code: 'sampleBidder',
       isBidRequestValid: () => {},
@@ -267,11 +266,8 @@ describe('User ID', function() {
       interpretResponse: () => {},
       getUserSyncs: () => {}
     };
-    let clock;
 
     beforeEach(function () {
-      clock = sinon.useFakeTimers();
-
       // simulate existing browser cookie values
       utils.setCookie('pubcid', `testpubcid${storageResetCount}`, (new Date(Date.now() + 5000).toUTCString()));
       utils.setCookie('unifiedid', JSON.stringify({
@@ -296,7 +292,7 @@ describe('User ID', function() {
         ]
       }];
       adUnitCodes = ['adUnit-code'];
-      let auction = auctionModule.newAuction({adUnits, adUnitCodes, callback: function() {}, cbTimeout: 2000});
+      let auction = auctionModule.newAuction({adUnits, adUnitCodes, callback: function() {}, cbTimeout: 1999});
       createAuctionStub = sinon.stub(auctionModule, 'newAuction');
       createAuctionStub.returns(auction);
 
@@ -315,7 +311,6 @@ describe('User ID', function() {
       auctionModule.newAuction.restore();
       $$PREBID_GLOBAL$$.requestBids.removeAll();
       config.resetConfig();
-      clock.restore();
     });
 
     it('test hook from pubcommonid cookie', function() {
@@ -327,7 +322,6 @@ describe('User ID', function() {
       });
 
       $$PREBID_GLOBAL$$.requestBids({adUnits});
-      clock.tick(2000);
 
       adUnits.forEach((unit) => {
         unit.bids.forEach((bid) => {
@@ -348,7 +342,6 @@ describe('User ID', function() {
       });
 
       $$PREBID_GLOBAL$$.requestBids({adUnits});
-      clock.tick(2000);
 
       adUnits.forEach((unit) => {
         unit.bids.forEach((bid) => {
@@ -366,7 +359,6 @@ describe('User ID', function() {
       });
 
       $$PREBID_GLOBAL$$.requestBids({adUnits});
-      clock.tick(2000);
 
       adUnits.forEach((unit) => {
         unit.bids.forEach((bid) => {
@@ -387,7 +379,6 @@ describe('User ID', function() {
       });
 
       $$PREBID_GLOBAL$$.requestBids({adUnits});
-      clock.tick(2000);
 
       adUnits.forEach((unit) => {
         unit.bids.forEach((bid) => {
@@ -400,35 +391,6 @@ describe('User ID', function() {
           expect(bid.userId.tdid).to.equal(`testunifiedid${storageResetCount}`);
         });
       });
-    });
-
-    it('test that hook does not add a userId property if no submodule data was available', function(done) {
-      const unifiedIdConfig = createStorageConfig('unifiedId', 'unifiedid', 'html5')
-      unifiedIdConfig.params = {partner: 'prebid'}
-      config.setConfig({
-        usersync: {
-          syncDelay: 0,
-          userIds: [unifiedIdConfig]}
-      });
-
-      $$PREBID_GLOBAL$$.requestBids({
-        adUnits,
-        timeout: 1999,
-        bidsBackHandler: function() {
-          // unifiedId configured to execute callback to load user id data after the auction ends
-          const submodulesWithCallbacks = submodules.filter(item => (typeof item.callback === 'function' && typeof item.idObj === 'undefined'));
-          expect(submodulesWithCallbacks.length).to.equal(1);
-          expect(submodulesWithCallbacks[0].submodule).to.equal(unifiedIdSubmodule);
-
-          adUnits.forEach((unit) => {
-            unit.bids.forEach((bid) => {
-              expect(typeof bid.userId).to.equal('undefined');
-            });
-          });
-          done();
-        }
-      });
-      clock.tick(2000);
     });
   });
 });
