@@ -198,6 +198,7 @@ export const spec = {
           if (rtbBid.cpm !== 0 && includes(this.supportedMediaTypes, rtbBid.ad_type)) {
             const bid = newBid(serverBid, rtbBid, bidderRequest);
             bid.mediaType = parseMediaType(rtbBid);
+            bid.viewability = rtbBid.viewability.config;
             bids.push(bid);
           }
         }
