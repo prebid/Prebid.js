@@ -1130,15 +1130,6 @@ export function deletePropertyFromObject(object, prop) {
 }
 
 /**
- * Delete requestId from external bid object.
- * @param {Object} bid
- * @return {Object} bid
- */
-export function removeRequestId(bid) {
-  return deletePropertyFromObject(bid, 'requestId');
-}
-
-/**
  * Checks input is integer or not
  * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/isInteger
  * @param {*} value
