@@ -243,7 +243,7 @@ describe('ServerBid S2S Adapter', function () {
       const response = addBidResponse.firstCall.args[1];
       expect(response).to.have.property('statusMessage', 'Bid available');
       expect(response).to.have.property('cpm', 0.5);
-      expect(response).to.have.property('adId', '123');
+      expect(response).to.have.property('requestId', '123');
     });
 
     it('registers no-bid response when ad unit not set', function () {
@@ -261,7 +261,7 @@ describe('ServerBid S2S Adapter', function () {
       expect(response).to.have.property('statusMessage', 'Bid returned empty or error response');
 
       const bid_request_passed = addBidResponse.firstCall.args[1];
-      expect(bid_request_passed).to.have.property('adId', '123');
+      expect(bid_request_passed).to.have.property('requestId', '123');
     });
 
     it('registers no-bid response when ad unit is set', function () {
@@ -291,8 +291,8 @@ describe('ServerBid S2S Adapter', function () {
       expect(addBidResponse.firstCall.args[0]).to.equal('div-gpt-ad-1460505748561-0');
       expect(addBidResponse.secondCall.args[0]).to.equal('div-gpt-ad-1460505748561-1');
 
-      expect(addBidResponse.firstCall.args[1]).to.have.property('adId', '123');
-      expect(addBidResponse.secondCall.args[1]).to.have.property('adId', '101111');
+      expect(addBidResponse.firstCall.args[1]).to.have.property('requestId', '123');
+      expect(addBidResponse.secondCall.args[1]).to.have.property('requestId', '101111');
 
       expect(addBidResponse.firstCall.args[1])
         .to.have.property('statusMessage', 'Bid available');

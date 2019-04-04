@@ -424,7 +424,12 @@ describe('IndexexchangeAdapter', function () {
           currency: 'USD',
           ttl: 35,
           netRevenue: true,
-          dealId: undefined
+          dealId: undefined,
+          meta: {
+            networkId: 50,
+            brandId: 303325,
+            brandName: 'OECTA'
+          }
         }
       ];
       const result = spec.interpretResponse({ body: DEFAULT_BANNER_BID_RESPONSE });
@@ -445,7 +450,12 @@ describe('IndexexchangeAdapter', function () {
           currency: 'USD',
           ttl: 35,
           netRevenue: true,
-          dealId: undefined
+          dealId: undefined,
+          meta: {
+            networkId: 50,
+            brandId: 303325,
+            brandName: 'OECTA'
+          }
         }
       ];
       const result = spec.interpretResponse({ body: bidResponse });
@@ -466,7 +476,12 @@ describe('IndexexchangeAdapter', function () {
           currency: 'JPY',
           ttl: 35,
           netRevenue: true,
-          dealId: undefined
+          dealId: undefined,
+          meta: {
+            networkId: 50,
+            brandId: 303325,
+            brandName: 'OECTA'
+          }
         }
       ];
       const result = spec.interpretResponse({ body: bidResponse });
@@ -487,7 +502,12 @@ describe('IndexexchangeAdapter', function () {
           currency: 'USD',
           ttl: 35,
           netRevenue: true,
-          dealId: 'deal'
+          dealId: 'deal',
+          meta: {
+            networkId: 50,
+            brandId: 303325,
+            brandName: 'OECTA'
+          }
         }
       ];
       const result = spec.interpretResponse({ body: bidResponse });

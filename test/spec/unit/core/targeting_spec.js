@@ -179,6 +179,17 @@ describe('targeting tests', function () {
       // expect the winning CPM to be equal to the sendAllBidCPM
       expect(targeting['/123456/header-bid-tag-0'][CONSTANTS.TARGETING_KEYS.PRICE_BUCKET + '_rubicon']).to.deep.equal(targeting['/123456/header-bid-tag-0'][CONSTANTS.TARGETING_KEYS.PRICE_BUCKET]);
     });
+
+    it('does not include adpod type bids in the getBidsReceived results', function () {
+      let adpodBid = utils.deepClone(bid1);
+      adpodBid.video = { context: 'adpod', durationSeconds: 15, durationBucket: 15 };
+      adpodBid.cpm = 5;
+      bidsReceived.push(adpodBid);
+
+      const targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0']);
+      expect(targeting['/123456/header-bid-tag-0']).to.contain.keys('hb_deal', 'hb_adid', 'hb_bidder');
+      expect(targeting['/123456/header-bid-tag-0']['hb_adid']).to.equal(bid1.adId);
+    });
   }); // end getAllTargeting tests
 
   describe('getAllTargeting without bids return empty object', function () {
