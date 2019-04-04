@@ -252,6 +252,10 @@ export const spec = {
       }
     }
 
+    if (currentBidRequest.params.gdpr_consented_providers) {
+      requestParams._fw_gdpr_consented_providers = currentBidRequest.params.gdpr_consented_providers;
+    }
+
     var vastParams = currentBidRequest.params.vastUrlParams;
     if (typeof vastParams === 'object') {
       for (var key in vastParams) {
