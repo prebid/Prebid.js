@@ -20,7 +20,7 @@ function removeHook() {
 }
 
 function enableOverrides(overrides, fromSession = false) {
-  config.setConfig({'debug': true});
+  config.setDefaults({'debug': true});
   logMessage(`bidder overrides enabled${fromSession ? ' from session' : ''}`);
 
   removeHook();
