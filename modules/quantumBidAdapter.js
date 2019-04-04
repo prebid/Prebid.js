@@ -137,6 +137,7 @@ export const spec = {
           let ad = {};
           ad['trackers'] = trackers;
           ad['jstrackers'] = jstracker;
+          ad['eventtrackers'] = serverBody.native.eventtrackers || [];
 
           for (let i = 0; i < assets.length; i++) {
             let asset = assets[i];
@@ -281,6 +282,7 @@ export const spec = {
             if (link.clicktrackers) {
               native.clickTrackers = link.clicktrackers;
             }
+            native.eventtrackers = native.eventtrackers || [];
 
             bid.qtx_native = utils.deepClone(serverBody.native);
             bid.native = native;
