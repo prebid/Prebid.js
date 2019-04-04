@@ -1,22 +1,9 @@
-# Overview
-
-**Module Name**: Finn.no bidder adapter
-**Module Type**: Bidder Adapter
-**Maintainer**:  jan.schoepp@finn.no
-
-# Description
-
-Connects to finn.no source to fetch bids.  
-
-# Test Parameters
-```	
-    var adUnits = [{
-      code: 'banner-ad-div',
-      sizes: [[300, 250]],
-      bids: [{
-        bidder: 'finn',
-        ...
-      }]
-    }];
-    
-```
+---
+layout: bidder
+title: Finn.no Adapter
+description: Prebid Finn SSP Bidder Adapter
+hide: false
+biddercode: finn
+biddercode_longer_than_12: false
+media_types: banner
+---
