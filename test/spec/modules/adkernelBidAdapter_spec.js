@@ -8,37 +8,61 @@ describe('Adkernel adapter', function () {
       bidId: 'Bid_01',
       params: {zoneId: 1, host: 'rtb.adkernel.com'},
       adUnitCode: 'ad-unit-1',
-      sizes: [[300, 250], [300, 200]]
+      mediaTypes: {
+        banner: {
+          sizes: [[300, 250], [300, 200]]
+        }
+      }
     }, bid2_zone2 = {
       bidder: 'adkernel',
       bidId: 'Bid_02',
       params: {zoneId: 2, host: 'rtb.adkernel.com'},
       adUnitCode: 'ad-unit-2',
-      sizes: [728, 90]
+      mediaTypes: {
+        banner: {
+          sizes: [728, 90]
+        }
+      }
     }, bid3_host2 = {
       bidder: 'adkernel',
       bidId: 'Bid_02',
       params: {zoneId: 1, host: 'rtb-private.adkernel.com'},
       adUnitCode: 'ad-unit-2',
-      sizes: [[728, 90]]
+      mediaTypes: {
+        banner: {
+          sizes: [[728, 90]]
+        }
+      }
     }, bid_without_zone = {
       bidder: 'adkernel',
       bidId: 'Bid_W',
       params: {host: 'rtb-private.adkernel.com'},
       adUnitCode: 'ad-unit-1',
-      sizes: [[728, 90]]
+      mediaTypes: {
+        banner: {
+          sizes: [[728, 90]]
+        }
+      }
     }, bid_without_host = {
       bidder: 'adkernel',
       bidId: 'Bid_W',
       params: {zoneId: 1},
       adUnitCode: 'ad-unit-1',
-      sizes: [[728, 90]]
+      mediaTypes: {
+        banner: {
+          sizes: [[728, 90]]
+        }
+      }
     }, bid_with_wrong_zoneId = {
       bidder: 'adkernel',
       bidId: 'Bid_02',
       params: {zoneId: 'wrong id', host: 'rtb.adkernel.com'},
       adUnitCode: 'ad-unit-2',
-      sizes: [[728, 90]]
+      mediaTypes: {
+        banner: {
+          sizes: [[728, 90]]
+        }
+      }
     }, bid_video = {
       bidder: 'adkernel',
       transactionId: '866394b8-5d37-4d49-803e-f1bdb595f73e',
@@ -120,7 +144,7 @@ describe('Adkernel adapter', function () {
     let dntmock = sinon.stub(utils, 'getDNT').callsFake(() => dnt);
     let pbRequests = spec.buildRequests(bidRequests, bidderRequest);
     dntmock.restore();
-    let rtbRequests = pbRequests.map(r => JSON.parse(r.data.r));
+    let rtbRequests = pbRequests.map(r => JSON.parse(r.data));
     return [pbRequests, rtbRequests];
   }
 
@@ -246,8 +270,8 @@ describe('Adkernel adapter', function () {
     it('should issue a request for each zone', function () {
       let [pbRequests, _] = buildRequest([bid1_zone1, bid2_zone2]);
       expect(pbRequests).to.have.length(2);
-      expect(pbRequests[0].data.zone).to.be.equal(bid1_zone1.params.zoneId);
-      expect(pbRequests[1].data.zone).to.be.equal(bid2_zone2.params.zoneId);
+      expect(pbRequests[0].url).to.include(`zone=${bid1_zone1.params.zoneId}`);
+      expect(pbRequests[1].url).to.include(`zone=${bid2_zone2.params.zoneId}`);
     });
   });
 

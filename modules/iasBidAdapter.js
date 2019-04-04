@@ -103,7 +103,7 @@ function interpretResponse(serverResponse, request) {
     height: 200,
     creativeId: 434,
     dealId: 42,
-    currency: 'usd',
+    currency: 'USD',
     netRevenue: true,
     ttl: 360
   };

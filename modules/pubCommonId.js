@@ -24,13 +24,13 @@ export function getExpInterval() { return interval; }
  * @param {function} next The next function in the chain
  */
 
-export function requestBidHook(config, next) {
+export function requestBidHook(next, config) {
   let adUnits = config.adUnits || $$PREBID_GLOBAL$$.adUnits;
   let pubcid = null;
 
   // Pass control to the next function if not enabled
   if (!pubcidEnabled) {
-    return next.apply(this, arguments);
+    return next.call(this, config);
   }
 
   if (typeof window[PUB_COMMON] === 'object') {
@@ -55,7 +55,7 @@ export function requestBidHook(config, next) {
       });
     });
   }
-  return next.apply(this, arguments);
+  return next.call(this, config);
 }
 
 // Helper to set a cookie
@@ -94,7 +94,7 @@ export function initPubcid() {
 
   if (utils.cookiesAreEnabled()) {
     if (!getCookie('_pubcid_optout')) {
-      $$PREBID_GLOBAL$$.requestBids.addHook(requestBidHook);
+      $$PREBID_GLOBAL$$.requestBids.before(requestBidHook);
     }
   }
 }

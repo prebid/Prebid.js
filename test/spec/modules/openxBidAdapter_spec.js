@@ -550,7 +550,7 @@ describe('OpenxAdapter', function () {
           params: {
             'unit': '12345678',
             'delDomain': 'test-del-domain',
-            'customFloor': 1.5
+            'customFloor': 1.500001
           }
         }
       );
@@ -1190,6 +1190,10 @@ describe('OpenxAdapter', function () {
         expect(bid.ts).to.equal(adUnitOverride.ts);
       });
 
+      it('should return a brand ID', function () {
+        expect(bid.meta.brandId).to.equal(DEFAULT_TEST_ARJ_AD_UNIT.brand_id);
+      });
+
       it('should register a beacon', function () {
         resetBoPixel();
         spec.interpretResponse({body: bidResponse}, bidRequest);
@@ -1437,7 +1441,6 @@ describe('OpenxAdapter', function () {
       const expectedResponse = [
         {
           'requestId': '30b31c1838de1e',
-          'bidderCode': 'openx',
           'cpm': 1,
           'width': '640',
           'height': '480',
@@ -1458,7 +1461,6 @@ describe('OpenxAdapter', function () {
       const expectedResponse = [
         {
           'requestId': '30b31c1838de1e',
-          'bidderCode': 'openx',
           'cpm': 1,
           'width': '640',
           'height': '480',
