@@ -128,6 +128,81 @@ describe('MantisAdapter', function () {
   });
 
   describe('interpretResponse', function () {
+    it('use ad ttl if provided', function () {
+      let response = {
+        body: {
+          ttl: 360,
+          uuid: 'uuid',
+          ads: [
+            {
+              bid: 'bid',
+              cpm: 1,
+              view: 'view',
+              width: 300,
+              ttl: 250,
+              height: 250,
+              html: '<!-- Creative -->'
+            }
+          ]
+        }
+      };
+
+      let expectedResponse = [
+        {
+          requestId: 'bid',
+          cpm: 1,
+          width: 300,
+          height: 250,
+          ttl: 250,
+          ad: '<!-- Creative -->',
+          creativeId: 'view',
+          netRevenue: true,
+          currency: 'USD'
+        }
+      ];
+      let bidderRequest;
+
+      let result = spec.interpretResponse(response, {bidderRequest});
+      expect(result[0]).to.deep.equal(expectedResponse[0]);
+    });
+
+    it('use global ttl if provded', function () {
+      let response = {
+        body: {
+          ttl: 360,
+          uuid: 'uuid',
+          ads: [
+            {
+              bid: 'bid',
+              cpm: 1,
+              view: 'view',
+              width: 300,
+              height: 250,
+              html: '<!-- Creative -->'
+            }
+          ]
+        }
+      };
+
+      let expectedResponse = [
+        {
+          requestId: 'bid',
+          cpm: 1,
+          width: 300,
+          height: 250,
+          ttl: 360,
+          ad: '<!-- Creative -->',
+          creativeId: 'view',
+          netRevenue: true,
+          currency: 'USD'
+        }
+      ];
+      let bidderRequest;
+
+      let result = spec.interpretResponse(response, {bidderRequest});
+      expect(result[0]).to.deep.equal(expectedResponse[0]);
+    });
+
     it('display ads returned', function () {
       let response = {
         body: {

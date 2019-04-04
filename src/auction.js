@@ -48,7 +48,8 @@
  * @property {function(): void} callBids - sends requests to all adapters for bids
  */
 
-import { uniques, flatten, timestamp, adUnitsFilter, deepAccess, getBidRequest } from './utils';
+import { uniques, flatten, timestamp, adUnitsFilter, deepAccess, getBidRequest, getValue } from './utils';
+import { parse as parseURL } from './url';
 import { getPriceBucketString } from './cpmBucketManager';
 import { getNativeTargeting } from './native';
 import { getCacheUrl, store } from './videoCache';
@@ -157,7 +158,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
 
         const adUnitCodes = _adUnitCodes;
         const bids = _bidsReceived
-          .filter(adUnitsFilter.bind(this, adUnitCodes))
+          .filter(utils.bind.call(adUnitsFilter, this, adUnitCodes))
           .reduce(groupByPlacement, {});
         _callback.apply($$PREBID_GLOBAL$$, [bids, timedOut]);
       } catch (e) {
@@ -386,6 +387,10 @@ export function doCallbacksIfTimedout(auctionInstance, bidResponse) {
 
 // Add a bid to the auction.
 export function addBidToAuction(auctionInstance, bidResponse) {
+  let bidderRequests = auctionInstance.getBidRequests();
+  let bidderRequest = find(bidderRequests, bidderRequest => bidderRequest.bidderCode === bidResponse.bidderCode);
+  setupBidTargeting(bidResponse, bidderRequest);
+
   events.emit(CONSTANTS.EVENTS.BID_RESPONSE, bidResponse);
   auctionInstance.addBidReceived(bidResponse);
 
@@ -416,7 +421,7 @@ function tryAddVideoBid(auctionInstance, bidResponse, bidRequests, afterBidAdded
   }
 }
 
-const callPrebidCache = hook('async', function(auctionInstance, bidResponse, afterBidAdded, bidderRequest) {
+export const callPrebidCache = hook('async', function(auctionInstance, bidResponse, afterBidAdded, bidderRequest) {
   store([bidResponse], function (error, cacheIds) {
     if (error) {
       utils.logWarn(`Failed to save to the video cache: ${error}. Video bid must be discarded.`);
@@ -429,6 +434,7 @@ const callPrebidCache = hook('async', function(auctionInstance, bidResponse, aft
         doCallbacksIfTimedout(auctionInstance, bidResponse);
       } else {
         bidResponse.videoCacheKey = cacheIds[0].uuid;
+
         if (!bidResponse.vastUrl) {
           bidResponse.vastUrl = getCacheUrl(bidResponse.videoCacheKey);
         }
@@ -485,19 +491,40 @@ function getPreparedBidForAuction({adUnitCode, bid, bidderRequest, auctionId}) {
   bidObject.pbDg = priceStringsObj.dense;
   bidObject.pbCg = priceStringsObj.custom;
 
-  // if there is any key value pairs to map do here
-  var keyValues;
+  return bidObject;
+}
+
+function setupBidTargeting(bidObject, bidderRequest) {
+  let keyValues;
   if (bidObject.bidderCode && (bidObject.cpm > 0 || bidObject.dealId)) {
-    keyValues = getKeyValueTargetingPairs(bidObject.bidderCode, bidObject);
+    let bidReq = find(bidderRequest.bids, bid => bid.adUnitCode === bidObject.adUnitCode);
+    keyValues = getKeyValueTargetingPairs(bidObject.bidderCode, bidObject, bidReq);
   }
 
   // use any targeting provided as defaults, otherwise just set from getKeyValueTargetingPairs
   bidObject.adserverTargeting = Object.assign(bidObject.adserverTargeting || {}, keyValues);
-
-  return bidObject;
 }
 
-export function getStandardBidderSettings(mediaType) {
+/**
+ * @param {string} mediaType
+ * @param {string} bidderCode
+ * @returns {*}
+ */
+export function getStandardBidderSettings(mediaType, bidderCode) {
+  // factory for key value objs
+  function createKeyVal(key, value) {
+    return {
+      key,
+      val: (typeof value === 'function')
+        ? function (bidResponse) {
+          return value(bidResponse);
+        }
+        : function (bidResponse) {
+          return getValue(bidResponse, value);
+        }
+    };
+  }
+  const TARGETING_KEYS = CONSTANTS.TARGETING_KEYS;
   // Use the config value 'mediaTypeGranularity' if it has been set for mediaType, else use 'priceGranularity'
   const mediaTypeGranularity = config.getConfig(`mediaTypePriceGranularity.${mediaType}`);
   const granularity = (typeof mediaType === 'string' && mediaTypeGranularity) ? ((typeof mediaTypeGranularity === 'string') ? mediaTypeGranularity : 'custom') : config.getConfig('priceGranularity');
@@ -508,62 +535,56 @@ export function getStandardBidderSettings(mediaType) {
   }
   if (!bidderSettings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD][CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING]) {
     bidderSettings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD][CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING] = [
-      {
-        key: CONSTANTS.TARGETING_KEYS.BIDDER,
-        val: function (bidResponse) {
-          return bidResponse.bidderCode;
+      createKeyVal(TARGETING_KEYS.BIDDER, 'bidderCode'),
+      createKeyVal(TARGETING_KEYS.AD_ID, 'adId'),
+      createKeyVal(TARGETING_KEYS.PRICE_BUCKET, function(bidResponse) {
+        if (granularity === CONSTANTS.GRANULARITY_OPTIONS.AUTO) {
+          return bidResponse.pbAg;
+        } else if (granularity === CONSTANTS.GRANULARITY_OPTIONS.DENSE) {
+          return bidResponse.pbDg;
+        } else if (granularity === CONSTANTS.GRANULARITY_OPTIONS.LOW) {
+          return bidResponse.pbLg;
+        } else if (granularity === CONSTANTS.GRANULARITY_OPTIONS.MEDIUM) {
+          return bidResponse.pbMg;
+        } else if (granularity === CONSTANTS.GRANULARITY_OPTIONS.HIGH) {
+          return bidResponse.pbHg;
+        } else if (granularity === CONSTANTS.GRANULARITY_OPTIONS.CUSTOM) {
+          return bidResponse.pbCg;
         }
-      }, {
-        key: CONSTANTS.TARGETING_KEYS.AD_ID,
-        val: function (bidResponse) {
-          return bidResponse.adId;
-        }
-      }, {
-        key: CONSTANTS.TARGETING_KEYS.PRICE_BUCKET,
-        val: function (bidResponse) {
-          if (granularity === CONSTANTS.GRANULARITY_OPTIONS.AUTO) {
-            return bidResponse.pbAg;
-          } else if (granularity === CONSTANTS.GRANULARITY_OPTIONS.DENSE) {
-            return bidResponse.pbDg;
-          } else if (granularity === CONSTANTS.GRANULARITY_OPTIONS.LOW) {
-            return bidResponse.pbLg;
-          } else if (granularity === CONSTANTS.GRANULARITY_OPTIONS.MEDIUM) {
-            return bidResponse.pbMg;
-          } else if (granularity === CONSTANTS.GRANULARITY_OPTIONS.HIGH) {
-            return bidResponse.pbHg;
-          } else if (granularity === CONSTANTS.GRANULARITY_OPTIONS.CUSTOM) {
-            return bidResponse.pbCg;
-          }
-        }
-      }, {
-        key: CONSTANTS.TARGETING_KEYS.SIZE,
-        val: function (bidResponse) {
-          return bidResponse.size;
-        }
-      }, {
-        key: CONSTANTS.TARGETING_KEYS.DEAL,
-        val: function (bidResponse) {
-          return bidResponse.dealId;
-        }
-      },
-      {
-        key: CONSTANTS.TARGETING_KEYS.SOURCE,
-        val: function (bidResponse) {
-          return bidResponse.source;
-        }
-      },
-      {
-        key: CONSTANTS.TARGETING_KEYS.FORMAT,
-        val: function (bidResponse) {
-          return bidResponse.mediaType;
-        }
-      },
+      }),
+      createKeyVal(TARGETING_KEYS.SIZE, 'size'),
+      createKeyVal(TARGETING_KEYS.DEAL, 'dealId'),
+      createKeyVal(TARGETING_KEYS.SOURCE, 'source'),
+      createKeyVal(TARGETING_KEYS.FORMAT, 'mediaType'),
     ]
+  }
+
+  if (mediaType === 'video') {
+    const adserverTargeting = bidderSettings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD][CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING];
+
+    // Adding hb_uuid + hb_cache_id
+    [TARGETING_KEYS.UUID, TARGETING_KEYS.CACHE_ID].forEach(targetingKeyVal => {
+      if (typeof find(adserverTargeting, kvPair => kvPair.key === targetingKeyVal) === 'undefined') {
+        adserverTargeting.push(createKeyVal(targetingKeyVal, 'videoCacheKey'));
+      }
+    });
+
+    // Adding hb_cache_host
+    if (config.getConfig('cache.url') && (!bidderCode || utils.deepAccess(bidderSettings, `${bidderCode}.sendStandardTargeting`) !== false)) {
+      const urlInfo = parseURL(config.getConfig('cache.url'));
+
+      if (typeof find(adserverTargeting, targetingKeyVal => targetingKeyVal.key === TARGETING_KEYS.CACHE_HOST) === 'undefined') {
+        adserverTargeting.push(createKeyVal(TARGETING_KEYS.CACHE_HOST, function(bidResponse) {
+          return utils.deepAccess(bidResponse, `adserverTargeting.${TARGETING_KEYS.CACHE_HOST}`)
+            ? bidResponse.adserverTargeting[TARGETING_KEYS.CACHE_HOST] : urlInfo.hostname;
+        }));
+      }
+    }
   }
   return bidderSettings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD];
 }
 
-export function getKeyValueTargetingPairs(bidderCode, custBidObj) {
+export function getKeyValueTargetingPairs(bidderCode, custBidObj, bidReq) {
   if (!custBidObj) {
     return {};
   }
@@ -574,7 +595,7 @@ export function getKeyValueTargetingPairs(bidderCode, custBidObj) {
   // 1) set the keys from "standard" setting or from prebid defaults
   if (bidderSettings) {
     // initialize default if not set
-    const standardSettings = getStandardBidderSettings(custBidObj.mediaType);
+    const standardSettings = getStandardBidderSettings(custBidObj.mediaType, bidderCode);
     setKeys(keyValues, standardSettings, custBidObj);
 
     // 2) set keys from specific bidder setting override if they exist
@@ -586,7 +607,7 @@ export function getKeyValueTargetingPairs(bidderCode, custBidObj) {
 
   // set native key value targeting
   if (custBidObj['native']) {
-    keyValues = Object.assign({}, keyValues, getNativeTargeting(custBidObj));
+    keyValues = Object.assign({}, keyValues, getNativeTargeting(custBidObj, bidReq));
   }
 
   return keyValues;

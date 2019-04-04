@@ -146,7 +146,8 @@ describe('UnrulyAdapter', function () {
           creativeId: 'mockBidId',
           ttl: 360,
           currency: 'USD',
-          renderer: fakeRenderer
+          renderer: fakeRenderer,
+          mediaType: 'video'
         }
       ])
     });
