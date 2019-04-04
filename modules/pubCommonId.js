@@ -7,15 +7,19 @@ import * as utils from '../src/utils'
 import { config } from '../src/config';
 
 const ID_NAME = '_pubcid';
+const OPTOUT_NAME = '_pubcid_optout';
 const DEFAULT_EXPIRES = 525600; // 1-year worth of minutes
 const PUB_COMMON = 'PublisherCommonId';
 const EXP_SUFFIX = '_exp';
 const COOKIE = 'cookie';
 const LOCAL_STORAGE = 'html5';
 
-var pubcidEnabled = true;
-var interval = DEFAULT_EXPIRES;
-var typeEnabled = {cookie: true, html5: true};
+let pubcidConfig = {
+  enabled: true,
+  interval: DEFAULT_EXPIRES,
+  typeEnabled: LOCAL_STORAGE,
+  readOnly: false
+};
 
 /**
  * Set an item in the storage with expiry time.
@@ -83,38 +87,45 @@ export function removeStorageItem(key) {
 }
 
 /**
- * Read a value by checking cookies first and then local storage.
+ * Read a value either from cookie or local storage
  * @param {string} name Name of the item
  * @returns {string|null} a string if item exists
  */
 function readValue(name) {
-  const cookieValue = typeEnabled[COOKIE] ? getCookie(name) : null;
+  let value;
+  if (pubcidConfig.typeEnabled === COOKIE) {
+    value = getCookie(name);
+  } else if (pubcidConfig.typeEnabled === LOCAL_STORAGE) {
+    value = getStorageItem(name);
+    if (!value) {
+      value = getCookie(name);
+    }
+  }
 
-  if (cookieValue) { return cookieValue; }
+  if (value === 'undefined' || value === 'null') { return null; }
 
-  const storageValue = typeEnabled[LOCAL_STORAGE] ? getStorageItem(name) : null;
-  return storageValue;
+  return value;
 }
 
 /**
- * Write a value to both cookies and local storage
+ * Write a value to either cookies or local storage
  * @param {string} name Name of the item
  * @param {string} value Value to be stored
  * @param {number} expInterval Expiry time in minutes
  */
 function writeValue(name, value, expInterval) {
   if (name && value) {
-    if (typeEnabled[COOKIE]) {
+    if (pubcidConfig.typeEnabled === COOKIE) {
       setCookie(name, value, expInterval);
-    }
-    if (typeEnabled[LOCAL_STORAGE]) {
+    } else if (pubcidConfig.typeEnabled === LOCAL_STORAGE) {
       setStorageItem(name, value, expInterval);
     }
   }
 }
 
-export function isPubcidEnabled() { return pubcidEnabled; }
-export function getExpInterval() { return interval; }
+export function isPubcidEnabled() { return pubcidConfig.enabled; }
+export function getExpInterval() { return pubcidConfig.interval; }
+export function getPubcidConfig() { return pubcidConfig; }
 
 /**
  * Decorate ad units with pubcid.  This hook function is called before the
@@ -129,7 +140,7 @@ export function requestBidHook(next, config) {
   let pubcid = null;
 
   // Pass control to the next function if not enabled
-  if (!pubcidEnabled) {
+  if (!pubcidConfig.enabled || !pubcidConfig.typeEnabled) {
     return next.call(this, config);
   }
 
@@ -141,17 +152,17 @@ export function requestBidHook(next, config) {
     // Otherwise get the existing cookie
     pubcid = readValue(ID_NAME);
 
-    if (pubcid === 'undefined' || pubcid === 'null') { pubcid = null; }
-
-    if (!pubcid) {
-      pubcid = utils.generateUUID();
-      // Update the cookie/storage with the latest expiration date
-      writeValue(ID_NAME, pubcid, interval);
-      // Only return pubcid if it is saved successfully
-      pubcid = readValue(ID_NAME);
-    } else {
-      // Update the cookie/storage with the latest expiration date
-      writeValue(ID_NAME, pubcid, interval);
+    if (!pubcidConfig.readOnly) {
+      if (!pubcid) {
+        pubcid = utils.generateUUID();
+        // Update the cookie/storage with the latest expiration date
+        writeValue(ID_NAME, pubcid, pubcidConfig.interval);
+        // Only return pubcid if it is saved successfully
+        pubcid = readValue(ID_NAME);
+      } else {
+        // Update the cookie/storage with the latest expiration date
+        writeValue(ID_NAME, pubcid, pubcidConfig.interval);
+      }
     }
 
     utils.logMessage('pbjs: pubcid = ' + pubcid);
@@ -190,18 +201,39 @@ export function getCookie(name) {
  * Configuration function
  * @param {boolean} enable Enable or disable pubcid.  By default the module is enabled.
  * @param {number} expInterval Expiration interval of the cookie in minutes.
+ * @param {string} type Type of storage to use
+ * @param {boolean} readOnly Read but not update id
  */
 
-export function setConfig({ enable = true, expInterval = DEFAULT_EXPIRES, type = 'cookie,html5' } = {}) {
-  pubcidEnabled = enable;
-  interval = parseInt(expInterval, 10);
-  if (isNaN(interval)) {
-    interval = DEFAULT_EXPIRES;
+export function setConfig({ enable = true, expInterval = DEFAULT_EXPIRES, type = 'html5,cookie', readOnly = false } = {}) {
+  pubcidConfig.enabled = enable;
+  pubcidConfig.interval = parseInt(expInterval, 10);
+  if (isNaN(pubcidConfig.interval)) {
+    pubcidConfig.interval = DEFAULT_EXPIRES;
   }
-  typeEnabled = type.split(',').reduce((obj, str, idx) => {
-    obj[str.trim()] = true;
-    return obj;
-  }, {});
+
+  pubcidConfig.readOnly = readOnly;
+
+  // Default is to use local storage. Fall back to
+  // cookie only if local storage is not supported.
+
+  pubcidConfig.typeEnabled = null;
+
+  const typeArray = type.split(',');
+  for (let i = 0; i < typeArray.length; ++i) {
+    const name = typeArray[i].trim();
+    if (name === COOKIE) {
+      if (utils.cookiesAreEnabled()) {
+        pubcidConfig.typeEnabled = COOKIE;
+        break;
+      }
+    } else if (name === LOCAL_STORAGE) {
+      if (utils.hasLocalStorage()) {
+        pubcidConfig.typeEnabled = LOCAL_STORAGE;
+        break;
+      }
+    }
+  }
 }
 
 /**
@@ -210,10 +242,8 @@ export function setConfig({ enable = true, expInterval = DEFAULT_EXPIRES, type =
 export function initPubcid() {
   config.getConfig('pubcid', config => setConfig(config.pubcid));
 
-  if (utils.cookiesAreEnabled() || utils.hasLocalStorage()) {
-    if (!readValue('_pubcid_optout')) {
-      $$PREBID_GLOBAL$$.requestBids.before(requestBidHook);
-    }
+  if (!readValue(OPTOUT_NAME)) {
+    $$PREBID_GLOBAL$$.requestBids.before(requestBidHook);
   }
 }
 

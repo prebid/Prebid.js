@@ -8,7 +8,8 @@ import {
   initPubcid,
   setStorageItem,
   getStorageItem,
-  removeStorageItem } from 'modules/pubCommonId';
+  removeStorageItem,
+  getPubcidConfig } from 'modules/pubCommonId';
 import { getAdUnits } from 'test/fixtures/fixtures';
 import * as auctionModule from 'src/auction';
 import { registerBidder } from 'src/adapters/bidderFactory';
@@ -46,12 +47,13 @@ describe('Publisher Common ID', function () {
       let adUnits2 = getAdUnits();
       let innerAdUnits1;
       let innerAdUnits2;
-      let pubcid = getCookie(ID_NAME);
+      let pubcid;
 
-      expect(pubcid).to.be.null; // there should be no cookie initially
+      expect(getCookie(ID_NAME)).to.be.null; // there should be no cookie initially
+      expect(localStorage.getItem(ID_NAME)).to.be.null; // there should be no local storage item either
 
       requestBidHook((config) => { innerAdUnits1 = config.adUnits }, {adUnits: adUnits1});
-      pubcid = getCookie(ID_NAME); // cookies is created after requestbidHook
+      pubcid = localStorage.getItem(ID_NAME); // local storage item is created after requestbidHook
 
       innerAdUnits1.forEach((unit) => {
         unit.bids.forEach((bid) => {
@@ -60,8 +62,8 @@ describe('Publisher Common ID', function () {
         });
       });
 
-      // verify local storage
-      expect(localStorage.getItem(ID_NAME)).to.be.equal(pubcid);
+      // verify cookie is null
+      expect(getCookie(ID_NAME)).to.be.null;
 
       // verify same pubcid is preserved
       requestBidHook((config) => { innerAdUnits2 = config.adUnits }, {adUnits: adUnits2});
@@ -77,9 +79,10 @@ describe('Publisher Common ID', function () {
       let pubcid2;
 
       requestBidHook((config) => { innerAdUnits1 = config.adUnits }, {adUnits: adUnits1});
-      pubcid1 = getCookie(ID_NAME); // get first cookie
-      setCookie(ID_NAME, '', -1); // erase cookie
+      pubcid1 = localStorage.getItem(ID_NAME); // get first pubcid
       removeStorageItem(ID_NAME); // remove storage
+
+      expect(pubcid1).to.not.be.null;
 
       innerAdUnits1.forEach((unit) => {
         unit.bids.forEach((bid) => {
@@ -89,7 +92,7 @@ describe('Publisher Common ID', function () {
       });
 
       requestBidHook((config) => { innerAdUnits2 = config.adUnits }, {adUnits: adUnits2});
-      pubcid2 = getCookie(ID_NAME); // get second cookie
+      pubcid2 = localStorage.getItem(ID_NAME); // get second pubcid
 
       innerAdUnits2.forEach((unit) => {
         unit.bids.forEach((bid) => {
@@ -98,6 +101,7 @@ describe('Publisher Common ID', function () {
         });
       });
 
+      expect(pubcid2).to.not.be.null;
       expect(pubcid1).to.not.equal(pubcid2);
     });
 
@@ -127,7 +131,7 @@ describe('Publisher Common ID', function () {
       expect(getStorageItem(ID_NAME)).to.equal(pubcid);
     });
 
-    it('Replicate storage to cookie', function() {
+    it('Does not replicate storage to cookie', function() {
       let adUnits = getAdUnits();
       let innerAdUnits;
       let pubcid = utils.generateUUID();
@@ -135,7 +139,7 @@ describe('Publisher Common ID', function () {
       setStorageItem(ID_NAME, pubcid, 600);
       requestBidHook((config) => { innerAdUnits = config.adUnits }, {adUnits});
 
-      expect(getCookie(ID_NAME)).to.equal(pubcid);
+      expect(getCookie(ID_NAME)).to.be.null;
     });
 
     it('Cookie only', function() {
@@ -159,11 +163,27 @@ describe('Publisher Common ID', function () {
       expect(getCookie(ID_NAME)).to.be.null;
       expect(getStorageItem(ID_NAME)).to.match(uuidPattern);
     });
+
+    it('Bad id recovery', function() {
+      let adUnits = getAdUnits();
+      let innerAdUnits;
+
+      setStorageItem(ID_NAME, 'undefined', 600);
+      requestBidHook((config) => { innerAdUnits = config.adUnits }, {adUnits});
+
+      expect(getStorageItem(ID_NAME)).to.match(uuidPattern);
+    });
   });
 
   describe('Configuration', function () {
-    beforeEach(() => { cleanUp(); });
-    afterEach(() => { cleanUp(); });
+    beforeEach(() => {
+      setConfig();
+      cleanUp();
+    });
+    afterEach(() => {
+      setConfig();
+      cleanUp();
+    });
 
     it('empty config', function () {
       // this should work as usual
@@ -171,7 +191,7 @@ describe('Publisher Common ID', function () {
       let adUnits = getAdUnits();
       let innerAdUnits;
       requestBidHook((config) => { innerAdUnits = config.adUnits }, {adUnits});
-      let pubcid = getCookie(ID_NAME);
+      let pubcid = localStorage.getItem(ID_NAME);
       innerAdUnits.forEach((unit) => {
         unit.bids.forEach((bid) => {
           expect(bid).to.have.deep.nested.property('crumbs.pubcid');
@@ -208,7 +228,24 @@ describe('Publisher Common ID', function () {
         unit.bids.forEach((bid) => {
           expect(bid).to.have.deep.nested.property('crumbs.pubcid');
         });
-      })
+      });
+    });
+
+    it('read only', function() {
+      setConfig({
+        readOnly: true
+      });
+
+      const config = getPubcidConfig();
+      expect(config.readOnly).to.be.true;
+      expect(config.typeEnabled).to.equal('html5');
+
+      let adUnits = getAdUnits();
+      let innerAdUnits;
+      requestBidHook((config) => { innerAdUnits = config.adUnits }, {adUnits});
+
+      const pubcid = localStorage.getItem(ID_NAME);
+      expect(pubcid).to.be.null;
     });
   });
 
