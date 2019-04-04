@@ -1,5 +1,5 @@
 import { config } from './config';
-import {logWarn, isPlainObject, deepAccess, deepClone} from './utils';
+import {logWarn, isPlainObject, deepAccess, deepClone, getWindowTop} from './utils';
 import includes from 'core-js/library/fn/array/includes';
 
 let sizeConfig = [];
@@ -123,7 +123,17 @@ function evaluateSizeConfig(configs) {
       typeof config === 'object' &&
       typeof config.mediaQuery === 'string'
     ) {
-      if (matchMedia(config.mediaQuery).matches) {
+      let ruleMatch = false;
+
+      try {
+        ruleMatch = getWindowTop().matchMedia(config.mediaQuery).matches;
+      } catch (e) {
+        logWarn('Unfriendly iFrame blocks sizeConfig from being correctly evaluated');
+
+        ruleMatch = matchMedia(config.mediaQuery).matches;
+      }
+
+      if (ruleMatch) {
         if (Array.isArray(config.sizesSupported)) {
           results.shouldFilter = true;
         }

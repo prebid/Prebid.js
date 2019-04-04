@@ -11,6 +11,7 @@ const gutil = require('gulp-util');
 const MODULE_PATH = './modules';
 const BUILD_PATH = './build/dist';
 const DEV_PATH = './build/dev';
+const ANALYTICS_PATH = '../analytics';
 
 
 // get only subdirectories that contain package.json with 'main' property
@@ -126,16 +127,34 @@ module.exports = {
    * Invoke with gulp <task> --analytics
    * Returns an array of source files for inclusion in build process
    */
-  getAnalyticsSources: function(directory) {
+  getAnalyticsSources: function() {
     if (!argv.analytics) {return [];} // empty arrays won't affect a standard build
 
-    const directoryContents = fs.readdirSync(directory);
+    const directoryContents = fs.readdirSync(ANALYTICS_PATH);
     return directoryContents
-      .filter(file => isModuleDirectory(path.join(directory, file)))
+      .filter(file => isModuleDirectory(path.join(ANALYTICS_PATH, file)))
       .map(moduleDirectory => {
-        const module = require(path.join(directory, moduleDirectory, MANIFEST));
-        return path.join(directory, moduleDirectory, module.main);
+        const module = require(path.join(ANALYTICS_PATH, moduleDirectory, MANIFEST));
+        return path.join(ANALYTICS_PATH, moduleDirectory, module.main);
       });
+  },
+
+  /*
+   * Returns the babel options object necessary for allowing analytics packages
+   * to have their own configs. Gets added to prebid's webpack config with the
+   * flag --analytics
+   */
+  getAnalyticsOptions: function() {
+    let options;
+
+    if (argv.analytics) {
+      // https://babeljs.io/docs/en/options#babelrcroots
+      options = {
+        babelrcRoots: ['.', ANALYTICS_PATH],
+      }
+    }
+
+    return options;
   },
 
   createEnd2EndTestReport : function(targetDestinationDir) {

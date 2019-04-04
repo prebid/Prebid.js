@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import {spec} from 'modules/yieldNexusBidAdapter';
+import {spec} from 'modules/yieldnexusBidAdapter';
 import * as utils from 'src/utils';
 
 const spid = '123';

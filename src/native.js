@@ -1,4 +1,4 @@
-import { deepAccess, getBidRequest, logError, triggerPixel, insertHtmlIntoIframe } from './utils';
+import { deepAccess, getBidRequest, getKeyByValue, insertHtmlIntoIframe, logError, triggerPixel } from './utils';
 import includes from 'core-js/library/fn/array/includes';
 
 const CONSTANTS = require('./constants.json');
@@ -69,7 +69,7 @@ export const hasNonNativeBidder = adUnit =>
  * @return {Boolean} If object is valid
  */
 export function nativeBidIsValid(bid, bidRequests) {
-  const bidRequest = getBidRequest(bid.adId, bidRequests);
+  const bidRequest = getBidRequest(bid.requestId, bidRequests);
   if (!bidRequest) { return false; }
 
   // all native bid responses must define a landing page url
@@ -144,6 +144,7 @@ export function fireNativeTrackers(message, adObject) {
   }
 
   (trackers || []).forEach(triggerPixel);
+  return message.action;
 }
 
 /**
@@ -151,16 +152,21 @@ export function fireNativeTrackers(message, adObject) {
  * @param {Object} bid
  * @return {Object} targeting
  */
-export function getNativeTargeting(bid) {
+export function getNativeTargeting(bid, bidReq) {
   let keyValues = {};
 
   Object.keys(bid['native']).forEach(asset => {
     const key = CONSTANTS.NATIVE_KEYS[asset];
-    let value = bid['native'][asset];
+    let value = getAssetValue(bid['native'][asset]);
 
-    // native image-type assets can be a string or an object with a url prop
-    if (typeof value === 'object' && value.url) {
-      value = value.url;
+    const sendPlaceholder = deepAccess(
+      bidReq,
+      `mediaTypes.native.${asset}.sendId`
+    );
+
+    if (sendPlaceholder) {
+      const placeholder = `${key}:${bid.adId}`;
+      value = placeholder;
     }
 
     if (key && value) {
@@ -169,4 +175,37 @@ export function getNativeTargeting(bid) {
   });
 
   return keyValues;
+}
+
+/**
+ * Constructs a message object containing asset values for each of the
+ * requested data keys.
+ */
+export function getAssetMessage(data, adObject) {
+  const message = {
+    message: 'assetResponse',
+    adId: data.adId,
+    assets: [],
+  };
+
+  data.assets.forEach(asset => {
+    const key = getKeyByValue(CONSTANTS.NATIVE_KEYS, asset);
+    const value = getAssetValue(adObject.native[key]);
+
+    message.assets.push({ key, value });
+  });
+
+  return message;
+}
+
+/**
+ * Native assets can be a string or an object with a url prop. Returns the value
+ * appropriate for sending in adserver targeting or placeholder replacement.
+ */
+function getAssetValue(value) {
+  if (typeof value === 'object' && value.url) {
+    return value.url;
+  }
+
+  return value;
 }
