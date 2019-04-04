@@ -60,6 +60,7 @@ export const spec = {
         id: bidRequest.bidId,
         network: network,
         channel: channel,
+        publisher: bidRequest.params.pubId ? bidRequest.params.pubId : 0,
         width: dim[0],
         height: dim[1],
         dimension: bidRequest.params.dimId,
@@ -258,11 +259,12 @@ function videoRenderer(bid) {
   bid.renderer.push(() => {
     let channelCode = utils.deepAccess(bid, 'params.0.channelCode') || 0;
     let dimId = utils.deepAccess(bid, 'params.0.dimId') || 0;
+    let publisher = utils.deepAccess(bid, 'params.0.pubId') || 0;
     let options = utils.deepAccess(bid, 'params.0.options') || {};
     let channel = (channelCode > 0) ? (channelCode - (bid.network * 1000000)) : 0;
     var rndr = new ZdPBTag(bid.adUnitCode, bid.network, bid.width, bid.height, bid.adType, bid.vastXml, channel, dimId,
       (encodeURI(utils.getTopWindowUrl()) || ''), options);
-    rndr.renderAd();
+    rndr.renderAd(publisher);
   });
 }
 
@@ -288,18 +290,19 @@ function getLoggingData(eid, data) {
   data = (utils.isArray(data) && data) || [];
 
   let params = {};
-  let channel, network, dim, adunitCode, timeToRespond, cpm;
+  let channel, network, dim, publisher, adunitCode, timeToRespond, cpm;
   data.map((adunit) => {
     adunitCode = adunit.adUnitCode;
     channel = utils.deepAccess(adunit, 'params.0.channelCode') || 0;
     network = channel > 0 ? parseInt(channel / 1000000) : 0;
     dim = utils.deepAccess(adunit, 'params.0.dimId') * 256 || 0;
+    publisher = utils.deepAccess(adunit, 'params.0.pubId') || 0;
     timeToRespond = adunit.timeout ? adunit.timeout : adunit.timeToRespond;
     cpm = adunit.cpm;
   });
   params.n = network;
   params.c = channel;
-  params.s = '0';
+  params.s = publisher;
   params.x = dim;
   params.ai = encodeURI('Prebid^zedo^' + adunitCode + '^' + cpm + '^' + timeToRespond);
   params.pu = encodeURI(utils.getTopWindowUrl()) || '';
