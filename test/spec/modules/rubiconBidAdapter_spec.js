@@ -1060,6 +1060,19 @@ describe('the rubicon adapter', function () {
             expect(serverRequests).that.is.an('array').of.length(3);
           });
         });
+
+        describe('user id config', function() {
+          it('should send tpid_tdid when userId defines tdid', function () {
+            const clonedBid = clone(bidderRequest.bids[0]);
+            clonedBid.userId = {
+              tdid: 'abcd-efgh-ijkl-mnop-1234'
+            };
+            let [request] = spec.buildRequests([clonedBid], bidderRequest);
+            let data = parseQuery(request.data);
+
+            expect(data['tpid_tdid']).to.equal('abcd-efgh-ijkl-mnop-1234');
+          });
+        })
       });
 
       describe('for video requests', function () {
