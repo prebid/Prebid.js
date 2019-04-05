@@ -40,8 +40,16 @@ export const spec = {
       w: localWindow.innerWidth,
       h: localWindow.innerHeight
     };
+
     bidRequests.forEach((request) => {
       serverRequest.p.push(addPlacement(request));
+      const userId = getUserId(request)
+      if (userId) {
+        const pubcid = userId.pubcid;
+        serverRequest.pubcid = pubcid;
+      } else {
+        serverRequest.pubcid = request.crumbs.pubcid;
+      }
     });
     serverRequest.p = '[' + serverRequest.p.toString() + ']';
     return {
@@ -301,4 +309,12 @@ function isSuperSandboxedIframe() {
  */
 function isMraid() {
   return !!(window.mraid);
+}
+
+function getUserId(request) {
+  let userId;
+  if (request && request.userId && typeof request.userId === 'object') {
+    userId = request.userId;
+  }
+  return userId;
 }
