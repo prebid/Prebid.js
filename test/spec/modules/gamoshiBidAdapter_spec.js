@@ -166,7 +166,7 @@ describe('GamoshiAdapter', function () {
       const bidRequestWithVideo = utils.deepClone(bidRequest);
       bidRequestWithVideo.mediaTypes = {
         video: {
-          playerSize: [300, 250]
+          playerSize: [302, 252]
         }
       };
       response = spec.buildRequests([bidRequestWithVideo], bidRequest)[0];
@@ -200,6 +200,29 @@ describe('GamoshiAdapter', function () {
       bidRequestWithPosEquals2.mediaTypes.video.context = null;
       response = spec.buildRequests([bidRequestWithPosEquals2], bidRequest)[0];
       expect(response.data.imp[0].video.ext.context).to.equal(null);
+    });
+
+    it('builds request video object correctly with multi-dimensions size array', function () {
+      let response;
+      const bidRequestWithVideo = utils.deepClone(bidRequest);
+      bidRequestWithVideo.mediaTypes.video = {
+        playerSize: [[304, 254], [305, 255]],
+        context: 'instream'
+      };
+
+      response = spec.buildRequests([bidRequestWithVideo], bidRequest)[0];
+      expect(response.data.imp[1].video.ext.context).to.equal('instream');
+      bidRequestWithVideo.mediaTypes.video.context = 'outstream';
+
+      const bidRequestWithPosEquals1 = utils.deepClone(bidRequestWithVideo);
+      bidRequestWithPosEquals1.mediaTypes.video.context = 'outstream';
+      response = spec.buildRequests([bidRequestWithPosEquals1], bidRequest)[0];
+      expect(response.data.imp[1].video.ext.context).to.equal('outstream');
+
+      const bidRequestWithPosEquals2 = utils.deepClone(bidRequestWithVideo);
+      bidRequestWithPosEquals2.mediaTypes.video.context = null;
+      response = spec.buildRequests([bidRequestWithPosEquals2], bidRequest)[0];
+      expect(response.data.imp[1].video.ext.context).to.equal(null);
     });
 
     it('builds request with gdpr consent', function () {
@@ -481,4 +504,5 @@ describe('GamoshiAdapter', function () {
       expect(result[0].url).to.equal('https://rtb.gamoshi.io/pix/1275/scm?gc=missing');
     });
   });
-});
+})
+;
