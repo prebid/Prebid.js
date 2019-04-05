@@ -10,7 +10,6 @@ describe('bid overrides', function () {
 
   beforeEach(function () {
     sandbox = sinon.sandbox.create();
-    sandbox.stub(utils, 'logMessage');
   });
 
   afterEach(function () {
