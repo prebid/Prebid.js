@@ -335,7 +335,7 @@ const spec = {
   buildRequests(bidRequests, bidderRequest) {
     return {
       method: "POST",
-      url: "//my-ad-server.herokuapp.com/bid",
+      url: "//pb.vi-serve.com/prebid/bid",
       data: {
         userId: getViUserId(),
         refererInfo: bidderRequest.refererInfo,
