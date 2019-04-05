@@ -1805,6 +1805,100 @@ describe('PubMatic adapter', function () {
       expect(data.site.ext).to.not.exist;
     });
 
+    describe('Request param bcat checking', function() {
+      let multipleBidRequests = [
+        {
+          bidder: 'pubmatic',
+          params: {
+            publisherId: '301',
+            adSlot: '/15671365/DMDemo@300x250:0',
+            kadfloor: '1.2',
+            pmzoneid: 'aabc, ddef',
+            kadpageurl: 'www.publisher.com',
+            yob: '1986',
+            gender: 'M',
+            lat: '12.3',
+            lon: '23.7',
+            wiid: '1234567890',
+            profId: '100',
+            verId: '200',
+            currency: 'AUD',
+            dctr: 'key1=val1|key2=val2,!val3'
+          },
+          placementCode: '/19968336/header-bid-tag-1',
+          sizes: [[300, 250], [300, 600]],
+          bidId: '23acc48ad47af5',
+          requestId: '0fb4905b-9456-4152-86be-c6f6d259ba99',
+          bidderRequestId: '1c56ad30b9b8ca8',
+          transactionId: '92489f71-1bf2-49a0-adf9-000cea934729'
+        },
+        {
+          bidder: 'pubmatic',
+          params: {
+            publisherId: '301',
+            adSlot: '/15671365/DMDemo@300x250:0',
+            kadfloor: '1.2',
+            pmzoneid: 'aabc, ddef',
+            kadpageurl: 'www.publisher.com',
+            yob: '1986',
+            gender: 'M',
+            lat: '12.3',
+            lon: '23.7',
+            wiid: '1234567890',
+            profId: '100',
+            verId: '200',
+            currency: 'GBP',
+            dctr: 'key1=val3|key2=val1,!val3|key3=val123'
+          },
+          placementCode: '/19968336/header-bid-tag-1',
+          sizes: [[300, 250], [300, 600]],
+          bidId: '23acc48ad47af5',
+          requestId: '0fb4905b-9456-4152-86be-c6f6d259ba99',
+          bidderRequestId: '1c56ad30b9b8ca8',
+          transactionId: '92489f71-1bf2-49a0-adf9-000cea934729'
+        }
+      ];
+
+      it('bcat: pass only strings', function() {
+        multipleBidRequests[0].params.bcat = [1, 2, 3, 'IAB1', 'IAB2'];
+        let request = spec.buildRequests(multipleBidRequests);
+        let data = JSON.parse(request.data);
+        expect(data.bcat).to.exist.and.to.deep.equal(['IAB1', 'IAB2']);
+      });
+
+      it('bcat: pass strings with length greater than 3', function() {
+        multipleBidRequests[0].params.bcat = ['AB', 'CD', 'IAB1', 'IAB2'];
+        let request = spec.buildRequests(multipleBidRequests);
+        let data = JSON.parse(request.data);
+        expect(data.bcat).to.exist.and.to.deep.equal(['IAB1', 'IAB2']);
+      });
+
+      it('bcat: trim the strings', function() {
+        multipleBidRequests[0].params.bcat = ['   IAB1    ', '   IAB2   '];
+        let request = spec.buildRequests(multipleBidRequests);
+        let data = JSON.parse(request.data);
+        expect(data.bcat).to.exist.and.to.deep.equal(['IAB1', 'IAB2']);
+      });
+
+      it('bcat: pass only unique strings', function() {
+        // multi slot
+        multipleBidRequests[0].params.bcat = ['IAB1', 'IAB2', 'IAB1', 'IAB2', 'IAB1', 'IAB2'];
+        multipleBidRequests[1].params.bcat = ['IAB1', 'IAB2', 'IAB1', 'IAB2', 'IAB1', 'IAB3'];
+        let request = spec.buildRequests(multipleBidRequests);
+        let data = JSON.parse(request.data);
+        expect(data.bcat).to.exist.and.to.deep.equal(['IAB1', 'IAB2', 'IAB3']);
+      });
+
+      it('bcat: do not pass bcat if all entries are invalid', function() {
+        // multi slot
+        multipleBidRequests[0].params.bcat = ['', 'IAB', 'IAB'];
+        multipleBidRequests[1].params.bcat = ['    ', 22, 99999, 'IA'];
+        let request = spec.buildRequests(multipleBidRequests);
+        let data = JSON.parse(request.data);
+        expect(data.bcat).to.deep.equal(undefined);
+      });
+    });
+
     describe('Response checking', function () {
       it('should check for valid response values', function () {
         let request = spec.buildRequests(bidRequests);
