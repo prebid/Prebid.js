@@ -1,7 +1,7 @@
 /** @module pbjs */
 
 import { getGlobal } from './prebidGlobal';
-import { flatten, uniques, isGptPubadsDefined, adUnitsFilter, removeRequestId, getLatestHighestCpmBid, isArrayOfNums } from './utils';
+import { flatten, uniques, isGptPubadsDefined, adUnitsFilter, getLatestHighestCpmBid, isArrayOfNums } from './utils';
 import { listenMessagesFromCreative } from './secureCreatives';
 import { userSync } from './userSync.js';
 import { loadScript } from './adloader';
@@ -184,7 +184,7 @@ function getBids(type) {
     .filter(bids => bids && bids[0] && bids[0].adUnitCode)
     .map(bids => {
       return {
-        [bids[0].adUnitCode]: { bids: bids.map(removeRequestId) }
+        [bids[0].adUnitCode]: { bids }
       };
     })
     .reduce((a, b) => Object.assign(a, b), {});
@@ -221,9 +221,7 @@ $$PREBID_GLOBAL$$.getBidResponses = function () {
 
 $$PREBID_GLOBAL$$.getBidResponsesForAdUnitCode = function (adUnitCode) {
   const bids = auctionManager.getBidsReceived().filter(bid => bid.adUnitCode === adUnitCode);
-  return {
-    bids: bids.map(removeRequestId)
-  };
+  return { bids };
 };
 
 /**
@@ -469,6 +467,12 @@ $$PREBID_GLOBAL$$.requestBids = hook('async', function ({ bidsBackHandler, timeo
   }
 
   const auction = auctionManager.createAuction({adUnits, adUnitCodes, callback: bidsBackHandler, cbTimeout, labels});
+
+  let adUnitsLen = adUnits.length;
+  if (adUnitsLen > 15) {
+    utils.logInfo(`Current auction ${auction.getAuctionId()} contains ${adUnitsLen} adUnits.`, adUnits);
+  }
+
   adUnitCodes.forEach(code => targeting.setLatestAuctionForAdUnit(code, auction.getAuctionId()));
   auction.callBids();
   return auction;
@@ -663,8 +667,7 @@ $$PREBID_GLOBAL$$.aliasBidder = function (bidderCode, alias) {
  * @return {Array<AdapterBidResponse>} A list of bids that have been rendered.
 */
 $$PREBID_GLOBAL$$.getAllWinningBids = function () {
-  return auctionManager.getAllWinningBids()
-    .map(removeRequestId);
+  return auctionManager.getAllWinningBids();
 };
 
 /**
@@ -673,8 +676,7 @@ $$PREBID_GLOBAL$$.getAllWinningBids = function () {
  */
 $$PREBID_GLOBAL$$.getAllPrebidWinningBids = function () {
   return auctionManager.getBidsReceived()
-    .filter(bid => bid.status === CONSTANTS.BID_STATUS.BID_TARGETING_SET)
-    .map(removeRequestId);
+    .filter(bid => bid.status === CONSTANTS.BID_STATUS.BID_TARGETING_SET);
 };
 
 /**
@@ -686,8 +688,7 @@ $$PREBID_GLOBAL$$.getAllPrebidWinningBids = function () {
  */
 $$PREBID_GLOBAL$$.getHighestCpmBids = function (adUnitCode) {
   let bidsReceived = getHighestCpmBidsFromBidPool(auctionManager.getBidsReceived(), getLatestHighestCpmBid);
-  return targeting.getWinningBids(adUnitCode, bidsReceived)
-    .map(removeRequestId);
+  return targeting.getWinningBids(adUnitCode, bidsReceived);
 };
 
 /**
