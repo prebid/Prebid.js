@@ -64,6 +64,21 @@ describe('orbidderBidAdapter', () => {
       delete bidRequest.params;
       expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
     });
+
+    it('accepts optional bidfloor', () => {
+      const bidRequest = deepClone(defaultBidRequest);
+      bidRequest.params.bidfloor = 123;
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
+
+      bidRequest.params.bidfloor = 1.23;
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
+    });
+
+    it('doesn\'t accept malformed bidfloor', () => {
+      const bidRequest = deepClone(defaultBidRequest);
+      bidRequest.params.bidfloor = 'another not usable string';
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
+    });
   });
 
   describe('buildRequests', () => {

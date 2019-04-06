@@ -29,7 +29,8 @@ const serverResponseToBid = (bid, rendererInstance) => ({
   creativeId: bid.bidId,
   ttl: 360,
   currency: 'USD',
-  renderer: rendererInstance
+  renderer: rendererInstance,
+  mediaType: VIDEO
 });
 
 const buildPrebidResponseAndInstallRenderer = bids =>
@@ -80,7 +81,7 @@ export const adapter = {
       bidRequests: validBidRequests,
       bidderRequest
     };
-    const options = { contentType: 'application/json' };
+    const options = { contentType: 'text/plain' };
 
     return {
       url,

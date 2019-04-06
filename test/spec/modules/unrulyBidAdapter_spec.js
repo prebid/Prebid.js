@@ -107,10 +107,10 @@ describe('UnrulyAdapter', function () {
       const mockBidRequests = ['mockBid'];
       expect(adapter.buildRequests(mockBidRequests).method).to.equal('POST');
     });
-    it('should ensure contentType is `application/json`', function () {
+    it('should ensure contentType is `text/plain`', function () {
       const mockBidRequests = ['mockBid'];
       expect(adapter.buildRequests(mockBidRequests).options).to.deep.equal({
-        contentType: 'application/json'
+        contentType: 'text/plain'
       });
     });
     it('should return a server request with valid payload', function () {
@@ -146,7 +146,8 @@ describe('UnrulyAdapter', function () {
           creativeId: 'mockBidId',
           ttl: 360,
           currency: 'USD',
-          renderer: fakeRenderer
+          renderer: fakeRenderer,
+          mediaType: 'video'
         }
       ])
     });

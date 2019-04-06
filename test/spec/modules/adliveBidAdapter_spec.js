@@ -73,15 +73,6 @@ describe('adliveBidAdapterTests', function() {
     };
     let bids = spec.interpretResponse(serverResponse, bidRequestData.bids[0]);
 
-    expect(bids).to.have.lengthOf(1);
-
-    let bid = bids[0];
-
-    expect(bid.creativeId).to.equal('1e100887dd614b0909bf6c49ba7f69fdd1360437');
-    expect(bid.ad).to.equal('Ad html passback');
-    expect(bid.cpm).to.equal(0);
-    expect(bid.width).to.equal(300);
-    expect(bid.height).to.equal(250);
-    expect(bid.currency).to.equal('USD');
+    expect(bids).to.have.lengthOf(0);
   });
 });

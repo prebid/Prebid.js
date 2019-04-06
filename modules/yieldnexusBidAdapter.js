@@ -92,7 +92,6 @@ export const spec = {
           pos: bidRequest.params.pos || 0,
           topframe: topFrame
         };
-
         let playerSize = bidRequest.mediaTypes.video.playerSize;
         if (playerSize && utils.isArray(playerSize[0])) {
           imp.video.w = playerSize[0][0];

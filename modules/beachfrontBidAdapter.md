@@ -4,7 +4,7 @@ Module Name: Beachfront Bid Adapter
 
 Module Type: Bidder Adapter
 
-Maintainer: johnsalis@beachfront.com
+Maintainer: john@beachfront.com
 
 # Description
 
