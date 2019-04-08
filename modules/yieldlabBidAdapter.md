@@ -25,7 +25,8 @@ Module that connects to Yieldlab's demand sources
                        targeting: {
                            key1: "value1",
                            key2: "value2"
-                       }
+                       },
+                       extId: "abc"
                    }
                }]
            }, {
