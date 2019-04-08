@@ -147,7 +147,7 @@ export function setStorageData(key, item) {
 
 export function acceptPostMessage(e) {
   var message = e.data || '';
-  if (message.indexOf(BASE_KEY + 'userId') !== 0) {
+  if (!message.indexOf || !message.split || message.indexOf(BASE_KEY + 'userId') !== 0) {
     return;
   }
   var intT = message.split(BASE_KEY + 'userId=')[1];

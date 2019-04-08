@@ -1,7 +1,6 @@
 import { expect } from 'chai';
 import adapterManager, {
-  gdprDataHandler,
-  checkBidRequestSizes
+  gdprDataHandler
 } from 'src/adapterManager';
 import { getAdUnits } from 'test/fixtures/fixtures';
 import CONSTANTS from 'src/constants.json';
@@ -914,7 +913,7 @@ describe('adapterManager tests', function () {
         setSizeConfig([]);
       });
 
-      it('should not filter bids w/ no labels', function () {
+      it('should not filter banner bids w/ no labels', function () {
         let bidRequests = adapterManager.makeBidRequests(
           adUnits,
           Date.now(),
@@ -932,6 +931,85 @@ describe('adapterManager tests', function () {
         expect(appnexusBidRequests.bids.length).to.equal(2);
         expect(appnexusBidRequests.bids[0].sizes).to.deep.equal(find(adUnits, adUnit => adUnit.code === appnexusBidRequests.bids[0].adUnitCode).sizes);
         expect(appnexusBidRequests.bids[1].sizes).to.deep.equal(find(adUnits, adUnit => adUnit.code === appnexusBidRequests.bids[1].adUnitCode).sizes);
+      });
+
+      it('should not filter video bids', function () {
+        setSizeConfig([{
+          'mediaQuery': '(min-width: 768px) and (max-width: 1199px)',
+          'sizesSupported': [
+            [728, 90],
+            [300, 250]
+          ],
+          'labels': ['tablet', 'phone']
+        }]);
+
+        let videoAdUnits = [{
+          code: 'test_video',
+          mediaTypes: {
+            video: {
+              playerSize: [300, 300],
+              context: 'outstream'
+            }
+          },
+          bids: [{
+            bidder: 'appnexus',
+            params: {
+              placementId: 13232385,
+              video: {
+                skippable: true,
+                playback_method: ['auto_play_sound_off']
+              }
+            }
+          }]
+        }];
+        let bidRequests = adapterManager.makeBidRequests(
+          videoAdUnits,
+          Date.now(),
+          utils.getUniqueIdentifierStr(),
+          function callback() {},
+          []
+        );
+        expect(bidRequests[0].bids[0].sizes).to.deep.equal([300, 300]);
+      });
+
+      it('should not filter native bids', function () {
+        setSizeConfig([{
+          'mediaQuery': '(min-width: 768px) and (max-width: 1199px)',
+          'sizesSupported': [
+            [728, 90],
+            [300, 250]
+          ],
+          'labels': ['tablet', 'phone']
+        }]);
+
+        let nativeAdUnits = [{
+          code: 'test_native',
+          sizes: [[1, 1]],
+          mediaTypes: {
+            native: {
+              title: { required: true },
+              body: { required: false },
+              image: { required: true },
+              icon: { required: false },
+              sponsoredBy: { required: true },
+              clickUrl: { required: true },
+            },
+          },
+          bids: [
+            {
+              bidder: 'appnexus',
+              params: { placementId: 13232354 }
+            },
+          ]
+        }];
+        let bidRequests = adapterManager.makeBidRequests(
+          nativeAdUnits,
+          Date.now(),
+          utils.getUniqueIdentifierStr(),
+          function callback() {},
+          []
+        );
+        expect(bidRequests[0].bids[0].sizes).to.deep.equal([]);
       });
 
       it('should filter sizes using size config', function () {
@@ -1062,212 +1140,6 @@ describe('adapterManager tests', function () {
           []
         );
         expect(bidRequests[0].gdprConsent).to.be.undefined;
-      });
-    });
-  });
-
-  describe('isValidBidRequest', function () {
-    describe('positive tests for validating bid request', function () {
-      beforeEach(function () {
-        sinon.stub(utils, 'logInfo');
-      });
-
-      afterEach(function () {
-        utils.logInfo.restore();
-      });
-
-      it('should maintain adUnit structure and adUnits.sizes is replaced', function () {
-        let fullAdUnit = [{
-          sizes: [[300, 250], [300, 600]],
-          mediaTypes: {
-            banner: {
-              sizes: [[300, 250]]
-            },
-            video: {
-              playerSize: [[640, 480]]
-            },
-            native: {
-              image: {
-                sizes: [150, 150],
-                aspect_ratios: [140, 140]
-              },
-              icon: {
-                sizes: [75, 75]
-              }
-            }
-          }
-        }];
-        let result = checkBidRequestSizes(fullAdUnit);
-        expect(result[0].sizes).to.deep.equal([[640, 480]]);
-        expect(result[0].mediaTypes.video.playerSize).to.deep.equal([[640, 480]]);
-        expect(result[0].mediaTypes.native.image.sizes).to.deep.equal([150, 150]);
-        expect(result[0].mediaTypes.native.icon.sizes).to.deep.equal([75, 75]);
-        expect(result[0].mediaTypes.native.image.aspect_ratios).to.deep.equal([140, 140]);
-
-        let noOptnlFieldAdUnit = [{
-          sizes: [[300, 250], [300, 600]],
-          mediaTypes: {
-            banner: {
-              sizes: [[300, 250]]
-            },
-            video: {
-              context: 'outstream'
-            },
-            native: {
-              image: {
-                required: true
-              },
-              icon: {
-                required: true
-              }
-            }
-          }
-        }];
-        result = checkBidRequestSizes(noOptnlFieldAdUnit);
-        expect(result[0].sizes).to.deep.equal([[300, 250]]);
-        expect(result[0].mediaTypes.video).to.exist;
-
-        let mixedAdUnit = [{
-          sizes: [[300, 250], [300, 600]],
-          mediaTypes: {
-            video: {
-              context: 'outstream',
-              playerSize: [[400, 350]]
-            },
-            native: {
-              image: {
-                aspect_ratios: [200, 150],
-                required: true
-              }
-            }
-          }
-        }];
-        result = checkBidRequestSizes(mixedAdUnit);
-        expect(result[0].sizes).to.deep.equal([[400, 350]]);
-        expect(result[0].mediaTypes.video).to.exist;
-
-        let altVideoPlayerSize = [{
-          sizes: [[600, 600]],
-          mediaTypes: {
-            video: {
-              playerSize: [640, 480]
-            }
-          }
-        }];
-        result = checkBidRequestSizes(altVideoPlayerSize);
-        expect(result[0].sizes).to.deep.equal([[640, 480]]);
-        expect(result[0].mediaTypes.video.playerSize).to.deep.equal([[640, 480]]);
-        expect(result[0].mediaTypes.video).to.exist;
-        sinon.assert.calledOnce(utils.logInfo);
-      });
-
-      it('should normalize adUnit.sizes and adUnit.mediaTypes.banner.sizes', function () {
-        let fullAdUnit = [{
-          sizes: [300, 250],
-          mediaTypes: {
-            banner: {
-              sizes: [300, 250]
-            }
-          }
-        }];
-        let result = checkBidRequestSizes(fullAdUnit);
-        expect(result[0].sizes).to.deep.equal([[300, 250]]);
-        expect(result[0].mediaTypes.banner.sizes).to.deep.equal([[300, 250]]);
-      });
-    });
-
-    describe('negative tests for validating bid requests', function () {
-      beforeEach(function () {
-        sinon.stub(utils, 'logError');
-      });
-
-      afterEach(function () {
-        utils.logError.restore();
-      });
-
-      it('should throw error message and delete an object/property', function () {
-        let badBanner = [{
-          sizes: [[300, 250], [300, 600]],
-          mediaTypes: {
-            banner: {
-              name: 'test'
-            }
-          }
-        }];
-        let result = checkBidRequestSizes(badBanner);
-        expect(result[0].sizes).to.deep.equal([[300, 250], [300, 600]]);
-        expect(result[0].mediaTypes.banner).to.be.undefined;
-        sinon.assert.called(utils.logError);
-
-        let badVideo1 = [{
-          sizes: [[600, 600]],
-          mediaTypes: {
-            video: {
-              playerSize: ['600x400']
-            }
-          }
-        }];
-        result = checkBidRequestSizes(badVideo1);
-        expect(result[0].sizes).to.deep.equal([[600, 600]]);
-        expect(result[0].mediaTypes.video.playerSize).to.be.undefined;
-        expect(result[0].mediaTypes.video).to.exist;
-        sinon.assert.called(utils.logError);
-
-        let badVideo2 = [{
-          sizes: [[600, 600]],
-          mediaTypes: {
-            video: {
-              playerSize: [['300', '200']]
-            }
-          }
-        }];
-        result = checkBidRequestSizes(badVideo2);
-        expect(result[0].sizes).to.deep.equal([[600, 600]]);
-        expect(result[0].mediaTypes.video.playerSize).to.be.undefined;
-        expect(result[0].mediaTypes.video).to.exist;
-        sinon.assert.called(utils.logError);
-
-        let badNativeImgSize = [{
-          mediaTypes: {
-            native: {
-              image: {
-                sizes: '300x250'
-              }
-            }
-          }
-        }];
-        result = checkBidRequestSizes(badNativeImgSize);
-        expect(result[0].mediaTypes.native.image.sizes).to.be.undefined;
-        expect(result[0].mediaTypes.native.image).to.exist;
-        sinon.assert.called(utils.logError);
-
-        let badNativeImgAspRat = [{
-          mediaTypes: {
-            native: {
-              image: {
-                aspect_ratios: '300x250'
-              }
-            }
-          }
-        }];
-        result = checkBidRequestSizes(badNativeImgAspRat);
-        expect(result[0].mediaTypes.native.image.aspect_ratios).to.be.undefined;
-        expect(result[0].mediaTypes.native.image).to.exist;
-        sinon.assert.called(utils.logError);
-
-        let badNativeIcon = [{
-          mediaTypes: {
-            native: {
-              icon: {
-                sizes: '300x250'
-              }
-            }
-          }
-        }];
-        result = checkBidRequestSizes(badNativeIcon);
-        expect(result[0].mediaTypes.native.icon.sizes).to.be.undefined;
-        expect(result[0].mediaTypes.native.icon).to.exist;
-        sinon.assert.called(utils.logError);
       });
     });
   });

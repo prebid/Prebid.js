@@ -3,9 +3,9 @@
 import { getAdUnitSizes, logWarn } from '../src/utils';
 import { registerBidder } from '../src/adapters/bidderFactory';
 import { BANNER } from '../src/mediaTypes';
-import { REPO_AND_VERSION } from '../src/constants';
 
-const SYNACOR_URL = '//prebid.technoratimedia.com';
+const BID_HOST = '//prebid.technoratimedia.com';
+const USER_SYNC_HOST = '//ad-cdn.technoratimedia.com';
 export const spec = {
   code: 'synacormedia',
   supportedMediaTypes: [ BANNER ],
@@ -40,22 +40,36 @@ export const spec = {
         seatId = bid.params.seatId;
       }
       let placementId = bid.params.placementId;
-      let size = getAdUnitSizes(bid)[0];
-      this.sizeMap[bid.bidId] = size;
-      openRtbBidRequest.imp.push({
-        id: bid.bidId,
-        tagid: placementId,
-        banner: {
-          w: size[0],
-          h: size[1],
-          pos: 0
+      let bidFloor = bid.params.bidfloor ? parseFloat(bid.params.bidfloor) : null;
+      if (isNaN(bidFloor)) {
+        logWarn(`Synacormedia: there is an invalid bid floor: ${bid.params.bidfloor}`);
+      }
+      let pos = parseInt(bid.params.pos);
+      if (isNaN(pos)) {
+        logWarn(`Synacormedia: there is an invalid POS: ${bid.params.pos}`);
+        pos = 0;
+      }
+      getAdUnitSizes(bid).forEach((size, i) => {
+        let request = {
+          id: bid.bidId + '~' + size[0] + 'x' + size[1],
+          tagid: placementId,
+          banner: {
+            w: size[0],
+            h: size[1],
+            pos
+          }
+        };
+        if (bidFloor !== null && !isNaN(bidFloor)) {
+          request.bidfloor = bidFloor;
         }
+        openRtbBidRequest.imp.push(request);
       });
     });
+
     if (openRtbBidRequest.imp.length && seatId) {
       return {
         method: 'POST',
-        url: `${SYNACOR_URL}/openrtb/bids/${seatId}?src=${REPO_AND_VERSION}`,
+        url: `${BID_HOST}/openrtb/bids/${seatId}?src=$$REPO_AND_VERSION$$`,
         data: openRtbBidRequest,
         options: {
           contentType: 'application/json',
@@ -74,7 +88,6 @@ export const spec = {
     if (id && seatbids) {
       seatbids.forEach(seatbid => {
         seatbid.bid.forEach(bid => {
-          let size = this.sizeMap[bid.impid] || [0, 0];
           let price = parseFloat(bid.price);
           let creative = bid.adm.replace(/\${([^}]*)}/g, (match, key) => {
             switch (key) {
@@ -87,11 +100,13 @@ export const spec = {
             }
             return match;
           });
+          let [, impid, width, height] = bid.impid.match(/^(.*)~(.*)x(.*)$/);
           bids.push({
-            requestId: bid.impid,
+            requestId: impid,
+            adId: bid.id.replace(/~/g, '-'),
             cpm: price,
-            width: size[0],
-            height: size[1],
+            width: parseInt(width, 10),
+            height: parseInt(height, 10),
             creativeId: seatbid.seat + '~' + bid.crid,
             currency: 'USD',
             netRevenue: true,
@@ -109,7 +124,7 @@ export const spec = {
     if (syncOptions.iframeEnabled) {
       syncs.push({
         type: 'iframe',
-        url: `${SYNACOR_URL}/usersync/html?src=${REPO_AND_VERSION}`
+        url: `${USER_SYNC_HOST}/html/usersync.html?src=$$REPO_AND_VERSION$$`
       });
     } else {
       logWarn('Synacormedia: Please enable iframe based user sync.');
