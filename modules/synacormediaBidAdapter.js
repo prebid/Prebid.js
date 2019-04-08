@@ -65,7 +65,7 @@ export const spec = {
         let size0 = size[0];
         let size1 = size[1];
         let imp = {
-          id: videoOrBannerKey.substring(0, 1) + bid.bidId + '-' + size0 + 'x' + size1,
+          id: `${videoOrBannerKey.substring(0, 1)}${bid.bidId}-${size0}x${size1}`,
           tagid: placementId
         };
         if (bidFloor !== null && !isNaN(bidFloor)) {
@@ -101,7 +101,7 @@ export const spec = {
   },
   interpretResponse: function(serverResponse) {
     var updateMacros = (bid, r) => {
-      return r ? r.replace(/\${AUCTION_PRICE}/g, parseFloat(bid.price)) : r;
+      return r ? r.replace(/\${AUCTION_PRICE}/g, bid.price) : r;
     };
 
     if (!serverResponse.body || typeof serverResponse.body != 'object') {
@@ -124,10 +124,10 @@ export const spec = {
             cpm: parseFloat(bid.price),
             width: parseInt(width, 10),
             height: parseInt(height, 10),
-            creativeId: seatbid.seat + '_' + bid.crid,
+            creativeId: `${seatbid.seat}_${bid.crid}`,
             currency: 'USD',
             netRevenue: true,
-            mediaType: (isVideo ? VIDEO : BANNER),
+            mediaType: isVideo ? VIDEO : BANNER,
             ad: creative,
             ttl: 60
           };
