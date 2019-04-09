@@ -62,7 +62,7 @@ export const spec = {
     if (config.getConfig('userSync') && config.getConfig('userSync').syncsPerBidder) {
       payload.us = config.getConfig('userSync').syncsPerBidder;
     }
-    
+
     // use userSync's internal function to determine if we can drop an iframe sync pixel
     if (_iframeAllowed()) {
       payload.ius = 1;
