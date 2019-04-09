@@ -90,7 +90,7 @@ const queuedCalls = [];
   *
   * @returns {Auction} auction instance
   */
-export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) {
+export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, auctionId}) {
   let _adUnits = adUnits;
   let _labels = labels;
   let _adUnitCodes = adUnitCodes;
@@ -99,7 +99,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
   let _noBids = [];
   let _auctionStart;
   let _auctionEnd;
-  let _auctionId = utils.generateUUID();
+  let _auctionId = auctionId || utils.generateUUID();
   let _auctionStatus;
   let _callback = callback;
   let _timer;
