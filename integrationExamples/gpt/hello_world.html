@@ -48,6 +48,17 @@
             bidsBackHandler: sendAdserverRequest
           });
         });
+
+        pbjs.que.push(function () {
+            pbjs.enableAnalytics([{
+              provider: 'staq',
+              options: {
+                site: ['test-test-test-test'],
+                url: 'localhost:3000',
+                cid: '5678'
+              }
+            }]);
+        });
   
         function sendAdserverRequest() {
           if (pbjs.adserverRequestSent) return;
