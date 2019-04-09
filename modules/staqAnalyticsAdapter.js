@@ -86,6 +86,7 @@ analyticsAdapter.context = {};
 analyticsAdapter.originEnableAnalytics = analyticsAdapter.enableAnalytics;
 
 analyticsAdapter.enableAnalytics = (config) => {
+  utils.logInfo('Enabling STAQ Adapter');
   if (!config.options.connId) {
     utils.logError('ConnId is not defined. Analytics won\'t work');
     return;
@@ -101,7 +102,7 @@ analyticsAdapter.enableAnalytics = (config) => {
 
 adapterManager.registerAnalyticsAdapter({
   adapter: analyticsAdapter,
-  code: 'staqAnalytics'
+  code: 'staq'
 });
 
 export default analyticsAdapter;

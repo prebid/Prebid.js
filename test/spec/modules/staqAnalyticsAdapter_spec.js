@@ -204,12 +204,12 @@ describe('', function () {
 
     it('should be configurable', function () {
       adapterManager.registerAnalyticsAdapter({
-        code: 'staqAnalytics',
+        code: 'staq',
         adapter: analyticsAdapter
       });
 
       adapterManager.enableAnalytics({
-        provider: 'staqAnalytics',
+        provider: 'staq',
         options: {
           connId: 777,
           queueTimeout: 1000
