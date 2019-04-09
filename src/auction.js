@@ -48,7 +48,7 @@
  * @property {function(): void} callBids - sends requests to all adapters for bids
  */
 
-import { uniques, flatten, timestamp, adUnitsFilter, deepAccess, getBidRequest, getValue } from './utils';
+import { flatten, timestamp, adUnitsFilter, deepAccess, getBidRequest, getValue } from './utils';
 import { parse as parseURL } from './url';
 import { getPriceBucketString } from './cpmBucketManager';
 import { getNativeTargeting } from './native';
@@ -58,7 +58,6 @@ import { config } from './config';
 import { userSync } from './userSync';
 import { hook } from './hook';
 import find from 'core-js/library/fn/array/find';
-import includes from 'core-js/library/fn/array/includes';
 import { OUTSTREAM } from './video';
 
 const { syncUsers } = userSync;
@@ -105,6 +104,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
   let _timer;
   let _timeout = cbTimeout;
   let _winningBids = [];
+  let _timelyBidders = new Set();
 
   function addBidRequests(bidderRequests) { _bidderRequests = _bidderRequests.concat(bidderRequests) };
   function addBidReceived(bidsReceived) { _bidsReceived = _bidsReceived.concat(bidsReceived); }
@@ -144,7 +144,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
       let timedOutBidders = [];
       if (timedOut) {
         utils.logMessage(`Auction ${_auctionId} timedOut`);
-        timedOutBidders = getTimedOutBids(_bidderRequests, _bidsReceived);
+        timedOutBidders = getTimedOutBids(_bidderRequests, _timelyBidders);
         if (timedOutBidders.length) {
           events.emit(CONSTANTS.EVENTS.BID_TIMEOUT, timedOutBidders);
         }
@@ -184,6 +184,10 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
     utils.logInfo(`Bids Received for Auction with id: ${_auctionId}`, _bidsReceived);
     _auctionStatus = AUCTION_COMPLETED;
     executeCallback(false, true);
+  }
+
+  function onTimelyResponse(bidderCode) {
+    _timelyBidders.add(bidderCode);
   }
 
   function callBids() {
@@ -240,7 +244,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
                 }
               }
             }
-          }, _timeout);
+          }, _timeout, onTimelyResponse);
         }
       };
 
@@ -690,7 +694,7 @@ function groupByPlacement(bidsByPlacement, bid) {
 /**
  * Returns a list of bids that we haven't received a response yet where the bidder did not call done
  * @param {BidRequest[]} bidderRequests List of bids requested for auction instance
- * @param {BidReceived[]} bidsReceived List of bids received for auction instance
+ * @param {Set} timelyBidders Set of bidders which responded in time
  *
  * @typedef {Object} TimedOutBid
  * @property {string} bidId The id representing the bid
@@ -700,21 +704,9 @@ function groupByPlacement(bidsByPlacement, bid) {
  *
  * @return {Array<TimedOutBid>} List of bids that Prebid hasn't received a response for
  */
-function getTimedOutBids(bidderRequests, bidsReceived) {
-  const bidRequestedWithoutDoneCodes = bidderRequests
-    .filter(bidderRequest => !bidderRequest.doneCbCallCount)
-    .map(bid => bid.bidderCode)
-    .filter(uniques);
-
-  const bidReceivedCodes = bidsReceived
-    .map(bid => bid.bidder)
-    .filter(uniques);
-
-  const timedOutBidderCodes = bidRequestedWithoutDoneCodes
-    .filter(bidder => !includes(bidReceivedCodes, bidder));
-
+function getTimedOutBids(bidderRequests, timelyBidders) {
   const timedOutBids = bidderRequests
-    .map(bid => (bid.bids || []).filter(bid => includes(timedOutBidderCodes, bid.bidder)))
+    .map(bid => (bid.bids || []).filter(bid => !timelyBidders.has(bid.bidder)))
     .reduce(flatten, [])
     .map(bid => ({
       bidId: bid.bidId,
