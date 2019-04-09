@@ -88,11 +88,16 @@ analyticsAdapter.originEnableAnalytics = analyticsAdapter.enableAnalytics;
 analyticsAdapter.enableAnalytics = (config) => {
   utils.logInfo('Enabling STAQ Adapter');
   if (!config.options.connId) {
-    utils.logError('ConnId is not defined. Analytics won\'t work');
+    utils.logError('ConnId is not defined. STAQ Analytics won\'t work');
+    return;
+  }
+  if (!config.options.url) {
+    utils.logError('URL is not defined. STAQ Analytics won\'t work');
     return;
   }
   analyticsAdapter.context = {
     host: config.options.host || DEFAULT_HOST,
+    url: config.options.url,
     connectionId: config.options.connId,
     requestTemplate: buildRequestTemplate(config.options.connId),
     queue: new ExpiringQueue(sendAll, config.options.queueTimeout || DEFAULT_QUEUE_TIMEOUT)
@@ -117,7 +122,7 @@ function sendAll() {
 
 analyticsAdapter.ajaxCall = function ajaxCall(data) {
   utils.logInfo('SENDING DATA: ' + data);
-  ajax(`//${analyticsAdapter.context.host}/prebid/${analyticsAdapter.context.connectionId}`, () => {
+  ajax(`//${analyticsAdapter.context.url}/prebid/${analyticsAdapter.context.connectionId}`, () => {
   }, data);
 };
 
