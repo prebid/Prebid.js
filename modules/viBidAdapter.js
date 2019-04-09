@@ -1,4 +1,5 @@
 import { registerBidder } from "../src/adapters/bidderFactory";
+import * as mediaTypes from "../src/mediaTypes";
 
 export function get(path, obj, notFound) {
   path = typeof path === "string" ? path.split(".") : path;
@@ -294,7 +295,7 @@ export function getViewabilityDescription(element) {
 
 const spec = {
   code: "vi",
-  supportedMediaTypes: ["banner"],
+  supportedMediaTypes: [mediaTypes.VIDEO, mediaTypes.BANNER],
 
   isBidRequestValid({ adUnitCode, params: { pubId, lang, cat } = {} }) {
     return [pubId, lang, cat].every(x => typeof x === "string");
