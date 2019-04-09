@@ -1,0 +1,95 @@
+
+<html>
+
+    <head>
+      <script>
+        var PREBID_TIMEOUT = 3300;
+    
+        var adUnits = [{
+          code: 'div-gpt-ad-1536336496327-0',
+          mediaTypes: {
+            banner: {
+              sizes: [[300, 250]]
+            }
+          },
+          // Replace this object to test a new Adapter!
+          bids: [{
+            bidder: 'appnexus',
+            params: {
+              placementId: 13993408
+            }
+          }]
+    
+        }];
+    
+        var pbjs = pbjs || {};
+        pbjs.que = pbjs.que || [];
+    
+      </script>
+    
+      <script type="text/javascript" src="https://acdn.adnxs.com/prebid/not-for-prod/1/prebid.js" async></script>
+      <script>
+        var googletag = googletag || {};
+        googletag.cmd = googletag.cmd || [];
+        googletag.cmd.push(function () {
+          googletag.pubads().disableInitialLoad();
+        });
+    
+        pbjs.que.push(function () {
+          pbjs.addAdUnits(adUnits);
+          pbjs.requestBids({
+            bidsBackHandler: sendAdserverRequest
+          });
+        });
+    
+        function sendAdserverRequest() {
+          if (pbjs.adserverRequestSent) return;
+          pbjs.adserverRequestSent = true;
+          googletag.cmd.push(function () {
+            pbjs.que.push(function () {
+              pbjs.setTargetingForGPTAsync();
+              googletag.pubads().refresh();
+            });
+          });
+        }
+    
+        setTimeout(function () {
+          sendAdserverRequest();
+        }, PREBID_TIMEOUT);
+    
+      </script>
+    
+      <script>
+        (function () {
+          var gads = document.createElement('script');
+          gads.async = true;
+          gads.type = 'text/javascript';
+          var useSSL = 'https:' == document.location.protocol;
+          gads.src = (useSSL ? 'https:' : 'http:') +
+            '//www.googletagservices.com/tag/js/gpt.js';
+          var node = document.getElementsByTagName('script')[0];
+          node.parentNode.insertBefore(gads, node);
+        })();
+      </script>
+    
+      <script>
+        googletag.cmd.push(function () {
+          googletag.defineSlot('/19968336/puc_monitor_banner', [300, 250], 'div-gpt-ad-1536336496327-0').addService(googletag.pubads());
+    
+          googletag.pubads().enableSingleRequest();
+          googletag.enableServices();
+        });
+      </script>
+    </head>
+    
+    <body>
+      <h2>Prebid.js Test</h2>
+      <h5>Div-1</h5>
+      <div id='div-gpt-ad-1536336496327-0' style='height:250px; width:300px;'>
+        <script>
+          googletag.cmd.push(function () { googletag.display('div-gpt-ad-1536336496327-0'); });
+        </script>
+      </div>
+    </body>
+    
+    </html>
