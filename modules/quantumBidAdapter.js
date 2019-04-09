@@ -137,6 +137,7 @@ export const spec = {
           let ad = {};
           ad['trackers'] = trackers;
           ad['jstrackers'] = jstracker;
+          ad['eventtrackers'] = serverBody.native.eventtrackers || [];
 
           for (let i = 0; i < assets.length; i++) {
             let asset = assets[i];
@@ -203,7 +204,7 @@ export const spec = {
             ad['clicktrackers'] = link.clicktrackers;
           }
 
-          ad['main_image'] = '//resize-ssp.elasticad.net/scalecrop-290x130/' + window.btoa(ad['main_image']) + '/external';
+          ad['main_image'] = '//resize-ssp.adux.com/scalecrop-290x130/' + window.btoa(ad['main_image']) + '/external';
 
           bid.ad = '<div id="ead_' + id + '\">' +
             '<div class="ad_container ead_' + id + '" style="clear: both; display:inline-block;width:100%">' +
@@ -281,6 +282,7 @@ export const spec = {
             if (link.clicktrackers) {
               native.clickTrackers = link.clicktrackers;
             }
+            native.eventtrackers = native.eventtrackers || [];
 
             bid.qtx_native = utils.deepClone(serverBody.native);
             bid.native = native;

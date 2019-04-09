@@ -62,7 +62,7 @@ export const spec = {
     if (config.getConfig('userSync') && config.getConfig('userSync').syncsPerBidder) {
       payload.us = config.getConfig('userSync').syncsPerBidder;
     }
-
+    
     // use userSync's internal function to determine if we can drop an iframe sync pixel
     if (_iframeAllowed()) {
       payload.ius = 1;
@@ -70,8 +70,12 @@ export const spec = {
       payload.ius = 0;
     }
 
-    if (deepAccess(validBidRequests[0], 'crumbs.pubcid') || deepAccess(validBidRequests[0], 'params.hfa')) {
-      payload.hfa = deepAccess(validBidRequests[0], 'params.hfa') ? deepAccess(validBidRequests[0], 'params.hfa') : `PRE-${deepAccess(validBidRequests[0], 'crumbs.pubcid')}`;
+    if (deepAccess(validBidRequests[0], 'params.hfa')) {
+      payload.hfa = deepAccess(validBidRequests[0], 'params.hfa');
+    } else if (deepAccess(validBidRequests[0], 'userId.pubcid')) {
+      payload.hfa = `PRE-${validBidRequests[0].userId.pubcid}`;
+    } else if (deepAccess(validBidRequests[0], 'crumbs.pubcid')) {
+      payload.hfa = `PRE-${validBidRequests[0].crumbs.pubcid}`;
     }
 
     if (validBidRequests[0].params.referrer) {
