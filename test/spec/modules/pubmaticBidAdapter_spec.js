@@ -63,10 +63,13 @@ describe('PubMatic adapter', function () {
         'impid': '23acc48ad47af5',
         'price': 1.3,
         'adm': 'image3.pubmatic.com Layer based creative',
+        'adomain': ['blackrock.com'],
         'h': 250,
         'w': 300,
         'ext': {
-          'deal_channel': 6
+          'deal_channel': 6,
+          'advid': 976,
+          'dspid': 123
         }
       }]
     };
@@ -76,10 +79,13 @@ describe('PubMatic adapter', function () {
         'impid': '22bddb28db77e',
         'price': 1.7,
         'adm': 'image3.pubmatic.com Layer based creative',
+        'adomain': ['hivehome.com'],
         'h': 250,
         'w': 300,
         'ext': {
-          'deal_channel': 5
+          'deal_channel': 5,
+          'advid': 832,
+          'dspid': 422
         }
       }]
     };
@@ -1341,6 +1347,9 @@ describe('PubMatic adapter', function () {
         expect(response[0].currency).to.equal('USD');
         expect(response[0].netRevenue).to.equal(false);
         expect(response[0].ttl).to.equal(300);
+        expect(response[0].meta.networkId).to.equal(123);
+        expect(response[0].meta.buyerId).to.equal(976);
+        expect(response[0].meta.clickUrl).to.equal('blackrock.com');
         expect(response[0].referrer).to.include(data.site.ref);
         expect(response[0].ad).to.equal(bidResponses.body.seatbid[0].bid[0].adm);
 
@@ -1357,6 +1366,9 @@ describe('PubMatic adapter', function () {
         expect(response[1].currency).to.equal('USD');
         expect(response[1].netRevenue).to.equal(false);
         expect(response[1].ttl).to.equal(300);
+        expect(response[1].meta.networkId).to.equal(422);
+        expect(response[1].meta.buyerId).to.equal(832);
+        expect(response[1].meta.clickUrl).to.equal('hivehome.com');
         expect(response[1].referrer).to.include(data.site.ref);
         expect(response[1].ad).to.equal(bidResponses.body.seatbid[1].bid[0].adm);
       });

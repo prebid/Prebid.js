@@ -29,7 +29,8 @@ const serverResponseToBid = (bid, rendererInstance) => ({
   creativeId: bid.bidId,
   ttl: 360,
   currency: 'USD',
-  renderer: rendererInstance
+  renderer: rendererInstance,
+  mediaType: VIDEO
 });
 
 const buildPrebidResponseAndInstallRenderer = bids =>
