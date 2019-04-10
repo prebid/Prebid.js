@@ -1,5 +1,6 @@
 import pmAnalytics from 'modules/pmAnalyticsAdapter';
 let events = require('src/events');
+let adapterManager = require('src/adapterManager').default;
 let constants = require('src/constants.json');
 
 describe('Prebid Manager Analytics Adapter', function () {
@@ -24,14 +25,18 @@ describe('Prebid Manager Analytics Adapter', function () {
     });
 
     it('track event without errors', function () {
-      pmAnalytics.enableAnalytics({
+      sinon.spy(pmAnalytics, 'track');
+
+      adapterManager.registerAnalyticsAdapter({
+        code: 'prebidmanager',
+        adapter: pmAnalytics
+      });
+      adapterManager.enableAnalytics({
         provider: 'prebidmanager',
         options: {
           bundleId: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
         }
       });
-
-      sinon.spy(pmAnalytics, 'track');
 
       events.emit(constants.EVENTS.AUCTION_INIT, {});
       events.emit(constants.EVENTS.BID_REQUESTED, {});

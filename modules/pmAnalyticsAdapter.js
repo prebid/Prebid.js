@@ -48,17 +48,12 @@ var _pageView = {
   vendor: window.navigator.vendor,
   screenWidth: x,
   screenHeight: y
-}
+};
 
 var _eventQueue = [
   _pageView
 ];
 
-/**
- * This will enable sending data to prebidmanager analytics. Only call once, or duplicate data will be sent!
- * @param  {object} options use to configure adapter;
- * @return {[type]}    [description]
- */
 let pmAnalytics = Object.assign(adapter({url: DEFAULT_EVENT_URL, analyticsType}), {
   track({eventType, args}) {
     handleEvent(eventType, args);
@@ -83,7 +78,7 @@ function flush() {
       ver: _VERSION,
       bundleId: initOptions.bundleId,
       events: _eventQueue
-    }
+    };
 
     ajax(
       initOptions.url,
