@@ -21,6 +21,10 @@ or
 Please note that version 1.5.20 or better is required.
 
 
+See the [Prebid Integration Guide for DigiTrust](https://github.com/digi-trust/dt-cdn/wiki/Prebid-Integration-for-DigiTrust-Id)
+and the [DigiTrust wiki](https://github.com/digi-trust/dt-cdn/wiki)
+for further instructions.
+
 
 ## Example Prebid Configuration for Digitrust Id
 ```
