@@ -3,7 +3,6 @@ import { expect } from 'chai';
 import { sessionLoader, addBidResponseHook, getConfig, disableOverrides, boundHook } from 'src/debugging';
 import { addBidResponse } from 'src/auction';
 import { config } from 'src/config';
-import * as utils from 'src/utils';
 
 describe('bid overrides', function () {
   let sandbox;
@@ -14,7 +13,6 @@ describe('bid overrides', function () {
 
   afterEach(function () {
     window.sessionStorage.clear();
-    config.resetConfig();
     sandbox.restore();
   });
 
