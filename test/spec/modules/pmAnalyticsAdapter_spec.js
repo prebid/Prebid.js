@@ -27,11 +27,7 @@ describe('Prebid Manager Analytics Adapter', function () {
     it('track event without errors', function () {
       sinon.spy(pmAnalytics, 'track');
 
-      adapterManager.registerAnalyticsAdapter({
-        code: 'prebidmanager',
-        adapter: pmAnalytics
-      });
-      adapterManager.enableAnalytics({
+      pmAnalytics.enableAnalytics({
         provider: 'prebidmanager',
         options: {
           bundleId: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
@@ -44,12 +40,8 @@ describe('Prebid Manager Analytics Adapter', function () {
       events.emit(constants.EVENTS.BID_WON, {});
       events.emit(constants.EVENTS.AUCTION_END, {});
       events.emit(constants.EVENTS.BID_TIMEOUT, {});
-      events.emit(constants.EVENTS.NO_BID, {});
-      events.emit(constants.EVENTS.BID_ADJUSTMENT, {});
-      events.emit(constants.EVENTS.BIDDER_DONE, {});
-      events.emit(constants.EVENTS.AD_RENDER_FAILED, {});
 
-      sinon.assert.callCount(pmAnalytics.track, 10);
+      sinon.assert.callCount(pmAnalytics.track, 6);
     });
   });
 });
