@@ -689,6 +689,32 @@ describe('adpod.js', function () {
       expect(logWarnStub.calledOnce).to.equal(true);
     });
 
+    it('removes an incorrectly setup adpod adunit - required fields are using invalid values', function() {
+      let adUnits = [{
+        code: 'test1',
+        mediaTypes: {
+          video: {
+            context: ADPOD,
+            durationRangeSec: [-5, 15, 30, 45],
+            adPodDurationSec: 300
+          }
+        }
+      }];
+
+      checkAdUnitSetupHook(callbackFn, adUnits);
+
+      expect(results).to.deep.equal([]);
+      expect(logWarnStub.calledOnce).to.equal(true);
+
+      adUnits[0].mediaTypes.video.durationRangeSec = [15, 30, 45];
+      adUnits[0].mediaTypes.video.adPodDurationSec = 0;
+
+      checkAdUnitSetupHook(callbackFn, adUnits);
+
+      expect(results).to.deep.equal([]);
+      expect(logWarnStub.calledTwice).to.equal(true);
+    });
+
     it('removes an incorrectly setup adpod adunit - attempting to use multi-format adUnit', function() {
       let adUnits = [{
         code: 'multi_test1',
