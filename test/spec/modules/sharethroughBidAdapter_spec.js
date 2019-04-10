@@ -74,6 +74,30 @@ const prebidRequests = [
       sizes: [[300, 250], [300, 300], [250, 250], [600, 50]]
     }
   },
+  {
+    method: 'GET',
+    url: document.location.protocol + '//btlr.sharethrough.com' + '/header-bid/v1',
+    data: {
+      bidId: 'bidId',
+      placement_key: 'pKey'
+    },
+    strData: {
+      stayInIframe: false,
+      sizes: [[0, 0]]
+    }
+  },
+  {
+    method: 'GET',
+    url: document.location.protocol + '//btlr.sharethrough.com' + '/header-bid/v1',
+    data: {
+      bidId: 'bidId',
+      placement_key: 'pKey'
+    },
+    strData: {
+      stayInIframe: false,
+      sizes: [[300, 250], [300, 300], [250, 250], [600, 50]]
+    }
+  },
 ];
 
 const bidderResponse = {
@@ -169,8 +193,8 @@ describe('sharethrough adapter spec', function () {
     it('returns a correctly parsed out response', function () {
       expect(spec.interpretResponse(bidderResponse, prebidRequests[0])[0]).to.include(
         {
-          width: 0,
-          height: 0,
+          width: 1,
+          height: 1,
           cpm: 12.34,
           creativeId: 'aCreativeId',
           dealId: 'aDealId',
@@ -199,6 +223,34 @@ describe('sharethrough adapter spec', function () {
         {
           width: 500,
           height: 500,
+          cpm: 12.34,
+          creativeId: 'aCreativeId',
+          dealId: 'aDealId',
+          currency: 'USD',
+          netRevenue: true,
+          ttl: 360,
+        });
+    });
+
+    it('returns a correctly parsed out response with explicitly defined size when strData.stayInIframe is false and strData.sizes contains [0, 0] only', function () {
+      expect(spec.interpretResponse(bidderResponse, prebidRequests[3])[0]).to.include(
+        {
+          width: 0,
+          height: 0,
+          cpm: 12.34,
+          creativeId: 'aCreativeId',
+          dealId: 'aDealId',
+          currency: 'USD',
+          netRevenue: true,
+          ttl: 360,
+        });
+    });
+
+    it('returns a correctly parsed out response with explicitly defined size when strData.stayInIframe is false and strData.sizes contains multiple sizes', function () {
+      expect(spec.interpretResponse(bidderResponse, prebidRequests[4])[0]).to.include(
+        {
+          width: 300,
+          height: 300,
           cpm: 12.34,
           creativeId: 'aCreativeId',
           dealId: 'aDealId',
