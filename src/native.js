@@ -144,6 +144,7 @@ export function fireNativeTrackers(message, adObject) {
   }
 
   (trackers || []).forEach(triggerPixel);
+  return message.action;
 }
 
 /**
@@ -156,12 +157,7 @@ export function getNativeTargeting(bid, bidReq) {
 
   Object.keys(bid['native']).forEach(asset => {
     const key = CONSTANTS.NATIVE_KEYS[asset];
-    let value = bid['native'][asset];
-
-    // native image-type assets can be a string or an object with a url prop
-    if (typeof value === 'object' && value.url) {
-      value = value.url;
-    }
+    let value = getAssetValue(bid['native'][asset]);
 
     const sendPlaceholder = deepAccess(
       bidReq,
@@ -194,10 +190,22 @@ export function getAssetMessage(data, adObject) {
 
   data.assets.forEach(asset => {
     const key = getKeyByValue(CONSTANTS.NATIVE_KEYS, asset);
-    const value = adObject.native[key];
+    const value = getAssetValue(adObject.native[key]);
 
     message.assets.push({ key, value });
   });
 
   return message;
+}
+
+/**
+ * Native assets can be a string or an object with a url prop. Returns the value
+ * appropriate for sending in adserver targeting or placeholder replacement.
+ */
+function getAssetValue(value) {
+  if (typeof value === 'object' && value.url) {
+    return value.url;
+  }
+
+  return value;
 }

@@ -134,7 +134,7 @@ describe('Adyoulike Adapter', function () {
   ];
   const adapter = newBidder(spec);
 
-  let getEndpoint = (dc = defaultDC) => `http://${dc}.omnitagjs.com/hb-api/prebid`;
+  let getEndpoint = (dc = defaultDC) => `https://${dc}.omnitagjs.com/hb-api/prebid`;
 
   describe('inherited functions', function () {
     it('exists and is a function', function () {

@@ -52,7 +52,9 @@ function receiveMessage(ev) {
         return;
       }
 
-      fireNativeTrackers(data, adObject);
+      const trackerType = fireNativeTrackers(data, adObject);
+      if (trackerType === 'click') { return; }
+
       auctionManager.addWinningBid(adObject);
       events.emit(BID_WON, adObject);
     }
