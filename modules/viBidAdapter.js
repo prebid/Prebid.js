@@ -257,12 +257,6 @@ export function getOffsetToViewPercentage(element) {
   );
 }
 
-export function getViUserId(localStorage) {
-  try {
-    return (localStorage || window.top.localStorage).getItem("ViUserId");
-  } catch (e) {}
-}
-
 export function getViewabilityDescription(element) {
   let iframeType;
   try {
@@ -338,7 +332,6 @@ const spec = {
       method: "POST",
       url: "//pb.vi-serve.com/prebid/bid",
       data: {
-        userId: getViUserId(),
         refererInfo: bidderRequest.refererInfo,
         imps: bidRequests.map(({ bidId, adUnitCode, sizes, params }) => {
           const slot = document.getElementById(adUnitCode);
