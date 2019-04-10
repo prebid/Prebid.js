@@ -5,6 +5,8 @@ import includes from 'core-js/library/fn/array/includes';
 import { parse } from './url';
 const CONSTANTS = require('./constants');
 
+var _loggingChecked = false;
+
 var tArr = 'Array';
 var tStr = 'String';
 var tFn = 'Function';
@@ -352,6 +354,12 @@ export function hasConsoleLogger() {
 }
 
 export function debugTurnedOn() {
+  if (config.getConfig('debug') === false && _loggingChecked === false) {
+    const debug = getParameterByName(CONSTANTS.DEBUG_MODE).toUpperCase() === 'TRUE';
+    config.setConfig({ debug });
+    _loggingChecked = true;
+  }
+
   return !!config.getConfig('debug');
 }
 

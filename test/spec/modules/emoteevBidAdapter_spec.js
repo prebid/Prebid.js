@@ -319,32 +319,31 @@ describe('emoteevBidAdapter', function () {
     });
   });
 
-  // TODO: these tests need to be fixed, they were somehow dependent on setConfig queueing and not being set...
-  // describe('getUserSyncs', function () {
-  //   config.setConfig({emoteevEnv: PRODUCTION});
-  //   expect(spec.getUserSyncs({
-  //     iframeEnabled: true
-  //   }, [{}])).to.deep.equal([{
-  //     type: 'iframe',
-  //     url: EMOTEEV_BASE_URL.concat(USER_SYNC_IFRAME_URL_PATH)
-  //   }]);
-  //
-  //   expect(spec.getUserSyncs({
-  //     pixelEnabled: true
-  //   }, [{}])).to.deep.equal([{
-  //     type: 'image',
-  //     url: EMOTEEV_BASE_URL.concat(USER_SYNC_IMAGE_URL_PATH)
-  //   }]);
-  //
-  //   expect(spec.getUserSyncs({
-  //     iframeEnabled: true,
-  //     pixelEnabled: true
-  //   }, [{}])).to.deep.equal([{
-  //     type: 'iframe',
-  //     url: EMOTEEV_BASE_URL.concat(USER_SYNC_IFRAME_URL_PATH)
-  //   }, {
-  //     type: 'image',
-  //     url: EMOTEEV_BASE_URL.concat(USER_SYNC_IMAGE_URL_PATH)
-  //   }]);
-  // });
+  describe('getUserSyncs', function () {
+    config.setConfig({emoteevEnv: PRODUCTION});
+    expect(spec.getUserSyncs({
+      iframeEnabled: true
+    }, [{}])).to.deep.equal([{
+      type: 'iframe',
+      url: EMOTEEV_BASE_URL.concat(USER_SYNC_IFRAME_URL_PATH)
+    }]);
+
+    expect(spec.getUserSyncs({
+      pixelEnabled: true
+    }, [{}])).to.deep.equal([{
+      type: 'image',
+      url: EMOTEEV_BASE_URL.concat(USER_SYNC_IMAGE_URL_PATH)
+    }]);
+
+    expect(spec.getUserSyncs({
+      iframeEnabled: true,
+      pixelEnabled: true
+    }, [{}])).to.deep.equal([{
+      type: 'iframe',
+      url: EMOTEEV_BASE_URL.concat(USER_SYNC_IFRAME_URL_PATH)
+    }, {
+      type: 'image',
+      url: EMOTEEV_BASE_URL.concat(USER_SYNC_IMAGE_URL_PATH)
+    }]);
+  });
 });
