@@ -330,7 +330,7 @@ const spec = {
   buildRequests(bidRequests, bidderRequest) {
     return {
       method: "POST",
-      url: "//pb.vi-serve.com/prebid/bid",
+      url: "https://pb.vi-serve.com/prebid/bid",
       data: {
         refererInfo: bidderRequest.refererInfo,
         imps: bidRequests.map(({ bidId, adUnitCode, sizes, params }) => {
