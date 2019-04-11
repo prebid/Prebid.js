@@ -346,7 +346,7 @@ const spec = {
       },
       options: {
         contentType: "application/json",
-        withCredentials: false
+        withCredentials: true
       }
     };
   },
