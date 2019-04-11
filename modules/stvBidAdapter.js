@@ -25,8 +25,6 @@ export const spec = {
       const width = sizes.split('x')[0];
       const height = sizes.split('x')[1];
 
-      // const format = convertSizes(videoData.playerSize || bid.sizes);
-
       const placementId = params.placement;
 
       const rnd = Math.floor(Math.random() * 99999999999);
@@ -41,7 +39,6 @@ export const spec = {
           payload = {
             _f: 'vast2',
             alternative: 'prebid_js',
-            // _ps: encodeURIComponent(placementId),
             _ps: placementId,
             srw: width,
             srh: height,
