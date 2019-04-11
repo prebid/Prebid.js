@@ -314,8 +314,8 @@ describe('SonobiBidAdapter', function () {
     })
 
     it('should return a properly formatted request with unified id as tdid', function () {
-      delete bidRequest[0].params.hfa;
-      delete bidRequest[1].params.hfa;
+      delete bidRequest[0].params.tdid;
+      delete bidRequest[1].params.tdid;
       bidRequest[0].crumbs = {'tdid': 'td-abcd-efg-0101'};
       bidRequest[1].crumbs = {'tdid': 'td-abcd-efg-0101'};
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
@@ -327,8 +327,8 @@ describe('SonobiBidAdapter', function () {
     });
 
     it('should return a properly formatted request with unified id from User ID as tdid', function () {
-      delete bidRequest[0].params.hfa;
-      delete bidRequest[1].params.hfa;
+      delete bidRequest[0].params.tdid;
+      delete bidRequest[1].params.tdid;
       bidRequest[0].userId = {'tdid': 'td-abcd-efg-0101'};
       bidRequest[1].userId = {'tdid': 'td-abcd-efg-0101'};
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
