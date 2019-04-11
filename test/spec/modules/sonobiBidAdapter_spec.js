@@ -290,11 +290,11 @@ describe('SonobiBidAdapter', function () {
       delete bidRequest[1].params.hfa;
       bidRequest[0].crumbs = {'pubcid': 'abcd-efg-0101'};
       bidRequest[1].crumbs = {'pubcid': 'abcd-efg-0101'};
-      const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
-      expect(bidRequests.url).to.equal('https://apex.go.sonobi.com/trinity.json')
-      expect(bidRequests.method).to.equal('GET')
-      expect(bidRequests.data.ref).not.to.be.empty
-      expect(bidRequests.data.s).not.to.be.empty
+      const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
+      expect(bidRequests.url).to.equal('https://apex.go.sonobi.com/trinity.json');
+      expect(bidRequests.method).to.equal('GET');
+      expect(bidRequests.data.ref).not.to.be.empty;
+      expect(bidRequests.data.s).not.to.be.empty;
       expect(bidRequests.data.hfa).to.equal('PRE-abcd-efg-0101');
     });
 
@@ -303,11 +303,11 @@ describe('SonobiBidAdapter', function () {
       delete bidRequest[1].params.hfa;
       bidRequest[0].userId = {'pubcid': 'abcd-efg-0101'};
       bidRequest[1].userId = {'pubcid': 'abcd-efg-0101'};
-      const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
-      expect(bidRequests.url).to.equal('https://apex.go.sonobi.com/trinity.json')
-      expect(bidRequests.method).to.equal('GET')
-      expect(bidRequests.data.ref).not.to.be.empty
-      expect(bidRequests.data.s).not.to.be.empty
+      const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
+      expect(bidRequests.url).to.equal('https://apex.go.sonobi.com/trinity.json');
+      expect(bidRequests.method).to.equal('GET');
+      expect(bidRequests.data.ref).not.to.be.empty;
+      expect(bidRequests.data.s).not.to.be.empty;
       expect(bidRequests.data.hfa).to.equal('PRE-abcd-efg-0101');
       delete bidRequest[0].userId;
       delete bidRequest[1].userId;
@@ -318,11 +318,11 @@ describe('SonobiBidAdapter', function () {
       delete bidRequest[1].params.tdid;
       bidRequest[0].crumbs = {'tdid': 'td-abcd-efg-0101'};
       bidRequest[1].crumbs = {'tdid': 'td-abcd-efg-0101'};
-      const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
-      expect(bidRequests.url).to.equal('https://apex.go.sonobi.com/trinity.json')
-      expect(bidRequests.method).to.equal('GET')
-      expect(bidRequests.data.ref).not.to.be.empty
-      expect(bidRequests.data.s).not.to.be.empty
+      const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
+      expect(bidRequests.url).to.equal('https://apex.go.sonobi.com/trinity.json');
+      expect(bidRequests.method).to.equal('GET');
+      expect(bidRequests.data.ref).not.to.be.empty;
+      expect(bidRequests.data.s).not.to.be.empty;
       expect(bidRequests.data.tdid).to.equal('td-abcd-efg-0101');
     });
 
@@ -331,11 +331,11 @@ describe('SonobiBidAdapter', function () {
       delete bidRequest[1].params.tdid;
       bidRequest[0].userId = {'tdid': 'td-abcd-efg-0101'};
       bidRequest[1].userId = {'tdid': 'td-abcd-efg-0101'};
-      const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
-      expect(bidRequests.url).to.equal('https://apex.go.sonobi.com/trinity.json')
-      expect(bidRequests.method).to.equal('GET')
-      expect(bidRequests.data.ref).not.to.be.empty
-      expect(bidRequests.data.s).not.to.be.empty
+      const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
+      expect(bidRequests.url).to.equal('https://apex.go.sonobi.com/trinity.json');
+      expect(bidRequests.method).to.equal('GET');
+      expect(bidRequests.data.ref).not.to.be.empty;
+      expect(bidRequests.data.s).not.to.be.empty;
       expect(bidRequests.data.tdid).to.equal('td-abcd-efg-0101');
     })
 
