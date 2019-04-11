@@ -7,7 +7,7 @@ import {logError, logInfo} from '../src/utils';
 const utils = require('../src/utils');
 const analyticsType = 'endpoint';
 
-export const ANALYTICS_VERSION = '0.2.0-beta';
+export const ANALYTICS_VERSION = '0.2.1-beta';
 
 const DEFAULT_SERVER = 'https://prebid-analytics.c.appier.net/v1';
 
@@ -90,7 +90,8 @@ export const appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, ana
     logInfo(`AJAX: ${endPoint}: ` + JSON.stringify(data));
 
     ajax(`${analyticsOptions.server}/${endPoint}`, null, JSON.stringify(data), {
-      contentType: 'application/json'
+      contentType: 'application/json',
+      withCredentials: true
     });
   },
   createCommonMessage(auctionId) {
