@@ -168,7 +168,7 @@ function buildMantisUrl(path, data, domain) {
     tz: new Date().getTimezoneOffset(),
     buster: new Date().getTime(),
     secure: isSecure(),
-    version: 8
+    version: 9
   };
   if (!inIframe() || isAmp()) {
     params.mobile = !isAmp() && isDesktop(true) ? 'false' : 'true';
@@ -252,7 +252,7 @@ const spec = {
         width: ad.width,
         height: ad.height,
         ad: ad.html,
-        ttl: 86400,
+        ttl: ad.ttl || serverResponse.body.ttl || 86400,
         creativeId: ad.view,
         netRevenue: true,
         currency: 'USD'
