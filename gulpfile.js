@@ -231,7 +231,7 @@ function newKarmaCallback(done) {
 function test(done) {
   if (argv.notest) {
     done();
-  } else if (argv.lfe2e) {
+  } else if (argv.e2e) {
     let wdioCmd = path.join(__dirname, 'node_modules/.bin/wdio');
     let wdioConf = path.join(__dirname, 'wdio.conf.js');
     let wdioOpts = [
@@ -284,7 +284,7 @@ function setupE2e(done) {
   if (argv.https) {
     process.env.TEST_SERVER_PROTOCOL = argv.https;
   }
-  argv.lfe2e = true;
+  argv.e2e = true;
   done();
 }
 
