@@ -280,10 +280,17 @@ describe('Appier Prebid AnalyticsAdapter', function () {
                 }
               },
               'adunit_2': {
+                // this bid result exists in both bid and noBid arrays and should be treated as bid
                 'appier': {
                   prebidWon: false,
                   isTimeout: false,
-                  status: BIDDER_STATUS.NO_BID,
+                  time: 120,
+                  cpm: 0.09,
+                  currency: 'USD',
+                  originalCpm: 0.09,
+                  originalCurrency: 'USD',
+                  cpmUsd: 0.09,
+                  status: BIDDER_STATUS.BID,
                 },
                 'reippa': {
                   prebidWon: false,
