@@ -7,10 +7,10 @@ import * as ajax from 'src/ajax';
 const events = require('src/events');
 
 const affiliateId = 'WhctHaViHtI';
-const configId = 'd9cc9a9b-e9b2-40ed-a17c-f1c9a8a4b29c';
+const configId = 'd9cc9a9be9b240eda17cf1c9a8a4b29c';
 const serverUrl = 'https://analytics.server.url/v1';
 const autoPick = 'none';
-const predictionId = 'none';
+const predictionId = '2a91ca5de54a4a2e89950af439f7a27f';
 const auctionId = 'b0b39610-b941-4659-a87c-de9f62d3e13e';
 
 describe('Appier Prebid AnalyticsAdapter', function () {
