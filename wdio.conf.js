@@ -9,6 +9,9 @@ function getCapabilities() {
     return platformMap[os];
   }
 
+  // remove the IE11 browser from functional tests
+  delete browsers['bs_ie_11_windows_10'];
+
   let capabilities = []
   Object.keys(browsers).forEach(key => {
     let browser = browsers[key];
