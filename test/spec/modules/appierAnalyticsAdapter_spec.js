@@ -10,6 +10,7 @@ const affiliateId = 'WhctHaViHtI';
 const configId = 'd9cc9a9b-e9b2-40ed-a17c-f1c9a8a4b29c';
 const serverUrl = 'https://analytics.server.url/v1';
 const autoPick = 'none';
+const predictionId = 'none';
 const auctionId = 'b0b39610-b941-4659-a87c-de9f62d3e13e';
 
 describe('Appier Prebid AnalyticsAdapter', function () {
@@ -22,6 +23,7 @@ describe('Appier Prebid AnalyticsAdapter', function () {
         configId: configId,
         server: serverUrl,
         autoPick: autoPick,
+        predictionId: predictionId,
         sampling: 0,
         adSampling: 1,
       };

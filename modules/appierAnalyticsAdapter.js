@@ -7,7 +7,7 @@ import {logError, logInfo} from '../src/utils';
 const utils = require('../src/utils');
 const analyticsType = 'endpoint';
 
-export const ANALYTICS_VERSION = '0.2.1-beta';
+export const ANALYTICS_VERSION = '0.2.2-beta';
 
 const DEFAULT_SERVER = 'https://prebid-analytics.c.appier.net/v1';
 
@@ -58,6 +58,7 @@ export const appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, ana
      * Optional option: sampling
      * Optional option: adSampling
      * Optional option: autoPick
+     * Optional option: predictionId
      * @type {boolean}
      */
     analyticsOptions.options = utils.deepClone(config.options);
@@ -83,6 +84,7 @@ export const appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, ana
       analyticsOptions.adSampled = Math.random() < parseFloat(config.options.adSampling);
     }
     analyticsOptions.autoPick = config.options.autoPick || null;
+    analyticsOptions.predictionId = config.options.predictionId || null;
 
     return true;
   },
@@ -104,7 +106,8 @@ export const appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, ana
       sampling: analyticsOptions.options.sampling,
       adSampling: analyticsOptions.options.adSampling,
       prebid: '$prebid.version$',
-      autoPick: analyticsOptions.options.autoPick,
+      autoPick: analyticsOptions.autoPick,
+      predictionId: analyticsOptions.predictionId,
       adUnits: {},
     };
   },
