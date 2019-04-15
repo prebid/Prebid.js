@@ -18,7 +18,7 @@ const ttl = 600;
 const videoTtl = 3600;
 const platver = '$prebid.version$';
 const platform = '2078522619030089';
-const adapterver = '1.2.0';
+const adapterver = '1.3.0';
 /**
  * Does this bid request contain valid parameters?
  * @param {Object} bid
@@ -107,7 +107,7 @@ const isFullWidth = format => format === 'fullwidth';
  * @param {String} format
  * @returns {String}
  */
-const sdkVersion = format => isVideo(format) ? '' : '5.5.web';
+const sdkVersion = format => isVideo(format) ? '' : '6.0.web';
 
 /**
  * Which platform identifier should be used?

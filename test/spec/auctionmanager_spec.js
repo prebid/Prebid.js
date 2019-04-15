@@ -139,7 +139,10 @@ describe('auctionmanager.js', function () {
       expected[ CONSTANTS.TARGETING_KEYS.SIZE ] = bid.getSize();
       expected[ CONSTANTS.TARGETING_KEYS.SOURCE ] = bid.source;
       expected[ CONSTANTS.TARGETING_KEYS.FORMAT ] = bid.mediaType;
-
+      if (bid.mediaType === 'video') {
+        expected[ CONSTANTS.TARGETING_KEYS.UUID ] = bid.videoCacheKey;
+        expected[ CONSTANTS.TARGETING_KEYS.CACHE_ID ] = bid.videoCacheKey;
+      }
       if (!keys) {
         return expected;
       }
@@ -157,8 +160,20 @@ describe('auctionmanager.js', function () {
     });
 
     it('No bidder level configuration defined - default', function () {
-      var expected = getDefaultExpected(bid);
-      var response = getKeyValueTargetingPairs(bid.bidderCode, bid, CONSTANTS.GRANULARITY_OPTIONS.MEDIUM);
+      $$PREBID_GLOBAL$$.bidderSettings = {};
+      let expected = getDefaultExpected(bid);
+      let response = getKeyValueTargetingPairs(bid.bidderCode, bid);
+      assert.deepEqual(response, expected);
+    });
+
+    it('No bidder level configuration defined - default for video', function () {
+      $$PREBID_GLOBAL$$.bidderSettings = {};
+      let videoBid = utils.deepClone(bid);
+      videoBid.mediaType = 'video';
+      videoBid.videoCacheKey = 'abc123def';
+
+      let expected = getDefaultExpected(videoBid);
+      let response = getKeyValueTargetingPairs(videoBid.bidderCode, videoBid);
       assert.deepEqual(response, expected);
     });
 
@@ -210,6 +225,70 @@ describe('auctionmanager.js', function () {
       expected[CONSTANTS.TARGETING_KEYS.PRICE_BUCKET] = bid.pbHg;
 
       var response = getKeyValueTargetingPairs(bid.bidderCode, bid);
+      assert.deepEqual(response, expected);
+    });
+
+    it('Custom configuration for all bidders with video bid', function () {
+      let videoBid = utils.deepClone(bid);
+      videoBid.mediaType = 'video';
+      videoBid.videoCacheKey = 'abc123def';
+
+      $$PREBID_GLOBAL$$.bidderSettings =
+      {
+        standard: {
+          adserverTargeting: [
+            {
+              key: CONSTANTS.TARGETING_KEYS.BIDDER,
+              val: function (bidResponse) {
+                return bidResponse.bidderCode;
+              }
+            }, {
+              key: CONSTANTS.TARGETING_KEYS.AD_ID,
+              val: function (bidResponse) {
+                return bidResponse.adId;
+              }
+            }, {
+              key: CONSTANTS.TARGETING_KEYS.PRICE_BUCKET,
+              val: function (bidResponse) {
+                return bidResponse.pbMg;
+              }
+            }, {
+              key: CONSTANTS.TARGETING_KEYS.SIZE,
+              val: function (bidResponse) {
+                return bidResponse.size;
+              }
+            },
+            {
+              key: CONSTANTS.TARGETING_KEYS.SOURCE,
+              val: function (bidResponse) {
+                return bidResponse.source;
+              }
+            },
+            {
+              key: CONSTANTS.TARGETING_KEYS.FORMAT,
+              val: function (bidResponse) {
+                return bidResponse.mediaType;
+              }
+            },
+            {
+              key: CONSTANTS.TARGETING_KEYS.UUID,
+              val: function (bidResponse) {
+                return bidResponse.videoCacheKey;
+              }
+            },
+            {
+              key: CONSTANTS.TARGETING_KEYS.CACHE_ID,
+              val: function (bidResponse) {
+                return bidResponse.videoCacheKey;
+              }
+            }
+          ]
+
+        }
+      };
+
+      let expected = getDefaultExpected(videoBid);
+      let response = getKeyValueTargetingPairs(videoBid.bidderCode, videoBid);
       assert.deepEqual(response, expected);
     });
 
