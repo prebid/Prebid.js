@@ -368,7 +368,7 @@ describe('User ID', function() {
       });
     });
 
-    it('test hook when both pubCommonId and unifiedId have data to pass', function() {
+    it.skip('test hook when both pubCommonId and unifiedId have data to pass', function() {
       config.setConfig({
         usersync: {
           syncDelay: 0,
