@@ -265,6 +265,7 @@ export const spec = {
     const containsTgI = /^tg_i/
 
     const orderedParams = [
+      'tpid_tdid',
       'account_id',
       'site_id',
       'zone_id',
@@ -366,6 +367,10 @@ export const spec = {
       'tg_fl.eid': bidRequest.code,
       'rf': _getPageUrl(bidRequest, bidderRequest)
     };
+
+    if ((bidRequest.userId || {}).tdid) {
+      data['tpid_tdid'] = bidRequest.userId.tdid;
+    }
 
     if (bidderRequest.gdprConsent) {
       // add 'gdpr' only if 'gdprApplies' is defined
@@ -843,27 +848,29 @@ export function determineRubiconVideoSizeId(bid) {
   return utils.deepAccess(bid, `mediaTypes.${VIDEO}.context`) === 'outstream' ? 203 : 201;
 }
 
+/**
+ * @param {PrebidConfig} config
+ * @returns {{ranges: {ranges: Object[]}}}
+ */
 export function getPriceGranularity(config) {
-  const granularityMappings = {
-    low: [{max: 5.00, increment: 0.50}],
-    medium: [{max: 20.00, increment: 0.10}],
-    high: [{max: 20.00, increment: 0.01}],
-    auto: [
-      {max: 5.00, increment: 0.05},
-      {min: 5.00, max: 10.00, increment: 0.10},
-      {min: 10.00, max: 20.00, increment: 0.50}
-    ],
-    dense: [
-      {max: 3.00, increment: 0.01},
-      {min: 3.00, max: 8.00, increment: 0.05},
-      {min: 8.00, max: 20.00, increment: 0.50}
-    ]
-  }
-  if (config.getConfig('priceGranularity') === 'custom') {
-    return {ranges: config.getConfig('customPriceGranularity').buckets}
-  } else {
-    return {ranges: granularityMappings[config.getConfig('priceGranularity')]}
-  }
+  return {
+    ranges: {
+      low: [{max: 5.00, increment: 0.50}],
+      medium: [{max: 20.00, increment: 0.10}],
+      high: [{max: 20.00, increment: 0.01}],
+      auto: [
+        {max: 5.00, increment: 0.05},
+        {min: 5.00, max: 10.00, increment: 0.10},
+        {min: 10.00, max: 20.00, increment: 0.50}
+      ],
+      dense: [
+        {max: 3.00, increment: 0.01},
+        {min: 3.00, max: 8.00, increment: 0.05},
+        {min: 8.00, max: 20.00, increment: 0.50}
+      ],
+      custom: config.getConfig('customPriceBucket') && config.getConfig('customPriceBucket').buckets
+    }[config.getConfig('priceGranularity')]
+  };
 }
 
 // Function to validate the required video params
