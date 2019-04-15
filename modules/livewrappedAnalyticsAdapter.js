@@ -113,7 +113,8 @@ livewrappedAnalyticsAdapter.sendEvents = function() {
     requests: getSentRequests(),
     responses: getResponses(),
     wins: getWins(),
-    timeouts: getTimeouts()
+    timeouts: getTimeouts(),
+    rcv: getAdblockerRecovered()
   };
 
   if (events.requests.length == 0 &&
@@ -124,6 +125,12 @@ livewrappedAnalyticsAdapter.sendEvents = function() {
   }
 
   ajax(URL, undefined, JSON.stringify(events), {method: 'POST'});
+}
+
+function getAdblockerRecovered() {
+  try {
+    return utils.getWindowTop().I12C && utils.getWindowTop().I12C.Morph === 1;
+  } catch (e) {}
 }
 
 function getSentRequests() {

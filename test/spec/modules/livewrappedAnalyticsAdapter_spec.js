@@ -240,6 +240,7 @@ describe('Livewrapped analytics adapter', function () {
     });
 
     it('should build a batched message from prebid events', function () {
+      sandbox.stub(utils, 'getWindowTop').returns({});
       performStandardAuction();
 
       clock.tick(BID_WON_TIMEOUT + 1000);
@@ -294,6 +295,20 @@ describe('Livewrapped analytics adapter', function () {
       expect(message.timeouts.length).to.equal(1);
       expect(message.timeouts[0].bidder).to.equal('livewrapped');
       expect(message.timeouts[0].adUnit).to.equal('panorama_d_1');
+    });
+
+    it('should detect adblocker recovered request', function () {
+      sandbox.stub(utils, 'getWindowTop').returns({ I12C: { Morph: 1 } });
+      performStandardAuction();
+
+      clock.tick(BID_WON_TIMEOUT + 1000);
+
+      expect(requests.length).to.equal(1);
+      let request = requests[0];
+
+      let message = JSON.parse(request.requestBody);
+
+      expect(message.rcv).to.equal(true);
     });
   });
 });
