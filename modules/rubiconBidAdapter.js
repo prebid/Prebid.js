@@ -151,7 +151,7 @@ export const spec = {
               includewinners: true,
               // includebidderkeys always false for openrtb
               includebidderkeys: false,
-              priceGranularity: getPriceGranularity(config)
+              pricegranularity: getPriceGranularity(config)
             }
           }
         }
@@ -265,6 +265,7 @@ export const spec = {
     const containsTgI = /^tg_i/
 
     const orderedParams = [
+      'tpid_tdid',
       'account_id',
       'site_id',
       'zone_id',
@@ -366,6 +367,10 @@ export const spec = {
       'tg_fl.eid': bidRequest.code,
       'rf': _getPageUrl(bidRequest, bidderRequest)
     };
+
+    if ((bidRequest.userId || {}).tdid) {
+      data['tpid_tdid'] = bidRequest.userId.tdid;
+    }
 
     if (bidderRequest.gdprConsent) {
       // add 'gdpr' only if 'gdprApplies' is defined

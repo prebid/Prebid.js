@@ -33,6 +33,12 @@ describe('justpremium adapter', function () {
     },
   ]
 
+  let bidderRequest = {
+    refererInfo: {
+      referer: 'http://justpremium.com'
+    }
+  }
+
   describe('isBidRequestValid', function () {
     it('Verifies bidder code', function () {
       expect(spec.code).to.equal('justpremium')
@@ -48,15 +54,14 @@ describe('justpremium adapter', function () {
 
   describe('buildRequests', function () {
     it('Verify build request and parameters', function () {
-      const request = spec.buildRequests(adUnits)
+      const request = spec.buildRequests(adUnits, bidderRequest)
       expect(request.method).to.equal('POST')
       expect(request.url).to.match(/pre.ads.justpremium.com\/v\/2.0\/t\/xhr/)
 
       const jpxRequest = JSON.parse(request.data)
       expect(jpxRequest).to.not.equal(null)
       expect(jpxRequest.zone).to.not.equal('undefined')
-      expect(jpxRequest.hostname).to.equal(top.document.location.hostname)
-      expect(jpxRequest.protocol).to.equal(top.document.location.protocol.replace(':', ''))
+      expect(bidderRequest.refererInfo.referer).to.equal('http://justpremium.com')
       expect(jpxRequest.sw).to.equal(window.top.screen.width)
       expect(jpxRequest.sh).to.equal(window.top.screen.height)
       expect(jpxRequest.ww).to.equal(window.top.innerWidth)
@@ -65,12 +70,12 @@ describe('justpremium adapter', function () {
       expect(jpxRequest.id).to.equal(adUnits[0].params.zone)
       expect(jpxRequest.sizes).to.not.equal('undefined')
       expect(jpxRequest.version.prebid).to.equal('$prebid.version$')
-      expect(jpxRequest.version.jp_adapter).to.equal('1.3')
+      expect(jpxRequest.version.jp_adapter).to.equal('1.4')
     })
   })
 
   describe('interpretResponse', function () {
-    const request = spec.buildRequests(adUnits)
+    const request = spec.buildRequests(adUnits, bidderRequest)
     it('Verify server response', function () {
       let response = {
         'bid': {
