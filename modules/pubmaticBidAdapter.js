@@ -707,6 +707,30 @@ function _parseNativeResponse(bid, newBid) {
   }
 }
 
+function _blockedIabCategoriesValidation(payload, blockedIabCategories) {
+  blockedIabCategories = blockedIabCategories
+    .filter(function(category) {
+      if (typeof category === 'string') { // only strings
+        return true;
+      } else {
+        utils.logWarn(LOG_WARN_PREFIX + 'bcat: Each category should be a string, ignoring category: ' + category);
+        return false;
+      }
+    })
+    .map(category => category.trim()) // trim all
+    .filter(function(category, index, arr) { // minimum 3 charaters length
+      if (category.length > 3) {
+        return arr.indexOf(category) === index; // unique value only
+      } else {
+        utils.logWarn(LOG_WARN_PREFIX + 'bcat: Each category should have a value of a length of more than 3 characters, ignoring category: ' + category)
+      }
+    });
+  if (blockedIabCategories.length > 0) {
+    utils.logWarn(LOG_WARN_PREFIX + 'bcat: Selected: ', blockedIabCategories);
+    payload.bcat = blockedIabCategories;
+  }
+}
+
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
@@ -756,6 +780,7 @@ export const spec = {
     var dctrLen;
     var dctrArr = [];
     var bid;
+    var blockedIabCategories = [];
     validBidRequests.forEach(originalBid => {
       bid = utils.deepClone(originalBid);
       _parseAdSlot(bid);
@@ -788,6 +813,9 @@ export const spec = {
       // check if dctr is added to more than 1 adunit
       if (bid.params.hasOwnProperty('dctr') && utils.isStr(bid.params.dctr)) {
         dctrArr.push(bid.params.dctr);
+      }
+      if (bid.params.hasOwnProperty('bcat') && utils.isArray(bid.params.bcat)) {
+        blockedIabCategories = blockedIabCategories.concat(bid.params.bcat);
       }
       var impObj = _createImpressionObject(bid, conf);
       if (impObj) {
@@ -860,6 +888,7 @@ export const spec = {
     }
 
     _handleEids(payload);
+    _blockedIabCategoriesValidation(payload, blockedIabCategories);
     return {
       method: 'POST',
       url: ENDPOINT,
