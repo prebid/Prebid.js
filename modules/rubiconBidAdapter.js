@@ -151,7 +151,7 @@ export const spec = {
               includewinners: true,
               // includebidderkeys always false for openrtb
               includebidderkeys: false,
-              priceGranularity: getPriceGranularity(config)
+              pricegranularity: getPriceGranularity(config)
             }
           }
         }
