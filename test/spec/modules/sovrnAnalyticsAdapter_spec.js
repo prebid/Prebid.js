@@ -1,7 +1,7 @@
 import sovrnAnalyticsAdapter from '../../../modules/sovrnAnalyticsAdapter'
 import { expect } from 'chai'
 import {config} from 'src/config'
-import adaptermanager from 'src/adaptermanager'
+import adaptermanager from 'src/adapterManager'
 var assert = require('assert');
 
 let events = require('src/events');
