@@ -322,7 +322,7 @@ describe('Rich Audience adapter tests', function () {
   it('Verifies user sync', function () {
     var syncs = spec.getUserSyncs({
       iframeEnabled: true
-    }, [BID_RESPONSE] , {
+    }, [BID_RESPONSE], {
       consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
       gdprApplies: true
     });
@@ -338,7 +338,7 @@ describe('Rich Audience adapter tests', function () {
 
     syncs = spec.getUserSyncs({
       iframeEnabled: true
-    }, [],{consentString:"",gdprApplies:false});
+    }, [], {consentString: '', gdprApplies: false});
     expect(syncs).to.have.lengthOf(1);
   });
 });
