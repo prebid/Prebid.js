@@ -122,19 +122,18 @@ export const spec = {
       return [];
     }
     bidResp.seatbid[0].bid.forEach(function (bidderBid) {
-      var responseCPM;
-      var placementCode = '';
       if (bidRequest) {
-        var bidResponse = bidfactory.createBid(1);
-        placementCode = bidRequest.placementCode;
-        bidRequest.status = CONSTANTS.STATUS.GOOD;
-        responseCPM = parseFloat(bidderBid.price);
+        var responseCPM = parseFloat(bidderBid.price);
         if (responseCPM === 0) {
-          var bid = bidfactory.createBid(2);
+          var bid = bidfactory.createBid(2, bidRequest);
           bid.bidderCode = BIDDER_CODE;
           bidResponses.push(bid);
           return bidResponses;
         }
+
+        var bidResponse = {};
+        var placementCode = bidRequest.placementCode;
+        bidRequest.status = CONSTANTS.STATUS.GOOD;
         bidResponse.placementCode = placementCode;
         bidResponse.size = bidRequest.sizes;
         bidResponse.creativeId = bidderBid.id;
