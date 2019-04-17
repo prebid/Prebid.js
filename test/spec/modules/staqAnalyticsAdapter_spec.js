@@ -147,11 +147,12 @@ describe('', function () {
   });
 
   const REQUEST = {
-    bidderCode: 'adapter',
+    bidderCode: 'AppNexus',
+    bidderName: 'AppNexus',
     auctionId: '5018eb39-f900-4370-b71e-3bb5b48d324f',
     bidderRequestId: '1a6fc81528d0f6',
     bids: [{
-      bidder: 'adapter',
+      bidder: 'AppNexus',
       params: {},
       adUnitCode: 'container-1',
       transactionId: 'de90df62-7fd0-4fbc-8787-92d133a7dc06',
@@ -166,7 +167,7 @@ describe('', function () {
   };
 
   const RESPONSE = {
-    bidderCode: 'adapter',
+    bidderCode: 'AppNexus',
     width: 300,
     height: 250,
     statusMessage: 'Bid available',
@@ -177,11 +178,24 @@ describe('', function () {
     auctionId: '5018eb39-f900-4370-b71e-3bb5b48d324f',
     responseTimestamp: 1509369418832,
     requestTimestamp: 1509369418389,
-    bidder: 'adapter',
+    bidder: 'AppNexus',
     adUnitCode: 'container-1',
     timeToRespond: 443,
     size: '300x250'
   };
+
+  const bidTimeoutArgsV1 = [{
+    bidId: '2baa51527bd015',
+    bidderCode: 'AppNexus',
+    adUnitCode: 'container-1',
+    auctionId: '66529d4c-8998-47c2-ab3e-5b953490b98f'
+  },
+  {
+    bidId: '6fe3b4c2c23092',
+    bidderCode: 'AppNexus',
+    adUnitCode: 'container-2',
+    auctionId: '66529d4c-8998-47c2-ab3e-5b953490b98f'
+  }];
 
   describe('Analytics adapter', function () {
     let ajaxStub;
@@ -196,6 +210,7 @@ describe('', function () {
       sandbox.stub(events, 'getEvents').callsFake(() => {
         return []
       });
+      sandbox.stub(navigator, 'userAgent').value('testUA');
     });
 
     afterEach(function () {
@@ -212,7 +227,8 @@ describe('', function () {
         provider: 'staq',
         options: {
           connId: 777,
-          queueTimeout: 1000
+          queueTimeout: 1000,
+          url: 'http://localhost/prebid'
         }
       });
 
@@ -224,14 +240,20 @@ describe('', function () {
       events.emit(CONSTANTS.EVENTS.AUCTION_INIT, {config: {}, timeout: 3000});
       const ev = analyticsAdapter.context.queue.peekAll();
       expect(ev).to.have.length(1);
-      expect(ev[0]).to.be.eql({event: 'auctionInit'});
+      expect(ev[0]).to.be.eql({event: 'auctionInit', auctionId: undefined});
     });
 
     it('should handle bid request event', function () {
       events.emit(CONSTANTS.EVENTS.BID_REQUESTED, REQUEST);
       const ev = analyticsAdapter.context.queue.peekAll();
       expect(ev).to.have.length(2);
-      expect(ev[1]).to.be.eql({event: 'bidRequested', adapter: 'adapter', tagid: 'container-1'});
+      expect(ev[1]).to.be.eql({
+        adUnitCode: 'container-1',
+        auctionId: '5018eb39-f900-4370-b71e-3bb5b48d324f',
+        event: 'bidRequested',
+        adapter: 'AppNexus',
+        bidderName: 'AppNexus'
+      });
     });
 
     it('should handle bid response event', function () {
@@ -239,11 +261,51 @@ describe('', function () {
       const ev = analyticsAdapter.context.queue.peekAll();
       expect(ev).to.have.length(3);
       expect(ev[2]).to.be.eql({
+        adId: '208750227436c1',
         event: 'bidResponse',
-        adapter: 'adapter',
-        tagid: 'container-1',
-        val: 0.015,
-        time: 0.443
+        adapter: 'AppNexus',
+        bidderName: 'AppNexus',
+        auctionId: '5018eb39-f900-4370-b71e-3bb5b48d324f',
+        adUnitCode: 'container-1',
+        cpm: 0.015,
+        timeToRespond: 0.443,
+        height: 250,
+        width: 300
+      });
+    });
+
+    it('should handle timeouts properly', function() {
+      events.emit(CONSTANTS.EVENTS.BID_TIMEOUT, bidTimeoutArgsV1);
+
+      const ev = analyticsAdapter.context.queue.peekAll();
+      expect(ev).to.have.length(5); // remember, we added 2 timeout events
+      expect(ev[3]).to.be.eql({
+        adapter: 'AppNexus',
+        auctionId: '66529d4c-8998-47c2-ab3e-5b953490b98f',
+        bidderName: 'AppNexus',
+        event: 'adapterTimedOut'
+      })
+    });
+
+    it('should handle winning bid', function () {
+      events.emit(CONSTANTS.EVENTS.BID_WON, RESPONSE);
+      const ev = analyticsAdapter.context.queue.peekAll();
+      expect(ev).to.have.length(6);
+      // let secondCallArgs = ajaxStub.secondCall.args[0];
+      // let ev = JSON.parse(secondCallArgs);
+      // console.log('AUCTION WON EVENT SHAPE ' + JSON.stringify(ev));
+      // let firstEv = JSON.parse(ajaxStub.firstCall.args)
+      // console.log('FIRST CALL ARGS ' + JSON.stringify(firstEv));
+      expect(ev[5]).to.be.eql({
+        auctionId: '5018eb39-f900-4370-b71e-3bb5b48d324f',
+        adId: '208750227436c1',
+        event: 'bidWon',
+        adapter: 'AppNexus',
+        bidderName: 'AppNexus',
+        adUnitCode: 'container-1',
+        cpm: 0.015,
+        height: 250,
+        width: 300
       });
     });
 
@@ -253,17 +315,31 @@ describe('', function () {
       let ev = analyticsAdapter.context.queue.peekAll();
       expect(ev).to.have.length(0);
       expect(ajaxStub.calledOnce).to.be.equal(true);
-      ev = JSON.parse(ajaxStub.firstCall.args[0]).hb_ev;
+      let firstCallArgs0 = ajaxStub.firstCall.args[0];
+      ev = JSON.parse(firstCallArgs0);
       console.log('AUCTION END EVENT SHAPE ' + JSON.stringify(ev));
-      expect(ev[3]).to.be.eql({event: 'auctionEnd', time: 0.447});
-    });
-
-    it('should handle winning bid', function () {
-      events.emit(CONSTANTS.EVENTS.BID_WON, RESPONSE);
-      timer.tick(4500);
-      expect(ajaxStub.calledTwice).to.be.equal(true);
-      let ev = JSON.parse(ajaxStub.secondCall.args[0]).hb_ev;
-      expect(ev[0]).to.be.eql({event: 'bidWon', adapter: 'adapter', tagid: 'container-1', val: 0.015});
+      expect(ev[6]).to.be.eql({
+        connId: 777,
+        domain: 'localhost',
+        userAgent: 'testUA',
+        env: {
+          lang: 'en-US',
+          screen: {
+            h: 800,
+            w: 1280
+          }
+        },
+        path: '/',
+        src: {
+          campaign: '(direct)',
+          medium: '(direct)',
+          source: '(direct)'
+        },
+        auctionId: '5018eb39-f900-4370-b71e-3bb5b48d324f',
+        event: 'auctionEnd',
+        timeToRespond: 0.447,
+        ver: '1.0.0'
+      });
     });
   });
 });

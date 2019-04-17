@@ -27,7 +27,8 @@ function buildRequestTemplate(connId) {
     ver: ANALYTICS_VERSION,
     domain: topLocation.hostname,
     path: topLocation.pathname,
-    accId: connId,
+    userAgent: navigator.userAgent,
+    connId: connId,
     env: {
       screen: {
         w: window.screen.width,
@@ -73,6 +74,9 @@ let analyticsAdapter = Object.assign(adapter({analyticsType: 'endpoint'}),
         let events = handler(args);
         if (analyticsAdapter.context.queue) {
           analyticsAdapter.context.queue.push(events);
+          if (eventType === CONSTANTS.EVENTS.BID_WON) {
+
+          }
         }
         if (eventType === CONSTANTS.EVENTS.AUCTION_END) {
           sendAll();
@@ -115,7 +119,11 @@ export default analyticsAdapter;
 function sendAll() {
   let events = analyticsAdapter.context.queue.popAll();
   if (events.length !== 0) {
-    let req = Object.assign({}, analyticsAdapter.context.requestTemplate, {hb_ev: events});
+    // let req = Object.assign({}, analyticsAdapter.context.requestTemplate, {events: events});
+    // let req = {events: events};
+    let req = events.map(event => {
+      return Object.assign({}, event, analyticsAdapter.context.requestTemplate)
+    });
     analyticsAdapter.ajaxCall(JSON.stringify(req));
   }
 }
@@ -123,55 +131,73 @@ function sendAll() {
 analyticsAdapter.ajaxCall = function ajaxCall(data) {
   utils.logInfo('SENDING DATA: ' + data);
   ajax(`//${analyticsAdapter.context.url}/prebid/${analyticsAdapter.context.connectionId}`, () => {
-  }, data);
+  }, data, {contentType: 'application/json'});
 };
 
-function trackAuctionInit() {
+function trackAuctionInit(args) {
   analyticsAdapter.context.auctionTimeStart = Date.now();
-  const event = createHbEvent(undefined, STAQ_EVENTS.AUCTION_INIT);
+  analyticsAdapter.context.auctionId = args.auctionId;
+  const event = createHbEvent(args.auctionId, undefined, STAQ_EVENTS.AUCTION_INIT);
   return [event];
 }
 
 function trackBidRequest(args) {
   return args.bids.map(bid =>
-    createHbEvent(args.bidderCode, STAQ_EVENTS.BID_REQUEST, bid.adUnitCode));
+    createHbEvent(args.auctionId, args.bidderCode, STAQ_EVENTS.BID_REQUEST, bid.adUnitCode));
 }
 
 function trackBidResponse(args) {
-  const event = createHbEvent(args.bidderCode, STAQ_EVENTS.BID_RESPONSE,
-    args.adUnitCode, args.cpm, args.timeToRespond / 1000);
+  const event = createHbEvent(args.auctionId, args.bidderCode, STAQ_EVENTS.BID_RESPONSE,
+    args.adUnitCode, args.cpm, args.timeToRespond / 1000, false, args);
   return [event];
 }
 
 function trackBidWon(args) {
-  const event = createHbEvent(args.bidderCode, STAQ_EVENTS.BID_WON, args.adUnitCode, args.cpm);
+  const event = createHbEvent(args.auctionId, args.bidderCode, STAQ_EVENTS.BID_WON, args.adUnitCode, args.cpm, undefined, true, args);
   return [event];
 }
 
 function trackAuctionEnd(args) {
-  const event = createHbEvent(undefined, STAQ_EVENTS.AUCTION_END, undefined,
+  const event = createHbEvent(args.auctionId, undefined, STAQ_EVENTS.AUCTION_END, undefined,
     undefined, (Date.now() - analyticsAdapter.context.auctionTimeStart) / 1000);
   return [event];
 }
 
 function trackBidTimeout(args) {
-  return args.map(bidderName => createHbEvent(bidderName, STAQ_EVENTS.TIMEOUT));
+  return args.map(arg =>
+    createHbEvent(arg.auctionId, arg.bidderCode, STAQ_EVENTS.TIMEOUT)
+  );
 }
 
-function createHbEvent(adapter, event, tagid = undefined, value = 0, time = 0) {
+function createHbEvent(auctionId, adapter, event, adUnitCode = undefined, value = 0, time = 0, bidWon = undefined, eventArgs) {
   let ev = { event: event };
   if (adapter) {
-    ev.adapter = adapter
+    ev.adapter = adapter;
+    ev.bidderName = adapter;
   }
-  if (tagid) {
-    ev.tagid = tagid;
+  if (adUnitCode) {
+    ev.adUnitCode = adUnitCode;
   }
   if (value) {
-    ev.val = value;
+    ev.cpm = value;
   }
   if (time) {
-    ev.time = time;
+    ev.timeToRespond = time;
   }
+  if (typeof myVar !== 'undefined') {
+    ev.bidWon = bidWon
+  }
+  ev.auctionId = auctionId;
+
+  if (eventArgs) {
+    if (STAQ_EVENTS.BID_RESPONSE == event || STAQ_EVENTS.BID_WON == event) {
+      ev.width = eventArgs.width;
+      ev.height = eventArgs.height;
+
+      ev.adId = eventArgs.adId;
+    }
+  }
+
   return ev;
 }
 
