@@ -3,9 +3,9 @@ import adapter from '../src/AnalyticsAdapter';
 import adapterManager from '../src/adapterManager';
 
 /**
- * pmAnalyticsAdapter.js - analytics adapter for prebidmanager
+ * prebidmanagerAnalyticsAdapter.js - analytics adapter for prebidmanager
  */
-const DEFAULT_EVENT_URL = 'http://endpoint.prebidmanager.com/endpoint'
+const DEFAULT_EVENT_URL = 'https://endpoint.prebidmanager.com/endpoint'
 const analyticsType = 'endpoint';
 const analyticsName = 'Prebid Manager Analytics: ';
 
@@ -54,17 +54,17 @@ var _eventQueue = [
   _pageView
 ];
 
-let pmAnalytics = Object.assign(adapter({url: DEFAULT_EVENT_URL, analyticsType}), {
+let prebidmanagerAnalytics = Object.assign(adapter({url: DEFAULT_EVENT_URL, analyticsType}), {
   track({eventType, args}) {
     handleEvent(eventType, args);
   }
 });
 
-pmAnalytics.originEnableAnalytics = pmAnalytics.enableAnalytics;
-pmAnalytics.enableAnalytics = function (config) {
+prebidmanagerAnalytics.originEnableAnalytics = prebidmanagerAnalytics.enableAnalytics;
+prebidmanagerAnalytics.enableAnalytics = function (config) {
   initOptions = config.options;
   pmAnalitycsEnabled = true;
-  pmAnalytics.originEnableAnalytics(config);
+  prebidmanagerAnalytics.originEnableAnalytics(config);
 };
 
 function flush() {
@@ -179,8 +179,8 @@ function sendEvent(event) {
 setInterval(flush, 1000);
 
 adapterManager.registerAnalyticsAdapter({
-  adapter: pmAnalytics,
+  adapter: prebidmanagerAnalytics,
   code: 'prebidmanager'
 });
 
-export default pmAnalytics;
+export default prebidmanagerAnalytics;

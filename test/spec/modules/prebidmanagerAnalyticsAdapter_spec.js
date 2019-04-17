@@ -1,6 +1,5 @@
-import pmAnalytics from 'modules/pmAnalyticsAdapter';
+import prebidmanagerAnalytics from 'modules/prebidmanagerAnalyticsAdapter';
 let events = require('src/events');
-let adapterManager = require('src/adapterManager').default;
 let constants = require('src/constants.json');
 
 describe('Prebid Manager Analytics Adapter', function () {
@@ -12,7 +11,7 @@ describe('Prebid Manager Analytics Adapter', function () {
 
   after(function () {
     xhr.restore();
-    pmAnalytics.disableAnalytics();
+    prebidmanagerAnalytics.disableAnalytics();
   });
 
   describe('enableAnalytics', function () {
@@ -25,9 +24,9 @@ describe('Prebid Manager Analytics Adapter', function () {
     });
 
     it('track event without errors', function () {
-      sinon.spy(pmAnalytics, 'track');
+      sinon.spy(prebidmanagerAnalytics, 'track');
 
-      pmAnalytics.enableAnalytics({
+      prebidmanagerAnalytics.enableAnalytics({
         provider: 'prebidmanager',
         options: {
           bundleId: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
@@ -41,7 +40,7 @@ describe('Prebid Manager Analytics Adapter', function () {
       events.emit(constants.EVENTS.AUCTION_END, {});
       events.emit(constants.EVENTS.BID_TIMEOUT, {});
 
-      sinon.assert.callCount(pmAnalytics.track, 6);
+      sinon.assert.callCount(prebidmanagerAnalytics.track, 6);
     });
   });
 });
