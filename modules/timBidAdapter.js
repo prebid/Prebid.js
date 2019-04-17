@@ -134,6 +134,7 @@ export const spec = {
         var bidResponse = {};
         var placementCode = bidRequest.placementCode;
         bidRequest.status = CONSTANTS.STATUS.GOOD;
+        bidResponse.mediaType = 'video';
         bidResponse.placementCode = placementCode;
         bidResponse.size = bidRequest.sizes;
         bidResponse.creativeId = bidderBid.id;
