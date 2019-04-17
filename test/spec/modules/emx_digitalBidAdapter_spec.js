@@ -168,18 +168,6 @@ describe('emx_digital Adapter', function () {
         expect(spec.isBidRequestValid(noInstreamBid)).to.equal(false);
       });
 
-      // it('bidRequest with missing instream video context', function() {
-      //   const testBid = Object.assign({}, bid);
-      //   delete testBid.mediaTypes.video.context;
-      //   expect(spec.isBidRequestValid(testBid)).to.equal(false);
-      // })
-
-      // it('bidRequest with missing video playerSize', function() {
-      //   const testBid = Object.assign({}, bid);
-      //   delete testBid.mediaTypes.video.playerSize;
-      //   expect(spec.isBidRequestValid(testBid)).to.equal(false);
-      // })
-
       it('should contain tagid param', function () {
         expect(spec.isBidRequestValid({
           bidder: 'emx_digital',
@@ -215,96 +203,6 @@ describe('emx_digital Adapter', function () {
       });
     });
   });
-
-  // describe('emxAdapter helper validity', function () {
-  //   let bid = {
-  //     'bidder': 'emx_digital',
-  //     'params': {
-  //       'tagid': '25251',
-  //       'video': {}
-  //     },
-  //     'mediaTypes': {
-  //       'video': {
-  //         'context': 'instream',
-  //         'playerSize': [640, 480]
-  //       }
-  //     },
-  //     'adUnitCode': 'adunit-code',
-  //     'sizes': [
-  //       [300, 250],
-  //       [300, 600]
-  //     ],
-  //     'bidId': '30b31c2501de1e',
-  //     'bidderRequestId': '22edbae3120bf6',
-  //     'auctionId': '1d1a01234a475'
-  //   };
-  //   describe('validateSizes()', function() {
-  //     it('should return correct values', function () {
-  //       expect(emxAdapter.validateSizes([[300, 250], [160, 600]])).to.equal(true);
-  //       expect(emxAdapter.validateSizes([])).to.equal(false);
-  //     })
-  //   })
-
-  //   describe('checkVideoContext()', function () {
-  //     it('should return correct values', function () {
-  //       const testBid = Object.assign({}, bid);
-  //       expect(emxAdapter.checkVideoContext(testBid)).to.equal(true);
-  //       const testBidWithoutVideoContext = Object.assign({}, bid);
-  //       delete testBidWithoutVideoContext.mediaTypes.video.context;
-  //       // eslint-disable-next-line no-unused-expressions
-  //       expect(emxAdapter.checkVideoContext(testBidWithoutVideoContext)).to.be.undefined;
-  //     })
-  //   })
-  //   describe('buildBanner()', function () {
-  //     it('should return ortb format banner obj', function () {
-  //       const testBid = Object.assign({}, bid);
-  //       delete testBid.mediaTypes.video;
-  //       testBid.mediaTypes.banner = {
-  //         'sizes': [
-  //           [300, 250],
-  //           [300, 600]
-  //         ]
-  //       };
-  //       const banner = emxAdapter.buildBanner(testBid);
-  //       expect(banner).to.exist.and.to.be.a('object');
-  //       expect(banner.w).to.equal(testBid.mediaTypes.banner.sizes[0][0]);
-  //       expect(banner.h).to.equal(testBid.mediaTypes.banner.sizes[0][1]);
-  //       expect(banner.format[0].w).to.equal(testBid.mediaTypes.banner.sizes[0][0]);
-  //       expect(banner.format[0].h).to.equal(testBid.mediaTypes.banner.sizes[0][1]);
-  //       expect(banner.format[1].w).to.equal(testBid.mediaTypes.banner.sizes[1][0]);
-  //       expect(banner.format[1].h).to.equal(testBid.mediaTypes.banner.sizes[1][1]);
-  //     })
-  //   })
-  //   describe('buildVideo()', function () {
-  //     it('should return ortb format video obj', function () {
-  //       const testBid = Object.assign({}, bid);
-  //       const banner = emxAdapter.buildBanner(testBid);
-  //       expect(banner).to.exist.and.to.be.a('object');
-  //     })
-  //   })
-  //   describe('cleanProtocols()', function () {
-  //     it('should remove 7 from protocols array', function () {
-  //       const testBid = Object.assign({}, bid);
-  //       testBid.params.video.protocols = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-  //       const noVast4 = emxAdapter.cleanProtocols(testBid.params.video);
-  //       const protocols = noVast4.protocols;
-  //       expect(protocols).to.be.an('array').that.does.not.include(7);
-  //     })
-  //   })
-  //   describe('getGdpr()', function () {
-  //     const consentString = 'OIJSZsOAFsABAB8EMXZZZZZ+A==';
-  //     const gdprObj = emxAdapter.getGdpr({ gdprConsent: {
-  //       'consentString': consentString,
-  //       'gdprApplies': true
-  //     } }, {});
-
-  //     it('should return properly formatted ortb gdpr obj', function () {
-  //       expect(gdprObj).to.exist.and.to.be.a('object');
-  //       expect(gdprObj.regs.ext).to.have.property('gdpr', 1);
-  //       expect(gdprObj.user.ext).to.have.property('consent', consentString);
-  //     })
-  //   })
-  // });
 
   describe('buildRequests', function () {
     let bidderRequest = {
