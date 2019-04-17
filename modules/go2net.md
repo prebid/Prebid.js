@@ -20,7 +20,7 @@ Please use ```go2net``` as the bidder code.
                    {
                        bidder: "go2net",
                        params: {
-                           zone: '00000000-0000-0000-0000-000000000000'
+                           zone: 'fb3d34d0-7a88-4a4a-a5c9-8088cd7845f4'
                        }
                    }
                ]
