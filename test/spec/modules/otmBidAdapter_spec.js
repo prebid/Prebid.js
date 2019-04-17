@@ -29,6 +29,44 @@ describe('otmBidAdapterTests', function () {
     expect(req_data.bidid).to.equal('bid1234');
   });
 
+  it('validate_best_size_select', function () {
+    // when:
+    let bidRequestData = [{
+      bidId: 'bid1234',
+      bidder: 'otm',
+      params: {
+        tid: '123',
+        bidfloor: 20
+      },
+      sizes: [[300, 500], [300, 600], [240, 400], [300, 50]]
+    }];
+
+    let request = spec.buildRequests(bidRequestData);
+    let req_data = request[0].data;
+
+    // then:
+    expect(req_data.w).to.equal(240);
+    expect(req_data.h).to.equal(400);
+
+    // when:
+    bidRequestData = [{
+      bidId: 'bid1234',
+      bidder: 'otm',
+      params: {
+        tid: '123',
+        bidfloor: 20
+      },
+      sizes: [[200, 240], [400, 440]]
+    }];
+
+    request = spec.buildRequests(bidRequestData);
+    req_data = request[0].data;
+
+    // then:
+    expect(req_data.w).to.equal(200);
+    expect(req_data.h).to.equal(240);
+  });
+
   it('validate_response_params', function () {
     let bidRequestData = {
       data: {

@@ -30,7 +30,6 @@ var jsEscape = require('gulp-js-escape');
 var prebid = require('./package.json');
 var dateString = 'Updated : ' + (new Date()).toISOString().substring(0, 10);
 var banner = '/* <%= prebid.name %> v<%= prebid.version %>\n' + dateString + ' */\n';
-var analyticsDirectory = '../analytics';
 var port = 9999;
 
 // these modules must be explicitly listed in --modules to be included in the build, won't be part of "all" modules
@@ -84,7 +83,7 @@ function lint(done) {
     return file.eslint != null && file.eslint.fixed;
   }
   return gulp.src(['src/**/*.js', 'modules/**/*.js', 'test/**/*.js'], {base: './'})
-    .pipe(eslint({fix: true}))
+    .pipe(gulpif(argv.nolintfix, eslint(), eslint({fix: true})))
     .pipe(eslint.format('stylish'))
     .pipe(eslint.failAfterError())
     .pipe(gulpif(isFixed, gulp.dest('./')));
@@ -135,7 +134,7 @@ function makeDevpackPkg() {
   cloned.devtool = 'source-map';
   var externalModules = helpers.getArgModules();
 
-  const analyticsSources = helpers.getAnalyticsSources(analyticsDirectory);
+  const analyticsSources = helpers.getAnalyticsSources();
   const moduleSources = helpers.getModulePaths(externalModules);
 
   return gulp.src([].concat(moduleSources, analyticsSources, 'src/prebid.js'))
@@ -147,12 +146,11 @@ function makeDevpackPkg() {
 
 function makeWebpackPkg() {
   var cloned = _.cloneDeep(webpackConfig);
-
   delete cloned.devtool;
 
   var externalModules = helpers.getArgModules();
 
-  const analyticsSources = helpers.getAnalyticsSources(analyticsDirectory);
+  const analyticsSources = helpers.getAnalyticsSources();
   const moduleSources = helpers.getModulePaths(externalModules);
 
   return gulp.src([].concat(moduleSources, analyticsSources, 'src/prebid.js'))

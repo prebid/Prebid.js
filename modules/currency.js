@@ -3,7 +3,7 @@ import { STATUS } from '../src/constants';
 import { ajax } from '../src/ajax';
 import * as utils from '../src/utils';
 import { config } from '../src/config';
-import { hooks } from '../src/hook.js';
+import { getHook } from '../src/hook.js';
 
 const DEFAULT_CURRENCY_RATE_URL = 'https://cdn.jsdelivr.net/gh/prebid/currency-file@1/latest.json?date=$$TODAY$$';
 const CURRENCY_RATE_PRECISION = 4;
@@ -122,7 +122,7 @@ function initCurrency(url) {
 
   utils.logInfo('Installing addBidResponse decorator for currency module', arguments);
 
-  hooks['addBidResponse'].before(addBidResponseHook, 100);
+  getHook('addBidResponse').before(addBidResponseHook, 100);
 
   // call for the file if we haven't already
   if (needToCallForCurrencyFile) {
@@ -148,7 +148,7 @@ function initCurrency(url) {
 function resetCurrency() {
   utils.logInfo('Uninstalling addBidResponse decorator for currency module', arguments);
 
-  hooks['addBidResponse'].getHooks({hook: addBidResponseHook}).remove();
+  getHook('addBidResponse').getHooks({hook: addBidResponseHook}).remove();
 
   adServerCurrency = 'USD';
   conversionCache = {};
@@ -222,7 +222,7 @@ function wrapFunction(fn, context, params) {
         utils.logWarn('Returning NO_BID, getCurrencyConversion threw error: ', e);
         params[1] = createBid(STATUS.NO_BID, {
           bidder: bid.bidderCode || bid.bidder,
-          bidId: bid.adId
+          bidId: bid.requestId
         });
       }
     }
