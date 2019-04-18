@@ -41,8 +41,8 @@ export const emxAdapter = {
     return bidResponse;
   },
   buildVideo: (bid) => {
-    bid.params.video.h = bid.mediaTypes.video.playerSize[0][0];
-    bid.params.video.w = bid.mediaTypes.video.playerSize[0][1];
+    bid.params.video.h = bid.mediaTypes.video.playerSize[0][1];
+    bid.params.video.w = bid.mediaTypes.video.playerSize[0][0];
     return emxAdapter.cleanProtocols(bid.params.video);
   },
   cleanProtocols: (video) => {

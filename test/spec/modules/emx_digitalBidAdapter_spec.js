@@ -283,8 +283,8 @@ describe('emx_digital Adapter', function () {
       let request = spec.buildRequests(bidRequestWithVideo, bidderRequest);
       const data = JSON.parse(request.data);
       expect(data.imp[0].video).to.exist.and.to.be.a('object');
-      expect(data.imp[0].video.h).to.equal(bidRequestWithVideo[0].mediaTypes.video.playerSize[0][0]);
-      expect(data.imp[0].video.w).to.equal(bidRequestWithVideo[0].mediaTypes.video.playerSize[0][1]);
+      expect(data.imp[0].video.h).to.equal(bidRequestWithVideo[0].mediaTypes.video.playerSize[0][1]);
+      expect(data.imp[0].video.w).to.equal(bidRequestWithVideo[0].mediaTypes.video.playerSize[0][0]);
     });
 
     it('shouldn\'t contain a user obj without GDPR information', function () {
