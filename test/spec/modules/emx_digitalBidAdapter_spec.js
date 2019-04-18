@@ -84,31 +84,6 @@ describe('emx_digital Adapter', function () {
         'auctionId': '1d1a01234a475'
       };
 
-      // it('should return true when required params found', function () {
-      //   expect(spec.isBidRequestValid(bid)).to.equal(true);
-      // });
-
-      // it('bidRequest with missing bidder code', function() {
-      //   const testBid = Object.assign({}, bid, { bidder: '' });
-      //   expect(spec.isBidRequestValid(testBid)).to.equal(false);
-      // })
-
-      // it('bidRequest with missing params obj', function() {
-      //   const testBid = Object.assign({}, bid);
-      //   delete testBid.params;
-      //   expect(spec.isBidRequestValid(testBid)).to.equal(false);
-      // })
-
-      // it('bidRequest with missing tagid param', function() {
-      //   const testBid = Object.assign({}, bid, { params: { tagid: '' } });
-      //   expect(spec.isBidRequestValid(testBid)).to.equal(false);
-      // })
-
-      // it('bidRequest with missing banner sizes', function() {
-      //   const testBid = Object.assign({}, bid, { mediaTypes: { banner: { sizes: [] } } });
-      //   expect(spec.isBidRequestValid(testBid)).to.equal(false);
-      // })
-
       it('should return true when required params found', function () {
         expect(spec.isBidRequestValid(bid)).to.equal(true);
         expect(spec.isBidRequestValid(badBid)).to.equal(false);
