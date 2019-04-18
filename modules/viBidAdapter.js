@@ -1,8 +1,8 @@
-import { registerBidder } from "../src/adapters/bidderFactory";
-import * as mediaTypes from "../src/mediaTypes";
+import { registerBidder } from '../src/adapters/bidderFactory';
+import * as mediaTypes from '../src/mediaTypes';
 
 export function get(path, obj, notFound) {
-  path = typeof path === "string" ? path.split(".") : path;
+  path = typeof path === 'string' ? path.split('.') : path;
 
   while (path.length) {
     const [key] = path;
@@ -38,23 +38,23 @@ export function ratioToPercentageCeil(x) {
 
 export function getDocumentHeight(curDocument = document) {
   return Math.max(
-    get("body.clientHeight", curDocument, 0),
-    get("body.scrollHeight", curDocument, 0),
-    get("body.offsetHeight", curDocument, 0),
-    get("documentElement.clientHeight", curDocument, 0),
-    get("documentElement.scrollHeight", curDocument, 0),
-    get("documentElement.offsetHeight", curDocument, 0)
+    get('body.clientHeight', curDocument, 0),
+    get('body.scrollHeight', curDocument, 0),
+    get('body.offsetHeight', curDocument, 0),
+    get('documentElement.clientHeight', curDocument, 0),
+    get('documentElement.scrollHeight', curDocument, 0),
+    get('documentElement.offsetHeight', curDocument, 0)
   );
 }
 
 export function getOffset(element) {
   const rect = element.getBoundingClientRect();
   const elementWindow = getElementWindow(element);
-  if (!elementWindow) throw new Error("cannot get element window");
+  if (!elementWindow) throw new Error('cannot get element window');
   const scrollLeft =
-    elementWindow.pageXOffset || get("documentElement.scrollLeft", document, 0);
+    elementWindow.pageXOffset || get('documentElement.scrollLeft', document, 0);
   const scrollTop =
-    elementWindow.pageYOffset || get("documentElement.scrollTop", document, 0);
+    elementWindow.pageYOffset || get('documentElement.scrollTop', document, 0);
   return {
     top: rect.top + scrollTop,
     right: rect.right + scrollLeft,
@@ -66,9 +66,9 @@ export function getOffset(element) {
 var IframeType;
 
 (function(IframeType) {
-  IframeType["safeframe"] = "safeframe";
-  IframeType["friendly"] = "friendly";
-  IframeType["nonfriendly"] = "nonfriendly";
+  IframeType['safeframe'] = 'safeframe';
+  IframeType['friendly'] = 'friendly';
+  IframeType['nonfriendly'] = 'nonfriendly';
 })(IframeType || (IframeType = {}));
 
 export function getWindowParents(curWindow = window) {
@@ -221,7 +221,7 @@ export function getOffsetTopDocument(element) {
 
 export function getOffsetTopDocumentPercentage(element) {
   const elementWindow = getElementWindow(element);
-  if (!elementWindow) throw new Error("cannot get element window");
+  if (!elementWindow) throw new Error('cannot get element window');
   if (!topDocumentIsReachable(elementWindow)) {
     throw new Error("top window isn't reachable");
   }
@@ -234,7 +234,7 @@ export function getOffsetTopDocumentPercentage(element) {
 
 export function getOffsetToView(element) {
   const elemWindow = getElementWindow(element);
-  if (!elemWindow) throw new Error("cannot get element window");
+  if (!elemWindow) throw new Error('cannot get element window');
   const topWindow = getTopmostReachableWindow(elemWindow);
   const { top, bottom } = getOffsetTopDocument(element);
   const topWindowHeight = topWindow.innerHeight;
@@ -262,7 +262,7 @@ export function getViewabilityDescription(element) {
   try {
     if (!element) {
       return {
-        error: "no element"
+        error: 'no element'
       };
     }
     iframeType = getIframeType(getElementWindow(element));
@@ -287,12 +287,27 @@ export function getViewabilityDescription(element) {
   }
 }
 
+export function mergeArrays(hashFn, ...args) {
+  const seen = {};
+  const merged = [];
+  args.forEach(sizes => {
+    sizes.forEach(size => {
+      const key = hashFn(size);
+      if (!(key in seen)) {
+        seen[key] = true;
+        merged.push(size);
+      }
+    });
+  });
+  return merged;
+}
+
 const spec = {
-  code: "vi",
+  code: 'vi',
   supportedMediaTypes: [mediaTypes.VIDEO, mediaTypes.BANNER],
 
   isBidRequestValid({ adUnitCode, params: { pubId, lang, cat } = {} }) {
-    return [pubId, lang, cat].every(x => typeof x === "string");
+    return [pubId, lang, cat].every(x => typeof x === 'string');
   },
 
   /**
@@ -329,23 +344,38 @@ const spec = {
    */
   buildRequests(bidRequests, bidderRequest) {
     return {
-      method: "POST",
-      url: "https://pb.vi-serve.com/prebid/bid",
+      method: 'POST',
+      url: 'https://pb.vi-serve.com/prebid/bid',
       data: {
         refererInfo: bidderRequest.refererInfo,
-        imps: bidRequests.map(({ bidId, adUnitCode, sizes, params }) => {
-          const slot = document.getElementById(adUnitCode);
-          return {
-            bidId,
-            adUnitCode,
-            sizes,
-            ...getViewabilityDescription(slot),
-            ...params
-          };
-        })
+        imps: bidRequests.map(
+          ({ bidId, adUnitCode, sizes, params, mediaTypes }) => {
+            const slot = document.getElementById(adUnitCode);
+            const bannerSizes = get('banner.sizes', mediaTypes);
+            const playerSize = get('video.playerSize', mediaTypes);
+
+            const sizesToMerge = [];
+            if (!params.useSizes) {
+              if (sizes) sizesToMerge.push(sizes);
+              if (bannerSizes) sizesToMerge.push(bannerSizes);
+              if (playerSize) sizesToMerge.push(playerSize);
+            } else if (params.useSizes === 'banner' && bannerSizes) {
+              sizesToMerge.push(bannerSizes);
+            } else if (params.useSizes === 'video' && playerSize) {
+              sizesToMerge.push(playerSize);
+            }
+            return {
+              bidId,
+              adUnitCode,
+              sizes: mergeArrays(x => x.join(','), ...sizesToMerge),
+              ...getViewabilityDescription(slot),
+              ...params
+            };
+          }
+        )
       },
       options: {
-        contentType: "application/json",
+        contentType: 'application/json',
         withCredentials: true
       }
     };

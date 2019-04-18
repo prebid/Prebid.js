@@ -23,6 +23,7 @@ import {
   area,
   get,
   getViewabilityDescription,
+  mergeArrays
 } from 'modules/viBidAdapter';
 
 describe('ratioToPercentageCeil', () => {
@@ -871,5 +872,23 @@ describe('getViewabilityDescription', () => {
     ).to.deep.equal({
       iframeType: 'safeframe'
     });
+  });
+});
+
+describe('mergeSizes', () => {
+  it('merges provides arrays of tuples, leaving only unique', () => {
+    expect(
+      mergeArrays(x => x.join(','), [[1, 2], [2, 4]], [[1, 2]])
+    ).to.deep.equal([[1, 2], [2, 4]]);
+  });
+  it('merges provides arrays of tuples, leaving only unique', () => {
+    expect(
+      mergeArrays(
+        x => x.join(','),
+        [[1, 2], [2, 4]],
+        [[1, 2]],
+        [[400, 500], [500, 600]]
+      )
+    ).to.deep.equal([[1, 2], [2, 4], [400, 500], [500, 600]]);
   });
 });
