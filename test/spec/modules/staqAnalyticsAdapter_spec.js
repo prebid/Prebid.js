@@ -44,75 +44,75 @@ describe('', function () {
     analyticsAdapter.disableAnalytics();
   });
 
-  // describe('UTM source parser', function () {
-  //   let stubSetItem;
-  //   let stubGetItem;
+  describe('UTM source parser', function () {
+    let stubSetItem;
+    let stubGetItem;
 
-  //   before(function () {
-  //     stubSetItem = sandbox.stub(storage, 'setItem');
-  //     stubGetItem = sandbox.stub(storage, 'getItem');
-  //   });
+    before(function () {
+      stubSetItem = sandbox.stub(storage, 'setItem');
+      stubGetItem = sandbox.stub(storage, 'getItem');
+    });
 
-  //   afterEach(function () {
-  //     sandbox.reset();
-  //   });
+    afterEach(function () {
+      sandbox.reset();
+    });
 
-  //   it('should parse first direct visit as (direct)', function () {
-  //     stubGetItem.withArgs('adk_dpt_analytics').returns(undefined);
-  //     stubSetItem.returns(undefined);
-  //     let source = getUmtSource('http://example.com');
-  //     expect(source).to.be.eql(DIRECT);
-  //   });
+    it('should parse first direct visit as (direct)', function () {
+      stubGetItem.withArgs('adk_dpt_analytics').returns(undefined);
+      stubSetItem.returns(undefined);
+      let source = getUmtSource('http://example.com');
+      expect(source).to.be.eql(DIRECT);
+    });
 
-  //   it('should respect past campaign visits before direct', function () {
-  //     stubGetItem.withArgs('adk_dpt_analytics').returns(JSON.stringify(CAMPAIGN));
-  //     stubSetItem.returns(undefined);
-  //     let source = getUmtSource('http://example.com');
-  //     expect(source).to.be.eql(CAMPAIGN);
-  //   });
+    // it('should respect past campaign visits before direct', function () {
+    //   stubGetItem.withArgs('adk_dpt_analytics').returns(JSON.stringify(CAMPAIGN));
+    //   stubSetItem.returns(undefined);
+    //   let source = getUmtSource('http://example.com');
+    //   expect(source).to.be.eql(CAMPAIGN);
+    // });
 
-  //   it('should parse visit from google as organic', function () {
-  //     stubGetItem.withArgs('adk_dpt_analytics').returns(undefined);
-  //     stubSetItem.returns(undefined);
-  //     let source = getUmtSource('http://example.com', 'https://www.google.com/search?q=pikachu');
-  //     expect(source).to.be.eql(GOOGLE_ORGANIC);
-  //   });
+    it('should parse visit from google as organic', function () {
+      stubGetItem.withArgs('adk_dpt_analytics').returns(undefined);
+      stubSetItem.returns(undefined);
+      let source = getUmtSource('http://example.com', 'https://www.google.com/search?q=pikachu');
+      expect(source).to.be.eql(GOOGLE_ORGANIC);
+    });
 
-  //   it('should respect previous campaign visit before organic', function () {
-  //     stubGetItem.withArgs('adk_dpt_analytics').returns(JSON.stringify(CAMPAIGN));
-  //     stubSetItem.returns(undefined);
-  //     let source = getUmtSource('http://example.com', 'https://www.google.com/search?q=pikachu');
-  //     expect(source).to.be.eql(CAMPAIGN);
-  //   });
+    // it('should respect previous campaign visit before organic', function () {
+    //   stubGetItem.withArgs('adk_dpt_analytics').returns(JSON.stringify(CAMPAIGN));
+    //   stubSetItem.returns(undefined);
+    //   let source = getUmtSource('http://example.com', 'https://www.google.com/search?q=pikachu');
+    //   expect(source).to.be.eql(CAMPAIGN);
+    // });
 
-  //   it('should parse referral visit', function () {
-  //     stubGetItem.withArgs('adk_dpt_analytics').returns(undefined);
-  //     stubSetItem.returns(undefined);
-  //     let source = getUmtSource('http://example.com', 'http://lander.com/lander.html');
-  //     expect(source).to.be.eql(REFERRER);
-  //   });
+    it('should parse referral visit', function () {
+      stubGetItem.withArgs('adk_dpt_analytics').returns(undefined);
+      stubSetItem.returns(undefined);
+      let source = getUmtSource('http://example.com', 'http://lander.com/lander.html');
+      expect(source).to.be.eql(REFERRER);
+    });
 
-  //   it('should respect previous campaign visit before referral', function () {
-  //     stubGetItem.withArgs('adk_dpt_analytics').returns(JSON.stringify(CAMPAIGN));
-  //     stubSetItem.returns(undefined);
-  //     let source = getUmtSource('http://example.com', 'https://www.google.com/search?q=pikachu');
-  //     expect(source).to.be.eql(CAMPAIGN);
-  //   });
+    // it('should respect previous campaign visit before referral', function () {
+    //   stubGetItem.withArgs('adk_dpt_analytics').returns(JSON.stringify(CAMPAIGN));
+    //   stubSetItem.returns(undefined);
+    //   let source = getUmtSource('http://example.com', 'https://www.google.com/search?q=pikachu');
+    //   expect(source).to.be.eql(CAMPAIGN);
+    // });
 
-  //   it('should parse referral visit from same domain as direct', function () {
-  //     stubGetItem.withArgs('adk_dpt_analytics').returns(undefined);
-  //     stubSetItem.returns(undefined);
-  //     let source = getUmtSource('http://lander.com/news.html', 'http://lander.com/lander.html');
-  //     expect(source).to.be.eql(DIRECT);
-  //   });
+    it('should parse referral visit from same domain as direct', function () {
+      stubGetItem.withArgs('adk_dpt_analytics').returns(undefined);
+      stubSetItem.returns(undefined);
+      let source = getUmtSource('http://lander.com/news.html', 'http://lander.com/lander.html');
+      expect(source).to.be.eql(DIRECT);
+    });
 
-  //   it('should parse campaign visit', function () {
-  //     stubGetItem.withArgs('adk_dpt_analytics').returns(undefined);
-  //     stubSetItem.returns(undefined);
-  //     let source = getUmtSource('http://lander.com/index.html?utm_campaign=new_campaign&utm_source=adkernel&utm_medium=email&utm_c1=1&utm_c2=2&utm_c3=3&utm_c4=4&utm_c5=5');
-  //     expect(source).to.be.eql(CAMPAIGN);
-  //   });
-  // });
+    it('should parse campaign visit', function () {
+      stubGetItem.withArgs('adk_dpt_analytics').returns(undefined);
+      stubSetItem.returns(undefined);
+      let source = getUmtSource('http://lander.com/index.html?utm_campaign=new_campaign&utm_source=adkernel&utm_medium=email&utm_c1=1&utm_c2=2&utm_c3=3&utm_c4=4&utm_c5=5');
+      expect(source).to.be.eql(CAMPAIGN);
+    });
+  });
 
   describe('ExpiringQueue', function () {
     let timer;
@@ -317,7 +317,7 @@ describe('', function () {
       expect(ajaxStub.calledOnce).to.be.equal(true);
       let firstCallArgs0 = ajaxStub.firstCall.args[0];
       ev = JSON.parse(firstCallArgs0);
-      console.log('AUCTION END EVENT SHAPE ' + JSON.stringify(ev));
+      // console.log('AUCTION END EVENT SHAPE ' + JSON.stringify(ev));
       expect(ev[6]).to.be.eql({
         connId: 777,
         domain: 'localhost',
