@@ -80,8 +80,6 @@ export const spec = {
 
     if (deepAccess(validBidRequests[0], 'userId.tdid')) {
       payload.tdid = validBidRequests[0].userId.tdid;
-    } else if (deepAccess(validBidRequests[0], 'crumbs.tdid')) {
-      payload.tdid = validBidRequests[0].crumbs.tdid;
     }
 
     if (validBidRequests[0].params.referrer) {

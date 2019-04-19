@@ -313,19 +313,6 @@ describe('SonobiBidAdapter', function () {
       delete bidRequest[1].userId;
     })
 
-    it('should return a properly formatted request with unified id as tdid', function () {
-      delete bidRequest[0].params.tdid;
-      delete bidRequest[1].params.tdid;
-      bidRequest[0].crumbs = {'tdid': 'td-abcd-efg-0101'};
-      bidRequest[1].crumbs = {'tdid': 'td-abcd-efg-0101'};
-      const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
-      expect(bidRequests.url).to.equal('https://apex.go.sonobi.com/trinity.json');
-      expect(bidRequests.method).to.equal('GET');
-      expect(bidRequests.data.ref).not.to.be.empty;
-      expect(bidRequests.data.s).not.to.be.empty;
-      expect(bidRequests.data.tdid).to.equal('td-abcd-efg-0101');
-    });
-
     it('should return a properly formatted request with unified id from User ID as tdid', function () {
       delete bidRequest[0].params.tdid;
       delete bidRequest[1].params.tdid;
