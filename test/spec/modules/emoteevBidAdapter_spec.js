@@ -691,10 +691,10 @@ describe('emoteevBidAdapter', function () {
           },
         };
         spec.isBidRequestValid(validBidRequest);
-        sinon.assert.calledOnce(utils.triggerPixel);
+        sinon.assert.notCalled(utils.triggerPixel);
         sinon.assert.notCalled(pubCommonId.getCookie);
-        sinon.assert.calledOnce(config.getConfig);
-        sinon.assert.calledOnce(utils.getParameterByName);
+        sinon.assert.notCalled(config.getConfig);
+        sinon.assert.notCalled(utils.getParameterByName);
       });
       it('has intended side-effects', function () {
         const invalidBidRequest = {};

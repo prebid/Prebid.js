@@ -456,15 +456,7 @@ export const resolveDebug = (config, parameter) => {
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER],
-  isBidRequestValid: (bidRequest) => {
-    const isValid = isBidRequestValid(bidRequest);
-    if (isValid) {
-      triggerPixel(url.format(onAdapterCalled(
-        resolveEnv(config.getConfig(), getParameterByName('emoteevEnv')),
-        bidRequest)))
-    }
-    return isValid;
-  },
+  isBidRequestValid: isBidRequestValid,
   buildRequests: (validBidRequests, bidderRequest) =>
     buildRequests(
       resolveEnv(config.getConfig(), getParameterByName('emoteevEnv')),
