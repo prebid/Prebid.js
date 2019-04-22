@@ -82,7 +82,7 @@ function lookupIabConsent({onSuccess, onError, onEvent}) {
     if (success) {
       onEvent(tcfData);
       if (tcfData.gdprApplies === false || tcfData.eventStatus === 'tcloaded' || tcfData.eventStatus === 'useractioncomplete') {
-        processCmpData(tcfData, {onSuccess, onError});
+        __tcfapi('getCustomVendorConsents', 2, customVendorConsents => processCmpData(tcfData, {onSuccess, onError}, customVendorConsents));
       }
     } else {
       onError('CMP unable to register callback function.  Please check CMP setup.');
@@ -276,7 +276,7 @@ export const requestBidsHook = timedAuctionHook('gdpr', function requestBidsHook
  * If it's bad, we call `onError`
  * If it's good, then we store the value and call `onSuccess`
  */
-function processCmpData(consentObject, {onSuccess, onError}) {
+function processCmpData(consentObject, {onSuccess, onError}, customVendorConsents) {
   function checkData() {
     // if CMP does not respond with a gdprApplies boolean, use defaultGdprScope (gdprScope)
     const gdprApplies = consentObject && typeof consentObject.gdprApplies === 'boolean' ? consentObject.gdprApplies : gdprScope;
@@ -295,7 +295,7 @@ function processCmpData(consentObject, {onSuccess, onError}) {
   if (checkData()) {
     onError(`CMP returned unexpected value during lookup process.`, consentObject);
   } else {
-    onSuccess(storeConsentData(consentObject));
+    onSuccess(storeConsentData(consentObject, customVendorConsents));
   }
 }
 
@@ -303,10 +303,11 @@ function processCmpData(consentObject, {onSuccess, onError}) {
  * Stores CMP data locally in module to make information available in adaptermanager.js for later in the auction
  * @param {object} cmpConsentObject required; an object representing user's consent choices (can be undefined in certain use-cases for this function only)
  */
-function storeConsentData(cmpConsentObject) {
+function storeConsentData(cmpConsentObject, customVendorConsents) {
   consentData = {
     consentString: (cmpConsentObject) ? cmpConsentObject.tcString : undefined,
     vendorData: (cmpConsentObject) || undefined,
+    customVendorConsents: customVendorConsents,
     gdprApplies: cmpConsentObject && typeof cmpConsentObject.gdprApplies === 'boolean' ? cmpConsentObject.gdprApplies : gdprScope
   };
   if (cmpConsentObject && cmpConsentObject.addtlConsent && isStr(cmpConsentObject.addtlConsent)) {

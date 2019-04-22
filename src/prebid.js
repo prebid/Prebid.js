@@ -290,6 +290,36 @@ $$PREBID_GLOBAL$$.getAdserverTargetingForAdUnitCodeStr = function (adunitCode) {
 };
 
 /**
+ * This function returns the bid requested
+ * @alias module:pbjs.getBidsRequested
+ * @return {Object}            map | object that contains the bidsRequested
+ */
+$$PREBID_GLOBAL$$.getBidsRequested = function () {
+  logInfo('Invoking $$PREBID_GLOBAL$$.getBidsRequested', arguments);
+  return auctionManager.getBidsRequested();
+};
+
+/**
+ * This function returns the USP consent data
+ * @alias module:pbjs.getUSPConsentData
+ * @return {Object}            map | object that contains the usp consent data
+ */
+$$PREBID_GLOBAL$$.getUSPConsentData = function () {
+  logInfo('Invoking $$PREBID_GLOBAL$$.getUSPConsentData', arguments);
+  return uspDataHandler.getConsentData();
+};
+
+/**
+ * This function returns the USP consent data
+ * @alias module:pbjs.getGDPRConsentData
+ * @return {Object}            map | object that contains the gdpr consent data
+ */
+$$PREBID_GLOBAL$$.getGDPRConsentData = function () {
+  logInfo('Invoking $$PREBID_GLOBAL$$.getGDPRConsentData', arguments);
+  return gdprDataHandler.getConsentData();
+};
+
+/**
  * This function returns the query string targeting parameters available at this moment for a given ad unit. Note that some bidder's response may not have been received if you call this function too quickly after the requests are sent.
  * @param adUnitCode {string} adUnitCode to get the bid responses for
  * @alias module:pbjs.getHighestUnusedBidResponseForAdUnitCode
@@ -1022,6 +1052,7 @@ $$PREBID_GLOBAL$$.getConfig = config.getAnyConfig;
 $$PREBID_GLOBAL$$.readConfig = config.readAnyConfig;
 $$PREBID_GLOBAL$$.mergeConfig = config.mergeConfig;
 $$PREBID_GLOBAL$$.mergeBidderConfig = config.mergeBidderConfig;
+$$PREBID_GLOBAL$$.getBidderConfig = config.getBidderConfig;
 
 /**
  * Set Prebid config options.

@@ -72,6 +72,8 @@
     "PRICE_BUCKET": "hb_pb",
     "SIZE": "hb_size",
     "DEAL": "hb_deal",
+    "DEALPRIORTY": "hb_deal_priority",
+    "DEALBIDDER": "hb_deal_bidder",
     "SOURCE": "hb_source",
     "FORMAT": "hb_format",
     "UUID": "hb_uuid",
@@ -111,6 +113,11 @@
     "salePrice": "hb_native_saleprice",
     "rendererUrl": "hb_renderer_url",
     "adTemplate": "hb_adTemplate"
+  },
+  "BIDDERS" : {
+    "NEWSIQ": "newsconnect",
+    "NEWSIQPRIORITYDEAL": "newsconnectPriorityDeal",
+    "AppNexus": "appnexus"
   },
   "S2S": {
     "SRC": "s2s",

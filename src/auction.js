@@ -72,6 +72,7 @@ import {
   logInfo,
   logMessage,
   logWarn,
+  logDetails,
   parseUrl,
   timestamp
 } from './utils.js';
@@ -256,6 +257,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
     let bidRequests = metrics.measureTime('requestBids.makeRequests',
       () => adapterManager.makeBidRequests(_adUnits, _auctionStart, _auctionId, _timeout, _labels, ortb2Fragments, metrics));
     logInfo(`Bids Requested for Auction with id: ${_auctionId}`, bidRequests);
+    logDetails(JSON.stringify(bidRequests, null, 4));
 
     metrics.checkpoint('callBids')
 
@@ -283,8 +285,6 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
     let call = {
       bidRequests,
       run: () => {
-        startAuctionTimer();
-
         _auctionStatus = AUCTION_IN_PROGRESS;
 
         events.emit(CONSTANTS.EVENTS.AUCTION_INIT, getProperties());
@@ -314,6 +314,8 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
             }
           }
         }, _timeout, onTimelyResponse, ortb2Fragments);
+
+          startAuctionTimer();
       }
     };
 
@@ -871,6 +873,7 @@ function defaultAdserverTargeting() {
     createKeyVal(TARGETING_KEYS.PRICE_BUCKET, getPriceByGranularity()),
     createKeyVal(TARGETING_KEYS.SIZE, 'size'),
     createKeyVal(TARGETING_KEYS.DEAL, 'dealId'),
+      createKeyVal(TARGETING_KEYS.DEALPRIORTY, 'dealPriority'),
     createKeyVal(TARGETING_KEYS.SOURCE, 'source'),
     createKeyVal(TARGETING_KEYS.FORMAT, 'mediaType'),
     createKeyVal(TARGETING_KEYS.ADOMAIN, getAdvertiserDomain()),
@@ -937,7 +940,7 @@ export function getKeyValueTargetingPairs(bidderCode, custBidObj, {index = aucti
   }
 
   // set native key value targeting
-  if (FEATURES.NATIVE && custBidObj['native']) {
+  if (FEATURES.NATIVE && custBidObj['native'] && (!config.getConfig('targetingControls.skipNativeTargeting'))) {
     keyValues = Object.assign({}, keyValues, getNativeTargeting(custBidObj));
   }
 
@@ -978,6 +981,13 @@ function setKeys(keyValues, bidderSettings, custBidObj, bidReq) {
       keyValues[key] = value;
     }
   });
+
+  if (keyValues[CONSTANTS.TARGETING_KEYS.DEAL]) {
+    keyValues[CONSTANTS.TARGETING_KEYS.DEALBIDDER] = keyValues[CONSTANTS.TARGETING_KEYS.BIDDER];
+    if ((keyValues[CONSTANTS.TARGETING_KEYS.DEALBIDDER] === CONSTANTS.BIDDERS.NEWSIQ) && (keyValues[CONSTANTS.TARGETING_KEYS.DEALPRIORTY] === 10)) {
+      keyValues[CONSTANTS.TARGETING_KEYS.DEALBIDDER] = CONSTANTS.BIDDERS.NEWSIQPRIORITYDEAL;
+    }
+  }
 
   return keyValues;
 }
