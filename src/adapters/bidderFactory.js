@@ -1,15 +1,17 @@
-import Adapter from 'src/adapter';
-import adaptermanager from 'src/adaptermanager';
-import { config } from 'src/config';
-import bidfactory from 'src/bidfactory';
-import { userSync } from 'src/userSync';
-import { nativeBidIsValid } from 'src/native';
-import { isValidVideoBid } from 'src/video';
-import CONSTANTS from 'src/constants.json';
-import events from 'src/events';
+import Adapter from '../adapter';
+import adapterManager from '../adapterManager';
+import { config } from '../config';
+import { createBid } from '../bidfactory';
+import { userSync } from '../userSync';
+import { nativeBidIsValid } from '../native';
+import { isValidVideoBid } from '../video';
+import CONSTANTS from '../constants.json';
+import events from '../events';
 import includes from 'core-js/library/fn/array/includes';
-
-import { logWarn, logError, parseQueryStringParameters, delayExecution, parseSizesInput, getBidderRequest } from 'src/utils';
+import { ajax } from '../ajax';
+import { logWarn, logError, parseQueryStringParameters, delayExecution, parseSizesInput, getBidderRequest, flatten, uniques, timestamp, setDataInLocalStorage, getDataFromLocalStorage, deepAccess } from '../utils';
+import { ADPOD } from '../mediaTypes';
+import { getHook } from '../hook';
 
 /**
  * This file aims to support Adapters during the Prebid 0.x -> 1.x transition.
@@ -98,6 +100,10 @@ import { logWarn, logError, parseQueryStringParameters, delayExecution, parseSiz
  * @property {number} height The height of the ad, in pixels.
  * @property {number} width The width of the ad, in pixels.
  *
+ * @property {object} [native] Object for storing native creative assets
+ * @property {object} [video] Object for storing video response data
+ * @property {object} [meta] Object for storing bid meta data
+ * @property {string} [meta.iabSubCatId] The IAB subcategory ID
  * @property [Renderer] renderer A Renderer which can be used as a default for this bid,
  *   if the publisher doesn't override it. This is only relevant for Outstream Video bids.
  */
@@ -123,10 +129,12 @@ import { logWarn, logError, parseQueryStringParameters, delayExecution, parseSiz
 // common params for all mediaTypes
 const COMMON_BID_RESPONSE_KEYS = ['requestId', 'cpm', 'ttl', 'creativeId', 'netRevenue', 'currency'];
 
+const DEFAULT_REFRESHIN_DAYS = 1;
+
 /**
  * Register a bidder with prebid, using the given spec.
  *
- * If possible, Adapter modules should use this function instead of adaptermanager.registerBidAdapter().
+ * If possible, Adapter modules should use this function instead of adapterManager.registerBidAdapter().
  *
  * @param {BidderSpec} spec An object containing the bare-bones functions we need to make a Bidder.
  */
@@ -136,13 +144,13 @@ export function registerBidder(spec) {
     : undefined;
   function putBidder(spec) {
     const bidder = newBidder(spec);
-    adaptermanager.registerBidAdapter(bidder, spec.code, mediaTypes);
+    adapterManager.registerBidAdapter(bidder, spec.code, mediaTypes);
   }
 
   putBidder(spec);
   if (Array.isArray(spec.aliases)) {
     spec.aliases.forEach(alias => {
-      adaptermanager.aliasRegistry[alias] = spec.code;
+      adapterManager.aliasRegistry[alias] = spec.code;
       putBidder(Object.assign({}, spec, { code: alias }));
     });
   }
@@ -291,7 +299,7 @@ export function newBidder(spec) {
           function addBidUsingRequestMap(bid) {
             const bidRequest = bidRequestMap[bid.requestId];
             if (bidRequest) {
-              const prebidBid = Object.assign(bidfactory.createBid(CONSTANTS.STATUS.GOOD, bidRequest), bid);
+              const prebidBid = Object.assign(createBid(CONSTANTS.STATUS.GOOD, bidRequest), bid);
               addBidWithCode(bidRequest.adUnitCode, prebidBid);
             } else {
               logWarn(`Bidder ${spec.code} made bid for unknown request ID: ${bid.requestId}. Ignoring.`);
@@ -342,9 +350,78 @@ export function newBidder(spec) {
   }
 }
 
+export function preloadBidderMappingFile(fn, adUnits) {
+  if (!config.getConfig('adpod.brandCategoryExclusion')) {
+    return fn.call(this, adUnits);
+  }
+  let adPodBidders = adUnits
+    .filter((adUnit) => deepAccess(adUnit, 'mediaTypes.video.context') === ADPOD)
+    .map((adUnit) => adUnit.bids.map((bid) => bid.bidder))
+    .reduce(flatten, [])
+    .filter(uniques);
+
+  adPodBidders.forEach(bidder => {
+    let bidderSpec = adapterManager.getBidAdapter(bidder);
+    if (bidderSpec.getSpec().getMappingFileInfo) {
+      let info = bidderSpec.getSpec().getMappingFileInfo();
+      let refreshInDays = (info.refreshInDays) ? info.refreshInDays : DEFAULT_REFRESHIN_DAYS;
+      let key = (info.localStorageKey) ? info.localStorageKey : bidderSpec.getSpec().code;
+      let mappingData = getDataFromLocalStorage(key);
+      if (!mappingData || timestamp() < mappingData.lastUpdated + refreshInDays * 24 * 60 * 60 * 1000) {
+        ajax(info.url,
+          {
+            success: (response) => {
+              try {
+                response = JSON.parse(response);
+                let mapping = {
+                  lastUpdated: timestamp(),
+                  mapping: response.mapping
+                }
+                setDataInLocalStorage(key, JSON.stringify(mapping));
+              } catch (error) {
+                logError(`Failed to parse ${bidder} bidder translation mapping file`);
+              }
+            },
+            error: () => {
+              logError(`Failed to load ${bidder} bidder translation file`)
+            }
+          },
+        );
+      }
+    }
+  });
+  fn.call(this, adUnits);
+}
+
+getHook('checkAdUnitSetup').before(preloadBidderMappingFile);
+
+/**
+ * Reads the data stored in localstorage and returns iab subcategory
+ * @param {string} bidderCode bidderCode
+ * @param {string} category bidders category
+ */
+export function getIabSubCategory(bidderCode, category) {
+  let bidderSpec = adapterManager.getBidAdapter(bidderCode);
+  if (bidderSpec.getSpec().getMappingFileInfo) {
+    let info = bidderSpec.getSpec().getMappingFileInfo();
+    let key = (info.localStorageKey) ? info.localStorageKey : bidderSpec.getBidderCode();
+    let data = getDataFromLocalStorage(key);
+    if (data) {
+      try {
+        data = JSON.parse(data);
+      } catch (error) {
+        logError(`Failed to parse ${bidderCode} mapping data stored in local storage`);
+      }
+      return (data.mapping[category]) ? data.mapping[category] : null;
+    }
+  }
+}
+
 // check that the bid has a width and height set
 function validBidSize(adUnitCode, bid, bidRequests) {
-  if ((bid.width || bid.width === 0) && (bid.height || bid.height === 0)) {
+  if ((bid.width || parseInt(bid.width, 10) === 0) && (bid.height || parseInt(bid.height, 10) === 0)) {
+    bid.width = parseInt(bid.width, 10);
+    bid.height = parseInt(bid.height, 10);
     return true;
   }
 
@@ -357,8 +434,8 @@ function validBidSize(adUnitCode, bid, bidRequests) {
   // response that does not explicitly set width or height
   if (parsedSizes.length === 1) {
     const [ width, height ] = parsedSizes[0].split('x');
-    bid.width = width;
-    bid.height = height;
+    bid.width = parseInt(width, 10);
+    bid.height = parseInt(height, 10);
     return true;
   }
 

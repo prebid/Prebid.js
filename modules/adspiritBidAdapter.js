@@ -1,5 +1,5 @@
-import * as utils from 'src/utils';
-import {registerBidder} from 'src/adapters/bidderFactory';
+import * as utils from '../src/utils';
+import {registerBidder} from '../src/adapters/bidderFactory';
 const RTB_URL = '/rtb/getbid.php?rtbprovider=prebid';
 const SCRIPT_URL = '/adasync.min.js';
 export const spec = {

@@ -1,4 +1,4 @@
-import { registerBidder } from 'src/adapters/bidderFactory';
+import { registerBidder } from '../src/adapters/bidderFactory';
 
 const VERSION = '3.0.1';
 const BIDDER_CODE = 'sharethrough';
@@ -12,12 +12,13 @@ export const sharethroughAdapterSpec = {
   buildRequests: (bidRequests, bidderRequest) => {
     return bidRequests.map(bid => {
       let query = {
-        bidId: bid.bidId,
         placement_key: bid.params.pkey,
-        hbVersion: '$prebid.version$',
-        strVersion: VERSION,
+        bidId: bid.bidId,
+        consent_required: false,
+        instant_play_capable: canAutoPlayHTML5Video(),
         hbSource: 'prebid',
-        consent_required: false
+        hbVersion: '$prebid.version$',
+        strVersion: VERSION
       };
 
       if (bidderRequest && bidderRequest.gdprConsent && bidderRequest.gdprConsent.consentString) {
@@ -122,7 +123,7 @@ function generateAd(body, req) {
       <script>
         (function() {
           if (!(window.STR && window.STR.Tag) && !(window.top.STR && window.top.STR.Tag)) {
-            const sfp_js = document.createElement('script');
+            var sfp_js = document.createElement('script');
             sfp_js.src = "//native.sharethrough.com/assets/sfp.js";
             sfp_js.type = 'text/javascript';
             sfp_js.charset = 'utf-8';
@@ -146,6 +147,27 @@ function b64EncodeUnicode(str) {
       function toSolidBytes(match, p1) {
         return String.fromCharCode('0x' + p1);
       }));
+}
+
+function canAutoPlayHTML5Video() {
+  const userAgent = navigator.userAgent;
+  if (!userAgent) return false;
+
+  const isAndroid = /Android/i.test(userAgent);
+  const isiOS = /iPhone|iPad|iPod/i.test(userAgent);
+  const chromeVersion = parseInt((/Chrome\/([0-9]+)/.exec(userAgent) || [0, 0])[1]);
+  const chromeiOSVersion = parseInt((/CriOS\/([0-9]+)/.exec(userAgent) || [0, 0])[1]);
+  const safariVersion = parseInt((/Version\/([0-9]+)/.exec(userAgent) || [0, 0])[1]);
+
+  if (
+    (isAndroid && chromeVersion >= 53) ||
+    (isiOS && (safariVersion >= 10 || chromeiOSVersion >= 53)) ||
+    !(isAndroid || isiOS)
+  ) {
+    return true;
+  } else {
+    return false;
+  }
 }
 
 registerBidder(sharethroughAdapterSpec);

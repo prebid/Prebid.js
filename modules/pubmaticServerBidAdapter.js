@@ -188,6 +188,7 @@ function cookieSyncCallBack(response, XMLReqObj) {
       } else {
         utils.logWarn(bidder.bidder + ': Please provide valid user sync type.');
       }
+      owpbjs.triggerUserSyncs();
     }
   });
 }

@@ -3,8 +3,9 @@ import { isValidVideoBid } from 'src/video';
 describe('video.js', function () {
   it('validates valid instream bids', function () {
     const bid = {
-      adId: '123abc',
-      vastUrl: 'http://www.example.com/vastUrl'
+      adId: '456xyz',
+      vastUrl: 'http://www.example.com/vastUrl',
+      requestId: '123abc'
     };
     const bidRequests = [{
       bids: [{
@@ -21,7 +22,7 @@ describe('video.js', function () {
 
   it('catches invalid instream bids', function () {
     const bid = {
-      adId: '123abc'
+      requestId: '123abc'
     };
     const bidRequests = [{
       bids: [{
@@ -51,7 +52,7 @@ describe('video.js', function () {
 
   it('validates valid outstream bids', function () {
     const bid = {
-      adId: '123abc',
+      requestId: '123abc',
       renderer: {
         url: 'render.url',
         render: () => true,
@@ -72,7 +73,7 @@ describe('video.js', function () {
 
   it('catches invalid outstream bids', function () {
     const bid = {
-      adId: '123abc'
+      requestId: '123abc'
     };
     const bidRequests = [{
       bids: [{

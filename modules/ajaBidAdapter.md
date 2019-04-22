@@ -11,11 +11,11 @@ Connects to Aja exchange for bids.
 Aja bid adapter supports Banner and Outstream Video.
 
 # Test Parameters
-```
+```js
 var adUnits = [
   // Banner adUnit
   {
-    code: 'banner-div',
+    code: 'prebid_banner',
     mediaTypes: {
       banner: {
         sizes: [
@@ -26,13 +26,13 @@ var adUnits = [
     bids: [{
       bidder: 'aja',
       params: {
-        asi: 'szs4htFiR'
+        asi: 'tk82gbLmg'
       }
     }]
   },
   // Video outstream adUnit
   {
-    code: 'video-outstream',
+    code: 'prebid_video',
     mediaTypes: {
       video: {
         context: 'outstream',
@@ -42,7 +42,45 @@ var adUnits = [
     bids: [{
       bidder: 'aja',
       params: {
-        asi: 'Kp2O2tFig'
+        asi: '1-KwEG_iR'
+      }
+    }]
+  },
+  // Native adUnit
+  {
+    code: 'prebid_native',
+    mediaTypes: {
+      native: {
+        image: {
+          required: true,
+          sendId: false
+        },
+        title: {
+          required: true,
+          sendId: true
+        },
+        sponsoredBy: {
+          required: false,
+          sendId: true
+        },
+        clickUrl: {
+          required: false,
+          sendId: true
+        },
+        body: {
+          required: false,
+          sendId: true
+        },
+        icon: {
+          required: false,
+          sendId: false
+        }
+      }
+    },
+    bids: [{
+      bidder: 'aja',
+      params: {
+        asi: 'qxueUGliR'
       }
     }]
   }

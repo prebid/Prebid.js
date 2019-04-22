@@ -9,7 +9,6 @@
     "ADSERVER_TARGETING": "adserverTargeting",
     "BD_SETTING_STANDARD": "standard"
   },
-  "REPO_AND_VERSION": "%%REPO_AND_VERSION%%",
   "DEBUG_MODE": "pbjs_debug",
   "STATUS": {
     "GOOD": 1,
@@ -63,19 +62,28 @@
     "SIZE": "hb_size",
     "DEAL": "hb_deal",
     "SOURCE": "hb_source",
-    "FORMAT": "hb_format"
+    "FORMAT": "hb_format",
+    "UUID": "hb_uuid",
+    "CACHE_ID": "hb_cache_id"
   },
   "NATIVE_KEYS": {
-    "title": "hb_native_title",
-    "body": "hb_native_body",
-    "body2": "hb_native_body2",
-    "privacyLink": "hb_native_privacy",
-    "sponsoredBy": "hb_native_brand",
-    "image": "hb_native_image",
-    "icon": "hb_native_icon",
-    "clickUrl": "hb_native_linkurl",
-    "cta": "hb_native_cta",
-    "rating": "hb_native_rating"
+    "title": "pwt_native_title",
+    "body": "pwt_native_body",
+    "body2": "pwt_native_body2",
+    "privacyLink": "pwt_native_privacy",
+    "sponsoredBy": "pwt_native_brand",
+    "image": "pwt_native_image",
+    "icon": "pwt_native_icon",
+    "clickUrl": "pwt_native_linkurl",
+    "displayUrl": "pwt_native_displayurl",
+    "cta": "pwt_native_cta",
+    "rating": "pwt_native_rating",
+    "address": "pwt_native_address",
+    "downloads": "pwt_native_downloads",
+    "likes": "pwt_native_likes",
+    "phone": "pwt_native_phone",
+    "price": "pwt_native_price",
+    "salePrice": "pwt_native_saleprice"
   },
   "S2S" : {
     "SRC" : "s2s",

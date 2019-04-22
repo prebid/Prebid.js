@@ -35,13 +35,15 @@ Please reach out to pmp@rtbhouse.com to receive your own
                 mediaTypes: {
                     native: {
                         title: {
-                            required: true
+                            required: true,
+                            len: 25
                         },
                         image: {
                             required: true
                         },
                         body: {
-                            required: true
+                            required: true,
+                            len: 90
                         }
                     }
                 },

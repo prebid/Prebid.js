@@ -12,6 +12,15 @@ describe('PubMatic adapter', function () {
   let emptyBidResponse;
   let firstResponse, secoundResponse;
   let firstBid, secoundBid;
+  let nativeBidRequests;
+  let nativeBidRequestsWithAllParams;
+  let nativeBidRequestsWithoutAsset;
+  let nativeBidRequestsWithRequiredParam;
+  let nativeBidResponse;
+  let validnativeBidImpression;
+  let validnativeBidImpressionWithRequiredParam;
+  let nativeBidImpressionWithoutRequiredParams;
+  let validnativeBidImpressionWithAllParams;
 
   beforeEach(() => {
     firstBid = {
@@ -54,10 +63,13 @@ describe('PubMatic adapter', function () {
         'impid': '23acc48ad47af5',
         'price': 1.3,
         'adm': 'image3.pubmatic.com Layer based creative',
+        'adomain': ['blackrock.com'],
         'h': 250,
         'w': 300,
         'ext': {
-          'deal_channel': 6
+          'deal_channel': 6,
+          'advid': 976,
+          'dspid': 123
         }
       }]
     };
@@ -67,10 +79,13 @@ describe('PubMatic adapter', function () {
         'impid': '22bddb28db77e',
         'price': 1.7,
         'adm': 'image3.pubmatic.com Layer based creative',
+        'adomain': ['hivehome.com'],
         'h': 250,
         'w': 300,
         'ext': {
-          'deal_channel': 5
+          'deal_channel': 5,
+          'advid': 832,
+          'dspid': 422
         }
       }]
     };
@@ -155,6 +170,145 @@ describe('PubMatic adapter', function () {
     }
     ];
 
+    nativeBidRequests = [{
+      code: '/19968336/prebid_native_example_1',
+      sizes: [
+        [300, 250]
+      ],
+      mediaTypes: {
+        native: {
+          title: {
+            required: true,
+            length: 80
+          },
+          image: {
+            required: true,
+            sizes: [300, 250]
+          },
+          sponsoredBy: {
+            required: true
+          }
+        }
+      },
+      nativeParams: {
+        title: { required: true, length: 80 },
+        image: { required: true, sizes: [300, 250] },
+        sponsoredBy: { required: true }
+      },
+      bidder: 'pubmatic',
+      params: {
+        publisherId: '5670',
+        adSlot: '/43743431/NativeAutomationPrebid@1x1',
+      },
+      bidId: '2a5571261281d4',
+      requestId: 'B68287E1-DC39-4B38-9790-FE4F179739D6',
+      bidderRequestId: '1c56ad30b9b8ca8',
+    }];
+
+    nativeBidRequestsWithAllParams = [{
+      code: '/19968336/prebid_native_example_1',
+      sizes: [
+        [300, 250]
+      ],
+      mediaTypes: {
+        native: {
+          title: {required: true, len: 80, ext: {'title1': 'title2'}},
+          icon: {required: true, sizes: [50, 50], ext: {'icon1': 'icon2'}},
+          image: {required: true, sizes: [728, 90], ext: {'image1': 'image2'}, 'mimes': ['image/png', 'image/gif']},
+          sponsoredBy: {required: true, len: 10, ext: {'sponsor1': 'sponsor2'}},
+          body: {required: true, len: 10, ext: {'body1': 'body2'}},
+          rating: {required: true, len: 10, ext: {'rating1': 'rating2'}},
+          likes: {required: true, len: 10, ext: {'likes1': 'likes2'}},
+          downloads: {required: true, len: 10, ext: {'downloads1': 'downloads2'}},
+          price: {required: true, len: 10, ext: {'price1': 'price2'}},
+          saleprice: {required: true, len: 10, ext: {'saleprice1': 'saleprice2'}},
+          phone: {required: true, len: 10, ext: {'phone1': 'phone2'}},
+          address: {required: true, len: 10, ext: {'address1': 'address2'}},
+          desc2: {required: true, len: 10, ext: {'desc21': 'desc22'}},
+          displayurl: {required: true, len: 10, ext: {'displayurl1': 'displayurl2'}}
+        }
+      },
+      nativeParams: {
+        title: {required: true, len: 80, ext: {'title1': 'title2'}},
+        icon: {required: true, sizes: [50, 50], ext: {'icon1': 'icon2'}},
+        image: {required: true, sizes: [728, 90], ext: {'image1': 'image2'}, 'mimes': ['image/png', 'image/gif']},
+        sponsoredBy: {required: true, len: 10, ext: {'sponsor1': 'sponsor2'}},
+        body: {required: true, len: 10, ext: {'body1': 'body2'}},
+        rating: {required: true, len: 10, ext: {'rating1': 'rating2'}},
+        likes: {required: true, len: 10, ext: {'likes1': 'likes2'}},
+        downloads: {required: true, len: 10, ext: {'downloads1': 'downloads2'}},
+        price: {required: true, len: 10, ext: {'price1': 'price2'}},
+        saleprice: {required: true, len: 10, ext: {'saleprice1': 'saleprice2'}},
+        phone: {required: true, len: 10, ext: {'phone1': 'phone2'}},
+        address: {required: true, len: 10, ext: {'address1': 'address2'}},
+        desc2: {required: true, len: 10, ext: {'desc21': 'desc22'}},
+        displayurl: {required: true, len: 10, ext: {'displayurl1': 'displayurl2'}}
+      },
+      bidder: 'pubmatic',
+      params: {
+        publisherId: '5670',
+        adSlot: '/43743431/NativeAutomationPrebid@1x1',
+      },
+      bidId: '2a5571261281d4',
+      requestId: 'B68287E1-DC39-4B38-9790-FE4F179739D6',
+      bidderRequestId: '1c56ad30b9b8ca8',
+    }];
+
+    nativeBidRequestsWithoutAsset = [{
+      code: '/19968336/prebid_native_example_1',
+      sizes: [
+        [300, 250]
+      ],
+      mediaTypes: {
+        native: {
+          type: 'image'
+        }
+      },
+      nativeParams: {
+        title: { required: true },
+        image: { required: true },
+        sponsoredBy: { required: true },
+        clickUrl: { required: true }
+      },
+      bidder: 'pubmatic',
+      params: {
+        publisherId: '5670',
+        adSlot: '/43743431/NativeAutomationPrebid@1x1',
+      }
+    }];
+
+    nativeBidRequestsWithRequiredParam = [{
+      code: '/19968336/prebid_native_example_1',
+      sizes: [
+        [300, 250]
+      ],
+      mediaTypes: {
+        native: {
+          title: {
+            required: false,
+            length: 80
+          },
+          image: {
+            required: false,
+            sizes: [300, 250]
+          },
+          sponsoredBy: {
+            required: true
+          }
+        }
+      },
+      nativeParams: {
+        title: { required: false, length: 80 },
+        image: { required: false, sizes: [300, 250] },
+        sponsoredBy: { required: true }
+      },
+      bidder: 'pubmatic',
+      params: {
+        publisherId: '5670',
+        adSlot: '/43743431/NativeAutomationPrebid@1x1',
+      }
+    }];
+
     bidResponses = {
       'body': {
         'id': '93D3BAD6-E2E2-49FB-9D89-920B1761C865',
@@ -164,6 +318,52 @@ describe('PubMatic adapter', function () {
 
     emptyBidResponse = {
       'body': ''
+    };
+
+    nativeBidResponse = {
+      'body': {
+        'id': '1544691825939',
+        'seatbid': [{
+          'bid': [{
+            'id': 'B68287E1-DC39-4B38-9790-FE4F179739D6',
+            'impid': '2a5571261281d4',
+            'price': 0.01,
+            'adm': "{\"native\":{\"assets\":[{\"id\":1,\"title\":{\"text\":\"Native Test Title\"}},{\"id\":2,\"img\":{\"h\":627,\"url\":\"http://stagingpub.net/native_ads/PM-Native-Ad-1200x627.png\",\"w\":1200}},{\"data\":{\"value\":\"Sponsored By PubMatic\"},\"id\":4}],\"imptrackers\":[\"http://imptracker.com/main/9bde02d0-6017-11e4-9df7-005056967c35\",\"http://172.16.4.213/AdServer/AdDisplayTrackerServlet?operId=1&pubId=5890&siteId=5892&adId=6016&adType=12&adServerId=243&kefact=0.010000&kaxefact=0.010000&kadNetFrequecy=0&kadwidth=0&kadheight=0&kadsizeid=7&kltstamp=1544692761&indirectAdId=0&adServerOptimizerId=2&ranreq=0.1&kpbmtpfact=1.000000&dcId=1&tldId=0&passback=0&svr=MADS1107&ekefact=GSQSXOLKDgBAvRnoiNj0LxtpAnNEO30u1ZI5sITloOsP7gzh&ekaxefact=GSQSXAXLDgD0fOZLCjgbnVJiyS3D65dqDkxfs2ArpC3iugXw&ekpbmtpfact=GSQSXCDLDgB5mcooOvXtCKmx7TnNDJDY2YuHFOL3o9ceoU4H&crID=campaign111&lpu=advertiserdomain.com&ucrid=273354366805642829&campaignId=16981&creativeId=0&pctr=0.000000&wDSPByrId=511&wDspId=6&wbId=0&wrId=0&wAdvID=1&isRTB=1&rtbId=C09BB577-B8C1-4C3E-A0FF-73F6F631C80A&imprId=B68287E1-DC39-4B38-9790-FE4F179739D6&oid=B68287E1-DC39-4B38-9790-FE4F179739D6&pageURL=http%3A%2F%2Ftest.com%2FTestPages%2Fnativead.html\"],\"jstracker\":\"<script src='http:\\\\/\\\\/stagingpub.net\\\\/native\\\\/tempReseponse.js'><script src='http:\\\\/\\\\/stagingpub.net\\\\/native\\\\/tempReseponse.js'>\",\"link\":{\"clicktrackers\":[\"http://clicktracker.com/main/9bde02d0-6017-11e4-9df7-005056967c35\",\"&pubId=5890&siteId=5892&adId=6016&kadsizeid=7&tldId=0&passback=0&campaignId=16981&creativeId=0&adServerId=243&impid=B68287E1-DC39-4B38-9790-FE4F179739D6\"],\"fallback\":\"http://www.pubmatic.com\",\"url\":\"http://www.pubmatic.com\"}}}",
+            'adomain': ['advertiserdomain.com'],
+            'cid': '16981',
+            'crid': 'campaign111',
+            'ext': {
+              'dspid': 6
+            }
+          }],
+          'seat': '527'
+        }],
+        'cur': 'USD'
+      }
+    };
+
+    validnativeBidImpression = {
+      'native': {
+        'request': '{"assets":[{"id":1,"required":1,"title":{"len":80}},{"id":2,"required":1,"img":{"type":3,"w":300,"h":250}},{"id":4,"required":1,"data":{"type":1}}]}'
+      }
+    };
+
+    nativeBidImpressionWithoutRequiredParams = {
+      'native': {
+        'request': '{"assets":[{"id":4,"required":1,"data":{"type":1}}]}'
+      }
+    };
+
+    validnativeBidImpressionWithRequiredParam = {
+      'native': {
+        'request': '{"assets":[{"id":1,"required":0,"title":{"len":80}},{"id":2,"required":0,"img":{"type":3,"w":300,"h":250}},{"id":4,"required":1,"data":{"type":1}}]}'
+      }
+    };
+
+    validnativeBidImpressionWithAllParams = {
+      native: {
+        'request': '{"assets":[{"id":1,"required":1,"title":{"len":80,"ext":{"title1":"title2"}}},{"id":3,"required":1,"img":{"type":1,"w":50,"h":50,"ext":{"icon1":"icon2"}}},{"id":2,"required":1,"img":{"type":3,"w":728,"h":90,"mimes":["image/png","image/gif"],"ext":{"image1":"image2"}}},{"id":4,"required":1,"data":{"type":1,"len":10,"ext":{"sponsor1":"sponsor2"}}},{"id":5,"required":1,"data":{"type":2,"len":10,"ext":{"body1":"body2"}}},{"id":13,"required":1,"data":{"type":3,"len":10,"ext":{"rating1":"rating2"}}},{"id":14,"required":1,"data":{"type":4,"len":10,"ext":{"likes1":"likes2"}}},{"id":15,"required":1,"data":{"type":5,"len":10,"ext":{"downloads1":"downloads2"}}},{"id":16,"required":1,"data":{"type":6,"len":10,"ext":{"price1":"price2"}}},{"id":17,"required":1,"data":{"type":7,"len":10,"ext":{"saleprice1":"saleprice2"}}},{"id":18,"required":1,"data":{"type":8,"len":10,"ext":{"phone1":"phone2"}}},{"id":19,"required":1,"data":{"type":9,"len":10,"ext":{"address1":"address2"}}},{"id":20,"required":1,"data":{"type":10,"len":10,"ext":{"desc21":"desc22"}}},{"id":21,"required":1,"data":{"type":11,"len":10,"ext":{"displayurl1":"displayurl2"}}}]}'
+      }
     };
   });
 
@@ -235,6 +435,12 @@ describe('PubMatic adapter', function () {
         expect(bidRequests).to.deep.equal(originalBidRequests);
       });
 
+      it('buildRequests function should not modify original nativebidRequests object', function () {
+        let originalBidRequests = utils.deepClone(nativeBidRequests);
+        let request = spec.buildRequests(nativeBidRequests);
+        expect(nativeBidRequests).to.deep.equal(originalBidRequests);
+      });
+
       it('Endpoint checking', function () {
   		  let request = spec.buildRequests(bidRequests);
         expect(request.url).to.equal('//hbopenbid.pubmatic.com/translator?source=prebid-client');
@@ -257,7 +463,7 @@ describe('PubMatic adapter', function () {
   		  expect(data.device.geo.lon).to.equal(parseFloat(bidRequests[0].params.lon)); // Lognitude
   		  expect(data.user.geo.lat).to.equal(parseFloat(bidRequests[0].params.lat)); // Latitude
   		  expect(data.user.geo.lon).to.equal(parseFloat(bidRequests[0].params.lon)); // Lognitude
-  		  expect(data.ext.wrapper.wv).to.equal(constants.REPO_AND_VERSION); // Wrapper Version
+  		  expect(data.ext.wrapper.wv).to.equal($$REPO_AND_VERSION$$); // Wrapper Version
   		  expect(data.ext.wrapper.transactionId).to.equal(bidRequests[0].transactionId); // Prebid TransactionId
   		  expect(data.ext.wrapper.wiid).to.equal(bidRequests[0].params.wiid); // OpenWrap: Wrapper Impression ID
   		  expect(data.ext.wrapper.profile).to.equal(parseInt(bidRequests[0].params.profId)); // OpenWrap: Wrapper Profile ID
@@ -446,7 +652,7 @@ describe('PubMatic adapter', function () {
   		  expect(data.device.geo.lon).to.equal(parseFloat(bidRequests[0].params.lon)); // Lognitude
   		  expect(data.user.geo.lat).to.equal(parseFloat(bidRequests[0].params.lat)); // Latitude
   		  expect(data.user.geo.lon).to.equal(parseFloat(bidRequests[0].params.lon)); // Lognitude
-  		  expect(data.ext.wrapper.wv).to.equal(constants.REPO_AND_VERSION); // Wrapper Version
+  		  expect(data.ext.wrapper.wv).to.equal($$REPO_AND_VERSION$$); // Wrapper Version
   		  expect(data.ext.wrapper.transactionId).to.equal(bidRequests[0].transactionId); // Prebid TransactionId
   		  expect(data.ext.wrapper.wiid).to.equal(bidRequests[0].params.wiid); // OpenWrap: Wrapper Impression ID
         expect(data.ext.wrapper.profile).to.equal(parseInt(bidRequests[0].params.profId)); // OpenWrap: Wrapper Profile ID
@@ -940,7 +1146,7 @@ describe('PubMatic adapter', function () {
         expect(data.device.geo.lon).to.equal(parseFloat(multipleMediaRequests[0].params.lon)); // Lognitude
         expect(data.user.geo.lat).to.equal(parseFloat(multipleMediaRequests[0].params.lat)); // Latitude
         expect(data.user.geo.lon).to.equal(parseFloat(multipleMediaRequests[0].params.lon)); // Lognitude
-        expect(data.ext.wrapper.wv).to.equal(constants.REPO_AND_VERSION); // Wrapper Version
+        expect(data.ext.wrapper.wv).to.equal($$REPO_AND_VERSION$$); // Wrapper Version
         expect(data.ext.wrapper.transactionId).to.equal(multipleMediaRequests[0].transactionId); // Prebid TransactionId
         expect(data.ext.wrapper.wiid).to.equal(multipleMediaRequests[0].params.wiid); // OpenWrap: Wrapper Impression ID
         expect(data.ext.wrapper.profile).to.equal(parseInt(multipleMediaRequests[0].params.profId)); // OpenWrap: Wrapper Profile ID
@@ -989,100 +1195,143 @@ describe('PubMatic adapter', function () {
         expect(data.imp[1]['video']['w']).to.equal(multipleMediaRequests[1].mediaTypes.video.playerSize[0]);
         expect(data.imp[1]['video']['h']).to.equal(multipleMediaRequests[1].mediaTypes.video.playerSize[1]);
       });
+
       it('invalid adslot', () => {
         firstBid.params.adSlot = '/15671365/DMDemo';
         firstBid.params.sizes = [];
         let request = spec.buildRequests([]);
         expect(request).to.equal(undefined);
       });
-    });
 
-    it('Request params dctr check', function () {
-      let multipleBidRequests = [
-        {
-          bidder: 'pubmatic',
-          params: {
-            publisherId: '301',
-            adSlot: '/15671365/DMDemo@300x250:0',
-            kadfloor: '1.2',
-            pmzoneid: 'aabc, ddef',
-            kadpageurl: 'www.publisher.com',
-            yob: '1986',
-            gender: 'M',
-            lat: '12.3',
-            lon: '23.7',
-            wiid: '1234567890',
-            profId: '100',
-            verId: '200',
-            currency: 'AUD',
-            dctr: 'key1=val1|key2=val2,!val3'
+      it('Request params should have valid native bid request for all valid params', function () {
+        let request = spec.buildRequests(nativeBidRequests);
+        let data = JSON.parse(request.data);
+        expect(data.imp[0].native).to.exist;
+        expect(data.imp[0].native['request']).to.exist;
+        expect(data.imp[0].tagid).to.equal('/43743431/NativeAutomationPrebid');
+        expect(data.imp[0]['native']['request']).to.exist.and.to.be.an('string');
+        expect(data.imp[0]['native']['request']).to.exist.and.to.equal(validnativeBidImpression.native.request);
+      });
+
+      it('Request params should not have valid native bid request for non native request', function () {
+        let request = spec.buildRequests(bidRequests);
+        let data = JSON.parse(request.data);
+        expect(data.imp[0].native).to.not.exist;
+      });
+
+      it('Request params should have valid native bid request with valid required param values for all valid params', function () {
+        let request = spec.buildRequests(nativeBidRequestsWithRequiredParam);
+        let data = JSON.parse(request.data);
+        expect(data.imp[0].native).to.exist;
+        expect(data.imp[0].native['request']).to.exist;
+        expect(data.imp[0].tagid).to.equal('/43743431/NativeAutomationPrebid');
+        expect(data.imp[0]['native']['request']).to.exist.and.to.be.an('string');
+        expect(data.imp[0]['native']['request']).to.exist.and.to.equal(validnativeBidImpressionWithRequiredParam.native.request);
+      });
+
+      it('should not have valid native request if assets are not defined with minimum required params and only native is the slot', function () {
+        let request = spec.buildRequests(nativeBidRequestsWithoutAsset);
+        expect(request).to.deep.equal(undefined);
+      });
+
+      it('Request params should have valid native bid request for all native params', function () {
+        let request = spec.buildRequests(nativeBidRequestsWithAllParams);
+        let data = JSON.parse(request.data);
+        expect(data.imp[0].native).to.exist;
+        expect(data.imp[0].native['request']).to.exist;
+        expect(data.imp[0].tagid).to.equal('/43743431/NativeAutomationPrebid');
+        expect(data.imp[0]['native']['request']).to.exist.and.to.be.an('string');
+        expect(data.imp[0]['native']['request']).to.exist.and.to.equal(validnativeBidImpressionWithAllParams.native.request);
+      });
+
+      it('Request params dctr check', function () {
+        let multipleBidRequests = [
+          {
+            bidder: 'pubmatic',
+            params: {
+              publisherId: '301',
+              adSlot: '/15671365/DMDemo@300x250:0',
+              kadfloor: '1.2',
+              pmzoneid: 'aabc, ddef',
+              kadpageurl: 'www.publisher.com',
+              yob: '1986',
+              gender: 'M',
+              lat: '12.3',
+              lon: '23.7',
+              wiid: '1234567890',
+              profId: '100',
+              verId: '200',
+              currency: 'AUD',
+              dctr: 'key1=val1|key2=val2,!val3'
+            },
+            placementCode: '/19968336/header-bid-tag-1',
+            sizes: [[300, 250], [300, 600]],
+            bidId: '23acc48ad47af5',
+            requestId: '0fb4905b-9456-4152-86be-c6f6d259ba99',
+            bidderRequestId: '1c56ad30b9b8ca8',
+            transactionId: '92489f71-1bf2-49a0-adf9-000cea934729'
           },
-          placementCode: '/19968336/header-bid-tag-1',
-          sizes: [[300, 250], [300, 600]],
-          bidId: '23acc48ad47af5',
-          requestId: '0fb4905b-9456-4152-86be-c6f6d259ba99',
-          bidderRequestId: '1c56ad30b9b8ca8',
-          transactionId: '92489f71-1bf2-49a0-adf9-000cea934729'
-        },
-        {
-          bidder: 'pubmatic',
-          params: {
-            publisherId: '301',
-            adSlot: '/15671365/DMDemo@300x250:0',
-            kadfloor: '1.2',
-            pmzoneid: 'aabc, ddef',
-            kadpageurl: 'www.publisher.com',
-            yob: '1986',
-            gender: 'M',
-            lat: '12.3',
-            lon: '23.7',
-            wiid: '1234567890',
-            profId: '100',
-            verId: '200',
-            currency: 'GBP',
-            dctr: 'key1=val3|key2=val1,!val3|key3=val123'
-          },
-          placementCode: '/19968336/header-bid-tag-1',
-          sizes: [[300, 250], [300, 600]],
-          bidId: '23acc48ad47af5',
-          requestId: '0fb4905b-9456-4152-86be-c6f6d259ba99',
-          bidderRequestId: '1c56ad30b9b8ca8',
-          transactionId: '92489f71-1bf2-49a0-adf9-000cea934729'
-        }
-      ];
+          {
+            bidder: 'pubmatic',
+            params: {
+              publisherId: '301',
+              adSlot: '/15671365/DMDemo@300x250:0',
+              kadfloor: '1.2',
+              pmzoneid: 'aabc, ddef',
+              kadpageurl: 'www.publisher.com',
+              yob: '1986',
+              gender: 'M',
+              lat: '12.3',
+              lon: '23.7',
+              wiid: '1234567890',
+              profId: '100',
+              verId: '200',
+              currency: 'GBP',
+              dctr: 'key1=val3|key2=val1,!val3|key3=val123'
+            },
+            placementCode: '/19968336/header-bid-tag-1',
+            sizes: [[300, 250], [300, 600]],
+            bidId: '23acc48ad47af5',
+            requestId: '0fb4905b-9456-4152-86be-c6f6d259ba99',
+            bidderRequestId: '1c56ad30b9b8ca8',
+            transactionId: '92489f71-1bf2-49a0-adf9-000cea934729'
+          }
+        ];
 
-      let request = spec.buildRequests(multipleBidRequests);
-      let data = JSON.parse(request.data);
+        let request = spec.buildRequests(multipleBidRequests);
+        let data = JSON.parse(request.data);
 
-      /* case 1 -
-        dctr is found in adunit[0]
-      */
+        /* case 1 -
+          dctr is found in adunit[0]
+        */
 
-      expect(data.site.ext).to.exist.and.to.be.an('object'); // dctr parameter
-      expect(data.site.ext.key_val).to.exist.and.to.equal(multipleBidRequests[0].params.dctr);
+        expect(data.site.ext).to.exist.and.to.be.an('object'); // dctr parameter
+        expect(data.site.ext.key_val).to.exist.and.to.equal(multipleBidRequests[0].params.dctr);
 
-      /* case 2 -
-        dctr not present in adunit[0]
-      */
-      delete multipleBidRequests[0].params.dctr;
-      request = spec.buildRequests(multipleBidRequests);
-      data = JSON.parse(request.data);
+        /* case 2 -
+          dctr not present in adunit[0]
+        */
+        delete multipleBidRequests[0].params.dctr;
+        request = spec.buildRequests(multipleBidRequests);
+        data = JSON.parse(request.data);
 
-      expect(data.site.ext).to.not.exist;
+        expect(data.site.ext).to.not.exist;
 
-      /* case 3 -
-        dctr is present in adunit[0], but is not a string value
-      */
-      multipleBidRequests[0].params.dctr = 123;
-      request = spec.buildRequests(multipleBidRequests);
-      data = JSON.parse(request.data);
+        /* case 3 -
+          dctr is present in adunit[0], but is not a string value
+        */
+        multipleBidRequests[0].params.dctr = 123;
+        request = spec.buildRequests(multipleBidRequests);
+        data = JSON.parse(request.data);
 
-      expect(data.site.ext).to.not.exist;
+        expect(data.site.ext).to.not.exist;
+      });
     });
 
     describe('Response checking', function () {
       it('should check for valid response values', function () {
         let request = spec.buildRequests(bidRequests);
+        let data = JSON.parse(request.data);
         let response = spec.interpretResponse(bidResponses, request);
         expect(response).to.be.an('array').with.length.above(0);
         expect(response[0].requestId).to.equal(bidResponses.body.seatbid[0].bid[0].impid);
@@ -1098,7 +1347,10 @@ describe('PubMatic adapter', function () {
         expect(response[0].currency).to.equal('USD');
         expect(response[0].netRevenue).to.equal(false);
         expect(response[0].ttl).to.equal(300);
-        expect(response[0].referrer).to.include(utils.getTopWindowUrl());
+        expect(response[0].meta.networkId).to.equal(123);
+        expect(response[0].meta.buyerId).to.equal(976);
+        expect(response[0].meta.clickUrl).to.equal('blackrock.com');
+        expect(response[0].referrer).to.include(data.site.ref);
         expect(response[0].ad).to.equal(bidResponses.body.seatbid[0].bid[0].adm);
 
         expect(response[1].requestId).to.equal(bidResponses.body.seatbid[1].bid[0].impid);
@@ -1114,7 +1366,10 @@ describe('PubMatic adapter', function () {
         expect(response[1].currency).to.equal('USD');
         expect(response[1].netRevenue).to.equal(false);
         expect(response[1].ttl).to.equal(300);
-        expect(response[1].referrer).to.include(utils.getTopWindowUrl());
+        expect(response[1].meta.networkId).to.equal(422);
+        expect(response[1].meta.buyerId).to.equal(832);
+        expect(response[1].meta.clickUrl).to.equal('hivehome.com');
+        expect(response[1].referrer).to.include(data.site.ref);
         expect(response[1].ad).to.equal(bidResponses.body.seatbid[1].bid[0].adm);
       });
 
@@ -1156,7 +1411,7 @@ describe('PubMatic adapter', function () {
         expect(response[0].netRevenue).to.equal(false);
         expect(response[0].cpm).to.equal(0);
         expect(response[0].currency).to.equal('USD');
-        expect(response[0].referrer).to.equal(utils.getTopWindowUrl());
+        expect(response[0].referrer).to.equal(request.site && request.site.ref ? request.site.ref : '');
       });
 
       it('should add one dummy & one original bid if partial response come from hbopenbid', () => {
@@ -1184,7 +1439,7 @@ describe('PubMatic adapter', function () {
         expect(response[0].currency).to.equal('USD');
         expect(response[0].netRevenue).to.equal(false);
         expect(response[0].ttl).to.equal(300);
-        expect(response[0].referrer).to.include(utils.getTopWindowUrl());
+        expect(response[0].referrer).to.include(request.site && request.site.ref ? request.site.ref : '');
         expect(response[0].ad).to.equal(bidResponses.body.seatbid[0].bid[0].adm);
 
         expect(response[1].requestId).to.equal(request.imp[1].id);
@@ -1196,7 +1451,7 @@ describe('PubMatic adapter', function () {
         expect(response[1].netRevenue).to.equal(false);
         expect(response[1].cpm).to.equal(0);
         expect(response[1].currency).to.equal('USD');
-        expect(response[1].referrer).to.equal(utils.getTopWindowUrl());
+        expect(response[1].referrer).to.equal(request.site && request.site.ref ? request.site.ref : '');
       });
 
       it('should responsed bid if partial response come from hbopenbid', () => {
@@ -1218,9 +1473,27 @@ describe('PubMatic adapter', function () {
         expect(response[0].currency).to.equal('USD');
         expect(response[0].netRevenue).to.equal(false);
         expect(response[0].ttl).to.equal(300);
-        expect(response[0].referrer).to.include(utils.getTopWindowUrl());
+        expect(response[0].referrer).to.include(request.site && request.site.ref ? request.site.ref : '');
         expect(response[0].ad).to.equal(bidResponses.body.seatbid[0].bid[0].adm);
       });
+
+      it('should have a valid native bid response', function() {
+        let request = spec.buildRequests(nativeBidRequests);
+        let data = JSON.parse(request.data);
+        data.imp[0].id = '2a5571261281d4';
+        request.data = JSON.stringify(data);
+        let response = spec.interpretResponse(nativeBidResponse, request);
+        expect(response).to.be.an('array').with.length.above(0);
+        expect(response[0].native).to.exist.and.to.be.an('object');
+        expect(response[0].mediaType).to.exist.and.to.equal('native');
+        expect(response[0].native.title).to.exist.and.to.be.an('string');
+        expect(response[0].native.image).to.exist.and.to.be.an('object');
+        expect(response[0].native.image.url).to.exist.and.to.be.an('string');
+        expect(response[0].native.image.height).to.exist;
+        expect(response[0].native.image.width).to.exist;
+        expect(response[0].native.sponsoredBy).to.exist.and.to.be.an('string');
+        expect(response[0].native.clickUrl).to.exist.and.to.be.an('string');
+      })
     });
   });
 });

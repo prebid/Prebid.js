@@ -1,13 +1,24 @@
 import { expect } from 'chai';
-import { fireNativeTrackers, getNativeTargeting, nativeBidIsValid } from 'src/native';
+import { fireNativeTrackers, getNativeTargeting, nativeBidIsValid, getAssetMessage } from 'src/native';
 import CONSTANTS from 'src/constants.json';
 const utils = require('src/utils');
 
 const bid = {
+  adId: '123',
   native: {
     title: 'Native Creative',
     body: 'Cool description great stuff',
     cta: 'Do it',
+    image: {
+      url: 'http://cdn.example.com/p/creative-image/image.png',
+      height: 83,
+      width: 127
+    },
+    icon: {
+      url: 'http://cdn.example.com/p/creative-image/icon.jpg',
+      height: 742,
+      width: 989
+    },
     sponsoredBy: 'AppNexus',
     clickUrl: 'https://www.link.example',
     clickTrackers: ['https://tracker.example'],
@@ -50,6 +61,22 @@ describe('native.js', function () {
     expect(targeting[CONSTANTS.NATIVE_KEYS.clickUrl]).to.equal(bid.native.clickUrl);
   });
 
+  it('sends placeholders for configured assets', function () {
+    const bidRequest = {
+      mediaTypes: {
+        native: {
+          body: { sendId: true },
+          clickUrl: { sendId: true },
+        }
+      }
+    };
+    const targeting = getNativeTargeting(bid, bidRequest);
+
+    expect(targeting[CONSTANTS.NATIVE_KEYS.title]).to.equal(bid.native.title);
+    expect(targeting[CONSTANTS.NATIVE_KEYS.body]).to.equal('pwt_native_body:123');
+    expect(targeting[CONSTANTS.NATIVE_KEYS.clickUrl]).to.equal('pwt_native_linkurl:123');
+  });
+
   it('should only include native targeting keys with values', function () {
     const targeting = getNativeTargeting(bidWithUndefinedFields);
 
@@ -68,9 +95,35 @@ describe('native.js', function () {
   });
 
   it('fires click trackers', function () {
-    fireNativeTrackers({ action: 'click' }, bid);
+    const trackerType = fireNativeTrackers({ action: 'click' }, bid);
+    expect(trackerType).to.equal('click');
     sinon.assert.calledOnce(triggerPixelStub);
     sinon.assert.calledWith(triggerPixelStub, bid.native.clickTrackers[0]);
+  });
+
+  it('creates native asset message', function() {
+    const messageRequest = {
+      message: 'Prebid Native',
+      action: 'assetRequest',
+      adId: '123',
+      assets: ['pwt_native_body', 'pwt_native_image', 'pwt_native_linkurl'],
+    };
+
+    const message = getAssetMessage(messageRequest, bid);
+
+    expect(message.assets.length).to.equal(3);
+    expect(message.assets).to.deep.include({
+      key: 'body',
+      value: bid.native.body
+    });
+    expect(message.assets).to.deep.include({
+      key: 'image',
+      value: bid.native.image.url
+    });
+    expect(message.assets).to.deep.include({
+      key: 'clickUrl',
+      value: bid.native.clickUrl
+    });
   });
 });
 
@@ -102,7 +155,8 @@ describe('validate native', function () {
   }];
 
   let validBid = {
-    adId: 'test_bid_id',
+    adId: 'abc123',
+    requestId: 'test_bid_id',
     adUnitCode: '123/prebid_native_adunit',
     bidder: 'test_bidder',
     native: {
@@ -126,7 +180,8 @@ describe('validate native', function () {
   };
 
   let noIconDimBid = {
-    adId: 'test_bid_id',
+    adId: 'abc234',
+    requestId: 'test_bid_id',
     adUnitCode: '123/prebid_native_adunit',
     bidder: 'test_bidder',
     native: {
@@ -150,7 +205,8 @@ describe('validate native', function () {
   };
 
   let noImgDimBid = {
-    adId: 'test_bid_id',
+    adId: 'abc345',
+    requestId: 'test_bid_id',
     adUnitCode: '123/prebid_native_adunit',
     bidder: 'test_bidder',
     native: {

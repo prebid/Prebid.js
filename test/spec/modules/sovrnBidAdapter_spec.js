@@ -1,10 +1,9 @@
 import { expect } from 'chai';
 import { spec, LogError } from 'modules/sovrnBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
-import { REPO_AND_VERSION } from 'src/constants';
 import { SSL_OP_SINGLE_ECDH_USE } from 'constants';
 
-const ENDPOINT = `//ap.lijit.com/rtb/bid?src=${REPO_AND_VERSION}`;
+const ENDPOINT = `//ap.lijit.com/rtb/bid?src=$$REPO_AND_VERSION$$`;
 
 describe('sovrnBidAdapter', function() {
   const adapter = newBidder(spec);
