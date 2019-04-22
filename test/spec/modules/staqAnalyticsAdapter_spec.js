@@ -319,8 +319,6 @@ describe('', function () {
       // console.log('AUCTION END EVENT SHAPE ' + JSON.stringify(ev));
       const ev6 = ev[6];
       expect(ev6.connId).to.be.eql(777);
-      expect(ev6.env.screen.h).to.be.eql(800);
-      expect(ev6.env.screen.w).to.be.eql(1280);
       expect(ev6.auctionId).to.be.eql('5018eb39-f900-4370-b71e-3bb5b48d324f');
       expect(ev6.event).to.be.eql('auctionEnd');
       // expect(ev[6]).to.be.eql({
