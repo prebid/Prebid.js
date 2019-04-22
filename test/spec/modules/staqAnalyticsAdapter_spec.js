@@ -210,7 +210,6 @@ describe('', function () {
       sandbox.stub(events, 'getEvents').callsFake(() => {
         return []
       });
-      sandbox.stub(navigator, 'userAgent').value('testUA');
     });
 
     afterEach(function () {
@@ -318,28 +317,39 @@ describe('', function () {
       let firstCallArgs0 = ajaxStub.firstCall.args[0];
       ev = JSON.parse(firstCallArgs0);
       // console.log('AUCTION END EVENT SHAPE ' + JSON.stringify(ev));
-      expect(ev[6]).to.be.eql({
-        connId: 777,
-        domain: 'localhost',
-        userAgent: 'testUA',
-        env: {
-          lang: 'en-US',
-          screen: {
-            h: 800,
-            w: 1280
-          }
-        },
-        path: '/',
-        src: {
-          campaign: '(direct)',
-          medium: '(direct)',
-          source: '(direct)'
-        },
-        auctionId: '5018eb39-f900-4370-b71e-3bb5b48d324f',
-        event: 'auctionEnd',
-        timeToRespond: 0.447,
-        ver: '1.0.0'
+      const ev6 = ev[6];
+      expect(ev6.connId).to.be.eql(777);
+      expect(ev6.env).to.be.eql({
+        lang: 'en-US',
+        screen: {
+          h: 800,
+          w: 1280
+        }
       });
+      expect(ev6.auctionId).to.be.eql('5018eb39-f900-4370-b71e-3bb5b48d324f');
+      expect(ev6.event).to.be.eql('auctionEnd');
+      // expect(ev[6]).to.be.eql({
+      //   connId: 777,
+      //   domain: 'localhost',
+      //   userAgent: 'testUA',
+      //   env: {
+      //     lang: 'en-US',
+      //     screen: {
+      //       h: 800,
+      //       w: 1280
+      //     }
+      //   },
+      //   path: '/',
+      //   src: {
+      //     campaign: '(direct)',
+      //     medium: '(direct)',
+      //     source: '(direct)'
+      //   },
+      //   auctionId: '5018eb39-f900-4370-b71e-3bb5b48d324f',
+      //   event: 'auctionEnd',
+      //   timeToRespond: 0.447,
+      //   ver: '1.0.0'
+      // });
     });
   });
 });
