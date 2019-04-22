@@ -88,12 +88,23 @@ export const spec = {
 
       if (bidRequest.mediaTypes && bidRequest.mediaTypes.video) {
         imp.video = {
-          w: bidRequest.sizes.length ? bidRequest.sizes[0][0] : 300,
-          h: bidRequest.sizes.length ? bidRequest.sizes[0][1] : 250,
           protocols: bidRequest.params.protocols || [1, 2, 3, 4, 5, 6],
           pos: bidRequest.params.pos || 0,
           topframe: topFrame
         };
+
+        let playerSize = bidRequest.mediaTypes.video.playerSize;
+        if (playerSize && utils.isArray(playerSize[0])) {
+          imp.video.w = playerSize[0][0];
+          imp.video.h = playerSize[0][1];
+        } else if (playerSize && utils.isNumber(playerSize[0])) {
+          imp.video.w = playerSize[0];
+          imp.video.h = playerSize[1];
+        } else {
+          playerSize = utils.isArray(bidRequest.sizes) ? bidRequest.sizes[0] : [300, 250];
+          imp.video.w = playerSize[0];
+          imp.video.h = playerSize[1];
+        }
       }
 
       if (!bidRequest.mediaTypes || bidRequest.mediaTypes.banner) {

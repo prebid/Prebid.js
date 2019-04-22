@@ -3,6 +3,7 @@ import { parseSizesInput, logError, generateUUID, isEmpty, deepAccess, logWarn, 
 import { BANNER, VIDEO } from '../src/mediaTypes';
 import { config } from '../src/config';
 import { Renderer } from '../src/Renderer';
+import { userSync } from '../src/userSync';
 
 const BIDDER_CODE = 'sonobi';
 const STR_ENDPOINT = 'https://apex.go.sonobi.com/trinity.json';
@@ -62,12 +63,23 @@ export const spec = {
       payload.us = config.getConfig('userSync').syncsPerBidder;
     }
 
+    // use userSync's internal function to determine if we can drop an iframe sync pixel
+    if (_iframeAllowed()) {
+      payload.ius = 1;
+    } else {
+      payload.ius = 0;
+    }
+
     if (deepAccess(validBidRequests[0], 'params.hfa')) {
       payload.hfa = deepAccess(validBidRequests[0], 'params.hfa');
     } else if (deepAccess(validBidRequests[0], 'userId.pubcid')) {
       payload.hfa = `PRE-${validBidRequests[0].userId.pubcid}`;
     } else if (deepAccess(validBidRequests[0], 'crumbs.pubcid')) {
       payload.hfa = `PRE-${validBidRequests[0].crumbs.pubcid}`;
+    }
+
+    if (deepAccess(validBidRequests[0], 'userId.tdid')) {
+      payload.tdid = validBidRequests[0].userId.tdid;
     }
 
     if (validBidRequests[0].params.referrer) {
@@ -325,6 +337,10 @@ function outstreamRender(bid) {
     });
     renderer.setRootElement(bid.adUnitCode);
   });
+}
+
+function _iframeAllowed() {
+  return userSync.canBidderRegisterSync('iframe', BIDDER_CODE);
 }
 
 registerBidder(spec);
