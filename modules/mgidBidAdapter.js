@@ -452,7 +452,7 @@ function createNativeRequest(params) {
         }
       }
     }
-    if (assetObj && assetObj.id) {
+    if (assetObj.id) {
       nativeRequestObject.assets[nativeRequestObject.assets.length] = assetObj;
     }
   }
