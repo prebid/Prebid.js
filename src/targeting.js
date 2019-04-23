@@ -60,6 +60,10 @@ export function newTargeting(auctionManager) {
     latestAuctionForAdUnit[adUnitCode] = auctionId;
   };
 
+  targeting.clearLatestAuctionKeys = function() {
+    latestAuctionForAdUnit = {};
+  };
+
   targeting.resetPresetTargeting = function(adUnitCode) {
     if (isGptPubadsDefined()) {
       const adUnitCodes = getAdUnitCodes(adUnitCode);
