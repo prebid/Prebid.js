@@ -68,11 +68,11 @@ describe('Prebid Manager Analytics Adapter', function () {
 
     it('bid won event', function() {
       xhr.onCreate = request => requests.push(request);
-
+      let bundleId = 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx';
       prebidmanagerAnalytics.enableAnalytics({
         provider: 'prebidmanager',
         options: {
-          bundleId: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
+          bundleId: bundleId
         }
       });
 
@@ -81,10 +81,12 @@ describe('Prebid Manager Analytics Adapter', function () {
 
       expect(requests.length).to.equal(1);
       expect(requests[0].url).to.equal('https://endpoint.prebidmanager.com/endpoint');
-      expect(requests[0].requestBody.substring(0, 2)).to.equal('1:')
+      expect(requests[0].requestBody.substring(0, 2)).to.equal('1:');
 
-      const pmEvents = JSON.parse(requests[0].requestBody.substring(2))
+      const pmEvents = JSON.parse(requests[0].requestBody.substring(2));
       expect(pmEvents.pageViewId).to.exist;
+      expect(pmEvents.bundleId).to.equal(bundleId);
+      expect(pmEvents.ver).to.equal(1);
       expect(pmEvents.events.length).to.equal(2);
       expect(pmEvents.events[0].eventType).to.equal('pageView');
       expect(pmEvents.events[1].eventType).to.equal('bidWon');

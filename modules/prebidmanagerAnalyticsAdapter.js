@@ -76,6 +76,7 @@ function flush() {
   if (_eventQueue.length > 1) {
     var data = {
       pageViewId: _pageViewId,
+      ver: _VERSION,
       bundleId: initOptions.bundleId,
       events: _eventQueue
     };
