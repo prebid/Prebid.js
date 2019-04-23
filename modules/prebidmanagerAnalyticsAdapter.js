@@ -30,7 +30,7 @@ var initOptions = null;
 var _pageViewId = generateUUID();
 var _startAuction = 0;
 var _bidRequestTimeout = 0;
-var pmAnalitycsEnabled = false;
+var pmAnalyticsEnabled = false;
 
 var w = window;
 var d = document;
@@ -63,19 +63,19 @@ let prebidmanagerAnalytics = Object.assign(adapter({url: DEFAULT_EVENT_URL, anal
 prebidmanagerAnalytics.originEnableAnalytics = prebidmanagerAnalytics.enableAnalytics;
 prebidmanagerAnalytics.enableAnalytics = function (config) {
   initOptions = config.options;
-  pmAnalitycsEnabled = true;
+  initOptions.url = initOptions.url || DEFAULT_EVENT_URL;
+  pmAnalyticsEnabled = true;
   prebidmanagerAnalytics.originEnableAnalytics(config);
 };
 
 function flush() {
-  if (!pmAnalitycsEnabled) {
+  if (!pmAnalyticsEnabled) {
     return;
   }
 
   if (_eventQueue.length > 1) {
     var data = {
       pageViewId: _pageViewId,
-      ver: _VERSION,
       bundleId: initOptions.bundleId,
       events: _eventQueue
     };
@@ -182,5 +182,11 @@ adapterManager.registerAnalyticsAdapter({
   adapter: prebidmanagerAnalytics,
   code: 'prebidmanager'
 });
+
+prebidmanagerAnalytics.getOptions = function () {
+  return initOptions;
+};
+
+prebidmanagerAnalytics.flush = flush;
 
 export default prebidmanagerAnalytics;
