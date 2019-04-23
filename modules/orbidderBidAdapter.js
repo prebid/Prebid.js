@@ -42,11 +42,11 @@ export const spec = {
         }
       };
       spec.bidParams[bidRequest.bidId] = bidRequest.params;
-      if (bidRequest && bidRequest.gdprConsent) {
+      if (bidderRequest && bidderRequest.gdprConsent) {
         ret.data.gdprConsent = {
-          consentString: bidRequest.gdprConsent.consentString,
-          consentRequired: (typeof bidRequest.gdprConsent.gdprApplies === 'boolean')
-            ? bidRequest.gdprConsent.gdprApplies
+          consentString: bidderRequest.gdprConsent.consentString,
+          consentRequired: (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean')
+            ? bidderRequest.gdprConsent.gdprApplies
             : true
         };
       }
