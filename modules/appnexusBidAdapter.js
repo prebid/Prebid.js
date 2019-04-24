@@ -10,7 +10,7 @@ const BIDDER_CODE = 'appnexus';
 const URL = '//ib.adnxs.com/ut/v3/prebid';
 const VIDEO_TARGETING = ['id', 'mimes', 'minduration', 'maxduration',
   'startdelay', 'skippable', 'playback_method', 'frameworks'];
-const USER_PARAMS = ['age', 'external_uid', 'segments', 'gender', 'dnt', 'language'];
+const USER_PARAMS = ['age', 'externalUid', 'segments', 'gender', 'dnt', 'language'];
 const APP_DEVICE_PARAMS = ['geo', 'device_id']; // appid is collected separately
 const DEBUG_PARAMS = ['enabled', 'dongle', 'member_id', 'debug_timeout'];
 const NATIVE_MAPPING = {
