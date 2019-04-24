@@ -214,7 +214,7 @@ gulp e2e-test --host=test.localhost
 ```
 
 To run these tests, the following items are required:
-- setup an alias of localhost in your `hosts` file; eg `127.0.0.1  test.localhost`.  Use this alias in the command-line argument.
+- setup an alias of localhost in your `hosts` file (eg `127.0.0.1  test.localhost`); note - you can use any alias.  Use this alias in the command-line argument above.
 - access to [BrowserStack](https://www.browserstack.com/) account.  Assign the following variables in your bash_profile:
 ```bash
 export BROWSERSTACK_USERNAME='YourUserNameHere'
