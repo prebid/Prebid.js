@@ -207,10 +207,20 @@ gulp test-coverage
 gulp view-coverage
 ```
 
-For end-to-end testing, edit the example file `./integrationExamples/gpt/pbjs_example_gpt.html`:
+For end-to-end testing:
 
-1. Change `{id}` values appropriately to set up ad units and bidders
-2. Set the path to Prebid.js in your example file as shown below (see `pbs.src`).
+```bash
+gulp e2e-test --host=test.localhost
+```
+
+To run these tests, the following items are required:
+- setup an alias of localhost in your `hosts` file; eg `127.0.0.1  test.localhost`.  Use this alias in the command-line argument.
+- access to [BrowserStack](https://www.browserstack.com/) account.  Assign the following variables in your bash_profile:
+```bash
+export BROWSERSTACK_USERNAME='YourUserNameHere'
+export BROWSERSTACK_ACCESS_KEY='YourAccessKeyHere'
+```
+You can get these BrowserStack values from your profile page.
 
 For development:
 
