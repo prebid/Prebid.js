@@ -31,7 +31,7 @@ describe('Prebid Manager Analytics Adapter', function () {
     'eventType': 'bidWon',
     'ad': 'some ad',
     'adUrl': 'ad url'
-  }
+  };
 
   before(function () {
     xhr = sinon.useFakeXMLHttpRequest();

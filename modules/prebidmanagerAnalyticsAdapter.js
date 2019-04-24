@@ -18,6 +18,7 @@ var initOptions = null;
 var _pageViewId = utils.generateUUID();
 var _startAuction = 0;
 var _bidRequestTimeout = 0;
+let flushInterval;
 var pmAnalyticsEnabled = false;
 
 var w = window;
@@ -54,7 +55,17 @@ prebidmanagerAnalytics.enableAnalytics = function (config) {
   initOptions.url = initOptions.url || DEFAULT_EVENT_URL;
   pmAnalyticsEnabled = true;
   prebidmanagerAnalytics.originEnableAnalytics(config);
-  setInterval(flush, 1000);
+  flushInterval = setInterval(flush, 1000);
+};
+
+prebidmanagerAnalytics.originDisableAnalytics = prebidmanagerAnalytics.disableAnalytics;
+prebidmanagerAnalytics.disableAnalytics = function() {
+  if (!pmAnalyticsEnabled) {
+    return;
+  }
+  flush();
+  clearInterval(flushInterval);
+  prebidmanagerAnalytics.originDisableAnalytics();
 };
 
 function flush() {
