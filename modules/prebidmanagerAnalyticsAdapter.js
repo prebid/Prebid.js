@@ -13,21 +13,9 @@ var utils = require('src/utils');
 var CONSTANTS = require('src/constants.json');
 let ajax = ajaxBuilder(0);
 
-function generateUUID() { // Public Domain/MIT
-  var d = new Date().getTime();
-  if (typeof performance !== 'undefined' && typeof performance.now === 'function') {
-    d += performance.now(); // use high-precision timer if available
-  }
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
-    var r = (d + Math.random() * 16) % 16 | 0;
-    d = Math.floor(d / 16);
-    return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
-  });
-}
-
 var _VERSION = 1;
 var initOptions = null;
-var _pageViewId = generateUUID();
+var _pageViewId = utils.generateUUID();
 var _startAuction = 0;
 var _bidRequestTimeout = 0;
 var pmAnalyticsEnabled = false;
@@ -62,10 +50,11 @@ let prebidmanagerAnalytics = Object.assign(adapter({url: DEFAULT_EVENT_URL, anal
 
 prebidmanagerAnalytics.originEnableAnalytics = prebidmanagerAnalytics.enableAnalytics;
 prebidmanagerAnalytics.enableAnalytics = function (config) {
-  initOptions = config.options;
+  initOptions = config.options || {};
   initOptions.url = initOptions.url || DEFAULT_EVENT_URL;
   pmAnalyticsEnabled = true;
   prebidmanagerAnalytics.originEnableAnalytics(config);
+  setInterval(flush, 1000);
 };
 
 function flush() {
@@ -176,8 +165,6 @@ function sendEvent(event) {
     flush();
   }
 }
-
-setInterval(flush, 1000);
 
 adapterManager.registerAnalyticsAdapter({
   adapter: prebidmanagerAnalytics,
