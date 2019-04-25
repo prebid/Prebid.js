@@ -1398,6 +1398,7 @@ describe('Unit: Prebid Module', function () {
         let latestStub = sinon.stub(targeting, 'setLatestAuctionForAdUnit');
         let clearLatestAuctionKeysStub = sinon.stub(targeting, 'clearLatestAuctionKeys');
         let getAuctionStub = sinon.stub(auction, 'getAuctionId').returns(2);
+        let getConfig = sinon.stub(configObj, 'getConfig').returns(false);
 
         $$PREBID_GLOBAL$$.requestBids({
           adUnits: [
@@ -1418,6 +1419,7 @@ describe('Unit: Prebid Module', function () {
 
         latestStub.restore();
         getAuctionStub.restore();
+        getConfig.restore();
       });
 
       it('should execute callback immediately if adUnits is empty', function () {

@@ -474,7 +474,10 @@ $$PREBID_GLOBAL$$.requestBids = hook('async', function ({ bidsBackHandler, timeo
     utils.logInfo(`Current auction ${auction.getAuctionId()} contains ${adUnitsLen} adUnits.`, adUnits);
   }
 
-  targeting.clearLatestAuctionKeys();
+  if (!config.getConfig('useBidCache')) {
+    targeting.clearLatestAuctionKeys();
+  }
+
   adUnitCodes.forEach(code => targeting.setLatestAuctionForAdUnit(code, auction.getAuctionId()));
   auction.callBids();
   return auction;
