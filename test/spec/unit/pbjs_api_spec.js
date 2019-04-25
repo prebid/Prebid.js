@@ -1396,6 +1396,7 @@ describe('Unit: Prebid Module', function () {
 
       it('should notify targeting of the latest auction for each adUnit', function () {
         let latestStub = sinon.stub(targeting, 'setLatestAuctionForAdUnit');
+        let clearLatestAuctionKeysStub = sinon.stub(targeting, 'clearLatestAuctionKeys');
         let getAuctionStub = sinon.stub(auction, 'getAuctionId').returns(2);
 
         $$PREBID_GLOBAL$$.requestBids({
@@ -1409,6 +1410,8 @@ describe('Unit: Prebid Module', function () {
             }
           ]
         });
+
+        assert(clearLatestAuctionKeysStub.called)
 
         expect(latestStub.firstCall.calledWith('test1', 2)).to.equal(true);
         expect(latestStub.secondCall.calledWith('test2', 2)).to.equal(true);
