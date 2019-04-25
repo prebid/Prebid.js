@@ -81,8 +81,8 @@ export const spec = {
         const bidResponse = {
           requestId: bidRequest.bidId,
           cpm: matchedBid.price / 100,
-          width: customsize[0],
-          height: customsize[1],
+          width: bidRequest.params.useSlotSize !== undefined ? primarysize[0] : customsize[0],
+          height: bidRequest.params.useSlotSize !== undefined ? primarysize[1] : customsize[1],
           creativeId: '' + matchedBid.id,
           dealId: (matchedBid['c.dealid']) ? matchedBid['c.dealid'] : matchedBid.pid,
           currency: CURRENCY_CODE,
