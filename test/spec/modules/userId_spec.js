@@ -1,16 +1,12 @@
 import {
   init,
   syncDelay,
-  submodules,
   pubCommonIdSubmodule,
   unifiedIdSubmodule,
   requestBidsHook
 } from 'modules/userId';
 import {config} from 'src/config';
 import * as utils from 'src/utils';
-import * as auctionModule from 'src/auction';
-import {getAdUnits} from 'test/fixtures/fixtures';
-import {registerBidder} from 'src/adapters/bidderFactory';
 
 let assert = require('chai').assert;
 let expect = require('chai').expect;
@@ -20,6 +16,15 @@ describe('User ID', function() {
 
   function createStorageConfig(name = 'pubCommonId', key = 'pubcid', type = 'cookie', expires = 30) {
     return { name: name, storage: { name: key, type: type, expires: expires } }
+  }
+
+  function createAdUnit(code = 'adUnit-code') {
+    return {
+      code,
+      mediaTypes: {banner: {}, native: {}},
+      sizes: [[300, 200], [300, 600]],
+      bids: [{bidder: 'sampleBidder', params: {placementId: 'banner-only-bidder'}}]
+    };
   }
 
   before(function() {
@@ -43,8 +48,8 @@ describe('User ID', function() {
     });
 
     it('Check same cookie behavior', function () {
-      let adUnits1 = getAdUnits();
-      let adUnits2 = getAdUnits();
+      let adUnits1 = [createAdUnit()];
+      let adUnits2 = [createAdUnit()];
       let innerAdUnits1;
       let innerAdUnits2;
 
@@ -54,23 +59,23 @@ describe('User ID', function() {
       init(config, [pubCommonIdSubmodule, unifiedIdSubmodule]);
       config.setConfig({ usersync: { syncDelay: 0, userIds: [ createStorageConfig() ] } });
 
-      requestBidsHook((config) => { innerAdUnits1 = config.adUnits }, {adUnits: adUnits1});
+      requestBidsHook(config => { innerAdUnits1 = config.adUnits }, {adUnits: adUnits1});
       pubcid = utils.getCookie('pubcid'); // cookies is created after requestbidHook
 
-      innerAdUnits1.forEach((unit) => {
-        unit.bids.forEach((bid) => {
+      innerAdUnits1.forEach(unit => {
+        unit.bids.forEach(bid => {
           expect(bid).to.have.deep.nested.property('userId.pubcid');
           expect(bid.userId.pubcid).to.equal(pubcid);
         });
       });
 
-      requestBidsHook((config) => { innerAdUnits2 = config.adUnits }, {adUnits: adUnits2});
+      requestBidsHook(config => { innerAdUnits2 = config.adUnits }, {adUnits: adUnits2});
       assert.deepEqual(innerAdUnits1, innerAdUnits2);
     });
 
     it('Check different cookies', function () {
-      let adUnits1 = getAdUnits();
-      let adUnits2 = getAdUnits();
+      let adUnits1 = [createAdUnit()];
+      let adUnits2 = [createAdUnit()];
       let innerAdUnits1;
       let innerAdUnits2;
       let pubcid1;
@@ -106,7 +111,7 @@ describe('User ID', function() {
     });
 
     it('Check new cookie', function () {
-      let adUnits = getAdUnits();
+      let adUnits = [createAdUnit()];
       let innerAdUnits;
 
       init(config, [pubCommonIdSubmodule, unifiedIdSubmodule]);
@@ -254,66 +259,17 @@ describe('User ID', function() {
     });
   });
 
-  describe('Invoking requestBid', function () {
-    let storageResetCount = 0;
-    let createAuctionStub;
+  describe('Request bids hook appends userId to bid objs in adapters', function() {
     let adUnits;
-    let adUnitCodes;
-    let sampleSpec = {
-      code: 'sampleBidder',
-      isBidRequestValid: () => {},
-      buildRequest: (reqs) => {},
-      interpretResponse: () => {},
-      getUserSyncs: () => {}
-    };
 
-    beforeEach(function () {
-      // simulate existing browser cookie values
-      utils.setCookie('pubcid', `testpubcid${storageResetCount}`, (new Date(Date.now() + 5000).toUTCString()));
-      utils.setCookie('unifiedid', JSON.stringify({
-        'TDID': `testunifiedid${storageResetCount}`
-      }), (new Date(Date.now() + 5000).toUTCString()));
-
-      // simulate existing browser local storage values
-      localStorage.setItem('unifiedid_alt', JSON.stringify({
-        'TDID': `testunifiedid_alt${storageResetCount}`
-      }));
-      localStorage.setItem('unifiedid_alt_exp', '');
-
-      adUnits = [{
-        code: 'adUnit-code',
-        mediaTypes: {
-          banner: {},
-          native: {},
-        },
-        sizes: [[300, 200], [300, 600]],
-        bids: [
-          {bidder: 'sampleBidder', params: {placementId: 'banner-only-bidder'}}
-        ]
-      }];
-      adUnitCodes = ['adUnit-code'];
-      let auction = auctionModule.newAuction({adUnits, adUnitCodes, callback: function() {}, cbTimeout: 1999});
-      createAuctionStub = sinon.stub(auctionModule, 'newAuction');
-      createAuctionStub.returns(auction);
-
-      init(config, [pubCommonIdSubmodule, unifiedIdSubmodule]);
-
-      registerBidder(sampleSpec);
+    beforeEach(function() {
+      adUnits = [createAdUnit()];
     });
 
-    afterEach(function () {
-      storageResetCount++;
+    it('test hook from pubcommonid cookie', function(done) {
+      utils.setCookie('pubcid', 'testpubcid', (new Date(Date.now() + 100000).toUTCString()));
 
-      utils.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
-      utils.setCookie('unifiedid', '', EXPIRED_COOKIE_DATE);
-      localStorage.removeItem('unifiedid_alt');
-      localStorage.removeItem('unifiedid_alt_exp');
-      auctionModule.newAuction.restore();
-      $$PREBID_GLOBAL$$.requestBids.removeAll();
-      config.resetConfig();
-    });
-
-    it('test hook from pubcommonid cookie', function() {
+      init(config, [pubCommonIdSubmodule]);
       config.setConfig({
         usersync: {
           syncDelay: 0,
@@ -321,17 +277,20 @@ describe('User ID', function() {
         }
       });
 
-      $$PREBID_GLOBAL$$.requestBids({adUnits});
-
-      adUnits.forEach((unit) => {
-        unit.bids.forEach((bid) => {
-          expect(bid).to.have.deep.nested.property('userId.pubcid');
-          expect(bid.userId.pubcid).to.equal(`testpubcid${storageResetCount}`);
+      requestBidsHook(function() {
+        adUnits.forEach(unit => {
+          unit.bids.forEach(bid => {
+            expect(bid).to.have.deep.nested.property('userId.pubcid');
+            expect(bid.userId.pubcid).to.equal('testpubcid');
+          });
         });
-      });
+        utils.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
+        done();
+      }, {adUnits});
     });
 
-    it('test hook from pubcommonid config value object', function() {
+    it('test hook from pubcommonid config value object', function(done) {
+      init(config, [pubCommonIdSubmodule]);
       config.setConfig({
         usersync: {
           syncDelay: 0,
@@ -341,34 +300,47 @@ describe('User ID', function() {
           }]}
       });
 
-      $$PREBID_GLOBAL$$.requestBids({adUnits});
-
-      adUnits.forEach((unit) => {
-        unit.bids.forEach((bid) => {
-          expect(bid).to.have.deep.nested.property('userId.pubcidvalue');
-          expect(bid.userId.pubcidvalue).to.equal('testpubcidvalue');
+      requestBidsHook(function() {
+        adUnits.forEach(unit => {
+          unit.bids.forEach(bid => {
+            expect(bid).to.have.deep.nested.property('userId.pubcidvalue');
+            expect(bid.userId.pubcidvalue).to.equal('testpubcidvalue');
+          });
         });
-      });
+        done();
+      }, {adUnits});
     });
 
-    it('test hook from pubcommonid html5', function() {
+    it('test hook from pubcommonid html5', function(done) {
+      // simulate existing browser local storage values
+      localStorage.setItem('unifiedid_alt', JSON.stringify({'TDID': 'testunifiedid_alt'}));
+      localStorage.setItem('unifiedid_alt_exp', '');
+
+      init(config, [unifiedIdSubmodule]);
       config.setConfig({
         usersync: {
           syncDelay: 0,
           userIds: [createStorageConfig('unifiedId', 'unifiedid_alt', 'html5')]}
       });
 
-      $$PREBID_GLOBAL$$.requestBids({adUnits});
-
-      adUnits.forEach((unit) => {
-        unit.bids.forEach((bid) => {
-          expect(bid).to.have.deep.nested.property('userId.tdid');
-          expect(bid.userId.tdid).to.equal(`testunifiedid_alt${storageResetCount}`);
+      requestBidsHook(function() {
+        adUnits.forEach(unit => {
+          unit.bids.forEach(bid => {
+            expect(bid).to.have.deep.nested.property('userId.tdid');
+            expect(bid.userId.tdid).to.equal('testunifiedid_alt');
+          });
         });
-      });
+        localStorage.removeItem('unifiedid_alt');
+        localStorage.removeItem('unifiedid_alt_exp');
+        done();
+      }, {adUnits});
     });
 
-    it('test hook when both pubCommonId and unifiedId have data to pass', function() {
+    it('test hook when both pubCommonId and unifiedId have data to pass', function(done) {
+      utils.setCookie('pubcid', 'testpubcid', (new Date(Date.now() + 5000).toUTCString()));
+      utils.setCookie('unifiedid', JSON.stringify({'TDID': 'testunifiedid'}), (new Date(Date.now() + 5000).toUTCString()));
+
+      init(config, [pubCommonIdSubmodule, unifiedIdSubmodule]);
       config.setConfig({
         usersync: {
           syncDelay: 0,
@@ -378,19 +350,21 @@ describe('User ID', function() {
           ]}
       });
 
-      $$PREBID_GLOBAL$$.requestBids({adUnits});
-
-      adUnits.forEach((unit) => {
-        unit.bids.forEach((bid) => {
-          // verify that the PubCommonId id data was copied to bid
-          expect(bid).to.have.deep.nested.property('userId.pubcid');
-          expect(bid.userId.pubcid).to.equal(`testpubcid${storageResetCount}`);
-
-          // also check that UnifiedId id data was copied to bid
-          expect(bid).to.have.deep.nested.property('userId.tdid');
-          expect(bid.userId.tdid).to.equal(`testunifiedid${storageResetCount}`);
+      requestBidsHook(function() {
+        adUnits.forEach(unit => {
+          unit.bids.forEach(bid => {
+            // verify that the PubCommonId id data was copied to bid
+            expect(bid).to.have.deep.nested.property('userId.pubcid');
+            expect(bid.userId.pubcid).to.equal('testpubcid');
+            // also check that UnifiedId id data was copied to bid
+            expect(bid).to.have.deep.nested.property('userId.tdid');
+            expect(bid.userId.tdid).to.equal('testunifiedid');
+          });
         });
-      });
+        utils.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
+        utils.setCookie('unifiedid', '', EXPIRED_COOKIE_DATE);
+        done();
+      }, {adUnits});
     });
-  });
+  })
 });
