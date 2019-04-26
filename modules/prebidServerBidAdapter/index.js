@@ -257,10 +257,14 @@ function _appendSiteAppDevice(request) {
     request.app = config.getConfig('app');
     request.app.publisher = {id: _s2sConfig.accountId}
   } else {
-    request.site = {
-      publisher: { id: _s2sConfig.accountId },
-      page: utils.getTopWindowUrl()
+    if (typeof config.getConfig('site') === 'object') {
+      request.site = config.getConfig('site');
     }
+    if (!request.site) {
+      request.site = {};
+    }
+    request.site.publisher = {id: _s2sConfig.accountId}
+    request.site.page = utils.getTopWindowUrl()
   }
   if (typeof config.getConfig('device') === 'object') {
     request.device = config.getConfig('device');
