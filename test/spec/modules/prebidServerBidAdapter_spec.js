@@ -634,7 +634,7 @@ describe('S2S Adapter', function () {
 
     it('adds site object to request', function () {
       const _config = { s2sConfig: CONFIG,
-        site: { keywords: 'test.keywords' },
+        site: { keywords: 'test.keywords_1, test.keywords_2' },
       };
 
       config.setConfig(_config);
@@ -643,7 +643,7 @@ describe('S2S Adapter', function () {
       expect(requestBid.site).to.exist.and.to.be.a('object');
       expect(requestBid.site.publisher).to.exist.and.to.be.a('object');
       expect(requestBid.site.page).to.exist.and.to.be.a('string');
-      expect(requestBid.site.keywords).to.exist.and.is.equal('test.keywords');
+      expect(requestBid.site.keywords).to.exist.and.is.equal('test.keywords_1, test.keywords_2');
     });
 
     it('adds appnexus aliases to request', function () {
