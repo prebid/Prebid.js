@@ -4,7 +4,7 @@ import * as videoCache from 'src/videoCache';
 import * as auction from 'src/auction';
 import { ADPOD } from 'src/mediaTypes';
 
-import { callPrebidCacheHook, checkAdUnitSetupHook, checkVideoBidSetupHook, adpodSetConfig } from 'modules/adpod';
+import { callPrebidCacheHook, checkAdUnitSetupHook, checkVideoBidSetupHook, adpodSetConfig, sortByPricePerSecond } from 'modules/adpod';
 
 let expect = require('chai').expect;
 
@@ -689,6 +689,32 @@ describe('adpod.js', function () {
       expect(logWarnStub.calledOnce).to.equal(true);
     });
 
+    it('removes an incorrectly setup adpod adunit - required fields are using invalid values', function() {
+      let adUnits = [{
+        code: 'test1',
+        mediaTypes: {
+          video: {
+            context: ADPOD,
+            durationRangeSec: [-5, 15, 30, 45],
+            adPodDurationSec: 300
+          }
+        }
+      }];
+
+      checkAdUnitSetupHook(callbackFn, adUnits);
+
+      expect(results).to.deep.equal([]);
+      expect(logWarnStub.calledOnce).to.equal(true);
+
+      adUnits[0].mediaTypes.video.durationRangeSec = [15, 30, 45];
+      adUnits[0].mediaTypes.video.adPodDurationSec = 0;
+
+      checkAdUnitSetupHook(callbackFn, adUnits);
+
+      expect(results).to.deep.equal([]);
+      expect(logWarnStub.calledTwice).to.equal(true);
+    });
+
     it('removes an incorrectly setup adpod adunit - attempting to use multi-format adUnit', function() {
       let adUnits = [{
         code: 'multi_test1',
@@ -990,4 +1016,63 @@ describe('adpod.js', function () {
       expect(logWarnStub.called).to.equal(false);
     })
   });
+
+  describe('adpod utils', function() {
+    it('should sort bids array', function() {
+      let bids = [{
+        cpm: 10.12345,
+        video: {
+          durationBucket: 15
+        }
+      }, {
+        cpm: 15,
+        video: {
+          durationBucket: 15
+        }
+      }, {
+        cpm: 15.00,
+        video: {
+          durationBucket: 30
+        }
+      }, {
+        cpm: 5.45,
+        video: {
+          durationBucket: 5
+        }
+      }, {
+        cpm: 20.1234567,
+        video: {
+          durationBucket: 60
+        }
+      }]
+      bids.sort(sortByPricePerSecond);
+      let sortedBids = [{
+        cpm: 5.45,
+        video: {
+          durationBucket: 5
+        }
+      }, {
+        cpm: 15,
+        video: {
+          durationBucket: 15
+        }
+      }, {
+        cpm: 10.12345,
+        video: {
+          durationBucket: 15
+        }
+      }, {
+        cpm: 15.00,
+        video: {
+          durationBucket: 30
+        }
+      }, {
+        cpm: 20.1234567,
+        video: {
+          durationBucket: 60
+        }
+      }]
+      expect(bids).to.include.deep.ordered.members(sortedBids);
+    });
+  })
 });

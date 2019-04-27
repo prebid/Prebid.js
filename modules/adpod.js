@@ -256,8 +256,8 @@ export function checkAdUnitSetupHook(fn, adUnits) {
       let errMsg = `Detected missing or incorrectly setup fields for an adpod adUnit.  Please review the following fields of adUnitCode: ${adUnit.code}.  This adUnit will be removed from the auction.`;
 
       let playerSize = !!(videoConfig.playerSize && utils.isArrayOfNums(videoConfig.playerSize));
-      let adPodDurationSec = !!(videoConfig.adPodDurationSec && utils.isNumber(videoConfig.adPodDurationSec));
-      let durationRangeSec = !!(videoConfig.durationRangeSec && utils.isArrayOfNums(videoConfig.durationRangeSec));
+      let adPodDurationSec = !!(videoConfig.adPodDurationSec && utils.isNumber(videoConfig.adPodDurationSec) && videoConfig.adPodDurationSec > 0);
+      let durationRangeSec = !!(videoConfig.durationRangeSec && utils.isArrayOfNums(videoConfig.durationRangeSec) && videoConfig.durationRangeSec.every(range => range > 0));
 
       if (!playerSize || !adPodDurationSec || !durationRangeSec) {
         errMsg += (!playerSize) ? '\nmediaTypes.video.playerSize' : '';
@@ -412,4 +412,19 @@ export function callPrebidCacheAfterAuction(bids, callback) {
       callback(null, successfulCachedBids);
     }
   })
+}
+
+/**
+ * Compare function to be used in sorting long-form bids. This will compare bids on price per second.
+ * @param {Object} bid
+ * @param {Object} bid
+ */
+export function sortByPricePerSecond(a, b) {
+  if (a.cpm / a.video.durationBucket < b.cpm / b.video.durationBucket) {
+    return 1;
+  }
+  if (a.cpm / a.video.durationBucket > b.cpm / b.video.durationBucket) {
+    return -1;
+  }
+  return 0;
 }

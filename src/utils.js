@@ -911,6 +911,22 @@ export function getCookie(name) {
   return m ? decodeURIComponent(m[2]) : null;
 }
 
+export function setCookie(key, value, expires) {
+  document.cookie = `${key}=${encodeURIComponent(value)}${(expires !== '') ? `; expires=${expires}` : ''}; path=/`;
+}
+
+/**
+ * @returns {boolean}
+ */
+export function localStorageIsEnabled () {
+  try {
+    localStorage.setItem('prebid.cookieTest', '1');
+    return localStorage.getItem('prebid.cookieTest') === '1';
+  } catch (error) {
+    return false;
+  }
+}
+
 /**
  * Given a function, return a function which only executes the original after
  * it's been called numRequiredCalls times.
@@ -1114,15 +1130,6 @@ export function deletePropertyFromObject(object, prop) {
 }
 
 /**
- * Delete requestId from external bid object.
- * @param {Object} bid
- * @return {Object} bid
- */
-export function removeRequestId(bid) {
-  return deletePropertyFromObject(bid, 'requestId');
-}
-
-/**
  * Checks input is integer or not
  * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/isInteger
  * @param {*} value
@@ -1275,4 +1282,21 @@ export function getMinValueFromArray(array) {
 
 export function getMaxValueFromArray(array) {
   return Math.max(...array);
+}
+
+/**
+ * This function will create compare function to sort on object property
+ * @param {string} property
+ * @returns {function} compare function to be used in sorting
+ */
+export function compareOn(property) {
+  return function compare(a, b) {
+    if (a[property] < b[property]) {
+      return 1;
+    }
+    if (a[property] > b[property]) {
+      return -1;
+    }
+    return 0;
+  }
 }

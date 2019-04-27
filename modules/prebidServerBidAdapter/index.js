@@ -53,7 +53,8 @@ const s2sDefaultConfig = {
   timeout: 1000,
   maxBids: 1,
   adapter: 'prebidServer',
-  adapterOptions: {}
+  adapterOptions: {},
+  syncUrlModifier: {}
 };
 
 config.setDefaults({
@@ -170,9 +171,26 @@ function doAllSyncs(bidders) {
 
   const thisSync = bidders.pop();
   if (thisSync.no_cookie) {
-    doBidderSync(thisSync.usersync.type, thisSync.usersync.url, thisSync.bidder, utils.bind.call(doAllSyncs, null, bidders));
+    doPreBidderSync(thisSync.usersync.type, thisSync.usersync.url, thisSync.bidder, utils.bind.call(doAllSyncs, null, bidders));
   } else {
     doAllSyncs(bidders);
+  }
+}
+
+/**
+ * Modify the cookie sync url from prebid server to add new params.
+ *
+ * @param {string} type the type of sync, "image", "redirect", "iframe"
+ * @param {string} url the url to sync
+ * @param {string} bidder name of bidder doing sync for
+ * @param {function} done an exit callback; to signify this pixel has either: finished rendering or something went wrong
+ */
+function doPreBidderSync(type, url, bidder, done) {
+  if (_s2sConfig.syncUrlModifier && typeof _s2sConfig.syncUrlModifier[bidder] === 'function') {
+    const newSyncUrl = _s2sConfig.syncUrlModifier[bidder](type, url, bidder);
+    doBidderSync(type, newSyncUrl, bidder, done)
+  } else {
+    doBidderSync(type, url, bidder, done)
   }
 }
 
