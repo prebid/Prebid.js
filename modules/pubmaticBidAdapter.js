@@ -602,18 +602,19 @@ function _handleDigitrustId(eids) {
 }
 
 function _handleTTDId(eids, validBidRequests) {
+  let ttdId = null;
   let adsrvrOrgId = config.getConfig('adsrvrOrgId');
-  let ttd_id = '';
-  if (adsrvrOrgId && utils.isStr(adsrvrOrgId.TDID)){
-    ttd_id = adsrvrOrgId.TDID;
-  } else if(validBidRequests.userId && validBidRequests.userId.tdid){
-    ttd_id = validBidRequests.userId.tdid;
+  if (validBidRequests[0] && validBidRequests[0].userId && validBidRequests[0].userId.tdid) {
+    ttdId = validBidRequests[0].userId.tdid;
+  } else if (adsrvrOrgId && utils.isStr(adsrvrOrgId.TDID)) {
+    ttdId = adsrvrOrgId.TDID;
   }
-  if (ttd_id) {
+
+  if (ttdId !== null) {
     eids.push({
       'source': 'adserver.org',
       'uids': [{
-        'id': ttd_id,
+        'id': ttdId,
         'atype': 1,
         'ext': {
           'rtiPartner': 'TDID'
