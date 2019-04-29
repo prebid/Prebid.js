@@ -25,7 +25,7 @@ var adUnits = [
       bidder: 'pubmatic',
       params: {
         publisherId: '156209',               // required
-        adSlot: 'pubmatic_test2',            // required
+        adSlot: 'pubmatic_test2',            // optional
         pmzoneid: 'zone1, zone11',           // optional
         lat: '40.712775',                    // optional
         lon: '-74.005973',                   // optional
@@ -56,7 +56,7 @@ var adVideoAdUnits = [
       bidder: 'pubmatic',
       params: {
         publisherId: '156209',                  // required
-        adSlot: 'pubmatic_video1',              // required
+        adSlot: 'pubmatic_video1',              // optional
         video: {
           mimes: ['video/mp4','video/x-flv'],   // required
           skippable: true,                      // optional
@@ -104,7 +104,7 @@ var adUnits = [
       bidder: 'pubmatic',
       params: {
         publisherId: '156295',               // required
-        adSlot: 'pubmatic_test2@1x1',       // required
+        adSlot: 'pubmatic_test2@1x1',       // optional
       }
     }]
 }];
@@ -146,7 +146,7 @@ var adUnits = [
       bidder: 'pubmatic',
       params: {
         publisherId: '156209',               // required
-        adSlot: 'pubmatic_test2@300x250',    // required
+        adSlot: 'pubmatic_test2@300x250',    // optional
         pmzoneid: 'zone1, zone11',           // optional
         lat: '40.712775',                    // optional
         lon: '-74.005973',                   // optional
