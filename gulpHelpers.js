@@ -26,6 +26,12 @@ function isModuleDirectory(filePath) {
   catch (error) {}
 }
 
+// Do not include any files of common directory in the build
+// common folder is designed to keep files shared by multiple modules
+function removeCommonDir(file) {
+  return !!(file !== 'common');
+}
+
 module.exports = {
   parseBrowserArgs: function (argv) {
     return (argv.browsers) ? argv.browsers.split(',') : [];
@@ -68,6 +74,7 @@ module.exports = {
       var absoluteModulePath = path.join(__dirname, MODULE_PATH);
       internalModules = fs.readdirSync(absoluteModulePath)
         .filter(file => (/^[^\.]+(\.js)?$/).test(file))
+        .filter(removeCommonDir)
         .reduce((memo, file) => {
           var moduleName = file.split(new RegExp('[.\\' + path.sep + ']'))[0];
           var modulePath = path.join(absoluteModulePath, file);
