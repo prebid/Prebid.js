@@ -112,7 +112,7 @@ export const spec = {
     // });
     syncs.push({
       type: 'iframe',
-      url: 'http://ads.betweendigital.com/sspmatch-iframe'
+      url: '//ads.betweendigital.com/sspmatch-iframe'
     });
     return syncs;
   }
