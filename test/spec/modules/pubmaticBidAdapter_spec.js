@@ -678,31 +678,6 @@ describe('PubMatic adapter', function () {
           isValid = spec.isBidRequestValid(validBid);
         expect(isValid).to.equal(true);
       });
-
-      // commenting following test-case as we are making param adSlot optional
-  		// it('invalid bid case: adSlot not passed', function () {
-  		//   let validBid = {
-	   //      bidder: 'pubmatic',
-	   //      params: {
-	   //        publisherId: '301'
-	   //      }
-	   //    },
-	   //    isValid = spec.isBidRequestValid(validBid);
-	   //    expect(isValid).to.equal(false);
-    // 	});
-
-      // commenting following test-case as we are making param adSlot optional
-      // it('invalid bid case: adSlot is not string', function () {
-      //   let validBid = {
-      //       bidder: 'pubmatic',
-      //       params: {
-      //         publisherId: '301',
-      //         adSlot: 15671365
-      //       }
-      //     },
-      //     isValid = spec.isBidRequestValid(validBid);
-      //   expect(isValid).to.equal(false);
-      // });
     });
 
   	describe('Request formation', function () {
