@@ -992,7 +992,7 @@ export const spec = {
   transformBidParams: function (params, isOpenRtb) {
     return utils.convertTypes({
       'publisherId': 'string',
-      'adSlot': 'string' // TODO: do we need to change here as well?
+      'adSlot': 'string'
     }, params);
   }
 };
