@@ -82,16 +82,10 @@ export const spec = {
         if (bksdebug) console.log(WHOIS + ' interpretResponse() - use RequestID from Placments');
         sRequestID = request.data.sys_bid_id || '';
       }
-      else {
-          if (bksdebug) console.log(WHOIS + ' interpretResponse() - use RequestID ELSE');
-      }
 
       if (request && request.data.test_cpm > 0) {
         if (bksdebug) console.log(WHOIS + ' interpretResponse() - use Test CPM ');
         nCPM = request.data.test_cpm;
-      }
-      else {
-          if (bksdebug) console.log(WHOIS + ' interpretResponse() - use CPM ELSE');
       }
 
       let bidResponse = {
@@ -113,7 +107,5 @@ export const spec = {
     return bidResponses;
   },
 
-
 };
-
 registerBidder(spec);
