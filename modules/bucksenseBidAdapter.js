@@ -1,7 +1,7 @@
-import { registerBidder } from 'src/adapters/bidderFactory';
-import { BANNER } from 'src/mediaTypes';
+import { registerBidder } from '../src/adapters/bidderFactory';
+import { BANNER } from '../src/mediaTypes';
 
-const WHOIS = 'BKSHBID-008';
+const WHOIS = 'BKSHBID-002';
 const BIDDER_CODE = 'bucksense';
 const URL = 'https://prebid.bksn.se:445/prebid';
 var bksdebug = false;
@@ -17,10 +17,7 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
   */
   isBidRequestValid: function (bid) {
-    if (isNaN(bid)) {
-      return false;
-    }
-    if (bid.params.debug) {
+    if (bid.hasOwnProperty('params') && bid.params.hasOwnProperty('debug')) {
       bksdebug = bid.params.debug;
     }
     if (bksdebug) console.log(WHOIS + ' isBidRequestValid() - INPUT bid:', bid);
@@ -81,14 +78,20 @@ export const spec = {
       var bNetRevenue = oResponse.netRevenue || true;
       var sAd = oResponse.ad || '';
 
-      if (sRequestID.length == 0 && !isNaN(request)) {
+      if (request && sRequestID.length == 0) {
         if (bksdebug) console.log(WHOIS + ' interpretResponse() - use RequestID from Placments');
         sRequestID = request.data.sys_bid_id || '';
       }
+      else {
+          if (bksdebug) console.log(WHOIS + ' interpretResponse() - use RequestID ELSE');
+      }
 
-      if (!isNaN(request) && request.data.test_cpm > 0) {
+      if (request && request.data.test_cpm > 0) {
         if (bksdebug) console.log(WHOIS + ' interpretResponse() - use Test CPM ');
         nCPM = request.data.test_cpm;
+      }
+      else {
+          if (bksdebug) console.log(WHOIS + ' interpretResponse() - use CPM ELSE');
       }
 
       let bidResponse = {
@@ -110,62 +113,7 @@ export const spec = {
     return bidResponses;
   },
 
-  /**
-   * ...
-   *
-   * @param {object} bid The bid to validate.
-   * @return ...
-  */
-  onSetTargeting: function (bid) {
-    if (bksdebug) console.log(WHOIS + ' onSetTargeting() - INPUT bid:', bid);
-  },
 
-  /**
-  * Register the user sync pixels which should be dropped after the auction.
-  *
-  * @param {SyncOptions} syncOptions Which user syncs are allowed?
-  * @param {ServerResponse[]} serverResponses List of server's responses.
-  * @return {UserSync[]} The user syncs which should be dropped.
-  */
-  getUserSyncs: function(syncOptions, serverResponses) {
-    if (bksdebug) console.log(WHOIS + ' getUserSyncs() - INPUT syncOptions:', syncOptions, 'INPUT serverResponses:', serverResponses);
-    const syncs = []
-    /*
-    if (syncOptions.iframeEnabled) {
-      syncs.push({
-        type: 'iframe',
-        url: '//'
-      });
-    }
-    if (syncOptions.pixelEnabled && serverResponses.length > 0) {
-      syncs.push({
-        type: 'image',
-        url: serverResponses[0].body.userSync.url
-      });
-    }
-    */
-    return syncs;
-  },
-
-  /**
-   * ...
-   *
-   * @param {object} bid The bid to validate.
-   * @return ...
-  */
-  onBidWon: function(bid) {
-    if (bksdebug) console.log(WHOIS + ' onBidWon() - INPUT bid:', bid);
-  },
-
-  /**
-   * ...
-   *
-   * @param ...
-   * @return ...
-  */
-  onTimeout: function(timeoutData) {
-    if (bksdebug) console.log(WHOIS + ' onTimeout() - INPUT timeoutData:', timeoutData);
-  },
 };
 
 registerBidder(spec);

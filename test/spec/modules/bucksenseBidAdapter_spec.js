@@ -23,14 +23,9 @@ describe('the bucksense adapter', function() {
       bid = getValidBidObject();
     });
 
-    it('should fail validation if the bid isn\'t defined or not an object', function() {
-      var result = spec.isBidRequestValid();
-
-      expect(result).to.equal(false);
-
-      result = spec.isBidRequestValid('not an object');
-
-      expect(result).to.equal(false);
+    it('should success validation', function() {
+      var result = spec.isBidRequestValid(bid);
+      expect(result).to.equal(true);
     });
   });
 
