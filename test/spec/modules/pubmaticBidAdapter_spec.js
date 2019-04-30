@@ -1268,14 +1268,16 @@ describe('PubMatic adapter', function () {
           }]);
         });
 
-        it('Request should NOT have adsrvrOrgId config params if userId is NOT object', function() {
+        it('Request should NOT have adsrvrOrgId params if userId is NOT object', function() {
           let request = spec.buildRequests(bidRequests, {});
           let data = JSON.parse(request.data);
           expect(data.user.eids).to.deep.equal(undefined);
         });
 
-        it('Request should NOT have adsrvrOrgId config params if userId.tdid is NOT object', function() {
-          bidRequests[0].userId = {};
+        it('Request should NOT have adsrvrOrgId params if userId.tdid is NOT string', function() {
+          bidRequests[0].userId = {
+            tdid: 1234
+          };
           let request = spec.buildRequests(bidRequests, {});
           let data = JSON.parse(request.data);
           expect(data.user.eids).to.deep.equal(undefined);
