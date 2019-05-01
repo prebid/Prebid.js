@@ -3,6 +3,7 @@ import {
   syncDelay,
   pubCommonIdSubmodule,
   unifiedIdSubmodule,
+  id5Submodule,
   requestBidsHook
 } from 'modules/userId';
 import {config} from 'src/config';
@@ -56,7 +57,7 @@ describe('User ID', function() {
       let pubcid = utils.getCookie('pubcid');
       expect(pubcid).to.be.null; // there should be no cookie initially
 
-      init(config, [pubCommonIdSubmodule, unifiedIdSubmodule]);
+      init(config, [pubCommonIdSubmodule, unifiedIdSubmodule, id5Submodule]);
       config.setConfig({ usersync: { syncDelay: 0, userIds: [ createStorageConfig() ] } });
 
       requestBidsHook(config => { innerAdUnits1 = config.adUnits }, {adUnits: adUnits1});
@@ -81,7 +82,7 @@ describe('User ID', function() {
       let pubcid1;
       let pubcid2;
 
-      init(config, [pubCommonIdSubmodule, unifiedIdSubmodule]);
+      init(config, [pubCommonIdSubmodule, unifiedIdSubmodule, id5Submodule]);
       config.setConfig({ usersync: { syncDelay: 0, userIds: [ createStorageConfig() ] } });
       requestBidsHook((config) => { innerAdUnits1 = config.adUnits }, {adUnits: adUnits1});
       pubcid1 = utils.getCookie('pubcid'); // get first cookie
@@ -94,7 +95,7 @@ describe('User ID', function() {
         });
       });
 
-      init(config, [pubCommonIdSubmodule, unifiedIdSubmodule]);
+      init(config, [pubCommonIdSubmodule, unifiedIdSubmodule, id5Submodule]);
       config.setConfig({ usersync: { syncDelay: 0, userIds: [ createStorageConfig() ] } });
       requestBidsHook((config) => { innerAdUnits2 = config.adUnits }, {adUnits: adUnits2});
 
@@ -114,7 +115,7 @@ describe('User ID', function() {
       let adUnits = [createAdUnit()];
       let innerAdUnits;
 
-      init(config, [pubCommonIdSubmodule, unifiedIdSubmodule]);
+      init(config, [pubCommonIdSubmodule, unifiedIdSubmodule, id5Submodule]);
       config.setConfig({
         usersync: {
           syncDelay: 0,
@@ -152,13 +153,13 @@ describe('User ID', function() {
     });
 
     it('fails initialization if opt out cookie exists', function () {
-      init(config, [pubCommonIdSubmodule, unifiedIdSubmodule]);
+      init(config, [pubCommonIdSubmodule, unifiedIdSubmodule, id5Submodule]);
       config.setConfig({ usersync: { syncDelay: 0, userIds: [ createStorageConfig() ] } });
       expect(utils.logInfo.args[0][0]).to.exist.and.to.equal('User ID - opt-out cookie found, exit module');
     });
 
     it('initializes if no opt out cookie exists', function () {
-      init(config, [pubCommonIdSubmodule, unifiedIdSubmodule]);
+      init(config, [pubCommonIdSubmodule, unifiedIdSubmodule, id5Submodule]);
       config.setConfig({ usersync: { syncDelay: 0, userIds: [ createStorageConfig() ] } });
       expect(utils.logInfo.args[0][0]).to.exist.and.to.equal('User ID - usersync config updated for 1 submodules');
     });
@@ -176,20 +177,20 @@ describe('User ID', function() {
     });
 
     it('handles config with no usersync object', function () {
-      init(config, [pubCommonIdSubmodule, unifiedIdSubmodule]);
+      init(config, [pubCommonIdSubmodule, unifiedIdSubmodule, id5Submodule]);
       config.setConfig({});
       // usersync is undefined, and no logInfo message for 'User ID - usersync config updated'
       expect(typeof utils.logInfo.args[0]).to.equal('undefined');
     });
 
     it('handles config with empty usersync object', function () {
-      init(config, [pubCommonIdSubmodule, unifiedIdSubmodule]);
+      init(config, [pubCommonIdSubmodule, unifiedIdSubmodule, id5Submodule]);
       config.setConfig({ usersync: {} });
       expect(typeof utils.logInfo.args[0]).to.equal('undefined');
     });
 
     it('handles config with usersync and userIds that are empty objs', function () {
-      init(config, [pubCommonIdSubmodule, unifiedIdSubmodule]);
+      init(config, [pubCommonIdSubmodule, unifiedIdSubmodule, id5Submodule]);
       config.setConfig({
         usersync: {
           userIds: [{}]
@@ -199,7 +200,7 @@ describe('User ID', function() {
     });
 
     it('handles config with usersync and userIds with empty names or that dont match a submodule.name', function () {
-      init(config, [pubCommonIdSubmodule, unifiedIdSubmodule]);
+      init(config, [pubCommonIdSubmodule, unifiedIdSubmodule, id5Submodule]);
       config.setConfig({
         usersync: {
           userIds: [{
@@ -215,7 +216,7 @@ describe('User ID', function() {
     });
 
     it('config with 1 configurations should create 1 submodules', function () {
-      init(config, [pubCommonIdSubmodule, unifiedIdSubmodule]);
+      init(config, [pubCommonIdSubmodule, unifiedIdSubmodule, id5Submodule]);
       config.setConfig({
         usersync: {
           syncDelay: 0,
@@ -229,7 +230,7 @@ describe('User ID', function() {
     });
 
     it('config with 2 configurations should result in 2 submodules add', function () {
-      init(config, [pubCommonIdSubmodule, unifiedIdSubmodule]);
+      init(config, [pubCommonIdSubmodule, unifiedIdSubmodule, id5Submodule]);
       config.setConfig({
         usersync: {
           syncDelay: 0,
@@ -238,14 +239,17 @@ describe('User ID', function() {
           }, {
             name: 'unifiedId',
             storage: { name: 'unifiedid', type: 'cookie' }
+          }, {
+            name: 'id5Id',
+            storage: { name: 'id5id', type: 'cookie' }
           }]
         }
       });
-      expect(utils.logInfo.args[0][0]).to.exist.and.to.equal('User ID - usersync config updated for 2 submodules');
+      expect(utils.logInfo.args[0][0]).to.exist.and.to.equal('User ID - usersync config updated for 3 submodules');
     });
 
     it('config syncDelay updates module correctly', function () {
-      init(config, [pubCommonIdSubmodule, unifiedIdSubmodule]);
+      init(config, [pubCommonIdSubmodule, unifiedIdSubmodule, id5Submodule]);
       config.setConfig({
         usersync: {
           syncDelay: 99,

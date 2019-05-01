@@ -103,6 +103,37 @@ export const unifiedIdSubmodule = {
 };
 
 // @type {Submodule}
+export const id5Submodule = {
+  name: 'id5Id',
+  decode(value) {
+    return (value && typeof value['ID5ID'] === 'string') ? { 'id5id': value['ID5ID'] } : undefined;
+  },
+  getId(submoduleConfigParams, consentData) {
+    if (!submoduleConfigParams || typeof submoduleConfigParams.partner !== 'number') {
+      utils.logError(`${MODULE_NAME} - ID5 submodule requires partner to be defined as a number`);
+      return;
+    }
+    const hasGdpr = GDPRApplies(consentData) ? 1 : 0;
+    const gdprConsentString = hasGdpr ? consentData.consentString : '';
+    const url = `https://id5-sync.com/g/v1/${submoduleConfigParams.partner}.json?gdpr=${hasGdpr}&gdpr_consent=${gdprConsentString}`;
+
+    return function (callback) {
+      ajax(url, response => {
+        let responseObj;
+        if (response) {
+          try {
+            responseObj = JSON.parse(response);
+          } catch (error) {
+            utils.logError(error);
+          }
+        }
+        callback(responseObj);
+      }, undefined, { method: 'GET' });
+    }
+  }
+};
+
+// @type {Submodule}
 export const pubCommonIdSubmodule = {
   name: 'pubCommonId',
   decode(value) {
@@ -435,4 +466,4 @@ export function init (config, enabledSubmodules) {
   });
 }
 
-init(config, [pubCommonIdSubmodule, unifiedIdSubmodule]);
+init(config, [pubCommonIdSubmodule, unifiedIdSubmodule, id5Submodule]);
