@@ -207,7 +207,7 @@ gulp test-coverage
 gulp view-coverage
 ```
 
-For end-to-end testing:
+For Prebid.org members with access to BrowserStack, additional end-to-end testing can be done with:
 
 ```bash
 gulp e2e-test --host=test.localhost
