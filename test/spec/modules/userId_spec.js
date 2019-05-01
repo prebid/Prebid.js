@@ -340,17 +340,42 @@ describe('User ID', function() {
       }, {adUnits});
     });
 
-    it('test hook when both pubCommonId and unifiedId have data to pass', function(done) {
+    it('test hook from id5id cookie', function(done) {
+      // simulate existing browser cookie values
+      utils.setCookie('id5id', JSON.stringify({'ID5ID': 'testid5id'}), (new Date(Date.now() + 5000).toUTCString()));
+
+      init(config, [id5Submodule]);
+      config.setConfig({
+        usersync: {
+          syncDelay: 0,
+          userIds: [createStorageConfig('id5Id', 'id5id', 'cookie')]}
+      });
+
+      requestBidsHook(function() {
+        adUnits.forEach(unit => {
+          unit.bids.forEach(bid => {
+            expect(bid).to.have.deep.nested.property('userId.id5id');
+            expect(bid.userId.id5id).to.equal('testid5id');
+          });
+        });
+        utils.setCookie('id5id', '', EXPIRED_COOKIE_DATE);
+        done();
+      }, {adUnits});
+    });
+
+    it('test hook when pubCommonId, unifiedId and id5Id have data to pass', function(done) {
       utils.setCookie('pubcid', 'testpubcid', (new Date(Date.now() + 5000).toUTCString()));
       utils.setCookie('unifiedid', JSON.stringify({'TDID': 'testunifiedid'}), (new Date(Date.now() + 5000).toUTCString()));
+      utils.setCookie('id5id', JSON.stringify({'ID5ID': 'testid5id'}), (new Date(Date.now() + 5000).toUTCString()));
 
-      init(config, [pubCommonIdSubmodule, unifiedIdSubmodule]);
+      init(config, [pubCommonIdSubmodule, unifiedIdSubmodule, id5Submodule]);
       config.setConfig({
         usersync: {
           syncDelay: 0,
           userIds: [
             createStorageConfig('pubCommonId', 'pubcid', 'cookie'),
-            createStorageConfig('unifiedId', 'unifiedid', 'cookie')
+            createStorageConfig('unifiedId', 'unifiedid', 'cookie'),
+            createStorageConfig('id5Id', 'id5id', 'cookie')
           ]}
       });
 
@@ -363,10 +388,14 @@ describe('User ID', function() {
             // also check that UnifiedId id data was copied to bid
             expect(bid).to.have.deep.nested.property('userId.tdid');
             expect(bid.userId.tdid).to.equal('testunifiedid');
+            // also check that ID5 id data was copied to bid
+            expect(bid).to.have.deep.nested.property('userId.id5id');
+            expect(bid.userId.id5id).to.equal('testid5id');
           });
         });
         utils.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
         utils.setCookie('unifiedid', '', EXPIRED_COOKIE_DATE);
+        utils.setCookie('id5id', '', EXPIRED_COOKIE_DATE);
         done();
       }, {adUnits});
     });
