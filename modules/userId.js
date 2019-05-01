@@ -176,12 +176,21 @@ export function getStoredValue(storage) {
 }
 
 /**
+ * test if consent module is present, and if GDPR applies
+ * @param {Object} consentData
+ * @returns {boolean}
+ */
+export function GDPRApplies(consentData) {
+  return consentData && typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies;
+}
+
+/**
  * test if consent module is present, applies, and is valid for local storage or cookies (purpose 1)
  * @param {Object} consentData
  * @returns {boolean}
  */
 export function hasGDPRConsent(consentData) {
-  if (consentData && typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies) {
+  if (GDPRApplies(consentData)) {
     if (!consentData.consentString) {
       return false;
     }
