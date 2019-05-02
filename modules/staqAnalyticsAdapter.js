@@ -10,6 +10,8 @@ const ANALYTICS_VERSION = '1.0.0';
 const DEFAULT_QUEUE_TIMEOUT = 4000;
 const DEFAULT_HOST = 'tag.staq.com';
 
+let staqAdapterRefWin;
+
 const STAQ_EVENTS = {
   AUCTION_INIT: 'auctionInit',
   BID_REQUEST: 'bidRequested',
@@ -17,13 +19,12 @@ const STAQ_EVENTS = {
   BID_WON: 'bidWon',
   AUCTION_END: 'auctionEnd',
   TIMEOUT: 'adapterTimedOut'
-};
+}
 
 function buildRequestTemplate(connId) {
-  const refWin = getRefererInfo(window);
-  const url = refWin.referer;
-  const ref = refWin.referer;
-  const topLocation = refWin.referer;
+  const url = staqAdapterRefWin.referer;
+  const ref = staqAdapterRefWin.referer;
+  const topLocation = staqAdapterRefWin.referer;
 
   return {
     ver: ANALYTICS_VERSION,
@@ -93,6 +94,7 @@ analyticsAdapter.originEnableAnalytics = analyticsAdapter.enableAnalytics;
 
 analyticsAdapter.enableAnalytics = (config) => {
   utils.logInfo('Enabling STAQ Adapter');
+  staqAdapterRefWin = getRefererInfo(window);
   if (!config.options.connId) {
     utils.logError('ConnId is not defined. STAQ Analytics won\'t work');
     return;
