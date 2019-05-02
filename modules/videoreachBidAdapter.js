@@ -5,7 +5,7 @@ const ENDPOINT_URL = '//a.videoreach.de/hb/';
 
 export const spec = {
   code: BIDDER_CODE,
-  supportedMediaTypes: ['video', 'banner'],
+  supportedMediaTypes: ['banner'],
 
   isBidRequestValid: function(bid) {
     return !!(bid.params.TagId);
@@ -62,17 +62,29 @@ export const spec = {
     return bidResponses;
   },
 
-  getUserSyncs: function(syncOptions, responses) {
+  getUserSyncs: function(syncOptions, responses, gdprConsent) {
     const syncs = [];
 
     if (syncOptions.pixelEnabled && responses.length) {
       const SyncPixels = responses[0].body.responses[0].sync;
 
+      let params = '';
+      if (gdprConsent && typeof gdprConsent.consentString === 'string') {
+        if (typeof gdprConsent.gdprApplies === 'boolean') {
+          params += 'gdpr='+gdprConsent.gdprApplies+'&gdpr_consent='+gdprConsent.consentString;
+        } else {
+          params += 'gdpr_consent='+gdprConsent.consentString;
+        }
+      }
+
+      var gdpr;
       if (SyncPixels) {
         SyncPixels.forEach(sync => {
+          gdpr = (params) ? ((sync.split('?')[1] ? '&':'?') + params) : '';
+
           syncs.push({
             type: 'image',
-            url: sync
+            url: sync + gdpr
           });
         });
       }
