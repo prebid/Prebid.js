@@ -1,6 +1,7 @@
 import adapter from '../src/AnalyticsAdapter';
 import CONSTANTS from '../src/constants.json';
 import adapterManager from '../src/adapterManager';
+import {getRefererInfo} from '../src/refererDetection';
 import {parse} from '../src/url';
 import * as utils from '../src/utils';
 import {ajax} from '../src/ajax';
@@ -19,9 +20,10 @@ const STAQ_EVENTS = {
 };
 
 function buildRequestTemplate(connId) {
-  const url = utils.getTopWindowUrl();
-  const ref = utils.getTopWindowReferrer();
-  const topLocation = utils.getTopWindowLocation();
+  const refWin = getRefererInfo(window);
+  const url = refWin.referer;
+  const ref = refWin.referer;
+  const topLocation = refWin.referer;
 
   return {
     ver: ANALYTICS_VERSION,
@@ -75,7 +77,7 @@ let analyticsAdapter = Object.assign(adapter({analyticsType: 'endpoint'}),
         if (analyticsAdapter.context.queue) {
           analyticsAdapter.context.queue.push(events);
           if (eventType === CONSTANTS.EVENTS.BID_WON) {
-
+            analyticsAdapter.context.queue.updateWithWins(events);
           }
         }
         if (eventType === CONSTANTS.EVENTS.AUCTION_END) {
@@ -184,8 +186,10 @@ function createHbEvent(auctionId, adapter, event, adUnitCode = undefined, value 
   if (time) {
     ev.timeToRespond = time;
   }
-  if (typeof myVar !== 'undefined') {
-    ev.bidWon = bidWon
+  if (typeof bidWon !== 'undefined') {
+    ev.bidWon = bidWon;
+  } else if (event === 'bidResponse') {
+    ev.bidWon = false;
   }
   ev.auctionId = auctionId;
 
@@ -380,6 +384,20 @@ export function ExpiringQueue(callback, ttl) {
     }
     reset();
   };
+
+  this.updateWithWins = (winEvents) => {
+    winEvents.forEach(winEvent => {
+      queue.forEach(prevEvent => {
+        if (prevEvent.event === 'bidResponse' &&
+          prevEvent.auctionId == winEvent.auctionId &&
+          prevEvent.adUnitCode == winEvent.adUnitCode &&
+          prevEvent.adId == winEvent.adId &&
+          prevEvent.adapter == winEvent.adapter) {
+          prevEvent.bidWon = true;
+        }
+      });
+    });
+  }
 
   this.popAll = () => {
     let result = queue;

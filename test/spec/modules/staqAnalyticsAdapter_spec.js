@@ -269,7 +269,8 @@ describe('', function () {
         cpm: 0.015,
         timeToRespond: 0.443,
         height: 250,
-        width: 300
+        width: 300,
+        bidWon: false,
       });
     });
 
@@ -304,7 +305,8 @@ describe('', function () {
         adUnitCode: 'container-1',
         cpm: 0.015,
         height: 250,
-        width: 300
+        width: 300,
+        bidWon: true,
       });
     });
 
