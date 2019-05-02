@@ -71,16 +71,16 @@ export const spec = {
       let params = '';
       if (gdprConsent && typeof gdprConsent.consentString === 'string') {
         if (typeof gdprConsent.gdprApplies === 'boolean') {
-          params += 'gdpr='+gdprConsent.gdprApplies+'&gdpr_consent='+gdprConsent.consentString;
+          params += 'gdpr=' + gdprConsent.gdprApplies + '&gdpr_consent=' + gdprConsent.consentString;
         } else {
-          params += 'gdpr_consent='+gdprConsent.consentString;
+          params += 'gdpr_consent=' + gdprConsent.consentString;
         }
       }
 
       var gdpr;
       if (SyncPixels) {
         SyncPixels.forEach(sync => {
-          gdpr = (params) ? ((sync.split('?')[1] ? '&':'?') + params) : '';
+          gdpr = (params) ? ((sync.split('?')[1] ? '&' : '?') + params) : '';
 
           syncs.push({
             type: 'image',
