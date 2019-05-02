@@ -260,16 +260,17 @@ $$PREBID_GLOBAL$$.setTargetingForGPTAsync = function (adUnit, customSlotMatching
 
 /**
  * Set query string targeting on all AST (AppNexus Seller Tag) ad units. Note that this function has to be called after all ad units on page are defined. For working example code, see [Using Prebid.js with AppNexus Publisher Ad Server](http://prebid.org/dev-docs/examples/use-prebid-with-appnexus-ad-server.html).
+ * @param  {(string|string[])} adUnitCode adUnitCode or array of adUnitCodes
  * @alias module:pbjs.setTargetingForAst
  */
-$$PREBID_GLOBAL$$.setTargetingForAst = function() {
+$$PREBID_GLOBAL$$.setTargetingForAst = function(adUnitCodes) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.setTargetingForAn', arguments);
   if (!targeting.isApntagDefined()) {
     utils.logError('window.apntag is not defined on the page');
     return;
   }
 
-  targeting.setTargetingForAst();
+  targeting.setTargetingForAst(adUnitCodes);
 
   // emit event
   events.emit(SET_TARGETING, targeting.getAllTargeting());
