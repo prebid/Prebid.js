@@ -78,15 +78,21 @@ export const spec = {
     let nativeOk = utils.isPlainObject(native);
     if (nativeOk) {
       const nativeParams = utils.deepAccess(bid, 'nativeParams');
+      let assetsCount = 0;
       if (utils.isPlainObject(nativeParams)) {
         for (let k in nativeParams) {
           let v = nativeParams[k];
-          if (!utils.isPlainObject(v) || (!spec.NATIVE_ASSET_KEY_TO_ASSET_MAP.hasOwnProperty(k) && utils.deepAccess(v, 'required'))) {
+          const supportProp = spec.NATIVE_ASSET_KEY_TO_ASSET_MAP.hasOwnProperty(k);
+          if (supportProp) {
+            assetsCount++
+          }
+          if (!utils.isPlainObject(v) || (!supportProp && utils.deepAccess(v, 'required'))) {
             nativeOk = false;
             break;
           }
         }
       }
+      nativeOk = nativeOk && (assetsCount > 0);
     }
     let bannerOk = utils.isPlainObject(banner);
     if (bannerOk) {
@@ -98,7 +104,6 @@ export const spec = {
     }
     return utils.isPlainObject(bid.params) && !!bid.params.accountId && !!bid.params.placementId &&
       utils.isStr(bid.params.accountId) && utils.isStr(bid.params.placementId) &&
-      bid.params.accountId.length > 0 && bid.params.placementId.length > 0 &&
       bid.params.accountId.toString().match(spec.reId) > 0 && bid.params.placementId.toString().match(spec.reId) &&
       (bannerOk || nativeOk);
   },
@@ -212,7 +217,11 @@ export const spec = {
     }
     serverResponse.body.seatbid.forEach((bids) => {
       bids.bid.forEach((bid) => {
-        returnedBids.push(prebidBid(bid, serverResponse.body.cur));
+        const pbid = prebidBid(bid, serverResponse.body.cur);
+        if (pbid.mediaType === NATIVE && utils.isEmpty(pbid.native)) {
+          return;
+        }
+        returnedBids.push(pbid);
       })
     });
 
@@ -482,7 +491,7 @@ function createNativeRequest(params) {
 }
 
 function commonNativeRequestObject(nativeAsset, params) {
-  var key = nativeAsset.KEY;
+  const key = nativeAsset.KEY;
   return {
     id: nativeAsset.ID,
     required: params[key].required ? 1 : 0,
