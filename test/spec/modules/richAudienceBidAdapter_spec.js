@@ -81,7 +81,9 @@ describe('Rich Audience adapter tests', function () {
       creative_id: '189198063',
       netRevenue: true,
       currency: 'USD',
-      ttl: 300
+      ttl: 300,
+      dealId: 'dealId'
+
     }
   };
 
@@ -95,7 +97,8 @@ describe('Rich Audience adapter tests', function () {
       netRevenue: true,
       currency: 'USD',
       ttl: 300,
-      vastXML: '<VAST></VAST>'
+      vastXML: '<VAST></VAST>',
+      dealId: 'dealId'
     }
   };
 
@@ -228,6 +231,7 @@ describe('Rich Audience adapter tests', function () {
     expect(bid.netRevenue).to.equal(true);
     expect(bid.currency).to.equal('USD');
     expect(bid.ttl).to.equal(300);
+    expect(bid.dealId).to.equal('dealId');
   });
 
   it('no banner media response', function () {

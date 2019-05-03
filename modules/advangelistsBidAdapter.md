@@ -24,7 +24,7 @@ var displayAdUnit = [
         [320, 50]
     ],
     bids: [{
-        bidder: 'avng',
+        bidder: 'advangelists',
         params: {
             pubid: '0cf8d6d643e13d86a5b6374148a4afac',
             placement: 1234
@@ -47,7 +47,7 @@ var videoAdUnit = {
 	},
     bids: [
       {
-      	bidder: 'avng',
+      	bidder: 'advangelists',
       	params: {
         	pubid: '8537f00948fc37cc03c5f0f88e198a76',
         	placement: 1234,

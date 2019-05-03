@@ -1460,5 +1460,16 @@ describe('S2S Adapter', function () {
         }
       })
     });
+
+    it('should set syncUrlModifier', function () {
+      config.setConfig({
+        s2sConfig: {
+          syncUrlModifier: {
+            appnexus: () => {}
+          }
+        }
+      });
+      expect(typeof config.getConfig('s2sConfig').syncUrlModifier.appnexus).to.equal('function')
+    });
   });
 });
