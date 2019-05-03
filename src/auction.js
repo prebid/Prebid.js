@@ -561,24 +561,9 @@ export function getStandardBidderSettings(mediaType, bidderCode) {
       createKeyVal(TARGETING_KEYS.SOURCE, 'source'),
       createKeyVal(TARGETING_KEYS.FORMAT, 'mediaType'),
 
-      {
-        key: CONSTANTS.TARGETING_KEYS.CPM,
-        val: function (bidResponse) {
-          return bidResponse.cpm;
-        }
-      },
-      {
-        key: CONSTANTS.TARGETING_KEYS.TIME_TO_RESPOND,
-        val: function (bidResponse) {
-          return bidResponse.timeToRespond;
-        }
-      },
-      {
-        key: CONSTANTS.TARGETING_KEYS.AUCTION_ID,
-        val: function (bidResponse) {
-          return bidResponse.auctionId;
-        }
-      },
+      createKeyVal(TARGETING_KEYS.CPM, 'cpm'),
+      createKeyVal(TARGETING_KEYS.TIME_TO_RESPOND, 'timeToRespond'),
+      createKeyVal(TARGETING_KEYS.AUCTION_ID, 'auctionId'),
     ]
   }
 
