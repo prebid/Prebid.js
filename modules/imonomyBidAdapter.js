@@ -12,7 +12,7 @@ export const spec = {
   * Determines whether or not the given bid request is valid. Valid bid request must have placementId and hbid
   *
   * @param {BidRequest} bid The bid params to validate.
-  * @return boolean True if this is a valid bid, and false otherwise.
+  * @return {boolean} True if this is a valid bid, and false otherwise.
   */
   isBidRequestValid: bid => {
     return !!(bid && bid.params && bid.params.placementId && bid.params.hbid);
@@ -20,7 +20,7 @@ export const spec = {
   /**
   * Make a server request from the list of BidRequests.
   *
-  * @param {validBidRequests[]} - an array of bids
+  * @param {BidRequest[]} validBidRequests an array of bids
   * @return ServerRequest Info describing the request to the server.
   */
   buildRequests: validBidRequests => {
@@ -65,12 +65,12 @@ export const spec = {
 
     let payload = {};
     if (!utils.isEmpty(tags)) {
-      payload = { bids: [...tags], kbConf: kbConf };
+      payload = { bids: [...tags], kbConf };
     }
 
-    var endpointToUse = ENDPOINT
+    let endpointToUse = ENDPOINT;
     if (kbConf.hdbdid) {
-      endpointToUse = endpointToUse.replace('00000', kbConf.hdbdid)
+      endpointToUse = endpointToUse.replace('00000', kbConf.hdbdid);
     }
 
     return {
@@ -85,20 +85,24 @@ export const spec = {
   * @param {*} response A successful response from the server.
   * @return {Bid[]} An array of bids which were nested inside the server.
   */
-  interpretResponse: (response, request) => {
+  interpretResponse: (response) => {
     const bidResponses = [];
-    try {
-      if (response.body && response.body.bids) {
-        response.body.bids.forEach(bid => {
-          // The bid ID. Used to tie this bid back to the request.
+    if (response && response.body && response.body.bids) {
+      response.body.bids.forEach(bid => {
+        // The bid ID. Used to tie this bid back to the request.
+        if (bid.uuid) {
           bid.requestId = bid.uuid;
-          // The creative payload of the returned bid.
+        } else {
+          utils.logError('No uuid for bid');
+        }
+        // The creative payload of the returned bid.
+        if (bid.creative) {
           bid.ad = bid.creative;
-          bidResponses.push(bid);
-        });
-      }
-    } catch (error) {
-      utils.logError(error);
+        } else {
+          utils.logError('No creative for bid');
+        }
+        bidResponses.push(bid);
+      });
     }
     return bidResponses;
   },
