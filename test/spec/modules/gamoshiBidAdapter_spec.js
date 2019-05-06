@@ -166,12 +166,12 @@ describe('GamoshiAdapter', function () {
       const bidRequestWithVideo = utils.deepClone(bidRequest);
       bidRequestWithVideo.mediaTypes = {
         video: {
-          sizes: [[300, 250], [120, 600]]
+          playerSize: [302, 252]
         }
       };
       response = spec.buildRequests([bidRequestWithVideo], bidRequest)[0];
-      expect(response.data.imp[0].video.w).to.equal(bidRequestWithVideo.mediaTypes.video.sizes[0][0]);
-      expect(response.data.imp[0].video.h).to.equal(bidRequestWithVideo.mediaTypes.video.sizes[0][1]);
+      expect(response.data.imp[0].video.w).to.equal(bidRequestWithVideo.mediaTypes.video.playerSize[0][0]);
+      expect(response.data.imp[0].video.h).to.equal(bidRequestWithVideo.mediaTypes.video.playerSize[0][1]);
       expect(response.data.imp[0].video.pos).to.equal(0);
       const bidRequestWithPosEquals1 = utils.deepClone(bidRequestWithVideo);
       bidRequestWithPosEquals1.params.pos = 1;
@@ -200,6 +200,29 @@ describe('GamoshiAdapter', function () {
       bidRequestWithPosEquals2.mediaTypes.video.context = null;
       response = spec.buildRequests([bidRequestWithPosEquals2], bidRequest)[0];
       expect(response.data.imp[0].video.ext.context).to.equal(null);
+    });
+
+    it('builds request video object correctly with multi-dimensions size array', function () {
+      let response;
+      const bidRequestWithVideo = utils.deepClone(bidRequest);
+      bidRequestWithVideo.mediaTypes.video = {
+        playerSize: [[304, 254], [305, 255]],
+        context: 'instream'
+      };
+
+      response = spec.buildRequests([bidRequestWithVideo], bidRequest)[0];
+      expect(response.data.imp[1].video.ext.context).to.equal('instream');
+      bidRequestWithVideo.mediaTypes.video.context = 'outstream';
+
+      const bidRequestWithPosEquals1 = utils.deepClone(bidRequestWithVideo);
+      bidRequestWithPosEquals1.mediaTypes.video.context = 'outstream';
+      response = spec.buildRequests([bidRequestWithPosEquals1], bidRequest)[0];
+      expect(response.data.imp[1].video.ext.context).to.equal('outstream');
+
+      const bidRequestWithPosEquals2 = utils.deepClone(bidRequestWithVideo);
+      bidRequestWithPosEquals2.mediaTypes.video.context = null;
+      response = spec.buildRequests([bidRequestWithPosEquals2], bidRequest)[0];
+      expect(response.data.imp[1].video.ext.context).to.equal(null);
     });
 
     it('builds request with gdpr consent', function () {

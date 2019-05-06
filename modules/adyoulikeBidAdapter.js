@@ -132,7 +132,7 @@ function getPageRefreshed() {
 function createEndpoint(bidRequests, bidderRequest) {
   let host = getHostname(bidRequests);
   return format({
-    protocol: (document.location.protocol === 'https:') ? 'https' : 'http',
+    protocol: 'https',
     host: `${DEFAULT_DC}${host}.omnitagjs.com`,
     pathname: '/hb-api/prebid/v1',
     search: createEndpointQS(bidderRequest)
