@@ -229,7 +229,7 @@ export const spec = {
     return returnedBids;
   },
   onBidWon: (bid) => {
-    const cpm = bid.pbMg;
+    const cpm = utils.deepAccess(bid, 'adserverTargeting.hb_pb') || '';
     if (utils.isStr(bid.nurl) && bid.nurl !== '') {
       bid.nurl = bid.nurl.replace(
         /\${AUCTION_PRICE}/,
