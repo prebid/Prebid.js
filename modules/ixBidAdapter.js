@@ -1,5 +1,5 @@
 import * as utils from '../src/utils';
-import { BANNER } from '../src/mediaTypes';
+import { BANNER, VIDEO } from '../src/mediaTypes';
 import { config } from '../src/config';
 import isArray from 'core-js/library/fn/array/is-array';
 import isInteger from 'core-js/library/fn/number/is-integer';
@@ -8,7 +8,7 @@ import { registerBidder } from '../src/adapters/bidderFactory';
 const BIDDER_CODE = 'ix';
 const BANNER_SECURE_BID_URL = 'https://as-sec.casalemedia.com/cygnus';
 const BANNER_INSECURE_BID_URL = 'http://as.casalemedia.com/cygnus';
-const SUPPORTED_AD_TYPES = [BANNER];
+const SUPPORTED_AD_TYPES = [BANNER, VIDEO];
 const ENDPOINT_VERSION = 7.2;
 const CENT_TO_DOLLAR_FACTOR = 100;
 const TIME_TO_LIVE = 35;
@@ -137,6 +137,7 @@ export const spec = {
 
   code: BIDDER_CODE,
   supportedMediaTypes: SUPPORTED_AD_TYPES,
+  aliases: ['indexExchange'],
 
   /**
    * Determines whether or not the given bid request is valid.
