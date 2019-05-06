@@ -1,8 +1,6 @@
 import { deepAccess, getBidRequest, getKeyByValue, insertHtmlIntoIframe, logError, triggerPixel } from './utils';
 import includes from 'core-js/library/fn/array/includes';
-import { auctionManager } from './auctionManager';
 
-const utils = require('./utils.js');
 const CONSTANTS = require('./constants.json');
 
 export const nativeAdapters = [];
@@ -136,8 +134,6 @@ export function fireNativeTrackers(message, adObject) {
   let trackers;
   if (message.action === 'click') {
     trackers = adObject['native'] && adObject['native'].clickTrackers;
-  } else if (message.action === 'startJsTrackers') {
-    let bids = auctionManager.getBidsReceived().filter(bid => bid.adId === message.adId);
   } else {
     trackers = adObject['native'] && adObject['native'].impressionTrackers;
 
