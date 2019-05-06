@@ -1,10 +1,10 @@
 import { registerBidder } from '../src/adapters/bidderFactory';
 import { BANNER } from '../src/mediaTypes';
+import * as utils from '../src/utils';
 
-const WHOIS = 'BKSHBID-002';
+const WHO = 'BKSHBID-005';
 const BIDDER_CODE = 'bucksense';
-const URL = 'https://prebid.bksn.se:445/prebid';
-var bksdebug = false;
+const URL = 'https://prebid.bksn.se:445/prebidjs/';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -17,11 +17,14 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
   */
   isBidRequestValid: function (bid) {
-    if (bid.hasOwnProperty('params') && bid.params.hasOwnProperty('debug')) {
-      bksdebug = bid.params.debug;
+    utils.logInfo(WHO + ' isBidRequestValid() - INPUT bid:', bid);
+    if (bid.bidder !== BIDDER_CODE || typeof bid.params === 'undefined') {
+      return false;
     }
-    if (bksdebug) console.log(WHOIS + ' isBidRequestValid() - INPUT bid:', bid);
-    return Boolean(bid.bidId && bid.params && !isNaN(bid.params.placementId));
+    if (typeof bid.params.placementId === 'undefined') {
+      return false;
+    }
+    return true;
   },
 
   /**
@@ -31,26 +34,37 @@ export const spec = {
     * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
-    if (bksdebug) console.log(WHOIS + ' buildRequests() - INPUT validBidRequests:', validBidRequests, 'INPUT bidderRequest:', bidderRequest);
+    utils.logInfo(WHO + ' buildRequests() - INPUT validBidRequests:', validBidRequests, 'INPUT bidderRequest:', bidderRequest);
     let requests = [];
-
     const len = validBidRequests.length;
     for (let i = 0; i < len; i++) {
       var bid = validBidRequests[i];
-
+      var params = {};
+      for (var key in bid.params) {
+        if (bid.params.hasOwnProperty(key)) {
+          params[key] = encodeURI(bid.params[key]);
+        }
+      }
+      delete bid.params;
+      var sizes = bid.sizes;
+      delete bid.sizes;
+      var sendData = {
+        'pub_id': location.host,
+        'pl_id': '' + params.placementId,
+        'secure': (location.protocol === 'https:') ? 1 : 0,
+        'href': encodeURI(location.href),
+        'bid_id': bid.bidId,
+        'params': params,
+        'sizes': sizes,
+        '_bid': bidderRequest
+      };
       requests.push({
         method: 'POST',
         url: URL,
-        data: {
-          'pub_id': location.host,
-          'pl_id': bid.params.placementId,
-          'sys_href': encodeURI(location.href),
-          'sys_bid_id': bid.bidId,
-          'test_cpm': bid.params.testcpm
-        }
-      })
+        data: sendData
+      });
     }
-    if (bksdebug) console.log(WHOIS + ' buildRequests() - requests:', requests);
+    utils.logInfo(WHO + ' buildRequests() - requests:', requests);
     return requests;
   },
 
@@ -61,10 +75,9 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
   */
   interpretResponse: function (serverResponse, request) {
-    if (bksdebug) console.log(WHOIS + ' interpretResponse() - INPUT serverResponse:', serverResponse, 'INPUT request:', request);
+    utils.logInfo(WHO + ' interpretResponse() - INPUT serverResponse:', serverResponse, 'INPUT request:', request);
 
     const bidResponses = [];
-
     if (serverResponse.body) {
       var oResponse = serverResponse.body;
 
@@ -79,13 +92,13 @@ export const spec = {
       var sAd = oResponse.ad || '';
 
       if (request && sRequestID.length == 0) {
-        if (bksdebug) console.log(WHOIS + ' interpretResponse() - use RequestID from Placments');
-        sRequestID = request.data.sys_bid_id || '';
+        utils.logInfo(WHO + ' interpretResponse() - use RequestID from Placments');
+        sRequestID = request.data.bid_id || '';
       }
 
-      if (request && request.data.test_cpm > 0) {
-        if (bksdebug) console.log(WHOIS + ' interpretResponse() - use Test CPM ');
-        nCPM = request.data.test_cpm;
+      if (request && request.data.params.hasOwnProperty('testcpm')) {
+        utils.logInfo(WHO + ' interpretResponse() - use Test CPM ');
+        nCPM = request.data.params.testcpm;
       }
 
       let bidResponse = {
@@ -101,9 +114,9 @@ export const spec = {
       };
       bidResponses.push(bidResponse);
     } else {
-      if (bksdebug) console.log(WHOIS + ' interpretResponse() - serverResponse not valid');
+      utils.logInfo(WHO + ' interpretResponse() - serverResponse not valid');
     }
-    if (bksdebug) console.log(WHOIS + ' interpretResponse() - return', bidResponses);
+    utils.logInfo(WHO + ' interpretResponse() - return', bidResponses);
     return bidResponses;
   },
 
