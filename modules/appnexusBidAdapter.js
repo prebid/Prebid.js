@@ -406,8 +406,6 @@ function newBid(serverBid, rtbBid, bidderRequest) {
     }
   } else if (rtbBid.rtb[NATIVE]) {
     const nativeAd = rtbBid.rtb[NATIVE];
-    let viewJsPayload = rtbBid.viewability.config;
-    let newViewJsPayload = viewJsPayload.replace('%native_dom_id%', ';css_selector=.pb-click[pbAdId=' + bidRequest.adUnitCode + ']');
     bid[NATIVE] = {
       title: nativeAd.title,
       body: nativeAd.desc,
@@ -426,8 +424,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
       displayUrl: nativeAd.displayurl,
       clickTrackers: nativeAd.link.click_trackers,
       impressionTrackers: nativeAd.impression_trackers,
-      javascriptTrackers: newViewJsPayload,
-      viewability: newViewJsPayload
+      javascriptTrackers: rtbBid.viewability.config
     };
     if (nativeAd.main_img) {
       bid['native'].image = {
