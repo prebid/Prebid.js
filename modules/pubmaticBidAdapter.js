@@ -642,10 +642,12 @@ function _createImpressionObject(bid, conf) {
       sizes = sizes.splice(1, sizes.length - 1);
       var format = [];
       sizes.forEach(size => {
-        format.push({
-          w: size[0],
-          h: size[1]
-        });
+        if (utils.isArray(size)) {
+          format.push({
+            w: size[0],
+            h: size[1]
+          });
+        }
       });
       bannerObj.format = format;
     }
