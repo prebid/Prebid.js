@@ -25,7 +25,6 @@ function armJsTracker(bid) {
 var appnexusAdapter = Object.assign(appnexusAdapterhead, {
   track({ eventType, args }) {
     if (typeof args !== 'undefined') {
-      console.info('appnexusAdapter.track - adId: ', args.adId);
       if (eventType === CONSTANTS.EVENTS.AUCTION_END) {
         // getting all appnexus' bids to put the adId in the javascriptTracjer's macro
         // (can't do it from the BidAdapter as the adId isn't defined when the bids are created)
