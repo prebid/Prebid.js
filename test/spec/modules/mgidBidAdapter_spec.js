@@ -571,17 +571,17 @@ describe('Mgid bid adapter', function () {
       const nurl = 'nurl&s=${' + 'AUCTION_PRICE}';
       const bid = {'bidderCode': 'mgid', 'width': 0, 'height': 0, 'statusMessage': 'Bid available', 'adId': '3d0b6ff1dda89', 'requestId': '2a423489e058a1', 'mediaType': 'native', 'source': 'client', 'ad': '{\"native\":{\"ver\":\"1.1\",\"link\":{\"url\":\"LinkURL\"},\"assets\":[{\"id\":1,\"required\":0,\"title\":{\"text\":\"TITLE\"}},{\"id\":2,\"required\":0,\"img\":{\"w\":80,\"h\":80,\"type\":3,\"url\":\"ImageURL\"}},{\"id\":3,\"required\":0,\"img\":{\"w\":50,\"h\":50,\"type\":1,\"url\":\"IconURL\"}},{\"id\":11,\"required\":0,\"data\":{\"type\":1,\"value\":\"sponsored\"}}],\"imptrackers\":[\"ImpTrackerURL\"]}}', 'cpm': 0.66, 'creativeId': '353538_591471', 'currency': 'USD', 'dealId': '', 'netRevenue': true, 'ttl': 300, 'nurl': nurl, 'burl': burl, 'isBurl': true, 'native': {'title': 'TITLE', 'image': {'url': 'ImageURL', 'height': 80, 'width': 80}, 'icon': {'url': 'IconURL', 'height': 50, 'width': 50}, 'sponsored': 'sponsored', 'clickUrl': 'LinkURL', 'clickTrackers': [], 'impressionTrackers': ['ImpTrackerURL'], 'jstracker': []}, 'auctionId': 'a92bffce-14d2-4f8f-a78a-7b9b5e4d28fa', 'responseTimestamp': 1556867386065, 'requestTimestamp': 1556867385916, 'bidder': 'mgid', 'adUnitCode': 'div-gpt-ad-1555415275793-0', 'timeToRespond': 149, 'pbLg': '0.50', 'pbMg': '0.60', 'pbHg': '0.66', 'pbAg': '0.65', 'pbDg': '0.66', 'pbCg': '', 'size': '0x0', 'adserverTargeting': {'hb_bidder': 'mgid', 'hb_adid': '3d0b6ff1dda89', 'hb_pb': '0.66', 'hb_size': '0x0', 'hb_source': 'client', 'hb_format': 'native', 'hb_native_title': 'TITLE', 'hb_native_image': 'hb_native_image:3d0b6ff1dda89', 'hb_native_icon': 'IconURL', 'hb_native_linkurl': 'hb_native_linkurl:3d0b6ff1dda89'}, 'status': 'targetingSet', 'params': [{'accountId': '184', 'placementId': '353538'}]};
       spec.onBidWon(bid);
-      expect(bid.nurl).to.deep.equal('nurl&s=0.60');
-      expect(bid.burl).to.deep.equal('burl&s=0.60');
+      expect(bid.nurl).to.deep.equal('nurl&s=0.66');
+      expect(bid.burl).to.deep.equal('burl&s=0.66');
     });
     it('should replace nurl and burl for banner', function () {
       const burl = 'burl&s=${' + 'AUCTION_PRICE}';
       const nurl = 'nurl&s=${' + 'AUCTION_PRICE}';
       const bid = {'bidderCode': 'mgid', 'width': 0, 'height': 0, 'statusMessage': 'Bid available', 'adId': '3d0b6ff1dda89', 'requestId': '2a423489e058a1', 'mediaType': 'banner', 'source': 'client', 'ad': burl, 'cpm': 0.66, 'creativeId': '353538_591471', 'currency': 'USD', 'dealId': '', 'netRevenue': true, 'ttl': 300, 'nurl': nurl, 'burl': burl, 'isBurl': true, 'auctionId': 'a92bffce-14d2-4f8f-a78a-7b9b5e4d28fa', 'responseTimestamp': 1556867386065, 'requestTimestamp': 1556867385916, 'bidder': 'mgid', 'adUnitCode': 'div-gpt-ad-1555415275793-0', 'timeToRespond': 149, 'pbLg': '0.50', 'pbMg': '0.60', 'pbHg': '0.66', 'pbAg': '0.65', 'pbDg': '0.66', 'pbCg': '', 'size': '0x0', 'adserverTargeting': {'hb_bidder': 'mgid', 'hb_adid': '3d0b6ff1dda89', 'hb_pb': '0.66', 'hb_size': '0x0', 'hb_source': 'client', 'hb_format': 'banner', 'hb_banner_title': 'TITLE', 'hb_banner_image': 'hb_banner_image:3d0b6ff1dda89', 'hb_banner_icon': 'IconURL', 'hb_banner_linkurl': 'hb_banner_linkurl:3d0b6ff1dda89'}, 'status': 'targetingSet', 'params': [{'accountId': '184', 'placementId': '353538'}]};
       spec.onBidWon(bid);
-      expect(bid.nurl).to.deep.equal('nurl&s=0.60');
+      expect(bid.nurl).to.deep.equal('nurl&s=0.66');
       expect(bid.burl).to.deep.equal(burl);
-      expect(bid.ad).to.deep.equal('burl&s=0.60');
+      expect(bid.ad).to.deep.equal('burl&s=0.66');
     });
   });
 });
