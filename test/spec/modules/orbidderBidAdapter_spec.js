@@ -107,7 +107,7 @@ describe('orbidderBidAdapter', () => {
       const request = buildRequest(defaultBidRequest, {
         gdprConsent: {}
       });
-      expect(request.data.gdprConsent.consentRequired).to.be.equal(true);
+      expect(request.data.gdprConsent.consentRequired).to.be.equal(false);
     });
 
     it('handles non-existent gdpr object', () => {
