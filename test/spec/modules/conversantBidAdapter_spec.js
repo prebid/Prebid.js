@@ -375,6 +375,19 @@ describe('Conversant adapter tests', function() {
     expect(payload).to.have.deep.nested.property('user.ext.fpc', 12345);
   });
 
+  it('Verify User ID publisher commond id support', function() {
+    // clone bidRequests
+    let requests = utils.deepClone(bidRequests)
+
+    // add pubcid to every entry
+    requests.forEach((unit) => {
+      Object.assign(unit, {userId: {pubcid: 67890}});
+    });
+    //  construct http post payload
+    const payload = spec.buildRequests(requests).data;
+    expect(payload).to.have.deep.nested.property('user.ext.fpc', 67890);
+  });
+
   it('Verify GDPR bid request', function() {
     // add gdpr info
     const bidRequest = {
