@@ -67,13 +67,15 @@
     "TIME_TO_RESPOND": "hb_ttr",
     "AUCTION_ID": "hb_auction",
     "UUID": "hb_uuid",
-    "CACHE_ID": "hb_cache_id"
+    "CACHE_ID": "hb_cache_id",
+    "CACHE_HOST": "hb_cache_host"
   },
   "NATIVE_KEYS": {
     "title": "hb_native_title",
     "body": "hb_native_body",
     "body2": "hb_native_body2",
     "privacyLink": "hb_native_privacy",
+    "privacyIcon": "hb_native_privicon",
     "sponsoredBy": "hb_native_brand",
     "image": "hb_native_image",
     "icon": "hb_native_icon",

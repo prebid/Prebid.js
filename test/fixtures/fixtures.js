@@ -341,6 +341,7 @@ export function getBidResponses() {
       'pbAg': '0.10',
       'size': '0x0',
       'auctionId': 123456,
+      'requestId': '1144e2f0de84363',
       'adserverTargeting': convertTargetingsFromOldToNew({
         'hb_bidder': 'triplelift',
         'hb_adid': '222bb26f9e8bd',
@@ -373,6 +374,7 @@ export function getBidResponses() {
       'size': '300x250',
       'alwaysUseBid': true,
       'auctionId': 123456,
+      'requestId': '4dccdc37746135',
       'adserverTargeting': convertTargetingsFromOldToNew({
         'hb_bidder': 'appnexus',
         'hb_adid': '233bcbee889d46d',
@@ -405,6 +407,7 @@ export function getBidResponses() {
       'size': '728x90',
       'alwaysUseBid': true,
       'auctionId': 123456,
+      'requestId': '392b5a6b05d648',
       'adserverTargeting': convertTargetingsFromOldToNew({
         'hb_bidder': 'appnexus',
         'hb_adid': '24bd938435ec3fc',
@@ -436,6 +439,7 @@ export function getBidResponses() {
       'pbAg': '0.50',
       'size': '300x250',
       'auctionId': 123456,
+      'requestId': '192c8c1df0f5d1d',
       'adserverTargeting': convertTargetingsFromOldToNew({
         'hb_bidder': 'pagescience',
         'hb_adid': '25bedd4813632d7',
@@ -466,6 +470,7 @@ export function getBidResponses() {
       'pbAg': '0.15',
       'size': '300x250',
       'auctionId': 654321,
+      'requestId': '135e89c039705da',
       'adserverTargeting': convertTargetingsFromOldToNew({
         'hb_bidder': 'brightcom',
         'hb_adid': '26e0795ab963896',
@@ -497,6 +502,7 @@ export function getBidResponses() {
       'pbAg': '0.50',
       'size': '300x250',
       'auctionId': 654321,
+      'requestId': '17dd1d869bed44e',
       'adserverTargeting': convertTargetingsFromOldToNew({
         'hb_bidder': 'brealtime',
         'hb_adid': '275bd666f5a5a5d',
@@ -529,6 +535,7 @@ export function getBidResponses() {
       'pbAg': '5.90',
       'size': '300x250',
       'auctionId': 654321,
+      'requestId': '6d11aa2d5b3659',
       'adserverTargeting': convertTargetingsFromOldToNew({
         'hb_bidder': 'pubmatic',
         'hb_adid': '28f4039c636b6a7',
@@ -559,6 +566,7 @@ export function getBidResponses() {
       'pbAg': '2.70',
       'size': '300x600',
       'auctionId': 654321,
+      'requestId': '96aff279720d39',
       'adserverTargeting': convertTargetingsFromOldToNew({
         'hb_bidder': 'rubicon',
         'hb_adid': '29019e2ab586a5a',
@@ -1063,6 +1071,7 @@ export function getBidResponsesFromAPI() {
           'pbAg': '0.15',
           'size': '300x250',
           'auctionId': 654321,
+          'requestId': '135e89c039705da',
           'adserverTargeting': convertTargetingsFromOldToNew({
             'hb_bidder': 'brightcom',
             'hb_adid': '26e0795ab963896',
@@ -1094,6 +1103,7 @@ export function getBidResponsesFromAPI() {
           'pbAg': '0.50',
           'size': '300x250',
           'auctionId': 654321,
+          'requestId': '17dd1d869bed44e',
           'adserverTargeting': convertTargetingsFromOldToNew({
             'hb_bidder': 'brealtime',
             'hb_adid': '275bd666f5a5a5d',
@@ -1126,6 +1136,7 @@ export function getBidResponsesFromAPI() {
           'pbAg': '5.90',
           'size': '300x250',
           'auctionId': 654321,
+          'requestId': '6d11aa2d5b3659',
           'adserverTargeting': convertTargetingsFromOldToNew({
             'hb_bidder': 'pubmatic',
             'hb_adid': '28f4039c636b6a7',
@@ -1156,6 +1167,7 @@ export function getBidResponsesFromAPI() {
           'pbAg': '2.70',
           'size': '300x600',
           'auctionId': 654321,
+          'requestId': '96aff279720d39',
           'adserverTargeting': convertTargetingsFromOldToNew({
             'hb_bidder': 'rubicon',
             'hb_adid': '29019e2ab586a5a',
@@ -1435,7 +1447,7 @@ export function getCurrencyRates() {
   };
 }
 
-export function createBidReceived({bidder, cpm, auctionId, responseTimestamp, adUnitCode, adId, status, ttl}) {
+export function createBidReceived({bidder, cpm, auctionId, responseTimestamp, adUnitCode, adId, status, ttl, requestId}) {
   let bid = {
     'bidderCode': bidder,
     'width': '300',
@@ -1449,6 +1461,7 @@ export function createBidReceived({bidder, cpm, auctionId, responseTimestamp, ad
     'requestTimestamp': 1454535718610,
     'responseTimestamp': responseTimestamp,
     'auctionId': auctionId,
+    'requestId': requestId,
     'timeToRespond': 123,
     'pbLg': '0.50',
     'pbMg': '0.50',

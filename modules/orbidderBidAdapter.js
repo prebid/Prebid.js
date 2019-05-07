@@ -18,6 +18,7 @@ export const spec = {
     return !!(bid.sizes && bid.bidId && bid.params &&
       (bid.params.accountId && (typeof bid.params.accountId === 'string')) &&
       (bid.params.placementId && (typeof bid.params.placementId === 'string')) &&
+      ((typeof bid.params.bidfloor === 'undefined') || (typeof bid.params.bidfloor === 'number')) &&
       ((typeof bid.params.keyValues === 'undefined') || (typeof bid.params.keyValues === 'object')));
   },
 
@@ -41,11 +42,11 @@ export const spec = {
         }
       };
       spec.bidParams[bidRequest.bidId] = bidRequest.params;
-      if (bidRequest && bidRequest.gdprConsent) {
+      if (bidderRequest && bidderRequest.gdprConsent) {
         ret.data.gdprConsent = {
-          consentString: bidRequest.gdprConsent.consentString,
-          consentRequired: (typeof bidRequest.gdprConsent.gdprApplies === 'boolean')
-            ? bidRequest.gdprConsent.gdprApplies
+          consentString: bidderRequest.gdprConsent.consentString,
+          consentRequired: (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean')
+            ? bidderRequest.gdprConsent.gdprApplies
             : true
         };
       }

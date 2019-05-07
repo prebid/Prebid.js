@@ -234,7 +234,9 @@ function buildCommonQueryParamsFromBids(bids, bidderRequest) {
     }
   }
 
-  if (bids[0].crumbs && bids[0].crumbs.pubcid) {
+  if ((bids[0].userId && bids[0].userId.pubcid)) {
+    defaultParams.pubcid = bids[0].userId.pubcid;
+  } else if (bids[0].crumbs && bids[0].crumbs.pubcid) {
     defaultParams.pubcid = bids[0].crumbs.pubcid;
   }
 
@@ -279,7 +281,7 @@ function buildOXBannerRequest(bids, bidderRequest) {
   let hasCustomFloor = false;
   bids.forEach(function (bid) {
     if (bid.params.customFloor) {
-      customFloorsForAllBids.push(bid.params.customFloor * 1000);
+      customFloorsForAllBids.push((Math.round(bid.params.customFloor * 100) / 100) * 1000);
       hasCustomFloor = true;
     } else {
       customFloorsForAllBids.push(0);

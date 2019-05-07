@@ -150,6 +150,7 @@ describe('the spotx adapter', function () {
       expect(request.data.imp.video.ext).to.deep.equal({
         ad_volume: 1,
         ad_unit: 'incontent',
+        hide_skin: 1,
         outstream_options: {foo: 'bar'},
         outstream_function: '987',
         custom: {bar: 'foo'},
