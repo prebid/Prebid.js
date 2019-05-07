@@ -326,4 +326,45 @@ describe('targeting tests', function () {
       });
     });
   });
+
+  describe('setTargetingForAst', function () {
+    let sandbox;
+    beforeEach(function() {
+      sandbox = sinon.createSandbox();
+      sandbox.stub(targetingInstance, 'resetPresetTargetingAST').callsFake(function() {});
+      sandbox.stub(window.apntag, 'setKeywords').callsFake(function() {});
+    });
+    afterEach(function () {
+      sandbox.restore();
+    });
+
+    it('should set single addUnit code', function() {
+      let adUnitCode = 'testdiv-abc-ad-123456-0';
+      sandbox.stub(targetingInstance, 'getAllTargeting').callsFake(function() {
+        let mockTargeting = {};
+        mockTargeting.adUnitCode = {hb_bidder: 'appnexus'};
+        return mockTargeting;
+      });
+      targetingInstance.setTargetingForAst(adUnitCode);
+      expect(targetingInstance.getAllTargeting.called).to.equal(true);
+      expect(targetingInstance.resetPresetTargetingAST.called).to.equal(true);
+      expect(window.apntag.setKeywords.called).to.equal(true);
+    });
+
+    it('should set array of addUnit codes', function() {
+      let adUnitCodes = ['testdiv1-abc-ad-123456-0', 'testdiv2-abc-ad-123456-0']
+      sandbox.stub(targetingInstance, 'getAllTargeting').callsFake(function() {
+        let mockTargeting = {};
+        for (let i = 0; i < Object.keys(adUnitCodes).length; i++) {
+          let key = Object.keys(adUnitCodes)[i];
+          mockTargeting[key] = {hb_bidder: 'appnexus'};
+        }
+        return mockTargeting;
+      });
+      targetingInstance.setTargetingForAst(adUnitCodes);
+      expect(targetingInstance.getAllTargeting.called).to.equal(true);
+      expect(targetingInstance.resetPresetTargetingAST.called).to.equal(true);
+      expect(window.apntag.setKeywords.called).to.equal(true);
+    });
+  });
 });
