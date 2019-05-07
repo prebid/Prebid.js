@@ -115,6 +115,25 @@ describe('YieldmoAdapter', function () {
       const data = spec.buildRequests([pubcidBid]).data;
       expect(data.pubcid).to.deep.equal('c604130c-0144-4b63-9bf2-c2bd8c8d86da2');
     })
+
+    it('should add bidFloor as parameter of request if given', function () {
+      const bidFloorBid = {
+        bidder: 'yieldmo',
+        params: {
+          bidFloor: 5
+        },
+        adUnitCode: 'adunit-code',
+        sizes: [[300, 250], [300, 600]],
+        bidId: '30b31c1838de1e',
+        bidderRequestId: '22edbae2733bf6',
+        auctionId: '1d1a030790a475',
+        userId: {
+          pubcid: 'c604130c-0144-4b63-9bf2-c2bd8c8d86da2'
+        }
+      };
+      const data = spec.buildRequests([bidFloorBid]).data;
+      expect(data.bidFloor).to.deep.equal(5);
+    })
   });
 
   describe('interpretResponse', function () {
