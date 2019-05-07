@@ -86,7 +86,7 @@ export const spec = {
       bid.params = spec.bidParams[bid.adId];
     }
 
-    spec.ajaxCall(`${spec.orbidderHost}`+{route}, JSON.stringify(bid));
+    spec.ajaxCall(`${spec.orbidderHost}${route}`, JSON.stringify(bid));
   },
 
   ajaxCall(endpoint, data) {
