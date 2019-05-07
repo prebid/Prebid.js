@@ -1,6 +1,7 @@
 import {expect} from 'chai';
 import {spec} from 'modules/orbidderBidAdapter';
 import {newBidder} from 'src/adapters/bidderFactory';
+import openxAdapter from "../../../modules/openxAnalyticsAdapter";
 
 describe('orbidderBidAdapter', () => {
   const adapter = newBidder(spec);
@@ -146,9 +147,9 @@ describe('orbidderBidAdapter', () => {
     });
   });
 
-  describe('onBidWon', () => {
+  describe('onCallbackHandler', () => {
     let ajaxStub;
-    const winObj = {
+    const bidObj = {
       adId: 'testId',
       test: 1,
       pageUrl: 'www.someurl.de',
@@ -164,11 +165,19 @@ describe('orbidderBidAdapter', () => {
     });
 
     it('calls orbidder\'s win endpoint', () => {
-      spec.onBidWon(winObj);
+      spec.onBidWon(bidObj);
       expect(ajaxStub.calledOnce).to.equal(true);
       expect(ajaxStub.firstCall.args[0].indexOf('https://')).to.equal(0);
       expect(ajaxStub.firstCall.args[0]).to.equal(`${spec.orbidderHost}/win`);
-      expect(ajaxStub.firstCall.args[1]).to.equal(JSON.stringify(winObj));
+      expect(ajaxStub.firstCall.args[1]).to.equal(JSON.stringify(bidObj));
+    });
+
+    it('calls orbidder\'s targeting endpoint', () => {
+      spec.onBidWon(bidObj);
+      expect(ajaxStub.calledOnce).to.equal(true);
+      expect(ajaxStub.firstCall.args[0].indexOf('https://')).to.equal(0);
+      expect(ajaxStub.firstCall.args[0]).to.equal(`${spec.orbidderHost}/targeting`);
+      expect(ajaxStub.firstCall.args[1]).to.equal(JSON.stringify(bidObj));
     });
   });
 
