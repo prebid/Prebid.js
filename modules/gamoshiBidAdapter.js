@@ -150,7 +150,6 @@ export const spec = {
 
     bids.forEach(bid => {
       const outBid = {
-        adId: bidRequest.bidRequest.adUnitCode,
         requestId: bidRequest.bidRequest.bidId,
         cpm: bid.price,
         width: bid.w,
@@ -161,7 +160,6 @@ export const spec = {
         currency: bid.cur || response.cur,
         adUnitCode: bidRequest.bidRequest.adUnitCode,
         mediaType: helper.getMediaType(bid)
-
       };
 
       if (utils.deepAccess(bidRequest.bidRequest, 'mediaTypes.' + outBid.mediaType)) {
