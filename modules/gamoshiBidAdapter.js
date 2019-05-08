@@ -11,6 +11,8 @@ const ENDPOINTS = {
   'gambid': 'https://rtb.gamoshi.io',
 };
 
+const DEFAULT_TTL = 360;
+
 export const helper = {
   getTopFrame: function () {
     try {
@@ -114,7 +116,7 @@ export const spec = {
 
       if (mediaTypes && mediaTypes.video) {
         if (!hasFavoredMediaType || params.favoredMediaType === VIDEO) {
-          const playerSize = mediaTypes.video.playerSize;
+          const playerSize = mediaTypes.video.playerSize || sizes;
           const videoImp = Object.assign({}, imp, {
             video: {
               w: playerSize ? playerSize[0][0] : 300,
@@ -154,11 +156,10 @@ export const spec = {
         cpm: bid.price,
         width: bid.w,
         height: bid.h,
-        ttl: 60 * 10,
-        creativeId: bid.crid,
+        ttl: DEFAULT_TTL,
+        creativeId: bid.crid || bid.adid,
         netRevenue: true,
         currency: bid.cur || response.cur,
-        adUnitCode: bidRequest.bidRequest.adUnitCode,
         mediaType: helper.getMediaType(bid)
       };
 
