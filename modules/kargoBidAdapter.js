@@ -17,7 +17,11 @@ export const spec = {
     const currencyObj = config.getConfig('currency');
     const currency = (currencyObj && currencyObj.adServerCurrency) || 'USD';
     const bidIds = {};
-    utils._each(validBidRequests, bid => bidIds[bid.bidId] = bid.params.placementId);
+    const bidSizes = {};
+    utils._each(validBidRequests, bid => {
+      bidIds[bid.bidId] = bid.params.placementId;
+      bidSizes[bid.bidId] = bid.sizes;
+    });
     const transformedParams = Object.assign({}, {
       timeout: bidderRequest.timeout,
       currency: currency,
@@ -27,7 +31,9 @@ export const spec = {
         floor: 0,
         ceil: 20
       },
-      bidIDs: bidIds
+      bidIDs: bidIds,
+      bidSizes: bidSizes,
+      prebidRawBidRequests: validBidRequests
     }, spec._getAllMetadata());
     const encodedParams = encodeURIComponent(JSON.stringify(transformedParams));
     return Object.assign({}, bidderRequest, {

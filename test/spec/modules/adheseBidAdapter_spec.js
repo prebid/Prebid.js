@@ -64,6 +64,9 @@ describe('AdheseAdapter', function () {
       gdprConsent: {
         gdprApplies: true,
         consentString: 'CONSENT_STRING'
+      },
+      refererInfo: {
+        referer: 'http://prebid.org/dev-docs/subjects?_d=1'
       }
     };
 
@@ -89,6 +92,12 @@ describe('AdheseAdapter', function () {
       let req = spec.buildRequests([ minimalBid() ], bidderRequest);
 
       expect(req.url).to.contain('/xtCONSENT_STRING');
+    });
+
+    it('should include referer param in base64url format', function () {
+      let req = spec.buildRequests([ minimalBid() ], bidderRequest);
+
+      expect(req.url).to.contain('/xfaHR0cDovL3ByZWJpZC5vcmcvZGV2LWRvY3Mvc3ViamVjdHM_X2Q9MQ');
     });
 
     it('should include bids', function () {

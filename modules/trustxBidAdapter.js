@@ -88,7 +88,9 @@ export const spec = {
       pt: priceType,
       auids: auids.join(','),
       sizes: utils.getKeys(sizeMap).join(','),
-      r: reqId
+      r: reqId,
+      wrapperType: 'Prebid_js',
+      wrapperVersion: '$prebid.version$'
     };
 
     if (bidderRequest) {

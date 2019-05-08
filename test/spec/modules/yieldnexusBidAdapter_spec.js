@@ -142,6 +142,27 @@ describe('YieldNexusAdapter', () => {
       response = spec.buildRequests([bidRequestWithPosEquals1])[0];
       expect(response.data.imp[0].video.pos).to.equal(bidRequestWithPosEquals1.params.pos);
     });
+
+    it('builds request video object correctly with multi-dimensions size array', function () {
+      let bidRequestWithVideo = utils.deepClone(bidRequest);
+      bidRequestWithVideo.mediaTypes.video = {
+        playerSize: [[304, 254], [305, 255]],
+        context: 'instream'
+      };
+
+      let response = spec.buildRequests([bidRequestWithVideo], bidRequest)[0];
+      expect(response.data.imp[0].video.w).to.equal(304);
+      expect(response.data.imp[0].video.h).to.equal(254);
+
+      bidRequestWithVideo = utils.deepClone(bidRequest);
+      bidRequestWithVideo.mediaTypes.video = {
+        playerSize: [304, 254]
+      };
+
+      response = spec.buildRequests([bidRequestWithVideo], bidRequest)[0];
+      expect(response.data.imp[0].video.w).to.equal(304);
+      expect(response.data.imp[0].video.h).to.equal(254);
+    });
   });
   describe('interpretResponse', () => {
     const bannerBidRequest = {
