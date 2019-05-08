@@ -64,17 +64,89 @@ function isValidPlacementId(placementId) {
 /**
  * Checks if the given media types contain unsupported settings
  * @param {MediaTypes} mediaTypes - the media types to check
- * @return {string[]} the unsupported settings, empty when all types are supported
+ * @return {MediaTypes} the unsupported settings, empty when all types are supported
  */
-function checkMediaTypes(mediaTypes) {
-  const errors = [];
-  if (mediaTypes.native) {
-    errors.push("'native' ads are not supported");
+function filterSupportedMediaTypes(mediaTypes) {
+  return {
+    banner: mediaTypes.banner,
+    video: mediaTypes.video && mediaTypes.video.filter(video => video.context !== 'outstream'),
+    native: []
+  };
+}
+
+/**
+ * Checks if the given media types are empty
+ * @param {MediaTypes} mediaTypes - the types to check
+ * @return {boolean} true if the types are empty
+ */
+function isMediaTypesEmpty(mediaTypes) {
+  return Object.keys(mediaTypes).every(type => mediaTypes[type].length === 0);
+}
+
+/**
+ * Builds the bid request to the FeedAd Server
+ * @param {BidRequest[]} validBidRequests - all validated bid requests
+ * @param {object} bidderRequest - meta information
+ * @return {ServerRequest|ServerRequest[]}
+ */
+function buildRequests(validBidRequests, bidderRequest) {
+  let acceptableRequests = validBidRequests.filter(request => !isMediaTypesEmpty(filterSupportedMediaTypes(request.mediaTypes)));
+  return {
+    method: 'POST',
+    url: 'http://localhost:3000/bidRequests',
+    data: {
+      requests: acceptableRequests
+    },
+    options: {
+      contentType: 'application/json'
+    }
   }
-  if (mediaTypes.video && mediaTypes.video.any(video => video.context !== 'outstream')) {
-    errors.push("only 'outstream' video context's are supported");
-  }
-  return errors;
+}
+
+/**
+ * Adapts the FeedAd server response to Prebid format
+ * @param {ServerResponse} serverResponse - the FeedAd server response
+ * @param {BidRequest} request - the initial bid request
+ * @returns {Bid[]} the FeedAd bids
+ */
+function interpretResponse(serverResponse, request) {
+  const body = typeof serverResponse.body === "string" ? JSON.parse(serverResponse.body) : serverResponse.body;
+  return body.requests.map((req, idx) => ({
+    requestId: req.bidId,
+    cpm: 0.5,
+    width: req.sizes[0][0],
+    height: req.sizes[0][1],
+    ad: createAdHTML(req),
+    ttl: 60,
+    creativeId: `feedad-${body.id}-${idx}`,
+    netRevenue: true,
+    currency: "EUR"
+  }));
+}
+
+/**
+ * Creates the HTML content for a FeedAd creative
+ * @param {object} req - the server response body
+ * @return {string} the HTML string
+ */
+function createAdHTML(req) {
+  return `<html><body>
+<script type="text/javascript" src="https://web.feedad.com/loader/feedad-iframe-loader.js"></script>
+<script type="text/javascript">
+    feedad.loadFeedAd({
+        clientToken: '${req.params.clientToken}',
+        placementId: '${req.params.placementId}',
+        adOptions: {scaleMode: "parent_width"},
+        beforeAttach: (el, wrp) => {
+        	wrp = document.createElement("div");
+        	wrp.style.width = '${req.sizes[0][0]}px';
+        	wrp.style.height = '${req.sizes[0][1]}px';
+        	el.appendChild(wrp);
+        	return wrp;
+        }
+    });
+</script>
+</body></html>`;
 }
 
 /**
@@ -84,11 +156,8 @@ export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: MEDIA_TYPES,
   isBidRequestValid,
-  buildRequests: function (validBidRequests, bidderRequest) {
-    utils.logMessage('buildRequests', JSON.stringify(validBidRequests), JSON.stringify(bidderRequest));
-  },
-  interpretResponse: function (serverResponse, request) {
-  },
+  buildRequests,
+  interpretResponse,
   getUserSyncs: function (syncOptions, serverResponses) {
   },
   onTimeout: function (timeoutData) {
@@ -98,4 +167,5 @@ export const spec = {
   onSetTargeting: function (bid) {
   }
 };
+
 registerBidder(spec);
