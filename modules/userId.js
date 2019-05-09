@@ -113,7 +113,7 @@ export const id5Submodule = {
       utils.logError(`${MODULE_NAME} - ID5 submodule requires partner to be defined as a number`);
       return;
     }
-    const hasGdpr = GDPRApplies(consentData) ? 1 : 0;
+    const hasGdpr = isGDPRApplicable(consentData) ? 1 : 0;
     const gdprConsentString = hasGdpr ? consentData.consentString : '';
     const url = `https://id5-sync.com/g/v1/${submoduleConfigParams.partner}.json?gdpr=${hasGdpr}&gdpr_consent=${gdprConsentString}`;
 
@@ -211,7 +211,7 @@ export function getStoredValue(storage) {
  * @param {Object} consentData
  * @returns {boolean}
  */
-export function GDPRApplies(consentData) {
+export function isGDPRApplicable(consentData) {
   return consentData && typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies;
 }
 
@@ -221,7 +221,7 @@ export function GDPRApplies(consentData) {
  * @returns {boolean}
  */
 export function hasGDPRConsent(consentData) {
-  if (GDPRApplies(consentData)) {
+  if (isGDPRApplicable(consentData)) {
     if (!consentData.consentString) {
       return false;
     }
