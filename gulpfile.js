@@ -19,7 +19,6 @@ var header = require('gulp-header');
 var footer = require('gulp-footer');
 var replace = require('gulp-replace');
 var shell = require('gulp-shell');
-var optimizejs = require('gulp-optimize-js');
 var eslint = require('gulp-eslint');
 var gulpif = require('gulp-if');
 var sourcemaps = require('gulp-sourcemaps');
@@ -145,7 +144,6 @@ function makeWebpackPkg() {
     .pipe(webpackStream(cloned, webpack))
     .pipe(uglify())
     .pipe(gulpif(file => file.basename === 'prebid-core.js', header(banner, { prebid: prebid })))
-    .pipe(optimizejs())
     .pipe(gulp.dest('build/dist'));
 }
 

@@ -511,7 +511,7 @@ function _createImpressionObject(bid, conf) {
 
   impObj = {
     id: bid.bidId,
-    tagid: bid.params.adUnit,
+    tagid: bid.params.adUnit || undefined,
     bidfloor: _parseSlotParam('kadfloor', bid.params.kadfloor),
     secure: window.location.protocol === 'https:' ? 1 : 0,
     ext: {
@@ -753,10 +753,6 @@ export const spec = {
         utils.logWarn(LOG_WARN_PREFIX + 'Error: publisherId is mandatory and cannot be numeric. Call to OpenBid will not be sent for ad unit: ' + JSON.stringify(bid));
         return false;
       }
-      if (!utils.isStr(bid.params.adSlot)) {
-        utils.logWarn(LOG_WARN_PREFIX + 'Error: adSlotId is mandatory and cannot be numeric. Call to OpenBid will not be sent for ad unit: ' + JSON.stringify(bid));
-        return false;
-      }
       // video ad validation
       if (bid.params.hasOwnProperty('video')) {
         if (!bid.params.video.hasOwnProperty('mimes') || !utils.isArray(bid.params.video.mimes) || bid.params.video.mimes.length === 0) {
@@ -790,17 +786,11 @@ export const spec = {
     var blockedIabCategories = [];
     validBidRequests.forEach(originalBid => {
       bid = utils.deepClone(originalBid);
+      bid.params.adSlot = bid.params.adSlot || '';
       _parseAdSlot(bid);
       if (bid.params.hasOwnProperty('video')) {
-        if (!(bid.params.adSlot && bid.params.adUnit && bid.params.adUnitIndex)) {
-          utils.logWarn(LOG_WARN_PREFIX + 'Skipping the non-standard adslot: ', bid.params.adSlot, JSON.stringify(bid));
-          return;
-        }
+        // Nothing to do
       } else {
-        if (!(bid.params.adSlot && bid.params.adUnit && bid.params.adUnitIndex)) {
-          utils.logWarn(LOG_WARN_PREFIX + 'Skipping the non-standard adslot: ', bid.params.adSlot, JSON.stringify(bid));
-          return;
-        }
         // If we have a native mediaType configured alongside banner, its ok if the banner size is not set in width and height
         // The corresponding banner imp object will not be generated, but we still want the native object to be sent, hence the following check
         if (!(bid.hasOwnProperty('mediaTypes') && bid.mediaTypes.hasOwnProperty(NATIVE)) && bid.params.width === 0 && bid.params.height === 0) {
