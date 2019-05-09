@@ -424,7 +424,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
       displayUrl: nativeAd.displayurl,
       clickTrackers: nativeAd.link.click_trackers,
       impressionTrackers: nativeAd.impression_trackers,
-      javascriptTrackers: rtbBid.viewability.config
+      javascriptTrackers: [nativeAd.javascript_trackers, rtbBid.viewability.config]
     };
     if (nativeAd.main_img) {
       bid['native'].image = {

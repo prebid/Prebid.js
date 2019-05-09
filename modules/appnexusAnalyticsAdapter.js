@@ -7,7 +7,7 @@ import adapterManager from '../src/adapterManager';
 import CONSTANTS from '../src/constants';
 import { auctionManager } from '../src/auctionManager';
 
-var appnexusAdapterhead = adapter({
+var appnexusAdapterHead = adapter({
   global: 'AppNexusPrebidAnalytics',
   handler: 'on',
   analyticsType: 'bundle'
@@ -15,14 +15,14 @@ var appnexusAdapterhead = adapter({
 
 function armJsTracker(bid) {
   if (bid.native) {
-    let viewJsPayload = bid.native.javascriptTrackers;
+    let viewJsPayload = bid.native.javascriptTrackers[1]; // see appnexusBidAdapter.newbid
     let cssSelector = 'css_selector=.pb-click[pbAdId=\'' + bid.adId + '\']';
     let newViewJsPayload = viewJsPayload.replace('%native_dom_id%', ';' + cssSelector);
-    bid.native.javascriptTrackers = newViewJsPayload;
+    bid.native.javascriptTrackers[1] = newViewJsPayload;
   }
 }
 
-var appnexusAdapter = Object.assign(appnexusAdapterhead, {
+var appnexusAdapter = Object.assign(appnexusAdapterHead, {
   track({ eventType, args }) {
     if (typeof args !== 'undefined') {
       if (eventType === CONSTANTS.EVENTS.AUCTION_END) {
