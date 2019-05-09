@@ -1,6 +1,7 @@
 import {expect} from 'chai';
 import {spec} from 'modules/orbidderBidAdapter';
 import {newBidder} from 'src/adapters/bidderFactory';
+import openxAdapter from '../../../modules/openxAnalyticsAdapter';
 
 describe('orbidderBidAdapter', () => {
   const adapter = newBidder(spec);
@@ -107,7 +108,7 @@ describe('orbidderBidAdapter', () => {
       const request = buildRequest(defaultBidRequest, {
         gdprConsent: {}
       });
-      expect(request.data.gdprConsent.consentRequired).to.be.equal(true);
+      expect(request.data.gdprConsent.consentRequired).to.be.equal(false);
     });
 
     it('handles non-existent gdpr object', () => {
@@ -146,9 +147,9 @@ describe('orbidderBidAdapter', () => {
     });
   });
 
-  describe('onBidWon', () => {
+  describe('onCallbackHandler', () => {
     let ajaxStub;
-    const winObj = {
+    const bidObj = {
       adId: 'testId',
       test: 1,
       pageUrl: 'www.someurl.de',
@@ -163,12 +164,18 @@ describe('orbidderBidAdapter', () => {
       ajaxStub.restore();
     });
 
-    it('calls orbidder\'s win endpoint', () => {
-      spec.onBidWon(winObj);
+    it('calls orbidder\'s callback endpoint', () => {
+      spec.onBidWon(bidObj);
       expect(ajaxStub.calledOnce).to.equal(true);
       expect(ajaxStub.firstCall.args[0].indexOf('https://')).to.equal(0);
       expect(ajaxStub.firstCall.args[0]).to.equal(`${spec.orbidderHost}/win`);
-      expect(ajaxStub.firstCall.args[1]).to.equal(JSON.stringify(winObj));
+      expect(ajaxStub.firstCall.args[1]).to.equal(JSON.stringify(bidObj));
+
+      spec.onSetTargeting(bidObj);
+      expect(ajaxStub.calledTwice).to.equal(true);
+      expect(ajaxStub.secondCall.args[0].indexOf('https://')).to.equal(0);
+      expect(ajaxStub.secondCall.args[0]).to.equal(`${spec.orbidderHost}/targeting`);
+      expect(ajaxStub.secondCall.args[1]).to.equal(JSON.stringify(bidObj));
     });
   });
 
