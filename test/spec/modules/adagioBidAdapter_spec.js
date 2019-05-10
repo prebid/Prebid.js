@@ -5,7 +5,7 @@ import { spec } from 'modules/adagioBidAdapter';
 describe('adagioAdapter', () => {
   const adapter = newBidder(spec);
   const ENDPOINT = 'https://mp.4dex.io/prebid';
-  const VERSION = '1.1.1';
+  const VERSION = '1.2.0';
 
   describe('inherited functions', () => {
     it('exists and is a function', () => {

@@ -3,7 +3,7 @@ import * as utils from 'src/utils';
 import { registerBidder } from 'src/adapters/bidderFactory';
 
 const BIDDER_CODE = 'adagio';
-const VERSION = '1.1.1';
+const VERSION = '1.2.0';
 const FEATURES_VERSION = '1';
 const ENDPOINT = 'https://mp.4dex.io/prebid';
 const SUPPORTED_MEDIA_TYPES = ['banner'];
@@ -11,6 +11,27 @@ const ADAGIO_TAG_URL = '//script.4dex.io/localstore.js';
 const ADAGIO_TAG_TO_LOCALSTORE = '//script.4dex.io/adagio.js';
 const ADAGIO_LOCALSTORE_KEY = 'adagioScript';
 const LOCALSTORE_TIMEOUT = 100;
+const ADSRV_EVENTS = {
+  GPT: {
+    IMPRESSION_VIEWABLE: 'impressionViewable',
+    SLOT_ON_LOAD: 'slotOnLoad',
+    SLOT_RENDER_ENDED: 'slotRenderEnded',
+    SLOT_REQUESTED: 'slotRequested',
+    SLOT_RESPONSE_RECEIVED: 'slotResponseReceived',
+    SLOT_VISIBILITY_CHANGED: 'slotVisibilityChanged',
+  },
+  SAS: {
+    CALL: 'call',
+    CLEAN: 'clean',
+    BEFORE_RENDER: 'beforeRender',
+    CMP_ANSWERED: 'CmpAnswered',
+    CMP_CALLED: 'CmpCalled',
+    LOAD: 'load',
+    NOAD: 'noad',
+    RENDER: 'render',
+    RESET: 'reset'
+  }
+};
 const script = document.createElement('script');
 
 window.top.ADAGIO = window.top.ADAGIO || {};
@@ -26,6 +47,38 @@ const getAdagioTag = function getAdagioTag() {
     utils.logWarn('Adagio Script not found');
   }
 }
+
+const adagioEnqueue = function adagioEnqueue(action, data) {
+  window.top.ADAGIO.queue.push({ action, data, ts: Date.now() });
+}
+
+top.googletag = top.googletag || {};
+top.googletag.cmd = top.googletag.cmd || [];
+top.googletag.cmd.push(function() {
+  const gptEvents = Object.keys(ADSRV_EVENTS.GPT).map(key => ADSRV_EVENTS.GPT[key]);
+  gptEvents.forEach(eventName => {
+    top.googletag.pubads().addEventListener(eventName, args => {
+      const adagioCustomArgs = {
+        adgAuctionId: auctionManager.getLastAuctionId()
+      };
+      adagioEnqueue('gpt-event', { eventName, args: { ...args, ...adagioCustomArgs } });
+    });
+  });
+});
+
+top.sas = top.sas || {};
+top.sas.cmd = top.sas.cmd || [];
+top.sas.cmd.push(function() {
+  const sasEvents = Object.keys(ADSRV_EVENTS.SAS).map(key => ADSRV_EVENTS.SAS[key]);
+  sasEvents.forEach(eventName => {
+    top.sas.events.on(eventName, args => {
+      const adagioCustomArgs = {
+        adgAuctionId: auctionManager.getLastAuctionId()
+      };
+      adagioEnqueue('sas-event', { eventName, args: { ...args, ...adagioCustomArgs } });
+    });
+  });
+});
 
 // First, try to load adagio-js from localStorage.
 getAdagioTag();
