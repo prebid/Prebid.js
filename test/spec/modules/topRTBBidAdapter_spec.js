@@ -1,10 +1,10 @@
 import { expect } from 'chai';
-import { spec } from 'modules/toprtbBidAdapter';
+import { spec } from 'modules/topRTBBidAdapter';
 
-describe('toprtbBidAdapterTests', function () {
+describe('topRTBBidAdapterTests', function () {
   it('validate_pub_params', function () {
     expect(spec.isBidRequestValid({
-      bidder: 'toprtb',
+      bidder: 'topRTB',
       params: {
         adUnitId: 'cd95dffec6b645afbc4e5aa9f68f2ff3'
       }
@@ -14,7 +14,7 @@ describe('toprtbBidAdapterTests', function () {
   it('validate_generated_params', function () {
     let bidRequestData = [{
       bidId: 'bid12345',
-      bidder: 'toprtb',
+      bidder: 'topRTB',
       params: {
         adUnitId: 'cd95dffec6b645afbc4e5aa9f68f2ff3'
       },

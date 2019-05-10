@@ -1,6 +1,6 @@
 import * as utils from '../src/utils';
 import {registerBidder} from '../src/adapters/bidderFactory';
-const BIDDER_CODE = 'toprtb';
+const BIDDER_CODE = 'topRTB';
 const ENDPOINT_URL = 'http://ssp.toprtb.com:8080/sspNew/rest/ReqAd?ref=www.google.com&hbid=0&adUnitId=';
 export const spec = {
   code: BIDDER_CODE,
