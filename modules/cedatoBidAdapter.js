@@ -33,31 +33,29 @@ export const spec = {
     const site = { id: params.player_id, domain: document.domain };
     const device = { ua: navigator.userAgent, ip: '' };
     const user = { id: getUserID() }
-    const cur = [ CURRENCY ];
+    const currency = CURRENCY;
     const tmax = bidderRequest.timeout;
 
     const imp = bidRequests.map(req => {
       const banner = { 'format': getFormats(utils.deepAccess(req, 'mediaTypes.banner.sizes')) };
-      const bidfloor = params.bidfloor !== undefined
-        ? Number(params.bidfloor) : 1;
-      const bidfloorcur = CURRENCY;
+      const bidfloor = params.bidfloor;
       const bidId = req.bidId;
 
       return {
         bidId,
         banner,
         bidfloor,
-        bidfloorcur,
       };
     });
 
     const payload = {
+      version: '$prebid.version$',
       at,
       site,
       device,
       user,
       imp,
-      cur,
+      currency,
       tmax,
     };
 

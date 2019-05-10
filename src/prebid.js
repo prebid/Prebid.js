@@ -260,16 +260,17 @@ $$PREBID_GLOBAL$$.setTargetingForGPTAsync = function (adUnit, customSlotMatching
 
 /**
  * Set query string targeting on all AST (AppNexus Seller Tag) ad units. Note that this function has to be called after all ad units on page are defined. For working example code, see [Using Prebid.js with AppNexus Publisher Ad Server](http://prebid.org/dev-docs/examples/use-prebid-with-appnexus-ad-server.html).
+ * @param  {(string|string[])} adUnitCode adUnitCode or array of adUnitCodes
  * @alias module:pbjs.setTargetingForAst
  */
-$$PREBID_GLOBAL$$.setTargetingForAst = function() {
+$$PREBID_GLOBAL$$.setTargetingForAst = function(adUnitCodes) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.setTargetingForAn', arguments);
   if (!targeting.isApntagDefined()) {
     utils.logError('window.apntag is not defined on the page');
     return;
   }
 
-  targeting.setTargetingForAst();
+  targeting.setTargetingForAst(adUnitCodes);
 
   // emit event
   events.emit(SET_TARGETING, targeting.getAllTargeting());
@@ -395,9 +396,10 @@ $$PREBID_GLOBAL$$.removeAdUnit = function (adUnitCode) {
  * @param {Array} requestOptions.adUnits
  * @param {Array} requestOptions.adUnitCodes
  * @param {Array} requestOptions.labels
+ * @param {String} requestOptions.auctionId
  * @alias module:pbjs.requestBids
  */
-$$PREBID_GLOBAL$$.requestBids = hook('async', function ({ bidsBackHandler, timeout, adUnits, adUnitCodes, labels } = {}) {
+$$PREBID_GLOBAL$$.requestBids = hook('async', function ({ bidsBackHandler, timeout, adUnits, adUnitCodes, labels, auctionId } = {}) {
   events.emit(REQUEST_BIDS);
   const cbTimeout = timeout || config.getConfig('bidderTimeout');
   adUnits = adUnits || $$PREBID_GLOBAL$$.adUnits;
@@ -466,7 +468,13 @@ $$PREBID_GLOBAL$$.requestBids = hook('async', function ({ bidsBackHandler, timeo
     return;
   }
 
-  const auction = auctionManager.createAuction({adUnits, adUnitCodes, callback: bidsBackHandler, cbTimeout, labels});
+  const auction = auctionManager.createAuction({adUnits, adUnitCodes, callback: bidsBackHandler, cbTimeout, labels, auctionId});
+
+  let adUnitsLen = adUnits.length;
+  if (adUnitsLen > 15) {
+    utils.logInfo(`Current auction ${auction.getAuctionId()} contains ${adUnitsLen} adUnits.`, adUnits);
+  }
+
   adUnitCodes.forEach(code => targeting.setLatestAuctionForAdUnit(code, auction.getAuctionId()));
   auction.callBids();
   return auction;

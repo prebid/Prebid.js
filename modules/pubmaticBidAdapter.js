@@ -511,7 +511,7 @@ function _createImpressionObject(bid, conf) {
 
   impObj = {
     id: bid.bidId,
-    tagid: bid.params.adUnit,
+    tagid: bid.params.adUnit || undefined,
     bidfloor: _parseSlotParam('kadfloor', bid.params.kadfloor),
     secure: window.location.protocol === 'https:' ? 1 : 0,
     ext: {
@@ -707,6 +707,30 @@ function _parseNativeResponse(bid, newBid) {
   }
 }
 
+function _blockedIabCategoriesValidation(payload, blockedIabCategories) {
+  blockedIabCategories = blockedIabCategories
+    .filter(function(category) {
+      if (typeof category === 'string') { // only strings
+        return true;
+      } else {
+        utils.logWarn(LOG_WARN_PREFIX + 'bcat: Each category should be a string, ignoring category: ' + category);
+        return false;
+      }
+    })
+    .map(category => category.trim()) // trim all
+    .filter(function(category, index, arr) { // minimum 3 charaters length
+      if (category.length > 3) {
+        return arr.indexOf(category) === index; // unique value only
+      } else {
+        utils.logWarn(LOG_WARN_PREFIX + 'bcat: Each category should have a value of a length of more than 3 characters, ignoring category: ' + category)
+      }
+    });
+  if (blockedIabCategories.length > 0) {
+    utils.logWarn(LOG_WARN_PREFIX + 'bcat: Selected: ', blockedIabCategories);
+    payload.bcat = blockedIabCategories;
+  }
+}
+
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
@@ -720,10 +744,6 @@ export const spec = {
     if (bid && bid.params) {
       if (!utils.isStr(bid.params.publisherId)) {
         utils.logWarn(LOG_WARN_PREFIX + 'Error: publisherId is mandatory and cannot be numeric. Call to OpenBid will not be sent for ad unit: ' + JSON.stringify(bid));
-        return false;
-      }
-      if (!utils.isStr(bid.params.adSlot)) {
-        utils.logWarn(LOG_WARN_PREFIX + 'Error: adSlotId is mandatory and cannot be numeric. Call to OpenBid will not be sent for ad unit: ' + JSON.stringify(bid));
         return false;
       }
       // video ad validation
@@ -756,19 +776,14 @@ export const spec = {
     var dctrLen;
     var dctrArr = [];
     var bid;
+    var blockedIabCategories = [];
     validBidRequests.forEach(originalBid => {
       bid = utils.deepClone(originalBid);
+      bid.params.adSlot = bid.params.adSlot || '';
       _parseAdSlot(bid);
       if (bid.params.hasOwnProperty('video')) {
-        if (!(bid.params.adSlot && bid.params.adUnit && bid.params.adUnitIndex)) {
-          utils.logWarn(LOG_WARN_PREFIX + 'Skipping the non-standard adslot: ', bid.params.adSlot, JSON.stringify(bid));
-          return;
-        }
+        // Nothing to do
       } else {
-        if (!(bid.params.adSlot && bid.params.adUnit && bid.params.adUnitIndex)) {
-          utils.logWarn(LOG_WARN_PREFIX + 'Skipping the non-standard adslot: ', bid.params.adSlot, JSON.stringify(bid));
-          return;
-        }
         // If we have a native mediaType configured alongside banner, its ok if the banner size is not set in width and height
         // The corresponding banner imp object will not be generated, but we still want the native object to be sent, hence the following check
         if (!(bid.hasOwnProperty('mediaTypes') && bid.mediaTypes.hasOwnProperty(NATIVE)) && bid.params.width === 0 && bid.params.height === 0) {
@@ -788,6 +803,9 @@ export const spec = {
       // check if dctr is added to more than 1 adunit
       if (bid.params.hasOwnProperty('dctr') && utils.isStr(bid.params.dctr)) {
         dctrArr.push(bid.params.dctr);
+      }
+      if (bid.params.hasOwnProperty('bcat') && utils.isArray(bid.params.bcat)) {
+        blockedIabCategories = blockedIabCategories.concat(bid.params.bcat);
       }
       var impObj = _createImpressionObject(bid, conf);
       if (impObj) {
@@ -860,6 +878,7 @@ export const spec = {
     }
 
     _handleEids(payload);
+    _blockedIabCategoriesValidation(payload, blockedIabCategories);
     return {
       method: 'POST',
       url: ENDPOINT,
