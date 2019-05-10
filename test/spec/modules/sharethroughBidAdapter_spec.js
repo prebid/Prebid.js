@@ -3,7 +3,7 @@ import { sharethroughAdapterSpec } from 'modules/sharethroughBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
 
 const spec = newBidder(sharethroughAdapterSpec).getSpec();
-const bidderRequest = [
+const bidRequests = [
   {
     bidder: 'sharethrough',
     bidId: 'bidId1',
@@ -11,7 +11,8 @@ const bidderRequest = [
     placementCode: 'foo',
     params: {
       pkey: 'aaaa1111'
-    }
+    },
+    userId: { tdid: 'fake-tdid' }
   },
   {
     bidder: 'sharethrough',
@@ -157,35 +158,81 @@ describe('sharethrough adapter spec', function () {
     });
 
     it('should return true if req is correct', function () {
-      expect(spec.isBidRequestValid(bidderRequest[0])).to.eq(true);
-      expect(spec.isBidRequestValid(bidderRequest[1])).to.eq(true);
+      expect(spec.isBidRequestValid(bidRequests[0])).to.eq(true);
+      expect(spec.isBidRequestValid(bidRequests[1])).to.eq(true);
     })
   });
 
   describe('.buildRequests', function () {
     it('should return an array of requests', function () {
-      const bidRequests = spec.buildRequests(bidderRequest);
+      const builtBidRequests = spec.buildRequests(bidRequests);
 
-      expect(bidRequests[0].url).to.eq(
+      expect(builtBidRequests[0].url).to.eq(
         'http://btlr.sharethrough.com/header-bid/v1');
-      expect(bidRequests[1].url).to.eq(
+      expect(builtBidRequests[1].url).to.eq(
         'http://btlr.sharethrough.com/header-bid/v1')
-      expect(bidRequests[0].method).to.eq('GET');
+      expect(builtBidRequests[0].method).to.eq('GET');
+    });
+
+    it('should set the instant_play_capable parameter correctly based on browser userAgent string', function () {
+      Object.defineProperty(navigator, 'userAgent', {
+        value: 'Android Chrome/60',
+        writable: true
+      });
+
+      let builtBidRequests = spec.buildRequests(bidRequests);
+      expect(builtBidRequests[0].data.instant_play_capable).to.be.true;
+
+      navigator.userAgent = 'iPhone Version/11';
+      builtBidRequests = spec.buildRequests(bidRequests);
+      expect(builtBidRequests[0].data.instant_play_capable).to.be.true;
+
+      navigator.userAgent = 'iPhone CriOS/60';
+      builtBidRequests = spec.buildRequests(bidRequests);
+      expect(builtBidRequests[0].data.instant_play_capable).to.be.true;
+
+      navigator.userAgent = 'Android Chrome/50';
+      builtBidRequests = spec.buildRequests(bidRequests);
+      expect(builtBidRequests[0].data.instant_play_capable).to.be.false;
+
+      navigator.userAgent = 'Android Chrome';
+      builtBidRequests = spec.buildRequests(bidRequests);
+      expect(builtBidRequests[0].data.instant_play_capable).to.be.false;
+
+      navigator.userAgent = undefined;
+      builtBidRequests = spec.buildRequests(bidRequests);
+      expect(builtBidRequests[0].data.instant_play_capable).to.be.false;
     });
 
     it('should add consent parameters if gdprConsent is present', function () {
       const gdprConsent = { consentString: 'consent_string123', gdprApplies: true };
-      const fakeBidRequest = { gdprConsent: gdprConsent };
-      const bidRequest = spec.buildRequests(bidderRequest, fakeBidRequest)[0];
+      const bidderRequest = { gdprConsent: gdprConsent };
+      const bidRequest = spec.buildRequests(bidRequests, bidderRequest)[0];
       expect(bidRequest.data.consent_required).to.eq(true);
       expect(bidRequest.data.consent_string).to.eq('consent_string123');
     });
 
     it('should handle gdprConsent is present but values are undefined case', function () {
       const gdprConsent = { consent_string: undefined, gdprApplies: undefined };
-      const fakeBidRequest = { gdprConsent: gdprConsent };
-      const bidRequest = spec.buildRequests(bidderRequest, fakeBidRequest)[0];
+      const bidderRequest = { gdprConsent: gdprConsent };
+      const bidRequest = spec.buildRequests(bidRequests, bidderRequest)[0];
       expect(bidRequest.data).to.not.include.any.keys('consent_string')
+    });
+
+    it('should add the ttduid parameter if a bid request contains a value for Unified ID from The Trade Desk', function () {
+      const bidRequest = spec.buildRequests(bidRequests)[0];
+      expect(bidRequest.data.ttduid).to.eq('fake-tdid');
+    });
+
+    it('should add Sharethrough specific parameters', function () {
+      const builtBidRequests = spec.buildRequests(bidRequests);
+      expect(builtBidRequests[0]).to.deep.include({
+        strData: {
+          stayInIframe: undefined,
+          iframeSize: undefined,
+          sizes: [[600, 300]]
+        }
+      });
     });
   });
 
@@ -317,6 +364,11 @@ describe('sharethrough adapter spec', function () {
         { type: 'image', url: 'cookieUrl2' },
         { type: 'image', url: 'cookieUrl3' }]
       );
+    });
+
+    it('returns an empty array if serverResponses is empty', function () {
+      const syncArray = spec.getUserSyncs({ pixelEnabled: true }, []);
+      expect(syncArray).to.be.an('array').that.is.empty;
     });
 
     it('returns an empty array if the body is null', function () {
