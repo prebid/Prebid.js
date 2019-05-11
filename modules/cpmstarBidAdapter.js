@@ -18,7 +18,9 @@ function getMediaType(bidRequest) {
 
 function getPlayerSize(bidRequest) {
   var playerSize = utils.deepAccess(bidRequest, 'mediaTypes.video.playerSize');
+  if (playerSize[0] != null) playerSize = playerSize[0];
   if (playerSize == null || playerSize[0] == null || playerSize[1] == null) return [640, 440];
+  return playerSize;
 }
 
 export const spec = {
