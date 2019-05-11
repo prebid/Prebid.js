@@ -11,22 +11,23 @@ const ENDPOINT_PRODUCTION = '//server.cpmstar.com/view.aspx';
 const DEFAULT_TTL = 300;
 const DEFAULT_CURRENCY = 'USD';
 
-function getMediaType(bidRequest) {
-  if (bidRequest == null) return BANNER;
-  return !utils.deepAccess(bidRequest, 'mediaTypes.video') ? BANNER : VIDEO;
-}
-
-function getPlayerSize(bidRequest) {
-  var playerSize = utils.deepAccess(bidRequest, 'mediaTypes.video.playerSize');
-  if (playerSize[0] != null) playerSize = playerSize[0];
-  if (playerSize == null || playerSize[0] == null || playerSize[1] == null) return [640, 440];
-  return playerSize;
-}
-
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO],
   pageID: Math.floor(Math.random() * 10e6),
+
+  getMediaType: function(bidRequest) {
+    if (bidRequest == null) return BANNER;
+    return !utils.deepAccess(bidRequest, 'mediaTypes.video') ? BANNER : VIDEO;
+  },
+
+  getPlayerSize: function(bidRequest) {
+    var playerSize = utils.deepAccess(bidRequest, 'mediaTypes.video.playerSize');
+    if (playerSize == null) return [640, 440];
+    if (playerSize[0] != null) playerSize = playerSize[0];
+    if (playerSize == null || playerSize[0] == null || playerSize[1] == null) return [640, 440];
+    return playerSize;
+  },
 
   isBidRequestValid: function (bid) {
     return ((typeof bid.params.placementId === 'string') && !!bid.params.placementId.length) || (typeof bid.params.placementId === 'number');
@@ -41,8 +42,8 @@ export const spec = {
       var referer = encodeURIComponent(bidderRequest.refererInfo.referer);
       var e = utils.getBidIdParameter('endpoint', bidRequest.params);
       var ENDPOINT = e == 'dev' ? ENDPOINT_DEV : e == 'staging' ? ENDPOINT_STAGING : ENDPOINT_PRODUCTION;
-      var mediaType = getMediaType(bidRequest);
-      var playerSize = getPlayerSize(bidRequest);
+      var mediaType = spec.getMediaType(bidRequest);
+      var playerSize = spec.getPlayerSize(bidRequest);
       var videoArgs = '&fv=0' + (playerSize ? ('&w=' + playerSize[0] + '&h=' + playerSize[1]) : '');
       requests.push({
         method: 'GET',
@@ -61,7 +62,7 @@ export const spec = {
 
   interpretResponse: function (serverResponse, request) {
     var bidRequest = request.bidRequest;
-    var mediaType = getMediaType(bidRequest);
+    var mediaType = spec.getMediaType(bidRequest);
 
     var bidResponses = [];
 
@@ -100,7 +101,7 @@ export const spec = {
       if (mediaType == BANNER && rawBid.code) {
         bidResponse.ad = rawBid.code + (rawBid.px_cr ? "\n<img width=0 height=0 src='" + rawBid.px_cr + "' />" : '');
       } else if (mediaType == VIDEO && rawBid.creativemacros && rawBid.creativemacros.HTML5VID_VASTSTRING) {
-        var playerSize = getPlayerSize(bidRequest);
+        var playerSize = spec.getPlayerSize(bidRequest);
         if (playerSize != null) {
           bidResponse.width = playerSize[0];
           bidResponse.height = playerSize[1];

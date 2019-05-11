@@ -14,6 +14,26 @@ describe('Cpmstar Bid Adapter', function () {
       var bid = { params: { placementId: '' } };
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     })
+
+    it('should return a valid player size', function() {
+      var bid = { mediaTypes: {
+        video: {
+          playerSize: [[960, 540]]
+        }
+      }}
+      expect(spec.getPlayerSize(bid)[0]).to.equal(960);
+      expect(spec.getPlayerSize(bid)[1]).to.equal(540);
+    })
+
+    it('should return a default player size', function() {
+      var bid = { mediaTypes: {
+        video: {
+          playerSize: null
+        }
+      }}
+      expect(spec.getPlayerSize(bid)[0]).to.equal(640);
+      expect(spec.getPlayerSize(bid)[1]).to.equal(440);
+    })
   });
 
   describe('buildRequests', function () {
