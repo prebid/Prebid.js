@@ -219,6 +219,7 @@ describe('aardvarkAdapterTest', function () {
             cid: '1abgs362e0x48a8',
             adm: '</tag2>',
             ttl: 200,
+            ex: 'extraproperty'
           }
         ],
         headers: {}
@@ -234,6 +235,7 @@ describe('aardvarkAdapterTest', function () {
       expect(result[0].currency).to.equal('USD');
       expect(result[0].ttl).to.equal(200);
       expect(result[0].dealId).to.equal('dealing');
+      expect(result[0].ex).to.be.undefined;
       expect(result[0].ad).to.not.be.undefined;
 
       expect(result[1].requestId).to.equal('1abgs362e0x48a8');
@@ -243,6 +245,7 @@ describe('aardvarkAdapterTest', function () {
       expect(result[1].currency).to.equal('USD');
       expect(result[1].ttl).to.equal(200);
       expect(result[1].ad).to.not.be.undefined;
+      expect(result[1].ex).to.equal('extraproperty');
     });
 
     it('should handle nobid responses', function () {

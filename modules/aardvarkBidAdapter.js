@@ -124,6 +124,10 @@ export const spec = {
         bidResponse.dealId = rawBid.dealId
       }
 
+      if (rawBid.hasOwnProperty('ex')) {
+        bidResponse.ex = rawBid.ex;
+      }
+
       switch (rawBid.media) {
         case 'banner':
           bidResponse.ad = rawBid.adm + utils.createTrackPixelHtml(decodeURIComponent(rawBid.nurl));
