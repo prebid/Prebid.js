@@ -25,7 +25,7 @@ export const spec = {
     var auctionCodes = [];
     var requests = [];
     var requestsMap = {};
-    var referer = utils.getTopWindowUrl();
+    var referer = bidderRequest.refererInfo.referer;
     var pageCategories = [];
 
     // This reference to window.top can cause issues when loaded in an iframe if not protected with a try/catch.

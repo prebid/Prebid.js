@@ -54,21 +54,27 @@ describe('aardvarkAdapterTest', function () {
       auctionId: 'e97cafd0-ebfc-4f5c-b7c9-baa0fd335a4a'
     }];
 
+    const bidderRequest = {
+      refererInfo: {
+        referer: 'http://example.com'
+      }
+    };
+
     it('should use HTTP GET method', function () {
-      const requests = spec.buildRequests(bidRequests);
+      const requests = spec.buildRequests(bidRequests, bidderRequest);
       requests.forEach(function(requestItem) {
         expect(requestItem.method).to.equal('GET');
       });
     });
 
     it('should call the correct bidRequest url', function () {
-      const requests = spec.buildRequests(bidRequests);
+      const requests = spec.buildRequests(bidRequests, bidderRequest);
       expect(requests.length).to.equal(1);
       expect(requests[0].url).to.match(new RegExp('^\/\/adzone.pub.com/xiby/TdAx_RAZd/aardvark\?'));
     });
 
     it('should have correct data', function () {
-      const requests = spec.buildRequests(bidRequests);
+      const requests = spec.buildRequests(bidRequests, bidderRequest);
       expect(requests.length).to.equal(1);
       expect(requests[0].data.version).to.equal(1);
       expect(requests[0].data.jsonp).to.equal(false);
@@ -108,22 +114,28 @@ describe('aardvarkAdapterTest', function () {
       auctionId: 'e97cafd0-ebfc-4f5c-b7c9-baa0fd335a4a'
     }];
 
+    const bidderRequest = {
+      refererInfo: {
+        referer: 'http://example.com'
+      }
+    };
+
     it('should use HTTP GET method', function () {
-      const requests = spec.buildRequests(bidRequests);
+      const requests = spec.buildRequests(bidRequests, bidderRequest);
       requests.forEach(function(requestItem) {
         expect(requestItem.method).to.equal('GET');
       });
     });
 
     it('should call the correct bidRequest urls for each auction', function () {
-      const requests = spec.buildRequests(bidRequests);
+      const requests = spec.buildRequests(bidRequests, bidderRequest);
       expect(requests[0].url).to.match(new RegExp('^\/\/bidder.rtk.io/Toby/TdAx/aardvark\?'));
       expect(requests[0].data.categories.length).to.equal(2);
       expect(requests[1].url).to.match(new RegExp('^\/\/adzone.pub.com/xiby/RAZd/aardvark\?'));
     });
 
     it('should have correct data', function () {
-      const requests = spec.buildRequests(bidRequests);
+      const requests = spec.buildRequests(bidRequests, bidderRequest);
       expect(requests.length).to.equal(2);
       expect(requests[0].data.version).to.equal(1);
       expect(requests[0].data.jsonp).to.equal(false);
@@ -157,6 +169,9 @@ describe('aardvarkAdapterTest', function () {
       gdprConsent: {
         consentString: 'awefasdfwefasdfasd',
         gdprApplies: true
+      },
+      refererInfo: {
+        referer: 'http://example.com'
       }
     };
 
@@ -184,7 +199,10 @@ describe('aardvarkAdapterTest', function () {
     }];
 
     const bidderRequest = {
-      gdprConsent: undefined
+      gdprConsent: undefined,
+      refererInfo: {
+        referer: 'http://example.com'
+      }
     };
 
     it('should transmit correct data', function () {
