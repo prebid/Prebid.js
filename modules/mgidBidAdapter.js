@@ -61,7 +61,7 @@ utils._each(NATIVE_ASSETS, anAsset => { _NATIVE_ASSET_KEY_TO_ASSET_MAP[anAsset.K
 export const spec = {
   VERSION: '1.1',
   code: BIDDER_CODE,
-  aliases: ['mgid'], // short code
+  aliases: ['mg'], // short code
   supportedMediaTypes: [BANNER, NATIVE],
   reId: /^[0-9]+$/,
   NATIVE_ASSET_ID_TO_KEY_MAP: _NATIVE_ASSET_ID_TO_KEY_MAP,
@@ -136,9 +136,9 @@ export const spec = {
         tagid: utils.deepAccess(bid, 'params.placementId'),
         secure,
       };
-      const bidFloor = utils.deepAccess(bid, 'params.bidFloor') || 0;
+      const bidFloor = utils.deepAccess(bid, 'params.bidFloor') || utils.deepAccess(bid, 'params.bidfloor') || 0;
       if (bidFloor && utils.isNumber(bidFloor)) {
-        impObj.bidFloor = bidFloor;
+        impObj.bidfloor = bidFloor;
       }
       for (let mediaTypes in bid.mediaTypes) {
         switch (mediaTypes) {

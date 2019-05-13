@@ -257,7 +257,7 @@ describe('Mgid bid adapter', function () {
       expect(data).to.be.a('object');
       expect(data.imp).to.be.a('array');
       expect(data.imp).to.have.lengthOf(1);
-      expect(data.imp[0].bidFloor).to.deep.equal(1.1);
+      expect(data.imp[0].bidfloor).to.deep.equal(1.1);
     });
     it('should return overwrite default currency', function () {
       let bid = Object.assign({}, bid);
