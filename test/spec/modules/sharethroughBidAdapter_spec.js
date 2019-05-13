@@ -129,6 +129,12 @@ const b64EncodeUnicode = (str) => {
       }));
 }
 
+const setUserAgent = (str) => {
+  window.navigator['__defineGetter__']('userAgent', function () {
+    return str;
+  });
+}
+
 describe('sharethrough adapter spec', function () {
   describe('.code', function () {
     it('should return a bidder code of sharethrough', function () {
@@ -175,31 +181,27 @@ describe('sharethrough adapter spec', function () {
     });
 
     it('should set the instant_play_capable parameter correctly based on browser userAgent string', function () {
-      Object.defineProperty(navigator, 'userAgent', {
-        value: 'Android Chrome/60',
-        writable: true
-      });
-
+      setUserAgent('Android Chrome/60');
       let builtBidRequests = spec.buildRequests(bidRequests);
       expect(builtBidRequests[0].data.instant_play_capable).to.be.true;
 
-      navigator.userAgent = 'iPhone Version/11';
+      setUserAgent('iPhone Version/11');
       builtBidRequests = spec.buildRequests(bidRequests);
       expect(builtBidRequests[0].data.instant_play_capable).to.be.true;
 
-      navigator.userAgent = 'iPhone CriOS/60';
+      setUserAgent('iPhone CriOS/60');
       builtBidRequests = spec.buildRequests(bidRequests);
       expect(builtBidRequests[0].data.instant_play_capable).to.be.true;
 
-      navigator.userAgent = 'Android Chrome/50';
+      setUserAgent('Android Chrome/50');
       builtBidRequests = spec.buildRequests(bidRequests);
       expect(builtBidRequests[0].data.instant_play_capable).to.be.false;
 
-      navigator.userAgent = 'Android Chrome';
+      setUserAgent('Android Chrome');
       builtBidRequests = spec.buildRequests(bidRequests);
       expect(builtBidRequests[0].data.instant_play_capable).to.be.false;
 
-      navigator.userAgent = undefined;
+      setUserAgent(undefined);
       builtBidRequests = spec.buildRequests(bidRequests);
       expect(builtBidRequests[0].data.instant_play_capable).to.be.false;
     });
