@@ -1,6 +1,5 @@
 import { expect } from 'chai';
 import { spec, VIDEO_ENDPOINT, BANNER_ENDPOINT, OUTSTREAM_SRC, DEFAULT_MIMES } from 'modules/beachfrontBidAdapter';
-import * as utils from 'src/utils';
 import { parse as parseUrl } from 'src/url';
 
 describe('BeachfrontAdapter', function () {
@@ -248,6 +247,24 @@ describe('BeachfrontAdapter', function () {
         expect(data.regs.ext.gdpr).to.equal(1);
         expect(data.user.ext.consent).to.equal(consentString);
       });
+
+      it('must add the Trade Desk User ID to the request', () => {
+        const tdid = '4321';
+        const bidRequest = bidRequests[0];
+        bidRequest.mediaTypes = { video: {} };
+        bidRequest.userId = { tdid };
+        const requests = spec.buildRequests([ bidRequest ]);
+        const data = requests[0].data;
+        expect(data.user.ext.eids[0]).to.deep.equal({
+          source: 'adserver.org',
+          uids: [{
+            id: tdid,
+            ext: {
+              rtiPartner: 'TDID'
+            }
+          }]
+        });
+      });
     });
 
     describe('for banner bids', function () {
@@ -367,6 +384,16 @@ describe('BeachfrontAdapter', function () {
         const data = requests[0].data;
         expect(data.gdpr).to.equal(1);
         expect(data.gdprConsent).to.equal(consentString);
+      });
+
+      it('must add the Trade Desk User ID to the request', () => {
+        const tdid = '4321';
+        const bidRequest = bidRequests[0];
+        bidRequest.mediaTypes = { banner: {} };
+        bidRequest.userId = { tdid };
+        const requests = spec.buildRequests([ bidRequest ]);
+        const data = requests[0].data;
+        expect(data.tdid).to.equal(tdid);
       });
     });
 
