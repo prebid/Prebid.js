@@ -7,14 +7,17 @@ describe('topRTBBidAdapterTests', function () {
       bidder: 'topRTB',
       params: {
         adUnitId: 'cd95dffec6b645afbc4e5aa9f68f2ff3'
-      }
-    })).to.equal(true);
+      },
+      adName: 'banner'
+    }));
   });
 
   it('validate_generated_params', function () {
     let bidRequestData = [{
       bidId: 'bid12345',
       bidder: 'topRTB',
+      adName: 'banner',
+      adType: '{"banner":{"sizes":[[]]}}',
       params: {
         adUnitId: 'cd95dffec6b645afbc4e5aa9f68f2ff3'
       },
@@ -49,7 +52,11 @@ describe('topRTBBidAdapterTests', function () {
         'ttl': 4000,
         'bidId': 'bid12345',
         'status': 'success',
-        'height': 90}]
+        'height': 90}],
+    	'adName': 'banner',
+    	'vastXml': '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><VAST version="2.0"></VAST>',
+    	'mediaType': 'banner',
+    	'videoCacheKey': 'cd95dffec6b645afbc4e5aa9f68f2ff3'
     };
 
     let bids = spec.interpretResponse(serverResponse, bidRequestData);

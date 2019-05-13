@@ -9,7 +9,7 @@ Maintainer: karthikeyan.d@djaxtech.com
 # Description
 
 topRTB Bidder Adapter for Prebid.js. 
-Only Banner format is supported.
+Only Banner & video format is supported.
 
 # Test Parameters
 ```
