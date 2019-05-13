@@ -61,7 +61,6 @@ utils._each(NATIVE_ASSETS, anAsset => { _NATIVE_ASSET_KEY_TO_ASSET_MAP[anAsset.K
 export const spec = {
   VERSION: '1.1',
   code: BIDDER_CODE,
-  aliases: ['mg'], // short code
   supportedMediaTypes: [BANNER, NATIVE],
   reId: /^[0-9]+$/,
   NATIVE_ASSET_ID_TO_KEY_MAP: _NATIVE_ASSET_ID_TO_KEY_MAP,
