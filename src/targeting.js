@@ -342,7 +342,7 @@ export function newTargeting(auctionManager) {
     let astTargeting = targeting.getAllTargeting(adUnitCodes);
 
     try {
-      targeting.resetPresetTargetingAST();
+      targeting.resetPresetTargetingAST(adUnitCodes);
     } catch (e) {
       utils.logError('unable to reset targeting for AST' + e)
     }
