@@ -59,7 +59,7 @@ describe('Cpmstar Bid Adapter', function () {
       expect(requests[0]).to.have.property('method');
       expect(requests[0]).to.have.property('url');
       expect(requests[0]).to.have.property('bidRequest');
-      expect(requests[0].url.startsWith('//server.cpmstar.com/view.aspx')).to.equal(true);
+      expect(requests[0].url).to.include('//server.cpmstar.com/view.aspx');
     });
     it('should produce a valid staging request', function () {
       var stgReq = deepClone(valid_bid_requests);
@@ -68,7 +68,7 @@ describe('Cpmstar Bid Adapter', function () {
       expect(requests[0]).to.have.property('method');
       expect(requests[0]).to.have.property('url');
       expect(requests[0]).to.have.property('bidRequest');
-      expect(requests[0].url.startsWith('//staging.server.cpmstar.com/view.aspx')).to.equal(true);
+      expect(requests[0].url).to.include('//staging.server.cpmstar.com/view.aspx');
     });
     it('should produce a valid dev request', function () {
       var devReq = deepClone(valid_bid_requests);
@@ -77,7 +77,7 @@ describe('Cpmstar Bid Adapter', function () {
       expect(requests[0]).to.have.property('method');
       expect(requests[0]).to.have.property('url');
       expect(requests[0]).to.have.property('bidRequest');
-      expect(requests[0].url.startsWith('//dev.server.cpmstar.com/view.aspx')).to.equal(true);
+      expect(requests[0].url).to.include('//dev.server.cpmstar.com/view.aspx');
     });
   })
 
@@ -153,24 +153,6 @@ describe('Cpmstar Bid Adapter', function () {
       var dealServer = deepClone(serverResponse);
       dealServer.body[0].creatives[0].dealId = 'deal';
       expect(spec.interpretResponse(dealServer, request)[0].dealId).to.equal('deal');
-    });
-  });
-
-  describe('onTimeout', function () {
-    it('should do and return nothing', function () {
-      var timeout = 'test';
-      var r = spec.onTimeout('test');
-      expect(r).to.be.undefined;
-      expect(timeout).to.equal(timeout);
-    })
-  });
-
-  describe('onBidWon', function () {
-    it('should do and return nothing', function () {
-      var bid = 'test';
-      var r = spec.onBidWon('test');
-      expect(r).to.be.undefined;
-      expect(bid).to.equal('test');
     });
   });
 });

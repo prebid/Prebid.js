@@ -1,5 +1,6 @@
-import * as utils from 'src/utils';
-import { registerBidder } from 'src/adapters/bidderFactory';
+
+import * as utils from '../src/utils';
+import { registerBidder } from '../src/adapters/bidderFactory';
 import {VIDEO, BANNER} from '../src/mediaTypes';
 
 const BIDDER_CODE = 'cpmstar';
@@ -55,11 +56,6 @@ export const spec = {
     return requests;
   },
 
-  onTimeout(timeout) {
-  },
-  onBidWon(winningBid) {
-  },
-
   interpretResponse: function (serverResponse, request) {
     var bidRequest = request.bidRequest;
     var mediaType = spec.getMediaType(bidRequest);
@@ -74,11 +70,13 @@ export const spec = {
       var raw = serverResponse.body[i];
       var rawBid = raw.creatives[0];
       if (!rawBid) {
+        utils.logWarn('cpmstarBidAdapter: server response failed check');
         return;
       }
       var cpm = (parseFloat(rawBid.cpm) || 0);
 
       if (!cpm) {
+        utils.logWarn('cpmstarBidAdapter: server response failed check. Missing cpm')
         return;
       }
 
@@ -91,7 +89,6 @@ export const spec = {
         netRevenue: rawBid.netRevenue ? rawBid.netRevenue : true,
         ttl: rawBid.ttl ? rawBid.ttl : DEFAULT_TTL,
         creativeId: rawBid.creativeid || 0,
-        ad: ''
       };
 
       if (rawBid.hasOwnProperty('dealId')) {
