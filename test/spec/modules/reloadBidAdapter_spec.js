@@ -1,9 +1,5 @@
 import { expect } from 'chai';
 import { spec } from 'modules/reloadBidAdapter';
-import { newBidder } from 'src/adapters/bidderFactory';
-import * as bidderFactory from 'src/adapters/bidderFactory';
-import { deepClone } from 'src/utils';
-import { config } from 'src/config';
 
 let getParams = () => {
   return JSON.parse(JSON.stringify({
@@ -151,8 +147,6 @@ let getServerResponse = (pExt) => {
 }
 
 describe('ReloadAdapter', function () {
-  // const adapter = newBidder(spec);
-
   describe('isBidRequestValid', function () {
     var bid = {
       'bidder': 'reload',

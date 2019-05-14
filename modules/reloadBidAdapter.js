@@ -13,8 +13,6 @@ const VERSION_ADAPTER = "1.0";
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: [],
-  supportedMediaTypes: [BANNER],
   /**
    * Determines whether or not the given bid request is valid.
    *
@@ -33,23 +31,24 @@ export const spec = {
    */
   buildRequests: function (validBidRequests, bidderRequest) {
 
-    var vRequests = [];
+    let vRequests = [];
     
-    var bidReq = {
+    let bidReq = {
       id: Math.random().toString(10).substring(2),
       imp : []
     };
 
-    for (var vIdx = 0; vIdx < validBidRequests.length; vIdx++) {
+    let vPrxClientTool = null;
+    for (let vIdx = 0; vIdx < validBidRequests.length; vIdx++) {
       
-      var bidRequest = validBidRequests[vIdx];
+      let bidRequest = validBidRequests[vIdx];
 
       if (BANNER in bidRequest.mediaTypes !== true) continue;       
       if (bidRequest.mediaTypes.banner.sizes.length <= 0) continue;
 
-      var vDim = bidRequest.mediaTypes.banner.sizes[0];
+      let vDim = bidRequest.mediaTypes.banner.sizes[0];
 
-      var vPrxClientTool = new ReloadClientTool({
+      vPrxClientTool = new ReloadClientTool({
         prxVer: VERSION_ADAPTER,
         prxType: "bd",
 
@@ -59,8 +58,7 @@ export const spec = {
         bsrvID: bidRequest.params.bsrvID
       });
 
-      var vImpression = {
-        // Data from BidRequest. id only required
+      let vImpression = {
         id: bidRequest.bidId,
         bidId: bidRequest.bidId,
         adUnitCode: bidRequest.adUnitCode,
@@ -102,13 +100,13 @@ export const spec = {
 
     const bidResponses = [];
 
-    for (var vIdx = 0; vIdx < serverBody.seatbid.length; vIdx++) {
-      var vSeatBid = serverBody.seatbid[vIdx];
+    for (let vIdx = 0; vIdx < serverBody.seatbid.length; vIdx++) {
+      let vSeatBid = serverBody.seatbid[vIdx];
 
-      for (var vIdxBid = 0; vIdxBid < vSeatBid.bid.length; vIdxBid++) {
-        var vBid = vSeatBid.bid[vIdxBid];
+      for (let vIdxBid = 0; vIdxBid < vSeatBid.bid.length; vIdxBid++) {
+        let vBid = vSeatBid.bid[vIdxBid];
 
-        var vPrxClientTool = new ReloadClientTool({
+        let vPrxClientTool = new ReloadClientTool({
           plcmID: vBid.ext.plcmID,
           partID: vBid.ext.partID,
           opdomID: vBid.ext.opdomID,
@@ -118,7 +116,7 @@ export const spec = {
         vPrxClientTool.setPCMObj(vBid.ext.pcmdata);
 
         if (vPrxClientTool.getBP() > 0) {
-          var bidResponse = {
+          let bidResponse = {
             requestId: vBid.impid,
             ad: vPrxClientTool.getAM(),
             cpm: vPrxClientTool.getBP() / 100,
@@ -135,32 +133,7 @@ export const spec = {
     }
 
     return bidResponses;
-  },
-
-  /**
-   * Register the user sync pixels which should be dropped after the auction.
-   *
-   * @param {SyncOptions} syncOptions Which user syncs are allowed?
-   * @param {ServerResponse[]} serverResponses List of server's responses.
-   * @return {UserSync[]} The user syncs which should be dropped.
-   */
-  getUserSyncs: function (syncOptions, serverResponses) {
-    return [];
-  },
-
-  /**
-   * Register bidder specific code, which will execute if bidder timed out after an auction
-   * @param {data} Containing timeout specific data
-   */
-  onTimeout: function (data) {},
-
-  /**
-   * Register bidder specific code, which will execute if a bid from this bidder won the auction
-   * @param {Bid} The bid that won the auction
-   */
-  onBidWon: function (bid) {},
-
-  onSetTargeting: function (bid) {}
+  }
 };
 
 /**
@@ -172,16 +145,11 @@ function ReloadClientTool(args) {
   
   var that = this;
   
-  
-  
-  
   var _pcmClientVersion = "120"; 
   var _pcmFilePref = "prx_root_";
   var _resFilePref = "prx_pnws_"; 
   
   var _pcmInputObjVers = "100"; 
-  
-  
   
   var _instObj = null;
   var _status = "NA";
@@ -193,9 +161,6 @@ function ReloadClientTool(args) {
   if(_memFile.status !== "ok") {
     _log += "WARNING: clnt-int mem file initialized\n";
   }
-  
-  
-  
   
   that.getPCMObj = function () {
     return {
@@ -212,7 +177,6 @@ function ReloadClientTool(args) {
     };
   };
   
-  
   that.setPCMObj = function (obj) {
     
     if(obj.thisVer !== "100") {
@@ -223,11 +187,9 @@ function ReloadClientTool(args) {
       return; 
     }
     
-    
     _status = obj.status;
     _message = obj.message;
     _log += " " + obj.log;
-    
     
     if(obj.status !== "ok") return; 
     
@@ -235,29 +197,19 @@ function ReloadClientTool(args) {
     _instObj = obj.instr;
   };
   
-  
   that.getSrvUrl = function () {
-    
     
     var effSrvUrl = getBidServerUrl(0);
     
-    
     if(isNaN(parseInt(args.bsrvID)) !== true) effSrvUrl = getBidServerUrl(parseInt(args.bsrvID));
-    
-    
     
     if(typeof _memFile.srvUrl === "string" && _memFile.srvUrl !== "") effSrvUrl = _memFile.srvUrl;
     
-    
     return _getProtocolString() + effSrvUrl + "/bid";
-    
-    
     
     function getBidServerUrl (idx) {
       
       return "bidsrv" + getTwoDigitString(idx) + ".reload.net";
-      
-      
       
       function getTwoDigitString (idx) {
         if(idx >= 10) return "" + idx;
@@ -266,7 +218,6 @@ function ReloadClientTool(args) {
     }
   };
   
-  
   that.getBP = function () {
     if(_instObj === null) return 0;
     if(typeof _instObj === "undefined") return 0;
@@ -274,14 +225,12 @@ function ReloadClientTool(args) {
     return _instObj.prc;
   };
   
-  
   that.getBC = function () {
     if(_instObj === null) return 0;
     if(typeof _instObj === "undefined") return 0;
     if(_instObj.go !== true) return 0;
     return _instObj.cur;
   };
-
   
   that.getAM = function () {
     if(_instObj === null) return null;
@@ -290,7 +239,6 @@ function ReloadClientTool(args) {
     return _instObj.am;
   };
   
-  
   that.getPM = function () {
     if(_instObj === null) return null;
     if(typeof _instObj === "undefined") return null;
@@ -298,39 +246,30 @@ function ReloadClientTool(args) {
     return _instObj.pbm;
   };
   
-  
   that.setRD = function (data) {
     return _setRD(data);
   };
-  
   
   that.getStat = function () {
     return _status;
   };
   
-  
   that.getMsg = function () {
     return _message;
   };
-  
   
   that.getLog = function () {
     return _log;
   };
   
-  
-  
   function _getPlcmData () {
     return {
       prxVer : args.prxVer,   
       prxType : args.prxType,   
-      
       plcmID : args.plcmID,   
       partID : args.partID,   
       opdomID : args.opdomID,   
       bsrvID: args.bsrvID,   
-      
-      
       dmod : args.dmod,    
       lmod : args.lmod,    
       lplcmID : args.lplcmID,   
@@ -353,8 +292,6 @@ function ReloadClientTool(args) {
       hostPageUrl : decodeURIComponent(window.location.href),
       hostPageTitle : document.title,
     };
-
-    
     
     function _genWinInfo () {
       var winInfo = {
@@ -389,13 +326,10 @@ function ReloadClientTool(args) {
     try {
       var memFileObj = _getItem(_getMemFileName());
       
-      
       if(memFileObj === null) throw { s : "init" }; 
-      
       
       if(typeof memFileObj.statStr !== "string") throw { s : "error" };
       if(typeof memFileObj.srvUrl !== "string") throw { s : "error" };
-      
       
       memFileObj.status = "ok";
       
@@ -460,7 +394,6 @@ function ReloadClientTool(args) {
       ts : Date.now(),
     };
     
-    
     if(typeof data === "string") {
       stgFileObj.objtype = false;
       stgFileObj.memdata = data;
@@ -471,7 +404,6 @@ function ReloadClientTool(args) {
     }
     
     var stgFileStr = JSON.stringify(stgFileObj);
-    
     
     localStorage.setItem(name, stgFileStr);
     
@@ -484,12 +416,9 @@ function ReloadClientTool(args) {
       var obStgFileStr = localStorage.getItem(name);
       if(obStgFileStr === null) return null; 
       
-      
       var stgFileObj = JSON.parse(obStgFileStr);
       
-      
       if(stgFileObj.ver !== _pcmClientVersion) throw { message : "version_error" };
-      
       
       if(stgFileObj.objtype === true) return JSON.parse(stgFileObj.memdata);
       else return "" + stgFileObj.memdata;
