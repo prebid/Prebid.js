@@ -135,7 +135,7 @@ function sendAll() {
 analyticsAdapter.ajaxCall = function ajaxCall(data) {
   utils.logInfo('SENDING DATA: ' + data);
   ajax(`//${analyticsAdapter.context.url}/prebid/${analyticsAdapter.context.connectionId}`, () => {
-  }, data, {contentType: 'application/json'});
+  }, data, {contentType: 'text/plain', withCredentials: true});
 };
 
 function trackAuctionInit(args) {
