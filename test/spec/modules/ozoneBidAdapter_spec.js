@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { spec } from 'modules/ozoneBidAdapter';
 import { config } from 'src/config';
+import {Renderer} from '../../../src/Renderer';
 const OZONEURI = 'https://elb.the-ozone-project.com/openrtb2/auction';
 const BIDDER_CODE = 'ozone';
 /*
@@ -63,7 +64,22 @@ var validBidRequestsWithBannerMediaType = [
     transactionId: '2e63c0ed-b10c-4008-aed5-84582cecfe87'
   }
 ];
-var validBidRequestsWithNonBannerMediaTypes = [
+var validBidRequestsWithNonBannerMediaTypesAndValidOutstreamVideo = [
+  {
+    adUnitCode: 'div-gpt-ad-1460505748561-0',
+    auctionId: '27dcb421-95c6-4024-a624-3c03816c5f99',
+    bidId: '2899ec066a91ff8',
+    bidRequestsCount: 1,
+    bidder: 'ozone',
+    bidderRequestId: '1c1586b27a1b5c8',
+    crumbs: {pubcid: '203a0692-f728-4856-87f6-9a25a6b63715'},
+    params: { publisherId: '9876abcd12-3', customData: {'gender': 'bart', 'age': 'low'}, ozoneData: {'networkID': '3048', 'dfpSiteID': 'd.thesun', 'sectionID': 'homepage', 'path': '/', 'sec_id': 'null', 'sec': 'sec', 'topics': 'null', 'kw': 'null', 'aid': 'null', 'search': 'null', 'article_type': 'null', 'hide_ads': '', 'article_slug': 'null'}, lotameData: {'Profile': {'tpid': 'c8ef27a0d4ba771a81159f0d2e792db4', 'Audiences': {'Audience': [{'id': '99999', 'abbr': 'sports'}, {'id': '88888', 'abbr': 'movie'}, {'id': '77777', 'abbr': 'blogger'}], 'ThirdPartyAudience': [{'id': '123', 'name': 'Automobiles'}, {'id': '456', 'name': 'Ages: 30-39'}]}}}, placementId: '1310000099', siteId: '1234567890', id: 'fea37168-78f1-4a23-a40e-88437a99377e', auctionId: '27dcb421-95c6-4024-a624-3c03816c5f99', imp: [ { id: '2899ec066a91ff8', tagid: 'undefined', secure: 1, video: {skippable: true, playback_method: ['auto_play_sound_off'], targetDiv: 'some-different-div-id-to-my-adunitcode'} } ] },
+    mediaTypes: {video: {mimes: ['video/mp4'], 'context': 'outstream'}, native: {info: 'dummy data'}},
+    transactionId: '2e63c0ed-b10c-4008-aed5-84582cecfe87'
+  }
+];
+
+var validBidRequestsWithNonBannerMediaTypesAndValidInstreamVideo = [
   {
     adUnitCode: 'div-gpt-ad-1460505748561-0',
     auctionId: '27dcb421-95c6-4024-a624-3c03816c5f99',
@@ -73,7 +89,22 @@ var validBidRequestsWithNonBannerMediaTypes = [
     bidderRequestId: '1c1586b27a1b5c8',
     crumbs: {pubcid: '203a0692-f728-4856-87f6-9a25a6b63715'},
     params: { publisherId: '9876abcd12-3', customData: {'gender': 'bart', 'age': 'low'}, ozoneData: {'networkID': '3048', 'dfpSiteID': 'd.thesun', 'sectionID': 'homepage', 'path': '/', 'sec_id': 'null', 'sec': 'sec', 'topics': 'null', 'kw': 'null', 'aid': 'null', 'search': 'null', 'article_type': 'null', 'hide_ads': '', 'article_slug': 'null'}, lotameData: {'Profile': {'tpid': 'c8ef27a0d4ba771a81159f0d2e792db4', 'Audiences': {'Audience': [{'id': '99999', 'abbr': 'sports'}, {'id': '88888', 'abbr': 'movie'}, {'id': '77777', 'abbr': 'blogger'}], 'ThirdPartyAudience': [{'id': '123', 'name': 'Automobiles'}, {'id': '456', 'name': 'Ages: 30-39'}]}}}, placementId: '1310000099', siteId: '1234567890', id: 'fea37168-78f1-4a23-a40e-88437a99377e', auctionId: '27dcb421-95c6-4024-a624-3c03816c5f99', imp: [ { id: '2899ec066a91ff8', tagid: 'undefined', secure: 1, banner: { format: [{ w: 300, h: 250 }, { w: 300, h: 600 }], h: 250, topframe: 1, w: 300 } } ] },
-    mediaTypes: {video: {info: 'dummy data'}, native: {info: 'dummy data'}},
+    mediaTypes: {video: {mimes: ['video/mp4'], 'context': 'instream'}, native: {info: 'dummy data'}},
+    transactionId: '2e63c0ed-b10c-4008-aed5-84582cecfe87'
+  }
+];
+
+var validBidRequestsWithNonBannerMediaTypesAndInvalidVideo = [
+  {
+    adUnitCode: 'div-gpt-ad-1460505748561-0',
+    auctionId: '27dcb421-95c6-4024-a624-3c03816c5f99',
+    bidId: '2899ec066a91ff8',
+    bidRequestsCount: 1,
+    bidder: 'ozone',
+    bidderRequestId: '1c1586b27a1b5c8',
+    crumbs: {pubcid: '203a0692-f728-4856-87f6-9a25a6b63715'},
+    params: { publisherId: '9876abcd12-3', customData: {'gender': 'bart', 'age': 'low'}, ozoneData: {'networkID': '3048', 'dfpSiteID': 'd.thesun', 'sectionID': 'homepage', 'path': '/', 'sec_id': 'null', 'sec': 'sec', 'topics': 'null', 'kw': 'null', 'aid': 'null', 'search': 'null', 'article_type': 'null', 'hide_ads': '', 'article_slug': 'null'}, lotameData: {'Profile': {'tpid': 'c8ef27a0d4ba771a81159f0d2e792db4', 'Audiences': {'Audience': [{'id': '99999', 'abbr': 'sports'}, {'id': '88888', 'abbr': 'movie'}, {'id': '77777', 'abbr': 'blogger'}], 'ThirdPartyAudience': [{'id': '123', 'name': 'Automobiles'}, {'id': '456', 'name': 'Ages: 30-39'}]}}}, placementId: '1310000099', siteId: '1234567890', id: 'fea37168-78f1-4a23-a40e-88437a99377e', auctionId: '27dcb421-95c6-4024-a624-3c03816c5f99', imp: [ { id: '2899ec066a91ff8', tagid: 'undefined', secure: 1, banner: { format: [{ w: 300, h: 250 }, { w: 300, h: 600 }], h: 250, topframe: 1, w: 300 } } ] },
+    mediaTypes: {video: {mimes: ['video/mp4']}, native: {info: 'dummy data'}},
     transactionId: '2e63c0ed-b10c-4008-aed5-84582cecfe87'
   }
 ];
@@ -139,6 +170,67 @@ var validResponse = {
           }
         ],
         'seat': 'appnexus'
+      }
+    ],
+    'ext': {
+      'responsetimemillis': {
+        'appnexus': 47,
+        'openx': 30
+      }
+    },
+    'timing': {
+      'start': 1536848078.089177,
+      'end': 1536848078.142203,
+      'TimeTaken': 0.05302619934082031
+    }
+  },
+  'headers': {}
+};
+var validOutstreamResponse = {
+  'body': {
+    'id': 'd6198807-7a53-4141-b2db-d2cb754d68ba',
+    'seatbid': [
+      {
+        'bid': [
+          {
+            'id': '677903815252395017',
+            'impid': '2899ec066a91ff8',
+            'price': 0.5,
+            'adm': '<script src="https://fra1-ib.adnxs.com/ab?e=wqT_3QLXB6DXAwAAAwDWAAUBCNDh6dwFENjt4vTs9Y6bWhjxtI3siuOTmREqNgkAAAECCOA_EQEHNAAA4D8ZAAAAgOtR4D8hERIAKREJADERG6gwsqKiBjjtSEDtSEgCUI3J-y5YnPFbYABotc95eMuOBYABAYoBA1VTRJIBAQbwUpgBrAKgAdgEqAEBsAEAuAECwAEDyAEC0AEA2AEA4AEA8AEAigI7dWYoJ2EnLCAyNTI5ODg1LCAxNTM2ODQ4MDgwKTt1ZigncicsIDk4NDkzNTgxNh4A8JySAv0BIWJ6YWpPQWl1c0s0S0VJM0oteTRZQUNDYzhWc3dBRGdBUUFSSTdVaFFzcUtpQmxnQVlQX19fXzhQYUFCd0FYZ0JnQUVCaUFFQmtBRUJtQUVCb0FFQnFBRURzQUVBdVFFcGk0aURBQURnUDhFQktZdUlnd0FBNERfSkFUMDR0TTFxYXZFXzJRRUFBQUFBQUFEd1AtQUJBUFVCBQ8oSmdDQUtBQ0FMVUMFEARMMAkI8FBNQUNBY2dDQWRBQ0FkZ0NBZUFDQU9nQ0FQZ0NBSUFEQVpBREFKZ0RBYWdEcnJDdUNyb0RDVVpTUVRFNk16WTROT0FER2cuLpoCPSFLQXVvRkE2AAFwblBGYklBUW9BRG9KUmxKQk1Ub3pOamcwUUJwSkENAfBAOEQ4LsICL2h0dHA6Ly9wcmViaWQub3JnL2Rldi1kb2NzL2dldHRpbmctc3RhcnRlZC5odG1s2AIA4AKtmEjqAiINOthkZW1vLnRoZS1vem9uZS1wcm9qZWN0LmNvbS_yAhMKD0NVU1RPTV9NT0RFTF9JRBIA8gIaChZDLhYAIExFQUZfTkFNRQEdCB4KGjIzAPCHTEFTVF9NT0RJRklFRBIAgAMAiAMBkAMAmAMUoAMBqgMAwAOsAsgDANgDAOADAOgDAPgDA4AEAJIECS9vcGVucnRiMpgEAKIECTEyNy4wLjAuMagEALIEDAgAEAAYACAAMAA4ALgEAMAEAMgEANIEDjkzMjUjRlJBMTozNjg02gQCCAHgBADwBEHvIIgFAZgFAKAF_xEBsAGqBSRkNjE5ODgwNy03YTUzLTQxNDEtYjJkYi1kMmNiNzU0ZDY4YmHABQDJBWlQFPA_0gUJCQkMpAAA2AUB4AUB8AWZ9CH6BQQIABAAkAYAmAYAuAYAwQYAAAAAAAAAAMgGAA..&s=ab84b182eef7d9b4e58c74fe8987705c25ed803c&referrer=http%3A%2F%2Fdemo.the-ozone-project.com%2F&pp=${AUCTION_PRICE}"></script>',
+            'adid': '98493581',
+            'adomain': [
+              'http://prebid.org'
+            ],
+            'iurl': 'https://fra1-ib.adnxs.com/cr?id=98493581',
+            'cid': '9325',
+            'crid': '98493581',
+            'cat': [
+              'IAB3-1'
+            ],
+            'w': 300,
+            'h': 600,
+            'ext': {
+              'prebid': {
+                'type': 'video'
+              },
+              'bidder': {
+                'unruly': {
+                  'renderer': {
+                    'config': {
+                      'targetingUUID': 'aafd3388-afaf-41f4-b271-0ac8e0325a7f',
+                      'siteId': 1052815,
+                      'featureOverrides': {}
+                    },
+                    'url': 'https://video.unrulymedia.com/native/native-loader.js#supplyMode=prebid?cb=6284685353877994',
+                    'id': 'unruly_inarticle'
+                  },
+                  'vast_url': 'data:text/xml;base64,PD94bWwgdmVyc2lvbj0i'
+                }
+              }
+            }
+          }
+        ],
+        'seat': 'unruly'
       }
     ],
     'ext': {
@@ -509,9 +601,19 @@ describe('ozone Adapter', function () {
       expect(request).to.have.all.keys(['bidderRequest', 'data', 'method', 'url']);
     });
 
-    it('handles missing banner mediaType element correctly', function () {
-      const request = spec.buildRequests(validBidRequestsWithNonBannerMediaTypes, validBidderRequest);
+    it('handles video mediaType element correctly, with outstream video', function () {
+      const request = spec.buildRequests(validBidRequestsWithNonBannerMediaTypesAndValidOutstreamVideo, validBidderRequest);
       expect(request).to.have.all.keys(['bidderRequest', 'data', 'method', 'url']);
+    });
+
+    it('handles video mediaType element correctly, with instream video', function () {
+      const request = spec.buildRequests(validBidRequestsWithNonBannerMediaTypesAndValidInstreamVideo, validBidderRequest);
+      expect(request).to.be.null;
+    });
+
+    it('handles missing banner mediaType element correctly, with no video context', function () {
+      const request = spec.buildRequests(validBidRequestsWithNonBannerMediaTypesAndInvalidVideo, validBidderRequest);
+      expect(request).to.be.null;
     });
 
     it('should not crash when there is no sizes element at all', function () {
@@ -583,6 +685,13 @@ describe('ozone Adapter', function () {
       const result = spec.interpretResponse({'body': {'seatbid': 'nothing_here'}}, {});
       expect(result).to.be.an('array');
       expect(result).to.be.empty;
+    });
+
+    it('should have video renderer', function () {
+      const request = spec.buildRequests(validBidRequestsWithNonBannerMediaTypesAndValidOutstreamVideo, validBidderRequest);
+      const result = spec.interpretResponse(validOutstreamResponse, request);
+      const bid = result[0];
+      expect(bid.renderer).to.be.an.instanceOf(Renderer);
     });
   });
 
