@@ -56,7 +56,8 @@ describe('topRTBBidAdapterTests', function () {
     	'adName': 'banner',
     	'vastXml': '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><VAST version="2.0"></VAST>',
     	'mediaType': 'banner',
-    	'videoCacheKey': 'cd95dffec6b645afbc4e5aa9f68f2ff3'
+      'dspId': '5oLqa%2FUvMMDJNTcX4Eq315TyK%2B0hI%2Bebskr371eWi3t0uUjVD0ViqJJV%2BZ3sR7Tn',
+      'adUnitId': 'vgKIF7zQaiDZuaVf7DSX%2F3CNVc4kuyU4fRyfGiBsDnN0uUjVD0ViqJJV%2BZ3sR7Tn'
     };
 
     let bids = spec.interpretResponse(serverResponse, bidRequestData);
