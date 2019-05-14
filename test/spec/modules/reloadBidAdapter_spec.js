@@ -6,8 +6,8 @@ let getParams = () => {
     'plcmID': 'placement_01',
     'partID': 'part00',
     'opdomID': 1,
-    'bsrvID' : 1,
-    'type' : 'pcm'
+    'bsrvID': 1,
+    'type': 'pcm'
   }));
 };
 
@@ -72,7 +72,7 @@ let getExt1ServerResponse = () => {
         'pcmurl': 'bidsrv01.reload.net'
       },
       'srvUrl': 'bidsrv01.reload.net',
-      'instr': {'go': true,  'prc': 32, 'cur':'USD'},
+      'instr': {'go': true, 'prc': 32, 'cur': 'USD'},
       'statStr': 'eyN4aHYnQCk5OTotOC',
       'status': 'ok',
       'message': '',
@@ -155,7 +155,7 @@ describe('ReloadAdapter', function () {
         'partID': 'part00',
         'opdomID': 1,
         'bsrvID': 23,
-        'type' : 'pcm'
+        'type': 'pcm'
       },
       'adUnitCode': 'adunit-code',
       'sizes': [[300, 250], [300, 600]],
@@ -237,10 +237,9 @@ describe('ReloadAdapter', function () {
   });
 
   describe('interpretResponse()', function () {
-    
     it('Returns an empty array', () => {
       let vData = spec.interpretResponse(getServerResponse(getExt2ServerResponse()), {});
-      
+
       expect(vData.length).to.equal(0);
     });
 
