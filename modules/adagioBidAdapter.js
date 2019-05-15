@@ -58,10 +58,7 @@ top.googletag.cmd.push(function() {
   const gptEvents = Object.keys(ADSRV_EVENTS.GPT).map(key => ADSRV_EVENTS.GPT[key]);
   gptEvents.forEach(eventName => {
     top.googletag.pubads().addEventListener(eventName, args => {
-      const adagioCustomArgs = {
-        adgAuctionId: auctionManager.getLastAuctionId()
-      };
-      adagioEnqueue('gpt-event', { eventName, args: { ...args, ...adagioCustomArgs } });
+      adagioEnqueue('gpt-event', { eventName, args });
     });
   });
 });
@@ -72,10 +69,7 @@ top.sas.cmd.push(function() {
   const sasEvents = Object.keys(ADSRV_EVENTS.SAS).map(key => ADSRV_EVENTS.SAS[key]);
   sasEvents.forEach(eventName => {
     top.sas.events.on(eventName, args => {
-      const adagioCustomArgs = {
-        adgAuctionId: auctionManager.getLastAuctionId()
-      };
-      adagioEnqueue('sas-event', { eventName, args: { ...args, ...adagioCustomArgs } });
+      adagioEnqueue('sas-event', { eventName, args });
     });
   });
 });
@@ -301,7 +295,18 @@ export const spec = {
   supportedMediaType: SUPPORTED_MEDIA_TYPES,
 
   isBidRequestValid: function(bid) {
-    return !!(bid.params.organizationId && bid.params.site && bid.params.placement && bid.params.pagetype && bid.params.adUnitElementId && document.getElementById(bid.params.adUnitElementId) !== null);
+    const { adUnitCode, auctionId } = bid;
+    const { organizationId, site, placement, pagetype, adUnitElementId } = bid.params;
+    const isValid = !!(organizationId && site && placement && pagetype && adUnitElementId && document.getElementById(adUnitElementId) !== null);
+
+    if (isValid === true) {
+      top.ADAGIO.adUnits = top.ADAGIO.adUnits || {};
+      top.ADAGIO.adUnits[adUnitCode] = {
+        auctionId: auctionId,
+        pageviewId: _getPageviewId()
+      };
+    }
+    return isValid;
   },
 
   buildRequests: function(validBidRequests, bidderRequest) {
