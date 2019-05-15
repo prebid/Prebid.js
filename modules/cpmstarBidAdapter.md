@@ -20,12 +20,31 @@ var adUnits = [
         sizes: [[300, 250]],
       }
     },
-    bids: [{
-      bidder: 'cpmstar',
-      params: {
-        placementId: 81006
+    bids: [
+      {
+        bidder: 'cpmstar',
+        params: {
+          placementId: 81006
+        }
+      },
+    ]
+  },
+  {
+    code: 'video-ad-div',
+    mediaTypes: {
+      video: {
+        context: 'instream',
+        sizes: [[640, 480]]
       }
-    }]
+    },
+    bids:[
+       {
+        bidder: 'cpmstar',
+        params: {
+          placementId: 81007
+        }
+      }
+    ]
   }
 ];
 ```
