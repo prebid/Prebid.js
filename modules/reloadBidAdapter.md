@@ -38,10 +38,10 @@ var adUnits = [
     bids: [{
       bidder: 'reload',
       params: {
-        plcmID: '4234897234',
-        partID: 'part_2',
-        opdomID: 0,
-		bsrvID: 0,
+        plcmID: 'prebid_check',
+        partID: 'part_4',
+        opdomID: '0',
+        bsrvID: 0,
         type: 'pcm'
       }
     }]
