@@ -162,7 +162,7 @@ export const spec = {
     if ((validBidRequests[0].userId && validBidRequests[0].userId.pubcid)) {
       beaconParams.pubcid = validBidRequests[0].userId.pubcid;
     } else if (validBidRequests[0].crumbs && validBidRequests[0].crumbs.pubcid) {
-      beaconParams.pubcid = bids[0].crumbs.pubcid;
+      beaconParams.pubcid = validBidRequests[0].crumbs.pubcid;
     }
 
     let adxcgRequestUrl = url.format({
