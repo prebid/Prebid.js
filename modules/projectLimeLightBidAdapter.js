@@ -1,7 +1,7 @@
-import { registerBidder } from 'src/adapters/bidderFactory';
-import { BANNER, VIDEO } from 'src/mediaTypes';
+import { registerBidder } from '../src/adapters/bidderFactory';
+import { BANNER, VIDEO } from '../src/mediaTypes';
 import {ajax} from '../src/ajax';
-import * as utils from 'src/utils';
+import * as utils from '../src/utils';
 
 const BIDDER_CODE = 'project-limelight';
 const URL = '//ads.project-limelight.com/hb';
