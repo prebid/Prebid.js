@@ -150,6 +150,48 @@ describe('AppNexusAdapter', function () {
       });
     });
 
+    it('should add video property when adUnit includes a renderer', function () {
+      const videoData = {
+        mediaTypes: {
+          video: {
+            context: 'outstream',
+            mimes: ['video/mp4']
+          }
+        },
+        params: {
+          placementId: '10433394',
+          video: {
+            skippable: true,
+            playback_method: ['auto_play_sound_off']
+          }
+        }
+      };
+
+      let bidRequest1 = deepClone(bidRequests[0]);
+      bidRequest1 = Object.assign({}, bidRequest1, videoData, {
+        renderer: {
+          url: 'http://test.renderer.url',
+          render: function () {}
+        }
+      });
+
+      let bidRequest2 = deepClone(bidRequests[0]);
+      bidRequest2.adUnitCode = 'adUnit_code_2';
+      bidRequest2 = Object.assign({}, bidRequest2, videoData);
+
+      const request = spec.buildRequests([bidRequest1, bidRequest2]);
+      const payload = JSON.parse(request.data);
+      expect(payload.tags[0].video).to.deep.equal({
+        skippable: true,
+        playback_method: ['auto_play_sound_off'],
+        custom_renderer_present: true
+      });
+      expect(payload.tags[1].video).to.deep.equal({
+        skippable: true,
+        playback_method: ['auto_play_sound_off']
+      });
+    });
+
     it('should attach valid user params to the tag', function () {
       let bidRequest = Object.assign({},
         bidRequests[0],
