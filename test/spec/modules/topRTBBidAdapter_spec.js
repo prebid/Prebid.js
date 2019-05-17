@@ -56,9 +56,7 @@ describe('topRTBBidAdapterTests', function () {
     	'adName': 'banner',
     	'vastXml': '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><VAST version="2.0"></VAST>',
     	'mediaType': 'banner',
-      'dspId': '5oLqa%2FUvMMDJNTcX4Eq315TyK%2B0hI%2Bebskr371eWi3t0uUjVD0ViqJJV%2BZ3sR7Tn',
-      'adUnitId': 'vgKIF7zQaiDZuaVf7DSX%2F3CNVc4kuyU4fRyfGiBsDnN0uUjVD0ViqJJV%2BZ3sR7Tn',
-      'deviceType':2
+    	'tracking': 'http://ssp.toprtb.com:8080/sspNew/tracking?F0cloTiKIw%2BjZ2UNDvlKGn5%2FWoAO9cnlAUDm6gFBM8bImY2fKo%2BMTvI0XvXzFTZSb5v8o4EUbPId9hckptTqA4QPaWvpVYCRKRZceXNa4kjtvfm4j2e%2FcRKgkns2goHXi7IZC0sBIbE77WWg%2BPBYv%2BCu84H%2FSH69mi%2FDaWcQlfaEOdkaJdstJEkaZtkgWnFnS7aagte%2BfdEbOqcTxq5hzj%2BZ4NZbwgReuWTQZbfrMWjkXFbn%2B35vZuI319o6XH9n9fKLS4xp8zstXfQT2oSgjw1NmrwqRKf1efB1UaWlS1TbkSqxZ7Kcy7nJvAZrDk0tzcSeIxe4VfHpwgPPs%2BueUeGwz3o7OCh7H1sCmogSrmJFB9JTeXudFjC13iANAtu4SvG9bGIbiJxS%2BNfkjy2mLFm8kSIcIobjNkMEcUAwmoqJNRndwb66a3Iovk2NTo0Ly%2FV7Y5ECPcS5%2FPBrIEOuQXS5SNUPRWKoklX5nexHtOc%3D'
     };
 
     let bids = spec.interpretResponse(serverResponse, bidRequestData);
