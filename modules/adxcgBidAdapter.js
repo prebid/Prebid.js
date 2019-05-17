@@ -11,6 +11,7 @@ import includes from 'core-js/library/fn/array/includes'
  * updated for gdpr compliance on 2018.05.22 -requires gdpr compliance module
  * updated to pass aditional auction and impression level parameters. added pass for video targeting parameters
  * updated to fix native support for image width/height and icon 2019.03.17
+ * updated pubcid 2019.05.13
  */
 
 const BIDDER_CODE = 'adxcg'
