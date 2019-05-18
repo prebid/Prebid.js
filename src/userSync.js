@@ -61,7 +61,7 @@ export function newUserSync(userSyncDependencies) {
    * @private
    */
   function fireSyncs() {
-    if (!usConfig.syncEnabled || !userSyncDependencies.browserSupportsCookies || hasFired) {
+    if (!usConfig.syncEnabled || !userSyncDependencies.browserSupportsCookies || (!usConfig.enableOverride && hasFired)) {
       return;
     }
 
@@ -156,13 +156,9 @@ export function newUserSync(userSyncDependencies) {
       return utils.logWarn(`Number of user syncs exceeded for "${bidder}"`);
     }
 
-    if (usConfig.filterSettings) {
-      if (shouldBidderBeBlocked(type, bidder)) {
-        return utils.logWarn(`Bidder '${bidder}' is not permitted to register their userSync ${type} pixels as per filterSettings config.`);
-      }
-      // TODO remove this else if code that supports deprecated fields (sometime in 2.x); for now - only run if filterSettings config is not present
-    } else if (usConfig.enabledBidders && usConfig.enabledBidders.length && usConfig.enabledBidders.indexOf(bidder) < 0) {
-      return utils.logWarn(`Bidder "${bidder}" not permitted to register their userSync pixels.`);
+    const canBidderRegisterSync = publicApi.canBidderRegisterSync(type, bidder);
+    if (!canBidderRegisterSync) {
+      return utils.logWarn(`Bidder "${bidder}" not permitted to register their "${type}" userSync pixels.`);
     }
 
     // the bidder's pixel has passed all checks and is allowed to register
@@ -262,6 +258,21 @@ export function newUserSync(userSyncDependencies) {
     }
   };
 
+  publicApi.canBidderRegisterSync = (type, bidder) => {
+    if (usConfig.filterSettings) {
+      if (shouldBidderBeBlocked(type, bidder)) {
+        return false;
+      }
+      // TODO remove this else if code that supports deprecated fields (sometime in 2.x); for now - only run if filterSettings config is not present
+    } else if (usConfig.enabledBidders && usConfig.enabledBidders.length && usConfig.enabledBidders.indexOf(bidder) < 0) {
+      return false
+    } else if (type === 'iframe' && !(usConfig.iframeEnabled || permittedPixels.iframe)) {
+      return false;
+    } else if (type === 'image' && !(usConfig.pixelEnabled || permittedPixels.image)) {
+      return false;
+    }
+    return true;
+  }
   return publicApi;
 }
 

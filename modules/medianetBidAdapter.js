@@ -2,6 +2,7 @@ import { registerBidder } from '../src/adapters/bidderFactory';
 import * as utils from '../src/utils';
 import { config } from '../src/config';
 import * as url from '../src/url';
+import { BANNER, NATIVE } from '../src/mediaTypes';
 
 const BIDDER_CODE = 'medianet';
 const BID_URL = '//prebid.media.net/rtb/prebid';
@@ -138,9 +139,18 @@ function slotParams(bidRequest) {
       dfp_id: bidRequest.adUnitCode,
       display_count: bidRequest.bidRequestsCount
     },
-    banner: transformSizes(bidRequest.sizes),
     all: bidRequest.params
   };
+  if (bidRequest.sizes.length > 0) {
+    params.banner = transformSizes(bidRequest.sizes);
+  }
+  if (bidRequest.nativeParams) {
+    try {
+      params.native = JSON.stringify(bidRequest.nativeParams);
+    } catch (e) {
+      utils.logError((`${BIDDER_CODE} : Incorrect JSON : bidRequest.nativeParams`));
+    }
+  }
 
   if (bidRequest.params.crid) {
     params.tagid = bidRequest.params.crid.toString();
@@ -151,7 +161,7 @@ function slotParams(bidRequest) {
     params.bidfloor = bidFloor;
   }
   const coordinates = getCoordinates(bidRequest.adUnitCode);
-  if (coordinates) {
+  if (coordinates && params.banner && params.banner.length !== 0) {
     let normCoordinates = normalizeCoordinates(coordinates);
     params.ext.coordinates = normCoordinates;
     params.ext.viewability = getSlotVisibility(coordinates.top_left, getMinSize(params.banner));
@@ -267,6 +277,8 @@ function clearMnData() {
 export const spec = {
 
   code: BIDDER_CODE,
+
+  supportedMediaTypes: [BANNER, NATIVE],
 
   /**
    * Determines whether or not the given bid request is valid.

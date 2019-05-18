@@ -550,7 +550,7 @@ describe('OpenxAdapter', function () {
           params: {
             'unit': '12345678',
             'delDomain': 'test-del-domain',
-            'customFloor': 1.5
+            'customFloor': 1.500001
           }
         }
       );
@@ -940,6 +940,30 @@ describe('OpenxAdapter', function () {
         const request = spec.buildRequests(bidRequestsWithPubcid);
         expect(request[0].data.pubcid).to.equal('c4a4c843-2368-4b5e-b3b1-6ee4702b9ad6');
       });
+
+      it('should send a pubcid query param when userId.pubcid is defined in the bid requests', function () {
+        const bidRequestsWithPubcid = [{
+          bidder: 'openx',
+          params: {
+            unit: '11',
+            delDomain: 'test-del-domain'
+          },
+          userId: {
+            pubcid: 'c1a4c843-2368-4b5e-b3b1-6ee4702b9ad6'
+          },
+          adUnitCode: 'adunit-code',
+          mediaTypes: {
+            banner: {
+              sizes: [[300, 250], [300, 600]]
+            }
+          },
+          bidId: 'test-bid-id-1',
+          bidderRequestId: 'test-bid-request-1',
+          auctionId: 'test-auction-1'
+        }];
+        const request = spec.buildRequests(bidRequestsWithPubcid);
+        expect(request[0].data.pubcid).to.equal('c1a4c843-2368-4b5e-b3b1-6ee4702b9ad6');
+      });
     })
   });
 
@@ -1190,6 +1214,10 @@ describe('OpenxAdapter', function () {
         expect(bid.ts).to.equal(adUnitOverride.ts);
       });
 
+      it('should return a brand ID', function () {
+        expect(bid.meta.brandId).to.equal(DEFAULT_TEST_ARJ_AD_UNIT.brand_id);
+      });
+
       it('should register a beacon', function () {
         resetBoPixel();
         spec.interpretResponse({body: bidResponse}, bidRequest);
@@ -1437,7 +1465,6 @@ describe('OpenxAdapter', function () {
       const expectedResponse = [
         {
           'requestId': '30b31c1838de1e',
-          'bidderCode': 'openx',
           'cpm': 1,
           'width': '640',
           'height': '480',
@@ -1458,7 +1485,6 @@ describe('OpenxAdapter', function () {
       const expectedResponse = [
         {
           'requestId': '30b31c1838de1e',
-          'bidderCode': 'openx',
           'cpm': 1,
           'width': '640',
           'height': '480',

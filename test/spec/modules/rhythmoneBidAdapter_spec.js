@@ -2,90 +2,46 @@ import {spec} from '../../../modules/rhythmoneBidAdapter';
 var assert = require('assert');
 
 describe('rhythmone adapter tests', function () {
-  describe('auditBeacon', function() {
-    var z = spec;
-    var beaconURL = z.getUserSyncs({pixelEnabled: true})[0];
-
-    it('should contain the correct path', function() {
-      var u = '//hbevents.1rx.io/audit?'
-      assert.equal(beaconURL.url.substring(0, u.length), u);
-    });
-  });
-
   describe('rhythmoneResponse', function () {
     var z = spec;
 
-    var rmpRequest = z.buildRequests(
+    var rmpBannerRequest = z.buildRequests(
       [
         {
           'bidder': 'rhythmone',
           'params': {
-            'placementId': 'xyz',
+            'placementId': 'abc',
             'keywords': '',
             'categories': [],
             'trace': true,
-            'method': 'get',
-            'endpoint': 'http://fakedomain.com'
+            'zone': '2345',
+            'path': 'mvo',
+            'method': 'POST'
           },
-          'mediaType': 'video',
+          'mediaType': 'banner',
           'adUnitCode': 'div-gpt-ad-1438287399331-0',
           'sizes': [[300, 250]]
         }
-      ]
+      ], { 'refererInfo': { 'referer': 'Reference Page' } }
     );
 
-    it('should have one request to RMP', function() {
-      assert.equal(rmpRequest.length, 1);
+    it('Verify POST Banner Bid Request', function () {
+      expect(rmpBannerRequest.url).to.have.string('//tag.1rx.io/rmp/abc/0/mvo?z=2345&hbv=');
+      expect(rmpBannerRequest.method).to.equal('POST');
+      const bidRequest = JSON.parse(rmpBannerRequest.data);
+      expect(bidRequest.site).to.not.equal(null);
+      expect(bidRequest.site.ref).to.equal('Reference Page');
+      expect(bidRequest.device).to.not.equal(null);
+      expect(bidRequest.device.ua).to.equal(navigator.userAgent);
+      expect(bidRequest.device).to.have.property('dnt');
+      expect(bidRequest.imp[0].banner).to.not.equal(null);
+      expect(bidRequest.imp[0].banner.w).to.equal(300);
+      expect(bidRequest.imp[0].banner.h).to.equal(250);
+      expect(bidRequest.imp[0].ext.bidder.zone).to.equal('2345');
+      expect(bidRequest.imp[0].ext.bidder.path).to.equal('mvo');
     });
 
-    var mangoRequest = z.buildRequests(
-      [
-        {
-          'bidder': 'rhythmone',
-          'params': {
-            'placementId': 'xyz',
-            'keywords': '',
-            'categories': [],
-            'trace': true,
-            'method': 'get',
-            'api': 'mango',
-            'endpoint': 'http://fakedomain.com'
-          },
-          'adUnitCode': 'div-gpt-ad-1438287399331-0',
-          'sizes': [[300, 250]]
-        }
-      ]
-    );
-
-    it('should have one request to Mango', function() {
-      assert.equal(mangoRequest.length, 1);
-    });
-
-    it('should send GDPR Consent data to RhythmOne tag', function () {
-	  let _consentString = 'testConsentString';
-	  var request = z.buildRequests(
-        [
-          {
-            'bidder': 'rhythmone',
-            'params': {
-              'placementId': 'xyz',
-              'keywords': '',
-              'categories': [],
-              'trace': true,
-              'method': 'get',
-              'api': 'mango',
-              'endpoint': 'http://fakedomain.com?'
-            },
-            'adUnitCode': 'div-gpt-ad-1438287399331-0',
-            'sizes': [[300, 250]]
-          }
-        ], {gdprConsent: {gdprApplies: 1, consentString: _consentString}}
-      );
-      assert.equal(getURLParam(request[0].url, 'gdpr'), 'true');
-      assert.equal(getURLParam(request[0].url, 'gdpr_consent'), 'testConsentString');
-    });
-
-    var bids = z.interpretResponse({
+    var bannerBids = z.interpretResponse({
       body: [
         {
           'impid': 'div-gpt-ad-1438287399331-0',
@@ -99,21 +55,265 @@ describe('rhythmone adapter tests', function () {
     });
 
     it('should register one bid', function() {
-      assert.equal(bids.length, 1);
+      assert.equal(bannerBids.length, 1);
     });
-    function getURLParam(url, key) {
-      let val = '';
-      if (url.indexOf('?') > -1) {
-        let qs = url.substr(url.indexOf('?'));
-        let qsArr = qs.split('&');
-        for (let i = 0; i < qsArr.length; i++) {
-          if (qsArr[i].indexOf(key.toLowerCase() + '=') > -1) {
-            val = qsArr[i].split('=')[1]
-            break;
-          }
+
+    it('Verify parse banner response', function() {
+      const bid = bannerBids[0];
+      expect(bid.width).to.equal(300);
+      expect(bid.height).to.equal(250);
+      expect(bid.creativeId).to.equal('cr-cfy24');
+      expect(bid.currency).to.equal('USD');
+      expect(bid.netRevenue).to.equal(true);
+      expect(bid.cpm).to.equal(1.0);
+      expect(bid.ttl).to.equal(350);
+    });
+
+    var rmpVideoRequest = z.buildRequests(
+      [
+        {
+          'bidder': 'rhythmone',
+          'params': {
+            'placementId': 'xyz',
+            'keywords': '',
+            'categories': [],
+            'trace': true,
+            'method': 'POST'
+          },
+          'mediaTypes': {
+            'video': {
+              'playerSize': [[640, 480]],
+              'context': 'instream'
+            }
+          },
+          'placementCode': 'div-gpt-ad-1438287399331-1',
+          'sizes': [[300, 250]]
         }
-      }
-      return val;
-    }
+      ], { 'refererInfo': { 'referer': 'Reference Page' } }
+    );
+
+    it('Verify POST Video Bid Request', function () {
+      expect(rmpVideoRequest.url).to.have.string('//tag.1rx.io/rmp/xyz/0/mvo?z=1r&hbv=');
+      expect(rmpVideoRequest.method).to.equal('POST');
+      const bidRequest = JSON.parse(rmpVideoRequest.data);
+      expect(bidRequest.site).to.not.equal(null);
+      expect(bidRequest.device).to.not.equal(null);
+      expect(bidRequest.device.ua).to.equal(navigator.userAgent);
+      expect(bidRequest.device).to.have.property('dnt');
+      expect(bidRequest.imp[0].video).to.not.equal(null);
+      expect(bidRequest.imp[0].video.w).to.equal(640);
+      expect(bidRequest.imp[0].video.h).to.equal(480);
+      expect(bidRequest.imp[0].video.mimes[0]).to.equal('video/mp4');
+      expect(bidRequest.imp[0].video.protocols).to.eql([2, 3, 5, 6]);
+      expect(bidRequest.imp[0].video.startdelay).to.equal(0);
+      expect(bidRequest.imp[0].video.skip).to.equal(0);
+      expect(bidRequest.imp[0].video.playbackmethod).to.eql([1, 2, 3, 4]);
+      expect(bidRequest.imp[0].video.delivery[0]).to.equal(1);
+      expect(bidRequest.imp[0].video.api).to.eql([1, 2, 5]);
+    });
+
+    var videoBids = z.interpretResponse({
+      body: [
+        {
+          'impid': 'div-gpt-ad-1438287399331-1',
+          'price': 1,
+          'nurl': 'http://testdomain/rmp/placementid/0/path?reqId=1636037',
+          'adomain': ['test.com'],
+          'cid': '467415',
+          'crid': 'cr-vid',
+          'w': 800,
+          'h': 600
+        }
+      ]
+    });
+
+    it('should register one bid', function() {
+      assert.equal(videoBids.length, 1);
+    });
+
+    it('Verify parse video response', function() {
+      const bid = videoBids[0];
+      expect(bid.width).to.equal(800);
+      expect(bid.height).to.equal(600);
+      expect(bid.vastUrl).to.equal('http://testdomain/rmp/placementid/0/path?reqId=1636037');
+      expect(bid.mediaType).to.equal('video');
+      expect(bid.creativeId).to.equal('cr-vid');
+      expect(bid.currency).to.equal('USD');
+      expect(bid.netRevenue).to.equal(true);
+      expect(bid.cpm).to.equal(1.0);
+      expect(bid.ttl).to.equal(600);
+    });
+
+    it('should send GDPR Consent data to RhythmOne tag', function () {
+	  let _consentString = 'testConsentString';
+	  var request = z.buildRequests(
+        [
+          {
+            'bidder': 'rhythmone',
+            'params': {
+              'placementId': 'xyz',
+              'keywords': '',
+              'categories': [],
+              'trace': true,
+              'method': 'POST'
+            },
+            'adUnitCode': 'div-gpt-ad-1438287399331-3',
+            'sizes': [[300, 250]]
+          }
+        ], {'gdprConsent': {'gdprApplies': true, 'consentString': _consentString}, 'refererInfo': { 'referer': 'Reference Page' }}
+      );
+      const bidRequest = JSON.parse(request.data);
+      expect(bidRequest.user.ext.consent).to.equal(_consentString);
+      expect(bidRequest.regs.ext.gdpr).to.equal(true);
+    });
+
+    var rmpMultiFormatRequest = z.buildRequests(
+      [
+        {
+          'bidder': 'rhythmone',
+          'params': {
+            'placementId': 'xyz',
+            'keywords': '',
+            'categories': [],
+            'trace': true,
+            'zone': '2345',
+            'path': 'mvo',
+            'method': 'POST'
+          },
+          'mediaTypes': {
+            'banner': {
+              'sizes': [
+                [300, 250]
+              ]
+            },
+            'video': {
+              'playerSize': [[640, 480]],
+              'context': 'instream'
+            }
+          },
+          'adUnitCode': 'div-gpt-ad-1438287399331-5',
+          'sizes': [[300, 250]]
+        }
+      ], { 'refererInfo': { 'referer': 'Reference Page' } }
+    );
+
+    it('Verify Multi-Format ads Bid Request', function () {
+      const bidRequest = JSON.parse(rmpMultiFormatRequest.data);
+      expect(bidRequest.site).to.not.equal(null);
+      expect(bidRequest.site.ref).to.equal('Reference Page');
+      expect(bidRequest.device).to.not.equal(null);
+      expect(bidRequest.device.ua).to.equal(navigator.userAgent);
+      expect(bidRequest.device).to.have.property('dnt');
+      expect(bidRequest.imp[0].video).to.not.equal(null);
+      expect(bidRequest.imp[0].video.w).to.equal(640);
+      expect(bidRequest.imp[0].video.h).to.equal(480);
+      expect(bidRequest.imp[0].video.mimes[0]).to.equal('video/mp4');
+      expect(bidRequest.imp[0].video.protocols).to.eql([2, 3, 5, 6]);
+      expect(bidRequest.imp[0].video.startdelay).to.equal(0);
+      expect(bidRequest.imp[0].video.skip).to.equal(0);
+      expect(bidRequest.imp[0].video.playbackmethod).to.eql([1, 2, 3, 4]);
+      expect(bidRequest.imp[0].video.delivery[0]).to.equal(1);
+      expect(bidRequest.imp[0].video.api).to.eql([1, 2, 5]);
+      expect(bidRequest.imp[0].banner).to.not.equal(null);
+      expect(bidRequest.imp[0].banner.w).to.equal(300);
+      expect(bidRequest.imp[0].banner.h).to.equal(250);
+      expect(bidRequest.imp[0].ext.bidder.zone).to.equal('2345');
+      expect(bidRequest.imp[0].ext.bidder.path).to.equal('mvo');
+    });
+
+    var forRMPMultiFormatResponse = z.interpretResponse({
+      body: {
+        'id': '1e810245dd1779',
+        'seatbid': [ {
+          'bid': [ {
+            'impid': 'div-gpt-ad-1438287399331-5',
+            'price': 1,
+            'nurl': 'http://testdomain/rmp/placementid/0/path?reqId=1636037',
+            'adomain': ['test.com'],
+            'cid': '467415',
+            'crid': 'cr-vid',
+            'w': 800,
+            'h': 600
+          } ]
+	    } ]
+	  }
+    });
+
+    it('should register one bid', function() {
+      assert.equal(forRMPMultiFormatResponse.length, 1);
+    });
+
+    it('Verify parse for multi format ad response', function() {
+      const bid = forRMPMultiFormatResponse[0];
+      expect(bid.width).to.equal(800);
+      expect(bid.height).to.equal(600);
+      expect(bid.vastUrl).to.equal('http://testdomain/rmp/placementid/0/path?reqId=1636037');
+      expect(bid.mediaType).to.equal('video');
+      expect(bid.creativeId).to.equal('cr-vid');
+      expect(bid.currency).to.equal('USD');
+      expect(bid.netRevenue).to.equal(true);
+      expect(bid.cpm).to.equal(1.0);
+      expect(bid.ttl).to.equal(600);
+    });
+
+    var noBidResponse = z.interpretResponse({
+      body: ''
+    });
+
+    it('No bid response', function() {
+      assert.equal(noBidResponse.length, 0);
+    });
+    describe('isRequiredParamPresent', function () {
+      var rmpBannerRequest = z.buildRequests(
+        [
+          {
+            'bidder': 'rhythmone',
+            'params': {
+              'keywords': '',
+              'categories': [],
+              'trace': true,
+              'zone': '2345',
+              'path': 'mvo',
+              'method': 'POST'
+            },
+            'mediaType': 'banner',
+            'adUnitCode': 'div-gpt-ad-1438287399331-0',
+            'sizes': [[300, 250]]
+          }
+        ], { 'refererInfo': { 'referer': 'Reference Page' } }
+      );
+
+      it('should return empty when required params not found', function () {
+        expect(rmpBannerRequest).to.be.empty;
+      });
+    });
+  });
+  describe('auditBeacon', function() {
+    var z = spec;
+    var beaconURL = z.getUserSyncs({pixelEnabled: true})[0];
+
+    it('should contain the correct path', function() {
+      var u = '//hbevents.1rx.io/audit?';
+      assert.equal(beaconURL.url.substring(0, u.length), u);
+    });
+
+    beaconURL = z.getUserSyncs({pixelEnabled: true}, null, {'gdprApplies': true, 'consentString': 'testConsentString'})[0];
+    it('should send GDPR Consent data to Sync pixel', function () {
+      expect(beaconURL.url).to.have.string('&gdpr=true&gdpr_consent=testConsentString');
+    });
+  });
+  describe('isBidRequestValid', function () {
+    let bid = {
+      'bidder': 'rhythmone',
+      'params': {
+        'placementId': '469127'
+      },
+      'adUnitCode': 'bannerDiv',
+      'sizes': [[300, 250]]
+    };
+
+    it('should return true when required params found', function () {
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
+    });
   });
 });

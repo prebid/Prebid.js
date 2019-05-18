@@ -18,13 +18,15 @@ export const spec = {
     if (validBidRequests.length === 0) {
       return null;
     }
+    const { gdprConsent, refererInfo } = bidderRequest;
 
     const account = getAccount(validBidRequests);
     const targets = validBidRequests.map(bid => bid.params.data).reduce(mergeTargets, {});
-    const gdprParams = (bidderRequest.gdprConsent && bidderRequest.gdprConsent.consentString) ? [ 'xt' + bidderRequest.gdprConsent.consentString ] : [];
+    const gdprParams = (gdprConsent && gdprConsent.consentString) ? [`xt${gdprConsent.consentString}`] : [];
+    const refererParams = (refererInfo && refererInfo.referer) ? [`xf${base64urlEncode(refererInfo.referer)}`] : [];
     const targetsParams = Object.keys(targets).map(targetCode => targetCode + targets[targetCode].join(';'));
     const slotsParams = validBidRequests.map(bid => 'sl' + bidToSlotName(bid));
-    const params = [...slotsParams, ...targetsParams, ...gdprParams].map(s => '/' + s).join('');
+    const params = [...slotsParams, ...targetsParams, ...gdprParams, ...refererParams].map(s => `/${s}`).join('');
     const cacheBuster = '?t=' + new Date().getTime();
     const uri = 'https://ads-' + account + '.adhese.com/json' + params + cacheBuster;
 
@@ -52,16 +54,19 @@ export const spec = {
       .map(item => adResponse(item.bid, item.ad));
   },
 
-  getUserSyncs: function(syncOptions, serverResponse, gdprConsent) {
-    const account = serverResponse.account || '';
-    if (syncOptions.iframeEnabled) {
-      let syncurl = USER_SYNC_BASE_URL + '?account=' + account;
-      if (gdprConsent) {
-        syncurl += '&gdpr=' + (gdprConsent.gdprApplies ? 1 : 0);
-        syncurl += '&consentString=' + encodeURIComponent(gdprConsent.consentString || '');
+  getUserSyncs: function(syncOptions, serverResponses, gdprConsent) {
+    if (syncOptions.iframeEnabled && serverResponses.length > 0) {
+      const account = serverResponses[0].account;
+      if (account) {
+        let syncurl = USER_SYNC_BASE_URL + '?account=' + account;
+        if (gdprConsent) {
+          syncurl += '&gdpr=' + (gdprConsent.gdprApplies ? 1 : 0);
+          syncurl += '&consentString=' + encodeURIComponent(gdprConsent.consentString || '');
+        }
+        return [{type: 'iframe', url: syncurl}];
       }
-      return [{ type: 'iframe', url: syncurl }];
     }
+    return [];
   }
 };
 
@@ -161,6 +166,10 @@ function getAdDetails(ad) {
     }
   }
   return { creativeId: creativeId, dealId: dealId };
+}
+
+function base64urlEncode(s) {
+  return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
 registerBidder(spec);

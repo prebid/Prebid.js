@@ -179,6 +179,17 @@ describe('targeting tests', function () {
       // expect the winning CPM to be equal to the sendAllBidCPM
       expect(targeting['/123456/header-bid-tag-0'][CONSTANTS.TARGETING_KEYS.PRICE_BUCKET + '_rubicon']).to.deep.equal(targeting['/123456/header-bid-tag-0'][CONSTANTS.TARGETING_KEYS.PRICE_BUCKET]);
     });
+
+    it('does not include adpod type bids in the getBidsReceived results', function () {
+      let adpodBid = utils.deepClone(bid1);
+      adpodBid.video = { context: 'adpod', durationSeconds: 15, durationBucket: 15 };
+      adpodBid.cpm = 5;
+      bidsReceived.push(adpodBid);
+
+      const targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0']);
+      expect(targeting['/123456/header-bid-tag-0']).to.contain.keys('hb_deal', 'hb_adid', 'hb_bidder');
+      expect(targeting['/123456/header-bid-tag-0']['hb_adid']).to.equal(bid1.adId);
+    });
   }); // end getAllTargeting tests
 
   describe('getAllTargeting without bids return empty object', function () {
@@ -313,6 +324,46 @@ describe('targeting tests', function () {
         expect(bids.length).to.equal(1);
         expect(bids[0].adId).to.equal('adid-3');
       });
+    });
+  });
+
+  describe('setTargetingForAst', function () {
+    let sandbox,
+      apnTagStub;
+    beforeEach(function() {
+      sandbox = sinon.createSandbox();
+      sandbox.stub(targetingInstance, 'resetPresetTargetingAST');
+      apnTagStub = sandbox.stub(window.apntag, 'setKeywords');
+    });
+    afterEach(function () {
+      sandbox.restore();
+    });
+
+    it('should set single addUnit code', function() {
+      let adUnitCode = 'testdiv-abc-ad-123456-0';
+      sandbox.stub(targetingInstance, 'getAllTargeting').returns({
+        'testdiv1-abc-ad-123456-0': {hb_bidder: 'appnexus'}
+      });
+      targetingInstance.setTargetingForAst(adUnitCode);
+      expect(targetingInstance.getAllTargeting.called).to.equal(true);
+      expect(targetingInstance.resetPresetTargetingAST.called).to.equal(true);
+      expect(apnTagStub.callCount).to.equal(1);
+      expect(apnTagStub.getCall(0).args[0]).to.deep.equal('testdiv1-abc-ad-123456-0');
+      expect(apnTagStub.getCall(0).args[1]).to.deep.equal({HB_BIDDER: 'appnexus'});
+    });
+
+    it('should set array of addUnit codes', function() {
+      let adUnitCodes = ['testdiv1-abc-ad-123456-0', 'testdiv2-abc-ad-123456-0']
+      sandbox.stub(targetingInstance, 'getAllTargeting').returns({
+        'testdiv1-abc-ad-123456-0': {hb_bidder: 'appnexus'},
+        'testdiv2-abc-ad-123456-0': {hb_bidder: 'appnexus'}
+      });
+      targetingInstance.setTargetingForAst(adUnitCodes);
+      expect(targetingInstance.getAllTargeting.called).to.equal(true);
+      expect(targetingInstance.resetPresetTargetingAST.called).to.equal(true);
+      expect(apnTagStub.callCount).to.equal(2);
+      expect(apnTagStub.getCall(1).args[0]).to.deep.equal('testdiv2-abc-ad-123456-0');
+      expect(apnTagStub.getCall(1).args[1]).to.deep.equal({HB_BIDDER: 'appnexus'});
     });
   });
 });

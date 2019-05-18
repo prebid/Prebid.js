@@ -350,7 +350,7 @@ describe('The Criteo bidding adapter', function () {
 
     it('should return undefined with incompatible browsers', function () {
       // Here use a null hash to make the call to crypto library fail and simulate a browser failure
-      expect(cryptoVerify(FAST_BID_PUBKEY, null, 'test')).to.equal.undefined;
+      expect(cryptoVerify(FAST_BID_PUBKEY, null, 'test')).to.be.false;
     });
   });
 });
