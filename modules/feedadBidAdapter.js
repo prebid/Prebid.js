@@ -67,11 +67,11 @@ function isValidClientToken(clientToken) {
  * @param placementId - the placement id to verify
  * @returns if the placement ID is valid.
  */
-export function isValidPlacementId(placementId) {
-  return typeof placementId === "string"
-    && placementId.length > 0
-    && placementId.length <= 256
-    && PLACEMENT_ID_PATTERN.test(placementId);
+function isValidPlacementId(placementId) {
+  return typeof placementId === 'string' &&
+    placementId.length > 0 &&
+    placementId.length <= 256 &&
+    PLACEMENT_ID_PATTERN.test(placementId);
 }
 
 /**
@@ -123,7 +123,7 @@ function buildRequests(validBidRequests, bidderRequest) {
  * @returns {Bid[]} the FeedAd bids
  */
 function interpretResponse(serverResponse, request) {
-  const body = typeof serverResponse.body === "string" ? JSON.parse(serverResponse.body) : serverResponse.body;
+  const body = typeof serverResponse.body === 'string' ? JSON.parse(serverResponse.body) : serverResponse.body;
   return body.requests.map((req, idx) => ({
     requestId: req.bidId,
     cpm: 0.5,
@@ -133,7 +133,7 @@ function interpretResponse(serverResponse, request) {
     ttl: 60,
     creativeId: `feedad-${body.id}-${idx}`,
     netRevenue: true,
-    currency: "EUR"
+    currency: 'EUR'
   }));
 }
 
@@ -151,11 +151,11 @@ function createAdHTML(req) {
         placementId: '${req.params.placementId}',
         adOptions: {scaleMode: "parent_width"},
         beforeAttach: (el, wrp) => {
-        	wrp = document.createElement("div");
-        	wrp.style.width = '${req.sizes[0][0]}px';
-        	wrp.style.height = '${req.sizes[0][1]}px';
-        	el.appendChild(wrp);
-        	return wrp;
+          wrp = document.createElement("div");
+          wrp.style.width = '${req.sizes[0][0]}px';
+          wrp.style.height = '${req.sizes[0][1]}px';
+          el.appendChild(wrp);
+          return wrp;
         }
     });
 </script>
@@ -174,10 +174,13 @@ export const spec = {
   getUserSyncs: function (syncOptions, serverResponses) {
   },
   onTimeout: function (timeoutData) {
+    console.log('onTimeout', timeoutData);
   },
   onBidWon: function (bid) {
+    console.log('onBidWon', bid);
   },
   onSetTargeting: function (bid) {
+    console.log('onSetTargeting', bid);
   }
 };
 
