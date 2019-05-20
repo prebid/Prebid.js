@@ -140,7 +140,9 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
       clearTimeout(_timer);
     }
 
-    if (_callback != null) {
+    // if (_auctionStatus !== AUCTION_COMPLETED) {
+    if (_auctionEnd === undefined) {
+    // if (_callback != null) {
       let timedOutBidders = [];
       if (timedOut) {
         utils.logMessage(`Auction ${_auctionId} timedOut`);
@@ -150,17 +152,19 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
         }
       }
 
+      _auctionStatus = AUCTION_COMPLETED;
+      _auctionEnd = Date.now();
+
+      events.emit(CONSTANTS.EVENTS.AUCTION_END, getProperties());
       try {
-        _auctionStatus = AUCTION_COMPLETED;
-        _auctionEnd = Date.now();
-
-        events.emit(CONSTANTS.EVENTS.AUCTION_END, getProperties());
-
-        const adUnitCodes = _adUnitCodes;
-        const bids = _bidsReceived
-          .filter(utils.bind.call(adUnitsFilter, this, adUnitCodes))
-          .reduce(groupByPlacement, {});
-        _callback.apply($$PREBID_GLOBAL$$, [bids, timedOut]);
+        if (_callback != null) {
+          const adUnitCodes = _adUnitCodes;
+          const bids = _bidsReceived
+            .filter(utils.bind.call(adUnitsFilter, this, adUnitCodes))
+            .reduce(groupByPlacement, {});
+          _callback.apply($$PREBID_GLOBAL$$, [bids, timedOut]);
+          _callback = null;
+        }
       } catch (e) {
         utils.logError('Error executing bidsBackHandler', null, e);
       } finally {
@@ -175,7 +179,6 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
           syncUsers(userSyncConfig.syncDelay);
         }
       }
-      _callback = null;
     }
   }
 
