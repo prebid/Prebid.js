@@ -21,6 +21,12 @@ const MEDIA_TYPES = [VIDEO, BANNER];
 const TAG = '[FeedAd]';
 
 /**
+ * Pattern for valid placement IDs
+ * @type {RegExp}
+ */
+const PLACEMENT_ID_PATTERN = /^(([a-z0-9])+[-_]?)+$/;
+
+/**
  * Checks if the bid is compatible with FeedAd.
  *
  * @param {BidRequest} bid - the bid to check
@@ -52,13 +58,20 @@ function isValidClientToken(clientToken) {
 }
 
 /**
- * Checks if the placement id is a valid FeedAd placement ID
+ * Checks if the given placement id is of a correct format.
+ * Valid IDs are words of lowercase letters from a to z and numbers from 0 to 9.
+ * The words can be separated by hyphens or underscores.
+ * Multiple separators must not follow each other.
+ * The whole placement ID must not be larger than 256 characters.
  *
- * @param {string} placementId - the placement id
- * @return {boolean} if the id is valid
+ * @param placementId - the placement id to verify
+ * @returns if the placement ID is valid.
  */
-function isValidPlacementId(placementId) {
-  return placementId.length > 0; // TODO: add placement ID regex or convert any string to valid ID?
+export function isValidPlacementId(placementId) {
+  return typeof placementId === "string"
+    && placementId.length > 0
+    && placementId.length <= 256
+    && PLACEMENT_ID_PATTERN.test(placementId);
 }
 
 /**
