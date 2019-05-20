@@ -82,8 +82,8 @@ function isValidPlacementId(placementId) {
 function filterSupportedMediaTypes(mediaTypes) {
   return {
     banner: mediaTypes.banner,
-    video: mediaTypes.video && mediaTypes.video.filter(video => video.context === 'outstream'),
-    native: []
+    video: mediaTypes.video && mediaTypes.video.context === 'outstream' ? mediaTypes.video : undefined,
+    native: undefined
   };
 }
 
@@ -93,7 +93,7 @@ function filterSupportedMediaTypes(mediaTypes) {
  * @return {boolean} true if the types are empty
  */
 function isMediaTypesEmpty(mediaTypes) {
-  return Object.keys(mediaTypes).every(type => mediaTypes[type].length === 0);
+  return Object.keys(mediaTypes).every(type => mediaTypes[type] === undefined);
 }
 
 /**

@@ -32,77 +32,192 @@ describe('FeedAdAdapter', function () {
   describe('isBidRequestValid', function () {
     it('should detect missing params', function () {
       let result = spec.isBidRequestValid({
-        bidder: "feedad",
+        bidder: 'feedad',
         sizes: []
       });
       expect(result).to.equal(false);
     });
     it('should detect missing client token', function () {
       let result = spec.isBidRequestValid({
-        bidder: "feedad",
+        bidder: 'feedad',
         sizes: [],
-        params: {placementId: "placement"}
+        params: {placementId: 'placement'}
       });
       expect(result).to.equal(false);
     });
     it('should detect zero length client token', function () {
       let result = spec.isBidRequestValid({
-        bidder: "feedad",
+        bidder: 'feedad',
         sizes: [],
-        params: {clientToken: "", placementId: "placement"}
+        params: {clientToken: '', placementId: 'placement'}
       });
       expect(result).to.equal(false);
     });
     it('should detect missing placement id', function () {
       let result = spec.isBidRequestValid({
-        bidder: "feedad",
+        bidder: 'feedad',
         sizes: [],
-        params: {clientToken: "clientToken"}
+        params: {clientToken: 'clientToken'}
       });
       expect(result).to.equal(false);
     });
     it('should detect zero length placement id', function () {
       let result = spec.isBidRequestValid({
-        bidder: "feedad",
+        bidder: 'feedad',
         sizes: [],
-        params: {clientToken: "clientToken", placementId: ""}
+        params: {clientToken: 'clientToken', placementId: ''}
       });
       expect(result).to.equal(false);
     });
     it('should detect too long placement id', function () {
-      var placementId = "";
+      var placementId = '';
       for (var i = 0; i < 300; i++) {
-        placementId += "a";
+        placementId += 'a';
       }
       let result = spec.isBidRequestValid({
-        bidder: "feedad",
+        bidder: 'feedad',
         sizes: [],
-        params: {clientToken: "clientToken", placementId}
+        params: {clientToken: 'clientToken', placementId}
       });
       expect(result).to.equal(false);
     });
     it('should detect invalid placement id', function () {
       [
-        "placement id with spaces",
-        "some|id",
-        "PLACEMENTID",
-        "placeme:ntId"
+        'placement id with spaces',
+        'some|id',
+        'PLACEMENTID',
+        'placeme:ntId'
       ].forEach(id => {
         let result = spec.isBidRequestValid({
-          bidder: "feedad",
+          bidder: 'feedad',
           sizes: [],
-          params: {clientToken: "clientToken", placementId: id}
+          params: {clientToken: 'clientToken', placementId: id}
         });
         expect(result).to.equal(false);
       });
     });
     it('should accept valid parameters', function () {
       let result = spec.isBidRequestValid({
-        bidder: "feedad",
+        bidder: 'feedad',
         sizes: [],
-        params: {clientToken: "clientToken", placementId: "placement-id"}
+        params: {clientToken: 'clientToken', placementId: 'placement-id'}
       });
       expect(result).to.equal(true);
+    });
+  });
+
+  describe('buildRequests', function () {
+    it('should accept empty lists', function () {
+      let result = spec.buildRequests([]);
+      expect(result.data.requests).to.be.empty;
+    });
+    it('should filter native media types', function () {
+      let bid = {
+        code: 'feedad',
+        mediaTypes: {
+          native: {
+            sizes: [[300, 250], [300, 600]],
+          }
+        },
+        params: {clientToken: 'clientToken', placementId: 'placement-id'}
+      };
+      let result = spec.buildRequests([bid]);
+      expect(result.data.requests).to.be.empty;
+    });
+    it('should filter video media types without outstream context', function () {
+      let bid = {
+        code: 'feedad',
+        mediaTypes: {
+          video: {
+            context: 'instream'
+          }
+        },
+        params: {clientToken: 'clientToken', placementId: 'placement-id'}
+      };
+      let result = spec.buildRequests([bid]);
+      expect(result.data.requests).to.be.empty;
+    });
+    it('should pass through outstream video media', function () {
+      let bid = {
+        code: 'feedad',
+        mediaTypes: {
+          video: {
+            context: 'outstream'
+          }
+        },
+        params: {clientToken: 'clientToken', placementId: 'placement-id'}
+      };
+      let result = spec.buildRequests([bid]);
+      expect(result.data.requests).to.be.lengthOf(1);
+      expect(result.data.requests[0]).to.deep.equal(bid);
+    });
+    it('should pass through banner media', function () {
+      let bid = {
+        code: 'feedad',
+        mediaTypes: {
+          banner: {
+            sizes: [[320, 250]]
+          }
+        },
+        params: {clientToken: 'clientToken', placementId: 'placement-id'}
+      };
+      let result = spec.buildRequests([bid]);
+      expect(result.data.requests).to.be.lengthOf(1);
+      expect(result.data.requests[0]).to.deep.equal(bid);
+    });
+    it('should detect empty media types', function () {
+      let bid = {
+        code: 'feedad',
+        mediaTypes: {
+          banner: undefined,
+          video: undefined,
+          native: undefined
+        },
+        params: {clientToken: 'clientToken', placementId: 'placement-id'}
+      };
+      let result = spec.buildRequests([bid]);
+      expect(result.data.requests).to.be.empty;
+    });
+    it('should use POST', function () {
+      let bid = {
+        code: 'feedad',
+        mediaTypes: {
+          banner: {
+            sizes: [[320, 250]]
+          }
+        },
+        params: {clientToken: 'clientToken', placementId: 'placement-id'}
+      };
+      let result = spec.buildRequests([bid]);
+      expect(result.method).to.equal('POST');
+    });
+    it('should use the correct URL', function () {
+      let bid = {
+        code: 'feedad',
+        mediaTypes: {
+          banner: {
+            sizes: [[320, 250]]
+          }
+        },
+        params: {clientToken: 'clientToken', placementId: 'placement-id'}
+      };
+      let result = spec.buildRequests([bid]);
+      expect(result.url).to.equal('http://localhost:3000/bidRequests');
+    });
+    it('should specify the content type explicitly', function () {
+      let bid = {
+        code: 'feedad',
+        mediaTypes: {
+          banner: {
+            sizes: [[320, 250]]
+          }
+        },
+        params: {clientToken: 'clientToken', placementId: 'placement-id'}
+      };
+      let result = spec.buildRequests([bid]);
+      expect(result.options).to.deep.equal({
+        contentType: 'application/json'
+      })
     });
   });
 });
