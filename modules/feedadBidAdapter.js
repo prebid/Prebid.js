@@ -82,7 +82,7 @@ export function isValidPlacementId(placementId) {
 function filterSupportedMediaTypes(mediaTypes) {
   return {
     banner: mediaTypes.banner,
-    video: mediaTypes.video && mediaTypes.video.filter(video => video.context !== 'outstream'),
+    video: mediaTypes.video && mediaTypes.video.filter(video => video.context === 'outstream'),
     native: []
   };
 }
