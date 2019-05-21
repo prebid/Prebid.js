@@ -3,7 +3,7 @@
 ```
 Module Name: Quantcast Bidder Adapter
 Module Type: Bidder Adapter
-Maintainer: igor.soarez@quantcast.com
+Maintainer: inventoryteam@quantcast.com
 ```
 
 # Description

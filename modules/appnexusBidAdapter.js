@@ -538,6 +538,10 @@ function bidToTag(bid) {
       .forEach(param => tag.video[param] = bid.params.video[param]);
   }
 
+  if (bid.renderer) {
+    tag.video = Object.assign({}, tag.video, {custom_renderer_present: true});
+  }
+
   if (
     (utils.isEmpty(bid.mediaType) && utils.isEmpty(bid.mediaTypes)) ||
     (bid.mediaType === BANNER || (bid.mediaTypes && bid.mediaTypes[BANNER]))
