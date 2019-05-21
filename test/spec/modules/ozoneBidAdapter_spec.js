@@ -79,36 +79,6 @@ var validBidRequestsWithNonBannerMediaTypesAndValidOutstreamVideo = [
   }
 ];
 
-var validBidRequestsWithNonBannerMediaTypesAndValidInstreamVideo = [
-  {
-    adUnitCode: 'div-gpt-ad-1460505748561-0',
-    auctionId: '27dcb421-95c6-4024-a624-3c03816c5f99',
-    bidId: '2899ec066a91ff8',
-    bidRequestsCount: 1,
-    bidder: 'ozone',
-    bidderRequestId: '1c1586b27a1b5c8',
-    crumbs: {pubcid: '203a0692-f728-4856-87f6-9a25a6b63715'},
-    params: { publisherId: '9876abcd12-3', customData: {'gender': 'bart', 'age': 'low'}, ozoneData: {'networkID': '3048', 'dfpSiteID': 'd.thesun', 'sectionID': 'homepage', 'path': '/', 'sec_id': 'null', 'sec': 'sec', 'topics': 'null', 'kw': 'null', 'aid': 'null', 'search': 'null', 'article_type': 'null', 'hide_ads': '', 'article_slug': 'null'}, lotameData: {'Profile': {'tpid': 'c8ef27a0d4ba771a81159f0d2e792db4', 'Audiences': {'Audience': [{'id': '99999', 'abbr': 'sports'}, {'id': '88888', 'abbr': 'movie'}, {'id': '77777', 'abbr': 'blogger'}], 'ThirdPartyAudience': [{'id': '123', 'name': 'Automobiles'}, {'id': '456', 'name': 'Ages: 30-39'}]}}}, placementId: '1310000099', siteId: '1234567890', id: 'fea37168-78f1-4a23-a40e-88437a99377e', auctionId: '27dcb421-95c6-4024-a624-3c03816c5f99', imp: [ { id: '2899ec066a91ff8', tagid: 'undefined', secure: 1, banner: { format: [{ w: 300, h: 250 }, { w: 300, h: 600 }], h: 250, topframe: 1, w: 300 } } ] },
-    mediaTypes: {video: {mimes: ['video/mp4'], 'context': 'instream'}, native: {info: 'dummy data'}},
-    transactionId: '2e63c0ed-b10c-4008-aed5-84582cecfe87'
-  }
-];
-
-var validBidRequestsWithNonBannerMediaTypesAndInvalidVideo = [
-  {
-    adUnitCode: 'div-gpt-ad-1460505748561-0',
-    auctionId: '27dcb421-95c6-4024-a624-3c03816c5f99',
-    bidId: '2899ec066a91ff8',
-    bidRequestsCount: 1,
-    bidder: 'ozone',
-    bidderRequestId: '1c1586b27a1b5c8',
-    crumbs: {pubcid: '203a0692-f728-4856-87f6-9a25a6b63715'},
-    params: { publisherId: '9876abcd12-3', customData: {'gender': 'bart', 'age': 'low'}, ozoneData: {'networkID': '3048', 'dfpSiteID': 'd.thesun', 'sectionID': 'homepage', 'path': '/', 'sec_id': 'null', 'sec': 'sec', 'topics': 'null', 'kw': 'null', 'aid': 'null', 'search': 'null', 'article_type': 'null', 'hide_ads': '', 'article_slug': 'null'}, lotameData: {'Profile': {'tpid': 'c8ef27a0d4ba771a81159f0d2e792db4', 'Audiences': {'Audience': [{'id': '99999', 'abbr': 'sports'}, {'id': '88888', 'abbr': 'movie'}, {'id': '77777', 'abbr': 'blogger'}], 'ThirdPartyAudience': [{'id': '123', 'name': 'Automobiles'}, {'id': '456', 'name': 'Ages: 30-39'}]}}}, placementId: '1310000099', siteId: '1234567890', id: 'fea37168-78f1-4a23-a40e-88437a99377e', auctionId: '27dcb421-95c6-4024-a624-3c03816c5f99', imp: [ { id: '2899ec066a91ff8', tagid: 'undefined', secure: 1, banner: { format: [{ w: 300, h: 250 }, { w: 300, h: 600 }], h: 250, topframe: 1, w: 300 } } ] },
-    mediaTypes: {video: {mimes: ['video/mp4']}, native: {info: 'dummy data'}},
-    transactionId: '2e63c0ed-b10c-4008-aed5-84582cecfe87'
-  }
-];
-
 var validBidderRequest = {
   auctionId: '27dcb421-95c6-4024-a624-3c03816c5f99',
   auctionStart: 1536838908986,
@@ -641,16 +611,6 @@ describe('ozone Adapter', function () {
     it('handles video mediaType element correctly, with outstream video', function () {
       const request = spec.buildRequests(validBidRequestsWithNonBannerMediaTypesAndValidOutstreamVideo, validBidderRequest);
       expect(request).to.have.all.keys(['bidderRequest', 'data', 'method', 'url']);
-    });
-
-    it('handles video mediaType element correctly, with instream video', function () {
-      const request = spec.buildRequests(validBidRequestsWithNonBannerMediaTypesAndValidInstreamVideo, validBidderRequest);
-      expect(request).to.be.null;
-    });
-
-    it('handles missing banner mediaType element correctly, with no video context', function () {
-      const request = spec.buildRequests(validBidRequestsWithNonBannerMediaTypesAndInvalidVideo, validBidderRequest);
-      expect(request).to.be.null;
     });
 
     it('should not crash when there is no sizes element at all', function () {
