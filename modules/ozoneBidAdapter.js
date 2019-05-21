@@ -81,7 +81,7 @@ export const spec = {
     }
     return true;
   },
-  
+
   buildRequests(validBidRequests, bidderRequest) {
     utils.logInfo('OZONE: ozone v' + OZONEVERSION + ' validBidRequests', validBidRequests, 'bidderRequest', bidderRequest);
     let singleRequest = config.getConfig('ozone.singleRequest');
