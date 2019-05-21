@@ -555,6 +555,43 @@ describe('ozone Adapter', function () {
     it('should not validate lotameData being sent', function () {
       expect(spec.isBidRequestValid(xBadLotame)).to.equal(false);
     });
+
+    var xBadVideoContext = {
+      bidder: BIDDER_CODE,
+      params: {
+        'placementId': '1234567890',
+        'publisherId': '9876abcd12-3',
+        'lotameData': 'this should be an object',
+        siteId: '1234567890'
+      },
+      mediaTypes: {
+        video: {
+          mimes: ['video/mp4'],
+          'context': 'instream'},
+      }
+    };
+
+    it('should not validate video instream being sent', function () {
+      expect(spec.isBidRequestValid(xBadVideoContext)).to.equal(false);
+    });
+
+    let validVideoBidReq = {
+      bidder: BIDDER_CODE,
+      params: {
+        placementId: '1310000099',
+        publisherId: '9876abcd12-3',
+        siteId: '1234567890'
+      },
+      mediaTypes: {
+        video: {
+          mimes: ['video/mp4'],
+          'context': 'outstream'},
+      }
+    };
+
+    it('should not validate video instream being sent', function () {
+      expect(spec.isBidRequestValid(validVideoBidReq)).to.equal(true);
+    });
   });
 
   describe('buildRequests', function () {
