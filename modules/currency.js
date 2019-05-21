@@ -180,12 +180,9 @@ export function addBidResponseHook(fn, adUnitCode, bid) {
     bid.currency = 'USD';
   }
 
-  let fromCurrency = bid.currency;
-  let cpm = bid.cpm;
-
   // used for analytics
   bid.getCpmInNewCurrency = function(toCurrency) {
-    return (parseFloat(cpm) * getCurrencyConversion(fromCurrency, toCurrency)).toFixed(3);
+    return (parseFloat(this.cpm) * getCurrencyConversion(this.currency, toCurrency)).toFixed(3);
   };
 
   // execute immediately if the bid is already in the desired currency
