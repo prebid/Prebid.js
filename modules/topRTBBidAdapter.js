@@ -48,7 +48,8 @@ export const spec = {
           creativeId: response.id,
           netRevenue: true,
           currency: response.currency,
-          tracking: response.tracking
+          tracking: response.tracking,
+          impression: response.impression
         };
         if (adName == 'video') {
           bidResponse.vastXml = response.mediadata;
