@@ -60,7 +60,7 @@ utils._each(NATIVE_ASSETS, anAsset => { _NATIVE_ASSET_ID_TO_KEY_MAP[anAsset.ID] 
 utils._each(NATIVE_ASSETS, anAsset => { _NATIVE_ASSET_KEY_TO_ASSET_MAP[anAsset.KEY] = anAsset });
 
 export const spec = {
-  VERSION: '1.1',
+  VERSION: '1.2',
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, NATIVE],
   reId: /^[0-9]+$/,
