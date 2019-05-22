@@ -15,6 +15,7 @@ export function resetUserSync() {
 
 export const spec = {
   code: BIDDER_CODE,
+  aliases: ['adsparc','safereach'],
 
   isBidRequestValid: function(bid) {
     return ((typeof bid.params.ai === 'string') && !!bid.params.ai.length &&
