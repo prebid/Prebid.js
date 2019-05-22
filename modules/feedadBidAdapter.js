@@ -1,6 +1,7 @@
 import * as utils from 'src/utils';
 import {registerBidder} from 'src/adapters/bidderFactory';
 import {BANNER, VIDEO} from '../src/mediaTypes';
+import {ajax} from '../src/ajax';
 
 /**
  * Bidder network identity code
@@ -173,11 +174,27 @@ export const spec = {
   interpretResponse,
   getUserSyncs: function (syncOptions, serverResponses) {
   },
-  onTimeout: function (timeoutData) {
-    console.log('onTimeout', timeoutData);
+  onTimeout: function (timeoutData, xhr) {
+    if (!timeoutData) {
+      return;
+    }
+    xhr = typeof xhr === 'function' ? xhr : ajax;
+    xhr('http://localhost:3000/onTimeout', null, JSON.stringify(timeoutData), {
+      withCredentials: true,
+      method: 'POST',
+      contentType: 'application/json'
+    })
   },
-  onBidWon: function (bid) {
-    console.log('onBidWon', bid);
+  onBidWon: function (bid, xhr) {
+    if (!bid) {
+      return;
+    }
+    xhr = typeof xhr === "function" ? xhr : ajax;
+    xhr('http://localhost:3000/onBidWon', null, JSON.stringify(bid), {
+      withCredentials: true,
+      method: 'POST',
+      contentType: 'application/json'
+    })
   },
   onSetTargeting: function (bid) {
     console.log('onSetTargeting', bid);

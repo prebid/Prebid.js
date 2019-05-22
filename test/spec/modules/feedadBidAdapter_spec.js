@@ -2,6 +2,8 @@ import {expect} from 'chai';
 import {spec} from 'modules/feedadBidAdapter';
 import {newBidder} from 'src/adapters/bidderFactory';
 import {BANNER, NATIVE, VIDEO} from '../../../src/mediaTypes';
+import * as xhr from '../../../src/ajax';
+import * as sinon from 'sinon';
 
 const CODE = 'feedad';
 
@@ -218,6 +220,54 @@ describe('FeedAdAdapter', function () {
       expect(result.options).to.deep.equal({
         contentType: 'application/json'
       })
+    });
+  });
+
+  describe('onTimeout', function () {
+    let xhr;
+
+    beforeEach(function () {
+      xhr = sinon.stub();
+    });
+
+    it('should send parameters to backend', function () {
+      let params = {some: 'parameters'};
+      spec.onTimeout(params, xhr);
+      expect(xhr.calledOnceWith('http://localhost:3000/onTimeout', null, JSON.stringify(params), {
+        withCredentials: true,
+        method: 'POST',
+        contentType: 'application/json'
+      })).to.be.true;
+    });
+
+    it('should do nothing on empty data', function () {
+      spec.onTimeout(undefined, xhr);
+      spec.onTimeout(null, xhr);
+      expect(xhr.called).to.be.false;
+    });
+  });
+
+  describe('onBidWon', function () {
+    let xhr;
+
+    beforeEach(function () {
+      xhr = sinon.stub();
+    });
+
+    it('should send parameters to backend', function () {
+      let params = {some: 'parameters'};
+      spec.onBidWon(params, xhr);
+      expect(xhr.calledOnceWith('http://localhost:3000/onBidWon', null, JSON.stringify(params), {
+        withCredentials: true,
+        method: 'POST',
+        contentType: 'application/json'
+      })).to.be.true;
+    });
+
+    it('should do nothing on empty data', function () {
+      spec.onBidWon(undefined, xhr);
+      spec.onBidWon(null, xhr);
+      expect(xhr.called).to.be.false;
     });
   });
 });
