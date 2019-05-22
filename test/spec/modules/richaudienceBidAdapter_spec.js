@@ -1,13 +1,12 @@
 // import or require modules necessary for the test, e.g.:
 import {expect} from 'chai'; // may prefer 'assert' in place of 'expect'
-// import spec from 'modules/richAudienceBidAdapter';
 import {
   spec
-} from 'modules/richAudienceBidAdapter';
+} from 'modules/richaudienceBidAdapter';
 import {config} from 'src/config';
 import * as utils from 'src/utils';
 
-describe('Rich Audience adapter tests', function () {
+describe('Richaudience adapter tests', function () {
   var DEFAULT_PARAMS = [{
     adUnitCode: 'test-div',
     bidId: '2c7c8e9c900244',

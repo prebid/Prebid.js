@@ -368,6 +368,10 @@ function newBid(serverBid, rtbBid, bidderRequest) {
     }
   };
 
+  if (rtbBid.advertiser_id) {
+    bid.meta = Object.assign({}, bid.meta, { advertiserId: rtbBid.advertiser_id });
+  }
+
   if (rtbBid.rtb.video) {
     Object.assign(bid, {
       width: rtbBid.rtb.video.player_width,
@@ -380,10 +384,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
     const videoContext = utils.deepAccess(bidRequest, 'mediaTypes.video.context');
     if (videoContext === ADPOD) {
       const iabSubCatId = getIabSubCategory(bidRequest.bidder, rtbBid.brand_category_id);
-      bid.meta = {
-        iabSubCatId
-      };
-
+      bid.meta = Object.assign({}, bid.meta, { iabSubCatId });
       bid.video = {
         context: ADPOD,
         durationSeconds: Math.floor(rtbBid.rtb.video.duration_ms / 1000),
@@ -536,6 +537,10 @@ function bidToTag(bid) {
     Object.keys(bid.params.video)
       .filter(param => includes(VIDEO_TARGETING, param))
       .forEach(param => tag.video[param] = bid.params.video[param]);
+  }
+
+  if (bid.renderer) {
+    tag.video = Object.assign({}, tag.video, {custom_renderer_present: true});
   }
 
   if (
