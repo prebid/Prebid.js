@@ -48,10 +48,17 @@ describe('AjaAdapter', function () {
       }
     ];
 
+    let bidderRequest = {
+      refererInfo: {
+        referer: 'http://hoge.com'
+      }
+    };
+
     it('sends bid request to ENDPOINT via GET', function () {
-      const requests = spec.buildRequests(bidRequests);
+      const requests = spec.buildRequests(bidRequests, bidderRequest);
       expect(requests[0].url).to.equal(ENDPOINT);
       expect(requests[0].method).to.equal('GET');
+      expect(requests[0].data).to.equal('asi=123456&skt=5&prebid_id=30b31c1838de1e&prebid_ver=$prebid.version$&page_url=http%3A%2F%2Fhoge.com&');
     });
   });
 

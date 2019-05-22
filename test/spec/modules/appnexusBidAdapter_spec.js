@@ -150,6 +150,48 @@ describe('AppNexusAdapter', function () {
       });
     });
 
+    it('should add video property when adUnit includes a renderer', function () {
+      const videoData = {
+        mediaTypes: {
+          video: {
+            context: 'outstream',
+            mimes: ['video/mp4']
+          }
+        },
+        params: {
+          placementId: '10433394',
+          video: {
+            skippable: true,
+            playback_method: ['auto_play_sound_off']
+          }
+        }
+      };
+
+      let bidRequest1 = deepClone(bidRequests[0]);
+      bidRequest1 = Object.assign({}, bidRequest1, videoData, {
+        renderer: {
+          url: 'http://test.renderer.url',
+          render: function () {}
+        }
+      });
+
+      let bidRequest2 = deepClone(bidRequests[0]);
+      bidRequest2.adUnitCode = 'adUnit_code_2';
+      bidRequest2 = Object.assign({}, bidRequest2, videoData);
+
+      const request = spec.buildRequests([bidRequest1, bidRequest2]);
+      const payload = JSON.parse(request.data);
+      expect(payload.tags[0].video).to.deep.equal({
+        skippable: true,
+        playback_method: ['auto_play_sound_off'],
+        custom_renderer_present: true
+      });
+      expect(payload.tags[1].video).to.deep.equal({
+        skippable: true,
+        playback_method: ['auto_play_sound_off']
+      });
+    });
+
     it('should attach valid user params to the tag', function () {
       let bidRequest = Object.assign({},
         bidRequests[0],
@@ -157,7 +199,7 @@ describe('AppNexusAdapter', function () {
           params: {
             placementId: '10433394',
             user: {
-              external_uid: '123',
+              externalUid: '123',
               foobar: 'invalid'
             }
           }
@@ -169,7 +211,7 @@ describe('AppNexusAdapter', function () {
 
       expect(payload.user).to.exist;
       expect(payload.user).to.deep.equal({
-        external_uid: '123',
+        externalUid: '123',
       });
     });
 
@@ -873,5 +915,19 @@ describe('AppNexusAdapter', function () {
       let result = spec.interpretResponse({ body: responseWithDeal }, {bidderRequest});
       expect(Object.keys(result[0].appnexus)).to.include.members(['buyerMemberId', 'dealPriority', 'dealCode']);
     });
+
+    it('should add advertiser id', function() {
+      let responseAdvertiserId = deepClone(response);
+      responseAdvertiserId.tags[0].ads[0].advertiser_id = '123';
+
+      let bidderRequest = {
+        bids: [{
+          bidId: '3db3773286ee59',
+          adUnitCode: 'code'
+        }]
+      }
+      let result = spec.interpretResponse({ body: responseAdvertiserId }, {bidderRequest});
+      expect(Object.keys(result[0].meta)).to.include.members(['advertiserId']);
+    })
   });
 });
