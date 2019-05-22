@@ -19,13 +19,11 @@ const NATIVE_MAPPING = {
   cta: 'ctatext',
   image: {
     serverName: 'main_image',
-    requiredParams: { required: true },
-    minimumParams: { sizes: [{}] },
+    requiredParams: { required: true }
   },
   icon: {
     serverName: 'icon',
-    requiredParams: { required: true },
-    minimumParams: { sizes: [{}] },
+    requiredParams: { required: true }
   },
   sponsoredBy: 'sponsored_by',
   privacyLink: 'privacy_link',
@@ -680,18 +678,12 @@ function buildNativeRequest(params) {
     const requiredParams = NATIVE_MAPPING[key] && NATIVE_MAPPING[key].requiredParams;
     request[requestKey] = Object.assign({}, requiredParams, params[key]);
 
-    // minimum params are passed if no non-required params given on adunit
-    const minimumParams = NATIVE_MAPPING[key] && NATIVE_MAPPING[key].minimumParams;
-
-    if (requiredParams && minimumParams) {
-      // subtract required keys from adunit keys
-      const adunitKeys = Object.keys(params[key]);
-      const requiredKeys = Object.keys(requiredParams);
-      const remaining = adunitKeys.filter(key => !includes(requiredKeys, key));
-
-      // if none are left over, the minimum params needs to be sent
-      if (remaining.length === 0) {
-        request[requestKey] = Object.assign({}, request[requestKey], minimumParams);
+    // convert the sizes of image/icon assets to proper format (if needed)
+    const isImageAsset = !!(requestKey === NATIVE_MAPPING.image.serverName || requestKey === NATIVE_MAPPING.icon.serverName);
+    if (isImageAsset && request[requestKey].sizes) {
+      let sizes = request[requestKey].sizes;
+      if (utils.isArrayOfNums(sizes) || (utils.isArray(sizes) && sizes.length > 0 && sizes.every(sz => utils.isArrayOfNums(sz)))) {
+        request[requestKey].sizes = transformSizes(request[requestKey].sizes);
       }
     }
   });
