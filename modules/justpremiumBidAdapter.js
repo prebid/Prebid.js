@@ -1,9 +1,8 @@
-import { registerBidder } from 'src/adapters/bidderFactory'
-import { getTopWindowLocation } from 'src/utils'
+import { registerBidder } from '../src/adapters/bidderFactory'
 
 const BIDDER_CODE = 'justpremium'
 const ENDPOINT_URL = '//pre.ads.justpremium.com/v/2.0/t/xhr'
-const JP_ADAPTER_VERSION = '1.3'
+const JP_ADAPTER_VERSION = '1.4'
 const pixels = []
 const TRACK_START_TIME = Date.now()
 let LAST_PAYLOAD = {}
@@ -31,8 +30,7 @@ export const spec = {
       }).filter((value, index, self) => {
         return self.indexOf(value) === index
       }),
-      hostname: getTopWindowLocation().hostname,
-      protocol: getTopWindowLocation().protocol.replace(':', ''),
+      referer: bidderRequest.refererInfo.referer,
       sw: dim.screenWidth,
       sh: dim.screenHeight,
       ww: dim.innerWidth,

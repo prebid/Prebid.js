@@ -1,9 +1,9 @@
-import * as utils from 'src/utils';
-import { parse as parseUrl } from 'src/url';
-import { config } from 'src/config';
-import { registerBidder } from 'src/adapters/bidderFactory';
-import { Renderer } from 'src/Renderer';
-import { VIDEO, BANNER } from 'src/mediaTypes';
+import * as utils from '../src/utils';
+import { parse as parseUrl } from '../src/url';
+import { config } from '../src/config';
+import { registerBidder } from '../src/adapters/bidderFactory';
+import { Renderer } from '../src/Renderer';
+import { VIDEO, BANNER } from '../src/mediaTypes';
 import find from 'core-js/library/fn/array/find';
 import includes from 'core-js/library/fn/array/includes';
 
@@ -294,15 +294,31 @@ function createVideoRequestData(bid, bidderRequest) {
       js: 1,
       geo: {}
     },
-    regs: {},
-    user: {},
+    regs: {
+      ext: {}
+    },
+    user: {
+      ext: {}
+    },
     cur: ['USD']
   };
 
   if (bidderRequest && bidderRequest.gdprConsent) {
     let { gdprApplies, consentString } = bidderRequest.gdprConsent;
-    payload.regs.ext = { gdpr: gdprApplies ? 1 : 0 };
-    payload.user.ext = { consent: consentString };
+    payload.regs.ext.gdpr = gdprApplies ? 1 : 0;
+    payload.user.ext.consent = consentString;
+  }
+
+  if (bid.userId && bid.userId.tdid) {
+    payload.user.ext.eids = [{
+      source: 'adserver.org',
+      uids: [{
+        id: bid.userId.tdid,
+        ext: {
+          rtiPartner: 'TDID'
+        }
+      }]
+    }];
   }
 
   return payload;
@@ -338,6 +354,10 @@ function createBannerRequestData(bids, bidderRequest) {
     let { gdprApplies, consentString } = bidderRequest.gdprConsent;
     payload.gdpr = gdprApplies ? 1 : 0;
     payload.gdprConsent = consentString;
+  }
+
+  if (bids[0] && bids[0].userId && bids[0].userId.tdid) {
+    payload.tdid = bids[0].userId.tdid;
   }
 
   return payload;

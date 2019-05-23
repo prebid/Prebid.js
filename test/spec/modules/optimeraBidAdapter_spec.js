@@ -15,7 +15,7 @@ describe('OptimeraAdapter', function () {
     let bid = {
       'bidder': 'optimera',
       'params': {
-        'clientID': '0'
+        'clientID': '9999'
       },
       'adUnitCode': 'div-0',
       'sizes': [[300, 250], [300, 600]],
@@ -47,7 +47,6 @@ describe('OptimeraAdapter', function () {
       expect(request).to.exist;
       expect(request.method).to.equal('GET');
       expect(request.payload).to.exist;
-      expect(request.data.t).to.exist;
     });
   })
 

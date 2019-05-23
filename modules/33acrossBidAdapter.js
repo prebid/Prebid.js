@@ -1,4 +1,4 @@
-import * as utils from 'src/utils';
+import * as utils from '../src/utils';
 
 const { registerBidder } = require('../src/adapters/bidderFactory');
 const { config } = require('../src/config');

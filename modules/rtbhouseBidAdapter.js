@@ -1,6 +1,6 @@
-import * as utils from 'src/utils';
-import { BANNER, NATIVE } from 'src/mediaTypes';
-import { registerBidder } from 'src/adapters/bidderFactory';
+import * as utils from '../src/utils';
+import { BANNER, NATIVE } from '../src/mediaTypes';
+import { registerBidder } from '../src/adapters/bidderFactory';
 import includes from 'core-js/library/fn/array/includes';
 
 const BIDDER_CODE = 'rtbhouse';

@@ -1,8 +1,9 @@
-import { uniques, isGptPubadsDefined, getHighestCpm, getOldestHighestCpmBid, groupBy, isAdUnitCodeMatchingSlot, timestamp } from './utils';
+import { uniques, isGptPubadsDefined, getHighestCpm, getOldestHighestCpmBid, groupBy, isAdUnitCodeMatchingSlot, timestamp, deepAccess } from './utils';
 import { config } from './config';
 import { NATIVE_TARGETING_KEYS } from './native';
 import { auctionManager } from './auctionManager';
 import { sizeSupported } from './sizeMapping';
+import { ADPOD } from './mediaTypes';
 import includes from 'core-js/library/fn/array/includes';
 
 const utils = require('./utils.js');
@@ -18,10 +19,15 @@ export const TARGETING_KEYS = Object.keys(CONSTANTS.TARGETING_KEYS).map(
 );
 
 // return unexpired bids
-export const isBidNotExpired = (bid) => (bid.responseTimestamp + bid.ttl * 1000 + TTL_BUFFER) > timestamp();
+const isBidNotExpired = (bid) => (bid.responseTimestamp + bid.ttl * 1000 + TTL_BUFFER) > timestamp();
 
 // return bids whose status is not set. Winning bid can have status `targetingSet` or `rendered`.
 const isUnusedBid = (bid) => bid && ((bid.status && !includes([CONSTANTS.BID_STATUS.BID_TARGETING_SET, CONSTANTS.BID_STATUS.RENDERED], bid.status)) || !bid.status);
+
+export let filters = {
+  isBidNotExpired,
+  isUnusedBid
+};
 
 // If two bids are found for same adUnitCode, we will use the highest one to take part in auction
 // This can happen in case of concurrent auctions
@@ -48,6 +54,11 @@ export function getHighestCpmBidsFromBidPool(bidsReceived, highestCpmCallback) {
 
 export function newTargeting(auctionManager) {
   let targeting = {};
+  let latestAuctionForAdUnit = {};
+
+  targeting.setLatestAuctionForAdUnit = function(adUnitCode, auctionId) {
+    latestAuctionForAdUnit[adUnitCode] = auctionId;
+  };
 
   targeting.resetPresetTargeting = function(adUnitCode) {
     if (isGptPubadsDefined()) {
@@ -65,6 +76,23 @@ export function newTargeting(auctionManager) {
         });
       });
     }
+  };
+
+  targeting.resetPresetTargetingAST = function(adUnitCode) {
+    const adUnitCodes = getAdUnitCodes(adUnitCode);
+    adUnitCodes.forEach(function(unit) {
+      const astTag = window.apntag.getTag(unit);
+      if (astTag && astTag.keywords) {
+        const currentKeywords = Object.keys(astTag.keywords);
+        const newKeywords = {};
+        currentKeywords.forEach((key) => {
+          if (!includes(pbTargetingKeys, key.toLowerCase())) {
+            newKeywords[key] = astTag.keywords[key];
+          }
+        })
+        window.apntag.modifyTag(unit, { keywords: newKeywords })
+      }
+    });
   };
 
   /**
@@ -186,10 +214,17 @@ export function newTargeting(auctionManager) {
   }
 
   function getBidsReceived() {
-    const bidsReceived = auctionManager.getBidsReceived()
+    let bidsReceived = auctionManager.getBidsReceived();
+
+    if (!config.getConfig('useBidCache')) {
+      bidsReceived = bidsReceived.filter(bid => latestAuctionForAdUnit[bid.adUnitCode] === bid.auctionId)
+    }
+
+    bidsReceived = bidsReceived
+      .filter(bid => deepAccess(bid, 'video.context') !== ADPOD)
       .filter(bid => bid.mediaType !== 'banner' || sizeSupported([bid.width, bid.height]))
-      .filter(isUnusedBid)
-      .filter(exports.isBidNotExpired)
+      .filter(filters.isUnusedBid)
+      .filter(filters.isBidNotExpired)
     ;
 
     return getHighestCpmBidsFromBidPool(bidsReceived, getOldestHighestCpmBid);
@@ -213,10 +248,18 @@ export function newTargeting(auctionManager) {
   };
 
   /**
+   * @param  {(string|string[])} adUnitCode adUnitCode or array of adUnitCodes
    * Sets targeting for AST
    */
-  targeting.setTargetingForAst = function() {
-    let astTargeting = targeting.getAllTargeting();
+  targeting.setTargetingForAst = function(adUnitCodes) {
+    let astTargeting = targeting.getAllTargeting(adUnitCodes);
+
+    try {
+      targeting.resetPresetTargetingAST(adUnitCodes);
+    } catch (e) {
+      utils.logError('unable to reset targeting for AST' + e)
+    }
+
     Object.keys(astTargeting).forEach(targetId =>
       Object.keys(astTargeting[targetId]).forEach(key => {
         utils.logMessage(`Attempting to set targeting for targetId: ${targetId} key: ${key} value: ${astTargeting[targetId][key]}`);
@@ -230,7 +273,7 @@ export function newTargeting(auctionManager) {
             // pt${n} keys should not be uppercased
             keywordsObj[key] = astTargeting[targetId][key];
           }
-          window.apntag.setKeywords(targetId, keywordsObj);
+          window.apntag.setKeywords(targetId, keywordsObj, { overrideKeyValue: true });
         }
       })
     );

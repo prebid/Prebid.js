@@ -1,5 +1,5 @@
 import {setConfig, requestBidsHook, resetConsentData, userCMP, consentTimeout, allowAuction, staticConsentData} from 'modules/consentManagement';
-import {gdprDataHandler} from 'src/adaptermanager';
+import {gdprDataHandler} from 'src/adapterManager';
 import * as utils from 'src/utils';
 import { config } from 'src/config';
 
@@ -30,7 +30,7 @@ describe('consentManagement', function () {
     describe('valid setConfig value', function () {
       afterEach(function () {
         config.resetConfig();
-        $$PREBID_GLOBAL$$.requestBids.removeHook(requestBidsHook);
+        $$PREBID_GLOBAL$$.requestBids.removeAll();
       });
       it('results in all user settings overriding system defaults', function () {
         let allConfig = {
@@ -49,7 +49,7 @@ describe('consentManagement', function () {
     describe('static consent string setConfig value', () => {
       afterEach(() => {
         config.resetConfig();
-        $$PREBID_GLOBAL$$.requestBids.removeHook(requestBidsHook);
+        $$PREBID_GLOBAL$$.requestBids.removeAll();
       });
       it('results in user settings overriding system defaults', () => {
         let staticConfig = {
@@ -487,7 +487,7 @@ describe('consentManagement', function () {
         utils.logWarn.restore();
         utils.logError.restore();
         config.resetConfig();
-        $$PREBID_GLOBAL$$.requestBids.removeHook(requestBidsHook);
+        $$PREBID_GLOBAL$$.requestBids.removeAll();
         resetConsentData();
       });
 
@@ -498,9 +498,9 @@ describe('consentManagement', function () {
         setConfig(badCMPConfig);
         expect(userCMP).to.be.equal(badCMPConfig.cmpApi);
 
-        requestBidsHook({}, () => {
+        requestBidsHook(() => {
           didHookReturn = true;
-        });
+        }, {});
         let consent = gdprDataHandler.getConsentData();
         sinon.assert.calledOnce(utils.logWarn);
         expect(didHookReturn).to.be.true;
@@ -510,9 +510,9 @@ describe('consentManagement', function () {
       it('should throw proper errors when CMP is not found', function () {
         setConfig(goodConfigWithCancelAuction);
 
-        requestBidsHook({}, () => {
+        requestBidsHook(() => {
           didHookReturn = true;
-        });
+        }, {});
         let consent = gdprDataHandler.getConsentData();
         // throw 2 errors; one for no bidsBackHandler and for CMP not being found (this is an error due to gdpr config)
         sinon.assert.calledTwice(utils.logError);
@@ -531,7 +531,7 @@ describe('consentManagement', function () {
 
       afterEach(function () {
         config.resetConfig();
-        $$PREBID_GLOBAL$$.requestBids.removeHook(requestBidsHook);
+        $$PREBID_GLOBAL$$.requestBids.removeAll();
         cmpStub.restore();
         delete window.__cmp;
         resetConsentData();
@@ -547,7 +547,7 @@ describe('consentManagement', function () {
           args[2](testConsentData);
         });
         setConfig(goodConfigWithAllowAuction);
-        requestBidsHook({}, () => {});
+        requestBidsHook(() => {}, {});
         cmpStub.restore();
 
         // reset the stub to ensure it wasn't called during the second round of calls
@@ -555,9 +555,9 @@ describe('consentManagement', function () {
           args[2](testConsentData);
         });
 
-        requestBidsHook({}, () => {
+        requestBidsHook(() => {
           didHookReturn = true;
-        });
+        }, {});
         let consent = gdprDataHandler.getConsentData();
 
         expect(didHookReturn).to.be.true;
@@ -585,7 +585,7 @@ describe('consentManagement', function () {
       afterEach(function () {
         delete window.$sf;
         config.resetConfig();
-        $$PREBID_GLOBAL$$.requestBids.removeHook(requestBidsHook);
+        $$PREBID_GLOBAL$$.requestBids.removeAll();
         registerStub.restore();
         utils.logError.restore();
         utils.logWarn.restore();
@@ -611,9 +611,9 @@ describe('consentManagement', function () {
         });
 
         setConfig(goodConfigWithAllowAuction);
-        requestBidsHook({adUnits: [{ sizes: [[300, 250]] }]}, () => {
+        requestBidsHook(() => {
           didHookReturn = true;
-        });
+        }, {adUnits: [{ sizes: [[300, 250]] }]});
         let consent = gdprDataHandler.getConsentData();
 
         sinon.assert.notCalled(utils.logWarn);
@@ -637,7 +637,7 @@ describe('consentManagement', function () {
 
       afterEach(function () {
         config.resetConfig();
-        $$PREBID_GLOBAL$$.requestBids.removeHook(requestBidsHook);
+        $$PREBID_GLOBAL$$.requestBids.removeAll();
         delete window.__cmp;
         utils.logError.restore();
         utils.logWarn.restore();
@@ -685,14 +685,14 @@ describe('consentManagement', function () {
         it(`should return the consent string from a postmessage + addEventListener response - ${testName}`, (done) => {
           stringifyResponse = messageFormatString;
           setConfig(goodConfigWithAllowAuction);
-          requestBidsHook({}, () => {
+          requestBidsHook(() => {
             let consent = gdprDataHandler.getConsentData();
             sinon.assert.notCalled(utils.logWarn);
             sinon.assert.notCalled(utils.logError);
             expect(consent.consentString).to.equal('encoded_consent_data_via_post_message');
             expect(consent.gdprApplies).to.be.true;
             done();
-          });
+          }, {});
         });
       }
     });
@@ -709,7 +709,7 @@ describe('consentManagement', function () {
 
       afterEach(function () {
         config.resetConfig();
-        $$PREBID_GLOBAL$$.requestBids.removeHook(requestBidsHook);
+        $$PREBID_GLOBAL$$.requestBids.removeAll();
         cmpStub.restore();
         utils.logError.restore();
         utils.logWarn.restore();
@@ -728,9 +728,9 @@ describe('consentManagement', function () {
 
         setConfig(goodConfigWithAllowAuction);
 
-        requestBidsHook({}, () => {
+        requestBidsHook(() => {
           didHookReturn = true;
-        });
+        }, {});
         let consent = gdprDataHandler.getConsentData();
 
         sinon.assert.notCalled(utils.logWarn);
@@ -750,9 +750,9 @@ describe('consentManagement', function () {
 
         setConfig(goodConfigWithCancelAuction);
 
-        requestBidsHook({ bidsBackHandler: () => bidsBackHandlerReturn = true }, () => {
+        requestBidsHook(() => {
           didHookReturn = true;
-        });
+        }, { bidsBackHandler: () => bidsBackHandlerReturn = true });
         let consent = gdprDataHandler.getConsentData();
 
         sinon.assert.calledOnce(utils.logError);
@@ -770,9 +770,9 @@ describe('consentManagement', function () {
 
         setConfig(goodConfigWithAllowAuction);
 
-        requestBidsHook({}, () => {
+        requestBidsHook(() => {
           didHookReturn = true;
-        });
+        }, {});
         let consent = gdprDataHandler.getConsentData();
 
         sinon.assert.calledOnce(utils.logWarn);

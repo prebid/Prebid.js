@@ -1,9 +1,8 @@
-import * as utils from 'src/utils';
-import * as bidfactory from 'src/bidfactory';
-import {registerBidder} from 'src/adapters/bidderFactory';
-import {config} from 'src/config';
+import * as utils from '../src/utils';
+import {createBid as createBidFactory} from '../src/bidfactory';
+import {registerBidder} from '../src/adapters/bidderFactory';
 import {VIDEO} from '../src/mediaTypes';
-import {STATUS} from 'src/constants';
+import {STATUS} from '../src/constants';
 
 const BIDDER_CODE = 'telaria';
 const ENDPOINT = '.ads.tremorhub.com/ad/tag';
@@ -24,17 +23,18 @@ export const spec = {
   /**
    * Make a server request from the list of BidRequests.
    * @param validBidRequests list of valid bid requests that have passed isBidRequestValid check
+   * @param bidderRequest
    * @returns {Array} of url objects
    */
-  buildRequests: function (validBidRequests) {
+  buildRequests: function (validBidRequests, bidderRequest) {
     let requests = [];
 
     validBidRequests.forEach(bid => {
-      let url = generateUrl(bid);
+      let url = generateUrl(bid, bidderRequest);
       if (url) {
         requests.push({
           method: 'GET',
-          url: generateUrl(bid),
+          url: generateUrl(bid, bidderRequest),
           bidId: bid.bidId,
           vastUrl: url.split('&fmt=json')[0]
         });
@@ -84,7 +84,7 @@ export const spec = {
       utils.logError(errorMessage);
     } else if (bidResult.seatbid && bidResult.seatbid.length > 0) {
       bidResult.seatbid[0].bid.forEach(tag => {
-        bids.push(createBid(STATUS.GOOD, bidderRequest, tag, width, height, bidResult.seatbid[0].seat));
+        bids.push(createBid(STATUS.GOOD, bidderRequest, tag, width, height, bidResult.seatbid[0].seat.toLowerCase()));
       });
     }
 
@@ -112,28 +112,36 @@ export const spec = {
  * Generates the url based on the parameters given. Sizes, supplyCode & adCode are required.
  * The format is: [L,W] or [[L1,W1],...]
  * @param bid
+ * @param bidderRequest
  * @returns {string}
  */
-function generateUrl(bid) {
-  let width, height;
-  if (!bid.sizes) {
-    return '';
+function generateUrl(bid, bidderRequest) {
+  let playerSize = (bid.mediaTypes && bid.mediaTypes.video && bid.mediaTypes.video.playerSize);
+  if (!playerSize) {
+    utils.logWarn('Although player size isn\'t required it is highly recommended');
   }
 
-  if (utils.isArray(bid.sizes) && (bid.sizes.length === 2) && (!isNaN(bid.sizes[0]) && !isNaN(bid.sizes[1]))) {
-    width = bid.sizes[0];
-    height = bid.sizes[1];
-  } else if (typeof bid.sizes === 'object') {
-    // take the primary (first) size from the array
-    width = bid.sizes[0][0];
-    height = bid.sizes[0][1];
+  let width, height;
+  if (playerSize) {
+    if (utils.isArray(playerSize) && (playerSize.length === 2) && (!isNaN(playerSize[0]) && !isNaN(playerSize[1]))) {
+      width = playerSize[0];
+      height = playerSize[1];
+    } else if (typeof playerSize === 'object') {
+      width = playerSize[0][0];
+      height = playerSize[0][1];
+    }
   }
-  if (width && height && bid.params.supplyCode && bid.params.adCode) {
+
+  if (bid.params.supplyCode && bid.params.adCode) {
     let scheme = ((document.location.protocol === 'https:') ? 'https' : 'http') + '://';
     let url = scheme + bid.params.supplyCode + ENDPOINT + '?adCode=' + bid.params.adCode;
 
-    url += ('&playerWidth=' + width);
-    url += ('&playerHeight=' + height);
+    if (width) {
+      url += ('&playerWidth=' + width);
+    }
+    if (height) {
+      url += ('&playerHeight=' + height);
+    }
 
     for (let key in bid.params) {
       if (bid.params.hasOwnProperty(key) && bid.params[key]) {
@@ -145,8 +153,22 @@ function generateUrl(bid) {
       url += ('&srcPageUrl=' + encodeURIComponent(document.location.href));
     }
 
-    url += ('&transactionId=' + bid.transactionId);
-    url += ('&referrer=' + config.getConfig('pageUrl') || utils.getTopWindowUrl());
+    url += ('&transactionId=' + bid.transactionId + '&hb=1');
+
+    if (bidderRequest) {
+      if (bidderRequest.gdprConsent) {
+        if (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') {
+          url += ('&gdpr=' + (bidderRequest.gdprConsent.gdprApplies ? 1 : 0));
+        }
+        if (bidderRequest.gdprConsent.consentString) {
+          url += ('&gdpr_consent=' + bidderRequest.gdprConsent.consentString);
+        }
+      }
+
+      if (bidderRequest.refererInfo && bidderRequest.refererInfo.referer) {
+        url += ('&referrer=' + encodeURIComponent(bidderRequest.refererInfo.referer));
+      }
+    }
 
     return (url + '&fmt=json');
   }
@@ -162,7 +184,7 @@ function generateUrl(bid) {
  * @param bidderCode
  */
 function createBid(status, reqBid, response, width, height, bidderCode) {
-  let bid = bidfactory.createBid(status, reqBid);
+  let bid = createBidFactory(status, reqBid);
 
   // TTL 5 mins by default, future support for extended imp wait time
   if (response) {

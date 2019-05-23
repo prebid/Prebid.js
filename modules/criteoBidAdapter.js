@@ -1,12 +1,12 @@
-import { loadExternalScript } from 'src/adloader';
-import { registerBidder } from 'src/adapters/bidderFactory';
-import { parse } from 'src/url';
-import * as utils from 'src/utils';
+import { loadExternalScript } from '../src/adloader';
+import { registerBidder } from '../src/adapters/bidderFactory';
+import { parse } from '../src/url';
+import * as utils from '../src/utils';
 import find from 'core-js/library/fn/array/find';
 import JSEncrypt from 'jsencrypt/bin/jsencrypt';
 import sha256 from 'crypto-js/sha256';
 
-const ADAPTER_VERSION = 15;
+const ADAPTER_VERSION = 16;
 const BIDDER_CODE = 'criteo';
 const CDB_ENDPOINT = '//bidder.criteo.com/cdb';
 const CRITEO_VENDOR_ID = 91;
@@ -98,6 +98,7 @@ export const spec = {
         const bidId = bidRequest.bidId;
         const bid = {
           requestId: bidId,
+          adId: slot.bidId || utils.getUniqueIdentifierStr(),
           cpm: slot.cpm,
           currency: slot.currency,
           netRevenue: true,

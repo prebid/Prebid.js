@@ -1,6 +1,20 @@
+/**
+ * The referer detection module attempts to gather referer information from the current page that prebid.js resides in.
+ * The information that it tries to collect includes:
+ * The detected top url in the nav bar,
+ * Whether it was able to reach the top most window (if for example it was embedded in several iframes),
+ * The number of iframes it was embedded in if applicable,
+ * A list of the domains of each embedded window if applicable.
+ * Canonical URL which refers to an HTML link element, with the attribute of rel="canonical", found in the <head> element of your webpage
+ */
+
 import { logWarn } from './utils';
 
 export function detectReferer(win) {
+  /**
+   * Returns number of frames to reach top from current frame where prebid.js sits
+   * @returns {Array} levels
+   */
   function getLevels() {
     let levels = walkUpWindows();
     let ancestors = getAncestorOrigins();
@@ -13,6 +27,11 @@ export function detectReferer(win) {
     return levels;
   }
 
+  /**
+   * This function would return a read-only array of hostnames for all the parent frames.
+   * win.location.ancestorOrigins is only supported in webkit browsers. For non-webkit browsers it will return undefined.
+   * @returns {(undefined|Array)} Ancestor origins or undefined
+   */
   function getAncestorOrigins() {
     try {
       if (!win.location.ancestorOrigins) {
@@ -24,6 +43,11 @@ export function detectReferer(win) {
     }
   }
 
+  /**
+   * This function would try to get referer and urls for all parent frames in case of win.location.ancestorOrigins undefined.
+   * @param {Array} levels
+   * @returns {Object} urls for all parent frames and top most detected referer url
+   */
   function getPubUrlStack(levels) {
     let stack = [];
     let defUrl = null;
@@ -78,6 +102,10 @@ export function detectReferer(win) {
     };
   }
 
+  /**
+   * This function returns canonical URL which refers to an HTML link element, with the attribute of rel="canonical", found in the <head> element of your webpage
+   * @param {Object} doc document
+   */
   function getCanonicalUrl(doc) {
     try {
       let element = doc.querySelector("link[rel='canonical']");
@@ -89,6 +117,9 @@ export function detectReferer(win) {
     return null;
   }
 
+  /**
+   * Walk up to the top of the window to detect origin, number of iframes, ancestor origins and canonical url
+   */
   function walkUpWindows() {
     let acc = [];
     let currentWindow;
@@ -135,6 +166,7 @@ export function detectReferer(win) {
    * @property {boolean} reachedTop whether prebid was able to walk upto top window or not
    * @property {number} numIframes number of iframes
    * @property {string} stack comma separated urls of all origins
+   * @property {string} canonicalUrl canonical URL refers to an HTML link element, with the attribute of rel="canonical", found in the <head> element of your webpage
    */
 
   /**
