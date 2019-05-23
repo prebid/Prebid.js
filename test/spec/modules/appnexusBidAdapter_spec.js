@@ -396,7 +396,8 @@ describe('AppNexusAdapter', function () {
             title: {required: true},
             body: {required: true},
             body2: {required: true},
-            image: {required: true, sizes: [{ width: 100, height: 100 }]},
+            image: {required: true, sizes: [100, 100]},
+            icon: {required: true},
             cta: {required: false},
             rating: {required: true},
             sponsoredBy: {required: true},
@@ -420,6 +421,7 @@ describe('AppNexusAdapter', function () {
         description: {required: true},
         desc2: {required: true},
         main_image: {required: true, sizes: [{ width: 100, height: 100 }]},
+        icon: {required: true},
         ctatext: {required: false},
         rating: {required: true},
         sponsored_by: {required: true},
@@ -431,57 +433,6 @@ describe('AppNexusAdapter', function () {
         phone: {required: true},
         price: {required: true},
         saleprice: {required: true}
-      });
-    });
-
-    it('sets minimum native asset params when not provided on adunit', function () {
-      let bidRequest = Object.assign({},
-        bidRequests[0],
-        {
-          mediaType: 'native',
-          nativeParams: {
-            image: {required: true},
-          }
-        }
-      );
-
-      const request = spec.buildRequests([bidRequest]);
-      const payload = JSON.parse(request.data);
-
-      expect(payload.tags[0].native.layouts[0]).to.deep.equal({
-        main_image: {required: true, sizes: [{}]},
-      });
-    });
-
-    it('does not overwrite native ad unit params with mimimum params', function () {
-      let bidRequest = Object.assign({},
-        bidRequests[0],
-        {
-          mediaType: 'native',
-          nativeParams: {
-            image: {
-              aspect_ratios: [{
-                min_width: 100,
-                ratio_width: 2,
-                ratio_height: 3,
-              }]
-            }
-          }
-        }
-      );
-
-      const request = spec.buildRequests([bidRequest]);
-      const payload = JSON.parse(request.data);
-
-      expect(payload.tags[0].native.layouts[0]).to.deep.equal({
-        main_image: {
-          required: true,
-          aspect_ratios: [{
-            min_width: 100,
-            ratio_width: 2,
-            ratio_height: 3,
-          }]
-        },
       });
     });
 
@@ -915,5 +866,19 @@ describe('AppNexusAdapter', function () {
       let result = spec.interpretResponse({ body: responseWithDeal }, {bidderRequest});
       expect(Object.keys(result[0].appnexus)).to.include.members(['buyerMemberId', 'dealPriority', 'dealCode']);
     });
+
+    it('should add advertiser id', function() {
+      let responseAdvertiserId = deepClone(response);
+      responseAdvertiserId.tags[0].ads[0].advertiser_id = '123';
+
+      let bidderRequest = {
+        bids: [{
+          bidId: '3db3773286ee59',
+          adUnitCode: 'code'
+        }]
+      }
+      let result = spec.interpretResponse({ body: responseAdvertiserId }, {bidderRequest});
+      expect(Object.keys(result[0].meta)).to.include.members(['advertiserId']);
+    })
   });
 });
