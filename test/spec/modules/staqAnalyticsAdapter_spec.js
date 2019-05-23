@@ -64,13 +64,6 @@ describe('', function () {
       expect(source).to.be.eql(DIRECT);
     });
 
-    // it('should respect past campaign visits before direct', function () {
-    //   stubGetItem.withArgs('adk_dpt_analytics').returns(JSON.stringify(CAMPAIGN));
-    //   stubSetItem.returns(undefined);
-    //   let source = getUmtSource('http://example.com');
-    //   expect(source).to.be.eql(CAMPAIGN);
-    // });
-
     it('should parse visit from google as organic', function () {
       stubGetItem.withArgs('adk_dpt_analytics').returns(undefined);
       stubSetItem.returns(undefined);
@@ -78,26 +71,12 @@ describe('', function () {
       expect(source).to.be.eql(GOOGLE_ORGANIC);
     });
 
-    // it('should respect previous campaign visit before organic', function () {
-    //   stubGetItem.withArgs('adk_dpt_analytics').returns(JSON.stringify(CAMPAIGN));
-    //   stubSetItem.returns(undefined);
-    //   let source = getUmtSource('http://example.com', 'https://www.google.com/search?q=pikachu');
-    //   expect(source).to.be.eql(CAMPAIGN);
-    // });
-
     it('should parse referral visit', function () {
       stubGetItem.withArgs('adk_dpt_analytics').returns(undefined);
       stubSetItem.returns(undefined);
       let source = getUmtSource('http://example.com', 'http://lander.com/lander.html');
       expect(source).to.be.eql(REFERRER);
     });
-
-    // it('should respect previous campaign visit before referral', function () {
-    //   stubGetItem.withArgs('adk_dpt_analytics').returns(JSON.stringify(CAMPAIGN));
-    //   stubSetItem.returns(undefined);
-    //   let source = getUmtSource('http://example.com', 'https://www.google.com/search?q=pikachu');
-    //   expect(source).to.be.eql(CAMPAIGN);
-    // });
 
     it('should parse referral visit from same domain as direct', function () {
       stubGetItem.withArgs('adk_dpt_analytics').returns(undefined);
@@ -231,7 +210,6 @@ describe('', function () {
         }
       });
 
-      // expect(analyticsAdapter.context).to.have.property('connId', 'tag.staqadapter.com');
       expect(analyticsAdapter.context).to.have.property('connectionId', 777);
     });
 
@@ -291,11 +269,6 @@ describe('', function () {
       events.emit(CONSTANTS.EVENTS.BID_WON, RESPONSE);
       const ev = analyticsAdapter.context.queue.peekAll();
       expect(ev).to.have.length(6);
-      // let secondCallArgs = ajaxStub.secondCall.args[0];
-      // let ev = JSON.parse(secondCallArgs);
-      // console.log('AUCTION WON EVENT SHAPE ' + JSON.stringify(ev));
-      // let firstEv = JSON.parse(ajaxStub.firstCall.args)
-      // console.log('FIRST CALL ARGS ' + JSON.stringify(firstEv));
       expect(ev[5]).to.be.eql({
         auctionId: '5018eb39-f900-4370-b71e-3bb5b48d324f',
         adId: '208750227436c1',
@@ -323,28 +296,6 @@ describe('', function () {
       expect(ev6.connId).to.be.eql(777);
       expect(ev6.auctionId).to.be.eql('5018eb39-f900-4370-b71e-3bb5b48d324f');
       expect(ev6.event).to.be.eql('auctionEnd');
-      // expect(ev[6]).to.be.eql({
-      //   connId: 777,
-      //   domain: 'localhost',
-      //   userAgent: 'testUA',
-      //   env: {
-      //     lang: 'en-US',
-      //     screen: {
-      //       h: 800,
-      //       w: 1280
-      //     }
-      //   },
-      //   path: '/',
-      //   src: {
-      //     campaign: '(direct)',
-      //     medium: '(direct)',
-      //     source: '(direct)'
-      //   },
-      //   auctionId: '5018eb39-f900-4370-b71e-3bb5b48d324f',
-      //   event: 'auctionEnd',
-      //   timeToRespond: 0.447,
-      //   ver: '1.0.0'
-      // });
     });
   });
 });

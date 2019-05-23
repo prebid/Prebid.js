@@ -123,8 +123,6 @@ export default analyticsAdapter;
 function sendAll() {
   let events = analyticsAdapter.context.queue.popAll();
   if (events.length !== 0) {
-    // let req = Object.assign({}, analyticsAdapter.context.requestTemplate, {events: events});
-    // let req = {events: events};
     let req = events.map(event => {
       return Object.assign({}, event, analyticsAdapter.context.requestTemplate)
     });
