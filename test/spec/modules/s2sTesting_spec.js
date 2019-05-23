@@ -1,10 +1,5 @@
 import s2sTesting from 'modules/s2sTesting';
 import { config } from 'src/config';
-import find from 'core-js/library/fn/array/find';
-
-var events = require('src/events');
-var CONSTANTS = require('src/constants.json');
-const BID_ADJUSTMENT = CONSTANTS.EVENTS.BID_ADJUSTMENT;
 
 var expect = require('chai').expect;
 
@@ -13,7 +8,7 @@ describe('s2sTesting', function () {
   let randomNumber = 0;
 
   beforeEach(function () {
-    mathRandomStub = sinon.stub(Math, 'random').callsFake(() => { return randomNumber; });
+    mathRandomStub = sinon.stub(s2sTesting, 'getGlobalRand').callsFake(() => { return randomNumber; });
   });
 
   afterEach(function () {
@@ -154,6 +149,32 @@ describe('s2sTesting', function () {
         var serverClientBidders = s2sTesting.getSourceBidderMap();
         expect(serverClientBidders.server).to.eql(['rubicon']);
         expect(serverClientBidders.client).to.have.members(['appnexus']);
+      });
+
+      it('sends both bidders to same source when weights are the same', function () {
+        config.setConfig({s2sConfig: {
+          bidders: ['rubicon', 'appnexus'],
+          testing: true,
+          bidderControl: {
+            rubicon: {bidSource: {server: 25, client: 75}},
+            appnexus: {bidSource: {server: 25, client: 75}}
+          }}});
+        expect(s2sTesting.getSourceBidderMap()).to.eql({
+          client: ['rubicon', 'appnexus'],
+          server: []
+        });
+
+        config.setConfig({s2sConfig: {
+          bidders: ['rubicon', 'appnexus'],
+          testing: true,
+          bidderControl: {
+            rubicon: {bidSource: {server: 75, client: 25}},
+            appnexus: {bidSource: {server: 75, client: 25}}
+          }}});
+        expect(s2sTesting.getSourceBidderMap()).to.eql({
+          server: ['rubicon', 'appnexus'],
+          client: []
+        });
       });
     });
 
