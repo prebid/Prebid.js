@@ -188,6 +188,9 @@ export function addBidResponseHook(fn, adUnitCode, bid) {
     return (parseFloat(cpm) * getCurrencyConversion(fromCurrency, toCurrency)).toFixed(3);
   };
 
+  bid.originalCpm = bid.cpm;
+  bid.originalCurrency = bid.currency;
+
   // execute immediately if the bid is already in the desired currency
   if (bid.currency === adServerCurrency) {
     return fn.call(this, adUnitCode, bid);
@@ -212,8 +215,6 @@ function wrapFunction(fn, context, params) {
       let fromCurrency = bid.currency;
       try {
         let conversion = getCurrencyConversion(fromCurrency);
-        bid.originalCpm = bid.cpm;
-        bid.originalCurrency = bid.currency;
         if (conversion !== 1) {
           bid.cpm = (parseFloat(bid.cpm) * conversion).toFixed(4);
           bid.currency = adServerCurrency;
