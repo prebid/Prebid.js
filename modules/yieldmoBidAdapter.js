@@ -47,7 +47,7 @@ export const spec = {
       if (userId) {
         const pubcid = userId.pubcid;
         serverRequest.pubcid = pubcid;
-      } else {
+      } else if (request.crumbs) {
         serverRequest.pubcid = request.crumbs.pubcid;
       }
     });

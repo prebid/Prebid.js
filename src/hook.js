@@ -1,5 +1,5 @@
 
-import funHooks from 'fun-hooks';
+import funHooks from 'fun-hooks/no-eval';
 
 export let hook = funHooks({
   useProxy: false,

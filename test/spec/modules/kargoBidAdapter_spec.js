@@ -57,19 +57,22 @@ describe('kargo adapter tests', function () {
           params: {
             placementId: 'foo'
           },
-          bidId: 1
+          bidId: 1,
+          sizes: [[320, 50], [300, 250], [300, 600]]
         },
         {
           params: {
             placementId: 'bar'
           },
-          bidId: 2
+          bidId: 2,
+          sizes: [[320, 50], [300, 250], [300, 600]]
         },
         {
           params: {
             placementId: 'bar'
           },
-          bidId: 3
+          bidId: 3,
+          sizes: [[320, 50], [300, 250], [300, 600]]
         }
       ];
     });
@@ -185,6 +188,14 @@ describe('kargo adapter tests', function () {
       setCookie('krg_crb', getInvalidKrgCrbType3OldStyle());
     }
 
+    function getInvalidKrgCrbType4OldStyle() {
+      return '%7B%22v%22%3A%22bnVsbA%3D%3D%22%7D';
+    }
+
+    function initializeInvalidKrgCrbType4Cookie() {
+      setCookie('krg_crb', getInvalidKrgCrbType4OldStyle());
+    }
+
     function getEmptyKrgCrb() {
       return 'eyJleHBpcmVUaW1lIjoxNDk3NDQ5MzgyNjY4LCJsYXN0U3luY2VkQXQiOjE0OTczNjI5NzkwMTJ9';
     }
@@ -216,6 +227,11 @@ describe('kargo adapter tests', function () {
           2: 'bar',
           3: 'bar'
         },
+        bidSizes: {
+          1: [[320, 50], [300, 250], [300, 600]],
+          2: [[320, 50], [300, 250], [300, 600]],
+          3: [[320, 50], [300, 250], [300, 600]]
+        },
         userIDs: {
           kargoID: '5f108831-302d-11e7-bf6b-4595acd3bf6c',
           clientID: '2410d8f2-c111-4811-88a5-7b5e190e475f',
@@ -241,6 +257,29 @@ describe('kargo adapter tests', function () {
           ]
         },
         pageURL: window.location.href,
+        prebidRawBidRequests: [
+          {
+            bidId: 1,
+            params: {
+              placementId: 'foo'
+            },
+            sizes: [[320, 50], [300, 250], [300, 600]]
+          },
+          {
+            bidId: 2,
+            params: {
+              placementId: 'bar'
+            },
+            sizes: [[320, 50], [300, 250], [300, 600]]
+          },
+          {
+            bidId: 3,
+            params: {
+              placementId: 'bar'
+            },
+            sizes: [[320, 50], [300, 250], [300, 600]]
+          }
+        ],
         rawCRB: expectedRawCRBCookie,
         rawCRBLocalStorage: expectedRawCRB
       };
@@ -337,6 +376,13 @@ describe('kargo adapter tests', function () {
       initializeKruxSegments();
       initializeInvalidKrgCrbType3Cookie();
       testBuildRequests(getExpectedKrakenParams(true, undefined, null, getInvalidKrgCrbType3OldStyle()));
+    });
+
+    it('handles broken Kargo CRBs where inner JSON is falsey', function() {
+      initializeKruxUser();
+      initializeKruxSegments();
+      initializeInvalidKrgCrbType4Cookie();
+      testBuildRequests(getExpectedKrakenParams(true, undefined, null, getInvalidKrgCrbType4OldStyle()));
     });
 
     it('handles a non-existant currency object on the config', function() {

@@ -40,7 +40,7 @@ export const spec = {
   buildRequests: function(validBidRequests, bidderRequest) {
     const bids = validBidRequests.map(buildRequestObject);
     const payload = {
-      referrer: utils.getTopWindowUrl(),
+      referrer: getReferrerInfo(bidderRequest),
       data: bids,
       deviceWidth: screen.width
     };
@@ -101,6 +101,14 @@ export const spec = {
     }
   }
 };
+
+function getReferrerInfo(bidderRequest) {
+  let ref = '';
+  if (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer) {
+    ref = bidderRequest.refererInfo.referer;
+  }
+  return ref;
+}
 
 function findGdprStatus(gdprApplies, gdprData) {
   let status = gdprStatus.GDPR_APPLIES_PUBLISHER;
