@@ -18,8 +18,8 @@ export const emxAdapter = {
     return sizes.every(size => utils.isArray(size) && size.length === 2);
   },
   checkVideoContext: (bid) => {
+    return ((bid && bid.mediaTypes && bid.mediaTypes.video && bid.mediaTypes.video.context) && ((bid.mediaTypes.video.context === 'instream') || (bid.mediaTypes.video.context === 'outstream')));
   },
-  return ((bid && bid.mediaTypes && bid.mediaTypes.video && bid.mediaTypes.video.context) && ((bid.mediaTypes.video.context === 'instream') || (bid.mediaTypes.video.context === 'outstream')));
   buildBanner: (bid) => {
     let sizes = [];
     bid.mediaTypes && bid.mediaTypes.banner && bid.mediaTypes.banner.sizes ? sizes = bid.mediaTypes.banner.sizes : sizes = bid.sizes;
@@ -58,7 +58,7 @@ export const emxAdapter = {
   },
   outstreamRender: (bid) => {
     bid.renderer.push(function () {
-      let params = (bid && bid.params && bid.params[0] && bid.params[0].video) ? bid.params[0].video  : {};
+      let params = (bid && bid.params && bid.params[0] && bid.params[0].video) ? bid.params[0].video : {};
       window.emxVideoQueue = window.emxVideoQueue || [];
       window.queueEmxVideo({
         id: bid.adUnitCode,
