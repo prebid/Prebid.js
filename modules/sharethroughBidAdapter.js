@@ -11,10 +11,10 @@ export const sharethroughAdapterSpec = {
   isBidRequestValid: bid => !!bid.params.pkey && bid.bidder === BIDDER_CODE,
 
   buildRequests: (bidRequests, bidderRequest) => {
-    return bidRequests.map(bid => {
+    return bidRequests.map(bidRequest => {
       let query = {
-        placement_key: bid.params.pkey,
-        bidId: bid.bidId,
+        placement_key: bidRequest.params.pkey,
+        bidId: bidRequest.bidId,
         consent_required: false,
         instant_play_capable: canAutoPlayHTML5Video(),
         hbSource: 'prebid',
@@ -30,12 +30,16 @@ export const sharethroughAdapterSpec = {
         query.consent_required = !!bidderRequest.gdprConsent.gdprApplies;
       }
 
+      if (bidRequest.userId && bidRequest.userId.tdid) {
+        query.ttduid = bidRequest.userId.tdid;
+      }
+
       // Data that does not need to go to the server,
       // but we need as part of interpretResponse()
       const strData = {
-        stayInIframe: bid.params.iframe,
-        iframeSize: bid.params.iframeSize,
-        sizes: bid.sizes
+        stayInIframe: bidRequest.params.iframe,
+        iframeSize: bidRequest.params.iframeSize,
+        sizes: bidRequest.sizes
       }
 
       return {
