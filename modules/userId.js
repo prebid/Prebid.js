@@ -75,6 +75,7 @@ import {getGlobal} from '../src/prebidGlobal.js';
 import {gdprDataHandler} from '../src/adapterManager.js';
 import {unifiedIdSubmodule} from './unifiedIdSystem.js';
 import {pubCommonIdSubmodule} from './pubCommonIdSystem.js';
+import {id5IdSubmodule} from './id5IdSystem.js';
 import CONSTANTS from '../src/constants.json';
 
 const MODULE_NAME = 'User ID';
@@ -159,12 +160,21 @@ function getStoredValue(storage) {
 }
 
 /**
+ * test if consent module is present, and if GDPR applies
+ * @param {ConsentData} consentData
+ * @returns {boolean}
+ */
+export function isGDPRApplicable(consentData) {
+  return consentData && typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies;
+}
+
+/**
  * test if consent module is present, applies, and is valid for local storage or cookies (purpose 1)
  * @param {ConsentData} consentData
  * @returns {boolean}
  */
-function hasGDPRConsent(consentData) {
-  if (consentData && typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies) {
+export function hasGDPRConsent(consentData) {
+  if (isGDPRApplicable(consentData)) {
     if (!consentData.consentString) {
       return false;
     }
@@ -422,3 +432,4 @@ init(config);
 // add submodules after init has been called
 attachIdSystem(pubCommonIdSubmodule);
 attachIdSystem(unifiedIdSubmodule);
+attachIdSystem(id5IdSubmodule);

@@ -3,12 +3,12 @@
 Example showing `cookie` storage for user id data for both submodules
 ```
 pbjs.setConfig({
-    userSync: {
+    usersync: {
         userIds: [{
             name: "unifiedId",
             params: {
                 partner: "prebid",
-                url: "//match.adsrvr.org/track/rid?ttd_pid=prebid&fmt=json"
+                url: "http://match.adsrvr.org/track/rid?ttd_pid=prebid&fmt=json"
             },
             storage: {
                 type: "cookie",
