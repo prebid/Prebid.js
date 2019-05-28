@@ -114,8 +114,9 @@ if (canAccessTopWindow()) {
 }
 
 const _features = {
-  getPrintNumber: function() {
-    return 1;
+  getPrintNumber: function(adUnitCode) {
+    const adagioAdUnit = _getOrAddAdagioAdUnit(adUnitCode);
+    return adagioAdUnit.printNumber || 1;
   },
 
   getPageDimensions: function() {
@@ -226,6 +227,26 @@ function _pushInAdagioQueue(ob) {
   window.top.ADAGIO.queue.push(ob);
 };
 
+function _getOrAddAdagioAdUnit(adUnitCode) {
+  if (top.ADAGIO.adUnits[adUnitCode]) {
+    return top.ADAGIO.adUnits[adUnitCode]
+  }
+  return top.ADAGIO.adUnits[adUnitCode] = {};
+}
+
+function _computePrintNumber(adUnitCode) {
+  let printNumber = 1;
+  if (
+    top.ADAGIO &&
+    top.ADAGIO.adUnits && top.ADAGIO.adUnits[adUnitCode] &&
+    top.ADAGIO.adUnits[adUnitCode].pageviewId === _getPageviewId() &&
+    top.ADAGIO.adUnits[adUnitCode].printNumber
+  ) {
+    printNumber = parseInt(top.ADAGIO.adUnits[adUnitCode].printNumber, 10) + 1;
+  }
+  return printNumber;
+}
+
 function _getDevice() {
   const language = navigator.language ? 'language' : 'userLanguage';
   return {
@@ -293,7 +314,7 @@ function _getFeatures(bidRequest) {
   let features = {};
   if (element) {
     features = Object.assign({}, {
-      print_number: _features.getPrintNumber(element).toString(),
+      print_number: _features.getPrintNumber(bidRequest.adUnitCode).toString(),
       page_dimensions: _features.getPageDimensions().toString(),
       viewport_dimensions: _features.getViewPortDimensions().toString(),
       dom_loading: _features.isDomLoading().toString(),
@@ -365,9 +386,11 @@ export const spec = {
       top.ADAGIO.pbjsAdUnits = tempAdUnits;
 
       if (isValid === true) {
+        let printNumber = _computePrintNumber(adUnitCode);
         top.ADAGIO.adUnits[adUnitCode] = {
           auctionId: auctionId,
-          pageviewId: _getPageviewId()
+          pageviewId: _getPageviewId(),
+          printNumber
         };
       }
     }

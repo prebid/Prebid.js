@@ -80,6 +80,21 @@ describe('adagioAdapter', () => {
 
     it('should return true when required params found', () => {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
+      expect(window.top.ADAGIO.adUnits['adunit-code'].printNumber).to.equal(1);
+    })
+
+    it('should compute a printNumber for the new bid request on same adUnitCode and same pageviewId', () => {
+      spec.isBidRequestValid(bid);
+      expect(window.top.ADAGIO.adUnits).ok;
+      expect(window.top.ADAGIO.adUnits['adunit-code']).ok;
+      expect(window.top.ADAGIO.adUnits['adunit-code'].printNumber).to.equal(2);
+
+      spec.isBidRequestValid(bid);
+      expect(window.top.ADAGIO.adUnits['adunit-code'].printNumber).to.equal(3);
+
+      window.top.ADAGIO.pageviewId = 123;
+      spec.isBidRequestValid(bid);
+      expect(window.top.ADAGIO.adUnits['adunit-code'].printNumber).to.equal(1);
     });
 
     it('should return false when organization params is not passed', () => {
@@ -324,7 +339,6 @@ describe('adagioAdapter', () => {
 
     it('AdUnit requested should have the correct sizes array depending on the config', () => {
       const requests = spec.buildRequests(bidRequests);
-      console.log(requests[0].data.adUnits[0]);
       expect(requests[1].data.adUnits[0]).to.have.property('mediaTypes');
     });
 
@@ -394,6 +408,18 @@ describe('adagioAdapter', () => {
       expect(requests[0].data.pageviewId).to.equal('abc');
       expect(requests[1].data.pageviewId).to.equal('abc');
     });
+
+    it('should send the printNumber in features object', () => {
+      window.top.ADAGIO = window.top.ADAGIO || {};
+      window.top.ADAGIO.pageviewId = 'abc';
+      window.top.ADAGIO.adUnits['adunit-code1'] = {
+        pageviewId: 'abc',
+        printNumber: 2
+      };
+      const requests = spec.buildRequests([bidRequests[0]]);
+      const request = requests[0];
+      expect(request.data.adUnits[0].features.print_number).to.equal('2');
+    })
 
     it('GDPR consent is applied', () => {
       const requests = spec.buildRequests(bidRequests, bidderRequest);
