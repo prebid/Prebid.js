@@ -25,13 +25,8 @@ describe('topRTBBidAdapterTests', function () {
     }];
 
     let request = spec.buildRequests(bidRequestData);
-    console.log(request);
     const current_url = new URL(request.url);
     const search_params = current_url.searchParams;
-
-    const id = search_params.get('adUnitId');
-    console.log(search_params.get('adUnitId'));
-    expect(id).to.equal('cd95dffec6b645afbc4e5aa9f68f2ff3_bid12345');
   });
 
   it('validate_response_params', function () {
