@@ -25,7 +25,7 @@ describe('topRTBBidAdapterTests', function () {
     }];
 
     let request = spec.buildRequests(bidRequestData);
-    const current_url = new URL(request.url);
+    const current_url = request.url;
     const search_params = current_url.searchParams;
   });
 
