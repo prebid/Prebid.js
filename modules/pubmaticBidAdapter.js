@@ -936,7 +936,6 @@ export const spec = {
             seatbidder.bid.forEach(bid => {
               bidResponses.forEach(br => {
                 if (br.requestId == bid.impid) {
-                  // br = {
                   br.requestId = bid.impid;
                   br.cpm = (parseFloat(bid.price) || 0).toFixed(2);
                   br.width = bid.w;
@@ -948,21 +947,20 @@ export const spec = {
                   br.ttl = 300;
                   br.referrer = requestData.site && requestData.site.ref ? requestData.site.ref : '';
                   br.ad = bid.adm;
-                  // };
                   if (requestData.imp && requestData.imp.length > 0) {
                     requestData.imp.forEach(req => {
                       if (bid.impid === req.id) {
-                        _checkMediaType(bid.adm, newBid);
-                        switch (newBid.mediaType) {
+                        _checkMediaType(bid.adm, br);
+                        switch (br.mediaType) {
                           case BANNER:
                             break;
                           case VIDEO:
-                            newBid.width = bid.hasOwnProperty('w') ? bid.w : req.video.w;
-                            newBid.height = bid.hasOwnProperty('h') ? bid.h : req.video.h;
-                            newBid.vastXml = bid.adm;
+                            br.width = bid.hasOwnProperty('w') ? bid.w : req.video.w;
+                            br.height = bid.hasOwnProperty('h') ? bid.h : req.video.h;
+                            br.vastXml = bid.adm;
                             break;
                           case NATIVE:
-                            _parseNativeResponse(bid, newBid);
+                            _parseNativeResponse(bid, br);
                             break;
                         }
                       }
