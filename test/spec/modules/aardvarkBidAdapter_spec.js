@@ -54,21 +54,27 @@ describe('aardvarkAdapterTest', function () {
       auctionId: 'e97cafd0-ebfc-4f5c-b7c9-baa0fd335a4a'
     }];
 
+    const bidderRequest = {
+      refererInfo: {
+        referer: 'http://example.com'
+      }
+    };
+
     it('should use HTTP GET method', function () {
-      const requests = spec.buildRequests(bidRequests);
+      const requests = spec.buildRequests(bidRequests, bidderRequest);
       requests.forEach(function(requestItem) {
         expect(requestItem.method).to.equal('GET');
       });
     });
 
     it('should call the correct bidRequest url', function () {
-      const requests = spec.buildRequests(bidRequests);
+      const requests = spec.buildRequests(bidRequests, bidderRequest);
       expect(requests.length).to.equal(1);
       expect(requests[0].url).to.match(new RegExp('^\/\/adzone.pub.com/xiby/TdAx_RAZd/aardvark\?'));
     });
 
     it('should have correct data', function () {
-      const requests = spec.buildRequests(bidRequests);
+      const requests = spec.buildRequests(bidRequests, bidderRequest);
       expect(requests.length).to.equal(1);
       expect(requests[0].data.version).to.equal(1);
       expect(requests[0].data.jsonp).to.equal(false);
@@ -108,22 +114,28 @@ describe('aardvarkAdapterTest', function () {
       auctionId: 'e97cafd0-ebfc-4f5c-b7c9-baa0fd335a4a'
     }];
 
+    const bidderRequest = {
+      refererInfo: {
+        referer: 'http://example.com'
+      }
+    };
+
     it('should use HTTP GET method', function () {
-      const requests = spec.buildRequests(bidRequests);
+      const requests = spec.buildRequests(bidRequests, bidderRequest);
       requests.forEach(function(requestItem) {
         expect(requestItem.method).to.equal('GET');
       });
     });
 
     it('should call the correct bidRequest urls for each auction', function () {
-      const requests = spec.buildRequests(bidRequests);
+      const requests = spec.buildRequests(bidRequests, bidderRequest);
       expect(requests[0].url).to.match(new RegExp('^\/\/bidder.rtk.io/Toby/TdAx/aardvark\?'));
       expect(requests[0].data.categories.length).to.equal(2);
       expect(requests[1].url).to.match(new RegExp('^\/\/adzone.pub.com/xiby/RAZd/aardvark\?'));
     });
 
     it('should have correct data', function () {
-      const requests = spec.buildRequests(bidRequests);
+      const requests = spec.buildRequests(bidRequests, bidderRequest);
       expect(requests.length).to.equal(2);
       expect(requests[0].data.version).to.equal(1);
       expect(requests[0].data.jsonp).to.equal(false);
@@ -157,6 +169,9 @@ describe('aardvarkAdapterTest', function () {
       gdprConsent: {
         consentString: 'awefasdfwefasdfasd',
         gdprApplies: true
+      },
+      refererInfo: {
+        referer: 'http://example.com'
       }
     };
 
@@ -184,7 +199,10 @@ describe('aardvarkAdapterTest', function () {
     }];
 
     const bidderRequest = {
-      gdprConsent: undefined
+      gdprConsent: undefined,
+      refererInfo: {
+        referer: 'http://example.com'
+      }
     };
 
     it('should transmit correct data', function () {
@@ -219,6 +237,7 @@ describe('aardvarkAdapterTest', function () {
             cid: '1abgs362e0x48a8',
             adm: '</tag2>',
             ttl: 200,
+            ex: 'extraproperty'
           }
         ],
         headers: {}
@@ -234,6 +253,7 @@ describe('aardvarkAdapterTest', function () {
       expect(result[0].currency).to.equal('USD');
       expect(result[0].ttl).to.equal(200);
       expect(result[0].dealId).to.equal('dealing');
+      expect(result[0].ex).to.be.undefined;
       expect(result[0].ad).to.not.be.undefined;
 
       expect(result[1].requestId).to.equal('1abgs362e0x48a8');
@@ -243,6 +263,7 @@ describe('aardvarkAdapterTest', function () {
       expect(result[1].currency).to.equal('USD');
       expect(result[1].ttl).to.equal(200);
       expect(result[1].ad).to.not.be.undefined;
+      expect(result[1].ex).to.equal('extraproperty');
     });
 
     it('should handle nobid responses', function () {
