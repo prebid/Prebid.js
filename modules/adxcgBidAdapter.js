@@ -160,10 +160,12 @@ export const spec = {
     beaconParams.prebidBidIds = prebidBidIds.join(',')
     beaconParams.bidfloors = bidfloors.join(',')
 
-    if ((validBidRequests[0].userId && validBidRequests[0].userId.pubcid)) {
+    if (utils.isStr(utils.deepAccess(validBidRequests, '0.userId.pubcid'))) {
       beaconParams.pubcid = validBidRequests[0].userId.pubcid;
-    } else if (validBidRequests[0].crumbs && validBidRequests[0].crumbs.pubcid) {
-      beaconParams.pubcid = validBidRequests[0].crumbs.pubcid;
+    }
+
+    if (utils.isStr(utils.deepAccess(validBidRequests, '0.userId.tdid'))) {
+      beaconParams.tdid = validBidRequests[0].userId.tdid;
     }
 
     let adxcgRequestUrl = url.format({
