@@ -126,6 +126,10 @@
                                 site: 'example_site_id'
                             },
                             callback: function (digiTrustResult) {
+                                // This callback can be used by publisher page to react to error conditions
+                                // Or pass the DigiTrust ID on.
+                                // If the Prebid userId system already has a managed copy of the DigiTrust ID
+                                // this callback will not be invoked.
                                 if (digiTrustResult.success) {
                                     console.log('Success in Digitrust init');
                                     if (digiTrustResult.identity && digiTrustResult.identity.id != null) {
@@ -194,6 +198,12 @@
 
 <body>
 <h2>DigiTrust Prebid Sample - No Framework</h2>
+
+
+<p>
+    This sample shows the simplest integration path for using DigiTrust ID with Prebid.
+    You can use DigiTrust ID without integrating the entire DigiTrust suite.
+</p>
 
 <div id='test-div'>
     <script>

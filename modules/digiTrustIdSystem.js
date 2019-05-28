@@ -9,10 +9,11 @@
  * @requires module:modules/userId
  */
 
-import { config } from 'src/config';
+// import { config } from 'src/config';
 import * as utils from '../src/utils'
 import { ajax } from 'src/ajax';
-import { getGlobal } from 'src/prebidGlobal';
+import { attachIdSystem } from '../modules/userId';
+// import { getGlobal } from 'src/prebidGlobal';
 
 /**
  * Checks to see if the DigiTrust framework is initialized.
@@ -25,14 +26,11 @@ function isInitialized() {
   return DigiTrust.isClient; // this is set to true after init
 }
 
-let retries = 0;
-let retryId = 0;
-var isMock = false;
 var noop = function () {
 };
 
 const MAX_RETRIES = 4;
-const DT_ID_SVC = 'https://cdn-cf.digitru.st/id/v1';
+const DT_ID_SVC = 'https://prebid.digitru.st/id/v1';
 
 var isFunc = function (fn) {
   return typeof (fn) === 'function';
@@ -80,13 +78,12 @@ function writeDigiId(id) {
 }
 
 /**
- * Set up a mock DigiTrust object
+ * Set up a DigiTrust fascade object to mimic the API
  *
  */
-function initMockDigitrust() {
-  isMock = true;
+function initDigitrustFascade() {
   var _savedId = null; // closure variable for storing Id to avoid additional requests
-  var mock = {
+  var fascade = {
     isClient: true,
     isMock: true,
     getUser: function (obj, callback) {
@@ -120,67 +117,121 @@ function initMockDigitrust() {
   }
 
   if (window) {
-    window.DigiTrust = mock;
+    window.DigiTrust = fascade;
   }
 }
 
-/*
- * Internal implementation to get the Id and trigger callback
+/**
+ * Encapsulation of needed info for the callback return.
+ *
+ * @param {any} opts
  */
-function getDigiTrustId(data, consentData, syncDelay, callback) {
-  if (!isInitialized()) {
-    if (retries >= MAX_RETRIES) {
-      utils.logInfo('DigiTrust framework timeout. Fallback to API and mock.');
-      initMockDigitrust();
-    } else {
-      // use expanding envelope
-      if (retryId != 0) {
-        clearTimeout(retryId);
-      }
+var ResultWrapper = function (opts) {
+  var me = this;
+  this.idObj = null;
 
-      retryId = setTimeout(function () {
-        getDigiTrustId(data, consentData, syncDelay, callback);
-      }, 100 * (1 + retries++));
-      return;
+  var idSystemFn = null;
+
+  /**
+   * Callback method that is passed back to the userId module.
+   *
+   * @param {function} callback
+   */
+  this.userIdCallback = function (callback) {
+    idSystemFn = callback;
+    if (me.idObj != null && isFunc(callback)) {
+      callback(wrapIdResult());
     }
   }
 
-  var executeIdRequest = function (data, callback) {
-    DigiTrust.getUser({ member: 'prebid' }, function (idResult) {
-      var exp = (data && data.storage && data.storage.expires) || 60;
-      var rslt = {
-        data: null,
-        expires: exp
-      };
-      if (idResult && idResult.success && idResult.identity) {
-        if (isMock) {
-          // plug in the mock ID
-        }
+  /**
+   * Return a wrapped result formatted for userId system
+   */
+  function wrapIdResult() {
+    if (me.idObj == null) {
+      return null;
+    }
 
-        if (isFunc(callback)) {
-          rslt.data = idResult.identity;
-          callback(rslt);
+    var cp = me.configParams;
+    var exp = (cp && cp.storage && cp.storage.expires) || 60;
+
+    var rslt = {
+      data: null,
+      expires: exp
+    };
+    if (me.idObj && me.idObj.success && me.idObj.identity) {
+      rslt.data = me.idObj.identity;
+    } else {
+      rslt.err = 'Failure getting id';
+    }
+
+    return rslt;
+  }
+
+  this.retries = 0;
+  this.retryId = 0;
+
+  this.executeIdRequest = function (configParams) {
+    DigiTrust.getUser({ member: 'prebid' }, function (idResult) {
+      me.idObj = idResult;
+      var cb = function () {
+        if (isFunc(idSystemFn)) {
+          idSystemFn(wrapIdResult());
         }
-      } else {
-        // failed
-        if (isFunc(callback)) {
-          rslt.err = 'Failure getting id';
-          callback(rslt);
+      }
+
+      cb();
+      if (configParams && configParams.callback && isFunc(configParams.callback)) {
+        try {
+          configParams.callback(idResult);
+        } catch (ex) {
+          utils.logError('Failure in DigiTrust executeIdRequest', ex);
         }
       }
     });
   }
+}
 
-  executeIdRequest(data, callback);
+// An instance of the result wrapper object.
+var resultHandler = new ResultWrapper();
+
+/*
+ * Internal implementation to get the Id and trigger callback
+ */
+function getDigiTrustId(configParams) {
+  if (resultHandler.configParams == null) {
+    resultHandler.configParams = configParams;
+  }
+
+  if (!isInitialized()) {
+    if (resultHandler.retries >= MAX_RETRIES) {
+      utils.logInfo('DigiTrust framework timeout. Fallback to API and mock.');
+      initDigitrustFascade();
+    } else {
+      // use expanding envelope
+      if (resultHandler.retryId != 0) {
+        clearTimeout(resultHandler.retryId);
+      }
+
+      resultHandler.retryId = setTimeout(function () {
+        getDigiTrustId(configParams);
+      }, 100 * (1 + resultHandler.retries++));
+      return resultHandler.userIdCallback;
+    }
+  }
+
+  resultHandler.executeIdRequest(configParams);
+  return resultHandler.userIdCallback;
 }
 
 function initializeDigiTrust(config) {
+  utils.logError('Digitrust Init');
   var dt = window.DigiTrust;
   if (dt && !dt.isClient && config != null) {
     dt.initialize(config.init, config.callback);
   } else if (dt == null) {
     // Assume we are already on a delay and DigiTrust is not on page
-    initMockDigitrust();
+    initDigitrustFascade();
   }
 }
 
@@ -194,10 +245,7 @@ function surfaceTestHook() {
   digitrustIdModule['_testHook'] = testHook;
 }
 
-testHook.exposeLoader = exposeLoader;
-testHook.initMockDigitrust = initMockDigitrust;
-
-
+testHook.initDigitrustFascade = initDigitrustFascade;
 
 /** @type {Submodule} */
 export const digiTrustIdSubmodule = {
@@ -205,7 +253,7 @@ export const digiTrustIdSubmodule = {
    * used to link submodule with config
    * @type {string}
    */
-  name: 'digiTrust',
+  name: 'digitrust',
   /**
    * decode the stored id value for passing to bid requests
    * @function
@@ -223,3 +271,5 @@ export const digiTrustIdSubmodule = {
   init: initializeDigiTrust,
   _testInit: surfaceTestHook
 };
+
+attachIdSystem(digiTrustIdSubmodule);
