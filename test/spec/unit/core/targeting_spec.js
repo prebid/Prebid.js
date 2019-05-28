@@ -175,10 +175,10 @@ describe('targeting tests', function () {
       });
     });
 
-    it('will enforce a limit on the number of auction keys when auctionKeysCharacterThreshold setting is active', function () {
+    it('will enforce a limit on the number of auction keys when auctionKeyMaxChars setting is active', function () {
       config.setConfig({
         targetingControls: {
-          auctionKeysCharacterThreshold: 150
+          auctionKeyMaxChars: 150
         }
       });
 
@@ -189,10 +189,10 @@ describe('targeting tests', function () {
       expect(logWarnStub.calledOnce).to.be.true;
     });
 
-    it('will return an error when auctionKeysCharacterThreshold setting is set too low for any auction keys to be allowed', function () {
+    it('will return an error when auctionKeyMaxChars setting is set too low for any auction keys to be allowed', function () {
       config.setConfig({
         targetingControls: {
-          auctionKeysCharacterThreshold: 50
+          auctionKeyMaxChars: 50
         }
       });
 

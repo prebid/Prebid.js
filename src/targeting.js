@@ -156,9 +156,9 @@ export function newTargeting(auctionManager) {
 
     targeting = flattenTargeting(targeting);
 
-    const auctionKeysThreshold = config.getConfig('targetingControls.auctionKeysCharacterThreshold');
+    const auctionKeysThreshold = config.getConfig('targetingControls.auctionKeyMaxChars');
     if (auctionKeysThreshold) {
-      logInfo(`Detected 'targetingControls.auctionKeysCharacterThreshold' was active for this auction; set with a limit of ${auctionKeysThreshold} characters.  Running checks on auction keys...`);
+      logInfo(`Detected 'targetingControls.auctionKeyMaxChars' was active for this auction; set with a limit of ${auctionKeysThreshold} characters.  Running checks on auction keys...`);
       targeting = filterTargetingKeys(targeting, auctionKeysThreshold);
     }
 
@@ -210,11 +210,11 @@ export function newTargeting(auctionManager) {
 
         accMap[code] = targetingCopy[code];
       } else {
-        logWarn(`The following keys for adUnitCode '${code}' exceeded the current limit of the 'auctionKeysCharacterThreshold' setting.\nThe key-set size was ${querySize}, the current allotted amount was ${auctionKeysThreshold}.\n`, targetingCopy[code]);
+        logWarn(`The following keys for adUnitCode '${code}' exceeded the current limit of the 'auctionKeyMaxChars' setting.\nThe key-set size was ${querySize}, the current allotted amount was ${auctionKeysThreshold}.\n`, targetingCopy[code]);
       }
 
       if ((index + 1) === arr.length && Object.keys(accMap).length === 0) {
-        logError('No auction targeting keys were permitted due to the setting in setConfig(targetingControls.auctionKeysCharacterThreshold).  Please review setup and consider adjusting.');
+        logError('No auction targeting keys were permitted due to the setting in setConfig(targetingControls.auctionKeyMaxChars).  Please review setup and consider adjusting.');
       }
       return accMap;
     }, {});
