@@ -18,7 +18,10 @@ describe('UnrulyAdapter', function () {
         'statusCode': statusCode,
         'renderer': {
           'id': 'unruly_inarticle',
-          'config': {},
+          'config': {
+            'siteId': 123456,
+            'targetingUUID': 'xxx-yyy-zzz'
+          },
           'url': 'https://video.unrulymedia.com/native/prebid-loader.js'
         },
         'adUnitCode': adUnitCode
@@ -157,7 +160,13 @@ describe('UnrulyAdapter', function () {
       expect(fakeRenderer.setRender.called).to.be.false;
 
       const mockReturnedBid = createOutStreamExchangeBid({adUnitCode: 'video1', bidId: 'mockBidId'});
-      const mockRenderer = { url: 'value: mockRendererURL' };
+      const mockRenderer = {
+        url: 'value: mockRendererURL',
+        config: {
+          siteId: 123456,
+          targetingUUID: 'xxx-yyy-zzz'
+        }
+      };
       mockReturnedBid.ext.renderer = mockRenderer;
       const mockServerResponse = createExchangeResponse(mockReturnedBid);
 

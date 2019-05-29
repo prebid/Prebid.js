@@ -6,7 +6,7 @@ import { VIDEO } from '../src/mediaTypes'
 function configureUniversalTag (exchangeRenderer) {
   parent.window.unruly = parent.window.unruly || {};
   parent.window.unruly['native'] = parent.window.unruly['native'] || {};
-  parent.window.unruly['native'].siteId = parent.window.unruly['native'].siteId || exchangeRenderer.siteId;
+  parent.window.unruly['native'].siteId = parent.window.unruly['native'].siteId || exchangeRenderer.config.siteId;
   parent.window.unruly['native'].supplyMode = 'prebid';
 }
 
