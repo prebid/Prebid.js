@@ -26,6 +26,13 @@ function isInitialized() {
   return DigiTrust.isClient; // this is set to true after init
 }
 
+/**
+ * Tests for presence of the DigiTrust object
+ * */
+function isPresent() {
+  return (window.DigiTrust != null);
+}
+
 var noop = function () {
 };
 
@@ -81,14 +88,33 @@ function writeDigiId(id) {
  * Set up a DigiTrust fascade object to mimic the API
  *
  */
-function initDigitrustFascade() {
+function initDigitrustFascade(config) {
   var _savedId = null; // closure variable for storing Id to avoid additional requests
   var fascade = {
     isClient: true,
     isMock: true,
+    _internals: {
+      callCount: 0,
+      initCallback: null
+    },
     getUser: function (obj, callback) {
       var cb = callback || noop;
+      var inter = fascade._internals;
+      inter.callCount++;
+
+      // wrap the initializer callback, if present
+      var checkCallInitializeCb = function (idResponse) {
+        if (inter.callCount <= 1 && isFunc(inter.initCallback)) {
+          try {
+            inter.initCallback(idResponse);
+          } catch (ex) {
+            utils.logError('Exception in passed DigiTrust init callback');
+          }
+        }
+      }
+
       if (_savedId != null) {
+        checkCallInitializeCb(_savedId);
         cb(_savedId);
         return;
       }
@@ -105,6 +131,7 @@ function initDigitrustFascade() {
           } catch (ex) {
             idResult.success = false;
           }
+          checkCallInitializeCb(idResult);
           cb(idResult);
         },
         fail: function (statusErr, result) {
@@ -116,7 +143,7 @@ function initDigitrustFascade() {
     }
   }
 
-  if (window) {
+  if (window && window.DigiTrust == null) {
     window.DigiTrust = fascade;
   }
 }
@@ -203,35 +230,41 @@ function getDigiTrustId(configParams) {
     resultHandler.configParams = configParams;
   }
 
-  if (!isInitialized()) {
+  // First see if we should initialize DigiTrust framework
+  if (isPresent() && !isInitialized()) {
+    initializeDigiTrust(configParams);
+    resultHandler.retryId = setTimeout(function () {
+      getDigiTrustId(configParams);
+    }, 100 * (1 + resultHandler.retries++));
+    return resultHandler.userIdCallback;
+  } else if (!isInitialized()) { // Second see if we should build a fascade object
     if (resultHandler.retries >= MAX_RETRIES) {
-      utils.logInfo('DigiTrust framework timeout. Fallback to API and mock.');
-      initDigitrustFascade();
+      initDigitrustFascade(configParams); // initialize a fascade object that relies on the AJAX call
+      resultHandler.executeIdRequest(configParams);
     } else {
       // use expanding envelope
       if (resultHandler.retryId != 0) {
         clearTimeout(resultHandler.retryId);
       }
-
       resultHandler.retryId = setTimeout(function () {
         getDigiTrustId(configParams);
       }, 100 * (1 + resultHandler.retries++));
-      return resultHandler.userIdCallback;
     }
+    return resultHandler.userIdCallback;
+  } else { // Third get the ID
+    resultHandler.executeIdRequest(configParams);
+    return resultHandler.userIdCallback;
   }
-
-  resultHandler.executeIdRequest(configParams);
-  return resultHandler.userIdCallback;
 }
 
 function initializeDigiTrust(config) {
-  utils.logError('Digitrust Init');
+  utils.logInfo('Digitrust Init');
   var dt = window.DigiTrust;
   if (dt && !dt.isClient && config != null) {
     dt.initialize(config.init, config.callback);
   } else if (dt == null) {
     // Assume we are already on a delay and DigiTrust is not on page
-    initDigitrustFascade();
+    initDigitrustFascade(config);
   }
 }
 
@@ -268,7 +301,6 @@ export const digiTrustIdSubmodule = {
     }
   },
   getId: getDigiTrustId,
-  init: initializeDigiTrust,
   _testInit: surfaceTestHook
 };
 
