@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec } from 'modules/aardvarkBidAdapter';
+import { spec, resetUserSync } from 'modules/aardvarkBidAdapter';
 
 describe('aardvarkAdapterTest', function () {
   describe('forming valid bidRequests', function () {
@@ -37,7 +37,8 @@ describe('aardvarkAdapterTest', function () {
       sizes: [300, 250],
       bidId: '1abgs362e0x48a8',
       bidderRequestId: '70deaff71c281d',
-      auctionId: '5c66da22-426a-4bac-b153-77360bef5337'
+      auctionId: '5c66da22-426a-4bac-b153-77360bef5337',
+      userId: { tdid: 'eff98622-b5fd-44fa-9a49-6e846922d532' }
     },
     {
       bidder: 'aardvark',
@@ -62,7 +63,7 @@ describe('aardvarkAdapterTest', function () {
 
     it('should use HTTP GET method', function () {
       const requests = spec.buildRequests(bidRequests, bidderRequest);
-      requests.forEach(function(requestItem) {
+      requests.forEach(function (requestItem) {
         expect(requestItem.method).to.equal('GET');
       });
     });
@@ -81,6 +82,13 @@ describe('aardvarkAdapterTest', function () {
       expect(requests[0].data.TdAx).to.equal('1abgs362e0x48a8');
       expect(requests[0].data.rtkreferer).to.not.be.undefined;
       expect(requests[0].data.RAZd).to.equal('22aidtbx5eabd9');
+    });
+
+    it('should have tdid, it is available in bidRequest', function () {
+      const requests = spec.buildRequests(bidRequests, bidderRequest);
+      requests.forEach(function (requestItem) {
+        expect(requestItem.data.tdid).to.equal('eff98622-b5fd-44fa-9a49-6e846922d532');
+      });
     });
   });
 
@@ -122,7 +130,7 @@ describe('aardvarkAdapterTest', function () {
 
     it('should use HTTP GET method', function () {
       const requests = spec.buildRequests(bidRequests, bidderRequest);
-      requests.forEach(function(requestItem) {
+      requests.forEach(function (requestItem) {
         expect(requestItem.method).to.equal('GET');
       });
     });
@@ -147,6 +155,13 @@ describe('aardvarkAdapterTest', function () {
       expect(requests[1].data.TdAx).to.be.undefined;
       expect(requests[1].data.rtkreferer).to.not.be.undefined;
       expect(requests[1].data.RAZd).to.equal('22aidtbx5eabd9');
+    });
+
+    it('should have no tdid, it is not available in bidRequest', function () {
+      const requests = spec.buildRequests(bidRequests, bidderRequest);
+      requests.forEach(function (requestItem) {
+        expect(requestItem.data.tdid).to.be.undefined;
+      });
     });
   });
 
@@ -279,6 +294,53 @@ describe('aardvarkAdapterTest', function () {
 
       var result = spec.interpretResponse({ body: emptyResponse }, {});
       expect(result.length).to.equal(0);
+    });
+  });
+
+  describe('getUserSyncs', function () {
+    const syncOptions = {
+      iframeEnabled: true
+    };
+
+    it('should produce sync url', function () {
+      const syncs = spec.getUserSyncs(syncOptions);
+      expect(syncs.length).to.equal(1);
+      expect(syncs[0].type).to.equal('iframe');
+      expect(syncs[0].url).to.equal('//sync.rtk.io/cs');
+    });
+
+    it('should return empty, as we sync only once', function () {
+      const syncs = spec.getUserSyncs(syncOptions);
+      expect(syncs.length).to.equal(0);
+    });
+
+    it('should reset hasSynced flag, allowing another sync', function () {
+      resetUserSync();
+
+      const syncs = spec.getUserSyncs(syncOptions);
+      expect(syncs.length).to.equal(1);
+    });
+
+    it('should return empty when iframe disallowed', function () {
+      resetUserSync();
+
+      const noIframeOptions = { iframeEnabled: false };
+      const syncs = spec.getUserSyncs(noIframeOptions);
+      expect(syncs.length).to.equal(0);
+    });
+
+    it('should produce sync url with gdpr params', function () {
+      const gdprConsent = {
+        gdprApplies: true,
+        consentString: 'BOEFEAyOEFEAyAHABDENAI4AAAB9vABAASA'
+      };
+
+      resetUserSync();
+
+      const syncs = spec.getUserSyncs(syncOptions, null, gdprConsent);
+      expect(syncs.length).to.equal(1);
+      expect(syncs[0].type).to.equal('iframe');
+      expect(syncs[0].url).to.equal('//sync.rtk.io/cs?g=1&c=BOEFEAyOEFEAyAHABDENAI4AAAB9vABAASA');
     });
   });
 });
