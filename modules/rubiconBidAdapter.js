@@ -134,6 +134,7 @@ export const spec = {
         },
         tmax: config.getConfig('TTL') || 1000,
         imp: [{
+          bidfloor: utils.deepAccess(bidRequest, 'params.floor') ? parseFloat(bidRequest.params.floor) : 0.0,
           exp: 300,
           id: bidRequest.adUnitCode,
           secure: isSecure() || bidRequest.params.secure ? 1 : 0,

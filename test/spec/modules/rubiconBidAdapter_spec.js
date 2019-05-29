@@ -1143,6 +1143,34 @@ describe('the rubicon adapter', function () {
           expect(request.data.imp[0].video.pos).to.equal(1);
         });
 
+        it('should send correct bidfloor to PBS', function() {
+          createVideoBidderRequest();
+
+          bidderRequest.bids[0].params.floor = 0.1;
+          let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          expect(request.data.imp[0].bidfloor).to.equal(0.1);
+
+          bidderRequest.bids[0].params.floor = 5.5;
+          [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          expect(request.data.imp[0].bidfloor).to.equal(5.5);
+
+          bidderRequest.bids[0].params.floor = '1.7';
+          [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          expect(request.data.imp[0].bidfloor).to.equal(1.7);
+
+          bidderRequest.bids[0].params.floor = 0;
+          [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          expect(request.data.imp[0].bidfloor).to.equal(0.0);
+
+          bidderRequest.bids[0].params.floor = undefined;
+          [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          expect(request.data.imp[0].bidfloor).to.equal(0.0);
+
+          bidderRequest.bids[0].params.floor = null;
+          [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          expect(request.data.imp[0].bidfloor).to.equal(0.0);
+        });
+
         it('should send request with proper ad position when mediaTypes.video.pos is not defined', function () {
           createVideoBidderRequest();
           let positionBidderRequest = clone(bidderRequest);
