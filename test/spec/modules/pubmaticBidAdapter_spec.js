@@ -44,7 +44,8 @@ describe('PubMatic adapter', function () {
       placementCode: '/19968336/header-bid-tag-1',
       sizes: [
         [300, 250],
-        [300, 600]
+        [300, 600],
+        ['fluid']
       ],
       bidId: '23acc48ad47af5',
       requestId: '0fb4905b-9456-4152-86be-c6f6d259ba99',
@@ -519,9 +520,9 @@ describe('PubMatic adapter', function () {
         expect(data.imp[0].banner.w).to.equal(300); // width
         expect(data.imp[0].banner.h).to.equal(250); // height
 
-        /* case 3 - size passed in sizes but not in adslot */
+        /* case 3 - size passed in sizes but not in adslot , also if fluid is present it should be ignored */
         bidRequests[0].params.adSlot = '/15671365/DMDemo';
-        bidRequests[0].sizes = [[300, 250], [300, 600]];
+        bidRequests[0].sizes = [[300, 250], [300, 600], 'fluid'];
         request = spec.buildRequests(bidRequests);
         data = JSON.parse(request.data);
 
@@ -531,6 +532,14 @@ describe('PubMatic adapter', function () {
         expect(data.imp[0].banner.format[0]).exist.and.to.be.an('object');
         expect(data.imp[0].banner.format[0].w).to.equal(300); // width
         expect(data.imp[0].banner.format[0].h).to.equal(600); // height
+
+        expect(data.imp[0].banner.format[1]).to.deep.equal(undefined); // fluid size should not be present
+
+        /* case 4 when fluid is an array */
+        bidRequests[0].sizes = [[300, 250], [300, 600], ['fluid']];
+        request = spec.buildRequests(bidRequests);
+        data = JSON.parse(request.data);
+        expect(data.imp[0].banner.format[1]).to.deep.equal(undefined); // fluid size should not be present
       });
 
       it('Request params currency check', function () {
