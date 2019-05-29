@@ -176,7 +176,9 @@ function _parseAdSlot(bid) {
     }
     bid.params.width = parseInt(splits[0]);
     bid.params.height = parseInt(splits[1]);
-  } else if (bid.hasOwnProperty('mediaTypes') &&
+  }
+  // Case : if Size is present in ad slot as well as in mediaTypes then ???
+  if (bid.hasOwnProperty('mediaTypes') &&
          bid.mediaTypes.hasOwnProperty(BANNER) &&
           bid.mediaTypes.banner.hasOwnProperty('sizes')) {
     var i = 0;
@@ -190,9 +192,13 @@ function _parseAdSlot(bid) {
     if (bid.mediaTypes.banner.sizes.length >= 1) {
       // set the first size in sizes array in bid.params.width and bid.params.height. These will be sent as primary size.
       // The rest of the sizes will be sent in format array.
-      bid.params.width = bid.mediaTypes.banner.sizes[0][0];
-      bid.params.height = bid.mediaTypes.banner.sizes[0][1];
-      bid.mediaTypes.banner.sizes = bid.mediaTypes.banner.sizes.splice(1, bid.mediaTypes.banner.sizes.length - 1);
+      if (!bid.params.width && !bid.params.height) {
+        bid.params.width = bid.mediaTypes.banner.sizes[0][0];
+        bid.params.height = bid.mediaTypes.banner.sizes[0][1];
+        bid.mediaTypes.banner.sizes = bid.mediaTypes.banner.sizes.splice(1, bid.mediaTypes.banner.sizes.length - 1);
+      } else if (bid.params.width == bid.mediaTypes.banner.sizes[0][0] && bid.params.height == bid.mediaTypes.banner.sizes[0][1]) {
+        bid.mediaTypes.banner.sizes = bid.mediaTypes.banner.sizes.splice(1, bid.mediaTypes.banner.sizes.length - 1);
+      }
     }
   }
 }

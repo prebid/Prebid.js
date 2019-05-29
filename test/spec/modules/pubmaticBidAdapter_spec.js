@@ -1638,7 +1638,7 @@ describe('PubMatic adapter', function () {
         expect(data.banner.w).to.equal(300);
         expect(data.banner.h).to.equal(250);
         expect(data.banner.format).to.exist;
-        expect(data.banner.format.length).to.equal(bannerAndVideoBidRequests[0].mediaTypes.banner.sizes.length);
+        expect(data.banner.format.length).to.equal(bannerAndVideoBidRequests[0].mediaTypes.banner.sizes.length - 1);
 
         // Case: when size is not present in adslo
         bannerAndVideoBidRequests[0].params.adSlot = '/15671365/DMDemo';
@@ -1746,7 +1746,7 @@ describe('PubMatic adapter', function () {
         expect(data.banner.w).to.equal(300);
         expect(data.banner.h).to.equal(250);
         expect(data.banner.format).to.exist;
-        expect(data.banner.format.length).to.equal(bannerAndNativeBidRequests[0].mediaTypes.banner.sizes.length);
+        expect(data.banner.format.length).to.equal(bannerAndNativeBidRequests[0].mediaTypes.banner.sizes.length - 1);
 
         expect(data.native).to.exist;
         expect(data.native.request).to.exist;
@@ -1774,7 +1774,7 @@ describe('PubMatic adapter', function () {
         expect(data.banner.w).to.equal(300);
         expect(data.banner.h).to.equal(250);
         expect(data.banner.format).to.exist;
-        expect(data.banner.format.length).to.equal(bannerAndNativeBidRequests[0].mediaTypes.banner.sizes.length);
+        expect(data.banner.format.length).to.equal(bannerAndNativeBidRequests[0].mediaTypes.banner.sizes.length - 1);
 
         expect(data.video).to.exist;
         expect(data.video.w).to.equal(bannerAndVideoBidRequests[0].mediaTypes.video.playerSize[0]);
