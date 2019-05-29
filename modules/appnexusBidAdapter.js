@@ -273,6 +273,19 @@ export const spec = {
     }
 
     return params;
+  },
+
+  /**
+   * Add element selector to javascript tracker to improve native viewability
+   * @param {Bid} bid 
+   */
+  onBidWon: function(bid) {
+    if (bid.native) {
+      let viewJsPayload = bid.native.javascriptTrackers[1]; // see appnexusBidAdapter.newbid
+      let cssSelector = 'css_selector=.pb-click[pbadid=\'' + bid.adId + '\']';
+      let newViewJsPayload = viewJsPayload.replace('%native_dom_id%', ';' + cssSelector);
+      bid.native.javascriptTrackers[1] = newViewJsPayload;
+    }
   }
 }
 
@@ -423,7 +436,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
       displayUrl: nativeAd.displayurl,
       clickTrackers: nativeAd.link.click_trackers,
       impressionTrackers: nativeAd.impression_trackers,
-      javascriptTrackers: nativeAd.javascript_trackers
+      javascriptTrackers: [nativeAd.javascript_trackers, rtbBid.viewability.config]
     };
     if (nativeAd.main_img) {
       bid['native'].image = {
