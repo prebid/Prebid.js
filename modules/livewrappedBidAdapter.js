@@ -24,6 +24,7 @@ export const spec = {
    * seats:       List of bidders and seats           Optional. {"bidder name": ["seat 1", "seat 2"], ...}
    * deviceId:    Device id if available              Optional.
    * ifa:         Advertising ID                      Optional.
+   * options      Dynamic data                        Optional. Optional data to send into adapter.
    *
    * @param {BidRequest} bid The bid params to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
@@ -69,6 +70,7 @@ export const spec = {
       gdprApplies: bidderRequest.gdprConsent ? bidderRequest.gdprConsent.gdprApplies : undefined,
       gdprConsent: bidderRequest.gdprConsent ? bidderRequest.gdprConsent.consentString : undefined,
       cookieSupport: !utils.isSafariBrowser() && utils.cookiesAreEnabled(),
+      rcv: getAdblockerRecovered(),
       adRequests: [...adRequests]
     };
     const payloadString = JSON.stringify(payload);
@@ -178,7 +180,8 @@ function bidToAdRequest(bid) {
     callerAdUnitId: bid.params.adUnitName || bid.adUnitCode || bid.placementCode,
     bidId: bid.bidId,
     transactionId: bid.transactionId,
-    formats: bid.sizes.map(sizeToFormat)
+    formats: bid.sizes.map(sizeToFormat),
+    options: bid.params.options
   };
 }
 
@@ -187,6 +190,12 @@ function sizeToFormat(size) {
     width: size[0],
     height: size[1]
   }
+}
+
+function getAdblockerRecovered() {
+  try {
+    return utils.getWindowTop().I12C && utils.getWindowTop().I12C.Morph === 1;
+  } catch (e) {}
 }
 
 registerBidder(spec);

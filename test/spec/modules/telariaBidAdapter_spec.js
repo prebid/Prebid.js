@@ -27,6 +27,10 @@ const REQUEST = {
 const BIDDER_REQUEST = {
   'refererInfo': {
     'referer': 'www.test.com'
+  },
+  'gdprConsent': {
+    'consentString': 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==',
+    'gdprApplies': true
   }
 };
 

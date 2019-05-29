@@ -25,6 +25,7 @@ var sizeMap = {
   14: '250x250',
   15: '300x250',
   16: '336x280',
+  17: '240x400',
   19: '300x100',
   31: '980x120',
   32: '250x360',
@@ -79,7 +80,8 @@ var sizeMap = {
   214: '980x360',
   229: '320x180',
   232: '580x400',
-  257: '400x600'
+  257: '400x600',
+  265: '1920x1080'
 };
 utils._each(sizeMap, (item, key) => sizeMap[item] = key);
 
@@ -132,6 +134,7 @@ export const spec = {
         },
         tmax: config.getConfig('TTL') || 1000,
         imp: [{
+          bidfloor: utils.deepAccess(bidRequest, 'params.floor') ? parseFloat(bidRequest.params.floor) : 0.0,
           exp: 300,
           id: bidRequest.adUnitCode,
           secure: isSecure() || bidRequest.params.secure ? 1 : 0,
@@ -151,7 +154,7 @@ export const spec = {
               includewinners: true,
               // includebidderkeys always false for openrtb
               includebidderkeys: false,
-              priceGranularity: getPriceGranularity(config)
+              pricegranularity: getPriceGranularity(config)
             }
           }
         }
@@ -232,30 +235,30 @@ export const spec = {
         return groupedBids;
       }, {});
 
-      requests = videoRequests.concat(Object.keys(groupedBidRequests).map(bidGroupKey => {
-        let bidsInGroup = groupedBidRequests[bidGroupKey];
+      // fastlane SRA has a limit of 10 slots
+      const SRA_BID_LIMIT = 10;
 
-        // fastlane SRA has a limit of 10 slots
-        if (bidsInGroup.length > 10) {
-          utils.logWarn(`Rubicon bid adapter Warning: single request mode has a limit of 10 bids: ${bidsInGroup.length - 10} bids were not sent`);
-          bidsInGroup = bidsInGroup.slice(0, 10);
-        }
+      // multiple requests are used if bids groups have more than 10 bids
+      requests = videoRequests.concat(Object.keys(groupedBidRequests).reduce((aggregate, bidGroupKey) => {
+        // for each partioned bidGroup, append a bidRequest to requests list
+        partitionArray(groupedBidRequests[bidGroupKey], SRA_BID_LIMIT).forEach(bidsInGroup => {
+          const combinedSlotParams = spec.combineSlotUrlParams(bidsInGroup.map(bidRequest => {
+            return spec.createSlotParams(bidRequest, bidderRequest);
+          }));
 
-        const combinedSlotParams = spec.combineSlotUrlParams(bidsInGroup.map(bidRequest => {
-          return spec.createSlotParams(bidRequest, bidderRequest);
-        }));
-
-        // SRA request returns grouped bidRequest arrays not a plain bidRequest
-        return {
-          method: 'GET',
-          url: FASTLANE_ENDPOINT,
-          data: spec.getOrderedParams(combinedSlotParams).reduce((paramString, key) => {
-            const propValue = combinedSlotParams[key];
-            return ((utils.isStr(propValue) && propValue !== '') || utils.isNumber(propValue)) ? `${paramString}${key}=${encodeURIComponent(propValue)}&` : paramString;
-          }, '') + `slots=${bidsInGroup.length}&rand=${Math.random()}`,
-          bidRequest: bidsInGroup,
-        };
-      }));
+          // SRA request returns grouped bidRequest arrays not a plain bidRequest
+          aggregate.push({
+            method: 'GET',
+            url: FASTLANE_ENDPOINT,
+            data: spec.getOrderedParams(combinedSlotParams).reduce((paramString, key) => {
+              const propValue = combinedSlotParams[key];
+              return ((utils.isStr(propValue) && propValue !== '') || utils.isNumber(propValue)) ? `${paramString}${key}=${encodeURIComponent(propValue)}&` : paramString;
+            }, '') + `slots=${bidsInGroup.length}&rand=${Math.random()}`,
+            bidRequest: bidsInGroup
+          });
+        });
+        return aggregate;
+      }, []));
     }
     return requests;
   },
@@ -265,6 +268,7 @@ export const spec = {
     const containsTgI = /^tg_i/
 
     const orderedParams = [
+      'tpid_tdid',
       'account_id',
       'site_id',
       'zone_id',
@@ -366,6 +370,10 @@ export const spec = {
       'tg_fl.eid': bidRequest.code,
       'rf': _getPageUrl(bidRequest, bidderRequest)
     };
+
+    if ((bidRequest.userId || {}).tdid) {
+      data['tpid_tdid'] = bidRequest.userId.tdid;
+    }
 
     if (bidderRequest.gdprConsent) {
       // add 'gdpr' only if 'gdprApplies' is defined
@@ -890,6 +898,16 @@ export function hasValidVideoParams(bid) {
     }
   })
   return isValid;
+}
+
+/**
+ * split array into multiple arrays of defined size
+ * @param {Array} array
+ * @param {number} size
+ * @returns {Array}
+ */
+function partitionArray(array, size) {
+  return array.map((e, i) => (i % size === 0) ? array.slice(i, i + size) : null).filter((e) => e)
 }
 
 var hasSynced = false;

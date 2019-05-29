@@ -33,31 +33,29 @@ export const spec = {
     const site = { id: params.player_id, domain: document.domain };
     const device = { ua: navigator.userAgent, ip: '' };
     const user = { id: getUserID() }
-    const cur = [ CURRENCY ];
+    const currency = CURRENCY;
     const tmax = bidderRequest.timeout;
 
     const imp = bidRequests.map(req => {
       const banner = { 'format': getFormats(utils.deepAccess(req, 'mediaTypes.banner.sizes')) };
-      const bidfloor = params.bidfloor !== undefined
-        ? Number(params.bidfloor) : 1;
-      const bidfloorcur = CURRENCY;
+      const bidfloor = params.bidfloor;
       const bidId = req.bidId;
 
       return {
         bidId,
         banner,
         bidfloor,
-        bidfloorcur,
       };
     });
 
     const payload = {
+      version: '$prebid.version$',
       at,
       site,
       device,
       user,
       imp,
-      cur,
+      currency,
       tmax,
     };
 
@@ -111,24 +109,33 @@ export const spec = {
     const syncs = [];
     if (syncOptions.pixelEnabled) {
       resps.forEach(() => {
-        const uuid = getUserID();
-        const syncUrl = SYNC_URL;
-        let params = '';
-        if (gdprConsent && typeof gdprConsent.consentString === 'string') {
-          if (typeof gdprConsent.gdprApplies === 'boolean') {
-            params += `?gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
-          } else {
-            params += `?gdpr_consent=${gdprConsent.consentString}`;
-          }
-        }
-        syncs.push({
-          type: 'image',
-          url: syncUrl.replace('{UUID}', uuid) + params,
-        });
+        syncs.push(getSync('image', gdprConsent));
+      });
+    }
+    if (syncOptions.iframeEnabled) {
+      resps.forEach(() => {
+        syncs.push(getSync('iframe', gdprConsent));
       });
     }
     return syncs;
   }
+}
+
+const getSync = (type, gdprConsent) => {
+  const uuid = getUserID();
+  const syncUrl = SYNC_URL;
+  let params = '&type=' + type;
+  if (gdprConsent && typeof gdprConsent.consentString === 'string') {
+    if (typeof gdprConsent.gdprApplies === 'boolean') {
+      params += `&gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
+    } else {
+      params += `&gdpr_consent=${gdprConsent.consentString}`;
+    }
+  }
+  return {
+    type: type,
+    url: syncUrl.replace('{UUID}', uuid) + params,
+  };
 }
 
 const getUserID = () => {
