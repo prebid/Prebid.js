@@ -7,7 +7,7 @@ import {logError, logInfo} from '../src/utils';
 const utils = require('../src/utils');
 const analyticsType = 'endpoint';
 
-export const ANALYTICS_VERSION = '0.2.2-beta';
+export const ANALYTICS_VERSION = '1.0.0';
 
 const DEFAULT_SERVER = 'https://prebid-analytics.c.appier.net/v1';
 
@@ -26,7 +26,7 @@ export const BIDDER_STATUS = {
   TIMEOUT: 'timeout'
 };
 
-const getCpmInUsd = function (bid) {
+export const getCpmInUsd = function (bid) {
   if (bid.currency === 'USD') {
     return bid.cpm;
   } else {
@@ -36,12 +36,12 @@ const getCpmInUsd = function (bid) {
 
 const analyticsOptions = {};
 
-const parseBidderCode = function (bid) {
+export const parseBidderCode = function (bid) {
   let bidderCode = bid.bidderCode || bid.bidder;
   return bidderCode.toLowerCase();
 };
 
-const parseAdUnitCode = function (bidResponse) {
+export const parseAdUnitCode = function (bidResponse) {
   return bidResponse.adUnitCode.toLowerCase();
 };
 
@@ -75,11 +75,11 @@ export const appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, ana
     analyticsOptions.configId = config.options.configId;
     analyticsOptions.server = config.options.server || DEFAULT_SERVER;
 
-    analyticsOptions.sampled = true; // Default is to collect bids data
+    analyticsOptions.sampled = true;
     if (typeof config.options.sampling === 'number') {
       analyticsOptions.sampled = Math.random() < parseFloat(config.options.sampling);
     }
-    analyticsOptions.adSampled = false; // Default is *NOT* to collect creative
+    analyticsOptions.adSampled = false;
     if (typeof config.options.adSampling === 'number') {
       analyticsOptions.adSampled = Math.random() < parseFloat(config.options.adSampling);
     }
@@ -191,13 +191,10 @@ export const appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, ana
   handleAuctionEnd(auctionEndArgs) {
     const cachedAuction = this.getCachedAuction(auctionEndArgs.auctionId);
     const highestCpmBids = pbjs.getHighestCpmBids();
-
     this.sendEventMessage('bid',
       this.createBidMessage(auctionEndArgs, highestCpmBids, cachedAuction.timeoutBids)
     );
-
     if (analyticsOptions.adSampled) {
-      // FIXME: do not send the message if there are no creatives at all to safe bandwidth
       this.sendEventMessage('cr',
         this.createCreativeMessage(auctionEndArgs.auctionId, auctionEndArgs.bidsReceived)
       );
