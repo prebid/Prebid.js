@@ -189,6 +189,12 @@ export const spec = {
     const bids = [];
 
     if (serverResponse.body && typeof serverResponse.body === 'object') {
+
+      if (serverResponse.body.tep !== undefined) {
+        fetch(serverResponse.body.tep);
+      }
+
+
       serverResponse.body.bids.forEach(bidResponse => {
         const cpm = bidResponse.cpm;
 
