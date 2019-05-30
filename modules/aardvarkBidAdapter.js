@@ -25,8 +25,9 @@ export const spec = {
     var auctionCodes = [];
     var requests = [];
     var requestsMap = {};
-    var referer = utils.getTopWindowUrl();
+    var referer = bidderRequest.refererInfo.referer;
     var pageCategories = [];
+    var tdId = '';
 
     // This reference to window.top can cause issues when loaded in an iframe if not protected with a try/catch.
     try {
@@ -34,6 +35,10 @@ export const spec = {
         pageCategories = window.top.rtkcategories;
       }
     } catch (e) {}
+
+    if (utils.isStr(utils.deepAccess(validBidRequests, '0.userId.tdid'))) {
+      tdId = validBidRequests[0].userId.tdid;
+    }
 
     utils._each(validBidRequests, function(b) {
       var rMap = requestsMap[b.params.ai];
@@ -47,6 +52,10 @@ export const spec = {
           },
           endpoint: DEFAULT_ENDPOINT
         };
+
+        if (tdId) {
+          rMap.payload.tdid = tdId;
+        }
 
         if (pageCategories && pageCategories.length) {
           rMap.payload.categories = pageCategories.slice(0);
@@ -122,6 +131,10 @@ export const spec = {
 
       if (rawBid.hasOwnProperty('dealId')) {
         bidResponse.dealId = rawBid.dealId
+      }
+
+      if (rawBid.hasOwnProperty('ex')) {
+        bidResponse.ex = rawBid.ex;
       }
 
       switch (rawBid.media) {

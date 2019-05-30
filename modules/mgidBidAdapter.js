@@ -2,6 +2,7 @@ import {registerBidder} from 'src/adapters/bidderFactory';
 import * as utils from '../src/utils';
 import * as urlUtils from '../src/url';
 import {BANNER, NATIVE} from 'src/mediaTypes';
+import {config} from '../src/config';
 const DEFAULT_CUR = 'USD';
 const BIDDER_CODE = 'mgid';
 const ENDPOINT_URL = 'https://prebid.mgid.com/prebid/';
@@ -59,7 +60,7 @@ utils._each(NATIVE_ASSETS, anAsset => { _NATIVE_ASSET_ID_TO_KEY_MAP[anAsset.ID] 
 utils._each(NATIVE_ASSETS, anAsset => { _NATIVE_ASSET_KEY_TO_ASSET_MAP[anAsset.KEY] = anAsset });
 
 export const spec = {
-  VERSION: '1.1',
+  VERSION: '1.2',
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, NATIVE],
   reId: /^[0-9]+$/,
@@ -126,6 +127,7 @@ export const spec = {
     if (utils.isStr(muid) && muid.length > 0) {
       url += '?muid=' + muid;
     }
+    const cur = [config.getConfig('currency.adServerCurrency') || setOnAny(validBidRequests, 'params.currency') || setOnAny(validBidRequests, 'params.cur') || DEFAULT_CUR];
     const page = utils.deepAccess(bidderRequest, 'refererInfo.canonicalUrl') || referer;
     const secure = window.location.protocol === 'https:' ? 1 : 0;
     let imp = [];
@@ -177,7 +179,7 @@ export const spec = {
     let request = {
       id: utils.deepAccess(bidderRequest, 'bidderRequestId'),
       site: { domain, page },
-      cur: [setOnAny(validBidRequests, 'params.currency') || setOnAny(validBidRequests, 'params.cur') || DEFAULT_CUR],
+      cur: cur,
       device: {
         ua: navigator.userAgent,
         js: 1,
