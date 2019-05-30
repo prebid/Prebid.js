@@ -1,6 +1,8 @@
 import {registerBidder} from 'src/adapters/bidderFactory';
 import includes from 'core-js/library/fn/array/includes';
 import find from 'core-js/library/fn/array/find';
+import {ajax} from 'src/ajax';
+
 
 const utils = require('src/utils');
 const url = require('src/url');
@@ -191,16 +193,8 @@ export const spec = {
     if (serverResponse.body && typeof serverResponse.body === 'object') {
 
       if (serverResponse.body.tep !== undefined) {
-        fetch(serverResponse.body.tep).then(res =>  {
-          if(res.ok) {
-            return res;
-          } else {
-            throw Error(`Request rejected with status ${res.status}`);
-          }
-        })
-        .catch(console.error)
+        ajax(serverResponse.body.tep, () => {});
     }
-
 
       serverResponse.body.bids.forEach(bidResponse => {
         const cpm = bidResponse.cpm;
