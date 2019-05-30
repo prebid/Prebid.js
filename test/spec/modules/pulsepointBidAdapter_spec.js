@@ -48,10 +48,28 @@ describe('PulsePoint Adapter Tests', function () {
       }
     }
   }];
+  const videoSlotConfig = [{
+    placementCode: '/DfpAccount1/slotVideo',
+    bidId: 'bid12345',
+    params: {
+      cp: 'p10000',
+      ct: 't10000',
+      video: {
+        w: 400,
+        h: 300,
+        minduration: 5,
+        maxduration: 10,
+        startdelay: 0,
+        skip: 1,
+        minbitrate: 200,
+        protocols: [1, 2, 4]
+      }
+    }
+  }];
 
   it('Verify build request', function () {
     const request = spec.buildRequests(slotConfigs);
-    expect(request.url).to.equal('//bid.contextweb.com/header/ortb');
+    expect(request.url).to.equal('https://bid.contextweb.com/header/ortb?src=prebid');
     expect(request.method).to.equal('POST');
     const ortbRequest = JSON.parse(request.data);
     // site object
@@ -139,7 +157,7 @@ describe('PulsePoint Adapter Tests', function () {
 
   it('Verify Native request', function () {
     const request = spec.buildRequests(nativeSlotConfig);
-    expect(request.url).to.equal('//bid.contextweb.com/header/ortb');
+    expect(request.url).to.equal('https://bid.contextweb.com/header/ortb?src=prebid');
     expect(request.method).to.equal('POST');
     const ortbRequest = JSON.parse(request.data);
     // native impression
@@ -177,7 +195,7 @@ describe('PulsePoint Adapter Tests', function () {
 
   it('Verify Native response', function () {
     const request = spec.buildRequests(nativeSlotConfig);
-    expect(request.url).to.equal('//bid.contextweb.com/header/ortb');
+    expect(request.url).to.equal('https://bid.contextweb.com/header/ortb?src=prebid');
     expect(request.method).to.equal('POST');
     const ortbRequest = JSON.parse(request.data);
     const nativeResponse = {
@@ -229,8 +247,9 @@ describe('PulsePoint Adapter Tests', function () {
   });
 
   it('Verifies supported media types', function () {
-    expect(spec.supportedMediaTypes).to.have.lengthOf(2);
+    expect(spec.supportedMediaTypes).to.have.lengthOf(3);
     expect(spec.supportedMediaTypes[1]).to.equal('native');
+    expect(spec.supportedMediaTypes[2]).to.equal('video');
   });
 
   it('Verifies if bid request valid', function () {
@@ -283,7 +302,7 @@ describe('PulsePoint Adapter Tests', function () {
       }
     };
     const request = spec.buildRequests(slotConfigs, bidderRequest);
-    expect(request.url).to.equal('//bid.contextweb.com/header/ortb');
+    expect(request.url).to.equal('https://bid.contextweb.com/header/ortb?src=prebid');
     expect(request.method).to.equal('POST');
     const ortbRequest = JSON.parse(request.data);
     // user object
@@ -294,5 +313,49 @@ describe('PulsePoint Adapter Tests', function () {
     expect(ortbRequest.regs).to.not.equal(null);
     expect(ortbRequest.regs.ext).to.not.equal(null);
     expect(ortbRequest.regs.ext.gdpr).to.equal(1);
+  });
+
+  it('Verify Video request', function () {
+    const request = spec.buildRequests(videoSlotConfig);
+    expect(request.url).to.equal('https://bid.contextweb.com/header/ortb?src=prebid');
+    expect(request.method).to.equal('POST');
+    const ortbRequest = JSON.parse(request.data);
+    expect(ortbRequest).to.not.equal(null);
+    expect(ortbRequest.imp).to.have.lengthOf(1);
+    expect(ortbRequest.imp[0].video).to.not.be.null;
+    expect(ortbRequest.imp[0].native).to.be.null;
+    expect(ortbRequest.imp[0].banner).to.be.null;
+    expect(ortbRequest.imp[0].video.w).to.equal(400);
+    expect(ortbRequest.imp[0].video.h).to.equal(300);
+    expect(ortbRequest.imp[0].video.minduration).to.equal(5);
+    expect(ortbRequest.imp[0].video.maxduration).to.equal(10);
+    expect(ortbRequest.imp[0].video.startdelay).to.equal(0);
+    expect(ortbRequest.imp[0].video.skip).to.equal(1);
+    expect(ortbRequest.imp[0].video.minbitrate).to.equal(200);
+    expect(ortbRequest.imp[0].video.protocols).to.eql([1, 2, 4]);
+  });
+
+  it('Verify Video response', function () {
+    const request = spec.buildRequests(videoSlotConfig);
+    expect(request.url).to.equal('https://bid.contextweb.com/header/ortb?src=prebid');
+    expect(request.method).to.equal('POST');
+    const ortbRequest = JSON.parse(request.data);
+    const ortbResponse = {
+      seatbid: [{
+        bid: [{
+          impid: ortbRequest.imp[0].id,
+          price: 1.25,
+          adm: '<VAST><Creative>http://pulsepoint.video.mp4</Creative></VAST>'
+        }]
+      }]
+    };
+    const bids = spec.interpretResponse({ body: ortbResponse }, request);
+    const bid = bids[0];
+    expect(bid.cpm).to.equal(1.25);
+    expect(bid.adId).to.equal('bid12345');
+    expect(bid.ad).to.be.undefined;
+    expect(bid['native']).to.be.undefined;
+    expect(bid.mediaType).to.equal('video');
+    expect(bid.vastXml).to.equal(ortbResponse.seatbid[0].bid[0].adm);
   });
 });

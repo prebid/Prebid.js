@@ -19,7 +19,7 @@ const DEFAULT_NET_REVENUE = true;
  * Contact: ExchangeTeam@pulsepoint.com
  *
  * Aliases - pulseLite and pulsepointLite are supported for backwards compatibility.
- * Formats - Display/Native/Outstream formats supported.
+ * Formats - Display/Native/Video formats supported.
  *
  */
 export const spec = {
@@ -28,7 +28,7 @@ export const spec = {
 
   aliases: ['pulseLite', 'pulsepointLite'],
 
-  supportedMediaTypes: ['banner', 'native'],
+  supportedMediaTypes: ['banner', 'native', 'video'],
 
   isBidRequestValid: bid => (
     !!(bid && bid.params && bid.params.cp && bid.params.ct)
@@ -45,7 +45,7 @@ export const spec = {
     applyGdpr(bidderRequest, request);
     return {
       method: 'POST',
-      url: '//bid.contextweb.com/header/ortb',
+      url: 'https://bid.contextweb.com/header/ortb?src=prebid',
       data: JSON.stringify(request),
     };
   },
@@ -109,6 +109,11 @@ function bidResponseAvailable(bidRequest, bidResponse) {
       if (idToImpMap[id]['native']) {
         bid['native'] = nativeResponse(idToImpMap[id], idToBidMap[id]);
         bid.mediaType = 'native';
+      } else if (idToImpMap[id].video) {
+        bid.vastXml = idToBidMap[id].adm;
+        bid.mediaType = 'video';
+        bid.width = idToBidMap[id].w;
+        bid.height = idToBidMap[id].h;
       } else {
         bid.ad = idToBidMap[id].adm;
         bid.width = idToImpMap[id].banner.w;
@@ -138,6 +143,7 @@ function impression(slot) {
     banner: banner(slot),
     'native': nativeImpression(slot),
     tagid: slot.params.ct.toString(),
+    video: video(slot)
   };
 }
 
@@ -146,10 +152,20 @@ function impression(slot) {
  */
 function banner(slot) {
   const size = adSize(slot);
-  return slot.nativeParams ? null : {
+  return (slot.nativeParams || slot.params.video) ? null : {
     w: size[0],
     h: size[1],
   };
+}
+
+/**
+ *
+ */
+function video(slot) {
+  if (slot.params.video) {
+    return slot.params.video;
+  }
+  return null;
 }
 
 /**

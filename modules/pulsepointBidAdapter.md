@@ -7,7 +7,7 @@
 # Description
 
 Connects to PulsePoint demand source to fetch bids.  
-Banner, Outstream and Native formats are supported.  
+Banner, Video and Native formats are supported.  
 Please use ```pulsepoint``` as the bidder code.
 ```pulseLite``` and ```pulsepointLite``` aliases also supported as well.
 
