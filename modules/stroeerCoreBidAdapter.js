@@ -191,7 +191,9 @@ export const spec = {
     if (serverResponse.body && typeof serverResponse.body === 'object') {
 
       if (serverResponse.body.tep !== undefined) {
-        fetch(serverResponse.body.tep);
+        fetch(serverResponse.body.tep)
+          .then(result => console.log("Successful endpoint call:", result))
+          .catch(error => console.log("Error calling endpoint: ", error));
       }
 
 
