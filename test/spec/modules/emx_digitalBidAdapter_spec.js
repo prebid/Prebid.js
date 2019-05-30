@@ -138,9 +138,32 @@ describe('emx_digital Adapter', function () {
         'auctionId': '1d1a01234a475'
       };
 
+      let outstreamBid = {
+        'bidder': 'emx_digital',
+        'params': {
+          'tagid': '25251',
+          'video': {}
+        },
+        'mediaTypes': {
+          'video': {
+            'context': 'outstream',
+            'playerSize': [640, 480]
+          }
+        },
+        'adUnitCode': 'adunit-code',
+        'sizes': [
+          [300, 250],
+          [300, 600]
+        ],
+        'bidId': '30b31c2501de1e',
+        'bidderRequestId': '22edbae3120bf6',
+        'auctionId': '1d1a01234a475'
+      };
+
       it('should return true when required params found', function () {
         expect(spec.isBidRequestValid(bid)).to.equal(true);
         expect(spec.isBidRequestValid(noInstreamBid)).to.equal(false);
+        expect(spec.isBidRequestValid(outstreamBid)).to.equal(true);
       });
 
       it('should contain tagid param', function () {
@@ -283,8 +306,24 @@ describe('emx_digital Adapter', function () {
       let request = spec.buildRequests(bidRequestWithVideo, bidderRequest);
       const data = JSON.parse(request.data);
       expect(data.imp[0].video).to.exist.and.to.be.a('object');
-      expect(data.imp[0].video.h).to.equal(bidRequestWithVideo[0].mediaTypes.video.playerSize[0][1]);
-      expect(data.imp[0].video.w).to.equal(bidRequestWithVideo[0].mediaTypes.video.playerSize[0][0]);
+      expect(data.imp[0].video.h).to.equal(bidRequestWithVideo[0].mediaTypes.video.playerSize[0][0]);
+      expect(data.imp[0].video.w).to.equal(bidRequestWithVideo[0].mediaTypes.video.playerSize[0][1]);
+    });
+
+    it('builds correctly formatted request video object for outstream', function () {
+      let bidRequestWithOutstreamVideo = utils.deepClone(bidderRequest.bids);
+      bidRequestWithOutstreamVideo[0].mediaTypes = {
+        video: {
+          context: 'outstream',
+          playerSize: [640, 480]
+        },
+      };
+      bidRequestWithOutstreamVideo[0].params.video = {};
+      let request = spec.buildRequests(bidRequestWithOutstreamVideo, bidderRequest);
+      const data = JSON.parse(request.data);
+      expect(data.imp[0].video).to.exist.and.to.be.a('object');
+      expect(data.imp[0].video.h).to.equal(bidRequestWithOutstreamVideo[0].mediaTypes.video.playerSize[0][0]);
+      expect(data.imp[0].video.w).to.equal(bidRequestWithOutstreamVideo[0].mediaTypes.video.playerSize[0][1]);
     });
 
     it('shouldn\'t contain a user obj without GDPR information', function () {
@@ -452,6 +491,7 @@ describe('emx_digital Adapter', function () {
       expect(ad1.vastXml).to.equal(serverResponse.seatbid[1].bid[0].adm);
       expect(ad1.ad).to.exist.and.to.be.a('string');
     });
+
     it('handles nobid responses', function () {
       let serverResponse = {
         'bids': []
@@ -464,10 +504,10 @@ describe('emx_digital Adapter', function () {
     });
   });
 
-  describe('getUserSyncs', function() {
+  describe('getUserSyncs', function () {
     let syncOptionsIframe = { iframeEnabled: true };
     let syncOptionsPixel = { pixelEnabled: true };
-    it('Should push the correct sync type depending on the config', function() {
+    it('Should push the correct sync type depending on the config', function () {
       let iframeSync = spec.getUserSyncs(syncOptionsIframe);
       expect(iframeSync.length).to.equal(1);
       expect(iframeSync[0].type).to.equal('iframe');

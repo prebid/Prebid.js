@@ -84,7 +84,7 @@ export const spec = {
       utils.logError(errorMessage);
     } else if (bidResult.seatbid && bidResult.seatbid.length > 0) {
       bidResult.seatbid[0].bid.forEach(tag => {
-        bids.push(createBid(STATUS.GOOD, bidderRequest, tag, width, height, bidResult.seatbid[0].seat.toLowerCase()));
+        bids.push(createBid(STATUS.GOOD, bidderRequest, tag, width, height, BIDDER_CODE));
       });
     }
 
