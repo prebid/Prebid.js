@@ -191,10 +191,15 @@ export const spec = {
     if (serverResponse.body && typeof serverResponse.body === 'object') {
 
       if (serverResponse.body.tep !== undefined) {
-        fetch(serverResponse.body.tep)
-          .then(result => console.log("Successful endpoint call:", result))
-          .catch(error => console.log("Error calling endpoint: ", error));
-      }
+        fetch(serverResponse.body.tep).then(res =>  {
+          if(res.ok) {
+            return res;
+          } else {
+            throw Error(`Request rejected with status ${res.status}`);
+          }
+        })
+        .catch(console.error)
+    }
 
 
       serverResponse.body.bids.forEach(bidResponse => {
