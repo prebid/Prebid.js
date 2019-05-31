@@ -158,6 +158,10 @@ export const spec = {
           }
         }
       }
+      const bidFloor = parseFloat(utils.deepAccess(bidRequest, 'params.floor'));
+      if (!isNaN(bidFloor)) {
+        data.imp[0].bidfloor = bidFloor;
+      }
       // if value is set, will overwrite with same value
       data.imp[0].ext.rubicon.video.size_id = determineRubiconVideoSizeId(bidRequest)
 
