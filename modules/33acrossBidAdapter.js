@@ -53,7 +53,11 @@ function getAdSlotHTMLElement(adUnitCode) {
   let element = document.getElementById(adUnitCode);
 
   if (element === null) {
-    element = document.getElementById(mapAdSlotPathToElementId(adUnitCode));
+    const id = mapAdSlotPathToElementId(adUnitCode);
+
+    element = document.getElementById(id);
+
+    utils.logInfo(`Trying to map ad unit path to HTML element id: '${adUnitCode}' -> '${id}'`);
   }
 
   return element;
@@ -75,7 +79,7 @@ function _createServerRequest(bidRequest, gdprConsent) {
   const contributeViewability = ViewabilityContributor(viewabilityAmount);
 
   if (element === null) {
-    utils.logWarn(`Unable to locate element with id: '${bidRequest.adUnitCode}'`);
+    utils.logWarn(`[33Across Adapter] Unable to locate element with id: '${bidRequest.adUnitCode}'`);
   }
 
   /*
@@ -289,6 +293,8 @@ function buildRequests(bidRequests, bidderRequest) {
   const gdprConsent = Object.assign({ consentString: undefined, gdprApplies: false }, bidderRequest && bidderRequest.gdprConsent);
 
   adapterState.uniqueSiteIds = bidRequests.map(req => req.params.siteId).filter(utils.uniques);
+
+  util.logInfo('[33Across Adapter] buildRequests():', bidRequests);
 
   return bidRequests.map(req => _createServerRequest(req, gdprConsent));
 }
