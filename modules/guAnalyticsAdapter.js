@@ -64,6 +64,17 @@ let analyticsAdapter = Object.assign(adapter({analyticsType}),
     }
   });
 
+function getBidderCode(args) {
+  if (args.bidderCode === 'ozone') {
+    if (args.adserverTargeting && args.adserverTargeting.oz_winner) {
+      return `${args.bidderCode}-${args.adserverTargeting.oz_winner}`;
+    } else {
+      return `${args.bidderCode}-unknown`;
+    }
+  }
+  return args.bidderCode;
+}
+
 function buildRequestTemplate(options) {
   return {
     v: VERSION,
@@ -126,7 +137,7 @@ function trackBidRequest(args) {
 function trackBidResponse(args) {
   if (args.statusMessage === 'Bid available') {
     const event = {ev: 'response'};
-    setSafely(event, 'n', args.bidderCode);
+    setSafely(event, 'n', getBidderCode(args));
     setSafely(event, 'bid', args.requestId);
     setSafely(event, 'sid', args.adUnitCode);
     setSafely(event, 'cpm', args.cpm);
