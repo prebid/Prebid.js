@@ -1,7 +1,6 @@
+import { registerBidder } from '../src/adapters/bidderFactory';
+import { config } from '../src/config';
 import * as utils from '../src/utils';
-
-const { registerBidder } = require('../src/adapters/bidderFactory');
-const { config } = require('../src/config');
 
 const BIDDER_CODE = '33across';
 const END_POINT = 'https://ssc.33across.com/api/v1/hb';
@@ -37,12 +36,35 @@ function _getViewability(element, topWin, { w, h } = {}) {
     : 0;
 }
 
+function mapAdSlotPathToElementId(path) {
+  if (utils.isGptPubadsDefined()) {
+    const isMatchingAdSlot = utils.isSlotMatchingAdUnitCode(path);
+    const matchingAdSlot = window.googletag.pubads().getSlots().filter(isMatchingAdSlot)[0];
+
+    if (matchingAdSlot) {
+      return matchingAdSlot.getSlotElementId();
+    }
+  }
+
+  return null;
+}
+
+function getAdSlotHTMLElement(adUnitCode) {
+  let element = document.getElementById(adUnitCode);
+
+  if (element === null) {
+    element = document.getElementById(mapAdSlotPathToElementId(adUnitCode));
+  }
+
+  return element;
+}
+
 // Infer the necessary data from valid bid for a minimal ttxRequest and create HTTP request
 // NOTE: At this point, TTX only accepts request for a single impression
 function _createServerRequest(bidRequest, gdprConsent) {
   const ttxRequest = {};
   const params = bidRequest.params;
-  const element = document.getElementById(bidRequest.adUnitCode);
+  const element = getAdSlotHTMLElement(bidRequest.adUnitCode);
   const sizes = _transformSizes(bidRequest.sizes);
   const minSize = _getMinSize(sizes);
 
@@ -268,9 +290,7 @@ function buildRequests(bidRequests, bidderRequest) {
 
   adapterState.uniqueSiteIds = bidRequests.map(req => req.params.siteId).filter(utils.uniques);
 
-  return bidRequests.map((req) => {
-    return _createServerRequest(req, gdprConsent);
-  });
+  return bidRequests.map(req => _createServerRequest(req, gdprConsent));
 }
 
 // NOTE: At this point, the response from 33exchange will only ever contain one bid i.e. the highest bid
