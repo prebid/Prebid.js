@@ -1,9 +1,11 @@
-import analyticsAdapter, {AnalyticsQueue} from 'modules/guAnalyticsAdapter';
+import analyticsAdapter, {AnalyticsQueue, _} from 'modules/guAnalyticsAdapter';
 import {expect} from 'chai';
 import adapterManager from 'src/adapterManager';
 import CONSTANTS from 'src/constants.json';
 
 const events = require('../../../src/events');
+
+const { getBidderCode } = _;
 
 describe('Gu analytics adapter', () => {
   let sandbox;
@@ -382,5 +384,50 @@ describe('Gu analytics adapter', () => {
       aid: 'bc1becdf-bbe5-4280-9427-8cc66d196e15',
       bid: '24a5288f9d6d6b'
     }]);
+  });
+});
+
+describe('getBidderCode', () => {
+  it('Should return back same bidderCode when not ozone', () => {
+    const appnexusArgs = {
+      bidderCode: 'appnexus',
+    };
+    expect(getBidderCode(appnexusArgs)).to.be.equal(appnexusArgs.bidderCode);
+  });
+
+  it('Should return ozone-unknown for ozone without adserverTargeting', () => {
+    const ozoneArgs = {
+      bidderCode: 'ozone',
+    };
+    expect(getBidderCode(ozoneArgs)).to.be.equal(`${ozoneArgs.bidderCode}-unknown`);
+  });
+
+  it('Should return ozone-unknown for ozone without oz_bidder', () => {
+    const ozoneArgs = {
+      bidderCode: 'ozone',
+      adserverTargeting: {
+      },
+    };
+    expect(getBidderCode(ozoneArgs)).to.be.equal(`${ozoneArgs.bidderCode}-unknown`);
+  });
+
+  it('Should return ozone-unknown for ozone with bad oz_bidder', () => {
+    const ozoneArgs = {
+      bidderCode: 'ozone',
+      adserverTargeting: {
+        oz_winner: ['what'],
+      },
+    };
+    expect(getBidderCode(ozoneArgs)).to.be.equal(`${ozoneArgs.bidderCode}-unknown`);
+  });
+
+  it('Should return ozone-openx for ozone with oz_winner openx', () => {
+    const ozoneArgs = {
+      bidderCode: 'ozone',
+      adserverTargeting: {
+        oz_winner: 'openx',
+      },
+    };
+    expect(getBidderCode(ozoneArgs)).to.be.equal(`${ozoneArgs.bidderCode}-openx`);
   });
 });

@@ -66,7 +66,9 @@ let analyticsAdapter = Object.assign(adapter({analyticsType}),
 
 function getBidderCode(args) {
   if (args.bidderCode === 'ozone') {
-    if (args.adserverTargeting && args.adserverTargeting.oz_winner) {
+    if (args.adserverTargeting &&
+      args.adserverTargeting.oz_winner &&
+      typeof args.adserverTargeting.oz_winner === 'string') {
       return `${args.bidderCode}-${args.adserverTargeting.oz_winner}`;
     } else {
       return `${args.bidderCode}-unknown`;
@@ -248,3 +250,7 @@ adapterManager.registerAnalyticsAdapter({
 });
 
 export default analyticsAdapter;
+
+export const _ = {
+  getBidderCode
+};
