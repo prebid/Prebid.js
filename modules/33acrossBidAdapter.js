@@ -31,7 +31,7 @@ function _isViewabilityMeasurable(element) {
 }
 
 function _getViewability(element, topWin, { w, h } = {}) {
-  return utils.getWindowTop().document.visibilityState === 'visible'
+  return topWin.document.visibilityState === 'visible'
     ? _getPercentInView(element, topWin, { w, h })
     : 0;
 }
@@ -290,11 +290,14 @@ function isBidRequestValid(bid) {
 // - the server, at this point, also doesn't need the consent string to handle gdpr compliance. So passing
 //    value whether set or not, for the sake of future dev.
 function buildRequests(bidRequests, bidderRequest) {
-  const gdprConsent = Object.assign({ consentString: undefined, gdprApplies: false }, bidderRequest && bidderRequest.gdprConsent);
+  const gdprConsent = Object.assign({
+    consentString: undefined,
+    gdprApplies: false
+  }, bidderRequest && bidderRequest.gdprConsent);
 
   adapterState.uniqueSiteIds = bidRequests.map(req => req.params.siteId).filter(utils.uniques);
 
-  util.logInfo('[33Across Adapter] buildRequests():', bidRequests);
+  utils.logInfo('[33Across Adapter] buildRequests():', bidRequests);
 
   return bidRequests.map(req => _createServerRequest(req, gdprConsent));
 }
