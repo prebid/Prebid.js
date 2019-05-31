@@ -9,7 +9,8 @@ const CONSTANTS = require('../src/constants.json');
 const ANALYTICS_TYPE = 'endpoint';
 const FINTEZA_HOST = 'https://content.mql5.com/tr';
 const BID_REQUEST_TRACK = 'Bid Request %BIDDER%';
-const BID_RESPONSE_TRACK = 'Bid Response %BIDDER%';
+const BID_RESPONSE_PRICE_TRACK = 'Bid Response Price %BIDDER%';
+const BID_RESPONSE_TIME_TRACK = 'Bid Response Time %BIDDER%';
 const BID_TIMEOUT_TRACK = 'Bid Timeout %BIDDER%';
 const BID_WON_TRACK = 'Bid Won %BIDDER%';
 
@@ -265,19 +266,21 @@ function prepareBidRequestedParams(args) {
 
 function prepareBidResponseParams(args) {
   return [{
-    event: encodeURIComponent(replaceBidder(fntzAnalyticsAdapter.context.bidResponseTrack, args.bidderCode)),
-    c1_value: args.timeToRespond,
-    c1_unit: 'ms',
-    c2_value: args.cpm,
-    c2_unit: 'usd',
+    event: encodeURIComponent(replaceBidder(fntzAnalyticsAdapter.context.bidResponsePriceTrack, args.bidderCode)),
+    value: args.cpm,
+    unit: 'usd'
+  }, {
+    event: encodeURIComponent(replaceBidder(fntzAnalyticsAdapter.context.bidResponseTimeTrack, args.bidderCode)),
+    value: args.timeToRespond,
+    unit: 'ms'
   }];
 }
 
 function prepareBidWonParams(args) {
   return [{
     event: encodeURIComponent(replaceBidder(fntzAnalyticsAdapter.context.bidWonTrack, args.bidderCode)),
-    c1_value: args.cpm,
-    c1_unit: 'usd',
+    value: args.cpm,
+    unit: 'usd'
   }];
 }
 
@@ -285,8 +288,8 @@ function prepareBidTimeoutParams(args) {
   return args.map(function(bid) {
     return {
       event: encodeURIComponent(replaceBidder(fntzAnalyticsAdapter.context.bidTimeoutTrack, bid.bidder)),
-      c1_value: bid.timeout,
-      c1_unit: 'ms',
+      value: bid.timeout,
+      unit: 'ms'
     };
   })
 }
@@ -387,7 +390,8 @@ fntzAnalyticsAdapter.enableAnalytics = function (config) {
     host: config.options.host || FINTEZA_HOST,
     id: config.options.id,
     bidRequestTrack: config.options.bidRequestTrack || BID_REQUEST_TRACK,
-    bidResponseTrack: config.options.bidResponseTrack || BID_RESPONSE_TRACK,
+    bidResponsePriceTrack: config.options.bidResponsePriceTrack || BID_RESPONSE_PRICE_TRACK,
+    bidResponseTimeTrack: config.options.bidResponseTimeTrack || BID_RESPONSE_TIME_TRACK,
     bidTimeoutTrack: config.options.bidTimeoutTrack || BID_TIMEOUT_TRACK,
     bidWonTrack: config.options.bidWonTrack || BID_WON_TRACK,
     firstVisit: initFirstVisit(),
