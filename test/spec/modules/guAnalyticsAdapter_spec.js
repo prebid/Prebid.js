@@ -150,6 +150,22 @@ describe('Gu analytics adapter', () => {
     advertiserDomain: 'blackrock.com'
   };
 
+  const OZONE_BID = Object.assign({}, BIDONE, {
+    bidder: 'ozone',
+  })
+
+  const OZONE_REQUEST = Object.assign({}, REQUEST1, {
+    bidderCode: 'ozone',
+    bids: [OZONE_BID]
+  });
+
+  const OZONE_RESPONSE = Object.assign({}, RESPONSE, {
+    bidderCode: 'ozone',
+    adserverTargeting: {
+      oz_winner: 'openx'
+    }
+  });
+
   // Taken from the example ./integrationExamples/gpt/hello_world.html
   const NOBID_EVENT = {
     'bidder': 'trustx',
@@ -252,6 +268,38 @@ describe('Gu analytics adapter', () => {
     expect(ev[3]).to.be.eql({
       ev: 'response',
       n: 'b1',
+      sid: 'slot-1',
+      bid: '208750227436c1',
+      cpm: 0.015,
+      pb: '0.01',
+      cry: 'USD',
+      net: true,
+      did: '208750227436c1',
+      cid: '123',
+      sz: '300x250',
+      lid: 'd12345',
+      ttr: 443,
+      adv: 36069,
+      dsp: 57,
+      add: 'blackrock.com',
+      bri: 101,
+      brn: 'biscuit'
+    });
+  });
+
+  it('should handle bid response event', () => {
+    events.emit(CONSTANTS.EVENTS.AUCTION_INIT, {
+      auctionId: '5018eb39-f900-4370-b71e-3bb5b48d324f',
+      config: {},
+      timeout: 3000
+    });
+    events.emit(CONSTANTS.EVENTS.BID_REQUESTED, OZONE_REQUEST);
+    events.emit(CONSTANTS.EVENTS.BID_RESPONSE, OZONE_RESPONSE);
+    const ev = analyticsAdapter.context.queue.peekAll();
+    expect(ev).to.have.length(3);
+    expect(ev[2]).to.be.eql({
+      ev: 'response',
+      n: 'ozone-openx',
       sid: 'slot-1',
       bid: '208750227436c1',
       cpm: 0.015,
