@@ -4,7 +4,7 @@ import {
 } from 'modules/appierAnalyticsAdapter';
 import {expect} from 'chai';
 const events = require('src/events');
-let constants = require('src/constants.json');
+const constants = require('src/constants.json');
 
 const affiliateId = 'WhctHaViHtI';
 const configId = 'd9cc9a9be9b240eda17cf1c9a8a4b29c';
@@ -58,7 +58,7 @@ describe('Appier Prebid AnalyticsAdapter Testing', function () {
           },
         ]
         const result = getCpmInUsd(receivedBids[0]);
-        expect(Object.is(result, 0.1)).to.be.true;
+        expect(result).to.equal(0.1);
       });
     });
 
@@ -80,7 +80,7 @@ describe('Appier Prebid AnalyticsAdapter Testing', function () {
           },
         ];
         const result = parseBidderCode(receivedBids[0]);
-        expect(Object.is(result, 'appier')).to.be.true;
+        expect(result).to.equal('appier');
       });
       it('should get lower case bidder code from bidder field value as bidderCode field is missing', function() {
         const receivedBids = [
@@ -99,7 +99,7 @@ describe('Appier Prebid AnalyticsAdapter Testing', function () {
           },
         ];
         const result = parseBidderCode(receivedBids[0]);
-        expect(Object.is(result, 'appier')).to.be.true;
+        expect(result).to.equal('appier');
       });
     });
 
@@ -121,7 +121,7 @@ describe('Appier Prebid AnalyticsAdapter Testing', function () {
           },
         ];
         const result = parseAdUnitCode(receivedBids[0]);
-        expect(Object.is(result, 'adunit')).to.be.true;
+        expect(result).to.equal('adunit');
       });
     });
 
@@ -132,7 +132,7 @@ describe('Appier Prebid AnalyticsAdapter Testing', function () {
       it('should get the existing cached object if it exists', function() {
         const result = appierAnalyticsAdapter.getCachedAuction('test_auction_id');
 
-        expect(Object.is(result, existing)).to.be.true;
+        expect(result).to.equal(existing);
       });
 
       it('should create a new object and store it in the cache on cache miss', function() {
@@ -542,7 +542,7 @@ describe('Appier Prebid AnalyticsAdapter Testing', function () {
   });
 
   describe('Appier Analytics Adapter track handler ', function () {
-    let configOptions = {
+    const configOptions = {
       affiliateId: affiliateId,
       configId: configId,
       server: serverUrl,
@@ -586,7 +586,7 @@ describe('Appier Prebid AnalyticsAdapter Testing', function () {
     });
 
     it('should call createCreativeMessage as AUCTION_END trigger event in adSampled is true', function() {
-      let configOptions = {
+      const configOptions = {
         options: {
           affiliateId: affiliateId,
           configId: configId,
@@ -616,7 +616,7 @@ describe('Appier Prebid AnalyticsAdapter Testing', function () {
   });
 
   describe('enableAnalytics and config parser', function () {
-    let configOptions = {
+    const configOptions = {
       affiliateId: affiliateId,
       configId: configId,
       server: serverUrl,
@@ -647,17 +647,17 @@ describe('Appier Prebid AnalyticsAdapter Testing', function () {
     });
 
     it('should not enable Analytics when affiliateId is missing', function () {
-      let configOptions = {
+      const configOptions = {
         options: {
           configId: configId
         }
       };
-      let validConfig = appierAnalyticsAdapter.initConfig(configOptions);
+      const validConfig = appierAnalyticsAdapter.initConfig(configOptions);
       expect(validConfig).to.equal(false);
     });
 
     it('should use DEFAULT_SERVER when server is missing', function () {
-      let configOptions = {
+      const configOptions = {
         options: {
           configId: configId,
           affiliateId: affiliateId
@@ -668,7 +668,7 @@ describe('Appier Prebid AnalyticsAdapter Testing', function () {
     });
 
     it('should use null when autoPick is missing', function () {
-      let configOptions = {
+      const configOptions = {
         options: {
           configId: configId,
           affiliateId: affiliateId
@@ -679,17 +679,17 @@ describe('Appier Prebid AnalyticsAdapter Testing', function () {
     });
 
     it('should not enable Analytics when configId is missing', function () {
-      let configOptions = {
+      const configOptions = {
         options: {
           affiliateId: affiliateId
         }
       };
-      let validConfig = appierAnalyticsAdapter.initConfig(configOptions);
+      const validConfig = appierAnalyticsAdapter.initConfig(configOptions);
       expect(validConfig).to.equal(false);
     });
 
     it('should fall back to default value when sampling factor is not number', function () {
-      let configOptions = {
+      const configOptions = {
         options: {
           affiliateId: affiliateId,
           configId: configId,
