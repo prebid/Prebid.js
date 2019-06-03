@@ -4,6 +4,30 @@ import {BANNER, VIDEO} from '../src/mediaTypes';
 import {ajax} from '../src/ajax';
 
 /**
+ * Version of the FeedAd bid adapter
+ * @type {string}
+ */
+const VERSION = "1.0.0";
+
+/**
+ * @typedef {object} FeedAdApiBidRequest
+ * @inner
+ *
+ * @property {number} ad_type
+ * @property {string} client_token
+ * @property {string} placement_id
+ * @property {string} sdk_version
+ * @property {boolean} app_hybrid
+ *
+ * @property {string} [app_bundle_id]
+ * @property {string} [app_name]
+ * @property {object} [custom_params]
+ * @property {number} [connectivity]
+ * @property {string} [device_adid]
+ * @property {string} [device_platform]
+ */
+
+/**
  * Bidder network identity code
  * @type {string}
  */
@@ -26,6 +50,9 @@ const TAG = '[FeedAd]';
  * @type {RegExp}
  */
 const PLACEMENT_ID_PATTERN = /^(([a-z0-9])+[-_]?)+$/;
+
+const API_ENDPOINT = 'https://feedad-backend-dev.appspot.com';
+const API_PATH_BID_REQUEST = '/1/prebid/web/bids';
 
 /**
  * Checks if the bid is compatible with FeedAd.
@@ -98,6 +125,21 @@ function isMediaTypesEmpty(mediaTypes) {
 }
 
 /**
+ * Creates the bid request params the api expects from the prebid bid request
+ * @param {BidRequest} request - the validated prebid bid request
+ * @return {FeedAdApiBidRequest}
+ */
+function createApiBidRParams(request) {
+  return {
+    ad_type: 0,
+    client_token: request.params.clientToken,
+    placement_id: request.params.placementId,
+    sdk_version: `prebid_${VERSION}`,
+    app_hybrid: false,
+  };
+}
+
+/**
  * Builds the bid request to the FeedAd Server
  * @param {BidRequest[]} validBidRequests - all validated bid requests
  * @param {object} bidderRequest - meta information
@@ -105,16 +147,23 @@ function isMediaTypesEmpty(mediaTypes) {
  */
 function buildRequests(validBidRequests, bidderRequest) {
   let acceptableRequests = validBidRequests.filter(request => !isMediaTypesEmpty(filterSupportedMediaTypes(request.mediaTypes)));
+  if (acceptableRequests.length === 0) {
+    return [];
+  }
+  let data = Object.assign({}, bidderRequest, {
+    bids: acceptableRequests.map(req => {
+      req.params = createApiBidRParams(req);
+      return req;
+    })
+  });
   return {
     method: 'POST',
-    url: 'http://localhost:3000/bidRequests',
-    data: {
-      requests: acceptableRequests
-    },
+    url: `${API_ENDPOINT}${API_PATH_BID_REQUEST}`,
+    data,
     options: {
       contentType: 'application/json'
     }
-  }
+  };
 }
 
 /**
