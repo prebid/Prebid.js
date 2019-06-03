@@ -36,28 +36,29 @@ function _getViewability(element, topWin, { w, h } = {}) {
     : 0;
 }
 
-function mapAdSlotPathToElementId(path) {
+function _mapAdUnitPathToElementId(adUnitCode) {
+  let id = null;
+
   if (utils.isGptPubadsDefined()) {
-    const isMatchingAdSlot = utils.isSlotMatchingAdUnitCode(path);
-    const matchingAdSlot = window.googletag.pubads().getSlots().filter(isMatchingAdSlot)[0];
+    const isMatchingAdSlot = utils.isSlotMatchingAdUnitCode(adUnitCode);
+    const matchingAdSlot = window.googletag.pubads().getSlots().find(isMatchingAdSlot);
 
     if (matchingAdSlot) {
-      return matchingAdSlot.getSlotElementId();
+      id = matchingAdSlot.getSlotElementId();
     }
   }
 
-  return null;
+  utils.logInfo(`[33Across Adapter] Map ad unit path to HTML element id: '${adUnitCode}' -> '${id}'`);
+
+  return id;
 }
 
-function getAdSlotHTMLElement(adUnitCode) {
-  let element = document.getElementById(adUnitCode);
+function _getAdSlotHTMLElement(adUnitCode) {
+  const element = document.getElementById(adUnitCode) ||
+    document.getElementById(_mapAdUnitPathToElementId(adUnitCode));
 
   if (element === null) {
-    const id = mapAdSlotPathToElementId(adUnitCode);
-
-    element = document.getElementById(id);
-
-    utils.logInfo(`Trying to map ad unit path to HTML element id: '${adUnitCode}' -> '${id}'`);
+    utils.logWarn(`[33Across Adapter] Unable to locate element with id: '${adUnitCode}'`);
   }
 
   return element;
@@ -68,7 +69,7 @@ function getAdSlotHTMLElement(adUnitCode) {
 function _createServerRequest(bidRequest, gdprConsent) {
   const ttxRequest = {};
   const params = bidRequest.params;
-  const element = getAdSlotHTMLElement(bidRequest.adUnitCode);
+  const element = _getAdSlotHTMLElement(bidRequest.adUnitCode);
   const sizes = _transformSizes(bidRequest.sizes);
   const minSize = _getMinSize(sizes);
 
@@ -77,10 +78,6 @@ function _createServerRequest(bidRequest, gdprConsent) {
     : NON_MEASURABLE;
 
   const contributeViewability = ViewabilityContributor(viewabilityAmount);
-
-  if (element === null) {
-    utils.logWarn(`[33Across Adapter] Unable to locate element with id: '${bidRequest.adUnitCode}'`);
-  }
 
   /*
    * Infer data for the request payload
