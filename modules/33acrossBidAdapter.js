@@ -58,7 +58,7 @@ function _getAdSlotHTMLElement(adUnitCode) {
     document.getElementById(_mapAdUnitPathToElementId(adUnitCode));
 
   if (element === null) {
-    utils.logWarn(`[33Across Adapter] Unable to locate element with id: '${adUnitCode}'`);
+    utils.logWarn(`[33Across Adapter] Unable to locate element for ad unit code: '${adUnitCode}'`);
   }
 
   return element;
