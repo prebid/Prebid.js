@@ -58,11 +58,9 @@ export const spec = {
           bidResponse.ad = response.mediadata;
           bidResponse.mediaType = 'banner';
         }
-        console.log(bidResponse);
         bidResponses.push(bidResponse);
       }
     });
-    console.log('bidResponses--' + bidResponses);
     return bidResponses;
   }
 };
