@@ -21,7 +21,7 @@ Only Banner & video format is supported.
                {
                     bidder: 'topRTB',
                     params: {
-                        adUnitId: cd95dffec6b645afbc4e5aa9f68f2ff3
+                        adUnitId: 'cd95dffec6b645afbc4e5aa9f68f2ff3'
                     }
                }
            ]
