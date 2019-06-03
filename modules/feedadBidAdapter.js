@@ -28,6 +28,21 @@ const VERSION = "1.0.0";
  */
 
 /**
+ * @typedef {object} FeedAdApiBidResponse
+ * @inner
+ *
+ * @property {string} ad - Ad HTML payload
+ * @property {number} cpm - number / float
+ * @property {string} creativeId - ID of creative for tracking
+ * @property {string} currency - 3-letter ISO 4217 currency-code
+ * @property {number} height - Height of creative returned in [].ad
+ * @property {boolean} netRevenue - Is the CPM net (true) or gross (false)?
+ * @property {string} requestId - bids[].bidId
+ * @property {number} ttl - Time to live for this ad
+ * @property {number} width - Width of creative returned in [].ad
+ */
+
+/**
  * Bidder network identity code
  * @type {string}
  */
@@ -173,17 +188,20 @@ function buildRequests(validBidRequests, bidderRequest) {
  * @returns {Bid[]} the FeedAd bids
  */
 function interpretResponse(serverResponse, request) {
+  /**
+   * @type FeedAdApiBidResponse[]
+   */
   const body = typeof serverResponse.body === 'string' ? JSON.parse(serverResponse.body) : serverResponse.body;
-  return body.requests.map((req, idx) => ({
-    requestId: req.bidId,
+  return body.map((response, idx) => ({
+    requestId: response.requestId,
     cpm: 0.5,
-    width: req.sizes[0][0],
-    height: req.sizes[0][1],
-    ad: createAdHTML(req),
-    ttl: 60,
-    creativeId: `feedad-${body.id}-${idx}`,
-    netRevenue: true,
-    currency: 'EUR'
+    width: response.width,
+    height: response.height,
+    ad: `<html><body>${response.ad}</body></html>`,
+    ttl: response.ttl,
+    creativeId: response.creativeId,
+    netRevenue: response.netRevenue,
+    currency: response.currency
   }));
 }
 
