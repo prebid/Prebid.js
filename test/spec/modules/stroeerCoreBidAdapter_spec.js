@@ -345,14 +345,14 @@ describe('stroeerCore bid adapter', function () {
           const serverRequestInfo = spec.buildRequests(bidderRequest.bids, bidderRequest);
           assert.equal(99, serverRequestInfo.data.ssat);
         });
-        
+
         it('yl2 defaults to false', () => {
           const bidderRequest = buildBidderRequest();
           bidderRequest.bids.length = 1;
           const serverRequestInfo = spec.buildRequests(bidderRequest.bids, bidderRequest);
           assert.equal(false, serverRequestInfo.data.yl2);
         });
-        
+
         it('should use yl2 value from config', () => {
           const bidderRequest = buildBidderRequest();
           bidderRequest.bids.length = 1;
@@ -369,7 +369,7 @@ describe('stroeerCore bid adapter', function () {
           const serverRequestInfo = spec.buildRequests(bidderRequest.bids, bidderRequest);
           assert.equal(true, serverRequestInfo.data.yl2);
         });
-        
+
         it('should use 2 as default value for ssat', () => {
           const bidderRequest = buildBidderRequest();
           bidderRequest.bids.length = 1;

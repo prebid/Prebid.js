@@ -3,7 +3,6 @@ import includes from 'core-js/library/fn/array/includes';
 import find from 'core-js/library/fn/array/find';
 import {ajax} from 'src/ajax';
 
-
 const utils = require('src/utils');
 const url = require('src/url');
 
@@ -191,10 +190,9 @@ export const spec = {
     const bids = [];
 
     if (serverResponse.body && typeof serverResponse.body === 'object') {
-
       if (serverResponse.body.tep !== undefined) {
         ajax(serverResponse.body.tep, () => {});
-    }
+      }
 
       serverResponse.body.bids.forEach(bidResponse => {
         const cpm = bidResponse.cpm;
