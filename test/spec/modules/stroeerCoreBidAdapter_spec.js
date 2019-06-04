@@ -87,6 +87,17 @@ describe('stroeerCore bid adapter', function () {
     }]
   });
 
+  const buildBidderResponseWithTep = () => ({
+    'tep': '//hb.adscale.de/sspReqId/5f465360-cb11-44ee-b0be-b47a4f583521',
+    'bids': [{
+      'bidId': 'bid1',
+      'cpm': 4.0,
+      'width': 300,
+      'height': 600,
+      'ad': '<div>tag1</div>'
+    }]
+  });
+
   const buildBidderResponseSecondPriceAuction = () => {
     const response = buildBidderResponse();
 
@@ -477,6 +488,26 @@ describe('stroeerCore bid adapter', function () {
         assert.isArray(result);
         assert.lengthOf(result, 0);
       });
+    });
+
+    it('should call endpoint when it exists', () => {
+      fakeServer.respondWith('');
+      spec.interpretResponse({body: buildBidderResponseWithTep()});
+      fakeServer.respond();
+
+      assert.equal(fakeServer.requests.length, 1);
+      const request = fakeServer.requests[0];
+
+      assert.equal(request.method, 'GET');
+      assert.equal(request.url, '//hb.adscale.de/sspReqId/5f465360-cb11-44ee-b0be-b47a4f583521');
+    });
+
+    it('should not call endpoint when endpoint field not present', () => {
+      fakeServer.respondWith('');
+      spec.interpretResponse({body: buildBidderResponse()});
+      fakeServer.respond();
+
+      assert.equal(fakeServer.requests.length, 0);
     });
 
     it('should ignore legacy (prebid < 1.0) redirect', () => {
