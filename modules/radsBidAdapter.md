@@ -29,8 +29,12 @@ RADS video adapter for Prebid.js 1.x
                     params: {
                         placement: '101',
                         pfilter: {
-                            floorprice: 1000000, // EUR * 1,000,000
+                            floorprice: 1000000, // EUR * 1,000,000,
+                            geo: {
+                                country: 'DE', // country
+                                region: 'DE-BE' // // Region code using ISO-3166-2; 2-letter state code if USA.
                             },
+                         },
                     
                         latitude: 52.52437, // Latitude from -90.0 to +90.0, where negative is south.
                         longitude: 13.41053, // Longitude from -180.0 to +180.0, where negative is west
@@ -54,6 +58,31 @@ RADS video adapter for Prebid.js 1.x
                         placement: 101
                     }
                 }
+            ]
+        },
+        {
+            // video settings
+            code: 'video-obj',
+            mediaTypes: {
+                video: {
+                    context: 'instream',
+                    playerSize: [640, 480]
+                }
+            },
+            bids: [
+                {
+                    bidder: "rads",
+                    params: {
+                        placement: "", // placement ID of inventory with RADS
+                        noskip: 1, // 0 or 1 
+                        pfilter: {/*
+                            min_duration: 10, // min duration
+                            max_duration: 30, // max duration
+                            min_bitrate:  300, // min bitrate
+                            max_bitrate:  1600, // max bitrate
+                        */}
+                    }
+                 }
             ]
         }
     ];
