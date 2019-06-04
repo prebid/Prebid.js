@@ -190,7 +190,7 @@ export const spec = {
     const bids = [];
 
     if (serverResponse.body && typeof serverResponse.body === 'object') {
-      if (serverResponse.body.tep !== undefined) {
+      if (serverResponse.body.tep) {
         ajax(serverResponse.body.tep, () => {});
       }
 
