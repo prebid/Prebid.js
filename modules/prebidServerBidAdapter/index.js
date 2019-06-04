@@ -491,7 +491,13 @@ const OPEN_RTB_PROTOCOL = {
       const imp = { id: adUnit.code, ext, secure: _s2sConfig.secure };
 
       if (banner) { imp.banner = banner; }
-      if (video) { imp.video = video; }
+      if (video) {
+        if (video.context === 'outstream' && !adUnit.renderer) {
+          // Don't push oustream w/o renderer to request object.
+        } else {
+          imp.video = video;
+        }
+      }
 
       imps.push(imp);
     });
