@@ -74,6 +74,7 @@ RADS video adapter for Prebid.js 1.x
                     bidder: "rads",
                     params: {
                         placement: "", // placement ID of inventory with RADS
+                        vastFormat: "vast2|vast4", // default vast2 
                         noskip: 1, // 0 or 1 
                         pfilter: {/*
                             min_duration: 10, // min duration
