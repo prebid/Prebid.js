@@ -36,7 +36,7 @@ function isPresent() {
 var noop = function () {
 };
 
-const MAX_RETRIES = 4;
+const MAX_RETRIES = 2;
 const DT_ID_SVC = 'https://prebid.digitru.st/id/v1';
 
 var isFunc = function (fn) {
