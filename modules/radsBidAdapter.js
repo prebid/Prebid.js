@@ -1,6 +1,7 @@
 import * as utils from '../src/utils';
 import {config} from '../src/config';
 import {registerBidder} from '../src/adapters/bidderFactory';
+import { BANNER, VIDEO } from '../src/mediaTypes';
 
 const BIDDER_CODE = 'rads';
 const ENDPOINT_URL = 'https://rads.recognified.net/md.request.php';
@@ -17,7 +18,8 @@ export const spec = {
   buildRequests: function(validBidRequests, bidderRequest) {
     return validBidRequests.map(bidRequest => {
       const params = bidRequest.params;
-      const sizes = utils.parseSizesInput(bidRequest.sizes)[0];
+      const videoData = utils.deepAccess(bidRequest, 'mediaTypes.video') || {};
+      const sizes = utils.parseSizesInput(videoData.playerSize || bidRequest.sizes)[0];
       const width = sizes.split('x')[0];
       const height = sizes.split('x')[1];
       const placementId = params.placement;
