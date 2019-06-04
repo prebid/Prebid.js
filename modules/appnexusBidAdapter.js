@@ -275,6 +275,56 @@ export const spec = {
     }
 
     return params;
+  },
+
+  /**
+   * Add element selector to javascript tracker to improve native viewability
+   * @param {Bid} bid
+   */
+  onBidWon: function(bid) {
+    if (bid.native) {
+      let viewJsPayload = bid.native.javascriptTrackers[1]; // see appnexusBidAdapter.newbid
+      let cssSelector = 'css_selector=.pb-click[pbadid=\'' + bid.adId + '\']';
+      let newViewJsPayload = viewJsPayload.replace('%native_dom_id%', ';' + cssSelector);
+      bid.native.javascriptTrackers[1] = newViewJsPayload;
+
+      // find iframe containing script tag
+      let frameArray = document.getElementsByTagName('iframe');
+      // extracting the content of the src attribute
+      // -> substring between src=" and "
+      let indexOfFirstQuote = viewJsPayload.indexOf('src="') + 5; // offset of 5: the length of 'src=' + 1
+      let indexOfSecondQuote = viewJsPayload.indexOf('"', indexOfFirstQuote);
+      let jsTrackerSrc = viewJsPayload.substring(indexOfFirstQuote, indexOfSecondQuote);
+
+      let newJsTrackerSrc = jsTrackerSrc.replace('%native_dom_id%', ';' + cssSelector);
+
+      // first, loop on all ifames
+      for (let i = 0; i < frameArray.length; i++) {
+        let currentFrame = frameArray[i];
+        try {
+          // IE-compatible, see https://stackoverflow.com/a/3999191/2112089
+          let nestedDoc = currentFrame.contentDocument || currentFrame.contentWindow.document;
+          if (nestedDoc) {
+            // if the doc is present, we look for our jstracker
+            let scriptArray = nestedDoc.getElementsByTagName('script');
+            for (let j = 0; j < scriptArray.length; j++) {
+              let currentScript = scriptArray[j];
+              if (currentScript.src == jsTrackerSrc) {
+                currentScript.src = newJsTrackerSrc;
+              }
+            }
+          }
+        } catch (exception) {
+          // trying to access a cross-domain iframe raises a SecurityError
+          // this is expected and ignored
+          if (!(exception instanceof DOMException && exception.name === 'SecurityError')) {
+            // all other cases are raised again to be treated by the calling function
+            throw exception;
+          }
+        }
+      }
+    }
+    console.log('onBidWon - END');
   }
 }
 
