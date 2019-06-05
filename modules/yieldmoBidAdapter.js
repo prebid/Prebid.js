@@ -45,14 +45,13 @@ export const spec = {
 
     bidRequests.forEach((request) => {
       serverRequest.p.push(addPlacement(request));
-      const pubcId = getPubcId(request);
-      console.log('request: ', request);
-      if (pubcId) {
-        serverRequest.pubcid = pubcId;
-      } else {
+      const userId = getPubcId(request)
+      if (userId) {
+        const pubcid = userId.pubcid;
+        serverRequest.pubcid = pubcid;
+      } else if (request.crumbs) {
         serverRequest.pubcid = request.crumbs.pubcid;
       }
-      
     });
     serverRequest.p = '[' + serverRequest.p.toString() + ']';
     return {
@@ -107,8 +106,8 @@ function addPlacement(request) {
     sizes: request.sizes
   }
   if (request.params) {
-       
-  } if(request.params.placementId) {
+
+  } if (request.params.placementId) {
     placementInfo.ym_placement_id = request.params.placementId;
   }
   if (request.params.bidFloor) {

@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/yieldmoBidAdapter';
-import {newBidder} from 'src/adapters/bidderFactory';
+import { newBidder } from 'src/adapters/bidderFactory';
 import * as utils from 'src/utils';
 
 describe('YieldmoAdapter', function () {
@@ -49,6 +49,13 @@ describe('YieldmoAdapter', function () {
       expect(request.method).to.equal('GET');
       expect(request.url).to.be.equal(ENDPOINT);
     });
+
+    it('should not blow up if crumbs is undefined', function () {
+      let bidArray = [
+        { ...bid, crumbs: undefined }
+      ]
+      expect(function () { spec.buildRequests(bidArray) }).not.to.throw()
+    })
 
     it('should place bid information into the p parameter of data', function () {
       let placementInfo = spec.buildRequests(bidArray).data.p;
