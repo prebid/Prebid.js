@@ -7,8 +7,11 @@ import includes from 'core-js/library/fn/array/includes';
 
 const BID_HOST = '//prebid.technoratimedia.com';
 const USER_SYNC_HOST = '//ad-cdn.technoratimedia.com';
-const VIDEO_PARAMS = [ 'minduration', 'maxduration' ];
-
+const VIDEO_PARAMS = [ 'minduration', 'maxduration', 'startdelay', 'placement', 'linearity', 'mimes', 'protocols', 'api' ];
+const BLOCKED_AD_SIZES = [
+  '1x1',
+  '1x2'
+];
 export const spec = {
   code: 'synacormedia',
   supportedMediaTypes: [ BANNER, VIDEO ],
@@ -19,7 +22,9 @@ export const spec = {
       bid.mediaTypes.hasOwnProperty('video');
   },
   isBidRequestValid: function(bid) {
-    return !!(bid && bid.params && bid.params.placementId && bid.params.seatId);
+    let hasRequiredParams = bid && bid.params && bid.params.hasOwnProperty('placementId') && bid.params.hasOwnProperty('seatId');
+    let hasAdSizes = bid && getAdUnitSizes(bid).filter(size => BLOCKED_AD_SIZES.indexOf(size.join('x')) === -1).length > 0
+    return !!(hasRequiredParams && hasAdSizes);
   },
 
   buildRequests: function(validBidReqs, bidderRequest) {
@@ -40,6 +45,7 @@ export const spec = {
       imp: []
     };
     let seatId = null;
+
     validBidReqs.forEach((bid, i) => {
       if (seatId && seatId !== bid.params.seatId) {
         logWarn(`Synacormedia: there is an inconsistent seatId: ${bid.params.seatId} but only sending bid requests for ${seatId}, you should double check your configuration`);
@@ -58,33 +64,38 @@ export const spec = {
         pos = 0;
       }
       let videoOrBannerKey = this.isVideoBid(bid) ? 'video' : 'banner';
-      getAdUnitSizes(bid).forEach((size, i) => {
-        if (!size || size.length != 2) {
-          return;
-        }
-        let size0 = size[0];
-        let size1 = size[1];
-        let imp = {
-          id: `${videoOrBannerKey.substring(0, 1)}${bid.bidId}-${size0}x${size1}`,
-          tagid: placementId
-        };
-        if (bidFloor !== null && !isNaN(bidFloor)) {
-          imp.bidfloor = bidFloor;
-        }
+      getAdUnitSizes(bid)
+        .filter(size => BLOCKED_AD_SIZES.indexOf(size.join('x')) === -1)
+        .forEach((size, i) => {
+          if (!size || size.length != 2) {
+            return;
+          }
+          let size0 = size[0];
+          let size1 = size[1];
+          let imp = {
+            id: `${videoOrBannerKey.substring(0, 1)}${bid.bidId}-${size0}x${size1}`,
+            tagid: placementId
+          };
+          if (bidFloor !== null && !isNaN(bidFloor)) {
+            imp.bidfloor = bidFloor;
+          }
 
-        let videoOrBannerValue = {
-          w: size0,
-          h: size1,
-          pos
-        };
-        if (videoOrBannerKey === 'video' && bid.params.video) {
-          Object.keys(bid.params.video)
-            .filter(param => includes(VIDEO_PARAMS, param) && !isNaN(parseInt(bid.params.video[param], 10)))
-            .forEach(param => videoOrBannerValue[param] = parseInt(bid.params.video[param], 10));
-        }
-        imp[videoOrBannerKey] = videoOrBannerValue;
-        openRtbBidRequest.imp.push(imp);
-      });
+          let videoOrBannerValue = {
+            w: size0,
+            h: size1,
+            pos
+          };
+          if (videoOrBannerKey === 'video') {
+            if (bid.mediaTypes.video) {
+              this.setValidVideoParams(bid.mediaTypes.video, bid.params.video);
+            }
+            if (bid.params.video) {
+              this.setValidVideoParams(bid.params.video, videoOrBannerValue);
+            }
+          }
+          imp[videoOrBannerKey] = videoOrBannerValue;
+          openRtbBidRequest.imp.push(imp);
+        });
     });
 
     if (openRtbBidRequest.imp.length && seatId) {
@@ -98,6 +109,12 @@ export const spec = {
         }
       };
     }
+  },
+
+  setValidVideoParams: function (sourceObj, destObj) {
+    Object.keys(sourceObj)
+      .filter(param => includes(VIDEO_PARAMS, param) && sourceObj[param] !== null && (!isNaN(parseInt(sourceObj[param], 10)) || !sourceObj[param].length < 1))
+      .forEach(param => destObj[param] = Array.isArray(sourceObj[param]) ? sourceObj[param] : parseInt(sourceObj[param], 10));
   },
   interpretResponse: function(serverResponse) {
     var updateMacros = (bid, r) => {
