@@ -18,7 +18,6 @@ export const spec = {
     * @return boolean, true if valid, otherwise false
     */
   isBidRequestValid: function(bid) {
-    console.log('this is the bid! ', bid);
     return !!(bid && bid.adUnitCode && bid.bidId);
   },
   /**
@@ -28,7 +27,6 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function(bidRequests) {
-    console.log('bid request: ', bidRequests);
     let serverRequest = {
       p: [],
       page_url: utils.getTopWindowUrl(),
