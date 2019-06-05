@@ -140,9 +140,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
       clearTimeout(_timer);
     }
 
-    // if (_auctionStatus !== AUCTION_COMPLETED) {
     if (_auctionEnd === undefined) {
-    // if (_callback != null) {
       let timedOutBidders = [];
       if (timedOut) {
         utils.logMessage(`Auction ${_auctionId} timedOut`);
