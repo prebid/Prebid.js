@@ -277,7 +277,7 @@ export const spec = {
 
   /**
    * Add element selector to javascript tracker to improve native viewability
-   * @param {Bid} bid 
+   * @param {Bid} bid
    */
   onBidWon: function(bid) {
     if (bid.native) {

@@ -46,6 +46,9 @@ function receiveMessage(ev) {
     //   adId: '%%PATTERN:hb_adid%%'
     // }), '*');
     if (data.message === 'Prebid Native') {
+      auctionManager.addWinningBid(adObject);
+      events.emit(BID_WON, adObject);
+
       if (data.action === 'assetRequest') {
         const message = getAssetMessage(data, adObject);
         ev.source.postMessage(JSON.stringify(message), ev.origin);
@@ -53,10 +56,7 @@ function receiveMessage(ev) {
       }
 
       const trackerType = fireNativeTrackers(data, adObject);
-      if (trackerType === 'click') { return; }
-
-      auctionManager.addWinningBid(adObject);
-      events.emit(BID_WON, adObject);
+      if (trackerType === 'click') { }
     }
   }
 }
