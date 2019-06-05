@@ -147,6 +147,9 @@ function prepareExtraParams(params, payload) {
   if (params.longitude !== undefined) {
     payload.longitude = params.longitude;
   }
+  if (params.ip !== undefined) {
+    payload.i = params.ip;
+  }
 }
 
 registerBidder(spec);

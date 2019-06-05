@@ -40,7 +40,8 @@ RADS video adapter for Prebid.js 1.x
                         longitude: 13.41053, // Longitude from -180.0 to +180.0, where negative is west
                     
                         bcat:  "IAB2,IAB4",  // List of  Blocked Categories (IAB) - comma separated 
-                        dvt: "desktop|smartphone|tv|tablet" // DeVice Type (autodetect if not exists)
+                        dvt: "desktop|smartphone|tv|tablet" // DeVice Type (autodetect if not exists),
+                        ip: "1.1.1.1"  // user IP
                     }
                 }
             ]

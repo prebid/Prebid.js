@@ -16,7 +16,8 @@ describe('radsAdapter', function () {
           'floorprice': 1000000
         },
         'bcat': 'IAB2,IAB4',
-        'dvt': 'desktop'
+        'dvt': 'desktop',
+        'ip': '1.1.1.1'
       },
       'sizes': [
         [300, 250]
@@ -52,7 +53,8 @@ describe('radsAdapter', function () {
           }
         },
         'bcat': 'IAB2,IAB4',
-        'dvt': 'desktop'
+        'dvt': 'desktop',
+        'ip': '1.1.1.1'
       },
       'sizes': [
         [300, 250]
@@ -95,7 +97,7 @@ describe('radsAdapter', function () {
     it('sends bid request to our endpoint via GET', function () {
       expect(request[0].method).to.equal('GET');
       let data = request[0].data.replace(/rnd=\d+\&/g, '').replace(/ref=.*\&bid/g, 'bid');
-      expect(data).to.equal('rt=bid-response&_f=prebid_js&_ps=6682&srw=300&srh=250&idt=100&p=some_referrer.net&bid_id=30b31c1838de1e&pfilter%5Bfloorprice%5D=1000000&pfilter%5Bgeo%5D%5Bcountry%5D=DE&bcat=IAB2%2CIAB4&dvt=desktop');
+      expect(data).to.equal('rt=bid-response&_f=prebid_js&_ps=6682&srw=300&srh=250&idt=100&p=some_referrer.net&bid_id=30b31c1838de1e&pfilter%5Bfloorprice%5D=1000000&pfilter%5Bgeo%5D%5Bcountry%5D=DE&bcat=IAB2%2CIAB4&dvt=desktop&i=1.1.1.1');
     });
 
     it('sends bid video request to our rads endpoint via GET', function () {
