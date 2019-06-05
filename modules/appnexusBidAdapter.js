@@ -298,19 +298,25 @@ export const spec = {
 
       let newJsTrackerSrc = jsTrackerSrc.replace('%native_dom_id%', ';' + cssSelector);
 
+      // boolean var to modify only one scrit. That way if there are muliple scripts,
+      // they won't all point to the same creative.
+      let modifiedAScript = false;
+
       // first, loop on all ifames
-      for (let i = 0; i < frameArray.length; i++) {
+      for (let i = 0; i < frameArray.length && !modifiedAScript; i++) {
         let currentFrame = frameArray[i];
         try {
           // IE-compatible, see https://stackoverflow.com/a/3999191/2112089
           let nestedDoc = currentFrame.contentDocument || currentFrame.contentWindow.document;
+
           if (nestedDoc) {
             // if the doc is present, we look for our jstracker
             let scriptArray = nestedDoc.getElementsByTagName('script');
-            for (let j = 0; j < scriptArray.length; j++) {
+            for (let j = 0; j < scriptArray.length && !modifiedAScript; j++) {
               let currentScript = scriptArray[j];
               if (currentScript.src == jsTrackerSrc) {
                 currentScript.src = newJsTrackerSrc;
+                modifiedAScript = true;
               }
             }
           }
@@ -324,7 +330,6 @@ export const spec = {
         }
       }
     }
-    console.log('onBidWon - END');
   }
 }
 
