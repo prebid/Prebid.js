@@ -43,12 +43,13 @@ export const spec = {
 
     bidRequests.forEach((request) => {
       serverRequest.p.push(addPlacement(request));
-      const userId = getPubcId(request)
-      if (userId) {
-        const pubcid = userId.pubcid;
+      const pubcid = getPubcId(request)
+      if (pubcid) {
         serverRequest.pubcid = pubcid;
       } else if (request.crumbs) {
-        serverRequest.pubcid = request.crumbs.pubcid;
+        if (request.crumbs.pubcid) {
+          serverRequest.pubcid = request.crumbs.pubcid;
+        }
       }
     });
     serverRequest.p = '[' + serverRequest.p.toString() + ']';
