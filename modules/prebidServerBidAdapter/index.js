@@ -514,8 +514,16 @@ const OPEN_RTB_PROTOCOL = {
       }
     };
 
+    /**
+     * @type {(string[]|undefined)} - OpenRTB property 'cur', currencies available for bids
+     */
+    const adServerCur = config.getConfig('currency.adServerCurrency');
+    if (Array.isArray(adServerCur) && adServerCur.length) {
+      request.cur = adServerCur.slice();
+    }
+
     // s2sConfig video.ext.prebid is passed through openrtb to PBS
-    if (_s2sConfig.extPrebid && typeof _s2sConfig.extPrebid === 'object') {
+    if (utils.isPlainObject(_s2sConfig.extPrebid)) {
       request.ext.prebid = Object.assign(request.ext.prebid, _s2sConfig.extPrebid);
     }
 
@@ -523,14 +531,18 @@ const OPEN_RTB_PROTOCOL = {
 
     const digiTrust = _getDigiTrustQueryParams();
     if (digiTrust) {
-      request.user = { ext: { digitrust: digiTrust } };
+      if (!request.user || !request.user.ext) {
+        request.user = { ext: { digitrust: digiTrust } };
+      } else {
+        request.user.ext.digitrust = digiTrust;
+      }
     }
 
     if (!utils.isEmpty(aliases)) {
       request.ext.prebid.aliases = aliases;
     }
 
-    if (bidRequests && bidRequests[0].userId && typeof bidRequests[0].userId === 'object') {
+    if (Array.isArray(bidRequests)) {
       if (!request.user) {
         request.user = {};
       }
@@ -540,35 +552,37 @@ const OPEN_RTB_PROTOCOL = {
       if (!request.user.ext.tpid) {
         request.user.ext.tpid = {}
       }
-      Object.assign(request.user.ext.tpid, bidRequests[0].userId);
-    }
 
-    if (bidRequests && bidRequests[0].gdprConsent) {
-      // note - gdprApplies & consentString may be undefined in certain use-cases for consentManagement module
-      let gdprApplies;
-      if (typeof bidRequests[0].gdprConsent.gdprApplies === 'boolean') {
-        gdprApplies = bidRequests[0].gdprConsent.gdprApplies ? 1 : 0;
+      const gdprConsent = utils.deepAccess(bidRequests, '0.gdprConsent');
+      if (gdprConsent) {
+        // note - gdprApplies & consentString may be undefined in certain use-cases for consentManagement module
+        const gdprApplies = (typeof gdprConsent.gdprApplies === 'boolean') ? Number(gdprConsent.gdprApplies) : undefined;
+        if (request.regs) {
+          if (request.regs.ext) {
+            request.regs.ext.gdpr = gdprApplies;
+          } else {
+            request.regs.ext = { gdpr: gdprApplies };
+          }
+        } else {
+          request.regs = { ext: { gdpr: gdprApplies } };
+        }
+
+        const consentString = gdprConsent.consentString;
+        if (request.user) {
+          if (request.user.ext) {
+            request.user.ext.consent = consentString;
+          } else {
+            request.user.ext = { consent: consentString };
+          }
+        } else {
+          request.user = { ext: { consent: consentString } };
+        }
       }
 
-      if (request.regs) {
-        if (request.regs.ext) {
-          request.regs.ext.gdpr = gdprApplies;
-        } else {
-          request.regs.ext = { gdpr: gdprApplies };
-        }
-      } else {
-        request.regs = { ext: { gdpr: gdprApplies } };
-      }
-
-      let consentString = bidRequests[0].gdprConsent.consentString;
-      if (request.user) {
-        if (request.user.ext) {
-          request.user.ext.consent = consentString;
-        } else {
-          request.user.ext = { consent: consentString };
-        }
-      } else {
-        request.user = { ext: { consent: consentString } };
+      // pass user id values from the User ID Module if enabled
+      const userId = utils.deepAccess(bidRequests, '0.bids.0.userId');
+      if (!utils.isEmpty(userId)) {
+        Object.assign(request.user.ext.tpid, userId);
       }
     }
 
@@ -577,7 +591,6 @@ const OPEN_RTB_PROTOCOL = {
 
   interpretResponse(response, bidderRequests, requestedBidders) {
     const bids = [];
-
     if (response.seatbid) {
       // a seatbid object contains a `bid` array and a `seat` string
       response.seatbid.forEach(seatbid => {

@@ -811,25 +811,62 @@ describe('S2S Adapter', function () {
       expect(requestBid.imp[0].ext.appnexus.key).to.be.equal('value')
     });
 
-    it('when userId is defined on bids, it\'s properties should be copied to user.ext.tpid properties', function () {
+    it('when userId is defined on bids, user.ext.tpid is set with the value', function () {
       let ortb2Config = utils.deepClone(CONFIG);
-      ortb2Config.endpoint = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
+      ortb2Config.endpoint = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction';
+      config.setConfig({ s2sConfig: ortb2Config });
 
-      let consentConfig = { s2sConfig: ortb2Config };
-      config.setConfig(consentConfig);
+      const userIdObj = {foo: 'abc123'};
+      const userIdBidRequest = utils.deepClone(BID_REQUESTS);
 
-      let userIdBidRequest = utils.deepClone(BID_REQUESTS);
-      userIdBidRequest[0].userId = {
-        foo: 'abc123',
-        unifiedid: '1234'
-      };
+      userIdBidRequest[0].bids[0].userId = userIdObj;
+      adapter.callBids(REQUEST, userIdBidRequest, addBidResponse, done, ajax);
+
+      const parsedRequestBody = JSON.parse(requests[0].requestBody);
+      expect(parsedRequestBody.user.ext.tpid).to.deep.equal(userIdObj);
+    });
+
+    it('when userId is not defined on bids, user.ext.tpid should not be set', function () {
+      let ortb2Config = utils.deepClone(CONFIG);
+      ortb2Config.endpoint = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction';
+      config.setConfig({ s2sConfig: ortb2Config });
+
+      const userIdBidRequest = utils.deepClone(BID_REQUESTS);
 
       adapter.callBids(REQUEST, userIdBidRequest, addBidResponse, done, ajax);
-      let requestBid = JSON.parse(requests[0].requestBody);
-      expect(typeof requestBid.user.ext.tpid).is.equal('object');
-      expect(requestBid.user.ext.tpid.foo).is.equal('abc123');
-      expect(requestBid.user.ext.tpid.unifiedid).is.equal('1234');
-    })
+
+      const parsedRequestBody = JSON.parse(requests[0].requestBody);
+      expect(Object.keys(parsedRequestBody.user.ext.tpid)).to.to.have.lengthOf(0);
+    });
+
+    it('setting currency.adServerCurrency results in the openRTB JSON containing cur: ["AAA"]', function () {
+      let ortb2Config = utils.deepClone(CONFIG);
+      ortb2Config.endpoint = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction';
+      config.setConfig({
+        currency: {adServerCurrency: ['USD', 'GB', 'UK', 'AU']},
+        s2sConfig: ortb2Config
+      });
+
+      const userIdBidRequest = utils.deepClone(BID_REQUESTS);
+      adapter.callBids(REQUEST, userIdBidRequest, addBidResponse, done, ajax);
+
+      const parsedRequestBody = JSON.parse(requests[0].requestBody);
+      expect(parsedRequestBody.cur).to.deep.equal(['USD', 'GB', 'UK', 'AU']);
+    });
+
+    it('when currency.adServerCurrency is unset, the OpenRTB JSON should not contain cur', function () {
+      let ortb2Config = utils.deepClone(CONFIG);
+      ortb2Config.endpoint = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction';
+      config.setConfig({
+        s2sConfig: ortb2Config
+      });
+
+      const userIdBidRequest = utils.deepClone(BID_REQUESTS);
+      adapter.callBids(REQUEST, userIdBidRequest, addBidResponse, done, ajax);
+
+      const parsedRequestBody = JSON.parse(requests[0].requestBody);
+      expect(typeof parsedRequestBody.cur).to.equal('undefined');
+    });
 
     it('always add ext.prebid.targeting.includebidderkeys: false for ORTB', function () {
       const s2sConfig = Object.assign({}, CONFIG, {
