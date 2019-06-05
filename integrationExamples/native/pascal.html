@@ -1,0 +1,296 @@
+
+<html>
+  <head>
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <script src="https://ajax.aspnetcdn.com/ajax/jQuery/jquery-3.3.1.min.js"></script>
+    <!-- Original Prebid.js -->
+    <!-- <script async src="//acdn.adnxs.com/prebid/not-for-prod/1/prebid.js"></script> -->
+    <!-- for testpages -->
+    <!-- <script async src="/prebid.js"></script> -->
+    <!-- for local -->
+    <script async src="/build/dev/prebid.js"></script>
+    
+    <!-- prebid-universal-creative -->
+    <!-- contains native tracking code -->
+    <!-- <script async src="http://3037.pmahe.user.nym2.adnexus.net/native-trk.js"></script> -->
+<script async src="https://cdn.jsdelivr.net/npm/prebid-universal-creative@latest/dist/native-trk.js"></script>
+    
+    <style>
+        .native-ad-container {
+            background-color: #fffdeb;
+            border: 0pt none; 
+            display: inline-block; 
+            width: 100%; 
+            height: auto;
+        }
+        
+        .sponsored-post-nativead {
+            font-family: sans-serif;
+            padding: 10px 20px 10px 20px;
+          }
+    
+          .content-nativead {
+              overflow: hidden;
+          }
+    
+          .thumbnail-nativead {
+              width: 120px;
+              height: 100px;
+              float: left;
+              margin: 0 20px 10px 0;
+              background-size: cover;
+          }
+    
+          h2.nativead {
+              font-size: 18px;
+              margin: 0;
+          }
+          
+          .attribution-nativead {
+              color: #fff;
+              font-size: 9px;
+              font-weight: bold;
+              display: inline-block;
+              letter-spacing: 2px;
+              background-color: #ffd724;
+              border-radius: 2px;
+              padding: 4px;
+          }
+    
+          a.nativead {
+              color: #0086b3;
+              text-decoration: none;
+          }
+    
+          p.nativead {
+              font-size: 16px;
+              color: #444;
+              margin: 10px 0 10px 0;
+          }
+    </style>
+    
+    <script>
+        const PREBID_TIMEOUT = 1500;
+        var pbjs = pbjs || {};
+        pbjs.que = pbjs.que || [];
+        
+        pbjs.que.push(function() {
+            pbjs.enableAnalytics({
+                provider: 'appnexus',
+                options: {}
+            });
+        });
+        
+        let date = new Date().getTime();
+
+        function initMyAdserver() {
+            if (pbjs.initMyAdserverSet) {
+                return;
+            }
+            
+            pbjs.initMyAdserverSet = true;
+        }
+
+        // Load GPT when timeout is reached.
+        setTimeout(initMyAdserver, PREBID_TIMEOUT);
+
+        pbjs.que.push(function() {
+
+            pbjs.setConfig({
+                debug: true
+            });
+
+            // var allSlotsBidWon = function allSlotsBidWon() {
+            //     console.log('allSlotsBidWon called');
+            // };
+            // 
+            // pbjs.onEvent('bidWon', allSlotsBidWon);
+
+            var adUnits = [{
+                    code: '/19968336/prebid_native_example_1',
+                    sizes: [
+                        [360, 360]
+                    ],
+                    mediaTypes: {
+                        native: {
+                            title: {
+                                required: true
+                            },
+                            image: {
+                                required: true
+                            },
+                            sponsoredBy: {
+                                required: true
+                            }
+                        }
+                    },
+                    bids: [{
+                        bidder: 'appnexus',
+                        params: {
+                            placementId: 13232354,
+                            allowSmallerSizes: true
+                        }
+                    }]
+                },
+                {
+                    code: '/14581651/prebid_native_example_2',
+                    sizes: [
+                        [1, 1]
+                    ],
+                    mediaTypes: {
+                        native: {
+                            title: {
+                                required: true
+                            },
+                            body: {
+                                required: true
+                            },
+                            image: {
+                                required: true
+                            },
+                            sponsoredBy: {
+                                required: true
+                            },
+                            icon: {
+                                required: false
+                            },
+                        }
+                    },
+                    bids: [{
+                        bidder: 'appnexus',
+                        params: {
+                            placementId: 13232354,
+                            allowSmallerSizes: true
+                        }
+                    }]
+                },
+                {
+                    code: '/17581651/prebid_native_example_3',
+                    sizes: [
+                        [1, 1]
+                    ],
+                    mediaTypes: {
+                        native: {
+                            title: {
+                                required: true
+                            },
+                            body: {
+                                required: true
+                            },
+                            image: {
+                                required: true
+                            },
+                            sponsoredBy: {
+                                required: true
+                            },
+                            icon: {
+                                required: false
+                            },
+                        }
+                    },
+                    bids: [{
+                        bidder: 'appnexus',
+                        params: {
+                            placementId: 14232354,
+                            allowSmallerSizes: true
+                        }
+                    }]
+                }
+            ];
+
+            pbjs.addAdUnits(adUnits);
+            pbjs.requestBids({
+                bidsBackHandler: function(bidResponses) {
+                    initMyAdserver();
+                    
+                }
+            });
+        });
+        
+        let adUnitCodeToDomId = {
+            "/19968336/prebid_native_example_1": "div-1",
+            "/14581651/prebid_native_example_2": "div-2"
+        };
+        
+        function getBidsResponse() {
+            var bidResponses = pbjs.getBidResponses();
+            
+            Object.keys(bidResponses).forEach(function(key,index) {
+                // key: the name of the object key
+                // index: the ordinal position of the key within the object 
+                var currentBids = bidResponses[key];
+                if(currentBids.bids.length >= 0){
+                    let currentResponse = currentBids.bids[0];
+                    if(key in adUnitCodeToDomId){
+                        // console.info('calling showNativeAd for ad: ' + adUnitCodeToDomId[key]);
+                        showNativeAd(currentResponse, adUnitCodeToDomId[key]);
+                    }
+                }  
+            });
+            
+            startNativeTracker();
+            
+            let auctionMgr = pbjs.auctionManager;
+        }
+        
+        function showNativeAd(bidResponse, htmlDomId){
+            var surroundingDivElmt = document.getElementById(htmlDomId);
+            while (surroundingDivElmt.firstChild) {
+                surroundingDivElmt.removeChild(surroundingDivElmt.firstChild);
+            }
+            let divContainerElmt = document.createElement('div');
+            divContainerElmt.setAttribute('id', 'native_ad_container_' + bidResponse.adUnitCode);
+            divContainerElmt.setAttribute('class', 'native-ad-container');
+            let divElmt = document.createElement('div');
+                     
+            divContainerElmt.appendChild(divElmt);
+            surroundingDivElmt.appendChild(divContainerElmt);
+            
+            let templateCrea = 
+'      <div id="native-ad-' + bidResponse.adId + '" class="sponsored-post-nativead">\n' +
+'        <div class="thumbnail-nativead" style="background-image: url(' + bidResponse.native.image.url + ');"></div>\n' +
+'        <div class="content-nativead">\n' +
+'          <h2 class="nativead">\n' +
+'            <a href="' + bidResponse.native.clickUrl + '" target="_blank" class="pb-click nativead" pbadid="' + bidResponse.adId + '">\n' +
+'              ' + bidResponse.native.title + '\n' +
+'            </a>\n' +
+'          <p class="nativead">Prebid native ad with ID: ' + bidResponse.adUnitCode + '</p>\n' +
+'          <div class="attribution-nativead">' + bidResponse.native.sponsoredBy + '</div>\n' +
+'          </h2>\n' +
+'        </div>\n' +
+'      </div>\n';
+            
+            let content = $.parseHTML(templateCrea);
+            $(divElmt).append(content);
+            
+            let viewScriptToCall = bidResponse.viewability;
+            viewScriptToCall = viewScriptToCall + 'native-ad-' + bidResponse.adId;
+        }
+        
+        function startNativeTracker() {
+            let tagData = {pubUrl: "http://test.localhost:9999"};
+            let pbNativeTagData = {};
+            pbNativeTagData.pubUrl = "http://prebid.org/examples/native/native-demo.html";
+            window.pbNativeTag.startTrackers(tagData);
+        }
+
+        setTimeout(getBidsResponse, PREBID_TIMEOUT);
+        // setTimeout(startNativeTracker, PREBID_TIMEOUT + 1);
+    </script>
+  </head>
+  <body>
+    <div>
+      <h2>Prebid Native</h2>
+        <div id='div-1'>
+          <p>No response</p>
+        </div>
+
+        <br>
+        <br>
+
+        <div id='div-2'>
+          <p>No response</p>
+        </div>
+    </div>
+  </body>
+</html>
