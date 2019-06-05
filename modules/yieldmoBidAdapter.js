@@ -105,14 +105,14 @@ function addPlacement(request) {
     sizes: request.sizes
   }
   if (request.params) {
-
-  } if (request.params.placementId) {
-    placementInfo.ym_placement_id = request.params.placementId;
-  }
-  if (request.params.bidFloor) {
-    placementInfo.bidFloor = request.params.bidFloor;
-  }
+    if (request.params.placementId) {
+      placementInfo.ym_placement_id = request.params.placementId;
+    }
+    if (request.params.bidFloor) {
+      placementInfo.bidFloor = request.params.bidFloor;
+    }
   return JSON.stringify(placementInfo);
+  }
 }
 
 /**
