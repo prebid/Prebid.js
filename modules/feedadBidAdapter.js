@@ -43,6 +43,25 @@ const VERSION = "1.0.0";
  */
 
 /**
+ * @typedef {object} FeedAdApiTrackingParams
+ * @inner
+ *
+ * app_hybrid {boolean}
+ * client_token {string}
+ * klass {'prebid_bidWon'|'prebid_bidTimeout'}
+ * placement_id {string}
+ * prebid_auction_id {string}
+ * prebid_bid_id {string}
+ * prebid_transaction_id {string}
+ * referer {string}
+ * sdk_version {string}
+ * [app_bundle_id] {string}
+ * [app_name] {string}
+ * [device_adid] {string}
+ * [device_platform] {1|2|3} 1 - Android | 2 - iOS | 3 - Windows
+ */
+
+/**
  * Bidder network identity code
  * @type {string}
  */
@@ -68,6 +87,13 @@ const PLACEMENT_ID_PATTERN = /^(([a-z0-9])+[-_]?)+$/;
 
 const API_ENDPOINT = 'https://feedad-backend-dev.appspot.com';
 const API_PATH_BID_REQUEST = '/1/prebid/web/bids';
+const API_PATH_TRACK_REQUEST = '/1/prebid/web/events';
+
+/**
+ * Stores temporary auction metadata
+ * @type {Object.<string, {referer: string, transactionId: string}>}
+ */
+const BID_METADATA = {};
 
 /**
  * Checks if the bid is compatible with FeedAd.
@@ -171,6 +197,10 @@ function buildRequests(validBidRequests, bidderRequest) {
       return req;
     })
   });
+  data.bids.forEach(bid => BID_METADATA[bid.bidId] = {
+    referer: data.refererInfo.referer,
+    transactionId: bid.transactionId
+  });
   return {
     method: 'POST',
     url: `${API_ENDPOINT}${API_PATH_BID_REQUEST}`,
@@ -231,6 +261,32 @@ function createAdHTML(req) {
 }
 
 /**
+ * Creates the parameters for the FeedAd tracking call
+ * @param {object} data - prebid data
+ * @param {'prebid_bidWon'|'prebid_bidTimeout'} klass - type of tracking call
+ * @return {FeedAdApiTrackingParams|null}
+ */
+function createTrackingParams(data, klass) {
+  const bidId = data.bidId || data.requestId;
+  if (!BID_METADATA.hasOwnProperty(bidId)) {
+    return null;
+  }
+  const {referer, transactionId} = BID_METADATA[bidId];
+  delete BID_METADATA[bidId];
+  return {
+    app_hybrid: false,
+    client_token: data.params[0].clientToken,
+    placement_id: data.params[0].placementId,
+    klass,
+    prebid_auction_id: data.auctionId,
+    prebid_bid_id: bidId,
+    prebid_transaction_id: transactionId,
+    referer,
+    sdk_version: VERSION
+  };
+}
+
+/**
  * @type {BidderSpec}
  */
 export const spec = {
@@ -245,26 +301,29 @@ export const spec = {
     if (!timeoutData) {
       return;
     }
-    xhr = typeof xhr === 'function' ? xhr : ajax;
-    xhr('http://localhost:3000/onTimeout', null, JSON.stringify(timeoutData), {
-      withCredentials: true,
-      method: 'POST',
-      contentType: 'application/json'
-    })
+    let params = createTrackingParams(timeoutData, 'prebid_bidTimeout');
+    if (params) {
+      xhr = typeof xhr === 'function' ? xhr : ajax;
+      xhr(`${API_ENDPOINT}${API_PATH_TRACK_REQUEST}`, null, JSON.stringify(params), {
+        withCredentials: true,
+        method: 'POST',
+        contentType: 'application/json'
+      });
+    }
   },
   onBidWon: function (bid, xhr) {
     if (!bid) {
       return;
     }
-    xhr = typeof xhr === "function" ? xhr : ajax;
-    xhr('http://localhost:3000/onBidWon', null, JSON.stringify(bid), {
-      withCredentials: true,
-      method: 'POST',
-      contentType: 'application/json'
-    })
-  },
-  onSetTargeting: function (bid) {
-    console.log('onSetTargeting', bid);
+    let params = createTrackingParams(bid, 'prebid_bidWon');
+    if (params) {
+      xhr = typeof xhr === 'function' ? xhr : ajax;
+      xhr(`${API_ENDPOINT}${API_PATH_TRACK_REQUEST}`, null, JSON.stringify(params), {
+        withCredentials: true,
+        method: 'POST',
+        contentType: 'application/json'
+      });
+    }
   }
 };
 
