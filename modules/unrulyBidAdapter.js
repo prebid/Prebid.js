@@ -4,6 +4,9 @@ import { registerBidder } from '../src/adapters/bidderFactory'
 import { VIDEO } from '../src/mediaTypes'
 
 function configureUniversalTag (exchangeRenderer) {
+  if (!exchangeRenderer.config) throw new Error('UnrulyBidAdapter: Missing renderer config.')
+  if (!exchangeRenderer.config.siteId) throw new Error('UnrulyBidAdapter: Missing renderer siteId.')
+
   parent.window.unruly = parent.window.unruly || {};
   parent.window.unruly['native'] = parent.window.unruly['native'] || {};
   parent.window.unruly['native'].siteId = parent.window.unruly['native'].siteId || exchangeRenderer.config.siteId;
