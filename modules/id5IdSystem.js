@@ -8,6 +8,7 @@
 import * as utils from '../src/utils.js'
 import {ajax} from '../src/ajax.js';
 import {isGDPRApplicable} from './userId.js';
+import {attachIdSystem} from './userId';
 
 /** @type {Submodule} */
 export const id5IdSubmodule = {
@@ -56,3 +57,5 @@ export const id5IdSubmodule = {
     }
   }
 };
+
+attachIdSystem(id5IdSubmodule);
