@@ -112,7 +112,7 @@ function addPlacement(request) {
       placementInfo.bidFloor = request.params.bidFloor;
     }
   }
-   return JSON.stringify(placementInfo);
+  return JSON.stringify(placementInfo);
 }
 
 /**
