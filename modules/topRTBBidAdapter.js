@@ -21,11 +21,8 @@ export const spec = {
 
   buildRequests: function (validBidRequests, bidderRequest) {
     let adunitid = [];
-    console.log(bidderRequest);
-    console.log(validBidRequests[0]);
     utils._each(validBidRequests, function (bid) {
       adunitid.push(bid.params.adUnitId + '_' + bid.bidId);
-      // console.log('adunitid = ' + adunitid[0]);
     });
 
     return {
