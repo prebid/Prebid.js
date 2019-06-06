@@ -286,6 +286,7 @@ export const spec = {
       let viewJsPayload = bid.native.javascriptTrackers[1]; // see appnexusBidAdapter.newbid
       let cssSelector = 'css_selector=.pb-click[pbadid=\'' + bid.adId + '\']';
       let newViewJsPayload = viewJsPayload.replace('%native_dom_id%', ';' + cssSelector);
+      newViewJsPayload = viewJsPayload.replace('data-src=', 'src=');
       bid.native.javascriptTrackers[1] = newViewJsPayload;
 
       // find iframe containing script tag
@@ -314,8 +315,9 @@ export const spec = {
             let scriptArray = nestedDoc.getElementsByTagName('script');
             for (let j = 0; j < scriptArray.length && !modifiedAScript; j++) {
               let currentScript = scriptArray[j];
-              if (currentScript.src == jsTrackerSrc) {
+              if (currentScript.dataset.src == jsTrackerSrc) {
                 currentScript.src = newJsTrackerSrc;
+                currentScript.dataset.src = '';
                 modifiedAScript = true;
               }
             }
@@ -461,6 +463,12 @@ function newBid(serverBid, rtbBid, bidderRequest) {
     }
   } else if (rtbBid.rtb[NATIVE]) {
     const nativeAd = rtbBid.rtb[NATIVE];
+
+    // setting up the jsTracker:
+    // we put it as a data-src attribute so that the tracker isn't called
+    // until we have the adId (see onBidWon)
+    let jsTrackerDisarmed = rtbBid.viewability.config.replace('src=', 'data-src=');
+
     bid[NATIVE] = {
       title: nativeAd.title,
       body: nativeAd.desc,
@@ -479,7 +487,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
       displayUrl: nativeAd.displayurl,
       clickTrackers: nativeAd.link.click_trackers,
       impressionTrackers: nativeAd.impression_trackers,
-      javascriptTrackers: [nativeAd.javascript_trackers, rtbBid.viewability.config]
+      javascriptTrackers: [nativeAd.javascript_trackers, jsTrackerDisarmed]
     };
     if (nativeAd.main_img) {
       bid['native'].image = {
