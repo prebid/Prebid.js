@@ -221,43 +221,7 @@ function interpretResponse(serverResponse, request) {
   /**
    * @type FeedAdApiBidResponse[]
    */
-  const body = typeof serverResponse.body === 'string' ? JSON.parse(serverResponse.body) : serverResponse.body;
-  return body.map((response, idx) => ({
-    requestId: response.requestId,
-    cpm: 0.5,
-    width: response.width,
-    height: response.height,
-    ad: `<html><body>${response.ad}</body></html>`,
-    ttl: response.ttl,
-    creativeId: response.creativeId,
-    netRevenue: response.netRevenue,
-    currency: response.currency
-  }));
-}
-
-/**
- * Creates the HTML content for a FeedAd creative
- * @param {object} req - the server response body
- * @return {string} the HTML string
- */
-function createAdHTML(req) {
-  return `<html><body>
-<script type="text/javascript" src="https://web.feedad.com/loader/feedad-iframe-loader.js"></script>
-<script type="text/javascript">
-    feedad.loadFeedAd({
-        clientToken: '${req.params.clientToken}',
-        placementId: '${req.params.placementId}',
-        adOptions: {scaleMode: "parent_width"},
-        beforeAttach: (el, wrp) => {
-          wrp = document.createElement("div");
-          wrp.style.width = '${req.sizes[0][0]}px';
-          wrp.style.height = '${req.sizes[0][1]}px';
-          el.appendChild(wrp);
-          return wrp;
-        }
-    });
-</script>
-</body></html>`;
+  return typeof serverResponse.body === 'string' ? JSON.parse(serverResponse.body) : serverResponse.body;
 }
 
 /**
@@ -287,35 +251,16 @@ function createTrackingParams(data, klass) {
 }
 
 /**
- * @type {BidderSpec}
+ * Creates a tracking handler for the given event type
+ * @param klass - the event type
+ * @return {Function} the tracking handler function
  */
-export const spec = {
-  code: BIDDER_CODE,
-  supportedMediaTypes: MEDIA_TYPES,
-  isBidRequestValid,
-  buildRequests,
-  interpretResponse,
-  getUserSyncs: function (syncOptions, serverResponses) {
-  },
-  onTimeout: function (timeoutData, xhr) {
-    if (!timeoutData) {
+function trackingHandlerFactory(klass) {
+  return (data, xhr) => {
+    if (!data) {
       return;
     }
-    let params = createTrackingParams(timeoutData, 'prebid_bidTimeout');
-    if (params) {
-      xhr = typeof xhr === 'function' ? xhr : ajax;
-      xhr(`${API_ENDPOINT}${API_PATH_TRACK_REQUEST}`, null, JSON.stringify(params), {
-        withCredentials: true,
-        method: 'POST',
-        contentType: 'application/json'
-      });
-    }
-  },
-  onBidWon: function (bid, xhr) {
-    if (!bid) {
-      return;
-    }
-    let params = createTrackingParams(bid, 'prebid_bidWon');
+    let params = createTrackingParams(data, klass);
     if (params) {
       xhr = typeof xhr === 'function' ? xhr : ajax;
       xhr(`${API_ENDPOINT}${API_PATH_TRACK_REQUEST}`, null, JSON.stringify(params), {
@@ -325,6 +270,19 @@ export const spec = {
       });
     }
   }
+}
+
+/**
+ * @type {BidderSpec}
+ */
+export const spec = {
+  code: BIDDER_CODE,
+  supportedMediaTypes: MEDIA_TYPES,
+  isBidRequestValid,
+  buildRequests,
+  interpretResponse,
+  onTimeout: trackingHandlerFactory('prebid_bidTimeout'),
+  onBidWon: trackingHandlerFactory('prebid_bidWon')
 };
 
 registerBidder(spec);
