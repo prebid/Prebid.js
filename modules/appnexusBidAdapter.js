@@ -35,6 +35,10 @@ const NATIVE_MAPPING = {
 const SOURCE = 'pbjs';
 const MAX_IMPS_PER_REQUEST = 15;
 const mappingFileUrl = '//acdn.adnxs.com/prebid/appnexus-mapping/mappings.json';
+const SCRIPT_TAG_START = "<script";
+const VIEWABILITY_HOST = "http://cdn.adnxs.com/v";
+const VIEWABILITY_FILE_NAME = "trk.js";
+
 
 export const spec = {
   code: BIDDER_CODE,
@@ -283,54 +287,60 @@ export const spec = {
    */
   onBidWon: function(bid) {
     if (bid.native) {
-      let viewJsPayload = bid.native.javascriptTrackers[1]; // see appnexusBidAdapter.newbid
-      let cssSelector = 'css_selector=.pb-click[pbadid=\'' + bid.adId + '\']';
-      let newViewJsPayload = viewJsPayload.replace('%native_dom_id%', ';' + cssSelector);
-      newViewJsPayload = viewJsPayload.replace('data-src=', 'src=');
-      bid.native.javascriptTrackers[1] = newViewJsPayload;
+      let viewJsPayload = getAppnexusViewabilityScriptFromJsTrackers(bid.native.javascriptTrackers);
+      
+      if(viewJsPayload && viewJsPayload !== null){
+          
+          let cssSelector = 'css_selector=.pb-click[pbadid=\'' + bid.adId + '\']';
+          
+          // extracting the content of the src attribute
+          // -> substring between src=" and "
+          let indexOfFirstQuote = viewJsPayload.indexOf('src="') + 5; // offset of 5: the length of 'src=' + 1
+          let indexOfSecondQuote = viewJsPayload.indexOf('"', indexOfFirstQuote);
+          let jsTrackerSrc = viewJsPayload.substring(indexOfFirstQuote, indexOfSecondQuote);
 
-      // find iframe containing script tag
-      let frameArray = document.getElementsByTagName('iframe');
-      // extracting the content of the src attribute
-      // -> substring between src=" and "
-      let indexOfFirstQuote = viewJsPayload.indexOf('src="') + 5; // offset of 5: the length of 'src=' + 1
-      let indexOfSecondQuote = viewJsPayload.indexOf('"', indexOfFirstQuote);
-      let jsTrackerSrc = viewJsPayload.substring(indexOfFirstQuote, indexOfSecondQuote);
+          let newJsTrackerSrc = jsTrackerSrc.replace('%native_dom_id%', ';' + cssSelector);          
+          
+          // find iframe containing script tag
+          let frameArray = document.getElementsByTagName('iframe');
+          
+          // boolean var to modify only one scrit. That way if there are muliple scripts,
+          // they won't all point to the same creative.
+          let modifiedAScript = false;
 
-      let newJsTrackerSrc = jsTrackerSrc.replace('%native_dom_id%', ';' + cssSelector);
+          // first, loop on all ifames
+          for (let i = 0; i < frameArray.length && !modifiedAScript; i++) {
+            let currentFrame = frameArray[i];
+            try {
+              // IE-compatible, see https://stackoverflow.com/a/3999191/2112089
+              let nestedDoc = currentFrame.contentDocument || currentFrame.contentWindow.document;
 
-      // boolean var to modify only one scrit. That way if there are muliple scripts,
-      // they won't all point to the same creative.
-      let modifiedAScript = false;
-
-      // first, loop on all ifames
-      for (let i = 0; i < frameArray.length && !modifiedAScript; i++) {
-        let currentFrame = frameArray[i];
-        try {
-          // IE-compatible, see https://stackoverflow.com/a/3999191/2112089
-          let nestedDoc = currentFrame.contentDocument || currentFrame.contentWindow.document;
-
-          if (nestedDoc) {
-            // if the doc is present, we look for our jstracker
-            let scriptArray = nestedDoc.getElementsByTagName('script');
-            for (let j = 0; j < scriptArray.length && !modifiedAScript; j++) {
-              let currentScript = scriptArray[j];
-              if (currentScript.dataset.src == jsTrackerSrc) {
-                currentScript.src = newJsTrackerSrc;
-                currentScript.dataset.src = '';
-                modifiedAScript = true;
+              if (nestedDoc) {
+                // if the doc is present, we look for our jstracker
+                let scriptArray = nestedDoc.getElementsByTagName('script');
+                for (let j = 0; j < scriptArray.length && !modifiedAScript; j++) {
+                  let currentScript = scriptArray[j];
+                  if (currentScript.getAttribute('data-src') == jsTrackerSrc) {
+                    currentScript.setAttribute('src', newJsTrackerSrc);
+                    currentScript.setAttribute('data-src', '');
+                    if(currentScript.removeAttribute){
+                        currentScript.removeAttribute('data-src');
+                    }
+                    modifiedAScript = true;
+                  }
+                }
+              }
+            } catch (exception) {
+              // trying to access a cross-domain iframe raises a SecurityError
+              // this is expected and ignored
+              if (!(exception instanceof DOMException && exception.name === 'SecurityError')) {
+                // all other cases are raised again to be treated by the calling function
+                throw exception;
               }
             }
           }
-        } catch (exception) {
-          // trying to access a cross-domain iframe raises a SecurityError
-          // this is expected and ignored
-          if (!(exception instanceof DOMException && exception.name === 'SecurityError')) {
-            // all other cases are raised again to be treated by the calling function
-            throw exception;
-          }
-        }
       }
+      
     }
   }
 }
@@ -343,6 +353,27 @@ function deleteValues(keyPairObj) {
   if (isPopulatedArray(keyPairObj.value) && keyPairObj.value[0] === '') {
     delete keyPairObj.value;
   }
+}
+
+function strIsAppnexusViewabilityScript(str){
+    return str.startsWith(SCRIPT_TAG_START) && 
+            (str.indexOf(VIEWABILITY_HOST) != -1) && 
+            (str.indexOf(VIEWABILITY_FILE_NAME) != -1);
+}
+
+function getAppnexusViewabilityScriptFromJsTrackers(jsTrackerArray){
+    let viewJsPayload;
+    if (utils.isStr(jsTrackerArray) && strIsAppnexusViewabilityScript(jsTrackerArray)){
+        viewJsPayload = jsTrackerArray;
+    } else if(utils.isArray(jsTrackerArray)){
+        for(let i = 0; i < jsTrackerArray.length; i++){
+            let currentJsTracker = jsTrackerArray[i];
+            if(strIsAppnexusViewabilityScript(currentJsTracker)){
+                viewJsPayload = currentJsTracker;
+            }
+        }
+    }
+    return viewJsPayload;
 }
 
 function formatRequest(payload, bidderRequest) {
@@ -468,6 +499,16 @@ function newBid(serverBid, rtbBid, bidderRequest) {
     // we put it as a data-src attribute so that the tracker isn't called
     // until we have the adId (see onBidWon)
     let jsTrackerDisarmed = rtbBid.viewability.config.replace('src=', 'data-src=');
+    
+    let jsTrackers = nativeAd.javascript_trackers;
+    
+    if(jsTrackers == undefined){
+        jsTrackers = jsTrackerDisarmed;
+    } else if(utils.isStr(jsTrackers)) {
+        jsTrackers = [jsTrackers, jsTrackerDisarmed];
+    } else {
+        jsTrackers.push(jsTrackerDisarmed);
+    }
 
     bid[NATIVE] = {
       title: nativeAd.title,
@@ -487,7 +528,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
       displayUrl: nativeAd.displayurl,
       clickTrackers: nativeAd.link.click_trackers,
       impressionTrackers: nativeAd.impression_trackers,
-      javascriptTrackers: [nativeAd.javascript_trackers, jsTrackerDisarmed]
+      javascriptTrackers: jsTrackers
     };
     if (nativeAd.main_img) {
       bid['native'].image = {
