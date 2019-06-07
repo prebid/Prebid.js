@@ -46,19 +46,19 @@ const VERSION = '1.0.0';
  * @typedef {object} FeedAdApiTrackingParams
  * @inner
  *
- * app_hybrid {boolean}
- * client_token {string}
- * klass {'prebid_bidWon'|'prebid_bidTimeout'}
- * placement_id {string}
- * prebid_auction_id {string}
- * prebid_bid_id {string}
- * prebid_transaction_id {string}
- * referer {string}
- * sdk_version {string}
- * [app_bundle_id] {string}
- * [app_name] {string}
- * [device_adid] {string}
- * [device_platform] {1|2|3} 1 - Android | 2 - iOS | 3 - Windows
+ * @property app_hybrid {boolean}
+ * @property client_token {string}
+ * @property klass {'prebid_bidWon'|'prebid_bidTimeout'}
+ * @property placement_id {string}
+ * @property prebid_auction_id {string}
+ * @property prebid_bid_id {string}
+ * @property prebid_transaction_id {string}
+ * @property referer {string}
+ * @property sdk_version {string}
+ * @property [app_bundle_id] {string}
+ * @property [app_name] {string}
+ * @property [device_adid] {string}
+ * @property [device_platform] {1|2|3} 1 - Android | 2 - iOS | 3 - Windows
  */
 
 /**

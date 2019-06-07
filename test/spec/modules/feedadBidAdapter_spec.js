@@ -250,51 +250,160 @@ describe('FeedAdAdapter', function () {
     });
   });
 
-  describe('onTimeout', function () {
-    let xhr;
+  describe('event tracking calls', function () {
+    const clientToken = 'clientToken';
+    const placementId = 'placement id';
+    const auctionId = 'the auction id';
+    const bidId = 'the bid id';
+    const transactionId = 'the transaction id';
+    const referer = 'the referer';
+    const bidderRequest = {
+      refererInfo: {
+        referer: referer
+      },
+      some: 'thing'
+    };
+    const bid = {
+      'bidder': 'feedad',
+      'params': {
+        'clientToken': 'fupp',
+        'placementId': 'prebid-test'
+      },
+      'crumbs': {
+        'pubcid': '6254a85f-bded-489a-9736-83c45d45ef1d'
+      },
+      'mediaTypes': {
+        'banner': {
+          'sizes': [
+            [
+              300,
+              250
+            ]
+          ]
+        }
+      },
+      'adUnitCode': 'div-gpt-ad-1460505748561-0',
+      'transactionId': transactionId,
+      'sizes': [
+        [
+          300,
+          250
+        ]
+      ],
+      'bidId': bidId,
+      'bidderRequestId': '10739fe6fe2127',
+      'auctionId': '5ac67dff-d971-4b56-84a3-345a87a1f786',
+      'src': 'client',
+      'bidRequestsCount': 1
+    };
+    const timeoutData = {
+      'bidId': bidId,
+      'bidder': 'feedad',
+      'adUnitCode': 'div-gpt-ad-1460505748561-0',
+      'auctionId': auctionId,
+      'params': [
+        {
+          'clientToken': clientToken,
+          'placementId': placementId
+        }
+      ],
+      'timeout': 3000
+    };
+    const bidWonData = {
+      'bidderCode': 'feedad',
+      'width': 300,
+      'height': 250,
+      'statusMessage': 'Bid available',
+      'adId': '3a4529aa05114d',
+      'requestId': bidId,
+      'mediaType': 'banner',
+      'source': 'client',
+      'cpm': 0.5,
+      'ad': 'ad content',
+      'ttl': 60,
+      'creativeId': 'feedad-21-0',
+      'netRevenue': true,
+      'currency': 'EUR',
+      'auctionId': auctionId,
+      'responseTimestamp': 1558365914596,
+      'requestTimestamp': 1558365914506,
+      'bidder': 'feedad',
+      'adUnitCode': 'div-gpt-ad-1460505748561-0',
+      'timeToRespond': 90,
+      'pbLg': '0.50',
+      'pbMg': '0.50',
+      'pbHg': '0.50',
+      'pbAg': '0.50',
+      'pbDg': '0.50',
+      'pbCg': '',
+      'size': '300x250',
+      'adserverTargeting': {
+        'hb_bidder': 'feedad',
+        'hb_adid': '3a4529aa05114d',
+        'hb_pb': '0.50',
+        'hb_size': '300x250',
+        'hb_source': 'client',
+        'hb_format': 'banner'
+      },
+      'status': 'rendered',
+      'params': [
+        {
+          'clientToken': clientToken,
+          'placementId': placementId
+        }
+      ]
+    };
+    const cases = [
+      ['onTimeout', timeoutData, 'prebid_bidTimeout'],
+      ['onBidWon', bidWonData, 'prebid_bidWon'],
+    ];
 
-    beforeEach(function () {
-      xhr = sinon.stub();
-    });
+    cases.forEach(([name, data, eventKlass]) => {
+      let subject = spec[name];
+      describe(name + ' handler', function () {
+        let xhr;
 
-    it('should send parameters to backend', function () {
-      let params = {some: 'parameters'};
-      spec.onTimeout(params, xhr);
-      expect(xhr.calledOnceWith('http://localhost:3000/onTimeout', null, JSON.stringify(params), {
-        withCredentials: true,
-        method: 'POST',
-        contentType: 'application/json'
-      })).to.be.true;
-    });
+        beforeEach(function () {
+          xhr = sinon.stub();
+        });
 
-    it('should do nothing on empty data', function () {
-      spec.onTimeout(undefined, xhr);
-      spec.onTimeout(null, xhr);
-      expect(xhr.called).to.be.false;
-    });
-  });
+        it('should do nothing on empty data', function () {
+          subject(undefined, xhr);
+          subject(null, xhr);
+          expect(xhr.called).to.be.false;
+        });
 
-  describe('onBidWon', function () {
-    let xhr;
+        it('should do nothing when bid metadata is not set', function () {
+          subject(data, xhr);
+          expect(xhr.callCount).to.equal(0);
+        });
 
-    beforeEach(function () {
-      xhr = sinon.stub();
-    });
-
-    it('should send parameters to backend', function () {
-      let params = {some: 'parameters'};
-      spec.onBidWon(params, xhr);
-      expect(xhr.calledOnceWith('http://localhost:3000/onBidWon', null, JSON.stringify(params), {
-        withCredentials: true,
-        method: 'POST',
-        contentType: 'application/json'
-      })).to.be.true;
-    });
-
-    it('should do nothing on empty data', function () {
-      spec.onBidWon(undefined, xhr);
-      spec.onBidWon(null, xhr);
-      expect(xhr.called).to.be.false;
+        it('should send tracking params when correct metadata was set', function () {
+          spec.buildRequests([bid], bidderRequest);
+          let expectedData = {
+            app_hybrid: false,
+            client_token: clientToken,
+            placement_id: placementId,
+            klass: eventKlass,
+            prebid_auction_id: auctionId,
+            prebid_bid_id: bidId,
+            prebid_transaction_id: transactionId,
+            referer,
+            sdk_version: '1.0.0'
+          };
+          subject(data, xhr);
+          expect(xhr.callCount).to.equal(1);
+          let call = xhr.getCall(0);
+          expect(call.args[0]).to.equal('https://feedad-backend-dev.appspot.com/1/prebid/web/events');
+          expect(call.args[1]).to.be.null;
+          expect(JSON.parse(call.args[2])).to.deep.equal(expectedData);
+          expect(call.args[3]).to.deep.equal({
+            withCredentials: true,
+            method: 'POST',
+            contentType: 'application/json'
+          });
+        })
+      });
     });
   });
 });
