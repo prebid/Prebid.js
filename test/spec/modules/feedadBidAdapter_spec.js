@@ -250,6 +250,27 @@ describe('FeedAdAdapter', function () {
     });
   });
 
+  describe('interpretResponse', function () {
+    const body = [{
+      foo: "bar",
+      sub: {
+        obj: 5
+      }
+    }, {
+      bar: "foo"
+    }];
+
+    it('should convert string bodies to JSON', function () {
+      let result = spec.interpretResponse({body: JSON.stringify(body)});
+      expect(result).to.deep.equal(body);
+    });
+
+    it('should pass through body objects', function () {
+      let result = spec.interpretResponse({body});
+      expect(result).to.deep.equal(body);
+    });
+  });
+
   describe('event tracking calls', function () {
     const clientToken = 'clientToken';
     const placementId = 'placement id';

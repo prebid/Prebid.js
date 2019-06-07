@@ -265,7 +265,7 @@ function trackingHandlerFactory(klass) {
     }
     let params = createTrackingParams(data, klass);
     if (params) {
-      xhr = typeof xhr === 'function' ? xhr : ajax;
+      xhr = typeof xhr === 'function' ? xhr : ajax; // required to test calls to the ajax method because it cannot be mocked
       xhr(`${API_ENDPOINT}${API_PATH_TRACK_REQUEST}`, null, JSON.stringify(params), {
         withCredentials: true,
         method: 'POST',
