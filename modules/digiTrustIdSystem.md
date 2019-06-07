@@ -127,7 +127,6 @@ without losing DigiTrust support in the process.
 ## Parameter Descriptions for the `usersync` Configuration Section
 The below parameters apply only to the DigiTrust ID integration.
 
-{: .table .table-bordered .table-striped }
 | Param under usersync.userIds[] | Scope | Type | Description | Example |
 | --- | --- | --- | --- | --- |
 | name | Required | String | ID value for the DigiTrust module - `"digitrust"` | `"digitrust"` |
