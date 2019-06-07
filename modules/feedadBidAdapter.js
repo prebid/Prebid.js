@@ -85,7 +85,7 @@ const TAG = '[FeedAd]';
  */
 const PLACEMENT_ID_PATTERN = /^(([a-z0-9])+[-_]?)+$/;
 
-const API_ENDPOINT = 'https://feedad-backend-dev.appspot.com';
+const API_ENDPOINT = 'https://api.feedad.com';
 const API_PATH_BID_REQUEST = '/1/prebid/web/bids';
 const API_PATH_TRACK_REQUEST = '/1/prebid/web/events';
 

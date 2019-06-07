@@ -205,7 +205,7 @@ describe('FeedAdAdapter', function () {
         params: {clientToken: 'clientToken', placementId: 'placement-id'}
       };
       let result = spec.buildRequests([bid], bidderRequest);
-      expect(result.url).to.equal('https://feedad-backend-dev.appspot.com/1/prebid/web/bids');
+      expect(result.url).to.equal('https://api.feedad.com/1/prebid/web/bids');
     });
     it('should specify the content type explicitly', function () {
       let bid = {
@@ -252,12 +252,12 @@ describe('FeedAdAdapter', function () {
 
   describe('interpretResponse', function () {
     const body = [{
-      foo: "bar",
+      foo: 'bar',
       sub: {
         obj: 5
       }
     }, {
-      bar: "foo"
+      bar: 'foo'
     }];
 
     it('should convert string bodies to JSON', function () {
@@ -415,7 +415,7 @@ describe('FeedAdAdapter', function () {
           subject(data, xhr);
           expect(xhr.callCount).to.equal(1);
           let call = xhr.getCall(0);
-          expect(call.args[0]).to.equal('https://feedad-backend-dev.appspot.com/1/prebid/web/events');
+          expect(call.args[0]).to.equal('https://api.feedad.com/1/prebid/web/events');
           expect(call.args[1]).to.be.null;
           expect(JSON.parse(call.args[2])).to.deep.equal(expectedData);
           expect(call.args[3]).to.deep.equal({
