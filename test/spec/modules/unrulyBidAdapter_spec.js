@@ -128,10 +128,10 @@ describe('UnrulyAdapter', function () {
     it('should be a function', function () {
       expect(typeof adapter.interpretResponse).to.equal('function');
     });
-    it('should return empty array when serverResponse is undefined', function () {
+    it('should return [] when serverResponse is undefined', function () {
       expect(adapter.interpretResponse()).to.deep.equal([]);
     });
-    it('should return empty array when  serverResponse has no bids', function () {
+    it('should return [] when  serverResponse has no bids', function () {
       const mockServerResponse = { body: { bids: [] } };
       expect(adapter.interpretResponse(mockServerResponse)).to.deep.equal([])
     });
@@ -182,7 +182,9 @@ describe('UnrulyAdapter', function () {
       sinon.assert.calledWithExactly(fakeRenderer.setRender, sinon.match.func)
     });
 
-    it('should throw if bidResponse renderer config is not available', function () {
+    it('should return [] and log if bidResponse renderer config is not available', function () {
+      sinon.assert.notCalled(utils.logError)
+
       expect(Renderer.install.called).to.be.false;
       expect(fakeRenderer.setRender.called).to.be.false;
 
@@ -193,11 +195,23 @@ describe('UnrulyAdapter', function () {
       mockReturnedBid.ext.renderer = mockRenderer;
       const mockServerResponse = createExchangeResponse(mockReturnedBid);
 
-      expect(() => adapter.interpretResponse(mockServerResponse))
-        .to.throw('UnrulyBidAdapter: Missing renderer config.');
+      expect(adapter.interpretResponse(mockServerResponse)).to.deep.equal([]);
+
+      const logErrorCalls = utils.logError.getCalls();
+      expect(logErrorCalls.length).to.equal(2);
+
+      const [ configErrorCall, siteIdErrorCall ] = logErrorCalls;
+
+      expect(configErrorCall.args.length).to.equal(1);
+      expect(configErrorCall.args[0].message).to.equal('UnrulyBidAdapter: Missing renderer config.');
+
+      expect(siteIdErrorCall.args.length).to.equal(1);
+      expect(siteIdErrorCall.args[0].message).to.equal('UnrulyBidAdapter: Missing renderer siteId.');
     });
 
-    it('should throw if siteId is not available', function () {
+    it('should return [] and log if siteId is not available', function () {
+      sinon.assert.notCalled(utils.logError)
+
       expect(Renderer.install.called).to.be.false;
       expect(fakeRenderer.setRender.called).to.be.false;
 
@@ -209,8 +223,15 @@ describe('UnrulyAdapter', function () {
       mockReturnedBid.ext.renderer = mockRenderer;
       const mockServerResponse = createExchangeResponse(mockReturnedBid);
 
-      expect(() => adapter.interpretResponse(mockServerResponse))
-        .to.throw('UnrulyBidAdapter: Missing renderer siteId.');
+      expect(adapter.interpretResponse(mockServerResponse)).to.deep.equal([]);
+
+      const logErrorCalls = utils.logError.getCalls();
+      expect(logErrorCalls.length).to.equal(1);
+
+      const [ siteIdErrorCall ] = logErrorCalls;
+
+      expect(siteIdErrorCall.args.length).to.equal(1);
+      expect(siteIdErrorCall.args[0].message).to.equal('UnrulyBidAdapter: Missing renderer siteId.');
     });
 
     it('bid is placed on the bid queue when render is called', function () {

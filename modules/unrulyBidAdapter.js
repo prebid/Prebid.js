@@ -38,9 +38,18 @@ const serverResponseToBid = (bid, rendererInstance) => ({
 
 const buildPrebidResponseAndInstallRenderer = bids =>
   bids
-    .filter(serverBid => !!utils.deepAccess(serverBid, 'ext.renderer'))
+    .filter(serverBid => {
+      const hasConfig = !!utils.deepAccess(serverBid, 'ext.renderer.config');
+      const hasSiteId = !!utils.deepAccess(serverBid, 'ext.renderer.config.siteId');
+
+      if (!hasConfig) utils.logError(new Error('UnrulyBidAdapter: Missing renderer config.'));
+      if (!hasSiteId) utils.logError(new Error('UnrulyBidAdapter: Missing renderer siteId.'));
+
+      return hasSiteId
+    })
     .map(serverBid => {
       const exchangeRenderer = utils.deepAccess(serverBid, 'ext.renderer');
+
       configureUniversalTag(exchangeRenderer);
       configureRendererQueue();
 
