@@ -3,7 +3,7 @@
 ```
 Module Name:  Quantum Advertising Bid Adapter
 Module Type:  Bidder Adapter
-Maintainer: sami@elasticad.com
+Maintainer: support.mediareporting@adux.com
 ```
 
 # Description
