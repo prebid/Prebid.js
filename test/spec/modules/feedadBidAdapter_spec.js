@@ -1,15 +1,11 @@
 import {expect} from 'chai';
 import {spec} from 'modules/feedadBidAdapter';
-import {newBidder} from 'src/adapters/bidderFactory';
 import {BANNER, NATIVE, VIDEO} from '../../../src/mediaTypes';
-import * as xhr from '../../../src/ajax';
 import * as sinon from 'sinon';
 
 const CODE = 'feedad';
 
 describe('FeedAdAdapter', function () {
-  const adapter = newBidder(spec);
-
   describe('Public API', function () {
     it('should have the FeedAd bidder code', function () {
       expect(spec.code).to.equal(CODE);
@@ -20,14 +16,12 @@ describe('FeedAdAdapter', function () {
       expect(spec.supportedMediaTypes).to.include(VIDEO);
       expect(spec.supportedMediaTypes).not.to.include(NATIVE);
     });
-    it('should include the BidderSpec functions', function () {
+    it('should export the BidderSpec functions', function () {
       expect(spec.isBidRequestValid).to.be.a('function');
       expect(spec.buildRequests).to.be.a('function');
       expect(spec.interpretResponse).to.be.a('function');
-      expect(spec.getUserSyncs).to.be.a('function');
       expect(spec.onTimeout).to.be.a('function');
       expect(spec.onBidWon).to.be.a('function');
-      expect(spec.onSetTargeting).to.be.a('function');
     });
   });
 
@@ -109,9 +103,16 @@ describe('FeedAdAdapter', function () {
   });
 
   describe('buildRequests', function () {
+    const bidderRequest = {
+      refererInfo: {
+        referer: 'the referer'
+      },
+      some: 'thing'
+    };
+
     it('should accept empty lists', function () {
-      let result = spec.buildRequests([]);
-      expect(result.data.requests).to.be.empty;
+      let result = spec.buildRequests([], bidderRequest);
+      expect(result).to.be.empty;
     });
     it('should filter native media types', function () {
       let bid = {
@@ -123,8 +124,8 @@ describe('FeedAdAdapter', function () {
         },
         params: {clientToken: 'clientToken', placementId: 'placement-id'}
       };
-      let result = spec.buildRequests([bid]);
-      expect(result.data.requests).to.be.empty;
+      let result = spec.buildRequests([bid], bidderRequest);
+      expect(result).to.be.empty;
     });
     it('should filter video media types without outstream context', function () {
       let bid = {
@@ -136,8 +137,8 @@ describe('FeedAdAdapter', function () {
         },
         params: {clientToken: 'clientToken', placementId: 'placement-id'}
       };
-      let result = spec.buildRequests([bid]);
-      expect(result.data.requests).to.be.empty;
+      let result = spec.buildRequests([bid], bidderRequest);
+      expect(result).to.be.empty;
     });
     it('should pass through outstream video media', function () {
       let bid = {
@@ -149,9 +150,9 @@ describe('FeedAdAdapter', function () {
         },
         params: {clientToken: 'clientToken', placementId: 'placement-id'}
       };
-      let result = spec.buildRequests([bid]);
-      expect(result.data.requests).to.be.lengthOf(1);
-      expect(result.data.requests[0]).to.deep.equal(bid);
+      let result = spec.buildRequests([bid], bidderRequest);
+      expect(result.data.bids).to.be.lengthOf(1);
+      expect(result.data.bids[0]).to.deep.equal(bid);
     });
     it('should pass through banner media', function () {
       let bid = {
@@ -163,9 +164,9 @@ describe('FeedAdAdapter', function () {
         },
         params: {clientToken: 'clientToken', placementId: 'placement-id'}
       };
-      let result = spec.buildRequests([bid]);
-      expect(result.data.requests).to.be.lengthOf(1);
-      expect(result.data.requests[0]).to.deep.equal(bid);
+      let result = spec.buildRequests([bid], bidderRequest);
+      expect(result.data.bids).to.be.lengthOf(1);
+      expect(result.data.bids[0]).to.deep.equal(bid);
     });
     it('should detect empty media types', function () {
       let bid = {
@@ -177,8 +178,8 @@ describe('FeedAdAdapter', function () {
         },
         params: {clientToken: 'clientToken', placementId: 'placement-id'}
       };
-      let result = spec.buildRequests([bid]);
-      expect(result.data.requests).to.be.empty;
+      let result = spec.buildRequests([bid], bidderRequest);
+      expect(result).to.be.empty;
     });
     it('should use POST', function () {
       let bid = {
@@ -190,7 +191,7 @@ describe('FeedAdAdapter', function () {
         },
         params: {clientToken: 'clientToken', placementId: 'placement-id'}
       };
-      let result = spec.buildRequests([bid]);
+      let result = spec.buildRequests([bid], bidderRequest);
       expect(result.method).to.equal('POST');
     });
     it('should use the correct URL', function () {
@@ -203,8 +204,8 @@ describe('FeedAdAdapter', function () {
         },
         params: {clientToken: 'clientToken', placementId: 'placement-id'}
       };
-      let result = spec.buildRequests([bid]);
-      expect(result.url).to.equal('http://localhost:3000/bidRequests');
+      let result = spec.buildRequests([bid], bidderRequest);
+      expect(result.url).to.equal('https://feedad-backend-dev.appspot.com/1/prebid/web/bids');
     });
     it('should specify the content type explicitly', function () {
       let bid = {
@@ -216,10 +217,36 @@ describe('FeedAdAdapter', function () {
         },
         params: {clientToken: 'clientToken', placementId: 'placement-id'}
       };
-      let result = spec.buildRequests([bid]);
+      let result = spec.buildRequests([bid], bidderRequest);
       expect(result.options).to.deep.equal({
         contentType: 'application/json'
       })
+    });
+    it('should include the bidder request', function () {
+      let bid = {
+        code: 'feedad',
+        mediaTypes: {
+          banner: {
+            sizes: [[320, 250]]
+          }
+        },
+        params: {clientToken: 'clientToken', placementId: 'placement-id'}
+      };
+      let result = spec.buildRequests([bid, bid, bid], bidderRequest);
+      expect(result.data).to.deep.include(bidderRequest);
+    });
+    it('should detect missing bidder request parameter', function () {
+      let bid = {
+        code: 'feedad',
+        mediaTypes: {
+          banner: {
+            sizes: [[320, 250]]
+          }
+        },
+        params: {clientToken: 'clientToken', placementId: 'placement-id'}
+      };
+      let result = spec.buildRequests([bid, bid, bid]);
+      expect(result).to.be.empty;
     });
   });
 

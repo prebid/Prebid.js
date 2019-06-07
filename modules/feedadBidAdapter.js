@@ -7,7 +7,7 @@ import {ajax} from '../src/ajax';
  * Version of the FeedAd bid adapter
  * @type {string}
  */
-const VERSION = "1.0.0";
+const VERSION = '1.0.0';
 
 /**
  * @typedef {object} FeedAdApiBidRequest
@@ -187,6 +187,9 @@ function createApiBidRParams(request) {
  * @return {ServerRequest|ServerRequest[]}
  */
 function buildRequests(validBidRequests, bidderRequest) {
+  if (!bidderRequest) {
+    return [];
+  }
   let acceptableRequests = validBidRequests.filter(request => !isMediaTypesEmpty(filterSupportedMediaTypes(request.mediaTypes)));
   if (acceptableRequests.length === 0) {
     return [];
