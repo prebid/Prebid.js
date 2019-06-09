@@ -28,12 +28,17 @@ export const spec = {
     var referer = bidderRequest.refererInfo.referer;
     var pageCategories = [];
     var tdId = '';
+    var width = window.innerWidth;
+    var height = window.innerHeight;
 
     // This reference to window.top can cause issues when loaded in an iframe if not protected with a try/catch.
     try {
-      if (window.top.rtkcategories && Array.isArray(window.top.rtkcategories)) {
-        pageCategories = window.top.rtkcategories;
+      var topWin = utils.getWindowTop();
+      if (topWin.rtkcategories && Array.isArray(topWin.rtkcategories)) {
+        pageCategories = topWin.rtkcategories;
       }
+      width = topWin.innerWidth;
+      height = topWin.innerHeight;
     } catch (e) {}
 
     if (utils.isStr(utils.deepAccess(validBidRequests, '0.userId.tdid'))) {
@@ -48,7 +53,9 @@ export const spec = {
           payload: {
             version: 1,
             jsonp: false,
-            rtkreferer: referer
+            rtkreferer: referer,
+            w: width,
+            h: height
           },
           endpoint: DEFAULT_ENDPOINT
         };
