@@ -246,6 +246,26 @@ describe('CleanmedianetAdapter', function() {
       response = spec.buildRequests([bidRequestWithPosEquals2], bidRequest)[0];
       expect(response.data.imp[0].video.ext.context).to.equal(null);
     });
+    it('builds request video object correctly with multi-dimensions size array', function () {
+      let bidRequestWithVideo = utils.deepClone(bidRequest);
+      bidRequestWithVideo.mediaTypes.video = {
+        playerSize: [[304, 254], [305, 255]],
+        context: 'instream'
+      };
+
+      let response = spec.buildRequests([bidRequestWithVideo], bidRequest)[0];
+      expect(response.data.imp[1].video.w).to.equal(304);
+      expect(response.data.imp[1].video.h).to.equal(254);
+
+      bidRequestWithVideo = utils.deepClone(bidRequest);
+      bidRequestWithVideo.mediaTypes.video = {
+        playerSize: [304, 254]
+      };
+
+      response = spec.buildRequests([bidRequestWithVideo], bidRequest)[0];
+      expect(response.data.imp[1].video.w).to.equal(304);
+      expect(response.data.imp[1].video.h).to.equal(254);
+    });
 
     it('builds request with gdpr consent', function() {
       let response = spec.buildRequests([bidRequest], bidRequest)[0];

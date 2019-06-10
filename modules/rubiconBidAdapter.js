@@ -25,6 +25,7 @@ var sizeMap = {
   14: '250x250',
   15: '300x250',
   16: '336x280',
+  17: '240x400',
   19: '300x100',
   31: '980x120',
   32: '250x360',
@@ -79,7 +80,9 @@ var sizeMap = {
   214: '980x360',
   229: '320x180',
   232: '580x400',
-  257: '400x600'
+  257: '400x600',
+  265: '1920x1080',
+  288: '640x380'
 };
 utils._each(sizeMap, (item, key) => sizeMap[item] = key);
 
@@ -151,10 +154,14 @@ export const spec = {
               includewinners: true,
               // includebidderkeys always false for openrtb
               includebidderkeys: false,
-              priceGranularity: getPriceGranularity(config)
+              pricegranularity: getPriceGranularity(config)
             }
           }
         }
+      }
+      const bidFloor = parseFloat(utils.deepAccess(bidRequest, 'params.floor'));
+      if (!isNaN(bidFloor)) {
+        data.imp[0].bidfloor = bidFloor;
       }
       // if value is set, will overwrite with same value
       data.imp[0].ext.rubicon.video.size_id = determineRubiconVideoSizeId(bidRequest)
@@ -232,30 +239,30 @@ export const spec = {
         return groupedBids;
       }, {});
 
-      requests = videoRequests.concat(Object.keys(groupedBidRequests).map(bidGroupKey => {
-        let bidsInGroup = groupedBidRequests[bidGroupKey];
+      // fastlane SRA has a limit of 10 slots
+      const SRA_BID_LIMIT = 10;
 
-        // fastlane SRA has a limit of 10 slots
-        if (bidsInGroup.length > 10) {
-          utils.logWarn(`Rubicon bid adapter Warning: single request mode has a limit of 10 bids: ${bidsInGroup.length - 10} bids were not sent`);
-          bidsInGroup = bidsInGroup.slice(0, 10);
-        }
+      // multiple requests are used if bids groups have more than 10 bids
+      requests = videoRequests.concat(Object.keys(groupedBidRequests).reduce((aggregate, bidGroupKey) => {
+        // for each partioned bidGroup, append a bidRequest to requests list
+        partitionArray(groupedBidRequests[bidGroupKey], SRA_BID_LIMIT).forEach(bidsInGroup => {
+          const combinedSlotParams = spec.combineSlotUrlParams(bidsInGroup.map(bidRequest => {
+            return spec.createSlotParams(bidRequest, bidderRequest);
+          }));
 
-        const combinedSlotParams = spec.combineSlotUrlParams(bidsInGroup.map(bidRequest => {
-          return spec.createSlotParams(bidRequest, bidderRequest);
-        }));
-
-        // SRA request returns grouped bidRequest arrays not a plain bidRequest
-        return {
-          method: 'GET',
-          url: FASTLANE_ENDPOINT,
-          data: spec.getOrderedParams(combinedSlotParams).reduce((paramString, key) => {
-            const propValue = combinedSlotParams[key];
-            return ((utils.isStr(propValue) && propValue !== '') || utils.isNumber(propValue)) ? `${paramString}${key}=${encodeURIComponent(propValue)}&` : paramString;
-          }, '') + `slots=${bidsInGroup.length}&rand=${Math.random()}`,
-          bidRequest: bidsInGroup,
-        };
-      }));
+          // SRA request returns grouped bidRequest arrays not a plain bidRequest
+          aggregate.push({
+            method: 'GET',
+            url: FASTLANE_ENDPOINT,
+            data: spec.getOrderedParams(combinedSlotParams).reduce((paramString, key) => {
+              const propValue = combinedSlotParams[key];
+              return ((utils.isStr(propValue) && propValue !== '') || utils.isNumber(propValue)) ? `${paramString}${key}=${encodeURIComponent(propValue)}&` : paramString;
+            }, '') + `slots=${bidsInGroup.length}&rand=${Math.random()}`,
+            bidRequest: bidsInGroup
+          });
+        });
+        return aggregate;
+      }, []));
     }
     return requests;
   },
@@ -265,6 +272,7 @@ export const spec = {
     const containsTgI = /^tg_i/
 
     const orderedParams = [
+      'tpid_tdid',
       'account_id',
       'site_id',
       'zone_id',
@@ -366,6 +374,10 @@ export const spec = {
       'tg_fl.eid': bidRequest.code,
       'rf': _getPageUrl(bidRequest, bidderRequest)
     };
+
+    if ((bidRequest.userId || {}).tdid) {
+      data['tpid_tdid'] = bidRequest.userId.tdid;
+    }
 
     if (bidderRequest.gdprConsent) {
       // add 'gdpr' only if 'gdprApplies' is defined
@@ -843,27 +855,29 @@ export function determineRubiconVideoSizeId(bid) {
   return utils.deepAccess(bid, `mediaTypes.${VIDEO}.context`) === 'outstream' ? 203 : 201;
 }
 
+/**
+ * @param {PrebidConfig} config
+ * @returns {{ranges: {ranges: Object[]}}}
+ */
 export function getPriceGranularity(config) {
-  const granularityMappings = {
-    low: [{max: 5.00, increment: 0.50}],
-    medium: [{max: 20.00, increment: 0.10}],
-    high: [{max: 20.00, increment: 0.01}],
-    auto: [
-      {max: 5.00, increment: 0.05},
-      {min: 5.00, max: 10.00, increment: 0.10},
-      {min: 10.00, max: 20.00, increment: 0.50}
-    ],
-    dense: [
-      {max: 3.00, increment: 0.01},
-      {min: 3.00, max: 8.00, increment: 0.05},
-      {min: 8.00, max: 20.00, increment: 0.50}
-    ]
-  }
-  if (config.getConfig('priceGranularity') === 'custom') {
-    return {ranges: config.getConfig('customPriceGranularity').buckets}
-  } else {
-    return {ranges: granularityMappings[config.getConfig('priceGranularity')]}
-  }
+  return {
+    ranges: {
+      low: [{max: 5.00, increment: 0.50}],
+      medium: [{max: 20.00, increment: 0.10}],
+      high: [{max: 20.00, increment: 0.01}],
+      auto: [
+        {max: 5.00, increment: 0.05},
+        {min: 5.00, max: 10.00, increment: 0.10},
+        {min: 10.00, max: 20.00, increment: 0.50}
+      ],
+      dense: [
+        {max: 3.00, increment: 0.01},
+        {min: 3.00, max: 8.00, increment: 0.05},
+        {min: 8.00, max: 20.00, increment: 0.50}
+      ],
+      custom: config.getConfig('customPriceBucket') && config.getConfig('customPriceBucket').buckets
+    }[config.getConfig('priceGranularity')]
+  };
 }
 
 // Function to validate the required video params
@@ -888,6 +902,16 @@ export function hasValidVideoParams(bid) {
     }
   })
   return isValid;
+}
+
+/**
+ * split array into multiple arrays of defined size
+ * @param {Array} array
+ * @param {number} size
+ * @returns {Array}
+ */
+function partitionArray(array, size) {
+  return array.map((e, i) => (i % size === 0) ? array.slice(i, i + size) : null).filter((e) => e)
 }
 
 var hasSynced = false;

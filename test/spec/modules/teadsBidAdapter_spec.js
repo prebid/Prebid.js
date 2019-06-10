@@ -132,6 +132,22 @@ describe('teadsBidAdapter', function() {
       expect(payload.gdpr_iab.status).to.equal(12);
     });
 
+    it('should add referer info to payload', function () {
+      const bidRequest = Object.assign({}, bidRequests[0])
+      const bidderRequest = {
+        refererInfo: {
+          referer: 'http://example.com/page.html',
+          reachedTop: true,
+          numIframes: 2
+        }
+      }
+      const request = spec.buildRequests([bidRequest], bidderRequest);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.referrer).to.exist;
+      expect(payload.referrer).to.deep.equal('http://example.com/page.html')
+    });
+
     it('should send GDPR to endpoint with 11 status', function() {
       let consentString = 'JRJ8RKfDeBNsERRDCSAAZ+A==';
       let bidderRequest = {

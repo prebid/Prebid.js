@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/yieldmoBidAdapter';
-import {newBidder} from 'src/adapters/bidderFactory';
+import { newBidder } from 'src/adapters/bidderFactory';
 import * as utils from 'src/utils';
 
 describe('YieldmoAdapter', function () {
@@ -14,7 +14,10 @@ describe('YieldmoAdapter', function () {
     sizes: [[300, 250], [300, 600]],
     bidId: '30b31c1838de1e',
     bidderRequestId: '22edbae2733bf6',
-    auctionId: '1d1a030790a475'
+    auctionId: '1d1a030790a475',
+    crumbs: {
+      pubcid: 'c604130c-0144-4b63-9bf2-c2bd8c8d86da'
+    }
   };
   let bidArray = [bid];
 
@@ -47,6 +50,13 @@ describe('YieldmoAdapter', function () {
       expect(request.url).to.be.equal(ENDPOINT);
     });
 
+    it('should not blow up if crumbs is undefined', function () {
+      let bidArray = [
+        { ...bid, crumbs: undefined }
+      ]
+      expect(function () { spec.buildRequests(bidArray) }).not.to.throw()
+    })
+
     it('should place bid information into the p parameter of data', function () {
       let placementInfo = spec.buildRequests(bidArray).data.p;
       expect(placementInfo).to.equal('[{"placement_id":"adunit-code","callback_id":"30b31c1838de1e","sizes":[[300,250],[300,600]]}]');
@@ -58,7 +68,11 @@ describe('YieldmoAdapter', function () {
         sizes: [[300, 250], [300, 600]],
         bidId: '123456789',
         bidderRequestId: '987654321',
-        auctionId: '0246810'
+        auctionId: '0246810',
+        crumbs: {
+          pubcid: 'c604130c-0144-4b63-9bf2-c2bd8c8d86da'
+        }
+
       });
 
       // multiple placements
@@ -90,6 +104,23 @@ describe('YieldmoAdapter', function () {
       expect(data.hasOwnProperty('title')).to.be.true;
       expect(data.hasOwnProperty('h')).to.be.true;
       expect(data.hasOwnProperty('w')).to.be.true;
+    })
+
+    it('should add pubcid as parameter of request', function () {
+      const pubcidBid = {
+        bidder: 'yieldmo',
+        params: {},
+        adUnitCode: 'adunit-code',
+        sizes: [[300, 250], [300, 600]],
+        bidId: '30b31c1838de1e',
+        bidderRequestId: '22edbae2733bf6',
+        auctionId: '1d1a030790a475',
+        userId: {
+          pubcid: 'c604130c-0144-4b63-9bf2-c2bd8c8d86da2'
+        }
+      };
+      const data = spec.buildRequests([pubcidBid]).data;
+      expect(data.pubcid).to.deep.equal('c604130c-0144-4b63-9bf2-c2bd8c8d86da2');
     })
   });
 

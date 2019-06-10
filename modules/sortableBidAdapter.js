@@ -136,8 +136,8 @@ export const spec = {
       let syncUrl = `//${SERVER_URL}/sync?f=html&s=${sortableConfig.siteId}&u=${encodeURIComponent(utils.getTopWindowLocation())}`;
 
       if (gdprConsent) {
-        syncurl += '&g=' + (gdprConsent.gdprApplies ? 1 : 0);
-        syncurl += '&cs=' + encodeURIComponent(gdprConsent.consentString || '');
+        syncUrl += '&g=' + (gdprConsent.gdprApplies ? 1 : 0);
+        syncUrl += '&cs=' + encodeURIComponent(gdprConsent.consentString || '');
       }
 
       return [{
