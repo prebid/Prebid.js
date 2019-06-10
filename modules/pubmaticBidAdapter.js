@@ -601,13 +601,20 @@ function _handleDigitrustId(eids) {
   }
 }
 
-function _handleTTDId(eids) {
+function _handleTTDId(eids, validBidRequests) {
+  let ttdId = null;
   let adsrvrOrgId = config.getConfig('adsrvrOrgId');
-  if (adsrvrOrgId && utils.isStr(adsrvrOrgId.TDID)) {
+  if (utils.isStr(utils.deepAccess(validBidRequests, '0.userId.tdid'))) {
+    ttdId = validBidRequests[0].userId.tdid;
+  } else if (adsrvrOrgId && utils.isStr(adsrvrOrgId.TDID)) {
+    ttdId = adsrvrOrgId.TDID;
+  }
+
+  if (ttdId !== null) {
     eids.push({
       'source': 'adserver.org',
       'uids': [{
-        'id': adsrvrOrgId.TDID,
+        'id': ttdId,
         'atype': 1,
         'ext': {
           'rtiPartner': 'TDID'
@@ -617,10 +624,10 @@ function _handleTTDId(eids) {
   }
 }
 
-function _handleEids(payload) {
+function _handleEids(payload, validBidRequests) {
   let eids = [];
   _handleDigitrustId(eids);
-  _handleTTDId(eids);
+  _handleTTDId(eids, validBidRequests);
   if (eids.length > 0) {
     payload.user.eids = eids;
   }
@@ -877,7 +884,7 @@ export const spec = {
       }
     }
 
-    _handleEids(payload);
+    _handleEids(payload, validBidRequests);
     _blockedIabCategoriesValidation(payload, blockedIabCategories);
     return {
       method: 'POST',

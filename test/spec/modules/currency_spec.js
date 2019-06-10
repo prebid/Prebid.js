@@ -191,6 +191,34 @@ describe('currency', function () {
       expect(innerBid.getCpmInNewCurrency('JPY')).to.equal('100.000');
     });
 
+    it('uses rates specified in json when provided and consider boosted bid', function () {
+      setConfig({
+        adServerCurrency: 'USD',
+        rates: {
+          USD: {
+            JPY: 100
+          }
+        }
+      });
+
+      var bid = { cpm: 100, currency: 'JPY', bidder: 'rubicon' };
+      var innerBid;
+
+      addBidResponseHook(function(adCodeId, bid) {
+        innerBid = bid;
+      }, 'elementId', bid);
+
+      expect(innerBid.cpm).to.equal('1.0000');
+      expect(typeof innerBid.getCpmInNewCurrency).to.equal('function');
+      expect(innerBid.getCpmInNewCurrency('JPY')).to.equal('100.000');
+
+      // Boosting the bid now
+      innerBid.cpm *= 10;
+      expect(innerBid.cpm).to.equal(10.0000);
+      expect(typeof innerBid.getCpmInNewCurrency).to.equal('function');
+      expect(innerBid.getCpmInNewCurrency('JPY')).to.equal('1000.000');
+    });
+
     it('uses default rates when currency file fails to load', function () {
       setConfig({});
 

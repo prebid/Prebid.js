@@ -1,12 +1,12 @@
 import { expect } from 'chai';
-import { spec } from 'modules/nextMilleniumBidAdapter';
+import { spec } from 'modules/nextMillenniumBidAdapter';
 
-describe('nextMilleniumBidAdapterTests', function() {
+describe('nextMillenniumBidAdapterTests', function() {
   let bidRequestData = {
     bids: [
       {
         bidId: 'transaction_1234',
-        bidder: 'nextMillenium',
+        bidder: 'nextMillennium',
         params: {
           placement_id: 12345
         },
@@ -19,7 +19,7 @@ describe('nextMilleniumBidAdapterTests', function() {
   it('validate_pub_params', function() {
     expect(
       spec.isBidRequestValid({
-        bidder: 'nextMillenium',
+        bidder: 'nextMillennium',
         params: {
           placement_id: 12345
         }
@@ -31,7 +31,7 @@ describe('nextMilleniumBidAdapterTests', function() {
     let bidRequestData = [
       {
         bidId: 'bid1234',
-        bidder: 'nextMillenium',
+        bidder: 'nextMillennium',
         params: { placement_id: -1 },
         sizes: [[300, 250]]
       }
