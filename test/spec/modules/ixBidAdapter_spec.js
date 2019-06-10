@@ -69,6 +69,19 @@ describe('IndexexchangeAdapter', function () {
       }
     ]
   };
+  const DEFAULT_IDENTITY_RESPONSE = {
+    IdentityIp: {
+      responsePending: false,
+      data: {
+        source: 'identityinc.com',
+        uids: [
+          {
+            id: 'identityid'
+          }
+        ]
+      }
+    }
+  };
 
   describe('inherited functions', function () {
     it('should exists and is a function', function () {
@@ -206,6 +219,171 @@ describe('IndexexchangeAdapter', function () {
       bid.params.bidFloor = 50;
       bid.params.bidFloorCur = 70;
       expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
+  });
+
+  describe('buildRequestsIdentity', function () {
+    let request;
+    let query;
+    let testCopy;
+
+    beforeEach(function() {
+      window.headertag = {};
+      window.headertag.getIdentityInfo = function() {
+        return testCopy;
+      };
+      request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_BANNER_OPTION);
+      query = request.data;
+    });
+    afterEach(function() {
+      delete window.headertag;
+    });
+    describe('buildRequestSingleRTI', function() {
+      before(function() {
+        testCopy = JSON.parse(JSON.stringify(DEFAULT_IDENTITY_RESPONSE));
+      });
+      it('payload should have correct format and value (single identity partner)', function () {
+        const payload = JSON.parse(query.r);
+
+        expect(payload.user).to.exist;
+        expect(payload.user.eids).to.exist;
+        expect(payload.user.eids).to.be.an('array');
+        expect(payload.user.eids).to.have.lengthOf(1);
+      });
+
+      it('identity data in impression should have correct format and value (single identity partner)', function () {
+        const impression = JSON.parse(query.r).user.eids;
+        expect(impression[0].source).to.equal(testCopy.IdentityIp.data.source);
+        expect(impression[0].uids[0].id).to.equal(testCopy.IdentityIp.data.uids[0].id);
+      });
+    });
+
+    describe('buildRequestMultipleIds', function() {
+      before(function() {
+        testCopy = JSON.parse(JSON.stringify(DEFAULT_IDENTITY_RESPONSE));
+        testCopy.IdentityIp.data.uids.push({
+          id: '1234567'
+        },
+        {
+          id: '2019-04-01TF2:34:41'
+        });
+      });
+      it('payload should have correct format and value (single identity w/ multi ids)', function () {
+        const payload = JSON.parse(query.r);
+
+        expect(payload.user).to.exist;
+        expect(payload.user.eids).to.exist;
+        expect(payload.user.eids).to.be.an('array');
+        expect(payload.user.eids).to.have.lengthOf(1);
+      });
+
+      it('identity data in impression should have correct format and value (single identity w/ multi ids)', function () {
+        const impression = JSON.parse(query.r).user.eids;
+
+        expect(impression[0].source).to.equal(testCopy.IdentityIp.data.source);
+        expect(impression[0].uids).to.have.lengthOf(3);
+      });
+    });
+
+    describe('buildRequestMultipleRTI', function() {
+      before(function() {
+        testCopy = JSON.parse(JSON.stringify(DEFAULT_IDENTITY_RESPONSE));
+        testCopy.JackIp = {
+          responsePending: false,
+          data: {
+            source: 'jackinc.com',
+            uids: [
+              {
+                id: 'jackid'
+              }
+            ]
+          }
+        }
+        testCopy.GenericIp = {
+          responsePending: false,
+          data: {
+            source: 'genericip.com',
+            uids: [
+              {
+                id: 'genericipenvelope'
+              }
+            ]
+          }
+        }
+      });
+      it('payload should have correct format and value (multiple identity partners)', function () {
+        const payload = JSON.parse(query.r);
+
+        expect(payload.user).to.exist;
+        expect(payload.user.eids).to.exist;
+        expect(payload.user.eids).to.be.an('array');
+        expect(payload.user.eids).to.have.lengthOf(3);
+      });
+
+      it('identity data in impression should have correct format and value (multiple identity partners)', function () {
+        const impression = JSON.parse(query.r).user.eids;
+
+        expect(impression[0].source).to.equal(testCopy.IdentityIp.data.source);
+        expect(impression[0].uids).to.have.lengthOf(1);
+
+        expect(impression[1].source).to.equal(testCopy.JackIp.data.source);
+        expect(impression[1].uids).to.have.lengthOf(1);
+
+        expect(impression[2].source).to.equal(testCopy.GenericIp.data.source);
+        expect(impression[2].uids).to.have.lengthOf(1);
+      });
+    });
+
+    describe('buildRequestNoData', function() {
+      beforeEach(function() {
+        testCopy = JSON.parse(JSON.stringify(DEFAULT_IDENTITY_RESPONSE));
+      });
+
+      it('payload should not have any user eids with an undefined identity data response', function () {
+        window.headertag.getIdentityInfo = function() {
+          return undefined;
+        };
+        request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_BANNER_OPTION);
+        query = request.data;
+        const payload = JSON.parse(query.r);
+
+        expect(payload.user).to.exist;
+        expect(payload.user.eids).to.not.exist;
+      });
+
+      it('payload should have user eids if least one partner data is available', function () {
+        testCopy.GenericIp = {
+          responsePending: true,
+          data: {}
+        }
+        request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_BANNER_OPTION);
+        query = request.data;
+        const payload = JSON.parse(query.r);
+
+        expect(payload.user).to.exist;
+        expect(payload.user.eids).to.exist;
+      });
+
+      it('payload should not have any user eids if identity data is pending for all partners', function () {
+        testCopy.IdentityIp.responsePending = true;
+        request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_BANNER_OPTION);
+        query = request.data;
+        const payload = JSON.parse(query.r);
+
+        expect(payload.user).to.exist;
+        expect(payload.user.eids).to.not.exist;
+      });
+
+      it('payload should not have any user eids if identity data is pending or not available for all partners', function () {
+        testCopy.IdentityIp.responsePending = false;
+        testCopy.IdentityIp.data = {};
+        request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_BANNER_OPTION);
+        query = request.data;
+        const payload = JSON.parse(query.r);
+
+        expect(payload.user).to.exist;
+        expect(payload.user.eids).to.not.exist;
+      });
     });
   });
 
