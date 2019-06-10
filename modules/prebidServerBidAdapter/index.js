@@ -494,14 +494,18 @@ const OPEN_RTB_PROTOCOL = {
       if (video) {
         if (video.context === 'outstream' && !adUnit.renderer) {
           // Don't push oustream w/o renderer to request object.
+          utils.logError('Outstream bid without renderer cannot be sent to Prebid Server.');
         } else {
           imp.video = video;
         }
       }
-
-      imps.push(imp);
+      if (imp.banner || imp.video) { imps.push(imp); }
     });
 
+    if (!imps.length) {
+      utils.logError('Request to Prebid Server rejected due to invalid media type(s) in adUnit.')
+      return;
+    }
     const request = {
       id: s2sBidRequest.tid,
       source: {tid: s2sBidRequest.tid},
@@ -715,17 +719,18 @@ export function PrebidServer() {
     }
 
     const request = protocolAdapter().buildRequest(s2sBidRequest, bidRequests, adUnitsWithSizes);
-    const requestJson = JSON.stringify(request);
-
-    ajax(
-      _s2sConfig.endpoint,
-      {
-        success: response => handleResponse(response, requestedBidders, bidRequests, addBidResponse, done),
-        error: done
-      },
-      requestJson,
-      { contentType: 'text/plain', withCredentials: true }
-    );
+    const requestJson = request && JSON.stringify(request);
+    if (request && requestJson) {
+      ajax(
+        _s2sConfig.endpoint,
+        {
+          success: response => handleResponse(response, requestedBidders, bidRequests, addBidResponse, done),
+          error: done
+        },
+        requestJson,
+        { contentType: 'text/plain', withCredentials: true }
+      );
+    }
   };
 
   /* Notify Prebid of bid responses so bids can get in the auction */
