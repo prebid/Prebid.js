@@ -1,12 +1,12 @@
 # Overview
 ```
-Module Name: NextMillenium Bid Adapter
+Module Name: NextMillennium Bid Adapter
 Module Type: Bidder Adapter
 Maintainer: mikhail.ivanchenko@iageengineering.net
 ```
 
 # Description
-Module that connects to NextMillenium's server for bids.
+Module that connects to NextMillennium's server for bids.
 Currently module supports only banner mediaType.
 
 # Test Parameters
@@ -19,7 +19,7 @@ Currently module supports only banner mediaType.
             }
         },
         bids: [{
-            bidder: 'nextMillenium',
+            bidder: 'nextMillennium',
             params: {
                 placement_id: -1
             }
