@@ -294,8 +294,6 @@ function buildRequests(bidRequests, bidderRequest) {
 
   adapterState.uniqueSiteIds = bidRequests.map(req => req.params.siteId).filter(utils.uniques);
 
-  utils.logInfo('[33Across Adapter] buildRequests():', bidRequests);
-
   return bidRequests.map(req => _createServerRequest(req, gdprConsent));
 }
 
