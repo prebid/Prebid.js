@@ -8,7 +8,7 @@ import {parse} from '../src/url';
 const SUPPORTED_AD_TYPES = [BANNER, VIDEO];
 const BIDDER_CODE = 'openx';
 const BIDDER_CONFIG = 'hb_pb';
-const BIDDER_VERSION = '2.1.6';
+const BIDDER_VERSION = '2.1.7';
 
 let shouldSendBoPixel = true;
 
