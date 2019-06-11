@@ -32,61 +32,78 @@ const ADSRV_EVENTS = {
     RESET: 'reset'
   }
 };
-const script = document.createElement('script');
 
-window.top.ADAGIO = window.top.ADAGIO || {};
-window.top.ADAGIO.queue = window.top.ADAGIO.queue || [];
-window.top.ADAGIO.versions = window.top.ADAGIO.versions || {};
-window.top.ADAGIO.versions.adagioBidderAdapter = VERSION;
-
-const getAdagioTag = function getAdagioTag() {
-  const ls = window.top.localStorage.getItem('adagioScript');
-  if (ls !== null) {
-    Function(ls)(); // eslint-disable-line no-new-func
-  } else {
-    utils.logWarn('Adagio Script not found');
+function canAccessTopWindow() {
+  try {
+    if (window.top.location.href) {
+      return true;
+    }
+  } catch (error) {
+    return false;
   }
 }
 
-const adagioEnqueue = function adagioEnqueue(action, data) {
-  window.top.ADAGIO.queue.push({ action, data, ts: Date.now() });
+function initAdagio() {
+  const script = document.createElement('script');
+
+  window.top.ADAGIO = window.top.ADAGIO || {};
+  window.top.ADAGIO.queue = window.top.ADAGIO.queue || [];
+  window.top.ADAGIO.versions = window.top.ADAGIO.versions || {};
+  window.top.ADAGIO.versions.adagioBidderAdapter = VERSION;
+
+  const getAdagioTag = function getAdagioTag() {
+    const ls = window.top.localStorage.getItem('adagioScript');
+    if (ls !== null) {
+      Function(ls)(); // eslint-disable-line no-new-func
+    } else {
+      utils.logWarn('Adagio Script not found');
+    }
+  }
+
+  const adagioEnqueue = function adagioEnqueue(action, data) {
+    window.top.ADAGIO.queue.push({ action, data, ts: Date.now() });
+  }
+
+  top.googletag = top.googletag || {};
+  top.googletag.cmd = top.googletag.cmd || [];
+  top.googletag.cmd.push(function() {
+    const gptEvents = Object.keys(ADSRV_EVENTS.GPT).map(key => ADSRV_EVENTS.GPT[key]);
+    gptEvents.forEach(eventName => {
+      top.googletag.pubads().addEventListener(eventName, args => {
+        adagioEnqueue('gpt-event', { eventName, args });
+      });
+    });
+  });
+
+  top.sas = top.sas || {};
+  top.sas.cmd = top.sas.cmd || [];
+  top.sas.cmd.push(function() {
+    const sasEvents = Object.keys(ADSRV_EVENTS.SAS).map(key => ADSRV_EVENTS.SAS[key]);
+    sasEvents.forEach(eventName => {
+      top.sas.events.on(eventName, args => {
+        adagioEnqueue('sas-event', { eventName, args });
+      });
+    });
+  });
+
+  // First, try to load adagio-js from localStorage.
+  getAdagioTag();
+
+  // Then prepare localstore.js to update localStorage adagio-sj script with
+  // the very last version.
+  script.type = 'text/javascript';
+  script.async = true;
+  script.src = ADAGIO_TAG_URL;
+  script.setAttribute('data-key', ADAGIO_LOCALSTORE_KEY);
+  script.setAttribute('data-src', ADAGIO_TAG_TO_LOCALSTORE);
+  setTimeout(function() {
+    utils.insertElement(script);
+  }, LOCALSTORE_TIMEOUT);
 }
 
-top.googletag = top.googletag || {};
-top.googletag.cmd = top.googletag.cmd || [];
-top.googletag.cmd.push(function() {
-  const gptEvents = Object.keys(ADSRV_EVENTS.GPT).map(key => ADSRV_EVENTS.GPT[key]);
-  gptEvents.forEach(eventName => {
-    top.googletag.pubads().addEventListener(eventName, args => {
-      adagioEnqueue('gpt-event', { eventName, args });
-    });
-  });
-});
-
-top.sas = top.sas || {};
-top.sas.cmd = top.sas.cmd || [];
-top.sas.cmd.push(function() {
-  const sasEvents = Object.keys(ADSRV_EVENTS.SAS).map(key => ADSRV_EVENTS.SAS[key]);
-  sasEvents.forEach(eventName => {
-    top.sas.events.on(eventName, args => {
-      adagioEnqueue('sas-event', { eventName, args });
-    });
-  });
-});
-
-// First, try to load adagio-js from localStorage.
-getAdagioTag();
-
-// Then prepare localstore.js to update localStorage adagio-sj script with
-// the very last version.
-script.type = 'text/javascript';
-script.async = true;
-script.src = ADAGIO_TAG_URL;
-script.setAttribute('data-key', ADAGIO_LOCALSTORE_KEY);
-script.setAttribute('data-src', ADAGIO_TAG_TO_LOCALSTORE);
-setTimeout(function() {
-  utils.insertElement(script);
-}, LOCALSTORE_TIMEOUT);
+if (canAccessTopWindow()) {
+  initAdagio();
+}
 
 const _features = {
   getPrintNumber: function() {
@@ -202,6 +219,7 @@ const _features = {
 }
 
 function _pushInAdagioQueue(ob) {
+  if (!canAccessTopWindow()) return;
   window.top.ADAGIO.queue.push(ob);
 };
 
@@ -238,6 +256,7 @@ function _getPageviewId() {
  * @returns {Object} features for an element (see specs)
  */
 function _getFeatures(bidRequest) {
+  if (!canAccessTopWindow()) return;
   const adUnitElementId = bidRequest.params.adUnitElementId;
   const element = document.getElementById(adUnitElementId);
   let features = {};
@@ -295,29 +314,34 @@ export const spec = {
   supportedMediaType: SUPPORTED_MEDIA_TYPES,
 
   isBidRequestValid: function(bid) {
-    top.ADAGIO = top.ADAGIO || {};
-    top.ADAGIO.adUnits = top.ADAGIO.adUnits || {};
-    top.ADAGIO.pbjsAdUnits = top.ADAGIO.pbjsAdUnits || [];
     const { adUnitCode, auctionId, sizes, bidder, params } = bid;
     const { organizationId, site, placement, pagetype, adUnitElementId } = bid.params;
-    const isValid = !!(organizationId && site && placement && pagetype && adUnitElementId && document.getElementById(adUnitElementId) !== null);
-    const tempAdUnits = top.ADAGIO.pbjsAdUnits.filter((adUnit) => adUnit.code !== adUnitCode);
-    tempAdUnits.push({
-      code: adUnitCode,
-      sizes,
-      bids: [{
-        bidder,
-        params
-      }]
-    });
-    top.ADAGIO.pbjsAdUnits = tempAdUnits;
+    let isValid = false;
 
-    if (isValid === true) {
-      top.ADAGIO.adUnits[adUnitCode] = {
-        auctionId: auctionId,
-        pageviewId: _getPageviewId()
-      };
+    if (canAccessTopWindow()) {
+      top.ADAGIO = top.ADAGIO || {};
+      top.ADAGIO.adUnits = top.ADAGIO.adUnits || {};
+      top.ADAGIO.pbjsAdUnits = top.ADAGIO.pbjsAdUnits || [];
+      isValid = !!(organizationId && site && placement && pagetype && adUnitElementId && document.getElementById(adUnitElementId) !== null);
+      const tempAdUnits = top.ADAGIO.pbjsAdUnits.filter((adUnit) => adUnit.code !== adUnitCode);
+      tempAdUnits.push({
+        code: adUnitCode,
+        sizes,
+        bids: [{
+          bidder,
+          params
+        }]
+      });
+      top.ADAGIO.pbjsAdUnits = tempAdUnits;
+
+      if (isValid === true) {
+        top.ADAGIO.adUnits[adUnitCode] = {
+          auctionId: auctionId,
+          pageviewId: _getPageviewId()
+        };
+      }
     }
+
     return isValid;
   },
 
