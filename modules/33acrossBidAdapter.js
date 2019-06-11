@@ -45,23 +45,19 @@ function _mapAdUnitPathToElementId(adUnitCode) {
 
     if (matchingAdSlot) {
       id = matchingAdSlot.getSlotElementId();
+
+      utils.logInfo(`[33Across Adapter] Map ad unit path to HTML element id: '${adUnitCode}' -> '${id}'`);
     }
   }
 
-  utils.logInfo(`[33Across Adapter] Map ad unit path to HTML element id: '${adUnitCode}' -> '${id}'`);
+  utils.logWarn(`[33Across Adapter] Unable to locate element for ad unit code: '${adUnitCode}'`);
 
-  return id;
+  return null;
 }
 
 function _getAdSlotHTMLElement(adUnitCode) {
-  const element = document.getElementById(adUnitCode) ||
+  return document.getElementById(adUnitCode) ||
     document.getElementById(_mapAdUnitPathToElementId(adUnitCode));
-
-  if (element === null) {
-    utils.logWarn(`[33Across Adapter] Unable to locate element for ad unit code: '${adUnitCode}'`);
-  }
-
-  return element;
 }
 
 // Infer the necessary data from valid bid for a minimal ttxRequest and create HTTP request
@@ -287,10 +283,15 @@ function isBidRequestValid(bid) {
 // - the server, at this point, also doesn't need the consent string to handle gdpr compliance. So passing
 //    value whether set or not, for the sake of future dev.
 function buildRequests(bidRequests, bidderRequest) {
-  const gdprConsent = Object.assign({
-    consentString: undefined,
-    gdprApplies: false
-  }, bidderRequest && bidderRequest.gdprConsent);
+  // const gdprConsent = Object.assign({
+  //   consentString: undefined,
+  //   gdprApplies: false
+  // }, bidderRequest && bidderRequest.gdprConsent);
+  const gdprConsent = {
+    gdprApplies: false,
+    consentString: undefined, // see comment about this
+    ...(bidderRequest && bidderRequest.gdprConsent)
+  };
 
   adapterState.uniqueSiteIds = bidRequests.map(req => req.params.siteId).filter(utils.uniques);
 
