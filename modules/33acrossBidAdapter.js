@@ -52,7 +52,7 @@ function _mapAdUnitPathToElementId(adUnitCode) {
 
   utils.logWarn(`[33Across Adapter] Unable to locate element for ad unit code: '${adUnitCode}'`);
 
-  return null;
+  return id;
 }
 
 function _getAdSlotHTMLElement(adUnitCode) {
