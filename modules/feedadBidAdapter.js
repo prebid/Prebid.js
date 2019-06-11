@@ -83,7 +83,7 @@ const TAG = '[FeedAd]';
  * Pattern for valid placement IDs
  * @type {RegExp}
  */
-const PLACEMENT_ID_PATTERN = /^(?:[a-z0-9]+[-_]?)+$/;
+const PLACEMENT_ID_PATTERN = /^[a-z0-9][a-z0-9_-]+[a-z0-9]$/;
 
 const API_ENDPOINT = 'https://api.feedad.com';
 const API_PATH_BID_REQUEST = '/1/prebid/web/bids';
