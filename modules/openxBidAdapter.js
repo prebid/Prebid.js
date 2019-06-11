@@ -121,6 +121,10 @@ function createBannerBidResponses(oxResponseObj, {bids, startTime}) {
       bidResponse.meta.brandId = adUnit.brand_id;
     }
 
+    if (adUnit.adv_id) {
+      bidResponse.meta.dspid = adUnit.adv_id;
+    }
+
     bidResponses.push(bidResponse);
 
     registerBeacon(BANNER, adUnit, startTime);
