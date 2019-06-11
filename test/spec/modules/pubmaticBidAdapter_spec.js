@@ -1235,6 +1235,76 @@ describe('PubMatic adapter', function () {
         });
       });
 
+      describe('AdsrvrOrgId from userId module', function() {
+        let sandbox;
+        beforeEach(() => {
+          sandbox = sinon.sandbox.create();
+        });
+
+        afterEach(() => {
+          sandbox.restore();
+        });
+
+        it('Request should have AdsrvrOrgId config params', function() {
+          bidRequests[0].userId = {};
+          bidRequests[0].userId.tdid = 'TTD_ID_FROM_USER_ID_MODULE';
+          let request = spec.buildRequests(bidRequests, {});
+          let data = JSON.parse(request.data);
+          expect(data.user.eids).to.deep.equal([{
+            'source': 'adserver.org',
+            'uids': [{
+              'id': 'TTD_ID_FROM_USER_ID_MODULE',
+              'atype': 1,
+              'ext': {
+                'rtiPartner': 'TDID'
+              }
+            }]
+          }]);
+        });
+
+        it('Request should have adsrvrOrgId from UserId Module if config and userId module both have TTD ID', function() {
+          sandbox.stub(config, 'getConfig').callsFake((key) => {
+            var config = {
+              adsrvrOrgId: {
+                'TDID': 'TTD_ID_FROM_CONFIG',
+                'TDID_LOOKUP': 'TRUE',
+                'TDID_CREATED_AT': '2018-10-01T07:05:40'
+              }
+            };
+            return config[key];
+          });
+          bidRequests[0].userId = {};
+          bidRequests[0].userId.tdid = 'TTD_ID_FROM_USER_ID_MODULE';
+          let request = spec.buildRequests(bidRequests, {});
+          let data = JSON.parse(request.data);
+          expect(data.user.eids).to.deep.equal([{
+            'source': 'adserver.org',
+            'uids': [{
+              'id': 'TTD_ID_FROM_USER_ID_MODULE',
+              'atype': 1,
+              'ext': {
+                'rtiPartner': 'TDID'
+              }
+            }]
+          }]);
+        });
+
+        it('Request should NOT have adsrvrOrgId params if userId is NOT object', function() {
+          let request = spec.buildRequests(bidRequests, {});
+          let data = JSON.parse(request.data);
+          expect(data.user.eids).to.deep.equal(undefined);
+        });
+
+        it('Request should NOT have adsrvrOrgId params if userId.tdid is NOT string', function() {
+          bidRequests[0].userId = {
+            tdid: 1234
+          };
+          let request = spec.buildRequests(bidRequests, {});
+          let data = JSON.parse(request.data);
+          expect(data.user.eids).to.deep.equal(undefined);
+        });
+      });
+
       describe('AdsrvrOrgId and Digitrust', function() {
         // here we are considering cases only of accepting DigiTrustId from config
         let sandbox;

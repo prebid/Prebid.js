@@ -187,7 +187,6 @@ function createBid(response) {
 
   return {
     requestId: response.BidID,
-    bidderCode: spec.code,
     width: response.Width,
     height: response.Height,
     ad: response.Ad,

@@ -329,6 +329,8 @@ describe('GamoshiAdapter', function () {
       ]
     };
 
+    const TTL = 360;
+
     it('returns an empty array on missing response', function () {
       let response;
 
@@ -345,13 +347,12 @@ describe('GamoshiAdapter', function () {
       const response = spec.interpretResponse({body: rtbResponse}, {bidRequest: bannerBidRequest});
       expect(Array.isArray(response)).to.equal(true);
       expect(response.length).to.equal(1);
-
       const ad0 = response[0];
       expect(ad0.requestId).to.equal(bannerBidRequest.bidId);
       expect(ad0.cpm).to.equal(rtbResponse.seatbid[1].bid[0].price);
       expect(ad0.width).to.equal(rtbResponse.seatbid[1].bid[0].w);
       expect(ad0.height).to.equal(rtbResponse.seatbid[1].bid[0].h);
-      expect(ad0.ttl).to.equal(60 * 10);
+      expect(ad0.ttl).to.equal(TTL);
       expect(ad0.creativeId).to.equal(rtbResponse.seatbid[1].bid[0].crid);
       expect(ad0.netRevenue).to.equal(true);
       expect(ad0.currency).to.equal(rtbResponse.seatbid[1].bid[0].cur || rtbResponse.cur || 'USD');
@@ -364,13 +365,12 @@ describe('GamoshiAdapter', function () {
       const response = spec.interpretResponse({body: rtbResponse}, {bidRequest: videoBidRequest});
       expect(Array.isArray(response)).to.equal(true);
       expect(response.length).to.equal(1);
-
       const ad0 = response[0];
       expect(ad0.requestId).to.equal(videoBidRequest.bidId);
       expect(ad0.cpm).to.equal(rtbResponse.seatbid[0].bid[0].price);
       expect(ad0.width).to.equal(rtbResponse.seatbid[0].bid[0].w);
       expect(ad0.height).to.equal(rtbResponse.seatbid[0].bid[0].h);
-      expect(ad0.ttl).to.equal(60 * 10);
+      expect(ad0.ttl).to.equal(TTL);
       expect(ad0.creativeId).to.equal(rtbResponse.seatbid[0].bid[0].crid);
       expect(ad0.netRevenue).to.equal(true);
       expect(ad0.currency).to.equal(rtbResponse.seatbid[0].bid[0].cur || rtbResponse.cur || 'USD');
