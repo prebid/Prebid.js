@@ -116,7 +116,10 @@ export const spec = {
 
       if (serverResponse) {
         const decision = serverResponse.decisions && serverResponse.decisions[bidId];
-        const price = decision && decision.pricing && decision.pricing.clearPrice;
+        const data = decision && decision.contents && decision.contents[0] && decision.contents[0].data;
+        const pubCPM = data && data.customData && data.customData.pubCPM;
+        const clearPrice = decision && decision.pricing && decision.pricing.clearPrice;
+        const price = pubCPM || clearPrice;
 
         if (decision && price) {
           bid.requestId = bidId;
