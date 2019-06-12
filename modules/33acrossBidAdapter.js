@@ -37,22 +37,22 @@ function _getViewability(element, topWin, { w, h } = {}) {
 }
 
 function _mapAdUnitPathToElementId(adUnitCode) {
-  let id = null;
-
   if (utils.isGptPubadsDefined()) {
     const isMatchingAdSlot = utils.isSlotMatchingAdUnitCode(adUnitCode);
     const matchingAdSlot = window.googletag.pubads().getSlots().find(isMatchingAdSlot);
 
     if (matchingAdSlot) {
-      id = matchingAdSlot.getSlotElementId();
+      const id = matchingAdSlot.getSlotElementId();
 
-      utils.logInfo(`[33Across Adapter] Map ad unit path to HTML element id: '${adUnitCode}' -> '${id}'`);
+      utils.logInfo(`[33Across Adapter] Map ad unit path to HTML element id: '${adUnitCode}' -> ${id}`);
+
+      return id;
     }
   }
 
   utils.logWarn(`[33Across Adapter] Unable to locate element for ad unit code: '${adUnitCode}'`);
 
-  return id;
+  return null;
 }
 
 function _getAdSlotHTMLElement(adUnitCode) {
