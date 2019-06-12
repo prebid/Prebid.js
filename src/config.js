@@ -13,6 +13,7 @@ const DEFAULT_DEBUG = (parseQS(window.location.search)[CONSTANTS.DEBUG_MODE] || 
 const DEFAULT_BIDDER_TIMEOUT = 3000;
 const DEFAULT_PUBLISHER_DOMAIN = window.location.origin;
 const DEFAULT_ENABLE_SEND_ALL_BIDS = true;
+const DEFAULT_AD_UNIT_BID_LIMIT = 0;
 const DEFAULT_DISABLE_AJAX_TIMEOUT = false;
 const DEFAULT_BID_CACHE = false;
 
@@ -130,6 +131,14 @@ export function newConfig() {
         this._sendAllBids = val;
       },
 
+      _adUnitBidLimit: DEFAULT_AD_UNIT_BID_LIMIT,
+      get adUnitBidLimit() {
+        return this._adUnitBidLimit;
+      },
+      set adUnitBidLimit(val) {
+        this._adUnitBidLimit = val;
+      },
+      
       _useBidCache: DEFAULT_BID_CACHE,
       get useBidCache() {
         return this._useBidCache;
