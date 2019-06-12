@@ -31,8 +31,8 @@ export const spec = {
     if (!validBidReqs || !validBidReqs.length || !bidderRequest) {
       return;
     }
-    let refererInfo = bidderRequest.refererInfo;
-    let openRtbBidRequest = {
+    const refererInfo = bidderRequest.refererInfo;
+    const openRtbBidRequest = {
       id: bidderRequest.auctionId,
       site: {
         domain: location.hostname,
