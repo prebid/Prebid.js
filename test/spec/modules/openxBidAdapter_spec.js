@@ -1218,6 +1218,10 @@ describe('OpenxAdapter', function () {
         expect(bid.meta.brandId).to.equal(DEFAULT_TEST_ARJ_AD_UNIT.brand_id);
       });
 
+      it('should return a brand ID', function () {
+        expect(bid.meta.dspid).to.equal(DEFAULT_TEST_ARJ_AD_UNIT.adv_id);
+      });
+
       it('should register a beacon', function () {
         resetBoPixel();
         spec.interpretResponse({body: bidResponse}, bidRequest);
