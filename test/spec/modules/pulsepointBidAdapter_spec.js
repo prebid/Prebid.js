@@ -66,6 +66,36 @@ describe('PulsePoint Adapter Tests', function () {
       }
     }
   }];
+  const additionalParamsConfig = [{
+    placementCode: '/DfpAccount1/slot1',
+    bidId: 'bid12345',
+    params: {
+      cp: 'p10000',
+      ct: 't10000',
+      cf: '1x1',
+      extra_key1: 'extra_val1',
+      extra_key2: 12345,
+      extra_key3: {
+        key1: 'val1',
+        key2: 23456,
+      },
+      extra_key4: [1, 2, 3]
+    }
+  }];
+
+  const ortbParamsSlotConfig = [{
+    placementCode: '/DfpAccount1/slot1',
+    bidId: 'bid12345',
+    params: {
+      cp: 'p10000',
+      ct: 't10000',
+      cf: '1x1',
+      bcat: ['IAB-1', 'IAB-20'],
+      battr: [1, 2, 3],
+      bidfloor: 1.5,
+      badv: ['cocacola.com', 'lays.com']
+    }
+  }];
 
   it('Verify build request', function () {
     const request = spec.buildRequests(slotConfigs);
@@ -248,6 +278,7 @@ describe('PulsePoint Adapter Tests', function () {
 
   it('Verifies supported media types', function () {
     expect(spec.supportedMediaTypes).to.have.lengthOf(3);
+    expect(spec.supportedMediaTypes[0]).to.equal('banner');
     expect(spec.supportedMediaTypes[1]).to.equal('native');
     expect(spec.supportedMediaTypes[2]).to.equal('video');
   });
@@ -357,5 +388,33 @@ describe('PulsePoint Adapter Tests', function () {
     expect(bid['native']).to.be.undefined;
     expect(bid.mediaType).to.equal('video');
     expect(bid.vastXml).to.equal(ortbResponse.seatbid[0].bid[0].adm);
+  });
+
+  it('Verify extra parameters', function () {
+    const request = spec.buildRequests(additionalParamsConfig);
+    const ortbRequest = JSON.parse(request.data);
+    expect(ortbRequest).to.not.equal(null);
+    expect(ortbRequest.imp).to.have.lengthOf(1);
+    expect(ortbRequest.imp[0].ext).to.not.be.null;
+    expect(ortbRequest.imp[0].ext.extra_key1).to.equal('extra_val1');
+    expect(ortbRequest.imp[0].ext.extra_key2).to.equal(12345);
+    expect(ortbRequest.imp[0].ext.extra_key3).to.not.be.null;
+    expect(ortbRequest.imp[0].ext.extra_key3.key1).to.equal('val1');
+    expect(ortbRequest.imp[0].ext.extra_key3.key2).to.equal(23456);
+    expect(ortbRequest.imp[0].ext.extra_key4).to.eql([1, 2, 3]);
+    expect(Object.keys(ortbRequest.imp[0].ext)).to.eql(['extra_key1', 'extra_key2', 'extra_key3', 'extra_key4'])
+  });
+
+  it('Verify ortb parameters', function () {
+    const request = spec.buildRequests(ortbParamsSlotConfig);
+    const ortbRequest = JSON.parse(request.data);
+    expect(ortbRequest).to.not.equal(null);
+    expect(ortbRequest.bcat).to.eql(['IAB-1', 'IAB-20']);
+    expect(ortbRequest.battr).to.eql([1, 2, 3]);
+    expect(ortbRequest.badv).to.eql(['cocacola.com', 'lays.com']);
+    expect(ortbRequest.imp).to.have.lengthOf(1);
+    expect(ortbRequest.imp[0].bidfloor).to.equal(1.5);
+    expect(ortbRequest.imp[0].ext).to.not.be.null;
+    expect(Object.keys(ortbRequest.imp[0].ext)).to.have.lengthOf(0);
   });
 });

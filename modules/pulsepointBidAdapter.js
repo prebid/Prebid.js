@@ -13,6 +13,7 @@ const NATIVE_DEFAULTS = {
 const DEFAULT_BID_TTL = 20;
 const DEFAULT_CURRENCY = 'USD';
 const DEFAULT_NET_REVENUE = true;
+const KNOWN_PARAMS = ['cp', 'ct', 'cf', 'video', 'battr', 'bcat', 'badv', 'bidfloor'];
 
 /**
  * PulsePoint Bid Adapter.
@@ -41,6 +42,9 @@ export const spec = {
       site: site(bidRequests),
       app: app(bidRequests),
       device: device(),
+      battr: bidRequests[0].params.battr,
+      bcat: bidRequests[0].params.bcat,
+      badv: bidRequests[0].params.badv,
     };
     applyGdpr(bidderRequest, request);
     return {
@@ -143,7 +147,9 @@ function impression(slot) {
     banner: banner(slot),
     'native': nativeImpression(slot),
     tagid: slot.params.ct.toString(),
-    video: video(slot)
+    video: video(slot),
+    bidfloor: slot.params.bidfloor,
+    ext: ext(slot),
   };
 }
 
@@ -159,13 +165,23 @@ function banner(slot) {
 }
 
 /**
- *
+ * Produces an OpenRTB Video object for the slot given
  */
 function video(slot) {
   if (slot.params.video) {
     return slot.params.video;
   }
   return null;
+}
+
+function ext(slot) {
+  const ext = {};
+  Object.keys(slot.params).forEach(key => {
+    if (!KNOWN_PARAMS.find((value) => value === key)) {
+      ext[key] = slot.params[key];
+    }
+  });
+  return ext;
 }
 
 /**
