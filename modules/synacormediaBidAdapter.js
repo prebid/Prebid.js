@@ -22,8 +22,8 @@ export const spec = {
       bid.mediaTypes.hasOwnProperty('video');
   },
   isBidRequestValid: function(bid) {
-    let hasRequiredParams = bid && bid.params && bid.params.hasOwnProperty('placementId') && bid.params.hasOwnProperty('seatId');
-    let hasAdSizes = bid && getAdUnitSizes(bid).filter(size => BLOCKED_AD_SIZES.indexOf(size.join('x')) === -1).length > 0
+    const hasRequiredParams = bid && bid.params && bid.params.hasOwnProperty('placementId') && bid.params.hasOwnProperty('seatId');
+    const hasAdSizes = bid && getAdUnitSizes(bid).filter(size => BLOCKED_AD_SIZES.indexOf(size.join('x')) === -1).length > 0
     return !!(hasRequiredParams && hasAdSizes);
   },
 
@@ -53,8 +53,8 @@ export const spec = {
       } else {
         seatId = bid.params.seatId;
       }
-      let placementId = bid.params.placementId;
-      let bidFloor = bid.params.bidfloor ? parseFloat(bid.params.bidfloor) : null;
+      const placementId = bid.params.placementId;
+      const bidFloor = bid.params.bidfloor ? parseFloat(bid.params.bidfloor) : null;
       if (isNaN(bidFloor)) {
         logWarn(`Synacormedia: there is an invalid bid floor: ${bid.params.bidfloor}`);
       }
@@ -63,16 +63,16 @@ export const spec = {
         logWarn(`Synacormedia: there is an invalid POS: ${bid.params.pos}`);
         pos = 0;
       }
-      let videoOrBannerKey = this.isVideoBid(bid) ? 'video' : 'banner';
+      const videoOrBannerKey = this.isVideoBid(bid) ? 'video' : 'banner';
       getAdUnitSizes(bid)
         .filter(size => BLOCKED_AD_SIZES.indexOf(size.join('x')) === -1)
         .forEach((size, i) => {
           if (!size || size.length != 2) {
             return;
           }
-          let size0 = size[0];
-          let size1 = size[1];
-          let imp = {
+          const size0 = size[0];
+          const size1 = size[1];
+          const imp = {
             id: `${videoOrBannerKey.substring(0, 1)}${bid.bidId}-${size0}x${size1}`,
             tagid: placementId
           };
@@ -80,7 +80,7 @@ export const spec = {
             imp.bidfloor = bidFloor;
           }
 
-          let videoOrBannerValue = {
+          const videoOrBannerValue = {
             w: size0,
             h: size1,
             pos
@@ -117,7 +117,7 @@ export const spec = {
       .forEach(param => destObj[param] = Array.isArray(sourceObj[param]) ? sourceObj[param] : parseInt(sourceObj[param], 10));
   },
   interpretResponse: function(serverResponse) {
-    var updateMacros = (bid, r) => {
+    const updateMacros = (bid, r) => {
       return r ? r.replace(/\${AUCTION_PRICE}/g, bid.price) : r;
     };
 
@@ -131,11 +131,11 @@ export const spec = {
     if (id && seatbids) {
       seatbids.forEach(seatbid => {
         seatbid.bid.forEach(bid => {
-          let creative = updateMacros(bid, bid.adm);
-          let nurl = updateMacros(bid, bid.nurl);
-          let [, impType, impid, width, height] = bid.impid.match(/^([vb])(.*)-(.*)x(.*)$/);
-          let isVideo = impType == 'v';
-          let bidObj = {
+          const creative = updateMacros(bid, bid.adm);
+          const nurl = updateMacros(bid, bid.nurl);
+          const [, impType, impid, width, height] = bid.impid.match(/^([vb])(.*)-(.*)x(.*)$/);
+          const isVideo = impType == 'v';
+          const bidObj = {
             requestId: impid,
             adId: bid.id.replace(/~/g, '-'),
             cpm: parseFloat(bid.price),
@@ -149,7 +149,7 @@ export const spec = {
             ttl: 60
           };
           if (isVideo) {
-            let [, uuid] = nurl.match(/ID=([^&]*)&?/);
+            const [, uuid] = nurl.match(/ID=([^&]*)&?/);
             bidObj.videoCacheKey = encodeURIComponent(uuid);
             bidObj.vastUrl = nurl;
           }
