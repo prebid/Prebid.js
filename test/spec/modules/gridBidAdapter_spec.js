@@ -89,6 +89,7 @@ describe('TheMediaGrid Adapter', function () {
       const payload = parseRequest(request.data);
       expect(payload).to.have.property('u').that.is.a('string');
       expect(payload).to.have.property('auids', '1');
+      expect(payload).to.have.property('sizes', '300x250,300x600');
       expect(payload).to.have.property('r', '22edbae2733bf6');
     });
 
@@ -97,7 +98,8 @@ describe('TheMediaGrid Adapter', function () {
       expect(request.data).to.be.an('string');
       const payload = parseRequest(request.data);
       expect(payload).to.have.property('u').that.is.a('string');
-      expect(payload).to.have.property('auids', '1,2');
+      expect(payload).to.have.property('auids', '1,1,2');
+      expect(payload).to.have.property('sizes', '300x250,300x600,728x90');
       expect(payload).to.have.property('r', '22edbae2733bf6');
     });
 
@@ -129,9 +131,10 @@ describe('TheMediaGrid Adapter', function () {
   describe('interpretResponse', function () {
     const responses = [
       {'bid': [{'price': 1.15, 'adm': '<div>test content 1</div>', 'auid': 1, 'h': 250, 'w': 300, dealid: 11}], 'seat': '1'},
-      {'bid': [{'price': 0.5, 'adm': '<div>test content 2</div>', 'auid': 2, 'h': 90, 'w': 728}], 'seat': '1'},
+      {'bid': [{'price': 0.5, 'adm': '<div>test content 2</div>', 'auid': 2, 'h': 600, 'w': 300}], 'seat': '1'},
+      {'bid': [{'price': 0.15, 'adm': '<div>test content 3</div>', 'auid': 1, 'h': 90, 'w': 728}], 'seat': '1'},
       {'bid': [{'price': 0, 'auid': 3, 'h': 250, 'w': 300}], 'seat': '1'},
-      {'bid': [{'price': 0, 'adm': '<div>test content 4</div>', 'h': 250, 'w': 300}], 'seat': '1'},
+      {'bid': [{'price': 0, 'adm': '<div>test content 5</div>', 'h': 250, 'w': 300}], 'seat': '1'},
       undefined,
       {'bid': [], 'seat': '1'},
       {'seat': '1'},
@@ -226,13 +229,13 @@ describe('TheMediaGrid Adapter', function () {
           'ttl': 360,
         },
         {
-          'requestId': '5703af74d0472a',
-          'cpm': 1.15,
-          'creativeId': 1,
-          'dealId': 11,
+          'requestId': '4dff80cc4ee346',
+          'cpm': 0.5,
+          'creativeId': 2,
+          'dealId': undefined,
           'width': 300,
-          'height': 250,
-          'ad': '<div>test content 1</div>',
+          'height': 600,
+          'ad': '<div>test content 2</div>',
           'bidderCode': 'grid',
           'currency': 'USD',
           'mediaType': 'banner',
@@ -240,13 +243,13 @@ describe('TheMediaGrid Adapter', function () {
           'ttl': 360,
         },
         {
-          'requestId': '4dff80cc4ee346',
-          'cpm': 0.5,
-          'creativeId': 2,
+          'requestId': '5703af74d0472a',
+          'cpm': 0.15,
+          'creativeId': 1,
           'dealId': undefined,
           'width': 728,
           'height': 90,
-          'ad': '<div>test content 2</div>',
+          'ad': '<div>test content 3</div>',
           'bidderCode': 'grid',
           'currency': 'USD',
           'mediaType': 'banner',
@@ -255,7 +258,7 @@ describe('TheMediaGrid Adapter', function () {
         }
       ];
 
-      const result = spec.interpretResponse({'body': {'seatbid': [responses[0], responses[1]]}}, request);
+      const result = spec.interpretResponse({'body': {'seatbid': responses.slice(0, 3)}}, request);
       expect(result).to.deep.equal(expectedResponse);
     });
 
@@ -264,7 +267,7 @@ describe('TheMediaGrid Adapter', function () {
         {
           'bidder': 'grid',
           'params': {
-            'uid': '1'
+            'uid': '11'
           },
           'adUnitCode': 'adunit-code-1',
           'sizes': [[300, 250], [300, 600]],
@@ -280,7 +283,7 @@ describe('TheMediaGrid Adapter', function () {
         {
           'bidder': 'grid',
           'params': {
-            'uid': '2'
+            'uid': '12'
           },
           'adUnitCode': 'adunit-code-1',
           'sizes': [[300, 250], [300, 600]],
@@ -295,15 +298,15 @@ describe('TheMediaGrid Adapter', function () {
         }
       ];
       const response = [
-        {'bid': [{'price': 1.15, 'adm': '<VAST version=\"3.0\">\n<Ad id=\"21341234\"><\/Ad>\n<\/VAST>', 'auid': 1, content_type: 'video', w: 300, h: 600}], 'seat': '2'},
-        {'bid': [{'price': 1.00, 'adm': '<VAST version=\"3.0\">\n<Ad id=\"21331274\"><\/Ad>\n<\/VAST>', 'auid': 2, content_type: 'video'}], 'seat': '2'}
+        {'bid': [{'price': 1.15, 'adm': '<VAST version=\"3.0\">\n<Ad id=\"21341234\"><\/Ad>\n<\/VAST>', 'auid': 11, content_type: 'video', w: 300, h: 600}], 'seat': '2'},
+        {'bid': [{'price': 1.00, 'adm': '<VAST version=\"3.0\">\n<Ad id=\"21331274\"><\/Ad>\n<\/VAST>', 'auid': 12, content_type: 'video'}], 'seat': '2'}
       ];
       const request = spec.buildRequests(bidRequests);
       const expectedResponse = [
         {
           'requestId': '659423fff799cb',
           'cpm': 1.15,
-          'creativeId': 1,
+          'creativeId': 11,
           'dealId': undefined,
           'width': 300,
           'height': 600,
@@ -315,23 +318,6 @@ describe('TheMediaGrid Adapter', function () {
           'vastXml': '<VAST version=\"3.0\">\n<Ad id=\"21341234\"><\/Ad>\n<\/VAST>',
           'adResponse': {
             'content': '<VAST version=\"3.0\">\n<Ad id=\"21341234\"><\/Ad>\n<\/VAST>'
-          }
-        },
-        {
-          'requestId': '2bc598e42b6a',
-          'cpm': 1.00,
-          'creativeId': 2,
-          'dealId': undefined,
-          'width': 300,
-          'height': 250,
-          'bidderCode': 'grid',
-          'currency': 'USD',
-          'mediaType': 'video',
-          'netRevenue': false,
-          'ttl': 360,
-          'vastXml': '<VAST version=\"3.0\">\n<Ad id=\"21331274\"><\/Ad>\n<\/VAST>',
-          'adResponse': {
-            'content': '<VAST version=\"3.0\">\n<Ad id=\"21331274\"><\/Ad>\n<\/VAST>'
           }
         }
       ];
@@ -379,6 +365,211 @@ describe('TheMediaGrid Adapter', function () {
       const request = spec.buildRequests(bidRequests);
       const result = spec.interpretResponse({'body': {'seatbid': responses.slice(2)}}, request);
       expect(result.length).to.equal(0);
+    });
+
+    it('complicated case', function () {
+      const fullResponse = [
+        {'bid': [{'price': 1.15, 'adm': '<div>test content 1</div>', 'auid': 1, 'h': 250, 'w': 300, dealid: 11}], 'seat': '1'},
+        {'bid': [{'price': 0.5, 'adm': '<div>test content 2</div>', 'auid': 2, 'h': 600, 'w': 300, dealid: 12}], 'seat': '1'},
+        {'bid': [{'price': 0.15, 'adm': '<div>test content 3</div>', 'auid': 1, 'h': 90, 'w': 728}], 'seat': '1'},
+        {'bid': [{'price': 0.15, 'adm': '<div>test content 4</div>', 'auid': 1, 'h': 600, 'w': 300}], 'seat': '1'},
+        {'bid': [{'price': 0.5, 'adm': '<div>test content 5</div>', 'auid': 2, 'h': 600, 'w': 350}], 'seat': '1'},
+      ];
+      const bidRequests = [
+        {
+          'bidder': 'grid',
+          'params': {
+            'uid': '1'
+          },
+          'adUnitCode': 'adunit-code-1',
+          'sizes': [[300, 250], [300, 600]],
+          'bidId': '2164be6358b9',
+          'bidderRequestId': '106efe3247',
+          'auctionId': '32a1f276cb87cb8',
+        },
+        {
+          'bidder': 'grid',
+          'params': {
+            'uid': '1'
+          },
+          'adUnitCode': 'adunit-code-1',
+          'sizes': [[300, 250], [300, 600]],
+          'bidId': '326bde7fbf69',
+          'bidderRequestId': '106efe3247',
+          'auctionId': '32a1f276cb87cb8',
+        },
+        {
+          'bidder': 'grid',
+          'params': {
+            'uid': '2'
+          },
+          'adUnitCode': 'adunit-code-1',
+          'sizes': [[300, 250], [300, 600]],
+          'bidId': '4e111f1b66e4',
+          'bidderRequestId': '106efe3247',
+          'auctionId': '32a1f276cb87cb8',
+        },
+        {
+          'bidder': 'grid',
+          'params': {
+            'uid': '1'
+          },
+          'adUnitCode': 'adunit-code-2',
+          'sizes': [[728, 90]],
+          'bidId': '26d6f897b516',
+          'bidderRequestId': '106efe3247',
+          'auctionId': '32a1f276cb87cb8',
+        },
+        {
+          'bidder': 'grid',
+          'params': {
+            'uid': '2'
+          },
+          'adUnitCode': 'adunit-code-2',
+          'sizes': [[728, 90]],
+          'bidId': '1751cd90161',
+          'bidderRequestId': '106efe3247',
+          'auctionId': '32a1f276cb87cb8',
+        }
+      ];
+      const request = spec.buildRequests(bidRequests);
+      const expectedResponse = [
+        {
+          'requestId': '2164be6358b9',
+          'cpm': 1.15,
+          'creativeId': 1,
+          'dealId': 11,
+          'width': 300,
+          'height': 250,
+          'ad': '<div>test content 1</div>',
+          'bidderCode': 'grid',
+          'currency': 'USD',
+          'mediaType': 'banner',
+          'netRevenue': false,
+          'ttl': 360,
+        },
+        {
+          'requestId': '4e111f1b66e4',
+          'cpm': 0.5,
+          'creativeId': 2,
+          'dealId': 12,
+          'width': 300,
+          'height': 600,
+          'ad': '<div>test content 2</div>',
+          'bidderCode': 'grid',
+          'currency': 'USD',
+          'mediaType': 'banner',
+          'netRevenue': false,
+          'ttl': 360,
+        },
+        {
+          'requestId': '26d6f897b516',
+          'cpm': 0.15,
+          'creativeId': 1,
+          'dealId': undefined,
+          'width': 728,
+          'height': 90,
+          'ad': '<div>test content 3</div>',
+          'bidderCode': 'grid',
+          'currency': 'USD',
+          'mediaType': 'banner',
+          'netRevenue': false,
+          'ttl': 360,
+        },
+        {
+          'requestId': '326bde7fbf69',
+          'cpm': 0.15,
+          'creativeId': 1,
+          'dealId': undefined,
+          'width': 300,
+          'height': 600,
+          'ad': '<div>test content 4</div>',
+          'bidderCode': 'grid',
+          'currency': 'USD',
+          'mediaType': 'banner',
+          'netRevenue': false,
+          'ttl': 360,
+        }
+      ];
+
+      const result = spec.interpretResponse({'body': {'seatbid': fullResponse}}, request);
+      expect(result).to.deep.equal(expectedResponse);
+    });
+
+    it('dublicate uids and sizes in one slot', function () {
+      const fullResponse = [
+        {'bid': [{'price': 1.15, 'adm': '<div>test content 1</div>', 'auid': 1, 'h': 250, 'w': 300}], 'seat': '1'},
+        {'bid': [{'price': 0.5, 'adm': '<div>test content 2</div>', 'auid': 1, 'h': 250, 'w': 300}], 'seat': '1'},
+      ];
+      const bidRequests = [
+        {
+          'bidder': 'grid',
+          'params': {
+            'uid': '1'
+          },
+          'adUnitCode': 'adunit-code-1',
+          'sizes': [[300, 250], [300, 600]],
+          'bidId': '5126e301f4be',
+          'bidderRequestId': '171c5405a390',
+          'auctionId': '35bcbc0f7e79c',
+        },
+        {
+          'bidder': 'grid',
+          'params': {
+            'uid': '1'
+          },
+          'adUnitCode': 'adunit-code-1',
+          'sizes': [[300, 250], [300, 600]],
+          'bidId': '57b2ebe70e16',
+          'bidderRequestId': '171c5405a390',
+          'auctionId': '35bcbc0f7e79c',
+        },
+        {
+          'bidder': 'grid',
+          'params': {
+            'uid': '1'
+          },
+          'adUnitCode': 'adunit-code-1',
+          'sizes': [[300, 250], [300, 600]],
+          'bidId': '225fcd44b18c',
+          'bidderRequestId': '171c5405a390',
+          'auctionId': '35bcbc0f7e79c',
+        }
+      ];
+      const request = spec.buildRequests(bidRequests);
+      const expectedResponse = [
+        {
+          'requestId': '5126e301f4be',
+          'cpm': 1.15,
+          'creativeId': 1,
+          'dealId': undefined,
+          'width': 300,
+          'height': 250,
+          'ad': '<div>test content 1</div>',
+          'bidderCode': 'grid',
+          'currency': 'USD',
+          'mediaType': 'banner',
+          'netRevenue': false,
+          'ttl': 360,
+        },
+        {
+          'requestId': '57b2ebe70e16',
+          'cpm': 0.5,
+          'creativeId': 1,
+          'dealId': undefined,
+          'width': 300,
+          'height': 250,
+          'ad': '<div>test content 2</div>',
+          'bidderCode': 'grid',
+          'currency': 'USD',
+          'mediaType': 'banner',
+          'netRevenue': false,
+          'ttl': 360,
+        }
+      ];
+
+      const result = spec.interpretResponse({'body': {'seatbid': fullResponse}}, request);
+      expect(result).to.deep.equal(expectedResponse);
     });
   });
 });

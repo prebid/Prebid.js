@@ -248,13 +248,14 @@ export function newTargeting(auctionManager) {
   };
 
   /**
+   * @param  {(string|string[])} adUnitCode adUnitCode or array of adUnitCodes
    * Sets targeting for AST
    */
-  targeting.setTargetingForAst = function() {
-    let astTargeting = targeting.getAllTargeting();
+  targeting.setTargetingForAst = function(adUnitCodes) {
+    let astTargeting = targeting.getAllTargeting(adUnitCodes);
 
     try {
-      targeting.resetPresetTargetingAST();
+      targeting.resetPresetTargetingAST(adUnitCodes);
     } catch (e) {
       utils.logError('unable to reset targeting for AST' + e)
     }
