@@ -987,6 +987,23 @@ export function deepAccess(obj, path) {
 }
 
 /**
+ * @param {Object} obj The object to set a deep property value in
+ * @param {(string|Array.<string>)} path Object path to the value you would like ot set.
+ * @param {*} value The value you would like to set
+ */
+export function deepSetValue(obj, path, value) {
+  if (!obj) {
+    return;
+  }
+  let i;
+  path = Array.isArray(path) ? path : path.split('.');
+  for (i = 0; i < path.length - 1; i++) {
+    obj = obj[path[i]];
+  }
+  obj[path[i]] = value;
+}
+
+/**
  * Returns content for a friendly iframe to execute a URL in script tag
  * @param {string} url URL to be executed in a script tag in a friendly iframe
  * <!--PRE_SCRIPT_TAG_MACRO--> and <!--POST_SCRIPT_TAG_MACRO--> are macros left to be replaced if required

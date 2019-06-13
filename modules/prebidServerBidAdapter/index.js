@@ -529,60 +529,27 @@ const OPEN_RTB_PROTOCOL = {
 
     _appendSiteAppDevice(request);
 
-    const digiTrust = _getDigiTrustQueryParams();
-    if (digiTrust) {
-      if (!request.user || !request.user.ext) {
-        request.user = { ext: { digitrust: digiTrust } };
-      } else {
-        request.user.ext.digitrust = digiTrust;
-      }
-    }
-
     if (!utils.isEmpty(aliases)) {
-      request.ext.prebid.aliases = aliases;
+      utils.deepSetValue(request, 'ext.prebid.aliases', aliases);
     }
 
     if (Array.isArray(bidRequests)) {
-      if (!request.user) {
-        request.user = {};
-      }
-      if (!request.user.ext) {
-        request.user.ext = {}
-      }
-      if (!request.user.ext.tpid) {
-        request.user.ext.tpid = {}
-      }
-
       const gdprConsent = utils.deepAccess(bidRequests, '0.gdprConsent');
       if (gdprConsent) {
         // note - gdprApplies & consentString may be undefined in certain use-cases for consentManagement module
-        const gdprApplies = (typeof gdprConsent.gdprApplies === 'boolean') ? Number(gdprConsent.gdprApplies) : undefined;
-        if (request.regs) {
-          if (request.regs.ext) {
-            request.regs.ext.gdpr = gdprApplies;
-          } else {
-            request.regs.ext = { gdpr: gdprApplies };
-          }
-        } else {
-          request.regs = { ext: { gdpr: gdprApplies } };
-        }
+        utils.deepSetValue(request, 'regs.ext.gdpr', (typeof gdprConsent.gdprApplies === 'boolean') ? Number(gdprConsent.gdprApplies) : undefined);
+        utils.deepSetValue(request, 'user.ext.consent', gdprConsent.consentString);
+      }
 
-        const consentString = gdprConsent.consentString;
-        if (request.user) {
-          if (request.user.ext) {
-            request.user.ext.consent = consentString;
-          } else {
-            request.user.ext = { consent: consentString };
-          }
-        } else {
-          request.user = { ext: { consent: consentString } };
-        }
+      const digiTrust = _getDigiTrustQueryParams();
+      if (digiTrust) {
+        utils.deepSetValue(request, 'user.ext.tpid.digitrust', digiTrust);
       }
 
       // pass user id values from the User ID Module if enabled
       const userId = utils.deepAccess(bidRequests, '0.bids.0.userId');
       if (!utils.isEmpty(userId)) {
-        Object.assign(request.user.ext.tpid, userId);
+        utils.deepSetValue(request, 'user.ext.tpid', userId);
       }
     }
 
