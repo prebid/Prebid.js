@@ -82,10 +82,9 @@ export const spec = {
     const getRefererInfo = detectReferer(window);
 
     bid.pageUrl = getRefererInfo().referer;
-    if (spec.bidParams[bid.adId]) {
-      bid.params = spec.bidParams[bid.adId];
+    if (spec.bidParams[bid.requestId] && (typeof bid.params === 'undefined')) {
+      bid.params = [spec.bidParams[bid.requestId]];
     }
-
     spec.ajaxCall(`${spec.orbidderHost}${route}`, JSON.stringify(bid));
   },
 
