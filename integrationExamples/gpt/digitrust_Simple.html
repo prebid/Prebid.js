@@ -1,0 +1,220 @@
+<html>
+<head>
+    <title>Simple DigiTrust Prebid - No Framework</title>
+
+    <script>
+        (function (window, document) {
+            if (!window.__cmp) {
+                window.__cmp = (function () {
+                    var listen = window.attachEvent || window.addEventListener;
+                    listen('message', function (event) {
+                        window.__cmp.receiveMessage(event);
+                    }, false);
+
+                    function addLocatorFrame() {
+                        if (!window.frames['__cmpLocator']) {
+                            if (document.body) {
+                                var frame = document.createElement('iframe');
+                                frame.style.display = 'none';
+                                frame.name = '__cmpLocator';
+                                document.body.appendChild(frame);
+                            } else {
+                                setTimeout(addLocatorFrame, 5);
+                            }
+                        }
+                    }
+                    addLocatorFrame();
+
+                    var commandQueue = [];
+                    var cmp = function (command, parameter, callback) {
+                        if (command === 'ping') {
+                            if (callback) {
+                                callback({
+                                    gdprAppliesGlobally: !!(window.__cmp && window.__cmp.config && window.__cmp.config.storeConsentGlobally),
+                                    cmpLoaded: false
+                                });
+                            }
+                        } else {
+                            commandQueue.push({
+                                command: command,
+                                parameter: parameter,
+                                callback: callback
+                            });
+                        }
+                    };
+                    cmp.commandQueue = commandQueue;
+                    cmp.receiveMessage = function (event) {
+                        var data = event && event.data && event.data.__cmpCall;
+                        if (data) {
+                            commandQueue.push({
+                                callId: data.callId,
+                                command: data.command,
+                                parameter: data.parameter,
+                                event: event
+                            });
+                        }
+                    };
+                    cmp.config = {
+                        //
+                        // Modify config values here
+                        //
+                        // globalVendorListLocation: 'https://vendorlist.consensu.org/vendorlist.json',
+                        // customPurposeListLocation: './purposes.json',
+                        // globalConsentLocation: './portal.html',
+                        // storeConsentGlobally: false,
+                        // storePublisherData: false,
+                        logging: 'debug'//,
+                        // localization: {},
+                        // forceLocale: 'en-us'
+                    };
+                    return cmp;
+                }());
+                var t = document.createElement('script');
+                t.async = false;
+                t.src = 'http://acdn.adnxs.com/cmp/cmp.bundle.js';
+                var tag = document.getElementsByTagName('head')[0];
+                tag.appendChild(t);
+            }
+        })(window, document);
+        // window.__cmp('showConsentTool');
+    </script>
+
+    <script>
+        var FAILSAFE_TIMEOUT = 2000;
+
+        var adUnits = [
+            {
+                code: 'test-div',
+                sizes: [[300, 250], [300, 600], [728, 90]],
+                bids: [
+                    {
+                        bidder: 'rubicon',
+                        params: {
+                            accountId: '1001',
+                            siteId: '113932',
+                            zoneId: '535510'
+                        }
+                    }
+                ]
+            }
+        ];
+
+        var pbjs = pbjs || {};
+        pbjs.que = pbjs.que || [];
+    </script>
+    <script src="../../build/dev/prebid.js" async></script>
+
+    <script>
+        var googletag = googletag || {};
+        googletag.cmd = googletag.cmd || [];
+        googletag.cmd.push(function () {
+            googletag.pubads().disableInitialLoad();
+        });
+
+        pbjs.que.push(function () {
+            pbjs.setConfig({
+                debug: true,
+                consentManagement: {
+                    cmpApi: 'iab',
+                    timeout: 1000,
+                    allowAuctionWithoutConsent: true
+                },
+                usersync: {
+                    userIds: [{
+                        name: "digitrust",
+                        params: {
+                            init: {
+                                member: 'example_member_id',
+                                site: 'example_site_id'
+                            },
+                            callback: function (digiTrustResult) {
+                                // This callback can be used by publisher page to react to error conditions
+                                // Or pass the DigiTrust ID on.
+                                // If the Prebid userId system already has a managed copy of the DigiTrust ID
+                                // this callback will not be invoked.
+                                var elem = document.getElementById('idDiv');
+                                var msg;
+                                if (digiTrustResult.success) {
+                                    console.log('Success in Digitrust init');
+                                    if (digiTrustResult.identity && digiTrustResult.identity.id != null) {
+                                        msg = 'DigiTrust Id (encrypted): ' + digiTrustResult.identity.id;
+                                        elem.innerHTML = msg;
+                                        console.log(msg);
+                                    }
+                                    else {
+                                        console.error('Digitrust gave success, but no identity returned');
+                                    }
+                                }
+                                else {
+                                    console.error('Digitrust init failed');
+                                }
+                            }
+                        },
+                        storage: {
+                            type: "html5",
+                            name: "pbjsdigitrust",
+                            expires: 60
+                        }
+                    }]
+                }
+            });
+            pbjs.addAdUnits(adUnits);
+            pbjs.requestBids({
+                bidsBackHandler: sendAdserverRequest
+            });
+        });
+
+        function sendAdserverRequest() {
+            if (pbjs.adserverRequestSent) return;
+            pbjs.adserverRequestSent = true;
+            googletag.cmd.push(function () {
+                pbjs.que.push(function () {
+                    pbjs.setTargetingForGPTAsync();
+                    googletag.pubads().refresh();
+                });
+            });
+        }
+
+        setTimeout(function () {
+            sendAdserverRequest();
+        }, FAILSAFE_TIMEOUT);
+    </script>
+
+    <script>
+        (function () {
+            var gads = document.createElement('script');
+            gads.async = true;
+            gads.type = 'text/javascript';
+            var useSSL = 'https:' == document.location.protocol;
+            gads.src = (useSSL ? 'https:' : 'http:') +
+                '//www.googletagservices.com/tag/js/gpt.js';
+            var node = document.getElementsByTagName('script')[0];
+            node.parentNode.insertBefore(gads, node);
+        })();
+    </script>
+
+    <script>
+        googletag.cmd.push(function () {
+            googletag.defineSlot('/112115922/FL_PB_MedRect', [[300, 250], [300, 600]], 'test-div').addService(googletag.pubads());
+            googletag.pubads().enableSingleRequest();
+            googletag.enableServices();
+        });
+    </script>
+</head>
+
+<body>
+    <h2>DigiTrust Prebid Sample - No Framework</h2>
+
+    <p>
+        This sample shows the simplest integration path for using DigiTrust ID with Prebid.
+        You can use DigiTrust ID without integrating the entire DigiTrust suite.
+    </p>
+    <div id="idDiv"></div>
+
+    <div id='test-div'>
+        <script>
+            googletag.cmd.push(function () { googletag.display('test-div'); });
+        </script>
+    </div>
+</body>
+</html>

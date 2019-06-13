@@ -1160,15 +1160,15 @@ describe('the rubicon adapter', function () {
 
           bidderRequest.bids[0].params.floor = 0;
           [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
-          expect(request.data.imp[0].bidfloor).to.equal(0.0);
+          expect(request.data.imp[0].bidfloor).to.equal(0);
 
           bidderRequest.bids[0].params.floor = undefined;
           [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
-          expect(request.data.imp[0].bidfloor).to.equal(0.0);
+          expect(request.data.imp[0]).to.not.haveOwnProperty('bidfloor');
 
           bidderRequest.bids[0].params.floor = null;
           [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
-          expect(request.data.imp[0].bidfloor).to.equal(0.0);
+          expect(request.data.imp[0]).to.not.haveOwnProperty('bidfloor');
         });
 
         it('should send request with proper ad position when mediaTypes.video.pos is not defined', function () {
