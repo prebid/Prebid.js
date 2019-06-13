@@ -995,6 +995,9 @@ export function deepSetValue(obj, path, value) {
   let i;
   path = path.split('.');
   for (i = 0; i < path.length - 1; i++) {
+    if (i !== path.length - 1 && typeof obj[path[i]] === 'undefined') {
+      obj[path[i]] = {};
+    }
     obj = obj[path[i]];
   }
   obj[path[i]] = value;
