@@ -305,7 +305,7 @@ function reloadViewabilityScriptWithCorrectParameters(bid) {
   let viewJsPayload = getAppnexusViewabilityScriptFromJsTrackers(bid.native.javascriptTrackers);
 
   if (viewJsPayload) {
-    let prebidParams = 'pbjs_adid=' + bid.adId + '&pbjs_iframeid=' + bid.adUnitCode;
+    let prebidParams = 'pbjs_adid=' + bid.adId + '&pbjs_auc=' + bid.adUnitCode;
 
     let jsTrackerSrc = getViewabilityScriptUrlFromPayload(viewJsPayload)
 
