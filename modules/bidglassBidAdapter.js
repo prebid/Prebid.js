@@ -24,15 +24,6 @@ export const spec = {
    */
   buildRequests: function(validBidRequests, bidderRequest) {
     /*
-    Use `bidderRequest.bids[]` to get bidder-dependent
-    request info.
-
-    If your bidder supports multiple currencies, use
-    `config.getConfig(currency)` to find which one the ad
-    server needs.
-    */
-
-    /*
     Sample array entry for validBidRequests[]:
     [{
       "bidder": "bidglass",
@@ -52,13 +43,7 @@ export const spec = {
 
     let imps = [];
     let getReferer = function() {
-      if (window === window.top) {
-        return window.location.href;
-      } else if (window.parent === window.top) {
-        return document.referrer;
-      } else {
-        return null;
-      }
+      return window === window.top ? window.location.href : window.parent === window.top ? document.referrer : null;
     };
     let getOrigins = function() {
       var ori = [window.location.protocol + '//' + window.location.hostname];
@@ -123,17 +108,14 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function(serverResponse) {
-    // const serverBody  = serverResponse.body;
-    // const headerValue = serverResponse.headers.get('some-response-header');
-
     const bidResponses = [];
 
     utils._each(serverResponse.body.bidResponses, function(bid) {
       bidResponses.push({
         requestId: bid.requestId,
         cpm: parseFloat(bid.cpm),
-        width: parseInt(bid.width),
-        height: parseInt(bid.height),
+        width: parseInt(bid.width, 10),
+        height: parseInt(bid.height, 10),
         creativeId: bid.creativeId,
         dealId: bid.dealId || null,
         currency: bid.currency || 'USD',
@@ -145,41 +127,6 @@ export const spec = {
     });
 
     return bidResponses;
-  },
-
-  /**
-   * Register the user sync pixels which should be dropped after the auction.
-   *
-   * @param {SyncOptions} syncOptions Which user syncs are allowed?
-   * @param {ServerResponse[]} serverResponses List of server's responses.
-   * @return {UserSync[]} The user syncs which should be dropped.
-   */
-  getUserSyncs: function(syncOptions, serverResponses) {
-    return [];
-  },
-
-  /**
-   * Register bidder specific code, which will execute if bidder timed out after an auction
-   * @param {data} Containing timeout specific data
-   */
-  onTimeout: function(data) {
-    // Bidder specifc code
-  },
-
-  /**
-   * Register bidder specific code, which will execute if a bid from this bidder won the auction
-   * @param {Bid} The bid that won the auction
-   */
-  onBidWon: function(bid) {
-    // Bidder specific code
-  },
-
-  /**
-   * Register bidder specific code, which will execute when the adserver targeting has been set for a bid from this bidder
-   * @param {Bid} The bid of which the targeting has been set
-   */
-  onSetTargeting: function(bid) {
-    // Bidder specific code
   }
 
 }
