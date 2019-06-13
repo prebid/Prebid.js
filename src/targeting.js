@@ -32,7 +32,7 @@ export let filters = {
 // If two bids are found for same adUnitCode, we will use the highest one to take part in auction
 // This can happen in case of concurrent auctions
 // If adUnitBidLimit is set above 0 return top N number of bids
-export function getHighestCpmBidsFromBidPool(bidsReceived, highestCpmCallback, adUnitBidLimit=0) {
+export function getHighestCpmBidsFromBidPool(bidsReceived, highestCpmCallback, adUnitBidLimit = 0) {
   const bids = [];
   // bucket by adUnitcode
   let buckets = groupBy(bidsReceived, 'adUnitCode');
@@ -40,10 +40,9 @@ export function getHighestCpmBidsFromBidPool(bidsReceived, highestCpmCallback, a
   Object.keys(buckets).forEach(bucketKey => {
     let bucketBids = [];
     let bidsByBidder = groupBy(buckets[bucketKey], 'bidderCode');
-    Object.keys(bidsByBidder).forEach(key => bucketBids.push(bidsByBidder[key].reduce(highestCpmCallback))); 
-    
+    Object.keys(bidsByBidder).forEach(key => bucketBids.push(bidsByBidder[key].reduce(highestCpmCallback)));
     // if adUnitBidLimit is set, pass top N number bids
-    if(adUnitBidLimit) {
+    if (adUnitBidLimit) {
       bucketBids.sort((a, b) => b.cpm - a.cpm);
       bids.push(bucketBids.slice(0, adUnitBidLimit));
     } else {
@@ -528,7 +527,7 @@ export function newTargeting(auctionManager) {
    */
   function getBidLandscapeTargeting(adUnitCodes, bidsReceived) {
     const standardKeys = TARGETING_KEYS.concat(NATIVE_TARGETING_KEYS);
-    const adUnitBidLimit = config.getConfig('adUnitBidLimit'); 
+    const adUnitBidLimit = config.getConfig('adUnitBidLimit');
     const bids = getHighestCpmBidsFromBidPool(bidsReceived, getHighestCpm, adUnitBidLimit);
 
     // populate targeting keys for the remaining bids
