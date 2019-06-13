@@ -992,11 +992,8 @@ export function deepAccess(obj, path) {
  * @param {*} value The value you would like to set
  */
 export function deepSetValue(obj, path, value) {
-  if (!obj) {
-    return;
-  }
   let i;
-  path = Array.isArray(path) ? path : path.split('.');
+  path = path.split('.');
   for (i = 0; i < path.length - 1; i++) {
     obj = obj[path[i]];
   }

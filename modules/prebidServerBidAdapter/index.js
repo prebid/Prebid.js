@@ -250,8 +250,6 @@ function _getDigiTrustQueryParams() {
 }
 
 function _appendSiteAppDevice(request) {
-  if (!request) return;
-
   // ORTB specifies app OR site
   if (typeof config.getConfig('app') === 'object') {
     request.app = config.getConfig('app');
@@ -265,14 +263,11 @@ function _appendSiteAppDevice(request) {
   if (typeof config.getConfig('device') === 'object') {
     request.device = config.getConfig('device');
   }
-  if (!request.device) {
-    request.device = {};
+  if (!utils.deepAccess(request, 'device.w')) {
+    utils.deepSetValue(request, 'device.w', window.innerWidth);
   }
-  if (!request.device.w) {
-    request.device.w = window.innerWidth;
-  }
-  if (!request.device.h) {
-    request.device.h = window.innerHeight;
+  if (!utils.deepAccess(request, 'device.h')) {
+    utils.deepSetValue(request, 'device.h', window.innerHeight);
   }
 }
 
@@ -514,6 +509,11 @@ const OPEN_RTB_PROTOCOL = {
       }
     };
 
+    // s2sConfig video.ext.prebid is passed through openrtb to PBS
+    if (_s2sConfig.extPrebid && typeof _s2sConfig.extPrebid === 'object') {
+      request.ext.prebid = Object.assign(request.ext.prebid, _s2sConfig.extPrebid);
+    }
+
     /**
      * @type {(string[]|undefined)} - OpenRTB property 'cur', currencies available for bids
      */
@@ -522,12 +522,12 @@ const OPEN_RTB_PROTOCOL = {
       request.cur = adServerCur.slice();
     }
 
-    // s2sConfig video.ext.prebid is passed through openrtb to PBS
-    if (utils.isPlainObject(_s2sConfig.extPrebid)) {
-      request.ext.prebid = Object.assign(request.ext.prebid, _s2sConfig.extPrebid);
-    }
-
     _appendSiteAppDevice(request);
+
+    const digiTrust = _getDigiTrustQueryParams();
+    if (digiTrust) {
+      utils.deepSetValue(request, 'user.ext.digitrust', digiTrust);
+    }
 
     if (!utils.isEmpty(aliases)) {
       utils.deepSetValue(request, 'ext.prebid.aliases', aliases);
@@ -539,11 +539,6 @@ const OPEN_RTB_PROTOCOL = {
         // note - gdprApplies & consentString may be undefined in certain use-cases for consentManagement module
         utils.deepSetValue(request, 'regs.ext.gdpr', (typeof gdprConsent.gdprApplies === 'boolean') ? Number(gdprConsent.gdprApplies) : undefined);
         utils.deepSetValue(request, 'user.ext.consent', gdprConsent.consentString);
-      }
-
-      const digiTrust = _getDigiTrustQueryParams();
-      if (digiTrust) {
-        utils.deepSetValue(request, 'user.ext.tpid.digitrust', digiTrust);
       }
 
       // pass user id values from the User ID Module if enabled
@@ -558,6 +553,7 @@ const OPEN_RTB_PROTOCOL = {
 
   interpretResponse(response, bidderRequests, requestedBidders) {
     const bids = [];
+
     if (response.seatbid) {
       // a seatbid object contains a `bid` array and a `seat` string
       response.seatbid.forEach(seatbid => {
