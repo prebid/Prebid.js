@@ -3,7 +3,7 @@ import * as utils from 'src/utils';
 import { registerBidder } from 'src/adapters/bidderFactory';
 
 const BIDDER_CODE = 'adagio';
-const VERSION = '1.2.0';
+const VERSION = '1.3.0';
 const FEATURES_VERSION = '1';
 const ENDPOINT = 'https://mp.4dex.io/prebid';
 const SUPPORTED_MEDIA_TYPES = ['banner'];
@@ -295,12 +295,24 @@ export const spec = {
   supportedMediaType: SUPPORTED_MEDIA_TYPES,
 
   isBidRequestValid: function(bid) {
-    const { adUnitCode, auctionId } = bid;
+    top.ADAGIO = top.ADAGIO || {};
+    top.ADAGIO.adUnits = top.ADAGIO.adUnits || {};
+    top.ADAGIO.pbjsAdUnits = top.ADAGIO.pbjsAdUnits || [];
+    const { adUnitCode, auctionId, sizes, bidder, params } = bid;
     const { organizationId, site, placement, pagetype, adUnitElementId } = bid.params;
     const isValid = !!(organizationId && site && placement && pagetype && adUnitElementId && document.getElementById(adUnitElementId) !== null);
+    const tempAdUnits = top.ADAGIO.pbjsAdUnits.filter((adUnit) => adUnit.code !== adUnitCode);
+    tempAdUnits.push({
+      code: adUnitCode,
+      sizes,
+      bids: [{
+        bidder,
+        params
+      }]
+    });
+    top.ADAGIO.pbjsAdUnits = tempAdUnits;
 
     if (isValid === true) {
-      top.ADAGIO.adUnits = top.ADAGIO.adUnits || {};
       top.ADAGIO.adUnits[adUnitCode] = {
         auctionId: auctionId,
         pageviewId: _getPageviewId()
