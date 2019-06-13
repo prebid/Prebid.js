@@ -100,4 +100,15 @@ describe('Bid Glass Adapter', function () {
       expect(result.length).to.equal(0);
     });
   });
+
+  describe('getUserSyncs', function () {
+    let syncOptions = {iframeEnabled: true, pixelEnabled: true};
+    let emptyServerResponse = {
+      bidResponses: []
+    };
+    it('should return an array', function () {
+      let result = spec.getUserSyncs(syncOptions, emptyServerResponse);
+      expect(result).to.be.an('array');
+    });
+  });
 });

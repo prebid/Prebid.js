@@ -154,7 +154,9 @@ export const spec = {
    * @param {ServerResponse[]} serverResponses List of server's responses.
    * @return {UserSync[]} The user syncs which should be dropped.
    */
-  getUserSyncs: function() {},
+  getUserSyncs: function(syncOptions, serverResponses) {
+    return [];
+  },
 
   /**
    * Register bidder specific code, which will execute if bidder timed out after an auction
