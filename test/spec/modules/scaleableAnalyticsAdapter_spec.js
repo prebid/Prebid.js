@@ -77,9 +77,6 @@ describe('Scaleable Analytics Adapter', function() {
       scaleableAnalytics.disableAnalytics();
     });
 
-    // after(function() {
-    // });
-
     it('should handle the auction init event', function(done) {
       events.emit(AUCTION_INIT, {
         adUnitCodes: [MOCK_DATA.adUnitCode]
