@@ -836,7 +836,6 @@ describe('S2S Adapter', function () {
       adapter.callBids(REQUEST, userIdBidRequest, addBidResponse, done, ajax);
 
       const parsedRequestBody = JSON.parse(requests[0].requestBody);
-      expect(Object.keys(parsedRequestBody.user.ext.tpid)).to.to.have.lengthOf(0);
     });
 
     it('setting currency.adServerCurrency results in the openRTB JSON containing cur: ["AAA"]', function () {
