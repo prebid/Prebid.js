@@ -138,7 +138,7 @@ export function newConfig() {
       set adUnitBidLimit(val) {
         this._adUnitBidLimit = val;
       },
-      
+
       _useBidCache: DEFAULT_BID_CACHE,
       get useBidCache() {
         return this._useBidCache;
