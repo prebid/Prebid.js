@@ -85,12 +85,12 @@ function writeDigiId(id) {
 }
 
 /**
- * Set up a DigiTrust fascade object to mimic the API
+ * Set up a DigiTrust facade object to mimic the API
  *
  */
-function initDigitrustFascade(config) {
+function initDigitrustFacade(config) {
   var _savedId = null; // closure variable for storing Id to avoid additional requests
-  var fascade = {
+  var facade = {
     isClient: true,
     isMock: true,
     _internals: {
@@ -98,8 +98,10 @@ function initDigitrustFascade(config) {
       initCallback: null
     },
     getUser: function (obj, callback) {
-      var cb = callback || noop;
-      var inter = fascade._internals;
+      var isAsync = !!isFunc(callback);
+      var cb = isAsync ? callback : noop;
+      var errResp = { success: false };
+      var inter = facade._internals;
       inter.callCount++;
 
       // wrap the initializer callback, if present
@@ -113,10 +115,23 @@ function initDigitrustFascade(config) {
         }
       }
 
+      if (!isMemberIdValid) {
+        if (!isAsync) {
+          return errResp
+        } else {
+          cb(errResp);
+          return;
+        }
+      }
+
       if (_savedId != null) {
         checkCallInitializeCb(_savedId);
-        cb(_savedId);
-        return;
+        if (isAsync) {
+          cb(_savedId);
+          return;
+        } else {
+          return _savedId;
+        }
       }
 
       var opts = {
@@ -140,13 +155,30 @@ function initDigitrustFascade(config) {
       }
 
       callApi(opts);
+
+      if (!isAsync) {
+        return errResp; // even if it will be successful later, without a callback we report a "failure in this moment"
+      }
     }
   }
 
   if (window && window.DigiTrust == null) {
-    window.DigiTrust = fascade;
+    window.DigiTrust = facade;
   }
 }
+
+/**
+ * Tests to see if a member ID is valid within facade
+ * @param {any} memberId
+ */
+var isMemberIdValid = function (memberId) {
+  if (memberId && memberId.length > 0) {
+    return true;
+  } else {
+    utils.logError('[DigiTrust Prebid Client Error] Missing member ID, add the member ID to the function call options');
+    return false;
+  }
+};
 
 /**
  * Encapsulation of needed info for the callback return.
@@ -237,9 +269,9 @@ function getDigiTrustId(configParams) {
       getDigiTrustId(configParams);
     }, 100 * (1 + resultHandler.retries++));
     return resultHandler.userIdCallback;
-  } else if (!isInitialized()) { // Second see if we should build a fascade object
+  } else if (!isInitialized()) { // Second see if we should build a facade object
     if (resultHandler.retries >= MAX_RETRIES) {
-      initDigitrustFascade(configParams); // initialize a fascade object that relies on the AJAX call
+      initDigitrustFacade(configParams); // initialize a facade object that relies on the AJAX call
       resultHandler.executeIdRequest(configParams);
     } else {
       // use expanding envelope
@@ -264,7 +296,7 @@ function initializeDigiTrust(config) {
     dt.initialize(config.init, config.callback);
   } else if (dt == null) {
     // Assume we are already on a delay and DigiTrust is not on page
-    initDigitrustFascade(config);
+    initDigitrustFacade(config);
   }
 }
 
@@ -278,7 +310,7 @@ function surfaceTestHook() {
   digitrustIdModule['_testHook'] = testHook;
 }
 
-testHook.initDigitrustFascade = initDigitrustFascade;
+testHook.initDigitrustFacade = initDigitrustFacade;
 
 /** @type {Submodule} */
 export const digiTrustIdSubmodule = {
