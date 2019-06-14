@@ -46,7 +46,7 @@ export function getHighestCpmBidsFromBidPool(bidsReceived, highestCpmCallback, a
       bucketBids.sort((a, b) => b.cpm - a.cpm);
       bids.push(...bucketBids.slice(0, adUnitBidLimit));
     } else {
-      bids.push(...bucketBids.slice(0, bucketBids.length));
+      bids.push(...bucketBids);
     }
   });
   return bids
