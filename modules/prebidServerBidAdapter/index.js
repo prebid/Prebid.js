@@ -10,6 +10,8 @@ import { isValid } from '../../src/adapters/bidderFactory';
 import events from '../../src/events';
 import includes from 'core-js/library/fn/array/includes';
 import { S2S_VENDORS } from './config.js';
+import get from 'lodash/get';
+import set from 'lodash/set';
 
 const getConfig = config.getConfig;
 
@@ -232,12 +234,13 @@ function doClientSideSyncs(bidders) {
   });
 }
 
-function _getDigiTrustQueryParams() {
-  function getDigiTrustId() {
-    let digiTrustUser = window.DigiTrust && (config.getConfig('digiTrustId') || window.DigiTrust.getUser({member: 'T9QSFKPDN9'}));
+function _getDigiTrustQueryParams(bidRequest = {}) {
+  function getDigiTrustId(bidRequest) {
+    let digiTrustUser = get(bidRequest, 'userId.digitrustid.data') ||
+        (window.DigiTrust && (config.getConfig('digiTrustId') || window.DigiTrust.getUser({member: 'T9QSFKPDN9'})));
     return (digiTrustUser && digiTrustUser.success && digiTrustUser.identity) || null;
   }
-  let digiTrustId = getDigiTrustId();
+  let digiTrustId = getDigiTrustId(bidRequest);
   // Verify there is an ID and this user has not opted out
   if (!digiTrustId || (digiTrustId.privacy && digiTrustId.privacy.optout)) {
     return null;
@@ -334,7 +337,7 @@ const LEGACY_PROTOCOL = {
 
     _appendSiteAppDevice(request);
 
-    let digiTrust = _getDigiTrustQueryParams();
+    let digiTrust = _getDigiTrustQueryParams(bidRequests && bidRequests[0]);
     if (digiTrust) {
       request.digiTrust = digiTrust;
     }
@@ -521,26 +524,37 @@ const OPEN_RTB_PROTOCOL = {
 
     _appendSiteAppDevice(request);
 
-    const digiTrust = _getDigiTrustQueryParams();
+    const digiTrust = _getDigiTrustQueryParams(bidRequests && bidRequests[0]);
     if (digiTrust) {
-      request.user = { ext: { digitrust: digiTrust } };
+      set(request, 'user.ext.digitrust', digiTrust);
     }
 
     if (!utils.isEmpty(aliases)) {
       request.ext.prebid.aliases = aliases;
     }
 
-    if (bidRequests && bidRequests[0].userId && typeof bidRequests[0].userId === 'object') {
-      if (!request.user) {
-        request.user = {};
+    if (bidRequests && bidRequests[0].userId && typeof bidRequests[0].userId === 'object' &&
+        (bidRequests[0].userId.tdid || bidRequests[0].userId.pubcid)) {
+      set(request, 'user.ext.eids', []);
+
+      if (bidRequests[0].userId.tdid) {
+        request.user.ext.eids.push({
+          source: 'adserver.org',
+          uids: [{
+            id: bidRequests[0].userId.tdid,
+            ext: {
+              rtiPartner: 'TDID'
+            }
+          }]
+        });
       }
-      if (!request.user.ext) {
-        request.user.ext = {}
+
+      if (bidRequests[0].userId.pubcid) {
+        request.user.ext.eids.push({
+          source: 'pubcommon',
+          id: bidRequests[0].userId.pubcid
+        });
       }
-      if (!request.user.ext.tpid) {
-        request.user.ext.tpid = {}
-      }
-      Object.assign(request.user.ext.tpid, bidRequests[0].userId);
     }
 
     if (bidRequests && bidRequests[0].gdprConsent) {
@@ -560,16 +574,7 @@ const OPEN_RTB_PROTOCOL = {
         request.regs = { ext: { gdpr: gdprApplies } };
       }
 
-      let consentString = bidRequests[0].gdprConsent.consentString;
-      if (request.user) {
-        if (request.user.ext) {
-          request.user.ext.consent = consentString;
-        } else {
-          request.user.ext = { consent: consentString };
-        }
-      } else {
-        request.user = { ext: { consent: consentString } };
-      }
+      set(request, 'user.ext.consent', bidRequests[0].gdprConsent.consentString);
     }
 
     return request;

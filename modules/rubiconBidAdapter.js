@@ -2,6 +2,8 @@ import * as utils from '../src/utils';
 import {registerBidder} from '../src/adapters/bidderFactory';
 import {config} from '../src/config';
 import {BANNER, VIDEO} from '../src/mediaTypes';
+import get from 'lodash/get';
+import set from 'lodash/set';
 
 const INTEGRATION = 'pbjs_lite_v$prebid.version$';
 
@@ -13,6 +15,19 @@ function isSecure() {
 export const FASTLANE_ENDPOINT = '//fastlane.rubiconproject.com/a/api/fastlane.json';
 export const VIDEO_ENDPOINT = '//prebid-server.rubiconproject.com/openrtb2/auction';
 export const SYNC_ENDPOINT = 'https://eus.rubiconproject.com/usync.html';
+
+const DIGITRUST_PROP_NAMES = {
+  FASTLANE: {
+    id: 'dt.id',
+    keyv: 'dt.keyv',
+    pref: 'dt.pref'
+  },
+  PREBID_SERVER: {
+    id: 'id',
+    keyv: 'keyv',
+    pref: 'pref'
+  }
+};
 
 var sizeMap = {
   1: '468x60',
@@ -170,13 +185,9 @@ export const spec = {
 
       addVideoParameters(data, bidRequest);
 
-      const digiTrust = getDigiTrustQueryParams();
+      const digiTrust = _getDigiTrustQueryParams(bidRequest, 'PREBID_SERVER');
       if (digiTrust) {
-        data.user = {
-          ext: {
-            digitrust: digiTrust
-          }
-        };
+        set(data, 'user.ext.digitrust', digiTrust);
       }
 
       if (bidderRequest.gdprConsent) {
@@ -196,15 +207,30 @@ export const spec = {
           data.regs = {ext: {gdpr: gdprApplies}};
         }
 
-        const consentString = bidderRequest.gdprConsent.consentString;
-        if (data.user) {
-          if (data.user.ext) {
-            data.user.ext.consent = consentString;
-          } else {
-            data.user.ext = {consent: consentString};
-          }
-        } else {
-          data.user = {ext: {consent: consentString}};
+        set(data, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
+      }
+
+      if (bidRequest.userId && typeof bidRequest.userId === 'object' &&
+        (bidRequest.userId.tdid || bidRequest.userId.pubcid)) {
+        set(data, 'user.ext.eids', []);
+
+        if (bidRequest.userId.tdid) {
+          data.user.ext.eids.push({
+            source: 'adserver.org',
+            uids: [{
+              id: bidRequests[0].userId.tdid,
+              ext: {
+                rtiPartner: 'TDID'
+              }
+            }]
+          });
+        }
+
+        if (bidRequest.userId.pubcid) {
+          data.user.ext.eids.push({
+            source: 'pubcommon',
+            id: bidRequests[0].userId.pubcid
+          });
         }
       }
 
@@ -406,10 +432,8 @@ export const spec = {
     }
 
     // digitrust properties
-    const digitrustParams = _getDigiTrustQueryParams();
-    Object.keys(digitrustParams).forEach(paramKey => {
-      data[paramKey] = digitrustParams[paramKey];
-    });
+    const digitrustParams = _getDigiTrustQueryParams(bidRequest, 'FASTLANE');
+    Object.assign(data, digitrustParams);
 
     return data;
   },
@@ -600,21 +624,27 @@ function _getScreenResolution() {
   return [window.screen.width, window.screen.height].join('x');
 }
 
-function _getDigiTrustQueryParams() {
+function _getDigiTrustQueryParams(bidRequest = {}, endpointName) {
+  if (!endpointName || !DIGITRUST_PROP_NAMES[endpointName]) {
+    return null;
+  }
+  const propNames = DIGITRUST_PROP_NAMES[endpointName];
+
   function getDigiTrustId() {
-    let digiTrustUser = window.DigiTrust && (config.getConfig('digiTrustId') || window.DigiTrust.getUser({member: 'T9QSFKPDN9'}));
+    let digiTrustUser = get(bidRequest, 'userId.digitrustid.data') ||
+        (window.DigiTrust && (config.getConfig('digiTrustId') || window.DigiTrust.getUser({member: 'T9QSFKPDN9'})));
     return (digiTrustUser && digiTrustUser.success && digiTrustUser.identity) || null;
   }
 
   let digiTrustId = getDigiTrustId();
   // Verify there is an ID and this user has not opted out
   if (!digiTrustId || (digiTrustId.privacy && digiTrustId.privacy.optout)) {
-    return [];
+    return null;
   }
   return {
-    'dt.id': digiTrustId.id,
-    'dt.keyv': digiTrustId.keyv,
-    'dt.pref': 0
+    [propNames.id]: digiTrustId.id,
+    [propNames.keyv]: digiTrustId.keyv,
+    [propNames.pref]: 0
   };
 }
 
@@ -675,24 +705,6 @@ function parseSizes(bid, mediaType) {
   }
 
   return masSizeOrdering(sizes);
-}
-
-function getDigiTrustQueryParams() {
-  function getDigiTrustId() {
-    let digiTrustUser = window.DigiTrust && (config.getConfig('digiTrustId') || window.DigiTrust.getUser({member: 'T9QSFKPDN9'}));
-    return (digiTrustUser && digiTrustUser.success && digiTrustUser.identity) || null;
-  }
-
-  let digiTrustId = getDigiTrustId();
-  // Verify there is an ID and this user has not opted out
-  if (!digiTrustId || (digiTrustId.privacy && digiTrustId.privacy.optout)) {
-    return null;
-  }
-  return {
-    id: digiTrustId.id,
-    keyv: digiTrustId.keyv,
-    pref: 0
-  };
 }
 
 /**
