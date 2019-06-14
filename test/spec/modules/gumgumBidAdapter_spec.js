@@ -4,7 +4,7 @@ import { spec } from 'modules/gumgumBidAdapter';
 
 const ENDPOINT = 'https://g2.gumgum.com/hbid/imp';
 
-describe.only('gumgumAdapter', function () {
+describe('gumgumAdapter', function () {
   const adapter = newBidder(spec);
 
   describe('inherited functions', function () {
