@@ -30,7 +30,7 @@ describe('stroeerCore bid adapter', function () {
     assert.propertyVal(bidObject, 'creativeId', '');
   }
 
-  function assertCustomFieldsOnBid(bidObject, cpm2, floor, exchangeRate, nurl, originalAd, maxprice) {
+  function assertCustomFieldsOnBid(bidObject, cpm2, floor, exchangeRate, nurl, originalAd, maxprice, tracking) {
     assert.propertyVal(bidObject, 'cpm2', cpm2);
     assert.propertyVal(bidObject, 'floor', floor);
     assert.propertyVal(bidObject, 'exchangeRate', exchangeRate);
@@ -38,6 +38,9 @@ describe('stroeerCore bid adapter', function () {
     assert.propertyVal(bidObject, 'originalAd', originalAd);
     assert.isFunction(bidObject.generateAd);
     assert.propertyVal(bidObject, 'maxprice', maxprice);
+    if (tracking) {
+      assert.deepEqual(bidObject['tracking'], tracking);
+    }
   }
 
   const AUCTION_ID = utils.getUniqueIdentifierStr();
@@ -77,7 +80,8 @@ describe('stroeerCore bid adapter', function () {
       'cpm': 4.0,
       'width': 300,
       'height': 600,
-      'ad': '<div>tag1</div>'
+      'ad': '<div>tag1</div>',
+      'tracking': { 'brandId': 123 }
     }, {
       'bidId': 'bid2',
       'cpm': 7.3,
@@ -522,11 +526,11 @@ describe('stroeerCore bid adapter', function () {
       const result = spec.interpretResponse({body: bidderResponse});
       assertStandardFieldsOnBid(result[0], 'bid1', '<div>tag1</div>', 300, 600, 4);
       // default custom values
-      assertCustomFieldsOnBid(result[0], 0, 4, undefined, undefined, '<div>tag1</div>', 4);
+      assertCustomFieldsOnBid(result[0], 0, 4, undefined, undefined, '<div>tag1</div>', 4, { 'brandId': 123 }, undefined);
 
       assertStandardFieldsOnBid(result[1], 'bid2', '<div>tag2</div>', 728, 90, 7.3);
       // default custom values
-      assertCustomFieldsOnBid(result[1], 0, 7.3, undefined, undefined, '<div>tag2</div>', 7.3);
+      assertCustomFieldsOnBid(result[1], 0, 7.3, undefined, undefined, '<div>tag2</div>', 7.3, undefined);
     });
 
     it('should interpret a first price response', () => {
@@ -534,10 +538,10 @@ describe('stroeerCore bid adapter', function () {
 
       const result = spec.interpretResponse({body: bidderResponse});
       assertStandardFieldsOnBid(result[0], 'bid1', '<div>tag1</div>', 300, 600, 4);
-      assertCustomFieldsOnBid(result[0], 3.8, 2.0, 1.0, 'www.something.com', '<div>tag1</div>', 2.38);
+      assertCustomFieldsOnBid(result[0], 3.8, 2.0, 1.0, 'www.something.com', '<div>tag1</div>', 2.38, undefined);
 
       assertStandardFieldsOnBid(result[1], 'bid2', '<div>tag2</div>', 728, 90, 7.3);
-      assertCustomFieldsOnBid(result[1], 0, 1.0, 0.8, 'www.something-else.com', '<div>tag2</div>', 7.3);
+      assertCustomFieldsOnBid(result[1], 0, 1.0, 0.8, 'www.something-else.com', '<div>tag2</div>', 7.3, undefined);
     });
 
     it('should default floor to same value as cpm and default cpm2 to 0', () => {

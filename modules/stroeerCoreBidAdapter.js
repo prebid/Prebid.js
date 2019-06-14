@@ -216,6 +216,7 @@ export const spec = {
           exchangeRate: bidResponse.exchangeRate,
           nurl: bidResponse.nurl,
           originalAd: bidResponse.ad,
+          tracking: bidResponse.tracking,
           generateAd: function ({auctionPrice, firstBid, secondBid, thirdBid}) {
             let sspAuctionPrice = auctionPrice;
 
