@@ -42,14 +42,14 @@ export function getHighestCpmBidsFromBidPool(bidsReceived, highestCpmCallback, a
     let bidsByBidder = groupBy(buckets[bucketKey], 'bidderCode');
     Object.keys(bidsByBidder).forEach(key => bucketBids.push(bidsByBidder[key].reduce(highestCpmCallback)));
     // if adUnitBidLimit is set, pass top N number bids
-    if (adUnitBidLimit) {
+    if (adUnitBidLimit > 0) {
       bucketBids.sort((a, b) => b.cpm - a.cpm);
-      bids.push(bucketBids.slice(0, adUnitBidLimit));
+      bids.push(...bucketBids.slice(0, adUnitBidLimit));
     } else {
-      bids.push(bucketBids);
+      bids.push(...bucketBids.slice(0, bucketBids.length));
     }
   });
-  return bids.flat();
+  return bids
 }
 
 /**
