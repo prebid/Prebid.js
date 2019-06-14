@@ -142,7 +142,7 @@ describe('gumgumAdapter', function () {
         const connection = window.navigator.connection;
         const downlink = connection.downlink || connection.bandwidth;
         expect(bidRequest.data).to.include.any.keys('ns');
-        expect(bidRequest.data.ns).to.eq(Math.round(downlink*1024));
+        expect(bidRequest.data.ns).to.eq(Math.round(downlink * 1024));
       }
     });
   })
