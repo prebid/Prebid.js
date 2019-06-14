@@ -138,11 +138,13 @@ describe('gumgumAdapter', function () {
     });
     it('should send ns parameter if browser contains navigator.connection property', function () {
       const bidRequest = spec.buildRequests(bidRequests)[0];
-      if (window.navigator) {
-        const connection = window.navigator.connection;
+      const connection = window.navigator && window.navigator.connection;
+      if (connection) {
         const downlink = connection.downlink || connection.bandwidth;
         expect(bidRequest.data).to.include.any.keys('ns');
         expect(bidRequest.data.ns).to.eq(Math.round(downlink * 1024));
+      } else {
+        expect(bidRequest.data).to.not.include.any.keys('ns');
       }
     });
   })
