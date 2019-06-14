@@ -383,20 +383,27 @@ describe('FeedAdAdapter', function () {
       let subject = spec[name];
       describe(name + ' handler', function () {
         let xhr;
+        let requests;
 
         beforeEach(function () {
-          xhr = sinon.stub();
+          xhr = sinon.useFakeXMLHttpRequest();
+          requests = [];
+          xhr.onCreate = xhr => requests.push(xhr);
+        });
+
+        afterEach(function () {
+          xhr.restore();
         });
 
         it('should do nothing on empty data', function () {
-          subject(undefined, xhr);
-          subject(null, xhr);
-          expect(xhr.called).to.be.false;
+          subject(undefined);
+          subject(null);
+          expect(requests.length).to.equal(0);
         });
 
         it('should do nothing when bid metadata is not set', function () {
-          subject(data, xhr);
-          expect(xhr.callCount).to.equal(0);
+          subject(data);
+          expect(requests.length).to.equal(0);
         });
 
         it('should send tracking params when correct metadata was set', function () {
@@ -412,17 +419,13 @@ describe('FeedAdAdapter', function () {
             referer,
             sdk_version: '1.0.0'
           };
-          subject(data, xhr);
-          expect(xhr.callCount).to.equal(1);
-          let call = xhr.getCall(0);
-          expect(call.args[0]).to.equal('https://api.feedad.com/1/prebid/web/events');
-          expect(call.args[1]).to.be.null;
-          expect(JSON.parse(call.args[2])).to.deep.equal(expectedData);
-          expect(call.args[3]).to.deep.equal({
-            withCredentials: true,
-            method: 'POST',
-            contentType: 'application/json'
-          });
+          subject(data);
+          expect(requests.length).to.equal(1);
+          let call = requests[0];
+          expect(call.url).to.equal('https://api.feedad.com/1/prebid/web/events');
+          expect(JSON.parse(call.requestBody)).to.deep.equal(expectedData);
+          expect(call.method).to.equal('POST');
+          expect(call.requestHeaders).to.include({'Content-Type': 'application/json;charset=utf-8'});
         })
       });
     });
