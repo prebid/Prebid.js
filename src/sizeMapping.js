@@ -1,5 +1,5 @@
-import { config } from 'src/config';
-import { logWarn } from 'src/utils';
+import { config } from './config';
+import {logWarn, isPlainObject, deepAccess, deepClone, getWindowTop} from './utils';
 import includes from 'core-js/library/fn/array/includes';
 
 let sizeConfig = [];
@@ -25,40 +25,96 @@ export function setSizeConfig(config) {
 config.getConfig('sizeConfig', config => setSizeConfig(config.sizeConfig));
 
 /**
+ * Returns object describing the status of labels on the adUnit or bidder along with labels passed into requestBids
+ * @param bidOrAdUnit the bidder or adUnit to get label info on
+ * @param activeLabels the labels passed to requestBids
+ * @returns {LabelDescriptor}
+ */
+export function getLabels(bidOrAdUnit, activeLabels) {
+  if (bidOrAdUnit.labelAll) {
+    return {labelAll: true, labels: bidOrAdUnit.labelAll, activeLabels};
+  }
+  return {labelAll: false, labels: bidOrAdUnit.labelAny, activeLabels};
+}
+
+/**
+ * Determines whether a single size is valid given configured sizes
+ * @param {Array} size [width, height]
+ * @param {Array<SizeConfig>} configs
+ * @returns {boolean}
+ */
+export function sizeSupported(size, configs = sizeConfig) {
+  let maps = evaluateSizeConfig(configs);
+  if (!maps.shouldFilter) {
+    return true;
+  }
+  return !!maps.sizesSupported[size];
+}
+
+/**
  * Resolves the unique set of the union of all sizes and labels that are active from a SizeConfig.mediaQuery match
  * @param {Array<string>} labels Labels specified on adUnit or bidder
  * @param {boolean} labelAll if true, all labels must match to be enabled
  * @param {Array<string>} activeLabels Labels passed in through requestBids
- * @param {Array<Array<number>>} sizes Sizes specified on adUnit
+ * @param {object} mediaTypes A mediaTypes object describing the various media types (banner, video, native)
+ * @param {Array<Array<number>>} sizes Sizes specified on adUnit (deprecated)
  * @param {Array<SizeConfig>} configs
  * @returns {{labels: Array<string>, sizes: Array<Array<number>>}}
  */
-export function resolveStatus({labels = [], labelAll = false, activeLabels = []} = {}, sizes = [], configs = sizeConfig) {
+export function resolveStatus({labels = [], labelAll = false, activeLabels = []} = {}, mediaTypes, sizes, configs = sizeConfig) {
   let maps = evaluateSizeConfig(configs);
 
-  let filteredSizes;
-  if (maps.shouldFilter) {
-    filteredSizes = sizes.filter(size => maps.sizesSupported[size]);
+  if (!isPlainObject(mediaTypes)) {
+    // add support for deprecated adUnit.sizes by creating correct banner mediaTypes if they don't already exist
+    if (sizes) {
+      mediaTypes = {
+        banner: {
+          sizes
+        }
+      };
+    } else {
+      mediaTypes = {};
+    }
   } else {
-    filteredSizes = sizes;
+    mediaTypes = deepClone(mediaTypes);
   }
 
-  return {
-    active: filteredSizes.length > 0 && (
-      labels.length === 0 || (
-        (!labelAll && (
-          labels.some(label => maps.labels[label]) ||
-          labels.some(label => includes(activeLabels, label))
-        )) ||
-        (labelAll && (
-          labels.reduce((result, label) => !result ? result : (
-            maps.labels[label] || includes(activeLabels, label)
-          ), true)
-        ))
+  let oldSizes = deepAccess(mediaTypes, 'banner.sizes');
+  if (maps.shouldFilter && oldSizes) {
+    mediaTypes.banner.sizes = oldSizes.filter(size => maps.sizesSupported[size]);
+  }
+
+  let allMediaTypes = Object.keys(mediaTypes);
+
+  let results = {
+    active: (
+      allMediaTypes.length > 1 || (allMediaTypes.length === 1 && allMediaTypes[0] !== 'banner')
+    ) || (
+      allMediaTypes[0] === 'banner' && deepAccess(mediaTypes, 'banner.sizes.length') > 0 && (
+        labels.length === 0 || (
+          (!labelAll && (
+            labels.some(label => maps.labels[label]) ||
+            labels.some(label => includes(activeLabels, label))
+          )) ||
+          (labelAll && (
+            labels.reduce((result, label) => !result ? result : (
+              maps.labels[label] || includes(activeLabels, label)
+            ), true)
+          ))
+        )
       )
     ),
-    sizes: filteredSizes
+    mediaTypes
   };
+
+  if (oldSizes && oldSizes.length !== mediaTypes.banner.sizes.length) {
+    results.filterResults = {
+      before: oldSizes,
+      after: mediaTypes.banner.sizes
+    }
+  }
+
+  return results;
 }
 
 function evaluateSizeConfig(configs) {
@@ -67,7 +123,17 @@ function evaluateSizeConfig(configs) {
       typeof config === 'object' &&
       typeof config.mediaQuery === 'string'
     ) {
-      if (matchMedia(config.mediaQuery).matches) {
+      let ruleMatch = false;
+
+      try {
+        ruleMatch = getWindowTop().matchMedia(config.mediaQuery).matches;
+      } catch (e) {
+        logWarn('Unfriendly iFrame blocks sizeConfig from being correctly evaluated');
+
+        ruleMatch = matchMedia(config.mediaQuery).matches;
+      }
+
+      if (ruleMatch) {
         if (Array.isArray(config.sizesSupported)) {
           results.shouldFilter = true;
         }

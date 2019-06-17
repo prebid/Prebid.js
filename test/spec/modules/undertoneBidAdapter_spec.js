@@ -44,6 +44,12 @@ const bidReq = [{
   auctionId: '6c22f5a5-59df-4dc6-b92c-f433bcf0a874'
 }];
 
+const bidderReq = {
+  refererInfo: {
+    referer: 'http://prebid.org/dev-docs/bidder-adaptor.html'
+  }
+};
+
 const validBidRes = {
   ad: '<div>Hello</div>',
   publisherId: 12345,
@@ -98,14 +104,16 @@ describe('Undertone Adapter', function () {
   });
   describe('build request', function () {
     it('should send request to correct url via POST', function () {
-      const request = spec.buildRequests(bidReq);
-      const domain = null;
+      const request = spec.buildRequests(bidReq, bidderReq);
+      const domainStart = bidderReq.refererInfo.referer.indexOf('//');
+      const domainEnd = bidderReq.refererInfo.referer.indexOf('/', domainStart + 2);
+      const domain = bidderReq.refererInfo.referer.substring(domainStart + 2, domainEnd);
       const REQ_URL = `${URL}?pid=${bidReq[0].params.publisherId}&domain=${domain}`;
       expect(request.url).to.equal(REQ_URL);
       expect(request.method).to.equal('POST');
     });
     it('should have all relevant fields', function () {
-      const request = spec.buildRequests(bidReq);
+      const request = spec.buildRequests(bidReq, bidderReq);
       const bid1 = JSON.parse(request.data)['x-ut-hb-params'][0];
       expect(bid1.bidRequestId).to.equal('263be71e91dd9d');
       expect(bid1.sizes.length).to.equal(2);
@@ -148,6 +156,29 @@ describe('Undertone Adapter', function () {
 
     it('should only use valid bid responses', function () {
       expect(spec.interpretResponse({ body: bidResArray }).length).to.equal(1);
+    });
+  });
+
+  describe('getUserSyncs', () => {
+    it('verifies gdpr consent checked', () => {
+      const options = ({ iframeEnabled: true, pixelEnabled: true });
+      expect(spec.getUserSyncs(options, {}, { gdprApplies: true }).length).to.equal(0);
+    });
+
+    it('Verifies sync iframe option', function () {
+      const result = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true });
+      expect(result).to.have.lengthOf(1);
+      expect(result[0].type).to.equal('iframe');
+      expect(result[0].url).to.equal('//cdn.undertone.com/js/usersync.html');
+    });
+
+    it('Verifies sync image option', function () {
+      const result = spec.getUserSyncs({ pixelEnabled: true });
+      expect(result).to.have.lengthOf(2);
+      expect(result[0].type).to.equal('image');
+      expect(result[0].url).to.equal('//usr.undertone.com/userPixel/syncOne?id=1&of=2');
+      expect(result[1].type).to.equal('image');
+      expect(result[1].url).to.equal('//usr.undertone.com/userPixel/syncOne?id=2&of=2');
     });
   });
 });

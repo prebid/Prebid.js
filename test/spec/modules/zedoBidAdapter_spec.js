@@ -38,15 +38,16 @@ describe('The ZEDO bidding adapter', function () {
           sizes: [[300, 200]],
           params: {
             channelCode: 20000000,
-            dimId: 10
+            dimId: 10,
+            pubId: 1
           },
         },
       ];
       const request = spec.buildRequests(bidRequests, bidderRequest);
-      expect(request.url).to.match(/^\/\/z2.zedo.com\/asw\/fmh.json/);
+      expect(request.url).to.match(/^\/\/saxp.zedo.com\/asw\/fmh.json/);
       expect(request.method).to.equal('GET');
       const zedoRequest = request.data;
-      expect(zedoRequest).to.equal('g={"placements":[{"network":20,"channel":0,"width":300,"height":200,"dimension":10,"version":"$prebid.version$","keyword":"","transactionId":"12345667","renderers":[{"name":"display"}]}]}');
+      expect(zedoRequest).to.equal('g={"placements":[{"network":20,"channel":0,"publisher":1,"width":300,"height":200,"dimension":10,"version":"$prebid.version$","keyword":"","transactionId":"12345667","renderers":[{"name":"display"}]}]}');
     });
 
     it('should properly build a channelCode request for video with type defined', function () {
@@ -68,10 +69,10 @@ describe('The ZEDO bidding adapter', function () {
         },
       ];
       const request = spec.buildRequests(bidRequests, bidderRequest);
-      expect(request.url).to.match(/^\/\/z2.zedo.com\/asw\/fmh.json/);
+      expect(request.url).to.match(/^\/\/saxp.zedo.com\/asw\/fmh.json/);
       expect(request.method).to.equal('GET');
       const zedoRequest = request.data;
-      expect(zedoRequest).to.equal('g={"placements":[{"network":20,"channel":0,"width":640,"height":480,"dimension":85,"version":"$prebid.version$","keyword":"","transactionId":"12345667","renderers":[{"name":"Inarticle"}]}]}');
+      expect(zedoRequest).to.equal('g={"placements":[{"network":20,"channel":0,"publisher":0,"width":640,"height":480,"dimension":85,"version":"$prebid.version$","keyword":"","transactionId":"12345667","renderers":[{"name":"Inarticle"}]}]}');
     });
 
     describe('buildGDPRRequests', function () {
@@ -100,7 +101,7 @@ describe('The ZEDO bidding adapter', function () {
         const request = spec.buildRequests(bidRequests, bidderRequest);
         expect(request.method).to.equal('GET');
         const zedoRequest = request.data;
-        expect(zedoRequest).to.equal('g={"placements":[{"network":20,"channel":0,"width":300,"height":200,"dimension":10,"version":"$prebid.version$","keyword":"","transactionId":"12345667","renderers":[{"name":"display"}]}],"gdpr":1,"gdpr_consent":"BOJ8RZsOJ8RZsABAB8AAAAAZ+A=="}');
+        expect(zedoRequest).to.equal('g={"placements":[{"network":20,"channel":0,"publisher":0,"width":300,"height":200,"dimension":10,"version":"$prebid.version$","keyword":"","transactionId":"12345667","renderers":[{"name":"display"}]}],"gdpr":1,"gdpr_consent":"BOJ8RZsOJ8RZsABAB8AAAAAZ+A=="}');
       });
     });
   });
@@ -234,14 +235,17 @@ describe('The ZEDO bidding adapter', function () {
           },
         }]
       };
+
       const bids = spec.interpretResponse(response, request);
       expect(bids).to.have.lengthOf(1);
       expect(bids[0].requestId).to.equal('ad1d762');
       expect(bids[0].cpm).to.equal(0.78);
       expect(bids[0].width).to.equal('640');
       expect(bids[0].height).to.equal('480');
+      expect(bids[0].adType).to.equal('VAST');
       expect(bids[0].vastXml).to.not.equal('');
       expect(bids[0].ad).to.be.an('undefined');
+      expect(bids[0].renderer).not.to.be.an('undefined');
     });
   });
 
@@ -263,6 +267,88 @@ describe('The ZEDO bidding adapter', function () {
       expect(syncs).to.have.lengthOf(1);
       expect(syncs[0].type).to.equal('iframe');
       expect(syncs[0].url).to.contains('gdpr=0');
+    });
+  });
+
+  describe('bid events', function () {
+    it('should trigger a win pixel', function () {
+      const bid = {
+        'bidderCode': 'zedo',
+        'width': '300',
+        'height': '250',
+        'statusMessage': 'Bid available',
+        'adId': '148018fe5e',
+        'cpm': 0.5,
+        'ad': 'dummy data',
+        'ad_id': '12345',
+        'sizeId': '15',
+        'adResponse':
+          {
+            'creatives': [
+              {
+                'adId': '12345',
+                'height': '480',
+                'width': '640',
+                'isFoc': true,
+                'creativeDetails': {
+                  'type': 'VAST',
+                  'adContent': '<VAST></VAST>'
+                },
+                'seeder': {
+                  'network': 1234,
+                  'servedChan': 1234567,
+                },
+                'cpm': '1200000',
+                'servedChan': 1234,
+              }]
+          },
+        'params': [{
+          'channelCode': '123456',
+          'dimId': '85'
+        }],
+        'requestTimestamp': 1540401686,
+        'responseTimestamp': 1540401687,
+        'timeToRespond': 6253,
+        'pbLg': '0.50',
+        'pbMg': '0.50',
+        'pbHg': '0.53',
+        'adUnitCode': '/123456/header-bid-tag-0',
+        'bidder': 'zedo',
+        'size': '300x250',
+        'adserverTargeting': {
+          'hb_bidder': 'zedo',
+          'hb_adid': '148018fe5e',
+          'hb_pb': '10.00',
+        }
+      };
+      spec.onBidWon(bid);
+      spec.onTimeout(bid);
+    });
+    it('should trigger a timeout pixel', function () {
+      const bid = {
+        'bidderCode': 'zedo',
+        'width': '300',
+        'height': '250',
+        'statusMessage': 'Bid available',
+        'adId': '148018fe5e',
+        'cpm': 0.5,
+        'ad': 'dummy data',
+        'ad_id': '12345',
+        'sizeId': '15',
+        'params': [{
+          'channelCode': '123456',
+          'dimId': '85'
+        }],
+        'timeout': 1,
+        'requestTimestamp': 1540401686,
+        'responseTimestamp': 1540401687,
+        'timeToRespond': 6253,
+        'adUnitCode': '/123456/header-bid-tag-0',
+        'bidder': 'zedo',
+        'size': '300x250',
+      };
+      spec.onBidWon(bid);
+      spec.onTimeout(bid);
     });
   });
 });

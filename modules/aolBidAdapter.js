@@ -1,8 +1,6 @@
-import * as utils from 'src/utils';
-import { registerBidder } from 'src/adapters/bidderFactory';
-import { config } from 'src/config';
-import { EVENTS } from 'src/constants.json';
-import { BANNER } from 'src/mediaTypes';
+import * as utils from '../src/utils';
+import { registerBidder } from '../src/adapters/bidderFactory';
+import { BANNER } from '../src/mediaTypes';
 
 const AOL_BIDDERS_CODES = {
   AOL: 'aol',
@@ -43,30 +41,10 @@ const NEXAGE_SERVER = 'hb.nexage.com';
 const ONE_DISPLAY_TTL = 60;
 const ONE_MOBILE_TTL = 3600;
 
-$$PREBID_GLOBAL$$.aolGlobals = {
-  pixelsDropped: false
-};
-
 const NUMERIC_VALUES = {
   TRUE: 1,
   FALSE: 0
 };
-
-let showCpmAdjustmentWarning = (function() {
-  let showCpmWarning = true;
-
-  return function() {
-    let bidderSettings = $$PREBID_GLOBAL$$.bidderSettings;
-    if (showCpmWarning && bidderSettings && bidderSettings.aol &&
-      typeof bidderSettings.aol.bidCpmAdjustment === 'function') {
-      utils.logWarn(
-        'bidCpmAdjustment is active for the AOL adapter. ' +
-        'As of Prebid 0.14, AOL can bid in net – please contact your accounts team to enable.'
-      );
-      showCpmWarning = false; // warning is shown at most once
-    }
-  };
-})();
 
 function template(strings, ...keys) {
   return function(...values) {
@@ -78,32 +56,6 @@ function template(strings, ...keys) {
     });
     return result.join('');
   };
-}
-
-function parsePixelItems(pixels) {
-  let itemsRegExp = /(img|iframe)[\s\S]*?src\s*=\s*("|')(.*?)\2/gi;
-  let tagNameRegExp = /\w*(?=\s)/;
-  let srcRegExp = /src=("|')(.*?)\1/;
-  let pixelsItems = [];
-
-  if (pixels) {
-    let matchedItems = pixels.match(itemsRegExp);
-    if (matchedItems) {
-      matchedItems.forEach(item => {
-        let tagName = item.match(tagNameRegExp)[0];
-        let url = item.match(srcRegExp)[2];
-
-        if (tagName && tagName) {
-          pixelsItems.push({
-            type: tagName === SYNC_TYPES.IMAGE.TAG ? SYNC_TYPES.IMAGE.TYPE : SYNC_TYPES.IFRAME.TYPE,
-            url: url
-          });
-        }
-      });
-    }
-  }
-
-  return pixelsItems;
 }
 
 function _isMarketplaceBidder(bidder) {
@@ -164,8 +116,6 @@ export const spec = {
     });
   },
   interpretResponse({body}, bidRequest) {
-    showCpmAdjustmentWarning();
-
     if (!body) {
       utils.logError('Empty bid response', bidRequest.bidderCode, body);
     } else {
@@ -176,15 +126,11 @@ export const spec = {
       }
     }
   },
-  getUserSyncs(options, bidResponses) {
-    let bidResponse = bidResponses[0];
+  getUserSyncs(options, serverResponses) {
+    const bidResponse = !utils.isEmpty(serverResponses) && serverResponses[0].body;
 
-    if (config.getConfig('aol.userSyncOn') === EVENTS.BID_RESPONSE) {
-      if (!$$PREBID_GLOBAL$$.aolGlobals.pixelsDropped && bidResponse && bidResponse.ext && bidResponse.ext.pixels) {
-        $$PREBID_GLOBAL$$.aolGlobals.pixelsDropped = true;
-
-        return parsePixelItems(bidResponse.ext.pixels);
-      }
+    if (bidResponse && bidResponse.ext && bidResponse.ext.pixels) {
+      return this.parsePixelItems(bidResponse.ext.pixels);
     }
 
     return [];
@@ -357,6 +303,31 @@ export const spec = {
 
     return params;
   },
+  parsePixelItems(pixels) {
+    let itemsRegExp = /(img|iframe)[\s\S]*?src\s*=\s*("|')(.*?)\2/gi;
+    let tagNameRegExp = /\w*(?=\s)/;
+    let srcRegExp = /src=("|')(.*?)\1/;
+    let pixelsItems = [];
+
+    if (pixels) {
+      let matchedItems = pixels.match(itemsRegExp);
+      if (matchedItems) {
+        matchedItems.forEach(item => {
+          let tagName = item.match(tagNameRegExp)[0];
+          let url = item.match(srcRegExp)[2];
+
+          if (tagName && tagName) {
+            pixelsItems.push({
+              type: tagName === SYNC_TYPES.IMAGE.TAG ? SYNC_TYPES.IMAGE.TYPE : SYNC_TYPES.IFRAME.TYPE,
+              url: url
+            });
+          }
+        });
+      }
+    }
+
+    return pixelsItems;
+  },
 
   _parseBidResponse(response, bidRequest) {
     let bidData;
@@ -380,38 +351,20 @@ export const spec = {
       }
     }
 
-    let bidResponse = {
+    return {
       bidderCode: bidRequest.bidderCode,
       requestId: bidRequest.bidId,
       ad: bidData.adm,
       cpm: cpm,
       width: bidData.w,
       height: bidData.h,
-      creativeId: bidData.crid,
+      creativeId: bidData.crid || 0,
       pubapiId: response.id,
-      currency: response.cur,
+      currency: response.cur || 'USD',
       dealId: bidData.dealid,
       netRevenue: true,
       ttl: bidRequest.ttl
     };
-
-    if (response.ext && response.ext.pixels) {
-      if (config.getConfig('aol.userSyncOn') !== EVENTS.BID_RESPONSE) {
-        bidResponse.ad += this.formatPixels(response.ext.pixels);
-      }
-    }
-
-    return bidResponse;
-  },
-  formatPixels(pixels) {
-    let formattedPixels = pixels.replace(/<\/?script( type=('|")text\/javascript('|")|)?>/g, '');
-
-    return '<script>var w=window,prebid;' +
-      'for(var i=0;i<10;i++){w = w.parent;prebid=w.$$PREBID_GLOBAL$$;' +
-      'if(prebid && prebid.aolGlobals && !prebid.aolGlobals.pixelsDropped){' +
-      'try{prebid.aolGlobals.pixelsDropped=true;' + formattedPixels + 'break;}' +
-      'catch(e){continue;}' +
-      '}}</script>';
   },
   isOneMobileBidder: _isOneMobileBidder,
   isSecureProtocol() {

@@ -1,4 +1,4 @@
-import 'mocha';
+import 'mocha/mocha';
 import chai from 'chai';
 import { getCacheUrl, store } from 'src/videoCache';
 import { config } from 'src/config';
@@ -100,7 +100,7 @@ describe('The video cache', function () {
       </Wrapper>
     </Ad>
   </VAST>`;
-      assertRequestMade({ vastUrl: 'my-mock-url.com' }, expectedValue)
+      assertRequestMade({ vastUrl: 'my-mock-url.com', ttl: 25 }, expectedValue)
     });
 
     it('should make the expected request when store() is called on an ad with a vastUrl and a vastImpUrl', function () {
@@ -114,12 +114,49 @@ describe('The video cache', function () {
       </Wrapper>
     </Ad>
   </VAST>`;
-      assertRequestMade({ vastUrl: 'my-mock-url.com', vastImpUrl: 'imptracker.com' }, expectedValue)
+      assertRequestMade({ vastUrl: 'my-mock-url.com', vastImpUrl: 'imptracker.com', ttl: 25 }, expectedValue)
     });
 
     it('should make the expected request when store() is called on an ad with vastXml', function () {
       const vastXml = '<VAST version="3.0"></VAST>';
-      assertRequestMade({ vastXml: vastXml }, vastXml);
+      assertRequestMade({ vastXml: vastXml, ttl: 25 }, vastXml);
+    });
+
+    it('should make the expected request when store() is called while supplying a custom key param', function () {
+      const customKey1 = 'keyword_abc_123';
+      const customKey2 = 'other_xyz_789';
+      const vastXml1 = '<VAST version="3.0">test1</VAST>';
+      const vastXml2 = '<VAST version="3.0">test2</VAST>';
+
+      const bids = [{
+        vastXml: vastXml1,
+        ttl: 25,
+        customCacheKey: customKey1
+      }, {
+        vastXml: vastXml2,
+        ttl: 25,
+        customCacheKey: customKey2
+      }];
+
+      store(bids, function () { });
+      const request = requests[0];
+      request.method.should.equal('POST');
+      request.url.should.equal('https://prebid.adnxs.com/pbc/v1/cache');
+      request.requestHeaders['Content-Type'].should.equal('text/plain;charset=utf-8');
+      let payload = {
+        puts: [{
+          type: 'xml',
+          value: vastXml1,
+          ttlseconds: 25,
+          key: customKey1
+        }, {
+          type: 'xml',
+          value: vastXml2,
+          ttlseconds: 25,
+          key: customKey2
+        }]
+      };
+      JSON.parse(request.requestBody).should.deep.equal(payload);
     });
 
     function assertRequestMade(bid, expectedValue) {
@@ -134,6 +171,7 @@ describe('The video cache', function () {
         puts: [{
           type: 'xml',
           value: expectedValue,
+          ttlseconds: 25
         }],
       });
     }

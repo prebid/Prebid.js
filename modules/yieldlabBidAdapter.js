@@ -1,7 +1,7 @@
-import * as utils from 'src/utils'
-import { registerBidder } from 'src/adapters/bidderFactory'
+import * as utils from '../src/utils'
+import { registerBidder } from '../src/adapters/bidderFactory'
 import find from 'core-js/library/fn/array/find'
-import { VIDEO, BANNER } from 'src/mediaTypes'
+import { VIDEO, BANNER } from '../src/mediaTypes'
 
 const ENDPOINT = 'https://ad.yieldlab.net'
 const BIDDER_CODE = 'yieldlab'
@@ -13,7 +13,7 @@ export const spec = {
   supportedMediaTypes: [VIDEO, BANNER],
 
   isBidRequestValid: function (bid) {
-    if (bid && bid.params && bid.params.adslotId && bid.params.adSize) {
+    if (bid && bid.params && bid.params.adslotId && bid.params.supplyId) {
       return true
     }
     return false
@@ -40,8 +40,10 @@ export const spec = {
     })
 
     if (bidderRequest && bidderRequest.gdprConsent) {
-      query.consent = bidderRequest.gdprConsent.consentString
       query.gdpr = (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') ? bidderRequest.gdprConsent.gdprApplies : true
+      if (query.gdpr) {
+        query.consent = bidderRequest.gdprConsent.consentString
+      }
     }
 
     const adslots = adslotIds.join(',')
@@ -73,23 +75,26 @@ export const spec = {
       })
 
       if (matchedBid) {
-        const sizes = parseSize(bidRequest.params.adSize)
+        const primarysize = bidRequest.sizes.length === 2 && !utils.isArray(bidRequest.sizes[0]) ? bidRequest.sizes : bidRequest.sizes[0]
+        const customsize = bidRequest.params.adSize !== undefined ? parseSize(bidRequest.params.adSize) : primarysize
+        const extId = bidRequest.params.extId !== undefined ? '&id=' + bidRequest.params.extId : ''
         const bidResponse = {
           requestId: bidRequest.bidId,
           cpm: matchedBid.price / 100,
-          width: sizes[0],
-          height: sizes[1],
+          width: customsize[0],
+          height: customsize[1],
           creativeId: '' + matchedBid.id,
-          dealId: matchedBid.pid,
+          dealId: (matchedBid['c.dealid']) ? matchedBid['c.dealid'] : matchedBid.pid,
           currency: CURRENCY_CODE,
           netRevenue: false,
           ttl: BID_RESPONSE_TTL_SEC,
           referrer: '',
-          ad: `<script src="${ENDPOINT}/d/${matchedBid.id}/${bidRequest.params.supplyId}/${sizes[0]}x${sizes[1]}?ts=${timestamp}"></script>`
+          ad: `<script src="${ENDPOINT}/d/${matchedBid.id}/${bidRequest.params.supplyId}/${customsize[0]}x${customsize[1]}?ts=${timestamp}${extId}"></script>`
         }
+
         if (isVideo(bidRequest)) {
           bidResponse.mediaType = VIDEO
-          bidResponse.vastUrl = `${ENDPOINT}/d/${matchedBid.id}/${bidRequest.params.supplyId}/${sizes[0]}x${sizes[1]}?ts=${timestamp}`
+          bidResponse.vastUrl = `${ENDPOINT}/d/${matchedBid.id}/${bidRequest.params.supplyId}/${customsize[0]}x${customsize[1]}?ts=${timestamp}${extId}`
         }
 
         bidResponses.push(bidResponse)

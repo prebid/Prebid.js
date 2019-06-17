@@ -3,7 +3,7 @@
 ```
 Module Name: Sharethrough Bidder Adapter
 Module Type: Bidder Adapter
-Maintainer: jchau@sharethrough.com && cpan@sharethrough.com
+Maintainer: pubgrowth.engineering@sharethrough.com
 ```
 
 # Description

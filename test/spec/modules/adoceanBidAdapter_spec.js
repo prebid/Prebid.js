@@ -36,6 +36,7 @@ describe('AdoceanAdapter', function () {
       bid.params = {
         'masterId': 0
       };
+
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
   });
@@ -54,6 +55,19 @@ describe('AdoceanAdapter', function () {
         'bidId': '30b31c1838de1e',
         'bidderRequestId': '22edbae2733bf6',
         'auctionId': '1d1a030790a475',
+      },
+      {
+        'bidder': 'adocean',
+        'params': {
+          'masterId': 'tmYF.DMl7ZBq.Nqt2Bq4FutQTJfTpxCOmtNPZoQUDcL.G7',
+          'slaveId': 'adoceanmyaozpniqismex',
+          'emiter': 'myao.adocean.pl'
+        },
+        'adUnitCode': 'adunit-code',
+        'sizes': [[300, 250]],
+        'bidId': '30b31c1838de1f',
+        'bidderRequestId': '22edbae2733bf6',
+        'auctionId': '1d1a030790a475',
       }
     ];
 
@@ -64,11 +78,18 @@ describe('AdoceanAdapter', function () {
       }
     };
 
-    it('should add bidIdMap with slaveId => bidId mapping', function () {
-      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
-      expect(request.bidIdMap).to.exists;
-      const bidIdMap = request.bidIdMap;
-      expect(bidIdMap[bidRequests[0].params.slaveId]).to.equal(bidRequests[0].bidId);
+    it('should send two requests if slave is duplicated', () => {
+      const nrOfRequests = spec.buildRequests(bidRequests, bidderRequest).length;
+      expect(nrOfRequests).to.equal(2);
+    });
+
+    it('should add bidIdMap with correct slaveId => bidId mapping', () => {
+      const requests = spec.buildRequests(bidRequests, bidderRequest);
+      for (let i = 0; i < bidRequests.length; i++) {
+        expect(requests[i]).to.exist;
+        expect(requests[i].bidIdMap).to.exist;
+        expect(requests[i].bidIdMap[bidRequests[i].params.slaveId]).to.equal(bidRequests[i].bidId);
+      }
     });
 
     it('sends bid request to url via GET', function () {

@@ -1,8 +1,9 @@
 import {expect} from 'chai';
-import * as utils from 'src/utils';
 import {spec} from 'modules/adgenerationBidAdapter';
 import {newBidder} from 'src/adapters/bidderFactory';
 import {NATIVE} from 'src/mediaTypes';
+import {config} from 'src/config';
+import prebid from '../../../package.json';
 
 describe('AdgenerationAdapter', function () {
   const adapter = newBidder(spec);
@@ -15,7 +16,7 @@ describe('AdgenerationAdapter', function () {
   });
 
   describe('isBidRequestValid', function () {
-    let bid = {
+    const bid = {
       'bidder': 'adg',
       'params': {
         id: '58278', // banner
@@ -39,11 +40,10 @@ describe('AdgenerationAdapter', function () {
         bidder: 'adg',
         params: {
           id: '58278',
-          width: '300',
-          height: '250'
+          currency: 'JPY',
         },
         adUnitCode: 'adunit-code',
-        sizes: [[300, 250]],
+        sizes: [[300, 250], [320, 100]],
         bidId: '2f6ac468a9c15e',
         bidderRequestId: '14a9f773e30243',
         auctionId: '4aae9f05-18c6-4fcd-80cf-282708cd584a',
@@ -53,8 +53,7 @@ describe('AdgenerationAdapter', function () {
         bidder: 'adg',
         params: {
           id: '58278',
-          width: '300',
-          height: '250'
+          currency: 'JPY',
         },
         mediaTypes: {
           native: {
@@ -87,34 +86,59 @@ describe('AdgenerationAdapter', function () {
         transactionTd: 'f76f6dfd-d64f-4645-a29f-682bac7f431a'
       }
     ];
+    const bidderRequest = {
+      refererInfo: {
+        referer: 'http://example.com'
+      }
+    };
     const data = {
-      banner: 'posall=SSPLOC&id=58278&sdktype=0&hb=true&t=json3&imark=1',
-      native: 'posall=SSPLOC&id=58278&sdktype=0&hb=true&t=json3'
+      banner: `posall=SSPLOC&id=58278&sdktype=0&hb=true&t=json3&sizes=300x250%2C320x100&currency=JPY&pbver=${prebid.version}&sdkname=prebidjs&adapterver=1.0.1&imark=1&tp=http%3A%2F%2Fexample.com`,
+      bannerUSD: `posall=SSPLOC&id=58278&sdktype=0&hb=true&t=json3&sizes=300x250%2C320x100&currency=USD&pbver=${prebid.version}&sdkname=prebidjs&adapterver=1.0.1&imark=1&tp=http%3A%2F%2Fexample.com`,
+      native: 'posall=SSPLOC&id=58278&sdktype=0&hb=true&t=json3&sizes=1x1&currency=JPY&pbver=' + prebid.version + '&sdkname=prebidjs&adapterver=1.0.1&tp=http%3A%2F%2Fexample.com'
     };
     it('sends bid request to ENDPOINT via GET', function () {
-      const request = spec.buildRequests(bidRequests)[0];
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
       expect(request.url).to.equal(ENDPOINT[1]);
       expect(request.method).to.equal('GET');
     });
 
     it('sends bid request to debug ENDPOINT via GET', function () {
       bidRequests[0].params.debug = true;
-      const request = spec.buildRequests(bidRequests)[0];
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
       expect(request.url).to.equal(ENDPOINT[0]);
       expect(request.method).to.equal('GET');
     });
 
     it('should attache params to the banner request', function () {
-      const request = spec.buildRequests(bidRequests)[0];
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
       expect(request.data).to.equal(data.banner);
     });
 
     it('should attache params to the native request', function () {
-      const request = spec.buildRequests(bidRequests)[1];
+      const request = spec.buildRequests(bidRequests, bidderRequest)[1];
       expect(request.data).to.equal(data.native);
     });
+    it('allows setConfig to set bidder currency for JPY', function () {
+      config.setConfig({
+        currency: {
+          adServerCurrency: 'JPY'
+        }
+      });
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
+      expect(request.data).to.equal(data.banner);
+      config.resetConfig();
+    });
+    it('allows setConfig to set bidder currency for USD', function () {
+      config.setConfig({
+        currency: {
+          adServerCurrency: 'USD'
+        }
+      });
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
+      expect(request.data).to.equal(data.bannerUSD);
+      config.resetConfig();
+    });
   });
-
   describe('interpretResponse', function () {
     const bidRequests = {
       banner: {
@@ -214,7 +238,7 @@ describe('AdgenerationAdapter', function () {
             {
               data: {
                 label: 'optout_url',
-                value: 'https://supership.jp/optout/'
+                value: 'https://supership.jp/optout/#'
               },
               id: 502
             },
@@ -298,7 +322,6 @@ describe('AdgenerationAdapter', function () {
         currency: 'JPY',
         netRevenue: true,
         ttl: 1000,
-        referrer: utils.getTopWindowUrl(),
         ad: '<div id="medibasspContainer">↵      <iframe src="https://s3-ap-northeast-1.amazonaws.com/sdk-temp/adg-sample-ad/300x250.html?prc=-WjRm3cb&rd=https%3A%2F%2Ftg.socdm.com%2Frd%2Fv1%2Fz%2FhKFj2gDZY2hzbT0yMDAsN2NhNTY1NjQvNTgyNzgvU1NQTE9DLzUxMjYwMS83MjExNS43Njg1NS41MTI2MDEvMTA5MzkyNi82NDkxOS81ODI3ODpTU1BMT0M6Ki9jdD0xNTE1MDM4NTQ3NjQyO3NyPWh0dHBzO2RzcGlkPTMwMTtwcj16ZmkzaWYxV3h5VDJrVk90OXpmMWIzMHE7cHJiPXlRO3Bybz15UTtwcm9jPUpQWTtjcmQyeT0xMTM7Y3J5MmQ9MC4wMDg4NDk1NTc1MjIxMjM4OTAyO2lkeD0wO6VzZXFpZNoAJDgyZDcxYzA3LTg5ZjItM2E1ZC1kYmVmLTFjNjhiMDZkOTBmZKdzZXF0aW1lrTE1MTUwMzg1NDc2NDKkeHVpZLhXamg1c2NDbzRWSUFBR1hRelRrQUFBQUE%2Fp%2Fseqid%3D82d71c07-89f2-3a5d-dbef-1c68b06d90fd%3B%2Fg%2FU%3A%3Furl%3D" style="border: 0px;" width="300" height="250" frameborder="0" scrolling="no"></iframe>↵    </div>',
       },
       native: {
@@ -311,7 +334,6 @@ describe('AdgenerationAdapter', function () {
         currency: 'JPY',
         netRevenue: true,
         ttl: 1000,
-        referrer: utils.getTopWindowUrl(),
         ad: '↵    <div id="medibasspContainer">↵      <iframe src="https://s3-ap-northeast-1.amazonaws.com/sdk-temp/adg-sample-ad/300x250.html?prc=-WjRm3cb&rd=https%3A%2F%2Ftg.socdm.com%2Frd%2Fv1%2Fz%2FhKFj2gDZY2hzbT0yMDAsN2NhNTY1NjQvNTgyNzgvU1NQTE9DLzUxMjYwMS83MjExNS43Njg1NS41MTI2MDEvMTA5MzkyNi82NDkxOS81ODI3ODpTU1BMT0M6Ki9jdD0xNTE1MDM4NTQ3NjQyO3NyPWh0dHBzO2RzcGlkPTMwMTtwcj16ZmkzaWYxV3h5VDJrVk90OXpmMWIzMHE7cHJiPXlRO3Bybz15UTtwcm9jPUpQWTtjcmQyeT0xMTM7Y3J5MmQ9MC4wMDg4NDk1NTc1MjIxMjM4OTAyO2lkeD0wO6VzZXFpZNoAJDgyZDcxYzA3LTg5ZjItM2E1ZC1kYmVmLTFjNjhiMDZkOTBmZKdzZXF0aW1lrTE1MTUwMzg1NDc2NDKkeHVpZLhXamg1c2NDbzRWSUFBR1hRelRrQUFBQUE%2Fp%2Fseqid%3D82d71c07-89f2-3a5d-dbef-1c68b06d90fd%3B%2Fg%2FU%3A%3Furl%3D" style="border: 0px;" width="300" height="250" frameborder="0" scrolling="no"></iframe>↵    </div>↵  <img src="https://tg.socdm.com/bc/v3?b=Y2hzbT0zNTQsMjZhOGQ2NTRpZD01ODI3OSZwb3M9U1NQTE9DJmFkPTUxMjYwMy83MjExNi43Njg1Ni41MTI2MDMvMTA5MzkyNy82NDkyMC81ODI3OTpTU1BMT0M6Ki9pZHg9MDtkc3BpZD0zMDE7cHI9emZpM2lmMVd4eVQya1ZPdDl6ZjFiMzBxO3ByYj15UTtwcm89eVE7cHJvYz1KUFk7Y3JkMnk9MTEyLjA1O2NyeTJkPTAuMDA4OTI0NTg3MjM3ODQwMjUwNDtwcnY9aWp6QVZtWW9wbmJUV1B0cWhtZEN1ZWRXNDd0MjU1MEtmYjFWYmI3SzthY2Q9JTdCJTIybWFyZ2luX2lkJTIyJTNBNSU3RDthc2Q9JTdCJTIybWFyZ2luX2lkJTIyJTNBNTIlMkMlMjJtYXJnaW4lMjIlM0FmYWxzZSU3RDsmZXg9MTUxNDE4NzQ4NiZjdD0xNTE0MTg3NDg2Mzc4JnNyPWh0dHA-&amp;xuid=Wjh5scCo4VIAAGXQzTkAAAAA&amp;ctsv=a-ad84&amp;seqid=ca7d6a2d-7cf1-6c6a-f4bd-a19b168ba94b&amp;seqtime=1514187486378&amp;t=.gif" width="1" height="1" style="display:none;border:none;padding:0;margin:0;width:1px;height:1px"/>',
         native: {
           title: 'Title',
@@ -328,6 +350,7 @@ describe('AdgenerationAdapter', function () {
           sponsoredBy: 'Sponsored',
           body: 'Description',
           cta: 'CTA',
+          privacyLink: 'https://supership.jp/optout/#',
           clickUrl: 'https://supership.jp',
           clickTrackers: ['https://s3-ap-northeast-1.amazonaws.com/adg-dummy-dsp/1x1_clicktracker_access.gif'],
           impressionTrackers: ['https://s3-ap-northeast-1.amazonaws.com/adg-dummy-dsp/1x1.gif']
@@ -351,7 +374,6 @@ describe('AdgenerationAdapter', function () {
       expect(result.currency).to.equal(bidResponses.banner.currency);
       expect(result.netRevenue).to.equal(bidResponses.banner.netRevenue);
       expect(result.ttl).to.equal(bidResponses.banner.ttl);
-      expect(result.referrer).to.equal(bidResponses.banner.referrer);
       expect(result.ad).to.equal(bidResponses.banner.ad);
     });
 
@@ -365,7 +387,6 @@ describe('AdgenerationAdapter', function () {
       expect(result.currency).to.equal(bidResponses.native.currency);
       expect(result.netRevenue).to.equal(bidResponses.native.netRevenue);
       expect(result.ttl).to.equal(bidResponses.native.ttl);
-      expect(result.referrer).to.equal(bidResponses.native.referrer);
       expect(result.native.title).to.equal(bidResponses.native.native.title);
       expect(result.native.image.url).to.equal(bidResponses.native.native.image.url);
       expect(result.native.image.height).to.equal(bidResponses.native.native.image.height);
@@ -376,6 +397,7 @@ describe('AdgenerationAdapter', function () {
       expect(result.native.sponsoredBy).to.equal(bidResponses.native.native.sponsoredBy);
       expect(result.native.body).to.equal(bidResponses.native.native.body);
       expect(result.native.cta).to.equal(bidResponses.native.native.cta);
+      expect(decodeURIComponent(result.native.privacyLink)).to.equal(bidResponses.native.native.privacyLink);
       expect(result.native.clickUrl).to.equal(bidResponses.native.native.clickUrl);
       expect(result.native.impressionTrackers[0]).to.equal(bidResponses.native.native.impressionTrackers[0]);
       expect(result.native.clickTrackers[0]).to.equal(bidResponses.native.native.clickTrackers[0]);

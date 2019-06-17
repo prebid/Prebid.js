@@ -1,4 +1,4 @@
-import { getSourceBidderMap, calculateBidSources, getSource } from 'modules/s2sTesting';
+import s2sTesting from 'modules/s2sTesting';
 import { config } from 'src/config';
 import find from 'core-js/library/fn/array/find';
 
@@ -20,12 +20,12 @@ describe('s2sTesting', function () {
     mathRandomStub.restore();
   });
 
-  describe('getSource', function () {
+  describe('s2sTesting.getSource', function () {
     // helper function to set random number and get the source
     function getExpectedSource(randNumber, sourceWeights, sources) {
       // set random number for testing
       randomNumber = randNumber;
-      return getSource(sourceWeights, sources);
+      return s2sTesting.getSource(sourceWeights, sources);
     }
 
     it('returns undefined if no sources', function () {
@@ -89,7 +89,7 @@ describe('s2sTesting', function () {
     });
   });
 
-  describe('getSourceBidderMap', function () {
+  describe('s2sTesting.getSourceBidderMap', function () {
     describe('setting source through s2sConfig', function () {
       beforeEach(function () {
         // set random number for testing
@@ -102,7 +102,7 @@ describe('s2sTesting', function () {
           testing: false,
           bidderControl: {rubicon: {bidSource: {server: 1, client: 1}}}
         }});
-        expect(getSourceBidderMap()).to.eql({
+        expect(s2sTesting.getSourceBidderMap()).to.eql({
           server: [],
           client: []
         });
@@ -114,7 +114,7 @@ describe('s2sTesting', function () {
           testing: true,
           bidderControl: {rubicon: {bidSource: {server: 1, client: 1}}}
         }});
-        expect(getSourceBidderMap()).to.eql({
+        expect(s2sTesting.getSourceBidderMap()).to.eql({
           server: [],
           client: ['rubicon']
         });
@@ -126,7 +126,7 @@ describe('s2sTesting', function () {
           testing: true,
           bidderControl: {rubicon: {bidSource: {server: 4, client: 1}}}
         }});
-        expect(getSourceBidderMap()).to.eql({
+        expect(s2sTesting.getSourceBidderMap()).to.eql({
           server: ['rubicon'],
           client: []
         });
@@ -137,7 +137,7 @@ describe('s2sTesting', function () {
           bidders: ['rubicon'],
           testing: true
         }});
-        expect(getSourceBidderMap()).to.eql({
+        expect(s2sTesting.getSourceBidderMap()).to.eql({
           server: ['rubicon'],
           client: []
         });
@@ -151,7 +151,7 @@ describe('s2sTesting', function () {
             rubicon: {bidSource: {server: 3, client: 1}},
             appnexus: {bidSource: {server: 1, client: 1}}
           }}});
-        var serverClientBidders = getSourceBidderMap();
+        var serverClientBidders = s2sTesting.getSourceBidderMap();
         expect(serverClientBidders.server).to.eql(['rubicon']);
         expect(serverClientBidders.client).to.have.members(['appnexus']);
       });
@@ -171,7 +171,7 @@ describe('s2sTesting', function () {
             {bidder: 'rubicon', bidSource: {server: 4, client: 1}}
           ]}
         ];
-        expect(getSourceBidderMap(adUnits)).to.eql({
+        expect(s2sTesting.getSourceBidderMap(adUnits)).to.eql({
           server: ['rubicon'],
           client: []
         });
@@ -184,7 +184,7 @@ describe('s2sTesting', function () {
             {bidder: 'rubicon', bidSource: {server: 1, client: 1}}
           ]}
         ];
-        expect(getSourceBidderMap(adUnits)).to.eql({
+        expect(s2sTesting.getSourceBidderMap(adUnits)).to.eql({
           server: [],
           client: ['rubicon']
         });
@@ -199,7 +199,7 @@ describe('s2sTesting', function () {
             {bidder: 'rubicon', bidSource: {}}
           ]}
         ];
-        expect(getSourceBidderMap(adUnits)).to.eql({
+        expect(s2sTesting.getSourceBidderMap(adUnits)).to.eql({
           server: [],
           client: ['rubicon']
         });
@@ -215,7 +215,7 @@ describe('s2sTesting', function () {
             {bidder: 'appnexus', bidSource: {server: 3, client: 1}}
           ]}
         ];
-        var serverClientBidders = getSourceBidderMap(adUnits);
+        var serverClientBidders = s2sTesting.getSourceBidderMap(adUnits);
         expect(serverClientBidders.server).to.eql(['appnexus']);
         expect(serverClientBidders.client).to.have.members(['rubicon']);
         // should have saved the source on the bid
@@ -236,7 +236,7 @@ describe('s2sTesting', function () {
             {bidder: 'bidder3', bidSource: {client: 1}}
           ]}
         ];
-        var serverClientBidders = getSourceBidderMap(adUnits);
+        var serverClientBidders = s2sTesting.getSourceBidderMap(adUnits);
         expect(serverClientBidders.server).to.have.members(['rubicon']);
         expect(serverClientBidders.server).to.not.have.members(['appnexus', 'bidder3']);
         expect(serverClientBidders.client).to.have.members(['rubicon', 'appnexus', 'bidder3']);
@@ -259,7 +259,7 @@ describe('s2sTesting', function () {
             {bidder: 'bidder3', calcSource: 'server', bidSource: {client: 1}}
           ]}
         ];
-        var serverClientBidders = getSourceBidderMap(adUnits);
+        var serverClientBidders = s2sTesting.getSourceBidderMap(adUnits);
 
         expect(serverClientBidders.server).to.have.members(['appnexus', 'bidder3']);
         expect(serverClientBidders.server).to.not.have.members(['rubicon']);
@@ -302,7 +302,7 @@ describe('s2sTesting', function () {
           }
         }});
 
-        var serverClientBidders = getSourceBidderMap(adUnits);
+        var serverClientBidders = s2sTesting.getSourceBidderMap(adUnits);
         expect(serverClientBidders.server).to.have.members(['rubicon', 'appnexus']);
         expect(serverClientBidders.client).to.have.members(['rubicon', 'appnexus']);
       });
