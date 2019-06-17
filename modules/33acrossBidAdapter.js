@@ -38,10 +38,18 @@ function _getViewability(element, topWin, { w, h } = {}) {
 
 function _mapAdUnitPathToElementId(adUnitCode) {
   if (utils.isGptPubadsDefined()) {
+    const adSlots = googletag.pubads().getSlots();
     const isMatchingAdSlot = utils.isSlotMatchingAdUnitCode(adUnitCode);
-    const matchingAdSlot = window.googletag.pubads().getSlots().find(isMatchingAdSlot);
+    let matchingAdSlot = null;
 
-    if (matchingAdSlot) {
+    for (let i = 0; i < adSlots.length; i++) {
+      if (isMatchingAdSlot(adSlots[i])) {
+        matchingAdSlot = adSlots[i]
+        break;
+      }
+    }
+
+    if (matchingAdSlot !== null) {
       const id = matchingAdSlot.getSlotElementId();
 
       utils.logInfo(`[33Across Adapter] Map ad unit path to HTML element id: '${adUnitCode}' -> ${id}`);
