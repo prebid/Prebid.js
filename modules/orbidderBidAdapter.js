@@ -74,10 +74,6 @@ export const spec = {
     this.onHandler(bid, '/win');
   },
 
-  onSetTargeting (bid) {
-    this.onHandler(bid, '/targeting');
-  },
-
   onHandler (bid, route) {
     const getRefererInfo = detectReferer(window);
 
