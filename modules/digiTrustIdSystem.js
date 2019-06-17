@@ -336,4 +336,14 @@ export const digiTrustIdSubmodule = {
   _testInit: surfaceTestHook
 };
 
+// check for fallback init of DigiTrust
+(function () {
+  setTimeout(function () {
+    if (resultHandler.retryId == 0 && !isInitialized()) {
+      // this triggers an init
+      getDigiTrustId({ member: 'fallback' }, function () { })
+    }
+  }, 1550);
+})();
+
 attachIdSystem(digiTrustIdSubmodule);
