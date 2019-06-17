@@ -8,10 +8,10 @@ import { Renderer } from '../src/Renderer'
 const BIDDER_CODE = 'ozone';
 
 const OZONEURI = 'https://elb.the-ozone-project.com/openrtb2/auction';
-const OZONE_RENDERER_URL = 'https://prebid.the-ozone-project.com/ozone-renderer.js'
+const OZONE_RENDERER_URL = 'https://prebid.the-ozone-project.com/ozone-renderer.js';
 
 const OZONECOOKIESYNC = 'https://elb.the-ozone-project.com/static/load-cookie.html';
-const OZONEVERSION = '2.0.0';
+const OZONEVERSION = '2.1.0';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -98,10 +98,17 @@ export const spec = {
       if (ozoneRequest.regs.ext.gdpr) {
         ozoneRequest.user = {};
         ozoneRequest.user.ext = {'consent': bidderRequest.gdprConsent.consentString};
+        // are we able to make this request?
+        let vendorConsents = bidderRequest.gdprConsent.vendorData.vendorConsents;
+        let boolGdprConsentForOzone = vendorConsents[524];
+        let arrGdprConsents = toFlatArray(bidderRequest.gdprConsent.vendorData.purposeConsents);
+        ozoneRequest.regs.ext.oz_con = boolGdprConsentForOzone ? 1 : 0;
+        ozoneRequest.regs.ext.gap = arrGdprConsents;
       }
     } else {
-      utils.logInfo('OZONE: WILL NOT ADD GDPR info');
+      utils.logInfo('OZONE: WILL NOT ADD GDPR info; no bidderRequest.gdprConsent object was present.');
     }
+
     ozoneRequest.device = {'w': window.innerWidth, 'h': window.innerHeight};
     let tosendtags = validBidRequests.map(ozoneBidRequest => {
       var obj = {};
@@ -226,8 +233,8 @@ export const spec = {
     serverResponse.seatbid = injectAdIdsIntoAllBidResponses(serverResponse.seatbid); // we now make sure that each bid in the bidresponse has a unique (within page) adId attribute.
     for (let i = 0; i < serverResponse.seatbid.length; i++) {
       let sb = serverResponse.seatbid[i];
-      const {defaultWidth, defaultHeight} = defaultSize(request.bidderRequest.bids[i]);
       for (let j = 0; j < sb.bid.length; j++) {
+        const {defaultWidth, defaultHeight} = defaultSize(request.bidderRequest.bids[j]); // there should be the same number of bids as requests, so index [j] should always exist.
         let thisBid = ozoneAddStandardProperties(sb.bid[j], defaultWidth, defaultHeight);
 
         // from https://github.com/prebid/Prebid.js/pull/1082
@@ -310,6 +317,13 @@ export function checkDeepArray(Arr) {
   }
 }
 export function defaultSize(thebidObj) {
+  if (!thebidObj) {
+    utils.logInfo('defaultSize received empty bid obj! going to return fixed default size');
+    return {
+      'defaultHeight': 250,
+      'defaultWidth': 300
+    };
+  }
   const {sizes} = thebidObj;
   const returnObject = {};
   returnObject.defaultWidth = checkDeepArray(sizes)[0];
@@ -497,6 +511,22 @@ function onOutstreamRendererLoaded(bid) {
 
 function outstreamRender(bid) {
   window.ozoneVideo.outstreamRender(bid);
+}
+
+/**
+ * convert {1: true,
+            2: true,
+            3: true,
+            4: true,
+            5: true}
+   to : [1,2,3,4,5]
+ * @param obj
+ */
+function toFlatArray(obj) {
+  let ret = [];
+  Object.keys(obj).forEach(function(key) { if (obj[key]) { ret.push(parseInt(key)); } });
+  utils.logInfo('toFlatArray:', obj, 'returning', ret);
+  return ret;
 }
 
 registerBidder(spec);
