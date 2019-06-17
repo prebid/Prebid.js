@@ -2,8 +2,6 @@ import * as utils from '../src/utils';
 import {registerBidder} from '../src/adapters/bidderFactory';
 import {config} from '../src/config';
 import {BANNER, VIDEO} from '../src/mediaTypes';
-import get from 'lodash/get';
-import set from 'lodash/set';
 
 const INTEGRATION = 'pbjs_lite_v$prebid.version$';
 
@@ -187,7 +185,7 @@ export const spec = {
 
       const digiTrust = _getDigiTrustQueryParams(bidRequest, 'PREBID_SERVER');
       if (digiTrust) {
-        set(data, 'user.ext.digitrust', digiTrust);
+        utils.deepSetValue(data, 'user.ext.digitrust', digiTrust);
       }
 
       if (bidderRequest.gdprConsent) {
@@ -207,18 +205,18 @@ export const spec = {
           data.regs = {ext: {gdpr: gdprApplies}};
         }
 
-        set(data, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
+        utils.deepSetValue(data, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
       }
 
       if (bidRequest.userId && typeof bidRequest.userId === 'object' &&
         (bidRequest.userId.tdid || bidRequest.userId.pubcid)) {
-        set(data, 'user.ext.eids', []);
+        utils.deepSetValue(data, 'user.ext.eids', []);
 
         if (bidRequest.userId.tdid) {
           data.user.ext.eids.push({
             source: 'adserver.org',
             uids: [{
-              id: bidRequests[0].userId.tdid,
+              id: bidRequest.userId.tdid,
               ext: {
                 rtiPartner: 'TDID'
               }
@@ -229,7 +227,9 @@ export const spec = {
         if (bidRequest.userId.pubcid) {
           data.user.ext.eids.push({
             source: 'pubcommon',
-            id: bidRequests[0].userId.pubcid
+            uids: [{
+              id: bidRequest.userId.pubcid,
+            }]
           });
         }
       }
@@ -631,8 +631,12 @@ function _getDigiTrustQueryParams(bidRequest = {}, endpointName) {
   const propNames = DIGITRUST_PROP_NAMES[endpointName];
 
   function getDigiTrustId() {
-    let digiTrustUser = get(bidRequest, 'userId.digitrustid.data') ||
-        (window.DigiTrust && (config.getConfig('digiTrustId') || window.DigiTrust.getUser({member: 'T9QSFKPDN9'})));
+    const bidRequestDigitrust = utils.deepAccess(bidRequest, 'userId.digitrustid.data');
+    if (bidRequestDigitrust) {
+      return bidRequestDigitrust;
+    }
+
+    let digiTrustUser = (window.DigiTrust && (config.getConfig('digiTrustId') || window.DigiTrust.getUser({member: 'T9QSFKPDN9'})));
     return (digiTrustUser && digiTrustUser.success && digiTrustUser.identity) || null;
   }
 

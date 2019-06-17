@@ -10,8 +10,6 @@ import { isValid } from '../../src/adapters/bidderFactory';
 import events from '../../src/events';
 import includes from 'core-js/library/fn/array/includes';
 import { S2S_VENDORS } from './config.js';
-import get from 'lodash/get';
-import set from 'lodash/set';
 
 const getConfig = config.getConfig;
 
@@ -236,8 +234,12 @@ function doClientSideSyncs(bidders) {
 
 function _getDigiTrustQueryParams(bidRequest = {}) {
   function getDigiTrustId(bidRequest) {
-    let digiTrustUser = get(bidRequest, 'userId.digitrustid.data') ||
-        (window.DigiTrust && (config.getConfig('digiTrustId') || window.DigiTrust.getUser({member: 'T9QSFKPDN9'})));
+    const bidRequestDigitrust = utils.deepAccess(bidRequest, 'bids.0.userId.digitrustid.data');
+    if (bidRequestDigitrust) {
+      return bidRequestDigitrust;
+    }
+
+    let digiTrustUser = (window.DigiTrust && (config.getConfig('digiTrustId') || window.DigiTrust.getUser({member: 'T9QSFKPDN9'})));
     return (digiTrustUser && digiTrustUser.success && digiTrustUser.identity) || null;
   }
   let digiTrustId = getDigiTrustId(bidRequest);
@@ -526,22 +528,22 @@ const OPEN_RTB_PROTOCOL = {
 
     const digiTrust = _getDigiTrustQueryParams(bidRequests && bidRequests[0]);
     if (digiTrust) {
-      set(request, 'user.ext.digitrust', digiTrust);
+      utils.deepSetValue(request, 'user.ext.digitrust', digiTrust);
     }
 
     if (!utils.isEmpty(aliases)) {
       request.ext.prebid.aliases = aliases;
     }
 
-    if (bidRequests && bidRequests[0].userId && typeof bidRequests[0].userId === 'object' &&
-        (bidRequests[0].userId.tdid || bidRequests[0].userId.pubcid)) {
-      set(request, 'user.ext.eids', []);
+    const bidUserId = utils.deepAccess(bidRequests, '0.bids.0.userId');
+    if (bidUserId && typeof bidUserId === 'object' && (bidUserId.tdid || bidUserId.pubcid)) {
+      utils.deepSetValue(request, 'user.ext.eids', []);
 
-      if (bidRequests[0].userId.tdid) {
+      if (bidUserId.tdid) {
         request.user.ext.eids.push({
           source: 'adserver.org',
           uids: [{
-            id: bidRequests[0].userId.tdid,
+            id: bidUserId.tdid,
             ext: {
               rtiPartner: 'TDID'
             }
@@ -549,10 +551,12 @@ const OPEN_RTB_PROTOCOL = {
         });
       }
 
-      if (bidRequests[0].userId.pubcid) {
+      if (bidUserId.pubcid) {
         request.user.ext.eids.push({
           source: 'pubcommon',
-          id: bidRequests[0].userId.pubcid
+          uids: [{
+            id: bidUserId.pubcid,
+          }]
         });
       }
     }
@@ -574,7 +578,7 @@ const OPEN_RTB_PROTOCOL = {
         request.regs = { ext: { gdpr: gdprApplies } };
       }
 
-      set(request, 'user.ext.consent', bidRequests[0].gdprConsent.consentString);
+      utils.deepSetValue(request, 'user.ext.consent', bidRequests[0].gdprConsent.consentString);
     }
 
     return request;
