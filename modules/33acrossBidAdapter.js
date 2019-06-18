@@ -43,7 +43,7 @@ function _mapAdUnitPathToElementId(adUnitCode) {
 
     for (let i = 0; i < adSlots.length; i++) {
       if (isMatchingAdSlot(adSlots[i])) {
-        let id = adSlots[i].getSlotElementId();
+        const id = adSlots[i].getSlotElementId();
 
         utils.logInfo(`[33Across Adapter] Map ad unit path to HTML element id: '${adUnitCode}' -> ${id}`);
 
