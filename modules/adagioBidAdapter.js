@@ -112,9 +112,9 @@ const _features = {
 
   getPageDimensions: function() {
     const viewportDims = _features.getViewPortDimensions().split('x');
-    const body = document.body;
-    const html = document.documentElement;
-    const w = window;
+    const w = window.top;
+    const body = w.document.body;
+    const html = w.document.documentElement;
     let pageHeight = 0;
 
     if (w === w.top) {
@@ -129,8 +129,8 @@ const _features = {
   getViewPortDimensions: function() {
     let viewPortWidth;
     let viewPortHeight;
-    const w = window;
-    const d = document;
+    const w = window.top;
+    const d = w.document;
 
     if (w.innerWidth != null) {
       viewPortWidth = w.innerWidth;
@@ -149,7 +149,7 @@ const _features = {
   },
 
   isDomLoading: function() {
-    const w = window;
+    const w = window.top;
     let performance = w.performance || w.msPerformance || w.webkitPerformance || w.mozPerformance;
     let domLoading = -1;
 
@@ -161,8 +161,8 @@ const _features = {
   },
 
   getSlotPosition: function(element) {
-    const w = window;
-    const d = document;
+    const w = window.top;
+    const d = w.document;
     const el = element;
 
     let box = el.getBoundingClientRect();
@@ -196,7 +196,8 @@ const _features = {
   },
 
   getDevice: function() {
-    const ua = navigator.userAgent;
+    const w = window.top;
+    const ua = w.navigator.userAgent;
 
     if ((/(tablet|ipad|playbook|silk)|(android(?!.*mobi))/i).test(ua)) {
       return 5; // "tablet"
@@ -208,13 +209,17 @@ const _features = {
   },
 
   getBrowser: function() {
-    const userAgentLoweCase = navigator.userAgent.toLowerCase();
-    return /Edge\/\d./i.test(navigator.userAgent) ? 'edge' : userAgentLoweCase.indexOf('chrome') > 0 ? 'chrome' : userAgentLoweCase.indexOf('firefox') > 0 ? 'firefox' : userAgentLoweCase.indexOf('safari') > 0 ? 'safari' : userAgentLoweCase.indexOf('opera') > 0 ? 'opera' : userAgentLoweCase.indexOf('msie') > 0 || window.top.MSStream ? 'ie' : 'unknow';
+    const w = window.top;
+    const ua = w.navigator.userAgent;
+    const uaLowerCase = ua.toLowerCase();
+    return /Edge\/\d./i.test(ua) ? 'edge' : uaLowerCase.indexOf('chrome') > 0 ? 'chrome' : uaLowerCase.indexOf('firefox') > 0 ? 'firefox' : uaLowerCase.indexOf('safari') > 0 ? 'safari' : uaLowerCase.indexOf('opera') > 0 ? 'opera' : uaLowerCase.indexOf('msie') > 0 || w.MSStream ? 'ie' : 'unknow';
   },
 
   getOS: function() {
-    const userAgentLoweCase = navigator.userAgent.toLowerCase();
-    return userAgentLoweCase.indexOf('linux') > 0 ? 'linux' : userAgentLoweCase.indexOf('mac') > 0 ? 'mac' : userAgentLoweCase.indexOf('win') > 0 ? 'windows' : '';
+    const w = window.top;
+    const ua = w.navigator.userAgent;
+    const uaLowerCase = ua.toLowerCase();
+    return uaLowerCase.indexOf('linux') > 0 ? 'linux' : uaLowerCase.indexOf('mac') > 0 ? 'mac' : uaLowerCase.indexOf('win') > 0 ? 'windows' : '';
   }
 }
 
@@ -258,7 +263,7 @@ function _getPageviewId() {
 function _getFeatures(bidRequest) {
   if (!canAccessTopWindow()) return;
   const adUnitElementId = bidRequest.params.adUnitElementId;
-  const element = document.getElementById(adUnitElementId);
+  const element = window.top.document.getElementById(adUnitElementId);
   let features = {};
 
   if (element) {
