@@ -113,7 +113,7 @@ export const spec = {
 
   setValidVideoParams: function (sourceObj, destObj) {
     Object.keys(sourceObj)
-      .filter(param => includes(VIDEO_PARAMS, param) && sourceObj[param] !== null && (!isNaN(parseInt(sourceObj[param], 10)) || !sourceObj[param].length < 1))
+      .filter(param => includes(VIDEO_PARAMS, param) && sourceObj[param] !== null && (!isNaN(parseInt(sourceObj[param], 10)) || !(sourceObj[param].length < 1)))
       .forEach(param => destObj[param] = Array.isArray(sourceObj[param]) ? sourceObj[param] : parseInt(sourceObj[param], 10));
   },
   interpretResponse: function(serverResponse) {
