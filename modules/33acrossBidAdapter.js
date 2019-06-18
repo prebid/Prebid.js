@@ -40,11 +40,10 @@ function _mapAdUnitPathToElementId(adUnitCode) {
   if (utils.isGptPubadsDefined()) {
     const adSlots = googletag.pubads().getSlots();
     const isMatchingAdSlot = utils.isSlotMatchingAdUnitCode(adUnitCode);
-    let id;
 
     for (let i = 0; i < adSlots.length; i++) {
       if (isMatchingAdSlot(adSlots[i])) {
-        id = adSlots[i].getSlotElementId();
+        let id = adSlots[i].getSlotElementId();
 
         utils.logInfo(`[33Across Adapter] Map ad unit path to HTML element id: '${adUnitCode}' -> ${id}`);
 
