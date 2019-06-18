@@ -1,8 +1,8 @@
-import * as utils from 'src/utils';
-import { registerBidder } from 'src/adapters/bidderFactory';
-import { BANNER, VIDEO } from 'src/mediaTypes';
-import { config } from 'src/config';
-import { Renderer } from 'src/Renderer';
+import * as utils from '../src/utils';
+import { registerBidder } from '../src/adapters/bidderFactory';
+import { BANNER, VIDEO } from '../src/mediaTypes';
+import { config } from '../src/config';
+import { Renderer } from '../src/Renderer';
 import includes from 'core-js/library/fn/array/includes';
 
 const BIDDER_CODE = 'emx_digital';
