@@ -8,10 +8,10 @@ import { Renderer } from '../src/Renderer'
 const BIDDER_CODE = 'ozone';
 
 const OZONEURI = 'https://elb.the-ozone-project.com/openrtb2/auction';
+const OZONECOOKIESYNC = 'https://elb.the-ozone-project.com/static/load-cookie.html';
 const OZONE_RENDERER_URL = 'https://prebid.the-ozone-project.com/ozone-renderer.js';
 
-const OZONECOOKIESYNC = 'https://elb.the-ozone-project.com/static/load-cookie.html';
-const OZONEVERSION = '2.1.0';
+const OZONEVERSION = '2.1.1';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -57,12 +57,6 @@ export const spec = {
       utils.logInfo('OZONE: OZONE BID ADAPTER VALIDATION FAILED : customParams should be renamed to customData');
       return false;
     }
-    if (bid.params.hasOwnProperty('ozoneData')) {
-      if (typeof bid.params.ozoneData !== 'object') {
-        utils.logInfo('OZONE: OZONE BID ADAPTER VALIDATION FAILED : ozoneData is not an object');
-        return false;
-      }
-    }
     if (bid.params.hasOwnProperty('lotameData')) {
       if (typeof bid.params.lotameData !== 'object') {
         utils.logInfo('OZONE: OZONE BID ADAPTER VALIDATION FAILED : lotameData is not an object');
@@ -90,20 +84,30 @@ export const spec = {
     let htmlParams = validBidRequests[0].params; // the html page config params will be included in each element
     let ozoneRequest = {}; // we only want to set specific properties on this, not validBidRequests[0].params
     delete ozoneRequest.test; // don't allow test to be set in the config - ONLY use $_GET['pbjs_debug']
-    if (bidderRequest.gdprConsent) {
+
+    if (bidderRequest && bidderRequest.gdprConsent) {
       utils.logInfo('OZONE: ADDING GDPR info');
       ozoneRequest.regs = {};
       ozoneRequest.regs.ext = {};
-      ozoneRequest.regs.ext.gdpr = bidderRequest.gdprConsent.gdprApplies === true ? 1 : 0;
+      ozoneRequest.regs.ext.gdpr = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
       if (ozoneRequest.regs.ext.gdpr) {
-        ozoneRequest.user = {};
-        ozoneRequest.user.ext = {'consent': bidderRequest.gdprConsent.consentString};
-        // are we able to make this request?
-        let vendorConsents = bidderRequest.gdprConsent.vendorData.vendorConsents;
-        let boolGdprConsentForOzone = vendorConsents[524];
-        let arrGdprConsents = toFlatArray(bidderRequest.gdprConsent.vendorData.purposeConsents);
-        ozoneRequest.regs.ext.oz_con = boolGdprConsentForOzone ? 1 : 0;
-        ozoneRequest.regs.ext.gap = arrGdprConsents;
+        ozoneRequest.user = ozoneRequest.user || {};
+        if (
+          bidderRequest.gdprConsent.vendorData &&
+          bidderRequest.gdprConsent.vendorData.vendorConsents &&
+          typeof bidderRequest.gdprConsent.consentString !== 'undefined'
+        ) {
+          utils.logInfo('OZONE: found all info we need for GDPR - will add info to request object');
+          ozoneRequest.user.ext = {'consent': bidderRequest.gdprConsent.consentString};
+          // are we able to make this request?
+          let vendorConsents = bidderRequest.gdprConsent.vendorData.vendorConsents;
+          let boolGdprConsentForOzone = vendorConsents[524];
+          let arrGdprConsents = toFlatArray(bidderRequest.gdprConsent.vendorData.purposeConsents);
+          ozoneRequest.regs.ext.oz_con = boolGdprConsentForOzone ? 1 : 0;
+          ozoneRequest.regs.ext.gap = arrGdprConsents;
+        }
+      } else {
+        utils.logInfo('OZONE: **** Failed to find required info for GDPR for request object, even though bidderRequest.gdprConsent is TRUE ****');
       }
     } else {
       utils.logInfo('OZONE: WILL NOT ADD GDPR info; no bidderRequest.gdprConsent object was present.');
@@ -163,9 +167,6 @@ export const spec = {
       obj.ext.ozone.oz_pb_v = OZONEVERSION;
       if (ozoneBidRequest.params.hasOwnProperty('customData')) {
         obj.ext.ozone.customData = ozoneBidRequest.params.customData;
-      }
-      if (ozoneBidRequest.params.hasOwnProperty('ozoneData')) {
-        obj.ext.ozone.ozoneData = ozoneBidRequest.params.ozoneData;
       }
       if (ozoneBidRequest.params.hasOwnProperty('lotameData')) {
         obj.ext.ozone.lotameData = ozoneBidRequest.params.lotameData;
