@@ -146,7 +146,8 @@ function isOutstream (format) {
  * @returns {Array}
  */
 function getPlayerSize (format) {
-  return utils.deepAccess(format, 'mediaTypes.video.playerSize')
+  let playerSize = utils.deepAccess(format, 'mediaTypes.video.playerSize')
+  return (playerSize && utils.isArray(playerSize[0])) ? playerSize[0] : playerSize
 }
 
 /**

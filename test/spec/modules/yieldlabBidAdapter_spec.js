@@ -153,6 +153,7 @@ describe('yieldlabBidAdapter', function () {
       const OUTSTREAM_REQUEST = Object.assign({}, REQUEST, {
         'mediaTypes': {
           'video': {
+            'playerSize': [[640, 480]],
             'context': 'outstream'
           }
         }
@@ -161,6 +162,8 @@ describe('yieldlabBidAdapter', function () {
 
       expect(result[0].renderer.id).to.equal('2d925f27f5079f')
       expect(result[0].renderer.url).to.equal('https://ad2.movad.net/dynamic.ad?a=o193092&ma_loadEvent=ma-start-event')
+      expect(result[0].width).to.equal(640)
+      expect(result[0].height).to.equal(480)
     })
   })
 })
