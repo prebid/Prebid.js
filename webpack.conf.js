@@ -6,6 +6,11 @@ var RequireEnsureWithoutJsonp = require('./plugins/RequireEnsureWithoutJsonp.js'
 var { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
 var argv = require('yargs').argv;
 
+// list of module names to never include in the common bundle chunk
+var neverBundle = [
+  'AnalyticsAdapter.js'
+];
+
 var plugins = [
   new RequireEnsureWithoutJsonp()
 ];
@@ -22,7 +27,10 @@ plugins.push(  // this plugin must be last so it can be easily removed for karma
     filename: 'prebid-core.js',
     minChunks: function(module) {
       return (
-        module.context && module.context === path.resolve('./src') ||
+        (
+          module.context && module.context === path.resolve('./src') &&
+          !(module.resource && neverBundle.some(name => module.resource.includes(name)))
+        ) ||
         module.resource && module.resource.includes(path.resolve('./node_modules/core-js'))
       );
     }
