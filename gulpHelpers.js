@@ -71,7 +71,9 @@ module.exports = {
           if (fs.lstatSync(modulePath).isDirectory()) {
             modulePath = path.join(modulePath, 'index.js')
           }
-          memo[modulePath] = moduleName;
+          if ((externalModules.length > 0 && externalModules.includes(moduleName)) || externalModules.length === 0) {
+            memo[modulePath] = moduleName;
+          }
           return memo;
         }, {});
     } catch (err) {
