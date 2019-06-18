@@ -38,15 +38,17 @@ function _getViewability(element, topWin, { w, h } = {}) {
 
 function _mapAdUnitPathToElementId(adUnitCode) {
   if (utils.isGptPubadsDefined()) {
+    const adSlots = googletag.pubads().getSlots();
     const isMatchingAdSlot = utils.isSlotMatchingAdUnitCode(adUnitCode);
-    const matchingAdSlot = window.googletag.pubads().getSlots().find(isMatchingAdSlot);
 
-    if (matchingAdSlot) {
-      const id = matchingAdSlot.getSlotElementId();
+    for (let i = 0; i < adSlots.length; i++) {
+      if (isMatchingAdSlot(adSlots[i])) {
+        const id = adSlots[i].getSlotElementId();
 
-      utils.logInfo(`[33Across Adapter] Map ad unit path to HTML element id: '${adUnitCode}' -> ${id}`);
+        utils.logInfo(`[33Across Adapter] Map ad unit path to HTML element id: '${adUnitCode}' -> ${id}`);
 
-      return id;
+        return id;
+      }
     }
   }
 
