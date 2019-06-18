@@ -9,8 +9,8 @@ const DEFAULT_EVENT_URL = 'https://endpoint.prebidmanager.com/endpoint'
 const analyticsType = 'endpoint';
 const analyticsName = 'Prebid Manager Analytics: ';
 
-var utils = require('src/utils');
-var CONSTANTS = require('src/constants.json');
+var utils = require('../src/utils');
+var CONSTANTS = require('../src/constants.json');
 let ajax = ajaxBuilder(0);
 
 var _VERSION = 1;
