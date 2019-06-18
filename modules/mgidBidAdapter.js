@@ -1,7 +1,7 @@
-import {registerBidder} from 'src/adapters/bidderFactory';
+import {registerBidder} from '../src/adapters/bidderFactory';
 import * as utils from '../src/utils';
 import * as urlUtils from '../src/url';
-import {BANNER, NATIVE} from 'src/mediaTypes';
+import {BANNER, NATIVE} from '../src/mediaTypes';
 import {config} from '../src/config';
 const DEFAULT_CUR = 'USD';
 const BIDDER_CODE = 'mgid';

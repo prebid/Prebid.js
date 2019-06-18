@@ -11,7 +11,7 @@
 
 // import { config } from 'src/config';
 import * as utils from '../src/utils'
-import { ajax } from 'src/ajax';
+import { ajax } from '../src/ajax';
 import { attachIdSystem } from '../modules/userId';
 // import { getGlobal } from 'src/prebidGlobal';
 
