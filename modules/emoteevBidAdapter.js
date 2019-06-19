@@ -22,11 +22,11 @@ import {
   contains,
   deepAccess,
   isArray,
-  getParameterByName
+  getParameterByName,
+  getCookie
 } from '../src/utils';
 import {config} from '../src/config';
 import * as url from '../src/url';
-import {getCookie} from './pubCommonId';
 
 export const BIDDER_CODE = 'emoteev';
 
