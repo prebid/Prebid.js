@@ -191,14 +191,14 @@ function video(slot) {
  */
 function ext(slot) {
   const ext = {};
-  let hasUnknownParams = false;
+  const knownParamsMap = {};
+  KNOWN_PARAMS.forEach(value => knownParamsMap[value] = 1);
   Object.keys(slot.params).forEach(key => {
-    if (KNOWN_PARAMS.filter((value) => value === key).length === 0) {
+    if (!knownParamsMap[key]) {
       ext[key] = slot.params[key];
-      hasUnknownParams = true;
     }
   });
-  return hasUnknownParams ? { prebid: ext } : null;
+  return Object.keys(ext).length > 0 ? { prebid: ext } : null;
 }
 
 /**

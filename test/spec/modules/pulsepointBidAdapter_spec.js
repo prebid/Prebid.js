@@ -419,8 +419,8 @@ describe('PulsePoint Adapter Tests', function () {
   });
 
   it('Verify extra parameters', function () {
-    const request = spec.buildRequests(additionalParamsConfig);
-    const ortbRequest = request.data;
+    let request = spec.buildRequests(additionalParamsConfig);
+    let ortbRequest = request.data;
     expect(ortbRequest).to.not.equal(null);
     expect(ortbRequest.imp).to.have.lengthOf(1);
     expect(ortbRequest.imp[0].ext).to.not.equal(null);
@@ -432,7 +432,13 @@ describe('PulsePoint Adapter Tests', function () {
     expect(ortbRequest.imp[0].ext.prebid.extra_key3.key1).to.equal('val1');
     expect(ortbRequest.imp[0].ext.prebid.extra_key3.key2).to.equal(23456);
     expect(ortbRequest.imp[0].ext.prebid.extra_key4).to.eql([1, 2, 3]);
-    expect(Object.keys(ortbRequest.imp[0].ext.prebid)).to.eql(['extra_key1', 'extra_key2', 'extra_key3', 'extra_key4'])
+    expect(Object.keys(ortbRequest.imp[0].ext.prebid)).to.eql(['extra_key1', 'extra_key2', 'extra_key3', 'extra_key4']);
+    // attempting with a configuration with no unknown params.
+    request = spec.buildRequests(outstreamSlotConfig);
+    ortbRequest = request.data;
+    expect(ortbRequest).to.not.equal(null);
+    expect(ortbRequest.imp).to.have.lengthOf(1);
+    expect(ortbRequest.imp[0].ext).to.equal(null);
   });
 
   it('Verify outstream renderer', function () {
