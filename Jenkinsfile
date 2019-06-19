@@ -32,7 +32,7 @@ node {
             sh('git branch -r')
             sh('cp ../build/dist/prebid.js app/library/dtkplayer/ext_library/PrebidLibrary.js')
             
-            withCredentials([usernamePassword(credentialsId: 'jenkins_access_repos', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
+            /*withCredentials([usernamePassword(credentialsId: 'jenkins_access_repos', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
                 sh('git config --global user.email "jenkins@jenkins.com"')
                 sh('git config --global user.name "$USERNAME"')
                 sh('git commit app/library/dtkplayer/ext_library/PrebidLibrary.js -m "Update Prebid Library from Jenkins"')
@@ -43,7 +43,7 @@ node {
                 // or inside double quotes for string interpolation
                 echo "username is $USERNAME"
                 sh('git push origin ' +env.BRANCH_NAME)
-            }
+            }*/
           
         }
     }
