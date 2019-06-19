@@ -50,8 +50,8 @@ export const spec = {
     applyGdpr(bidderRequest, request);
     return {
       method: 'POST',
-      url: 'http://lga-kube-bid-stage.pulsepoint.com/header/ortb?src=prebid',
-      data: JSON.stringify(request),
+      url: 'https://bid.contextweb.com/header/ortb?src=prebid',
+      data: request,
       bidderRequest
     };
   },
@@ -91,7 +91,7 @@ function bidResponseAvailable(bidRequest, bidResponse) {
   const idToSlotConfig = {};
   bidResponse = bidResponse.body
   // extract the request bids and the response bids, keyed by impr-id
-  const ortbRequest = parse(bidRequest.data);
+  const ortbRequest = bidRequest.data;
   ortbRequest.imp.forEach(imp => {
     idToImpMap[imp.id] = imp;
   });
@@ -122,6 +122,7 @@ function bidResponseAvailable(bidRequest, bidResponse) {
         bid['native'] = nativeResponse(idToImpMap[id], idToBidMap[id]);
         bid.mediaType = 'native';
       } else if (idToImpMap[id].video) {
+        // for outstream, a renderer is specified
         if (idToSlotConfig[id] && utils.deepAccess(idToSlotConfig[id], 'mediaTypes.video.context') === 'outstream') {
           bid.renderer = outstreamRenderer(utils.deepAccess(idToSlotConfig[id], 'renderer.options'), utils.deepAccess(idToBidMap[id], 'ext.outstream'));
         }
@@ -185,16 +186,24 @@ function video(slot) {
   return null;
 }
 
+/**
+ * Unknown params are captured and sent on ext
+ */
 function ext(slot) {
   const ext = {};
+  let hasUnknownParams = false;
   Object.keys(slot.params).forEach(key => {
     if (!KNOWN_PARAMS.find((value) => value === key)) {
       ext[key] = slot.params[key];
+      hasUnknownParams = true;
     }
   });
-  return ext;
+  return hasUnknownParams ? { prebid: ext } : null;
 }
 
+/**
+ * Sets up the renderer on the bid, for outstream bid responses.
+ */
 function outstreamRenderer(rendererOptions, outstreamExtOptions) {
   const renderer = Renderer.install({
     url: outstreamExtOptions.rendererUrl,

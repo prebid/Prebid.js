@@ -97,11 +97,39 @@ describe('PulsePoint Adapter Tests', function () {
     }
   }];
 
+  const outstreamSlotConfig = [{
+    placementCode: '/DfpAccount1/slot1',
+    mediaTypes: {
+      video: {
+        playerSize: [640, 480],
+        context: 'outstream'
+      }
+    },
+    bidId: 'bid12345',
+    params: {
+      cp: 'p10000',
+      ct: 't10000',
+      cf: '1x1',
+      video: {
+        h: 300,
+        w: 400,
+        minduration: 1,
+        maxduration: 210,
+        linearity: 1,
+      }
+    },
+    renderer: {
+      options: {
+        text: 'PulsePoint Outstream'
+      }
+    }
+  }];
+
   it('Verify build request', function () {
     const request = spec.buildRequests(slotConfigs);
     expect(request.url).to.equal('https://bid.contextweb.com/header/ortb?src=prebid');
     expect(request.method).to.equal('POST');
-    const ortbRequest = JSON.parse(request.data);
+    const ortbRequest = request.data;
     // site object
     expect(ortbRequest.site).to.not.equal(null);
     expect(ortbRequest.site.publisher).to.not.equal(null);
@@ -126,7 +154,7 @@ describe('PulsePoint Adapter Tests', function () {
 
   it('Verify parse response', function () {
     const request = spec.buildRequests(slotConfigs);
-    const ortbRequest = JSON.parse(request.data);
+    const ortbRequest = request.data;
     const ortbResponse = {
       seatbid: [{
         bid: [{
@@ -155,7 +183,7 @@ describe('PulsePoint Adapter Tests', function () {
 
   it('Verify use ttl in ext', function () {
     const request = spec.buildRequests(slotConfigs);
-    const ortbRequest = JSON.parse(request.data);
+    const ortbRequest = request.data;
     const ortbResponse = {
       seatbid: [{
         bid: [{
@@ -189,7 +217,7 @@ describe('PulsePoint Adapter Tests', function () {
     const request = spec.buildRequests(nativeSlotConfig);
     expect(request.url).to.equal('https://bid.contextweb.com/header/ortb?src=prebid');
     expect(request.method).to.equal('POST');
-    const ortbRequest = JSON.parse(request.data);
+    const ortbRequest = request.data;
     // native impression
     expect(ortbRequest.imp[0].tagid).to.equal('t10000');
     expect(ortbRequest.imp[0].banner).to.equal(null);
@@ -227,7 +255,7 @@ describe('PulsePoint Adapter Tests', function () {
     const request = spec.buildRequests(nativeSlotConfig);
     expect(request.url).to.equal('https://bid.contextweb.com/header/ortb?src=prebid');
     expect(request.method).to.equal('POST');
-    const ortbRequest = JSON.parse(request.data);
+    const ortbRequest = request.data;
     const nativeResponse = {
       'native': {
         assets: [
@@ -314,7 +342,7 @@ describe('PulsePoint Adapter Tests', function () {
 
   it('Verify app requests', function () {
     const request = spec.buildRequests(appSlotConfig);
-    const ortbRequest = JSON.parse(request.data);
+    const ortbRequest = request.data;
     // site object
     expect(ortbRequest.site).to.equal(null);
     expect(ortbRequest.app).to.not.be.null;
@@ -335,7 +363,7 @@ describe('PulsePoint Adapter Tests', function () {
     const request = spec.buildRequests(slotConfigs, bidderRequest);
     expect(request.url).to.equal('https://bid.contextweb.com/header/ortb?src=prebid');
     expect(request.method).to.equal('POST');
-    const ortbRequest = JSON.parse(request.data);
+    const ortbRequest = request.data;
     // user object
     expect(ortbRequest.user).to.not.equal(null);
     expect(ortbRequest.user.ext).to.not.equal(null);
@@ -350,7 +378,7 @@ describe('PulsePoint Adapter Tests', function () {
     const request = spec.buildRequests(videoSlotConfig);
     expect(request.url).to.equal('https://bid.contextweb.com/header/ortb?src=prebid');
     expect(request.method).to.equal('POST');
-    const ortbRequest = JSON.parse(request.data);
+    const ortbRequest = request.data;
     expect(ortbRequest).to.not.equal(null);
     expect(ortbRequest.imp).to.have.lengthOf(1);
     expect(ortbRequest.imp[0].video).to.not.be.null;
@@ -370,7 +398,7 @@ describe('PulsePoint Adapter Tests', function () {
     const request = spec.buildRequests(videoSlotConfig);
     expect(request.url).to.equal('https://bid.contextweb.com/header/ortb?src=prebid');
     expect(request.method).to.equal('POST');
-    const ortbRequest = JSON.parse(request.data);
+    const ortbRequest = request.data;
     const ortbResponse = {
       seatbid: [{
         bid: [{
@@ -392,29 +420,55 @@ describe('PulsePoint Adapter Tests', function () {
 
   it('Verify extra parameters', function () {
     const request = spec.buildRequests(additionalParamsConfig);
-    const ortbRequest = JSON.parse(request.data);
+    const ortbRequest = request.data;
     expect(ortbRequest).to.not.equal(null);
     expect(ortbRequest.imp).to.have.lengthOf(1);
-    expect(ortbRequest.imp[0].ext).to.not.be.null;
-    expect(ortbRequest.imp[0].ext.extra_key1).to.equal('extra_val1');
-    expect(ortbRequest.imp[0].ext.extra_key2).to.equal(12345);
-    expect(ortbRequest.imp[0].ext.extra_key3).to.not.be.null;
-    expect(ortbRequest.imp[0].ext.extra_key3.key1).to.equal('val1');
-    expect(ortbRequest.imp[0].ext.extra_key3.key2).to.equal(23456);
-    expect(ortbRequest.imp[0].ext.extra_key4).to.eql([1, 2, 3]);
-    expect(Object.keys(ortbRequest.imp[0].ext)).to.eql(['extra_key1', 'extra_key2', 'extra_key3', 'extra_key4'])
+    expect(ortbRequest.imp[0].ext).to.not.equal(null);
+    expect(ortbRequest.imp[0].ext.prebid).to.not.equal(null);
+    expect(ortbRequest.imp[0].ext.prebid).to.not.be.null;
+    expect(ortbRequest.imp[0].ext.prebid.extra_key1).to.equal('extra_val1');
+    expect(ortbRequest.imp[0].ext.prebid.extra_key2).to.equal(12345);
+    expect(ortbRequest.imp[0].ext.prebid.extra_key3).to.not.be.null;
+    expect(ortbRequest.imp[0].ext.prebid.extra_key3.key1).to.equal('val1');
+    expect(ortbRequest.imp[0].ext.prebid.extra_key3.key2).to.equal(23456);
+    expect(ortbRequest.imp[0].ext.prebid.extra_key4).to.eql([1, 2, 3]);
+    expect(Object.keys(ortbRequest.imp[0].ext.prebid)).to.eql(['extra_key1', 'extra_key2', 'extra_key3', 'extra_key4'])
   });
 
-  it('Verify ortb parameters', function () {
-    const request = spec.buildRequests(ortbParamsSlotConfig);
-    const ortbRequest = JSON.parse(request.data);
-    expect(ortbRequest).to.not.equal(null);
-    expect(ortbRequest.bcat).to.eql(['IAB-1', 'IAB-20']);
-    expect(ortbRequest.battr).to.eql([1, 2, 3]);
-    expect(ortbRequest.badv).to.eql(['cocacola.com', 'lays.com']);
-    expect(ortbRequest.imp).to.have.lengthOf(1);
-    expect(ortbRequest.imp[0].bidfloor).to.equal(1.5);
-    expect(ortbRequest.imp[0].ext).to.not.be.null;
-    expect(Object.keys(ortbRequest.imp[0].ext)).to.have.lengthOf(0);
+  it('Verify outstream renderer', function () {
+    const request = spec.buildRequests(outstreamSlotConfig, {bids: [outstreamSlotConfig[0]]});
+    const ortbRequest = request.data;
+    expect(ortbRequest).to.not.be.null;
+    expect(ortbRequest.imp[0]).to.not.be.null;
+    expect(ortbRequest.imp[0].video).to.not.be.null;
+    const ortbResponse = {
+      seatbid: [{
+        bid: [{
+          impid: ortbRequest.imp[0].id,
+          price: 1.25,
+          adm: '<VAST><Creative>http://pulsepoint.video.mp4</Creative></VAST>',
+          ext: {
+            outstream: {
+              type: 'Inline',
+              config: {
+                text: 'ADVERTISEMENT',
+                skipaftersec: 5
+              },
+              rendererUrl: 'http://tag.contextweb.com/hb-outstr-renderer.js'
+            }
+          }
+        }]
+      }]
+    };
+    const bids = spec.interpretResponse({ body: ortbResponse }, request);
+    const bid = bids[0];
+    expect(bid.cpm).to.equal(1.25);
+    expect(bid.renderer).to.not.be.null;
+    expect(bid.renderer.url).to.equal('http://tag.contextweb.com/hb-outstr-renderer.js');
+    expect(bid.renderer.loaded).to.equal(false);
+    expect(bid.renderer.getConfig()).to.not.be.null;
+    expect(bid.renderer.getConfig().defaultOptions).to.eql(ortbResponse.seatbid[0].bid[0].ext.outstream.config);
+    expect(bid.renderer.getConfig().rendererOptions).to.eql(outstreamSlotConfig[0].rendererOptions.options);
+    expect(bid.renderer.getConfig().type).to.equal('Inline');
   });
 });
