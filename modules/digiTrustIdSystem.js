@@ -337,13 +337,17 @@ export const digiTrustIdSubmodule = {
 };
 
 // check for fallback init of DigiTrust
-(function () {
-  setTimeout(function () {
-    if (resultHandler.retryId == 0 && !isInitialized()) {
-      // this triggers an init
-      getDigiTrustId({ member: 'fallback' }, function () { })
-    }
-  }, 1550);
-})();
+function fallbackInit() {
+  if (resultHandler.retryId == 0 && !isInitialized()) {
+    // this triggers an init
+    var conf = {
+      member: 'fallback',
+      callback: noop
+    };
+    getDigiTrustId(conf);
+  }
+}
+
+setTimeout(fallbackInit, 1550);
 
 attachIdSystem(digiTrustIdSubmodule);
