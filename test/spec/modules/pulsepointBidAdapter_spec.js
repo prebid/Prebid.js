@@ -465,10 +465,9 @@ describe('PulsePoint Adapter Tests', function () {
     expect(bid.cpm).to.equal(1.25);
     expect(bid.renderer).to.not.be.null;
     expect(bid.renderer.url).to.equal('http://tag.contextweb.com/hb-outstr-renderer.js');
-    expect(bid.renderer.loaded).to.equal(false);
     expect(bid.renderer.getConfig()).to.not.be.null;
     expect(bid.renderer.getConfig().defaultOptions).to.eql(ortbResponse.seatbid[0].bid[0].ext.outstream.config);
-    expect(bid.renderer.getConfig().rendererOptions).to.eql(outstreamSlotConfig[0].rendererOptions.options);
+    expect(bid.renderer.getConfig().rendererOptions).to.eql(outstreamSlotConfig[0].renderer.options);
     expect(bid.renderer.getConfig().type).to.equal('Inline');
   });
 });

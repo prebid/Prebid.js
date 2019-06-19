@@ -193,7 +193,7 @@ function ext(slot) {
   const ext = {};
   let hasUnknownParams = false;
   Object.keys(slot.params).forEach(key => {
-    if (!KNOWN_PARAMS.find((value) => value === key)) {
+    if (KNOWN_PARAMS.filter((value) => value === key).length === 0) {
       ext[key] = slot.params[key];
       hasUnknownParams = true;
     }
