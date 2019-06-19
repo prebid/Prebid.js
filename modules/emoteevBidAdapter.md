@@ -25,7 +25,9 @@ Module that connects to Emoteev's demand sources
                 {
                     bidder: 'emoteev',
                     params: {
-                        adSpaceId: 5084
+                        adSpaceId: 5084,
+                        context: 'in-content',
+                        metadata: 42,
                     }
                 }
             ]
