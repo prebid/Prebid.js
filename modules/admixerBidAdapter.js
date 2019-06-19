@@ -29,9 +29,7 @@ export const spec = {
       referrer: encodeURIComponent(utils.getTopWindowUrl()),
     };
     bidderRequest.forEach((bid) => {
-      if (bid.bidder === BIDDER_CODE || ALIASES.indexOf(bid.bidder) > -1) {
-        payload.imps.push(bid);
-      }
+      payload.imps.push(bid);
     });
     const payloadString = JSON.stringify(payload);
     return {

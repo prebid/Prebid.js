@@ -7,7 +7,7 @@ import { VIDEO, BANNER } from '../src/mediaTypes';
 import find from 'core-js/library/fn/array/find';
 import includes from 'core-js/library/fn/array/includes';
 
-const ADAPTER_VERSION = '1.4';
+const ADAPTER_VERSION = '1.5';
 const ADAPTER_NAME = 'BFIO_PREBID';
 const OUTSTREAM = 'outstream';
 
@@ -143,21 +143,20 @@ function createRenderer(bidRequest) {
     loaded: false
   });
 
-  renderer.setRender(outstreamRender);
-
-  return renderer;
-}
-
-function outstreamRender(bid) {
-  bid.renderer.push(() => {
-    window.Beachfront.Player(bid.adUnitCode, {
-      ad_tag_url: bid.vastUrl,
-      width: bid.width,
-      height: bid.height,
-      expand_in_view: false,
-      collapse_on_complete: true
+  renderer.setRender(bid => {
+    bid.renderer.push(() => {
+      window.Beachfront.Player(bid.adUnitCode, {
+        adTagUrl: bid.vastUrl,
+        width: bid.width,
+        height: bid.height,
+        expandInView: getPlayerBidParam(bidRequest, 'expandInView', false),
+        collapseOnComplete: getPlayerBidParam(bidRequest, 'collapseOnComplete', true),
+        progressColor: getPlayerBidParam(bidRequest, 'progressColor')
+      });
     });
   });
+
+  return renderer;
 }
 
 function getFirstSize(sizes) {
@@ -229,6 +228,11 @@ function getVideoBidParam(bid, key) {
 
 function getBannerBidParam(bid, key) {
   return utils.deepAccess(bid, 'params.banner.' + key) || utils.deepAccess(bid, 'params.' + key);
+}
+
+function getPlayerBidParam(bid, key, defaultValue) {
+  let param = utils.deepAccess(bid, 'params.player.' + key);
+  return param === undefined ? defaultValue : param;
 }
 
 function isVideoBidValid(bid) {
