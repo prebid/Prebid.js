@@ -12,7 +12,7 @@
 // import { config } from 'src/config';
 import * as utils from '../src/utils'
 import { ajax } from '../src/ajax';
-import { attachIdSystem } from '../modules/userId';
+import { submodule } from '../src/hook';
 // import { getGlobal } from 'src/prebidGlobal';
 
 /**
@@ -336,4 +336,4 @@ export const digiTrustIdSubmodule = {
   _testInit: surfaceTestHook
 };
 
-attachIdSystem(digiTrustIdSubmodule);
+submodule('userId', digiTrustIdSubmodule);

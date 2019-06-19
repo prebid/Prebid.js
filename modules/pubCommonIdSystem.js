@@ -5,7 +5,8 @@
  * @requires module:modules/userId
  */
 
-import * as utils from '../src/utils.js'
+import * as utils from '../src/utils.js';
+import { submodule } from '../src/hook';
 
 /** @type {Submodule} */
 export const pubCommonIdSubmodule = {
@@ -40,3 +41,5 @@ export const pubCommonIdSubmodule = {
     return (pubcid) || utils.generateUUID();
   }
 };
+
+submodule('userId', pubCommonIdSubmodule);
