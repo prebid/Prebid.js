@@ -2,10 +2,12 @@ import * as utils from '../src/utils';
 import { registerBidder } from '../src/adapters/bidderFactory';
 import { BANNER, VIDEO } from '../src/mediaTypes';
 import { config } from '../src/config';
+import { Renderer } from '../src/Renderer';
 import includes from 'core-js/library/fn/array/includes';
 
 const BIDDER_CODE = 'emx_digital';
 const ENDPOINT = 'hb.emxdgt.com';
+const RENDERER_URL = '//js.brealtime.com/outstream/1.30.0/bundle.js';
 
 export const emxAdapter = {
   validateSizes: (sizes) => {
@@ -16,7 +18,7 @@ export const emxAdapter = {
     return sizes.every(size => utils.isArray(size) && size.length === 2);
   },
   checkVideoContext: (bid) => {
-    return (bid && bid.mediaTypes && bid.mediaTypes.video && bid.mediaTypes.video.context && bid.mediaTypes.video.context === 'instream');
+    return ((bid && bid.mediaTypes && bid.mediaTypes.video && bid.mediaTypes.video.context) && ((bid.mediaTypes.video.context === 'instream') || (bid.mediaTypes.video.context === 'outstream')));
   },
   buildBanner: (bid) => {
     let sizes = [];
@@ -38,19 +40,55 @@ export const emxAdapter = {
   },
   formatVideoResponse: (bidResponse, emxBid) => {
     bidResponse.vastXml = emxBid.adm;
+    if (!emxBid.renderer && (!emxBid.mediaTypes || !emxBid.mediaTypes.video || !emxBid.mediaTypes.video.context || emxBid.mediaTypes.video.context === 'outstream')) {
+      bidResponse.renderer = emxAdapter.createRenderer(bidResponse, {
+        id: emxBid.bidId,
+        url: RENDERER_URL
+      });
+    }
     return bidResponse;
-  },
-  buildVideo: (bid) => {
-    bid.params.video.h = bid.mediaTypes.video.playerSize[0][1];
-    bid.params.video.w = bid.mediaTypes.video.playerSize[0][0];
-    return emxAdapter.cleanProtocols(bid.params.video);
   },
   cleanProtocols: (video) => {
     if (video.protocols && includes(video.protocols, 7)) {
+      // not supporting VAST protocol 7 (VAST 4.0);
       utils.logWarn(BIDDER_CODE + ': VAST 4.0 is currently not supported. This protocol has been filtered out of the request.');
       video.protocols = video.protocols.filter(protocol => protocol !== 7);
     }
     return video;
+  },
+  outstreamRender: (bid) => {
+    bid.renderer.push(function () {
+      let params = (bid && bid.params && bid.params[0] && bid.params[0].video) ? bid.params[0].video : {};
+      window.emxVideoQueue = window.emxVideoQueue || [];
+      window.queueEmxVideo({
+        id: bid.adUnitCode,
+        adsResponses: bid.vastXml,
+        options: params
+      });
+      if (window.emxVideoReady && window.videojs) {
+        window.emxVideoReady();
+      }
+    });
+  },
+  createRenderer: (bid, rendererParams) => {
+    const renderer = Renderer.install({
+      id: rendererParams.id,
+      url: RENDERER_URL,
+      loaded: false
+    });
+    try {
+      renderer.setRender(emxAdapter.outstreamRender);
+    } catch (err) {
+      utils.logWarn('Prebid Error calling setRender on renderer', err);
+    }
+
+    return renderer;
+  },
+  buildVideo: (bid) => {
+    bid.params.video = bid.params.video || {};
+    bid.params.video.h = bid.mediaTypes.video.playerSize[0][0];
+    bid.params.video.w = bid.mediaTypes.video.playerSize[0][1];
+    return emxAdapter.cleanProtocols(bid.params.video);
   },
   getGdpr: (bidRequests, emxData) => {
     if (bidRequests.gdprConsent) {
@@ -100,7 +138,7 @@ export const spec = {
       }
     } else if (bid.mediaTypes && bid.mediaTypes.video) {
       if (!emxAdapter.checkVideoContext(bid)) {
-        utils.logWarn(BIDDER_CODE + ': Missing video context: instream');
+        utils.logWarn(BIDDER_CODE + ': Missing video context: instream or outstream');
         return false;
       }
 
@@ -146,7 +184,7 @@ export const spec = {
         domain: window.top.document.location.host,
         page: page
       },
-      version: '1.21.1'
+      version: '1.30.0'
     };
 
     emxData = emxAdapter.getGdpr(bidderRequest, Object.assign({}, emxData));

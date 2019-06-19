@@ -133,6 +133,56 @@ describe('AdxcgAdapter', function () {
     })
   })
 
+  describe('userid pubcid should be passed to querystring', function () {
+    let bid = [{
+      'bidder': 'adxcg',
+      'params': {
+        'adzoneid': '1'
+      },
+      'adUnitCode': 'adunit-code',
+      'sizes': [[300, 250], [640, 360], [1, 1]],
+      'bidId': '84ab500420319d',
+      'bidderRequestId': '7101db09af0db2',
+      'auctionId': '1d1a030790a475',
+    }]
+
+    let bidderRequests = {};
+
+    bid[0].userId = {'pubcid': 'pubcidabcd'};
+
+    it('should send pubcid if available', function () {
+      let request = spec.buildRequests(bid, bidderRequests)
+      let parsedRequestUrl = url.parse(request.url)
+      let query = parsedRequestUrl.search
+      expect(query.pubcid).to.equal('pubcidabcd')
+    })
+  })
+
+  describe('userid tdid should be passed to querystring', function () {
+    let bid = [{
+      'bidder': 'adxcg',
+      'params': {
+        'adzoneid': '1'
+      },
+      'adUnitCode': 'adunit-code',
+      'sizes': [[300, 250], [640, 360], [1, 1]],
+      'bidId': '84ab500420319d',
+      'bidderRequestId': '7101db09af0db2',
+      'auctionId': '1d1a030790a475',
+    }]
+
+    let bidderRequests = {};
+
+    bid[0].userId = {'tdid': 'tdidabcd'};
+
+    it('should send pubcid if available', function () {
+      let request = spec.buildRequests(bid, bidderRequests)
+      let parsedRequestUrl = url.parse(request.url)
+      let query = parsedRequestUrl.search
+      expect(query.tdid).to.equal('tdidabcd');
+    })
+  })
+
   describe('response handler', function () {
     let BIDDER_REQUEST = {
       'bidder': 'adxcg',

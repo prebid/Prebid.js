@@ -175,16 +175,14 @@ export const spec = {
 
     bids.forEach(bid => {
       const outBid = {
-        adId: bidRequest.bidRequest.adUnitCode,
         requestId: bidRequest.bidRequest.bidId,
         cpm: bid.price,
         width: bid.w,
         height: bid.h,
         ttl: 60 * 10,
-        creativeId: bid.crid,
+        creativeId: bid.crid || bid.adid,
         netRevenue: true,
         currency: bid.cur || response.cur,
-        adUnitCode: bidRequest.bidRequest.adUnitCode,
         mediaType: helper.getMediaType(bid)
       };
 
