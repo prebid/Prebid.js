@@ -23,6 +23,7 @@ export const spec = {
       bidSizes[bid.bidId] = bid.sizes;
     });
     const transformedParams = Object.assign({}, {
+      sessionId: spec._getSessionId(),
       timeout: bidderRequest.timeout,
       currency: currency,
       cpmGranularity: 1,
@@ -181,6 +182,13 @@ export const spec = {
       rawCRB: spec._readCookie('krg_crb'),
       rawCRBLocalStorage: spec._getLocalStorageSafely('krg_crb')
     };
+  },
+
+  _getSessionId() {
+    if (!spec._sessionId) {
+      spec._sessionId = spec._generateRandomUuid();
+    }
+    return spec._sessionId;
   },
 
   _generateRandomUuid() {
