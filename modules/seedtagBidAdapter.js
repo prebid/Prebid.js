@@ -19,7 +19,7 @@ function mapMediaType(seedtagMediaType) {
 }
 
 function getMediaTypeFromBid(bid) {
-  return Object.keys(bid.mediaTypes)[0];
+  return bid.mediaTypes && Object.keys(bid.mediaTypes)[0]
 }
 
 function hasMandatoryParams(params) {
