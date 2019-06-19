@@ -1,4 +1,5 @@
 [
+  "currency",
   "consentManagement",
   "appnexusBidAdapter",
   "freewheel-sspBidAdapter",
