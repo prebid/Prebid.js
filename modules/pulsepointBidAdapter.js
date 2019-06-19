@@ -85,13 +85,13 @@ export const spec = {
 /**
  * Callback for bids, after the call to PulsePoint completes.
  */
-function bidResponseAvailable(bidRequest, bidResponse) {
+function bidResponseAvailable(request, response) {
   const idToImpMap = {};
   const idToBidMap = {};
   const idToSlotConfig = {};
-  bidResponse = bidResponse.body
+  const bidResponse = response.body
   // extract the request bids and the response bids, keyed by impr-id
-  const ortbRequest = bidRequest.data;
+  const ortbRequest = request.data;
   ortbRequest.imp.forEach(imp => {
     idToImpMap[imp.id] = imp;
   });
@@ -100,8 +100,8 @@ function bidResponseAvailable(bidRequest, bidResponse) {
       idToBidMap[bid.impid] = bid;
     }));
   }
-  if (bidRequest.bidderRequest) {
-    bidRequest.bidderRequest.bids.forEach(bid => {
+  if (request.bidderRequest) {
+    request.bidderRequest.bids.forEach(bid => {
       idToSlotConfig[bid.bidId] = bid;
     });
   }
