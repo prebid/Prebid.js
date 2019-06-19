@@ -1,6 +1,7 @@
 /* eslint dot-notation:0, quote-props:0 */
 import * as utils from '../src/utils';
 import { registerBidder } from '../src/adapters/bidderFactory';
+import { Renderer } from '../src/Renderer';
 
 const NATIVE_DEFAULTS = {
   TITLE_LEN: 100,
@@ -49,8 +50,9 @@ export const spec = {
     applyGdpr(bidderRequest, request);
     return {
       method: 'POST',
-      url: 'https://bid.contextweb.com/header/ortb?src=prebid',
+      url: 'http://lga-kube-bid-stage.pulsepoint.com/header/ortb?src=prebid',
       data: JSON.stringify(request),
+      bidderRequest
     };
   },
 
@@ -86,6 +88,7 @@ export const spec = {
 function bidResponseAvailable(bidRequest, bidResponse) {
   const idToImpMap = {};
   const idToBidMap = {};
+  const idToSlotConfig = {};
   bidResponse = bidResponse.body
   // extract the request bids and the response bids, keyed by impr-id
   const ortbRequest = parse(bidRequest.data);
@@ -96,6 +99,11 @@ function bidResponseAvailable(bidRequest, bidResponse) {
     bidResponse.seatbid.forEach(seatBid => seatBid.bid.forEach(bid => {
       idToBidMap[bid.impid] = bid;
     }));
+  }
+  if (bidRequest.bidderRequest) {
+    bidRequest.bidderRequest.bids.forEach(bid => {
+      idToSlotConfig[bid.bidId] = bid;
+    });
   }
   const bids = [];
   Object.keys(idToImpMap).forEach(id => {
@@ -114,6 +122,9 @@ function bidResponseAvailable(bidRequest, bidResponse) {
         bid['native'] = nativeResponse(idToImpMap[id], idToBidMap[id]);
         bid.mediaType = 'native';
       } else if (idToImpMap[id].video) {
+        if (idToSlotConfig[id] && utils.deepAccess(idToSlotConfig[id], 'mediaTypes.video.context') === 'outstream') {
+          bid.renderer = outstreamRenderer(utils.deepAccess(idToSlotConfig[id], 'renderer.options'), utils.deepAccess(idToBidMap[id], 'ext.outstream'));
+        }
         bid.vastXml = idToBidMap[id].adm;
         bid.mediaType = 'video';
         bid.width = idToBidMap[id].w;
@@ -182,6 +193,31 @@ function ext(slot) {
     }
   });
   return ext;
+}
+
+function outstreamRenderer(rendererOptions, outstreamExtOptions) {
+  const renderer = Renderer.install({
+    url: outstreamExtOptions.rendererUrl,
+    config: {
+      defaultOptions: outstreamExtOptions.config,
+      rendererOptions,
+      type: outstreamExtOptions.type
+    },
+    loaded: false,
+  });
+  renderer.setRender((bid) => {
+    bid.renderer.push(() => {
+      const config = bid.renderer.getConfig();
+      new window.PulsePointOutstreamRenderer().render({
+        adUnitCode: bid.adUnitCode,
+        vastXml: bid.vastXml,
+        type: config.type,
+        defaultOptions: config.defaultOptions,
+        rendererOptions
+      });
+    });
+  });
+  return renderer;
 }
 
 /**
