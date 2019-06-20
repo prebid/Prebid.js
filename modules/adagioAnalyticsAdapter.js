@@ -9,7 +9,7 @@ import CONSTANTS from 'src/constants.json';
 const emptyUrl = '';
 const analyticsType = 'endpoint';
 const events = Object.keys(CONSTANTS.EVENTS).map(key => CONSTANTS.EVENTS[key]);
-const VERSION = '1.2.0';
+const VERSION = '1.3.0';
 
 let adagioAdapter = Object.assign(adapter({ emptyUrl, analyticsType }));
 
