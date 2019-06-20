@@ -43,7 +43,6 @@ export const spec = {
       site: site(bidRequests),
       app: app(bidRequests),
       device: device(),
-      battr: bidRequests[0].params.battr,
       bcat: bidRequests[0].params.bcat,
       badv: bidRequests[0].params.badv,
     };
@@ -173,6 +172,7 @@ function banner(slot) {
   return (slot.nativeParams || slot.params.video) ? null : {
     w: size[0],
     h: size[1],
+    battr: slot.params.battr,
   };
 }
 
@@ -181,7 +181,7 @@ function banner(slot) {
  */
 function video(slot) {
   if (slot.params.video) {
-    return slot.params.video;
+    return Object.assign({}, slot.params.video, {battr: slot.params.battr});
   }
   return null;
 }
@@ -243,6 +243,7 @@ function nativeImpression(slot) {
     return {
       request: JSON.stringify({ assets }),
       ver: '1.1',
+      battr: slot.params.battr,
     };
   }
   return null;

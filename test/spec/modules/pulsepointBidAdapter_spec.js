@@ -95,6 +95,21 @@ describe('PulsePoint Adapter Tests', function () {
       bidfloor: 1.5,
       badv: ['cocacola.com', 'lays.com']
     }
+  }, {
+    placementCode: '/DfpAccount1/slotVideo',
+    bidId: 'bid12345',
+    params: {
+      cp: 'p10000',
+      ct: 't10000',
+      video: {
+        w: 400,
+        h: 300,
+        minduration: 5,
+        maxduration: 10,
+      },
+      battr: [2, 3, 4],
+      bidfloor: 2.5,
+    }
   }];
 
   const outstreamSlotConfig = [{
@@ -439,6 +454,22 @@ describe('PulsePoint Adapter Tests', function () {
     expect(ortbRequest).to.not.equal(null);
     expect(ortbRequest.imp).to.have.lengthOf(1);
     expect(ortbRequest.imp[0].ext).to.equal(null);
+  });
+
+  it('Verify ortb parameters', function () {
+    const request = spec.buildRequests(ortbParamsSlotConfig);
+    const ortbRequest = request.data;
+    expect(ortbRequest).to.not.equal(null);
+    expect(ortbRequest.bcat).to.eql(['IAB-1', 'IAB-20']);
+    expect(ortbRequest.badv).to.eql(['cocacola.com', 'lays.com']);
+    expect(ortbRequest.imp).to.have.lengthOf(2);
+    expect(ortbRequest.imp[0].bidfloor).to.equal(1.5);
+    expect(ortbRequest.imp[0].banner.battr).to.eql([1, 2, 3]);
+    expect(ortbRequest.imp[0].ext).to.be.null;
+    // slot 2
+    expect(ortbRequest.imp[1].bidfloor).to.equal(2.5);
+    expect(ortbRequest.imp[1].video.battr).to.eql([2, 3, 4]);
+    expect(ortbRequest.imp[1].ext).to.be.null;
   });
 
   it('Verify outstream renderer', function () {
