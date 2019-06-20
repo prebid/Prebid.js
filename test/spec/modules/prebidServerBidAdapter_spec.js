@@ -827,10 +827,10 @@ describe('S2S Adapter', function () {
       let requestBid = JSON.parse(requests[0].requestBody);
       expect(typeof requestBid.user.ext.eids).is.equal('object');
       expect(Array.isArray(requestBid.user.ext.eids)).to.be.true;
-      expect(requestBid.user.ext.eids.find(eid => eid.source === 'adserver.org')).to.not.be.undefined;
-      expect(requestBid.user.ext.eids.find(eid => eid.source === 'adserver.org').uids[0].id).is.equal('abc123');
-      expect(requestBid.user.ext.eids.find(eid => eid.source === 'pubcommon')).to.not.be.undefined;
-      expect(requestBid.user.ext.eids.find(eid => eid.source === 'pubcommon').uids[0].id).is.equal('1234');
+      expect(requestBid.user.ext.eids.filter(eid => eid.source === 'adserver.org')).is.not.empty;
+      expect(requestBid.user.ext.eids.filter(eid => eid.source === 'adserver.org')[0].uids[0].id).is.equal('abc123');
+      expect(requestBid.user.ext.eids.filter(eid => eid.source === 'pubcommon')).is.not.empty; ;
+      expect(requestBid.user.ext.eids.filter(eid => eid.source === 'pubcommon')[0].uids[0].id).is.equal('1234');
     })
 
     it('always add ext.prebid.targeting.includebidderkeys: false for ORTB', function () {
