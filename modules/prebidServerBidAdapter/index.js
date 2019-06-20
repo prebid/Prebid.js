@@ -239,7 +239,7 @@ function _getDigiTrustQueryParams(bidRequest = {}) {
       return bidRequestDigitrust;
     }
 
-    let digiTrustUser = (window.DigiTrust && (config.getConfig('digiTrustId') || window.DigiTrust.getUser({member: 'T9QSFKPDN9'})));
+    const digiTrustUser = config.getConfig('digiTrustId');
     return (digiTrustUser && digiTrustUser.success && digiTrustUser.identity) || null;
   }
   let digiTrustId = getDigiTrustId(bidRequest);
@@ -249,8 +249,7 @@ function _getDigiTrustQueryParams(bidRequest = {}) {
   }
   return {
     id: digiTrustId.id,
-    keyv: digiTrustId.keyv,
-    pref: 0
+    keyv: digiTrustId.keyv
   };
 }
 

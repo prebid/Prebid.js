@@ -22,8 +22,7 @@ const DIGITRUST_PROP_NAMES = {
   },
   PREBID_SERVER: {
     id: 'id',
-    keyv: 'keyv',
-    pref: 'pref'
+    keyv: 'keyv'
   }
 };
 
@@ -645,11 +644,15 @@ function _getDigiTrustQueryParams(bidRequest = {}, endpointName) {
   if (!digiTrustId || (digiTrustId.privacy && digiTrustId.privacy.optout)) {
     return null;
   }
-  return {
+
+  const digiTrustQueryParams = {
     [propNames.id]: digiTrustId.id,
-    [propNames.keyv]: digiTrustId.keyv,
-    [propNames.pref]: 0
+    [propNames.keyv]: digiTrustId.keyv
   };
+  if (propNames.pref) {
+    digiTrustQueryParams[propNames.pref] = 0;
+  }
+  return digiTrustQueryParams;
 }
 
 /**
