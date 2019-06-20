@@ -182,7 +182,7 @@ export const spec = {
   },
   buildRequests: function (validBidRequests, bidderRequest) {
     const emxImps = [];
-    const timeout = bidderRequest.timeout || "";
+    const timeout = bidderRequest.timeout || '';
     const timestamp = Date.now();
     const url = location.protocol + '//' + ENDPOINT + ('?t=' + timeout + '&ts=' + timestamp + '&src=pbjs');
     const secure = location.protocol.indexOf('https') > -1 ? 1 : 0;
@@ -190,6 +190,7 @@ export const spec = {
     const page = bidderRequest.refererInfo.referer;
     const device = emxAdapter.getDevice();
     const ref = emxAdapter.getReferrer();
+
 
     utils._each(validBidRequests, function (bid) {
       let tagid = utils.getBidIdParameter('tagid', bid.params);
@@ -199,12 +200,11 @@ export const spec = {
         id: bid.bidId,
         tid: bid.transactionId,
         tagid,
-        secure,
-        ...(bidfloor > 0 && { bidfloor, bidfloorcur: DEFAULT_CUR })
-
+        secure
       };
       let typeSpecifics = isVideo ? { video: emxAdapter.buildVideo(bid) } : { banner: emxAdapter.buildBanner(bid) };
-      let emxBid = Object.assign(data, typeSpecifics);
+      let bidfloorObj = bidfloor > 0 ? { bidfloor, bidfloorcur: DEFAULT_CUR } : {};
+      let emxBid = Object.assign(data, typeSpecifics, bidfloorObj);
 
       emxImps.push(emxBid);
     });
