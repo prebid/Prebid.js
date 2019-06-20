@@ -8,7 +8,7 @@ import includes from 'core-js/library/fn/array/includes';
 const BIDDER_CODE = 'emx_digital';
 const ENDPOINT = 'hb.emxdgt.com';
 const RENDERER_URL = '//js.brealtime.com/outstream/1.30.0/bundle.js';
-const ADAPTER_VERSION = '1.40.1';
+const ADAPTER_VERSION = '1.40.2';
 const DEFAULT_CUR = 'USD';
 
 export const emxAdapter = {
@@ -183,7 +183,7 @@ export const spec = {
   },
   buildRequests: function (validBidRequests, bidderRequest) {
     const emxImps = [];
-    const timeout = config.getConfig('bidderTimeout');
+    const timeout = bidderRequest.timeout || "";
     const timestamp = Date.now();
     const url = location.protocol + '//' + ENDPOINT + ('?t=' + timeout + '&ts=' + timestamp + '&src=pbjs');
     const secure = location.protocol.indexOf('https') > -1 ? 1 : 0;
