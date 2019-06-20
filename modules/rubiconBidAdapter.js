@@ -208,6 +208,10 @@ export const spec = {
         }
       }
 
+      if (config.getConfig('coppa') === true) {
+        utils.deepSetValue(request, 'regs.coppa', 1);
+      }
+
       return {
         method: 'POST',
         url: VIDEO_ENDPOINT,
@@ -410,6 +414,10 @@ export const spec = {
     Object.keys(digitrustParams).forEach(paramKey => {
       data[paramKey] = digitrustParams[paramKey];
     });
+
+    if (config.getConfig('coppa') === true) {
+      data['coppa'] = 1;
+    }
 
     return data;
   },

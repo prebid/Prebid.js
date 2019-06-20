@@ -572,7 +572,9 @@ const OPEN_RTB_PROTOCOL = {
       }
     }
 
-    utils.deepSetValue(request, 'regs.coppa', utils.deepAccess(bidRequests, '0.coppa') === true ? 1 : 0);
+    if (getConfig('coppa') === true) {
+      utils.deepSetValue(request, 'regs.coppa', 1);
+    }
 
     return request;
   },
