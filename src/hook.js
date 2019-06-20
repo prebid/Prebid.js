@@ -16,13 +16,13 @@ export function setupBeforeHookFnOnce(baseFn, hookFn, priority = 15) {
 
 export function module(name, install) {
   hook('async', function (submodules) {
-    submodules.forEach(module => install(module));
+    submodules.forEach(args => install(...args));
   }, name)([]); // will be queued until hook.ready() called in pbjs.processQueue();
 }
 
-export function submodule(name, spec) {
+export function submodule(name, ...args) {
   getHook(name).before((next, modules) => {
-    modules.push(spec);
+    modules.push(args);
     next(modules);
   });
 }
