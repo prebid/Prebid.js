@@ -13,7 +13,7 @@
  * @name Submodule#getId
  * @param {SubmoduleParams} configParams
  * @param {ConsentData} consentData
- * @return {(Object|function} id data or a callback, the callback is called on the auction end event
+ * @return {(Object|function)} id data or a callback, the callback is called on the auction end event
  */
 
 /**
@@ -21,7 +21,7 @@
  * @summary decode a stored value for passing to bid requests
  * @name Submodule#decode
  * @param {Object|string} value
- * @return {(Object|undefined}
+ * @return {(Object|undefined)}
  */
 
 /**
