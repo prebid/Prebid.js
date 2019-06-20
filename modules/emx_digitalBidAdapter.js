@@ -191,7 +191,6 @@ export const spec = {
     const device = emxAdapter.getDevice();
     const ref = emxAdapter.getReferrer();
 
-
     utils._each(validBidRequests, function (bid) {
       let tagid = utils.getBidIdParameter('tagid', bid.params);
       let bidfloor = parseFloat(utils.getBidIdParameter('bidfloor', bid.params)) || 0;
