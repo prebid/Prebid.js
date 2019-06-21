@@ -49,7 +49,7 @@ export function getHighestCpmBidsFromBidPool(bidsReceived, highestCpmCallback, a
       bids.push(...bucketBids);
     }
   });
-  return bids
+  return bids;
 }
 
 /**
@@ -527,7 +527,7 @@ export function newTargeting(auctionManager) {
    */
   function getBidLandscapeTargeting(adUnitCodes, bidsReceived) {
     const standardKeys = TARGETING_KEYS.concat(NATIVE_TARGETING_KEYS);
-    const adUnitBidLimit = config.getConfig('adUnitBidLimit');
+    const adUnitBidLimit = config.getConfig('sendBidsControl.bidLimit');
     const bids = getHighestCpmBidsFromBidPool(bidsReceived, getHighestCpm, adUnitBidLimit);
 
     // populate targeting keys for the remaining bids
