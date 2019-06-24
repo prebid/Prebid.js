@@ -514,6 +514,11 @@ const OPEN_RTB_PROTOCOL = {
       }
     };
 
+    const mediaTypePriceGranularity = getConfig('mediaTypePriceGranularity');
+    if(mediaTypePriceGranularity) {
+      request.ext.prebid.targeting.mediatypepricegranularity = mediaTypePriceGranularity;
+    }
+
     // s2sConfig video.ext.prebid is passed through openrtb to PBS
     if (_s2sConfig.extPrebid && typeof _s2sConfig.extPrebid === 'object') {
       request.ext.prebid = utils.deepAssign(true, request.ext.prebid, _s2sConfig.extPrebid);
