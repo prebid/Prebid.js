@@ -327,7 +327,7 @@ describe('User ID', function() {
       }, {adUnits});
     });
 
-    it('test hook from unifiedid html5', function(done) {
+    it('test hook from pubcommonid html5', function(done) {
       // simulate existing browser local storage values
       localStorage.setItem('unifiedid_alt', JSON.stringify({'TDID': 'testunifiedid_alt'}));
       localStorage.setItem('unifiedid_alt_exp', '');

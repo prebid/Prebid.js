@@ -74,7 +74,7 @@ import * as utils from '../src/utils.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 import {gdprDataHandler} from '../src/adapterManager.js';
 import CONSTANTS from '../src/constants.json';
-import { module } from '../src/hook'
+import {module} from '../src/hook';
 
 const MODULE_NAME = 'User ID';
 const COOKIE = 'cookie';
@@ -158,21 +158,12 @@ function getStoredValue(storage) {
 }
 
 /**
- * test if consent module is present, and if GDPR applies
- * @param {ConsentData} consentData
- * @returns {boolean}
- */
-export function isGDPRApplicable(consentData) {
-  return consentData && typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies;
-}
-
-/**
  * test if consent module is present, applies, and is valid for local storage or cookies (purpose 1)
  * @param {ConsentData} consentData
  * @returns {boolean}
  */
-export function hasGDPRConsent(consentData) {
-  if (isGDPRApplicable(consentData)) {
+function hasGDPRConsent(consentData) {
+  if (consentData && typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies) {
     if (!consentData.consentString) {
       return false;
     }

@@ -7,7 +7,7 @@
 
 import * as utils from '../src/utils.js'
 import {ajax} from '../src/ajax.js';
-import {isGDPRApplicable, attachIdSystem} from './userId.js';
+import {submodule} from '../src/hook';
 
 /** @type {Submodule} */
 export const id5IdSubmodule = {
@@ -37,7 +37,7 @@ export const id5IdSubmodule = {
       utils.logError(`User ID - ID5 submodule requires partner to be defined as a number`);
       return;
     }
-    const hasGdpr = isGDPRApplicable(consentData) ? 1 : 0;
+    const hasGdpr = (consentData && typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies) ? 1 : 0;
     const gdprConsentString = hasGdpr ? consentData.consentString : '';
     const url = `https://id5-sync.com/g/v1/${configParams.partner}.json?gdpr=${hasGdpr}&gdpr_consent=${gdprConsentString}`;
 
@@ -57,4 +57,4 @@ export const id5IdSubmodule = {
   }
 };
 
-attachIdSystem(id5IdSubmodule);
+submodule('userId', id5IdSubmodule);
