@@ -143,14 +143,30 @@ function _createServerRequest(bidRequest, gdprConsent) {
 }
 
 // Sync object will always be of type iframe for TTX
-function _createSync(siteId) {
+function _createSync({siteId, gdprConsent = {}}) {
   const ttxSettings = config.getConfig('ttxSettings');
   const syncUrl = (ttxSettings && ttxSettings.syncUrl) || SYNC_ENDPOINT;
 
-  return {
+  const {consentString, gdprApplies} = gdprConsent;
+
+  const sync = {
     type: 'iframe',
     url: `${syncUrl}&id=${siteId}`
+  };
+
+  const gdprMap = {
+    'true': 1,
+    'false': 0
+  };
+
+  if (typeof gdprApplies === 'boolean') {
+    const gdpr = gdprMap[gdprApplies.toString()];
+    sync.url = `${sync.url}&gdpr=${gdpr}`;
   }
+
+  sync.url = `${sync.url}&gdpr_consent=${consentString}`;
+
+  return sync;
 }
 
 function _getSize(size) {
@@ -310,11 +326,7 @@ function interpretResponse(serverResponse, bidRequest) {
 // Register one sync per unique guid
 // NOTE: If gdpr applies do not sync
 function getUserSyncs(syncOptions, responses, gdprConsent) {
-  if (gdprConsent && gdprConsent.gdprApplies === true) {
-    return []
-  } else {
-    return (syncOptions.iframeEnabled) ? adapterState.uniqueSiteIds.map(_createSync) : ([]);
-  }
+  return (syncOptions.iframeEnabled) ? adapterState.uniqueSiteIds.map((siteId) => _createSync({gdprConsent, siteId})) : ([]);
 }
 
 export const spec = {
