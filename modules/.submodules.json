@@ -2,6 +2,7 @@
   "userId": [
     "digiTrustIdSystem",
     "pubCommonIdSystem",
-    "unifiedIdSystem"
+    "unifiedIdSystem",
+    "id5IdSystem"
   ]
 }
