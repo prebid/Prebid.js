@@ -337,8 +337,8 @@ describe('33acrossBidAdapter:', function () {
 
         utils.getWindowTop.restore();
         utils.getWindowSelf.restore();
-        sandbox.stub(utils, 'getWindowTop').returns(win);
-        sandbox.stub(utils, 'getWindowSelf').returns({});
+        sandbox.stub(utils, 'getWindowTop').returns({});
+        sandbox.stub(utils, 'getWindowSelf').returns(win);
 
         expect(spec.buildRequests(bidRequests)).to.deep.equal([ serverRequest ]);
       });
