@@ -44,7 +44,7 @@ import {
   userSyncImageUrl,
   validateSizes,
   validateContext,
-  validateMetadata,
+  validateExternalId,
   VENDOR_ID,
   WALLPAPER,
 } from 'modules/emoteevBidAdapter';
@@ -63,7 +63,7 @@ const cannedValidBidRequests = [{
   params: {
     adSpaceId: 5084,
     context: IN_CONTENT,
-    metadata: 42
+    externalId: 42
   },
   sizes: [[300, 250], [250, 300], [300, 600]],
   transactionId: '58dbd732-7a39-45f1-b23e-1c24051a941c',
@@ -114,7 +114,7 @@ describe('emoteevBidAdapter', function () {
         params: {
           adSpaceId: 12345,
           context: IN_CONTENT,
-          metadata: 42
+          externalId: 42
         },
         mediaTypes: {
           banner: {
@@ -134,7 +134,7 @@ describe('emoteevBidAdapter', function () {
         params: {
           adSpaceId: 12345,
           context: IN_CONTENT,
-          metadata: 42
+          externalId: 42
         },
         mediaTypes: {
           banner: {
@@ -147,7 +147,7 @@ describe('emoteevBidAdapter', function () {
         params: {
           adSpaceId: '', // invalid adSpaceId
           context: IN_CONTENT,
-          metadata: 42
+          externalId: 42
         },
         mediaTypes: {
           banner: {
@@ -160,7 +160,7 @@ describe('emoteevBidAdapter', function () {
         params: {
           adSpaceId: 12345,
           context: 'something', // invalid context
-          metadata: 42
+          externalId: 42
         },
         mediaTypes: {
           banner: {
@@ -173,7 +173,7 @@ describe('emoteevBidAdapter', function () {
         params: {
           adSpaceId: 12345,
           context: IN_CONTENT,
-          metadata: 'lol' // invalid metadata
+          externalId: 'lol' // invalid externalId
         },
         mediaTypes: {
           banner: {
@@ -186,7 +186,7 @@ describe('emoteevBidAdapter', function () {
         params: {
           adSpaceId: 12345,
           context: IN_CONTENT,
-          metadata: 42
+          externalId: 42
         },
         mediaTypes: {
           banner: {
@@ -852,15 +852,15 @@ describe('emoteevBidAdapter', function () {
     });
   });
 
-  describe('validateMetadata', function () {
+  describe('validateExternalId', function () {
     it('only accepts a positive integer or null', function () {
-      expect(validateMetadata(0)).to.deep.equal(false);
-      expect(validateMetadata(42)).to.deep.equal(true);
-      expect(validateMetadata(42.0)).to.deep.equal(true); // edge case: valid metadata
-      expect(validateMetadata(3.14159)).to.deep.equal(false);
-      expect(validateMetadata('metadata')).to.deep.equal(false);
-      expect(validateMetadata(undefined)).to.deep.equal(true);
-      expect(validateMetadata(null)).to.deep.equal(true);
+      expect(validateExternalId(0)).to.deep.equal(false);
+      expect(validateExternalId(42)).to.deep.equal(true);
+      expect(validateExternalId(42.0)).to.deep.equal(true); // edge case: valid externalId
+      expect(validateExternalId(3.14159)).to.deep.equal(false);
+      expect(validateExternalId('externalId')).to.deep.equal(false);
+      expect(validateExternalId(undefined)).to.deep.equal(true);
+      expect(validateExternalId(null)).to.deep.equal(true);
     });
   });
 });

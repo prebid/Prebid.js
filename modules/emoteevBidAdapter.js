@@ -86,7 +86,7 @@ export const isBidRequestValid = (bidRequest) => {
     bidRequest.params &&
     deepAccess(bidRequest, 'params.adSpaceId') &&
     validateContext(deepAccess(bidRequest, 'params.context')) &&
-    validateMetadata(deepAccess(bidRequest, 'params.metadata')) &&
+    validateExternalId(deepAccess(bidRequest, 'params.externalId')) &&
     bidRequest.bidder === BIDDER_CODE &&
     validateSizes(deepAccess(bidRequest, 'mediaTypes.banner.sizes')));
 };
@@ -293,10 +293,10 @@ export const validateContext = context => contains([IN_CONTENT, FOOTER, OVERLAY,
 /**
  * Pure function.
  *
- * @param {(number|null|undefined)} metadata
- * @returns {boolean} is param `metadata` valid?
+ * @param {(number|null|undefined)} externalId
+ * @returns {boolean} is param `externalId` valid?
  */
-export const validateMetadata = metadata => metadata === undefined || metadata === null || (isInteger(metadata) && metadata > 0);
+export const validateExternalId = externalId => externalId === undefined || externalId === null || (isInteger(externalId) && externalId > 0);
 
 /**
  * Pure function.
