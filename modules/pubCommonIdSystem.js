@@ -6,7 +6,7 @@
  */
 
 import * as utils from '../src/utils.js';
-import { submodule } from '../src/hook';
+// import { submodule } from '../src/hook';
 
 /** @type {Submodule} */
 export const pubCommonIdSubmodule = {
@@ -42,4 +42,4 @@ export const pubCommonIdSubmodule = {
   }
 };
 
-submodule('userId', pubCommonIdSubmodule);
+// submodule('userId', pubCommonIdSubmodule);

@@ -7,7 +7,7 @@
 
 import * as utils from '../src/utils.js'
 import {ajax} from '../src/ajax.js';
-import {submodule} from '../src/hook';
+// import {submodule} from '../src/hook';
 
 /** @type {Submodule} */
 export const unifiedIdSubmodule = {
@@ -55,4 +55,4 @@ export const unifiedIdSubmodule = {
   }
 };
 
-submodule('userId', unifiedIdSubmodule);
+// submodule('userId', unifiedIdSubmodule);

@@ -74,6 +74,8 @@ import * as utils from '../src/utils.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 import {gdprDataHandler} from '../src/adapterManager.js';
 import CONSTANTS from '../src/constants.json';
+import {unifiedIdSubmodule} from './unifiedIdSystem.js';
+import {pubCommonIdSubmodule} from './pubCommonIdSystem.js';
 import {module} from '../src/hook';
 
 const MODULE_NAME = 'User ID';
@@ -417,5 +419,8 @@ export function init(config) {
 
 // init config update listener to start the application
 init(config);
+// add submodules after init has been called
+attachIdSystem(pubCommonIdSubmodule);
+attachIdSystem(unifiedIdSubmodule);
 
 module('userId', attachIdSystem);
