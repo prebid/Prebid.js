@@ -580,6 +580,10 @@ const OPEN_RTB_PROTOCOL = {
       utils.deepSetValue(request, 'user.ext.consent', bidRequests[0].gdprConsent.consentString);
     }
 
+    if (getConfig('coppa') === true) {
+      utils.deepSetValue(request, 'regs.coppa', 1);
+    }
+
     return request;
   },
 
