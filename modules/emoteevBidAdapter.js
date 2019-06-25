@@ -61,7 +61,7 @@ export const ON_ADAPTER_CALLED = 'on_adapter_called';
 export const ON_BID_WON = 'on_bid_won';
 export const ON_BIDDER_TIMEOUT = 'on_bidder_timeout';
 
-export const IN_CONTENT = 'in-content';
+export const IN_CONTENT = 'content';
 export const FOOTER = 'footer';
 export const OVERLAY = 'overlay';
 export const WALLPAPER = 'wallpaper';
