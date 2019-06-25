@@ -321,7 +321,7 @@ function getValidSubmoduleConfigs(configRegistry, submoduleRegistry, activeStora
     if (!config || utils.isEmptyStr(config.name)) {
       return carry;
     }
-    // alidate storage config contains 'type' and 'name' properties with non-empty string values
+    // Validate storage config contains 'type' and 'name' properties with non-empty string values
     // 'type' must be a value currently enabled in the browser
     if (config.storage &&
       !utils.isEmptyStr(config.storage.type) &&
