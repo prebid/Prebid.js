@@ -28,6 +28,26 @@ pbjs.setConfig({
 });
 ```
 
+Example showing `cookie` storage for user id data for id5 submodule
+```
+pbjs.setConfig({
+    usersync: {
+        userIds: [{
+            name: "id5Id",
+            params: {
+                partner: 173 // @TODO: Set your real ID5 partner ID here for production, please ask for one contact@id5.io
+            },
+            storage: {
+                type: "cookie",
+                name: "id5id",
+                expires: 90
+            }
+        }],
+        syncDelay: 5000
+    }
+});
+```
+
 Example showing `localStorage` for user id data for both submodules
 ```
 pbjs.setConfig({

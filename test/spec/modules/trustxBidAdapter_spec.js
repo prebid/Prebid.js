@@ -92,6 +92,8 @@ describe('TrustXAdapter', function () {
       expect(payload).to.have.property('auids', '43');
       expect(payload).to.have.property('sizes', '300x250,300x600');
       expect(payload).to.have.property('r', '22edbae2733bf6');
+      expect(payload).to.have.property('wrapperType', 'Prebid_js');
+      expect(payload).to.have.property('wrapperVersion', '$prebid.version$');
     });
 
     it('sizes must not be duplicated', function () {
