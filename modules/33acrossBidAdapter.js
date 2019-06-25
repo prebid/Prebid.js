@@ -298,8 +298,6 @@ function isBidRequestValid(bid) {
 
 // NOTE: With regards to gdrp consent data,
 // - the server independently infers gdpr applicability therefore, setting the default value to false
-// - the server, at this point, also doesn't need the consent string to handle gdpr compliance. So passing
-//    value whether set or not, for the sake of future dev.
 function buildRequests(bidRequests, bidderRequest) {
   const gdprConsent = Object.assign({
     consentString: undefined,
@@ -323,8 +321,10 @@ function interpretResponse(serverResponse, bidRequest) {
   return bidResponses;
 }
 
-// Register one sync per unique guid
-// NOTE: If gdpr applies do not sync
+// Register one sync per unique guid so long as iframe is enable
+// Else no syncs
+// For logic on how we handle gdpr data see _createSyncs and module's unit tests
+// '33acrossBidAdapter#getUserSyncs'
 function getUserSyncs(syncOptions, responses, gdprConsent) {
   return (syncOptions.iframeEnabled) ? adapterState.uniqueSiteIds.map((siteId) => _createSync({gdprConsent, siteId})) : ([]);
 }
