@@ -1,8 +1,6 @@
 {
   "userId": [
     "digiTrustIdSystem",
-    "pubCommonIdSystem",
-    "unifiedIdSystem",
     "id5IdSystem"
   ]
 }

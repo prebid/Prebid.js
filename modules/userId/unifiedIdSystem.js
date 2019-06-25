@@ -5,9 +5,8 @@
  * @requires module:modules/userId
  */
 
-import * as utils from '../src/utils.js'
-import {ajax} from '../src/ajax.js';
-// import {submodule} from '../src/hook';
+import * as utils from '../../src/utils'
+import {ajax} from '../../src/ajax';
 
 /** @type {Submodule} */
 export const unifiedIdSubmodule = {
@@ -54,5 +53,3 @@ export const unifiedIdSubmodule = {
     }
   }
 };
-
-// submodule('userId', unifiedIdSubmodule);

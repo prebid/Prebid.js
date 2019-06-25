@@ -234,7 +234,7 @@ function doClientSideSyncs(bidders) {
 
 function _getDigiTrustQueryParams(bidRequest = {}) {
   function getDigiTrustId(bidRequest) {
-    const bidRequestDigitrust = utils.deepAccess(bidRequest, 'bids.0.userId.digitrustid.data');
+    const bidRequestDigitrust = utils.deepAccess(bidRequest, 'userId.digitrustid.data');
     if (bidRequestDigitrust) {
       return bidRequestDigitrust;
     }
@@ -534,7 +534,7 @@ const OPEN_RTB_PROTOCOL = {
       request.ext.prebid.aliases = aliases;
     }
 
-    const bidUserId = utils.deepAccess(bidRequests, '0.bids.0.userId');
+    const bidUserId = utils.deepAccess(bidRequests, 'userId');
     if (bidUserId && typeof bidUserId === 'object' && (bidUserId.tdid || bidUserId.pubcid)) {
       utils.deepSetValue(request, 'user.ext.eids', []);
 

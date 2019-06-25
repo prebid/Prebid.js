@@ -604,7 +604,7 @@ function _handleDigitrustId(eids) {
 function _handleTTDId(eids, validBidRequests) {
   let ttdId = null;
   let adsrvrOrgId = config.getConfig('adsrvrOrgId');
-  if (utils.isStr(utils.deepAccess(validBidRequests, '0.userId.tdid'))) {
+  if (utils.isStr(utils.deepAccess(validBidRequests, 'userId.tdid'))) {
     ttdId = validBidRequests[0].userId.tdid;
   } else if (adsrvrOrgId && utils.isStr(adsrvrOrgId.TDID)) {
     ttdId = adsrvrOrgId.TDID;
