@@ -276,8 +276,9 @@ describe('emx_digital Adapter', function () {
     it('properly sends site information and protocol', function () {
       request = spec.buildRequests(bidderRequest.bids, bidderRequest);
       request = JSON.parse(request.data);
-      expect(request.site.domain).to.equal(window.top.document.location.host);
+      expect(request.site.domain).to.equal(utils.getTopWindowLocation().hostname);
       expect(decodeURIComponent(request.site.page)).to.equal(bidderRequest.refererInfo.referer);
+      expect(request.site.ref).to.equal(window.top.document.referrer);
     });
 
     it('builds correctly formatted request banner object', function () {
@@ -511,10 +512,6 @@ describe('emx_digital Adapter', function () {
       let iframeSync = spec.getUserSyncs(syncOptionsIframe);
       expect(iframeSync.length).to.equal(1);
       expect(iframeSync[0].type).to.equal('iframe');
-
-      let pixelSync = spec.getUserSyncs(syncOptionsPixel);
-      expect(pixelSync.length).to.equal(1);
-      expect(pixelSync[0].type).to.equal('image');
     });
   });
 });

@@ -34,7 +34,7 @@ Module that connects to Yieldlab's demand sources
                sizes: [[640, 480]],
                mediaTypes: {
                    video: {
-                       context: "instream"
+                       context: "instream" // or "outstream"
                    }
                },
                bids: [{
