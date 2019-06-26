@@ -3,6 +3,7 @@ import clone from 'just-clone';
 import find from 'core-js/library/fn/array/find';
 import includes from 'core-js/library/fn/array/includes';
 import { parse } from './url';
+import extend from 'just-extend';
 const CONSTANTS = require('./constants');
 
 var _loggingChecked = false;
@@ -872,7 +873,9 @@ export function deepClone(obj) {
   return clone(obj);
 }
 
-export { default as deepAssign } from 'just-extend';
+export function deepAssign(...args) {
+  return extend(true, ...args);
+}
 
 export function inIframe() {
   try {
