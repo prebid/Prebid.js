@@ -516,7 +516,7 @@ const OPEN_RTB_PROTOCOL = {
 
     const mediaTypePriceGranularity = getConfig('mediaTypePriceGranularity');
     if (mediaTypePriceGranularity && Object.keys(mediaTypePriceGranularity).length) {
-      request.ext.prebid.targeting.mediaTypePriceGranularity = mediaTypePriceGranularity;
+      request.ext.prebid.targeting.mediatypepricegranularity = mediaTypePriceGranularity;
     }
 
     // s2sConfig video.ext.prebid is passed through openrtb to PBS
