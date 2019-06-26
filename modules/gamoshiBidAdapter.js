@@ -45,7 +45,7 @@ export const helper = {
 
 export const spec = {
   code: 'gamoshi',
-  aliases: ['gambid', 'cleanmedia', 'viewdeos'],
+  aliases: ['gambid', 'cleanmedia', 'viewdeos','adasta'],
   supportedMediaTypes: ['banner', 'video'],
 
   isBidRequestValid: function (bid) {
