@@ -1,6 +1,6 @@
 import { Renderer } from '../src/Renderer';
 import {ajax} from '../src/ajax';
-import * as utils from 'src/utils';
+import * as utils from '../src/utils';
 import { registerBidder } from '../src/adapters/bidderFactory';
 import { VIDEO, BANNER } from '../src/mediaTypes';
 
