@@ -1186,8 +1186,8 @@ export function cleanObj(obj) {
  * @param properties An array of desired properties
  */
 export function pick(obj, properties) {
-  if (!exports.isPlainObject(obj)) {
-    return undefined;
+  if (typeof obj !== 'object') {
+    return {};
   }
   return properties.reduce((newObj, prop, i) => {
     if (typeof prop === 'function') {

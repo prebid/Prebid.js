@@ -35,7 +35,27 @@ const REQUEST = {
           'sizes': [[ 300, 250 ], [ 300, 300 ]]
         },
         'native': {
-          'type': 'image'
+          'image': {
+            'required': true,
+            'sizes': [1, 1]
+          },
+          'title': {
+            'required': true,
+            'len': 80
+          },
+          'sponsoredBy': {
+            'required': true
+          },
+          'clickUrl': {
+            'required': true
+          },
+          'body': {
+            'required': false
+          },
+          'icon': {
+            'required': false,
+            'sizes': [1, 1]
+          },
         }
       },
       'transactionId': '4ef956ad-fd83-406d-bd35-e4bb786ab86c',
@@ -758,40 +778,44 @@ describe('S2S Adapter', function () {
       config.setConfig(_config);
       adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
       const requestBid = JSON.parse(requests[0].requestBody);
+
       expect(requestBid.imp[0].native).to.deep.equal({
         request: JSON.stringify({
+          'context': 1,
+          'plcmttype': 1,
           'assets': [
             {
-              'id': 200,
               'required': 1,
               'img': {
-                'type': 3
+                'type': 3,
+                'w': 1,
+                'h': 1
               }
             },
             {
-              'id': 201,
               'required': 1,
-              'title': {}
+              'title': {
+                'len': 80
+              }
             },
             {
-              'id': 202,
               'required': 1,
               'data': {
                 'type': 1
               }
             },
             {
-              'id': 203,
               'required': 0,
               'data': {
                 'type': 2
               }
             },
             {
-              'id': 204,
               'required': 0,
               'img': {
-                'type': 1
+                'type': 1,
+                'w': 1,
+                'h': 1
               }
             }
           ]
@@ -1489,7 +1513,7 @@ describe('S2S Adapter', function () {
       expect(response).to.have.property('adm').deep.equal(RESPONSE_OPENRTB_NATIVE.seatbid[0].bid[0].adm);
       expect(response).to.have.property('mediaType', 'native');
       expect(response).to.have.property('bidderCode', 'appnexus');
-      expect(response).to.have.property('adId', '123');
+      expect(response).to.have.property('requestId', '123');
       expect(response).to.have.property('cpm', 0.13);
     });
 

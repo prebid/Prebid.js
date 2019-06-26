@@ -10,7 +10,6 @@ import { processNativeAdUnitParams } from 'src/native';
 import { isValid } from '../../src/adapters/bidderFactory';
 import events from '../../src/events';
 import includes from 'core-js/library/fn/array/includes';
-import find from 'core-js/library/fn/array/find';
 import { S2S_VENDORS } from './config.js';
 
 const getConfig = config.getConfig;
@@ -433,20 +432,33 @@ const LEGACY_PROTOCOL = {
   }
 };
 
-function getNativeImgId(type) {
-  return ({
-    'icon': 1,
-    'image': 3
-  })[type];
-}
+// https://iabtechlab.com/wp-content/uploads/2016/07/OpenRTB-Native-Ads-Specification-Final-1.2.pdf#page=40
+let nativeDataIdMap = {
+  sponsoredBy: 1, // sponsored
+  body: 2, // desc
+  rating: 3,
+  likes: 4,
+  downloads: 5,
+  price: 6,
+  salePrice: 7,
+  phone: 8,
+  address: 9,
+  body2: 10, // desc2
+  cta: 12 // ctatext
+};
+let nativeDataNames = Object.keys(nativeDataIdMap);
 
-function getNativeDataId(type) {
-  return ({
-    sponsoredBy: 1,
-    body: 2,
-    cta: 12
-  })[type];
-}
+let nativeImgIdMap = {
+  icon: 1,
+  image: 3
+};
+
+// enable reverse lookup
+[nativeDataIdMap, nativeImgIdMap].forEach(map => {
+  Object.keys(map).forEach(key => {
+    map[map[key]] = key;
+  });
+});
 
 /*
  * Protocol spec for OpenRTB endpoint
@@ -501,20 +513,19 @@ const OPEN_RTB_PROTOCOL = {
 
       const nativeParams = processNativeAdUnitParams(utils.deepAccess(adUnit, 'mediaTypes.native'));
       if (nativeParams) {
-        let assetCounter = 200;
         try {
           mediaTypes['native'] = {
             request: JSON.stringify({
-              // TODO: determine if following OpenRTB recommended properties can be defined or are needed
-              // context: int,
-              // plcmttype: int,
+              // TODO: determine best way to pass these and if we allow defaults
+              context: nativeParams.context || 1,
+              plcmttype: nativeParams.plcmttype || 1,
+              // TODO: figure out how to support privacy field
               // privacy: int
               assets: Object.keys(nativeParams).reduce((assets, type, index) => {
                 let params = nativeParams[type];
 
                 function newAsset(obj) {
                   return Object.assign({
-                    id: assetCounter++,
                     required: params.required ? 1 : 0
                   }, obj ? utils.cleanObj(obj) : {});
                 }
@@ -522,40 +533,38 @@ const OPEN_RTB_PROTOCOL = {
                 if (
                   (type === 'image' || type === 'icon')
                 ) {
-                  let imgTypeId = getNativeImgId(type);
-
-                  if (Array.isArray(params.sizes)) {
-                    let sizes = params.sizes;
-                    if (!Array.isArray(sizes[0])) { // support single size or an array of sizes
-                      sizes = [sizes]
-                    }
-                    // TODO: Currently creating multiple image assets for each size.  Figure out if this is correct!
-                    sizes.forEach(size => {
-                      assets.push(newAsset({
-                        img: {
-                          type: imgTypeId,
-                          w: size[0],
-                          h: size[1]
-                        }
-                      }));
-                    });
-                  // TODO: Figure out what to do about aspect_ratios, ext perhaps?
-                  // } else if (Array.isArray(params.aspect_ratios)) {
-                  } else {
-                    assets.push(newAsset({
-                      img: {
-                        type: imgTypeId
-                      }
-                    }));
+                  let imgTypeId = nativeImgIdMap[type];
+                  let asset = utils.cleanObj({
+                    type: imgTypeId,
+                    w: utils.deepAccess(params, 'sizes.0'),
+                    h: utils.deepAccess(params, 'sizes.1'),
+                    wmin: utils.deepAccess(params, 'aspect_ratios.0.min_width')
+                  });
+                  if (!(asset.w || asset.wmin)) {
+                    throw 'invalid img sizes (must provided sizes or aspect_ratios)';
                   }
+                  if (Array.isArray(params.aspect_ratios)) {
+                    // pass aspect_ratios as ext data I guess?
+                    asset.ext = {
+                      aspectratios: params.aspect_ratios.map(
+                        ratio => `${ratio.ratio_width}:${ratio.ratio_height}`
+                      )
+                    }
+                  }
+                  assets.push(newAsset({
+                    img: asset
+                  }));
                 } else if (type === 'title') {
+                  if (!params.len) {
+                    throw utils.logWarn('invalid title.len');
+                  }
                   assets.push(newAsset({
                     title: {
                       len: params.len
                     }
                   }));
                 } else {
-                  let dataAssetTypeId = getNativeDataId(type);
+                  let dataAssetTypeId = nativeDataIdMap[type];
                   if (dataAssetTypeId) {
                     assets.push(newAsset({
                       data: {
@@ -565,14 +574,13 @@ const OPEN_RTB_PROTOCOL = {
                     }))
                   }
                 }
-
                 return assets;
               }, [])
             }),
             ver: '1.2'
           }
         } catch (e) {
-          throw e;
+          utils.logError('error creating native request: ' + String(e))
         }
       }
 
@@ -757,32 +765,28 @@ const OPEN_RTB_PROTOCOL = {
             }
 
             if (utils.isPlainObject(adm) && Array.isArray(adm.assets)) {
-              bidObject.native = utils.cleanObj({
-                image: utils.pick(
-                  utils.deepAccess(find(adm.assets, asset => asset.img && asset.img.type === getNativeImgId('image')), 'img'),
-                  ['url', 'w as width', 'h as height']
-                ),
-                icon: utils.pick(
-                  utils.deepAccess(find(adm.assets, asset => asset.img && asset.img.type === getNativeImgId('icon')), 'img'),
-                  ['url', 'w as width', 'h as height']
-                ),
-                title: utils.deepAccess(
-                  find(adm.assets, asset => asset.title),
-                  'title.text'
-                ),
-                body: utils.deepAccess(
-                  find(adm.assets, asset => asset.data && asset.data.type === getNativeDataId('body')),
-                  'data.value'
-                ),
-                sponsoredBy: utils.deepAccess(
-                  find(adm.assets, asset => asset.data && asset.data.type === getNativeDataId('sponsoredBy')),
-                  'data.value'
-                ),
+              bidObject.native = utils.cleanObj(adm.assets.reduce((native, asset) => {
+                if (utils.isPlainObject(asset.img)) {
+                  native[nativeImgIdMap[asset.img.type]] = utils.pick(
+                    asset.img,
+                    ['url', 'w as width', 'h as height']
+                  );
+                } else if (utils.isPlainObject(asset.title)) {
+                  native['title'] = asset.title.text
+                } else if (utils.isPlainObject(asset.data)) {
+                  nativeDataNames.forEach(dataType => {
+                    if (nativeDataIdMap[dataType] === asset.data.type) {
+                      native[dataType] = asset.data.value;
+                    }
+                  });
+                }
+                return native;
+              }, utils.cleanObj({
                 clickUrl: adm.link,
                 clickTrackers: adm.clickTrackers,
                 impressionTrackers: adm.impressionTrackers,
                 javascriptTrackers: adm.javascriptTrackers
-              });
+              })));
             } else {
               utils.logError('prebid server native response contained no assets');
             }

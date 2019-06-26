@@ -160,7 +160,7 @@ function sendMessage(auctionId, bidWonId) {
     // This allows the bidWon events to have these params even in the case of a delayed render
     Object.keys(auctionCache.bids).forEach(function (bidId) {
       let adCode = auctionCache.bids[bidId].adUnit.adUnitCode;
-      Object.assign(auctionCache.bids[bidId], _pick(adUnitMap[adCode], ['accountId', 'siteId', 'zoneId']));
+      Object.assign(auctionCache.bids[bidId], utils.pick(adUnitMap[adCode], ['accountId', 'siteId', 'zoneId']));
     });
 
     let auction = {
