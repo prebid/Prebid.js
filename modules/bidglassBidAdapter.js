@@ -1,6 +1,6 @@
-import * as utils from 'src/utils';
+import * as utils from '../src/utils';
 // import {config} from 'src/config';
-import {registerBidder} from 'src/adapters/bidderFactory';
+import {registerBidder} from '../src/adapters/bidderFactory';
 
 const BIDDER_CODE = 'bidglass';
 
