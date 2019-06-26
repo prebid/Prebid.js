@@ -64,7 +64,7 @@ function _getAdSlotHTMLElement(adUnitCode) {
 
 // Infer the necessary data from valid bid for a minimal ttxRequest and create HTTP request
 // NOTE: At this point, TTX only accepts request for a single impression
-function _createServerRequest(bidRequest, gdprConsent) {
+function _createServerRequest(bidRequest, gdprConsent = {}) {
   const ttxRequest = {};
   const params = bidRequest.params;
   const element = _getAdSlotHTMLElement(bidRequest.adUnitCode);
@@ -151,20 +151,12 @@ function _createSync({siteId, gdprConsent = {}}) {
 
   const sync = {
     type: 'iframe',
-    url: `${syncUrl}&id=${siteId}`
-  };
-
-  const gdprMap = {
-    'true': 1,
-    'false': 0
+    url: `${syncUrl}&id=${siteId}&gdpr_consent=${encodeURIComponent(consentString)}`
   };
 
   if (typeof gdprApplies === 'boolean') {
-    const gdpr = gdprMap[gdprApplies.toString()];
-    sync.url = `${sync.url}&gdpr=${gdpr}`;
+    sync.url += `&gdpr=${Number(gdprApplies)}`;
   }
-
-  sync.url = `${sync.url}&gdpr_consent=${consentString}`;
 
   return sync;
 }

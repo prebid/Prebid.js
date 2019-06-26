@@ -664,11 +664,11 @@ describe('33acrossBidAdapter:', function () {
           const expectedSyncs = [
             {
               type: 'iframe',
-              url: `${syncs[0].url}&gdpr=1&gdpr_consent=undefined`
+              url: `${syncs[0].url}&gdpr_consent=undefined&gdpr=1`
             },
             {
               type: 'iframe',
-              url: `${syncs[1].url}&gdpr=1&gdpr_consent=undefined`
+              url: `${syncs[1].url}&gdpr_consent=undefined&gdpr=1`
             }
           ];
 
@@ -684,11 +684,11 @@ describe('33acrossBidAdapter:', function () {
           const expectedSyncs = [
             {
               type: 'iframe',
-              url: `${syncs[0].url}&gdpr=1&gdpr_consent=consent123A`
+              url: `${syncs[0].url}&gdpr_consent=consent123A&gdpr=1`
             },
             {
               type: 'iframe',
-              url: `${syncs[1].url}&gdpr=1&gdpr_consent=consent123A`
+              url: `${syncs[1].url}&gdpr_consent=consent123A&gdpr=1`
             }
           ];
 
@@ -704,11 +704,11 @@ describe('33acrossBidAdapter:', function () {
           const expectedSyncs = [
             {
               type: 'iframe',
-              url: `${syncs[0].url}&gdpr=0&gdpr_consent=undefined`
+              url: `${syncs[0].url}&gdpr_consent=undefined&gdpr=0`
             },
             {
               type: 'iframe',
-              url: `${syncs[1].url}&gdpr=0&gdpr_consent=undefined`
+              url: `${syncs[1].url}&gdpr_consent=undefined&gdpr=0`
             }
           ];
           expect(syncResults).to.deep.equal(expectedSyncs);
@@ -742,11 +742,11 @@ describe('33acrossBidAdapter:', function () {
           const expectedSyncs = [
             {
               type: 'iframe',
-              url: `${syncs[0].url}&gdpr=0&gdpr_consent=consent123A`
+              url: `${syncs[0].url}&gdpr_consent=consent123A&gdpr=0`
             },
             {
               type: 'iframe',
-              url: `${syncs[1].url}&gdpr=0&gdpr_consent=consent123A`
+              url: `${syncs[1].url}&gdpr_consent=consent123A&gdpr=0`
             }
           ];
           expect(syncResults).to.deep.equal(expectedSyncs);
