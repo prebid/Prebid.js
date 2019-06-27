@@ -45,15 +45,6 @@ module.exports = {
       .split(',')
       .filter(module => !!module);
 
-    Object.keys(submodules).forEach(parentModule => {
-      if (
-        !modules.includes(parentModule) &&
-        modules.some(module => submodules[parentModule].includes(module))
-      ) {
-        modules.unshift(parentModule);
-      }
-    });
-
     try {
       if (modules.length === 1 && path.extname(modules[0]).toLowerCase() === '.json') {
         var moduleFile = modules[0];
@@ -68,6 +59,15 @@ module.exports = {
         message: 'failed reading: ' + argv.modules
       });
     }
+
+    Object.keys(submodules).forEach(parentModule => {
+      if (
+        !modules.includes(parentModule) &&
+        modules.some(module => submodules[parentModule].includes(module))
+      ) {
+        modules.unshift(parentModule);
+      }
+    });
 
     return modules;
   },
