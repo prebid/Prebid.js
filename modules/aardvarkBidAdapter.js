@@ -42,7 +42,7 @@ export const spec = {
       height = topWin.innerHeight;
     } catch (e) {}
 
-    if (utils.isStr(utils.deepAccess(validBidRequests, 'userId.tdid'))) {
+    if (utils.isStr(utils.deepAccess(validBidRequests, '0.userId.tdid'))) {
       tdId = validBidRequests[0].userId.tdid;
     }
 

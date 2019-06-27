@@ -419,6 +419,7 @@ export function init(config) {
 
 // init config update listener to start the application
 init(config);
+
 // add submodules after init has been called
 attachIdSystem(pubCommonIdSubmodule);
 attachIdSystem(unifiedIdSubmodule);
