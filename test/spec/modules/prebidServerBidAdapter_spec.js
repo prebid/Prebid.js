@@ -831,36 +831,7 @@ describe('S2S Adapter', function () {
       expect(requestBid.user.ext.eids.filter(eid => eid.source === 'adserver.org')[0].uids[0].id).is.equal('abc123');
       expect(requestBid.user.ext.eids.filter(eid => eid.source === 'pubcommon')).is.not.empty; ;
       expect(requestBid.user.ext.eids.filter(eid => eid.source === 'pubcommon')[0].uids[0].id).is.equal('1234');
-    });
-
-    it('setting currency.adServerCurrency results in the openRTB JSON containing cur: ["AAA"]', function () {
-      let ortb2Config = utils.deepClone(CONFIG);
-      ortb2Config.endpoint = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction';
-      config.setConfig({
-        currency: {adServerCurrency: ['USD', 'GB', 'UK', 'AU']},
-        s2sConfig: ortb2Config
-      });
-
-      const userIdBidRequest = utils.deepClone(BID_REQUESTS);
-      adapter.callBids(REQUEST, userIdBidRequest, addBidResponse, done, ajax);
-
-      const parsedRequestBody = JSON.parse(requests[0].requestBody);
-      expect(parsedRequestBody.cur).to.deep.equal(['USD', 'GB', 'UK', 'AU']);
-    });
-
-    it('when currency.adServerCurrency is unset, the OpenRTB JSON should not contain cur', function () {
-      let ortb2Config = utils.deepClone(CONFIG);
-      ortb2Config.endpoint = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction';
-      config.setConfig({
-        s2sConfig: ortb2Config
-      });
-
-      const userIdBidRequest = utils.deepClone(BID_REQUESTS);
-      adapter.callBids(REQUEST, userIdBidRequest, addBidResponse, done, ajax);
-
-      const parsedRequestBody = JSON.parse(requests[0].requestBody);
-      expect(typeof parsedRequestBody.cur).to.equal('undefined');
-    });
+    })
 
     it('always add ext.prebid.targeting.includebidderkeys: false for ORTB', function () {
       const s2sConfig = Object.assign({}, CONFIG, {
