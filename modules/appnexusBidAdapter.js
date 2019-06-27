@@ -686,6 +686,10 @@ function buildNativeRequest(params) {
         request[requestKey].sizes = transformSizes(request[requestKey].sizes);
       }
     }
+
+    if (requestKey === NATIVE_MAPPING.privacyLink) {
+      request.privacy_supported = true;
+    }
   });
 
   return request;
