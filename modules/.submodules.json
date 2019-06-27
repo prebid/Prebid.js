@@ -3,6 +3,10 @@
     "digiTrustIdSystem",
     "pubCommonIdSystem",
     "unifiedIdSystem",
-    "id5IdSystem"
+    "id5IdSystem",
+    "unifiedIdSystem"
+  ],
+  "adpod": [
+    "freeWheelAdserverVideo"
   ]
 }
