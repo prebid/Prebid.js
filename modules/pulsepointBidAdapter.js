@@ -45,8 +45,9 @@ export const spec = {
       device: device(),
       bcat: bidRequests[0].params.bcat,
       badv: bidRequests[0].params.badv,
+      user: user(bidRequests[0], bidderRequest),
+      regs: regs(bidderRequest),
     };
-    applyGdpr(bidderRequest, request);
     return {
       method: 'POST',
       url: 'https://bid.contextweb.com/header/ortb?src=prebid',
@@ -390,13 +391,50 @@ function adSize(slot) {
 }
 
 /**
- * Applies GDPR parameters to request.
+ * Handles the user level attributes and produces
+ * an openrtb User object.
  */
-function applyGdpr(bidderRequest, ortbRequest) {
-  if (bidderRequest && bidderRequest.gdprConsent) {
-    ortbRequest.regs = { ext: { gdpr: bidderRequest.gdprConsent.gdprApplies ? 1 : 0 } };
-    ortbRequest.user = { ext: { consent: bidderRequest.gdprConsent.consentString } };
+function user(bidRequest, bidderRequest) {
+  var ext = {};
+  if (bidderRequest) {
+    if (bidderRequest.gdprConsent) {
+      ext.consent = bidderRequest.gdprConsent.consentString;
+    }
   }
+  if (bidRequest) {
+    if (bidRequest.userId) {
+      ext.eids = [];
+      addExternalUserId(ext.eids, bidRequest.userId.pubcid, 'pubcommon');
+      addExternalUserId(ext.eids, bidRequest.userId.tdid, 'ttdid');
+      addExternalUserId(ext.eids, utils.deepAccess(bidRequest.userId.digitrustid, 'data.id'), 'digitrust');
+      addExternalUserId(ext.eids, bidRequest.userId.id5id, 'id5id');
+    }
+  }
+  return { ext };
+}
+
+/**
+ * Produces external userid object in ortb 3.0 model.
+ */
+function addExternalUserId(eids, value, source) {
+  if (value) {
+    eids.push({
+      source,
+      uids: [{
+        id: value
+      }]
+    });
+  }
+}
+
+/**
+ * Produces the regulations ortb object
+ */
+function regs(bidderRequest) {
+  if (bidderRequest && bidderRequest.gdprConsent) {
+    return { ext: { gdpr: bidderRequest.gdprConsent.gdprApplies ? 1 : 0 } };
+  }
+  return null;
 }
 
 /**
