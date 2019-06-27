@@ -28,6 +28,7 @@
        Prebid Video adUnit
        */
 
+<<<<<<< Updated upstream
       var videoAdUnit = {
         code: 'video1',
         sizes: [640,480],
@@ -44,9 +45,39 @@
                 playback_methods: ['auto_play_sound_off']
               }
             }
+=======
+      var videoAdUnit = 	{
+            code: 'video1',
+              sizes: [640,480],
+              mediaTypes: {
+                video: {
+                  context: "outstream"
+                }
+              },
+              bids: [
+                {
+                  bidder: 'oneVideo',
+                  params: {
+                    video: {
+                      playerWidth: 480,
+                      playerHeight: 640,
+                      mimes: ['video/mp4', 'application/javascript'],
+                      protocols: [2,5],
+                      api: [2],
+                      position: 1,
+                      delivery: [2]
+                    },
+                    site: {
+                      id: 1,
+                      page: 'http://abhi12345.com',
+                      referrer: 'http://abhi12345.com'
+                    },
+                    pubId: 'brxd'
+                  }
+                }
+              ]
+>>>>>>> Stashed changes
           }
-        ]
-      };
 
       pbjs.que.push(function(){
         pbjs.addAdUnits(videoAdUnit);

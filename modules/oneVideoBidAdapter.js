@@ -1,9 +1,11 @@
 import * as utils from '../src/utils';
 import {registerBidder} from '../src/adapters/bidderFactory';
+import { Renderer } from 'src/renderer';
+
 const BIDDER_CODE = 'oneVideo';
 export const spec = {
   code: 'oneVideo',
-  ENDPOINT: '//ads.adaptv.advertising.com/rtb/openrtb?ext_id=',
+  ENDPOINT: '//ads.adaptv.advertising.com/rtb/openrtb?globalFilterSuppress=1&ext_id=',
   SYNC_ENDPOINT1: 'https://cm.g.doubleclick.net/pixel?google_nid=adaptv_dbm&google_cm&google_sc',
   SYNC_ENDPOINT2: 'https://pr-bh.ybp.yahoo.com/sync/adaptv_ortb/{combo_uid}',
   SYNC_ENDPOINT3: 'https://sync-tm.everesttech.net/upi/pid/m7y5t93k?redir=https%3A%2F%2Fsync.adap.tv%2Fsync%3Ftype%3Dgif%26key%3Dtubemogul%26uid%3D%24%7BUSER_ID%7D',
@@ -82,13 +84,15 @@ export const spec = {
       mediaType: 'video',
       currency: response.cur,
       ttl: 100,
-      netRevenue: true
+      netRevenue: true,
+      adUnitCode: bidRequest.adUnitCode
     };
     if (bid.nurl) {
       bidResponse.vastUrl = bid.nurl;
     } else if (bid.adm) {
       bidResponse.vastXml = bid.adm;
     }
+    bidResponse.renderer = (bidRequest.mediaTypes.video.context === 'outstream') ? newRenderer(bidResponse) : undefined;
     return bidResponse;
   },
   /**
@@ -215,6 +219,20 @@ function getRequestData(bid, consentData) {
 
 function isSecure() {
   return document.location.protocol === 'https:';
+}
+/**
+ * Create Vertamedia renderer
+ * @param requestId
+ * @returns {*}
+ */
+function newRenderer(bidResponse) {
+  const renderer = Renderer.install({
+    url: 'https://cdn.vidible.tv/prod/2019-06/04/5cf5164bc14228000199c0fa_v3.js',
+    render: function (bidResponse) {
+      o2PlayerRender(bidResponse);
+    }
+  });
+  return renderer;
 }
 
 registerBidder(spec);
