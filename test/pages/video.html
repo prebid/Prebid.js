@@ -27,40 +27,25 @@
       /*
        Prebid Video adUnit
        */
-
-      var videoAdUnit = 		{
-            code: 'video1',
-              sizes: [640,480],
-              mediaTypes: {
+       var videoAdUnit = {
+          code: 'video1',
+          sizes: [640,480],
+          mediaTypes: {
+            video: {context: 'instream',  playerSize: [640, 480]}
+          },
+          bids: [
+            {
+              bidder: 'appnexus',
+              params: {
+                placementId: '9333431',
                 video: {
-                  context: "outstream"
+                  skipppable: false,
+                  playback_methods: ['auto_play_sound_off']
                 }
-              },
-              bids: [
-                {
-                  bidder: 'oneVideo',
-                  params: {
-                    video: {
-                      playerWidth: 480,
-                      playerHeight: 640,
-                      mimes: ['video/mp4', 'application/javascript'],
-                      protocols: [2,5],
-                      api: [1],
-                      position: 1,
-                      delivery: [2],
-                      playbackmethod: [2]
-                    },
-                    site: {
-                      id: 1,
-                      page: 'http://abhi12345.com',
-                      referrer: 'http://abhi12345.com'
-                    },
-                    pubId: 'brxd'
-                  }
-                }
-              ]
-          }
-
+              }
+            }
+          ]
+        };
       pbjs.que.push(function(){
         pbjs.addAdUnits(videoAdUnit);
         pbjs.requestBids({
