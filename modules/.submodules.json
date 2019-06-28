@@ -1,10 +1,7 @@
 {
   "userId": [
     "digiTrustIdSystem",
-    "pubCommonIdSystem",
-    "unifiedIdSystem",
-    "id5IdSystem",
-    "unifiedIdSystem"
+    "id5IdSystem"
   ],
   "adpod": [
     "freeWheelAdserverVideo"
