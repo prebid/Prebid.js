@@ -233,6 +233,10 @@ export const spec = {
         }
       }
 
+      if (config.getConfig('coppa') === true) {
+        utils.deepSetValue(request, 'regs.coppa', 1);
+      }
+
       return {
         method: 'POST',
         url: VIDEO_ENDPOINT,
@@ -433,6 +437,10 @@ export const spec = {
     // digitrust properties
     const digitrustParams = _getDigiTrustQueryParams(bidRequest, 'FASTLANE');
     Object.assign(data, digitrustParams);
+
+    if (config.getConfig('coppa') === true) {
+      data['coppa'] = 1;
+    }
 
     return data;
   },
