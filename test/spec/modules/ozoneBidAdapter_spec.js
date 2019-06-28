@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec } from 'modules/ozoneBidAdapter';
+import { spec, getWidthAndHeightFromVideoObject, playerSizeIsNestedArray, defaultSize } from 'modules/ozoneBidAdapter';
 import { config } from 'src/config';
 import {Renderer} from '../../../src/Renderer';
 const OZONEURI = 'https://elb.the-ozone-project.com/openrtb2/auction';
@@ -74,7 +74,7 @@ var validBidRequestsWithNonBannerMediaTypesAndValidOutstreamVideo = [
     bidderRequestId: '1c1586b27a1b5c8',
     crumbs: {pubcid: '203a0692-f728-4856-87f6-9a25a6b63715'},
     params: { publisherId: '9876abcd12-3', customData: {'gender': 'bart', 'age': 'low'}, lotameData: {'Profile': {'tpid': 'c8ef27a0d4ba771a81159f0d2e792db4', 'Audiences': {'Audience': [{'id': '99999', 'abbr': 'sports'}, {'id': '88888', 'abbr': 'movie'}, {'id': '77777', 'abbr': 'blogger'}], 'ThirdPartyAudience': [{'id': '123', 'name': 'Automobiles'}, {'id': '456', 'name': 'Ages: 30-39'}]}}}, placementId: '1310000099', siteId: '1234567890', id: 'fea37168-78f1-4a23-a40e-88437a99377e', auctionId: '27dcb421-95c6-4024-a624-3c03816c5f99', imp: [ { id: '2899ec066a91ff8', tagid: 'undefined', secure: 1, video: {skippable: true, playback_method: ['auto_play_sound_off'], targetDiv: 'some-different-div-id-to-my-adunitcode'} } ] },
-    mediaTypes: {video: {mimes: ['video/mp4'], 'context': 'outstream'}, native: {info: 'dummy data'}},
+    mediaTypes: {video: {mimes: ['video/mp4'], 'context': 'outstream', 'sizes' : [640,480]}, native: {info: 'dummy data'}},
     transactionId: '2e63c0ed-b10c-4008-aed5-84582cecfe87'
   }
 ];
@@ -664,7 +664,7 @@ describe('ozone Adapter', function () {
       params: {
         'placementId': '1234567890',
         'publisherId': '9876abcd12-3',
-        'lotameData': 'this should be an object',
+        'lotameData': {},
         siteId: '1234567890'
       },
       mediaTypes: {
@@ -676,6 +676,24 @@ describe('ozone Adapter', function () {
 
     it('should not validate video instream being sent', function () {
       expect(spec.isBidRequestValid(xBadVideoContext)).to.equal(false);
+    });
+
+    var xBadVideoContext2 = {
+      bidder: BIDDER_CODE,
+      params: {
+        'placementId': '1234567890',
+        'publisherId': '9876abcd12-3',
+        'lotameData': {},
+        siteId: '1234567890'
+      },
+      mediaTypes: {
+        video: {
+          mimes: ['video/mp4']}
+      }
+    };
+
+    it('should not validate video without context attribute', function () {
+      expect(spec.isBidRequestValid(xBadVideoContext2)).to.equal(false);
     });
 
     let validVideoBidReq = {
@@ -692,7 +710,7 @@ describe('ozone Adapter', function () {
       }
     };
 
-    it('should not validate video instream being sent', function () {
+    it('should validate video outstream being sent', function () {
       expect(spec.isBidRequestValid(validVideoBidReq)).to.equal(true);
     });
   });
@@ -908,4 +926,69 @@ describe('ozone Adapter', function () {
       expect(result).to.be.empty;
     });
   });
+
+  describe('video object utils', function () {
+    it('should find width & height from video object', function () {
+      let obj = {'playerSize': [640, 480], 'mimes': ['video/mp4'], 'context': 'outstream'};
+      const result = getWidthAndHeightFromVideoObject(obj);
+      expect(result.w).to.equal(640);
+      expect(result.h).to.equal(480);
+    });
+    it('should find null from bad video object', function () {
+      let obj = {'playerSize': [], 'mimes': ['video/mp4'], 'context': 'outstream'};
+      const result = getWidthAndHeightFromVideoObject(obj);
+      expect(result).to.be.null;
+    });
+    it('should find null from bad video object2', function () {
+      let obj = {'mimes': ['video/mp4'], 'context': 'outstream'};
+      const result = getWidthAndHeightFromVideoObject(obj);
+      expect(result).to.be.null;
+    });
+    it('should find null from bad video object3', function () {
+      let obj = {'playerSize': 'should be an array', 'mimes': ['video/mp4'], 'context': 'outstream'};
+      const result = getWidthAndHeightFromVideoObject(obj);
+      expect(result).to.be.null;
+    });
+    it('should find that player size is nested', function () {
+      let obj = {'playerSize': [[640, 480]], 'mimes': ['video/mp4'], 'context': 'outstream'};
+      const result = getWidthAndHeightFromVideoObject(obj);
+      expect(result.w).to.equal(640);
+      expect(result.h).to.equal(480);
+    });
+    it('should fail if player size is 2 x nested', function () {
+      let obj = {'playerSize': [[[640, 480]]], 'mimes': ['video/mp4'], 'context': 'outstream'};
+      const result = getWidthAndHeightFromVideoObject(obj);
+      expect(result).to.be.null;
+    });
+    it('should find that player size is nested', function () {
+      let obj = {'playerSize': [[640, 480]], 'mimes': ['video/mp4'], 'context': 'outstream'};
+      const result = playerSizeIsNestedArray(obj);
+      expect(result).to.be.true;
+    });
+    it('should find null from bad video object', function () {
+      let obj = {'playerSize': [], 'mimes': ['video/mp4'], 'context': 'outstream'};
+      const result = playerSizeIsNestedArray(obj);
+      expect(result).to.be.null;
+    });
+    it('should find null from bad video object2', function () {
+      let obj = {'mimes': ['video/mp4'], 'context': 'outstream'};
+      const result = playerSizeIsNestedArray(obj);
+      expect(result).to.be.null;
+    });
+    it('should find null from bad video object3', function () {
+      let obj = {'playerSize': 'should be an array', 'mimes': ['video/mp4'], 'context': 'outstream'};
+      const result = playerSizeIsNestedArray(obj);
+      expect(result).to.be.null;
+    });
+  });
+
+  describe('default size', function () {
+    it('should should return default sizes if no obj is sent', function () {
+      let obj = '';
+      const result = defaultSize(obj);
+      expect(result.defaultHeight).to.equal(250);
+      expect(result.defaultWidth).to.equal(300);
+    });
+  });
+
 });
