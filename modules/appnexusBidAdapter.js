@@ -36,7 +36,7 @@ const SOURCE = 'pbjs';
 const MAX_IMPS_PER_REQUEST = 15;
 const mappingFileUrl = '//acdn.adnxs.com/prebid/appnexus-mapping/mappings.json';
 const SCRIPT_TAG_START = '<script';
-const VIEWABILITY_HOST = 'http://cdn.adnxs.com/v';
+const VIEWABILITY_URL_START = 'http://cdn.adnxs.com/v';
 const VIEWABILITY_FILE_NAME = 'trk.js';
 
 export const spec = {
@@ -353,9 +353,13 @@ function reloadViewabilityScriptWithCorrectParameters(bid) {
 }
 
 function strIsAppnexusViewabilityScript(str) {
-  return str.startsWith(SCRIPT_TAG_START) &&
-            (str.indexOf(VIEWABILITY_HOST) != -1) &&
-            (str.indexOf(VIEWABILITY_FILE_NAME) != -1);
+    let regexMatchUrlStart = str.match(VIEWABILITY_URL_START);
+    let viewUrlStartInStr = regexMatchUrlStart != null && regexMatchUrlStart.length >= 1;
+    
+    let regexMatchFileName = str.match(VIEWABILITY_FILE_NAME);
+    let fileNameInStr = regexMatchFileName != null && regexMatchFileName.length >= 1;
+    
+    return str.startsWith(SCRIPT_TAG_START) && fileNameInStr && viewUrlStartInStr;
 }
 
 function getAppnexusViewabilityScriptFromJsTrackers(jsTrackerArray) {
