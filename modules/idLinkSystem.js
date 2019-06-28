@@ -1,0 +1,55 @@
+/**
+ * This module adds idLink to the User ID module
+ * The {@link module:modules/userId} module is required
+ * @module modules/idLinkSubmodule
+ * @requires module:modules/userId
+ */
+
+import * as utils from '../src/utils.js'
+import {ajax} from '../src/ajax.js';
+
+/** @type {Submodule} */
+export const idLinkSubmodule = {
+  /**
+   * used to link submodule with config
+   * @type {string}
+   */
+  name: 'idLink',
+  /**
+   * decode the stored id value for passing to bid requests
+   * @function
+   * @param {string} value
+   * @returns {{idl_env:string}}
+   */
+  decode(value) {
+    return { 'idl_env': value }
+  },
+  /**
+   * performs action to obtain id and return a value in the callback's response argument
+   * @function
+   * @param {SubmoduleParams} [configParams]
+   * @returns {function(callback:function)}
+   */
+  getId(configParams) {
+    if (!configParams || typeof configParams.pid !== 'string') {
+      utils.logError('ID Link - idLink submodule requires partner id to be defined');
+      return;
+    }
+    // use protocol relative urls for http or https
+    const url = `https://api.rlcdn.com/api/identity?pid=${configParams.pid}&rt=envelope`;
+
+    return function (callback) {
+      ajax(url, response => {
+        let responseObj;
+        if (response) {
+          try {
+            responseObj = JSON.parse(response);
+          } catch (error) {
+            utils.logError(error);
+          }
+        }
+        callback(responseObj.envelope);
+      }, undefined, { method: 'GET' });
+    }
+  }
+};

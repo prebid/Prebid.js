@@ -1,6 +1,6 @@
 ## User ID Example Configuration
 
-Example showing `cookie` storage for user id data for both submodules
+Example showing `cookie` storage for user id data for available submodules
 ```
 pbjs.setConfig({
     userSync: {
@@ -21,6 +21,16 @@ pbjs.setConfig({
                 type: "cookie",
                 name: "_pubcid",
                 expires: 60
+            }
+        }, {
+            name: 'idLink',
+            params: {
+               pid: '14'
+            },
+            storage: {
+              type: 'cookie',
+              name: 'idl_env',
+              expires: 60
             }
         }],
         syncDelay: 5000
@@ -48,6 +58,16 @@ pbjs.setConfig({
             storage: {
                 type: "html5",
                 name: "pubcid",
+                expires: 60
+            }
+        }, {
+            name: 'idLink',
+            params: {
+                pid: '14'
+            },
+            storage: {
+                type: 'html5',
+                name: 'idl_env',
                 expires: 60
             }
         }],

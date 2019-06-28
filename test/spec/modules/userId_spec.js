@@ -9,18 +9,20 @@ import {config} from 'src/config';
 import * as utils from 'src/utils';
 import {unifiedIdSubmodule} from 'modules/unifiedIdSystem';
 import {pubCommonIdSubmodule} from 'modules/pubCommonIdSystem';
+import {idLinkSubmodule} from 'modules/idLinkSystem';
 let assert = require('chai').assert;
 let expect = require('chai').expect;
 const EXPIRED_COOKIE_DATE = 'Thu, 01 Jan 1970 00:00:01 GMT';
 
 describe('User ID', function() {
-  function getConfigMock(configArr1, configArr2) {
+  function getConfigMock(configArr1, configArr2, configArr3) {
     return {
       userSync: {
         syncDelay: 0,
         userIds: [
           (configArr1 && configArr1.length === 3) ? getStorageMock.apply(null, configArr1) : null,
-          (configArr2 && configArr2.length === 3) ? getStorageMock.apply(null, configArr2) : null
+          (configArr2 && configArr2.length === 3) ? getStorageMock.apply(null, configArr2) : null,
+          (configArr3 && configArr3.length === 3) ? getStorageMock.apply(null, configArr3) : null
         ].filter(i => i)}
     }
   }
@@ -344,6 +346,46 @@ describe('User ID', function() {
       }, {adUnits});
     });
 
+    it('test hook from idLink html5', function(done) {
+      // simulate existing browser local storage values
+      localStorage.setItem('idl_env', 'AiGNC8Z5ONyZKSpIPf');
+      localStorage.setItem('idl_env_exp', '');
+
+      setSubmoduleRegistry([idLinkSubmodule]);
+      init(config);
+      config.setConfig(getConfigMock(['idLink', 'idl_env', 'html5']));
+      requestBidsHook(function() {
+        adUnits.forEach(unit => {
+          unit.bids.forEach(bid => {
+            expect(bid).to.have.deep.nested.property('userId.idl_env');
+            expect(bid.userId.idl_env).to.equal('AiGNC8Z5ONyZKSpIPf');
+          });
+        });
+        localStorage.removeItem('idl_env');
+        localStorage.removeItem('idl_env_exp');
+        done();
+      }, {adUnits});
+    });
+
+    it('test hook from idLink cookie', function(done) {
+      utils.setCookie('idl_env', 'AiGNC8Z5ONyZKSpIPf', (new Date(Date.now() + 100000).toUTCString()));
+
+      setSubmoduleRegistry([idLinkSubmodule]);
+      init(config);
+      config.setConfig(getConfigMock(['idLink', 'idl_env', 'cookie']));
+
+      requestBidsHook(function() {
+        adUnits.forEach(unit => {
+          unit.bids.forEach(bid => {
+            expect(bid).to.have.deep.nested.property('userId.idl_env');
+            expect(bid.userId.idl_env).to.equal('AiGNC8Z5ONyZKSpIPf');
+          });
+        });
+        utils.setCookie('idl_env', '', EXPIRED_COOKIE_DATE);
+        done();
+      }, {adUnits});
+    });
+
     it('test hook when both pubCommonId and unifiedId have data to pass', function(done) {
       utils.setCookie('pubcid', 'testpubcid', (new Date(Date.now() + 5000).toUTCString()));
       utils.setCookie('unifiedid', JSON.stringify({'TDID': 'testunifiedid'}), (new Date(Date.now() + 5000).toUTCString()));
@@ -365,6 +407,35 @@ describe('User ID', function() {
         });
         utils.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
         utils.setCookie('unifiedid', '', EXPIRED_COOKIE_DATE);
+        done();
+      }, {adUnits});
+    });
+
+    it('IdLink test hook when pubCommonId, unifiedId and IdLink have data to pass', function(done) {
+      utils.setCookie('pubcid', 'testpubcid', (new Date(Date.now() + 5000).toUTCString()));
+      utils.setCookie('unifiedid', JSON.stringify({'TDID': 'testunifiedid'}), (new Date(Date.now() + 5000).toUTCString()));
+      utils.setCookie('idl_env', 'AiGNC8Z5ONyZKSpIPf', (new Date(Date.now() + 5000).toUTCString()));
+
+      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, idLinkSubmodule]);
+      init(config);
+      config.setConfig(getConfigMock(['pubCommonId', 'pubcid', 'cookie'], ['unifiedId', 'unifiedid', 'cookie'], ['idLink', 'idl_env', 'cookie']));
+      requestBidsHook(function() {
+        adUnits.forEach(unit => {
+          unit.bids.forEach(bid => {
+            // verify that the PubCommonId id data was copied to bid
+            expect(bid).to.have.deep.nested.property('userId.pubcid');
+            expect(bid.userId.pubcid).to.equal('testpubcid');
+            // also check that UnifiedId id data was copied to bid
+            expect(bid).to.have.deep.nested.property('userId.tdid');
+            expect(bid.userId.tdid).to.equal('testunifiedid');
+            // check that idLink id data was copied to bid
+            expect(bid).to.have.deep.nested.property('userId.idl_env');
+            expect(bid.userId.idl_env).to.equal('AiGNC8Z5ONyZKSpIPf');
+          });
+        });
+        utils.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
+        utils.setCookie('unifiedid', '', EXPIRED_COOKIE_DATE);
+        utils.setCookie('idl_env', '', EXPIRED_COOKIE_DATE);
         done();
       }, {adUnits});
     });
@@ -402,12 +473,46 @@ describe('User ID', function() {
       }, {adUnits});
     });
 
+    it('test hook when pubCommonId and IdLink have their modules added before and after init', function(done) {
+      utils.setCookie('pubcid', 'testpubcid', (new Date(Date.now() + 5000).toUTCString()));
+      utils.setCookie('idl_env', 'AiGNC8Z5ONyZKSpIPf', new Date(Date.now() + 5000).toUTCString());
+
+      setSubmoduleRegistry([]);
+
+      // attaching before init
+      attachIdSystem(pubCommonIdSubmodule);
+
+      init(config);
+
+      // attaching after init
+      attachIdSystem(idLinkSubmodule);
+
+      config.setConfig(getConfigMock(['pubCommonId', 'pubcid', 'cookie'], ['idLink', 'idl_env', 'cookie']));
+
+      requestBidsHook(function() {
+        adUnits.forEach(unit => {
+          unit.bids.forEach(bid => {
+            // verify that the PubCommonId id data was copied to bid
+            expect(bid).to.have.deep.nested.property('userId.pubcid');
+            expect(bid.userId.pubcid).to.equal('testpubcid');
+            // also check that idLink id data was copied to bid
+            expect(bid).to.have.deep.nested.property('userId.idl_env');
+            expect(bid.userId.idl_env).to.equal('AiGNC8Z5ONyZKSpIPf');
+          });
+        });
+        utils.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
+        utils.setCookie('idl_env', '', EXPIRED_COOKIE_DATE);
+        done();
+      }, {adUnits});
+    });
+
     it('should add new id system ', function(done) {
       utils.setCookie('pubcid', 'testpubcid', (new Date(Date.now() + 5000).toUTCString()));
       utils.setCookie('unifiedid', JSON.stringify({'TDID': 'cookie-value-add-module-variations'}), new Date(Date.now() + 5000).toUTCString());
+      utils.setCookie('idl_env', 'AiGNC8Z5ONyZKSpIPf', new Date(Date.now() + 5000).toUTCString());
       utils.setCookie('MOCKID', JSON.stringify({'MOCKID': '123456778'}), new Date(Date.now() + 5000).toUTCString());
 
-      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule]);
+      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, idLinkSubmodule]);
       init(config);
 
       config.setConfig({
@@ -417,6 +522,8 @@ describe('User ID', function() {
             name: 'pubCommonId', storage: { name: 'pubcid', type: 'cookie' }
           }, {
             name: 'unifiedId', storage: { name: 'unifiedid', type: 'cookie' }
+          }, {
+            name: 'idLink', storage: { name: 'idl_env', type: 'cookie' }
           }, {
             name: 'mockId', storage: { name: 'MOCKID', type: 'cookie' }
           }]
@@ -445,6 +552,9 @@ describe('User ID', function() {
             // check UnifiedId id data was copied to bid
             expect(bid).to.have.deep.nested.property('userId.tdid');
             expect(bid.userId.tdid).to.equal('cookie-value-add-module-variations');
+            // also check that idLink id data was copied to bid
+            expect(bid).to.have.deep.nested.property('userId.idl_env');
+            expect(bid.userId.idl_env).to.equal('AiGNC8Z5ONyZKSpIPf');
             // check MockId data was copied to bid
             expect(bid).to.have.deep.nested.property('userId.mid');
             expect(bid.userId.mid).to.equal('123456778');
@@ -452,6 +562,7 @@ describe('User ID', function() {
         });
         utils.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
         utils.setCookie('unifiedid', '', EXPIRED_COOKIE_DATE);
+        utils.setCookie('idl_env', '', EXPIRED_COOKIE_DATE);
         utils.setCookie('MOCKID', '', EXPIRED_COOKIE_DATE);
         done();
       }, {adUnits});

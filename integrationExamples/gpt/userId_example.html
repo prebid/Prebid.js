@@ -140,7 +140,7 @@
                             name: "unifiedid",
                             expires: 30
                         },
-                        
+
                     }, {
                         name: "pubCommonId",
                         storage: {
@@ -152,6 +152,16 @@
                         //     foo: '9879878907987',
                         //     bar:'93939'
                         // }
+                    },  {
+                      name: 'idLink',
+                      params: {
+                        pid: '14'
+                      },
+                      storage: {
+                        type: 'cookie',
+                        name: 'idl_env',
+                        expires: 60
+                      }
                     }],
                     syncDelay: 5000
                 }
