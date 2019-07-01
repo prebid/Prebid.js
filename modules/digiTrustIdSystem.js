@@ -350,7 +350,7 @@ function fallbackInit() {
       member: 'fallback',
       callback: noop
     };
-    getDigiTrustId(conf, noop);
+    getDigiTrustId(conf);
   }
 }
 
