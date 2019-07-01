@@ -228,12 +228,7 @@ export const spec = {
     if (/^https?:\/\//i.test(url)) {
       return url;
     }
-    switch (url.indexOf('//')) {
-      case 0:
-        return `${DEFAULT_PROTO}:${url}`;
-      default:
-        return `${DEFAULT_PROTO}://${url}`;
-    }
+    return (url.indexOf('//') === 0) ? `${DEFAULT_PROTO}:${url}` : `${DEFAULT_PROTO}://${url}`;
   },
   formatMarketplaceDynamicParams(params = {}, consentData) {
     let queryParams = {};
