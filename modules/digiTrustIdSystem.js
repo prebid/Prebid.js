@@ -162,6 +162,10 @@ function initDigitrustFacade(config) {
     }
   }
 
+  if (config && isFunc(config.callback)) {
+    facade._internals.initCallback = config.callback;
+  }
+
   if (window && window.DigiTrust == null) {
     window.DigiTrust = facade;
   }
@@ -306,8 +310,9 @@ var testHook = {};
  * Exposes the test hook object by attaching to the digitrustIdModule.
  * This method is called in the unit tests to surface internals.
  */
-function surfaceTestHook() {
-  digitrustIdModule['_testHook'] = testHook;
+export function surfaceTestHook() {
+  digiTrustIdSubmodule['_testHook'] = testHook;
+  return testHook;
 }
 
 testHook.initDigitrustFacade = initDigitrustFacade;
@@ -333,6 +338,7 @@ export const digiTrustIdSubmodule = {
     }
   },
   getId: getDigiTrustId,
+  foo: 'bar',
   _testInit: surfaceTestHook
 };
 
@@ -340,14 +346,18 @@ export const digiTrustIdSubmodule = {
 function fallbackInit() {
   if (resultHandler.retryId == 0 && !isInitialized()) {
     // this triggers an init
+    /*
     var conf = {
       member: 'fallback',
       callback: noop
     };
-    getDigiTrustId(conf);
+    */
+    // getDigiTrustId(conf);
   }
 }
 
 setTimeout(fallbackInit, 1550);
 
 attachIdSystem(digiTrustIdSubmodule);
+
+window.dtsub = digiTrustIdSubmodule;
