@@ -1,40 +1,10 @@
-
-import {
-  requestBidHook,
-  getCookie,
-  setCookie,
-  setConfig,
-  isPubcidEnabled,
-  getExpInterval,
-  initPubcid,
-  setStorageItem,
-  getStorageItem,
-  removeStorageItem,
-  getPubcidConfig } from 'modules/pubCommonId';
 import {
   digiTrustIdSubmodule,
   surfaceTestHook
-} from 'modules/digitrustIdSystem';
-
-import { getAdUnits } from 'test/fixtures/fixtures';
-import * as auctionModule from 'src/auction';
-import { registerBidder } from 'src/adapters/bidderFactory';
-import * as utils from 'src/utils';
+} from 'modules/digiTrustIdSystem';
 
 let assert = require('chai').assert;
 let expect = require('chai').expect;
-
-const ID_NAME = '_pubcid';
-const EXP = '_exp';
-const TIMEOUT = 2000;
-
-const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89a-f][0-9a-f]{3}-[0-9a-f]{12}$/;
-
-function cleanUp() {
-  window.document.cookie = ID_NAME + '=; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
-  localStorage.removeItem(ID_NAME);
-  localStorage.removeItem(ID_NAME + EXP);
-}
 
 var testHook = null;
 
