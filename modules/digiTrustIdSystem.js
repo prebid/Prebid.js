@@ -81,7 +81,7 @@ function writeDigiId(id) {
   var date = new Date();
   date.setTime(date.getTime() + 604800000);
   var exp = 'expires=' + date.toUTCString();
-  document.cookie = key + '=' + encId(id) + '; ' + exp + '; path=/;';
+  document.cookie = key + '=' + encId(id) + '; ' + exp + '; path=/;SameSite=none;';
 }
 
 /**
