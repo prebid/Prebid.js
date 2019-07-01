@@ -346,18 +346,14 @@ export const digiTrustIdSubmodule = {
 function fallbackInit() {
   if (resultHandler.retryId == 0 && !isInitialized()) {
     // this triggers an init
-    /*
     var conf = {
       member: 'fallback',
       callback: noop
     };
-    */
-    // getDigiTrustId(conf);
+    getDigiTrustId(conf, noop);
   }
 }
 
 setTimeout(fallbackInit, 1550);
 
 attachIdSystem(digiTrustIdSubmodule);
-
-window.dtsub = digiTrustIdSubmodule;
