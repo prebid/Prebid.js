@@ -19,14 +19,13 @@ describe('DigiTrust Id System', function () {
           site: 'foo'
         },
         callback: function (result) {
-          expect(window.DigiTrust).to.exist;
-          expect(result).to.exist;
-          expect(window.DigiTrust.isMock).to.be.true;
-          resolve();
         }
       };
       testHook.initDigitrustFacade(conf);
       window.DigiTrust.getUser(conf);
+      expect(window.DigiTrust).to.exist;
+      expect(window.DigiTrust.isMock).to.be.true;
+      resolve();
     });
   });
 
@@ -43,7 +42,6 @@ describe('DigiTrust Id System', function () {
         expect(window.DigiTrust).to.exist;
         expect(result).to.exist;
         expect(window.DigiTrust.isMock).to.be.true;
-        resolve();
       }
     };
     testHook.initDigitrustFacade(conf);
