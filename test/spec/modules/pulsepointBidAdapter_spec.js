@@ -343,7 +343,7 @@ describe('PulsePoint Adapter Tests', function () {
     expect(options).to.not.be.undefined;
     expect(options).to.have.lengthOf(1);
     expect(options[0].type).to.equal('iframe');
-    expect(options[0].url).to.equal('//bh.contextweb.com/visitormatch');
+    expect(options[0].url).to.equal('https://bh.contextweb.com/visitormatch');
   });
 
   it('Verifies image pixel sync', function () {
@@ -351,7 +351,7 @@ describe('PulsePoint Adapter Tests', function () {
     expect(options).to.not.be.undefined;
     expect(options).to.have.lengthOf(1);
     expect(options[0].type).to.equal('image');
-    expect(options[0].url).to.equal('//bh.contextweb.com/visitormatch/prebid');
+    expect(options[0].url).to.equal('https://bh.contextweb.com/visitormatch/prebid');
   });
 
   it('Verify app requests', function () {

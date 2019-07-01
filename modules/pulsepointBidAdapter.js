@@ -64,12 +64,12 @@ export const spec = {
     if (syncOptions.iframeEnabled) {
       return [{
         type: 'iframe',
-        url: '//bh.contextweb.com/visitormatch'
+        url: 'https://bh.contextweb.com/visitormatch'
       }];
     } else if (syncOptions.pixelEnabled) {
       return [{
         type: 'image',
-        url: '//bh.contextweb.com/visitormatch/prebid'
+        url: 'https://bh.contextweb.com/visitormatch/prebid'
       }];
     }
   },
