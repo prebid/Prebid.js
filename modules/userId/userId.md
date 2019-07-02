@@ -3,12 +3,12 @@
 Example showing `cookie` storage for user id data for both submodules
 ```
 pbjs.setConfig({
-    usersync: {
+    userSync: {
         userIds: [{
             name: "unifiedId",
             params: {
                 partner: "prebid",
-                url: "http://match.adsrvr.org/track/rid?ttd_pid=prebid&fmt=json"
+                url: "//match.adsrvr.org/track/rid?ttd_pid=prebid&fmt=json"
             },
             storage: {
                 type: "cookie",
@@ -21,26 +21,6 @@ pbjs.setConfig({
                 type: "cookie",
                 name: "_pubcid",
                 expires: 60
-            }
-        }],
-        syncDelay: 5000
-    }
-});
-```
-
-Example showing `cookie` storage for user id data for id5 submodule
-```
-pbjs.setConfig({
-    usersync: {
-        userIds: [{
-            name: "id5Id",
-            params: {
-                partner: 173 // @TODO: Set your real ID5 partner ID here for production, please ask for one contact@id5.io
-            },
-            storage: {
-                type: "cookie",
-                name: "id5id",
-                expires: 90
             }
         }],
         syncDelay: 5000
