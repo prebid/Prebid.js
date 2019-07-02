@@ -24,7 +24,7 @@ var adUnits = [
     bids: [{
         bidder: '33across',
         params: {
-            siteId: 'examplePub1234',     
+            siteId: 'cxBE0qjUir6iopaKkGJozW',     
             productId: 'siab'     
         }
     }]
