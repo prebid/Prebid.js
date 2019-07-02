@@ -221,8 +221,7 @@ function isSecure() {
   return document.location.protocol === 'https:';
 }
 /**
- * Create Vertamedia renderer
- * @param requestId
+ * Create oneVideo renderer
  * @returns {*}
  */
 function newRenderer(bidResponse) {
