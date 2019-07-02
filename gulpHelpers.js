@@ -6,11 +6,13 @@ const MANIFEST = 'package.json';
 const through = require('through2');
 const _ = require('lodash');
 const gutil = require('gulp-util');
+const submodules = require('./modules/.submodules.json');
 
 const MODULE_PATH = './modules';
 const BUILD_PATH = './build/dist';
 const DEV_PATH = './build/dev';
 const ANALYTICS_PATH = '../analytics';
+
 
 // get only subdirectories that contain package.json with 'main' property
 function isModuleDirectory(filePath) {
@@ -39,7 +41,9 @@ module.exports = {
       .replace(/\/>/g, '\\/>');
   },
   getArgModules() {
-    var modules = (argv.modules || '').split(',').filter(module => !!module);
+    var modules = (argv.modules || '')
+      .split(',')
+      .filter(module => !!module);
 
     try {
       if (modules.length === 1 && path.extname(modules[0]).toLowerCase() === '.json') {
@@ -55,6 +59,15 @@ module.exports = {
         message: 'failed reading: ' + argv.modules
       });
     }
+
+    Object.keys(submodules).forEach(parentModule => {
+      if (
+        !modules.includes(parentModule) &&
+        modules.some(module => submodules[parentModule].includes(module))
+      ) {
+        modules.unshift(parentModule);
+      }
+    });
 
     return modules;
   },
