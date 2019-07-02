@@ -1,8 +1,7 @@
 import { expect } from 'chai';
-import { getTargeting } from 'modules/common/videoAdserver';
+import { getTargeting, adpodUtils } from 'modules/freeWheelAdserverVideo';
 import { auctionManager } from 'src/auctionManager';
 import { config } from 'src/config';
-import * as adpod from 'modules/adpod';
 
 describe('freeWheel adserver module', function() {
   let amStub;
@@ -53,7 +52,7 @@ describe('freeWheel adserver module', function() {
     amGetAdUnitsStub = sinon.stub(auctionManager, 'getAdUnits');
     amGetAdUnitsStub.returns(adUnits);
     amStub = sinon.stub(auctionManager, 'getBidsReceived');
-    pbcStub = sinon.stub(adpod, 'callPrebidCacheAfterAuction').callsFake(function (...args) {
+    pbcStub = sinon.stub(adpodUtils, 'callPrebidCacheAfterAuction').callsFake(function (...args) {
       args[1](null, getBidsReceived());
     });
   });

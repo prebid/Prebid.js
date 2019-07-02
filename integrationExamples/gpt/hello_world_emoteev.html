@@ -5,15 +5,23 @@
     <script async src="//www.googletagservices.com/tag/js/gpt.js"></script>
     <script type="text/javascript" src="../../build/dev/prebid.js" async></script>
     <script>
-        var sizes = [
-            [300, 250],
-            [250, 300],
-            [300, 600]
-        ];
-        var PREBID_TIMEOUT = 3000;
-        var FAILSAFE_TIMEOUT = 3000;
+        const sizes = [
+            [728, 90],  // Footer
+            [750, 200], // Content
+            [300, 250], // Content
+            [320, 480], // Overlay
 
-        var adUnits = [{
+            // some further examples from https://www.iab.com/wp-content/uploads/2017/08/IABNewAdPortfolio_FINAL_2017.pdf
+            [900, 225], // IAB: horizontal, Billboard
+            [900, 450], // IAB: horizontal, Half Page
+            [300, 150], // IAB: horizontal 2x1 and tiles Financial
+            [300, 600], // IAB: vertical 1x2
+            [300, 900]  // IAB: vertical 1x3 Portrait
+        ];
+        const PREBID_TIMEOUT = 3000;
+        const FAILSAFE_TIMEOUT = 3000;
+
+        const adUnits = [{
             code: '/19968336/header-bid-tag-1',
             mediaTypes: {
                 banner: {
@@ -21,10 +29,33 @@
                 }
             },
             bids: [{
-              bidder: 'emoteev',
-              params: {
-                adSpaceId: 5084,
-              }
+                bidder: 'emoteev',
+                params: {
+                    adSpaceId: 5084,
+                    context: 'content',
+                    externalId: null
+                }
+            }, {
+                bidder: 'emoteev',
+                params: {
+                    adSpaceId: 5084,
+                    context: 'footer',
+                    externalId: null
+                }
+            }, {
+                bidder: 'emoteev',
+                params: {
+                    adSpaceId: 5084,
+                    context: 'overlay',
+                    externalId: null
+                }
+            }, {
+                bidder: 'emoteev',
+                params: {
+                    adSpaceId: 5084,
+                    context: 'wallpaper',
+                    externalId: null
+                }
             }]
         }];
 
@@ -57,10 +88,7 @@
             });
         }
 
-
-        // in case PBJS doesn't load
         setTimeout(function () {
-            console.log("prebid.js setTimeout");
             initAdserver();
         }, FAILSAFE_TIMEOUT);
 
@@ -70,9 +98,7 @@
             googletag.pubads().enableSingleRequest();
             googletag.enableServices();
         });
-
     </script>
-
 </head>
 
 <body>

@@ -1,4 +1,4 @@
-import {setConfig, requestBidsHook, resetConsentData, userCMP, consentTimeout, allowAuction, staticConsentData} from 'modules/consentManagement';
+import {setConsentConfig, requestBidsHook, resetConsentData, userCMP, consentTimeout, allowAuction, staticConsentData} from 'modules/consentManagement';
 import {gdprDataHandler} from 'src/adapterManager';
 import * as utils from 'src/utils';
 import { config } from 'src/config';
@@ -7,8 +7,8 @@ let assert = require('chai').assert;
 let expect = require('chai').expect;
 
 describe('consentManagement', function () {
-  describe('setConfig tests:', function () {
-    describe('empty setConfig value', function () {
+  describe('setConsentConfig tests:', function () {
+    describe('empty setConsentConfig value', function () {
       beforeEach(function () {
         sinon.stub(utils, 'logInfo');
       });
@@ -19,7 +19,7 @@ describe('consentManagement', function () {
       });
 
       it('should use system default values', function () {
-        setConfig({});
+        setConsentConfig({});
         expect(userCMP).to.be.equal('iab');
         expect(consentTimeout).to.be.equal(10000);
         expect(allowAuction).to.be.true;
@@ -27,7 +27,7 @@ describe('consentManagement', function () {
       });
     });
 
-    describe('valid setConfig value', function () {
+    describe('valid setConsentConfig value', function () {
       afterEach(function () {
         config.resetConfig();
         $$PREBID_GLOBAL$$.requestBids.removeAll();
@@ -39,14 +39,14 @@ describe('consentManagement', function () {
           allowAuctionWithoutConsent: false
         };
 
-        setConfig(allConfig);
+        setConsentConfig(allConfig);
         expect(userCMP).to.be.equal('iab');
         expect(consentTimeout).to.be.equal(7500);
         expect(allowAuction).to.be.false;
       });
     });
 
-    describe('static consent string setConfig value', () => {
+    describe('static consent string setConsentConfig value', () => {
       afterEach(() => {
         config.resetConfig();
         $$PREBID_GLOBAL$$.requestBids.removeAll();
@@ -447,7 +447,7 @@ describe('consentManagement', function () {
           }
         };
 
-        setConfig(staticConfig);
+        setConsentConfig(staticConfig);
         expect(userCMP).to.be.equal('static');
         expect(consentTimeout).to.be.equal(0); // should always return without a timeout when config is used
         expect(allowAuction).to.be.false;
@@ -495,7 +495,7 @@ describe('consentManagement', function () {
         let badCMPConfig = {
           cmpApi: 'bad'
         };
-        setConfig(badCMPConfig);
+        setConsentConfig(badCMPConfig);
         expect(userCMP).to.be.equal(badCMPConfig.cmpApi);
 
         requestBidsHook(() => {
@@ -508,7 +508,7 @@ describe('consentManagement', function () {
       });
 
       it('should throw proper errors when CMP is not found', function () {
-        setConfig(goodConfigWithCancelAuction);
+        setConsentConfig(goodConfigWithCancelAuction);
 
         requestBidsHook(() => {
           didHookReturn = true;
@@ -546,7 +546,7 @@ describe('consentManagement', function () {
         cmpStub = sinon.stub(window, '__cmp').callsFake((...args) => {
           args[2](testConsentData);
         });
-        setConfig(goodConfigWithAllowAuction);
+        setConsentConfig(goodConfigWithAllowAuction);
         requestBidsHook(() => {}, {});
         cmpStub.restore();
 
@@ -610,7 +610,7 @@ describe('consentManagement', function () {
           args[2](testConsentData.data.msgName, testConsentData.data);
         });
 
-        setConfig(goodConfigWithAllowAuction);
+        setConsentConfig(goodConfigWithAllowAuction);
         requestBidsHook(() => {
           didHookReturn = true;
         }, {adUnits: [{ sizes: [[300, 250]] }]});
@@ -684,7 +684,7 @@ describe('consentManagement', function () {
       function testIFramedPage(testName, messageFormatString) {
         it(`should return the consent string from a postmessage + addEventListener response - ${testName}`, (done) => {
           stringifyResponse = messageFormatString;
-          setConfig(goodConfigWithAllowAuction);
+          setConsentConfig(goodConfigWithAllowAuction);
           requestBidsHook(() => {
             let consent = gdprDataHandler.getConsentData();
             sinon.assert.notCalled(utils.logWarn);
@@ -726,7 +726,7 @@ describe('consentManagement', function () {
           args[2](testConsentData);
         });
 
-        setConfig(goodConfigWithAllowAuction);
+        setConsentConfig(goodConfigWithAllowAuction);
 
         requestBidsHook(() => {
           didHookReturn = true;
@@ -748,7 +748,7 @@ describe('consentManagement', function () {
           args[2](testConsentData);
         });
 
-        setConfig(goodConfigWithCancelAuction);
+        setConsentConfig(goodConfigWithCancelAuction);
 
         requestBidsHook(() => {
           didHookReturn = true;
@@ -768,7 +768,7 @@ describe('consentManagement', function () {
           args[2](testConsentData);
         });
 
-        setConfig(goodConfigWithAllowAuction);
+        setConsentConfig(goodConfigWithAllowAuction);
 
         requestBidsHook(() => {
           didHookReturn = true;

@@ -84,6 +84,10 @@ export const spec = {
         versionOrtb: ORTB_VERSION
       };
 
+      if (utils.getBidIdParameter('hide_skin', bid.params) != '') {
+        ext.hide_skin = +!!utils.getBidIdParameter('hide_skin', bid.params);
+      }
+
       if (utils.getBidIdParameter('ad_volume', bid.params) != '') {
         ext.ad_volume = utils.getBidIdParameter('ad_volume', bid.params);
       }

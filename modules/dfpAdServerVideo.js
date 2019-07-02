@@ -62,7 +62,7 @@ const defaultParamConstants = {
  */
 export function buildDfpVideoUrl(options) {
   if (!options.params && !options.url) {
-    logError(`A params object or a url is required to use pbjs.adServers.dfp.buildVideoUrl`);
+    logError(`A params object or a url is required to use $$PREBID_GLOBAL$$.adServers.dfp.buildVideoUrl`);
     return;
   }
 
