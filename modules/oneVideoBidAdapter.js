@@ -1,6 +1,5 @@
 import * as utils from '../src/utils';
 import {registerBidder} from '../src/adapters/bidderFactory';
-import { Renderer } from 'src/renderer';
 
 const BIDDER_CODE = 'oneVideo';
 export const spec = {
@@ -78,7 +77,8 @@ export const spec = {
       requestId: bidRequest.bidId,
       bidderCode: spec.code,
       cpm: bid.price,
-      creativeId: bid.id,
+      adId: bid.adid,
+      creativeId: bid.crid,
       width: size.width,
       height: size.height,
       mediaType: 'video',
@@ -92,7 +92,7 @@ export const spec = {
     } else if (bid.adm) {
       bidResponse.vastXml = bid.adm;
     }
-    bidResponse.renderer = (bidRequest.mediaTypes.video.context === 'outstream') ? newRenderer(bidResponse) : undefined;
+    bidResponse.renderer = (bidRequest.mediaTypes.video.context === 'outstream') ? newRenderer(bidRequest, bidResponse) : undefined;
     return bidResponse;
   },
   /**
@@ -224,14 +224,16 @@ function isSecure() {
  * Create oneVideo renderer
  * @returns {*}
  */
-function newRenderer(bidResponse) {
-  const renderer = Renderer.install({
-    url: 'https://cdn.vidible.tv/prod/2019-06/04/5cf5164bc14228000199c0fa_v3.js',
-    render: function (bidResponse) {
-      o2PlayerRender(bidResponse);
-    }
-  });
-  return renderer;
+function newRenderer(bidRequest, bid) {
+  if (bidRequest) {
+    bidRequest.renderer = {};
+    bidRequest.renderer.url = 'https://cdn.vidible.tv/prod/hb-outstream-renderer/renderer.js';
+    bidRequest.renderer.render = function(bid) {
+      setTimeout(function () {
+        o2PlayerRender(bid);
+      }, 1000)
+    };
+  }
 }
 
 registerBidder(spec);
