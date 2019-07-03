@@ -20,11 +20,14 @@
 
 
     <script>
+
       var pbjs = pbjs || {};
       pbjs.que = pbjs.que || [];
+
       /*
        Prebid Video adUnit
        */
+
       var videoAdUnit = {
         code: 'video1',
         sizes: [640,480],
@@ -44,6 +47,7 @@
           }
         ]
       };
+
       pbjs.que.push(function(){
         pbjs.addAdUnits(videoAdUnit);
         pbjs.requestBids({
@@ -55,10 +59,12 @@
                 iu: '/19968336/prebid_cache_video_adunit'
               }
             });
+
             invokeVideoPlayer(videoUrl);
           }
         });
       });
+
       pbjs.bidderSettings =
         {
           standard: {
@@ -82,6 +88,7 @@
                 key: "hb_size",
                 val: function (bidResponse) {
                   return bidResponse.size;
+
                 }
               }
             ]
@@ -118,10 +125,12 @@
         vpaidFlashLoaderPath: "https://github.com/MailOnline/videojs-vast-vpaid/blob/RELEASE/bin/VPAIDFlash.swf?raw=true",
         autoplay: true
       });
+
       this.muted(true);
       this.play();
     });
   }
+
 </script>
 </body>
 </html>
