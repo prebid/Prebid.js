@@ -52,7 +52,7 @@ Please use ```pulsepoint``` as the bidder code.
           bidder: 'pulsepoint',
           params: { 
               cp: 512379,
-              ct: 505642
+              ct: 505642,
               video: {
                   h: 300,
                   w: 400,
