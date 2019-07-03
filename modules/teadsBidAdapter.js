@@ -42,7 +42,8 @@ export const spec = {
     const payload = {
       referrer: getReferrerInfo(bidderRequest),
       data: bids,
-      deviceWidth: screen.width
+      deviceWidth: screen.width,
+      hbVersion: '$prebid.version$'
     };
 
     let gdpr = bidderRequest.gdprConsent;
@@ -84,7 +85,8 @@ export const spec = {
           ttl: bid.ttl,
           ad: bid.ad,
           requestId: bid.bidId,
-          creativeId: bid.creativeId
+          creativeId: bid.creativeId,
+          placementId: bid.placementId
         };
         bidResponses.push(bidResponse);
       });
@@ -92,11 +94,20 @@ export const spec = {
     return bidResponses;
   },
 
-  getUserSyncs: function(syncOptions, responses, gdprApplies) {
+  getUserSyncs: function(syncOptions, responses, gdprConsent) {
+    let gdprIab = {
+      status: findGdprStatus(gdprConsent.gdprApplies, gdprConsent.vendorData),
+      consent: gdprConsent.consentString
+    };
+    let queryParams = {
+      hb_provider: 'prebid',
+      gdprIab: JSON.stringify(gdprIab)
+    };
+
     if (syncOptions.iframeEnabled) {
       return [{
         type: 'iframe',
-        url: '//sync.teads.tv/iframe'
+        url: '//sync.teads.tv/iframe?' + utils.parseQueryStringParameters(queryParams)
       }];
     }
   }

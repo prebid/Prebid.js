@@ -286,16 +286,17 @@ describe('teadsBidAdapter', function() {
           'currency': 'USD',
           'height': 250,
           'netRevenue': true,
-          'requestId': '3ede2a3fa0db94',
+          'bidId': '3ede2a3fa0db94',
           'ttl': 360,
           'width': 300,
-          'creativeId': 'er2ee'
+          'creativeId': 'er2ee',
+          'placementId': 34
         }]
       }
     };
 
     it('should get correct bid response', function() {
-      let expectedResponse = [{
+      let expectedResponse = {
         'cpm': 0.5,
         'width': 300,
         'height': 250,
@@ -304,11 +305,12 @@ describe('teadsBidAdapter', function() {
         'ttl': 360,
         'ad': AD_SCRIPT,
         'requestId': '3ede2a3fa0db94',
-        'creativeId': 'er2ee'
-      }];
+        'creativeId': 'er2ee',
+        'placementId': 34
+      };
 
       let result = spec.interpretResponse(bids);
-      expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse[0]));
+      expect(result[0]).to.deep.equal(expectedResponse);
     });
 
     it('handles nobid responses', function() {
@@ -321,5 +323,22 @@ describe('teadsBidAdapter', function() {
       let result = spec.interpretResponse(bids);
       expect(result.length).to.equal(0);
     });
+  });
+
+  it('should call userSync with good params', function() {
+    let syncOptions = { 'iframeEnabled': true };
+    let consentString = 'JRJ8FCP29RPZDeBNsERRDCSAAZ+A==';
+    let gdprConsent = {
+      'consentString': consentString,
+      'gdprApplies': true,
+      'vendorData': {
+        'hasGlobalConsent': false
+      }
+    };
+    let finalUrl = `//sync.teads.tv/iframe?hb_provider=prebid&gdprIab={"status":12,"consent":"${consentString}"}&`;
+    const userSync = spec.getUserSyncs(syncOptions, {}, gdprConsent);
+
+    expect(userSync[0].type).to.equal('iframe');
+    expect(decodeURIComponent(userSync[0].url)).to.equal(finalUrl);
   });
 });
