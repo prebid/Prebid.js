@@ -41,8 +41,7 @@ describe('Sublime Adapter', () => {
         sizes: [[1800, 1000], [640, 300]],
         requestId: 'xyz654',
         params: {
-          zoneId: 14312,
-          bidHost: 'pbjs.sskzlabs.com.local',
+          zoneId: 23651,
           callbackName: 'myCallback'
         }
       }, {
@@ -52,8 +51,7 @@ describe('Sublime Adapter', () => {
         sizes: [[1800, 1000], [640, 300]],
         requestId: 'xyz654_2',
         params: {
-          zoneId: 14313,
-          bidHost: 'pbjs.sskzlabs.com.local',
+          zoneId: 23651,
           callbackName: 'myCallback'
         }
       }
@@ -103,7 +101,7 @@ describe('Sublime Adapter', () => {
       sizes: [[1800, 1000], [640, 300]],
       requestId: 'xyz654',
       params: {
-        zoneId: 1
+        zoneId: 23651
       }
     }];
 
@@ -114,7 +112,7 @@ describe('Sublime Adapter', () => {
     });
 
     it('should create a default callback function', () => {
-      expect(window['sublime_prebid_callback_1']).to.be.an('function');
+      expect(window['sublime_prebid_callback_23651']).to.be.an('function');
     });
   });
 
@@ -128,7 +126,7 @@ describe('Sublime Adapter', () => {
       sizes: [[1800, 1000], [640, 300]],
       requestId: 'xyz654',
       params: {
-        zoneId: 1
+        zoneId: 23651
       }
     }];
 
@@ -139,7 +137,7 @@ describe('Sublime Adapter', () => {
         ad: '<h1>oh</h1>',
         cpm: 2
       };
-      let actual = window['sublime_prebid_callback_1'](response);
+      let actual = window['sublime_prebid_callback_23651'](response);
 
       it('should query the notify url', () => {
         expect(actual.url).to.equal('https://pbjs.sskzlabs.com/notify');
