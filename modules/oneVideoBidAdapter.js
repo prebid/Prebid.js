@@ -224,13 +224,13 @@ function isSecure() {
  * @returns {*}
  */
 function newRenderer(bidRequest, bid) {
-  if (bidRequest) {
+  if (!bidRequest.renderer) {
     bidRequest.renderer = {};
     bidRequest.renderer.url = 'https://cdn.vidible.tv/prod/hb-outstream-renderer/renderer.js';
     bidRequest.renderer.render = function(bid) {
       setTimeout(function () {
         o2PlayerRender(bid);
-      }, 1000)
+      }, 700)
     };
   }
 }
