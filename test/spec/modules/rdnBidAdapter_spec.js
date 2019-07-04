@@ -2,10 +2,20 @@ import { expect } from 'chai'
 import * as utils from 'src/utils'
 import { spec } from 'modules/rdnBidAdapter'
 import { newBidder } from 'src/adapters/bidderFactory'
+import {config} from '../../../src/config';
 
 describe('rdnBidAdapter', function() {
   const adapter = newBidder(spec);
   const ENDPOINT = 'https://s-bid.rmp.rakuten.co.jp/h';
+  let sandbox;
+
+  beforeEach(function() {
+    config.resetConfig();
+  });
+
+  afterEach(function () {
+    config.resetConfig();
+  });
 
   describe('inherited functions', () => {
     it('exists and is a function', () => {
@@ -52,6 +62,16 @@ describe('rdnBidAdapter', function() {
       const request = spec.buildRequests(bidRequests)[0];
       expect(request.url).to.equal(ENDPOINT);
       expect(request.method).to.equal('GET')
+    })
+
+    it('allows url override', () => {
+      config.setConfig({
+        rdn: {
+          endpoint: '//test.rakuten.com'
+        }
+      });
+      const request = spec.buildRequests(bidRequests)[0];
+      expect(request.url).to.equal('//test.rakuten.com');
     })
   });
 

@@ -7,7 +7,6 @@ import { newBidder } from 'src/adapters/bidderFactory';
 describe('Adyoulike Adapter', function () {
   const canonicalUrl = 'http://canonical.url/?t=%26';
   const defaultDC = 'hb-api';
-  const bidderCode = 'adyoulike';
   const bidRequestWithEmptyPlacement = [
     {
       'bidId': 'bid_id_0',
@@ -18,7 +17,6 @@ describe('Adyoulike Adapter', function () {
     }
   ];
   const bidRequestWithEmptySizes = {
-    'bidderCode': 'adyoulike',
     'bids': [
       {
         'bidId': 'bid_id_0',
@@ -193,7 +191,6 @@ describe('Adyoulike Adapter', function () {
     it('should add gdpr consent information to the request', function () {
       let consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
       let bidderRequest = {
-        'bidderCode': 'adyoulike',
         'auctionId': '1d1a030790a475',
         'bidderRequestId': '22edbae2733bf6',
         'timeout': 3000,
@@ -306,13 +303,11 @@ describe('Adyoulike Adapter', function () {
 
       expect(result.length).to.equal(2);
 
-      expect(result[0].bidderCode).to.equal(bidderCode);
       expect(result[0].cpm).to.equal(0.5);
       expect(result[0].ad).to.equal('placement_0');
       expect(result[0].width).to.equal(300);
       expect(result[0].height).to.equal(300);
 
-      expect(result[1].bidderCode).to.equal(bidderCode);
       expect(result[1].cpm).to.equal(0.6);
       expect(result[1].ad).to.equal('placement_1');
       expect(result[1].width).to.equal(300);

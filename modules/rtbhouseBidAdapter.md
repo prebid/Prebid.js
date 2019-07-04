@@ -39,7 +39,8 @@ Please reach out to pmp@rtbhouse.com to receive your own
                             len: 25
                         },
                         image: {
-                            required: true
+                            required: true,
+                            sizes: [300, 250]
                         },
                         body: {
                             required: true,
