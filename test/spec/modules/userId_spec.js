@@ -4,13 +4,13 @@ import {
   setSubmoduleRegistry,
   syncDelay,
   attachIdSystem
-} from 'modules/userId';
+} from 'modules/userId/index.js';
 import {config} from 'src/config';
 import * as utils from 'src/utils';
-import {unifiedIdSubmodule} from 'modules/unifiedIdSystem';
-import {pubCommonIdSubmodule} from 'modules/pubCommonIdSystem';
+import {unifiedIdSubmodule} from 'modules/userId/unifiedIdSystem';
+import {pubCommonIdSubmodule} from 'modules/userId/pubCommonIdSystem';
 import {id5IdSubmodule} from 'modules/id5IdSystem';
-import {identityLinkSubmodule} from 'modules/identityLinkSystem';
+import {identityLinkSubmodule} from 'modules/userId/identityLinkSystem';
 let assert = require('chai').assert;
 let expect = require('chai').expect;
 const EXPIRED_COOKIE_DATE = 'Thu, 01 Jan 1970 00:00:01 GMT';
@@ -332,7 +332,7 @@ describe('User ID', function() {
       }, {adUnits});
     });
 
-    it('test hook from unifiedid html5', function(done) {
+    it('test hook from pubcommonid html5', function(done) {
       // simulate existing browser local storage values
       localStorage.setItem('unifiedid_alt', JSON.stringify({'TDID': 'testunifiedid_alt'}));
       localStorage.setItem('unifiedid_alt_exp', '');

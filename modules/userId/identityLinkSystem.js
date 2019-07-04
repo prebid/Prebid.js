@@ -1,28 +1,28 @@
 /**
- * This module adds UnifiedId to the User ID module
+ * This module adds IdentityLink to the User ID module
  * The {@link module:modules/userId} module is required
- * @module modules/unifiedIdSystem
+ * @module modules/identityLinkSubmodule
  * @requires module:modules/userId
  */
 
-import * as utils from '../src/utils.js'
-import {ajax} from '../src/ajax.js';
+import * as utils from '../../src/utils.js'
+import {ajax} from '../../src/ajax.js';
 
 /** @type {Submodule} */
-export const unifiedIdSubmodule = {
+export const identityLinkSubmodule = {
   /**
    * used to link submodule with config
    * @type {string}
    */
-  name: 'unifiedId',
+  name: 'identityLink',
   /**
    * decode the stored id value for passing to bid requests
    * @function
-   * @param {{TDID:string}} value
-   * @returns {{tdid:Object}}
+   * @param {string} value
+   * @returns {{idl_env:string}}
    */
   decode(value) {
-    return (value && typeof value['TDID'] === 'string') ? { 'tdid': value['TDID'] } : undefined;
+    return { 'idl_env': value }
   },
   /**
    * performs action to obtain id and return a value in the callback's response argument
@@ -31,12 +31,12 @@ export const unifiedIdSubmodule = {
    * @returns {function(callback:function)}
    */
   getId(configParams) {
-    if (!configParams || (typeof configParams.partner !== 'string' && typeof configParams.url !== 'string')) {
-      utils.logError('User ID - unifiedId submodule requires either partner or url to be defined');
+    if (!configParams || typeof configParams.pid !== 'string') {
+      utils.logError('identityLink submodule requires partner id to be defined');
       return;
     }
     // use protocol relative urls for http or https
-    const url = configParams.url || `//match.adsrvr.org/track/rid?ttd_pid=${configParams.partner}&fmt=json`;
+    const url = `https://api.rlcdn.com/api/identity?pid=${configParams.pid}&rt=envelope`;
 
     return function (callback) {
       ajax(url, response => {
@@ -48,7 +48,7 @@ export const unifiedIdSubmodule = {
             utils.logError(error);
           }
         }
-        callback(responseObj);
+        callback(responseObj.envelope);
       }, undefined, { method: 'GET' });
     }
   }
