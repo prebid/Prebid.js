@@ -1,11 +1,8 @@
 import {
-  BANNER
-}
-  from '../src/mediaTypes';
-import {
   registerBidder
 }
-  from '../src/adapters/bidderFactory';
+  from 'src/adapters/bidderFactory';
+import * as utils from '../src/utils';
 
 const BIDDER_CODE = 'reload';
 
@@ -37,24 +34,28 @@ export const spec = {
       imp: []
     };
 
+    let vgdprConsent = null;
+    if (utils.deepAccess(bidderRequest, 'gdprConsent')) {
+      vgdprConsent = bidderRequest.gdprConsent;
+    }
+
     let vPrxClientTool = null;
+    let vSrvUrl = null;
     for (let vIdx = 0; vIdx < validBidRequests.length; vIdx++) {
       let bidRequest = validBidRequests[vIdx];
-
-      if (BANNER in bidRequest.mediaTypes !== true) continue;
-      if (bidRequest.mediaTypes.banner.sizes.length <= 0) continue;
-
-      let vDim = bidRequest.mediaTypes.banner.sizes[0];
 
       vPrxClientTool = new ReloadClientTool({
         prxVer: VERSION_ADAPTER,
         prxType: 'bd',
-
         plcmID: bidRequest.params.plcmID,
         partID: bidRequest.params.partID,
         opdomID: bidRequest.params.opdomID,
-        bsrvID: bidRequest.params.bsrvID
+        bsrvID: bidRequest.params.bsrvID,
+        gdprObj: vgdprConsent,
+        mediaObj: bidRequest.mediaTypes
       });
+
+      if (vSrvUrl === null) vSrvUrl = vPrxClientTool.getSrvUrl();
 
       let vImpression = {
         id: bidRequest.bidId,
@@ -65,8 +66,6 @@ export const spec = {
         auctionId: bidRequest.auctionId,
 
         banner: {
-          h: vDim[1],
-          w: vDim[0],
           ext: {
             type: bidRequest.params.type || 'pcm',
             pcmdata: vPrxClientTool.getPCMObj()
@@ -80,7 +79,7 @@ export const spec = {
       const payloadString = JSON.stringify(bidReq);
       vRequests.push({
         method: 'POST',
-        url: vPrxClientTool.getSrvUrl(),
+        url: vSrvUrl,
         data: payloadString
       });
     }
@@ -117,8 +116,8 @@ export const spec = {
             requestId: vBid.impid,
             ad: vPrxClientTool.getAM(),
             cpm: vPrxClientTool.getBP() / 100,
-            width: vBid.ext.banner.w,
-            height: vBid.ext.banner.h,
+            width: vPrxClientTool.getW(),
+            height: vPrxClientTool.getH(),
             creativeId: vBid.id,
             currency: vPrxClientTool.getBC(),
             ttl: 300,
@@ -133,20 +132,13 @@ export const spec = {
   }
 };
 
-/**
- * Reload Client Tool
- * @param {json} args
- */
-
 function ReloadClientTool(args) {
   var that = this;
 
-  var _pcmClientVersion = '120';
+  var _pcmClientVersion = '140';
   var _pcmFilePref = 'prx_root_';
   var _resFilePref = 'prx_pnws_';
-
-  var _pcmInputObjVers = '100';
-
+  var _pcmInputObjVers = '110';
   var _instObj = null;
   var _status = 'NA';
   var _message = '';
@@ -166,6 +158,8 @@ function ReloadClientTool(args) {
       plcmData: _getPlcmData(),
       clntData: _getClientData(),
       resultData: _getRD(),
+      gdprObj: _getGdpr(),
+      mediaObj: _getMediaObj(),
 
       proxetString: null,
       dboData: null,
@@ -174,7 +168,7 @@ function ReloadClientTool(args) {
   };
 
   that.setPCMObj = function (obj) {
-    if (obj.thisVer !== '100') {
+    if (obj.thisVer !== '110') {
       _status = 'error';
       _message = 'incomp_output_obj_version';
       _log += ' ERROR incomp_output_obj_version';
@@ -186,7 +180,6 @@ function ReloadClientTool(args) {
     _log += ' ' + obj.log;
 
     if (obj.status !== 'ok') return;
-
     _saveMemFile(obj.statStr, obj.srvUrl);
     _instObj = obj.instr;
   };
@@ -200,42 +193,42 @@ function ReloadClientTool(args) {
 
     return _getProtocolString() + effSrvUrl + '/bid';
 
-    function getBidServerUrl (idx) {
+    function getBidServerUrl(idx) {
       return 'bidsrv' + getTwoDigitString(idx) + '.reload.net';
 
-      function getTwoDigitString (idx) {
+      function getTwoDigitString(idx) {
         if (idx >= 10) return '' + idx;
         else return '0' + idx;
       }
     }
   };
 
+  that.getMT = function () {
+    return _checkInstProp('mtype', 'dsp');
+  };
+
+  that.getW = function () {
+    return _checkInstProp('width', 0);
+  };
+
+  that.getH = function () {
+    return _checkInstProp('height', 0);
+  };
+
   that.getBP = function () {
-    if (_instObj === null) return 0;
-    if (typeof _instObj === 'undefined') return 0;
-    if (_instObj.go !== true) return 0;
-    return _instObj.prc;
+    return _checkInstProp('prc', 0);
   };
 
   that.getBC = function () {
-    if (_instObj === null) return 0;
-    if (typeof _instObj === 'undefined') return 0;
-    if (_instObj.go !== true) return 0;
-    return _instObj.cur;
+    return _checkInstProp('cur', 'USD');
   };
 
   that.getAM = function () {
-    if (_instObj === null) return null;
-    if (typeof _instObj === 'undefined') return null;
-    if (_instObj.go !== true) return null;
-    return _instObj.am;
+    return _checkInstProp('am', null);
   };
 
   that.getPM = function () {
-    if (_instObj === null) return null;
-    if (typeof _instObj === 'undefined') return null;
-    if (_instObj.go === true) return null;
-    return _instObj.pbm;
+    return _checkInstProp('pbm', null);
   };
 
   that.setRD = function (data) {
@@ -254,7 +247,14 @@ function ReloadClientTool(args) {
     return _log;
   };
 
-  function _getPlcmData () {
+  function _checkInstProp(key, def) {
+    if (_instObj === null) return def;
+    if (typeof _instObj === 'undefined') return def;
+    if (_instObj.go !== true) return def;
+    return _instObj[key];
+  }
+
+  function _getPlcmData() {
     return {
       prxVer: args.prxVer,
       prxType: args.prxType,
@@ -268,7 +268,8 @@ function ReloadClientTool(args) {
     };
   }
 
-  function _getClientData () {
+  function _getClientData() {
+    var locInf = getBestLocInf();
     return {
       version: 100,
       locTime: Date.now(),
@@ -278,13 +279,19 @@ function ReloadClientTool(args) {
       confined: detectConfined(),
       protStr: _getProtocolString(),
 
-      hostDomain: decodeURIComponent(window.location.host),
-      hostPagePath: decodeURIComponent(window.location.pathname),
-      hostPageUrl: decodeURIComponent(window.location.href),
+      hostDomain: decodeURIComponent(locInf.host),
+      hostPagePath: decodeURIComponent(locInf.pathname),
+      hostPageUrl: decodeURIComponent(locInf.href),
       hostPageTitle: document.title,
     };
 
-    function _genWinInfo () {
+    function getBestLocInf() {
+      var trgtWnd = window;
+      try { trgtWnd = top; } catch (e) { }
+      return trgtWnd.location;
+    }
+
+    function _genWinInfo() {
       var winInfo = {
         physicalWidth: window.screen.width,
         physicalHeight: window.screen.height,
@@ -305,19 +312,18 @@ function ReloadClientTool(args) {
       };
     }
 
-    function detectConfined () {
+    function detectConfined() {
       var confined = true;
-      try { if (window.top === window.self) confined = false; } catch (err) {}
+      try { if (window.top === window.self) confined = false; } catch (err) { }
       return confined;
     }
   }
 
-  function _getMemFile () {
+  function _getMemFile() {
     try {
       var memFileObj = _getItem(_getMemFileName());
 
       if (memFileObj === null) throw { s: 'init' };
-
       if (typeof memFileObj.statStr !== 'string') throw { s: 'error' };
       if (typeof memFileObj.srvUrl !== 'string') throw { s: 'error' };
 
@@ -335,7 +341,7 @@ function ReloadClientTool(args) {
     }
   }
 
-  function _saveMemFile (statStr, srvUrl) {
+  function _saveMemFile(statStr, srvUrl) {
     try {
       var fileData = {
         statStr: statStr,
@@ -348,11 +354,11 @@ function ReloadClientTool(args) {
     }
   }
 
-  function _getMemFileName () {
+  function _getMemFileName() {
     return _pcmFilePref + args.plcmID + '_' + args.partID;
   }
 
-  function _getRD () {
+  function _getRD() {
     try {
       return _getItem(_getResltStatusFileName());
     } catch (err) {
@@ -360,7 +366,7 @@ function ReloadClientTool(args) {
     }
   }
 
-  function _setRD (fileData) {
+  function _setRD(fileData) {
     try {
       _setItem(_getResltStatusFileName(), fileData);
       return true;
@@ -369,11 +375,20 @@ function ReloadClientTool(args) {
     }
   }
 
-  function _getResltStatusFileName () {
-    return _resFilePref + args.plcmID + '_' + args.partID;
+  function _getGdpr() {
+    return args.gdprObj;
   }
 
-  function _setItem (name, data) {
+  function _getMediaObj() {
+    return args.mediaObj;
+  }
+
+  function _getResltStatusFileName() {
+    if (args.lmod === true) return _resFilePref + args.lplcmID + '_' + args.partID;
+    else return _resFilePref + args.plcmID + '_' + args.partID;
+  }
+
+  function _setItem(name, data) {
     var stgFileObj = {
       ver: _pcmClientVersion,
       ts: Date.now(),
@@ -394,11 +409,10 @@ function ReloadClientTool(args) {
     return true;
   }
 
-  function _getItem (name) {
+  function _getItem(name) {
     try {
       var obStgFileStr = localStorage.getItem(name);
       if (obStgFileStr === null) return null;
-
       var stgFileObj = JSON.parse(obStgFileStr);
 
       if (stgFileObj.ver !== _pcmClientVersion) throw { message: 'version_error' };
@@ -410,12 +424,12 @@ function ReloadClientTool(args) {
     }
   }
 
-  function _getProtocolString () {
+  function _getProtocolString() {
     var wnd = null;
     try { wnd = top; } catch (err) { wnd = window; }
 
-    if (wnd.location.protocol.toLowerCase().indexOf('http:') >= 0) return 'http://';
-    else return 'https://';
+    if (wnd.location.protocol.toLowerCase().indexOf('http:') >= 0) return 'http://'
+    else return 'https://'
   }
 };
 

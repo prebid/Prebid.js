@@ -52,7 +52,7 @@ let getValidBidRequests = () => {
 let getExt1ServerResponse = () => {
   return JSON.parse(JSON.stringify({
     'pcmdata': {
-      'thisVer': '100',
+      'thisVer': '110',
       'plcmSett': {
         'name': 'zz_test_mariano_adapter',
         'Version': '210',
@@ -89,7 +89,7 @@ let getExt1ServerResponse = () => {
 let getExt2ServerResponse = () => {
   return JSON.parse(JSON.stringify({
     'pcmdata': {
-      'thisVer': '100',
+      'thisVer': '110',
       'plcmSett': {
         'name': 'placement_01',
         'Version': '210',
