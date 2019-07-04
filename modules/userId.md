@@ -23,9 +23,9 @@ pbjs.setConfig({
                 expires: 60
             }
         }, {
-            name: 'idLink',
+            name: 'identityLink',
             params: {
-               pid: '14'
+               pid: '999' // Set your real identityLink placement ID here 
             },
             storage: {
               type: 'cookie',
@@ -81,9 +81,9 @@ pbjs.setConfig({
                 expires: 60
             }
         }, {
-            name: 'idLink',
+            name: 'identityLink',
             params: {
-                pid: '14'
+                pid: '999' // Set your real identityLink placement ID here 
             },
             storage: {
                 type: 'html5',

@@ -1,7 +1,7 @@
 /**
- * This module adds idLink to the User ID module
+ * This module adds IdentityLink to the User ID module
  * The {@link module:modules/userId} module is required
- * @module modules/idLinkSubmodule
+ * @module modules/identityLinkSubmodule
  * @requires module:modules/userId
  */
 
@@ -9,12 +9,12 @@ import * as utils from '../src/utils.js'
 import {ajax} from '../src/ajax.js';
 
 /** @type {Submodule} */
-export const idLinkSubmodule = {
+export const identityLinkSubmodule = {
   /**
    * used to link submodule with config
    * @type {string}
    */
-  name: 'idLink',
+  name: 'identityLink',
   /**
    * decode the stored id value for passing to bid requests
    * @function
@@ -32,7 +32,7 @@ export const idLinkSubmodule = {
    */
   getId(configParams) {
     if (!configParams || typeof configParams.pid !== 'string') {
-      utils.logError('ID Link - idLink submodule requires partner id to be defined');
+      utils.logError('identityLink submodule requires partner id to be defined');
       return;
     }
     // use protocol relative urls for http or https
