@@ -15,12 +15,12 @@ function RhythmOneBidAdapter() {
   let SUPPORTED_VIDEO_API = [1, 2, 5];
   let slotsToBids = {};
   let that = this;
-  let version = '1.0.2.1';
+  let version = '2.0.0.0';
   let loadStart = Date.now();
   var win = typeof window !== 'undefined' ? window : {};
 
   this.isBidRequestValid = function (bid) {
-    return true;
+    return !!(bid.params && bid.params.placementId);
   };
 
   this.getUserSyncs = function (syncOptions, responses, gdprConsent) {
@@ -90,6 +90,7 @@ function RhythmOneBidAdapter() {
       impObj.id = BRs[i].adUnitCode;
       impObj.bidfloor = parseFloat(utils.deepAccess(BRs[i], 'params.floor')) || 0;
       impObj.secure = win.location.protocol === 'https:' ? 1 : 0;
+
       if (utils.deepAccess(BRs[i], 'mediaTypes.banner') || utils.deepAccess(BRs[i], 'mediaType') === 'banner') {
         impObj.banner = frameBanner(BRs[i]);
       }
@@ -139,21 +140,58 @@ function RhythmOneBidAdapter() {
     }
   }
 
-  function frameBanner(bid) {
-    var sizes = utils.parseSizesInput(bid.sizes).map(size => size.split('x'));
-    return {
-      w: parseInt(sizes[0][0]),
-      h: parseInt(sizes[0][1])
+  function getValidSizeSet(dimensionList) {
+    let w = parseInt(dimensionList[0]);
+    let h = parseInt(dimensionList[1]);
+    // clever check for NaN
+    if (! (w !== w || h !== h)) {  // eslint-disable-line
+      return [w, h];
     }
+    return false;
+  }
+
+  function frameBanner(adUnit) {
+    // adUnit.sizes is scheduled to be deprecated, continue its support but prefer adUnit.mediaTypes.banner
+    var sizeList = adUnit.sizes;
+    if (adUnit.mediaTypes && adUnit.mediaTypes.banner) {
+      sizeList = adUnit.mediaTypes.banner.sizes;
+    }
+    var sizeStringList = utils.parseSizesInput(sizeList);
+    if (!Array.isArray(sizeStringList)) {
+      return {};
+    }
+
+    var format = [];
+    sizeStringList.forEach(function(size) {
+      if (!size) {
+        return;
+      }
+      var dimensionList = getValidSizeSet(size.split('x'));
+      if (dimensionList) {
+        format.push({
+          'w': dimensionList[0],
+          'h': dimensionList[1],
+        });
+      }
+    });
+    if (format.length) {
+      return {
+        'format': format
+      };
+    }
+    return {};
   }
 
   function frameVideo(bid) {
     var size = [];
     if (utils.deepAccess(bid, 'mediaTypes.video.playerSize')) {
+      var dimensionSet = bid.mediaTypes.video.playerSize;
       if (utils.isArray(bid.mediaTypes.video.playerSize[0])) {
-        size = bid.mediaTypes.video.playerSize[0];
-      } else if (utils.isNumber(bid.mediaTypes.video.playerSize[0])) {
-        size = bid.mediaTypes.video.playerSize;
+        dimensionSet = bid.mediaTypes.video.playerSize[0];
+      }
+      var validSize = getValidSizeSet(dimensionSet)
+      if (validSize) {
+        size = validSize;
       }
     }
     return {
@@ -172,7 +210,7 @@ function RhythmOneBidAdapter() {
   function frameExt(bid) {
     return {
       bidder: {
-        placementId: (bid.params && bid.params['placementId']) ? bid.params['placementId'] : '',
+        placementId: bid.params['placementId'],
         zone: (bid.params && bid.params['zone']) ? bid.params['zone'] : '1r',
         path: (bid.params && bid.params['path']) ? bid.params['path'] : 'mvo'
       }

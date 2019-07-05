@@ -84,7 +84,7 @@ export const spec = {
       utils.logError(errorMessage);
     } else if (bidResult.seatbid && bidResult.seatbid.length > 0) {
       bidResult.seatbid[0].bid.forEach(tag => {
-        bids.push(createBid(STATUS.GOOD, bidderRequest, tag, width, height, bidResult.seatbid[0].seat.toLowerCase()));
+        bids.push(createBid(STATUS.GOOD, bidderRequest, tag, width, height, BIDDER_CODE));
       });
     }
 
@@ -154,7 +154,21 @@ function generateUrl(bid, bidderRequest) {
     }
 
     url += ('&transactionId=' + bid.transactionId + '&hb=1');
-    url += ('&referrer=' + encodeURIComponent(bidderRequest.refererInfo.referer));
+
+    if (bidderRequest) {
+      if (bidderRequest.gdprConsent) {
+        if (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') {
+          url += ('&gdpr=' + (bidderRequest.gdprConsent.gdprApplies ? 1 : 0));
+        }
+        if (bidderRequest.gdprConsent.consentString) {
+          url += ('&gdpr_consent=' + bidderRequest.gdprConsent.consentString);
+        }
+      }
+
+      if (bidderRequest.refererInfo && bidderRequest.refererInfo.referer) {
+        url += ('&referrer=' + encodeURIComponent(bidderRequest.refererInfo.referer));
+      }
+    }
 
     return (url + '&fmt=json');
   }

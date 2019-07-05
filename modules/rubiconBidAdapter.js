@@ -14,6 +14,18 @@ export const FASTLANE_ENDPOINT = '//fastlane.rubiconproject.com/a/api/fastlane.j
 export const VIDEO_ENDPOINT = '//prebid-server.rubiconproject.com/openrtb2/auction';
 export const SYNC_ENDPOINT = 'https://eus.rubiconproject.com/usync.html';
 
+const DIGITRUST_PROP_NAMES = {
+  FASTLANE: {
+    id: 'dt.id',
+    keyv: 'dt.keyv',
+    pref: 'dt.pref'
+  },
+  PREBID_SERVER: {
+    id: 'id',
+    keyv: 'keyv'
+  }
+};
+
 var sizeMap = {
   1: '468x60',
   2: '728x90',
@@ -25,6 +37,7 @@ var sizeMap = {
   14: '250x250',
   15: '300x250',
   16: '336x280',
+  17: '240x400',
   19: '300x100',
   31: '980x120',
   32: '250x360',
@@ -70,6 +83,7 @@ var sizeMap = {
   126: '200x600',
   144: '980x600',
   145: '980x150',
+  156: '640x320',
   159: '320x250',
   179: '250x600',
   195: '600x300',
@@ -79,7 +93,9 @@ var sizeMap = {
   214: '980x360',
   229: '320x180',
   232: '580x400',
-  257: '400x600'
+  257: '400x600',
+  265: '1920x1080',
+  288: '640x380'
 };
 utils._each(sizeMap, (item, key) => sizeMap[item] = key);
 
@@ -151,10 +167,14 @@ export const spec = {
               includewinners: true,
               // includebidderkeys always false for openrtb
               includebidderkeys: false,
-              priceGranularity: getPriceGranularity(config)
+              pricegranularity: getPriceGranularity(config)
             }
           }
         }
+      }
+      const bidFloor = parseFloat(utils.deepAccess(bidRequest, 'params.floor'));
+      if (!isNaN(bidFloor)) {
+        data.imp[0].bidfloor = bidFloor;
       }
       // if value is set, will overwrite with same value
       data.imp[0].ext.rubicon.video.size_id = determineRubiconVideoSizeId(bidRequest)
@@ -163,13 +183,9 @@ export const spec = {
 
       addVideoParameters(data, bidRequest);
 
-      const digiTrust = getDigiTrustQueryParams();
+      const digiTrust = _getDigiTrustQueryParams(bidRequest, 'PREBID_SERVER');
       if (digiTrust) {
-        data.user = {
-          ext: {
-            digitrust: digiTrust
-          }
-        };
+        utils.deepSetValue(data, 'user.ext.digitrust', digiTrust);
       }
 
       if (bidderRequest.gdprConsent) {
@@ -189,16 +205,37 @@ export const spec = {
           data.regs = {ext: {gdpr: gdprApplies}};
         }
 
-        const consentString = bidderRequest.gdprConsent.consentString;
-        if (data.user) {
-          if (data.user.ext) {
-            data.user.ext.consent = consentString;
-          } else {
-            data.user.ext = {consent: consentString};
-          }
-        } else {
-          data.user = {ext: {consent: consentString}};
+        utils.deepSetValue(data, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
+      }
+
+      if (bidRequest.userId && typeof bidRequest.userId === 'object' &&
+        (bidRequest.userId.tdid || bidRequest.userId.pubcid)) {
+        utils.deepSetValue(data, 'user.ext.eids', []);
+
+        if (bidRequest.userId.tdid) {
+          data.user.ext.eids.push({
+            source: 'adserver.org',
+            uids: [{
+              id: bidRequest.userId.tdid,
+              ext: {
+                rtiPartner: 'TDID'
+              }
+            }]
+          });
         }
+
+        if (bidRequest.userId.pubcid) {
+          data.user.ext.eids.push({
+            source: 'pubcommon',
+            uids: [{
+              id: bidRequest.userId.pubcid,
+            }]
+          });
+        }
+      }
+
+      if (config.getConfig('coppa') === true) {
+        utils.deepSetValue(request, 'regs.coppa', 1);
       }
 
       return {
@@ -232,30 +269,30 @@ export const spec = {
         return groupedBids;
       }, {});
 
-      requests = videoRequests.concat(Object.keys(groupedBidRequests).map(bidGroupKey => {
-        let bidsInGroup = groupedBidRequests[bidGroupKey];
+      // fastlane SRA has a limit of 10 slots
+      const SRA_BID_LIMIT = 10;
 
-        // fastlane SRA has a limit of 10 slots
-        if (bidsInGroup.length > 10) {
-          utils.logWarn(`Rubicon bid adapter Warning: single request mode has a limit of 10 bids: ${bidsInGroup.length - 10} bids were not sent`);
-          bidsInGroup = bidsInGroup.slice(0, 10);
-        }
+      // multiple requests are used if bids groups have more than 10 bids
+      requests = videoRequests.concat(Object.keys(groupedBidRequests).reduce((aggregate, bidGroupKey) => {
+        // for each partioned bidGroup, append a bidRequest to requests list
+        partitionArray(groupedBidRequests[bidGroupKey], SRA_BID_LIMIT).forEach(bidsInGroup => {
+          const combinedSlotParams = spec.combineSlotUrlParams(bidsInGroup.map(bidRequest => {
+            return spec.createSlotParams(bidRequest, bidderRequest);
+          }));
 
-        const combinedSlotParams = spec.combineSlotUrlParams(bidsInGroup.map(bidRequest => {
-          return spec.createSlotParams(bidRequest, bidderRequest);
-        }));
-
-        // SRA request returns grouped bidRequest arrays not a plain bidRequest
-        return {
-          method: 'GET',
-          url: FASTLANE_ENDPOINT,
-          data: spec.getOrderedParams(combinedSlotParams).reduce((paramString, key) => {
-            const propValue = combinedSlotParams[key];
-            return ((utils.isStr(propValue) && propValue !== '') || utils.isNumber(propValue)) ? `${paramString}${key}=${encodeURIComponent(propValue)}&` : paramString;
-          }, '') + `slots=${bidsInGroup.length}&rand=${Math.random()}`,
-          bidRequest: bidsInGroup,
-        };
-      }));
+          // SRA request returns grouped bidRequest arrays not a plain bidRequest
+          aggregate.push({
+            method: 'GET',
+            url: FASTLANE_ENDPOINT,
+            data: spec.getOrderedParams(combinedSlotParams).reduce((paramString, key) => {
+              const propValue = combinedSlotParams[key];
+              return ((utils.isStr(propValue) && propValue !== '') || utils.isNumber(propValue)) ? `${paramString}${key}=${encodeURIComponent(propValue)}&` : paramString;
+            }, '') + `slots=${bidsInGroup.length}&rand=${Math.random()}`,
+            bidRequest: bidsInGroup
+          });
+        });
+        return aggregate;
+      }, []));
     }
     return requests;
   },
@@ -265,6 +302,7 @@ export const spec = {
     const containsTgI = /^tg_i/
 
     const orderedParams = [
+      'tpid_tdid',
       'account_id',
       'site_id',
       'zone_id',
@@ -367,6 +405,10 @@ export const spec = {
       'rf': _getPageUrl(bidRequest, bidderRequest)
     };
 
+    if ((bidRequest.userId || {}).tdid) {
+      data['tpid_tdid'] = bidRequest.userId.tdid;
+    }
+
     if (bidderRequest.gdprConsent) {
       // add 'gdpr' only if 'gdprApplies' is defined
       if (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') {
@@ -394,10 +436,12 @@ export const spec = {
     }
 
     // digitrust properties
-    const digitrustParams = _getDigiTrustQueryParams();
-    Object.keys(digitrustParams).forEach(paramKey => {
-      data[paramKey] = digitrustParams[paramKey];
-    });
+    const digitrustParams = _getDigiTrustQueryParams(bidRequest, 'FASTLANE');
+    Object.assign(data, digitrustParams);
+
+    if (config.getConfig('coppa') === true) {
+      data['coppa'] = 1;
+    }
 
     return data;
   },
@@ -588,22 +632,36 @@ function _getScreenResolution() {
   return [window.screen.width, window.screen.height].join('x');
 }
 
-function _getDigiTrustQueryParams() {
+function _getDigiTrustQueryParams(bidRequest = {}, endpointName) {
+  if (!endpointName || !DIGITRUST_PROP_NAMES[endpointName]) {
+    return null;
+  }
+  const propNames = DIGITRUST_PROP_NAMES[endpointName];
+
   function getDigiTrustId() {
-    let digiTrustUser = window.DigiTrust && (config.getConfig('digiTrustId') || window.DigiTrust.getUser({member: 'T9QSFKPDN9'}));
+    const bidRequestDigitrust = utils.deepAccess(bidRequest, 'userId.digitrustid.data');
+    if (bidRequestDigitrust) {
+      return bidRequestDigitrust;
+    }
+
+    let digiTrustUser = (window.DigiTrust && (config.getConfig('digiTrustId') || window.DigiTrust.getUser({member: 'T9QSFKPDN9'})));
     return (digiTrustUser && digiTrustUser.success && digiTrustUser.identity) || null;
   }
 
   let digiTrustId = getDigiTrustId();
   // Verify there is an ID and this user has not opted out
   if (!digiTrustId || (digiTrustId.privacy && digiTrustId.privacy.optout)) {
-    return [];
+    return null;
   }
-  return {
-    'dt.id': digiTrustId.id,
-    'dt.keyv': digiTrustId.keyv,
-    'dt.pref': 0
+
+  const digiTrustQueryParams = {
+    [propNames.id]: digiTrustId.id,
+    [propNames.keyv]: digiTrustId.keyv
   };
+  if (propNames.pref) {
+    digiTrustQueryParams[propNames.pref] = 0;
+  }
+  return digiTrustQueryParams;
 }
 
 /**
@@ -663,24 +721,6 @@ function parseSizes(bid, mediaType) {
   }
 
   return masSizeOrdering(sizes);
-}
-
-function getDigiTrustQueryParams() {
-  function getDigiTrustId() {
-    let digiTrustUser = window.DigiTrust && (config.getConfig('digiTrustId') || window.DigiTrust.getUser({member: 'T9QSFKPDN9'}));
-    return (digiTrustUser && digiTrustUser.success && digiTrustUser.identity) || null;
-  }
-
-  let digiTrustId = getDigiTrustId();
-  // Verify there is an ID and this user has not opted out
-  if (!digiTrustId || (digiTrustId.privacy && digiTrustId.privacy.optout)) {
-    return null;
-  }
-  return {
-    id: digiTrustId.id,
-    keyv: digiTrustId.keyv,
-    pref: 0
-  };
 }
 
 /**
@@ -843,27 +883,29 @@ export function determineRubiconVideoSizeId(bid) {
   return utils.deepAccess(bid, `mediaTypes.${VIDEO}.context`) === 'outstream' ? 203 : 201;
 }
 
+/**
+ * @param {PrebidConfig} config
+ * @returns {{ranges: {ranges: Object[]}}}
+ */
 export function getPriceGranularity(config) {
-  const granularityMappings = {
-    low: [{max: 5.00, increment: 0.50}],
-    medium: [{max: 20.00, increment: 0.10}],
-    high: [{max: 20.00, increment: 0.01}],
-    auto: [
-      {max: 5.00, increment: 0.05},
-      {min: 5.00, max: 10.00, increment: 0.10},
-      {min: 10.00, max: 20.00, increment: 0.50}
-    ],
-    dense: [
-      {max: 3.00, increment: 0.01},
-      {min: 3.00, max: 8.00, increment: 0.05},
-      {min: 8.00, max: 20.00, increment: 0.50}
-    ]
-  }
-  if (config.getConfig('priceGranularity') === 'custom') {
-    return {ranges: config.getConfig('customPriceGranularity').buckets}
-  } else {
-    return {ranges: granularityMappings[config.getConfig('priceGranularity')]}
-  }
+  return {
+    ranges: {
+      low: [{max: 5.00, increment: 0.50}],
+      medium: [{max: 20.00, increment: 0.10}],
+      high: [{max: 20.00, increment: 0.01}],
+      auto: [
+        {max: 5.00, increment: 0.05},
+        {min: 5.00, max: 10.00, increment: 0.10},
+        {min: 10.00, max: 20.00, increment: 0.50}
+      ],
+      dense: [
+        {max: 3.00, increment: 0.01},
+        {min: 3.00, max: 8.00, increment: 0.05},
+        {min: 8.00, max: 20.00, increment: 0.50}
+      ],
+      custom: config.getConfig('customPriceBucket') && config.getConfig('customPriceBucket').buckets
+    }[config.getConfig('priceGranularity')]
+  };
 }
 
 // Function to validate the required video params
@@ -888,6 +930,16 @@ export function hasValidVideoParams(bid) {
     }
   })
   return isValid;
+}
+
+/**
+ * split array into multiple arrays of defined size
+ * @param {Array} array
+ * @param {number} size
+ * @returns {Array}
+ */
+function partitionArray(array, size) {
+  return array.map((e, i) => (i % size === 0) ? array.slice(i, i + size) : null).filter((e) => e)
 }
 
 var hasSynced = false;
