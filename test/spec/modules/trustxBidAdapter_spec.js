@@ -47,6 +47,14 @@ describe('TrustXAdapter', function () {
       });
       return res;
     }
+
+    const bidderRequest = {
+      refererInfo: {
+        referer: 'http://example.com'
+      }
+    };
+    const encodedReferer = encodeURIComponent(bidderRequest.refererInfo.referer);
+
     let bidRequests = [
       {
         'bidder': 'trustx',
@@ -84,10 +92,10 @@ describe('TrustXAdapter', function () {
     ];
 
     it('should attach valid params to the tag', function () {
-      const request = spec.buildRequests([bidRequests[0]]);
+      const request = spec.buildRequests([bidRequests[0]], bidderRequest);
       expect(request.data).to.be.an('string');
       const payload = parseRequest(request.data);
-      expect(payload).to.have.property('u').that.is.a('string');
+      expect(payload).to.have.property('u', encodedReferer);
       expect(payload).to.have.property('pt', 'net');
       expect(payload).to.have.property('auids', '43');
       expect(payload).to.have.property('sizes', '300x250,300x600');
@@ -97,10 +105,10 @@ describe('TrustXAdapter', function () {
     });
 
     it('sizes must not be duplicated', function () {
-      const request = spec.buildRequests(bidRequests);
+      const request = spec.buildRequests(bidRequests, bidderRequest);
       expect(request.data).to.be.an('string');
       const payload = parseRequest(request.data);
-      expect(payload).to.have.property('u').that.is.a('string');
+      expect(payload).to.have.property('u', encodedReferer);
       expect(payload).to.have.property('pt', 'net');
       expect(payload).to.have.property('auids', '43,43,45');
       expect(payload).to.have.property('sizes', '300x250,300x600,728x90');
@@ -109,10 +117,10 @@ describe('TrustXAdapter', function () {
 
     it('pt parameter must be "gross" if params.priceType === "gross"', function () {
       bidRequests[1].params.priceType = 'gross';
-      const request = spec.buildRequests(bidRequests);
+      const request = spec.buildRequests(bidRequests, bidderRequest);
       expect(request.data).to.be.an('string');
       const payload = parseRequest(request.data);
-      expect(payload).to.have.property('u').that.is.a('string');
+      expect(payload).to.have.property('u', encodedReferer);
       expect(payload).to.have.property('pt', 'gross');
       expect(payload).to.have.property('auids', '43,43,45');
       expect(payload).to.have.property('sizes', '300x250,300x600,728x90');
@@ -122,10 +130,10 @@ describe('TrustXAdapter', function () {
 
     it('pt parameter must be "net" or "gross"', function () {
       bidRequests[1].params.priceType = 'some';
-      const request = spec.buildRequests(bidRequests);
+      const request = spec.buildRequests(bidRequests, bidderRequest);
       expect(request.data).to.be.an('string');
       const payload = parseRequest(request.data);
-      expect(payload).to.have.property('u').that.is.a('string');
+      expect(payload).to.have.property('u', encodedReferer);
       expect(payload).to.have.property('pt', 'net');
       expect(payload).to.have.property('auids', '43,43,45');
       expect(payload).to.have.property('sizes', '300x250,300x600,728x90');
@@ -134,7 +142,8 @@ describe('TrustXAdapter', function () {
     });
 
     it('if gdprConsent is present payload must have gdpr params', function () {
-      const request = spec.buildRequests(bidRequests, {gdprConsent: {consentString: 'AAA', gdprApplies: true}});
+      const bidderRequestWithGDPR = Object.assign({gdprConsent: {consentString: 'AAA', gdprApplies: true}}, bidderRequest);
+      const request = spec.buildRequests(bidRequests, bidderRequestWithGDPR);
       expect(request.data).to.be.an('string');
       const payload = parseRequest(request.data);
       expect(payload).to.have.property('gdpr_consent', 'AAA');
@@ -142,7 +151,8 @@ describe('TrustXAdapter', function () {
     });
 
     it('if gdprApplies is false gdpr_applies must be 0', function () {
-      const request = spec.buildRequests(bidRequests, {gdprConsent: {consentString: 'AAA', gdprApplies: false}});
+      const bidderRequestWithGDPR = Object.assign({gdprConsent: {consentString: 'AAA', gdprApplies: false}}, bidderRequest);
+      const request = spec.buildRequests(bidRequests, bidderRequestWithGDPR);
       expect(request.data).to.be.an('string');
       const payload = parseRequest(request.data);
       expect(payload).to.have.property('gdpr_consent', 'AAA');
@@ -150,7 +160,8 @@ describe('TrustXAdapter', function () {
     });
 
     it('if gdprApplies is undefined gdpr_applies must be 1', function () {
-      const request = spec.buildRequests(bidRequests, {gdprConsent: {consentString: 'AAA'}});
+      const bidderRequestWithGDPR = Object.assign({gdprConsent: {consentString: 'AAA'}}, bidderRequest);
+      const request = spec.buildRequests(bidRequests, bidderRequestWithGDPR);
       expect(request.data).to.be.an('string');
       const payload = parseRequest(request.data);
       expect(payload).to.have.property('gdpr_consent', 'AAA');
