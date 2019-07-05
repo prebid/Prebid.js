@@ -3,12 +3,14 @@ import { cryptoVerify, spec, FAST_BID_PUBKEY } from 'modules/criteoBidAdapter';
 import { createBid } from 'src/bidfactory';
 import CONSTANTS from 'src/constants.json';
 import * as utils from 'src/utils';
+import { config } from '../../../src/config';
 
 describe('The Criteo bidding adapter', function () {
   beforeEach(function () {
     // Remove FastBid to avoid side effects.
     localStorage.removeItem('criteo_fast_bid');
   });
+
   describe('isBidRequestValid', function () {
     it('should return false when given an invalid bid', function () {
       const bid = {
@@ -197,6 +199,28 @@ describe('The Criteo bidding adapter', function () {
       expect(ortbRequest.gdprConsent.consentData).to.equal(undefined);
       expect(ortbRequest.gdprConsent.gdprApplies).to.equal(undefined);
       expect(ortbRequest.gdprConsent.consentGiven).to.equal(undefined);
+    });
+
+    it('should properly build a request with ceh', function () {
+      const bidRequests = [
+        {
+          bidder: 'criteo',
+          adUnitCode: 'bid-123',
+          transactionId: 'transaction-123',
+          sizes: [[728, 90]],
+          params: {
+            zoneId: 123,
+          },
+        },
+      ];
+      config.setConfig({
+        criteo: {
+          ceh: 'hashedemail'
+        }
+      });
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.user).to.not.be.null;
+      expect(request.data.user.ceh).to.equal('hashedemail');
     });
   });
 
