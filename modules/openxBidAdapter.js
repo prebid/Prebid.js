@@ -1,14 +1,14 @@
-import {config} from 'src/config';
-import {registerBidder} from 'src/adapters/bidderFactory';
-import * as utils from 'src/utils';
-import {userSync} from 'src/userSync';
-import {BANNER, VIDEO} from 'src/mediaTypes';
-import {parse} from 'src/url';
+import {config} from '../src/config';
+import {registerBidder} from '../src/adapters/bidderFactory';
+import * as utils from '../src/utils';
+import {userSync} from '../src/userSync';
+import {BANNER, VIDEO} from '../src/mediaTypes';
+import {parse} from '../src/url';
 
 const SUPPORTED_AD_TYPES = [BANNER, VIDEO];
 const BIDDER_CODE = 'openx';
 const BIDDER_CONFIG = 'hb_pb';
-const BIDDER_VERSION = '2.1.6';
+const BIDDER_VERSION = '2.1.7';
 
 let shouldSendBoPixel = true;
 
@@ -75,7 +75,7 @@ export const spec = {
 };
 
 function isVideoRequest(bidRequest) {
-  return utils.deepAccess(bidRequest, 'mediaTypes.video') || bidRequest.mediaType === VIDEO;
+  return (utils.deepAccess(bidRequest, 'mediaTypes.video') && !utils.deepAccess(bidRequest, 'mediaTypes.banner')) || bidRequest.mediaType === VIDEO;
 }
 
 function createBannerBidResponses(oxResponseObj, {bids, startTime}) {
@@ -115,6 +115,15 @@ function createBannerBidResponses(oxResponseObj, {bids, startTime}) {
       bidResponse.tbd = adUnit.tbd;
     }
     bidResponse.ts = adUnit.ts;
+
+    bidResponse.meta = {};
+    if (adUnit.brand_id) {
+      bidResponse.meta.brandId = adUnit.brand_id;
+    }
+
+    if (adUnit.adv_id) {
+      bidResponse.meta.dspid = adUnit.adv_id;
+    }
 
     bidResponses.push(bidResponse);
 
@@ -228,7 +237,9 @@ function buildCommonQueryParamsFromBids(bids, bidderRequest) {
     }
   }
 
-  if (bids[0].crumbs && bids[0].crumbs.pubcid) {
+  if ((bids[0].userId && bids[0].userId.pubcid)) {
+    defaultParams.pubcid = bids[0].userId.pubcid;
+  } else if (bids[0].crumbs && bids[0].crumbs.pubcid) {
     defaultParams.pubcid = bids[0].crumbs.pubcid;
   }
 
@@ -251,7 +262,7 @@ function buildOXBannerRequest(bids, bidderRequest) {
     queryParams.ns = 1;
   }
 
-  if (bids.some(bid => bid.params.coppa)) {
+  if (config.getConfig('coppa') === true || bids.some(bid => bid.params.coppa)) {
     queryParams.tfcd = 1;
   }
 
@@ -273,7 +284,7 @@ function buildOXBannerRequest(bids, bidderRequest) {
   let hasCustomFloor = false;
   bids.forEach(function (bid) {
     if (bid.params.customFloor) {
-      customFloorsForAllBids.push(bid.params.customFloor * 1000);
+      customFloorsForAllBids.push((Math.round(bid.params.customFloor * 100) / 100) * 1000);
       hasCustomFloor = true;
     } else {
       customFloorsForAllBids.push(0);
@@ -362,7 +373,6 @@ function createVideoBidResponses(response, {bid, startTime}) {
     let vastQueryParams = parse(response.vastUrl).search || {};
     let bidResponse = {};
     bidResponse.requestId = bid.bidId;
-    bidResponse.bidderCode = BIDDER_CODE;
     // default 5 mins
     bidResponse.ttl = 300;
     // true is net, false is gross

@@ -1,6 +1,6 @@
-import * as utils from 'src/utils';
-import {registerBidder} from 'src/adapters/bidderFactory';
-import { BANNER, VIDEO } from 'src/mediaTypes';
+import * as utils from '../src/utils';
+import {registerBidder} from '../src/adapters/bidderFactory';
+import { BANNER, VIDEO } from '../src/mediaTypes';
 
 const BIDDER_CODE = 'conversant';
 const URL = '//web.hb.ad.cpe.dotomi.com/s2s/header/24';
@@ -99,7 +99,9 @@ export const spec = {
         imp.banner = banner;
       }
 
-      if (bid.crumbs && bid.crumbs.pubcid) {
+      if (bid.userId && bid.userId.pubcid) {
+        pubcid = bid.userId.pubcid;
+      } else if (bid.crumbs && bid.crumbs.pubcid) {
         pubcid = bid.crumbs.pubcid;
       }
 

@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { cryptoVerify, spec, FAST_BID_PUBKEY } from 'modules/criteoBidAdapter';
-import * as bidfactory from 'src/bidfactory';
+import { createBid } from 'src/bidfactory';
 import CONSTANTS from 'src/constants.json';
 import * as utils from 'src/utils';
 
@@ -332,7 +332,7 @@ describe('The Criteo bidding adapter', function () {
       };
       const bids = spec.interpretResponse(response, request);
       expect(bids).to.have.lengthOf(2);
-      const prebidBids = bids.map(bid => Object.assign(bidfactory.createBid(CONSTANTS.STATUS.GOOD, request.bidRequests[0]), bid));
+      const prebidBids = bids.map(bid => Object.assign(createBid(CONSTANTS.STATUS.GOOD, request.bidRequests[0]), bid));
       expect(prebidBids[0].adId).to.not.equal(prebidBids[1].adId);
     });
   });
@@ -350,7 +350,7 @@ describe('The Criteo bidding adapter', function () {
 
     it('should return undefined with incompatible browsers', function () {
       // Here use a null hash to make the call to crypto library fail and simulate a browser failure
-      expect(cryptoVerify(FAST_BID_PUBKEY, null, 'test')).to.equal.undefined;
+      expect(cryptoVerify(FAST_BID_PUBKEY, null, 'test')).to.be.false;
     });
   });
 });

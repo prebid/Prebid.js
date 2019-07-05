@@ -1,8 +1,8 @@
-import * as utils from 'src/utils';
-import * as bidfactory from 'src/bidfactory';
-import {registerBidder} from 'src/adapters/bidderFactory';
+import * as utils from '../src/utils';
+import {createBid as createBidFactory} from '../src/bidfactory';
+import {registerBidder} from '../src/adapters/bidderFactory';
 import {VIDEO} from '../src/mediaTypes';
-import {STATUS} from 'src/constants';
+import {STATUS} from '../src/constants';
 
 const BIDDER_CODE = 'telaria';
 const ENDPOINT = '.ads.tremorhub.com/ad/tag';
@@ -84,7 +84,7 @@ export const spec = {
       utils.logError(errorMessage);
     } else if (bidResult.seatbid && bidResult.seatbid.length > 0) {
       bidResult.seatbid[0].bid.forEach(tag => {
-        bids.push(createBid(STATUS.GOOD, bidderRequest, tag, width, height, bidResult.seatbid[0].seat.toLowerCase()));
+        bids.push(createBid(STATUS.GOOD, bidderRequest, tag, width, height, BIDDER_CODE));
       });
     }
 
@@ -154,7 +154,21 @@ function generateUrl(bid, bidderRequest) {
     }
 
     url += ('&transactionId=' + bid.transactionId + '&hb=1');
-    url += ('&referrer=' + encodeURIComponent(bidderRequest.refererInfo.referer));
+
+    if (bidderRequest) {
+      if (bidderRequest.gdprConsent) {
+        if (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') {
+          url += ('&gdpr=' + (bidderRequest.gdprConsent.gdprApplies ? 1 : 0));
+        }
+        if (bidderRequest.gdprConsent.consentString) {
+          url += ('&gdpr_consent=' + bidderRequest.gdprConsent.consentString);
+        }
+      }
+
+      if (bidderRequest.refererInfo && bidderRequest.refererInfo.referer) {
+        url += ('&referrer=' + encodeURIComponent(bidderRequest.refererInfo.referer));
+      }
+    }
 
     return (url + '&fmt=json');
   }
@@ -170,7 +184,7 @@ function generateUrl(bid, bidderRequest) {
  * @param bidderCode
  */
 function createBid(status, reqBid, response, width, height, bidderCode) {
-  let bid = bidfactory.createBid(status, reqBid);
+  let bid = createBidFactory(status, reqBid);
 
   // TTL 5 mins by default, future support for extended imp wait time
   if (response) {

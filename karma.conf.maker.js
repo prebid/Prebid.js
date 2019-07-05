@@ -20,7 +20,10 @@ function newWebpackConfig(codeCoverage) {
     webpackConfig.module.rules.push({
       enforce: 'post',
       exclude: /(node_modules)|(test)|(integrationExamples)|(build)|polyfill.js|(src\/adapters\/analytics\/ga.js)/,
-      loader: 'istanbul-instrumenter-loader',
+      use: {
+        loader: 'istanbul-instrumenter-loader',
+        options: { esModules: true }
+      },
       test: /\.js$/
     })
   }
@@ -82,7 +85,8 @@ function setBrowsers(karmaConf, browserstack) {
   if (browserstack) {
     karmaConf.browserStack = {
       username: process.env.BROWSERSTACK_USERNAME,
-      accessKey: process.env.BROWSERSTACK_ACCESS_KEY
+      accessKey: process.env.BROWSERSTACK_ACCESS_KEY,
+      build: 'Prebidjs Unit Tests ' + new Date().toLocaleString()
     }
     if (process.env.TRAVIS) {
       karmaConf.browserStack.startTunnel = false;

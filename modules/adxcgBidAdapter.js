@@ -1,8 +1,8 @@
-import { config } from 'src/config'
-import * as utils from 'src/utils'
-import * as url from 'src/url'
-import { registerBidder } from 'src/adapters/bidderFactory'
-import { BANNER, NATIVE, VIDEO } from 'src/mediaTypes'
+import { config } from '../src/config'
+import * as utils from '../src/utils'
+import * as url from '../src/url'
+import { registerBidder } from '../src/adapters/bidderFactory'
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes'
 import includes from 'core-js/library/fn/array/includes'
 
 /**
@@ -10,6 +10,8 @@ import includes from 'core-js/library/fn/array/includes'
  * updated to latest prebid repo on 2017.10.20
  * updated for gdpr compliance on 2018.05.22 -requires gdpr compliance module
  * updated to pass aditional auction and impression level parameters. added pass for video targeting parameters
+ * updated to fix native support for image width/height and icon 2019.03.17
+ * updated support for userid - pubcid,ttid 2019.05.28
  */
 
 const BIDDER_CODE = 'adxcg'
@@ -158,6 +160,14 @@ export const spec = {
     beaconParams.prebidBidIds = prebidBidIds.join(',')
     beaconParams.bidfloors = bidfloors.join(',')
 
+    if (utils.isStr(utils.deepAccess(validBidRequests, '0.userId.pubcid'))) {
+      beaconParams.pubcid = validBidRequests[0].userId.pubcid;
+    }
+
+    if (utils.isStr(utils.deepAccess(validBidRequests, '0.userId.tdid'))) {
+      beaconParams.tdid = validBidRequests[0].userId.tdid;
+    }
+
     let adxcgRequestUrl = url.format({
       protocol: secure ? 'https' : 'http',
       hostname: secure ? 'hbps.adxcg.net' : 'hbp.adxcg.net',
@@ -210,8 +220,10 @@ export const spec = {
             let nativeResponse = serverResponseOneItem.nativeResponse
 
             bid['native'] = {
-              clickUrl: encodeURIComponent(nativeResponse.link.url),
-              impressionTrackers: nativeResponse.imptrackers
+              clickUrl: nativeResponse.link.url,
+              impressionTrackers: nativeResponse.imptrackers,
+              clickTrackers: nativeResponse.clktrackers,
+              javascriptTrackers: nativeResponse.jstrackers
             }
 
             nativeResponse.assets.forEach(asset => {
@@ -220,7 +232,19 @@ export const spec = {
               }
 
               if (asset.img && asset.img.url) {
-                bid['native'].image = asset.img.url
+                let nativeImage = {}
+                nativeImage.url = asset.img.url
+                nativeImage.height = asset.img.h
+                nativeImage.width = asset.img.w
+                bid['native'].image = nativeImage
+              }
+
+              if (asset.icon && asset.icon.url) {
+                let nativeIcon = {}
+                nativeIcon.url = asset.icon.url
+                nativeIcon.height = asset.icon.h
+                nativeIcon.width = asset.icon.w
+                bid['native'].icon = nativeIcon
               }
 
               if (asset.data && asset.data.label === 'DESC' && asset.data.value) {

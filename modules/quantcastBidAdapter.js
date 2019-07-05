@@ -1,7 +1,7 @@
-import * as utils from 'src/utils';
-import { ajax } from 'src/ajax';
-import { config } from 'src/config';
-import { registerBidder } from 'src/adapters/bidderFactory';
+import * as utils from '../src/utils';
+import { ajax } from '../src/ajax';
+import { config } from '../src/config';
+import { registerBidder } from '../src/adapters/bidderFactory';
 
 const BIDDER_CODE = 'quantcast';
 const DEFAULT_BID_FLOOR = 0.0000000001;
@@ -182,7 +182,7 @@ export const spec = {
     }
 
     const bidResponsesList = response.bids.map(bid => {
-      const { ad, cpm, width, height, creativeId, currency, videoUrl } = bid;
+      const { ad, cpm, width, height, creativeId, currency, videoUrl, dealId } = bid;
 
       const result = {
         requestId: response.requestId,
@@ -199,6 +199,10 @@ export const spec = {
       if (videoUrl !== undefined && videoUrl) {
         result['vastUrl'] = videoUrl;
         result['mediaType'] = 'video';
+      }
+
+      if (dealId !== undefined && dealId) {
+        result['dealId'] = dealId;
       }
 
       return result;

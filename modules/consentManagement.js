@@ -4,9 +4,9 @@
  * and make it available for any GDPR supported adapters to read/pass this information to
  * their system.
  */
-import * as utils from 'src/utils';
-import { config } from 'src/config';
-import { gdprDataHandler } from 'src/adaptermanager';
+import * as utils from '../src/utils';
+import { config } from '../src/config';
+import { gdprDataHandler } from '../src/adapterManager';
 import includes from 'core-js/library/fn/array/includes';
 import strIncludes from 'core-js/library/fn/string/includes';
 
@@ -185,16 +185,16 @@ function lookupIabConsent(cmpSuccess, cmpError, hookConfig) {
 /**
  * If consentManagement module is enabled (ie included in setConfig), this hook function will attempt to fetch the
  * user's encoded consent string from the supported CMP.  Once obtained, the module will store this
- * data as part of a gdprConsent object which gets transferred to adaptermanager's gdprDataHandler object.
+ * data as part of a gdprConsent object which gets transferred to adapterManager's gdprDataHandler object.
  * This information is later added into the bidRequest object for any supported adapters to read/pass along to their system.
  * @param {object} reqBidsConfigObj required; This is the same param that's used in pbjs.requestBids.
  * @param {function} fn required; The next function in the chain, used by hook.js
  */
-export function requestBidsHook(reqBidsConfigObj, fn) {
+export function requestBidsHook(fn, reqBidsConfigObj) {
   // preserves all module related variables for the current auction instance (used primiarily for concurrent auctions)
   const hookConfig = {
     context: this,
-    args: arguments,
+    args: [reqBidsConfigObj],
     nextFn: fn,
     adUnits: reqBidsConfigObj.adUnits || $$PREBID_GLOBAL$$.adUnits,
     bidsBackHandler: reqBidsConfigObj.bidsBackHandler,
@@ -342,7 +342,7 @@ export function resetConsentData() {
  * A configuration function that initializes some module variables, as well as add a hook into the requestBids function
  * @param {object} config required; consentManagement module config settings; cmp (string), timeout (int), allowAuctionWithoutConsent (boolean)
  */
-export function setConfig(config) {
+export function setConsentConfig(config) {
   if (utils.isStr(config.cmpApi)) {
     userCMP = config.cmpApi;
   } else {
@@ -375,8 +375,8 @@ export function setConfig(config) {
     }
   }
   if (!addedConsentHook) {
-    $$PREBID_GLOBAL$$.requestBids.addHook(requestBidsHook, 50);
+    $$PREBID_GLOBAL$$.requestBids.before(requestBidsHook, 50);
   }
   addedConsentHook = true;
 }
-config.getConfig('consentManagement', config => setConfig(config.consentManagement));
+config.getConfig('consentManagement', config => setConsentConfig(config.consentManagement));

@@ -1,6 +1,7 @@
 import { expect } from 'chai'
 import { spec, _getPlatform } from 'modules/sonobiBidAdapter'
 import { newBidder } from 'src/adapters/bidderFactory'
+import {userSync} from '../../../src/userSync';
 
 describe('SonobiBidAdapter', function () {
   const adapter = newBidder(spec)
@@ -101,6 +102,12 @@ describe('SonobiBidAdapter', function () {
   })
 
   describe('.buildRequests', function () {
+    beforeEach(function() {
+      sinon.stub(userSync, 'canBidderRegisterSync');
+    });
+    afterEach(function() {
+      userSync.canBidderRegisterSync.restore();
+    });
     let bidRequest = [{
       'bidder': 'sonobi',
       'params': {
@@ -143,6 +150,47 @@ describe('SonobiBidAdapter', function () {
         'stack': ['http://example.com']
       }
     };
+    it('should include the digitrust id and keyv', () => {
+      window.DigiTrust = {
+        getUser: function () {
+        }
+      };
+      let sandbox = sinon.sandbox.create();
+      sandbox.stub(window.DigiTrust, 'getUser').callsFake(() =>
+        ({
+          success: true,
+          identity: {
+            id: 'Vb0YJIxTMJV4W0GHRdJ3MwyiOVYJjYEgc2QYdBSG',
+            keyv: 4,
+            version: 2,
+            privacy: {}
+          }
+        })
+      );
+      const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
+      expect(bidRequests.data.digid).to.equal('Vb0YJIxTMJV4W0GHRdJ3MwyiOVYJjYEgc2QYdBSG');
+      expect(bidRequests.data.digkeyv).to.equal(4);
+      sandbox.restore();
+      delete window.DigiTrust;
+    });
+
+    it('should not include the digitrust id and keyv', () => {
+      window.DigiTrust = {
+        getUser: function () {
+        }
+      };
+      let sandbox = sinon.sandbox.create();
+      sandbox.stub(window.DigiTrust, 'getUser').callsFake(() =>
+        ({
+          success: false
+        })
+      );
+      const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
+      expect(bidRequests.data.digid).to.be.undefined;
+      expect(bidRequests.data.digkeyv).to.be.undefined;
+      sandbox.restore();
+      delete window.DigiTrust;
+    })
 
     it('should return a properly formatted request', function () {
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
@@ -242,12 +290,40 @@ describe('SonobiBidAdapter', function () {
       delete bidRequest[1].params.hfa;
       bidRequest[0].crumbs = {'pubcid': 'abcd-efg-0101'};
       bidRequest[1].crumbs = {'pubcid': 'abcd-efg-0101'};
-      const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
-      expect(bidRequests.url).to.equal('https://apex.go.sonobi.com/trinity.json')
-      expect(bidRequests.method).to.equal('GET')
-      expect(bidRequests.data.ref).not.to.be.empty
-      expect(bidRequests.data.s).not.to.be.empty
+      const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
+      expect(bidRequests.url).to.equal('https://apex.go.sonobi.com/trinity.json');
+      expect(bidRequests.method).to.equal('GET');
+      expect(bidRequests.data.ref).not.to.be.empty;
+      expect(bidRequests.data.s).not.to.be.empty;
       expect(bidRequests.data.hfa).to.equal('PRE-abcd-efg-0101');
+    });
+
+    it('should return a properly formatted request with commonid from User ID as hfa', function () {
+      delete bidRequest[0].params.hfa;
+      delete bidRequest[1].params.hfa;
+      bidRequest[0].userId = {'pubcid': 'abcd-efg-0101'};
+      bidRequest[1].userId = {'pubcid': 'abcd-efg-0101'};
+      const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
+      expect(bidRequests.url).to.equal('https://apex.go.sonobi.com/trinity.json');
+      expect(bidRequests.method).to.equal('GET');
+      expect(bidRequests.data.ref).not.to.be.empty;
+      expect(bidRequests.data.s).not.to.be.empty;
+      expect(bidRequests.data.hfa).to.equal('PRE-abcd-efg-0101');
+      delete bidRequest[0].userId;
+      delete bidRequest[1].userId;
+    })
+
+    it('should return a properly formatted request with unified id from User ID as tdid', function () {
+      delete bidRequest[0].params.tdid;
+      delete bidRequest[1].params.tdid;
+      bidRequest[0].userId = {'tdid': 'td-abcd-efg-0101'};
+      bidRequest[1].userId = {'tdid': 'td-abcd-efg-0101'};
+      const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
+      expect(bidRequests.url).to.equal('https://apex.go.sonobi.com/trinity.json');
+      expect(bidRequests.method).to.equal('GET');
+      expect(bidRequests.data.ref).not.to.be.empty;
+      expect(bidRequests.data.s).not.to.be.empty;
+      expect(bidRequests.data.tdid).to.equal('td-abcd-efg-0101');
     })
 
     it('should return a properly formatted request with hfa preferred over commonid', function () {
@@ -262,6 +338,18 @@ describe('SonobiBidAdapter', function () {
       expect(bidRequests.data.s).not.to.be.empty
       expect(bidRequests.data.hfa).to.equal('hfakey')
     })
+
+    it('should set ius as 0 if Sonobi cannot drop iframe pixels', function () {
+      userSync.canBidderRegisterSync.returns(false);
+      const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
+      expect(bidRequests.data.ius).to.equal(0);
+    });
+
+    it('should set ius as 1 if Sonobi can drop iframe pixels', function() {
+      userSync.canBidderRegisterSync.returns(true);
+      const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
+      expect(bidRequests.data.ius).to.equal(1);
+    });
   })
 
   describe('.interpretResponse', function () {
@@ -303,6 +391,20 @@ describe('SonobiBidAdapter', function () {
           'adUnitCode': 'adunit-code-3',
           'sizes': [[120, 600], [300, 600], [160, 600]],
           'bidId': '30b31c1838de1g'
+        },
+        {
+          'bidId': '30b31c1838de1zzzz',
+          'adUnitCode': 'outstream-dom-id',
+          bidder: 'sonobi',
+          mediaTypes: {
+            video: {
+              context: 'outstream'
+            }
+          },
+          params: {
+            placement_id: '92e95368e86639dbd86d',
+            sizes: [[640, 480]]
+          }
         }
       ]
     };
@@ -333,6 +435,17 @@ describe('SonobiBidAdapter', function () {
             'sbi_mouse': 1.07,
           },
           '/7780971/sparks_prebid_LB|30b31c1838de1g': {},
+          '30b31c1838de1zzzz': {
+            sbi_aid: 'force_1550072228_da1c5d030cb49150c5db8a2136175755',
+            sbi_apoc: 'premium',
+            sbi_ct: 'video',
+            sbi_curr: 'USD',
+            sbi_mouse: 1.25,
+            sbi_size: 'preroll',
+            'sbi_crid': 'somecrid',
+
+          }
+
         },
         'sbi_dc': 'mco-1-',
         'sbi_px': [{
@@ -363,13 +476,14 @@ describe('SonobiBidAdapter', function () {
         'cpm': 1.25,
         'width': 300,
         'height': 250,
-        'ad': 'https://mco-1-apex.go.sonobi.com/vast.xml?vid=30292e432662bd5f86d90774b944b038&ref=http%3A%2F%2Flocalhost%2F',
+        'vastUrl': 'https://mco-1-apex.go.sonobi.com/vast.xml?vid=30292e432662bd5f86d90774b944b038&ref=http%3A%2F%2Flocalhost%2F',
         'ttl': 500,
         'creativeId': '30292e432662bd5f86d90774b944b038',
         'netRevenue': true,
         'currency': 'USD',
         'dealId': 'dozerkey',
-        'aid': '30292e432662bd5f86d90774b944b038'
+        'aid': '30292e432662bd5f86d90774b944b038',
+        'mediaType': 'video'
       },
       {
         'requestId': '30b31c1838de1g',
@@ -382,6 +496,21 @@ describe('SonobiBidAdapter', function () {
         'netRevenue': true,
         'currency': 'USD',
         'aid': '30292e432662bd5f86d90774b944b038'
+      },
+      {
+        'requestId': '30b31c1838de1zzzz',
+        'cpm': 1.25,
+        'width': 640,
+        'height': 480,
+        'vastUrl': 'https://mco-1-apex.go.sonobi.com/vast.xml?vid=30292e432662bd5f86d90774b944b038&ref=http%3A%2F%2Flocalhost%2F',
+        'ttl': 500,
+        'creativeId': 'somecrid',
+        'netRevenue': true,
+        'currency': 'USD',
+        'dealId': 'dozerkey',
+        'aid': 'force_1550072228_da1c5d030cb49150c5db8a2136175755',
+        'mediaType': 'video',
+        renderer: () => {}
       },
     ];
 
@@ -396,7 +525,12 @@ describe('SonobiBidAdapter', function () {
         expect(resp.netRevenue).to.equal(prebidResponse[i].netRevenue);
         expect(resp.currency).to.equal(prebidResponse[i].currency);
         expect(resp.aid).to.equal(prebidResponse[i].aid);
-        if (resp.mediaType === 'video') {
+        if (resp.mediaType === 'video' && resp.renderer) {
+          expect(resp.vastUrl.indexOf('vast.xml')).to.be.greaterThan(0);
+          expect(resp.width).to.equal(prebidResponse[i].width);
+          expect(resp.height).to.equal(prebidResponse[i].height);
+          expect(resp.renderer).to.be.ok;
+        } else if (resp.mediaType === 'video') {
           expect(resp.vastUrl.indexOf('vast.xml')).to.be.greaterThan(0);
           expect(resp.ad).to.be.undefined;
           expect(resp.width).to.be.undefined;

@@ -1,5 +1,5 @@
-import * as utils from 'src/utils';
-import { registerBidder } from 'src/adapters/bidderFactory';
+import * as utils from '../src/utils';
+import { registerBidder } from '../src/adapters/bidderFactory';
 
 const BIDDER_CODE = 'yieldmo';
 const CURRENCY = 'USD';
@@ -40,8 +40,17 @@ export const spec = {
       w: localWindow.innerWidth,
       h: localWindow.innerHeight
     };
+
     bidRequests.forEach((request) => {
       serverRequest.p.push(addPlacement(request));
+      const pubcid = getPubcId(request)
+      if (pubcid) {
+        serverRequest.pubcid = pubcid;
+      } else if (request.crumbs) {
+        if (request.crumbs.pubcid) {
+          serverRequest.pubcid = request.crumbs.pubcid;
+        }
+      }
     });
     serverRequest.p = '[' + serverRequest.p.toString() + ']';
     return {
@@ -95,8 +104,13 @@ function addPlacement(request) {
     callback_id: request.bidId,
     sizes: request.sizes
   }
-  if (request.params && request.params.placementId) {
-    placementInfo.ym_placement_id = request.params.placementId
+  if (request.params) {
+    if (request.params.placementId) {
+      placementInfo.ym_placement_id = request.params.placementId;
+    }
+    if (request.params.bidFloor) {
+      placementInfo.bidFloor = request.params.bidFloor;
+    }
   }
   return JSON.stringify(placementInfo);
 }
@@ -301,4 +315,12 @@ function isSuperSandboxedIframe() {
  */
 function isMraid() {
   return !!(window.mraid);
+}
+
+function getPubcId(request) {
+  let pubcid;
+  if (request && request.userId && request.userId.pubcid && typeof request.userId === 'object') {
+    pubcid = request.userId.pubcid;
+  }
+  return pubcid;
 }

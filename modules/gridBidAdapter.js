@@ -1,8 +1,13 @@
-import * as utils from 'src/utils';
-import {registerBidder} from 'src/adapters/bidderFactory';
+import * as utils from '../src/utils';
+import {registerBidder} from '../src/adapters/bidderFactory';
+import { Renderer } from '../src/Renderer';
+import { VIDEO, BANNER } from '../src/mediaTypes';
+
 const BIDDER_CODE = 'grid';
 const ENDPOINT_URL = '//grid.bidswitch.net/hb';
 const TIME_TO_LIVE = 360;
+const RENDERER_URL = '//cdn.adnxs.com/renderer/video/ANOutstreamVideo.js';
+
 const LOG_ERROR_MESS = {
   noAuid: 'Bid from response has no auid parameter - ',
   noAdm: 'Bid from response has no adm parameter - ',
@@ -16,6 +21,7 @@ const LOG_ERROR_MESS = {
 };
 export const spec = {
   code: BIDDER_CODE,
+  supportedMediaTypes: [ BANNER, VIDEO ],
   /**
    * Determines whether or not the given bid request is valid.
    *
@@ -35,22 +41,47 @@ export const spec = {
   buildRequests: function(validBidRequests, bidderRequest) {
     const auids = [];
     const bidsMap = {};
+    const slotsMapByUid = {};
+    const sizeMap = {};
     const bids = validBidRequests || [];
     let reqId;
 
     bids.forEach(bid => {
       reqId = bid.bidderRequestId;
-      if (!bidsMap[bid.params.uid]) {
-        bidsMap[bid.params.uid] = [bid];
-        auids.push(bid.params.uid);
-      } else {
-        bidsMap[bid.params.uid].push(bid);
+      const {params: {uid}, adUnitCode} = bid;
+      auids.push(uid);
+      const sizesId = utils.parseSizesInput(bid.sizes);
+
+      if (!slotsMapByUid[uid]) {
+        slotsMapByUid[uid] = {};
       }
+      const slotsMap = slotsMapByUid[uid];
+      if (!slotsMap[adUnitCode]) {
+        slotsMap[adUnitCode] = {adUnitCode, bids: [bid], parents: []};
+      } else {
+        slotsMap[adUnitCode].bids.push(bid);
+      }
+      const slot = slotsMap[adUnitCode];
+
+      sizesId.forEach((sizeId) => {
+        sizeMap[sizeId] = true;
+        if (!bidsMap[uid]) {
+          bidsMap[uid] = {};
+        }
+
+        if (!bidsMap[uid][sizeId]) {
+          bidsMap[uid][sizeId] = [slot];
+        } else {
+          bidsMap[uid][sizeId].push(slot);
+        }
+        slot.parents.push({parent: bidsMap[uid], key: sizeId, uid});
+      });
     });
 
     const payload = {
       u: utils.getTopWindowUrl(),
       auids: auids.join(','),
+      sizes: utils.getKeys(sizeMap).join(','),
       r: reqId
     };
 
@@ -102,7 +133,7 @@ export const spec = {
     if (errorMessage) utils.logError(errorMessage);
     return bidResponses;
   }
-}
+};
 
 function _getBidFromResponse(respItem) {
   if (!respItem) {
@@ -123,7 +154,12 @@ function _addBidResponse(serverBid, bidsMap, bidResponses) {
   else {
     const awaitingBids = bidsMap[serverBid.auid];
     if (awaitingBids) {
-      awaitingBids.forEach(bid => {
+      const sizeId = `${serverBid.w}x${serverBid.h}`;
+      if (awaitingBids[sizeId]) {
+        const slot = awaitingBids[sizeId][0];
+
+        const bid = slot.bids.shift();
+
         const bidResponse = {
           requestId: bid.bidId, // bid.bidderRequestId,
           bidderCode: spec.code,
@@ -134,11 +170,42 @@ function _addBidResponse(serverBid, bidsMap, bidResponses) {
           currency: 'USD',
           netRevenue: false,
           ttl: TIME_TO_LIVE,
-          ad: serverBid.adm,
           dealId: serverBid.dealid
         };
+
+        if (serverBid.content_type === 'video') {
+          bidResponse.vastXml = serverBid.adm;
+          bidResponse.mediaType = VIDEO;
+          bidResponse.adResponse = {
+            content: bidResponse.vastXml
+          };
+          if (!bid.renderer && (!bid.mediaTypes || !bid.mediaTypes.video || bid.mediaTypes.video.context === 'outstream')) {
+            bidResponse.renderer = createRenderer(bidResponse, {
+              id: bid.bidId,
+              url: RENDERER_URL
+            });
+          }
+        } else {
+          bidResponse.ad = serverBid.adm;
+          bidResponse.mediaType = BANNER;
+        }
         bidResponses.push(bidResponse);
-      });
+
+        if (!slot.bids.length) {
+          slot.parents.forEach(({parent, key, uid}) => {
+            const index = parent[key].indexOf(slot);
+            if (index > -1) {
+              parent[key].splice(index, 1);
+            }
+            if (!parent[key].length) {
+              delete parent[key];
+              if (!utils.getKeys(parent).length) {
+                delete bidsMap[uid];
+              }
+            }
+          });
+        }
+      }
     } else {
       errorMessage = LOG_ERROR_MESS.noPlacementCode + serverBid.auid;
     }
@@ -146,6 +213,31 @@ function _addBidResponse(serverBid, bidsMap, bidResponses) {
   if (errorMessage) {
     utils.logError(errorMessage);
   }
+}
+
+function outstreamRender (bid) {
+  bid.renderer.push(() => {
+    window.ANOutstreamVideo.renderAd({
+      targetId: bid.adUnitCode,
+      adResponse: bid.adResponse
+    });
+  });
+}
+
+function createRenderer (bid, rendererParams) {
+  const renderer = Renderer.install({
+    id: rendererParams.id,
+    url: rendererParams.url,
+    loaded: false
+  });
+
+  try {
+    renderer.setRender(outstreamRender);
+  } catch (err) {
+    utils.logWarn('Prebid Error calling setRender on renderer', err);
+  }
+
+  return renderer;
 }
 
 registerBidder(spec);

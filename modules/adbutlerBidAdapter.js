@@ -1,8 +1,8 @@
 'use strict';
 
-import * as utils from 'src/utils';
-import {config} from 'src/config';
-import {registerBidder} from 'src/adapters/bidderFactory';
+import * as utils from '../src/utils';
+import {config} from '../src/config';
+import {registerBidder} from '../src/adapters/bidderFactory';
 
 const BIDDER_CODE = 'adbutler';
 

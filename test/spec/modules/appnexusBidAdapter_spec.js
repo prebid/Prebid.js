@@ -1,7 +1,9 @@
 import { expect } from 'chai';
 import { spec } from 'modules/appnexusBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
+import * as bidderFactory from 'src/adapters/bidderFactory';
 import { deepClone } from 'src/utils';
+import { config } from 'src/config';
 
 const ENDPOINT = '//ib.adnxs.com/ut/v3/prebid';
 
@@ -148,6 +150,48 @@ describe('AppNexusAdapter', function () {
       });
     });
 
+    it('should add video property when adUnit includes a renderer', function () {
+      const videoData = {
+        mediaTypes: {
+          video: {
+            context: 'outstream',
+            mimes: ['video/mp4']
+          }
+        },
+        params: {
+          placementId: '10433394',
+          video: {
+            skippable: true,
+            playback_method: ['auto_play_sound_off']
+          }
+        }
+      };
+
+      let bidRequest1 = deepClone(bidRequests[0]);
+      bidRequest1 = Object.assign({}, bidRequest1, videoData, {
+        renderer: {
+          url: 'http://test.renderer.url',
+          render: function () {}
+        }
+      });
+
+      let bidRequest2 = deepClone(bidRequests[0]);
+      bidRequest2.adUnitCode = 'adUnit_code_2';
+      bidRequest2 = Object.assign({}, bidRequest2, videoData);
+
+      const request = spec.buildRequests([bidRequest1, bidRequest2]);
+      const payload = JSON.parse(request.data);
+      expect(payload.tags[0].video).to.deep.equal({
+        skippable: true,
+        playback_method: ['auto_play_sound_off'],
+        custom_renderer_present: true
+      });
+      expect(payload.tags[1].video).to.deep.equal({
+        skippable: true,
+        playback_method: ['auto_play_sound_off']
+      });
+    });
+
     it('should attach valid user params to the tag', function () {
       let bidRequest = Object.assign({},
         bidRequests[0],
@@ -155,7 +199,7 @@ describe('AppNexusAdapter', function () {
           params: {
             placementId: '10433394',
             user: {
-              external_uid: '123',
+              externalUid: '123',
               foobar: 'invalid'
             }
           }
@@ -167,8 +211,180 @@ describe('AppNexusAdapter', function () {
 
       expect(payload.user).to.exist;
       expect(payload.user).to.deep.equal({
-        external_uid: '123',
+        externalUid: '123',
       });
+    });
+
+    it('should duplicate adpod placements into batches and set correct maxduration', function() {
+      let bidRequest = Object.assign({},
+        bidRequests[0],
+        {
+          params: { placementId: '14542875' }
+        },
+        {
+          mediaTypes: {
+            video: {
+              context: 'adpod',
+              playerSize: [640, 480],
+              adPodDurationSec: 300,
+              durationRangeSec: [15, 30],
+            }
+          }
+        }
+      );
+
+      const request = spec.buildRequests([bidRequest]);
+      const payload1 = JSON.parse(request[0].data);
+      const payload2 = JSON.parse(request[1].data);
+
+      // 300 / 15 = 20 total
+      expect(payload1.tags.length).to.equal(15);
+      expect(payload2.tags.length).to.equal(5);
+
+      expect(payload1.tags[0]).to.deep.equal(payload1.tags[1]);
+      expect(payload1.tags[0].video.maxduration).to.equal(30);
+
+      expect(payload2.tags[0]).to.deep.equal(payload1.tags[1]);
+      expect(payload2.tags[0].video.maxduration).to.equal(30);
+    });
+
+    it('should round down adpod placements when numbers are uneven', function() {
+      let bidRequest = Object.assign({},
+        bidRequests[0],
+        {
+          params: { placementId: '14542875' }
+        },
+        {
+          mediaTypes: {
+            video: {
+              context: 'adpod',
+              playerSize: [640, 480],
+              adPodDurationSec: 123,
+              durationRangeSec: [45],
+            }
+          }
+        }
+      );
+
+      const request = spec.buildRequests([bidRequest]);
+      const payload = JSON.parse(request.data);
+      expect(payload.tags.length).to.equal(2);
+    });
+
+    it('should duplicate adpod placements when requireExactDuration is set', function() {
+      let bidRequest = Object.assign({},
+        bidRequests[0],
+        {
+          params: { placementId: '14542875' }
+        },
+        {
+          mediaTypes: {
+            video: {
+              context: 'adpod',
+              playerSize: [640, 480],
+              adPodDurationSec: 300,
+              durationRangeSec: [15, 30],
+              requireExactDuration: true,
+            }
+          }
+        }
+      );
+
+      // 20 total placements with 15 max impressions = 2 requests
+      const request = spec.buildRequests([bidRequest]);
+      expect(request.length).to.equal(2);
+
+      // 20 spread over 2 requests = 15 in first request, 5 in second
+      const payload1 = JSON.parse(request[0].data);
+      const payload2 = JSON.parse(request[1].data);
+      expect(payload1.tags.length).to.equal(15);
+      expect(payload2.tags.length).to.equal(5);
+
+      // 10 placements should have max/min at 15
+      // 10 placemenst should have max/min at 30
+      const payload1tagsWith15 = payload1.tags.filter(tag => tag.video.maxduration === 15);
+      const payload1tagsWith30 = payload1.tags.filter(tag => tag.video.maxduration === 30);
+      expect(payload1tagsWith15.length).to.equal(10);
+      expect(payload1tagsWith30.length).to.equal(5);
+
+      // 5 placemenst with min/max at 30 were in the first request
+      // so 5 remaining should be in the second
+      const payload2tagsWith30 = payload2.tags.filter(tag => tag.video.maxduration === 30);
+      expect(payload2tagsWith30.length).to.equal(5);
+    });
+
+    it('should set durations for placements when requireExactDuration is set and numbers are uneven', function() {
+      let bidRequest = Object.assign({},
+        bidRequests[0],
+        {
+          params: { placementId: '14542875' }
+        },
+        {
+          mediaTypes: {
+            video: {
+              context: 'adpod',
+              playerSize: [640, 480],
+              adPodDurationSec: 105,
+              durationRangeSec: [15, 30, 60],
+              requireExactDuration: true,
+            }
+          }
+        }
+      );
+
+      const request = spec.buildRequests([bidRequest]);
+      const payload = JSON.parse(request.data);
+      expect(payload.tags.length).to.equal(7);
+
+      const tagsWith15 = payload.tags.filter(tag => tag.video.maxduration === 15);
+      const tagsWith30 = payload.tags.filter(tag => tag.video.maxduration === 30);
+      const tagsWith60 = payload.tags.filter(tag => tag.video.maxduration === 60);
+      expect(tagsWith15.length).to.equal(3);
+      expect(tagsWith30.length).to.equal(3);
+      expect(tagsWith60.length).to.equal(1);
+    });
+
+    it('should break adpod request into batches', function() {
+      let bidRequest = Object.assign({},
+        bidRequests[0],
+        {
+          params: { placementId: '14542875' }
+        },
+        {
+          mediaTypes: {
+            video: {
+              context: 'adpod',
+              playerSize: [640, 480],
+              adPodDurationSec: 225,
+              durationRangeSec: [5],
+            }
+          }
+        }
+      );
+
+      const request = spec.buildRequests([bidRequest]);
+      const payload1 = JSON.parse(request[0].data);
+      const payload2 = JSON.parse(request[1].data);
+      const payload3 = JSON.parse(request[2].data);
+
+      expect(payload1.tags.length).to.equal(15);
+      expect(payload2.tags.length).to.equal(15);
+      expect(payload3.tags.length).to.equal(15);
+    });
+
+    it('adds brand_category_exclusion to request when set', function() {
+      let bidRequest = Object.assign({}, bidRequests[0]);
+      sinon
+        .stub(config, 'getConfig')
+        .withArgs('adpod.brandCategoryExclusion')
+        .returns(true);
+
+      const request = spec.buildRequests([bidRequest]);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.brand_category_uniqueness).to.equal(true);
+
+      config.getConfig.restore();
     });
 
     it('should attach native params to the request', function () {
@@ -180,11 +396,19 @@ describe('AppNexusAdapter', function () {
             title: {required: true},
             body: {required: true},
             body2: {required: true},
-            image: {required: true, sizes: [{ width: 100, height: 100 }]},
+            image: {required: true, sizes: [100, 100]},
+            icon: {required: true},
             cta: {required: false},
             rating: {required: true},
             sponsoredBy: {required: true},
-            privacyLink: {required: true}
+            privacyLink: {required: true},
+            displayUrl: {required: true},
+            address: {required: true},
+            downloads: {required: true},
+            likes: {required: true},
+            phone: {required: true},
+            price: {required: true},
+            salePrice: {required: true}
           }
         }
       );
@@ -197,62 +421,44 @@ describe('AppNexusAdapter', function () {
         description: {required: true},
         desc2: {required: true},
         main_image: {required: true, sizes: [{ width: 100, height: 100 }]},
+        icon: {required: true},
         ctatext: {required: false},
         rating: {required: true},
         sponsored_by: {required: true},
-        privacy_link: {required: true}
+        privacy_link: {required: true},
+        displayurl: {required: true},
+        address: {required: true},
+        downloads: {required: true},
+        likes: {required: true},
+        phone: {required: true},
+        price: {required: true},
+        saleprice: {required: true},
+        privacy_supported: true
       });
     });
 
-    it('sets minimum native asset params when not provided on adunit', function () {
+    it('should always populated tags[].sizes with 1,1 for native if otherwise not defined', function () {
       let bidRequest = Object.assign({},
         bidRequests[0],
         {
           mediaType: 'native',
           nativeParams: {
-            image: {required: true},
+            image: { required: true }
           }
         }
       );
+      bidRequest.sizes = [[150, 100], [300, 250]];
 
-      const request = spec.buildRequests([bidRequest]);
-      const payload = JSON.parse(request.data);
+      let request = spec.buildRequests([bidRequest]);
+      let payload = JSON.parse(request.data);
+      expect(payload.tags[0].sizes).to.deep.equal([{width: 150, height: 100}, {width: 300, height: 250}]);
 
-      expect(payload.tags[0].native.layouts[0]).to.deep.equal({
-        main_image: {required: true, sizes: [{}]},
-      });
-    });
+      delete bidRequest.sizes;
 
-    it('does not overwrite native ad unit params with mimimum params', function () {
-      let bidRequest = Object.assign({},
-        bidRequests[0],
-        {
-          mediaType: 'native',
-          nativeParams: {
-            image: {
-              aspect_ratios: [{
-                min_width: 100,
-                ratio_width: 2,
-                ratio_height: 3,
-              }]
-            }
-          }
-        }
-      );
+      request = spec.buildRequests([bidRequest]);
+      payload = JSON.parse(request.data);
 
-      const request = spec.buildRequests([bidRequest]);
-      const payload = JSON.parse(request.data);
-
-      expect(payload.tags[0].native.layouts[0]).to.deep.equal({
-        main_image: {
-          required: true,
-          aspect_ratios: [{
-            min_width: 100,
-            ratio_width: 2,
-            ratio_height: 3,
-          }]
-        },
-      });
+      expect(payload.tags[0].sizes).to.deep.equal([{width: 1, height: 1}]);
     });
 
     it('should convert keyword params to proper form and attaches to request', function () {
@@ -411,6 +617,15 @@ describe('AppNexusAdapter', function () {
   })
 
   describe('interpretResponse', function () {
+    let bfStub;
+    before(function() {
+      bfStub = sinon.stub(bidderFactory, 'getIabSubCategory');
+    });
+
+    after(function() {
+      bfStub.restore();
+    });
+
     let response = {
       'version': '3.0.0',
       'tags': [
@@ -530,12 +745,50 @@ describe('AppNexusAdapter', function () {
       expect(result[0]).to.have.property('mediaType', 'video');
     });
 
+    it('handles adpod responses', function () {
+      let response = {
+        'tags': [{
+          'uuid': '84ab500420319d',
+          'ads': [{
+            'ad_type': 'video',
+            'brand_category_id': 10,
+            'cpm': 0.500000,
+            'notify_url': 'imptracker.com',
+            'rtb': {
+              'video': {
+                'content': '<!-- Creative -->',
+                'duration_ms': 30000,
+              }
+            }
+          }]
+        }]
+      };
+
+      let bidderRequest = {
+        bids: [{
+          bidId: '84ab500420319d',
+          adUnitCode: 'code',
+          mediaTypes: {
+            video: {
+              context: 'adpod'
+            }
+          }
+        }]
+      };
+      bfStub.returns('1');
+
+      let result = spec.interpretResponse({ body: response }, {bidderRequest});
+      expect(result[0].video.context).to.equal('adpod');
+      expect(result[0].video.durationSeconds).to.equal(30);
+    });
+
     it('handles native responses', function () {
       let response1 = deepClone(response);
       response1.tags[0].ads[0].ad_type = 'native';
       response1.tags[0].ads[0].rtb.native = {
         'title': 'Native Creative',
         'desc': 'Cool description great stuff',
+        'desc2': 'Additional body text',
         'ctatext': 'Do it',
         'sponsored': 'AppNexus',
         'icon': {
@@ -554,6 +807,15 @@ describe('AppNexusAdapter', function () {
           'click_trackers': ['http://nym1-ib.adnxs.com/click']
         },
         'impression_trackers': ['http://example.com'],
+        'rating': '5',
+        'displayurl': 'http://AppNexus.com/?url=display_url',
+        'likes': '38908320',
+        'downloads': '874983',
+        'price': '9.99',
+        'saleprice': 'FREE',
+        'phone': '1234567890',
+        'address': '28 W 23rd St, New York, NY 10010',
+        'privacy_link': 'http://appnexus.com/?url=privacy_url'
       };
       let bidderRequest = {
         bids: [{
@@ -605,5 +867,19 @@ describe('AppNexusAdapter', function () {
       let result = spec.interpretResponse({ body: responseWithDeal }, {bidderRequest});
       expect(Object.keys(result[0].appnexus)).to.include.members(['buyerMemberId', 'dealPriority', 'dealCode']);
     });
+
+    it('should add advertiser id', function() {
+      let responseAdvertiserId = deepClone(response);
+      responseAdvertiserId.tags[0].ads[0].advertiser_id = '123';
+
+      let bidderRequest = {
+        bids: [{
+          bidId: '3db3773286ee59',
+          adUnitCode: 'code'
+        }]
+      }
+      let result = spec.interpretResponse({ body: responseAdvertiserId }, {bidderRequest});
+      expect(Object.keys(result[0].meta)).to.include.members(['advertiserId']);
+    })
   });
 });

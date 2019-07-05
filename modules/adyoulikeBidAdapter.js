@@ -1,7 +1,7 @@
-import * as utils from 'src/utils';
-import { format } from 'src/url';
-// import { config } from 'src/config';
-import { registerBidder } from 'src/adapters/bidderFactory';
+import * as utils from '../src/utils';
+import { format } from '../src/url';
+// import { config } from '../src/config';
+import { registerBidder } from '../src/adapters/bidderFactory';
 import find from 'core-js/library/fn/array/find';
 
 const VERSION = '1.0';
@@ -132,7 +132,7 @@ function getPageRefreshed() {
 function createEndpoint(bidRequests, bidderRequest) {
   let host = getHostname(bidRequests);
   return format({
-    protocol: (document.location.protocol === 'https:') ? 'https' : 'http',
+    protocol: 'https',
     host: `${DEFAULT_DC}${host}.omnitagjs.com`,
     pathname: '/hb-api/prebid/v1',
     search: createEndpointQS(bidderRequest)
@@ -187,7 +187,6 @@ function createBid(response) {
 
   return {
     requestId: response.BidID,
-    bidderCode: spec.code,
     width: response.Width,
     height: response.Height,
     ad: response.Ad,

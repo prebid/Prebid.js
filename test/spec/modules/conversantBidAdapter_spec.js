@@ -372,7 +372,20 @@ describe('Conversant adapter tests', function() {
     });
     //  construct http post payload
     const payload = spec.buildRequests(requests).data;
-    expect(payload).to.have.deep.property('user.ext.fpc', 12345);
+    expect(payload).to.have.deep.nested.property('user.ext.fpc', 12345);
+  });
+
+  it('Verify User ID publisher commond id support', function() {
+    // clone bidRequests
+    let requests = utils.deepClone(bidRequests)
+
+    // add pubcid to every entry
+    requests.forEach((unit) => {
+      Object.assign(unit, {userId: {pubcid: 67890}});
+    });
+    //  construct http post payload
+    const payload = spec.buildRequests(requests).data;
+    expect(payload).to.have.deep.nested.property('user.ext.fpc', 67890);
   });
 
   it('Verify GDPR bid request', function() {
@@ -385,8 +398,8 @@ describe('Conversant adapter tests', function() {
     };
 
     const payload = spec.buildRequests(bidRequests, bidRequest).data;
-    expect(payload).to.have.deep.property('user.ext.consent', 'BOJObISOJObISAABAAENAA4AAAAAoAAA');
-    expect(payload).to.have.deep.property('regs.ext.gdpr', 1);
+    expect(payload).to.have.deep.nested.property('user.ext.consent', 'BOJObISOJObISAABAAENAA4AAAAAoAAA');
+    expect(payload).to.have.deep.nested.property('regs.ext.gdpr', 1);
   });
 
   it('Verify GDPR bid request without gdprApplies', function() {
@@ -398,7 +411,7 @@ describe('Conversant adapter tests', function() {
     };
 
     const payload = spec.buildRequests(bidRequests, bidRequest).data;
-    expect(payload).to.have.deep.property('user.ext.consent', '');
-    expect(payload).to.not.have.deep.property('regs.ext.gdpr');
+    expect(payload).to.have.deep.nested.property('user.ext.consent', '');
+    expect(payload).to.not.have.deep.nested.property('regs.ext.gdpr');
   });
 })

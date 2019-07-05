@@ -60,11 +60,17 @@ function wrapURI(uri, impUrl) {
  */
 function toStorageRequest(bid) {
   const vastValue = bid.vastXml ? bid.vastXml : wrapURI(bid.vastUrl, bid.vastImpUrl);
-  return {
+  let payload = {
     type: 'xml',
     value: vastValue,
     ttlseconds: Number(bid.ttl)
   };
+
+  if (typeof bid.customCacheKey === 'string' && bid.customCacheKey !== '') {
+    payload.key = bid.customCacheKey;
+  }
+
+  return payload;
 }
 
 /**
@@ -114,7 +120,7 @@ function shimStorageCallback(done) {
  *
  * @param {CacheableBid[]} bids A list of bid objects which should be cached.
  * @param {videoCacheStoreCallback} [done] An optional callback which should be executed after
- *   the data has been stored in the cache.
+ * the data has been stored in the cache.
  */
 export function store(bids, done) {
   const requestData = {
