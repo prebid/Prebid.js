@@ -7,7 +7,7 @@
 
 import * as utils from '../src/utils'
 import { ajax } from '../src/ajax';
-import { attachIdSystem } from '../modules/userId';
+import { submodule } from '../src/hook';
 
 const key = '__pbjs_criteo_rtus';
 
@@ -102,4 +102,4 @@ export const criteortusIdSubmodule = {
   }
 };
 
-attachIdSystem(criteortusIdSubmodule);
+submodule('userId', criteortusIdSubmodule);

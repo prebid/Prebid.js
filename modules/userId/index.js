@@ -302,7 +302,7 @@ function initSubmodules(submodules, consentData) {
       // cache decoded value (this is copied to every adUnit bid)
       submodule.idObj = submodule.config.value;
     } else {
-      let result = submodule.submodule.getId(submodule.config.params, consentData);
+      const result = submodule.submodule.getId(submodule.config.params, consentData);
       if (typeof result === 'function') {
         submodule.callback = result;
       } else {
