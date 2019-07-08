@@ -305,11 +305,11 @@ function reloadViewabilityScriptWithCorrectParameters(bid) {
   let viewJsPayload = getAppnexusViewabilityScriptFromJsTrackers(bid.native.javascriptTrackers);
 
   if (viewJsPayload) {
-    let prebidParams = 'pbjs_adid=' + bid.adId + '&pbjs_auc=' + bid.adUnitCode;
+    let prebidParams = 'pbjs_adid=' + bid.adId + ';pbjs_auc=' + bid.adUnitCode;
 
     let jsTrackerSrc = getViewabilityScriptUrlFromPayload(viewJsPayload)
 
-    let newJsTrackerSrc = jsTrackerSrc.replace('%native_dom_id%', ';' + prebidParams);
+    let newJsTrackerSrc = jsTrackerSrc.replace('dom_id=%native_dom_id%', prebidParams);
 
     // find iframe containing script tag
     let frameArray = document.getElementsByTagName('iframe');
@@ -353,13 +353,13 @@ function reloadViewabilityScriptWithCorrectParameters(bid) {
 }
 
 function strIsAppnexusViewabilityScript(str) {
-    let regexMatchUrlStart = str.match(VIEWABILITY_URL_START);
-    let viewUrlStartInStr = regexMatchUrlStart != null && regexMatchUrlStart.length >= 1;
-    
-    let regexMatchFileName = str.match(VIEWABILITY_FILE_NAME);
-    let fileNameInStr = regexMatchFileName != null && regexMatchFileName.length >= 1;
-    
-    return str.startsWith(SCRIPT_TAG_START) && fileNameInStr && viewUrlStartInStr;
+  let regexMatchUrlStart = str.match(VIEWABILITY_URL_START);
+  let viewUrlStartInStr = regexMatchUrlStart != null && regexMatchUrlStart.length >= 1;
+
+  let regexMatchFileName = str.match(VIEWABILITY_FILE_NAME);
+  let fileNameInStr = regexMatchFileName != null && regexMatchFileName.length >= 1;
+
+  return str.startsWith(SCRIPT_TAG_START) && fileNameInStr && viewUrlStartInStr;
 }
 
 function getAppnexusViewabilityScriptFromJsTrackers(jsTrackerArray) {
