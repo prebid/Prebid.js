@@ -169,6 +169,23 @@ export const spec = {
       });
     }
 
+    const supportedUserIds = {
+      get ttd() {
+        return utils.deepAccess(bidRequests[0], `userId.tdid`)
+      }
+    }
+
+    const hasUserId = Object.keys(supportedUserIds).some((provider) => { return !!(supportedUserIds[provider]) })
+    if (hasUserId) {
+      let tpuids = Object.keys(supportedUserIds).map((provider) => {
+        return {
+          'provider': provider,
+          'user_id': supportedUserIds[provider]
+        }
+      }).filter(userId => userId.user_id);
+      payload.tpuids = tpuids;
+    }
+
     const request = formatRequest(payload, bidderRequest);
     return request;
   },
