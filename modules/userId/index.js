@@ -13,7 +13,7 @@
  * @name Submodule#getId
  * @param {SubmoduleParams} configParams
  * @param {ConsentData} consentData
- * @return {(Object|function} id data or a callback, the callback is called on the auction end event
+ * @return {(Object|function)} id data or a callback, the callback is called on the auction end event
  */
 
 /**
@@ -21,7 +21,7 @@
  * @summary decode a stored value for passing to bid requests
  * @name Submodule#decode
  * @param {Object|string} value
- * @return {(Object|undefined}
+ * @return {(Object|undefined)}
  */
 
 /**
@@ -68,14 +68,15 @@
  */
 
 import find from 'core-js/library/fn/array/find';
-import {config} from '../src/config.js';
-import events from '../src/events.js';
-import * as utils from '../src/utils.js';
-import {getGlobal} from '../src/prebidGlobal.js';
-import {gdprDataHandler} from '../src/adapterManager.js';
+import {config} from '../../src/config';
+import events from '../../src/events';
+import * as utils from '../../src/utils';
+import {getGlobal} from '../../src/prebidGlobal';
+import {gdprDataHandler} from '../../src/adapterManager';
+import CONSTANTS from '../../src/constants.json';
+import {module} from '../../src/hook';
 import {unifiedIdSubmodule} from './unifiedIdSystem.js';
 import {pubCommonIdSubmodule} from './pubCommonIdSystem.js';
-import CONSTANTS from '../src/constants.json';
 
 const MODULE_NAME = 'User ID';
 const COOKIE = 'cookie';
@@ -331,7 +332,7 @@ function getValidSubmoduleConfigs(configRegistry, submoduleRegistry, activeStora
     if (!config || utils.isEmptyStr(config.name)) {
       return carry;
     }
-    // alidate storage config contains 'type' and 'name' properties with non-empty string values
+    // Validate storage config contains 'type' and 'name' properties with non-empty string values
     // 'type' must be a value currently enabled in the browser
     if (config.storage &&
       !utils.isEmptyStr(config.storage.type) &&
@@ -411,7 +412,7 @@ export function init(config) {
     return;
   }
   // _pubcid_optout is checked for compatiblility with pubCommonId
-  if (validStorageTypes.indexOf(LOCAL_STORAGE) !== -1 && (localStorage.getItem('_pbjs_id_optout') && localStorage.getItem('_pubcid_optout'))) {
+  if (validStorageTypes.indexOf(LOCAL_STORAGE) !== -1 && (localStorage.getItem('_pbjs_id_optout') || localStorage.getItem('_pubcid_optout'))) {
     utils.logInfo(`${MODULE_NAME} - opt-out localStorage found, exit module`);
     return;
   }
@@ -433,3 +434,5 @@ init(config);
 // add submodules after init has been called
 attachIdSystem(pubCommonIdSubmodule);
 attachIdSystem(unifiedIdSubmodule);
+
+module('userId', attachIdSystem);

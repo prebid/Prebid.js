@@ -5,8 +5,8 @@
  * @requires module:modules/userId
  */
 
-import * as utils from '../src/utils.js'
-import {ajax} from '../src/ajax.js';
+import * as utils from '../../src/utils'
+import {ajax} from '../../src/ajax';
 
 /** @type {Submodule} */
 export const unifiedIdSubmodule = {

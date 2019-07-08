@@ -432,7 +432,8 @@ describe('AppNexusAdapter', function () {
         likes: {required: true},
         phone: {required: true},
         price: {required: true},
-        saleprice: {required: true}
+        saleprice: {required: true},
+        privacy_supported: true
       });
     });
 

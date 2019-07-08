@@ -75,7 +75,7 @@ export const spec = {
 };
 
 function isVideoRequest(bidRequest) {
-  return utils.deepAccess(bidRequest, 'mediaTypes.video') || bidRequest.mediaType === VIDEO;
+  return (utils.deepAccess(bidRequest, 'mediaTypes.video') && !utils.deepAccess(bidRequest, 'mediaTypes.banner')) || bidRequest.mediaType === VIDEO;
 }
 
 function createBannerBidResponses(oxResponseObj, {bids, startTime}) {
@@ -262,7 +262,7 @@ function buildOXBannerRequest(bids, bidderRequest) {
     queryParams.ns = 1;
   }
 
-  if (bids.some(bid => bid.params.coppa)) {
+  if (config.getConfig('coppa') === true || bids.some(bid => bid.params.coppa)) {
     queryParams.tfcd = 1;
   }
 
