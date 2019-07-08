@@ -286,8 +286,8 @@ function ReloadClientTool(args) {
     };
 
     function getBestLocInf() {
-      var trgtWnd = window;
-      try { trgtWnd = top; } catch (e) { }
+      var trgtWnd = null;
+      try { trgtWnd = top; } catch (e) { trgtWnd = window; }
       return trgtWnd.location;
     }
 
