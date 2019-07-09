@@ -9,12 +9,10 @@
  * @requires module:modules/userId
  */
 
-// import { config } from 'src/config';
 import * as utils from '../src/utils'
 import { ajax } from '../src/ajax';
 import { submodule } from '../src/hook';
 import { attachIdSystem } from '../modules/userId/index';
-// import { getGlobal } from 'src/prebidGlobal';
 
 /**
  * Checks to see if the DigiTrust framework is initialized.
