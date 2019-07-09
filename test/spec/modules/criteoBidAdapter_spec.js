@@ -53,6 +53,191 @@ describe('The Criteo bidding adapter', function () {
       const isValid = spec.isBidRequestValid(bid);
       expect(isValid).to.equal(true);
     });
+
+    it('should return true when given a valid video bid request', function () {
+      expect(spec.isBidRequestValid({
+        bidder: 'criteo',
+        mediaTypes: {
+          video: {
+            mimes: ['video/mpeg'],
+            playerSize: [640, 480],
+            protocols: [5, 6],
+            maxduration: 30,
+            api: [1, 2]
+          }
+        },
+        params: {
+          networkId: 456,
+          video: {
+            skip: 1,
+            placement: 1,
+            playbackmethod: 1
+          }
+        },
+      })).to.equal(true);
+    });
+
+    it('should return false when given an invalid video bid request', function () {
+      expect(spec.isBidRequestValid({
+        bidder: 'criteo',
+        mediaTypes: {
+          video: {
+            playerSize: [640, 480],
+            protocols: [5, 6],
+            maxduration: 30,
+            api: [1, 2]
+          }
+        },
+        params: {
+          networkId: 456,
+          video: {
+            skip: 1,
+            placement: 1,
+            playbackmethod: 1
+          }
+        },
+      })).to.equal(false);
+
+      expect(spec.isBidRequestValid({
+        bidder: 'criteo',
+        mediaTypes: {
+          video: {
+            mimes: ['video/mpeg'],
+            protocols: [5, 6],
+            maxduration: 30,
+            api: [1, 2]
+          }
+        },
+        params: {
+          networkId: 456,
+          video: {
+            skip: 1,
+            placement: 1,
+            playbackmethod: 1
+          }
+        },
+      })).to.equal(false);
+
+      expect(spec.isBidRequestValid({
+        bidder: 'criteo',
+        mediaTypes: {
+          video: {
+            mimes: ['video/mpeg'],
+            playerSize: [640, 480],
+            maxduration: 30,
+            api: [1, 2]
+          }
+        },
+        params: {
+          networkId: 456,
+          video: {
+            skip: 1,
+            placement: 1,
+            playbackmethod: 1
+          }
+        },
+      })).to.equal(false);
+
+      expect(spec.isBidRequestValid({
+        bidder: 'criteo',
+        mediaTypes: {
+          video: {
+            mimes: ['video/mpeg'],
+            playerSize: [640, 480],
+            protocols: [5, 6],
+            api: [1, 2]
+          }
+        },
+        params: {
+          networkId: 456,
+          video: {
+            skip: 1,
+            placement: 1,
+            playbackmethod: 1
+          }
+        },
+      })).to.equal(false);
+
+      expect(spec.isBidRequestValid({
+        bidder: 'criteo',
+        mediaTypes: {
+          video: {
+            mimes: ['video/mpeg'],
+            playerSize: [640, 480],
+            protocols: [5, 6],
+            maxduration: 30
+          }
+        },
+        params: {
+          networkId: 456,
+          video: {
+            skip: 1,
+            placement: 1,
+            playbackmethod: 1
+          }
+        },
+      })).to.equal(false);
+
+      expect(spec.isBidRequestValid({
+        bidder: 'criteo',
+        mediaTypes: {
+          video: {
+            mimes: ['video/mpeg'],
+            playerSize: [640, 480],
+            protocols: [5, 6],
+            maxduration: 30,
+            api: [1, 2]
+          }
+        },
+        params: {
+          networkId: 456,
+          video: {
+            placement: 1,
+            playbackmethod: 1
+          }
+        },
+      })).to.equal(false);
+
+      expect(spec.isBidRequestValid({
+        bidder: 'criteo',
+        mediaTypes: {
+          video: {
+            mimes: ['video/mpeg'],
+            playerSize: [640, 480],
+            protocols: [5, 6],
+            maxduration: 30,
+            api: [1, 2]
+          }
+        },
+        params: {
+          networkId: 456,
+          video: {
+            skip: 1,
+            playbackmethod: 1
+          }
+        },
+      })).to.equal(false);
+
+      expect(spec.isBidRequestValid({
+        bidder: 'criteo',
+        mediaTypes: {
+          video: {
+            mimes: ['video/mpeg'],
+            playerSize: [640, 480],
+            protocols: [5, 6],
+            maxduration: 30,
+            api: [1, 2]
+          }
+        },
+        params: {
+          networkId: 456,
+          video: {
+            skip: 1,
+            placement: 1
+          }
+        },
+      })).to.equal(false);
+    });
   });
 
   describe('buildRequests', function () {
@@ -118,7 +303,11 @@ describe('The Criteo bidding adapter', function () {
           bidder: 'criteo',
           adUnitCode: 'bid-123',
           transactionId: 'transaction-123',
-          sizes: [[300, 250], [728, 90]],
+          mediaTypes: {
+            banner: {
+              sizes: [[300, 250], [728, 90]]
+            }
+          },
           params: {
             networkId: 456,
           },
@@ -203,6 +392,46 @@ describe('The Criteo bidding adapter', function () {
       expect(ortbRequest.gdprConsent.consentData).to.equal(undefined);
       expect(ortbRequest.gdprConsent.gdprApplies).to.equal(undefined);
       expect(ortbRequest.gdprConsent.consentGiven).to.equal(undefined);
+    });
+
+    it('should properly build a video request', function () {
+      const bidRequests = [
+        {
+          bidder: 'criteo',
+          adUnitCode: 'bid-123',
+          transactionId: 'transaction-123',
+          sizes: [[728, 90]],
+          mediaTypes: {
+            video: {
+              playerSize: [[640, 480]],
+              mimes: ['video/mp4', 'video/x-flv'],
+              maxduration: 30,
+              api: [1, 2],
+              protocols: [2, 3]
+            }
+          },
+          params: {
+            zoneId: 123,
+            video: {
+              skip: 1,
+              minduration: 5,
+              startdelay: 5,
+              playbackmethod: [1, 3],
+              placement: 2
+            }
+          },
+        },
+      ];
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.url).to.match(/^\/\/bidder\.criteo\.com\/cdb\?profileId=207&av=\d+&wv=[^&]+&cb=\d/);
+      expect(request.method).to.equal('POST');
+      const ortbRequest = request.data;
+      expect(ortbRequest.slots[0].video.skip).to.equal(1);
+      expect(ortbRequest.slots[0].video.minduration).to.equal(5);
+      expect(ortbRequest.slots[0].video.startdelay).to.equal(5);
+      expect(ortbRequest.slots[0].video.playerSizes).to.deep.equal(['640x480']);
+      expect(ortbRequest.slots[0].video.playbackmethod).to.deep.equal([1, 3]);
+      expect(ortbRequest.slots[0].video.placement).to.equal(2);
     });
 
     it('should properly build a request with ceh', function () {
