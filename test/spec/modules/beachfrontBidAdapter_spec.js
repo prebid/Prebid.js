@@ -719,7 +719,7 @@ describe('BeachfrontAdapter', function () {
       });
 
       it('should return user syncs defined the bid response', function () {
-        const syncUrl = 'http://sync.bfmio.com/sync_iframe?ifpl=5&ifg=1&id=test&gdpr=0&gc=&gce=0';
+        const syncUrl = 'https://sync.bfmio.com/sync_iframe?ifpl=5&ifg=1&id=test&gdpr=0&gc=&gce=0';
         const syncOptions = {
           iframeEnabled: true,
           pixelEnabled: true
@@ -737,7 +737,7 @@ describe('BeachfrontAdapter', function () {
       });
 
       it('should not return user syncs if iframes are disabled', function () {
-        const syncUrl = 'http://sync.bfmio.com/sync_iframe?ifpl=5&ifg=1&id=test&gdpr=0&gc=&gce=0';
+        const syncUrl = 'https://sync.bfmio.com/sync_iframe?ifpl=5&ifg=1&id=test&gdpr=0&gc=&gce=0';
         const syncOptions = {
           iframeEnabled: false,
           pixelEnabled: true
