@@ -327,7 +327,7 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
         } else if (ad) {
           // will check if browser is firefox and below version 67, if so execute special doc.open()
           // for details see: https://github.com/prebid/Prebid.js/pull/3524
-          // TODO remove this browser specific code at later date
+          // TODO remove this browser specific code at later date (when Firefox < 67 usage is mostly gone)
           if (navigator.userAgent && navigator.userAgent.toLowerCase().indexOf('firefox/') > -1) {
             const firefoxVerRegx = /firefox\/([\d\.]+)/;
             let firefoxVer = navigator.userAgent.toLowerCase().match(firefoxVerRegx)[1]; // grabs the text in the 1st matching group
