@@ -1,8 +1,8 @@
-import * as utils from 'src/utils';
-import {ajax} from 'src/ajax';
-import adapter from 'src/AnalyticsAdapter';
-import CONSTANTS from 'src/constants.json';
-import adaptermanager from 'src/adaptermanager';
+import * as utils from '../src/utils';
+import {ajax} from '../src/ajax';
+import adapter from '../src/AnalyticsAdapter';
+import CONSTANTS from '../src/constants.json';
+import adapterManager from '../src/adapterManager';
 
 const ANALYTICSTYPE = 'endpoint';
 const URL = '//lwadm.com/analytics/10';
@@ -21,6 +21,7 @@ const cache = {
 
 let livewrappedAnalyticsAdapter = Object.assign(adapter({EMPTYURL, ANALYTICSTYPE}), {
   track({eventType, args}) {
+    const time = utils.timestamp();
     utils.logInfo('LIVEWRAPPED_EVENT:', [eventType, args]);
 
     switch (eventType) {
@@ -30,16 +31,18 @@ let livewrappedAnalyticsAdapter = Object.assign(adapter({EMPTYURL, ANALYTICSTYPE
         break;
       case CONSTANTS.EVENTS.BID_REQUESTED:
         utils.logInfo('LIVEWRAPPED_BID_REQUESTED:', args);
+        cache.auctions[args.auctionId].timeStamp = args.start;
 
         args.bids.forEach(function(bidRequest) {
-          cache.auctions[args.auctionId].timeStamp = args.start;
           cache.auctions[args.auctionId].bids[bidRequest.bidId] = {
             bidder: bidRequest.bidder,
             adUnit: bidRequest.adUnitCode,
             isBid: false,
             won: false,
             timeout: false,
-            sendStatus: 0
+            sendStatus: 0,
+            readyToSend: 0,
+            start: args.start
           }
 
           utils.logInfo(bidRequest);
@@ -49,25 +52,30 @@ let livewrappedAnalyticsAdapter = Object.assign(adapter({EMPTYURL, ANALYTICSTYPE
       case CONSTANTS.EVENTS.BID_RESPONSE:
         utils.logInfo('LIVEWRAPPED_BID_RESPONSE:', args);
 
-        let bidResponse = cache.auctions[args.auctionId].bids[args.adId];
+        let bidResponse = cache.auctions[args.auctionId].bids[args.requestId];
         bidResponse.isBid = args.getStatusCode() === CONSTANTS.STATUS.GOOD;
         bidResponse.width = args.width;
         bidResponse.height = args.height;
         bidResponse.cpm = args.cpm;
         bidResponse.ttr = args.timeToRespond;
+        bidResponse.readyToSend = 1;
+        if (!bidResponse.ttr) {
+          bidResponse.ttr = time - bidResponse.start;
+        }
         break;
       case CONSTANTS.EVENTS.BIDDER_DONE:
         utils.logInfo('LIVEWRAPPED_BIDDER_DONE:', args);
         args.bids.forEach(doneBid => {
-          let bid = cache.auctions[doneBid.auctionId].bids[doneBid.bidId];
+          let bid = cache.auctions[doneBid.auctionId].bids[doneBid.bidId || doneBid.requestId];
           if (!bid.ttr) {
-            bid.ttr = Date.now() - args.auctionStart;
+            bid.ttr = time - bid.start;
           }
+          bid.readyToSend = 1;
         });
         break;
       case CONSTANTS.EVENTS.BID_WON:
         utils.logInfo('LIVEWRAPPED_BID_WON:', args);
-        let wonBid = cache.auctions[args.auctionId].bids[args.adId];
+        let wonBid = cache.auctions[args.auctionId].bids[args.requestId];
         wonBid.won = true;
         if (wonBid.sendStatus != 0) {
           livewrappedAnalyticsAdapter.sendEvents();
@@ -105,7 +113,8 @@ livewrappedAnalyticsAdapter.sendEvents = function() {
     requests: getSentRequests(),
     responses: getResponses(),
     wins: getWins(),
-    timeouts: getTimeouts()
+    timeouts: getTimeouts(),
+    rcv: getAdblockerRecovered()
   };
 
   if (events.requests.length == 0 &&
@@ -116,6 +125,12 @@ livewrappedAnalyticsAdapter.sendEvents = function() {
   }
 
   ajax(URL, undefined, JSON.stringify(events), {method: 'POST'});
+}
+
+function getAdblockerRecovered() {
+  try {
+    return utils.getWindowTop().I12C && utils.getWindowTop().I12C.Morph === 1;
+  } catch (e) {}
 }
 
 function getSentRequests() {
@@ -147,7 +162,7 @@ function getResponses() {
     Object.keys(cache.auctions[auctionId].bids).forEach(bidId => {
       let auction = cache.auctions[auctionId];
       let bid = auction.bids[bidId];
-      if (!(bid.sendStatus & RESPONSESENT) && !bid.timeout) {
+      if (bid.readyToSend && !(bid.sendStatus & RESPONSESENT) && !bid.timeout) {
         bid.sendStatus |= RESPONSESENT;
 
         responses.push({
@@ -214,7 +229,7 @@ function getTimeouts() {
   return timeouts;
 }
 
-adaptermanager.registerAnalyticsAdapter({
+adapterManager.registerAnalyticsAdapter({
   adapter: livewrappedAnalyticsAdapter,
   code: 'livewrapped'
 });

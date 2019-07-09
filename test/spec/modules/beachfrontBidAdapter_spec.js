@@ -1,6 +1,6 @@
 import { expect } from 'chai';
+import sinon from 'sinon';
 import { spec, VIDEO_ENDPOINT, BANNER_ENDPOINT, OUTSTREAM_SRC, DEFAULT_MIMES } from 'modules/beachfrontBidAdapter';
-import * as utils from 'src/utils';
 import { parse as parseUrl } from 'src/url';
 
 describe('BeachfrontAdapter', function () {
@@ -248,6 +248,24 @@ describe('BeachfrontAdapter', function () {
         expect(data.regs.ext.gdpr).to.equal(1);
         expect(data.user.ext.consent).to.equal(consentString);
       });
+
+      it('must add the Trade Desk User ID to the request', () => {
+        const tdid = '4321';
+        const bidRequest = bidRequests[0];
+        bidRequest.mediaTypes = { video: {} };
+        bidRequest.userId = { tdid };
+        const requests = spec.buildRequests([ bidRequest ]);
+        const data = requests[0].data;
+        expect(data.user.ext.eids[0]).to.deep.equal({
+          source: 'adserver.org',
+          uids: [{
+            id: tdid,
+            ext: {
+              rtiPartner: 'TDID'
+            }
+          }]
+        });
+      });
     });
 
     describe('for banner bids', function () {
@@ -367,6 +385,16 @@ describe('BeachfrontAdapter', function () {
         const data = requests[0].data;
         expect(data.gdpr).to.equal(1);
         expect(data.gdprConsent).to.equal(consentString);
+      });
+
+      it('must add the Trade Desk User ID to the request', () => {
+        const tdid = '4321';
+        const bidRequest = bidRequests[0];
+        bidRequest.mediaTypes = { banner: {} };
+        bidRequest.userId = { tdid };
+        const requests = spec.buildRequests([ bidRequest ]);
+        const data = requests[0].data;
+        expect(data.tdid).to.equal(tdid);
       });
     });
 
@@ -503,6 +531,63 @@ describe('BeachfrontAdapter', function () {
           id: bidRequest.bidId,
           url: OUTSTREAM_SRC
         });
+      });
+
+      it('should initialize a player for outstream bids', () => {
+        const width = 640;
+        const height = 480;
+        const bidRequest = bidRequests[0];
+        bidRequest.mediaTypes = {
+          video: {
+            context: 'outstream',
+            playerSize: [ width, height ]
+          }
+        };
+        const serverResponse = {
+          bidPrice: 5.00,
+          url: 'http://reachms.bfmio.com/getmu?aid=bid:19c4a196-fb21-4c81-9a1a-ecc5437a39da',
+          cmpId: '123abc'
+        };
+        const bidResponse = spec.interpretResponse({ body: serverResponse }, { bidRequest });
+        window.Beachfront = { Player: sinon.spy() };
+        bidResponse.adUnitCode = bidRequest.adUnitCode;
+        bidResponse.renderer.render(bidResponse);
+        sinon.assert.calledWith(window.Beachfront.Player, bidResponse.adUnitCode, sinon.match({
+          adTagUrl: bidResponse.vastUrl,
+          width: bidResponse.width,
+          height: bidResponse.height,
+          expandInView: false,
+          collapseOnComplete: true
+        }));
+        delete window.Beachfront;
+      });
+
+      it('should configure outstream player settings from the bidder params', () => {
+        const width = 640;
+        const height = 480;
+        const bidRequest = bidRequests[0];
+        bidRequest.mediaTypes = {
+          video: {
+            context: 'outstream',
+            playerSize: [ width, height ]
+          }
+        };
+        bidRequest.params.player = {
+          expandInView: true,
+          collapseOnComplete: false,
+          progressColor: 'green'
+        };
+        const serverResponse = {
+          bidPrice: 5.00,
+          url: 'http://reachms.bfmio.com/getmu?aid=bid:19c4a196-fb21-4c81-9a1a-ecc5437a39da',
+          cmpId: '123abc'
+        };
+        const bidResponse = spec.interpretResponse({ body: serverResponse }, { bidRequest });
+        window.Beachfront = { Player: sinon.spy() };
+        bidResponse.adUnitCode = bidRequest.adUnitCode;
+        bidResponse.renderer.render(bidResponse);
+        sinon.assert.calledWith(window.Beachfront.Player, bidResponse.adUnitCode, sinon.match(bidRequest.params.player));
+        delete window.Beachfront;
       });
     });
 

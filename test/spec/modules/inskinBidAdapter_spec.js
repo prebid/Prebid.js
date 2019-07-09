@@ -1,7 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/inskinBidAdapter';
-
-var bidFactory = require('src/bidfactory.js');
+import { createBid } from 'src/bidfactory';
 
 const ENDPOINT = 'https://mfad.inskinad.com/api/v2';
 
@@ -213,7 +212,7 @@ describe('InSkin BidAdapter', function () {
   describe('interpretResponse validation', function () {
     it('response should have valid bidderCode', function () {
       let bidRequest = spec.buildRequests(REQUEST.bidRequest);
-      let bid = bidFactory.createBid(1, bidRequest.bidRequest[0]);
+      let bid = createBid(1, bidRequest.bidRequest[0]);
 
       expect(bid.bidderCode).to.equal('inskin');
     });

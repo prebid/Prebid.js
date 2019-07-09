@@ -1,13 +1,13 @@
-import * as utils from 'src/utils';
-import { parse as parseUrl } from 'src/url';
-import { config } from 'src/config';
-import { registerBidder } from 'src/adapters/bidderFactory';
-import { Renderer } from 'src/Renderer';
-import { VIDEO, BANNER } from 'src/mediaTypes';
+import * as utils from '../src/utils';
+import { parse as parseUrl } from '../src/url';
+import { config } from '../src/config';
+import { registerBidder } from '../src/adapters/bidderFactory';
+import { Renderer } from '../src/Renderer';
+import { VIDEO, BANNER } from '../src/mediaTypes';
 import find from 'core-js/library/fn/array/find';
 import includes from 'core-js/library/fn/array/includes';
 
-const ADAPTER_VERSION = '1.4';
+const ADAPTER_VERSION = '1.5';
 const ADAPTER_NAME = 'BFIO_PREBID';
 const OUTSTREAM = 'outstream';
 
@@ -143,21 +143,20 @@ function createRenderer(bidRequest) {
     loaded: false
   });
 
-  renderer.setRender(outstreamRender);
-
-  return renderer;
-}
-
-function outstreamRender(bid) {
-  bid.renderer.push(() => {
-    window.Beachfront.Player(bid.adUnitCode, {
-      ad_tag_url: bid.vastUrl,
-      width: bid.width,
-      height: bid.height,
-      expand_in_view: false,
-      collapse_on_complete: true
+  renderer.setRender(bid => {
+    bid.renderer.push(() => {
+      window.Beachfront.Player(bid.adUnitCode, {
+        adTagUrl: bid.vastUrl,
+        width: bid.width,
+        height: bid.height,
+        expandInView: getPlayerBidParam(bidRequest, 'expandInView', false),
+        collapseOnComplete: getPlayerBidParam(bidRequest, 'collapseOnComplete', true),
+        progressColor: getPlayerBidParam(bidRequest, 'progressColor')
+      });
     });
   });
+
+  return renderer;
 }
 
 function getFirstSize(sizes) {
@@ -231,6 +230,11 @@ function getBannerBidParam(bid, key) {
   return utils.deepAccess(bid, 'params.banner.' + key) || utils.deepAccess(bid, 'params.' + key);
 }
 
+function getPlayerBidParam(bid, key, defaultValue) {
+  let param = utils.deepAccess(bid, 'params.player.' + key);
+  return param === undefined ? defaultValue : param;
+}
+
 function isVideoBidValid(bid) {
   return isVideoBid(bid) && getVideoBidParam(bid, 'appId') && getVideoBidParam(bid, 'bidfloor');
 }
@@ -294,15 +298,31 @@ function createVideoRequestData(bid, bidderRequest) {
       js: 1,
       geo: {}
     },
-    regs: {},
-    user: {},
+    regs: {
+      ext: {}
+    },
+    user: {
+      ext: {}
+    },
     cur: ['USD']
   };
 
   if (bidderRequest && bidderRequest.gdprConsent) {
     let { gdprApplies, consentString } = bidderRequest.gdprConsent;
-    payload.regs.ext = { gdpr: gdprApplies ? 1 : 0 };
-    payload.user.ext = { consent: consentString };
+    payload.regs.ext.gdpr = gdprApplies ? 1 : 0;
+    payload.user.ext.consent = consentString;
+  }
+
+  if (bid.userId && bid.userId.tdid) {
+    payload.user.ext.eids = [{
+      source: 'adserver.org',
+      uids: [{
+        id: bid.userId.tdid,
+        ext: {
+          rtiPartner: 'TDID'
+        }
+      }]
+    }];
   }
 
   return payload;
@@ -338,6 +358,10 @@ function createBannerRequestData(bids, bidderRequest) {
     let { gdprApplies, consentString } = bidderRequest.gdprConsent;
     payload.gdpr = gdprApplies ? 1 : 0;
     payload.gdprConsent = consentString;
+  }
+
+  if (bids[0] && bids[0].userId && bids[0].userId.tdid) {
+    payload.tdid = bids[0].userId.tdid;
   }
 
   return payload;

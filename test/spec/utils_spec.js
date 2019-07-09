@@ -1,9 +1,9 @@
 import { getAdServerTargeting } from 'test/fixtures/fixtures';
 import { expect } from 'chai';
 import CONSTANTS from 'src/constants.json';
+import * as utils from 'src/utils';
 
 var assert = require('assert');
-var utils = require('src/utils');
 
 describe('Utils', function () {
   var obj_string = 's',
@@ -626,6 +626,29 @@ describe('Utils', function () {
     });
   });
 
+  describe('deepSetValue', function() {
+    it('should set existing properties at various depths', function() {
+      const testObj = {
+        prop: 'value',
+        nestedObj: {
+          nestedProp: 'nestedValue'
+        }
+      };
+      utils.deepSetValue(testObj, 'prop', 'newValue');
+      assert.equal(testObj.prop, 'newValue');
+      utils.deepSetValue(testObj, 'nestedObj.nestedProp', 'newNestedValue');
+      assert.equal(testObj.nestedObj.nestedProp, 'newNestedValue');
+    });
+
+    it('should create object levels between top and bottom of given path if they do not exist', function() {
+      const testObj = {};
+      utils.deepSetValue(testObj, 'level1.level2', 'value');
+      assert.notEqual(testObj.level1, undefined);
+      assert.notEqual(testObj.level1.level2, undefined);
+      assert.equal(testObj.level1.level2, 'value');
+    });
+  });
+
   describe('createContentToExecuteExtScriptInFriendlyFrame', function () {
     it('should return empty string if url is not passed', function () {
       var output = utils.createContentToExecuteExtScriptInFriendlyFrame();
@@ -732,7 +755,7 @@ describe('Utils', function () {
     });
 
     it('returns window.location if not in iFrame', function () {
-      sandbox.stub(utils, 'getWindowLocation').returns({
+      sandbox.stub(utils.internal, 'getWindowLocation').returns({
         href: 'https://www.google.com/',
         ancestorOrigins: {},
         origin: 'https://www.google.com',
@@ -745,10 +768,10 @@ describe('Utils', function () {
         hash: ''
       });
       let windowSelfAndTopObject = { self: 'is same as top' };
-      sandbox.stub(utils, 'getWindowSelf').returns(
+      sandbox.stub(utils.internal, 'getWindowSelf').returns(
         windowSelfAndTopObject
       );
-      sandbox.stub(utils, 'getWindowTop').returns(
+      sandbox.stub(utils.internal, 'getWindowTop').returns(
         windowSelfAndTopObject
       );
       var topWindowLocation = utils.getTopWindowLocation();
@@ -764,13 +787,13 @@ describe('Utils', function () {
     });
 
     it('returns parsed dom string from ancestorOrigins if in iFrame & ancestorOrigins is populated', function () {
-      sandbox.stub(utils, 'getWindowSelf').returns(
+      sandbox.stub(utils.internal, 'getWindowSelf').returns(
         { self: 'is not same as top' }
       );
-      sandbox.stub(utils, 'getWindowTop').returns(
+      sandbox.stub(utils.internal, 'getWindowTop').returns(
         { top: 'is not same as self' }
       );
-      sandbox.stub(utils, 'getAncestorOrigins').returns('https://www.google.com/a/umich.edu/acs');
+      sandbox.stub(utils.internal, 'getAncestorOrigins').returns('https://www.google.com/a/umich.edu/acs');
       var topWindowLocation = utils.getTopWindowLocation();
       expect(topWindowLocation).to.be.a('object');
       expect(topWindowLocation.pathname).to.equal('/a/umich.edu/acs');
@@ -785,14 +808,14 @@ describe('Utils', function () {
     });
 
     it('returns parsed referrer string if in iFrame but no ancestorOrigins', function () {
-      sandbox.stub(utils, 'getWindowSelf').returns(
+      sandbox.stub(utils.internal, 'getWindowSelf').returns(
         { self: 'is not same as top' }
       );
-      sandbox.stub(utils, 'getWindowTop').returns(
+      sandbox.stub(utils.internal, 'getWindowTop').returns(
         { top: 'is not same as self' }
       );
-      sandbox.stub(utils, 'getAncestorOrigins').returns(null);
-      sandbox.stub(utils, 'getTopFrameReferrer').returns('https://www.example.com/');
+      sandbox.stub(utils.internal, 'getAncestorOrigins').returns(null);
+      sandbox.stub(utils.internal, 'getTopFrameReferrer').returns('https://www.example.com/');
       var topWindowLocation = utils.getTopWindowLocation();
       expect(topWindowLocation).to.be.a('object');
       expect(topWindowLocation.href).to.equal('https://www.example.com/');
@@ -916,11 +939,23 @@ describe('Utils', function () {
     });
 
     describe('insertElement', function () {
-      it('returns a node at bottom of head if no target is given', function () {
+      it('returns a node at the top of the target by default', function () {
         const toInsert = document.createElement('div');
-        const head = document.getElementsByTagName('head')[0];
+        const target = document.getElementsByTagName('body')[0];
+        const inserted = utils.insertElement(toInsert, document, 'body');
+        expect(inserted).to.equal(target.firstChild);
+      });
+      it('returns a node at bottom of target if 4th argument is true', function () {
+        const toInsert = document.createElement('div');
+        const target = document.getElementsByTagName('html')[0];
+        const inserted = utils.insertElement(toInsert, document, 'html', true);
+        expect(inserted).to.equal(target.lastChild);
+      });
+      it('returns a node at top of the head if no target is given', function () {
+        const toInsert = document.createElement('div');
+        const target = document.getElementsByTagName('head')[0];
         const inserted = utils.insertElement(toInsert);
-        expect(inserted).to.equal(head.lastChild);
+        expect(inserted).to.equal(target.firstChild);
       });
     });
   });

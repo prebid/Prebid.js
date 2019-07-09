@@ -1,7 +1,8 @@
-import { Renderer } from 'src/Renderer';
-import * as utils from 'src/utils';
-import { registerBidder } from 'src/adapters/bidderFactory';
-import { BANNER, NATIVE, VIDEO } from 'src/mediaTypes';
+import { Renderer } from '../src/Renderer';
+import * as utils from '../src/utils';
+import { config } from '../src/config';
+import { registerBidder, getIabSubCategory } from '../src/adapters/bidderFactory';
+import { BANNER, NATIVE, VIDEO, ADPOD } from '../src/mediaTypes';
 import find from 'core-js/library/fn/array/find';
 import includes from 'core-js/library/fn/array/includes';
 
@@ -9,24 +10,29 @@ const BIDDER_CODE = 'appnexus';
 const URL = '//ib.adnxs.com/ut/v3/prebid';
 const VIDEO_TARGETING = ['id', 'mimes', 'minduration', 'maxduration',
   'startdelay', 'skippable', 'playback_method', 'frameworks'];
-const USER_PARAMS = ['age', 'external_uid', 'segments', 'gender', 'dnt', 'language'];
+const USER_PARAMS = ['age', 'externalUid', 'segments', 'gender', 'dnt', 'language'];
 const APP_DEVICE_PARAMS = ['geo', 'device_id']; // appid is collected separately
+const DEBUG_PARAMS = ['enabled', 'dongle', 'member_id', 'debug_timeout'];
 const NATIVE_MAPPING = {
   body: 'description',
+  body2: 'desc2',
   cta: 'ctatext',
   image: {
     serverName: 'main_image',
-    requiredParams: { required: true },
-    minimumParams: { sizes: [{}] },
+    requiredParams: { required: true }
   },
   icon: {
     serverName: 'icon',
-    requiredParams: { required: true },
-    minimumParams: { sizes: [{}] },
+    requiredParams: { required: true }
   },
   sponsoredBy: 'sponsored_by',
+  privacyLink: 'privacy_link',
+  salePrice: 'saleprice',
+  displayUrl: 'displayurl'
 };
 const SOURCE = 'pbjs';
+const MAX_IMPS_PER_REQUEST = 15;
+const mappingFileUrl = '//acdn.adnxs.com/prebid/appnexus-mapping/mappings.json';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -77,6 +83,32 @@ export const spec = {
       };
     }
 
+    let debugObj = {};
+    let debugObjParams = {};
+    const debugCookieName = 'apn_prebid_debug';
+    const debugCookie = utils.getCookie(debugCookieName) || null;
+
+    if (debugCookie) {
+      try {
+        debugObj = JSON.parse(debugCookie);
+      } catch (e) {
+        utils.logError('AppNexus Debug Auction Cookie Error:\n\n' + e);
+      }
+    } else {
+      const debugBidRequest = find(bidRequests, hasDebug);
+      if (debugBidRequest && debugBidRequest.debug) {
+        debugObj = debugBidRequest.debug;
+      }
+    }
+
+    if (debugObj && debugObj.enabled) {
+      Object.keys(debugObj)
+        .filter(param => includes(DEBUG_PARAMS, param))
+        .forEach(param => {
+          debugObjParams[param] = debugObj[param];
+        });
+    }
+
     const memberIdBid = find(bidRequests, hasMemberId);
     const member = memberIdBid ? parseInt(memberIdBid.params.member, 10) : 0;
 
@@ -88,6 +120,7 @@ export const spec = {
         version: '$prebid.version$'
       }
     };
+
     if (member > 0) {
       payload.member_id = member;
     }
@@ -97,6 +130,15 @@ export const spec = {
     }
     if (appIdObjBid) {
       payload.app = appIdObj;
+    }
+
+    if (config.getConfig('adpod.brandCategoryExclusion')) {
+      payload.brand_category_uniqueness = true;
+    }
+
+    if (debugObjParams.enabled) {
+      payload.debug = debugObjParams;
+      utils.logInfo('AppNexus Debug Auction Settings:\n\n' + JSON.stringify(debugObjParams, null, 4));
     }
 
     if (bidderRequest && bidderRequest.gdprConsent) {
@@ -117,13 +159,18 @@ export const spec = {
       payload.referrer_detection = refererinfo;
     }
 
-    const payloadString = JSON.stringify(payload);
-    return {
-      method: 'POST',
-      url: URL,
-      data: payloadString,
-      bidderRequest
-    };
+    const hasAdPodBid = find(bidRequests, hasAdPod);
+    if (hasAdPodBid) {
+      bidRequests.filter(hasAdPod).forEach(adPodBid => {
+        const adPodTags = createAdPodRequest(tags, adPodBid);
+        // don't need the original adpod placement because it's in adPodTags
+        const nonPodTags = payload.tags.filter(tag => tag.uuid !== adPodBid.bidId);
+        payload.tags = [...nonPodTags, ...adPodTags];
+      });
+    }
+
+    const request = formatRequest(payload, bidderRequest);
+    return request;
   },
 
   /**
@@ -154,7 +201,41 @@ export const spec = {
         }
       });
     }
+
+    if (serverResponse.debug && serverResponse.debug.debug_info) {
+      let debugHeader = 'AppNexus Debug Auction for Prebid\n\n'
+      let debugText = debugHeader + serverResponse.debug.debug_info
+      debugText = debugText
+        .replace(/(<td>|<th>)/gm, '\t') // Tables
+        .replace(/(<\/td>|<\/th>)/gm, '\n') // Tables
+        .replace(/^<br>/gm, '') // Remove leading <br>
+        .replace(/(<br>\n|<br>)/gm, '\n') // <br>
+        .replace(/<h1>(.*)<\/h1>/gm, '\n\n===== $1 =====\n\n') // Header H1
+        .replace(/<h[2-6]>(.*)<\/h[2-6]>/gm, '\n\n*** $1 ***\n\n') // Headers
+        .replace(/(<([^>]+)>)/igm, ''); // Remove any other tags
+      utils.logMessage('https://console.appnexus.com/docs/understanding-the-debug-auction');
+      utils.logMessage(debugText);
+    }
+
     return bids;
+  },
+
+  /**
+   * @typedef {Object} mappingFileInfo
+   * @property {string} url  mapping file json url
+   * @property {number} refreshInDays prebid stores mapping data in localstorage so you can return in how many days you want to update value stored in localstorage.
+   * @property {string} localStorageKey unique key to store your mapping json in localstorage
+   */
+
+  /**
+   * Returns mapping file info. This info will be used by bidderFactory to preload mapping file and store data in local storage
+   * @returns {mappingFileInfo}
+   */
+  getMappingFileInfo: function() {
+    return {
+      url: mappingFileUrl,
+      refreshInDays: 7
+    }
   },
 
   getUserSyncs: function(syncOptions) {
@@ -203,6 +284,35 @@ function deleteValues(keyPairObj) {
   if (isPopulatedArray(keyPairObj.value) && keyPairObj.value[0] === '') {
     delete keyPairObj.value;
   }
+}
+
+function formatRequest(payload, bidderRequest) {
+  let request = [];
+
+  if (payload.tags.length > MAX_IMPS_PER_REQUEST) {
+    const clonedPayload = utils.deepClone(payload);
+
+    utils.chunk(payload.tags, MAX_IMPS_PER_REQUEST).forEach(tags => {
+      clonedPayload.tags = tags;
+      const payloadString = JSON.stringify(clonedPayload);
+      request.push({
+        method: 'POST',
+        url: URL,
+        data: payloadString,
+        bidderRequest
+      });
+    });
+  } else {
+    const payloadString = JSON.stringify(payload);
+    request = {
+      method: 'POST',
+      url: URL,
+      data: payloadString,
+      bidderRequest
+    };
+  }
+
+  return request;
 }
 
 function newRenderer(adUnitCode, rtbBid, rendererOptions = {}) {
@@ -256,6 +366,10 @@ function newBid(serverBid, rtbBid, bidderRequest) {
     }
   };
 
+  if (rtbBid.advertiser_id) {
+    bid.meta = Object.assign({}, bid.meta, { advertiserId: rtbBid.advertiser_id });
+  }
+
   if (rtbBid.rtb.video) {
     Object.assign(bid, {
       width: rtbBid.rtb.video.player_width,
@@ -264,6 +378,17 @@ function newBid(serverBid, rtbBid, bidderRequest) {
       vastImpUrl: rtbBid.notify_url,
       ttl: 3600
     });
+
+    const videoContext = utils.deepAccess(bidRequest, 'mediaTypes.video.context');
+    if (videoContext === ADPOD) {
+      const iabSubCatId = getIabSubCategory(bidRequest.bidder, rtbBid.brand_category_id);
+      bid.meta = Object.assign({}, bid.meta, { iabSubCatId });
+      bid.video = {
+        context: ADPOD,
+        durationSeconds: Math.floor(rtbBid.rtb.video.duration_ms / 1000),
+      };
+    }
+
     // This supports Outstream Video
     if (rtbBid.renderer_url) {
       const rendererOptions = utils.deepAccess(
@@ -283,12 +408,22 @@ function newBid(serverBid, rtbBid, bidderRequest) {
     bid[NATIVE] = {
       title: nativeAd.title,
       body: nativeAd.desc,
+      body2: nativeAd.desc2,
       cta: nativeAd.ctatext,
+      rating: nativeAd.rating,
       sponsoredBy: nativeAd.sponsored,
+      privacyLink: nativeAd.privacy_link,
+      address: nativeAd.address,
+      downloads: nativeAd.downloads,
+      likes: nativeAd.likes,
+      phone: nativeAd.phone,
+      price: nativeAd.price,
+      salePrice: nativeAd.saleprice,
       clickUrl: nativeAd.link.url,
+      displayUrl: nativeAd.displayurl,
       clickTrackers: nativeAd.link.click_trackers,
       impressionTrackers: nativeAd.impression_trackers,
-      javascriptTrackers: nativeAd.javascript_trackers,
+      javascriptTrackers: nativeAd.javascript_trackers
     };
     if (nativeAd.main_img) {
       bid['native'].image = {
@@ -372,6 +507,9 @@ function bidToTag(bid) {
 
   if (bid.mediaType === NATIVE || utils.deepAccess(bid, `mediaTypes.${NATIVE}`)) {
     tag.ad_types.push(NATIVE);
+    if (tag.sizes.length === 0) {
+      tag.sizes = transformSizes([1, 1]);
+    }
 
     if (bid.nativeParams) {
       const nativeRequest = buildNativeRequest(bid.nativeParams);
@@ -397,6 +535,10 @@ function bidToTag(bid) {
     Object.keys(bid.params.video)
       .filter(param => includes(VIDEO_TARGETING, param))
       .forEach(param => tag.video[param] = bid.params.video[param]);
+  }
+
+  if (bid.renderer) {
+    tag.video = Object.assign({}, tag.video, {custom_renderer_present: true});
   }
 
   if (
@@ -453,6 +595,66 @@ function hasAppId(bid) {
   return !!bid.params.app
 }
 
+function hasDebug(bid) {
+  return !!bid.debug
+}
+
+function hasAdPod(bid) {
+  return (
+    bid.mediaTypes &&
+    bid.mediaTypes.video &&
+    bid.mediaTypes.video.context === ADPOD
+  );
+}
+
+/**
+ * Expand an adpod placement into a set of request objects according to the
+ * total adpod duration and the range of duration seconds. Sets minduration/
+ * maxduration video property according to requireExactDuration configuration
+ */
+function createAdPodRequest(tags, adPodBid) {
+  const { durationRangeSec, requireExactDuration } = adPodBid.mediaTypes.video;
+
+  const numberOfPlacements = getAdPodPlacementNumber(adPodBid.mediaTypes.video);
+  const maxDuration = utils.getMaxValueFromArray(durationRangeSec);
+
+  const tagToDuplicate = tags.filter(tag => tag.uuid === adPodBid.bidId);
+  let request = utils.fill(...tagToDuplicate, numberOfPlacements);
+
+  if (requireExactDuration) {
+    const divider = Math.ceil(numberOfPlacements / durationRangeSec.length);
+    const chunked = utils.chunk(request, divider);
+
+    // each configured duration is set as min/maxduration for a subset of requests
+    durationRangeSec.forEach((duration, index) => {
+      chunked[index].map(tag => {
+        setVideoProperty(tag, 'minduration', duration);
+        setVideoProperty(tag, 'maxduration', duration);
+      });
+    });
+  } else {
+    // all maxdurations should be the same
+    request.map(tag => setVideoProperty(tag, 'maxduration', maxDuration));
+  }
+
+  return request;
+}
+
+function getAdPodPlacementNumber(videoParams) {
+  const { adPodDurationSec, durationRangeSec, requireExactDuration } = videoParams;
+  const minAllowedDuration = utils.getMinValueFromArray(durationRangeSec);
+  const numberOfPlacements = Math.floor(adPodDurationSec / minAllowedDuration);
+
+  return requireExactDuration
+    ? Math.max(numberOfPlacements, durationRangeSec.length)
+    : numberOfPlacements;
+}
+
+function setVideoProperty(tag, key, value) {
+  if (utils.isEmpty(tag.video)) { tag.video = {}; }
+  tag.video[key] = value;
+}
+
 function getRtbBid(tag) {
   return tag && tag.ads && tag.ads.length && find(tag.ads, ad => ad.rtb);
 }
@@ -476,19 +678,17 @@ function buildNativeRequest(params) {
     const requiredParams = NATIVE_MAPPING[key] && NATIVE_MAPPING[key].requiredParams;
     request[requestKey] = Object.assign({}, requiredParams, params[key]);
 
-    // minimum params are passed if no non-required params given on adunit
-    const minimumParams = NATIVE_MAPPING[key] && NATIVE_MAPPING[key].minimumParams;
-
-    if (requiredParams && minimumParams) {
-      // subtract required keys from adunit keys
-      const adunitKeys = Object.keys(params[key]);
-      const requiredKeys = Object.keys(requiredParams);
-      const remaining = adunitKeys.filter(key => !includes(requiredKeys, key));
-
-      // if none are left over, the minimum params needs to be sent
-      if (remaining.length === 0) {
-        request[requestKey] = Object.assign({}, request[requestKey], minimumParams);
+    // convert the sizes of image/icon assets to proper format (if needed)
+    const isImageAsset = !!(requestKey === NATIVE_MAPPING.image.serverName || requestKey === NATIVE_MAPPING.icon.serverName);
+    if (isImageAsset && request[requestKey].sizes) {
+      let sizes = request[requestKey].sizes;
+      if (utils.isArrayOfNums(sizes) || (utils.isArray(sizes) && sizes.length > 0 && sizes.every(sz => utils.isArrayOfNums(sz)))) {
+        request[requestKey].sizes = transformSizes(request[requestKey].sizes);
       }
+    }
+
+    if (requestKey === NATIVE_MAPPING.privacyLink) {
+      request.privacy_supported = true;
     }
   });
 

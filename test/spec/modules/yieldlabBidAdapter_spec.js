@@ -11,7 +11,8 @@ const REQUEST = {
     'targeting': {
       'key1': 'value1',
       'key2': 'value2'
-    }
+    },
+    'extId': 'abc'
   },
   'bidderRequestId': '143346cf0f1731',
   'auctionId': '2e41f65424c87c',
@@ -104,6 +105,7 @@ describe('yieldlabBidAdapter', function () {
       expect(result[0].ttl).to.equal(300)
       expect(result[0].referrer).to.equal('')
       expect(result[0].ad).to.include('<script src="https://ad.yieldlab.net/d/1111/2222/728x90?ts=')
+      expect(result[0].ad).to.include('&id=abc')
     })
 
     it('should get correct bid response when passing more than one size', function () {
@@ -127,6 +129,7 @@ describe('yieldlabBidAdapter', function () {
       expect(result[0].ttl).to.equal(300)
       expect(result[0].referrer).to.equal('')
       expect(result[0].ad).to.include('<script src="https://ad.yieldlab.net/d/1111/2222/728x90?ts=')
+      expect(result[0].ad).to.include('&id=abc')
     })
 
     it('should add vastUrl when type is video', function () {
@@ -143,6 +146,24 @@ describe('yieldlabBidAdapter', function () {
       expect(result[0].cpm).to.equal(0.01)
       expect(result[0].mediaType).to.equal('video')
       expect(result[0].vastUrl).to.include('https://ad.yieldlab.net/d/1111/2222/728x90?ts=')
+      expect(result[0].vastUrl).to.include('&id=abc')
+    })
+
+    it('should add renderer if outstream context', function () {
+      const OUTSTREAM_REQUEST = Object.assign({}, REQUEST, {
+        'mediaTypes': {
+          'video': {
+            'playerSize': [[640, 480]],
+            'context': 'outstream'
+          }
+        }
+      })
+      const result = spec.interpretResponse({body: [RESPONSE]}, {validBidRequests: [OUTSTREAM_REQUEST]})
+
+      expect(result[0].renderer.id).to.equal('2d925f27f5079f')
+      expect(result[0].renderer.url).to.equal('https://ad2.movad.net/dynamic.ad?a=o193092&ma_loadEvent=ma-start-event')
+      expect(result[0].width).to.equal(640)
+      expect(result[0].height).to.equal(480)
     })
   })
 })

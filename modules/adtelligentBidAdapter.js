@@ -1,7 +1,7 @@
-import * as utils from 'src/utils';
-import {registerBidder} from 'src/adapters/bidderFactory';
-import {VIDEO, BANNER} from 'src/mediaTypes';
-import {Renderer} from 'src/Renderer';
+import * as utils from '../src/utils';
+import {registerBidder} from '../src/adapters/bidderFactory';
+import {VIDEO, BANNER} from '../src/mediaTypes';
+import {Renderer} from '../src/Renderer';
 import findIndex from 'core-js/library/fn/array/find-index';
 
 const URL = '//hb.adtelligent.com/auction/';
@@ -17,7 +17,45 @@ export const spec = {
   isBidRequestValid: function (bid) {
     return bid && bid.params && bid.params.aid;
   },
+  getUserSyncs: function (syncOptions, serverResponses) {
+    var syncs = [];
 
+    function addSyncs(bid) {
+      const uris = bid.cookieURLs;
+      const types = bid.cookieURLSTypes || [];
+
+      if (uris && uris.length) {
+        uris.forEach((uri, i) => {
+          let type = types[i] || 'image';
+
+          if ((!syncOptions.pixelEnabled && type == 'image') ||
+            (!syncOptions.iframeEnabled && type == 'iframe')) {
+            return;
+          }
+
+          syncs.push({
+            type: type,
+            url: uri
+          })
+        })
+      }
+    }
+
+    if (syncOptions.pixelEnabled || syncOptions.iframeEnabled) {
+      serverResponses && serverResponses.length && serverResponses.forEach((response) => {
+        if (response.body) {
+          if (utils.isArray(response.body)) {
+            response.body.forEach(b => {
+              addSyncs(b);
+            })
+          } else {
+            addSyncs(response.body)
+          }
+        }
+      })
+    }
+    return syncs;
+  },
   /**
    * Make a server request from the list of BidRequests
    * @param bidRequests
@@ -25,7 +63,7 @@ export const spec = {
    */
   buildRequests: function (bidRequests, bidderRequest) {
     return {
-      data: bidToTag(bidRequests),
+      data: bidToTag(bidRequests, bidderRequest),
       bidderRequest,
       method: 'GET',
       url: URL
@@ -83,10 +121,15 @@ function parseRTBResponse(serverResponse, bidderRequest) {
   return bids;
 }
 
-function bidToTag(bidRequests) {
+function bidToTag(bidRequests, bidderRequest) {
   let tag = {
     domain: utils.getTopWindowLocation().hostname
   };
+
+  if (bidderRequest && bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies) {
+    tag.gdpr = 1;
+    tag.gdpr_consent = bidderRequest.gdprConsent.consentString;
+  }
 
   for (let i = 0, length = bidRequests.length; i < length; i++) {
     Object.assign(tag, prepareRTBRequestParams(i, bidRequests[i]));
