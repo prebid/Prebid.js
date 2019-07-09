@@ -211,15 +211,18 @@ class AuctionData {
    * Sends the auction to the the ingest server
    */
   send() {
-    let maxbid = {cpm: 0}
+    let maxBids = {}
     this.auction.requests.forEach(request => {
       request.bids.forEach(bid => {
-        if (bid.cpm > maxbid.cpm) {
-          maxbid = bid
+        maxBids[bid.adUnitCode] = maxBids[bid.adUnitCode] || {cpm: 0}
+        if (bid.cpm > maxBids[bid.adUnitCode].cpm) {
+          maxBids[bid.adUnitCode] = bid
         }
       })
     })
-    maxbid.isAuctionWinner = true
+    Object.keys(maxBids).forEach(unit => {
+      maxBids[unit].isAuctionWinner = true
+    })
     this.auction.ts = utils.timestamp()
     ajax(
       pbaUrl,
