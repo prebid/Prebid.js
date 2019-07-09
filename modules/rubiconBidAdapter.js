@@ -557,6 +557,9 @@ export const spec = {
           netRevenue: config.getConfig('rubicon.netRevenue') || false,
           rubicon: {
             advertiserId: ad.advertiser, networkId: ad.network
+          },
+          meta: {
+            advertiserId: ad.advertiser, networkId: ad.network
           }
         };
 
