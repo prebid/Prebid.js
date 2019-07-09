@@ -426,10 +426,13 @@ describe('The Criteo bidding adapter', function () {
       expect(request.url).to.match(/^\/\/bidder\.criteo\.com\/cdb\?profileId=207&av=\d+&wv=[^&]+&cb=\d/);
       expect(request.method).to.equal('POST');
       const ortbRequest = request.data;
+      expect(ortbRequest.slots[0].video.mimes).to.deep.equal(['video/mp4', 'video/x-flv']);
+      expect(ortbRequest.slots[0].video.maxduration).to.equal(30);
+      expect(ortbRequest.slots[0].video.api).to.deep.equal([1, 2]);
+      expect(ortbRequest.slots[0].video.protocols).to.deep.equal([2, 3]);
       expect(ortbRequest.slots[0].video.skip).to.equal(1);
       expect(ortbRequest.slots[0].video.minduration).to.equal(5);
       expect(ortbRequest.slots[0].video.startdelay).to.equal(5);
-      expect(ortbRequest.slots[0].video.playerSizes).to.deep.equal(['640x480']);
       expect(ortbRequest.slots[0].video.playbackmethod).to.deep.equal([1, 3]);
       expect(ortbRequest.slots[0].video.placement).to.equal(2);
     });
