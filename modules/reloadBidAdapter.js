@@ -1,11 +1,11 @@
 import {
   BANNER
 }
-  from 'src/mediaTypes';
+  from '../src/mediaTypes';
 import {
   registerBidder
 }
-  from 'src/adapters/bidderFactory';
+  from '../src/adapters/bidderFactory';
 
 const BIDDER_CODE = 'reload';
 
