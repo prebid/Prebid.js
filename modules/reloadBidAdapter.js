@@ -1,7 +1,7 @@
 import {
   registerBidder
 }
-  from 'src/adapters/bidderFactory';
+  from '../src/adapters/bidderFactory';
 import * as utils from '../src/utils';
 
 const BIDDER_CODE = 'reload';
