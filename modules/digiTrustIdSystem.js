@@ -12,7 +12,8 @@
 // import { config } from 'src/config';
 import * as utils from '../src/utils'
 import { ajax } from '../src/ajax';
-import { attachIdSystem } from '../modules/userId';
+import { submodule } from '../src/hook';
+import { attachIdSystem } from '../modules/userId/index';
 // import { getGlobal } from 'src/prebidGlobal';
 
 /**
@@ -338,7 +339,6 @@ export const digiTrustIdSubmodule = {
     }
   },
   getId: getDigiTrustId,
-  foo: 'bar',
   _testInit: surfaceTestHook
 };
 
@@ -357,3 +357,4 @@ function fallbackInit() {
 setTimeout(fallbackInit, 1550);
 
 attachIdSystem(digiTrustIdSubmodule);
+submodule('userId', digiTrustIdSubmodule);
