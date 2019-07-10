@@ -186,7 +186,9 @@ function processSubmoduleCallbacks(submodules) {
       submodule.callback = undefined;
       // if valid, id data should be saved to cookie/html storage
       if (idObj) {
-        setStoredValue(submodule.config.storage, idObj, submodule.config.storage.expires);
+        if (submodule.config.storage) {
+          setStoredValue(submodule.config.storage, idObj, submodule.config.storage.expires);
+        }
         // cache decoded value (this is copied to every adUnit bid)
         submodule.idObj = submodule.submodule.decode(idObj);
       } else {
@@ -328,6 +330,13 @@ function initSubmodules(submodules, consentData) {
     } else if (submodule.config.value) {
       // cache decoded value (this is copied to every adUnit bid)
       submodule.idObj = submodule.config.value;
+    } else {
+      const result = submodule.submodule.getId(submodule.config.params, consentData);
+      if (typeof result === 'function') {
+        submodule.callback = result;
+      } else {
+        submodule.idObj = submodule.submodule.decode();
+      }
     }
     carry.push(submodule);
     return carry;
@@ -360,6 +369,8 @@ function getValidSubmoduleConfigs(configRegistry, submoduleRegistry, activeStora
       activeStorageTypes.indexOf(config.storage.type) !== -1) {
       carry.push(config);
     } else if (utils.isPlainObject(config.value)) {
+      carry.push(config);
+    } else if (!config.storage && !config.value) {
       carry.push(config);
     }
     return carry;

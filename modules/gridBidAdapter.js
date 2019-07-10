@@ -79,13 +79,15 @@ export const spec = {
     });
 
     const payload = {
-      u: utils.getTopWindowUrl(),
       auids: auids.join(','),
       sizes: utils.getKeys(sizeMap).join(','),
       r: reqId
     };
 
     if (bidderRequest) {
+      if (bidderRequest.refererInfo && bidderRequest.refererInfo.referer) {
+        payload.u = encodeURIComponent(bidderRequest.refererInfo.referer);
+      }
       if (bidderRequest.timeout) {
         payload.wtimeout = bidderRequest.timeout;
       }
