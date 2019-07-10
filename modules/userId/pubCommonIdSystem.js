@@ -5,7 +5,7 @@
  * @requires module:modules/userId
  */
 
-import * as utils from '../src/utils.js'
+import * as utils from '../../src/utils';
 
 /** @type {Submodule} */
 export const pubCommonIdSubmodule = {

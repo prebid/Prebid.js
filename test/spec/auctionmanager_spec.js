@@ -1,4 +1,4 @@
-import { getKeyValueTargetingPairs, auctionCallbacks } from 'src/auction';
+import { getKeyValueTargetingPairs, auctionCallbacks, AUCTION_COMPLETED } from 'src/auction';
 import CONSTANTS from 'src/constants.json';
 import { adjustBids } from 'src/auction';
 import * as auctionModule from 'src/auction';
@@ -822,7 +822,8 @@ describe('auctionmanager.js', function () {
         server.restore();
         events.emit.restore();
       });
-      it('should emit BID_TIMEOUT for timed out bids', function (done) {
+
+      it('should emit BID_TIMEOUT and AUCTION_END for timed out bids', function (done) {
         const spec1 = mockBidder(BIDDER_CODE, [bids[0]]);
         registerBidder(spec1);
         const spec2 = mockBidder(BIDDER_CODE1, [bids[1]]);
@@ -836,6 +837,12 @@ describe('auctionmanager.js', function () {
           const timedOutBids = bidTimeoutCall.args[1];
           assert.equal(timedOutBids.length, 1);
           assert.equal(timedOutBids[0].bidder, BIDDER_CODE1);
+
+          const auctionEndCall = eventsEmitSpy.withArgs(CONSTANTS.EVENTS.AUCTION_END).getCalls()[0];
+          const auctionProps = auctionEndCall.args[1];
+          assert.equal(auctionProps.adUnits, adUnits);
+          assert.equal(auctionProps.timeout, 20);
+          assert.equal(auctionProps.auctionStatus, AUCTION_COMPLETED)
           done();
         }
         auction = auctionModule.newAuction({adUnits, adUnitCodes, callback: auctionCallback, cbTimeout: 20});
