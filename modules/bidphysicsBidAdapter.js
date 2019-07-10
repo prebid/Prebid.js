@@ -1,4 +1,4 @@
-import {registerBidder} from 'src/adapters/bidderFactory';
+import {registerBidder} from '../src/adapters/bidderFactory';
 import * as utils from '../src/utils';
 import {BANNER} from '../src/mediaTypes';
 
