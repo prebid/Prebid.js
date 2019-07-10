@@ -91,7 +91,6 @@ function _buildPostBody(bidRequests, bidderRequest) {
     }
   });
 
-  // Handle consortia user ids. Eids will be an array of consortia user ids
   let eids = handleConsortiaUserIds(bidderRequest)
   if (eids.length > 0) {
     data.user = {
@@ -118,7 +117,6 @@ function _isValidSize(size) {
 
 function handleConsortiaUserIds(bidderRequest) {
   let eids = [];
-  // TDID
   if (bidderRequest.userId && bidderRequest.userId.tdid) {
     eids.push({
       source: 'adserver.org',
