@@ -75,6 +75,14 @@ function getWrapperCode(wrapper, data) {
   return wrapper.replace('AD_JSON', window.btoa(JSON.stringify(data)))
 }
 
+function _getTradeDeskIDParam(bidRequest) {
+  const unifiedIdObj = {};
+  if (bidRequest.userId && bidRequest.userId.tdid) {
+    unifiedIdObj.tdid = bidRequest.userId.tdid;
+  }
+  return unifiedIdObj;
+}
+
 // TODO: use getConfig()
 function _getDigiTrustQueryParams() {
   function getDigiTrustId () {
@@ -170,7 +178,7 @@ function buildRequests (validBidRequests, bidderRequest) {
       sizes: bidRequest.sizes,
       url: BID_ENDPOINT,
       method: 'GET',
-      data: Object.assign(data, _getBrowserParams(), _getDigiTrustQueryParams())
+      data: Object.assign(data, _getBrowserParams(), _getDigiTrustQueryParams(), _getTradeDeskIDParam(bidRequest))
     })
   });
   return bids;

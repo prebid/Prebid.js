@@ -432,7 +432,8 @@ describe('AppNexusAdapter', function () {
         likes: {required: true},
         phone: {required: true},
         price: {required: true},
-        saleprice: {required: true}
+        saleprice: {required: true},
+        privacy_supported: true
       });
     });
 
@@ -612,6 +613,22 @@ describe('AppNexusAdapter', function () {
         rd_ifs: 2,
         rd_stk: bidderRequest.refererInfo.stack.map((url) => encodeURIComponent(url)).join(',')
       });
+    });
+
+    it('should populate tpids array when userId is available', function () {
+      const bidRequest = Object.assign({}, bidRequests[0], {
+        userId: {
+          criteortus: {
+            appnexus: {
+              userid: 'sample-userid'
+            }
+          }
+        }
+      });
+
+      const request = spec.buildRequests([bidRequest]);
+      const payload = JSON.parse(request.data);
+      expect(payload.tpuids).to.deep.equal([{provider: 'criteo', user_id: 'sample-userid'}]);
     });
   })
 
