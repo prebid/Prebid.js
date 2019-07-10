@@ -195,14 +195,14 @@ export const spec = {
       }
 
       serverResponse.body.bids.forEach(bidResponse => {
-        const cpm = bidResponse.cpm;
+        const cpm = bidResponse.cpm || 0;
 
         const bid = {
           // Prebid fields
           requestId: bidResponse.bidId,
           cpm: cpm,
-          width: bidResponse.width,
-          height: bidResponse.height,
+          width: bidResponse.width || 0,
+          height: bidResponse.height || 0,
           ad: bidResponse.ad,
           ttl: 300 /* 5 minutes */,
           currency: 'EUR',
@@ -242,7 +242,11 @@ export const spec = {
           }
         };
 
-        bids.push(bid);
+        if (bidResponse.bidPriceOptimisation) {
+          bids.push(mergeObjects(bid, bidResponse.bidPriceOptimisation))
+        } else {
+          bids.push(bid);
+        }
       });
     }
 
@@ -264,6 +268,18 @@ export const spec = {
 };
 
 registerBidder(spec);
+
+function mergeObjects() {
+  let resObj = {};
+  for (let i = 0; i < arguments.length; i += 1) {
+    let obj = arguments[i];
+    let keys = Object.keys(obj);
+    for (let j = 0; j < keys.length; j += 1) {
+      resObj[keys[j]] = obj[keys[j]];
+    }
+  }
+  return resObj;
+}
 
 function tunePrice(price) {
   const ENCRYPTION_SIZE_LIMIT = 8;

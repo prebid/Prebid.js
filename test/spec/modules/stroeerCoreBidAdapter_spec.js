@@ -92,7 +92,7 @@ describe('stroeerCore bid adapter', function () {
   });
 
   const buildBidderResponseWithTep = () => ({
-    'tep': '//hb.adscale.de/sspReqId/5f465360-cb11-44ee-b0be-b47a4f583521',
+    'tep': '//hb.adscale.de/sspReqId/5f465360-cb11-44ee-b0be-b47a4f583521/39000',
     'bids': [{
       'bidId': 'bid1',
       'cpm': 4.0,
@@ -101,6 +101,42 @@ describe('stroeerCore bid adapter', function () {
       'ad': '<div>tag1</div>'
     }]
   });
+
+  const buildBidderResponseWithBidPriceOptimisation = () => ({
+    'bids': [{
+      'bidId': 'bid1',
+      'cpm': 4.0,
+      'width': 300,
+      'height': 600,
+      'ad': '<div>tag1</div>',
+      'bidPriceOptimisation': {
+        'cp': 4,
+        'rop': {
+          '0.0': 4,
+          '2.0': 6,
+          '5.3': 8.2,
+          '7.0': 10
+        },
+        'ropFactor': 1.2
+      }
+    }]
+  })
+
+  const buildBidderResponseWithBidPriceOptimisationButNoBids = () => ({
+    'bids': [{
+      'bidId': 'bid1',
+      'bidPriceOptimisation': {
+        'cp': 4,
+        'rop': {
+          '0.0': 4,
+          '2.0': 6,
+          '5.3': 8.2,
+          '7.0': 10
+        },
+        'ropFactor': 1.2
+      }
+    }]
+  })
 
   const buildBidderResponseSecondPriceAuction = () => {
     const response = buildBidderResponse();
@@ -503,7 +539,7 @@ describe('stroeerCore bid adapter', function () {
       const request = fakeServer.requests[0];
 
       assert.equal(request.method, 'GET');
-      assert.equal(request.url, '//hb.adscale.de/sspReqId/5f465360-cb11-44ee-b0be-b47a4f583521');
+      assert.equal(request.url, '//hb.adscale.de/sspReqId/5f465360-cb11-44ee-b0be-b47a4f583521/39000');
     });
 
     it('should not call endpoint when endpoint field not present', () => {
@@ -558,6 +594,28 @@ describe('stroeerCore bid adapter', function () {
 
       assert.propertyVal(result[1], 'cpm2', 0);
       assert.propertyVal(result[1], 'floor', 7.3);
+    });
+
+    it('should extend bid with bidPriceOptimisation fields if provided', () => {
+      const bidderResponse = buildBidderResponseWithBidPriceOptimisation();
+
+      const result = spec.interpretResponse({body: bidderResponse});
+      console.log(result[0].rop)
+      assertStandardFieldsOnBid(result[0], 'bid1', '<div>tag1</div>', 300, 600, 4)
+      assert.propertyVal(result[0], 'cp', 4);
+      result[0].should.include.keys('rop');
+      assert.propertyVal(result[0], 'ropFactor', 1.2)
+    });
+
+    it('should default cpm, width and height fields to 0 and include bidPriceOptimisation fields if provided and no bids', () => {
+      const bidderResponse = buildBidderResponseWithBidPriceOptimisationButNoBids();
+
+      const result = spec.interpretResponse({body: bidderResponse});
+      console.log(result)
+      assert.propertyVal(result[0], 'requestId', 'bid1')
+      assert.propertyVal(result[0], 'cp', 4)
+      result[0].should.include.keys('rop');
+      assert.propertyVal(result[0], 'ropFactor', 1.2)
     });
 
     describe('should add generateAd method on bid object', () => {
