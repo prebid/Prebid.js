@@ -178,12 +178,6 @@ describe('orbidderBidAdapter', () => {
       expect(ajaxStub.firstCall.args[0].indexOf('https://')).to.equal(0);
       expect(ajaxStub.firstCall.args[0]).to.equal(`${spec.orbidderHost}/win`);
       expect(ajaxStub.firstCall.args[1]).to.equal(JSON.stringify(bidObjClone));
-
-      spec.onSetTargeting(bidObj);
-      expect(ajaxStub.calledTwice).to.equal(true);
-      expect(ajaxStub.secondCall.args[0].indexOf('https://')).to.equal(0);
-      expect(ajaxStub.secondCall.args[0]).to.equal(`${spec.orbidderHost}/targeting`);
-      expect(ajaxStub.secondCall.args[1]).to.equal(JSON.stringify(bidObjClone));
     });
   });
 

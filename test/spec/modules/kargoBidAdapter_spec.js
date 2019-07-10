@@ -34,7 +34,7 @@ describe('kargo adapter tests', function () {
   });
 
   describe('build request', function() {
-    var bids, undefinedCurrency, noAdServerCurrency, cookies = [], localStorageItems = [];
+    var bids, undefinedCurrency, noAdServerCurrency, cookies = [], localStorageItems = [], sessionIds = [];
 
     beforeEach(function () {
       undefinedCurrency = false;
@@ -212,6 +212,10 @@ describe('kargo adapter tests', function () {
       setCookie('krg_crb', getEmptyKrgCrbOldStyle());
     }
 
+    function getSessionId() {
+      return spec._sessionId;
+    }
+
     function getExpectedKrakenParams(excludeUserIds, excludeKrux, expectedRawCRB, expectedRawCRBCookie) {
       var base = {
         timeout: 200,
@@ -302,6 +306,8 @@ describe('kargo adapter tests', function () {
 
     function testBuildRequests(expected) {
       var request = spec.buildRequests(bids, {timeout: 200, foo: 'bar'});
+      expected.sessionId = getSessionId();
+      sessionIds.push(expected.sessionId);
       var krakenParams = JSON.parse(decodeURIComponent(request.data.slice(5)));
       expect(request.data.slice(0, 5)).to.equal('json=');
       expect(request.url).to.equal('https://krk.kargo.com/api/v2/bid');
@@ -310,6 +316,14 @@ describe('kargo adapter tests', function () {
       expect(request.timeout).to.equal(200);
       expect(request.foo).to.equal('bar');
       expect(krakenParams).to.deep.equal(expected);
+      // Make sure session ID stays the same across requests simulating multiple auctions on one page load
+      for (let i in sessionIds) {
+        if (i == 0) {
+          continue;
+        }
+        let sessionId = sessionIds[i];
+        expect(sessionIds[0]).to.equal(sessionId);
+      }
     }
 
     it('works when all params and localstorage and cookies are correctly set', function() {
