@@ -27,8 +27,11 @@ let auctionInit = {
 let bidderCode = 'sovrn';
 let bidderRequestId = '123bri';
 let adUnitCode = 'div';
+let adUnitCode2 = 'div2';
 let bidId = 'bidid';
+let bidId2 = 'bidid2';
 let tId = '7aafa3ee-a80a-46d7-a4a0-cbcba463d97a';
+let tId2 = '99dca3ee-a80a-46d7-a4a0-cbcba463d97e';
 let bidRequested = {
   auctionStart: auctionStartTimestamp,
   bidderCode: bidderCode,
@@ -42,6 +45,15 @@ let bidRequested = {
       sizes: [[300, 250]],
       startTime: auctionStartTimestamp + 100,
       transactionId: tId
+    },
+    {
+      adUnitCode: adUnitCode2,
+      bidId: bidId2,
+      bidder: bidderCode,
+      bidderRequestId: '10340af0c7dc72',
+      sizes: [[300, 250]],
+      startTime: auctionStartTimestamp + 100,
+      transactionId: tId2
     }
   ],
   doneCbCallCount: 1,
@@ -80,6 +92,42 @@ let bidResponse = {
     hb_bidder: bidderCode,
     hb_adid: '3870e27a5752fb',
     hb_pb: '0.85'
+  },
+  status: 'rendered'
+};
+
+let bidResponse2 = {
+  bidderCode: bidderCode,
+  width: 300,
+  height: 250,
+  statusMessage: 'Bid available',
+  adId: '9999e27a5752fb',
+  mediaType: 'banner',
+  source: 'client',
+  requestId: bidId2,
+  cpm: 0.12,
+  creativeId: 'cridprebidrtb',
+  dealId: null,
+  currency: 'USD',
+  netRevenue: true,
+  ad: '<div>divvy mcdiv</div>',
+  ttl: 60000,
+  responseTimestamp: auctionStartTimestamp + 150,
+  requestTimestamp: auctionStartTimestamp + 100,
+  bidder: bidderCode,
+  adUnitCode: adUnitCode2,
+  timeToRespond: 50,
+  pbLg: '0.10',
+  pbMg: '0.10',
+  pbHg: '0.10',
+  pbAg: '0.10',
+  pbDg: '0.10',
+  pbCg: '',
+  size: '300x250',
+  adserverTargeting: {
+    hb_bidder: bidderCode,
+    hb_adid: '9999e27a5752fb',
+    hb_pb: '0.10'
   },
   status: 'rendered'
 };
@@ -245,7 +293,7 @@ describe('Sovrn Analytics Adapter', function () {
       assert.equal(requests[0].timeout, timeout);
       let bids = requests[0].bids;
       assert(bids);
-      assert.equal(bids.length, 1);
+      assert.equal(bids.length, 2);
       assert.equal(bids[0].bidId, bidId);
       assert.equal(bids[0].bidder, bidderCode);
       assert.equal(bids[0].transactionId, tId);
@@ -340,6 +388,29 @@ describe('Sovrn Analytics Adapter', function () {
       status: 'rendered',
       isAuctionWinner: true
     };
+    let SecondAdUnitExpectedBids = {
+      adUnitCode: 'div2',
+      bidId: 'bidid2',
+      bidder: 'sovrn',
+      bidderRequestId: '10340af0c7dc72',
+      transactionId: '99dca3ee-a80a-46d7-a4a0-cbcba463d97e',
+      width: 300,
+      height: 250,
+      statusMessage: 'Bid available',
+      adId: '9999e27a5752fb',
+      mediaType: 'banner',
+      source: 'client',
+      cpm: 0.12,
+      creativeId: 'cridprebidrtb',
+      dealId: null,
+      currency: 'USD',
+      netRevenue: true,
+      ttl: 60000,
+      timeToRespond: 50,
+      size: '300x250',
+      status: 'rendered',
+      isAuctionWinner: true
+    };
     let expectedAdServerTargeting = {
       hb_bidder: 'sovrn',
       hb_adid: '3870e27a5752fb',
@@ -363,6 +434,7 @@ describe('Sovrn Analytics Adapter', function () {
       emitEvent('AUCTION_INIT', auctionInit, auctionId);
       emitEvent('BID_REQUESTED', bidRequested, auctionId);
       emitEvent('BID_RESPONSE', bidResponse, auctionId);
+      emitEvent('BID_RESPONSE', bidResponse2, auctionId)
       emitEvent('AUCTION_END', {}, auctionId);
       let requestBody = JSON.parse(requests[0].requestBody);
       let requestsFromRequestBody = requestBody.requests[0];
@@ -371,6 +443,8 @@ describe('Sovrn Analytics Adapter', function () {
       expect(requestBody.timeouts).to.deep.equal({buffer: 400, bidder: 3000});
       expect(requestsFromRequestBody).to.deep.include(expectedRequests);
       expect(bidsFromRequests).to.deep.include(expectedBids);
+      let bidsFromRequests2 = requestsFromRequestBody.bids[1];
+      expect(bidsFromRequests2).to.deep.include(SecondAdUnitExpectedBids);
       expect(bidsFromRequests.adserverTargeting).to.deep.include(expectedAdServerTargeting);
     });
   });

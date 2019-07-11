@@ -83,6 +83,7 @@ var sizeMap = {
   126: '200x600',
   144: '980x600',
   145: '980x150',
+  156: '640x320',
   159: '320x250',
   179: '250x600',
   195: '600x300',
@@ -555,6 +556,9 @@ export const spec = {
           ttl: 300, // 5 minutes
           netRevenue: config.getConfig('rubicon.netRevenue') || false,
           rubicon: {
+            advertiserId: ad.advertiser, networkId: ad.network
+          },
+          meta: {
             advertiserId: ad.advertiser, networkId: ad.network
           }
         };

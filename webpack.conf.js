@@ -25,8 +25,14 @@ plugins.push(  // this plugin must be last so it can be easily removed for karma
   new webpack.optimize.CommonsChunkPlugin({
     name: 'prebid',
     filename: 'prebid-core.js',
-    minChunks: function(module, count) {
-      return !(count < 2 || neverBundle.indexOf(path.basename(module.resource)) !== -1)
+    minChunks: function(module) {
+      return (
+        (
+          module.context && module.context === path.resolve('./src') &&
+          !(module.resource && neverBundle.some(name => module.resource.includes(name)))
+        ) ||
+        module.resource && module.resource.includes(path.resolve('./node_modules/core-js'))
+      );
     }
   })
 );
