@@ -5,7 +5,7 @@ import { BANNER, VIDEO } from '../src/mediaTypes';
 
 const BIDDER_CODE = 'rads';
 const ENDPOINT_URL = 'https://rads.recognified.net/md.request.php';
-const ENDPOINT_URL_DEV = 'https://dcmadn1.permodo.net/md.request.php';
+const ENDPOINT_URL_DEV = 'https://dcradn1.online-solution.biz/md.request.php';
 const DEFAULT_VAST_FORMAT = 'vast2';
 
 export const spec = {
