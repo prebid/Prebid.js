@@ -92,7 +92,13 @@ export const sharethroughAdapterSpec = {
     }
 
     return syncs;
-  }
+  },
+
+  onTimeout: (data) => {},
+
+  onBidWon: (bid) => {},
+
+  onSetTargeting: (bid) => {}
 }
 
 function getLargestSize(sizes) {
