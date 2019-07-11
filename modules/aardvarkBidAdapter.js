@@ -15,6 +15,7 @@ export function resetUserSync() {
 
 export const spec = {
   code: BIDDER_CODE,
+  aliases: ['adsparc', 'safereach'],
 
   isBidRequestValid: function(bid) {
     return ((typeof bid.params.ai === 'string') && !!bid.params.ai.length &&
@@ -25,15 +26,25 @@ export const spec = {
     var auctionCodes = [];
     var requests = [];
     var requestsMap = {};
-    var referer = utils.getTopWindowUrl();
+    var referer = bidderRequest.refererInfo.referer;
     var pageCategories = [];
+    var tdId = '';
+    var width = window.innerWidth;
+    var height = window.innerHeight;
 
     // This reference to window.top can cause issues when loaded in an iframe if not protected with a try/catch.
     try {
-      if (window.top.rtkcategories && Array.isArray(window.top.rtkcategories)) {
-        pageCategories = window.top.rtkcategories;
+      var topWin = utils.getWindowTop();
+      if (topWin.rtkcategories && Array.isArray(topWin.rtkcategories)) {
+        pageCategories = topWin.rtkcategories;
       }
+      width = topWin.innerWidth;
+      height = topWin.innerHeight;
     } catch (e) {}
+
+    if (utils.isStr(utils.deepAccess(validBidRequests, '0.userId.tdid'))) {
+      tdId = validBidRequests[0].userId.tdid;
+    }
 
     utils._each(validBidRequests, function(b) {
       var rMap = requestsMap[b.params.ai];
@@ -43,10 +54,16 @@ export const spec = {
           payload: {
             version: 1,
             jsonp: false,
-            rtkreferer: referer
+            rtkreferer: referer,
+            w: width,
+            h: height
           },
           endpoint: DEFAULT_ENDPOINT
         };
+
+        if (tdId) {
+          rMap.payload.tdid = tdId;
+        }
 
         if (pageCategories && pageCategories.length) {
           rMap.payload.categories = pageCategories.slice(0);
@@ -122,6 +139,10 @@ export const spec = {
 
       if (rawBid.hasOwnProperty('dealId')) {
         bidResponse.dealId = rawBid.dealId
+      }
+
+      if (rawBid.hasOwnProperty('ex')) {
+        bidResponse.ex = rawBid.ex;
       }
 
       switch (rawBid.media) {
