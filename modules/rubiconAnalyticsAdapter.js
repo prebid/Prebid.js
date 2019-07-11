@@ -27,6 +27,15 @@ config.getConfig('s2sConfig', ({s2sConfig}) => {
   serverConfig = s2sConfig;
 });
 
+let wrapperName = 'na';
+try {
+  if (window.document.currentScript.src) {
+    wrapperName = window.document.currentScript.src.split('/').slice(-1)[0].split('.')[0];
+  }
+} catch (e) {
+  utils.logError('Wrapper name could not be set');
+}
+
 export const SEND_TIMEOUT = 3000;
 const INTEGRATION = 'pbjs';
 
@@ -141,7 +150,8 @@ function sendMessage(auctionId, bidWonId) {
     eventTimeMillis: Date.now(),
     integration: INTEGRATION,
     version: '$prebid.version$',
-    referrerUri: referrer
+    referrerUri: referrer,
+    wrapperName
   };
   let auctionCache = cache.auctions[auctionId];
   if (auctionCache && !auctionCache.sent) {
