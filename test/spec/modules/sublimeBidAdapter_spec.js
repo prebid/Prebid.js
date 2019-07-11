@@ -111,11 +111,7 @@ describe('Sublime Adapter', function() {
       expect(request.url).to.equal('https://pbjs.sskzlabs.com/bid');
     });
 
-<<<<<<< HEAD
     it('should create a default callback function', function() {
-=======
-    it('should create a default callback function', () => {
->>>>>>> Fix tests for sublimeBidAdapter
       expect(window['sublime_prebid_callback_23651']).to.be.an('function');
     });
   });
