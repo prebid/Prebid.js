@@ -243,7 +243,7 @@ export const spec = {
         };
 
         if (bidResponse.bidPriceOptimisation) {
-          bids.push(mergeObjects(bid, bidResponse.bidPriceOptimisation))
+          bids.push(Object.assign(bid, bidResponse.bidPriceOptimisation))
         } else {
           bids.push(bid);
         }
@@ -268,18 +268,6 @@ export const spec = {
 };
 
 registerBidder(spec);
-
-function mergeObjects() {
-  let resObj = {};
-  for (let i = 0; i < arguments.length; i += 1) {
-    let obj = arguments[i];
-    let keys = Object.keys(obj);
-    for (let j = 0; j < keys.length; j += 1) {
-      resObj[keys[j]] = obj[keys[j]];
-    }
-  }
-  return resObj;
-}
 
 function tunePrice(price) {
   const ENCRYPTION_SIZE_LIMIT = 8;

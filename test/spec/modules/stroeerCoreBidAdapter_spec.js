@@ -600,7 +600,6 @@ describe('stroeerCore bid adapter', function () {
       const bidderResponse = buildBidderResponseWithBidPriceOptimisation();
 
       const result = spec.interpretResponse({body: bidderResponse});
-      console.log(result[0].rop)
       assertStandardFieldsOnBid(result[0], 'bid1', '<div>tag1</div>', 300, 600, 4)
       assert.propertyVal(result[0], 'cp', 4);
       result[0].should.include.keys('rop');
@@ -611,7 +610,6 @@ describe('stroeerCore bid adapter', function () {
       const bidderResponse = buildBidderResponseWithBidPriceOptimisationButNoBids();
 
       const result = spec.interpretResponse({body: bidderResponse});
-      console.log(result)
       assert.propertyVal(result[0], 'requestId', 'bid1')
       assert.propertyVal(result[0], 'cp', 4)
       result[0].should.include.keys('rop');
