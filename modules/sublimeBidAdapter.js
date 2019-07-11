@@ -1,4 +1,4 @@
-import { registerBidder } from 'src/adapters/bidderFactory';
+import { registerBidder } from '../src/adapters/bidderFactory';
 import { config } from '../src/config';
 import * as utils from '../src/utils';
 
@@ -7,7 +7,7 @@ const DEFAULT_BID_HOST = 'pbjs.sskzlabs.com';
 const DEFAULT_SAC_HOST = 'sac.ayads.co';
 const DEFAULT_CALLBACK_NAME = 'sublime_prebid_callback';
 const DEFAULT_PROTOCOL = 'https';
-const SUBLIME_VERSION = '0.3.3';
+const SUBLIME_VERSION = '0.3.4';
 let SUBLIME_ZONE = null;
 
 /**
@@ -173,7 +173,6 @@ export const spec = {
         currency: serverResponse.body.currency || 'USD',
         netRevenue: true,
         ttl: 600,
-        referrer: '',
         ad: serverResponse.body.ad || '',
       };
 
@@ -185,9 +184,6 @@ export const spec = {
 
     return bidResponses;
   },
-  getUserSyncs: (syncOptions, serverResponses) => {
-    return [];
-  }
 };
 
 registerBidder(spec);
