@@ -305,6 +305,26 @@ describe('Quantcast adapter', function () {
       expect(interpretedResponse[0]).to.deep.equal(expectedResponse);
     });
 
+    it('should include dealId in bid response', function () {
+      response.body.bids[0].dealId = 'test-dealid';
+      const expectedResponse = {
+        requestId: 'erlangcluster@qa-rtb002.us-ec.adtech.com-11417780270886458',
+        cpm: 4.5,
+        width: 300,
+        height: 250,
+        ad:
+          '<!DOCTYPE html><div style="height: 250; width: 300; display: table-cell; vertical-align: middle;"><div style="width: 300px; margin-left: auto; margin-right: auto;"><script src="https://adserver.adtechus.com/addyn/3.0/5399.1/2394397/0/-1/QUANTCAST;size=300x250;target=_blank;alias=;kvp36=;sub1=;kvl=;kvc=;kvs=300x250;kvi=;kva=;sub2=;rdclick=http://exch.quantserve.com/r?a=;labels=_qc.clk,_click.adserver.rtb,_click.rand.;rtbip=;rtbdata2=;redirecturl2=" type="text/javascript"></script><img src="https://exch.quantserve.com/pixel/p_12345.gif?media=ad&p=&r=&rand=&labels=_qc.imp,_imp.adserver.rtb&rtbip=&rtbdata2=" style="display: none;" border="0" height="1" width="1" alt="Quantcast"/></div></div>',
+        ttl: QUANTCAST_TTL,
+        creativeId: 1001,
+        netRevenue: QUANTCAST_NET_REVENUE,
+        currency: 'USD',
+        dealId: 'test-dealid'
+      };
+      const interpretedResponse = qcSpec.interpretResponse(response);
+
+      expect(interpretedResponse[0]).to.deep.equal(expectedResponse);
+    });
+
     it('should get correct bid response for instream video', function() {
       const expectedResponse = {
         requestId: 'erlangcluster@qa-rtb002.us-ec.adtech.com-11417780270886458',

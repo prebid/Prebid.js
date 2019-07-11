@@ -1,7 +1,7 @@
 /** @module pbjs */
 
 import { getGlobal } from './prebidGlobal';
-import { flatten, uniques, isGptPubadsDefined, adUnitsFilter, removeRequestId, getLatestHighestCpmBid, isArrayOfNums } from './utils';
+import { flatten, uniques, isGptPubadsDefined, adUnitsFilter, getLatestHighestCpmBid, isArrayOfNums } from './utils';
 import { listenMessagesFromCreative } from './secureCreatives';
 import { userSync } from './userSync.js';
 import { loadScript } from './adloader';
@@ -184,7 +184,7 @@ function getBids(type) {
     .filter(bids => bids && bids[0] && bids[0].adUnitCode)
     .map(bids => {
       return {
-        [bids[0].adUnitCode]: { bids: bids.map(removeRequestId) }
+        [bids[0].adUnitCode]: { bids }
       };
     })
     .reduce((a, b) => Object.assign(a, b), {});
@@ -221,9 +221,7 @@ $$PREBID_GLOBAL$$.getBidResponses = function () {
 
 $$PREBID_GLOBAL$$.getBidResponsesForAdUnitCode = function (adUnitCode) {
   const bids = auctionManager.getBidsReceived().filter(bid => bid.adUnitCode === adUnitCode);
-  return {
-    bids: bids.map(removeRequestId)
-  };
+  return { bids };
 };
 
 /**
@@ -262,16 +260,17 @@ $$PREBID_GLOBAL$$.setTargetingForGPTAsync = function (adUnit, customSlotMatching
 
 /**
  * Set query string targeting on all AST (AppNexus Seller Tag) ad units. Note that this function has to be called after all ad units on page are defined. For working example code, see [Using Prebid.js with AppNexus Publisher Ad Server](http://prebid.org/dev-docs/examples/use-prebid-with-appnexus-ad-server.html).
+ * @param  {(string|string[])} adUnitCode adUnitCode or array of adUnitCodes
  * @alias module:pbjs.setTargetingForAst
  */
-$$PREBID_GLOBAL$$.setTargetingForAst = function() {
+$$PREBID_GLOBAL$$.setTargetingForAst = function(adUnitCodes) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.setTargetingForAn', arguments);
   if (!targeting.isApntagDefined()) {
     utils.logError('window.apntag is not defined on the page');
     return;
   }
 
-  targeting.setTargetingForAst();
+  targeting.setTargetingForAst(adUnitCodes);
 
   // emit event
   events.emit(SET_TARGETING, targeting.getAllTargeting());
@@ -326,7 +325,16 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
           const message = `Error trying to write ad. Ad render call ad id ${id} was prevented from writing to the main document.`;
           emitAdRenderFail(PREVENT_WRITING_ON_MAIN_DOCUMENT, message, bid);
         } else if (ad) {
-          doc.open('text/html', 'replace');
+          // will check if browser is firefox and below version 67, if so execute special doc.open()
+          // for details see: https://github.com/prebid/Prebid.js/pull/3524
+          // TODO remove this browser specific code at later date (when Firefox < 67 usage is mostly gone)
+          if (navigator.userAgent && navigator.userAgent.toLowerCase().indexOf('firefox/') > -1) {
+            const firefoxVerRegx = /firefox\/([\d\.]+)/;
+            let firefoxVer = navigator.userAgent.toLowerCase().match(firefoxVerRegx)[1]; // grabs the text in the 1st matching group
+            if (firefoxVer && parseInt(firefoxVer, 10) < 67) {
+              doc.open('text/html', 'replace');
+            }
+          }
           doc.write(ad);
           doc.close();
           setRenderSize(doc, width, height);
@@ -397,9 +405,10 @@ $$PREBID_GLOBAL$$.removeAdUnit = function (adUnitCode) {
  * @param {Array} requestOptions.adUnits
  * @param {Array} requestOptions.adUnitCodes
  * @param {Array} requestOptions.labels
+ * @param {String} requestOptions.auctionId
  * @alias module:pbjs.requestBids
  */
-$$PREBID_GLOBAL$$.requestBids = hook('async', function ({ bidsBackHandler, timeout, adUnits, adUnitCodes, labels } = {}) {
+$$PREBID_GLOBAL$$.requestBids = hook('async', function ({ bidsBackHandler, timeout, adUnits, adUnitCodes, labels, auctionId } = {}) {
   events.emit(REQUEST_BIDS);
   const cbTimeout = timeout || config.getConfig('bidderTimeout');
   adUnits = adUnits || $$PREBID_GLOBAL$$.adUnits;
@@ -468,7 +477,13 @@ $$PREBID_GLOBAL$$.requestBids = hook('async', function ({ bidsBackHandler, timeo
     return;
   }
 
-  const auction = auctionManager.createAuction({adUnits, adUnitCodes, callback: bidsBackHandler, cbTimeout, labels});
+  const auction = auctionManager.createAuction({adUnits, adUnitCodes, callback: bidsBackHandler, cbTimeout, labels, auctionId});
+
+  let adUnitsLen = adUnits.length;
+  if (adUnitsLen > 15) {
+    utils.logInfo(`Current auction ${auction.getAuctionId()} contains ${adUnitsLen} adUnits.`, adUnits);
+  }
+
   adUnitCodes.forEach(code => targeting.setLatestAuctionForAdUnit(code, auction.getAuctionId()));
   auction.callBids();
   return auction;
@@ -663,8 +678,7 @@ $$PREBID_GLOBAL$$.aliasBidder = function (bidderCode, alias) {
  * @return {Array<AdapterBidResponse>} A list of bids that have been rendered.
 */
 $$PREBID_GLOBAL$$.getAllWinningBids = function () {
-  return auctionManager.getAllWinningBids()
-    .map(removeRequestId);
+  return auctionManager.getAllWinningBids();
 };
 
 /**
@@ -673,8 +687,7 @@ $$PREBID_GLOBAL$$.getAllWinningBids = function () {
  */
 $$PREBID_GLOBAL$$.getAllPrebidWinningBids = function () {
   return auctionManager.getBidsReceived()
-    .filter(bid => bid.status === CONSTANTS.BID_STATUS.BID_TARGETING_SET)
-    .map(removeRequestId);
+    .filter(bid => bid.status === CONSTANTS.BID_STATUS.BID_TARGETING_SET);
 };
 
 /**
@@ -686,8 +699,7 @@ $$PREBID_GLOBAL$$.getAllPrebidWinningBids = function () {
  */
 $$PREBID_GLOBAL$$.getHighestCpmBids = function (adUnitCode) {
   let bidsReceived = getHighestCpmBidsFromBidPool(auctionManager.getBidsReceived(), getLatestHighestCpmBid);
-  return targeting.getWinningBids(adUnitCode, bidsReceived)
-    .map(removeRequestId);
+  return targeting.getWinningBids(adUnitCode, bidsReceived);
 };
 
 /**

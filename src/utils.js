@@ -911,6 +911,22 @@ export function getCookie(name) {
   return m ? decodeURIComponent(m[2]) : null;
 }
 
+export function setCookie(key, value, expires) {
+  document.cookie = `${key}=${encodeURIComponent(value)}${(expires !== '') ? `; expires=${expires}` : ''}; path=/`;
+}
+
+/**
+ * @returns {boolean}
+ */
+export function localStorageIsEnabled () {
+  try {
+    localStorage.setItem('prebid.cookieTest', '1');
+    return localStorage.getItem('prebid.cookieTest') === '1';
+  } catch (error) {
+    return false;
+  }
+}
+
 /**
  * Given a function, return a function which only executes the original after
  * it's been called numRequiredCalls times.
@@ -968,6 +984,23 @@ export function deepAccess(obj, path) {
     }
   }
   return obj;
+}
+
+/**
+ * @param {Object} obj The object to set a deep property value in
+ * @param {(string|Array.<string>)} path Object path to the value you would like ot set.
+ * @param {*} value The value you would like to set
+ */
+export function deepSetValue(obj, path, value) {
+  let i;
+  path = path.split('.');
+  for (i = 0; i < path.length - 1; i++) {
+    if (i !== path.length - 1 && typeof obj[path[i]] === 'undefined') {
+      obj[path[i]] = {};
+    }
+    obj = obj[path[i]];
+  }
+  obj[path[i]] = value;
 }
 
 /**
@@ -1111,15 +1144,6 @@ export function deletePropertyFromObject(object, prop) {
   let result = Object.assign({}, object);
   delete result[prop];
   return result;
-}
-
-/**
- * Delete requestId from external bid object.
- * @param {Object} bid
- * @return {Object} bid
- */
-export function removeRequestId(bid) {
-  return deletePropertyFromObject(bid, 'requestId');
 }
 
 /**

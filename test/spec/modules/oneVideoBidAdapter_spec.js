@@ -10,9 +10,16 @@ describe('OneVideoBidAdapter', function () {
 
   beforeEach(function () {
     bidRequest = {
+      mediaTypes: {
+        video: {
+          context: 'instream',
+          playerSize: [640, 480]
+        }
+      },
       bidder: 'oneVideo',
       sizes: [640, 480],
       bidId: '30b3efwfwe1e',
+      adUnitCode: 'video1',
       params: {
         video: {
           playerWidth: 640,
@@ -140,20 +147,23 @@ describe('OneVideoBidAdapter', function () {
     });
 
     it('should return a valid bid response with just "adm"', function () {
-      const serverResponse = {seatbid: [{bid: [{id: 1, price: 6.01, adm: '<VAST></VAST>'}]}], cur: 'USD'};
+      const serverResponse = {seatbid: [{bid: [{id: 1, adid: 123, crid: 2, price: 6.01, adm: '<VAST></VAST>'}]}], cur: 'USD'};
       const bidResponse = spec.interpretResponse({ body: serverResponse }, { bidRequest });
       let o = {
         requestId: bidRequest.bidId,
         bidderCode: spec.code,
         cpm: serverResponse.seatbid[0].bid[0].price,
-        creativeId: serverResponse.seatbid[0].bid[0].id,
+        adId: serverResponse.seatbid[0].bid[0].adid,
+        creativeId: serverResponse.seatbid[0].bid[0].crid,
         vastXml: serverResponse.seatbid[0].bid[0].adm,
         width: 640,
         height: 480,
         mediaType: 'video',
         currency: 'USD',
         ttl: 100,
-        netRevenue: true
+        netRevenue: true,
+        adUnitCode: bidRequest.adUnitCode,
+        renderer: (bidRequest.mediaTypes.video.context === 'outstream') ? newRenderer(bidRequest, bidResponse) : undefined,
       };
       expect(bidResponse).to.deep.equal(o);
     });

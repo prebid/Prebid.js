@@ -342,7 +342,7 @@ export function resetConsentData() {
  * A configuration function that initializes some module variables, as well as add a hook into the requestBids function
  * @param {object} config required; consentManagement module config settings; cmp (string), timeout (int), allowAuctionWithoutConsent (boolean)
  */
-export function setConfig(config) {
+export function setConsentConfig(config) {
   if (utils.isStr(config.cmpApi)) {
     userCMP = config.cmpApi;
   } else {
@@ -379,4 +379,4 @@ export function setConfig(config) {
   }
   addedConsentHook = true;
 }
-config.getConfig('consentManagement', config => setConfig(config.consentManagement));
+config.getConfig('consentManagement', config => setConsentConfig(config.consentManagement));

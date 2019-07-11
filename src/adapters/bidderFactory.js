@@ -168,7 +168,7 @@ export function newBidder(spec) {
       return Object.freeze(spec);
     },
     registerSyncs,
-    callBids: function(bidderRequest, addBidResponse, done, ajax) {
+    callBids: function(bidderRequest, addBidResponse, done, ajax, onTimelyResponse) {
       if (!Array.isArray(bidderRequest.bids)) {
         return;
       }
@@ -267,6 +267,8 @@ export function newBidder(spec) {
         // If the adapter code fails, no bids should be added. After all the bids have been added, make
         // sure to call the `onResponse` function so that we're one step closer to calling done().
         function onSuccess(response, responseObj) {
+          onTimelyResponse(spec.code);
+
           try {
             response = JSON.parse(response);
           } catch (e) { /* response might not be JSON... that's ok. */ }
@@ -316,6 +318,8 @@ export function newBidder(spec) {
         // If the server responds with an error, there's not much we can do. Log it, and make sure to
         // call onResponse() so that we're one step closer to calling done().
         function onFailure(err) {
+          onTimelyResponse(spec.code);
+
           logError(`Server call for ${spec.code} failed: ${err}. Continuing without bids.`);
           onResponse();
         }
@@ -419,7 +423,9 @@ export function getIabSubCategory(bidderCode, category) {
 
 // check that the bid has a width and height set
 function validBidSize(adUnitCode, bid, bidRequests) {
-  if ((bid.width || bid.width === 0) && (bid.height || bid.height === 0)) {
+  if ((bid.width || parseInt(bid.width, 10) === 0) && (bid.height || parseInt(bid.height, 10) === 0)) {
+    bid.width = parseInt(bid.width, 10);
+    bid.height = parseInt(bid.height, 10);
     return true;
   }
 
@@ -432,8 +438,8 @@ function validBidSize(adUnitCode, bid, bidRequests) {
   // response that does not explicitly set width or height
   if (parsedSizes.length === 1) {
     const [ width, height ] = parsedSizes[0].split('x');
-    bid.width = width;
-    bid.height = height;
+    bid.width = parseInt(width, 10);
+    bid.height = parseInt(height, 10);
     return true;
   }
 
