@@ -58,7 +58,7 @@ const defaultParamConstants = {
  */
 export default function buildDfpVideoUrl(options) {
   if (!options.params && !options.url) {
-    logError(`A params object or a url is required to use pbjs.adServers.dfp.buildVideoUrl`);
+    logError(`A params object or a url is required to use $$PREBID_GLOBAL$$.adServers.dfp.buildVideoUrl`);
     return;
   }
 
@@ -158,11 +158,12 @@ function getCustParams(bid, options) {
 
   const optCustParams = deepAccess(options, 'params.cust_params');
   let customParams = Object.assign({},
-    allTargetingData,
-    adserverTargeting,
+    // Why are we adding standard keys here ? Refer https://github.com/prebid/Prebid.js/issues/3664
     { hb_uuid: bid && bid.videoCacheKey },
     // hb_uuid will be deprecated and replaced by hb_cache_id
     { hb_cache_id: bid && bid.videoCacheKey },
+    allTargetingData,
+    adserverTargeting,
     optCustParams,
   );
   return encodeURIComponent(formatQS(customParams));

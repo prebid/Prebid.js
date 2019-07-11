@@ -10,11 +10,14 @@ import { targeting } from 'src/targeting';
 
 const bid = {
   videoCacheKey: 'abc',
-  adserverTargeting: { },
+  adserverTargeting: {
+    hb_uuid: 'abc',
+    hb_cache_id: 'abc',
+  },
 };
 
-describe('The DFP video support module', () => {
-  it('should make a legal request URL when given the required params', () => {
+describe('The DFP video support module', function () {
+  it('should make a legal request URL when given the required params', function () {
     const url = parse(buildDfpVideoUrl({
       adUnit: adUnit,
       bid: bid,
@@ -39,8 +42,8 @@ describe('The DFP video support module', () => {
     expect(queryParams).to.have.property('url');
   });
 
-  it('can take an adserver url as a parameter', () => {
-    const bidCopy = Object.assign({ }, bid);
+  it('can take an adserver url as a parameter', function () {
+    const bidCopy = utils.deepClone(bid);
     bidCopy.vastUrl = 'vastUrl.example';
 
     const url = parse(buildDfpVideoUrl({
@@ -55,7 +58,7 @@ describe('The DFP video support module', () => {
     expect(queryObject.description_url).to.equal('vastUrl.example');
   });
 
-  it('requires a params object or url', () => {
+  it('requires a params object or url', function () {
     const url = buildDfpVideoUrl({
       adUnit: adUnit,
       bid: bid,
@@ -64,7 +67,7 @@ describe('The DFP video support module', () => {
     expect(url).to.be.undefined;
   });
 
-  it('overwrites url params when both url and params object are given', () => {
+  it('overwrites url params when both url and params object are given', function () {
     const url = parse(buildDfpVideoUrl({
       adUnit: adUnit,
       bid: bid,
@@ -76,7 +79,7 @@ describe('The DFP video support module', () => {
     expect(queryObject.iu).to.equal('my/adUnit');
   });
 
-  it('should override param defaults with user-provided ones', () => {
+  it('should override param defaults with user-provided ones', function () {
     const url = parse(buildDfpVideoUrl({
       adUnit: adUnit,
       bid: bid,
@@ -89,11 +92,11 @@ describe('The DFP video support module', () => {
     expect(parseQS(url.query)).to.have.property('output', 'vast');
   });
 
-  it('should include the cache key and adserver targeting in cust_params', () => {
-    const bidCopy = Object.assign({ }, bid);
-    bidCopy.adserverTargeting = {
+  it('should include the cache key and adserver targeting in cust_params', function () {
+    const bidCopy = utils.deepClone(bid);
+    bidCopy.adserverTargeting = Object.assign(bidCopy.adserverTargeting, {
       hb_adid: 'ad_id',
-    };
+    });
 
     const url = parse(buildDfpVideoUrl({
       adUnit: adUnit,
@@ -110,7 +113,7 @@ describe('The DFP video support module', () => {
     expect(customParams).to.have.property('hb_cache_id', bid.videoCacheKey);
   });
 
-  describe('special targeting unit test', () => {
+  describe('special targeting unit test', function () {
     const allTargetingData = {
       'hb_format': 'video',
       'hb_source': 'client',
@@ -133,7 +136,7 @@ describe('The DFP video support module', () => {
     };
     let targetingStub;
 
-    before(() => {
+    before(function () {
       targetingStub = sinon.stub(targeting, 'getAllTargeting');
       targetingStub.returns({'video1': allTargetingData});
 
@@ -142,12 +145,12 @@ describe('The DFP video support module', () => {
       });
     });
 
-    after(() => {
+    after(function () {
       config.resetConfig();
       targetingStub.restore();
     });
 
-    it('should include all adserver targeting in cust_params if pbjs.enableSendAllBids is true', () => {
+    it('should include all adserver targeting in cust_params if pbjs.enableSendAllBids is true', function () {
       const adUnitsCopy = utils.deepClone(adUnit);
       adUnitsCopy.bids.push({
         'bidder': 'testBidder2',
@@ -160,10 +163,10 @@ describe('The DFP video support module', () => {
         }
       });
 
-      const bidCopy = Object.assign({ }, bid);
-      bidCopy.adserverTargeting = {
+      const bidCopy = utils.deepClone(bid);
+      bidCopy.adserverTargeting = Object.assign(bidCopy.adserverTargeting, {
         hb_adid: 'ad_id',
-      };
+      });
 
       const url = parse(buildDfpVideoUrl({
         adUnit: adUnitsCopy,
@@ -183,11 +186,11 @@ describe('The DFP video support module', () => {
     });
   });
 
-  it('should merge the user-provided cust_params with the default ones', () => {
-    const bidCopy = Object.assign({ }, bid);
-    bidCopy.adserverTargeting = {
+  it('should merge the user-provided cust_params with the default ones', function () {
+    const bidCopy = utils.deepClone(bid);
+    bidCopy.adserverTargeting = Object.assign(bidCopy.adserverTargeting, {
       hb_adid: 'ad_id',
-    };
+    });
 
     const url = parse(buildDfpVideoUrl({
       adUnit: adUnit,
@@ -206,11 +209,11 @@ describe('The DFP video support module', () => {
     expect(customParams).to.have.property('my_targeting', 'foo');
   });
 
-  it('should merge the user-provided cust-params with the default ones when using url object', () => {
-    const bidCopy = Object.assign({ }, bid);
-    bidCopy.adserverTargeting = {
+  it('should merge the user-provided cust-params with the default ones when using url object', function () {
+    const bidCopy = utils.deepClone(bid);
+    bidCopy.adserverTargeting = Object.assign(bidCopy.adserverTargeting, {
       hb_adid: 'ad_id',
-    };
+    });
 
     const url = parse(buildDfpVideoUrl({
       adUnit: adUnit,
@@ -228,8 +231,8 @@ describe('The DFP video support module', () => {
     expect(customParams).to.have.property('hb_cache_id', 'abc');
   });
 
-  it('should not overwrite an existing description_url for object input and cache disabled', () => {
-    const bidCopy = Object.assign({}, bid);
+  it('should not overwrite an existing description_url for object input and cache disabled', function () {
+    const bidCopy = utils.deepClone(bid);
     bidCopy.vastUrl = 'vastUrl.example';
 
     const url = parse(buildDfpVideoUrl({
@@ -245,12 +248,52 @@ describe('The DFP video support module', () => {
     expect(queryObject.description_url).to.equal('descriptionurl.example');
   });
 
-  it('should work with nobid responses', () => {
+  it('should work with nobid responses', function () {
     const url = buildDfpVideoUrl({
       adUnit: adUnit,
       params: { 'iu': 'my/adUnit' }
     });
 
     expect(url).to.be.a('string');
+  });
+
+  it('should include hb_uuid and hb_cache_id in cust_params when both keys are exluded from overwritten bidderSettings', function () {
+    const bidCopy = utils.deepClone(bid);
+    delete bidCopy.adserverTargeting.hb_uuid;
+    delete bidCopy.adserverTargeting.hb_cache_id;
+
+    const url = parse(buildDfpVideoUrl({
+      adUnit: adUnit,
+      bid: bidCopy,
+      params: {
+        'iu': 'my/adUnit'
+      }
+    }));
+    const queryObject = parseQS(url.query);
+    const customParams = parseQS('?' + decodeURIComponent(queryObject.cust_params));
+
+    expect(customParams).to.have.property('hb_uuid', bid.videoCacheKey);
+    expect(customParams).to.have.property('hb_cache_id', bid.videoCacheKey);
+  });
+
+  it('should include hb_uuid and hb_cache_id in cust params from overwritten standard bidderSettings', function () {
+    const bidCopy = utils.deepClone(bid);
+    bidCopy.adserverTargeting = Object.assign(bidCopy.adserverTargeting, {
+      hb_uuid: 'def',
+      hb_cache_id: 'def'
+    });
+
+    const url = parse(buildDfpVideoUrl({
+      adUnit: adUnit,
+      bid: bidCopy,
+      params: {
+        'iu': 'my/adUnit'
+      }
+    }));
+    const queryObject = parseQS(url.query);
+    const customParams = parseQS('?' + decodeURIComponent(queryObject.cust_params));
+
+    expect(customParams).to.have.property('hb_uuid', 'def');
+    expect(customParams).to.have.property('hb_cache_id', 'def');
   });
 });

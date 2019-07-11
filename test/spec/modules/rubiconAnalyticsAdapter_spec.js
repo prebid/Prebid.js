@@ -40,7 +40,7 @@ const BID = {
   'mediaType': 'video',
   'statusMessage': 'Bid available',
   'bidId': '2ecff0db240757',
-  'adId': '2ecff0db240757',
+  'adId': 'fake_ad_id',
   'source': 'client',
   'requestId': '2ecff0db240757',
   'currency': 'USD',
@@ -80,7 +80,7 @@ const BID = {
 const BID2 = Object.assign({}, BID, {
   adUnitCode: '/19968336/header-bid-tag1',
   bidId: '3bd4ebb1c900e2',
-  adId: '3bd4ebb1c900e2',
+  adId: 'fake_ad_id',
   requestId: '3bd4ebb1c900e2',
   width: 728,
   height: 90,
@@ -106,9 +106,58 @@ const MOCK = {
     [BID2.adUnitCode]: BID2.adserverTargeting
   },
   AUCTION_INIT: {
-    'timestamp': 1519767010567,
     'auctionId': '25c6d7f5-699a-4bfc-87c9-996f915341fa',
-    'timeout': 3000
+    'timestamp': 1519767010567,
+    'auctionStatus': 'inProgress',
+    'adUnits': [ {
+      'code': '/19968336/header-bid-tag1',
+      'sizes': [[640, 480]],
+      'bids': [ {
+        'bidder': 'rubicon',
+        'params': {
+          'accountId': 1001, 'siteId': 113932, 'zoneId': 535512
+        }
+      } ],
+      'transactionId': 'ca4af27a-6d02-4f90-949d-d5541fa12014'
+    }
+    ],
+    'adUnitCodes': ['/19968336/header-bid-tag1'],
+    'bidderRequests': [ {
+      'bidderCode': 'rubicon',
+      'auctionId': '25c6d7f5-699a-4bfc-87c9-996f915341fa',
+      'bidderRequestId': '1be65d7958826a',
+      'bids': [ {
+        'bidder': 'rubicon',
+        'params': {
+          'accountId': 1001, 'siteId': 113932, 'zoneId': 535512
+        },
+        'mediaTypes': {
+          'banner': {
+            'sizes': [[640, 480]]
+          }
+        },
+        'adUnitCode': '/19968336/header-bid-tag1',
+        'transactionId': 'ca4af27a-6d02-4f90-949d-d5541fa12014',
+        'sizes': [[640, 480]],
+        'bidId': '2ecff0db240757',
+        'bidderRequestId': '1be65d7958826a',
+        'auctionId': '25c6d7f5-699a-4bfc-87c9-996f915341fa',
+        'src': 'client',
+        'bidRequestsCount': 1
+      }
+      ],
+      'timeout': 3000,
+      'refererInfo': {
+        'referer': 'http://www.test.com/page.html', 'reachedTop': true, 'numIframes': 0, 'stack': ['http://www.test.com/page.html']
+      }
+    }
+    ],
+    'bidsReceived': [],
+    'winningBids': [],
+    'timeout': 3000,
+    'config': {
+      'accountId': 1001, 'endpoint': '//localhost:9999/event'
+    }
   },
   BID_REQUESTED: {
     'bidder': 'rubicon',
@@ -118,7 +167,7 @@ const MOCK = {
       {
         'bidder': 'rubicon',
         'params': {
-          'accountId': '14062',
+          'accountId': '1001',
           'siteId': '70608',
           'zoneId': '335918',
           'userId': '12346',
@@ -236,6 +285,9 @@ const ANALYTICS_MESSAGE = {
             }
           ],
           'status': 'success',
+          'accountId': 1001,
+          'siteId': 70608,
+          'zoneId': 335918,
           'adserverTargeting': {
             'hb_bidder': 'rubicon',
             'hb_adid': '2ecff0db240757',
@@ -251,7 +303,7 @@ const ANALYTICS_MESSAGE = {
               'source': 'client',
               'clientLatencyMillis': 3214,
               'params': {
-                'accountId': '14062',
+                'accountId': '1001',
                 'siteId': '70608',
                 'zoneId': '335918'
               },
@@ -332,8 +384,10 @@ const ANALYTICS_MESSAGE = {
       'clientLatencyMillis': 3214,
       'samplingFactor': 1,
       'accountId': 1001,
+      'siteId': 70608,
+      'zoneId': 335918,
       'params': {
-        'accountId': '14062',
+        'accountId': '1001',
         'siteId': '70608',
         'zoneId': '335918'
       },
@@ -409,14 +463,14 @@ function performStandardAuction() {
   events.emit(BID_WON, MOCK.BID_WON[1]);
 }
 
-describe('rubicon analytics adapter', () => {
+describe('rubicon analytics adapter', function () {
   let sandbox;
   let xhr;
   let requests;
   let oldScreen;
   let clock;
 
-  beforeEach(() => {
+  beforeEach(function () {
     sandbox = sinon.sandbox.create();
 
     xhr = sandbox.useFakeXMLHttpRequest();
@@ -437,12 +491,12 @@ describe('rubicon analytics adapter', () => {
     })
   });
 
-  afterEach(() => {
+  afterEach(function () {
     sandbox.restore();
     config.resetConfig();
   });
 
-  it('should require accountId', () => {
+  it('should require accountId', function () {
     sandbox.stub(utils, 'logError');
 
     rubiconAnalyticsAdapter.enableAnalytics({
@@ -454,7 +508,7 @@ describe('rubicon analytics adapter', () => {
     expect(utils.logError.called).to.equal(true);
   });
 
-  it('should require endpoint', () => {
+  it('should require endpoint', function () {
     sandbox.stub(utils, 'logError');
 
     rubiconAnalyticsAdapter.enableAnalytics({
@@ -466,18 +520,18 @@ describe('rubicon analytics adapter', () => {
     expect(utils.logError.called).to.equal(true);
   });
 
-  describe('sampling', () => {
-    beforeEach(() => {
+  describe('sampling', function () {
+    beforeEach(function () {
       sandbox.stub(Math, 'random').returns(0.08);
       sandbox.stub(utils, 'logError');
     });
 
-    afterEach(() => {
+    afterEach(function () {
       rubiconAnalyticsAdapter.disableAnalytics();
     });
 
-    describe('with options.samplingFactor', () => {
-      it('should sample', () => {
+    describe('with options.samplingFactor', function () {
+      it('should sample', function () {
         rubiconAnalyticsAdapter.enableAnalytics({
           options: {
             endpoint: '//localhost:9999/event',
@@ -491,7 +545,7 @@ describe('rubicon analytics adapter', () => {
         expect(requests.length).to.equal(1);
       });
 
-      it('should unsample', () => {
+      it('should unsample', function () {
         rubiconAnalyticsAdapter.enableAnalytics({
           options: {
             endpoint: '//localhost:9999/event',
@@ -505,7 +559,7 @@ describe('rubicon analytics adapter', () => {
         expect(requests.length).to.equal(0);
       });
 
-      it('should throw errors for invalid samplingFactor', () => {
+      it('should throw errors for invalid samplingFactor', function () {
         rubiconAnalyticsAdapter.enableAnalytics({
           options: {
             endpoint: '//localhost:9999/event',
@@ -520,8 +574,8 @@ describe('rubicon analytics adapter', () => {
         expect(utils.logError.called).to.equal(true);
       });
     });
-    describe('with options.sampling', () => {
-      it('should sample', () => {
+    describe('with options.sampling', function () {
+      it('should sample', function () {
         rubiconAnalyticsAdapter.enableAnalytics({
           options: {
             endpoint: '//localhost:9999/event',
@@ -535,7 +589,7 @@ describe('rubicon analytics adapter', () => {
         expect(requests.length).to.equal(1);
       });
 
-      it('should unsample', () => {
+      it('should unsample', function () {
         rubiconAnalyticsAdapter.enableAnalytics({
           options: {
             endpoint: '//localhost:9999/event',
@@ -549,7 +603,7 @@ describe('rubicon analytics adapter', () => {
         expect(requests.length).to.equal(0);
       });
 
-      it('should throw errors for invalid samplingFactor', () => {
+      it('should throw errors for invalid samplingFactor', function () {
         rubiconAnalyticsAdapter.enableAnalytics({
           options: {
             endpoint: '//localhost:9999/event',
@@ -566,21 +620,21 @@ describe('rubicon analytics adapter', () => {
     });
   });
 
-  describe('when handling events', () => {
-    beforeEach(() => {
+  describe('when handling events', function () {
+    beforeEach(function () {
       rubiconAnalyticsAdapter.enableAnalytics({
         options: {
           endpoint: '//localhost:9999/event',
-          accountId: '1001'
+          accountId: 1001
         }
       });
     });
 
-    afterEach(() => {
+    afterEach(function () {
       rubiconAnalyticsAdapter.disableAnalytics();
     });
 
-    it('should build a batched message from prebid events', () => {
+    it('should build a batched message from prebid events', function () {
       performStandardAuction();
 
       expect(requests.length).to.equal(1);
@@ -594,7 +648,7 @@ describe('rubicon analytics adapter', () => {
       expect(message).to.deep.equal(ANALYTICS_MESSAGE);
     });
 
-    it('should send batched message without BID_WON if necessary and further BID_WON events individually', () => {
+    it('should send batched message without BID_WON if necessary and further BID_WON events individually', function () {
       events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
       events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
       events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[0]);
@@ -623,7 +677,7 @@ describe('rubicon analytics adapter', () => {
       expect(message.bidsWon[0]).to.deep.equal(ANALYTICS_MESSAGE.bidsWon[1]);
     });
 
-    it('should properly mark bids as timed out', () => {
+    it('should properly mark bids as timed out', function () {
       events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
       events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
       events.emit(BID_TIMEOUT, MOCK.BID_TIMEOUT);

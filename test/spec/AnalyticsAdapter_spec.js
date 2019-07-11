@@ -2,11 +2,13 @@ import { expect } from 'chai';
 import events from 'src/events';
 import CONSTANTS from 'src/constants.json';
 
+const REQUEST_BIDS = CONSTANTS.EVENTS.REQUEST_BIDS;
 const BID_REQUESTED = CONSTANTS.EVENTS.BID_REQUESTED;
 const BID_RESPONSE = CONSTANTS.EVENTS.BID_RESPONSE;
 const BID_WON = CONSTANTS.EVENTS.BID_WON;
 const BID_TIMEOUT = CONSTANTS.EVENTS.BID_TIMEOUT;
 const AD_RENDER_FAILED = CONSTANTS.EVENTS.AD_RENDER_FAILED;
+const ADD_AD_UNITS = CONSTANTS.EVENTS.ADD_AD_UNITS;
 
 const AnalyticsAdapter = require('src/AnalyticsAdapter').default;
 const config = {
@@ -22,19 +24,19 @@ FEATURE: Analytics Adapters API
   let requests;
   let adapter;
 
-  beforeEach(() => {
+  beforeEach(function () {
     xhr = sinon.useFakeXMLHttpRequest();
     requests = [];
     xhr.onCreate = (request) => requests.push(request);
     adapter = new AnalyticsAdapter(config);
   });
 
-  afterEach(() => {
+  afterEach(function () {
     xhr.restore();
     adapter.disableAnalytics();
   });
 
-  it(`SHOULD call the endpoint WHEN an event occurs that is to be tracked`, () => {
+  it(`SHOULD call the endpoint WHEN an event occurs that is to be tracked`, function () {
     const eventType = BID_REQUESTED;
     const args = { some: 'data' };
 
@@ -44,7 +46,7 @@ FEATURE: Analytics Adapters API
     expect(result).to.deep.equal({args: {some: 'data'}, eventType: 'bidRequested'});
   });
 
-  it(`SHOULD queue the event first and then track it WHEN an event occurs before tracking library is available`, () => {
+  it(`SHOULD queue the event first and then track it WHEN an event occurs before tracking library is available`, function () {
     const eventType = BID_RESPONSE;
     const args = { wat: 'wot' };
 
@@ -55,16 +57,16 @@ FEATURE: Analytics Adapters API
     expect(result).to.deep.equal({args: {wat: 'wot'}, eventType: 'bidResponse'});
   });
 
-  describe(`WHEN an event occurs after enable analytics\n`, () => {
-    beforeEach(() => {
+  describe(`WHEN an event occurs after enable analytics\n`, function () {
+    beforeEach(function () {
       sinon.stub(events, 'getEvents').returns([]); // these tests shouldn't be affected by previous tests
     });
 
-    afterEach(() => {
+    afterEach(function () {
       events.getEvents.restore();
     });
 
-    it('SHOULD call global when a bidWon event occurs', () => {
+    it('SHOULD call global when a bidWon event occurs', function () {
       const eventType = BID_WON;
       const args = { more: 'info' };
 
@@ -75,7 +77,7 @@ FEATURE: Analytics Adapters API
       expect(result).to.deep.equal({args: {more: 'info'}, eventType: 'bidWon'});
     });
 
-    it('SHOULD call global when a adRenderFailed event occurs', () => {
+    it('SHOULD call global when a adRenderFailed event occurs', function () {
       const eventType = AD_RENDER_FAILED;
       const args = { call: 'adRenderFailed' };
 
@@ -86,7 +88,29 @@ FEATURE: Analytics Adapters API
       expect(result).to.deep.equal({args: {call: 'adRenderFailed'}, eventType: 'adRenderFailed'});
     });
 
-    it('SHOULD call global when a bidRequest event occurs', () => {
+    it('SHOULD call global when an addAdUnits event occurs', function () {
+      const eventType = ADD_AD_UNITS;
+      const args = { call: 'addAdUnits' };
+
+      adapter.enableAnalytics();
+      events.emit(eventType, args);
+
+      let result = JSON.parse(requests[0].requestBody);
+      expect(result).to.deep.equal({args: {call: 'addAdUnits'}, eventType: 'addAdUnits'});
+    });
+
+    it('SHOULD call global when a requestBids event occurs', function () {
+      const eventType = REQUEST_BIDS;
+      const args = { call: 'request' };
+
+      adapter.enableAnalytics();
+      events.emit(eventType, args);
+
+      let result = JSON.parse(requests[0].requestBody);
+      expect(result).to.deep.equal({args: {call: 'request'}, eventType: 'requestBids'});
+    });
+
+    it('SHOULD call global when a bidRequest event occurs', function () {
       const eventType = BID_REQUESTED;
       const args = { call: 'request' };
 
@@ -97,7 +121,7 @@ FEATURE: Analytics Adapters API
       expect(result).to.deep.equal({args: {call: 'request'}, eventType: 'bidRequested'});
     });
 
-    it('SHOULD call global when a bidResponse event occurs', () => {
+    it('SHOULD call global when a bidResponse event occurs', function () {
       const eventType = BID_RESPONSE;
       const args = { call: 'response' };
 
@@ -108,7 +132,7 @@ FEATURE: Analytics Adapters API
       expect(result).to.deep.equal({args: {call: 'response'}, eventType: 'bidResponse'});
     });
 
-    it('SHOULD call global when a bidTimeout event occurs', () => {
+    it('SHOULD call global when a bidTimeout event occurs', function () {
       const eventType = BID_TIMEOUT;
       const args = { call: 'timeout' };
 
@@ -119,7 +143,7 @@ FEATURE: Analytics Adapters API
       expect(result).to.deep.equal({args: {call: 'timeout'}, eventType: 'bidTimeout'});
     });
 
-    it('SHOULD NOT call global again when adapter.enableAnalytics is called with previous timeout', () => {
+    it('SHOULD NOT call global again when adapter.enableAnalytics is called with previous timeout', function () {
       const eventType = BID_TIMEOUT;
       const args = { call: 'timeout' };
 
@@ -130,19 +154,19 @@ FEATURE: Analytics Adapters API
       expect(requests.length).to.equal(1);
     });
 
-    describe(`AND sampling is enabled\n`, () => {
+    describe(`AND sampling is enabled\n`, function () {
       const eventType = BID_WON;
       const args = { more: 'info' };
 
-      beforeEach(() => {
+      beforeEach(function () {
         sinon.stub(Math, 'random').returns(0.5);
       });
 
-      afterEach(() => {
+      afterEach(function () {
         Math.random.restore();
       });
 
-      it(`THEN should enable analytics when random number is in sample range`, () => {
+      it(`THEN should enable analytics when random number is in sample range`, function () {
         adapter.enableAnalytics({
           options: {
             sampling: 0.75
@@ -155,7 +179,7 @@ FEATURE: Analytics Adapters API
         expect(result).to.deep.equal({args: {more: 'info'}, eventType: 'bidWon'});
       });
 
-      it(`THEN should disable analytics when random number is outside sample range`, () => {
+      it(`THEN should disable analytics when random number is outside sample range`, function () {
         adapter.enableAnalytics({
           options: {
             sampling: 0.25

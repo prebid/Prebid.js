@@ -1,8 +1,7 @@
 import { expect } from 'chai';
-import { PrebidServer as Adapter, resetSyncedStatus } from 'modules/prebidServerBidAdapter';
-import adapterManager from 'src/adaptermanager';
+import { PrebidServer as Adapter, resetSyncedStatus } from 'modules/prebidServerBidAdapter/index.js';
+import adapterManager from 'src/adapterManager';
 import * as utils from 'src/utils';
-import cookie from 'src/cookie';
 import { userSync } from 'src/userSync';
 import { ajax } from 'src/ajax';
 import { config } from 'src/config';
@@ -329,12 +328,12 @@ const RESPONSE_UNSUPPORTED_BIDDER = {
   }]
 };
 
-describe('S2S Adapter', () => {
+describe('S2S Adapter', function () {
   let adapter,
     addBidResponse = sinon.spy(),
     done = sinon.spy();
 
-  beforeEach(() => {
+  beforeEach(function () {
     adapter = new Adapter();
     BID_REQUESTS = [
       {
@@ -370,16 +369,16 @@ describe('S2S Adapter', () => {
     ];
   });
 
-  afterEach(() => {
+  afterEach(function () {
     addBidResponse.resetHistory();
     done.resetHistory();
   });
 
-  describe('request function', () => {
+  describe('request function', function () {
     let xhr;
     let requests;
 
-    beforeEach(() => {
+    beforeEach(function () {
       xhr = sinon.useFakeXMLHttpRequest();
       requests = [];
       xhr.onCreate = request => requests.push(request);
@@ -387,13 +386,15 @@ describe('S2S Adapter', () => {
       resetSyncedStatus();
     });
 
-    afterEach(() => xhr.restore());
+    afterEach(function () {
+      xhr.restore();
+    });
 
-    it('exists and is a function', () => {
+    it('exists and is a function', function () {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
 
-    it('exists converts types', () => {
+    it('exists converts types', function () {
       config.setConfig({s2sConfig: CONFIG});
       adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
       const requestBid = JSON.parse(requests[0].requestBody);
@@ -402,13 +403,13 @@ describe('S2S Adapter', () => {
       expect(requestBid.ad_units[0].bids[0].params.member).to.exist.and.to.be.a('string');
     });
 
-    describe('gdpr tests', () => {
-      afterEach(() => {
+    describe('gdpr tests', function () {
+      afterEach(function () {
         config.resetConfig();
-        $$PREBID_GLOBAL$$.requestBids.removeHook(requestBidsHook);
+        $$PREBID_GLOBAL$$.requestBids.removeAll();
       });
 
-      it('adds gdpr consent information to ortb2 request depending on presence of module', () => {
+      it('adds gdpr consent information to ortb2 request depending on presence of module', function () {
         let ortb2Config = utils.deepClone(CONFIG);
         ortb2Config.endpoint = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
 
@@ -437,7 +438,7 @@ describe('S2S Adapter', () => {
         expect(requestBid.user).to.not.exist;
       });
 
-      it('check gdpr info gets added into cookie_sync request: have consent data', () => {
+      it('check gdpr info gets added into cookie_sync request: have consent data', function () {
         let cookieSyncConfig = utils.deepClone(CONFIG);
         cookieSyncConfig.syncEndpoint = 'https://prebid.adnxs.com/pbs/v1/cookie_sync';
 
@@ -456,9 +457,11 @@ describe('S2S Adapter', () => {
 
         expect(requestBid.gdpr).is.equal(1);
         expect(requestBid.gdpr_consent).is.equal('abc123def');
+        expect(requestBid.bidders).to.contain('appnexus').and.to.have.lengthOf(1);
+        expect(requestBid.account).is.equal('1');
       });
 
-      it('check gdpr info gets added into cookie_sync request: have consent data but gdprApplies is false', () => {
+      it('check gdpr info gets added into cookie_sync request: have consent data but gdprApplies is false', function () {
         let cookieSyncConfig = utils.deepClone(CONFIG);
         cookieSyncConfig.syncEndpoint = 'https://prebid.adnxs.com/pbs/v1/cookie_sync';
 
@@ -478,7 +481,7 @@ describe('S2S Adapter', () => {
         expect(requestBid.gdpr_consent).is.undefined;
       });
 
-      it('checks gdpr info gets added to cookie_sync request: consent data unknown', () => {
+      it('checks gdpr info gets added to cookie_sync request: consent data unknown', function () {
         let cookieSyncConfig = utils.deepClone(CONFIG);
         cookieSyncConfig.syncEndpoint = 'https://prebid.adnxs.com/pbs/v1/cookie_sync';
 
@@ -499,7 +502,7 @@ describe('S2S Adapter', () => {
       });
     });
 
-    it('sets invalid cacheMarkup value to 0', () => {
+    it('sets invalid cacheMarkup value to 0', function () {
       const s2sConfig = Object.assign({}, CONFIG, {
         cacheMarkup: 999
       });
@@ -509,42 +512,41 @@ describe('S2S Adapter', () => {
       expect(requestBid).to.have.property('cache_markup', 0);
     });
 
-    it('adds digitrust id is present and user is not optout', () => {
+    it('adds digitrust id is present and user is not optout', function () {
+      let ortb2Config = utils.deepClone(CONFIG);
+      ortb2Config.endpoint = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction';
+
+      let consentConfig = { s2sConfig: ortb2Config };
+      config.setConfig(consentConfig);
+
       let digiTrustObj = {
-        success: true,
-        identity: {
-          privacy: {
-            optout: false
-          },
-          id: 'testId',
-          keyv: 'testKeyV'
-        }
+        privacy: {
+          optout: false
+        },
+        id: 'testId',
+        keyv: 'testKeyV'
       };
 
-      window.DigiTrust = {
-        getUser: () => digiTrustObj
-      };
+      let digiTrustBidRequest = utils.deepClone(BID_REQUESTS);
+      digiTrustBidRequest[0].bids[0].userId = { digitrustid: { data: digiTrustObj } };
 
-      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      adapter.callBids(REQUEST, digiTrustBidRequest, addBidResponse, done, ajax);
       let requestBid = JSON.parse(requests[0].requestBody);
 
-      expect(requestBid.digiTrust).to.deep.equal({
-        id: digiTrustObj.identity.id,
-        keyv: digiTrustObj.identity.keyv,
-        pref: 0
+      expect(requestBid.user.ext.digitrust).to.deep.equal({
+        id: digiTrustObj.id,
+        keyv: digiTrustObj.keyv
       });
 
-      digiTrustObj.identity.privacy.optout = true;
+      digiTrustObj.privacy.optout = true;
 
-      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      adapter.callBids(REQUEST, digiTrustBidRequest, addBidResponse, done, ajax);
       requestBid = JSON.parse(requests[1].requestBody);
 
-      expect(requestBid.digiTrust).to.not.exist;
-
-      delete window.DigiTrust;
+      expect(requestBid.user && request.user.ext && requestBid.user.ext.digitrust).to.not.exist;
     });
 
-    it('adds device and app objects to request', () => {
+    it('adds device and app objects to request', function () {
       const _config = { s2sConfig: CONFIG,
         device: { ifa: '6D92078A-8246-4BA4-AE5B-76104861E7DC' },
         app: { bundle: 'com.test.app' },
@@ -555,6 +557,8 @@ describe('S2S Adapter', () => {
       const requestBid = JSON.parse(requests[0].requestBody);
       expect(requestBid.device).to.deep.equal({
         ifa: '6D92078A-8246-4BA4-AE5B-76104861E7DC',
+        w: window.innerWidth,
+        h: window.innerHeight
       });
       expect(requestBid.app).to.deep.equal({
         bundle: 'com.test.app',
@@ -562,7 +566,7 @@ describe('S2S Adapter', () => {
       });
     });
 
-    it('adds device and app objects to request for ORTB', () => {
+    it('adds device and app objects to request for ORTB', function () {
       const s2sConfig = Object.assign({}, CONFIG, {
         endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
       });
@@ -578,6 +582,8 @@ describe('S2S Adapter', () => {
       const requestBid = JSON.parse(requests[0].requestBody);
       expect(requestBid.device).to.deep.equal({
         ifa: '6D92078A-8246-4BA4-AE5B-76104861E7DC',
+        w: window.innerWidth,
+        h: window.innerHeight
       });
       expect(requestBid.app).to.deep.equal({
         bundle: 'com.test.app',
@@ -585,7 +591,30 @@ describe('S2S Adapter', () => {
       });
     });
 
-    it('adds site if app is not present', () => {
+    it('adds device.w and device.h even if the config lacks a device object', function () {
+      const s2sConfig = Object.assign({}, CONFIG, {
+        endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
+      });
+
+      const _config = {
+        s2sConfig: s2sConfig,
+        app: { bundle: 'com.test.app' },
+      };
+
+      config.setConfig(_config);
+      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      const requestBid = JSON.parse(requests[0].requestBody);
+      expect(requestBid.device).to.deep.equal({
+        w: window.innerWidth,
+        h: window.innerHeight
+      });
+      expect(requestBid.app).to.deep.equal({
+        bundle: 'com.test.app',
+        publisher: {'id': '1'}
+      });
+    });
+
+    it('adds site if app is not present', function () {
       const s2sConfig = Object.assign({}, CONFIG, {
         endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
       });
@@ -602,7 +631,7 @@ describe('S2S Adapter', () => {
       expect(requestBid.site.page).to.exist.and.to.be.a('string');
     });
 
-    it('adds appnexus aliases to request', () => {
+    it('adds appnexus aliases to request', function () {
       const s2sConfig = Object.assign({}, CONFIG, {
         endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
       });
@@ -624,12 +653,16 @@ describe('S2S Adapter', () => {
         prebid: {
           aliases: {
             brealtime: 'appnexus'
+          },
+          targeting: {
+            includebidderkeys: false,
+            includewinners: true
           }
         }
       });
     });
 
-    it('adds dynamic aliases to request', () => {
+    it('adds dynamic aliases to request', function () {
       const s2sConfig = Object.assign({}, CONFIG, {
         endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
       });
@@ -654,12 +687,16 @@ describe('S2S Adapter', () => {
         prebid: {
           aliases: {
             [alias]: 'appnexus'
+          },
+          targeting: {
+            includebidderkeys: false,
+            includewinners: true
           }
         }
       });
     });
 
-    it('converts appnexus params to expected format for PBS', () => {
+    it('converts appnexus params to expected format for PBS', function () {
       const s2sConfig = Object.assign({}, CONFIG, {
         endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
       });
@@ -708,34 +745,259 @@ describe('S2S Adapter', () => {
         value: ['buzz']
       }]);
     });
+
+    it('adds limit to the cookie_sync request if userSyncLimit is greater than 0', function () {
+      let cookieSyncConfig = utils.deepClone(CONFIG);
+      cookieSyncConfig.syncEndpoint = 'https://prebid.adnxs.com/pbs/v1/cookie_sync';
+      cookieSyncConfig.userSyncLimit = 1;
+
+      config.setConfig({ s2sConfig: cookieSyncConfig });
+
+      let bidRequest = utils.deepClone(BID_REQUESTS);
+      adapter.callBids(REQUEST, bidRequest, addBidResponse, done, ajax);
+      let requestBid = JSON.parse(requests[0].requestBody);
+
+      expect(requestBid.bidders).to.contain('appnexus').and.to.have.lengthOf(1);
+      expect(requestBid.account).is.equal('1');
+      expect(requestBid.limit).is.equal(1);
+    });
+
+    it('does not add limit to cooke_sync request if userSyncLimit is missing or 0', function () {
+      let cookieSyncConfig = utils.deepClone(CONFIG);
+      cookieSyncConfig.syncEndpoint = 'https://prebid.adnxs.com/pbs/v1/cookie_sync';
+      config.setConfig({ s2sConfig: cookieSyncConfig });
+
+      let bidRequest = utils.deepClone(BID_REQUESTS);
+      adapter.callBids(REQUEST, bidRequest, addBidResponse, done, ajax);
+      let requestBid = JSON.parse(requests[0].requestBody);
+
+      expect(requestBid.bidders).to.contain('appnexus').and.to.have.lengthOf(1);
+      expect(requestBid.account).is.equal('1');
+      expect(requestBid.limit).is.undefined;
+
+      cookieSyncConfig.userSyncLimit = 0;
+      config.resetConfig();
+      config.setConfig({ s2sConfig: cookieSyncConfig });
+
+      bidRequest = utils.deepClone(BID_REQUESTS);
+      adapter.callBids(REQUEST, bidRequest, addBidResponse, done, ajax);
+      requestBid = JSON.parse(requests[0].requestBody);
+
+      expect(requestBid.bidders).to.contain('appnexus').and.to.have.lengthOf(1);
+      expect(requestBid.account).is.equal('1');
+      expect(requestBid.limit).is.undefined;
+    });
+
+    it('adds s2sConfig adapterOptions to request for ORTB', function () {
+      const s2sConfig = Object.assign({}, CONFIG, {
+        endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction',
+        adapterOptions: {
+          appnexus: {
+            key: 'value'
+          }
+        }
+      });
+      const _config = {
+        s2sConfig: s2sConfig,
+        device: { ifa: '6D92078A-8246-4BA4-AE5B-76104861E7DC' },
+        app: { bundle: 'com.test.app' },
+      };
+
+      config.setConfig(_config);
+      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      const requestBid = JSON.parse(requests[0].requestBody);
+      expect(requestBid.imp[0].ext.appnexus).to.haveOwnProperty('key');
+      expect(requestBid.imp[0].ext.appnexus.key).to.be.equal('value')
+    });
+
+    it('when userId is defined on bids, it\'s properties should be copied to user.ext.tpid properties', function () {
+      let ortb2Config = utils.deepClone(CONFIG);
+      ortb2Config.endpoint = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction';
+
+      let consentConfig = { s2sConfig: ortb2Config };
+      config.setConfig(consentConfig);
+
+      let userIdBidRequest = utils.deepClone(BID_REQUESTS);
+      userIdBidRequest[0].bids[0].userId = {
+        tdid: 'abc123',
+        pubcid: '1234'
+      };
+
+      adapter.callBids(REQUEST, userIdBidRequest, addBidResponse, done, ajax);
+      let requestBid = JSON.parse(requests[0].requestBody);
+      expect(typeof requestBid.user.ext.eids).is.equal('object');
+      expect(Array.isArray(requestBid.user.ext.eids)).to.be.true;
+      expect(requestBid.user.ext.eids.filter(eid => eid.source === 'adserver.org')).is.not.empty;
+      expect(requestBid.user.ext.eids.filter(eid => eid.source === 'adserver.org')[0].uids[0].id).is.equal('abc123');
+      expect(requestBid.user.ext.eids.filter(eid => eid.source === 'pubcommon')).is.not.empty; ;
+      expect(requestBid.user.ext.eids.filter(eid => eid.source === 'pubcommon')[0].uids[0].id).is.equal('1234');
+    })
+
+    it('always add ext.prebid.targeting.includebidderkeys: false for ORTB', function () {
+      const s2sConfig = Object.assign({}, CONFIG, {
+        endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction',
+        adapterOptions: {
+          appnexus: {
+            key: 'value'
+          }
+        }
+      });
+      const _config = {
+        s2sConfig: s2sConfig,
+        device: { ifa: '6D92078A-8246-4BA4-AE5B-76104861E7DC' },
+        app: { bundle: 'com.test.app' },
+      };
+
+      config.setConfig(_config);
+      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      const requestBid = JSON.parse(requests[0].requestBody);
+
+      expect(requestBid.ext.prebid.targeting).to.haveOwnProperty('includebidderkeys');
+      expect(requestBid.ext.prebid.targeting.includebidderkeys).to.equal(false);
+    });
+
+    it('always add ext.prebid.targeting.includewinners: true for ORTB', function () {
+      const s2sConfig = Object.assign({}, CONFIG, {
+        endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction',
+        adapterOptions: {
+          appnexus: {
+            key: 'value'
+          }
+        }
+      });
+      const _config = {
+        s2sConfig: s2sConfig,
+        device: { ifa: '6D92078A-8246-4BA4-AE5B-76104861E7DC' },
+        app: { bundle: 'com.test.app' },
+      };
+
+      config.setConfig(_config);
+      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      const requestBid = JSON.parse(requests[0].requestBody);
+
+      expect(requestBid.ext.prebid.targeting).to.haveOwnProperty('includewinners');
+      expect(requestBid.ext.prebid.targeting.includewinners).to.equal(true);
+    });
+
+    it('adds s2sConfig video.ext.prebid to request for ORTB', function () {
+      const s2sConfig = Object.assign({}, CONFIG, {
+        endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction',
+        extPrebid: {
+          foo: 'bar'
+        }
+      });
+      const _config = {
+        s2sConfig: s2sConfig,
+        device: { ifa: '6D92078A-8246-4BA4-AE5B-76104861E7DC' },
+        app: { bundle: 'com.test.app' },
+      };
+
+      config.setConfig(_config);
+      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      const requestBid = JSON.parse(requests[0].requestBody);
+
+      expect(requestBid).to.haveOwnProperty('ext');
+      expect(requestBid.ext).to.haveOwnProperty('prebid');
+      expect(requestBid.ext.prebid).to.deep.equal({
+        foo: 'bar',
+        targeting: {
+          includewinners: true,
+          includebidderkeys: false
+        }
+      });
+    });
+
+    it('overrides request.ext.prebid properties using s2sConfig video.ext.prebid values for ORTB', function () {
+      const s2sConfig = Object.assign({}, CONFIG, {
+        endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction',
+        extPrebid: {
+          targeting: {
+            includewinners: false,
+            includebidderkeys: true
+          }
+        }
+      });
+      const _config = {
+        s2sConfig: s2sConfig,
+        device: { ifa: '6D92078A-8246-4BA4-AE5B-76104861E7DC' },
+        app: { bundle: 'com.test.app' },
+      };
+
+      config.setConfig(_config);
+      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      const requestBid = JSON.parse(requests[0].requestBody);
+
+      expect(requestBid).to.haveOwnProperty('ext');
+      expect(requestBid.ext).to.haveOwnProperty('prebid');
+      expect(requestBid.ext.prebid).to.deep.equal({
+        targeting: {
+          includewinners: false,
+          includebidderkeys: true
+        }
+      });
+    });
+
+    it('overrides request.ext.prebid properties using s2sConfig video.ext.prebid values for ORTB', function () {
+      const s2sConfig = Object.assign({}, CONFIG, {
+        endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction',
+        extPrebid: {
+          cache: {
+            vastxml: 'vastxml-set-though-extPrebid.cache.vastXml'
+          },
+          targeting: {
+            includewinners: false,
+            includebidderkeys: false
+          }
+        }
+      });
+      const _config = {
+        s2sConfig: s2sConfig,
+        device: { ifa: '6D92078A-8246-4BA4-AE5B-76104861E7DC' },
+        app: { bundle: 'com.test.app' },
+      };
+
+      config.setConfig(_config);
+      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      const requestBid = JSON.parse(requests[0].requestBody);
+
+      expect(requestBid).to.haveOwnProperty('ext');
+      expect(requestBid.ext).to.haveOwnProperty('prebid');
+      expect(requestBid.ext.prebid).to.deep.equal({
+        cache: {
+          vastxml: 'vastxml-set-though-extPrebid.cache.vastXml'
+        },
+        targeting: {
+          includewinners: false,
+          includebidderkeys: false
+        }
+      });
+    });
   });
 
-  describe('response handler', () => {
+  describe('response handler', function () {
     let server;
     let logWarnSpy;
 
-    beforeEach(() => {
+    beforeEach(function () {
       server = sinon.fakeServer.create();
       sinon.stub(utils, 'triggerPixel');
       sinon.stub(utils, 'insertUserSyncIframe');
       sinon.stub(utils, 'logError');
-      sinon.stub(cookie, 'cookieSet');
       sinon.stub(events, 'emit');
       logWarnSpy = sinon.spy(utils, 'logWarn');
     });
 
-    afterEach(() => {
+    afterEach(function () {
       server.restore();
       utils.triggerPixel.restore();
       utils.insertUserSyncIframe.restore();
       utils.logError.restore();
       events.emit.restore();
-      cookie.cookieSet.restore();
       logWarnSpy.restore();
     });
 
     // TODO: test dependent on pbjs_api_spec.  Needs to be isolated
-    it('registers bids and calls BIDDER_DONE', () => {
+    it('registers bids and calls BIDDER_DONE', function () {
       server.respondWith(JSON.stringify(RESPONSE));
 
       config.setConfig({s2sConfig: CONFIG});
@@ -751,14 +1013,14 @@ describe('S2S Adapter', () => {
       const response = addBidResponse.firstCall.args[1];
       expect(response).to.have.property('statusMessage', 'Bid available');
       expect(response).to.have.property('cpm', 0.5);
-      expect(response).to.have.property('adId', '123');
+      expect(response).to.have.property('requestId', '123');
       expect(response).to.not.have.property('videoCacheKey');
       expect(response).to.have.property('cache_id', '7654321');
       expect(response).to.have.property('cache_url', 'http://www.test.com/cache?uuid=7654321');
       expect(response).to.not.have.property('vastUrl');
     });
 
-    it('registers video bids', () => {
+    it('registers video bids', function () {
       server.respondWith(JSON.stringify(VIDEO_RESPONSE));
 
       config.setConfig({s2sConfig: CONFIG});
@@ -769,14 +1031,14 @@ describe('S2S Adapter', () => {
       const response = addBidResponse.firstCall.args[1];
       expect(response).to.have.property('statusMessage', 'Bid available');
       expect(response).to.have.property('cpm', 0.5);
-      expect(response).to.have.property('adId', '123');
+      expect(response).to.have.property('requestId', '123');
       expect(response).to.have.property('videoCacheKey', 'video_cache_id');
       expect(response).to.have.property('cache_id', 'video_cache_id');
       expect(response).to.have.property('cache_url', 'video_cache_url');
       expect(response).to.have.property('vastUrl', 'video_cache_url');
     });
 
-    it('does not call addBidResponse and calls done when ad unit not set', () => {
+    it('does not call addBidResponse and calls done when ad unit not set', function () {
       server.respondWith(JSON.stringify(RESPONSE_NO_BID_NO_UNIT));
 
       config.setConfig({s2sConfig: CONFIG});
@@ -787,7 +1049,7 @@ describe('S2S Adapter', () => {
       sinon.assert.calledOnce(done);
     });
 
-    it('does not call addBidResponse and calls done when server requests cookie sync', () => {
+    it('does not call addBidResponse and calls done when server requests cookie sync', function () {
       server.respondWith(JSON.stringify(RESPONSE_NO_COOKIE));
 
       config.setConfig({s2sConfig: CONFIG});
@@ -798,7 +1060,7 @@ describe('S2S Adapter', () => {
       sinon.assert.calledOnce(done);
     });
 
-    it('does not call addBidResponse and calls done  when ad unit is set', () => {
+    it('does not call addBidResponse and calls done  when ad unit is set', function () {
       server.respondWith(JSON.stringify(RESPONSE_NO_BID_UNIT_SET));
 
       config.setConfig({s2sConfig: CONFIG});
@@ -809,7 +1071,7 @@ describe('S2S Adapter', () => {
       sinon.assert.calledOnce(done);
     });
 
-    it('registers successful bids and calls done when there are less bids than requests', () => {
+    it('registers successful bids and calls done when there are less bids than requests', function () {
       server.respondWith(JSON.stringify(RESPONSE));
 
       config.setConfig({s2sConfig: CONFIG});
@@ -821,13 +1083,13 @@ describe('S2S Adapter', () => {
 
       expect(addBidResponse.firstCall.args[0]).to.equal('div-gpt-ad-1460505748561-0');
 
-      expect(addBidResponse.firstCall.args[1]).to.have.property('adId', '123');
+      expect(addBidResponse.firstCall.args[1]).to.have.property('requestId', '123');
 
       expect(addBidResponse.firstCall.args[1])
         .to.have.property('statusMessage', 'Bid available');
     });
 
-    it('should have dealId in bidObject', () => {
+    it('should have dealId in bidObject', function () {
       server.respondWith(JSON.stringify(RESPONSE));
 
       config.setConfig({s2sConfig: CONFIG});
@@ -837,7 +1099,7 @@ describe('S2S Adapter', () => {
       expect(response).to.have.property('dealId', 'test-dealid');
     });
 
-    it('should pass through default adserverTargeting if present in bidObject', () => {
+    it('should pass through default adserverTargeting if present in bidObject', function () {
       server.respondWith(JSON.stringify(RESPONSE));
 
       config.setConfig({s2sConfig: CONFIG});
@@ -847,7 +1109,7 @@ describe('S2S Adapter', () => {
       expect(response).to.have.property('adserverTargeting').that.deep.equals({'foo': 'bar'});
     });
 
-    it('registers client user syncs when client bid adapter is present', () => {
+    it('registers client user syncs when client bid adapter is present', function () {
       let rubiconAdapter = {
         registerSyncs: sinon.spy()
       };
@@ -864,7 +1126,7 @@ describe('S2S Adapter', () => {
       adapterManager.getBidAdapter.restore();
     });
 
-    it('registers client user syncs when using OpenRTB endpoint', () => {
+    it('registers client user syncs when using OpenRTB endpoint', function () {
       let rubiconAdapter = {
         registerSyncs: sinon.spy()
       };
@@ -884,7 +1146,7 @@ describe('S2S Adapter', () => {
       adapterManager.getBidAdapter.restore();
     });
 
-    it('registers bid responses when server requests cookie sync', () => {
+    it('registers bid responses when server requests cookie sync', function () {
       server.respondWith(JSON.stringify(RESPONSE_NO_PBS_COOKIE));
 
       config.setConfig({s2sConfig: CONFIG});
@@ -900,34 +1162,10 @@ describe('S2S Adapter', () => {
       expect(response).to.have.property('source', 's2s');
 
       const bid_request_passed = addBidResponse.firstCall.args[1];
-      expect(bid_request_passed).to.have.property('adId', '123');
+      expect(bid_request_passed).to.have.property('requestId', '123');
     });
 
-    it('does not call cookieSet cookie sync when no_cookie response && not opted in', () => {
-      server.respondWith(JSON.stringify(RESPONSE_NO_PBS_COOKIE));
-
-      let myConfig = Object.assign({}, CONFIG);
-
-      config.setConfig({s2sConfig: myConfig});
-      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
-      server.respond();
-      sinon.assert.notCalled(cookie.cookieSet);
-    });
-
-    it('calls cookieSet cookie sync when no_cookie response && opted in', () => {
-      server.respondWith(JSON.stringify(RESPONSE_NO_PBS_COOKIE));
-      let myConfig = Object.assign({
-        cookieSet: true,
-        cookieSetUrl: 'https://acdn.adnxs.com/cookieset/cs.js'
-      }, CONFIG);
-
-      config.setConfig({s2sConfig: myConfig});
-      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
-      server.respond();
-      sinon.assert.calledOnce(cookie.cookieSet);
-    });
-
-    it('handles OpenRTB responses and call BIDDER_DONE', () => {
+    it('handles OpenRTB responses and call BIDDER_DONE', function () {
       const s2sConfig = Object.assign({}, CONFIG, {
         endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
       });
@@ -946,11 +1184,11 @@ describe('S2S Adapter', () => {
       const response = addBidResponse.firstCall.args[1];
       expect(response).to.have.property('statusMessage', 'Bid available');
       expect(response).to.have.property('bidderCode', 'appnexus');
-      expect(response).to.have.property('adId', '123');
+      expect(response).to.have.property('requestId', '123');
       expect(response).to.have.property('cpm', 0.5);
     });
 
-    it('handles OpenRTB video responses', () => {
+    it('handles OpenRTB video responses', function () {
       const s2sConfig = Object.assign({}, CONFIG, {
         endpoint: 'https://prebidserverurl/openrtb2/auction?querystring=param'
       });
@@ -966,11 +1204,90 @@ describe('S2S Adapter', () => {
       expect(response).to.have.property('vastXml', RESPONSE_OPENRTB_VIDEO.seatbid[0].bid[0].adm);
       expect(response).to.have.property('mediaType', 'video');
       expect(response).to.have.property('bidderCode', 'appnexus');
-      expect(response).to.have.property('adId', '123');
+      expect(response).to.have.property('requestId', '123');
       expect(response).to.have.property('cpm', 10);
     });
 
-    it('should log warning for unsupported bidder', () => {
+    it('handles response cache from ext.prebid.cache.vastXml', function () {
+      const s2sConfig = Object.assign({}, CONFIG, {
+        endpoint: 'https://prebidserverurl/openrtb2/auction?querystring=param'
+      });
+      config.setConfig({s2sConfig});
+      const cacheResponse = utils.deepClone(RESPONSE_OPENRTB_VIDEO);
+      cacheResponse.seatbid.forEach(item => {
+        item.bid[0].ext.prebid.cache = {
+          vastXml: {
+            cacheId: 'abcd1234',
+            url: 'https://prebid-cache.net/cache?uuid=abcd1234'
+          }
+        }
+      });
+      server.respondWith(JSON.stringify(cacheResponse));
+      adapter.callBids(VIDEO_REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      server.respond();
+
+      sinon.assert.calledOnce(addBidResponse);
+      const response = addBidResponse.firstCall.args[1];
+
+      expect(response).to.have.property('statusMessage', 'Bid available');
+      expect(response).to.have.property('videoCacheKey', 'abcd1234');
+      expect(response).to.have.property('vastUrl', 'https://prebid-cache.net/cache?uuid=abcd1234');
+    });
+
+    it('add adserverTargeting object to bids when ext.prebid.targeting is defined', function () {
+      const s2sConfig = Object.assign({}, CONFIG, {
+        endpoint: 'https://prebidserverurl/openrtb2/auction?querystring=param'
+      });
+      config.setConfig({s2sConfig});
+      const cacheResponse = utils.deepClone(RESPONSE_OPENRTB_VIDEO);
+      const targetingTestData = {
+        hb_cache_path: '/cache',
+        hb_cache_host: 'prebid-cache.testurl.com'
+      };
+
+      cacheResponse.seatbid.forEach(item => {
+        item.bid[0].ext.prebid.targeting = targetingTestData
+      });
+      server.respondWith(JSON.stringify(cacheResponse));
+      adapter.callBids(VIDEO_REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      server.respond();
+
+      sinon.assert.calledOnce(addBidResponse);
+      const response = addBidResponse.firstCall.args[1];
+
+      expect(response).to.have.property('adserverTargeting');
+      expect(response.adserverTargeting).to.deep.equal({
+        'hb_cache_path': '/cache',
+        'hb_cache_host': 'prebid-cache.testurl.com'
+      });
+    });
+
+    it('handles response cache from ext.prebid.targeting', function () {
+      const s2sConfig = Object.assign({}, CONFIG, {
+        endpoint: 'https://prebidserverurl/openrtb2/auction?querystring=param'
+      });
+      config.setConfig({s2sConfig});
+      const cacheResponse = utils.deepClone(RESPONSE_OPENRTB_VIDEO);
+      cacheResponse.seatbid.forEach(item => {
+        item.bid[0].ext.prebid.targeting = {
+          hb_uuid: 'a5ad3993',
+          hb_cache_host: 'prebid-cache.net',
+          hb_cache_path: '/cache'
+        }
+      });
+      server.respondWith(JSON.stringify(cacheResponse));
+      adapter.callBids(VIDEO_REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      server.respond();
+
+      sinon.assert.calledOnce(addBidResponse);
+      const response = addBidResponse.firstCall.args[1];
+
+      expect(response).to.have.property('statusMessage', 'Bid available');
+      expect(response).to.have.property('videoCacheKey', 'a5ad3993');
+      expect(response).to.have.property('vastUrl', 'https://prebid-cache.net/cache?uuid=a5ad3993');
+    });
+
+    it('should log warning for unsupported bidder', function () {
       server.respondWith(JSON.stringify(RESPONSE_UNSUPPORTED_BIDDER));
 
       const s2sConfig = Object.assign({}, CONFIG, {
@@ -990,18 +1307,18 @@ describe('S2S Adapter', () => {
     });
   });
 
-  describe('s2sConfig', () => {
+  describe('s2sConfig', function () {
     let logErrorSpy;
 
-    beforeEach(() => {
+    beforeEach(function () {
       logErrorSpy = sinon.spy(utils, 'logError');
     });
 
-    afterEach(() => {
+    afterEach(function () {
       utils.logError.restore();
     });
 
-    it('should log an error when accountId is missing', () => {
+    it('should log an error when accountId is missing', function () {
       const options = {
         enabled: true,
         bidders: ['appnexus'],
@@ -1014,7 +1331,7 @@ describe('S2S Adapter', () => {
       sinon.assert.calledOnce(logErrorSpy);
     });
 
-    it('should log an error when bidders is missing', () => {
+    it('should log an error when bidders is missing', function () {
       const options = {
         accountId: '1',
         enabled: true,
@@ -1027,7 +1344,7 @@ describe('S2S Adapter', () => {
       sinon.assert.calledOnce(logErrorSpy);
     });
 
-    it('should log an error when endpoint is missing', () => {
+    it('should log an error when endpoint is missing', function () {
       const options = {
         accountId: '1',
         bidders: ['appnexus'],
@@ -1040,7 +1357,7 @@ describe('S2S Adapter', () => {
       sinon.assert.calledOnce(logErrorSpy);
     });
 
-    it('should log an error when using an unknown vendor', () => {
+    it('should log an error when using an unknown vendor', function () {
       const options = {
         accountId: '1',
         bidders: ['appnexus'],
@@ -1051,7 +1368,7 @@ describe('S2S Adapter', () => {
       sinon.assert.calledOnce(logErrorSpy);
     });
 
-    it('should configure the s2sConfig object with appnexus vendor defaults unless specified by user', () => {
+    it('should configure the s2sConfig object with appnexus vendor defaults unless specified by user', function () {
       const options = {
         accountId: '123',
         bidders: ['appnexus'],
@@ -1066,15 +1383,13 @@ describe('S2S Adapter', () => {
       expect(vendorConfig).to.have.property('accountId', '123');
       expect(vendorConfig).to.have.property('adapter', 'prebidServer');
       expect(vendorConfig.bidders).to.deep.equal(['appnexus']);
-      expect(vendorConfig.cookieSet).to.be.false;
-      expect(vendorConfig.cookieSetUrl).to.be.undefined;
       expect(vendorConfig.enabled).to.be.true;
       expect(vendorConfig).to.have.property('endpoint', '//prebid.adnxs.com/pbs/v1/openrtb2/auction');
       expect(vendorConfig).to.have.property('syncEndpoint', '//prebid.adnxs.com/pbs/v1/cookie_sync');
       expect(vendorConfig).to.have.property('timeout', 750);
     });
 
-    it('should configure the s2sConfig object with rubicon vendor defaults unless specified by user', () => {
+    it('should configure the s2sConfig object with rubicon vendor defaults unless specified by user', function () {
       const options = {
         accountId: 'abc',
         bidders: ['rubicon'],
@@ -1089,12 +1404,74 @@ describe('S2S Adapter', () => {
       expect(vendorConfig).to.have.property('accountId', 'abc');
       expect(vendorConfig).to.have.property('adapter', 'prebidServer');
       expect(vendorConfig.bidders).to.deep.equal(['rubicon']);
-      expect(vendorConfig.cookieSet).to.be.false;
-      expect(vendorConfig.cookieSetUrl).to.be.undefined;
       expect(vendorConfig.enabled).to.be.true;
-      expect(vendorConfig).to.have.property('endpoint', '//prebid-server.rubiconproject.com/auction');
+      expect(vendorConfig).to.have.property('endpoint', '//prebid-server.rubiconproject.com/openrtb2/auction');
       expect(vendorConfig).to.have.property('syncEndpoint', '//prebid-server.rubiconproject.com/cookie_sync');
       expect(vendorConfig).to.have.property('timeout', 750);
+    });
+
+    it('should return proper defaults', function () {
+      expect(config.getConfig('s2sConfig')).to.deep.equal({
+        'accountId': 'abc',
+        'adapter': 'prebidServer',
+        'bidders': ['rubicon'],
+        'defaultVendor': 'rubicon',
+        'enabled': true,
+        'endpoint': '//prebid-server.rubiconproject.com/openrtb2/auction',
+        'syncEndpoint': '//prebid-server.rubiconproject.com/cookie_sync',
+        'timeout': 750
+      })
+    });
+
+    it('should return default adapterOptions if not set', function () {
+      config.setConfig({
+        s2sConfig: {
+          accountId: 'abc',
+          bidders: ['rubicon'],
+          defaultVendor: 'rubicon',
+          timeout: 750
+        }
+      });
+      expect(config.getConfig('s2sConfig')).to.deep.equal({
+        enabled: true,
+        timeout: 750,
+        adapter: 'prebidServer',
+        accountId: 'abc',
+        bidders: ['rubicon'],
+        defaultVendor: 'rubicon',
+        endpoint: '//prebid-server.rubiconproject.com/openrtb2/auction',
+        syncEndpoint: '//prebid-server.rubiconproject.com/cookie_sync'
+      })
+    });
+
+    it('should set adapterOptions', function () {
+      config.setConfig({
+        s2sConfig: {
+          adapterOptions: {
+            rubicon: {
+              singleRequest: true,
+              foo: 'bar'
+            }
+          }
+        }
+      });
+      expect(config.getConfig('s2sConfig').adapterOptions).to.deep.equal({
+        rubicon: {
+          singleRequest: true,
+          foo: 'bar'
+        }
+      })
+    });
+
+    it('should set syncUrlModifier', function () {
+      config.setConfig({
+        s2sConfig: {
+          syncUrlModifier: {
+            appnexus: () => {}
+          }
+        }
+      });
+      expect(typeof config.getConfig('s2sConfig').syncUrlModifier.appnexus).to.equal('function')
     });
   });
 });

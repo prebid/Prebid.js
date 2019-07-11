@@ -1,8 +1,7 @@
-import * as utils from 'src/utils';
-import { registerBidder } from 'src/adapters/bidderFactory';
-import { config } from 'src/config';
-import { BANNER } from 'src/mediaTypes';
-import { REPO_AND_VERSION } from 'src/constants';
+import * as utils from '../src/utils';
+import { registerBidder } from '../src/adapters/bidderFactory';
+import { config } from '../src/config';
+import { BANNER } from '../src/mediaTypes';
 
 const BIDDER_CODE = 'sortable';
 const SERVER_URL = 'c.deployads.com';
@@ -14,7 +13,19 @@ export const spec = {
   isBidRequestValid: function(bid) {
     const sortableConfig = config.getConfig('sortable');
     const haveSiteId = (sortableConfig && !!sortableConfig.siteId) || bid.params.siteId;
-    return !!(bid.params.tagId && haveSiteId && bid.sizes &&
+    const validFloor = !bid.params.floor || utils.isNumber(bid.params.floor);
+    const validSize = /\d+x\d+/;
+    const validFloorSizeMap = !bid.params.floorSizeMap ||
+      (utils.isPlainObject(bid.params.floorSizeMap) &&
+        Object.keys(bid.params.floorSizeMap).every(size =>
+          size.match(validSize) && utils.isNumber(bid.params.floorSizeMap[size])
+        ))
+    const validKeywords = !bid.params.keywords ||
+      (utils.isPlainObject(bid.params.keywords) &&
+        Object.keys(bid.params.keywords).every(key =>
+          utils.isStr(key) && utils.isStr(bid.params.keywords[key])
+        ))
+    return !!(bid.params.tagId && haveSiteId && validFloor && validFloorSizeMap && validKeywords && bid.sizes &&
       bid.sizes.every(sizeArr => sizeArr.length == 2 && sizeArr.every(num => utils.isNumber(num))));
   },
 
@@ -36,13 +47,15 @@ export const spec = {
         rv.bidfloor = bid.params.floor;
       }
       if (bid.params.keywords) {
-        let keywords = utils._map(bid.params.keywords, (foo, bar) => ({name: bar, value: foo}));
-        rv.ext.keywords = keywords;
+        rv.ext.keywords = bid.params.keywords;
       }
       if (bid.params.bidderParams) {
         utils._each(bid.params.bidderParams, (params, partner) => {
           rv.ext[partner] = params;
         });
+      }
+      if (bid.params.floorSizeMap) {
+        rv.ext.floorSizeMap = bid.params.floorSizeMap;
       }
       return rv;
     });
@@ -78,7 +91,7 @@ export const spec = {
 
     return {
       method: 'POST',
-      url: `//${SERVER_URL}/openrtb2/auction?src=${REPO_AND_VERSION}&host=${loc.host}`,
+      url: `//${SERVER_URL}/openrtb2/auction?src=$$REPO_AND_VERSION$$&host=${loc.host}`,
       data: JSON.stringify(sortableBidReq),
       options: {contentType: 'text/plain'}
     };
@@ -95,7 +108,7 @@ export const spec = {
             cpm: parseFloat(bid.price),
             width: parseInt(bid.w),
             height: parseInt(bid.h),
-            creativeId: bid.id,
+            creativeId: bid.crid || bid.id,
             dealId: bid.dealid || null,
             currency: 'USD',
             netRevenue: true,
@@ -123,8 +136,8 @@ export const spec = {
       let syncUrl = `//${SERVER_URL}/sync?f=html&s=${sortableConfig.siteId}&u=${encodeURIComponent(utils.getTopWindowLocation())}`;
 
       if (gdprConsent) {
-        syncurl += '&g=' + (gdprConsent.gdprApplies ? 1 : 0);
-        syncurl += '&cs=' + encodeURIComponent(gdprConsent.consentString || '');
+        syncUrl += '&g=' + (gdprConsent.gdprApplies ? 1 : 0);
+        syncUrl += '&cs=' + encodeURIComponent(gdprConsent.consentString || '');
       }
 
       return [{

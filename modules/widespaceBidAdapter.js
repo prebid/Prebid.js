@@ -1,12 +1,11 @@
-import { version } from '../package.json';
-import { config } from 'src/config';
-import { registerBidder } from 'src/adapters/bidderFactory';
+import { config } from '../src/config';
+import { registerBidder } from '../src/adapters/bidderFactory';
 import {
   cookiesAreEnabled,
   parseQueryStringParameters,
   parseSizesInput,
   getTopWindowReferrer
-} from 'src/utils';
+} from '../src/utils';
 import includes from 'core-js/library/fn/array/includes';
 import find from 'core-js/library/fn/array/find';
 
@@ -38,7 +37,7 @@ export const spec = {
     let serverRequests = [];
     const REQUEST_SERVER_URL = getEngineUrl();
     const DEMO_DATA_PARAMS = ['gender', 'country', 'region', 'postal', 'city', 'yob'];
-    const PERF_DATA = getData(LS_KEYS.PERF_DATA).map(perf_data => JSON.parse(perf_data));
+    const PERF_DATA = getData(LS_KEYS.PERF_DATA).map(perfData => JSON.parse(perfData));
     const CUST_DATA = getData(LS_KEYS.CUST_DATA, false)[0];
     const LC_UID = getLcuid();
 
@@ -66,7 +65,7 @@ export const spec = {
         'hb.floor': bid.bidfloor || '',
         'hb.spb': i === 0 ? pixelSyncPossibility() : -1,
         'hb.ver': WS_ADAPTER_VERSION,
-        'hb.name': `prebidjs-${version}`,
+        'hb.name': 'prebidjs-$prebid.version$',
         'hb.bidId': bid.bidId,
         'hb.sizes': parseSizesInput(bid.sizes).join(','),
         'hb.currency': bid.params.cur || bid.params.currency || ''

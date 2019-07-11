@@ -1,215 +1,280 @@
-import {expect} from 'chai';
-import * as utils from 'src/utils';
-import {spec} from 'modules/consumableBidAdapter';
-import {config} from 'src/config';
+import { expect } from 'chai';
+import { spec } from 'modules/consumableBidAdapter';
+import { createBid } from 'src/bidfactory';
 
-const DEFAULT_OAD_CONTENT = '<script>logInfo(\'ad\');</script>';
-const DEFAULT_AD_CONTENT = '<script type=\'text/javascript\'>document.write(\'<div id="unitname-987654">\');</script><script>logInfo(\'ad\');</script><script type=\'text/javascript\'>document.write(\'</div>\');</script><script type=\'text/javascript\'>document.write(\'<div class="unitname"></div>\');</script><script type=\'text/javascript\'>document.write(\'<scr\'+\'ipt type="text/javascript" src="https://yummy.consumable.com/987654/unitname/widget/unit.js?cb=7654321" charset="utf-8" async></scr\'+\'ipt>\');</script>'
+const ENDPOINT = 'https://e.serverbid.com/api/v2';
+const SMARTSYNC_CALLBACK = 'serverbidCallBids';
 
-let getDefaultBidResponse = () => {
-  return {
-    id: '245730051428950632',
-    cur: 'USD',
-    seatbid: [{
-      bid: [{
-        id: 1,
-        impid: '245730051428950632',
-        price: 0.09,
-        adm: DEFAULT_OAD_CONTENT,
-        crid: 'creative-id',
-        h: 90,
-        w: 728,
-        dealid: 'deal-id',
-        ext: {sizeid: 225}
-      }]
-    }]
-  };
+const REQUEST = {
+  'bidderCode': 'consumable',
+  'auctionId': 'a4713c32-3762-4798-b342-4ab810ca770d',
+  'bidderRequestId': '109f2a181342a9',
+  'bidRequest': [{
+    'bidder': 'consumable',
+    'params': {
+      'networkId': 9969,
+      'siteId': 730181,
+      'unitId': 123456,
+      'unitName': 'cnsmbl-unit'
+    },
+    'placementCode': 'div-gpt-ad-1487778092495-0',
+    'sizes': [
+      [728, 90],
+      [970, 90]
+    ],
+    'bidId': '2b0f82502298c9',
+    'bidderRequestId': '109f2a181342a9',
+    'auctionId': 'a4713c32-3762-4798-b342-4ab810ca770d'
+  },
+  {
+    'bidder': 'consumable',
+    'params': {
+      'networkId': 9969,
+      'siteId': 730181,
+      'unitId': 123456,
+      'unitName': 'cnsmbl-unit'
+    },
+    'placementCode': 'div-gpt-ad-1487778092495-0',
+    'sizes': [
+      [728, 90],
+      [970, 90]
+    ],
+    'bidId': '123',
+    'bidderRequestId': '109f2a181342a9',
+    'auctionId': 'a4713c32-3762-4798-b342-4ab810ca770d'
+  }],
+  'gdprConsent': {
+    'consentString': 'consent-test',
+    'gdprApplies': true
+  },
+  'start': 1487883186070,
+  'auctionStart': 1487883186069,
+  'timeout': 3000
 };
 
-let getBidParams = () => {
-  return {
-    placement: 1234567,
-    network: '9599.1',
-    unitId: '987654',
-    unitName: 'unitname',
-    zoneId: '9599.1'
-  };
-};
-
-let getDefaultBidRequest = () => {
-  return {
-    bidderCode: 'consumable',
-    auctionId: 'd3e07445-ab06-44c8-a9dd-5ef9af06d2a6',
-    bidderRequestId: '7101db09af0db2',
-    start: new Date().getTime(),
-    bids: [{
-      bidder: 'consumable',
-      bidId: '84ab500420319d',
-      bidderRequestId: '7101db09af0db2',
-      auctionId: 'd3e07445-ab06-44c8-a9dd-5ef9af06d2a6',
-      placementCode: 'foo',
-      params: getBidParams()
-    }]
-  };
-};
-
-let getPixels = () => {
-  return '<script>document.write(\'<img src="img.org"></iframe>' +
-    '<iframe src="pixels1.org"></iframe>\');</script>';
-};
-
-describe('ConsumableAdapter', () => {
-  const CONSUMABLE_URL = '//adserver-us.adtech.advertising.com/pubapi/3.0/';
-  const CONSUMABLE_TTL = 60;
-
-  function createCustomBidRequest({bids, params} = {}) {
-    var bidderRequest = getDefaultBidRequest();
-    if (bids && Array.isArray(bids)) {
-      bidderRequest.bids = bids;
+const RESPONSE = {
+  'headers': null,
+  'body': {
+    'user': { 'key': 'ue1-2d33e91b71e74929b4aeecc23f4376f1' },
+    'pixels': [{ 'type': 'image', 'url': '//sync.serverbid.com/ss/' }],
+    'decisions': {
+      '2b0f82502298c9': {
+        'adId': 2364764,
+        'creativeId': 1950991,
+        'flightId': 2788300,
+        'campaignId': 542982,
+        'clickUrl': 'https://e.serverbid.com/r',
+        'impressionUrl': 'https://e.serverbid.com/i.gif',
+        'contents': [{
+          'type': 'html',
+          'body': '<html></html>',
+          'data': {
+            'height': 90,
+            'width': 728,
+            'imageUrl': 'https://static.adzerk.net/Advertisers/b0ab77db8a7848c8b78931aed022a5ef.gif',
+            'fileName': 'b0ab77db8a7848c8b78931aed022a5ef.gif'
+          },
+          'template': 'image'
+        }],
+        'height': 90,
+        'width': 728,
+        'events': [],
+        'pricing': {'price': 0.5, 'clearPrice': 0.5, 'revenue': 0.0005, 'rateType': 2, 'eCPM': 0.5}
+      },
+      '123': {
+        'adId': 2364764,
+        'creativeId': 1950991,
+        'flightId': 2788300,
+        'campaignId': 542982,
+        'clickUrl': 'https://e.serverbid.com/r',
+        'impressionUrl': 'https://e.serverbid.com/i.gif',
+        'contents': [{
+          'type': 'html',
+          'body': '<html></html>',
+          'data': {
+            'height': 90,
+            'width': 728,
+            'imageUrl': 'https://static.adzerk.net/Advertisers/b0ab77db8a7848c8b78931aed022a5ef.gif',
+            'fileName': 'b0ab77db8a7848c8b78931aed022a5ef.gif'
+          },
+          'template': 'image'
+        }],
+        'height': 90,
+        'width': 728,
+        'events': [],
+        'pricing': {'price': 0.5, 'clearPrice': 0.5, 'revenue': 0.0005, 'rateType': 2, 'eCPM': 0.5}
+      }
     }
-    if (params) {
-      bidderRequest.bids.forEach(bid => bid.params = params);
-    }
-    return bidderRequest;
   }
+};
 
-  describe('interpretResponse()', () => {
-    let bidderSettingsBackup;
-    let bidResponse;
-    let bidRequest;
-    let logWarnSpy;
+describe('Consumable BidAdapter', function () {
+  let bidRequests;
+  let adapter = spec;
 
-    beforeEach(() => {
-      bidderSettingsBackup = $$PREBID_GLOBAL$$.bidderSettings;
-      bidRequest = {
-        bidderCode: 'test-bidder-code',
-        bidId: 'bid-id',
-        unitName: 'unitname',
-        unitId: '987654',
-        zoneId: '9599.1',
-        network: '9599.1'
-      };
-      bidResponse = {
-        body: getDefaultBidResponse()
-      };
-      logWarnSpy = sinon.spy(utils, 'logWarn');
-    });
-
-    afterEach(() => {
-      $$PREBID_GLOBAL$$.bidderSettings = bidderSettingsBackup;
-      logWarnSpy.restore();
-    });
-
-    it('should return formatted bid response with required properties', () => {
-      let formattedBidResponse = spec.interpretResponse(bidResponse, bidRequest);
-      expect(formattedBidResponse).to.deep.equal({
-        bidderCode: bidRequest.bidderCode,
-        requestId: 'bid-id',
-        ad: DEFAULT_AD_CONTENT,
-        cpm: 0.09,
-        width: 728,
-        height: 90,
-        creativeId: 'creative-id',
-        pubapiId: '245730051428950632',
-        currency: 'USD',
-        dealId: 'deal-id',
-        netRevenue: true,
-        ttl: 60
-      });
-    });
-
-    it('should add formatted pixels to ad content when pixels are present in the response', () => {
-      bidResponse.body.ext = {
-        pixels: 'pixels-content'
-      };
-
-      let formattedBidResponse = spec.interpretResponse(bidResponse, bidRequest);
-
-      expect(formattedBidResponse.ad).to.equal(DEFAULT_AD_CONTENT + '<script>var w=window,prebid;for(var i=0;i<10;i++){w = w.parent;prebid=w.pbjs;if(prebid && prebid.consumableGlobals && !prebid.consumableGlobals.pixelsDropped){try{prebid.consumableGlobals.pixelsDropped=true;pixels-contentbreak;}catch(e){continue;}}}</script>');
-      return true;
-    });
-  });
-
-  describe('buildRequests()', () => {
-    it('method exists and is a function', () => {
-      expect(spec.buildRequests).to.exist.and.to.be.a('function');
-    });
-
-    describe('Consumable', () => {
-      it('should not return request when no bids are present', () => {
-        let [request] = spec.buildRequests([]);
-        expect(request).to.be.empty;
-      });
-
-      it('should return request for endpoint', () => {
-        let bidRequest = getDefaultBidRequest();
-        let [request] = spec.buildRequests(bidRequest.bids);
-        expect(request.url).to.contain(CONSUMABLE_URL);
-      });
-
-      it('should return url with pubapi bid option', () => {
-        let bidRequest = getDefaultBidRequest();
-        let [request] = spec.buildRequests(bidRequest.bids);
-        expect(request.url).to.contain('cmd=bid;');
-      });
-
-      it('should return url with version 2 of pubapi', () => {
-        let bidRequest = getDefaultBidRequest();
-        let [request] = spec.buildRequests(bidRequest.bids);
-        expect(request.url).to.contain('v=2;');
-      });
-
-      it('should return url with cache busting option', () => {
-        let bidRequest = getDefaultBidRequest();
-        let [request] = spec.buildRequests(bidRequest.bids);
-        expect(request.url).to.match(/misc=\d+/);
-      });
-    });
-  });
-
-  describe('getUserSyncs()', () => {
-    let bidResponse;
-    let bidRequest;
-
-    beforeEach(() => {
-      $$PREBID_GLOBAL$$.consumableGlobals.pixelsDropped = false;
-      config.setConfig({
-        consumable: {
-          userSyncOn: 'bidResponse'
+  beforeEach(function () {
+    bidRequests = [
+      {
+        bidder: 'consumable',
+        params: {
+          networkId: '9969',
+          siteId: '730181',
+          unitId: '123456',
+          unitName: 'cnsmbl-unit'
         },
-      });
-      bidResponse = getDefaultBidResponse();
-      bidResponse.ext = {
-        pixels: getPixels()
+        placementCode: 'header-bid-tag-1',
+        sizes: [[300, 250], [300, 600]],
+        bidId: '23acc48ad47af5',
+        auctionId: '0fb4905b-9456-4152-86be-c6f6d259ba99',
+        bidderRequestId: '1c56ad30b9b8ca8',
+        transactionId: '92489f71-1bf2-49a0-adf9-000cea934729'
+      }
+    ];
+  });
+
+  describe('bid request validation', function () {
+    it('should accept valid bid requests', function () {
+      let bid = {
+        bidder: 'consumable',
+        params: {
+          networkId: '9969',
+          siteId: '123',
+          unitId: '123456',
+          unitName: 'cnsmbl-unit'
+        }
       };
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
-    it('should return user syncs only if userSyncOn equals to "bidResponse"', () => {
-      let userSyncs = spec.getUserSyncs({}, [bidResponse], bidRequest);
-
-      expect($$PREBID_GLOBAL$$.consumableGlobals.pixelsDropped).to.be.true;
-      expect(userSyncs).to.deep.equal([
-        {type: 'image', url: 'img.org'},
-        {type: 'iframe', url: 'pixels1.org'}
-      ]);
+    it('should accept valid bid requests with extra fields', function () {
+      let bid = {
+        bidder: 'consumable',
+        params: {
+          networkId: '9969',
+          siteId: '123',
+          unitId: '123456',
+          unitName: 'cnsmbl-unit',
+          zoneId: '123'
+        }
+      };
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
-    it('should not return user syncs if it has already been returned', () => {
-      $$PREBID_GLOBAL$$.consumableGlobals.pixelsDropped = true;
-
-      let userSyncs = spec.getUserSyncs({}, [bidResponse], bidRequest);
-
-      expect($$PREBID_GLOBAL$$.consumableGlobals.pixelsDropped).to.be.true;
-      expect(userSyncs).to.deep.equal([]);
+    it('should reject bid requests without siteId', function () {
+      let bid = {
+        bidder: 'consumable',
+        params: {
+          networkId: '9969',
+          unitId: '123456',
+          unitName: 'cnsmbl-unit'
+        }
+      };
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
-    it('should not return user syncs if pixels are not present', () => {
-      bidResponse.ext.pixels = null;
+    it('should reject bid requests without networkId', function () {
+      let bid = {
+        bidder: 'consumable',
+        params: {
+          siteId: '9969',
+          unitId: '123456',
+          unitName: 'cnsmbl-unit'
+        }
+      };
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
+  });
 
-      let userSyncs = spec.getUserSyncs({}, [bidResponse], bidRequest);
+  describe('buildRequests validation', function () {
+    it('creates request data', function () {
+      let request = spec.buildRequests(bidRequests);
 
-      expect($$PREBID_GLOBAL$$.consumableGlobals.pixelsDropped).to.be.false;
-      expect(userSyncs).to.deep.equal([]);
+      expect(request).to.exist.and.to.be.a('object');
+    });
+
+    it('request to consumable should contain a url', function () {
+      let request = spec.buildRequests(bidRequests);
+
+      expect(request.url).to.have.string('serverbid.com');
+    });
+
+    it('requires valid bids to make request', function () {
+      let request = spec.buildRequests([]);
+      expect(request.bidRequest).to.be.empty;
+    });
+
+    it('sends bid request to ENDPOINT via POST', function () {
+      let request = spec.buildRequests(bidRequests);
+
+      expect(request.method).to.have.string('POST');
+    });
+  });
+  describe('interpretResponse validation', function () {
+    it('response should have valid bidderCode', function () {
+      let bidRequest = spec.buildRequests(REQUEST.bidRequest, REQUEST);
+      let bid = createBid(1, bidRequest.bidRequest[0]);
+
+      expect(bid.bidderCode).to.equal('consumable');
+    });
+
+    it('response should include objects for all bids', function () {
+      let bids = spec.interpretResponse(RESPONSE, REQUEST);
+      expect(bids.length).to.equal(2);
+    });
+
+    it('registers bids', function () {
+      let bids = spec.interpretResponse(RESPONSE, REQUEST);
+      bids.forEach(b => {
+        expect(b).to.have.property('cpm');
+        expect(b.cpm).to.be.above(0);
+        expect(b).to.have.property('requestId');
+        expect(b).to.have.property('unitId');
+        expect(b).to.have.property('unitName');
+        expect(b).to.have.property('cpm');
+        expect(b).to.have.property('width');
+        expect(b).to.have.property('height');
+        expect(b).to.have.property('ad');
+        expect(b).to.have.property('currency', 'USD');
+        expect(b).to.have.property('creativeId');
+        expect(b).to.have.property('ttl', 30);
+        expect(b).to.have.property('netRevenue', true);
+        expect(b).to.have.property('referrer');
+      });
+    });
+
+    it('handles nobid responses', function () {
+      let EMPTY_RESP = Object.assign({}, RESPONSE, {'body': {'decisions': null}})
+      let bids = spec.interpretResponse(EMPTY_RESP, REQUEST);
+
+      expect(bids).to.be.empty;
+    });
+
+    it('handles no server response', function () {
+      let bids = spec.interpretResponse(null, REQUEST);
+
+      expect(bids).to.be.empty;
+    });
+  });
+  describe('getUserSyncs', function () {
+    let syncOptions = {'iframeEnabled': true};
+
+    it('handles empty sync options', function () {
+      let opts = spec.getUserSyncs({});
+
+      expect(opts).to.be.undefined;
+    });
+
+    it('should return a sync url if iframe syncs are enabled', function () {
+      let opts = spec.getUserSyncs(syncOptions);
+
+      expect(opts.length).to.equal(1);
+    });
+
+    it('should return a sync url if pixel syncs are enabled and some are returned from the server', function () {
+      let syncOptions = {'pixelEnabled': true};
+      let opts = spec.getUserSyncs(syncOptions, [RESPONSE]);
+
+      expect(opts.length).to.equal(1);
     });
   });
 });

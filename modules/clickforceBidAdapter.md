@@ -16,7 +16,7 @@ It requires adapters to start bidding and no extra setting is needed. If you'd l
 
 joey@clickforce.com.tw (MR. Joey)
 
-# Test Parameters
+# Test Parameters (Display ad)
 ```
   var adUnits = [{
     code: 'banner-ad-div',
@@ -29,6 +29,45 @@ joey@clickforce.com.tw (MR. Joey)
     }]
   }];
 ```
+# Test Parameters (Native ad)
+```
+  var adUnits = [{
+    code: 'banner-ad-div',
+    sizes: [[300, 250]],
+    mediaTypes: {
+        native: {
+            title: {
+                required: true,
+            },
+            body: {
+                required: true
+            },
+            image: {
+                required: true,
+            },
+            icon: {
+                required: false,
+            },
+            clickUrl: {
+                required: true
+            },
+            cta: {
+                required: true
+            },
+            sponsoredBy: {
+                required: true
+            }
+        }
+    },    
+    bids: [{
+      bidder: "clickforce",
+      params: {
+          zone: "6878",
+      }
+    }]
+  }];
+```
+
 ### Configuration
 
 CLICKFORCE recommend the UserSync configuration below. It's can be optimize the CPM for the request.
