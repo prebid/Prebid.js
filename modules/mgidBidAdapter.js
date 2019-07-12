@@ -60,10 +60,10 @@ utils._each(NATIVE_ASSETS, anAsset => { _NATIVE_ASSET_ID_TO_KEY_MAP[anAsset.ID] 
 utils._each(NATIVE_ASSETS, anAsset => { _NATIVE_ASSET_KEY_TO_ASSET_MAP[anAsset.KEY] = anAsset });
 
 export const spec = {
-  VERSION: '1.2',
+  VERSION: '1.3',
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, NATIVE],
-  reId: /^[0-9]+$/,
+  reId: /^[1-9][0-9]*$/,
   NATIVE_ASSET_ID_TO_KEY_MAP: _NATIVE_ASSET_ID_TO_KEY_MAP,
   NATIVE_ASSET_KEY_TO_ASSET_MAP: _NATIVE_ASSET_KEY_TO_ASSET_MAP,
   /**
@@ -102,10 +102,10 @@ export const spec = {
         bannerOk = sizes[f].length === 2;
       }
     }
-    return utils.isPlainObject(bid.params) && !!bid.params.accountId && !!bid.params.placementId &&
-      utils.isStr(bid.params.accountId) && utils.isStr(bid.params.placementId) &&
-      bid.params.accountId.toString().match(spec.reId) > 0 && bid.params.placementId.toString().match(spec.reId) &&
-      (bannerOk || nativeOk);
+    let acc = Number(bid.params.accountId);
+    let plcmt = Number(bid.params.placementId);
+    return (bannerOk || nativeOk) && utils.isPlainObject(bid.params) && !!bid.adUnitCode && utils.isStr(bid.adUnitCode) && (plcmt > 0 ? bid.params.placementId.toString().search(spec.reId) === 0 : true) &&
+      !!acc && acc > 0 && bid.params.accountId.toString().search(spec.reId) === 0;
   },
   /**
    * Make a server request from the list of BidRequests.
@@ -132,9 +132,11 @@ export const spec = {
     const secure = window.location.protocol === 'https:' ? 1 : 0;
     let imp = [];
     validBidRequests.forEach(bid => {
+      let tagid = utils.deepAccess(bid, 'params.placementId') || 0;
+      tagid = !tagid ? bid.adUnitCode : tagid + '/' + bid.adUnitCode;
       let impObj = {
         id: bid.bidId,
-        tagid: utils.deepAccess(bid, 'params.placementId'),
+        tagid,
         secure,
       };
       const bidFloor = utils.deepAccess(bid, 'params.bidFloor') || utils.deepAccess(bid, 'params.bidfloor') || 0;
