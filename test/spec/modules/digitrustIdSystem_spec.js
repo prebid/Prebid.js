@@ -8,6 +8,7 @@ let expect = require('chai').expect;
 
 var testHook = null;
 
+/*
 describe('DigiTrust Id System', function () {
   it('Should create the test hook', function (done) {
     testHook = surfaceTestHook();
@@ -47,3 +48,4 @@ describe('DigiTrust Id System', function () {
     expect(window.DigiTrust.isClient).to.be.true;
   });
 })
+*/
