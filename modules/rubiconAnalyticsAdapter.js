@@ -27,10 +27,10 @@ config.getConfig('s2sConfig', ({s2sConfig}) => {
   serverConfig = s2sConfig;
 });
 
-let wrapperName = 'na';
+let wrapperName;
 try {
-  if (window.document.currentScript.src) {
-    wrapperName = window.document.currentScript.src.split('/').slice(-1)[0].split('.')[0];
+  if (document.currentScript && document.currentScript.src) {
+    wrapperName = document.currentScript.src.split('/').slice(-1)[0].split('.')[0];
   }
 } catch (e) {
   utils.logError('Wrapper name could not be set');
@@ -150,9 +150,11 @@ function sendMessage(auctionId, bidWonId) {
     eventTimeMillis: Date.now(),
     integration: INTEGRATION,
     version: '$prebid.version$',
-    referrerUri: referrer,
-    wrapperName
+    referrerUri: referrer
   };
+  if (wrapperName) {
+    message.wrapperName = wrapperName;
+  }
   let auctionCache = cache.auctions[auctionId];
   if (auctionCache && !auctionCache.sent) {
     let adUnitMap = Object.keys(auctionCache.bids).reduce((adUnits, bidId) => {
