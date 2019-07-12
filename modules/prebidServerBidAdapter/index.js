@@ -6,7 +6,7 @@ import { STATUS, S2S, EVENTS } from '../../src/constants';
 import adapterManager from '../../src/adapterManager';
 import { config } from '../../src/config';
 import { VIDEO, NATIVE } from '../../src/mediaTypes';
-import { processNativeAdUnitParams } from 'src/native';
+import { processNativeAdUnitParams } from '../../src/native';
 import { isValid } from '../../src/adapters/bidderFactory';
 import events from '../../src/events';
 import includes from 'core-js/library/fn/array/includes';
@@ -508,7 +508,12 @@ const OPEN_RTB_PROTOCOL = {
 
       const videoParams = utils.deepAccess(adUnit, 'mediaTypes.video');
       if (!utils.isEmpty(videoParams)) {
-        mediaTypes['video'] = videoParams;
+        if (videoParams.context === 'outstream' && !adUnit.renderer) {
+          // Don't push oustream w/o renderer to request object.
+          utils.logError('Outstream bid without renderer cannot be sent to Prebid Server.');
+        } else {
+          mediaTypes['video'] = videoParams;
+        }
       }
 
       const nativeParams = processNativeAdUnitParams(utils.deepAccess(adUnit, 'mediaTypes.native'));
@@ -596,16 +601,11 @@ const OPEN_RTB_PROTOCOL = {
 
       const imp = { id: adUnit.code, ext, secure: _s2sConfig.secure };
 
-      if (banner) { imp.banner = banner; }
-      if (video) {
-        if (video.context === 'outstream' && !adUnit.renderer) {
-          // Don't push oustream w/o renderer to request object.
-          utils.logError('Outstream bid without renderer cannot be sent to Prebid Server.');
-        } else {
-          imp.video = video;
-        }
+      Object.assign(imp, mediaTypes);
+
+      if (imp.banner || imp.video || imp.native) {
+        imps.push(imp);
       }
-      if (imp.banner || imp.video) { imps.push(imp); }
     });
 
     if (!imps.length) {
