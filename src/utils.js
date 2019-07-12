@@ -976,36 +976,14 @@ export function groupBy(xs, key) {
  * @param {string|number} path Object path to the value you would like to access.  Non-strings are coerced to strings.
  * @returns {*} The value found at the specified object path, or undefined if path is not found.
  */
-export function deepAccess(obj, path) {
-  if (!obj) {
-    return;
-  }
-  path = String(path).split('.');
-  for (let i = 0; i < path.length; i++) {
-    obj = obj[path[i]];
-    if (typeof obj === 'undefined') {
-      return;
-    }
-  }
-  return obj;
-}
+export { default as deepAccess } from 'dlv';
 
 /**
  * @param {Object} obj The object to set a deep property value in
  * @param {(string|Array.<string>)} path Object path to the value you would like ot set.
  * @param {*} value The value you would like to set
  */
-export function deepSetValue(obj, path, value) {
-  let i;
-  path = path.split('.');
-  for (i = 0; i < path.length - 1; i++) {
-    if (i !== path.length - 1 && typeof obj[path[i]] === 'undefined') {
-      obj[path[i]] = {};
-    }
-    obj = obj[path[i]];
-  }
-  obj[path[i]] = value;
-}
+export { default as deepSetValue } from 'dset';
 
 /**
  * Returns content for a friendly iframe to execute a URL in script tag
