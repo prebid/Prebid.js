@@ -5,6 +5,9 @@ import includes from 'core-js/library/fn/array/includes';
 import { parse } from './url';
 const CONSTANTS = require('./constants');
 
+export { default as deepAccess } from 'dlv';
+export { default as deepSetValue } from 'dset';
+
 var tArr = 'Array';
 var tStr = 'String';
 var tFn = 'Function';
@@ -969,21 +972,6 @@ export function groupBy(xs, key) {
     return rv;
   }, {});
 }
-
-/**
- * deepAccess utility function useful for doing safe access (will not throw exceptions) of deep object paths.
- * @param {Object} obj The object containing the values you would like to access.
- * @param {string|number} path Object path to the value you would like to access.  Non-strings are coerced to strings.
- * @returns {*} The value found at the specified object path, or undefined if path is not found.
- */
-export { default as deepAccess } from 'dlv';
-
-/**
- * @param {Object} obj The object to set a deep property value in
- * @param {(string|Array.<string>)} path Object path to the value you would like ot set.
- * @param {*} value The value you would like to set
- */
-export { default as deepSetValue } from 'dset';
 
 /**
  * Returns content for a friendly iframe to execute a URL in script tag
