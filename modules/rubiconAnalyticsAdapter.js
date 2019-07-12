@@ -27,15 +27,6 @@ config.getConfig('s2sConfig', ({s2sConfig}) => {
   serverConfig = s2sConfig;
 });
 
-let wrapperName;
-try {
-  if (document.currentScript && document.currentScript.src) {
-    wrapperName = document.currentScript.src.split('/').slice(-1)[0].split('.')[0];
-  }
-} catch (e) {
-  utils.logError('Wrapper name could not be set');
-}
-
 export const SEND_TIMEOUT = 3000;
 const INTEGRATION = 'pbjs';
 
@@ -152,6 +143,7 @@ function sendMessage(auctionId, bidWonId) {
     version: '$prebid.version$',
     referrerUri: referrer
   };
+  const wrapperName = config.getConfig('rubicon.wrapperName');
   if (wrapperName) {
     message.wrapperName = wrapperName;
   }
