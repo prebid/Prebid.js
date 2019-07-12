@@ -8,7 +8,6 @@ let expect = require('chai').expect;
 
 var testHook = null;
 
-
 describe('DigiTrust Id System', function () {
   it('Should create the test hook', function (done) {
     testHook = surfaceTestHook();
@@ -41,12 +40,11 @@ describe('DigiTrust Id System', function () {
         expect(window.DigiTrust).to.exist;
         expect(result).to.exist;
         expect(window.DigiTrust.isMock).to.be.true;
-        done();
       }
     };
     testHook.initDigitrustFacade(conf);
     expect(window.DigiTrust).to.exist;
     expect(window.DigiTrust.isClient).to.be.true;
+    done();
   });
-})
-
+});
