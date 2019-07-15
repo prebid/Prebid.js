@@ -14,8 +14,8 @@ import { ajax } from '../src/ajax';
 import { submodule } from '../src/hook';
 import { attachIdSystem } from '../modules/userId/index';
 
-var fallbackTimeout = 1550;
-var fallbackTimer = 0;
+var fallbackTimeout = 1550; // timeout value that allows userId system to execute first
+var fallbackTimer = 0; // timer Id for fallback init so we don't double call
 
 /**
  * Checks to see if the DigiTrust framework is initialized.
@@ -321,7 +321,7 @@ export function surfaceTestHook() {
   return testHook;
 }
 
-testHook.initDigitrustFacade = initDigitrustFacade;
+testHook.initDigitrustFacade = initDigitrustFacade; // expose for unit tests
 
 /** @type {Submodule} */
 export const digiTrustIdSubmodule = {
