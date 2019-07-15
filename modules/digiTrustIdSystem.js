@@ -191,23 +191,6 @@ var isMemberIdValid = function (memberId) {
 };
 
 /**
- * Utility method to detect Safari
- * @param {string} ua User Agent string, or null to use default
- */
-var isSafari = function (ua) {
-  var usrAgent = ua || navigator.userAgent;
-  usrAgent = usrAgent.toLowerCase();
-  if (usrAgent.indexOf('safari') !== -1) {
-    if (usrAgent.indexOf('chrome') > -1) {
-      return false;
-    } else {
-      return true;
-    }
-  }
-  return false;
-};
-
-/**
  * Encapsulation of needed info for the callback return.
  *
  * @param {any} opts
@@ -339,8 +322,6 @@ export function surfaceTestHook() {
 }
 
 testHook.initDigitrustFacade = initDigitrustFacade;
-
-testHook.isSafari = isSafari;
 
 /** @type {Submodule} */
 export const digiTrustIdSubmodule = {
