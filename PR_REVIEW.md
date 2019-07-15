@@ -18,6 +18,7 @@ For modules and core platform updates, the initial reviewer should request an ad
     - Add support for GDPR consentManagement module > add `gdpr_supported: true`
     - Add support for userId module > add `userId: pubCommon, digitrust, newProviderHere`
     - Add support for video and/or native mediaTypes > add `media_types: video, native`
+    - Add support for COPPA > add `coppa_supported: true`
 - If all above is good, add a `LGTM` comment and request 1 additional core member to review.
 - Once there is 2 `LGTM` on the PR, merge to master
 - Ask the submitter to add a PR for documentation if applicable.
