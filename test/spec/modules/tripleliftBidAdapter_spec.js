@@ -249,4 +249,36 @@ describe('triplelift adapter', function () {
       expect(result).to.have.length(2);
     });
   });
+
+  describe('user sync', function () {
+    let syncUrl = '//ib.3lift.com/sync?gdpr=true&cmp_cs=BOONm0NOONm0NABABAENAa-AAAARh7______b9_3__7_9uz_Kv_K7Vf7nnG072lPVA9LTOQ6gEaY&';
+
+    describe('iframe sync', function () {
+      it('should register the iframe user sync', function () {
+        let syncs = tripleliftAdapterSpec.getUserSyncs(
+          {iframeEnabled: true},
+          [{body: {ads: {pixels: syncUrl}}}]
+        );
+        expect(syncs).to.deep.equal([{type: 'iframe', url: syncUrl}]);
+      });
+    });
+
+    describe('image sync', function () {
+      it('should register the image user sync', function () {
+        let syncs = tripleliftAdapterSpec.getUserSyncs(
+          {iframeEnabled: false, pixelEnabled: true},
+          [{body: {ads: {pixels: syncUrl}}}]
+        );
+        expect(syncs).to.deep.equal([{type: 'image', url: syncUrl}]);
+      });
+
+      it('should prioritize iframe over image', function () {
+        let syncs = tripleliftAdapterSpec.getUserSyncs(
+          {iframeEnabled: true, pixelEnabled: true},
+          [{body: {ads: {pixels: syncUrl}}}]
+        );
+        expect(syncs).to.deep.equal([{type: 'iframe', url: syncUrl}]);
+      });
+    });
+  });
 });
