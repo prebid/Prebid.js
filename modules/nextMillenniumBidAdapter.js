@@ -2,7 +2,7 @@ import * as utils from '../src/utils';
 import { registerBidder } from '../src/adapters/bidderFactory';
 import { BANNER } from '../src/mediaTypes';
 
-const BIDDER_CODE = 'nextMillenium';
+const BIDDER_CODE = 'nextMillennium';
 const HOST = 'https://brainlyads.com';
 const CURRENCY = 'USD';
 const TIME_TO_LIVE = 360;

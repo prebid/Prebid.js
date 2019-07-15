@@ -708,7 +708,7 @@ describe('PubMatic adapter', function () {
 
       it('Endpoint checking', function () {
   		  let request = spec.buildRequests(bidRequests);
-        expect(request.url).to.equal('//hbopenbid.pubmatic.com/translator?source=prebid-client');
+        expect(request.url).to.equal('https://hbopenbid.pubmatic.com/translator?source=prebid-client');
         expect(request.method).to.equal('POST');
   		});
 
