@@ -13,10 +13,6 @@ let ajv = new Ajv({
   allErrors: true
 });
 
-function clone(obj) {
-  return JSON.parse(JSON.stringify(obj));
-}
-
 let validator = ajv.compile(schema);
 
 function validate(message) {
@@ -716,7 +712,7 @@ describe('rubicon analytics adapter', function () {
       });
 
       // set our bid response to JPY
-      const bidCopy = clone(BID2);
+      const bidCopy = utils.deepClone(BID2);
       bidCopy.currency = 'JPY';
       bidCopy.cpm = 100;
 

@@ -470,7 +470,7 @@ describe('the rubicon adapter', function () {
         });
 
         it('should use rubicon sizes if present (including non-mappable sizes)', function () {
-          var sizesBidderRequest = clone(bidderRequest);
+          var sizesBidderRequest = utils.deepClone(bidderRequest);
           sizesBidderRequest.bids[0].params.sizes = [55, 57, 59, 801];
 
           let [request] = spec.buildRequests(sizesBidderRequest.bids, sizesBidderRequest);
@@ -481,7 +481,7 @@ describe('the rubicon adapter', function () {
         });
 
         it('should not validate bid request if no valid sizes', function () {
-          var sizesBidderRequest = clone(bidderRequest);
+          var sizesBidderRequest = utils.deepClone(bidderRequest);
           sizesBidderRequest.bids[0].sizes = [[621, 250], [300, 251]];
 
           let result = spec.isBidRequestValid(sizesBidderRequest.bids[0]);
@@ -490,7 +490,7 @@ describe('the rubicon adapter', function () {
         });
 
         it('should not validate bid request if no account id is present', function () {
-          var noAccountBidderRequest = clone(bidderRequest);
+          var noAccountBidderRequest = utils.deepClone(bidderRequest);
           delete noAccountBidderRequest.bids[0].params.accountId;
 
           let result = spec.isBidRequestValid(noAccountBidderRequest.bids[0]);
@@ -499,7 +499,7 @@ describe('the rubicon adapter', function () {
         });
 
         it('should allow a floor override', function () {
-          var floorBidderRequest = clone(bidderRequest);
+          var floorBidderRequest = utils.deepClone(bidderRequest);
           floorBidderRequest.bids[0].params.floor = 2;
 
           let [request] = spec.buildRequests(floorBidderRequest.bids, floorBidderRequest);
@@ -876,17 +876,17 @@ describe('the rubicon adapter', function () {
               'rf': 'localhost'
             };
 
-            const bidCopy = clone(bidderRequest.bids[0]);
+            const bidCopy = utils.deepClone(bidderRequest.bids[0]);
             bidCopy.params.siteId = '70608';
             bidCopy.params.zoneId = '1111';
             bidderRequest.bids.push(bidCopy);
 
-            const bidCopy2 = clone(bidderRequest.bids[0]);
+            const bidCopy2 = utils.deepClone(bidderRequest.bids[0]);
             bidCopy2.params.siteId = '99999';
             bidCopy2.params.zoneId = '2222';
             bidderRequest.bids.push(bidCopy2);
 
-            const bidCopy3 = clone(bidderRequest.bids[0]);
+            const bidCopy3 = utils.deepClone(bidderRequest.bids[0]);
             bidCopy3.params.siteId = '99999';
             bidCopy3.params.zoneId = '3333';
             bidderRequest.bids.push(bidCopy3);
@@ -970,7 +970,7 @@ describe('the rubicon adapter', function () {
 
             // TEST '10' BIDS, add 9 to 1 existing bid
             for (let i = 0; i < 9; i++) {
-              let bidCopy = clone(bidderRequest.bids[0]);
+              let bidCopy = utils.deepClone(bidderRequest.bids[0]);
               bidCopy.params.zoneId = `${i}0000`;
               bidderRequest.bids.push(bidCopy);
             }
@@ -989,7 +989,7 @@ describe('the rubicon adapter', function () {
 
             // TEST '100' BIDS, add 90 to the previously added 10
             for (let i = 0; i < 90; i++) {
-              let bidCopy = clone(bidderRequest.bids[0]);
+              let bidCopy = utils.deepClone(bidderRequest.bids[0]);
               bidCopy.params.zoneId = `${(i + 10)}0000`;
               bidderRequest.bids.push(bidCopy);
             }
@@ -1013,14 +1013,14 @@ describe('the rubicon adapter', function () {
               return config[key];
             });
 
-            const bidCopy = clone(bidderRequest.bids[0]);
+            const bidCopy = utils.deepClone(bidderRequest.bids[0]);
             bidderRequest.bids.push(bidCopy);
 
-            const bidCopy2 = clone(bidderRequest.bids[0]);
+            const bidCopy2 = utils.deepClone(bidderRequest.bids[0]);
             bidCopy2.params.siteId = '32001';
             bidderRequest.bids.push(bidCopy2);
 
-            const bidCopy3 = clone(bidderRequest.bids[0]);
+            const bidCopy3 = utils.deepClone(bidderRequest.bids[0]);
             bidCopy3.params.siteId = '32001';
             bidderRequest.bids.push(bidCopy3);
 
@@ -1036,18 +1036,18 @@ describe('the rubicon adapter', function () {
               return config[key];
             });
 
-            const bidCopy = clone(bidderRequest.bids[0]);
+            const bidCopy = utils.deepClone(bidderRequest.bids[0]);
             bidderRequest.bids.push(bidCopy);
 
-            const bidCopy2 = clone(bidderRequest.bids[0]);
+            const bidCopy2 = utils.deepClone(bidderRequest.bids[0]);
             bidCopy2.params.siteId = '32001';
             bidderRequest.bids.push(bidCopy2);
 
-            const bidCopy3 = clone(bidderRequest.bids[0]);
+            const bidCopy3 = utils.deepClone(bidderRequest.bids[0]);
             bidCopy3.params.siteId = '32001';
             bidderRequest.bids.push(bidCopy3);
 
-            const bidCopy4 = clone(bidderRequest.bids[0]);
+            const bidCopy4 = utils.deepClone(bidderRequest.bids[0]);
             bidCopy4.mediaTypes = {
               video: {
                 context: 'instream',
@@ -1080,7 +1080,7 @@ describe('the rubicon adapter', function () {
 
         describe('user id config', function() {
           it('should send tpid_tdid when userId defines tdid', function () {
-            const clonedBid = clone(bidderRequest.bids[0]);
+            const clonedBid = utils.deepClone(bidderRequest.bids[0]);
             clonedBid.userId = {
               tdid: 'abcd-efgh-ijkl-mnop-1234'
             };
@@ -1137,7 +1137,7 @@ describe('the rubicon adapter', function () {
 
         it('should send request with proper ad position', function () {
           createVideoBidderRequest();
-          let positionBidderRequest = clone(bidderRequest);
+          let positionBidderRequest = utils.deepClone(bidderRequest);
           positionBidderRequest.bids[0].mediaTypes.video.pos = 1;
           let [request] = spec.buildRequests(positionBidderRequest.bids, positionBidderRequest);
           expect(request.data.imp[0].video.pos).to.equal(1);
@@ -1173,25 +1173,25 @@ describe('the rubicon adapter', function () {
 
         it('should send request with proper ad position when mediaTypes.video.pos is not defined', function () {
           createVideoBidderRequest();
-          let positionBidderRequest = clone(bidderRequest);
+          let positionBidderRequest = utils.deepClone(bidderRequest);
           positionBidderRequest.bids[0].params.position = undefined;
           positionBidderRequest.bids[0].mediaTypes.video.pos = undefined;
           let [request] = spec.buildRequests(positionBidderRequest.bids, positionBidderRequest);
           expect(request.data.imp[0].video.pos).to.equal(0);
 
-          positionBidderRequest = clone(bidderRequest);
+          positionBidderRequest = utils.deepClone(bidderRequest);
           positionBidderRequest.bids[0].params.position = 'atf'
           positionBidderRequest.bids[0].mediaTypes.video.pos = undefined;
           [request] = spec.buildRequests(positionBidderRequest.bids, positionBidderRequest);
           expect(request.data.imp[0].video.pos).to.equal(1);
 
-          positionBidderRequest = clone(bidderRequest);
+          positionBidderRequest = utils.deepClone(bidderRequest);
           positionBidderRequest.bids[0].params.position = 'btf';
           positionBidderRequest.bids[0].mediaTypes.video.pos = undefined;
           [request] = spec.buildRequests(positionBidderRequest.bids, positionBidderRequest);
           expect(request.data.imp[0].video.pos).to.equal(3);
 
-          positionBidderRequest = clone(bidderRequest);
+          positionBidderRequest = utils.deepClone(bidderRequest);
           positionBidderRequest.bids[0].params.position = 'foobar';
           positionBidderRequest.bids[0].mediaTypes.video.pos = undefined;
           [request] = spec.buildRequests(positionBidderRequest.bids, positionBidderRequest);
@@ -1216,7 +1216,7 @@ describe('the rubicon adapter', function () {
             bidderRequest.auctionStart + 100
           );
 
-          const bidRequestCopy = clone(bidderRequest.bids[0]);
+          const bidRequestCopy = utils.deepClone(bidderRequest.bids[0]);
           expect(spec.isBidRequestValid(bidRequestCopy)).to.equal(true);
 
           // change context to outstream, still true
@@ -1302,7 +1302,7 @@ describe('the rubicon adapter', function () {
             bidderRequest.auctionStart + 100
           );
 
-          const bidRequestCopy = clone(bidderRequest);
+          const bidRequestCopy = utils.deepClone(bidderRequest);
 
           let [request] = spec.buildRequests(bidRequestCopy.bids, bidRequestCopy);
           expect(spec.isBidRequestValid(bidderRequest.bids[0])).to.equal(true);
@@ -1350,7 +1350,7 @@ describe('the rubicon adapter', function () {
             bidderRequest.auctionStart + 100
           );
 
-          const bidRequestCopy = clone(bidderRequest);
+          const bidRequestCopy = utils.deepClone(bidderRequest);
 
           let requests = spec.buildRequests(bidRequestCopy.bids, bidRequestCopy);
           expect(requests.length).to.equal(1);
@@ -1801,7 +1801,7 @@ describe('the rubicon adapter', function () {
           };
 
           let bids = spec.interpretResponse({ body: response }, {
-            bidRequest: [clone(bidderRequest.bids[0])]
+            bidRequest: [utils.deepClone(bidderRequest.bids[0])]
           });
 
           expect(bids).to.be.lengthOf(1);
@@ -2135,7 +2135,3 @@ describe('the rubicon adapter', function () {
     });
   });
 });
-
-function clone(obj) {
-  return JSON.parse(JSON.stringify(obj));
-}
