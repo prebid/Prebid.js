@@ -184,6 +184,8 @@ export const spec = {
     };
   },
 
+  _sessionId: undefined,
+
   _getSessionId() {
     if (!spec._sessionId) {
       spec._sessionId = spec._generateRandomUuid();
