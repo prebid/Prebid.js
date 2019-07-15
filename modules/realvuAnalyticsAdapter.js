@@ -56,7 +56,7 @@ export let lib = {
     z.add_evt(window.top1, 'focus', function () {
       window.top1.realvu_aa.foc = 1;
     });
-    z.add_evt(window.top1, "scroll", function () {
+    z.add_evt(window.top1, 'scroll', function () {
       window.top1.realvu_aa.foc = 1;
     });
     z.add_evt(window.top1, 'blur', function () {
@@ -152,7 +152,7 @@ export let lib = {
       let bk = z.beacons.shift();
       while (typeof bk != 'undefined') {
         bk.s1 = bk.s1.replace(/_sr=0*_/, '_sr=' + z.sr + '_');
-        z.log(' ' + bk.a.riff + ' ' + bk.a.unit_id + /* " "+pin.mode+ */ ' ' + bk.a.w + 'x' + bk.a.h + '@' + bk.a.x + ',' + bk.a.y +
+        z.log(' ' + bk.a.riff + ' ' + bk.a.unit_id + /* ' '+pin.mode+ */ ' ' + bk.a.w + 'x' + bk.a.h + '@' + bk.a.x + ',' + bk.a.y +
           ' <a href=\'' + bk.s1 + '\'>' + bk.f + '</a>', bk.a.num);
         if (bk.a.rnd < Math.pow(10, 1 - (z.sr.charCodeAt(0) & 7))) {
           z.scr(bk.s1, bk.a);
@@ -191,7 +191,7 @@ export let lib = {
   },
 
   enc: function (s1) {
-    // return escape(s1).replace(/[0-9a-f]{5,}/gi,'RANDOM').replace(/\*/g, "%2A").replace(/_/g, "%5F").replace(/\+/g,
+    // return escape(s1).replace(/[0-9a-f]{5,}/gi,'RANDOM').replace(/\*/g, '%2A').replace(/_/g, '%5F').replace(/\+/g,
     return escape(s1).replace(/\*/g, '%2A').replace(/_/g, '%5F').replace(/\+/g,
       '%2B').replace(/\./g, '%2E').replace(/\x2F/g, '%2F');
   },
@@ -467,7 +467,7 @@ export let lib = {
     return null;
   },
 
-  doc: function(f) { // return document of f-iframe, keep here "n" as a parameter because of call from setTimeout()
+  doc: function(f) { // return document of f-iframe
     let d = null;
     try {
       if (f.contentDocument) d = f.contentDocument; // DOM
