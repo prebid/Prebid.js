@@ -69,9 +69,10 @@ export const tripleliftAdapterSpec = {
       ibCall = utils.tryAppendQueryString(ibCall, 'cmp_cs', consentString);
     }
 
-    if (syncOptions.iframeEnabled) {
+    if (syncOptions.iframeEnabled || syncOptions.pixelEnabled) {
+      let pixelType = syncOptions.iframeEnabled ? 'iframe' : 'image';
       return [{
-        type: 'iframe',
+        type: pixelType,
         url: ibCall
       }];
     }
