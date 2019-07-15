@@ -14,6 +14,9 @@ import { ajax } from '../src/ajax';
 import { submodule } from '../src/hook';
 import { attachIdSystem } from '../modules/userId/index';
 
+var fallbackTimeout = 1550;
+var fallbackTimer = 0;
+
 /**
  * Checks to see if the DigiTrust framework is initialized.
  * @function
@@ -89,6 +92,10 @@ function writeDigiId(id) {
  */
 function initDigitrustFacade(config) {
   var _savedId = null; // closure variable for storing Id to avoid additional requests
+
+  clearTimeout(fallbackTimer);
+  fallbackTimer = 0;
+
   var facade = {
     isClient: true,
     isMock: true,
@@ -181,6 +188,23 @@ var isMemberIdValid = function (memberId) {
     utils.logError('[DigiTrust Prebid Client Error] Missing member ID, add the member ID to the function call options');
     return false;
   }
+};
+
+/**
+ * Utility method to detect Safari
+ * @param {string} ua User Agent string, or null to use default
+ */
+var isSafari = function (ua) {
+  var usrAgent = ua || navigator.userAgent;
+  usrAgent = usrAgent.toLowerCase();
+  if (usrAgent.indexOf('safari') !== -1) {
+    if (usrAgent.indexOf('chrome') > -1) {
+      return false;
+    } else {
+      return true;
+    }
+  }
+  return false;
 };
 
 /**
@@ -316,6 +340,8 @@ export function surfaceTestHook() {
 
 testHook.initDigitrustFacade = initDigitrustFacade;
 
+testHook.isSafari = isSafari;
+
 /** @type {Submodule} */
 export const digiTrustIdSubmodule = {
   /**
@@ -352,7 +378,7 @@ function fallbackInit() {
   }
 }
 
-setTimeout(fallbackInit, 1550);
+fallbackTimer = setTimeout(fallbackInit, fallbackTimeout);
 
 attachIdSystem(digiTrustIdSubmodule);
 submodule('userId', digiTrustIdSubmodule);
