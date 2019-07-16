@@ -216,7 +216,7 @@ describe('kargo adapter tests', function () {
     }
 
     function getSessionId() {
-      return spec._sessionId;
+      return spec._getSessionId();
     }
 
     function getExpectedKrakenParams(excludeUserIds, excludeKrux, expectedRawCRB, expectedRawCRBCookie) {
