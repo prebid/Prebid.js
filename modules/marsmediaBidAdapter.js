@@ -2,7 +2,7 @@ import * as utils from '../src/utils';
 import {registerBidder} from '../src/adapters/bidderFactory';
 const BIDDER_CODE = 'marsmedia';
 
-function getDomain(){
+function getDomain() {
   if (!utils.inIframe()) {
     return window.location.hostname
   }
@@ -18,13 +18,11 @@ export const spec = {
   isBidRequestValid: function(bid) {
     return (bid.params.publisherID !== null);
   },
-  buildRequests: function(validBidRequests, bidderRequest){
+  buildRequests: function(validBidRequests, bidderRequest) {
     try {
       let protocol = (window.location.protocol === 'https:');
-      
       const parse = getSize(validBidRequests[0].sizes);
       const publisherId = validBidRequests[0].params.publisherID;
-	  
       const payload = {
         id: validBidRequests[0].bidId,
         cur: ['USD'],
@@ -85,21 +83,21 @@ export const spec = {
     }
 
     for (let x = 0; x < res.seatbid.length; x++) {
-      var bidAd = res.seatbid[x].bid[0];
+		var bidAd = res.seatbid[x].bid[0];
 
-      bidResponses.push({
-        requestId: res.id,
-        cpm: Number(bidAd.price),
-        width: bidAd.w,
-        height: bidAd.h,
-        ad: bidAd.adm,
-		ttl: 60,
-        creativeId: bidAd.cid,
-		netRevenue: true,
-        currency: 'USD'
-      })
+		bidResponses.push({
+			requestId: res.id,
+			cpm: Number(bidAd.price),
+			width: bidAd.w,
+			height: bidAd.h,
+			ad: bidAd.adm,
+			ttl: 60,
+			creativeId: bidAd.cid,
+			netRevenue: true,
+			currency: 'USD'
+		})
     }
-	
+
     return bidResponses;
   },
   getUserSyncs: function(syncOptions, serverResponses) {
