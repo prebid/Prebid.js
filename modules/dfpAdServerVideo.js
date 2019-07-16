@@ -7,9 +7,7 @@ import { targeting } from '../src/targeting';
 import { formatQS, format as buildUrl, parse } from '../src/url';
 import { deepAccess, isEmpty, logError, parseSizesInput } from '../src/utils';
 import { config } from '../src/config';
-import { getTargeting } from './common/videoAdserver';
-import { getHook } from '../src/hook';
-import { initAdpodHooks, TARGETING_KEY_PB_CAT_DUR, TARGETING_KEY_CACHE_ID } from './adpod';
+import { getHook, submodule } from '../src/hook';
 import { auctionManager } from '../src/auctionManager';
 
 /**
@@ -48,6 +46,8 @@ const defaultParamConstants = {
   output: 'xml_vast3',
   unviewed_position_start: 1,
 };
+
+export const adpodUtils = {};
 
 /**
  * Merge all the bid data and publisher-supplied options into a single URL, and then return it.
@@ -146,7 +146,7 @@ export function buildAdpodVideoUrl({code, params, callback} = {}) {
     return parseSizesInput(sizes).join('|');
   }
 
-  getTargeting({
+  adpodUtils.getTargeting({
     'codes': [code],
     'callback': createMasterTag
   });
@@ -158,16 +158,16 @@ export function buildAdpodVideoUrl({code, params, callback} = {}) {
     }
 
     let initialValue = {
-      [TARGETING_KEY_PB_CAT_DUR]: undefined,
-      [TARGETING_KEY_CACHE_ID]: undefined
+      [adpodUtils.TARGETING_KEY_PB_CAT_DUR]: undefined,
+      [adpodUtils.TARGETING_KEY_CACHE_ID]: undefined
     }
     let customParams;
     if (targeting[code]) {
       customParams = targeting[code].reduce((acc, curValue) => {
-        if (Object.keys(curValue)[0] === TARGETING_KEY_PB_CAT_DUR) {
-          acc[TARGETING_KEY_PB_CAT_DUR] = (typeof acc[TARGETING_KEY_PB_CAT_DUR] !== 'undefined') ? acc[TARGETING_KEY_PB_CAT_DUR] + ',' + curValue[TARGETING_KEY_PB_CAT_DUR] : curValue[TARGETING_KEY_PB_CAT_DUR];
-        } else if (Object.keys(curValue)[0] === TARGETING_KEY_CACHE_ID) {
-          acc[TARGETING_KEY_CACHE_ID] = curValue[TARGETING_KEY_CACHE_ID]
+        if (Object.keys(curValue)[0] === adpodUtils.TARGETING_KEY_PB_CAT_DUR) {
+          acc[adpodUtils.TARGETING_KEY_PB_CAT_DUR] = (typeof acc[adpodUtils.TARGETING_KEY_PB_CAT_DUR] !== 'undefined') ? acc[adpodUtils.TARGETING_KEY_PB_CAT_DUR] + ',' + curValue[adpodUtils.TARGETING_KEY_PB_CAT_DUR] : curValue[adpodUtils.TARGETING_KEY_PB_CAT_DUR];
+        } else if (Object.keys(curValue)[0] === adpodUtils.TARGETING_KEY_CACHE_ID) {
+          acc[adpodUtils.TARGETING_KEY_CACHE_ID] = curValue[adpodUtils.TARGETING_KEY_CACHE_ID]
         }
         return acc;
       }, initialValue);
@@ -259,9 +259,10 @@ function getCustParams(bid, options) {
   return encodeURIComponent(formatQS(customParams));
 }
 
-initAdpodHooks();
 registerVideoSupport('dfp', {
   buildVideoUrl: buildDfpVideoUrl,
   buildAdpodVideoUrl: buildAdpodVideoUrl,
-  getAdpodTargeting: getTargeting
+  getAdpodTargeting: (args) => adpodUtils.getTargeting(args)
 });
+
+submodule('adpod', adpodUtils);
