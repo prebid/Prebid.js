@@ -112,7 +112,7 @@ prebid.requestBids({
     $ cd Prebid.js
     $ npm install
 
-*Note:* You need to have `NodeJS` 6.x or greater installed.
+*Note:* You need to have `NodeJS` 10.x or greater installed.
 
 *Note:* In the 1.24.0 release of Prebid.js we have transitioned to using gulp 4.0 from using gulp 3.9.1.  To compily with gulp's recommended setup for 4.0, you'll need to have `gulp-cli` installed globally prior to running the general `npm install`.  This shouldn't impact any other projects you may work on that use an earlier version of gulp in it's setup.
 
