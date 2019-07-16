@@ -92,7 +92,16 @@ export const sharethroughAdapterSpec = {
     }
 
     return syncs;
-  }
+  },
+
+  // Empty implementation for prebid core to be able to find it
+  onTimeout: (data) => {},
+
+  // Empty implementation for prebid core to be able to find it
+  onBidWon: (bid) => {},
+
+  // Empty implementation for prebid core to be able to find it
+  onSetTargeting: (bid) => {}
 }
 
 function getLargestSize(sizes) {
