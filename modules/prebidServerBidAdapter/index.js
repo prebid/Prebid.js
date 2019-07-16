@@ -232,20 +232,24 @@ function doClientSideSyncs(bidders) {
   });
 }
 
-function _getDigiTrustQueryParams() {
-  function getDigiTrustId() {
-    let digiTrustUser = window.DigiTrust && (config.getConfig('digiTrustId') || window.DigiTrust.getUser({member: 'T9QSFKPDN9'}));
+function _getDigiTrustQueryParams(bidRequest = {}) {
+  function getDigiTrustId(bidRequest) {
+    const bidRequestDigitrust = utils.deepAccess(bidRequest, 'bids.0.userId.digitrustid.data');
+    if (bidRequestDigitrust) {
+      return bidRequestDigitrust;
+    }
+
+    const digiTrustUser = config.getConfig('digiTrustId');
     return (digiTrustUser && digiTrustUser.success && digiTrustUser.identity) || null;
   }
-  let digiTrustId = getDigiTrustId();
+  let digiTrustId = getDigiTrustId(bidRequest);
   // Verify there is an ID and this user has not opted out
   if (!digiTrustId || (digiTrustId.privacy && digiTrustId.privacy.optout)) {
     return null;
   }
   return {
     id: digiTrustId.id,
-    keyv: digiTrustId.keyv,
-    pref: 0
+    keyv: digiTrustId.keyv
   };
 }
 
@@ -334,7 +338,7 @@ const LEGACY_PROTOCOL = {
 
     _appendSiteAppDevice(request);
 
-    let digiTrust = _getDigiTrustQueryParams();
+    let digiTrust = _getDigiTrustQueryParams(bidRequests && bidRequests[0]);
     if (digiTrust) {
       request.digiTrust = digiTrust;
     }
@@ -491,11 +495,21 @@ const OPEN_RTB_PROTOCOL = {
       const imp = { id: adUnit.code, ext, secure: _s2sConfig.secure };
 
       if (banner) { imp.banner = banner; }
-      if (video) { imp.video = video; }
-
-      imps.push(imp);
+      if (video) {
+        if (video.context === 'outstream' && !adUnit.renderer) {
+          // Don't push oustream w/o renderer to request object.
+          utils.logError('Outstream bid without renderer cannot be sent to Prebid Server.');
+        } else {
+          imp.video = video;
+        }
+      }
+      if (imp.banner || imp.video) { imps.push(imp); }
     });
 
+    if (!imps.length) {
+      utils.logError('Request to Prebid Server rejected due to invalid media type(s) in adUnit.')
+      return;
+    }
     const request = {
       id: s2sBidRequest.tid,
       source: {tid: s2sBidRequest.tid},
@@ -521,26 +535,39 @@ const OPEN_RTB_PROTOCOL = {
 
     _appendSiteAppDevice(request);
 
-    const digiTrust = _getDigiTrustQueryParams();
+    const digiTrust = _getDigiTrustQueryParams(bidRequests && bidRequests[0]);
     if (digiTrust) {
-      request.user = { ext: { digitrust: digiTrust } };
+      utils.deepSetValue(request, 'user.ext.digitrust', digiTrust);
     }
 
     if (!utils.isEmpty(aliases)) {
       request.ext.prebid.aliases = aliases;
     }
 
-    if (bidRequests && bidRequests[0].userId && typeof bidRequests[0].userId === 'object') {
-      if (!request.user) {
-        request.user = {};
+    const bidUserId = utils.deepAccess(bidRequests, '0.bids.0.userId');
+    if (bidUserId && typeof bidUserId === 'object' && (bidUserId.tdid || bidUserId.pubcid)) {
+      utils.deepSetValue(request, 'user.ext.eids', []);
+
+      if (bidUserId.tdid) {
+        request.user.ext.eids.push({
+          source: 'adserver.org',
+          uids: [{
+            id: bidUserId.tdid,
+            ext: {
+              rtiPartner: 'TDID'
+            }
+          }]
+        });
       }
-      if (!request.user.ext) {
-        request.user.ext = {}
+
+      if (bidUserId.pubcid) {
+        request.user.ext.eids.push({
+          source: 'pubcommon',
+          uids: [{
+            id: bidUserId.pubcid,
+          }]
+        });
       }
-      if (!request.user.ext.tpid) {
-        request.user.ext.tpid = {}
-      }
-      Object.assign(request.user.ext.tpid, bidRequests[0].userId);
     }
 
     if (bidRequests && bidRequests[0].gdprConsent) {
@@ -560,16 +587,11 @@ const OPEN_RTB_PROTOCOL = {
         request.regs = { ext: { gdpr: gdprApplies } };
       }
 
-      let consentString = bidRequests[0].gdprConsent.consentString;
-      if (request.user) {
-        if (request.user.ext) {
-          request.user.ext.consent = consentString;
-        } else {
-          request.user.ext = { consent: consentString };
-        }
-      } else {
-        request.user = { ext: { consent: consentString } };
-      }
+      utils.deepSetValue(request, 'user.ext.consent', bidRequests[0].gdprConsent.consentString);
+    }
+
+    if (getConfig('coppa') === true) {
+      utils.deepSetValue(request, 'regs.coppa', 1);
     }
 
     return request;
@@ -614,6 +636,9 @@ const OPEN_RTB_PROTOCOL = {
 
           if (utils.deepAccess(bid, 'ext.prebid.type') === VIDEO) {
             bidObject.mediaType = VIDEO;
+            let sizes = bidRequest.sizes && bidRequest.sizes[0];
+            bidObject.playerHeight = sizes[0];
+            bidObject.playerWidth = sizes[1];
 
             // try to get cache values from 'response.ext.prebid.cache'
             // else try 'bid.ext.prebid.targeting' as fallback
@@ -709,17 +734,18 @@ export function PrebidServer() {
     }
 
     const request = protocolAdapter().buildRequest(s2sBidRequest, bidRequests, adUnitsWithSizes);
-    const requestJson = JSON.stringify(request);
-
-    ajax(
-      _s2sConfig.endpoint,
-      {
-        success: response => handleResponse(response, requestedBidders, bidRequests, addBidResponse, done),
-        error: done
-      },
-      requestJson,
-      { contentType: 'text/plain', withCredentials: true }
-    );
+    const requestJson = request && JSON.stringify(request);
+    if (request && requestJson) {
+      ajax(
+        _s2sConfig.endpoint,
+        {
+          success: response => handleResponse(response, requestedBidders, bidRequests, addBidResponse, done),
+          error: done
+        },
+        requestJson,
+        { contentType: 'text/plain', withCredentials: true }
+      );
+    }
   };
 
   /* Notify Prebid of bid responses so bids can get in the auction */

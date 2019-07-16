@@ -178,6 +178,41 @@ describe('OpenxAdapter', function () {
       });
     });
 
+    describe('when request is for a multiformat ad', function () {
+      describe('and request config uses mediaTypes video and banner', () => {
+        const multiformatBid = {
+          bidder: 'openx',
+          params: {
+            unit: '12345678',
+            delDomain: 'test-del-domain'
+          },
+          adUnitCode: 'adunit-code',
+          mediaTypes: {
+            banner: {
+              sizes: [[300, 250]]
+            },
+            video: {
+              playerSize: [300, 250]
+            }
+          },
+          bidId: '30b31c1838de1e',
+          bidderRequestId: '22edbae2733bf6',
+          auctionId: '1d1a030790a475',
+          transactionId: '4008d88a-8137-410b-aa35-fbfdabcb478e'
+        };
+        it('should return true multisize when required params found', function () {
+          expect(spec.isBidRequestValid(multiformatBid)).to.equal(true);
+        });
+
+        it('should send bid request to openx url via GET, with mediaType specified as banner', function () {
+          const request = spec.buildRequests([multiformatBid]);
+          expect(request[0].url).to.equal(`//${multiformatBid.params.delDomain}${URLBASE}`);
+          expect(request[0].data.ph).to.be.undefined;
+          expect(request[0].method).to.equal('GET');
+        });
+      });
+    });
+
     describe('when request is for a video ad', function () {
       describe('and request config uses mediaTypes', () => {
         const videoBidWithMediaTypes = {
@@ -1216,6 +1251,10 @@ describe('OpenxAdapter', function () {
 
       it('should return a brand ID', function () {
         expect(bid.meta.brandId).to.equal(DEFAULT_TEST_ARJ_AD_UNIT.brand_id);
+      });
+
+      it('should return a brand ID', function () {
+        expect(bid.meta.dspid).to.equal(DEFAULT_TEST_ARJ_AD_UNIT.adv_id);
       });
 
       it('should register a beacon', function () {

@@ -80,6 +80,69 @@ const VIDEO_REQUEST = {
   ]
 };
 
+const OUTSTREAM_VIDEO_REQUEST = {
+  'account_id': '1',
+  'tid': '437fbbf5-33f5-487a-8e16-a7112903cfe5',
+  'max_bids': 1,
+  'timeout_millis': 1000,
+  'secure': 0,
+  'url': '',
+  'prebid_version': '1.4.0-pre',
+  'ad_units': [
+    {
+      'code': 'div-gpt-ad-1460505748561-0',
+      'sizes': [640, 480],
+      'mediaTypes': {
+        'video': {
+          playerSize: [[ 640, 480 ]],
+          context: 'outstream',
+          mimes: ['video/mp4']
+        },
+        banner: { sizes: [[300, 250]] }
+      },
+      'transactionId': '4ef956ad-fd83-406d-bd35-e4bb786ab86c',
+      'bids': [
+        {
+          'bid_id': '123',
+          'bidder': 'appnexus',
+          'params': { 'placementId': '12349520' }
+        }
+      ]
+    },
+    {
+      code: 'video1',
+      mediaTypes: {
+        video: {
+          playerSize: [640, 480],
+          context: 'outstream',
+          mimes: ['video/mp4']
+        }
+      },
+      bids: [
+        {
+          bidder: 'appnexus',
+          params: {
+            placementId: 13232385,
+            video: {
+              skippable: true,
+              playback_method: ['auto_play_sound_off']
+            }
+          }
+        }
+      ],
+      renderer: {
+        url: 'http://cdn.adnxs.com/renderer/video/ANOutstreamVideo.js',
+        render: function (bid) {
+          ANOutstreamVideo.renderAd({
+            targetId: bid.adUnitCode,
+            adResponse: bid.adResponse,
+          });
+        }
+      }
+    }
+  ]
+};
+
 let BID_REQUESTS;
 
 const RESPONSE = {
@@ -390,6 +453,18 @@ describe('S2S Adapter', function () {
       xhr.restore();
     });
 
+    it('should not add outstrean without renderer', function() {
+      let ortb2Config = utils.deepClone(CONFIG);
+      ortb2Config.endpoint = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
+
+      config.setConfig({s2sConfig: ortb2Config});
+      adapter.callBids(OUTSTREAM_VIDEO_REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+
+      const requestBid = JSON.parse(requests[0].requestBody);
+      expect(requestBid.imp[0].banner).to.exist;
+      expect(requestBid.imp[0].video).to.not.exist;
+    });
+
     it('exists and is a function', function () {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
@@ -513,38 +588,37 @@ describe('S2S Adapter', function () {
     });
 
     it('adds digitrust id is present and user is not optout', function () {
+      let ortb2Config = utils.deepClone(CONFIG);
+      ortb2Config.endpoint = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction';
+
+      let consentConfig = { s2sConfig: ortb2Config };
+      config.setConfig(consentConfig);
+
       let digiTrustObj = {
-        success: true,
-        identity: {
-          privacy: {
-            optout: false
-          },
-          id: 'testId',
-          keyv: 'testKeyV'
-        }
+        privacy: {
+          optout: false
+        },
+        id: 'testId',
+        keyv: 'testKeyV'
       };
 
-      window.DigiTrust = {
-        getUser: () => digiTrustObj
-      };
+      let digiTrustBidRequest = utils.deepClone(BID_REQUESTS);
+      digiTrustBidRequest[0].bids[0].userId = { digitrustid: { data: digiTrustObj } };
 
-      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      adapter.callBids(REQUEST, digiTrustBidRequest, addBidResponse, done, ajax);
       let requestBid = JSON.parse(requests[0].requestBody);
 
-      expect(requestBid.digiTrust).to.deep.equal({
-        id: digiTrustObj.identity.id,
-        keyv: digiTrustObj.identity.keyv,
-        pref: 0
+      expect(requestBid.user.ext.digitrust).to.deep.equal({
+        id: digiTrustObj.id,
+        keyv: digiTrustObj.keyv
       });
 
-      digiTrustObj.identity.privacy.optout = true;
+      digiTrustObj.privacy.optout = true;
 
-      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      adapter.callBids(REQUEST, digiTrustBidRequest, addBidResponse, done, ajax);
       requestBid = JSON.parse(requests[1].requestBody);
 
-      expect(requestBid.digiTrust).to.not.exist;
-
-      delete window.DigiTrust;
+      expect(requestBid.user && request.user.ext && requestBid.user.ext.digitrust).to.not.exist;
     });
 
     it('adds device and app objects to request', function () {
@@ -813,22 +887,25 @@ describe('S2S Adapter', function () {
 
     it('when userId is defined on bids, it\'s properties should be copied to user.ext.tpid properties', function () {
       let ortb2Config = utils.deepClone(CONFIG);
-      ortb2Config.endpoint = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
+      ortb2Config.endpoint = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction';
 
       let consentConfig = { s2sConfig: ortb2Config };
       config.setConfig(consentConfig);
 
       let userIdBidRequest = utils.deepClone(BID_REQUESTS);
-      userIdBidRequest[0].userId = {
-        foo: 'abc123',
-        unifiedid: '1234'
+      userIdBidRequest[0].bids[0].userId = {
+        tdid: 'abc123',
+        pubcid: '1234'
       };
 
       adapter.callBids(REQUEST, userIdBidRequest, addBidResponse, done, ajax);
       let requestBid = JSON.parse(requests[0].requestBody);
-      expect(typeof requestBid.user.ext.tpid).is.equal('object');
-      expect(requestBid.user.ext.tpid.foo).is.equal('abc123');
-      expect(requestBid.user.ext.tpid.unifiedid).is.equal('1234');
+      expect(typeof requestBid.user.ext.eids).is.equal('object');
+      expect(Array.isArray(requestBid.user.ext.eids)).to.be.true;
+      expect(requestBid.user.ext.eids.filter(eid => eid.source === 'adserver.org')).is.not.empty;
+      expect(requestBid.user.ext.eids.filter(eid => eid.source === 'adserver.org')[0].uids[0].id).is.equal('abc123');
+      expect(requestBid.user.ext.eids.filter(eid => eid.source === 'pubcommon')).is.not.empty; ;
+      expect(requestBid.user.ext.eids.filter(eid => eid.source === 'pubcommon')[0].uids[0].id).is.equal('1234');
     })
 
     it('always add ext.prebid.targeting.includebidderkeys: false for ORTB', function () {

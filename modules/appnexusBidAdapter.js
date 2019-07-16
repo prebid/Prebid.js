@@ -169,6 +169,16 @@ export const spec = {
       });
     }
 
+    const rtusId = utils.deepAccess(bidRequests[0], `userId.criteortus.${BIDDER_CODE}.userid`);
+    if (rtusId) {
+      let tpuids = [];
+      tpuids.push({
+        'provider': 'criteo',
+        'user_id': rtusId
+      });
+      payload.tpuids = tpuids;
+    }
+
     const request = formatRequest(payload, bidderRequest);
     return request;
   },
@@ -685,6 +695,10 @@ function buildNativeRequest(params) {
       if (utils.isArrayOfNums(sizes) || (utils.isArray(sizes) && sizes.length > 0 && sizes.every(sz => utils.isArrayOfNums(sz)))) {
         request[requestKey].sizes = transformSizes(request[requestKey].sizes);
       }
+    }
+
+    if (requestKey === NATIVE_MAPPING.privacyLink) {
+      request.privacy_supported = true;
     }
   });
 
