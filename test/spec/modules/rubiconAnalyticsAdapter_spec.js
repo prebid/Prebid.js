@@ -1,6 +1,11 @@
-import rubiconAnalyticsAdapter, { SEND_TIMEOUT } from 'modules/rubiconAnalyticsAdapter';
+import rubiconAnalyticsAdapter, { SEND_TIMEOUT, parseBidResponse } from 'modules/rubiconAnalyticsAdapter';
 import CONSTANTS from 'src/constants.json';
 import { config } from 'src/config';
+
+import {
+  setConfig,
+  addBidResponseHook,
+} from 'modules/currency';
 
 let Ajv = require('ajv');
 let schema = require('./rubiconAnalyticsSchema.json');
@@ -693,6 +698,34 @@ describe('rubicon analytics adapter', function () {
       expect(timedOutBid.status).to.equal('error');
       expect(timedOutBid.error.code).to.equal('timeout-error');
       expect(timedOutBid).to.not.have.property('bidResponse');
+    });
+
+    it('should successfully convert bid price to USD in parseBidResponse', function () {
+      // Set the rates
+      setConfig({
+        adServerCurrency: 'JPY',
+        rates: {
+          USD: {
+            JPY: 100
+          }
+        }
+      });
+
+      // set our bid response to JPY
+      const bidCopy = utils.deepClone(BID2);
+      bidCopy.currency = 'JPY';
+      bidCopy.cpm = 100;
+
+      // Now add the bidResponse hook which hooks on the currenct conversion function onto the bid response
+      let innerBid;
+      addBidResponseHook(function(adCodeId, bid) {
+        innerBid = bid;
+      }, 'elementId', bidCopy);
+
+      // Use the rubi analytics parseBidResponse Function to get the resulting cpm from the bid response!
+      const bidResponseObj = parseBidResponse(innerBid);
+      expect(bidResponseObj).to.have.property('bidPriceUSD');
+      expect(bidResponseObj.bidPriceUSD).to.equal(1.0);
     });
   });
 });

@@ -169,6 +169,16 @@ export const spec = {
       });
     }
 
+    const rtusId = utils.deepAccess(bidRequests[0], `userId.criteortus.${BIDDER_CODE}.userid`);
+    if (rtusId) {
+      let tpuids = [];
+      tpuids.push({
+        'provider': 'criteo',
+        'user_id': rtusId
+      });
+      payload.tpuids = tpuids;
+    }
+
     const request = formatRequest(payload, bidderRequest);
     return request;
   },

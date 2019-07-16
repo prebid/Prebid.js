@@ -1,10 +1,17 @@
 ## User ID Example Configuration
 
-Example showing `cookie` storage for user id data for both submodules
+Example showing `cookie` storage for user id data for each of the submodules
 ```
 pbjs.setConfig({
     userSync: {
         userIds: [{
+            name: "pubCommonId",
+            storage: {
+                type: "cookie",
+                name: "_pubcid",
+                expires: 60
+            }
+        }, {
             name: "unifiedId",
             params: {
                 partner: "prebid",
@@ -16,11 +23,14 @@ pbjs.setConfig({
                 expires: 60
             }
         }, {
-            name: "pubCommonId",
+            name: "id5Id",
+            params: {
+                partner: 173 // @TODO: Set your real ID5 partner ID here for production, please ask for one at http://id5.io/prebid
+            },
             storage: {
                 type: "cookie",
-                name: "_pubcid",
-                expires: 60
+                name: "id5id",
+                expires: 5
             }
         }],
         syncDelay: 5000
@@ -28,7 +38,7 @@ pbjs.setConfig({
 });
 ```
 
-Example showing `localStorage` for user id data for both submodules
+Example showing `localStorage` for user id data for some submodules
 ```
 pbjs.setConfig({
     usersync: {
@@ -65,6 +75,10 @@ pbjs.setConfig({
             value: {
               "providedPubCommonId": "1234567890"
             }
+        },
+        {
+            name: "id5Id",
+            value: { "id5id": "ID5-abcdef" }
         }],
         syncDelay: 5000
     }
