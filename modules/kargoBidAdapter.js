@@ -5,6 +5,9 @@ const BIDDER_CODE = 'kargo';
 const HOST = 'https://krk.kargo.com';
 const SYNC = 'https://crb.kargo.com/api/v1/initsyncrnd/{UUID}?seed={SEED}&idx={INDEX}';
 const SYNC_COUNT = 5;
+
+let sessionId;
+
 export const spec = {
   code: BIDDER_CODE,
   isBidRequestValid: function(bid) {
@@ -193,10 +196,10 @@ export const spec = {
   },
 
   _getSessionId() {
-    if (!spec._sessionId) {
-      spec._sessionId = spec._generateRandomUuid();
+    if (!sessionId) {
+      sessionId = spec._generateRandomUuid();
     }
-    return spec._sessionId;
+    return sessionId;
   },
 
   _generateRandomUuid() {
