@@ -205,17 +205,17 @@ function sendMessage(auctionId, bidWonId) {
   );
 }
 
-function parseBidResponse(bid) {
+export function parseBidResponse(bid) {
   return utils.pick(bid, [
-    'getCpmInNewCurrency as bidPriceUSD', (fn) => {
+    'bidPriceUSD', () => {
       if (typeof bid.currency === 'string' && bid.currency.toUpperCase() === 'USD') {
         return Number(bid.cpm);
       }
       // use currency conversion function if present
-      if (typeof fn === 'function') {
-        return Number(fn('USD'));
+      if (typeof bid.getCpmInNewCurrency === 'function') {
+        return Number(bid.getCpmInNewCurrency('USD'));
       }
-      // TODO: throw error or something if not USD and currency module wasn't present?
+      utils.logWarn('Rubicon Analytics Adapter: Could not determine the bidPriceUSD of the bid ', bid);
     },
     'dealId',
     'status',
