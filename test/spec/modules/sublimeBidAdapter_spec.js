@@ -42,7 +42,7 @@ describe('Sublime Adapter', function() {
         requestId: 'xyz654',
         params: {
           zoneId: 23651,
-          callbackName: 'myCallback'
+          callbackName: 'false'
         }
       }, {
         bidder: 'sublime',
@@ -52,7 +52,7 @@ describe('Sublime Adapter', function() {
         requestId: 'xyz654_2',
         params: {
           zoneId: 23651,
-          callbackName: 'myCallback'
+          callbackName: 'false'
         }
       }
     ];
@@ -86,11 +86,6 @@ describe('Sublime Adapter', function() {
     it('should have an url that contains bid keyword', function() {
       expect(request.url).to.match(/bid/);
     });
-
-    it('should create a callback function', function() {
-      const params = bidRequests[0].params;
-      expect(window[params.callbackName + '_' + params.zoneId]).to.be.an('function');
-    });
   });
 
   describe('buildRequests: default arguments', function() {
@@ -109,49 +104,6 @@ describe('Sublime Adapter', function() {
 
     it('should have an url that match the default endpoint', function() {
       expect(request.url).to.equal('https://pbjs.sskzlabs.com/bid');
-    });
-
-    it('should create a default callback function', function() {
-      expect(window['sublime_prebid_callback_23651']).to.be.an('function');
-    });
-  });
-
-  describe('buildRequests: test callback', function() {
-    let XMLHttpRequest = sinon.useFakeXMLHttpRequest();
-
-    let bidRequests = [{
-      bidder: 'sublime',
-      adUnitCode: 'sublime_code',
-      bidId: 'abc1234',
-      sizes: [[1800, 1000], [640, 300]],
-      requestId: 'xyz654',
-      params: {
-        zoneId: 23651
-      }
-    }];
-
-    spec.buildRequests(bidRequests);
-
-    it('should execute a default callback function', function() {
-      let response = {
-        ad: '<h1>oh</h1>',
-        cpm: 2
-      };
-      let actual = window['sublime_prebid_callback_23651'](response);
-
-      it('should query the notify url', function() {
-        expect(actual.url).to.equal('https://pbjs.sskzlabs.com/notify');
-      });
-
-      it('should send the correct headers', function() {
-        expect(actual.requestHeaders).to.equal({
-          'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8'
-        });
-      });
-
-      it('should send the correct body', function() {
-        expect(actual.requestBody).to.equal('notify=1&request_id=abc1234&ad=%3Ch1%3Eoh%3C%2Fh1%3E&cpm=2');
-      });
     });
   });
 
