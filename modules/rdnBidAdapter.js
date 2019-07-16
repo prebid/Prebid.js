@@ -1,6 +1,7 @@
 import { registerBidder } from '../src/adapters/bidderFactory'
 import * as utils from '../src/utils'
 import { BANNER } from '../src/mediaTypes'
+import { config } from '../src/config'
 
 const BIDDER_CODE = 'rdn'
 const ENDPOINT = 'https://s-bid.rmp.rakuten.co.jp/h'
@@ -14,7 +15,7 @@ export const spec = {
       const params = bid.params
       bidRequests.push({
         method: 'GET',
-        url: ENDPOINT,
+        url: config.getConfig('rdn.endpoint') || ENDPOINT,
         data: {
           bi: bid.bidId,
           t: params.adSpotId,

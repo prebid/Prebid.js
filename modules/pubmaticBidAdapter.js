@@ -5,8 +5,8 @@ import {config} from '../src/config';
 
 const BIDDER_CODE = 'pubmatic';
 const LOG_WARN_PREFIX = 'PubMatic: ';
-const ENDPOINT = '//hbopenbid.pubmatic.com/translator?source=prebid-client';
-const USYNCURL = '//ads.pubmatic.com/AdServer/js/showad.js#PIX&kdntuid=1&p=';
+const ENDPOINT = 'https://hbopenbid.pubmatic.com/translator?source=prebid-client';
+const USYNCURL = 'https://ads.pubmatic.com/AdServer/js/showad.js#PIX&kdntuid=1&p=';
 const DEFAULT_CURRENCY = 'USD';
 const AUCTION_TYPE = 1;
 const PUBMATIC_DIGITRUST_KEY = 'nFIn8aLzbd';
@@ -521,7 +521,7 @@ function _createImpressionObject(bid, conf) {
     id: bid.bidId,
     tagid: bid.params.adUnit || undefined,
     bidfloor: _parseSlotParam('kadfloor', bid.params.kadfloor),
-    secure: window.location.protocol === 'https:' ? 1 : 0,
+    secure: 1,
     ext: {
       pmZoneId: _parseSlotParam('pmzoneid', bid.params.pmzoneid)
     },
