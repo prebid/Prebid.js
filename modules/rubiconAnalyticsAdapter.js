@@ -143,7 +143,7 @@ function sendMessage(auctionId, bidWonId) {
     version: '$prebid.version$',
     referrerUri: referrer
   };
-  let wrapperName = config.getConfig('rubicon.wrapperName');
+  const wrapperName = config.getConfig('rubicon.wrapperName');
   if (wrapperName) {
     message.wrapperName = wrapperName;
   }
