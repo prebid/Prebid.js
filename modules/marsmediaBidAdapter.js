@@ -83,19 +83,19 @@ export const spec = {
     }
 
     for (let x = 0; x < res.seatbid.length; x++) {
-		var bidAd = res.seatbid[x].bid[0];
+      var bidAd = res.seatbid[x].bid[0];
 
-		bidResponses.push({
-			requestId: res.id,
-			cpm: Number(bidAd.price),
-			width: bidAd.w,
-			height: bidAd.h,
-			ad: bidAd.adm,
-			ttl: 60,
-			creativeId: bidAd.cid,
-			netRevenue: true,
-			currency: 'USD'
-		})
+      bidResponses.push({
+        requestId: res.id,
+        cpm: Number(bidAd.price),
+        width: bidAd.w,
+        height: bidAd.h,
+        ad: bidAd.adm,
+        ttl: 60,
+        creativeId: bidAd.cid,
+        netRevenue: true,
+        currency: 'USD'
+      })
     }
 
     return bidResponses;
