@@ -221,13 +221,25 @@ export function parseSizesInput(sizeObj) {
   return parsedSizes;
 }
 
-// parse a GPT style sigle size array, (i.e [300,250])
+// Parse a GPT style single size array, (i.e [300, 250])
 // into an AppNexus style string, (i.e. 300x250)
 export function parseGPTSingleSizeArray(singleSize) {
-  // if we aren't exactly 2 items in this array, it is invalid
-  if (isArray(singleSize) && singleSize.length === 2 && (!isNaN(singleSize[0]) && !isNaN(singleSize[1]))) {
+  if (isValidGPTSingleSize(singleSize)) {
     return singleSize[0] + 'x' + singleSize[1];
   }
+}
+
+// Parse a GPT style single size array, (i.e [300, 250])
+// into OpenRTB-compatible (imp.banner.w/h, imp.banner.format.w/h, imp.video.w/h) object(i.e. {w:300, h:250})
+export function parseGPTSingleSizeArrayToRtbSize(singleSize) {
+  if (isValidGPTSingleSize(singleSize)) {
+    return {w: singleSize[0], h: singleSize[1]};
+  }
+}
+
+function isValidGPTSingleSize(singleSize) {
+  // if we aren't exactly 2 items in this array, it is invalid
+  return isArray(singleSize) && singleSize.length === 2 && (!isNaN(singleSize[0]) && !isNaN(singleSize[1]));
 }
 
 /**
