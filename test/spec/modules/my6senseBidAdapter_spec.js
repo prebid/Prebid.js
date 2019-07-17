@@ -99,7 +99,7 @@ describe('My6sense Bid adapter test', function () {
     ]
   });
 
-describe('test if requestIsValid function', function () {
+  describe('test if requestIsValid function', function () {
     it('with valid data 1', function () {
       expect(spec.isBidRequestValid(bidRequests[0])).to.equal(true);
     });
