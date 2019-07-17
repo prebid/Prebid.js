@@ -270,6 +270,13 @@
                         }
                     },
                     {
+                      bidder: 'weborama',
+                      params: {
+                          placementId: 0,
+                          traffic: 'banner'
+                      }
+                    },
+                    {
                         bidder: 'pollux',
                         params: {
                             zone: '1806' // REQUIRED Zone Id (1806 is a test zone)
@@ -281,7 +288,38 @@
                             pubId: 50357,   //REQUIRED
                             host: 'dsp-staging.adkernel.com'    //OPTIONAL
                         }
-                    }
+                    },
+                    {
+                        bidder: 'bizzclick',
+                        params: {
+                            placementId: 0,
+                            type: "banner"
+                        }
+                    },
+                    {
+                        bidder: 'zedo',
+                        params: {
+                            channelCode: 2264002816,   //REQUIRED
+                            dimId: 9, //REQUIRED
+                            pubId: 1 // OPTIONAL
+                        }
+                    },
+                    {
+                      bidder: 'openxoutstream',
+                      params: {
+                          unit: '53943996499',
+                          delDomain: 'se-demo-d.openx.net',
+                          publisher_page_url: 'yieldmo.com',
+                          width:  '300',
+                          height: '250',
+                      }
+                    },
+		            {
+                        bidder: 'emoteev',
+                        params: {
+                            adSpaceId: 5084,
+                        }
+                    },
                 ]
             }, {
                 code: 'div-gpt-ad-12345678-1',
@@ -379,7 +417,8 @@
                     {
                         bidder: 'gumgum',
                         params: {
-                            inScreen: 'ggumtest' // REQUIRED str Tracking Id
+                            inScreen: 'ggumtest', // REQUIRED str Tracking Id
+                            bidfloor: 0.01        // OPTIONAL number CPM bid
                         }
                     },
                     {
@@ -413,6 +452,13 @@
                         params: {
                             zone: '276' // REQUIRED Zone Id (276 is a test zone)
                         }
+                    },
+                    {
+                      bidder: 'bizzclick',
+                      params: {
+                        placementId: 0,
+                        type: "banner"
+                      }
                     }
                 ]
             }

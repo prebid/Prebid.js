@@ -1,6 +1,6 @@
-import * as utils from 'src/utils';
-import {registerBidder} from 'src/adapters/bidderFactory';
-import {BANNER, NATIVE} from 'src/mediaTypes';
+import * as utils from '../src/utils';
+import {registerBidder} from '../src/adapters/bidderFactory';
+import {BANNER, NATIVE} from '../src/mediaTypes';
 import find from 'core-js/library/fn/array/find';
 
 const BIDDER_CODE = 'bridgewell';
@@ -164,35 +164,35 @@ export const spec = {
               return;
             }
 
-            let req_nativeLayout = req.mediaTypes.native;
-            let res_native = matchedResponse.native;
+            let reqNativeLayout = req.mediaTypes.native;
+            let resNative = matchedResponse.native;
 
             // check title
-            let title = req_nativeLayout.title;
+            let title = reqNativeLayout.title;
             if (title && title.required) {
-              if (typeof res_native.title !== 'string') {
+              if (typeof resNative.title !== 'string') {
                 return;
-              } else if (title.len && title.len < res_native.title.length) {
+              } else if (title.len && title.len < resNative.title.length) {
                 return;
               }
             }
 
             // check body
-            let body = req_nativeLayout.body;
+            let body = reqNativeLayout.body;
             if (body && body.required) {
-              if (typeof res_native.body !== 'string') {
+              if (typeof resNative.body !== 'string') {
                 return;
               }
             }
 
             // check image
-            let image = req_nativeLayout.image;
+            let image = reqNativeLayout.image;
             if (image && image.required) {
-              if (res_native.image) {
-                if (typeof res_native.image.url !== 'string') { // check image url
+              if (resNative.image) {
+                if (typeof resNative.image.url !== 'string') { // check image url
                   return;
                 } else {
-                  if (res_native.image.width !== image.sizes[0] || res_native.image.height !== image.sizes[1]) { // check image sizes
+                  if (resNative.image.width !== image.sizes[0] || resNative.image.height !== image.sizes[1]) { // check image sizes
                     return;
                   }
                 }
@@ -202,21 +202,21 @@ export const spec = {
             }
 
             // check sponsoredBy
-            let sponsoredBy = req_nativeLayout.sponsoredBy;
+            let sponsoredBy = reqNativeLayout.sponsoredBy;
             if (sponsoredBy && sponsoredBy.required) {
-              if (typeof res_native.sponsoredBy !== 'string') {
+              if (typeof resNative.sponsoredBy !== 'string') {
                 return;
               }
             }
 
             // check icon
-            let icon = req_nativeLayout.icon;
+            let icon = reqNativeLayout.icon;
             if (icon && icon.required) {
-              if (res_native.icon) {
-                if (typeof res_native.icon.url !== 'string') { // check icon url
+              if (resNative.icon) {
+                if (typeof resNative.icon.url !== 'string') { // check icon url
                   return;
                 } else {
-                  if (res_native.icon.width !== icon.sizes[0] || res_native.icon.height !== icon.sizes[0]) { // check image sizes
+                  if (resNative.icon.width !== icon.sizes[0] || resNative.icon.height !== icon.sizes[0]) { // check image sizes
                     return;
                   }
                 }
@@ -226,12 +226,12 @@ export const spec = {
             }
 
             // check clickUrl
-            if (typeof res_native.clickUrl !== 'string') {
+            if (typeof resNative.clickUrl !== 'string') {
               return;
             }
 
             // check clickTracker
-            let clickTrackers = res_native.clickTrackers;
+            let clickTrackers = resNative.clickTrackers;
             if (clickTrackers) {
               if (clickTrackers.length === 0) {
                 return;
@@ -241,7 +241,7 @@ export const spec = {
             }
 
             // check impressionTrackers
-            let impressionTrackers = res_native.impressionTrackers;
+            let impressionTrackers = resNative.impressionTrackers;
             if (impressionTrackers) {
               if (impressionTrackers.length === 0) {
                 return;

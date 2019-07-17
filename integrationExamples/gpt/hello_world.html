@@ -10,17 +10,20 @@
 <html>
   <head>
       <script>
-        var PREBID_TIMEOUT = 700;
+        var PREBID_TIMEOUT = 3300;
   
         var adUnits = [{
           code: 'div-gpt-ad-1460505748561-0',
-          sizes: [[300, 250], [300,600]],
-  
+          mediaTypes: {
+            banner: {
+              sizes: [[300, 250], [300,600]],
+            }
+          },
           // Replace this object to test a new Adapter!
           bids: [{
-            bidder: 'appnexusAst',
+            bidder: 'appnexus',
             params: {
-              placementId: '10433394'
+              placementId: 13144370
             }
           }]
   

@@ -1,4 +1,4 @@
-import { BANNER, NATIVE } from 'src/mediaTypes';
+import { BANNER, NATIVE } from '../src/mediaTypes';
 
 const {registerBidder} = require('../src/adapters/bidderFactory');
 const BIDDER_CODE = 'my6sense';
@@ -184,7 +184,7 @@ function interpretResponse(serverResponse) {
   return bidResponses;
 }
 
-const spec = {
+export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, NATIVE],
   isBidRequestValid,
@@ -193,5 +193,3 @@ const spec = {
 };
 
 registerBidder(spec);
-
-module.exports = spec;

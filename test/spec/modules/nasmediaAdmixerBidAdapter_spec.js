@@ -2,16 +2,16 @@ import {expect} from 'chai';
 import {spec} from 'modules/nasmediaAdmixerBidAdapter';
 import {newBidder} from 'src/adapters/bidderFactory';
 
-describe('nasmediaAdmixerBidAdapter', () => {
+describe('nasmediaAdmixerBidAdapter', function () {
   const adapter = newBidder(spec);
 
-  describe('inherited functions', () => {
-    it('exists and is a function', () => {
+  describe('inherited functions', function () {
+    it('exists and is a function', function () {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
   });
 
-  describe('isBidRequestValid', () => {
+  describe('isBidRequestValid', function () {
     const bid = {
       'bidder': 'nasmediaAdmixer',
       'params': {
@@ -24,11 +24,11 @@ describe('nasmediaAdmixerBidAdapter', () => {
       'auctionId': '124cb070528662',
     };
 
-    it('should return true when required params found', () => {
+    it('should return true when required params found', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
-    it('should return false when required params are not passed', () => {
+    it('should return false when required params are not passed', function () {
       const bid = Object.assign({}, bid);
       delete bid.params;
       bid.params = {
@@ -38,7 +38,7 @@ describe('nasmediaAdmixerBidAdapter', () => {
     });
   });
 
-  describe('buildRequests', () => {
+  describe('buildRequests', function () {
     const bidRequests = [
       {
         'bidder': 'nasmediaAdmixer',
@@ -53,14 +53,14 @@ describe('nasmediaAdmixerBidAdapter', () => {
       }
     ];
 
-    it('sends bid request to url via GET', () => {
+    it('sends bid request to url via GET', function () {
       const request = spec.buildRequests(bidRequests)[0];
       expect(request.method).to.equal('GET');
       expect(request.url).to.match(new RegExp(`https://adn.admixer.co.kr`));
     });
   });
 
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     const response = {
       'body': {
         'bidder': 'nasmedia_admixer',
@@ -94,7 +94,7 @@ describe('nasmediaAdmixerBidAdapter', () => {
       'auctionId': '169827a33f03cc',
     };
 
-    it('should get correct bid response', () => {
+    it('should get correct bid response', function () {
       const expectedResponse = [
         {
           'requestId': '861a8e7952c82c',
@@ -122,7 +122,7 @@ describe('nasmediaAdmixerBidAdapter', () => {
       });
     });
 
-    it('handles nobid responses', () => {
+    it('handles nobid responses', function () {
       response.body = {
         'bidder': 'nasmedia_admixer',
         'req_id': '861a8e7952c82c',

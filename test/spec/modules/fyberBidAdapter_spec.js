@@ -72,82 +72,82 @@ const mock = {
   }
 };
 
-describe('FyberAdapter', () => {
+describe('FyberAdapter', function () {
   const adapter = newBidder(spec);
 
-  describe('inherited functions', () => {
-    it('callBids exists and is a function', () => {
+  describe('inherited functions', function () {
+    it('callBids exists and is a function', function () {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
   });
 
-  describe('Verifies bidder code', () => {
-    it('Verifies bidder code', () => {
+  describe('Verifies bidder code', function () {
+    it('Verifies bidder code', function () {
       expect(spec.code).to.equal('fyber');
     });
   });
 
-  describe('isBidRequestValid', () => {
-    it('should return true when required params found', () => {
+  describe('isBidRequestValid', function () {
+    it('should return true when required params found', function () {
       const bid = Object.assign({}, mock.bid);
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
-    it('should return false when required params{spotType} not found', () => {
+    it('should return false when required params{spotType} not found', function () {
       const bid = Object.assign({}, mock.bid);
       delete bid.params.spotType;
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
-    it('should return false when required{appId} params not found', () => {
+    it('should return false when required{appId} params not found', function () {
       const bid = Object.assign({}, mock.bid);
       delete bid.params.appId;
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
   });
 
-  describe('buildRequests', () => {
+  describe('buildRequests', function () {
     const bidsRequest = Object.assign([], mock.bidsRequest);
     const requests = spec.buildRequests(bidsRequest);
 
-    it('Verify only one build request', () => {
+    it('Verify only one build request', function () {
       expect(requests.length).to.equal(1);
     });
 
     const request = requests[0];
 
-    it('Verify build request http method', () => {
+    it('Verify build request http method', function () {
       expect(request.method).to.equal('GET');
     });
 
-    it('Verify build request bidId', () => {
+    it('Verify build request bidId', function () {
       expect(request.bidId).to.equal(bidId);
     });
   });
 
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     const request = Object.assign([], mock.bidsRequest)[0];
     const validResponse = Object.assign({}, mock.validResponse);
     const validResult = spec.interpretResponse(validResponse, request);
 
-    it('Verify only one bid response', () => {
+    it('Verify only one bid response', function () {
       expect(validResult.length).to.equal(1);
     });
 
     const bidResponse = validResult[0];
 
-    it('Verify CPM', () => {
+    it('Verify CPM', function () {
       expect(bidResponse.cpm).to.equal(10000);
     });
 
-    it('Verify requestId', () => {
+    it('Verify requestId', function () {
       expect(bidResponse.requestId).to.equal(bidId);
     });
 
     const invalidResponse = Object.assign({}, mock.invalidResponse);
     const invalidResult = spec.interpretResponse(invalidResponse, request);
 
-    it('Verify empty bid response', () => {
+    it('Verify empty bid response', function () {
       expect(invalidResult.length).to.equal(0);
     });
   });

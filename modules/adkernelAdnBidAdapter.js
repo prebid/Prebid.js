@@ -1,7 +1,8 @@
-import * as utils from 'src/utils';
-import {registerBidder} from 'src/adapters/bidderFactory';
-import {BANNER, VIDEO} from 'src/mediaTypes';
+import * as utils from '../src/utils';
+import {registerBidder} from '../src/adapters/bidderFactory';
+import {BANNER, VIDEO} from '../src/mediaTypes';
 import includes from 'core-js/library/fn/array/includes';
+import {parse as parseUrl} from '../src/url';
 
 const DEFAULT_ADKERNEL_DSP_DOMAIN = 'tag.adkernel.com';
 const VIDEO_TARGETING = ['mimes', 'protocols', 'api'];
@@ -9,8 +10,8 @@ const DEFAULT_MIMES = ['video/mp4', 'video/webm', 'application/x-shockwave-flash
 const DEFAULT_PROTOCOLS = [2, 3, 5, 6];
 const DEFAULT_APIS = [1, 2];
 
-function isRtbDebugEnabled() {
-  return utils.getTopWindowLocation().href.indexOf('adk_debug=true') !== -1;
+function isRtbDebugEnabled(refInfo) {
+  return refInfo.referer.indexOf('adk_debug=true') !== -1;
 }
 
 function buildImp(bidRequest) {
@@ -18,14 +19,13 @@ function buildImp(bidRequest) {
     id: bidRequest.bidId,
     tagid: bidRequest.adUnitCode
   };
-  if (bidRequest.mediaType === BANNER || utils.deepAccess(bidRequest, `mediaTypes.banner`) ||
-    (bidRequest.mediaTypes === undefined && bidRequest.mediaType === undefined)) {
-    let sizes = canonicalizeSizesArray(bidRequest.sizes);
+  if (utils.deepAccess(bidRequest, `mediaTypes.banner`)) {
+    let sizes = canonicalizeSizesArray(bidRequest.mediaTypes.banner.sizes);
     imp.banner = {
       format: utils.parseSizesInput(sizes)
     }
-  } else if (bidRequest.mediaType === VIDEO || utils.deepAccess(bidRequest, `mediaTypes.video`)) {
-    let size = canonicalizeSizesArray(bidRequest.sizes)[0];
+  } else if (utils.deepAccess(bidRequest, `mediaTypes.video`)) {
+    let size = canonicalizeSizesArray(bidRequest.mediaTypes.video.playerSize)[0];
     imp.video = {
       w: size[0],
       h: size[1],
@@ -54,16 +54,11 @@ function canonicalizeSizesArray(sizes) {
   return sizes;
 }
 
-function buildRequestParams(tags, auctionId, transactionId, gdprConsent) {
-  let loc = utils.getTopWindowLocation();
+function buildRequestParams(tags, auctionId, transactionId, gdprConsent, refInfo) {
   let req = {
     id: auctionId,
     tid: transactionId,
-    site: {
-      page: loc.href,
-      ref: utils.getTopWindowReferrer(),
-      secure: ~~(loc.protocol === 'https:')
-    },
+    site: buildSite(refInfo),
     imp: tags
   };
 
@@ -79,6 +74,22 @@ function buildRequestParams(tags, auctionId, transactionId, gdprConsent) {
   return req;
 }
 
+function buildSite(refInfo) {
+  let loc = parseUrl(refInfo.referer);
+  let result = {
+    page: `${loc.protocol}://${loc.hostname}${loc.pathname}`,
+    secure: ~~(loc.protocol === 'https')
+  };
+  if (self === top && document.referrer) {
+    result.ref = document.referrer;
+  }
+  let keywords = document.getElementsByTagName('meta')['keywords'];
+  if (keywords && keywords.content) {
+    result.keywords = keywords.content;
+  }
+  return result;
+}
+
 function buildBid(tag) {
   let bid = {
     requestId: tag.impid,
@@ -92,7 +103,7 @@ function buildBid(tag) {
     netRevenue: true
   };
   if (tag.tag) {
-    bid.ad = `<!DOCTYPE html><html><head><title></title><body style='margin:0px;padding:0px;'>${tag.tag}</body></head>`;
+    bid.ad = tag.tag;
     bid.mediaType = BANNER;
   } else if (tag.vast_url) {
     bid.vastUrl = tag.vast_url;
@@ -104,10 +115,11 @@ function buildBid(tag) {
 export const spec = {
   code: 'adkernelAdn',
   supportedMediaTypes: [BANNER, VIDEO],
+  aliases: ['engagesimply'],
 
   isBidRequestValid: function(bidRequest) {
     return 'params' in bidRequest && (typeof bidRequest.params.host === 'undefined' || typeof bidRequest.params.host === 'string') &&
-      typeof bidRequest.params.pubId === 'number';
+      typeof bidRequest.params.pubId === 'number' && 'mediaTypes' in bidRequest && ('banner' in bidRequest.mediaTypes || 'video' in bidRequest.mediaTypes);
   },
 
   buildRequests: function(bidRequests, bidderRequest) {
@@ -124,13 +136,14 @@ export const spec = {
     let auctionId = bidderRequest.auctionId;
     let gdprConsent = bidderRequest.gdprConsent;
     let transactionId = bidderRequest.transactionId;
+    let refererInfo = bidderRequest.refererInfo;
     let requests = [];
     Object.keys(dispatch).forEach(host => {
       Object.keys(dispatch[host]).forEach(pubId => {
-        let request = buildRequestParams(dispatch[host][pubId], auctionId, transactionId, gdprConsent);
+        let request = buildRequestParams(dispatch[host][pubId], auctionId, transactionId, gdprConsent, refererInfo);
         requests.push({
           method: 'POST',
-          url: `//${host}/tag?account=${pubId}&pb=1${isRtbDebugEnabled() ? '&debug=1' : ''}`,
+          url: `//${host}/tag?account=${pubId}&pb=1${isRtbDebugEnabled(refererInfo) ? '&debug=1' : ''}`,
           data: JSON.stringify(request)
         })
       });
@@ -156,7 +169,7 @@ export const spec = {
     return serverResponses.filter(rps => rps.body && rps.body.syncpages)
       .map(rsp => rsp.body.syncpages)
       .reduce((a, b) => a.concat(b), [])
-      .map(sync_url => ({type: 'iframe', url: sync_url}));
+      .map(syncUrl => ({type: 'iframe', url: syncUrl}));
   }
 };
 

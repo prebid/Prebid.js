@@ -1,6 +1,6 @@
-import * as utils from 'src/utils';
-import { registerBidder } from 'src/adapters/bidderFactory';
-import { BANNER, NATIVE, VIDEO } from 'src/mediaTypes';
+import * as utils from '../src/utils';
+import { registerBidder } from '../src/adapters/bidderFactory';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes';
 import includes from 'core-js/library/fn/array/includes';
 
 const NATIVE_DEFAULTS = {
@@ -23,7 +23,7 @@ export const spec = {
   isBidRequestValid: bid => (
     !!(bid && bid.params && bid.params.pubId && bid.params.placementId)
   ),
-  buildRequests: bidRequests => {
+  buildRequests: (bidRequests, bidderRequest) => {
     const request = {
       id: bidRequests[0].bidderRequestId,
       at: 2,
@@ -32,6 +32,7 @@ export const spec = {
       app: app(bidRequests),
       device: device(bidRequests),
     };
+    applyGdpr(bidderRequest, request);
     return {
       method: 'POST',
       url: '//hb.kumma.com/',
@@ -268,6 +269,13 @@ function parse(rawResponse) {
     logError('kumma.parse', 'ERROR', ex);
   }
   return null;
+}
+
+function applyGdpr(bidderRequest, ortbRequest) {
+  if (bidderRequest && bidderRequest.gdprConsent) {
+    ortbRequest.regs = { ext: { gdpr: bidderRequest.gdprConsent.gdprApplies ? 1 : 0 } };
+    ortbRequest.user = { ext: { consent: bidderRequest.gdprConsent.consentString } };
+  }
 }
 
 function nativeResponse(imp, bid) {

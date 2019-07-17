@@ -1,10 +1,10 @@
-import * as utils from 'src/utils';
-import {registerBidder} from 'src/adapters/bidderFactory';
-import { BANNER, VIDEO } from 'src/mediaTypes';
+import * as utils from '../src/utils';
+import {registerBidder} from '../src/adapters/bidderFactory';
+import { BANNER, VIDEO } from '../src/mediaTypes';
 
 const BIDDER_CODE = 'conversant';
 const URL = '//web.hb.ad.cpe.dotomi.com/s2s/header/24';
-const VERSION = '2.2.3';
+const VERSION = '2.2.4';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -62,8 +62,6 @@ export const spec = {
       siteId = utils.getBidIdParameter('site_id', bid.params);
       requestId = bid.auctionId;
 
-      const format = convertSizes(bid.sizes);
-
       const imp = {
         id: bid.bidId,
         secure: secure,
@@ -72,30 +70,38 @@ export const spec = {
         displaymanagerver: VERSION
       };
 
-      copyOptProperty(bid.params, 'tag_id', imp, 'tagid');
+      copyOptProperty(bid.params.tag_id, imp, 'tagid');
 
       if (isVideoRequest(bid)) {
-        const video = {
-          w: format[0].w,
-          h: format[0].h
-        };
+        const videoData = utils.deepAccess(bid, 'mediaTypes.video') || {};
+        const format = convertSizes(videoData.playerSize || bid.sizes);
+        const video = {};
 
-        copyOptProperty(bid.params, 'position', video, 'pos');
-        copyOptProperty(bid.params, 'mimes', video);
-        copyOptProperty(bid.params, 'maxduration', video);
-        copyOptProperty(bid.params, 'protocols', video);
-        copyOptProperty(bid.params, 'api', video);
+        if (format && format[0]) {
+          copyOptProperty(format[0].w, video, 'w');
+          copyOptProperty(format[0].h, video, 'h');
+        }
+
+        copyOptProperty(bid.params.position, video, 'pos');
+        copyOptProperty(bid.params.mimes || videoData.mimes, video, 'mimes');
+        copyOptProperty(bid.params.maxduration, video, 'maxduration');
+        copyOptProperty(bid.params.protocols || videoData.protocols, video, 'protocols');
+        copyOptProperty(bid.params.api || videoData.api, video, 'api');
 
         imp.video = video;
       } else {
+        const bannerData = utils.deepAccess(bid, 'mediaTypes.banner') || {};
+        const format = convertSizes(bannerData.sizes || bid.sizes);
         const banner = {format: format};
 
-        copyOptProperty(bid.params, 'position', banner, 'pos');
+        copyOptProperty(bid.params.position, banner, 'pos');
 
         imp.banner = banner;
       }
 
-      if (bid.crumbs && bid.crumbs.pubcid) {
+      if (bid.userId && bid.userId.pubcid) {
+        pubcid = bid.userId.pubcid;
+      } else if (bid.crumbs && bid.crumbs.pubcid) {
         pubcid = bid.crumbs.pubcid;
       }
 
@@ -196,6 +202,20 @@ export const spec = {
     }
 
     return bidResponses;
+  },
+
+  /**
+   * Covert bid param types for S2S
+   * @param {Object} params bid params
+   * @param {Boolean} isOpenRtb boolean to check openrtb2 protocol
+   * @return {Object} params bid params
+   */
+  transformBidParams: function(params, isOpenRtb) {
+    return utils.convertTypes({
+      'site_id': 'string',
+      'secure': 'number',
+      'mobile': 'number'
+    }, params);
   }
 };
 
@@ -235,11 +255,12 @@ function getDevice() {
  */
 function convertSizes(bidSizes) {
   let format;
-
-  if (bidSizes.length === 2 && typeof bidSizes[0] === 'number' && typeof bidSizes[1] === 'number') {
-    format = [{w: bidSizes[0], h: bidSizes[1]}];
-  } else {
-    format = utils._map(bidSizes, d => { return {w: d[0], h: d[1]}; });
+  if (Array.isArray(bidSizes)) {
+    if (bidSizes.length === 2 && typeof bidSizes[0] === 'number' && typeof bidSizes[1] === 'number') {
+      format = [{w: bidSizes[0], h: bidSizes[1]}];
+    } else {
+      format = utils._map(bidSizes, d => { return {w: d[0], h: d[1]}; });
+    }
   }
 
   return format;
@@ -258,16 +279,13 @@ function isVideoRequest(bid) {
 /**
  * Copy property if exists from src to dst
  *
- * @param {object} src
- * @param {string} srcName
- * @param {object} dst
- * @param {string} [dstName] - Optional. If not specified then srcName is used.
+ * @param {object} src - source object
+ * @param {object} dst - destination object
+ * @param {string} dstName - destination property name
  */
-function copyOptProperty(src, srcName, dst, dstName) {
-  dstName = dstName || srcName;
-  const obj = utils.getBidIdParameter(srcName, src);
-  if (obj !== '') {
-    dst[dstName] = obj;
+function copyOptProperty(src, dst, dstName) {
+  if (src) {
+    dst[dstName] = src;
   }
 }
 
