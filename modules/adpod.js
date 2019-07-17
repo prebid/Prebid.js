@@ -216,21 +216,21 @@ export function callPrebidCacheHook(fn, auctionInstance, bidResponse, afterBidAd
     if (!adServerCatId && brandCategoryExclusion) {
       utils.logWarn('Detected a bid without meta.adServerCatId while setConfig({adpod.brandCategoryExclusion}) was enabled.  This bid has been rejected:', bidResponse)
       afterBidAdded();
-    }
-
-    if (config.getConfig('adpod.deferCaching') === false) {
-      bidCacheRegistry.addBid(bidResponse);
-      attachPriceIndustryDurationKeyToBid(bidResponse, brandCategoryExclusion);
-
-      updateBidQueue(auctionInstance, bidResponse, afterBidAdded);
     } else {
-      // generate targeting keys for bid
-      bidCacheRegistry.setupInitialCacheKey(bidResponse);
-      attachPriceIndustryDurationKeyToBid(bidResponse, brandCategoryExclusion);
+      if (config.getConfig('adpod.deferCaching') === false) {
+        bidCacheRegistry.addBid(bidResponse);
+        attachPriceIndustryDurationKeyToBid(bidResponse, brandCategoryExclusion);
 
-      // add bid to auction
-      addBidToAuction(auctionInstance, bidResponse);
-      afterBidAdded();
+        updateBidQueue(auctionInstance, bidResponse, afterBidAdded);
+      } else {
+        // generate targeting keys for bid
+        bidCacheRegistry.setupInitialCacheKey(bidResponse);
+        attachPriceIndustryDurationKeyToBid(bidResponse, brandCategoryExclusion);
+
+        // add bid to auction
+        addBidToAuction(auctionInstance, bidResponse);
+        afterBidAdded();
+      }
     }
   } else {
     fn.call(this, auctionInstance, bidResponse, afterBidAdded, bidderRequest);
@@ -537,9 +537,9 @@ function getAdPodAdUnits(codes) {
 }
 
 /**
- * This function removes bids of same freewheel category. It will be used when competitive exclusion is enabled.
+ * This function removes bids of same category. It will be used when competitive exclusion is enabled.
  * @param {Array[Object]} bidsReceived
- * @returns {Array[Object]} unique freewheel category bids
+ * @returns {Array[Object]} unique category bids
  */
 function getExclusiveBids(bidsReceived) {
   let bids = bidsReceived

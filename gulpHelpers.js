@@ -13,7 +13,6 @@ const BUILD_PATH = './build/dist';
 const DEV_PATH = './build/dev';
 const ANALYTICS_PATH = '../analytics';
 
-
 // get only subdirectories that contain package.json with 'main' property
 function isModuleDirectory(filePath) {
   try {
@@ -23,12 +22,6 @@ function isModuleDirectory(filePath) {
       return module && module.main;
     }
   } catch (error) {}
-}
-
-// Do not include any files of common directory in the build
-// common folder is designed to keep files shared by multiple modules
-function removeCommonDir(file) {
-  return !!(file !== 'common');
 }
 
 module.exports = {
@@ -84,7 +77,6 @@ module.exports = {
       var absoluteModulePath = path.join(__dirname, MODULE_PATH);
       internalModules = fs.readdirSync(absoluteModulePath)
         .filter(file => (/^[^\.]+(\.js)?$/).test(file))
-        .filter(removeCommonDir)
         .reduce((memo, file) => {
           var moduleName = file.split(new RegExp('[.\\' + path.sep + ']'))[0];
           var modulePath = path.join(absoluteModulePath, file);
