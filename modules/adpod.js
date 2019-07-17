@@ -434,7 +434,7 @@ export function sortByPricePerSecond(a, b) {
 }
 
 /**
- * This function returns targeting keyvalue pairs for freewheel adserver module
+ * This function returns targeting keyvalue pairs for long-form adserver modules. Freewheel and GAM are currently supporting Prebid long-form
  * @param {Object} options
  * @param {Array[string]} codes
  * @param {function} callback

@@ -10,8 +10,6 @@ import { targeting } from 'src/targeting';
 import { auctionManager } from 'src/auctionManager';
 import * as adpod from 'modules/adpod';
 
-// import { getTargeting } from 'modules/common/videoAdserver';
-
 const bid = {
   videoCacheKey: 'abc',
   adserverTargeting: {
@@ -304,7 +302,8 @@ describe('The DFP video support module', function () {
   describe('adpod unit tests', function () {
     let amStub;
     let amGetAdUnitsStub;
-    let pbcStub;
+    let xhr;
+    let requests;
 
     before(function () {
       let adUnits = [{
@@ -334,7 +333,10 @@ describe('The DFP video support module', function () {
     });
 
     beforeEach(function () {
-      pbcStub = sinon.stub(adpod, 'callPrebidCacheAfterAuction');
+      xhr = sinon.useFakeXMLHttpRequest();
+      requests = [];
+      xhr.onCreate = request => requests.push(request);
+
       config.setConfig({
         adpod: {
           brandCategoryExclusion: true,
@@ -345,7 +347,7 @@ describe('The DFP video support module', function () {
 
     afterEach(function() {
       config.resetConfig();
-      pbcStub.restore();
+      xhr.restore();
     });
 
     after(function () {
@@ -355,9 +357,6 @@ describe('The DFP video support module', function () {
 
     it('should return masterTag url', function() {
       amStub.returns(getBidsReceived());
-      pbcStub.callsFake(function (...args) {
-        args[1](null, getBidsReceived());
-      });
       let url;
       parse(buildAdpodVideoUrl({
         code: 'adUnitCode-1',
@@ -413,9 +412,6 @@ describe('The DFP video support module', function () {
         return bids;
       }
       amStub.returns(getBids());
-      pbcStub.callsFake(function (...args) {
-        args[1](null, getBids());
-      });
       let url;
       parse(buildAdpodVideoUrl({
         code: 'adUnitCode-1',
@@ -460,9 +456,7 @@ describe('The DFP video support module', function () {
         }
       });
       amStub.returns(getBidsReceived());
-      pbcStub.callsFake(function (...args) {
-        args[1]('cache-error', null);
-      });
+
       parse(buildAdpodVideoUrl({
         code: 'adUnitCode-1',
         callback: handleResponse,
@@ -472,9 +466,13 @@ describe('The DFP video support module', function () {
         }
       }));
 
+      requests[0].respond(503, {
+        'Content-Type': 'plain/text',
+      }, 'The server could not save anything at the moment.');
+
       function handleResponse(err, masterTag) {
         expect(masterTag).to.be.null;
-        expect(err).to.equal('cache-error');
+        expect(err).to.be.an('error');
       }
     });
   })
