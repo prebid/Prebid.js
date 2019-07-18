@@ -97,9 +97,9 @@ export const spec = {
   },
 
   getUserSyncs: function getUserSyncs(syncOptions, responses, gdprConsent) {
-    let url = '//pre.ads.justpremium.com/v/1.0/t/sync'
+    let url = '//pre.ads.justpremium.com/v/1.0/t/sync' + '?_c=' + 'a' + Math.random().toString(36).substring(7) + Date.now();
     if (gdprConsent && (typeof gdprConsent.gdprApplies === 'boolean')) {
-      url = url + '?consentString=' + encodeURIComponent(gdprConsent.consentString)
+      url = url + '&consentString=' + encodeURIComponent(gdprConsent.consentString)
     }
     if (syncOptions.iframeEnabled) {
       pixels.push({
