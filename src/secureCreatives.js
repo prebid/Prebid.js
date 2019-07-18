@@ -81,7 +81,7 @@ export function _sendAdToCreative(adObject, remoteDomain, source) {
 
 function resizeRemoteCreative({ adUnitCode, width, height }) {
   // resize both container div + iframe
-  ['div', 'iframe'].forEach(elmType => {
+  ['div:last-child', 'div:last-child iframe'].forEach(elmType => {
     let element = getElementByAdUnit(elmType);
     if (element) {
       let elementStyle = element.style;
