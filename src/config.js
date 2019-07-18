@@ -10,10 +10,11 @@
 import { isValidPriceConfig } from './cpmBucketManager';
 import find from 'core-js/library/fn/array/find';
 import includes from 'core-js/library/fn/array/includes';
-import { hook } from './hook';
-const utils = require('./utils');
 
-const DEFAULT_DEBUG = false;
+const utils = require('./utils');
+const CONSTANTS = require('./constants');
+
+const DEFAULT_DEBUG = utils.getParameterByName(CONSTANTS.DEBUG_MODE).toUpperCase() === 'TRUE';
 const DEFAULT_BIDDER_TIMEOUT = 3000;
 const DEFAULT_PUBLISHER_DOMAIN = window.location.origin;
 const DEFAULT_ENABLE_SEND_ALL_BIDS = true;
@@ -231,7 +232,7 @@ export function newConfig() {
    * Sets configuration given an object containing key-value pairs and calls
    * listeners that were added by the `subscribe` function
    */
-  let setConfig = hook('async', function setConfig(options) {
+  function setConfig(options) {
     if (typeof options !== 'object') {
       utils.logError('setConfig options must be an object');
       return;
@@ -251,7 +252,7 @@ export function newConfig() {
     });
 
     callSubscribers(topicalConfig);
-  });
+  }
 
   /**
    * Sets configuration defaults which setConfig values can be applied on top of
