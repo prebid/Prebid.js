@@ -44,8 +44,10 @@ export const spec = {
     }
 
     // video media types requires some mandatory params
-    if (hasVideoMediaType(bid) && (!hasValidVideoMediaType(bid) || !hasValidVideoParams(bid))) {
-      return false;
+    if (hasVideoMediaType(bid)) {
+      if (!hasValidVideoMediaType(bid)) {
+        return false;
+      }
     }
 
     return true;
@@ -307,29 +309,23 @@ function parseSizes(sizes) {
 }
 
 function hasVideoMediaType(bidRequest) {
-  if (typeof utils.deepAccess(bidRequest, 'params.video') !== 'object') {
+  if (utils.deepAccess(bidRequest, 'params.video') === undefined) {
     return false;
   }
-  return (typeof utils.deepAccess(bidRequest, `mediaTypes.${VIDEO}`) !== 'undefined');
+  return utils.deepAccess(bidRequest, 'mediaTypes.video') !== undefined;
 }
 
 function hasValidVideoMediaType(bidRequest) {
   let isValid = true;
 
-  var requiredParams = ['mimes', 'playerSize', 'maxduration', 'protocols', 'api'];
+  var requiredMediaTypesParams = ['mimes', 'playerSize', 'maxduration', 'protocols', 'api'];
 
-  requiredParams.forEach(function(param) {
-    if (utils.deepAccess(bidRequest, `mediaTypes.${VIDEO}.` + param) === undefined) {
+  requiredMediaTypesParams.forEach(function(param) {
+    if (utils.deepAccess(bidRequest, 'mediaTypes.video.' + param) === undefined) {
       isValid = false;
       utils.logError('Criteo Bid Adapter: mediaTypes.video.' + param + ' is required');
     }
   });
-
-  return isValid;
-}
-
-function hasValidVideoParams(bidRequest) {
-  let isValid = true;
 
   var requiredParams = ['skip', 'placement', 'playbackmethod'];
 
@@ -340,7 +336,16 @@ function hasValidVideoParams(bidRequest) {
     }
   });
 
-  return isValid;
+  if (isValid) {
+    // We do not support long form for now, also we have to check that context & placement are consistent
+    if (bidRequest.mediaTypes.video.context == 'instream' && bidRequest.params.video.placement === 1) {
+      return true;
+    } else if (bidRequest.mediaTypes.video.context == 'outstream' && bidRequest.params.video.placement !== 1) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 /**

@@ -59,6 +59,7 @@ describe('The Criteo bidding adapter', function () {
         bidder: 'criteo',
         mediaTypes: {
           video: {
+            context: 'instream',
             mimes: ['video/mpeg'],
             playerSize: [640, 480],
             protocols: [5, 6],
@@ -75,6 +76,28 @@ describe('The Criteo bidding adapter', function () {
           }
         },
       })).to.equal(true);
+
+      expect(spec.isBidRequestValid({
+        bidder: 'criteo',
+        mediaTypes: {
+          video: {
+            context: 'outstream',
+            mimes: ['video/mpeg'],
+            playerSize: [640, 480],
+            protocols: [5, 6],
+            maxduration: 30,
+            api: [1, 2]
+          }
+        },
+        params: {
+          networkId: 456,
+          video: {
+            skip: 1,
+            placement: 2,
+            playbackmethod: 1
+          }
+        },
+      })).to.equal(true);
     });
 
     it('should return false when given an invalid video bid request', function () {
@@ -82,6 +105,7 @@ describe('The Criteo bidding adapter', function () {
         bidder: 'criteo',
         mediaTypes: {
           video: {
+            mimes: ['video/mpeg'],
             playerSize: [640, 480],
             protocols: [5, 6],
             maxduration: 30,
@@ -102,6 +126,94 @@ describe('The Criteo bidding adapter', function () {
         bidder: 'criteo',
         mediaTypes: {
           video: {
+            context: 'instream',
+            mimes: ['video/mpeg'],
+            playerSize: [640, 480],
+            protocols: [5, 6],
+            maxduration: 30,
+            api: [1, 2]
+          }
+        },
+        params: {
+          networkId: 456,
+          video: {
+            skip: 1,
+            placement: 2,
+            playbackmethod: 1
+          }
+        },
+      })).to.equal(false);
+
+      expect(spec.isBidRequestValid({
+        bidder: 'criteo',
+        mediaTypes: {
+          video: {
+            context: 'outstream',
+            mimes: ['video/mpeg'],
+            playerSize: [640, 480],
+            protocols: [5, 6],
+            maxduration: 30,
+            api: [1, 2]
+          }
+        },
+        params: {
+          networkId: 456,
+          video: {
+            skip: 1,
+            placement: 1,
+            playbackmethod: 1
+          }
+        },
+      })).to.equal(false);
+
+      expect(spec.isBidRequestValid({
+        bidder: 'criteo',
+        mediaTypes: {
+          video: {
+            context: 'adpod',
+            mimes: ['video/mpeg'],
+            playerSize: [640, 480],
+            protocols: [5, 6],
+            maxduration: 30,
+            api: [1, 2]
+          }
+        },
+        params: {
+          networkId: 456,
+          video: {
+            skip: 1,
+            placement: 1,
+            playbackmethod: 1
+          }
+        },
+      })).to.equal(false);
+
+      expect(spec.isBidRequestValid({
+        bidder: 'criteo',
+        mediaTypes: {
+          video: {
+            context: 'instream',
+            playerSize: [640, 480],
+            protocols: [5, 6],
+            maxduration: 30,
+            api: [1, 2]
+          }
+        },
+        params: {
+          networkId: 456,
+          video: {
+            skip: 1,
+            placement: 1,
+            playbackmethod: 1
+          }
+        },
+      })).to.equal(false);
+
+      expect(spec.isBidRequestValid({
+        bidder: 'criteo',
+        mediaTypes: {
+          video: {
+            context: 'instream',
             mimes: ['video/mpeg'],
             protocols: [5, 6],
             maxduration: 30,
@@ -122,6 +234,7 @@ describe('The Criteo bidding adapter', function () {
         bidder: 'criteo',
         mediaTypes: {
           video: {
+            context: 'instream',
             mimes: ['video/mpeg'],
             playerSize: [640, 480],
             maxduration: 30,
@@ -142,6 +255,7 @@ describe('The Criteo bidding adapter', function () {
         bidder: 'criteo',
         mediaTypes: {
           video: {
+            context: 'instream',
             mimes: ['video/mpeg'],
             playerSize: [640, 480],
             protocols: [5, 6],
@@ -162,6 +276,7 @@ describe('The Criteo bidding adapter', function () {
         bidder: 'criteo',
         mediaTypes: {
           video: {
+            context: 'instream',
             mimes: ['video/mpeg'],
             playerSize: [640, 480],
             protocols: [5, 6],
@@ -182,6 +297,7 @@ describe('The Criteo bidding adapter', function () {
         bidder: 'criteo',
         mediaTypes: {
           video: {
+            context: 'instream',
             mimes: ['video/mpeg'],
             playerSize: [640, 480],
             protocols: [5, 6],
@@ -202,6 +318,7 @@ describe('The Criteo bidding adapter', function () {
         bidder: 'criteo',
         mediaTypes: {
           video: {
+            context: 'instream',
             mimes: ['video/mpeg'],
             playerSize: [640, 480],
             protocols: [5, 6],
@@ -222,6 +339,7 @@ describe('The Criteo bidding adapter', function () {
         bidder: 'criteo',
         mediaTypes: {
           video: {
+            context: 'instream',
             mimes: ['video/mpeg'],
             playerSize: [640, 480],
             protocols: [5, 6],
