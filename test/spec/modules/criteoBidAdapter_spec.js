@@ -69,7 +69,7 @@ describe('The Criteo bidding adapter', function () {
     };
 
     afterEach(function () {
-      config.resetConfig()
+      config.resetConfig();
     });
 
     it('should properly build a zoneId request', function () {
