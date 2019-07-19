@@ -91,9 +91,7 @@ describe('rhythmone adapter tests', function () {
           },
           'mediaTypes': {
             'video': {
-              'playerSize': [
-                [640, 480]
-              ],
+              'playerSize': [640, 480],
               'context': 'instream'
             }
           },
@@ -332,7 +330,7 @@ describe('rhythmone adapter tests', function () {
       expect(openrtbRequest.imp[0].banner.format[0].h).to.equal(600);
     });
 
-    it('survives size misconfiguration', function () {
+    it('does not return request for invalid banner size configuration', function () {
       var bidRequestList = [
         {
           'bidder': 'rhythmone',
@@ -356,9 +354,58 @@ describe('rhythmone adapter tests', function () {
       ];
 
       var bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest);
+      expect(bidRequest.method).to.be.undefined;
+    });
 
+    it('does not return request for missing banner size configuration', function () {
+      var bidRequestList = [
+        {
+          'bidder': 'rhythmone',
+          'params': {
+            'placementId': 'myplacement',
+            'zone': 'myzone',
+            'path': 'mypath'
+          },
+          'mediaTypes': {
+            'banner': {}
+          },
+          'adUnitCode': 'div-gpt-ad-1438287399331-0',
+          'transactionId': 'd7b773de-ceaa-484d-89ca-d9f51b8d61ec',
+          'bidderRequestId': '418b37f85e772c',
+          'auctionId': '18fd8b8b0bd757',
+          'bidRequestsCount': 1,
+          'bidId': '51ef8751f9aead'
+        }
+      ];
+
+      var bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest);
+      expect(bidRequest.method).to.be.undefined;
+    });
+
+    it('reject bad sizes', function () {
+      var bidRequestList = [
+        {
+          'bidder': 'rhythmone',
+          'params': {
+            'placementId': 'myplacement',
+            'zone': 'myzone',
+            'path': 'mypath'
+          },
+          'mediaTypes': {
+            'banner': {'sizes': [['400', '500'], ['4n0', '5g0']]}
+          },
+          'adUnitCode': 'div-gpt-ad-1438287399331-0',
+          'transactionId': 'd7b773de-ceaa-484d-89ca-d9f51b8d61ec',
+          'bidderRequestId': '418b37f85e772c',
+          'auctionId': '18fd8b8b0bd757',
+          'bidRequestsCount': 1,
+          'bidId': '51ef8751f9aead'
+        }
+      ];
+
+      var bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest);
       const openrtbRequest = JSON.parse(bidRequest.data);
-      expect(openrtbRequest.imp[0].banner.format).to.be.undefined;
+      expect(openrtbRequest.imp[0].banner.format.length).to.equal(1);
     });
 
     it('dnt is correctly set to 1', function () {
@@ -418,35 +465,6 @@ describe('rhythmone adapter tests', function () {
 
       const openrtbRequest = JSON.parse(bidRequest.data);
       expect(openrtbRequest.imp[0].bidfloor).to.equal(100.0);
-    });
-
-    it('support for correct video size definition', function () {
-      var bidRequestList = [
-        {
-          'bidder': 'rhythmone',
-          'params': {
-            'placementId': 'myplacement',
-          },
-          'mediaTypes': {
-            'video': {
-              'playerSize': [640, 480],
-              'context': 'instream'
-            }
-          },
-          'adUnitCode': 'div-gpt-ad-1438287399331-1',
-          'transactionId': 'd7b773de-ceaa-484d-89ca-d9f51b8d61ec',
-          'bidderRequestId': '418b37f85e772c',
-          'auctionId': '18fd8b8b0bd757',
-          'bidRequestsCount': 1,
-          'bidId': '51ef8751f9aead'
-        }
-      ];
-
-      var bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest);
-
-      const openrtbRequest = JSON.parse(bidRequest.data);
-      expect(openrtbRequest.imp[0].video.w).to.equal(640);
-      expect(openrtbRequest.imp[0].video.h).to.equal(480);
     });
 
     it('supports string video sizes', function () {
@@ -601,28 +619,6 @@ describe('rhythmone adapter tests', function () {
         'body': ''
       });
       expect(noBidResponse.length).to.equal(0);
-    });
-  });
-
-  describe('auditBeacon', function() {
-    it('should contain the correct path', function() {
-      var syncList = r1adapter.getUserSyncs({pixelEnabled: true});
-      expect(syncList.length).to.equal(1);
-      var syncData = syncList[0];
-      var expectedURL = '//hbevents.1rx.io/audit?';
-      assert.equal(syncData.url.substring(0, expectedURL.length), expectedURL);
-    });
-
-    it('should send GDPR Consent data to Sync pixel', function () {
-      var syncList = r1adapter.getUserSyncs({pixelEnabled: true}, null, {'gdprApplies': true, 'consentString': 'testConsentString'});
-      expect(syncList.length).to.equal(1);
-      var syncData = syncList[0];
-      expect(syncData.url).to.have.string('&gdpr=true&gdpr_consent=testConsentString');
-    });
-
-    it('should not return anything when pixelEnabled is false', function () {
-      var syncList = r1adapter.getUserSyncs({pixelEnabled: false}, null, {'gdprApplies': true, 'consentString': 'testConsentString'});
-      expect(syncList).to.be.undefined;
     });
   });
 
