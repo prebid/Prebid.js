@@ -125,7 +125,6 @@ export const spec = {
         }
       }
     });
-    utils.logInfo('padsquad.getUserSyncs result=%o', syncs);
     return syncs;
   },
 
