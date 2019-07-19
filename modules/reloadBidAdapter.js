@@ -6,7 +6,7 @@ import * as utils from '../src/utils';
 
 const BIDDER_CODE = 'reload';
 
-const VERSION_ADAPTER = '1.0';
+const VERSION_ADAPTER = '1.10';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -52,7 +52,10 @@ export const spec = {
         opdomID: bidRequest.params.opdomID,
         bsrvID: bidRequest.params.bsrvID,
         gdprObj: vgdprConsent,
-        mediaObj: bidRequest.mediaTypes
+        mediaObj: bidRequest.mediaTypes,
+
+        wnd: utils.getWindowTop(),
+        rtop: utils.deepAccess(bidderRequest, 'refererInfo.reachedTop') || false
       });
 
       if (vSrvUrl === null) vSrvUrl = vPrxClientTool.getSrvUrl();
@@ -138,7 +141,9 @@ function ReloadClientTool(args) {
   var _pcmClientVersion = '140';
   var _pcmFilePref = 'prx_root_';
   var _resFilePref = 'prx_pnws_';
-  var _pcmInputObjVers = '110';
+
+  var _pcmInputObjVers = '120';
+
   var _instObj = null;
   var _status = 'NA';
   var _message = '';
@@ -153,14 +158,12 @@ function ReloadClientTool(args) {
   that.getPCMObj = function () {
     return {
       thisVer: _pcmInputObjVers,
-
       statStr: _memFile.statStr,
       plcmData: _getPlcmData(),
-      clntData: _getClientData(),
+      clntData: _getClientData(args.wnd, args.rtop),
       resultData: _getRD(),
       gdprObj: _getGdpr(),
       mediaObj: _getMediaObj(),
-
       proxetString: null,
       dboData: null,
       plcmSett: null,
@@ -180,6 +183,7 @@ function ReloadClientTool(args) {
     _log += ' ' + obj.log;
 
     if (obj.status !== 'ok') return;
+
     _saveMemFile(obj.statStr, obj.srvUrl);
     _instObj = obj.instr;
   };
@@ -193,10 +197,10 @@ function ReloadClientTool(args) {
 
     return _getProtocolString() + effSrvUrl + '/bid';
 
-    function getBidServerUrl(idx) {
+    function getBidServerUrl (idx) {
       return 'bidsrv' + getTwoDigitString(idx) + '.reload.net';
 
-      function getTwoDigitString(idx) {
+      function getTwoDigitString (idx) {
         if (idx >= 10) return '' + idx;
         else return '0' + idx;
       }
@@ -247,14 +251,14 @@ function ReloadClientTool(args) {
     return _log;
   };
 
-  function _checkInstProp(key, def) {
+  function _checkInstProp (key, def) {
     if (_instObj === null) return def;
     if (typeof _instObj === 'undefined') return def;
     if (_instObj.go !== true) return def;
     return _instObj[key];
   }
 
-  function _getPlcmData() {
+  function _getPlcmData () {
     return {
       prxVer: args.prxVer,
       prxType: args.prxType,
@@ -268,40 +272,39 @@ function ReloadClientTool(args) {
     };
   }
 
-  function _getClientData() {
-    var locInf = getBestLocInf();
+  function _getClientData (wnd, rtop) {
     return {
-      version: 100,
+      version: 200,
       locTime: Date.now(),
 
-      winInfo: _genWinInfo(),
+      winInfo: _winInf(wnd),
       envInfo: getEnvInfo(),
-      confined: detectConfined(),
-      protStr: _getProtocolString(),
 
-      hostDomain: decodeURIComponent(locInf.host),
-      hostPagePath: decodeURIComponent(locInf.pathname),
-      hostPageUrl: decodeURIComponent(locInf.href),
-      hostPageTitle: document.title,
+      topw: rtop === true,
+      prot: wnd.document.location.protocol,
+      host: wnd.document.location.host,
+      title: wnd.document.title,
     };
 
-    function getBestLocInf() {
-      var trgtWnd = null;
-      try { trgtWnd = top; } catch (e) { trgtWnd = window; }
-      return trgtWnd.location;
-    }
-
-    function _genWinInfo() {
-      var winInfo = {
-        physicalWidth: window.screen.width,
-        physicalHeight: window.screen.height,
-        screenWidth: window.screen.availWidth,
-        screenHeight: window.screen.availHeight,
-        windowWidth: window.innerWidth,
-        windowHeight: window.innerHeight,
-        bodyHeight: document.body.clientHeight
+    function _winInf (wnd) {
+      return {
+        phs: {
+          w: wnd.screen.width,
+          h: wnd.screen.height
+        },
+        avl: {
+          w: wnd.screen.availWidth,
+          h: wnd.screen.availHeight
+        },
+        inr: {
+          w: wnd.innerWidth,
+          h: wnd.innerHeight
+        },
+        bdy: {
+          w: wnd.document.body.clientWidth,
+          h: wnd.document.body.clientHeight
+        }
       };
-      return winInfo;
     }
 
     function getEnvInfo() {
@@ -311,19 +314,14 @@ function ReloadClientTool(args) {
         appVersion: navigator.appVersion
       };
     }
-
-    function detectConfined() {
-      var confined = true;
-      try { if (window.top === window.self) confined = false; } catch (err) { }
-      return confined;
-    }
   }
 
-  function _getMemFile() {
+  function _getMemFile () {
     try {
       var memFileObj = _getItem(_getMemFileName());
 
       if (memFileObj === null) throw { s: 'init' };
+
       if (typeof memFileObj.statStr !== 'string') throw { s: 'error' };
       if (typeof memFileObj.srvUrl !== 'string') throw { s: 'error' };
 
@@ -341,7 +339,7 @@ function ReloadClientTool(args) {
     }
   }
 
-  function _saveMemFile(statStr, srvUrl) {
+  function _saveMemFile (statStr, srvUrl) {
     try {
       var fileData = {
         statStr: statStr,
@@ -354,11 +352,11 @@ function ReloadClientTool(args) {
     }
   }
 
-  function _getMemFileName() {
+  function _getMemFileName () {
     return _pcmFilePref + args.plcmID + '_' + args.partID;
   }
 
-  function _getRD() {
+  function _getRD () {
     try {
       return _getItem(_getResltStatusFileName());
     } catch (err) {
@@ -366,7 +364,7 @@ function ReloadClientTool(args) {
     }
   }
 
-  function _setRD(fileData) {
+  function _setRD (fileData) {
     try {
       _setItem(_getResltStatusFileName(), fileData);
       return true;
@@ -383,12 +381,12 @@ function ReloadClientTool(args) {
     return args.mediaObj;
   }
 
-  function _getResltStatusFileName() {
+  function _getResltStatusFileName () {
     if (args.lmod === true) return _resFilePref + args.lplcmID + '_' + args.partID;
     else return _resFilePref + args.plcmID + '_' + args.partID;
   }
 
-  function _setItem(name, data) {
+  function _setItem (name, data) {
     var stgFileObj = {
       ver: _pcmClientVersion,
       ts: Date.now(),
@@ -409,10 +407,11 @@ function ReloadClientTool(args) {
     return true;
   }
 
-  function _getItem(name) {
+  function _getItem (name) {
     try {
       var obStgFileStr = localStorage.getItem(name);
       if (obStgFileStr === null) return null;
+
       var stgFileObj = JSON.parse(obStgFileStr);
 
       if (stgFileObj.ver !== _pcmClientVersion) throw { message: 'version_error' };
@@ -424,12 +423,12 @@ function ReloadClientTool(args) {
     }
   }
 
-  function _getProtocolString() {
+  function _getProtocolString () {
     var wnd = null;
     try { wnd = top; } catch (err) { wnd = window; }
 
-    if (wnd.location.protocol.toLowerCase().indexOf('http:') >= 0) return 'http://'
-    else return 'https://'
+    if (wnd.location.protocol.toLowerCase().indexOf('http:') >= 0) return 'http://';
+    else return 'https://';
   }
 };
 
