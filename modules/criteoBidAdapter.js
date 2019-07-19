@@ -255,7 +255,7 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
       }
       if (hasVideoMediaType(bidRequest)) {
         const video = {
-          playersize: getVideoSizes(bidRequest),
+          playersizes: getVideoSizes(bidRequest),
           mimes: bidRequest.mediaTypes.video.mimes,
           protocols: bidRequest.mediaTypes.video.protocols,
           maxduration: bidRequest.mediaTypes.video.maxduration,

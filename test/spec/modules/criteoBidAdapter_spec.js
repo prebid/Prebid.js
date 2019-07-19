@@ -546,7 +546,7 @@ describe('The Criteo bidding adapter', function () {
       expect(request.method).to.equal('POST');
       const ortbRequest = request.data;
       expect(ortbRequest.slots[0].video.mimes).to.deep.equal(['video/mp4', 'video/x-flv']);
-      expect(ortbRequest.slots[0].video.playersize).to.deep.equal(['640x480']);
+      expect(ortbRequest.slots[0].video.playersizes).to.deep.equal(['640x480']);
       expect(ortbRequest.slots[0].video.maxduration).to.equal(30);
       expect(ortbRequest.slots[0].video.api).to.deep.equal([1, 2]);
       expect(ortbRequest.slots[0].video.protocols).to.deep.equal([2, 3]);
@@ -590,7 +590,7 @@ describe('The Criteo bidding adapter', function () {
       expect(request.method).to.equal('POST');
       const ortbRequest = request.data;
       expect(ortbRequest.slots[0].video.mimes).to.deep.equal(['video/mp4', 'video/x-flv']);
-      expect(ortbRequest.slots[0].video.playersize).to.deep.equal(['640x480', '800x600']);
+      expect(ortbRequest.slots[0].video.playersizes).to.deep.equal(['640x480', '800x600']);
       expect(ortbRequest.slots[0].video.maxduration).to.equal(30);
       expect(ortbRequest.slots[0].video.api).to.deep.equal([1, 2]);
       expect(ortbRequest.slots[0].video.protocols).to.deep.equal([2, 3]);
