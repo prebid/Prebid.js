@@ -15,8 +15,7 @@ function RhythmOneBidAdapter() {
   let SUPPORTED_VIDEO_API = [1, 2, 5];
   let slotsToBids = {};
   let that = this;
-  let version = '2.0.0.0';
-  let loadStart = Date.now();
+  let version = '2.0.1.0';
   var win = typeof window !== 'undefined' ? window : {};
 
   this.isBidRequestValid = function (bid) {
@@ -24,66 +23,11 @@ function RhythmOneBidAdapter() {
   };
 
   this.getUserSyncs = function (syncOptions, responses, gdprConsent) {
-    let slots = [];
-    let placementIds = [];
-
-    for (let k in slotsToBids) {
-      slots.push(k);
-      placementIds.push(getFirstParam('placementId', [slotsToBids[k]]));
-    }
-
-    let data = {
-      doc_version: 1,
-      doc_type: 'Prebid Audit',
-      placement_id: placementIds.join(',').replace(/[,]+/g, ',').replace(/^,|,$/g, '')
-    };
-    let w = typeof (window) !== 'undefined' ? window : {document: {location: {href: ''}}};
-    let ao = w.document.location.ancestorOrigins;
-    let q = [];
-    let u = '//hbevents.1rx.io/audit?';
-
-    if (ao && ao.length > 0) {
-      data.ancestor_origins = ao[ao.length - 1];
-    }
-
-    data.popped = w.opener !== null ? 1 : 0;
-    data.framed = w.top === w ? 0 : 1;
-
-    try {
-      data.url = w.top.document.location.href.toString();
-    } catch (ex) {
-      data.url = w.document.location.href.toString();
-    }
-
-    try {
-      data.prebid_version = '$prebid.version$';
-      data.prebid_timeout = config.getConfig('bidderTimeout');
-    } catch (ex) { }
-
-    data.response_ms = Date.now() - loadStart;
-    data.placement_codes = slots.join(',');
-    data.bidder_version = version;
-    if (gdprConsent) {
-      data.gdpr_consent = gdprConsent.consentString;
-      data.gdpr = (typeof gdprConsent.gdprApplies === 'boolean') ? gdprConsent.gdprApplies : false;
-    }
-
-    for (let k in data) {
-      q.push(encodeURIComponent(k) + '=' + encodeURIComponent((typeof data[k] === 'object' ? JSON.stringify(data[k]) : data[k])));
-    }
-
-    q.sort();
-
-    if (syncOptions.pixelEnabled) {
-      return [{
-        type: 'image',
-        url: u + q.join('&')
-      }];
-    }
+    return [];
   };
 
   function frameImp(BRs) {
-    var imp = [];
+    var impList = [];
     for (var i = 0; i < BRs.length; i++) {
       slotsToBids[BRs[i].adUnitCode || BRs[i].placementCode] = BRs[i];
       var impObj = {};
@@ -92,15 +36,21 @@ function RhythmOneBidAdapter() {
       impObj.secure = win.location.protocol === 'https:' ? 1 : 0;
 
       if (utils.deepAccess(BRs[i], 'mediaTypes.banner') || utils.deepAccess(BRs[i], 'mediaType') === 'banner') {
-        impObj.banner = frameBanner(BRs[i]);
+        let banner = frameBanner(BRs[i]);
+        if (banner) {
+          impObj.banner = banner;
+        }
       }
       if (utils.deepAccess(BRs[i], 'mediaTypes.video') || utils.deepAccess(BRs[i], 'mediaType') === 'video') {
         impObj.video = frameVideo(BRs[i]);
       }
+      if (!(impObj.banner || impObj.video)) {
+        continue;
+      }
       impObj.ext = frameExt(BRs[i]);
-      imp.push(impObj);
+      impList.push(impObj);
     }
-    return imp;
+    return impList;
   }
 
   function frameSite(bidderRequest) {
@@ -134,7 +84,6 @@ function RhythmOneBidAdapter() {
   function frameDevice() {
     return {
       ua: navigator.userAgent,
-      devicetype: /(ios|ipod|ipad|iphone|android)/i.test(win.navigator.userAgent) ? 1 : /(smart[-]?tv|hbbtv|appletv|googletv|hdmi|netcast\.tv|viera|nettv|roku|\bdtv\b|sonydtv|inettvbrowser|\btv\b)/i.test(win.navigator.userAgent) ? 3 : 2,
       ip: '', // Empty Ip string is required, server gets the ip from HTTP header
       dnt: utils.getDNT() ? 1 : 0,
     }
@@ -157,21 +106,16 @@ function RhythmOneBidAdapter() {
       sizeList = adUnit.mediaTypes.banner.sizes;
     }
     var sizeStringList = utils.parseSizesInput(sizeList);
-    if (!Array.isArray(sizeStringList)) {
-      return {};
-    }
-
     var format = [];
     sizeStringList.forEach(function(size) {
-      if (!size) {
-        return;
-      }
-      var dimensionList = getValidSizeSet(size.split('x'));
-      if (dimensionList) {
-        format.push({
-          'w': dimensionList[0],
-          'h': dimensionList[1],
-        });
+      if (size) {
+        var dimensionList = getValidSizeSet(size.split('x'));
+        if (dimensionList) {
+          format.push({
+            'w': dimensionList[0],
+            'h': dimensionList[1],
+          });
+        }
       }
     });
     if (format.length) {
@@ -179,7 +123,8 @@ function RhythmOneBidAdapter() {
         'format': format
       };
     }
-    return {};
+
+    return false;
   }
 
   function frameVideo(bid) {
@@ -272,7 +217,9 @@ function RhythmOneBidAdapter() {
     rmpUrl += '&hbv=' + prebidVersion.replace(fat, '') + ',' + version.replace(fat, '');
 
     var bidRequest = frameBid(BRs, bidderRequest);
-    loadStart = Date.now();
+    if (!bidRequest.imp.length) {
+      return {};
+    }
 
     return {
       method: 'POST',
