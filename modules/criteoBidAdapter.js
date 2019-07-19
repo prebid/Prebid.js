@@ -304,8 +304,16 @@ function getBannerSizes(bidRequest) {
   return parseSizes(utils.deepAccess(bidRequest, 'mediaTypes.banner.sizes') || bidRequest.sizes);
 }
 
+function parseSize(size) {
+  return size[0] + 'x' + size[1];
+}
+
 function parseSizes(sizes) {
-  return sizes.map(size => size[0] + 'x' + size[1]);
+  if (Array.isArray(sizes[0])) { // is there several sizes ? (ie. [[728,90],[200,300]])
+    return sizes.map(size => parseSize(size));
+  }
+
+  return [parseSize(sizes)]; // or a single one ? (ie. [728,90])
 }
 
 function hasVideoMediaType(bidRequest) {

@@ -522,7 +522,7 @@ describe('The Criteo bidding adapter', function () {
           sizes: [[728, 90]],
           mediaTypes: {
             video: {
-              playerSize: [[640, 480]],
+              playerSize: [640, 480],
               mimes: ['video/mp4', 'video/x-flv'],
               maxduration: 30,
               api: [1, 2],
@@ -547,6 +547,50 @@ describe('The Criteo bidding adapter', function () {
       const ortbRequest = request.data;
       expect(ortbRequest.slots[0].video.mimes).to.deep.equal(['video/mp4', 'video/x-flv']);
       expect(ortbRequest.slots[0].video.playersize).to.deep.equal(['640x480']);
+      expect(ortbRequest.slots[0].video.maxduration).to.equal(30);
+      expect(ortbRequest.slots[0].video.api).to.deep.equal([1, 2]);
+      expect(ortbRequest.slots[0].video.protocols).to.deep.equal([2, 3]);
+      expect(ortbRequest.slots[0].video.skip).to.equal(1);
+      expect(ortbRequest.slots[0].video.minduration).to.equal(5);
+      expect(ortbRequest.slots[0].video.startdelay).to.equal(5);
+      expect(ortbRequest.slots[0].video.playbackmethod).to.deep.equal([1, 3]);
+      expect(ortbRequest.slots[0].video.placement).to.equal(2);
+    });
+
+    it('should properly build a video request with more than one player size', function () {
+      const bidRequests = [
+        {
+          bidder: 'criteo',
+          adUnitCode: 'bid-123',
+          transactionId: 'transaction-123',
+          sizes: [[728, 90]],
+          mediaTypes: {
+            video: {
+              playerSize: [[640, 480], [800, 600]],
+              mimes: ['video/mp4', 'video/x-flv'],
+              maxduration: 30,
+              api: [1, 2],
+              protocols: [2, 3]
+            }
+          },
+          params: {
+            zoneId: 123,
+            video: {
+              skip: 1,
+              minduration: 5,
+              startdelay: 5,
+              playbackmethod: [1, 3],
+              placement: 2
+            }
+          },
+        },
+      ];
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.url).to.match(/^\/\/bidder\.criteo\.com\/cdb\?profileId=207&av=\d+&wv=[^&]+&cb=\d/);
+      expect(request.method).to.equal('POST');
+      const ortbRequest = request.data;
+      expect(ortbRequest.slots[0].video.mimes).to.deep.equal(['video/mp4', 'video/x-flv']);
+      expect(ortbRequest.slots[0].video.playersize).to.deep.equal(['640x480', '800x600']);
       expect(ortbRequest.slots[0].video.maxduration).to.equal(30);
       expect(ortbRequest.slots[0].video.api).to.deep.equal([1, 2]);
       expect(ortbRequest.slots[0].video.protocols).to.deep.equal([2, 3]);
