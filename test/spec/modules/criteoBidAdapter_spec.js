@@ -4,6 +4,7 @@ import { createBid } from 'src/bidfactory';
 import CONSTANTS from 'src/constants.json';
 import * as utils from 'src/utils';
 import { config } from '../../../src/config';
+import { VIDEO } from '../../../src/mediaTypes';
 
 describe('The Criteo bidding adapter', function () {
   beforeEach(function () {
@@ -545,6 +546,7 @@ describe('The Criteo bidding adapter', function () {
       expect(request.method).to.equal('POST');
       const ortbRequest = request.data;
       expect(ortbRequest.slots[0].video.mimes).to.deep.equal(['video/mp4', 'video/x-flv']);
+      expect(ortbRequest.slots[0].video.playersize).to.deep.equal(['640x480']);
       expect(ortbRequest.slots[0].video.maxduration).to.equal(30);
       expect(ortbRequest.slots[0].video.api).to.deep.equal([1, 2]);
       expect(ortbRequest.slots[0].video.protocols).to.deep.equal([2, 3]);
@@ -647,6 +649,39 @@ describe('The Criteo bidding adapter', function () {
       expect(bids[0].ad).to.equal('test-ad');
       expect(bids[0].width).to.equal(728);
       expect(bids[0].height).to.equal(90);
+    });
+
+    it('should properly parse a bid responsewith with a video', function () {
+      const response = {
+        body: {
+          slots: [{
+            impid: 'test-requestId',
+            bidId: 'abc123',
+            cpm: 1.23,
+            creative: 'test-ad',
+            width: 728,
+            height: 90,
+            zoneid: 123,
+            video: true
+          }],
+        },
+      };
+      const request = {
+        bidRequests: [{
+          adUnitCode: 'test-requestId',
+          bidId: 'test-bidId',
+          params: {
+            zoneId: 123,
+          },
+        }]
+      };
+      const bids = spec.interpretResponse(response, request);
+      expect(bids).to.have.lengthOf(1);
+      expect(bids[0].requestId).to.equal('test-bidId');
+      expect(bids[0].adId).to.equal('abc123');
+      expect(bids[0].cpm).to.equal(1.23);
+      expect(bids[0].vastUrl).to.equal('test-ad');
+      expect(bids[0].mediaType).to.equal(VIDEO);
     });
 
     it('should properly parse a bid responsewith with a zoneId passed as a string', function () {
