@@ -1,10 +1,10 @@
-import {registerBidder} from 'src/adapters/bidderFactory';
+import {registerBidder} from '../src/adapters/bidderFactory';
 import includes from 'core-js/library/fn/array/includes';
 import find from 'core-js/library/fn/array/find';
-import {ajax} from 'src/ajax';
+import {ajax} from '../src/ajax';
 
-const utils = require('src/utils');
-const url = require('src/url');
+const utils = require('../src/utils');
+const url = require('../src/url');
 
 const BIDDER_CODE = 'stroeerCore';
 const DEFAULT_HOST = 'hb.adscale.de';
