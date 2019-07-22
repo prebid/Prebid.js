@@ -36,10 +36,10 @@ const buildItems = (bidRequests) => {
 
   bidRequests.forEach(bidRequest => {
     imp.push(buildImpression(bidRequest));
-    if (utils.deepAccess(bidRequests, 'gdprConsent.gdprApplies')) {
+    if (utils.deepAccess(bidRequest, 'gdprConsent.gdprApplies')) {
       user.ext = {
-        consent: bidRequests.gdprConsent.consentString,
-        gdpr: bidRequests.gdprConsent.gdprApplies & 1
+        consent: bidRequest.gdprConsent.consentString,
+        gdpr: bidRequest.gdprConsent.gdprApplies & 1
       }
     }
   });

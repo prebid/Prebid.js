@@ -34,7 +34,8 @@ const bidResponse = {
         'w': 300,
         'h': 250,
         'cid': '2.6.75',
-        'crid': '2.6.75.300x250'
+        'crid': '2.6.75.300x250',
+        'dealid': 'default'
       }],
       'seat': '2'
     }],
@@ -103,7 +104,7 @@ describe('meazyBidAdapter', function () {
         height: 250,
         creativeId: '2.6.75.300x250',
         netRevenue: true,
-        dealId: undefined,
+        dealId: 'default',
         currency: 'USD',
         ttl: 900,
         ad: '<iframe src="https://ads.meazy.co/ad?u=fdc401a2-92f1-42bd-ac22-d570520ad0ec&s=6&p=2&g=e97b3549dc62c94d7e6b1d6db50917f9&gu=%252Fsergi-s-podvesnoy-chastyu%252Fserebryanye-serezhki-s-fianitami-302-00130-16373%252F&r=9780a52ff05c0e92780f5baf9cf3f4e8&si=75&sz=300x250&ssp=5&ts=1563820889&iph=6712b60796a2ed8ce4da786a7715ff2c25295aea&pl=ukr.net&bp=1.5&sp=${AUCTION_PRICE}" width="300" height="250" scrolling="no" style="overflow:hidden" frameBorder="0"></iframe>'
