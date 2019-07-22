@@ -26,8 +26,8 @@ export const registerAdserver = hook('async', function(adServer) {
   let url;
   if (adServer === 'freewheel') {
     url = DEFAULT_TRANSLATION_FILE_URL;
+    initTranslation(url, DEFAULT_IAB_TO_FW_MAPPING_KEY);
   }
-  initTranslation(url, DEFAULT_IAB_TO_FW_MAPPING_KEY);
 }, 'registerAdserver');
 registerAdserver();
 
