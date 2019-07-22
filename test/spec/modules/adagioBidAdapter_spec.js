@@ -94,6 +94,10 @@ describe('adagioAdapter', () => {
     let sandbox;
     let sdbxStuGetComputedStyle;
 
+    top.ADAGIO = top.ADAGIO || {};
+    top.ADAGIO.adUnits = top.ADAGIO.adUnits || {};
+    top.ADAGIO.pbjsAdUnits = top.ADAGIO.pbjsAdUnits || [];
+
     beforeEach(function () {
       sandbox = sinon.sandbox.create();
 
@@ -197,6 +201,25 @@ describe('adagioAdapter', () => {
       }
     ];
 
+    const bidRequestsWithPostBid = [
+      {
+        'bidder': 'adagio',
+        'params': {
+          organizationId: '456',
+          site: 'ADAGIO-456',
+          placement: 'PAVE_ATF-456',
+          pagetype: 'ARTICLE',
+          adUnitElementId: 'banner-atf-456',
+          postBid: true
+        },
+        'adUnitCode': 'adunit-code3',
+        'sizes': [[300, 250], [300, 600]],
+        'bidId': 'c180kg4267tyqz',
+        'bidderRequestId': '8vfscuixrovn8i',
+        'auctionId': 'lel4fhp239i9km',
+      }
+    ];
+
     let consentString = 'theConsentString';
     let bidderRequest = {
       'bidderCode': 'adagio',
@@ -241,6 +264,24 @@ describe('adagioAdapter', () => {
       let requests = spec.buildRequests(bidRequests);
       let request = requests[0];
       expect(request.data.adUnits[0].features).to.exist;
+    });
+
+    it('outerAdUnitElementId must be added when PostBid param has been set', () => {
+      top.ADAGIO = top.ADAGIO || {};
+      top.ADAGIO.pbjsAdUnits = [];
+
+      top.ADAGIO.pbjsAdUnits.push({
+        code: bidRequestsWithPostBid[0].adUnitCode,
+        sizes: bidRequestsWithPostBid[0].sizes,
+        bids: [{
+          bidder: bidRequestsWithPostBid[0].bidder,
+          params: bidRequestsWithPostBid[0].params
+        }]
+      });
+      let requests = spec.buildRequests(bidRequestsWithPostBid);
+      let request = requests[0];
+      expect(request.data.adUnits[0].features).to.exist;
+      expect(request.data.adUnits[0].params.outerAdUnitElementId).to.exist;
     });
 
     it('generates a pageviewId if missing', () => {

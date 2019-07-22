@@ -64,23 +64,25 @@ function initAdagio() {
     window.top.ADAGIO.queue.push({ action, data, ts: Date.now() });
   }
 
-  top.googletag = top.googletag || {};
-  top.googletag.cmd = top.googletag.cmd || [];
-  top.googletag.cmd.push(function() {
+  // Listen to ad-server events in current window as we can
+  // in a Post-Bid scenario.
+  window.googletag = window.googletag || {};
+  window.googletag.cmd = window.googletag.cmd || [];
+  window.googletag.cmd.push(function() {
     const gptEvents = Object.keys(ADSRV_EVENTS.GPT).map(key => ADSRV_EVENTS.GPT[key]);
     gptEvents.forEach(eventName => {
-      top.googletag.pubads().addEventListener(eventName, args => {
+      window.googletag.pubads().addEventListener(eventName, args => {
         adagioEnqueue('gpt-event', { eventName, args });
       });
     });
   });
 
-  top.sas = top.sas || {};
-  top.sas.cmd = top.sas.cmd || [];
-  top.sas.cmd.push(function() {
+  window.sas = window.sas || {};
+  window.sas.cmd = window.sas.cmd || [];
+  window.sas.cmd.push(function() {
     const sasEvents = Object.keys(ADSRV_EVENTS.SAS).map(key => ADSRV_EVENTS.SAS[key]);
     sasEvents.forEach(eventName => {
-      top.sas.events.on(eventName, args => {
+      window.sas.events.on(eventName, args => {
         adagioEnqueue('sas-event', { eventName, args });
       });
     });
@@ -254,6 +256,18 @@ function _getPageviewId() {
   return window.top.ADAGIO.pageviewId;
 };
 
+function _getElementFromTopWindow(element, w) {
+  if (w.top === w) {
+    if (!element.getAttribute('id')) {
+      element.setAttribute('id', `adg-${utils.getUniqueIdentifierStr()}`);
+    }
+    return element;
+  } else {
+    const frame = w.frameElement;
+    return _getElementFromTopWindow(frame, w.parent);
+  }
+}
+
 /**
  * Returns all features for a specific adUnit element
  *
@@ -263,7 +277,23 @@ function _getPageviewId() {
 function _getFeatures(bidRequest) {
   if (!canAccessTopWindow()) return;
   const adUnitElementId = bidRequest.params.adUnitElementId;
-  const element = window.top.document.getElementById(adUnitElementId);
+  const adUnitCode = bidRequest.adUnitCode;
+
+  let element = window.document.getElementById(adUnitElementId);
+
+  if (bidRequest.params.postBid === true) {
+    element = _getElementFromTopWindow(element, window);
+    top.ADAGIO.pbjsAdUnits.map((adUnit) => {
+      if (adUnit.code === adUnitCode) {
+        const outerElementId = element.getAttribute('id');
+        adUnit.outerAdUnitElementId = outerElementId;
+        bidRequest.params.outerAdUnitElementId = outerElementId;
+      }
+    });
+  } else {
+    element = window.top.document.getElementById(adUnitElementId);
+  }
+
   let features = {};
 
   if (element) {
@@ -384,6 +414,9 @@ export const spec = {
           prebidVersion: $$PREBID_GLOBAL$$.version,
           adapterVersion: VERSION,
           featuresVersion: FEATURES_VERSION
+          /**
+           * @todo doit on ajouter ici le outerAdUnitElementId si on est en Post-Bid ?
+           */
         },
         options: {
           contentType: 'application/json'
