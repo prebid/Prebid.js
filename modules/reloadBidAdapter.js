@@ -10,6 +10,7 @@ const VERSION_ADAPTER = '1.10';
 
 export const spec = {
   code: BIDDER_CODE,
+  _reloadPings: {},
   /**
    * Determines whether or not the given bid request is valid.
    *
@@ -127,23 +128,29 @@ export const spec = {
             netRevenue: true
           };
           bidResponses.push(bidResponse);
+          this._reloadPings[vBid.ext.adUnitCode] = vPrxClientTool.getPingUrl('bidwon');
         }
       }
     }
 
     return bidResponses;
+  },
+  /**
+     * Register bidder specific code, which will execute if a bid from this bidder won the auction
+     * @param {Bid} The bid that won the auction
+     */
+  onBidWon: function (bid) {
+    if (typeof this._reloadPings[bid.adUnitCode] !== 'string' || this._reloadPings[bid.adUnitCode] === '') return;
+    (new Image()).src = this._reloadPings[bid.adUnitCode];
   }
 };
 
 function ReloadClientTool(args) {
   var that = this;
-
   var _pcmClientVersion = '140';
   var _pcmFilePref = 'prx_root_';
   var _resFilePref = 'prx_pnws_';
-
   var _pcmInputObjVers = '120';
-
   var _instObj = null;
   var _status = 'NA';
   var _message = '';
@@ -158,12 +165,14 @@ function ReloadClientTool(args) {
   that.getPCMObj = function () {
     return {
       thisVer: _pcmInputObjVers,
+
       statStr: _memFile.statStr,
       plcmData: _getPlcmData(),
       clntData: _getClientData(args.wnd, args.rtop),
       resultData: _getRD(),
       gdprObj: _getGdpr(),
       mediaObj: _getMediaObj(),
+
       proxetString: null,
       dboData: null,
       plcmSett: null,
@@ -235,6 +244,12 @@ function ReloadClientTool(args) {
     return _checkInstProp('pbm', null);
   };
 
+  that.getPingUrl = function (pingName) {
+    var pingData = _checkInstProp('pingdata', {});
+    if (pingData[pingName] !== 'undefined') return pingData[pingName];
+    return '';
+  };
+
   that.setRD = function (data) {
     return _setRD(data);
   };
@@ -255,6 +270,7 @@ function ReloadClientTool(args) {
     if (_instObj === null) return def;
     if (typeof _instObj === 'undefined') return def;
     if (_instObj.go !== true) return def;
+    if (typeof _instObj[key] === 'undefined') return def;
     return _instObj[key];
   }
 

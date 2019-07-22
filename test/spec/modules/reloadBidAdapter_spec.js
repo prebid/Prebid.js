@@ -82,6 +82,7 @@ let getExt1ServerResponse = () => {
     'partID': 'prx_part',
     'opdomID': '0',
     'bsrvID': 1,
+    'adUnitCode': '1b243858-3c53-43dc-9fdf-89f839ea4a0f',
     'banner': {'w': 300, 'h': 250}
   }));
 }
@@ -117,6 +118,7 @@ let getExt2ServerResponse = () => {
     'partID': 'prx_part',
     'opdomID': '0',
     'bsrvID': 1,
+    'adUnitCode': '1b243858-3c53-43dc-9fdf-89f839ea4a0f',
     'banner': {'w': 160, 'h': 600}
   }));
 }
