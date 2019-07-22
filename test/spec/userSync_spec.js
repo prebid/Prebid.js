@@ -98,15 +98,18 @@ describe('user sync', function () {
     expect(insertUserSyncIframeStub.getCall(0).args[0]).to.equal('http://example.com/iframe');
   });
 
-  it('should only trigger syncs once per page', function () {
+  it('should only trigger syncs once per page per bidder', function () {
     const userSync = newTestUserSync({pixelEnabled: true});
     userSync.registerSync('image', 'testBidder', 'http://example.com/1');
     userSync.syncUsers();
     userSync.registerSync('image', 'testBidder', 'http://example.com/2');
+    userSync.registerSync('image', 'testBidder2', 'http://example.com/3');
     userSync.syncUsers();
+    expect(triggerPixelStub.callCount).to.equal(2);
     expect(triggerPixelStub.getCall(0)).to.not.be.null;
     expect(triggerPixelStub.getCall(0).args[0]).to.exist.and.to.equal('http://example.com/1');
-    expect(triggerPixelStub.getCall(1)).to.be.null;
+    expect(triggerPixelStub.getCall(1)).to.not.be.null;
+    expect(triggerPixelStub.getCall(1).args[0]).to.exist.and.to.equal('http://example.com/3');
   });
 
   it('should not fire syncs if cookies are not supported', function () {
