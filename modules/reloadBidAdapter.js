@@ -10,7 +10,7 @@ const VERSION_ADAPTER = '1.10';
 
 export const spec = {
   code: BIDDER_CODE,
-  _reloadPings: {},
+  png: {},
   /**
    * Determines whether or not the given bid request is valid.
    *
@@ -128,7 +128,7 @@ export const spec = {
             netRevenue: true
           };
           bidResponses.push(bidResponse);
-          this._reloadPings[vBid.ext.adUnitCode] = vPrxClientTool.getPingUrl('bidwon');
+          this.png[vBid.ext.adUnitCode] = vPrxClientTool.getPingUrl('bidwon');
         }
       }
     }
@@ -140,8 +140,8 @@ export const spec = {
      * @param {Bid} The bid that won the auction
      */
   onBidWon: function (bid) {
-    if (typeof this._reloadPings[bid.adUnitCode] !== 'string' || this._reloadPings[bid.adUnitCode] === '') return;
-    (new Image()).src = this._reloadPings[bid.adUnitCode];
+    if (typeof this.png[bid.adUnitCode] !== 'string' || this.png[bid.adUnitCode] === '') return;
+    (new Image()).src = this.png[bid.adUnitCode];
   }
 };
 
