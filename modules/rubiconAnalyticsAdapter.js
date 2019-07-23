@@ -143,6 +143,10 @@ function sendMessage(auctionId, bidWonId) {
     version: '$prebid.version$',
     referrerUri: referrer
   };
+  const wrapperName = config.getConfig('rubicon.wrapperName');
+  if (wrapperName) {
+    message.wrapperName = wrapperName;
+  }
   let auctionCache = cache.auctions[auctionId];
   if (auctionCache && !auctionCache.sent) {
     let adUnitMap = Object.keys(auctionCache.bids).reduce((adUnits, bidId) => {
