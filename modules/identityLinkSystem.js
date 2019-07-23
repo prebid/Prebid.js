@@ -5,8 +5,9 @@
  * @requires module:modules/userId
  */
 
-import * as utils from '../../src/utils.js'
-import {ajax} from '../../src/ajax.js';
+import * as utils from '../src/utils.js'
+import {ajax} from '../src/ajax.js';
+import {submodule} from '../src/hook';
 
 /** @type {Submodule} */
 export const identityLinkSubmodule = {
@@ -53,3 +54,5 @@ export const identityLinkSubmodule = {
     }
   }
 };
+
+submodule('userId', identityLinkSubmodule);

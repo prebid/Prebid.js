@@ -10,7 +10,7 @@ import * as utils from 'src/utils';
 import {unifiedIdSubmodule} from 'modules/userId/unifiedIdSystem';
 import {pubCommonIdSubmodule} from 'modules/userId/pubCommonIdSystem';
 import {id5IdSubmodule} from 'modules/id5IdSystem';
-import {identityLinkSubmodule} from 'modules/userId/identityLinkSystem';
+import {identityLinkSubmodule} from 'modules/identityLinkSystem';
 let assert = require('chai').assert;
 let expect = require('chai').expect;
 const EXPIRED_COOKIE_DATE = 'Thu, 01 Jan 1970 00:00:01 GMT';
