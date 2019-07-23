@@ -77,12 +77,6 @@ describe('adagioAdapter', () => {
       expect(spec.isBidRequestValid(bidTest)).to.equal(false);
     });
 
-    it('should return false when pagetype params is not passed', () => {
-      let bidTest = Object.assign({}, bid);
-      delete bidTest.params.pagetype;
-      expect(spec.isBidRequestValid(bidTest)).to.equal(false);
-    });
-
     it('should return false when adUnit element id params is not passed', () => {
       let bidTest = Object.assign({}, bid);
       delete bidTest.params.adUnitElementId;

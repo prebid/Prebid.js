@@ -350,14 +350,14 @@ export const spec = {
 
   isBidRequestValid: function(bid) {
     const { adUnitCode, auctionId, sizes, bidder, params } = bid;
-    const { organizationId, site, placement, pagetype, adUnitElementId } = bid.params;
+    const { organizationId, site, placement, adUnitElementId } = bid.params;
     let isValid = false;
 
     if (canAccessTopWindow()) {
       top.ADAGIO = top.ADAGIO || {};
       top.ADAGIO.adUnits = top.ADAGIO.adUnits || {};
       top.ADAGIO.pbjsAdUnits = top.ADAGIO.pbjsAdUnits || [];
-      isValid = !!(organizationId && site && placement && pagetype && adUnitElementId && document.getElementById(adUnitElementId) !== null);
+      isValid = !!(organizationId && site && placement && adUnitElementId && document.getElementById(adUnitElementId) !== null);
       const tempAdUnits = top.ADAGIO.pbjsAdUnits.filter((adUnit) => adUnit.code !== adUnitCode);
       tempAdUnits.push({
         code: adUnitCode,
