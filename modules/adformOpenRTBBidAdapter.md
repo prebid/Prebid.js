@@ -45,7 +45,8 @@ Only native format is supported. Using OpenRTB standard.
             bidder: 'adformOpenRTB',
             params: {
                 mid: 606169,                  // required
-                adxDomain: 'axd.adform.net',  // optional
+                currency: 'EUR',              // optional
+                adxDomain: 'adx.adform.net',  // optional
                 siteId: '23455',              // optional
                 priceType: 'gross'            // optional, default is 'net'
                 publisher: {                  // optional block

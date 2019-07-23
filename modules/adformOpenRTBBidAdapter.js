@@ -56,6 +56,8 @@ export const spec = {
     const test = setOnAny(validBidRequests, 'params.test');
     const publisher = setOnAny(validBidRequests, 'params.publisher');
     const siteId = setOnAny(validBidRequests, 'params.siteId');
+    const currency = setOnAny(validBidRequests, 'params.currency');
+    const cur = currency && [ currency ];
 
     const imp = validBidRequests.map((bid, id) => {
       bid.netRevenue = pt;
@@ -94,6 +96,7 @@ export const spec = {
       device: { ua },
       source: { tid, fd: 1 },
       ext: { pt },
+      cur,
       imp
     };
 

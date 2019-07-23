@@ -144,6 +144,16 @@ describe('AdformOpenRTB adapter', function () {
       });
     });
 
+    it('should send currency if defined', function () {
+      let validBidRequests = [{
+        params: { currency: 'EUR' }
+      }];
+      let refererInfo = { referer: 'page' };
+      let request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo }).data);
+
+      assert.deepEqual(request.cur, [ 'EUR' ]);
+    });
+
     describe('priceType', function () {
       it('should send default priceType', function () {
         let validBidRequests = [{
