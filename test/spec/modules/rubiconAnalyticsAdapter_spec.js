@@ -728,4 +728,31 @@ describe('rubicon analytics adapter', function () {
       expect(bidResponseObj.bidPriceUSD).to.equal(1.0);
     });
   });
+
+  describe('config with integration type', () => {
+    it('should use the integration type provided in the config instead of the default', () => {
+      sandbox.stub(config, 'getConfig').callsFake(function (key) {
+        const config = {
+          'rubicon.int_type': 'testType'
+        };
+        return config[key];
+      });
+
+      rubiconAnalyticsAdapter.enableAnalytics({
+        options: {
+          endpoint: '//localhost:9999/event',
+          accountId: 1001
+        }
+      });
+
+      performStandardAuction();
+
+      expect(requests.length).to.equal(1);
+      const request = requests[0];
+      const message = JSON.parse(request.requestBody);
+      expect(message.integration).to.equal('testType');
+
+      rubiconAnalyticsAdapter.disableAnalytics();
+    });
+  });
 });
