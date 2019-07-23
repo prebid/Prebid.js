@@ -799,16 +799,18 @@ const OPEN_RTB_PROTOCOL = {
               [nativeEventTrackerMethodMap.img]: adm.imptrackers || [],
               [nativeEventTrackerMethodMap.js]: adm.jstracker ? [adm.jstracker] : []
             };
-            adm.eventtrackers.forEach(tracker => {
-              switch (tracker.method) {
-                case nativeEventTrackerMethodMap.img:
-                  trackers[nativeEventTrackerMethodMap.img].push(tracker.url);
-                  break;
-                case nativeEventTrackerMethodMap.js:
-                  trackers[nativeEventTrackerMethodMap.js].push(tracker.url);
-                  break;
-              }
-            });
+            if (adm.eventtrackers) {
+              adm.eventtrackers.forEach(tracker => {
+                switch (tracker.method) {
+                  case nativeEventTrackerMethodMap.img:
+                    trackers[nativeEventTrackerMethodMap.img].push(tracker.url);
+                    break;
+                  case nativeEventTrackerMethodMap.js:
+                    trackers[nativeEventTrackerMethodMap.js].push(tracker.url);
+                    break;
+                }
+              });
+            }
 
             if (utils.isPlainObject(adm) && Array.isArray(adm.assets)) {
               let origAssets = nativeAssetCache[bidRequest.adUnitCode];
