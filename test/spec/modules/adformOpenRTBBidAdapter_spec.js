@@ -3,6 +3,7 @@ import {assert, expect} from 'chai';
 import * as url from 'src/url';
 import {spec} from 'modules/adformOpenRTBBidAdapter';
 import { NATIVE } from 'src/mediaTypes';
+import { config } from 'src/config';
 
 describe('AdformOpenRTB adapter', function () {
   let serverResponse, bidRequest, bidResponses;
@@ -145,9 +146,8 @@ describe('AdformOpenRTB adapter', function () {
     });
 
     it('should send currency if defined', function () {
-      let validBidRequests = [{
-        params: { currency: 'EUR' }
-      }];
+      config.setConfig({ currency: { adServerCurrency: 'EUR' } });
+      let validBidRequests = [{ params: {} }];
       let refererInfo = { referer: 'page' };
       let request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo }).data);
 
