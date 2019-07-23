@@ -32,6 +32,16 @@ pbjs.setConfig({
                 name: "id5id",
                 expires: 5
             }
+        }, {
+            name: 'identityLink',
+            params: {
+                pid: '999' // Set your real identityLink placement ID here 
+            },
+            storage: {
+                type: 'cookie',
+                name: 'idl_env',
+                expires: 60
+            }
         }],
         syncDelay: 5000
     }
@@ -58,6 +68,16 @@ pbjs.setConfig({
             storage: {
                 type: "html5",
                 name: "pubcid",
+                expires: 60
+            }
+        }, {
+            name: 'identityLink',
+            params: {
+                pid: '999' // Set your real identityLink placement ID here 
+            },
+            storage: {
+                type: 'html5',
+                name: 'idl_env',
                 expires: 60
             }
         }],
