@@ -95,16 +95,19 @@ export const spec = {
   },
 
   getUserSyncs: function(syncOptions, responses, gdprConsent) {
-    let gdprIab = {
-      status: findGdprStatus(gdprConsent.gdprApplies, gdprConsent.vendorData),
-      consent: gdprConsent.consentString
-    };
-
     let queryParams = {
       hb_provider: 'prebid',
-      hb_version: '$prebid.version$',
-      gdprIab: JSON.stringify(gdprIab)
+      hb_version: '$prebid.version$'
     };
+
+    if (gdprConsent) {
+      let gdprIab = {
+        status: findGdprStatus(gdprConsent.gdprApplies, gdprConsent.vendorData),
+        consent: gdprConsent.consentString
+      };
+
+      queryParams.gdprIab = JSON.stringify(gdprIab)
+    }
 
     if (utils.deepAccess(responses[0], 'body.responses.0.placementId')) {
       queryParams.placementId = responses[0].body.responses[0].placementId
