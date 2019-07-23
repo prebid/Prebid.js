@@ -2011,6 +2011,19 @@ describe('the rubicon adapter', function () {
           expect(bids[0].height).to.equal(480);
         });
       });
+
+      describe('config with integration type', () => {
+        it('should use the integration type provided in the config instead of the default', () => {
+          sandbox.stub(config, 'getConfig').callsFake(function (key) {
+            const config = {
+              'rubicon.int_type': 'testType'
+            };
+            return config[key];
+          });
+          const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          expect(parseQuery(request.data).tk_flint).to.equal('testType_v$prebid.version$');
+        });
+      });
     });
   });
 
