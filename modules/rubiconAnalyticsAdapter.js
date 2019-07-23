@@ -28,7 +28,7 @@ config.getConfig('s2sConfig', ({s2sConfig}) => {
 });
 
 export const SEND_TIMEOUT = 3000;
-const INTEGRATION = 'pbjs';
+const DEFAULT_INTEGRATION = 'pbjs';
 
 const cache = {
   auctions: {},
@@ -139,7 +139,7 @@ function sendMessage(auctionId, bidWonId) {
   let referrer = config.getConfig('pageUrl') || utils.getTopWindowUrl();
   let message = {
     eventTimeMillis: Date.now(),
-    integration: INTEGRATION,
+    integration: config.getConfig('rubicon.int_type') || DEFAULT_INTEGRATION,
     version: '$prebid.version$',
     referrerUri: referrer
   };
