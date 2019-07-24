@@ -3,28 +3,28 @@
 var _ = require('lodash');
 var argv = require('yargs').argv;
 var gulp = require('gulp');
-var gutil = require('gulp-util');
-var connect = require('gulp-connect');
-var webpack = require('webpack');
-var webpackStream = require('webpack-stream');
-var uglify = require('gulp-uglify');
-var gulpClean = require('gulp-clean');
-var KarmaServer = require('karma').Server;
-var karmaConfMaker = require('./karma.conf.maker');
-var opens = require('opn');
-var webpackConfig = require('./webpack.conf');
-var helpers = require('./gulpHelpers');
+// var gutil = require('gulp-util');
+// var connect = require('gulp-connect');
+// var webpack = require('webpack');
+// var webpackStream = require('webpack-stream');
+// var uglify = require('gulp-uglify');
+// var gulpClean = require('gulp-clean');
+// var KarmaServer = require('karma').Server;
+// var karmaConfMaker = require('./karma.conf.maker');
+// var opens = require('opn');
+// var webpackConfig = require('./webpack.conf');
+// var helpers = require('./gulpHelpers');
 var concat = require('gulp-concat');
-var header = require('gulp-header');
-var footer = require('gulp-footer');
+// var header = require('gulp-header');
+// var footer = require('gulp-footer');
 var replace = require('gulp-replace');
-var shell = require('gulp-shell');
+// var shell = require('gulp-shell');
 var eslint = require('gulp-eslint');
 var gulpif = require('gulp-if');
-var sourcemaps = require('gulp-sourcemaps');
-var through = require('through2');
-var fs = require('fs');
-var jsEscape = require('gulp-js-escape');
+// var sourcemaps = require('gulp-sourcemaps');
+// var through = require('through2');
+// var fs = require('fs');
+// var jsEscape = require('gulp-js-escape');
 const path = require('path');
 const execa = require('execa');
 
@@ -45,6 +45,7 @@ function bundleToStdout() {
 bundleToStdout.displayName = 'bundle-to-stdout';
 
 function clean() {
+  var gulpClean = require('gulp-clean');
   return gulp.src(['build'], {
     read: false,
     allowEmpty: true
@@ -54,6 +55,8 @@ function clean() {
 
 // Dependant task for building postbid. It escapes postbid-config file.
 function escapePostbidConfig() {
+  var jsEscape = require('gulp-js-escape');
+
   gulp.src('./integrationExamples/postbid/oas/postbid-config.js')
     .pipe(jsEscape())
     .pipe(gulp.dest('build/postbid/'));
@@ -76,6 +79,9 @@ function lint(done) {
 
 // View the code coverage report in the browser.
 function viewCoverage(done) {
+  var connect = require('gulp-connect');
+  var opens = require('opn');
+
   var coveragePort = 1999;
   var mylocalhost = (argv.host) ? argv.host : 'localhost';
 
@@ -92,6 +98,8 @@ viewCoverage.displayName = 'view-coverage';
 
 // Watch Task with Live Reload
 function watch(done) {
+  var connect = require('gulp-connect');
+
   var mainWatcher = gulp.watch([
     'src/**/*.js',
     'modules/**/*.js',
@@ -116,6 +124,12 @@ function watch(done) {
 };
 
 function makeDevpackPkg() {
+  var connect = require('gulp-connect');
+  var webpack = require('webpack');
+  var webpackStream = require('webpack-stream');
+  var webpackConfig = require('./webpack.conf');
+  var helpers = require('./gulpHelpers');
+
   var cloned = _.cloneDeep(webpackConfig);
   cloned.devtool = 'source-map';
   var externalModules = helpers.getArgModules();
@@ -131,6 +145,13 @@ function makeDevpackPkg() {
 }
 
 function makeWebpackPkg() {
+  var webpack = require('webpack');
+  var webpackStream = require('webpack-stream');
+  var uglify = require('gulp-uglify');
+  var webpackConfig = require('./webpack.conf');
+  var helpers = require('./gulpHelpers');
+  var header = require('gulp-header');
+
   var cloned = _.cloneDeep(webpackConfig);
   delete cloned.devtool;
 
@@ -152,6 +173,8 @@ function gulpBundle(dev) {
 }
 
 function nodeBundle(modules) {
+  var through = require('through2');
+
   return new Promise((resolve, reject) => {
     bundle(false, modules)
       .on('error', (err) => {
@@ -165,6 +188,10 @@ function nodeBundle(modules) {
 }
 
 function bundle(dev, moduleArr) {
+  var gutil = require('gulp-util');
+  var helpers = require('./gulpHelpers');
+  var footer = require('gulp-footer');
+  var sourcemaps = require('gulp-sourcemaps');
   var modules = moduleArr || helpers.getArgModules();
   var allModules = helpers.getModuleNames(modules);
 
@@ -227,6 +254,10 @@ function newKarmaCallback(done) {
 // If --browsers is given, browsers can be chosen explicitly. e.g. --browsers=chrome,firefox,ie9
 // If --notest is given, it will immediately skip the test task (useful for developing changes with `gulp serve --notest`)
 function test(done) {
+  var KarmaServer = require('karma').Server;
+  var karmaConfMaker = require('./karma.conf.maker');
+  var helpers = require('./gulpHelpers');
+
   if (argv.notest) {
     done();
   } else if (argv.e2e) {
@@ -250,10 +281,15 @@ function test(done) {
 
 // If --file "<path-to-test-file>" is given, the task will only run tests in the specified file.
 function testCoverage(done) {
+  var KarmaServer = require('karma').Server;
+  var karmaConfMaker = require('./karma.conf.maker');
+
   new KarmaServer(karmaConfMaker(true, false, false, argv.file), newKarmaCallback(done)).start();
 }
 
 function coveralls() { // 2nd arg is a dependency: 'test' must be finished
+  var shell = require('gulp-shell');
+
   // first send results of istanbul's test coverage to coveralls.io.
   return gulp.src('gulpfile.js', { read: false }) // You have to give it a file, but you don't
   // have to read it.
@@ -264,6 +300,8 @@ function coveralls() { // 2nd arg is a dependency: 'test' must be finished
 // More info can be found here http://prebid.org/overview/what-is-post-bid.html
 
 function buildPostbid() {
+  var fs = require('fs');
+
   var fileContent = fs.readFileSync('./build/postbid/postbid-config.js', 'utf8');
 
   return gulp.src('./integrationExamples/postbid/oas/postbid.js')
@@ -272,6 +310,8 @@ function buildPostbid() {
 }
 
 function setupE2e(done) {
+  var gutil = require('gulp-util');
+
   if (!argv.host) {
     throw new gutil.PluginError({
       plugin: 'E2E test',
