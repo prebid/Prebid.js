@@ -2,7 +2,8 @@
 import funHooks from 'fun-hooks/no-eval';
 
 export let hook = funHooks({
-  ready: funHooks.SYNC | funHooks.ASYNC | funHooks.QUEUE
+  ready: funHooks.SYNC | funHooks.ASYNC | funHooks.QUEUE,
+  ...$$PREBID_GLOBAL$$.hookSettings
 });
 
 export const getHook = hook.get;
