@@ -50,6 +50,7 @@
  * @typedef {Object} SubmoduleParams
  * @property {(string|undefined)} partner - partner url param value
  * @property {(string|undefined)} url - webservice request url used to load Id data
+ * @property {(string|undefined)} pid - placement id url param value
  */
 
 /**
@@ -199,12 +200,12 @@ function processSubmoduleCallbacks(submodules) {
 }
 
 /**
- * @param {AdUnit[]} adUnits
+ * This function will create a combined object for all subModule Ids
  * @param {SubmoduleContainer[]} submodules
  */
-function addIdDataToAdUnitBids(adUnits, submodules) {
-  if ([adUnits, submodules].some(i => !Array.isArray(i) || !i.length)) {
-    return;
+function getCombinedSubmoduleIds(submodules) {
+  if (!Array.isArray(submodules) || !submodules.length) {
+    return {};
   }
   const combinedSubmoduleIds = submodules.filter(i => utils.isPlainObject(i.idObj) && Object.keys(i.idObj).length).reduce((carry, i) => {
     Object.keys(i.idObj).forEach(key => {
@@ -212,6 +213,19 @@ function addIdDataToAdUnitBids(adUnits, submodules) {
     });
     return carry;
   }, {});
+
+  return combinedSubmoduleIds;
+}
+
+/**
+ * @param {AdUnit[]} adUnits
+ * @param {SubmoduleContainer[]} submodules
+ */
+function addIdDataToAdUnitBids(adUnits, submodules) {
+  if ([adUnits].some(i => !Array.isArray(i) || !i.length)) {
+    return;
+  }
+  const combinedSubmoduleIds = getCombinedSubmoduleIds(submodules);
   if (Object.keys(combinedSubmoduleIds).length) {
     adUnits.forEach(adUnit => {
       adUnit.bids.forEach(bid => {
@@ -223,15 +237,9 @@ function addIdDataToAdUnitBids(adUnits, submodules) {
 }
 
 /**
- * Hook is executed before adapters, but after consentManagement. Consent data is requied because
- * this module requires GDPR consent with Purpose #1 to save data locally.
- * The two main actions handled by the hook are:
- * 1. check gdpr consentData and handle submodule initialization.
- * 2. append user id data (loaded from cookied/html or from the getId method) to bids to be accessed in adapters.
- * @param {Object} reqBidsConfigObj required; This is the same param that's used in pbjs.requestBids.
- * @param {function} fn required; The next function in the chain, used by hook.js
+ * This is a common function that will initalize subModules if not already done and it will also execute subModule callbacks
  */
-export function requestBidsHook(fn, reqBidsConfigObj) {
+function initializeSubmodulesAndExecuteCallbacks() {
   // initialize submodules only when undefined
   if (typeof initializedSubmodules === 'undefined') {
     initializedSubmodules = initSubmodules(submodules, gdprDataHandler.getConsentData());
@@ -256,13 +264,35 @@ export function requestBidsHook(fn, reqBidsConfigObj) {
       }
     }
   }
+}
 
+/**
+ * Hook is executed before adapters, but after consentManagement. Consent data is requied because
+ * this module requires GDPR consent with Purpose #1 to save data locally.
+ * The two main actions handled by the hook are:
+ * 1. check gdpr consentData and handle submodule initialization.
+ * 2. append user id data (loaded from cookied/html or from the getId method) to bids to be accessed in adapters.
+ * @param {Object} reqBidsConfigObj required; This is the same param that's used in pbjs.requestBids.
+ * @param {function} fn required; The next function in the chain, used by hook.js
+ */
+export function requestBidsHook(fn, reqBidsConfigObj) {
+  // initialize submodules only when undefined
+  initializeSubmodulesAndExecuteCallbacks();
   // pass available user id data to bid adapters
   addIdDataToAdUnitBids(reqBidsConfigObj.adUnits || getGlobal().adUnits, initializedSubmodules);
-
   // calling fn allows prebid to continue processing
   return fn.call(this, reqBidsConfigObj);
 }
+
+/**
+ * This function will be exposed in global-name-space so that userIds stored by Prebid UserId module can be used by external codes as well.
+ * Simple use case will be passing these UserIds to A9 wrapper solution
+ */
+function getUserIds() {
+  // initialize submodules only when undefined
+  initializeSubmodulesAndExecuteCallbacks();
+  return getCombinedSubmoduleIds(initializedSubmodules);
+};
 
 /**
  * @param {SubmoduleContainer[]} submodules
@@ -425,7 +455,10 @@ export function init(config) {
       syncDelay = utils.isNumber(userSync.syncDelay) ? userSync.syncDelay : DEFAULT_SYNC_DELAY;
       updateSubmodules();
     }
-  })
+  });
+
+  // exposing getUserIds function in global-name-space so that userIds stored in Prebid can be used by external codes.
+  (getGlobal()).getUserIds = getUserIds;
 }
 
 // init config update listener to start the application

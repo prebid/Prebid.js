@@ -2,15 +2,14 @@ import {registerBidder} from '../src/adapters/bidderFactory';
 import * as utils from '../src/utils';
 import {BANNER} from '../src/mediaTypes';
 
-const ENDPOINT_URL = '//exchange.bidphysics.com/auction';
+const ENDPOINT_URL = '//x.padsquad.com/auction';
 
 const DEFAULT_BID_TTL = 30;
 const DEFAULT_CURRENCY = 'USD';
 const DEFAULT_NET_REVENUE = true;
 
 export const spec = {
-  code: 'bidphysics',
-  aliases: ['yieldlift'],
+  code: 'padsquad',
   supportedMediaTypes: [BANNER],
 
   isBidRequestValid: function (bid) {
@@ -34,7 +33,7 @@ export const spec = {
         }))
       },
       ext: {
-        bidphysics: {
+        exchange: {
           unitId: bidRequest.params.unitId
         }
       }
@@ -49,7 +48,7 @@ export const spec = {
         ref: bidderRequest.refererInfo ? bidderRequest.refererInfo.referer || null : null
       },
       ext: {
-        bidphysics: {
+        exchange: {
           publisherId: publisherId,
           networkId: networkId,
         }
@@ -73,7 +72,7 @@ export const spec = {
   interpretResponse: function (serverResponse, request) {
     const bidResponses = [];
     const response = (serverResponse || {}).body;
-    // response is always one seat (bidphysics) with (optional) bids for each impression
+    // response is always one seat with (optional) bids for each impression
     if (response && response.seatbid && response.seatbid.length === 1 && response.seatbid[0].bid && response.seatbid[0].bid.length) {
       response.seatbid[0].bid.forEach(bid => {
         bidResponses.push({
@@ -89,12 +88,12 @@ export const spec = {
         })
       })
     } else {
-      utils.logInfo('bidphysics.interpretResponse :: no valid responses to interpret');
+      utils.logInfo('padsquad.interpretResponse :: no valid responses to interpret');
     }
     return bidResponses;
   },
   getUserSyncs: function (syncOptions, serverResponses) {
-    utils.logInfo('bidphysics.getUserSyncs', 'syncOptions', syncOptions, 'serverResponses', serverResponses);
+    utils.logInfo('padsquad.getUserSyncs', 'syncOptions', syncOptions, 'serverResponses', serverResponses);
     let syncs = [];
 
     if (!syncOptions.iframeEnabled && !syncOptions.pixelEnabled) {
@@ -126,7 +125,6 @@ export const spec = {
         }
       }
     });
-    utils.logInfo('bidphysics.getUserSyncs result=%o', syncs);
     return syncs;
   },
 
