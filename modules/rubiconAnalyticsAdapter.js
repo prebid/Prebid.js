@@ -28,7 +28,7 @@ config.getConfig('s2sConfig', ({s2sConfig}) => {
 });
 
 export const SEND_TIMEOUT = 3000;
-const INTEGRATION = 'pbjs';
+const DEFAULT_INTEGRATION = 'pbjs';
 
 const cache = {
   auctions: {},
@@ -139,10 +139,14 @@ function sendMessage(auctionId, bidWonId) {
   let referrer = config.getConfig('pageUrl') || utils.getTopWindowUrl();
   let message = {
     eventTimeMillis: Date.now(),
-    integration: INTEGRATION,
+    integration: config.getConfig('rubicon.int_type') || DEFAULT_INTEGRATION,
     version: '$prebid.version$',
     referrerUri: referrer
   };
+  const wrapperName = config.getConfig('rubicon.wrapperName');
+  if (wrapperName) {
+    message.wrapperName = wrapperName;
+  }
   let auctionCache = cache.auctions[auctionId];
   if (auctionCache && !auctionCache.sent) {
     let adUnitMap = Object.keys(auctionCache.bids).reduce((adUnits, bidId) => {
