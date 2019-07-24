@@ -161,7 +161,7 @@ export function buildAdpodVideoUrl({code, params, callback} = {}) {
       [adpodUtils.TARGETING_KEY_PB_CAT_DUR]: undefined,
       [adpodUtils.TARGETING_KEY_CACHE_ID]: undefined
     }
-    let customParams;
+    let customParams = {};
     if (targeting[code]) {
       customParams = targeting[code].reduce((acc, curValue) => {
         if (Object.keys(curValue)[0] === adpodUtils.TARGETING_KEY_PB_CAT_DUR) {
