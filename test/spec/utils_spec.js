@@ -232,6 +232,56 @@ describe('Utils', function () {
     });
   });
 
+  describe('parseGPTSingleSizeArrayToRtbSize', function () {
+    it('should return size string with input single size array', function () {
+      var size = [300, 250];
+      var output = utils.parseGPTSingleSizeArrayToRtbSize(size);
+      assert.deepEqual(output, {w: 300, h: 250});
+    });
+
+    it('should return size string with input single size array', function () {
+      var size = ['300', '250'];
+      var output = utils.parseGPTSingleSizeArrayToRtbSize(size);
+      assert.deepEqual(output, {w: 300, h: 250});
+    });
+
+    it('return undefined using string input', function () {
+      var size = '1';
+      var output = utils.parseGPTSingleSizeArrayToRtbSize(size);
+      assert.equal(output, undefined);
+    });
+
+    it('return undefined using number input', function () {
+      var size = 1;
+      var output = utils.parseGPTSingleSizeArrayToRtbSize(size);
+      assert.equal(output, undefined);
+    });
+
+    it('return undefined using one length single array', function () {
+      var size = [300];
+      var output = utils.parseGPTSingleSizeArrayToRtbSize(size);
+      assert.equal(output, undefined);
+    });
+
+    it('return undefined if the input is empty', function () {
+      var size = '';
+      var output = utils.parseGPTSingleSizeArrayToRtbSize(size);
+      assert.equal(output, undefined);
+    });
+
+    it('return undefined if the input is not a number', function () {
+      var size = ['foo', 'bar'];
+      var output = utils.parseGPTSingleSizeArrayToRtbSize(size);
+      assert.equal(output, undefined);
+    });
+
+    it('return undefined if the input is not a number 2', function () {
+      var size = [300, 'foo'];
+      var output = utils.parseGPTSingleSizeArrayToRtbSize(size);
+      assert.equal(output, undefined);
+    });
+  });
+
   describe('isA', function () {
     it('should return true with string object', function () {
       var output = utils.isA(obj_string, type_string);
