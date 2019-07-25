@@ -18,7 +18,7 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
-    const sizes = getSize(utils.parseSizesInput(bid.sizes));
+    const sizes = getSize(getSizeArray(bid));
     if (!bid.params || !bid.params.placement || !sizes.width || !sizes.height) {
       return false;
     }
@@ -34,7 +34,7 @@ export const spec = {
     const payload = {
       Version: VERSION,
       Bids: bidRequests.reduce((accumulator, bid) => {
-        let sizesArray = utils.parseSizesInput(bid.sizes);
+        let sizesArray = getSizeArray(bid);
         let size = getSize(sizesArray);
         accumulator[bid.bidId] = {};
         accumulator[bid.bidId].PlacementID = bid.params.placement;
@@ -156,6 +156,15 @@ function createEndpointQS(bidderRequest) {
   }
 
   return qs;
+}
+
+function getSizeArray(bid) {
+  let inputSize = bid.sizes;
+  if (bid.mediaTypes.banner) {
+    inputSize = bid.mediaTypes.banner.sizes;
+  }
+
+  return utils.parseSizesInput(inputSize);
 }
 
 /* Get parsed size from request size */
