@@ -439,7 +439,7 @@ describe('Mgid bid adapter', function () {
       };
       bid.nativeParams = {
         title: {required: true},
-        image: {wmin: 50, hmin: 50, required:true},
+        image: {wmin: 50, hmin: 50, required: true},
         icon: {},
         sponsored: { },
       };
