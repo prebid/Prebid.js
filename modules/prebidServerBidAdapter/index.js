@@ -541,8 +541,8 @@ const OPEN_RTB_PROTOCOL = {
       // if the value is a string, wrap it with an array
       request.cur = [adServerCur];
     } else if (Array.isArray(adServerCur) && adServerCur.length) {
-      // if it's an array, copy the first element
-      request.cur = adServerCur.slice(0, 1);
+      // if it's an array, get the first element
+      request.cur = adServerCur[0];
     }
 
     _appendSiteAppDevice(request);
