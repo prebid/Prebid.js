@@ -15,91 +15,42 @@ function RhythmOneBidAdapter() {
   let SUPPORTED_VIDEO_API = [1, 2, 5];
   let slotsToBids = {};
   let that = this;
-  let version = '1.0.2.1';
-  let loadStart = Date.now();
+  let version = '2.0.1.0';
   var win = typeof window !== 'undefined' ? window : {};
 
   this.isBidRequestValid = function (bid) {
-    return true;
+    return !!(bid.params && bid.params.placementId);
   };
 
   this.getUserSyncs = function (syncOptions, responses, gdprConsent) {
-    let slots = [];
-    let placementIds = [];
-
-    for (let k in slotsToBids) {
-      slots.push(k);
-      placementIds.push(getFirstParam('placementId', [slotsToBids[k]]));
-    }
-
-    let data = {
-      doc_version: 1,
-      doc_type: 'Prebid Audit',
-      placement_id: placementIds.join(',').replace(/[,]+/g, ',').replace(/^,|,$/g, '')
-    };
-    let w = typeof (window) !== 'undefined' ? window : {document: {location: {href: ''}}};
-    let ao = w.document.location.ancestorOrigins;
-    let q = [];
-    let u = '//hbevents.1rx.io/audit?';
-
-    if (ao && ao.length > 0) {
-      data.ancestor_origins = ao[ao.length - 1];
-    }
-
-    data.popped = w.opener !== null ? 1 : 0;
-    data.framed = w.top === w ? 0 : 1;
-
-    try {
-      data.url = w.top.document.location.href.toString();
-    } catch (ex) {
-      data.url = w.document.location.href.toString();
-    }
-
-    try {
-      data.prebid_version = '$prebid.version$';
-      data.prebid_timeout = config.getConfig('bidderTimeout');
-    } catch (ex) { }
-
-    data.response_ms = Date.now() - loadStart;
-    data.placement_codes = slots.join(',');
-    data.bidder_version = version;
-    if (gdprConsent) {
-      data.gdpr_consent = gdprConsent.consentString;
-      data.gdpr = (typeof gdprConsent.gdprApplies === 'boolean') ? gdprConsent.gdprApplies : false;
-    }
-
-    for (let k in data) {
-      q.push(encodeURIComponent(k) + '=' + encodeURIComponent((typeof data[k] === 'object' ? JSON.stringify(data[k]) : data[k])));
-    }
-
-    q.sort();
-
-    if (syncOptions.pixelEnabled) {
-      return [{
-        type: 'image',
-        url: u + q.join('&')
-      }];
-    }
+    return [];
   };
 
   function frameImp(BRs) {
-    var imp = [];
+    var impList = [];
     for (var i = 0; i < BRs.length; i++) {
       slotsToBids[BRs[i].adUnitCode || BRs[i].placementCode] = BRs[i];
       var impObj = {};
       impObj.id = BRs[i].adUnitCode;
       impObj.bidfloor = parseFloat(utils.deepAccess(BRs[i], 'params.floor')) || 0;
       impObj.secure = win.location.protocol === 'https:' ? 1 : 0;
+
       if (utils.deepAccess(BRs[i], 'mediaTypes.banner') || utils.deepAccess(BRs[i], 'mediaType') === 'banner') {
-        impObj.banner = frameBanner(BRs[i]);
+        let banner = frameBanner(BRs[i]);
+        if (banner) {
+          impObj.banner = banner;
+        }
       }
       if (utils.deepAccess(BRs[i], 'mediaTypes.video') || utils.deepAccess(BRs[i], 'mediaType') === 'video') {
         impObj.video = frameVideo(BRs[i]);
       }
+      if (!(impObj.banner || impObj.video)) {
+        continue;
+      }
       impObj.ext = frameExt(BRs[i]);
-      imp.push(impObj);
+      impList.push(impObj);
     }
-    return imp;
+    return impList;
   }
 
   function frameSite(bidderRequest) {
@@ -133,27 +84,59 @@ function RhythmOneBidAdapter() {
   function frameDevice() {
     return {
       ua: navigator.userAgent,
-      devicetype: /(ios|ipod|ipad|iphone|android)/i.test(win.navigator.userAgent) ? 1 : /(smart[-]?tv|hbbtv|appletv|googletv|hdmi|netcast\.tv|viera|nettv|roku|\bdtv\b|sonydtv|inettvbrowser|\btv\b)/i.test(win.navigator.userAgent) ? 3 : 2,
       ip: '', // Empty Ip string is required, server gets the ip from HTTP header
       dnt: utils.getDNT() ? 1 : 0,
     }
   }
 
-  function frameBanner(bid) {
-    var sizes = utils.parseSizesInput(bid.sizes).map(size => size.split('x'));
-    return {
-      w: parseInt(sizes[0][0]),
-      h: parseInt(sizes[0][1])
+  function getValidSizeSet(dimensionList) {
+    let w = parseInt(dimensionList[0]);
+    let h = parseInt(dimensionList[1]);
+    // clever check for NaN
+    if (! (w !== w || h !== h)) {  // eslint-disable-line
+      return [w, h];
     }
+    return false;
+  }
+
+  function frameBanner(adUnit) {
+    // adUnit.sizes is scheduled to be deprecated, continue its support but prefer adUnit.mediaTypes.banner
+    var sizeList = adUnit.sizes;
+    if (adUnit.mediaTypes && adUnit.mediaTypes.banner) {
+      sizeList = adUnit.mediaTypes.banner.sizes;
+    }
+    var sizeStringList = utils.parseSizesInput(sizeList);
+    var format = [];
+    sizeStringList.forEach(function(size) {
+      if (size) {
+        var dimensionList = getValidSizeSet(size.split('x'));
+        if (dimensionList) {
+          format.push({
+            'w': dimensionList[0],
+            'h': dimensionList[1],
+          });
+        }
+      }
+    });
+    if (format.length) {
+      return {
+        'format': format
+      };
+    }
+
+    return false;
   }
 
   function frameVideo(bid) {
     var size = [];
     if (utils.deepAccess(bid, 'mediaTypes.video.playerSize')) {
+      var dimensionSet = bid.mediaTypes.video.playerSize;
       if (utils.isArray(bid.mediaTypes.video.playerSize[0])) {
-        size = bid.mediaTypes.video.playerSize[0];
-      } else if (utils.isNumber(bid.mediaTypes.video.playerSize[0])) {
-        size = bid.mediaTypes.video.playerSize;
+        dimensionSet = bid.mediaTypes.video.playerSize[0];
+      }
+      var validSize = getValidSizeSet(dimensionSet)
+      if (validSize) {
+        size = validSize;
       }
     }
     return {
@@ -172,7 +155,7 @@ function RhythmOneBidAdapter() {
   function frameExt(bid) {
     return {
       bidder: {
-        placementId: (bid.params && bid.params['placementId']) ? bid.params['placementId'] : '',
+        placementId: bid.params['placementId'],
         zone: (bid.params && bid.params['zone']) ? bid.params['zone'] : '1r',
         path: (bid.params && bid.params['path']) ? bid.params['path'] : 'mvo'
       }
@@ -234,7 +217,9 @@ function RhythmOneBidAdapter() {
     rmpUrl += '&hbv=' + prebidVersion.replace(fat, '') + ',' + version.replace(fat, '');
 
     var bidRequest = frameBid(BRs, bidderRequest);
-    loadStart = Date.now();
+    if (!bidRequest.imp.length) {
+      return {};
+    }
 
     return {
       method: 'POST',

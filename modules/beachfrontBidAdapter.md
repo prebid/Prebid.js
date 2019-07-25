@@ -86,3 +86,35 @@ Module that connects to Beachfront's demand sources
         }
     ];
 ```
+
+# Outstream Player Params Example
+```javascript
+    var adUnits = [
+        {
+            code: 'test-video-outstream',
+            mediaTypes: {
+                video: {
+                    context: 'outstream',
+                    playerSize: [ 640, 360 ]
+                }
+            },
+            bids: [
+                {
+                    bidder: 'beachfront',
+                    params: {
+                        video: {
+                            bidfloor: 0.01,
+                            appId: '11bc5dd5-7421-4dd8-c926-40fa653bec76',
+                            mimes: [ 'video/mp4', 'application/javascript' ]
+                        },
+                        player: {
+                            progressColor: '#50A8FA',
+                            expandInView: false,
+                            collapseOnComplete: true
+                        }
+                    }
+                }
+            ]
+        }
+    ];
+```

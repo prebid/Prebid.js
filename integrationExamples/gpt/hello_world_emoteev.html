@@ -5,68 +5,99 @@
     <script async src="//www.googletagservices.com/tag/js/gpt.js"></script>
     <script type="text/javascript" src="../../build/dev/prebid.js" async></script>
     <script>
-      const sizes = [
-        [300, 250],
-        [250, 300],
-        [300, 600]
-      ];
-      const PREBID_TIMEOUT = 3000;
-      const FAILSAFE_TIMEOUT = 3000;
+        const sizes = [
+            [728, 90],  // Footer
+            [750, 200], // Content
+            [300, 250], // Content
+            [320, 480], // Overlay
 
-      const adUnits = [{
-        code: '/19968336/header-bid-tag-1',
-        mediaTypes: {
-          banner: {
-            sizes: sizes
-          }
-        },
-        bids: [{
-          bidder: 'emoteev',
-          params: {
-            adSpaceId: 5084,
-          }
-        }]
-      }];
+            // some further examples from https://www.iab.com/wp-content/uploads/2017/08/IABNewAdPortfolio_FINAL_2017.pdf
+            [900, 225], // IAB: horizontal, Billboard
+            [900, 450], // IAB: horizontal, Half Page
+            [300, 150], // IAB: horizontal 2x1 and tiles Financial
+            [300, 600], // IAB: vertical 1x2
+            [300, 900]  // IAB: vertical 1x3 Portrait
+        ];
+        const PREBID_TIMEOUT = 3000;
+        const FAILSAFE_TIMEOUT = 3000;
 
-      // ======== DO NOT EDIT BELOW THIS LINE =========== //
-      var googletag = googletag || {};
-      googletag.cmd = googletag.cmd || [];
-      googletag.cmd.push(function () {
-        googletag.pubads().disableInitialLoad();
-      });
+        const adUnits = [{
+            code: '/19968336/header-bid-tag-1',
+            mediaTypes: {
+                banner: {
+                    sizes: sizes
+                }
+            },
+            bids: [{
+                bidder: 'emoteev',
+                params: {
+                    adSpaceId: 5084,
+                    context: 'content',
+                    externalId: null
+                }
+            }, {
+                bidder: 'emoteev',
+                params: {
+                    adSpaceId: 5084,
+                    context: 'footer',
+                    externalId: null
+                }
+            }, {
+                bidder: 'emoteev',
+                params: {
+                    adSpaceId: 5084,
+                    context: 'overlay',
+                    externalId: null
+                }
+            }, {
+                bidder: 'emoteev',
+                params: {
+                    adSpaceId: 5084,
+                    context: 'wallpaper',
+                    externalId: null
+                }
+            }]
+        }];
 
-      var pbjs = pbjs || {};
-      pbjs.que = pbjs.que || [];
-
-      pbjs.que.push(function () {
-        pbjs.addAdUnits(adUnits);
-        pbjs.requestBids({
-          bidsBackHandler: initAdserver,
-          timeout: PREBID_TIMEOUT
-        });
-      });
-
-      function initAdserver() {
-        if (pbjs.initAdserverSet) return;
-        pbjs.initAdserverSet = true;
+        // ======== DO NOT EDIT BELOW THIS LINE =========== //
+        var googletag = googletag || {};
+        googletag.cmd = googletag.cmd || [];
         googletag.cmd.push(function () {
-          pbjs.que.push(function () {
-            pbjs.setTargetingForGPTAsync();
-            googletag.pubads().refresh();
-          });
+            googletag.pubads().disableInitialLoad();
         });
-      }
 
-      setTimeout(function () {
-        initAdserver();
-      }, FAILSAFE_TIMEOUT);
+        var pbjs = pbjs || {};
+        pbjs.que = pbjs.que || [];
 
-      googletag.cmd.push(function () {
-        googletag.defineSlot('/19968336/header-bid-tag-1', sizes, 'div-1')
-          .addService(googletag.pubads());
-        googletag.pubads().enableSingleRequest();
-        googletag.enableServices();
-      });
+        pbjs.que.push(function () {
+            pbjs.addAdUnits(adUnits);
+            pbjs.requestBids({
+                bidsBackHandler: initAdserver,
+                timeout: PREBID_TIMEOUT
+            });
+        });
+
+        function initAdserver() {
+            if (pbjs.initAdserverSet) return;
+            pbjs.initAdserverSet = true;
+            googletag.cmd.push(function () {
+                pbjs.que.push(function () {
+                    pbjs.setTargetingForGPTAsync();
+                    googletag.pubads().refresh();
+                });
+            });
+        }
+
+        setTimeout(function () {
+            initAdserver();
+        }, FAILSAFE_TIMEOUT);
+
+        googletag.cmd.push(function () {
+            googletag.defineSlot('/19968336/header-bid-tag-1', sizes, 'div-1')
+                .addService(googletag.pubads());
+            googletag.pubads().enableSingleRequest();
+            googletag.enableServices();
+        });
     </script>
 </head>
 
@@ -75,9 +106,9 @@
 <h5>Div-1</h5>
 <div id='div-1'>
     <script type='text/javascript'>
-      googletag.cmd.push(function () {
-        googletag.display('div-1');
-      });
+        googletag.cmd.push(function () {
+            googletag.display('div-1');
+        });
 
     </script>
 </div>

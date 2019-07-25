@@ -1,3 +1,13 @@
+
+const sharedWhiteList = [
+  "core-js/library/fn/array/find", // no ie11
+  "core-js/library/fn/array/includes", // no ie11
+  "core-js/library/fn/set", // ie11 supports Set but not Set#values
+  "core-js/library/fn/string/includes", // no ie11
+  "core-js/library/fn/number/is-integer", // no ie11,
+  "core-js/library/fn/array/from" // no ie11
+];
+
 module.exports = {
   "env": {
     "browser": true,
@@ -11,6 +21,9 @@ module.exports = {
     }
   },
   "extends": "standard",
+  "plugins": [
+    "prebid"
+  ],
   "globals": {
     "$$PREBID_GLOBAL$$": false
   },
@@ -31,5 +44,24 @@ module.exports = {
     "no-throw-literal": "off",
     "no-undef": "off",
     "no-useless-escape": "off",
-  }
+  },
+  "overrides": [{
+    "files": "modules/**/*.js",
+    "rules": {
+      "prebid/validate-imports": ["error", [
+        ...sharedWhiteList,
+        "jsencrypt",
+        "crypto-js"
+      ]]
+    }
+  }, {
+    "files": "src/**/*.js",
+    "rules": {
+      "prebid/validate-imports": ["error", [
+        ...sharedWhiteList,
+        "fun-hooks/no-eval",
+        "just-clone"
+      ]]
+    }
+  }]
 };
