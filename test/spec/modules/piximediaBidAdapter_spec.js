@@ -100,3 +100,4 @@ describe('piximediaAdapterTest', function() {
     });
   });
 });
+
