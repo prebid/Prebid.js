@@ -1,8 +1,8 @@
-import { BANNER, NATIVE } from 'src/mediaTypes';
+import { BANNER, NATIVE } from '../src/mediaTypes';
 
 const {registerBidder} = require('../src/adapters/bidderFactory');
 const BIDDER_CODE = 'my6sense';
-const END_POINT = '//papi.mynativeplatform.com/pub2/web/v1.15.0/hbwidget.json';
+const END_POINT = '//hb.mynativeplatform.com/pub2/web/v1.15.0/hbwidget.json';
 const END_POINT_METHOD = 'POST';
 
 // called first
@@ -184,7 +184,7 @@ function interpretResponse(serverResponse) {
   return bidResponses;
 }
 
-const spec = {
+export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, NATIVE],
   isBidRequestValid,
@@ -193,5 +193,3 @@ const spec = {
 };
 
 registerBidder(spec);
-
-module.exports = spec;

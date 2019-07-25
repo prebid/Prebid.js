@@ -1,20 +1,31 @@
-import { loadExternalScript } from 'src/adloader';
-import { registerBidder } from 'src/adapters/bidderFactory';
-import { parse } from 'src/url';
-import * as utils from 'src/utils';
+import { loadExternalScript } from '../src/adloader';
+import { registerBidder } from '../src/adapters/bidderFactory';
+import { parse } from '../src/url';
+import * as utils from '../src/utils';
 import find from 'core-js/library/fn/array/find';
+import JSEncrypt from 'jsencrypt/bin/jsencrypt';
+import sha256 from 'crypto-js/sha256';
+import { config } from '../src/config';
 
-const ADAPTER_VERSION = 8;
+const ADAPTER_VERSION = 17;
 const BIDDER_CODE = 'criteo';
 const CDB_ENDPOINT = '//bidder.criteo.com/cdb';
 const CRITEO_VENDOR_ID = 91;
 const INTEGRATION_MODES = {
   'amp': 1,
 };
-const PROFILE_ID = 207;
+const PROFILE_ID_INLINE = 207;
+const PROFILE_ID_PUBLISHERTAG = 185;
 
 // Unminified source code can be found in: https://github.com/Prebid-org/prebid-js-external-js-criteo/blob/master/dist/prod.js
 const PUBLISHER_TAG_URL = '//static.criteo.net/js/ld/publishertag.prebid.js';
+
+export const FAST_BID_PUBKEY = `-----BEGIN PUBLIC KEY-----
+MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDO1BjAITkFTtP0IMzmF7qsqhpu
+y1dGaTPHnjMU9mRZsrnfR3C0sEN5pYEzEcFRPnkJjJuhH8Rnh5+CE+LcKg0Z8ZZ7
+OmOSj0/qnYTAYCu0cR5LiyWG79KlIgUyMbp92ulGg24gAyGrVn4+v/4c53WlOEUp
+4YWvb82G0CD5NcDNpQIDAQAB
+-----END PUBLIC KEY-----`;
 
 /** @type {BidderSpec} */
 export const spec = {
@@ -37,6 +48,8 @@ export const spec = {
     let url;
     let data;
 
+    Object.assign(bidderRequest, { ceh: config.getConfig('criteo.ceh') });
+
     // If publisher tag not already loaded try to get it from fast bid
     if (!publisherTagAvailable()) {
       window.Criteo = window.Criteo || {};
@@ -51,7 +64,7 @@ export const spec = {
     }
 
     if (publisherTagAvailable()) {
-      const adapter = new Criteo.PubTag.Adapters.Prebid(PROFILE_ID, ADAPTER_VERSION, bidRequests, bidderRequest);
+      const adapter = new Criteo.PubTag.Adapters.Prebid(PROFILE_ID_PUBLISHERTAG, ADAPTER_VERSION, bidRequests, bidderRequest, '$prebid.version$');
       url = adapter.buildCdbUrl();
       data = adapter.buildCdbRequest();
     } else {
@@ -88,6 +101,7 @@ export const spec = {
         const bidId = bidRequest.bidId;
         const bid = {
           requestId: bidId,
+          adId: slot.bidId || utils.getUniqueIdentifierStr(),
           cpm: slot.cpm,
           currency: slot.currency,
           netRevenue: true,
@@ -115,6 +129,26 @@ export const spec = {
     if (publisherTagAvailable()) {
       const adapter = Criteo.PubTag.Adapters.Prebid.GetAdapter(timeoutData.auctionId);
       adapter.handleBidTimeout();
+    }
+  },
+
+  /**
+   * @param {Bid} bid
+   */
+  onBidWon: (bid) => {
+    if (publisherTagAvailable()) {
+      const adapter = Criteo.PubTag.Adapters.Prebid.GetAdapter(bid.auctionId);
+      adapter.handleBidWon(bid);
+    }
+  },
+
+  /**
+   * @param {Bid} bid
+   */
+  onSetTargeting: (bid) => {
+    if (publisherTagAvailable()) {
+      const adapter = Criteo.PubTag.Adapters.Prebid.GetAdapter(bid.auctionId);
+      adapter.handleSetTargeting(bid);
     }
   },
 };
@@ -156,8 +190,9 @@ function buildContext(bidRequests) {
  */
 function buildCdbUrl(context) {
   let url = CDB_ENDPOINT;
-  url += '?profileId=' + PROFILE_ID;
+  url += '?profileId=' + PROFILE_ID_INLINE;
   url += '&av=' + String(ADAPTER_VERSION);
+  url += '&wv=' + encodeURIComponent('$prebid.version$');
   url += '&cb=' + String(Math.floor(Math.random() * 99999999999));
 
   if (context.integrationMode in INTEGRATION_MODES) {
@@ -207,6 +242,10 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
   if (networkId) {
     request.publisher.networkid = networkId;
   }
+  request.user = {};
+  if (bidderRequest && bidderRequest.ceh) {
+    request.user.ceh = bidderRequest.ceh;
+  }
   if (bidderRequest && bidderRequest.gdprConsent) {
     request.gdprConsent = {};
     if (typeof bidderRequest.gdprConsent.gdprApplies !== 'undefined') {
@@ -249,6 +288,34 @@ function createNativeAd(id, payload, callback) {
   </script>`;
 }
 
+export function cryptoVerify(key, hash, code) {
+  var jse = new JSEncrypt();
+  jse.setPublicKey(key);
+  return jse.verify(code, hash, sha256);
+}
+
+function validateFastBid(fastBid) {
+  // The value stored must contain the file's encrypted hash as first line
+  const firstLineEnd = fastBid.indexOf('\n');
+  const firstLine = fastBid.substr(0, firstLineEnd).trim();
+  if (firstLine.substr(0, 9) !== '// Hash: ') {
+    utils.logWarn('No hash found in FastBid');
+    return false;
+  }
+
+  // Remove the hash part from the locally stored value
+  const fileEncryptedHash = firstLine.substr(9);
+  const publisherTag = fastBid.substr(firstLineEnd + 1);
+
+  // Verify the hash using cryptography
+  try {
+    return cryptoVerify(FAST_BID_PUBKEY, fileEncryptedHash, publisherTag);
+  } catch (e) {
+    utils.logWarn('Failed to verify Criteo FastBid');
+    return undefined;
+  }
+}
+
 /**
  * @return {boolean}
  */
@@ -256,13 +323,17 @@ function tryGetCriteoFastBid() {
   try {
     const fastBid = localStorage.getItem('criteo_fast_bid');
     if (fastBid !== null) {
-      eval(fastBid); // eslint-disable-line no-eval
-      return true;
+      if (validateFastBid(fastBid) === false) {
+        utils.logWarn('Invalid Criteo FastBid found');
+        localStorage.removeItem('criteo_fast_bid');
+      } else {
+        utils.logInfo('Using Criteo FastBid');
+        eval(fastBid); // eslint-disable-line no-eval
+      }
     }
   } catch (e) {
     // Unable to get fast bid
   }
-  return false;
 }
 
 registerBidder(spec);

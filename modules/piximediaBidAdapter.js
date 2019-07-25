@@ -1,5 +1,5 @@
-import * as utils from 'src/utils';
-import { registerBidder } from 'src/adapters/bidderFactory';
+import * as utils from '../src/utils';
+import { registerBidder } from '../src/adapters/bidderFactory';
 
 const BIDDER_CODE = 'piximedia';
 const ENDPOINT = '//ad.piximedia.com/prebid';
@@ -44,3 +44,4 @@ export const spec = {
   }
 }
 registerBidder(spec);
+

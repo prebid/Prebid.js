@@ -1,7 +1,7 @@
-import {logError, getTopWindowUrl, getTopWindowReferrer, getTopWindowLocation, createTrackPixelHtml} from 'src/utils';
-import { registerBidder } from 'src/adapters/bidderFactory';
-import { formatQS } from 'src/url';
-import { config } from 'src/config';
+import {logError, getTopWindowUrl, getTopWindowReferrer, getTopWindowLocation, createTrackPixelHtml} from '../src/utils';
+import { registerBidder } from '../src/adapters/bidderFactory';
+import { formatQS } from '../src/url';
+import { config } from '../src/config';
 
 /**
  * @type {{CODE: string, V: string, RECTANGLE_SIZE: {W: number, H: number}, SPOT_TYPES: {INTERSTITIAL: string, RECTANGLE: string, FLOATING: string, BANNER: string}, DISPLAY_AD: number, ENDPOINT_URL: string, EVENTS_ENDPOINT_URL: string, RESPONSE_HEADERS_NAME: {PRICING_VALUE: string, AD_H: string, AD_W: string}}}

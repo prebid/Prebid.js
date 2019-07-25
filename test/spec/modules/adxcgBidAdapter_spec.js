@@ -2,8 +2,8 @@ import { expect } from 'chai'
 import * as url from 'src/url'
 import { spec } from 'modules/adxcgBidAdapter'
 
-describe('AdxcgAdapter', () => {
-  describe('isBidRequestValid', () => {
+describe('AdxcgAdapter', function () {
+  describe('isBidRequestValid', function () {
     let bidBanner = {
       'bidder': 'adxcg',
       'params': {
@@ -37,22 +37,22 @@ describe('AdxcgAdapter', () => {
       'auctionId': '1d1a030790a475',
     }
 
-    it('should return true when required params found', () => {
+    it('should return true when required params found', function () {
       expect(spec.isBidRequestValid(bidBanner)).to.equal(true)
     })
 
-    it('should return true when required params not found', () => {
+    it('should return true when required params not found', function () {
       expect(spec.isBidRequestValid({})).to.be.false
     })
 
-    it('should return false when required params are not passed', () => {
+    it('should return false when required params are not passed', function () {
       let bid = Object.assign({}, bidBanner)
       delete bid.params
       bid.params = {}
       expect(spec.isBidRequestValid(bid)).to.equal(false)
     })
 
-    it('should return true when required video params not found', () => {
+    it('should return true when required video params not found', function () {
       const simpleVideo = JSON.parse(JSON.stringify(bidVideo))
       simpleVideo.params.adzoneid = 123
       expect(spec.isBidRequestValid(simpleVideo)).to.be.false
@@ -63,7 +63,7 @@ describe('AdxcgAdapter', () => {
     })
   })
 
-  describe('request function http', () => {
+  describe('request function http', function () {
     let bid = {
       'bidder': 'adxcg',
       'params': {
@@ -76,7 +76,7 @@ describe('AdxcgAdapter', () => {
       'auctionId': '1d1a030790a475',
     }
 
-    it('creates a valid adxcg request url', () => {
+    it('creates a valid adxcg request url', function () {
       let request = spec.buildRequests([bid])
       expect(request).to.exist
       expect(request.method).to.equal('GET')
@@ -91,12 +91,12 @@ describe('AdxcgAdapter', () => {
       expect(query.pbjs).to.equal('$prebid.version$')
       expect(query.adzoneid).to.equal('1')
       expect(query.format).to.equal('300x250|640x360|1x1')
-      expect(query.jsonp).to.be.empty
+      expect(query.jsonp).to.be.undefined
       expect(query.prebidBidIds).to.equal('84ab500420319d')
     })
   })
 
-  describe('gdpr compliance', () => {
+  describe('gdpr compliance', function () {
     let bid = {
       'bidder': 'adxcg',
       'params': {
@@ -109,7 +109,7 @@ describe('AdxcgAdapter', () => {
       'auctionId': '1d1a030790a475',
     }
 
-    it('should send GDPR Consent data if gdprApplies', () => {
+    it('should send GDPR Consent data if gdprApplies', function () {
       let request = spec.buildRequests([bid], {gdprConsent: {gdprApplies: true, consentString: 'consentDataString'}})
       let parsedRequestUrl = url.parse(request.url)
       let query = parsedRequestUrl.search
@@ -118,7 +118,7 @@ describe('AdxcgAdapter', () => {
       expect(query.gdpr_consent).to.equal('consentDataString')
     })
 
-    it('should not send GDPR Consent data if gdprApplies is false or undefined', () => {
+    it('should not send GDPR Consent data if gdprApplies is false or undefined', function () {
       let request = spec.buildRequests([bid], {
         gdprConsent: {
           gdprApplies: false,
@@ -128,12 +128,62 @@ describe('AdxcgAdapter', () => {
       let parsedRequestUrl = url.parse(request.url)
       let query = parsedRequestUrl.search
 
-      expect(query.gdpr).to.be.empty
-      expect(query.gdpr_consent).to.be.empty
+      expect(query.gdpr).to.be.undefined
+      expect(query.gdpr_consent).to.be.undefined
     })
   })
 
-  describe('response handler', () => {
+  describe('userid pubcid should be passed to querystring', function () {
+    let bid = [{
+      'bidder': 'adxcg',
+      'params': {
+        'adzoneid': '1'
+      },
+      'adUnitCode': 'adunit-code',
+      'sizes': [[300, 250], [640, 360], [1, 1]],
+      'bidId': '84ab500420319d',
+      'bidderRequestId': '7101db09af0db2',
+      'auctionId': '1d1a030790a475',
+    }]
+
+    let bidderRequests = {};
+
+    bid[0].userId = {'pubcid': 'pubcidabcd'};
+
+    it('should send pubcid if available', function () {
+      let request = spec.buildRequests(bid, bidderRequests)
+      let parsedRequestUrl = url.parse(request.url)
+      let query = parsedRequestUrl.search
+      expect(query.pubcid).to.equal('pubcidabcd')
+    })
+  })
+
+  describe('userid tdid should be passed to querystring', function () {
+    let bid = [{
+      'bidder': 'adxcg',
+      'params': {
+        'adzoneid': '1'
+      },
+      'adUnitCode': 'adunit-code',
+      'sizes': [[300, 250], [640, 360], [1, 1]],
+      'bidId': '84ab500420319d',
+      'bidderRequestId': '7101db09af0db2',
+      'auctionId': '1d1a030790a475',
+    }]
+
+    let bidderRequests = {};
+
+    bid[0].userId = {'tdid': 'tdidabcd'};
+
+    it('should send pubcid if available', function () {
+      let request = spec.buildRequests(bid, bidderRequests)
+      let parsedRequestUrl = url.parse(request.url)
+      let query = parsedRequestUrl.search
+      expect(query.tdid).to.equal('tdidabcd');
+    })
+  })
+
+  describe('response handler', function () {
     let BIDDER_REQUEST = {
       'bidder': 'adxcg',
       'params': {
@@ -235,6 +285,14 @@ describe('AdxcgAdapter', () => {
                 'label': 'SPONSORED',
                 'value': 'sponsoredByContent'
               }
+            }, {
+              'id': 5,
+              'required': 0,
+              'icon': {
+                'url': 'iconContent',
+                'w': 400,
+                'h': 400
+              }
             }],
             'link': {
               'url': 'linkContent'
@@ -245,7 +303,7 @@ describe('AdxcgAdapter', () => {
         header: {'someheader': 'fakedata'}
       }
 
-    it('handles regular responses', () => {
+    it('handles regular responses', function () {
       let result = spec.interpretResponse(BANNER_RESPONSE, BIDDER_REQUEST)
 
       expect(result).to.have.lengthOf(1)
@@ -262,7 +320,7 @@ describe('AdxcgAdapter', () => {
       expect(result[0].dealId).to.not.exist
     })
 
-    it('handles regular responses with dealid', () => {
+    it('handles regular responses with dealid', function () {
       let result = spec.interpretResponse(BANNER_RESPONSE_WITHDEALID, BIDDER_REQUEST)
 
       expect(result).to.have.lengthOf(1)
@@ -277,7 +335,7 @@ describe('AdxcgAdapter', () => {
       expect(result[0].ttl).to.equal(300)
     })
 
-    it('handles video responses', () => {
+    it('handles video responses', function () {
       let result = spec.interpretResponse(VIDEO_RESPONSE, BIDDER_REQUEST)
       expect(result).to.have.lengthOf(1)
 
@@ -292,7 +350,7 @@ describe('AdxcgAdapter', () => {
       expect(result[0].ttl).to.equal(300)
     })
 
-    it('handles native responses', () => {
+    it('handles native responses', function () {
       let result = spec.interpretResponse(NATIVE_RESPONSE, BIDDER_REQUEST)
 
       expect(result[0].width).to.equal(0)
@@ -307,12 +365,20 @@ describe('AdxcgAdapter', () => {
       expect(result[0].native.clickUrl).to.equal('linkContent')
       expect(result[0].native.impressionTrackers).to.deep.equal(['impressionTracker1', 'impressionTracker2'])
       expect(result[0].native.title).to.equal('titleContent')
-      expect(result[0].native.image).to.equal('imageContent')
+
+      expect(result[0].native.image.url).to.equal('imageContent')
+      expect(result[0].native.image.height).to.equal(600)
+      expect(result[0].native.image.width).to.equal(600)
+
+      expect(result[0].native.icon.url).to.equal('iconContent')
+      expect(result[0].native.icon.height).to.equal(400)
+      expect(result[0].native.icon.width).to.equal(400)
+
       expect(result[0].native.body).to.equal('descriptionContent')
       expect(result[0].native.sponsoredBy).to.equal('sponsoredByContent')
     })
 
-    it('handles nobid responses', () => {
+    it('handles nobid responses', function () {
       let response = []
       let bidderRequest = BIDDER_REQUEST
 
@@ -321,12 +387,12 @@ describe('AdxcgAdapter', () => {
     })
   })
 
-  describe('getUserSyncs', () => {
+  describe('getUserSyncs', function () {
     let syncoptionsIframe = {
       'iframeEnabled': 'true'
     }
 
-    it('should return iframe sync option', () => {
+    it('should return iframe sync option', function () {
       expect(spec.getUserSyncs(syncoptionsIframe)[0].type).to.equal('iframe')
       expect(spec.getUserSyncs(syncoptionsIframe)[0].url).to.equal('//cdn.adxcg.net/pb-sync.html')
     })
