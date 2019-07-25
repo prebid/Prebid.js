@@ -533,6 +533,18 @@ const OPEN_RTB_PROTOCOL = {
       request.ext.prebid = Object.assign(request.ext.prebid, _s2sConfig.extPrebid);
     }
 
+    /**
+     * @type {(string[]|string|undefined)} - OpenRTB property 'cur', currencies available for bids
+     */
+    const adServerCur = config.getConfig('currency.adServerCurrency');
+    if (adServerCur && typeof adServerCur === 'string') {
+      // if the value is a string, wrap it with an array
+      request.cur = [adServerCur];
+    } else if (Array.isArray(adServerCur) && adServerCur.length) {
+      // if it's an array, get the first element
+      request.cur = [adServerCur[0]];
+    }
+
     _appendSiteAppDevice(request);
 
     const digiTrust = _getDigiTrustQueryParams(bidRequests && bidRequests[0]);
