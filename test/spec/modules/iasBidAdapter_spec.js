@@ -1,15 +1,15 @@
 import { expect } from 'chai';
 import { spec } from 'modules/iasBidAdapter';
 
-describe('iasBidAdapter is an adapter that', () => {
-  it('has the correct bidder code', () => {
+describe('iasBidAdapter is an adapter that', function () {
+  it('has the correct bidder code', function () {
     expect(spec.code).to.equal('ias');
   });
-  describe('has a method `isBidRequestValid` that', () => {
-    it('exists', () => {
+  describe('has a method `isBidRequestValid` that', function () {
+    it('exists', function () {
       expect(spec.isBidRequestValid).to.be.a('function');
     });
-    it('returns false if bid params misses `pubId`', () => {
+    it('returns false if bid params misses `pubId`', function () {
       expect(spec.isBidRequestValid(
         {
           params: {
@@ -17,7 +17,7 @@ describe('iasBidAdapter is an adapter that', () => {
           }
         })).to.equal(false);
     });
-    it('returns false if bid params misses `adUnitPath`', () => {
+    it('returns false if bid params misses `adUnitPath`', function () {
       expect(spec.isBidRequestValid(
         {
           params: {
@@ -25,7 +25,7 @@ describe('iasBidAdapter is an adapter that', () => {
           }
         })).to.equal(false);
     });
-    it('returns true otherwise', () => {
+    it('returns true otherwise', function () {
       expect(spec.isBidRequestValid(
         {
           params: {
@@ -37,13 +37,13 @@ describe('iasBidAdapter is an adapter that', () => {
     });
   });
 
-  describe('has a method `buildRequests` that', () => {
-    it('exists', () => {
+  describe('has a method `buildRequests` that', function () {
+    it('exists', function () {
       expect(spec.buildRequests).to.be.a('function');
     });
-    describe('given bid requests, returns a `ServerRequest` instance that', () => {
+    describe('given bid requests, returns a `ServerRequest` instance that', function () {
       let bidRequests, IAS_HOST;
-      beforeEach(() => {
+      beforeEach(function () {
         IAS_HOST = '//pixel.adsafeprotected.com/services/pub';
         bidRequests = [
           {
@@ -79,20 +79,20 @@ describe('iasBidAdapter is an adapter that', () => {
           }
         ];
       });
-      it('has property `method` of `GET`', () => {
+      it('has property `method` of `GET`', function () {
         expect(spec.buildRequests(bidRequests)).to.deep.include({
           method: 'GET'
         });
       });
-      it('has property `url` to be the correct IAS endpoint', () => {
+      it('has property `url` to be the correct IAS endpoint', function () {
         expect(spec.buildRequests(bidRequests)).to.deep.include({
           url: IAS_HOST
         });
       });
-      it('only includes the first `bidRequest` as the bidRequest variable on a multiple slot request', () => {
+      it('only includes the first `bidRequest` as the bidRequest variable on a multiple slot request', function () {
         expect(spec.buildRequests(bidRequests).bidRequest.adUnitCode).to.equal(bidRequests[0].adUnitCode);
       });
-      describe('has property `data` that is an encode query string containing information such as', () => {
+      describe('has property `data` that is an encode query string containing information such as', function () {
         let val;
         const ANID_PARAM = 'anId';
         const SLOT_PARAM = 'slot';
@@ -100,35 +100,37 @@ describe('iasBidAdapter is an adapter that', () => {
         const SLOT_SIZE_PARAM = 'ss';
         const SLOT_AD_UNIT_PATH_PARAM = 'p';
 
-        beforeEach(() => val = decodeURI(spec.buildRequests(bidRequests).data));
-        it('publisher id', () => {
+        beforeEach(function () {
+          val = decodeURI(spec.buildRequests(bidRequests).data);
+        });
+        it('publisher id', function () {
           expect(val).to.have.string(`${ANID_PARAM}=1234`);
         });
-        it('ad slot`s id, size and ad unit path', () => {
+        it('ad slot`s id, size and ad unit path', function () {
           expect(val).to.have.string(`${SLOT_PARAM}={${SLOT_ID_PARAM}:one-div-id,${SLOT_SIZE_PARAM}:[10.20,300.400],${SLOT_AD_UNIT_PATH_PARAM}:/a/b/c}`);
           expect(val).to.have.string(`${SLOT_PARAM}={${SLOT_ID_PARAM}:two-div-id,${SLOT_SIZE_PARAM}:[50.60],${SLOT_AD_UNIT_PATH_PARAM}:/d/e/f}`);
         });
-        it('window size', () => {
+        it('window size', function () {
           expect(val).to.match(/.*wr=[0-9]*\.[0-9]*/);
         });
-        it('screen size', () => {
+        it('screen size', function () {
           expect(val).to.match(/.*sr=[0-9]*\.[0-9]*/);
         });
       });
-      it('has property `bidRequest` that is the first passed in bid request', () => {
+      it('has property `bidRequest` that is the first passed in bid request', function () {
         expect(spec.buildRequests(bidRequests)).to.deep.include({
           bidRequest: bidRequests[0]
         });
       });
     });
   });
-  describe('has a method `interpretResponse` that', () => {
-    it('exists', () => {
+  describe('has a method `interpretResponse` that', function () {
+    it('exists', function () {
       expect(spec.interpretResponse).to.be.a('function');
     });
-    describe('returns a list of bid response that', () => {
+    describe('returns a list of bid response that', function () {
       let bidRequests, bidResponse, slots, serverResponse;
-      beforeEach(() => {
+      beforeEach(function () {
         bidRequests = [
           {
             adUnitCode: 'one-div-id',
@@ -194,34 +196,34 @@ describe('iasBidAdapter is an adapter that', () => {
         };
         bidResponse = spec.interpretResponse(serverResponse, request);
       });
-      it('has IAS keyword `adt` as property', () => {
+      it('has IAS keyword `adt` as property', function () {
         expect(bidResponse[0]).to.deep.include({ adt: 'adtVal' });
       });
-      it('has IAS keyword `alc` as property', () => {
+      it('has IAS keyword `alc` as property', function () {
         expect(bidResponse[0]).to.deep.include({ alc: 'alcVal' });
       });
-      it('has IAS keyword `dlm` as property', () => {
+      it('has IAS keyword `dlm` as property', function () {
         expect(bidResponse[0]).to.deep.include({ dlm: 'dlmVal' });
       });
-      it('has IAS keyword `drg` as property', () => {
+      it('has IAS keyword `drg` as property', function () {
         expect(bidResponse[0]).to.deep.include({ drg: 'drgVal' });
       });
-      it('has IAS keyword `hat` as property', () => {
+      it('has IAS keyword `hat` as property', function () {
         expect(bidResponse[0]).to.deep.include({ hat: 'hatVal' });
       });
-      it('has IAS keyword `off` as property', () => {
+      it('has IAS keyword `off` as property', function () {
         expect(bidResponse[0]).to.deep.include({ off: 'offVal' });
       });
-      it('has IAS keyword `vio` as property', () => {
+      it('has IAS keyword `vio` as property', function () {
         expect(bidResponse[0]).to.deep.include({ vio: 'vioVal' });
       });
-      it('has IAS keyword `fr` as property', () => {
+      it('has IAS keyword `fr` as property', function () {
         expect(bidResponse[0]).to.deep.include({ fr: 'false' });
       });
-      it('has property `slots`', () => {
+      it('has property `slots`', function () {
         expect(bidResponse[0]).to.deep.include({ slots: slots });
       });
-      it('response is the same for multiple slots', () => {
+      it('response is the same for multiple slots', function () {
         var adapter = spec;
         var requests = adapter.buildRequests(bidRequests);
         expect(adapter.interpretResponse(serverResponse, requests)).to.length(2);

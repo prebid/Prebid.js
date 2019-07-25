@@ -300,10 +300,26 @@
                         bidder: 'zedo',
                         params: {
                             channelCode: 2264002816,   //REQUIRED
-                            dimId: 9 //REQUIRED
+                            dimId: 9, //REQUIRED
+                            pubId: 1 // OPTIONAL
                         }
-                    }
-
+                    },
+                    {
+                      bidder: 'openxoutstream',
+                      params: {
+                          unit: '53943996499',
+                          delDomain: 'se-demo-d.openx.net',
+                          publisher_page_url: 'yieldmo.com',
+                          width:  '300',
+                          height: '250',
+                      }
+                    },
+		            {
+                        bidder: 'emoteev',
+                        params: {
+                            adSpaceId: 5084,
+                        }
+                    },
                 ]
             }, {
                 code: 'div-gpt-ad-12345678-1',
@@ -401,7 +417,8 @@
                     {
                         bidder: 'gumgum',
                         params: {
-                            inScreen: 'ggumtest' // REQUIRED str Tracking Id
+                            inScreen: 'ggumtest', // REQUIRED str Tracking Id
+                            bidfloor: 0.01        // OPTIONAL number CPM bid
                         }
                     },
                     {

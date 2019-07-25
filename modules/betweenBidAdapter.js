@@ -1,4 +1,4 @@
-import {registerBidder} from 'src/adapters/bidderFactory';
+import {registerBidder} from '../src/adapters/bidderFactory';
 
 const BIDDER_CODE = 'between';
 
@@ -27,9 +27,9 @@ export const spec = {
       let params = {
         jst: 'hb',
         ord: Math.random() * 10000000000000000,
-        tz: get_tz(),
-        fl: get_fl(),
-        rr: get_rr(),
+        tz: getTz(),
+        fl: getFl(),
+        rr: getRr(),
         w: i.params.w,
         h: i.params.h,
         s: i.params.s,
@@ -69,13 +69,13 @@ export const spec = {
     for (var i = 0; i < serverResponse.body.length; i++) {
       let bidResponse = {
         requestId: serverResponse.body[i].bidid,
-        cpm: serverResponse.body[i].cpm || 123,
-        width: serverResponse.body[i].w || 200,
-        height: serverResponse.body[i].h || 400,
-        ttl: serverResponse.body[i].ttl || 120,
-        creativeId: serverResponse.body[i].creativeid || 123,
+        cpm: serverResponse.body[i].cpm || 0,
+        width: serverResponse.body[i].w,
+        height: serverResponse.body[i].h,
+        ttl: serverResponse.body[i].ttl,
+        creativeId: serverResponse.body[i].creativeid,
         currency: serverResponse.body[i].currency || 'RUB',
-        netRevenue: serverResponse.body[i].netRevenue || false,
+        netRevenue: serverResponse.body[i].netRevenue || true,
         ad: serverResponse.body[i].ad
       };
       bidResponses.push(bidResponse);
@@ -106,15 +106,19 @@ export const spec = {
       });
     } */
 
+    // syncs.push({
+    //   type: 'iframe',
+    //   url: '//acdn.adnxs.com/ib/static/usersync/v3/async_usersync.html'
+    // });
     syncs.push({
       type: 'iframe',
-      url: '//acdn.adnxs.com/ib/static/usersync/v3/async_usersync.html'
-    })
+      url: '//ads.betweendigital.com/sspmatch-iframe'
+    });
     return syncs;
   }
 }
 
-function get_rr() {
+function getRr() {
   try {
     var td = top.document;
     var rr = td.referrer;
@@ -127,7 +131,7 @@ function get_rr() {
   }
 }
 
-function get_fl() {
+function getFl() {
   if (navigator.plugins !== undefined && navigator.plugins !== null) {
     if (navigator.plugins['Shockwave Flash'] !== undefined && navigator.plugins['Shockwave Flash'] !== null && typeof navigator.plugins['Shockwave Flash'] === 'object') {
       var description = navigator.plugins['Shockwave Flash'].description;
@@ -142,7 +146,7 @@ function get_fl() {
   return 0;
 }
 
-function get_tz() {
+function getTz() {
   return new Date().getTimezoneOffset();
 }
 

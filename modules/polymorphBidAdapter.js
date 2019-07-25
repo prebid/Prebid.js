@@ -1,9 +1,19 @@
-import * as utils from 'src/utils';
-import { registerBidder } from 'src/adapters/bidderFactory';
-import { BANNER } from 'src/mediaTypes';
+import * as utils from '../src/utils';
+import { registerBidder } from '../src/adapters/bidderFactory';
+import { BANNER } from '../src/mediaTypes';
 
+const PROTOCOL = getProtocol();
 const BIDDER_CODE = 'polymorph';
 const URL = '//api.adsnative.com/v1/ad-template.json';
+const USER_SYNC_URL = PROTOCOL + '//rudy.adsnative.com/cm.gif';
+
+function getProtocol() {
+  if (location.protocol && location.protocol.indexOf('https') === 0) {
+    return 'https:';
+  } else {
+    return 'http:';
+  }
+}
 
 export const polymorphAdapterSpec = {
   code: BIDDER_CODE,
@@ -17,7 +27,7 @@ export const polymorphAdapterSpec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function(bid) {
-    return !!(bid.params.placementId);
+    return !!(bid.params.placementId) || (!!(bid.params.network_key) && !!(bid.params.widget_id) && !!(bid.params.cat));
   },
 
   /**
@@ -31,11 +41,18 @@ export const polymorphAdapterSpec = {
       var payload = {
         url: utils.getTopWindowUrl(),
         ref: utils.getTopFrameReferrer(),
-        zid: bid.params.placementId,
         sizes: bid.sizes,
         hb: 1,
-        hb_source: 'prebid'
+        hb_source: 'prebid',
+        bid_id: bid.bidId,
       };
+      if (bid.params.placementId) {
+        payload.zid = bid.params.placementId;
+      } else if (bid.params.network_key && bid.params.widget_id && bid.params.cat) {
+        payload.network_key = bid.params.network_key;
+        payload.widget_id = bid.params.widget_id;
+        payload.cat = bid.params.cat;
+      }
       Object.keys(bid.params).forEach(function(key) {
         if (key != 'defaultWidth' && key != 'defaultHeight') {
           payload[key] = bid.params[key];
@@ -100,6 +117,14 @@ export const polymorphAdapterSpec = {
       utils.logError(e);
     }
     return bidResponses;
+  },
+  getUserSyncs: function(syncOptions) {
+    if (syncOptions.pixelEnabled) {
+      return [{
+        type: 'image',
+        url: USER_SYNC_URL
+      }];
+    }
   }
 }
 

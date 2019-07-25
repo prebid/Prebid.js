@@ -1,10 +1,10 @@
 'use strict';
 
-import {registerBidder} from 'src/adapters/bidderFactory';
-import { BANNER, VIDEO } from 'src/mediaTypes';
+import {registerBidder} from '../src/adapters/bidderFactory';
+import { BANNER, VIDEO } from '../src/mediaTypes';
 
 const BIDDER_CODE = 'etarget';
-const country_map = {
+const countryMap = {
   1: 'sk',
   2: 'cz',
   3: 'hu',
@@ -28,18 +28,18 @@ export const spec = {
     var i, l, bid, reqParams, netRevenue, gdprObject;
     var request = [];
     var bids = JSON.parse(JSON.stringify(validBidRequests));
-    var last_contry = 'sk';
+    var lastCountry = 'sk';
     for (i = 0, l = bids.length; i < l; i++) {
       bid = bids[i];
-      if (country_map[bid.params.country]) {
-        last_contry = country_map[bid.params.country];
+      if (countryMap[bid.params.country]) {
+        lastCountry = countryMap[bid.params.country];
       }
       reqParams = bid.params;
       reqParams.transactionId = bid.transactionId;
       request.push(formRequestUrl(reqParams));
     }
 
-    request.unshift('//' + last_contry + '.search.etargetnet.com/hb/?hbget=1');
+    request.unshift('//' + lastCountry + '.search.etargetnet.com/hb/?hbget=1');
     netRevenue = 'net';
 
     if (bidderRequest && bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies) {
