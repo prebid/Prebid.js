@@ -160,7 +160,7 @@ function createEndpointQS(bidderRequest) {
 
 function getSizeArray(bid) {
   let inputSize = bid.sizes;
-  if (bid.mediaTypes.banner) {
+  if (bid.mediaTypes && bid.mediaTypes.banner) {
     inputSize = bid.mediaTypes.banner.sizes;
   }
 
