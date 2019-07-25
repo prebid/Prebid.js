@@ -439,7 +439,7 @@ describe('Mgid bid adapter', function () {
       };
       bid.nativeParams = {
         title: {required: true},
-        image: {wmin:50, hmin:50, required:true},
+        image: {wmin: 50, hmin: 50, required:true},
         icon: {},
         sponsored: { },
       };
@@ -461,7 +461,7 @@ describe('Mgid bid adapter', function () {
       expect(data.device.w).equal(screenWidth);
       expect(data.device.language).to.deep.equal(lang);
       expect(data.imp[0].tagid).to.deep.equal('2/div');
-      expect(data.imp[0].native).is.a('object').and.to.deep.equal({'request': {'assets': [{'id': 1, 'required': 1, 'title': {'len': 80}}, {'id': 2, 'img': {'h': 328, hmin: 50, 'type': 3, 'w': 492, wmin: 50}, 'required': 1},{'id': 3, 'img': {'h': 50, 'type': 1, 'w': 50}, 'required': 0}, {'data': {'type': 1}, 'id': 11, 'required': 0}], 'plcmtcnt': 1}});
+      expect(data.imp[0].native).is.a('object').and.to.deep.equal({'request': {'assets': [{'id': 1, 'required': 1, 'title': {'len': 80}}, {'id': 2, 'img': {'h': 328, hmin: 50, 'type': 3, 'w': 492, wmin: 50}, 'required': 1}, {'id': 3, 'img': {'h': 50, 'type': 1, 'w': 50}, 'required': 0}, {'data': {'type': 1}, 'id': 11, 'required': 0}], 'plcmtcnt': 1}});
       expect(data.imp[0].secure).to.deep.equal(secure);
       expect(request).to.deep.equal({
         'method': 'POST',
