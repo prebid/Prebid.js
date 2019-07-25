@@ -3,7 +3,7 @@
 ```
 Module Name:  Triplelift Bid Adapter
 Module Type:  Bidder Adapter
-Maintainer: bzellman@triplelift.com
+Maintainer: csmith+wrapper@triplelift.com
 ```
 
 # Description
