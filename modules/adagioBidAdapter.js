@@ -88,6 +88,12 @@ function initAdagio() {
     });
   });
 
+  if (window.advstLib && typeof window.advstLib === 'function') {
+    advstLib().eventHandler.addListener('renderEndedEvent', function(e) {
+      adagioEnqueue('adthk-event', { eventName: 'renderEndedEvent', args: e.detail });
+    });
+  }
+
   // First, try to load adagio-js from localStorage.
   getAdagioTag();
 
