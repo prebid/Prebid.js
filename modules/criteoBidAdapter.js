@@ -127,7 +127,7 @@ export const spec = {
         if (slot.native) {
           bid.ad = createNativeAd(bidId, slot.native, bidRequest.params.nativeCallback);
         } else if (slot.video) {
-          bid.vastUrl = slot.creative;
+          bid.vastUrl = slot.displayurl;
           bid.mediaType = VIDEO;
         } else {
           bid.ad = slot.creative;
