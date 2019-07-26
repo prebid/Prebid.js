@@ -3,11 +3,8 @@ import {
 }
   from '../src/adapters/bidderFactory';
 import * as utils from '../src/utils';
-
 const BIDDER_CODE = 'reload';
-
 const VERSION_ADAPTER = '1.10';
-
 export const spec = {
   code: BIDDER_CODE,
   png: {},
@@ -29,22 +26,18 @@ export const spec = {
    */
   buildRequests: function (validBidRequests, bidderRequest) {
     let vRequests = [];
-
     let bidReq = {
       id: Math.random().toString(10).substring(2),
       imp: []
     };
-
     let vgdprConsent = null;
     if (utils.deepAccess(bidderRequest, 'gdprConsent')) {
       vgdprConsent = bidderRequest.gdprConsent;
     }
-
     let vPrxClientTool = null;
     let vSrvUrl = null;
     for (let vIdx = 0; vIdx < validBidRequests.length; vIdx++) {
       let bidRequest = validBidRequests[vIdx];
-
       vPrxClientTool = new ReloadClientTool({
         prxVer: VERSION_ADAPTER,
         prxType: 'bd',
@@ -54,13 +47,10 @@ export const spec = {
         bsrvID: bidRequest.params.bsrvID,
         gdprObj: vgdprConsent,
         mediaObj: bidRequest.mediaTypes,
-
         wnd: utils.getWindowTop(),
         rtop: utils.deepAccess(bidderRequest, 'refererInfo.reachedTop') || false
       });
-
       if (vSrvUrl === null) vSrvUrl = vPrxClientTool.getSrvUrl();
-
       let vImpression = {
         id: bidRequest.bidId,
         bidId: bidRequest.bidId,
@@ -68,7 +58,6 @@ export const spec = {
         transactionId: bidRequest.transactionId,
         bidderRequestId: bidRequest.bidderRequestId,
         auctionId: bidRequest.auctionId,
-
         banner: {
           ext: {
             type: bidRequest.params.type || 'pcm',
@@ -78,7 +67,6 @@ export const spec = {
       };
       bidReq.imp.push(vImpression);
     }
-
     if (bidReq.imp.length > 0) {
       const payloadString = JSON.stringify(bidReq);
       vRequests.push({
@@ -97,24 +85,18 @@ export const spec = {
    */
   interpretResponse: function (serverResponse, bidRequest) {
     const serverBody = serverResponse.body;
-
     const bidResponses = [];
-
     for (let vIdx = 0; vIdx < serverBody.seatbid.length; vIdx++) {
       let vSeatBid = serverBody.seatbid[vIdx];
-
       for (let vIdxBid = 0; vIdxBid < vSeatBid.bid.length; vIdxBid++) {
         let vBid = vSeatBid.bid[vIdxBid];
-
         let vPrxClientTool = new ReloadClientTool({
           plcmID: vBid.ext.plcmID,
           partID: vBid.ext.partID,
           opdomID: vBid.ext.opdomID,
           bsrvID: vBid.ext.bsrvID
         });
-
         vPrxClientTool.setPCMObj(vBid.ext.pcmdata);
-
         if (vPrxClientTool.getBP() > 0) {
           let bidResponse = {
             requestId: vBid.impid,
@@ -132,7 +114,6 @@ export const spec = {
         }
       }
     }
-
     return bidResponses;
   },
   /**
@@ -147,7 +128,7 @@ export const spec = {
 
 function ReloadClientTool(args) {
   var that = this;
-  var _pcmClientVersion = '140';
+  var _pcmClientVersion = '120';
   var _pcmFilePref = 'prx_root_';
   var _resFilePref = 'prx_pnws_';
   var _pcmInputObjVers = '120';
@@ -155,7 +136,6 @@ function ReloadClientTool(args) {
   var _status = 'NA';
   var _message = '';
   var _log = '';
-
   var _memFile = _getMemFile();
 
   if (_memFile.status !== 'ok') {
@@ -165,14 +145,12 @@ function ReloadClientTool(args) {
   that.getPCMObj = function () {
     return {
       thisVer: _pcmInputObjVers,
-
       statStr: _memFile.statStr,
       plcmData: _getPlcmData(),
       clntData: _getClientData(args.wnd, args.rtop),
       resultData: _getRD(),
       gdprObj: _getGdpr(),
       mediaObj: _getMediaObj(),
-
       proxetString: null,
       dboData: null,
       plcmSett: null,
@@ -180,7 +158,7 @@ function ReloadClientTool(args) {
   };
 
   that.setPCMObj = function (obj) {
-    if (obj.thisVer !== '110') {
+    if (obj.thisVer !== '100') {
       _status = 'error';
       _message = 'incomp_output_obj_version';
       _log += ' ERROR incomp_output_obj_version';
@@ -240,10 +218,6 @@ function ReloadClientTool(args) {
     return _checkInstProp('am', null);
   };
 
-  that.getPM = function () {
-    return _checkInstProp('pbm', null);
-  };
-
   that.getPingUrl = function (pingName) {
     var pingData = _checkInstProp('pingdata', {});
     if (pingData[pingName] !== 'undefined') return pingData[pingName];
@@ -292,10 +266,8 @@ function ReloadClientTool(args) {
     return {
       version: 200,
       locTime: Date.now(),
-
       winInfo: _winInf(wnd),
       envInfo: getEnvInfo(),
-
       topw: rtop === true,
       prot: wnd.document.location.protocol,
       host: wnd.document.location.host,

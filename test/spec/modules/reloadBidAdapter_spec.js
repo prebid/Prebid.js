@@ -66,7 +66,7 @@ let getExt1ServerResponse = () => {
         'testCase': 'A:00_B:100',
         'opdomain': '1',
         'checksum': '6378',
-        'cmp': '0',
+        'cpm': '0',
         'bstfct': '100',
         'totstop': 'false',
         'pcmurl': 'bidsrv01.reload.net'
@@ -104,7 +104,7 @@ let getExt2ServerResponse = () => {
         'testCase': 'A:00_B:100',
         'opdomain': '1',
         'checksum': '6378',
-        'cmp': '0',
+        'cpm': '0',
         'bstfct': '100',
         'totstop': 'false',
         'pcmurl': 'bidsrv00.reload.net'
