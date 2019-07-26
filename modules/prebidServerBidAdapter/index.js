@@ -907,10 +907,13 @@ export function PrebidServer() {
     const adUnits = utils.deepClone(s2sBidRequest.ad_units);
 
     // at this point ad units should have a size array either directly or mapped so filter for that
-    const adUnitsWithSizes = adUnits.filter(unit => unit.sizes && unit.sizes.length);
+    const validAdUnits = adUnits.filter(unit =>
+      (unit.sizes && unit.sizes.length) ||
+      (unit.mediaTypes && unit.mediaTypes.native)
+    );
 
     // in case config.bidders contains invalid bidders, we only process those we sent requests for
-    const requestedBidders = adUnitsWithSizes
+    const requestedBidders = validAdUnits
       .map(adUnit => adUnit.bids.map(bid => bid.bidder).filter(utils.uniques))
       .reduce(utils.flatten)
       .filter(utils.uniques);
@@ -920,7 +923,7 @@ export function PrebidServer() {
       queueSync(_s2sConfig.bidders, consent);
     }
 
-    const request = protocolAdapter().buildRequest(s2sBidRequest, bidRequests, adUnitsWithSizes);
+    const request = protocolAdapter().buildRequest(s2sBidRequest, bidRequests, validAdUnits);
     const requestJson = request && JSON.stringify(request);
     if (request && requestJson) {
       ajax(
