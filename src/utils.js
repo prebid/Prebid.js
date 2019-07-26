@@ -5,6 +5,9 @@ import includes from 'core-js/library/fn/array/includes';
 import { parse } from './url';
 const CONSTANTS = require('./constants');
 
+export { default as deepAccess } from 'dlv';
+export { default as deepSetValue } from 'dset';
+
 var tArr = 'Array';
 var tStr = 'String';
 var tFn = 'Function';
@@ -968,43 +971,6 @@ export function groupBy(xs, key) {
     (rv[x[key]] = rv[x[key]] || []).push(x);
     return rv;
   }, {});
-}
-
-/**
- * deepAccess utility function useful for doing safe access (will not throw exceptions) of deep object paths.
- * @param {Object} obj The object containing the values you would like to access.
- * @param {string|number} path Object path to the value you would like to access.  Non-strings are coerced to strings.
- * @returns {*} The value found at the specified object path, or undefined if path is not found.
- */
-export function deepAccess(obj, path) {
-  if (!obj) {
-    return;
-  }
-  path = String(path).split('.');
-  for (let i = 0; i < path.length; i++) {
-    obj = obj[path[i]];
-    if (typeof obj === 'undefined') {
-      return;
-    }
-  }
-  return obj;
-}
-
-/**
- * @param {Object} obj The object to set a deep property value in
- * @param {(string|Array.<string>)} path Object path to the value you would like ot set.
- * @param {*} value The value you would like to set
- */
-export function deepSetValue(obj, path, value) {
-  let i;
-  path = path.split('.');
-  for (i = 0; i < path.length - 1; i++) {
-    if (i !== path.length - 1 && typeof obj[path[i]] === 'undefined') {
-      obj[path[i]] = {};
-    }
-    obj = obj[path[i]];
-  }
-  obj[path[i]] = value;
 }
 
 /**

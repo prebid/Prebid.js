@@ -661,7 +661,7 @@ describe('Utils', function () {
       var value2 = utils.deepAccess(obj, 'test.first');
       assert.equal(value2, 11);
 
-      var value3 = utils.deepAccess(obj, 1);
+      var value3 = utils.deepAccess(obj, '1');
       assert.equal(value3, 2);
     });
 
