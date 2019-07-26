@@ -51,8 +51,8 @@ describe('topRTBBidAdapterTests', function () {
     	'adName': 'banner',
     	'vastXml': '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><VAST version="2.0"></VAST>',
     	'mediaType': 'banner',
-    	'tracking': 'http://ssp.toprtb.com:8080/sspNew/tracking?F0cloTiKIw%2BjZ2UNDvlKGn5%2FWoAO9cnlAUDm6gFBM8bImY2fKo%2BMTvI0XvXzFTZSb5v8o4EUbPId9hckptTqA4QPaWvpVYCRKRZceXNa4kjtvfm4j2e%2FcRKgkns2goHXi7IZC0sBIbE77WWg%2BPBYv%2BCu84H%2FSH69mi%2FDaWcQlfaEOdkaJdstJEkaZtkgWnFnS7aagte%2BfdEbOqcTxq5hzj%2BZ4NZbwgReuWTQZbfrMWjkXFbn%2B35vZuI319o6XH9n9fKLS4xp8zstXfQT2oSgjw1NmrwqRKf1efB1UaWlS1TbkSqxZ7Kcy7nJvAZrDk0tzcSeIxe4VfHpwgPPs%2BueUeGwz3o7OCh7H1sCmogSrmJFB9JTeXudFjC13iANAtu4SvG9bGIbiJxS%2BNfkjy2mLFm8kSIcIobjNkMEcUAwmoqJNRndwb66a3Iovk2NTo0Ly%2FV7Y5ECPcS5%2FPBrIEOuQXS5SNUPRWKoklX5nexHtOc%3D',
-    	'impression': 'http://ssp.toprtb.com:8080/sspNew/impression?id=64f29f7b226249f19925a680a506b32d'
+    	'tracking': 'https://ssp.toprtb.com/ssp/tracking?F0cloTiKIw%2BjZ2UNDvlKGn5%2FWoAO9cnlAUDm6gFBM8bImY2fKo%2BMTvI0XvXzFTZSb5v8o4EUbPId9hckptTqA4QPaWvpVYCRKRZceXNa4kjtvfm4j2e%2FcRKgkns2goHXi7IZC0sBIbE77WWg%2BPBYv%2BCu84H%2FSH69mi%2FDaWcQlfaEOdkaJdstJEkaZtkgWnFnS7aagte%2BfdEbOqcTxq5hzj%2BZ4NZbwgReuWTQZbfrMWjkXFbn%2B35vZuI319o6XH9n9fKLS4xp8zstXfQT2oSgjw1NmrwqRKf1efB1UaWlS1TbkSqxZ7Kcy7nJvAZrDk0tzcSeIxe4VfHpwgPPs%2BueUeGwz3o7OCh7H1sCmogSrmJFB9JTeXudFjC13iANAtu4SvG9bGIbiJxS%2BNfkjy2mLFm8kSIcIobjNkMEcUAwmoqJNRndwb66a3Iovk2NTo0Ly%2FV7Y5ECPcS5%2FPBrIEOuQXS5SNUPRWKoklX5nexHtOc%3D',
+    	'impression': 'https://ssp.toprtb.com/ssp/impression?id=64f29f7b226249f19925a680a506b32d'
     };
 
     let bids = spec.interpretResponse(serverResponse, bidRequestData);

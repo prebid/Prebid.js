@@ -3,7 +3,7 @@ import {registerBidder} from '../src/adapters/bidderFactory';
 import {BANNER, VIDEO} from '../src/mediaTypes';
 
 const BIDDER_CODE = 'topRTB';
-const ENDPOINT_URL = 'http://ssp.toprtb.com:8080/sspNew/rest/ReqAd?ref=www.google.com&hbid=0&adUnitId=';
+const ENDPOINT_URL = 'https://ssp.toprtb.com/ssp/rest/ReqAd?ref=www.google.com&hbid=0&adUnitId=';
 var adName = '';
 export const spec = {
   code: BIDDER_CODE,
