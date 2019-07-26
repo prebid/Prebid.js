@@ -175,7 +175,7 @@ function buildRequests (validBidRequests, bidderRequest) {
       tId: transactionId,
       pi: data.pi,
       selector: params.selector,
-      sizes: bidRequest.sizes,
+      sizes: bidRequest.sizes || bidRequest.mediatype[banner].sizes,
       url: BID_ENDPOINT,
       method: 'GET',
       data: Object.assign(data, _getBrowserParams(), _getDigiTrustQueryParams(), _getTradeDeskIDParam(bidRequest))
