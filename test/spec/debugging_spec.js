@@ -1,7 +1,7 @@
 
 import { expect } from 'chai';
-import { sessionLoader, addBidResponseHook, getConfig, disableOverrides, boundHook } from 'src/debugging';
-import { addBidResponse } from 'src/auction';
+import { sessionLoader, addBidResponseHook, getConfig, disableOverrides, boundHook, boundBidRequestsHook } from 'src/debugging';
+import { addBidResponse, addBidRequest } from 'src/auction';
 import { config } from 'src/config';
 
 describe('bid overrides', function () {
@@ -32,6 +32,15 @@ describe('bid overrides', function () {
       });
 
       expect(addBidResponse.getHooks().some(hook => hook.hook === boundHook)).to.equal(true);
+    });
+
+    it('should override bidRequest when enabled with setConfig', function () {
+      getConfig({
+        enabled: true,
+        bidRequests: [{ foo: 'bar' }]
+      });
+
+      expect(addBidRequest.getHooks().some(hook => hook.hook === boundBidRequestsHook)).to.equal(true);
     });
 
     it('should happen when configuration found in sessionStorage', function () {
