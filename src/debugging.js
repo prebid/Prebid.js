@@ -74,13 +74,12 @@ export function addBidRequestHook(next, bidRequest) {
   if (Array.isArray(overrides.bidRequests)) {
     const override = find(overrides.bidRequests, overrideBidRequest => (typeof overrideBidRequest.bidderCode === 'undefined' || overrideBidRequest.bidderCode === item.bidderCode));
     if (override) {
-      // TODO: WHY?????????????????
-      // bidRequest = Object.assign({}, bidRequest);
       Object.keys(override).filter(key => ['bidderCode', 'adUnitCode'].indexOf(key) === -1).forEach(key => {
         bidRequest[key] = override[key];
       });
     }
   }
+
   next(bidRequest)
 }
 
