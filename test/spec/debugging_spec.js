@@ -1,6 +1,6 @@
 
 import { expect } from 'chai';
-import { sessionLoader, addBidResponseHook, getConfig, disableOverrides, boundHook, boundBidRequestsHook } from 'src/debugging';
+import { sessionLoader, addBidResponseHook, getConfig, disableOverrides, boundBidResponseHook, boundBidRequestHook } from 'src/debugging';
 import { addBidResponse, addBidRequest } from 'src/auction';
 import { config } from 'src/config';
 
@@ -31,7 +31,7 @@ describe('bid overrides', function () {
         enabled: true
       });
 
-      expect(addBidResponse.getHooks().some(hook => hook.hook === boundHook)).to.equal(true);
+      expect(addBidResponse.getHooks().some(hook => hook.hook === boundBidResponseHook)).to.equal(true);
     });
 
     it('should override bidRequest when enabled with setConfig', function () {
@@ -40,14 +40,14 @@ describe('bid overrides', function () {
         bidRequests: [{ foo: 'bar' }]
       });
 
-      expect(addBidRequest.getHooks().some(hook => hook.hook === boundBidRequestsHook)).to.equal(true);
+      expect(addBidRequest.getHooks().some(hook => hook.hook === boundBidRequestHook)).to.equal(true);
     });
 
     it('should happen when configuration found in sessionStorage', function () {
       sessionLoader({
         getItem: () => ('{"enabled": true}')
       });
-      expect(addBidResponse.getHooks().some(hook => hook.hook === boundHook)).to.equal(true);
+      expect(addBidResponse.getHooks().some(hook => hook.hook === boundBidResponseHook)).to.equal(true);
     });
 
     it('should not throw if sessionStorage is inaccessible', function () {
