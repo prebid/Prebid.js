@@ -60,7 +60,9 @@ module.exports = {
       "prebid/validate-imports": ["error", [
         ...sharedWhiteList,
         "fun-hooks/no-eval",
-        "just-clone"
+        "just-clone",
+        "dlv",
+        "dset"
       ]]
     }
   }]
