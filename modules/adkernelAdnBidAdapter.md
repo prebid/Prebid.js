@@ -3,7 +3,7 @@
 ```
 Module Name: AdKernel ADN Bidder Adapter
 Module Type: Bidder Adapter
-Maintainer: denis@adkernel.com
+Maintainer: prebid-dev@adkernel.com
 ```
 
 # Description
