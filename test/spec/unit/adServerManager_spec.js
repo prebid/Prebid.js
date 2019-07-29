@@ -5,7 +5,11 @@ import { registerVideoSupport } from 'src/adServerManager';
 const prebid = getGlobal();
 
 describe('The ad server manager', function () {
-  beforeEach(function () {
+  before(function () {
+    delete prebid.adServers;
+  });
+
+  afterEach(function () {
     delete prebid.adServers;
   });
 
@@ -26,5 +30,14 @@ describe('The ad server manager', function () {
     expect(prebid).to.have.property('adServers');
     expect(prebid.adServers).to.have.property('dfp');
     expect(prebid.adServers.dfp).to.have.property('buildVideoUrl', videoSupport);
+  });
+
+  it('should support any custom named property in the public API', function () {
+    function getTestAdServerTargetingKeys() { };
+    registerVideoSupport('testAdServer', { getTargetingKeys: getTestAdServerTargetingKeys });
+
+    expect(prebid).to.have.property('adServers');
+    expect(prebid.adServers).to.have.property('testAdServer');
+    expect(prebid.adServers.testAdServer).to.have.property('getTargetingKeys', getTestAdServerTargetingKeys);
   });
 });

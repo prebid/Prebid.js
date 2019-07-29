@@ -25,7 +25,8 @@ Module that connects to Yieldlab's demand sources
                        targeting: {
                            key1: "value1",
                            key2: "value2"
-                       }
+                       },
+                       extId: "abc"
                    }
                }]
            }, {
@@ -33,7 +34,7 @@ Module that connects to Yieldlab's demand sources
                sizes: [[640, 480]],
                mediaTypes: {
                    video: {
-                       context: "instream"
+                       context: "instream" // or "outstream"
                    }
                },
                bids: [{

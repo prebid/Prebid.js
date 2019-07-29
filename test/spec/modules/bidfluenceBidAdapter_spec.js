@@ -54,25 +54,25 @@ describe('Bidfluence Adapter test', () => {
     const request = spec.buildRequests(validBidRequests, bidderRequest);
 
     it('sends bid request to our endpoint via POST', function () {
-      expect(request[0].method).to.equal('POST');
+      expect(request.method).to.equal('POST');
     });
 
-    const payload = JSON.parse(request[0].data);
+    const payload = JSON.parse(request.data);
 
-    expect(payload.bid).to.equal(validBidRequests[0].bidId);
+    expect(payload.bids[0].bid).to.equal(validBidRequests[0].bidId);
     expect(payload.azr).to.equal(true);
     expect(payload.ck).to.not.be.undefined;
-    expect(payload.tid).to.equal(PLACEMENT_ID);
-    expect(payload.pid).to.equal(PUB_ID);
-    expect(payload.rp).to.be.a('number');
+    expect(payload.bids[0].tid).to.equal(PLACEMENT_ID);
+    expect(payload.bids[0].pid).to.equal(PUB_ID);
+    expect(payload.bids[0].rp).to.be.a('number');
     expect(payload.re).to.not.be.undefined;
     expect(payload.st).to.not.be.undefined;
     expect(payload.tz).to.not.be.undefined;
     expect(payload.sr).to.not.be.undefined;
     expect(payload.vp).to.not.be.undefined;
     expect(payload.sdt).to.not.be.undefined;
-    expect(payload.w).to.equal('300');
-    expect(payload.h).to.equal('250');
+    expect(payload.bids[0].w).to.equal('300');
+    expect(payload.bids[0].h).to.equal('250');
 
     it('sends gdpr info if exists', function () {
       expect(payload.gdpr).to.equal(true);
@@ -83,22 +83,25 @@ describe('Bidfluence Adapter test', () => {
   describe('interpretResponse', function () {
     const response = {
       body: {
-        'CreativeId': '1000',
-        'Cpm': 0.50,
-        'Ad': '<div></div>',
-        'Height': 250,
-        'Width': 300
+        Bids:
+          [{
+            'CreativeId': '1000',
+            'Cpm': 0.50,
+            'Ad': '<div></div>',
+            'Height': 250,
+            'Width': 300
+          }]
       }
     };
 
     it('should get correct bid response', function () {
       const expectedResponse = [{
-        requestId: response.body.BidId,
-        cpm: response.body.Cpm,
-        width: response.body.Width,
-        height: response.body.Height,
-        creativeId: response.body.CreativeId,
-        ad: response.body.Ad,
+        requestId: response.body.Bids[0].BidId,
+        cpm: response.body.Bids[0].Cpm,
+        width: response.body.Bids[0].Width,
+        height: response.body.Bids[0].Height,
+        creativeId: response.body.Bids[0].CreativeId,
+        ad: response.body.Bids[0].Ad,
         currency: 'USD',
         netRevenue: true,
         ttl: 360
