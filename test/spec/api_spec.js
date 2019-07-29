@@ -39,6 +39,10 @@ describe('Publisher API', function () {
       assert.isFunction($$PREBID_GLOBAL$$.getBidResponses);
     });
 
+    it('should have function $$PREBID_GLOBAL$$.getBidResponses', function () {
+      assert.isFunction($$PREBID_GLOBAL$$.getNoBids);
+    });
+
     it('should have function $$PREBID_GLOBAL$$.getBidResponsesForAdUnitCode', function () {
       assert.isFunction($$PREBID_GLOBAL$$.getBidResponsesForAdUnitCode);
     });

@@ -1,14 +1,14 @@
-import * as utils from 'src/utils';
-import { Renderer } from 'src/Renderer';
-import { BANNER, VIDEO } from 'src/mediaTypes';
-import { registerBidder } from 'src/adapters/bidderFactory';
+import * as utils from '../src/utils';
+import { Renderer } from '../src/Renderer';
+import { BANNER, VIDEO } from '../src/mediaTypes';
+import { registerBidder } from '../src/adapters/bidderFactory';
 
 const BIDDER_CODE = 'rockyou';
 
 const BASE_REQUEST_PATH = 'https://tas.rockyou.net/servlet/rotator/';
-const IFRAME_SYNC_URL = 'https://prebid.tex-sync.rockyou.net/usersync2/tas';
+const IFRAME_SYNC_URL = 'https://prebid.tas-sync.rockyou.net/usersync2/prebid';
 const VAST_PLAYER_LOCATION = 'https://rya-static.rockyou.com/rya/js/PreBidPlayer.js';
-export const ROTATION_ZONE = 'openrtbprod';
+export const ROTATION_ZONE = 'prod';
 
 let isBidRequestValid = (bid) => {
   return !!bid.params && !!bid.params.placementId;
@@ -52,17 +52,27 @@ let extractValidSize = (bidRequest) => {
   let width = null;
   let height = null;
 
-  if (!utils.isEmpty(bidRequest.sizes)) {
-    // Ensure the size array is normalized
-    let conformingSize = utils.parseSizesInput(bidRequest.sizes);
-
-    if (!utils.isEmpty(conformingSize) && conformingSize[0] != null) {
-      // Currently only the first size is utilized
-      let splitSizes = conformingSize[0].split('x');
-
-      width = parseInt(splitSizes[0]);
-      height = parseInt(splitSizes[1]);
+  let requestedSizes = [];
+  let mediaTypes = bidRequest.mediaTypes;
+  if (mediaTypes && ((mediaTypes.banner && mediaTypes.banner.sizes) || (mediaTypes.video && mediaTypes.video.playerSize))) {
+    if (mediaTypes.banner) {
+      requestedSizes = mediaTypes.banner.sizes;
+    } else {
+      requestedSizes = [mediaTypes.video.playerSize];
     }
+  } else if (!utils.isEmpty(bidRequest.sizes)) {
+    requestedSizes = bidRequest.sizes
+  }
+
+  // Ensure the size array is normalized
+  let conformingSize = utils.parseSizesInput(requestedSizes);
+
+  if (!utils.isEmpty(conformingSize) && conformingSize[0] != null) {
+    // Currently only the first size is utilized
+    let splitSizes = conformingSize[0].split('x');
+
+    width = parseInt(splitSizes[0]);
+    height = parseInt(splitSizes[1]);
   }
 
   return {
@@ -109,22 +119,14 @@ let generateImpBody = (bidRequest) => {
   };
 }
 
-let generatePayload = (bidRequests) => {
+let generatePayload = (bidRequest) => {
   // Generate the expected OpenRTB payload
 
-  let rootBidRequest = bidRequests[0];
-
-  let index = 1;
-  bidRequests.forEach((bidRequest) => {
-    bidRequest.index = index;
-    index += 1;
-  })
-
   let payload = {
-    id: determineOptimalRequestId(rootBidRequest),
-    site: buildSiteComponent(rootBidRequest),
-    device: buildDeviceComponent(rootBidRequest),
-    imp: bidRequests.map(generateImpBody)
+    id: determineOptimalRequestId(bidRequest),
+    site: buildSiteComponent(bidRequest),
+    device: buildDeviceComponent(bidRequest),
+    imp: [generateImpBody(bidRequest)]
   };
 
   return JSON.stringify(payload);
@@ -165,37 +167,42 @@ let buildRequests = (validBidRequests, requestRoot) => {
   let adUnitCode = null;
   let rendererOverride = null;
 
+  let results = [];
   // Due to the nature of how URLs are generated, there must
   // be at least one bid request present for this to function
   // correctly
   if (!utils.isEmpty(validBidRequests)) {
-    let headBidRequest = validBidRequests[0];
+    results = validBidRequests.map(
+      bidRequest => {
+        let serverLocations = overridableProperties(bidRequest);
 
-    let serverLocations = overridableProperties(headBidRequest);
+        // requestUrl is the full endpoint w/ relevant adspot paramters
+        let placementId = determineOptimalPlacementId(bidRequest);
+        requestUrl = `${serverLocations.baseRequestPath}${placementId}/0/vo?z=${serverLocations.rotationZone}`;
 
-    // requestUrl is the full endpoint w/ relevant adspot paramters
-    let placementId = determineOptimalPlacementId(headBidRequest);
-    requestUrl = `${serverLocations.baseRequestPath}${placementId}/0/vo?z=${serverLocations.rotationZone}`;
+        // requestPayload is the POST body JSON for the OpenRtb request
+        requestPayload = generatePayload(bidRequest);
 
-    // requestPayload is the POST body JSON for the OpenRtb request
-    requestPayload = generatePayload(validBidRequests);
+        mediaTypes = bidRequest.mediaTypes;
+        adUnitCode = bidRequest.adUnitCode;
+        rendererOverride = bidRequest.rendererOverride;
 
-    mediaTypes = headBidRequest.mediaTypes;
-    adUnitCode = headBidRequest.adUnitCode;
-    rendererOverride = headBidRequest.rendererOverride;
+        return {
+          method: requestType,
+          type: requestType,
+          url: requestUrl,
+          data: requestPayload,
+          mediaTypes,
+          requestId: requestRoot.bidderRequestId,
+          bidId: bidRequest.bidId,
+          adUnitCode,
+          rendererOverride
+        };
+      }
+    );
   }
-  const result = {
-    method: requestType,
-    type: requestType,
-    url: requestUrl,
-    data: requestPayload,
-    mediaTypes,
-    requestId: requestRoot.bidderRequestId,
-    adUnitCode,
-    rendererOverride
-  };
 
-  return result;
+  return results;
 };
 
 let outstreamRender = (bid) => {
@@ -308,7 +315,7 @@ let interpretResponse = (serverResponse, request) => {
         }
 
         let response = {
-          requestId: responseBody.id,
+          requestId: request.bidId,
           cpm: bid.price,
           width: bidWidth,
           height: bidHeight,

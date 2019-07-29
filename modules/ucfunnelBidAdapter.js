@@ -1,43 +1,54 @@
-import * as utils from 'src/utils';
-import {registerBidder} from 'src/adapters/bidderFactory';
-import { BANNER } from 'src/mediaTypes';
+import * as utils from '../src/utils';
+import {registerBidder} from '../src/adapters/bidderFactory';
+import {BANNER, VIDEO, NATIVE} from '../src/mediaTypes';
 
 const VER = 'ADGENT_PREBID-2018011501';
-const BID_REQUEST_BASE_URL = '//hb.aralego.com/header';
-const UCFUNNEL_BIDDER_CODE = 'ucfunnel';
+const BIDDER_CODE = 'ucfunnel';
+
+const VIDEO_CONTEXT = {
+  INSTREAM: 0,
+  OUSTREAM: 2
+}
 
 export const spec = {
-  code: UCFUNNEL_BIDDER_CODE,
-  supportedMediaTypes: [BANNER],
+  code: BIDDER_CODE,
+  ENDPOINT: '//hb.aralego.com/header',
+  supportedMediaTypes: [BANNER, VIDEO, NATIVE],
   /**
    * Check if the bid is a valid zone ID in either number or string form
    * @param {object} bid the ucfunnel bid to validate
    * @return boolean for whether or not a bid is valid
    */
   isBidRequestValid: function(bid) {
-    return !!(bid && bid.params && bid.params.adid && typeof bid.params.adid === 'string');
+    const isVideoMediaType = utils.deepAccess(bid, 'mediaTypes.video');
+    const videoContext = utils.deepAccess(bid, 'mediaTypes.video.context');
+
+    if (typeof bid.params !== 'object' || typeof bid.params.adid != 'string') {
+      return false;
+    }
+
+    if (isVideoMediaType && videoContext === 'outstream') {
+      utils.logWarn('Warning: outstream video is not supported yet');
+      return false;
+    }
+
+    return true;
   },
 
   /**
-   * Format the bid request object for our endpoint
-   * @param {BidRequest[]} bidRequests Array of ucfunnel bidders
-   * @return object of parameters for Prebid AJAX request
+   * @param {BidRequest[]} bidRequests
+   * @param {*} bidderRequest
+   * @return {ServerRequest}
    */
-  buildRequests: function(validBidRequests) {
-    var bidRequests = [];
-    for (var i = 0; i < validBidRequests.length; i++) {
-      var bid = validBidRequests[i];
-
-      var ucfunnelUrlParams = buildUrlParams(bid);
-
-      bidRequests.push({
+  buildRequests: function(bids, bidderRequest) {
+    return bids.map(bid => {
+      return {
         method: 'GET',
-        url: BID_REQUEST_BASE_URL,
-        bidRequest: bid,
-        data: ucfunnelUrlParams
-      });
-    }
-    return bidRequests;
+        url: location.protocol + spec.ENDPOINT,
+        data: getRequestData(bid, bidderRequest),
+        bidRequest: bid
+      }
+    });
   },
 
   /**
@@ -46,50 +57,151 @@ export const spec = {
    * @return {Bid[]} An array of formatted bids.
   */
   interpretResponse: function (ucfunnelResponseObj, request) {
-    var bidResponses = [];
-    var bidRequest = request.bidRequest;
-    var responseBody = ucfunnelResponseObj ? ucfunnelResponseObj.body : {};
+    const bidRequest = request.bidRequest;
+    const ad = ucfunnelResponseObj ? ucfunnelResponseObj.body : {};
+    const videoPlayerSize = parseSizes(bidRequest);
 
-    bidResponses.push({
+    let bid = {
       requestId: bidRequest.bidId,
-      cpm: responseBody.cpm || 0,
-      width: responseBody.width,
-      height: responseBody.height,
-      creativeId: responseBody.ad_id,
-      dealId: responseBody.deal || null,
+      cpm: ad.cpm || 0,
+      creativeId: ad.ad_id,
+      dealId: ad.deal || null,
       currency: 'USD',
       netRevenue: true,
-      ttl: 1000,
-      mediaType: BANNER,
-      ad: responseBody.adm
-    });
+      ttl: 1800
+    };
 
-    return bidResponses;
+    if (ad.creative_type) {
+      bid.mediaType = ad.creative_type;
+    }
+
+    switch (ad.creative_type) {
+      case NATIVE:
+        let nativeAd = ad.native;
+        Object.assign(bid, {
+          width: 1,
+          height: 1,
+          native: {
+            title: nativeAd.title,
+            body: nativeAd.desc,
+            cta: nativeAd.ctatext,
+            sponsoredBy: nativeAd.sponsored,
+            image: nativeAd.image || nativeAd.image.url,
+            icon: nativeAd.icon || nativeAd.icon.url,
+            clickUrl: nativeAd.clickUrl,
+            impressionTrackers: nativeAd.impressionTrackers,
+          }
+        });
+        break;
+      case VIDEO:
+        Object.assign(bid, {
+          vastUrl: ad.vastUrl,
+          vastXml: ad.vastXml
+        });
+
+        if (videoPlayerSize && videoPlayerSize.length === 2) {
+          Object.assign(bid, {
+            width: videoPlayerSize[0],
+            height: videoPlayerSize[1]
+          });
+        }
+        break;
+      case BANNER:
+      default:
+        Object.assign(bid, {
+          width: ad.width,
+          height: ad.height,
+          ad: ad.adm
+        });
+    }
+
+    return [bid];
+  },
+
+  getUserSyncs: function(syncOptions) {
+    if (syncOptions.iframeEnabled) {
+      return [{
+        type: 'iframe',
+        url: '//cdn.aralego.com/ucfad/cookie/sync.html'
+      }];
+    } else if (syncOptions.pixelEnabled) {
+      return [{
+        type: 'image',
+        url: '//sync.aralego.com/idSync'
+      }];
+    }
   }
 };
 registerBidder(spec);
 
-function buildUrlParams(bid) {
-  const host = utils.getTopWindowLocation().host;
-  const page = utils.getTopWindowLocation().pathname;
-  const refer = document.referrer;
+function transformSizes(requestSizes) {
+  if (utils.isArray(requestSizes) && requestSizes.length === 2 && !utils.isArray(requestSizes[0])) {
+    return [parseInt(requestSizes[0], 10), parseInt(requestSizes[1], 10)];
+  } else if (typeof requestSizes === 'object' && requestSizes.length) {
+    return requestSizes[0];
+  }
+}
+
+function parseSizes(bid) {
+  let params = bid.params;
+  if (bid.mediaType === VIDEO) {
+    let size = [];
+    if (params.video && params.video.playerWidth && params.video.playerHeight) {
+      size = [
+        params.video.playerWidth,
+        params.video.playerHeight
+      ];
+      return size;
+    }
+  }
+
+  return transformSizes(bid.sizes);
+}
+
+function getRequestData(bid, bidderRequest) {
+  const size = parseSizes(bid);
+  const loc = utils.getTopWindowLocation();
+  const host = loc.host;
+  const page = loc.href;
+  const ref = utils.getTopWindowReferrer();
   const language = navigator.language;
   const dnt = (navigator.doNotTrack == 'yes' || navigator.doNotTrack == '1' || navigator.msDoNotTrack == '1') ? 1 : 0;
+  const videoContext = utils.deepAccess(bid, 'mediaTypes.video.context');
+  const videoMediaType = utils.deepAccess(bid, 'mediaTypes.video');
 
-  let queryString = [
-    'ifr', '0',
-    'bl', language,
-    'je', '1',
-    'dnt', dnt,
-    'host', host,
-    'u', page,
-    'ru', refer,
-    'adid', utils.getBidIdParameter('adid', bid.params),
-    'ver', VER
-  ];
+  // general bid data
+  let bidData = {
+    ver: VER,
+    ifr: 0,
+    bl: language,
+    je: 1,
+    dnt: dnt,
+    host: host,
+    u: page,
+    ru: ref,
+    adid: utils.getBidIdParameter('adid', bid.params),
+    w: size[0],
+    h: size[1]
+  };
 
-  return queryString.reduce(
-    (memo, curr, index) =>
-      index % 2 === 0 && queryString[index + 1] !== undefined ? memo + curr + '=' + encodeURIComponent(queryString[index + 1]) + '&' : memo, ''
-  ).slice(0, -1);
+  if (bid.mediaType === 'video' || videoMediaType) {
+    switch (videoContext) {
+      case 'outstream':
+        bidData.atype = VIDEO_CONTEXT.OUSTREAM;
+        break;
+      case 'instream':
+      default:
+        bidData.atype = VIDEO_CONTEXT.INSTREAM;
+        break;
+    }
+  }
+
+  if (bidderRequest && bidderRequest.gdprConsent) {
+    Object.assign(bidData, {
+      gdpr: bidderRequest.gdprConsent.gdprApplies ? 1 : 0,
+      euconsent: bidderRequest.gdprConsent.consentString
+    });
+  }
+
+  return bidData;
 }

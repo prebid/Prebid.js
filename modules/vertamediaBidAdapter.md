@@ -28,7 +28,7 @@ This adapter provides a solution for accessing Video demand and display demand
         bids: [{
           bidder: 'vertamedia',
           params: {
-            aid: 332842
+            aid: 331133
           }
         }]
       },
@@ -45,7 +45,7 @@ This adapter provides a solution for accessing Video demand and display demand
         bids: [{
           bidder: 'vertamedia',
           params: {
-            aid: 332842
+            aid: 331133
           }
         }]
       },
@@ -57,7 +57,7 @@ This adapter provides a solution for accessing Video demand and display demand
         bids: [{
           bidder: 'vertamedia',
           params: {
-            aid: 324758
+            aid: 350975
           }
         }]
       }

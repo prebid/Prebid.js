@@ -1,9 +1,9 @@
-import adapter from 'src/AnalyticsAdapter';
-import CONSTANTS from 'src/constants.json';
-import adaptermanager from 'src/adaptermanager';
-import {parse} from 'src/url';
-import * as utils from 'src/utils';
-import {ajax} from 'src/ajax';
+import adapter from '../src/AnalyticsAdapter';
+import CONSTANTS from '../src/constants.json';
+import adapterManager from '../src/adapterManager';
+import {parse} from '../src/url';
+import * as utils from '../src/utils';
+import {ajax} from '../src/ajax';
 
 const ANALYTICS_VERSION = '1.0.0';
 const DEFAULT_QUEUE_TIMEOUT = 4000;
@@ -99,7 +99,7 @@ analyticsAdapter.enableAnalytics = (config) => {
   analyticsAdapter.originEnableAnalytics(config);
 };
 
-adaptermanager.registerAnalyticsAdapter({
+adapterManager.registerAnalyticsAdapter({
   adapter: analyticsAdapter,
   code: 'adkernelAdn'
 });
@@ -110,10 +110,14 @@ function sendAll() {
   let events = analyticsAdapter.context.queue.popAll();
   if (events.length !== 0) {
     let req = Object.assign({}, analyticsAdapter.context.requestTemplate, {hb_ev: events});
-    ajax(`//${analyticsAdapter.context.host}/hb-analytics`, () => {
-    }, JSON.stringify(req));
+    analyticsAdapter.ajaxCall(JSON.stringify(req));
   }
 }
+
+analyticsAdapter.ajaxCall = function ajaxCall(data) {
+  ajax(`//${analyticsAdapter.context.host}/hb-analytics`, () => {
+  }, data);
+};
 
 function trackAuctionInit() {
   analyticsAdapter.context.auctionTimeStart = Date.now();
@@ -123,7 +127,7 @@ function trackAuctionInit() {
 
 function trackBidRequest(args) {
   return args.bids.map(bid =>
-    createHbEvent(args.bidderCode, ADK_HB_EVENTS.BID_REQUEST, bid.placementCode));
+    createHbEvent(args.bidderCode, ADK_HB_EVENTS.BID_REQUEST, bid.adUnitCode));
 }
 
 function trackBidResponse(args) {

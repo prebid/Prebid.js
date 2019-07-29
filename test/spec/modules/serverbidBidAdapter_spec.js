@@ -1,7 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/serverbidBidAdapter';
-
-var bidFactory = require('src/bidfactory.js');
+import { createBid } from 'src/bidfactory';
 
 const ENDPOINT = 'https://e.serverbid.com/api/v2';
 const SMARTSYNC_CALLBACK = 'serverbidCallBids';
@@ -100,11 +99,11 @@ const RESPONSE = {
   }
 };
 
-describe('Serverbid BidAdapter', () => {
+describe('Serverbid BidAdapter', function () {
   let bidRequests;
   let adapter = spec;
 
-  beforeEach(() => {
+  beforeEach(function () {
     bidRequests = [
       {
         bidder: 'serverbid',
@@ -122,8 +121,8 @@ describe('Serverbid BidAdapter', () => {
     ];
   });
 
-  describe('bid request validation', () => {
-    it('should accept valid bid requests', () => {
+  describe('bid request validation', function () {
+    it('should accept valid bid requests', function () {
       let bid = {
         bidder: 'serverbid',
         params: {
@@ -134,7 +133,7 @@ describe('Serverbid BidAdapter', () => {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
-    it('should accept valid bid requests with extra fields', () => {
+    it('should accept valid bid requests with extra fields', function () {
       let bid = {
         bidder: 'serverbid',
         params: {
@@ -146,7 +145,7 @@ describe('Serverbid BidAdapter', () => {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
-    it('should reject bid requests without siteId', () => {
+    it('should reject bid requests without siteId', function () {
       let bid = {
         bidder: 'serverbid',
         params: {
@@ -156,7 +155,7 @@ describe('Serverbid BidAdapter', () => {
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
-    it('should reject bid requests without networkId', () => {
+    it('should reject bid requests without networkId', function () {
       let bid = {
         bidder: 'serverbid',
         params: {
@@ -167,45 +166,45 @@ describe('Serverbid BidAdapter', () => {
     });
   });
 
-  describe('buildRequests validation', () => {
-    it('creates request data', () => {
+  describe('buildRequests validation', function () {
+    it('creates request data', function () {
       let request = spec.buildRequests(bidRequests);
 
       expect(request).to.exist.and.to.be.a('object');
     });
 
-    it('request to serverbid should contain a url', () => {
+    it('request to serverbid should contain a url', function () {
       let request = spec.buildRequests(bidRequests);
 
       expect(request.url).to.have.string('serverbid.com');
     });
 
-    it('requires valid bids to make request', () => {
+    it('requires valid bids to make request', function () {
       let request = spec.buildRequests([]);
       expect(request.bidRequest).to.be.empty;
     });
 
-    it('sends bid request to ENDPOINT via POST', () => {
+    it('sends bid request to ENDPOINT via POST', function () {
       let request = spec.buildRequests(bidRequests);
 
       expect(request.method).to.have.string('POST');
     });
   });
-  describe('interpretResponse validation', () => {
-    it('response should have valid bidderCode', () => {
+  describe('interpretResponse validation', function () {
+    it('response should have valid bidderCode', function () {
       let bidRequest = spec.buildRequests(REQUEST.bidRequest);
-      let bid = bidFactory.createBid(1, bidRequest.bidRequest[0]);
+      let bid = createBid(1, bidRequest.bidRequest[0]);
 
       expect(bid.bidderCode).to.equal('serverbid');
     });
 
-    it('response should include objects for all bids', () => {
+    it('response should include objects for all bids', function () {
       let bids = spec.interpretResponse(RESPONSE, REQUEST);
 
       expect(bids.length).to.equal(2);
     });
 
-    it('registers bids', () => {
+    it('registers bids', function () {
       let bids = spec.interpretResponse(RESPONSE, REQUEST);
       bids.forEach(b => {
         expect(b).to.have.property('cpm');
@@ -223,29 +222,29 @@ describe('Serverbid BidAdapter', () => {
       });
     });
 
-    it('handles nobid responses', () => {
+    it('handles nobid responses', function () {
       let EMPTY_RESP = Object.assign({}, RESPONSE, {'body': {'decisions': null}})
       let bids = spec.interpretResponse(EMPTY_RESP, REQUEST);
 
       expect(bids).to.be.empty;
     });
 
-    it('handles no server response', () => {
+    it('handles no server response', function () {
       let bids = spec.interpretResponse(null, REQUEST);
 
       expect(bids).to.be.empty;
     });
   });
-  describe('getUserSyncs', () => {
+  describe('getUserSyncs', function () {
     let syncOptions = {'iframeEnabled': true};
 
-    it('handles empty sync options', () => {
+    it('handles empty sync options', function () {
       let opts = spec.getUserSyncs({});
 
-      expect(opts).to.be.empty;
+      expect(opts).to.be.undefined;
     });
 
-    it('should return a sync url if iframe syncs are enabled', () => {
+    it('should return a sync url if iframe syncs are enabled', function () {
       let opts = spec.getUserSyncs(syncOptions);
 
       expect(opts.length).to.equal(1);

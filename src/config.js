@@ -10,16 +10,19 @@
 import { isValidPriceConfig } from './cpmBucketManager';
 import find from 'core-js/library/fn/array/find';
 import includes from 'core-js/library/fn/array/includes';
-import { createHook } from 'src/hook';
-const utils = require('./utils');
+import { parseQS } from './url';
 
-const DEFAULT_DEBUG = false;
+const utils = require('./utils');
+const CONSTANTS = require('./constants');
+
+const DEFAULT_DEBUG = (parseQS(window.location.search)[CONSTANTS.DEBUG_MODE] || '').toUpperCase() === 'TRUE';
 const DEFAULT_BIDDER_TIMEOUT = 3000;
 const DEFAULT_PUBLISHER_DOMAIN = window.location.origin;
-const DEFAULT_COOKIESYNC_DELAY = 100;
 const DEFAULT_ENABLE_SEND_ALL_BIDS = true;
+const DEFAULT_DISABLE_AJAX_TIMEOUT = false;
+const DEFAULT_BID_CACHE = false;
 
-const DEFAULT_TIMEOUTBUFFER = 200;
+const DEFAULT_TIMEOUTBUFFER = 400;
 
 export const RANDOM = 'random';
 const FIXED = 'fixed';
@@ -55,7 +58,7 @@ export function newConfig() {
 
   function resetConfig() {
     defaults = {};
-    config = {
+    let newConfig = {
       // `debug` is equivalent to legacy `pbjs.logging` property
       _debug: DEFAULT_DEBUG,
       get debug() {
@@ -83,15 +86,6 @@ export function newConfig() {
         this._publisherDomain = val;
       },
 
-      // delay to request cookie sync to stay out of critical path
-      _cookieSyncDelay: DEFAULT_COOKIESYNC_DELAY,
-      get cookieSyncDelay() {
-        return $$PREBID_GLOBAL$$.cookieSyncDelay || this._cookieSyncDelay;
-      },
-      set cookieSyncDelay(val) {
-        this._cookieSyncDelay = val;
-      },
-
       // calls existing function which may be moved after deprecation
       _priceGranularity: GRANULARITY_OPTIONS.MEDIUM,
       set priceGranularity(val) {
@@ -114,12 +108,40 @@ export function newConfig() {
         return this._customPriceBucket;
       },
 
+      _mediaTypePriceGranularity: {},
+      get mediaTypePriceGranularity() {
+        return this._mediaTypePriceGranularity;
+      },
+      set mediaTypePriceGranularity(val) {
+        this._mediaTypePriceGranularity = Object.keys(val).reduce((aggregate, item) => {
+          if (validatePriceGranularity(val[item])) {
+            if (typeof val === 'string') {
+              aggregate[item] = (hasGranularity(val[item])) ? val[item] : this._priceGranularity;
+            } else if (typeof val === 'object') {
+              aggregate[item] = val[item];
+              utils.logMessage(`Using custom price granularity for ${item}`);
+            }
+          } else {
+            utils.logWarn(`Invalid price granularity for media type: ${item}`);
+          }
+          return aggregate;
+        }, {});
+      },
+
       _sendAllBids: DEFAULT_ENABLE_SEND_ALL_BIDS,
       get enableSendAllBids() {
         return this._sendAllBids;
       },
       set enableSendAllBids(val) {
         this._sendAllBids = val;
+      },
+
+      _useBidCache: DEFAULT_BID_CACHE,
+      get useBidCache() {
+        return this._useBidCache;
+      },
+      set useBidCache(val) {
+        this._useBidCache = val;
       },
 
       _bidderSequence: DEFAULT_BIDDER_SEQUENCE,
@@ -135,15 +157,37 @@ export function newConfig() {
       },
 
       // timeout buffer to adjust for bidder CDN latency
-      _timoutBuffer: DEFAULT_TIMEOUTBUFFER,
+      _timeoutBuffer: DEFAULT_TIMEOUTBUFFER,
       get timeoutBuffer() {
-        return this._timoutBuffer;
+        return this._timeoutBuffer;
       },
       set timeoutBuffer(val) {
-        this._timoutBuffer = val;
+        this._timeoutBuffer = val;
+      },
+
+      _disableAjaxTimeout: DEFAULT_DISABLE_AJAX_TIMEOUT,
+      get disableAjaxTimeout() {
+        return this._disableAjaxTimeout;
+      },
+      set disableAjaxTimeout(val) {
+        this._disableAjaxTimeout = val;
       },
 
     };
+
+    if (config) {
+      callSubscribers(
+        Object.keys(config).reduce((memo, topic) => {
+          if (config[topic] !== newConfig[topic]) {
+            memo[topic] = newConfig[topic] || {};
+          }
+          return memo;
+        },
+        {})
+      );
+    }
+
+    config = newConfig;
 
     function hasGranularity(val) {
       return find(Object.keys(GRANULARITY_OPTIONS), option => val === GRANULARITY_OPTIONS[option]);
@@ -189,7 +233,7 @@ export function newConfig() {
    * Sets configuration given an object containing key-value pairs and calls
    * listeners that were added by the `subscribe` function
    */
-  let setConfig = createHook('asyncSeries', function setConfig(options) {
+  function setConfig(options) {
     if (typeof options !== 'object') {
       utils.logError('setConfig options must be an object');
       return;
@@ -209,7 +253,7 @@ export function newConfig() {
     });
 
     callSubscribers(topicalConfig);
-  });
+  }
 
   /**
    * Sets configuration defaults which setConfig values can be applied on top of

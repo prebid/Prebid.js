@@ -24,13 +24,16 @@ var adUnits = [
   // Banner adUnit
   {
     code: 'banner-div',
-    sizes: [[720, 480]],
+    mediaTypes: {
+      banner: {
+        sizes: [[720, 480]]
+      }
+    },
 
-    // Replace this object to test a new Adapter!
     bids: [{
           bidder: 'rockyou',
           params: {
-            placementId: '4322'
+            placementId: '4954'
           }
         }]
   },
@@ -38,18 +41,16 @@ var adUnits = [
   // Video (outstream)
   {
     code: 'video-outstream',
-    sizes: [[720, 480]],
-
-    mediaType: 'video',
     mediaTypes: {
       video: {
-        context: 'outstream'
+        context: 'outstream',
+        playerSize: [720, 480]
       }
     },
     bids: [{
       bidder: 'rockyou',
       params: {
-        placementId: '4307'
+        placementId: '4957'
       }
     }]
   }

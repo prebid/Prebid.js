@@ -9,7 +9,6 @@
     "ADSERVER_TARGETING": "adserverTargeting",
     "BD_SETTING_STANDARD": "standard"
   },
-  "REPO_AND_VERSION": "%%REPO_AND_VERSION%%",
   "DEBUG_MODE": "pbjs_debug",
   "STATUS": {
     "GOOD": 1,
@@ -30,10 +29,20 @@
     "BID_TIMEOUT": "bidTimeout",
     "BID_REQUESTED": "bidRequested",
     "BID_RESPONSE": "bidResponse",
+    "NO_BID": "noBid",
     "BID_WON": "bidWon",
+    "BIDDER_DONE": "bidderDone",
     "SET_TARGETING": "setTargeting",
     "REQUEST_BIDS": "requestBids",
-    "ADD_AD_UNITS": "addAdUnits"
+    "ADD_AD_UNITS": "addAdUnits",
+    "AD_RENDER_FAILED" : "adRenderFailed"
+  },
+  "AD_RENDER_FAILED_REASON" : {
+    "PREVENT_WRITING_ON_MAIN_DOCUMENT": "preventWritingOnMainDocuemnt",
+    "NO_AD": "noAd",
+    "EXCEPTION": "exception",
+    "CANNOT_FIND_AD": "cannotFindAd",
+    "MISSING_DOC_OR_ADID": "missingDocOrAdid"
   },
   "EVENT_ID_PATHS": {
     "bidWon": "adUnitCode"
@@ -46,17 +55,45 @@
     "DENSE": "dense",
     "CUSTOM": "custom"
   },
-  "TARGETING_KEYS": [
-    "hb_bidder",
-    "hb_adid",
-    "hb_pb",
-    "hb_size",
-    "hb_deal",
-    "hb_source",
-    "hb_format"
-  ],
+  "TARGETING_KEYS": {
+    "BIDDER": "hb_bidder",
+    "AD_ID": "hb_adid",
+    "PRICE_BUCKET": "hb_pb",
+    "SIZE": "hb_size",
+    "DEAL": "hb_deal",
+    "SOURCE": "hb_source",
+    "FORMAT": "hb_format",
+    "UUID": "hb_uuid",
+    "CACHE_ID": "hb_cache_id",
+    "CACHE_HOST": "hb_cache_host"
+  },
+  "NATIVE_KEYS": {
+    "title": "hb_native_title",
+    "body": "hb_native_body",
+    "body2": "hb_native_body2",
+    "privacyLink": "hb_native_privacy",
+    "privacyIcon": "hb_native_privicon",
+    "sponsoredBy": "hb_native_brand",
+    "image": "hb_native_image",
+    "icon": "hb_native_icon",
+    "clickUrl": "hb_native_linkurl",
+    "displayUrl": "hb_native_displayurl",
+    "cta": "hb_native_cta",
+    "rating": "hb_native_rating",
+    "address": "hb_native_address",
+    "downloads": "hb_native_downloads",
+    "likes": "hb_native_likes",
+    "phone": "hb_native_phone",
+    "price": "hb_native_price",
+    "salePrice": "hb_native_saleprice"
+  },
   "S2S" : {
     "SRC" : "s2s",
+    "DEFAULT_ENDPOINT" : "https://prebid.adnxs.com/pbs/v1/openrtb2/auction",
     "SYNCED_BIDDERS_KEY": "pbjsSyncs"
+  },
+  "BID_STATUS" : {
+    "BID_TARGETING_SET": "targetingSet",
+    "RENDERED": "rendered"
   }
 }

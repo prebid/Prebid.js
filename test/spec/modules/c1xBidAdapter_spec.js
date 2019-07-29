@@ -5,16 +5,16 @@ import { newBidder } from 'src/adapters/bidderFactory';
 const ENDPOINT = 'https://ht.c1exchange.com/ht';
 const BIDDER_CODE = 'c1x';
 
-describe('C1XAdapter', () => {
+describe('C1XAdapter', function () {
   const adapter = newBidder(c1xAdapter);
 
-  describe('inherited functions', () => {
-    it('exists and is a function', () => {
+  describe('inherited functions', function () {
+    it('exists and is a function', function () {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
   });
 
-  describe('isBidRequestValid', () => {
+  describe('isBidRequestValid', function () {
     let bid = {
       'bidder': BIDDER_CODE,
       'adUnitCode': 'adunit-code',
@@ -24,11 +24,11 @@ describe('C1XAdapter', () => {
       }
     };
 
-    it('should return true when required params are passed', () => {
+    it('should return true when required params are passed', function () {
       expect(c1xAdapter.isBidRequestValid(bid)).to.equal(true);
     });
 
-    it('should return false when required params are not found', () => {
+    it('should return false when required params are not found', function () {
       let bid = Object.assign({}, bid);
       delete bid.params;
       bid.params = {
@@ -38,7 +38,7 @@ describe('C1XAdapter', () => {
     });
   });
 
-  describe('buildRequests', () => {
+  describe('buildRequests', function () {
     let bidRequests = [
       {
         'bidder': BIDDER_CODE,
@@ -61,19 +61,19 @@ describe('C1XAdapter', () => {
       return parsedData;
     };
 
-    it('sends bid request to ENDPOINT via GET', () => {
+    it('sends bid request to ENDPOINT via GET', function () {
       const request = c1xAdapter.buildRequests(bidRequests);
       expect(request.url).to.equal(ENDPOINT);
       expect(request.method).to.equal('GET');
     });
 
-    it('should generate correct bid Id tag', () => {
+    it('should generate correct bid Id tag', function () {
       const request = c1xAdapter.buildRequests(bidRequests);
       expect(request.bids[0].adUnitCode).to.equal('adunit-code');
       expect(request.bids[0].bidId).to.equal('30b31c1838de1e');
     });
 
-    it('should convert params to proper form and attach to request', () => {
+    it('should convert params to proper form and attach to request', function () {
       const request = c1xAdapter.buildRequests(bidRequests);
       const originalPayload = parseRequest(request.data);
       const payloadObj = JSON.parse(originalPayload);
@@ -83,7 +83,7 @@ describe('C1XAdapter', () => {
       expect(payloadObj.site).to.equal('9999');
     });
 
-    it('should convert floor price to proper form and attach to request', () => {
+    it('should convert floor price to proper form and attach to request', function () {
       let bidRequest = Object.assign({},
         bidRequests[0],
         {
@@ -100,7 +100,7 @@ describe('C1XAdapter', () => {
       expect(payloadObj.a1p).to.equal('4.35');
     });
 
-    it('should convert pageurl to proper form and attach to request', () => {
+    it('should convert pageurl to proper form and attach to request', function () {
       let bidRequest = Object.assign({},
         bidRequests[0],
         {
@@ -114,9 +114,27 @@ describe('C1XAdapter', () => {
       const payloadObj = JSON.parse(originalPayload);
       expect(payloadObj.pageurl).to.equal('http://c1exchange.com/');
     });
+
+    it('should convert GDPR Consent to proper form and attach to request', function () {
+      let consentString = 'BOP2gFWOQIFovABABAENBGAAAAAAMw';
+      let bidderRequest = {
+        'bidderCode': 'c1x',
+        'gdprConsent': {
+          'consentString': consentString,
+          'gdprApplies': true
+        }
+      }
+      bidderRequest.bids = bidRequests;
+
+      const request = c1xAdapter.buildRequests(bidRequests, bidderRequest);
+      const originalPayload = parseRequest(request.data);
+      const payloadObj = JSON.parse(originalPayload);
+      expect(payloadObj['consent_string']).to.equal('BOP2gFWOQIFovABABAENBGAAAAAAMw');
+      expect(payloadObj['consent_required']).to.equal('true');
+    });
   });
 
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     let response = {
       'bid': true,
       'cpm': 1.5,
@@ -128,7 +146,7 @@ describe('C1XAdapter', () => {
       'bidType': 'GROSS_BID'
     };
 
-    it('should get correct bid response', () => {
+    it('should get correct bid response', function () {
       let expectedResponse = [
         {
           width: 300,
@@ -151,7 +169,7 @@ describe('C1XAdapter', () => {
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
     });
 
-    it('handles nobid responses', () => {
+    it('handles nobid responses', function () {
       let response = {
         bid: false,
         adId: 'c1x-test'

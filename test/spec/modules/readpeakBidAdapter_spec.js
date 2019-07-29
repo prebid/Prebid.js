@@ -1,13 +1,14 @@
 import { expect } from 'chai';
 import { spec, ENDPOINT } from 'modules/readpeakBidAdapter';
 import * as utils from 'src/utils';
+import {config} from 'src/config';
 
-describe('ReadPeakAdapter', () => {
+describe('ReadPeakAdapter', function () {
   let bidRequest
   let serverResponse
   let serverRequest
 
-  beforeEach(() => {
+  beforeEach(function () {
     bidRequest = {
       bidder: 'readpeak',
       nativeParams: {
@@ -19,7 +20,8 @@ describe('ReadPeakAdapter', () => {
       },
       params: {
         bidfloor: 5.00,
-        publisherId: '11bc5dd5-7421-4dd8-c926-40fa653bec76'
+        publisherId: '11bc5dd5-7421-4dd8-c926-40fa653bec76',
+        siteId: '11bc5dd5-7421-4dd8-c926-40fa653bec77'
       },
       bidId: '2ffb201a808da7',
       bidderRequestId: '178e34bad3658f',
@@ -63,8 +65,8 @@ describe('ReadPeakAdapter', () => {
               img: {
                 type: 3,
                 url: 'http://url.to/image',
-                w: 320,
-                h: 200,
+                w: 750,
+                h: 500,
               },
             }],
             link: {
@@ -97,7 +99,7 @@ describe('ReadPeakAdapter', () => {
           'publisher': {
             'id': '11bc5dd5-7421-4dd8-c926-40fa653bec76'
           },
-          'id': '11bc5dd5-7421-4dd8-c926-40fa653bec76',
+          'id': '11bc5dd5-7421-4dd8-c926-40fa653bec77',
           'ref': '',
           'page': 'http://localhost',
           'domain': 'localhost'
@@ -112,69 +114,78 @@ describe('ReadPeakAdapter', () => {
     }
   });
 
-  describe('spec.isBidRequestValid', () => {
-    it('should return true when the required params are passed', () => {
+  describe('spec.isBidRequestValid', function () {
+    it('should return true when the required params are passed', function () {
       expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
     });
 
-    it('should return false when the native params are missing', () => {
+    it('should return false when the native params are missing', function () {
       bidRequest.nativeParams = undefined;
       expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
     });
 
-    it('should return false when the "publisherId" param is missing', () => {
+    it('should return false when the "publisherId" param is missing', function () {
       bidRequest.params = {
         bidfloor: 5.00
       };
       expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
     });
 
-    it('should return false when no bid params are passed', () => {
+    it('should return false when no bid params are passed', function () {
       bidRequest.params = {};
       expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
     });
 
-    it('should return false when a bid request is not passed', () => {
+    it('should return false when a bid request is not passed', function () {
       expect(spec.isBidRequestValid()).to.equal(false);
       expect(spec.isBidRequestValid({})).to.equal(false);
     });
   });
 
-  describe('spec.buildRequests', () => {
-    it('should create a POST request for every bid', () => {
+  describe('spec.buildRequests', function () {
+    it('should create a POST request for every bid', function () {
       const request = spec.buildRequests([ bidRequest ]);
       expect(request.method).to.equal('POST');
       expect(request.url).to.equal(ENDPOINT);
     });
 
-    it('should attach request data', () => {
+    it('should attach request data', function () {
+      config.setConfig({
+        currency: {
+          adServerCurrency: 'EUR'
+        }
+      });
+
       const request = spec.buildRequests([ bidRequest ]);
 
       const data = JSON.parse(request.data);
-      expect(data.isPrebid).to.equal(true);
+
+      expect(data.source.ext.prebid).to.equal('$prebid.version$');
       expect(data.id).to.equal(bidRequest.bidderRequestId)
       expect(data.imp[0].bidfloor).to.equal(bidRequest.params.bidfloor);
       expect(data.imp[0].bidfloorcur).to.equal('USD');
       expect(data.site).to.deep.equal({
         publisher: {
           id: bidRequest.params.publisherId,
+          domain: 'http://localhost:9876',
         },
-        id: bidRequest.params.publisherId,
+        id: bidRequest.params.siteId,
         ref: window.top.document.referrer,
         page: utils.getTopWindowLocation().href,
         domain: utils.getTopWindowLocation().hostname,
       });
-      expect(data.device).to.deep.contain({ ua: navigator.userAgent });
+      expect(data.device).to.deep.contain({ ua: navigator.userAgent, language: navigator.language });
+      expect(data.cur).to.deep.equal(['EUR']);
     });
   });
 
-  describe('spec.interpretResponse', () => {
-    it('should return no bids if the response is not valid', () => {
+  describe('spec.interpretResponse', function () {
+    it('should return no bids if the response is not valid', function () {
       const bidResponse = spec.interpretResponse({ body: null }, serverRequest);
       expect(bidResponse.length).to.equal(0);
     });
 
-    it('should return a valid bid response', () => {
+    it('should return a valid bid response', function () {
       const bidResponse = spec.interpretResponse({ body: serverResponse }, serverRequest)[0];
       expect(bidResponse).to.contain({
         requestId: bidRequest.bidId,
@@ -188,7 +199,7 @@ describe('ReadPeakAdapter', () => {
 
       expect(bidResponse.native.title).to.equal('Title')
       expect(bidResponse.native.body).to.equal('Description')
-      expect(bidResponse.native.image).to.equal('http://url.to/image')
+      expect(bidResponse.native.image).to.deep.equal({url: 'http://url.to/image', width: 750, height: 500})
       expect(bidResponse.native.clickUrl).to.equal('http%3A%2F%2Furl.to%2Ftarget')
       expect(bidResponse.native.impressionTrackers).to.contain('http://url.to/pixeltracker')
     });

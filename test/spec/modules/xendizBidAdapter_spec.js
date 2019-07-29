@@ -34,39 +34,39 @@ const bidResponse = {
 
 const noBidResponse = { body: { id: '1d1a030790a475', bids: [] } };
 
-describe('xendizBidAdapter', () => {
+describe('xendizBidAdapter', function () {
   const adapter = newBidder(spec);
 
-  describe('inherited functions', () => {
-    it('exists and is a function', () => {
+  describe('inherited functions', function () {
+    it('exists and is a function', function () {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
   });
 
-  describe('isBidRequestValid', () => {
-    it('should return false', () => {
+  describe('isBidRequestValid', function () {
+    it('should return false', function () {
       let bid = Object.assign({}, bidRequest);
       bid.params = {};
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
-    it('should return true', () => {
+    it('should return true', function () {
       expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
     });
   });
 
-  describe('buildRequests', () => {
-    it('should format valid url', () => {
+  describe('buildRequests', function () {
+    it('should format valid url', function () {
       const request = spec.buildRequests([bidRequest]);
       expect(request.url).to.equal(VALID_ENDPOINT);
     });
 
-    it('should format valid url', () => {
+    it('should format valid url', function () {
       const request = spec.buildRequests([bidRequest]);
       expect(request.url).to.equal(VALID_ENDPOINT);
     });
 
-    it('should format valid request body', () => {
+    it('should format valid request body', function () {
       const request = spec.buildRequests([bidRequest]);
       const payload = JSON.parse(request.data);
       expect(payload.id).to.exist;
@@ -74,7 +74,7 @@ describe('xendizBidAdapter', () => {
       expect(payload.device).to.exist;
     });
 
-    it('should attach valid device info', () => {
+    it('should attach valid device info', function () {
       const request = spec.buildRequests([bidRequest]);
       const payload = JSON.parse(request.data);
       expect(payload.device).to.deep.equal([
@@ -84,7 +84,7 @@ describe('xendizBidAdapter', () => {
       ]);
     });
 
-    it('should transform sizes', () => {
+    it('should transform sizes', function () {
       const request = spec.buildRequests([bidRequest]);
       const payload = JSON.parse(request.data);
       const item = payload.items[0];
@@ -92,8 +92,8 @@ describe('xendizBidAdapter', () => {
     });
   });
 
-  describe('interpretResponse', () => {
-    it('should get correct bid response', () => {
+  describe('interpretResponse', function () {
+    it('should get correct bid response', function () {
       const result = spec.interpretResponse(bidResponse);
       const validResponse = [{
         requestId: '30b31c1838de1e',
@@ -111,7 +111,7 @@ describe('xendizBidAdapter', () => {
       expect(result).to.deep.equal(validResponse);
     });
 
-    it('handles nobid responses', () => {
+    it('handles nobid responses', function () {
       let result = spec.interpretResponse(noBidResponse);
       expect(result.length).to.equal(0);
     });
