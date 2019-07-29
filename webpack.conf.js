@@ -71,26 +71,5 @@ module.exports = {
       }
     ]
   },
-<<<<<<< HEAD
-  plugins: [
-    new StringReplacePlugin(),
-    new RequireEnsureWithoutJsonp(),
-
-    // this plugin must be last so it can be easily removed for karma unit tests
-    new webpack.optimize.CommonsChunkPlugin({
-      name: 'prebid',
-      filename: 'prebid-core.js',
-      minChunks: function(module, count) {
-        return !(count < 2 || neverBundle.indexOf(path.basename(module.resource)) !== -1)
-      }
-    })
-  ],
-  // Webpack provide unwanted dependencies, tell explicitely not to bundle them (issues/194)
-  node: {
-    Buffer: false,
-    crypto: 'empty'
-  }
-=======
   plugins
->>>>>>> 2.25.0
 };
