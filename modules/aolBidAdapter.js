@@ -338,6 +338,7 @@ export const spec = {
 
   _parseBidResponse(response, bidRequest) {
     let bidData;
+    let bid;
 
     try {
       bidData = response.seatbid[0].bid[0];

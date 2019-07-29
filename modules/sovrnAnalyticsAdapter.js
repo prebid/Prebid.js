@@ -261,8 +261,8 @@ class LogError {
         }
       })
     }
-    if (ErrorEvent.data && error.data.ad) {
-      delete error.data.ad
+    if (ErrorEvent.data && this.error.data.ad) {
+      delete this.error.data.ad
     }
     this.error.ts = utils.timestamp()
     ajax(

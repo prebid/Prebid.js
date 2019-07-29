@@ -16,6 +16,7 @@ export const spec = {
     let bidRequest;
     let reqUrl;
     let placementId;
+    let page ={};
     for (let i = 0; i < validBidRequests.length; i++) {
       bidRequest = validBidRequests[i];
       bidRequest.adspiritConId = spec.genAdConId(bidRequest);

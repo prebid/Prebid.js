@@ -27,6 +27,7 @@ var fs = require('fs');
 var jsEscape = require('gulp-js-escape');
 const path = require('path');
 const execa = require('execa');
+const closureCompiler = require('google-closure-compiler').gulp();
 
 var prebid = require('./package.json');
 var dateString = 'Updated : ' + (new Date()).toISOString().substring(0, 10);
@@ -138,11 +139,18 @@ function makeWebpackPkg() {
 
   const analyticsSources = helpers.getAnalyticsSources();
   const moduleSources = helpers.getModulePaths(externalModules);
-
+  //console.log('path:::::', compilerPackage.compiler.CONTRIB_PATH);
   return gulp.src([].concat(moduleSources, analyticsSources, 'src/prebid.js'))
     .pipe(helpers.nameModules(externalModules))
     .pipe(webpackStream(cloned, webpack))
-    .pipe(uglify())
+    // .pipe(closureCompiler({
+    //   js_output_file: 'prebid.js',  // filename returned to gulp
+    //   compilation_level: 'ADVANCED', // as opposed to 'SIMPLE', the default
+    //   language_in: 'ECMASCRIPT6_STRICT',
+    //   language_out: 'ECMASCRIPT5_STRICT',  
+    //   warning_level: 'VERBOSE',      // complain loudly on errors
+    //   externs: 'externs.js'
+    // }))
     .pipe(gulpif(file => file.basename === 'prebid-core.js', header(banner, { prebid: prebid })))
     .pipe(gulp.dest('build/dist'));
 }

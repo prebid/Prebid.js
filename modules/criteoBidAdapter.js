@@ -1,3 +1,4 @@
+"use strict";
 import { loadExternalScript } from '../src/adloader';
 import { registerBidder } from '../src/adapters/bidderFactory';
 import { parse } from '../src/url';

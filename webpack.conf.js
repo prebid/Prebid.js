@@ -5,6 +5,7 @@ var helpers = require('./gulpHelpers');
 var RequireEnsureWithoutJsonp = require('./plugins/RequireEnsureWithoutJsonp.js');
 var { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
 var argv = require('yargs').argv;
+const ClosurePlugin = require('closure-webpack-plugin');
 
 // list of module names to never include in the common bundle chunk
 var neverBundle = [
@@ -34,6 +35,15 @@ plugins.push(  // this plugin must be last so it can be easily removed for karma
         module.resource && module.resource.includes(path.resolve('./node_modules/core-js'))
       );
     }
+  })
+);
+
+plugins.push(
+  new ClosurePlugin({mode: 'STANDARD'},{
+      language_in: 'ECMASCRIPT6',
+      language_out: 'ECMASCRIPT5',
+      compilation_level: 'ADVANCED',
+      externs: 'externs.js'
   })
 );
 
