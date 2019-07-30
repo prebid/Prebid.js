@@ -3,6 +3,7 @@ import {assert, expect} from 'chai';
 import * as url from 'src/url';
 import {spec} from 'modules/adformOpenRTBBidAdapter';
 import { NATIVE } from 'src/mediaTypes';
+import { config } from 'src/config';
 
 describe('AdformOpenRTB adapter', function () {
   let serverResponse, bidRequest, bidResponses;
@@ -144,6 +145,15 @@ describe('AdformOpenRTB adapter', function () {
       });
     });
 
+    it('should send currency if defined', function () {
+      config.setConfig({ currency: { adServerCurrency: 'EUR' } });
+      let validBidRequests = [{ params: {} }];
+      let refererInfo = { referer: 'page' };
+      let request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo }).data);
+
+      assert.deepEqual(request.cur, [ 'EUR' ]);
+    });
+
     describe('priceType', function () {
       it('should send default priceType', function () {
         let validBidRequests = [{
@@ -262,13 +272,102 @@ describe('AdformOpenRTB adapter', function () {
             let assets = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }).data).imp[0].native.request.assets;
             assert.ok(assets[0].title);
             assert.equal(assets[0].title.len, 140);
-            assert.deepEqual(assets[1].img, { type: 3, wmin: 150, hmin: 50 });
-            assert.deepEqual(assets[2].img, { type: 1, wmin: 50, hmin: 50 });
+            assert.deepEqual(assets[1].img, { type: 3, w: 150, h: 50 });
+            assert.deepEqual(assets[2].img, { type: 1, w: 50, h: 50 });
             assert.deepEqual(assets[3].data, { type: 2, len: 140 });
             assert.deepEqual(assets[4].data, { type: 1 });
             assert.deepEqual(assets[5].data, { type: 12 });
             assert.ok(!assets[6]);
           });
+
+          describe('icon/image sizing', function () {
+            it('should flatten sizes and utilise first pair', function () {
+              const validBidRequests = [{
+                bidId: 'bidId',
+                params: { siteId: 'siteId', mid: 1000 },
+                nativeParams: {
+                  image: {
+                    sizes: [[200, 300], [100, 200]]
+                  },
+                }
+              }];
+
+              let assets = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }).data).imp[0].native.request.assets;
+              assert.ok(assets[0].img);
+              assert.equal(assets[0].img.w, 200);
+              assert.equal(assets[0].img.h, 300);
+            });
+          });
+
+          it('should utilise aspect_ratios', function () {
+            const validBidRequests = [{
+              bidId: 'bidId',
+              params: { siteId: 'siteId', mid: 1000 },
+              nativeParams: {
+                image: {
+                  aspect_ratios: [{
+                    min_width: 100,
+                    ratio_height: 3,
+                    ratio_width: 1
+                  }]
+                },
+                icon: {
+                  aspect_ratios: [{
+                    min_width: 10,
+                    ratio_height: 5,
+                    ratio_width: 2
+                  }]
+                }
+              }
+            }];
+
+            let assets = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }).data).imp[0].native.request.assets;
+            assert.ok(assets[0].img);
+            assert.equal(assets[0].img.wmin, 100);
+            assert.equal(assets[0].img.hmin, 300);
+
+            assert.ok(assets[1].img);
+            assert.equal(assets[1].img.wmin, 10);
+            assert.equal(assets[1].img.hmin, 25);
+          });
+
+          it('should not throw error if aspect_ratios config is not defined', function () {
+            const validBidRequests = [{
+              bidId: 'bidId',
+              params: { siteId: 'siteId', mid: 1000 },
+              nativeParams: {
+                image: {
+                  aspect_ratios: []
+                },
+                icon: {
+                  aspect_ratios: []
+                }
+              }
+            }];
+
+            assert.doesNotThrow(() => spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }));
+          });
+        });
+
+        it('should expect any dimensions if min_width not passed', function () {
+          const validBidRequests = [{
+            bidId: 'bidId',
+            params: { siteId: 'siteId', mid: 1000 },
+            nativeParams: {
+              image: {
+                aspect_ratios: [{
+                  ratio_height: 3,
+                  ratio_width: 1
+                }]
+              }
+            }
+          }];
+
+          let assets = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }).data).imp[0].native.request.assets;
+          assert.ok(assets[0].img);
+          assert.equal(assets[0].img.wmin, 0);
+          assert.equal(assets[0].img.hmin, 0);
+          assert.ok(!assets[1]);
         });
       });
     });

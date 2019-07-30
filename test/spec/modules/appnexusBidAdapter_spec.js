@@ -612,19 +612,27 @@ describe('AppNexusAdapter', function () {
         rd_top: true,
         rd_ifs: 2,
         rd_stk: bidderRequest.refererInfo.stack.map((url) => encodeURIComponent(url)).join(',')
-      });
+      })
     });
 
     it('should populate tpids array when userId is available', function () {
       const bidRequest = Object.assign({}, bidRequests[0], {
         userId: {
-          tdid: 'sample-userid'
+          tdid: 'sample-userid',
+          criteortus: {
+            appnexus: {
+              userid: 'sample-userid'
+            }
+          }
         }
       });
 
       const request = spec.buildRequests([bidRequest]);
       const payload = JSON.parse(request.data);
-      expect(payload.tpuids).to.deep.equal([{provider: 'ttd', user_id: 'sample-userid'}]);
+      expect(payload.tpuids).to.deep.equal([
+        {provider: 'ttd', user_id: 'sample-userid'},
+        {provider: 'criteo', user_id: 'sample-userid'}
+      ]);
     });
   })
 

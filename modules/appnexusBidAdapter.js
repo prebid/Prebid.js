@@ -172,6 +172,9 @@ export const spec = {
     const supportedUserIds = {
       get ttd() {
         return utils.deepAccess(bidRequests[0], `userId.tdid`)
+      },
+      get criteo() {
+        return utils.deepAccess(bidRequests[0], `userId.criteortus.${BIDDER_CODE}.userid`);
       }
     }
 
