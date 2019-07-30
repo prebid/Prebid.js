@@ -320,6 +320,23 @@ describe('AdformOpenRTB adapter', function () {
             assert.equal(assets[1].img.wmin, 10);
             assert.equal(assets[1].img.hmin, 25);
           });
+
+          it('should not throw error if aspect_ratios config is not defined', function () {
+            const validBidRequests = [{
+              bidId: 'bidId',
+              params: { siteId: 'siteId', mid: 1000 },
+              nativeParams: {
+                image: {
+                  aspect_ratios: []
+                },
+                icon: {
+                  aspect_ratios: []
+                }
+              }
+            }];
+
+            assert.doesNotThrow(() => spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }));
+          });
         });
 
         it('should expect any dimensions if min_width not passed', function () {

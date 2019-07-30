@@ -69,7 +69,7 @@ export const spec = {
           let wmin, hmin, w, h;
           let aRatios = bidParams.aspect_ratios;
 
-          if (aRatios) {
+          if (aRatios && aRatios[0]) {
             aRatios = aRatios[0];
             wmin = aRatios.min_width || 0;
             hmin = aRatios.ratio_height * wmin / aRatios.ratio_width | 0;
