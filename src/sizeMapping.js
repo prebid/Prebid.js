@@ -88,9 +88,9 @@ export function resolveStatus({labels = [], labelAll = false, activeLabels = []}
 
   let results = {
     active: (
-      allMediaTypes.length > 1 || (allMediaTypes.length === 1 && allMediaTypes[0] !== 'banner')
+      allMediaTypes.every(type => type !== 'banner')
     ) || (
-      allMediaTypes[0] === 'banner' && deepAccess(mediaTypes, 'banner.sizes.length') > 0 && (
+      allMediaTypes.some(type => type === 'banner') && deepAccess(mediaTypes, 'banner.sizes.length') > 0 && (
         labels.length === 0 || (
           (!labelAll && (
             labels.some(label => maps.labels[label]) ||

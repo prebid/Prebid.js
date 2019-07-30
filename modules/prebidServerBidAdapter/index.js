@@ -495,11 +495,21 @@ const OPEN_RTB_PROTOCOL = {
       const imp = { id: adUnit.code, ext, secure: _s2sConfig.secure };
 
       if (banner) { imp.banner = banner; }
-      if (video) { imp.video = video; }
-
-      imps.push(imp);
+      if (video) {
+        if (video.context === 'outstream' && !adUnit.renderer) {
+          // Don't push oustream w/o renderer to request object.
+          utils.logError('Outstream bid without renderer cannot be sent to Prebid Server.');
+        } else {
+          imp.video = video;
+        }
+      }
+      if (imp.banner || imp.video) { imps.push(imp); }
     });
 
+    if (!imps.length) {
+      utils.logError('Request to Prebid Server rejected due to invalid media type(s) in adUnit.')
+      return;
+    }
     const request = {
       id: s2sBidRequest.tid,
       source: {tid: s2sBidRequest.tid},
@@ -521,6 +531,18 @@ const OPEN_RTB_PROTOCOL = {
     // s2sConfig video.ext.prebid is passed through openrtb to PBS
     if (_s2sConfig.extPrebid && typeof _s2sConfig.extPrebid === 'object') {
       request.ext.prebid = Object.assign(request.ext.prebid, _s2sConfig.extPrebid);
+    }
+
+    /**
+     * @type {(string[]|string|undefined)} - OpenRTB property 'cur', currencies available for bids
+     */
+    const adServerCur = config.getConfig('currency.adServerCurrency');
+    if (adServerCur && typeof adServerCur === 'string') {
+      // if the value is a string, wrap it with an array
+      request.cur = [adServerCur];
+    } else if (Array.isArray(adServerCur) && adServerCur.length) {
+      // if it's an array, get the first element
+      request.cur = [adServerCur[0]];
     }
 
     _appendSiteAppDevice(request);
@@ -626,6 +648,9 @@ const OPEN_RTB_PROTOCOL = {
 
           if (utils.deepAccess(bid, 'ext.prebid.type') === VIDEO) {
             bidObject.mediaType = VIDEO;
+            let sizes = bidRequest.sizes && bidRequest.sizes[0];
+            bidObject.playerHeight = sizes[0];
+            bidObject.playerWidth = sizes[1];
 
             // try to get cache values from 'response.ext.prebid.cache'
             // else try 'bid.ext.prebid.targeting' as fallback
@@ -721,17 +746,18 @@ export function PrebidServer() {
     }
 
     const request = protocolAdapter().buildRequest(s2sBidRequest, bidRequests, adUnitsWithSizes);
-    const requestJson = JSON.stringify(request);
-
-    ajax(
-      _s2sConfig.endpoint,
-      {
-        success: response => handleResponse(response, requestedBidders, bidRequests, addBidResponse, done),
-        error: done
-      },
-      requestJson,
-      { contentType: 'text/plain', withCredentials: true }
-    );
+    const requestJson = request && JSON.stringify(request);
+    if (request && requestJson) {
+      ajax(
+        _s2sConfig.endpoint,
+        {
+          success: response => handleResponse(response, requestedBidders, bidRequests, addBidResponse, done),
+          error: done
+        },
+        requestJson,
+        { contentType: 'text/plain', withCredentials: true }
+      );
+    }
   };
 
   /* Notify Prebid of bid responses so bids can get in the auction */

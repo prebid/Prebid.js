@@ -8,6 +8,7 @@ import {
   NATIVE
 } from '../src/mediaTypes';
 import * as utils from '../src/utils';
+import { config } from '../src/config';
 
 const BIDDER_CODE = 'adformOpenRTB';
 const NATIVE_ASSET_IDS = { 0: 'title', 2: 'icon', 3: 'image', 5: 'sponsoredBy', 4: 'body', 1: 'cta' };
@@ -56,6 +57,8 @@ export const spec = {
     const test = setOnAny(validBidRequests, 'params.test');
     const publisher = setOnAny(validBidRequests, 'params.publisher');
     const siteId = setOnAny(validBidRequests, 'params.siteId');
+    const currency = config.getConfig('currency.adServerCurrency');
+    const cur = currency && [ currency ];
 
     const imp = validBidRequests.map((bid, id) => {
       bid.netRevenue = pt;
@@ -94,6 +97,7 @@ export const spec = {
       device: { ua },
       source: { tid, fd: 1 },
       ext: { pt },
+      cur,
       imp
     };
 

@@ -28,7 +28,7 @@ config.getConfig('s2sConfig', ({s2sConfig}) => {
 });
 
 export const SEND_TIMEOUT = 3000;
-const INTEGRATION = 'pbjs';
+const DEFAULT_INTEGRATION = 'pbjs';
 
 const cache = {
   auctions: {},
@@ -139,10 +139,14 @@ function sendMessage(auctionId, bidWonId) {
   let referrer = config.getConfig('pageUrl') || utils.getTopWindowUrl();
   let message = {
     eventTimeMillis: Date.now(),
-    integration: INTEGRATION,
+    integration: config.getConfig('rubicon.int_type') || DEFAULT_INTEGRATION,
     version: '$prebid.version$',
     referrerUri: referrer
   };
+  const wrapperName = config.getConfig('rubicon.wrapperName');
+  if (wrapperName) {
+    message.wrapperName = wrapperName;
+  }
   let auctionCache = cache.auctions[auctionId];
   if (auctionCache && !auctionCache.sent) {
     let adUnitMap = Object.keys(auctionCache.bids).reduce((adUnits, bidId) => {
@@ -232,17 +236,17 @@ function sendMessage(auctionId, bidWonId) {
   );
 }
 
-function parseBidResponse(bid) {
+export function parseBidResponse(bid) {
   return _pick(bid, [
-    'getCpmInNewCurrency as bidPriceUSD', (fn) => {
+    'bidPriceUSD', () => {
       if (typeof bid.currency === 'string' && bid.currency.toUpperCase() === 'USD') {
         return Number(bid.cpm);
       }
       // use currency conversion function if present
-      if (typeof fn === 'function') {
-        return Number(fn('USD'));
+      if (typeof bid.getCpmInNewCurrency === 'function') {
+        return Number(bid.getCpmInNewCurrency('USD'));
       }
-      // TODO: throw error or something if not USD and currency module wasn't present?
+      utils.logWarn('Rubicon Analytics Adapter: Could not determine the bidPriceUSD of the bid ', bid);
     },
     'dealId',
     'status',
