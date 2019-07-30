@@ -232,15 +232,19 @@ function test(done) {
       karmaConf.browsers = browserOverride;
     }
 
-    new KarmaServer(karmaConf, function(exitCode) {
-      if (exitCode) {
-        done(new Error('Karma tests failed with exit code', exitCode));
-        process.exit(exitCode);
-      } else {
-        done();
-        process.exit(exitCode);
-      }
-    }).start();
+    new KarmaServer(karmaConf, newKarmaCallback(done)).start();
+  }
+}
+
+function newKarmaCallback(done) {
+  return function(exitCode) {
+    if (exitCode) {
+      done(new Error('Karma tests failed with exit code ' + exitCode));
+      process.exit(exitCode);
+    } else {
+      done();
+      process.exit(exitCode);
+    }
   }
 }
 
