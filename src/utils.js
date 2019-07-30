@@ -5,7 +5,8 @@ import includes from 'core-js/library/fn/array/includes';
 import { parse } from './url';
 const CONSTANTS = require('./constants');
 
-var _loggingChecked = false;
+export { default as deepAccess } from 'dlv';
+export { default as deepSetValue } from 'dset';
 
 var tArr = 'Array';
 var tStr = 'String';
@@ -221,13 +222,25 @@ export function parseSizesInput(sizeObj) {
   return parsedSizes;
 }
 
-// parse a GPT style sigle size array, (i.e [300,250])
+// Parse a GPT style single size array, (i.e [300, 250])
 // into an AppNexus style string, (i.e. 300x250)
 export function parseGPTSingleSizeArray(singleSize) {
-  // if we aren't exactly 2 items in this array, it is invalid
-  if (isArray(singleSize) && singleSize.length === 2 && (!isNaN(singleSize[0]) && !isNaN(singleSize[1]))) {
+  if (isValidGPTSingleSize(singleSize)) {
     return singleSize[0] + 'x' + singleSize[1];
   }
+}
+
+// Parse a GPT style single size array, (i.e [300, 250])
+// into OpenRTB-compatible (imp.banner.w/h, imp.banner.format.w/h, imp.video.w/h) object(i.e. {w:300, h:250})
+export function parseGPTSingleSizeArrayToRtbSize(singleSize) {
+  if (isValidGPTSingleSize(singleSize)) {
+    return {w: singleSize[0], h: singleSize[1]};
+  }
+}
+
+function isValidGPTSingleSize(singleSize) {
+  // if we aren't exactly 2 items in this array, it is invalid
+  return isArray(singleSize) && singleSize.length === 2 && (!isNaN(singleSize[0]) && !isNaN(singleSize[1]));
 }
 
 /**
@@ -354,12 +367,6 @@ export function hasConsoleLogger() {
 }
 
 export function debugTurnedOn() {
-  if (config.getConfig('debug') === false && _loggingChecked === false) {
-    const debug = getParameterByName(CONSTANTS.DEBUG_MODE).toUpperCase() === 'TRUE';
-    config.setConfig({ debug });
-    _loggingChecked = true;
-  }
-
   return !!config.getConfig('debug');
 }
 
@@ -964,43 +971,6 @@ export function groupBy(xs, key) {
     (rv[x[key]] = rv[x[key]] || []).push(x);
     return rv;
   }, {});
-}
-
-/**
- * deepAccess utility function useful for doing safe access (will not throw exceptions) of deep object paths.
- * @param {Object} obj The object containing the values you would like to access.
- * @param {string|number} path Object path to the value you would like to access.  Non-strings are coerced to strings.
- * @returns {*} The value found at the specified object path, or undefined if path is not found.
- */
-export function deepAccess(obj, path) {
-  if (!obj) {
-    return;
-  }
-  path = String(path).split('.');
-  for (let i = 0; i < path.length; i++) {
-    obj = obj[path[i]];
-    if (typeof obj === 'undefined') {
-      return;
-    }
-  }
-  return obj;
-}
-
-/**
- * @param {Object} obj The object to set a deep property value in
- * @param {(string|Array.<string>)} path Object path to the value you would like ot set.
- * @param {*} value The value you would like to set
- */
-export function deepSetValue(obj, path, value) {
-  let i;
-  path = path.split('.');
-  for (i = 0; i < path.length - 1; i++) {
-    if (i !== path.length - 1 && typeof obj[path[i]] === 'undefined') {
-      obj[path[i]] = {};
-    }
-    obj = obj[path[i]];
-  }
-  obj[path[i]] = value;
 }
 
 /**
