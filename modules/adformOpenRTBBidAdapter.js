@@ -69,11 +69,28 @@ export const spec = {
         };
         if (props) {
           asset.id = props.id;
+          let wmin, hmin, w, h;
+          let aRatios = bidParams.aspect_ratios;
+
+          if (aRatios && aRatios[0]) {
+            aRatios = aRatios[0];
+            wmin = aRatios.min_width || 0;
+            hmin = aRatios.ratio_height * wmin / aRatios.ratio_width | 0;
+          }
+
+          if (bidParams.sizes) {
+            const sizes = flatten(bidParams.sizes);
+            w = sizes[0];
+            h = sizes[1];
+          }
+
           asset[props.name] = {
             len: bidParams.len,
-            wmin: bidParams.sizes && bidParams.sizes[0],
-            hmin: bidParams.sizes && bidParams.sizes[1],
-            type: props.type
+            type: props.type,
+            wmin,
+            hmin,
+            w,
+            h
           };
 
           return asset;
@@ -174,4 +191,8 @@ function setOnAny(collection, key) {
       return result;
     }
   }
+}
+
+function flatten(arr) {
+  return [].concat(...arr);
 }
