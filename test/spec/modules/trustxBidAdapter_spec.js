@@ -50,10 +50,10 @@ describe('TrustXAdapter', function () {
 
     const bidderRequest = {
       refererInfo: {
-        referer: 'http://example.com'
+        referer: encodeURIComponent('http://example.com')
       }
     };
-    const encodedReferer = encodeURIComponent(bidderRequest.refererInfo.referer);
+    const encodedReferer = bidderRequest.refererInfo.referer;
 
     let bidRequests = [
       {
