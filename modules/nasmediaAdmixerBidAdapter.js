@@ -1,5 +1,6 @@
-import * as utils from 'src/utils';
-import {registerBidder} from 'src/adapters/bidderFactory';
+import * as utils from '../src/utils';
+import {registerBidder} from '../src/adapters/bidderFactory';
+import find from 'core-js/library/fn/array/find';
 
 const ADMIXER_ENDPOINT = 'https://adn.admixer.co.kr:10443/prebid';
 const DEFAULT_BID_TTL = 360;
@@ -59,14 +60,14 @@ export const spec = {
 
 function getOsType() {
   let ua = navigator.userAgent.toLowerCase();
-  let os = ['android', 'ios', 'mac', 'linux', 'window', 'etc'];
-  let regexp_os = [/android/i, /iphone|ipad/i, /mac/i, /linux/i, /window/i, ''];
+  let os = ['android', 'ios', 'mac', 'linux', 'window'];
+  let regexpOs = [/android/i, /iphone|ipad/i, /mac/i, /linux/i, /window/i];
 
-  return regexp_os.some((tos, idx) => {
-    if (ua.match(tos)) {
+  return find(os, (tos, idx) => {
+    if (ua.match(regexpOs[idx])) {
       return os[idx];
     }
-  });
+  }) || 'etc';
 }
 
 function getSize(sizes) {

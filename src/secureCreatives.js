@@ -4,11 +4,12 @@
  */
 
 import events from './events';
-import { fireNativeTrackers } from './native';
+import { fireNativeTrackers, getAssetMessage } from './native';
 import { EVENTS } from './constants';
-import { isSlotMatchingAdUnitCode } from './utils';
+import { isSlotMatchingAdUnitCode, logWarn, replaceAuctionPrice } from './utils';
 import { auctionManager } from './auctionManager';
 import find from 'core-js/library/fn/array/find';
+import { isRendererRequired, executeRenderer } from './Renderer';
 
 const BID_WON = EVENTS.BID_WON;
 
@@ -25,13 +26,13 @@ function receiveMessage(ev) {
     return;
   }
 
-  if (data.adId) {
+  if (data && data.adId) {
     const adObject = find(auctionManager.getBidsReceived(), function (bid) {
       return bid.adId === data.adId;
     });
 
     if (data.message === 'Prebid Request') {
-      sendAdToCreative(adObject, data.adServerDomain, ev.source);
+      _sendAdToCreative(adObject, data.adServerDomain, ev.source);
 
       // save winning bids
       auctionManager.addWinningBid(adObject);
@@ -45,22 +46,32 @@ function receiveMessage(ev) {
     //   adId: '%%PATTERN:hb_adid%%'
     // }), '*');
     if (data.message === 'Prebid Native') {
-      fireNativeTrackers(data, adObject);
+      if (data.action === 'assetRequest') {
+        const message = getAssetMessage(data, adObject);
+        ev.source.postMessage(JSON.stringify(message), ev.origin);
+        return;
+      }
+
+      const trackerType = fireNativeTrackers(data, adObject);
+      if (trackerType === 'click') { return; }
+
       auctionManager.addWinningBid(adObject);
       events.emit(BID_WON, adObject);
     }
   }
 }
 
-function sendAdToCreative(adObject, remoteDomain, source) {
-  const { adId, ad, adUrl, width, height } = adObject;
-
-  if (adId) {
+export function _sendAdToCreative(adObject, remoteDomain, source) {
+  const { adId, ad, adUrl, width, height, renderer, cpm } = adObject;
+  // rendering for outstream safeframe
+  if (isRendererRequired(renderer)) {
+    executeRenderer(renderer, adObject);
+  } else if (adId) {
     resizeRemoteCreative(adObject);
     source.postMessage(JSON.stringify({
       message: 'Prebid Response',
-      ad,
-      adUrl,
+      ad: replaceAuctionPrice(ad, cpm),
+      adUrl: replaceAuctionPrice(adUrl, cpm),
       adId,
       width,
       height
@@ -69,10 +80,40 @@ function sendAdToCreative(adObject, remoteDomain, source) {
 }
 
 function resizeRemoteCreative({ adUnitCode, width, height }) {
-  const iframe = document.getElementById(
-    find(window.googletag.pubads().getSlots().filter(isSlotMatchingAdUnitCode(adUnitCode)), slot => slot)
-      .getSlotElementId()).querySelector('iframe');
+  // resize both container div + iframe
+  ['div:last-child', 'div:last-child iframe'].forEach(elmType => {
+    let element = getElementByAdUnit(elmType);
+    if (element) {
+      let elementStyle = element.style;
+      elementStyle.width = width + 'px';
+      elementStyle.height = height + 'px';
+    } else {
+      logWarn(`Unable to locate matching page element for adUnitCode ${adUnitCode}.  Can't resize it to ad's dimensions.  Please review setup.`);
+    }
+  });
 
-  iframe.width = '' + width;
-  iframe.height = '' + height;
+  function getElementByAdUnit(elmType) {
+    let id = getElementIdBasedOnAdServer(adUnitCode);
+    let parentDivEle = document.getElementById(id);
+    return parentDivEle && parentDivEle.querySelector(elmType);
+  }
+
+  function getElementIdBasedOnAdServer(adUnitCode) {
+    if (window.googletag) {
+      return getDfpElementId(adUnitCode)
+    } else if (window.apntag) {
+      return getAstElementId(adUnitCode)
+    } else {
+      return adUnitCode;
+    }
+  }
+
+  function getDfpElementId(adUnitCode) {
+    return find(window.googletag.pubads().getSlots().filter(isSlotMatchingAdUnitCode(adUnitCode)), slot => slot).getSlotElementId()
+  }
+
+  function getAstElementId(adUnitCode) {
+    let astTag = window.apntag.getTag(adUnitCode);
+    return astTag && astTag.targetId;
+  }
 }

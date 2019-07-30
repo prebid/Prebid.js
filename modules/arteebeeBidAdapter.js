@@ -1,7 +1,7 @@
-import * as utils from 'src/utils';
-import {BANNER} from 'src/mediaTypes';
-import {registerBidder} from 'src/adapters/bidderFactory';
-import {config} from 'src/config';
+import * as utils from '../src/utils';
+import {BANNER} from '../src/mediaTypes';
+import {registerBidder} from '../src/adapters/bidderFactory';
+import {config} from '../src/config';
 
 const BIDDER_CODE = 'arteebee';
 
@@ -16,11 +16,11 @@ export const spec = {
     return 'params' in bidRequest && bidRequest.params.pub !== undefined &&
       bidRequest.params.source !== undefined;
   },
-  buildRequests: function (validBidRequests) {
+  buildRequests: function (validBidRequests, bidderRequest) {
     var requests = [];
 
     for (let i = 0; i < validBidRequests.length; i++) {
-      let prebidReq = makePrebidRequest(validBidRequests[i]);
+      let prebidReq = makePrebidRequest(validBidRequests[i], bidderRequest);
       if (prebidReq) {
         requests.push(prebidReq);
       }
@@ -58,20 +58,20 @@ export const spec = {
     }
     return bidResponses;
   },
-  getUserSyncs: function (syncOptions, serverResponses) {
+  getUserSyncs: function (syncOptions, serverResponses, gdprConsent) {
     return [];
   }
 }
 
 registerBidder(spec);
 
-function makePrebidRequest(req) {
+function makePrebidRequest(req, bidderRequest) {
   var host = req.params.host || DEFAULT_HOST;
   var ssp = req.params.ssp || DEFAULT_SSP;
 
   var url = window.location.protocol + '//' + host + '/rtb/bid/' + ssp + '?type=json&register=0';
 
-  const payload = makeRtbRequest(req);
+  const payload = makeRtbRequest(req, bidderRequest);
   const payloadString = JSON.stringify(payload);
 
   return {
@@ -81,8 +81,8 @@ function makePrebidRequest(req) {
   };
 }
 
-function makeRtbRequest(req) {
-  var auctionId = req.requestId;
+function makeRtbRequest(req, bidderRequest) {
+  var auctionId = req.bidderRequestId;
 
   var imp = [];
   imp.push(makeImp(req));
@@ -96,8 +96,20 @@ function makeRtbRequest(req) {
     'tmax': config.getConfig('bidderTimeout')
   };
 
-  if (req.params.coppa) {
+  if (config.getConfig('coppa') === true || req.params.coppa) {
     rtbReq.regs = {coppa: 1};
+  }
+
+  if (bidderRequest && bidderRequest.gdprConsent) {
+    if ((typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') && bidderRequest.gdprConsent.gdprApplies) {
+      if (!rtbReq.regs) {
+        rtbReq.regs = {};
+      }
+      rtbReq.regs['ext'] = {'gdpr': 1};
+    }
+    if ((typeof bidderRequest.gdprConsent.consentString === 'string') && bidderRequest.gdprConsent.consentString) {
+      rtbReq['user'] = {'ext': {'consent': bidderRequest.gdprConsent.consentString}};
+    }
   }
 
   if (req.params.test) {

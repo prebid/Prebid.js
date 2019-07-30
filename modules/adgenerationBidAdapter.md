@@ -1,16 +1,16 @@
 # Overview
 
 ```
-Module Name:  Adgeneration Bid Adapter
+Module Name:  AdGeneration Bid Adapter
 Module Type:  Bidder Adapter
 Maintainer: ssp-ope@supership.jp
 ```
 
 # Description
 
-Connects to Adgeneration exchange for bids.
+Connects to AdGeneration exchange for bids.
 
-Adgeneration bid adapter supports Banner and Native.
+AdGeneration bid adapter supports Banner and Native.
 
 # Test Parameters
 ```
@@ -52,7 +52,10 @@ var adUnits = [
                   },
                   icon: {
                     required: true
-                  }
+                  },
+                  privacyLink: {
+                    required: true
+                  },
                 },
               },
               bids: [

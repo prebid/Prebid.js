@@ -1,0 +1,380 @@
+{
+  "$schema": "http://json-schema.org/draft-06/schema#",
+  "title": "Prebid Auctions",
+  "description": "A batched data object describing the lifecycle of an auction or multiple auction across a single page view.",
+  "type": "object",
+  "required": [
+    "eventTimeMillis",
+    "integration",
+    "version"
+  ],
+  "anyOf": [
+    {
+      "required": [
+        "auctions"
+      ]
+    },
+    {
+      "required": [
+        "bidsWon"
+      ]
+    }
+  ],
+  "properties": {
+    "eventTimeMillis": {
+      "type": "integer",
+      "description": "Unix timestamp of time of creation for this batched event in milliseconds."
+    },
+    "integration": {
+      "type": "string",
+      "description": "Integration type that generated this event.",
+      "default": "pbjs"
+    },
+    "version": {
+      "type": "string",
+      "description": "Version of Prebid.js responsible for the auctions contained within."
+    },
+    "auctions": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "adUnits",
+          "samplingFactor"
+        ],
+        "properties": {
+          "clientTimeoutMillis": {
+            "type": "integer",
+            "description": "Timeout given in client for given auction in milliseconds (if applicable)."
+          },
+          "serverTimeoutMillis": {
+            "type": "integer",
+            "description": "Timeout configured for server adapter request in milliseconds (if applicable)."
+          },
+          "accountId": {
+            "type": "number",
+            "description": "The account id for prebid server (if applicable)."
+          },
+          "samplingFactor": {
+            "$ref": "#/definitions/samplingFactor"
+          },
+          "adUnits": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "description": "An array of adUnits involved in this auction.",
+              "required": [
+                "status",
+                "adUnitCode",
+                "transactionId",
+                "mediaTypes",
+                "dimensions",
+                "bids"
+              ],
+              "properties": {
+                "status": {
+                  "type": "string",
+                  "description": "The status of the adUnit"
+                },
+                "adUnitCode": {
+                  "type": "string",
+                  "description": "The adUnit.code identifier"
+                },
+                "transactionId": {
+                  "type": "string",
+                  "description": "The UUID generated id to represent this adunit in this auction."
+                },
+                "adSlot": {
+                  "type": "string"
+                },
+                "mediaTypes": {
+                  "$ref": "#/definitions/mediaTypes"
+                },
+                "videoAdFormat": {
+                  "$ref": "#/definitions/videoAdFormat"
+                },
+                "dimensions": {
+                  "type": "array",
+                  "description": "All valid sizes included in this auction (note: may be sizeConfig filtered).",
+                  "minItems": 1,
+                  "items": {
+                    "$ref": "#/definitions/dimensions"
+                  }
+                },
+                "adserverTargeting": {
+                  "$ref": "#/definitions/adserverTargeting"
+                },
+                "bids": {
+                  "type": "array",
+                  "description": "An array that contains a combination of the bids from the adUnit combined with their responses.",
+                  "minItems": 1,
+                  "items": {
+                    "$ref": "#/definitions/bid"
+                  }
+                },
+                "accountId": {
+                  "type": "number",
+                  "description": "The Rubicon AccountId associated with this adUnit - Removed if null"
+                },
+                "siteId": {
+                  "type": "number",
+                  "description": "The Rubicon siteId associated with this adUnit - Removed if null"
+                },
+                "zoneId": {
+                  "type": "number",
+                  "description": "The Rubicon zoneId associated with this adUnit - Removed if null"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "bidsWon": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "allOf": [
+          {
+            "$ref": "#/definitions/bid"
+          },
+          {
+            "required": [
+              "transactionId",
+              "accountId",
+              "samplingFactor",
+              "mediaTypes",
+              "adUnitCode",
+              "bidwonStatus"
+            ],
+            "properties": {
+              "transactionId": {
+                "type": "string"
+              },
+              "accountId": {
+                "type": "number"
+              },
+              "samplingFactor": {
+                "$ref": "#/definitions/samplingFactor"
+              },
+              "adUnitCode": {
+                "type": "string"
+              },
+              "videoAdFormat": {
+                "$ref": "#/definitions/videoAdFormat"
+              },
+              "mediaTypes": {
+                "$ref": "#/definitions/mediaTypes"
+              },
+              "adserverTargeting": {
+                "$ref": "#/definitions/adserverTargeting"
+              },
+              "bidwonStatus": {
+                "description": "Whether the bid was successfully rendered or not",
+                "type": "string",
+                "enum": [
+                  "success",
+                  "error"
+                ]
+              },
+              "siteId": {
+                "type": "number",
+                "description": "The Rubicon siteId associated with this adUnit - Removed if null"
+              },
+              "zoneId": {
+                "type": "number",
+                "description": "The Rubicon zoneId associated with this adUnit - Removed if null"
+              }
+            }
+          }
+        ]
+      }
+    },
+    "wrapperName": {
+      "type": "string"
+    }
+  },
+  "definitions": {
+    "adserverTargeting": {
+      "type": "object",
+      "description": "The adserverTargeting key/value pairs",
+      "patternProperties": {
+        ".+": {
+          "type": "string"
+        }
+      }
+    },
+    "samplingFactor": {
+      "type": "integer",
+      "description": "An integer value representing the factor to multiply event count by to receive unsampled count.",
+      "enum": [
+        1,
+        10,
+        20,
+        40,
+        100
+      ]
+    },
+    "videoAdFormat": {
+      "type": "string",
+      "description": "This value only provided for video specifies the ad format",
+      "enum": [
+        "pre-roll",
+        "interstitial",
+        "outstream",
+        "mid-roll",
+        "post-roll",
+        "vertical"
+      ]
+    },
+    "mediaTypes": {
+      "type": "array",
+      "uniqueItems": true,
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "enum": [
+          "native",
+          "video",
+          "banner"
+        ]
+      }
+    },
+    "dimensions": {
+      "type": "object",
+      "description": "Size object representing the dimensions of creative in pixels.",
+      "required": [
+        "width",
+        "height"
+      ],
+      "properties": {
+        "width": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "height": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "bid": {
+      "type": "object",
+      "required": [
+        "bidder",
+        "bidId",
+        "status",
+        "source"
+      ],
+      "properties": {
+        "bidder": {
+          "type": "string"
+        },
+        "bidId": {
+          "type": "string",
+          "description": "UUID representing this individual bid request in this auction."
+        },
+        "params": {
+          "description": "A copy of the bid.params from the adUnit.bids",
+          "anyOf": [
+            {
+              "type": "object"
+            },
+            {
+              "$ref": "#/definitions/params/rubicon"
+            }
+          ]
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "success",
+            "no-bid",
+            "error"
+          ]
+        },
+        "error": {
+          "type": "object",
+          "required": [
+            "code"
+          ],
+          "properties": {
+            "code": {
+              "type": "string",
+              "enum": [
+                "request-error",
+                "connect-error",
+                "timeout-error"
+              ]
+            },
+            "description": {
+              "type": "string"
+            }
+          }
+        },
+        "source": {
+          "type": "string",
+          "enum": [
+            "client",
+            "server"
+          ]
+        },
+        "clientLatencyMillis": {
+          "type": "integer",
+          "description": "Latency from auction start to bid response recieved in milliseconds."
+        },
+        "serverLatencyMillis": {
+          "type": "integer",
+          "description": "Latency returned by prebid server (response_time_ms)."
+        },
+        "bidResponse": {
+          "type": "object",
+          "required": [
+            "dimensions",
+            "mediaType",
+            "bidPriceUSD"
+          ],
+          "properties": {
+            "dimensions": {
+              "$ref": "#/definitions/dimensions"
+            },
+            "mediaType": {
+              "type": "string",
+              "enum": [
+                "native",
+                "video",
+                "banner"
+              ]
+            },
+            "bidPriceUSD": {
+              "type": "number",
+              "description": "The bid value denoted in USD"
+            },
+            "dealId": {
+              "type": "integer",
+              "description": "The id associated with any potential deals"
+            }
+          }
+        }
+      }
+    },
+    "params": {
+      "rubicon": {
+        "type": "object",
+        "properties": {
+          "accountId": {
+            "type": "number"
+          },
+          "siteId": {
+            "type": "number"
+          },
+          "zoneId": {
+            "type": "number"
+          }
+        }
+      }
+    }
+  }
+}

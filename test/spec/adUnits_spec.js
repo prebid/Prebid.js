@@ -82,13 +82,6 @@ describe('Publisher API _ AdUnits', function () {
       assert.strictEqual(bids2[1].params.placementId, '827326', 'adUnit2 bids2 params.placementId');
     });
 
-    it('both add unit should contains a transactionId', function() {
-      assert.isString(adUnit1.transactionId);
-      assert.isString(adUnit2.transactionId);
-
-      assert.strictEqual(false, adUnit1.transactionId === adUnit2.transactionId);
-    });
-
     it('the second adUnits value should be same with the adUnits that is added by $$PREBID_GLOBAL$$.addAdUnits();', function () {
       assert.strictEqual(adUnit2.code, '/1996833/slot-2', 'adUnit2 code');
       assert.deepEqual(adUnit2.sizes, [[468, 60]], 'adUnit2 sizes');
