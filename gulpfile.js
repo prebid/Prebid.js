@@ -240,10 +240,14 @@ function newKarmaCallback(done) {
   return function(exitCode) {
     if (exitCode) {
       done(new Error('Karma tests failed with exit code ' + exitCode));
-      process.exit(exitCode);
+      if (argv.browserstack) {
+        process.exit(exitCode);
+      }
     } else {
       done();
-      process.exit(exitCode);
+      if (argv.browserstack) {
+        process.exit(exitCode);
+      }
     }
   }
 }
