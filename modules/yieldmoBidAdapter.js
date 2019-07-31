@@ -330,7 +330,6 @@ function isMraid() {
 function getId(request, idType) {
   let id;
   if (request && request.userId && request.userId[idType] && typeof request.userId === 'object') {
-    console.log(JSON.stringify(request.userId));
     id = request.userId[idType];
   }
   return id;
