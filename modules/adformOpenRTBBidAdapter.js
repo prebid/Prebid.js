@@ -143,9 +143,13 @@ export const spec = {
     }
     const { seatbid, cur } = serverResponse.body;
 
+    const bidResponses = flatten(seatbid.map(seat => seat.bid)).reduce((result, bid) => {
+      result[bid.impid - 1] = bid;
+      return result;
+    }, []);
+
     return bids.map((bid, id) => {
-      const _cbid = seatbid && seatbid[id] && seatbid[id].bid;
-      const bidResponse = _cbid && _cbid[0];
+      const bidResponse = bidResponses[id];
       if (bidResponse) {
         return {
           requestId: bid.bidId,
