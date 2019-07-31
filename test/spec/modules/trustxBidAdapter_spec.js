@@ -53,7 +53,7 @@ describe('TrustXAdapter', function () {
         referer: 'http://example.com'
       }
     };
-    const encodedReferer = encodeURIComponent(bidderRequest.refererInfo.referer);
+    const referrer = bidderRequest.refererInfo.referer;
 
     let bidRequests = [
       {
@@ -95,7 +95,7 @@ describe('TrustXAdapter', function () {
       const request = spec.buildRequests([bidRequests[0]], bidderRequest);
       expect(request.data).to.be.an('string');
       const payload = parseRequest(request.data);
-      expect(payload).to.have.property('u', encodedReferer);
+      expect(payload).to.have.property('u', referrer);
       expect(payload).to.have.property('pt', 'net');
       expect(payload).to.have.property('auids', '43');
       expect(payload).to.have.property('sizes', '300x250,300x600');
@@ -108,7 +108,7 @@ describe('TrustXAdapter', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
       expect(request.data).to.be.an('string');
       const payload = parseRequest(request.data);
-      expect(payload).to.have.property('u', encodedReferer);
+      expect(payload).to.have.property('u', referrer);
       expect(payload).to.have.property('pt', 'net');
       expect(payload).to.have.property('auids', '43,43,45');
       expect(payload).to.have.property('sizes', '300x250,300x600,728x90');
@@ -120,7 +120,7 @@ describe('TrustXAdapter', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
       expect(request.data).to.be.an('string');
       const payload = parseRequest(request.data);
-      expect(payload).to.have.property('u', encodedReferer);
+      expect(payload).to.have.property('u', referrer);
       expect(payload).to.have.property('pt', 'gross');
       expect(payload).to.have.property('auids', '43,43,45');
       expect(payload).to.have.property('sizes', '300x250,300x600,728x90');
@@ -133,7 +133,7 @@ describe('TrustXAdapter', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
       expect(request.data).to.be.an('string');
       const payload = parseRequest(request.data);
-      expect(payload).to.have.property('u', encodedReferer);
+      expect(payload).to.have.property('u', referrer);
       expect(payload).to.have.property('pt', 'net');
       expect(payload).to.have.property('auids', '43,43,45');
       expect(payload).to.have.property('sizes', '300x250,300x600,728x90');
