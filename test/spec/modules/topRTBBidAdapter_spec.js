@@ -6,7 +6,7 @@ describe('topRTBBidAdapterTests', function () {
     expect(spec.isBidRequestValid({
       bidder: 'topRTB',
       params: {
-        adUnitId: 'cd95dffec6b645afbc4e5aa9f68f2ff3'
+        adUnitId: 'c5c06f77430c4c33814a0577cb4cc978'
       },
       adName: 'banner'
     }));
@@ -19,7 +19,7 @@ describe('topRTBBidAdapterTests', function () {
       adName: 'banner',
       adType: '{"banner":{"sizes":[[]]}}',
       params: {
-        adUnitId: 'cd95dffec6b645afbc4e5aa9f68f2ff3'
+        adUnitId: 'c5c06f77430c4c33814a0577cb4cc978'
       },
       sizes: [[728, 90]]
     }];

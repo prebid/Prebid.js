@@ -16,12 +16,12 @@ Only Banner & video format is supported.
     var adUnits = [
        {
            code: 'test-div-0',
-           sizes: [[300, 250]],  // a display size
+           sizes: [[728, 90]],  // a display size
            bids: [
                {
                     bidder: 'topRTB',
                     params: {
-                        adUnitId: 'cd95dffec6b645afbc4e5aa9f68f2ff3'
+                        adUnitId: 'c5c06f77430c4c33814a0577cb4cc978'
                     }
                }
            ]
