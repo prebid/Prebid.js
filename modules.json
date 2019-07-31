@@ -6,5 +6,6 @@
   "spotxBidAdapter",
   "telariaBidAdapter",
   "rubiconBidAdapter",
+  "oneVideoBidAdapter",
   "dfpAdServerVideo"
 ]
