@@ -15,6 +15,8 @@ function getDomain() {
 export const spec = {
   code: BIDDER_CODE,
   aliases: ['mars'],
+  supportedMediaTypes: [BANNER],
+  
   isBidRequestValid: function(bid) {
     return (bid.params.publisherID !== null);
   },
