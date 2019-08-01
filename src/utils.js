@@ -5,6 +5,9 @@ import includes from 'core-js/library/fn/array/includes';
 import { parse } from './url';
 const CONSTANTS = require('./constants');
 
+export { default as deepAccess } from 'dlv';
+export { default as deepSetValue } from 'dset';
+
 var tArr = 'Array';
 var tStr = 'String';
 var tFn = 'Function';
@@ -219,13 +222,25 @@ export function parseSizesInput(sizeObj) {
   return parsedSizes;
 }
 
-// parse a GPT style sigle size array, (i.e [300,250])
+// Parse a GPT style single size array, (i.e [300, 250])
 // into an AppNexus style string, (i.e. 300x250)
 export function parseGPTSingleSizeArray(singleSize) {
-  // if we aren't exactly 2 items in this array, it is invalid
-  if (isArray(singleSize) && singleSize.length === 2 && (!isNaN(singleSize[0]) && !isNaN(singleSize[1]))) {
+  if (isValidGPTSingleSize(singleSize)) {
     return singleSize[0] + 'x' + singleSize[1];
   }
+}
+
+// Parse a GPT style single size array, (i.e [300, 250])
+// into OpenRTB-compatible (imp.banner.w/h, imp.banner.format.w/h, imp.video.w/h) object(i.e. {w:300, h:250})
+export function parseGPTSingleSizeArrayToRtbSize(singleSize) {
+  if (isValidGPTSingleSize(singleSize)) {
+    return {w: singleSize[0], h: singleSize[1]};
+  }
+}
+
+function isValidGPTSingleSize(singleSize) {
+  // if we aren't exactly 2 items in this array, it is invalid
+  return isArray(singleSize) && singleSize.length === 2 && (!isNaN(singleSize[0]) && !isNaN(singleSize[1]));
 }
 
 /**
@@ -959,43 +974,6 @@ export function groupBy(xs, key) {
 }
 
 /**
- * deepAccess utility function useful for doing safe access (will not throw exceptions) of deep object paths.
- * @param {Object} obj The object containing the values you would like to access.
- * @param {string|number} path Object path to the value you would like to access.  Non-strings are coerced to strings.
- * @returns {*} The value found at the specified object path, or undefined if path is not found.
- */
-export function deepAccess(obj, path) {
-  if (!obj) {
-    return;
-  }
-  path = String(path).split('.');
-  for (let i = 0; i < path.length; i++) {
-    obj = obj[path[i]];
-    if (typeof obj === 'undefined') {
-      return;
-    }
-  }
-  return obj;
-}
-
-/**
- * @param {Object} obj The object to set a deep property value in
- * @param {(string|Array.<string>)} path Object path to the value you would like ot set.
- * @param {*} value The value you would like to set
- */
-export function deepSetValue(obj, path, value) {
-  let i;
-  path = path.split('.');
-  for (i = 0; i < path.length - 1; i++) {
-    if (i !== path.length - 1 && typeof obj[path[i]] === 'undefined') {
-      obj[path[i]] = {};
-    }
-    obj = obj[path[i]];
-  }
-  obj[path[i]] = value;
-}
-
-/**
  * Returns content for a friendly iframe to execute a URL in script tag
  * @param {string} url URL to be executed in a script tag in a friendly iframe
  * <!--PRE_SCRIPT_TAG_MACRO--> and <!--POST_SCRIPT_TAG_MACRO--> are macros left to be replaced if required
@@ -1157,6 +1135,53 @@ export function isInteger(value) {
  */
 export function convertCamelToUnderscore(value) {
   return value.replace(/(?:^|\.?)([A-Z])/g, function (x, y) { return '_' + y.toLowerCase() }).replace(/^_/, '');
+}
+
+/**
+ * Returns a new object with undefined properties removed from given object
+ * @param obj the object to clean
+ */
+export function cleanObj(obj) {
+  return Object.keys(obj).reduce((newObj, key) => {
+    if (typeof obj[key] !== 'undefined') {
+      newObj[key] = obj[key];
+    }
+    return newObj;
+  }, {})
+}
+
+/**
+ * Create a new object with selected properties.  Also allows property renaming and transform functions.
+ * @param obj the original object
+ * @param properties An array of desired properties
+ */
+export function pick(obj, properties) {
+  if (typeof obj !== 'object') {
+    return {};
+  }
+  return properties.reduce((newObj, prop, i) => {
+    if (typeof prop === 'function') {
+      return newObj;
+    }
+
+    let newProp = prop;
+    let match = prop.match(/^(.+?)\sas\s(.+?)$/i);
+
+    if (match) {
+      prop = match[1];
+      newProp = match[2];
+    }
+
+    let value = obj[prop];
+    if (typeof properties[i + 1] === 'function') {
+      value = properties[i + 1](value, newObj);
+    }
+    if (typeof value !== 'undefined') {
+      newObj[newProp] = value;
+    }
+
+    return newObj;
+  }, {});
 }
 
 /**
