@@ -1,8 +1,8 @@
-import * as utils from 'src/utils'
+import * as utils from '../src/utils'
 
-import { config } from 'src/config'
-import { registerBidder } from 'src/adapters/bidderFactory'
+import { config } from '../src/config'
 import includes from 'core-js/library/fn/array/includes';
+import { registerBidder } from '../src/adapters/bidderFactory'
 
 const BIDDER_CODE = 'gumgum'
 const ALIAS_BIDDER_CODE = ['gg']
@@ -13,82 +13,26 @@ const TIME_TO_LIVE = 60
 let browserParams = {};
 let pageViewId = null
 
-function hasTopAccess () {
-  var hasTopAccess = false
-  try { hasTopAccess = !!top.document } catch (e) {}
-  return hasTopAccess
-}
-
-function isInSafeFrame (windowRef) {
-  const w = windowRef || window
-  if (w.$sf) return w.$sf
-  else if (hasTopAccess() && w !== top) return isInSafeFrame(w.parent)
-  return null
-}
-
-function getGoogleTag (windowRef) {
-  try {
-    const w = windowRef || window
-    var GOOGLETAG = null
-    if ('googletag' in w) {
-      GOOGLETAG = w.googletag
-    } else if (w !== top) {
-      GOOGLETAG = getGoogleTag(w.parent)
-    }
-    return GOOGLETAG
-  } catch (error) {
-    utils.logError('Error getting googletag ', error)
-    return null
-  }
-}
-
-function getAMPContext (windowRef) {
-  const w = windowRef || window
-  var context = null
-  var nameJSON = null
-  if (utils.isPlainObject(w.context)) {
-    context = w.context
-  } else {
-    try {
-      nameJSON = JSON.parse(w.name || null)
-    } catch (error) {
-      utils.logError('Error getting w.name', error)
-    }
-    if (utils.isPlainObject(nameJSON)) {
-      context = nameJSON._context || (nameJSON.attributes ? nameJSON.attributes._context : null)
-    }
-    if (utils.isPlainObject(w.AMP_CONTEXT_DATA)) {
-      context = w.AMP_CONTEXT_DATA
-    }
-  }
-  return context
-}
-
-function getJCSI () {
-  const entrypointOffset = 7
-  const inFrame = (window.top && window.top !== window)
-  const frameType = (!inFrame ? 1 : (isInSafeFrame() ? 2 : (hasTopAccess() ? 3 : 4)))
-  const context = []
-  if (getAMPContext()) {
-    context.push(1)
-  }
-  if (getGoogleTag()) {
-    context.push(2)
-  }
-  const jcsi = {
-    ep: entrypointOffset,
-    fc: frameType,
-    ctx: context
-  }
-  return JSON.stringify(jcsi)
-}
-
 // TODO: potential 0 values for browserParams sent to ad server
 function _getBrowserParams() {
   let topWindow
   let topScreen
   let topUrl
   let ggad
+  let ns
+  function getNetworkSpeed () {
+    const connection = window.navigator && (window.navigator.connection || window.navigator.mozConnection || window.navigator.webkitConnection)
+    const Mbps = connection && (connection.downlink || connection.bandwidth)
+    return Mbps ? Math.round(Mbps * 1024) : null // 1 megabit -> 1024 kilobits
+  }
+  function getOgURL () {
+    let ogURL = ''
+    const ogURLSelector = "meta[property='og:url']"
+    const head = document && document.getElementsByTagName('head')[0]
+    const ogURLElement = head.querySelector(ogURLSelector)
+    ogURL = ogURLElement ? ogURLElement.content : null
+    return ogURL
+  }
   if (browserParams.vw) {
     // we've already initialized browserParams, just return it.
     return browserParams
@@ -111,8 +55,15 @@ function _getBrowserParams() {
     pu: topUrl,
     ce: utils.cookiesAreEnabled(),
     dpr: topWindow.devicePixelRatio || 1,
-    jcsi: getJCSI()
+    jcsi: JSON.stringify({ t: 0, rq: 8 }),
+    ogu: getOgURL()
   }
+
+  ns = getNetworkSpeed()
+  if (ns) {
+    browserParams.ns = ns
+  }
+
   ggad = (topUrl.match(/#ggad=(\w+)$/) || [0, 0])[1]
   if (ggad) {
     browserParams[isNaN(ggad) ? 'eAdBuyId' : 'adBuyId'] = ggad
@@ -122,6 +73,14 @@ function _getBrowserParams() {
 
 function getWrapperCode(wrapper, data) {
   return wrapper.replace('AD_JSON', window.btoa(JSON.stringify(data)))
+}
+
+function _getTradeDeskIDParam(bidRequest) {
+  const unifiedIdObj = {};
+  if (bidRequest.userId && bidRequest.userId.tdid) {
+    unifiedIdObj.tdid = bidRequest.userId.tdid;
+  }
+  return unifiedIdObj;
 }
 
 // TODO: use getConfig()
@@ -161,6 +120,12 @@ function isBidRequestValid (bid) {
       utils.logWarn(`[GumGum] No product selected for the placement ${adUnitCode}, please check your implementation.`);
       return false;
   }
+
+  if (params.bidfloor && !(typeof params.bidfloor === 'number' && isFinite(params.bidfloor))) {
+    utils.logWarn('[GumGum] bidfloor must be a Number');
+    return false;
+  }
+
   return true;
 }
 
@@ -183,6 +148,9 @@ function buildRequests (validBidRequests, bidderRequest) {
     const data = {}
     if (pageViewId) {
       data.pv = pageViewId
+    }
+    if (params.bidfloor) {
+      data.fp = params.bidfloor;
     }
     if (params.inScreen) {
       data.t = params.inScreen;
@@ -210,7 +178,7 @@ function buildRequests (validBidRequests, bidderRequest) {
       sizes: bidRequest.sizes,
       url: BID_ENDPOINT,
       method: 'GET',
-      data: Object.assign(data, _getBrowserParams(), _getDigiTrustQueryParams())
+      data: Object.assign(data, _getBrowserParams(), _getDigiTrustQueryParams(), _getTradeDeskIDParam(bidRequest))
     })
   });
   return bids;

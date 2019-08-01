@@ -1,9 +1,8 @@
-import { registerBidder } from 'src/adapters/bidderFactory'
-import { getTopWindowLocation } from 'src/utils'
+import { registerBidder } from '../src/adapters/bidderFactory'
 
 const BIDDER_CODE = 'justpremium'
 const ENDPOINT_URL = '//pre.ads.justpremium.com/v/2.0/t/xhr'
-const JP_ADAPTER_VERSION = '1.3'
+const JP_ADAPTER_VERSION = '1.4'
 const pixels = []
 const TRACK_START_TIME = Date.now()
 let LAST_PAYLOAD = {}
@@ -31,8 +30,7 @@ export const spec = {
       }).filter((value, index, self) => {
         return self.indexOf(value) === index
       }),
-      hostname: getTopWindowLocation().hostname,
-      protocol: getTopWindowLocation().protocol.replace(':', ''),
+      referer: bidderRequest.refererInfo.referer,
       sw: dim.screenWidth,
       sh: dim.screenHeight,
       ww: dim.innerWidth,
@@ -99,9 +97,9 @@ export const spec = {
   },
 
   getUserSyncs: function getUserSyncs(syncOptions, responses, gdprConsent) {
-    let url = '//pre.ads.justpremium.com/v/1.0/t/sync'
+    let url = '//pre.ads.justpremium.com/v/1.0/t/sync' + '?_c=' + 'a' + Math.random().toString(36).substring(7) + Date.now();
     if (gdprConsent && (typeof gdprConsent.gdprApplies === 'boolean')) {
-      url = url + '?consentString=' + encodeURIComponent(gdprConsent.consentString)
+      url = url + '&consentString=' + encodeURIComponent(gdprConsent.consentString)
     }
     if (syncOptions.iframeEnabled) {
       pixels.push({
@@ -121,6 +119,16 @@ export const spec = {
   },
 
 }
+
+export let pixel = {
+  fire(url) {
+    let img = document.createElement('img')
+    img.src = url
+    img.id = 'jp-pixel-track'
+    img.style.cssText = 'display:none !important;'
+    document.body.appendChild(img)
+  }
+};
 
 function track (data, payload, type) {
   let pubUrl = ''
@@ -147,11 +155,7 @@ ru=${encodeURIComponent(pubUrl)}&tt=&siw=&sh=${payload.sh}&sw=${payload.sw}&wh=$
 sd=&_c=&et=&aid=&said=&ei=&fc=&sp=&at=bidder&cid=&ist=&mg=&dl=&dlt=&ev=&vt=&zid=${payload.id}&dr=${duration}&di=&pr=&
 cw=&ch=&nt=&st=&jp=${encodeURIComponent(JSON.stringify(jp))}&ty=${type}`
 
-  let img = document.createElement('img')
-  img.src = pixelUrl
-  img.id = 'jp-pixel-track'
-  img.style.cssText = 'display:none !important;'
-  document.body.appendChild(img)
+  pixel.fire(pixelUrl);
 }
 
 function findBid (params, bids) {

@@ -1,16 +1,18 @@
-import * as utils from 'src/utils';
-import { registerBidder } from 'src/adapters/bidderFactory';
-import { Renderer } from 'src/Renderer';
-import { VIDEO, BANNER } from 'src/mediaTypes';
+import * as utils from '../src/utils';
+import { parse as parseUrl } from '../src/url';
+import { config } from '../src/config';
+import { registerBidder } from '../src/adapters/bidderFactory';
+import { Renderer } from '../src/Renderer';
+import { VIDEO, BANNER } from '../src/mediaTypes';
 import find from 'core-js/library/fn/array/find';
 import includes from 'core-js/library/fn/array/includes';
 
-const ADAPTER_VERSION = '1.3';
+const ADAPTER_VERSION = '1.6';
 const ADAPTER_NAME = 'BFIO_PREBID';
 const OUTSTREAM = 'outstream';
 
-export const VIDEO_ENDPOINT = '//reachms.bfmio.com/bid.json?exchange_id=';
-export const BANNER_ENDPOINT = '//display.bfmio.com/prebid_display';
+export const VIDEO_ENDPOINT = 'https://reachms.bfmio.com/bid.json?exchange_id=';
+export const BANNER_ENDPOINT = 'https://display.bfmio.com/prebid_display';
 export const OUTSTREAM_SRC = '//player-cdn.beachfrontmedia.com/playerapi/loader/outstream.js';
 
 export const VIDEO_TARGETING = ['mimes', 'playbackmethod', 'maxduration'];
@@ -121,12 +123,12 @@ export const spec = {
     } else if (syncOptions.iframeEnabled) {
       syncs.push({
         type: 'iframe',
-        url: `//sync.bfmio.com/sync_iframe?ifg=1&id=${appId}&gdpr=${gdprApplies ? 1 : 0}&gc=${consentString || ''}&gce=1`
+        url: `https://sync.bfmio.com/sync_iframe?ifg=1&id=${appId}&gdpr=${gdprApplies ? 1 : 0}&gc=${consentString || ''}&gce=1`
       });
     } else if (syncOptions.pixelEnabled) {
       syncs.push({
         type: 'image',
-        url: `//sync.bfmio.com/syncb?pid=144&id=${appId}&gdpr=${gdprApplies ? 1 : 0}&gc=${consentString || ''}&gce=1`
+        url: `https://sync.bfmio.com/syncb?pid=144&id=${appId}&gdpr=${gdprApplies ? 1 : 0}&gc=${consentString || ''}&gce=1`
       });
     }
 
@@ -141,21 +143,20 @@ function createRenderer(bidRequest) {
     loaded: false
   });
 
-  renderer.setRender(outstreamRender);
-
-  return renderer;
-}
-
-function outstreamRender(bid) {
-  bid.renderer.push(() => {
-    window.Beachfront.Player(bid.adUnitCode, {
-      ad_tag_url: bid.vastUrl,
-      width: bid.width,
-      height: bid.height,
-      expand_in_view: false,
-      collapse_on_complete: true
+  renderer.setRender(bid => {
+    bid.renderer.push(() => {
+      window.Beachfront.Player(bid.adUnitCode, {
+        adTagUrl: bid.vastUrl,
+        width: bid.width,
+        height: bid.height,
+        expandInView: getPlayerBidParam(bidRequest, 'expandInView', false),
+        collapseOnComplete: getPlayerBidParam(bidRequest, 'collapseOnComplete', true),
+        progressColor: getPlayerBidParam(bidRequest, 'progressColor')
+      });
     });
   });
+
+  return renderer;
 }
 
 function getFirstSize(sizes) {
@@ -229,12 +230,30 @@ function getBannerBidParam(bid, key) {
   return utils.deepAccess(bid, 'params.banner.' + key) || utils.deepAccess(bid, 'params.' + key);
 }
 
+function getPlayerBidParam(bid, key, defaultValue) {
+  let param = utils.deepAccess(bid, 'params.player.' + key);
+  return param === undefined ? defaultValue : param;
+}
+
 function isVideoBidValid(bid) {
   return isVideoBid(bid) && getVideoBidParam(bid, 'appId') && getVideoBidParam(bid, 'bidfloor');
 }
 
 function isBannerBidValid(bid) {
   return isBannerBid(bid) && getBannerBidParam(bid, 'appId') && getBannerBidParam(bid, 'bidfloor');
+}
+
+function getTopWindowLocation(bidderRequest) {
+  let url = bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer;
+  return parseUrl(config.getConfig('pageUrl') || url, { decodeSearchAsString: true });
+}
+
+function getTopWindowReferrer() {
+  try {
+    return window.top.document.referrer;
+  } catch (e) {
+    return '';
+  }
 }
 
 function getVideoTargetingParams(bid) {
@@ -252,7 +271,7 @@ function createVideoRequestData(bid, bidderRequest) {
   let video = getVideoTargetingParams(bid);
   let appId = getVideoBidParam(bid, 'appId');
   let bidfloor = getVideoBidParam(bid, 'bidfloor');
-  let topLocation = utils.getTopWindowLocation();
+  let topLocation = getTopWindowLocation(bidderRequest);
   let payload = {
     isPrebid: true,
     appId: appId,
@@ -279,23 +298,39 @@ function createVideoRequestData(bid, bidderRequest) {
       js: 1,
       geo: {}
     },
-    regs: {},
-    user: {},
+    regs: {
+      ext: {}
+    },
+    user: {
+      ext: {}
+    },
     cur: ['USD']
   };
 
   if (bidderRequest && bidderRequest.gdprConsent) {
     let { gdprApplies, consentString } = bidderRequest.gdprConsent;
-    payload.regs.ext = { gdpr: gdprApplies ? 1 : 0 };
-    payload.user.ext = { consent: consentString };
+    payload.regs.ext.gdpr = gdprApplies ? 1 : 0;
+    payload.user.ext.consent = consentString;
+  }
+
+  if (bid.userId && bid.userId.tdid) {
+    payload.user.ext.eids = [{
+      source: 'adserver.org',
+      uids: [{
+        id: bid.userId.tdid,
+        ext: {
+          rtiPartner: 'TDID'
+        }
+      }]
+    }];
   }
 
   return payload;
 }
 
 function createBannerRequestData(bids, bidderRequest) {
-  let topLocation = utils.getTopWindowLocation();
-  let referrer = utils.getTopWindowReferrer();
+  let topLocation = getTopWindowLocation(bidderRequest);
+  let topReferrer = getTopWindowReferrer();
   let slots = bids.map(bid => {
     return {
       slot: bid.adUnitCode,
@@ -309,8 +344,8 @@ function createBannerRequestData(bids, bidderRequest) {
     page: topLocation.href,
     domain: topLocation.hostname,
     search: topLocation.search,
-    secure: topLocation.protocol === 'https:' ? 1 : 0,
-    referrer: referrer,
+    secure: topLocation.protocol.indexOf('https') === 0 ? 1 : 0,
+    referrer: topReferrer,
     ua: navigator.userAgent,
     deviceOs: getOsVersion(),
     isMobile: isMobile() ? 1 : 0,
@@ -323,6 +358,10 @@ function createBannerRequestData(bids, bidderRequest) {
     let { gdprApplies, consentString } = bidderRequest.gdprConsent;
     payload.gdpr = gdprApplies ? 1 : 0;
     payload.gdprConsent = consentString;
+  }
+
+  if (bids[0] && bids[0].userId && bids[0].userId.tdid) {
+    payload.tdid = bids[0].userId.tdid;
   }
 
   return payload;

@@ -2,8 +2,8 @@
  * Adapter to send bids to Undertone
  */
 
-import * as utils from 'src/utils';
-import { registerBidder } from 'src/adapters/bidderFactory';
+import * as urlUtils from '../src/url';
+import { registerBidder } from '../src/adapters/bidderFactory';
 
 const BIDDER_CODE = 'undertone';
 const URL = '//hb.undertone.com/hb';
@@ -13,7 +13,7 @@ const PIXEL_USER_SYNC_2 = '//usr.undertone.com/userPixel/syncOne?id=2&of=2';
 
 function getCanonicalUrl() {
   try {
-    let doc = utils.getWindowTop().document;
+    let doc = window.top.document;
     let element = doc.querySelector("link[rel='canonical']");
     if (element !== null) {
       return element.href;
@@ -21,6 +21,24 @@ function getCanonicalUrl() {
   } catch (e) {
   }
   return null;
+}
+
+function extractDomainFromHost(pageHost) {
+  let domain = null;
+  try {
+    let domains = /[-\w]+\.([-\w]+|[-\w]{3,}|[-\w]{1,3}\.[-\w]{2})$/i.exec(pageHost);
+    if (domains != null && domains.length > 0) {
+      domain = domains[0];
+      for (let i = 1; i < domains.length; i++) {
+        if (domains[i].length > domain.length) {
+          domain = domains[i];
+        }
+      }
+    }
+  } catch (e) {
+    domain = null;
+  }
+  return domain;
 }
 
 export const spec = {
@@ -31,29 +49,17 @@ export const spec = {
       return true;
     }
   },
-  buildRequests: function(validBidRequests) {
+  buildRequests: function(validBidRequests, bidderRequest) {
     const payload = {
       'x-ut-hb-params': []
     };
-    let domain = null;
-    try {
-      const location = utils.getWindowTop().location;
-      let domains = /[-\w]+\.([-\w]+|[-\w]{3,}|[-\w]{1,3}\.[-\w]{2})$/i.exec(location.host);
-      if (domains != null && domains.length > 0) {
-        domain = domains[0];
-        for (let i = 1; i < domains.length; i++) {
-          if (domains[i].length > domain.length) {
-            domain = domains[i];
-          }
-        }
-      }
-    } catch (e) {
-      domain = null;
-    }
+    const referer = bidderRequest.refererInfo.referer;
+    const hostname = urlUtils.parse(referer).hostname;
+    let domain = extractDomainFromHost(hostname);
+    const pageUrl = getCanonicalUrl() || referer;
 
     const pubid = validBidRequests[0].params.publisherId;
     const REQ_URL = `${URL}?pid=${pubid}&domain=${domain}`;
-    const pageUrl = getCanonicalUrl() || location.href;
 
     validBidRequests.map(bidReq => {
       const bid = {
@@ -112,13 +118,13 @@ export const spec = {
       });
     } else if (syncOptions.pixelEnabled) {
       syncs.push({
-          type: 'image',
-          url: PIXEL_USER_SYNC_1
-        },
-        {
-          type: 'image',
-          url: PIXEL_USER_SYNC_2
-        });
+        type: 'image',
+        url: PIXEL_USER_SYNC_1
+      },
+      {
+        type: 'image',
+        url: PIXEL_USER_SYNC_2
+      });
     }
     return syncs;
   }

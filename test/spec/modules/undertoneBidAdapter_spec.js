@@ -44,6 +44,12 @@ const bidReq = [{
   auctionId: '6c22f5a5-59df-4dc6-b92c-f433bcf0a874'
 }];
 
+const bidderReq = {
+  refererInfo: {
+    referer: 'http://prebid.org/dev-docs/bidder-adaptor.html'
+  }
+};
+
 const validBidRes = {
   ad: '<div>Hello</div>',
   publisherId: 12345,
@@ -98,14 +104,16 @@ describe('Undertone Adapter', function () {
   });
   describe('build request', function () {
     it('should send request to correct url via POST', function () {
-      const request = spec.buildRequests(bidReq);
-      const domain = null;
+      const request = spec.buildRequests(bidReq, bidderReq);
+      const domainStart = bidderReq.refererInfo.referer.indexOf('//');
+      const domainEnd = bidderReq.refererInfo.referer.indexOf('/', domainStart + 2);
+      const domain = bidderReq.refererInfo.referer.substring(domainStart + 2, domainEnd);
       const REQ_URL = `${URL}?pid=${bidReq[0].params.publisherId}&domain=${domain}`;
       expect(request.url).to.equal(REQ_URL);
       expect(request.method).to.equal('POST');
     });
     it('should have all relevant fields', function () {
-      const request = spec.buildRequests(bidReq);
+      const request = spec.buildRequests(bidReq, bidderReq);
       const bid1 = JSON.parse(request.data)['x-ut-hb-params'][0];
       expect(bid1.bidRequestId).to.equal('263be71e91dd9d');
       expect(bid1.sizes.length).to.equal(2);

@@ -1,9 +1,9 @@
-import { BANNER } from 'src/mediaTypes';
-import { registerBidder } from 'src/adapters/bidderFactory';
-import * as utils from 'src/utils';
+import { BANNER } from '../src/mediaTypes';
+import { registerBidder } from '../src/adapters/bidderFactory';
+import * as utils from '../src/utils';
 
 const BIDDER_CODE = 'triplelift';
-const STR_ENDPOINT = document.location.protocol + '//tlx.3lift.com/header/auction?';
+const STR_ENDPOINT = 'https://tlx.3lift.com/header/auction?';
 let gdprApplies = true;
 let consentString = null;
 
@@ -17,12 +17,15 @@ export const tripleliftAdapterSpec = {
 
   buildRequests: function(bidRequests, bidderRequest) {
     let tlCall = STR_ENDPOINT;
-    let referrer = utils.getTopWindowUrl();
-    let data = _buildPostBody(bidRequests);
+    let data = _buildPostBody(bidRequests, bidderRequest);
 
     tlCall = utils.tryAppendQueryString(tlCall, 'lib', 'prebid');
     tlCall = utils.tryAppendQueryString(tlCall, 'v', '$prebid.version$');
-    tlCall = utils.tryAppendQueryString(tlCall, 'referrer', referrer);
+
+    if (bidderRequest && bidderRequest.refererInfo) {
+      let referrer = bidderRequest.refererInfo.referer;
+      tlCall = utils.tryAppendQueryString(tlCall, 'referrer', referrer);
+    }
 
     if (bidderRequest && bidderRequest.timeout) {
       tlCall = utils.tryAppendQueryString(tlCall, 'tmax', bidderRequest.timeout);
@@ -75,7 +78,7 @@ export const tripleliftAdapterSpec = {
   }
 }
 
-function _buildPostBody(bidRequests) {
+function _buildPostBody(bidRequests, bidderRequest) {
   let data = {};
   data.imp = bidRequests.map(function(bid, index) {
     return {
@@ -87,6 +90,13 @@ function _buildPostBody(bidRequests) {
       }
     }
   });
+
+  let eids = handleConsortiaUserIds(bidderRequest)
+  if (eids.length > 0) {
+    data.user = {
+      ext: {eids}
+    }
+  }
 
   return data;
 }
@@ -105,16 +115,33 @@ function _isValidSize(size) {
   return (size.length === 2 && typeof size[0] === 'number' && typeof size[1] === 'number');
 }
 
+function handleConsortiaUserIds(bidderRequest) {
+  let eids = [];
+  if (bidderRequest.userId && bidderRequest.userId.tdid) {
+    eids.push({
+      source: 'adserver.org',
+      uids: [{
+        id: bidderRequest.userId.tdid,
+        ext: {
+          rtiPartner: 'TDID'
+        }
+      }]
+    })
+  }
+
+  return eids;
+}
+
 function _buildResponseObject(bidderRequest, bid) {
   let bidResponse = {};
   let width = bid.width || 1;
   let height = bid.height || 1;
   let dealId = bid.deal_id || '';
-  let creativeId = bid.imp_id;
+  let creativeId = bid.crid || '';
 
   if (bid.cpm != 0 && bid.ad) {
     bidResponse = {
-      requestId: bidderRequest.bids[creativeId].bidId,
+      requestId: bidderRequest.bids[bid.imp_id].bidId,
       cpm: bid.cpm,
       width: width,
       height: height,

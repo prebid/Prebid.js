@@ -1,6 +1,6 @@
-import * as utils from 'src/utils';
-import { registerBidder } from 'src/adapters/bidderFactory';
-import { VIDEO } from 'src/mediaTypes';
+import * as utils from '../src/utils';
+import { registerBidder } from '../src/adapters/bidderFactory';
+import { VIDEO } from '../src/mediaTypes';
 
 const BIDDER_CODE = 'lkqd';
 const BID_TTL_DEFAULT = 300;

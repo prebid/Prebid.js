@@ -1,6 +1,11 @@
-import rubiconAnalyticsAdapter, { SEND_TIMEOUT } from 'modules/rubiconAnalyticsAdapter';
+import rubiconAnalyticsAdapter, { SEND_TIMEOUT, parseBidResponse } from 'modules/rubiconAnalyticsAdapter';
 import CONSTANTS from 'src/constants.json';
 import { config } from 'src/config';
+
+import {
+  setConfig,
+  addBidResponseHook,
+} from 'modules/currency';
 
 let Ajv = require('ajv');
 let schema = require('./rubiconAnalyticsSchema.json');
@@ -40,7 +45,7 @@ const BID = {
   'mediaType': 'video',
   'statusMessage': 'Bid available',
   'bidId': '2ecff0db240757',
-  'adId': '2ecff0db240757',
+  'adId': 'fake_ad_id',
   'source': 'client',
   'requestId': '2ecff0db240757',
   'currency': 'USD',
@@ -80,7 +85,7 @@ const BID = {
 const BID2 = Object.assign({}, BID, {
   adUnitCode: '/19968336/header-bid-tag1',
   bidId: '3bd4ebb1c900e2',
-  adId: '3bd4ebb1c900e2',
+  adId: 'fake_ad_id',
   requestId: '3bd4ebb1c900e2',
   width: 728,
   height: 90,
@@ -106,9 +111,58 @@ const MOCK = {
     [BID2.adUnitCode]: BID2.adserverTargeting
   },
   AUCTION_INIT: {
-    'timestamp': 1519767010567,
     'auctionId': '25c6d7f5-699a-4bfc-87c9-996f915341fa',
-    'timeout': 3000
+    'timestamp': 1519767010567,
+    'auctionStatus': 'inProgress',
+    'adUnits': [ {
+      'code': '/19968336/header-bid-tag1',
+      'sizes': [[640, 480]],
+      'bids': [ {
+        'bidder': 'rubicon',
+        'params': {
+          'accountId': 1001, 'siteId': 113932, 'zoneId': 535512
+        }
+      } ],
+      'transactionId': 'ca4af27a-6d02-4f90-949d-d5541fa12014'
+    }
+    ],
+    'adUnitCodes': ['/19968336/header-bid-tag1'],
+    'bidderRequests': [ {
+      'bidderCode': 'rubicon',
+      'auctionId': '25c6d7f5-699a-4bfc-87c9-996f915341fa',
+      'bidderRequestId': '1be65d7958826a',
+      'bids': [ {
+        'bidder': 'rubicon',
+        'params': {
+          'accountId': 1001, 'siteId': 113932, 'zoneId': 535512
+        },
+        'mediaTypes': {
+          'banner': {
+            'sizes': [[640, 480]]
+          }
+        },
+        'adUnitCode': '/19968336/header-bid-tag1',
+        'transactionId': 'ca4af27a-6d02-4f90-949d-d5541fa12014',
+        'sizes': [[640, 480]],
+        'bidId': '2ecff0db240757',
+        'bidderRequestId': '1be65d7958826a',
+        'auctionId': '25c6d7f5-699a-4bfc-87c9-996f915341fa',
+        'src': 'client',
+        'bidRequestsCount': 1
+      }
+      ],
+      'timeout': 3000,
+      'refererInfo': {
+        'referer': 'http://www.test.com/page.html', 'reachedTop': true, 'numIframes': 0, 'stack': ['http://www.test.com/page.html']
+      }
+    }
+    ],
+    'bidsReceived': [],
+    'winningBids': [],
+    'timeout': 3000,
+    'config': {
+      'accountId': 1001, 'endpoint': '//localhost:9999/event'
+    }
   },
   BID_REQUESTED: {
     'bidder': 'rubicon',
@@ -118,7 +172,7 @@ const MOCK = {
       {
         'bidder': 'rubicon',
         'params': {
-          'accountId': '14062',
+          'accountId': '1001',
           'siteId': '70608',
           'zoneId': '335918',
           'userId': '12346',
@@ -236,6 +290,9 @@ const ANALYTICS_MESSAGE = {
             }
           ],
           'status': 'success',
+          'accountId': 1001,
+          'siteId': 70608,
+          'zoneId': 335918,
           'adserverTargeting': {
             'hb_bidder': 'rubicon',
             'hb_adid': '2ecff0db240757',
@@ -251,7 +308,7 @@ const ANALYTICS_MESSAGE = {
               'source': 'client',
               'clientLatencyMillis': 3214,
               'params': {
-                'accountId': '14062',
+                'accountId': '1001',
                 'siteId': '70608',
                 'zoneId': '335918'
               },
@@ -332,8 +389,10 @@ const ANALYTICS_MESSAGE = {
       'clientLatencyMillis': 3214,
       'samplingFactor': 1,
       'accountId': 1001,
+      'siteId': 70608,
+      'zoneId': 335918,
       'params': {
-        'accountId': '14062',
+        'accountId': '1001',
         'siteId': '70608',
         'zoneId': '335918'
       },
@@ -394,7 +453,8 @@ const ANALYTICS_MESSAGE = {
       },
       'bidwonStatus': 'success'
     }
-  ]
+  ],
+  'wrapperName': '10000_fakewrapper_test'
 };
 
 function performStandardAuction() {
@@ -433,6 +493,9 @@ describe('rubicon analytics adapter', function () {
       s2sConfig: {
         timeout: 1000,
         accountId: 10000,
+      },
+      rubicon: {
+        wrapperName: '10000_fakewrapper_test'
       }
     })
   });
@@ -571,7 +634,7 @@ describe('rubicon analytics adapter', function () {
       rubiconAnalyticsAdapter.enableAnalytics({
         options: {
           endpoint: '//localhost:9999/event',
-          accountId: '1001'
+          accountId: 1001
         }
       });
     });
@@ -639,6 +702,61 @@ describe('rubicon analytics adapter', function () {
       expect(timedOutBid.status).to.equal('error');
       expect(timedOutBid.error.code).to.equal('timeout-error');
       expect(timedOutBid).to.not.have.property('bidResponse');
+    });
+
+    it('should successfully convert bid price to USD in parseBidResponse', function () {
+      // Set the rates
+      setConfig({
+        adServerCurrency: 'JPY',
+        rates: {
+          USD: {
+            JPY: 100
+          }
+        }
+      });
+
+      // set our bid response to JPY
+      const bidCopy = utils.deepClone(BID2);
+      bidCopy.currency = 'JPY';
+      bidCopy.cpm = 100;
+
+      // Now add the bidResponse hook which hooks on the currenct conversion function onto the bid response
+      let innerBid;
+      addBidResponseHook(function(adCodeId, bid) {
+        innerBid = bid;
+      }, 'elementId', bidCopy);
+
+      // Use the rubi analytics parseBidResponse Function to get the resulting cpm from the bid response!
+      const bidResponseObj = parseBidResponse(innerBid);
+      expect(bidResponseObj).to.have.property('bidPriceUSD');
+      expect(bidResponseObj.bidPriceUSD).to.equal(1.0);
+    });
+  });
+
+  describe('config with integration type', () => {
+    it('should use the integration type provided in the config instead of the default', () => {
+      sandbox.stub(config, 'getConfig').callsFake(function (key) {
+        const config = {
+          'rubicon.int_type': 'testType'
+        };
+        return config[key];
+      });
+
+      rubiconAnalyticsAdapter.enableAnalytics({
+        options: {
+          endpoint: '//localhost:9999/event',
+          accountId: 1001
+        }
+      });
+
+      performStandardAuction();
+
+      expect(requests.length).to.equal(1);
+      const request = requests[0];
+      const message = JSON.parse(request.requestBody);
+      expect(message.integration).to.equal('testType');
+
+      rubiconAnalyticsAdapter.disableAnalytics();
     });
   });
 });

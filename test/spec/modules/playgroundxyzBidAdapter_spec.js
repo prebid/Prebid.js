@@ -102,7 +102,7 @@ describe('playgroundxyzBidAdapter', function () {
         'seat': '4321'
       }],
       'bidid': '6894227111893743356',
-      'cur': 'USD'
+      'cur': 'AUD'
     };
 
     let bidderRequest = {
@@ -119,7 +119,7 @@ describe('playgroundxyzBidAdapter', function () {
           'height': 50,
           'ad': '<script src=\'pgxyz\'></script>',
           'mediaType': 'banner',
-          'currency': 'USD',
+          'currency': 'AUD',
           'ttl': 300,
           'netRevenue': true
         }
