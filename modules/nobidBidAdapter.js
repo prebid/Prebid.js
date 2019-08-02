@@ -182,6 +182,14 @@ nobid.setup = function(bids, bidderRequest) {
   }
 }
 nobid.ProcessBidResponse = function (response, bidRequest) {
+  var findBid = function(divid, bids) {
+    for (var i = 0; i < bids.length; i++) {
+      if (bids[i].adUnitCode === divid) {
+        return bids[i];
+      }
+    }
+    return false;
+  }
   var bidResponses = [];
   nobid.status.bidResponseProcessed = true;
   nobid.status.bidResponseTimeout = false;
@@ -189,7 +197,7 @@ nobid.ProcessBidResponse = function (response, bidRequest) {
   for (var i = 0; response.bids && i < response.bids.length; i++) {
     var bid = response.bids[i];
     if (bid.bdrid < 100 || !bidRequest || !bidRequest.bidderRequest || !bidRequest.bidderRequest.bids) continue;
-    var reqBid = bidRequest.bidderRequest.bids.find(item => { return item.adUnitCode == bid.divid; });
+    var reqBid = findBid(bid.divid, bidRequest.bidderRequest.bids);
     if (!reqBid) continue;
     const bidResponse = {
       requestId: reqBid.bidId,
