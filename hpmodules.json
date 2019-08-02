@@ -3,6 +3,7 @@
   "aolBidAdapter",
   "appnexusBidAdapter",
   "emx_digitalBidAdapter",
+  "audienceNetworkBidAdapter",
   "ixBidAdapter",
   "justpremiumBidAdapter",
   "mantisBidAdapter",
