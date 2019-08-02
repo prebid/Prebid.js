@@ -389,13 +389,8 @@ $$PREBID_GLOBAL$$.removeAdUnit = function (adUnitCode) {
     adUnitCodes = [adUnitCode];
   }
 
-  adUnitCodes.forEach((adUnitCode) => {
-    for (let i = 0; i < $$PREBID_GLOBAL$$.adUnits.length; i++) {
-      if ($$PREBID_GLOBAL$$.adUnits[i].code === adUnitCode) {
-        $$PREBID_GLOBAL$$.adUnits.splice(i, 1);
-      }
-    }
-  })
+  $$PREBID_GLOBAL$$.adUnits = $$PREBID_GLOBAL$$.adUnits
+    .filter(adUnit => adUnitCodes.indexOf(adUnit.code) === -1);
 };
 
 /**
