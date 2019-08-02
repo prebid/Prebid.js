@@ -160,7 +160,7 @@ describe('Nobid Adapter', function () {
           adUnitCode: ADUNIT_300x250
         }]
       }
-      let result = spec.interpretResponse({ body: response }, {bidderRequest});
+      let result = spec.interpretResponse({ body: response }, {bidderRequest: bidderRequest});
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0])); ;
     });
   });

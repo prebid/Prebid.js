@@ -144,7 +144,7 @@ nobid.setup = function(bids, bidderRequest) {
       } else {
         ret = (window.context && window.context.location && window.context.location.href) ? window.context.location.href : document.location.href;
       }
-      return encodeURIComponent(ret.replace('%', ''));
+      return encodeURIComponent(ret.replace(/\%/g, ''));
     }
     var state = {};
     state['sid'] = siteId;
