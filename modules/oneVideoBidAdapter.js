@@ -196,6 +196,19 @@ function getRequestData(bid, consentData) {
   if (bid.params.site && bid.params.site.id) {
     bidData.site.id = bid.params.site.id
   }
+  if (bid.params.video.sid) {
+    bidData.source = {
+      ext: {
+        schain: {
+          complete: 1,
+          nodes: [{
+            sid: bid.params.video.sid,
+            rid: bidData.id,
+          }]
+        }
+      }
+    }
+  }
 
   if (isConsentRequired(consentData)) {
     bidData.regs = {
