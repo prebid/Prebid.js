@@ -50,6 +50,16 @@ const bidderReq = {
   }
 };
 
+const bidderReqGdpr = {
+  refererInfo: {
+    referer: 'http://prebid.org/dev-docs/bidder-adaptor.html'
+  },
+  gdprConsent: {
+    gdprApplies: true,
+    consentString: 'acdefgh'
+  }
+};
+
 const validBidRes = {
   ad: '<div>Hello</div>',
   publisherId: 12345,
@@ -103,12 +113,22 @@ describe('Undertone Adapter', function () {
     });
   });
   describe('build request', function () {
-    it('should send request to correct url via POST', function () {
+    it('should send request to correct url via POST not in GDPR', function () {
       const request = spec.buildRequests(bidReq, bidderReq);
       const domainStart = bidderReq.refererInfo.referer.indexOf('//');
       const domainEnd = bidderReq.refererInfo.referer.indexOf('/', domainStart + 2);
       const domain = bidderReq.refererInfo.referer.substring(domainStart + 2, domainEnd);
       const REQ_URL = `${URL}?pid=${bidReq[0].params.publisherId}&domain=${domain}`;
+      expect(request.url).to.equal(REQ_URL);
+      expect(request.method).to.equal('POST');
+    });
+    it('should send request to correct url via POST when in GDPR', function () {
+      const request = spec.buildRequests(bidReq, bidderReqGdpr);
+      const domainStart = bidderReq.refererInfo.referer.indexOf('//');
+      const domainEnd = bidderReq.refererInfo.referer.indexOf('/', domainStart + 2);
+      const domain = bidderReq.refererInfo.referer.substring(domainStart + 2, domainEnd);
+      let gdpr = bidderReqGdpr.gdprConsent.gdprApplies ? 1 : 0
+      const REQ_URL = `${URL}?pid=${bidReq[0].params.publisherId}&domain=${domain}&gdpr=${gdpr}&gdprstr=${bidderReqGdpr.gdprConsent.consentString}`;
       expect(request.url).to.equal(REQ_URL);
       expect(request.method).to.equal('POST');
     });
@@ -160,25 +180,71 @@ describe('Undertone Adapter', function () {
   });
 
   describe('getUserSyncs', () => {
-    it('verifies gdpr consent checked', () => {
-      const options = ({ iframeEnabled: true, pixelEnabled: true });
-      expect(spec.getUserSyncs(options, {}, { gdprApplies: true }).length).to.equal(0);
-    });
+    let testParams = [
+      {
+        name: 'with iframe and no gdpr data',
+        arguments: [{ iframeEnabled: true, pixelEnabled: true }, {}, null],
+        expect: {
+          type: 'iframe',
+          pixels: ['//cdn.undertone.com/js/usersync.html']
+        }
+      },
+      {
+        name: 'with iframe and gdpr on',
+        arguments: [{ iframeEnabled: true, pixelEnabled: true }, {}, {gdprApplies: true, consentString: '234234'}],
+        expect: {
+          type: 'iframe',
+          pixels: ['//cdn.undertone.com/js/usersync.html?gdpr=1&gdprstr=234234']
+        }
+      },
+      {
+        name: 'with iframe and no gdpr off',
+        arguments: [{ iframeEnabled: true, pixelEnabled: true }, {}, {gdprApplies: false}],
+        expect: {
+          type: 'iframe',
+          pixels: ['//cdn.undertone.com/js/usersync.html?gdpr=0&gdprstr=']
+        }
+      },
+      {
+        name: 'with pixels and no gdpr data',
+        arguments: [{ pixelEnabled: true }, {}, null],
+        expect: {
+          type: 'image',
+          pixels: ['//usr.undertone.com/userPixel/syncOne?id=1&of=2',
+            '//usr.undertone.com/userPixel/syncOne?id=2&of=2']
+        }
+      },
+      {
+        name: 'with pixels and gdpr on',
+        arguments: [{ pixelEnabled: true }, {}, {gdprApplies: true, consentString: '234234'}],
+        expect: {
+          type: 'image',
+          pixels: ['//usr.undertone.com/userPixel/syncOne?id=1&of=2&gdpr=1&gdprstr=234234',
+            '//usr.undertone.com/userPixel/syncOne?id=2&of=2&gdpr=1&gdprstr=234234']
+        }
+      },
+      {
+        name: 'with pixels and gdpr off',
+        arguments: [{ pixelEnabled: true }, {}, {gdprApplies: false}],
+        expect: {
+          type: 'image',
+          pixels: ['//usr.undertone.com/userPixel/syncOne?id=1&of=2&gdpr=0&gdprstr=',
+            '//usr.undertone.com/userPixel/syncOne?id=2&of=2&gdpr=0&gdprstr=']
+        }
+      }
+    ];
 
-    it('Verifies sync iframe option', function () {
-      const result = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true });
-      expect(result).to.have.lengthOf(1);
-      expect(result[0].type).to.equal('iframe');
-      expect(result[0].url).to.equal('//cdn.undertone.com/js/usersync.html');
-    });
+    for (let i = 0; i < testParams.length; i++) {
+      let currParams = testParams[i];
+      it(currParams.name, function () {
+        const result = spec.getUserSyncs.apply(this, currParams.arguments);
+        expect(result).to.have.lengthOf(currParams.expect.pixels.length);
+        for (let ix = 0; ix < currParams.expect.pixels.length; ix++) {
+          expect(result[ix].url).to.equal(currParams.expect.pixels[ix]);
+          expect(result[ix].type).to.equal(currParams.expect.type);
+        }
+      });
+    }
 
-    it('Verifies sync image option', function () {
-      const result = spec.getUserSyncs({ pixelEnabled: true });
-      expect(result).to.have.lengthOf(2);
-      expect(result[0].type).to.equal('image');
-      expect(result[0].url).to.equal('//usr.undertone.com/userPixel/syncOne?id=1&of=2');
-      expect(result[1].type).to.equal('image');
-      expect(result[1].url).to.equal('//usr.undertone.com/userPixel/syncOne?id=2&of=2');
-    });
   });
 });
