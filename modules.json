@@ -1,9 +1,7 @@
 [
   "consentManagement",
   "pubCommonId",
-
   "guAnalyticsAdapter",
-
   "adyoulikeBidAdapter",
   "appnexusBidAdapter",
   "improvedigitalBidAdapter",
@@ -13,5 +11,6 @@
   "trustxBidAdapter",
   "openxBidAdapter",
   "ozoneBidAdapter",
-  "pubmaticBidAdapter"
+  "pubmaticBidAdapter",
+  "tripleliftBidAdapter"
 ]
