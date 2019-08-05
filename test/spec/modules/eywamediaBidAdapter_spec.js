@@ -1,7 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/eywamediaBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
-import * as utils from 'src/utils';
 
 describe('EywamediaAdapter', function () {
   const adapter = newBidder(spec);
