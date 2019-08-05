@@ -218,6 +218,56 @@ describe('Quantcast adapter', function () {
 
       expect(requests).to.be.empty;
     });
+
+    it('parses multi-format bid request', function () {
+      bidRequest.mediaTypes = {
+        banner: {sizes: [[300, 250], [728, 90], [250, 250], [468, 60], [320, 50]]},
+        native: {
+          image: {required: true, sizes: [150, 50]},
+          title: {required: true, len: 80},
+          sponsoredBy: {required: true},
+          clickUrl: {required: true},
+          privacyLink: {required: false},
+          body: {required: true},
+          icon: {required: true, sizes: [50, 50]}
+        },
+        video: {
+          context: 'outstream',
+          playerSize: [[550, 310]]
+        }
+      };
+      bidRequest.sizes = [[300, 250], [728, 90], [250, 250], [468, 60], [320, 50]];
+
+      const requests = qcSpec.buildRequests([bidRequest], bidderRequest);
+      const expectedBidRequest = {
+        publisherId: QUANTCAST_TEST_PUBLISHER,
+        requestId: '2f7b179d443f14',
+        imp: [{
+          banner: {
+            battr: [1, 2],
+            sizes: [
+              {width: 300, height: 250},
+              {width: 728, height: 90},
+              {width: 250, height: 250},
+              {width: 468, height: 60},
+              {width: 320, height: 50}
+            ]
+          },
+          placementCode: 'div-gpt-ad-1438287399331-0',
+          bidFloor: 1e-10
+        }],
+        site: {
+          page: 'http://example.com/hello.html',
+          referrer: 'http://example.com/hello.html',
+          domain: 'example.com'
+        },
+        bidId: '2f7b179d443f14',
+        gdprSignal: 0,
+        prebidJsVersion: '$prebid.version$'
+      };
+
+      expect(requests[0].data).to.equal(JSON.stringify(expectedBidRequest));
+    });
   });
 
   it('propagates GDPR consent string and signal', function () {
