@@ -1,11 +1,10 @@
 import { expect } from 'chai';
 import { spec } from 'modules/eywamediaBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
+import * as utils from 'src/utils';
 
 describe('EywamediaAdapter', function () {
-  const adapter = newBidder(spec);
   let serverResponse, bidRequests, bidRequest, bidResponses;
-  let bids = [];
   const ENDPOINT = 'https://adtarbostg.eywamedia.com/auctions/prebidjs/3000';
 
   bidRequests = [
