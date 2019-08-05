@@ -68,27 +68,25 @@ describe('Quantcast adapter', function () {
   });
 
   describe('`isBidRequestValid`', function () {
-    it('should return `false` when bid is not passed', function () {
-      expect(qcSpec.isBidRequestValid()).to.equal(false);
+    it('should return `true` when bid has publisherId', function () {
+      const bidRequest = {
+        bidder: 'quantcast',
+        params: {
+          publisherId: 'my_publisher_id'
+        }
+      };
+
+      expect(qcSpec.isBidRequestValid(bidRequest)).to.equal(true);
     });
 
-    it('should return `false` when bid is for outstream video', function () {
+    it('should return `false` when bid has no publisherId', function () {
       const bidRequest = {
-        mediaType: 'video',
-        mediaTypes: {
-          video: {
-            context: 'outstream'
-          }
+        bidder: 'quantcast',
+        params: {
         }
       };
 
       expect(qcSpec.isBidRequestValid(bidRequest)).to.equal(false);
-    });
-
-    it('should return `true` when bid contains required params', function () {
-      const bidRequest = { mediaType: 'banner' };
-
-      expect(qcSpec.isBidRequestValid(bidRequest)).to.equal(true);
     });
   });
 

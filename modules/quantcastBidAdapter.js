@@ -83,17 +83,7 @@ export const spec = {
    * @return boolean `true` is this is a valid bid, and `false` otherwise
    */
   isBidRequestValid(bid) {
-    if (!bid) {
-      return false;
-    }
-
-    const videoMediaType = utils.deepAccess(bid, 'mediaTypes.video');
-    const context = utils.deepAccess(bid, 'mediaTypes.video.context');
-    if (videoMediaType && context == 'outstream') {
-      return false;
-    }
-
-    return true;
+    return !!bid.params.publisherId;
   },
 
   /**
