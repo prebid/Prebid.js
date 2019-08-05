@@ -20,15 +20,22 @@ export const QUANTCAST_PORT =
     ? '8080'
     : '8443';
 
-function extractBidSizes(bid) {
+function extractBidSizes(sizes) {
   const bidSizes = [];
 
-  bid.sizes.forEach(size => {
-    bidSizes.push({
-      width: size[0],
-      height: size[1]
+  if (utils.isArray(sizes[0])) {
+    sizes.forEach(size => {
+      bidSizes.push({
+        width: size[0],
+        height: size[1]
+      });
     });
-  });
+  } else {
+    bidSizes.push({
+      width: sizes[0],
+      height: sizes[1]
+    });
+  }
 
   return bidSizes;
 }
@@ -53,7 +60,7 @@ function makeBannerImp(bid) {
   return {
     banner: {
       battr: bid.params.battr,
-      sizes: extractBidSizes(bid),
+      sizes: extractBidSizes(bid.sizes),
     },
     placementCode: bid.placementCode,
     bidFloor: bid.params.bidFloor || DEFAULT_BID_FLOOR
@@ -102,14 +109,21 @@ export const spec = {
     const page = utils.deepAccess(bidderRequest, 'refererInfo.canonicalUrl') || config.getConfig('pageUrl') || utils.deepAccess(window, 'location.href');
     const domain = getDomain(page);
 
-    const bidRequestsList = bids.filter(bid => {
-      // Filter outstream video
-      return utils.deepAccess(bid, 'mediaTypes.video.context') !== 'outstream';
-    }).map(bid => {
+    let bidRequestsList = [];
+
+    bids.forEach(bid => {
       let imp;
-      if (utils.deepAccess(bid, 'mediaTypes.video')) {
-        imp = makeVideoImp(bid);
+      if (bid.mediaTypes) {
+        if (bid.mediaTypes.video && bid.mediaTypes.video.context === 'instream') {
+          imp = makeVideoImp(bid);
+        } else if (bid.mediaTypes.banner) {
+          imp = makeBannerImp(bid);
+        } else {
+          // Unsupported mediaType
+          return;
+        }
       } else {
+        // Parse as banner by default
         imp = makeBannerImp(bid);
       }
 
@@ -135,11 +149,11 @@ export const spec = {
         : QUANTCAST_DOMAIN;
       const url = `${QUANTCAST_PROTOCOL}://${qcDomain}:${QUANTCAST_PORT}/qchb`;
 
-      return {
+      bidRequestsList.push({
         data,
         method: 'POST',
         url
-      };
+      });
     });
 
     return bidRequestsList;
