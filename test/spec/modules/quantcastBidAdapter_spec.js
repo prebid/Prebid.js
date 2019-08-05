@@ -18,6 +18,7 @@ import * as ajax from 'src/ajax';
 describe('Quantcast adapter', function () {
   const quantcastAdapter = newBidder(qcSpec);
   let bidRequest;
+  let bidderRequest;
 
   beforeEach(function () {
     bidRequest = {
@@ -31,6 +32,13 @@ describe('Quantcast adapter', function () {
         battr: [1, 2] // OPTIONAL - Array of blocked creative attributes as per OpenRTB Spec List 5.3
       },
       sizes: [[300, 250]]
+    };
+
+    bidderRequest = {
+      refererInfo: {
+        referer: 'http://example.com/hello.html',
+        canonicalUrl: 'http://example.com/hello.html'
+      }
     };
   });
 
@@ -129,13 +137,6 @@ describe('Quantcast adapter', function () {
     });
 
     it('sends banner bid requests contains all the required parameters', function () {
-      const bidderRequest = {
-        refererInfo: {
-          referer: 'http://example.com/hello.html',
-          canonicalUrl: 'http://example.com/hello.html'
-        }
-      };
-
       const requests = qcSpec.buildRequests([bidRequest], bidderRequest);
       const expectedBannerBidRequest = {
         publisherId: QUANTCAST_TEST_PUBLISHER,
@@ -165,13 +166,6 @@ describe('Quantcast adapter', function () {
 
     it('sends video bid requests containing all the required parameters', function () {
       setupVideoBidRequest();
-
-      const bidderRequest = {
-        refererInfo: {
-          referer: 'http://example.com/hello.html',
-          canonicalUrl: 'http://example.com/hello.html'
-        }
-      };
 
       const requests = qcSpec.buildRequests([bidRequest], bidderRequest);
       const expectedVideoBidRequest = {
@@ -210,6 +204,19 @@ describe('Quantcast adapter', function () {
       };
 
       expect(requests[0].data).to.equal(JSON.stringify(expectedVideoBidRequest));
+    });
+
+    it('ignores unsupported video bid requests', function () {
+      bidRequest.mediaTypes = {
+        video: {
+          context: 'outstream',
+          playerSize: [[550, 310]]
+        }
+      };
+
+      const requests = qcSpec.buildRequests([bidRequest], bidderRequest);
+
+      expect(requests).to.be.empty;
     });
   });
 

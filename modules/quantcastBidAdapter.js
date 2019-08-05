@@ -102,10 +102,12 @@ export const spec = {
     const page = utils.deepAccess(bidderRequest, 'refererInfo.canonicalUrl') || config.getConfig('pageUrl') || utils.deepAccess(window, 'location.href');
     const domain = getDomain(page);
 
-    const bidRequestsList = bids.map(bid => {
+    const bidRequestsList = bids.filter(bid => {
+      // Filter outstream video
+      return utils.deepAccess(bid, 'mediaTypes.video.context') !== 'outstream';
+    }).map(bid => {
       let imp;
-      const videoContext = utils.deepAccess(bid, 'mediaTypes.video.context');
-      if (videoContext === 'instream') {
+      if (utils.deepAccess(bid, 'mediaTypes.video')) {
         imp = makeVideoImp(bid);
       } else {
         imp = makeBannerImp(bid);
