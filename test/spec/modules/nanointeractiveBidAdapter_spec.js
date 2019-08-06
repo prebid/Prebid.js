@@ -1,4 +1,4 @@
-import { expect } from 'chai';
+import {expect} from 'chai';
 import * as utils from 'src/utils';
 import * as sinon from 'sinon';
 
@@ -19,9 +19,6 @@ describe('nanointeractive adapter tests', function () {
   const SIZES_PARAM = 'sizes';
   const BID_ID_PARAM = 'bidId';
   const BID_ID_VALUE = '24a1c9ec270973';
-  const CORS_PARAM = 'cors';
-  const LOC_PARAM = 'loc';
-  const LS_USER_ID = 'lsUserId';
   const DATA_PARTNER_PIXEL_ID_VALUE = 'testPID';
   const NQ_VALUE = 'rumpelstiltskin';
   const NQ_NAME_QUERY_PARAM = 'nqName';
@@ -38,22 +35,7 @@ describe('nanointeractive adapter tests', function () {
   const AD = '<script type="text/javascript" src="https://trc.audiencemanager.de/ad/?pl=58c2829beb0a193456047a27&cb=${CACHEBUSTER}&tc=${CLICK_URL_ENC}"></script> <noscript> <a href="https://trc.audiencemanager.de/ad/?t=c&pl=58c2829beb0a193456047a27&cb=${CACHEBUSTER}&tc=${CLICK_URL_ENC}"> <img src="https://trc.audiencemanager.de/ad/?t=i&pl=58c2829beb0a193456047a27&cb=${CACHEBUSTER}" alt="Click Here" border="0"> </a> </noscript>';
   const CPM = 1;
 
-  function getBidResponse (pid, nq, category, subId, cors, ref, loc, lsUserId) {
-    return {
-      [SSP_PLACEMENT_ID]: pid,
-      [NQ]: nq,
-      [CATEGORY]: category,
-      [SUB_ID]: subId,
-      [REF]: ref,
-      [SIZES_PARAM]: [WIDTH1 + 'x' + HEIGHT1, WIDTH2 + 'x' + HEIGHT2],
-      [BID_ID_PARAM]: BID_ID_VALUE,
-      [CORS_PARAM]: cors,
-      [LOC_PARAM]: loc,
-      [LS_USER_ID]: lsUserId
-    };
-  }
-
-  function getBidRequest (params) {
+  function getBidRequest(params) {
     return {
       bidder: BIDDER_CODE,
       params: params,
@@ -195,8 +177,7 @@ describe('nanointeractive adapter tests', function () {
 
       let sandbox;
 
-      function getMocks () {
-        // let mockWindowLocationAddress = 'http://some-location.test';
+      function getMocks() {
         let mockOriginAddress = 'http://localhost';
         let mockRefAddress = 'http://some-ref.test';
         return {
@@ -206,16 +187,10 @@ describe('nanointeractive adapter tests', function () {
         };
       }
 
-      function setUpMocks () {
+      function setUpMocks() {
         sinon.sandbox.restore();
         sandbox = sinon.sandbox.create();
         sandbox.stub(utils, 'getOrigin').callsFake(() => getMocks()['originAddress']);
-        // if (mockRefAddress == null) {
-        //   sandbox.stub(spec, 'createRefParam').callsFake(() => getMocks()['refAddress']);
-        // } else {
-        //   sandbox.stub(spec, 'createRefParam').callsFake(() => mockRefAddress);
-        // }
-
         sandbox.stub(utils, 'deepAccess').callsFake(() => getMocks()['windowLocationAddress']);
 
         sandbox.stub(utils, 'getParameterByName').callsFake((arg) => {
@@ -228,33 +203,24 @@ describe('nanointeractive adapter tests', function () {
         });
       }
 
-      function assert (
+      function assert(
         request,
         expectedPid,
         expectedNq,
         expectedCategory,
-        expectedSubId,
-        expectedRef = '',
-        expectedOrigin = getMocks()['originAddress'],
-        expectedLocation = getMocks()['windowLocationAddress']
+        expectedSubId
       ) {
+        const requestData = JSON.parse(request.data);
+
         expect(request.method).to.equal('POST');
         expect(request.url).to.equal(END_POINT_URL + '/hb');
-        expect(request.data).to.equal(JSON.stringify([
-          getBidResponse(
-            expectedPid,
-            expectedNq,
-            expectedCategory,
-            expectedSubId,
-            expectedOrigin,
-            expectedRef,
-            expectedLocation,
-            null
-          ),
-        ]));
+        expect(requestData[0].pid).to.equal(expectedPid);
+        expect(requestData[0].nq.toString()).to.equal(expectedNq.toString());
+        expect(requestData[0].category.toString()).to.equal(expectedCategory.toString());
+        expect(requestData[0].subId).to.equal(expectedSubId);
       }
 
-      function tearDownMocks () {
+      function tearDownMocks() {
         sandbox.restore();
       }
 

@@ -37,11 +37,11 @@ export const spec = {
       data: JSON.stringify(payload)
     };
   },
-  interpretResponse(serverResponse, bidRequest) {
+  interpretResponse(serverResponse) {
     const bids = [];
     serverResponse.body.forEach(serverBid => {
       if (isEngineResponseValid(serverBid)) {
-        bids.push(createSingleBidResponse(serverBid, bidRequest));
+        bids.push(createSingleBidResponse(serverBid));
       }
     });
     return bids;
