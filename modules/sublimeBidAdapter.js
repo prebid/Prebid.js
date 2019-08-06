@@ -57,12 +57,6 @@ export const spec = {
         consentString: bidderRequest.gdprConsent.consentString,
         gdprApplies: (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') ? bidderRequest.gdprConsent.gdprApplies : true
       };
-
-      window.sublime.gdpr = (typeof window.sublime.gdpr !== 'undefined') ? window.sublime.gdpr : {};
-      window.sublime.gdpr.injected = {
-        consentString: gdpr.consentString,
-        gdprApplies: gdpr.gdprApplies
-      };
     }
 
     // Grab only the first `validBidRequest`
@@ -79,19 +73,6 @@ export const spec = {
     let bidHost = params.bidHost || DEFAULT_BID_HOST;
     let protocol = params.protocol || DEFAULT_PROTOCOL;
     SUBLIME_ZONE = params.zoneId;
-
-    window.sublime.pbjs = (typeof window.sublime.pbjs !== 'undefined') ? window.sublime.pbjs : {};
-    window.sublime.pbjs.injected = {
-      bt: config.getConfig('bidderTimeout'),
-      ts: Date.now(),
-      version: SUBLIME_VERSION,
-      requestId
-    };
-
-    let script = document.createElement('script');
-    script.type = 'application/javascript';
-    script.src = 'https://' + sacHost + '/sublime/' + SUBLIME_ZONE + '/prebid?callback=false';
-    document.body.appendChild(script);
 
     // Initial size object
     let sizes = {
