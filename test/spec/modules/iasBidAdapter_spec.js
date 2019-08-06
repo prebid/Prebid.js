@@ -283,7 +283,6 @@ describe('iasBidAdapter is an adapter that', function () {
           vw: ['80', '90']
         };
         custom = {};
-        custom['kw'] = ['IAS_1_KW', 'IAS_2_KW'];
         custom['ias-kw'] = ['IAS_1_KW', 'IAS_2_KW'];
         serverResponse = {
           body: {
