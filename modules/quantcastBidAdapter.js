@@ -20,22 +20,15 @@ export const QUANTCAST_PORT =
     ? '8080'
     : '8443';
 
-function extractBidSizes(sizes) {
+function extractBidSizes(bid) {
   const bidSizes = [];
 
-  if (utils.isArray(sizes[0])) {
-    sizes.forEach(size => {
-      bidSizes.push({
-        width: size[0],
-        height: size[1]
-      });
-    });
-  } else {
+  bid.sizes.forEach(size => {
     bidSizes.push({
-      width: sizes[0],
-      height: sizes[1]
+      width: size[0],
+      height: size[1]
     });
-  }
+  });
 
   return bidSizes;
 }
@@ -60,7 +53,7 @@ function makeBannerImp(bid) {
   return {
     banner: {
       battr: bid.params.battr,
-      sizes: extractBidSizes(bid.sizes),
+      sizes: extractBidSizes(bid),
     },
     placementCode: bid.placementCode,
     bidFloor: bid.params.bidFloor || DEFAULT_BID_FLOOR
