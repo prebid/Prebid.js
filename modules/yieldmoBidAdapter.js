@@ -323,8 +323,8 @@ function isMraid() {
 
 /**
  * Gets an id from the userId object if it exists
- * @param {*} request 
- * @param {*} idType 
+ * @param {*} request
+ * @param {*} idType
  * @returns an id if there is one, or undefined
  */
 function getId(request, idType) {
