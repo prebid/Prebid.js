@@ -24,7 +24,9 @@ for further instructions.
 								site: 'example_site_id'
 							},
 							callback: function (digiTrustResult) {
-							// This callback method is optional
+							// This callback method is optional and used for error handling
+							// in many if not most cases.
+							/*
 								if (digiTrustResult.success) {
 									// Success in Digitrust init;
 									// 'DigiTrust Id (encrypted): ' + digiTrustResult.identity.id;
@@ -32,6 +34,7 @@ for further instructions.
 								else {
 									// Digitrust init failed
 								}
+							*/
 							}
 						},
 						storage: {
