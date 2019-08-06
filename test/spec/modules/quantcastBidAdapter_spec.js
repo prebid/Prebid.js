@@ -1,6 +1,4 @@
-import * as utils from 'src/utils';
 import { expect } from 'chai';
-import { stub, sandbox } from 'sinon';
 import {
   QUANTCAST_DOMAIN,
   QUANTCAST_TEST_DOMAIN,
@@ -13,7 +11,6 @@ import {
 } from '../../../modules/quantcastBidAdapter';
 import { newBidder } from '../../../src/adapters/bidderFactory';
 import { parse } from 'src/url';
-import * as ajax from 'src/ajax';
 
 describe('Quantcast adapter', function () {
   const quantcastAdapter = newBidder(qcSpec);
@@ -409,26 +406,9 @@ describe('Quantcast adapter', function () {
         body,
         headers: {}
       };
-      const expectedResponse = [];
       const interpretedResponse = qcSpec.interpretResponse(response);
 
       expect(interpretedResponse.length).to.equal(0);
     });
   });
-
-  // can't stub ajax with es6 anymore, need to fix this
-  // describe('`onTimeout`', function() {
-  //   it('makes a request to the notify endpoint', function() {
-  //     const sinonSandbox = sandbox.create();
-  //     const ajaxStub = sinonSandbox.stub(ajax, 'ajax').callsFake(function() {});
-  //     const timeoutData = {
-  //       bidder: 'quantcast'
-  //     };
-  //     qcSpec.onTimeout(timeoutData);
-  //     const expectedUrl = `${QUANTCAST_PROTOCOL}://${QUANTCAST_DOMAIN}:${QUANTCAST_PORT}/qchb_notify?type=timeout`;
-  //     ajaxStub.withArgs(expectedUrl, null, null).calledOnce.should.be.true;
-  //     ajaxStub.restore();
-  //     sinonSandbox.restore();
-  //   });
-  // });
 });
