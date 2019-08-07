@@ -7,17 +7,16 @@ import { config } from '../../../src/config';
 import { VIDEO } from '../../../src/mediaTypes';
 
 describe('The Criteo bidding adapter', function () {
-  let localStorageMock;
   let utilsMock;
 
   beforeEach(function () {
-    localStorageMock = sinon.mock(localStorage);
+    // Remove FastBid to avoid side effects
+    localStorage.removeItem('criteo_fast_bid');
     utilsMock = sinon.mock(utils);
   });
 
   afterEach(function() {
     global.Criteo = undefined;
-    localStorageMock.restore();
     utilsMock.restore();
   });
 
@@ -816,9 +815,10 @@ describe('The Criteo bidding adapter', function () {
     const VALID_PUBLISHER_TAG = 'test';
     const INVALID_PUBLISHER_TAG = 'test invalid';
 
+    const FASTBID_LOCAL_STORAGE_KEY = 'criteo_fast_bid';
+
     it('should verify valid hash with valid publisher tag', function () {
-      localStorageMock.expects('getItem').withExactArgs('criteo_fast_bid').once().returns('// Hash: ' + VALID_HASH + '\n' + VALID_PUBLISHER_TAG);
-      localStorageMock.expects('removeItem').withExactArgs('criteo_fast_bid').never();
+      localStorage.setItem(FASTBID_LOCAL_STORAGE_KEY, '// Hash: ' + VALID_HASH + '\n' + VALID_PUBLISHER_TAG);
 
       utilsMock.expects('logInfo').withExactArgs('Using Criteo FastBid').once();
       utilsMock.expects('logWarn').withExactArgs('No hash found in FastBid').never();
@@ -826,13 +826,12 @@ describe('The Criteo bidding adapter', function () {
 
       tryGetCriteoFastBid();
 
-      localStorageMock.verify();
+      expect(localStorage.getItem(FASTBID_LOCAL_STORAGE_KEY)).to.equals('// Hash: ' + VALID_HASH + '\n' + VALID_PUBLISHER_TAG);
       utilsMock.verify();
     });
 
     it('should verify valid hash with invalid publisher tag', function () {
-      localStorageMock.expects('getItem').withExactArgs('criteo_fast_bid').once().returns('// Hash: ' + VALID_HASH + '\n' + INVALID_PUBLISHER_TAG);
-      localStorageMock.expects('removeItem').withExactArgs('criteo_fast_bid').once();
+      localStorage.setItem(FASTBID_LOCAL_STORAGE_KEY, '// Hash: ' + VALID_HASH + '\n' + INVALID_PUBLISHER_TAG);
 
       utilsMock.expects('logInfo').withExactArgs('Using Criteo FastBid').never();
       utilsMock.expects('logWarn').withExactArgs('No hash found in FastBid').never();
@@ -840,13 +839,12 @@ describe('The Criteo bidding adapter', function () {
 
       tryGetCriteoFastBid();
 
-      localStorageMock.verify();
+      expect(localStorage.getItem(FASTBID_LOCAL_STORAGE_KEY)).to.be.null;
       utilsMock.verify();
     });
 
     it('should verify invalid hash with valid publisher tag', function () {
-      localStorageMock.expects('getItem').withExactArgs('criteo_fast_bid').once().returns('// Hash: ' + INVALID_HASH + '\n' + VALID_PUBLISHER_TAG);
-      localStorageMock.expects('removeItem').withExactArgs('criteo_fast_bid').once();
+      localStorage.setItem(FASTBID_LOCAL_STORAGE_KEY, '// Hash: ' + INVALID_HASH + '\n' + VALID_PUBLISHER_TAG);
 
       utilsMock.expects('logInfo').withExactArgs('Using Criteo FastBid').never();
       utilsMock.expects('logWarn').withExactArgs('No hash found in FastBid').never();
@@ -854,13 +852,12 @@ describe('The Criteo bidding adapter', function () {
 
       tryGetCriteoFastBid();
 
-      localStorageMock.verify();
+      expect(localStorage.getItem(FASTBID_LOCAL_STORAGE_KEY)).to.be.null;
       utilsMock.verify();
     });
 
     it('should verify missing hash', function () {
-      localStorageMock.expects('getItem').withExactArgs('criteo_fast_bid').once().returns(VALID_PUBLISHER_TAG);
-      localStorageMock.expects('removeItem').withExactArgs('criteo_fast_bid').once();
+      localStorage.setItem(FASTBID_LOCAL_STORAGE_KEY, VALID_PUBLISHER_TAG);
 
       utilsMock.expects('logInfo').withExactArgs('Using Criteo FastBid').never();
       utilsMock.expects('logWarn').withExactArgs('No hash found in FastBid').once();
@@ -868,7 +865,7 @@ describe('The Criteo bidding adapter', function () {
 
       tryGetCriteoFastBid();
 
-      localStorageMock.verify();
+      expect(localStorage.getItem(FASTBID_LOCAL_STORAGE_KEY)).to.be.null;
       utilsMock.verify();
     });
   });
