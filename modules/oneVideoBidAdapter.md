@@ -36,6 +36,8 @@ Connects to One Video demand source to fetch bids.
                 sid: <scpid>,
                 placement: 1,
                 tagid: 123
+              },
+             },
               site: {
                 id: 1,
                 page: 'http://abhi12345.com',
