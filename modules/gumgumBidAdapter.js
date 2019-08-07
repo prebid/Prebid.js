@@ -175,7 +175,7 @@ function buildRequests (validBidRequests, bidderRequest) {
       tId: transactionId,
       pi: data.pi,
       selector: params.selector,
-      sizes: bidRequest.sizes,
+      sizes: bidRequest.sizes || bidRequest.mediatype[banner].sizes,
       url: BID_ENDPOINT,
       method: 'GET',
       data: Object.assign(data, _getBrowserParams(), _getDigiTrustQueryParams(), _getTradeDeskIDParam(bidRequest))
@@ -221,7 +221,7 @@ function interpretResponse (serverResponse, bidRequest) {
   let [width, height] = sizes[0].split('x')
 
   // return 1x1 when breakout expected
-  if ((product === 2 || product === 5) && includes(sizes, '1x1')) {
+  if (product === 5 && includes(sizes, '1x1')) {
     width = '1'
     height = '1'
   }
