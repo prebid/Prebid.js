@@ -1,11 +1,12 @@
 import { loadExternalScript } from '../src/adloader';
 import { registerBidder } from '../src/adapters/bidderFactory';
+import { config } from '../src/config';
+import { BANNER, VIDEO } from '../src/mediaTypes';
 import { parse } from '../src/url';
 import * as utils from '../src/utils';
 import find from 'core-js/library/fn/array/find';
 import JSEncrypt from 'jsencrypt/bin/jsencrypt';
 import sha256 from 'crypto-js/sha256';
-import { config } from '../src/config';
 
 export const ADAPTER_VERSION = 20;
 const BIDDER_CODE = 'criteo';
@@ -27,14 +28,27 @@ OmOSj0/qnYTAYCu0cR5LiyWG79KlIgUyMbp92ulGg24gAyGrVn4+v/4c53WlOEUp
 /** @type {BidderSpec} */
 export const spec = {
   code: BIDDER_CODE,
+  supportedMediaTypes: [ BANNER, VIDEO ],
 
   /**
    * @param {object} bid
    * @return {boolean}
    */
-  isBidRequestValid: bid => (
-    !!(bid && bid.params && (bid.params.zoneId || bid.params.networkId))
-  ),
+  isBidRequestValid: (bid) => {
+    // either one of zoneId or networkId should be set
+    if (!(bid && bid.params && (bid.params.zoneId || bid.params.networkId))) {
+      return false;
+    }
+
+    // video media types requires some mandatory params
+    if (hasVideoMediaType(bid)) {
+      if (!hasValidVideoMediaType(bid)) {
+        return false;
+      }
+    }
+
+    return true;
+  },
 
   /**
    * @param {BidRequest[]} bidRequests
@@ -109,6 +123,9 @@ export const spec = {
         }
         if (slot.native) {
           bid.ad = createNativeAd(bidId, slot.native, bidRequest.params.nativeCallback);
+        } else if (slot.video) {
+          bid.vastUrl = slot.displayurl;
+          bid.mediaType = VIDEO;
         } else {
           bid.ad = slot.creative;
         }
@@ -222,7 +239,7 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
         impid: bidRequest.adUnitCode,
         transactionid: bidRequest.transactionId,
         auctionId: bidRequest.auctionId,
-        sizes: bidRequest.sizes.map(size => size[0] + 'x' + size[1]),
+        sizes: getBannerSizes(bidRequest),
       };
       if (bidRequest.params.zoneId) {
         slot.zoneid = bidRequest.params.zoneId;
@@ -232,6 +249,23 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
       }
       if (bidRequest.params.nativeCallback) {
         slot.native = true;
+      }
+      if (hasVideoMediaType(bidRequest)) {
+        const video = {
+          playersizes: getVideoSizes(bidRequest),
+          mimes: bidRequest.mediaTypes.video.mimes,
+          protocols: bidRequest.mediaTypes.video.protocols,
+          maxduration: bidRequest.mediaTypes.video.maxduration,
+          api: bidRequest.mediaTypes.video.api
+        }
+
+        video.skip = bidRequest.params.video.skip;
+        video.placement = bidRequest.params.video.placement;
+        video.minduration = bidRequest.params.video.minduration;
+        video.playbackmethod = bidRequest.params.video.playbackmethod;
+        video.startdelay = bidRequest.params.video.startdelay;
+
+        slot.video = video;
       }
       return slot;
     }),
@@ -257,6 +291,66 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
     }
   }
   return request;
+}
+
+function getVideoSizes(bidRequest) {
+  return parseSizes(utils.deepAccess(bidRequest, 'mediaTypes.video.playerSize'));
+}
+
+function getBannerSizes(bidRequest) {
+  return parseSizes(utils.deepAccess(bidRequest, 'mediaTypes.banner.sizes') || bidRequest.sizes);
+}
+
+function parseSize(size) {
+  return size[0] + 'x' + size[1];
+}
+
+function parseSizes(sizes) {
+  if (Array.isArray(sizes[0])) { // is there several sizes ? (ie. [[728,90],[200,300]])
+    return sizes.map(size => parseSize(size));
+  }
+
+  return [parseSize(sizes)]; // or a single one ? (ie. [728,90])
+}
+
+function hasVideoMediaType(bidRequest) {
+  if (utils.deepAccess(bidRequest, 'params.video') === undefined) {
+    return false;
+  }
+  return utils.deepAccess(bidRequest, 'mediaTypes.video') !== undefined;
+}
+
+function hasValidVideoMediaType(bidRequest) {
+  let isValid = true;
+
+  var requiredMediaTypesParams = ['mimes', 'playerSize', 'maxduration', 'protocols', 'api'];
+
+  requiredMediaTypesParams.forEach(function(param) {
+    if (utils.deepAccess(bidRequest, 'mediaTypes.video.' + param) === undefined) {
+      isValid = false;
+      utils.logError('Criteo Bid Adapter: mediaTypes.video.' + param + ' is required');
+    }
+  });
+
+  var requiredParams = ['skip', 'placement', 'playbackmethod'];
+
+  requiredParams.forEach(function(param) {
+    if (utils.deepAccess(bidRequest, 'params.video.' + param) === undefined) {
+      isValid = false;
+      utils.logError('Criteo Bid Adapter: params.video.' + param + ' is required');
+    }
+  });
+
+  if (isValid) {
+    // We do not support long form for now, also we have to check that context & placement are consistent
+    if (bidRequest.mediaTypes.video.context == 'instream' && bidRequest.params.video.placement === 1) {
+      return true;
+    } else if (bidRequest.mediaTypes.video.context == 'outstream' && bidRequest.params.video.placement !== 1) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 /**
