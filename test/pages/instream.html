@@ -20,11 +20,14 @@
 
 
     <script>
+
       var pbjs = pbjs || {};
       pbjs.que = pbjs.que || [];
+
       /*
        Prebid Video adUnit
        */
+
       var videoAdUnit = {
         code: 'video1',
         sizes: [640,480],
@@ -44,6 +47,7 @@
           }
         ]
       };
+
       pbjs.que.push(function(){
         pbjs.onEvent('auctionEnd', function() {
             console.log(pbjs.getAdserverTargeting('video1'));
@@ -72,6 +76,7 @@
               }
             });
             invokeVideoPlayer(videoUrl);
+
           }
         });
       });
@@ -113,10 +118,12 @@
         vpaidFlashLoaderPath: "https://github.com/MailOnline/videojs-vast-vpaid/blob/RELEASE/bin/VPAIDFlash.swf?raw=true",
         autoplay: true
       });
+
       this.muted(true);
       this.play();
     });
   }
+
 </script>
 </body>
 </html>
