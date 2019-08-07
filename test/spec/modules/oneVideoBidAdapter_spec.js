@@ -32,7 +32,7 @@ describe('OneVideoBidAdapter', function () {
           playbackmethod: [1, 5],
           placement: 1,
           sid: 134,
-          tagid: 123
+          tagid: '123'
         },
         site: {
           id: 1,
@@ -69,7 +69,7 @@ describe('OneVideoBidAdapter', function () {
           playbackmethod: [1, 5],
           placement: 1,
           sid: 134,
-          tagid: 123
+          tagid: '123'
         }
       };
       expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
@@ -87,7 +87,7 @@ describe('OneVideoBidAdapter', function () {
           playbackmethod: [1, 5],
           placement: 1,
           sid: 134,
-          tagid: 123
+          tagid: '123'
         },
         pubId: 'brxd'
       };
@@ -121,7 +121,7 @@ describe('OneVideoBidAdapter', function () {
       expect(data.imp[0].video.w).to.equal(width);
       expect(data.imp[0].video.h).to.equal(height);
       expect(data.imp[0].bidfloor).to.equal(bidRequest.params.bidfloor);
-      expect(data.imp[0].placement).to.equal(placement);
+      expect(data.imp[0].video.placement).to.equal(placement);
       expect(data.imp[0].tagid).to.equal(tagid);
     });
 
