@@ -9,14 +9,14 @@
  */
 
 /**
-  * @typedef {Object} AdUnit An object containing the adUnit configuration.
-  *
-  * @property {string} code A code which will be used to uniquely identify this bidder. This should be the same
-  *   one as is used in the call to registerBidAdapter
-  * @property {Array.<size>} sizes A list of size for adUnit.
-  * @property {object} params Any bidder-specific params which the publisher used in their bid request.
-  *   This is guaranteed to have passed the spec.areParamsValid() test.
-  */
+ * @typedef {Object} AdUnit An object containing the adUnit configuration.
+ *
+ * @property {string} code A code which will be used to uniquely identify this bidder. This should be the same
+ *   one as is used in the call to registerBidAdapter
+ * @property {Array.<size>} sizes A list of size for adUnit.
+ * @property {object} params Any bidder-specific params which the publisher used in their bid request.
+ *   This is guaranteed to have passed the spec.areParamsValid() test.
+ */
 
 /**
  * @typedef {Array.<number>} size
@@ -81,14 +81,14 @@ const sourceInfo = {};
 const queuedCalls = [];
 
 /**
-  * Creates new auction instance
-  *
-  * @param {Object} requestConfig
-  * @param {AdUnit} requestConfig.adUnits
-  * @param {AdUnitCode} requestConfig.adUnitCode
-  *
-  * @returns {Auction} auction instance
-  */
+ * Creates new auction instance
+ *
+ * @param {Object} requestConfig
+ * @param {AdUnit} requestConfig.adUnits
+ * @param {AdUnitCode} requestConfig.adUnitCode
+ *
+ * @returns {Auction} auction instance
+ */
 export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, auctionId}) {
   let _adUnits = adUnits;
   let _labels = labels;
@@ -419,7 +419,7 @@ function tryAddVideoBid(auctionInstance, bidResponse, bidRequests, afterBidAdded
 
   const bidderRequest = getBidRequest(bidResponse.requestId, [bidRequests]);
   const videoMediaType =
-  bidderRequest && deepAccess(bidderRequest, 'mediaTypes.video');
+    bidderRequest && deepAccess(bidderRequest, 'mediaTypes.video');
   const context = videoMediaType && deepAccess(videoMediaType, 'context');
 
   if (config.getConfig('cache.url') && context !== OUTSTREAM) {
@@ -651,7 +651,7 @@ function setKeys(keyValues, bidderSettings, custBidObj) {
 
     if (
       ((typeof bidderSettings.suppressEmptyKeys !== 'undefined' && bidderSettings.suppressEmptyKeys === true) ||
-      key === CONSTANTS.TARGETING_KEYS.DEAL) && // hb_deal is suppressed automatically if not set
+        key === CONSTANTS.TARGETING_KEYS.DEAL) && // hb_deal is suppressed automatically if not set
       (
         utils.isEmptyStr(value) ||
         value === null ||
