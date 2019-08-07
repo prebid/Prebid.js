@@ -40,7 +40,7 @@ let _s2sConfig;
 /**
  * @typedef {Object} S2SDefaultConfig
  * @property {boolean} enabled
- * @property {number} timeout
+ * @property {number} timeout @deprecated This property will be removed in 3.0. Please refer <TBD github pr> for more info
  * @property {number} maxBids
  * @property {string} adapter
  * @property {AdapterOptions} adapterOptions

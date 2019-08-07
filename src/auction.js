@@ -385,7 +385,15 @@ export function auctionCallbacks(auctionDone, auctionInstance) {
 }
 
 export function doCallbacksIfTimedout(auctionInstance, bidResponse) {
-  if (bidResponse.timeToRespond > auctionInstance.getTimeout() + config.getConfig('timeoutBuffer')) {
+  // TODO: In 3.0 use default values defined in config module. <TBD github issue>
+  let buffer = config.getConfig('timeoutBuffer');
+  if (config.getConfig('timeoutBufferCoefficient')) {
+    let newBuffer = utils.evaluateTimeout(auctionInstance.getTimeout(), config.getConfig('timeoutBufferCoefficient'));
+    if (buffer) {
+      buffer = newBuffer
+    }
+  }
+  if (bidResponse.timeToRespond > auctionInstance.getTimeout() + buffer) {
     auctionInstance.executeCallback(true);
   }
 }

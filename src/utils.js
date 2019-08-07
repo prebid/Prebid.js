@@ -1334,3 +1334,19 @@ export function compareOn(property) {
     return 0;
   }
 }
+
+/**
+ * This function calculates new timeout value
+ * @param {number} auctionTimeout auction timeout
+ * @param {float} coefficient floating point coefficient
+ * @returns {(number|undefined)} new timeout value
+ */
+export function evaluateTimeout(auctionTimeout, coefficient) {
+  let newTimeout = Math.floor(auctionTimeout * parseFloat(coefficient));
+  // Both timeoutBuffer and s2s timeout cannot be greater than auction timeout
+  if (newTimeout > auctionTimeout) {
+    internal.logInfo(`Ignoring evaluated timeout ${newTimeout} as it is greater than ${auctionTimeout}. Prebid will use default settings`);
+    newTimeout = undefined;
+  }
+  return newTimeout;
+}

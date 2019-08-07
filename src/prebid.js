@@ -411,6 +411,16 @@ $$PREBID_GLOBAL$$.removeAdUnit = function (adUnitCode) {
 $$PREBID_GLOBAL$$.requestBids = hook('async', function ({ bidsBackHandler, timeout, adUnits, adUnitCodes, labels, auctionId } = {}) {
   events.emit(REQUEST_BIDS);
   const cbTimeout = timeout || config.getConfig('bidderTimeout');
+  const s2sConfig = config.getConfig('s2sConfig');
+
+  if (s2sConfig && s2sConfig.timeoutCoefficient) {
+    let newTimeout = utils.evaluateTimeout(cbTimeout, s2sConfig.timeoutCoefficient);
+    if (newTimeout) {
+      s2sConfig.timeout = newTimeout;
+      config.setConfig({s2sConfig: s2sConfig});
+    }
+  }
+
   adUnits = adUnits || $$PREBID_GLOBAL$$.adUnits;
 
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.requestBids', arguments);

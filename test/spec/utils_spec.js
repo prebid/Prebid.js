@@ -1009,4 +1009,28 @@ describe('Utils', function () {
       });
     });
   });
+
+  describe('evaluateTimeout', function() {
+    let logInfoStub;
+    before(function() {
+      logInfoStub = sinon.stub(utils.internal, 'logInfo');
+    });
+
+    after(function() {
+      logInfoStub.restore();
+    })
+
+    it('returns original timeout when auction timeout is higher', function() {
+      let auctionTimeout = 1000;
+      let coefficient = 2.00;
+      expect(utils.evaluateTimeout(auctionTimeout, coefficient)).to.equal(undefined);
+      expect(logInfoStub.calledOnce).to.be.true;
+    });
+
+    it('returns modified timeout when auction timeout is lower', function() {
+      let auctionTimeout = 1000;
+      let coefficient = 0.20;
+      expect(utils.evaluateTimeout(auctionTimeout, coefficient)).to.equal(200);
+    });
+  });
 });
