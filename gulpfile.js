@@ -1,6 +1,5 @@
 'use strict';
-
-var _ = require('lodash');
+console.time('Loading Plugins in Prebid');
 var argv = require('yargs').argv;
 var gulp = require('gulp');
 // var gutil = require('gulp-util');
@@ -19,8 +18,8 @@ var concat = require('gulp-concat');
 // var footer = require('gulp-footer');
 var replace = require('gulp-replace');
 // var shell = require('gulp-shell');
-var eslint = require('gulp-eslint');
-var gulpif = require('gulp-if');
+// var eslint = require('gulp-eslint');
+// var gulpif = require('gulp-if');
 // var sourcemaps = require('gulp-sourcemaps');
 // var through = require('through2');
 // var fs = require('fs');
@@ -32,6 +31,7 @@ var prebid = require('./package.json');
 var dateString = 'Updated : ' + (new Date()).toISOString().substring(0, 10);
 var banner = '/* <%= prebid.name %> v<%= prebid.version %>\n' + dateString + ' */\n';
 var port = 9999;
+console.timeEnd('Loading Plugins in Prebid');
 
 // these modules must be explicitly listed in --modules to be included in the build, won't be part of "all" modules
 var explicitModules = [
@@ -64,6 +64,9 @@ function escapePostbidConfig() {
 escapePostbidConfig.displayName = 'escape-postbid-config';
 
 function lint(done) {
+  var eslint = require('gulp-eslint');
+  var gulpif = require('gulp-if');
+
   if (argv.nolint) {
     return done();
   }
@@ -124,6 +127,7 @@ function watch(done) {
 };
 
 function makeDevpackPkg() {
+  var _ = require('lodash');
   var connect = require('gulp-connect');
   var webpack = require('webpack');
   var webpackStream = require('webpack-stream');
@@ -145,12 +149,14 @@ function makeDevpackPkg() {
 }
 
 function makeWebpackPkg() {
+  var _ = require('lodash');
   var webpack = require('webpack');
   var webpackStream = require('webpack-stream');
   var uglify = require('gulp-uglify');
   var webpackConfig = require('./webpack.conf');
   var helpers = require('./gulpHelpers');
   var header = require('gulp-header');
+  var gulpif = require('gulp-if');
 
   var cloned = _.cloneDeep(webpackConfig);
   delete cloned.devtool;
@@ -188,13 +194,17 @@ function nodeBundle(modules) {
 }
 
 function bundle(dev, moduleArr) {
+  // console.time('Loading Plugins for Prebid');
+  var _ = require('lodash');
   var gutil = require('gulp-util');
   var helpers = require('./gulpHelpers');
   var footer = require('gulp-footer');
+  var gulpif = require('gulp-if');
   var sourcemaps = require('gulp-sourcemaps');
   var modules = moduleArr || helpers.getArgModules();
   var allModules = helpers.getModuleNames(modules);
-
+  // console.timeEnd('Loading Plugins for Prebid');
+  // console.time('Getting Modules for Prebid');
   if (modules.length === 0) {
     modules = allModules.filter(module => explicitModules.indexOf(module) === -1);
   } else {
@@ -206,7 +216,8 @@ function bundle(dev, moduleArr) {
       });
     }
   }
-
+  // console.timeEnd('Getting Modules for Prebid');
+  // console.time('Concating Starts');
   var entries = [helpers.getBuiltPrebidCoreFile(dev)].concat(helpers.getBuiltModules(dev, modules));
 
   var outputFileName = argv.bundleName ? argv.bundleName : 'prebid.js';
@@ -216,10 +227,10 @@ function bundle(dev, moduleArr) {
     outputFileName = outputFileName.replace(/\.js$/, `.${argv.tag}.js`);
   }
 
-  gutil.log('Concatenating files:\n', entries);
-  gutil.log('Appending ' + prebid.globalVarName + '.processQueue();');
-  gutil.log('Generating bundle:', outputFileName);
-
+  // gutil.log('Concatenating files:\n', entries);
+  // gutil.log('Appending ' + prebid.globalVarName + '.processQueue();');
+  // gutil.log('Generating bundle:', outputFileName);
+  // console.timeEnd('Concating Starts');
   return gulp.src(
     entries
   )
