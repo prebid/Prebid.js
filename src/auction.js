@@ -201,7 +201,6 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
     utils.logInfo(`Bids Requested for Auction with id: ${_auctionId}`, bidRequests);
 
     bidRequests.forEach(bidRequest => {
-      // addBidRequests(bidRequest);
       addBidRequest.call({
         dispatch: addBidRequests,
         context: newAuction
@@ -418,8 +417,7 @@ function tryAddVideoBid(auctionInstance, bidResponse, bidRequests, afterBidAdded
   let addBid = true;
 
   const bidderRequest = getBidRequest(bidResponse.requestId, [bidRequests]);
-  const videoMediaType =
-    bidderRequest && deepAccess(bidderRequest, 'mediaTypes.video');
+  const videoMediaType = bidderRequest && deepAccess(bidderRequest, 'mediaTypes.video');
   const context = videoMediaType && deepAccess(videoMediaType, 'context');
 
   if (config.getConfig('cache.url') && context !== OUTSTREAM) {
@@ -651,7 +649,7 @@ function setKeys(keyValues, bidderSettings, custBidObj) {
 
     if (
       ((typeof bidderSettings.suppressEmptyKeys !== 'undefined' && bidderSettings.suppressEmptyKeys === true) ||
-        key === CONSTANTS.TARGETING_KEYS.DEAL) && // hb_deal is suppressed automatically if not set
+      key === CONSTANTS.TARGETING_KEYS.DEAL) && // hb_deal is suppressed automatically if not set
       (
         utils.isEmptyStr(value) ||
         value === null ||
