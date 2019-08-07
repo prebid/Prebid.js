@@ -37,7 +37,7 @@ export const identityLinkSubmodule = {
       return;
     }
     // use protocol relative urls for http or https
-    const url = `https://api.rlcdn.com/api/identity?pid=${configParams.pid}&rt=envelope`;
+    const url = `https://api.rlcdn.com/api/identity/envelope?pid=${configParams.pid}`;
 
     return function (callback) {
       ajax(url, response => {
