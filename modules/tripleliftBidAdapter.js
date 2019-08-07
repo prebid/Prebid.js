@@ -3,7 +3,7 @@ import { registerBidder } from '../src/adapters/bidderFactory';
 import * as utils from '../src/utils';
 
 const BIDDER_CODE = 'triplelift';
-const STR_ENDPOINT = document.location.protocol + '//tlx.3lift.com/header/auction?';
+const STR_ENDPOINT = 'https://tlx.3lift.com/header/auction?';
 let gdprApplies = true;
 let consentString = null;
 
