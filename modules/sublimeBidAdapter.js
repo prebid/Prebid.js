@@ -33,8 +33,6 @@ export const spec = {
      * @return ServerRequest Info describing the request to the server.
      */
   buildRequests: (validBidRequests, bidderRequest) => {
-    window.sublime = window.sublime ? window.sublime : {};
-
     let gdpr = {
       consentString: "",
       gdprApplies: false,
