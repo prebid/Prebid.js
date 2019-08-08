@@ -44,6 +44,30 @@ const bidReq = [{
   auctionId: '6c22f5a5-59df-4dc6-b92c-f433bcf0a874'
 }];
 
+const bidReqUserIds = [{
+  bidder: BIDDER_CODE,
+  params: {
+    placementId: '10433394',
+    publisherId: 12345
+  },
+  sizes: [[300, 250], [300, 600]],
+  bidId: '263be71e91dd9d',
+  auctionId: '9ad1fa8d-2297-4660-a018-b39945054746',
+  userId: {
+    tdid: '123456',
+    digitrustid: {data: {id: 'DTID', keyv: 4, privacy: {optout: false}, producer: 'ABC', version: 2}}
+  }
+},
+{
+  bidder: BIDDER_CODE,
+  params: {
+    publisherId: 12345
+  },
+  sizes: [[1, 1]],
+  bidId: '453cf42d72bb3c',
+  auctionId: '6c22f5a5-59df-4dc6-b92c-f433bcf0a874'
+}];
+
 const bidderReq = {
   refererInfo: {
     referer: 'http://prebid.org/dev-docs/bidder-adaptor.html'
@@ -147,6 +171,14 @@ describe('Undertone Adapter', function () {
       expect(bid2.publisherId).to.equal(12345);
       expect(bid2.params).to.be.an('object');
     });
+    it('should send all userIds data to server', function () {
+      const request = spec.buildRequests(bidReqUserIds, bidderReq);
+      const bidCommons = JSON.parse(request.data)['commons'];
+      expect(bidCommons).to.be.an('object');
+      expect(bidCommons.uids).to.be.an('object');
+      expect(bidCommons.uids.tdid).to.equal('123456');
+      expect(bidCommons.uids.digitrustid.data.id).to.equal('DTID');
+    });
   });
 
   describe('interpretResponse', function () {
@@ -245,6 +277,5 @@ describe('Undertone Adapter', function () {
         }
       });
     }
-
   });
 });

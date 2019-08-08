@@ -61,7 +61,11 @@ export const spec = {
   },
   buildRequests: function(validBidRequests, bidderRequest) {
     const payload = {
-      'x-ut-hb-params': []
+      'x-ut-hb-params': [],
+      'commons': {
+        'adapterVersion': pbjs.version,
+        'uids': validBidRequests[0].userId
+      }
     };
     const referer = bidderRequest.refererInfo.referer;
     const hostname = urlUtils.parse(referer).hostname;
