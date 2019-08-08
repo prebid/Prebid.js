@@ -17,7 +17,6 @@ describe('Sublime Adapter', function() {
       params: {
         zoneId: 24549,
         endpoint: '',
-        sacHost: 'sac.ayads.co',
       },
     };
 
@@ -52,7 +51,6 @@ describe('Sublime Adapter', function() {
         requestId: 'xyz654_2',
         params: {
           zoneId: 23651,
-          callbackName: 'false'
         }
       }
     ];
@@ -68,15 +66,6 @@ describe('Sublime Adapter', function() {
 
     it('should have a get method', function() {
       expect(request.method).to.equal('GET');
-    });
-
-    it('should contains window.sublime.gdpr.injected', function() {
-      expect(window.sublime).to.not.be.undefined;
-      expect(window.sublime.gdpr).to.not.be.undefined;
-      expect(window.sublime.gdpr.injected).to.eql({
-        consentString: bidderRequest.gdprConsent.consentString,
-        gdprApplies: bidderRequest.gdprConsent.gdprApplies
-      });
     });
 
     it('should contains a request id equals to the bid id', function() {
