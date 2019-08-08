@@ -102,7 +102,7 @@ function initUserConnect() {
   const stroeerCore = getStroeerCore();
 
   const sid = stroeerCore.anySid;
-  const userConnectJsUrl = (stroeerCore.userConnectJsUrl || '//js.adscale.de/userconnect.js');
+  const userConnectJsUrl = (stroeerCore.userConnectJsUrl || 'https://js.adscale.de/userconnect.js');
 
   const scriptElement = getMostAccessibleTopWindow().document.createElement('script');
 
