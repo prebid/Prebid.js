@@ -83,13 +83,11 @@ function elementInView(elementId) {
 }
 
 function buildUrl({host: hostname = DEFAULT_HOST, port = DEFAULT_PORT, securePort, path: pathname = DEFAULT_PATH}) {
-  const secure = isSecureWindow();
-
-  if (securePort && secure) {
+  if (securePort) {
     port = securePort;
   }
 
-  return url.format({protocol: secure ? 'https' : 'http', hostname, port, pathname});
+  return url.format({protocol: 'https', hostname, port, pathname});
 }
 
 function setupGlobalNamespace(anyBid) {
