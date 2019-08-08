@@ -38,21 +38,37 @@ export const identityLinkSubmodule = {
     }
     // use protocol relative urls for http or https
     const url = `https://api.rlcdn.com/api/identity/envelope?pid=${configParams.pid}`;
-
-    return function (callback) {
-      ajax(url, response => {
-        let responseObj;
-        if (response) {
-          try {
-            responseObj = JSON.parse(response);
-          } catch (error) {
-            utils.logError(error);
+    // if ats library is initialised, use it to retrieve envelope. If not use standard third party endpoint
+    if (window.ats) {
+      return function(callback) {
+        window.ats.retrieveEnvelope(function (envelope) {
+          if (envelope) {
+            callback(JSON.parse(envelope).envelope);
+          } else {
+            getEnvelope(url, callback);
           }
-        }
-        callback(responseObj.envelope);
-      }, undefined, { method: 'GET' });
+        });
+      }
+    } else {
+      return function (callback) {
+        getEnvelope(url, callback);
+      }
     }
   }
-};
+}
+// return envelope from third party endpoint
+function getEnvelope(url, callback) {
+  ajax(url, response => {
+    let responseObj;
+    if (response) {
+      try {
+        responseObj = JSON.parse(response);
+      } catch (error) {
+        utils.logError(error);
+      }
+    }
+    callback(responseObj.envelope);
+  }, undefined, {method: 'GET'});
+}
 
 submodule('userId', identityLinkSubmodule);
