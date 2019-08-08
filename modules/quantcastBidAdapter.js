@@ -113,6 +113,7 @@ export const spec = {
           imp = makeBannerImp(bid);
         } else {
           // Unsupported mediaType
+          utils.logInfo(`${BIDDER_CODE}: No supported mediaTypes found in ${JSON.stringify(bid.mediaTypes)}`);
           return;
         }
       } else {
