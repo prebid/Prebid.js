@@ -15,8 +15,7 @@ function RhythmOneBidAdapter() {
   let SUPPORTED_VIDEO_API = [1, 2, 5];
   let slotsToBids = {};
   let that = this;
-  let version = '2.0.1.0';
-  var win = typeof window !== 'undefined' ? window : {};
+  let version = '2.1';
 
   this.isBidRequestValid = function (bid) {
     return !!(bid.params && bid.params.placementId);
@@ -26,14 +25,21 @@ function RhythmOneBidAdapter() {
     return [];
   };
 
-  function frameImp(BRs) {
+  function frameImp(BRs, bidderRequest) {
     var impList = [];
+    var isSecure = 0;
+    if (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.stack.length) {
+      // clever trick to get the protocol
+      var el = document.createElement('a');
+      el.href = bidderRequest.refererInfo.stack[0];
+      isSecure = (el.protocol == 'https:') ? 1 : 0;
+    }
     for (var i = 0; i < BRs.length; i++) {
-      slotsToBids[BRs[i].adUnitCode || BRs[i].placementCode] = BRs[i];
+      slotsToBids[BRs[i].adUnitCode] = BRs[i];
       var impObj = {};
       impObj.id = BRs[i].adUnitCode;
       impObj.bidfloor = parseFloat(utils.deepAccess(BRs[i], 'params.floor')) || 0;
-      impObj.secure = win.location.protocol === 'https:' ? 1 : 0;
+      impObj.secure = isSecure;
 
       if (utils.deepAccess(BRs[i], 'mediaTypes.banner') || utils.deepAccess(BRs[i], 'mediaType') === 'banner') {
         let banner = frameBanner(BRs[i]);
@@ -54,31 +60,25 @@ function RhythmOneBidAdapter() {
   }
 
   function frameSite(bidderRequest) {
-    return {
-      domain: attempt(function() {
-        var d = win.document.location.ancestorOrigins;
-        if (d && d.length > 0) {
-          return d[d.length - 1];
-        }
-        return win.top.document.location.hostname; // try/catch is in the attempt function
-      }, ''),
-      page: attempt(function() {
-        var l;
-        // try/catch is in the attempt function
-        try {
-          l = win.top.document.location.href.toString();
-        } catch (ex) {
-          l = win.document.location.href.toString();
-        }
-        return l;
-      }, ''),
-      ref: attempt(function() {
-        if (bidderRequest && bidderRequest.refererInfo) {
-          return bidderRequest.refererInfo.referer;
-        }
-        return '';
-      }, '')
+    var site = {
+      domain: '',
+      page: '',
+      ref: ''
     }
+    if (bidderRequest && bidderRequest.refererInfo) {
+      var ri = bidderRequest.refererInfo;
+      site.ref = ri.referer;
+
+      if (ri.stack.length) {
+        site.page = ri.stack[ri.stack.length - 1];
+
+        // clever trick to get the domain
+        var el = document.createElement('a');
+        el.href = ri.stack[0];
+        site.domain = el.hostname;
+      }
+    }
+    return site;
   }
 
   function frameDevice() {
@@ -165,7 +165,7 @@ function RhythmOneBidAdapter() {
   function frameBid(BRs, bidderRequest) {
     return {
       id: BRs[0].bidderRequestId,
-      imp: frameImp(BRs),
+      imp: frameImp(BRs, bidderRequest),
       site: frameSite(bidderRequest),
       device: frameDevice(),
       user: {
@@ -189,13 +189,6 @@ function RhythmOneBidAdapter() {
         return validBidRequests[i].params[key];
       }
     }
-  }
-
-  function attempt(valueFunction, defaultValue) {
-    try {
-      return valueFunction();
-    } catch (ex) { }
-    return defaultValue;
   }
 
   this.buildRequests = function (BRs, bidderRequest) {
