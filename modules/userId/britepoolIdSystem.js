@@ -33,43 +33,35 @@ export const britepoolIdSubmodule = {
    * @returns {function(callback:function)}
    */
   getId(submoduleConfigParams, consentData) {
+    const { params, headers, url, getter, errors } = britepoolIdSubmodule.createParams(submoduleConfigParams, consentData);
+    let getterResponse = null;
+    if (typeof getter === 'function') {
+      getterResponse = getter(params);
+      // First let's rule out that the response is not a Promise
+      if (!(typeof getterResponse === 'object' && typeof getterResponse.then === 'function')) {
+        // Optimization to return value from getter
+        return britepoolIdSubmodule.normalizeValue(getterResponse);
+      }
+    }
+    // Return for async operation
     return function(callback) {
-      const { params, headers, url, getter, errors } = britepoolIdSubmodule.createParams(submoduleConfigParams, consentData);
       if (errors.length > 0) {
         errors.forEach(error => utils.logError(error));
         callback();
         return;
       }
-      if (typeof getter === 'function') {
-        // Use caller provided getter function
-        getter(params).then(response => {
-          let responseObj = null;
-          if (typeof response === 'object') {
-            responseObj = response;
-          } else if (typeof response === 'string') {
-            try {
-              responseObj = JSON.parse(response);
-            } catch (error) {
-              utils.logError(error);
-            }
-          }
-          callback(responseObj);
+      if (getterResponse) {
+        // Resolve the getter function response
+        Promise.resolve(getterResponse).then(response => {
+          callback(britepoolIdSubmodule.normalizeValue(response));
         }).catch(error => {
-          utils.logError(error);
+          if (error !== '') utils.logError(error);
           callback();
         });
       } else {
         ajax(url, {
           success: response => {
-            let responseObj = null;
-            if (response) {
-              try {
-                responseObj = JSON.parse(response);
-              } catch (error) {
-                utils.logError(error);
-              }
-            }
-            callback(responseObj);
+            callback(britepoolIdSubmodule.normalizeValue(response));
           },
           error: error => {
             if (error !== '') utils.logError(error);
@@ -114,5 +106,21 @@ export const britepoolIdSubmodule = {
       getter,
       errors
     };
+  },
+  /**
+   * Helper method to normalize a JSON value
+   */
+  normalizeValue(value) {
+    let valueObj = null;
+    if (typeof value === 'object') {
+      valueObj = value;
+    } else if (typeof value === 'string') {
+      try {
+        valueObj = JSON.parse(value);
+      } catch (error) {
+        utils.logError(error);
+      }
+    }
+    return valueObj;
   }
 };
