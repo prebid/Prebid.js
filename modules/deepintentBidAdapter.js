@@ -18,7 +18,12 @@ export const spec = {
     return valid;
   },
   interpretResponse: function(bidResponse, request) {
-
+    let responses = [];
+    if(bidResponse && bidResponse.body){
+      let bids = bidResponse.body.seatbid && bidResponse.body.seatbid[0] ? bidResponse.body.seatbid[0].bid : [];
+      responses = bids.map(bid => formatResponse(bid))
+    }
+    return responses;
   },
   buildRequests: function (validBidRequests, bidderRequest) {
     const openRtbBidRequest = {
@@ -57,6 +62,19 @@ export const spec = {
   }
 
 };
+
+function formatResponse(bid) {
+  return {
+    requestId: bid && bid.id ? bid.id : undefined,
+    cpm: bid && bid.price ? bid.price : 0.0,
+    width: bid && bid.w ? bid.w : 0,
+    height: bid && bid.h ? bid.h : 0,
+    ad: bid && bid.adm ? bid.adm : "",
+    creativeId: bid && bid.crid ? bid.crid : undefined,
+    netRevenue: false,
+    currency: bid && bid.cur ? bid.cur : "USD"
+  }
+}
 
 function buildImpression(bid) {
   return {
