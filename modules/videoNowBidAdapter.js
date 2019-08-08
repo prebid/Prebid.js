@@ -9,11 +9,11 @@ import { BANNER } from '../src/mediaTypes'
 // import { addBidResponse } from '../src/bidmanager'
 // import { registerBidAdapter } from '../src/adaptermanager'
 
-// const RTB_URL = 'localhost:8085/bid' // 'rtb.videonow.com/bid'
+const RTB_URL = '//localhost:8085/bid' // 'rtb.videonow.com/bid'
 // const RTB_URL = 'rtb.videonow.com/bid'
-const RTB_URL = 'poligon.videonow.ru/tests/hbiding.php' // 'localhost:8085/bid' // 'rtb.videonow.com/bid'
+// const RTB_URL = '//poligon.videonow.ru/tests/hbiding.php' // 'localhost:8085/bid' // 'rtb.videonow.com/bid'
 
-const BIDDER_CODE = 'videoNow'
+const BIDDER_CODE = 'videonow'
 const TTL_SECONDS = 60 * 5;
 
 function isBidRequestValid(bid) {
@@ -28,7 +28,7 @@ function buildRequest(bid, size, bidderRequest) {
 
   const dto = {
     method: 'GET',
-    url: `${RTB_URL}/${cId}`,
+    url: RTB_URL, // /${cId}`,
     data: {
       cb: Date.now(),
       bidFloor: bidFloor,
@@ -47,6 +47,7 @@ function buildRequest(bid, size, bidderRequest) {
 }
 
 function buildRequests(validBidRequests, bidderRequest) {
+  console.log('buildRequests')
   // const topWindowUrl = utils.getTopWindowUrl();
   const requests = [];
   validBidRequests.forEach(validBidRequest => {

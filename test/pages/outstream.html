@@ -21,53 +21,62 @@
     <script src="http://localhost:9999/build/dev/videoNowBidAdapter.js"></script>
     <script>
       let message = 'No message'
+      let container
       document.addEventListener('DOMContentLoaded', () => {
-        const container = document.getElementById('container')
+        container = document.getElementById('container')
         container.innerHTML = message
-
-        var pbjs = pbjs || {}
-        pbjs.que = pbjs.que || []
-
-        pbjs.que.push(function () {
-//        pbjs.setConfig({ debug: true, logging: true });
-          pbjs.logging = true
-          var adUnits = [{
-            code: 'div-gpt-ad-1438287399331-0',
-            bids: [{
-              bidder: 'videonow',
-              bidId: '51ef8751f9aead',
-              params: {
-                cId: '1',
-                placementId: '4799418',
-              },
-            },
-              // Add other bidders here
-            ],
-          }]
-          pbjs.onEvent('bidWon', () => {
-            console.warn('bid Won!!!')
-          })
-
-          pbjs.addAdUnits(adUnits)
-          pbjs.requestBids({
-            // This callback gets triggered when all bids for this
-            // ad unit come back.
-            bidsBackHandler: function (bidResponses) {
-              const targetingParams = pbjs.getAdserverTargeting()
-              message = `Nobody wins. targetingParams:${JSON.stringify(targetingParams)}`
-              container.innerHTML = message
-
-              const bids = pbjs.getHighestCpmBids()
-              if (bids.length) {
-                // bids[0] - первый, выигравший бид (наш, в данном случае), покажем рекламу из этого бида стандартным методом pbjs.renderAd
-                // будет вызван метод bids[0].renderer.render()
-                pbjs.renderAd(document.body, bids[0].adId)
-                message = `bidResponses: ${JSON.stringify(bidResponses)} <br> targetingParams:${JSON.stringify(targetingParams)}`
-              }
-            },
-          })
-        })        
       })
+
+      var pbjs = pbjs || {}
+      pbjs.que = pbjs.que || []
+
+      pbjs.que.push(function () {
+        pbjs.setConfig({ debug: true, logging: true });
+        pbjs.logging = true
+        var adUnits = [{
+          code: 'div-gpt-ad-1438287399331-0',
+          // sizes: [640,480],
+          mediaTypes: {
+            banner: {
+              sizes: [[640,480], [300, 250], [336, 280]]
+            }
+          },
+          bids: [{
+            bidder: 'videonow',
+            bidId: '51ef8751f9aead',
+            params: {
+              cId: '1',
+              placementId: '4799418',
+            },
+          },
+            // Add other bidders here
+          ],
+        }]
+        pbjs.onEvent('bidWon', () => {
+          console.warn('bid Won!!!')
+        })
+
+        pbjs.addAdUnits(adUnits)
+        pbjs.requestBids({
+          // This callback gets triggered when all bids for this
+          // ad unit come back.
+          bidsBackHandler: function (bidResponses) {
+            console.warn('bidsBackHandler')
+            const targetingParams = pbjs.getAdserverTargeting()
+            message = `Nobody wins. targetingParams:${JSON.stringify(targetingParams)}`
+            container && (container.innerHTML = message)
+            console.log(message)
+
+            const bids = pbjs.getHighestCpmBids()
+            if (bids.length) {
+              // bids[0] - первый, выигравший бид (наш, в данном случае), покажем рекламу из этого бида стандартным методом pbjs.renderAd
+              // будет вызван метод bids[0].renderer.render()
+              pbjs.renderAd(document.body, bids[0].adId)
+              message = `bidResponses: ${JSON.stringify(bidResponses)} <br> targetingParams:${JSON.stringify(targetingParams)}`
+            }
+          },
+        })
+      })        
     </script>
 
 </head>
