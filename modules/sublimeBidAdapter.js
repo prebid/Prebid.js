@@ -1,15 +1,11 @@
 import { registerBidder } from '../src/adapters/bidderFactory';
-import { config } from '../src/config';
 import * as utils from '../src/utils';
 
 const BIDDER_CODE = 'sublime';
 const DEFAULT_BID_HOST = 'pbjs.sskzlabs.com';
-const DEFAULT_SAC_HOST = 'sac.ayads.co';
 const DEFAULT_PROTOCOL = 'https';
 const SUBLIME_VERSION = '0.4.0';
 let SUBLIME_ZONE = null;
-
-
 
 export const spec = {
   code: BIDDER_CODE,
@@ -34,7 +30,7 @@ export const spec = {
      */
   buildRequests: (validBidRequests, bidderRequest) => {
     let gdpr = {
-      consentString: "",
+      consentString: '',
       gdprApplies: false,
     };
 
@@ -53,7 +49,6 @@ export const spec = {
 
     let params = bid.params;
     let requestId = bid.bidId || '';
-    let sacHost = params.sacHost || DEFAULT_SAC_HOST;
     let bidHost = params.bidHost || DEFAULT_BID_HOST;
     let protocol = params.protocol || DEFAULT_PROTOCOL;
     SUBLIME_ZONE = params.zoneId;
@@ -79,7 +74,8 @@ export const spec = {
         z: SUBLIME_ZONE,
         w: sizes.w || 1800,
         h: sizes.h || 1000,
-        gdpr: JSON.stringify(gdpr)
+        gdpr: JSON.stringify(gdpr),
+        v: SUBLIME_VERSION
       }
     };
   },
