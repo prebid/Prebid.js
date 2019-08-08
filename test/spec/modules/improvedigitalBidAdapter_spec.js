@@ -7,7 +7,7 @@ describe('Improve Digital Adapter Tests', function () {
   let idClient = new ImproveDigitalAdServerJSClient('hb');
 
   const METHOD = 'GET';
-  const URL = '//ice.360yield.com/hb';
+  const URL = 'https://ice.360yield.com/hb';
   const PARAM_PREFIX = 'jsonp=';
 
   const simpleBidRequest = {
@@ -149,6 +149,28 @@ describe('Improve Digital Adapter Tests', function () {
       const params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
       expect(params.bid_request.imp[0].currency).to.equal('JPY');
       getConfigStub.restore();
+    });
+
+    it('should add bid floor', function () {
+      const bidRequest = Object.assign({}, simpleBidRequest);
+      let request = spec.buildRequests([bidRequest])[0];
+      let params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
+      // Floor price currency shouldn't be populated without a floor price
+      expect(params.bid_request.imp[0].bidfloorcur).to.not.exist;
+
+      // Default floor price currency
+      bidRequest.params.bidFloor = 0.05;
+      request = spec.buildRequests([bidRequest])[0];
+      params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
+      expect(params.bid_request.imp[0].bidfloor).to.equal(0.05);
+      expect(params.bid_request.imp[0].bidfloorcur).to.equal('USD');
+
+      // Floor price currency
+      bidRequest.params.bidFloorCur = 'eUR';
+      request = spec.buildRequests([bidRequest])[0];
+      params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
+      expect(params.bid_request.imp[0].bidfloor).to.equal(0.05);
+      expect(params.bid_request.imp[0].bidfloorcur).to.equal('EUR');
     });
 
     it('should add GDPR consent string', function () {
@@ -310,13 +332,61 @@ describe('Improve Digital Adapter Tests', function () {
               {
                 data: {
                   type: 3,
-                  value: 'Should get ignored'
+                  value: '4' // rating
+                }
+              },
+              {
+                data: {
+                  type: 4,
+                  value: '10105' // likes
+                }
+              },
+              {
+                data: {
+                  type: 5,
+                  value: '150000' // downloads
+                }
+              },
+              {
+                data: {
+                  type: 6,
+                  value: '3.99' // price
+                }
+              },
+              {
+                data: {
+                  type: 7,
+                  value: '4.49' // salePrice
+                }
+              },
+              {
+                data: {
+                  type: 8,
+                  value: '(123) 456-7890' // phone
+                }
+              },
+              {
+                data: {
+                  type: 9,
+                  value: '123 Main Street, Anywhere USA' // address
+                }
+              },
+              {
+                data: {
+                  type: 10,
+                  value: 'body2'
+                }
+              },
+              {
+                data: {
+                  type: 11,
+                  value: 'https://myurl.com' // displayUrl
                 }
               },
               {
                 data: {
                   type: 12,
-                  value: 'Do it'
+                  value: 'Do it' // cta
                 }
               },
               {
@@ -334,6 +404,7 @@ describe('Improve Digital Adapter Tests', function () {
                   h: 30,
                   w: 40
                 }
+
               },
               {
                 img: {
@@ -354,13 +425,27 @@ describe('Improve Digital Adapter Tests', function () {
               'http://imptrack1.com',
               'http://imptrack2.com'
             ],
-            jstracker: '<script src=\"http://www.foobar.js\"></script>'
+            jstracker: '<script src=\"http://www.foobar.js\"></script>',
+            privacy: 'https://www.myprivacyurl.com'
           }
         }
       ],
       debug: ''
     }
   };
+
+  const nativeEventtrackers = [
+    {
+      event: 1,
+      method: 1,
+      url: 'http://www.mytracker.com/imptracker'
+    },
+    {
+      event: 1,
+      method: 2,
+      url: 'http://www.mytracker.com/tracker.js'
+    }
+  ];
 
   describe('interpretResponse', function () {
     let expectedBid = [
@@ -411,8 +496,17 @@ describe('Improve Digital Adapter Tests', function () {
         native: {
           title: 'Native title',
           body: 'Native body',
+          body2: 'body2',
           cta: 'Do it',
           sponsoredBy: 'Improve Digital',
+          rating: '4',
+          likes: '10105',
+          downloads: '150000',
+          price: '3.99',
+          salePrice: '4.49',
+          phone: '(123) 456-7890',
+          address: '123 Main Street, Anywhere USA',
+          displayUrl: 'https://myurl.com',
           icon: {
             url: 'http://blah.com/icon.jpg',
             height: 30,
@@ -430,7 +524,8 @@ describe('Improve Digital Adapter Tests', function () {
             'http://imptrack1.com',
             'http://imptrack2.com'
           ],
-          javascriptTrackers: '<script src=\"http://www.foobar.js\"></script>'
+          javascriptTrackers: '<script src=\"http://www.foobar.js\"></script>',
+          privacyLink: 'https://www.myprivacyurl.com'
         }
       }
     ];
@@ -532,8 +627,23 @@ describe('Improve Digital Adapter Tests', function () {
 
     // Native ads
     it('should return a well-formed native ad bid', function () {
-      const bids = spec.interpretResponse(serverResponseNative);
+      let bids = spec.interpretResponse(serverResponseNative);
+      expect(bids[0].ortbNative).to.deep.equal(serverResponseNative.body.bid[0].native);
+      delete bids[0].ortbNative;
       expect(bids).to.deep.equal(expectedBidNative);
+
+      // eventtrackers
+      const response = JSON.parse(JSON.stringify(serverResponseNative));
+      const expectedBids = JSON.parse(JSON.stringify(expectedBidNative));
+      response.body.bid[0].native.eventtrackers = nativeEventtrackers;
+      expectedBids[0].native.impressionTrackers = [
+        'http://ice.360yield.com/imp_pixel?ic=wVm',
+        'http://www.mytracker.com/imptracker'
+      ];
+      expectedBids[0].native.javascriptTrackers = '<script src=\"http://www.mytracker.com/tracker.js\"></script>';
+      bids = spec.interpretResponse(response);
+      delete bids[0].ortbNative;
+      expect(bids).to.deep.equal(expectedBids);
     });
   });
 
