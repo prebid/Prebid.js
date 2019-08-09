@@ -18,23 +18,26 @@ const TTL_SECONDS = 60 * 5;
 
 function isBidRequestValid(bid) {
   const params = bid.params || {};
-  return !!(params.cId /* && params.pId */);
+  return !!(params.cId);
 }
 
 function buildRequest(bid, size, bidderRequest) {
-  const {params, bidId} = bid;
-  const {bidFloor, cId} = params;
+  const {params, bidId, bidFloor, cId, url: rtbUrl} = bid;
+  const {placementId} = params || {};
   const [width, height] = size.split('x');
 
+  let url = rtbUrl || RTB_URL
+  url = `${url}${~url.indexOf('?') ? '&' : '?'}cId=${cId}`
   const dto = {
     method: 'GET',
-    url: RTB_URL, // /${cId}`,
+    url,
     data: {
       cb: Date.now(),
-      bidFloor: bidFloor,
+      bidFloor,
+      placementId,
       bidId: bidId,
       // publisherId: pId,
-      consent: bidderRequest.gdprConsent && bidderRequest.gdprConsent.consentString,
+      // consent: bidderRequest.gdprConsent && bidderRequest.gdprConsent.consentString,
       width,
       height
     }
@@ -64,49 +67,70 @@ function interpretResponse(serverResponse, bidRequest) {
   if (!serverResponse || !serverResponse.body) {
     return [];
   }
-  const {crid: creativeId, ad, price, exp, ext} = serverResponse.body;
+  const { bidId, width, height, placementId } = (bidRequest && bidRequest.data) || {}
+  if (!bidId) return []
 
-  if (!ad || !price) {
-    return [];
+  const {seatbid, cur} = serverResponse.body;
+
+  if (!seatbid || !seatbid.length) return []
+
+  const bids = []
+  seatbid.forEach(sb => {
+    const { bid } = sb
+    if (bid && bid.length) {
+      bid.forEach(b => {
+        const res = createResponseBid(b, bidId, cur, width, height, placementId)
+        bids.push(res)
+      })
+    }
+  })
+
+  return bids
+}
+
+function createResponseBid(bidInfo, bidId, cur, width, height, placementId) {
+  const {id, code, price, crid, adm, ttl, netRevenue} = bidInfo
+
+  if (!id || !price) {
+    return null;
   }
-  const { adm } = ext
-  const {bidId, width, height, cur} = bidRequest.data;
-
+  const { dataUrl, vastUrl, moduleUrl, vast, options, profileId } = adm || {}
   try {
-    return [{
+    return {
       requestId: bidId,
       cpm: price,
       width: width,
       height: height,
-      creativeId: creativeId,
+      creativeId: crid,
       currency: cur || 'RUB',
-      netRevenue: true,
-      ttl: exp || TTL_SECONDS,
-      ad: ad,
+      netRevenue: netRevenue !== undefined ? netRevenue : true,
+      ttl: ttl || TTL_SECONDS,
+      ad: code,
       renderer: {
-        url: adm.vastUrl,
+        url: dataUrl || vastUrl,
         /**
          * injects javascript code into page
          * <script src='adm.init' data-module-url='adm.moduleUrl' data-vast-url='adm.vastUrl' data-vast="" data-opts='adm.options'></script>
-         * @param bid
          */
-        render: function(bid) {
-          const d = window.top.document
+        render: function() {
+          const d = window.document
           const elem = d.createElement('script')
           const params = {}
-          adm.moduleUrl && (params['data-module-url'] = adm.moduleUrl)
-          adm.vast && (params['data-vast'] = JSON.stringify(adm.vast))
-          adm.vastUrl && (params['data-vast-url'] = adm.vastUrl)
-          adm.options && (params['data-opts'] = JSON.stringify(adm.options))
+          dataUrl && (params['data-url'] = dataUrl)
+          moduleUrl && (params['data-module-url'] = moduleUrl)
+          vast && (params['data-vast'] = JSON.stringify(vast))
+          vastUrl && (params['data-vast-url'] = vastUrl)
+          options && (params['data-opts'] = JSON.stringify(options))
           Object.keys(params).forEach(key => elem.setAttribute(key, params[key]))
-          elem.src = adm.init
-          d.head.appendChild(elem)
+          elem.src = adm.init + (profileId ? `?profileId=${profileId}` : '')
+          const el = placementId ? d.getElementById(placementId) : d.head;
+
+          (el || d.head).appendChild(elem)
         }
       }
     }
-    ];
   } catch (e) {
-    return [];
+    return null
   }
 }
 
