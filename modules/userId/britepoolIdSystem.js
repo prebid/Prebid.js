@@ -61,7 +61,8 @@ export const britepoolIdSubmodule = {
       } else {
         ajax(url, {
           success: response => {
-            callback(britepoolIdSubmodule.normalizeValue(response));
+            const responseObj = britepoolIdSubmodule.normalizeValue(response);
+            callback(responseObj ? { primaryBPID: responseObj.primaryBPID } : null);
           },
           error: error => {
             if (error !== '') utils.logError(error);
