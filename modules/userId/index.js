@@ -50,6 +50,7 @@
  * @typedef {Object} SubmoduleParams
  * @property {(string|undefined)} partner - partner url param value
  * @property {(string|undefined)} url - webservice request url used to load Id data
+ * @property {(string|undefined)} pid - placement id url param value
  */
 
 /**

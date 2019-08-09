@@ -2,7 +2,7 @@ import { registerBidder } from '../src/adapters/bidderFactory';
 
 const VERSION = '3.0.1';
 const BIDDER_CODE = 'sharethrough';
-const STR_ENDPOINT = document.location.protocol + '//btlr.sharethrough.com/header-bid/v1';
+const STR_ENDPOINT = document.location.protocol + '//btlr.sharethrough.com/WYu2BXv1/v1';
 const DEFAULT_SIZE = [1, 1];
 
 export const sharethroughAdapterSpec = {
@@ -92,7 +92,16 @@ export const sharethroughAdapterSpec = {
     }
 
     return syncs;
-  }
+  },
+
+  // Empty implementation for prebid core to be able to find it
+  onTimeout: (data) => {},
+
+  // Empty implementation for prebid core to be able to find it
+  onBidWon: (bid) => {},
+
+  // Empty implementation for prebid core to be able to find it
+  onSetTargeting: (bid) => {}
 }
 
 function getLargestSize(sizes) {
