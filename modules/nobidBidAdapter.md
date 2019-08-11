@@ -8,17 +8,12 @@ media_types: banner
 gdpr_supported: true
 ---
 
-# Overview
+### Bid Params
 
-```
-Module Name: Nobid Bidder Adapter
-Module Type: Bidder Adapter
-Maintainer: rob.dubois@nobid.io
-```
-
-# Description
-
-Module that connects to Nobid demand sources
+{: .table .table-bordered .table-striped }
+| Name          | Scope    | Description | Example | Type     |
+|---------------|----------|-------------|---------|----------|
+| `siteId` | required | siteId is provided by your Nobid account manager |         | `integer` |
 
 # Test Parameters
 ```
