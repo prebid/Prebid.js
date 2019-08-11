@@ -5,9 +5,9 @@
  * @requires module:modules/userId
  */
 
-import * as utils from '../src/utils'
-import {ajax} from '../src/ajax';
-import {submodule} from '../src/hook';
+import * as utils from '../../src/utils'
+import {ajax} from '../../src/ajax';
+import {submodule} from '../../src/hook';
 
 /** @type {Submodule} */
 export const id5IdSubmodule = {
@@ -32,14 +32,15 @@ export const id5IdSubmodule = {
    * @param {ConsentData} [consentData]
    * @returns {function(callback:function)}
    */
-  getId(configParams, consentData) {
+  getId(configParams, consentData, cacheIdObj) {
     if (!configParams || typeof configParams.partner !== 'number') {
       utils.logError(`User ID - ID5 submodule requires partner to be defined as a number`);
       return;
     }
     const hasGdpr = (consentData && typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies) ? 1 : 0;
     const gdprConsentString = hasGdpr ? consentData.consentString : '';
-    const url = `https://id5-sync.com/g/v1/${configParams.partner}.json?gdpr=${hasGdpr}&gdpr_consent=${gdprConsentString}`;
+    const storedUserId = this.decode(cacheIdObj);
+    const url = `https://id5-sync.com/g/v1/${configParams.partner}.json?1puid=${storedUserId ? storedUserId.id5id : ''}&gdpr=${hasGdpr}&gdpr_consent=${gdprConsentString}`;
 
     return function (callback) {
       ajax(url, response => {
@@ -52,7 +53,7 @@ export const id5IdSubmodule = {
           }
         }
         callback(responseObj);
-      }, undefined, { method: 'GET' });
+      }, undefined, { method: 'GET', withCredentials: true });
     }
   }
 };
