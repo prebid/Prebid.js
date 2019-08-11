@@ -63,7 +63,7 @@ export const spec = {
     const payload = {
       'x-ut-hb-params': [],
       'commons': {
-        'adapterVersion': pbjs.version,
+        'adapterVersion': $$PREBID_GLOBAL$$.version,
         'uids': validBidRequests[0].userId
       }
     };
