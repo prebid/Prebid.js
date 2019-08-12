@@ -1,6 +1,6 @@
 /** @module adaptermanger */
 
-import { flatten, getBidderCodes, getDefinedParams, shuffle, timestamp, getBidderRequest, deepAccess, isNumber, isStr, isArray, isPlainObject, hasOwn } from './utils';
+import { flatten, getBidderCodes, getDefinedParams, shuffle, timestamp, getBidderRequest } from './utils';
 import { getLabels, resolveStatus } from './sizeMapping';
 import { processNativeAdUnitParams, nativeAdapters } from './native';
 import { newBidder } from './adapters/bidderFactory';
@@ -10,6 +10,7 @@ import includes from 'core-js/library/fn/array/includes';
 import find from 'core-js/library/fn/array/find';
 import { adunitCounter } from './adUnits';
 import { getRefererInfo } from './refererDetection';
+import { isSchainObjectValid, copySchainObjectInAdunits } from './schain';
 
 var utils = require('./utils.js');
 var CONSTANTS = require('./constants.json');
@@ -158,117 +159,6 @@ export let gdprDataHandler = {
     return gdprDataHandler.consentData;
   }
 };
-
-// validate the supply chanin object 
-// https://github.com/InteractiveAdvertisingBureau/openrtb/blob/master/supplychainobject.md
-function isSchainObjectValid(schainObject){
-  const schainErrorPrefix = 'Invalid schain object found: ';
-  const shouldBeAString = ' should be a string';
-  const shouldBeAnInteger = ' should be an Integer';
-  const shouldBeAnObject = ' should be an object';
-  const shouldBeAnArray = ' should be an Array';
-  
-  if(!isPlainObject(schainObject)){
-    utils.logError(schainErrorPrefix +`schain` + shouldBeAnObject);
-    return false;
-  }
-
-  // complete: Integer
-  if(!isNumber(schainObject.complete) && !Number.isInteger(schainObject.complete)){
-    utils.logError(schainErrorPrefix +`schain.complete` + shouldBeAnInteger);
-    return false;
-  }
-
-  // ver: String
-  if(!isStr(schainObject.ver)){
-    utils.logError(schainErrorPrefix +`schain.ver` + shouldBeAString);
-    return false;
-  }
-
-  // ext: Object [optional]
-  if(hasOwn(schainObject, 'ext')){
-    if(!isPlainObject(schainObject.ext)){
-      utils.logError(schainErrorPrefix +`schain.ext` + shouldBeAnObject);
-      return false;
-    }
-  }
-
-  // nodes: Array of objects
-  if(!isArray(schainObject.nodes)){
-    utils.logError(schainErrorPrefix +`schain.nodes` + shouldBeAnArray);
-    return false;
-  }
-
-  // now validate each node
-  let isEachNodeIsValid = true;
-  schainObject.nodes.forEach(node => {
-
-    // asi: String
-    if(! isStr(node.asi)){
-      isEachNodeIsValid = isEachNodeIsValid && false;
-      utils.logError(schainErrorPrefix +`schain.nodes[].asi` + shouldBeAString);
-    }
-
-    // sid: String
-    if(! isStr(node.sid)){
-      isEachNodeIsValid = isEachNodeIsValid && false;
-      utils.logError(schainErrorPrefix +`schain.nodes[].sid` + shouldBeAString);
-    }
-
-    // hp: Integer
-    if(!isNumber(node.hp) && !Number.isInteger(node.hp)){
-      isEachNodeIsValid = isEachNodeIsValid && false;
-      utils.logError(schainErrorPrefix +`schain.nodes[].hp` + shouldBeAnInteger);
-    }
-
-    // rid: String [Optional]
-    if(hasOwn(node, 'rid')){
-      if(! isStr(node.rid)){
-        isEachNodeIsValid = isEachNodeIsValid && false;
-        utils.logError(schainErrorPrefix +`schain.nodes[].rid` + shouldBeAString);
-      }
-    }
-
-    // name: String [Optional]
-    if(hasOwn(node, 'name')){
-      if(! isStr(node.name)){
-        isEachNodeIsValid = isEachNodeIsValid && false;
-        utils.logError(schainErrorPrefix +`schain.nodes[].name` + shouldBeAString);
-      }
-    }
-
-    // domain: String [Optional]
-    if(hasOwn(node, 'domain')){
-      if(! isStr(node.domain)){
-        isEachNodeIsValid = isEachNodeIsValid && false;
-        utils.logError(schainErrorPrefix +`schain.nodes[].domain` + shouldBeAString);
-      }
-    }
-
-    // rid: String [Optional]
-    if(hasOwn(node, 'ext')){
-      if(! isPlainObject(node.ext)){
-        isEachNodeIsValid = isEachNodeIsValid && false;
-        utils.logError(schainErrorPrefix +`schain.nodes[].ext` + shouldBeAnObject);
-      }
-    }
-  });
-
-  if(! isEachNodeIsValid){
-    return false;
-  }
-
-  return true;
-}
-
-function copySchainObjectInAdunits(adUnits, schainObject){
-  // copy schain object in all adUnits as adUnit.bid.schain
-  adUnits.forEach(adUnit => {      
-    adUnit.bids.forEach(bid => {
-      bid.schain = schainObject;
-    });
-  });
-}
 
 adapterManager.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTimeout, labels) {
   let bidRequests = [];
