@@ -873,7 +873,7 @@ export const spec = {
     payload.device.geo = payload.user.geo;
     payload.site.page = conf.kadpageurl.trim() || payload.site.page.trim();
     payload.site.domain = _getDomainFromURL(payload.site.page);
-    if(schainConfig){
+    if (schainConfig) {
       payload.source = {
         ext: {
           schain: schainConfig
