@@ -168,6 +168,11 @@ adapterManager.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTi
   }
   const refererInfo = getRefererInfo();
 
+  /**
+   * todo: here we can read schain from config and push into adUnits as adUnit.schain
+   */
+
+
   let clientBidderCodes = bidderCodes;
   let clientTestAdapters = [];
   if (_s2sConfig.enabled) {
