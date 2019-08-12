@@ -170,7 +170,7 @@ adapterManager.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTi
   const refererInfo = getRefererInfo();
 
   let schainObject = config.getConfig('schain');
-  if(isSchainObjectValid(schainObject)){
+  if (isSchainObjectValid(schainObject)) {
     copySchainObjectInAdunits(adUnits, schainObject);
   }
 
