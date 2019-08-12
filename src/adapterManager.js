@@ -169,33 +169,33 @@ function isSchainObjectValid(schainObject){
   const shouldBeAnArray = ' should be an Array';
   
   if(!isPlainObject(schainObject)){
-    utils.logMessage(schainErrorPrefix +`schain` + shouldBeAnObject);
+    utils.logError(schainErrorPrefix +`schain` + shouldBeAnObject);
     return false;
   }
 
   // complete: Integer
-  if(!isNumber(schainObject.complete) && Number.isInteger(schainObject.complete)){
-    utils.logMessage(schainErrorPrefix +`schain.complete` + shouldBeAnInteger);
+  if(!isNumber(schainObject.complete) && !Number.isInteger(schainObject.complete)){
+    utils.logError(schainErrorPrefix +`schain.complete` + shouldBeAnInteger);
     return false;
   }
 
   // ver: String
   if(!isStr(schainObject.ver)){
-    utils.logMessage(schainErrorPrefix +`schain.ver` + shouldBeAString);
+    utils.logError(schainErrorPrefix +`schain.ver` + shouldBeAString);
     return false;
   }
 
   // ext: Object [optional]
   if(hasOwn(schainObject, 'ext')){
     if(!isPlainObject(schainObject.ext)){
-      utils.logMessage(schainErrorPrefix +`schain.ext` + shouldBeAnObject);
+      utils.logError(schainErrorPrefix +`schain.ext` + shouldBeAnObject);
       return false;
     }
   }
 
   // nodes: Array of objects
   if(!isArray(schainObject.nodes)){
-    utils.logMessage(schainErrorPrefix +`schain.nodes` + shouldBeAnArray);
+    utils.logError(schainErrorPrefix +`schain.nodes` + shouldBeAnArray);
     return false;
   }
 
@@ -206,26 +206,26 @@ function isSchainObjectValid(schainObject){
     // asi: String
     if(! isStr(node.asi)){
       isEachNodeIsValid = isEachNodeIsValid && false;
-      utils.logMessage(schainErrorPrefix +`schain.nodes[].asi` + shouldBeAString);
+      utils.logError(schainErrorPrefix +`schain.nodes[].asi` + shouldBeAString);
     }
 
     // sid: String
     if(! isStr(node.sid)){
       isEachNodeIsValid = isEachNodeIsValid && false;
-      utils.logMessage(schainErrorPrefix +`schain.nodes[].sid` + shouldBeAString);
+      utils.logError(schainErrorPrefix +`schain.nodes[].sid` + shouldBeAString);
     }
 
     // hp: Integer
-    if(! isNumber(node.hp) && Number.isInteger(node.hp)){
+    if(!isNumber(node.hp) && !Number.isInteger(node.hp)){
       isEachNodeIsValid = isEachNodeIsValid && false;
-      utils.logMessage(schainErrorPrefix +`schain.nodes[].hp` + shouldBeAnInteger);
+      utils.logError(schainErrorPrefix +`schain.nodes[].hp` + shouldBeAnInteger);
     }
 
     // rid: String [Optional]
     if(hasOwn(node, 'rid')){
       if(! isStr(node.rid)){
         isEachNodeIsValid = isEachNodeIsValid && false;
-        utils.logMessage(schainErrorPrefix +`schain.nodes[].rid` + shouldBeAString);
+        utils.logError(schainErrorPrefix +`schain.nodes[].rid` + shouldBeAString);
       }
     }
 
@@ -233,7 +233,7 @@ function isSchainObjectValid(schainObject){
     if(hasOwn(node, 'name')){
       if(! isStr(node.name)){
         isEachNodeIsValid = isEachNodeIsValid && false;
-        utils.logMessage(schainErrorPrefix +`schain.nodes[].name` + shouldBeAString);
+        utils.logError(schainErrorPrefix +`schain.nodes[].name` + shouldBeAString);
       }
     }
 
@@ -241,7 +241,7 @@ function isSchainObjectValid(schainObject){
     if(hasOwn(node, 'domain')){
       if(! isStr(node.domain)){
         isEachNodeIsValid = isEachNodeIsValid && false;
-        utils.logMessage(schainErrorPrefix +`schain.nodes[].domain` + shouldBeAString);
+        utils.logError(schainErrorPrefix +`schain.nodes[].domain` + shouldBeAString);
       }
     }
 
@@ -249,7 +249,7 @@ function isSchainObjectValid(schainObject){
     if(hasOwn(node, 'ext')){
       if(! isPlainObject(node.ext)){
         isEachNodeIsValid = isEachNodeIsValid && false;
-        utils.logMessage(schainErrorPrefix +`schain.nodes[].ext` + shouldBeAnObject);
+        utils.logError(schainErrorPrefix +`schain.nodes[].ext` + shouldBeAnObject);
       }
     }
   });
