@@ -164,5 +164,28 @@ describe('RealVu', function() {
       let r = boost.readPos(a);
       expect(r).to.equal(true);
     });
+
+    it('send_track', function () {
+      const a = boost.ads[boost.len - 1];
+      boost.track(a, 'show', '');
+      boost.sr = 'a';
+      boost.send_track();
+      expect(boost.beacons.length).to.equal(0);
+    });
+
+    it('questA text', function () {
+      let p = document.createElement('p');
+      p.innerHTML = 'ABC';
+      document.body.appendChild(p);
+      let r = boost.questA(p.firstChild);
+      document.body.removeChild(p);
+      expect(r).to.not.equal(null);
+    });
+
+    it('_f=conf', function () {
+      const a = boost.ads[boost.len - 1];
+      let r = boost.tru(a, 'conf');
+      expect(r).to.not.include('_ps=');
+    });
   });
 });

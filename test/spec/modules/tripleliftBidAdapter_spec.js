@@ -4,7 +4,7 @@ import { newBidder } from 'src/adapters/bidderFactory';
 import { deepClone } from 'src/utils';
 import prebid from '../../../package.json';
 
-const ENDPOINT = document.location.protocol + '//tlx.3lift.com/header/auction?';
+const ENDPOINT = 'https://tlx.3lift.com/header/auction?';
 
 describe('triplelift adapter', function () {
   const adapter = newBidder(tripleliftAdapterSpec);
