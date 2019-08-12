@@ -814,6 +814,7 @@ export const spec = {
     var dctrArr = [];
     var bid;
     var blockedIabCategories = [];
+    let schainConfig;
     validBidRequests.forEach(originalBid => {
       bid = utils.deepClone(originalBid);
       bid.params.adSlot = bid.params.adSlot || '';
@@ -848,6 +849,7 @@ export const spec = {
       if (impObj) {
         payload.imp.push(impObj);
       }
+      schainConfig = schainConfig || bid.schain;
     });
 
     if (payload.imp.length == 0) {
@@ -871,6 +873,13 @@ export const spec = {
     payload.device.geo = payload.user.geo;
     payload.site.page = conf.kadpageurl.trim() || payload.site.page.trim();
     payload.site.domain = _getDomainFromURL(payload.site.page);
+    if(schainConfig){
+      payload.source = {
+        ext: {
+          schain: schainConfig
+        }
+      };
+    }
 
     // Attaching GDPR Consent Params
     if (bidderRequest && bidderRequest.gdprConsent) {
