@@ -4,22 +4,11 @@ import { config } from 'src/config';
 var expect = require('chai').expect;
 
 describe('s2sTesting', function () {
-  let mathRandomStub;
-  let randomNumber = 0;
-
-  beforeEach(function () {
-    mathRandomStub = sinon.stub(s2sTesting, 'getGlobalRand').callsFake(() => { return randomNumber; });
-  });
-
-  afterEach(function () {
-    mathRandomStub.restore();
-  });
-
   describe('s2sTesting.getSource', function () {
     // helper function to set random number and get the source
     function getExpectedSource(randNumber, sourceWeights, sources) {
       // set random number for testing
-      randomNumber = randNumber;
+      s2sTesting.globalRand = randNumber;
       return s2sTesting.getSource(sourceWeights, sources);
     }
 
@@ -88,7 +77,7 @@ describe('s2sTesting', function () {
     describe('setting source through s2sConfig', function () {
       beforeEach(function () {
         // set random number for testing
-        randomNumber = 0.7;
+        s2sTesting.globalRand = 0.7;
       });
 
       it('does not work if testing is "false"', function () {
@@ -152,6 +141,8 @@ describe('s2sTesting', function () {
       });
 
       it('sends both bidders to same source when weights are the same', function () {
+        s2sTesting.globalRand = 0.5;
+
         config.setConfig({s2sConfig: {
           bidders: ['rubicon', 'appnexus'],
           testing: true,
@@ -159,6 +150,14 @@ describe('s2sTesting', function () {
             rubicon: {bidSource: {server: 25, client: 75}},
             appnexus: {bidSource: {server: 25, client: 75}}
           }}});
+        expect(s2sTesting.getSourceBidderMap()).to.eql({
+          client: ['rubicon', 'appnexus'],
+          server: []
+        });
+        expect(s2sTesting.getSourceBidderMap()).to.eql({
+          client: ['rubicon', 'appnexus'],
+          server: []
+        });
         expect(s2sTesting.getSourceBidderMap()).to.eql({
           client: ['rubicon', 'appnexus'],
           server: []
@@ -175,6 +174,14 @@ describe('s2sTesting', function () {
           server: ['rubicon', 'appnexus'],
           client: []
         });
+        expect(s2sTesting.getSourceBidderMap()).to.eql({
+          server: ['rubicon', 'appnexus'],
+          client: []
+        });
+        expect(s2sTesting.getSourceBidderMap()).to.eql({
+          server: ['rubicon', 'appnexus'],
+          client: []
+        });
       });
     });
 
@@ -183,7 +190,7 @@ describe('s2sTesting', function () {
         // reset s2sconfig bid sources
         config.setConfig({s2sConfig: {testing: true}});
         // set random number for testing
-        randomNumber = 0.7;
+        s2sTesting.globalRand = 0.7;
       });
 
       it('sets one bidder source from one adUnit', function () {
@@ -301,7 +308,7 @@ describe('s2sTesting', function () {
         // reset s2sconfig bid sources
         config.setConfig({s2sConfig: {testing: true}});
         // set random number for testing
-        randomNumber = 0.7;
+        s2sTesting.globalRand = 0.7;
       });
 
       it('should get sources from  both', function () {
