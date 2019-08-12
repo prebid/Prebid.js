@@ -1,13 +1,9 @@
 import * as utils from '../src/utils';
+// import {config} from '../src/config';
 import { registerBidder } from '../src/adapters/bidderFactory';
-// import { config } from 'src/config';
 import { BANNER } from '../src/mediaTypes'
-
-// const VIDEONOW_CALLBACK_NAME = 'videoNowResponse'
-// const VIDEONOW_REQUESTS_MAP = 'videoNowRequests'
-
-// import { addBidResponse } from '../src/bidmanager'
-// import { registerBidAdapter } from '../src/adaptermanager'
+import { pixel } from './justpremiumBidAdapter'
+// import { pixel } from './justpremiumBidAdapter'
 
 const RTB_URL = '//localhost:8085/bid' // 'rtb.videonow.com/bid'
 // const RTB_URL = 'rtb.videonow.com/bid'
@@ -17,35 +13,34 @@ const BIDDER_CODE = 'videonow'
 const TTL_SECONDS = 60 * 5;
 
 function isBidRequestValid(bid) {
-  const params = bid.params || {};
-  return !!(params.cId);
+  return !!(bid.pId);
 }
 
 function buildRequest(bid, size, bidderRequest) {
-  const {params, bidId, bidFloor, cId, url: rtbUrl} = bid;
-  const {placementId} = params || {};
+  const {refererInfo} = bidderRequest
+  const {ext, bidId, pId, placementId, code, url: rtbUrl} = bid;
   const [width, height] = size.split('x');
 
   let url = rtbUrl || RTB_URL
-  url = `${url}${~url.indexOf('?') ? '&' : '?'}cId=${cId}`
+  url = `${url}${~url.indexOf('?') ? '&' : '?'}pId=${pId}`
   const dto = {
     method: 'GET',
     url,
     data: {
+      referer: refererInfo && refererInfo.referer,
       cb: Date.now(),
-      bidFloor,
       placementId,
       bidId: bidId,
-      // publisherId: pId,
-      // consent: bidderRequest.gdprConsent && bidderRequest.gdprConsent.consentString,
+      code,
       width,
       height
     }
   }
-  // utils._each(ext, (value, key) => {
-  //   dto.data['ext.' + key] = value;
-  // });
-  //
+
+  ext && Object.keys(ext).forEach(key => {
+    dto[key] = ext.key
+  })
+
   return dto;
 }
 
@@ -89,7 +84,7 @@ function interpretResponse(serverResponse, bidRequest) {
 }
 
 function createResponseBid(bidInfo, bidId, cur, width, height, placementId) {
-  const {id, code, price, crid, adm, ttl, netRevenue} = bidInfo
+  const {id, nurl, code, price, crid, adm, ttl, netRevenue} = bidInfo
 
   if (!id || !price) {
     return null;
@@ -106,6 +101,7 @@ function createResponseBid(bidInfo, bidId, cur, width, height, placementId) {
       netRevenue: netRevenue !== undefined ? netRevenue : true,
       ttl: ttl || TTL_SECONDS,
       ad: code,
+      nurl,
       renderer: {
         url: dataUrl || vastUrl,
         /**
@@ -134,6 +130,35 @@ function createResponseBid(bidInfo, bidId, cur, width, height, placementId) {
   }
 }
 
+function getUserSyncs(syncOptions, serverResponses) {
+  const syncs = []
+
+  if (!serverResponses || !serverResponses.length) return sync
+
+  serverResponses.forEach(response => {
+    const {ext} = (response && response.body) || {}
+    const {pixels, iframes} = ext || {}
+
+    if (syncOptions.iframeEnabled && iframes && iframes.length) {
+      iframes.forEach(i => syncs.push({
+        type: 'iframe',
+        url: i
+      })
+      )
+    }
+
+    if (syncOptions.pixelEnabled && pixels && pixels.length) {
+      pixels.forEach(p => syncs.push({
+        type: 'image',
+        url: p
+      })
+      )
+    }
+  })
+
+  return syncs;
+}
+
 export const spec = {
   code: BIDDER_CODE,
   aliases: ['videonow'], // short code
@@ -141,41 +166,12 @@ export const spec = {
   isBidRequestValid,
   buildRequests,
   interpretResponse,
-  getUserSyncs: function(syncOptions, serverResponses) {
-
-  },
+  getUserSyncs,
   onTimeout: function(timeoutData) {},
   onBidWon: function(bid) {
-
-  },
-  onSetTargeting: function(bid) {}
+    const { nurl } = bid
+    nurl && pixel.fire(nurl)
+  }
 }
 
 registerBidder(spec);
-
-// const json = {
-//   'id': '2955a162-699e-4811-ce88-5c3ac973e73c',
-//   'seatbid': [{
-//     'bid': [{
-//       'id': '1',
-//       'impid': '0005110c-8db7-44d8-d47c-cea0908dea9e',
-//       'price': 0.1,
-//       'adid': 'e3bf2b82e3e9485113fad6c9b27f8768.1',
-//       'nurl': 'http://rtb.videonow.ru/?profile_id=111',
-//       'adomain': ['www.paulig.ru'],
-//       'ext': {
-//         'pixels': ['http://sync.videonow.ru/ssp?uuid=1&dsp_id=1', 'http://sync.videonow.ru/ssp?uuid=1&dsp_id=2'],
-//         adm: {
-//           vastUrl: 'vast',
-//           moduleUrl: 'vn_module.js'
-//         }
-//       },
-//       'crid': 'e3bf2b82e3e9485113fad6c9b27f8768.1',
-//     }],
-//     'group': 0,
-//   }],
-//   'bidid': '2955a162-699e-4811-ce88-5c3ac973e73c',
-//   'cur': 'USD',
-// }
-
-// const bidResponse = JSON.stringify(json)
