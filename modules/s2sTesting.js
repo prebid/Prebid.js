@@ -12,7 +12,6 @@ s2sTesting.CLIENT = CLIENT;
 var testing = false; // whether testing is turned on
 var bidSource = {}; // store bidder sources determined from s2sConfing bidderControl
 s2sTesting.globalRand = Math.random(); // if 10% of bidderA and 10% of bidderB should be server-side, make it the same 10%
-console.log('THE globalRand IS:  =>  ', s2sTesting.globalRand);
 
 // load s2sConfig
 config.getConfig('s2sConfig', config => {
