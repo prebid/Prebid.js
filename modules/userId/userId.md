@@ -25,7 +25,7 @@ pbjs.setConfig({
         }, {
             name: "id5Id",
             params: {
-                partner: 173 //Set your real ID5 partner ID here for production, please ask for one at http://id5.io/prebid
+                partner: 173 // Set your real ID5 partner ID here for production, please ask for one at http://id5.io/prebid
             },
             storage: {
                 type: "cookie",
