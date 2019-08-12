@@ -34,7 +34,7 @@ describe('kargo adapter tests', function () {
   });
 
   describe('build request', function() {
-    var bids, undefinedCurrency, noAdServerCurrency, cookies = [], localStorageItems = [];
+    var bids, undefinedCurrency, noAdServerCurrency, cookies = [], localStorageItems = [], sessionIds = [], requestCount = 0;
 
     beforeEach(function () {
       undefinedCurrency = false;
@@ -58,6 +58,9 @@ describe('kargo adapter tests', function () {
             placementId: 'foo'
           },
           bidId: 1,
+          userId: {
+            tdid: 'fake-tdid'
+          },
           sizes: [[320, 50], [300, 250], [300, 600]]
         },
         {
@@ -212,9 +215,14 @@ describe('kargo adapter tests', function () {
       setCookie('krg_crb', getEmptyKrgCrbOldStyle());
     }
 
+    function getSessionId() {
+      return spec._getSessionId();
+    }
+
     function getExpectedKrakenParams(excludeUserIds, excludeKrux, expectedRawCRB, expectedRawCRBCookie) {
       var base = {
         timeout: 200,
+        requestCount: requestCount++,
         currency: 'USD',
         cpmGranularity: 1,
         timestamp: frozenNow.getTime(),
@@ -235,6 +243,7 @@ describe('kargo adapter tests', function () {
         userIDs: {
           kargoID: '5f108831-302d-11e7-bf6b-4595acd3bf6c',
           clientID: '2410d8f2-c111-4811-88a5-7b5e190e475f',
+          tdID: 'fake-tdid',
           crbIDs: {
             2: '82fa2555-5969-4614-b4ce-4dcf1080e9f9',
             16: 'VoxIk8AoJz0AAEdCeyAAAAC2&502',
@@ -263,6 +272,9 @@ describe('kargo adapter tests', function () {
             params: {
               placementId: 'foo'
             },
+            userId: {
+              tdid: 'fake-tdid'
+            },
             sizes: [[320, 50], [300, 250], [300, 600]]
           },
           {
@@ -288,6 +300,7 @@ describe('kargo adapter tests', function () {
         base.userIDs = {
           crbIDs: {}
         };
+        delete base.prebidRawBidRequests[0].userId.tdid;
       }
 
       if (excludeKrux) {
@@ -300,8 +313,14 @@ describe('kargo adapter tests', function () {
       return base;
     }
 
-    function testBuildRequests(expected) {
-      var request = spec.buildRequests(bids, {timeout: 200, foo: 'bar'});
+    function testBuildRequests(excludeTdid, expected) {
+      var clonedBids = JSON.parse(JSON.stringify(bids));
+      if (excludeTdid) {
+        delete clonedBids[0].userId.tdid;
+      }
+      var request = spec.buildRequests(clonedBids, {timeout: 200, foo: 'bar'});
+      expected.sessionId = getSessionId();
+      sessionIds.push(expected.sessionId);
       var krakenParams = JSON.parse(decodeURIComponent(request.data.slice(5)));
       expect(request.data.slice(0, 5)).to.equal('json=');
       expect(request.url).to.equal('https://krk.kargo.com/api/v2/bid');
@@ -310,29 +329,37 @@ describe('kargo adapter tests', function () {
       expect(request.timeout).to.equal(200);
       expect(request.foo).to.equal('bar');
       expect(krakenParams).to.deep.equal(expected);
+      // Make sure session ID stays the same across requests simulating multiple auctions on one page load
+      for (let i in sessionIds) {
+        if (i == 0) {
+          continue;
+        }
+        let sessionId = sessionIds[i];
+        expect(sessionIds[0]).to.equal(sessionId);
+      }
     }
 
     it('works when all params and localstorage and cookies are correctly set', function() {
       initializeKruxUser();
       initializeKruxSegments();
       initializeKrgCrb();
-      testBuildRequests(getExpectedKrakenParams(undefined, undefined, getKrgCrb(), getKrgCrbOldStyle()));
+      testBuildRequests(false, getExpectedKrakenParams(undefined, undefined, getKrgCrb(), getKrgCrbOldStyle()));
     });
 
     it('works when all params and cookies are correctly set but no localstorage', function() {
       initializeKruxUser();
       initializeKruxSegments();
       initializeKrgCrb(true);
-      testBuildRequests(getExpectedKrakenParams(undefined, undefined, null, getKrgCrbOldStyle()));
+      testBuildRequests(false, getExpectedKrakenParams(undefined, undefined, null, getKrgCrbOldStyle()));
     });
 
     it('gracefully handles nothing being set', function() {
-      testBuildRequests(getExpectedKrakenParams(true, true, null, null));
+      testBuildRequests(true, getExpectedKrakenParams(true, true, null, null));
     });
 
     it('gracefully handles browsers without localStorage', function() {
       simulateNoLocalStorage();
-      testBuildRequests(getExpectedKrakenParams(true, true, null, null));
+      testBuildRequests(true, getExpectedKrakenParams(true, true, null, null));
     });
 
     it('handles empty yet valid Kargo CRB', function() {
@@ -340,49 +367,49 @@ describe('kargo adapter tests', function () {
       initializeKruxSegments();
       initializeEmptyKrgCrb();
       initializeEmptyKrgCrbCookie();
-      testBuildRequests(getExpectedKrakenParams(true, undefined, getEmptyKrgCrb(), getEmptyKrgCrbOldStyle()));
+      testBuildRequests(true, getExpectedKrakenParams(true, undefined, getEmptyKrgCrb(), getEmptyKrgCrbOldStyle()));
     });
 
     it('handles broken Kargo CRBs where base64 encoding is invalid', function() {
       initializeKruxUser();
       initializeKruxSegments();
       initializeInvalidKrgCrbType1();
-      testBuildRequests(getExpectedKrakenParams(true, undefined, getInvalidKrgCrbType1(), null));
+      testBuildRequests(true, getExpectedKrakenParams(true, undefined, getInvalidKrgCrbType1(), null));
     });
 
     it('handles broken Kargo CRBs where top level JSON is invalid on cookie', function() {
       initializeKruxUser();
       initializeKruxSegments();
       initializeInvalidKrgCrbType1Cookie();
-      testBuildRequests(getExpectedKrakenParams(true, undefined, null, getInvalidKrgCrbType1()));
+      testBuildRequests(true, getExpectedKrakenParams(true, undefined, null, getInvalidKrgCrbType1()));
     });
 
     it('handles broken Kargo CRBs where decoded JSON is invalid', function() {
       initializeKruxUser();
       initializeKruxSegments();
       initializeInvalidKrgCrbType2();
-      testBuildRequests(getExpectedKrakenParams(true, undefined, getInvalidKrgCrbType2(), null));
+      testBuildRequests(true, getExpectedKrakenParams(true, undefined, getInvalidKrgCrbType2(), null));
     });
 
     it('handles broken Kargo CRBs where inner base 64 is invalid on cookie', function() {
       initializeKruxUser();
       initializeKruxSegments();
       initializeInvalidKrgCrbType2Cookie();
-      testBuildRequests(getExpectedKrakenParams(true, undefined, null, getInvalidKrgCrbType2OldStyle()));
+      testBuildRequests(true, getExpectedKrakenParams(true, undefined, null, getInvalidKrgCrbType2OldStyle()));
     });
 
     it('handles broken Kargo CRBs where inner JSON is invalid on cookie', function() {
       initializeKruxUser();
       initializeKruxSegments();
       initializeInvalidKrgCrbType3Cookie();
-      testBuildRequests(getExpectedKrakenParams(true, undefined, null, getInvalidKrgCrbType3OldStyle()));
+      testBuildRequests(true, getExpectedKrakenParams(true, undefined, null, getInvalidKrgCrbType3OldStyle()));
     });
 
     it('handles broken Kargo CRBs where inner JSON is falsey', function() {
       initializeKruxUser();
       initializeKruxSegments();
       initializeInvalidKrgCrbType4Cookie();
-      testBuildRequests(getExpectedKrakenParams(true, undefined, null, getInvalidKrgCrbType4OldStyle()));
+      testBuildRequests(true, getExpectedKrakenParams(true, undefined, null, getInvalidKrgCrbType4OldStyle()));
     });
 
     it('handles a non-existant currency object on the config', function() {
@@ -390,7 +417,7 @@ describe('kargo adapter tests', function () {
       initializeKruxUser();
       initializeKruxSegments();
       initializeKrgCrb();
-      testBuildRequests(getExpectedKrakenParams(undefined, undefined, getKrgCrb(), getKrgCrbOldStyle()));
+      testBuildRequests(false, getExpectedKrakenParams(undefined, undefined, getKrgCrb(), getKrgCrbOldStyle()));
     });
 
     it('handles no ad server currency being set on the currency object in the config', function() {
@@ -398,7 +425,7 @@ describe('kargo adapter tests', function () {
       initializeKruxUser();
       initializeKruxSegments();
       initializeKrgCrb();
-      testBuildRequests(getExpectedKrakenParams(undefined, undefined, getKrgCrb(), getKrgCrbOldStyle()));
+      testBuildRequests(false, getExpectedKrakenParams(undefined, undefined, getKrgCrb(), getKrgCrbOldStyle()));
     });
   });
 

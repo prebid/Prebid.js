@@ -140,7 +140,17 @@
                             name: "unifiedid",
                             expires: 30
                         },
-                        
+                    }, {
+                        name: "id5Id",
+                        params: {
+                            partner: 173 // @TODO: Set your real ID5 partner ID here for production, please ask for one contact@id5.io
+                        },
+                        storage: {
+                            type: "cookie",
+                            name: "id5id",
+                            expires: 90
+                        },
+
                     }, {
                         name: "pubCommonId",
                         storage: {
@@ -152,6 +162,16 @@
                         //     foo: '9879878907987',
                         //     bar:'93939'
                         // }
+                    },  {
+                      name: 'identityLink',
+                      params: {
+                        pid: '14' // Set your real identityLink placement ID here
+                      },
+                      storage: {
+                        type: 'cookie',
+                        name: 'idl_env',
+                        expires: 60
+                      }
                     }],
                     syncDelay: 5000
                 }

@@ -1,6 +1,6 @@
-import * as utils from 'src/utils';
-import { registerBidder } from 'src/adapters/bidderFactory';
-import { BANNER } from 'src/mediaTypes';
+import * as utils from '../src/utils';
+import { registerBidder } from '../src/adapters/bidderFactory';
+import { BANNER } from '../src/mediaTypes';
 
 const BIDDER_CODE = 'cedato';
 const BID_URL = '//h.cedatoplayer.com/hb';
@@ -107,15 +107,10 @@ export const spec = {
 
   getUserSyncs: function(syncOptions, resps, gdprConsent) {
     const syncs = [];
-    if (syncOptions.pixelEnabled) {
-      resps.forEach(() => {
-        syncs.push(getSync('image', gdprConsent));
-      });
-    }
     if (syncOptions.iframeEnabled) {
-      resps.forEach(() => {
-        syncs.push(getSync('iframe', gdprConsent));
-      });
+      syncs.push(getSync('iframe', gdprConsent));
+    } else if (syncOptions.pixelEnabled) {
+      syncs.push(getSync('image', gdprConsent));
     }
     return syncs;
   }
