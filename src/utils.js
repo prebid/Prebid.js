@@ -571,7 +571,7 @@ export function _map(object, callback) {
   return output;
 }
 
-var hasOwn = function (objectToCheck, propertyToCheckFor) {
+export function hasOwn(objectToCheck, propertyToCheckFor) {
   if (objectToCheck.hasOwnProperty) {
     return objectToCheck.hasOwnProperty(propertyToCheckFor);
   } else {
