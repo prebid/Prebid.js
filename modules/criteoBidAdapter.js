@@ -120,6 +120,7 @@ export const spec = {
           creativeId: bidId,
           width: slot.width,
           height: slot.height,
+          dealId: slot.dealCode,
         }
         if (slot.native) {
           bid.ad = createNativeAd(bidId, slot.native, bidRequest.params.nativeCallback);
