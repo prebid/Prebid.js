@@ -68,7 +68,7 @@ function getEnvelope(url, callback) {
       }
     }
     callback(responseObj.envelope);
-  }, undefined, {method: 'GET'});
+  }, undefined, {method: 'GET', withCredentials: true});
 }
 
 submodule('userId', identityLinkSubmodule);
