@@ -1,4 +1,4 @@
-import { isNumber, isStr, isArray, isPlainObject, hasOwn, logError } from './utils';
+import { isNumber, isStr, isArray, isPlainObject, hasOwn, logError, isInteger } from './utils';
 
 // validate the supply chanin object
 // https://github.com/InteractiveAdvertisingBureau/openrtb/blob/master/supplychainobject.md
@@ -16,7 +16,7 @@ export function isSchainObjectValid(schainObject) {
   }
 
   // complete: Integer
-  if (!isNumber(schainObject.complete) || !Number.isInteger(schainObject.complete)) {
+  if (!isNumber(schainObject.complete) || !isInteger(schainObject.complete)) {
     logError(schainErrorPrefix + `schain.complete` + shouldBeAnInteger);
     return false;
   }
@@ -57,7 +57,7 @@ export function isSchainObjectValid(schainObject) {
     }
 
     // hp: Integer
-    if (!isNumber(node.hp) || !Number.isInteger(node.hp)) {
+    if (!isNumber(node.hp) || !isInteger(node.hp)) {
       isEachNodeIsValid = isEachNodeIsValid && false;
       logError(schainErrorPrefix + `schain.nodes[].hp` + shouldBeAnInteger);
     }
