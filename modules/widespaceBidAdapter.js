@@ -8,7 +8,6 @@ import {
 } from '../src/utils';
 import includes from 'core-js/library/fn/array/includes';
 import find from 'core-js/library/fn/array/find';
-import { utils } from 'mocha';
 
 const BIDDER_CODE = 'widespace';
 const WS_ADAPTER_VERSION = '2.0.1';
@@ -178,11 +177,8 @@ export const spec = {
 function storeData(data, name, stringify = true) {
   const value = stringify ? JSON.stringify(data) : data;
   if (LOCAL_STORAGE_AVAILABLE) {
-    // adding try-catch as this code was breaking CI for IE-11
-    try{
-      localStorage.setItem(name, value);
-      return true;
-    }catch(e){}
+    localStorage.setItem(name, value);
+    return true;
   } else if (COOKIE_ENABLED) {
     const theDate = new Date();
     const expDate = new Date(theDate.setMonth(theDate.getMonth() + 12)).toGMTString();
