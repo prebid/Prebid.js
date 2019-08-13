@@ -344,7 +344,7 @@ export const spec = {
   supportedMediaType: SUPPORTED_MEDIA_TYPES,
 
   isBidRequestValid: function(bid) {
-    const { adUnitCode, auctionId, sizes, bidder, params } = bid;
+    const { adUnitCode, auctionId, sizes, bidder, params, mediaTypes } = bid;
     const { organizationId, site, placement, adUnitElementId } = bid.params;
     let isValid = false;
 
@@ -356,7 +356,7 @@ export const spec = {
       const tempAdUnits = top.ADAGIO.pbjsAdUnits.filter((adUnit) => adUnit.code !== adUnitCode);
       tempAdUnits.push({
         code: adUnitCode,
-        sizes,
+        sizes: (mediaTypes && mediaTypes.banner && Array.isArray(mediaTypes.banner.sizes)) ? mediaTypes.banner.sizes : sizes,
         bids: [{
           bidder,
           params

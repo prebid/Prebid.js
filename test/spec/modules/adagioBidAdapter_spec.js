@@ -57,6 +57,27 @@ describe('adagioAdapter', () => {
       'auctionId': 'lel4fhp239i9km',
     };
 
+    let bidWithMediaTypes = {
+      'bidder': 'adagio',
+      'params': {
+        organizationId: '0',
+        placement: 'PAVE_ATF',
+        site: 'SITE-NAME',
+        pagetype: 'ARTICLE',
+        adUnitElementId: 'banner-atf'
+      },
+      'adUnitCode': 'adunit-code-2',
+      'mediaTypes': {
+        banner: {
+          sizes: [[300, 250]],
+        }
+      },
+      sizes: [[300, 600]],
+      'bidId': 'c180kg4267tyqz',
+      'bidderRequestId': '8vfscuixrovn8i',
+      'auctionId': 'lel4fhp239i9km',
+    }
+
     it('should return true when required params found', () => {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
@@ -88,6 +109,17 @@ describe('adagioAdapter', () => {
     it('should return false if not in the window.top', () => {
       sandbox.stub(utils, 'getWindowTop').throws();
       expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
+
+    it('should expose ADAGIO.pbjsAdUnits in window', () => {
+      spec.isBidRequestValid(bidWithMediaTypes);
+      spec.isBidRequestValid(bid);
+      expect(window.top.ADAGIO.pbjsAdUnits).ok;
+      expect(window.top.ADAGIO.pbjsAdUnits).to.have.lengthOf(2);
+      const adUnitWithMediaTypeSizes = window.top.ADAGIO.pbjsAdUnits.filter((aU) => aU.code === 'adunit-code-2')[0];
+      const adUnitWithSizes = window.top.ADAGIO.pbjsAdUnits.filter((aU) => aU.code === 'adunit-code')[0];
+      expect(adUnitWithMediaTypeSizes.sizes).to.eql([[300, 250]]);
+      expect(adUnitWithSizes.sizes).to.eql([[300, 250], [300, 600]]);
     });
   });
 
@@ -204,6 +236,11 @@ describe('adagioAdapter', () => {
           adUnitElementId: 'banner-atf-456'
         },
         'adUnitCode': 'adunit-code3',
+        'mediaTypes': {
+          banner: {
+            sizes: [[300, 250]]
+          }
+        },
         'sizes': [[300, 250], [300, 600]],
         'bidId': 'c180kg4267tyqz',
         'bidderRequestId': '8vfscuixrovn8i',
@@ -283,6 +320,12 @@ describe('adagioAdapter', () => {
       let request = requests[0];
       expect(request.data.adUnits[0].features).to.exist;
       expect(request.data.adUnits[0].features.viewport_dimensions).to.match(/^[\d]+x[\d]+$/);
+    });
+
+    it('AdUnit requested should have the correct sizes array depending on the config', () => {
+      const requests = spec.buildRequests(bidRequests);
+      console.log(requests[0].data.adUnits[0]);
+      expect(requests[1].data.adUnits[0]).to.have.property('mediaTypes');
     });
 
     it('features params must be an object if featurejs is loaded', () => {
