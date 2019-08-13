@@ -1,36 +1,18 @@
 import { registerBidder } from '../src/adapters/bidderFactory';
-import { config } from '../src/config';
 import * as utils from '../src/utils';
+import { config } from '../src/config';
 
 const BIDDER_CODE = 'sublime';
 const DEFAULT_BID_HOST = 'pbjs.sskzlabs.com';
-const DEFAULT_SAC_HOST = 'sac.ayads.co';
 const DEFAULT_PROTOCOL = 'https';
-const SUBLIME_VERSION = '0.3.5';
-let SUBLIME_ZONE = null;
+const SUBLIME_VERSION = '0.4.0';
 
-/**
- * Send a pixel to antenna
- * @param {String} name The pixel name
- * @param {String} [requestId]
- */
-function sendAntennaPixel(name, requestId) {
-  if (typeof top.sublime !== 'undefined' && typeof top.sublime.analytics !== 'undefined') {
-    let param = {
-      qs: {
-        z: SUBLIME_ZONE
-      }
-    };
-    if (requestId) {
-      param.qs.reqid = encodeURIComponent(requestId);
-    }
-    top.sublime.analytics.fire(SUBLIME_ZONE, name, param);
-  }
-}
+const DEFAULT_CURRENCY = 'EUR';
+const DEFAULT_TTL = 600;
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['sskz', 'sublime-skinz'],
+  aliases: [],
 
   /**
      * Determines whether or not the given bid request is valid.
@@ -50,72 +32,56 @@ export const spec = {
      * @return ServerRequest Info describing the request to the server.
      */
   buildRequests: (validBidRequests, bidderRequest) => {
-    window.sublime = window.sublime ? window.sublime : {};
+    let commonPayload = {
+      sublimeVersion: SUBLIME_VERSION,
+      // Current Prebid params
+      prebidVersion: '$prebid.version$',
+      currencyCode: config.getConfig('currency.adServerCurrency') || DEFAULT_CURRENCY,
+      timeout: config.getConfig('bidderTimeout'),
+      pageDomain: utils.getTopWindowUrl(),
+    };
 
+    // RefererInfo
+    if (bidderRequest && bidderRequest.refererInfo) {
+      commonPayload.referer = bidderRequest.refererInfo.referer;
+      commonPayload.numIframes = bidderRequest.refererInfo.numIframes;
+    }
+    // GDPR handling
     if (bidderRequest && bidderRequest.gdprConsent) {
-      const gdpr = {
-        consentString: bidderRequest.gdprConsent.consentString,
-        gdprApplies: (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') ? bidderRequest.gdprConsent.gdprApplies : true
+      commonPayload.gdprConsent = bidderRequest.gdprConsent.consentString;
+      commonPayload.gdpr = bidderRequest.gdprConsent.gdprApplies; // we're handling the undefined case server side
+    }
+
+    return validBidRequests.map(bid => {
+      let bidPayload = {
+        adUnitCode: bid.adUnitCode,
+        auctionId: bid.auctionId,
+        bidder: bid.bidder,
+        bidderRequestId: bid.bidderRequestId,
+        bidRequestsCount: bid.bidRequestsCount,
+        requestId: bid.bidId,
+        sizes: bid.sizes.map(size => ({
+          w: size[0],
+          h: size[1],
+        })),
+        transactionId: bid.transactionId,
+        zoneId: bid.params.zoneId,
       };
 
-      window.sublime.gdpr = (typeof window.sublime.gdpr !== 'undefined') ? window.sublime.gdpr : {};
-      window.sublime.gdpr.injected = {
-        consentString: gdpr.consentString,
-        gdprApplies: gdpr.gdprApplies
+      let protocol = bid.params.protocol || DEFAULT_PROTOCOL;
+      let bidHost = bid.params.bidHost || DEFAULT_BID_HOST;
+      let payload = Object.assign({}, commonPayload, bidPayload);
+
+      return {
+        method: 'POST',
+        url: protocol + '://' + bidHost + '/bid',
+        data: payload,
+        options: {
+          contentType: 'application/json',
+          withCredentials: true
+        },
       };
-    }
-
-    // Grab only the first `validBidRequest`
-    let bid = validBidRequests[0];
-
-    if (validBidRequests.length > 1) {
-      let leftoverZonesIds = validBidRequests.slice(1).map(bid => { return bid.params.zoneId }).join(',');
-      utils.logWarn(`Sublime Adapter: ZoneIds ${leftoverZonesIds} are ignored. Only one ZoneId per page can be instanciated.`);
-    }
-
-    let params = bid.params;
-    let requestId = bid.bidId || '';
-    let sacHost = params.sacHost || DEFAULT_SAC_HOST;
-    let bidHost = params.bidHost || DEFAULT_BID_HOST;
-    let protocol = params.protocol || DEFAULT_PROTOCOL;
-    SUBLIME_ZONE = params.zoneId;
-
-    window.sublime.pbjs = (typeof window.sublime.pbjs !== 'undefined') ? window.sublime.pbjs : {};
-    window.sublime.pbjs.injected = {
-      bt: config.getConfig('bidderTimeout'),
-      ts: Date.now(),
-      version: SUBLIME_VERSION,
-      requestId
-    };
-
-    let script = document.createElement('script');
-    script.type = 'application/javascript';
-    script.src = 'https://' + sacHost + '/sublime/' + SUBLIME_ZONE + '/prebid?callback=false';
-    document.body.appendChild(script);
-
-    // Initial size object
-    let sizes = {
-      w: null,
-      h: null
-    };
-
-    if (bid.mediaTypes && bid.mediaTypes.banner && bid.mediaTypes.banner.sizes && bid.mediaTypes.banner.sizes[0]) {
-      // Setting size for banner if they exist
-      sizes.w = bid.mediaTypes.banner.sizes[0][0] || false;
-      sizes.h = bid.mediaTypes.banner.sizes[0][1] || false;
-    }
-
-    return {
-      method: 'GET',
-      url: protocol + '://' + bidHost + '/bid',
-      data: {
-        prebid: 1,
-        request_id: requestId,
-        z: SUBLIME_ZONE,
-        w: sizes.w || 1800,
-        h: sizes.h || 1000
-      }
-    };
+    });
   },
 
   /**
@@ -130,6 +96,10 @@ export const spec = {
     const response = serverResponse.body;
 
     if (response) {
+      if (response.timeout || !response.ad || response.ad.match(/<!-- No ad -->/gmi)) {
+        return bidResponses;
+      }
+
       // Setting our returned sizes object to default values
       let returnedSizes = {
         width: 1800,
@@ -137,7 +107,7 @@ export const spec = {
       };
 
       // Verifying Banner sizes
-      if (bidRequest && bidRequest.data.w === 1 && bidRequest.data.h === 1) {
+      if (bidRequest && bidRequest.data && bidRequest.data.w === 1 && bidRequest.data.h === 1) {
         // If banner sizes are 1x1 we set our default size object to 1x1
         returnedSizes = {
           width: 1,
@@ -145,24 +115,20 @@ export const spec = {
         };
       }
 
-      const regexNoAd = /no ad/gmi;
       const bidResponse = {
-        requestId: serverResponse.body.request_id || '',
-        cpm: serverResponse.body.cpm || 0,
-        width: returnedSizes.width,
-        height: returnedSizes.height,
-        creativeId: 1,
-        dealId: 1,
-        currency: serverResponse.body.currency || 'USD',
-        netRevenue: true,
-        ttl: 600,
-        ad: serverResponse.body.ad || '',
+        requestId: response.requestId || '',
+        cpm: response.cpm || 0,
+        width: response.width || returnedSizes.width,
+        height: response.height || returnedSizes.height,
+        creativeId: response.creativeId || 1,
+        dealId: response.dealId || 1,
+        currency: response.currency || DEFAULT_CURRENCY,
+        netRevenue: response.netRevenue || true,
+        ttl: response.ttl || DEFAULT_TTL,
+        ad: response.ad,
       };
 
-      if (!response.timeout && !bidResponse.ad.match(regexNoAd) && response.cpm) {
-        sendAntennaPixel('bid', bidResponse.requestId);
-        bidResponses.push(bidResponse);
-      }
+      bidResponses.push(bidResponse);
     }
 
     return bidResponses;
