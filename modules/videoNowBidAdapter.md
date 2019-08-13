@@ -26,8 +26,8 @@ var adUnits = [
       },
       bids: [{
          bidder: 'videonow',
-         pId: 1,
-         ext: {
+         params: {
+           pId: 1,
            placementId: '36891'
          }
        }]

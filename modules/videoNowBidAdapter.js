@@ -2,8 +2,6 @@ import * as utils from '../src/utils';
 // import {config} from '../src/config';
 import { registerBidder } from '../src/adapters/bidderFactory';
 import { BANNER } from '../src/mediaTypes'
-import { pixel } from './justpremiumBidAdapter'
-// import { pixel } from './justpremiumBidAdapter'
 
 const RTB_URL = '//localhost:8085/bid' // 'rtb.videonow.com/bid'
 // const RTB_URL = 'rtb.videonow.com/bid'
@@ -13,16 +11,19 @@ const BIDDER_CODE = 'videonow'
 const TTL_SECONDS = 60 * 5;
 
 function isBidRequestValid(bid) {
-  return !!(bid.pId);
+  const { params } = bid || {}
+  return !!(params.pId);
 }
 
 function buildRequest(bid, size, bidderRequest) {
-  const {refererInfo} = bidderRequest
-  const {ext, bidId, pId, placementId, code, url: rtbUrl} = bid;
+  const { refererInfo } = bidderRequest
+  const { ext, bidId, params, code } = bid;
   const [width, height] = size.split('x');
+  const { pId, placementId, bidFloor, url: rtbUrl } = params || {}
 
   let url = rtbUrl || RTB_URL
   url = `${url}${~url.indexOf('?') ? '&' : '?'}pId=${pId}`
+
   const dto = {
     method: 'GET',
     url,
@@ -31,6 +32,7 @@ function buildRequest(bid, size, bidderRequest) {
       cb: Date.now(),
       placementId,
       bidId: bidId,
+      bidFloor,
       code,
       width,
       height
@@ -38,15 +40,14 @@ function buildRequest(bid, size, bidderRequest) {
   }
 
   ext && Object.keys(ext).forEach(key => {
-    dto[key] = ext.key
+    dto[`ext_${key}`] = ext.key
   })
 
   return dto;
 }
 
 function buildRequests(validBidRequests, bidderRequest) {
-  console.log('buildRequests')
-  // const topWindowUrl = utils.getTopWindowUrl();
+  utils.logInfo(`${BIDDER_CODE}. buildRequests`)
   const requests = [];
   validBidRequests.forEach(validBidRequest => {
     const sizes = utils.parseSizesInput(validBidRequest.sizes);
@@ -65,7 +66,7 @@ function interpretResponse(serverResponse, bidRequest) {
   const { bidId, width, height, placementId } = (bidRequest && bidRequest.data) || {}
   if (!bidId) return []
 
-  const {seatbid, cur} = serverResponse.body;
+  const { seatbid, cur } = serverResponse.body;
 
   if (!seatbid || !seatbid.length) return []
 
@@ -75,7 +76,7 @@ function interpretResponse(serverResponse, bidRequest) {
     if (bid && bid.length) {
       bid.forEach(b => {
         const res = createResponseBid(b, bidId, cur, width, height, placementId)
-        bids.push(res)
+        res && bids.push(res)
       })
     }
   })
@@ -84,12 +85,22 @@ function interpretResponse(serverResponse, bidRequest) {
 }
 
 function createResponseBid(bidInfo, bidId, cur, width, height, placementId) {
-  const {id, nurl, code, price, crid, adm, ttl, netRevenue} = bidInfo
+  const { id, nurl, code, price, crid, adm, ttl, netRevenue } = bidInfo
 
   if (!id || !price) {
     return null;
   }
   const { dataUrl, vastUrl, moduleUrl, vast, options, profileId } = adm || {}
+
+  if (!dataUrl && !vastUrl) {
+    utils.logError(`${BIDDER_CODE}. createResponseBid(): Nor dataUrl neither vastUrl are not defined`)
+    return null
+  }
+  if (!profileId) {
+    utils.logError(`${BIDDER_CODE}. createResponseBid(): profileId is not defined`)
+    return null
+  }
+
   try {
     return {
       requestId: bidId,
@@ -133,7 +144,7 @@ function createResponseBid(bidInfo, bidId, cur, width, height, placementId) {
 function getUserSyncs(syncOptions, serverResponses) {
   const syncs = []
 
-  if (!serverResponses || !serverResponses.length) return sync
+  if (!serverResponses || !serverResponses.length) return syncs
 
   serverResponses.forEach(response => {
     const {ext} = (response && response.body) || {}
@@ -156,22 +167,29 @@ function getUserSyncs(syncOptions, serverResponses) {
     }
   })
 
-  return syncs;
+  utils.logInfo(`${BIDDER_CODE} getUserSyncs() syncs=${syncs.length}`)
+  return syncs
+}
+
+function onBidWon(bid) {
+  const { nurl } = bid
+  if (nurl) {
+    const img = document.createElement('img')
+    img.src = nurl
+    img.style.cssText = 'display:none !important;'
+    document.body.appendChild(img)
+  }
 }
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['videonow'], // short code
   supportedMediaTypes: [BANNER],
   isBidRequestValid,
   buildRequests,
   interpretResponse,
   getUserSyncs,
   onTimeout: function(timeoutData) {},
-  onBidWon: function(bid) {
-    const { nurl } = bid
-    nurl && pixel.fire(nurl)
-  }
+  onBidWon
 }
 
 registerBidder(spec);
