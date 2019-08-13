@@ -1,14 +1,13 @@
 import { registerBidder } from '../src/adapters/bidderFactory';
-import * as utils from '../src/utils';
 import { config } from '../src/config';
+import * as utils from '../src/utils';
 
 const BIDDER_CODE = 'sublime';
 const DEFAULT_BID_HOST = 'pbjs.sskzlabs.com';
-const DEFAULT_PROTOCOL = 'https';
-const SUBLIME_VERSION = '0.4.0';
-
 const DEFAULT_CURRENCY = 'EUR';
+const DEFAULT_PROTOCOL = 'https';
 const DEFAULT_TTL = 600;
+const SUBLIME_VERSION = '0.4.0';
 
 export const spec = {
   code: BIDDER_CODE,
