@@ -1,4 +1,9 @@
-import { isNumber, isStr, isArray, isPlainObject, hasOwn, logError, isInteger } from './utils';
+import {config} from '../src/config';
+// import {module} from '../../src/hook';
+import {getGlobal} from '../src/prebidGlobal';
+import { isNumber, isStr, isArray, isPlainObject, hasOwn, logError, isInteger } from '../src/utils';
+
+// const MODULE_NAME = 'SCHAIN';
 
 // validate the supply chanin object
 // https://github.com/InteractiveAdvertisingBureau/openrtb/blob/master/supplychainobject.md
@@ -110,3 +115,16 @@ export function copySchainObjectInAdunits(adUnits, schainObject) {
     });
   });
 }
+
+export function init(config) {
+    getGlobal().requestBids.before(function(fn, reqBidsConfigObj){
+      let schainObject = config.getConfig('schain');
+      if (isSchainObjectValid(schainObject)) {
+        copySchainObjectInAdunits(reqBidsConfigObj.adUnits || getGlobal().adUnits, schainObject);
+        // calling fn allows prebid to continue processing
+        return fn.call(this, reqBidsConfigObj);
+      }
+    }, 40);  
+}
+
+init(config)

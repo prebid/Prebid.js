@@ -10,7 +10,6 @@ import includes from 'core-js/library/fn/array/includes';
 import find from 'core-js/library/fn/array/find';
 import { adunitCounter } from './adUnits';
 import { getRefererInfo } from './refererDetection';
-import { isSchainObjectValid, copySchainObjectInAdunits } from './schain';
 
 var utils = require('./utils.js');
 var CONSTANTS = require('./constants.json');
@@ -168,11 +167,6 @@ adapterManager.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTi
     bidderCodes = shuffle(bidderCodes);
   }
   const refererInfo = getRefererInfo();
-
-  let schainObject = config.getConfig('schain');
-  if (isSchainObjectValid(schainObject)) {
-    copySchainObjectInAdunits(adUnits, schainObject);
-  }
 
   let clientBidderCodes = bidderCodes;
   let clientTestAdapters = [];

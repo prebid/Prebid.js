@@ -1,4 +1,4 @@
-import {isSchainObjectValid, copySchainObjectInAdunits} from '../../src/schain';
+import {isSchainObjectValid, copySchainObjectInAdunits} from '../../../modules/schain';
 import { expect } from 'chai';
 
 describe('#isSchainObjectValid: schain object validation', function() {
