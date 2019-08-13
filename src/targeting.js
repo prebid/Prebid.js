@@ -443,7 +443,7 @@ export function newTargeting(auctionManager) {
   }
 
   function getCustomKeys() {
-    let standardKeys = getStandardKeys();
+    let standardKeys = getStandardKeys().concat(NATIVE_TARGETING_KEYS);
     return function(key) {
       return standardKeys.indexOf(key) === -1;
     }
