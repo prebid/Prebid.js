@@ -1,11 +1,8 @@
 import * as utils from '../src/utils';
-// import {config} from '../src/config';
 import { registerBidder } from '../src/adapters/bidderFactory';
 import { BANNER } from '../src/mediaTypes'
 
-const RTB_URL = '//localhost:8085/bid' // 'rtb.videonow.com/bid'
-// const RTB_URL = 'rtb.videonow.com/bid'
-// const RTB_URL = '//poligon.videonow.ru/tests/hbiding.php' // 'localhost:8085/bid' // 'rtb.videonow.com/bid'
+const RTB_URL = 'https://bidder.videonow.ru/prebid'
 
 const BIDDER_CODE = 'videonow'
 const TTL_SECONDS = 60 * 5;
@@ -15,27 +12,25 @@ function isBidRequestValid(bid) {
   return !!(params.pId);
 }
 
-function buildRequest(bid, size, bidderRequest) {
+function buildRequest(bid, bidderRequest) {
   const { refererInfo } = bidderRequest
-  const { ext, bidId, params, code } = bid;
-  const [width, height] = size.split('x');
-  const { pId, placementId, bidFloor, url: rtbUrl } = params || {}
+  const { ext, bidId, params, code, sizes } = bid;
+  const { pId, bidFloor, cur, placementId, url: rtbUrl } = params || {}
 
   let url = rtbUrl || RTB_URL
-  url = `${url}${~url.indexOf('?') ? '&' : '?'}pId=${pId}`
+  url = `${url}${~url.indexOf('?') ? '&' : '?'}profile_id=${pId}`
 
   const dto = {
-    method: 'GET',
+    method: 'POST',
     url,
     data: {
-      referer: refererInfo && refererInfo.referer,
-      cb: Date.now(),
-      placementId,
-      bidId: bidId,
-      bidFloor,
+      id: bidId,
+      cpm: bidFloor,
       code,
-      width,
-      height
+      sizes,
+      cur: cur || 'RUB',
+      placementId,
+      ref: refererInfo && refererInfo.referer
     }
   }
 
@@ -50,11 +45,8 @@ function buildRequests(validBidRequests, bidderRequest) {
   utils.logInfo(`${BIDDER_CODE}. buildRequests`)
   const requests = [];
   validBidRequests.forEach(validBidRequest => {
-    const sizes = utils.parseSizesInput(validBidRequest.sizes);
-    sizes.forEach(size => {
-      const request = buildRequest(validBidRequest, size, bidderRequest);
-      requests.push(request);
-    });
+    const request = buildRequest(validBidRequest, bidderRequest);
+    request && requests.push(request);
   });
   return requests;
 }
@@ -63,19 +55,21 @@ function interpretResponse(serverResponse, bidRequest) {
   if (!serverResponse || !serverResponse.body) {
     return [];
   }
-  const { bidId, width, height, placementId } = (bidRequest && bidRequest.data) || {}
+  const { id: bidId } = (bidRequest && bidRequest.data) || {}
   if (!bidId) return []
 
-  const { seatbid, cur } = serverResponse.body;
-
+  const { seatbid, cur, ext } = serverResponse.body;
   if (!seatbid || !seatbid.length) return []
+
+  const { placementId } = ext || {}
+  if (!placementId) return []
 
   const bids = []
   seatbid.forEach(sb => {
     const { bid } = sb
     if (bid && bid.length) {
       bid.forEach(b => {
-        const res = createResponseBid(b, bidId, cur, width, height, placementId)
+        const res = createResponseBid(b, bidId, cur, placementId)
         res && bids.push(res)
       })
     }
@@ -84,20 +78,15 @@ function interpretResponse(serverResponse, bidRequest) {
   return bids
 }
 
-function createResponseBid(bidInfo, bidId, cur, width, height, placementId) {
-  const { id, nurl, code, price, crid, adm, ttl, netRevenue } = bidInfo
+function createResponseBid(bidInfo, bidId, cur, placementId) {
+  const { id, nurl, code, price, crid, adm, ttl, netRevenue, w, h } = bidInfo
 
   if (!id || !price) {
     return null;
   }
-  const { dataUrl, vastUrl, moduleUrl, vast, options, profileId } = adm || {}
 
-  if (!dataUrl && !vastUrl) {
-    utils.logError(`${BIDDER_CODE}. createResponseBid(): Nor dataUrl neither vastUrl are not defined`)
-    return null
-  }
-  if (!profileId) {
-    utils.logError(`${BIDDER_CODE}. createResponseBid(): profileId is not defined`)
+  if (!adm) {
+    utils.logError(`${BIDDER_CODE}. adm not exists in the response`)
     return null
   }
 
@@ -105,8 +94,8 @@ function createResponseBid(bidInfo, bidId, cur, width, height, placementId) {
     return {
       requestId: bidId,
       cpm: price,
-      width: width,
-      height: height,
+      width: w,
+      height: h,
       creativeId: crid,
       currency: cur || 'RUB',
       netRevenue: netRevenue !== undefined ? netRevenue : true,
@@ -114,25 +103,16 @@ function createResponseBid(bidInfo, bidId, cur, width, height, placementId) {
       ad: code,
       nurl,
       renderer: {
-        url: dataUrl || vastUrl,
-        /**
-         * injects javascript code into page
-         * <script src='adm.init' data-module-url='adm.moduleUrl' data-vast-url='adm.vastUrl' data-vast="" data-opts='adm.options'></script>
-         */
+        url: nurl,
         render: function() {
           const d = window.document
-          const elem = d.createElement('script')
-          const params = {}
-          dataUrl && (params['data-url'] = dataUrl)
-          moduleUrl && (params['data-module-url'] = moduleUrl)
-          vast && (params['data-vast'] = JSON.stringify(vast))
-          vastUrl && (params['data-vast-url'] = vastUrl)
-          options && (params['data-opts'] = JSON.stringify(options))
-          Object.keys(params).forEach(key => elem.setAttribute(key, params[key]))
-          elem.src = adm.init + (profileId ? `?profileId=${profileId}` : '')
-          const el = placementId ? d.getElementById(placementId) : d.head;
+          const el = placementId && d.getElementById(placementId)
+          if (!el) {
+            console.error(`bidAdapter ${BIDDER_CODE}: ${placementId} not found`)
+          }
 
-          (el || d.head).appendChild(elem)
+          el.innerHTML = adm
+          reInitScripts(el)
         }
       }
     }
@@ -193,3 +173,39 @@ export const spec = {
 }
 
 registerBidder(spec);
+
+function reInitScripts(container, shouldReInitInlineScripts = true, delay = 10) {
+  const oldScripts = container.querySelectorAll('script')
+  const innerScriptsInsertActions = []
+
+  oldScripts && oldScripts.length && Array.from(oldScripts).forEach(oldScr => {
+    const { parentNode } = oldScr
+    const scriptElement = document.createElement('script')
+    oldScr.attributes && Array.from(oldScr.attributes).forEach(attr => {
+      scriptElement.setAttribute(attr.name, attr.value)
+    })
+
+    if (oldScr.src) {
+      innerScriptsInsertActions.push(() => {
+        ((function(parent, scriptElm, src) {
+          scriptElm.src = src
+          parent.appendChild(scriptElm)
+        })(parentNode, scriptElement, oldScr.src))
+      })
+    }
+
+    if (oldScr.innerHTML && shouldReInitInlineScripts) {
+      innerScriptsInsertActions.push(() => {
+        ((function(parent, scriptElm, scriptText) {
+          scriptElm.innerHTML = scriptText
+          parent.appendChild(scriptElm)
+        })(parentNode, scriptElement, oldScr.innerHTML))
+      })
+    }
+    parentNode.removeChild(oldScr)
+  })
+
+  innerScriptsInsertActions.length && setTimeout(() => {
+    innerScriptsInsertActions.forEach(si => si())
+  }, delay)
+}

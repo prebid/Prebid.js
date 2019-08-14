@@ -23,36 +23,39 @@ describe('videonowAdapterTests', function () {
   });
 
   describe('bidRequest', function () {
-    const validBidRequests = [{
-      'bidder': 'videonow',
-      'params': {
-        'pId': '1',
-        'placementId': 'div-gpt-ad-1438287399331-0',
-        'url': 'http://localhost:8086/bid',
-        'bidFloor': 10
-      },
-      'crumbs': {
-        'pubcid': '9ab37692-3798-4eee-8510-9cc76e8be8f6'
-      },
-      'mediaTypes': {
-        'banner': {
-          'sizes': [[640, 480]]
-        }
-      },
-      'adUnitCode': 'test-ad',
-      'transactionId': '1c48a82f-aaf0-4e70-8b13-5b63c1259fb7',
-      'sizes': [[640, 480]],
-      'bidId': '2dccf547f2c736',
-      'bidderRequestId': '1c495372b6c6b2',
-      'auctionId': '8fd34e56-ae49-4d9e-ad04-9ce627cdbcbd',
-      'src': 'client',
-      'bidRequestsCount': 1
-    }];
+    const validBidRequests = [
+      {
+        'bidder': 'videonow',
+        'params': {
+          'pId': '1',
+          'placementId': 'div-gpt-ad-1438287399331-0',
+          'url': 'http://localhost:8086/bid',
+          'bidFloor': 10,
+          'cur': 'RUB'
+        },
+        'crumbs': {
+          'pubcid': 'feded041-35dd-4b54-979a-6d7805abfa75'
+        },
+        'mediaTypes': {
+          'banner': {
+            'sizes': [[640, 480], [320, 200]]
+          }
+        },
+        'adUnitCode': 'test-ad',
+        'transactionId': '676403c7-09c9-4b56-be82-e7cae81f40b9',
+        'sizes': [[640, 480], [320, 200]],
+        'bidId': '268c309f46390d',
+        'bidderRequestId': '1dfdd514c36ef6',
+        'auctionId': '4d523546-889a-4029-9a79-13d3c69f9922',
+        'src': 'client',
+        'bidRequestsCount': 1
+      }
+    ];
 
     const bidderRequest = {
       'bidderCode': 'videonow',
-      'auctionId': '8fd34e56-ae49-4d9e-ad04-9ce627cdbcbd',
-      'bidderRequestId': '1c495372b6c6b2',
+      'auctionId': '4d523546-889a-4029-9a79-13d3c69f9922',
+      'bidderRequestId': '1dfdd514c36ef6',
       'bids': [
         {
           'bidder': 'videonow',
@@ -60,26 +63,28 @@ describe('videonowAdapterTests', function () {
             'pId': '1',
             'placementId': 'div-gpt-ad-1438287399331-0',
             'url': 'http://localhost:8086/bid',
-            'bidFloor': 10
+            'bidFloor': 10,
+            'cur': 'RUB'
           },
           'crumbs': {
-            'pubcid': '9ab37692-3798-4eee-8510-9cc76e8be8f6'
+            'pubcid': 'feded041-35dd-4b54-979a-6d7805abfa75'
           },
           'mediaTypes': {
             'banner': {
-              'sizes': [[640, 480]] }
+              'sizes': [[640, 480], [320, 200]]
+            }
           },
           'adUnitCode': 'test-ad',
-          'transactionId': '1c48a82f-aaf0-4e70-8b13-5b63c1259fb7',
-          'sizes': [[640, 480]],
-          'bidId': '2dccf547f2c736',
-          'bidderRequestId': '1c495372b6c6b2',
-          'auctionId': '8fd34e56-ae49-4d9e-ad04-9ce627cdbcbd',
+          'transactionId': '676403c7-09c9-4b56-be82-e7cae81f40b9',
+          'sizes': [[640, 480], [320, 200]],
+          'bidId': '268c309f46390d',
+          'bidderRequestId': '1dfdd514c36ef6',
+          'auctionId': '4d523546-889a-4029-9a79-13d3c69f9922',
           'src': 'client',
           'bidRequestsCount': 1
         }
       ],
-      'auctionStart': 1565711321749,
+      'auctionStart': 1565794308584,
       'timeout': 3000,
       'refererInfo': {
         'referer': 'http://localhost:8086/page',
@@ -89,7 +94,7 @@ describe('videonowAdapterTests', function () {
           'http://localhost:8086/page'
         ]
       },
-      'start': 1565711321755
+      'start': 1565794308589
     };
 
     const requests = spec.buildRequests(validBidRequests, bidderRequest);
@@ -100,23 +105,23 @@ describe('videonowAdapterTests', function () {
     });
 
     it('bidRequest method', function () {
-      expect(request.method).to.equal('GET');
+      expect(request.method).to.equal('POST');
     });
 
     it('bidRequest url', function () {
-      expect(request.url).to.equal('http://localhost:8086/bid?pId=1');
+      expect(request.url).to.equal('http://localhost:8086/bid?profile_id=1');
     });
 
     it('bidRequest data', function () {
       const data = request.data;
-      const w = validBidRequests[0].sizes[0][0] + ''
-      const h = validBidRequests[0].sizes[0][1] + ''
+      // const w = validBidRequests[0].sizes[0][0] + ''
+      // const h = validBidRequests[0].sizes[0][1] + ''
 
-      expect(decodeURIComponent(data.referer)).to.be.eql(bidderRequest.refererInfo.referer);
+      // expect(decodeURIComponent(data.referer)).to.be.eql(bidderRequest.refererInfo.referer);
       expect(data.aid).to.be.eql(validBidRequests[0].params.aid);
-      expect(data.bidId).to.be.eql(validBidRequests[0].bidId);
-      expect(data.width).to.be.eql(w);
-      expect(data.height).to.be.eql(h);
+      expect(data.id).to.be.eql(validBidRequests[0].bidId);
+      expect(data.sizes).to.be.eql(validBidRequests[0].sizes);
+      // expect(data.height).to.be.eql(h);
     });
   });
 
@@ -131,23 +136,22 @@ describe('videonowAdapterTests', function () {
             'bid': [
               {
                 'id': 'e3bf2b82e3e9485113fad6c9b27f8768.1',
-                'impid': '11111111',
+                'impid': '1',
                 'price': 10.97,
                 'nurl': 'http://localhost:8086/event/nurl',
-                'netRevenue': true,
+                'netRevenue': false,
                 'ttl': 800,
-                'adm': {
-                  'profileId': 1,
-                  'dataUrl': 'http://localhost:8086/init',
-                  'init': 'http://localhost:8086/vn_init.js'
-                },
-                'crid': 'e3bf2b82e3e9485113fad6c9b27f8768.1'
+                'adm': 'stub',
+                'crid': 'e3bf2b82e3e9485113fad6c9b27f8768.1',
+                'h': 640,
+                'w': 480
               }
             ],
             'group': 0
           }
         ],
         'ext': {
+          'placementId': 'div-gpt-ad-1438287399331-0',
           'pixels': [
             'http://localhost:8086/event/pxlcookiematching?uiid=1',
             'http://localhost:8086/event/pxlcookiematching?uiid=2'
@@ -162,16 +166,15 @@ describe('videonowAdapterTests', function () {
     };
 
     const bidRequest = {
-      'method': 'GET',
-      'url': 'http://localhost:8086/bid?pId=1',
+      'method': 'POST',
+      'url': 'http://localhost:8086/bid?profile_id=1',
       'data': {
-        'referer': 'http://localhost:8086/page',
-        'cb': 1565715456073,
+        'id': '217b8ab59a18e8',
+        'cpm': 10,
+        'sizes': [[640, 480], [320, 200]],
+        'cur': 'RUB',
         'placementId': 'div-gpt-ad-1438287399331-0',
-        'bidId': '2467b82a7afaf1',
-        'bidFloor': 10,
-        'width': '640',
-        'height': '480'
+        'ref': 'http://localhost:8086/page'
       }
     };
 
@@ -185,20 +188,16 @@ describe('videonowAdapterTests', function () {
       expect(result.length).to.equal(1);
     });
 
-    // it('d', function() {
-    //   const res = result[0]
-    //   const bid = serverResponse.body.seatbid[0].bid
-    //   expect(res).to.be.eql(bid);
-    // })
-    //
     it('Should have required keys', function () {
       const bid = serverResponse.body.seatbid[0].bid[0]
       const res = result[0]
-      expect(res.requestId).to.be.eql(bidRequest.data.bidId);
+      expect(res.requestId).to.be.eql(bidRequest.data.id);
       expect(res.cpm).to.be.eql(bid.price);
       expect(res.creativeId).to.be.eql(bid.crid);
-      expect(res.netRevenue).to.be.eql(true);
+      expect(res.netRevenue).to.be.a('boolean');
       expect(res.ttl).to.be.eql(bid.ttl);
+      expect(res.renderer).to.be.a('Object');
+      expect(res.renderer.render).to.be.a('function');
     })
   });
 });
