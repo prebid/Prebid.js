@@ -35,7 +35,7 @@ Connects to One Video demand source to fetch bids.
                 playbackmethod: [1,5],
                 sid: <scpid>,
                 placement: 1,
-                tagid: '123'
+                inventoryid: 123
               },
              },
               site: {

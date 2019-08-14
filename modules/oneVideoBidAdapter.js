@@ -193,8 +193,8 @@ function getRequestData(bid, consentData) {
   if (bid.params.video.placement) {
     bidData.imp[0].video.placement = bid.params.video.placement
   }
-  if (bid.params.video.tagid) {
-    bidData.imp[0].tagid = bid.params.video.tagid
+  if (bid.params.video.inventoryid) {
+    bidData.imp[0].ext.inventoryid = bid.params.video.inventoryid
   }
   if (bid.params.site && bid.params.site.id) {
     bidData.site.id = bid.params.site.id
