@@ -116,7 +116,7 @@ describe('iasBidAdapter is an adapter that', function () {
         it('screen size', function () {
           expect(val).to.match(/.*sr=[0-9]*\.[0-9]*/);
         });
-        it('url', function () {
+        it('url value', function () {
           expect(val).to.match(/.*url=https?%3A%2F%2F[^\s$.?#].[^\s]*/);
         });
       });
