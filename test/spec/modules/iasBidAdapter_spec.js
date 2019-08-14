@@ -117,7 +117,7 @@ describe('iasBidAdapter is an adapter that', function () {
           expect(val).to.match(/.*sr=[0-9]*\.[0-9]*/);
         });
         it('url', function () {
-          expect(val).to.have.string('url=http%3A%2F%2Flocalhost%3A9876%2Fcontext.html');
+          expect(val).to.match(/.*url=https?%3A%2F%2F[^\s$.?#].[^\s]*/);
         });
       });
       it('has property `bidRequest` that is the first passed in bid request', function () {
