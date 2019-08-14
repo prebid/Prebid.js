@@ -37,6 +37,6 @@ If required, schain module can be included as following
 ```
     $ gulp build --modules=schain,pubmaticBidAdapter,openxBidAdapter,rubiconBidAdapter,sovrnBidAdapter
 ```
-The schian module will validate the schain object passed using pbjs.setConfig API.
+The schain module will validate the schain object passed using pbjs.setConfig API.
 If the schain object is valid then it will be passed on to bidders/adapters in ```validBidRequests[].schain```
 You may refer pubmaticBidAdapter implementaion for the same.

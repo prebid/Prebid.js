@@ -2,7 +2,7 @@ import {config} from '../src/config';
 import {getGlobal} from '../src/prebidGlobal';
 import { isNumber, isStr, isArray, isPlainObject, hasOwn, logError, isInteger } from '../src/utils';
 
-// validate the supply chanin object
+// validate the supply chain object
 // https://github.com/InteractiveAdvertisingBureau/openrtb/blob/master/supplychainobject.md
 
 export function isSchainObjectValid(schainObject) {
