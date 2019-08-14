@@ -177,7 +177,10 @@ export const spec = {
 function storeData(data, name, stringify = true) {
   const value = stringify ? JSON.stringify(data) : data;
   if (LOCAL_STORAGE_AVAILABLE) {
-    localStorage.setItem(name, value);
+    try {
+      // adding try-catch as this code was breaking CI sometimes for IE-11
+      localStorage.setItem(name, value);
+    } catch (e) {}
     return true;
   } else if (COOKIE_ENABLED) {
     const theDate = new Date();
