@@ -105,7 +105,7 @@ export function isSchainObjectValid(schainObject) {
 }
 
 export function copySchainObjectInAdunits(adUnits, schainObject) {
-  // copy schain object in all adUnits as adUnit.bid.schain
+  // copy schain object in all adUnits as adUnits[].bid.schain
   adUnits.forEach(adUnit => {
     adUnit.bids.forEach(bid => {
       bid.schain = schainObject;
