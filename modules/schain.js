@@ -5,13 +5,13 @@ import { isNumber, isStr, isArray, isPlainObject, hasOwn, logError, isInteger } 
 // validate the supply chain object
 // https://github.com/InteractiveAdvertisingBureau/openrtb/blob/master/supplychainobject.md
 
-export function isSchainObjectValid(schainObject) {
-  const schainErrorPrefix = 'Invalid schain object found: ';
-  const shouldBeAString = ' should be a string';
-  const shouldBeAnInteger = ' should be an Integer';
-  const shouldBeAnObject = ' should be an object';
-  const shouldBeAnArray = ' should be an Array';
+const schainErrorPrefix = 'Invalid schain object found: ';
+const shouldBeAString = ' should be a string';
+const shouldBeAnInteger = ' should be an Integer';
+const shouldBeAnObject = ' should be an object';
+const shouldBeAnArray = ' should be an Array';
 
+export function isSchainObjectValid(schainObject) {
   if (!isPlainObject(schainObject)) {
     logError(schainErrorPrefix + `schain` + shouldBeAnObject);
     return false;
@@ -117,7 +117,9 @@ export function init(config) {
   getGlobal().requestBids.before(function(fn, reqBidsConfigObj) {
     let schainObject = config.getConfig('schain');
     if (isSchainObjectValid(schainObject)) {
-      copySchainObjectInAdunits(reqBidsConfigObj.adUnits || getGlobal().adUnits, schainObject);      
+      copySchainObjectInAdunits(reqBidsConfigObj.adUnits || getGlobal().adUnits, schainObject);
+    } else {
+      logError(schainErrorPrefix + 'schain object will not be passed to bidders as it is not valid.');
     }
     // calling fn allows prebid to continue processing
     return fn.call(this, reqBidsConfigObj);
