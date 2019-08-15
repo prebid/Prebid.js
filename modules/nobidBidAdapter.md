@@ -29,7 +29,7 @@ gdpr_supported: true
                 {
                     bidder: "nobid",
                     params: {
-                        siteId: <SITE_ID_PROVIDED_BY_YOUR_NOBID_ACCOUNT_MANAGER>
+                        siteId: 2
                     }
                 }
             ]
@@ -44,7 +44,7 @@ gdpr_supported: true
                 {
                     bidder: "nobid",
                     params: {
-                        siteId: <SITE_ID_PROVIDED_BY_YOUR_NOBID_ACCOUNT_MANAGER>
+                        siteId: 2
                     }
                 }
             ]

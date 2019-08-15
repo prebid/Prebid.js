@@ -16,7 +16,7 @@ describe('Nobid Adapter', function () {
     let bid = {
       'bidder': 'nobid',
       'params': {
-        'siteId': 1
+        'siteId': 2
       },
       'adUnitCode': 'adunit-code',
       'sizes': [[300, 250]],
@@ -33,7 +33,7 @@ describe('Nobid Adapter', function () {
       let bid = Object.assign({}, bid);
       delete bid.params;
       bid.params = {
-        'siteId': 1
+        'siteId': 2
       };
 
       expect(spec.isBidRequestValid(bid)).to.equal(true);
@@ -50,7 +50,7 @@ describe('Nobid Adapter', function () {
   });
 
   describe('buildRequests', function () {
-    const SITE_ID = 1;
+    const SITE_ID = 2;
     const REFERER = 'https://www.examplereferer.com';
     let bidRequests = [
       {
@@ -124,7 +124,7 @@ describe('Nobid Adapter', function () {
       country: 'US',
       ip: '68.83.15.75',
       device: 'COMPUTER',
-      site: 1,
+      site: 2,
       bids: [
         {id: 1,
           bdrid: 101,
