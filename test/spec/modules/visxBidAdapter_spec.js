@@ -40,6 +40,12 @@ describe('VisxAdapter', function () {
   });
 
   describe('buildRequests', function () {
+    const bidderRequest = {
+      refererInfo: {
+        referer: 'http://example.com'
+      }
+    };
+    const encodedReferrer = encodeURIComponent(bidderRequest.refererInfo.referer);
     let bidRequests = [
       {
         'bidder': 'visx',
@@ -77,10 +83,10 @@ describe('VisxAdapter', function () {
     ];
 
     it('should attach valid params to the tag', function () {
-      const request = spec.buildRequests([bidRequests[0]]);
+      const request = spec.buildRequests([bidRequests[0]], bidderRequest);
       const payload = request.data;
       expect(payload).to.be.an('object');
-      expect(payload).to.have.property('u').that.is.a('string');
+      expect(payload).to.have.property('u', encodedReferrer);
       expect(payload).to.have.property('pt', 'net');
       expect(payload).to.have.property('auids', '903535');
       expect(payload).to.have.property('sizes', '300x250,300x600');
@@ -89,10 +95,10 @@ describe('VisxAdapter', function () {
     });
 
     it('sizes must not be duplicated', function () {
-      const request = spec.buildRequests(bidRequests);
+      const request = spec.buildRequests(bidRequests, bidderRequest);
       const payload = request.data;
       expect(payload).to.be.an('object');
-      expect(payload).to.have.property('u').that.is.a('string');
+      expect(payload).to.have.property('u', encodedReferrer);
       expect(payload).to.have.property('pt', 'net');
       expect(payload).to.have.property('auids', '903535,903535,903536');
       expect(payload).to.have.property('sizes', '300x250,300x600,728x90');
@@ -102,10 +108,10 @@ describe('VisxAdapter', function () {
 
     it('pt parameter must be "net" if params.priceType === "gross"', function () {
       bidRequests[1].params.priceType = 'gross';
-      const request = spec.buildRequests(bidRequests);
+      const request = spec.buildRequests(bidRequests, bidderRequest);
       const payload = request.data;
       expect(payload).to.be.an('object');
-      expect(payload).to.have.property('u').that.is.a('string');
+      expect(payload).to.have.property('u', encodedReferrer);
       expect(payload).to.have.property('pt', 'net');
       expect(payload).to.have.property('auids', '903535,903535,903536');
       expect(payload).to.have.property('sizes', '300x250,300x600,728x90');
@@ -115,10 +121,10 @@ describe('VisxAdapter', function () {
     });
     it('pt parameter must be "net" if params.priceType === "net"', function () {
       bidRequests[1].params.priceType = 'net';
-      const request = spec.buildRequests(bidRequests);
+      const request = spec.buildRequests(bidRequests, bidderRequest);
       const payload = request.data;
       expect(payload).to.be.an('object');
-      expect(payload).to.have.property('u').that.is.a('string');
+      expect(payload).to.have.property('u', encodedReferrer);
       expect(payload).to.have.property('pt', 'net');
       expect(payload).to.have.property('auids', '903535,903535,903536');
       expect(payload).to.have.property('sizes', '300x250,300x600,728x90');
@@ -129,10 +135,10 @@ describe('VisxAdapter', function () {
 
     it('pt parameter must be "net" if params.priceType === "undefined"', function () {
       bidRequests[1].params.priceType = 'undefined';
-      const request = spec.buildRequests(bidRequests);
+      const request = spec.buildRequests(bidRequests, bidderRequest);
       const payload = request.data;
       expect(payload).to.be.an('object');
-      expect(payload).to.have.property('u').that.is.a('string');
+      expect(payload).to.have.property('u', encodedReferrer);
       expect(payload).to.have.property('pt', 'net');
       expect(payload).to.have.property('auids', '903535,903535,903536');
       expect(payload).to.have.property('sizes', '300x250,300x600,728x90');
@@ -144,10 +150,10 @@ describe('VisxAdapter', function () {
     it('should add currency from currency.bidderCurrencyDefault', function () {
       const getConfigStub = sinon.stub(config, 'getConfig').callsFake(
         arg => arg === 'currency.bidderCurrencyDefault.visx' ? 'JPY' : 'USD');
-      const request = spec.buildRequests(bidRequests);
+      const request = spec.buildRequests(bidRequests, bidderRequest);
       const payload = request.data;
       expect(payload).to.be.an('object');
-      expect(payload).to.have.property('u').that.is.a('string');
+      expect(payload).to.have.property('u', encodedReferrer);
       expect(payload).to.have.property('pt', 'net');
       expect(payload).to.have.property('auids', '903535,903535,903536');
       expect(payload).to.have.property('sizes', '300x250,300x600,728x90');
@@ -159,10 +165,10 @@ describe('VisxAdapter', function () {
     it('should add currency from currency.adServerCurrency', function () {
       const getConfigStub = sinon.stub(config, 'getConfig').callsFake(
         arg => arg === 'currency.bidderCurrencyDefault.visx' ? '' : 'USD');
-      const request = spec.buildRequests(bidRequests);
+      const request = spec.buildRequests(bidRequests, bidderRequest);
       const payload = request.data;
       expect(payload).to.be.an('object');
-      expect(payload).to.have.property('u').that.is.a('string');
+      expect(payload).to.have.property('u', encodedReferrer);
       expect(payload).to.have.property('pt', 'net');
       expect(payload).to.have.property('auids', '903535,903535,903536');
       expect(payload).to.have.property('sizes', '300x250,300x600,728x90');

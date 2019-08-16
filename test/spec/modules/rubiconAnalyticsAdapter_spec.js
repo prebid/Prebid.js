@@ -453,7 +453,8 @@ const ANALYTICS_MESSAGE = {
       },
       'bidwonStatus': 'success'
     }
-  ]
+  ],
+  'wrapperName': '10000_fakewrapper_test'
 };
 
 function performStandardAuction() {
@@ -492,6 +493,9 @@ describe('rubicon analytics adapter', function () {
       s2sConfig: {
         timeout: 1000,
         accountId: 10000,
+      },
+      rubicon: {
+        wrapperName: '10000_fakewrapper_test'
       }
     })
   });
@@ -726,6 +730,33 @@ describe('rubicon analytics adapter', function () {
       const bidResponseObj = parseBidResponse(innerBid);
       expect(bidResponseObj).to.have.property('bidPriceUSD');
       expect(bidResponseObj.bidPriceUSD).to.equal(1.0);
+    });
+  });
+
+  describe('config with integration type', () => {
+    it('should use the integration type provided in the config instead of the default', () => {
+      sandbox.stub(config, 'getConfig').callsFake(function (key) {
+        const config = {
+          'rubicon.int_type': 'testType'
+        };
+        return config[key];
+      });
+
+      rubiconAnalyticsAdapter.enableAnalytics({
+        options: {
+          endpoint: '//localhost:9999/event',
+          accountId: 1001
+        }
+      });
+
+      performStandardAuction();
+
+      expect(requests.length).to.equal(1);
+      const request = requests[0];
+      const message = JSON.parse(request.requestBody);
+      expect(message.integration).to.equal('testType');
+
+      rubiconAnalyticsAdapter.disableAnalytics();
     });
   });
 });
