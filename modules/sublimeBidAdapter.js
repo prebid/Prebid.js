@@ -1,6 +1,5 @@
 import { registerBidder } from '../src/adapters/bidderFactory';
 import { config } from '../src/config';
-import * as utils from '../src/utils';
 
 const BIDDER_CODE = 'sublime';
 const DEFAULT_BID_HOST = 'pbjs.sskzlabs.com';
@@ -37,7 +36,6 @@ export const spec = {
       prebidVersion: '$prebid.version$',
       currencyCode: config.getConfig('currency.adServerCurrency') || DEFAULT_CURRENCY,
       timeout: config.getConfig('bidderTimeout'),
-      pageDomain: utils.getTopWindowUrl(),
     };
 
     // RefererInfo
