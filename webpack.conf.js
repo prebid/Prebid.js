@@ -14,31 +14,17 @@ var neverBundle = [
 var plugins = [
   new RequireEnsureWithoutJsonp()
 ];
-
+console.log('argv::::', JSON.stringify(argv._));
+console.log('yargs:::', JSON.stringify(argv._) === JSON.stringify(['build']));
 if (argv.analyze) {
   plugins.push(
     new BundleAnalyzerPlugin()
   )
 }
 
-plugins.push(  // this plugin must be last so it can be easily removed for karma unit tests
-  new webpack.optimize.CommonsChunkPlugin({
-    name: 'prebid',
-    filename: 'prebid-core.js',
-    minChunks: function(module) {
-      return (
-        (
-          module.context && module.context === path.resolve('./src') &&
-          !(module.resource && neverBundle.some(name => module.resource.includes(name)))
-        ) ||
-        module.resource && module.resource.includes(path.resolve('./node_modules/core-js'))
-      );
-    }
-  })
-);
-
 module.exports = {
   devtool: 'source-map',
+  mode: JSON.stringify(argv._) === JSON.stringify(['build']) ? 'production' : 'development',
   resolve: {
     modules: [
       path.resolve('.'),
@@ -46,7 +32,7 @@ module.exports = {
     ],
   },
   output: {
-    jsonpFunction: prebid.globalVarName + "Chunk"
+    jsonpFunction: prebid.globalVarName + "Chunk",
   },
   module: {
     rules: [
@@ -70,6 +56,47 @@ module.exports = {
         ],
       }
     ]
+  },
+  optimization: {
+    moduleIds: 'hashed',
+    runtimeChunk: 'single',
+    splitChunks: {
+      minSize: 0,
+      chunks: 'all',
+      cacheGroups: {
+        default: {
+          minChunks: 2,
+          minSize: 0,
+          reuseExistingChunk: true
+        },
+        vendor: {
+          test: /[\\/]node_modules[\\/]/,
+          name: 'vendors',
+          chunks: 'all',
+          reuseExistingChunk: true
+        },
+        commons: {
+          chunks: 'all',
+          name: 'prebid-core',
+          priority:1,
+          minSize: 0,
+          test: function(module, chunks) {
+            console.log('mode::::',this.mode);
+            if(module.resource && module.resource.includes('bidderFactory.js')) {
+              console.log(module.name, module.resource, module.context, 'context:::', module.context && (module.context.indexOf(path.resolve('./src'))>-1));
+            }
+            console.log(module.name, module.resource, module.context, 'context:::', module.context && (module.context.indexOf(path.resolve('./src'))>-1));
+            return (
+              (
+                module.context && (module.context.indexOf(path.resolve('./src'))>-1) &&
+                !(module.resource && neverBundle.some(name => module.resource.includes(name)))
+              ) ||
+              module.resource && module.resource.includes(path.resolve('./node_modules/core-js'))
+            );
+          }
+        }
+      }
+    }
   },
   plugins
 };
