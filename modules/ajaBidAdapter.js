@@ -31,6 +31,10 @@ export const spec = {
       queryString = utils.tryAppendQueryString(queryString, 'prebid_id', bid.bidId);
       queryString = utils.tryAppendQueryString(queryString, 'prebid_ver', '$prebid.version$');
 
+      if (bidderRequest && bidderRequest.refererInfo) {
+        queryString = utils.tryAppendQueryString(queryString, 'page_url', bidderRequest.refererInfo.referer);
+      }
+
       bidRequests.push({
         method: 'GET',
         url: URL,

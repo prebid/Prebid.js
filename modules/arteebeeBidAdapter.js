@@ -96,7 +96,7 @@ function makeRtbRequest(req, bidderRequest) {
     'tmax': config.getConfig('bidderTimeout')
   };
 
-  if (req.params.coppa) {
+  if (config.getConfig('coppa') === true || req.params.coppa) {
     rtbReq.regs = {coppa: 1};
   }
 

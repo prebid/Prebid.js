@@ -1,6 +1,6 @@
-import * as utils from 'src/utils';
-import { registerBidder } from 'src/adapters/bidderFactory';
-import { BANNER } from 'src/mediaTypes';
+import * as utils from '../src/utils';
+import { registerBidder } from '../src/adapters/bidderFactory';
+import { BANNER } from '../src/mediaTypes';
 
 const BIDDER_CODE = 'cedato';
 const BID_URL = '//h.cedatoplayer.com/hb';
@@ -107,26 +107,30 @@ export const spec = {
 
   getUserSyncs: function(syncOptions, resps, gdprConsent) {
     const syncs = [];
-    if (syncOptions.pixelEnabled) {
-      resps.forEach(() => {
-        const uuid = getUserID();
-        const syncUrl = SYNC_URL;
-        let params = '';
-        if (gdprConsent && typeof gdprConsent.consentString === 'string') {
-          if (typeof gdprConsent.gdprApplies === 'boolean') {
-            params += `?gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
-          } else {
-            params += `?gdpr_consent=${gdprConsent.consentString}`;
-          }
-        }
-        syncs.push({
-          type: 'image',
-          url: syncUrl.replace('{UUID}', uuid) + params,
-        });
-      });
+    if (syncOptions.iframeEnabled) {
+      syncs.push(getSync('iframe', gdprConsent));
+    } else if (syncOptions.pixelEnabled) {
+      syncs.push(getSync('image', gdprConsent));
     }
     return syncs;
   }
+}
+
+const getSync = (type, gdprConsent) => {
+  const uuid = getUserID();
+  const syncUrl = SYNC_URL;
+  let params = '&type=' + type;
+  if (gdprConsent && typeof gdprConsent.consentString === 'string') {
+    if (typeof gdprConsent.gdprApplies === 'boolean') {
+      params += `&gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
+    } else {
+      params += `&gdpr_consent=${gdprConsent.consentString}`;
+    }
+  }
+  return {
+    type: type,
+    url: syncUrl.replace('{UUID}', uuid) + params,
+  };
 }
 
 const getUserID = () => {

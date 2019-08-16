@@ -42,12 +42,10 @@ export const spec = {
         }
       };
       spec.bidParams[bidRequest.bidId] = bidRequest.params;
-      if (bidRequest && bidRequest.gdprConsent) {
+      if (bidderRequest && bidderRequest.gdprConsent) {
         ret.data.gdprConsent = {
-          consentString: bidRequest.gdprConsent.consentString,
-          consentRequired: (typeof bidRequest.gdprConsent.gdprApplies === 'boolean')
-            ? bidRequest.gdprConsent.gdprApplies
-            : true
+          consentString: bidderRequest.gdprConsent.consentString,
+          consentRequired: (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') && bidderRequest.gdprConsent.gdprApplies
         };
       }
       return ret;
@@ -72,15 +70,18 @@ export const spec = {
     return bidResponses;
   },
 
-  onBidWon(winObj) {
+  onBidWon(bid) {
+    this.onHandler(bid, '/win');
+  },
+
+  onHandler (bid, route) {
     const getRefererInfo = detectReferer(window);
 
-    winObj.pageUrl = getRefererInfo().referer;
-    if (spec.bidParams[winObj.adId]) {
-      winObj.params = spec.bidParams[winObj.adId];
+    bid.pageUrl = getRefererInfo().referer;
+    if (spec.bidParams[bid.requestId] && (typeof bid.params === 'undefined')) {
+      bid.params = [spec.bidParams[bid.requestId]];
     }
-
-    spec.ajaxCall(`${spec.orbidderHost}/win`, JSON.stringify(winObj));
+    spec.ajaxCall(`${spec.orbidderHost}${route}`, JSON.stringify(bid));
   },
 
   ajaxCall(endpoint, data) {

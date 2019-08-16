@@ -33,7 +33,9 @@ Connects to One Video demand source to fetch bids.
                 position: 1,
                 delivery: [2],
                 playbackmethod: [1,5],
-                placement: 123
+                placement: 123,
+                sid: <scpid>,
+               },
               },
               site: {
                 id: 1,

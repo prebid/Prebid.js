@@ -84,14 +84,18 @@ export const spec = {
     });
 
     const payload = {
-      u: utils.getTopWindowUrl(),
       pt: priceType,
       auids: auids.join(','),
       sizes: utils.getKeys(sizeMap).join(','),
-      r: reqId
+      r: reqId,
+      wrapperType: 'Prebid_js',
+      wrapperVersion: '$prebid.version$'
     };
 
     if (bidderRequest) {
+      if (bidderRequest.refererInfo && bidderRequest.refererInfo.referer) {
+        payload.u = bidderRequest.refererInfo.referer;
+      }
       if (bidderRequest.timeout) {
         payload.wtimeout = bidderRequest.timeout;
       }

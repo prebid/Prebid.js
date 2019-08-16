@@ -337,8 +337,8 @@ describe('33acrossBidAdapter:', function () {
 
         utils.getWindowTop.restore();
         utils.getWindowSelf.restore();
-        sandbox.stub(utils, 'getWindowTop').returns(win);
-        sandbox.stub(utils, 'getWindowSelf').returns({});
+        sandbox.stub(utils, 'getWindowTop').returns({});
+        sandbox.stub(utils, 'getWindowSelf').returns(win);
 
         expect(spec.buildRequests(bidRequests)).to.deep.equal([ serverRequest ]);
       });
@@ -618,73 +618,140 @@ describe('33acrossBidAdapter:', function () {
       ];
     });
 
-    context('when gdpr does not apply', function() {
-      let gdprConsent;
-
-      beforeEach(function() {
-        gdprConsent = {
-          gdprApplies: false
-        };
-      });
-
-      context('when iframe is not enabled', function() {
-        it('returns empty sync array', function() {
-          const syncOptions = {};
-
-          spec.buildRequests(bidRequests);
-
-          expect(spec.getUserSyncs(syncOptions, {}, gdprConsent)).to.deep.equal([]);
-        });
-      });
-
-      context('when iframe is enabled', function() {
-        it('returns sync array equal to number of unique siteIDs', function() {
-          const syncOptions = {
-            iframeEnabled: true
-          };
-
-          spec.buildRequests(bidRequests);
-
-          expect(spec.getUserSyncs(syncOptions, {}, gdprConsent)).to.deep.equal(syncs);
-        });
-      });
-    });
-
-    context('when consent data is not defined', function() {
-      context('when iframe is not enabled', function() {
-        it('returns empty sync array', function() {
-          const syncOptions = {};
-
-          spec.buildRequests(bidRequests);
-
-          expect(spec.getUserSyncs(syncOptions)).to.deep.equal([]);
-        });
-      });
-
-      context('when iframe is enabled', function() {
-        it('returns sync array equal to number of unique siteIDs', function() {
-          const syncOptions = {
-            iframeEnabled: true
-          };
-
-          spec.buildRequests(bidRequests);
-
-          expect(spec.getUserSyncs(syncOptions)).to.deep.equal(syncs);
-        });
-      });
-    });
-
-    context('when gdpr applies', function() {
+    context('when iframe is not enabled', function() {
       it('returns empty sync array', function() {
         const syncOptions = {};
-        const gdprConsent = {
-          gdprApplies: true
-        };
 
         spec.buildRequests(bidRequests);
 
-        expect(spec.getUserSyncs(syncOptions, {}, gdprConsent)).to.deep.equal([]);
+        expect(spec.getUserSyncs(syncOptions)).to.deep.equal([]);
       });
-    })
+    });
+
+    context('when iframe is enabled', function() {
+      let syncOptions;
+      beforeEach(function() {
+        syncOptions = {
+          iframeEnabled: true
+        };
+      });
+
+      context('when there is no gdpr consent data', function() {
+        it('returns sync urls with undefined consent string as param', function() {
+          spec.buildRequests(bidRequests);
+
+          const syncResults = spec.getUserSyncs(syncOptions, {}, undefined);
+          const expectedSyncs = [
+            {
+              type: 'iframe',
+              url: `${syncs[0].url}&gdpr_consent=undefined`
+            },
+            {
+              type: 'iframe',
+              url: `${syncs[1].url}&gdpr_consent=undefined`
+            }
+          ]
+
+          expect(syncResults).to.deep.equal(expectedSyncs);
+        })
+      });
+
+      context('when gdpr applies but there is no consent string', function() {
+        it('returns sync urls with undefined consent string as param and gdpr=1', function() {
+          spec.buildRequests(bidRequests);
+
+          const syncResults = spec.getUserSyncs(syncOptions, {}, {gdprApplies: true});
+          const expectedSyncs = [
+            {
+              type: 'iframe',
+              url: `${syncs[0].url}&gdpr_consent=undefined&gdpr=1`
+            },
+            {
+              type: 'iframe',
+              url: `${syncs[1].url}&gdpr_consent=undefined&gdpr=1`
+            }
+          ];
+
+          expect(syncResults).to.deep.equal(expectedSyncs);
+        });
+      });
+
+      context('when gdpr applies and there is consent string', function() {
+        it('returns sync urls with gdpr_consent=consent string as param and gdpr=1', function() {
+          spec.buildRequests(bidRequests);
+
+          const syncResults = spec.getUserSyncs(syncOptions, {}, {gdprApplies: true, consentString: 'consent123A'});
+          const expectedSyncs = [
+            {
+              type: 'iframe',
+              url: `${syncs[0].url}&gdpr_consent=consent123A&gdpr=1`
+            },
+            {
+              type: 'iframe',
+              url: `${syncs[1].url}&gdpr_consent=consent123A&gdpr=1`
+            }
+          ];
+
+          expect(syncResults).to.deep.equal(expectedSyncs);
+        });
+      });
+
+      context('when gdpr does not apply and there is no consent string', function() {
+        it('returns sync urls with undefined consent string as param and gdpr=0', function() {
+          spec.buildRequests(bidRequests);
+
+          const syncResults = spec.getUserSyncs(syncOptions, {}, {gdprApplies: false});
+          const expectedSyncs = [
+            {
+              type: 'iframe',
+              url: `${syncs[0].url}&gdpr_consent=undefined&gdpr=0`
+            },
+            {
+              type: 'iframe',
+              url: `${syncs[1].url}&gdpr_consent=undefined&gdpr=0`
+            }
+          ];
+          expect(syncResults).to.deep.equal(expectedSyncs);
+        });
+      });
+
+      context('when gdpr is unknown and there is consent string', function() {
+        it('returns sync urls with only consent string as param', function() {
+          spec.buildRequests(bidRequests);
+
+          const syncResults = spec.getUserSyncs(syncOptions, {}, {consentString: 'consent123A'});
+          const expectedSyncs = [
+            {
+              type: 'iframe',
+              url: `${syncs[0].url}&gdpr_consent=consent123A`
+            },
+            {
+              type: 'iframe',
+              url: `${syncs[1].url}&gdpr_consent=consent123A`
+            }
+          ];
+          expect(syncResults).to.deep.equal(expectedSyncs);
+        });
+      });
+
+      context('when gdpr does not apply and there is consent string (yikes!)', function() {
+        it('returns sync urls with consent string as param and gdpr=0', function() {
+          spec.buildRequests(bidRequests);
+
+          const syncResults = spec.getUserSyncs(syncOptions, {}, {gdprApplies: false, consentString: 'consent123A'});
+          const expectedSyncs = [
+            {
+              type: 'iframe',
+              url: `${syncs[0].url}&gdpr_consent=consent123A&gdpr=0`
+            },
+            {
+              type: 'iframe',
+              url: `${syncs[1].url}&gdpr_consent=consent123A&gdpr=0`
+            }
+          ];
+          expect(syncResults).to.deep.equal(expectedSyncs);
+        });
+      });
+    });
   });
 });

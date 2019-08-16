@@ -11,6 +11,13 @@ Maintainer: eng-demand@synacor.com
 The Synacor Media adapter requires setup and approval from Synacor.
 Please reach out to your account manager for more information.
 
+### DFP Video Creative
+To use video, setup a `VAST redirect` creative within Google AdManager (DFP) with the following VAST tag URL:
+
+```
+https://track.technoratimedia.com/openrtb/tags?ID=%%PATTERN:hb_cache_id_synacorm%%&AUCTION_PRICE=%%PATTERN:hb_pb_synacormedia%%
+```
+
 # Test Parameters
 
 ## Web
@@ -24,24 +31,33 @@ Please reach out to your account manager for more information.
           bidder: "synacormedia",
           params: {
               seatId: "prebid",
-              placementId: "81416",
-              bidfloor: "0.10",
+              placementId: "demo1",
+              bidfloor: 0.10,
               pos: 1
           }
       }]
   },{
       code: 'test-div2',
-      sizes: [
-          [300, 250]
-      ],
+      mediaTypes: {
+        video: {
+            context: 'instream',
+            playerSize: [[300, 250]],
+        }
+      },
       bids: [{
           bidder: "synacormedia",
           params: {
               seatId: "prebid",
-              placementId: "demo2"
-              bidfloor: "0.10",
-              pos: 1
+              placementId: "demo1",
+              bidfloor: 0.20,
+              pos: 1,
+              video: {
+                minduration: 15,
+                maxduration: 30,
+                startdelay: 1,
+                linearity: 1
+              }
           }
       }]
-  }];
+    }];
 ```
