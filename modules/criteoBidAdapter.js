@@ -8,15 +8,12 @@ import find from 'core-js/library/fn/array/find';
 import JSEncrypt from 'jsencrypt/bin/jsencrypt';
 import sha256 from 'crypto-js/sha256';
 
-const ADAPTER_VERSION = 19;
+export const ADAPTER_VERSION = 20;
 const BIDDER_CODE = 'criteo';
 const CDB_ENDPOINT = '//bidder.criteo.com/cdb';
 const CRITEO_VENDOR_ID = 91;
-const INTEGRATION_MODES = {
-  'amp': 1,
-};
 const PROFILE_ID_INLINE = 207;
-const PROFILE_ID_PUBLISHERTAG = 185;
+export const PROFILE_ID_PUBLISHERTAG = 185;
 
 // Unminified source code can be found in: https://github.com/Prebid-org/prebid-js-external-js-criteo/blob/master/dist/prod.js
 const PUBLISHER_TAG_URL = '//static.criteo.net/js/ld/publishertag.prebid.js';
@@ -123,6 +120,7 @@ export const spec = {
           creativeId: bidId,
           width: slot.width,
           height: slot.height,
+          dealId: slot.dealCode,
         }
         if (slot.native) {
           bid.ad = createNativeAd(bidId, slot.native, bidRequest.params.nativeCallback);
@@ -189,12 +187,12 @@ function buildContext(bidRequests) {
     url: url,
     debug: queryString['pbt_debug'] === '1',
     noLog: queryString['pbt_nolog'] === '1',
-    integrationMode: undefined,
+    amp: false,
   };
 
   bidRequests.forEach(bidRequest => {
-    if (bidRequest.params.integrationMode) {
-      context.integrationMode = bidRequest.params.integrationMode;
+    if (bidRequest.params.integrationMode === 'amp') {
+      context.amp = true;
     }
   })
 
@@ -212,8 +210,8 @@ function buildCdbUrl(context) {
   url += '&wv=' + encodeURIComponent('$prebid.version$');
   url += '&cb=' + String(Math.floor(Math.random() * 99999999999));
 
-  if (context.integrationMode in INTEGRATION_MODES) {
-    url += '&im=' + INTEGRATION_MODES[context.integrationMode];
+  if (context.amp) {
+    url += '&im=1';
   }
   if (context.debug) {
     url += '&debug=1';
@@ -382,47 +380,37 @@ function createNativeAd(id, payload, callback) {
   </script>`;
 }
 
-export function cryptoVerify(key, hash, code) {
-  var jse = new JSEncrypt();
-  jse.setPublicKey(key);
-  return jse.verify(code, hash, sha256);
-}
-
-function validateFastBid(fastBid) {
-  // The value stored must contain the file's encrypted hash as first line
-  const firstLineEnd = fastBid.indexOf('\n');
-  const firstLine = fastBid.substr(0, firstLineEnd).trim();
-  if (firstLine.substr(0, 9) !== '// Hash: ') {
-    utils.logWarn('No hash found in FastBid');
-    return false;
-  }
-
-  // Remove the hash part from the locally stored value
-  const fileEncryptedHash = firstLine.substr(9);
-  const publisherTag = fastBid.substr(firstLineEnd + 1);
-
-  // Verify the hash using cryptography
-  try {
-    return cryptoVerify(FAST_BID_PUBKEY, fileEncryptedHash, publisherTag);
-  } catch (e) {
-    utils.logWarn('Failed to verify Criteo FastBid');
-    return undefined;
-  }
-}
-
 /**
  * @return {boolean}
  */
-function tryGetCriteoFastBid() {
+export function tryGetCriteoFastBid() {
   try {
-    const fastBid = localStorage.getItem('criteo_fast_bid');
-    if (fastBid !== null) {
-      if (validateFastBid(fastBid) === false) {
-        utils.logWarn('Invalid Criteo FastBid found');
-        localStorage.removeItem('criteo_fast_bid');
+    const fastBidStorageKey = 'criteo_fast_bid';
+    const hashPrefix = '// Hash: ';
+    const fastBidFromStorage = localStorage.getItem(fastBidStorageKey);
+
+    if (fastBidFromStorage !== null) {
+      // The value stored must contain the file's encrypted hash as first line
+      const firstLineEndPosition = fastBidFromStorage.indexOf('\n');
+      const firstLine = fastBidFromStorage.substr(0, firstLineEndPosition).trim();
+
+      if (firstLine.substr(0, hashPrefix.length) !== hashPrefix) {
+        utils.logWarn('No hash found in FastBid');
+        localStorage.removeItem(fastBidStorageKey);
       } else {
-        utils.logInfo('Using Criteo FastBid');
-        eval(fastBid); // eslint-disable-line no-eval
+        // Remove the hash part from the locally stored value
+        const publisherTagHash = firstLine.substr(hashPrefix.length);
+        const publisherTag = fastBidFromStorage.substr(firstLineEndPosition + 1);
+
+        var jsEncrypt = new JSEncrypt();
+        jsEncrypt.setPublicKey(FAST_BID_PUBKEY);
+        if (jsEncrypt.verify(publisherTag, publisherTagHash, sha256)) {
+          utils.logInfo('Using Criteo FastBid');
+          eval(publisherTag); // eslint-disable-line no-eval
+        } else {
+          utils.logWarn('Invalid Criteo FastBid found');
+          localStorage.removeItem(fastBidStorageKey);
+        }
       }
     }
   } catch (e) {
