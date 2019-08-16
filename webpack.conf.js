@@ -39,10 +39,9 @@ plugins.push(  // this plugin must be last so it can be easily removed for karma
 );
 
 plugins.push(
-  new ClosurePlugin({mode: 'STANDARD'},{
+  new ClosurePlugin({mode: 'AGGRESSIVE_BUNDLE'},{
       language_in: 'ECMASCRIPT6',
       language_out: 'ECMASCRIPT5',
-      compilation_level: 'ADVANCED',
       externs: 'externs.js'
   })
 );
