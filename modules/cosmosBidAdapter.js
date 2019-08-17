@@ -10,6 +10,7 @@ const LOG_PREFIX = 'COSMOS: ';
 const DEFAULT_CURRENCY = 'USD';
 const HTTPS = 'https:';
 const MEDIA_TYPES = 'mediaTypes';
+const MIMES = 'mimes';
 const DEFAULT_NET_REVENUE = false;
 
 export const spec = {
@@ -20,8 +21,7 @@ export const spec = {
    * generate UUID
    **/
   _createUUID: function () {
-    var u = Date.now().toString(16) + Math.random().toString(16) + '0'.repeat(16);
-    return [u.substr(0, 8), u.substr(8, 4), '4000-8' + u.substr(13, 3), u.substr(16, 12)].join('-');
+    return ('' + new Date().getTime());
   },
 
   /**
@@ -55,30 +55,27 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    **/
   isBidRequestValid: function (bid) {
-    var retval = false;
-    do {
-      if (!bid || !bid.params) {
-        utils.logError(LOG_PREFIX, 'nil/empty bid object');
-        break;
-      }
+    if (!bid || !bid.params) {
+      utils.logError(LOG_PREFIX, 'nil/empty bid object');
+      return false;
+    }
 
-      if (!utils.isEmpty(bid.params.publisherId) ||
-        !utils.isNumber(bid.params.publisherId)) {
-        utils.logError(LOG_PREFIX, 'publisherId is mandatory and must be numeric. Ad Unit: ', JSON.stringify(bid));
-        break;
+    if (!utils.isEmpty(bid.params.publisherId) ||
+      !utils.isNumber(bid.params.publisherId)) {
+      utils.logError(LOG_PREFIX, 'publisherId is mandatory and must be numeric. Ad Unit: ', JSON.stringify(bid));
+      return false;
+    }
+    // video bid request validation
+    if (bid.hasOwnProperty(MEDIA_TYPES) && bid.mediaTypes.hasOwnProperty(VIDEO)) {
+      if (!bid.mediaTypes.video.hasOwnProperty(MIMES) ||
+        !utils.isArray(bid.mediaTypes.video.mimes) ||
+        bid.mediaTypes.video.mimes.length === 0) {
+        utils.logError(LOG_PREFIX, 'mimes are mandatory for video bid request. Ad Unit: ', JSON.stringify(bid));
+        return false;
       }
-      // video bid request validation
-      if (bid.params.hasOwnProperty('video')) {
-        if (!bid.params.video.hasOwnProperty('mimes') ||
-          !utils.isArray(bid.params.video.mimes) ||
-          bid.params.video.mimes.length === 0) {
-          utils.logError(LOG_PREFIX, 'mimes are mandatory for video bid request. Ad Unit: ', JSON.stringify(bid));
-          break;
-        }
-      }
-      retval = true;
-    } while (0);
-    return retval;
+    }
+
+    return true;
   },
 
   /**
@@ -92,8 +89,14 @@ export const spec = {
       return [];
     }
 
-    return validBidRequests.map(bidRequest => {
-      const oRequest = spec._createRequest(bidRequest);
+    var refererInfo;
+    if (bidderRequest && bidderRequest.refererInfo) {
+      refererInfo = bidderRequest.refererInfo;
+    }
+
+    let clonedBidRequests = utils.deepClone(validBidRequests);
+    return clonedBidRequests.map(bidRequest => {
+      const oRequest = spec._createRequest(bidRequest, refererInfo);
       if (oRequest) {
         spec._setGDPRParams(bidderRequest, oRequest);
         return {
@@ -140,10 +143,12 @@ export const spec = {
                 if (impr.id === bid.impid) {
                   if (impr.banner) {
                     bidResponse.ad = bid.adm;
+                    bidResponse.mediaType = BANNER;
                   } else {
                     bidResponse.width = bid.hasOwnProperty('w') ? bid.w : impr.video.w;
                     bidResponse.height = bid.hasOwnProperty('h') ? bid.h : impr.video.h;
                     bidResponse.vastXml = bid.adm;
+                    bidResponse.mediaType = VIDEO;
                   }
                 }
               });
@@ -176,30 +181,9 @@ export const spec = {
   },
 
   /**
-   * Register bidder specific code, which will execute if bidder timed out after an auction
-   * @param {Data} Containing timeout specific data
-   */
-  onTimeout: function (data) {
-  },
-
-  /**
-   * Register bidder specific code, which will execute if a bid from this bidder won the auction
-   * @param {Bid} The bid that won the auction
-   */
-  onBidWon: function (bid) {
-  },
-
-  /**
-   * Register bidder specific code, which will execute when the adserver targeting has been set for a bid from this bidder
-   * @param {Bid} The bid of which the targeting has been set
-   **/
-  onSetTargeting: function (bid) {
-  },
-
-  /**
    * create IAB standard OpenRTB bid request
    **/
-  _createRequest: function (bidRequests) {
+  _createRequest: function (bidRequests, refererInfo) {
     var oRequest = {};
     try {
       oRequest = {
@@ -208,7 +192,7 @@ export const spec = {
         user: {},
         ext: {}
       };
-      var site = spec._createSite(bidRequests);
+      var site = spec._createSite(bidRequests, refererInfo);
       var app = spec._createApp(bidRequests);
       var device = spec._createDevice(bidRequests);
       if (app) {
@@ -333,14 +317,24 @@ export const spec = {
   /**
    * create site object
    **/
-  _createSite: function (request) {
+  _createSite: function (request, refererInfo) {
     var rSite = request.params.site;
     if (rSite || !request.params.app) {
       var site = {};
       spec._copyObject(rSite, site);
-      site.domain = utils.getTopWindowLocation().hostname;
-      site.ref = utils.getTopWindowReferrer();
-      site.page = utils.getTopWindowLocation().href;
+
+      if (refererInfo) {
+        if (refererInfo.referer) {
+          site.ref = encodeURIComponent(refererInfo.referer);
+        }
+        if (utils.isArray(refererInfo.stack) && refererInfo.stack.length > 0) {
+          site.page = encodeURIComponent(refererInfo.stack[0]);
+          let anchrTag = document.createElement('a');
+          anchrTag.href = site.page;
+          site.domain = anchrTag.hostname;
+        }
+      }
+
       // override publisher object
       site.publisher = {
         id: request.params.publisherId.toString()
