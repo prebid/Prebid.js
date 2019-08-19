@@ -45,7 +45,9 @@ function _createServerRequest(bidRequest, gdprConsent) {
   const element = document.getElementById(bidRequest.adUnitCode);
   const sizes = _transformSizes(bidRequest.sizes);
   const minSize = _getMinSize(sizes);
-
+  if (!element) {
+    return;
+  }
   const viewabilityAmount = _isViewabilityMeasurable()
     ? _getViewability(element, utils.getWindowTop(), minSize)
     : NON_MEASURABLE;
