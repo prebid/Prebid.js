@@ -4,9 +4,9 @@
  * and make it available for any GDPR supported adapters to read/pass this information to
  * their system.
  */
-import * as utils from 'src/utils';
-import { config } from 'src/config';
-import { gdprDataHandler } from 'src/adaptermanager';
+import * as utils from '../src/utils';
+import { config } from '../src/config';
+import { gdprDataHandler } from '../src/adapterManager';
 import includes from 'core-js/library/fn/array/includes';
 import strIncludes from 'core-js/library/fn/string/includes';
 
@@ -20,6 +20,7 @@ export let allowAuction;
 export let staticConsentData;
 
 let consentData;
+let addedConsentHook = false;
 
 // add new CMPs here, with their dedicated lookup function
 const cmpCallMap = {
@@ -56,11 +57,11 @@ function lookupIabConsent(cmpSuccess, cmpError, hookConfig) {
     }
 
     return {
-      consentDataCallback: function(consentResponse) {
+      consentDataCallback: function (consentResponse) {
         cmpResponse.getConsentData = consentResponse;
         afterEach();
       },
-      vendorConsentsCallback: function(consentResponse) {
+      vendorConsentsCallback: function (consentResponse) {
         cmpResponse.getVendorConsents = consentResponse;
         afterEach();
       }
@@ -82,7 +83,7 @@ function lookupIabConsent(cmpSuccess, cmpError, hookConfig) {
   // if the CMP is not found, the iframe function will call the cmpError exit callback to abort the rest of the CMP workflow
   try {
     cmpFunction = window.__cmp || utils.getWindowTop().__cmp;
-  } catch (e) {}
+  } catch (e) { }
 
   if (utils.isFn(cmpFunction)) {
     cmpFunction('getConsentData', null, callbackHandler.consentDataCallback);
@@ -97,7 +98,7 @@ function lookupIabConsent(cmpSuccess, cmpError, hookConfig) {
     while (!cmpFrame) {
       try {
         if (f.frames['__cmpLocator']) cmpFrame = f;
-      } catch (e) {}
+      } catch (e) { }
       if (f === window.top) break;
       f = f.parent;
     }
@@ -139,13 +140,15 @@ function lookupIabConsent(cmpSuccess, cmpError, hookConfig) {
   function callCmpWhileInIframe(commandName, cmpFrame, moduleCallback) {
     /* Setup up a __cmp function to do the postMessage and stash the callback.
       This function behaves (from the caller's perspective identicially to the in-frame __cmp call */
-    window.__cmp = function(cmd, arg, callback) {
+    window.__cmp = function (cmd, arg, callback) {
       let callId = Math.random() + '';
-      let msg = {__cmpCall: {
-        command: cmd,
-        parameter: arg,
-        callId: callId
-      }};
+      let msg = {
+        __cmpCall: {
+          command: cmd,
+          parameter: arg,
+          callId: callId
+        }
+      };
       cmpCallbacks[callId] = callback;
       cmpFrame.postMessage(msg, '*');
     }
@@ -182,16 +185,16 @@ function lookupIabConsent(cmpSuccess, cmpError, hookConfig) {
 /**
  * If consentManagement module is enabled (ie included in setConfig), this hook function will attempt to fetch the
  * user's encoded consent string from the supported CMP.  Once obtained, the module will store this
- * data as part of a gdprConsent object which gets transferred to adaptermanager's gdprDataHandler object.
+ * data as part of a gdprConsent object which gets transferred to adapterManager's gdprDataHandler object.
  * This information is later added into the bidRequest object for any supported adapters to read/pass along to their system.
  * @param {object} reqBidsConfigObj required; This is the same param that's used in pbjs.requestBids.
  * @param {function} fn required; The next function in the chain, used by hook.js
  */
-export function requestBidsHook(reqBidsConfigObj, fn) {
+export function requestBidsHook(fn, reqBidsConfigObj) {
   // preserves all module related variables for the current auction instance (used primiarily for concurrent auctions)
   const hookConfig = {
     context: this,
-    args: arguments,
+    args: [reqBidsConfigObj],
     nextFn: fn,
     adUnits: reqBidsConfigObj.adUnits || $$PREBID_GLOBAL$$.adUnits,
     bidsBackHandler: reqBidsConfigObj.bidsBackHandler,
@@ -339,7 +342,7 @@ export function resetConsentData() {
  * A configuration function that initializes some module variables, as well as add a hook into the requestBids function
  * @param {object} config required; consentManagement module config settings; cmp (string), timeout (int), allowAuctionWithoutConsent (boolean)
  */
-export function setConfig(config) {
+export function setConsentConfig(config) {
   if (utils.isStr(config.cmpApi)) {
     userCMP = config.cmpApi;
   } else {
@@ -371,6 +374,9 @@ export function setConfig(config) {
       utils.logError(`consentManagement config with cmpApi: 'static' did not specify consentData. No consents will be available to adapters.`);
     }
   }
-  $$PREBID_GLOBAL$$.requestBids.addHook(requestBidsHook, 50);
+  if (!addedConsentHook) {
+    $$PREBID_GLOBAL$$.requestBids.before(requestBidsHook, 50);
+  }
+  addedConsentHook = true;
 }
-config.getConfig('consentManagement', config => setConfig(config.consentManagement));
+config.getConfig('consentManagement', config => setConsentConfig(config.consentManagement));

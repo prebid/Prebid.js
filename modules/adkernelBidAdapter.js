@@ -1,9 +1,9 @@
-import * as utils from 'src/utils';
-import { BANNER, VIDEO } from 'src/mediaTypes';
-import {registerBidder} from 'src/adapters/bidderFactory';
+import * as utils from '../src/utils';
+import { BANNER, VIDEO } from '../src/mediaTypes';
+import {registerBidder} from '../src/adapters/bidderFactory';
 import find from 'core-js/library/fn/array/find';
 import includes from 'core-js/library/fn/array/includes';
-import {parse as parseUrl} from 'src/url'
+import {parse as parseUrl} from '../src/url';
 
 const VIDEO_TARGETING = ['mimes', 'minduration', 'maxduration', 'protocols',
   'startdelay', 'linearity', 'boxingallowed', 'playbackmethod', 'delivery',
@@ -20,7 +20,8 @@ export const spec = {
   supportedMediaTypes: [BANNER, VIDEO],
   isBidRequestValid: function(bidRequest) {
     return 'params' in bidRequest && typeof bidRequest.params.host !== 'undefined' &&
-      'zoneId' in bidRequest.params && !isNaN(Number(bidRequest.params.zoneId));
+      'zoneId' in bidRequest.params && !isNaN(Number(bidRequest.params.zoneId)) &&
+      bidRequest.mediaTypes && (bidRequest.mediaTypes.banner || bidRequest.mediaTypes.video);
   },
   buildRequests: function(bidRequests, bidderRequest) {
     let impDispatch = dispatchImps(bidRequests, bidderRequest.refererInfo);
@@ -31,14 +32,9 @@ export const spec = {
       Object.keys(impDispatch[host]).forEach(zoneId => {
         const request = buildRtbRequest(impDispatch[host][zoneId], auctionId, gdprConsent, bidderRequest.refererInfo);
         requests.push({
-          method: 'GET',
-          url: `${window.location.protocol}//${host}/rtbg`,
-          data: {
-            zone: Number(zoneId),
-            ad_type: 'rtb',
-            v: VERSION,
-            r: JSON.stringify(request)
-          }
+          method: 'POST',
+          url: `${window.location.protocol}//${host}/hb?zone=${Number(zoneId)}&v=${VERSION}`,
+          data: JSON.stringify(request)
         });
       });
     });
@@ -50,7 +46,7 @@ export const spec = {
       return [];
     }
 
-    let rtbRequest = JSON.parse(request.data.r);
+    let rtbRequest = JSON.parse(request.data);
     let rtbImps = rtbRequest.imp;
     let rtbBids = response.seatbid
       .map(seatbid => seatbid.bid)
@@ -120,15 +116,14 @@ function buildImp(bidRequest, secure) {
     'tagid': bidRequest.adUnitCode
   };
 
-  if (bidRequest.mediaType === BANNER || utils.deepAccess(bidRequest, `mediaTypes.banner`) ||
-    (bidRequest.mediaTypes === undefined && bidRequest.mediaType === undefined)) {
-    let sizes = canonicalizeSizesArray(bidRequest.sizes);
+  if (utils.deepAccess(bidRequest, `mediaTypes.banner`)) {
+    let sizes = canonicalizeSizesArray(bidRequest.mediaTypes.banner.sizes);
     imp.banner = {
       format: sizes.map(s => ({'w': s[0], 'h': s[1]})),
       topframe: 0
     };
-  } else if (bidRequest.mediaType === VIDEO || utils.deepAccess(bidRequest, 'mediaTypes.video')) {
-    let size = canonicalizeSizesArray(bidRequest.sizes)[0];
+  } else if (utils.deepAccess(bidRequest, 'mediaTypes.video')) {
+    let size = canonicalizeSizesArray(bidRequest.mediaTypes.video.playerSize)[0];
     imp.video = {
       w: size[0],
       h: size[1]
@@ -222,9 +217,9 @@ function createSite(refInfo) {
  *  @param bid rtb Bid object
  */
 function formatAdMarkup(bid) {
-  var adm = bid.adm;
+  let adm = bid.adm;
   if ('nurl' in bid) {
     adm += utils.createTrackPixelHtml(`${bid.nurl}&px=1`);
   }
-  return `<!DOCTYPE html><html><head><title></title><body style='margin:0px;padding:0px;'>${adm}</body></head>`;
+  return adm;
 }
