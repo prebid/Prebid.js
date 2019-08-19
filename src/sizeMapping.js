@@ -1,5 +1,5 @@
-import { config } from 'src/config';
-import {logWarn, isPlainObject, deepAccess, deepClone} from 'src/utils';
+import { config } from './config';
+import {logWarn, isPlainObject, deepAccess, deepClone, getWindowTop} from './utils';
 import includes from 'core-js/library/fn/array/includes';
 
 let sizeConfig = [];
@@ -65,20 +65,18 @@ export function resolveStatus({labels = [], labelAll = false, activeLabels = []}
   let maps = evaluateSizeConfig(configs);
 
   if (!isPlainObject(mediaTypes)) {
-    mediaTypes = {};
+    // add support for deprecated adUnit.sizes by creating correct banner mediaTypes if they don't already exist
+    if (sizes) {
+      mediaTypes = {
+        banner: {
+          sizes
+        }
+      };
+    } else {
+      mediaTypes = {};
+    }
   } else {
     mediaTypes = deepClone(mediaTypes);
-  }
-
-  // add support for deprecated adUnit.sizes by creating correct banner mediaTypes if they don't already exist
-  if (sizes) {
-    if (!mediaTypes.banner) {
-      mediaTypes.banner = {
-        sizes
-      }
-    } else if (!mediaTypes.banner.sizes) {
-      mediaTypes.banner.sizes = sizes;
-    }
   }
 
   let oldSizes = deepAccess(mediaTypes, 'banner.sizes');
@@ -90,9 +88,9 @@ export function resolveStatus({labels = [], labelAll = false, activeLabels = []}
 
   let results = {
     active: (
-      allMediaTypes.length > 1 || (allMediaTypes.length === 1 && allMediaTypes[0] !== 'banner')
+      allMediaTypes.every(type => type !== 'banner')
     ) || (
-      allMediaTypes[0] === 'banner' && deepAccess(mediaTypes, 'banner.sizes.length') > 0 && (
+      allMediaTypes.some(type => type === 'banner') && deepAccess(mediaTypes, 'banner.sizes.length') > 0 && (
         labels.length === 0 || (
           (!labelAll && (
             labels.some(label => maps.labels[label]) ||
@@ -125,7 +123,17 @@ function evaluateSizeConfig(configs) {
       typeof config === 'object' &&
       typeof config.mediaQuery === 'string'
     ) {
-      if (matchMedia(config.mediaQuery).matches) {
+      let ruleMatch = false;
+
+      try {
+        ruleMatch = getWindowTop().matchMedia(config.mediaQuery).matches;
+      } catch (e) {
+        logWarn('Unfriendly iFrame blocks sizeConfig from being correctly evaluated');
+
+        ruleMatch = matchMedia(config.mediaQuery).matches;
+      }
+
+      if (ruleMatch) {
         if (Array.isArray(config.sizesSupported)) {
           results.shouldFilter = true;
         }

@@ -38,7 +38,8 @@ describe('The ZEDO bidding adapter', function () {
           sizes: [[300, 200]],
           params: {
             channelCode: 20000000,
-            dimId: 10
+            dimId: 10,
+            pubId: 1
           },
         },
       ];
@@ -46,7 +47,7 @@ describe('The ZEDO bidding adapter', function () {
       expect(request.url).to.match(/^\/\/saxp.zedo.com\/asw\/fmh.json/);
       expect(request.method).to.equal('GET');
       const zedoRequest = request.data;
-      expect(zedoRequest).to.equal('g={"placements":[{"network":20,"channel":0,"width":300,"height":200,"dimension":10,"version":"$prebid.version$","keyword":"","transactionId":"12345667","renderers":[{"name":"display"}]}]}');
+      expect(zedoRequest).to.equal('g={"placements":[{"network":20,"channel":0,"publisher":1,"width":300,"height":200,"dimension":10,"version":"$prebid.version$","keyword":"","transactionId":"12345667","renderers":[{"name":"display"}]}]}');
     });
 
     it('should properly build a channelCode request for video with type defined', function () {
@@ -71,7 +72,7 @@ describe('The ZEDO bidding adapter', function () {
       expect(request.url).to.match(/^\/\/saxp.zedo.com\/asw\/fmh.json/);
       expect(request.method).to.equal('GET');
       const zedoRequest = request.data;
-      expect(zedoRequest).to.equal('g={"placements":[{"network":20,"channel":0,"width":640,"height":480,"dimension":85,"version":"$prebid.version$","keyword":"","transactionId":"12345667","renderers":[{"name":"Inarticle"}]}]}');
+      expect(zedoRequest).to.equal('g={"placements":[{"network":20,"channel":0,"publisher":0,"width":640,"height":480,"dimension":85,"version":"$prebid.version$","keyword":"","transactionId":"12345667","renderers":[{"name":"Inarticle"}]}]}');
     });
 
     describe('buildGDPRRequests', function () {
@@ -100,7 +101,7 @@ describe('The ZEDO bidding adapter', function () {
         const request = spec.buildRequests(bidRequests, bidderRequest);
         expect(request.method).to.equal('GET');
         const zedoRequest = request.data;
-        expect(zedoRequest).to.equal('g={"placements":[{"network":20,"channel":0,"width":300,"height":200,"dimension":10,"version":"$prebid.version$","keyword":"","transactionId":"12345667","renderers":[{"name":"display"}]}],"gdpr":1,"gdpr_consent":"BOJ8RZsOJ8RZsABAB8AAAAAZ+A=="}');
+        expect(zedoRequest).to.equal('g={"placements":[{"network":20,"channel":0,"publisher":0,"width":300,"height":200,"dimension":10,"version":"$prebid.version$","keyword":"","transactionId":"12345667","renderers":[{"name":"display"}]}],"gdpr":1,"gdpr_consent":"BOJ8RZsOJ8RZsABAB8AAAAAZ+A=="}');
       });
     });
   });

@@ -1,7 +1,7 @@
-import * as utils from 'src/utils';
-import { format } from 'src/url';
-// import { config } from 'src/config';
-import { registerBidder } from 'src/adapters/bidderFactory';
+import * as utils from '../src/utils';
+import { format } from '../src/url';
+// import { config } from '../src/config';
+import { registerBidder } from '../src/adapters/bidderFactory';
 import find from 'core-js/library/fn/array/find';
 
 const VERSION = '1.0';
@@ -31,7 +31,6 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (bidRequests, bidderRequest) {
-    let dcHostname = getHostname(bidRequests);
     const payload = {
       Version: VERSION,
       Bids: bidRequests.reduce((accumulator, bid) => {
@@ -60,7 +59,7 @@ export const spec = {
 
     return {
       method: 'POST',
-      url: createEndpoint(dcHostname),
+      url: createEndpoint(bidRequests, bidderRequest),
       data,
       options
     };
@@ -94,14 +93,10 @@ function getHostname(bidderRequest) {
 }
 
 /* Get current page referrer url */
-function getReferrerUrl() {
+function getReferrerUrl(bidderRequest) {
   let referer = '';
-  if (window.self !== window.top) {
-    try {
-      referer = window.top.document.referrer;
-    } catch (e) { }
-  } else {
-    referer = document.referrer;
+  if (bidderRequest && bidderRequest.refererInfo) {
+    referer = encodeURIComponent(bidderRequest.refererInfo.referer);
   }
   return referer;
 }
@@ -134,20 +129,21 @@ function getPageRefreshed() {
 }
 
 /* Create endpoint url */
-function createEndpoint(host) {
+function createEndpoint(bidRequests, bidderRequest) {
+  let host = getHostname(bidRequests);
   return format({
-    protocol: (document.location.protocol === 'https:') ? 'https' : 'http',
+    protocol: 'https',
     host: `${DEFAULT_DC}${host}.omnitagjs.com`,
     pathname: '/hb-api/prebid/v1',
-    search: createEndpointQS()
+    search: createEndpointQS(bidderRequest)
   });
 }
 
 /* Create endpoint query string */
-function createEndpointQS() {
+function createEndpointQS(bidderRequest) {
   const qs = {};
 
-  const ref = getReferrerUrl();
+  const ref = getReferrerUrl(bidderRequest);
   if (ref) {
     qs.RefererUrl = encodeURIComponent(ref);
   }
@@ -191,7 +187,6 @@ function createBid(response) {
 
   return {
     requestId: response.BidID,
-    bidderCode: spec.code,
     width: response.Width,
     height: response.Height,
     ad: response.Ad,
