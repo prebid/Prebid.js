@@ -1,8 +1,8 @@
 // Vuble Adapter
 
-import * as utils from 'src/utils';
-import {registerBidder} from 'src/adapters/bidderFactory';
-import { Renderer } from 'src/Renderer';
+import * as utils from '../src/utils';
+import {registerBidder} from '../src/adapters/bidderFactory';
+import { Renderer } from '../src/Renderer';
 
 const BIDDER_CODE = 'vuble';
 

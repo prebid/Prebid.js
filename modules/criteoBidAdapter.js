@@ -1,12 +1,13 @@
-import { loadExternalScript } from 'src/adloader';
-import { registerBidder } from 'src/adapters/bidderFactory';
-import { parse } from 'src/url';
-import * as utils from 'src/utils';
+import { loadExternalScript } from '../src/adloader';
+import { registerBidder } from '../src/adapters/bidderFactory';
+import { parse } from '../src/url';
+import * as utils from '../src/utils';
 import find from 'core-js/library/fn/array/find';
 import JSEncrypt from 'jsencrypt/bin/jsencrypt';
 import sha256 from 'crypto-js/sha256';
+import { config } from '../src/config';
 
-const ADAPTER_VERSION = 15;
+const ADAPTER_VERSION = 17;
 const BIDDER_CODE = 'criteo';
 const CDB_ENDPOINT = '//bidder.criteo.com/cdb';
 const CRITEO_VENDOR_ID = 91;
@@ -46,6 +47,8 @@ export const spec = {
   buildRequests: (bidRequests, bidderRequest) => {
     let url;
     let data;
+
+    Object.assign(bidderRequest, { ceh: config.getConfig('criteo.ceh') });
 
     // If publisher tag not already loaded try to get it from fast bid
     if (!publisherTagAvailable()) {
@@ -98,6 +101,7 @@ export const spec = {
         const bidId = bidRequest.bidId;
         const bid = {
           requestId: bidId,
+          adId: slot.bidId || utils.getUniqueIdentifierStr(),
           cpm: slot.cpm,
           currency: slot.currency,
           netRevenue: true,
@@ -237,6 +241,10 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
   };
   if (networkId) {
     request.publisher.networkid = networkId;
+  }
+  request.user = {};
+  if (bidderRequest && bidderRequest.ceh) {
+    request.user.ceh = bidderRequest.ceh;
   }
   if (bidderRequest && bidderRequest.gdprConsent) {
     request.gdprConsent = {};

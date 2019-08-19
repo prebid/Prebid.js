@@ -1,5 +1,5 @@
-import * as utils from 'src/utils';
-import { registerBidder } from 'src/adapters/bidderFactory';
+import * as utils from '../src/utils';
+import { registerBidder } from '../src/adapters/bidderFactory';
 
 const BIDDER_CODE = 'serverbid';
 
@@ -16,9 +16,6 @@ const CONFIG = {
   'insticator': {
     'BASE_URI': 'https://e.serverbid.com/api/v2'
   },
-  'adsparc': {
-    'BASE_URI': 'https://e.serverbid.com/api/v2'
-  },
   'automatad': {
     'BASE_URI': 'https://e.serverbid.com/api/v2'
   },
@@ -30,9 +27,6 @@ const CONFIG = {
   },
   'answermedia': {
     'BASE_URI': 'https://e.serverbid.com/api/v2'
-  },
-  'pubnx': {
-    'BASE_URI': 'https://e.serverbid.com/api/v2'
   }
 };
 
@@ -41,7 +35,7 @@ let bidder = 'serverbid';
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['connectad', 'onefiftytwo', 'insticator', 'adsparc', 'automatad', 'archon', 'buysellads', 'answermedia', 'pubnx'],
+  aliases: ['connectad', 'onefiftytwo', 'insticator', 'automatad', 'archon', 'buysellads', 'answermedia'],
 
   /**
    * Determines whether or not the given bid request is valid.

@@ -46,6 +46,7 @@ describe('freewheel-ssp BidAdapter Test', function () {
         'bidder': 'freewheel-ssp',
         'params': {
           'zoneId': '277225',
+          'gdpr_consented_providers': '123,345',
           'vastUrlParams': {'ownerId': 'kombRJ'}
         },
         'adUnitCode': 'adunit-code',
@@ -71,6 +72,7 @@ describe('freewheel-ssp BidAdapter Test', function () {
       expect(payload.playerSize).to.equal('300x600');
       expect(payload._fw_gdpr).to.equal(true);
       expect(payload._fw_gdpr_consent).to.equal('BOJ/P2HOJ/P2HABABMAAAAAZ+A==');
+      expect(payload._fw_gdpr_consented_providers).to.equal('123,345');
     });
 
     it('sends bid request to ENDPOINT via GET', function () {

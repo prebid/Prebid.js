@@ -1,7 +1,7 @@
-import * as utils from 'src/utils';
-import {registerBidder} from 'src/adapters/bidderFactory';
-import {BANNER, NATIVE} from 'src/mediaTypes';
-import { config } from 'src/config';
+import * as utils from '../src/utils';
+import {registerBidder} from '../src/adapters/bidderFactory';
+import {BANNER, NATIVE} from '../src/mediaTypes';
+import {config} from '../src/config';
 const ADG_BIDDER_CODE = 'adgeneration';
 
 export const spec = {
@@ -75,11 +75,6 @@ export const spec = {
       return [];
     }
     const bidRequest = bidRequests.bidRequest;
-    if (!bidRequest.mediaTypes || bidRequest.mediaTypes.banner) {
-      if (!body.w || !body.h) {
-        return [];
-      }
-    }
     const bidResponse = {
       requestId: bidRequest.bidId,
       cpm: body.cpm || 0,
@@ -91,7 +86,7 @@ export const spec = {
       netRevenue: true,
       ttl: body.ttl || 10,
     };
-    if (bidRequest.mediaTypes && bidRequest.mediaTypes.native) {
+    if (isNative(body)) {
       bidResponse.native = createNativeAd(body);
       bidResponse.mediaType = NATIVE;
     } else {
@@ -122,6 +117,11 @@ function createAd(body, bidRequest) {
   ad = appendChildToBody(ad, body.beacon);
   if (removeWrapper(ad)) return removeWrapper(ad);
   return ad;
+}
+
+function isNative(body) {
+  if (!body) return false;
+  return body.native_ad && body.native_ad.assets.length > 0;
 }
 
 function createNativeAd(body) {
@@ -155,6 +155,9 @@ function createNativeAd(body) {
           break;
         case 6:
           native.cta = assets[i].data.value;
+          break;
+        case 502:
+          native.privacyLink = encodeURIComponent(assets[i].data.value);
           break;
       }
     }

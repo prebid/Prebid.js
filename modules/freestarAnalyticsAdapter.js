@@ -1,7 +1,7 @@
 import { ajax } from 'src/ajax';
 import adapter from 'src/AnalyticsAdapter';
 import CONSTANTS from 'src/constants.json';
-import adaptermanager from 'src/adaptermanager';
+import adapterManager from 'src/adapterManager';
 import { auctionManager } from 'src/auctionManager';
 
 const utils = require('src/utils');
@@ -37,7 +37,7 @@ freestarAnalytics.enableAnalytics = function (config) {
   freestarAnalytics.originEnableAnalytics(config);  // call the base class function
 };
 
-adaptermanager.registerAnalyticsAdapter({
+adapterManager.registerAnalyticsAdapter({
   adapter: freestarAnalytics,
   code: 'freestar'
 });
