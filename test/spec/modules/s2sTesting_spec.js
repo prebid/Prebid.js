@@ -141,14 +141,14 @@ describe('s2sTesting', function () {
       });
 
       it('sends both bidders to same source when weights are the same', function () {
-        s2sTesting.globalRand = 0.5;
+        s2sTesting.globalRand = 0.01;
 
         config.setConfig({s2sConfig: {
           bidders: ['rubicon', 'appnexus'],
           testing: true,
           bidderControl: {
-            rubicon: {bidSource: {server: 25, client: 75}},
-            appnexus: {bidSource: {server: 25, client: 75}}
+            rubicon: {bidSource: {server: 1, client: 99}},
+            appnexus: {bidSource: {server: 1, client: 99}}
           }}});
         expect(s2sTesting.getSourceBidderMap()).to.eql({
           client: ['rubicon', 'appnexus'],
@@ -167,8 +167,8 @@ describe('s2sTesting', function () {
           bidders: ['rubicon', 'appnexus'],
           testing: true,
           bidderControl: {
-            rubicon: {bidSource: {server: 75, client: 25}},
-            appnexus: {bidSource: {server: 75, client: 25}}
+            rubicon: {bidSource: {server: 99, client: 1}},
+            appnexus: {bidSource: {server: 99, client: 1}}
           }}});
         expect(s2sTesting.getSourceBidderMap()).to.eql({
           server: ['rubicon', 'appnexus'],
