@@ -7,8 +7,15 @@ import * as utils from '../src/utils';
 
 /*
     TODO:
+        send one logger call
+        send one tracker call
+        configurations
+            pub-id
+            profile-id
+            version-id
         what about video bids?
             first version only banner?
+            can we support as a basic version?
         remove un-necessary export statements from Rubicon analytics adapter
         grossEcpm / netEcpm?
 */
@@ -20,12 +27,17 @@ const DEFAULT_INTEGRATION = 'pbjs';
 const END_POINT_HOST = 'https://t.pubmatic.com/';
 const END_POINT_BID_LOGGER = END_POINT_HOST + 'wl/?';
 const END_POINT_WIN_BID_LOGGER = END_POINT_HOST + 'wt/?';
-const LOG_PRE_FIX = 'PubMatic-Analytics:: ';
+const LOG_PRE_FIX = 'PubMatic-Analytics: ';
 const cache = {
     auctions: {},
     targeting: {},
     timeouts: {},
 };
+const SUCCESS = 'success';
+const NO_BID = 'no-bid';
+const ERROR = 'error';
+const REQUEST_ERROR = 'request-error';
+const TIMEOUT_ERROR = 'timeout-error';
 
 ////////////// VARIABLES ////////////// 
 
@@ -64,7 +76,7 @@ function copyRequiredBidDetails(bid){
     return utils.pick(bid, [
         'bidder', bidder => bidder.toLowerCase(),
         'bidId',
-        'status', () => 'no-bid', // default a bid to no-bid until response is recieved or bid is timed out
+        'status', () => NO_BID, // default a bid to NO_BID until response is recieved or bid is timed out
         'finalSource as source',
         'params',
         'adUnit', () => utils.pick(bid, [
@@ -99,17 +111,17 @@ function copyRequiredBidDetails(bid){
 function setBidStatus(bid, args){
     switch (args.getStatusCode()) {
         case CONSTANTS.STATUS.GOOD:
-            bid.status = 'success'; //todo: move to const
+            bid.status = SUCCESS;
             delete bid.error; // it's possible for this to be set by a previous timeout
             break;
         case CONSTANTS.STATUS.NO_BID:
-            bid.status = 'no-bid';
+            bid.status = NO_BID;
             delete bid.error;
             break;
         default:
-            bid.status = 'error';
+            bid.status = ERROR;
             bid.error = {
-                code: 'request-error'
+                code: REQUEST_ERROR
             };
     }
 }
@@ -152,11 +164,11 @@ function formatBidToSend(bid) {
         'status',
         'error',
         'source', (source, bid) => {
-        if (source) {
-            return source;
-        }
-        return serverConfig && Array.isArray(serverConfig.bidders) && serverConfig.bidders.indexOf(bid.bidder) !== -1
-            ? 'server' : 'client'
+            if (source) {
+                return source;
+            }
+            return serverConfig && Array.isArray(serverConfig.bidders) && serverConfig.bidders.indexOf(bid.bidder) !== -1
+                ? 'server' : 'client'
         },
         'clientLatencyTimeMs',
         'serverLatencyTimeMs',
@@ -178,7 +190,7 @@ function formatBidWonToSend(bid) {
         'mediaTypes'
     ]), {
         adserverTargeting: stringProperties(cache.targeting[bid.adUnit.adUnitCode] || {}),
-        bidwonStatus: 'success', // hard-coded for now //todo: move to const
+        bidwonStatus: SUCCESS,
         accountId,
         siteId: bid.siteId, // todo: what is it?
         zoneId: bid.zoneId // todo: what is it?
@@ -239,7 +251,7 @@ function sendMessage(auctionId, bidWonId){
             }
 
             // determine adUnit.status from its bid statuses.  Use priority below to determine, higher index is better
-            let statusPriority = ['error', 'no-bid', 'success']; //todo: move to const in an obj
+            let statusPriority = [ERROR, NO_BID, SUCCESS]; //todo: move to const in an obj
             if (statusPriority.indexOf(bid.status) > statusPriority.indexOf(adUnit.status)) { //todo: change to hasOwnProperty
                 adUnit.status = bid.status;
             }
@@ -350,7 +362,7 @@ function bidderDoneHandler(args){
             cachedBid.serverLatencyTimeMs = bid.serverResponseTimeMs;
         }
         if (!cachedBid.status) {
-            cachedBid.status = 'no-bid';
+            cachedBid.status = NO_BID;
         }
         if (!cachedBid.clientLatencyTimeMs) {
             cachedBid.clientLatencyTimeMs = Date.now() - cache.auctions[bid.auctionId].timestamp;
@@ -395,9 +407,9 @@ function bidTimeoutHandler(args){
         let auctionCache = cache.auctions[badBid.auctionId];
         // todo: need to test
         let bid = auctionCache.adUnitCodes[badBid.adUnit.adUnitCode].bids[badBid.bidId || badBid.requestId]; //todo: need try-catch
-        bid.status = 'error'; //todo: move to const
+        bid.status = ERROR;
         bid.error = {
-            code: 'timeout-error' //todo: move to const
+            code: TIMEOUT_ERROR
         };
     });
 }
