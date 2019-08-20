@@ -64,11 +64,12 @@ export const spec = {
         language: navigator.language
       },
       cur: ENDPOINT_CONFIG.defaultCurrency,
-      imp: bidRequests.map(buildImpression)
+      imp: bidRequests.map(buildImpression),
+      user: {}
     };
 
     if (utils.deepAccess(bidderRequest, 'gdprConsent.gdprApplies')) {
-      user.ext = {
+      payload.user.ext = {
         consent: bidderRequest.gdprConsent.consentString,
         gdpr: bidderRequest.gdprConsent.gdprApplies & 1
       }
