@@ -17,7 +17,7 @@ export const spec = {
    * @return {boolean} True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
-    return bid && bid.mediaType === BANNER && bid.params && bid.params.placementId;
+    return bid && bid.mediaTypes && bid.mediaTypes.banner && bid.params && bid.params.placementId;
   },
 
   /**
