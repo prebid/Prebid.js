@@ -207,7 +207,7 @@ describe('#isSchainObjectValid: schain object validation', function() {
   });
 });
 
-describe('', function() {
+describe('Passing schain object to adUnits', function() {
   let schainConfig;
 
   beforeEach(function() {
