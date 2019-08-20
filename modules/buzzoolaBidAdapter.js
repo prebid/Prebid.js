@@ -3,7 +3,7 @@ import {registerBidder} from 'src/adapters/bidderFactory';
 import {BANNER} from '../src/mediaTypes';
 
 const BIDDER_CODE = 'buzzoola';
-const ENDPOINT = 'https://exchange.buzzoola.com/prebidjs';
+const ENDPOINT = 'https://exchange.buzzoola.com/ssp/prebidjs';
 
 export const spec = {
   code: BIDDER_CODE,
