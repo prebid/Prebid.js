@@ -30,23 +30,6 @@ const buildImpression = (bidRequest) => {
   return impression;
 }
 
-const buildItems = (bidRequests) => {
-  const imp = [];
-  const user = {};
-
-  bidRequests.forEach(bidRequest => {
-    imp.push(buildImpression(bidRequest));
-    if (utils.deepAccess(bidRequest, 'gdprConsent.gdprApplies')) {
-      user.ext = {
-        consent: bidRequest.gdprConsent.consentString,
-        gdpr: bidRequest.gdprConsent.gdprApplies & 1
-      }
-    }
-  });
-
-  return { imp, user };
-}
-
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER],
@@ -67,12 +50,8 @@ export const spec = {
    * @param {BidRequest[]} bidRequests A non-empty list of bid requests which should be sent to the Server.
    * @return ServerRequest Info describing the request to the server.
    */
-  buildRequests: function(bidRequests) {
-    const { user, imp } = buildItems(bidRequests);
-
+  buildRequests: function(bidRequests, bidderRequest) {
     const payload = {
-      imp,
-      user,
       id: bidRequests[0].bidId,
       site: {
         domain: utils.getOrigin(),
@@ -84,8 +63,17 @@ export const spec = {
         h: window.screen.height,
         language: navigator.language
       },
-      cur: ENDPOINT_CONFIG.defaultCurrency
+      cur: ENDPOINT_CONFIG.defaultCurrency,
+      imp: bidRequests.map(buildImpression)
     };
+
+    if (utils.deepAccess(bidderRequest, 'gdprConsent.gdprApplies')) {
+      user.ext = {
+        consent: bidderRequest.gdprConsent.consentString,
+        gdpr: bidderRequest.gdprConsent.gdprApplies & 1
+      }
+    }
+
     const payloadString = JSON.stringify(payload);
 
     return {
@@ -131,7 +119,7 @@ export const spec = {
   getUserSyncs: function(syncOptions, serverResponses) {
     const syncs = [];
 
-    if (syncOptions.pixelEnabled) {
+    if (syncOptions.pixelEnabled && serverResponses[0] && utils.deepAccess(serverResponses[0], 'body.ext.syncUrl')) {
       syncs.push({
         type: 'image',
         url: serverResponses[0].body.ext.syncUrl
