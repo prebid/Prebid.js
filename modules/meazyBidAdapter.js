@@ -54,9 +54,7 @@ export const spec = {
     const payload = {
       id: bidRequests[0].bidId,
       site: {
-        domain: utils.getOrigin(),
-        page: utils.getTopWindowUrl(),
-        ref: utils.getTopWindowReferrer()
+        domain: utils.getOrigin()
       },
       device: {
         w: window.screen.width,
@@ -67,6 +65,16 @@ export const spec = {
       imp: bidRequests.map(buildImpression),
       user: {}
     };
+
+    if (bidderRequest.refererInfo) {
+      if (bidderRequest.refererInfo.referer) {
+        payload.site.ref = bidderRequest.refererInfo.referer;
+      }
+
+      if (utils.isArray(bidderRequest.refererInfo) && bidderRequest.refererInfo.stack.length > 0) {
+        payload.site.page = bidderRequest.refererInfo.stack[0];
+      }
+    }
 
     if (utils.deepAccess(bidderRequest, 'gdprConsent.gdprApplies')) {
       payload.user.ext = {
