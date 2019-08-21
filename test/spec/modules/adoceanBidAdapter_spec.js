@@ -86,8 +86,8 @@ describe('AdoceanAdapter', function () {
     it('should add bidIdMap with correct slaveId => bidId mapping', () => {
       const requests = spec.buildRequests(bidRequests, bidderRequest);
       for (let i = 0; i < bidRequests.length; i++) {
-        expect(requests[i]).to.exists;
-        expect(requests[i].bidIdMap).to.exists;
+        expect(requests[i]).to.exist;
+        expect(requests[i].bidIdMap).to.exist;
         expect(requests[i].bidIdMap[bidRequests[i].params.slaveId]).to.equal(bidRequests[i].bidId);
       }
     });

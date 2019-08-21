@@ -1,8 +1,9 @@
-import { getKeyValueTargetingPairs, auctionCallbacks } from 'src/auction';
+import { getKeyValueTargetingPairs, auctionCallbacks, AUCTION_COMPLETED } from 'src/auction';
 import CONSTANTS from 'src/constants.json';
 import { adjustBids } from 'src/auction';
 import * as auctionModule from 'src/auction';
 import { registerBidder } from 'src/adapters/bidderFactory';
+import { createBid } from 'src/bidfactory';
 import { config } from 'src/config';
 import * as store from 'src/videoCache';
 import * as ajaxLib from 'src/ajax';
@@ -14,9 +15,8 @@ var assert = require('assert');
 
 // TODO refactor to use the spec files
 var utils = require('../../src/utils');
-var bidfactory = require('../../src/bidfactory');
 var fixtures = require('../fixtures/fixtures');
-var adaptermanager = require('src/adaptermanager');
+var adapterManager = require('src/adapterManager').default;
 var events = require('src/events');
 
 const BIDDER_CODE = 'sampleBidder';
@@ -139,7 +139,11 @@ describe('auctionmanager.js', function () {
       expected[ CONSTANTS.TARGETING_KEYS.SIZE ] = bid.getSize();
       expected[ CONSTANTS.TARGETING_KEYS.SOURCE ] = bid.source;
       expected[ CONSTANTS.TARGETING_KEYS.FORMAT ] = bid.mediaType;
-
+      if (bid.mediaType === 'video') {
+        expected[ CONSTANTS.TARGETING_KEYS.UUID ] = bid.videoCacheKey;
+        expected[ CONSTANTS.TARGETING_KEYS.CACHE_ID ] = bid.videoCacheKey;
+        expected[ CONSTANTS.TARGETING_KEYS.CACHE_HOST ] = 'prebid.adnxs.com';
+      }
       if (!keys) {
         return expected;
       }
@@ -157,8 +161,27 @@ describe('auctionmanager.js', function () {
     });
 
     it('No bidder level configuration defined - default', function () {
-      var expected = getDefaultExpected(bid);
-      var response = getKeyValueTargetingPairs(bid.bidderCode, bid, CONSTANTS.GRANULARITY_OPTIONS.MEDIUM);
+      $$PREBID_GLOBAL$$.bidderSettings = {};
+      let expected = getDefaultExpected(bid);
+      // remove hb_cache_host from expected
+      delete expected.hb_cache_host;
+      let response = getKeyValueTargetingPairs(bid.bidderCode, bid);
+      assert.deepEqual(response, expected);
+    });
+
+    it('No bidder level configuration defined - default for video', function () {
+      config.setConfig({
+        cache: {
+          url: 'https://prebid.adnxs.com/pbc/v1/cache'
+        }
+      });
+      $$PREBID_GLOBAL$$.bidderSettings = {};
+      let videoBid = utils.deepClone(bid);
+      videoBid.mediaType = 'video';
+      videoBid.videoCacheKey = 'abc123def';
+
+      let expected = getDefaultExpected(videoBid);
+      let response = getKeyValueTargetingPairs(videoBid.bidderCode, videoBid);
       assert.deepEqual(response, expected);
     });
 
@@ -210,6 +233,76 @@ describe('auctionmanager.js', function () {
       expected[CONSTANTS.TARGETING_KEYS.PRICE_BUCKET] = bid.pbHg;
 
       var response = getKeyValueTargetingPairs(bid.bidderCode, bid);
+      assert.deepEqual(response, expected);
+    });
+
+    it('Custom configuration for all bidders with video bid', function () {
+      config.setConfig({
+        cache: {
+          url: 'https://prebid.adnxs.com/pbc/v1/cache'
+        }
+      });
+      let videoBid = utils.deepClone(bid);
+      videoBid.mediaType = 'video';
+      videoBid.videoCacheKey = 'abc123def';
+
+      $$PREBID_GLOBAL$$.bidderSettings =
+      {
+        standard: {
+          adserverTargeting: [
+            {
+              key: CONSTANTS.TARGETING_KEYS.BIDDER,
+              val: function (bidResponse) {
+                return bidResponse.bidderCode;
+              }
+            }, {
+              key: CONSTANTS.TARGETING_KEYS.AD_ID,
+              val: function (bidResponse) {
+                return bidResponse.adId;
+              }
+            }, {
+              key: CONSTANTS.TARGETING_KEYS.PRICE_BUCKET,
+              val: function (bidResponse) {
+                return bidResponse.pbMg;
+              }
+            }, {
+              key: CONSTANTS.TARGETING_KEYS.SIZE,
+              val: function (bidResponse) {
+                return bidResponse.size;
+              }
+            },
+            {
+              key: CONSTANTS.TARGETING_KEYS.SOURCE,
+              val: function (bidResponse) {
+                return bidResponse.source;
+              }
+            },
+            {
+              key: CONSTANTS.TARGETING_KEYS.FORMAT,
+              val: function (bidResponse) {
+                return bidResponse.mediaType;
+              }
+            },
+            {
+              key: CONSTANTS.TARGETING_KEYS.UUID,
+              val: function (bidResponse) {
+                return bidResponse.videoCacheKey;
+              }
+            },
+            {
+              key: CONSTANTS.TARGETING_KEYS.CACHE_ID,
+              val: function (bidResponse) {
+                return bidResponse.videoCacheKey;
+              }
+            }
+          ]
+
+        }
+      };
+
+      let expected = getDefaultExpected(videoBid);
+
+      let response = getKeyValueTargetingPairs(videoBid.bidderCode, videoBid);
       assert.deepEqual(response, expected);
     });
 
@@ -332,7 +425,7 @@ describe('auctionmanager.js', function () {
 
     it('Standard bidCpmAdjustment changes the bid of any bidder', function () {
       const bid = Object.assign({},
-        bidfactory.createBid(2),
+        createBid(2),
         fixtures.getBidResponses()[5]
       );
 
@@ -477,7 +570,7 @@ describe('auctionmanager.js', function () {
   describe('adjustBids', function () {
     it('should adjust bids if greater than zero and pass copy of bid object', function () {
       const bid = Object.assign({},
-        bidfactory.createBid(2),
+        createBid(2),
         fixtures.getBidResponses()[5]
       );
 
@@ -534,18 +627,16 @@ describe('auctionmanager.js', function () {
     let makeRequestsStub;
 
     before(function () {
-      makeRequestsStub = sinon.stub(adaptermanager, 'makeBidRequests');
-
-      ajaxStub = sinon.stub(ajaxLib, 'ajaxBuilder').callsFake(mockAjaxBuilder);
+      makeRequestsStub = sinon.stub(adapterManager, 'makeBidRequests');
     });
 
     after(function () {
-      ajaxStub.restore();
-      adaptermanager.makeBidRequests.restore();
+      adapterManager.makeBidRequests.restore();
     });
 
     describe('when auction timeout is 3000', function () {
       before(function () {
+        ajaxStub = sinon.stub(ajaxLib, 'ajaxBuilder').callsFake(mockAjaxBuilder);
         makeRequestsStub.returns(TEST_BID_REQS);
       });
       beforeEach(function () {
@@ -566,6 +657,10 @@ describe('auctionmanager.js', function () {
 
       afterEach(function () {
         auctionModule.newAuction.restore();
+      });
+
+      after(function () {
+        ajaxStub.restore();
       });
 
       function checkPbDg(cpm, expected, msg) {
@@ -662,6 +757,7 @@ describe('auctionmanager.js', function () {
 
     describe('when auction timeout is 20', function () {
       let eventsEmitSpy;
+      let server;
 
       before(function () {
         bids = [mockBid(), mockBid({ bidderCode: BIDDER_CODE1 })];
@@ -671,6 +767,8 @@ describe('auctionmanager.js', function () {
       });
 
       beforeEach(function () {
+        server = sinon.createFakeServer();
+
         adUnits = [{
           code: ADUNIT_CODE,
           bids: [
@@ -679,35 +777,79 @@ describe('auctionmanager.js', function () {
         }];
         adUnitCodes = [ADUNIT_CODE];
 
-        auction = auctionModule.newAuction({adUnits, adUnitCodes, callback: function() {}, cbTimeout: 20});
-        createAuctionStub = sinon.stub(auctionModule, 'newAuction');
-        createAuctionStub.returns(auction);
-
-        spec = mockBidder(BIDDER_CODE, [bids[0]]);
-        registerBidder(spec);
-
-        // Timeout is checked when bid is received. If that bid is the only one
-        // auction is waiting for, timeout is not emitted, so we need to add a
-        // second bidder to get timeout event.
-        let spec1 = mockBidder(BIDDER_CODE1, [bids[1]]);
-        registerBidder(spec1);
-
         eventsEmitSpy = sinon.spy(events, 'emit');
-
-        // make all timestamp calls 5 minutes apart
-        let callCount = 0;
-        sinon.stub(utils, 'timestamp').callsFake(function() {
-          return new Date().getTime() + (callCount++ * 1000 * 60 * 5);
-        });
       });
       afterEach(function () {
-        auctionModule.newAuction.restore();
+        server.restore();
         events.emit.restore();
-        utils.timestamp.restore();
       });
-      it('should emit BID_TIMEOUT for timed out bids', function () {
+
+      it('should emit BID_TIMEOUT and AUCTION_END for timed out bids', function (done) {
+        const spec1 = mockBidder(BIDDER_CODE, [bids[0]]);
+        registerBidder(spec1);
+        const spec2 = mockBidder(BIDDER_CODE1, [bids[1]]);
+        registerBidder(spec2);
+
+        function respondToRequest(requestIndex) {
+          server.requests[requestIndex].respond(200, {}, 'response body');
+        }
+        function auctionCallback() {
+          const bidTimeoutCall = eventsEmitSpy.withArgs(CONSTANTS.EVENTS.BID_TIMEOUT).getCalls()[0];
+          const timedOutBids = bidTimeoutCall.args[1];
+          assert.equal(timedOutBids.length, 1);
+          assert.equal(timedOutBids[0].bidder, BIDDER_CODE1);
+
+          const auctionEndCall = eventsEmitSpy.withArgs(CONSTANTS.EVENTS.AUCTION_END).getCalls()[0];
+          const auctionProps = auctionEndCall.args[1];
+          assert.equal(auctionProps.adUnits, adUnits);
+          assert.equal(auctionProps.timeout, 20);
+          assert.equal(auctionProps.auctionStatus, AUCTION_COMPLETED)
+          done();
+        }
+        auction = auctionModule.newAuction({adUnits, adUnitCodes, callback: auctionCallback, cbTimeout: 20});
+
         auction.callBids();
-        assert.ok(eventsEmitSpy.calledWith(CONSTANTS.EVENTS.BID_TIMEOUT), 'emitted events BID_TIMEOUT');
+        respondToRequest(0);
+      });
+      it('should NOT emit BID_TIMEOUT when all bidders responded in time', function (done) {
+        const spec1 = mockBidder(BIDDER_CODE, [bids[0]]);
+        registerBidder(spec1);
+        const spec2 = mockBidder(BIDDER_CODE1, [bids[1]]);
+        registerBidder(spec2);
+
+        function respondToRequest(requestIndex) {
+          server.requests[requestIndex].respond(200, {}, 'response body');
+        }
+        function auctionCallback() {
+          assert.ok(eventsEmitSpy.withArgs(CONSTANTS.EVENTS.BID_TIMEOUT).notCalled, 'did not emit event BID_TIMEOUT');
+          done();
+        }
+        auction = auctionModule.newAuction({adUnits, adUnitCodes, callback: auctionCallback, cbTimeout: 20});
+
+        auction.callBids();
+        respondToRequest(0);
+        respondToRequest(1);
+      });
+      it('should NOT emit BID_TIMEOUT for bidders which responded in time but with an empty bid', function (done) {
+        const spec1 = mockBidder(BIDDER_CODE, []);
+        registerBidder(spec1);
+        const spec2 = mockBidder(BIDDER_CODE1, []);
+        registerBidder(spec2);
+
+        function respondToRequest(requestIndex) {
+          server.requests[requestIndex].respond(200, {}, 'response body');
+        }
+        function auctionCallback() {
+          const bidTimeoutCall = eventsEmitSpy.withArgs(CONSTANTS.EVENTS.BID_TIMEOUT).getCalls()[0];
+          const timedOutBids = bidTimeoutCall.args[1];
+          assert.equal(timedOutBids.length, 1);
+          assert.equal(timedOutBids[0].bidder, BIDDER_CODE1);
+          done();
+        }
+        auction = auctionModule.newAuction({adUnits, adUnitCodes, callback: auctionCallback, cbTimeout: 20});
+
+        auction.callBids();
+        respondToRequest(0);
       });
     });
   });
@@ -729,7 +871,7 @@ describe('auctionmanager.js', function () {
         mockBidRequest(bids[0]),
         mockBidRequest(bids1[0], { adUnitCode: ADUNIT_CODE1 })
       ];
-      let makeRequestsStub = sinon.stub(adaptermanager, 'makeBidRequests');
+      let makeRequestsStub = sinon.stub(adapterManager, 'makeBidRequests');
       makeRequestsStub.returns(bidRequests);
 
       ajaxStub = sinon.stub(ajaxLib, 'ajaxBuilder').callsFake(mockAjaxBuilder);
@@ -737,7 +879,7 @@ describe('auctionmanager.js', function () {
 
     after(function () {
       ajaxStub.restore();
-      adaptermanager.makeBidRequests.restore();
+      adapterManager.makeBidRequests.restore();
     });
 
     beforeEach(function () {
@@ -768,13 +910,13 @@ describe('auctionmanager.js', function () {
       auctionModule.newAuction.restore();
     });
 
-    it('should not alter bid adID', function () {
+    it('should not alter bid requestID', function () {
       auction.callBids();
 
       const addedBid2 = auction.getBidsReceived().pop();
-      assert.equal(addedBid2.adId, bids1[0].requestId);
+      assert.equal(addedBid2.requestId, bids1[0].requestId);
       const addedBid1 = auction.getBidsReceived().pop();
-      assert.equal(addedBid1.adId, bids[0].requestId);
+      assert.equal(addedBid1.requestId, bids[0].requestId);
     });
 
     it('should not add banner bids that have no width or height', function () {

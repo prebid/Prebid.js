@@ -1,5 +1,5 @@
-import * as utils from 'src/utils';
-import { registerBidder } from 'src/adapters/bidderFactory';
+import * as utils from '../src/utils';
+import { registerBidder } from '../src/adapters/bidderFactory';
 
 const BIDDER_CODE = 'ias';
 
@@ -59,6 +59,7 @@ function buildRequests(bidRequests) {
 
   queries.push(['wr', stringifyWindowSize()]);
   queries.push(['sr', stringifyScreenSize()]);
+  queries.push(['url', encodeURIComponent(window.location.href)]);
 
   const queryString = encodeURI(queries.map(qs => qs.join('=')).join('&'));
 
@@ -80,6 +81,7 @@ function getPageLevelKeywords(response) {
   let result = {};
   shallowMerge(result, response.brandSafety);
   result.fr = response.fr;
+  result.custom = response.custom;
   return result;
 }
 
@@ -103,7 +105,7 @@ function interpretResponse(serverResponse, request) {
     height: 200,
     creativeId: 434,
     dealId: 42,
-    currency: 'usd',
+    currency: 'USD',
     netRevenue: true,
     ttl: 360
   };

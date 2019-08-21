@@ -1,6 +1,6 @@
-import * as utils from 'src/utils';
-import { registerBidder } from 'src/adapters/bidderFactory';
-// import { config } from 'src/config';
+import * as utils from '../src/utils';
+import { registerBidder } from '../src/adapters/bidderFactory';
+// import { config } from '../src/config';
 
 const BIDDER_CODE = 'freewheel-ssp';
 
@@ -250,6 +250,10 @@ export const spec = {
       if (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') {
         requestParams._fw_gdpr = bidderRequest.gdprConsent.gdprApplies;
       }
+    }
+
+    if (currentBidRequest.params.gdpr_consented_providers) {
+      requestParams._fw_gdpr_consented_providers = currentBidRequest.params.gdpr_consented_providers;
     }
 
     var vastParams = currentBidRequest.params.vastUrlParams;

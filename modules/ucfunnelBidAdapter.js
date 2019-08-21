@@ -1,6 +1,6 @@
-import * as utils from 'src/utils';
-import {registerBidder} from 'src/adapters/bidderFactory';
-import {BANNER, VIDEO, NATIVE} from 'src/mediaTypes';
+import * as utils from '../src/utils';
+import {registerBidder} from '../src/adapters/bidderFactory';
+import {BANNER, VIDEO, NATIVE} from '../src/mediaTypes';
 
 const VER = 'ADGENT_PREBID-2018011501';
 const BIDDER_CODE = 'ucfunnel';
@@ -168,7 +168,7 @@ function getRequestData(bid, bidderRequest) {
   const dnt = (navigator.doNotTrack == 'yes' || navigator.doNotTrack == '1' || navigator.msDoNotTrack == '1') ? 1 : 0;
   const videoContext = utils.deepAccess(bid, 'mediaTypes.video.context');
   const videoMediaType = utils.deepAccess(bid, 'mediaTypes.video');
-
+  const userIdTdid = (bid.userId && bid.userId.tdid) ? bid.userId.tdid : '';
   // general bid data
   let bidData = {
     ver: VER,
@@ -181,7 +181,8 @@ function getRequestData(bid, bidderRequest) {
     ru: ref,
     adid: utils.getBidIdParameter('adid', bid.params),
     w: size[0],
-    h: size[1]
+    h: size[1],
+    tdid: userIdTdid
   };
 
   if (bid.mediaType === 'video' || videoMediaType) {

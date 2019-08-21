@@ -4,7 +4,7 @@ commit your changes, and [open a pull request](https://help.github.com/articles/
 master branch.
 
 Pull requests must have 80% code coverage before beign considered for merge.
-Additional details about the process can be found [here](./pr_review.md).
+Additional details about the process can be found [here](./PR_REVIEW.md).
 
 ## Issues
 [prebid.org](http://prebid.org/) contains documentation that may help answer questions you have about using Prebid.js.

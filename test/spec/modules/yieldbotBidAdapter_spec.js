@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import find from 'core-js/library/fn/array/find';
 import { newBidder } from 'src/adapters/bidderFactory';
-import AdapterManager from 'src/adaptermanager';
+import AdapterManager from 'src/adapterManager';
 import { newAuctionManager } from 'src/auctionManager';
 import * as utils from 'src/utils';
 import * as urlUtils from 'src/url';

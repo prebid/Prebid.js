@@ -17,7 +17,7 @@ import {
   activelyWaitForBannersToRender,
 } from 'modules/rivrAnalyticsAdapter';
 import {expect} from 'chai';
-import adaptermanager from 'src/adaptermanager';
+import adapterManager from 'src/adapterManager';
 import * as ajax from 'src/ajax';
 import CONSTANTS from 'src/constants.json';
 
@@ -35,9 +35,7 @@ describe('RIVR Analytics adapter', () => {
   let sandbox;
   let ajaxStub;
   let rivraddonsEnableAnalyticsStub;
-  let rivraddonsTrackAuctionInitStub;
-  let rivraddonsTrackAuctionEndStub;
-  let rivraddonsTrackBidWonStub;
+  let rivraddonsTrackPbjsEventStub;
   let timer;
 
   before(() => {
@@ -46,9 +44,7 @@ describe('RIVR Analytics adapter', () => {
       analytics: {
         enableAnalytics: () => {},
         getContext: () => { return MOCK_RIVRADDON_CONTEXT; },
-        trackAuctionInit: () => {},
-        trackAuctionEnd: () => {},
-        trackBidWon: () => {},
+        trackPbjsEvent: () => {},
       }
     };
     rivraddonsEnableAnalyticsStub = sandbox.stub(window.rivraddon.analytics, 'enableAnalytics');
@@ -59,11 +55,11 @@ describe('RIVR Analytics adapter', () => {
     ajaxStub = sandbox.stub(ajax, 'ajax');
     sinon.stub(events, 'getEvents').returns([]);
 
-    adaptermanager.registerAnalyticsAdapter({
+    adapterManager.registerAnalyticsAdapter({
       code: 'rivr',
       adapter: analyticsAdapter
     });
-    adaptermanager.enableAnalytics({
+    adapterManager.enableAnalytics({
       provider: 'rivr',
       options: {
         clientID: RVR_CLIENT_ID_MOCK,
@@ -86,7 +82,7 @@ describe('RIVR Analytics adapter', () => {
   });
 
   it('enableAnalytics - should call rivraddon enableAnalytics with the correct arguments', () => {
-    // adaptermanager.enableAnalytics() is called in beforeEach. If just called here it doesn't seem to work.
+    // adapterManager.enableAnalytics() is called in beforeEach. If just called here it doesn't seem to work.
     const firstArgument = rivraddonsEnableAnalyticsStub.getCall(0).args[0];
     const secondArgument = rivraddonsEnableAnalyticsStub.getCall(0).args[1];
 
@@ -98,61 +94,32 @@ describe('RIVR Analytics adapter', () => {
 
   it('Firing an event when rivraddon context is not defined it should do nothing', () => {
     let rivraddonsGetContextStub = sandbox.stub(window.rivraddon.analytics, 'getContext');
-    rivraddonsTrackAuctionInitStub = sandbox.stub(window.rivraddon.analytics, 'trackAuctionInit');
+    rivraddonsTrackPbjsEventStub = sandbox.stub(window.rivraddon.analytics, 'trackPbjsEvent');
 
-    expect(rivraddonsTrackAuctionInitStub.callCount).to.be.equal(0);
+    expect(rivraddonsTrackPbjsEventStub.callCount).to.be.equal(0);
 
     events.emit(CONSTANTS.EVENTS.AUCTION_INIT, {auctionId: EMITTED_AUCTION_ID, config: {}, timeout: 3000});
 
-    expect(rivraddonsTrackAuctionInitStub.callCount).to.be.equal(0);
+    expect(rivraddonsTrackPbjsEventStub.callCount).to.be.equal(0);
 
     window.rivraddon.analytics.getContext.restore();
-    window.rivraddon.analytics.trackAuctionInit.restore();
+    window.rivraddon.analytics.trackPbjsEvent.restore();
   });
 
-  it('Firing AUCTION_INIT should call rivraddon trackAuctionInit passing the parameters', () => {
-    rivraddonsTrackAuctionInitStub = sandbox.stub(window.rivraddon.analytics, 'trackAuctionInit');
+  it('Firing AUCTION_INIT should call rivraddon trackPbjsEvent passing the parameters', () => {
+    rivraddonsTrackPbjsEventStub = sandbox.stub(window.rivraddon.analytics, 'trackPbjsEvent');
 
-    expect(rivraddonsTrackAuctionInitStub.callCount).to.be.equal(0);
+    expect(rivraddonsTrackPbjsEventStub.callCount).to.be.equal(0);
 
     events.emit(CONSTANTS.EVENTS.AUCTION_INIT, {auctionId: EMITTED_AUCTION_ID, config: {}, timeout: 3000});
 
-    expect(rivraddonsTrackAuctionInitStub.callCount).to.be.equal(1);
+    expect(rivraddonsTrackPbjsEventStub.callCount).to.be.equal(1);
 
-    const firstArgument = rivraddonsTrackAuctionInitStub.getCall(0).args[0];
-    expect(firstArgument.auctionId).to.be.equal(EMITTED_AUCTION_ID);
+    const firstArgument = rivraddonsTrackPbjsEventStub.getCall(0).args[0];
+    expect(firstArgument.eventType).to.be.equal(CONSTANTS.EVENTS.AUCTION_INIT);
+    expect(firstArgument.args.auctionId).to.be.equal(EMITTED_AUCTION_ID);
 
-    window.rivraddon.analytics.trackAuctionInit.restore();
-  });
-
-  it('Firing AUCTION_END should call rivraddon trackAuctionEnd passing the parameters', () => {
-    rivraddonsTrackAuctionEndStub = sandbox.stub(window.rivraddon.analytics, 'trackAuctionEnd');
-
-    expect(rivraddonsTrackAuctionEndStub.callCount).to.be.equal(0);
-
-    events.emit(CONSTANTS.EVENTS.AUCTION_END, {auctionId: EMITTED_AUCTION_ID});
-
-    expect(rivraddonsTrackAuctionEndStub.callCount).to.be.equal(1);
-
-    const firstArgument = rivraddonsTrackAuctionEndStub.getCall(0).args[0];
-    expect(firstArgument.auctionId).to.be.equal(EMITTED_AUCTION_ID);
-
-    window.rivraddon.analytics.trackAuctionEnd.restore();
-  });
-
-  it('Firing BID_WON should call rivraddon trackBidWon passing the parameters', () => {
-    rivraddonsTrackBidWonStub = sandbox.stub(window.rivraddon.analytics, 'trackBidWon');
-
-    expect(rivraddonsTrackBidWonStub.callCount).to.be.equal(0);
-
-    events.emit(CONSTANTS.EVENTS.BID_WON, {auctionId: EMITTED_AUCTION_ID});
-
-    expect(rivraddonsTrackBidWonStub.callCount).to.be.equal(1);
-
-    const firstArgument = rivraddonsTrackBidWonStub.getCall(0).args[0];
-    expect(firstArgument.auctionId).to.be.equal(EMITTED_AUCTION_ID);
-
-    window.rivraddon.analytics.trackBidWon.restore();
+    window.rivraddon.analytics.trackPbjsEvent.restore();
   });
 
   const BANNER_AD_UNITS_MOCK = [

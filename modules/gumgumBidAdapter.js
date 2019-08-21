@@ -1,8 +1,8 @@
-import * as utils from 'src/utils'
+import * as utils from '../src/utils'
 
-import { config } from 'src/config'
-import { registerBidder } from 'src/adapters/bidderFactory'
+import { config } from '../src/config'
 import includes from 'core-js/library/fn/array/includes';
+import { registerBidder } from '../src/adapters/bidderFactory'
 
 const BIDDER_CODE = 'gumgum'
 const ALIAS_BIDDER_CODE = ['gg']
@@ -14,7 +14,7 @@ let browserParams = {};
 let pageViewId = null
 
 // TODO: potential 0 values for browserParams sent to ad server
-function _getBrowserParams() {
+function _getBrowserParams(topWindowUrl) {
   let topWindow
   let topScreen
   let topUrl
@@ -25,6 +25,14 @@ function _getBrowserParams() {
     const Mbps = connection && (connection.downlink || connection.bandwidth)
     return Mbps ? Math.round(Mbps * 1024) : null // 1 megabit -> 1024 kilobits
   }
+  function getOgURL () {
+    let ogURL = ''
+    const ogURLSelector = "meta[property='og:url']"
+    const head = document && document.getElementsByTagName('head')[0]
+    const ogURLElement = head.querySelector(ogURLSelector)
+    ogURL = ogURLElement ? ogURLElement.content : null
+    return ogURL
+  }
   if (browserParams.vw) {
     // we've already initialized browserParams, just return it.
     return browserParams
@@ -33,7 +41,7 @@ function _getBrowserParams() {
   try {
     topWindow = global.top;
     topScreen = topWindow.screen;
-    topUrl = utils.getTopWindowUrl()
+    topUrl = topWindowUrl || utils.getTopWindowUrl();
   } catch (error) {
     utils.logError(error);
     return browserParams
@@ -47,7 +55,8 @@ function _getBrowserParams() {
     pu: topUrl,
     ce: utils.cookiesAreEnabled(),
     dpr: topWindow.devicePixelRatio || 1,
-    jcsi: JSON.stringify({ t: 0, rq: 7 })
+    jcsi: JSON.stringify({ t: 0, rq: 8 }),
+    ogu: getOgURL()
   }
 
   ns = getNetworkSpeed()
@@ -64,6 +73,14 @@ function _getBrowserParams() {
 
 function getWrapperCode(wrapper, data) {
   return wrapper.replace('AD_JSON', window.btoa(JSON.stringify(data)))
+}
+
+function _getTradeDeskIDParam(bidRequest) {
+  const unifiedIdObj = {};
+  if (bidRequest.userId && bidRequest.userId.tdid) {
+    unifiedIdObj.tdid = bidRequest.userId.tdid;
+  }
+  return unifiedIdObj;
 }
 
 // TODO: use getConfig()
@@ -103,6 +120,12 @@ function isBidRequestValid (bid) {
       utils.logWarn(`[GumGum] No product selected for the placement ${adUnitCode}, please check your implementation.`);
       return false;
   }
+
+  if (params.bidfloor && !(typeof params.bidfloor === 'number' && isFinite(params.bidfloor))) {
+    utils.logWarn('[GumGum] bidfloor must be a Number');
+    return false;
+  }
+
   return true;
 }
 
@@ -122,9 +145,13 @@ function buildRequests (validBidRequests, bidderRequest) {
       params = {},
       transactionId
     } = bidRequest;
-    const data = {}
+    const data = {};
+    const topWindowUrl = bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer;
     if (pageViewId) {
       data.pv = pageViewId
+    }
+    if (params.bidfloor) {
+      data.fp = params.bidfloor;
     }
     if (params.inScreen) {
       data.t = params.inScreen;
@@ -149,10 +176,10 @@ function buildRequests (validBidRequests, bidderRequest) {
       tId: transactionId,
       pi: data.pi,
       selector: params.selector,
-      sizes: bidRequest.sizes,
+      sizes: bidRequest.sizes || bidRequest.mediatype[banner].sizes,
       url: BID_ENDPOINT,
       method: 'GET',
-      data: Object.assign(data, _getBrowserParams(), _getDigiTrustQueryParams())
+      data: Object.assign(data, _getBrowserParams(topWindowUrl), _getDigiTrustQueryParams(), _getTradeDeskIDParam(bidRequest))
     })
   });
   return bids;
@@ -195,7 +222,7 @@ function interpretResponse (serverResponse, bidRequest) {
   let [width, height] = sizes[0].split('x')
 
   // return 1x1 when breakout expected
-  if ((product === 2 || product === 5) && includes(sizes, '1x1')) {
+  if (product === 5 && includes(sizes, '1x1')) {
     width = '1'
     height = '1'
   }
