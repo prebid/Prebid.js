@@ -322,10 +322,10 @@ registerBidder(spec);
 
 export function ImproveDigitalAdServerJSClient(endPoint) {
   this.CONSTANTS = {
-    AD_SERVER_BASE_URL: 'https://ice.360yield.com',
+    AD_SERVER_BASE_URL: 'ice.360yield.com',
     END_POINT: endPoint || 'hb',
     AD_SERVER_URL_PARAM: 'jsonp=',
-    CLIENT_VERSION: 'JS-6.1.0',
+    CLIENT_VERSION: 'JS-6.2.0',
     MAX_URL_LENGTH: 2083,
     ERROR_CODES: {
       MISSING_PLACEMENT_PARAMS: 2,
@@ -351,6 +351,7 @@ export function ImproveDigitalAdServerJSClient(endPoint) {
     }
 
     requestParameters.returnObjType = requestParameters.returnObjType || this.CONSTANTS.RETURN_OBJ_TYPE.DEFAULT;
+    requestParameters.adServerBaseUrl = 'https://' + (requestParameters.adServerBaseUrl || this.CONSTANTS.AD_SERVER_BASE_URL);
 
     let impressionObjects = [];
     let impressionObject;
@@ -376,7 +377,7 @@ export function ImproveDigitalAdServerJSClient(endPoint) {
     }
     let errors = null;
 
-    let baseUrl = `${this.CONSTANTS.AD_SERVER_BASE_URL}/${this.CONSTANTS.END_POINT}?${this.CONSTANTS.AD_SERVER_URL_PARAM}`;
+    let baseUrl = `${requestParameters.adServerBaseUrl}/${this.CONSTANTS.END_POINT}?${this.CONSTANTS.AD_SERVER_URL_PARAM}`;
 
     let bidRequestObject = {
       bid_request: this.createBasicBidRequestObject(requestParameters, extraRequestParameters)
@@ -437,11 +438,11 @@ export function ImproveDigitalAdServerJSClient(endPoint) {
       case this.CONSTANTS.RETURN_OBJ_TYPE.URL_PARAMS_SPLIT:
         return {
           method: 'GET',
-          url: `${this.CONSTANTS.AD_SERVER_BASE_URL}/${this.CONSTANTS.END_POINT}`,
+          url: `${requestParameters.adServerBaseUrl}/${this.CONSTANTS.END_POINT}`,
           data: `${this.CONSTANTS.AD_SERVER_URL_PARAM}${encodeURIComponent(JSON.stringify(bidRequestObject))}`
         };
       default:
-        const baseUrl = `${this.CONSTANTS.AD_SERVER_BASE_URL}/` +
+        const baseUrl = `${requestParameters.adServerBaseUrl}/` +
           `${this.CONSTANTS.END_POINT}?${this.CONSTANTS.AD_SERVER_URL_PARAM}`;
         return {
           url: baseUrl + encodeURIComponent(JSON.stringify(bidRequestObject))
