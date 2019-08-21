@@ -152,7 +152,7 @@ export function newUserSync(userSyncDependencies) {
     if (!bidder) {
       return utils.logWarn(`Bidder is required for registering sync`);
     }
-    if (Number(numAdapterBids[bidder]) >= usConfig.syncsPerBidder) {
+    if (usConfig.syncsPerBidder !== 0 && Number(numAdapterBids[bidder]) >= usConfig.syncsPerBidder) {
       return utils.logWarn(`Number of user syncs exceeded for "${bidder}"`);
     }
 

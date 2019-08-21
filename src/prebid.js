@@ -114,15 +114,8 @@ $$PREBID_GLOBAL$$.getAdserverTargeting = function (adUnitCode) {
   return targeting.getAllTargeting(adUnitCode);
 };
 
-/**
- * This function returns the bid responses at the given moment.
- * @alias module:pbjs.getBidResponses
- * @return {Object}            map | object that contains the bidResponses
- */
-
-$$PREBID_GLOBAL$$.getBidResponses = function () {
-  utils.logInfo('Invoking $$PREBID_GLOBAL$$.getBidResponses', arguments);
-  const responses = auctionManager.getBidsReceived()
+function getBids(type) {
+  const responses = auctionManager[type]()
     .filter(adUnitsFilter.bind(this, auctionManager.getAdUnitCodes()));
 
   // find the last auction id to get responses for most recent auction only
@@ -139,6 +132,28 @@ $$PREBID_GLOBAL$$.getBidResponses = function () {
       };
     })
     .reduce((a, b) => Object.assign(a, b), {});
+}
+
+/**
+ * This function returns the bids requests involved in an auction but not bid on
+ * @alias module:pbjs.getNoBids
+ * @return {Object}            map | object that contains the bidRequests
+ */
+
+$$PREBID_GLOBAL$$.getNoBids = function () {
+  utils.logInfo('Invoking $$PREBID_GLOBAL$$.getNoBids', arguments);
+  return getBids('getNoBids');
+};
+
+/**
+ * This function returns the bid responses at the given moment.
+ * @alias module:pbjs.getBidResponses
+ * @return {Object}            map | object that contains the bidResponses
+ */
+
+$$PREBID_GLOBAL$$.getBidResponses = function () {
+  utils.logInfo('Invoking $$PREBID_GLOBAL$$.getBidResponses', arguments);
+  return getBids('getBidsReceived');
 };
 
 /**

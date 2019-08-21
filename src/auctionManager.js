@@ -39,15 +39,20 @@ export function newAuctionManager() {
     } else {
       utils.logWarn(`Auction not found when adding winning bid`);
     }
-  }
+  };
 
   auctionManager.getAllWinningBids = function() {
     return _auctions.map(auction => auction.getWinningBids())
       .reduce(flatten, []);
-  }
+  };
 
   auctionManager.getBidsRequested = function() {
     return _auctions.map(auction => auction.getBidRequests())
+      .reduce(flatten, []);
+  };
+
+  auctionManager.getNoBids = function() {
+    return _auctions.map(auction => auction.getNoBids())
       .reduce(flatten, []);
   };
 

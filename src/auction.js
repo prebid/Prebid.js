@@ -48,7 +48,7 @@
  * @property {function(): void} callBids - sends requests to all adapters for bids
  */
 
-import { uniques, flatten, timestamp, adUnitsFilter, getBidderRequest, deepAccess, delayExecution, getBidRequest } from './utils';
+import { uniques, flatten, timestamp, adUnitsFilter, deepAccess, getBidRequest } from './utils';
 import { getPriceBucketString } from './cpmBucketManager';
 import { getNativeTargeting } from './native';
 import { getCacheUrl, store } from './videoCache';
@@ -95,6 +95,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
   let _adUnitCodes = adUnitCodes;
   let _bidderRequests = [];
   let _bidsReceived = [];
+  let _noBids = [];
   let _auctionStart;
   let _auctionEnd;
   let _auctionId = utils.generateUUID();
@@ -106,6 +107,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
 
   function addBidRequests(bidderRequests) { _bidderRequests = _bidderRequests.concat(bidderRequests) };
   function addBidReceived(bidsReceived) { _bidsReceived = _bidsReceived.concat(bidsReceived); }
+  function addNoBid(noBid) { _noBids = _noBids.concat(noBid); }
 
   function getProperties() {
     return {
@@ -117,6 +119,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
       adUnitCodes: _adUnitCodes,
       labels: _labels,
       bidderRequests: _bidderRequests,
+      noBids: _noBids,
       bidsReceived: _bidsReceived,
       winningBids: _winningBids,
       timeout: _timeout
@@ -175,7 +178,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
     }
   }
 
-  function auctionDone(bidderCount) {
+  function auctionDone() {
     // when all bidders have called done callback atleast once it means auction is complete
     utils.logInfo(`Bids Received for Auction with id: ${_auctionId}`, _bidsReceived);
     _auctionStatus = AUCTION_COMPLETED;
@@ -208,10 +211,12 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
           events.emit(CONSTANTS.EVENTS.AUCTION_INIT, getProperties());
 
           let callbacks = auctionCallbacks(auctionDone, this);
-          let boundObj = {
-            auctionAddBidResponse: callbacks.addBidResponse
-          };
-          adaptermanager.callBids(_adUnits, bidRequests, addBidResponse.bind(boundObj), callbacks.adapterDone, {
+          adaptermanager.callBids(_adUnits, bidRequests, function(...args) {
+            addBidResponse.apply({
+              dispatch: callbacks.addBidResponse,
+              bidderRequest: this
+            }, args)
+          }, callbacks.adapterDone, {
             request(source, origin) {
               increment(outstandingRequests, origin);
               increment(requests, source);
@@ -296,6 +301,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
 
   return {
     addBidReceived,
+    addNoBid,
     executeCallback,
     callBids,
     addWinningBid,
@@ -308,20 +314,19 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
     getAdUnitCodes: () => _adUnitCodes,
     getBidRequests: () => _bidderRequests,
     getBidsReceived: () => _bidsReceived,
+    getNoBids: () => _noBids
   }
 }
 
 export const addBidResponse = createHook('asyncSeries', function(adUnitCode, bid) {
-  this.auctionAddBidResponse(adUnitCode, bid);
+  this.dispatch.call(this.bidderRequest, adUnitCode, bid);
 }, 'addBidResponse');
 
 export function auctionCallbacks(auctionDone, auctionInstance) {
   let outstandingBidsAdded = 0;
   let allAdapterCalledDone = false;
-
-  let onAllAdapterDone = delayExecution(() => {
-    allAdapterCalledDone = true;
-  }, auctionInstance.getBidRequests().length);
+  let bidderRequestsDone = new Set();
+  let bidResponseMap = {};
 
   function afterBidAdded() {
     outstandingBidsAdded--;
@@ -331,15 +336,17 @@ export function auctionCallbacks(auctionDone, auctionInstance) {
   }
 
   function addBidResponse(adUnitCode, bid) {
+    let bidderRequest = this;
+
+    bidResponseMap[bid.requestId] = true;
+
     outstandingBidsAdded++;
-    let bidRequests = auctionInstance.getBidRequests();
     let auctionId = auctionInstance.getAuctionId();
 
-    let bidRequest = getBidderRequest(bidRequests, bid.bidderCode, adUnitCode);
-    let bidResponse = getPreparedBidForAuction({adUnitCode, bid, bidRequest, auctionId});
+    let bidResponse = getPreparedBidForAuction({adUnitCode, bid, bidderRequest, auctionId});
 
     if (bidResponse.mediaType === 'video') {
-      tryAddVideoBid(auctionInstance, bidResponse, bidRequest, afterBidAdded);
+      tryAddVideoBid(auctionInstance, bidResponse, bidderRequest, afterBidAdded);
     } else {
       addBidToAuction(auctionInstance, bidResponse);
       afterBidAdded();
@@ -347,7 +354,19 @@ export function auctionCallbacks(auctionDone, auctionInstance) {
   }
 
   function adapterDone() {
-    onAllAdapterDone();
+    let bidderRequest = this;
+
+    bidderRequestsDone.add(bidderRequest);
+    allAdapterCalledDone = auctionInstance.getBidRequests()
+      .every(bidderRequest => bidderRequestsDone.has(bidderRequest));
+
+    bidderRequest.bids.forEach(bid => {
+      if (!bidResponseMap[bid.bidId]) {
+        auctionInstance.addNoBid(bid);
+        events.emit(CONSTANTS.EVENTS.NO_BID, bid);
+      }
+    });
+
     if (allAdapterCalledDone && outstandingBidsAdded === 0) {
       auctionDone();
     }
@@ -412,8 +431,8 @@ function tryAddVideoBid(auctionInstance, bidResponse, bidRequests, afterBidAdded
 
 // Postprocess the bids so that all the universal properties exist, no matter which bidder they came from.
 // This should be called before addBidToAuction().
-function getPreparedBidForAuction({adUnitCode, bid, bidRequest, auctionId}) {
-  const start = bidRequest.start;
+function getPreparedBidForAuction({adUnitCode, bid, bidderRequest, auctionId}) {
+  const start = bidderRequest.start;
 
   let bidObject = Object.assign({}, bid, {
     auctionId,
@@ -433,7 +452,7 @@ function getPreparedBidForAuction({adUnitCode, bid, bidRequest, auctionId}) {
   events.emit(CONSTANTS.EVENTS.BID_ADJUSTMENT, bidObject);
 
   // a publisher-defined renderer can be used to render bids
-  const bidReq = bidRequest.bids && find(bidRequest.bids, bid => bid.adUnitCode == adUnitCode);
+  const bidReq = bidderRequest.bids && find(bidderRequest.bids, bid => bid.adUnitCode == adUnitCode);
   const adUnitRenderer = bidReq && bidReq.renderer;
 
   if (adUnitRenderer && adUnitRenderer.url) {

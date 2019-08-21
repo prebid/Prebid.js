@@ -1,9 +1,8 @@
-import { auctionManager, newAuctionManager } from 'src/auctionManager';
 import { getKeyValueTargetingPairs, auctionCallbacks } from 'src/auction';
 import CONSTANTS from 'src/constants.json';
 import { adjustBids } from 'src/auction';
 import * as auctionModule from 'src/auction';
-import { newBidder, registerBidder } from 'src/adapters/bidderFactory';
+import { registerBidder } from 'src/adapters/bidderFactory';
 import { config } from 'src/config';
 import * as store from 'src/videoCache';
 import * as ajaxLib from 'src/ajax';
@@ -19,10 +18,6 @@ var bidfactory = require('../../src/bidfactory');
 var fixtures = require('../fixtures/fixtures');
 var adaptermanager = require('src/adaptermanager');
 var events = require('src/events');
-
-function timestamp() {
-  return new Date().getTime();
-}
 
 const BIDDER_CODE = 'sampleBidder';
 const BIDDER_CODE1 = 'sampleBidder1';
@@ -667,7 +662,6 @@ describe('auctionmanager.js', function () {
 
     describe('when auction timeout is 20', function () {
       let eventsEmitSpy;
-      let getBidderRequestStub;
 
       before(function () {
         bids = [mockBid(), mockBid({ bidderCode: BIDDER_CODE1 })];
@@ -700,18 +694,16 @@ describe('auctionmanager.js', function () {
 
         eventsEmitSpy = sinon.spy(events, 'emit');
 
-        let origGBR = utils.getBidderRequest;
-        getBidderRequestStub = sinon.stub(utils, 'getBidderRequest');
-        getBidderRequestStub.callsFake((bidRequests, bidder, adUnitCode) => {
-          let req = origGBR(bidRequests, bidder, adUnitCode);
-          req.start = 1000;
-          return req;
+        // make all timestamp calls 5 minutes apart
+        let callCount = 0;
+        sinon.stub(utils, 'timestamp').callsFake(function() {
+          return new Date().getTime() + (callCount++ * 1000 * 60 * 5);
         });
       });
       afterEach(function () {
         auctionModule.newAuction.restore();
         events.emit.restore();
-        getBidderRequestStub.restore();
+        utils.timestamp.restore();
       });
       it('should emit BID_TIMEOUT for timed out bids', function () {
         auction.callBids();
@@ -885,12 +877,12 @@ describe('auctionmanager.js', function () {
         mockBidRequest(bids2[0], { adUnitCode: ADUNIT_CODE2 })
       ];
       let cbs = auctionCallbacks(doneSpy, auction);
-      cbs.addBidResponse(ADUNIT_CODE, bids[0]);
-      cbs.adapterDone();
-      cbs.addBidResponse(ADUNIT_CODE1, bids1[0]);
-      cbs.adapterDone();
-      cbs.addBidResponse(ADUNIT_CODE2, bids2[0]);
-      cbs.adapterDone();
+      cbs.addBidResponse.call(bidRequests[0], ADUNIT_CODE, bids[0]);
+      cbs.adapterDone.call(bidRequests[0]);
+      cbs.addBidResponse.call(bidRequests[1], ADUNIT_CODE1, bids1[0]);
+      cbs.adapterDone.call(bidRequests[1]);
+      cbs.addBidResponse.call(bidRequests[2], ADUNIT_CODE2, bids2[0]);
+      cbs.adapterDone.call(bidRequests[2]);
       assert.equal(doneSpy.callCount, 1);
     });
 
@@ -905,17 +897,17 @@ describe('auctionmanager.js', function () {
             playerSize: [640, 480],
           },
         }
-      }
+      };
       bidRequests = [
         mockBidRequest(bids[0], opts),
         mockBidRequest(bids1[0], { adUnitCode: ADUNIT_CODE1 }),
-      ]
+      ];
 
       let cbs = auctionCallbacks(doneSpy, auction);
-      cbs.addBidResponse(ADUNIT_CODE, bids[0]);
-      cbs.adapterDone();
-      cbs.addBidResponse(ADUNIT_CODE1, bids1[0]);
-      cbs.adapterDone();
+      cbs.addBidResponse.call(bidRequests[0], ADUNIT_CODE, bids[0]);
+      cbs.adapterDone.call(bidRequests[0]);
+      cbs.addBidResponse.call(bidRequests[1], ADUNIT_CODE1, bids1[0]);
+      cbs.adapterDone.call(bidRequests[1]);
       assert.equal(doneSpy.callCount, 0);
       const uuid = 'c488b101-af3e-4a99-b538-00423e5a3371';
       const responseBody = `{"responses":[{"uuid":"${uuid}"}]}`;

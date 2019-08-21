@@ -558,6 +558,8 @@ describe('S2S Adapter', function () {
       const requestBid = JSON.parse(requests[0].requestBody);
       expect(requestBid.device).to.deep.equal({
         ifa: '6D92078A-8246-4BA4-AE5B-76104861E7DC',
+        w: window.innerWidth,
+        h: window.innerHeight
       });
       expect(requestBid.app).to.deep.equal({
         bundle: 'com.test.app',
@@ -581,6 +583,31 @@ describe('S2S Adapter', function () {
       const requestBid = JSON.parse(requests[0].requestBody);
       expect(requestBid.device).to.deep.equal({
         ifa: '6D92078A-8246-4BA4-AE5B-76104861E7DC',
+        w: window.innerWidth,
+        h: window.innerHeight
+      });
+      expect(requestBid.app).to.deep.equal({
+        bundle: 'com.test.app',
+        publisher: {'id': '1'}
+      });
+    });
+
+    it('adds device.w and device.h even if the config lacks a device object', function () {
+      const s2sConfig = Object.assign({}, CONFIG, {
+        endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
+      });
+
+      const _config = {
+        s2sConfig: s2sConfig,
+        app: { bundle: 'com.test.app' },
+      };
+
+      config.setConfig(_config);
+      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      const requestBid = JSON.parse(requests[0].requestBody);
+      expect(requestBid.device).to.deep.equal({
+        w: window.innerWidth,
+        h: window.innerHeight
       });
       expect(requestBid.app).to.deep.equal({
         bundle: 'com.test.app',
@@ -710,6 +737,48 @@ describe('S2S Adapter', function () {
         key: 'fizz',
         value: ['buzz']
       }]);
+    });
+
+    it('adds limit to the cookie_sync request if userSyncLimit is greater than 0', function () {
+      let cookieSyncConfig = utils.deepClone(CONFIG);
+      cookieSyncConfig.syncEndpoint = 'https://prebid.adnxs.com/pbs/v1/cookie_sync';
+      cookieSyncConfig.userSyncLimit = 1;
+
+      config.setConfig({ s2sConfig: cookieSyncConfig });
+
+      let bidRequest = utils.deepClone(BID_REQUESTS);
+      adapter.callBids(REQUEST, bidRequest, addBidResponse, done, ajax);
+      let requestBid = JSON.parse(requests[0].requestBody);
+
+      expect(requestBid.bidders).to.contain('appnexus').and.to.have.lengthOf(1);
+      expect(requestBid.account).is.equal('1');
+      expect(requestBid.limit).is.equal(1);
+    });
+
+    it('does not add limit to cooke_sync request if userSyncLimit is missing or 0', function () {
+      let cookieSyncConfig = utils.deepClone(CONFIG);
+      cookieSyncConfig.syncEndpoint = 'https://prebid.adnxs.com/pbs/v1/cookie_sync';
+      config.setConfig({ s2sConfig: cookieSyncConfig });
+
+      let bidRequest = utils.deepClone(BID_REQUESTS);
+      adapter.callBids(REQUEST, bidRequest, addBidResponse, done, ajax);
+      let requestBid = JSON.parse(requests[0].requestBody);
+
+      expect(requestBid.bidders).to.contain('appnexus').and.to.have.lengthOf(1);
+      expect(requestBid.account).is.equal('1');
+      expect(requestBid.limit).is.undefined;
+
+      cookieSyncConfig.userSyncLimit = 0;
+      config.resetConfig();
+      config.setConfig({ s2sConfig: cookieSyncConfig });
+
+      bidRequest = utils.deepClone(BID_REQUESTS);
+      adapter.callBids(REQUEST, bidRequest, addBidResponse, done, ajax);
+      requestBid = JSON.parse(requests[0].requestBody);
+
+      expect(requestBid.bidders).to.contain('appnexus').and.to.have.lengthOf(1);
+      expect(requestBid.account).is.equal('1');
+      expect(requestBid.limit).is.undefined;
     });
   });
 

@@ -296,8 +296,10 @@ function buildOXBannerRequest(bids, bidderRequest) {
 }
 
 function buildOXVideoRequest(bid, bidderRequest) {
-  let url = `//${bid.params.delDomain}/v/1.0/avjp`;
   let oxVideoParams = generateVideoParameters(bid, bidderRequest);
+  let url = oxVideoParams.ph
+    ? `//u.openx.net/v/1.0/avjp`
+    : `//${bid.params.delDomain}/v/1.0/avjp`;
   return {
     method: 'GET',
     url: url,

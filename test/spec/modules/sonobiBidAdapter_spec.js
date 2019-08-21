@@ -136,11 +136,17 @@ describe('SonobiBidAdapter', function () {
         'vendorData': {},
         'gdprApplies': true
       },
+      'refererInfo': {
+        'numIframes': 0,
+        'reachedTop': true,
+        'referer': 'http://example.com',
+        'stack': ['http://example.com']
+      }
     };
 
     it('should return a properly formatted request', function () {
-      const bidRequests = spec.buildRequests(bidRequest)
-      const bidRequestsPageViewID = spec.buildRequests(bidRequest)
+      const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
+      const bidRequestsPageViewID = spec.buildRequests(bidRequest, bidderRequests)
       expect(bidRequests.url).to.equal('https://apex.go.sonobi.com/trinity.json')
       expect(bidRequests.method).to.equal('GET')
       expect(bidRequests.data.key_maker).to.deep.equal(JSON.stringify(keyMakerData))
@@ -161,6 +167,12 @@ describe('SonobiBidAdapter', function () {
       expect(bidRequests.data.consent_string).to.equal('BOJ/P2HOJ/P2HABABMAAAAAZ+A==')
     })
 
+    it('should return a properly formatted request with referer', function () {
+      bidRequest[0].params.referrer = ''
+      const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
+      expect(bidRequests.data.ref).to.equal('http://example.com')
+    })
+
     it('should return a properly formatted request with GDPR applies set to false', function () {
       bidderRequests.gdprConsent.gdprApplies = false;
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
@@ -176,6 +188,12 @@ describe('SonobiBidAdapter', function () {
           'vendorData': {},
           'gdprApplies': false
         },
+        'refererInfo': {
+          'numIframes': 0,
+          'reachedTop': true,
+          'referer': 'http://example.com',
+          'stack': ['http://example.com']
+        }
       };
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
       expect(bidRequests.url).to.equal('https://apex.go.sonobi.com/trinity.json')
@@ -190,6 +208,12 @@ describe('SonobiBidAdapter', function () {
           'vendorData': {},
           'gdprApplies': true
         },
+        'refererInfo': {
+          'numIframes': 0,
+          'reachedTop': true,
+          'referer': 'http://example.com',
+          'stack': ['http://example.com']
+        }
       };
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
       expect(bidRequests.url).to.equal('https://apex.go.sonobi.com/trinity.json')
@@ -200,7 +224,7 @@ describe('SonobiBidAdapter', function () {
     it('should return a properly formatted request with hfa', function () {
       bidRequest[0].params.hfa = 'hfakey'
       bidRequest[1].params.hfa = 'hfakey'
-      const bidRequests = spec.buildRequests(bidRequest)
+      const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
       expect(bidRequests.url).to.equal('https://apex.go.sonobi.com/trinity.json')
       expect(bidRequests.method).to.equal('GET')
       expect(bidRequests.data.ref).not.to.be.empty
@@ -209,8 +233,34 @@ describe('SonobiBidAdapter', function () {
     })
 
     it('should return null if there is nothing to bid on', function () {
-      const bidRequests = spec.buildRequests([{params: {}}])
+      const bidRequests = spec.buildRequests([{params: {}}], bidderRequests)
       expect(bidRequests).to.equal(null);
+    })
+
+    it('should return a properly formatted request with commonid as hfa', function () {
+      delete bidRequest[0].params.hfa;
+      delete bidRequest[1].params.hfa;
+      bidRequest[0].crumbs = {'pubcid': 'abcd-efg-0101'};
+      bidRequest[1].crumbs = {'pubcid': 'abcd-efg-0101'};
+      const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
+      expect(bidRequests.url).to.equal('https://apex.go.sonobi.com/trinity.json')
+      expect(bidRequests.method).to.equal('GET')
+      expect(bidRequests.data.ref).not.to.be.empty
+      expect(bidRequests.data.s).not.to.be.empty
+      expect(bidRequests.data.hfa).to.equal('PRE-abcd-efg-0101');
+    })
+
+    it('should return a properly formatted request with hfa preferred over commonid', function () {
+      bidRequest[0].params.hfa = 'hfakey';
+      bidRequest[1].params.hfa = 'hfakey';
+      bidRequest[0].crumbs = {'pubcid': 'abcd-efg-0101'};
+      bidRequest[1].crumbs = {'pubcid': 'abcd-efg-0101'};
+      const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
+      expect(bidRequests.url).to.equal('https://apex.go.sonobi.com/trinity.json')
+      expect(bidRequests.method).to.equal('GET')
+      expect(bidRequests.data.ref).not.to.be.empty
+      expect(bidRequests.data.s).not.to.be.empty
+      expect(bidRequests.data.hfa).to.equal('hfakey')
     })
   })
 

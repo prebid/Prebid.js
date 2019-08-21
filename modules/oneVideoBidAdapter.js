@@ -47,7 +47,6 @@ export const spec = {
         method: 'POST',
         url: location.protocol + spec.ENDPOINT + bid.params.pubId,
         data: getRequestData(bid, consentData),
-        options: {contentType: 'application/json'},
         bidRequest: bid
       }
     })

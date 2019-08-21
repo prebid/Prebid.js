@@ -36,67 +36,79 @@ export const spec = {
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
-    return validBidRequests.map(bidRequest => {
-      const params = bidRequest.params;
-      const sizes = utils.parseSizesInput(bidRequest.sizes)[0];
-      const width = sizes.split('x')[0];
-      const height = sizes.split('x')[1];
-      const refInfo = bidderRequest.refererInfo;
-      const gdpr = bidderRequest.gdprConsent;
-      const body = document.getElementsByTagName('body')[0];
-      const vpW = Math.max(window.innerWidth || body.clientWidth || 0) + 2;
-      const vpH = Math.max(window.innerHeight || body.clientHeight || 0) + 2;
-      const sr = screen.height > screen.width ? screen.height + 'x' + screen.width + 'x' + screen.colorDepth : screen.width + 'x' + screen.height + 'x' + screen.colorDepth;
+    const body = document.getElementsByTagName('body')[0];
+    const refInfo = bidderRequest.refererInfo;
+    const gdpr = bidderRequest.gdprConsent;
+    const vpW = Math.max(window.innerWidth || body.clientWidth || 0) + 2;
+    const vpH = Math.max(window.innerHeight || body.clientHeight || 0) + 2;
+    const sr = screen.height > screen.width ? screen.height + 'x' + screen.width + 'x' + screen.colorDepth : screen.width + 'x' + screen.height + 'x' + screen.colorDepth;
 
-      const payload = {
+    var payload = {
+      v: '2.0',
+      azr: true,
+      ck: utils.cookiesAreEnabled(),
+      re: refInfo ? refInfo.referer : '',
+      st: refInfo ? refInfo.stack : [],
+      tz: getBdfTz(new Date()),
+      sr: sr,
+      tm: bidderRequest.timeout,
+      vp: vpW + 'x' + vpH,
+      sdt: getUTCDate(),
+      top: refInfo ? refInfo.reachedTop : false,
+      gdpr: gdpr ? gdpr.gdprApplies : false,
+      gdprc: gdpr ? gdpr.consentString : '',
+      bids: []
+    };
+
+    utils._each(validBidRequests, function (bidRequest) {
+      var params = bidRequest.params;
+      var sizes = utils.parseSizesInput(bidRequest.sizes)[0];
+      var width = sizes.split('x')[0];
+      var height = sizes.split('x')[1];
+
+      var currentBidPayload = {
         bid: bidRequest.bidId,
-        v: '1.0',
-        azr: true,
-        ck: utils.cookiesAreEnabled(),
         tid: params.placementId,
         pid: params.publisherId,
         rp: params.reservePrice || 0,
-        re: refInfo ? refInfo.referer : '',
-        st: refInfo ? refInfo.stack : [],
-        tz: getBdfTz(new Date()),
-        sr: sr,
-        tm: bidderRequest.timeout,
-        vp: vpW + 'x' + vpH,
-        sdt: getUTCDate(),
         w: width,
-        h: height,
-        gdpr: gdpr ? gdpr.gdprApplies : false,
-        gdprc: gdpr ? gdpr.consentString : ''
+        h: height
       };
-      const payloadString = JSON.stringify(payload);
-      return {
-        method: 'POST',
-        url: `//${payload.pid}.bidfluence.com/Hb`,
-        data: payloadString,
-        options: { contentType: 'text/plain' }
-      };
+
+      payload.bids.push(currentBidPayload);
     });
+
+    const payloadString = JSON.stringify(payload);
+    return {
+      method: 'POST',
+      url: `//bdf${payload.bids[0].pid}.bidfluence.com/Prebid`,
+      data: payloadString,
+      options: { contentType: 'text/plain' }
+    };
   },
 
   interpretResponse: function (serverResponse, bidRequest) {
     const bidResponses = [];
     const response = serverResponse.body;
-    const cpm = response.Cpm || 0;
 
-    if (cpm > 0) {
-      const bidResponse = {
-        requestId: response.BidId,
-        cpm: cpm,
-        width: response.Width,
-        height: response.Height,
-        creativeId: response.CreativeId,
-        ad: response.Ad,
-        currency: 'USD',
-        netRevenue: true,
-        ttl: 360
-      };
-      bidResponses.push(bidResponse);
-    }
+    utils._each(response.Bids, function (currentResponse) {
+      var cpm = currentResponse.Cpm || 0;
+
+      if (cpm > 0) {
+        const bidResponse = {
+          requestId: currentResponse.BidId,
+          cpm: cpm,
+          width: currentResponse.Width,
+          height: currentResponse.Height,
+          creativeId: currentResponse.CreativeId,
+          ad: currentResponse.Ad,
+          currency: 'USD',
+          netRevenue: true,
+          ttl: 360
+        };
+        bidResponses.push(bidResponse);
+      }
+    });
 
     return bidResponses;
   },

@@ -93,16 +93,28 @@ export const spec = {
 
   getUserSyncs: function(syncOptions, serverResponses) {
     const syncs = [];
-    if (syncOptions.pixelEnabled && serverResponses.length) {
-      const bidderResponseBody = serverResponses[0].body;
-      if (bidderResponseBody.syncs) {
-        bidderResponseBody.syncs.forEach(sync => {
-          syncs.push({
-            type: 'image',
-            url: sync
-          });
+    if (!serverResponses.length) {
+      return syncs;
+    }
+
+    const bidderResponseBody = serverResponses[0].body;
+
+    if (syncOptions.pixelEnabled && bidderResponseBody.syncs) {
+      bidderResponseBody.syncs.forEach(sync => {
+        syncs.push({
+          type: 'image',
+          url: sync
         });
-      }
+      });
+    }
+
+    if (syncOptions.iframeEnabled && bidderResponseBody.sync_htmls) {
+      bidderResponseBody.sync_htmls.forEach(sync => {
+        syncs.push({
+          type: 'iframe',
+          url: sync
+        });
+      });
     }
 
     return syncs;
