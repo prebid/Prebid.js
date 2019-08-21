@@ -77,7 +77,8 @@ module.exports = {
         },
         commons: {
           chunks: 'all',
-          name: 'prebid-core',
+          name: 'prebid',
+          filename: 'prebid-core.js',
           priority:1,
           minSize: 0,
           test: function(module, chunks) {
