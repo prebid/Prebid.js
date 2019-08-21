@@ -155,7 +155,7 @@ function onBidWon(bid) {
   const { nurl } = bid
   if (nurl) {
     const img = document.createElement('img')
-    img.src = nurl
+    img.src = utils.replaceAuctionPrice(nurl, bid.cpm)
     img.style.cssText = 'display:none !important;'
     document.body.appendChild(img)
   }
