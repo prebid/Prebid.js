@@ -144,7 +144,7 @@ const OUTSTREAM_VIDEO_REQUEST = {
         }
       ],
       renderer: {
-        url: 'http://cdn.adnxs.com/renderer/video/ANOutstreamVideo.js',
+        url: 'http://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js',
         render: function (bid) {
           ANOutstreamVideo.renderAd({
             targetId: bid.adUnitCode,
