@@ -9,7 +9,7 @@ const TTL_SECONDS = 60 * 5;
 
 function isBidRequestValid(bid) {
   const { params } = bid || {}
-  return !!(params.pId);
+  return !!(params.pId)
 }
 
 function buildRequest(bid, bidderRequest) {
