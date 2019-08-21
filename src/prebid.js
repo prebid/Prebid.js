@@ -23,7 +23,7 @@ const events = require('./events');
 const { triggerUserSyncs } = userSync;
 
 /* private variables */
-const { ADD_AD_UNITS, BID_WON, REQUEST_BIDS, SET_TARGETING, AD_RENDER_FAILED } = CONSTANTS.EVENTS;
+const { ADD_AD_UNITS, BID_WON, REQUEST_BIDS, SET_TARGETING, AD_RENDER_FAILED, IN_VALID_AD_UNIT } = CONSTANTS.EVENTS;
 const { PREVENT_WRITING_ON_MAIN_DOCUMENT, NO_AD, EXCEPTION, CANNOT_FIND_AD, MISSING_DOC_OR_ADID } = CONSTANTS.AD_RENDER_FAILED_REASON;
 
 const eventValidators = {
@@ -82,6 +82,7 @@ export const checkAdUnitSetup = hook('sync', function (adUnits) {
         adUnit.sizes = normalizedSize;
       } else {
         utils.logError('Detected a mediaTypes.banner object did not include sizes.  This is a required field for the mediaTypes.banner object.  Removing invalid mediaTypes.banner object from request.');
+        events.emit(IN_VALID_AD_UNIT, 'Detected a mediaTypes.banner object did not include sizes.  This is a required field for the mediaTypes.banner object.  Removing invalid mediaTypes.banner object from request.');
         delete adUnit.mediaTypes.banner;
       }
     } else if (adUnit.sizes) {
@@ -101,6 +102,7 @@ export const checkAdUnitSetup = hook('sync', function (adUnits) {
           adUnit.sizes = video.playerSize = newPlayerSize;
         } else {
           utils.logError('Detected incorrect configuration of mediaTypes.video.playerSize.  Please specify only one set of dimensions in a format like: [[640, 480]]. Removing invalid mediaTypes.video.playerSize property from request.');
+          events.emit(IN_VALID_AD_UNIT, 'Detected incorrect configuration of mediaTypes.video.playerSize.  Please specify only one set of dimensions in a format like: [[640, 480]]. Removing invalid mediaTypes.video.playerSize property from request.');
           delete adUnit.mediaTypes.video.playerSize;
         }
       }
@@ -110,14 +112,17 @@ export const checkAdUnitSetup = hook('sync', function (adUnits) {
       const nativeObj = mediaTypes.native;
       if (nativeObj.image && nativeObj.image.sizes && !Array.isArray(nativeObj.image.sizes)) {
         utils.logError('Please use an array of sizes for native.image.sizes field.  Removing invalid mediaTypes.native.image.sizes property from request.');
+        events.emit(IN_VALID_AD_UNIT, 'Please use an array of sizes for native.image.sizes field.  Removing invalid mediaTypes.native.image.sizes property from request.');
         delete adUnit.mediaTypes.native.image.sizes;
       }
       if (nativeObj.image && nativeObj.image.aspect_ratios && !Array.isArray(nativeObj.image.aspect_ratios)) {
         utils.logError('Please use an array of sizes for native.image.aspect_ratios field.  Removing invalid mediaTypes.native.image.aspect_ratios property from request.');
+        events.emit(IN_VALID_AD_UNIT, 'Please use an array of sizes for native.image.aspect_ratios field.  Removing invalid mediaTypes.native.image.aspect_ratios property from request.');
         delete adUnit.mediaTypes.native.image.aspect_ratios;
       }
       if (nativeObj.icon && nativeObj.icon.sizes && !Array.isArray(nativeObj.icon.sizes)) {
         utils.logError('Please use an array of sizes for native.icon.sizes field.  Removing invalid mediaTypes.native.icon.sizes property from request.');
+        events.emit(IN_VALID_AD_UNIT, 'Please use an array of sizes for native.icon.sizes field.  Removing invalid mediaTypes.native.icon.sizes property from request.');
         delete adUnit.mediaTypes.native.icon.sizes;
       }
     }
@@ -466,6 +471,7 @@ $$PREBID_GLOBAL$$.requestBids = hook('async', function ({ bidsBackHandler, timeo
 
   if (!adUnits || adUnits.length === 0) {
     utils.logMessage('No adUnits configured. No bids requested.');
+    events.emit(IN_VALID_AD_UNIT, 'No adUnits configured. No bids requested.');
     if (typeof bidsBackHandler === 'function') {
       // executeCallback, this will only be called in case of first request
       try {
@@ -501,6 +507,9 @@ $$PREBID_GLOBAL$$.addAdUnits = function (adUnitArr) {
     $$PREBID_GLOBAL$$.adUnits.push.apply($$PREBID_GLOBAL$$.adUnits, adUnitArr);
   } else if (typeof adUnitArr === 'object') {
     $$PREBID_GLOBAL$$.adUnits.push(adUnitArr);
+  } else {
+    // emit event for invalid ad unit
+    events.emit(IN_VALID_AD_UNIT, 'invalid ad unit');
   }
   // emit event
   events.emit(ADD_AD_UNITS);

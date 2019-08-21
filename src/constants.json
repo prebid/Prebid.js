@@ -35,7 +35,8 @@
     "SET_TARGETING": "setTargeting",
     "REQUEST_BIDS": "requestBids",
     "ADD_AD_UNITS": "addAdUnits",
-    "AD_RENDER_FAILED" : "adRenderFailed"
+    "AD_RENDER_FAILED" : "adRenderFailed",
+    "IN_VALID_AD_UNIT": "invalidAdUnit"
   },
   "AD_RENDER_FAILED_REASON" : {
     "PREVENT_WRITING_ON_MAIN_DOCUMENT": "preventWritingOnMainDocuemnt",
