@@ -33,11 +33,17 @@ describe('Improve Digital Adapter Tests', function () {
     }
   };
 
-  const bidderRequest = {
-    'gdprConsent': {
-      'consentString': 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==',
-      'vendorData': {},
-      'gdprApplies': true
+  const bidderRequestGdpr = {
+    gdprConsent: {
+      consentString: 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==',
+      vendorData: {},
+      gdprApplies: true
+    },
+  };
+
+  const bidderRequestReferrer = {
+    refererInfo: {
+      referer: 'https://blah.com/test.html',
     },
   };
 
@@ -175,9 +181,16 @@ describe('Improve Digital Adapter Tests', function () {
 
     it('should add GDPR consent string', function () {
       const bidRequest = Object.assign({}, simpleBidRequest);
-      const request = spec.buildRequests([bidRequest], bidderRequest)[0];
+      const request = spec.buildRequests([bidRequest], bidderRequestGdpr)[0];
       const params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
       expect(params.bid_request.gdpr).to.equal('BOJ/P2HOJ/P2HABABMAAAAAZ+A==');
+    });
+
+    it('should add referrer', function () {
+      const bidRequest = Object.assign({}, simpleBidRequest);
+      const request = spec.buildRequests([bidRequest], bidderRequestReferrer)[0];
+      const params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
+      expect(params.bid_request.referrer).to.equal('https://blah.com/test.html');
     });
 
     it('should return 2 requests', function () {

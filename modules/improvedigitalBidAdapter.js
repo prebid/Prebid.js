@@ -43,6 +43,10 @@ export const spec = {
       requestParameters.gdpr = bidderRequest.gdprConsent.consentString;
     }
 
+    if (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer) {
+      requestParameters.referrer = bidderRequest.refererInfo.referer;
+    }
+
     let requestObj = idClient.createRequest(
       normalizedBids, // requestObject
       requestParameters
