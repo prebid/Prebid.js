@@ -11,7 +11,7 @@ const validBidReq = {
   },
   sizes: [[300, 250], [300, 600]],
   bidId: '263be71e91dd9d',
-  auctionId: '9ad1fa8d-2297-4660-a018-b39945054746',
+  auctionId: '9ad1fa8d-2297-4660-a018-b39945054747',
 };
 
 const invalidBidReq = {
