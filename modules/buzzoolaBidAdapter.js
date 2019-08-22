@@ -1,6 +1,6 @@
 import * as utils from 'src/utils';
 import {registerBidder} from 'src/adapters/bidderFactory';
-import {BANNER} from '../src/mediaTypes';
+import {BANNER, VIDEO} from '../src/mediaTypes';
 
 const BIDDER_CODE = 'buzzoola';
 const ENDPOINT = 'https://exchange.buzzoola.com/ssp/prebidjs';
@@ -8,7 +8,7 @@ const ENDPOINT = 'https://exchange.buzzoola.com/ssp/prebidjs';
 export const spec = {
   code: BIDDER_CODE,
   aliases: ['buzzoolaAdapter'],
-  supportedMediaTypes: [BANNER],
+  supportedMediaTypes: [BANNER, VIDEO],
 
   /**
    * Determines whether or not the given bid request is valid.
@@ -17,7 +17,8 @@ export const spec = {
    * @return {boolean} True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
-    return bid && bid.mediaTypes && bid.mediaTypes.banner && bid.params && bid.params.placementId;
+    let types = bid.mediaTypes;
+    return bid && bid.mediaTypes && (types.banner || types.video) && bid.params && bid.params.placementId;
   },
 
   /**
