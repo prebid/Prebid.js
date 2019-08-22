@@ -86,7 +86,7 @@ describe('admanBidAdapter', function() {
       expect(payload.gdpr).to.exist;
 
       expect(payload.bids).to.exist.and.to.be.an('array').and.to.have.lengthOf(1);
-      expect(payload.referrer).to.exist;
+      expect(payload.referer).to.exist;
 
       const bid = payload.bids[0];
       expect(bid).to.exist;

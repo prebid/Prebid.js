@@ -1,6 +1,7 @@
 'use strict';
 
 import {registerBidder} from '../src/adapters/bidderFactory';
+import { config } from '../src/config';
 import { BANNER, VIDEO } from '../src/mediaTypes';
 
 const BIDDER_CODE = 'adform';
@@ -12,6 +13,8 @@ export const spec = {
   },
   buildRequests: function (validBidRequests, bidderRequest) {
     var i, l, j, k, bid, _key, _value, reqParams, netRevenue, gdprObject;
+    const currency = config.getConfig('currency.adServerCurrency');
+
     var request = [];
     var globalParams = [ [ 'adxDomain', 'adx.adform.net' ], [ 'fd', 1 ], [ 'url', null ], [ 'tid', null ] ];
     var bids = JSON.parse(JSON.stringify(validBidRequests));
@@ -31,6 +34,7 @@ export const spec = {
       }
       reqParams = bid.params;
       reqParams.transactionId = bid.transactionId;
+      reqParams.rcur = reqParams.rcur || currency;
       request.push(formRequestUrl(reqParams));
     }
 
