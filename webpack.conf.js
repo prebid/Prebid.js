@@ -5,6 +5,7 @@ var helpers = require('./gulpHelpers');
 var RequireEnsureWithoutJsonp = require('./plugins/RequireEnsureWithoutJsonp.js');
 var { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
 var argv = require('yargs').argv;
+var allowedModules = require('./allowedModules');
 
 // list of module names to never include in the common bundle chunk
 var neverBundle = [
