@@ -7,6 +7,7 @@ var { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
 var argv = require('yargs').argv;
 var allowedModules = require('./allowedModules');
 
+
 // list of module names to never include in the common bundle chunk
 var neverBundle = [
   'AnalyticsAdapter.js'
@@ -15,8 +16,7 @@ var neverBundle = [
 var plugins = [
   new RequireEnsureWithoutJsonp()
 ];
-console.log('argv::::', JSON.stringify(argv._));
-console.log('yargs:::', JSON.stringify(argv._) === JSON.stringify(['build']));
+
 if (argv.analyze) {
   plugins.push(
     new BundleAnalyzerPlugin()
@@ -59,8 +59,10 @@ module.exports = {
     ]
   },
   optimization: {
-    moduleIds: 'hashed',
-    runtimeChunk: 'single',
+    runtimeChunk: {
+      name: 'prebid'
+    },
+    minimize: false,
     splitChunks: {
       minSize: 0,
       chunks: 'all',
@@ -76,24 +78,21 @@ module.exports = {
           chunks: 'all',
           reuseExistingChunk: true
         },
-        commons: {
+        prebid: {
           chunks: 'all',
           name: 'prebid',
           filename: 'prebid-core.js',
           priority:1,
           minSize: 0,
           test: function(module, chunks) {
-            console.log('mode::::',this.mode);
-            if(module.resource && module.resource.includes('bidderFactory.js')) {
-              console.log(module.name, module.resource, module.context, 'context:::', module.context && (module.context.indexOf(path.resolve('./src'))>-1));
-            }
-            console.log(module.name, module.resource, module.context, 'context:::', module.context && (module.context.indexOf(path.resolve('./src'))>-1));
             return (
               (
-                module.context && (module.context.indexOf(path.resolve('./src'))>-1) &&
+                module.context && module.context.startsWith(path.resolve('./src')) &&
                 !(module.resource && neverBundle.some(name => module.resource.includes(name)))
               ) ||
-              module.resource && module.resource.includes(path.resolve('./node_modules/core-js'))
+              module.resource && (allowedModules.src.concat(['core-js'])).some(
+                name => module.resource.includes(path.resolve('./node_modules/' + name))
+              )
             );
           }
         }
