@@ -3,7 +3,7 @@ import {registerBidder} from '../src/adapters/bidderFactory';
 import {config} from '../src/config';
 import {BANNER, VIDEO} from '../src/mediaTypes';
 
-const INTEGRATION = 'pbjs_lite_v$prebid.version$';
+const DEFAULT_INTEGRATION = 'pbjs_lite';
 
 function isSecure() {
   return location.protocol === 'https:';
@@ -83,6 +83,7 @@ var sizeMap = {
   126: '200x600',
   144: '980x600',
   145: '980x150',
+  156: '640x320',
   159: '320x250',
   179: '250x600',
   195: '600x300',
@@ -384,6 +385,8 @@ export const spec = {
 
     const [latitude, longitude] = params.latLong || [];
 
+    const configIntType = config.getConfig('rubicon.int_type');
+
     const data = {
       'account_id': params.accountId,
       'site_id': params.siteId,
@@ -393,7 +396,7 @@ export const spec = {
       'p_pos': params.position === 'atf' || params.position === 'btf' ? params.position : 'unknown',
       'rp_floor': (params.floor = parseFloat(params.floor)) > 0.01 ? params.floor : 0.01,
       'rp_secure': isSecure() ? '1' : '0',
-      'tk_flint': INTEGRATION,
+      'tk_flint': `${configIntType || DEFAULT_INTEGRATION}_v$prebid.version$`,
       'x_source.tid': bidRequest.transactionId,
       'p_screen_res': _getScreenResolution(),
       'kw': Array.isArray(params.keywords) ? params.keywords.join(',') : '',
@@ -555,6 +558,9 @@ export const spec = {
           ttl: 300, // 5 minutes
           netRevenue: config.getConfig('rubicon.netRevenue') || false,
           rubicon: {
+            advertiserId: ad.advertiser, networkId: ad.network
+          },
+          meta: {
             advertiserId: ad.advertiser, networkId: ad.network
           }
         };

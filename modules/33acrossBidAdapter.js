@@ -64,7 +64,7 @@ function _getAdSlotHTMLElement(adUnitCode) {
 
 // Infer the necessary data from valid bid for a minimal ttxRequest and create HTTP request
 // NOTE: At this point, TTX only accepts request for a single impression
-function _createServerRequest(bidRequest, gdprConsent) {
+function _createServerRequest(bidRequest, gdprConsent = {}) {
   const ttxRequest = {};
   const params = bidRequest.params;
   const element = _getAdSlotHTMLElement(bidRequest.adUnitCode);
@@ -143,14 +143,22 @@ function _createServerRequest(bidRequest, gdprConsent) {
 }
 
 // Sync object will always be of type iframe for TTX
-function _createSync(siteId) {
+function _createSync({siteId, gdprConsent = {}}) {
   const ttxSettings = config.getConfig('ttxSettings');
   const syncUrl = (ttxSettings && ttxSettings.syncUrl) || SYNC_ENDPOINT;
 
-  return {
+  const {consentString, gdprApplies} = gdprConsent;
+
+  const sync = {
     type: 'iframe',
-    url: `${syncUrl}&id=${siteId}`
+    url: `${syncUrl}&id=${siteId}&gdpr_consent=${encodeURIComponent(consentString)}`
+  };
+
+  if (typeof gdprApplies === 'boolean') {
+    sync.url += `&gdpr=${Number(gdprApplies)}`;
   }
+
+  return sync;
 }
 
 function _getSize(size) {
@@ -282,8 +290,6 @@ function isBidRequestValid(bid) {
 
 // NOTE: With regards to gdrp consent data,
 // - the server independently infers gdpr applicability therefore, setting the default value to false
-// - the server, at this point, also doesn't need the consent string to handle gdpr compliance. So passing
-//    value whether set or not, for the sake of future dev.
 function buildRequests(bidRequests, bidderRequest) {
   const gdprConsent = Object.assign({
     consentString: undefined,
@@ -307,14 +313,12 @@ function interpretResponse(serverResponse, bidRequest) {
   return bidResponses;
 }
 
-// Register one sync per unique guid
-// NOTE: If gdpr applies do not sync
+// Register one sync per unique guid so long as iframe is enable
+// Else no syncs
+// For logic on how we handle gdpr data see _createSyncs and module's unit tests
+// '33acrossBidAdapter#getUserSyncs'
 function getUserSyncs(syncOptions, responses, gdprConsent) {
-  if (gdprConsent && gdprConsent.gdprApplies === true) {
-    return []
-  } else {
-    return (syncOptions.iframeEnabled) ? adapterState.uniqueSiteIds.map(_createSync) : ([]);
-  }
+  return (syncOptions.iframeEnabled) ? adapterState.uniqueSiteIds.map((siteId) => _createSync({gdprConsent, siteId})) : ([]);
 }
 
 export const spec = {

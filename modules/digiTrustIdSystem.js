@@ -9,11 +9,12 @@
  * @requires module:modules/userId
  */
 
-// import { config } from 'src/config';
 import * as utils from '../src/utils'
 import { ajax } from '../src/ajax';
-import { attachIdSystem } from '../modules/userId';
-// import { getGlobal } from 'src/prebidGlobal';
+import { submodule } from '../src/hook';
+
+var fallbackTimeout = 1550; // timeout value that allows userId system to execute first
+var fallbackTimer = 0; // timer Id for fallback init so we don't double call
 
 /**
  * Checks to see if the DigiTrust framework is initialized.
@@ -81,7 +82,7 @@ function writeDigiId(id) {
   var date = new Date();
   date.setTime(date.getTime() + 604800000);
   var exp = 'expires=' + date.toUTCString();
-  document.cookie = key + '=' + encId(id) + '; ' + exp + '; path=/;';
+  document.cookie = key + '=' + encId(id) + '; ' + exp + '; path=/;SameSite=none;';
 }
 
 /**
@@ -90,6 +91,10 @@ function writeDigiId(id) {
  */
 function initDigitrustFacade(config) {
   var _savedId = null; // closure variable for storing Id to avoid additional requests
+
+  clearTimeout(fallbackTimer);
+  fallbackTimer = 0;
+
   var facade = {
     isClient: true,
     isMock: true,
@@ -160,6 +165,10 @@ function initDigitrustFacade(config) {
         return errResp; // even if it will be successful later, without a callback we report a "failure in this moment"
       }
     }
+  }
+
+  if (config && isFunc(config.callback)) {
+    facade._internals.initCallback = config.callback;
   }
 
   if (window && window.DigiTrust == null) {
@@ -306,11 +315,12 @@ var testHook = {};
  * Exposes the test hook object by attaching to the digitrustIdModule.
  * This method is called in the unit tests to surface internals.
  */
-function surfaceTestHook() {
-  digitrustIdModule['_testHook'] = testHook;
+export function surfaceTestHook() {
+  digiTrustIdSubmodule['_testHook'] = testHook;
+  return testHook;
 }
 
-testHook.initDigitrustFacade = initDigitrustFacade;
+testHook.initDigitrustFacade = initDigitrustFacade; // expose for unit tests
 
 /** @type {Submodule} */
 export const digiTrustIdSubmodule = {
@@ -336,4 +346,18 @@ export const digiTrustIdSubmodule = {
   _testInit: surfaceTestHook
 };
 
-attachIdSystem(digiTrustIdSubmodule);
+// check for fallback init of DigiTrust
+function fallbackInit() {
+  if (resultHandler.retryId == 0 && !isInitialized()) {
+    // this triggers an init
+    var conf = {
+      member: 'fallback',
+      callback: noop
+    };
+    getDigiTrustId(conf);
+  }
+}
+
+fallbackTimer = setTimeout(fallbackInit, fallbackTimeout);
+
+submodule('userId', digiTrustIdSubmodule);
