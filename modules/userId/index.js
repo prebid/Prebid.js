@@ -139,21 +139,23 @@ function setStoredValue(storage, value) {
 
 /**
  * @param {SubmoduleStorage} storage
+ * @param {String|undefined} key optional key of the value
  * @returns {string}
  */
-function getStoredValue(storage) {
+function getStoredValue(storage, key = undefined) {
+  const storedKey = key ? `${storage.name}_${key}` : storage.name;
   let storedValue;
   try {
     if (storage.type === COOKIE) {
-      storedValue = utils.getCookie(storage.name);
+      storedValue = utils.getCookie(storedKey);
     } else if (storage.type === LOCAL_STORAGE) {
       const storedValueExp = localStorage.getItem(`${storage.name}_exp`);
       // empty string means no expiration set
       if (storedValueExp === '') {
-        storedValue = localStorage.getItem(storage.name);
+        storedValue = localStorage.getItem(storedKey);
       } else if (storedValueExp) {
         if ((new Date(storedValueExp)).getTime() - Date.now() > 0) {
-          storedValue = decodeURIComponent(localStorage.getItem(storage.name));
+          storedValue = decodeURIComponent(localStorage.getItem(storedKey));
         }
       }
     }
@@ -165,24 +167,6 @@ function getStoredValue(storage) {
     utils.logError(e);
   }
   return storedValue;
-}
-
-/**
- * @param {SubmoduleStorage} storage
- * @returns {date} browser date and time of the last storage
- */
-function getStoredDate(storage) {
-  let storedDate;
-  try {
-    if (storage.type === COOKIE) {
-      storedDate = new Date(utils.getCookie(`${storage.name}_last`));
-    } else if (storage.type === LOCAL_STORAGE) {
-      storedDate = new Date(localStorage.getItem(`${storage.name}_last`));
-    }
-  } catch (e) {
-    utils.logError(e);
-  }
-  return storedDate.getTime() > 0 ? storedDate : undefined;
 }
 
 /**
@@ -342,7 +326,7 @@ function initSubmodules(submodules, consentData) {
       }
       let refreshNeeded = false;
       if (typeof submodule.config.storage.refreshInSeconds === 'number') {
-        const storedDate = getStoredDate(submodule.config.storage);
+        const storedDate = new Date(getStoredValue(submodule.config.storage, 'last'));
         refreshNeeded = storedDate && (Date.now() - storedDate.getTime() > submodule.config.storage.refreshInSeconds * 1000);
       }
       if (!storedId || refreshNeeded) {
