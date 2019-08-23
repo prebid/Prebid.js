@@ -1,9 +1,12 @@
 import * as utils from 'src/utils';
 import {registerBidder} from 'src/adapters/bidderFactory';
 import {BANNER, VIDEO} from '../src/mediaTypes';
+import {Renderer} from '../src/Renderer';
+import {OUTSTREAM} from '../src/video';
 
 const BIDDER_CODE = 'buzzoola';
 const ENDPOINT = 'https://exchange.buzzoola.com/ssp/prebidjs';
+const RENDERER_SRC = 'https://tube.buzzoola.com/new/build/buzzlibrary.js';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -42,13 +45,37 @@ export const spec = {
    * @param {ServerResponse} serverResponse A successful response from the server.
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
-  interpretResponse: function (serverResponse) {
+  interpretResponse: function (serverResponse, {bidRequest}) {
+    let context = utils.deepAccess(bidRequest, 'mediaTypes.video.context');
     return serverResponse.body.map(bid => {
       let validBid = utils.deepClone(bid);
+
+      if (context === OUTSTREAM) {
+        let renderer = Renderer.install({
+          id: validBid.requestId,
+          url: RENDERER_SRC,
+          loaded: false
+        });
+
+        renderer.setRender(setOutstreamRenderer);
+      }
 
       return validBid;
     })
   }
 };
+
+/**
+ * Initialize Buzzoola Outstream player
+ *
+ * @param bid
+ */
+function setOutstreamRenderer(bid) {
+  bid.renderer.push(() => {
+    window.Buzzoola.Core.install(document.querySelector(`#${bid.adUnitCode}`), {
+      data: bid.ad
+    });
+  });
+}
 
 registerBidder(spec);
