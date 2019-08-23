@@ -45,12 +45,15 @@ export const spec = {
    * @param {ServerResponse} serverResponse A successful response from the server.
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
-  interpretResponse: function (serverResponse, {bidRequest}) {
-    let context = utils.deepAccess(bidRequest, 'mediaTypes.video.context');
-    return serverResponse.body.map(bid => {
-      let validBid = utils.deepClone(bid);
+  interpretResponse: function (serverResponse, {data}) {
+    let responseBids = {};
+    serverResponse.body.forEach(bid => responseBids[bid.requestId] = bid);
 
-      if (context === OUTSTREAM) {
+    return data.bids.map(bid => {
+      let context = utils.deepAccess(bid, 'mediaTypes.video.context');
+      let validBid = utils.deepClone(responseBids[bid.bidId]);
+
+      if (validBid.mediaType === VIDEO && context === OUTSTREAM) {
         let renderer = Renderer.install({
           id: validBid.requestId,
           url: RENDERER_SRC,
@@ -58,10 +61,11 @@ export const spec = {
         });
 
         renderer.setRender(setOutstreamRenderer);
+        validBid.renderer = renderer
       }
 
       return validBid;
-    })
+    });
   }
 };
 
@@ -73,7 +77,7 @@ export const spec = {
 function setOutstreamRenderer(bid) {
   bid.renderer.push(() => {
     window.Buzzoola.Core.install(document.querySelector(`#${bid.adUnitCode}`), {
-      data: bid.ad
+      data: JSON.parse(bid.ad)
     });
   });
 }
