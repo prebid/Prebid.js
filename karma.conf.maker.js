@@ -12,8 +12,7 @@ function newWebpackConfig(codeCoverage) {
   var webpackConfig = _.cloneDeep(webpackConf);
 
   // remove optimize plugin for tests
-  webpackConfig.plugins.pop()
-
+  webpackConfig.optimization = {};
   webpackConfig.devtool = 'inline-source-map';
 
   if (codeCoverage) {

@@ -23,7 +23,8 @@ module.exports = {
             "ie >= 10",
             "ios >= 8"
           ]
-        }
+        },
+        modules: 'commonjs' //This causes Babel to transpile ES modules into CJS modules before Webpack sees them, which prevents Webpack from creating getters, which fixes Sinon.(Ref: https://github.com/webpack/webpack/issues/6979)
       }
     ]
   ],

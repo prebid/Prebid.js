@@ -64,26 +64,13 @@ module.exports = {
     },
     minimize: false,
     splitChunks: {
-      minSize: 0,
       chunks: 'all',
       cacheGroups: {
-        default: {
-          minChunks: 2,
-          minSize: 0,
-          reuseExistingChunk: true
-        },
-        vendor: {
-          test: /[\\/]node_modules[\\/]/,
-          name: 'vendors',
-          chunks: 'all',
-          reuseExistingChunk: true
-        },
+        vendors: false,
         prebid: {
           chunks: 'all',
           name: 'prebid',
           filename: 'prebid-core.js',
-          priority:1,
-          minSize: 0,
           test: function(module, chunks) {
             return (
               (
