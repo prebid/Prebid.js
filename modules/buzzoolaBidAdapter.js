@@ -79,9 +79,9 @@ function setOutstreamRenderer(bid) {
   let adData = JSON.parse(bid.ad);
   let unitSettings = utils.deepAccess(adData, 'placement.unit_settings');
   let extendedSettings = {
-    width: bid.width,
-    height: bid.height,
-    container_height: bid.height
+    width: '' + bid.width,
+    height: '' + bid.height,
+    container_height: '' + bid.height
   };
 
   adData.placement = Object.assign({}, adData.placement);
