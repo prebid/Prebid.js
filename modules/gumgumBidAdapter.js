@@ -14,7 +14,7 @@ let browserParams = {};
 let pageViewId = null
 
 // TODO: potential 0 values for browserParams sent to ad server
-function _getBrowserParams() {
+function _getBrowserParams(topWindowUrl) {
   let topWindow
   let topScreen
   let topUrl
@@ -41,7 +41,7 @@ function _getBrowserParams() {
   try {
     topWindow = global.top;
     topScreen = topWindow.screen;
-    topUrl = utils.getTopWindowUrl()
+    topUrl = topWindowUrl || utils.getTopWindowUrl();
   } catch (error) {
     utils.logError(error);
     return browserParams
@@ -145,7 +145,8 @@ function buildRequests (validBidRequests, bidderRequest) {
       params = {},
       transactionId
     } = bidRequest;
-    const data = {}
+    const data = {};
+    const topWindowUrl = bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer;
     if (pageViewId) {
       data.pv = pageViewId
     }
@@ -178,7 +179,7 @@ function buildRequests (validBidRequests, bidderRequest) {
       sizes: bidRequest.sizes || bidRequest.mediatype[banner].sizes,
       url: BID_ENDPOINT,
       method: 'GET',
-      data: Object.assign(data, _getBrowserParams(), _getDigiTrustQueryParams(), _getTradeDeskIDParam(bidRequest))
+      data: Object.assign(data, _getBrowserParams(topWindowUrl), _getDigiTrustQueryParams(), _getTradeDeskIDParam(bidRequest))
     })
   });
   return bids;
