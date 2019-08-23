@@ -1,6 +1,5 @@
 var prebid = require('./package.json');
 var path = require('path');
-var webpack = require('webpack');
 var helpers = require('./gulpHelpers');
 var RequireEnsureWithoutJsonp = require('./plugins/RequireEnsureWithoutJsonp.js');
 var { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
