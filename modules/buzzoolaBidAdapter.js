@@ -75,9 +75,20 @@ export const spec = {
  * @param bid
  */
 function setOutstreamRenderer(bid) {
+  let adData = JSON.parse(bid.ad);
+  let unitSettings = utils.deepAccess(adData, 'placement.unit_settings');
+  let extendedSettings = {
+    width: bid.width,
+    height: bid.height,
+    container_height: bid.height
+  };
+
+  adData.placement = Object.assign({}, adData.placement);
+  adData.placement.unit_settings = Object.assign({}, unitSettings, extendedSettings);
+
   bid.renderer.push(() => {
     window.Buzzoola.Core.install(document.querySelector(`#${bid.adUnitCode}`), {
-      data: JSON.parse(bid.ad)
+      data: adData
     });
   });
 }
