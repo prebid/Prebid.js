@@ -7,7 +7,6 @@ var { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
 var argv = require('yargs').argv;
 var allowedModules = require('./allowedModules');
 
-
 // list of module names to never include in the common bundle chunk
 var neverBundle = [
   'AnalyticsAdapter.js'
@@ -33,7 +32,7 @@ module.exports = {
     ],
   },
   output: {
-    jsonpFunction: prebid.globalVarName + "Chunk",
+    jsonpFunction: prebid.globalVarName + "Chunk"
   },
   module: {
     rules: [
