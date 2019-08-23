@@ -197,6 +197,89 @@ function formatBidWonToSend(bid) {
     });
 }
 
+function executeBidsLoggerCall(auctionId){
+    let referrer = config.getConfig('pageUrl') || utils.getTopWindowUrl(),
+        auctionCache = cache.auctions[auctionId],
+        date = new window.Date(),
+        pubId = 12,
+        outputObj = {
+            s: []
+        },
+        pixelURL = END_POINT_BID_LOGGER,
+        impressionIDMap = {} // impID => slots[]        
+    ;
+
+    console.log('executeBidsLoggerCall');
+    console.log('auctionCache', auctionCache);
+
+    if(!auctionCache){
+        return;
+    }
+
+    if(auctionCache.sent){
+        return;
+    }
+
+    pixelURL += 'pubid=' + pubId;
+    outputObj['pubid'] = pubId;
+	outputObj['to'] = "" + auctionCache.timeout;
+	outputObj['purl'] = referrer;
+	outputObj['tst'] = date.getTime();
+	// outputObj['pid'] = CONFIG.getProfileID(); // todo
+    // outputObj['pdvid'] = CONFIG.getProfileDisplayVersionID(); // todo
+    
+    // if (CONFIG.getGdpr()) {
+	// 	consentString = gdprData && gdprData.c ? encodeURIComponent(gdprData.c) : "";
+	// 	outputObj[CONSTANTS.CONFIG.GDPR_CONSENT] = gdprData && gdprData.g;
+	// 	outputObj[CONSTANTS.CONFIG.CONSENT_STRING] = consentString;
+	// 	pixelURL += "&gdEn=" + (CONFIG.getGdpr() ? 1 : 0);
+    // }
+
+    outputObj.s = Object.keys(auctionCache.adUnitCodes).reduce(function(slotsArray, adUnitId){
+        let adUnit = auctionCache.adUnitCodes[adUnitId],
+            slotObject = {
+            'sn': adUnitId,
+            'sz': adUnit.dimensions,
+            'ps': []
+        };
+        slotObject.ps = Object.keys(adUnit.bids).reduce(function(partnerBids, bidId){
+            let bid = adUnit.bids[bidId];
+            partnerBids.push({
+                'pn': bid.bidder,
+                'bidid': bid.bidId,
+                'db': bid.bidResponse ? 1 : 0,
+                'kgpv': '',
+                'psz': bid.bidResponse ? (bid.bidResponse.dimensions.width + 'x' + bid.bidResponse.dimensions.height) : '0x0',
+                'eg': bid.bidResponse ? bid.bidResponse.bidPriceUSD : 0, // todo: check
+                'en': bid.bidResponse ? bid.bidResponse.bidPriceUSD : 0, // todo: check
+                'di': '', // todo: get it
+                'dc': '', // todo: get it
+                'l1': bid.clientLatencyTimeMs, //todo: do we need to rename it?s
+                'l2': 0,
+                'ss': (bid.source === 'server' ? 1 : 0), //todo: is there any special handling
+                't': (bid.status == ERROR && bid.error.code == TIMEOUT_ERROR) ? 1 : 0,
+                'wb': '',
+                'mi': '',
+                'af': (bid.bidResponse ? bid.bidResponse.mediaType : 'banner'),
+                'ocpm': '', // todo: what to send here?
+                'ocry': '' // todo: what to send here?
+            });
+            return partnerBids;
+        }, [])
+        slotsArray.push(slotObject);
+        return slotsArray;
+    }, []);
+
+    ajax(
+        pixelURL,
+        null,
+        JSON.stringify(outputObj),
+        {
+            contentType: 'application/json'
+        }
+    );
+}
+
 // todo: can we split this function in two for bid-logger and bid-win-logger?
 function sendMessage(auctionId, bidWonId){
     let referrer = config.getConfig('pageUrl') || utils.getTopWindowUrl();
@@ -396,7 +479,7 @@ function auctionEndHandler(args){
     // console.log(args);
     // start timer to send batched payload just in case we don't hear any BID_WON events
     cache.timeouts[args.auctionId] = setTimeout(() => {
-        sendMessage.call(this, args.auctionId);
+        executeBidsLoggerCall.call(this, args.auctionId);
     }, SEND_TIMEOUT);
 }
 
