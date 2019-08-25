@@ -83,6 +83,7 @@ const MODULE_NAME = 'User ID';
 const COOKIE = 'cookie';
 const LOCAL_STORAGE = 'html5';
 const DEFAULT_SYNC_DELAY = 500;
+const NO_AUCTION_DELAY = 0;
 
 /** @type {string[]} */
 let validStorageTypes = [];
@@ -104,6 +105,9 @@ let submoduleRegistry = [];
 
 /** @type {(number|undefined)} */
 export let syncDelay;
+
+/** @type {(number|undefined)} */
+export let auctionDelay;
 
 /** @param {Submodule[]} submodules */
 export function setSubmoduleRegistry(submodules) {
@@ -239,7 +243,9 @@ function addIdDataToAdUnitBids(adUnits, submodules) {
 /**
  * This is a common function that will initalize subModules if not already done and it will also execute subModule callbacks
  */
-function initializeSubmodulesAndExecuteCallbacks() {
+function initializeSubmodulesAndExecuteCallbacks(continueAuction) {
+  let delayed = false;
+
   // initialize submodules only when undefined
   if (typeof initializedSubmodules === 'undefined') {
     initializedSubmodules = initSubmodules(submodules, gdprDataHandler.getConsentData());
@@ -248,21 +254,37 @@ function initializeSubmodulesAndExecuteCallbacks() {
       const submodulesWithCallbacks = initializedSubmodules.filter(item => utils.isFn(item.callback));
 
       if (submodulesWithCallbacks.length) {
-        // wait for auction complete before processing submodule callbacks
-        events.on(CONSTANTS.EVENTS.AUCTION_END, function auctionEndHandler() {
-          events.off(CONSTANTS.EVENTS.AUCTION_END, auctionEndHandler);
+        if (continueAuction && auctionDelay > 0) {
+          // delay auction until ids are available
+          delayed = true;
+          processSubmoduleCallbacks(submodulesWithCallbacks);
+          utils.logInfo(`${MODULE_NAME} - auction delayed by ${auctionDelay}`);
 
-          // when syncDelay is zero, process callbacks now, otherwise dealy process with a setTimeout
-          if (syncDelay > 0) {
-            setTimeout(function() {
+          setTimeout(function() {
+            continueAuction();
+          }, auctionDelay);
+        } else {
+          // wait for auction complete before processing submodule callbacks
+          events.on(CONSTANTS.EVENTS.AUCTION_END, function auctionEndHandler() {
+            events.off(CONSTANTS.EVENTS.AUCTION_END, auctionEndHandler);
+
+            // when syncDelay is zero, process callbacks now, otherwise dealy process with a setTimeout
+            if (syncDelay > 0) {
+              setTimeout(function() {
+                processSubmoduleCallbacks(submodulesWithCallbacks);
+              }, syncDelay);
+            } else {
               processSubmoduleCallbacks(submodulesWithCallbacks);
-            }, syncDelay);
-          } else {
-            processSubmoduleCallbacks(submodulesWithCallbacks);
-          }
-        });
+            }
+          });
+        }
       }
     }
+  }
+
+  // continue auction if not delayed
+  if (continueAuction && !delayed) {
+    continueAuction();
   }
 }
 
@@ -277,11 +299,12 @@ function initializeSubmodulesAndExecuteCallbacks() {
  */
 export function requestBidsHook(fn, reqBidsConfigObj) {
   // initialize submodules only when undefined
-  initializeSubmodulesAndExecuteCallbacks();
-  // pass available user id data to bid adapters
-  addIdDataToAdUnitBids(reqBidsConfigObj.adUnits || getGlobal().adUnits, initializedSubmodules);
-  // calling fn allows prebid to continue processing
-  return fn.call(this, reqBidsConfigObj);
+  initializeSubmodulesAndExecuteCallbacks(function() {
+    // pass available user id data to bid adapters
+    addIdDataToAdUnitBids(reqBidsConfigObj.adUnits || getGlobal().adUnits, initializedSubmodules);
+    // calling fn allows prebid to continue processing
+    fn.call(this, reqBidsConfigObj);
+  });
 }
 
 /**
@@ -453,6 +476,7 @@ export function init(config) {
     if (userSync && userSync.userIds) {
       configRegistry = userSync.userIds;
       syncDelay = utils.isNumber(userSync.syncDelay) ? userSync.syncDelay : DEFAULT_SYNC_DELAY;
+      auctionDelay = utils.isNumber(userSync.auctionDelay) ? userSync.auctionDelay : NO_AUCTION_DELAY;
       updateSubmodules();
     }
   });
