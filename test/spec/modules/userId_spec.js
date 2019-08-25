@@ -3,7 +3,8 @@ import {
   requestBidsHook,
   setSubmoduleRegistry,
   syncDelay,
-  attachIdSystem
+  attachIdSystem,
+  auctionDelay
 } from 'modules/userId/index.js';
 import {config} from 'src/config';
 import * as utils from 'src/utils';
@@ -280,6 +281,36 @@ describe('User ID', function() {
         }
       });
       expect(syncDelay).to.equal(99);
+    });
+
+    it('config auctionDelay updates module correctly', function () {
+      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule]);
+      init(config);
+      config.setConfig({
+        usersync: {
+          auctionDelay: 100,
+          userIds: [{
+            name: 'unifiedId',
+            storage: { name: 'unifiedid', type: 'cookie' }
+          }]
+        }
+      });
+      expect(auctionDelay).to.equal(100);
+    });
+
+    it('config auctionDelay defaults to 0 if not a number', function () {
+      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule]);
+      init(config);
+      config.setConfig({
+        usersync: {
+          auctionDelay: '',
+          userIds: [{
+            name: 'unifiedId',
+            storage: { name: 'unifiedid', type: 'cookie' }
+          }]
+        }
+      });
+      expect(auctionDelay).to.equal(0);
     });
   });
 
