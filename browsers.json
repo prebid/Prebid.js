@@ -7,11 +7,11 @@
     "device": null,
     "os": "Windows"
   },
-  "bs_edge_18_windows_10": {
+  "bs_edge_16_windows_10": {
     "base": "BrowserStack",
     "os_version": "10",
     "browser": "edge",
-    "browser_version": "18.0",
+    "browser_version": "16.0",
     "device": null,
     "os": "Windows"
   },
@@ -39,19 +39,19 @@
     "device": null,
     "os": "Windows"
   },
+  "bs_firefox_66_windows_10": {
+    "base": "BrowserStack",
+    "os_version": "10",
+    "browser": "firefox",
+    "browser_version": "66.0",
+    "device": null,
+    "os": "Windows"
+  },
   "bs_firefox_67_windows_10": {
     "base": "BrowserStack",
     "os_version": "10",
     "browser": "firefox",
     "browser_version": "67.0",
-    "device": null,
-    "os": "Windows"
-  },
-  "bs_firefox_68_windows_10": {
-    "base": "BrowserStack",
-    "os_version": "10",
-    "browser": "firefox",
-    "browser_version": "68.0",
     "device": null,
     "os": "Windows"
   },
