@@ -1142,5 +1142,16 @@ describe('adapterManager tests', function () {
         expect(bidRequests[0].gdprConsent).to.be.undefined;
       });
     });
+
+    describe('s2sTesting testServerOnly', () => {
+      let stubGetSourceBidderMap;
+      beforeEach(() => {
+        stubGetSourceBidderMap = sinon.stub(s2sTesting, 'getSourceBidderMap');
+      });
+
+      afterEach(() => {
+        s2sTesting.getSourceBidderMap.restore();
+      });
+    });
   });
 });

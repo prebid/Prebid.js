@@ -180,6 +180,10 @@ adapterManager.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTi
     // these are called on the s2s adapter
     let adaptersServerSide = _s2sConfig.bidders;
 
+    if (adaptersServerSide.length > 0 && isTestingServerOnly()) {
+      clientTestAdapters.length = 0;
+    }
+
     // don't call these client side (unless client request is needed for testing)
     clientBidderCodes = bidderCodes.filter((elm) => {
       return !includes(adaptersServerSide, elm) || includes(clientTestAdapters, elm);
@@ -330,6 +334,10 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
 function doingS2STesting() {
   return _s2sConfig && _s2sConfig.enabled && _s2sConfig.testing && s2sTestingModule;
 }
+
+function isTestingServerOnly() {
+  return Boolean(doingS2STesting() && _s2sConfig.testServerOnly);
+};
 
 function getSupportedMediaTypes(bidderCode) {
   let result = [];
