@@ -25,14 +25,12 @@ const EXPECTED_TARGETING_KEYS = {
 
 describe('Prebid.js Native Ad Unit Test', function () {
   before(function loadTestPage() {
-    console.log('running function loadTestPage()');
     browser.url(TEST_PAGE_URL).pause(3000);
     try {
       browser.waitForExist(CREATIVE_IFRAME_CSS_SELECTOR, 2000);
     } catch (e) {
       // If creative Iframe didn't load, repeat the steps again!
       // Due to some reason if the Ad server doesn't respond, the test case will time out after 60000 ms as defined in file wdio.conf.js
-      console.log('caught an error, ', e);
       loadTestPage();
     }
   });
@@ -55,7 +53,6 @@ describe('Prebid.js Native Ad Unit Test', function () {
 
   it('should render the native ad on the page', function () {
     const creativeIframe = $(CREATIVE_IFRAME_CSS_SELECTOR).value;
-    console.log('creativeIframe', creativeIframe);
     browser.frame(creativeIframe);
     expect(browser.isVisible('body > div[class="GoogleActiveViewElement"] > div[class="card"]')).to.be.true;
   });
