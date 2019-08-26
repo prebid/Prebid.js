@@ -11,7 +11,7 @@ import {unifiedIdSubmodule} from 'modules/userId/unifiedIdSystem';
 import {pubCommonIdSubmodule} from 'modules/userId/pubCommonIdSystem';
 import {britepoolIdSubmodule} from 'modules/userId/britepoolIdSystem';
 import {id5IdSubmodule} from 'modules/id5IdSystem';
-import {identityLinkSubmodule} from 'modules/identityLinkSystem';
+import {identityLinkSubmodule} from 'modules/identityLinkIdSystem';
 let assert = require('chai').assert;
 let expect = require('chai').expect;
 const EXPIRED_COOKIE_DATE = 'Thu, 01 Jan 1970 00:00:01 GMT';
