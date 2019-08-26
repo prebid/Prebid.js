@@ -599,5 +599,57 @@ describe('User ID', function() {
         done();
       }, {adUnits});
     });
-  })
+  });
+
+  // todo
+  // describe('auctionDelay', function() {
+  //   let sandbox;
+  //   let adUnits;
+  //   before(function() {
+  //     sandbox = sinon.createSandbox();
+  //     sandbox.stub(global, 'setTimeout');
+  //   });
+
+  //   beforeEach(function() {
+  //     adUnits = [getAdUnitMock()];
+  //   });
+
+  //   after(function() {
+  //     sandbox.reset();
+  //   });
+
+  //   it('delays auction if auctionDelay is set', function() {
+  //     const mockIdSystem = {
+  //       name: 'mockIdSystem',
+  //       decode: function(value) {
+  //         return {
+  //           'mockid': value
+  //         };
+  //       },
+  //       getId: function() {
+  //         return function() {
+  //           return 'MOCKID';
+  //         };
+  //       }
+  //     };
+
+  //     const userSyncConfig = {
+  //       userSync: {
+  //         auctionDelay: 1000,
+  //         syncDelay: 2000
+  //       }
+  //     };
+  //     const spy = sandbox.spy();
+
+  //     setSubmoduleRegistry([mockIdSystem]);
+  //     init(config);
+  //     config.setConfig(userSyncConfig);
+
+  //     requestBidsHook(spy, {adUnits});
+
+  //     global.setTimeout.calledOnce.should.equal(true);
+  //     global.setTimeout.calledWith(sinon.match.func, 1000);
+  //     spy.calledOnce.should.equal(false);
+  //   });
+  // });
 });

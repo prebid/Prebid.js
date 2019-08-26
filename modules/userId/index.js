@@ -257,6 +257,7 @@ function initializeSubmodulesAndExecuteCallbacks(continueAuction) {
         if (continueAuction && auctionDelay > 0) {
           // delay auction until ids are available
           delayed = true;
+          // todo: continue auction if done processing
           processSubmoduleCallbacks(submodulesWithCallbacks);
           utils.logInfo(`${MODULE_NAME} - auction delayed by ${auctionDelay}`);
 
@@ -282,7 +283,6 @@ function initializeSubmodulesAndExecuteCallbacks(continueAuction) {
     }
   }
 
-  // continue auction if not delayed
   if (continueAuction && !delayed) {
     continueAuction();
   }
