@@ -1,4 +1,5 @@
 import { registerBidder } from '../src/adapters/bidderFactory';
+import { deepAccess } from '../src/utils';
 
 const BIDDER_CODE = 'optimera';
 const SCORES_BASE_URL = 'https://dyv1bugovvq1g.cloudfront.net/';
@@ -58,9 +59,10 @@ export const spec = {
       for (let i = 0; i < validBids.length; i += 1) {
         if (typeof validBids[i].params.clientID !== 'undefined') {
           if (validBids[i].adUnitCode in scores) {
+            const deviceCode = deepAccess(validBids[i], 'params.device');
             dealId = scores[validBids[i].adUnitCode];
-            if (typeof validBids[i].params.device == 'string' && typeof scores.device == 'object' && typeof scores.device[validBids[i].params.device] == 'object' && typeof scores.device[validBids[i].params.device][validBids[i].adUnitCode] != 'undefined') {
-              dealId = scores.device[validBids[i].params.device][validBids[i].adUnitCode];
+            if (deepAccess(scores, `device.${deviceCode}.${validBids[i].adUnitCode}`)) {
+              dealId = scores.device[deviceCode][validBids[i].adUnitCode];
             }
           }
           const bidResponse = {
