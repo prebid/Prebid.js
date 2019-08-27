@@ -183,8 +183,10 @@ function hasGDPRConsent(consentData) {
 
 /**
  * @param {SubmoduleContainer[]} submodules
+ * @param {function} cb - callback for after processing is done.
  */
-function processSubmoduleCallbacks(submodules) {
+function processSubmoduleCallbacks(submodules, cb) {
+  const done = cb ? utils.delayExecution(cb, submodules.length) : function() { };
   submodules.forEach(function(submodule) {
     submodule.callback(function callbackCompleted(idObj) {
       // clear callback, this prop is used to test if all submodule callbacks are complete below
@@ -199,6 +201,7 @@ function processSubmoduleCallbacks(submodules) {
       } else {
         utils.logError(`${MODULE_NAME}: ${submodule.submodule.name} - request id responded with an empty value`);
       }
+      done();
     });
   });
 }
@@ -258,12 +261,17 @@ function initializeSubmodulesAndExecuteCallbacks(continueAuction) {
           // delay auction until ids are available
           delayed = true;
           // todo: continue auction if done processing
-          processSubmoduleCallbacks(submodulesWithCallbacks);
-          utils.logInfo(`${MODULE_NAME} - auction delayed by ${auctionDelay}`);
+          let continued = false;
+          const continueCallback = function() {
+            if (!continued) {
+              continued = true;
+              continueAuction();
+            }
+          }
+          utils.logInfo(`${MODULE_NAME} - auction delayed by ${auctionDelay} at most to fetch ids`);
+          processSubmoduleCallbacks(submodulesWithCallbacks, continueCallback);
 
-          setTimeout(function() {
-            continueAuction();
-          }, auctionDelay);
+          setTimeout(continueCallback, auctionDelay);
         } else {
           // wait for auction complete before processing submodule callbacks
           events.on(CONSTANTS.EVENTS.AUCTION_END, function auctionEndHandler() {
