@@ -59,8 +59,7 @@ function sizeToDimensions(size) {
 }
 
 function validMediaType(type) {
-    //todo: support Video and Native in futures
-    return ({'banner':1}).hasOwnProperty(type);
+    return ({'banner':1, 'native':1, 'video':1}).hasOwnProperty(type);
 }
 
 function formatSource(src) {
@@ -225,8 +224,8 @@ function executeBidsLoggerCall(auctionId){
 	outputObj['to'] = "" + auctionCache.timeout;
 	outputObj['purl'] = referrer;
 	outputObj['tst'] = date.getTime();
-	// outputObj['pid'] = CONFIG.getProfileID(); // todo
-    // outputObj['pdvid'] = CONFIG.getProfileDisplayVersionID(); // todo
+	outputObj['pid'] = profileId;
+    outputObj['pdvid'] = profileVersionId;
     
     // if (CONFIG.getGdpr()) {
 	// 	consentString = gdprData && gdprData.c ? encodeURIComponent(gdprData.c) : "";
@@ -248,28 +247,28 @@ function executeBidsLoggerCall(auctionId){
                 'pn': bid.bidder,
                 'bidid': bid.bidId,
                 'db': bid.bidResponse ? 1 : 0,
-                'kgpv': '',
+                'kgpv': '', // todo: what to pass here?
                 'psz': bid.bidResponse ? (bid.bidResponse.dimensions.width + 'x' + bid.bidResponse.dimensions.height) : '0x0',
                 'eg': bid.bidResponse ? bid.bidResponse.bidPriceUSD : 0, // todo: check
                 'en': bid.bidResponse ? bid.bidResponse.bidPriceUSD : 0, // todo: check
                 'di': '', // todo: get it
                 'dc': '', // todo: get it
-                'l1': bid.clientLatencyTimeMs, //todo: do we need to rename it?s
+                'l1': bid.clientLatencyTimeMs, //todo: do we need to rename it?
                 'l2': 0,
-                'ss': (bid.source === 'server' ? 1 : 0), //todo: is there any special handling
+                'ss': (bid.source === 'server' ? 1 : 0), //todo: is there any special handling required as per OW?
                 't': (bid.status == ERROR && bid.error.code == TIMEOUT_ERROR) ? 1 : 0,
-                'wb': '',
-                'mi': '',
+                'wb': '', // todo
+                'mi': '', // todo
                 'af': (bid.bidResponse ? bid.bidResponse.mediaType : 'banner'),
                 'ocpm': '', // todo: what to send here?
                 'ocry': '' // todo: what to send here?
             });
             return partnerBids;
         }, [])
-        slotsArray.push(slotObject);
+        slotsArray.push(slotObject);        
         return slotsArray;
     }, []);
-
+    auctionCache.sent = true;
     ajax(
         pixelURL,
         null,
@@ -285,7 +284,7 @@ function sendMessage(auctionId, bidWonId){
     let referrer = config.getConfig('pageUrl') || utils.getTopWindowUrl();
     let message = {
         eventTimeMillis: Date.now(),
-        integration: config.getConfig('rubicon.int_type') || DEFAULT_INTEGRATION, //todo: we can take this as analytics-adapter-config along with publisherId
+        integration: DEFAULT_INTEGRATION, //todo: we can take this as analytics-adapter-config along with publisherId
         version: '$prebid.version$',
         referrerUri: referrer
     };
@@ -509,7 +508,9 @@ let pubmaticAdapter = Object.assign({}, baseAdapter, {
             if (config.options.publisherId) {
                 publisherId = Number(config.options.publisherId);
             }
-            // todo: input profileId and profileVersionId ; defaults to zero
+            // todo: input profileId and profileVersionId ; defaults to zero or one
+            profileId = Number(config.options.profileId) || 0;
+            profileVersionId = Number(config.options.profileVersionId) || 0;
         } else {
             utils.logError(LOG_PRE_FIX + 'Config not found.');
             error = true;
