@@ -72,7 +72,7 @@ export function addBidResponseHook(next, adUnitCode, bid) {
 export function addBidRequestHook(next, bidRequest) {
   const overrides = this;
   if (Array.isArray(overrides.bidRequests)) {
-    const override = find(overrides.bidRequests, overrideBidRequest => (typeof overrideBidRequest.bidderCode === 'undefined' || overrideBidRequest.bidderCode === item.bidderCode));
+    const override = find(overrides.bidRequests, overrideBidRequest => (typeof overrideBidRequest.bidderCode === 'undefined' || overrideBidRequest.bidderCode === bidRequest.bidderCode));
     if (override) {
       Object.keys(override).filter(key => ['bidderCode', 'adUnitCode'].indexOf(key) === -1).forEach(key => {
         bidRequest[key] = override[key];
