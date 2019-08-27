@@ -2,99 +2,117 @@ import {expect} from 'chai';
 import {spec} from 'modules/buzzoolaBidAdapter';
 import {newBidder} from 'src/adapters/bidderFactory';
 
-const ENDPOINT = '//hb2.buzzoola.com/auction/';
+const ENDPOINT = 'https://exchange.buzzoola.com/ssp/prebidjs';
 
-const DISPLAY_REQUEST = {
+const INVALID_BIDS = [{
   'bidder': 'buzzoola',
-  'params': {
-    'aid': 12345
-  },
-  'bidderRequestId': '7101db09af0db2',
-  'auctionId': '2e41f65424c87c',
-  'adUnitCode': 'adunit-code',
-  'bidId': '84ab500420319d',
-  'sizes': [300, 250]
-};
-
-const VIDEO_REQUEST = {
+  'mediaTypes': {'banner': {'sizes': [[240, 400], [300, 600]]}},
+  'sizes': [[240, 400], [300, 600]]
+}, {
+  'bidder': 'buzzoola',
+  'params': {'placementId': 417846},
+  'sizes': [[240, 400], [300, 600]]
+}, {
   'bidder': 'buzzoola',
   'mediaTypes': {
-    'video': {}
-  },
-  'params': {
-    'aid': 12345
-  },
-  'bidderRequestId': '7101db09af0db2',
-  'auctionId': '2e41f65424c87c',
-  'adUnitCode': 'adunit-code',
-  'bidId': '84ab500420319d',
-  'sizes': [[480, 360], [640, 480]]
-};
-
-const SERVER_VIDEO_RESPONSE = {
-  'source': {'aid': 12345, 'pubId': 54321},
-  'bids': [{
-    'vastUrl': 'http://rtb.buzzoola.com/vast/?adid=44F2AEB9BFC881B3',
-    'requestId': '2e41f65424c87c',
-    'url': '44F2AEB9BFC881B3',
-    'creative_id': 342516,
-    'cmpId': 342516,
-    'height': 480,
-    'cur': 'USD',
-    'width': 640,
-    'cpm': 0.9
+    'video': {
+      'playerSize': [[640, 380]],
+      'mimes': ['video/mp4'],
+      'minduration': 1,
+      'maxduration': 2
+    }
   }
-  ]
-};
-const SERVER_DISPLAY_RESPONSE = {
-  'source': {'aid': 12345, 'pubId': 54321},
-  'bids': [{
-    'ad': '<!-- Creative -->',
-    'requestId': '2e41f65424c87c',
-    'creative_id': 342516,
-    'cmpId': 342516,
-    'height': 250,
-    'cur': 'USD',
-    'width': 300,
-    'cpm': 0.9
-  }]
-};
-
-const videoBidderRequest = {
-  bidderCode: 'bidderCode',
-  bids: [{mediaTypes: {video: {}}, bidId: '2e41f65424c87c'}]
-};
-
-const displayBidderRequest = {
-  bidderCode: 'bidderCode',
-  bids: [{bidId: '2e41f65424c87c'}]
-};
-
-const videoEqResponse = [{
-  vastUrl: 'http://rtb.buzzoola.com/vast/?adid=44F2AEB9BFC881B3',
-  requestId: '2e41f65424c87c',
-  creativeId: 342516,
-  mediaType: 'video',
-  netRevenue: true,
-  currency: 'USD',
-  height: 480,
-  width: 640,
-  ttl: 3600,
-  cpm: 0.9
+}, {
+  'bidder': 'buzzoola',
+  'params': {'placementId': 417845}
 }];
 
-const displayEqResponse = [{
-  requestId: '2e41f65424c87c',
-  creativeId: 342516,
-  mediaType: 'display',
-  netRevenue: true,
-  currency: 'USD',
-  ad: '<!-- Creative -->',
-  height: 250,
-  width: 300,
-  ttl: 3600,
-  cpm: 0.9
+const BANNER_BID = {
+  'bidder': 'buzzoola',
+  'params': {'placementId': 417846},
+  'mediaTypes': {'banner': {'sizes': [[240, 400], [300, 600]]}},
+  'sizes': [[240, 400], [300, 600]]
+};
+
+const BANNER_BID_REQUEST = {
+  bidderCode: 'buzzoola',
+  bids: [BANNER_BID]
+};
+
+const BANNER_RESPONSE = [{
+  'requestId': '2a11641ada3c6a',
+  'cpm': 5.583115,
+  'width': 240,
+  'height': 400,
+  'creativeId': '11773',
+  'dealId': '',
+  'currency': 'RUB',
+  'netRevenue': true,
+  'ttl': 10800,
+  'ad': '<div id=\"2a11641ada3c6a\"><script>\n(function(w, d){\n\tvar env = \"prod\";\n\tvar playerData = unescape(\"\\u003ca href=\"https://buzzoola.com\" target="_blank"\\u003e\\u003cimg src="https://tube.buzzoola.com/xstatic/o42/buzzoola-test/240x400.jpg" width="240" height="400"/\\u003e\\u003c/a\\u003e\\u003cscript\\u003econsole.log("Im a buzzoola banner!");\\u003c/script\\u003e\");\n\tvar containerId = \"2a11641ada3c6a\";\n\n\tloadScript = function(src, cb){\n\t\tvar s = d.createElement(\"script\");\n\t\ts.onload = function(){cb && cb()};\n\t\ts.onerror = function(){cb && cb(true)};\n\t\ts.src = src;\n\t\ts.async = true;\n\t\td.body.appendChild(s);\n\t};\n\n\tthis.createPlayer = (function(containerId, env, playerData){ return function(){\n\t\tvar p = d.createElement(\"div\");\n\t\tif (env) p.setAttribute(\"data-debug_env\", env);\n\t\tvar container = d.getElementById(containerId)\n\t\tif(container){\n\t\t\tcontainer.appendChild(p);\n\n\t\t\tnew w.Buzzoola.Core(p, {\n\t\t\t\tdata: {\n\t\t\t\t\tcrs: [{\n\t\t\t\t\t\tcontent: {\n\t\t\t\t\t\t\tmain_content: playerData,\n\t\t\t\t\t\t\tbanner_height: 400,\n\t\t\t\t\t\t\tbanner_width: 240\n\t\t\t\t\t\t},\n\t\t\t\t\t\tevent_url: \"https://exchange.buzzoola.com/event/398e072c-4987-4745-6e72-109b214a79e0/3fa02874-3d73-48a1-4ba6-2129c6f99e1d/m7JVQI9Y7J35_gEDugNO2bIiP2qTqPKfuLrqqh_LoJu0tD6PoLEglMXUBzVpSg75R6wziBhL0JAERGosa1adol78sahgLU5t/\",\n\t\t\t\t\t\tcontent_type: \"banner\",\n\t\t\t\t\t\tshare_buttons: [],\n\t\t\t\t\t\tbranding_template: \"\",\n\t\t\t\t\t\tplayer_show_skip_button_seconds: 5,\n\t\t\t\t\t\ttracking_url: {\"ctor\":[\"https://www.tns-counter.ru/V13a****buzzola_com/ru/CP1251/tmsec=buzzola_total/5786980942666966205\",\"https://www.tns-counter.ru/V13a****buzzoola_kz/ru/UTF-8/tmsec=buzzoola_video/3495102609460744232\",\"https://buzzoolaru.solution.weborama.fr/fcgi-bin/dispatch.fcgi?a.A=ev\\u0026a.si=3071\\u0026a.te=37\\u0026a.aap=1\\u0026a.agi=862\\u0026a.evn=PrebidJS.test\\u0026g.ra=7385909726626079306\",\"https://x01.aidata.io/0.gif?pid=BUZZOOLA\\u0026id=dbdb5b13-e719-4987-7f6a-a882322bbfce\",\"https://top-fwz1.mail.ru/counter?id=3026766\",\"https://dm.hybrid.ai/match?id=111\\u0026vid=dbdb5b13-e719-4987-7f6a-a882322bbfce\",\"https://px.adhigh.net/p/cm/buzzoola?u=dbdb5b13-e719-4987-7f6a-a882322bbfce\",\"https://ssp1.rtb.beeline.ru/userbind?src=buz\\u0026ssp_user_id=dbdb5b13-e719-4987-7f6a-a882322bbfce\",\"https://sync.upravel.com/image?source=buzzoola\\u0026id=dbdb5b13-e719-4987-7f6a-a882322bbfce\",\"https://relap.io/api/partners/bzcs.gif?uid=dbdb5b13-e719-4987-7f6a-a882322bbfce\",\"https://x.bidswitch.net/sync?ssp=sspicyads\",\"https://inv-nets.admixer.net/adxcm.aspx?ssp=3C5173FC-CA30-4692-9116-009C19CB1BF9\\u0026rurl=%2F%2Fexchange.buzzoola.com%2Fcookiesync%2Fdsp%2Fadmixer-video%2F%24%24visitor_cookie%24%24\",\"https://sync.datamind.ru/cookie/accepter?source=buzzoola\\u0026id=dbdb5b13-e719-4987-7f6a-a882322bbfce\",\"https://dmp.vihub.ru/match?sysid=buz\\u0026redir=no\\u0026uid=dbdb5b13-e719-4987-7f6a-a882322bbfce\",\"https://ad.adriver.ru/cgi-bin/rle.cgi?sid=1\\u0026ad=608223\\u0026bt=21\\u0026pid=2551979\\u0026bid=6150299\\u0026bn=6150299\\u0026rnd=8725366486107503947\",\"https://reichelcormier.bid/point/?method=match\\u0026type=ssp\\u0026key=4677290772f9000878093d69c199bfba\\u0026id=3509\\u0026extUid=dbdb5b13-e719-4987-7f6a-a882322bbfce\",\"https://sync.republer.com/match?src=buzzoola\\u0026id=dbdb5b13-e719-4987-7f6a-a882322bbfce\",\"https://sm.rtb.mts.ru/p?id=dbdb5b13-e719-4987-7f6a-a882322bbfce\\u0026ssp=buzzoola\",\"https://cm.mgid.com/m?cdsp=371151\\u0026adu=https%3A%2F%2Fexchange.buzzoola.com%2Fcookiesync%2Fdsp%2Fmarketgid-native%2F%7Bmuidn%7D\",\"https://dmp.gotechnology.io/dmp/syncsspdmp?sspid=122258\"]},\n\t\t\t\t\t\ttracking_js: {\"ctor\":[\"https://buzzoola.fraudscore.mobi/dooJ9sheeeDaZ3fe.js?s=268671\\u0026l=417846\"]}\n\t\t\t\t\t}],\n\t\t\t\t\tauction_id: \"398e072c-4987-4745-6e72-109b214a79e0\"\n\t\t        }\n\t\t    });\n\t\t}\n\t}})(containerId, env, playerData)\n\n\tif (w.Buzzoola !== null && w.Buzzoola !== undefined){\n\t\tthis.createPlayer();\n\t} else {\n\t\tloadScript(\"https://tube.buzzoola.com/new/build/buzzlibrary.js\", (function(context){return function(err){\n\t\t\tif (err){\n\t\t\t\t// TODO: error callback\n\t\t\t} else {\n\t\t\t\tcontext.createPlayer();\n\t\t\t}\n\t\t}})(this));\n\t}\n\n}).call({},window, document);\n</script></div>',
+  'mediaType': 'banner'
 }];
+
+const REQUIRED_BANNER_FIELDS = [
+  'requestId',
+  'cpm',
+  'width',
+  'height',
+  'ad',
+  'ttl',
+  'creativeId',
+  'netRevenue',
+  'currency',
+  'mediaType'
+];
+
+const VIDEO_BID = {
+  'bidder': 'buzzoola',
+  'params': {'placementId': 417845},
+  'mediaTypes': {
+    'video': {
+      'context': 'outstream',
+      'playerSize': [[640, 380]],
+      'mimes': ['video/mp4'],
+      'minduration': 1,
+      'maxduration': 2
+    }
+  }
+};
+
+const VIDEO_BID_REQUEST = {
+  bidderCode: 'buzzoola',
+  bids: [VIDEO_BID]
+};
+
+const VIDEO_RESPONSE = [{
+  'requestId': '325a54271dc40a',
+  'cpm': 4.6158956756756755,
+  'width': 640,
+  'height': 380,
+  'creativeId': '11774',
+  'dealId': '',
+  'currency': 'RUB',
+  'netRevenue': true,
+  'ttl': 10800,
+  'ad': '{\'crs\':[{\'advertiser_id\':165,\'title\':\'qa//PrebidJStestVideoURL\',\'description\':\'qa//PrebidJStest\',\'duration\':0,\'ya_id\':\'55038886\',\'raw_content\':\'{\\\'main_content\\\': \\\'https://tube.buzzoola.com/xstatic/o42/mcaug/2.mp4\\\'}\',\'content\':{\'main_content\':\'https://tube.buzzoola.com/xstatic/o42/mcaug/2.mp4\'},\'content_type\':\'video_url\',\'sponsor_link\':\'\',\'sponsor_name\':\'\',\'overlay\':\'\',\'overlay_start_after\':0,\'overlay_close_after\':0,\'action_button_title\':\'\',\'tracking_url\':{},\'iframe_domains\':[],\'soc_share_url\':\'https://tube.buzzoola.com/share.html\',\'player_show_skip_button_before_play\':false,\'player_show_skip_button_seconds\':5,\'player_show_title\':true,\'player_data_attributes\':{\'expandable\':\'default\',\'overroll\':\'default\'},\'click_event_view\':\'default\',\'share_panel_position\':\'left\',\'auto_play\':true,\'logo_url\':{},\'share_buttons\':[\'vkontakte\',\'facebook\',\'twitter\',\'moimir\',\'odnoklassniki\',\'embed\'],\'player_show_panels\':false,\'thumbnail\':\'\',\'tracking_js\':{},\'click_event_url\':\'https://exchange.buzzoola.com/event/f9382ceb-49c2-4683-50d8-5c516c53cd69/14795a96-6261-49dc-7241-207333ab1490/m7JVQI9Y7J35_gEDugNO2bIiP2qTqPKfuLrqqh_LoJu0tD6PoLEglMXUBzVpSg75c-unsaijXpIERGosa1adogXgqjDml4Pm/click/0/\',\'vpaid_js_url\':\'https://tube.buzzoola.com/new/js/lib/vpaid_js_proxy.js\',\'skip_clickthru\':false,\'landing_link_text\':\'\',\'sound_enabled_by_default\':false,\'landing_link_position\':\'right\',\'displayed_price\':\'\',\'js_wrapper_url\':\'\',\'enable_moat\':false,\'branding_template\':\'\',\'event_url\':\'https://exchange.buzzoola.com/event/f9382ceb-49c2-4683-50d8-5c516c53cd69/14795a96-6261-49dc-7241-207333ab1490/m7JVQI9Y7J35_gEDugNO2bIiP2qTqPKfuLrqqh_LoJu0tD6PoLEglMXUBzVpSg75c-unsaijXpIERGosa1adogXgqjDml4Pm/\',\'resend_event_url\':\'https://exchange.buzzoola.com/resend_event/f9382ceb-49c2-4683-50d8-5c516c53cd69/14795a96-6261-49dc-7241-207333ab1490/m7JVQI9Y7J35_gEDugNO2bIiP2qTqPKfuLrqqh_LoJu0tD6PoLEglMXUBzVpSg75c-unsaijXpIERGosa1adogXgqjDml4Pm/\',\'creative_hash\':\'m7JVQI9Y7J35_gEDugNO2bIiP2qTqPKfuLrqqh_LoJu0tD6PoLEglMXUBzVpSg75c-unsaijXpIERGosa1adogXgqjDml4Pm\',\'custom_html\':\'\',\'custom_js\':\'\',\'height\':0,\'width\':0,\'campaign_id\':5758,\'line_item_id\':17319,\'creative_id\':11774,\'extra\':{\'imp_id\':\'14795a96-6261-49dc-7241-207333ab1490\',\'rtime\':\'2019-08-27 13:58:36\'},\'subcontent\':\'vast\',\'auction_settings\':{\'price\':\'4.6158956756756755\',\'currency\':\'RUB\',\'event_name\':\'player_seen\',\'time_slice\':0},\'hash_to_embed\':\'kbDH64c7yFYkSu0KCwSkoUD2bNHAnUTHBERqLGtWnaIF4Kow5peD5g\',\'need_ad\':false}],\'tracking_urls\':{\'ctor\':[\'https://www.tns-counter.ru/V13a****buzzola_com/ru/CP1251/tmsec=buzzola_total/1322650417245790778\',\'https://www.tns-counter.ru/V13a****buzzoola_kz/ru/UTF-8/tmsec=buzzoola_video/5395765100939533275\',\'https://buzzoolaru.solution.weborama.fr/fcgi-bin/dispatch.fcgi?a.A=ev&a.si=3071&a.te=37&a.aap=1&a.agi=862&a.evn=PrebidJS.test&g.ra=4581478478720298652\',\'https://x01.aidata.io/0.gif?pid=BUZZOOLA&id=dbdb5b13-e719-4987-7f6a-a882322bbfce\',\'https://top-fwz1.mail.ru/counter?id=3026769\',\'https://www.tns-counter.ru/V13a****buzzola_com/ru/UTF-8/tmsec=buzzola_inread/542059452789128996\',\'https://dm.hybrid.ai/match?id=111&vid=dbdb5b13-e719-4987-7f6a-a882322bbfce\',\'https://px.adhigh.net/p/cm/buzzoola?u=dbdb5b13-e719-4987-7f6a-a882322bbfce\',\'https://ssp1.rtb.beeline.ru/userbind?src=buz&ssp_user_id=dbdb5b13-e719-4987-7f6a-a882322bbfce\',\'https://sync.upravel.com/image?source=buzzoola&id=dbdb5b13-e719-4987-7f6a-a882322bbfce\',\'https://relap.io/api/partners/bzcs.gif?uid=dbdb5b13-e719-4987-7f6a-a882322bbfce\',\'https://x.bidswitch.net/sync?ssp=sspicyads\',\'https://inv-nets.admixer.net/adxcm.aspx?ssp=3C5173FC-CA30-4692-9116-009C19CB1BF9&rurl=%2F%2Fexchange.buzzoola.com%2Fcookiesync%2Fdsp%2Fadmixer-video%2F%24%24visitor_cookie%24%24\',\'https://sync.datamind.ru/cookie/accepter?source=buzzoola&id=dbdb5b13-e719-4987-7f6a-a882322bbfce\',\'https://dmp.vihub.ru/match?sysid=buz&redir=no&uid=dbdb5b13-e719-4987-7f6a-a882322bbfce\',\'https://ad.adriver.ru/cgi-bin/rle.cgi?sid=1&ad=608223&bt=21&pid=2551979&bid=6150299&bn=6150299&rnd=1279444531737367663\',\'https://reichelcormier.bid/point/?method=match&type=ssp&key=4677290772f9000878093d69c199bfba&id=3509&extUid=dbdb5b13-e719-4987-7f6a-a882322bbfce\',\'https://sync.republer.com/match?src=buzzoola&id=dbdb5b13-e719-4987-7f6a-a882322bbfce\',\'https://sm.rtb.mts.ru/p?id=dbdb5b13-e719-4987-7f6a-a882322bbfce&ssp=buzzoola\',\'https://cm.mgid.com/m?cdsp=371151&adu=https%3A%2F%2Fexchange.buzzoola.com%2Fcookiesync%2Fdsp%2Fmarketgid-native%2F%7Bmuidn%7D\',\'https://dmp.gotechnology.io/dmp/syncsspdmp?sspid=122258\']},\'tracking_js\':{\'ctor\':[\'https://buzzoola.fraudscore.mobi/dooJ9sheeeDaZ3fe.js?s=268671&l=417845\']},\'placement\':{\'placement_id\':417845,\'unit_type\':\'inread\',\'unit_settings\':{\'align\':\'left\',\'autoplay_enable_sound\':false,\'creatives_amount\':1,\'debug_mode\':false,\'expandable\':\'never\',\'sound_control\':\'default\',\'target\':\'\',\'width\':\'100%\'},\'unit_settings_list\':[\'width\',\'sound_control\',\'debug_mode\',\'target\',\'creatives_amount\',\'expandable\',\'container_height\',\'align\',\'height\']},\'uuid\':\'dbdb5b13-e719-4987-7f6a-a882322bbfce\',\'auction_id\':\'f9382ceb-49c2-4683-50d8-5c516c53cd69\',\'env\':\'prod\'}',
+  'vastXml': '<?xml version=\'1.0\' encoding=\'UTF-8\'?>\n<VAST version=\'3.0\'><Ad id=\'17319\' sequence=\'1\'><InLine><AdSystem><![CDATA[Buzzoola VAST 3.0]]></AdSystem><AdTitle><![CDATA[qa//PrebidJStestVideoURL]]></AdTitle><Creatives><Creative><Linear><Duration>00:00:30</Duration><AdParameters><![CDATA[{\'crs\':[{\'advertiser_id\':165,\'title\':\'qa//PrebidJStestVideoURL\',\'description\':\'qa//PrebidJStest\',\'duration\':0,\'ya_id\':\'55038886\',\'raw_content\':\'{\\\'main_content\\\': \\\'https://tube.buzzoola.com/xstatic/o42/mcaug/2.mp4\\\'}\',\'content\':{\'main_content\':\'https://tube.buzzoola.com/xstatic/o42/mcaug/2.mp4\'},\'content_type\':\'video_url\',\'sponsor_link\':\'\',\'sponsor_name\':\'\',\'overlay\':\'\',\'overlay_start_after\':0,\'overlay_close_after\':0,\'action_button_title\':\'\',\'tracking_url\':{},\'iframe_domains\':[],\'soc_share_url\':\'https://tube.buzzoola.com/share.html\',\'player_show_skip_button_before_play\':false,\'player_show_skip_button_seconds\':5,\'player_show_title\':true,\'player_data_attributes\':{\'expandable\':\'default\',\'overroll\':\'default\'},\'click_event_view\':\'default\',\'share_panel_position\':\'left\',\'auto_play\':true,\'logo_url\':{},\'share_buttons\':[\'vkontakte\',\'facebook\',\'twitter\',\'moimir\',\'odnoklassniki\',\'embed\'],\'player_show_panels\':false,\'thumbnail\':\'\',\'tracking_js\':{},\'click_event_url\':\'https://exchange.buzzoola.com/event/f9382ceb-49c2-4683-50d8-5c516c53cd69/14795a96-6261-49dc-7241-207333ab1490/m7JVQI9Y7J35_gEDugNO2bIiP2qTqPKfuLrqqh_LoJu0tD6PoLEglMXUBzVpSg75c-unsaijXpIERGosa1adogXgqjDml4Pm/click/0/\',\'vpaid_js_url\':\'https://tube.buzzoola.com/new/js/lib/vpaid_js_proxy.js\',\'skip_clickthru\':false,\'landing_link_text\':\'\',\'sound_enabled_by_default\':false,\'landing_link_position\':\'right\',\'displayed_price\':\'\',\'js_wrapper_url\':\'\',\'enable_moat\':false,\'branding_template\':\'\',\'event_url\':\'https://exchange.buzzoola.com/event/f9382ceb-49c2-4683-50d8-5c516c53cd69/14795a96-6261-49dc-7241-207333ab1490/m7JVQI9Y7J35_gEDugNO2bIiP2qTqPKfuLrqqh_LoJu0tD6PoLEglMXUBzVpSg75c-unsaijXpIERGosa1adogXgqjDml4Pm/\',\'resend_event_url\':\'https://exchange.buzzoola.com/resend_event/f9382ceb-49c2-4683-50d8-5c516c53cd69/14795a96-6261-49dc-7241-207333ab1490/m7JVQI9Y7J35_gEDugNO2bIiP2qTqPKfuLrqqh_LoJu0tD6PoLEglMXUBzVpSg75c-unsaijXpIERGosa1adogXgqjDml4Pm/\',\'creative_hash\':\'m7JVQI9Y7J35_gEDugNO2bIiP2qTqPKfuLrqqh_LoJu0tD6PoLEglMXUBzVpSg75c-unsaijXpIERGosa1adogXgqjDml4Pm\',\'custom_html\':\'\',\'custom_js\':\'\',\'height\':0,\'width\':0,\'campaign_id\':5758,\'line_item_id\':17319,\'creative_id\':11774,\'extra\':{\'imp_id\':\'14795a96-6261-49dc-7241-207333ab1490\',\'rtime\':\'2019-08-27 13:58:36\'},\'subcontent\':\'vast\',\'auction_settings\':{\'price\':\'4.6158956756756755\',\'currency\':\'RUB\',\'event_name\':\'player_seen\',\'time_slice\':0},\'hash_to_embed\':\'kbDH64c7yFYkSu0KCwSkoUD2bNHAnUTHBERqLGtWnaIF4Kow5peD5g\',\'need_ad\':false}],\'tracking_urls\':{\'ctor\':[\'https://www.tns-counter.ru/V13a****buzzola_com/ru/CP1251/tmsec=buzzola_total/1322650417245790778\',\'https://www.tns-counter.ru/V13a****buzzoola_kz/ru/UTF-8/tmsec=buzzoola_video/5395765100939533275\',\'https://buzzoolaru.solution.weborama.fr/fcgi-bin/dispatch.fcgi?a.A=ev&a.si=3071&a.te=37&a.aap=1&a.agi=862&a.evn=PrebidJS.test&g.ra=4581478478720298652\',\'https://x01.aidata.io/0.gif?pid=BUZZOOLA&id=dbdb5b13-e719-4987-7f6a-a882322bbfce\',\'https://top-fwz1.mail.ru/counter?id=3026769\',\'https://www.tns-counter.ru/V13a****buzzola_com/ru/UTF-8/tmsec=buzzola_inread/542059452789128996\',\'https://dm.hybrid.ai/match?id=111&vid=dbdb5b13-e719-4987-7f6a-a882322bbfce\',\'https://px.adhigh.net/p/cm/buzzoola?u=dbdb5b13-e719-4987-7f6a-a882322bbfce\',\'https://ssp1.rtb.beeline.ru/userbind?src=buz&ssp_user_id=dbdb5b13-e719-4987-7f6a-a882322bbfce\',\'https://sync.upravel.com/image?source=buzzoola&id=dbdb5b13-e719-4987-7f6a-a882322bbfce\',\'https://relap.io/api/partners/bzcs.gif?uid=dbdb5b13-e719-4987-7f6a-a882322bbfce\',\'https://x.bidswitch.net/sync?ssp=sspicyads\',\'https://inv-nets.admixer.net/adxcm.aspx?ssp=3C5173FC-CA30-4692-9116-009C19CB1BF9&rurl=%2F%2Fexchange.buzzoola.com%2Fcookiesync%2Fdsp%2Fadmixer-video%2F%24%24visitor_cookie%24%24\',\'https://sync.datamind.ru/cookie/accepter?source=buzzoola&id=dbdb5b13-e719-4987-7f6a-a882322bbfce\',\'https://dmp.vihub.ru/match?sysid=buz&redir=no&uid=dbdb5b13-e719-4987-7f6a-a882322bbfce\',\'https://ad.adriver.ru/cgi-bin/rle.cgi?sid=1&ad=608223&bt=21&pid=2551979&bid=6150299&bn=6150299&rnd=1279444531737367663\',\'https://reichelcormier.bid/point/?method=match&type=ssp&key=4677290772f9000878093d69c199bfba&id=3509&extUid=dbdb5b13-e719-4987-7f6a-a882322bbfce\',\'https://sync.republer.com/match?src=buzzoola&id=dbdb5b13-e719-4987-7f6a-a882322bbfce\',\'https://sm.rtb.mts.ru/p?id=dbdb5b13-e719-4987-7f6a-a882322bbfce&ssp=buzzoola\',\'https://cm.mgid.com/m?cdsp=371151&adu=https%3A%2F%2Fexchange.buzzoola.com%2Fcookiesync%2Fdsp%2Fmarketgid-native%2F%7Bmuidn%7D\',\'https://dmp.gotechnology.io/dmp/syncsspdmp?sspid=122258\']},\'tracking_js\':{\'ctor\':[\'https://buzzoola.fraudscore.mobi/dooJ9sheeeDaZ3fe.js?s=268671&l=417845\']},\'placement\':{\'placement_id\':417845,\'unit_type\':\'inread\',\'unit_settings\':{\'align\':\'left\',\'autoplay_enable_sound\':false,\'creatives_amount\':1,\'debug_mode\':false,\'expandable\':\'never\',\'sound_control\':\'default\',\'target\':\'\',\'width\':\'100%\'},\'unit_settings_list\':[\'width\',\'sound_control\',\'debug_mode\',\'target\',\'creatives_amount\',\'expandable\',\'container_height\',\'align\',\'height\']},\'uuid\':\'dbdb5b13-e719-4987-7f6a-a882322bbfce\',\'auction_id\':\'f9382ceb-49c2-4683-50d8-5c516c53cd69\',\'env\':\'prod\'}]]></AdParameters><TrackingEvents></TrackingEvents><MediaFiles><MediaFile delivery=\'\' type=\'application/javascript\' width=\'0\' height=\'0\' apiFramework=\'VPAID\'><![CDATA[https://tube.buzzoola.com/new/js/lib/vpaid_js_proxy_hash_only.js]]></MediaFile></MediaFiles></Linear></Creative></Creatives><Description></Description><Survey></Survey><Extensions></Extensions></InLine></Ad></VAST>',
+  'mediaType': 'video'
+}];
+
+const REQUIRED_VIDEO_FIELDS = [
+  'requestId',
+  'cpm',
+  'width',
+  'height',
+  'ad',
+  'ttl',
+  'creativeId',
+  'netRevenue',
+  'currency',
+  'vastXml',
+  'mediaType'
+];
 
 describe('buzzoolaBidAdapter', function () {
   const adapter = newBidder(spec);
@@ -107,112 +125,76 @@ describe('buzzoolaBidAdapter', function () {
 
   describe('isBidRequestValid', function () {
     it('should return true when required params found', function () {
-      expect(spec.isBidRequestValid(VIDEO_REQUEST)).to.be.true;
+      expect(spec.isBidRequestValid(VIDEO_BID)).to.be.true;
     });
 
     it('should return false when required params are not passed', function () {
-      let bid = Object.assign({}, VIDEO_REQUEST);
-      delete bid.params;
-      expect(spec.isBidRequestValid(bid)).to.be.false;
+      INVALID_BIDS.forEach(bid => {
+        expect(spec.isBidRequestValid(bid)).to.be.false;
+      });
     });
   });
 
   describe('buildRequests', function () {
-    let videoBidRequests = [VIDEO_REQUEST];
-    let dispalyBidRequests = [DISPLAY_REQUEST];
+    let videoBidRequests = [VIDEO_BID];
+    let bannerBidRequests = [BANNER_BID];
 
-    const displayRequest = spec.buildRequests(dispalyBidRequests, {});
-    const videoRequest = spec.buildRequests(videoBidRequests, {});
+    const bannerRequest = spec.buildRequests(bannerBidRequests, BANNER_BID_REQUEST);
+    const videoRequest = spec.buildRequests(videoBidRequests, VIDEO_BID_REQUEST);
 
-    it('sends bid request to ENDPOINT via GET', function () {
-      expect(videoRequest.method).to.equal('GET');
-      expect(displayRequest.method).to.equal('GET');
+    it('sends bid request to ENDPOINT via POST', function () {
+      expect(videoRequest.method).to.equal('POST');
+      expect(bannerRequest.method).to.equal('POST');
     });
 
     it('sends bid request to correct ENDPOINT', function () {
       expect(videoRequest.url).to.equal(ENDPOINT);
-      expect(displayRequest.url).to.equal(ENDPOINT);
+      expect(bannerRequest.url).to.equal(ENDPOINT);
     });
 
     it('sends correct video bid parameters', function () {
-      const bid = Object.assign({}, videoRequest.data);
-      delete bid.domain;
-
-      const eq = {
-        callbackId: '84ab500420319d',
-        ad_type: 'video',
-        aid: 12345,
-        sizes: '480x360,640x480'
-      };
-
-      expect(bid).to.deep.equal(eq);
+      expect(videoRequest.data).to.deep.equal(VIDEO_BID_REQUEST);
     });
 
-    it('sends correct display bid parameters', function () {
-      const bid = Object.assign({}, displayRequest.data);
-      delete bid.domain;
-
-      const eq = {
-        callbackId: '84ab500420319d',
-        ad_type: 'display',
-        aid: 12345,
-        sizes: '300x250'
-      };
-
-      expect(bid).to.deep.equal(eq);
+    it('sends correct banner bid parameters', function () {
+      expect(bannerRequest.data).to.deep.equal(BANNER_BID_REQUEST);
     });
   });
 
   describe('interpretResponse', function () {
-    let serverResponse;
-    let bidderRequest;
-    let eqResponse;
+    const noBidServerResponse = [];
 
-    afterEach(function () {
-      serverResponse = null;
-      bidderRequest = null;
-      eqResponse = null;
-    });
+    function bidServerResponseCheck(response, request, fields) {
+      const result = spec.interpretResponse({body: response}, {data: request});
 
-    it('should get correct video bid response', function () {
-      serverResponse = SERVER_VIDEO_RESPONSE;
-      bidderRequest = videoBidderRequest;
-      eqResponse = videoEqResponse;
-
-      bidServerResponseCheck();
-    });
-
-    it('should get correct display bid response', function () {
-      serverResponse = SERVER_DISPLAY_RESPONSE;
-      bidderRequest = displayBidderRequest;
-      eqResponse = displayEqResponse;
-
-      bidServerResponseCheck();
-    });
-
-    function bidServerResponseCheck() {
-      const result = spec.interpretResponse({body: serverResponse}, {bidderRequest});
-
-      expect(result).to.deep.equal(eqResponse);
+      expect(result).to.deep.equal(response);
+      result.forEach(bid => {
+        fields.forEach(field => {
+          expect(bid).to.have.own.property(field);
+        })
+      });
     }
 
-    function nobidServerResponseCheck() {
-      const noBidServerResponse = {bids: []};
-      const noBidResult = spec.interpretResponse({body: noBidServerResponse}, {bidderRequest});
+    function nobidServerResponseCheck(request) {
+      const noBidResult = spec.interpretResponse({body: noBidServerResponse}, {data: request});
 
       expect(noBidResult.length).to.equal(0);
     }
 
-    it('handles video nobid responses', function () {
-      bidderRequest = videoBidderRequest;
-
-      nobidServerResponseCheck();
+    it('should get correct video bid response', function () {
+      bidServerResponseCheck(VIDEO_RESPONSE, VIDEO_BID_REQUEST, REQUIRED_VIDEO_FIELDS);
     });
 
-    it('handles display nobid responses', function () {
-      bidderRequest = displayBidderRequest;
+    it('should get correct banner bid response', function () {
+      bidServerResponseCheck(BANNER_RESPONSE, BANNER_BID_REQUEST, REQUIRED_BANNER_FIELDS);
+    });
 
-      nobidServerResponseCheck();
+    it('handles video nobid responses', function () {
+      nobidServerResponseCheck(VIDEO_BID_REQUEST);
+    });
+
+    it('handles banner nobid responses', function () {
+      nobidServerResponseCheck(BANNER_BID_REQUEST);
     });
   });
 });

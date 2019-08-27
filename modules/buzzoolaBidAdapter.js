@@ -21,7 +21,7 @@ export const spec = {
    */
   isBidRequestValid: function (bid) {
     let types = bid.mediaTypes;
-    return bid && bid.mediaTypes && (types.banner || types.video) && bid.params && bid.params.placementId;
+    return !!(bid && bid.mediaTypes && (types.banner || types.video) && bid.params && bid.params.placementId);
   },
 
   /**
