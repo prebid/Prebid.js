@@ -24,27 +24,8 @@ describe('PubMatic adapter', function () {
   let bannerVideoAndNativeBidRequests;
   let bannerBidResponse;
   let videoBidResponse;
-  let schainConfig;
 
   beforeEach(function () {
-    schainConfig = {
-      'ver': '1.0',
-      'complete': 1,
-      'nodes': [
-        {
-          'asi': 'indirectseller.com',
-          'sid': '00001',
-          'hp': 1
-        },
-
-        {
-          'asi': 'indirectseller-2.com',
-          'sid': '00002',
-          'hp': 2
-        }
-      ]
-    };
-
     bidRequests = [
       {
         bidder: 'pubmatic',
@@ -74,8 +55,7 @@ describe('PubMatic adapter', function () {
         bidId: '23acc48ad47af5',
         requestId: '0fb4905b-9456-4152-86be-c6f6d259ba99',
         bidderRequestId: '1c56ad30b9b8ca8',
-        transactionId: '92489f71-1bf2-49a0-adf9-000cea934729',
-        schain: schainConfig
+        transactionId: '92489f71-1bf2-49a0-adf9-000cea934729'
       }
     ];
 
@@ -748,7 +728,6 @@ describe('PubMatic adapter', function () {
   		  expect(data.imp[0].banner.h).to.equal(250); // height
   		  expect(data.imp[0].ext.pmZoneId).to.equal(bidRequests[0].params.pmzoneid.split(',').slice(0, 50).map(id => id.trim()).join()); // pmzoneid
         expect(data.imp[0].bidfloorcur).to.equal(bidRequests[0].params.currency);
-        expect(data.source.ext.schain).to.deep.equal(bidRequests[0].schain);
   		});
 
       it('Request params check: without adSlot', function () {
@@ -1474,6 +1453,125 @@ describe('PubMatic adapter', function () {
           let data = JSON.parse(request.data);
           expect(data.user.eids).to.deep.equal(undefined);
         });
+      });
+
+      describe('schain from config', function() {
+        let schainConfig;
+        let sandbox;
+
+        beforeEach(function() {
+          sandbox = sinon.sandbox.create();
+
+          schainConfig = {
+            'ver': '1.0',
+            'complete': 1,
+            'nodes': [
+              {
+                'asi': 'indirectseller.com',
+                'sid': '00001',
+                'hp': 1
+              },
+
+              {
+                'asi': 'indirectseller-2.com',
+                'sid': '00002',
+                'hp': 2
+              }
+            ]
+          };
+        });
+
+        afterEach(() => {
+          sandbox.restore();
+          delete window.DigiTrust;
+        });
+
+        it('if schain is not defined then schain should not be passed in request', function() {
+          sandbox.stub(config, 'getConfig').callsFake((key) => {
+            var config = {};
+            return config[key];
+          });
+          let request = spec.buildRequests(bidRequests, {});
+          let data = JSON.parse(request.data);
+          expect(data.source).to.deep.equal(undefined);
+        });
+
+        it('if schain is a string then schain should not be passed in request', function() {
+          schainConfig = JSON.stringify(schainConfig);
+          sandbox.stub(config, 'getConfig').callsFake((key) => {
+            var config = {
+              schain: schainConfig
+            };
+            return config[key];
+          });
+          let request = spec.buildRequests(bidRequests, {});
+          let data = JSON.parse(request.data);
+          expect(data.source).to.deep.equal(undefined);
+        });
+
+        it('if schain.complete is NOT Integer then schain should not be passed in request', function() {
+          sandbox.stub(config, 'getConfig').callsFake((key) => {
+            var config = {
+              schain: schainConfig
+            };
+            return config[key];
+          });
+          let request, data;
+
+          schainConfig.complete = 1; // integer
+          request = spec.buildRequests(bidRequests, {});
+          data = JSON.parse(request.data);
+          expect(data.source.ext.schain).to.deep.equal(schainConfig);
+
+          schainConfig.complete = '1'; // string
+          request = spec.buildRequests(bidRequests, {});
+          data = JSON.parse(request.data);
+          expect(data.source).to.deep.equal(undefined);
+
+          schainConfig.complete = 1.1; // float
+          request = spec.buildRequests(bidRequests, {});
+          data = JSON.parse(request.data);
+          expect(data.source).to.deep.equal(undefined);
+
+          schainConfig.complete = {}; // object
+          request = spec.buildRequests(bidRequests, {});
+          data = JSON.parse(request.data);
+          expect(data.source).to.deep.equal(undefined);
+
+          delete schainConfig.complete; // undefined
+          request = spec.buildRequests(bidRequests, {});
+          data = JSON.parse(request.data);
+          expect(data.source).to.deep.equal(undefined);
+
+          schainConfig.complete = true; // boolean
+          request = spec.buildRequests(bidRequests, {});
+          data = JSON.parse(request.data);
+          expect(data.source).to.deep.equal(undefined);
+
+          schainConfig.complete = []; // array
+          request = spec.buildRequests(bidRequests, {});
+          data = JSON.parse(request.data);
+          expect(data.source).to.deep.equal(undefined);
+        });
+
+        it('if schain.version is NOT String then schain should not be passed in request', function() {
+          schainConfig.ver = 1; // Integer 
+          request = spec.buildRequests(bidRequests, {});
+          data = JSON.parse(request.data);
+          expect(data.source).to.deep.equal(undefined);
+          
+          schainConfig.ver = 1.1; // float
+          expect(isSchainObjectValid(schainConfig)).to.false;
+          schainConfig.ver = {}; // object
+          expect(isSchainObjectValid(schainConfig)).to.false;
+          delete schainConfig.ver; // undefined
+          expect(isSchainObjectValid(schainConfig)).to.false;
+          schainConfig.ver = true; // boolean
+          expect(isSchainObjectValid(schainConfig)).to.false;
+          schainConfig.ver = []; // array
+          expect(isSchainObjectValid(schainConfig)).to.false;
+        });
+
       });
 
       it('Request params check for video ad', function () {

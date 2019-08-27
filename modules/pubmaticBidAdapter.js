@@ -633,6 +633,118 @@ function _handleEids(payload, validBidRequests) {
   }
 }
 
+function _isSchainObjectValid(schainObject) {
+  const schainErrorPrefix = 'Invalid schain object found: ';
+  const shouldBeAString = ' should be a string';
+  const shouldBeAnInteger = ' should be an Integer';
+  const shouldBeAnObject = ' should be an object';
+  const shouldBeAnArray = ' should be an Array';
+
+  if (!utils.isPlainObject(schainObject)) {
+    utils.logError(schainErrorPrefix + `schain` + shouldBeAnObject);
+    return false;
+  }
+
+  // complete: Integer
+  if (!utils.isNumber(schainObject.complete) || !utils.isInteger(schainObject.complete)) {
+    utils.logError(schainErrorPrefix + `schain.complete` + shouldBeAnInteger);
+    return false;
+  }
+
+  // ver: String
+  if (!utils.isStr(schainObject.ver)) {
+    utils.logError(schainErrorPrefix + `schain.ver` + shouldBeAString);
+    return false;
+  }
+
+  // ext: Object [optional]
+  if (utils.hasOwn(schainObject, 'ext')) {
+    if (!utils.isPlainObject(schainObject.ext)) {
+      utils.logError(schainErrorPrefix + `schain.ext` + shouldBeAnObject);
+      return false;
+    }
+  }
+
+  // nodes: Array of objects
+  if (!utils.isArray(schainObject.nodes)) {
+    utils.logError(schainErrorPrefix + `schain.nodes` + shouldBeAnArray);
+    return false;
+  }
+
+  // now validate each node
+  let isEachNodeIsValid = true;
+  schainObject.nodes.forEach(node => {
+    // asi: String
+    if (!utils.isStr(node.asi)) {
+      isEachNodeIsValid = isEachNodeIsValid && false;
+      utils.logError(schainErrorPrefix + `schain.nodes[].asi` + shouldBeAString);
+    }
+
+    // sid: String
+    if (!utils.isStr(node.sid)) {
+      isEachNodeIsValid = isEachNodeIsValid && false;
+      utils.logError(schainErrorPrefix + `schain.nodes[].sid` + shouldBeAString);
+    }
+
+    // hp: Integer
+    if (!utils.isNumber(node.hp) || !utils.isInteger(node.hp)) {
+      isEachNodeIsValid = isEachNodeIsValid && false;
+      utils.logError(schainErrorPrefix + `schain.nodes[].hp` + shouldBeAnInteger);
+    }
+
+    // rid: String [Optional]
+    if (utils.hasOwn(node, 'rid')) {
+      if (!utils.isStr(node.rid)) {
+        isEachNodeIsValid = isEachNodeIsValid && false;
+        utils.logError(schainErrorPrefix + `schain.nodes[].rid` + shouldBeAString);
+      }
+    }
+
+    // name: String [Optional]
+    if (utils.hasOwn(node, 'name')) {
+      if (!utils.isStr(node.name)) {
+        isEachNodeIsValid = isEachNodeIsValid && false;
+        utils.logError(schainErrorPrefix + `schain.nodes[].name` + shouldBeAString);
+      }
+    }
+
+    // domain: String [Optional]
+    if (utils.hasOwn(node, 'domain')) {
+      if (!isStr(node.domain)) {
+        isEachNodeIsValid = isEachNodeIsValid && false;
+        utils.logError(schainErrorPrefix + `schain.nodes[].domain` + shouldBeAString);
+      }
+    }
+
+    // ext: Object [Optional]
+    if (utils.hasOwn(node, 'ext')) {
+      if (!utils.isPlainObject(node.ext)) {
+        isEachNodeIsValid = isEachNodeIsValid && false;
+        logError(schainErrorPrefix + `schain.nodes[].ext` + shouldBeAnObject);
+      }
+    }
+  });
+
+  if (!isEachNodeIsValid) {
+    return false;
+  }
+
+  return true;
+}
+
+function _addSchainObjet(payload) {
+  let schainConfig = config.getConfig('schain');
+  if (schainConfig && _isSchainObjectValid(schainConfig)) {
+    if (!payload.source) {
+      payload.source = {};
+    }
+    if (!payload.source.ext) {
+      payload.source.ext = {};
+    }
+    payload.source.ext.schain = schainConfig;
+  }
+}
+
 function _checkMediaType(adm, newBid) {
   // Create a regex here to check the strings
   var admStr = '';
@@ -873,15 +985,6 @@ export const spec = {
     payload.site.page = conf.kadpageurl.trim() || payload.site.page.trim();
     payload.site.domain = _getDomainFromURL(payload.site.page);
 
-    // adding schain object
-    if (validBidRequests[0].schain) {
-      payload.source = {
-        ext: {
-          schain: validBidRequests[0].schain
-        }
-      };
-    }
-
     // Attaching GDPR Consent Params
     if (bidderRequest && bidderRequest.gdprConsent) {
       payload.user.ext = {
@@ -895,6 +998,7 @@ export const spec = {
       };
     }
 
+    _addSchainObjet(payload);
     _handleDealCustomTargetings(payload, dctrArr, validBidRequests);
     _handleEids(payload, validBidRequests);
     _blockedIabCategoriesValidation(payload, blockedIabCategories);
