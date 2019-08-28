@@ -1,7 +1,7 @@
-import * as utils from 'src/utils';
-import {registerBidder} from 'src/adapters/bidderFactory';
+import * as utils from '../src/utils';
+import {registerBidder} from '../src/adapters/bidderFactory';
 import * as bidfactory from '../src/bidfactory';
-var CONSTANTS = require('src/constants.json');
+var CONSTANTS = require('../src/constants.json');
 const BIDDER_CODE = 'tim';
 
 function parseBidRequest(bidRequest) {

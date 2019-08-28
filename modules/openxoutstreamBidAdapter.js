@@ -114,7 +114,7 @@ function buildOXBannerRequest(bid, bidderRequest) {
     queryParams.ns = 1;
   }
 
-  if (bid.params.coppa) {
+  if (config.getConfig('coppa') === true || bid.params.coppa) {
     queryParams.tfcd = 1;
   }
 

@@ -1,4 +1,5 @@
 import { expect } from 'chai';
+import sinon from 'sinon';
 import { spec, VIDEO_ENDPOINT, BANNER_ENDPOINT, OUTSTREAM_SRC, DEFAULT_MIMES } from 'modules/beachfrontBidAdapter';
 import { parse as parseUrl } from 'src/url';
 
@@ -225,11 +226,12 @@ describe('BeachfrontAdapter', function () {
         const mimes = ['video/webm'];
         const playbackmethod = 2;
         const maxduration = 30;
+        const placement = 4;
         bidRequest.mediaTypes = { video: {} };
-        bidRequest.params.video = { mimes, playbackmethod, maxduration };
+        bidRequest.params.video = { mimes, playbackmethod, maxduration, placement };
         const requests = spec.buildRequests([ bidRequest ]);
         const data = requests[0].data;
-        expect(data.imp[0].video).to.deep.contain({ mimes, playbackmethod, maxduration });
+        expect(data.imp[0].video).to.deep.contain({ mimes, playbackmethod, maxduration, placement });
       });
 
       it('must add GDPR consent data to the request', function () {
@@ -531,6 +533,63 @@ describe('BeachfrontAdapter', function () {
           url: OUTSTREAM_SRC
         });
       });
+
+      it('should initialize a player for outstream bids', () => {
+        const width = 640;
+        const height = 480;
+        const bidRequest = bidRequests[0];
+        bidRequest.mediaTypes = {
+          video: {
+            context: 'outstream',
+            playerSize: [ width, height ]
+          }
+        };
+        const serverResponse = {
+          bidPrice: 5.00,
+          url: 'http://reachms.bfmio.com/getmu?aid=bid:19c4a196-fb21-4c81-9a1a-ecc5437a39da',
+          cmpId: '123abc'
+        };
+        const bidResponse = spec.interpretResponse({ body: serverResponse }, { bidRequest });
+        window.Beachfront = { Player: sinon.spy() };
+        bidResponse.adUnitCode = bidRequest.adUnitCode;
+        bidResponse.renderer.render(bidResponse);
+        sinon.assert.calledWith(window.Beachfront.Player, bidResponse.adUnitCode, sinon.match({
+          adTagUrl: bidResponse.vastUrl,
+          width: bidResponse.width,
+          height: bidResponse.height,
+          expandInView: false,
+          collapseOnComplete: true
+        }));
+        delete window.Beachfront;
+      });
+
+      it('should configure outstream player settings from the bidder params', () => {
+        const width = 640;
+        const height = 480;
+        const bidRequest = bidRequests[0];
+        bidRequest.mediaTypes = {
+          video: {
+            context: 'outstream',
+            playerSize: [ width, height ]
+          }
+        };
+        bidRequest.params.player = {
+          expandInView: true,
+          collapseOnComplete: false,
+          progressColor: 'green'
+        };
+        const serverResponse = {
+          bidPrice: 5.00,
+          url: 'http://reachms.bfmio.com/getmu?aid=bid:19c4a196-fb21-4c81-9a1a-ecc5437a39da',
+          cmpId: '123abc'
+        };
+        const bidResponse = spec.interpretResponse({ body: serverResponse }, { bidRequest });
+        window.Beachfront = { Player: sinon.spy() };
+        bidResponse.adUnitCode = bidRequest.adUnitCode;
+        bidResponse.renderer.render(bidResponse);
+        sinon.assert.calledWith(window.Beachfront.Player, bidResponse.adUnitCode, sinon.match(bidRequest.params.player));
+        delete window.Beachfront;
+      });
     });
 
     describe('for banner bids', function () {
@@ -661,7 +720,7 @@ describe('BeachfrontAdapter', function () {
       });
 
       it('should return user syncs defined the bid response', function () {
-        const syncUrl = 'http://sync.bfmio.com/sync_iframe?ifpl=5&ifg=1&id=test&gdpr=0&gc=&gce=0';
+        const syncUrl = 'https://sync.bfmio.com/sync_iframe?ifpl=5&ifg=1&id=test&gdpr=0&gc=&gce=0';
         const syncOptions = {
           iframeEnabled: true,
           pixelEnabled: true
@@ -679,7 +738,7 @@ describe('BeachfrontAdapter', function () {
       });
 
       it('should not return user syncs if iframes are disabled', function () {
-        const syncUrl = 'http://sync.bfmio.com/sync_iframe?ifpl=5&ifg=1&id=test&gdpr=0&gc=&gce=0';
+        const syncUrl = 'https://sync.bfmio.com/sync_iframe?ifpl=5&ifg=1&id=test&gdpr=0&gc=&gce=0';
         const syncOptions = {
           iframeEnabled: false,
           pixelEnabled: true

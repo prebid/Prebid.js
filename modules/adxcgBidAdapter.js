@@ -11,6 +11,7 @@ import includes from 'core-js/library/fn/array/includes'
  * updated for gdpr compliance on 2018.05.22 -requires gdpr compliance module
  * updated to pass aditional auction and impression level parameters. added pass for video targeting parameters
  * updated to fix native support for image width/height and icon 2019.03.17
+ * updated support for userid - pubcid,ttid 2019.05.28
  */
 
 const BIDDER_CODE = 'adxcg'
@@ -158,6 +159,14 @@ export const spec = {
     beaconParams.format = sizes.join(',')
     beaconParams.prebidBidIds = prebidBidIds.join(',')
     beaconParams.bidfloors = bidfloors.join(',')
+
+    if (utils.isStr(utils.deepAccess(validBidRequests, '0.userId.pubcid'))) {
+      beaconParams.pubcid = validBidRequests[0].userId.pubcid;
+    }
+
+    if (utils.isStr(utils.deepAccess(validBidRequests, '0.userId.tdid'))) {
+      beaconParams.tdid = validBidRequests[0].userId.tdid;
+    }
 
     let adxcgRequestUrl = url.format({
       protocol: secure ? 'https' : 'http',

@@ -40,7 +40,7 @@ const bidRequests = [
 const prebidRequests = [
   {
     method: 'GET',
-    url: document.location.protocol + '//btlr.sharethrough.com' + '/header-bid/v1',
+    url: document.location.protocol + '//btlr.sharethrough.com' + '/WYu2BXv1/v1',
     data: {
       bidId: 'bidId',
       placement_key: 'pKey'
@@ -52,7 +52,7 @@ const prebidRequests = [
   },
   {
     method: 'GET',
-    url: document.location.protocol + '//btlr.sharethrough.com' + '/header-bid/v1',
+    url: document.location.protocol + '//btlr.sharethrough.com' + '/WYu2BXv1/v1',
     data: {
       bidId: 'bidId',
       placement_key: 'pKey'
@@ -64,7 +64,7 @@ const prebidRequests = [
   },
   {
     method: 'GET',
-    url: document.location.protocol + '//btlr.sharethrough.com' + '/header-bid/v1',
+    url: document.location.protocol + '//btlr.sharethrough.com' + '/WYu2BXv1/v1',
     data: {
       bidId: 'bidId',
       placement_key: 'pKey'
@@ -77,7 +77,7 @@ const prebidRequests = [
   },
   {
     method: 'GET',
-    url: document.location.protocol + '//btlr.sharethrough.com' + '/header-bid/v1',
+    url: document.location.protocol + '//btlr.sharethrough.com' + '/WYu2BXv1/v1',
     data: {
       bidId: 'bidId',
       placement_key: 'pKey'
@@ -89,7 +89,7 @@ const prebidRequests = [
   },
   {
     method: 'GET',
-    url: document.location.protocol + '//btlr.sharethrough.com' + '/header-bid/v1',
+    url: document.location.protocol + '//btlr.sharethrough.com' + '/WYu2BXv1/v1',
     data: {
       bidId: 'bidId',
       placement_key: 'pKey'
@@ -174,9 +174,9 @@ describe('sharethrough adapter spec', function () {
       const builtBidRequests = spec.buildRequests(bidRequests);
 
       expect(builtBidRequests[0].url).to.eq(
-        'http://btlr.sharethrough.com/header-bid/v1');
+        'http://btlr.sharethrough.com/WYu2BXv1/v1');
       expect(builtBidRequests[1].url).to.eq(
-        'http://btlr.sharethrough.com/header-bid/v1')
+        'http://btlr.sharethrough.com/WYu2BXv1/v1')
       expect(builtBidRequests[0].method).to.eq('GET');
     });
 

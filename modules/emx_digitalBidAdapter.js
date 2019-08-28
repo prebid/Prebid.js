@@ -1,11 +1,14 @@
 import * as utils from '../src/utils';
 import { registerBidder } from '../src/adapters/bidderFactory';
 import { BANNER, VIDEO } from '../src/mediaTypes';
-import { config } from '../src/config';
+import { Renderer } from '../src/Renderer';
 import includes from 'core-js/library/fn/array/includes';
 
 const BIDDER_CODE = 'emx_digital';
 const ENDPOINT = 'hb.emxdgt.com';
+const RENDERER_URL = '//js.brealtime.com/outstream/1.30.0/bundle.js';
+const ADAPTER_VERSION = '1.40.2';
+const DEFAULT_CUR = 'USD';
 
 export const emxAdapter = {
   validateSizes: (sizes) => {
@@ -16,7 +19,7 @@ export const emxAdapter = {
     return sizes.every(size => utils.isArray(size) && size.length === 2);
   },
   checkVideoContext: (bid) => {
-    return (bid && bid.mediaTypes && bid.mediaTypes.video && bid.mediaTypes.video.context && bid.mediaTypes.video.context === 'instream');
+    return ((bid && bid.mediaTypes && bid.mediaTypes.video && bid.mediaTypes.video.context) && ((bid.mediaTypes.video.context === 'instream') || (bid.mediaTypes.video.context === 'outstream')));
   },
   buildBanner: (bid) => {
     let sizes = [];
@@ -38,19 +41,84 @@ export const emxAdapter = {
   },
   formatVideoResponse: (bidResponse, emxBid) => {
     bidResponse.vastXml = emxBid.adm;
+    if (!emxBid.renderer && (!emxBid.mediaTypes || !emxBid.mediaTypes.video || !emxBid.mediaTypes.video.context || emxBid.mediaTypes.video.context === 'outstream')) {
+      bidResponse.renderer = emxAdapter.createRenderer(bidResponse, {
+        id: emxBid.bidId,
+        url: RENDERER_URL
+      });
+    }
     return bidResponse;
   },
-  buildVideo: (bid) => {
-    bid.params.video.h = bid.mediaTypes.video.playerSize[0][1];
-    bid.params.video.w = bid.mediaTypes.video.playerSize[0][0];
-    return emxAdapter.cleanProtocols(bid.params.video);
+  isMobile: () => {
+    return (/(ios|ipod|ipad|iphone|android)/i).test(navigator.userAgent);
+  },
+  isConnectedTV: () => {
+    return (/(smart[-]?tv|hbbtv|appletv|googletv|hdmi|netcast\.tv|viera|nettv|roku|\bdtv\b|sonydtv|inettvbrowser|\btv\b)/i).test(navigator.userAgent);
+  },
+  getDevice: () => {
+    return {
+      ua: navigator.userAgent,
+      js: 1,
+      dnt: (navigator.doNotTrack === 'yes' || navigator.doNotTrack === '1' || navigator.msDoNotTrack === '1') ? 1 : 0,
+      h: screen.height,
+      w: screen.width,
+      devicetype: emxAdapter.isMobile() ? 1 : emxAdapter.isConnectedTV() ? 3 : 2,
+      language: (navigator.language || navigator.browserLanguage || navigator.userLanguage || navigator.systemLanguage),
+    };
   },
   cleanProtocols: (video) => {
     if (video.protocols && includes(video.protocols, 7)) {
+      // not supporting VAST protocol 7 (VAST 4.0);
       utils.logWarn(BIDDER_CODE + ': VAST 4.0 is currently not supported. This protocol has been filtered out of the request.');
       video.protocols = video.protocols.filter(protocol => protocol !== 7);
     }
     return video;
+  },
+  outstreamRender: (bid) => {
+    bid.renderer.push(function () {
+      let params = (bid && bid.params && bid.params[0] && bid.params[0].video) ? bid.params[0].video : {};
+      window.emxVideoQueue = window.emxVideoQueue || [];
+      window.queueEmxVideo({
+        id: bid.adUnitCode,
+        adsResponses: bid.vastXml,
+        options: params
+      });
+      if (window.emxVideoReady && window.videojs) {
+        window.emxVideoReady();
+      }
+    });
+  },
+  createRenderer: (bid, rendererParams) => {
+    const renderer = Renderer.install({
+      id: rendererParams.id,
+      url: RENDERER_URL,
+      loaded: false
+    });
+    try {
+      renderer.setRender(emxAdapter.outstreamRender);
+    } catch (err) {
+      utils.logWarn('Prebid Error calling setRender on renderer', err);
+    }
+
+    return renderer;
+  },
+  buildVideo: (bid) => {
+    let videoObj = Object.assign(bid.mediaTypes.video, bid.params.video)
+    return emxAdapter.cleanProtocols(videoObj);
+  },
+  parseResponse: (bidResponseAdm) => {
+    try {
+      return decodeURIComponent(bidResponseAdm);
+    } catch (err) {
+      utils.logError('emx_digitalBidAdapter', 'error', err);
+    }
+  },
+  getReferrer: () => {
+    try {
+      return window.top.document.referrer;
+    } catch (err) {
+      return document.referrer;
+    }
   },
   getGdpr: (bidRequests, emxData) => {
     if (bidRequests.gdprConsent) {
@@ -100,7 +168,7 @@ export const spec = {
       }
     } else if (bid.mediaTypes && bid.mediaTypes.video) {
       if (!emxAdapter.checkVideoContext(bid)) {
-        utils.logWarn(BIDDER_CODE + ': Missing video context: instream');
+        utils.logWarn(BIDDER_CODE + ': Missing video context: instream or outstream');
         return false;
       }
 
@@ -113,40 +181,44 @@ export const spec = {
     return true;
   },
   buildRequests: function (validBidRequests, bidderRequest) {
-    const page = bidderRequest.refererInfo.referer;
-    let emxImps = [];
-    const timeout = config.getConfig('bidderTimeout');
+    const emxImps = [];
+    const timeout = bidderRequest.timeout || '';
     const timestamp = Date.now();
-    const url = location.protocol + '//' + ENDPOINT + ('?t=' + timeout + '&ts=' + timestamp);
-    const networkProtocol = location.protocol.indexOf('https') > -1 ? 1 : 0;
+    const url = location.protocol + '//' + ENDPOINT + ('?t=' + timeout + '&ts=' + timestamp + '&src=pbjs');
+    const secure = location.protocol.indexOf('https') > -1 ? 1 : 0;
+    const domain = utils.getTopWindowLocation().hostname;
+    const page = bidderRequest.refererInfo.referer;
+    const device = emxAdapter.getDevice();
+    const ref = emxAdapter.getReferrer();
 
     utils._each(validBidRequests, function (bid) {
-      let tagId = utils.getBidIdParameter('tagid', bid.params);
-      let bidFloor = parseFloat(utils.getBidIdParameter('bidfloor', bid.params)) || 0;
+      let tagid = utils.getBidIdParameter('tagid', bid.params);
+      let bidfloor = parseFloat(utils.getBidIdParameter('bidfloor', bid.params)) || 0;
       let isVideo = !!bid.mediaTypes.video;
       let data = {
         id: bid.bidId,
         tid: bid.transactionId,
-        tagid: tagId,
-        secure: networkProtocol
+        tagid,
+        secure
       };
       let typeSpecifics = isVideo ? { video: emxAdapter.buildVideo(bid) } : { banner: emxAdapter.buildBanner(bid) };
-      let emxBid = Object.assign(data, typeSpecifics);
+      let bidfloorObj = bidfloor > 0 ? { bidfloor, bidfloorcur: DEFAULT_CUR } : {};
+      let emxBid = Object.assign(data, typeSpecifics, bidfloorObj);
 
-      if (bidFloor > 0) {
-        emxBid.bidfloor = bidFloor
-      }
       emxImps.push(emxBid);
     });
 
     let emxData = {
       id: bidderRequest.auctionId,
       imp: emxImps,
+      device,
       site: {
-        domain: window.top.document.location.host,
-        page: page
+        domain,
+        page,
+        ref
       },
-      version: '1.21.1'
+      cur: DEFAULT_CUR,
+      version: ADAPTER_VERSION
     };
 
     emxData = emxAdapter.getGdpr(bidderRequest, Object.assign({}, emxData));
@@ -166,6 +238,7 @@ export const spec = {
       response.seatbid.forEach(function (emxBid) {
         emxBid = emxBid.bid[0];
         let isVideo = false;
+        let adm = emxAdapter.parseResponse(emxBid.adm) || '';
         let bidResponse = {
           requestId: emxBid.id,
           cpm: emxBid.price,
@@ -176,7 +249,7 @@ export const spec = {
           currency: 'USD',
           netRevenue: true,
           ttl: emxBid.ttl,
-          ad: decodeURIComponent(emxBid.adm)
+          ad: adm
         };
         if (emxBid.adm && emxBid.adm.indexOf('<?xml version=') > -1) {
           isVideo = true;
@@ -194,12 +267,6 @@ export const spec = {
       syncs.push({
         type: 'iframe',
         url: '//biddr.brealtime.com/check.html'
-      });
-    }
-    if (syncOptions.pixelEnabled) {
-      syncs.push({
-        type: 'image',
-        url: '//edba.brealtime.com/'
       });
     }
     return syncs;
