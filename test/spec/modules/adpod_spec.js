@@ -4,7 +4,7 @@ import * as videoCache from 'src/videoCache';
 import * as auction from 'src/auction';
 import { ADPOD } from 'src/mediaTypes';
 
-import { callPrebidCacheHook, checkAdUnitSetupHook, checkVideoBidSetupHook, adpodSetConfig, sortByPricePerSecond } from 'modules/adpod';
+import { callPrebidCacheHook, checkAdUnitSetupHook, checkVideoBidSetupHook, adpodSetConfig, sortByPricePerSecond, internal } from 'modules/adpod';
 
 let expect = require('chai').expect;
 
@@ -642,6 +642,84 @@ describe('adpod.js', function () {
       expect(logWarnStub.calledOnce).to.equal(true);
       expect(auctionBids.length).to.equal(0);
     });
+
+    it('should not add bid to auction when price by granularity is empty', function() {
+      storeStub.callsFake(fakeStoreFn);
+
+      const customConfigObject = {
+        'buckets': [{
+          'precision': 2, // default is 2 if omitted - means 2.1234 rounded to 2 decimal places = 2.12
+          'min': 0,
+          'max': 5,
+          'increment': 0.01 // from $0 to $5, 1-cent increments
+        },
+        {
+          'precision': 2,
+          'min': 5,
+          'max': 8,
+          'increment': 0.05 // from $5 to $8, round down to the previous 5-cent increment
+        },
+        {
+          'precision': 2,
+          'min': 8,
+          'max': 40,
+          'increment': 0.5 // from $8 to $40, round down to the previous 50-cent increment
+        }]
+      };
+      config.setConfig({
+        priceGranularity: customConfigObject,
+        adpod: {
+          brandCategoryExclusion: true
+        }
+      });
+
+      let bidResponse1 = {
+        adId: 'missingCat_ad1',
+        auctionId: 'missing_category_abc345',
+        mediaType: 'video',
+        cpm: 15,
+        pbAg: '15.00',
+        pbCg: '',
+        pbDg: '15.00',
+        pbHg: '15.00',
+        pbLg: '5.00',
+        pbMg: '15.00',
+        adserverTargeting: {
+          hb_pb: '',
+        },
+        meta: {
+          adServerCatId: undefined
+        },
+        video: {
+          context: ADPOD,
+          durationSeconds: 15,
+          durationBucket: 15
+        }
+      };
+
+      let bidderRequest = {
+        adUnitCode: 'adpod_5',
+        auctionId: 'missing_category_abc345',
+        mediaTypes: {
+          video: {
+            context: ADPOD,
+            playerSize: [300, 300],
+            adPodDurationSec: 45,
+            durationRangeSec: [15, 30],
+            requireExactDuration: false
+          }
+        }
+      };
+
+      callPrebidCacheHook(callbackFn, auctionInstance, bidResponse1, afterBidAddedSpy, bidderRequest);
+
+      expect(callbackResult).to.be.null;
+      expect(afterBidAddedSpy.calledOnce).to.equal(true);
+      expect(storeStub.called).to.equal(false);
+      expect(logWarnStub.calledOnce).to.equal(true);
+      expect(auctionBids.length).to.equal(0);
+      expect(internal.useRawCpm).to.equal(false);
+    });
   });
 
   describe('checkAdUnitSetupHook', function () {
@@ -1018,6 +1096,9 @@ describe('adpod.js', function () {
   });
 
   describe('adpod utils', function() {
+    before(function() {
+      internal.useRawCpm = true;
+    });
     it('should sort bids array', function() {
       let bids = [{
         cpm: 10.12345,
