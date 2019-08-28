@@ -156,6 +156,7 @@ function isWinningBidReceivedForAllAdUnitsInAuction(auctionCache){
     }, true)
 }
 
+//todo: delete this function
 function formatBidToSend(bid) {
     return utils.pick(bid, [
         'bidder',
@@ -181,6 +182,7 @@ function formatBidToSend(bid) {
     ]);
 }
 
+//todo: delete this function
 function formatBidWonToSend(bid) {
     return Object.assign(formatBid(bid), utils.pick(bid.adUnit, [
         'adUnitCode',
@@ -277,6 +279,11 @@ function executeBidsLoggerCall(auctionId){
             contentType: 'application/json'
         }
     );
+}
+
+// todo: we may need adUnitId as well
+function executeBidWonLoggerCall(auctionId, bidWonId){
+
 }
 
 // todo: can we split this function in two for bid-logger and bid-win-logger?
@@ -460,13 +467,19 @@ function setTargetingHandler(args){
 
 function bidWonHandler(args){
     console.log(LOG_PRE_FIX, 'bidWonHandler');
-    // console.log(args);
+    console.log(args);
     let auctionCache = cache.auctions[args.auctionId];
     auctionCache.adUnitCodes[args.adUnitCode].bidWon = args.requestId;
     // check if this BID_WON missed the boat, if so send by itself
+    // todo: i think we should remove these checks; and keep bidsLog and winBidLog separate
     if (auctionCache.sent === true) {
-        sendMessage.call(this, args.auctionId, args.requestId);
+        sendMessage.call(this, args.auctionId, args.requestId);        
     } else if (isWinningBidReceivedForAllAdUnitsInAuction(auctionCache)) {
+        //todo: why isWinningBidReceivedForAllAdUnitsInAuction is important?
+        //      execute logger only if we have got all winning bids
+        //         here winning bid is the rendered bids
+        //      removing delayed execution
+        // todo: are we missing the bidWin logger call then?
         clearTimeout(cache.timeouts[args.auctionId]);
         delete cache.timeouts[args.auctionId];
         sendMessage.call(this, args.auctionId);
