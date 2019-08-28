@@ -163,6 +163,7 @@ function nobidInterpretResponse(response, bidRequest) {
   for (var i = 0; response.bids && i < response.bids.length; i++) {
     var bid = response.bids[i];
     if (bid.bdrid < 100 || !bidRequest || !bidRequest.bidderRequest || !bidRequest.bidderRequest.bids) continue;
+    nobid.bidResponses['' + bid.id] = bid;
     var reqBid = findBid(bid.divid, bidRequest.bidderRequest.bids);
     if (!reqBid) continue;
     const bidResponse = {
@@ -183,19 +184,15 @@ function nobidInterpretResponse(response, bidRequest) {
   return bidResponses;
 };
 window.nobid = window.nobid || {};
+nobid.bidResponses = {};
 nobid.renderTag = function(doc, id, win) {
   log('nobid.renderTag()', id);
-  if (nobid.bidResponse && nobid.bidResponse.bids) {
-    for (var i in nobid.bidResponse.bids) {
-      const bid = nobid.bidResponse.bids[i];
-      if (id == bid.id && bid.adm2) {
-        log('nobid.renderTag() found tag', id);
-        var markup = bid.adm2;
-        doc.write(markup);
-        doc.close();
-        break;
-      }
-    }
+  var bid = nobid.bidResponses['' + id];
+  if (bid && bid.adm2) {
+    log('nobid.renderTag() found tag', id);
+    var markup = bid.adm2;
+    doc.write(markup);
+    doc.close();
   }
 }
 export const spec = {
@@ -255,7 +252,6 @@ export const spec = {
   interpretResponse: function(serverResponse, bidRequest) {
     log('interpretResponse', serverResponse);
     log('interpretResponse', bidRequest);
-    nobid.bidResponse = serverResponse.body;
     return nobidInterpretResponse(serverResponse.body, bidRequest);
   },
 
