@@ -92,7 +92,10 @@ module.exports = {
     return Object.assign(externalModules.reduce((memo, module) => {
       try {
         var modulePath = require.resolve(module);
-        memo[modulePath] = module;
+        // only include modules from our project.  This is in case a dependency shares one of our module's name (like express).
+        if (modulePath.indexOf('/modules/') !== -1) {
+          memo[modulePath] = module;
+        }
       } catch (err) {
         // do something
       }
