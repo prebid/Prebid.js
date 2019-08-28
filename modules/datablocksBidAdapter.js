@@ -142,13 +142,12 @@ export const spec = {
       }
       let host = bidRequest.params.host;
       let sourceId = bidRequest.params.sourceId;
-      let preLoadParam = window.DATABLOCKS && window.DATABLOCKS.getFetchId && typeof window.DATABLOCKS.getFetchId == 'function' && window.DATABLOCKS.getFetchId();
       imps[host] = imps[host] || {};
-      let hostImp = imps[host][preLoadParam || sourceId] = imps[host][preLoadParam || sourceId] || { imps: [] };
+      let hostImp = imps[host][sourceId] = imps[host][sourceId] || { imps: [] };
       hostImp.imps.push(imp);
       hostImp.subid = hostImp.imps.subid || bidRequest.params.subid || 'blank';
-      hostImp.path = preLoadParam ? 'prebid' : 'search';
-      hostImp.preLoadParam = preLoadParam ? 'preid' : 'sid';
+      hostImp.path = 'search';
+      hostImp.idParam = 'sid';
       hostImp.protocol = '//';
     });
 
@@ -189,7 +188,7 @@ export const spec = {
         Object.keys(sourceIds).forEach(sourceId => {
           let impObj = sourceIds[sourceId];
           collection.push({
-            url: `${impObj.protocol}${host}/${impObj.path}/?${impObj.preLoadParam}=${sourceId}`,
+            url: `${impObj.protocol}${host}/${impObj.path}/?${impObj.idLoadParam}=${sourceId}`,
             body: {
               id: bidderRequest.auctionId,
               imp: impObj.imps,
