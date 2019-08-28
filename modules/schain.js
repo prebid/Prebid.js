@@ -10,37 +10,42 @@ const shouldBeAString = ' should be a string';
 const shouldBeAnInteger = ' should be an Integer';
 const shouldBeAnObject = ' should be an object';
 const shouldBeAnArray = ' should be an Array';
+const MODE = {
+  STRICT: 'strict',
+  RELAXED: 'relaxed',
+  OFF: 'off'
+};
 
-export function isSchainObjectValid(schainObject) {
+export function isSchainObjectValid(schainObject, returnOnError) {
   if (!isPlainObject(schainObject)) {
     logError(schainErrorPrefix + `schain` + shouldBeAnObject);
-    return false;
+    if (returnOnError) return false;
   }
 
   // complete: Integer
   if (!isNumber(schainObject.complete) || !isInteger(schainObject.complete)) {
     logError(schainErrorPrefix + `schain.complete` + shouldBeAnInteger);
-    return false;
+    if (returnOnError) return false;
   }
 
   // ver: String
   if (!isStr(schainObject.ver)) {
     logError(schainErrorPrefix + `schain.ver` + shouldBeAString);
-    return false;
+    if (returnOnError) return false;
   }
 
   // ext: Object [optional]
   if (hasOwn(schainObject, 'ext')) {
     if (!isPlainObject(schainObject.ext)) {
       logError(schainErrorPrefix + `schain.ext` + shouldBeAnObject);
-      return false;
+      if (returnOnError) return false;
     }
   }
 
   // nodes: Array of objects
   if (!isArray(schainObject.nodes)) {
     logError(schainErrorPrefix + `schain.nodes` + shouldBeAnArray);
-    return false;
+    if (returnOnError) return false;
   }
 
   // now validate each node
@@ -97,7 +102,7 @@ export function isSchainObjectValid(schainObject) {
     }
   });
 
-  if (!isEachNodeIsValid) {
+  if (returnOnError && !isEachNodeIsValid) {
     return false;
   }
 
@@ -114,12 +119,25 @@ export function copySchainObjectInAdunits(adUnits, schainObject) {
 }
 
 export function init(config) {
+  let mode = MODE.STRICT;
   getGlobal().requestBids.before(function(fn, reqBidsConfigObj) {
     let schainObject = config.getConfig('schain');
-    if (isSchainObjectValid(schainObject)) {
-      copySchainObjectInAdunits(reqBidsConfigObj.adUnits || getGlobal().adUnits, schainObject);
+    if (!isPlainObject(schainObject)) {
+      logError(schainErrorPrefix + 'schain config will not be passed to bidders as schain is not an object.');
     } else {
-      logError(schainErrorPrefix + 'schain object will not be passed to bidders as it is not valid.');
+      if (isStr(schainObject.validation) && Object.values(MODE).indexOf(schainObject.validation) != -1) {
+        mode = schainObject.validation;
+      }
+      if (mode === MODE.OFF) {
+        // no need to validate
+        copySchainObjectInAdunits(reqBidsConfigObj.adUnits || getGlobal().adUnits, schainObject.config);
+      } else {
+        if (isSchainObjectValid(schainObject.config, mode === MODE.STRICT)) {
+          copySchainObjectInAdunits(reqBidsConfigObj.adUnits || getGlobal().adUnits, schainObject.config);
+        } else {
+          logError(schainErrorPrefix + 'schain config will not be passed to bidders as it is not valid.');
+        }
+      }
     }
     // calling fn allows prebid to continue processing
     return fn.call(this, reqBidsConfigObj);
