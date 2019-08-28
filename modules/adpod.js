@@ -134,37 +134,6 @@ const getPriceByGranulariy = (bid, granularity) => {
   }
 }
 
-export let internal = {
-  useRawCpm: true
-}
-/**
- * This function tells adpod module that publisher has configured custom price granularity on the page, so do not use raw cpm while returning targeting information
- * @param {Object} config
- */
-export function pubDefinedPriceGranularity(config) {
-  if (config.priceGranularity || (config.mediaTypePriceGranularity && config.mediaTypePriceGranularity.video)) {
-    internal.useRawCpm = false;
-  }
-}
-
-config.getConfig('priceGranularity', config => pubDefinedPriceGranularity(config));
-config.getConfig('mediaTypePriceGranularity', config => pubDefinedPriceGranularity(config));
-
-/**
- * This function validates whether bid price calculated by granularity is empty or not. If empty adpod module should reject the bid
- * @param {Object} bid Bid response
- */
-const validateCpmByGranularity = (bid) => {
-  if (!internal.useRawCpm) {
-    const granularity = getPriceGranularity(bid.mediaType);
-    let cpmFixed = getPriceByGranulariy(bid, granularity);
-    if (utils.isEmptyStr(cpmFixed)) {
-      return true;
-    }
-  }
-  return false;
-}
-
 /**
  * This function reads certain fields from the bid to generate a specific key used for caching the bid in Prebid Cache
  * @param {Object} bid bid object to update
@@ -173,13 +142,9 @@ const validateCpmByGranularity = (bid) => {
 function attachPriceIndustryDurationKeyToBid(bid, brandCategoryExclusion) {
   let initialCacheKey = bidCacheRegistry.getInitialCacheKey(bid);
   let duration = utils.deepAccess(bid, 'video.durationBucket');
-  let cpmFixed;
-  if (internal.useRawCpm) {
-    cpmFixed = bid.cpm.toFixed(2);
-  } else {
-    const granularity = getPriceGranularity(bid.mediaType);
-    cpmFixed = getPriceByGranulariy(bid, granularity);
-  }
+  const granularity = getPriceGranularity(bid.mediaType);
+  let cpmFixed = getPriceByGranulariy(bid, granularity);
+
   let pcd;
 
   if (brandCategoryExclusion) {
@@ -275,9 +240,6 @@ export function callPrebidCacheHook(fn, auctionInstance, bidResponse, afterBidAd
     let adServerCatId = utils.deepAccess(bidResponse, 'meta.adServerCatId');
     if (!adServerCatId && brandCategoryExclusion) {
       utils.logWarn('Detected a bid without meta.adServerCatId while setConfig({adpod.brandCategoryExclusion}) was enabled.  This bid has been rejected:', bidResponse)
-      afterBidAdded();
-    } else if (validateCpmByGranularity(bidResponse)) {
-      utils.logWarn('Detected a bid out of Price bucket size. This bid has been rejected', bidResponse);
       afterBidAdded();
     } else {
       if (config.getConfig('adpod.deferCaching') === false) {
@@ -487,19 +449,10 @@ export function callPrebidCacheAfterAuction(bids, callback) {
  * @param {Object} bid
  */
 export function sortByPricePerSecond(a, b) {
-  let acpm;
-  let bcpm;
-  if (internal.useRawCpm) {
-    acpm = a.cpm;
-    bcpm = b.cpm;
-  } else {
-    acpm = a.adserverTargeting.hb_pb;
-    bcpm = b.adserverTargeting.hb_pb;
-  }
-  if (acpm / a.video.durationBucket < bcpm / b.video.durationBucket) {
+  if (a.adserverTargeting.hb_pb / a.video.durationBucket < b.adserverTargeting.hb_pb / b.video.durationBucket) {
     return 1;
   }
-  if (acpm / a.video.durationBucket > bcpm / b.video.durationBucket) {
+  if (a.adserverTargeting.hb_pb / a.video.durationBucket > b.adserverTargeting.hb_pb / b.video.durationBucket) {
     return -1;
   }
   return 0;
