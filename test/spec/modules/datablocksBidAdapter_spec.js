@@ -1,0 +1,230 @@
+import { expect } from 'chai';
+import { spec } from '../../../modules/datablocksBidAdapter';
+
+let bid = {
+  bidId: '2dd581a2b6281d',
+  bidder: 'datablocks',
+  bidderRequestId: '145e1d6a7837c9',
+  params: {
+    sourceId: 7560,
+    host: 'v5demo.datablocks.net'
+  },
+  adUnitCode: '/19968336/header-bid-tag-0',
+  auctionId: '74f78609-a92d-4cf1-869f-1b244bbfb5d2',
+  mediaTypes: {
+    banner: {
+      sizes: [
+        [300, 250]
+      ]
+    }
+  },
+  sizes: [
+    [300, 250]
+  ],
+  transactionId: '1ccbee15-f6f6-46ce-8998-58fe5542e8e1'
+};
+
+let nativeBid = {
+  adUnitCode: '/19968336/header-bid-tag-0',
+  auctionId: '160c78a4-f808-410f-b682-d8728f3a79ee',
+  bidId: '332045ee374a99',
+  bidder: 'datablocks',
+  bidderRequestId: '15d9012765e36c',
+  mediaTypes: {
+    native: {
+      body: {
+        required: true
+      },
+      title: {
+        required: true
+      }
+    }
+  },
+  nativeParams: {
+    body: {
+      required: true
+    },
+    title: {
+      required: true
+    }
+  },
+  params: {
+    sourceId: 7560,
+    host: 'v5demo.datablocks.net'
+  },
+  transactionId: '0a4e9788-4def-4b94-bc25-564d7cac99f6'
+}
+
+const bidderRequest = {
+  auctionId: '8bfef1be-d3ac-4d18-8859-754c7b4cf017',
+  auctionStart: Date.now(),
+  biddeCode: 'datablocks',
+  bidderRequestId: '10c47a5fc3c41',
+  bids: [bid, nativeBid],
+  refererInfo: {
+    numIframes: 0,
+    reachedTop: true,
+    referer: 'http://v5demo.datablocks.net/test',
+    stack: ['http://v5demo.datablocks.net/test']
+  },
+  start: Date.now(),
+  timeout: 10000
+};
+
+let resObject = {
+  body: {
+    id: '10c47a5fc3c41',
+    bidid: '166895245-28-11347-1',
+    seatbid: [{
+      seat: '7560',
+      bid: [{
+        id: '1090738570',
+        impid: '2966b257c81d27',
+        price: 24.000000,
+        adm: '<a href="http://click.v5demo.datablocks.net/c//?fcid=1090738570"><img src="http://impression.v5demo.datablocks.net/i//?fcid=1090738570&mime=image/png" alt="RON" height="250" width="300"></a><img alt="" src="http://impression.v5demo.datablocks.net/i//?fcid=1090738570&pixel=1" width="1" height="1" >',
+        cid: '55',
+        adid: '177654',
+        crid: '177656',
+        cat: [],
+        api: [],
+        w: 300,
+        h: 250
+      }, {
+        id: '1090738570',
+        impid: '15d9012765e36c',
+        price: 24.000000,
+        adm: '{"native":{"ver":"1.2","assets":[{"id":"title_1","required":1,"title":{"text":"Example Title"}},{"id":"body_0","required":1,"data":{"value":"Example Body"}}],"link":{"url":"http://click.example.com/c/264597/?fcid=29699699045816"},"imptrackers":["http://impression.example.com/i/264597/?fcid=29699699045816"]}}',
+        cid: '132145',
+        adid: '154321',
+        crid: '177432',
+        cat: [],
+        api: []
+      }]
+    }],
+    cur: 'USD',
+    ext: {}
+  }
+};
+let bidRequest = {
+  method: 'POST',
+  url: '//v5demo.datablocks.net/search/?sid=7560',
+  options: {
+    withCredentials: false
+  },
+  data: {
+    device: {
+      ip: 'peer',
+      ua: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_0) Ap…ML, like Gecko) Chrome/73.0.3683.86 Safari/537.36',
+      js: 1,
+      language: 'en'
+    },
+    id: '10c47a5fc3c41',
+    imp: [{
+      banner: { w: 300, h: 250 },
+      id: '2966b257c81d27',
+      secure: false,
+      tagid: '/19968336/header-bid-tag-0'
+    }, {
+      id: '15d9012765e36c',
+      native: '{"assets":[{"id":"title_0","required":true,"title":{"len":140}},{"id":"body_1","required":true,"data":{"type":2}}]}',
+      secure: false,
+      tagid: '/19968336/header-bid-tag-0'
+    }],
+    site: {
+      domain: '',
+      id: 'blank',
+      page: 'http://v5demo.datablocks.net/test'
+    }
+  }
+}
+
+describe('DatablocksAdapter', function() {
+  describe('isBidRequestValid', function() {
+    it('Should return true when sourceId and Host are set', function() {
+      expect(spec.isBidRequestValid(bid)).to.be.true;
+    });
+    it('Should return false when host/sourceId is not set', function() {
+      let moddedBid = Object.assign({}, bid);
+      delete moddedBid.params.sourceId;
+      delete moddedBid.params.host;
+      expect(spec.isBidRequestValid(bid)).to.be.false;
+    });
+  });
+
+  describe('buildRequests', function() {
+    let requests = spec.buildRequests([bid], bidderRequest);
+    it('Creates an array of request objects', function() {
+      expect(requests).to.be.an('array').that.is.not.empty;
+    });
+
+    requests.forEach(request => {
+      expect(request).to.exist;
+      it('Returns POST method', function() {
+        expect(request.method).to.exist;
+        expect(request.method).to.equal('POST');
+      });
+      it('Returns valid URL', function() {
+        expect(request.url).to.exist;
+        expect(request.url).to.equal('//v5demo.datablocks.net/search/?sid=7560');
+      });
+
+      it('Should be a valid openRTB request', function() {
+        let data = request.data;
+        expect(data).to.be.an('object');
+        expect(data).to.have.all.keys('device', 'imp', 'site', 'id');
+        expect(data.id).to.be.a('string');
+
+        let imps = data['imp'];
+        imps.forEach((imp, index) => {
+          let curBid = bidderRequest.bids[index];
+          expect(imp).to.have.all.keys('banner', 'id', 'secure', 'tagid');
+          expect(imp.banner).to.be.a('object');
+          expect(imp.id).to.be.a('string');
+          expect(imp.id).to.equal(curBid.bidId);
+          expect(imp.tagid).to.be.a('string');
+          expect(imp.tagid).to.equal(curBid.adUnitCode);
+          expect(imp.secure).to.equal(false);
+        })
+
+        expect(data.device.ip).to.equal('peer');
+      });
+    })
+
+    it('Returns empty data if no valid requests are passed', function() {
+      let request = spec.buildRequests([]);
+      expect(request).to.be.an('array').that.is.empty;
+    });
+  });
+  describe('interpretResponse', function() {
+    let serverResponses = spec.interpretResponse(resObject, bidRequest);
+    it('Returns an array of valid server responses if response object is valid', function() {
+      expect(serverResponses).to.be.an('array').that.is.not.empty;
+      for (let i = 0; i < serverResponses.length; i++) {
+        let dataItem = serverResponses[i];
+        expect(Object.keys(dataItem)).to.include('cpm', 'ttl', 'creativeId',
+          'netRevenue', 'currency', 'mediaType', 'requestId');
+        expect(dataItem.requestId).to.be.a('string');
+        expect(dataItem.cpm).to.be.a('number');
+        expect(dataItem.ttl).to.be.a('number');
+        expect(dataItem.creativeId).to.be.a('string');
+        expect(dataItem.netRevenue).to.be.a('boolean');
+        expect(dataItem.currency).to.be.a('string');
+        expect(dataItem.mediaType).to.be.a('string');
+
+        if (dataItem.mediaType == 'banner') {
+          expect(dataItem.ad).to.be.a('string');
+          expect(dataItem.width).to.be.a('number');
+          expect(dataItem.height).to.be.a('number');
+        } else if (dataItem.mediaType == 'native') {
+          expect(dataItem.native.title).to.be.a('string');
+          expect(dataItem.native.body).to.be.a('string');
+          expect(dataItem.native.clickUrl).to.be.a('string');
+        }
+      }
+      it('Returns an empty array if invalid response is passed', function() {
+        serverResponses = spec.interpretResponse('invalid_response');
+        expect(serverResponses).to.be.an('array').that.is.empty;
+      });
+    });
+  });
+});
