@@ -372,7 +372,11 @@ const spec = {
               ...params
             };
           }
-        )
+        ),
+        focus:
+          typeof document.hasFocus === 'function'
+            ? document.hasFocus()
+            : undefined
       },
       options: {
         contentType: 'application/json',
