@@ -449,10 +449,10 @@ export function callPrebidCacheAfterAuction(bids, callback) {
  * @param {Object} bid
  */
 export function sortByPricePerSecond(a, b) {
-  if (a.adserverTargeting.hb_pb / a.video.durationBucket < b.adserverTargeting.hb_pb / b.video.durationBucket) {
+  if (a.adserverTargeting[CONSTANTS.TARGETING_KEYS.PRICE_BUCKET] / a.video.durationBucket < b.adserverTargeting[CONSTANTS.TARGETING_KEYS.PRICE_BUCKET] / b.video.durationBucket) {
     return 1;
   }
-  if (a.adserverTargeting.hb_pb / a.video.durationBucket > b.adserverTargeting.hb_pb / b.video.durationBucket) {
+  if (a.adserverTargeting[CONSTANTS.TARGETING_KEYS.PRICE_BUCKET] / a.video.durationBucket > b.adserverTargeting[CONSTANTS.TARGETING_KEYS.PRICE_BUCKET] / b.video.durationBucket) {
     return -1;
   }
   return 0;
