@@ -2,7 +2,6 @@ import {config} from '../src/config';
 import {getGlobal} from '../src/prebidGlobal';
 import { isNumber, isStr, isArray, isPlainObject, hasOwn, logError, isInteger } from '../src/utils';
 
-// validate the supply chain object
 // https://github.com/InteractiveAdvertisingBureau/openrtb/blob/master/supplychainobject.md
 
 const schainErrorPrefix = 'Invalid schain object found: ';
@@ -16,6 +15,7 @@ const MODE = {
   OFF: 'off'
 };
 
+// validate the supply chain object
 export function isSchainObjectValid(schainObject, returnOnError) {
   if (!isPlainObject(schainObject)) {
     logError(schainErrorPrefix + `schain` + shouldBeAnObject);
