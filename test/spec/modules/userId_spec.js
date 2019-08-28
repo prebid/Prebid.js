@@ -314,6 +314,86 @@ describe('User ID', function() {
     });
   });
 
+  // todo
+  describe('delays auctions to fetch ids', function() {
+    let sandbox;
+    let adUnits;
+    let mockIdCallback;
+    let auctionSpy;
+
+    before(function() {
+      sandbox = sinon.createSandbox();
+      sandbox.stub(global, 'setTimeout');
+    });
+
+    beforeEach(function() {
+      adUnits = [getAdUnitMock()];
+
+      auctionSpy = sandbox.spy();
+      mockIdCallback = sandbox.stub();
+      const mockIdSystem = {
+        name: 'mockId',
+        decode: function(value) {
+          return {
+            'mockid': value
+          };
+        },
+        getId: function() {
+          return mockIdCallback;
+        }
+      };
+
+      init(config);
+      config.setConfig({
+        usersync: {
+          auctionDelay: 33,
+          syncDelay: 77,
+          userIds: [{
+            name: 'mockId', storage: { name: 'MOCKID', type: 'cookie' }
+          }]
+        }
+      });
+
+      attachIdSystem(mockIdSystem, true);
+    });
+
+    afterEach(function () {
+      $$PREBID_GLOBAL$$.requestBids.removeAll();
+      config.resetConfig();
+      sandbox.reset();
+    });
+
+    after(function() {
+      sandbox.restore();
+    });
+
+    it('delays auction if auctionDelay is set, timing out at auction delay', function() {
+      requestBidsHook(auctionSpy, {adUnits});
+
+      global.setTimeout.calledOnce.should.equal(true);
+      global.setTimeout.calledWith(sinon.match.func, 33);
+      mockIdCallback.calledOnce.should.equal(true);
+      auctionSpy.calledOnce.should.equal(false);
+
+      // callback to continue auction if timedout
+      global.setTimeout.callArg(0);
+      auctionSpy.calledOnce.should.equal(true);
+    });
+
+    it('delays auction if auctionDelay is set, continuing auction if ids are fetched before timing out', function() {
+      requestBidsHook(auctionSpy, {adUnits});
+
+      global.setTimeout.calledOnce.should.equal(true);
+      global.setTimeout.calledWith(sinon.match.func, 33);
+      mockIdCallback.calledOnce.should.equal(true);
+      auctionSpy.calledOnce.should.equal(false);
+
+      // callback to return id
+      mockIdCallback.returns({'MOCKID': 1234}).yield();
+      auctionSpy.calledOnce.should.equal(true);
+    });
+  });
+
   describe('Request bids hook appends userId to bid objs in adapters', function() {
     let adUnits;
 
@@ -600,56 +680,4 @@ describe('User ID', function() {
       }, {adUnits});
     });
   });
-
-  // todo
-  // describe('auctionDelay', function() {
-  //   let sandbox;
-  //   let adUnits;
-  //   before(function() {
-  //     sandbox = sinon.createSandbox();
-  //     sandbox.stub(global, 'setTimeout');
-  //   });
-
-  //   beforeEach(function() {
-  //     adUnits = [getAdUnitMock()];
-  //   });
-
-  //   after(function() {
-  //     sandbox.reset();
-  //   });
-
-  //   it('delays auction if auctionDelay is set', function() {
-  //     const mockIdSystem = {
-  //       name: 'mockIdSystem',
-  //       decode: function(value) {
-  //         return {
-  //           'mockid': value
-  //         };
-  //       },
-  //       getId: function() {
-  //         return function() {
-  //           return 'MOCKID';
-  //         };
-  //       }
-  //     };
-
-  //     const userSyncConfig = {
-  //       userSync: {
-  //         auctionDelay: 1000,
-  //         syncDelay: 2000
-  //       }
-  //     };
-  //     const spy = sandbox.spy();
-
-  //     setSubmoduleRegistry([mockIdSystem]);
-  //     init(config);
-  //     config.setConfig(userSyncConfig);
-
-  //     requestBidsHook(spy, {adUnits});
-
-  //     global.setTimeout.calledOnce.should.equal(true);
-  //     global.setTimeout.calledWith(sinon.match.func, 1000);
-  //     spy.calledOnce.should.equal(false);
-  //   });
-  // });
 });
