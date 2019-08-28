@@ -1,5 +1,5 @@
-import * as utils from 'src/utils';
-import { registerBidder } from 'src/adapters/bidderFactory';
+import * as utils from '../src/utils';
+import { registerBidder } from '../src/adapters/bidderFactory';
 import { BANNER, NATIVE } from '../src/mediaTypes';
 import { parse as parseUrl } from '../src/url';
 const NATIVE_MAP = {
@@ -188,7 +188,7 @@ export const spec = {
         Object.keys(sourceIds).forEach(sourceId => {
           let impObj = sourceIds[sourceId];
           collection.push({
-            url: `${impObj.protocol}${host}/${impObj.path}/?${impObj.idLoadParam}=${sourceId}`,
+            url: `${impObj.protocol}${host}/${impObj.path}/?${impObj.idParam}=${sourceId}`,
             body: {
               id: bidderRequest.auctionId,
               imp: impObj.imps,
