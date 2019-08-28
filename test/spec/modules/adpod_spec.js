@@ -4,7 +4,7 @@ import * as videoCache from 'src/videoCache';
 import * as auction from 'src/auction';
 import { ADPOD } from 'src/mediaTypes';
 
-import { callPrebidCacheHook, checkAdUnitSetupHook, checkVideoBidSetupHook, adpodSetConfig, sortByPricePerSecond, internal } from 'modules/adpod';
+import { callPrebidCacheHook, checkAdUnitSetupHook, checkVideoBidSetupHook, adpodSetConfig, sortByPricePerSecond } from 'modules/adpod';
 
 let expect = require('chai').expect;
 
