@@ -118,7 +118,8 @@ function getAdUnitCopyForPrebidServer(adUnits) {
   adUnitsCopy.forEach((adUnit) => {
     // filter out client side bids
     adUnit.bids = adUnit.bids.filter((bid) => {
-      return includes(adaptersServerSide, bid.bidder) && (!doingS2STesting() || bid.finalSource !== s2sTestingModule.CLIENT);
+      return includes(adaptersServerSide, bid.bidder) &&
+        (!doingS2STesting() || bid.finalSource !== s2sTestingModule.CLIENT);
     }).map((bid) => {
       bid.bid_id = utils.getUniqueIdentifierStr();
       return bid;
@@ -170,24 +171,29 @@ adapterManager.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTi
 
   let clientBidderCodes = bidderCodes;
   let clientTestAdapters = [];
+  let serverTestAdapters = [];
+
   if (_s2sConfig.enabled) {
     // if s2sConfig.bidderControl testing is turned on
     if (doingS2STesting()) {
       // get all adapters doing client testing
-      clientTestAdapters = s2sTestingModule.getSourceBidderMap(adUnits)[s2sTestingModule.CLIENT];
+      const bidderMap = s2sTestingModule.getSourceBidderMap(adUnits);
+      clientTestAdapters = bidderMap[s2sTestingModule.CLIENT];
+      serverTestAdapters = bidderMap[s2sTestingModule.SERVER];
     }
 
     // these are called on the s2s adapter
     let adaptersServerSide = _s2sConfig.bidders;
 
-    if (adaptersServerSide.length > 0 && isTestingServerOnly()) {
-      clientTestAdapters.length = 0;
-    }
-
     // don't call these client side (unless client request is needed for testing)
     clientBidderCodes = bidderCodes.filter((elm) => {
       return !includes(adaptersServerSide, elm) || includes(clientTestAdapters, elm);
     });
+
+    if (isTestingServerOnly() && serverTestAdapters.length > 0) {
+      adaptersServerSide = serverTestAdapters;
+      clientBidderCodes.length = 0;
+    }
 
     let adUnitsS2SCopy = getAdUnitCopyForPrebidServer(adUnits);
     let tid = utils.generateUUID();

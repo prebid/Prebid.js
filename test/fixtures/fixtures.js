@@ -1484,3 +1484,58 @@ export function createBidReceived({bidder, cpm, auctionId, responseTimestamp, ad
   }
   return bid;
 }
+
+export function getServerTestingsAds() {
+  return [
+    {
+      code: 'test_div_1',
+      sizes: [[728, 90]],
+      bids: [
+        {
+          'bidSource': { 'client': 0, 'server': 100 },
+          'bidder': 'rubicon',
+          'params': { 'accountId': 1001, 'siteId': 113932, 'zoneId': 535510 }
+        },
+        {
+          'bidSource': { 'client': 100, 'server': 0 },
+          'bidder': 'appnexus',
+          'params': { 'placementId': '10433394' }
+        }
+      ]
+    },
+    {
+      code: 'test_div_2',
+      sizes: [[300, 250]],
+      bids: [
+        {
+          'bidSource': { 'client': 100, 'server': 0 },
+          'bidder': 'rubicon',
+          'params': { 'accountId': 1001, 'siteId': 113932, 'zoneId': 535510 }
+        },
+        {
+          'bidSource': { 'client': 100, 'server': 0 },
+          'bidder': 'appnexus',
+          'params': { 'placementId': '10433394' }
+        }
+      ]
+    }
+  ];
+};
+
+export const getServerTestingConfig = (config, override = {}) =>
+  Object.assign({}, config, {
+    enabled: true,
+    testing: true,
+    testServerOnly: true,
+    bidders: ['rubicon', 'appnexus'],
+    bidderControl: {
+      rubicon: {
+        bidSource: { server: 0, client: 100 },
+        includeSourceKvp: true
+      },
+      appnexus: {
+        bidSource: { server: 0, client: 100 },
+        includeSourceKvp: true
+      }
+    }
+  }, override);

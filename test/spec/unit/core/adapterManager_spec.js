@@ -1,8 +1,10 @@
 import { expect } from 'chai';
-import adapterManager, {
-  gdprDataHandler
-} from 'src/adapterManager';
-import { getAdUnits } from 'test/fixtures/fixtures';
+import adapterManager, { gdprDataHandler } from 'src/adapterManager';
+import {
+  getAdUnits,
+  getServerTestingConfig,
+  getServerTestingsAds
+} from 'test/fixtures/fixtures';
 import CONSTANTS from 'src/constants.json';
 import * as utils from 'src/utils';
 import { config } from 'src/config';
@@ -1143,14 +1145,79 @@ describe('adapterManager tests', function () {
       });
     });
 
-    describe('s2sTesting testServerOnly', () => {
-      let stubGetSourceBidderMap;
+    describe('s2sTesting - testServerOnly', () => {
       beforeEach(() => {
-        stubGetSourceBidderMap = sinon.stub(s2sTesting, 'getSourceBidderMap');
+        config.setConfig({ s2sConfig: getServerTestingConfig(CONFIG) });
       });
 
-      afterEach(() => {
-        s2sTesting.getSourceBidderMap.restore();
+      afterEach(() => config.resetConfig());
+
+      const makeBidRequests = ads => {
+        let bidRequests = adapterManager.makeBidRequests(
+          ads, 1111, 2222, 1000
+        );
+
+        bidRequests.sort((a, b) => {
+          if (a.bidderCode < b.bidderCode) return -1;
+          if (a.bidderCode > b.bidderCode) return 1;
+          return 0;
+        });
+
+        return bidRequests;
+      };
+
+      it('should only call the server once for Rubicon', () => {
+        const bidRequests = makeBidRequests(getServerTestingsAds());
+
+        expect(bidRequests).lengthOf(1);
+
+        expect(bidRequests[0].bids).lengthOf(1);
+        expect(bidRequests[0].bids[0].bidder).equals('rubicon');
+        expect(bidRequests[0].bids[0].finalSource).equals('server');
+      });
+
+      it('should only call the server twice', () => {
+        const ads = getServerTestingsAds();
+
+        // change this adUnit to be server based
+        ads[1].bids[1].bidSource.client = 0;
+        ads[1].bids[1].bidSource.server = 100;
+
+        const bidRequests = makeBidRequests(ads);
+
+        expect(bidRequests).lengthOf(2);
+
+        expect(bidRequests[0].bids).lengthOf(1);
+        expect(bidRequests[0].bids[0].bidder).equals('appnexus');
+        expect(bidRequests[0].bids[0].finalSource).equals('server');
+
+        expect(bidRequests[1].bids).lengthOf(1);
+        expect(bidRequests[1].bids[0].bidder).equals('rubicon');
+        expect(bidRequests[1].bids[0].finalSource).equals('server');
+      });
+
+      it('only client calls', () => {
+        const ads = getServerTestingsAds();
+
+        // change this adUnit to be client based
+        ads[0].bids[0].bidSource.client = 100;
+        ads[0].bids[0].bidSource.server = 0;
+
+        const bidRequests = makeBidRequests(ads);
+
+        expect(bidRequests).lengthOf(2);
+
+        expect(bidRequests[0].bids).lengthOf(2);
+        expect(bidRequests[0].bids[0].bidder).equals('appnexus');
+        expect(bidRequests[0].bids[0].finalSource).equals('client');
+        expect(bidRequests[0].bids[1].bidder).equals('appnexus');
+        expect(bidRequests[0].bids[1].finalSource).equals('client');
+
+        expect(bidRequests[1].bids).lengthOf(2);
+        expect(bidRequests[1].bids[0].bidder).equals('rubicon');
+        expect(bidRequests[1].bids[0].finalSource).equals('client');
+        expect(bidRequests[1].bids[1].bidder).equals('rubicon');
+        expect(bidRequests[1].bids[1].finalSource).equals('client');
       });
     });
   });
