@@ -11,22 +11,25 @@ Refer:
 ## Sample code for passing the schain object
 ```
 pbjs.setConfig( {
-    "schain": {
-		"ver":"1.0",
-		"complete": 1,
-		"nodes": [
-		    {
-			   "asi":"indirectseller.com",
-			   "sid":"00001",
-			   "hp":1
-		    },
+    "schain":
+    	"validation": "strict",
+    	"config": {
+			"ver":"1.0",
+			"complete": 1,
+			"nodes": [
+			    {
+				   "asi":"indirectseller.com",
+				   "sid":"00001",
+				   "hp":1
+			    },
 
-            {
-			   "asi":"indirectseller-2.com",
-			   "sid":"00002",
-			   "hp":2
-		    },
-		]     
+	            {
+				   "asi":"indirectseller-2.com",
+				   "sid":"00002",
+				   "hp":2
+			    },
+			]
+		}	
 	}
 });
 ```
@@ -40,3 +43,8 @@ If required, schain module can be included as following
 The schain module will validate the schain object passed using pbjs.setConfig API.
 If the schain object is valid then it will be passed on to bidders/adapters in ```validBidRequests[].schain```
 You may refer pubmaticBidAdapter implementaion for the same.
+
+## Validation modes
+- ```strict```: It is the default validation mode. In this mode, schain object will not be passed to adapters if it is invalid. Errors are thrown for invalid schain object.
+- ```relaxed```: In this mode, errors are thrown for an invalid schain object but the invalid schain object is still passed to adapters.
+- ```off```: In this mode, no validations are performed and schain object is passed as is to adapters.
