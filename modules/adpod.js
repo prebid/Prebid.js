@@ -13,7 +13,7 @@
  */
 
 import * as utils from '../src/utils';
-import { addBidToAuction, doCallbacksIfTimedout, AUCTION_IN_PROGRESS, callPrebidCache } from '../src/auction';
+import { addBidToAuction, doCallbacksIfTimedout, AUCTION_IN_PROGRESS, callPrebidCache, getPriceByGranularity, getPriceGranularity } from '../src/auction';
 import { checkAdUnitSetup } from '../src/prebid';
 import { checkVideoBidSetup } from '../src/video';
 import { setupBeforeHookFnOnce, module } from '../src/hook';
@@ -112,28 +112,6 @@ function createDispatcher(timeoutDuration) {
   };
 }
 
-const getPriceGranularity = (mediaType) => {
-  const mediaTypeGranularity = config.getConfig(`mediaTypePriceGranularity.${mediaType}`);
-  const granularity = (typeof mediaType === 'string' && mediaTypeGranularity) ? ((typeof mediaTypeGranularity === 'string') ? mediaTypeGranularity : 'custom') : config.getConfig('priceGranularity');
-  return granularity;
-}
-
-const getPriceByGranulariy = (bid, granularity) => {
-  if (granularity === CONSTANTS.GRANULARITY_OPTIONS.AUTO) {
-    return bid.pbAg;
-  } else if (granularity === CONSTANTS.GRANULARITY_OPTIONS.DENSE) {
-    return bid.pbDg;
-  } else if (granularity === CONSTANTS.GRANULARITY_OPTIONS.LOW) {
-    return bid.pbLg;
-  } else if (granularity === CONSTANTS.GRANULARITY_OPTIONS.MEDIUM) {
-    return bid.pbMg;
-  } else if (granularity === CONSTANTS.GRANULARITY_OPTIONS.HIGH) {
-    return bid.pbHg;
-  } else if (granularity === CONSTANTS.GRANULARITY_OPTIONS.CUSTOM) {
-    return bid.pbCg;
-  }
-}
-
 /**
  * This function reads certain fields from the bid to generate a specific key used for caching the bid in Prebid Cache
  * @param {Object} bid bid object to update
@@ -143,7 +121,7 @@ function attachPriceIndustryDurationKeyToBid(bid, brandCategoryExclusion) {
   let initialCacheKey = bidCacheRegistry.getInitialCacheKey(bid);
   let duration = utils.deepAccess(bid, 'video.durationBucket');
   const granularity = getPriceGranularity(bid.mediaType);
-  let cpmFixed = getPriceByGranulariy(bid, granularity);
+  let cpmFixed = getPriceByGranularity(granularity)(bid);
 
   let pcd;
 
