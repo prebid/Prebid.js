@@ -191,7 +191,6 @@ adapterManager.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTi
     });
 
     if (isTestingServerOnly() && serverTestAdapters.length > 0) {
-      adaptersServerSide = serverTestAdapters;
       clientBidderCodes.length = 0;
     }
 
