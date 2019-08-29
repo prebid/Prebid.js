@@ -64,13 +64,17 @@ let nativeBid = {
   },
   nativeParams: {
     body: {
-      required: true
+      required: true,
+      data:{
+        len:250
+      }
     },
     title: {
       required: true
     },
     image: {
-      required: true
+      required: true,
+      sizes:[728,90]
     }
   },
   params: {
