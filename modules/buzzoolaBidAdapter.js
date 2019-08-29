@@ -1,5 +1,5 @@
-import * as utils from 'src/utils';
-import {registerBidder} from 'src/adapters/bidderFactory';
+import * as utils from '../src/utils';
+import {registerBidder} from '../src/adapters/bidderFactory';
 import {BANNER, VIDEO} from '../src/mediaTypes';
 import {Renderer} from '../src/Renderer';
 import {OUTSTREAM} from '../src/video';
