@@ -215,7 +215,14 @@ export const spec = {
     let reqImps = req.imp;
 
     return bids.map(rtbBid => {
-      let imp = reqImps.find(imp => imp.id == rtbBid.impid);
+      let imp;
+      for (let i in reqImps) {
+        let testImp = reqImps[i]
+        if (testImp.id == rtbBid.impid) {
+          imp = testImp;
+          break;
+        }
+      }
       let br = {
         requestId: rtbBid.impid,
         cpm: rtbBid.price,
@@ -224,7 +231,9 @@ export const spec = {
         netRevenue: true,
         ttl: 360
       };
-      if (imp.banner) {
+      if (!imp) {
+        return br;
+      } else if (imp.banner) {
         br.mediaType = BANNER;
         br.width = rtbBid.w;
         br.height = rtbBid.h;
