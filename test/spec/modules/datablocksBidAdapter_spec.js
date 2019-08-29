@@ -24,6 +24,25 @@ let bid = {
   transactionId: '1ccbee15-f6f6-46ce-8998-58fe5542e8e1'
 };
 
+let bid2 = {
+  bidId: '2dd581a2b624324g',
+  bidder: 'datablocks',
+  bidderRequestId: '145e1d6a7837543',
+  params: {
+    sourceId: 7560,
+    host: 'v5demo.datablocks.net'
+  },
+  adUnitCode: '/19968336/header-bid-tag-0',
+  auctionId: '74f78609-a92d-4cf1-869f-1b244bbfb5d2',
+  mediaTypes: {
+    banner: {
+      sizes:
+        [728, 90]
+    }
+  },
+  transactionId: '1ccbee15-f6f6-46ce-8998-58fe55425432'
+};
+
 let nativeBid = {
   adUnitCode: '/19968336/header-bid-tag-0',
   auctionId: '160c78a4-f808-410f-b682-d8728f3a79ee',
@@ -37,6 +56,9 @@ let nativeBid = {
       },
       title: {
         required: true
+      },
+      image: {
+        required: true
       }
     }
   },
@@ -45,6 +67,9 @@ let nativeBid = {
       required: true
     },
     title: {
+      required: true
+    },
+    image: {
       required: true
     }
   },
@@ -60,7 +85,7 @@ const bidderRequest = {
   auctionStart: Date.now(),
   biddeCode: 'datablocks',
   bidderRequestId: '10c47a5fc3c41',
-  bids: [bid, nativeBid],
+  bids: [bid, bid2, nativeBid],
   refererInfo: {
     numIframes: 0,
     reachedTop: true,
@@ -90,10 +115,22 @@ let resObject = {
         w: 300,
         h: 250
       }, {
+        id: '1090738571',
+        impid: '2966b257c81d28',
+        price: 24.000000,
+        adm: '<a href="http://click.v5demo.datablocks.net/c//?fcid=1090738570"><img src="http://impression.v5demo.datablocks.net/i//?fcid=1090738570&mime=image/png" alt="RON" height="250" width="300"></a><img alt="" src="http://impression.v5demo.datablocks.net/i//?fcid=1090738570&pixel=1" width="1" height="1" >',
+        cid: '55',
+        adid: '177654',
+        crid: '177656',
+        cat: [],
+        api: [],
+        w: 728,
+        h: 90
+      }, {
         id: '1090738570',
         impid: '15d9012765e36c',
         price: 24.000000,
-        adm: '{"native":{"ver":"1.2","assets":[{"id":"title_1","required":1,"title":{"text":"Example Title"}},{"id":"body_0","required":1,"data":{"value":"Example Body"}}],"link":{"url":"http://click.example.com/c/264597/?fcid=29699699045816"},"imptrackers":["http://impression.example.com/i/264597/?fcid=29699699045816"]}}',
+        adm: '{"native":{"ver":"1.2","assets":[{"id":"title_1","required":1,"title":{"text":"Example Title"}},{"id":"body_0","required":1,"data":{"value":"Example Body"}},{"id":"image_1","required":1,"img":{"url":"http://example.image.com/"}}],"link":{"url":"http://click.example.com/c/264597/?fcid=29699699045816"},"imptrackers":["http://impression.example.com/i/264597/?fcid=29699699045816"]}}',
         cid: '132145',
         adid: '154321',
         crid: '177432',
@@ -125,8 +162,13 @@ let bidRequest = {
       secure: false,
       tagid: '/19968336/header-bid-tag-0'
     }, {
+      banner: { w: 728, h: 90 },
+      id: '2966b257c81d28',
+      secure: false,
+      tagid: '/19968336/header-bid-tag-0'
+    }, {
       id: '15d9012765e36c',
-      native: '{"assets":[{"id":"title_0","required":true,"title":{"len":140}},{"id":"body_1","required":true,"data":{"type":2}}]}',
+      native: '{"assets":[{"id":"title_0","required":true,"title":{"len":140}},{"id":"body_1","required":true,"data":{"type":2}},{"id":"image_1","img":{"w":728,"h":90,"type":3}}]}',
       secure: false,
       tagid: '/19968336/header-bid-tag-0'
     }],
@@ -152,7 +194,7 @@ describe('DatablocksAdapter', function() {
   });
 
   describe('buildRequests', function() {
-    let requests = spec.buildRequests([bid], bidderRequest);
+    let requests = spec.buildRequests([bid,bid2,nativeBid], bidderRequest);
     it('Creates an array of request objects', function() {
       expect(requests).to.be.an('array').that.is.not.empty;
     });
@@ -177,8 +219,18 @@ describe('DatablocksAdapter', function() {
         let imps = data['imp'];
         imps.forEach((imp, index) => {
           let curBid = bidderRequest.bids[index];
-          expect(imp).to.have.all.keys('banner', 'id', 'secure', 'tagid');
-          expect(imp.banner).to.be.a('object');
+          if (imp.banner ) {
+            expect(imp).to.have.all.keys('banner','id', 'secure', 'tagid');
+            expect(imp.banner).to.be.a('object');
+          } else if ( imp.native ) {
+            expect(imp).to.have.all.keys('native','id', 'secure', 'tagid');
+            expect(imp.native).to.be.a('string');
+            let native = JSON.parse(imp.native);
+            expect(native).to.be.a('object');
+          } else {
+            expect(true).to.equal(false);
+          }
+
           expect(imp.id).to.be.a('string');
           expect(imp.id).to.equal(curBid.bidId);
           expect(imp.tagid).to.be.a('string');
