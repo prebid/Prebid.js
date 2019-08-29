@@ -226,7 +226,7 @@ function _getAppObject(request) {
 
 function _getDeviceObject(request) {
   var params = request && request.params ? request.params : null;
-  if (cfn(params) != null) {
+  if (cfn(params) != '') {
     return {
       dnt: utils.getDNT() ? 1 : 0,
       ua: navigator.userAgent,
