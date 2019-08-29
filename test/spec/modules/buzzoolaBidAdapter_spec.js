@@ -209,52 +209,34 @@ describe('buzzoolaBidAdapter', () => {
   });
 
   describe('outstream renderer', () => {
-    let scriptElement;
-    let scriptStub;
+    let result;
+    let renderer;
 
     before(() => {
       const adContainer = document.createElement('div');
       adContainer.id = 'adUnitCode';
       document.body.appendChild(adContainer);
 
-      customElements.define('stub-script', class StubScript extends HTMLElement {
-        constructor() {
-          super();
-          this.proxy = new Proxy(this, {
-            get: (target, key) => {
-              return target[key];
-            },
-            set: (target, key, value) => {
-              if (key === 'src' && value === RENDERER_SRC) {
-                target.onload && target.onload();
-              } else {
-                target[key] = value;
-              }
-              return true;
-            }
-          })
-        }
-      });
+      const outstreamVideoBid = deepClone(VIDEO_BID);
+      outstreamVideoBid.mediaTypes.video.context = 'outstream';
 
-      scriptElement = document.createElement('stub-script');
-      scriptStub = sinon.stub(document, 'createElement');
+      const outstreamVideoRequest = deepClone(VIDEO_BID_REQUEST);
+      outstreamVideoRequest.bids = [outstreamVideoBid];
+
+      const scriptElement = document.createElement('div');
+
+      const scriptStub = sinon.stub(document, 'createElement');
       scriptStub.withArgs('script').returns(scriptElement);
-    });
 
-    after(() => {
+      result = spec.interpretResponse({body: VIDEO_RESPONSE}, {data: outstreamVideoRequest})[0];
+      renderer = result.renderer;
+
+      result.adUnitCode = 'adUnitCode';
+
+      scriptElement.onload && scriptElement.onload();
+
       scriptStub.restore();
     });
-
-    const outstreamVideoBid = deepClone(VIDEO_BID);
-    outstreamVideoBid.mediaTypes.video.context = 'outstream';
-
-    const outstreamVideoRequest = deepClone(VIDEO_BID_REQUEST);
-    outstreamVideoRequest.bids = [outstreamVideoBid];
-
-    const result = spec.interpretResponse({body: VIDEO_RESPONSE}, {data: outstreamVideoRequest})[0];
-    const renderer = result.renderer;
-
-    result.adUnitCode = 'adUnitCode';
 
     it('should add renderer for outstream video', () => {
       expect(result).to.have.own.property('renderer');
