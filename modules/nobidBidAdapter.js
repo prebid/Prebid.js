@@ -193,7 +193,9 @@ nobid.renderTag = function(doc, id, win) {
     var markup = bid.adm2;
     doc.write(markup);
     doc.close();
+    return;
   }
+  log('nobid.renderTag() tag NOT FOUND *ERROR*', id);
 }
 export const spec = {
   code: BIDDER_CODE,
