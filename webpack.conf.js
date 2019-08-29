@@ -31,6 +31,7 @@ plugins.push(new CustomizedSplitChunksPlugin({
         name: 'prebid',
         filename: 'prebid-core.js',
         enforce: true,
+        reuseExistingChunk: true,
         test: function(module, chunks) {
           return (
             (
