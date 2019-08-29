@@ -5,7 +5,11 @@
   "main": "src/prebid.js",
   "scripts": {
     "test": "gulp test",
-    "lint": "gulp lint"
+    "lint": "gulp lint",
+    "postinstall": "node scripts/postinstall.js"
+  },
+  "dllPlugin": {
+    "path": "node_modules/prebid-temp-dll"
   },
   "repository": {
     "type": "git",
