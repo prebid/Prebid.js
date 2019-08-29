@@ -1196,7 +1196,7 @@ describe('adapterManager tests', function () {
         expect(bidRequests[1].bids[0].finalSource).equals('server');
       });
 
-      it('only client calls', () => {
+      it('should only make client calls', () => {
         const ads = getServerTestingsAds();
 
         // change this adUnit to be client based
@@ -1205,19 +1205,23 @@ describe('adapterManager tests', function () {
 
         const bidRequests = makeBidRequests(ads);
 
-        expect(bidRequests).lengthOf(2);
+        expect(bidRequests).lengthOf(3);
 
-        expect(bidRequests[0].bids).lengthOf(2);
-        expect(bidRequests[0].bids[0].bidder).equals('appnexus');
+        expect(bidRequests[0].bids).lengthOf(1);
+        expect(bidRequests[0].bids[0].bidder).equals('adequant');
         expect(bidRequests[0].bids[0].finalSource).equals('client');
-        expect(bidRequests[0].bids[1].bidder).equals('appnexus');
-        expect(bidRequests[0].bids[1].finalSource).equals('client');
 
         expect(bidRequests[1].bids).lengthOf(2);
-        expect(bidRequests[1].bids[0].bidder).equals('rubicon');
+        expect(bidRequests[1].bids[0].bidder).equals('appnexus');
         expect(bidRequests[1].bids[0].finalSource).equals('client');
-        expect(bidRequests[1].bids[1].bidder).equals('rubicon');
+        expect(bidRequests[1].bids[1].bidder).equals('appnexus');
         expect(bidRequests[1].bids[1].finalSource).equals('client');
+
+        expect(bidRequests[2].bids).lengthOf(2);
+        expect(bidRequests[2].bids[0].bidder).equals('rubicon');
+        expect(bidRequests[2].bids[0].finalSource).equals('client');
+        expect(bidRequests[2].bids[1].bidder).equals('rubicon');
+        expect(bidRequests[2].bids[1].finalSource).equals('client');
       });
     });
   });

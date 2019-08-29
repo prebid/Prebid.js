@@ -1518,6 +1518,11 @@ export function getServerTestingsAds() {
           'params': { 'placementId': '10433394' }
         }
       ]
+    },
+    {
+      code: 'test_div_3',
+      sizes: [[300, 250]],
+      bids: [{ bidder: 'adequant' }]
     }
   ];
 };

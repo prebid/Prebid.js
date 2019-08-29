@@ -186,11 +186,16 @@ adapterManager.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTi
     let adaptersServerSide = _s2sConfig.bidders;
 
     // don't call these client side (unless client request is needed for testing)
-    clientBidderCodes = bidderCodes.filter((elm) => {
-      return !includes(adaptersServerSide, elm) || includes(clientTestAdapters, elm);
-    });
+    clientBidderCodes = bidderCodes.filter(elm =>
+      !includes(adaptersServerSide, elm) || includes(clientTestAdapters, elm)
+    );
 
-    if (isTestingServerOnly() && serverTestAdapters.length > 0) {
+    if (
+      isTestingServerOnly() &&
+      Object.keys(_s2sConfig.bidderControl)
+        .filter(testBidder => includes(serverTestAdapters, testBidder))
+        .length > 0
+    ) {
       clientBidderCodes.length = 0;
     }
 
