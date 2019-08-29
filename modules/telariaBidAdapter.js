@@ -131,6 +131,10 @@ function getSrcPageUrl(params) {
 }
 
 function getSupplyChainString(schainObject){
+  if (utils.isEmpty(schainObject)) {
+    return '';
+  }
+
   let scStr = `${schainObject.ver},${schainObject.complete}`;
 
   schainObject.nodes.forEach((node) => {
@@ -152,10 +156,11 @@ function getParamsString(params) {
 
   if (!utils.isEmpty(params)) {
     for (let key in params) {
-      if (params.hasOwnProperty(key) && !utils.isEmpty(params[key])) {
+      if (key !== 'schain' && params.hasOwnProperty(key) && !utils.isEmpty(params[key])) {
         urlSuffix += `&${key}=${params[key]}`;
       }
     }
+    urlSuffix += getSupplyChainString(params['schain']);
   }
 
   return urlSuffix;
@@ -164,13 +169,6 @@ function getParamsString(params) {
 export const getTimeoutUrl = function(timeoutData) {
   if (!utils.isEmpty(timeoutData)) {
     let url = `${getScheme()}${TIMEOUT_URL}`;
-
-    if (timeoutData[0].auctionId) {
-      url += `?rid=${timeoutData[0].auctionId}`;
-    }
-    if (timeoutData[0].bidId) {
-      url += `&bid=${timeoutData[0].bidId}`;
-    }
 
     if (!utils.isEmpty(timeoutData[0].params)) {
       url += `&srcPageUrl=${getSrcPageUrl(timeoutData[0].params[0])}`;
