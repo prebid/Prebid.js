@@ -766,12 +766,14 @@ module.exports = class SplitChunksPlugin {
 
 							/* Commented the below code as it was restricting to execute the commom chunk `prebid`.
 							
+							const entrypoint = compilation.entrypoints.get(chunkName);
 							If the chosen name is already an entry point we remove the entry point
-							if (!item.cacheGroup.preserveEntrypoint && entrypoint) {
+							if (entrypoint) {
 								compilation.entrypoints.delete(chunkName);
 								entrypoint.remove();
 								newChunk.entryModule = undefined;
-							}*/
+							}
+							*/
 						}
 						if (item.cacheGroup.filename) {
 							if (!newChunk.isOnlyInitial()) {
