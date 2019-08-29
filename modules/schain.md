@@ -26,7 +26,7 @@ pbjs.setConfig( {
 	            {
 				   "asi":"indirectseller-2.com",
 				   "sid":"00002",
-				   "hp":2
+				   "hp":0
 			    },
 			]
 		}	
