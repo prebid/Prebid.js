@@ -184,7 +184,7 @@ function nobidInterpretResponse(response, bidRequest) {
   return bidResponses;
 };
 window.nobid = window.nobid || {};
-nobid.bidResponses = {};
+nobid.bidResponses = nobid.bidResponses || {};
 nobid.renderTag = function(doc, id, win) {
   log('nobid.renderTag()', id);
   var bid = nobid.bidResponses['' + id];
