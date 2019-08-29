@@ -5,7 +5,9 @@ import {VIDEO} from '../src/mediaTypes';
 import {STATUS} from '../src/constants';
 
 const BIDDER_CODE = 'telaria';
-const ENDPOINT = '.ads.tremorhub.com/ad/tag';
+const DOMAIN = 'ads.tremorhub.com';
+const ENDPOINT = `.${DOMAIN}/ad/tag`;
+const TIMEOUT_URL = `${DOMAIN}/evt`;
 
 export const spec = {
   code: BIDDER_CODE,
@@ -82,7 +84,7 @@ export const spec = {
         errorMessage += `: ${bidResult.error}`;
       }
       utils.logError(errorMessage);
-    } else if (bidResult.seatbid && bidResult.seatbid.length > 0) {
+    } else if (!utils.isEmpty(bidResult.seatbid)) {
       bidResult.seatbid[0].bid.forEach(tag => {
         bids.push(createBid(STATUS.GOOD, bidderRequest, tag, width, height, BIDDER_CODE));
       });
@@ -105,6 +107,79 @@ export const spec = {
       } catch (e) {}
     }
     return syncs;
+  },
+
+  /**
+   * See http://prebid.org/dev-docs/bidder-adaptor.html#registering-on-timeout for detailed semantic.
+   * @param timeoutData bidRequest
+   * @returns ${url}
+   */
+  onTimeout: function (timeoutData) {
+    let url = getTimeoutUrl(timeoutData);
+    if (url) {
+      utils.triggerPixel(url);
+    }
+  }
+};
+
+function getScheme() {
+  return ((document.location.protocol === 'https:') ? 'https' : 'http') + '://';
+}
+
+function getSrcPageUrl(params) {
+  return (params && params['srcPageUrl']) || encodeURIComponent(document.location.href);
+}
+
+function getSupplyChainString(schainObject){
+  let scStr = `${schainObject.ver},${schainObject.complete}`;
+
+  schainObject.nodes.forEach((node) => {
+    scStr += '!';
+    scStr += `${node.asi ? encodeURIComponent(node.asi) : ''},`;
+    scStr += `${node.sid ? encodeURIComponent(node.sid) : ''},`;
+    scStr += `${node.hp ? encodeURIComponent(node.hp) : ''},`;
+    scStr += `${node.rid ? encodeURIComponent(node.rid) : ''},`;
+    scStr += `${node.name ? encodeURIComponent(node.name) : ''},`;
+    scStr += `${node.domain ? encodeURIComponent(node.domain) : ''},`;
+  });
+
+
+  return scStr;
+}
+
+function getParamsString(params) {
+  let urlSuffix = '';
+
+  if (!utils.isEmpty(params)) {
+    for (let key in params) {
+      if (params.hasOwnProperty(key) && !utils.isEmpty(params[key])) {
+        urlSuffix += `&${key}=${params[key]}`;
+      }
+    }
+  }
+
+  return urlSuffix;
+}
+
+export const getTimeoutUrl = function(timeoutData) {
+  if (!utils.isEmpty(timeoutData)) {
+    let url = `${getScheme()}${TIMEOUT_URL}`;
+
+    if (timeoutData[0].auctionId) {
+      url += `?rid=${timeoutData[0].auctionId}`;
+    }
+    if (timeoutData[0].bidId) {
+      url += `&bid=${timeoutData[0].bidId}`;
+    }
+
+    if (!utils.isEmpty(timeoutData[0].params)) {
+      url += `&srcPageUrl=${getSrcPageUrl(timeoutData[0].params[0])}`;
+      url += `${getParamsString(timeoutData[0].params[0])}`;
+    }
+
+    url += '&hb=1&evt=TO';
+
+    return url;
   }
 };
 
@@ -118,7 +193,7 @@ export const spec = {
 function generateUrl(bid, bidderRequest) {
   let playerSize = (bid.mediaTypes && bid.mediaTypes.video && bid.mediaTypes.video.playerSize);
   if (!playerSize) {
-    utils.logWarn('Although player size isn\'t required it is highly recommended');
+    utils.logWarn(`Although player size isn't required it is highly recommended`);
   }
 
   let width, height;
@@ -133,44 +208,37 @@ function generateUrl(bid, bidderRequest) {
   }
 
   if (bid.params.supplyCode && bid.params.adCode) {
-    let scheme = ((document.location.protocol === 'https:') ? 'https' : 'http') + '://';
-    let url = scheme + bid.params.supplyCode + ENDPOINT + '?adCode=' + bid.params.adCode;
+    let url = `${getScheme()}${bid.params.supplyCode}${ENDPOINT}?adCode=${bid.params.adCode}`;
 
     if (width) {
-      url += ('&playerWidth=' + width);
+      url += (`&playerWidth=${width}`);
     }
     if (height) {
-      url += ('&playerHeight=' + height);
+      url += (`&playerHeight=${height}`);
     }
 
-    for (let key in bid.params) {
-      if (bid.params.hasOwnProperty(key) && bid.params[key]) {
-        url += ('&' + key + '=' + bid.params[key]);
-      }
-    }
+    url += `${getParamsString(bid.params)}`;
 
-    if (!bid.params['srcPageUrl']) {
-      url += ('&srcPageUrl=' + encodeURIComponent(document.location.href));
-    }
+    url += `&srcPageUrl=${getSrcPageUrl(bid.params)}`;
 
-    url += ('&transactionId=' + bid.transactionId + '&hb=1');
+    url += (`&transactionId=${bid.transactionId}`);
 
     if (bidderRequest) {
       if (bidderRequest.gdprConsent) {
         if (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') {
-          url += ('&gdpr=' + (bidderRequest.gdprConsent.gdprApplies ? 1 : 0));
+          url += (`&gdpr=${(bidderRequest.gdprConsent.gdprApplies ? 1 : 0)}`);
         }
         if (bidderRequest.gdprConsent.consentString) {
-          url += ('&gdpr_consent=' + bidderRequest.gdprConsent.consentString);
+          url += (`&gdpr_consent=${bidderRequest.gdprConsent.consentString}`);
         }
       }
 
       if (bidderRequest.refererInfo && bidderRequest.refererInfo.referer) {
-        url += ('&referrer=' + encodeURIComponent(bidderRequest.refererInfo.referer));
+        url += (`&referrer=${encodeURIComponent(bidderRequest.refererInfo.referer)}`);
       }
     }
 
-    return (url + '&fmt=json');
+    return (url + '&hb=1&fmt=json');
   }
 }
 
