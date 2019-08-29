@@ -65,8 +65,8 @@ let nativeBid = {
   nativeParams: {
     body: {
       required: true,
-      data:{
-        len:250
+      data: {
+        len: 250
       }
     },
     title: {
@@ -74,7 +74,7 @@ let nativeBid = {
     },
     image: {
       required: true,
-      sizes:[728,90]
+      sizes: [728, 90]
     }
   },
   params: {
@@ -198,7 +198,7 @@ describe('DatablocksAdapter', function() {
   });
 
   describe('buildRequests', function() {
-    let requests = spec.buildRequests([bid,bid2,nativeBid], bidderRequest);
+    let requests = spec.buildRequests([bid, bid2, nativeBid], bidderRequest);
     it('Creates an array of request objects', function() {
       expect(requests).to.be.an('array').that.is.not.empty;
     });
@@ -223,11 +223,11 @@ describe('DatablocksAdapter', function() {
         let imps = data['imp'];
         imps.forEach((imp, index) => {
           let curBid = bidderRequest.bids[index];
-          if (imp.banner ) {
-            expect(imp).to.have.all.keys('banner','id', 'secure', 'tagid');
+          if (imp.banner) {
+            expect(imp).to.have.all.keys('banner', 'id', 'secure', 'tagid');
             expect(imp.banner).to.be.a('object');
-          } else if ( imp.native ) {
-            expect(imp).to.have.all.keys('native','id', 'secure', 'tagid');
+          } else if (imp.native) {
+            expect(imp).to.have.all.keys('native', 'id', 'secure', 'tagid');
             expect(imp.native).to.be.a('string');
             let native = JSON.parse(imp.native);
             expect(native).to.be.a('object');
