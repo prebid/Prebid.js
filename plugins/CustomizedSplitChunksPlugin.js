@@ -1,10 +1,17 @@
 /*
+* CustomizedSplitChunksPlugin
+* 
+* There is only one change here from original SpliChunksPlugin which is that lines:770-774 is commented out 
+* as it was restricting the common chunk `prebid` to get executed.
+*/
+
+/*
 	MIT License http://www.opensource.org/licenses/mit-license.php
 	Author Tobias Koppers @sokra
 */
 "use strict";
 
-const crypto = require("crypto-js");
+const crypto = require("crypto");
 const SortableSet = require("webpack/lib/util/SortableSet");
 const GraphHelpers = require("webpack/lib/GraphHelpers");
 const { isSubset } = require("webpack/lib/util/SetHelpers");
@@ -756,14 +763,15 @@ module.exports = class SplitChunksPlugin {
 						}
 						if (chunkName) {
 							newChunk.chunkReason += ` (name: ${chunkName})`;
-							// If the chosen name is already an entry point we remove the entry point
-							const entrypoint = compilation.entrypoints.get(chunkName);
-							if (entrypoint) {
-								console.log('entypoint in splitchunks:::::', entrypoint.options.name);
+
+							/* Commented the below code as it was restricting to execute the commom chunk `prebid`.
+							
+							If the chosen name is already an entry point we remove the entry point
+							if (!item.cacheGroup.preserveEntrypoint && entrypoint) {
 								compilation.entrypoints.delete(chunkName);
 								entrypoint.remove();
 								newChunk.entryModule = undefined;
-							}
+							}*/
 						}
 						if (item.cacheGroup.filename) {
 							if (!newChunk.isOnlyInitial()) {

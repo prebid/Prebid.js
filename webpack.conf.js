@@ -5,9 +5,7 @@ var RequireEnsureWithoutJsonp = require('./plugins/RequireEnsureWithoutJsonp.js'
 var { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
 var argv = require('yargs').argv;
 var allowedModules = require('./allowedModules');
-var webpack = require('webpack');
-var AllowExecuteCommonChunk = require('./plugins/AllowMutateEsmExports.js')
-var SplitChunksPluginCopy = require('./plugins/SplitChunksPluginCopy.js')
+var CustomizedSplitChunksPlugin = require('./plugins/CustomizedSplitChunksPlugin.js')
 
 // list of module names to never include in the common bundle chunk
 var neverBundle = [
@@ -16,7 +14,6 @@ var neverBundle = [
 
 var plugins = [
   new RequireEnsureWithoutJsonp(),
-  //new AllowExecuteCommonChunk()
 ];
 
 if (argv.analyze) {
@@ -25,7 +22,7 @@ if (argv.analyze) {
   )
 }
 
-plugins.push(new SplitChunksPluginCopy({
+plugins.push(new CustomizedSplitChunksPlugin({
     chunks: 'all',
     cacheGroups: {
       vendors: false,
@@ -33,6 +30,7 @@ plugins.push(new SplitChunksPluginCopy({
         chunks: 'all',
         name: 'prebid',
         filename: 'prebid-core.js',
+        enforce: true,
         test: function(module, chunks) {
           return (
             (
@@ -47,18 +45,6 @@ plugins.push(new SplitChunksPluginCopy({
       }
     }
 }))
-// plugins.push(new webpack.DllPlugin({
-//   context: __dirname,
-//   name: '[name]_[hash]',
-//   path: path.join(__dirname, 'manifest.json'),
-// }));
-
-// plugins.push(new webpack.DllReferencePlugin({
-//   context: __dirname,
-//   manifest: require('./manifest.json'),
-//   scope: 'xyz',
-//   sourceType: 'commonjs2'
-// }));
 
 module.exports = {
   devtool: 'source-map',
@@ -100,28 +86,6 @@ module.exports = {
       name: 'prebid'
     },
     minimize: false,
-    // splitChunks: {
-    //   chunks: 'all',
-    //   cacheGroups: {
-    //     vendors: false,
-    //     prebid: {
-    //       chunks: 'all',
-    //       name: 'prebid',
-    //       filename: 'prebid-core.js',
-    //       test: function(module, chunks) {
-    //         return (
-    //           (
-    //             module.context && module.context.startsWith(path.resolve('./src')) &&
-    //             !(module.resource && neverBundle.some(name => module.resource.includes(name)))
-    //           ) ||
-    //           module.resource && (allowedModules.src.concat(['core-js'])).some(
-    //             name => module.resource.includes(path.resolve('./node_modules/' + name))
-    //           )
-    //         );
-    //       }
-    //     }
-    //   }
-    // }
     splitChunks: false
   },
   plugins
