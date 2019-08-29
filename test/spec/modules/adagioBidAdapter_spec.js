@@ -1,6 +1,7 @@
 import { expect } from 'chai';
-import { newBidder } from 'src/adapters/bidderFactory';
 import { spec } from 'modules/adagioBidAdapter';
+import { newBidder } from 'src/adapters/bidderFactory';
+import * as utils from 'src/utils';
 
 describe('adagioAdapter', () => {
   const adapter = newBidder(spec);
@@ -39,6 +40,7 @@ describe('adagioAdapter', () => {
     afterEach(function () {
       sandbox.restore();
     });
+
     let bid = {
       'bidder': 'adagio',
       'params': {
@@ -82,71 +84,86 @@ describe('adagioAdapter', () => {
       delete bidTest.params.adUnitElementId;
       expect(spec.isBidRequestValid(bidTest)).to.equal(false);
     });
+
+    it('should return false if not in the window.top', () => {
+      sandbox.stub(utils, 'getWindowTop').throws();
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
   });
 
   describe('buildRequests', () => {
-    let sandbox;
-    let sdbxStuGetComputedStyle;
+    const sandbox = sinon.createSandbox();
+
+    const banner300x250 = {
+      x: 0,
+      y: 0,
+      width: 300,
+      height: 250,
+      getBoundingClientRect: () => {
+        return {
+          width: banner300x250.width,
+          height: banner300x250.height,
+          left: banner300x250.x,
+          top: banner300x250.y,
+          right: banner300x250.x + banner300x250.width,
+          bottom: banner300x250.y + banner300x250.height
+        };
+      },
+    };
+
+    const banner300x600 = {
+      x: 0,
+      y: 0,
+      width: 300,
+      height: 600,
+      getBoundingClientRect: () => {
+        return {
+          width: banner300x600.width,
+          height: banner300x600.height,
+          left: banner300x600.x,
+          top: banner300x600.y,
+          right: banner300x600.x + banner300x600.width,
+          bottom: banner300x600.y + banner300x600.height
+        };
+      },
+    };
+
+    const computedStyleBlock = {
+      display: 'block'
+    };
+
+    const computedStyleNone = {
+      display: 'none'
+    };
+
+    const stubs = {
+      topGetElementById: undefined,
+      topGetComputedStyle: undefined
+    }
 
     top.ADAGIO = top.ADAGIO || {};
     top.ADAGIO.adUnits = top.ADAGIO.adUnits || {};
     top.ADAGIO.pbjsAdUnits = top.ADAGIO.pbjsAdUnits || [];
 
     beforeEach(function () {
-      sandbox = sinon.sandbox.create();
+      stubs.topGetElementById = sandbox.stub(top.document, 'getElementById');
+      stubs.topGetComputedStyle = sandbox.stub(top, 'getComputedStyle');
 
-      let element = {
-        x: 0,
-        y: 0,
-        width: 200,
-        height: 300,
-        getBoundingClientRect: () => {
-          return {
-            width: element.width,
-            height: element.height,
-            left: element.x,
-            top: element.y,
-            right: element.x + element.width,
-            bottom: element.y + element.height
-          };
-        },
-      };
-
-      let element2 = {
-        x: 0,
-        y: 0,
-        width: 200,
-        height: 300,
-        getBoundingClientRect: () => {
-          return {
-            width: element2.width,
-            height: element2.height,
-            left: element2.x,
-            top: element2.y,
-            right: element2.x + element2.width,
-            bottom: element2.y + element2.height
-          };
-        },
-      };
-
-      let cptedStyleBlock = {
-        display: 'block'
-      };
-
-      const sdbxStub = sandbox.stub(document, 'getElementById');
-      sdbxStuGetComputedStyle = sandbox.stub(window, 'getComputedStyle');
-      sdbxStub.withArgs('banner-atf-123').returns(element);
-      sdbxStub.withArgs('banner-atf-456').returns(element2);
-      sdbxStuGetComputedStyle.returns(cptedStyleBlock);
+      stubs.topGetElementById.withArgs('banner-atf-123').returns(banner300x250);
+      stubs.topGetElementById.withArgs('banner-atf-456').returns(banner300x600);
+      stubs.topGetElementById.withArgs('does-not-exist').returns(null);
+      stubs.topGetComputedStyle.returns(computedStyleBlock);
     });
 
     afterEach(function () {
-      // delete window.top._ADAGIO;
       sandbox.restore();
     });
 
+    after(function() {
+      sandbox.reset();
+    })
+
     let bidRequests = [
-      // organization 123
       {
         'bidder': 'adagio',
         'params': {
@@ -177,7 +194,6 @@ describe('adagioAdapter', () => {
         'bidderRequestId': '8vfscuixrovn8i',
         'auctionId': 'lel4fhp239i9km',
       },
-      // siteId 456
       {
         'bidder': 'adagio',
         'params': {
@@ -246,19 +262,55 @@ describe('adagioAdapter', () => {
       expect(request.url).to.equal(ENDPOINT);
     });
 
-    // it('features params must be an empty object if featurejs is not loaded', () => {
-    //   const requests = spec.buildRequests(bidRequests);
-    //   expect(requests).to.have.lengthOf(2);
-    //   const request = requests[0];
-    //   const expected = {};
-    //   expect(request.data.adUnits[0].features).to.deep.equal(expected);
-    // });
+    it('features params must be empty if param adUnitElementId is not found', () => {
+      const requests = spec.buildRequests([Object.assign({}, bidRequests[0], {params: {adUnitElementId: 'does-not-exist'}})]);
+      const request = requests[0];
+      const expected = {}
+      expect(request.data.adUnits[0].features).to.deep.equal(expected);
+    });
+
+    it('features params "adunit_position" should be computed even if DOM element is display:none', () => {
+      stubs.topGetComputedStyle.returns(computedStyleNone);
+      const requests = spec.buildRequests([Object.assign({}, bidRequests[0])]);
+      let request = requests[0];
+      expect(request.data.adUnits[0].features).to.exist;
+      expect(request.data.adUnits[0].features.adunit_position).to.equal('0x0');
+    });
+
+    it('features params "viewport" should be computed even if window.innerWidth is not supported', () => {
+      sandbox.stub(top, 'innerWidth').value(undefined);
+      const requests = spec.buildRequests([Object.assign({}, bidRequests[0])]);
+      let request = requests[0];
+      expect(request.data.adUnits[0].features).to.exist;
+      expect(request.data.adUnits[0].features.viewport_dimensions).to.match(/^[\d]+x[\d]+$/);
+    });
 
     it('features params must be an object if featurejs is loaded', () => {
       let requests = spec.buildRequests(bidRequests);
       let request = requests[0];
       expect(request.data.adUnits[0].features).to.exist;
     });
+
+    it('features params must be undefined if not in window.top', () => {
+      sandbox.stub(utils, 'getWindowTop').throws();
+      const requests = spec.buildRequests(bidRequests);
+      let request = requests[0];
+      expect(request.data.adUnits[0].features).to.undefined;
+    });
+
+    it('device type must be "5" when user agent match tablet test', () => {
+      sandbox.stub(top.navigator, 'userAgent').value('Mozilla/5.0 (iPad; CPU OS 12_1_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/16C50');
+      const requests = spec.buildRequests([Object.assign({}, bidRequests[0])]);
+      const request = requests[0];
+      expect(request.data.device.deviceType).to.equal(5);
+    })
+
+    it('device type must be "4" when user agent match phone test', () => {
+      sandbox.stub(top.navigator, 'userAgent').value('Mozilla/5.0 (Linux; Android 7.0; SAMSUNG SM-G950F Build/NRD90M) AppleWebKit/537.36 (KHTML, like Gecko) SamsungBrowser/5.2 Chrome/51.0.2704.106 Mobile Safari/537.36');
+      const requests = spec.buildRequests([Object.assign({}, bidRequests[0])]);
+      const request = requests[0];
+      expect(request.data.device.deviceType).to.equal(4);
+    })
 
     it('outerAdUnitElementId must be added when PostBid param has been set', () => {
       top.ADAGIO = top.ADAGIO || {};
@@ -349,6 +401,8 @@ describe('adagioAdapter', () => {
   });
 
   describe('interpretResponse', () => {
+    const sandbox = sinon.createSandbox();
+
     let serverResponse = {
       body: {
         data: {
@@ -380,6 +434,17 @@ describe('adagioAdapter', () => {
       }
     };
 
+    let serverResponseWhichThrowsException = {
+      body: {
+        data: {
+          pred: 1
+        },
+        bids: {
+          foo: 'bar'
+        }
+      }
+    };
+
     let bidRequest = {
       'data': {
         'adUnits': [
@@ -406,8 +471,8 @@ describe('adagioAdapter', () => {
       }
     };
 
-    beforeEach(function () {
-      // delete (window.top.ADAGIO);
+    afterEach(function() {
+      sandbox.restore();
     });
 
     it('Should returns empty response if body is empty', () => {
@@ -445,7 +510,19 @@ describe('adagioAdapter', () => {
       spec.interpretResponse(serverResponse, bidRequest);
       expect(window.top.ADAGIO).ok;
       expect(window.top.ADAGIO.queue).to.be.an('array');
-      expect(window.top.ADAGIO.queue).not.empty;
+    });
+
+    it('Should not populate ADAGIO queue with ssp-data if not in top window', () => {
+      utils.getWindowTop().ADAGIO.queue = [];
+      sandbox.stub(utils, 'getWindowTop').throws();
+      spec.interpretResponse(serverResponse, bidRequest);
+      expect(window.top.ADAGIO).ok;
+      expect(window.top.ADAGIO.queue).to.be.an('array');
+      expect(window.top.ADAGIO.queue).empty;
+    });
+
+    it('should return an empty response even if an exception is ', () => {
+      expect(spec.interpretResponse(serverResponseWhichThrowsException, bidRequest)).to.be.an('array').length(0);
     });
   });
 

@@ -35,7 +35,7 @@ const ADSRV_EVENTS = {
 
 function canAccessTopWindow() {
   try {
-    if (window.top.location.href) {
+    if (utils.getWindowTop().location.href) {
       return true;
     }
   } catch (error) {
@@ -123,13 +123,7 @@ const _features = {
     const w = window.top;
     const body = w.document.body;
     const html = w.document.documentElement;
-    let pageHeight = 0;
-
-    if (w === w.top) {
-      pageHeight = Math.max(body.scrollHeight, body.offsetHeight, html.clientHeight, html.scrollHeight, html.offsetHeight);
-    } else {
-      pageHeight = Math.max(body.offsetHeight, html.scrollHeight, html.offsetHeight);
-    }
+    const pageHeight = Math.max(body.scrollHeight, body.offsetHeight, html.clientHeight, html.scrollHeight, html.offsetHeight);
 
     return viewportDims[0] + 'x' + pageHeight;
   },
@@ -140,14 +134,9 @@ const _features = {
     const w = window.top;
     const d = w.document;
 
-    if (w.innerWidth != null) {
+    if (w.innerWidth) {
       viewPortWidth = w.innerWidth;
       viewPortHeight = w.innerHeight;
-    } else if (d.documentElement != null &&
-        d.documentElement.clientWidth != null &&
-        d.documentElement.clientWidth !== 0) {
-      viewPortWidth = d.documentElement.clientWidth;
-      viewPortHeight = d.documentElement.clientHeight;
     } else {
       viewPortWidth = d.getElementsByTagName('body')[0].clientWidth;
       viewPortHeight = d.getElementsByTagName('body')[0].clientHeight;
@@ -186,6 +175,7 @@ const _features = {
     const mustDisplayElement = elComputedDisplay === 'none';
 
     if (mustDisplayElement) {
+      el.style = el.style || {};
       el.style.display = 'block';
       box = el.getBoundingClientRect();
       el.style.display = elComputedDisplay;
@@ -301,7 +291,6 @@ function _getFeatures(bidRequest) {
   }
 
   let features = {};
-
   if (element) {
     features = Object.assign({}, {
       print_number: _features.getPrintNumber(element).toString(),
