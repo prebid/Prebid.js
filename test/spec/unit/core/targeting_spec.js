@@ -330,6 +330,73 @@ describe('targeting tests', function () {
       expect(logErrorStub.calledOnce).to.be.true;
     });
 
+    describe('targetingControls.alwaysIncludeDeals', function () {
+      let bid4;
+
+      let targetingWithAdnxsDeal = {
+        hb_deal_rubicon: '1234',
+        hb_deal: '1234',
+        hb_pb: '0.53',
+        hb_adid: '148018fe5e',
+        hb_bidder: 'rubicon',
+        foobar: '300x250',
+        hb_deal_appnexus: '1234',
+        hb_pb_appnexus: '0.53',
+        hb_adid_appnexus: '148018fe5e',
+        hb_bidder_appnexus: 'appnexus',
+      };
+      let targetingWithoutAdnxsDeal = {
+        hb_deal_rubicon: '1234',
+        hb_deal: '1234',
+        hb_pb: '0.53',
+        hb_adid: '148018fe5e',
+        hb_bidder: 'rubicon',
+        foobar: '300x250'
+      };
+
+      beforeEach(function() {
+        bid4 = utils.deepClone(bid1);
+        bid4.adserverTargeting['hb_bidder'] = bid4.bidder = bid4.bidderCode = 'appnexus';
+        bid4.cpm = 0.1; // losing bid so not included if enableSendAllBids === false
+        bid4.dealId = '1234';
+        enableSendAllBids = false;
+
+        bidsReceived.push(bid4);
+      });
+
+      it('does not include losing deals when alwaysIncludeDeals not set', function () {
+        const targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0']);
+
+        // no appnexus stuff added
+        expect(targeting['/123456/header-bid-tag-0']).to.deep.equal(targetingWithoutAdnxsDeal);
+      });
+
+      it('does not include losing deals when alwaysIncludeDeals set to false', function () {
+        config.setConfig({
+          targetingControls: {
+            alwaysIncludeDeals: false
+          }
+        });
+
+        const targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0']);
+
+        // no appnexus stuff added
+        expect(targeting['/123456/header-bid-tag-0']).to.deep.equal(targetingWithoutAdnxsDeal);
+      });
+
+      it('includes losing deals when alwaysIncludeDeals set to true', function () {
+        config.setConfig({
+          targetingControls: {
+            alwaysIncludeDeals: true
+          }
+        });
+        const targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0']);
+
+        // all appnexus keys added, not just hb_deal_appnexus
+        expect(targeting['/123456/header-bid-tag-0']).to.deep.equal(targetingWithAdnxsDeal);
+      });
+    });
+
     it('selects the top bid when enableSendAllBids true', function () {
       enableSendAllBids = true;
       let targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0']);
