@@ -7,8 +7,7 @@ import { auctionManager } from '../src/auctionManager';
 import { groupBy, deepAccess, logError, compareOn } from '../src/utils';
 import { config } from '../src/config';
 import { ADPOD } from '../src/mediaTypes';
-import { initAdpodHooks, TARGETING_KEY_PB_CAT_DUR, TARGETING_KEY_CACHE_ID, callPrebidCacheAfterAuction, sortByPricePerSecond } from './adpod';
-import { getHook } from '../src/hook';
+import { getHook, submodule } from '../src/hook';
 
 export function notifyTranslationModule(fn) {
   fn.call(this, 'freewheel');
@@ -37,7 +36,7 @@ export function getTargeting({codes, callback} = {}) {
 
   let bids = getBidsForAdpod(bidsReceived, adPodAdUnits);
   bids = (competiveExclusionEnabled || deferCachingEnabled) ? getExclusiveBids(bids) : bids;
-  bids.sort(sortByPricePerSecond);
+  bids.sort(adpodUtils.sortByPricePerSecond);
 
   let targeting = {};
   if (deferCachingEnabled === false) {
@@ -50,13 +49,13 @@ export function getTargeting({codes, callback} = {}) {
         .forEach((bid, index, arr) => {
           if (bid.video.durationBucket <= adPodDurationSeconds) {
             adPodTargeting.push({
-              [TARGETING_KEY_PB_CAT_DUR]: bid.adserverTargeting[TARGETING_KEY_PB_CAT_DUR]
+              [adpodUtils.TARGETING_KEY_PB_CAT_DUR]: bid.adserverTargeting[adpodUtils.TARGETING_KEY_PB_CAT_DUR]
             });
             adPodDurationSeconds -= bid.video.durationBucket;
           }
           if (index === arr.length - 1 && adPodTargeting.length > 0) {
             adPodTargeting.push({
-              [TARGETING_KEY_CACHE_ID]: bid.adserverTargeting[TARGETING_KEY_CACHE_ID]
+              [adpodUtils.TARGETING_KEY_CACHE_ID]: bid.adserverTargeting[adpodUtils.TARGETING_KEY_CACHE_ID]
             });
           }
         });
@@ -79,7 +78,7 @@ export function getTargeting({codes, callback} = {}) {
         });
     });
 
-    callPrebidCacheAfterAuction(bidsToCache, function(error, bidsSuccessfullyCached) {
+    adpodUtils.callPrebidCacheAfterAuction(bidsToCache, function(error, bidsSuccessfullyCached) {
       if (error) {
         callback(error, null);
       } else {
@@ -89,12 +88,12 @@ export function getTargeting({codes, callback} = {}) {
 
           groupedBids[adUnitCode].forEach((bid, index, arr) => {
             adPodTargeting.push({
-              [TARGETING_KEY_PB_CAT_DUR]: bid.adserverTargeting[TARGETING_KEY_PB_CAT_DUR]
+              [adpodUtils.TARGETING_KEY_PB_CAT_DUR]: bid.adserverTargeting[adpodUtils.TARGETING_KEY_PB_CAT_DUR]
             });
 
             if (index === arr.length - 1 && adPodTargeting.length > 0) {
               adPodTargeting.push({
-                [TARGETING_KEY_CACHE_ID]: bid.adserverTargeting[TARGETING_KEY_CACHE_ID]
+                [adpodUtils.TARGETING_KEY_CACHE_ID]: bid.adserverTargeting[adpodUtils.TARGETING_KEY_CACHE_ID]
               });
             }
           });
@@ -126,8 +125,8 @@ function getAdPodAdUnits(codes) {
  */
 function getExclusiveBids(bidsReceived) {
   let bids = bidsReceived
-    .map((bid) => Object.assign({}, bid, {[TARGETING_KEY_PB_CAT_DUR]: bid.adserverTargeting[TARGETING_KEY_PB_CAT_DUR]}));
-  bids = groupBy(bids, TARGETING_KEY_PB_CAT_DUR);
+    .map((bid) => Object.assign({}, bid, {[adpodUtils.TARGETING_KEY_PB_CAT_DUR]: bid.adserverTargeting[adpodUtils.TARGETING_KEY_PB_CAT_DUR]}));
+  bids = groupBy(bids, adpodUtils.TARGETING_KEY_PB_CAT_DUR);
   let filteredBids = [];
   Object.keys(bids).forEach((targetingKey) => {
     bids[targetingKey].sort(compareOn('responseTimestamp'));
@@ -148,7 +147,9 @@ function getBidsForAdpod(bidsReceived, adPodAdUnits) {
     .filter((bid) => adUnitCodes.indexOf(bid.adUnitCode) != -1 && (bid.video && bid.video.context === ADPOD))
 }
 
-initAdpodHooks();
 registerVideoSupport('freewheel', {
   getTargeting: getTargeting
 });
+
+export const adpodUtils = {};
+submodule('adpod', adpodUtils);
