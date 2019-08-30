@@ -24,8 +24,27 @@ describe('PubMatic adapter', function () {
   let bannerVideoAndNativeBidRequests;
   let bannerBidResponse;
   let videoBidResponse;
+  let schainConfig;
 
   beforeEach(function () {
+    schainConfig = {
+      'ver': '1.0',
+      'complete': 1,
+      'nodes': [
+        {
+          'asi': 'indirectseller.com',
+          'sid': '00001',
+          'hp': 1
+        },
+
+        {
+          'asi': 'indirectseller-2.com',
+          'sid': '00002',
+          'hp': 2
+        }
+      ]
+    };
+
     bidRequests = [
       {
         bidder: 'pubmatic',
@@ -55,7 +74,8 @@ describe('PubMatic adapter', function () {
         bidId: '23acc48ad47af5',
         requestId: '0fb4905b-9456-4152-86be-c6f6d259ba99',
         bidderRequestId: '1c56ad30b9b8ca8',
-        transactionId: '92489f71-1bf2-49a0-adf9-000cea934729'
+        transactionId: '92489f71-1bf2-49a0-adf9-000cea934729',
+        schain: schainConfig
       }
     ];
 
@@ -728,6 +748,7 @@ describe('PubMatic adapter', function () {
   		  expect(data.imp[0].banner.h).to.equal(250); // height
   		  expect(data.imp[0].ext.pmZoneId).to.equal(bidRequests[0].params.pmzoneid.split(',').slice(0, 50).map(id => id.trim()).join()); // pmzoneid
         expect(data.imp[0].bidfloorcur).to.equal(bidRequests[0].params.currency);
+        expect(data.source.ext.schain).to.deep.equal(bidRequests[0].schain);
   		});
 
       it('Request params check: without adSlot', function () {
