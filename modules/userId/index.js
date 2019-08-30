@@ -455,18 +455,10 @@ export function init(config) {
       syncDelay = utils.isNumber(userSync.syncDelay) ? userSync.syncDelay : DEFAULT_SYNC_DELAY;
       updateSubmodules();
     }
-<<<<<<< HEAD
-  })
-
-  // exposing getUserIds function in global-name-space so that userIds stored in Prebid can be used by external codes.
-  let theGlobal = getGlobal();
-  theGlobal.getUserIds = getUserIds;
-=======
   });
 
   // exposing getUserIds function in global-name-space so that userIds stored in Prebid can be used by external codes.
   (getGlobal()).getUserIds = getUserIds;
->>>>>>> 11200ac2c2bd5dc1ab0060c24893df4cc2f324c1
 }
 
 // init config update listener to start the application
