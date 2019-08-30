@@ -5,7 +5,6 @@ import { newBidder } from 'src/adapters/bidderFactory';
 import { spec } from 'modules/ixBidAdapter';
 
 describe('IndexexchangeAdapter', function () {
-  const IX_INSECURE_ENDPOINT = 'http://as.casalemedia.com/cygnus';
   const IX_SECURE_ENDPOINT = 'https://as-sec.casalemedia.com/cygnus';
   const BIDDER_VERSION = 7.2;
 
@@ -401,7 +400,7 @@ describe('IndexexchangeAdapter', function () {
 
     it('request should be made to IX endpoint with GET method', function () {
       expect(requestMethod).to.equal('GET');
-      expect(requestUrl).to.equal(IX_INSECURE_ENDPOINT);
+      expect(requestUrl).to.equal(IX_SECURE_ENDPOINT);
     });
 
     it('query object (version, siteID and request) should be correct', function () {
