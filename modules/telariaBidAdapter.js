@@ -152,7 +152,7 @@ function getSupplyChainAsUrlParam(schainObject) {
     scStr += `${getEncodedValIfNotEmpty(node.hp)},`;
     scStr += `${getEncodedValIfNotEmpty(node.rid)},`;
     scStr += `${getEncodedValIfNotEmpty(node.name)},`;
-    scStr += `${getEncodedValIfNotEmpty(node.domain)},`;
+    scStr += `${getEncodedValIfNotEmpty(node.domain)}`;
   });
 
   return scStr;
