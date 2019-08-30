@@ -171,7 +171,6 @@ adapterManager.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTi
 
   let clientBidderCodes = bidderCodes;
   let clientTestAdapters = [];
-  let serverTestAdapters = [];
 
   if (_s2sConfig.enabled) {
     // if s2sConfig.bidderControl testing is turned on
@@ -179,7 +178,6 @@ adapterManager.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTi
       // get all adapters doing client testing
       const bidderMap = s2sTestingModule.getSourceBidderMap(adUnits);
       clientTestAdapters = bidderMap[s2sTestingModule.CLIENT];
-      serverTestAdapters = bidderMap[s2sTestingModule.SERVER];
     }
 
     // these are called on the s2s adapter
@@ -192,9 +190,10 @@ adapterManager.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTi
 
     if (
       isTestingServerOnly() &&
-      Object.keys(_s2sConfig.bidderControl)
-        .filter(testBidder => includes(serverTestAdapters, testBidder))
-        .length > 0
+      adUnits.find(adUnit => adUnit.bids.find(bid => (
+        bid.bidSource || _s2sConfig.bidderControl[bid.bidder]) &&
+        bid.finalSource === s2sTestingModule.SERVER
+      ))
     ) {
       clientBidderCodes.length = 0;
     }
