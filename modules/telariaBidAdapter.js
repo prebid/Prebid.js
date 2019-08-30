@@ -179,7 +179,7 @@ export const getTimeoutUrl = function(timeoutData) {
   if (!utils.isEmpty(params)) {
     let url = `${getScheme()}${EVENTS_ENDPOINT}`;
 
-    url += `&srcPageUrl=${getSrcPageUrl(params)}`;
+    url += `?srcPageUrl=${getSrcPageUrl(params)}`;
     url += `${getUrlParams(params)}`;
 
     url += '&hb=1&evt=TO';
