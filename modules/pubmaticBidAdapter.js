@@ -624,10 +624,27 @@ function _handleTTDId(eids, validBidRequests) {
   }
 }
 
+function _handlePubCommonId(eids, validBidRequests) {
+  let pubcid = null;
+  if (utils.isStr(utils.deepAccess(validBidRequests, '0.userId.pubcid'))) {
+    pubcid = validBidRequests[0].userId.pubcid;
+  }
+  if (pubcid !== null) {
+    eids.push({
+      source: 'pubcommon',
+      uids: [{
+        'id': pubcid,
+        'atype': 1
+      }]
+    });
+  }
+}
+
 function _handleEids(payload, validBidRequests) {
   let eids = [];
   _handleDigitrustId(eids);
   _handleTTDId(eids, validBidRequests);
+  _handlePubCommonId(eids,validBidRequests);
   if (eids.length > 0) {
     payload.user.eids = eids;
   }
