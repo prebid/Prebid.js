@@ -41,7 +41,7 @@ export const spec = {
         accumulator[bid.bidId].TransactionID = bid.transactionId;
         accumulator[bid.bidId].Width = size.width;
         accumulator[bid.bidId].Height = size.height;
-        accumulator[bid.bidId].AvaiableSizes = sizesArray.join(',');
+        accumulator[bid.bidId].AvailableSizes = sizesArray.join(',');
         return accumulator;
       }, {}),
       PageRefreshed: getPageRefreshed()

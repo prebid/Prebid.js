@@ -755,6 +755,38 @@ function _blockedIabCategoriesValidation(payload, blockedIabCategories) {
   }
 }
 
+function _handleDealCustomTargetings(payload, dctrArr, validBidRequests) {
+  var dctr = '';
+  var dctrLen;
+  // set dctr value in site.ext, if present in validBidRequests[0], else ignore
+  if (dctrArr.length > 0) {
+    if (validBidRequests[0].params.hasOwnProperty('dctr')) {
+      dctr = validBidRequests[0].params.dctr;
+      if (utils.isStr(dctr) && dctr.length > 0) {
+        var arr = dctr.split('|');
+        dctr = '';
+        arr.forEach(val => {
+          dctr += (val.length > 0) ? (val.trim() + '|') : '';
+        });
+        dctrLen = dctr.length;
+        if (dctr.substring(dctrLen, dctrLen - 1) === '|') {
+          dctr = dctr.substring(0, dctrLen - 1);
+        }
+        payload.site.ext = {
+          key_val: dctr.trim()
+        }
+      } else {
+        utils.logWarn(LOG_WARN_PREFIX + 'Ignoring param : dctr with value : ' + dctr + ', expects string-value, found empty or non-string value');
+      }
+      if (dctrArr.length > 1) {
+        utils.logWarn(LOG_WARN_PREFIX + 'dctr value found in more than 1 adunits. Value from 1st adunit will be picked. Ignoring values from subsequent adunits');
+      }
+    } else {
+      utils.logWarn(LOG_WARN_PREFIX + 'dctr value not found in 1st adunit, ignoring values from subsequent adunits');
+    }
+  }
+}
+
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
@@ -796,11 +828,10 @@ export const spec = {
     var conf = _initConf(refererInfo);
     var payload = _createOrtbTemplate(conf);
     var bidCurrency = '';
-    var dctr = '';
-    var dctrLen;
     var dctrArr = [];
     var bid;
     var blockedIabCategories = [];
+
     validBidRequests.forEach(originalBid => {
       bid = utils.deepClone(originalBid);
       bid.params.adSlot = bid.params.adSlot || '';
@@ -852,6 +883,21 @@ export const spec = {
     payload.ext.wrapper.wp = 'pbjs';
     payload.user.gender = (conf.gender ? conf.gender.trim() : UNDEFINED);
     payload.user.geo = {};
+    payload.user.geo.lat = _parseSlotParam('lat', conf.lat);
+    payload.user.geo.lon = _parseSlotParam('lon', conf.lon);
+    payload.user.yob = _parseSlotParam('yob', conf.yob);
+    payload.device.geo = payload.user.geo;
+    payload.site.page = conf.kadpageurl.trim() || payload.site.page.trim();
+    payload.site.domain = _getDomainFromURL(payload.site.page);
+
+    // adding schain object
+    if (validBidRequests[0].schain) {
+      payload.source = {
+        ext: {
+          schain: validBidRequests[0].schain
+        }
+      };
+    }
 
     // Attaching GDPR Consent Params
     if (bidderRequest && bidderRequest.gdprConsent) {
@@ -866,43 +912,10 @@ export const spec = {
       };
     }
 
-    payload.user.geo.lat = _parseSlotParam('lat', conf.lat);
-    payload.user.geo.lon = _parseSlotParam('lon', conf.lon);
-    payload.user.yob = _parseSlotParam('yob', conf.yob);
-    payload.device.geo = payload.user.geo;
-    payload.site.page = conf.kadpageurl.trim() || payload.site.page.trim();
-    payload.site.domain = _getDomainFromURL(payload.site.page);
-
-    // set dctr value in site.ext, if present in validBidRequests[0], else ignore
-    if (dctrArr.length > 0) {
-      if (validBidRequests[0].params.hasOwnProperty('dctr')) {
-        dctr = validBidRequests[0].params.dctr;
-        if (utils.isStr(dctr) && dctr.length > 0) {
-          var arr = dctr.split('|');
-          dctr = '';
-          arr.forEach(val => {
-            dctr += (val.length > 0) ? (val.trim() + '|') : '';
-          });
-          dctrLen = dctr.length;
-          if (dctr.substring(dctrLen, dctrLen - 1) === '|') {
-            dctr = dctr.substring(0, dctrLen - 1);
-          }
-          payload.site.ext = {
-            key_val: dctr.trim()
-          }
-        } else {
-          utils.logWarn(LOG_WARN_PREFIX + 'Ignoring param : dctr with value : ' + dctr + ', expects string-value, found empty or non-string value');
-        }
-        if (dctrArr.length > 1) {
-          utils.logWarn(LOG_WARN_PREFIX + 'dctr value found in more than 1 adunits. Value from 1st adunit will be picked. Ignoring values from subsequent adunits');
-        }
-      } else {
-        utils.logWarn(LOG_WARN_PREFIX + 'dctr value not found in 1st adunit, ignoring values from subsequent adunits');
-      }
-    }
-
+    _handleDealCustomTargetings(payload, dctrArr, validBidRequests);
     _handleEids(payload, validBidRequests);
     _blockedIabCategoriesValidation(payload, blockedIabCategories);
+
     return {
       method: 'POST',
       url: ENDPOINT,
@@ -919,6 +932,8 @@ export const spec = {
   interpretResponse: (response, request) => {
     const bidResponses = [];
     var respCur = DEFAULT_CURRENCY;
+    let parsedRequest = JSON.parse(request.data);
+    let parsedReferrer = parsedRequest.site && parsedRequest.site.ref ? parsedRequest.site.ref : '';
     try {
       if (response.body && response.body.seatbid && utils.isArray(response.body.seatbid)) {
         // Supporting multiple bid responses for same adSize
@@ -927,7 +942,6 @@ export const spec = {
           seatbidder.bid &&
             utils.isArray(seatbidder.bid) &&
             seatbidder.bid.forEach(bid => {
-              let parsedRequest = JSON.parse(request.data);
               let newBid = {
                 requestId: bid.impid,
                 cpm: (parseFloat(bid.price) || 0).toFixed(2),
@@ -938,7 +952,7 @@ export const spec = {
                 currency: respCur,
                 netRevenue: NET_REVENUE,
                 ttl: 300,
-                referrer: parsedRequest.site && parsedRequest.site.ref ? parsedRequest.site.ref : '',
+                referrer: parsedReferrer,
                 ad: bid.adm
               };
               if (parsedRequest.imp && parsedRequest.imp.length > 0) {
