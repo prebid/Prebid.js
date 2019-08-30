@@ -375,7 +375,7 @@ const spec = {
         ),
         focus:
           typeof document.hasFocus === 'function'
-            ? document.hasFocus()
+            ? +document.hasFocus()
             : undefined
       },
       options: {
