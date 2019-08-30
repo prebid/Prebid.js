@@ -50,6 +50,7 @@
  * @typedef {Object} SubmoduleParams
  * @property {(string|undefined)} partner - partner url param value
  * @property {(string|undefined)} url - webservice request url used to load Id data
+ * @property {(string|undefined)} pid - placement id url param value
  */
 
 /**
@@ -186,7 +187,9 @@ function processSubmoduleCallbacks(submodules) {
       submodule.callback = undefined;
       // if valid, id data should be saved to cookie/html storage
       if (idObj) {
-        setStoredValue(submodule.config.storage, idObj, submodule.config.storage.expires);
+        if (submodule.config.storage) {
+          setStoredValue(submodule.config.storage, idObj, submodule.config.storage.expires);
+        }
         // cache decoded value (this is copied to every adUnit bid)
         submodule.idObj = submodule.submodule.decode(idObj);
       } else {
@@ -201,7 +204,7 @@ function processSubmoduleCallbacks(submodules) {
  * @param {SubmoduleContainer[]} submodules
  */
 function getCombinedSubmoduleIds(submodules) {
-  if ([submodules].some(i => !Array.isArray(i) || !i.length)) {
+  if (!Array.isArray(submodules) || !submodules.length) {
     return {};
   }
   const combinedSubmoduleIds = submodules.filter(i => utils.isPlainObject(i.idObj) && Object.keys(i.idObj).length).reduce((carry, i) => {
@@ -328,6 +331,13 @@ function initSubmodules(submodules, consentData) {
     } else if (submodule.config.value) {
       // cache decoded value (this is copied to every adUnit bid)
       submodule.idObj = submodule.config.value;
+    } else {
+      const result = submodule.submodule.getId(submodule.config.params, consentData);
+      if (typeof result === 'function') {
+        submodule.callback = result;
+      } else {
+        submodule.idObj = submodule.submodule.decode();
+      }
     }
     carry.push(submodule);
     return carry;
@@ -360,6 +370,8 @@ function getValidSubmoduleConfigs(configRegistry, submoduleRegistry, activeStora
       activeStorageTypes.indexOf(config.storage.type) !== -1) {
       carry.push(config);
     } else if (utils.isPlainObject(config.value)) {
+      carry.push(config);
+    } else if (!config.storage && !config.value) {
       carry.push(config);
     }
     return carry;
@@ -443,11 +455,18 @@ export function init(config) {
       syncDelay = utils.isNumber(userSync.syncDelay) ? userSync.syncDelay : DEFAULT_SYNC_DELAY;
       updateSubmodules();
     }
+<<<<<<< HEAD
   })
 
   // exposing getUserIds function in global-name-space so that userIds stored in Prebid can be used by external codes.
   let theGlobal = getGlobal();
   theGlobal.getUserIds = getUserIds;
+=======
+  });
+
+  // exposing getUserIds function in global-name-space so that userIds stored in Prebid can be used by external codes.
+  (getGlobal()).getUserIds = getUserIds;
+>>>>>>> 11200ac2c2bd5dc1ab0060c24893df4cc2f324c1
 }
 
 // init config update listener to start the application

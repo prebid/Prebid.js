@@ -5,6 +5,11 @@ const BIDDER_CODE = 'kargo';
 const HOST = 'https://krk.kargo.com';
 const SYNC = 'https://crb.kargo.com/api/v1/initsyncrnd/{UUID}?seed={SEED}&idx={INDEX}';
 const SYNC_COUNT = 5;
+
+let sessionId,
+  lastPageUrl,
+  requestCounter;
+
 export const spec = {
   code: BIDDER_CODE,
   isBidRequestValid: function(bid) {
@@ -22,8 +27,13 @@ export const spec = {
       bidIds[bid.bidId] = bid.params.placementId;
       bidSizes[bid.bidId] = bid.sizes;
     });
+    let tdid;
+    if (validBidRequests.length > 0 && validBidRequests[0].userId && validBidRequests[0].userId.tdid) {
+      tdid = validBidRequests[0].userId.tdid;
+    }
     const transformedParams = Object.assign({}, {
       sessionId: spec._getSessionId(),
+      requestCount: spec._getRequestCount(),
       timeout: bidderRequest.timeout,
       currency: currency,
       cpmGranularity: 1,
@@ -35,7 +45,7 @@ export const spec = {
       bidIDs: bidIds,
       bidSizes: bidSizes,
       prebidRawBidRequests: validBidRequests
-    }, spec._getAllMetadata());
+    }, spec._getAllMetadata(tdid));
     const encodedParams = encodeURIComponent(JSON.stringify(transformedParams));
     return Object.assign({}, bidderRequest, {
       method: 'GET',
@@ -159,14 +169,18 @@ export const spec = {
     }
   },
 
-  _getUserIds() {
+  _getUserIds(tdid) {
     const crb = spec._getCrb();
-    return {
+    const userIds = {
       kargoID: crb.userId,
       clientID: crb.clientId,
       crbIDs: crb.syncIds || {},
       optOut: crb.optOut
     };
+    if (tdid) {
+      userIds.tdID = tdid;
+    }
+    return userIds;
   },
 
   _getClientId() {
@@ -174,9 +188,9 @@ export const spec = {
     return crb.clientId;
   },
 
-  _getAllMetadata() {
+  _getAllMetadata(tdid) {
     return {
-      userIDs: spec._getUserIds(),
+      userIDs: spec._getUserIds(tdid),
       krux: spec._getKrux(),
       pageURL: window.location.href,
       rawCRB: spec._readCookie('krg_crb'),
@@ -185,10 +199,18 @@ export const spec = {
   },
 
   _getSessionId() {
-    if (!spec._sessionId) {
-      spec._sessionId = spec._generateRandomUuid();
+    if (!sessionId) {
+      sessionId = spec._generateRandomUuid();
     }
-    return spec._sessionId;
+    return sessionId;
+  },
+
+  _getRequestCount() {
+    if (lastPageUrl === window.location.pathname) {
+      return ++requestCounter;
+    }
+    lastPageUrl = window.location.pathname;
+    return requestCounter = 0;
   },
 
   _generateRandomUuid() {
