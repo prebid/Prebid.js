@@ -17,6 +17,7 @@
   "rhythmoneBidAdapter",
   "pubmaticBidAdapter",
   "synacormediaBidAdapter",
-  "googleAnalyticsAdapter"
+  "googleAnalyticsAdapter",
+  "tripleliftBidAdapter"
 ]
 
