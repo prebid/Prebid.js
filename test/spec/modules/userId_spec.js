@@ -391,6 +391,13 @@ describe('User ID', function() {
       // callback to continue auction if timed out
       global.setTimeout.callArg(0);
       auctionSpy.calledOnce.should.equal(true);
+
+      // does not call auction again once ids are synced
+      mockIdCallback.callArgWith(0, {'MOCKID': '1234'});
+      auctionSpy.calledOnce.should.equal(true);
+
+      // no sync after auction ends
+      events.on.called.should.equal(false);
     });
 
     it('delays auction if auctionDelay is set, continuing auction if ids are fetched before timing out', function(done) {
@@ -426,6 +433,9 @@ describe('User ID', function() {
         });
         done();
       });
+
+      // no sync after auction ends
+      events.on.called.should.equal(false);
     });
 
     it('does not delay auction if not set, delays id fetch after auction ends with syncDelay', function() {
@@ -510,6 +520,9 @@ describe('User ID', function() {
       global.setTimeout.calledOnce.should.equal(false);
       auctionSpy.calledOnce.should.equal(true);
       mockIdCallback.calledOnce.should.equal(false);
+
+      // no sync after auction ends
+      events.on.called.should.equal(false);
     });
   });
 
