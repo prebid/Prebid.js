@@ -8,6 +8,8 @@ import {
 } from 'modules/userId/index.js';
 import {config} from 'src/config';
 import * as utils from 'src/utils';
+import events from 'src/events';
+import CONSTANTS from 'src/constants.json';
 import {unifiedIdSubmodule} from 'modules/userId/unifiedIdSystem';
 import {pubCommonIdSubmodule} from 'modules/userId/pubCommonIdSystem';
 import {id5IdSubmodule} from 'modules/id5IdSystem';
@@ -314,8 +316,7 @@ describe('User ID', function() {
     });
   });
 
-  // todo
-  describe('delays auctions to fetch ids', function() {
+  describe('auction and user sync delays', function() {
     let sandbox;
     let adUnits;
     let mockIdCallback;
@@ -324,9 +325,13 @@ describe('User ID', function() {
     before(function() {
       sandbox = sinon.createSandbox();
       sandbox.stub(global, 'setTimeout');
+      sandbox.stub(events, 'on');
     });
 
     beforeEach(function() {
+      // remove cookie
+      utils.setCookie('MOCKID', '', EXPIRED_COOKIE_DATE);
+
       adUnits = [getAdUnitMock()];
 
       auctionSpy = sandbox.spy();
@@ -335,15 +340,34 @@ describe('User ID', function() {
         name: 'mockId',
         decode: function(value) {
           return {
-            'mockid': value
+            'mid': value['MOCKID']
           };
         },
         getId: function() {
+          const storedId = utils.getCookie('MOCKID');
+          if (storedId) {
+            return {'MOCKID': storedId};
+          }
           return mockIdCallback;
         }
       };
 
       init(config);
+
+      attachIdSystem(mockIdSystem, true);
+    });
+
+    afterEach(function () {
+      $$PREBID_GLOBAL$$.requestBids.removeAll();
+      config.resetConfig();
+      sandbox.resetHistory();
+    });
+
+    after(function() {
+      sandbox.restore();
+    });
+
+    it('delays auction if auctionDelay is set, timing out at auction delay', function() {
       config.setConfig({
         usersync: {
           auctionDelay: 33,
@@ -354,43 +378,128 @@ describe('User ID', function() {
         }
       });
 
-      attachIdSystem(mockIdSystem, true);
-    });
-
-    afterEach(function () {
-      $$PREBID_GLOBAL$$.requestBids.removeAll();
-      config.resetConfig();
-      sandbox.reset();
-    });
-
-    after(function() {
-      sandbox.restore();
-    });
-
-    it('delays auction if auctionDelay is set, timing out at auction delay', function() {
       requestBidsHook(auctionSpy, {adUnits});
 
+      // check auction was delayed
       global.setTimeout.calledOnce.should.equal(true);
       global.setTimeout.calledWith(sinon.match.func, 33);
-      mockIdCallback.calledOnce.should.equal(true);
       auctionSpy.calledOnce.should.equal(false);
 
-      // callback to continue auction if timedout
+      // check ids were fetched
+      mockIdCallback.calledOnce.should.equal(true);
+
+      // callback to continue auction if timed out
       global.setTimeout.callArg(0);
       auctionSpy.calledOnce.should.equal(true);
     });
 
-    it('delays auction if auctionDelay is set, continuing auction if ids are fetched before timing out', function() {
+    it('delays auction if auctionDelay is set, continuing auction if ids are fetched before timing out', function(done) {
+      config.setConfig({
+        usersync: {
+          auctionDelay: 33,
+          syncDelay: 77,
+          userIds: [{
+            name: 'mockId', storage: { name: 'MOCKID', type: 'cookie' }
+          }]
+        }
+      });
+
       requestBidsHook(auctionSpy, {adUnits});
 
+      // check auction was delayed
       global.setTimeout.calledOnce.should.equal(true);
       global.setTimeout.calledWith(sinon.match.func, 33);
-      mockIdCallback.calledOnce.should.equal(true);
       auctionSpy.calledOnce.should.equal(false);
 
-      // callback to return id
-      mockIdCallback.returns({'MOCKID': 1234}).yield();
+      // check ids were fetched
+      mockIdCallback.calledOnce.should.equal(true);
+
+      // if ids returned, should continue auction
+      mockIdCallback.callArgWith(0, {'MOCKID': '1234'});
       auctionSpy.calledOnce.should.equal(true);
+
+      // check ids were copied to bids
+      adUnits.forEach(unit => {
+        unit.bids.forEach(bid => {
+          expect(bid).to.have.deep.nested.property('userId.mid');
+          expect(bid.userId.mid).to.equal('1234');
+        });
+        done();
+      });
+    });
+
+    it('does not delay auction if not set, delays id fetch after auction ends with syncDelay', function() {
+      config.setConfig({
+        usersync: {
+          syncDelay: 77,
+          userIds: [{
+            name: 'mockId', storage: { name: 'MOCKID', type: 'cookie' }
+          }]
+        }
+      });
+
+      expect(auctionDelay).to.equal(0);
+      expect(syncDelay).to.equal(77);
+
+      requestBidsHook(auctionSpy, {adUnits});
+
+      // should not delay auction
+      global.setTimeout.calledOnce.should.equal(false);
+      auctionSpy.calledOnce.should.equal(true);
+
+      // check user sync is delayed after auction is ended
+      mockIdCallback.calledOnce.should.equal(false);
+      events.on.calledOnce.should.equal(true);
+      events.on.calledWith(CONSTANTS.EVENTS.AUCTION_END, sinon.match.func);
+
+      // once auction is ended, sync user ids after delay
+      events.on.callArg(1);
+      global.setTimeout.calledOnce.should.equal(true);
+      global.setTimeout.calledWith(sinon.match.func, 77);
+      mockIdCallback.calledOnce.should.equal(false);
+
+      // once sync delay is over, ids should be fetched
+      global.setTimeout.callArg(0);
+      mockIdCallback.calledOnce.should.equal(true);
+    });
+
+    it('does not delay user id sync after auction ends if set to 0', function() {
+      config.setConfig({
+        usersync: {
+          syncDelay: 0,
+          userIds: [{
+            name: 'mockId', storage: { name: 'MOCKID', type: 'cookie' }
+          }]
+        }
+      });
+
+      expect(syncDelay).to.equal(0);
+
+      requestBidsHook(auctionSpy, {adUnits});
+
+      // auction should not be delayed
+      global.setTimeout.calledOnce.should.equal(false);
+      auctionSpy.calledOnce.should.equal(true);
+
+      // sync delay after auction is ended
+      mockIdCallback.calledOnce.should.equal(false);
+      events.on.calledOnce.should.equal(true);
+      events.on.calledWith(CONSTANTS.EVENTS.AUCTION_END, sinon.match.func);
+
+      // once auction is ended, if no sync delay, fetch ids
+      events.on.callArg(1);
+      global.setTimeout.calledOnce.should.equal(false);
+      mockIdCallback.calledOnce.should.equal(true);
+    });
+
+    it('does not delay auction if there are no ids to fetch', function() {
+      utils.setCookie('MOCKID', JSON.stringify({'MOCKID': '123456778'}), new Date(Date.now() + 5000).toUTCString());
+
+      requestBidsHook(auctionSpy, {adUnits});
+
+      global.setTimeout.calledOnce.should.equal(false);
+      auctionSpy.calledOnce.should.equal(true);
+      mockIdCallback.calledOnce.should.equal(false);
     });
   });
 
