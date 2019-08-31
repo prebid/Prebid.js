@@ -495,6 +495,16 @@ describe('User ID', function() {
     it('does not delay auction if there are no ids to fetch', function() {
       utils.setCookie('MOCKID', JSON.stringify({'MOCKID': '123456778'}), new Date(Date.now() + 5000).toUTCString());
 
+      config.setConfig({
+        usersync: {
+          auctionDelay: 33,
+          syncDelay: 77,
+          userIds: [{
+            name: 'mockId', storage: { name: 'MOCKID', type: 'cookie' }
+          }]
+        }
+      });
+
       requestBidsHook(auctionSpy, {adUnits});
 
       global.setTimeout.calledOnce.should.equal(false);
