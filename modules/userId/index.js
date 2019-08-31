@@ -260,7 +260,6 @@ function initializeSubmodulesAndExecuteCallbacks(continueAuction) {
         if (continueAuction && auctionDelay > 0) {
           // delay auction until ids are available
           delayed = true;
-          // todo: continue auction if done processing
           let continued = false;
           const continueCallback = function() {
             if (!continued) {
