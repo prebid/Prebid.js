@@ -21,20 +21,17 @@ export function shareUserIds(userIds, config){
 		logInfo(MODULE_NAME + ': Not enabled for ' + DFP);
 	}
 
-	// add validation for googletag.pubads().setTargeting
 	if(googletag && isFn(googletag.pubads) && hasOwn(googletag.pubads(), 'setTargeting') && isFn(googletag.pubads().setTargeting)){
 		DFP_API = googletag.pubads().setTargeting;
 	} else {
-		// for invalid case unset SHARE_WITH_DFP and log failure
 		SHARE_WITH_DFP = false;
 		logInfo(MODULE_NAME + ': Could not find googletag.pubads().setTargeting API. Not adding User Ids in targeting.')
 		return;
 	}
 
     Object.keys(userIds).forEach(function(key){
-    	// check may be incorrect if a userId is an object
     	if(isStr(userIds[key])){
-    		// DFP_KEYS[key] = '' means publisher do not want to send this uid
+    		// DFP_KEYS[key] = '' means publisher does not want to send this uid
     		if(SHARE_WITH_DFP && DFP_KEYS[key] !== ''){
     			DFP_API( 
     				(hasOwn(DFP_KEYS, key) ? DFP_KEYS[key] : key), 
