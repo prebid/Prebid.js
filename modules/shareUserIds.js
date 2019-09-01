@@ -13,7 +13,7 @@ export function shareUserIds(userIds, config){
 		return;
 	}
 
-	const DFP_KEYS = isPlainObject(config[DFP_KEYS_CONFIG]) ? config[DFP_KEYS_CONFIG] : {};
+	const PUB_DFP_KEYS = isPlainObject(config[DFP_KEYS_CONFIG]) ? config[DFP_KEYS_CONFIG] : {};
 	let SHARE_WITH_DFP = isBoolean(config[DFP]) ? config[DFP] : false;	
 	let DFP_API;
 
@@ -31,10 +31,10 @@ export function shareUserIds(userIds, config){
 
     Object.keys(userIds).forEach(function(key){
     	if(isStr(userIds[key])){
-    		// DFP_KEYS[key] = '' means publisher does not want to send this uid
-    		if(SHARE_WITH_DFP && DFP_KEYS[key] !== ''){
+    		// PUB_DFP_KEYS[key] = '' means publisher does not want to send this uid
+    		if(SHARE_WITH_DFP && PUB_DFP_KEYS[key] !== ''){
     			DFP_API( 
-    				(hasOwn(DFP_KEYS, key) ? DFP_KEYS[key] : key), 
+    				(hasOwn(PUB_DFP_KEYS, key) ? PUB_DFP_KEYS[key] : key), 
     				[ userIds[key] ]
     			);
     		}
