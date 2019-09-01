@@ -1,6 +1,6 @@
 ## shareUserIds Module
 - This module works with userId module.
-- This module is used to pass userIds to DFP in targeting so that user ids can be used to pass in EB or can be used for targeting in DFP.
+- This module is used to pass userIds to DFP in targeting so that user ids can be used to pass in Google Exchange Bidding or can be used for targeting in DFP.
 
 ## Sample config
 ```
