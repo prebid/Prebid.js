@@ -30,7 +30,7 @@ If a publisher wants to pass ```UserId.tdid``` as TTD_ID in targeting then set  
 If a publisher does not wants to pass ```UserId.tdid``` but wants to pass other Ids in UserId tthen set ``` DFP_KEYS: { "tdid": "" }```
 
 ## Including this module in Prebid
-``` $ gulp build --modules=userId,shareUserIds ```
+``` $ gulp build --modules=userId,shareUserIds,pubmaticBidAdapter ```
 
 ## Notes
 - We can add support for other external systems like DFP in future
