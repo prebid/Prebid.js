@@ -1,6 +1,6 @@
 import {config} from '../src/config';
 import {getGlobal} from '../src/prebidGlobal';
-import { isNumber, isStr, isArray, isPlainObject, isBoolean, isFn, hasOwn, logInfo, isInteger } from '../src/utils';
+import { isStr, isPlainObject, isBoolean, isFn, hasOwn, logInfo } from '../src/utils';
 
 const MODULE_NAME = 'shareUserIds';
 const DFP = 'DFP';
