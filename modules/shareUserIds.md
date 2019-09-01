@@ -1,4 +1,4 @@
-## shareUids Module
+## shareUserIds Module
 This module works with userId module.
 This module is used to pass userIds to DFP in targeting so that user ids can be used to pass in EB or can be used for targeting in DFP.
 
@@ -12,9 +12,9 @@ pbjs.setConfig({
 		userIds: [{...}, ...]
 	},
 
-	// new shareUids config
+	// new shareUserIds config
 
-	shareUids: {
+	shareUserIds: {
 		"DFP": true,
 		"DFP_KEYS": {
 			"tdid": "TTD_ID" // send tdid as TTD_ID
@@ -28,6 +28,9 @@ pbjs.setConfig({
 - DFP_KEYS: is an optional object. If not passed then all UserIds are passed with key-name used in UserIds object.
 If a publisher wants to pass ```UserId.tdid``` as TTD_ID in targeting then set  ``` DFP_KEYS: { "tdid": "TTD_ID" }```
 If a publisher does not wants to pass ```UserId.tdid``` but wants to pass other Ids in UserId tthen set ``` DFP_KEYS: { "tdid": "" }```
+
+## Including this module in Prebid
+``` $ gulp build --modules=userId,shareUserIds ```
 
 ## Notes
 - We can add support for other external systems like DFP in future

@@ -2,11 +2,11 @@ import {config} from '../src/config';
 import {getGlobal} from '../src/prebidGlobal';
 import { isNumber, isStr, isArray, isPlainObject, isBoolean, isFn, hasOwn, logInfo, isInteger } from '../src/utils';
 
-const MODULE_NAME = 'shareUids';
+const MODULE_NAME = 'shareUserIds';
 const DFP = 'DFP';
 const DFP_KEYS_CONFIG = 'DFP_KEYS';
 
-export function addUidsToDFP(userIds, config){
+export function shareUserIds(userIds, config){
 	
 	if(! isPlainObject(config)){
 		logInfo(MODULE_NAME + ': Invalid config found, not sharing userIds externally.');
@@ -27,7 +27,7 @@ export function addUidsToDFP(userIds, config){
 	} else {
 		// for invalid case unset SHARE_WITH_DFP and log failure
 		SHARE_WITH_DFP = false;
-		logInfo(MODULE_NAME + ': Could not find googletag.pubads().setTargeting API. Not adding UIDs in targeting.')
+		logInfo(MODULE_NAME + ': Could not find googletag.pubads().setTargeting API. Not adding User Ids in targeting.')
 		return;
 	}
 
@@ -48,7 +48,7 @@ export function addUidsToDFP(userIds, config){
 export function init(config) {
   getGlobal().requestBids.before(function(fn, reqBidsConfigObj) {
   	// using setTimeout to avoid delay
-  	setTimeout(addUidsToDFP, 0, (getGlobal()).getUserIds(), config.getConfig(MODULE_NAME));
+  	setTimeout(shareUserIds, 0, (getGlobal()).getUserIds(), config.getConfig(MODULE_NAME));
     // calling fn allows prebid to continue processing
     return fn.call(this, reqBidsConfigObj);
   }, 40);
