@@ -24,8 +24,8 @@ pbjs.setConfig({
 ```
 
 ## Config options
-- DFP: is required to be set to true if a publisher wants to send UserIds as targeting in DFP call
-- DFP_KEYS: is an optional object. If not passed then all UserIds are passed with key-name used in UserIds object.
+- DFP: is required to be set to true if a publisher wants to send UserIds as targeting in DFP call. This module uses ``` googletag.pubads().setTargeting('key-name', ['value']) ``` API to set DFP targeting.
+- DFP_KEYS: is an optional config object to be used with ``` "DFP": true ```. If not passed then all UserIds are passed with key-name used in UserIds object.
 If a publisher wants to pass ```UserId.tdid``` as TTD_ID in targeting then set  ``` DFP_KEYS: { "tdid": "TTD_ID" }```
 If a publisher does not wants to pass ```UserId.tdid``` but wants to pass other Ids in UserId tthen set ``` DFP_KEYS: { "tdid": "" }```
 
