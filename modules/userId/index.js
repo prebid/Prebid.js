@@ -114,7 +114,7 @@ export function setSubmoduleRegistry(submodules) {
 
 /**
  * @param {SubmoduleStorage} storage
- * @param {string} value
+ * @param {(Object|string)} value
  */
 function setStoredValue(storage, value) {
   try {

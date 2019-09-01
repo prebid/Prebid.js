@@ -18,9 +18,9 @@ export const id5IdSubmodule = {
   name: 'id5Id',
   /**
    * decode the stored id value for passing to bid requests
-   * @function
-   * @param {{ID5ID:Object}} value
-   * @returns {{id5id:String}}
+   * @function decode
+   * @param {(Object|string)} value
+   * @returns {(Object|undefined)}
    */
   decode(value) {
     return (value && typeof value['ID5ID'] === 'string') ? { 'id5id': value['ID5ID'] } : undefined;
@@ -30,12 +30,13 @@ export const id5IdSubmodule = {
    * @function
    * @param {SubmoduleParams} [configParams]
    * @param {ConsentData} [consentData]
-   * @returns {function(callback:function)}
+   * @param {(Object|undefined)} cacheIdObj
+   * @returns {(Object|function(callback:function))}
    */
   getId(configParams, consentData, cacheIdObj) {
     if (!configParams || typeof configParams.partner !== 'number') {
       utils.logError(`User ID - ID5 submodule requires partner to be defined as a number`);
-      return;
+      return undefined;
     }
     const hasGdpr = (typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies) ? 1 : 0;
     const gdprConsentString = hasGdpr ? consentData.consentString : '';

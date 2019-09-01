@@ -1,16 +1,11 @@
-import {
-  init,
-  requestBidsHook,
-  setSubmoduleRegistry,
-  syncDelay,
-  attachIdSystem
-} from 'modules/userId/index.js';
+import {attachIdSystem, init, requestBidsHook, setSubmoduleRegistry, syncDelay} from 'modules/userId/index.js';
 import {config} from 'src/config';
 import * as utils from 'src/utils';
 import {unifiedIdSubmodule} from 'modules/userId/unifiedIdSystem';
 import {pubCommonIdSubmodule} from 'modules/userId/pubCommonIdSystem';
 import {id5IdSubmodule} from 'modules/id5IdSystem';
 import {identityLinkSubmodule} from 'modules/identityLinkIdSystem';
+
 let assert = require('chai').assert;
 let expect = require('chai').expect;
 const EXPIRED_COOKIE_DATE = 'Thu, 01 Jan 1970 00:00:01 GMT';
@@ -410,7 +405,7 @@ describe('User ID', function() {
             expect(bid.userId.id5id).to.equal('testid5id');
           });
         });
-        expect(utils.logError.called).to.equal(true);
+        sinon.assert.calledOnce(utils.logError);
         utils.setCookie('id5id', '', EXPIRED_COOKIE_DATE);
         utils.logError.restore();
         done();
