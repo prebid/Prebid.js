@@ -9,7 +9,7 @@ import {config} from 'src/config';
 import * as utils from 'src/utils';
 import {unifiedIdSubmodule} from 'modules/userId/unifiedIdSystem';
 import {pubCommonIdSubmodule} from 'modules/userId/pubCommonIdSystem';
-import {id5IdSubmodule} from 'modules/userId/id5IdSystem';
+import {id5IdSubmodule} from 'modules/id5IdSystem';
 import {identityLinkSubmodule} from 'modules/identityLinkIdSystem';
 let assert = require('chai').assert;
 let expect = require('chai').expect;

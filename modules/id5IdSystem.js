@@ -5,9 +5,9 @@
  * @requires module:modules/userId
  */
 
-import * as utils from '../../src/utils'
-import {ajax} from '../../src/ajax';
-import {submodule} from '../../src/hook';
+import * as utils from '../src/utils'
+import {ajax} from '../src/ajax';
+import {submodule} from '../src/hook';
 
 /** @type {Submodule} */
 export const id5IdSubmodule = {
