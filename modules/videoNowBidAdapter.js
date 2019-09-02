@@ -79,15 +79,15 @@ function interpretResponse(serverResponse, bidRequest) {
 }
 
 function createResponseBid(bidInfo, bidId, cur, placementId) {
-  const { id, nurl, code, price, crid, adm, ttl, netRevenue, w, h } = bidInfo
+  const { id, nurl, code, price, crid, ext, ttl, netRevenue, w, h } = bidInfo
 
   if (!id || !price) {
     return null;
   }
 
-  if (!adm) {
-    utils.logError(`${BIDDER_CODE}. adm not exists in the response`)
-    return null
+  const { vnInitModule, vnModule, dataXml, format } = ext || {}
+  if (!vnInitModule || !dataXml || !vnModule) {
+    utils.logError('vnInitModule or dataXml or vnModule is not defined')
   }
 
   try {
@@ -108,11 +108,26 @@ function createResponseBid(bidInfo, bidId, cur, placementId) {
           const d = window.document
           const el = placementId && d.getElementById(placementId)
           if (!el) {
-            console.error(`bidAdapter ${BIDDER_CODE}: ${placementId} not found`)
+            utils.logError(`bidAdapter ${BIDDER_CODE}: ${placementId} not found`)
           }
 
-          el.innerHTML = adm
-          reInitScripts(el)
+          // prepare data for vn_init script
+          const profileData = {
+            url: `${vnModule}`,
+            dataXml
+          }
+
+          format && (profileData.format = format)
+
+          // add init data for vn_init on the page
+          window.videonow = {
+            'init': { '1': profileData }
+          }
+
+          // add vn_init js on the page
+          const scr = document.createElement('script')
+          scr.src = `${vnInitModule}?profileId=1`
+          el.appendChild(scr)
         }
       }
     }
@@ -173,39 +188,3 @@ export const spec = {
 }
 
 registerBidder(spec);
-
-function reInitScripts(container, shouldReInitInlineScripts = true, delay = 10) {
-  const oldScripts = container.querySelectorAll('script')
-  const innerScriptsInsertActions = []
-
-  oldScripts && oldScripts.length && Array.from(oldScripts).forEach(oldScr => {
-    const { parentNode } = oldScr
-    const scriptElement = document.createElement('script')
-    oldScr.attributes && Array.from(oldScr.attributes).forEach(attr => {
-      scriptElement.setAttribute(attr.name, attr.value)
-    })
-
-    if (oldScr.src) {
-      innerScriptsInsertActions.push(() => {
-        ((function(parent, scriptElm, src) {
-          scriptElm.src = src
-          parent.appendChild(scriptElm)
-        })(parentNode, scriptElement, oldScr.src))
-      })
-    }
-
-    if (oldScr.innerHTML && shouldReInitInlineScripts) {
-      innerScriptsInsertActions.push(() => {
-        ((function(parent, scriptElm, scriptText) {
-          scriptElm.innerHTML = scriptText
-          parent.appendChild(scriptElm)
-        })(parentNode, scriptElement, oldScr.innerHTML))
-      })
-    }
-    parentNode.removeChild(oldScr)
-  })
-
-  innerScriptsInsertActions.length && setTimeout(() => {
-    innerScriptsInsertActions.forEach(si => si())
-  }, delay)
-}

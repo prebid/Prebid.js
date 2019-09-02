@@ -174,7 +174,12 @@ describe('videonowAdapterTests', function () {
         'sizes': [[640, 480], [320, 200]],
         'cur': 'RUB',
         'placementId': 'div-gpt-ad-1438287399331-0',
-        'ref': 'http://localhost:8086/page'
+        'ref': 'http://localhost:8086/page',
+        'ext': {
+          vnInitModule: 'http://localhost:8086/vn_init.js',
+          vnModule: 'http://localhost:8086/vn_module.js',
+          dataXml: '<VAST></VAST>'
+        }
       }
     };
 
