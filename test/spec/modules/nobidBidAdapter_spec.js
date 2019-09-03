@@ -207,11 +207,10 @@ describe('Nobid Adapter', function () {
       expect(result.length).to.equal(expectedResponse.length);
       expect(result[0].dealId).to.equal(expectedResponse[0].dealId);
     });
-
   });
 
   describe('getUserSyncs', function () {
-	const GDPR_CONSENT_STRING = "GDPR_CONSENT_STRING";
+    const GDPR_CONSENT_STRING = 'GDPR_CONSENT_STRING';
     it('should get correct user sync when iframeEnabled', function () {
       let pixel = spec.getUserSyncs({iframeEnabled: true})
       expect(pixel[0].type).to.equal('iframe');
@@ -238,7 +237,7 @@ describe('Nobid Adapter', function () {
     it('should get correct user sync when !iframeEnabled', function () {
 	  let pixel = spec.getUserSyncs({})
 	  expect(pixel.length).to.equal(0);
-	});
+    });
   });
 
   describe('onTimeout', function (syncOptions) {
@@ -254,5 +253,4 @@ describe('Nobid Adapter', function () {
       expect(bidWonTotal).to.equal(1);
     });
   });
-
 });
