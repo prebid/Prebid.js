@@ -34,7 +34,21 @@ function extractBidSizes(bid) {
 }
 
 function makeVideoImp(bid) {
-  const video = bid.params.video;
+  const video = {};
+  if (bid.params.video) {
+    video['mimes'] = bid.params.video.mimes;
+    video['minduration'] = bid.params.video.minduration;
+    video['maxduration'] = bid.params.video.maxduration;
+    video['protocols'] = bid.params.video.protocols;
+    video['startdelay'] = bid.params.video.startdelay;
+    video['linearity'] = bid.params.video.linearity;
+    video['battr'] = bid.params.video.battr;
+    video['maxbitrate'] = bid.params.video.maxbitrate;
+    video['playbackmethod'] = bid.params.video.playbackmethod;
+    video['delivery'] = bid.params.video.delivery;
+    video['placement'] = bid.params.video.placement;
+    video['api'] = bid.params.video.api;
+  }
   if (utils.isArray(bid.mediaTypes.video.playerSize[0])) {
     video['w'] = bid.mediaTypes.video.playerSize[0][0];
     video['h'] = bid.mediaTypes.video.playerSize[0][1];
