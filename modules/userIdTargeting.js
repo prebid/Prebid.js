@@ -30,7 +30,7 @@ export function userIdTargeting(userIds, config) {
 
   Object.keys(userIds).forEach(function(key) {
     if (userIds[key]) {
-      // PUB_GAM_KEYS[key] = '' means publisher does not want to send this uid
+      // PUB_GAM_KEYS: { "tdid": '' } means the publisher does not want to send the tdid to GAM
       if (SHARE_WITH_GAM && PUB_GAM_KEYS[key] !== '') {
         let uidStr;
         if (isStr(userIds[key])) {
