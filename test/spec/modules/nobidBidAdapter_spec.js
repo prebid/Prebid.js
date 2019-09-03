@@ -120,6 +120,7 @@ describe('Nobid Adapter', function () {
     const ADMARKUP_300x250 = 'ADMARKUP-300x250';
     const PRICE_300x250 = 0.51;
     const REQUEST_ID = '3db3773286ee59';
+    const DEAL_ID = 'deal123';
     let response = {
       country: 'US',
       ip: '68.83.15.75',
@@ -129,6 +130,7 @@ describe('Nobid Adapter', function () {
         {id: 1,
           bdrid: 101,
           divid: ADUNIT_300x250,
+          dealid: DEAL_ID,
           creativeid: CREATIVE_ID_300x250,
           size: {'w': 300, 'h': 250},
           adm: ADMARKUP_300x250,
@@ -145,7 +147,7 @@ describe('Nobid Adapter', function () {
           width: 300,
           height: 250,
           creativeId: CREATIVE_ID_300x250,
-          dealId: '',
+          dealId: DEAL_ID,
           currency: 'USD',
           netRevenue: true,
           ttl: 300,
@@ -161,7 +163,96 @@ describe('Nobid Adapter', function () {
         }]
       }
       let result = spec.interpretResponse({ body: response }, {bidderRequest: bidderRequest});
-      expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0])); ;
+      expect(result.length).to.equal(expectedResponse.length);
+      expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
+      expect(result[0].requestId).to.equal(expectedResponse[0].requestId);
+      expect(result[0].cpm).to.equal(expectedResponse[0].cpm);
+    });
+    
+    it('should get correct empty response', function () {
+      let bidderRequest = {
+        bids: [{
+        bidId: REQUEST_ID,
+        adUnitCode: ADUNIT_300x250+'1'
+        }]
+      }
+      let result = spec.interpretResponse({ body: response }, {bidderRequest: bidderRequest});
+      expect(result.length).to.equal(0);
+    });
+    
+    it('should get correct deal id', function () {
+      let expectedResponse = [
+        {
+          requestId: REQUEST_ID,
+          cpm: PRICE_300x250,
+          width: 300,
+          height: 250,
+          creativeId: CREATIVE_ID_300x250,
+          dealId: DEAL_ID,
+          currency: 'USD',
+          netRevenue: true,
+          ttl: 300,
+          ad: ADMARKUP_300x250,
+          mediaType: 'banner'
+        }
+      ];
+
+      let bidderRequest = {
+        bids: [{
+          bidId: REQUEST_ID,
+          adUnitCode: ADUNIT_300x250
+        }]
+      }
+      let result = spec.interpretResponse({ body: response }, {bidderRequest: bidderRequest});
+      expect(result.length).to.equal(expectedResponse.length);
+      expect(result[0].dealId).to.equal(expectedResponse[0].dealId);
+    });
+    
+  });
+  
+  describe('getUserSyncs', function () {
+	const GDPR_CONSENT_STRING = "GDPR_CONSENT_STRING";
+    it('should get correct user sync when iframeEnabled', function () {
+      let pixel = spec.getUserSyncs({iframeEnabled: true})
+      expect(pixel[0].type).to.equal('iframe');
+      expect(pixel[0].url).to.equal('https://s3.amazonaws.com/nobid-public/sync.html');
+    });
+    
+    it('should get correct user sync when iframeEnabled and pixelEnabled', function () {
+        let pixel = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: true})
+        expect(pixel[0].type).to.equal('iframe');
+        expect(pixel[0].url).to.equal('https://s3.amazonaws.com/nobid-public/sync.html');
+      });
+    
+    it('should get correct user sync when iframeEnabled', function () {
+      let pixel = spec.getUserSyncs({iframeEnabled: true}, {}, {gdprApplies:true, consentString:GDPR_CONSENT_STRING})
+      expect(pixel[0].type).to.equal('iframe');
+      expect(pixel[0].url).to.equal('https://s3.amazonaws.com/nobid-public/sync.html?gdpr=1&gdpr_consent='+GDPR_CONSENT_STRING);
+    });
+    
+    it('should get correct user sync when !iframeEnabled', function () {
+      let pixel = spec.getUserSyncs({iframeEnabled: false})
+      expect(pixel.length).to.equal(0);
+    });
+    
+    it('should get correct user sync when !iframeEnabled', function () {
+	  let pixel = spec.getUserSyncs({})
+	  expect(pixel.length).to.equal(0);
+	});
+  });
+  
+  describe('onTimeout', function (syncOptions) {
+    it('should increment timeoutTotal', function () {
+      let timeoutTotal = spec.onTimeout()
+      expect(timeoutTotal).to.equal(1);
     });
   });
+
+  describe('onBidWon', function (syncOptions) {
+    it('should increment bidWonTotal', function () {
+      let bidWonTotal = spec.onBidWon()
+      expect(bidWonTotal).to.equal(1);
+    });
+  });
+
 });

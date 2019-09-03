@@ -185,6 +185,8 @@ function nobidInterpretResponse(response, bidRequest) {
 };
 window.nobid = window.nobid || {};
 nobid.bidResponses = nobid.bidResponses || {};
+nobid.timeoutTotal = 0;
+nobid.bidWonTotal = 0;
 nobid.renderTag = function(doc, id, win) {
   log('nobid.renderTag()', id);
   var bid = nobid.bidResponses['' + id];
@@ -264,11 +266,20 @@ export const spec = {
      * @param {ServerResponse[]} serverResponses List of server's responses.
      * @return {UserSync[]} The user syncs which should be dropped.
      */
-  getUserSyncs: function(syncOptions, serverResponses) {
+  getUserSyncs: function(syncOptions, serverResponses, gdprConsent) {
     if (syncOptions.iframeEnabled) {
+      let params = '';
+      if (gdprConsent && typeof gdprConsent.consentString === 'string') {
+        // add 'gdpr' only if 'gdprApplies' is defined
+        if (typeof gdprConsent.gdprApplies === 'boolean') {
+          params += `?gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
+        } else {
+          params += `?gdpr_consent=${gdprConsent.consentString}`;
+        }
+      }    	
       return [{
         type: 'iframe',
-        url: 'https://s3.amazonaws.com/nobid-public/sync.html'
+        url: 'https://s3.amazonaws.com/nobid-public/sync.html'+params
       }];
     } else {
       utils.logWarn('-NoBid- Please enable iframe based user sync.', syncOptions);
@@ -281,10 +292,14 @@ export const spec = {
      * @param {data} Containing timeout specific data
      */
   onTimeout: function(data) {
-    log('Timeout', data);
+    nobid.timeoutTotal++;
+    log('Timeout total: '+nobid.timeoutTotal, data);
+    return nobid.timeoutTotal;
   },
   onBidWon: function(data) {
-    log('BidWon', data);
+    nobid.bidWonTotal++;
+    log('BidWon total: '+nobid.bidWonTotal, data);
+    return nobid.bidWonTotal;
   }
 }
 registerBidder(spec);
