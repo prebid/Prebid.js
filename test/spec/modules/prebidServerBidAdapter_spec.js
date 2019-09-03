@@ -33,6 +33,19 @@ const REQUEST = {
       'mediaTypes': {
         'banner': {
           'sizes': [[ 300, 250 ], [ 300, 300 ]]
+        },
+        'native': {
+          'title': {
+            'required': true,
+            'len': 800
+          },
+          'image': {
+            'required': true,
+            'sizes': [989, 742],
+          },
+          'sponsoredBy': {
+            'required': true
+          }
         }
       },
       'transactionId': '4ef956ad-fd83-406d-bd35-e4bb786ab86c',
@@ -382,6 +395,93 @@ const RESPONSE_OPENRTB_VIDEO = {
   },
 };
 
+const RESPONSE_OPENRTB_NATIVE = {
+  'id': 'c7dcf14f',
+  'seatbid': [
+    {
+      'bid': [
+        {
+          'id': '6451317310275562039',
+          'impid': 'div-gpt-ad-1460505748561-0',
+          'price': 10,
+          'adm': {
+            'ver': '1.2',
+            'assets': [
+              {
+                'id': 1,
+                'img': {
+                  'url': 'https://vcdn.adnxs.com/p/creative-image/f8/7f/0f/13/f87f0f13-230c-4f05-8087-db9216e393de.jpg',
+                  'w': 989,
+                  'h': 742,
+                  'ext': {
+                    'appnexus': {
+                      'prevent_crop': 0
+                    }
+                  }
+                }
+              },
+              {
+                'id': 0,
+                'title': {
+                  'text': 'This is a Prebid Native Creative'
+                }
+              },
+              {
+                'id': 2,
+                'data': {
+                  'value': 'Prebid.org'
+                }
+              }
+            ],
+            'link': {
+              'url': 'https://lax1-ib.adnxs.com/click?AAAAAAAAJEAAAAAAAAAkQAAAAAAAACRAAAAAAAAAJEAAAAAAAAAkQGdce2vBWudAJZpFu1er1zA7ZzddAAAAAOLoyQBtJAAAbSQAAAIAAAC8pM8FnPgWAAAAAABVU0QAVVNEAAEAAQBNXQAAAAABAgMCAAAAALsAuhVqdgAAAAA./cpcpm=AAAAAAAAAAA=/bcr=AAAAAAAA8D8=/pp=${AUCTION_PRICE}/cnd=%213Q5HCQj8-LwKELzJvi4YnPFbIAQoADEAAAAAAAAkQDoJTEFYMTo0MDc3QKcPSQAAAAAAAPA_UQAAAAAAAAAAWQAAAAAAAAAAYQAAAAAAAAAAaQAAAAAAAAAAcQAAAAAAAAAA/cca=OTMyNSNMQVgxOjQwNzc=/bn=84305/test=1/clickenc=http%3A%2F%2Fprebid.org%2Fdev-docs%2Fshow-native-ads.html'
+            },
+            'eventtrackers': [
+              {
+                'event': 1,
+                'method': 1,
+                'url': 'https://lax1-ib.adnxs.com/it?an_audit=0&test=1&referrer=http%3A%2F%2Flocalhost%3A9999%2FintegrationExamples%2Fgpt%2Fdemo_native.html&e=wqT_3QKCCKACBAAAAwDWAAUBCLvO3ekFEOe47duW2NbzQBiltJba--rq6zAqNgkAAAECCCRAEQEHEAAAJEAZEQkAIREJACkRCQAxEQmoMOLRpwY47UhA7UhIAlC8yb4uWJzxW2AAaM26dXjRkgWAAQGKAQNVU0SSAQEG8FKYAQGgAQGoAQGwAQC4AQLAAQPIAQLQAQnYAQDgAQHwAQCKAjt1ZignYScsIDI1Mjk4ODUsIDE1NjM5MTE5OTUpO3VmKCdyJywgOTc0OTQyMDQsIC4eAPQ0AZICnQIhb2pkaWlnajgtTHdLRUx6SnZpNFlBQ0NjOFZzd0FEZ0FRQVJJN1VoUTR0R25CbGdBWVAwQmFBQndBSGdBZ0FFQWlBRUFrQUVCbUFFQm9BRUJxQUVEc0FFQXVRSHpyV3FrQUFBa1FNRUI4NjFxcEFBQUpFREpBVVZpYmxDaFpRQkEyUUVBQUFBQUFBRHdQLUFCQVBVQkFBQUFBUGdCQUpnQ0FLQUNBTFVDQUFBQUFMMENBQUFBQU1BQ0FNZ0NBT0FDQU9nQ0FQZ0NBSUFEQVpBREFKZ0RBYWdEX1BpOENyb0RDVXhCV0RFNk5EQTNOLUFEcHctUUJBQ1lCQUhCQkFBQUFBQUFBQUFBeVFRQUFBQUFBQUFBQU5nRUFBLi6aAoUBITNRNUhDUWo4LUx3S0VMeiUhJG5QRmJJQVFvQUQRvVhBa1FEb0pURUZZTVRvME1EYzNRS2NQUxFUDFBBX1URDAxBQUFXHQwAWR0MAGEdDABjHQz0FwHYAgDgAq2YSOoCPmh0dHA6Ly9sb2NhbGhvc3Q6OTk5OS9pbnRlZ3JhdGlvbkV4YW1wbGVzL2dwdC9kZW1vX25hdGl2ZS5odG1sgAMAiAMBkAMAmAMUoAMBqgMAwAPgqAHIAwDYAwDgAwDoAwD4AwOABACSBAkvb3BlbnJ0YjKYBACiBA0xNzMuMjQ0LjM2LjQwqATtoySyBAwIABAAGAAgADAAOAC4BADABADIBADSBA45MzI1I0xBWDE6NDA3N9oEAggB4AQA8AS8yb4uiAUBmAUAoAX___________8BqgUkZTU5YzNlYjYtNmRkNi00MmQ5LWExMWEtM2FhMTFjOTc5MGUwwAUAyQUAAAAAAADwP9IFCQkAaVh0ANgFAeAFAfAFmfQh-gUECAAQAJAGAZgGALgGAMEGCSQk8D_IBgDaBhYKEAkQGQEBwTTgBgzyBgIIAIAHAYgHAA..&s=11ababa390e9f7983de260493fc5b91ec5b1b3d4&pp=${AUCTION_PRICE}'
+              }
+            ]
+          },
+          'adid': '97494204',
+          'adomain': [
+            'http://prebid.org'
+          ],
+          'iurl': 'https://lax1-ib.adnxs.com/cr?id=97494204',
+          'cid': '9325',
+          'crid': '97494204',
+          'cat': [
+            'IAB3-1'
+          ],
+          'ext': {
+            'prebid': {
+              'targeting': {
+                'hb_bidder': 'appnexus',
+                'hb_pb': '10.00'
+              },
+              'type': 'native',
+              'video': {
+                'duration': 0,
+                'primary_category': ''
+              }
+            },
+            'bidder': {
+              'appnexus': {
+                'brand_id': 555545,
+                'auction_id': 4676806524825984103,
+                'bidder_id': 2,
+                'bid_ad_type': 3
+              }
+            }
+          }
+        }
+      ],
+      'seat': 'appnexus'
+    }
+  ]
+};
+
 const RESPONSE_UNSUPPORTED_BIDDER = {
   'tid': '437fbbf5-33f5-487a-8e16-a7112903cfe5',
   'status': 'OK',
@@ -641,7 +741,7 @@ describe('S2S Adapter', function () {
       });
     });
 
-    it('adds device and app objects to request for ORTB', function () {
+    it('adds device and app objects to request for OpenRTB', function () {
       const s2sConfig = Object.assign({}, CONFIG, {
         endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
       });
@@ -686,6 +786,54 @@ describe('S2S Adapter', function () {
       expect(requestBid.app).to.deep.equal({
         bundle: 'com.test.app',
         publisher: {'id': '1'}
+      });
+    });
+
+    it('adds native request for OpenRTB', function () {
+      const s2sConfig = Object.assign({}, CONFIG, {
+        endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
+      });
+
+      const _config = {
+        s2sConfig: s2sConfig
+      };
+
+      config.setConfig(_config);
+      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      const requestBid = JSON.parse(requests[0].requestBody);
+
+      expect(requestBid.imp[0].native).to.deep.equal({
+        request: JSON.stringify({
+          'context': 1,
+          'plcmttype': 1,
+          'eventtrackers': [{
+            event: 1,
+            methods: [1]
+          }],
+          'assets': [
+            {
+              'required': 1,
+              'title': {
+                'len': 800
+              }
+            },
+            {
+              'required': 1,
+              'img': {
+                'type': 3,
+                'w': 989,
+                'h': 742
+              }
+            },
+            {
+              'required': 1,
+              'data': {
+                'type': 1
+              }
+            }
+          ]
+        }),
+        ver: '1.2'
       });
     });
 
@@ -1089,6 +1237,31 @@ describe('S2S Adapter', function () {
         }
       });
     });
+
+    it('passes schain object in request', function() {
+      const bidRequests = utils.deepClone(BID_REQUESTS);
+      const schainObject = {
+        'ver': '1.0',
+        'complete': 1,
+        'nodes': [
+          {
+            'asi': 'indirectseller.com',
+            'sid': '00001',
+            'hp': 1
+          },
+
+          {
+            'asi': 'indirectseller-2.com',
+            'sid': '00002',
+            'hp': 2
+          }
+        ]
+      };
+      bidRequests[0].bids[0].schain = schainObject;
+      adapter.callBids(REQUEST, bidRequests, addBidResponse, done, ajax);
+      const parsedRequestBody = JSON.parse(requests[0].requestBody);
+      expect(parsedRequestBody.source.ext.schain).to.deep.equal(schainObject);
+    })
   });
 
   describe('response handler', function () {
@@ -1402,6 +1575,33 @@ describe('S2S Adapter', function () {
       expect(response).to.have.property('statusMessage', 'Bid available');
       expect(response).to.have.property('videoCacheKey', 'a5ad3993');
       expect(response).to.have.property('vastUrl', 'https://prebid-cache.net/cache?uuid=a5ad3993');
+    });
+
+    it('handles OpenRTB native responses', function () {
+      sinon.stub(utils, 'getBidRequest').returns({
+        adUnitCode: 'div-gpt-ad-1460505748561-0',
+        bidder: 'appnexus',
+        bidId: '123'
+      });
+      const s2sConfig = Object.assign({}, CONFIG, {
+        endpoint: 'https://prebidserverurl/openrtb2/auction?querystring=param'
+      });
+      config.setConfig({s2sConfig});
+
+      server.respondWith(JSON.stringify(RESPONSE_OPENRTB_NATIVE));
+      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      server.respond();
+
+      sinon.assert.calledOnce(addBidResponse);
+      const response = addBidResponse.firstCall.args[1];
+      expect(response).to.have.property('statusMessage', 'Bid available');
+      expect(response).to.have.property('adm').deep.equal(RESPONSE_OPENRTB_NATIVE.seatbid[0].bid[0].adm);
+      expect(response).to.have.property('mediaType', 'native');
+      expect(response).to.have.property('bidderCode', 'appnexus');
+      expect(response).to.have.property('requestId', '123');
+      expect(response).to.have.property('cpm', 10);
+
+      utils.getBidRequest.restore();
     });
 
     it('should log warning for unsupported bidder', function () {

@@ -390,12 +390,12 @@ $$PREBID_GLOBAL$$.removeAdUnit = function (adUnitCode) {
   }
 
   adUnitCodes.forEach((adUnitCode) => {
-    for (let i = 0; i < $$PREBID_GLOBAL$$.adUnits.length; i++) {
+    for (let i = $$PREBID_GLOBAL$$.adUnits.length - 1; i >= 0; i--) {
       if ($$PREBID_GLOBAL$$.adUnits[i].code === adUnitCode) {
         $$PREBID_GLOBAL$$.adUnits.splice(i, 1);
       }
     }
-  })
+  });
 };
 
 /**

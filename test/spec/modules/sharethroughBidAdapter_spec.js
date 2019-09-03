@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { sharethroughAdapterSpec } from 'modules/sharethroughBidAdapter';
+import { sharethroughAdapterSpec, sharethroughInternal } from 'modules/sharethroughBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
 
 const spec = newBidder(sharethroughAdapterSpec).getSpec();
@@ -46,7 +46,7 @@ const prebidRequests = [
       placement_key: 'pKey'
     },
     strData: {
-      stayInIframe: false,
+      skipIframeBusting: false,
       sizes: []
     }
   },
@@ -58,7 +58,7 @@ const prebidRequests = [
       placement_key: 'pKey'
     },
     strData: {
-      stayInIframe: true,
+      skipIframeBusting: true,
       sizes: [[300, 250], [300, 300], [250, 250], [600, 50]]
     }
   },
@@ -70,7 +70,7 @@ const prebidRequests = [
       placement_key: 'pKey'
     },
     strData: {
-      stayInIframe: true,
+      skipIframeBusting: true,
       iframeSize: [500, 500],
       sizes: [[300, 250], [300, 300], [250, 250], [600, 50]]
     }
@@ -83,7 +83,7 @@ const prebidRequests = [
       placement_key: 'pKey'
     },
     strData: {
-      stayInIframe: false,
+      skipIframeBusting: false,
       sizes: [[0, 0]]
     }
   },
@@ -95,7 +95,7 @@ const prebidRequests = [
       placement_key: 'pKey'
     },
     strData: {
-      stayInIframe: false,
+      skipIframeBusting: false,
       sizes: [[300, 250], [300, 300], [250, 250], [600, 50]]
     }
   },
@@ -120,27 +120,71 @@ const bidderResponse = {
   header: { get: (header) => header }
 };
 
-// Mirrors the one in modules/sharethroughBidAdapter.js as the function is unexported
-const b64EncodeUnicode = (str) => {
-  return btoa(
-    encodeURIComponent(str).replace(/%([0-9A-F]{2})/g,
-      function toSolidBytes(match, p1) {
-        return String.fromCharCode('0x' + p1);
-      }));
-}
-
 const setUserAgent = (str) => {
   window.navigator['__defineGetter__']('userAgent', function () {
     return str;
   });
-}
+};
+
+describe('sharethrough internal spec', function () {
+  let windowSpy, windowTopSpy;
+
+  beforeEach(function() {
+    windowSpy = sinon.spy(window.document, 'getElementsByTagName');
+    windowTopSpy = sinon.spy(window.top.document, 'getElementsByTagName');
+  });
+
+  afterEach(function() {
+    windowSpy.restore();
+    windowTopSpy.restore();
+    window.STR = undefined;
+    window.top.STR = undefined;
+  });
+
+  describe('we cannot access top level document', function () {
+    beforeEach(function() {
+      window.lockedInFrame = true;
+    });
+
+    afterEach(function() {
+      window.lockedInFrame = false;
+    });
+
+    it('appends sfp.js to the safeframe', function () {
+      sharethroughInternal.handleIframe();
+      expect(windowSpy.calledOnce).to.be.true;
+    });
+
+    it('does not append anything if sfp.js is already loaded in the safeframe', function () {
+      window.STR = { Tag: true };
+      sharethroughInternal.handleIframe();
+      expect(windowSpy.notCalled).to.be.true;
+      expect(windowTopSpy.notCalled).to.be.true;
+    });
+  });
+
+  describe('we are able to bust out of the iframe', function () {
+    it('appends sfp.js to window.top', function () {
+      sharethroughInternal.handleIframe();
+      expect(windowSpy.calledOnce).to.be.true;
+      expect(windowTopSpy.calledOnce).to.be.true;
+    });
+
+    it('only appends sfp-set-targeting.js if sfp.js is already loaded on the page', function () {
+      window.top.STR = { Tag: true };
+      sharethroughInternal.handleIframe();
+      expect(windowSpy.calledOnce).to.be.true;
+      expect(windowTopSpy.notCalled).to.be.true;
+    });
+  });
+});
 
 describe('sharethrough adapter spec', function () {
   describe('.code', function () {
     it('should return a bidder code of sharethrough', function () {
       expect(spec.code).to.eql('sharethrough');
     });
-  })
+  });
 
   describe('.isBidRequestValid', function () {
     it('should return false if req has no pkey', function () {
@@ -176,7 +220,7 @@ describe('sharethrough adapter spec', function () {
       expect(builtBidRequests[0].url).to.eq(
         'http://btlr.sharethrough.com/WYu2BXv1/v1');
       expect(builtBidRequests[1].url).to.eq(
-        'http://btlr.sharethrough.com/WYu2BXv1/v1')
+        'http://btlr.sharethrough.com/WYu2BXv1/v1');
       expect(builtBidRequests[0].method).to.eq('GET');
     });
 
@@ -230,7 +274,7 @@ describe('sharethrough adapter spec', function () {
       const builtBidRequests = spec.buildRequests(bidRequests);
       expect(builtBidRequests[0]).to.deep.include({
         strData: {
-          stayInIframe: undefined,
+          skipIframeBusting: undefined,
           iframeSize: undefined,
           sizes: [[600, 300]]
         }
@@ -253,7 +297,7 @@ describe('sharethrough adapter spec', function () {
         });
     });
 
-    it('returns a correctly parsed out response with largest size when strData.stayInIframe is true', function () {
+    it('returns a correctly parsed out response with largest size when strData.skipIframeBusting is true', function () {
       expect(spec.interpretResponse(bidderResponse, prebidRequests[1])[0]).to.include(
         {
           width: 300,
@@ -267,7 +311,7 @@ describe('sharethrough adapter spec', function () {
         });
     });
 
-    it('returns a correctly parsed out response with explicitly defined size when strData.stayInIframe is true and strData.iframeSize is provided', function () {
+    it('returns a correctly parsed out response with explicitly defined size when strData.skipIframeBusting is true and strData.iframeSize is provided', function () {
       expect(spec.interpretResponse(bidderResponse, prebidRequests[2])[0]).to.include(
         {
           width: 500,
@@ -281,7 +325,7 @@ describe('sharethrough adapter spec', function () {
         });
     });
 
-    it('returns a correctly parsed out response with explicitly defined size when strData.stayInIframe is false and strData.sizes contains [0, 0] only', function () {
+    it('returns a correctly parsed out response with explicitly defined size when strData.skipIframeBusting is false and strData.sizes contains [0, 0] only', function () {
       expect(spec.interpretResponse(bidderResponse, prebidRequests[3])[0]).to.include(
         {
           width: 0,
@@ -295,7 +339,7 @@ describe('sharethrough adapter spec', function () {
         });
     });
 
-    it('returns a correctly parsed out response with explicitly defined size when strData.stayInIframe is false and strData.sizes contains multiple sizes', function () {
+    it('returns a correctly parsed out response with explicitly defined size when strData.skipIframeBusting is false and strData.sizes contains multiple sizes', function () {
       expect(spec.interpretResponse(bidderResponse, prebidRequests[4])[0]).to.include(
         {
           width: 300,
@@ -324,29 +368,27 @@ describe('sharethrough adapter spec', function () {
       expect(spec.interpretResponse(bidResponse, prebidRequests[0])).to.be.an('array').that.is.empty;
     });
 
-    it('correctly generates ad markup', function () {
+    it('correctly generates ad markup when skipIframeBusting is false', function () {
       const adMarkup = spec.interpretResponse(bidderResponse, prebidRequests[0])[0].ad;
       let resp = null;
 
       expect(() => btoa(JSON.stringify(bidderResponse))).to.throw();
-      expect(() => resp = b64EncodeUnicode(JSON.stringify(bidderResponse))).not.to.throw();
+      expect(() => resp = sharethroughInternal.b64EncodeUnicode(JSON.stringify(bidderResponse))).not.to.throw();
       expect(adMarkup).to.match(
         /data-str-native-key="pKey" data-stx-response-name=\"str_response_bidId\"/);
       expect(!!adMarkup.indexOf(resp)).to.eql(true);
-      expect(adMarkup).to.match(
-        /<script src="\/\/native.sharethrough.com\/assets\/sfp-set-targeting.js"><\/script>/);
-      expect(adMarkup).to.match(
-        /sfp_js.src = "\/\/native.sharethrough.com\/assets\/sfp.js";/);
-      expect(adMarkup).to.match(
-        /window.top.document.getElementsByTagName\('body'\)\[0\].appendChild\(sfp_js\);/)
+
+      // insert functionality to autodetect whether or not in safeframe, and handle JS insertion
+      expect(adMarkup).to.match(/isLockedInFrame/);
+      expect(adMarkup).to.match(/handleIframe/);
     });
 
-    it('correctly generates ad markup for staying in iframe', function () {
+    it('correctly generates ad markup when skipIframeBusting is true', function () {
       const adMarkup = spec.interpretResponse(bidderResponse, prebidRequests[1])[0].ad;
       let resp = null;
 
       expect(() => btoa(JSON.stringify(bidderResponse))).to.throw();
-      expect(() => resp = b64EncodeUnicode(JSON.stringify(bidderResponse))).not.to.throw();
+      expect(() => resp = sharethroughInternal.b64EncodeUnicode(JSON.stringify(bidderResponse))).not.to.throw();
       expect(adMarkup).to.match(
         /data-str-native-key="pKey" data-stx-response-name=\"str_response_bidId\"/);
       expect(!!adMarkup.indexOf(resp)).to.eql(true);

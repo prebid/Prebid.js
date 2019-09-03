@@ -97,6 +97,131 @@ const bid3 = {
   'ttl': 300
 };
 
+const nativeBid1 = {
+  'bidderCode': 'appnexus',
+  'width': 0,
+  'height': 0,
+  'statusMessage': 'Bid available',
+  'adId': '591e7c9354b633',
+  'requestId': '24aae81e32d6f6',
+  'mediaType': 'native',
+  'source': 'client',
+  'cpm': 10,
+  'creativeId': 97494403,
+  'currency': 'USD',
+  'netRevenue': true,
+  'ttl': 300,
+  'adUnitCode': '/19968336/prebid_native_example_1',
+  'appnexus': {
+    'buyerMemberId': 9325
+  },
+  'meta': {
+    'advertiserId': 2529885
+  },
+  'native': {
+    'title': 'This is a Prebid Native Creative',
+    'body': 'This is a Prebid Native Creative. There are many like it, but this one is mine.',
+    'sponsoredBy': 'Prebid.org',
+    'clickUrl': 'http://prebid.org/dev-docs/show-native-ads.html',
+    'clickTrackers': ['http://www.clickUrl.com/404'],
+    'impressionTrackers': ['http://imp.trackerUrl.com/it1'],
+    'javascriptTrackers': '<script>//js script here</script>',
+    'image': {
+      'url': 'http://vcdn.adnxs.com/p/creative-image/94/22/cd/0f/9422cd0f-f400-45d3-80f5-2b92629d9257.jpg',
+      'height': 2250,
+      'width': 3000
+    },
+    'icon': {
+      'url': 'http://vcdn.adnxs.com/p/creative-image/bd/59/a6/c6/bd59a6c6-0851-411d-a16d-031475a51312.png',
+      'height': 83,
+      'width': 127
+    }
+  },
+  'auctionId': '72138a4a-b747-4192-9192-dcc41d675de8',
+  'responseTimestamp': 1565785219461,
+  'requestTimestamp': 1565785219405,
+  'bidder': 'appnexus',
+  'timeToRespond': 56,
+  'pbLg': '5.00',
+  'pbMg': '10.00',
+  'pbHg': '10.00',
+  'pbAg': '10.00',
+  'pbDg': '10.00',
+  'pbCg': '',
+  'size': '0x0',
+  'adserverTargeting': {
+    [CONSTANTS.TARGETING_KEYS.BIDDER]: 'appnexus',
+    [CONSTANTS.TARGETING_KEYS.AD_ID]: '591e7c9354b633',
+    [CONSTANTS.TARGETING_KEYS.PRICE_BUCKET]: '10.00',
+    [CONSTANTS.TARGETING_KEYS.SIZE]: '0x0',
+    [CONSTANTS.TARGETING_KEYS.SOURCE]: 'client',
+    [CONSTANTS.TARGETING_KEYS.FORMAT]: 'native',
+    [CONSTANTS.NATIVE_KEYS.title]: 'This is a Prebid Native Creative',
+    [CONSTANTS.NATIVE_KEYS.body]: 'This is a Prebid Native Creative. There are many like it, but this one is mine.',
+    [CONSTANTS.NATIVE_KEYS.sponsoredBy]: 'Prebid.org',
+    [CONSTANTS.NATIVE_KEYS.clickUrl]: 'http://prebid.org/dev-docs/show-native-ads.html',
+    [CONSTANTS.NATIVE_KEYS.image]: 'http://vcdn.adnxs.com/p/creative-image/94/22/cd/0f/9422cd0f-f400-45d3-80f5-2b92629d9257.jpg',
+    [CONSTANTS.NATIVE_KEYS.icon]: 'http://vcdn.adnxs.com/p/creative-image/bd/59/a6/c6/bd59a6c6-0851-411d-a16d-031475a51312.png'
+  }
+};
+const nativeBid2 = {
+  'bidderCode': 'dgads',
+  'width': 0,
+  'height': 0,
+  'statusMessage': 'Bid available',
+  'adId': '6e0aba55ed54e5',
+  'requestId': '4de26ec83d9661',
+  'mediaType': 'native',
+  'source': 'client',
+  'cpm': 1.90909091,
+  'creativeId': 'xuidx6c901261b0x2b2',
+  'currency': 'JPY',
+  'netRevenue': true,
+  'ttl': 60,
+  'referrer': 'http://test.localhost:9999/integrationExamples/gpt/demo_native.html?pbjs_debug=true',
+  'native': {
+    'image': {
+      'url': 'https://ads-tr.bigmining.com/img/300x250.png',
+      'width': 300,
+      'height': 250
+    },
+    'title': 'Test Title',
+    'body': 'Test Description',
+    'sponsoredBy': 'test.com',
+    'clickUrl': 'http://prebid.org/',
+    'clickTrackers': ['https://www.clickUrl.com/404'],
+    'impressionTrackers': [
+      'http://imp.trackerUrl.com/it2'
+    ]
+  },
+  'auctionId': '72138a4a-b747-4192-9192-dcc41d675de8',
+  'responseTimestamp': 1565785219607,
+  'requestTimestamp': 1565785219409,
+  'bidder': 'dgads',
+  'adUnitCode': '/19968336/prebid_native_example_1',
+  'timeToRespond': 198,
+  'pbLg': '1.50',
+  'pbMg': '1.90',
+  'pbHg': '1.90',
+  'pbAg': '1.90',
+  'pbDg': '1.90',
+  'pbCg': '',
+  'size': '0x0',
+  'adserverTargeting': {
+    [CONSTANTS.TARGETING_KEYS.BIDDER]: 'dgads',
+    [CONSTANTS.TARGETING_KEYS.AD_ID]: '6e0aba55ed54e5',
+    [CONSTANTS.TARGETING_KEYS.PRICE_BUCKET]: '1.90',
+    [CONSTANTS.TARGETING_KEYS.SIZE]: '0x0',
+    [CONSTANTS.TARGETING_KEYS.SOURCE]: 'client',
+    [CONSTANTS.TARGETING_KEYS.FORMAT]: 'native',
+    [CONSTANTS.NATIVE_KEYS.image]: 'https://ads-tr.bigmining.com/img/300x250.png',
+    [CONSTANTS.NATIVE_KEYS.title]: 'Test Title',
+    [CONSTANTS.NATIVE_KEYS.body]: 'Test Description',
+    [CONSTANTS.NATIVE_KEYS.sponsoredBy]: 'test.com',
+    [CONSTANTS.NATIVE_KEYS.clickUrl]: 'http://prebid.org/'
+  }
+};
+
 describe('targeting tests', function () {
   let sandbox;
   let enableSendAllBids = false;
@@ -106,7 +231,6 @@ describe('targeting tests', function () {
     sandbox = sinon.sandbox.create();
 
     useBidCache = true;
-    // enableSendAllBids = false;
 
     let origGetConfig = config.getConfig;
     sandbox.stub(config, 'getConfig').callsFake(function (key) {
@@ -150,6 +274,9 @@ describe('targeting tests', function () {
       config.resetConfig();
       logWarnStub.restore();
       logErrorStub.restore();
+      amBidsReceivedStub.restore();
+      amGetAdUnitsStub.restore();
+      bidExpiryStub.restore();
     });
 
     describe('when hb_deal is present in bid.adserverTargeting', function () {
@@ -216,6 +343,27 @@ describe('targeting tests', function () {
 
       // expect the winning CPM to be equal to the sendAllBidCPM
       expect(targeting['/123456/header-bid-tag-0'][CONSTANTS.TARGETING_KEYS.PRICE_BUCKET + '_rubicon']).to.deep.equal(targeting['/123456/header-bid-tag-0'][CONSTANTS.TARGETING_KEYS.PRICE_BUCKET]);
+    });
+
+    it('ensures keys are properly generated when enableSendAllBids is true and multiple bidders use native', function() {
+      const nativeAdUnitCode = '/19968336/prebid_native_example_1';
+      enableSendAllBids = true;
+
+      // update mocks for this test to return native bids
+      amBidsReceivedStub.callsFake(function() {
+        return [nativeBid1, nativeBid2];
+      });
+      amGetAdUnitsStub.callsFake(function() {
+        return [nativeAdUnitCode];
+      });
+
+      let targeting = targetingInstance.getAllTargeting([nativeAdUnitCode]);
+      expect(targeting[nativeAdUnitCode].hb_native_image).to.equal(nativeBid1.native.image.url);
+      expect(targeting[nativeAdUnitCode].hb_native_linkurl).to.equal(nativeBid1.native.clickUrl);
+      expect(targeting[nativeAdUnitCode].hb_native_title).to.equal(nativeBid1.native.title);
+      expect(targeting[nativeAdUnitCode].hb_native_image_dgad).to.exist.and.to.equal(nativeBid2.native.image.url);
+      expect(targeting[nativeAdUnitCode].hb_pb_dgads).to.exist.and.to.equal(nativeBid2.pbMg);
+      expect(targeting[nativeAdUnitCode].hb_native_body_appne).to.exist.and.to.equal(nativeBid1.native.body);
     });
 
     it('does not include adpod type bids in the getBidsReceived results', function () {
