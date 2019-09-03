@@ -191,9 +191,9 @@ adapterManager.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTi
     if (
       isTestingServerOnly() &&
       adUnits.find(adUnit => adUnit.bids.find(bid => (
-        bid.bidSource || _s2sConfig.bidderControl[bid.bidder]) &&
-        bid.finalSource === s2sTestingModule.SERVER
-      ))
+        bid.bidSource || (
+          _s2sConfig.bidderControl && _s2sConfig.bidderControl[bid.bidder]
+        )) && bid.finalSource === s2sTestingModule.SERVER))
     ) {
       clientBidderCodes.length = 0;
     }
