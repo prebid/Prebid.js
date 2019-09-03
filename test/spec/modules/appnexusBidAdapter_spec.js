@@ -760,7 +760,7 @@ describe('AppNexusAdapter', function () {
       }
 
       let result = spec.interpretResponse({ body: response }, {bidderRequest});
-      expect(result[0]).to.have.property('vastUrl');
+      expect(result[0]).to.have.property('vastXml');
       expect(result[0]).to.have.property('vastImpUrl');
       expect(result[0]).to.have.property('mediaType', 'video');
     });
