@@ -2,11 +2,11 @@ import {config} from '../src/config';
 import {getGlobal} from '../src/prebidGlobal';
 import { isStr, isPlainObject, isBoolean, isFn, hasOwn, logInfo } from '../src/utils';
 
-const MODULE_NAME = 'shareUserIds';
+const MODULE_NAME = 'userIdTargeting';
 const GAM = 'GAM';
 const GAM_KEYS_CONFIG = 'GAM_KEYS';
 
-export function shareUserIds(userIds, config) {
+export function userIdTargeting(userIds, config) {
   if (!isPlainObject(config)) {
     logInfo(MODULE_NAME + ': Invalid config found, not sharing userIds externally.');
     return;
@@ -44,7 +44,7 @@ export function shareUserIds(userIds, config) {
 export function init(config) {
   getGlobal().requestBids.before(function(fn, reqBidsConfigObj) {
     // using setTimeout to avoid delay
-    setTimeout(shareUserIds, 0, (getGlobal()).getUserIds(), config.getConfig(MODULE_NAME));
+    setTimeout(userIdTargeting, 0, (getGlobal()).getUserIds(), config.getConfig(MODULE_NAME));
     // calling fn allows prebid to continue processing
     return fn.call(this, reqBidsConfigObj);
   }, 40);

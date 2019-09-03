@@ -1,7 +1,7 @@
-import {shareUserIds} from '../../../modules/shareUserIds';
+import {userIdTargeting} from '../../../modules/userIdTargeting';
 import { expect } from 'chai';
 
-describe('#shareUserIds', function() {
+describe('#userIdTargeting', function() {
   let userIds;
   let config;
 
@@ -21,7 +21,7 @@ describe('#shareUserIds', function() {
     let pubads = window.googletag.pubads();
     pubads.clearTargeting();
     pubads.setTargeting('test', ['TEST']);
-    shareUserIds(userIds, JSON.stringify(config));
+    userIdTargeting(userIds, JSON.stringify(config));
     expect(pubads.getTargeting()).to.deep.equal({test: ['TEST']});
   });
 
@@ -30,7 +30,7 @@ describe('#shareUserIds', function() {
     pubads.clearTargeting();
     pubads.setTargeting('test', ['TEST']);
     delete config.GAM_KEYS;
-    shareUserIds(userIds, config);
+    userIdTargeting(userIds, config);
     expect(pubads.getTargeting()).to.deep.equal({test: ['TEST'], tdid: ['my-tdid']});
   })
 
@@ -38,7 +38,7 @@ describe('#shareUserIds', function() {
     let pubads = window.googletag.pubads();
     pubads.clearTargeting();
     pubads.setTargeting('test', ['TEST']);
-    shareUserIds(userIds, config);
+    userIdTargeting(userIds, config);
     expect(pubads.getTargeting()).to.deep.equal({test: ['TEST'], 'TD_ID': ['my-tdid']});
   });
 
@@ -47,7 +47,7 @@ describe('#shareUserIds', function() {
     pubads.clearTargeting();
     pubads.setTargeting('test', ['TEST']);
     config.GAM_KEYS.tdid = '';
-    shareUserIds(userIds, config);
+    userIdTargeting(userIds, config);
     expect(pubads.getTargeting()).to.deep.equal({test: ['TEST']});
   });
 });

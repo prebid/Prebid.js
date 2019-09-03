@@ -1,4 +1,4 @@
-## shareUserIds Module
+## userIdTargeting Module
 - This module works with userId module.
 - This module is used to pass userIds to GAM in targeting so that user ids can be used to pass in Google Exchange Bidding or can be used for targeting in GAM.
 
@@ -12,9 +12,9 @@ pbjs.setConfig({
 		userIds: [{...}, ...]
 	},
 
-	// new shareUserIds config
+	// new userIdTargeting config
 
-	shareUserIds: {
+	userIdTargeting: {
 		"GAM": true,
 		"GAM_KEYS": {
 			"tdid": "TTD_ID" // send tdid as TTD_ID
@@ -30,7 +30,7 @@ If a publisher wants to pass ```UserId.tdid``` as TTD_ID in targeting then set  
 If a publisher does not wants to pass ```UserId.tdid``` but wants to pass other Ids in UserId tthen set ``` GAM_KEYS: { "tdid": "" }```
 
 ## Including this module in Prebid
-``` $ gulp build --modules=userId,shareUserIds,pubmaticBidAdapter ```
+``` $ gulp build --modules=userId,userIdTargeting,pubmaticBidAdapter ```
 
 ## Notes
 - We can add support for other external systems like GAM in future
