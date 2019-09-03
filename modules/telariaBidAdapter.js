@@ -36,7 +36,7 @@ export const spec = {
       if (url) {
         requests.push({
           method: 'GET',
-          url: generateUrl(bid, bidderRequest),
+          url: url,
           bidId: bid.bidId,
           vastUrl: url.split('&fmt=json')[0]
         });
@@ -158,7 +158,7 @@ function getSupplyChainAsUrlParam(schainObject) {
   return scStr;
 }
 
-function getUrlParams(params) {
+function getUrlParams(params, schainFromBidRequest) {
   let urlSuffix = '';
 
   if (!utils.isEmpty(params)) {
@@ -167,7 +167,7 @@ function getUrlParams(params) {
         urlSuffix += `&${key}=${params[key]}`;
       }
     }
-    urlSuffix += getSupplyChainAsUrlParam(params['schain']);
+    urlSuffix += getSupplyChainAsUrlParam(!utils.isEmpty(schainFromBidRequest) ? schainFromBidRequest : params['schain']);
   }
 
   return urlSuffix;
@@ -225,7 +225,7 @@ function generateUrl(bid, bidderRequest) {
       url += (`&playerHeight=${height}`);
     }
 
-    url += `${getUrlParams(bid.params)}`;
+    url += `${getUrlParams(bid.params, bid.schain)}`;
 
     url += `&srcPageUrl=${getSrcPageUrl(bid.params)}`;
 
