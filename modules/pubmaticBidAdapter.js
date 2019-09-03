@@ -644,7 +644,7 @@ function _handleEids(payload, validBidRequests) {
   let eids = [];
   _handleDigitrustId(eids);
   _handleTTDId(eids, validBidRequests);
-  _handlePubCommonId(eids,validBidRequests);
+  _handlePubCommonId(eids, validBidRequests);
   if (eids.length > 0) {
     payload.user.eids = eids;
   }

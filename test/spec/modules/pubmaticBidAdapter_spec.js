@@ -1832,6 +1832,44 @@ describe('PubMatic adapter', function () {
         expect(data.video).to.exist;
         expect(data.native).to.not.exist;
       });
+
+      describe('pubCommonId from userId module', function() {
+        let sandbox;
+        beforeEach(() => {
+          sandbox = sinon.sandbox.create();
+        });
+
+        afterEach(() => {
+          sandbox.restore();
+        });
+
+        it('Request should have pubcommonId in userId params', function() {
+          bidRequests[0].userId = {};
+          bidRequests[0].userId.pubcid = 'PUBCOMMON_ID_FROM_USER_ID_MODULE';
+          let request = spec.buildRequests(bidRequests, {});
+          let data = JSON.parse(request.data);
+          expect(data.user.eids).to.deep.equal([{
+            'source': 'pubcommon',
+            'uids': [{
+              'id': 'PUBCOMMON_ID_FROM_USER_ID_MODULE',
+              'atype': 1
+            }]
+          }]);
+        });
+
+        it('Request should NOT have pubcommonId params if userId is NOT object', function() {
+          let request = spec.buildRequests(bidRequests, {});
+          let data = JSON.parse(request.data);
+          expect(data.user.eids).to.deep.equal(undefined);
+        });
+
+        it('Request should NOT have pubcommonId params if userId.pubcid is NOT present', function() {
+          bidRequests[0].userId = {};
+          let request = spec.buildRequests(bidRequests, {});
+          let data = JSON.parse(request.data);
+          expect(data.user.eids).to.deep.equal(undefined);
+        });
+      });
   	});
 
     it('Request params dctr check', function () {
