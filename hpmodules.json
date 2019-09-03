@@ -3,6 +3,7 @@
   "aolBidAdapter",
   "appnexusBidAdapter",
   "emx_digitalBidAdapter",
+  "audienceNetworkBidAdapter",
   "ixBidAdapter",
   "justpremiumBidAdapter",
   "mantisBidAdapter",
@@ -16,6 +17,7 @@
   "rhythmoneBidAdapter",
   "pubmaticBidAdapter",
   "synacormediaBidAdapter",
-  "googleAnalyticsAdapter"
+  "googleAnalyticsAdapter",
+  "tripleliftBidAdapter"
 ]
 
