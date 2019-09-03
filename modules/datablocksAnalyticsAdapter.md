@@ -16,7 +16,7 @@ Analytics adapter for Datablocks.net. Contact support@datablocks.net for informa
   options: {
     publisherId: 12345,
     sourceId: 12356,
-    host: 'datablocks.net'
+    host: 'prebid.datablocks.net'
 
   }
 }

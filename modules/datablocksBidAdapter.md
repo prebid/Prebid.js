@@ -28,7 +28,7 @@ Banner Native and
             bidder: 'datablocks',
             params: {
               sourceId: 12345,
-              host: 'v5demo.datablocks.net'
+              host: 'prebid.datablocks.net'
             }
           }
         ]
@@ -45,7 +45,7 @@ Banner Native and
             },
             params: {
               sourceId: 12345,
-              host: 'v5demo.datablocks.net'
+              host: 'prebid.datablocks.net'
             }
           }
         ]
