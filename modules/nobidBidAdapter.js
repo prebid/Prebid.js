@@ -276,7 +276,7 @@ export const spec = {
         } else {
           params += `?gdpr_consent=${gdprConsent.consentString}`;
         }
-      }    	
+      }
       return [{
         type: 'iframe',
         url: 'https://s3.amazonaws.com/nobid-public/sync.html'+params

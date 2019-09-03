@@ -168,7 +168,7 @@ describe('Nobid Adapter', function () {
       expect(result[0].requestId).to.equal(expectedResponse[0].requestId);
       expect(result[0].cpm).to.equal(expectedResponse[0].cpm);
     });
-    
+
     it('should get correct empty response', function () {
       let bidderRequest = {
         bids: [{
@@ -179,7 +179,7 @@ describe('Nobid Adapter', function () {
       let result = spec.interpretResponse({ body: response }, {bidderRequest: bidderRequest});
       expect(result.length).to.equal(0);
     });
-    
+
     it('should get correct deal id', function () {
       let expectedResponse = [
         {
@@ -209,7 +209,7 @@ describe('Nobid Adapter', function () {
     });
     
   });
-  
+
   describe('getUserSyncs', function () {
 	const GDPR_CONSENT_STRING = "GDPR_CONSENT_STRING";
     it('should get correct user sync when iframeEnabled', function () {
@@ -240,7 +240,7 @@ describe('Nobid Adapter', function () {
 	  expect(pixel.length).to.equal(0);
 	});
   });
-  
+
   describe('onTimeout', function (syncOptions) {
     it('should increment timeoutTotal', function () {
       let timeoutTotal = spec.onTimeout()
