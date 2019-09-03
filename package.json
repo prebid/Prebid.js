@@ -21,7 +21,7 @@
   "author": "the prebid.js contributors",
   "license": "Apache-2.0",
   "engines": {
-    "node": ">=4.0"
+    "node": ">=8.9.0"
   },
   "devDependencies": {
     "@babel/core": "^7.2.2",
