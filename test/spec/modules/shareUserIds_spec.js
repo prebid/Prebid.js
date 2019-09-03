@@ -10,8 +10,8 @@ describe('#shareUserIds', function() {
       tdid: 'my-tdid'
     };
     config = {
-      'DFP': true,
-      'DFP_KEYS': {
+      'GAM': true,
+      'GAM_KEYS': {
         'tdid': 'TD_ID'
       }
     };
@@ -25,11 +25,11 @@ describe('#shareUserIds', function() {
     expect(pubads.getTargeting()).to.deep.equal({test: ['TEST']});
   });
 
-  it('all UserIds are passed as is with DFP: true', function() {
+  it('all UserIds are passed as is with GAM: true', function() {
     let pubads = window.googletag.pubads();
     pubads.clearTargeting();
     pubads.setTargeting('test', ['TEST']);
-    delete config.DFP_KEYS;
+    delete config.GAM_KEYS;
     shareUserIds(userIds, config);
     expect(pubads.getTargeting()).to.deep.equal({test: ['TEST'], tdid: ['my-tdid']});
   })
@@ -46,7 +46,7 @@ describe('#shareUserIds', function() {
     let pubads = window.googletag.pubads();
     pubads.clearTargeting();
     pubads.setTargeting('test', ['TEST']);
-    config.DFP_KEYS.tdid = '';
+    config.GAM_KEYS.tdid = '';
     shareUserIds(userIds, config);
     expect(pubads.getTargeting()).to.deep.equal({test: ['TEST']});
   });
