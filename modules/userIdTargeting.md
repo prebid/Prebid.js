@@ -34,4 +34,4 @@ If a publisher does not wants to pass ```UserId.tdid``` but wants to pass other 
 
 ## Notes
 - We can add support for other external systems like GAM in future
-- We have not added support for A9/APSTag as it is called in parallel with Prebid. This module executes when ```pbjs.requestBids``` is called, in practice, call to A9 is expected to execute in paralle to Prebid thus we have not covered A9 here. For sending Uids in A9, one will need to set those Ids in params key in the object passed to ```apstag.init```, ```pbjs.getUserIds``` can be used for the same. 
+- We have not added support for A9/APSTag as it is called in parallel with Prebid. This module executes when ```pbjs.requestBids``` is called, in practice, call to A9 is expected to execute in paralle to Prebid thus we have not covered A9 here. For sending Uids in A9, one will need to set those Ids in params key in the object passed to ```apstag.init```, ```pbjs.getUserIds``` can be used for the same.
