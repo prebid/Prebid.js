@@ -29,12 +29,21 @@ export function userIdTargeting(userIds, config) {
   }
 
   Object.keys(userIds).forEach(function(key) {
-    if (isStr(userIds[key])) {
+    if (userIds[key]) {
       // PUB_GAM_KEYS[key] = '' means publisher does not want to send this uid
       if (SHARE_WITH_GAM && PUB_GAM_KEYS[key] !== '') {
+        let uidStr;
+        if (isStr(userIds[key])) {
+          uidStr = userIds[key];
+        } else if (isPlainObject(userIds[key])) {
+          uidStr = JSON.stringify(userIds[key])
+        } else {
+          logInfo(MODULE_NAME + ': ' + key + ' User ID is not an object or a string.');
+          return;
+        }
         GAM_API(
           (hasOwn(PUB_GAM_KEYS, key) ? PUB_GAM_KEYS[key] : key),
-          [ userIds[key] ]
+          [ uidStr ]
         );
       }
     }
