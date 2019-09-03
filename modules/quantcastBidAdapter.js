@@ -34,7 +34,7 @@ function extractBidSizes(bid) {
 }
 
 function makeVideoImp(bid) {
-  const video = bid.params.video;
+  const video = bid.params.video || [];
   if (utils.isArray(bid.mediaTypes.video.playerSize[0])) {
     video['w'] = bid.mediaTypes.video.playerSize[0][0];
     video['h'] = bid.mediaTypes.video.playerSize[0][1];
