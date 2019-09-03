@@ -172,8 +172,8 @@ describe('Nobid Adapter', function () {
     it('should get correct empty response', function () {
       let bidderRequest = {
         bids: [{
-        bidId: REQUEST_ID,
-        adUnitCode: ADUNIT_300x250+'1'
+          bidId: REQUEST_ID,
+          adUnitCode: ADUNIT_300x250 + '1'
         }]
       }
       let result = spec.interpretResponse({ body: response }, {bidderRequest: bidderRequest});
@@ -207,7 +207,7 @@ describe('Nobid Adapter', function () {
       expect(result.length).to.equal(expectedResponse.length);
       expect(result[0].dealId).to.equal(expectedResponse[0].dealId);
     });
-    
+
   });
 
   describe('getUserSyncs', function () {
@@ -217,24 +217,24 @@ describe('Nobid Adapter', function () {
       expect(pixel[0].type).to.equal('iframe');
       expect(pixel[0].url).to.equal('https://s3.amazonaws.com/nobid-public/sync.html');
     });
-    
+
     it('should get correct user sync when iframeEnabled and pixelEnabled', function () {
-        let pixel = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: true})
-        expect(pixel[0].type).to.equal('iframe');
-        expect(pixel[0].url).to.equal('https://s3.amazonaws.com/nobid-public/sync.html');
-      });
-    
-    it('should get correct user sync when iframeEnabled', function () {
-      let pixel = spec.getUserSyncs({iframeEnabled: true}, {}, {gdprApplies:true, consentString:GDPR_CONSENT_STRING})
+      let pixel = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: true})
       expect(pixel[0].type).to.equal('iframe');
-      expect(pixel[0].url).to.equal('https://s3.amazonaws.com/nobid-public/sync.html?gdpr=1&gdpr_consent='+GDPR_CONSENT_STRING);
+      expect(pixel[0].url).to.equal('https://s3.amazonaws.com/nobid-public/sync.html');
     });
-    
+
+    it('should get correct user sync when iframeEnabled', function () {
+      let pixel = spec.getUserSyncs({iframeEnabled: true}, {}, {gdprApplies: true, consentString: GDPR_CONSENT_STRING})
+      expect(pixel[0].type).to.equal('iframe');
+      expect(pixel[0].url).to.equal('https://s3.amazonaws.com/nobid-public/sync.html?gdpr=1&gdpr_consent=' + GDPR_CONSENT_STRING);
+    });
+
     it('should get correct user sync when !iframeEnabled', function () {
       let pixel = spec.getUserSyncs({iframeEnabled: false})
       expect(pixel.length).to.equal(0);
     });
-    
+
     it('should get correct user sync when !iframeEnabled', function () {
 	  let pixel = spec.getUserSyncs({})
 	  expect(pixel.length).to.equal(0);

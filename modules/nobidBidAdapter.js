@@ -279,7 +279,7 @@ export const spec = {
       }
       return [{
         type: 'iframe',
-        url: 'https://s3.amazonaws.com/nobid-public/sync.html'+params
+        url: 'https://s3.amazonaws.com/nobid-public/sync.html' + params
       }];
     } else {
       utils.logWarn('-NoBid- Please enable iframe based user sync.', syncOptions);
@@ -293,12 +293,12 @@ export const spec = {
      */
   onTimeout: function(data) {
     nobid.timeoutTotal++;
-    log('Timeout total: '+nobid.timeoutTotal, data);
+    log('Timeout total: ' + nobid.timeoutTotal, data);
     return nobid.timeoutTotal;
   },
   onBidWon: function(data) {
     nobid.bidWonTotal++;
-    log('BidWon total: '+nobid.bidWonTotal, data);
+    log('BidWon total: ' + nobid.bidWonTotal, data);
     return nobid.bidWonTotal;
   }
 }
