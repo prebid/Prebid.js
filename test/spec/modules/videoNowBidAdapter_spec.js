@@ -1,5 +1,61 @@
 import { expect } from 'chai'
 import { spec } from 'modules/videoNowBidAdapter'
+import { replaceAuctionPrice } from '../../../src/utils'
+
+const placementId = 'div-gpt-ad-1438287399331-0'
+
+const getValidServerResponse = () => {
+  const serverResponse = {
+    body: {
+      id: '111-111',
+      bidid: '2955a162-699e-4811-ce88-5c3ac973e73c',
+      cur: 'RUB',
+      seatbid: [
+        {
+          bid: [
+            {
+              id: 'e3bf2b82e3e9485113fad6c9b27f8768.1',
+              impid: '1',
+              price: 10.97,
+              nurl: 'http://localhost:8086/event/nurl',
+              netRevenue: false,
+              ttl: 800,
+              adm: 'stub',
+              crid: 'e3bf2b82e3e9485113fad6c9b27f8768.1',
+              h: 640,
+              w: 480,
+              ext: {
+                vnInitModule: 'http://localhost:8086/vn_init.js',
+                vnModule: 'http://localhost:8086/vn_module.js',
+                dataXml: '<VAST></VAST>',
+                format: {
+                  name: 'flyRoll',
+                },
+              },
+
+            },
+          ],
+          group: 0,
+        },
+      ],
+      price: 10,
+      ext: {
+        placementId,
+        pixels: [
+          'http://localhost:8086/event/pxlcookiematching?uiid=1',
+          'http://localhost:8086/event/pxlcookiematching?uiid=2',
+        ],
+        iframes: [
+          'http://localhost:8086/event/ifrcookiematching?uiid=1',
+          'http://localhost:8086/event/ifrcookiematching?uiid=2',
+        ],
+      },
+    },
+    headers: {},
+  }
+
+  return JSON.parse(JSON.stringify(serverResponse))
+}
 
 describe('videonowAdapterTests', function() {
   describe('bidRequestValidity', function() {
@@ -8,7 +64,7 @@ describe('videonowAdapterTests', function() {
         bidder: 'videonow',
         params: {
           pId: '86858',
-        }
+        },
       })).to.equal(true)
     })
 
@@ -16,8 +72,8 @@ describe('videonowAdapterTests', function() {
       expect(spec.isBidRequestValid({
         bidder: 'videonow',
         params: {
-          nomater: 86858
-        }
+          nomater: 86858,
+        },
       })).to.equal(false)
 
       it('bidRequest is empty', function() {
@@ -32,76 +88,76 @@ describe('videonowAdapterTests', function() {
     describe('bidRequest', function() {
       const validBidRequests = [
         {
-          'bidder': 'videonow',
-          'params': {
-            'pId': '1',
-            'placementId': 'div-gpt-ad-1438287399331-0',
-            'url': 'http://localhost:8086/bid?p=exists',
-            'bidFloor': 10,
-            'cur': 'RUB'
+          bidder: 'videonow',
+          params: {
+            pId: '1',
+            placementId,
+            url: 'http://localhost:8086/bid?p=exists',
+            bidFloor: 10,
+            cur: 'RUB'
           },
-          'crumbs': {
-            'pubcid': 'feded041-35dd-4b54-979a-6d7805abfa75'
+          crumbs: {
+            pubcid: 'feded041-35dd-4b54-979a-6d7805abfa75',
           },
-          'mediaTypes': {
-            'banner': {
-              'sizes': [[640, 480], [320, 200]]
-            }
+          mediaTypes: {
+            banner: {
+              sizes: [[640, 480], [320, 200]]
+            },
           },
-          'adUnitCode': 'test-ad',
-          'transactionId': '676403c7-09c9-4b56-be82-e7cae81f40b9',
-          'sizes': [[640, 480], [320, 200]],
-          'bidId': '268c309f46390d',
-          'bidderRequestId': '1dfdd514c36ef6',
-          'auctionId': '4d523546-889a-4029-9a79-13d3c69f9922',
-          'src': 'client',
-          'bidRequestsCount': 1
-        }
+          adUnitCode: 'test-ad',
+          transactionId: '676403c7-09c9-4b56-be82-e7cae81f40b9',
+          sizes: [[640, 480], [320, 200]],
+          bidId: '268c309f46390d',
+          bidderRequestId: '1dfdd514c36ef6',
+          auctionId: '4d523546-889a-4029-9a79-13d3c69f9922',
+          src: 'client',
+          bidRequestsCount: 1,
+        },
       ]
 
       const bidderRequest = {
-        'bidderCode': 'videonow',
-        'auctionId': '4d523546-889a-4029-9a79-13d3c69f9922',
-        'bidderRequestId': '1dfdd514c36ef6',
-        'bids': [
+        bidderCode: 'videonow',
+        auctionId: '4d523546-889a-4029-9a79-13d3c69f9922',
+        bidderRequestId: '1dfdd514c36ef6',
+        bids: [
           {
-            'bidder': 'videonow',
-            'params': {
-              'pId': '1',
-              'placementId': 'div-gpt-ad-1438287399331-0',
-              'url': 'http://localhost:8086/bid',
-              'bidFloor': 10,
-              'cur': 'RUB'
+            bidder: 'videonow',
+            params: {
+              pId: '1',
+              placementId,
+              url: 'http://localhost:8086/bid',
+              bidFloor: 10,
+              cur: 'RUB',
             },
-            'crumbs': {
-              'pubcid': 'feded041-35dd-4b54-979a-6d7805abfa75'
+            crumbs: {
+              pubcid: 'feded041-35dd-4b54-979a-6d7805abfa75',
             },
-            'mediaTypes': {
-              'banner': {
-                'sizes': [[640, 480], [320, 200]]
-              }
+            mediaTypes: {
+              banner: {
+                sizes: [[640, 480], [320, 200]],
+              },
             },
-            'adUnitCode': 'test-ad',
-            'transactionId': '676403c7-09c9-4b56-be82-e7cae81f40b9',
-            'sizes': [[640, 480], [320, 200]],
-            'bidId': '268c309f46390d',
-            'bidderRequestId': '1dfdd514c36ef6',
-            'auctionId': '4d523546-889a-4029-9a79-13d3c69f9922',
-            'src': 'client',
-            'bidRequestsCount': 1
-          }
+            adUnitCode: 'test-ad',
+            transactionId: '676403c7-09c9-4b56-be82-e7cae81f40b9',
+            sizes: [[640, 480], [320, 200]],
+            bidId: '268c309f46390d',
+            bidderRequestId: '1dfdd514c36ef6',
+            auctionId: '4d523546-889a-4029-9a79-13d3c69f9922',
+            src: 'client',
+            bidRequestsCount: 1,
+          },
         ],
-        'auctionStart': 1565794308584,
-        'timeout': 3000,
-        'refererInfo': {
-          'referer': 'http://localhost:8086/page',
-          'reachedTop': true,
-          'numIframes': 0,
-          'stack': [
-            'http://localhost:8086/page'
-          ]
+        auctionStart: 1565794308584,
+        timeout: 3000,
+        refererInfo: {
+          referer: 'http://localhost:8086/page',
+          reachedTop: true,
+          numIframes: 0,
+          stack: [
+            'http://localhost:8086/page',
+          ],
         },
-        'start': 1565794308589
+        start: 1565794308589,
       }
 
       const requests = spec.buildRequests(validBidRequests, bidderRequest)
@@ -133,14 +189,14 @@ describe('videonowAdapterTests', function() {
 
       describe('bidRequest advanced', function() {
         const bidderRequestEmptyParamsAndExtParams = {
-          'bidder': 'videonow',
-          'params': {
-            'pId': '1',
+          bidder: 'videonow',
+          params: {
+            pId: '1',
           },
-          'ext': {
-            'p1': 'ext1',
-            'p2': 'ext2',
-          }
+          ext: {
+            p1: 'ext1',
+            p2: 'ext2',
+          },
         }
 
         it('bidRequest count', function() {
@@ -171,7 +227,7 @@ describe('videonowAdapterTests', function() {
 
         it('bidRequest without params', function() {
           const bidderReq = {
-            'bidder': 'videonow'
+            bidder: 'videonow',
           }
           const requests = spec.buildRequests([bidderReq], bidderRequest)
           expect(requests.length).to.equal(1)
@@ -180,68 +236,92 @@ describe('videonowAdapterTests', function() {
       })
     })
 
+    describe('onBidWon', function() {
+      const cpm = 10
+      const nurl = 'http://fakedomain.nld?price=${AUCTION_PRICE}'
+      const imgSrc = replaceAuctionPrice(nurl, cpm)
+      const foundPixels = () => window.document.body.querySelectorAll(`img[src="${imgSrc}"]`)
+
+
+      it('Should not create nurl pixel if bid is undefined', function(){
+        spec.onBidWon()
+        expect(foundPixels().length).to.equal(0)
+      })
+
+      it('Should not create nurl pixel if bid does not contains nurl', function(){
+        spec.onBidWon({})
+        expect(foundPixels().length).to.equal(0)
+      })
+
+      it('Should create nurl pixel if bid nurl', function(){
+        spec.onBidWon({ nurl, cpm })
+        expect(foundPixels().length).to.equal(1)
+      })
+
+    })
+
+    describe('getUserSyncs', function() {
+
+      it('Should return an empty array if not get serverResponses', function() {
+        expect(spec.getUserSyncs({}).length).to.equal(0)
+      })
+
+      it('Should return an empty array if get serverResponses as empty array', function() {
+        expect(spec.getUserSyncs({}, []).length).to.equal(0)
+      })
+
+      it('Should return an empty array if serverResponses has no body', function() {
+        const serverResp = getValidServerResponse()
+        delete serverResp.body
+        const syncs = spec.getUserSyncs({}, [serverResp])
+        expect(syncs.length).to.equal(0)
+      })
+
+      it('Should return an empty array if serverResponses has no ext', function() {
+        const serverResp = getValidServerResponse()
+        delete serverResp.body.ext
+        const syncs = spec.getUserSyncs({}, [serverResp])
+        expect(syncs.length).to.equal(0)
+      })
+
+      it('Should return an array', function() {
+        const serverResp = getValidServerResponse()
+        const syncs = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: true}, [serverResp])
+        expect(syncs.length).to.equal(4)
+      })
+
+      it('Should return pixels', function() {
+        const serverResp = getValidServerResponse()
+        const syncs = spec.getUserSyncs({iframeEnabled: false, pixelEnabled: true}, [serverResp])
+        expect(syncs.length).to.equal(2)
+        expect(syncs[0].type).to.equal('image')
+        expect(syncs[1].type).to.equal('image')
+      })
+
+      it('Should return iframes', function() {
+        const serverResp = getValidServerResponse()
+        const syncs = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: false}, [serverResp])
+        expect(syncs.length).to.equal(2)
+        expect(syncs[0].type).to.equal('iframe')
+        expect(syncs[1].type).to.equal('iframe')
+      })
+
+    })
+
+
     describe('interpretResponse', function() {
-      const getValidServerResponse = () => {
-        const serverResponse = {
-          'body': {
-            'id': '111-111',
-            'bidid': '2955a162-699e-4811-ce88-5c3ac973e73c',
-            'cur': 'RUB',
-            'seatbid': [
-              {
-                'bid': [
-                  {
-                    'id': 'e3bf2b82e3e9485113fad6c9b27f8768.1',
-                    'impid': '1',
-                    'price': 10.97,
-                    'nurl': 'http://localhost:8086/event/nurl',
-                    'netRevenue': false,
-                    'ttl': 800,
-                    'adm': 'stub',
-                    'crid': 'e3bf2b82e3e9485113fad6c9b27f8768.1',
-                    'h': 640,
-                    'w': 480,
-                    'ext': {
-                      vnInitModule: 'http://localhost:8086/vn_init.js',
-                      vnModule: 'http://localhost:8086/vn_module.js',
-                      dataXml: '<VAST></VAST>'
-                    }
-
-                  }
-                ],
-                'group': 0
-              }
-            ],
-            'price': 10,
-            'ext': {
-              'placementId': 'div-gpt-ad-1438287399331-0',
-              'pixels': [
-                'http://localhost:8086/event/pxlcookiematching?uiid=1',
-                'http://localhost:8086/event/pxlcookiematching?uiid=2'
-              ],
-              'iframes': [
-                'http://localhost:8086/event/ifrcookiematching?uiid=1',
-                'http://localhost:8086/event/ifrcookiematching?uiid=2'
-              ]
-            }
-          },
-          'headers': {}
-        }
-
-        return JSON.parse(JSON.stringify(serverResponse))
-      }
 
       const bidRequest = {
-        'method': 'POST',
-        'url': 'http://localhost:8086/bid?profile_id=1',
-        'data': {
-          'id': '217b8ab59a18e8',
-          'cpm': 10,
-          'sizes': [[640, 480], [320, 200]],
-          'cur': 'RUB',
-          'placementId': 'div-gpt-ad-1438287399331-0',
-          'ref': 'http://localhost:8086/page'
-        }
+        method: 'POST',
+        url: 'http://localhost:8086/bid?profile_id=1',
+        data: {
+          id: '217b8ab59a18e8',
+          cpm: 10,
+          sizes: [[640, 480], [320, 200]],
+          cur: 'RUB',
+          placementId,
+          ref: 'http://localhost:8086/page',
+        },
       }
 
 
@@ -293,7 +373,7 @@ describe('videonowAdapterTests', function() {
       })
 
       it('Should return an empty array if serverResponse\'s placementId is undefined', function() {
-        expect(spec.interpretResponse({ body: { seatbid: [1,2] } }, bidRequest).length).to.equal(0)
+        expect(spec.interpretResponse({ body: { seatbid: [1, 2] } }, bidRequest).length).to.equal(0)
       })
 
       it('Should return an empty array if serverResponse\'s id in the bid is undefined', function() {
@@ -366,7 +446,7 @@ describe('videonowAdapterTests', function() {
         delete serverResp.body.seatbid[0].bid[0].netRevenue
         const res = spec.interpretResponse(serverResp, bidRequest)
         expect(res.length).to.equal(1)
-        expect(res[0].netRevenue).to.equal(true)
+        expect(res[0].netRevenue).to.be.true;
       })
 
       it('Default currency is RUB', function() {
@@ -376,6 +456,43 @@ describe('videonowAdapterTests', function() {
         expect(res.length).to.equal(1)
         expect(res[0].currency).to.equal('RUB')
       })
+
+      describe('renderer object', function() {
+
+        it('execute renderer.render() should create window.videonow object', function() {
+          const serverResp = getValidServerResponse()
+          const res = spec.interpretResponse(serverResp, bidRequest)
+          expect(res.length).to.equal(1)
+
+          const renderer = res[0].renderer
+          expect(renderer).to.be.an('object')
+          expect(renderer.render).to.a('function')
+
+          const doc = window.document
+          const placementElement = doc.createElement('div')
+          placementElement.setAttribute('id', placementId)
+          doc.body.appendChild(placementElement)
+
+          renderer.render()
+          expect(window.videonow).to.an('object')
+        })
+      })
+
+      it('execute renderer.render() should not create window.videonow object if placement element not found', function() {
+        const serverResp = getValidServerResponse()
+        const res = spec.interpretResponse(serverResp, bidRequest)
+        expect(res.length).to.equal(1)
+
+        const renderer = res[0].renderer
+        expect(renderer).to.be.an('object')
+        expect(renderer.render).to.a('function')
+
+        renderer.render()
+        expect(window.videonow).to.be.undefined
+      })
+
     })
+
   })
+
 })

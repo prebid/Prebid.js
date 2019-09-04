@@ -8,8 +8,7 @@ const BIDDER_CODE = 'videonow'
 const TTL_SECONDS = 60 * 5
 
 function isBidRequestValid(bid) {
-  const { params } = bid || {}
-  return !!(params.pId)
+  return !!(bid && bid.params && bid.params.pId)
 }
 
 function buildRequest(bid, bidderRequest) {
@@ -30,8 +29,8 @@ function buildRequest(bid, bidderRequest) {
       sizes,
       cur: cur || 'RUB',
       placementId,
-      ref: refererInfo && refererInfo.referer
-    }
+      ref: refererInfo && refererInfo.referer,
+    },
   }
 
   ext && Object.keys(ext).forEach(key => {
@@ -105,27 +104,27 @@ function createResponseBid(bidInfo, bidId, cur, placementId) {
       render: function() {
         const d = window.document
         const el = placementId && d.getElementById(placementId)
-        if (!el) {
+        if (el) {
+          // prepare data for vn_init script
+          const profileData = {
+            url: `${vnModule}`,
+            dataXml,
+          }
+
+          format && (profileData.format = format);
+
+          // add init data for vn_init on the page
+          window.videonow = {
+            'init': { '1': profileData },
+          }
+
+          // add vn_init js on the page
+          const scr = document.createElement('script')
+          scr.src = `${vnInitModule}?profileId=1`
+          el && el.appendChild(scr)
+        } else {
           utils.logError(`bidAdapter ${BIDDER_CODE}: ${placementId} not found`)
         }
-
-        // prepare data for vn_init script
-        const profileData = {
-          url: `${vnModule}`,
-          dataXml
-        }
-
-        format && (profileData.format = format)
-
-        // add init data for vn_init on the page
-        window.videonow = {
-          'init': { '1': profileData }
-        }
-
-        // add vn_init js on the page
-        const scr = document.createElement('script')
-        scr.src = `${vnInitModule}?profileId=1`
-        el.appendChild(scr)
       }
     }
   }
@@ -143,16 +142,16 @@ function getUserSyncs(syncOptions, serverResponses) {
     if (syncOptions.iframeEnabled && iframes && iframes.length) {
       iframes.forEach(i => syncs.push({
           type: 'iframe',
-          url: i
-        })
+          url: i,
+        }),
       )
     }
 
     if (syncOptions.pixelEnabled && pixels && pixels.length) {
       pixels.forEach(p => syncs.push({
           type: 'image',
-          url: p
-        })
+          url: p,
+        }),
       )
     }
   })
@@ -162,7 +161,7 @@ function getUserSyncs(syncOptions, serverResponses) {
 }
 
 function onBidWon(bid) {
-  const { nurl } = bid
+  const { nurl } = bid || {}
   if (nurl) {
     const img = document.createElement('img')
     img.src = utils.replaceAuctionPrice(nurl, bid.cpm)
