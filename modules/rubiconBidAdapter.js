@@ -468,9 +468,7 @@ export const spec = {
     if (responseObj.seatbid) {
       const responseErrors = utils.deepAccess(responseObj, 'ext.errors.rubicon');
       if (Array.isArray(responseErrors) && responseErrors.length > 0) {
-        responseErrors.forEach(error => {
           utils.logWarn('Rubicon: Error in video response');
-        });
       }
       const bids = [];
       responseObj.seatbid.forEach(seatbid => {
