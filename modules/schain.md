@@ -1,13 +1,14 @@
 # schain module
 
-Aggregators who manage Prebid wrappers on behalf of multiple publishers need to declare their intermediary status in the Supply Chain Object.  
-As the spec prohibits us from adding upstream intermediaries, Prebid requests in this case need to come with the schain information.
-In this use case, it's seems cumbersome to have every bidder in the wrapper separately configured the same schain information.
+Aggregators who manage Prebid wrappers on behalf of multiple publishers and handle payment on behalf of the publishers
+need to declare their intermediary status in the Supply Chain Object.  As the Supply Chain Object spec prohibits SSPs from adding
+upstream intermediaries, Prebid requests in this case need to come with the schain information.  In this use case, it's cumbersome
+to have every bidder in the wrapper separately configured the same schain information.
 
 Refer:
 - https://iabtechlab.com/sellers-json/
-- https://github.com/InteractiveAdvertisingBureau/openrtb/blob/master/supplychainobject.md 
- 
+- https://github.com/InteractiveAdvertisingBureau/openrtb/blob/master/supplychainobject.md
+
 ## Sample code for passing the schain object
 ```
 pbjs.setConfig( {
@@ -26,16 +27,16 @@ pbjs.setConfig( {
 	            {
 				   "asi":"indirectseller-2.com",
 				   "sid":"00002",
-				   "hp":0
+				   "hp":1
 			    },
 			]
-		}	
+		}
 	}
 });
 ```
 
 ## Workflow
-The schain module is not enabled by default as it may not be neccessary for all publishers.
+The schain module is not enabled by default as it may not be necessary for all publishers.
 If required, schain module can be included as following
 ```
     $ gulp build --modules=schain,pubmaticBidAdapter,openxBidAdapter,rubiconBidAdapter,sovrnBidAdapter
