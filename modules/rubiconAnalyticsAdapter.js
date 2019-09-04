@@ -73,7 +73,7 @@ function sendMessage(auctionId, bidWonId) {
   function formatBid(bid) {
     return utils.pick(bid, [
       'bidder',
-      'bidId',
+      'bidId', bidId => (utils.deepAccess(bid, 'bidResponse.seatBidId')) ? utils.deepAccess(bid, 'bidResponse.seatBidId') : bidId,
       'status',
       'error',
       'source', (source, bid) => {
@@ -211,6 +211,7 @@ function sendMessage(auctionId, bidWonId) {
 
 export function parseBidResponse(bid) {
   return utils.pick(bid, [
+    'seatBidId',
     'bidPriceUSD', () => {
       if (typeof bid.currency === 'string' && bid.currency.toUpperCase() === 'USD') {
         return Number(bid.cpm);
@@ -389,6 +390,7 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
           break;
         }
         bid.source = formatSource(bid.source || args.source);
+
         switch (args.getStatusCode()) {
           case GOOD:
             bid.status = 'success';
@@ -406,6 +408,15 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
         }
         bid.clientLatencyMillis = Date.now() - cache.auctions[args.auctionId].timestamp;
         bid.bidResponse = parseBidResponse(args);
+        // RP server banner overwrites bidId with bid.seatBidId
+        if (bid.bidder === 'rubicon' && bid.source === 'server') {
+          if (Array.isArray(utils.deepAccess(bid, 'bid.mediaTypes.banner')) && utils.deepAccess(bid, 'bid.mediaTypes.banner').length > 0) {
+            bid.seatBidId = bid.bidResponse.seatBidId;
+          }
+          if (Array.isArray(utils.deepAccess(bid, 'bid.mediaTypes.video')) && utils.deepAccess(bid, 'bid.mediaTypes.video').length > 0) {
+            bid.seatBidId = bid.bidResponse.seatBidId;
+          }
+        }
         break;
       case BIDDER_DONE:
         args.bids.forEach(bid => {

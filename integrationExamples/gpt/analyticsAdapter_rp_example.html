@@ -1,0 +1,137 @@
+<html>
+<head>
+    <script>
+        var PREBID_TIMEOUT = 3000;
+
+        var googletag = googletag || {};
+        googletag.cmd = googletag.cmd || [];
+
+        function initAdserver() {
+            if (pbjs.initAdserverSet) return;
+            (function() {
+                var gads = document.createElement('script');
+                gads.async = true;
+                gads.type = 'text/javascript';
+                var useSSL = 'https:' == document.location.protocol;
+                gads.src = (useSSL ? 'https:' : 'http:') + '//www.googletagservices.com/tag/js/gpt.js';
+                var node = document.getElementsByTagName('script')[0];
+                node.parentNode.insertBefore(gads, node);
+            })();
+            pbjs.initAdserverSet = true;
+        };
+        setTimeout(initAdserver, PREBID_TIMEOUT);
+
+        var pbjs = pbjs || {};
+        pbjs.que = pbjs.que || [];
+        (function() {
+            var pbjsEl = document.createElement("script");
+            pbjsEl.type = "text/javascript";
+            pbjsEl.async = true;
+            pbjsEl.src = '/build/dev/prebid.js';
+            var pbjsTargetEl = document.getElementsByTagName("head")[0];
+            pbjsTargetEl.insertBefore(pbjsEl, pbjsTargetEl.firstChild);
+        })();
+
+        pbjs.que.push(function() {
+            var adUnits = [
+                {
+                    code: 'test-div',
+                    mediaTypes: {
+                        banner: {
+                            sizes: [[300, 250]]
+                        }
+                    },
+                    bids: [
+                        {
+                            bidder: "rubicon",
+                            params: {
+                                accountId: 1001,
+                                siteId: 113932,
+                                zoneId: 535510
+                            }
+                        }
+                    ]
+                },{
+                    code: 'test-native-size',
+                    mediaTypes: {
+                        banner: {
+                            sizes: [[300, 50]]
+                        }
+                    },
+                    bids: [
+                        {
+                            bidder: "rubicon",
+                            params: {
+                                accountId: 1001,
+                                siteId: 113932,
+                                zoneId: 535510
+                            }
+                        }
+                    ]
+                }
+            ];
+
+            pbjs.setConfig({
+                bidderTimeout: 3000,
+                s2sConfig: {
+                    'accountId': 'abc',
+                    'adapter': 'prebidServer',
+                    'bidders': ['rubicon'],
+                    'defaultVendor': 'rubicon',
+                    'enabled': true,
+                    'endpoint': '//prebid-server.rubiconproject.com/openrtb2/auction',
+                    'syncEndpoint': '//prebid-server.rubiconproject.com/cookie_sync',
+                    'timeout': 750
+                }
+            });
+
+            pbjs.addAdUnits(adUnits);
+
+            pbjs.enableAnalytics({
+                provider: 'rubicon',
+                options: {
+                    accountId: 1001,
+                    endpoint: '//localhost:9999/event'
+                }
+            });
+
+            pbjs.requestBids({
+                bidsBackHandler: function(bidResponses) {
+                    initAdserver();
+                }
+            })
+        });
+    </script>
+
+    <script>
+        googletag.cmd.push(function() {
+            var rightSlot = googletag.defineSlot('/19968336/header-bid-tag-0', [[300, 250]], 'div-gpt-ad-1460505748561-0').addService(googletag.pubads());
+
+            pbjs.que.push(function() {
+                pbjs.setTargetingForGPTAsync();
+            });
+
+            googletag.pubads().enableSingleRequest();
+            googletag.enableServices();
+        });
+    </script>
+</head>
+
+<body>
+<h2>Prebid.js Rubicon Analytics Example</h2>
+
+<h5>Div-1</h5>
+<div id='test-div'>
+    <script type='text/javascript'>
+        googletag.cmd.push(function() { googletag.display('test-div'); });
+    </script>
+</div>
+
+<h5>Div-2</h5>
+<div id='test-native-size'>
+    <script type='text/javascript'>
+        googletag.cmd.push(function() { googletag.display('test-native-size'); });
+    </script>
+</div>
+</body>
+</html>
