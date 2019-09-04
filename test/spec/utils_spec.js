@@ -1,9 +1,9 @@
 import { getAdServerTargeting } from 'test/fixtures/fixtures';
 import { expect } from 'chai';
 import CONSTANTS from 'src/constants.json';
+import * as utils from 'src/utils';
 
 var assert = require('assert');
-var utils = require('src/utils');
 
 describe('Utils', function () {
   var obj_string = 's',
@@ -228,6 +228,56 @@ describe('Utils', function () {
     it('return undefined if the input is not a number 2', function () {
       var size = ['foo', 300];
       var output = utils.parseGPTSingleSizeArray(size);
+      assert.equal(output, undefined);
+    });
+  });
+
+  describe('parseGPTSingleSizeArrayToRtbSize', function () {
+    it('should return size string with input single size array', function () {
+      var size = [300, 250];
+      var output = utils.parseGPTSingleSizeArrayToRtbSize(size);
+      assert.deepEqual(output, {w: 300, h: 250});
+    });
+
+    it('should return size string with input single size array', function () {
+      var size = ['300', '250'];
+      var output = utils.parseGPTSingleSizeArrayToRtbSize(size);
+      assert.deepEqual(output, {w: 300, h: 250});
+    });
+
+    it('return undefined using string input', function () {
+      var size = '1';
+      var output = utils.parseGPTSingleSizeArrayToRtbSize(size);
+      assert.equal(output, undefined);
+    });
+
+    it('return undefined using number input', function () {
+      var size = 1;
+      var output = utils.parseGPTSingleSizeArrayToRtbSize(size);
+      assert.equal(output, undefined);
+    });
+
+    it('return undefined using one length single array', function () {
+      var size = [300];
+      var output = utils.parseGPTSingleSizeArrayToRtbSize(size);
+      assert.equal(output, undefined);
+    });
+
+    it('return undefined if the input is empty', function () {
+      var size = '';
+      var output = utils.parseGPTSingleSizeArrayToRtbSize(size);
+      assert.equal(output, undefined);
+    });
+
+    it('return undefined if the input is not a number', function () {
+      var size = ['foo', 'bar'];
+      var output = utils.parseGPTSingleSizeArrayToRtbSize(size);
+      assert.equal(output, undefined);
+    });
+
+    it('return undefined if the input is not a number 2', function () {
+      var size = [300, 'foo'];
+      var output = utils.parseGPTSingleSizeArrayToRtbSize(size);
       assert.equal(output, undefined);
     });
   });
@@ -611,7 +661,7 @@ describe('Utils', function () {
       var value2 = utils.deepAccess(obj, 'test.first');
       assert.equal(value2, 11);
 
-      var value3 = utils.deepAccess(obj, 1);
+      var value3 = utils.deepAccess(obj, '1');
       assert.equal(value3, 2);
     });
 
@@ -623,6 +673,29 @@ describe('Utils', function () {
       });
 
       assert.equal(value, undefined);
+    });
+  });
+
+  describe('deepSetValue', function() {
+    it('should set existing properties at various depths', function() {
+      const testObj = {
+        prop: 'value',
+        nestedObj: {
+          nestedProp: 'nestedValue'
+        }
+      };
+      utils.deepSetValue(testObj, 'prop', 'newValue');
+      assert.equal(testObj.prop, 'newValue');
+      utils.deepSetValue(testObj, 'nestedObj.nestedProp', 'newNestedValue');
+      assert.equal(testObj.nestedObj.nestedProp, 'newNestedValue');
+    });
+
+    it('should create object levels between top and bottom of given path if they do not exist', function() {
+      const testObj = {};
+      utils.deepSetValue(testObj, 'level1.level2', 'value');
+      assert.notEqual(testObj.level1, undefined);
+      assert.notEqual(testObj.level1.level2, undefined);
+      assert.equal(testObj.level1.level2, 'value');
     });
   });
 
@@ -732,7 +805,7 @@ describe('Utils', function () {
     });
 
     it('returns window.location if not in iFrame', function () {
-      sandbox.stub(utils, 'getWindowLocation').returns({
+      sandbox.stub(utils.internal, 'getWindowLocation').returns({
         href: 'https://www.google.com/',
         ancestorOrigins: {},
         origin: 'https://www.google.com',
@@ -745,10 +818,10 @@ describe('Utils', function () {
         hash: ''
       });
       let windowSelfAndTopObject = { self: 'is same as top' };
-      sandbox.stub(utils, 'getWindowSelf').returns(
+      sandbox.stub(utils.internal, 'getWindowSelf').returns(
         windowSelfAndTopObject
       );
-      sandbox.stub(utils, 'getWindowTop').returns(
+      sandbox.stub(utils.internal, 'getWindowTop').returns(
         windowSelfAndTopObject
       );
       var topWindowLocation = utils.getTopWindowLocation();
@@ -764,13 +837,13 @@ describe('Utils', function () {
     });
 
     it('returns parsed dom string from ancestorOrigins if in iFrame & ancestorOrigins is populated', function () {
-      sandbox.stub(utils, 'getWindowSelf').returns(
+      sandbox.stub(utils.internal, 'getWindowSelf').returns(
         { self: 'is not same as top' }
       );
-      sandbox.stub(utils, 'getWindowTop').returns(
+      sandbox.stub(utils.internal, 'getWindowTop').returns(
         { top: 'is not same as self' }
       );
-      sandbox.stub(utils, 'getAncestorOrigins').returns('https://www.google.com/a/umich.edu/acs');
+      sandbox.stub(utils.internal, 'getAncestorOrigins').returns('https://www.google.com/a/umich.edu/acs');
       var topWindowLocation = utils.getTopWindowLocation();
       expect(topWindowLocation).to.be.a('object');
       expect(topWindowLocation.pathname).to.equal('/a/umich.edu/acs');
@@ -785,14 +858,14 @@ describe('Utils', function () {
     });
 
     it('returns parsed referrer string if in iFrame but no ancestorOrigins', function () {
-      sandbox.stub(utils, 'getWindowSelf').returns(
+      sandbox.stub(utils.internal, 'getWindowSelf').returns(
         { self: 'is not same as top' }
       );
-      sandbox.stub(utils, 'getWindowTop').returns(
+      sandbox.stub(utils.internal, 'getWindowTop').returns(
         { top: 'is not same as self' }
       );
-      sandbox.stub(utils, 'getAncestorOrigins').returns(null);
-      sandbox.stub(utils, 'getTopFrameReferrer').returns('https://www.example.com/');
+      sandbox.stub(utils.internal, 'getAncestorOrigins').returns(null);
+      sandbox.stub(utils.internal, 'getTopFrameReferrer').returns('https://www.example.com/');
       var topWindowLocation = utils.getTopWindowLocation();
       expect(topWindowLocation).to.be.a('object');
       expect(topWindowLocation.href).to.equal('https://www.example.com/');
@@ -844,6 +917,96 @@ describe('Utils', function () {
 
       sizes = utils.getAdUnitSizes({ mediaTypes: { banner: { sizes: [[300, 250], [300, 600]] } } });
       expect(sizes).to.deep.equal([[300, 250], [300, 600]]);
+    });
+  });
+
+  describe('transformBidderParamKeywords', function () {
+    it('returns an array of objects when keyvalue is an array', function () {
+      let keywords = {
+        genre: ['rock', 'pop']
+      };
+      let result = utils.transformBidderParamKeywords(keywords);
+      expect(result).to.deep.equal([{
+        key: 'genre',
+        value: ['rock', 'pop']
+      }]);
+    });
+
+    it('returns an array of objects when keyvalue is a string', function () {
+      let keywords = {
+        genre: 'opera'
+      };
+      let result = utils.transformBidderParamKeywords(keywords);
+      expect(result).to.deep.equal([{
+        key: 'genre',
+        value: ['opera']
+      }]);
+    });
+
+    it('returns an array of objects when keyvalue is a number', function () {
+      let keywords = {
+        age: 15
+      };
+      let result = utils.transformBidderParamKeywords(keywords);
+      expect(result).to.deep.equal([{
+        key: 'age',
+        value: ['15']
+      }]);
+    });
+
+    it('returns an array of objects when using multiple keys with values of differing types', function () {
+      let keywords = {
+        genre: 'classical',
+        mix: ['1', 2, '3', 4],
+        age: 10
+      };
+      let result = utils.transformBidderParamKeywords(keywords);
+      expect(result).to.deep.equal([{
+        key: 'genre',
+        value: ['classical']
+      }, {
+        key: 'mix',
+        value: ['1', '2', '3', '4']
+      }, {
+        key: 'age',
+        value: ['10']
+      }]);
+    });
+
+    it('returns an array of objects when the keyvalue uses an empty string', function() {
+      let keywords = {
+        test: [''],
+        test2: ''
+      };
+      let result = utils.transformBidderParamKeywords(keywords);
+      expect(result).to.deep.equal([{
+        key: 'test',
+        value: ['']
+      }, {
+        key: 'test2',
+        value: ['']
+      }]);
+    });
+
+    describe('insertElement', function () {
+      it('returns a node at the top of the target by default', function () {
+        const toInsert = document.createElement('div');
+        const target = document.getElementsByTagName('body')[0];
+        const inserted = utils.insertElement(toInsert, document, 'body');
+        expect(inserted).to.equal(target.firstChild);
+      });
+      it('returns a node at bottom of target if 4th argument is true', function () {
+        const toInsert = document.createElement('div');
+        const target = document.getElementsByTagName('html')[0];
+        const inserted = utils.insertElement(toInsert, document, 'html', true);
+        expect(inserted).to.equal(target.lastChild);
+      });
+      it('returns a node at top of the head if no target is given', function () {
+        const toInsert = document.createElement('div');
+        const target = document.getElementsByTagName('head')[0];
+        const inserted = utils.insertElement(toInsert);
+        expect(inserted).to.equal(target.firstChild);
+      });
     });
   });
 });

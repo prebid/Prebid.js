@@ -1,6 +1,6 @@
-import {registerBidder} from 'src/adapters/bidderFactory';
-import * as utils from 'src/utils';
-import { BANNER, NATIVE } from 'src/mediaTypes';
+import {registerBidder} from '../src/adapters/bidderFactory';
+import * as utils from '../src/utils';
+import { BANNER, NATIVE } from '../src/mediaTypes';
 
 const BIDDER_CODE = 'dgads';
 const UID_NAME = 'dgads_uid';

@@ -91,7 +91,7 @@ describe('Livewrapped adapter tests', function () {
       let result = spec.buildRequests(bidderRequest.bids, bidderRequest);
       let data = JSON.parse(result.data);
 
-      expect(result.url).to.equal('https://lwadm.com/ad');
+      expect(result.url).to.equal('//lwadm.com/ad');
 
       let expectedQuery = {
         auctionId: 'F7557995-65F5-4682-8782-7D5D34D82A8C',
@@ -101,7 +101,6 @@ describe('Livewrapped adapter tests', function () {
         seats: {'dsp': ['seat 1']},
         version: '1.1',
         cookieSupport: true,
-        gdprApplies: false,
         adRequests: [{
           adUnitId: '9E153CED-61BC-479E-98DF-24DC0D01BA37',
           callerAdUnitId: 'panorama_d_1',
@@ -127,7 +126,7 @@ describe('Livewrapped adapter tests', function () {
       let result = spec.buildRequests(multiplebidRequest.bids, multiplebidRequest);
       let data = JSON.parse(result.data);
 
-      expect(result.url).to.equal('https://lwadm.com/ad');
+      expect(result.url).to.equal('//lwadm.com/ad');
 
       let expectedQuery = {
         auctionId: 'F7557995-65F5-4682-8782-7D5D34D82A8C',
@@ -137,7 +136,6 @@ describe('Livewrapped adapter tests', function () {
         seats: {'dsp': ['seat 1']},
         version: '1.1',
         cookieSupport: true,
-        gdprApplies: false,
         adRequests: [{
           adUnitId: '9E153CED-61BC-479E-98DF-24DC0D01BA37',
           callerAdUnitId: 'panorama_d_1',
@@ -164,7 +162,7 @@ describe('Livewrapped adapter tests', function () {
       let result = spec.buildRequests(testbidRequest.bids, testbidRequest);
       let data = JSON.parse(result.data);
 
-      expect(result.url).to.equal('https://lwadm.com/ad');
+      expect(result.url).to.equal('//lwadm.com/ad');
 
       let expectedQuery = {
         auctionId: 'F7557995-65F5-4682-8782-7D5D34D82A8C',
@@ -174,7 +172,6 @@ describe('Livewrapped adapter tests', function () {
         seats: {'dsp': ['seat 1']},
         version: '1.1',
         cookieSupport: true,
-        gdprApplies: false,
         adRequests: [{
           callerAdUnitId: 'caller id 1',
           bidId: '2ffb201a808da7',
@@ -196,7 +193,7 @@ describe('Livewrapped adapter tests', function () {
       let result = spec.buildRequests(testbidRequest.bids, testbidRequest);
       let data = JSON.parse(result.data);
 
-      expect(result.url).to.equal('https://lwadm.com/ad');
+      expect(result.url).to.equal('//lwadm.com/ad');
 
       let expectedQuery = {
         auctionId: 'F7557995-65F5-4682-8782-7D5D34D82A8C',
@@ -204,7 +201,6 @@ describe('Livewrapped adapter tests', function () {
         url: 'http://www.domain.com',
         version: '1.1',
         cookieSupport: true,
-        gdprApplies: false,
         adRequests: [{
           callerAdUnitId: 'panorama_d_1',
           bidId: '2ffb201a808da7',
@@ -226,14 +222,13 @@ describe('Livewrapped adapter tests', function () {
       let result = spec.buildRequests(testbidRequest.bids, testbidRequest);
       let data = JSON.parse(result.data);
 
-      expect(result.url).to.equal('https://lwadm.com/ad');
+      expect(result.url).to.equal('//lwadm.com/ad');
 
       let expectedQuery = {
         auctionId: 'F7557995-65F5-4682-8782-7D5D34D82A8C',
         url: 'http://www.domain.com',
         version: '1.1',
         cookieSupport: true,
-        gdprApplies: false,
         adRequests: [{
           adUnitId: '9E153CED-61BC-479E-98DF-24DC0D01BA37',
           callerAdUnitId: 'panorama_d_1',
@@ -266,7 +261,6 @@ describe('Livewrapped adapter tests', function () {
         deviceId: 'deviceid',
         ifa: 'ifa',
         cookieSupport: true,
-        gdprApplies: false,
         adRequests: [{
           callerAdUnitId: 'panorama_d_1',
           bidId: '2ffb201a808da7',
@@ -298,7 +292,6 @@ describe('Livewrapped adapter tests', function () {
         tid: 'tracking id',
         test: true,
         cookieSupport: true,
-        gdprApplies: false,
         adRequests: [{
           callerAdUnitId: 'panorama_d_1',
           bidId: '2ffb201a808da7',
@@ -310,7 +303,65 @@ describe('Livewrapped adapter tests', function () {
       expect(data).to.deep.equal(expectedQuery);
     });
 
-    it('should pass gdpr parameters', function() {
+    it('should make a well-formed single request object with optional parameters', function() {
+      sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
+      sandbox.stub(utils, 'cookiesAreEnabled').callsFake(() => true);
+      let testbidRequest = clone(bidderRequest);
+      delete testbidRequest.bids[0].params.userId;
+      delete testbidRequest.bids[0].params.seats;
+      delete testbidRequest.bids[0].params.adUnitId;
+      testbidRequest.bids[0].params.options = {keyvalues: [{key: 'key', value: 'value'}]};
+      let result = spec.buildRequests(testbidRequest.bids, testbidRequest);
+      let data = JSON.parse(result.data);
+
+      let expectedQuery = {
+        auctionId: 'F7557995-65F5-4682-8782-7D5D34D82A8C',
+        publisherId: '26947112-2289-405D-88C1-A7340C57E63E',
+        url: 'http://www.domain.com',
+        version: '1.1',
+        cookieSupport: true,
+        adRequests: [{
+          callerAdUnitId: 'panorama_d_1',
+          bidId: '2ffb201a808da7',
+          transactionId: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D',
+          formats: [{width: 980, height: 240}, {width: 980, height: 120}],
+          options: {keyvalues: [{key: 'key', value: 'value'}]}
+        }]
+      };
+
+      expect(data).to.deep.equal(expectedQuery);
+    });
+
+    it('should make a well-formed single request object with ad blocker revovered parameter', function() {
+      sandbox.stub(utils, 'getWindowTop').returns({ I12C: { Morph: 1 } });
+      sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
+      sandbox.stub(utils, 'cookiesAreEnabled').callsFake(() => true);
+      let testbidRequest = clone(bidderRequest);
+      delete testbidRequest.bids[0].params.userId;
+      delete testbidRequest.bids[0].params.seats;
+      delete testbidRequest.bids[0].params.adUnitId;
+      let result = spec.buildRequests(testbidRequest.bids, testbidRequest);
+      let data = JSON.parse(result.data);
+
+      let expectedQuery = {
+        auctionId: 'F7557995-65F5-4682-8782-7D5D34D82A8C',
+        publisherId: '26947112-2289-405D-88C1-A7340C57E63E',
+        url: 'http://www.domain.com',
+        version: '1.1',
+        cookieSupport: true,
+        rcv: true,
+        adRequests: [{
+          callerAdUnitId: 'panorama_d_1',
+          bidId: '2ffb201a808da7',
+          transactionId: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D',
+          formats: [{width: 980, height: 240}, {width: 980, height: 120}]
+        }]
+      };
+
+      expect(data).to.deep.equal(expectedQuery);
+    });
+
+    it('should pass gdpr true parameters', function() {
       sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
       sandbox.stub(utils, 'cookiesAreEnabled').callsFake(() => true);
       let testRequest = clone(bidderRequest);
@@ -321,7 +372,7 @@ describe('Livewrapped adapter tests', function () {
       let result = spec.buildRequests(testRequest.bids, testRequest);
       let data = JSON.parse(result.data);
 
-      expect(result.url).to.equal('https://lwadm.com/ad');
+      expect(result.url).to.equal('//lwadm.com/ad');
 
       let expectedQuery = {
         auctionId: 'F7557995-65F5-4682-8782-7D5D34D82A8C',
@@ -345,13 +396,17 @@ describe('Livewrapped adapter tests', function () {
       expect(data).to.deep.equal(expectedQuery);
     });
 
-    it('should pass no cookie support', function() {
-      sandbox.stub(utils, 'cookiesAreEnabled').callsFake(() => false);
+    it('should pass gdpr false parameters', function() {
       sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
-      let result = spec.buildRequests(bidderRequest.bids, bidderRequest);
+      sandbox.stub(utils, 'cookiesAreEnabled').callsFake(() => true);
+      let testRequest = clone(bidderRequest);
+      testRequest.gdprConsent = {
+        gdprApplies: false
+      };
+      let result = spec.buildRequests(testRequest.bids, testRequest);
       let data = JSON.parse(result.data);
 
-      expect(result.url).to.equal('https://lwadm.com/ad');
+      expect(result.url).to.equal('//lwadm.com/ad');
 
       let expectedQuery = {
         auctionId: 'F7557995-65F5-4682-8782-7D5D34D82A8C',
@@ -360,7 +415,35 @@ describe('Livewrapped adapter tests', function () {
         url: 'http://www.domain.com',
         seats: {'dsp': ['seat 1']},
         version: '1.1',
+        cookieSupport: true,
         gdprApplies: false,
+        adRequests: [{
+          adUnitId: '9E153CED-61BC-479E-98DF-24DC0D01BA37',
+          callerAdUnitId: 'panorama_d_1',
+          bidId: '2ffb201a808da7',
+          transactionId: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D',
+          formats: [{width: 980, height: 240}, {width: 980, height: 120}]
+        }]
+      };
+
+      expect(data).to.deep.equal(expectedQuery);
+    });
+
+    it('should pass no cookie support', function() {
+      sandbox.stub(utils, 'cookiesAreEnabled').callsFake(() => false);
+      sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
+      let result = spec.buildRequests(bidderRequest.bids, bidderRequest);
+      let data = JSON.parse(result.data);
+
+      expect(result.url).to.equal('//lwadm.com/ad');
+
+      let expectedQuery = {
+        auctionId: 'F7557995-65F5-4682-8782-7D5D34D82A8C',
+        publisherId: '26947112-2289-405D-88C1-A7340C57E63E',
+        userId: 'user id',
+        url: 'http://www.domain.com',
+        seats: {'dsp': ['seat 1']},
+        version: '1.1',
         cookieSupport: false,
         adRequests: [{
           adUnitId: '9E153CED-61BC-479E-98DF-24DC0D01BA37',
@@ -380,7 +463,7 @@ describe('Livewrapped adapter tests', function () {
       let result = spec.buildRequests(bidderRequest.bids, bidderRequest);
       let data = JSON.parse(result.data);
 
-      expect(result.url).to.equal('https://lwadm.com/ad');
+      expect(result.url).to.equal('//lwadm.com/ad');
 
       let expectedQuery = {
         auctionId: 'F7557995-65F5-4682-8782-7D5D34D82A8C',
@@ -389,7 +472,6 @@ describe('Livewrapped adapter tests', function () {
         url: 'http://www.domain.com',
         seats: {'dsp': ['seat 1']},
         version: '1.1',
-        gdprApplies: false,
         cookieSupport: false,
         adRequests: [{
           adUnitId: '9E153CED-61BC-479E-98DF-24DC0D01BA37',
@@ -431,6 +513,67 @@ describe('Livewrapped adapter tests', function () {
       data = JSON.parse(result.data);
 
       expect(data.url).to.equal('http://www.configurl.com');
+    });
+
+    it('should make use of pubcid if available', function() {
+      sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
+      sandbox.stub(utils, 'cookiesAreEnabled').callsFake(() => true);
+      let testbidRequest = clone(bidderRequest);
+      delete testbidRequest.bids[0].params.userId;
+      testbidRequest.bids[0].crumbs = {pubcid: 'pubcid 123'};
+      let result = spec.buildRequests(testbidRequest.bids, testbidRequest);
+      let data = JSON.parse(result.data);
+
+      expect(result.url).to.equal('//lwadm.com/ad');
+
+      let expectedQuery = {
+        auctionId: 'F7557995-65F5-4682-8782-7D5D34D82A8C',
+        publisherId: '26947112-2289-405D-88C1-A7340C57E63E',
+        userId: 'pubcid 123',
+        url: 'http://www.domain.com',
+        seats: {'dsp': ['seat 1']},
+        version: '1.1',
+        cookieSupport: true,
+        adRequests: [{
+          adUnitId: '9E153CED-61BC-479E-98DF-24DC0D01BA37',
+          callerAdUnitId: 'panorama_d_1',
+          bidId: '2ffb201a808da7',
+          transactionId: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D',
+          formats: [{width: 980, height: 240}, {width: 980, height: 120}]
+        }]
+      };
+
+      expect(data).to.deep.equal(expectedQuery);
+    });
+
+    it('should make userId take precedence over pubcid', function() {
+      sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
+      sandbox.stub(utils, 'cookiesAreEnabled').callsFake(() => true);
+      let testbidRequest = clone(bidderRequest);
+      testbidRequest.bids[0].crumbs = {pubcid: 'pubcid 123'};
+      let result = spec.buildRequests(testbidRequest.bids, testbidRequest);
+      let data = JSON.parse(result.data);
+
+      expect(result.url).to.equal('//lwadm.com/ad');
+
+      let expectedQuery = {
+        auctionId: 'F7557995-65F5-4682-8782-7D5D34D82A8C',
+        publisherId: '26947112-2289-405D-88C1-A7340C57E63E',
+        userId: 'user id',
+        url: 'http://www.domain.com',
+        seats: {'dsp': ['seat 1']},
+        version: '1.1',
+        cookieSupport: true,
+        adRequests: [{
+          adUnitId: '9E153CED-61BC-479E-98DF-24DC0D01BA37',
+          callerAdUnitId: 'panorama_d_1',
+          bidId: '2ffb201a808da7',
+          transactionId: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D',
+          formats: [{width: 980, height: 240}, {width: 980, height: 120}]
+        }]
+      };
+
+      expect(data).to.deep.equal(expectedQuery);
     });
   });
 

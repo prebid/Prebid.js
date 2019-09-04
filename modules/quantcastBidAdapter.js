@@ -1,6 +1,7 @@
-import * as utils from 'src/utils';
-import { ajax } from 'src/ajax';
-import { registerBidder } from 'src/adapters/bidderFactory';
+import * as utils from '../src/utils';
+import { ajax } from '../src/ajax';
+import { config } from '../src/config';
+import { registerBidder } from '../src/adapters/bidderFactory';
 
 const BIDDER_CODE = 'quantcast';
 const DEFAULT_BID_FLOOR = 0.0000000001;
@@ -19,12 +20,60 @@ export const QUANTCAST_PORT =
     ? '8080'
     : '8443';
 
+function extractBidSizes(bid) {
+  const bidSizes = [];
+
+  bid.sizes.forEach(size => {
+    bidSizes.push({
+      width: size[0],
+      height: size[1]
+    });
+  });
+
+  return bidSizes;
+}
+
+function makeVideoImp(bid) {
+  const video = bid.params.video;
+  if (utils.isArray(bid.mediaTypes.video.playerSize[0])) {
+    video['w'] = bid.mediaTypes.video.playerSize[0][0];
+    video['h'] = bid.mediaTypes.video.playerSize[0][1];
+  } else {
+    video['w'] = bid.mediaTypes.video.playerSize[0];
+    video['h'] = bid.mediaTypes.video.playerSize[1];
+  }
+  return {
+    video: video,
+    placementCode: bid.placementCode,
+    bidFloor: bid.params.bidFloor || DEFAULT_BID_FLOOR
+  };
+}
+
+function makeBannerImp(bid) {
+  return {
+    banner: {
+      battr: bid.params.battr,
+      sizes: extractBidSizes(bid),
+    },
+    placementCode: bid.placementCode,
+    bidFloor: bid.params.bidFloor || DEFAULT_BID_FLOOR
+  };
+}
+
+function getDomain(url) {
+  if (!url) {
+    return url;
+  }
+  return url.replace('http://', '').replace('https://', '').replace('www.', '').split(/[/?#]/)[0];
+}
+
 /**
  * The documentation for Prebid.js Adapter 1.0 can be found at link below,
  * http://prebid.org/dev-docs/bidder-adapter-1.html
  */
 export const spec = {
   code: BIDDER_CODE,
+  supportedMediaTypes: ['banner', 'video'],
 
   /**
    * Verify the `AdUnits.bids` response with `true` for valid request and `false`
@@ -34,15 +83,7 @@ export const spec = {
    * @return boolean `true` is this is a valid bid, and `false` otherwise
    */
   isBidRequestValid(bid) {
-    if (!bid) {
-      return false;
-    }
-
-    if (bid.mediaType === 'video') {
-      return false;
-    }
-
-    return true;
+    return !!bid.params.publisherId;
   },
 
   /**
@@ -55,59 +96,58 @@ export const spec = {
    */
   buildRequests(bidRequests, bidderRequest) {
     const bids = bidRequests || [];
+    const gdprConsent = (bidderRequest && bidderRequest.gdprConsent) ? bidderRequest.gdprConsent : {};
 
-    const referrer = utils.getTopWindowUrl();
-    const loc = utils.getTopWindowLocation();
-    const domain = loc.hostname;
+    const referrer = utils.deepAccess(bidderRequest, 'refererInfo.referer');
+    const page = utils.deepAccess(bidderRequest, 'refererInfo.canonicalUrl') || config.getConfig('pageUrl') || utils.deepAccess(window, 'location.href');
+    const domain = getDomain(page);
 
-    const bidRequestsList = bids.map(bid => {
-      const bidSizes = [];
+    let bidRequestsList = [];
 
-      bid.sizes.forEach(size => {
-        bidSizes.push({
-          width: size[0],
-          height: size[1]
-        });
-      });
-
-      const gdprConsent = (bidderRequest && bidderRequest.gdprConsent) ? bidderRequest.gdprConsent : {};
+    bids.forEach(bid => {
+      let imp;
+      if (bid.mediaTypes) {
+        if (bid.mediaTypes.video && bid.mediaTypes.video.context === 'instream') {
+          imp = makeVideoImp(bid);
+        } else if (bid.mediaTypes.banner) {
+          imp = makeBannerImp(bid);
+        } else {
+          // Unsupported mediaType
+          utils.logInfo(`${BIDDER_CODE}: No supported mediaTypes found in ${JSON.stringify(bid.mediaTypes)}`);
+          return;
+        }
+      } else {
+        // Parse as banner by default
+        imp = makeBannerImp(bid);
+      }
 
       // Request Data Format can be found at https://wiki.corp.qc/display/adinf/QCX
       const requestData = {
         publisherId: bid.params.publisherId,
         requestId: bid.bidId,
-        imp: [
-          {
-            banner: {
-              battr: bid.params.battr,
-              sizes: bidSizes
-            },
-            placementCode: bid.placementCode,
-            bidFloor: bid.params.bidFloor || DEFAULT_BID_FLOOR
-          }
-        ],
+        imp: [imp],
         site: {
-          page: loc.href,
+          page,
           referrer,
           domain
         },
         bidId: bid.bidId,
         gdprSignal: gdprConsent.gdprApplies ? 1 : 0,
-        gdprConsent: gdprConsent.consentString
+        gdprConsent: gdprConsent.consentString,
+        prebidJsVersion: '$prebid.version$'
       };
 
       const data = JSON.stringify(requestData);
-
       const qcDomain = bid.params.publisherId === QUANTCAST_TEST_PUBLISHER
         ? QUANTCAST_TEST_DOMAIN
         : QUANTCAST_DOMAIN;
       const url = `${QUANTCAST_PROTOCOL}://${qcDomain}:${QUANTCAST_PORT}/qchb`;
 
-      return {
+      bidRequestsList.push({
         data,
         method: 'POST',
         url
-      };
+      });
     });
 
     return bidRequestsList;
@@ -142,9 +182,9 @@ export const spec = {
     }
 
     const bidResponsesList = response.bids.map(bid => {
-      const { ad, cpm, width, height, creativeId, currency } = bid;
+      const { ad, cpm, width, height, creativeId, currency, videoUrl, dealId } = bid;
 
-      return {
+      const result = {
         requestId: response.requestId,
         cpm,
         width,
@@ -155,6 +195,17 @@ export const spec = {
         netRevenue: QUANTCAST_NET_REVENUE,
         currency
       };
+
+      if (videoUrl !== undefined && videoUrl) {
+        result['vastUrl'] = videoUrl;
+        result['mediaType'] = 'video';
+      }
+
+      if (dealId !== undefined && dealId) {
+        result['dealId'] = dealId;
+      }
+
+      return result;
     });
 
     return bidResponsesList;

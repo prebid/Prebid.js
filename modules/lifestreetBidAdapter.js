@@ -1,6 +1,6 @@
-import * as utils from 'src/utils';
-import {registerBidder} from 'src/adapters/bidderFactory';
-import { BANNER, VIDEO } from 'src/mediaTypes';
+import * as utils from '../src/utils';
+import {registerBidder} from '../src/adapters/bidderFactory';
+import { BANNER, VIDEO } from '../src/mediaTypes';
 
 const BIDDER_CODE = 'lifestreet';
 const ADAPTER_VERSION = 'prebidJS-2.0';
