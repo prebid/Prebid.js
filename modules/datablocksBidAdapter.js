@@ -10,33 +10,33 @@ const NATIVE_MAP = {
   'cta': 12
 };
 const NATIVE_IMAGE = [{
-  id: 'title_1',
+  id: 1,
   required: 1,
   title: {
     len: 140
   }
 }, {
-  id: 'image_1',
+  id: 2,
   required: 1,
   img: { type: 3 }
 }, {
-  id: 'sponsoredBy_1',
+  id: 3,
   required: 1,
   data: {
     type: 11
   }
 }, {
-  id: 'body_1',
+  id: 4,
   required: 0,
   data: {
     type: 2
   }
 }, {
-  id: 'icon_1',
+  id: 5,
   required: 0,
   img: { type: 1 }
 }, {
-  id: 'cta_1',
+  id: 6,
   required: 0,
   data: {
     type: 12
@@ -98,10 +98,11 @@ export const spec = {
           let nativeKeys = Object.keys(nativeImp);
           nativeKeys.forEach((nativeKey, index) => {
             let required = !!nativeImp[nativeKey].required;
+            let assetId = index + 1;
             switch (nativeKey) {
               case 'title':
                 nativeAssets.push({
-                  id: 'title_' + index,
+                  id: assetId,
                   required: required,
                   title: {
                     len: nativeImp[nativeKey].len || 140
@@ -113,7 +114,7 @@ export const spec = {
               case 'price':
               case 'display_url':
                 let data = {
-                  id: nativeKey + '_' + index,
+                  id: assetId,
                   required: required,
                   data: {
                     type: NATIVE_MAP[nativeKey]
@@ -126,7 +127,7 @@ export const spec = {
               case 'image':
                 if (nativeImp[nativeKey].sizes && nativeImp[nativeKey].sizes.length) {
                   nativeAssets.push({
-                    id: 'image_' + index,
+                    id: assetId,
                     required: required,
                     image: {
                       type: 3,
@@ -137,7 +138,9 @@ export const spec = {
                 }
             }
           });
-          imp.native = JSON.stringify({ assets: nativeAssets });
+          imp.native = {
+            request: JSON.stringify({native: {assets: nativeAssets}})
+          };
         }
       }
       let host = bidRequest.params.host;
@@ -240,6 +243,21 @@ export const spec = {
         br.ad = rtbBid.adm;
       } else if (imp.native) {
         br.mediaType = NATIVE;
+
+        let reverseNativeMap = {};
+        let nativeKeys = Object.keys(NATIVE_MAP);
+        nativeKeys.forEach(k => {
+          reverseNativeMap[NATIVE_MAP[k]] = k;
+        });
+
+        let idMap = {};
+        let nativeReq = JSON.parse(imp.native.request);
+        if (nativeReq.native && nativeReq.native.assets) {
+          nativeReq.native.assets.forEach(asset => {
+            if (asset.data) { idMap[asset.id] = reverseNativeMap[asset.data.type]; }
+          })
+        }
+
         const nativeResponse = JSON.parse(rtbBid.adm);
         const { assets, link, imptrackers, jstrackers } = nativeResponse.native;
         const result = {
@@ -249,17 +267,12 @@ export const spec = {
           javascriptTrackers: jstrackers ? [jstrackers] : undefined
         };
         assets.forEach(asset => {
-          let assetType = asset.id.split('_')[0];
-          switch (assetType) {
-            case 'title':
-              result.title = asset.title.text;
-              break;
-            case 'image':
-              result.image = asset.img.url;
-              break;
-            default:
-              result[assetType] = asset.data.value;
-              break;
+          if (asset.title) {
+            result.title = asset.title.text;
+          } else if (asset.img) {
+            result.image = asset.img.url;
+          } else if (idMap[asset.id]) {
+            result[idMap[asset.id]] = asset.data.value;
           }
         })
         br.native = result;

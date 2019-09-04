@@ -51,10 +51,10 @@ let nativeBid = {
   bidderRequestId: '15d9012765e36c',
   mediaTypes: {
     native: {
-      body: {
+      title: {
         required: true
       },
-      title: {
+      body: {
         required: true
       },
       image: {
@@ -63,14 +63,14 @@ let nativeBid = {
     }
   },
   nativeParams: {
+    title: {
+      required: true
+    },
     body: {
       required: true,
       data: {
         len: 250
       }
-    },
-    title: {
-      required: true
     },
     image: {
       required: true,
@@ -134,7 +134,7 @@ let resObject = {
         id: '1090738570',
         impid: '15d9012765e36c',
         price: 24.000000,
-        adm: '{"native":{"ver":"1.2","assets":[{"id":"title_1","required":1,"title":{"text":"Example Title"}},{"id":"body_0","required":1,"data":{"value":"Example Body"}},{"id":"image_1","required":1,"img":{"url":"http://example.image.com/"}}],"link":{"url":"http://click.example.com/c/264597/?fcid=29699699045816"},"imptrackers":["http://impression.example.com/i/264597/?fcid=29699699045816"]}}',
+        adm: '{"native":{"ver":"1.2","assets":[{"id":1,"required":1,"title":{"text":"Example Title"}},{"id":2,"required":1,"data":{"value":"Example Body"}},{"id":3,"required":1,"img":{"url":"http://example.image.com/"}}],"link":{"url":"http://click.example.com/c/264597/?fcid=29699699045816"},"imptrackers":["http://impression.example.com/i/264597/?fcid=29699699045816"]}}',
         cid: '132145',
         adid: '154321',
         crid: '177432',
@@ -172,7 +172,7 @@ let bidRequest = {
       tagid: '/19968336/header-bid-tag-0'
     }, {
       id: '15d9012765e36c',
-      native: '{"assets":[{"id":"title_0","required":true,"title":{"len":140}},{"id":"body_1","required":true,"data":{"type":2}},{"id":"image_1","img":{"w":728,"h":90,"type":3}}]}',
+      native: {request: '{"native":{"assets":[{"id":"1","required":true,"title":{"len":140}},{"id":"2","required":true,"data":{"type":2}},{"id":"3","img":{"w":728,"h":90,"type":3}}]}}'},
       secure: false,
       tagid: '/19968336/header-bid-tag-0'
     }],
@@ -228,8 +228,9 @@ describe('DatablocksAdapter', function() {
             expect(imp.banner).to.be.a('object');
           } else if (imp.native) {
             expect(imp).to.have.all.keys('native', 'id', 'secure', 'tagid');
-            expect(imp.native).to.be.a('string');
-            let native = JSON.parse(imp.native);
+            expect(imp.native).to.have.all.keys('request');
+            expect(imp.native.request).to.be.a('string');
+            let native = JSON.parse(imp.native.request);
             expect(native).to.be.a('object');
           } else {
             expect(true).to.equal(false);

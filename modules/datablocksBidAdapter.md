@@ -18,7 +18,7 @@ Banner Native and
       {
         code: 'banner-div',
         sizes: [[300, 250]],
-        mediaType:{
+        mediaTypes:{
         	banner: {
         		sizes: [300,250]
         	}
@@ -34,15 +34,15 @@ Banner Native and
         ]
       }, {
         code: 'native-div',
+        mediaTypes : {
+          native: {
+            title:{required:true},
+            body:{required:true}
+          }
+        },
         bids: [
           {
             bidder: 'datablocks',
-            mediaType : {
-            	native: {
-            		title:{required:true},
-            		body:{required:true}
-            	}
-            },
             params: {
               sourceId: 12345,
               host: 'prebid.datablocks.net'
