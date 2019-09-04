@@ -177,14 +177,9 @@ describe('videonowAdapterTests', function() {
 
       it('bidRequest data', function() {
         const data = request.data
-        // const w = validBidRequests[0].sizes[0][0] + ''
-        // const h = validBidRequests[0].sizes[0][1] + ''
-
-        // expect(decodeURIComponent(data.referer)).to.be.eql(bidderRequest.refererInfo.referer);
         expect(data.aid).to.be.eql(validBidRequests[0].params.aid)
         expect(data.id).to.be.eql(validBidRequests[0].bidId)
         expect(data.sizes).to.be.eql(validBidRequests[0].sizes)
-        // expect(data.height).to.be.eql(h);
       })
 
       describe('bidRequest advanced', function() {
