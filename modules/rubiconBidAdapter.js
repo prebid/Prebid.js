@@ -237,7 +237,7 @@ export const spec = {
       }
 
       if (config.getConfig('coppa') === true) {
-        utils.deepSetValue(request, 'regs.coppa', 1);
+        utils.deepSetValue(data, 'regs.coppa', 1);
       }
 
       return {
