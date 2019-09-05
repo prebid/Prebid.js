@@ -2,7 +2,7 @@ import * as utils from '../src/utils';
 import { registerBidder } from '../src/adapters/bidderFactory';
 // import { config } from '../src/config';
 
-const BIDDER_CODE = 'freewheel';
+const BIDDER_CODE = 'freewheel-ssp';
 
 const PROTOCOL = getProtocol();
 const FREEWHEEL_ADSSETUP = PROTOCOL + '://ads.stickyadstv.com/www/delivery/swfIndex.php';
