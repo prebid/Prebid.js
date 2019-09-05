@@ -15,8 +15,8 @@ describe('outconBidAdapter', function () {
       expect(spec.isBidRequestValid({
         bidder: 'outcom',
         params: {
-          internalId: "12345",
-          publisher: "5beeb1fd306ea4779e464532",
+          internalId: '12345',
+          publisher: '5beeb1fd306ea4779e464532',
         }
       })).to.equal(true);
     });
@@ -38,8 +38,8 @@ describe('outconBidAdapter', function () {
       expect(spec.buildRequests({
         bidder: 'outcom',
         params: {
-          internalId: "12345678",
-          publisher: "5beeb1fd306ea4779e464532",
+          internalId: '12345678',
+          publisher: '5beeb1fd306ea4779e464532',
         }
       })).to.eql({
         method: 'GET',
@@ -69,7 +69,7 @@ describe('outconBidAdapter', function () {
             size: 3,
             width: 1920,
             height: 1080,
-            codec: "video/mp4"
+            codec: 'video/mp4'
           }
         ],
         id: '5d6e6aef22063e392bf7f564',
@@ -82,18 +82,18 @@ describe('outconBidAdapter', function () {
     it('check all the keys that are needed to interpret the response', function () {
       const result = spec.interpretResponse(bidResponse, bidRequest);
 
-    let requiredKeys = [
-      'requestId',
-      'cpm',
-      'width',
-      'height',
-      'creativeId',
-      'currency',
-      'netRevenue',
-      'ttl',
-      'ad',
-      'vastImpUrl'
-    ];
+      let requiredKeys = [
+        'requestId',
+        'cpm',
+        'width',
+        'height',
+        'creativeId',
+        'currency',
+        'netRevenue',
+        'ttl',
+        'ad',
+        'vastImpUrl'
+      ];
       let resultKeys = Object.keys(result[0]);
       resultKeys.forEach(function(key) {
         expect(requiredKeys.indexOf(key) !== -1).to.equal(true);
