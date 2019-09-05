@@ -117,10 +117,12 @@ describe('OneVideoBidAdapter', function () {
       const data = requests[0].data;
       const [ width, height ] = bidRequest.sizes;
       const placement = bidRequest.params.video.placement;
+      const rewarded = bidRequest.params.video.rewarded;
       expect(data.imp[0].video.w).to.equal(width);
       expect(data.imp[0].video.h).to.equal(height);
       expect(data.imp[0].ext.placement).to.equal(placement);
       expect(data.imp[0].bidfloor).to.equal(bidRequest.params.bidfloor);
+      expect(data.imp[0].ext.rewarded).to.equal(rewarded);
     });
 
     it('must parse bid size from a nested array', function () {
