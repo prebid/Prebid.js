@@ -24,6 +24,20 @@ export const unifiedIdSubmodule = {
   decode(value) {
     return (value && typeof value['TDID'] === 'string') ? { 'tdid': value['TDID'] } : undefined;
   },
+
+  ortbFormat: function(data, eidsArray) {
+    if (utils.isStr(data)) {
+      eidsArray.push({
+        source: 'adserver.org',
+        uids: [{
+          id: data,
+          ext: {
+            rtiPartner: 'TDID'
+          }
+        }]
+      });
+    }
+  },
   /**
    * performs action to obtain id and return a value in the callback's response argument
    * @function
