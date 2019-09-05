@@ -23,6 +23,18 @@ export const pubCommonIdSubmodule = {
   decode(value) {
     return { 'pubcid': value }
   },
+
+  ortbFormat: function(data, eidsArray) {
+    if (utils.isStr(data)) {
+      eidsArray.push({
+        source: 'pubcommon',
+        uids: [{
+          id: data
+        }]
+      });
+    }
+  },
+
   /**
    * performs action to obtain id
    * @function
