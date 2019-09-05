@@ -122,9 +122,10 @@ export function init(config) {
   let mode = MODE.STRICT;
   getGlobal().requestBids.before(function(fn, reqBidsConfigObj) {
     let schainObject = config.getConfig('schain');
-    if (!isPlainObject(schainObject)) {
+    let isSchainConfigAnObject = isPlainObject(schainObject);
+    if (schainObject !== undefined && !isSchainConfigAnObject) {
       logError(schainErrorPrefix + 'schain config will not be passed to bidders as schain is not an object.');
-    } else {
+    } else if (isSchainConfigAnObject) {
       if (isStr(schainObject.validation) && Object.values(MODE).indexOf(schainObject.validation) != -1) {
         mode = schainObject.validation;
       }
