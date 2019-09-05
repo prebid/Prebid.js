@@ -1493,13 +1493,11 @@ export function getServerTestingsAds() {
       bids: [
         {
           'bidSource': { 'client': 0, 'server': 100 },
-          'bidder': 'rubicon',
-          'params': { 'accountId': 1001, 'siteId': 113932, 'zoneId': 535510 }
+          'bidder': 'rubicon'
         },
         {
           'bidSource': { 'client': 100, 'server': 0 },
-          'bidder': 'appnexus',
-          'params': { 'placementId': '10433394' }
+          'bidder': 'appnexus'
         }
       ]
     },
@@ -1509,13 +1507,11 @@ export function getServerTestingsAds() {
       bids: [
         {
           'bidSource': { 'client': 100, 'server': 0 },
-          'bidder': 'rubicon',
-          'params': { 'accountId': 1001, 'siteId': 113932, 'zoneId': 535510 }
+          'bidder': 'rubicon'
         },
         {
           'bidSource': { 'client': 100, 'server': 0 },
-          'bidder': 'appnexus',
-          'params': { 'placementId': '10433394' }
+          'bidder': 'appnexus'
         }
       ]
     },
@@ -1523,6 +1519,11 @@ export function getServerTestingsAds() {
       code: 'test_div_3',
       sizes: [[300, 250]],
       bids: [{ bidder: 'adequant' }]
+    },
+    {
+      code: 'test_div_4',
+      sizes: [[300, 250]],
+      bids: [{ bidder: 'openx' }]
     }
   ];
 };
@@ -1532,10 +1533,10 @@ export const getServerTestingConfig = (config, override = {}) =>
     enabled: true,
     testing: true,
     testServerOnly: true,
-    bidders: ['rubicon', 'appnexus'],
+    bidders: ['appnexus', 'rubicon', 'openx'],
     bidderControl: {
       rubicon: {
-        bidSource: { server: 0, client: 100 },
+        bidSource: { server: 100, client: 0 },
         includeSourceKvp: true
       },
       appnexus: {

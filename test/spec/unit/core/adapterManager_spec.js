@@ -1166,16 +1166,31 @@ describe('adapterManager tests', function () {
         return bidRequests;
       };
 
+      const removeAdUnitsBidSource = adUnits => adUnits.map(adUnit => {
+        const newAdUnit = { ...adUnit };
+        newAdUnit.bids = newAdUnit.bids.map(bid => {
+          if (bid.bidSource) delete bid.bidSource;
+          return bid;
+        });
+        return newAdUnit;
+      });
+
+      // todo: update description
       it('should only call the server once for Rubicon', () => {
         const bidRequests = makeBidRequests(getServerTestingsAds());
 
-        expect(bidRequests).lengthOf(1);
+        expect(bidRequests).lengthOf(2);
 
         expect(bidRequests[0].bids).lengthOf(1);
-        expect(bidRequests[0].bids[0].bidder).equals('rubicon');
+        expect(bidRequests[0].bids[0].bidder).equals('openx');
         expect(bidRequests[0].bids[0].finalSource).equals('server');
+
+        expect(bidRequests[0].bids).lengthOf(1);
+        expect(bidRequests[1].bids[0].bidder).equals('rubicon');
+        expect(bidRequests[1].bids[0].finalSource).equals('server');
       });
 
+      // todo: update description
       it('should only call the server twice', () => {
         const ads = getServerTestingsAds();
 
@@ -1185,17 +1200,22 @@ describe('adapterManager tests', function () {
 
         const bidRequests = makeBidRequests(ads);
 
-        expect(bidRequests).lengthOf(2);
+        expect(bidRequests).lengthOf(3);
 
         expect(bidRequests[0].bids).lengthOf(1);
         expect(bidRequests[0].bids[0].bidder).equals('appnexus');
         expect(bidRequests[0].bids[0].finalSource).equals('server');
 
         expect(bidRequests[1].bids).lengthOf(1);
-        expect(bidRequests[1].bids[0].bidder).equals('rubicon');
+        expect(bidRequests[1].bids[0].bidder).equals('openx');
         expect(bidRequests[1].bids[0].finalSource).equals('server');
+
+        expect(bidRequests[2].bids).lengthOf(1);
+        expect(bidRequests[2].bids[0].bidder).equals('rubicon');
+        expect(bidRequests[2].bids[0].finalSource).equals('server');
       });
 
+      // we have a server call now
       it('should only make client calls', () => {
         const ads = getServerTestingsAds();
 
@@ -1205,7 +1225,7 @@ describe('adapterManager tests', function () {
 
         const bidRequests = makeBidRequests(ads);
 
-        expect(bidRequests).lengthOf(3);
+        expect(bidRequests).lengthOf(4);
 
         expect(bidRequests[0].bids).lengthOf(1);
         expect(bidRequests[0].bids[0].bidder).equals('adequant');
@@ -1217,12 +1237,36 @@ describe('adapterManager tests', function () {
         expect(bidRequests[1].bids[1].bidder).equals('appnexus');
         expect(bidRequests[1].bids[1].finalSource).equals('client');
 
-        expect(bidRequests[2].bids).lengthOf(2);
-        expect(bidRequests[2].bids[0].bidder).equals('rubicon');
-        expect(bidRequests[2].bids[0].finalSource).equals('client');
-        expect(bidRequests[2].bids[1].bidder).equals('rubicon');
-        expect(bidRequests[2].bids[1].finalSource).equals('client');
+        expect(bidRequests[2].bids).lengthOf(1);
+        expect(bidRequests[2].bids[0].bidder).equals('openx');
+        expect(bidRequests[2].bids[0].finalSource).equals('server');
+
+        expect(bidRequests[3].bids).lengthOf(2);
+        expect(bidRequests[3].bids[0].bidder).equals('rubicon');
+        expect(bidRequests[3].bids[0].finalSource).equals('client');
+        expect(bidRequests[3].bids[1].bidder).equals('rubicon');
+        expect(bidRequests[3].bids[1].finalSource).equals('client');
       });
+
+      it(
+        'should surpress client side bids if no ad unit bidSources are set, ' +
+        'but bidderControl resolves to server',
+        () => {
+          const ads = removeAdUnitsBidSource(getServerTestingsAds());
+
+          const bidRequests = makeBidRequests(ads);
+
+          expect(bidRequests).lengthOf(2);
+
+          expect(bidRequests[0].bids).lengthOf(1);
+          expect(bidRequests[0].bids[0].bidder).equals('openx');
+          expect(bidRequests[0].bids[0].finalSource).equals('server');
+
+          expect(bidRequests[1].bids).lengthOf(2);
+          expect(bidRequests[1].bids[0].bidder).equals('rubicon');
+          expect(bidRequests[1].bids[0].finalSource).equals('server');
+        }
+      );
     });
   });
 });
