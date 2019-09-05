@@ -344,8 +344,8 @@ export const digiTrustIdSubmodule = {
   },
 
   // todo: Digitrust team to confirm the format
-  ortbFormat: function(data, eidsArray){
-    if(utils.deepAccess(data, 'data.id')){
+  ortbFormat: function(data, eidsArray) {
+    if (utils.deepAccess(data, 'data.id')) {
       eidsArray.push({
         source: 'digitrust',
         uids: [{
