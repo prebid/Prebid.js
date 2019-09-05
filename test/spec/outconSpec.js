@@ -53,7 +53,7 @@ describe('outconBidAdapter', function () {
         url: 'http://test.outcondigital.com:8048/ad/',
         data: {
           internalId: '12345678',
-          publisher: '5beeb1fd306ea4779e464532'
+          publisher: '5beeb1fd306ea4779e464532',
           demo: true
         }
       });
