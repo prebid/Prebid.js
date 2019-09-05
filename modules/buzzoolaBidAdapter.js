@@ -43,13 +43,24 @@ export const spec = {
    * Unpack the response from the server into a list of bids.
    *
    * @param {ServerResponse} serverResponse A successful response from the server.
+   * @param bidderRequest
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
-  interpretResponse: function (serverResponse, {data}) {
+  interpretResponse: function ({body}, {data}) {
     let requestBids = {};
+    let response;
+
+    try {
+      response = JSON.parse(body);
+    } catch (ex) {
+      response = body;
+    }
+
+    if (!Array.isArray(response)) response = [];
+
     data.bids.forEach(bid => requestBids[bid.bidId] = bid);
 
-    return serverResponse.body.map(bid => {
+    return response.map(bid => {
       let requestBid = requestBids[bid.requestId];
       let context = utils.deepAccess(requestBid, 'mediaTypes.video.context');
       let validBid = utils.deepClone(bid);

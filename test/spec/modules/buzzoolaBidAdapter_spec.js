@@ -173,9 +173,10 @@ describe('buzzoolaBidAdapter', () => {
 
   describe('interpretResponse', () => {
     const noBidServerResponse = [];
+    const emptyResponse = '';
 
-    function nobidServerResponseCheck(request) {
-      const noBidResult = spec.interpretResponse({body: noBidServerResponse}, {data: request});
+    function nobidServerResponseCheck(request, response = noBidServerResponse) {
+      const noBidResult = spec.interpretResponse({body: response}, {data: request});
 
       expect(noBidResult.length).to.equal(0);
     }
@@ -197,6 +198,14 @@ describe('buzzoolaBidAdapter', () => {
 
     it('handles banner nobid responses', () => {
       nobidServerResponseCheck(BANNER_BID_REQUEST);
+    });
+
+    it('handles video empty responses', () => {
+      nobidServerResponseCheck(VIDEO_BID_REQUEST, emptyResponse);
+    });
+
+    it('handles banner empty responses', () => {
+      nobidServerResponseCheck(BANNER_BID_REQUEST, emptyResponse);
     });
 
     it('should get correct video bid response', () => {
