@@ -209,10 +209,13 @@ function getCombinedSubmoduleIds(submodules) {
   }
   const combinedSubmoduleIds = submodules.filter(i => utils.isPlainObject(i.idObj) && Object.keys(i.idObj).length).reduce((carry, i) => {
     Object.keys(i.idObj).forEach(key => {
-      carry[key] = i.idObj[key];
+      carry.userId[key] = i.idObj[key];
+      if (utils.isFn(i.submodule.ortbFormat)) {
+        i.submodule.ortbFormat(i.idObj[key], carry.eids);
+      }
     });
     return carry;
-  }, {});
+  }, {userId: {}, eids: []});
 
   return combinedSubmoduleIds;
 }
@@ -230,7 +233,8 @@ function addIdDataToAdUnitBids(adUnits, submodules) {
     adUnits.forEach(adUnit => {
       adUnit.bids.forEach(bid => {
         // create a User ID object on the bid,
-        bid.userId = combinedSubmoduleIds;
+        bid.userId = combinedSubmoduleIds.userId;
+        bid.userIdEids = combinedSubmoduleIds.eids;
       });
     });
   }
@@ -459,6 +463,8 @@ export function init(config) {
 
   // exposing getUserIds function in global-name-space so that userIds stored in Prebid can be used by external codes.
   (getGlobal()).getUserIds = getUserIds;
+  // todo: need to change documentation of the output format
+  // todo: need to make changes in PR https://github.com/prebid/Prebid.js/pull/4140
 }
 
 // init config update listener to start the application
