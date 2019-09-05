@@ -9,11 +9,11 @@ export const spec = {
 
   buildRequests: function(validBidRequests) {
     let par = {};
-    if (validBidRequests.params.pod != undefined) par = {pod: validBidRequests.params.pod};
-    else par = {internalId: validBidRequests.params.internalId, publisher: validBidRequests.params.publisher}
+    if (validBidRequests.params.pod != undefined) par = {pod: validBidRequests.params.pod, demo: true};
+    else par = {internalId: validBidRequests.params.internalId, publisher: validBidRequests.params.publisher, demo: true}
     return {
       method: 'GET',
-      url: 'http://outcon.dokkogroup.com.ar:8048/ad/',
+      url: 'http://test.outcondigital.com:8048/ad/',
       data: par
     };
   },

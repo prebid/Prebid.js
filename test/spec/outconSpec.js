@@ -8,6 +8,7 @@ describe('outconBidAdapter', function () {
         bidder: 'outcom',
         params: {
           pod: '5d6e6abc22063e392bf7f563',
+          demo: true
         }
       })).to.equal(true);
     });
@@ -17,6 +18,7 @@ describe('outconBidAdapter', function () {
         params: {
           internalId: '12345',
           publisher: '5beeb1fd306ea4779e464532',
+          demo: true
         }
       })).to.equal(true);
     });
@@ -27,11 +29,15 @@ describe('outconBidAdapter', function () {
         bidder: 'outcom',
         params: {
           pod: '5d6e6abc22063e392bf7f563',
+          demo: true
         }
       })).to.eql({
         method: 'GET',
-        url: 'http://outcon.dokkogroup.com.ar:8048/ad/',
-        data: {pod: '5d6e6abc22063e392bf7f563'}
+        url: 'http://test.outcondigital.com:8048/ad/',
+        data: {
+          pod: '5d6e6abc22063e392bf7f563',
+          demo: true
+        }
       });
     });
     it('Build requests with internalID and publisherID params', function () {
@@ -40,13 +46,15 @@ describe('outconBidAdapter', function () {
         params: {
           internalId: '12345678',
           publisher: '5beeb1fd306ea4779e464532',
+          demo: true
         }
       })).to.eql({
         method: 'GET',
-        url: 'http://outcon.dokkogroup.com.ar:8048/ad/',
+        url: 'http://test.outcondigital.com:8048/ad/',
         data: {
           internalId: '12345678',
           publisher: '5beeb1fd306ea4779e464532'
+          demo: true
         }
       });
     });
@@ -54,8 +62,11 @@ describe('outconBidAdapter', function () {
   describe('interpretResponse', function () {
     const bidRequest = {
       method: 'GET',
-      url: 'http://outcon.dokkogroup.com.ar:8048/ad/',
-      data: {pod: '5d6e6abc22063e392bf7f563'}
+      url: 'http://test.outcondigital.com:8048/ad/',
+      data: {
+        pod: '5d6e6abc22063e392bf7f563',
+        demo: true
+      }
     };
 
     const bidResponse = {
@@ -65,7 +76,7 @@ describe('outconBidAdapter', function () {
         exp: 10,
         creatives: [
           {
-            url: 'http://outcon.dokkogroup.com.ar/uploads/5d42e7a7306ea4689b67c122/frutas.mp4',
+            url: 'http://test.outcondigital.com/uploads/5d42e7a7306ea4689b67c122/frutas.mp4',
             size: 3,
             width: 1920,
             height: 1080,
@@ -75,7 +86,7 @@ describe('outconBidAdapter', function () {
         id: '5d6e6aef22063e392bf7f564',
         type: 'video',
         campaign: '5d42e44b306ea469593c76a2',
-        trackingURL: 'http://outcon.dokkogroup.com.ar:8048/ad/track?track=5d6e6aef22063e392bf7f564'
+        trackingURL: 'http://test.outcondigital.com:8048/ad/track?track=5d6e6aef22063e392bf7f564'
       },
     };
 
