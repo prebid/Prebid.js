@@ -8,13 +8,13 @@ export const spec = {
   },
 
   buildRequests: function(validBidRequests) {
-    let par = {};
-    if (validBidRequests.params.pod != undefined) par = {pod: validBidRequests.params.pod, demo: true};
-    else par = {internalId: validBidRequests.params.internalId, publisher: validBidRequests.params.publisher, demo: true}
+    let par = '';
+    if (validBidRequests.params.pod != undefined) par = 'get?pod='+validBidRequests.params.pod+'&demo=true';
+    else par = 'get?demo=true'+'&internalId='+validBidRequests.params.internalId+'&publisher='+validBidRequests.params.publisher;
     return {
       method: 'GET',
-      url: 'http://test.outcondigital.com:8048/ad/',
-      data: par
+      url: 'http://test.outcondigital.com:8048/ad/'+par,
+      data: {}
     };
   },
 
