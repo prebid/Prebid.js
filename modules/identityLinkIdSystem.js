@@ -25,6 +25,19 @@ export const identityLinkSubmodule = {
   decode(value) {
     return { 'idl_env': value }
   },
+
+  // todo: who can confirm the format?
+  ortbFormat: function(data, eidsArray) {
+    if (utils.isStr(data)) {
+      eidsArray.push({
+        source: 'identityLink',
+        uids: [{
+          id: data
+        }]
+      });
+    }
+  },
+
   /**
    * performs action to obtain id and return a value in the callback's response argument
    * @function

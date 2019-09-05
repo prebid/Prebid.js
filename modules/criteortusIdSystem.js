@@ -32,6 +32,20 @@ export const criteortusIdSubmodule = {
       utils.logError('Error in parsing criteo rtus data', error);
     }
   },
+
+  // todo: who can confirm the format?
+  // todo: this code may not even work as Criteo is creating UID per bidder like bidRequests[0].userId.criteortus.appnexus.userid
+  ortbFormat: function(data, eidsArray) {
+    if (utils.isStr(data)) {
+      eidsArray.push({
+        source: 'criteortus',
+        uids: [{
+          id: data
+        }]
+      });
+    }
+  },
+
   /**
    * performs action to obtain id and return a value in the callback's response argument
    * @function
