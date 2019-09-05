@@ -25,6 +25,19 @@ export const id5IdSubmodule = {
   decode(value) {
     return (value && typeof value['ID5ID'] === 'string') ? { 'id5id': value['ID5ID'] } : undefined;
   },
+
+  // todo: who can confirm the format?
+  ortbFormat: function(data, eidsArray){
+    if (utils.isStr(data)) {
+      eidsArray.push({
+        source: 'id5id',
+        uids: [{
+          id: data          
+        }]
+      });
+    }
+  },
+
   /**
    * performs action to obtain id and return a value in the callback's response argument
    * @function
