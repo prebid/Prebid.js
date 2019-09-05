@@ -3,6 +3,7 @@ import { spec } from 'modules/videoNowBidAdapter'
 import { replaceAuctionPrice } from '../../../src/utils'
 
 const placementId = 'div-gpt-ad-1438287399331-0'
+const LS_ITEM_NAME = 'VN_DATA'
 
 const getValidServerResponse = () => {
   const serverResponse = {
@@ -20,14 +21,13 @@ const getValidServerResponse = () => {
               nurl: 'http://localhost:8086/event/nurl',
               netRevenue: false,
               ttl: 800,
-              adm: 'stub',
+              adm: '<VAST></VAST>',
               crid: 'e3bf2b82e3e9485113fad6c9b27f8768.1',
               h: 640,
               w: 480,
               ext: {
                 vnInitModule: 'http://localhost:8086/vn_init.js',
                 vnModule: 'http://localhost:8086/vn_module.js',
-                dataXml: '<VAST></VAST>',
                 format: {
                   name: 'flyRoll',
                 },
@@ -208,14 +208,14 @@ describe('videonowAdapterTests', function() {
         it('bidRequest default currency', function() {
           const requests = spec.buildRequests([bidderRequestEmptyParamsAndExtParams], bidderRequest)
           const request = (requests && requests.length && requests[0]) || {}
-          const data = request && request.data || {}
+          const data = (request && request.data) || {}
           expect(data.cur).to.equal('RUB')
         })
 
         it('bidRequest ext parameters ', function() {
           const requests = spec.buildRequests([bidderRequestEmptyParamsAndExtParams], bidderRequest)
           const request = (requests && requests.length && requests[0]) || {}
-          const data = request && request.data || {}
+          const data = (request && request.data) || {}
           expect(data['ext_p1']).to.equal('ext1')
           expect(data['ext_p2']).to.equal('ext2')
         })
@@ -227,7 +227,6 @@ describe('videonowAdapterTests', function() {
           const requests = spec.buildRequests([bidderReq], bidderRequest)
           expect(requests.length).to.equal(1)
         })
-
       })
     })
 
@@ -237,26 +236,23 @@ describe('videonowAdapterTests', function() {
       const imgSrc = replaceAuctionPrice(nurl, cpm)
       const foundPixels = () => window.document.body.querySelectorAll(`img[src="${imgSrc}"]`)
 
-
-      it('Should not create nurl pixel if bid is undefined', function(){
+      it('Should not create nurl pixel if bid is undefined', function() {
         spec.onBidWon()
         expect(foundPixels().length).to.equal(0)
       })
 
-      it('Should not create nurl pixel if bid does not contains nurl', function(){
+      it('Should not create nurl pixel if bid does not contains nurl', function() {
         spec.onBidWon({})
         expect(foundPixels().length).to.equal(0)
       })
 
-      it('Should create nurl pixel if bid nurl', function(){
+      it('Should create nurl pixel if bid nurl', function() {
         spec.onBidWon({ nurl, cpm })
         expect(foundPixels().length).to.equal(1)
       })
-
     })
 
     describe('getUserSyncs', function() {
-
       it('Should return an empty array if not get serverResponses', function() {
         expect(spec.getUserSyncs({}).length).to.equal(0)
       })
@@ -300,12 +296,9 @@ describe('videonowAdapterTests', function() {
         expect(syncs[0].type).to.equal('iframe')
         expect(syncs[1].type).to.equal('iframe')
       })
-
     })
 
-
     describe('interpretResponse', function() {
-
       const bidRequest = {
         method: 'POST',
         url: 'http://localhost:8086/bid?profile_id=1',
@@ -318,7 +311,6 @@ describe('videonowAdapterTests', function() {
           ref: 'http://localhost:8086/page',
         },
       }
-
 
       it('Should have only one bid', function() {
         const serverResponse = getValidServerResponse()
@@ -378,7 +370,6 @@ describe('videonowAdapterTests', function() {
         expect(res.length).to.equal(0)
       })
 
-
       it('Should return an empty array if serverResponse\'s price in the bid is undefined', function() {
         const serverResp = getValidServerResponse()
         delete serverResp.body.seatbid[0].bid[0].price
@@ -394,7 +385,6 @@ describe('videonowAdapterTests', function() {
         expect(res.length).to.equal(0)
       })
 
-
       it('Should return an empty array if serverResponse\'s vnInitModule in the bid\'s ext is undefined', function() {
         const serverResp = getValidServerResponse()
         delete serverResp.body.seatbid[0].bid[0].ext.vnInitModule
@@ -402,7 +392,6 @@ describe('videonowAdapterTests', function() {
 
         expect(res.length).to.equal(0)
       })
-
 
       it('Should return an empty array if serverResponse\'s vnModule in the bid\'s ext is undefined', function() {
         const serverResp = getValidServerResponse()
@@ -412,9 +401,9 @@ describe('videonowAdapterTests', function() {
         expect(res.length).to.equal(0)
       })
 
-      it('Should return an empty array if serverResponse\'s dataXml in the bid\'s ext is undefined', function() {
+      it('Should return an empty array if serverResponse\'s adm in the bid is undefined', function() {
         const serverResp = getValidServerResponse()
-        delete serverResp.body.seatbid[0].bid[0].ext.dataXml
+        delete serverResp.body.seatbid[0].bid[0].adm
         const res = spec.interpretResponse(serverResp, bidRequest)
 
         expect(res.length).to.equal(0)
@@ -452,8 +441,85 @@ describe('videonowAdapterTests', function() {
         expect(res[0].currency).to.equal('RUB')
       })
 
-      describe('renderer object', function() {
+      describe('different module paths', function() {
+        beforeEach(function() {
+          window.localStorage && localStorage.setItem(LS_ITEM_NAME, '{}')
+        })
 
+        afterEach(function() {
+          const serverResp = getValidServerResponse()
+          let src = serverResp.body.seatbid[0].bid[0].ext.vnInitModule
+          let d = document.querySelectorAll(`script[src^="${src}"]`)
+          d && d.forEach(el => el && el.remove())
+          src = serverResp.body.seatbid[0].bid[0].ext.vnModule
+          d = document.querySelectorAll(`script[src^="${src}"]`)
+          d && d.forEach(el => el && el.remove())
+        })
+
+        it('should use prod modules by default', function() {
+          const serverResp = getValidServerResponse()
+          const res = spec.interpretResponse(serverResp, bidRequest)
+          expect(res.length).to.equal(1)
+
+          const renderer = res[0].renderer
+          expect(renderer).to.be.an('object')
+          expect(renderer.url).to.equal(serverResp.body.seatbid[0].bid[0].ext.vnModule)
+        })
+
+        it('should use custom path for vnModule', function() {
+          const serverResp = getValidServerResponse()
+          const vnInitModule = serverResp.body.seatbid[0].bid[0].ext.vnInitModule + '?dev=1'
+          const vnModule = serverResp.body.seatbid[0].bid[0].ext.vnModule + '?dev=1'
+          localStorage.setItem(LS_ITEM_NAME, JSON.stringify({
+            vnInitModule,
+            vnModule
+          }))
+
+          const src = `${vnInitModule}&profileId=1`
+          const placementElement = document.createElement('div')
+          placementElement.setAttribute('id', placementId)
+
+          const resp = spec.interpretResponse(serverResp, bidRequest)
+          expect(resp.length).to.equal(1)
+
+          const renderer = resp[0].renderer
+          expect(renderer).to.be.an('object')
+          expect(renderer.url).to.equal(vnModule)
+
+          document.body.appendChild(placementElement)
+
+          renderer.render()
+
+          const res = document.querySelectorAll(`script[src="${src}"]`)
+          expect(res.length).to.equal(1)
+        })
+
+        it('should correct combine src for vnInitModule', function() {
+          // localStorage.setItem(LS_ITEM_NAME, '{}')
+          const serverResp = getValidServerResponse()
+
+          const src = `${serverResp.body.seatbid[0].bid[0].ext.vnInitModule}?profileId=1`
+          const placementElement = document.createElement('div')
+          placementElement.setAttribute('id', placementId)
+
+          const resp = spec.interpretResponse(serverResp, bidRequest)
+          expect(resp.length).to.equal(1)
+
+          const renderer = resp[0].renderer
+          expect(renderer).to.be.an('object')
+
+          document.body.appendChild(placementElement)
+
+          renderer.render()
+
+          // expect(Array.from(document.querySelectorAll('script')).map(s => s.src)).to.equal({})
+          //
+          const res = document.querySelectorAll(`script[src="${src}"]`)
+          expect(res.length).to.equal(1)
+        })
+      })
+
+      describe('renderer object', function() {
         it('execute renderer.render() should create window.videonow object', function() {
           const serverResp = getValidServerResponse()
           const res = spec.interpretResponse(serverResp, bidRequest)
@@ -485,9 +551,6 @@ describe('videonowAdapterTests', function() {
         renderer.render()
         expect(window.videonow).to.be.undefined
       })
-
     })
-
   })
-
 })
