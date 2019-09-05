@@ -342,6 +342,23 @@ export const digiTrustIdSubmodule = {
       utils.logError('DigiTrust ID submodule decode error');
     }
   },
+
+  // todo: Digitrust team to confirm the format
+  ortbFormat: function(data, eidsArray){
+    if(utils.deepAccess(data, 'data.id')){
+      eidsArray.push({
+        source: 'digitrust',
+        uids: [{
+          id: data.data.id,
+          atype: 1,
+          ext: {
+            keyv: data.data.keyv
+          }
+        }]
+      });
+    }
+  },
+
   getId: getDigiTrustId,
   _testInit: surfaceTestHook
 };
