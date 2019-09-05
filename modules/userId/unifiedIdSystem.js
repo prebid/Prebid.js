@@ -25,6 +25,7 @@ export const unifiedIdSubmodule = {
     return (value && typeof value['TDID'] === 'string') ? { 'tdid': value['TDID'] } : undefined;
   },
 
+  // todo: who can confirm the format?
   ortbFormat: function(data, eidsArray) {
     if (utils.isStr(data)) {
       eidsArray.push({
