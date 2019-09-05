@@ -188,13 +188,14 @@ adapterManager.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTi
       !includes(adaptersServerSide, elm) || includes(clientTestAdapters, elm)
     );
 
-    if (
-      isTestingServerOnly() &&
-      adUnits.find(adUnit => adUnit.bids.find(bid => (
-        bid.bidSource || (
-          _s2sConfig.bidderControl && _s2sConfig.bidderControl[bid.bidder]
-        )) && bid.finalSource === s2sTestingModule.SERVER))
-    ) {
+    const adUnitsContainServerRequests = adUnits => Boolean(
+      find(adUnits, adUnit => find(adUnit.bids, bid => (
+        bid.bidSource ||
+        (_s2sConfig.bidderControl && _s2sConfig.bidderControl[bid.bidder])
+      ) && bid.finalSource === s2sTestingModule.SERVER))
+    );
+
+    if (isTestingServerOnly() && adUnitsContainServerRequests(adUnits)) {
       clientBidderCodes.length = 0;
     }
 
