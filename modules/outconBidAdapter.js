@@ -1,4 +1,4 @@
-import {registerBidder} from 'src/adapters/bidfactory';
+import {registerBidder} from '../src/adapters/bidfactory';
 const BIDDER_CODE = 'outcom';
 export const spec = {
   code: BIDDER_CODE,
