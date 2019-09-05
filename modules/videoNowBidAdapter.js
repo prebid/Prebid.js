@@ -6,6 +6,7 @@ const RTB_URL = 'https://bidder.videonow.ru/prebid'
 
 const BIDDER_CODE = 'videonow'
 const TTL_SECONDS = 60 * 5
+const LS_ITEM_NAME = 'VN_DATA'
 
 function isBidRequestValid(bid) {
   return !!(bid && bid.params && bid.params.pId)
@@ -76,15 +77,26 @@ function interpretResponse(serverResponse, bidRequest) {
 }
 
 function createResponseBid(bidInfo, bidId, cur, placementId) {
-  const { id, nurl, code, price, crid, ext, ttl, netRevenue, w, h } = bidInfo
+  const { id, nurl, code, price, crid, ext, ttl, netRevenue, w, h, adm } = bidInfo
 
-  if (!id || !price) {
+  if (!id || !price || !adm) {
     return null
   }
 
-  const { vnInitModule, vnModule, dataXml, format } = ext || {}
-  if (!vnInitModule || !dataXml || !vnModule) {
-    utils.logError('vnInitModule or dataXml or vnModule is not defined')
+  const { vnInitModule, vnModule, format } = ext || {}
+
+  const vnData = JSON.parse(localStorage.getItem(LS_ITEM_NAME) || '{}')
+  let { vnModule: vnModuleCustom, vnInitModule: vnInitModuleCustom } = vnData
+
+  const vnInitModulePath = vnInitModuleCustom || vnInitModule
+  if (!vnInitModulePath) {
+    utils.logError(`vnInitModulePath is not defined`)
+    return null
+  }
+
+  const vntModulePath = vnModuleCustom || vnModule
+  if (!vntModulePath) {
+    utils.logError(`vntModulePath is not defined`)
     return null
   }
 
@@ -100,18 +112,18 @@ function createResponseBid(bidInfo, bidId, cur, placementId) {
     ad: code,
     nurl,
     renderer: {
-      url: nurl,
+      url: vntModulePath,
       render: function() {
         const d = window.document
         const el = placementId && d.getElementById(placementId)
         if (el) {
           // prepare data for vn_init script
           const profileData = {
-            url: `${vnModule}`,
-            dataXml,
+            url: vntModulePath,
+            dataXml: adm,
           }
 
-          format && (profileData.format = format);
+          format && (profileData.format = format)
 
           // add init data for vn_init on the page
           window.videonow = {
@@ -120,7 +132,7 @@ function createResponseBid(bidInfo, bidId, cur, placementId) {
 
           // add vn_init js on the page
           const scr = document.createElement('script')
-          scr.src = `${vnInitModule}?profileId=1`
+          scr.src = `${vnInitModulePath}${~vnInitModulePath.indexOf('?') ? '&' : '?'}profileId=1`
           el && el.appendChild(scr)
         } else {
           utils.logError(`bidAdapter ${BIDDER_CODE}: ${placementId} not found`)
@@ -141,17 +153,17 @@ function getUserSyncs(syncOptions, serverResponses) {
 
     if (syncOptions.iframeEnabled && iframes && iframes.length) {
       iframes.forEach(i => syncs.push({
-          type: 'iframe',
-          url: i,
-        }),
+        type: 'iframe',
+        url: i,
+      }),
       )
     }
 
     if (syncOptions.pixelEnabled && pixels && pixels.length) {
       pixels.forEach(p => syncs.push({
-          type: 'image',
-          url: p,
-        }),
+        type: 'image',
+        url: p,
+      }),
       )
     }
   })
