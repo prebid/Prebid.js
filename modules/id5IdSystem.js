@@ -27,12 +27,12 @@ export const id5IdSubmodule = {
   },
 
   // todo: who can confirm the format?
-  ortbFormat: function(data, eidsArray){
+  ortbFormat: function(data, eidsArray) {
     if (utils.isStr(data)) {
       eidsArray.push({
         source: 'id5id',
         uids: [{
-          id: data          
+          id: data
         }]
       });
     }
