@@ -49,6 +49,9 @@ function makeVideoImp(bid) {
     video['placement'] = bid.params.video.placement;
     video['api'] = bid.params.video.api;
   }
+  if (bid.mediaTypes.video.mimes) {
+    video['mimes'] = bid.mediaTypes.video.mimes;
+  }
   if (utils.isArray(bid.mediaTypes.video.playerSize[0])) {
     video['w'] = bid.mediaTypes.video.playerSize[0][0];
     video['h'] = bid.mediaTypes.video.playerSize[0][1];
