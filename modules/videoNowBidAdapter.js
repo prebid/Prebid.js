@@ -132,7 +132,7 @@ function createResponseBid(bidInfo, bidId, cur, placementId) {
           // add init data for vn_init on the page
           const videonow = window.videonow = window.videonow || {}
           const init = videonow.init = window.videonow.init || {}
-          init[pId] = [ profileData ]
+          init[pId] = profileData
 
           // add vn_init js on the page
           const scr = document.createElement('script')
