@@ -1,6 +1,7 @@
 import * as utils from '../src/utils'
 import { registerBidder } from '../src/adapters/bidderFactory'
 import { BANNER } from '../src/mediaTypes'
+import { walkUpWindows } from '../src/refererDetection'
 
 const RTB_URL = 'https://bidder.videonow.ru/prebid'
 
@@ -83,20 +84,22 @@ function createResponseBid(bidInfo, bidId, cur, placementId) {
     return null
   }
 
-  const { vnInitModule, vnModule, format } = ext || {}
+  const { init, module, format } = ext || {}
 
   const vnData = JSON.parse(localStorage.getItem(LS_ITEM_NAME) || '{}')
-  let { vnModule: vnModuleCustom, vnInitModule: vnInitModuleCustom } = vnData
+  let { module: { log, min }, init: customInit } = vnData
 
-  const vnInitModulePath = vnInitModuleCustom || vnInitModule
-  if (!vnInitModulePath) {
+  const initPath = customInit || init
+  if (!initPath) {
     utils.logError(`vnInitModulePath is not defined`)
     return null
   }
 
-  const vntModulePath = vnModuleCustom || vnModule
-  if (!vntModulePath) {
-    utils.logError(`vntModulePath is not defined`)
+  min && (module.min = min)
+  log && (module.log = log)
+
+  if (!module.min && module.log) {
+    utils.logError('module\'s paths are not defined')
     return null
   }
 
@@ -112,27 +115,28 @@ function createResponseBid(bidInfo, bidId, cur, placementId) {
     ad: code,
     nurl,
     renderer: {
-      url: vntModulePath,
+      url: module.min || module.log,
       render: function() {
         const d = window.document
         const el = placementId && d.getElementById(placementId)
         if (el) {
+          const pId = 1
           // prepare data for vn_init script
           const profileData = {
-            url: vntModulePath,
+            module,
             dataXml: adm,
           }
 
           format && (profileData.format = format)
 
           // add init data for vn_init on the page
-          window.videonow = {
-            'init': { '1': profileData },
-          }
+          const videonow = window.videonow = window.videonow || {}
+          const init = videonow.init = window.videonow.init || {}
+          init[pId] = [ profileData ]
 
           // add vn_init js on the page
           const scr = document.createElement('script')
-          scr.src = `${vnInitModulePath}${~vnInitModulePath.indexOf('?') ? '&' : '?'}profileId=1`
+          scr.src = `${initPath}${~initPath.indexOf('?') ? '&' : '?'}profileId=${pId}`
           el && el.appendChild(scr)
         } else {
           utils.logError(`bidAdapter ${BIDDER_CODE}: ${placementId} not found`)
