@@ -12,7 +12,7 @@ export const spec = {
     let par = '';
     if (validBidRequests.params.pod != undefined) par = 'get?pod=' + validBidRequests.params.pod;
     else par = 'get?internalId=' + validBidRequests.params.internalId + '&publisher=' + validBidRequests.params.publisher;
-    if (validBidRequests.params.demo == true) par += '&demo=true';
+    if (validBidRequests.params.demo == true) par = par + '&demo=true';
     return {
       method: 'GET',
       url: 'http://test.outcondigital.com:8048/ad/' + par,
