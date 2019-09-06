@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import { spec } from 'modules/appnexusBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
 import * as bidderFactory from 'src/adapters/bidderFactory';
+import { auctionManager } from 'src/auctionManager';
 import { deepClone } from 'src/utils';
 import { config } from 'src/config';
 
@@ -55,6 +56,7 @@ describe('AppNexusAdapter', function () {
   });
 
   describe('buildRequests', function () {
+    let getAdUnitsStub;
     let bidRequests = [
       {
         'bidder': 'appnexus',
@@ -66,8 +68,19 @@ describe('AppNexusAdapter', function () {
         'bidId': '30b31c1838de1e',
         'bidderRequestId': '22edbae2733bf6',
         'auctionId': '1d1a030790a475',
+        'transactionId': '04f2659e-c005-4eb1-a57c-fa93145e3843'
       }
     ];
+
+    beforeEach(function() {
+      getAdUnitsStub = sinon.stub(auctionManager, 'getAdUnits').callsFake(function() {
+        return [];
+      });
+    });
+
+    afterEach(function() {
+      getAdUnitsStub.restore();
+    });
 
     it('should parse out private sizes', function () {
       let bidRequest = Object.assign({},
@@ -98,7 +111,27 @@ describe('AppNexusAdapter', function () {
     });
 
     it('should populate the ad_types array on all requests', function () {
+      let adUnits = [{
+        code: 'adunit-code',
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 250], [300, 600]]
+          }
+        },
+        bids: [{
+          bidder: 'appnexus',
+          params: {
+            placementId: '10433394'
+          }
+        }],
+        transactionId: '04f2659e-c005-4eb1-a57c-fa93145e3843'
+      }];
+
       ['banner', 'video', 'native'].forEach(type => {
+        getAdUnitsStub.callsFake(function(...args) {
+          return adUnits;
+        });
+
         const bidRequest = Object.assign({}, bidRequests[0]);
         bidRequest.mediaTypes = {};
         bidRequest.mediaTypes[type] = {};
@@ -107,7 +140,19 @@ describe('AppNexusAdapter', function () {
         const payload = JSON.parse(request.data);
 
         expect(payload.tags[0].ad_types).to.deep.equal([type]);
+
+        if (type === 'banner') {
+          delete adUnits[0].mediaTypes;
+        }
       });
+    });
+
+    it('should not populate the ad_types array when adUnit.mediaTypes is undefined', function() {
+      const bidRequest = Object.assign({}, bidRequests[0]);
+      const request = spec.buildRequests([bidRequest]);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.tags[0].ad_types).to.not.exist;
     });
 
     it('should populate the ad_types array on outstream requests', function () {
