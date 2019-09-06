@@ -51,12 +51,9 @@ export function userIdTargeting(userIds, config) {
 }
 
 export function init(config) {
-  getGlobal().requestBids.before(function(fn, reqBidsConfigObj) {
-    // using setTimeout to avoid delay
-    setTimeout(userIdTargeting, 0, (getGlobal()).getUserIds(), config.getConfig(MODULE_NAME));
-    // calling fn allows prebid to continue processing
-    return fn.call(this, reqBidsConfigObj);
-  }, 40);
+  $$PREBID_GLOBAL$$.onEvent('auctionEnd', function() {
+    userIdTargeting((getGlobal()).getUserIds(), config.getConfig(MODULE_NAME));
+  })
 }
 
 init(config)
