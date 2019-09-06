@@ -250,9 +250,11 @@ describe('videonowAdapterTests', function() {
         spec.onBidWon({ nurl, cpm })
         expect(foundPixels().length).to.equal(1)
       })
+
     })
 
     describe('getUserSyncs', function() {
+
       it('Should return an empty array if not get serverResponses', function() {
         expect(spec.getUserSyncs({}).length).to.equal(0)
       })
@@ -393,6 +395,7 @@ describe('videonowAdapterTests', function() {
         expect(res.length).to.equal(0)
       })
 
+
       it('Should return an empty array if serverResponse\'s vnModule in the bid\'s ext is undefined', function() {
         const serverResp = getValidServerResponse()
         delete serverResp.body.seatbid[0].bid[0].ext.vnModule
@@ -520,6 +523,7 @@ describe('videonowAdapterTests', function() {
       })
 
       describe('renderer object', function() {
+
         it('execute renderer.render() should create window.videonow object', function() {
           const serverResp = getValidServerResponse()
           const res = spec.interpretResponse(serverResp, bidRequest)
