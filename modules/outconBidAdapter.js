@@ -10,8 +10,9 @@ export const spec = {
 
   buildRequests: function(validBidRequests) {
     let par = '';
-    if (validBidRequests.params.pod != undefined) par = 'get?pod=' + validBidRequests.params.pod + '&demo=true';
-    else par = 'get?demo=true' + '&internalId=' + validBidRequests.params.internalId + '&publisher=' + validBidRequests.params.publisher;
+    if (validBidRequests.params.pod != undefined) par = 'get?pod=' + validBidRequests.params.pod ;
+    else par = 'get?internalId=' + validBidRequests.params.internalId + '&publisher=' + validBidRequests.params.publisher;
+    if (validBidRequests.params.demo == true) par += '&demo=true';
     return {
       method: 'GET',
       url: 'http://test.outcondigital.com:8048/ad/' + par,
