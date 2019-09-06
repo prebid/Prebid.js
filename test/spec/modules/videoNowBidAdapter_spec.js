@@ -26,8 +26,11 @@ const getValidServerResponse = () => {
               h: 640,
               w: 480,
               ext: {
-                vnInitModule: 'http://localhost:8086/vn_init.js',
-                vnModule: 'http://localhost:8086/vn_module.js',
+                init: 'http://localhost:8086/vn_init.js',
+                module: {
+                  min: 'http://localhost:8086/vn_module.js',
+                  log: 'http://localhost:8086/vn_module.js?log=1'
+                },
                 format: {
                   name: 'flyRoll',
                 },
@@ -250,11 +253,9 @@ describe('videonowAdapterTests', function() {
         spec.onBidWon({ nurl, cpm })
         expect(foundPixels().length).to.equal(1)
       })
-
     })
 
     describe('getUserSyncs', function() {
-
       it('Should return an empty array if not get serverResponses', function() {
         expect(spec.getUserSyncs({}).length).to.equal(0)
       })
@@ -387,18 +388,17 @@ describe('videonowAdapterTests', function() {
         expect(res.length).to.equal(0)
       })
 
-      it('Should return an empty array if serverResponse\'s vnInitModule in the bid\'s ext is undefined', function() {
+      it('Should return an empty array if serverResponse\'s init in the bid\'s ext is undefined', function() {
         const serverResp = getValidServerResponse()
-        delete serverResp.body.seatbid[0].bid[0].ext.vnInitModule
+        delete serverResp.body.seatbid[0].bid[0].ext.init
         const res = spec.interpretResponse(serverResp, bidRequest)
 
         expect(res.length).to.equal(0)
       })
 
-
-      it('Should return an empty array if serverResponse\'s vnModule in the bid\'s ext is undefined', function() {
+      it('Should return an empty array if serverResponse\'s module in the bid\'s ext is undefined', function() {
         const serverResp = getValidServerResponse()
-        delete serverResp.body.seatbid[0].bid[0].ext.vnModule
+        delete serverResp.body.seatbid[0].bid[0].ext.module
         const res = spec.interpretResponse(serverResp, bidRequest)
 
         expect(res.length).to.equal(0)
@@ -451,12 +451,16 @@ describe('videonowAdapterTests', function() {
 
         afterEach(function() {
           const serverResp = getValidServerResponse()
-          let src = serverResp.body.seatbid[0].bid[0].ext.vnInitModule
-          let d = document.querySelectorAll(`script[src^="${src}"]`)
-          d && d.forEach(el => el && el.remove())
-          src = serverResp.body.seatbid[0].bid[0].ext.vnModule
-          d = document.querySelectorAll(`script[src^="${src}"]`)
-          d && d.forEach(el => el && el.remove())
+          const { module: { log, min }, init } =  serverResp.body.seatbid[0].bid[0].ext
+          remove(init)
+          remove(log)
+          remove(min)
+
+          function remove(src) {
+            if (!src) return
+            d = document.querySelectorAll(`script[src^="${src}"]`)
+            d && d.forEach(el => el && el.remove())
+          }
         })
 
         it('should use prod modules by default', function() {
@@ -466,19 +470,19 @@ describe('videonowAdapterTests', function() {
 
           const renderer = res[0].renderer
           expect(renderer).to.be.an('object')
-          expect(renderer.url).to.equal(serverResp.body.seatbid[0].bid[0].ext.vnModule)
+          expect(renderer.url).to.equal(serverResp.body.seatbid[0].bid[0].ext.module)
         })
 
-        it('should use custom path for vnModule', function() {
+        it('should use custom path for module', function() {
           const serverResp = getValidServerResponse()
-          const vnInitModule = serverResp.body.seatbid[0].bid[0].ext.vnInitModule + '?dev=1'
-          const vnModule = serverResp.body.seatbid[0].bid[0].ext.vnModule + '?dev=1'
+          const init = serverResp.body.seatbid[0].bid[0].ext.init + '?dev=1'
+          const module = serverResp.body.seatbid[0].bid[0].ext.module.min + '?dev=1'
           localStorage.setItem(LS_ITEM_NAME, JSON.stringify({
-            vnInitModule,
-            vnModule
+            init,
+            module
           }))
 
-          const src = `${vnInitModule}&profileId=1`
+          const src = `${init}&profileId=1`
           const placementElement = document.createElement('div')
           placementElement.setAttribute('id', placementId)
 
@@ -487,7 +491,7 @@ describe('videonowAdapterTests', function() {
 
           const renderer = resp[0].renderer
           expect(renderer).to.be.an('object')
-          expect(renderer.url).to.equal(vnModule)
+          expect(renderer.url).to.equal(module)
 
           document.body.appendChild(placementElement)
 
@@ -497,11 +501,11 @@ describe('videonowAdapterTests', function() {
           expect(res.length).to.equal(1)
         })
 
-        it('should correct combine src for vnInitModule', function() {
+        it('should correct combine src for init', function() {
           // localStorage.setItem(LS_ITEM_NAME, '{}')
           const serverResp = getValidServerResponse()
 
-          const src = `${serverResp.body.seatbid[0].bid[0].ext.vnInitModule}?profileId=1`
+          const src = `${serverResp.body.seatbid[0].bid[0].ext.init}?profileId=1`
           const placementElement = document.createElement('div')
           placementElement.setAttribute('id', placementId)
 
@@ -523,7 +527,6 @@ describe('videonowAdapterTests', function() {
       })
 
       describe('renderer object', function() {
-
         it('execute renderer.render() should create window.videonow object', function() {
           const serverResp = getValidServerResponse()
           const res = spec.interpretResponse(serverResp, bidRequest)
