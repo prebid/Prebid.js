@@ -344,6 +344,7 @@ export const digiTrustIdSubmodule = {
   },
 
   // todo: Digitrust team to confirm the format
+  // https://github.com/digi-trust/dt-cdn/wiki/OpenRTB-extension
   ortbFormat: function(data, eidsArray) {
     if (utils.deepAccess(data, 'data.id')) {
       eidsArray.push({
