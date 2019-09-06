@@ -35,6 +35,7 @@ var adUnits = [
         code: 'video-instream',
         mediaTypes: {
             video: {
+                context: 'instream',
                 playerSize: [640, 380],
                 mimes: ['video/mp4'],
                 minduration: 1,
@@ -50,7 +51,7 @@ var adUnits = [
     },
     // Video outstream adUnit
     {
-        code: 'video-instream',
+        code: 'video-outstream',
         mediaTypes: {
             video: {
                 context: 'outstream',
