@@ -26,11 +26,10 @@ export const id5IdSubmodule = {
     return (value && typeof value['ID5ID'] === 'string') ? { 'id5id': value['ID5ID'] } : undefined;
   },
 
-  // todo: who can confirm the format?
   ortbFormat: function(data, eidsArray) {
     if (utils.isStr(data)) {
       eidsArray.push({
-        source: 'id5id',
+        source: 'id5-sync.com',
         uids: [{
           id: data
         }]
