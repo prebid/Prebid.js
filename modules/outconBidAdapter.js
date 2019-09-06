@@ -10,7 +10,7 @@ export const spec = {
 
   buildRequests: function(validBidRequests) {
     let par = '';
-    if (validBidRequests.params.pod != undefined) par = 'get?pod=' + validBidRequests.params.pod ;
+    if (validBidRequests.params.pod != undefined) par = 'get?pod=' + validBidRequests.params.pod;
     else par = 'get?internalId=' + validBidRequests.params.internalId + '&publisher=' + validBidRequests.params.publisher;
     if (validBidRequests.params.demo == true) par += '&demo=true';
     return {
