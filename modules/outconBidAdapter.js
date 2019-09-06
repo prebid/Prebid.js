@@ -1,4 +1,5 @@
 import {registerBidder} from '../src/adapters/bidderFactory';
+import {config} from '../src/config';
 const BIDDER_CODE = 'outcom';
 export const spec = {
   code: BIDDER_CODE,
@@ -28,7 +29,7 @@ export const spec = {
       creativeId: serverResponse.body.id,
       currency: serverResponse.body.cur,
       netRevenue: true,
-      ttl: serverResponse.body.exp,
+      ttl: config.getConfig('_bidderTimeout'),
       ad: serverResponse.body.creatives[0].url,
       vastImpUrl: serverResponse.body.trackingURL
     };
