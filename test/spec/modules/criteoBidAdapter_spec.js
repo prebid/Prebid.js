@@ -656,6 +656,7 @@ describe('The Criteo bidding adapter', function () {
             creative: 'test-ad',
             width: 728,
             height: 90,
+            dealCode: 'myDealCode',
           }],
         },
       };
@@ -675,6 +676,7 @@ describe('The Criteo bidding adapter', function () {
       expect(bids[0].ad).to.equal('test-ad');
       expect(bids[0].width).to.equal(728);
       expect(bids[0].height).to.equal(90);
+      expect(bids[0].dealId).to.equal('myDealCode');
     });
 
     it('should properly parse a bid responsewith with a zoneId', function () {
