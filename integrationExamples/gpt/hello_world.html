@@ -47,8 +47,14 @@
         pbjs.que.push(function() {
           pbjs.addAdUnits(adUnits);
           pbjs.requestBids({
-            bidsBackHandler: sendAdserverRequest,
+            bidsBackHandler: null,
             timeout: PREBID_TIMEOUT
+          }).then(function(auction) {
+            try {
+              sendAdserverRequest();
+            } catch (e) {
+              utils.logError('Error executing bidsBackHandler', null, e);
+            }
           });
         });
   
