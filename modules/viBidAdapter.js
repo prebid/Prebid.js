@@ -302,6 +302,10 @@ export function mergeArrays(hashFn, ...args) {
   return merged;
 }
 
+export function documentFocus(doc) {
+  return typeof doc.hasFocus === 'function' ? +doc.hasFocus() : undefined;
+}
+
 const spec = {
   code: 'vi',
   supportedMediaTypes: [mediaTypes.VIDEO, mediaTypes.BANNER],
@@ -373,10 +377,7 @@ const spec = {
             };
           }
         ),
-        focus:
-          typeof document.hasFocus === 'function'
-            ? +document.hasFocus()
-            : undefined
+        focus: documentFocus(document)
       },
       options: {
         contentType: 'application/json',
