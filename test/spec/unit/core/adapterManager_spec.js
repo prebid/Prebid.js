@@ -1175,8 +1175,7 @@ describe('adapterManager tests', function () {
         return newAdUnit;
       });
 
-      // todo: update description
-      it('should only call the server once for Rubicon', () => {
+      it('suppresses all client bids if there are server bids resulting from bidSource at the adUnit Level', () => {
         const bidRequests = makeBidRequests(getServerTestingsAds());
 
         expect(bidRequests).lengthOf(2);
@@ -1191,7 +1190,7 @@ describe('adapterManager tests', function () {
       });
 
       // todo: update description
-      it('should only call the server twice', () => {
+      it('suppresses all, and only, client bids if there are bids resulting from bidSource at the adUnit Level', () => {
         const ads = getServerTestingsAds();
 
         // change this adUnit to be server based
@@ -1216,7 +1215,7 @@ describe('adapterManager tests', function () {
       });
 
       // we have a server call now
-      it('should only make client calls', () => {
+      it('does not suppress client bids if no "test case" bids result in a server bid', () => {
         const ads = getServerTestingsAds();
 
         // change this adUnit to be client based
