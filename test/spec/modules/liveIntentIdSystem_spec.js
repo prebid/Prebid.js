@@ -112,7 +112,6 @@ describe('LiveIntentId', function() {
       ...defaultConfigParams,
       ...{
         'identifiersToResolve': ['_thirdPC']
-
       }
     };
 
