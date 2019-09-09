@@ -3,14 +3,14 @@ import {
   requestBidsHook,
   attachRealTimeDataProvider,
   setTargetsAfterRequestBids
-} from 'modules/realTimeDataModule';
+} from 'modules/rtdModules/index';
 import {
   init as browsiInit,
   addBrowsiTag,
   isIdMatchingAdUnit
-} from 'modules/browsiProvider';
+} from 'modules/rtdModules/browsiProvider';
 import {config} from 'src/config';
-import {browsiSubmodule, _resolvePromise} from 'modules/browsiProvider';
+import {browsiSubmodule, _resolvePromise} from 'modules/rtdModules/browsiProvider';
 import {makeSlot} from '../integration/faker/googletag';
 
 let expect = require('chai').expect;
@@ -19,7 +19,7 @@ describe('Real time module', function() {
   const conf = {
     'realTimeData': {
       'name': 'browsi',
-      'primary_only': false,
+      'auctionDelay': 1500,
       'params': {
         'url': 'testUrl.com',
         'siteKey': 'testKey',

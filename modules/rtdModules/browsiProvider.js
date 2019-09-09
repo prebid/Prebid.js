@@ -15,9 +15,9 @@
  * @property {string} keyName
  */
 
-import {config} from '../src/config.js';
-import * as utils from '../src/utils';
-import {submodule} from '../src/hook';
+import {config} from '../../src/config.js';
+import * as utils from '../../src/utils';
+import {submodule} from '../../src/hook';
 
 /** @type {string} */
 const MODULE_NAME = 'realTimeData';

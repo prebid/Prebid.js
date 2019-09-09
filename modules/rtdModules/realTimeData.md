@@ -5,7 +5,7 @@ Example showing config using `browsi` sub module
     pbjs.setConfig({
         "realTimeData": {
             "name": "browsi",
-            "primary_only": false,
+            "auctionDelay": 1000,
             "params": {
                 "url": "testUrl.com",
                 "siteKey": "testKey",
