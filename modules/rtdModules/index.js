@@ -54,16 +54,14 @@
  * @type {boolean}
  */
 
-import {getGlobal} from '../src/prebidGlobal';
-import {config} from '../src/config.js';
-import {targeting} from '../src/targeting';
-import {getHook, module} from '../src/hook';
-import * as utils from '../src/utils';
+import {getGlobal} from '../../src/prebidGlobal';
+import {config} from '../../src/config.js';
+import {targeting} from '../../src/targeting';
+import {getHook, module} from '../../src/hook';
+import * as utils from '../../src/utils';
 
 /** @type {string} */
 const MODULE_NAME = 'realTimeData';
-/** @type {number} */
-const DEF_TIMEOUT = 1000;
 /** @type {RtdSubmodule[]} */
 let subModules = [];
 /** @type {RtdSubmodule | null} */
@@ -95,7 +93,7 @@ function getSubModule() {
 
 export function init(config) {
   const confListener = config.getConfig(MODULE_NAME, ({realTimeData}) => {
-    if (!realTimeData.name) {
+    if (!realTimeData.name || typeof (realTimeData.auctionDelay) == 'undefined') {
       utils.logError('missing parameters for real time module');
       return;
     }
@@ -121,7 +119,7 @@ function getProviderData(adUnits) {
   const timeOutPromise = new Promise((resolve) => {
     setTimeout(() => {
       resolve(false);
-    }, _moduleConfig.timeout || DEF_TIMEOUT)
+    }, _moduleConfig.auctionDelay)
   });
 
   return Promise.race([
@@ -180,10 +178,10 @@ function setDataForPrimaryAdServer(data) {
  */
 function addIdDataToAdUnitBids(adUnits, data) {
   adUnits.forEach(adUnit => {
-    adUnit.bids.forEach(bid => {
+    adUnit.bids = adUnit.bids.map(bid => {
       const rd = data[adUnit.code] || {};
-      bid = Object.assign(bid, rd);
-    });
+      return Object.assign(bid, rd);
+    })
   });
 }
 
