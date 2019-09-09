@@ -508,7 +508,7 @@ describe('videonowAdapterTests', function() {
         it('should correct combine src for init if init url contains "?"', function() {
           const serverResp = getValidServerResponse()
 
-          serverResp.body.seatbid[0].bid[0].ext.init +=  '?div=1'
+          serverResp.body.seatbid[0].bid[0].ext.init += '?div=1'
           const src = `${serverResp.body.seatbid[0].bid[0].ext.init}&profileId=1`
 
           const placementElement = document.createElement('div')
@@ -527,7 +527,6 @@ describe('videonowAdapterTests', function() {
           const res = document.querySelectorAll(`script[src="${src}"]`)
           expect(res.length).to.equal(1)
         })
-
       })
 
       describe('renderer object', function() {
