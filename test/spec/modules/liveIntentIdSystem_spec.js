@@ -37,7 +37,7 @@ describe('LiveIntentId', function() {
     expect(logErrorStub.calledOnce).to.be.true;
   });
 
-  it('should call the Custom ULR of theLiveIntent Identity Exchange endpoint', function() {
+  it('should call the Custom URL of theLiveIntent Identity Exchange endpoint', function() {
     getCookieStub.returns(null);
     let callBackSpy = sinon.spy();
     let submoduleCallback = liveIntentIdSubmodule.getId({...defaultConfigParams, ...{'url': 'https://dummy.liveintent.com'}});
