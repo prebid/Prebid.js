@@ -1,13 +1,11 @@
 import * as utils from '../src/utils'
 import { registerBidder } from '../src/adapters/bidderFactory'
 import { BANNER } from '../src/mediaTypes'
-import { walkUpWindows } from '../src/refererDetection'
 
 const RTB_URL = 'https://bidder.videonow.ru/prebid'
 
 const BIDDER_CODE = 'videonow'
 const TTL_SECONDS = 60 * 5
-const LS_ITEM_NAME = 'VN_DATA'
 
 function isBidRequestValid(bid) {
   return !!(bid && bid.params && bid.params.pId)
@@ -84,21 +82,15 @@ function createResponseBid(bidInfo, bidId, cur, placementId) {
     return null
   }
 
-  const { init, module, format } = ext || {}
-
-  const vnData = JSON.parse(localStorage.getItem(LS_ITEM_NAME) || '{}')
-  let { module: { log, min }, init: customInit } = vnData
-
-  const initPath = customInit || init
+  const { init: initPath, module, format } = ext || {}
   if (!initPath) {
     utils.logError(`vnInitModulePath is not defined`)
     return null
   }
 
-  min && (module.min = min)
-  log && (module.log = log)
+  const { log, min } = module || {}
 
-  if (!module.min && module.log) {
+  if (!min && !log) {
     utils.logError('module\'s paths are not defined')
     return null
   }
@@ -115,7 +107,7 @@ function createResponseBid(bidInfo, bidId, cur, placementId) {
     ad: code,
     nurl,
     renderer: {
-      url: module.min || module.log,
+      url: min || log,
       render: function() {
         const d = window.document
         const el = placementId && d.getElementById(placementId)
