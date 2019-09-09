@@ -51,6 +51,8 @@
  * @property {(string|undefined)} partner - partner url param value
  * @property {(string|undefined)} url - webservice request url used to load Id data
  * @property {(string|undefined)} pid - placement id url param value
+ * @property {(string|undefined)} publisherId - the unique identifier of the publisher in question
+ * @property {(array|undefined)} identifiersToResolve - the identifiers from either ls|cookie to be attached to the getId query
  */
 
 /**
@@ -77,6 +79,7 @@ import {gdprDataHandler} from '../../src/adapterManager';
 import CONSTANTS from '../../src/constants.json';
 import {module} from '../../src/hook';
 import {unifiedIdSubmodule} from './unifiedIdSystem.js';
+import {liveIntentIdSubmodule} from './liveIntentIdSystem.js';
 import {pubCommonIdSubmodule} from './pubCommonIdSystem.js';
 
 const MODULE_NAME = 'User ID';
@@ -467,5 +470,6 @@ init(config);
 // add submodules after init has been called
 attachIdSystem(pubCommonIdSubmodule);
 attachIdSystem(unifiedIdSubmodule);
+attachIdSystem(liveIntentIdSubmodule);
 
 module('userId', attachIdSystem);
