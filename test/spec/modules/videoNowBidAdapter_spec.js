@@ -3,7 +3,7 @@ import { spec } from 'modules/videoNowBidAdapter'
 import { replaceAuctionPrice } from '../../../src/utils'
 
 const placementId = 'div-gpt-ad-1438287399331-0'
-const LS_ITEM_NAME = 'VN_DATA'
+const LS_ITEM_NAME = 'videonow-config'
 
 const getValidServerResponse = () => {
   const serverResponse = {
@@ -451,58 +451,40 @@ describe('videonowAdapterTests', function() {
 
         afterEach(function() {
           const serverResp = getValidServerResponse()
-          const { module: { log, min }, init } =  serverResp.body.seatbid[0].bid[0].ext
+          const { module: { log, min }, init } = serverResp.body.seatbid[0].bid[0].ext
           remove(init)
           remove(log)
           remove(min)
 
           function remove(src) {
             if (!src) return
-            d = document.querySelectorAll(`script[src^="${src}"]`)
+            const d = document.querySelectorAll(`script[src^="${src}"]`)
             d && d.forEach(el => el && el.remove())
           }
         })
 
-        it('should use prod modules by default', function() {
+        it('should use prod module by default', function() {
           const serverResp = getValidServerResponse()
           const res = spec.interpretResponse(serverResp, bidRequest)
           expect(res.length).to.equal(1)
 
           const renderer = res[0].renderer
           expect(renderer).to.be.an('object')
-          expect(renderer.url).to.equal(serverResp.body.seatbid[0].bid[0].ext.module)
+          expect(renderer.url).to.equal(serverResp.body.seatbid[0].bid[0].ext.module.min)
         })
 
-        it('should use custom path for module', function() {
+        it('should use "log" module if "prod" is not exists', function() {
           const serverResp = getValidServerResponse()
-          const init = serverResp.body.seatbid[0].bid[0].ext.init + '?dev=1'
-          const module = serverResp.body.seatbid[0].bid[0].ext.module.min + '?dev=1'
-          localStorage.setItem(LS_ITEM_NAME, JSON.stringify({
-            init,
-            module
-          }))
-
-          const src = `${init}&profileId=1`
-          const placementElement = document.createElement('div')
-          placementElement.setAttribute('id', placementId)
-
-          const resp = spec.interpretResponse(serverResp, bidRequest)
-          expect(resp.length).to.equal(1)
-
-          const renderer = resp[0].renderer
-          expect(renderer).to.be.an('object')
-          expect(renderer.url).to.equal(module)
-
-          document.body.appendChild(placementElement)
-
-          renderer.render()
-
-          const res = document.querySelectorAll(`script[src="${src}"]`)
+          delete serverResp.body.seatbid[0].bid[0].ext.module.min
+          const res = spec.interpretResponse(serverResp, bidRequest)
           expect(res.length).to.equal(1)
+
+          const renderer = res[0].renderer
+          expect(renderer).to.be.an('object')
+          expect(renderer.url).to.equal(serverResp.body.seatbid[0].bid[0].ext.module.log)
         })
 
         it('should correct combine src for init', function() {
-          // localStorage.setItem(LS_ITEM_NAME, '{}')
           const serverResp = getValidServerResponse()
 
           const src = `${serverResp.body.seatbid[0].bid[0].ext.init}?profileId=1`
@@ -519,11 +501,33 @@ describe('videonowAdapterTests', function() {
 
           renderer.render()
 
-          // expect(Array.from(document.querySelectorAll('script')).map(s => s.src)).to.equal({})
-          //
           const res = document.querySelectorAll(`script[src="${src}"]`)
           expect(res.length).to.equal(1)
         })
+
+        it('should correct combine src for init if init url contains "?"', function() {
+          const serverResp = getValidServerResponse()
+
+          serverResp.body.seatbid[0].bid[0].ext.init +=  '?div=1'
+          const src = `${serverResp.body.seatbid[0].bid[0].ext.init}&profileId=1`
+
+          const placementElement = document.createElement('div')
+          placementElement.setAttribute('id', placementId)
+
+          const resp = spec.interpretResponse(serverResp, bidRequest)
+          expect(resp.length).to.equal(1)
+
+          const renderer = resp[0].renderer
+          expect(renderer).to.be.an('object')
+
+          document.body.appendChild(placementElement)
+
+          renderer.render()
+
+          const res = document.querySelectorAll(`script[src="${src}"]`)
+          expect(res.length).to.equal(1)
+        })
+
       })
 
       describe('renderer object', function() {
