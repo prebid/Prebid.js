@@ -6,6 +6,7 @@ const MANIFEST = 'package.json';
 const through = require('through2');
 const _ = require('lodash');
 const gutil = require('gulp-util');
+const submodules = require('./modules/.submodules.json');
 
 const MODULE_PATH = './modules';
 const BUILD_PATH = './build/dist';
@@ -39,7 +40,9 @@ module.exports = {
       .replace(/\/>/g, '\\/>');
   },
   getArgModules() {
-    var modules = (argv.modules || '').split(',').filter(module => !!module);
+    var modules = (argv.modules || '')
+      .split(',')
+      .filter(module => !!module);
 
     try {
       if (modules.length === 1 && path.extname(modules[0]).toLowerCase() === '.json') {
@@ -55,6 +58,15 @@ module.exports = {
         message: 'failed reading: ' + argv.modules
       });
     }
+
+    Object.keys(submodules).forEach(parentModule => {
+      if (
+        !modules.includes(parentModule) &&
+        modules.some(module => submodules[parentModule].includes(module))
+      ) {
+        modules.unshift(parentModule);
+      }
+    });
 
     return modules;
   },
@@ -79,7 +91,10 @@ module.exports = {
     }
     return Object.assign(externalModules.reduce((memo, module) => {
       try {
-        var modulePath = require.resolve(module);
+        // prefer internal project modules before looking at project dependencies
+        var modulePath = require.resolve(module, {paths: ['./modules']});
+        if (modulePath === '') modulePath = require.resolve(module);
+
         memo[modulePath] = module;
       } catch (err) {
         // do something

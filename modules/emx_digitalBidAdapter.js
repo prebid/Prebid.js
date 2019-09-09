@@ -1,14 +1,17 @@
 import * as utils from '../src/utils';
 import { registerBidder } from '../src/adapters/bidderFactory';
 import { BANNER, VIDEO } from '../src/mediaTypes';
-import { config } from '../src/config';
 import { Renderer } from '../src/Renderer';
 import includes from 'core-js/library/fn/array/includes';
 
 const BIDDER_CODE = 'emx_digital';
 const ENDPOINT = 'hb.emxdgt.com';
 const RENDERER_URL = '//js.brealtime.com/outstream/1.30.0/bundle.js';
+<<<<<<< HEAD
 const ADAPTER_VERSION = '1.40.1';
+=======
+const ADAPTER_VERSION = '1.40.2';
+>>>>>>> 25b64718a34916bac9904854796c986f40fc9268
 const DEFAULT_CUR = 'USD';
 
 export const emxAdapter = {
@@ -183,7 +186,11 @@ export const spec = {
   },
   buildRequests: function (validBidRequests, bidderRequest) {
     const emxImps = [];
+<<<<<<< HEAD
     const timeout = config.getConfig('bidderTimeout');
+=======
+    const timeout = bidderRequest.timeout || '';
+>>>>>>> 25b64718a34916bac9904854796c986f40fc9268
     const timestamp = Date.now();
     const url = location.protocol + '//' + ENDPOINT + ('?t=' + timeout + '&ts=' + timestamp + '&src=pbjs');
     const secure = location.protocol.indexOf('https') > -1 ? 1 : 0;
@@ -200,12 +207,17 @@ export const spec = {
         id: bid.bidId,
         tid: bid.transactionId,
         tagid,
+<<<<<<< HEAD
         secure,
         ...(bidfloor > 0 && { bidfloor, bidfloorcur: DEFAULT_CUR })
 
+=======
+        secure
+>>>>>>> 25b64718a34916bac9904854796c986f40fc9268
       };
       let typeSpecifics = isVideo ? { video: emxAdapter.buildVideo(bid) } : { banner: emxAdapter.buildBanner(bid) };
-      let emxBid = Object.assign(data, typeSpecifics);
+      let bidfloorObj = bidfloor > 0 ? { bidfloor, bidfloorcur: DEFAULT_CUR } : {};
+      let emxBid = Object.assign(data, typeSpecifics, bidfloorObj);
 
       emxImps.push(emxBid);
     });
