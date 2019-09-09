@@ -1,5 +1,7 @@
 import {config} from '../src/config';
 import {getGlobal} from '../src/prebidGlobal';
+import CONSTANTS from '../src/constants.json';
+import events from '../src/events';
 import { isStr, isPlainObject, isBoolean, isFn, hasOwn, logInfo } from '../src/utils';
 
 const MODULE_NAME = 'userIdTargeting';
@@ -51,7 +53,7 @@ export function userIdTargeting(userIds, config) {
 }
 
 export function init(config) {
-  $$PREBID_GLOBAL$$.onEvent('auctionEnd', function() {
+  events.on(CONSTANTS.EVENTS.AUCTION_END, function() {
     userIdTargeting((getGlobal()).getUserIds(), config.getConfig(MODULE_NAME));
   })
 }
