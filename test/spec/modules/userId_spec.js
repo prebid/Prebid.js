@@ -265,7 +265,7 @@ describe('User ID', function() {
             storage: { name: 'idl_env', type: 'cookie' }
           }, {
             name: 'liveIntentId',
-            storage: { name: 'liuid', type: 'cookie' }
+            storage: { name: '_li_pbid', type: 'cookie' }
           }]
         }
       });
@@ -401,40 +401,40 @@ describe('User ID', function() {
 
     it('test hook from liveIntentId html5', function(done) {
       // simulate existing browser local storage values
-      localStorage.setItem('liuid', JSON.stringify({'unifiedId': 'random-ls-identifier'}));
-      localStorage.setItem('liuid_exp', '');
+      localStorage.setItem('_li_pbid', JSON.stringify({'unifiedId': 'random-ls-identifier'}));
+      localStorage.setItem('_li_pbid_exp', '');
 
       setSubmoduleRegistry([liveIntentIdSubmodule]);
       init(config);
-      config.setConfig(getConfigMock(['liveIntentId', 'liuid', 'html5']));
+      config.setConfig(getConfigMock(['liveIntentId', '_li_pbid', 'html5']));
       requestBidsHook(function() {
         adUnits.forEach(unit => {
           unit.bids.forEach(bid => {
-            expect(bid).to.have.deep.nested.property('userId.liuid');
-            expect(bid.userId.liuid).to.equal('random-ls-identifier');
+            expect(bid).to.have.deep.nested.property('userId.lipbid');
+            expect(bid.userId.lipbid).to.equal('random-ls-identifier');
           });
         });
-        localStorage.removeItem('liuid');
-        localStorage.removeItem('liuid_exp');
+        localStorage.removeItem('_li_pbid');
+        localStorage.removeItem('_li_pbid_exp');
         done();
       }, {adUnits});
     });
 
     it('test hook from liveIntentId cookie', function(done) {
-      utils.setCookie('liuid', JSON.stringify({'unifiedId': 'random-cookie-identifier'}), (new Date(Date.now() + 100000).toUTCString()));
+      utils.setCookie('_li_pbid', JSON.stringify({'unifiedId': 'random-cookie-identifier'}), (new Date(Date.now() + 100000).toUTCString()));
 
       setSubmoduleRegistry([liveIntentIdSubmodule]);
       init(config);
-      config.setConfig(getConfigMock(['liveIntentId', 'liuid', 'cookie']));
+      config.setConfig(getConfigMock(['liveIntentId', '_li_pbid', 'cookie']));
 
       requestBidsHook(function() {
         adUnits.forEach(unit => {
           unit.bids.forEach(bid => {
-            expect(bid).to.have.deep.nested.property('userId.liuid');
-            expect(bid.userId.liuid).to.equal('random-cookie-identifier');
+            expect(bid).to.have.deep.nested.property('userId.lipbid');
+            expect(bid.userId.lipbid).to.equal('random-cookie-identifier');
           });
         });
-        utils.setCookie('liuid', '', EXPIRED_COOKIE_DATE);
+        utils.setCookie('_li_pbid', '', EXPIRED_COOKIE_DATE);
         done();
       }, {adUnits});
     });
@@ -502,7 +502,7 @@ describe('User ID', function() {
       utils.setCookie('unifiedid', JSON.stringify({'TDID': 'cookie-value-add-module-variations'}), new Date(Date.now() + 5000).toUTCString());
       utils.setCookie('id5id', JSON.stringify({'ID5ID': 'testid5id'}), (new Date(Date.now() + 5000).toUTCString()));
       utils.setCookie('idl_env', 'AiGNC8Z5ONyZKSpIPf', new Date(Date.now() + 5000).toUTCString());
-      utils.setCookie('liuid', JSON.stringify({'unifiedId': 'randomly-returned-id'}), new Date(Date.now() + 5000).toUTCString());
+      utils.setCookie('_li_pbid', JSON.stringify({'unifiedId': 'randomly-returned-id'}), new Date(Date.now() + 5000).toUTCString());
 
       setSubmoduleRegistry([]);
 
@@ -521,7 +521,7 @@ describe('User ID', function() {
         ['unifiedId', 'unifiedid', 'cookie'],
         ['id5Id', 'id5id', 'cookie'],
         ['identityLink', 'idl_env', 'cookie'],
-        ['liveIntentId', 'liuid', 'cookie']));
+        ['liveIntentId', '_li_pbid', 'cookie']));
 
       requestBidsHook(function() {
         adUnits.forEach(unit => {
@@ -539,15 +539,15 @@ describe('User ID', function() {
             expect(bid).to.have.deep.nested.property('userId.idl_env');
             expect(bid.userId.idl_env).to.equal('AiGNC8Z5ONyZKSpIPf');
             // also check that liveIntentIdentity id data was copied to bid
-            expect(bid).to.have.deep.nested.property('userId.liuid');
-            expect(bid.userId.liuid).to.equal('randomly-returned-id');
+            expect(bid).to.have.deep.nested.property('userId.lipbid');
+            expect(bid.userId.lipbid).to.equal('randomly-returned-id');
           });
         });
         utils.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
         utils.setCookie('unifiedid', '', EXPIRED_COOKIE_DATE);
         utils.setCookie('id5id', '', EXPIRED_COOKIE_DATE);
         utils.setCookie('idl_env', '', EXPIRED_COOKIE_DATE);
-        utils.setCookie('liuid', '', EXPIRED_COOKIE_DATE);
+        utils.setCookie('_li_pbid', '', EXPIRED_COOKIE_DATE);
         done();
       }, {adUnits});
     });
@@ -557,7 +557,7 @@ describe('User ID', function() {
       utils.setCookie('unifiedid', JSON.stringify({'TDID': 'cookie-value-add-module-variations'}), new Date(Date.now() + 5000).toUTCString());
       utils.setCookie('id5id', JSON.stringify({'ID5ID': 'testid5id'}), (new Date(Date.now() + 5000).toUTCString()));
       utils.setCookie('idl_env', 'AiGNC8Z5ONyZKSpIPf', new Date(Date.now() + 5000).toUTCString());
-      utils.setCookie('liuid', JSON.stringify({'unifiedId': 'randomly-returned-id'}), new Date(Date.now() + 5000).toUTCString());
+      utils.setCookie('_li_pbid', JSON.stringify({'unifiedId': 'randomly-returned-id'}), new Date(Date.now() + 5000).toUTCString());
       utils.setCookie('MOCKID', JSON.stringify({'MOCKID': '123456778'}), new Date(Date.now() + 5000).toUTCString());
 
       setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, liveIntentIdSubmodule]);
@@ -575,7 +575,7 @@ describe('User ID', function() {
           }, {
             name: 'identityLink', storage: { name: 'idl_env', type: 'cookie' }
           }, {
-            name: 'liveIntentId', storage: { name: 'liuid', type: 'cookie' }
+            name: 'liveIntentId', storage: { name: '_li_pbid', type: 'cookie' }
           }, {
             name: 'mockId', storage: { name: 'MOCKID', type: 'cookie' }
           }]
@@ -611,8 +611,8 @@ describe('User ID', function() {
             expect(bid).to.have.deep.nested.property('userId.idl_env');
             expect(bid.userId.idl_env).to.equal('AiGNC8Z5ONyZKSpIPf');
             // also check that liveIntentIdentity id data was copied to bid
-            expect(bid).to.have.deep.nested.property('userId.liuid');
-            expect(bid.userId.liuid).to.equal('randomly-returned-id');
+            expect(bid).to.have.deep.nested.property('userId.lipbid');
+            expect(bid.userId.lipbid).to.equal('randomly-returned-id');
             // check MockId data was copied to bid
             expect(bid).to.have.deep.nested.property('userId.mid');
             expect(bid.userId.mid).to.equal('123456778');
@@ -622,7 +622,7 @@ describe('User ID', function() {
         utils.setCookie('unifiedid', '', EXPIRED_COOKIE_DATE);
         utils.setCookie('id5id', '', EXPIRED_COOKIE_DATE);
         utils.setCookie('idl_env', '', EXPIRED_COOKIE_DATE);
-        utils.setCookie('liuid', '', EXPIRED_COOKIE_DATE);
+        utils.setCookie('_li_pbid', '', EXPIRED_COOKIE_DATE);
         utils.setCookie('MOCKID', '', EXPIRED_COOKIE_DATE);
         done();
       }, {adUnits});

@@ -37,7 +37,7 @@ describe('LiveIntentId', function() {
     expect(logErrorStub.calledOnce).to.be.true;
   });
 
-  it('should call the Custom URL of theLiveIntent Identity Exchange endpoint', function() {
+  it('should call the Custom URL of the LiveIntent Identity Exchange endpoint', function() {
     getCookieStub.returns(null);
     let callBackSpy = sinon.spy();
     let submoduleCallback = liveIntentIdSubmodule.getId({...defaultConfigParams, ...{'url': 'https://dummy.liveintent.com'}});
@@ -67,7 +67,7 @@ describe('LiveIntentId', function() {
     expect(callBackSpy.calledOnce).to.be.true;
   });
 
-  it('should include the LiveConnect identifier when calling hte LiveIntent Identity Exchange endpoint', function() {
+  it('should include the LiveConnect identifier when calling the LiveIntent Identity Exchange endpoint', function() {
     getCookieStub.withArgs('_li_duid').returns('li-fpc');
     let callBackSpy = sinon.spy();
     let submoduleCallback = liveIntentIdSubmodule.getId(defaultConfigParams);
@@ -105,7 +105,7 @@ describe('LiveIntentId', function() {
     expect(callBackSpy.calledOnce).to.be.true;
   });
 
-  it('should include  an additional identifier value to resolve even if it is an object', function() {
+  it('should include an additional identifier value to resolve even if it is an object', function() {
     getCookieStub.returns(null);
     getDataFromLocalStorageStub.withArgs('_thirdPC').returns({'key': 'value'});
     let configParams = {

@@ -28,7 +28,7 @@ export const liveIntentIdSubmodule = {
    * @returns {{liuid:Object}}
    */
   decode(value) {
-    return (value && typeof value['unifiedId'] === 'string') ? { 'liuid': value['unifiedId'] } : undefined;
+    return (value && typeof value['unifiedId'] === 'string') ? { 'lipbid': value['unifiedId'] } : undefined;
   },
 
   /**
