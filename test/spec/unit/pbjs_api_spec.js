@@ -108,6 +108,7 @@ var createSlotArrayScenario2 = function createSlotArrayScenario2() {
 
 window.googletag = {
   _slots: [],
+  _targeting: {},
   pubads: function () {
     var self = this;
     return {
@@ -117,6 +118,18 @@ window.googletag = {
 
       setSlots: function (slots) {
         self._slots = slots;
+      },
+
+      setTargeting: function(key, arrayOfValues) {
+        self._targeting[key] = arrayOfValues;
+      },
+
+      getTargeting: function() {
+        return self._targeting;
+      },
+
+      clearTargeting: function() {
+        self._targeting = {};
       }
     };
   }

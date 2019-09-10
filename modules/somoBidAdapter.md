@@ -5,7 +5,7 @@
 **Maintainer**: prebid@somoaudience.com
 # Description
 Connects to Somo Audience demand source.  
-Please use ```somoaudience``` as the bidder code.  
+Please use ```somo``` as the bidder code.  
 
 For video integration, somoAudience returns content as vastXML and requires the publisher to define the cache url in config passed to Prebid for it to be valid in the auction
 # Test Site Parameters
@@ -14,7 +14,7 @@ For video integration, somoAudience returns content as vastXML and requires the 
       code: 'banner-ad-div',
       sizes: [[300, 250]],
       bids: [{
-          bidder: 'somoaudience',
+          bidder: 'somo',
           params: {
               placementId: '22a58cfb0c9b656bff713d1236e930e8'
           }
@@ -27,7 +27,7 @@ var adUnits = [{
   code: 'banner-ad-div',
   sizes: [[300, 250]],
   bids: [{
-      bidder: 'somoaudience',
+      bidder: 'somo',
       params: {
           placementId: '22a58cfb0c9b656bff713d1236e930e8',
           app: {
