@@ -925,12 +925,9 @@ describe('adapterManager tests', function () {
         expect(bidRequests.length).to.equal(2);
         let rubiconBidRequests = find(bidRequests, bidRequest => bidRequest.bidderCode === 'rubicon');
         expect(rubiconBidRequests.bids.length).to.equal(1);
-        expect(rubiconBidRequests.bids[0].sizes).to.deep.equal(find(adUnits, adUnit => adUnit.code === rubiconBidRequests.bids[0].adUnitCode).sizes);
 
         let appnexusBidRequests = find(bidRequests, bidRequest => bidRequest.bidderCode === 'appnexus');
         expect(appnexusBidRequests.bids.length).to.equal(2);
-        expect(appnexusBidRequests.bids[0].sizes).to.deep.equal(find(adUnits, adUnit => adUnit.code === appnexusBidRequests.bids[0].adUnitCode).sizes);
-        expect(appnexusBidRequests.bids[1].sizes).to.deep.equal(find(adUnits, adUnit => adUnit.code === appnexusBidRequests.bids[1].adUnitCode).sizes);
       });
 
       it('should not filter video bids', function () {
@@ -1107,8 +1104,6 @@ describe('adapterManager tests', function () {
         expect(bidRequests[0].adUnitsS2SCopy.length).to.equal(1);
         expect(bidRequests[0].adUnitsS2SCopy[0].bids.length).to.equal(1);
         expect(bidRequests[0].adUnitsS2SCopy[0].bids[0].bidder).to.equal('rubicon');
-        expect(bidRequests[0].adUnitsS2SCopy[0].bids[0].adUnitCode).to.equal(adUnits[1].code);
-        expect(bidRequests[0].adUnitsS2SCopy[0].bids[0].bid_id).to.equal(bidRequests[0].bids[0].bid_id);
         expect(bidRequests[0].adUnitsS2SCopy[0].labelAny).to.deep.equal(['visitor-uk', 'desktop']);
       });
     });
