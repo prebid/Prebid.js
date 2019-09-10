@@ -409,13 +409,8 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
         bid.clientLatencyMillis = Date.now() - cache.auctions[args.auctionId].timestamp;
         bid.bidResponse = parseBidResponse(args);
         // RP server banner overwrites bidId with bid.seatBidId
-        if (bid.bidder === 'rubicon' && bid.source === 'server') {
-          if (Array.isArray(utils.deepAccess(bid, 'bid.mediaTypes.banner')) && utils.deepAccess(bid, 'bid.mediaTypes.banner').length > 0) {
-            bid.seatBidId = bid.bidResponse.seatBidId;
-          }
-          if (Array.isArray(utils.deepAccess(bid, 'bid.mediaTypes.video')) && utils.deepAccess(bid, 'bid.mediaTypes.video').length > 0) {
-            bid.seatBidId = bid.bidResponse.seatBidId;
-          }
+        if (utils.deepAccess(bid, 'bidResponse.seatBidId') && bid.bidder === 'rubicon' && bid.source === 'server' && ['video', 'banner'].some(i => utils.deepAccess(bid, 'bidResponse.mediaType') === i)) {
+          bid.seatBidId = bid.bidResponse.seatBidId;
         }
         break;
       case BIDDER_DONE:
