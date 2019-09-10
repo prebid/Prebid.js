@@ -116,7 +116,7 @@ describe('OpenxAdapter', function () {
     ads: {
       version: 0,
       count: 1,
-      pixels: 'http://testpixels.net',
+      pixels: 'https://testpixels.net',
       ad: [DEFAULT_TEST_ARJ_AD_UNIT]
     }
   };
@@ -203,13 +203,6 @@ describe('OpenxAdapter', function () {
         it('should return true multisize when required params found', function () {
           expect(spec.isBidRequestValid(multiformatBid)).to.equal(true);
         });
-
-        it('should send bid request to openx url via GET, with mediaType specified as banner', function () {
-          const request = spec.buildRequests([multiformatBid]);
-          expect(request[0].url).to.equal(`//${multiformatBid.params.delDomain}${URLBASE}`);
-          expect(request[0].data.ph).to.be.undefined;
-          expect(request[0].method).to.equal('GET');
-        });
       });
     });
 
@@ -243,7 +236,7 @@ describe('OpenxAdapter', function () {
         });
         it('should send bid request to openx url via GET, with mediaType specified as video', function () {
           const request = spec.buildRequests([videoBidWithMediaTypes]);
-          expect(request[0].url).to.equal(`//${videoBidWithMediaTypes.params.delDomain}${URLBASEVIDEO}`);
+          expect(request[0].url).to.equal(`https://${videoBidWithMediaTypes.params.delDomain}${URLBASEVIDEO}`);
           expect(request[0].data.ph).to.be.undefined;
           expect(request[0].method).to.equal('GET');
         });
@@ -278,7 +271,7 @@ describe('OpenxAdapter', function () {
         });
         it('should send bid request to openx url via GET, with mediaType specified as video', function () {
           const request = spec.buildRequests([videoBidWithDelDomainAndPlatform]);
-          expect(request[0].url).to.equal(`//u.openx.net${URLBASEVIDEO}`);
+          expect(request[0].url).to.equal(`https://u.openx.net${URLBASEVIDEO}`);
           expect(request[0].data.ph).to.equal(videoBidWithDelDomainAndPlatform.params.platform);
           expect(request[0].method).to.equal('GET');
         });
@@ -310,7 +303,7 @@ describe('OpenxAdapter', function () {
         });
         it('should send bid request to openx url via GET, with mediaType specified as video', function () {
           const request = spec.buildRequests([videoBidWithMediaType]);
-          expect(request[0].url).to.equal(`//${videoBidWithMediaType.params.delDomain}${URLBASEVIDEO}`);
+          expect(request[0].url).to.equal(`https://${videoBidWithMediaType.params.delDomain}${URLBASEVIDEO}`);
           expect(request[0].data.ph).to.be.undefined;
           expect(request[0].method).to.equal('GET');
         });
@@ -397,21 +390,21 @@ describe('OpenxAdapter', function () {
 
     it('should send bid request to openx url via GET, with mediaType specified as banner', function () {
       const request = spec.buildRequests(bidRequestsWithMediaType);
-      expect(request[0].url).to.equal('//' + bidRequestsWithMediaType[0].params.delDomain + URLBASE);
+      expect(request[0].url).to.equal('https://' + bidRequestsWithMediaType[0].params.delDomain + URLBASE);
       expect(request[0].data.ph).to.be.undefined;
       expect(request[0].method).to.equal('GET');
     });
 
     it('should send bid request to openx url via GET, with mediaTypes specified with banner type', function () {
       const request = spec.buildRequests(bidRequestsWithMediaTypes);
-      expect(request[0].url).to.equal('//' + bidRequestsWithMediaTypes[0].params.delDomain + URLBASE);
+      expect(request[0].url).to.equal('https://' + bidRequestsWithMediaTypes[0].params.delDomain + URLBASE);
       expect(request[0].data.ph).to.be.undefined;
       expect(request[0].method).to.equal('GET');
     });
 
     it('should send bid request to openx platform url via GET, if platform is present', function () {
       const request = spec.buildRequests(bidRequestsWithPlatform);
-      expect(request[0].url).to.equal(`//u.openx.net${URLBASE}`);
+      expect(request[0].url).to.equal(`https://u.openx.net${URLBASE}`);
       expect(request[0].data.ph).to.equal(bidRequestsWithPlatform[0].params.platform);
       expect(request[0].method).to.equal('GET');
     });
@@ -452,7 +445,7 @@ describe('OpenxAdapter', function () {
       }];
 
       const request = spec.buildRequests(bidRequestsWithPlatformAndDelDomain);
-      expect(request[0].url).to.equal(`//u.openx.net${URLBASE}`);
+      expect(request[0].url).to.equal(`https://u.openx.net${URLBASE}`);
       expect(request[0].data.ph).to.equal(bidRequestsWithPlatform[0].params.platform);
       expect(request[0].method).to.equal('GET');
     });
@@ -1148,13 +1141,13 @@ describe('OpenxAdapter', function () {
 
     it('should send bid request to openx url via GET, with mediaType as video', function () {
       const request = spec.buildRequests(bidRequestsWithMediaType);
-      expect(request[0].url).to.equal('//' + bidRequestsWithMediaType[0].params.delDomain + URLBASEVIDEO);
+      expect(request[0].url).to.equal('https://' + bidRequestsWithMediaType[0].params.delDomain + URLBASEVIDEO);
       expect(request[0].method).to.equal('GET');
     });
 
     it('should send bid request to openx url via GET, with mediaTypes having video parameter', function () {
       const request = spec.buildRequests(bidRequestsWithMediaTypes);
-      expect(request[0].url).to.equal('//' + bidRequestsWithMediaTypes[0].params.delDomain + URLBASEVIDEO);
+      expect(request[0].url).to.equal('https://' + bidRequestsWithMediaTypes[0].params.delDomain + URLBASEVIDEO);
       expect(request[0].method).to.equal('GET');
     });
 
@@ -1261,6 +1254,34 @@ describe('OpenxAdapter', function () {
     });
   });
 
+  describe('buildRequest for multi-format ad', function () {
+    const multiformatBid = {
+      bidder: 'openx',
+      params: {
+        unit: '12345678',
+        delDomain: 'test-del-domain'
+      },
+      adUnitCode: 'adunit-code',
+      mediaTypes: {
+        banner: {
+          sizes: [[300, 250]]
+        },
+        video: {
+          playerSize: [300, 250]
+        }
+      },
+      bidId: '30b31c1838de1e',
+      bidderRequestId: '22edbae2733bf6',
+      auctionId: '1d1a030790a475',
+      transactionId: '4008d88a-8137-410b-aa35-fbfdabcb478e'
+    };
+
+    it('should send bid request to openx url via GET, with mediaType specified as banner', function () {
+      const request = spec.buildRequests([multiformatBid]);
+      expect(request[0].url).to.equal(`https://${multiformatBid.params.delDomain}${URLBASE}`);
+    });
+  });
+
   describe('interpretResponse for banner ads', function () {
     beforeEach(function () {
       sinon.spy(userSync, 'registerSync');
@@ -1276,7 +1297,7 @@ describe('OpenxAdapter', function () {
         width: '300',
         height: '250',
         tracking: {
-          impression: 'http://openx-d.openx.net/v/1.0/ri?ts=ts'
+          impression: 'https://openx-d.openx.net/v/1.0/ri?ts=ts'
         }
       };
 
@@ -1311,7 +1332,7 @@ describe('OpenxAdapter', function () {
 
         bidRequest = {
           method: 'GET',
-          url: '//openx-d.openx.net/v/1.0/arj',
+          url: 'https://openx-d.openx.net/v/1.0/arj',
           data: {},
           payload: {'bids': bidRequestConfigs, 'startTime': new Date()}
         };
@@ -1369,7 +1390,7 @@ describe('OpenxAdapter', function () {
       it('should register a beacon', function () {
         resetBoPixel();
         spec.interpretResponse({body: bidResponse}, bidRequest);
-        sinon.assert.calledWith(userSync.registerSync, 'image', 'openx', sinon.match(new RegExp(`\/\/openx-d\.openx\.net.*\/bo\?.*ts=${adUnitOverride.ts}`)));
+        sinon.assert.calledWith(userSync.registerSync, 'image', 'openx', sinon.match(new RegExp(`https:\/\/openx-d\.openx\.net.*\/bo\?.*ts=${adUnitOverride.ts}`)));
       });
     });
 
@@ -1401,7 +1422,7 @@ describe('OpenxAdapter', function () {
 
         bidRequest = {
           method: 'GET',
-          url: '//openx-d.openx.net/v/1.0/arj',
+          url: 'https://openx-d.openx.net/v/1.0/arj',
           data: {},
           payload: {'bids': bidRequestConfigs, 'startTime': new Date()}
         };
@@ -1437,7 +1458,7 @@ describe('OpenxAdapter', function () {
 
         bidRequest = {
           method: 'GET',
-          url: '//openx-d.openx.net/v/1.0/arj',
+          url: 'https://openx-d.openx.net/v/1.0/arj',
           data: {},
           payload: {'bids': bidRequestConfigs, 'startTime': new Date()}
         };
@@ -1449,7 +1470,7 @@ describe('OpenxAdapter', function () {
             {
               'version': 1,
               'count': 1,
-              'pixels': 'http://testpixels.net',
+              'pixels': 'https://testpixels.net',
               'ad': []
             }
         };
@@ -1508,7 +1529,7 @@ describe('OpenxAdapter', function () {
       }];
       const bidRequest = {
         method: 'GET',
-        url: '//openx-d.openx.net/v/1.0/arj',
+        url: 'https://openx-d.openx.net/v/1.0/arj',
         data: {},
         payload: {'bids': bidRequests, 'startTime': new Date()}
       };
@@ -1590,13 +1611,13 @@ describe('OpenxAdapter', function () {
     }];
     const bidRequestsWithMediaTypes = {
       method: 'GET',
-      url: '//openx-d.openx.net/v/1.0/avjp',
+      url: 'https://openx-d.openx.net/v/1.0/avjp',
       data: {},
       payload: {'bid': bidsWithMediaTypes[0], 'startTime': new Date()}
     };
     const bidRequestsWithMediaType = {
       method: 'GET',
-      url: '//openx-d.openx.net/v/1.0/avjp',
+      url: 'https://openx-d.openx.net/v/1.0/avjp',
       data: {},
       payload: {'bid': bidsWithMediaType[0], 'startTime': new Date()}
     };
@@ -1605,8 +1626,8 @@ describe('OpenxAdapter', function () {
       'width': '640',
       'height': '480',
       'adid': '5678',
-      'vastUrl': 'http://testvast.com/vastpath?colo=http://test-colo.com&ph=test-ph&ts=test-ts',
-      'pixels': 'http://testpixels.net'
+      'vastUrl': 'https://testvast.com/vastpath?colo=https://test-colo.com&ph=test-ph&ts=test-ts',
+      'pixels': 'https://testpixels.net'
     };
 
     it('should return correct bid response with MediaTypes', function () {
@@ -1618,7 +1639,7 @@ describe('OpenxAdapter', function () {
           'height': '480',
           'mediaType': 'video',
           'creativeId': '5678',
-          'vastUrl': 'http://testvast.com',
+          'vastUrl': 'https://testvast.com',
           'ttl': 300,
           'netRevenue': true,
           'currency': 'USD'
@@ -1638,7 +1659,7 @@ describe('OpenxAdapter', function () {
           'height': '480',
           'mediaType': 'video',
           'creativeId': '5678',
-          'vastUrl': 'http://testvast.com',
+          'vastUrl': 'https://testvast.com',
           'ttl': 300,
           'netRevenue': true,
           'currency': 'USD'
@@ -1664,14 +1685,14 @@ describe('OpenxAdapter', function () {
     it('should register a beacon', function () {
       resetBoPixel();
       spec.interpretResponse({body: bidResponse}, bidRequestsWithMediaTypes);
-      sinon.assert.calledWith(userSync.registerSync, 'image', 'openx', sinon.match(/^\/\/test-colo\.com/))
+      sinon.assert.calledWith(userSync.registerSync, 'image', 'openx', sinon.match(/^https:\/\/test-colo\.com/));
       sinon.assert.calledWith(userSync.registerSync, 'image', 'openx', sinon.match(/ph=test-ph/));
       sinon.assert.calledWith(userSync.registerSync, 'image', 'openx', sinon.match(/ts=test-ts/));
     });
   });
 
   describe('user sync', function () {
-    const syncUrl = 'http://testpixels.net';
+    const syncUrl = 'https://testpixels.net';
 
     describe('iframe sync', function () {
       it('should register the pixel iframe from banner ad response', function () {
@@ -1695,7 +1716,7 @@ describe('OpenxAdapter', function () {
           {iframeEnabled: true},
           []
         );
-        expect(syncs).to.deep.equal([{type: 'iframe', url: '//u.openx.net/w/1.0/pd'}]);
+        expect(syncs).to.deep.equal([{type: 'iframe', url: 'https://u.openx.net/w/1.0/pd'}]);
       });
     });
 
@@ -1721,7 +1742,7 @@ describe('OpenxAdapter', function () {
           {pixelEnabled: true},
           []
         );
-        expect(syncs).to.deep.equal([{type: 'image', url: '//u.openx.net/w/1.0/pd'}]);
+        expect(syncs).to.deep.equal([{type: 'image', url: 'https://u.openx.net/w/1.0/pd'}]);
       });
     });
 
@@ -1772,7 +1793,7 @@ describe('OpenxAdapter', function () {
 
     if (adUnits.length) {
       mockedArjResponse.ads.count = adUnits.length;
-      mockedArjResponse.ads.ad = adUnits.map((adUnit, index) => {
+      mockedArjResponse.ads.ad = adUnits.map((adUnit) => {
         overrideKeyCheck(adUnit, DEFAULT_TEST_ARJ_AD_UNIT, 'OxArjAdUnit');
         return Object.assign(utils.deepClone(DEFAULT_TEST_ARJ_AD_UNIT), adUnit);
       });
