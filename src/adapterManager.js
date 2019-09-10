@@ -5,6 +5,7 @@ import { getLabels, resolveStatus } from './sizeMapping';
 import { processNativeAdUnitParams, nativeAdapters } from './native';
 import { newBidder } from './adapters/bidderFactory';
 import { ajaxBuilder } from './ajax';
+import { ajaxBuilderPromise } from './ajax';
 import { config, RANDOM } from './config';
 import includes from 'core-js/library/fn/array/includes';
 import find from 'core-js/library/fn/array/find';
@@ -319,7 +320,11 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
     const adapter = _bidderRegistry[bidRequest.bidderCode];
     utils.logMessage(`CALLING BIDDER ======= ${bidRequest.bidderCode}`);
     events.emit(CONSTANTS.EVENTS.BID_REQUESTED, bidRequest);
-    let ajax = ajaxBuilder(requestBidsTimeout, requestCallbacks ? {
+    // let ajax = ajaxBuilder(requestBidsTimeout, requestCallbacks ? {
+    //   request: requestCallbacks.request.bind(null, bidRequest.bidderCode),
+    //   done: requestCallbacks.done
+    // } : undefined);
+    let ajax = ajaxBuilderPromise(requestBidsTimeout, requestCallbacks ? {
       request: requestCallbacks.request.bind(null, bidRequest.bidderCode),
       done: requestCallbacks.done
     } : undefined);
