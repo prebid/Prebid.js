@@ -1356,6 +1356,24 @@ describe('the rubicon adapter', function () {
           expect(requests.length).to.equal(1);
           expect(requests[0].url).to.equal(FASTLANE_ENDPOINT);
         });
+
+        it('should include coppa flag in video bid request', () => {
+          createVideoBidderRequest();
+
+          sandbox.stub(Date, 'now').callsFake(() =>
+            bidderRequest.auctionStart + 100
+          );
+
+          sandbox.stub(config, 'getConfig').callsFake(key => {
+            const config = {
+              'coppa': true
+            };
+            return config[key];
+          });
+
+          const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          expect(request.data.regs.coppa).to.equal(1);
+        });
       });
 
       describe('combineSlotUrlParams', function () {
