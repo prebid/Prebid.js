@@ -247,7 +247,7 @@ describe('OpenxAdapter', function () {
           params: {
             unit: '12345678',
             delDomain: 'test-del-domain',
-            platform: '1cabba9e-cafe-3665-beef-f00f00f00f00',
+            platform: '1cabba9e-cafe-3665-beef-f00f00f00f00'
           },
           adUnitCode: 'adunit-code',
           mediaTypes: {
@@ -360,7 +360,7 @@ describe('OpenxAdapter', function () {
       'bidder': 'openx',
       'params': {
         'unit': '11',
-        'platform': '1cabba9e-cafe-3665-beef-f00f00f00f00',
+        'platform': '1cabba9e-cafe-3665-beef-f00f00f00f00'
       },
       'adUnitCode': '/adunit-code/test-path',
       mediaTypes: {
@@ -375,7 +375,7 @@ describe('OpenxAdapter', function () {
       'bidder': 'openx',
       'params': {
         'unit': '11',
-        'platform': '1cabba9e-cafe-3665-beef-f00f00f00f00',
+        'platform': '1cabba9e-cafe-3665-beef-f00f00f00f00'
       },
       'adUnitCode': '/adunit-code/test-path',
       mediaTypes: {
@@ -415,7 +415,7 @@ describe('OpenxAdapter', function () {
         'params': {
           'unit': '11',
           'delDomain': 'test-del-domain',
-          'platform': '1cabba9e-cafe-3665-beef-f00f00f00f00',
+          'platform': '1cabba9e-cafe-3665-beef-f00f00f00f00'
         },
         'adUnitCode': '/adunit-code/test-path',
         mediaTypes: {
@@ -431,7 +431,7 @@ describe('OpenxAdapter', function () {
         'params': {
           'unit': '11',
           'delDomain': 'test-del-domain',
-          'platform': '1cabba9e-cafe-3665-beef-f00f00f00f00',
+          'platform': '1cabba9e-cafe-3665-beef-f00f00f00f00'
         },
         'adUnitCode': '/adunit-code/test-path',
         mediaTypes: {
@@ -940,61 +940,6 @@ describe('OpenxAdapter', function () {
       expect(request[0].data.ns).to.equal(1);
     });
 
-    describe('publisher common id query param', function() {
-      it('should not send a pubcid query param when there is no crumbs.pubcid defined in the bid requests', function () {
-        const request = spec.buildRequests(bidRequestsWithMediaType);
-        expect(request[0].data).to.not.have.any.keys('pubcid');
-      });
-
-      it('should send a pubcid query param when crumbs.pubcid is defined in the bid requests', function () {
-        const bidRequestsWithPubcid = [{
-          bidder: 'openx',
-          params: {
-            unit: '11',
-            delDomain: 'test-del-domain'
-          },
-          crumbs: {
-            pubcid: 'c4a4c843-2368-4b5e-b3b1-6ee4702b9ad6'
-          },
-          adUnitCode: 'adunit-code',
-          mediaTypes: {
-            banner: {
-              sizes: [[300, 250], [300, 600]]
-            }
-          },
-          bidId: 'test-bid-id-1',
-          bidderRequestId: 'test-bid-request-1',
-          auctionId: 'test-auction-1'
-        }];
-        const request = spec.buildRequests(bidRequestsWithPubcid);
-        expect(request[0].data.pubcid).to.equal('c4a4c843-2368-4b5e-b3b1-6ee4702b9ad6');
-      });
-
-      it('should send a pubcid query param when userId.pubcid is defined in the bid requests', function () {
-        const bidRequestsWithPubcid = [{
-          bidder: 'openx',
-          params: {
-            unit: '11',
-            delDomain: 'test-del-domain'
-          },
-          userId: {
-            pubcid: 'c1a4c843-2368-4b5e-b3b1-6ee4702b9ad6'
-          },
-          adUnitCode: 'adunit-code',
-          mediaTypes: {
-            banner: {
-              sizes: [[300, 250], [300, 600]]
-            }
-          },
-          bidId: 'test-bid-id-1',
-          bidderRequestId: 'test-bid-request-1',
-          auctionId: 'test-auction-1'
-        }];
-        const request = spec.buildRequests(bidRequestsWithPubcid);
-        expect(request[0].data.pubcid).to.equal('c1a4c843-2368-4b5e-b3b1-6ee4702b9ad6');
-      });
-    })
-
     describe('when schain is provided', function () {
       let bidRequests;
       let schainConfig;
@@ -1099,6 +1044,125 @@ describe('OpenxAdapter', function () {
             expect(nodeProperty).to.equal(node[key] ? String(node[key]) : '',
               `expected node '${nodeIndex}' property '${nodeProperty}' to key '${key}' to be the same value`)
           });
+        });
+      });
+    });
+
+    describe('when there are userid providers', function () {
+      describe('with publisher common id', function () {
+        it('should not send a pubcid query param when there is no crumbs.pubcid and no userId.pubcid defined in the bid requests', function () {
+          const request = spec.buildRequests(bidRequestsWithMediaType);
+          expect(request[0].data).to.not.have.any.keys('pubcid');
+        });
+
+        it('should send a pubcid query param when crumbs.pubcid is defined in the bid requests', function () {
+          const bidRequestsWithPubcid = [{
+            bidder: 'openx',
+            params: {
+              unit: '11',
+              delDomain: 'test-del-domain'
+            },
+            crumbs: {
+              pubcid: 'c4a4c843-2368-4b5e-b3b1-6ee4702b9ad6'
+            },
+            adUnitCode: 'adunit-code',
+            mediaTypes: {
+              banner: {
+                sizes: [[300, 250], [300, 600]]
+              }
+            },
+            bidId: 'test-bid-id-1',
+            bidderRequestId: 'test-bid-request-1',
+            auctionId: 'test-auction-1'
+          }];
+          const request = spec.buildRequests(bidRequestsWithPubcid);
+          expect(request[0].data.pubcid).to.equal('c4a4c843-2368-4b5e-b3b1-6ee4702b9ad6');
+        });
+
+        it('should send a pubcid query param when userId.pubcid is defined in the bid requests', function () {
+          const bidRequestsWithPubcid = [{
+            bidder: 'openx',
+            params: {
+              unit: '11',
+              delDomain: 'test-del-domain'
+            },
+            userId: {
+              pubcid: 'c1a4c843-2368-4b5e-b3b1-6ee4702b9ad6'
+            },
+            adUnitCode: 'adunit-code',
+            mediaTypes: {
+              banner: {
+                sizes: [[300, 250], [300, 600]]
+              }
+            },
+            bidId: 'test-bid-id-1',
+            bidderRequestId: 'test-bid-request-1',
+            auctionId: 'test-auction-1'
+          }];
+          const request = spec.buildRequests(bidRequestsWithPubcid);
+          expect(request[0].data.pubcid).to.equal('c1a4c843-2368-4b5e-b3b1-6ee4702b9ad6');
+        });
+      });
+
+      describe('with the trade desk unified id', function () {
+        it('should not send a tdid query param when there is no userId.tdid defined in the bid requests', function () {
+          const request = spec.buildRequests(bidRequestsWithMediaType);
+          expect(request[0].data).to.not.have.any.keys('ttduuid');
+        });
+
+        it('should send a tdid query param when userId.tdid is defined in the bid requests', function () {
+          const bidRequestsWithTdid = [{
+            bidder: 'openx',
+            params: {
+              unit: '11',
+              delDomain: 'test-del-domain'
+            },
+            userId: {
+              tdid: '00000000-aaaa-1111-bbbb-222222222222'
+            },
+            adUnitCode: 'adunit-code',
+            mediaTypes: {
+              banner: {
+                sizes: [[300, 250], [300, 600]]
+              }
+            },
+            bidId: 'test-bid-id-1',
+            bidderRequestId: 'test-bid-request-1',
+            auctionId: 'test-auction-1'
+          }];
+          const request = spec.buildRequests(bidRequestsWithTdid);
+          expect(request[0].data.ttduuid).to.equal('00000000-aaaa-1111-bbbb-222222222222');
+        });
+      });
+
+      describe('with the liveRamp identity link envelope', function () {
+        it('should not send a tdid query param when there is no userId.lre defined in the bid requests', function () {
+          const request = spec.buildRequests(bidRequestsWithMediaType);
+          expect(request[0].data).to.not.have.any.keys('lre');
+        });
+
+        it('should send a lre query param when userId.lre is defined in the bid requests', function () {
+          const bidRequestsWithLiveRampEnvelope = [{
+            bidder: 'openx',
+            params: {
+              unit: '11',
+              delDomain: 'test-del-domain'
+            },
+            userId: {
+              idl_env: '00000000-aaaa-1111-bbbb-222222222222'
+            },
+            adUnitCode: 'adunit-code',
+            mediaTypes: {
+              banner: {
+                sizes: [[300, 250], [300, 600]]
+              }
+            },
+            bidId: 'test-bid-id-1',
+            bidderRequestId: 'test-bid-request-1',
+            auctionId: 'test-auction-1'
+          }];
+          const request = spec.buildRequests(bidRequestsWithLiveRampEnvelope);
+          expect(request[0].data.lre).to.equal('00000000-aaaa-1111-bbbb-222222222222');
         });
       });
     });
@@ -1824,4 +1888,5 @@ describe('OpenxAdapter', function () {
 
     return mockedAdUnit;
   }
-});
+})
+;

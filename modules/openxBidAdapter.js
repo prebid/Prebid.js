@@ -10,6 +10,12 @@ const BIDDER_CODE = 'openx';
 const BIDDER_CONFIG = 'hb_pb';
 const BIDDER_VERSION = '2.1.9';
 
+const USER_ID_CODE_TO_QUERY_ARG = {
+  idl_env: 'lre', // liveramp
+  pubcid: 'pubcid', // publisher common id
+  tdid: 'ttduuid' // the trade desk
+};
+
 let shouldSendBoPixel = true;
 
 export function resetBoPixel() {
@@ -237,17 +243,28 @@ function buildCommonQueryParamsFromBids(bids, bidderRequest) {
     }
   }
 
-  if ((bids[0].userId && bids[0].userId.pubcid)) {
-    defaultParams.pubcid = bids[0].userId.pubcid;
-  } else if (bids[0].crumbs && bids[0].crumbs.pubcid) {
-    defaultParams.pubcid = bids[0].crumbs.pubcid;
+  // normalize publisher common id
+  if (utils.deepAccess(bids[0], 'crumbs.pubcid')) {
+    utils.deepSetValue(bids[0], 'userId.pubcid', utils.deepAccess(bids[0], 'crumbs.pubcid'));
   }
+  defaultParams = appendUserIdsToQueryParams(defaultParams, bids[0].userId);
 
+  // supply chain support
   if (bids[0].schain) {
     defaultParams.schain = serializeSupplyChain(bids[0].schain);
   }
 
   return defaultParams;
+}
+
+function appendUserIdsToQueryParams(queryParams, userIds) {
+  utils._each(userIds, (userIdValue, userIdProviderKey) => {
+    if (USER_ID_CODE_TO_QUERY_ARG.hasOwnProperty(userIdProviderKey)) {
+      queryParams[USER_ID_CODE_TO_QUERY_ARG[userIdProviderKey]] = userIdValue;
+    }
+  });
+
+  return queryParams;
 }
 
 function serializeSupplyChain(supplyChain) {
