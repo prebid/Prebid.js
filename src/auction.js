@@ -65,6 +65,7 @@ const utils = require('./utils');
 const adapterManager = require('./adapterManager').default;
 const events = require('./events');
 const CONSTANTS = require('./constants.json');
+var t0, t1;
 
 export const AUCTION_STARTED = 'started';
 export const AUCTION_IN_PROGRESS = 'inProgress';
@@ -128,6 +129,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
   }
 
   function startAuctionTimer() {
+    t0 = performance.now();
     const timedOut = true;
     const timeoutCallback = executeCallback.bind(null, timedOut);
     let timer = setTimeout(timeoutCallback, _timeout);
@@ -185,6 +187,8 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
     utils.logInfo(`Bids Received for Auction with id: ${_auctionId}`, _bidsReceived);
     _auctionStatus = AUCTION_COMPLETED;
     executeCallback(false, true);
+    t1 = performance.now();
+    console.log("Call to complete auction took " + (t1 - t0) + " milliseconds.");
   }
 
   function onTimelyResponse(bidderCode) {
