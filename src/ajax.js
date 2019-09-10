@@ -107,33 +107,15 @@ export function ajaxBuilderPromise(timeout = 3000, {request} = {}) {
         let method = options.method || (data ? 'POST' : 'GET');
         let parser = document.createElement('a');
         parser.href = url;
-  
-        // let callbacks = typeof callback === 'object' && callback !== null ? callback : {
-        //   success: function() {
-        //     utils.logMessage('xhr success');
-        //   },
-        //   error: function(e) {
-        //     utils.logError('xhr error', null, e);
-        //   }
-        // };
-  
-        // if (typeof callback === 'function') {
-        //   callbacks.success = callback;
-        // }
-  
+
         x = new window.XMLHttpRequest();
   
         x.onreadystatechange = function () {
           if (x.readyState === XHR_DONE) {
-            // if (typeof done === 'function') {
-            //   done(parser.origin);
-            // }
             let status = x.status;
             if ((status >= 200 && status < 300) || status === 304) {
-              //callbacks.success(x.responseText, x);
               resolve(x);
             } else {
-              //callbacks.error(x.statusText, x);
               reject(x.statusText);
             }
           }
