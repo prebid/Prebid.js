@@ -30,7 +30,9 @@ describe('OneVideoBidAdapter', function () {
           position: 1,
           delivery: [2],
           playbackmethod: [1, 5],
-          placement: 123
+          placement: 123,
+          sid: 134,
+          rewarded: 1
         },
         site: {
           id: 1,
@@ -65,7 +67,9 @@ describe('OneVideoBidAdapter', function () {
           position: 1,
           delivery: [2],
           playbackmethod: [1, 5],
-          placement: 123
+          placement: 123,
+          sid: 134,
+          rewarded: 1
         }
       };
       expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
@@ -81,7 +85,9 @@ describe('OneVideoBidAdapter', function () {
           position: 1,
           delivery: [2],
           playbackmethod: [1, 5],
-          placement: 123
+          placement: 123,
+          sid: 134,
+          rewarded: 1
         },
         pubId: 'brxd'
       };
@@ -111,10 +117,12 @@ describe('OneVideoBidAdapter', function () {
       const data = requests[0].data;
       const [ width, height ] = bidRequest.sizes;
       const placement = bidRequest.params.video.placement;
+      const rewarded = bidRequest.params.video.rewarded;
       expect(data.imp[0].video.w).to.equal(width);
       expect(data.imp[0].video.h).to.equal(height);
       expect(data.imp[0].ext.placement).to.equal(placement);
       expect(data.imp[0].bidfloor).to.equal(bidRequest.params.bidfloor);
+      expect(data.imp[0].ext.rewarded).to.equal(rewarded);
     });
 
     it('must parse bid size from a nested array', function () {
@@ -195,6 +203,13 @@ describe('OneVideoBidAdapter', function () {
     it('should send the consent string', function () {
       const request = spec.buildRequests([ bidRequest ], bidderRequest);
       expect(request[0].data.user.ext.consent).to.equal(bidderRequest.gdprConsent.consentString);
+    });
+
+    it('should send schain object', function () {
+      const requests = spec.buildRequests([ bidRequest ]);
+      const data = requests[0].data;
+      expect(data.source.ext.schain.nodes[0].sid).to.equal(bidRequest.params.video.sid);
+      expect(data.source.ext.schain.nodes[0].rid).to.equal(data.id);
     });
   });
 });
