@@ -58,7 +58,7 @@ describe('LiveIntentId', function() {
     let submoduleCallback = liveIntentIdSubmodule.getId(defaultConfigParams);
     submoduleCallback(callBackSpy);
     let request = requests[0];
-    expect(request.url).to.be.eq('//id.liadm.com/idex/prebid/89899?');
+    expect(request.url).to.be.eq('//idx.liadm.com/idex/prebid/89899?');
     request.respond(
       200,
       responseHeader,
@@ -73,7 +73,7 @@ describe('LiveIntentId', function() {
     let submoduleCallback = liveIntentIdSubmodule.getId(defaultConfigParams);
     submoduleCallback(callBackSpy);
     let request = requests[0];
-    expect(request.url).to.be.eq('//id.liadm.com/idex/prebid/89899?duid=li-fpc&');
+    expect(request.url).to.be.eq('//idx.liadm.com/idex/prebid/89899?duid=li-fpc&');
     request.respond(
       200,
       responseHeader,
@@ -96,7 +96,7 @@ describe('LiveIntentId', function() {
     let submoduleCallback = liveIntentIdSubmodule.getId(configParams);
     submoduleCallback(callBackSpy);
     let request = requests[0];
-    expect(request.url).to.be.eq('//id.liadm.com/idex/prebid/89899?_thirdPC=third-pc&duid=li-fpc&');
+    expect(request.url).to.be.eq('//idx.liadm.com/idex/prebid/89899?_thirdPC=third-pc&duid=li-fpc&');
     request.respond(
       200,
       responseHeader,
@@ -119,7 +119,7 @@ describe('LiveIntentId', function() {
     let submoduleCallback = liveIntentIdSubmodule.getId(configParams);
     submoduleCallback(callBackSpy);
     let request = requests[0];
-    expect(request.url).to.be.eq('//id.liadm.com/idex/prebid/89899?_thirdPC=%7B%22key%22%3A%22value%22%7D&');
+    expect(request.url).to.be.eq('//idx.liadm.com/idex/prebid/89899?_thirdPC=%7B%22key%22%3A%22value%22%7D&');
     request.respond(
       200,
       responseHeader,
