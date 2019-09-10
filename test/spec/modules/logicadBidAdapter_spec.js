@@ -108,7 +108,7 @@ describe('LogicadAdapter', function () {
     it('should perform usersync', function () {
       let syncs = spec.getUserSyncs({pixelEnabled: false}, [serverResponse]);
       expect(syncs).to.have.length(0);
-      console.log(serverResponse);
+
       syncs = spec.getUserSyncs({pixelEnabled: true}, [serverResponse]);
       expect(syncs).to.have.length(1);
 
