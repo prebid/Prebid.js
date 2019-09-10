@@ -88,14 +88,14 @@ function _buildPostBody(bidRequests, bidderRequest) {
       banner: {
         format: _sizes(bid.sizes)
       }
-    }
+    };
   });
 
-  let eids = handleConsortiaUserIds(bidderRequest)
+  let eids = handleConsortiaUserIds(bidderRequest);
   if (eids.length > 0) {
     data.user = {
       ext: {eids}
-    }
+    };
   }
 
   return data;
@@ -126,7 +126,7 @@ function handleConsortiaUserIds(bidderRequest) {
           rtiPartner: 'TDID'
         }
       }]
-    })
+    });
   }
 
   return eids;
