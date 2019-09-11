@@ -40,7 +40,7 @@ export function buildVastUrl(options) {
 
   const queryParams = {};
 
-  const vastUrl = obtainVastUrl(bid, options, 'params');
+  const vastUrl = obtainVastUrl(bid);
 
   if (vastUrl) {
     queryParams.konduit_id = options.params.konduit_id;
