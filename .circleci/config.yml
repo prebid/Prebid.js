@@ -34,6 +34,8 @@ jobs:
           key: v1-dependencies-{{ checksum "package.json" }}
 
       - run: sudo npm install -g gulp-cli
+
+    unit-tests:
       # Download and run BrowserStack local
       - run:
           name : Download BrowserStack Local binary and start it.
@@ -48,3 +50,7 @@ jobs:
       - run: 
           name: BrowserStack testing
           command: gulp test --browserstack --nolintfix
+      # run e2e tests
+      - run:
+          name: Functional testing
+          command: gulp e2e-test --host=test.localhost --ci --file=./test/spec/e2e/banner/basic_banner_ad.spec.js

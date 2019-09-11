@@ -214,16 +214,41 @@ function bundle(dev, moduleArr) {
 // If --browserstack is given, it will run the full suite of currently supported browsers.
 // If --browsers is given, browsers can be chosen explicitly. e.g. --browsers=chrome,firefox,ie9
 // If --notest is given, it will immediately skip the test task (useful for developing changes with `gulp serve --notest`)
+
 function test(done) {
   if (argv.notest) {
     done();
   } else if (argv.e2e) {
     let wdioCmd = path.join(__dirname, 'node_modules/.bin/wdio');
     let wdioConf = path.join(__dirname, 'wdio.conf.js');
-    let wdioOpts = [
-      wdioConf
-    ];
-    return execa(wdioCmd, wdioOpts, { stdio: 'inherit' });
+    let wdioOpts;
+
+    if (argv.ci) {
+      process.env.RUN_CONTEXT = 'CI';
+    } else {
+      process.env.RUN_CONTEXT = 'LOCAL';
+    }
+
+    if (argv.file) {
+      wdioOpts = [
+        wdioConf,
+        `--spec`,
+        `${argv.file}`
+      ]
+    } else {
+      wdioOpts = [
+        wdioConf
+      ];
+    }
+    execa(wdioCmd, wdioOpts, { stdio: 'inherit' })
+      .then(stdout => {
+        done();
+        process.exit(0);
+      })
+      .catch(err => {
+        done(new Error(`Tests failed with error: ${err}`));
+        process.exit(1);
+      });
   } else {
     var karmaConf = karmaConfMaker(false, argv.browserstack, argv.watch, argv.file);
 

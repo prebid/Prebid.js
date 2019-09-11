@@ -1,5 +1,8 @@
 const browsers = require('./browsers.json');
 
+// runContext keeps track of the tests running in CI or outside of CI / Local machine
+const runContext = process.env.RUN_CONTEXT || 'LOCAL';
+
 function getCapabilities() {
   function getPlatform(os) {
     const platformMap = {
@@ -11,6 +14,16 @@ function getCapabilities() {
 
   // remove the IE11 browser from functional tests
   delete browsers['bs_ie_11_windows_10'];
+
+  // only Edge 16, Chrome 74 & Firefox 66 are part of the CI run
+  // rest of the browsers are discarded.
+  if (runContext === 'CI') {
+    delete browsers['bs_edge_17_windows_10'];
+    delete browsers['bs_chrome_75_windows_10'];
+    delete browsers['bs_firefox_67_windows_10'];
+    delete browsers['bs_safari_11_mac_high_sierra'];
+    delete browsers['bs_safari_12_mac_mojave'];
+  }
 
   let capabilities = []
   Object.keys(browsers).forEach(key => {
