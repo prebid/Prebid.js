@@ -176,7 +176,9 @@ function _parseAdSlot(bid) {
     }
     bid.params.width = parseInt(splits[0]);
     bid.params.height = parseInt(splits[1]);
-  } else if (bid.hasOwnProperty('mediaTypes') &&
+  }
+  // Case : if Size is present in ad slot as well as in mediaTypes then ???
+  if (bid.hasOwnProperty('mediaTypes') &&
          bid.mediaTypes.hasOwnProperty(BANNER) &&
           bid.mediaTypes.banner.hasOwnProperty('sizes')) {
     var i = 0;
@@ -190,9 +192,13 @@ function _parseAdSlot(bid) {
     if (bid.mediaTypes.banner.sizes.length >= 1) {
       // set the first size in sizes array in bid.params.width and bid.params.height. These will be sent as primary size.
       // The rest of the sizes will be sent in format array.
-      bid.params.width = bid.mediaTypes.banner.sizes[0][0];
-      bid.params.height = bid.mediaTypes.banner.sizes[0][1];
-      bid.mediaTypes.banner.sizes = bid.mediaTypes.banner.sizes.splice(1, bid.mediaTypes.banner.sizes.length - 1);
+      if (!bid.params.width && !bid.params.height) {
+        bid.params.width = bid.mediaTypes.banner.sizes[0][0];
+        bid.params.height = bid.mediaTypes.banner.sizes[0][1];
+        bid.mediaTypes.banner.sizes = bid.mediaTypes.banner.sizes.splice(1, bid.mediaTypes.banner.sizes.length - 1);
+      } else if (bid.params.width == bid.mediaTypes.banner.sizes[0][0] && bid.params.height == bid.mediaTypes.banner.sizes[0][1]) {
+        bid.mediaTypes.banner.sizes = bid.mediaTypes.banner.sizes.splice(1, bid.mediaTypes.banner.sizes.length - 1);
+      }
     }
   }
 }
@@ -349,6 +355,7 @@ function _createNativeRequest(params) {
                   type: NATIVE_ASSET_IMAGE_TYPE.ICON,
                   w: params[key].w || params[key].width || (params[key].sizes ? params[key].sizes[0] : UNDEFINED),
                   h: params[key].h || params[key].height || (params[key].sizes ? params[key].sizes[1] : UNDEFINED),
+                  ext: params[key].ext
                 }
               };
             } else {
@@ -381,7 +388,8 @@ function _createNativeRequest(params) {
               img: {
                 type: NATIVE_ASSET_IMAGE_TYPE.LOGO,
                 w: params[key].w || params[key].width || (params[key].sizes ? params[key].sizes[0] : UNDEFINED),
-                h: params[key].h || params[key].height || (params[key].sizes ? params[key].sizes[1] : UNDEFINED)
+                h: params[key].h || params[key].height || (params[key].sizes ? params[key].sizes[1] : UNDEFINED),
+                ext: params[key].ext
               }
             };
             break;
@@ -557,10 +565,12 @@ function _createImpressionObject(bid, conf) {
     if (utils.isArray(sizes) && sizes.length > 1) {
       sizes = sizes.splice(1, sizes.length - 1);
       sizes.forEach(size => {
-        format.push({
-          w: size[0],
-          h: size[1]
-        });
+        if (utils.isArray(size) && size.length == 2) {
+          format.push({
+            w: size[0],
+            h: size[1]
+          });
+        };
       });
       bannerObj.format = format;
     }
@@ -918,6 +928,23 @@ export const spec = {
     let parsedRequest = JSON.parse(request.data);
     let parsedReferrer = parsedRequest.site && parsedRequest.site.ref ? parsedRequest.site.ref : '';
     try {
+      let requestData = JSON.parse(request.data);
+      if (requestData && requestData.imp && requestData.imp.length > 0) {
+        requestData.imp.forEach(impData => {
+          bidResponses.push({
+            requestId: impData.id,
+            width: 0,
+            height: 0,
+            ttl: 300,
+            ad: '',
+            creativeId: 0,
+            netRevenue: NET_REVENUE,
+            cpm: 0,
+            currency: respCur,
+            referrer: requestData.site && requestData.site.ref ? requestData.site.ref : '',
+          })
+        });
+      }
       if (response.body && response.body.seatbid && utils.isArray(response.body.seatbid)) {
         // Supporting multiple bid responses for same adSize
         respCur = response.body.cur || respCur;
@@ -925,54 +952,53 @@ export const spec = {
           seatbidder.bid &&
             utils.isArray(seatbidder.bid) &&
             seatbidder.bid.forEach(bid => {
-              let newBid = {
-                requestId: bid.impid,
-                cpm: (parseFloat(bid.price) || 0).toFixed(2),
-                width: bid.w,
-                height: bid.h,
-                creativeId: bid.crid || bid.id,
-                dealId: bid.dealid,
-                currency: respCur,
-                netRevenue: NET_REVENUE,
-                ttl: 300,
-                referrer: parsedReferrer,
-                ad: bid.adm
-              };
-              if (parsedRequest.imp && parsedRequest.imp.length > 0) {
-                parsedRequest.imp.forEach(req => {
-                  if (bid.impid === req.id) {
-                    _checkMediaType(bid.adm, newBid);
-                    switch (newBid.mediaType) {
-                      case BANNER:
-                        break;
-                      case VIDEO:
-                        newBid.width = bid.hasOwnProperty('w') ? bid.w : req.video.w;
-                        newBid.height = bid.hasOwnProperty('h') ? bid.h : req.video.h;
-                        newBid.vastXml = bid.adm;
-                        break;
-                      case NATIVE:
-                        _parseNativeResponse(bid, newBid);
-                        break;
-                    }
+              bidResponses.forEach(br => {
+                if (br.requestId == bid.impid) {
+                  br.requestId = bid.impid;
+                  br.cpm = (parseFloat(bid.price) || 0).toFixed(2);
+                  br.width = bid.w;
+                  br.height = bid.h;
+                  br.creativeId = bid.crid || bid.id;
+                  br.dealId = bid.dealid;
+                  br.currency = respCur;
+                  br.netRevenue = NET_REVENUE;
+                  br.ttl = 300;
+                  br.referrer = requestData.site && requestData.site.ref ? requestData.site.ref : '';
+                  br.ad = bid.adm;
+                  if (requestData.imp && requestData.imp.length > 0) {
+                    requestData.imp.forEach(req => {
+                      if (bid.impid === req.id) {
+                        _checkMediaType(bid.adm, br);
+                        switch (br.mediaType) {
+                          case BANNER:
+                            break;
+                          case VIDEO:
+                            br.width = bid.hasOwnProperty('w') ? bid.w : req.video.w;
+                            br.height = bid.hasOwnProperty('h') ? bid.h : req.video.h;
+                            br.vastXml = bid.adm;
+                            break;
+                          case NATIVE:
+                            _parseNativeResponse(bid, br);
+                            break;
+                        }
+                      }
+                    });
                   }
-                });
-              }
-              if (bid.ext && bid.ext.deal_channel) {
-                newBid['dealChannel'] = dealChannelValues[bid.ext.deal_channel] || null;
-              }
-
-              newBid.meta = {};
-              if (bid.ext && bid.ext.dspid) {
-                newBid.meta.networkId = bid.ext.dspid;
-              }
-              if (bid.ext && bid.ext.advid) {
-                newBid.meta.buyerId = bid.ext.advid;
-              }
-              if (bid.adomain && bid.adomain.length > 0) {
-                newBid.meta.clickUrl = bid.adomain[0];
-              }
-
-              bidResponses.push(newBid);
+                  if (bid.ext && bid.ext.deal_channel) {
+                    br['dealChannel'] = dealChannelValues[bid.ext.deal_channel] || null;
+                  }
+                  br.meta = {};
+                  if (bid.ext && bid.ext.dspid) {
+                    br.meta.networkId = bid.ext.dspid;
+                  }
+                  if (bid.ext && bid.ext.advid) {
+                    br.meta.buyerId = bid.ext.advid;
+                  }
+                  if (bid.adomain && bid.adomain.length > 0) {
+                    br.meta.clickUrl = bid.adomain[0];
+                  }
+                }
+              });
             });
         });
       }
