@@ -6,7 +6,7 @@ import { VIDEO, BANNER } from '../src/mediaTypes';
 const BIDDER_CODE = 'grid';
 const ENDPOINT_URL = '//grid.bidswitch.net/hb';
 const TIME_TO_LIVE = 360;
-const RENDERER_URL = '//cdn.adnxs.com/renderer/video/ANOutstreamVideo.js';
+const RENDERER_URL = '//acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
 
 const LOG_ERROR_MESS = {
   noAuid: 'Bid from response has no auid parameter - ',
@@ -79,13 +79,15 @@ export const spec = {
     });
 
     const payload = {
-      u: utils.getTopWindowUrl(),
       auids: auids.join(','),
       sizes: utils.getKeys(sizeMap).join(','),
       r: reqId
     };
 
     if (bidderRequest) {
+      if (bidderRequest.refererInfo && bidderRequest.refererInfo.referer) {
+        payload.u = bidderRequest.refererInfo.referer;
+      }
       if (bidderRequest.timeout) {
         payload.wtimeout = bidderRequest.timeout;
       }

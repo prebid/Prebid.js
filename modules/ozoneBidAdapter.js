@@ -11,7 +11,7 @@ const OZONEURI = 'https://elb.the-ozone-project.com/openrtb2/auction';
 const OZONECOOKIESYNC = 'https://elb.the-ozone-project.com/static/load-cookie.html';
 const OZONE_RENDERER_URL = 'https://prebid.the-ozone-project.com/ozone-renderer.js';
 
-const OZONEVERSION = '2.1.1';
+const OZONEVERSION = '2.1.2';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -65,11 +65,11 @@ export const spec = {
     }
     if (bid.hasOwnProperty('mediaTypes') && bid.mediaTypes.hasOwnProperty(VIDEO)) {
       if (!bid.mediaTypes.video.hasOwnProperty('context')) {
-        utils.logInfo('OZONE: [WARNING] No context key/value in bid. Rejecting bid: ', ozoneBidRequest);
+        utils.logInfo('OZONE: [WARNING] No context key/value in bid. Rejecting bid: ', bid);
         return false;
       }
       if (bid.mediaTypes.video.context !== 'outstream') {
-        utils.logInfo('OZONE: [WARNING] Only outstream video is supported. Rejecting bid: ', ozoneBidRequest);
+        utils.logInfo('OZONE: [WARNING] Only outstream video is supported. Rejecting bid: ', bid);
         return false;
       }
     }
@@ -134,10 +134,24 @@ export const spec = {
           arrBannerSizes = ozoneBidRequest.mediaTypes[BANNER].sizes; /* Note - if there is a sizes element in the config root it will be pushed into here */
           utils.logInfo('OZONE: setting banner size from the mediaTypes.banner element for bidId ' + obj.id + ': ', arrBannerSizes);
         }
-        // Video integration is not complete yet
         if (ozoneBidRequest.mediaTypes.hasOwnProperty(VIDEO)) {
           obj.video = ozoneBidRequest.mediaTypes[VIDEO];
-          utils.logInfo('OZONE: setting video object from the mediaTypes.video element: ' + obj.id + ':', obj.video);
+          // we need to duplicate some of the video values
+          let wh = getWidthAndHeightFromVideoObject(obj.video);
+          utils.logInfo('OZONE: setting video object from the mediaTypes.video element: ' + obj.id + ':', obj.video, 'wh=', wh);
+          if (wh && typeof wh === 'object') {
+            obj.video.w = wh['w'];
+            obj.video.h = wh['h'];
+            if (playerSizeIsNestedArray(obj.video)) { // this should never happen; it was in the original spec for this change though.
+              utils.logInfo('OZONE: setting obj.video.format to be an array of objects');
+              obj.video.format = [wh];
+            } else {
+              utils.logInfo('OZONE: setting obj.video.format to be an object');
+              obj.video.format = wh;
+            }
+          } else {
+            utils.logInfo('OZONE: cannot set w, h & format values for video; the config is not right');
+          }
         }
         // Native integration is not complete yet
         if (ozoneBidRequest.mediaTypes.hasOwnProperty(NATIVE)) {
@@ -319,7 +333,7 @@ export function checkDeepArray(Arr) {
 }
 export function defaultSize(thebidObj) {
   if (!thebidObj) {
-    utils.logInfo('defaultSize received empty bid obj! going to return fixed default size');
+    utils.logInfo('OZONE: defaultSize received empty bid obj! going to return fixed default size');
     return {
       'defaultHeight': 250,
       'defaultWidth': 300
@@ -389,14 +403,14 @@ export function getRoundedBid(price, mediaType) {
   let theConfigObject = getGranularityObject(mediaType, mediaTypeGranularity, strBuckets, objBuckets);
   let theConfigKey = getGranularityKeyName(mediaType, mediaTypeGranularity, strBuckets);
 
-  utils.logInfo('getRoundedBid. price:', price, 'mediaType:', mediaType, 'configkey:', theConfigKey, 'configObject:', theConfigObject, 'mediaTypeGranularity:', mediaTypeGranularity, 'strBuckets:', strBuckets);
+  utils.logInfo('OZONE: getRoundedBid. price:', price, 'mediaType:', mediaType, 'configkey:', theConfigKey, 'configObject:', theConfigObject, 'mediaTypeGranularity:', mediaTypeGranularity, 'strBuckets:', strBuckets);
 
   let priceStringsObj = getPriceBucketString(
     price,
     theConfigObject,
     config.getConfig('currency.granularityMultiplier')
   );
-  utils.logInfo('priceStringsObj', priceStringsObj);
+  utils.logInfo('OZONE: priceStringsObj', priceStringsObj);
   // by default, without any custom granularity set, you get granularity name : 'medium'
   let granularityNamePriceStringsKeyMapping = {
     'medium': 'med',
@@ -526,8 +540,67 @@ function outstreamRender(bid) {
 function toFlatArray(obj) {
   let ret = [];
   Object.keys(obj).forEach(function(key) { if (obj[key]) { ret.push(parseInt(key)); } });
-  utils.logInfo('toFlatArray:', obj, 'returning', ret);
+  utils.logInfo('OZONE: toFlatArray:', obj, 'returning', ret);
   return ret;
+}
+
+/**
+ *
+ * @param objVideo will be like {"playerSize":[640,480],"mimes":["video/mp4"],"context":"outstream"} or POSSIBLY {"playerSize":[[640,480]],"mimes":["video/mp4"],"context":"outstream"}
+ * @return object {w,h} or null
+ */
+export function getWidthAndHeightFromVideoObject(objVideo) {
+  let playerSize = getPlayerSizeFromObject(objVideo);
+  if (!playerSize) {
+    return null;
+  }
+  if (playerSize[0] && typeof playerSize[0] === 'object') {
+    utils.logInfo('OZONE: getWidthAndHeightFromVideoObject found nested array inside playerSize.', playerSize[0]);
+    playerSize = playerSize[0];
+    if (typeof playerSize[0] !== 'number' && typeof playerSize[0] !== 'string') {
+      utils.logInfo('OZONE: getWidthAndHeightFromVideoObject found non-number/string type inside the INNER array in playerSize. This is totally wrong - cannot continue.', playerSize[0]);
+      return null;
+    }
+  }
+  if (playerSize.length !== 2) {
+    utils.logInfo('OZONE: getWidthAndHeightFromVideoObject found playerSize with length of ' + playerSize.length + '. This is totally wrong - cannot continue.');
+    return null;
+  }
+  return ({'w': playerSize[0], 'h': playerSize[1]});
+}
+
+/**
+ * @param objVideo will be like {"playerSize":[640,480],"mimes":["video/mp4"],"context":"outstream"} or POSSIBLY {"playerSize":[[640,480]],"mimes":["video/mp4"],"context":"outstream"}
+ * @return object {w,h} or null
+ */
+export function playerSizeIsNestedArray(objVideo) {
+  let playerSize = getPlayerSizeFromObject(objVideo);
+  if (!playerSize) {
+    return null;
+  }
+  if (playerSize.length < 1) {
+    return null;
+  }
+  return (playerSize[0] && typeof playerSize[0] === 'object');
+}
+
+/**
+ * Common functionality when looking at a video object, to get the playerSize
+ * @param objVideo
+ * @returns {*}
+ */
+function getPlayerSizeFromObject(objVideo) {
+  utils.logInfo('OZONE: getPlayerSizeFromObject received object', objVideo);
+  if (!objVideo.hasOwnProperty('playerSize')) {
+    utils.logError('OZONE: getPlayerSizeFromObject FAILED: no playerSize in video object', objVideo);
+    return null;
+  }
+  let playerSize = objVideo.playerSize;
+  if (typeof playerSize !== 'object') {
+    utils.logError('OZONE: getPlayerSizeFromObject FAILED: playerSize is not an object/array', objVideo);
+    return null;
+  }
+  return playerSize;
 }
 
 registerBidder(spec);
