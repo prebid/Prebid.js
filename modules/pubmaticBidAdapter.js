@@ -634,10 +634,82 @@ function _handleTTDId(eids, validBidRequests) {
   }
 }
 
+function _handlePubCommonId(eids, validBidRequests) {
+  let pubcid = null;
+  if (utils.isStr(utils.deepAccess(validBidRequests, '0.userId.pubcid'))) {
+    pubcid = validBidRequests[0].userId.pubcid;
+  }
+  if (pubcid !== null) {
+    eids.push({
+      source: 'pubcommon',
+      uids: [{
+        'id': pubcid,
+        'atype': 1
+      }]
+    });
+  }
+}
+
+function _handleLinkId(eids, validBidRequests) {
+  let linkId = null;
+  if (utils.isStr(utils.deepAccess(validBidRequests, '0.userId.idl_env'))) {
+    linkId = validBidRequests[0].userId.idl_env;
+  }
+  if (linkId !== null) {
+    eids.push({
+      source: 'identityLink',
+      uids: [{
+        'id': linkId,
+        'atype': 1
+      }]
+    });
+  }
+}
+
+function _handleId5Id(eids, validBidRequests) {
+  let id5id = null;
+  let id5IdConfig = config.getConfig('id5Id');
+  if (id5IdConfig && utils.isStr(id5IdConfig.id5id)) {
+    ttdId = id5IdConfig.id5id;
+  } else if (utils.isStr(utils.deepAccess(validBidRequests, '0.userId.id5id'))) {
+    id5id = validBidRequests[0].userId.id5id;
+  }
+  if (id5id !== null) {
+    eids.push({
+      source: 'id5Id',
+      uids: [{
+        'id': id5id,
+        'atype': 1
+      }]
+    });
+  }
+}
+
+function _handleCriteo(eids, validBidRequests) {
+  let criteortus = null;
+  if (utils.isStr(utils.deepAccess(validBidRequests, '0.userId.criteortus'))) {
+    criteortus = validBidRequests[0].userId.criteortus;
+  }
+  if (linkId !== null) {
+    eids.push({
+      source: 'criteortus',
+      uids: [{
+        'id': criteortus,
+        'atype': 1
+      }]
+    });
+  }
+}
+
 function _handleEids(payload, validBidRequests) {
   let eids = [];
   _handleDigitrustId(eids);
   _handleTTDId(eids, validBidRequests);
+  _handlePubCommonId(eids, validBidRequests);
+  _handleLinkId(eids, validBidRequests);
+  _handleId5Id(eids, validBidRequests);
+  _handleCriteo(eids, validBidRequests);
+
   if (eids.length > 0) {
     payload.user.eids = eids;
   }
