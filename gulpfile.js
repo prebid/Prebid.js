@@ -243,18 +243,6 @@ function bundle(dev, moduleArr) {
     .pipe(gulpif(dev, sourcemaps.write('.')));
 }
 
-// Workaround for incompatibility between Karma & gulp callbacks.
-// See https://github.com/karma-runner/gulp-karma/issues/18 for some related discussion.
-function newKarmaCallback(done) {
-  return function (exitCode) {
-    if (exitCode) {
-      done(new Error('Karma tests failed with exit code ' + exitCode));
-    } else {
-      done();
-    }
-  }
-}
-
 // Run the unit tests.
 //
 // By default, this runs in headless chrome.
@@ -287,6 +275,22 @@ function test(done) {
     }
 
     new KarmaServer(karmaConf, newKarmaCallback(done)).start();
+  }
+}
+
+function newKarmaCallback(done) {
+  return function(exitCode) {
+    if (exitCode) {
+      done(new Error('Karma tests failed with exit code ' + exitCode));
+      if (argv.browserstack) {
+        process.exit(exitCode);
+      }
+    } else {
+      done();
+      if (argv.browserstack) {
+        process.exit(exitCode);
+      }
+    }
   }
 }
 

@@ -1,0 +1,94 @@
+<!-- This is a Test Page for a Banner End-to-End test  -->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<title>Prebid.js Banner Example</title>
+
+	<!-- Prebid.js -->
+	<script async src="../../build/dev/prebid.js"></script>
+
+	<!-- Google Publisher Tag -->
+	<script async src="https://www.googletagservices.com/tag/js/gpt.js"></script>
+
+	<script>
+		var pbjs = pbjs || {};
+		pbjs.que = pbjs.que || [];
+
+		// Prebid Banner Ad Unit
+		const adUnits = [{
+			code: 'div-gpt-ad-1460505748561-0',
+			mediaTypes: {
+				banner: {
+					sizes: [[300, 250], [300, 600]],
+				}
+			},
+			bids: [{
+				bidder: 'appnexus',
+				params: {
+					placementId: 13144370
+				}
+			}]
+		}, {
+			code: 'div-gpt-ad-1460505748561-1',
+			mediaTypes: {
+				banner: {
+					sizes: [[300, 250], [300, 600]],
+				}
+			},
+			bids: [{
+				bidder: 'appnexus',
+				params: {
+					placementId: 13144370
+				}
+			}]
+		}];
+	</script>
+
+	<script>
+		var googletag = googletag || {};
+		googletag.cmd = googletag.cmd || [];
+
+		googletag.cmd.push(() => {
+			googletag.pubads().disableInitialLoad();
+		});
+
+		pbjs.que.push(() => {
+			pbjs.addAdUnits(adUnits);
+			pbjs.requestBids({ bidsBackHandler: sendAdServerRequest });
+		});
+
+		function sendAdServerRequest() {
+			googletag.cmd.push(() => {
+				pbjs.que.push(() => {
+					pbjs.setTargetingForGPTAsync('div-gpt-ad-1460505748561-0');
+					googletag.pubads().refresh();
+				});
+			});
+		}
+	</script>
+
+	<script>
+		googletag.cmd.push(() => {
+			googletag
+				.defineSlot('/19968336/header-bid-tag-0', [[300, 250], [300, 600]], 'div-gpt-ad-1460505748561-0')
+				.addService(googletag.pubads());
+			
+			googletag.pubads().enableSingleRequest();
+			googletag.enableServices();
+		});
+	</script>
+</head>
+
+<body>
+	<h2>Prebid.js Banner Ad Unit Test</h2>
+	<div id='div-gpt-ad-1460505748561-0'>
+      <script>
+        googletag.cmd.push(() => { googletag.display('div-gpt-ad-1460505748561-0'); });
+      </script>
+	</div>
+	<div id="targeting-keys"></div>
+</body>
+
+</html>
