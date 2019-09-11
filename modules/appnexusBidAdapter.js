@@ -6,6 +6,7 @@ import { BANNER, NATIVE, VIDEO, ADPOD } from '../src/mediaTypes';
 import { auctionManager } from '../src/auctionManager';
 import find from 'core-js/library/fn/array/find';
 import includes from 'core-js/library/fn/array/includes';
+import { OUTSTREAM, INSTREAM } from '../src/video';
 
 const BIDDER_CODE = 'appnexus';
 const URL = '//ib.adnxs.com/ut/v3/prebid';
@@ -480,37 +481,40 @@ function newBid(serverBid, rtbBid, bidderRequest) {
   }
 
   if (rtbBid.rtb.video) {
+    // shared video properties used for all 3 contexts
     Object.assign(bid, {
       width: rtbBid.rtb.video.player_width,
       height: rtbBid.rtb.video.player_height,
-      vastUrl: rtbBid.rtb.video.asset_url,
       vastImpUrl: rtbBid.notify_url,
       ttl: 3600
     });
 
     const videoContext = utils.deepAccess(bidRequest, 'mediaTypes.video.context');
-    if (videoContext === ADPOD) {
-      const iabSubCatId = getIabSubCategory(bidRequest.bidder, rtbBid.brand_category_id);
-      bid.meta = Object.assign({}, bid.meta, { iabSubCatId });
-      bid.video = {
-        context: ADPOD,
-        durationSeconds: Math.floor(rtbBid.rtb.video.duration_ms / 1000),
-      };
-    }
+    switch (videoContext) {
+      case ADPOD:
+        const iabSubCatId = getIabSubCategory(bidRequest.bidder, rtbBid.brand_category_id);
+        bid.meta = Object.assign({}, bid.meta, { iabSubCatId });
+        bid.video = {
+          context: ADPOD,
+          durationSeconds: Math.floor(rtbBid.rtb.video.duration_ms / 1000),
+        };
+        bid.vastUrl = rtbBid.rtb.video.asset_url;
+        break;
+      case OUTSTREAM:
+        bid.adResponse = serverBid;
+        bid.adResponse.ad = bid.adResponse.ads[0];
+        bid.adResponse.ad.video = bid.adResponse.ad.rtb.video;
+        bid.vastXml = rtbBid.rtb.video.content;
 
-    // This supports Outstream Video
-    if (rtbBid.renderer_url) {
-      const rendererOptions = utils.deepAccess(
-        bidderRequest.bids[0],
-        'renderer.options'
-      );
-
-      Object.assign(bid, {
-        adResponse: serverBid,
-        renderer: newRenderer(bid.adUnitCode, rtbBid, rendererOptions)
-      });
-      bid.adResponse.ad = bid.adResponse.ads[0];
-      bid.adResponse.ad.video = bid.adResponse.ad.rtb.video;
+        if (rtbBid.renderer_url) {
+          const videoBid = find(bidderRequest.bids, bid => bid.bidId === serverBid.uuid);
+          const rendererOptions = utils.deepAccess(videoBid, 'renderer.options');
+          bid.renderer = newRenderer(bid.adUnitCode, rtbBid, rendererOptions);
+        }
+        break;
+      case INSTREAM:
+        bid.vastUrl = rtbBid.rtb.video.asset_url;
+        break;
     }
   } else if (rtbBid.rtb[NATIVE]) {
     const nativeAd = rtbBid.rtb[NATIVE];

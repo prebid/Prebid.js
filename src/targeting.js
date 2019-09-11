@@ -130,6 +130,40 @@ export function newTargeting(auctionManager) {
   };
 
   /**
+   * checks if bid has targeting set and belongs based on matching ad unit codes
+   * @return {boolean} true or false
+   */
+  function bidShouldBeAddedToTargeting(bid, adUnitCodes) {
+    return bid.adserverTargeting && adUnitCodes &&
+      ((utils.isArray(adUnitCodes) && includes(adUnitCodes, bid.adUnitCode)) ||
+      (typeof adUnitCodes === 'string' && bid.adUnitCode === adUnitCodes));
+  };
+
+  /**
+   * Returns targeting for any bids which have deals if alwaysIncludeDeals === true
+   */
+  function getDealBids(adUnitCodes, bidsReceived) {
+    if (config.getConfig('targetingControls.alwaysIncludeDeals') === true) {
+      const standardKeys = TARGETING_KEYS.concat(NATIVE_TARGETING_KEYS);
+
+      // we only want the top bid from bidders who have multiple entries per ad unit code
+      const bids = getHighestCpmBidsFromBidPool(bidsReceived, getHighestCpm);
+
+      // populate targeting keys for the remaining bids if they have a dealId
+      return bids.map(bid => {
+        if (bid.dealId && bidShouldBeAddedToTargeting(bid, adUnitCodes)) {
+          return {
+            [bid.adUnitCode]: getTargetingMap(bid, standardKeys.filter(
+              key => typeof bid.adserverTargeting[key] !== 'undefined')
+            )
+          };
+        }
+      }).filter(bid => bid); // removes empty elements in array
+    }
+    return [];
+  };
+
+  /**
    * Returns all ad server targeting for all ad units.
    * @param {string=} adUnitCode
    * @return {Object.<string,targeting>} targeting
@@ -141,7 +175,7 @@ export function newTargeting(auctionManager) {
     // `alwaysUseBid=true`. If sending all bids is enabled, add targeting for losing bids.
     var targeting = getWinningBidTargeting(adUnitCodes, bidsReceived)
       .concat(getCustomBidTargeting(adUnitCodes, bidsReceived))
-      .concat(config.getConfig('enableSendAllBids') ? getBidLandscapeTargeting(adUnitCodes, bidsReceived) : []);
+      .concat(config.getConfig('enableSendAllBids') ? getBidLandscapeTargeting(adUnitCodes, bidsReceived) : getDealBids(adUnitCodes, bidsReceived));
 
     // store a reference of the targeting keys
     targeting.map(adUnitCode => {
@@ -489,11 +523,7 @@ export function newTargeting(auctionManager) {
 
     // populate targeting keys for the remaining bids
     return bids.map(bid => {
-      if (
-        bid.adserverTargeting && adUnitCodes &&
-        ((utils.isArray(adUnitCodes) && includes(adUnitCodes, bid.adUnitCode)) ||
-        (typeof adUnitCodes === 'string' && bid.adUnitCode === adUnitCodes))
-      ) {
+      if (bidShouldBeAddedToTargeting(bid, adUnitCodes)) {
         return {
           [bid.adUnitCode]: getTargetingMap(bid, standardKeys.filter(
             key => typeof bid.adserverTargeting[key] !== 'undefined')
