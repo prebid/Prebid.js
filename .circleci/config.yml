@@ -35,7 +35,6 @@ jobs:
 
       - run: sudo npm install -g gulp-cli
 
-    unit-tests:
       # Download and run BrowserStack local
       - run:
           name : Download BrowserStack Local binary and start it.
