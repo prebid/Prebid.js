@@ -330,7 +330,7 @@ describe('targeting tests', function () {
       expect(logWarnStub.calledTwice).to.be.true;
       expect(logErrorStub.calledOnce).to.be.true;
     });
-    
+
     describe('when bidLimit is present in setConfig', function () {
       let bid4;
 
@@ -365,7 +365,7 @@ describe('targeting tests', function () {
 
         const targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0']);
         let limitedBids = Object.keys(targeting['/123456/header-bid-tag-0']).filter(key => key.indexOf(CONSTANTS.TARGETING_KEYS.PRICE_BUCKET + '_') != -1)
-        
+
         expect(limitedBids.length).to.equal(2);
       });
 
