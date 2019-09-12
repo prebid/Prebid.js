@@ -72,7 +72,7 @@ globalsupport@rubiconproject.com for more information.
         params: {
             accountId: '7780',
             siteId: '87184',
-            zoneId: '413290',
+            zoneId: '412394',
             video: {
                 language: 'en'
             }
