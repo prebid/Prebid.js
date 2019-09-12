@@ -99,6 +99,10 @@ pbjs.setConfig({
         {
             name: "id5Id",
             value: { "id5id": "ID5-abcdef" }
+        },
+        {
+            name: "netId",
+            value: { "netId": "netId-1234" }
         }],
         syncDelay: 5000
     }
