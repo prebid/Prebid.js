@@ -2,8 +2,8 @@ import { expect } from 'chai';
 import {getPriceBucketString, isValidPriceConfig} from 'src/cpmBucketManager';
 let cpmFixtures = require('test/fixtures/cpmInputsOutputs.json');
 
-describe('cpmBucketManager', () => {
-  it('getPriceBucketString function generates the correct price strings', () => {
+describe('cpmBucketManager', function () {
+  it('getPriceBucketString function generates the correct price strings', function () {
     let input = cpmFixtures.cpmInputs;
     for (let i = 0; i < input.length; i++) {
       let output = getPriceBucketString(input[i]);
@@ -12,7 +12,7 @@ describe('cpmBucketManager', () => {
     }
   });
 
-  it('gets the correct custom bucket strings', () => {
+  it('gets the correct custom bucket strings', function () {
     let cpm = 16.50908;
     let customConfig = {
       'buckets': [{
@@ -35,7 +35,7 @@ describe('cpmBucketManager', () => {
     expect(JSON.stringify(output)).to.deep.equal(expected);
   });
 
-  it('gets the correct custom bucket strings with irregular increment', () => {
+  it('gets the correct custom bucket strings with irregular increment', function () {
     let cpm = 14.50908;
     let customConfig = {
       'buckets': [{
@@ -58,7 +58,7 @@ describe('cpmBucketManager', () => {
     expect(JSON.stringify(output)).to.deep.equal(expected);
   });
 
-  it('gets the correct custom bucket strings in non-USD currency', () => {
+  it('gets the correct custom bucket strings in non-USD currency', function () {
     let cpm = 16.50908 * 110.49;
     let customConfig = {
       'buckets': [{
@@ -81,7 +81,7 @@ describe('cpmBucketManager', () => {
     expect(JSON.stringify(output)).to.deep.equal(expected);
   });
 
-  it('gets the correct custom bucket strings with specific cpms that round oddly with certain increments', () => {
+  it('gets the correct custom bucket strings with specific cpms that round oddly with certain increments', function () {
     let customConfig = {
       'buckets': [{
         'precision': 4,
@@ -155,7 +155,7 @@ describe('cpmBucketManager', () => {
     expect(JSON.stringify(output)).to.deep.equal(expected);
   });
 
-  it('gets custom bucket strings and it should honor 0', () => {
+  it('gets custom bucket strings and it should honor 0', function () {
     let cpm = 16.50908;
     let customConfig = {
       'buckets': [
@@ -172,7 +172,7 @@ describe('cpmBucketManager', () => {
     expect(JSON.stringify(output)).to.deep.equal(expected);
   });
 
-  it('gets the custom bucket strings without passing precision and it should honor the default precision', () => {
+  it('gets the custom bucket strings without passing precision and it should honor the default precision', function () {
     let cpm = 16.50908;
     let customConfig = {
       'buckets': [
@@ -188,7 +188,7 @@ describe('cpmBucketManager', () => {
     expect(JSON.stringify(output)).to.deep.equal(expected);
   });
 
-  it('checks whether custom config is valid', () => {
+  it('checks whether custom config is valid', function () {
     let badConfig = {
       'buckets': [{
         'min': 0,

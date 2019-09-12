@@ -17,7 +17,7 @@
  */
 
 import { uniques, flatten } from './utils';
-import { newAuction, getStandardBidderSettings, AUCTION_COMPLETED } from 'src/auction';
+import { newAuction, getStandardBidderSettings, AUCTION_COMPLETED } from './auction';
 import find from 'core-js/library/fn/array/find';
 
 const CONSTANTS = require('./constants.json');
@@ -29,8 +29,8 @@ const CONSTANTS = require('./constants.json');
  * @returns {AuctionManager} auctionManagerInstance
  */
 export function newAuctionManager() {
-  let _auctions = [];
-  let auctionManager = {};
+  const _auctions = [];
+  const auctionManager = {};
 
   auctionManager.addWinningBid = function(bid) {
     const auction = find(_auctions, auction => auction.getAuctionId() === bid.auctionId);
@@ -39,22 +39,24 @@ export function newAuctionManager() {
     } else {
       utils.logWarn(`Auction not found when adding winning bid`);
     }
-  }
+  };
 
   auctionManager.getAllWinningBids = function() {
     return _auctions.map(auction => auction.getWinningBids())
       .reduce(flatten, []);
-  }
+  };
 
   auctionManager.getBidsRequested = function() {
     return _auctions.map(auction => auction.getBidRequests())
       .reduce(flatten, []);
   };
 
+  auctionManager.getNoBids = function() {
+    return _auctions.map(auction => auction.getNoBids())
+      .reduce(flatten, []);
+  };
+
   auctionManager.getBidsReceived = function() {
-    // As of now, an old bid which is not used in auction 1 can be used in auction n.
-    // To prevent this, bid.ttl (time to live) will be added to this logic and bid pool will also be added
-    // As of now none of the adapters are sending back bid.ttl
     return _auctions.map((auction) => {
       if (auction.getAuctionStatus() === AUCTION_COMPLETED) {
         return auction.getBidsReceived();
@@ -74,8 +76,8 @@ export function newAuctionManager() {
       .filter(uniques);
   };
 
-  auctionManager.createAuction = function({ adUnits, adUnitCodes, callback, cbTimeout, labels }) {
-    const auction = newAuction({ adUnits, adUnitCodes, callback, cbTimeout, labels });
+  auctionManager.createAuction = function({ adUnits, adUnitCodes, callback, cbTimeout, labels, auctionId }) {
+    const auction = newAuction({ adUnits, adUnitCodes, callback, cbTimeout, labels, auctionId });
     _addAuction(auction);
     return auction;
   };
@@ -91,7 +93,16 @@ export function newAuctionManager() {
   auctionManager.setStatusForBids = function(adId, status) {
     let bid = auctionManager.findBidByAdId(adId);
     if (bid) bid.status = status;
+
+    if (bid && status === CONSTANTS.BID_STATUS.BID_TARGETING_SET) {
+      const auction = find(_auctions, auction => auction.getAuctionId() === bid.auctionId);
+      if (auction) auction.setBidTargeting(bid);
+    }
   }
+
+  auctionManager.getLastAuctionId = function() {
+    return _auctions.length && _auctions[_auctions.length - 1].getAuctionId()
+  };
 
   function _addAuction(auction) {
     _auctions.push(auction);

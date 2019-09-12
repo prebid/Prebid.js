@@ -1,6 +1,6 @@
-import * as utils from 'src/utils';
-import { registerBidder } from 'src/adapters/bidderFactory';
-import { BANNER, NATIVE, VIDEO } from 'src/mediaTypes';
+import * as utils from '../src/utils';
+import { registerBidder } from '../src/adapters/bidderFactory';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes';
 import includes from 'core-js/library/fn/array/includes';
 
 const BIDDER_CODE = 'giants';

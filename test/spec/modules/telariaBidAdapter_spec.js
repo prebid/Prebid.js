@@ -8,7 +8,12 @@ const SUPPLY_CODE = 'ssp-demo-rm6rh';
 const SIZES = [640, 480];
 const REQUEST = {
   'code': 'video1',
-  'sizes': [640, 480],
+  'mediaTypes': {
+    'video': {
+      'playerSize': [[640, 480]],
+      'context': 'instream'
+    }
+  },
   'mediaType': 'video',
   'bids': [{
     'bidder': 'tremor',
@@ -17,6 +22,16 @@ const REQUEST = {
       'inclSync': true
     }
   }]
+};
+
+const BIDDER_REQUEST = {
+  'refererInfo': {
+    'referer': 'www.test.com'
+  },
+  'gdprConsent': {
+    'consentString': 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==',
+    'gdprApplies': true
+  }
 };
 
 const RESPONSE = {
@@ -73,8 +88,13 @@ describe('TelariaAdapter', () => {
 
   describe('buildRequests', () => {
     const stub = [{
+      mediaTypes: {
+        video: {
+          playerSize: [[640, 480]],
+          context: 'instream'
+        }
+      },
       bidder: 'tremor',
-      sizes: [[300, 250], [300, 600]],
       params: {
         supplyCode: 'ssp-demo-rm6rh',
         adCode: 'ssp-!demo!-lufip',
@@ -86,13 +106,13 @@ describe('TelariaAdapter', () => {
       expect(spec.buildRequests).to.exist.and.to.be.a('function');
     });
 
-    it('requires supply code, ad code and sizes to make a request', () => {
-      const tempRequest = spec.buildRequests(stub);
+    it('requires supply code & ad code to make a request', () => {
+      const tempRequest = spec.buildRequests(stub, BIDDER_REQUEST);
       expect(tempRequest.length).to.equal(1);
     });
 
     it('generates an array of requests with 4 params, method, url, bidId and vastUrl', () => {
-      const tempRequest = spec.buildRequests(stub);
+      const tempRequest = spec.buildRequests(stub, BIDDER_REQUEST);
 
       expect(tempRequest.length).to.equal(1);
       expect(tempRequest[0].method).to.equal('GET');
@@ -101,18 +121,21 @@ describe('TelariaAdapter', () => {
       expect(tempRequest[0].vastUrl).to.exist;
     });
 
-    it('requires sizes to make a request', () => {
+    it('doesn\'t require player size but is highly recommended', () => {
       let tempBid = stub;
-      tempBid[0].sizes = null;
-      const tempRequest = spec.buildRequests(tempBid);
+      tempBid[0].mediaTypes.video.playerSize = null;
+      const tempRequest = spec.buildRequests(tempBid, BIDDER_REQUEST);
 
-      expect(tempRequest.length).to.equal(0);
+      expect(tempRequest.length).to.equal(1);
     });
 
     it('generates a valid request with sizes as an array of two elements', () => {
       let tempBid = stub;
-      tempBid[0].sizes = [640, 480];
-      expect(spec.buildRequests(tempBid).length).to.equal(1);
+      tempBid[0].mediaTypes.video.playerSize = [640, 480];
+      tempBid[0].params.adCode = 'ssp-!demo!-lufip';
+      tempBid[0].params.supplyCode = 'ssp-demo-rm6rh';
+      let builtRequests = spec.buildRequests(tempBid, BIDDER_REQUEST);
+      expect(builtRequests.length).to.equal(1);
     });
 
     it('requires ad code and supply code to make a request', () => {
@@ -120,7 +143,7 @@ describe('TelariaAdapter', () => {
       tempBid[0].params.adCode = null;
       tempBid[0].params.supplyCode = null;
 
-      const tempRequest = spec.buildRequests(tempBid);
+      const tempRequest = spec.buildRequests(tempBid, BIDDER_REQUEST);
 
       expect(tempRequest.length).to.equal(0);
     });
@@ -129,8 +152,13 @@ describe('TelariaAdapter', () => {
   describe('interpretResponse', () => {
     const responseStub = RESPONSE;
     const stub = [{
+      mediaTypes: {
+        video: {
+          playerSize: [[640, 480]],
+          context: 'instream'
+        }
+      },
       bidder: 'tremor',
-      sizes: [[300, 250], [300, 600]],
       params: {
         supplyCode: 'ssp-demo-rm6rh',
         adCode: 'ssp-!demo!-lufip',
@@ -143,7 +171,7 @@ describe('TelariaAdapter', () => {
         'getStatusCode', 'getSize', 'requestId', 'cpm', 'creativeId', 'vastXml',
         'vastUrl', 'currency', 'netRevenue', 'ttl', 'ad'];
 
-      let bidRequest = spec.buildRequests(stub)[0];
+      let bidRequest = spec.buildRequests(stub, BIDDER_REQUEST)[0];
       bidRequest.bidId = '1234';
       let result = spec.interpretResponse({body: responseStub}, bidRequest);
       expect(Object.keys(result[0])).to.have.members(expectedResponseKeys);
@@ -153,7 +181,7 @@ describe('TelariaAdapter', () => {
       let tempResponse = responseStub;
       tempResponse.seatbid = [];
 
-      let bidRequest = spec.buildRequests(stub)[0];
+      let bidRequest = spec.buildRequests(stub, BIDDER_REQUEST)[0];
       bidRequest.bidId = '1234';
 
       let result = spec.interpretResponse({body: tempResponse}, bidRequest);

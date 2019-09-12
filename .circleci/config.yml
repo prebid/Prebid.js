@@ -7,7 +7,7 @@ jobs:
   build:
     docker:
       # specify the version you desire here
-      - image: circleci/node:7.10
+      - image: circleci/node:8.9.0
       
       # Specify service dependencies here if necessary
       # CircleCI maintains a library of pre-built images
@@ -33,7 +33,7 @@ jobs:
             - node_modules
           key: v1-dependencies-{{ checksum "package.json" }}
 
-      - run: sudo npm install -g gulp
+      - run: sudo npm install -g gulp-cli
       # Download and run BrowserStack local
       - run:
           name : Download BrowserStack Local binary and start it.
@@ -47,4 +47,4 @@ jobs:
       # run tests!
       - run: 
           name: BrowserStack testing
-          command: gulp test --browserstack
+          command: gulp test --browserstack --nolintfix
