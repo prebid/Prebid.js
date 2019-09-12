@@ -117,14 +117,22 @@ export function copySchainObjectInAdunits(adUnits, schainObject) {
   });
 }
 
+export function isValidSchainConfig(schainObject) {
+  if (schainObject === undefined) {
+    return false;
+  }
+  if (!isPlainObject(schainObject)) {
+    logError(schainErrorPrefix + 'schain config will not be passed to bidders as schain is not an object.');
+    return false;
+  }
+  return true;
+}
+
 export function init(config) {
   let mode = MODE.STRICT;
   getGlobal().requestBids.before(function(fn, reqBidsConfigObj) {
     let schainObject = config.getConfig('schain');
-    let isSchainConfigAnObject = isPlainObject(schainObject);
-    if (schainObject !== undefined && !isSchainConfigAnObject) {
-      logError(schainErrorPrefix + 'schain config will not be passed to bidders as schain is not an object.');
-    } else if (isSchainConfigAnObject) {
+    if (isValidSchainConfig(schainObject)) {
       if (isStr(schainObject.validation) && Object.values(MODE).indexOf(schainObject.validation) != -1) {
         mode = schainObject.validation;
       }
