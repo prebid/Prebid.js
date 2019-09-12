@@ -52,6 +52,21 @@ describe('LiveIntentId', function() {
     expect(callBackSpy.calledOnce).to.be.true;
   });
 
+  it('should call the default url of the LiveIntent Identity Exchange endpoint, with a partner', function() {
+    getCookieStub.returns(null);
+    let callBackSpy = sinon.spy();
+    let submoduleCallback = liveIntentIdSubmodule.getId({...defaultConfigParams, ...{'url': 'https://dummy.liveintent.com', 'partner': 'rubicon'}});
+    submoduleCallback(callBackSpy);
+    let request = requests[0];
+    expect(request.url).to.be.eq('https://dummy.liveintent.com/idex/rubicon/89899?');
+    request.respond(
+      200,
+      responseHeader,
+      JSON.stringify({})
+    );
+    expect(callBackSpy.calledOnce).to.be.true;
+  });
+
   it('should call the LiveIntent Identity Exchange endpoint, with no additional query params', function() {
     getCookieStub.returns(null);
     let callBackSpy = sinon.spy();

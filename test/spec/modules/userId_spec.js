@@ -410,8 +410,8 @@ describe('User ID', function() {
       requestBidsHook(function() {
         adUnits.forEach(unit => {
           unit.bids.forEach(bid => {
-            expect(bid).to.have.deep.nested.property('userId.lipbid');
-            expect(bid.userId.lipbid).to.equal('random-ls-identifier');
+            expect(bid).to.have.deep.nested.property('userId.lipb');
+            expect(bid.userId.lipb.lipbid).to.equal('random-ls-identifier');
           });
         });
         localStorage.removeItem('_li_pbid');
@@ -430,8 +430,8 @@ describe('User ID', function() {
       requestBidsHook(function() {
         adUnits.forEach(unit => {
           unit.bids.forEach(bid => {
-            expect(bid).to.have.deep.nested.property('userId.lipbid');
-            expect(bid.userId.lipbid).to.equal('random-cookie-identifier');
+            expect(bid).to.have.deep.nested.property('userId.lipb');
+            expect(bid.userId.lipb.lipbid).to.equal('random-cookie-identifier');
           });
         });
         utils.setCookie('_li_pbid', '', EXPIRED_COOKIE_DATE);
@@ -539,8 +539,8 @@ describe('User ID', function() {
             expect(bid).to.have.deep.nested.property('userId.idl_env');
             expect(bid.userId.idl_env).to.equal('AiGNC8Z5ONyZKSpIPf');
             // also check that liveIntentIdentity id data was copied to bid
-            expect(bid).to.have.deep.nested.property('userId.lipbid');
-            expect(bid.userId.lipbid).to.equal('randomly-returned-id');
+            expect(bid).to.have.deep.nested.property('userId.lipb');
+            expect(bid.userId.lipb.lipbid).to.equal('randomly-returned-id');
           });
         });
         utils.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
@@ -557,7 +557,7 @@ describe('User ID', function() {
       utils.setCookie('unifiedid', JSON.stringify({'TDID': 'cookie-value-add-module-variations'}), new Date(Date.now() + 5000).toUTCString());
       utils.setCookie('id5id', JSON.stringify({'ID5ID': 'testid5id'}), (new Date(Date.now() + 5000).toUTCString()));
       utils.setCookie('idl_env', 'AiGNC8Z5ONyZKSpIPf', new Date(Date.now() + 5000).toUTCString());
-      utils.setCookie('_li_pbid', JSON.stringify({'unifiedId': 'randomly-returned-id'}), new Date(Date.now() + 5000).toUTCString());
+      utils.setCookie('_li_pbid', JSON.stringify({'unifiedId': 'randomly-returned-id', 'segments': ['123']}), new Date(Date.now() + 5000).toUTCString());
       utils.setCookie('MOCKID', JSON.stringify({'MOCKID': '123456778'}), new Date(Date.now() + 5000).toUTCString());
 
       setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, liveIntentIdSubmodule]);
@@ -611,8 +611,9 @@ describe('User ID', function() {
             expect(bid).to.have.deep.nested.property('userId.idl_env');
             expect(bid.userId.idl_env).to.equal('AiGNC8Z5ONyZKSpIPf');
             // also check that liveIntentIdentity id data was copied to bid
-            expect(bid).to.have.deep.nested.property('userId.lipbid');
-            expect(bid.userId.lipbid).to.equal('randomly-returned-id');
+            expect(bid).to.have.deep.nested.property('userId.lipb');
+            expect(bid.userId.lipb.lipbid).to.equal('randomly-returned-id');
+            expect(bid.userId.lipb.segments).to.include('123');
             // check MockId data was copied to bid
             expect(bid).to.have.deep.nested.property('userId.mid');
             expect(bid.userId.mid).to.equal('123456778');

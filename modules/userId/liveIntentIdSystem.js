@@ -28,7 +28,11 @@ export const liveIntentIdSubmodule = {
    * @returns {{liuid:Object}}
    */
   decode(value) {
-    return (value && typeof value['unifiedId'] === 'string') ? { 'lipbid': value['unifiedId'] } : undefined;
+    function composeIdObject(value) {
+      const base = {'lipbid': value['unifiedId']};
+      return {'lipb': {...base, ...value}};
+    }
+    return (value && typeof value['unifiedId'] === 'string') ? composeIdObject(value) : undefined;
   },
 
   /**
@@ -44,8 +48,12 @@ export const liveIntentIdSubmodule = {
       return;
     }
     let baseUrl = DEFAULT_LIVEINTENT_IDENTITY_URL;
+    let source = DEFAULT_PREBID_SOURCE;
     if (configParams.url) {
       baseUrl = configParams.url
+    }
+    if (configParams.partner) {
+      source = configParams.partner
     }
 
     const additionalIdentifierNames = configParams.identifiersToResolve || [];
@@ -64,7 +72,7 @@ export const liveIntentIdSubmodule = {
     }, {});
 
     const queryString = utils.parseQueryStringParameters(additionalIdentifiers)
-    const url = `${baseUrl}/idex/${DEFAULT_PREBID_SOURCE}/${publisherId}?${queryString}`;
+    const url = `${baseUrl}/idex/${source}/${publisherId}?${queryString}`;
 
     return function (callback) {
       ajax(url, response => {
