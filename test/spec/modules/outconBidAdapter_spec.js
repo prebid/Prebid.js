@@ -33,11 +33,8 @@ describe('outconBidAdapter', function () {
         }
       })).to.eql({
         method: 'GET',
-        url: 'http://test.outcondigital.com:8048/ad/',
-        data: {
-          pod: '5d603538eba7192ae14e39a4',
-          demo: true
-        }
+        url: 'http://test.outcondigital.com:8048/ad/get?pod=5d603538eba7192ae14e39a4&demo=true',
+        data: {}
       });
     });
     it('Build requests with internalID and publisherID params', function () {
@@ -46,15 +43,12 @@ describe('outconBidAdapter', function () {
         params: {
           internalId: '12345678',
           publisher: '5d5d66f2306ea4114a37c7c2',
+          demo: true
         }
       })).to.eql({
         method: 'GET',
-        url: 'http://test.outcondigital.com:8048/ad/',
-        data: {
-          internalId: '12345678',
-          publisher: '5d5d66f2306ea4114a37c7c2',
-          demo: true
-        }
+        url: 'http://test.outcondigital.com:8048/ad/get?internalId=12345678&publisher=5d5d66f2306ea4114a37c7c2&demo=true',
+        data: {}
       });
     });
   });
