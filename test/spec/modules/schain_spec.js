@@ -225,6 +225,9 @@ describe('#isSchainObjectValid: schain object validation', function() {
       ]
     };
     expect(isSchainObjectValid(schainConfig, false)).to.true;
+
+    schainConfig = {};
+    expect(isSchainObjectValid(schainConfig, false)).to.true;
   })
 });
 
