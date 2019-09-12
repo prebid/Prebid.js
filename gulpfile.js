@@ -22,6 +22,7 @@ var shell = require('gulp-shell');
 var eslint = require('gulp-eslint');
 var gulpif = require('gulp-if');
 var sourcemaps = require('gulp-sourcemaps');
+var filter = require('gulp-filter');
 var through = require('through2');
 var fs = require('fs');
 var jsEscape = require('gulp-js-escape');
