@@ -1,20 +1,16 @@
 var prebid = require('./package.json');
 var path = require('path');
 var helpers = require('./gulpHelpers');
-var RequireEnsureWithoutJsonp = require('./plugins/RequireEnsureWithoutJsonp.js');
 var { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
 var argv = require('yargs').argv;
 var allowedModules = require('./allowedModules');
-var CustomizedSplitChunksPlugin = require('./plugins/CustomizedSplitChunksPlugin.js')
 
 // list of module names to never include in the common bundle chunk
 var neverBundle = [
   'AnalyticsAdapter.js'
 ];
 
-var plugins = [
-  new RequireEnsureWithoutJsonp(),
-];
+var plugins = [];
 
 if (argv.analyze) {
   plugins.push(
@@ -22,34 +18,9 @@ if (argv.analyze) {
   )
 }
 
-plugins.push(new CustomizedSplitChunksPlugin({
-    chunks: 'all',
-    cacheGroups: {
-      vendors: false,
-      prebid: {
-        chunks: 'all',
-        name: 'prebid',
-        filename: 'prebid-core.js',
-        enforce: true,
-        reuseExistingChunk: true,
-        test: function(module, chunks) {
-          return (
-            (
-              module.context && module.context.startsWith(path.resolve('./src')) &&
-              !(module.resource && neverBundle.some(name => module.resource.includes(name)))
-            ) ||
-            module.resource && (allowedModules.src.concat(['core-js'])).some(
-              name => module.resource.includes(path.resolve('./node_modules/' + name))
-            )
-          );
-        }
-      }
-    }
-}))
-
 module.exports = {
-  devtool: 'source-map',
-  mode: JSON.stringify(argv._) === JSON.stringify(['build']) ? 'production' : 'development',
+  devtool: 'inline-source-map',
+  mode: 'development',
   resolve: {
     modules: [
       path.resolve('.'),
@@ -83,11 +54,38 @@ module.exports = {
     ]
   },
   optimization: {
+    // we generate a runtime entry chunk, prebid-core, and separate prebid-shared cacheGroup chunk and then
+    // concatenate them together in gulp (as prebid-core) to get around splitChunks bug with having entry chunks
+    // share a name with cacheGroups: https://github.com/webpack/webpack/issues/7230
     runtimeChunk: {
-      name: 'prebid'
+      name: 'prebid-core'
     },
     minimize: false,
-    splitChunks: false
+    splitChunks: {
+      chunks: 'all',
+      cacheGroups: {
+        vendors: false,
+        prebidShared: {
+          chunks: 'all',
+          name: 'prebid-shared',
+          filename: 'prebid-shared.js',
+          enforce: true,
+          reuseExistingChunk: true,
+          test: function(module, chunks) {
+            return (
+              (
+                module.context && module.context.startsWith(path.resolve('./src')) &&
+                !(module.resource && neverBundle.some(name => module.resource.includes(name)))
+              ) || (
+                module.resource && (allowedModules.src.concat(['core-js'])).some(
+                  name => module.resource.includes(path.resolve('./node_modules/' + name))
+                )
+              )
+            )
+          }
+        }
+      }
+    }
   },
   plugins
 };

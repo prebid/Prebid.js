@@ -124,7 +124,7 @@ module.exports = {
   nameModules: function(externalModules) {
     var modules = this.getModules(externalModules);
     return through.obj(function(file, enc, done) {
-      file.named = modules[file.path] ? modules[file.path] : 'prebid';
+      file.named = modules[file.path] ? modules[file.path] : 'prebid-core';
       this.push(file);
       done();
     })

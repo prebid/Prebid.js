@@ -66,13 +66,13 @@ function lint(done) {
   }
   const isFixed = function(file) {
     return file.eslint != null && file.eslint.fixed;
-  }
+  };
   return gulp.src(['src/**/*.js', 'modules/**/*.js', 'test/**/*.js'], {base: './'})
     .pipe(gulpif(argv.nolintfix, eslint(), eslint({fix: true})))
     .pipe(eslint.format('stylish'))
     .pipe(eslint.failAfterError())
     .pipe(gulpif(isFixed, gulp.dest('./')));
-};
+}
 
 // View the code coverage report in the browser.
 function viewCoverage(done) {
@@ -86,7 +86,7 @@ function viewCoverage(done) {
   });
   opens('http://' + mylocalhost + ':' + coveragePort);
   done();
-};
+}
 
 viewCoverage.displayName = 'view-coverage';
 
@@ -115,36 +115,32 @@ function watch(done) {
   done();
 };
 
-function makeDevpackPkg() {
+function makeWebpackPkg(dev) {
   var cloned = _.cloneDeep(webpackConfig);
-  cloned.devtool = 'source-map';
   var externalModules = helpers.getArgModules();
+
+  if (!dev) {
+    delete cloned.devtool;
+    cloned.mode = 'production';
+  }
 
   const analyticsSources = helpers.getAnalyticsSources();
   const moduleSources = helpers.getModulePaths(externalModules);
 
+  var coreFilter = filter(['**/prebid-core.js', '**/prebid-shared.js'], {restore: true});
+
   return gulp.src([].concat(moduleSources, analyticsSources, 'src/prebid.js'))
     .pipe(helpers.nameModules(externalModules))
     .pipe(webpackStream(cloned, webpack))
-    .pipe(gulp.dest('build/dev'))
+    .pipe(coreFilter)
+    .pipe(sourcemaps.init({loadMaps: true}))
+    .pipe(concat('prebid-core.js'))
+    .pipe(sourcemaps.write())
+    .pipe(coreFilter.restore)
+    .pipe(gulpif(!dev, uglify()))
+    .pipe(gulpif(file => (!dev && file.basename === 'prebid-core.js'), header(banner, { prebid: prebid })))
+    .pipe(gulp.dest(dev ? 'build/dev' : 'build/dist'))
     .pipe(connect.reload());
-}
-
-function makeWebpackPkg() {
-  var cloned = _.cloneDeep(webpackConfig);
-  delete cloned.devtool;
-
-  var externalModules = helpers.getArgModules();
-
-  const analyticsSources = helpers.getAnalyticsSources();
-  const moduleSources = helpers.getModulePaths(externalModules);
-
-  return gulp.src([].concat(moduleSources, analyticsSources, 'src/prebid.js'))
-    .pipe(helpers.nameModules(externalModules))
-    .pipe(webpackStream(cloned, webpack))
-    .pipe(uglify())
-    .pipe(gulpif(file => file.basename === 'prebid-core.js', header(banner, { prebid: prebid })))
-    .pipe(gulp.dest('build/dist'));
 }
 
 function gulpBundle(dev) {
@@ -202,7 +198,7 @@ function bundle(dev, moduleArr) {
       global: prebid.globalVarName
     }
     )))
-    .pipe(gulpif(dev, sourcemaps.write('.')));
+    .pipe(gulpif(dev, sourcemaps.write()));
 }
 
 // Run the unit tests.
@@ -298,8 +294,8 @@ gulp.task(clean);
 
 gulp.task(escapePostbidConfig);
 
-gulp.task('build-bundle-dev', gulp.series(makeDevpackPkg, gulpBundle.bind(null, true)));
-gulp.task('build-bundle-prod', gulp.series(makeWebpackPkg, gulpBundle.bind(null, false)));
+gulp.task('build-bundle-dev', gulp.series(makeWebpackPkg.bind(null, true), gulpBundle.bind(null, true)));
+gulp.task('build-bundle-prod', gulp.series(makeWebpackPkg.bind(null, false), gulpBundle.bind(null, false)));
 
 // public tasks (dependencies are needed for each task since they can be ran on their own)
 gulp.task('test', gulp.series(clean, lint, test));
@@ -313,7 +309,7 @@ gulp.task('build', gulp.series(clean, 'build-bundle-prod'));
 gulp.task('build-postbid', gulp.series(escapePostbidConfig, buildPostbid));
 
 gulp.task('serve', gulp.series(clean, lint, gulp.parallel('build-bundle-dev', watch, test)));
-gulp.task('default', gulp.series(clean, makeWebpackPkg));
+gulp.task('default', gulp.series(clean, makeWebpackPkg.bind(null, true)));
 
 gulp.task('e2e-test', gulp.series(clean, setupE2e, gulp.parallel('build-bundle-dev', watch), test))
 // other tasks

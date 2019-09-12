@@ -46,6 +46,7 @@
     "gulp-concat": "^2.6.0",
     "gulp-connect": "^5.7.0",
     "gulp-eslint": "^4.0.0",
+    "gulp-filter": "^6.0.0",
     "gulp-footer": "github:prebid/gulp-footer#master",
     "gulp-header": "^1.7.1",
     "gulp-if": "^2.0.2",
