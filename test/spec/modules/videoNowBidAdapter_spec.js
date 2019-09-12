@@ -2,7 +2,7 @@ import { expect } from 'chai'
 import { spec } from 'modules/videoNowBidAdapter'
 import { replaceAuctionPrice } from '../../../src/utils'
 
-const placementId = 'div-gpt-ad-1438287399331-0'
+const placementId = 'div-gpt-ad-1438287399331-1'
 const LS_ITEM_NAME = 'videonow-config'
 
 const getValidServerResponse = () => {
