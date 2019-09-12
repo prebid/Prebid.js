@@ -375,8 +375,9 @@ export const spec = {
               bid.ext.summary.forEach(function (summary, index) {
                 var firstSummary = index === 0;
                 let newBid = {};
-                if (summary.errorCode === 6 || summary.errorCode === 3) {
-                  // special handling for error code 6. Create all dummy bids from request data.
+                if (summary.errorCode === 6 || summary.errorCode === 3 || summary.errorCode === 11 || summary.errorCode === 12) {
+                  // special handling for error code 6,11,12. Create all dummy bids from request data.
+                  // 11: All Partners Throttled, 12 Some Partner Throttled.
                   bidResponses.length === 0 && _createDummyBids(requestData.imp, bidResponses, summary.errorCode);
                 } else {
                   switch (summary.errorCode) {
