@@ -459,7 +459,7 @@ describe('videonowAdapterTests', function() {
           function remove(src) {
             if (!src) return
             const d = document.querySelectorAll(`script[src^="${src}"]`)
-            d && d.forEach(el => el && el.remove())
+            d && d.length && Array.from(d).forEach(el => el && el.remove())
           }
         })
 
