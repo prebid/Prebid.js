@@ -30,6 +30,7 @@ export const liveIntentIdSubmodule = {
   decode(value) {
     function composeIdObject(value) {
       const base = {'lipbid': value['unifiedId']};
+      delete value.unifiedId;
       return {'lipb': {...base, ...value}};
     }
     return (value && typeof value['unifiedId'] === 'string') ? composeIdObject(value) : undefined;
