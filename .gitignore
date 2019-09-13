@@ -28,6 +28,9 @@ build/coverage/
 .idea/
 # if you remove the above rule, at least ignore the following:
 
+# VS Code
+.vscode/
+
 # User-specific stuff:
 # .idea/workspace.xml
 # .idea/tasks.xml
