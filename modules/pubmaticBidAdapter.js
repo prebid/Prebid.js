@@ -647,7 +647,7 @@ function _handleEids(payload, validBidRequests) {
   if (bidRequest && bidRequest.userId) {
     _addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.pubcid`), 'pubcommon', 1);
     _addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.digitrustid.data.id`), 'digitru.st', 1);
-    _addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.id5id`), 'id5id', 1);
+    _addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.id5id`), 'id5-sync.com', 1);
     _addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.criteortus.${BIDDER_CODE}.userid`), 'criteortus', 1);
     _addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.idl_env`), 'identity_link_envelope', 1);
   }
