@@ -644,10 +644,12 @@ function _handleEids(payload, validBidRequests) {
   _handleDigitrustId(eids);
   _handleTTDId(eids, validBidRequests);
   const bidRequest = validBidRequests[0];
-  if(bidRequest && bidRequest.userId){
-    _addExternalUserId(eids, bidRequest.userId.pubcid, 'pubcommon', 1);
-    _addExternalUserId(eids, utils.deepAccess(bidRequest.userId.digitrustid, 'data.id'), 'digitru.st', 1);
-    _addExternalUserId(eids, bidRequest.userId.id5id, 'id5id', 1);
+  if (bidRequest && bidRequest.userId) {
+    _addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.pubcid`), 'pubcommon', 1);
+    _addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.digitrustid.data.id`), 'digitru.st', 1);
+    _addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.id5id`), 'id5id', 1);
+    _addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.criteortus.${BIDDER_CODE}.userid`), 'criteortus', 1);
+    _addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.idl_env`), 'identity_link_envelope', 1);
   }
   if (eids.length > 0) {
     payload.user.eids = eids;
