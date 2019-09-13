@@ -101,6 +101,10 @@ export const spec = {
       payload.digkeyv = digitrust.keyv;
     }
 
+    if (validBidRequests[0].schain) {
+      payload.schain = JSON.stringify(validBidRequests[0].schain)
+    }
+
     // If there is no key_maker data, then don't make the request.
     if (isEmpty(data)) {
       return null;

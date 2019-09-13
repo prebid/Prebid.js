@@ -22,7 +22,7 @@ var adUnits = [{
     bids: [{
         bidder: 'lockerdome',
         params: {
-            adUnitId: 10809467961050726
+            adUnitId: 'LD10809467961050726'
         }
     }]
 }];
