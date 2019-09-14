@@ -19,14 +19,14 @@
           code: 'div-gpt-ad-1460505748561-0',
           mediaTypes: {
             banner: {
-              sizes: [[300, 250], [300,600]],
+              sizes: [[300, 250]],
             }
           },
           // Replace this object to test a new Adapter!
           bids: [{
-            bidder: 'appnexus',
+            bidder: 'djax',
             params: {
-              placementId: 13144370
+              publisherId: 1
             }
           }]
   
@@ -71,8 +71,7 @@
   
       <script>
         googletag.cmd.push(function () {
-          googletag.defineSlot('/19968336/header-bid-tag-0', [[300, 250], [300, 600]], 'div-gpt-ad-1460505748561-0').addService(googletag.pubads());
-  
+          googletag.defineSlot('/19968336/header-bid-tag-0', [[300, 250], [300, 600]], 'div-gpt-ad-1460505748561-0').addService(googletag.pubads());  
           googletag.pubads().enableSingleRequest();
           googletag.enableServices();
         });
@@ -81,7 +80,7 @@
   
   <body>
   <h2>Prebid.js Test</h2>
-  <h5>Div-1</h5>
+  <h5>Image Banner</h5>
   <div id='div-gpt-ad-1460505748561-0'>
       <script type='text/javascript'>
         googletag.cmd.push(function() { googletag.display('div-gpt-ad-1460505748561-0'); });
