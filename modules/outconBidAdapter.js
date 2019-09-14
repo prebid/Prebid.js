@@ -7,7 +7,7 @@ export const spec = {
     return !!(bid.params.pod || (bid.params.internalId && bid.params.publisher));
   },
   buildRequests: function(validBidRequests) {
-    for (let i=0; i<validBidRequests.length; i++) {
+    for (let i = 0; i < validBidRequests.length; i++) {
       let par = '';
       if (validBidRequests[i].params.pod != undefined) par = 'get?pod=' + validBidRequests[i].params.pod;
       else par = 'get?internalId=' + validBidRequests[i].params.internalId + '&publisher=' + validBidRequests[i].params.publisher;
