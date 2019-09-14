@@ -14,8 +14,11 @@ Module that connects to Outcon demand sources
 ```
     var adUnits = [
         {
-            pod: "5beeb24a306ea47660632043",
-            internalId: "12345678",
-            publisher: "5beeb1fd306ea4779e464532"
+        bidder: 'outcom',
+        params: {
+          internalId: '12345678',
+          publisher: '5d5d66f2306ea4114a37c7c2',
+          demo: true
+        }
     ];
 ```

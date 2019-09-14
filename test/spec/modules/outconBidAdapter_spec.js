@@ -25,27 +25,27 @@ describe('outconBidAdapter', function () {
   });
   describe('buildRequests', function () {
     it('Build requests with pod param', function () {
-      expect(spec.buildRequests({
+      expect(spec.buildRequests([{
         bidder: 'outcom',
         params: {
           pod: '5d603538eba7192ae14e39a4',
           demo: true
         }
-      })).to.eql({
+      }])).to.eql({
         method: 'GET',
         url: 'http://test.outcondigital.com:8048/ad/get?pod=5d603538eba7192ae14e39a4&demo=true',
         data: {}
       });
     });
     it('Build requests with internalID and publisherID params', function () {
-      expect(spec.buildRequests({
+      expect(spec.buildRequests([{
         bidder: 'outcom',
         params: {
           internalId: '12345678',
           publisher: '5d5d66f2306ea4114a37c7c2',
           demo: true
         }
-      })).to.eql({
+      }])).to.eql({
         method: 'GET',
         url: 'http://test.outcondigital.com:8048/ad/get?internalId=12345678&publisher=5d5d66f2306ea4114a37c7c2&demo=true',
         data: {}
