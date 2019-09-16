@@ -100,8 +100,8 @@ let videoBid = {
   params: {
     sourceId: 7560,
     host: 'v5demo.datablocks.net',
-    video:{
-      minduration:14
+    video: {
+      minduration: 14
     }
   },
   transactionId: '0a4e9788-4def-4b94-bc25-564d7cac99f7'
