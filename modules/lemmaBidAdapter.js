@@ -17,7 +17,7 @@ export var spec = {
 
   isBidRequestValid: bid => {
     if (bid && bid.params) {
-      if (utils.isStr(bid.params.pubId) || !bid.params.pubId) {
+      if (!utils.isNumber(bid.params.pubId)) {
         utils.logWarn(LOG_WARN_PREFIX + 'Error: publisherId is mandatory and cannot be string. Call to OpenBid will not be sent for ad unit: ' + JSON.stringify(bid));
         return false;
       }
@@ -73,11 +73,11 @@ function _initConf(refererInfo) {
 function parseRTBResponse(request, response) {
   var bidResponses = [];
   try {
-    if (cfn(response.seatbid).length > 0) {
-      var currency = cfn(response.curr) || DEFAULT_CURRENCY;
-      var seatbid = cfn(response.seatbid);
+    if (response.seatbid) {
+      var currency = response.curr || DEFAULT_CURRENCY;
+      var seatbid = response.seatbid;
       seatbid.forEach(seatbidder => {
-        var bidder = cfn(seatbidder.bid);
+        var bidder = seatbidder.bid;
         bidder.forEach(bid => {
           var req = parse(request.data);
           var newBid = {
@@ -136,13 +136,13 @@ function oRTBTemplate(bidRequests, conf) {
     var app = _getAppObject(bid);
     var site = _getSiteObject(bid, conf);
     var device = _getDeviceObject(bid);
-    if (cfn(app) != '') {
+    if (app) {
       oRTBObject.app = app;
     }
-    if (cfn(site) != '') {
+    if (site) {
       oRTBObject.site = site;
     }
-    if (cfn(device) != '') {
+    if (device) {
       oRTBObject.device = device;
     }
     return oRTBObject;
@@ -154,9 +154,9 @@ function oRTBTemplate(bidRequests, conf) {
 function _getImpressionArray(request) {
   var impArray = [];
   var map = request.map(bid => _getImpressionObject(bid));
-  if (cfn(map).length > 0) {
+  if (map) {
     map.forEach(o => {
-      if (cfn(o) != '') {
+      if (o) {
         impArray.push(o);
       }
     });
@@ -166,9 +166,9 @@ function _getImpressionArray(request) {
 
 function endPointURL(request) {
   var params = request && request[0].params ? request[0].params : null;
-  if (cfn(params) != '') {
-    var pubId = cfn(params.pubId) != '' ? params.pubId : 0;
-    var adunitId = cfn(params.adunitId) != '' ? params.adunitId : 0;
+  if (params) {
+    var pubId = params.pubId ? params.pubId : 0;
+    var adunitId = params.adunitId ? params.adunitId : 0;
     return ENDPOINT + '?pid=' + pubId + '&aid=' + adunitId;
   }
   return null;
@@ -182,10 +182,10 @@ function _getDomain(url) {
 
 function _getSiteObject(request, conf) {
   var params = request && request.params ? request.params : null;
-  if (cfn(params) != '') {
-    var pubId = cfn(params.pubId) != '' ? params.pubId : '0';
-    var siteId = cfn(params.siteId) != '' ? params.siteId : '0';
-    var appParams = cfn(params.app);
+  if (params) {
+    var pubId = params.pubId ? params.pubId : '0';
+    var siteId = params.siteId ? params.siteId : '0';
+    var appParams = params.app;
     if (!appParams) {
       return {
         publisher: {
@@ -203,10 +203,10 @@ function _getSiteObject(request, conf) {
 
 function _getAppObject(request) {
   var params = request && request.params ? request.params : null;
-  if (cfn(params) != '') {
-    var pubId = cfn(params.pubId) != '' ? cfn(params.pubId) : '0';
-    var appParams = cfn(params.app);
-    if (cfn(appParams)) {
+  if (params) {
+    var pubId = params.pubId ? params.pubId : 0;
+    var appParams = params.app;
+    if (appParams) {
       return {
         publisher: {
           id: pubId.toString(),
@@ -226,7 +226,7 @@ function _getAppObject(request) {
 
 function _getDeviceObject(request) {
   var params = request && request.params ? request.params : null;
-  if (cfn(params) != '') {
+  if (params) {
     return {
       dnt: utils.getDNT() ? 1 : 0,
       ua: navigator.userAgent,
@@ -255,16 +255,15 @@ function setOtherParams(request, ortbRequest) {
     ortbRequest.regs = { ext: { gdpr: request.gdprConsent.gdprApplies ? 1 : 0 } };
     ortbRequest.user = { ext: { consent: request.gdprConsent.consentString } };
   }
-  if (cfn(params) != '') {
+  if (params) {
     ortbRequest.tmax = params.tmax;
     ortbRequest.bcat = params.bcat;
   }
 }
 
 function _getSizes(request) {
-  var size = cfn(cfn(request).sizes)[0];
-  if (utils.isArray(size) && cfn(size).length > 0) {
-    return size;
+  if (request.sizes && utils.isArray(request.sizes[0]) && request.sizes[0].length > 0) {
+    return request.sizes[0];
   }
   return null;
 }
@@ -272,23 +271,23 @@ function _getSizes(request) {
 function _getBannerRequest(bid) {
   var bObj;
   var adFormat = [];
-  if (cfn(bid.mediaType) === 'banner' || utils.deepAccess(bid, 'mediaTypes.banner')) {
-    var params = cfn(bid) != '' ? bid.params : null;
-    var bannerData = cfn(params.banner);
-    var sizes = _getSizes(bid);
-    if (cfn(sizes).length == 0) {
-      sizes = cfn(bid.mediaTypes.banner.sizes[0]);
+  if (bid.mediaType === 'banner' || utils.deepAccess(bid, 'mediaTypes.banner')) {
+    var params = bid ? bid.params : null;
+    var bannerData = params.banner;
+    var sizes = _getSizes(bid) || [];
+    if (sizes && sizes.length == 0) {
+      sizes = bid.mediaTypes.banner.sizes[0];
     }
-    if (cfn(sizes).length > 0) {
+    if (sizes && sizes.length > 0) {
       bObj = {};
-      bObj.w = cfn(sizes[0]);
-      bObj.h = cfn(sizes[1]);
+      bObj.w = sizes[0];
+      bObj.h = sizes[1];
       bObj.pos = 0;
-      if (cfn(bannerData) != '') {
+      if (bannerData) {
         bObj = utils.deepClone(bannerData);
       }
-      sizes = cfn(bid.mediaTypes.banner.sizes);
-      if (cfn(sizes).length > 0) {
+      sizes = bid.mediaTypes.banner.sizes;
+      if (sizes.length > 0) {
         adFormat = [];
         sizes.forEach(function(size) {
           if (size.length > 1) {
@@ -308,20 +307,20 @@ function _getBannerRequest(bid) {
 
 function _getVideoRequest(bid) {
   var vObj;
-  if (cfn(bid.mediaType) === 'video' || utils.deepAccess(bid, 'mediaTypes.video')) {
-    var params = cfn(bid) != '' ? bid.params : null;
-    var sizes = _getSizes(bid);
-    if (cfn(sizes).length == 0) {
-      sizes = cfn(bid.mediaTypes.video.playerSize);
+  if (bid.mediaType === 'video' || utils.deepAccess(bid, 'mediaTypes.video')) {
+    var params = bid ? bid.params : null;
+    var sizes = _getSizes(bid) || [];
+    if (sizes && sizes.length == 0) {
+      sizes = bid.mediaTypes && bid.mediaTypes.video ? bid.mediaTypes.video.playerSize : [];
     }
-    if (cfn(sizes).length > 0) {
-      var videoData = cfn(params.video);
+    if (sizes && sizes.length > 0) {
+      var videoData = params.video;
       vObj = {};
-      if (cfn(videoData) !== '') {
+      if (videoData) {
         vObj = utils.deepClone(videoData);
       }
-      vObj.w = cfn(sizes[0]);
-      vObj.h = cfn(sizes[1]);
+      vObj.w = sizes[0];
+      vObj.h = sizes[1];
     } else {
       utils.logWarn(LOG_WARN_PREFIX + 'Error: mediaTypes.video.sizes missing for adunit: ' + bid.params.adunitId);
     }
@@ -336,16 +335,16 @@ function _getImpressionObject(bid) {
   var sizes = bid.hasOwnProperty('sizes') ? bid.sizes : [];
   var mediaTypes = '';
   var format = [];
-  var params = cfn(bid.params) != '' ? bid.params : null;
+  var params = bid && bid.params ? bid.params : null;
   impression = {
-    id: cfn(bid.bidId),
-    tagid: cfn(params.adunitId).toString() != '' ? cfn(params.adunitId).toString() : undefined,
+    id: bid.bidId,
+    tagid: params.adunitId ? params.adunitId.toString() : undefined,
     secure: window.location.protocol === 'https:' ? 1 : 0,
-    bidfloorcur: cfn(params.currency) != '' ? params.currency : DEFAULT_CURRENCY
+    bidfloorcur: params.currency ? params.currency : DEFAULT_CURRENCY
   };
 
-  if (cfn(params.bidFloor) != '') {
-    impression.bidfloor = cfn(params.bidFloor);
+  if (params.bidFloor) {
+    impression.bidfloor = params.bidFloor;
   }
 
   if (bid.hasOwnProperty('mediaTypes')) {
@@ -353,13 +352,13 @@ function _getImpressionObject(bid) {
       switch (mediaTypes) {
         case BANNER:
           bObj = _getBannerRequest(bid);
-          if (cfn(bObj) !== '') {
+          if (bObj) {
             impression.banner = bObj;
           }
           break;
         case VIDEO:
           vObj = _getVideoRequest(bid);
-          if (cfn(vObj) !== '') {
+          if (vObj) {
             impression.video = vObj;
           }
           break;
@@ -397,10 +396,6 @@ function parse(rawResp) {
     utils.logError(LOG_WARN_PREFIX, 'ERROR', ex);
   }
   return null;
-}
-
-function cfn(el) {
-  return void 0 === el || el === null ? '' : el;
 }
 
 registerBidder(spec);
