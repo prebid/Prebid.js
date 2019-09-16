@@ -149,17 +149,19 @@ export const spec = {
         }
       } else if (utils.deepAccess(bidRequest, 'mediaTypes.video')) {
         let video = bidRequest.mediaTypes.video;
-        let sizes = video.playerSize || bidRequest.sizes;
+        let sizes = video.playerSize || bidRequest.sizes || [];
         if (sizes.length && Array.isArray(sizes[0])) {
           imp.video = {
             w: sizes[0][0],
             h: sizes[0][1]
           };
-        } else if (sizes.length && sizes.length == 2 && !Array.isArray(sizes[0])) {
+        } else if (sizes.length == 2 && !Array.isArray(sizes[0])) {
           imp.video = {
             w: sizes[0],
             h: sizes[1]
           };
+        } else {
+          return;
         }
 
         if (video.durationRangeSec) {
