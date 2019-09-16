@@ -12,6 +12,7 @@ import { ajax } from '../ajax';
 import { logWarn, logError, parseQueryStringParameters, delayExecution, parseSizesInput, getBidderRequest, flatten, uniques, timestamp, setDataInLocalStorage, getDataFromLocalStorage, deepAccess } from '../utils';
 import { ADPOD } from '../mediaTypes';
 import { getHook } from '../hook';
+import mockResponse from '../mock_response.json';
 
 /**
  * This file aims to support Adapters during the Prebid 0.x -> 1.x transition.
@@ -365,7 +366,7 @@ export function newBidder(spec) {
           onTimelyResponse(spec.code);
 
           try {
-            var response = JSON.parse(responseObj.responseText);
+            var response = mockResponse;
           } catch (e) { /* response might not be JSON... that's ok. */ }
 
           // Make response headers available for #1742. These are lazy-loaded because most adapters won't need them.

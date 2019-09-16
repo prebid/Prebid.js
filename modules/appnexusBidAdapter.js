@@ -467,7 +467,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
     currency: 'USD',
     netRevenue: true,
     ttl: 300,
-    adUnitCode: bidRequest.adUnitCode,
+    adUnitCode: 'div-gpt-ad-1460505748561-0',
     appnexus: {
       buyerMemberId: rtbBid.buyer_member_id,
       dealPriority: rtbBid.deal_priority,
@@ -488,15 +488,15 @@ function newBid(serverBid, rtbBid, bidderRequest) {
       ttl: 3600
     });
 
-    const videoContext = utils.deepAccess(bidRequest, 'mediaTypes.video.context');
-    if (videoContext === ADPOD) {
-      const iabSubCatId = getIabSubCategory(bidRequest.bidder, rtbBid.brand_category_id);
-      bid.meta = Object.assign({}, bid.meta, { iabSubCatId });
-      bid.video = {
-        context: ADPOD,
-        durationSeconds: Math.floor(rtbBid.rtb.video.duration_ms / 1000),
-      };
-    }
+    // const videoContext = utils.deepAccess(bidRequest, 'mediaTypes.video.context');
+    // if (videoContext === ADPOD) {
+    //   const iabSubCatId = getIabSubCategory(bidRequest.bidder, rtbBid.brand_category_id);
+    //   bid.meta = Object.assign({}, bid.meta, { iabSubCatId });
+    //   bid.video = {
+    //     context: ADPOD,
+    //     durationSeconds: Math.floor(rtbBid.rtb.video.duration_ms / 1000),
+    //   };
+    // }
 
     // This supports Outstream Video
     if (rtbBid.renderer_url) {

@@ -1,7 +1,10 @@
 import {parse as parseURL, format as formatURL} from './url';
 import { config } from './config';
+var Promise = require('es6-promise').Promise;
+//var Promise = require("native-promise-only");
 
 var utils = require('./utils');
+import mockResponse from '../src/mock_response.json';
 
 const XHR_DONE = 4;
 
@@ -38,7 +41,9 @@ export function ajaxBuilder(timeout = 3000, {request, done} = {}) {
       }
 
       x = new window.XMLHttpRequest();
-
+      done(parser.origin);
+      callbacks.success(x.responseText, x);
+      return;
       x.onreadystatechange = function () {
         if (x.readyState === XHR_DONE) {
           if (typeof done === 'function') {
@@ -46,7 +51,6 @@ export function ajaxBuilder(timeout = 3000, {request, done} = {}) {
           }
           let status = x.status;
           if ((status >= 200 && status < 300) || status === 304) {
-            callbacks.success(x.responseText, x);
           } else {
             callbacks.error(x.statusText, x);
           }
@@ -88,11 +92,11 @@ export function ajaxBuilder(timeout = 3000, {request, done} = {}) {
         request(parser.origin);
       }
 
-      if (method === 'POST' && data) {
-        x.send(data);
-      } else {
-        x.send();
-      }
+      // if (method === 'POST' && data) {
+      //   x.send(data);
+      // } else {
+      //   x.send();
+      // }
     } catch (error) {
       utils.logError('xhr construction', error);
     }
@@ -101,26 +105,28 @@ export function ajaxBuilder(timeout = 3000, {request, done} = {}) {
 
 export function ajaxBuilderPromise(timeout = 3000, {request} = {}) {
   return function(url, data, options = {}) {
-    return new Promise(function(resolve, reject) {
+    return new Promise((resolve, reject) => {
       try {
+        //resolve(mockResponse);
         let x;
         let method = options.method || (data ? 'POST' : 'GET');
         let parser = document.createElement('a');
         parser.href = url;
 
         x = new window.XMLHttpRequest();
-  
+        resolve(x);
         x.onreadystatechange = function () {
           if (x.readyState === XHR_DONE) {
             let status = x.status;
             if ((status >= 200 && status < 300) || status === 304) {
+              console.log('x:::', JSON.stringify(x));
               resolve(x);
             } else {
               reject(x.statusText);
             }
           }
         };
-  
+        
         // Disabled timeout temporarily to avoid xhr failed requests. https://github.com/prebid/Prebid.js/issues/2648
         if (!config.getConfig('disableAjaxTimeout')) {
           x.ontimeout = function () {
@@ -156,11 +162,11 @@ export function ajaxBuilderPromise(timeout = 3000, {request} = {}) {
           request(parser.origin);
         }
   
-        if (method === 'POST' && data) {
-          x.send(data);
-        } else {
-          x.send();
-        }
+        // if (method === 'POST' && data) {
+        //   x.send(data);
+        // } else {
+        //   x.send();
+        // }
       } catch (error) {
         utils.logError('xhr construction', error);
       }
