@@ -185,6 +185,7 @@ export const spec = {
     }
 
     const request = formatRequest(payload, bidderRequest);
+    console.log('request.data', request.data);
     return request;
   },
 
