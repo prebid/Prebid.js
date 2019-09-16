@@ -1632,7 +1632,7 @@ describe('PubMatic adapter', function () {
             let request = spec.buildRequests(bidRequests, {});
             let data = JSON.parse(request.data);
             expect(data.user.eids).to.deep.equal([{
-              'source': 'identity_link_envelope',
+              'source': 'liveramp.com',
               'uids': [{
                 'id': 'identity-link-user-id',
                 'atype': 1
