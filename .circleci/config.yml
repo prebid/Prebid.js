@@ -46,9 +46,9 @@ jobs:
             # Run the file with user's access key
             ./BrowserStackLocal ${BROWSERSTACK_ACCESS_KEY} &
       # run tests!
-      # - run: 
-      #     name: BrowserStack testing
-      #     command: gulp test --browserstack --nolintfix
+      - run: 
+          name: BrowserStack testing
+          command: gulp test --browserstack --nolintfix
       # run e2e tests
       - run:
           name: Functional testing
