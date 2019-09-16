@@ -155,7 +155,7 @@ export const spec = {
             w: sizes[0][0],
             h: sizes[0][1]
           };
-        } else if (sizes.length && Number.isInteger(sizes[0])) {
+        } else if (sizes.length && sizes.length == 2 && !Array.isArray(sizes[0])) {
           imp.video = {
             w: sizes[0],
             h: sizes[1]
