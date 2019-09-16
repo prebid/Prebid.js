@@ -24,7 +24,7 @@ var adUnits = [{
   bids: [{
     bidder: 'lemma',
     params: {
-      pubId: '1', // required
+      pubId: 1, // required
       adunitId: '3768', // required
       latitude: 37.3230,
       longitude: -122.0322,
@@ -53,7 +53,7 @@ var adUnits = [{
   bids: [{
     bidder: 'lemma',
     params: {
-      pubId: '1', // required
+      pubId: 1, // required
       adunitId: '3769', // required
       latitude: 37.3230,
       longitude: -122.0322,
