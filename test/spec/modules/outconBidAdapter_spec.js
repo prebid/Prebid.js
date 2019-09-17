@@ -5,20 +5,20 @@ describe('outconBidAdapter', function () {
   describe('bidRequestValidity', function () {
     it('Check the bidRequest with pod param', function () {
       expect(spec.isBidRequestValid({
-        bidder: 'outcom',
+        bidder: 'outcon',
         params: {
           pod: '5d603538eba7192ae14e39a4',
-          demo: true
+          env: 'test'
         }
       })).to.equal(true);
     });
     it('Check the bidRequest with internalID and publisherID params', function () {
       expect(spec.isBidRequestValid({
-        bidder: 'outcom',
+        bidder: 'outcon',
         params: {
           internalId: '12345678',
           publisher: '5d5d66f2306ea4114a37c7c2',
-          demo: true
+          env: 'test'
         }
       })).to.equal(true);
     });
@@ -26,10 +26,10 @@ describe('outconBidAdapter', function () {
   describe('buildRequests', function () {
     it('Build requests with pod param', function () {
       expect(spec.buildRequests([{
-        bidder: 'outcom',
+        bidder: 'outcon',
         params: {
           pod: '5d603538eba7192ae14e39a4',
-          demo: true
+          env: 'test'
         }
       }])).to.eql({
         method: 'GET',
@@ -39,11 +39,11 @@ describe('outconBidAdapter', function () {
     });
     it('Build requests with internalID and publisherID params', function () {
       expect(spec.buildRequests([{
-        bidder: 'outcom',
+        bidder: 'outcon',
         params: {
           internalId: '12345678',
           publisher: '5d5d66f2306ea4114a37c7c2',
-          demo: true
+          env: 'test'
         }
       }])).to.eql({
         method: 'GET',
@@ -58,7 +58,7 @@ describe('outconBidAdapter', function () {
       url: 'http://test.outcondigital.com:8048/ad/',
       data: {
         pod: '5d603538eba7192ae14e39a4',
-        demo: true
+        env: 'test'
       }
     };
     const bidResponse = {

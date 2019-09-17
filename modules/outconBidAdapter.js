@@ -4,17 +4,29 @@ const BIDDER_CODE = 'outcon';
 export const spec = {
   code: BIDDER_CODE,
   isBidRequestValid: function(bid) {
-    return !!(bid.params.pod || (bid.params.internalId && bid.params.publisher));
+    return !!((bid.params.pod || (bid.params.internalId && bid.params.publisher)) && bid.params.env);
   },
   buildRequests: function(validBidRequests) {
     for (let i = 0; i < validBidRequests.length; i++) {
       let par = '';
+      let url = '';
       if (validBidRequests[i].params.pod != undefined) par = 'get?pod=' + validBidRequests[i].params.pod;
       else par = 'get?internalId=' + validBidRequests[i].params.internalId + '&publisher=' + validBidRequests[i].params.publisher;
-      if (validBidRequests[i].params.demo == true) par = par + '&demo=true';
+      switch (validBidRequests[i].params.env) {
+        case 'test':
+          par = par + '&demo=true';
+          url = 'http://test.outcondigital.com:8048/ad/' + par;
+          break;
+        case 'api':
+          url = 'http://api.outcondigital.com:8048/ad/' + par;
+          break;
+        case 'stg':
+          url = 'http://stg.outcondigital.com:8048/ad/' + par;
+          break;
+      } 
       return {
         method: 'GET',
-        url: 'http://test.outcondigital.com:8048/ad/' + par,
+        url: url,
         data: {}
       };
     }
