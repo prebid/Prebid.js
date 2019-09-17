@@ -23,7 +23,7 @@ export const spec = {
         case 'stg':
           url = 'http://stg.outcondigital.com:8048/ad/' + par;
           break;
-      } 
+      }
       return {
         method: 'GET',
         url: url,
