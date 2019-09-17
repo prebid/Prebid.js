@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import { spec } from '../../../modules/outconBidAdapter';
+
 describe('outconBidAdapter', function () {
   describe('bidRequestValidity', function () {
     it('Check the bidRequest with pod param', function () {
