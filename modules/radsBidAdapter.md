@@ -14,31 +14,10 @@ RADS Bidder Adapter for Prebid.js 1.x
 ```
     var adUnits = [
         {
-            code: 'test-div',
+            code: "test-div",
             mediaTypes: {
                 banner: {
-                    sizes: [
-                      [300, 250],
-                      [300, 600],
-                    ],  // ad display size
-                }
-            },
-            bids: [
-                {
-                    bidder: "rads",
-                    params: {
-                        placement: '101',
-                        pfilter: {
-                            floorprice: 1000000, // EUR * 1,000,000,
-                        }
-                    }
-                }
-            ]
-        }, {
-            code: 'test-div',
-            mediaTypes: {
-                banner: {
-                    sizes: [[320, 50]]   // mobile ad size
+                    sizes: [[320, 50]]
                 }
             },
             bids: [
@@ -48,25 +27,6 @@ RADS Bidder Adapter for Prebid.js 1.x
                         placement: 101
                     }
                 }
-            ]
-        },
-        {
-            // video settings
-            code: 'video-obj',
-            mediaTypes: {
-                video: {
-                    context: 'instream',
-                    playerSize: [640, 480]
-                }
-            },
-            bids: [
-                {
-                    bidder: "rads",
-                    params: {
-                        placement: "...", // placement ID of inventory with RADS
-                        vastFormat: "vast2|vast4" // default vast2 
-                    }
-                 }
             ]
         }
     ];
