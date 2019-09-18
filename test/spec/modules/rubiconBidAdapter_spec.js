@@ -1157,15 +1157,6 @@ describe('the rubicon adapter', function () {
           expect(post.ext.prebid.cache.vastxml.returnCreative).to.equal(false)
         });
 
-        it('should not send pos for bad param entry', function () {
-          createVideoBidderRequest();
-          let positionBidderRequest = utils.deepClone(bidderRequest);
-          delete positionBidderRequest.bids[0].mediaTypes.video.pos;
-	  positionBidderRequest.bids[0].params.position = 'bad';
-          let [request] = spec.buildRequests(positionBidderRequest.bids, positionBidderRequest);
-          expect(request.data.imp[0].video.pos).to.equal(undefined);
-        });
-
         it('should send correct bidfloor to PBS', function() {
           createVideoBidderRequest();
 
@@ -1195,6 +1186,12 @@ describe('the rubicon adapter', function () {
         });
 
         it('should send request with proper ad position when mediaTypes.video.pos is not defined', function () {
+          createVideoBidderRequest();
+          let positionBidderRequest = utils.deepClone(bidderRequest);
+          positionBidderRequest.bids[0].mediaTypes.video.pos = 1;
+          let [request] = spec.buildRequests(positionBidderRequest.bids, positionBidderRequest);
+          expect(request.data.imp[0].video.pos).to.equal(1);
+
           createVideoBidderRequest();
           let positionBidderRequest = utils.deepClone(bidderRequest);
           positionBidderRequest.bids[0].params.position = undefined;
