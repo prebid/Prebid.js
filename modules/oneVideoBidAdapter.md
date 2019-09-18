@@ -35,8 +35,9 @@ Connects to One Video demand source to fetch bids.
                 playbackmethod: [1,5],
                 placement: 123,
                 sid: <scpid>,
-               },
+                rewarded: 1
               },
+             },
               site: {
                 id: 1,
                 page: 'http://abhi12345.com',
