@@ -49,7 +49,7 @@ export const unifiedIdSubmodule = {
           }
         }
         callback(responseObj);
-      }, undefined, { method: 'GET' });
+      }, undefined, { method: 'GET', withCredentials: true });
     }
   }
 };

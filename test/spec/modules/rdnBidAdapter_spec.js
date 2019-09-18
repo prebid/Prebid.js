@@ -95,6 +95,9 @@ describe('rdnBidAdapter', function() {
 
     const serverResponse = {
       noAd: [],
+      noAd2: {
+        requestId: 'biequa9oaph4we'
+      },
       banner: {
         requestId: 'biequa9oaph4we',
         cpm: 37.66,
@@ -113,10 +116,15 @@ describe('rdnBidAdapter', function() {
     it('handles nobid responses', () => {
       const result = spec.interpretResponse(
         { body: serverResponse.noAd },
-
         bidRequests.banner
       );
-      expect(result.length).to.equal(1)
+      expect(result.length).to.equal(0);
+
+      const result2 = spec.interpretResponse(
+        { body: serverResponse.noAd2 },
+        bidRequests.banner
+      );
+      expect(result2.length).to.equal(0);
     })
   });
   describe('spec.getUserSyncs', function () {

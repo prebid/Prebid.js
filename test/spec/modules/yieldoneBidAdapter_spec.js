@@ -2,9 +2,9 @@ import { expect } from 'chai';
 import { spec } from 'modules/yieldoneBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
 
-const ENDPOINT = '//y.one.impact-ad.jp/h_bid';
-const USER_SYNC_URL = '//y.one.impact-ad.jp/push_sync';
-const VIDEO_PLAYER_URL = '//img.ak.impact-ad.jp/ic/pone/ivt/firstview/js/dac-video-prebid.min.js';
+const ENDPOINT = 'https://y.one.impact-ad.jp/h_bid';
+const USER_SYNC_URL = 'https://y.one.impact-ad.jp/push_sync';
+const VIDEO_PLAYER_URL = 'https://img.ak.impact-ad.jp/ic/pone/ivt/firstview/js/dac-video-prebid.min.js';
 
 describe('yieldoneBidAdapter', function() {
   const adapter = newBidder(spec);
@@ -100,7 +100,7 @@ describe('yieldoneBidAdapter', function() {
     let bidRequestBanner = [
       {
         'method': 'GET',
-        'url': '//y.one.impact-ad.jp/h_bid',
+        'url': 'https://y.one.impact-ad.jp/h_bid',
         'data': {
           'v': 'hb1',
           'p': '36891',
@@ -164,7 +164,7 @@ describe('yieldoneBidAdapter', function() {
     let bidRequestVideo = [
       {
         'method': 'GET',
-        'url': '//y.one.impact-ad.jp/h_bid',
+        'url': 'https://y.one.impact-ad.jp/h_bid',
         'data': {
           'v': 'hb1',
           'p': '41993',
