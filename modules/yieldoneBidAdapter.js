@@ -89,7 +89,7 @@ export const spec = {
         <script>
         let width =${bidResponse.width};
         let height =${bidResponse.height};
-        let adTag = \`${response.adTag.replace(/\\/g, "\\\\").replace(/\//g, '\\/').replace(/'/g, "\\'").replace(/"/g, '\\"')}\`;
+        let adTag = \`${response.adTag.replace(/\\/g, '\\\\').replace(/\//g, '\\/').replace(/'/g, "\\'").replace(/"/g, '\\"')}\`;
         let targetId ="${bidRequest.data.uc}";
         window.YONEPBViewable = {};
         window.YONEPBViewable.executed = false;
