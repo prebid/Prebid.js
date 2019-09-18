@@ -12,12 +12,12 @@
  * @property {string} siteKey
  * @property {string} pubKey
  * @property {string} url
- * @property {string} keyName
+ * @property {?string} keyName
  */
 
-import {config} from '../../src/config.js';
-import * as utils from '../../src/utils';
-import {submodule} from '../../src/hook';
+import {config} from '../src/config.js';
+import * as utils from '../src/utils';
+import {submodule} from '../src/hook';
 
 /** @type {string} */
 const MODULE_NAME = 'realTimeData';
@@ -47,6 +47,7 @@ export function addBrowsiTag(bptUrl) {
  */
 function collectData() {
   const win = window.top;
+  const doc = win.document;
   let historicalData = null;
   try {
     historicalData = JSON.parse(utils.getDataFromLocalStorage('__brtd'))
@@ -59,6 +60,7 @@ function collectData() {
       sk: _moduleParams.siteKey,
       sw: (win.screen && win.screen.width) || -1,
       sh: (win.screen && win.screen.height) || -1,
+      url: encodeURIComponent(`${doc.location.protocol}//${doc.location.host}${doc.location.pathname}`)
     },
     ...(historicalData && historicalData.pi ? {pi: historicalData.pi} : {}),
     ...(historicalData && historicalData.pv ? {pv: historicalData.pv} : {}),
@@ -76,13 +78,14 @@ function collectData() {
  */
 function sendDataToModule(adUnits) {
   return _waitForData
-    .then((_predictions) => {
-      if (!_predictions) {
-        resolve({})
+    .then((_predictionsData) => {
+      const _predictions = _predictionsData.p;
+      if (!_predictions || !Object.keys(_predictions).length) {
+        return ({})
       }
       const slots = getAllSlots();
       if (!slots) {
-        resolve({})
+        return ({})
       }
       let dataToResolve = adUnits.reduce((rp, cau) => {
         const adUnitCode = cau && cau.code;
@@ -94,13 +97,13 @@ function sendDataToModule(adUnits) {
           if (!isIdMatchingAdUnit(adUnitCode, slots, predictionData.w)) {
             return rp;
           }
-          rp[adUnitCode] = getKVObject(predictionData.p);
+          rp[adUnitCode] = getKVObject(predictionData.p, _predictionsData.kn);
         }
         return rp;
       }, {});
       return (dataToResolve);
     })
-    .catch(() => {
+    .catch((e) => {
       return ({});
     });
 }
@@ -115,12 +118,13 @@ function getAllSlots() {
 /**
  * get prediction and return valid object for key value set
  * @param {number} p
+ * @param {string?} keyName
  * @return {Object} key:value
  */
-function getKVObject(p) {
+function getKVObject(p, keyName) {
   const prValue = p < 0 ? 'NA' : (Math.floor(p * 10) / 10).toFixed(2);
   let prObject = {};
-  prObject[(_moduleParams['keyName'].toString())] = prValue.toString();
+  prObject[((_moduleParams['keyName'] || keyName).toString())] = prValue.toString();
   return prObject;
 }
 /**
@@ -149,7 +153,7 @@ function getPredictionsFromServer(url) {
     if (xmlhttp.readyState === 4 && xmlhttp.status === 200) {
       try {
         var data = JSON.parse(xmlhttp.responseText);
-        _resolvePromise(data.p);
+        _resolvePromise({p: data.p, kn: data.kn});
         addBrowsiTag(data.u);
       } catch (err) {
         utils.logError('unable to parse data');
@@ -158,12 +162,12 @@ function getPredictionsFromServer(url) {
   };
   xmlhttp.onloadend = function() {
     if (xmlhttp.status === 404) {
-      _resolvePromise(false);
+      _resolvePromise({});
       utils.logError('unable to get prediction data');
     }
   };
   xmlhttp.open('GET', url, true);
-  xmlhttp.onerror = function() { _resolvePromise(false) };
+  xmlhttp.onerror = function() { _resolvePromise({}) };
   xmlhttp.send();
 }
 
@@ -173,8 +177,8 @@ function getPredictionsFromServer(url) {
  * @return {string}
  */
 function serialize(obj) {
-  var str = [];
-  for (var p in obj) {
+  let str = [];
+  for (let p in obj) {
     if (obj.hasOwnProperty(p)) {
       str.push(encodeURIComponent(p) + '=' + encodeURIComponent(obj[p]));
     }
@@ -200,9 +204,13 @@ export const browsiSubmodule = {
 
 export function init(config) {
   const confListener = config.getConfig(MODULE_NAME, ({realTimeData}) => {
-    _moduleParams = realTimeData.params || {};
-    if (_moduleParams.siteKey && _moduleParams.pubKey && _moduleParams.url && _moduleParams.keyName &&
-      realTimeData.name && realTimeData.name.toLowerCase() === 'browsi') {
+    try {
+      _moduleParams = realTimeData.dataProviders && realTimeData.dataProviders.filter(
+        pr => pr.name && pr.name.toLowerCase() === 'browsi')[0].params;
+    } catch (e) {
+      _moduleParams = {};
+    }
+    if (_moduleParams.siteKey && _moduleParams.pubKey && _moduleParams.url) {
       confListener();
       collectData();
     } else {

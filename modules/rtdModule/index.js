@@ -35,8 +35,8 @@
 
 /**
  * @property
- * @summary timeout
- * @name ModuleConfig#timeout
+ * @summary auction delay
+ * @name ModuleConfig#auctionDelay
  * @type {number}
  */
 
@@ -45,13 +45,6 @@
  * @summary params for provide (sub module)
  * @name ModuleConfig#params
  * @type {Object}
- */
-
-/**
- * @property
- * @summary primary ad server only
- * @name ModuleConfig#primary_only
- * @type {boolean}
  */
 
 import {getGlobal} from '../../src/prebidGlobal';
@@ -64,8 +57,6 @@ import * as utils from '../../src/utils';
 const MODULE_NAME = 'realTimeData';
 /** @type {RtdSubmodule[]} */
 let subModules = [];
-/** @type {RtdSubmodule | null} */
-let _subModule = null;
 /** @type {ModuleConfig} */
 let _moduleConfig;
 
@@ -76,33 +67,17 @@ let _moduleConfig;
 export function attachRealTimeDataProvider(submodule) {
   subModules.push(submodule);
 }
-/**
- * get registered sub module
- * @returns {RtdSubmodule}
- */
-function getSubModule() {
-  if (!_moduleConfig.name) {
-    return null;
-  }
-  const subModule = subModules.filter(m => m.name === _moduleConfig.name)[0] || null;
-  if (!subModule) {
-    throw new Error('unable to use real time data module without provider');
-  }
-  return subModules.filter(m => m.name === _moduleConfig.name)[0] || null;
-}
 
 export function init(config) {
   const confListener = config.getConfig(MODULE_NAME, ({realTimeData}) => {
-    if (!realTimeData.name || typeof (realTimeData.auctionDelay) == 'undefined') {
+    if (!realTimeData.dataProviders || typeof (realTimeData.auctionDelay) == 'undefined') {
       utils.logError('missing parameters for real time module');
       return;
     }
     confListener(); // unsubscribe config listener
     _moduleConfig = realTimeData;
-    // get submodule
-    _subModule = getSubModule();
-    // delay bidding process only if primary ad server only is false
-    if (_moduleConfig['primary_only']) {
+    // delay bidding process only if auctionDelay > 0
+    if (!_moduleConfig.auctionDelay > 0) {
       getHook('bidsBackCallback').before(setTargetsAfterRequestBids);
     } else {
       getGlobal().requestBids.before(requestBidsHook);
@@ -115,17 +90,18 @@ export function init(config) {
  * @returns {Promise} promise race  - will return submodule config or false if time out
  */
 function getProviderData(adUnits) {
+  const promises = subModules.map(sm => sm.getData(adUnits));
+
   // promise for timeout
   const timeOutPromise = new Promise((resolve) => {
     setTimeout(() => {
-      resolve(false);
+      resolve({});
     }, _moduleConfig.auctionDelay)
   });
 
-  return Promise.race([
-    timeOutPromise,
-    _subModule.getData(adUnits)
-  ]);
+  return Promise.all(promises.map(p => {
+    return Promise.race([p, timeOutPromise]);
+  }));
 }
 
 /**
@@ -136,12 +112,41 @@ function getProviderData(adUnits) {
  */
 export function setTargetsAfterRequestBids(next, adUnits) {
   getProviderData(adUnits).then(data => {
-    if (data && Object.keys(data).length) { // utils.isEmpty
-      setDataForPrimaryAdServer(data);
+    if (data && Object.keys(data).length) {
+      const _mergedData = deepMerge(data);
+      if (Object.keys(_mergedData).length) {
+        setDataForPrimaryAdServer(_mergedData);
+      }
     }
     next(adUnits);
   }
   );
+}
+
+/**
+ * deep merge array of objects
+ * @param {array} arr - objects array
+ * @return {Object} merged object
+ */
+export function deepMerge(arr) {
+  if (!arr.length) {
+    return {};
+  }
+  return arr.reduce((merged, obj) => {
+    for (let key in obj) {
+      if (obj.hasOwnProperty(key)) {
+        if (!merged.hasOwnProperty(key)) merged[key] = obj[key];
+        else {
+          // duplicate key - merge values
+          const dp = obj[key];
+          for (let dk in dp) {
+            if (dp.hasOwnProperty(dk)) merged[key][dk] = dp[dk];
+          }
+        }
+      }
+    }
+    return merged;
+  }, {});
 }
 
 /**
@@ -153,10 +158,13 @@ export function setTargetsAfterRequestBids(next, adUnits) {
 export function requestBidsHook(fn, reqBidsConfigObj) {
   getProviderData(reqBidsConfigObj.adUnits || getGlobal().adUnits).then(data => {
     if (data && Object.keys(data).length) {
-      setDataForPrimaryAdServer(data);
-      addIdDataToAdUnitBids(reqBidsConfigObj.adUnits || getGlobal().adUnits, data);
+      const _mergedData = deepMerge(data);
+      if (Object.keys(_mergedData).length) {
+        setDataForPrimaryAdServer(_mergedData);
+        addIdDataToAdUnitBids(reqBidsConfigObj.adUnits || getGlobal().adUnits, _mergedData);
+      }
     }
-    return fn.call(this, reqBidsConfigObj.adUnits);
+    return fn.call(this, reqBidsConfigObj);
   });
 }
 
