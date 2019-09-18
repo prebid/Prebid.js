@@ -19,6 +19,16 @@
 
 /**
  * @function
+ * @summary performs action to refresh stored id (only one of Submodule#getId or Submodule#refreshId will be called)
+ * @name Submodule#refreshId
+ * @param {SubmoduleParams} configParams
+ * @param {ConsentData} consentData
+ * @param {Object|string} currentStoredId
+ * @return {function} a callback, the callback is called on the auction end event
+ */
+
+/**
+ * @function
  * @summary decode a stored value for passing to bid requests
  * @name Submodule#decode
  * @param {Object|string} value
@@ -341,6 +351,16 @@ function initSubmodules(submodules, consentData) {
           setStoredValue(submodule.config.storage, getIdResult);
           // cache decoded value (this is copied to every adUnit bid)
           submodule.idObj = submodule.submodule.decode(getIdResult);
+        }
+      }
+
+      if (typeof submodule.submodule.refreshId === 'function') {
+        // if defined, refreshId will return a function that will load an updated id to be stored for subsequent use
+        const refreshIdResult = submodule.submodule.refreshId(submodule.config.params, consentData, storedId);
+
+        // a function to be called later is expected, otherwise ignore
+        if (typeof refreshIdResult === 'function') {
+          submodule.callback = refreshIdResult;
         }
       }
     } else if (submodule.config.value) {

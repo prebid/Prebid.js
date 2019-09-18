@@ -582,5 +582,69 @@ describe('User ID', function() {
         done();
       }, {adUnits});
     });
+
+    it('should update id storage value if refreshId is defined', function(done) {
+      const conf = {
+        usersync: {
+          syncDelay: 0,
+          userIds: [{
+            name: 'mockId', storage: { name: 'MOCKID', type: 'cookie' }
+          }]
+        }
+      };
+
+      const mockSubmodule = {
+        name: 'mockId',
+        decode: function(value) {
+          return {
+            'mid': value['MOCKID']
+          };
+        },
+        getId: function() {
+          return {'MOCKID': '1234'}
+        },
+        refreshId: function() {
+          const id = {'MOCKID': '5678'};
+          return function(cb) {
+            cb(id);
+          }
+        }
+      };
+
+      utils.setCookie('MOCKID', JSON.stringify({'MOCKID': '1234'}), new Date(Date.now() + 5000).toUTCString());
+      setSubmoduleRegistry([]);
+      init(config);
+      config.setConfig(conf);
+      attachIdSystem(mockSubmodule);
+
+      // first request
+      requestBidsHook(function() {
+        adUnits.forEach(unit => {
+          unit.bids.forEach(bid => {
+            // check MockId data was copied to bid
+            expect(bid).to.have.deep.nested.property('userId.mid');
+            expect(bid.userId.mid).to.equal('1234');
+          });
+        });
+
+        setSubmoduleRegistry([]);
+        init(config);
+        config.setConfig(conf);
+        attachIdSystem(mockSubmodule);
+
+        // second request, should get the updated value
+        requestBidsHook(function() {
+          adUnits.forEach(unit => {
+            unit.bids.forEach(bid => {
+              // check MockId data was copied to bid
+              expect(bid).to.have.deep.nested.property('userId.mid');
+              expect(bid.userId.mid).to.equal('5678');
+            });
+          });
+          utils.setCookie('MOCKID', '', EXPIRED_COOKIE_DATE);
+          done();
+        }, {adUnits});
+      }, {adUnits});
+    });
   })
 });
