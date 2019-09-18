@@ -177,7 +177,6 @@ function interpretResponse(serverResponse, bidRequest) {
   let bidResponses = [];
   if (serverResponse && serverResponse.body) {
     if (serverResponse.error) {
-      console.log('Error: ' + serverResponse.error);
       utils.logError('Error: ' + serverResponse.error);
       return bidResponses;
     } else {
@@ -192,8 +191,7 @@ function interpretResponse(serverResponse, bidRequest) {
             bidResponse.requestId = bidRequest.data.bidId;
             bidResponse.bidderCode = BIDDER_CODE;
             bidResponse.ad = '';
-            // bidResponse.cpm = parseFloat(sspXml.getElementsByTagName('Pricing')[0].textContent);
-            bidResponse.cpm = 2.87;
+            bidResponse.cpm = parseFloat(sspXml.getElementsByTagName('Pricing')[0].textContent);
             bidResponse.width = bidRequest.data.bidWidth;
             bidResponse.height = bidRequest.data.bidHeight;
             bidResponse.ttl = BID_TTL_DEFAULT;
@@ -201,30 +199,23 @@ function interpretResponse(serverResponse, bidRequest) {
             bidResponse.currency = sspXml.getElementsByTagName('Pricing')[0].getAttribute('currency');
             bidResponse.netRevenue = true;
             bidResponse.vastUrl = sspUrl;
-            bidResponse.vastXml = sspXmlString.replace(/USD\"\>0.0/, 'USD">2.87');
+            bidResponse.vastXml = sspXmlString;
             bidResponse.mediaType = VIDEO;
 
             bidResponses.push(bidResponse);
           } else {
-            console.log('Error: Server response contained invalid XML');
             utils.logError('Error: Server response contained invalid XML');
           }
         } else {
-          console.log('Error: Could not associate bid request to server response');
           utils.logError('Error: Could not associate bid request to server response');
         }
       } catch (e) {
-        console.log('Error: Could not interpret server response');
         utils.logError('Error: Could not interpret server response');
       }
     }
   } else {
-    console.log('Error: No server response or server response was empty for the requested URL');
     utils.logError('Error: No server response or server response was empty for the requested URL');
   }
-
-  console.log('bidResponses');
-  console.log(bidResponses);
 
   return bidResponses;
 }
