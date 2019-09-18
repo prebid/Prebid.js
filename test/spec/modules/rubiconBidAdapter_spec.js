@@ -1157,12 +1157,13 @@ describe('the rubicon adapter', function () {
           expect(post.ext.prebid.cache.vastxml.returnCreative).to.equal(false)
         });
 
-        it('should send request with proper ad position', function () {
+        it('should not send pos for bad param entry', function () {
           createVideoBidderRequest();
           let positionBidderRequest = utils.deepClone(bidderRequest);
-          positionBidderRequest.bids[0].mediaTypes.video.pos = 1;
+          delete positionBidderRequest.bids[0].mediaTypes.video.pos;
+	  positionBidderRequest.bids[0].params.position = 'bad';
           let [request] = spec.buildRequests(positionBidderRequest.bids, positionBidderRequest);
-          expect(request.data.imp[0].video.pos).to.equal(1);
+          expect(request.data.imp[0].video.pos).to.equal(undefined);
         });
 
         it('should send correct bidfloor to PBS', function() {
@@ -1199,7 +1200,7 @@ describe('the rubicon adapter', function () {
           positionBidderRequest.bids[0].params.position = undefined;
           positionBidderRequest.bids[0].mediaTypes.video.pos = undefined;
           let [request] = spec.buildRequests(positionBidderRequest.bids, positionBidderRequest);
-          expect(request.data.imp[0].video.pos).to.equal(0);
+          expect(request.data.imp[0].video.pos).to.equal(undefined);
 
           positionBidderRequest = utils.deepClone(bidderRequest);
           positionBidderRequest.bids[0].params.position = 'atf'
@@ -1217,7 +1218,7 @@ describe('the rubicon adapter', function () {
           positionBidderRequest.bids[0].params.position = 'foobar';
           positionBidderRequest.bids[0].mediaTypes.video.pos = undefined;
           [request] = spec.buildRequests(positionBidderRequest.bids, positionBidderRequest);
-          expect(request.data.imp[0].video.pos).to.equal(0);
+          expect(request.data.imp[0].video.pos).to.equal(undefined);
         });
 
         it('should properly enforce video.context to be either instream or outstream', function () {
