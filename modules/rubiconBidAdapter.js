@@ -408,6 +408,7 @@ export const spec = {
       'rf': _getPageUrl(bidRequest, bidderRequest)
     };
 
+    // add p_pos only if specified and valid
     if (params.position === 'atf' || params.position === 'btf') {
       data['p_pos'] = params.position;
     }
