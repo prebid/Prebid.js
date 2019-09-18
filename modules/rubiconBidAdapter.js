@@ -395,7 +395,6 @@ export const spec = {
       'zone_id': params.zoneId,
       'size_id': parsedSizes[0],
       'alt_size_ids': parsedSizes.slice(1).join(',') || undefined,
-      'p_pos': params.position === 'atf' || params.position === 'btf' ? params.position : 'unknown',
       'rp_floor': (params.floor = parseFloat(params.floor)) > 0.01 ? params.floor : 0.01,
       'rp_secure': isSecure() ? '1' : '0',
       'tk_flint': `${configIntType || DEFAULT_INTEGRATION}_v$prebid.version$`,
@@ -408,6 +407,10 @@ export const spec = {
       'tg_fl.eid': bidRequest.code,
       'rf': _getPageUrl(bidRequest, bidderRequest)
     };
+
+    if (params.position === 'atf' || params.position === 'btf') {
+      data['p_pos'] = params.position;
+    }
 
     if ((bidRequest.userId || {}).tdid) {
       data['tpid_tdid'] = bidRequest.userId.tdid;

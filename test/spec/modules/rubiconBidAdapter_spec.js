@@ -353,6 +353,28 @@ describe('the rubicon adapter', function () {
           });
         });
 
+        it('should not send p_pos to AE if not params.position specified', function() {
+	      var noposRequest = utils.deepClone(bidderRequest);
+	      delete noposRequest.bids[0].params.position;
+
+	      let [request] = spec.buildRequests(noposRequest.bids, noposRequest);
+	      let data = parseQuery(request.data);
+
+	      expect(data['site_id']).to.equal('70608');
+	      expect(data['p_pos']).to.equal(undefined);
+        });
+
+        it('should not send p_pos to AE if not params.position is invalid', function() {
+	      var badposRequest = utils.deepClone(bidderRequest);
+	      badposRequest.bids[0].params.position = 'bad';
+
+	      let [request] = spec.buildRequests(badposRequest.bids, badposRequest);
+	      let data = parseQuery(request.data);
+
+	      expect(data['site_id']).to.equal('70608');
+	      expect(data['p_pos']).to.equal(undefined);
+        });
+
         it('ad engine query params should be ordered correctly', function () {
           sandbox.stub(Math, 'random').callsFake(() => 0.1);
           let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
