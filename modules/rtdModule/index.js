@@ -9,10 +9,10 @@
 
 /**
  * @function
- * @summary return real time data
+ * @summary return teal time data
  * @name RtdSubmodule#getData
- * @param {AdUnit[]} adUnits
- * @param {function} onDone
+ * @param {adUnit[]} adUnits
+ * @return {Promise}
  */
 
 /**
@@ -70,15 +70,12 @@ export function attachRealTimeDataProvider(submodule) {
 
 export function init(config) {
   const confListener = config.getConfig(MODULE_NAME, ({realTimeData}) => {
-    if (!realTimeData.dataProviders) {
+    if (!realTimeData.dataProviders || typeof (realTimeData.auctionDelay) == 'undefined') {
       utils.logError('missing parameters for real time module');
       return;
     }
     confListener(); // unsubscribe config listener
     _moduleConfig = realTimeData;
-    if (typeof (_moduleConfig.auctionDelay) === 'undefined') {
-      _moduleConfig.auctionDelay = 0;
-    }
     // delay bidding process only if auctionDelay > 0
     if (!_moduleConfig.auctionDelay > 0) {
       getHook('bidsBackCallback').before(setTargetsAfterRequestBids);
@@ -90,33 +87,21 @@ export function init(config) {
 
 /**
  * get data from sub module
- * @param {AdUnit[]} adUnits received from auction
- * @param {function} callback callback function on data received
+ * @returns {Promise} promise race  - will return submodule config or false if time out
  */
-function getProviderData(adUnits, callback) {
-  const callbackExpected = subModules.length;
-  let dataReceived = [];
-  let processDone = false;
-  const dataWaitTimeout = setTimeout(() => {
-    processDone = true;
-    callback(dataReceived);
-  }, _moduleConfig.auctionDelay);
+function getProviderData(adUnits) {
+  const promises = subModules.map(sm => sm.getData(adUnits));
 
-  subModules.forEach(sm => {
-    sm.getData(adUnits, onDataReceived);
+  // promise for timeout
+  const timeOutPromise = new Promise((resolve) => {
+    setTimeout(() => {
+      resolve({});
+    }, _moduleConfig.auctionDelay)
   });
 
-  function onDataReceived(data) {
-    if (processDone) {
-      return
-    }
-    dataReceived.push(data);
-    if (dataReceived.length === callbackExpected) {
-      processDone = true;
-      clearTimeout(dataWaitTimeout);
-      callback(dataReceived);
-    }
-  }
+  return Promise.all(promises.map(p => {
+    return Promise.race([p, timeOutPromise]);
+  }));
 }
 
 /**
@@ -126,7 +111,7 @@ function getProviderData(adUnits, callback) {
  * @param {AdUnit[]} adUnits received from auction
  */
 export function setTargetsAfterRequestBids(next, adUnits) {
-  getProviderData(adUnits, (data) => {
+  getProviderData(adUnits).then(data => {
     if (data && Object.keys(data).length) {
       const _mergedData = deepMerge(data);
       if (Object.keys(_mergedData).length) {
@@ -134,7 +119,8 @@ export function setTargetsAfterRequestBids(next, adUnits) {
       }
     }
     next(adUnits);
-  });
+  }
+  );
 }
 
 /**
@@ -143,7 +129,7 @@ export function setTargetsAfterRequestBids(next, adUnits) {
  * @return {Object} merged object
  */
 export function deepMerge(arr) {
-  if (!Array.isArray(arr) || !arr.length) {
+  if (!arr.length) {
     return {};
   }
   return arr.reduce((merged, obj) => {
@@ -170,7 +156,7 @@ export function deepMerge(arr) {
  * @param {Object} reqBidsConfigObj - request bids object
  */
 export function requestBidsHook(fn, reqBidsConfigObj) {
-  getProviderData(reqBidsConfigObj.adUnits || getGlobal().adUnits, (data) => {
+  getProviderData(reqBidsConfigObj.adUnits || getGlobal().adUnits).then(data => {
     if (data && Object.keys(data).length) {
       const _mergedData = deepMerge(data);
       if (Object.keys(_mergedData).length) {
@@ -202,7 +188,7 @@ function addIdDataToAdUnitBids(adUnits, data) {
   adUnits.forEach(adUnit => {
     adUnit.bids = adUnit.bids.map(bid => {
       const rd = data[adUnit.code] || {};
-      return Object.assign(bid, {realTimeData: rd});
+      return Object.assign(bid, rd);
     })
   });
 }

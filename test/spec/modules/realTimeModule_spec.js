@@ -1,16 +1,16 @@
 import {
   init,
   requestBidsHook,
-  attachRealTimeDataProvider,
-  setTargetsAfterRequestBids
-} from 'modules/rtdModules/index';
+  setTargetsAfterRequestBids,
+  deepMerge
+} from 'modules/rtdModule/index';
 import {
   init as browsiInit,
   addBrowsiTag,
-  isIdMatchingAdUnit
-} from 'modules/rtdModules/browsiProvider';
+  isIdMatchingAdUnit,
+  _resolvePromise
+} from 'modules/browsiRtdProvider';
 import {config} from 'src/config';
-import {browsiSubmodule, _resolvePromise} from 'modules/rtdModules/browsiProvider';
 import {makeSlot} from '../integration/faker/googletag';
 
 let expect = require('chai').expect;
@@ -18,19 +18,22 @@ let expect = require('chai').expect;
 describe('Real time module', function() {
   const conf = {
     'realTimeData': {
-      'name': 'browsi',
       'auctionDelay': 1500,
-      'params': {
-        'url': 'testUrl.com',
-        'siteKey': 'testKey',
-        'pubKey': 'testPub',
-        'keyName': 'bv'
-      }
+      dataProviders: [{
+        'name': 'browsi',
+        'params': {
+          'url': 'testUrl.com',
+          'siteKey': 'testKey',
+          'pubKey': 'testPub',
+          'keyName': 'bv'
+        }
+      }]
+
     }
   };
 
   const predictions =
-    {
+    {p: {
       'browsiAd_2': {
         'w': [
           '/57778053/Browsi_Demo_Low',
@@ -52,6 +55,7 @@ describe('Real time module', function() {
         ],
         'p': 0.85
       }
+    }
     };
 
   function getAdUnitMock(code = 'adUnit-code') {
@@ -83,22 +87,20 @@ describe('Real time module', function() {
 
     it('check module using bidsBackCallback', function () {
       let adUnits1 = [getAdUnitMock('browsiAd_1')];
-      _resolvePromise(predictions);
-      attachRealTimeDataProvider(browsiSubmodule);
       init(config);
       browsiInit(config);
       config.setConfig(conf);
+      _resolvePromise(predictions);
 
       // set slot
       const slots = createSlots();
       window.googletag.pubads().setSlots(slots);
 
-      setTargetsAfterRequestBids(afterBidHook, {adUnits: adUnits1});
+      setTargetsAfterRequestBids(afterBidHook, adUnits1);
       function afterBidHook() {
         slots.map(s => {
           let targeting = [];
           s.getTargeting().map(value => {
-            console.log('in slots map');
             let temp = [];
             temp.push(Object.keys(value).toString());
             temp.push(value[Object.keys(value)]);
@@ -135,6 +137,44 @@ describe('Real time module', function() {
           expect(targeting.indexOf('bv')).to.be.greaterThan(-1);
         });
       }
+    });
+
+    it('check object dep merger', function () {
+      const obj1 = {
+        id1: {
+          key: 'value',
+          key2: 'value2'
+        },
+        id2: {
+          k: 'v'
+        }
+      };
+      const obj2 = {
+        id1: {
+          key3: 'value3'
+        }
+      };
+      const obj3 = {
+        id3: {
+          key: 'value'
+        }
+      };
+      const expected = {
+        id1: {
+          key: 'value',
+          key2: 'value2',
+          key3: 'value3'
+        },
+        id2: {
+          k: 'v'
+        },
+        id3: {
+          key: 'value'
+        }
+      };
+
+      const merged = deepMerge([obj1, obj2, obj3]);
+      assert.deepEqual(expected, merged);
     });
 
     it('check browsi sub module', function () {
