@@ -31,7 +31,7 @@ function receiveMessage(ev) {
       return bid.adId === data.adId;
     });
 
-    if (data.message === 'Prebid Request') {
+    if (adObject && data.message === 'Prebid Request') {
       _sendAdToCreative(adObject, data.adServerDomain, ev.source);
 
       // save winning bids
@@ -45,7 +45,7 @@ function receiveMessage(ev) {
     //   message: 'Prebid Native',
     //   adId: '%%PATTERN:hb_adid%%'
     // }), '*');
-    if (data.message === 'Prebid Native') {
+    if (adObject && data.message === 'Prebid Native') {
       if (data.action === 'assetRequest') {
         const message = getAssetMessage(data, adObject);
         ev.source.postMessage(JSON.stringify(message), ev.origin);
@@ -81,7 +81,7 @@ export function _sendAdToCreative(adObject, remoteDomain, source) {
 
 function resizeRemoteCreative({ adUnitCode, width, height }) {
   // resize both container div + iframe
-  ['div', 'iframe'].forEach(elmType => {
+  ['div:last-child', 'div:last-child iframe'].forEach(elmType => {
     let element = getElementByAdUnit(elmType);
     if (element) {
       let elementStyle = element.style;
