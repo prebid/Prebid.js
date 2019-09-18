@@ -1185,18 +1185,17 @@ describe('the rubicon adapter', function () {
           expect(request.data.imp[0]).to.not.haveOwnProperty('bidfloor');
         });
 
-        it('should send request with proper ad position when mediaTypes.video.pos is not defined', function () {
+        it('should send request with proper ad position', function () {
           createVideoBidderRequest();
           let positionBidderRequest = utils.deepClone(bidderRequest);
           positionBidderRequest.bids[0].mediaTypes.video.pos = 1;
           let [request] = spec.buildRequests(positionBidderRequest.bids, positionBidderRequest);
           expect(request.data.imp[0].video.pos).to.equal(1);
 
-          createVideoBidderRequest();
-          let positionBidderRequest = utils.deepClone(bidderRequest);
+          positionBidderRequest = utils.deepClone(bidderRequest);
           positionBidderRequest.bids[0].params.position = undefined;
           positionBidderRequest.bids[0].mediaTypes.video.pos = undefined;
-          let [request] = spec.buildRequests(positionBidderRequest.bids, positionBidderRequest);
+          [request] = spec.buildRequests(positionBidderRequest.bids, positionBidderRequest);
           expect(request.data.imp[0].video.pos).to.equal(undefined);
 
           positionBidderRequest = utils.deepClone(bidderRequest);
