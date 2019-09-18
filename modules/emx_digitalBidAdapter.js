@@ -7,7 +7,7 @@ import includes from 'core-js/library/fn/array/includes';
 const BIDDER_CODE = 'emx_digital';
 const ENDPOINT = 'hb.emxdgt.com';
 const RENDERER_URL = '//js.brealtime.com/outstream/1.30.0/bundle.js';
-const ADAPTER_VERSION = '1.40.2';
+const ADAPTER_VERSION = '1.40.3';
 const DEFAULT_CUR = 'USD';
 
 export const emxAdapter = {
@@ -103,7 +103,15 @@ export const emxAdapter = {
     return renderer;
   },
   buildVideo: (bid) => {
-    let videoObj = Object.assign(bid.mediaTypes.video, bid.params.video)
+    let videoObj = Object.assign(bid.mediaTypes.video, bid.params.video);
+
+    if (utils.isArray(bid.mediaTypes.video.playerSize[0])) {
+      videoObj['w'] = bid.mediaTypes.video.playerSize[0][0];
+      videoObj['h'] = bid.mediaTypes.video.playerSize[0][1];
+    } else {
+      videoObj['w'] = bid.mediaTypes.video.playerSize[0];
+      videoObj['h'] = bid.mediaTypes.video.playerSize[1];
+    }
     return emxAdapter.cleanProtocols(videoObj);
   },
   parseResponse: (bidResponseAdm) => {
