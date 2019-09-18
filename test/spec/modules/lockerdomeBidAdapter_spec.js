@@ -2,11 +2,11 @@ import { expect } from 'chai';
 import { spec } from '../../../modules/lockerdomeBidAdapter';
 import * as utils from 'src/utils';
 
-describe('LockerDomeAdapter', () => {
+describe('LockerDomeAdapter', function () {
   const bidRequests = [{
     bidder: 'lockerdome',
     params: {
-      adUnitId: 10809467961050726
+      adUnitId: 'LD10809467961050726'
     },
     mediaTypes: {
       banner: {
@@ -22,7 +22,7 @@ describe('LockerDomeAdapter', () => {
   }, {
     bidder: 'lockerdome',
     params: {
-      adUnitId: 9434769725128806
+      adUnitId: 'LD9434769725128806'
     },
     mediaTypes: {
       banner: {
@@ -37,20 +37,20 @@ describe('LockerDomeAdapter', () => {
     auctionId: 'd4c83108-615d-4c2c-9384-dac9ffd4fd72'
   }];
 
-  describe('isBidRequestValid', () => {
-    it('should return true if the adUnitId parameter is present', () => {
+  describe('isBidRequestValid', function () {
+    it('should return true if the adUnitId parameter is present', function () {
       expect(spec.isBidRequestValid(bidRequests[0])).to.be.true;
       expect(spec.isBidRequestValid(bidRequests[1])).to.be.true;
     });
-    it('should return false if the adUnitId parameter is not present', () => {
+    it('should return false if the adUnitId parameter is not present', function () {
       let bidRequest = utils.deepClone(bidRequests[0]);
       delete bidRequest.params.adUnitId;
       expect(spec.isBidRequestValid(bidRequest)).to.be.false;
     });
   });
 
-  describe('buildRequests', () => {
-    it('should generate a valid single POST request for multiple bid requests', () => {
+  describe('buildRequests', function () {
+    it('should generate a valid single POST request for multiple bid requests', function () {
       const request = spec.buildRequests(bidRequests);
       expect(request.method).to.equal('POST');
       expect(request.url).to.equal('https://lockerdome.com/ladbid/prebid');
@@ -65,19 +65,21 @@ describe('LockerDomeAdapter', () => {
       expect(bids).to.have.lengthOf(2);
 
       expect(bids[0].requestId).to.equal('2652ca954bce9');
-      expect(bids[0].adUnitId).to.equal(10809467961050726);
+      expect(bids[0].adUnitCode).to.equal('ad-1');
+      expect(bids[0].adUnitId).to.equal('LD10809467961050726');
       expect(bids[0].sizes).to.have.lengthOf(1);
       expect(bids[0].sizes[0][0]).to.equal(300);
       expect(bids[0].sizes[0][1]).to.equal(250);
 
       expect(bids[1].requestId).to.equal('4510f2834773ce');
-      expect(bids[1].adUnitId).to.equal(9434769725128806);
+      expect(bids[1].adUnitCode).to.equal('ad-2');
+      expect(bids[1].adUnitId).to.equal('LD9434769725128806');
       expect(bids[1].sizes).to.have.lengthOf(1);
       expect(bids[1].sizes[0][0]).to.equal(300);
       expect(bids[1].sizes[0][1]).to.equal(600);
     });
 
-    it('should add GDPR data to request if available', () => {
+    it('should add GDPR data to request if available', function () {
       const bidderRequest = {
         gdprConsent: {
           consentString: 'AAABBB',
@@ -93,13 +95,13 @@ describe('LockerDomeAdapter', () => {
     });
   });
 
-  describe('interpretResponse', () => {
-    it('should return an empty array if an invalid response is passed', () => {
+  describe('interpretResponse', function () {
+    it('should return an empty array if an invalid response is passed', function () {
       const interpretedResponse = spec.interpretResponse({ body: {} });
       expect(interpretedResponse).to.be.an('array').that.is.empty;
     });
 
-    it('should return valid response when passed valid server response', () => {
+    it('should return valid response when passed valid server response', function () {
       const serverResponse = {
         body: {
           bids: [{

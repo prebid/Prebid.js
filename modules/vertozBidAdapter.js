@@ -1,5 +1,5 @@
-import * as utils from 'src/utils';
-import { registerBidder } from 'src/adapters/bidderFactory';
+import * as utils from '../src/utils';
+import { registerBidder } from '../src/adapters/bidderFactory';
 const BIDDER_CODE = 'vertoz';
 const BASE_URI = '//hb.vrtzads.com/vzhbidder/bid?';
 
@@ -74,7 +74,7 @@ export const spec = {
         mediaType: 'banner',
         currency: 'USD',
         dealId: null,
-        creativeId: null,
+        creativeId: bidRespObj.bid,
         ttl: 300,
         ad: bidRespObj.ad + utils.createTrackPixelHtml(decodeURIComponent(bidRespObj.nurl))
       };

@@ -2,7 +2,7 @@ import {expect} from 'chai';
 import {spec} from 'modules/rtbdemandadkBidAdapter';
 import * as utils from 'src/utils';
 
-describe('rtbdemandadk adapter', () => {
+describe('rtbdemandadk adapter', function () {
   const bid1_zone1 = {
       bidder: 'rtbdemandadk',
       bidId: 'Bid_01',
@@ -107,29 +107,29 @@ describe('rtbdemandadk adapter', () => {
       }
     };
 
-  describe('input parameters validation', () => {
-    it('empty request shouldn\'t generate exception', () => {
+  describe('input parameters validation', function () {
+    it('empty request shouldn\'t generate exception', function () {
       expect(spec.isBidRequestValid({
         bidderCode: 'rtbdemandadk'
       })).to.be.equal(false);
     });
 
-    it('request without zone shouldn\'t issue a request', () => {
+    it('request without zone shouldn\'t issue a request', function () {
       expect(spec.isBidRequestValid(bid_without_zone)).to.be.equal(false);
     });
 
-    it('request without host shouldn\'t issue a request', () => {
+    it('request without host shouldn\'t issue a request', function () {
       expect(spec.isBidRequestValid(bid_without_host)).to.be.equal(false);
     });
 
-    it('empty request shouldn\'t generate exception', () => {
+    it('empty request shouldn\'t generate exception', function () {
       expect(spec.isBidRequestValid(bid_with_wrong_zoneId)).to.be.equal(false);
     });
   });
 
-  describe('banner request building', () => {
+  describe('banner request building', function () {
     let bidRequest;
-    before(() => {
+    before(function () {
       let wmock = sinon.stub(utils, 'getTopWindowLocation').callsFake(() => ({
         protocol: 'https:',
         hostname: 'example.com',
@@ -144,33 +144,33 @@ describe('rtbdemandadk adapter', () => {
       dntmock.restore();
     });
 
-    it('should be a first-price auction', () => {
+    it('should be a first-price auction', function () {
       expect(bidRequest).to.have.property('at', 1);
     });
 
-    it('should have banner object', () => {
+    it('should have banner object', function () {
       expect(bidRequest.imp[0]).to.have.property('banner');
     });
 
-    it('should have w/h', () => {
+    it('should have w/h', function () {
       expect(bidRequest.imp[0].banner).to.have.property('format');
       expect(bidRequest.imp[0].banner.format).to.be.eql([{w: 300, h: 250}, {w: 300, h: 200}]);
     });
 
-    it('should respect secure connection', () => {
+    it('should respect secure connection', function () {
       expect(bidRequest.imp[0]).to.have.property('secure', 1);
     });
 
-    it('should have tagid', () => {
+    it('should have tagid', function () {
       expect(bidRequest.imp[0]).to.have.property('tagid', 'ad-unit-1');
     });
 
-    it('should create proper site block', () => {
+    it('should create proper site block', function () {
       expect(bidRequest.site).to.have.property('domain', 'example.com');
       expect(bidRequest.site).to.have.property('page', 'https://example.com/index.html');
     });
 
-    it('should fill device with caller macro', () => {
+    it('should fill device with caller macro', function () {
       expect(bidRequest).to.have.property('device');
       expect(bidRequest.device).to.have.property('ip', 'caller');
       expect(bidRequest.device).to.have.property('ua', 'caller');
@@ -178,37 +178,37 @@ describe('rtbdemandadk adapter', () => {
     });
   });
 
-  describe('video request building', () => {
+  describe('video request building', function () {
     let bidRequest;
 
-    before(() => {
+    before(function () {
       let request = spec.buildRequests([bid_video])[0];
       bidRequest = JSON.parse(request.data.r);
     });
 
-    it('should have video object', () => {
+    it('should have video object', function () {
       expect(bidRequest.imp[0]).to.have.property('video');
     });
 
-    it('should have h/w', () => {
+    it('should have h/w', function () {
       expect(bidRequest.imp[0].video).to.have.property('w', 640);
       expect(bidRequest.imp[0].video).to.have.property('h', 480);
     });
 
-    it('should have tagid', () => {
+    it('should have tagid', function () {
       expect(bidRequest.imp[0]).to.have.property('tagid', 'ad-unit-1');
     });
   });
 
-  describe('requests routing', () => {
-    it('should issue a request for each host', () => {
+  describe('requests routing', function () {
+    it('should issue a request for each host', function () {
       let pbRequests = spec.buildRequests([bid1_zone1, bid3_host2]);
       expect(pbRequests).to.have.length(2);
       expect(pbRequests[0].url).to.have.string(`//${bid1_zone1.params.host}/`);
       expect(pbRequests[1].url).to.have.string(`//${bid3_host2.params.host}/`);
     });
 
-    it('should issue a request for each zone', () => {
+    it('should issue a request for each zone', function () {
       let pbRequests = spec.buildRequests([bid1_zone1, bid2_zone2]);
       expect(pbRequests).to.have.length(2);
       expect(pbRequests[0].data.zone).to.be.equal(bid1_zone1.params.zoneId);
@@ -216,8 +216,8 @@ describe('rtbdemandadk adapter', () => {
     });
   });
 
-  describe('responses processing', () => {
-    it('should return fully-initialized banner bid-response', () => {
+  describe('responses processing', function () {
+    it('should return fully-initialized banner bid-response', function () {
       let request = spec.buildRequests([bid1_zone1])[0];
       let resp = spec.interpretResponse({body: bidResponse1}, request)[0];
       expect(resp).to.have.property('requestId', 'Bid_01');
@@ -232,7 +232,7 @@ describe('rtbdemandadk adapter', () => {
       expect(resp.ad).to.have.string('<!-- admarkup here -->');
     });
 
-    it('should return fully-initialized video bid-response', () => {
+    it('should return fully-initialized video bid-response', function () {
       let request = spec.buildRequests([bid_video])[0];
       let resp = spec.interpretResponse({body: videoBidResponse}, request)[0];
       expect(resp).to.have.property('requestId', 'Bid_Video');
@@ -243,20 +243,20 @@ describe('rtbdemandadk adapter', () => {
       expect(resp.height).to.equal(480);
     });
 
-    it('should add nurl as pixel for banner response', () => {
+    it('should add nurl as pixel for banner response', function () {
       let request = spec.buildRequests([bid1_zone1])[0];
       let resp = spec.interpretResponse({body: bidResponse1}, request)[0];
       let expectedNurl = bidResponse1.seatbid[0].bid[0].nurl + '&px=1';
       expect(resp.ad).to.have.string(expectedNurl);
     });
 
-    it('should handle bidresponse with user-sync only', () => {
+    it('should handle bidresponse with user-sync only', function () {
       let request = spec.buildRequests([bid1_zone1])[0];
       let resp = spec.interpretResponse({body: usersyncOnlyResponse}, request);
       expect(resp).to.have.length(0);
     });
 
-    it('should perform usersync', () => {
+    it('should perform usersync', function () {
       let syncs = spec.getUserSyncs({iframeEnabled: false}, [{body: bidResponse1}]);
       expect(syncs).to.have.length(0);
       syncs = spec.getUserSyncs({iframeEnabled: true}, [{body: bidResponse1}]);

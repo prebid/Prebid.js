@@ -1,7 +1,7 @@
-import * as utils from 'src/utils';
-import {BANNER} from 'src/mediaTypes';
-import {registerBidder} from 'src/adapters/bidderFactory';
-import {config} from 'src/config';
+import * as utils from '../src/utils';
+import {BANNER} from '../src/mediaTypes';
+import {registerBidder} from '../src/adapters/bidderFactory';
+import {config} from '../src/config';
 
 const BIDDER_CODE = 'arteebee';
 
@@ -96,7 +96,7 @@ function makeRtbRequest(req, bidderRequest) {
     'tmax': config.getConfig('bidderTimeout')
   };
 
-  if (req.params.coppa) {
+  if (config.getConfig('coppa') === true || req.params.coppa) {
     rtbReq.regs = {coppa: 1};
   }
 

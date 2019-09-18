@@ -2,9 +2,9 @@
  * vuble.js - Vuble Prebid Analytics Adapter
  */
 
-import adapter from 'src/AnalyticsAdapter';
-import adaptermanager from 'src/adaptermanager';
-import CONSTANTS from 'src/constants.json';
+import adapter from '../src/AnalyticsAdapter';
+import adapterManager from '../src/adapterManager';
+import CONSTANTS from '../src/constants.json';
 import {ajax} from '../src/ajax';
 import * as utils from '../src/utils';
 
@@ -78,7 +78,7 @@ vubleAnalytics.enableAnalytics = config => {
   vubleAnalytics.originEnableAnalytics(config);
 };
 
-adaptermanager.registerAnalyticsAdapter({
+adapterManager.registerAnalyticsAdapter({
   adapter: vubleAnalytics,
   code: 'vuble'
 });

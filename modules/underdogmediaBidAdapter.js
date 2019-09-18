@@ -1,6 +1,6 @@
-import * as utils from 'src/utils';
-import { config } from 'src/config';
-import { registerBidder } from 'src/adapters/bidderFactory';
+import * as utils from '../src/utils';
+import { config } from '../src/config';
+import { registerBidder } from '../src/adapters/bidderFactory';
 const BIDDER_CODE = 'underdogmedia';
 const UDM_ADAPTER_VERSION = '1.13V';
 const UDM_VENDOR_ID = '159';
@@ -66,14 +66,14 @@ export const spec = {
           mid.useCount = 0;
         }
 
-        var size_not_found = true;
+        var sizeNotFound = true;
         utils.parseSizesInput(bidParam.sizes).forEach(size => {
           if (size === mid.width + 'x' + mid.height) {
-            size_not_found = false;
+            sizeNotFound = false;
           }
         });
 
-        if (size_not_found) {
+        if (sizeNotFound) {
           return;
         }
 
