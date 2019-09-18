@@ -300,15 +300,15 @@ describe('emx_digital Adapter', function () {
       bidRequestWithVideo[0].mediaTypes = {
         video: {
           context: 'instream',
-          playerSize: [640, 480]
+          playerSize: [[640, 480]]
         },
       };
       bidRequestWithVideo[0].params.video = {};
       let request = spec.buildRequests(bidRequestWithVideo, bidderRequest);
       const data = JSON.parse(request.data);
       expect(data.imp[0].video).to.exist.and.to.be.a('object');
-      expect(data.imp[0].video.h).to.equal(bidRequestWithVideo[0].mediaTypes.video.playerSize[0][0]);
-      expect(data.imp[0].video.w).to.equal(bidRequestWithVideo[0].mediaTypes.video.playerSize[0][1]);
+      expect(data.imp[0].video.w).to.equal(bidRequestWithVideo[0].mediaTypes.video.playerSize[0][0]);
+      expect(data.imp[0].video.h).to.equal(bidRequestWithVideo[0].mediaTypes.video.playerSize[0][1]);
     });
 
     it('builds correctly formatted request video object for outstream', function () {
@@ -316,15 +316,15 @@ describe('emx_digital Adapter', function () {
       bidRequestWithOutstreamVideo[0].mediaTypes = {
         video: {
           context: 'outstream',
-          playerSize: [640, 480]
+          playerSize: [[640, 480]]
         },
       };
       bidRequestWithOutstreamVideo[0].params.video = {};
       let request = spec.buildRequests(bidRequestWithOutstreamVideo, bidderRequest);
       const data = JSON.parse(request.data);
       expect(data.imp[0].video).to.exist.and.to.be.a('object');
-      expect(data.imp[0].video.h).to.equal(bidRequestWithOutstreamVideo[0].mediaTypes.video.playerSize[0][0]);
-      expect(data.imp[0].video.w).to.equal(bidRequestWithOutstreamVideo[0].mediaTypes.video.playerSize[0][1]);
+      expect(data.imp[0].video.w).to.equal(bidRequestWithOutstreamVideo[0].mediaTypes.video.playerSize[0][0]);
+      expect(data.imp[0].video.h).to.equal(bidRequestWithOutstreamVideo[0].mediaTypes.video.playerSize[0][1]);
     });
 
     it('shouldn\'t contain a user obj without GDPR information', function () {
