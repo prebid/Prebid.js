@@ -38,26 +38,26 @@ https://track.technoratimedia.com/openrtb/tags?ID=%%PATTERN:hb_cache_id_synacorm
       }]
   },{
       code: 'test-div2',
-      mediaType: {
+      mediaTypes: {
         video: {
-          context: 'instream',
-          playerSizes: [
-            [300, 250]
-          ],
+            context: 'instream',
+            playerSize: [[300, 250]],
         }
       },
       bids: [{
           bidder: "synacormedia",
           params: {
               seatId: "prebid",
-              placementId: "demo1"
+              placementId: "demo1",
               bidfloor: 0.20,
               pos: 1,
               video: {
                 minduration: 15,
-                maxduration: 30
+                maxduration: 30,
+                startdelay: 1,
+                linearity: 1
               }
           }
       }]
-  }];
+    }];
 ```
