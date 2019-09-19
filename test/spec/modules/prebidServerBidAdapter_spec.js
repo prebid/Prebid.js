@@ -668,7 +668,6 @@ describe('S2S Adapter', function () {
       });
     });
 
-
     it('adds digitrust id is present and user is not optout', function () {
       let ortb2Config = utils.deepClone(CONFIG);
       ortb2Config.endpoint = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction';
