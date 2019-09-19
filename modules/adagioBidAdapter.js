@@ -195,6 +195,7 @@ const _features = {
   },
 
   getDevice: function() {
+    if (!canAccessTopWindow()) return false;
     const w = window.top;
     const ua = w.navigator.userAgent;
 
@@ -269,6 +270,7 @@ function _getSite() {
 };
 
 function _getPageviewId() {
+  if (!canAccessTopWindow()) return false;
   window.top.ADAGIO.pageviewId = window.top.ADAGIO.pageviewId || utils.generateUUID();
   return window.top.ADAGIO.pageviewId;
 };
