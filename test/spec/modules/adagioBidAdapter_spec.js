@@ -466,6 +466,14 @@ describe('adagioAdapter', () => {
       expect(window.top.ADAGIO.versions).ok;
       expect(window.top.ADAGIO.versions.adagioBidderAdapter).to.eq(VERSION);
     });
+
+    it('should returns an empty array if the bidder cannot access to window top (based on refererInfo.reachedTop)', () => {
+      const requests = spec.buildRequests(bidRequests, {
+        ...bidderRequest,
+        refererInfo: { reachedTop: false }
+      });
+      expect(requests).to.be.empty;
+    });
   });
 
   describe('interpretResponse', () => {

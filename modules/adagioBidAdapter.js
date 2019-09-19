@@ -408,6 +408,9 @@ export const spec = {
   },
 
   buildRequests: function(validBidRequests, bidderRequest) {
+    // AdagioBidAdapter works when window.top can be reached only
+    if (!bidderRequest.refererInfo.reachedTop) return [];
+
     const secure = (location.protocol === 'https:') ? 1 : 0;
     const device = _getDevice();
     const site = _getSite();
@@ -441,9 +444,6 @@ export const spec = {
           prebidVersion: '$prebid.version$',
           adapterVersion: VERSION,
           featuresVersion: FEATURES_VERSION
-          /**
-           * @todo doit on ajouter ici le outerAdUnitElementId si on est en Post-Bid ?
-           */
         },
         options: {
           contentType: 'application/json'
