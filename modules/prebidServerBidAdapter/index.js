@@ -281,21 +281,6 @@ function _appendSiteAppDevice(request) {
   }
 }
 
-function transformHeightWidth(adUnit) {
-  let sizesObj = [];
-  let sizes = utils.parseSizesInput(adUnit.sizes);
-  sizes.forEach(size => {
-    let heightWidth = size.split('x');
-    let sizeObj = {
-      'w': parseInt(heightWidth[0]),
-      'h': parseInt(heightWidth[1])
-    };
-    sizesObj.push(sizeObj);
-  });
-  return sizesObj;
-}
-
-
 // https://iabtechlab.com/wp-content/uploads/2016/07/OpenRTB-Native-Ads-Specification-Final-1.2.pdf#page=40
 let nativeDataIdMap = {
   sponsoredBy: 1, // sponsored
