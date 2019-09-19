@@ -10,7 +10,7 @@ import * as utils from '../src/utils';
 const emptyUrl = '';
 const analyticsType = 'endpoint';
 const events = Object.keys(CONSTANTS.EVENTS).map(key => CONSTANTS.EVENTS[key]);
-const VERSION = '1.3.0';
+const VERSION = '2.0.0';
 
 const adagioEnqueue = function adagioEnqueue(action, data) {
   utils.getWindowTop().ADAGIO.queue.push({ action, data, ts: Date.now() });

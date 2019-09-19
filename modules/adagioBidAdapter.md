@@ -33,7 +33,8 @@ Connects to Adagio demand source to fetch bids.
             placement: 'ban_atf', // Required. Refers to the placement of an adunit in a page. Must not contain any information about the type of device. Other example: `mpu_btf'.
             pagetype: 'article', // Required. The pagetype describes what kind of content will be present in the page.
             category: 'sport', // Recommended. Category of the content displayed in the page.
-            subcategory: 'handball' // Optional. Subcategory of the content displayed in the page.
+            subcategory: 'handball', // Optional. Subcategory of the content displayed in the page.
+            postBid: false // Optional. Use it in case of Post-bid integration only.
           }
          }
        ]
