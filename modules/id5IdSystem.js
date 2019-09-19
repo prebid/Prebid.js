@@ -38,7 +38,7 @@ export const id5IdSubmodule = {
       utils.logError(`User ID - ID5 submodule requires partner to be defined as a number`);
       return undefined;
     }
-    const hasGdpr = (typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies) ? 1 : 0;
+    const hasGdpr = (consentData && typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies) ? 1 : 0;
     const gdprConsentString = hasGdpr ? consentData.consentString : '';
     const storedUserId = this.decode(cacheIdObj);
     const url = `https://id5-sync.com/g/v1/${configParams.partner}.json?1puid=${storedUserId ? storedUserId.id5id : ''}&gdpr=${hasGdpr}&gdpr_consent=${gdprConsentString}`;
