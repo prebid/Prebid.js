@@ -45,14 +45,15 @@ function canAccessTopWindow() {
 
 function initAdagio() {
   const script = document.createElement('script');
+  const w = utils.getWindowTop();
 
-  window.top.ADAGIO = window.top.ADAGIO || {};
-  window.top.ADAGIO.queue = window.top.ADAGIO.queue || [];
-  window.top.ADAGIO.versions = window.top.ADAGIO.versions || {};
-  window.top.ADAGIO.versions.adagioBidderAdapter = VERSION;
+  w.ADAGIO = w.ADAGIO || {};
+  w.ADAGIO.queue = w.ADAGIO.queue || [];
+  w.ADAGIO.versions = w.ADAGIO.versions || {};
+  w.ADAGIO.versions.adagioBidderAdapter = VERSION;
 
   const getAdagioTag = function getAdagioTag() {
-    const ls = window.top.localStorage.getItem('adagioScript');
+    const ls = w.localStorage.getItem('adagioScript');
     if (ls !== null) {
       Function(ls)(); // eslint-disable-line no-new-func
     } else {
@@ -61,7 +62,7 @@ function initAdagio() {
   }
 
   const adagioEnqueue = function adagioEnqueue(action, data) {
-    window.top.ADAGIO.queue.push({ action, data, ts: Date.now() });
+    w.ADAGIO.queue.push({ action, data, ts: Date.now() });
   }
 
   // Listen to ad-server events in current window as we can
@@ -121,7 +122,7 @@ const _features = {
 
   getPageDimensions: function() {
     const viewportDims = _features.getViewPortDimensions().split('x');
-    const w = window.top;
+    const w = utils.getWindowTop();
     const body = w.document.body;
     const html = w.document.documentElement;
     const pageHeight = Math.max(body.scrollHeight, body.offsetHeight, html.clientHeight, html.scrollHeight, html.offsetHeight);
@@ -132,7 +133,7 @@ const _features = {
   getViewPortDimensions: function() {
     let viewPortWidth;
     let viewPortHeight;
-    const w = window.top;
+    const w = utils.getWindowTop();
     const d = w.document;
 
     if (w.innerWidth) {
@@ -147,7 +148,7 @@ const _features = {
   },
 
   isDomLoading: function() {
-    const w = window.top;
+    const w = utils.getWindowTop();
     let performance = w.performance || w.msPerformance || w.webkitPerformance || w.mozPerformance;
     let domLoading = -1;
 
@@ -159,7 +160,7 @@ const _features = {
   },
 
   getSlotPosition: function(element) {
-    const w = window.top;
+    const w = utils.getWindowTop();
     const d = w.document;
     const el = element;
 
@@ -196,7 +197,7 @@ const _features = {
 
   getDevice: function() {
     if (!canAccessTopWindow()) return false;
-    const w = window.top;
+    const w = utils.getWindowTop();
     const ua = w.navigator.userAgent;
 
     if ((/(tablet|ipad|playbook|silk)|(android(?!.*mobi))/i).test(ua)) {
@@ -209,7 +210,7 @@ const _features = {
   },
 
   getBrowser: function() {
-    const w = window.top;
+    const w = utils.getWindowTop();
     const ua = w.navigator.userAgent;
     const uaLowerCase = ua.toLowerCase();
     return /Edge\/\d./i.test(ua) ? 'edge' : uaLowerCase.indexOf('chrome') > 0 ? 'chrome' : uaLowerCase.indexOf('firefox') > 0 ? 'firefox' : uaLowerCase.indexOf('safari') > 0 ? 'safari' : uaLowerCase.indexOf('opera') > 0 ? 'opera' : uaLowerCase.indexOf('msie') > 0 || w.MSStream ? 'ie' : 'unknow';
@@ -225,25 +226,28 @@ const _features = {
 
 function _pushInAdagioQueue(ob) {
   if (!canAccessTopWindow()) return;
-  window.top.ADAGIO.queue.push(ob);
+  const w = utils.getWindowTop();
+  w.ADAGIO.queue.push(ob);
 };
 
 function _getOrAddAdagioAdUnit(adUnitCode) {
-  if (top.ADAGIO.adUnits[adUnitCode]) {
-    return top.ADAGIO.adUnits[adUnitCode]
+  const w = utils.getWindowTop();
+  if (w.ADAGIO.adUnits[adUnitCode]) {
+    return w.ADAGIO.adUnits[adUnitCode]
   }
-  return top.ADAGIO.adUnits[adUnitCode] = {};
+  return w.ADAGIO.adUnits[adUnitCode] = {};
 }
 
 function _computePrintNumber(adUnitCode) {
   let printNumber = 1;
+  const w = utils.getWindowTop();
   if (
-    top.ADAGIO &&
-    top.ADAGIO.adUnits && top.ADAGIO.adUnits[adUnitCode] &&
-    top.ADAGIO.adUnits[adUnitCode].pageviewId === _getPageviewId() &&
-    top.ADAGIO.adUnits[adUnitCode].printNumber
+    w.ADAGIO &&
+    w.ADAGIO.adUnits && w.ADAGIO.adUnits[adUnitCode] &&
+    w.ADAGIO.adUnits[adUnitCode].pageviewId === _getPageviewId() &&
+    w.ADAGIO.adUnits[adUnitCode].printNumber
   ) {
-    printNumber = parseInt(top.ADAGIO.adUnits[adUnitCode].printNumber, 10) + 1;
+    printNumber = parseInt(w.ADAGIO.adUnits[adUnitCode].printNumber, 10) + 1;
   }
   return printNumber;
 }
@@ -261,29 +265,30 @@ function _getDevice() {
 };
 
 function _getSite() {
-  const topLocation = utils.getTopWindowLocation();
+  const w = utils.getWindowTop();
   return {
-    domain: topLocation.hostname,
-    page: topLocation.href,
-    referrer: utils.getTopWindowReferrer()
+    domain: w.location.hostname,
+    page: w.location.href,
+    referrer: w.document.referrer || ''
   };
 };
 
 function _getPageviewId() {
   if (!canAccessTopWindow()) return false;
-  window.top.ADAGIO.pageviewId = window.top.ADAGIO.pageviewId || utils.generateUUID();
-  return window.top.ADAGIO.pageviewId;
+  const w = utils.getWindowTop();
+  w.ADAGIO.pageviewId = w.ADAGIO.pageviewId || utils.generateUUID();
+  return w.ADAGIO.pageviewId;
 };
 
-function _getElementFromTopWindow(element, w) {
-  if (w.top === w) {
+function _getElementFromTopWindow(element, currentWindow) {
+  if (utils.getWindowTop() === currentWindow) {
     if (!element.getAttribute('id')) {
       element.setAttribute('id', `adg-${utils.getUniqueIdentifierStr()}`);
     }
     return element;
   } else {
-    const frame = w.frameElement;
-    return _getElementFromTopWindow(frame, w.parent);
+    const frame = currentWindow.frameElement;
+    return _getElementFromTopWindow(frame, currentWindow.parent);
   }
 }
 
@@ -295,6 +300,7 @@ function _getElementFromTopWindow(element, w) {
  */
 function _getFeatures(bidRequest) {
   if (!canAccessTopWindow()) return;
+  const w = utils.getWindowTop();
   const adUnitElementId = bidRequest.params.adUnitElementId;
   const adUnitCode = bidRequest.adUnitCode;
 
@@ -302,7 +308,7 @@ function _getFeatures(bidRequest) {
 
   if (bidRequest.params.postBid === true) {
     element = _getElementFromTopWindow(element, window);
-    top.ADAGIO.pbjsAdUnits.map((adUnit) => {
+    w.ADAGIO.pbjsAdUnits.map((adUnit) => {
       if (adUnit.code === adUnitCode) {
         const outerElementId = element.getAttribute('id');
         adUnit.outerAdUnitElementId = outerElementId;
@@ -310,7 +316,7 @@ function _getFeatures(bidRequest) {
       }
     });
   } else {
-    element = window.top.document.getElementById(adUnitElementId);
+    element = w.document.getElementById(adUnitElementId);
   }
 
   let features = {};
@@ -324,7 +330,7 @@ function _getFeatures(bidRequest) {
       adunit_position: _features.getSlotPosition(element).toString(),
       user_timestamp: _features.getTimestamp().toString(),
       device: _features.getDevice().toString(),
-      url: top.location.origin + top.location.pathname,
+      url: w.location.origin + w.location.pathname,
       browser: _features.getBrowser(),
       os: _features.getOS()
     })
@@ -372,11 +378,12 @@ export const spec = {
     let isValid = false;
 
     if (canAccessTopWindow()) {
-      top.ADAGIO = top.ADAGIO || {};
-      top.ADAGIO.adUnits = top.ADAGIO.adUnits || {};
-      top.ADAGIO.pbjsAdUnits = top.ADAGIO.pbjsAdUnits || [];
+      const w = utils.getWindowTop();
+      w.ADAGIO = w.ADAGIO || {};
+      w.ADAGIO.adUnits = w.ADAGIO.adUnits || {};
+      w.ADAGIO.pbjsAdUnits = w.ADAGIO.pbjsAdUnits || [];
       isValid = !!(organizationId && site && placement && adUnitElementId && document.getElementById(adUnitElementId) !== null);
-      const tempAdUnits = top.ADAGIO.pbjsAdUnits.filter((adUnit) => adUnit.code !== adUnitCode);
+      const tempAdUnits = w.ADAGIO.pbjsAdUnits.filter((adUnit) => adUnit.code !== adUnitCode);
       tempAdUnits.push({
         code: adUnitCode,
         sizes: (mediaTypes && mediaTypes.banner && Array.isArray(mediaTypes.banner.sizes)) ? mediaTypes.banner.sizes : sizes,
@@ -385,11 +392,11 @@ export const spec = {
           params
         }]
       });
-      top.ADAGIO.pbjsAdUnits = tempAdUnits;
+      w.ADAGIO.pbjsAdUnits = tempAdUnits;
 
       if (isValid === true) {
         let printNumber = _computePrintNumber(adUnitCode);
-        top.ADAGIO.adUnits[adUnitCode] = {
+        w.ADAGIO.adUnits[adUnitCode] = {
           auctionId: auctionId,
           pageviewId: _getPageviewId(),
           printNumber
@@ -431,7 +438,7 @@ export const spec = {
           pageviewId: pageviewId,
           adUnits: groupedAdUnits[organizationId],
           gdpr: gdprConsent,
-          prebidVersion: $$PREBID_GLOBAL$$.version,
+          prebidVersion: '$prebid.version$',
           adapterVersion: VERSION,
           featuresVersion: FEATURES_VERSION
           /**

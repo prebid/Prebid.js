@@ -41,10 +41,12 @@ adagioAdapter.enableAnalytics = config => {
     return;
   }
 
-  window.top.ADAGIO = window.top.ADAGIO || {};
-  window.top.ADAGIO.queue = window.top.ADAGIO.queue || [];
-  window.top.ADAGIO.versions = window.top.ADAGIO.versions || {};
-  window.top.ADAGIO.versions.adagioAnalyticsAdapter = VERSION;
+  const w = utils.getWindowTop();
+
+  w.ADAGIO = w.ADAGIO || {};
+  w.ADAGIO.queue = w.ADAGIO.queue || [];
+  w.ADAGIO.versions = w.ADAGIO.versions || {};
+  w.ADAGIO.versions.adagioAnalyticsAdapter = VERSION;
 
   adagioAdapter.originEnableAnalytics(config);
 }

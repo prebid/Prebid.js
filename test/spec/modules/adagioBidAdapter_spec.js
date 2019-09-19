@@ -292,11 +292,16 @@ describe('adagioAdapter', () => {
         consentString: consentString,
         gdprApplies: true,
         allowAuctionWithoutConsent: true
+      },
+      'refererInfo': {
+        'numIframes': 0,
+        'reachedTop': true,
+        'referer': 'http://test.io/index.html?pbjs_debug=true'
       }
     };
 
     it('groups requests by siteId', () => {
-      const requests = spec.buildRequests(bidRequests);
+      const requests = spec.buildRequests(bidRequests, bidderRequest);
       expect(requests).to.have.lengthOf(2);
 
       expect(requests[0].data.organizationId).to.equal('123');
@@ -307,15 +312,16 @@ describe('adagioAdapter', () => {
     });
 
     it('sends bid request to ENDPOINT_PB via POST', () => {
-      const requests = spec.buildRequests(bidRequests);
+      const requests = spec.buildRequests(bidRequests, bidderRequest);
       expect(requests).to.have.lengthOf(2);
       const request = requests[0];
       expect(request.method).to.equal('POST');
       expect(request.url).to.equal(ENDPOINT);
+      expect(request.data.prebidVersion).to.equal('$prebid.version$');
     });
 
     it('features params must be empty if param adUnitElementId is not found', () => {
-      const requests = spec.buildRequests([Object.assign({}, bidRequests[0], {params: {adUnitElementId: 'does-not-exist'}})]);
+      const requests = spec.buildRequests([Object.assign({}, bidRequests[0], {params: {adUnitElementId: 'does-not-exist'}})], bidderRequest);
       const request = requests[0];
       const expected = {}
       expect(request.data.adUnits[0].features).to.deep.equal(expected);
@@ -323,7 +329,7 @@ describe('adagioAdapter', () => {
 
     it('features params "adunit_position" should be computed even if DOM element is display:none', () => {
       stubs.topGetComputedStyle.returns(computedStyleNone);
-      const requests = spec.buildRequests([Object.assign({}, bidRequests[0])]);
+      const requests = spec.buildRequests([Object.assign({}, bidRequests[0])], bidderRequest);
       let request = requests[0];
       expect(request.data.adUnits[0].features).to.exist;
       expect(request.data.adUnits[0].features.adunit_position).to.equal('0x0');
@@ -331,40 +337,33 @@ describe('adagioAdapter', () => {
 
     it('features params "viewport" should be computed even if window.innerWidth is not supported', () => {
       sandbox.stub(top, 'innerWidth').value(undefined);
-      const requests = spec.buildRequests([Object.assign({}, bidRequests[0])]);
+      const requests = spec.buildRequests([Object.assign({}, bidRequests[0])], bidderRequest);
       let request = requests[0];
       expect(request.data.adUnits[0].features).to.exist;
       expect(request.data.adUnits[0].features.viewport_dimensions).to.match(/^[\d]+x[\d]+$/);
     });
 
     it('AdUnit requested should have the correct sizes array depending on the config', () => {
-      const requests = spec.buildRequests(bidRequests);
+      const requests = spec.buildRequests(bidRequests, bidderRequest);
       expect(requests[1].data.adUnits[0]).to.have.property('mediaTypes');
     });
 
     it('features params must be an object if featurejs is loaded', () => {
-      let requests = spec.buildRequests(bidRequests);
+      let requests = spec.buildRequests(bidRequests, bidderRequest);
       let request = requests[0];
       expect(request.data.adUnits[0].features).to.exist;
     });
 
-    it('features params must be undefined if not in window.top', () => {
-      sandbox.stub(utils, 'getWindowTop').throws();
-      const requests = spec.buildRequests(bidRequests);
-      let request = requests[0];
-      expect(request.data.adUnits[0].features).to.undefined;
-    });
-
     it('device type must be "5" when user agent match tablet test', () => {
       sandbox.stub(top.navigator, 'userAgent').value('Mozilla/5.0 (iPad; CPU OS 12_1_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/16C50');
-      const requests = spec.buildRequests([Object.assign({}, bidRequests[0])]);
+      const requests = spec.buildRequests([Object.assign({}, bidRequests[0])], bidderRequest);
       const request = requests[0];
       expect(request.data.device.deviceType).to.equal(5);
     })
 
     it('device type must be "4" when user agent match phone test', () => {
       sandbox.stub(top.navigator, 'userAgent').value('Mozilla/5.0 (Linux; Android 7.0; SAMSUNG SM-G950F Build/NRD90M) AppleWebKit/537.36 (KHTML, like Gecko) SamsungBrowser/5.2 Chrome/51.0.2704.106 Mobile Safari/537.36');
-      const requests = spec.buildRequests([Object.assign({}, bidRequests[0])]);
+      const requests = spec.buildRequests([Object.assign({}, bidRequests[0])], bidderRequest);
       const request = requests[0];
       expect(request.data.device.deviceType).to.equal(4);
     })
@@ -381,7 +380,7 @@ describe('adagioAdapter', () => {
           params: bidRequestsWithPostBid[0].params
         }]
       });
-      let requests = spec.buildRequests(bidRequestsWithPostBid);
+      let requests = spec.buildRequests(bidRequestsWithPostBid, bidderRequest);
       let request = requests[0];
       expect(request.data.adUnits[0].features).to.exist;
       expect(request.data.adUnits[0].params.outerAdUnitElementId).to.exist;
@@ -391,7 +390,7 @@ describe('adagioAdapter', () => {
       window.top.ADAGIO = window.top.ADAGIO || {};
       delete window.top.ADAGIO.pageviewId;
 
-      const requests = spec.buildRequests(bidRequests);
+      const requests = spec.buildRequests(bidRequests, bidderRequest);
       expect(requests).to.have.lengthOf(2);
 
       expect(requests[0].data.pageviewId).to.exist.and.to.not.equal('_').and.to.not.equal('');
@@ -402,7 +401,7 @@ describe('adagioAdapter', () => {
       window.top.ADAGIO = window.top.ADAGIO || {};
       window.top.ADAGIO.pageviewId = 'abc';
 
-      const requests = spec.buildRequests(bidRequests);
+      const requests = spec.buildRequests(bidRequests, bidderRequest);
       expect(requests).to.have.lengthOf(2);
 
       expect(requests[0].data.pageviewId).to.equal('abc');
@@ -416,7 +415,7 @@ describe('adagioAdapter', () => {
         pageviewId: 'abc',
         printNumber: 2
       };
-      const requests = spec.buildRequests([bidRequests[0]]);
+      const requests = spec.buildRequests([bidRequests[0]], bidderRequest);
       const request = requests[0];
       expect(request.data.adUnits[0].features.print_number).to.equal('2');
     })
