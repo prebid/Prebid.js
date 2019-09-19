@@ -99,6 +99,10 @@ describe('adpod.js', function () {
         auctionId: 'no_defer_123',
         mediaType: 'video',
         cpm: 5,
+        pbMg: '5.00',
+        adserverTargeting: {
+          hb_pb: '5.00'
+        },
         meta: {
           adServerCatId: 'test'
         },
@@ -114,6 +118,10 @@ describe('adpod.js', function () {
         auctionId: 'no_defer_123',
         mediaType: 'video',
         cpm: 12,
+        pbMg: '12.00',
+        adserverTargeting: {
+          hb_pb: '12.00'
+        },
         meta: {
           adServerCatId: 'value'
         },
@@ -175,6 +183,10 @@ describe('adpod.js', function () {
         auctionId: 'full_abc123',
         mediaType: 'video',
         cpm: 10,
+        pbMg: '10.00',
+        adserverTargeting: {
+          hb_pb: '10.00'
+        },
         meta: {
           adServerCatId: 'airline'
         },
@@ -189,6 +201,10 @@ describe('adpod.js', function () {
         auctionId: 'full_abc123',
         mediaType: 'video',
         cpm: 15,
+        pbMg: '15.00',
+        adserverTargeting: {
+          hb_pb: '15.00'
+        },
         meta: {
           adServerCatId: 'airline'
         },
@@ -247,6 +263,10 @@ describe('adpod.js', function () {
         auctionId: 'timer_abc234',
         mediaType: 'video',
         cpm: 15,
+        pbMg: '15.00',
+        adserverTargeting: {
+          hb_pb: '15.00'
+        },
         meta: {
           adServerCatId: 'airline'
         },
@@ -300,6 +320,10 @@ describe('adpod.js', function () {
         auctionId: 'multi_call_abc345',
         mediaType: 'video',
         cpm: 15,
+        pbMg: '15.00',
+        adserverTargeting: {
+          hb_pb: '15.00'
+        },
         meta: {
           adServerCatId: 'airline'
         },
@@ -314,6 +338,10 @@ describe('adpod.js', function () {
         auctionId: 'multi_call_abc345',
         mediaType: 'video',
         cpm: 15,
+        pbMg: '15.00',
+        adserverTargeting: {
+          hb_pb: '15.00'
+        },
         meta: {
           adServerCatId: 'news'
         },
@@ -328,6 +356,10 @@ describe('adpod.js', function () {
         auctionId: 'multi_call_abc345',
         mediaType: 'video',
         cpm: 10,
+        pbMg: '10.00',
+        adserverTargeting: {
+          hb_pb: '10.00'
+        },
         meta: {
           adServerCatId: 'sports'
         },
@@ -395,6 +427,10 @@ describe('adpod.js', function () {
         auctionId: 'no_category_abc345',
         mediaType: 'video',
         cpm: 10,
+        pbMg: '10.00',
+        adserverTargeting: {
+          hb_pb: '10.00'
+        },
         meta: {
           adServerCatId: undefined
         },
@@ -409,6 +445,10 @@ describe('adpod.js', function () {
         auctionId: 'no_category_abc345',
         mediaType: 'video',
         cpm: 15,
+        pbMg: '15.00',
+        adserverTargeting: {
+          hb_pb: '15.00'
+        },
         meta: {
           adServerCatId: undefined
         },
@@ -525,6 +565,10 @@ describe('adpod.js', function () {
         auctionId: 'duplicate_def123',
         mediaType: 'video',
         cpm: 5,
+        pbMg: '5.00',
+        adserverTargeting: {
+          hb_pb: '5.00'
+        },
         meta: {
           adServerCatId: 'tech'
         },
@@ -539,6 +583,10 @@ describe('adpod.js', function () {
         auctionId: 'duplicate_def123',
         mediaType: 'video',
         cpm: 5,
+        pbMg: '5.00',
+        adserverTargeting: {
+          hb_pb: '5.00'
+        },
         meta: {
           adServerCatId: 'tech'
         },
@@ -642,6 +690,82 @@ describe('adpod.js', function () {
       expect(logWarnStub.calledOnce).to.equal(true);
       expect(auctionBids.length).to.equal(0);
     });
+
+    it('should use bid.adserverTargeting.hb_pb when custom price granularity is configured', function() {
+      storeStub.callsFake(fakeStoreFn);
+
+      const customConfigObject = {
+        'buckets': [{
+          'precision': 2, // default is 2 if omitted - means 2.1234 rounded to 2 decimal places = 2.12
+          'min': 0,
+          'max': 5,
+          'increment': 0.01 // from $0 to $5, 1-cent increments
+        },
+        {
+          'precision': 2,
+          'min': 5,
+          'max': 8,
+          'increment': 0.05 // from $5 to $8, round down to the previous 5-cent increment
+        },
+        {
+          'precision': 2,
+          'min': 8,
+          'max': 40,
+          'increment': 0.5 // from $8 to $40, round down to the previous 50-cent increment
+        }]
+      };
+      config.setConfig({
+        priceGranularity: customConfigObject,
+        adpod: {
+          brandCategoryExclusion: true
+        }
+      });
+
+      let bidResponse1 = {
+        adId: 'cat_ad1',
+        auctionId: 'test_category_abc345',
+        mediaType: 'video',
+        cpm: 15,
+        pbAg: '15.00',
+        pbCg: '15.00',
+        pbDg: '15.00',
+        pbHg: '15.00',
+        pbLg: '5.00',
+        pbMg: '15.00',
+        adserverTargeting: {
+          hb_pb: '15.00',
+        },
+        meta: {
+          adServerCatId: 'test'
+        },
+        video: {
+          context: ADPOD,
+          durationSeconds: 15,
+          durationBucket: 15
+        }
+      };
+
+      let bidderRequest = {
+        adUnitCode: 'adpod_5',
+        auctionId: 'test_category_abc345',
+        mediaTypes: {
+          video: {
+            context: ADPOD,
+            playerSize: [300, 300],
+            adPodDurationSec: 45,
+            durationRangeSec: [15, 30],
+            requireExactDuration: false
+          }
+        }
+      };
+
+      callPrebidCacheHook(callbackFn, auctionInstance, bidResponse1, afterBidAddedSpy, bidderRequest);
+
+      expect(callbackResult).to.be.null;
+      expect(afterBidAddedSpy.calledOnce).to.equal(true);
+      expect(storeStub.called).to.equal(false);
+      expect(auctionBids.length).to.equal(1);
+    });
   });
 
   describe('checkAdUnitSetupHook', function () {
@@ -687,6 +811,32 @@ describe('adpod.js', function () {
         }
       }]);
       expect(logWarnStub.calledOnce).to.equal(true);
+    });
+
+    it('removes an incorrectly setup adpod adunit - required fields are using invalid values', function() {
+      let adUnits = [{
+        code: 'test1',
+        mediaTypes: {
+          video: {
+            context: ADPOD,
+            durationRangeSec: [-5, 15, 30, 45],
+            adPodDurationSec: 300
+          }
+        }
+      }];
+
+      checkAdUnitSetupHook(callbackFn, adUnits);
+
+      expect(results).to.deep.equal([]);
+      expect(logWarnStub.calledOnce).to.equal(true);
+
+      adUnits[0].mediaTypes.video.durationRangeSec = [15, 30, 45];
+      adUnits[0].mediaTypes.video.adPodDurationSec = 0;
+
+      checkAdUnitSetupHook(callbackFn, adUnits);
+
+      expect(results).to.deep.equal([]);
+      expect(logWarnStub.calledTwice).to.equal(true);
     });
 
     it('removes an incorrectly setup adpod adunit - attempting to use multi-format adUnit', function() {
@@ -995,53 +1145,83 @@ describe('adpod.js', function () {
     it('should sort bids array', function() {
       let bids = [{
         cpm: 10.12345,
+        adserverTargeting: {
+          hb_pb: '10.00',
+        },
         video: {
           durationBucket: 15
         }
       }, {
         cpm: 15,
+        adserverTargeting: {
+          hb_pb: '15.00',
+        },
         video: {
           durationBucket: 15
         }
       }, {
         cpm: 15.00,
+        adserverTargeting: {
+          hb_pb: '15.00',
+        },
         video: {
           durationBucket: 30
         }
       }, {
         cpm: 5.45,
+        adserverTargeting: {
+          hb_pb: '5.00',
+        },
         video: {
           durationBucket: 5
         }
       }, {
         cpm: 20.1234567,
+        adserverTargeting: {
+          hb_pb: '20.10',
+        },
         video: {
           durationBucket: 60
         }
       }]
       bids.sort(sortByPricePerSecond);
       let sortedBids = [{
-        cpm: 5.45,
-        video: {
-          durationBucket: 5
-        }
-      }, {
         cpm: 15,
+        adserverTargeting: {
+          hb_pb: '15.00',
+        },
         video: {
           durationBucket: 15
         }
       }, {
+        cpm: 5.45,
+        adserverTargeting: {
+          hb_pb: '5.00',
+        },
+        video: {
+          durationBucket: 5
+        }
+      }, {
         cpm: 10.12345,
+        adserverTargeting: {
+          hb_pb: '10.00',
+        },
         video: {
           durationBucket: 15
         }
       }, {
         cpm: 15.00,
+        adserverTargeting: {
+          hb_pb: '15.00',
+        },
         video: {
           durationBucket: 30
         }
       }, {
         cpm: 20.1234567,
+        adserverTargeting: {
+          hb_pb: '20.10',
+        },
         video: {
           durationBucket: 60
         }

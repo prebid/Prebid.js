@@ -25,6 +25,8 @@ export const spec = {
   buildRequests: function(validBidRequests, bidderRequest) {
     const auids = [];
     const bidsMap = {};
+    const slotsMapByUid = {};
+    const sizeMap = {};
     const bids = validBidRequests || [];
     const currency =
       config.getConfig(`currency.bidderCurrencyDefault.${BIDDER_CODE}`) ||
@@ -33,30 +35,59 @@ export const spec = {
     let reqId;
 
     bids.forEach(bid => {
-      if (!bidsMap[bid.params.uid]) {
-        bidsMap[bid.params.uid] = [bid];
-        auids.push(bid.params.uid);
-      } else {
-        bidsMap[bid.params.uid].push(bid);
-      }
       reqId = bid.bidderRequestId;
+      const {params: {uid}, adUnitCode} = bid;
+      auids.push(uid);
+      const sizesId = utils.parseSizesInput(bid.sizes);
+
+      if (!slotsMapByUid[uid]) {
+        slotsMapByUid[uid] = {};
+      }
+      const slotsMap = slotsMapByUid[uid];
+      if (!slotsMap[adUnitCode]) {
+        slotsMap[adUnitCode] = {adUnitCode, bids: [bid], parents: []};
+      } else {
+        slotsMap[adUnitCode].bids.push(bid);
+      }
+      const slot = slotsMap[adUnitCode];
+
+      sizesId.forEach((sizeId) => {
+        sizeMap[sizeId] = true;
+        if (!bidsMap[uid]) {
+          bidsMap[uid] = {};
+        }
+
+        if (!bidsMap[uid][sizeId]) {
+          bidsMap[uid][sizeId] = [slot];
+        } else {
+          bidsMap[uid][sizeId].push(slot);
+        }
+        slot.parents.push({parent: bidsMap[uid], key: sizeId, uid});
+      });
     });
 
     const payload = {
-      u: utils.getTopWindowUrl(),
       pt: 'net',
       auids: auids.join(','),
+      sizes: utils.getKeys(sizeMap).join(','),
       r: reqId,
       cur: currency,
+      wrapperType: 'Prebid_js',
+      wrapperVersion: '$prebid.version$'
     };
 
-    if (bidderRequest && bidderRequest.gdprConsent) {
-      if (bidderRequest.gdprConsent.consentString) {
-        payload.gdpr_consent = bidderRequest.gdprConsent.consentString;
+    if (bidderRequest) {
+      if (bidderRequest.refererInfo && bidderRequest.refererInfo.referer) {
+        payload.u = encodeURIComponent(bidderRequest.refererInfo.referer);
       }
-      payload.gdpr_applies =
-        (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean')
-          ? Number(bidderRequest.gdprConsent.gdprApplies) : 1;
+      if (bidderRequest.gdprConsent) {
+        if (bidderRequest.gdprConsent.consentString) {
+          payload.gdpr_consent = bidderRequest.gdprConsent.consentString;
+        }
+        payload.gdpr_applies =
+            (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean')
+              ? Number(bidderRequest.gdprConsent.gdprApplies) : 1;
+      }
     }
 
     return {
@@ -69,6 +100,7 @@ export const spec = {
   interpretResponse: function(serverResponse, bidRequest) {
     serverResponse = serverResponse && serverResponse.body;
     const bidResponses = [];
+    const bidsWithoutSizeMatching = [];
     const bidsMap = bidRequest.bidsMap;
     const currency = bidRequest.data.cur;
 
@@ -81,7 +113,10 @@ export const spec = {
 
     if (!errorMessage && serverResponse.seatbid) {
       serverResponse.seatbid.forEach(respItem => {
-        _addBidResponse(_getBidFromResponse(respItem), bidsMap, currency, bidResponses);
+        _addBidResponse(_getBidFromResponse(respItem), bidsMap, currency, bidResponses, bidsWithoutSizeMatching);
+      });
+      bidsWithoutSizeMatching.forEach(serverBid => {
+        _addBidResponse(serverBid, bidsMap, currency, bidResponses);
       });
     }
     if (errorMessage) utils.logError(errorMessage);
@@ -117,7 +152,7 @@ function _getBidFromResponse(respItem) {
   return respItem && respItem.bid && respItem.bid[0];
 }
 
-function _addBidResponse(serverBid, bidsMap, currency, bidResponses) {
+function _addBidResponse(serverBid, bidsMap, currency, bidResponses, bidsWithoutSizeMatching) {
   if (!serverBid) return;
   let errorMessage;
   if (!serverBid.auid) errorMessage = LOG_ERROR_MESS.noAuid + JSON.stringify(serverBid);
@@ -125,9 +160,14 @@ function _addBidResponse(serverBid, bidsMap, currency, bidResponses) {
   else {
     const awaitingBids = bidsMap[serverBid.auid];
     if (awaitingBids) {
-      awaitingBids.forEach(bid => {
-        const bidResponse = {
+      const sizeId = bidsWithoutSizeMatching ? `${serverBid.w}x${serverBid.h}` : Object.keys(awaitingBids)[0];
+      if (awaitingBids[sizeId]) {
+        const slot = awaitingBids[sizeId][0];
+
+        const bid = slot.bids.shift();
+        bidResponses.push({
           requestId: bid.bidId,
+          bidderCode: spec.code,
           cpm: serverBid.price,
           width: serverBid.w,
           height: serverBid.h,
@@ -137,9 +177,25 @@ function _addBidResponse(serverBid, bidsMap, currency, bidResponses) {
           ttl: TIME_TO_LIVE,
           ad: serverBid.adm,
           dealId: serverBid.dealid
-        };
-        bidResponses.push(bidResponse);
-      });
+        });
+
+        if (!slot.bids.length) {
+          slot.parents.forEach(({parent, key, uid}) => {
+            const index = parent[key].indexOf(slot);
+            if (index > -1) {
+              parent[key].splice(index, 1);
+            }
+            if (!parent[key].length) {
+              delete parent[key];
+              if (!utils.getKeys(parent).length) {
+                delete bidsMap[uid];
+              }
+            }
+          });
+        }
+      } else {
+        bidsWithoutSizeMatching && bidsWithoutSizeMatching.push(serverBid);
+      }
     } else {
       errorMessage = LOG_ERROR_MESS.noPlacementCode + serverBid.auid;
     }

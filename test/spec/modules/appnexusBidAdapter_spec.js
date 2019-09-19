@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import { spec } from 'modules/appnexusBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
 import * as bidderFactory from 'src/adapters/bidderFactory';
+import { auctionManager } from 'src/auctionManager';
 import { deepClone } from 'src/utils';
 import { config } from 'src/config';
 
@@ -55,6 +56,7 @@ describe('AppNexusAdapter', function () {
   });
 
   describe('buildRequests', function () {
+    let getAdUnitsStub;
     let bidRequests = [
       {
         'bidder': 'appnexus',
@@ -66,8 +68,19 @@ describe('AppNexusAdapter', function () {
         'bidId': '30b31c1838de1e',
         'bidderRequestId': '22edbae2733bf6',
         'auctionId': '1d1a030790a475',
+        'transactionId': '04f2659e-c005-4eb1-a57c-fa93145e3843'
       }
     ];
+
+    beforeEach(function() {
+      getAdUnitsStub = sinon.stub(auctionManager, 'getAdUnits').callsFake(function() {
+        return [];
+      });
+    });
+
+    afterEach(function() {
+      getAdUnitsStub.restore();
+    });
 
     it('should parse out private sizes', function () {
       let bidRequest = Object.assign({},
@@ -98,7 +111,27 @@ describe('AppNexusAdapter', function () {
     });
 
     it('should populate the ad_types array on all requests', function () {
+      let adUnits = [{
+        code: 'adunit-code',
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 250], [300, 600]]
+          }
+        },
+        bids: [{
+          bidder: 'appnexus',
+          params: {
+            placementId: '10433394'
+          }
+        }],
+        transactionId: '04f2659e-c005-4eb1-a57c-fa93145e3843'
+      }];
+
       ['banner', 'video', 'native'].forEach(type => {
+        getAdUnitsStub.callsFake(function(...args) {
+          return adUnits;
+        });
+
         const bidRequest = Object.assign({}, bidRequests[0]);
         bidRequest.mediaTypes = {};
         bidRequest.mediaTypes[type] = {};
@@ -107,7 +140,19 @@ describe('AppNexusAdapter', function () {
         const payload = JSON.parse(request.data);
 
         expect(payload.tags[0].ad_types).to.deep.equal([type]);
+
+        if (type === 'banner') {
+          delete adUnits[0].mediaTypes;
+        }
       });
+    });
+
+    it('should not populate the ad_types array when adUnit.mediaTypes is undefined', function() {
+      const bidRequest = Object.assign({}, bidRequests[0]);
+      const request = spec.buildRequests([bidRequest]);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.tags[0].ad_types).to.not.exist;
     });
 
     it('should populate the ad_types array on outstream requests', function () {
@@ -150,6 +195,48 @@ describe('AppNexusAdapter', function () {
       });
     });
 
+    it('should add video property when adUnit includes a renderer', function () {
+      const videoData = {
+        mediaTypes: {
+          video: {
+            context: 'outstream',
+            mimes: ['video/mp4']
+          }
+        },
+        params: {
+          placementId: '10433394',
+          video: {
+            skippable: true,
+            playback_method: ['auto_play_sound_off']
+          }
+        }
+      };
+
+      let bidRequest1 = deepClone(bidRequests[0]);
+      bidRequest1 = Object.assign({}, bidRequest1, videoData, {
+        renderer: {
+          url: 'http://test.renderer.url',
+          render: function () {}
+        }
+      });
+
+      let bidRequest2 = deepClone(bidRequests[0]);
+      bidRequest2.adUnitCode = 'adUnit_code_2';
+      bidRequest2 = Object.assign({}, bidRequest2, videoData);
+
+      const request = spec.buildRequests([bidRequest1, bidRequest2]);
+      const payload = JSON.parse(request.data);
+      expect(payload.tags[0].video).to.deep.equal({
+        skippable: true,
+        playback_method: ['auto_play_sound_off'],
+        custom_renderer_present: true
+      });
+      expect(payload.tags[1].video).to.deep.equal({
+        skippable: true,
+        playback_method: ['auto_play_sound_off']
+      });
+    });
+
     it('should attach valid user params to the tag', function () {
       let bidRequest = Object.assign({},
         bidRequests[0],
@@ -157,7 +244,7 @@ describe('AppNexusAdapter', function () {
           params: {
             placementId: '10433394',
             user: {
-              external_uid: '123',
+              externalUid: '123',
               foobar: 'invalid'
             }
           }
@@ -169,7 +256,7 @@ describe('AppNexusAdapter', function () {
 
       expect(payload.user).to.exist;
       expect(payload.user).to.deep.equal({
-        external_uid: '123',
+        externalUid: '123',
       });
     });
 
@@ -354,7 +441,8 @@ describe('AppNexusAdapter', function () {
             title: {required: true},
             body: {required: true},
             body2: {required: true},
-            image: {required: true, sizes: [{ width: 100, height: 100 }]},
+            image: {required: true, sizes: [100, 100]},
+            icon: {required: true},
             cta: {required: false},
             rating: {required: true},
             sponsoredBy: {required: true},
@@ -378,6 +466,7 @@ describe('AppNexusAdapter', function () {
         description: {required: true},
         desc2: {required: true},
         main_image: {required: true, sizes: [{ width: 100, height: 100 }]},
+        icon: {required: true},
         ctatext: {required: false},
         rating: {required: true},
         sponsored_by: {required: true},
@@ -388,58 +477,8 @@ describe('AppNexusAdapter', function () {
         likes: {required: true},
         phone: {required: true},
         price: {required: true},
-        saleprice: {required: true}
-      });
-    });
-
-    it('sets minimum native asset params when not provided on adunit', function () {
-      let bidRequest = Object.assign({},
-        bidRequests[0],
-        {
-          mediaType: 'native',
-          nativeParams: {
-            image: {required: true},
-          }
-        }
-      );
-
-      const request = spec.buildRequests([bidRequest]);
-      const payload = JSON.parse(request.data);
-
-      expect(payload.tags[0].native.layouts[0]).to.deep.equal({
-        main_image: {required: true, sizes: [{}]},
-      });
-    });
-
-    it('does not overwrite native ad unit params with mimimum params', function () {
-      let bidRequest = Object.assign({},
-        bidRequests[0],
-        {
-          mediaType: 'native',
-          nativeParams: {
-            image: {
-              aspect_ratios: [{
-                min_width: 100,
-                ratio_width: 2,
-                ratio_height: 3,
-              }]
-            }
-          }
-        }
-      );
-
-      const request = spec.buildRequests([bidRequest]);
-      const payload = JSON.parse(request.data);
-
-      expect(payload.tags[0].native.layouts[0]).to.deep.equal({
-        main_image: {
-          required: true,
-          aspect_ratios: [{
-            min_width: 100,
-            ratio_width: 2,
-            ratio_height: 3,
-          }]
-        },
+        saleprice: {required: true},
+        privacy_supported: true
       });
     });
 
@@ -620,6 +659,22 @@ describe('AppNexusAdapter', function () {
         rd_stk: bidderRequest.refererInfo.stack.map((url) => encodeURIComponent(url)).join(',')
       });
     });
+
+    it('should populate tpids array when userId is available', function () {
+      const bidRequest = Object.assign({}, bidRequests[0], {
+        userId: {
+          criteortus: {
+            appnexus: {
+              userid: 'sample-userid'
+            }
+          }
+        }
+      });
+
+      const request = spec.buildRequests([bidRequest]);
+      const payload = JSON.parse(request.data);
+      expect(payload.tpuids).to.deep.equal([{provider: 'criteo', user_id: 'sample-userid'}]);
+    });
   })
 
   describe('interpretResponse', function () {
@@ -655,6 +710,9 @@ describe('AppNexusAdapter', function () {
               'cpm_publisher_currency': 0.5,
               'publisher_currency_code': '$',
               'client_initiated_ad_counting': true,
+              'viewability': {
+                'config': '<script type=\'text/javascript\' async=\'true\' src=\'http://cdn.adnxs.com/v/s/152/trk.js#v;vk=appnexus.com-omid;tv=native1-18h;dom_id=%native_dom_id%;st=0;d=1x1;vc=iab;vid_ccr=1;tag_id=13232354;cb=http%3A%2F%2Fams1-ib.adnxs.com%2Fvevent%3Freferrer%3Dhttp%253A%252F%252Ftestpages-pmahe.tp.adnxs.net%252F01_basic_single%26e%3DwqT_3QLNB6DNAwAAAwDWAAUBCLfl_-MFEMStk8u3lPTjRxih88aF0fq_2QsqNgkAAAECCCRAEQEHEAAAJEAZEQkAIREJACkRCQAxEQmoMOLRpwY47UhA7UhIAlCDy74uWJzxW2AAaM26dXjzjwWAAQGKAQNVU0SSAQEG8FCYAQGgAQGoAQGwAQC4AQHAAQTIAQLQAQDYAQDgAQDwAQCKAjt1ZignYScsIDI1Mjk4ODUsIDE1NTE4ODkwNzkpO3VmKCdyJywgOTc0OTQ0MDM2HgDwjZIC8QEha0RXaXBnajgtTHdLRUlQTHZpNFlBQ0NjOFZzd0FEZ0FRQVJJN1VoUTR0R25CbGdBWU1rR2FBQndMSGlrTDRBQlVvZ0JwQy1RQVFHWUFRR2dBUUdvQVFPd0FRQzVBZk90YXFRQUFDUkF3UUh6cldxa0FBQWtRTWtCbWo4dDA1ZU84VF9aQVFBQUEBAyRQQV80QUVBOVFFAQ4sQW1BSUFvQUlBdFFJBRAAdg0IeHdBSUF5QUlBNEFJQTZBSUEtQUlBZ0FNQm1BTUJxQVAFzIh1Z01KUVUxVE1UbzBNekl3NEFPVENBLi6aAmEhUXcxdGNRagUoEfQkblBGYklBUW9BRAl8AEEBqAREbzJEABRRSk1JU1EBGwRBQQGsAFURDAxBQUFXHQzwWNgCAOACrZhI6gIzaHR0cDovL3Rlc3RwYWdlcy1wbWFoZS50cC5hZG54cy5uZXQvMDFfYmFzaWNfc2luZ2xl8gITCg9DVVNUT01fTU9ERUxfSUQSAPICGgoWMhYAPExFQUZfTkFNRRIA8gIeCho2HQAIQVNUAT7wnElGSUVEEgCAAwCIAwGQAwCYAxegAwGqAwDAA-CoAcgDANgD8ao-4AMA6AMA-AMBgAQAkgQNL3V0L3YzL3ByZWJpZJgEAKIECjEwLjIuMTIuMzioBIqpB7IEDggAEAEYACAAKAAwADgCuAQAwAQAyAQA0gQOOTMyNSNBTVMxOjQzMjDaBAIIAeAEAfAEg8u-LogFAZgFAKAF______8BAxgBwAUAyQUABQEU8D_SBQkJBQt8AAAA2AUB4AUB8AWZ9CH6BQQIABAAkAYBmAYAuAYAwQYBITAAAPA_yAYA2gYWChAAOgEAGBAAGADgBgw.%26s%3D971dce9d49b6bee447c8a58774fb30b40fe98171;ts=1551889079;cet=0;cecb=\'></script>'
+              },
               'rtb': {
                 'banner': {
                   'content': '<!-- Creative -->',
@@ -722,7 +780,7 @@ describe('AppNexusAdapter', function () {
       expect(result.length).to.equal(0);
     });
 
-    it('handles non-banner media responses', function () {
+    it('handles outstream video responses', function () {
       let response = {
         'tags': [{
           'uuid': '84ab500420319d',
@@ -732,16 +790,57 @@ describe('AppNexusAdapter', function () {
             'notify_url': 'imptracker.com',
             'rtb': {
               'video': {
-                'content': '<!-- Creative -->'
+                'content': '<!-- VAST Creative -->'
               }
-            }
+            },
+            'javascriptTrackers': '<script type=\'text/javascript\' async=\'true\' src=\'http://cdn.adnxs.com/v/s/152/trk.js#v;vk=appnexus.com-omid;tv=native1-18h;dom_id=%native_dom_id%;st=0;d=1x1;vc=iab;vid_ccr=1;tag_id=13232354;cb=http%3A%2F%2Fams1-ib.adnxs.com%2Fvevent%3Freferrer%3Dhttp%253A%252F%252Ftestpages-pmahe.tp.adnxs.net%252F01_basic_single%26e%3DwqT_3QLNB6DNAwAAAwDWAAUBCLfl_-MFEMStk8u3lPTjRxih88aF0fq_2QsqNgkAAAECCCRAEQEHEAAAJEAZEQkAIREJACkRCQAxEQmoMOLRpwY47UhA7UhIAlCDy74uWJzxW2AAaM26dXjzjwWAAQGKAQNVU0SSAQEG8FCYAQGgAQGoAQGwAQC4AQHAAQTIAQLQAQDYAQDgAQDwAQCKAjt1ZignYScsIDI1Mjk4ODUsIDE1NTE4ODkwNzkpO3VmKCdyJywgOTc0OTQ0MDM2HgDwjZIC8QEha0RXaXBnajgtTHdLRUlQTHZpNFlBQ0NjOFZzd0FEZ0FRQVJJN1VoUTR0R25CbGdBWU1rR2FBQndMSGlrTDRBQlVvZ0JwQy1RQVFHWUFRR2dBUUdvQVFPd0FRQzVBZk90YXFRQUFDUkF3UUh6cldxa0FBQWtRTWtCbWo4dDA1ZU84VF9aQVFBQUEBAyRQQV80QUVBOVFFAQ4sQW1BSUFvQUlBdFFJBRAAdg0IeHdBSUF5QUlBNEFJQTZBSUEtQUlBZ0FNQm1BTUJxQVAFzIh1Z01KUVUxVE1UbzBNekl3NEFPVENBLi6aAmEhUXcxdGNRagUoEfQkblBGYklBUW9BRAl8AEEBqAREbzJEABRRSk1JU1EBGwRBQQGsAFURDAxBQUFXHQzwWNgCAOACrZhI6gIzaHR0cDovL3Rlc3RwYWdlcy1wbWFoZS50cC5hZG54cy5uZXQvMDFfYmFzaWNfc2luZ2xl8gITCg9DVVNUT01fTU9ERUxfSUQSAPICGgoWMhYAPExFQUZfTkFNRRIA8gIeCho2HQAIQVNUAT7wnElGSUVEEgCAAwCIAwGQAwCYAxegAwGqAwDAA-CoAcgDANgD8ao-4AMA6AMA-AMBgAQAkgQNL3V0L3YzL3ByZWJpZJgEAKIECjEwLjIuMTIuMzioBIqpB7IEDggAEAEYACAAKAAwADgCuAQAwAQAyAQA0gQOOTMyNSNBTVMxOjQzMjDaBAIIAeAEAfAEg8u-LogFAZgFAKAF______8BAxgBwAUAyQUABQEU8D_SBQkJBQt8AAAA2AUB4AUB8AWZ9CH6BQQIABAAkAYBmAYAuAYAwQYBITAAAPA_yAYA2gYWChAAOgEAGBAAGADgBgw.%26s%3D971dce9d49b6bee447c8a58774fb30b40fe98171;ts=1551889079;cet=0;cecb=\'></script>'
           }]
         }]
       };
       let bidderRequest = {
         bids: [{
           bidId: '84ab500420319d',
-          adUnitCode: 'code'
+          adUnitCode: 'code',
+          mediaTypes: {
+            video: {
+              context: 'outstream'
+            }
+          }
+        }]
+      }
+
+      let result = spec.interpretResponse({ body: response }, {bidderRequest});
+      expect(result[0]).to.have.property('vastXml');
+      expect(result[0]).to.have.property('vastImpUrl');
+      expect(result[0]).to.have.property('mediaType', 'video');
+    });
+
+    it('handles instream video responses', function () {
+      let response = {
+        'tags': [{
+          'uuid': '84ab500420319d',
+          'ads': [{
+            'ad_type': 'video',
+            'cpm': 0.500000,
+            'notify_url': 'imptracker.com',
+            'rtb': {
+              'video': {
+                'asset_url': 'http://sample.vastURL.com/here/vid'
+              }
+            },
+            'javascriptTrackers': '<script type=\'text/javascript\' async=\'true\' src=\'http://cdn.adnxs.com/v/s/152/trk.js#v;vk=appnexus.com-omid;tv=native1-18h;dom_id=%native_dom_id%;st=0;d=1x1;vc=iab;vid_ccr=1;tag_id=13232354;cb=http%3A%2F%2Fams1-ib.adnxs.com%2Fvevent%3Freferrer%3Dhttp%253A%252F%252Ftestpages-pmahe.tp.adnxs.net%252F01_basic_single%26e%3DwqT_3QLNB6DNAwAAAwDWAAUBCLfl_-MFEMStk8u3lPTjRxih88aF0fq_2QsqNgkAAAECCCRAEQEHEAAAJEAZEQkAIREJACkRCQAxEQmoMOLRpwY47UhA7UhIAlCDy74uWJzxW2AAaM26dXjzjwWAAQGKAQNVU0SSAQEG8FCYAQGgAQGoAQGwAQC4AQHAAQTIAQLQAQDYAQDgAQDwAQCKAjt1ZignYScsIDI1Mjk4ODUsIDE1NTE4ODkwNzkpO3VmKCdyJywgOTc0OTQ0MDM2HgDwjZIC8QEha0RXaXBnajgtTHdLRUlQTHZpNFlBQ0NjOFZzd0FEZ0FRQVJJN1VoUTR0R25CbGdBWU1rR2FBQndMSGlrTDRBQlVvZ0JwQy1RQVFHWUFRR2dBUUdvQVFPd0FRQzVBZk90YXFRQUFDUkF3UUh6cldxa0FBQWtRTWtCbWo4dDA1ZU84VF9aQVFBQUEBAyRQQV80QUVBOVFFAQ4sQW1BSUFvQUlBdFFJBRAAdg0IeHdBSUF5QUlBNEFJQTZBSUEtQUlBZ0FNQm1BTUJxQVAFzIh1Z01KUVUxVE1UbzBNekl3NEFPVENBLi6aAmEhUXcxdGNRagUoEfQkblBGYklBUW9BRAl8AEEBqAREbzJEABRRSk1JU1EBGwRBQQGsAFURDAxBQUFXHQzwWNgCAOACrZhI6gIzaHR0cDovL3Rlc3RwYWdlcy1wbWFoZS50cC5hZG54cy5uZXQvMDFfYmFzaWNfc2luZ2xl8gITCg9DVVNUT01fTU9ERUxfSUQSAPICGgoWMhYAPExFQUZfTkFNRRIA8gIeCho2HQAIQVNUAT7wnElGSUVEEgCAAwCIAwGQAwCYAxegAwGqAwDAA-CoAcgDANgD8ao-4AMA6AMA-AMBgAQAkgQNL3V0L3YzL3ByZWJpZJgEAKIECjEwLjIuMTIuMzioBIqpB7IEDggAEAEYACAAKAAwADgCuAQAwAQAyAQA0gQOOTMyNSNBTVMxOjQzMjDaBAIIAeAEAfAEg8u-LogFAZgFAKAF______8BAxgBwAUAyQUABQEU8D_SBQkJBQt8AAAA2AUB4AUB8AWZ9CH6BQQIABAAkAYBmAYAuAYAwQYBITAAAPA_yAYA2gYWChAAOgEAGBAAGADgBgw.%26s%3D971dce9d49b6bee447c8a58774fb30b40fe98171;ts=1551889079;cet=0;cecb=\'></script>'
+          }]
+        }]
+      };
+      let bidderRequest = {
+        bids: [{
+          bidId: '84ab500420319d',
+          adUnitCode: 'code',
+          mediaTypes: {
+            video: {
+              context: 'instream'
+            }
+          }
         }]
       }
 
@@ -762,9 +861,12 @@ describe('AppNexusAdapter', function () {
             'notify_url': 'imptracker.com',
             'rtb': {
               'video': {
-                'content': '<!-- Creative -->',
+                'asset_url': 'http://sample.vastURL.com/here/adpod',
                 'duration_ms': 30000,
               }
+            },
+            'viewability': {
+              'config': '<script type=\'text/javascript\' async=\'true\' src=\'http://cdn.adnxs.com/v/s/152/trk.js#v;vk=appnexus.com-omid;tv=native1-18h;dom_id=%native_dom_id%;st=0;d=1x1;vc=iab;vid_ccr=1;tag_id=13232354;cb=http%3A%2F%2Fams1-ib.adnxs.com%2Fvevent%3Freferrer%3Dhttp%253A%252F%252Ftestpages-pmahe.tp.adnxs.net%252F01_basic_single%26e%3DwqT_3QLNB6DNAwAAAwDWAAUBCLfl_-MFEMStk8u3lPTjRxih88aF0fq_2QsqNgkAAAECCCRAEQEHEAAAJEAZEQkAIREJACkRCQAxEQmoMOLRpwY47UhA7UhIAlCDy74uWJzxW2AAaM26dXjzjwWAAQGKAQNVU0SSAQEG8FCYAQGgAQGoAQGwAQC4AQHAAQTIAQLQAQDYAQDgAQDwAQCKAjt1ZignYScsIDI1Mjk4ODUsIDE1NTE4ODkwNzkpO3VmKCdyJywgOTc0OTQ0MDM2HgDwjZIC8QEha0RXaXBnajgtTHdLRUlQTHZpNFlBQ0NjOFZzd0FEZ0FRQVJJN1VoUTR0R25CbGdBWU1rR2FBQndMSGlrTDRBQlVvZ0JwQy1RQVFHWUFRR2dBUUdvQVFPd0FRQzVBZk90YXFRQUFDUkF3UUh6cldxa0FBQWtRTWtCbWo4dDA1ZU84VF9aQVFBQUEBAyRQQV80QUVBOVFFAQ4sQW1BSUFvQUlBdFFJBRAAdg0IeHdBSUF5QUlBNEFJQTZBSUEtQUlBZ0FNQm1BTUJxQVAFzIh1Z01KUVUxVE1UbzBNekl3NEFPVENBLi6aAmEhUXcxdGNRagUoEfQkblBGYklBUW9BRAl8AEEBqAREbzJEABRRSk1JU1EBGwRBQQGsAFURDAxBQUFXHQzwWNgCAOACrZhI6gIzaHR0cDovL3Rlc3RwYWdlcy1wbWFoZS50cC5hZG54cy5uZXQvMDFfYmFzaWNfc2luZ2xl8gITCg9DVVNUT01fTU9ERUxfSUQSAPICGgoWMhYAPExFQUZfTkFNRRIA8gIeCho2HQAIQVNUAT7wnElGSUVEEgCAAwCIAwGQAwCYAxegAwGqAwDAA-CoAcgDANgD8ao-4AMA6AMA-AMBgAQAkgQNL3V0L3YzL3ByZWJpZJgEAKIECjEwLjIuMTIuMzioBIqpB7IEDggAEAEYACAAKAAwADgCuAQAwAQAyAQA0gQOOTMyNSNBTVMxOjQzMjDaBAIIAeAEAfAEg8u-LogFAZgFAKAF______8BAxgBwAUAyQUABQEU8D_SBQkJBQt8AAAA2AUB4AUB8AWZ9CH6BQQIABAAkAYBmAYAuAYAwQYBITAAAPA_yAYA2gYWChAAOgEAGBAAGADgBgw.%26s%3D971dce9d49b6bee447c8a58774fb30b40fe98171;ts=1551889079;cet=0;cecb=\'></script>'
             }
           }]
         }]
@@ -784,6 +886,7 @@ describe('AppNexusAdapter', function () {
       bfStub.returns('1');
 
       let result = spec.interpretResponse({ body: response }, {bidderRequest});
+      expect(result[0]).to.have.property('vastUrl');
       expect(result[0].video.context).to.equal('adpod');
       expect(result[0].video.durationSeconds).to.equal(30);
     });
@@ -821,7 +924,8 @@ describe('AppNexusAdapter', function () {
         'saleprice': 'FREE',
         'phone': '1234567890',
         'address': '28 W 23rd St, New York, NY 10010',
-        'privacy_link': 'http://appnexus.com/?url=privacy_url'
+        'privacy_link': 'http://appnexus.com/?url=privacy_url',
+        'javascriptTrackers': '<script type=\'text/javascript\' async=\'true\' src=\'http://cdn.adnxs.com/v/s/152/trk.js#v;vk=appnexus.com-omid;tv=native1-18h;dom_id=;css_selector=.pb-click;st=0;d=1x1;vc=iab;vid_ccr=1;tag_id=13232354;cb=http%3A%2F%2Fams1-ib.adnxs.com%2Fvevent%3Freferrer%3Dhttp%253A%252F%252Ftestpages-pmahe.tp.adnxs.net%252F01_basic_single%26e%3DwqT_3QLNB6DNAwAAAwDWAAUBCLfl_-MFEMStk8u3lPTjRxih88aF0fq_2QsqNgkAAAECCCRAEQEHEAAAJEAZEQkAIREJACkRCQAxEQmoMOLRpwY47UhA7UhIAlCDy74uWJzxW2AAaM26dXjzjwWAAQGKAQNVU0SSAQEG8FCYAQGgAQGoAQGwAQC4AQHAAQTIAQLQAQDYAQDgAQDwAQCKAjt1ZignYScsIDI1Mjk4ODUsIDE1NTE4ODkwNzkpO3VmKCdyJywgOTc0OTQ0MDM2HgDwjZIC8QEha0RXaXBnajgtTHdLRUlQTHZpNFlBQ0NjOFZzd0FEZ0FRQVJJN1VoUTR0R25CbGdBWU1rR2FBQndMSGlrTDRBQlVvZ0JwQy1RQVFHWUFRR2dBUUdvQVFPd0FRQzVBZk90YXFRQUFDUkF3UUh6cldxa0FBQWtRTWtCbWo4dDA1ZU84VF9aQVFBQUEBAyRQQV80QUVBOVFFAQ4sQW1BSUFvQUlBdFFJBRAAdg0IeHdBSUF5QUlBNEFJQTZBSUEtQUlBZ0FNQm1BTUJxQVAFzIh1Z01KUVUxVE1UbzBNekl3NEFPVENBLi6aAmEhUXcxdGNRagUoEfQkblBGYklBUW9BRAl8AEEBqAREbzJEABRRSk1JU1EBGwRBQQGsAFURDAxBQUFXHQzwWNgCAOACrZhI6gIzaHR0cDovL3Rlc3RwYWdlcy1wbWFoZS50cC5hZG54cy5uZXQvMDFfYmFzaWNfc2luZ2xl8gITCg9DVVNUT01fTU9ERUxfSUQSAPICGgoWMhYAPExFQUZfTkFNRRIA8gIeCho2HQAIQVNUAT7wnElGSUVEEgCAAwCIAwGQAwCYAxegAwGqAwDAA-CoAcgDANgD8ao-4AMA6AMA-AMBgAQAkgQNL3V0L3YzL3ByZWJpZJgEAKIECjEwLjIuMTIuMzioBIqpB7IEDggAEAEYACAAKAAwADgCuAQAwAQAyAQA0gQOOTMyNSNBTVMxOjQzMjDaBAIIAeAEAfAEg8u-LogFAZgFAKAF______8BAxgBwAUAyQUABQEU8D_SBQkJBQt8AAAA2AUB4AUB8AWZ9CH6BQQIABAAkAYBmAYAuAYAwQYBITAAAPA_yAYA2gYWChAAOgEAGBAAGADgBgw.%26s%3D971dce9d49b6bee447c8a58774fb30b40fe98171;ts=1551889079;cet=0;cecb=\'></script>'
       };
       let bidderRequest = {
         bids: [{
@@ -849,6 +953,11 @@ describe('AppNexusAdapter', function () {
             options: {
               adText: 'configured'
             }
+          },
+          mediaTypes: {
+            video: {
+              context: 'outstream'
+            }
           }
         }]
       };
@@ -873,5 +982,19 @@ describe('AppNexusAdapter', function () {
       let result = spec.interpretResponse({ body: responseWithDeal }, {bidderRequest});
       expect(Object.keys(result[0].appnexus)).to.include.members(['buyerMemberId', 'dealPriority', 'dealCode']);
     });
+
+    it('should add advertiser id', function() {
+      let responseAdvertiserId = deepClone(response);
+      responseAdvertiserId.tags[0].ads[0].advertiser_id = '123';
+
+      let bidderRequest = {
+        bids: [{
+          bidId: '3db3773286ee59',
+          adUnitCode: 'code'
+        }]
+      }
+      let result = spec.interpretResponse({ body: responseAdvertiserId }, {bidderRequest});
+      expect(Object.keys(result[0].meta)).to.include.members(['advertiserId']);
+    })
   });
 });
