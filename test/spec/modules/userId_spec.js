@@ -585,10 +585,15 @@ describe('User ID', function() {
 
     it('should update id storage value if refreshId is defined', function(done) {
       const conf = {
-        usersync: {
+        userSync: {
           syncDelay: 0,
           userIds: [{
-            name: 'mockId', storage: { name: 'MOCKID', type: 'cookie' }
+            name: 'mockId',
+            storage: {
+              expires: 365,
+              name: 'MOCKID',
+              type: 'cookie'
+            }
           }]
         }
       };
