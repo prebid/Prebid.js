@@ -2,8 +2,8 @@ import {registerBidder} from '../src/adapters/bidderFactory';
 import {BANNER} from '../src/mediaTypes';
 import * as utils from '../src/utils';
 const BIDDER_CODE = 'deepintent';
-const BIDDER_ENDPOINT = 'https://useast-x.deepintent.com/serve';
-const USER_SYNC_URL = 'beacon.deepintent.com/usersync.html';
+const BIDDER_ENDPOINT = 'https://useast-x.deepintent.com/exchange';
+const USER_SYNC_URL = 'https://beacon.deepintent.com/usersync.html';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -41,10 +41,6 @@ export const spec = {
         }
       }
     };
-
-    if(bidderRequest && bidderRequest.gdprConsent){
-      // Fill in GDPR Params
-    }
 
     return {
       method: 'POST',
