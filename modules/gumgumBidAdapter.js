@@ -135,7 +135,7 @@ function isBidRequestValid (bid) {
  */
 function buildRequests (validBidRequests, bidderRequest) {
   const bids = [];
-  const gdprConsent = Object.assign({ consentString: null, gdprApplies: true }, bidderRequest && bidderRequest.gdprConsent)
+  const gdprConsent = bidderRequest && bidderRequest.gdprConsent;
   utils._each(validBidRequests, bidRequest => {
     const timeout = config.getConfig('bidderTimeout');
     const {
@@ -164,8 +164,10 @@ function buildRequests (validBidRequests, bidderRequest) {
       data.ni = parseInt(params.ICV, 10);
       data.pi = 5;
     }
-    data.gdprApplies = gdprConsent.gdprApplies ? 1 : 0;
-    if (gdprConsent.gdprApplies) {
+    if (gdprConsent) {
+      data.gdprApplies = gdprConsent.gdprApplies ? 1 : 0;
+    }
+    if (data.gdprApplies) {
       data.gdprConsent = gdprConsent.consentString;
     }
 
