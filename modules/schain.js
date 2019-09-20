@@ -43,64 +43,63 @@ export function isSchainObjectValid(schainObject, returnOnError) {
   }
 
   // nodes: Array of objects
+  let isEachNodeIsValid = true;
   if (!isArray(schainObject.nodes)) {
     logError(schainErrorPrefix + `schain.nodes` + shouldBeAnArray);
     if (returnOnError) return false;
+  } else {
+    schainObject.nodes.forEach(node => {
+      // asi: String
+      if (!isStr(node.asi)) {
+        isEachNodeIsValid = isEachNodeIsValid && false;
+        logError(schainErrorPrefix + `schain.nodes[].asi` + shouldBeAString);
+      }
+
+      // sid: String
+      if (!isStr(node.sid)) {
+        isEachNodeIsValid = isEachNodeIsValid && false;
+        logError(schainErrorPrefix + `schain.nodes[].sid` + shouldBeAString);
+      }
+
+      // hp: Integer
+      if (!isNumber(node.hp) || !isInteger(node.hp)) {
+        isEachNodeIsValid = isEachNodeIsValid && false;
+        logError(schainErrorPrefix + `schain.nodes[].hp` + shouldBeAnInteger);
+      }
+
+      // rid: String [Optional]
+      if (hasOwn(node, 'rid')) {
+        if (!isStr(node.rid)) {
+          isEachNodeIsValid = isEachNodeIsValid && false;
+          logError(schainErrorPrefix + `schain.nodes[].rid` + shouldBeAString);
+        }
+      }
+
+      // name: String [Optional]
+      if (hasOwn(node, 'name')) {
+        if (!isStr(node.name)) {
+          isEachNodeIsValid = isEachNodeIsValid && false;
+          logError(schainErrorPrefix + `schain.nodes[].name` + shouldBeAString);
+        }
+      }
+
+      // domain: String [Optional]
+      if (hasOwn(node, 'domain')) {
+        if (!isStr(node.domain)) {
+          isEachNodeIsValid = isEachNodeIsValid && false;
+          logError(schainErrorPrefix + `schain.nodes[].domain` + shouldBeAString);
+        }
+      }
+
+      // ext: Object [Optional]
+      if (hasOwn(node, 'ext')) {
+        if (!isPlainObject(node.ext)) {
+          isEachNodeIsValid = isEachNodeIsValid && false;
+          logError(schainErrorPrefix + `schain.nodes[].ext` + shouldBeAnObject);
+        }
+      }
+    });
   }
-
-  // now validate each node
-  let isEachNodeIsValid = true;
-  schainObject.nodes.forEach(node => {
-    // asi: String
-    if (!isStr(node.asi)) {
-      isEachNodeIsValid = isEachNodeIsValid && false;
-      logError(schainErrorPrefix + `schain.nodes[].asi` + shouldBeAString);
-    }
-
-    // sid: String
-    if (!isStr(node.sid)) {
-      isEachNodeIsValid = isEachNodeIsValid && false;
-      logError(schainErrorPrefix + `schain.nodes[].sid` + shouldBeAString);
-    }
-
-    // hp: Integer
-    if (!isNumber(node.hp) || !isInteger(node.hp)) {
-      isEachNodeIsValid = isEachNodeIsValid && false;
-      logError(schainErrorPrefix + `schain.nodes[].hp` + shouldBeAnInteger);
-    }
-
-    // rid: String [Optional]
-    if (hasOwn(node, 'rid')) {
-      if (!isStr(node.rid)) {
-        isEachNodeIsValid = isEachNodeIsValid && false;
-        logError(schainErrorPrefix + `schain.nodes[].rid` + shouldBeAString);
-      }
-    }
-
-    // name: String [Optional]
-    if (hasOwn(node, 'name')) {
-      if (!isStr(node.name)) {
-        isEachNodeIsValid = isEachNodeIsValid && false;
-        logError(schainErrorPrefix + `schain.nodes[].name` + shouldBeAString);
-      }
-    }
-
-    // domain: String [Optional]
-    if (hasOwn(node, 'domain')) {
-      if (!isStr(node.domain)) {
-        isEachNodeIsValid = isEachNodeIsValid && false;
-        logError(schainErrorPrefix + `schain.nodes[].domain` + shouldBeAString);
-      }
-    }
-
-    // ext: Object [Optional]
-    if (hasOwn(node, 'ext')) {
-      if (!isPlainObject(node.ext)) {
-        isEachNodeIsValid = isEachNodeIsValid && false;
-        logError(schainErrorPrefix + `schain.nodes[].ext` + shouldBeAnObject);
-      }
-    }
-  });
 
   if (returnOnError && !isEachNodeIsValid) {
     return false;
@@ -118,13 +117,22 @@ export function copySchainObjectInAdunits(adUnits, schainObject) {
   });
 }
 
+export function isValidSchainConfig(schainObject) {
+  if (schainObject === undefined) {
+    return false;
+  }
+  if (!isPlainObject(schainObject)) {
+    logError(schainErrorPrefix + 'schain config will not be passed to bidders as schain is not an object.');
+    return false;
+  }
+  return true;
+}
+
 export function init(config) {
   let mode = MODE.STRICT;
   getGlobal().requestBids.before(function(fn, reqBidsConfigObj) {
     let schainObject = config.getConfig('schain');
-    if (!isPlainObject(schainObject)) {
-      logError(schainErrorPrefix + 'schain config will not be passed to bidders as schain is not an object.');
-    } else {
+    if (isValidSchainConfig(schainObject)) {
       if (isStr(schainObject.validation) && Object.values(MODE).indexOf(schainObject.validation) != -1) {
         mode = schainObject.validation;
       }

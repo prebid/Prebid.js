@@ -52,6 +52,12 @@ describe('orbidderBidAdapter', () => {
       expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
     });
 
+    it('accepts optional profile object', () => {
+      const bidRequest = deepClone(defaultBidRequest);
+      bidRequest.params.profile = {'key': 'value'};
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
+    });
+
     it('performs type checking', () => {
       const bidRequest = deepClone(defaultBidRequest);
       bidRequest.params.accountId = 1; // supposed to be a string
@@ -61,6 +67,12 @@ describe('orbidderBidAdapter', () => {
     it('doesn\'t accept malformed keyValues', () => {
       const bidRequest = deepClone(defaultBidRequest);
       bidRequest.params.keyValues = 'another not usable string';
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
+    });
+
+    it('doesn\'t accept malformed profile', () => {
+      const bidRequest = deepClone(defaultBidRequest);
+      bidRequest.params.profile = 'another not usable string';
       expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
     });
 

@@ -46,6 +46,7 @@ export const spec = {
     const sizeMap = {};
     const bids = validBidRequests || [];
     let priceType = 'net';
+    let pageKeywords;
     let reqId;
 
     bids.forEach(bid => {
@@ -56,6 +57,15 @@ export const spec = {
       const {params: {uid}, adUnitCode} = bid;
       auids.push(uid);
       const sizesId = utils.parseSizesInput(bid.sizes);
+
+      if (!pageKeywords && !utils.isEmpty(bid.params.keywords)) {
+        const keywords = utils.transformBidderParamKeywords(bid.params.keywords);
+
+        if (keywords.length > 0) {
+          keywords.forEach(deleteValues);
+        }
+        pageKeywords = keywords;
+      }
 
       if (!slotsMapByUid[uid]) {
         slotsMapByUid[uid] = {};
@@ -91,6 +101,10 @@ export const spec = {
       wrapperType: 'Prebid_js',
       wrapperVersion: '$prebid.version$'
     };
+
+    if (pageKeywords) {
+      payload.keywords = JSON.stringify(pageKeywords);
+    }
 
     if (bidderRequest) {
       if (bidderRequest.refererInfo && bidderRequest.refererInfo.referer) {
@@ -151,6 +165,16 @@ export const spec = {
         url: ADAPTER_SYNC_URL
       }];
     }
+  }
+}
+
+function isPopulatedArray(arr) {
+  return !!(utils.isArray(arr) && arr.length > 0);
+}
+
+function deleteValues(keyPairObj) {
+  if (isPopulatedArray(keyPairObj.value) && keyPairObj.value[0] === '') {
+    delete keyPairObj.value;
   }
 }
 
