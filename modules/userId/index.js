@@ -354,12 +354,12 @@ function initSubmodules(submodules, consentData) {
         }
       }
 
-      if (typeof submodule.submodule.refreshId === 'function') {
+      if (utils.isFn(submodule.submodule.refreshId)) {
         // if defined, refreshId will return a function that will load an updated id to be stored for subsequent use
         const refreshIdResult = submodule.submodule.refreshId(submodule.config.params, consentData, storedId);
 
         // a function to be called later is expected, otherwise ignore
-        if (typeof refreshIdResult === 'function') {
+        if (utils.isFn(refreshIdResult)) {
           submodule.callback = refreshIdResult;
         }
       }
