@@ -12,7 +12,7 @@
  * @summary performs action to obtain id and return a value in the callback's response argument
  * @name Submodule#getId
  * @param {SubmoduleParams} configParams
- * @param {ConsentData} consentData
+ * @param {ConsentData|undefined} consentData
  * @param {(Object|undefined)} cacheIdObj
  * @return {(Object|function)} id data or a callback, the callback is called on the auction end event
  */
