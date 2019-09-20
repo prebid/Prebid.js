@@ -32,6 +32,7 @@ const bid1 = {
     [CONSTANTS.TARGETING_KEYS.PRICE_BUCKET]: '0.53',
     [CONSTANTS.TARGETING_KEYS.DEAL]: '1234'
   },
+  'dealId': '1234',
   'netRevenue': true,
   'currency': 'USD',
   'ttl': 300
@@ -328,6 +329,127 @@ describe('targeting tests', function () {
       expect(targeting['/123456/header-bid-tag-0']).to.deep.equal({});
       expect(logWarnStub.calledTwice).to.be.true;
       expect(logErrorStub.calledOnce).to.be.true;
+    });
+
+    describe('targetingControls.alwaysIncludeDeals', function () {
+      let bid4;
+
+      beforeEach(function() {
+        bid4 = utils.deepClone(bid1);
+        bid4.adserverTargeting = {
+          hb_deal: '4321',
+          hb_pb: '0.1',
+          hb_adid: '567891011',
+          hb_bidder: 'appnexus',
+        };
+        bid4.bidder = bid4.bidderCode = 'appnexus';
+        bid4.cpm = 0.1; // losing bid so not included if enableSendAllBids === false
+        bid4.dealId = '4321';
+        enableSendAllBids = false;
+
+        bidsReceived.push(bid4);
+      });
+
+      it('does not include losing deals when alwaysIncludeDeals not set', function () {
+        const targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0']);
+
+        // Rubicon wins bid and has deal, but alwaysIncludeDeals is false, so only top bid plus deal_id
+        // appnexus does not get sent since alwaysIncludeDeals is not defined
+        expect(targeting['/123456/header-bid-tag-0']).to.deep.equal({
+          'hb_deal_rubicon': '1234',
+          'hb_deal': '1234',
+          'hb_pb': '0.53',
+          'hb_adid': '148018fe5e',
+          'hb_bidder': 'rubicon',
+          'foobar': '300x250'
+        });
+      });
+
+      it('does not include losing deals when alwaysIncludeDeals set to false', function () {
+        config.setConfig({
+          targetingControls: {
+            alwaysIncludeDeals: false
+          }
+        });
+
+        const targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0']);
+
+        // Rubicon wins bid and has deal, but alwaysIncludeDeals is false, so only top bid plus deal_id
+        // appnexus does not get sent since alwaysIncludeDeals is false
+        expect(targeting['/123456/header-bid-tag-0']).to.deep.equal({
+          'hb_deal_rubicon': '1234', // This is just how it works before this PR, always added no matter what for winner if they have deal
+          'hb_deal': '1234',
+          'hb_pb': '0.53',
+          'hb_adid': '148018fe5e',
+          'hb_bidder': 'rubicon',
+          'foobar': '300x250'
+        });
+      });
+
+      it('includes losing deals when alwaysIncludeDeals set to true and also winning deals bidder KVPs', function () {
+        config.setConfig({
+          targetingControls: {
+            alwaysIncludeDeals: true
+          }
+        });
+        const targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0']);
+
+        // Rubicon wins bid and has a deal, so all KVPs for them are passed (top plus bidder specific)
+        // Appnexus had deal so passed through
+        expect(targeting['/123456/header-bid-tag-0']).to.deep.equal({
+          'hb_deal_rubicon': '1234',
+          'hb_deal': '1234',
+          'hb_pb': '0.53',
+          'hb_adid': '148018fe5e',
+          'hb_bidder': 'rubicon',
+          'foobar': '300x250',
+          'hb_pb_rubicon': '0.53',
+          'hb_adid_rubicon': '148018fe5e',
+          'hb_bidder_rubicon': 'rubicon',
+          'hb_deal_appnexus': '4321',
+          'hb_pb_appnexus': '0.1',
+          'hb_adid_appnexus': '567891011',
+          'hb_bidder_appnexus': 'appnexus'
+        });
+      });
+
+      it('includes winning bid even when it is not a deal, plus other deal KVPs', function () {
+        config.setConfig({
+          targetingControls: {
+            alwaysIncludeDeals: true
+          }
+        });
+        let bid5 = utils.deepClone(bid4);
+        bid5.adserverTargeting = {
+          hb_pb: '3.0',
+          hb_adid: '111111',
+          hb_bidder: 'pubmatic',
+        };
+        bid5.bidder = bid5.bidderCode = 'pubmatic';
+        bid5.cpm = 3.0; // winning bid!
+        delete bid5.dealId; // no deal with winner
+        bidsReceived.push(bid5);
+
+        const targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0']);
+
+        // Pubmatic wins but no deal. So only top bid KVPs for them is sent
+        // Rubicon has a dealId so passed through
+        // Appnexus has a dealId so passed through
+        expect(targeting['/123456/header-bid-tag-0']).to.deep.equal({
+          'hb_bidder': 'pubmatic',
+          'hb_adid': '111111',
+          'hb_pb': '3.0',
+          'foobar': '300x250',
+          'hb_deal_rubicon': '1234',
+          'hb_pb_rubicon': '0.53',
+          'hb_adid_rubicon': '148018fe5e',
+          'hb_bidder_rubicon': 'rubicon',
+          'hb_deal_appnexus': '4321',
+          'hb_pb_appnexus': '0.1',
+          'hb_adid_appnexus': '567891011',
+          'hb_bidder_appnexus': 'appnexus'
+        });
+      });
     });
 
     it('selects the top bid when enableSendAllBids true', function () {

@@ -1,11 +1,5 @@
 /*
  * Module for getting and setting Prebid configuration.
- *
- * Prebid previously defined these properties directly on the global object:
- * pbjs.logging = true;
- *
- * Defining and access properties in this way is now deprecated, but these will
- * continue to work during a deprecation window.
  */
 import { isValidPriceConfig } from './cpmBucketManager';
 import find from 'core-js/library/fn/array/find';

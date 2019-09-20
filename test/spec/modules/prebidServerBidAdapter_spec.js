@@ -144,7 +144,7 @@ const OUTSTREAM_VIDEO_REQUEST = {
         }
       ],
       renderer: {
-        url: 'http://cdn.adnxs.com/renderer/video/ANOutstreamVideo.js',
+        url: 'http://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js',
         render: function (bid) {
           ANOutstreamVideo.renderAd({
             targetId: bid.adUnitCode,
@@ -1237,6 +1237,31 @@ describe('S2S Adapter', function () {
         }
       });
     });
+
+    it('passes schain object in request', function() {
+      const bidRequests = utils.deepClone(BID_REQUESTS);
+      const schainObject = {
+        'ver': '1.0',
+        'complete': 1,
+        'nodes': [
+          {
+            'asi': 'indirectseller.com',
+            'sid': '00001',
+            'hp': 1
+          },
+
+          {
+            'asi': 'indirectseller-2.com',
+            'sid': '00002',
+            'hp': 2
+          }
+        ]
+      };
+      bidRequests[0].bids[0].schain = schainObject;
+      adapter.callBids(REQUEST, bidRequests, addBidResponse, done, ajax);
+      const parsedRequestBody = JSON.parse(requests[0].requestBody);
+      expect(parsedRequestBody.source.ext.schain).to.deep.equal(schainObject);
+    })
   });
 
   describe('response handler', function () {

@@ -735,12 +735,12 @@ describe('TrustXAdapter', function () {
     expect(spyRendererInstall.calledTwice).to.equal(true);
     expect(spyRendererInstall.getCall(0).args[0]).to.deep.equal({
       id: 'e6e65553fc8',
-      url: '//cdn.adnxs.com/renderer/video/ANOutstreamVideo.js',
+      url: '//acdn.adnxs.com/video/outstream/ANOutstreamVideo.js',
       loaded: false
     });
     expect(spyRendererInstall.getCall(1).args[0]).to.deep.equal({
       id: 'c8fdcb3f269f',
-      url: '//cdn.adnxs.com/renderer/video/ANOutstreamVideo.js',
+      url: '//acdn.adnxs.com/video/outstream/ANOutstreamVideo.js',
       loaded: false
     });
 

@@ -685,6 +685,14 @@ const OPEN_RTB_PROTOCOL = {
       utils.deepSetValue(request, 'user.ext.digitrust', digiTrust);
     }
 
+    // pass schain object if it is present
+    const schain = utils.deepAccess(bidRequests, '0.bids.0.schain');
+    if (schain) {
+      request.source.ext = {
+        schain: schain
+      };
+    }
+
     if (!utils.isEmpty(aliases)) {
       request.ext.prebid.aliases = aliases;
     }
