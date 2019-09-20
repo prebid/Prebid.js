@@ -41,7 +41,7 @@ pbjs.setConfig({
             storage: {
                 type: 'cookie',
                 name: 'idl_env',
-                expires: 60
+                expires: 30
             }
         }],
         syncDelay: 5000
@@ -79,7 +79,7 @@ pbjs.setConfig({
             storage: {
                 type: 'html5',
                 name: 'idl_env',
-                expires: 60
+                expires: 30
             }
         }],
         syncDelay: 5000
