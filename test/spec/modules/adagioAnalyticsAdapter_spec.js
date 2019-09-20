@@ -1,10 +1,5 @@
 import adagioAnalyticsAdapter from 'modules/adagioAnalyticsAdapter';
-import {
-  expect
-} from 'chai';
-import {
-  parse as parseURL
-} from 'src/url';
+import { expect } from 'chai';
 import * as utils from 'src/utils';
 
 let adapterManager = require('src/adapterManager').default;
@@ -14,25 +9,27 @@ let constants = require('src/constants.json');
 describe('adagio analytics adapter', () => {
   let xhr;
   let requests;
+  let sandbox
 
   beforeEach(() => {
-    xhr = sinon.useFakeXMLHttpRequest();
+    sandbox = sinon.createSandbox();
+
+    xhr = sandbox.useFakeXMLHttpRequest();
     requests = [];
     xhr.onCreate = request => requests.push(request);
-    sinon.stub(events, 'getEvents').returns([]);
-  });
+    sandbox.stub(events, 'getEvents').returns([]);
 
-  afterEach(() => {
-    xhr.restore();
-    events.getEvents.restore();
-  });
-
-  describe('track', () => {
     adapterManager.registerAnalyticsAdapter({
       code: 'adagio',
       adapter: adagioAnalyticsAdapter
     });
+  });
 
+  afterEach(() => {
+    sandbox.restore();
+  });
+
+  describe('track', () => {
     beforeEach(() => {
       adapterManager.enableAnalytics({
         provider: 'adagio'
@@ -44,6 +41,8 @@ describe('adagio analytics adapter', () => {
     });
 
     it('builds and sends auction data', () => {
+      const w = utils.getWindowTop();
+
       let bidRequest = {
         bids: [{
           adUnitCode: 'div-1',
@@ -90,23 +89,23 @@ describe('adagio analytics adapter', () => {
       // Step 3: Send auction end event
       events.emit(constants.EVENTS.AUCTION_END, {});
 
-      expect(window.top.ADAGIO.queue).length(3);
+      expect(w.ADAGIO.queue).length(3);
 
-      let o = window.top.ADAGIO.queue.shift();
+      let o = w.ADAGIO.queue.shift();
       expect(o).to.not.be.undefined;
       expect(o.action).to.equal('pb-analytics-event');
       expect(o.ts).to.not.be.undefined;
       expect(o.data).to.not.be.undefined;
       expect(o.data).to.deep.equal({eventName: constants.EVENTS.BID_REQUESTED, args: bidRequest});
 
-      o = window.top.ADAGIO.queue.shift();
+      o = w.ADAGIO.queue.shift();
       expect(o).to.not.be.undefined;
       expect(o.action).to.equal('pb-analytics-event');
       expect(o.ts).to.not.be.undefined;
       expect(o.data).to.not.be.undefined;
       expect(o.data).to.deep.equal({eventName: constants.EVENTS.BID_RESPONSE, args: bidResponse});
 
-      o = window.top.ADAGIO.queue.shift();
+      o = w.ADAGIO.queue.shift();
       expect(o).to.not.be.undefined;
       expect(o.action).to.equal('pb-analytics-event');
       expect(o.ts).to.not.be.undefined;
@@ -116,14 +115,6 @@ describe('adagio analytics adapter', () => {
   });
 
   describe('no track', () => {
-    // delete window.top.ADAGIO;
-    const sandbox = sinon.createSandbox();
-
-    adapterManager.registerAnalyticsAdapter({
-      code: 'adagio',
-      adapter: adagioAnalyticsAdapter
-    });
-
     beforeEach(() => {
       sandbox.stub(utils, 'getWindowTop').throws();
 
@@ -184,7 +175,9 @@ describe('adagio analytics adapter', () => {
       // Step 3: Send auction end event
       events.emit(constants.EVENTS.AUCTION_END, {});
 
-      expect(window.top.ADAGIO.queue).length(0);
+      utils.getWindowTop.restore();
+
+      expect(utils.getWindowTop().ADAGIO.queue).length(0);
     });
   });
 });
