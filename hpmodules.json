@@ -2,6 +2,7 @@
   "33acrossBidAdapter",
   "aolBidAdapter",
   "appnexusBidAdapter",
+  "consentManagement",
   "emx_digitalBidAdapter",
   "audienceNetworkBidAdapter",
   "ixBidAdapter",
