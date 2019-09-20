@@ -354,20 +354,6 @@ describe('adagioAdapter', () => {
       expect(request.data.adUnits[0].features).to.exist;
     });
 
-    it('device type must be "5" when user agent match tablet test', () => {
-      sandbox.stub(top.navigator, 'userAgent').value('Mozilla/5.0 (iPad; CPU OS 12_1_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/16C50');
-      const requests = spec.buildRequests([Object.assign({}, bidRequests[0])], bidderRequest);
-      const request = requests[0];
-      expect(request.data.device.deviceType).to.equal(5);
-    })
-
-    it('device type must be "4" when user agent match phone test', () => {
-      sandbox.stub(top.navigator, 'userAgent').value('Mozilla/5.0 (Linux; Android 7.0; SAMSUNG SM-G950F Build/NRD90M) AppleWebKit/537.36 (KHTML, like Gecko) SamsungBrowser/5.2 Chrome/51.0.2704.106 Mobile Safari/537.36');
-      const requests = spec.buildRequests([Object.assign({}, bidRequests[0])], bidderRequest);
-      const request = requests[0];
-      expect(request.data.device.deviceType).to.equal(4);
-    })
-
     it('outerAdUnitElementId must be added when PostBid param has been set', () => {
       top.ADAGIO = top.ADAGIO || {};
       top.ADAGIO.pbjsAdUnits = [];
