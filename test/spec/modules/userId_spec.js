@@ -1,10 +1,10 @@
 import {
+  attachIdSystem,
+  auctionDelay,
   init,
   requestBidsHook,
   setSubmoduleRegistry,
-  syncDelay,
-  attachIdSystem,
-  auctionDelay
+  syncDelay
 } from 'modules/userId/index.js';
 import {config} from 'src/config';
 import * as utils from 'src/utils';
@@ -14,6 +14,7 @@ import {unifiedIdSubmodule} from 'modules/userId/unifiedIdSystem';
 import {pubCommonIdSubmodule} from 'modules/userId/pubCommonIdSystem';
 import {id5IdSubmodule} from 'modules/id5IdSystem';
 import {identityLinkSubmodule} from 'modules/identityLinkIdSystem';
+
 let assert = require('chai').assert;
 let expect = require('chai').expect;
 const EXPIRED_COOKIE_DATE = 'Thu, 01 Jan 1970 00:00:01 GMT';
@@ -24,15 +25,20 @@ describe('User ID', function() {
       userSync: {
         syncDelay: 0,
         userIds: [
-          (configArr1 && configArr1.length === 3) ? getStorageMock.apply(null, configArr1) : null,
-          (configArr2 && configArr2.length === 3) ? getStorageMock.apply(null, configArr2) : null,
-          (configArr3 && configArr3.length === 3) ? getStorageMock.apply(null, configArr3) : null,
-          (configArr4 && configArr4.length === 3) ? getStorageMock.apply(null, configArr4) : null
+          (configArr1 && configArr1.length >= 3) ? getStorageMock.apply(null, configArr1) : null,
+          (configArr2 && configArr2.length >= 3) ? getStorageMock.apply(null, configArr2) : null,
+          (configArr3 && configArr3.length >= 3) ? getStorageMock.apply(null, configArr3) : null,
+          (configArr4 && configArr4.length >= 3) ? getStorageMock.apply(null, configArr4) : null
         ].filter(i => i)}
     }
   }
-  function getStorageMock(name = 'pubCommonId', key = 'pubcid', type = 'cookie', expires = 30) {
-    return { name: name, storage: { name: key, type: type, expires: expires } }
+  function getStorageMock(name = 'pubCommonId', key = 'pubcid', type = 'cookie', expires = 30, refreshInSeconds) {
+    return { name: name, storage: { name: key, type: type, expires: expires, refreshInSeconds: refreshInSeconds } }
+  }
+  function getConfigValueMock(name, value) {
+    return {
+      userSync: { syncDelay: 0, userIds: [{ name: name, value: value }] }
+    }
   }
 
   function getAdUnitMock(code = 'adUnit-code') {
@@ -75,7 +81,7 @@ describe('User ID', function() {
       let pubcid = utils.getCookie('pubcid');
       expect(pubcid).to.be.null; // there should be no cookie initially
 
-      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule]);
+      setSubmoduleRegistry([pubCommonIdSubmodule]);
       init(config);
       config.setConfig(getConfigMock(['pubCommonId', 'pubcid', 'cookie']));
 
@@ -101,7 +107,7 @@ describe('User ID', function() {
       let pubcid1;
       let pubcid2;
 
-      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule]);
+      setSubmoduleRegistry([pubCommonIdSubmodule]);
       init(config);
       config.setConfig(getConfigMock(['pubCommonId', 'pubcid', 'cookie']));
       requestBidsHook((config) => { innerAdUnits1 = config.adUnits }, {adUnits: adUnits1});
@@ -115,7 +121,7 @@ describe('User ID', function() {
         });
       });
 
-      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule]);
+      setSubmoduleRegistry([pubCommonIdSubmodule]);
       init(config);
       config.setConfig(getConfigMock(['pubCommonId', 'pubcid', 'cookie']));
       requestBidsHook((config) => { innerAdUnits2 = config.adUnits }, {adUnits: adUnits2});
@@ -136,7 +142,7 @@ describe('User ID', function() {
       let adUnits = [getAdUnitMock()];
       let innerAdUnits;
 
-      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule]);
+      setSubmoduleRegistry([pubCommonIdSubmodule]);
       init(config);
       config.setConfig(getConfigMock(['pubCommonId', 'pubcid_alt', 'cookie']));
       requestBidsHook((config) => { innerAdUnits = config.adUnits }, {adUnits});
@@ -171,14 +177,14 @@ describe('User ID', function() {
     });
 
     it('fails initialization if opt out cookie exists', function () {
-      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule]);
+      setSubmoduleRegistry([pubCommonIdSubmodule]);
       init(config);
       config.setConfig(getConfigMock(['pubCommonId', 'pubcid', 'cookie']));
       expect(utils.logInfo.args[0][0]).to.exist.and.to.equal('User ID - opt-out cookie found, exit module');
     });
 
     it('initializes if no opt out cookie exists', function () {
-      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule]);
+      setSubmoduleRegistry([pubCommonIdSubmodule]);
       init(config);
       config.setConfig(getConfigMock(['pubCommonId', 'pubcid', 'cookie']));
       expect(utils.logInfo.args[0][0]).to.exist.and.to.equal('User ID - usersync config updated for 1 submodules');
@@ -239,7 +245,7 @@ describe('User ID', function() {
       expect(typeof utils.logInfo.args[0]).to.equal('undefined');
     });
 
-    it('config with 1 configurations should create 1 submodules', function () {
+    it('config with 1 configuration should create 1 submodule', function () {
       setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule]);
       init(config);
       config.setConfig(getConfigMock(['unifiedId', 'unifiedid', 'cookie']));
@@ -555,14 +561,7 @@ describe('User ID', function() {
     it('test hook from pubcommonid config value object', function(done) {
       setSubmoduleRegistry([pubCommonIdSubmodule]);
       init(config);
-      config.setConfig({
-        usersync: {
-          syncDelay: 0,
-          userIds: [{
-            name: 'pubCommonId',
-            value: {'pubcidvalue': 'testpubcidvalue'}
-          }]}
-      });
+      config.setConfig(getConfigValueMock('pubCommonId', {'pubcidvalue': 'testpubcidvalue'}));
 
       requestBidsHook(function() {
         adUnits.forEach(unit => {
@@ -637,13 +636,16 @@ describe('User ID', function() {
       }, {adUnits});
     });
 
-    it('test hook from id5id cookies', function(done) {
+    it('test hook from id5id cookies when refresh needed', function(done) {
       // simulate existing browser local storage values
       utils.setCookie('id5id', JSON.stringify({'ID5ID': 'testid5id'}), (new Date(Date.now() + 5000).toUTCString()));
+      utils.setCookie('id5id_last', (new Date(Date.now() - 7200 * 1000)).toUTCString(), (new Date(Date.now() + 5000).toUTCString()));
+
+      sinon.stub(utils, 'logError'); // getId should failed with a logError as it has no partnerId
 
       setSubmoduleRegistry([id5IdSubmodule]);
       init(config);
-      config.setConfig(getConfigMock(['id5Id', 'id5id', 'cookie']));
+      config.setConfig(getConfigMock(['id5Id', 'id5id', 'cookie', 10, 3600]));
 
       requestBidsHook(function() {
         adUnits.forEach(unit => {
@@ -652,7 +654,25 @@ describe('User ID', function() {
             expect(bid.userId.id5id).to.equal('testid5id');
           });
         });
+        sinon.assert.calledOnce(utils.logError);
         utils.setCookie('id5id', '', EXPIRED_COOKIE_DATE);
+        utils.logError.restore();
+        done();
+      }, {adUnits});
+    });
+
+    it('test hook from id5id value-based config', function(done) {
+      setSubmoduleRegistry([id5IdSubmodule]);
+      init(config);
+      config.setConfig(getConfigValueMock('id5Id', {'id5id': 'testid5id'}));
+
+      requestBidsHook(function() {
+        adUnits.forEach(unit => {
+          unit.bids.forEach(bid => {
+            expect(bid).to.have.deep.nested.property('userId.id5id');
+            expect(bid.userId.id5id).to.equal('testid5id');
+          });
+        });
         done();
       }, {adUnits});
     });

@@ -12,7 +12,8 @@
  * @summary performs action to obtain id and return a value in the callback's response argument
  * @name Submodule#getId
  * @param {SubmoduleParams} configParams
- * @param {ConsentData} consentData
+ * @param {ConsentData|undefined} consentData
+ * @param {(Object|undefined)} cacheIdObj
  * @return {(Object|function)} id data or a callback, the callback is called on the auction end event
  */
 
@@ -43,7 +44,8 @@
  * @typedef {Object} SubmoduleStorage
  * @property {string} type - browser storage type (html5 or cookie)
  * @property {string} name - key name to use when saving/reading to local storage or cookies
- * @property {(number|undefined)} expires - time to live for browser cookie
+ * @property {number} expires - time to live for browser storage in days
+ * @property {(number|undefined)} refreshInSeconds - if not empty, this value defines the maximum time span in seconds before refreshing user ID stored in browser
  */
 
 /**
@@ -116,18 +118,23 @@ export function setSubmoduleRegistry(submodules) {
 
 /**
  * @param {SubmoduleStorage} storage
- * @param {string} value
- * @param {(number|string)} expires
+ * @param {(Object|string)} value
  */
-function setStoredValue(storage, value, expires) {
+function setStoredValue(storage, value) {
   try {
     const valueStr = utils.isPlainObject(value) ? JSON.stringify(value) : value;
-    const expiresStr = (new Date(Date.now() + (expires * (60 * 60 * 24 * 1000)))).toUTCString();
+    const expiresStr = (new Date(Date.now() + (storage.expires * (60 * 60 * 24 * 1000)))).toUTCString();
     if (storage.type === COOKIE) {
       utils.setCookie(storage.name, valueStr, expiresStr);
+      if (typeof storage.refreshInSeconds === 'number') {
+        utils.setCookie(`${storage.name}_last`, new Date().toUTCString(), expiresStr);
+      }
     } else if (storage.type === LOCAL_STORAGE) {
       localStorage.setItem(`${storage.name}_exp`, expiresStr);
       localStorage.setItem(storage.name, encodeURIComponent(valueStr));
+      if (typeof storage.refreshInSeconds === 'number') {
+        localStorage.setItem(`${storage.name}_last`, new Date().toUTCString());
+      }
     }
   } catch (error) {
     utils.logError(error);
@@ -136,21 +143,23 @@ function setStoredValue(storage, value, expires) {
 
 /**
  * @param {SubmoduleStorage} storage
+ * @param {String|undefined} key optional key of the value
  * @returns {string}
  */
-function getStoredValue(storage) {
+function getStoredValue(storage, key = undefined) {
+  const storedKey = key ? `${storage.name}_${key}` : storage.name;
   let storedValue;
   try {
     if (storage.type === COOKIE) {
-      storedValue = utils.getCookie(storage.name);
+      storedValue = utils.getCookie(storedKey);
     } else if (storage.type === LOCAL_STORAGE) {
       const storedValueExp = localStorage.getItem(`${storage.name}_exp`);
       // empty string means no expiration set
       if (storedValueExp === '') {
-        storedValue = localStorage.getItem(storage.name);
+        storedValue = localStorage.getItem(storedKey);
       } else if (storedValueExp) {
         if ((new Date(storedValueExp)).getTime() - Date.now() > 0) {
-          storedValue = decodeURIComponent(localStorage.getItem(storage.name));
+          storedValue = decodeURIComponent(localStorage.getItem(storedKey));
         }
       }
     }
@@ -194,7 +203,7 @@ function processSubmoduleCallbacks(submodules, cb) {
       // if valid, id data should be saved to cookie/html storage
       if (idObj) {
         if (submodule.config.storage) {
-          setStoredValue(submodule.config.storage, idObj, submodule.config.storage.expires);
+          setStoredValue(submodule.config.storage, idObj);
         }
         // cache decoded value (this is copied to every adUnit bid)
         submodule.idObj = submodule.submodule.decode(idObj);
@@ -253,7 +262,7 @@ function initializeSubmodulesAndExecuteCallbacks(continueAuction) {
   if (typeof initializedSubmodules === 'undefined') {
     initializedSubmodules = initSubmodules(submodules, gdprDataHandler.getConsentData());
     if (initializedSubmodules.length) {
-      // list of sumodules that have callbacks that need to be executed
+      // list of submodules that have callbacks that need to be executed
       const submodulesWithCallbacks = initializedSubmodules.filter(item => utils.isFn(item.callback));
 
       if (submodulesWithCallbacks.length) {
@@ -276,7 +285,7 @@ function initializeSubmodulesAndExecuteCallbacks(continueAuction) {
           events.on(CONSTANTS.EVENTS.AUCTION_END, function auctionEndHandler() {
             events.off(CONSTANTS.EVENTS.AUCTION_END, auctionEndHandler);
 
-            // when syncDelay is zero, process callbacks now, otherwise dealy process with a setTimeout
+            // when syncDelay is zero, process callbacks now, otherwise delay process with a setTimeout
             if (syncDelay > 0) {
               setTimeout(function() {
                 processSubmoduleCallbacks(submodulesWithCallbacks);
@@ -344,16 +353,22 @@ function initSubmodules(submodules, consentData) {
       if (storedId) {
         // cache decoded value (this is copied to every adUnit bid)
         submodule.idObj = submodule.submodule.decode(storedId);
-      } else {
+      }
+      let refreshNeeded = false;
+      if (typeof submodule.config.storage.refreshInSeconds === 'number') {
+        const storedDate = new Date(getStoredValue(submodule.config.storage, 'last'));
+        refreshNeeded = storedDate && (Date.now() - storedDate.getTime() > submodule.config.storage.refreshInSeconds * 1000);
+      }
+      if (!storedId || refreshNeeded) {
         // getId will return user id data or a function that will load the data
-        const getIdResult = submodule.submodule.getId(submodule.config.params, consentData);
+        const getIdResult = submodule.submodule.getId(submodule.config.params, consentData, storedId);
 
         // If the getId result has a type of function, it is asynchronous and cannot be called until later
         if (typeof getIdResult === 'function') {
           submodule.callback = getIdResult;
-        } else {
+        } else if (getIdResult) {
           // A getId result that is not a function is assumed to be valid user id data, which should be saved to users local storage or cookies
-          setStoredValue(submodule.config.storage, getIdResult, submodule.config.storage.expires);
+          setStoredValue(submodule.config.storage, getIdResult);
           // cache decoded value (this is copied to every adUnit bid)
           submodule.idObj = submodule.submodule.decode(getIdResult);
         }
@@ -362,7 +377,7 @@ function initSubmodules(submodules, consentData) {
       // cache decoded value (this is copied to every adUnit bid)
       submodule.idObj = submodule.config.value;
     } else {
-      const result = submodule.submodule.getId(submodule.config.params, consentData);
+      const result = submodule.submodule.getId(submodule.config.params, consentData, undefined);
       if (typeof result === 'function') {
         submodule.callback = result;
       } else {

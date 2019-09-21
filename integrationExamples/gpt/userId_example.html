@@ -143,12 +143,13 @@
                     }, {
                         name: "id5Id",
                         params: {
-                            partner: 173 // @TODO: Set your real ID5 partner ID here for production, please ask for one contact@id5.io
+                            partner: 173 //Set your real ID5 partner ID here for production, please ask for one at http://id5.io/prebid
                         },
                         storage: {
                             type: "cookie",
                             name: "id5id",
-                            expires: 90
+                            expires: 90,
+                            refreshInSeconds: 8*3600 // Refresh frequency of cookies, defaulting to 'expires'
                         },
 
                     }, {

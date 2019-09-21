@@ -402,9 +402,9 @@ describe('The DFP video support module', function () {
       });
       function getBids() {
         let bids = [
-          createBid(10, 'adUnitCode-1', 15, '10.00_15s', '123', '395'),
-          createBid(15, 'adUnitCode-1', 15, '15.00_15s', '123', '395'),
-          createBid(25, 'adUnitCode-1', 30, '15.00_30s', '123', '406'),
+          createBid(10, 'adUnitCode-1', 15, '10.00_15s', '123', '395', '10.00'),
+          createBid(15, 'adUnitCode-1', 15, '15.00_15s', '123', '395', '15.00'),
+          createBid(25, 'adUnitCode-1', 30, '15.00_30s', '123', '406', '25.00'),
         ];
         bids.forEach((bid) => {
           delete bid.meta;
@@ -480,13 +480,13 @@ describe('The DFP video support module', function () {
 
 function getBidsReceived() {
   return [
-    createBid(10, 'adUnitCode-1', 15, '10.00_395_15s', '123', '395'),
-    createBid(15, 'adUnitCode-1', 15, '15.00_395_15s', '123', '395'),
-    createBid(25, 'adUnitCode-1', 30, '15.00_406_30s', '123', '406'),
+    createBid(10, 'adUnitCode-1', 15, '10.00_395_15s', '123', '395', '10.00'),
+    createBid(15, 'adUnitCode-1', 15, '15.00_395_15s', '123', '395', '15.00'),
+    createBid(25, 'adUnitCode-1', 30, '15.00_406_30s', '123', '406', '25.00'),
   ]
 }
 
-function createBid(cpm, adUnitCode, durationBucket, priceIndustryDuration, uuid, label) {
+function createBid(cpm, adUnitCode, durationBucket, priceIndustryDuration, uuid, label, hbpb) {
   return {
     'bidderCode': 'appnexus',
     'width': 640,
@@ -526,7 +526,7 @@ function createBid(cpm, adUnitCode, durationBucket, priceIndustryDuration, uuid,
     'adserverTargeting': {
       'hb_bidder': 'appnexus',
       'hb_adid': '28f24ced14586c',
-      'hb_pb': '5.00',
+      'hb_pb': hbpb,
       'hb_size': '640x360',
       'hb_source': 'client',
       'hb_format': 'video',
