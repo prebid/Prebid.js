@@ -54,6 +54,9 @@ export const spec = {
       return {
         method: ADPONE_REQUEST_METHOD,
         url,
+        options: {
+          withCredentials: true,
+        },
         data
       };
     });
