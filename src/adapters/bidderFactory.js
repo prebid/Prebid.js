@@ -331,8 +331,8 @@ export function newBidder(spec) {
     if (spec.getUserSyncs) {
       let filterConfig = config.getConfig('userSync.filterSettings');
       let syncs = spec.getUserSyncs({
-        iframeEnabled: !!(config.getConfig('userSync.iframeEnabled') || (filterConfig && (filterConfig.iframe || filterConfig.all))),
-        pixelEnabled: !!(config.getConfig('userSync.pixelEnabled') || (filterConfig && (filterConfig.image || filterConfig.all))),
+        iframeEnabled: !!(filterConfig && (filterConfig.iframe || filterConfig.all)),
+        pixelEnabled: !!(filterConfig && (filterConfig.image || filterConfig.all)),
       }, responses, gdprConsent);
       if (syncs) {
         if (!Array.isArray(syncs)) {
