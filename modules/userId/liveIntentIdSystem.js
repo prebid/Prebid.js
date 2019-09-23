@@ -22,10 +22,12 @@ export const liveIntentIdSubmodule = {
   name: MODULE_NAME,
 
   /**
-   * decode the stored id value for passing to bid requests
+   * decode the stored id value for passing to bid requests. Note that lipb object is a  wrapper for everything, and
+   * internally it could contain more data other than `lipbid`(e.g. `segments`) depending on the `partner` and
+   * `publisherId` params.
    * @function
    * @param {{unifiedId:string}} value
-   * @returns {{liuid:Object}}
+   * @returns {{lipb:Object}}
    */
   decode(value) {
     function composeIdObject(value) {
