@@ -104,6 +104,9 @@ export const spec = {
     if (validBidRequests[0].schain) {
       payload.schain = JSON.stringify(validBidRequests[0].schain)
     }
+    if (deepAccess(validBidRequests[0], 'userId') && Object.keys(validBidRequests[0].userId).length > 0) {
+      payload.userid = JSON.stringify(validBidRequests[0].userId);
+    }
 
     // If there is no key_maker data, then don't make the request.
     if (isEmpty(data)) {

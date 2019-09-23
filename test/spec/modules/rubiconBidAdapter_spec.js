@@ -353,6 +353,28 @@ describe('the rubicon adapter', function () {
           });
         });
 
+        it('should not send p_pos to AE if not params.position specified', function() {
+	      var noposRequest = utils.deepClone(bidderRequest);
+	      delete noposRequest.bids[0].params.position;
+
+	      let [request] = spec.buildRequests(noposRequest.bids, noposRequest);
+	      let data = parseQuery(request.data);
+
+	      expect(data['site_id']).to.equal('70608');
+	      expect(data['p_pos']).to.equal(undefined);
+        });
+
+        it('should not send p_pos to AE if not params.position is invalid', function() {
+	      var badposRequest = utils.deepClone(bidderRequest);
+	      badposRequest.bids[0].params.position = 'bad';
+
+	      let [request] = spec.buildRequests(badposRequest.bids, badposRequest);
+	      let data = parseQuery(request.data);
+
+	      expect(data['site_id']).to.equal('70608');
+	      expect(data['p_pos']).to.equal(undefined);
+        });
+
         it('ad engine query params should be ordered correctly', function () {
           sandbox.stub(Math, 'random').callsFake(() => 0.1);
           let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
@@ -1135,14 +1157,6 @@ describe('the rubicon adapter', function () {
           expect(post.ext.prebid.cache.vastxml.returnCreative).to.equal(false)
         });
 
-        it('should send request with proper ad position', function () {
-          createVideoBidderRequest();
-          let positionBidderRequest = utils.deepClone(bidderRequest);
-          positionBidderRequest.bids[0].mediaTypes.video.pos = 1;
-          let [request] = spec.buildRequests(positionBidderRequest.bids, positionBidderRequest);
-          expect(request.data.imp[0].video.pos).to.equal(1);
-        });
-
         it('should send correct bidfloor to PBS', function() {
           createVideoBidderRequest();
 
@@ -1171,13 +1185,18 @@ describe('the rubicon adapter', function () {
           expect(request.data.imp[0]).to.not.haveOwnProperty('bidfloor');
         });
 
-        it('should send request with proper ad position when mediaTypes.video.pos is not defined', function () {
+        it('should send request with proper ad position', function () {
           createVideoBidderRequest();
           let positionBidderRequest = utils.deepClone(bidderRequest);
+          positionBidderRequest.bids[0].mediaTypes.video.pos = 1;
+          let [request] = spec.buildRequests(positionBidderRequest.bids, positionBidderRequest);
+          expect(request.data.imp[0].video.pos).to.equal(1);
+
+          positionBidderRequest = utils.deepClone(bidderRequest);
           positionBidderRequest.bids[0].params.position = undefined;
           positionBidderRequest.bids[0].mediaTypes.video.pos = undefined;
-          let [request] = spec.buildRequests(positionBidderRequest.bids, positionBidderRequest);
-          expect(request.data.imp[0].video.pos).to.equal(0);
+          [request] = spec.buildRequests(positionBidderRequest.bids, positionBidderRequest);
+          expect(request.data.imp[0].video.pos).to.equal(undefined);
 
           positionBidderRequest = utils.deepClone(bidderRequest);
           positionBidderRequest.bids[0].params.position = 'atf'
@@ -1195,7 +1214,7 @@ describe('the rubicon adapter', function () {
           positionBidderRequest.bids[0].params.position = 'foobar';
           positionBidderRequest.bids[0].mediaTypes.video.pos = undefined;
           [request] = spec.buildRequests(positionBidderRequest.bids, positionBidderRequest);
-          expect(request.data.imp[0].video.pos).to.equal(0);
+          expect(request.data.imp[0].video.pos).to.equal(undefined);
         });
 
         it('should properly enforce video.context to be either instream or outstream', function () {

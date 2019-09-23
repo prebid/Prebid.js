@@ -395,7 +395,6 @@ export const spec = {
       'zone_id': params.zoneId,
       'size_id': parsedSizes[0],
       'alt_size_ids': parsedSizes.slice(1).join(',') || undefined,
-      'p_pos': params.position === 'atf' || params.position === 'btf' ? params.position : 'unknown',
       'rp_floor': (params.floor = parseFloat(params.floor)) > 0.01 ? params.floor : 0.01,
       'rp_secure': isSecure() ? '1' : '0',
       'tk_flint': `${configIntType || DEFAULT_INTEGRATION}_v$prebid.version$`,
@@ -408,6 +407,11 @@ export const spec = {
       'tg_fl.eid': bidRequest.code,
       'rf': _getPageUrl(bidRequest, bidderRequest)
     };
+
+    // add p_pos only if specified and valid
+    if (params.position === 'atf' || params.position === 'btf') {
+      data['p_pos'] = params.position;
+    }
 
     if ((bidRequest.userId || {}).tdid) {
       data['tpid_tdid'] = bidRequest.userId.tdid;
@@ -768,8 +772,14 @@ function addVideoParameters(data, bidRequest) {
   if (typeof data.imp[0].video === 'object' && data.imp[0].video.skipafter === undefined) {
     data.imp[0].video.skipafter = bidRequest.params.video.skipdelay;
   }
+  // video.pos can already be specified by adunit.mediatypes.video.pos.
+  // but if not, it might be specified in the params
   if (typeof data.imp[0].video === 'object' && data.imp[0].video.pos === undefined) {
-    data.imp[0].video.pos = bidRequest.params.position === 'atf' ? 1 : (bidRequest.params.position === 'btf' ? 3 : 0);
+    if (bidRequest.params.position === 'atf') {
+      data.imp[0].video.pos = 1;
+    } else if (bidRequest.params.position === 'btf') {
+      data.imp[0].video.pos = 3;
+    }
   }
 
   const size = parseSizes(bidRequest, 'video')
