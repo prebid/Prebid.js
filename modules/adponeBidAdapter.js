@@ -51,13 +51,15 @@ export const spec = {
           }))
       };
 
+      const options = {
+        withCredentials: true
+      };
+
       return {
         method: ADPONE_REQUEST_METHOD,
         url,
-        options: {
-          withCredentials: true,
-        },
-        data
+        data,
+        options,
       };
     });
   },
