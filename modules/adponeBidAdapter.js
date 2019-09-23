@@ -51,7 +51,11 @@ export const spec = {
           }))
       };
 
-      return { method: ADPONE_REQUEST_METHOD, url, data, withCredentials: true };
+      return {
+        method: ADPONE_REQUEST_METHOD,
+        url,
+        data
+      };
     });
   },
 
