@@ -1,7 +1,6 @@
 import * as utils from '../src/utils';
 import { BANNER } from '../src/mediaTypes';
 import { config } from '../src/config';
-import isArray from 'core-js/library/fn/array/is-array';
 import isInteger from 'core-js/library/fn/number/is-integer';
 import { registerBidder } from '../src/adapters/bidderFactory';
 
@@ -92,7 +91,7 @@ function parseBid(rawBid, currency) {
  * @return {boolean}      True if this is a valid size format, and false otherwise.
  */
 function isValidSize(size) {
-  return isArray(size) && size.length === 2 && isInteger(size[0]) && isInteger(size[1]);
+  return Array.isArray(size) && size.length === 2 && isInteger(size[0]) && isInteger(size[1]);
 }
 
 /**
@@ -185,8 +184,10 @@ export const spec = {
    */
   buildRequests: function (validBidRequests, options) {
     const bannerImps = [];
+    const userEids = [];
     let validBidRequest = null;
     let bannerImp = null;
+
     // Always start by assuming the protocol is HTTPS. This way, it will work
     // whether the page protocol is HTTP or HTTPS. Then check if the page is
     // actually HTTP.If we can guarantee it is, then, and only then, set protocol to
@@ -201,6 +202,21 @@ export const spec = {
       bannerImps.push(bannerImp);
     }
 
+    // RTI ids will be included in the bid request if the function getIdentityInfo() is loaded
+    // and if the data for the partner exist
+    if (window.headertag && typeof window.headertag.getIdentityInfo === 'function') {
+      let identityInfo = window.headertag.getIdentityInfo();
+      if (identityInfo && typeof identityInfo === 'object') {
+        for (const partnerName in identityInfo) {
+          if (identityInfo.hasOwnProperty(partnerName)) {
+            let response = identityInfo[partnerName];
+            if (!response.responsePending && response.data && typeof response.data === 'object' && Object.keys(response.data).length) {
+              userEids.push(response.data);
+            }
+          }
+        }
+      }
+    }
     const r = {};
 
     // Since bidderRequestId are the same for different bid request, just use the first one.
@@ -210,6 +226,10 @@ export const spec = {
     r.site = {};
     r.ext = {};
     r.ext.source = 'prebid';
+    if (userEids.length > 0) {
+      r.user = {};
+      r.user.eids = userEids;
+    }
 
     if (document.referrer && document.referrer !== '') {
       r.site.ref = document.referrer;
@@ -229,10 +249,9 @@ export const spec = {
         }
 
         if (gdprConsent.hasOwnProperty('consentString')) {
-          r.user = {
-            ext: {
-              consent: gdprConsent.consentString || ''
-            }
+          r.user = r.user || {};
+          r.user.ext = {
+            consent: gdprConsent.consentString || ''
           };
         }
       }

@@ -2,8 +2,9 @@ import { expect } from 'chai';
 import { spec } from 'modules/yieldoneBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
 
-const ENDPOINT = '//y.one.impact-ad.jp/h_bid';
-const USER_SYNC_URL = '//y.one.impact-ad.jp/push_sync';
+const ENDPOINT = 'https://y.one.impact-ad.jp/h_bid';
+const USER_SYNC_URL = 'https://y.one.impact-ad.jp/push_sync';
+const VIDEO_PLAYER_URL = 'https://img.ak.impact-ad.jp/ic/pone/ivt/firstview/js/dac-video-prebid.min.js';
 
 describe('yieldoneBidAdapter', function() {
   const adapter = newBidder(spec);
@@ -99,7 +100,7 @@ describe('yieldoneBidAdapter', function() {
     let bidRequestBanner = [
       {
         'method': 'GET',
-        'url': '//y.one.impact-ad.jp/h_bid',
+        'url': 'https://y.one.impact-ad.jp/h_bid',
         'data': {
           'v': 'hb1',
           'p': '36891',
@@ -163,7 +164,7 @@ describe('yieldoneBidAdapter', function() {
     let bidRequestVideo = [
       {
         'method': 'GET',
-        'url': '//y.one.impact-ad.jp/h_bid',
+        'url': 'https://y.one.impact-ad.jp/h_bid',
         'data': {
           'v': 'hb1',
           'p': '41993',
@@ -190,11 +191,17 @@ describe('yieldoneBidAdapter', function() {
         'ttl': 3000,
         'referrer': '',
         'mediaType': 'video',
-        'vastXml': '<!-- vast -->'
+        'vastXml': '<!-- vast -->',
+        'renderer': {
+          id: '23beaa6af6cdde',
+          url: VIDEO_PLAYER_URL
+        }
       }];
       let result = spec.interpretResponse(serverResponseVideo, bidRequestVideo[0]);
       expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse[0]));
       expect(result[0].mediaType).to.equal(expectedResponse[0].mediaType);
+      expect(result[0].renderer.id).to.equal(expectedResponse[0].renderer.id);
+      expect(result[0].renderer.url).to.equal(expectedResponse[0].renderer.url);
     });
 
     it('handles empty bid response', function () {

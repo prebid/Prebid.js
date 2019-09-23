@@ -178,6 +178,41 @@ describe('OpenxAdapter', function () {
       });
     });
 
+    describe('when request is for a multiformat ad', function () {
+      describe('and request config uses mediaTypes video and banner', () => {
+        const multiformatBid = {
+          bidder: 'openx',
+          params: {
+            unit: '12345678',
+            delDomain: 'test-del-domain'
+          },
+          adUnitCode: 'adunit-code',
+          mediaTypes: {
+            banner: {
+              sizes: [[300, 250]]
+            },
+            video: {
+              playerSize: [300, 250]
+            }
+          },
+          bidId: '30b31c1838de1e',
+          bidderRequestId: '22edbae2733bf6',
+          auctionId: '1d1a030790a475',
+          transactionId: '4008d88a-8137-410b-aa35-fbfdabcb478e'
+        };
+        it('should return true multisize when required params found', function () {
+          expect(spec.isBidRequestValid(multiformatBid)).to.equal(true);
+        });
+
+        it('should send bid request to openx url via GET, with mediaType specified as banner', function () {
+          const request = spec.buildRequests([multiformatBid]);
+          expect(request[0].url).to.equal(`//${multiformatBid.params.delDomain}${URLBASE}`);
+          expect(request[0].data.ph).to.be.undefined;
+          expect(request[0].method).to.equal('GET');
+        });
+      });
+    });
+
     describe('when request is for a video ad', function () {
       describe('and request config uses mediaTypes', () => {
         const videoBidWithMediaTypes = {
@@ -359,39 +394,6 @@ describe('OpenxAdapter', function () {
       'bidderRequestId': 'test-bid-request-1',
       'auctionId': 'test-auction-1'
     }];
-    const bidRequestsWithPlatformAndDelDomain = [{
-      'bidder': 'openx',
-      'params': {
-        'unit': '11',
-        'delDomain': 'test-del-domain',
-        'platform': '1cabba9e-cafe-3665-beef-f00f00f00f00',
-      },
-      'adUnitCode': '/adunit-code/test-path',
-      mediaTypes: {
-        banner: {
-          sizes: [[300, 250], [300, 600]]
-        }
-      },
-      'bidId': 'test-bid-id-1',
-      'bidderRequestId': 'test-bid-request-1',
-      'auctionId': 'test-auction-1'
-    }, {
-      'bidder': 'openx',
-      'params': {
-        'unit': '11',
-        'delDomain': 'test-del-domain',
-        'platform': '1cabba9e-cafe-3665-beef-f00f00f00f00',
-      },
-      'adUnitCode': '/adunit-code/test-path',
-      mediaTypes: {
-        banner: {
-          sizes: [[300, 250], [300, 600]]
-        }
-      },
-      'bidId': 'test-bid-id-1',
-      'bidderRequestId': 'test-bid-request-1',
-      'auctionId': 'test-auction-1'
-    }];
 
     it('should send bid request to openx url via GET, with mediaType specified as banner', function () {
       const request = spec.buildRequests(bidRequestsWithMediaType);
@@ -415,6 +417,40 @@ describe('OpenxAdapter', function () {
     });
 
     it('should send bid request to openx platform url via GET, if both params present', function () {
+      const bidRequestsWithPlatformAndDelDomain = [{
+        'bidder': 'openx',
+        'params': {
+          'unit': '11',
+          'delDomain': 'test-del-domain',
+          'platform': '1cabba9e-cafe-3665-beef-f00f00f00f00',
+        },
+        'adUnitCode': '/adunit-code/test-path',
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 250], [300, 600]]
+          }
+        },
+        'bidId': 'test-bid-id-1',
+        'bidderRequestId': 'test-bid-request-1',
+        'auctionId': 'test-auction-1'
+      }, {
+        'bidder': 'openx',
+        'params': {
+          'unit': '11',
+          'delDomain': 'test-del-domain',
+          'platform': '1cabba9e-cafe-3665-beef-f00f00f00f00',
+        },
+        'adUnitCode': '/adunit-code/test-path',
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 250], [300, 600]]
+          }
+        },
+        'bidId': 'test-bid-id-1',
+        'bidderRequestId': 'test-bid-request-1',
+        'auctionId': 'test-auction-1'
+      }];
+
       const request = spec.buildRequests(bidRequestsWithPlatformAndDelDomain);
       expect(request[0].url).to.equal(`//u.openx.net${URLBASE}`);
       expect(request[0].data.ph).to.equal(bidRequestsWithPlatform[0].params.platform);
@@ -940,7 +976,139 @@ describe('OpenxAdapter', function () {
         const request = spec.buildRequests(bidRequestsWithPubcid);
         expect(request[0].data.pubcid).to.equal('c4a4c843-2368-4b5e-b3b1-6ee4702b9ad6');
       });
+
+      it('should send a pubcid query param when userId.pubcid is defined in the bid requests', function () {
+        const bidRequestsWithPubcid = [{
+          bidder: 'openx',
+          params: {
+            unit: '11',
+            delDomain: 'test-del-domain'
+          },
+          userId: {
+            pubcid: 'c1a4c843-2368-4b5e-b3b1-6ee4702b9ad6'
+          },
+          adUnitCode: 'adunit-code',
+          mediaTypes: {
+            banner: {
+              sizes: [[300, 250], [300, 600]]
+            }
+          },
+          bidId: 'test-bid-id-1',
+          bidderRequestId: 'test-bid-request-1',
+          auctionId: 'test-auction-1'
+        }];
+        const request = spec.buildRequests(bidRequestsWithPubcid);
+        expect(request[0].data.pubcid).to.equal('c1a4c843-2368-4b5e-b3b1-6ee4702b9ad6');
+      });
     })
+
+    describe('when schain is provided', function () {
+      let bidRequests;
+      let schainConfig;
+      const supplyChainNodePropertyOrder = ['asi', 'sid', 'hp', 'rid', 'name', 'domain'];
+
+      beforeEach(function () {
+        schainConfig = {
+          'ver': '1.0',
+          'complete': 1,
+          'nodes': [
+            {
+              'asi': 'exchange1.com',
+              'sid': '1234',
+              'hp': 1,
+              'rid': 'bid-request-1',
+              'name': 'publisher',
+              'domain': 'publisher.com'
+              // omitted ext
+            },
+            {
+              'asi': 'exchange2.com',
+              'sid': 'abcd',
+              'hp': 1,
+              'rid': 'bid-request-2',
+              // name field missing
+              'domain': 'intermediary.com'
+            },
+            {
+              'asi': 'exchange3.com',
+              'sid': '4321',
+              'hp': 1,
+              // request id
+              // name field missing
+              'domain': 'intermediary-2.com'
+            }
+          ]
+        };
+
+        bidRequests = [{
+          'bidder': 'openx',
+          'params': {
+            'unit': '11',
+            'delDomain': 'test-del-domain'
+          },
+          'adUnitCode': '/adunit-code/test-path',
+          mediaTypes: {
+            banner: {
+              sizes: [[300, 250], [300, 600]]
+            }
+          },
+          'bidId': 'test-bid-id-1',
+          'bidderRequestId': 'test-bid-request-1',
+          'auctionId': 'test-auction-1',
+          'schain': schainConfig
+        }];
+      });
+
+      it('should send a schain parameter with the proper delimiter symbols', function () {
+        const request = spec.buildRequests(bidRequests);
+        const dataParams = request[0].data;
+        const numNodes = schainConfig.nodes.length;
+
+        // each node will have a ! to denote beginning of a new node
+        expect(dataParams.schain.match(/!/g).length).to.equal(numNodes);
+
+        // 1 comma in the front for version
+        // 5 commas per node
+        expect(dataParams.schain.match(/,/g).length).to.equal(numNodes * 5 + 1);
+      });
+
+      it('should send a schain with the right version', function () {
+        const request = spec.buildRequests(bidRequests);
+        const dataParams = request[0].data;
+        let serializedSupplyChain = dataParams.schain.split('!');
+        let version = serializedSupplyChain.shift().split(',')[0];
+
+        expect(version).to.equal(bidRequests[0].schain.ver);
+      });
+
+      it('should send a schain with the right complete value', function () {
+        const request = spec.buildRequests(bidRequests);
+        const dataParams = request[0].data;
+        let serializedSupplyChain = dataParams.schain.split('!');
+        let isComplete = serializedSupplyChain.shift().split(',')[1];
+
+        expect(isComplete).to.equal(String(bidRequests[0].schain.complete));
+      });
+
+      it('should send all available params in the right order', function () {
+        const request = spec.buildRequests(bidRequests);
+        const dataParams = request[0].data;
+        let serializedSupplyChain = dataParams.schain.split('!');
+        serializedSupplyChain.shift();
+
+        serializedSupplyChain.forEach((serializedNode, nodeIndex) => {
+          let nodeProperties = serializedNode.split(',');
+
+          nodeProperties.forEach((nodeProperty, propertyIndex) => {
+            let node = schainConfig.nodes[nodeIndex];
+            let key = supplyChainNodePropertyOrder[propertyIndex];
+
+            expect(nodeProperty).to.equal(node[key] ? String(node[key]) : '',
+              `expected node '${nodeIndex}' property '${nodeProperty}' to key '${key}' to be the same value`)
+          });
+        });
+      });
+    });
   });
 
   describe('buildRequests for video', function () {
@@ -1192,6 +1360,10 @@ describe('OpenxAdapter', function () {
 
       it('should return a brand ID', function () {
         expect(bid.meta.brandId).to.equal(DEFAULT_TEST_ARJ_AD_UNIT.brand_id);
+      });
+
+      it('should return a brand ID', function () {
+        expect(bid.meta.dspid).to.equal(DEFAULT_TEST_ARJ_AD_UNIT.adv_id);
       });
 
       it('should register a beacon', function () {

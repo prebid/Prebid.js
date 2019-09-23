@@ -5,11 +5,10 @@ import {Renderer} from '../src/Renderer';
 import {BANNER, VIDEO} from '../src/mediaTypes';
 
 const ENDPOINTS = {
-  'viewdeos': 'https://rtb.viewdeos.com',
-  'cleanmedia': 'https://bidder.cleanmediaads.com',
-  'gamoshi': 'https://rtb.gamoshi.io',
-  'gambid': 'https://rtb.gamoshi.io',
+  'gamoshi': 'https://rtb.gamoshi.io'
 };
+
+const DEFAULT_TTL = 360;
 
 export const helper = {
   getTopFrame: function () {
@@ -43,7 +42,7 @@ export const helper = {
 
 export const spec = {
   code: 'gamoshi',
-  aliases: ['gambid', 'cleanmedia', 'viewdeos'],
+  aliases: ['gambid', 'cleanmedia', 'viewdeos', 'adastaMedia', '9MediaOnline'],
   supportedMediaTypes: ['banner', 'video'],
 
   isBidRequestValid: function (bid) {
@@ -59,7 +58,7 @@ export const spec = {
   buildRequests: function (validBidRequests, bidderRequest) {
     return validBidRequests.map(bidRequest => {
       const {adUnitCode, auctionId, mediaTypes, params, sizes, transactionId} = bidRequest;
-      const baseEndpoint = params['rtbEndpoint'] || ENDPOINTS[bidRequest.bidder] || ENDPOINTS['gamoshi'];
+      const baseEndpoint = params['rtbEndpoint'] || ENDPOINTS['gamoshi'];
       const rtbEndpoint = `${baseEndpoint}/r/${params.supplyPartnerId}/bidr?rformat=open_rtb&reqformat=rtb_json&bidder=prebid` + (params.query ? '&' + params.query : '');
       let url = config.getConfig('pageUrl') || bidderRequest.refererInfo.referer;
 
@@ -114,10 +113,11 @@ export const spec = {
 
       if (mediaTypes && mediaTypes.video) {
         if (!hasFavoredMediaType || params.favoredMediaType === VIDEO) {
+          const playerSize = mediaTypes.video.playerSize || sizes;
           const videoImp = Object.assign({}, imp, {
             video: {
-              w: sizes.length ? sizes[0][0] : 300,
-              h: sizes.length ? sizes[0][1] : 250,
+              w: playerSize ? playerSize[0][0] : 300,
+              h: playerSize ? playerSize[0][1] : 250,
               protocols: params.protocols || [1, 2, 3, 4, 5, 6],
               pos: params.pos || 0,
               ext: {
@@ -149,18 +149,15 @@ export const spec = {
 
     bids.forEach(bid => {
       const outBid = {
-        adId: bidRequest.bidRequest.adUnitCode,
         requestId: bidRequest.bidRequest.bidId,
         cpm: bid.price,
         width: bid.w,
         height: bid.h,
-        ttl: 60 * 10,
-        creativeId: bid.crid,
+        ttl: DEFAULT_TTL,
+        creativeId: bid.crid || bid.adid,
         netRevenue: true,
         currency: bid.cur || response.cur,
-        adUnitCode: bidRequest.bidRequest.adUnitCode,
         mediaType: helper.getMediaType(bid)
-
       };
 
       if (utils.deepAccess(bidRequest.bidRequest, 'mediaTypes.' + outBid.mediaType)) {

@@ -1,4 +1,4 @@
-import { getKeyValueTargetingPairs, auctionCallbacks } from 'src/auction';
+import { getKeyValueTargetingPairs, auctionCallbacks, AUCTION_COMPLETED } from 'src/auction';
 import CONSTANTS from 'src/constants.json';
 import { adjustBids } from 'src/auction';
 import * as auctionModule from 'src/auction';
@@ -628,17 +628,15 @@ describe('auctionmanager.js', function () {
 
     before(function () {
       makeRequestsStub = sinon.stub(adapterManager, 'makeBidRequests');
-
-      ajaxStub = sinon.stub(ajaxLib, 'ajaxBuilder').callsFake(mockAjaxBuilder);
     });
 
     after(function () {
-      ajaxStub.restore();
       adapterManager.makeBidRequests.restore();
     });
 
     describe('when auction timeout is 3000', function () {
       before(function () {
+        ajaxStub = sinon.stub(ajaxLib, 'ajaxBuilder').callsFake(mockAjaxBuilder);
         makeRequestsStub.returns(TEST_BID_REQS);
       });
       beforeEach(function () {
@@ -659,6 +657,10 @@ describe('auctionmanager.js', function () {
 
       afterEach(function () {
         auctionModule.newAuction.restore();
+      });
+
+      after(function () {
+        ajaxStub.restore();
       });
 
       function checkPbDg(cpm, expected, msg) {
@@ -755,6 +757,7 @@ describe('auctionmanager.js', function () {
 
     describe('when auction timeout is 20', function () {
       let eventsEmitSpy;
+      let server;
 
       before(function () {
         bids = [mockBid(), mockBid({ bidderCode: BIDDER_CODE1 })];
@@ -764,6 +767,8 @@ describe('auctionmanager.js', function () {
       });
 
       beforeEach(function () {
+        server = sinon.createFakeServer();
+
         adUnits = [{
           code: ADUNIT_CODE,
           bids: [
@@ -772,35 +777,79 @@ describe('auctionmanager.js', function () {
         }];
         adUnitCodes = [ADUNIT_CODE];
 
-        auction = auctionModule.newAuction({adUnits, adUnitCodes, callback: function() {}, cbTimeout: 20});
-        createAuctionStub = sinon.stub(auctionModule, 'newAuction');
-        createAuctionStub.returns(auction);
-
-        spec = mockBidder(BIDDER_CODE, [bids[0]]);
-        registerBidder(spec);
-
-        // Timeout is checked when bid is received. If that bid is the only one
-        // auction is waiting for, timeout is not emitted, so we need to add a
-        // second bidder to get timeout event.
-        let spec1 = mockBidder(BIDDER_CODE1, [bids[1]]);
-        registerBidder(spec1);
-
         eventsEmitSpy = sinon.spy(events, 'emit');
-
-        // make all timestamp calls 5 minutes apart
-        let callCount = 0;
-        sinon.stub(utils, 'timestamp').callsFake(function() {
-          return new Date().getTime() + (callCount++ * 1000 * 60 * 5);
-        });
       });
       afterEach(function () {
-        auctionModule.newAuction.restore();
+        server.restore();
         events.emit.restore();
-        utils.timestamp.restore();
       });
-      it('should emit BID_TIMEOUT for timed out bids', function () {
+
+      it('should emit BID_TIMEOUT and AUCTION_END for timed out bids', function (done) {
+        const spec1 = mockBidder(BIDDER_CODE, [bids[0]]);
+        registerBidder(spec1);
+        const spec2 = mockBidder(BIDDER_CODE1, [bids[1]]);
+        registerBidder(spec2);
+
+        function respondToRequest(requestIndex) {
+          server.requests[requestIndex].respond(200, {}, 'response body');
+        }
+        function auctionCallback() {
+          const bidTimeoutCall = eventsEmitSpy.withArgs(CONSTANTS.EVENTS.BID_TIMEOUT).getCalls()[0];
+          const timedOutBids = bidTimeoutCall.args[1];
+          assert.equal(timedOutBids.length, 1);
+          assert.equal(timedOutBids[0].bidder, BIDDER_CODE1);
+
+          const auctionEndCall = eventsEmitSpy.withArgs(CONSTANTS.EVENTS.AUCTION_END).getCalls()[0];
+          const auctionProps = auctionEndCall.args[1];
+          assert.equal(auctionProps.adUnits, adUnits);
+          assert.equal(auctionProps.timeout, 20);
+          assert.equal(auctionProps.auctionStatus, AUCTION_COMPLETED)
+          done();
+        }
+        auction = auctionModule.newAuction({adUnits, adUnitCodes, callback: auctionCallback, cbTimeout: 20});
+
         auction.callBids();
-        assert.ok(eventsEmitSpy.calledWith(CONSTANTS.EVENTS.BID_TIMEOUT), 'emitted events BID_TIMEOUT');
+        respondToRequest(0);
+      });
+      it('should NOT emit BID_TIMEOUT when all bidders responded in time', function (done) {
+        const spec1 = mockBidder(BIDDER_CODE, [bids[0]]);
+        registerBidder(spec1);
+        const spec2 = mockBidder(BIDDER_CODE1, [bids[1]]);
+        registerBidder(spec2);
+
+        function respondToRequest(requestIndex) {
+          server.requests[requestIndex].respond(200, {}, 'response body');
+        }
+        function auctionCallback() {
+          assert.ok(eventsEmitSpy.withArgs(CONSTANTS.EVENTS.BID_TIMEOUT).notCalled, 'did not emit event BID_TIMEOUT');
+          done();
+        }
+        auction = auctionModule.newAuction({adUnits, adUnitCodes, callback: auctionCallback, cbTimeout: 20});
+
+        auction.callBids();
+        respondToRequest(0);
+        respondToRequest(1);
+      });
+      it('should NOT emit BID_TIMEOUT for bidders which responded in time but with an empty bid', function (done) {
+        const spec1 = mockBidder(BIDDER_CODE, []);
+        registerBidder(spec1);
+        const spec2 = mockBidder(BIDDER_CODE1, []);
+        registerBidder(spec2);
+
+        function respondToRequest(requestIndex) {
+          server.requests[requestIndex].respond(200, {}, 'response body');
+        }
+        function auctionCallback() {
+          const bidTimeoutCall = eventsEmitSpy.withArgs(CONSTANTS.EVENTS.BID_TIMEOUT).getCalls()[0];
+          const timedOutBids = bidTimeoutCall.args[1];
+          assert.equal(timedOutBids.length, 1);
+          assert.equal(timedOutBids[0].bidder, BIDDER_CODE1);
+          done();
+        }
+        auction = auctionModule.newAuction({adUnits, adUnitCodes, callback: auctionCallback, cbTimeout: 20});
+
+        auction.callBids();
+        respondToRequest(0);
       });
     });
   });

@@ -2,10 +2,11 @@ import * as utils from '../src/utils';
 import {registerBidder} from '../src/adapters/bidderFactory';
 
 const BIDDER_CODE = 'admixer';
+const ALIASES = ['go2net'];
 const ENDPOINT_URL = '//inv-nets.admixer.net/prebid.1.0.aspx';
 export const spec = {
   code: BIDDER_CODE,
-  aliases: [],
+  aliases: ALIASES,
   supportedMediaTypes: ['banner', 'video'],
   /**
    * Determines whether or not the given bid request is valid.
@@ -28,9 +29,7 @@ export const spec = {
       referrer: encodeURIComponent(utils.getTopWindowUrl()),
     };
     bidderRequest.forEach((bid) => {
-      if (bid.bidder === BIDDER_CODE) {
-        payload.imps.push(bid);
-      }
+      payload.imps.push(bid);
     });
     const payloadString = JSON.stringify(payload);
     return {

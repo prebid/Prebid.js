@@ -1,11 +1,13 @@
 import * as utils from '../src/utils';
 import {config} from '../src/config';
 import {registerBidder} from '../src/adapters/bidderFactory';
+import { Renderer } from '../src/Renderer';
 import { BANNER, VIDEO } from '../src/mediaTypes';
 
 const BIDDER_CODE = 'yieldone';
-const ENDPOINT_URL = '//y.one.impact-ad.jp/h_bid';
-const USER_SYNC_URL = '//y.one.impact-ad.jp/push_sync';
+const ENDPOINT_URL = 'https://y.one.impact-ad.jp/h_bid';
+const USER_SYNC_URL = 'https://y.one.impact-ad.jp/push_sync';
+const VIDEO_PLAYER_URL = 'https://img.ak.impact-ad.jp/ic/pone/ivt/firstview/js/dac-video-prebid.min.js';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -35,15 +37,15 @@ export const spec = {
       };
 
       const videoMediaType = utils.deepAccess(bidRequest, 'mediaTypes.video');
-      if (bidRequest.mediaType === VIDEO || videoMediaType) {
+      if ((utils.isEmpty(bidRequest.mediaType) && utils.isEmpty(bidRequest.mediaTypes)) ||
+      (bidRequest.mediaType === BANNER || (bidRequest.mediaTypes && bidRequest.mediaTypes[BANNER]))) {
+        const sizes = utils.deepAccess(bidRequest, 'mediaTypes.banner.sizes') || bidRequest.sizes;
+        payload.sz = utils.parseSizesInput(sizes).join(',');
+      } else if (bidRequest.mediaType === VIDEO || videoMediaType) {
         const sizes = utils.deepAccess(bidRequest, 'mediaTypes.video.playerSize') || bidRequest.sizes;
         const size = utils.parseSizesInput(sizes)[0];
         payload.w = size.split('x')[0];
         payload.h = size.split('x')[1];
-      } else if ((utils.isEmpty(bidRequest.mediaType) && utils.isEmpty(bidRequest.mediaTypes)) ||
-      (bidRequest.mediaType === BANNER || (bidRequest.mediaTypes && bidRequest.mediaTypes[BANNER]))) {
-        const sizes = utils.deepAccess(bidRequest, 'mediaTypes.banner.sizes') || bidRequest.sizes;
-        payload.sz = utils.parseSizesInput(sizes).join(',');
       }
 
       return {
@@ -84,6 +86,7 @@ export const spec = {
       } else if (response.adm) {
         bidResponse.mediaType = VIDEO;
         bidResponse.vastXml = response.adm;
+        bidResponse.renderer = newRenderer(response);
       }
 
       bidResponses.push(bidResponse);
@@ -97,6 +100,29 @@ export const spec = {
         url: USER_SYNC_URL
       }];
     }
-  }
+  },
 }
+
+function newRenderer(response) {
+  const renderer = Renderer.install({
+    id: response.uid,
+    url: VIDEO_PLAYER_URL,
+    loaded: false,
+  });
+
+  try {
+    renderer.setRender(outstreamRender);
+  } catch (err) {
+    utils.logWarn('Prebid Error calling setRender on newRenderer', err);
+  }
+
+  return renderer;
+}
+
+function outstreamRender(bid) {
+  bid.renderer.push(() => {
+    window.DACIVTPREBID.renderPrebid(bid);
+  });
+}
+
 registerBidder(spec);

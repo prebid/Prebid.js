@@ -6,7 +6,7 @@ import { BANNER, NATIVE } from '../src/mediaTypes';
 const BIDDER_CODE = 'improvedigital';
 
 export const spec = {
-  version: '5.1.0',
+  version: '5.2.0',
   code: BIDDER_CODE,
   aliases: ['id'],
   supportedMediaTypes: [BANNER, NATIVE],
@@ -43,6 +43,10 @@ export const spec = {
       requestParameters.gdpr = bidderRequest.gdprConsent.consentString;
     }
 
+    if (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer) {
+      requestParameters.referrer = bidderRequest.refererInfo.referer;
+    }
+
     let requestObj = idClient.createRequest(
       normalizedBids, // requestObject
       requestParameters
@@ -75,6 +79,8 @@ export const spec = {
       if (bidObject.native) {
         // Native
         bid.native = getNormalizedNativeAd(bidObject.native);
+        // Expose raw oRTB response to the client to allow parsing assets not directly supported by Prebid
+        bid.ortbNative = bidObject.native;
         if (bidObject.nurl) {
           bid.native.impressionTrackers.unshift(bidObject.nurl);
         }
@@ -169,11 +175,13 @@ function getNormalizedBidRequest(bid) {
     publisherId = utils.getBidIdParameter('publisherId', bid.params) || null;
     placementKey = utils.getBidIdParameter('placementKey', bid.params) || null;
   }
-  let keyValues = utils.getBidIdParameter('keyValues', bid.params) || null;
-  let singleSizeFilter = utils.getBidIdParameter('size', bid.params) || null;
-  let bidId = utils.getBidIdParameter('bidId', bid);
-  let transactionId = utils.getBidIdParameter('transactionId', bid);
+  const keyValues = utils.getBidIdParameter('keyValues', bid.params) || null;
+  const singleSizeFilter = utils.getBidIdParameter('size', bid.params) || null;
+  const bidId = utils.getBidIdParameter('bidId', bid);
+  const transactionId = utils.getBidIdParameter('transactionId', bid);
   const currency = config.getConfig('currency.adServerCurrency');
+  const bidFloor = utils.getBidIdParameter('bidFloor', bid.params);
+  const bidFloorCur = utils.getBidIdParameter('bidFloorCur', bid.params);
 
   let normalizedBidRequest = {};
   if (placementId) {
@@ -211,6 +219,10 @@ function getNormalizedBidRequest(bid) {
   if (currency) {
     normalizedBidRequest.currency = currency;
   }
+  if (bidFloor) {
+    normalizedBidRequest.bidFloor = bidFloor;
+    normalizedBidRequest.bidFloorCur = bidFloorCur ? bidFloorCur.toUpperCase() : 'USD';
+  }
   return normalizedBidRequest;
 }
 
@@ -230,6 +242,33 @@ function getNormalizedNativeAd(rawNative) {
           break;
         case 2:
           native.body = asset.data.value;
+          break;
+        case 3:
+          native.rating = asset.data.value;
+          break;
+        case 4:
+          native.likes = asset.data.value;
+          break;
+        case 5:
+          native.downloads = asset.data.value;
+          break;
+        case 6:
+          native.price = asset.data.value;
+          break;
+        case 7:
+          native.salePrice = asset.data.value;
+          break;
+        case 8:
+          native.phone = asset.data.value;
+          break;
+        case 9:
+          native.address = asset.data.value;
+          break;
+        case 10:
+          native.body2 = asset.data.value;
+          break;
+        case 11:
+          native.displayUrl = asset.data.value;
           break;
         case 12:
           native.cta = asset.data.value;
@@ -255,11 +294,31 @@ function getNormalizedNativeAd(rawNative) {
     }
   });
   // Trackers
-  native.impressionTrackers = rawNative.imptrackers || [];
-  native.javascriptTrackers = rawNative.jstracker;
+  if (rawNative.eventtrackers) {
+    native.impressionTrackers = [];
+    rawNative.eventtrackers.forEach(tracker => {
+      // Only handle impression event. Viewability events are not supported yet.
+      if (tracker.event !== 1) return;
+      switch (tracker.method) {
+        case 1: // img
+          native.impressionTrackers.push(tracker.url);
+          break;
+        case 2: // js
+          // javascriptTrackers is a string. If there's more than one JS tracker in bid response, the last script will be used.
+          native.javascriptTrackers = `<script src=\"${tracker.url}\"></script>`;
+          break;
+      }
+    });
+  } else {
+    native.impressionTrackers = rawNative.imptrackers || [];
+    native.javascriptTrackers = rawNative.jstracker;
+  }
   if (rawNative.link) {
     native.clickUrl = rawNative.link.url;
     native.clickTrackers = rawNative.link.clicktrackers;
+  }
+  if (rawNative.privacy) {
+    native.privacyLink = rawNative.privacy;
   }
   return native;
 }
@@ -267,14 +326,10 @@ registerBidder(spec);
 
 export function ImproveDigitalAdServerJSClient(endPoint) {
   this.CONSTANTS = {
-    HTTP_SECURITY: {
-      STANDARD: 0,
-      SECURE: 1
-    },
-    AD_SERVER_BASE_URL: 'ad.360yield.com',
+    AD_SERVER_BASE_URL: 'ice.360yield.com',
     END_POINT: endPoint || 'hb',
     AD_SERVER_URL_PARAM: 'jsonp=',
-    CLIENT_VERSION: 'JS-5.3.0',
+    CLIENT_VERSION: 'JS-6.2.0',
     MAX_URL_LENGTH: 2083,
     ERROR_CODES: {
       MISSING_PLACEMENT_PARAMS: 2,
@@ -300,6 +355,7 @@ export function ImproveDigitalAdServerJSClient(endPoint) {
     }
 
     requestParameters.returnObjType = requestParameters.returnObjType || this.CONSTANTS.RETURN_OBJ_TYPE.DEFAULT;
+    requestParameters.adServerBaseUrl = 'https://' + (requestParameters.adServerBaseUrl || this.CONSTANTS.AD_SERVER_BASE_URL);
 
     let impressionObjects = [];
     let impressionObject;
@@ -325,7 +381,7 @@ export function ImproveDigitalAdServerJSClient(endPoint) {
     }
     let errors = null;
 
-    let baseUrl = `${(requestParameters.secure === 1 ? 'https' : 'http')}://${this.CONSTANTS.AD_SERVER_BASE_URL}/${this.CONSTANTS.END_POINT}?${this.CONSTANTS.AD_SERVER_URL_PARAM}`;
+    let baseUrl = `${requestParameters.adServerBaseUrl}/${this.CONSTANTS.END_POINT}?${this.CONSTANTS.AD_SERVER_URL_PARAM}`;
 
     let bidRequestObject = {
       bid_request: this.createBasicBidRequestObject(requestParameters, extraRequestParameters)
@@ -386,12 +442,11 @@ export function ImproveDigitalAdServerJSClient(endPoint) {
       case this.CONSTANTS.RETURN_OBJ_TYPE.URL_PARAMS_SPLIT:
         return {
           method: 'GET',
-          url: `//${this.CONSTANTS.AD_SERVER_BASE_URL}/${this.CONSTANTS.END_POINT}`,
+          url: `${requestParameters.adServerBaseUrl}/${this.CONSTANTS.END_POINT}`,
           data: `${this.CONSTANTS.AD_SERVER_URL_PARAM}${encodeURIComponent(JSON.stringify(bidRequestObject))}`
         };
       default:
-        const baseUrl = `${(requestParameters.secure === 1 ? 'https' : 'http')}://` +
-          `${this.CONSTANTS.AD_SERVER_BASE_URL}/` +
+        const baseUrl = `${requestParameters.adServerBaseUrl}/` +
           `${this.CONSTANTS.END_POINT}?${this.CONSTANTS.AD_SERVER_URL_PARAM}`;
         return {
           url: baseUrl + encodeURIComponent(JSON.stringify(bidRequestObject))
@@ -401,6 +456,7 @@ export function ImproveDigitalAdServerJSClient(endPoint) {
 
   this.createBasicBidRequestObject = function(requestParameters, extraRequestParameters) {
     let impressionBidRequestObject = {};
+    impressionBidRequestObject.secure = 1;
     if (requestParameters.requestId) {
       impressionBidRequestObject.id = requestParameters.requestId;
     } else {
@@ -417,9 +473,6 @@ export function ImproveDigitalAdServerJSClient(endPoint) {
     }
     if (requestParameters.callback) {
       impressionBidRequestObject.callback = requestParameters.callback;
-    }
-    if ('secure' in requestParameters) {
-      impressionBidRequestObject.secure = requestParameters.secure;
     }
     if (requestParameters.libVersion) {
       impressionBidRequestObject.version = requestParameters.libVersion + '-' + this.CONSTANTS.CLIENT_VERSION;
@@ -454,6 +507,12 @@ export function ImproveDigitalAdServerJSClient(endPoint) {
     }
     if (placementObject.currency) {
       impressionObject.currency = placementObject.currency.toUpperCase();
+    }
+    if (placementObject.bidFloor) {
+      impressionObject.bidfloor = placementObject.bidFloor;
+    }
+    if (placementObject.bidFloorCur) {
+      impressionObject.bidfloorcur = placementObject.bidFloorCur.toUpperCase();
     }
     if (placementObject.placementId) {
       impressionObject.pid = placementObject.placementId;

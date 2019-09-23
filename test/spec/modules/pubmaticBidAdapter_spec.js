@@ -24,8 +24,27 @@ describe('PubMatic adapter', function () {
   let bannerVideoAndNativeBidRequests;
   let bannerBidResponse;
   let videoBidResponse;
+  let schainConfig;
 
   beforeEach(function () {
+    schainConfig = {
+      'ver': '1.0',
+      'complete': 1,
+      'nodes': [
+        {
+          'asi': 'indirectseller.com',
+          'sid': '00001',
+          'hp': 1
+        },
+
+        {
+          'asi': 'indirectseller-2.com',
+          'sid': '00002',
+          'hp': 2
+        }
+      ]
+    };
+
     bidRequests = [
       {
         bidder: 'pubmatic',
@@ -55,7 +74,8 @@ describe('PubMatic adapter', function () {
         bidId: '23acc48ad47af5',
         requestId: '0fb4905b-9456-4152-86be-c6f6d259ba99',
         bidderRequestId: '1c56ad30b9b8ca8',
-        transactionId: '92489f71-1bf2-49a0-adf9-000cea934729'
+        transactionId: '92489f71-1bf2-49a0-adf9-000cea934729',
+        schain: schainConfig
       }
     ];
 
@@ -668,27 +688,15 @@ describe('PubMatic adapter', function () {
         expect(isValid).to.equal(false);
       });
 
-  		it('invalid bid case: adSlot not passed', function () {
-  		  let validBid = {
-	        bidder: 'pubmatic',
-	        params: {
-	          publisherId: '301'
-	        }
-	      },
-	      isValid = spec.isBidRequestValid(validBid);
-	      expect(isValid).to.equal(false);
-    	});
-
-      it('invalid bid case: adSlot is not string', function () {
+      it('valid bid case: adSlot is not passed', function () {
         let validBid = {
             bidder: 'pubmatic',
             params: {
-              publisherId: '301',
-              adSlot: 15671365
+              publisherId: '301'
             }
           },
           isValid = spec.isBidRequestValid(validBid);
-        expect(isValid).to.equal(false);
+        expect(isValid).to.equal(true);
       });
     });
 
@@ -707,7 +715,7 @@ describe('PubMatic adapter', function () {
 
       it('Endpoint checking', function () {
   		  let request = spec.buildRequests(bidRequests);
-        expect(request.url).to.equal('//hbopenbid.pubmatic.com/translator?source=prebid-client');
+        expect(request.url).to.equal('https://hbopenbid.pubmatic.com/translator?source=prebid-client');
         expect(request.method).to.equal('POST');
   		});
 
@@ -740,7 +748,41 @@ describe('PubMatic adapter', function () {
   		  expect(data.imp[0].banner.h).to.equal(250); // height
   		  expect(data.imp[0].ext.pmZoneId).to.equal(bidRequests[0].params.pmzoneid.split(',').slice(0, 50).map(id => id.trim()).join()); // pmzoneid
         expect(data.imp[0].bidfloorcur).to.equal(bidRequests[0].params.currency);
+        expect(data.source.ext.schain).to.deep.equal(bidRequests[0].schain);
   		});
+
+      it('Request params check: without adSlot', function () {
+        delete bidRequests[0].params.adSlot;
+        let request = spec.buildRequests(bidRequests);
+        let data = JSON.parse(request.data);
+        expect(data.at).to.equal(1); // auction type
+        expect(data.cur[0]).to.equal('USD'); // currency
+        expect(data.site.domain).to.be.a('string'); // domain should be set
+        expect(data.site.page).to.equal(bidRequests[0].params.kadpageurl); // forced pageURL
+        expect(data.site.publisher.id).to.equal(bidRequests[0].params.publisherId); // publisher Id
+        expect(data.site.ext).to.exist.and.to.be.an('object'); // dctr parameter
+        expect(data.site.ext.key_val).to.exist.and.to.equal(bidRequests[0].params.dctr);
+        expect(data.user.yob).to.equal(parseInt(bidRequests[0].params.yob)); // YOB
+        expect(data.user.gender).to.equal(bidRequests[0].params.gender); // Gender
+        expect(data.device.geo.lat).to.equal(parseFloat(bidRequests[0].params.lat)); // Latitude
+        expect(data.device.geo.lon).to.equal(parseFloat(bidRequests[0].params.lon)); // Lognitude
+        expect(data.user.geo.lat).to.equal(parseFloat(bidRequests[0].params.lat)); // Latitude
+        expect(data.user.geo.lon).to.equal(parseFloat(bidRequests[0].params.lon)); // Lognitude
+        expect(data.ext.wrapper.wv).to.equal($$REPO_AND_VERSION$$); // Wrapper Version
+        expect(data.ext.wrapper.transactionId).to.equal(bidRequests[0].transactionId); // Prebid TransactionId
+        expect(data.ext.wrapper.wiid).to.equal(bidRequests[0].params.wiid); // OpenWrap: Wrapper Impression ID
+        expect(data.ext.wrapper.profile).to.equal(parseInt(bidRequests[0].params.profId)); // OpenWrap: Wrapper Profile ID
+        expect(data.ext.wrapper.version).to.equal(parseInt(bidRequests[0].params.verId)); // OpenWrap: Wrapper Profile Version ID
+
+        expect(data.imp[0].id).to.equal(bidRequests[0].bidId); // Prebid bid id is passed as id
+        expect(data.imp[0].bidfloor).to.equal(parseFloat(bidRequests[0].params.kadfloor)); // kadfloor
+        expect(data.imp[0].tagid).to.deep.equal(undefined); // tagid
+        expect(data.imp[0].banner.w).to.equal(728); // width
+        expect(data.imp[0].banner.h).to.equal(90); // height
+        expect(data.imp[0].banner.format).to.deep.equal([{w: 160, h: 600}]);
+        expect(data.imp[0].ext.pmZoneId).to.equal(bidRequests[0].params.pmzoneid.split(',').slice(0, 50).map(id => id.trim()).join()); // pmzoneid
+        expect(data.imp[0].bidfloorcur).to.equal(bidRequests[0].params.currency);
+      });
 
       it('Request params multi size format object check', function () {
         let bidRequests = [
@@ -1208,6 +1250,76 @@ describe('PubMatic adapter', function () {
             return config[key];
           });
 
+          let request = spec.buildRequests(bidRequests, {});
+          let data = JSON.parse(request.data);
+          expect(data.user.eids).to.deep.equal(undefined);
+        });
+      });
+
+      describe('AdsrvrOrgId from userId module', function() {
+        let sandbox;
+        beforeEach(() => {
+          sandbox = sinon.sandbox.create();
+        });
+
+        afterEach(() => {
+          sandbox.restore();
+        });
+
+        it('Request should have AdsrvrOrgId config params', function() {
+          bidRequests[0].userId = {};
+          bidRequests[0].userId.tdid = 'TTD_ID_FROM_USER_ID_MODULE';
+          let request = spec.buildRequests(bidRequests, {});
+          let data = JSON.parse(request.data);
+          expect(data.user.eids).to.deep.equal([{
+            'source': 'adserver.org',
+            'uids': [{
+              'id': 'TTD_ID_FROM_USER_ID_MODULE',
+              'atype': 1,
+              'ext': {
+                'rtiPartner': 'TDID'
+              }
+            }]
+          }]);
+        });
+
+        it('Request should have adsrvrOrgId from UserId Module if config and userId module both have TTD ID', function() {
+          sandbox.stub(config, 'getConfig').callsFake((key) => {
+            var config = {
+              adsrvrOrgId: {
+                'TDID': 'TTD_ID_FROM_CONFIG',
+                'TDID_LOOKUP': 'TRUE',
+                'TDID_CREATED_AT': '2018-10-01T07:05:40'
+              }
+            };
+            return config[key];
+          });
+          bidRequests[0].userId = {};
+          bidRequests[0].userId.tdid = 'TTD_ID_FROM_USER_ID_MODULE';
+          let request = spec.buildRequests(bidRequests, {});
+          let data = JSON.parse(request.data);
+          expect(data.user.eids).to.deep.equal([{
+            'source': 'adserver.org',
+            'uids': [{
+              'id': 'TTD_ID_FROM_USER_ID_MODULE',
+              'atype': 1,
+              'ext': {
+                'rtiPartner': 'TDID'
+              }
+            }]
+          }]);
+        });
+
+        it('Request should NOT have adsrvrOrgId params if userId is NOT object', function() {
+          let request = spec.buildRequests(bidRequests, {});
+          let data = JSON.parse(request.data);
+          expect(data.user.eids).to.deep.equal(undefined);
+        });
+
+        it('Request should NOT have adsrvrOrgId params if userId.tdid is NOT string', function() {
+          bidRequests[0].userId = {
+            tdid: 1234
+          };
           let request = spec.buildRequests(bidRequests, {});
           let data = JSON.parse(request.data);
           expect(data.user.eids).to.deep.equal(undefined);

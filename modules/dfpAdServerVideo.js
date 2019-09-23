@@ -7,6 +7,8 @@ import { targeting } from '../src/targeting';
 import { formatQS, format as buildUrl, parse } from '../src/url';
 import { deepAccess, isEmpty, logError, parseSizesInput } from '../src/utils';
 import { config } from '../src/config';
+import { getHook, submodule } from '../src/hook';
+import { auctionManager } from '../src/auctionManager';
 
 /**
  * @typedef {Object} DfpVideoParams
@@ -45,6 +47,8 @@ const defaultParamConstants = {
   unviewed_position_start: 1,
 };
 
+export const adpodUtils = {};
+
 /**
  * Merge all the bid data and publisher-supplied options into a single URL, and then return it.
  *
@@ -56,9 +60,9 @@ const defaultParamConstants = {
  *   (or the auction's winning bid for this adUnit, if undefined) compete alongside the rest of the
  *   demand in DFP.
  */
-export default function buildDfpVideoUrl(options) {
+export function buildDfpVideoUrl(options) {
   if (!options.params && !options.url) {
-    logError(`A params object or a url is required to use pbjs.adServers.dfp.buildVideoUrl`);
+    logError(`A params object or a url is required to use $$PREBID_GLOBAL$$.adServers.dfp.buildVideoUrl`);
     return;
   }
 
@@ -101,6 +105,92 @@ export default function buildDfpVideoUrl(options) {
     pathname: '/gampad/ads',
     search: queryParams
   });
+}
+
+export function notifyTranslationModule(fn) {
+  fn.call(this, 'dfp');
+}
+
+getHook('registerAdserver').before(notifyTranslationModule);
+
+/**
+ * @typedef {Object} DfpAdpodOptions
+ *
+ * @param {string} code Ad Unit code
+ * @param {Object} params Query params which should be set on the DFP request.
+ * These will override this module's defaults whenever they conflict.
+ * @param {function} callback Callback function to execute when master tag is ready
+ */
+
+/**
+ * Creates master tag url for long-form
+ * @param {DfpAdpodOptions} options
+ * @returns {string} A URL which calls DFP with custom adpod targeting key values to compete with rest of the demand in DFP
+ */
+export function buildAdpodVideoUrl({code, params, callback} = {}) {
+  if (!params || !callback) {
+    logError(`A params object and a callback is required to use pbjs.adServers.dfp.buildAdpodVideoUrl`);
+    return;
+  }
+
+  const derivedParams = {
+    correlator: Date.now(),
+    sz: getSizeForAdUnit(code),
+    url: encodeURIComponent(location.href),
+  };
+
+  function getSizeForAdUnit(code) {
+    let adUnit = auctionManager.getAdUnits()
+      .filter((adUnit) => adUnit.code === code)
+    let sizes = deepAccess(adUnit[0], 'mediaTypes.video.playerSize');
+    return parseSizesInput(sizes).join('|');
+  }
+
+  adpodUtils.getTargeting({
+    'codes': [code],
+    'callback': createMasterTag
+  });
+
+  function createMasterTag(err, targeting) {
+    if (err) {
+      callback(err, null);
+      return;
+    }
+
+    let initialValue = {
+      [adpodUtils.TARGETING_KEY_PB_CAT_DUR]: undefined,
+      [adpodUtils.TARGETING_KEY_CACHE_ID]: undefined
+    }
+    let customParams = {};
+    if (targeting[code]) {
+      customParams = targeting[code].reduce((acc, curValue) => {
+        if (Object.keys(curValue)[0] === adpodUtils.TARGETING_KEY_PB_CAT_DUR) {
+          acc[adpodUtils.TARGETING_KEY_PB_CAT_DUR] = (typeof acc[adpodUtils.TARGETING_KEY_PB_CAT_DUR] !== 'undefined') ? acc[adpodUtils.TARGETING_KEY_PB_CAT_DUR] + ',' + curValue[adpodUtils.TARGETING_KEY_PB_CAT_DUR] : curValue[adpodUtils.TARGETING_KEY_PB_CAT_DUR];
+        } else if (Object.keys(curValue)[0] === adpodUtils.TARGETING_KEY_CACHE_ID) {
+          acc[adpodUtils.TARGETING_KEY_CACHE_ID] = curValue[adpodUtils.TARGETING_KEY_CACHE_ID]
+        }
+        return acc;
+      }, initialValue);
+    }
+
+    let encodedCustomParams = encodeURIComponent(formatQS(customParams));
+
+    const queryParams = Object.assign({},
+      defaultParamConstants,
+      derivedParams,
+      params,
+      { cust_params: encodedCustomParams }
+    );
+
+    const masterTag = buildUrl({
+      protocol: 'https',
+      host: 'pubads.g.doubleclick.net',
+      pathname: '/gampad/ads',
+      search: queryParams
+    });
+
+    callback(null, masterTag);
+  }
 }
 
 /**
@@ -170,5 +260,9 @@ function getCustParams(bid, options) {
 }
 
 registerVideoSupport('dfp', {
-  buildVideoUrl: buildDfpVideoUrl
+  buildVideoUrl: buildDfpVideoUrl,
+  buildAdpodVideoUrl: buildAdpodVideoUrl,
+  getAdpodTargeting: (args) => adpodUtils.getTargeting(args)
 });
+
+submodule('adpod', adpodUtils);

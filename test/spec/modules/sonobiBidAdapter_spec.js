@@ -1,6 +1,7 @@
 import { expect } from 'chai'
 import { spec, _getPlatform } from 'modules/sonobiBidAdapter'
 import { newBidder } from 'src/adapters/bidderFactory'
+import {userSync} from '../../../src/userSync';
 
 describe('SonobiBidAdapter', function () {
   const adapter = newBidder(spec)
@@ -101,7 +102,29 @@ describe('SonobiBidAdapter', function () {
   })
 
   describe('.buildRequests', function () {
+    beforeEach(function() {
+      sinon.stub(userSync, 'canBidderRegisterSync');
+    });
+    afterEach(function() {
+      userSync.canBidderRegisterSync.restore();
+    });
     let bidRequest = [{
+      'schain': {
+        'ver': '1.0',
+        'complete': 1,
+        'nodes': [
+          {
+            'asi': 'indirectseller.com',
+            'sid': '00001',
+            'hp': 1
+          },
+          {
+            'asi': 'indirectseller-2.com',
+            'sid': '00002',
+            'hp': 0
+          },
+        ]
+      },
       'bidder': 'sonobi',
       'params': {
         'placement_id': '1a2b3c4d5e6f1a2b3c4d',
@@ -283,27 +306,40 @@ describe('SonobiBidAdapter', function () {
       delete bidRequest[1].params.hfa;
       bidRequest[0].crumbs = {'pubcid': 'abcd-efg-0101'};
       bidRequest[1].crumbs = {'pubcid': 'abcd-efg-0101'};
-      const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
-      expect(bidRequests.url).to.equal('https://apex.go.sonobi.com/trinity.json')
-      expect(bidRequests.method).to.equal('GET')
-      expect(bidRequests.data.ref).not.to.be.empty
-      expect(bidRequests.data.s).not.to.be.empty
+      const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
+      expect(bidRequests.url).to.equal('https://apex.go.sonobi.com/trinity.json');
+      expect(bidRequests.method).to.equal('GET');
+      expect(bidRequests.data.ref).not.to.be.empty;
+      expect(bidRequests.data.s).not.to.be.empty;
       expect(bidRequests.data.hfa).to.equal('PRE-abcd-efg-0101');
-    })
+    });
 
     it('should return a properly formatted request with commonid from User ID as hfa', function () {
       delete bidRequest[0].params.hfa;
       delete bidRequest[1].params.hfa;
       bidRequest[0].userId = {'pubcid': 'abcd-efg-0101'};
       bidRequest[1].userId = {'pubcid': 'abcd-efg-0101'};
-      const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
-      expect(bidRequests.url).to.equal('https://apex.go.sonobi.com/trinity.json')
-      expect(bidRequests.method).to.equal('GET')
-      expect(bidRequests.data.ref).not.to.be.empty
-      expect(bidRequests.data.s).not.to.be.empty
+      const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
+      expect(bidRequests.url).to.equal('https://apex.go.sonobi.com/trinity.json');
+      expect(bidRequests.method).to.equal('GET');
+      expect(bidRequests.data.ref).not.to.be.empty;
+      expect(bidRequests.data.s).not.to.be.empty;
       expect(bidRequests.data.hfa).to.equal('PRE-abcd-efg-0101');
       delete bidRequest[0].userId;
       delete bidRequest[1].userId;
+    })
+
+    it('should return a properly formatted request with unified id from User ID as tdid', function () {
+      delete bidRequest[0].params.tdid;
+      delete bidRequest[1].params.tdid;
+      bidRequest[0].userId = {'tdid': 'td-abcd-efg-0101'};
+      bidRequest[1].userId = {'tdid': 'td-abcd-efg-0101'};
+      const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
+      expect(bidRequests.url).to.equal('https://apex.go.sonobi.com/trinity.json');
+      expect(bidRequests.method).to.equal('GET');
+      expect(bidRequests.data.ref).not.to.be.empty;
+      expect(bidRequests.data.s).not.to.be.empty;
+      expect(bidRequests.data.tdid).to.equal('td-abcd-efg-0101');
     })
 
     it('should return a properly formatted request with hfa preferred over commonid', function () {
@@ -318,6 +354,56 @@ describe('SonobiBidAdapter', function () {
       expect(bidRequests.data.s).not.to.be.empty
       expect(bidRequests.data.hfa).to.equal('hfakey')
     })
+
+    it('should set ius as 0 if Sonobi cannot drop iframe pixels', function () {
+      userSync.canBidderRegisterSync.returns(false);
+      const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
+      expect(bidRequests.data.ius).to.equal(0);
+    });
+
+    it('should set ius as 1 if Sonobi can drop iframe pixels', function() {
+      userSync.canBidderRegisterSync.returns(true);
+      const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
+      expect(bidRequests.data.ius).to.equal(1);
+    });
+
+    it('should return a properly formatted request with schain defined', function () {
+      const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
+      expect(JSON.parse(bidRequests.data.schain)).to.deep.equal(bidRequest[0].schain)
+    });
+
+    it('should return a properly formatted request with userid as a JSON-encoded set of User ID results', function () {
+      bidRequest[0].userId = {'pubcid': 'abcd-efg-0101', 'tdid': 'td-abcd-efg-0101'};
+      bidRequest[1].userId = {'pubcid': 'abcd-efg-0101', 'tdid': 'td-abcd-efg-0101'};
+      const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
+      expect(bidRequests.url).to.equal('https://apex.go.sonobi.com/trinity.json');
+      expect(bidRequests.method).to.equal('GET');
+      expect(bidRequests.data.ref).not.to.be.empty;
+      expect(bidRequests.data.s).not.to.be.empty;
+      expect(JSON.parse(bidRequests.data.userid)).to.eql({'pubcid': 'abcd-efg-0101', 'tdid': 'td-abcd-efg-0101'});
+    });
+
+    it('should return a properly formatted request with userid omitted if there are no userIds', function () {
+      bidRequest[0].userId = {};
+      bidRequest[1].userId = {};
+      const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
+      expect(bidRequests.url).to.equal('https://apex.go.sonobi.com/trinity.json');
+      expect(bidRequests.method).to.equal('GET');
+      expect(bidRequests.data.ref).not.to.be.empty;
+      expect(bidRequests.data.s).not.to.be.empty;
+      expect(bidRequests.data.userid).to.equal(undefined);
+    });
+
+    it('should return a properly formatted request with userid omitted', function () {
+      bidRequest[0].userId = undefined;
+      bidRequest[1].userId = undefined;
+      const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
+      expect(bidRequests.url).to.equal('https://apex.go.sonobi.com/trinity.json');
+      expect(bidRequests.method).to.equal('GET');
+      expect(bidRequests.data.ref).not.to.be.empty;
+      expect(bidRequests.data.s).not.to.be.empty;
+      expect(bidRequests.data.userid).to.equal(undefined);
+    });
   })
 
   describe('.interpretResponse', function () {

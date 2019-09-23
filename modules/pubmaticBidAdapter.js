@@ -5,8 +5,8 @@ import {config} from '../src/config';
 
 const BIDDER_CODE = 'pubmatic';
 const LOG_WARN_PREFIX = 'PubMatic: ';
-const ENDPOINT = '//hbopenbid.pubmatic.com/translator?source=prebid-client';
-const USYNCURL = '//ads.pubmatic.com/AdServer/js/showad.js#PIX&kdntuid=1&p=';
+const ENDPOINT = 'https://hbopenbid.pubmatic.com/translator?source=prebid-client';
+const USYNCURL = 'https://ads.pubmatic.com/AdServer/js/showad.js#PIX&kdntuid=1&p=';
 const DEFAULT_CURRENCY = 'USD';
 const AUCTION_TYPE = 1;
 const PUBMATIC_DIGITRUST_KEY = 'nFIn8aLzbd';
@@ -511,9 +511,9 @@ function _createImpressionObject(bid, conf) {
 
   impObj = {
     id: bid.bidId,
-    tagid: bid.params.adUnit,
+    tagid: bid.params.adUnit || undefined,
     bidfloor: _parseSlotParam('kadfloor', bid.params.kadfloor),
-    secure: window.location.protocol === 'https:' ? 1 : 0,
+    secure: 1,
     ext: {
       pmZoneId: _parseSlotParam('pmzoneid', bid.params.pmzoneid)
     },
@@ -601,13 +601,20 @@ function _handleDigitrustId(eids) {
   }
 }
 
-function _handleTTDId(eids) {
+function _handleTTDId(eids, validBidRequests) {
+  let ttdId = null;
   let adsrvrOrgId = config.getConfig('adsrvrOrgId');
-  if (adsrvrOrgId && utils.isStr(adsrvrOrgId.TDID)) {
+  if (utils.isStr(utils.deepAccess(validBidRequests, '0.userId.tdid'))) {
+    ttdId = validBidRequests[0].userId.tdid;
+  } else if (adsrvrOrgId && utils.isStr(adsrvrOrgId.TDID)) {
+    ttdId = adsrvrOrgId.TDID;
+  }
+
+  if (ttdId !== null) {
     eids.push({
       'source': 'adserver.org',
       'uids': [{
-        'id': adsrvrOrgId.TDID,
+        'id': ttdId,
         'atype': 1,
         'ext': {
           'rtiPartner': 'TDID'
@@ -617,10 +624,10 @@ function _handleTTDId(eids) {
   }
 }
 
-function _handleEids(payload) {
+function _handleEids(payload, validBidRequests) {
   let eids = [];
   _handleDigitrustId(eids);
-  _handleTTDId(eids);
+  _handleTTDId(eids, validBidRequests);
   if (eids.length > 0) {
     payload.user.eids = eids;
   }
@@ -731,6 +738,38 @@ function _blockedIabCategoriesValidation(payload, blockedIabCategories) {
   }
 }
 
+function _handleDealCustomTargetings(payload, dctrArr, validBidRequests) {
+  var dctr = '';
+  var dctrLen;
+  // set dctr value in site.ext, if present in validBidRequests[0], else ignore
+  if (dctrArr.length > 0) {
+    if (validBidRequests[0].params.hasOwnProperty('dctr')) {
+      dctr = validBidRequests[0].params.dctr;
+      if (utils.isStr(dctr) && dctr.length > 0) {
+        var arr = dctr.split('|');
+        dctr = '';
+        arr.forEach(val => {
+          dctr += (val.length > 0) ? (val.trim() + '|') : '';
+        });
+        dctrLen = dctr.length;
+        if (dctr.substring(dctrLen, dctrLen - 1) === '|') {
+          dctr = dctr.substring(0, dctrLen - 1);
+        }
+        payload.site.ext = {
+          key_val: dctr.trim()
+        }
+      } else {
+        utils.logWarn(LOG_WARN_PREFIX + 'Ignoring param : dctr with value : ' + dctr + ', expects string-value, found empty or non-string value');
+      }
+      if (dctrArr.length > 1) {
+        utils.logWarn(LOG_WARN_PREFIX + 'dctr value found in more than 1 adunits. Value from 1st adunit will be picked. Ignoring values from subsequent adunits');
+      }
+    } else {
+      utils.logWarn(LOG_WARN_PREFIX + 'dctr value not found in 1st adunit, ignoring values from subsequent adunits');
+    }
+  }
+}
+
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
@@ -744,10 +783,6 @@ export const spec = {
     if (bid && bid.params) {
       if (!utils.isStr(bid.params.publisherId)) {
         utils.logWarn(LOG_WARN_PREFIX + 'Error: publisherId is mandatory and cannot be numeric. Call to OpenBid will not be sent for ad unit: ' + JSON.stringify(bid));
-        return false;
-      }
-      if (!utils.isStr(bid.params.adSlot)) {
-        utils.logWarn(LOG_WARN_PREFIX + 'Error: adSlotId is mandatory and cannot be numeric. Call to OpenBid will not be sent for ad unit: ' + JSON.stringify(bid));
         return false;
       }
       // video ad validation
@@ -776,24 +811,17 @@ export const spec = {
     var conf = _initConf(refererInfo);
     var payload = _createOrtbTemplate(conf);
     var bidCurrency = '';
-    var dctr = '';
-    var dctrLen;
     var dctrArr = [];
     var bid;
     var blockedIabCategories = [];
+
     validBidRequests.forEach(originalBid => {
       bid = utils.deepClone(originalBid);
+      bid.params.adSlot = bid.params.adSlot || '';
       _parseAdSlot(bid);
       if (bid.params.hasOwnProperty('video')) {
-        if (!(bid.params.adSlot && bid.params.adUnit && bid.params.adUnitIndex)) {
-          utils.logWarn(LOG_WARN_PREFIX + 'Skipping the non-standard adslot: ', bid.params.adSlot, JSON.stringify(bid));
-          return;
-        }
+        // Nothing to do
       } else {
-        if (!(bid.params.adSlot && bid.params.adUnit && bid.params.adUnitIndex)) {
-          utils.logWarn(LOG_WARN_PREFIX + 'Skipping the non-standard adslot: ', bid.params.adSlot, JSON.stringify(bid));
-          return;
-        }
         // If we have a native mediaType configured alongside banner, its ok if the banner size is not set in width and height
         // The corresponding banner imp object will not be generated, but we still want the native object to be sent, hence the following check
         if (!(bid.hasOwnProperty('mediaTypes') && bid.mediaTypes.hasOwnProperty(NATIVE)) && bid.params.width === 0 && bid.params.height === 0) {
@@ -838,6 +866,21 @@ export const spec = {
     payload.ext.wrapper.wp = 'pbjs';
     payload.user.gender = (conf.gender ? conf.gender.trim() : UNDEFINED);
     payload.user.geo = {};
+    payload.user.geo.lat = _parseSlotParam('lat', conf.lat);
+    payload.user.geo.lon = _parseSlotParam('lon', conf.lon);
+    payload.user.yob = _parseSlotParam('yob', conf.yob);
+    payload.device.geo = payload.user.geo;
+    payload.site.page = conf.kadpageurl.trim() || payload.site.page.trim();
+    payload.site.domain = _getDomainFromURL(payload.site.page);
+
+    // adding schain object
+    if (validBidRequests[0].schain) {
+      payload.source = {
+        ext: {
+          schain: validBidRequests[0].schain
+        }
+      };
+    }
 
     // Attaching GDPR Consent Params
     if (bidderRequest && bidderRequest.gdprConsent) {
@@ -852,43 +895,10 @@ export const spec = {
       };
     }
 
-    payload.user.geo.lat = _parseSlotParam('lat', conf.lat);
-    payload.user.geo.lon = _parseSlotParam('lon', conf.lon);
-    payload.user.yob = _parseSlotParam('yob', conf.yob);
-    payload.device.geo = payload.user.geo;
-    payload.site.page = conf.kadpageurl.trim() || payload.site.page.trim();
-    payload.site.domain = _getDomainFromURL(payload.site.page);
-
-    // set dctr value in site.ext, if present in validBidRequests[0], else ignore
-    if (dctrArr.length > 0) {
-      if (validBidRequests[0].params.hasOwnProperty('dctr')) {
-        dctr = validBidRequests[0].params.dctr;
-        if (utils.isStr(dctr) && dctr.length > 0) {
-          var arr = dctr.split('|');
-          dctr = '';
-          arr.forEach(val => {
-            dctr += (val.length > 0) ? (val.trim() + '|') : '';
-          });
-          dctrLen = dctr.length;
-          if (dctr.substring(dctrLen, dctrLen - 1) === '|') {
-            dctr = dctr.substring(0, dctrLen - 1);
-          }
-          payload.site.ext = {
-            key_val: dctr.trim()
-          }
-        } else {
-          utils.logWarn(LOG_WARN_PREFIX + 'Ignoring param : dctr with value : ' + dctr + ', expects string-value, found empty or non-string value');
-        }
-        if (dctrArr.length > 1) {
-          utils.logWarn(LOG_WARN_PREFIX + 'dctr value found in more than 1 adunits. Value from 1st adunit will be picked. Ignoring values from subsequent adunits');
-        }
-      } else {
-        utils.logWarn(LOG_WARN_PREFIX + 'dctr value not found in 1st adunit, ignoring values from subsequent adunits');
-      }
-    }
-
-    _handleEids(payload);
+    _handleDealCustomTargetings(payload, dctrArr, validBidRequests);
+    _handleEids(payload, validBidRequests);
     _blockedIabCategoriesValidation(payload, blockedIabCategories);
+
     return {
       method: 'POST',
       url: ENDPOINT,
@@ -905,6 +915,8 @@ export const spec = {
   interpretResponse: (response, request) => {
     const bidResponses = [];
     var respCur = DEFAULT_CURRENCY;
+    let parsedRequest = JSON.parse(request.data);
+    let parsedReferrer = parsedRequest.site && parsedRequest.site.ref ? parsedRequest.site.ref : '';
     try {
       if (response.body && response.body.seatbid && utils.isArray(response.body.seatbid)) {
         // Supporting multiple bid responses for same adSize
@@ -913,7 +925,6 @@ export const spec = {
           seatbidder.bid &&
             utils.isArray(seatbidder.bid) &&
             seatbidder.bid.forEach(bid => {
-              let parsedRequest = JSON.parse(request.data);
               let newBid = {
                 requestId: bid.impid,
                 cpm: (parseFloat(bid.price) || 0).toFixed(2),
@@ -924,7 +935,7 @@ export const spec = {
                 currency: respCur,
                 netRevenue: NET_REVENUE,
                 ttl: 300,
-                referrer: parsedRequest.site && parsedRequest.site.ref ? parsedRequest.site.ref : '',
+                referrer: parsedReferrer,
                 ad: bid.adm
               };
               if (parsedRequest.imp && parsedRequest.imp.length > 0) {

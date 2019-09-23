@@ -48,7 +48,7 @@
  * @property {function(): void} callBids - sends requests to all adapters for bids
  */
 
-import { uniques, flatten, timestamp, adUnitsFilter, deepAccess, getBidRequest, getValue } from './utils';
+import { flatten, timestamp, adUnitsFilter, deepAccess, getBidRequest, getValue } from './utils';
 import { parse as parseURL } from './url';
 import { getPriceBucketString } from './cpmBucketManager';
 import { getNativeTargeting } from './native';
@@ -58,7 +58,6 @@ import { config } from './config';
 import { userSync } from './userSync';
 import { hook } from './hook';
 import find from 'core-js/library/fn/array/find';
-import includes from 'core-js/library/fn/array/includes';
 import { OUTSTREAM } from './video';
 
 const { syncUsers } = userSync;
@@ -90,7 +89,7 @@ const queuedCalls = [];
   *
   * @returns {Auction} auction instance
   */
-export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) {
+export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, auctionId}) {
   let _adUnits = adUnits;
   let _labels = labels;
   let _adUnitCodes = adUnitCodes;
@@ -99,12 +98,13 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
   let _noBids = [];
   let _auctionStart;
   let _auctionEnd;
-  let _auctionId = utils.generateUUID();
+  let _auctionId = auctionId || utils.generateUUID();
   let _auctionStatus;
   let _callback = callback;
   let _timer;
   let _timeout = cbTimeout;
   let _winningBids = [];
+  let _timelyBidders = new Set();
 
   function addBidRequests(bidderRequests) { _bidderRequests = _bidderRequests.concat(bidderRequests) };
   function addBidReceived(bidsReceived) { _bidsReceived = _bidsReceived.concat(bidsReceived); }
@@ -140,27 +140,29 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
       clearTimeout(_timer);
     }
 
-    if (_callback != null) {
+    if (_auctionEnd === undefined) {
       let timedOutBidders = [];
       if (timedOut) {
         utils.logMessage(`Auction ${_auctionId} timedOut`);
-        timedOutBidders = getTimedOutBids(_bidderRequests, _bidsReceived);
+        timedOutBidders = getTimedOutBids(_bidderRequests, _timelyBidders);
         if (timedOutBidders.length) {
           events.emit(CONSTANTS.EVENTS.BID_TIMEOUT, timedOutBidders);
         }
       }
 
+      _auctionStatus = AUCTION_COMPLETED;
+      _auctionEnd = Date.now();
+
+      events.emit(CONSTANTS.EVENTS.AUCTION_END, getProperties());
       try {
-        _auctionStatus = AUCTION_COMPLETED;
-        _auctionEnd = Date.now();
-
-        events.emit(CONSTANTS.EVENTS.AUCTION_END, getProperties());
-
-        const adUnitCodes = _adUnitCodes;
-        const bids = _bidsReceived
-          .filter(utils.bind.call(adUnitsFilter, this, adUnitCodes))
-          .reduce(groupByPlacement, {});
-        _callback.apply($$PREBID_GLOBAL$$, [bids, timedOut]);
+        if (_callback != null) {
+          const adUnitCodes = _adUnitCodes;
+          const bids = _bidsReceived
+            .filter(utils.bind.call(adUnitsFilter, this, adUnitCodes))
+            .reduce(groupByPlacement, {});
+          _callback.apply($$PREBID_GLOBAL$$, [bids, timedOut]);
+          _callback = null;
+        }
       } catch (e) {
         utils.logError('Error executing bidsBackHandler', null, e);
       } finally {
@@ -175,7 +177,6 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
           syncUsers(userSyncConfig.syncDelay);
         }
       }
-      _callback = null;
     }
   }
 
@@ -184,6 +185,10 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
     utils.logInfo(`Bids Received for Auction with id: ${_auctionId}`, _bidsReceived);
     _auctionStatus = AUCTION_COMPLETED;
     executeCallback(false, true);
+  }
+
+  function onTimelyResponse(bidderCode) {
+    _timelyBidders.add(bidderCode);
   }
 
   function callBids() {
@@ -240,7 +245,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels}) 
                 }
               }
             }
-          }, _timeout);
+          }, _timeout, onTimelyResponse);
         }
       };
 
@@ -506,6 +511,41 @@ function setupBidTargeting(bidObject, bidderRequest) {
 }
 
 /**
+ * This function returns the price granularity defined. It can be either publisher defined or default value
+ * @param {string} mediaType
+ * @returns {string} granularity
+ */
+export const getPriceGranularity = (mediaType) => {
+  // Use the config value 'mediaTypeGranularity' if it has been set for mediaType, else use 'priceGranularity'
+  const mediaTypeGranularity = config.getConfig(`mediaTypePriceGranularity.${mediaType}`);
+  const granularity = (typeof mediaType === 'string' && mediaTypeGranularity) ? ((typeof mediaTypeGranularity === 'string') ? mediaTypeGranularity : 'custom') : config.getConfig('priceGranularity');
+  return granularity;
+}
+
+/**
+ * This function returns a function to get bid price by price granularity
+ * @param {string} granularity
+ * @returns {function}
+ */
+export const getPriceByGranularity = (granularity) => {
+  return (bid) => {
+    if (granularity === CONSTANTS.GRANULARITY_OPTIONS.AUTO) {
+      return bid.pbAg;
+    } else if (granularity === CONSTANTS.GRANULARITY_OPTIONS.DENSE) {
+      return bid.pbDg;
+    } else if (granularity === CONSTANTS.GRANULARITY_OPTIONS.LOW) {
+      return bid.pbLg;
+    } else if (granularity === CONSTANTS.GRANULARITY_OPTIONS.MEDIUM) {
+      return bid.pbMg;
+    } else if (granularity === CONSTANTS.GRANULARITY_OPTIONS.HIGH) {
+      return bid.pbHg;
+    } else if (granularity === CONSTANTS.GRANULARITY_OPTIONS.CUSTOM) {
+      return bid.pbCg;
+    }
+  }
+}
+
+/**
  * @param {string} mediaType
  * @param {string} bidderCode
  * @returns {*}
@@ -525,9 +565,7 @@ export function getStandardBidderSettings(mediaType, bidderCode) {
     };
   }
   const TARGETING_KEYS = CONSTANTS.TARGETING_KEYS;
-  // Use the config value 'mediaTypeGranularity' if it has been set for mediaType, else use 'priceGranularity'
-  const mediaTypeGranularity = config.getConfig(`mediaTypePriceGranularity.${mediaType}`);
-  const granularity = (typeof mediaType === 'string' && mediaTypeGranularity) ? ((typeof mediaTypeGranularity === 'string') ? mediaTypeGranularity : 'custom') : config.getConfig('priceGranularity');
+  const granularity = getPriceGranularity(mediaType);
 
   let bidderSettings = $$PREBID_GLOBAL$$.bidderSettings;
   if (!bidderSettings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD]) {
@@ -537,21 +575,7 @@ export function getStandardBidderSettings(mediaType, bidderCode) {
     bidderSettings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD][CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING] = [
       createKeyVal(TARGETING_KEYS.BIDDER, 'bidderCode'),
       createKeyVal(TARGETING_KEYS.AD_ID, 'adId'),
-      createKeyVal(TARGETING_KEYS.PRICE_BUCKET, function(bidResponse) {
-        if (granularity === CONSTANTS.GRANULARITY_OPTIONS.AUTO) {
-          return bidResponse.pbAg;
-        } else if (granularity === CONSTANTS.GRANULARITY_OPTIONS.DENSE) {
-          return bidResponse.pbDg;
-        } else if (granularity === CONSTANTS.GRANULARITY_OPTIONS.LOW) {
-          return bidResponse.pbLg;
-        } else if (granularity === CONSTANTS.GRANULARITY_OPTIONS.MEDIUM) {
-          return bidResponse.pbMg;
-        } else if (granularity === CONSTANTS.GRANULARITY_OPTIONS.HIGH) {
-          return bidResponse.pbHg;
-        } else if (granularity === CONSTANTS.GRANULARITY_OPTIONS.CUSTOM) {
-          return bidResponse.pbCg;
-        }
-      }),
+      createKeyVal(TARGETING_KEYS.PRICE_BUCKET, getPriceByGranularity(granularity)),
       createKeyVal(TARGETING_KEYS.SIZE, 'size'),
       createKeyVal(TARGETING_KEYS.DEAL, 'dealId'),
       createKeyVal(TARGETING_KEYS.SOURCE, 'source'),
@@ -690,7 +714,7 @@ function groupByPlacement(bidsByPlacement, bid) {
 /**
  * Returns a list of bids that we haven't received a response yet where the bidder did not call done
  * @param {BidRequest[]} bidderRequests List of bids requested for auction instance
- * @param {BidReceived[]} bidsReceived List of bids received for auction instance
+ * @param {Set} timelyBidders Set of bidders which responded in time
  *
  * @typedef {Object} TimedOutBid
  * @property {string} bidId The id representing the bid
@@ -700,21 +724,9 @@ function groupByPlacement(bidsByPlacement, bid) {
  *
  * @return {Array<TimedOutBid>} List of bids that Prebid hasn't received a response for
  */
-function getTimedOutBids(bidderRequests, bidsReceived) {
-  const bidRequestedWithoutDoneCodes = bidderRequests
-    .filter(bidderRequest => !bidderRequest.doneCbCallCount)
-    .map(bid => bid.bidderCode)
-    .filter(uniques);
-
-  const bidReceivedCodes = bidsReceived
-    .map(bid => bid.bidder)
-    .filter(uniques);
-
-  const timedOutBidderCodes = bidRequestedWithoutDoneCodes
-    .filter(bidder => !includes(bidReceivedCodes, bidder));
-
+function getTimedOutBids(bidderRequests, timelyBidders) {
   const timedOutBids = bidderRequests
-    .map(bid => (bid.bids || []).filter(bid => includes(timedOutBidderCodes, bid.bidder)))
+    .map(bid => (bid.bids || []).filter(bid => !timelyBidders.has(bid.bidder)))
     .reduce(flatten, [])
     .map(bid => ({
       bidId: bid.bidId,
