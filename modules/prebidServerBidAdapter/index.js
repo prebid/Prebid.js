@@ -473,7 +473,7 @@ const OPEN_RTB_PROTOCOL = {
       const ext = adUnit.bids.reduce((acc, bid) => {
         const adapter = adapterManager.bidderRegistry[bid.bidder];
         if (adapter && adapter.getSpec().transformBidParams) {
-          bid.params = adapter.getSpec().transformBidParams(bid.params, isOpenRtb());
+          bid.params = adapter.getSpec().transformBidParams(bid.params, true);
         }
         acc[bid.bidder] = (_s2sConfig.adapterOptions && _s2sConfig.adapterOptions[bid.bidder]) ? Object.assign({}, bid.params, _s2sConfig.adapterOptions[bid.bidder]) : bid.params;
         return acc;
@@ -741,13 +741,6 @@ const OPEN_RTB_PROTOCOL = {
     return bids;
   }
 };
-
-const isOpenRtb = () => {
-  const OPEN_RTB_PATH = '/openrtb2/';
-
-  const endpoint = (_s2sConfig && _s2sConfig.endpoint) || '';
-  return ~endpoint.indexOf(OPEN_RTB_PATH);
-}
 
 /**
  * Bidder adapter for Prebid Server
