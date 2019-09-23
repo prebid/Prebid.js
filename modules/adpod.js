@@ -13,7 +13,7 @@
  */
 
 import * as utils from '../src/utils';
-import { addBidToAuction, doCallbacksIfTimedout, AUCTION_IN_PROGRESS, callPrebidCache } from '../src/auction';
+import { addBidToAuction, doCallbacksIfTimedout, AUCTION_IN_PROGRESS, callPrebidCache, getPriceByGranularity, getPriceGranularity } from '../src/auction';
 import { checkAdUnitSetup } from '../src/prebid';
 import { checkVideoBidSetup } from '../src/video';
 import { setupBeforeHookFnOnce, module } from '../src/hook';
@@ -23,6 +23,7 @@ import { ADPOD } from '../src/mediaTypes';
 import Set from 'core-js/library/fn/set';
 import find from 'core-js/library/fn/array/find';
 import { auctionManager } from '../src/auctionManager';
+import CONSTANTS from '../src/constants.json';
 
 const from = require('core-js/library/fn/array/from');
 
@@ -119,7 +120,9 @@ function createDispatcher(timeoutDuration) {
 function attachPriceIndustryDurationKeyToBid(bid, brandCategoryExclusion) {
   let initialCacheKey = bidCacheRegistry.getInitialCacheKey(bid);
   let duration = utils.deepAccess(bid, 'video.durationBucket');
-  let cpmFixed = bid.cpm.toFixed(2);
+  const granularity = getPriceGranularity(bid.mediaType);
+  let cpmFixed = getPriceByGranularity(granularity)(bid);
+
   let pcd;
 
   if (brandCategoryExclusion) {
@@ -424,10 +427,10 @@ export function callPrebidCacheAfterAuction(bids, callback) {
  * @param {Object} bid
  */
 export function sortByPricePerSecond(a, b) {
-  if (a.cpm / a.video.durationBucket < b.cpm / b.video.durationBucket) {
+  if (a.adserverTargeting[CONSTANTS.TARGETING_KEYS.PRICE_BUCKET] / a.video.durationBucket < b.adserverTargeting[CONSTANTS.TARGETING_KEYS.PRICE_BUCKET] / b.video.durationBucket) {
     return 1;
   }
-  if (a.cpm / a.video.durationBucket > b.cpm / b.video.durationBucket) {
+  if (a.adserverTargeting[CONSTANTS.TARGETING_KEYS.PRICE_BUCKET] / a.video.durationBucket > b.adserverTargeting[CONSTANTS.TARGETING_KEYS.PRICE_BUCKET] / b.video.durationBucket) {
     return -1;
   }
   return 0;
