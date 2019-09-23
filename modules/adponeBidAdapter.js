@@ -4,6 +4,7 @@ import * as utils from '../src/utils';
 
 const ADPONE_CODE = 'adpone';
 const ADPONE_ENDPOINT = 'https://rtb.adpone.com/bid-request';
+const ADPONE_SYNC_ENDPOINT = 'https://eu-ads.adpone.com';
 const ADPONE_REQUEST_METHOD = 'POST';
 const ADPONE_CURRENCY = 'EUR';
 const adapterState = {};
@@ -11,7 +12,7 @@ const adapterState = {};
 function _createSync(placementId) {
   return {
     type: 'iframe',
-    url: `https://eu-ads.adpone.com?id=${placementId}`
+    url: ADPONE_SYNC_ENDPOINT + '?id=' + placementId
   }
 }
 
