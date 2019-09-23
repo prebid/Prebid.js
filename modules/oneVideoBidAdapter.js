@@ -3,7 +3,7 @@ import {registerBidder} from '../src/adapters/bidderFactory';
 const BIDDER_CODE = 'oneVideo';
 export const spec = {
   code: 'oneVideo',
-  ENDPOINT: '//ads.adaptv.advertising.com/rtb/openrtb?ext_id=',
+  ENDPOINT: '//ads.adaptv.advertising.com/rtb/openrtb?&globalFilterSuppres=1&ext_id=',
   SYNC_ENDPOINT1: 'https://cm.g.doubleclick.net/pixel?google_nid=adaptv_dbm&google_cm&google_sc',
   SYNC_ENDPOINT2: 'https://pr-bh.ybp.yahoo.com/sync/adaptv_ortb/{combo_uid}',
   SYNC_ENDPOINT3: 'https://sync-tm.everesttech.net/upi/pid/m7y5t93k?redir=https%3A%2F%2Fsync.adap.tv%2Fsync%3Ftype%3Dgif%26key%3Dtubemogul%26uid%3D%24%7BUSER_ID%7D',
@@ -21,7 +21,7 @@ export const spec = {
     }
 
     // Video validations
-    if (typeof bid.params.video === 'undefined' || typeof bid.params.video.playerWidth === 'undefined' || typeof bid.params.video.playerHeight == 'undefined' || typeof bid.params.video.mimes == 'undefined') {
+    if (typeof bid.params.video === 'undefined' && typeof bid.params.banner === 'undefined') {
       return false;
     }
 
@@ -148,12 +148,11 @@ function getRequestData(bid, consentData) {
       id: '1',
       secure: isSecure(),
       bidfloor: bid.params.bidfloor,
-      video: {
-        mimes: bid.params.video.mimes,
-        w: bid.params.video.playerWidth,
-        h: bid.params.video.playerHeight,
-        linearity: 1,
-        protocols: bid.params.video.protocols || [2, 5]
+      banner: {
+        mimes: bid.params.banner.mimes,
+        w: bid.params.banner.playerWidth,
+        h: bid.params.banner.playerHeight,
+        pos: bid.params.banner.position,
       },
       ext: {
         hb: 1,
@@ -169,7 +168,7 @@ function getRequestData(bid, consentData) {
     tmax: 200
   };
 
-  if (bid.params.video.maxbitrate) {
+  /*  if (bid.params.video.maxbitrate) {
     bidData.imp[0].video.maxbitrate = bid.params.video.maxbitrate
   }
   if (bid.params.video.maxduration) {
@@ -211,7 +210,7 @@ function getRequestData(bid, consentData) {
         }
       }
     }
-  }
+  } */
 
   if (isConsentRequired(consentData)) {
     bidData.regs = {

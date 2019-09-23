@@ -1,136 +1,124 @@
-<!--
-  This page exists to test a video ad, end-to-end.
--->
-<!DOCTYPE html>
-<html>
+<html lang="en">
+
 <head>
-    <meta charset="utf-8" />
-    <title>Prebid.js video adUnit example</title>
-
-    <!-- videojs -->
-    <link rel="stylesheet" href="http://vjs.zencdn.net/5.9.2/video-js.css">
-    <script type="text/javascript" src="http://vjs.zencdn.net/5.9.2/video.js"></script>
-
-    <!-- videojs-vast-vpaid -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/videojs-vast-vpaid/2.0.2/videojs.vast.vpaid.min.css" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/videojs-vast-vpaid/2.0.2/videojs_5.vast.vpaid.min.js"></script>
-
-    <!-- prebid.js -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Video SSP Header Bidding Renderer Solution</title>
+    <!-- Link to prebid.js local library-->
     <script src="../../build/dev/prebid.js" async=true></script>
 
+    <!-- <script src="o2OutstreamRenderer.js"></script> -->
 
+    <!--Declare PREBID JS Objects and Ad Units-->
     <script>
+        var pbjs = pbjs || {};
+        pbjs.que = pbjs.que || [];
+        // pbjs.setConfig({ useBidCache: true });
 
-      var pbjs = pbjs || {};
-      pbjs.que = pbjs.que || [];
+        let PREBID_TIMEOUT = 1000;
 
-      /*
-       Prebid Video adUnit
-       */
-
-      var videoAdUnit = {
-        code: 'video1',
-        sizes: [640,480],
-        mediaTypes: {
-          video: {context: 'instream',  playerSize: [640, 480]}
-        },
-        bids: [
-          {
-            bidder: 'appnexus',
-            params: {
-              placementId: '9333431',
-              video: {
-                skipppable: false,
-                playback_methods: ['auto_play_sound_off']
-              }
-            }
-          }
-        ]
-      };
-
-      pbjs.que.push(function(){
-        pbjs.addAdUnits(videoAdUnit);
-        pbjs.requestBids({
-          timeout : 700,
-          bidsBackHandler : function(bids) {
-            var videoUrl = pbjs.adServers.dfp.buildVideoUrl({
-              adUnit: videoAdUnit,
-              params: {
-                iu: '/19968336/prebid_cache_video_adunit'
-              }
-            });
-
-            invokeVideoPlayer(videoUrl);
-          }
-        });
-      });
-
-      pbjs.bidderSettings =
-        {
-          standard: {
-            adserverTargeting: [
-              {
-                key: "hb_bidder",
-                val: function (bidResponse) {
-                  return bidResponse.bidderCode;
+        const videoAdUnits = [{
+            code: 'video1',
+            mediaTypes: {
+                video: {
+                    context: 'instream',
+                    playerSize: [640, 480]
                 }
-              }, {
-                key: "hb_adid",
-                val: function (bidResponse) {
-                  return bidResponse.adId;
-                }
-              }, {
-                key: "hb_pb",
-                val: function (bidResponse) {
-                  return "10.00";
-                }
-              }, {
-                key: "hb_size",
-                val: function (bidResponse) {
-                  return bidResponse.size;
+            },
+            bids: [
+                {
+                    bidder: 'oneVideo',
+                    params: {
+                        Bidfloor: 10,
+                        banner: {
+                            playerWidth: 640,
+                            playerHeight: 480,
+                            mimes: ["video/mp4",
+               "application/javascript"],
+                            position: 1,
 
+                        },
+                        site: {
+                            id: 1,
+                            page: 'http://www.amazonaws.com',
+                            ref: 'http://www.amazonaws.com/5'
+                        },
+                        pubId: 'OneMDisplay'
+                    }
                 }
-              }
             ]
-          }
-        };
+        }];
+
+    pbjs.que.push(function() {
+        pbjs.addAdUnits(videoAdUnits)
+        pbjs.requestBids({
+            timeout: 2000,
+            bidsBackHandler: function(bids) {
+                let highestCpmBids = pbjs.getHighestCpmBids('video1');
+                pbjs.renderAd(document, highestCpmBids[0].adId);
+                }
+            })
+        });
     </script>
 </head>
 
 <body>
+    <h1>Header Bidding Outstream Renderer Solution</h1>
+    <p>By Adam Browning</p>
+    <p>Verizon Media Video SSP Header Bidding Outstream Renderer Solution by Adam Browning. Lorem ipsum dolor sit amet,
+        consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim
+        veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor
+        in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat
+        cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
 
-<h2>Prebid Video -- video.js</h2>
+    <p>Verizon Media Video SSP Header Bidding Outstream Renderer Solution by Adam Browning. Lorem ipsum dolor sit amet,
+        consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim
+        veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor
+        in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat
+        cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
 
-<div class="example-video-container">
+    <p>Verizon Media Video SSP Header Bidding Outstream Renderer Solution by Adam Browning. Lorem ipsum dolor sit amet,
+        consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim
+        veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor
+        in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat
+        cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
 
-    <video id="vid1" class="video-js vjs-default-skin vjs-big-play-centered" controls
-           data-setup='{}'
-           width='640'
-           height='480'
-    >
-        <source src="http://vjs.zencdn.net/v/oceans.mp4" type='video/mp4'/>
-        <source src="http://vjs.zencdn.net/v/oceans.webm" type='video/webm'/>
-        <source src="http://vjs.zencdn.net/v/oceans.ogv" type='video/ogg'/>
+        <!--Outstream adUnit for auction -->
+        <div id="video1"></div>
 
-    </video>
-</div>
+    <p>Verizon Media Video SSP Header Bidding Outstream Renderer Solution by Adam Browning. Lorem ipsum dolor sit amet,
+        consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim
+        veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor
+        in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat
+        cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
 
-<script>
-  function invokeVideoPlayer(url) {
-    videojs("vid1").ready(function() {
-      this.vastClient({
-        adTagUrl: url,
-        playAdAlways: true,
-        verbosity: 4,
-        vpaidFlashLoaderPath: "https://github.com/MailOnline/videojs-vast-vpaid/blob/RELEASE/bin/VPAIDFlash.swf?raw=true",
-        autoplay: true
-      });
+    <p>Verizon Media Video SSP Header Bidding Outstream Renderer Solution by Adam Browning. Lorem ipsum dolor sit amet,
+        consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim
+        veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor
+        in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat
+        cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
 
-      this.muted(true);
-      this.play();
-    });
-  }
+    <p>Verizon Media Video aSSP Header Bidding Outstream Renderer Solution by Adam Browning. Lorem ipsum dolor sit amet,
+        consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim
+        veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor
+        in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat
+        cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
 
-</script>
+    <p>Verizon Media Video SSP Header Bidding Outstream Renderer Solution by Adam Browning. Lorem ipsum dolor sit amet,
+        consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim
+        veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor
+        in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat
+        cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+
+    <p>Verizon Media Video SSP Header Bidding Outstream Renderer Solution by Adam Browning. Lorem ipsum dolor sit amet,
+        consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim
+        veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor
+        in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat
+        cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+
+
 </body>
+
 </html>
+<script>

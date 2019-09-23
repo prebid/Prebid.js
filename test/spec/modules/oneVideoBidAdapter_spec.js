@@ -32,7 +32,8 @@ describe('OneVideoBidAdapter', function () {
           playbackmethod: [1, 5],
           placement: 123,
           sid: 134,
-          rewarded: 1
+          rewarded: 1,
+          inventoryid: 123
         },
         site: {
           id: 1,
@@ -69,7 +70,8 @@ describe('OneVideoBidAdapter', function () {
           playbackmethod: [1, 5],
           placement: 123,
           sid: 134,
-          rewarded: 1
+          rewarded: 1,
+          inventoryid: 123
         }
       };
       expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
@@ -87,7 +89,8 @@ describe('OneVideoBidAdapter', function () {
           playbackmethod: [1, 5],
           placement: 123,
           sid: 134,
-          rewarded: 1
+          rewarded: 1,
+          inventoryid: 123
         },
         pubId: 'brxd'
       };
