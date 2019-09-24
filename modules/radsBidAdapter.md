@@ -24,7 +24,8 @@ RADS Bidder Adapter for Prebid.js 1.x
                 {
                     bidder: "rads",
                     params: {
-                        placement: 101
+                        placement: 3,   // placement ID
+                        devMode: true   // if true: library uses dev server for tests
                     }
                 }
             ]

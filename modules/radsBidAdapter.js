@@ -20,8 +20,7 @@ export const spec = {
       const params = bidRequest.params;
       const videoData = utils.deepAccess(bidRequest, 'mediaTypes.video') || {};
       const sizes = utils.parseSizesInput(videoData.playerSize || bidRequest.sizes)[0];
-      const width = sizes.split('x')[0];
-      const height = sizes.split('x')[1];
+      const [width, height] = sizes.split('x');
       const placementId = params.placement;
 
       const rnd = Math.floor(Math.random() * 99999999999);
@@ -29,10 +28,7 @@ export const spec = {
       const bidId = bidRequest.bidId;
       const isDev = params.devMode || false;
 
-      let endpoint = ENDPOINT_URL;
-      if (isDev) {
-        endpoint = ENDPOINT_URL_DEV;
-      }
+      let endpoint = isDev ? ENDPOINT_URL_DEV : ENDPOINT_URL;
 
       let payload = {};
       if (isVideoRequest(bidRequest)) {
