@@ -35,11 +35,11 @@ export const spec = {
   interpretResponse: function(serverResponse, bidRequest) {
     const bidResponses = [];
     const bidResponse = {
-      requestId: serverResponse.body.id,
+      requestId: serverResponse.body.bidID,
       cpm: serverResponse.body.cpm,
       width: serverResponse.body.creatives[0].width,
       height: serverResponse.body.creatives[0].height,
-      creativeId: serverResponse.body.id,
+      creativeId: serverResponse.body.creatives[0].id,
       currency: serverResponse.body.cur,
       netRevenue: true,
       ttl: config.getConfig('_bidderTimeout'),
