@@ -8,7 +8,7 @@
 import * as utils from '../../src/utils';
 
 /** @type {Submodule} */
-export const pubCommonIdSubmodule = {
+export const customIdSubmodule = {
   /**
    * used to link submodule with config
    * @type {string}
