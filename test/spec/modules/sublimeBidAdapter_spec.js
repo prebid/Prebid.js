@@ -70,17 +70,14 @@ describe('Sublime Adapter', function() {
 
     it('should have a post method', function() {
       expect(request[0].method).to.equal('POST');
-      expect(request[1].method).to.equal('POST');
     });
 
     it('should contains a request id equals to the bid id', function() {
       expect(request[0].data.requestId).to.equal(bidRequests[0].bidId);
-      expect(request[1].data.requestId).to.equal(bidRequests[1].bidId);
     });
 
     it('should have an url that contains bid keyword', function() {
       expect(request[0].url).to.match(/bid/);
-      expect(request[1].url).to.match(/bid/);
     });
   });
 
