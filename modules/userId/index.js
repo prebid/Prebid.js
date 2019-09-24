@@ -352,7 +352,7 @@ function initSubmodules(submodules, consentData) {
           }
         }
         if (utils.isNumber(refreshInSeconds) && !utils.isFn(submodule.submodule.refreshId)) {
-          utils.logWarn(`${MODULE_NAME} - storage.refreshInSeconds provided but userId system missing refreshId() implementation`);
+          utils.logWarn(`${submodule.submodule.name} - storage.refreshInSeconds provided but userId system missing refreshId() implementation`);
         }
       } else {
         const getIdResult = submodule.submodule.getId(submodule.config.params, consentData);
