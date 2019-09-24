@@ -351,18 +351,18 @@ function initSubmodules(submodules, consentData) {
             }
           }
         }
-        if (utils.isNumber(refreshInSeconds) && ! utils.isFn(submodule.submodule.refreshId)) {
+        if (utils.isNumber(refreshInSeconds) && !utils.isFn(submodule.submodule.refreshId)) {
           utils.logWarn(`${MODULE_NAME} - storage.refreshInSeconds provided but userId system missing refreshId() implementation`);
         }
-      }
-
-      const getIdResult = submodule.submodule.getId(submodule.config.params, consentData);
-
-      if (utils.isFn(getIdResult)) {
-        submodule.callback = getIdResult;
       } else {
-        setStoredValue(submodule.config.storage, getIdResult, submodule.config.storage.expires);
-        submodule.idObj = submodule.submodule.decode(getIdResult);
+        const getIdResult = submodule.submodule.getId(submodule.config.params, consentData);
+
+        if (utils.isFn(getIdResult)) {
+          submodule.callback = getIdResult;
+        } else {
+          setStoredValue(submodule.config.storage, getIdResult, submodule.config.storage.expires);
+          submodule.idObj = submodule.submodule.decode(getIdResult);
+        }
       }
     } else if (submodule.config.value) {
       // cache decoded value (this is copied to every adUnit bid)
@@ -372,7 +372,7 @@ function initSubmodules(submodules, consentData) {
       if (typeof result === 'function') {
         submodule.callback = result;
       } else {
-        submodule.idObj = submodule.submodule.decode();
+        submodule.idObj = submodule.submodule.decode(result);
       }
     }
     carry.push(submodule);
