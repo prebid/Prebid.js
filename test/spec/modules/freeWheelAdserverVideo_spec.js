@@ -1,13 +1,13 @@
 import { expect } from 'chai';
-import { getTargeting } from 'modules/freeWheelAdserverVideo';
+import { adpodUtils } from 'modules/freeWheelAdserverVideo';
 import { auctionManager } from 'src/auctionManager';
 import { config } from 'src/config';
-import * as adpod from 'modules/adpod';
 
 describe('freeWheel adserver module', function() {
   let amStub;
   let amGetAdUnitsStub;
-  let pbcStub;
+  let xhr;
+  let requests;
 
   before(function () {
     let adUnits = [{
@@ -53,12 +53,13 @@ describe('freeWheel adserver module', function() {
     amGetAdUnitsStub = sinon.stub(auctionManager, 'getAdUnits');
     amGetAdUnitsStub.returns(adUnits);
     amStub = sinon.stub(auctionManager, 'getBidsReceived');
-    pbcStub = sinon.stub(adpod, 'callPrebidCacheAfterAuction').callsFake(function (...args) {
-      args[1](null, getBidsReceived());
-    });
   });
 
   beforeEach(function () {
+    xhr = sinon.useFakeXMLHttpRequest();
+    requests = [];
+    xhr.onCreate = request => requests.push(request);
+
     config.setConfig({
       adpod: {
         brandCategoryExclusion: false,
@@ -69,6 +70,7 @@ describe('freeWheel adserver module', function() {
 
   afterEach(function() {
     config.resetConfig();
+    xhr.restore();
   });
 
   after(function () {
@@ -79,20 +81,20 @@ describe('freeWheel adserver module', function() {
   it('should return targeting for all adunits', function() {
     amStub.returns(getBidsReceived());
     let targeting;
-    getTargeting({
+    adpodUtils.getTargeting({
       callback: function(errorMsg, targetingResult) {
         targeting = targetingResult;
       }
     });
 
     expect(targeting['preroll_1'].length).to.equal(3);
-    expect(targeting['midroll_1'].length).to.equal(2);
+    expect(targeting['midroll_1'].length).to.equal(3);
   });
 
   it('should return targeting for passed adunit code', function() {
     amStub.returns(getBidsReceived());
     let targeting;
-    getTargeting({
+    adpodUtils.getTargeting({
       codes: ['preroll_1'],
       callback: function(errorMsg, targetingResult) {
         targeting = targetingResult;
@@ -121,14 +123,14 @@ describe('freeWheel adserver module', function() {
     }];
     amStub.returns(getBidsReceived().concat(bannerBid));
     let targeting;
-    getTargeting({
+    adpodUtils.getTargeting({
       callback: function(errorMsg, targetingResult) {
         targeting = targetingResult;
       }
     });
 
     expect(targeting['preroll_1'].length).to.equal(3);
-    expect(targeting['midroll_1'].length).to.equal(2);
+    expect(targeting['midroll_1'].length).to.equal(3);
   });
 
   it('should return unique category bids when competitive exclusion is enabled', function() {
@@ -139,13 +141,13 @@ describe('freeWheel adserver module', function() {
       }
     });
     amStub.returns([
-      createBid(10, 'preroll_1', 30, '10.00_airline_30s', '123', 'airline'),
-      createBid(15, 'preroll_1', 30, '15.00_airline_30s', '123', 'airline'),
-      createBid(15, 'midroll_1', 60, '15.00_travel_60s', '123', 'travel'),
-      createBid(10, 'preroll_1', 30, '10.00_airline_30s', '123', 'airline')
+      createBid(10, 'preroll_1', 30, '10.00_395_30s', '123', '395'),
+      createBid(15, 'preroll_1', 30, '15.00_395_30s', '123', '395'),
+      createBid(15, 'midroll_1', 60, '15.00_406_60s', '123', '406'),
+      createBid(10, 'preroll_1', 30, '10.00_395_30s', '123', '395')
     ]);
     let targeting;
-    getTargeting({
+    adpodUtils.getTargeting({
       callback: function(errorMsg, targetingResult) {
         targeting = targetingResult;
       }
@@ -157,12 +159,12 @@ describe('freeWheel adserver module', function() {
 
   it('should only select bids less than adpod duration', function() {
     amStub.returns([
-      createBid(10, 'preroll_1', 90, '10.00_airline_90s', '123', 'airline'),
-      createBid(15, 'preroll_1', 90, '15.00_airline_90s', '123', 'airline'),
-      createBid(15, 'midroll_1', 90, '15.00_travel_90s', '123', 'travel')
+      createBid(10, 'preroll_1', 90, '10.00_395_90s', '123', '395'),
+      createBid(15, 'preroll_1', 90, '15.00_395_90s', '123', '395'),
+      createBid(15, 'midroll_1', 90, '15.00_406_90s', '123', '406')
     ]);
     let targeting;
-    getTargeting({
+    adpodUtils.getTargeting({
       callback: function(errorMsg, targetingResult) {
         targeting = targetingResult;
       }
@@ -180,25 +182,30 @@ describe('freeWheel adserver module', function() {
     });
     amStub.returns(getBidsReceived());
     let targeting;
-    getTargeting({
+    adpodUtils.getTargeting({
       callback: function(errorMsg, targetingResult) {
         targeting = targetingResult;
       }
     });
 
-    expect(pbcStub.called).to.equal(true);
+    requests[0].respond(
+      200,
+      { 'Content-Type': 'text/plain' },
+      JSON.stringify({'responses': getBidsReceived().slice(0, 4)})
+    );
+
     expect(targeting['preroll_1'].length).to.equal(3);
-    expect(targeting['midroll_1'].length).to.equal(4);
+    expect(targeting['midroll_1'].length).to.equal(3);
   });
 });
 
 function getBidsReceived() {
   return [
-    createBid(10, 'preroll_1', 15, '10.00_airline_15s', '123', 'airline'),
-    createBid(15, 'preroll_1', 15, '15.00_airline_15s', '123', 'airline'),
-    createBid(15, 'midroll_1', 30, '15.00_travel_30s', '123', 'travel'),
-    createBid(5, 'midroll_1', 5, '5.00_travel_5s', '123', 'travel'),
-    createBid(20, 'midroll_1', 60, '20.00_travel_60s', '123', 'travel'),
+    createBid(10, 'preroll_1', 15, '10.00_395_15s', '123', '395'),
+    createBid(15, 'preroll_1', 15, '15.00_395_15s', '123', '395'),
+    createBid(15, 'midroll_1', 30, '15.00_406_30s', '123', '406'),
+    createBid(5, 'midroll_1', 5, '5.00_406_5s', '123', '406'),
+    createBid(20, 'midroll_1', 60, '20.00_406_60s', '123', '406'),
   ]
 }
 
@@ -225,8 +232,8 @@ function createBid(cpm, adUnitCode, durationBucket, priceIndustryDuration, uuid,
     'appnexus': {
       'buyerMemberId': 9325
     },
-    'vastUrl': 'http://nym1-ib.adnxs.com/ab?ro=1&referrer=http%3A%2F%2Fprebid.org%2Fexamples%2Fvideo%2FjwPlayerPrebid.html&e=wqT_3QKQCKAQBAAAAwDWAAUBCOC2reIFENXVz86_iKrdKRiyjp7_7P7s0GQqNgkAAAECCBRAEQEHNAAAFEAZAAAA4HoUFEAhERIAKREJADERG6gw6dGnBjjtSEDtSEgCUMuBwC5YnPFbYABozbp1eIHdBIABAYoBA1VTRJIBAQbwUJgBAaABAagBAbABALgBA8ABBMgBAtABANgBAOABAPABAIoCO3VmKCdhJywgMjUyOTg4NSwgMTU0ODQ0MjQ2NCk7dWYoJ3InLCA5NzUxNzc3MTYeAPQAAZIC8QEhOXpPdkVBaTItTHdLRU11QndDNFlBQ0NjOFZzd0FEZ0FRQVJJN1VoUTZkR25CbGdBWUVwb0FIQ0FBWGdBZ0FHMEFvZ0JBSkFCQVpnQkFhQUJBYWdCQTdBQkFMa0I4NjFxcEFBQUZFREJBZk90YXFRQUFCUkF5UUhWSVlsRnN5SDRQOWtCQUFBQUFBQUE4RF9nQVFEMUFRQUFBQUNZQWdDZ0FnQzFBZ0FBQUFDOUFnQUFBQURBQWdESUFnRGdBZ0RvQWdENEFnQ0FBd0dRQXdDWUF3R29BN2I0dkFxNkF3bE9XVTB5T2pRd016SGdBODBGmgJhIU53M1VaUWkyLvQAKG5QRmJJQVFvQURFCY1cQUFVUURvSlRsbE5Nam8wTURNeFFNMEZTBZwYQUFBUEFfVREMDEFBQVcdDPBMwgI_aHR0cDovL3ByZWJpZC5vcmcvZGV2LWRvY3Mvc2hvdy12aWRlby13aXRoLWEtZGZwLXZpZGVvLXRhZy5odG1s2AIA4AKtmEjqAjRGSgAgZXhhbXBsZXMvBUUkL2p3UGxheWVyUAlseGh0bWzyAhMKD0NVU1RPTV9NT0RFTF9JRBIA8gIaChYyFgAgTEVBRl9OQU1FAR0IHgoaNh0ACEFTVAE-4ElGSUVEEgCAAwCIAwGQAwCYAxegAwGqAwDAA-CoAcgDANgDAOADAOgDAPgDAYAEAJIEDS91dC92Mw3-8E6YBACiBAsxMC4xLjEyLjE4MKgEjq4IsgQSCAEQAhiABSDoAigBKAIwADgDuAQAwAQAyAQA0gQOOTMyNSNOWU0yOjQwMzHaBAIIAeAEAPAEYTYgiAUBmAUAoAX_EQEUAcAFAMkFaXAU8D_SBQkJCQx4AADYBQHgBQHwBcOVC_oFBAgAEACQBgGYBgC4BgDBBgklJPA_yAYA2gYWChAJEDQAAAAAAAAAAAAAEAAYAA..&s=539bcaeb9ce05a13a8c4a6cab3c000194a8e8f53',
-    'vastImpUrl': 'http://nym1-ib.adnxs.com/vast_track/v2?info=ZQAAAAMArgAFAQlgW0tcAAAAABHV6tP5Q6i6KRlgW0tcAAAAACDLgcAuKAAw7Ug47UhA0-hISLuv1AFQ6dGnBljDlQtiAkZSaAFwAXgAgAEBiAEBkAGABZgB6AKgAQCoAcuBwC4.&s=61db1767c8c362ef1a58d2c5587dd6a9b1015aeb&event_type=1',
+    'vastUrl': 'http://some-vast-url.com',
+    'vastImpUrl': 'http://some-vast-imp-url.com',
     'auctionId': 'ec266b31-d652-49c5-8295-e83fafe5532b',
     'responseTimestamp': 1548442460888,
     'requestTimestamp': 1548442460827,

@@ -1,8 +1,10 @@
 import { expect } from 'chai';
-import adapterManager, {
-  gdprDataHandler
-} from 'src/adapterManager';
-import { getAdUnits } from 'test/fixtures/fixtures';
+import adapterManager, { gdprDataHandler } from 'src/adapterManager';
+import {
+  getAdUnits,
+  getServerTestingConfig,
+  getServerTestingsAds
+} from 'test/fixtures/fixtures';
 import CONSTANTS from 'src/constants.json';
 import * as utils from 'src/utils';
 import { config } from 'src/config';
@@ -925,12 +927,12 @@ describe('adapterManager tests', function () {
         expect(bidRequests.length).to.equal(2);
         let rubiconBidRequests = find(bidRequests, bidRequest => bidRequest.bidderCode === 'rubicon');
         expect(rubiconBidRequests.bids.length).to.equal(1);
-        expect(rubiconBidRequests.bids[0].sizes).to.deep.equal(find(adUnits, adUnit => adUnit.code === rubiconBidRequests.bids[0].adUnitCode).sizes);
+        expect(rubiconBidRequests.bids[0].mediaTypes).to.deep.equal(find(adUnits, adUnit => adUnit.code === rubiconBidRequests.bids[0].adUnitCode).mediaTypes);
 
         let appnexusBidRequests = find(bidRequests, bidRequest => bidRequest.bidderCode === 'appnexus');
         expect(appnexusBidRequests.bids.length).to.equal(2);
-        expect(appnexusBidRequests.bids[0].sizes).to.deep.equal(find(adUnits, adUnit => adUnit.code === appnexusBidRequests.bids[0].adUnitCode).sizes);
-        expect(appnexusBidRequests.bids[1].sizes).to.deep.equal(find(adUnits, adUnit => adUnit.code === appnexusBidRequests.bids[1].adUnitCode).sizes);
+        expect(appnexusBidRequests.bids[0].mediaTypes).to.deep.equal(find(adUnits, adUnit => adUnit.code === appnexusBidRequests.bids[0].adUnitCode).mediaTypes);
+        expect(appnexusBidRequests.bids[1].mediaTypes).to.deep.equal(find(adUnits, adUnit => adUnit.code === appnexusBidRequests.bids[1].adUnitCode).mediaTypes);
       });
 
       it('should not filter video bids', function () {
@@ -1107,8 +1109,6 @@ describe('adapterManager tests', function () {
         expect(bidRequests[0].adUnitsS2SCopy.length).to.equal(1);
         expect(bidRequests[0].adUnitsS2SCopy[0].bids.length).to.equal(1);
         expect(bidRequests[0].adUnitsS2SCopy[0].bids[0].bidder).to.equal('rubicon');
-        expect(bidRequests[0].adUnitsS2SCopy[0].bids[0].adUnitCode).to.equal(adUnits[1].code);
-        expect(bidRequests[0].adUnitsS2SCopy[0].bids[0].bid_id).to.equal(bidRequests[0].bids[0].bid_id);
         expect(bidRequests[0].adUnitsS2SCopy[0].labelAny).to.deep.equal(['visitor-uk', 'desktop']);
       });
     });
@@ -1141,6 +1141,129 @@ describe('adapterManager tests', function () {
         );
         expect(bidRequests[0].gdprConsent).to.be.undefined;
       });
+    });
+
+    describe('s2sTesting - testServerOnly', () => {
+      beforeEach(() => {
+        config.setConfig({ s2sConfig: getServerTestingConfig(CONFIG) });
+      });
+
+      afterEach(() => config.resetConfig());
+
+      const makeBidRequests = ads => {
+        let bidRequests = adapterManager.makeBidRequests(
+          ads, 1111, 2222, 1000
+        );
+
+        bidRequests.sort((a, b) => {
+          if (a.bidderCode < b.bidderCode) return -1;
+          if (a.bidderCode > b.bidderCode) return 1;
+          return 0;
+        });
+
+        return bidRequests;
+      };
+
+      const removeAdUnitsBidSource = adUnits => adUnits.map(adUnit => {
+        const newAdUnit = { ...adUnit };
+        newAdUnit.bids = newAdUnit.bids.map(bid => {
+          if (bid.bidSource) delete bid.bidSource;
+          return bid;
+        });
+        return newAdUnit;
+      });
+
+      it('suppresses all client bids if there are server bids resulting from bidSource at the adUnit Level', () => {
+        const bidRequests = makeBidRequests(getServerTestingsAds());
+
+        expect(bidRequests).lengthOf(2);
+
+        expect(bidRequests[0].bids).lengthOf(1);
+        expect(bidRequests[0].bids[0].bidder).equals('openx');
+        expect(bidRequests[0].bids[0].finalSource).equals('server');
+
+        expect(bidRequests[0].bids).lengthOf(1);
+        expect(bidRequests[1].bids[0].bidder).equals('rubicon');
+        expect(bidRequests[1].bids[0].finalSource).equals('server');
+      });
+
+      // todo: update description
+      it('suppresses all, and only, client bids if there are bids resulting from bidSource at the adUnit Level', () => {
+        const ads = getServerTestingsAds();
+
+        // change this adUnit to be server based
+        ads[1].bids[1].bidSource.client = 0;
+        ads[1].bids[1].bidSource.server = 100;
+
+        const bidRequests = makeBidRequests(ads);
+
+        expect(bidRequests).lengthOf(3);
+
+        expect(bidRequests[0].bids).lengthOf(1);
+        expect(bidRequests[0].bids[0].bidder).equals('appnexus');
+        expect(bidRequests[0].bids[0].finalSource).equals('server');
+
+        expect(bidRequests[1].bids).lengthOf(1);
+        expect(bidRequests[1].bids[0].bidder).equals('openx');
+        expect(bidRequests[1].bids[0].finalSource).equals('server');
+
+        expect(bidRequests[2].bids).lengthOf(1);
+        expect(bidRequests[2].bids[0].bidder).equals('rubicon');
+        expect(bidRequests[2].bids[0].finalSource).equals('server');
+      });
+
+      // we have a server call now
+      it('does not suppress client bids if no "test case" bids result in a server bid', () => {
+        const ads = getServerTestingsAds();
+
+        // change this adUnit to be client based
+        ads[0].bids[0].bidSource.client = 100;
+        ads[0].bids[0].bidSource.server = 0;
+
+        const bidRequests = makeBidRequests(ads);
+
+        expect(bidRequests).lengthOf(4);
+
+        expect(bidRequests[0].bids).lengthOf(1);
+        expect(bidRequests[0].bids[0].bidder).equals('adequant');
+        expect(bidRequests[0].bids[0].finalSource).equals('client');
+
+        expect(bidRequests[1].bids).lengthOf(2);
+        expect(bidRequests[1].bids[0].bidder).equals('appnexus');
+        expect(bidRequests[1].bids[0].finalSource).equals('client');
+        expect(bidRequests[1].bids[1].bidder).equals('appnexus');
+        expect(bidRequests[1].bids[1].finalSource).equals('client');
+
+        expect(bidRequests[2].bids).lengthOf(1);
+        expect(bidRequests[2].bids[0].bidder).equals('openx');
+        expect(bidRequests[2].bids[0].finalSource).equals('server');
+
+        expect(bidRequests[3].bids).lengthOf(2);
+        expect(bidRequests[3].bids[0].bidder).equals('rubicon');
+        expect(bidRequests[3].bids[0].finalSource).equals('client');
+        expect(bidRequests[3].bids[1].bidder).equals('rubicon');
+        expect(bidRequests[3].bids[1].finalSource).equals('client');
+      });
+
+      it(
+        'should surpress client side bids if no ad unit bidSources are set, ' +
+        'but bidderControl resolves to server',
+        () => {
+          const ads = removeAdUnitsBidSource(getServerTestingsAds());
+
+          const bidRequests = makeBidRequests(ads);
+
+          expect(bidRequests).lengthOf(2);
+
+          expect(bidRequests[0].bids).lengthOf(1);
+          expect(bidRequests[0].bids[0].bidder).equals('openx');
+          expect(bidRequests[0].bids[0].finalSource).equals('server');
+
+          expect(bidRequests[1].bids).lengthOf(2);
+          expect(bidRequests[1].bids[0].bidder).equals('rubicon');
+          expect(bidRequests[1].bids[0].finalSource).equals('server');
+        }
+      );
     });
   });
 });
