@@ -5,14 +5,14 @@ const BIDDER_CODE = 'outcon';
 export const spec = {
   code: BIDDER_CODE,
   isBidRequestValid: function(bid) {
-    return !!((bid.params.pod || (bid.params.internalId && bid.params.publisher)) && bid.params.env);
+    return !!((bid.params.pod || (bid.params.internalId && bid.params.publisher)) && bid.params.env && bid.params.bidId);
   },
   buildRequests: function(validBidRequests) {
     for (let i = 0; i < validBidRequests.length; i++) {
       let par = '';
       let url = '';
-      if (validBidRequests[i].params.pod != undefined) par = 'get?pod=' + validBidRequests[i].params.pod;
-      else par = 'get?internalId=' + validBidRequests[i].params.internalId + '&publisher=' + validBidRequests[i].params.publisher;
+      if (validBidRequests[i].params.pod != undefined) par = 'get?pod=' + validBidRequests[i].params.pod + '&bidId=' + validBidRequests[i].params.bidId;
+      else par = 'get?internalId=' + validBidRequests[i].params.internalId + '&publisher=' + validBidRequests[i].params.publisher + '&bidId=' + validBidRequests[i].params.bidId;
       switch (validBidRequests[i].params.env) {
         case 'test':
           par = par + '&demo=true';
@@ -35,7 +35,7 @@ export const spec = {
   interpretResponse: function(serverResponse, bidRequest) {
     const bidResponses = [];
     const bidResponse = {
-      requestId: serverResponse.body.bidID,
+      requestId: serverResponse.body.bidId,
       cpm: serverResponse.body.cpm,
       width: serverResponse.body.creatives[0].width,
       height: serverResponse.body.creatives[0].height,
