@@ -1,16 +1,13 @@
 import find from 'core-js/library/fn/array/find';
 import * as utils from '../src/utils';
 import {registerBidder} from '../src/adapters/bidderFactory';
-
+import { loadExternalScript } from '../src/adloader'
 const BIDDER_CODE = 'adagio';
 const VERSION = '2.0.0';
 const FEATURES_VERSION = '1';
 const ENDPOINT = 'https://mp.4dex.io/prebid';
 const SUPPORTED_MEDIA_TYPES = ['banner'];
 const ADAGIO_TAG_URL = '//script.4dex.io/localstore.js';
-const ADAGIO_TAG_TO_LOCALSTORE = '//script.4dex.io/adagio.js';
-const ADAGIO_LOCALSTORE_KEY = 'adagioScript';
-const LOCALSTORE_TIMEOUT = 100;
 const ADSRV_EVENTS = {
   GPT: {
     IMPRESSION_VIEWABLE: 'impressionViewable',
@@ -44,7 +41,6 @@ function canAccessTopWindow() {
 }
 
 function initAdagio() {
-  const script = document.createElement('script');
   const w = utils.getWindowTop();
 
   w.ADAGIO = w.ADAGIO || {};
@@ -100,14 +96,7 @@ function initAdagio() {
 
   // Then prepare localstore.js to update localStorage adagio-sj script with
   // the very last version.
-  script.type = 'text/javascript';
-  script.async = true;
-  script.src = ADAGIO_TAG_URL;
-  script.setAttribute('data-key', ADAGIO_LOCALSTORE_KEY);
-  script.setAttribute('data-src', ADAGIO_TAG_TO_LOCALSTORE);
-  setTimeout(function() {
-    utils.insertElement(script);
-  }, LOCALSTORE_TIMEOUT);
+  loadExternalScript(ADAGIO_TAG_URL, BIDDER_CODE)
 }
 
 if (canAccessTopWindow()) {
