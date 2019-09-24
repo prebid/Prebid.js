@@ -48,3 +48,30 @@ jobs:
       - run: 
           name: BrowserStack testing
           command: gulp test --browserstack --nolintfix
+  e2etest:
+    docker:
+      # specify the version you desire here
+      - image: circleci/node:8.9.0
+    steps:
+      - run: echo "Running end to end test using workflows"
+workflows:
+  version: 2
+  commit:
+    jobs:
+      - build
+  nightly:
+    triggers:
+      - schedule:
+          cron: "5 * * * *"
+          filters:
+            branches:
+              only:
+                - master
+                - ${CIRCLE_BRANCH}
+    jobs:
+      - build
+      - e2etest:
+          requires:
+            - build
+
+  
