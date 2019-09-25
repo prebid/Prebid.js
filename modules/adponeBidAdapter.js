@@ -15,7 +15,7 @@ function _createSync() {
 }
 
 function getUserSyncs(syncOptions) {
-  return (syncOptions.iframeEnabled) ? _createSync() : ([]);
+  return (syncOptions && syncOptions.iframeEnabled) ? _createSync() : ([]);
 }
 
 export const spec = {

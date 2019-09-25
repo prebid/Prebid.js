@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/adponeBidAdapter';
-
+const EMPTY_ARRAY = [];
 describe('adponeBidAdapter', function () {
   let bid = {
     bidder: 'adpone',
@@ -102,8 +102,10 @@ describe('interpretResponse', function () {
 });
 
 describe('getUserSyncs', function () {
-  it('Verifies sync iframe option', function () {
-    expect(spec.getUserSyncs({iframeEnabled: false})).to.deep.equal([]);
+  it('Verifies getUserSyncs returns expected result', function () {
+    expect((typeof (spec.getUserSyncs)).should.equals('function'));
+    expect(spec.getUserSyncs({iframeEnabled: false})).to.deep.equal(EMPTY_ARRAY);
+    expect(spec.getUserSyncs(null)).to.deep.equal(EMPTY_ARRAY);
     expect(spec.getUserSyncs({iframeEnabled: true})).to.deep.equal({
       type: 'iframe',
       url: 'https://eu-ads.adpone.com'
