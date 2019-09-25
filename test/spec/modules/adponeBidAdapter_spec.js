@@ -103,9 +103,8 @@ describe('interpretResponse', function () {
 
 describe('getUserSyncs', function () {
   it('Verifies sync iframe option', function () {
-    expect(spec.getUserSyncs({}, [], {gdprApplies: true})).to.deep.equal([]);
-    expect(spec.getUserSyncs({iframeEnabled: false}, [], {gdprApplies: false})).to.deep.equal([]);
-    expect(spec.getUserSyncs({iframeEnabled: true}, [], {gdprApplies: false})).to.deep.equal({
+    expect(spec.getUserSyncs({iframeEnabled: false})).to.deep.equal([]);
+    expect(spec.getUserSyncs({iframeEnabled: true})).to.deep.equal({
       type: 'iframe',
       url: 'https://eu-ads.adpone.com'
     });

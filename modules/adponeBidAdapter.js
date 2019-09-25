@@ -1,13 +1,11 @@
 import {BANNER} from '../src/mediaTypes';
 import {registerBidder} from '../src/adapters/bidderFactory';
-import * as utils from '../src/utils';
 
 const ADPONE_CODE = 'adpone';
 const ADPONE_ENDPOINT = 'https://rtb.adpone.com/bid-request';
 const ADPONE_SYNC_ENDPOINT = 'https://eu-ads.adpone.com';
 const ADPONE_REQUEST_METHOD = 'POST';
 const ADPONE_CURRENCY = 'EUR';
-const adapterState = {};
 
 function _createSync() {
   return {
@@ -16,12 +14,8 @@ function _createSync() {
   }
 }
 
-function getUserSyncs(syncOptions, responses, gdprConsent) {
-  if (gdprConsent && gdprConsent.gdprApplies === true) {
-    return []
-  } else {
-    return (syncOptions.iframeEnabled) ? _createSync() : ([]);
-  }
+function getUserSyncs(syncOptions) {
+  return (syncOptions.iframeEnabled) ? _createSync() : ([]);
 }
 
 export const spec = {
@@ -35,7 +29,6 @@ export const spec = {
   },
 
   buildRequests: bidRequests => {
-    adapterState.uniquePlacementIds = bidRequests.map(req => req.params.placementId).filter(utils.uniques);
     return bidRequests.map(bid => {
       const url = ADPONE_ENDPOINT + '?pid=' + bid.params.placementId;
       const data = {
