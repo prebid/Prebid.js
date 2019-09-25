@@ -14,6 +14,7 @@ const DOMAIN_USER_ID_QUERY_PARAM_KEY = 'duid';
 const DEFAULT_LIVEINTENT_IDENTITY_URL = '//idx.liadm.com';
 const DEFAULT_PREBID_SOURCE = 'prebid';
 
+/** @type {Submodule} */
 export const liveIntentIdSubmodule = {
   /**
    * used to link submodule with config
