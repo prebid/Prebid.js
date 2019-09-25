@@ -67,7 +67,7 @@ workflows:
             branches:
               only:
                 - master
-                - ${CIRCLE_BRANCH}
+                - circleci-workflow
     jobs:
       - build
       - e2etest:
