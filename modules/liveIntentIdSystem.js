@@ -4,11 +4,11 @@
  * @module modules/liveIntentIdSystem
  * @requires module:modules/userId
  */
-/** @type {Submodule} */
-import * as utils from '../../src/utils'
-import {ajax} from '../../src/ajax';
+import * as utils from '../src/utils'
+import {ajax} from '../src/ajax';
+import {submodule} from '../src/hook';
 
-const MODULE_NAME = 'liveIntentId'
+const MODULE_NAME = 'liveIntentId';
 const LIVE_CONNECT_DUID_KEY = '_li_duid';
 const DOMAIN_USER_ID_QUERY_PARAM_KEY = 'duid';
 const DEFAULT_LIVEINTENT_IDENTITY_URL = '//idx.liadm.com';
@@ -93,3 +93,5 @@ export const liveIntentIdSubmodule = {
     }
   }
 };
+
+submodule('userId', liveIntentIdSubmodule);

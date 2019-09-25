@@ -5,7 +5,7 @@ import {unifiedIdSubmodule} from 'modules/userId/unifiedIdSystem';
 import {pubCommonIdSubmodule} from 'modules/userId/pubCommonIdSystem';
 import {id5IdSubmodule} from 'modules/id5IdSystem';
 import {identityLinkSubmodule} from 'modules/identityLinkIdSystem';
-import {liveIntentIdSubmodule} from 'modules/userId/liveIntentIdSystem';
+import {liveIntentIdSubmodule} from 'modules/liveIntentIdSystem';
 
 let assert = require('chai').assert;
 let expect = require('chai').expect;

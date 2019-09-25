@@ -1,4 +1,4 @@
-import { liveIntentIdSubmodule } from 'modules/userId/liveIntentIdSystem';
+import { liveIntentIdSubmodule } from 'modules/liveIntentIdSystem';
 import * as utils from 'src/utils';
 
 describe('LiveIntentId', function() {
