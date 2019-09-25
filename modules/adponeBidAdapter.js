@@ -9,10 +9,10 @@ const ADPONE_REQUEST_METHOD = 'POST';
 const ADPONE_CURRENCY = 'EUR';
 const adapterState = {};
 
-function _createSync(placementId) {
+function _createSync() {
   return {
     type: 'iframe',
-    url: ADPONE_SYNC_ENDPOINT + '?id=' + placementId
+    url: ADPONE_SYNC_ENDPOINT
   }
 }
 
@@ -20,7 +20,7 @@ function getUserSyncs(syncOptions, responses, gdprConsent) {
   if (gdprConsent && gdprConsent.gdprApplies === true) {
     return []
   } else {
-    return (syncOptions.iframeEnabled) ? adapterState.uniquePlacementIds.map(_createSync) : ([]);
+    return (syncOptions.iframeEnabled) ? _createSync() : ([]);
   }
 }
 
