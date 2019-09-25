@@ -8,7 +8,7 @@ import {parse} from '../src/url';
 const SUPPORTED_AD_TYPES = [BANNER, VIDEO];
 const BIDDER_CODE = 'openx';
 const BIDDER_CONFIG = 'hb_pb';
-const BIDDER_VERSION = '2.1.7';
+const BIDDER_VERSION = '2.1.9';
 
 let shouldSendBoPixel = true;
 
@@ -243,7 +243,24 @@ function buildCommonQueryParamsFromBids(bids, bidderRequest) {
     defaultParams.pubcid = bids[0].crumbs.pubcid;
   }
 
+  if (bids[0].schain) {
+    defaultParams.schain = serializeSupplyChain(bids[0].schain);
+  }
+
   return defaultParams;
+}
+
+function serializeSupplyChain(supplyChain) {
+  return `${supplyChain.ver},${supplyChain.complete}!${serializeSupplyChainNodes(supplyChain.nodes)}`;
+}
+
+function serializeSupplyChainNodes(supplyChainNodes) {
+  const supplyChainNodePropertyOrder = ['asi', 'sid', 'hp', 'rid', 'name', 'domain'];
+
+  return supplyChainNodes.map(supplyChainNode => {
+    return supplyChainNodePropertyOrder.map(property => supplyChainNode[property] || '')
+      .join(',');
+  }).join('!');
 }
 
 function buildOXBannerRequest(bids, bidderRequest) {
