@@ -10,9 +10,16 @@ describe('OneVideoBidAdapter', function () {
 
   beforeEach(function () {
     bidRequest = {
+      mediaTypes: {
+        video: {
+          context: 'instream',
+          playerSize: [640, 480]
+        }
+      },
       bidder: 'oneVideo',
       sizes: [640, 480],
       bidId: '30b3efwfwe1e',
+      adUnitCode: 'video1',
       params: {
         video: {
           playerWidth: 640,
@@ -23,7 +30,9 @@ describe('OneVideoBidAdapter', function () {
           position: 1,
           delivery: [2],
           playbackmethod: [1, 5],
-          placement: 123
+          placement: 123,
+          sid: 134,
+          rewarded: 1
         },
         site: {
           id: 1,
@@ -58,7 +67,9 @@ describe('OneVideoBidAdapter', function () {
           position: 1,
           delivery: [2],
           playbackmethod: [1, 5],
-          placement: 123
+          placement: 123,
+          sid: 134,
+          rewarded: 1
         }
       };
       expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
@@ -74,7 +85,9 @@ describe('OneVideoBidAdapter', function () {
           position: 1,
           delivery: [2],
           playbackmethod: [1, 5],
-          placement: 123
+          placement: 123,
+          sid: 134,
+          rewarded: 1
         },
         pubId: 'brxd'
       };
@@ -104,10 +117,12 @@ describe('OneVideoBidAdapter', function () {
       const data = requests[0].data;
       const [ width, height ] = bidRequest.sizes;
       const placement = bidRequest.params.video.placement;
+      const rewarded = bidRequest.params.video.rewarded;
       expect(data.imp[0].video.w).to.equal(width);
       expect(data.imp[0].video.h).to.equal(height);
       expect(data.imp[0].ext.placement).to.equal(placement);
       expect(data.imp[0].bidfloor).to.equal(bidRequest.params.bidfloor);
+      expect(data.imp[0].ext.rewarded).to.equal(rewarded);
     });
 
     it('must parse bid size from a nested array', function () {
@@ -140,20 +155,23 @@ describe('OneVideoBidAdapter', function () {
     });
 
     it('should return a valid bid response with just "adm"', function () {
-      const serverResponse = {seatbid: [{bid: [{id: 1, price: 6.01, adm: '<VAST></VAST>'}]}], cur: 'USD'};
+      const serverResponse = {seatbid: [{bid: [{id: 1, adid: 123, crid: 2, price: 6.01, adm: '<VAST></VAST>'}]}], cur: 'USD'};
       const bidResponse = spec.interpretResponse({ body: serverResponse }, { bidRequest });
       let o = {
         requestId: bidRequest.bidId,
         bidderCode: spec.code,
         cpm: serverResponse.seatbid[0].bid[0].price,
-        creativeId: serverResponse.seatbid[0].bid[0].id,
+        adId: serverResponse.seatbid[0].bid[0].adid,
+        creativeId: serverResponse.seatbid[0].bid[0].crid,
         vastXml: serverResponse.seatbid[0].bid[0].adm,
         width: 640,
         height: 480,
         mediaType: 'video',
         currency: 'USD',
         ttl: 100,
-        netRevenue: true
+        netRevenue: true,
+        adUnitCode: bidRequest.adUnitCode,
+        renderer: (bidRequest.mediaTypes.video.context === 'outstream') ? newRenderer(bidRequest, bidResponse) : undefined,
       };
       expect(bidResponse).to.deep.equal(o);
     });
@@ -185,6 +203,13 @@ describe('OneVideoBidAdapter', function () {
     it('should send the consent string', function () {
       const request = spec.buildRequests([ bidRequest ], bidderRequest);
       expect(request[0].data.user.ext.consent).to.equal(bidderRequest.gdprConsent.consentString);
+    });
+
+    it('should send schain object', function () {
+      const requests = spec.buildRequests([ bidRequest ]);
+      const data = requests[0].data;
+      expect(data.source.ext.schain.nodes[0].sid).to.equal(bidRequest.params.video.sid);
+      expect(data.source.ext.schain.nodes[0].rid).to.equal(data.id);
     });
   });
 });
