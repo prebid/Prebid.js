@@ -23,7 +23,7 @@ const VERSION = '1.3';
 export const spec = {
 
   code: 'adkernel',
-  aliases: ['headbidding', 'adsolut', 'oftmediahb'],
+  aliases: ['headbidding', 'adsolut', 'oftmediahb', 'audiencemedia'],
   supportedMediaTypes: [BANNER, VIDEO],
   isBidRequestValid: function(bidRequest) {
     return 'params' in bidRequest &&

@@ -54,46 +54,49 @@ describe('triplelift adapter', function () {
   });
 
   describe('buildRequests', function () {
-    let bidRequests = [
-      {
-        bidder: 'triplelift',
-        params: {
-          inventoryCode: '12345',
-          floor: 1.0,
-        },
-        adUnitCode: 'adunit-code',
-        sizes: [[300, 250], [300, 600], [1, 1, 1], ['flex']],
-        bidId: '30b31c1838de1e',
-        bidderRequestId: '22edbae2733bf6',
-        auctionId: '1d1a030790a475',
-      }
-    ];
+    let bidRequests;
+    let bidderRequest;
 
-    let bidderRequest = {
-      bidderCode: 'triplelift',
-      auctionId: 'a7ebcd1d-66ff-4b5c-a82c-6a21a6ee5a18',
-      bidderRequestId: '5c55612f99bc11',
-      bids: [
+    this.beforeEach(() => {
+      bidRequests = [
         {
-          imp_id: 0,
-          cpm: 1.062,
-          width: 300,
-          height: 250,
-          ad: 'ad-markup',
-          iurl: 'https://s.adroll.com/a/IYR/N36/IYRN366MFVDITBAGNNT5U6.jpg'
+          bidder: 'triplelift',
+          params: {
+            inventoryCode: '12345',
+            floor: 1.0,
+          },
+          adUnitCode: 'adunit-code',
+          sizes: [[300, 250], [300, 600], [1, 1, 1], ['flex']],
+          bidId: '30b31c1838de1e',
+          bidderRequestId: '22edbae2733bf6',
+          auctionId: '1d1a030790a475',
+          userId: {},
         }
-      ],
-      refererInfo: {
-        referer: 'http://examplereferer.com'
-      },
-      gdprConsent: {
-        consentString: 'BOONm0NOONm0NABABAENAa-AAAARh7______b9_3__7_9uz_Kv_K7Vf7nnG072lPVA9LTOQ6gEaY',
-        gdprApplies: true
-      },
-      userId: {
-        tdid: '6bca7f6b-a98a-46c0-be05-6020f7604598'
-      }
-    };
+      ];
+
+      bidderRequest = {
+        bidderCode: 'triplelift',
+        auctionId: 'a7ebcd1d-66ff-4b5c-a82c-6a21a6ee5a18',
+        bidderRequestId: '5c55612f99bc11',
+        bids: [
+          {
+            imp_id: 0,
+            cpm: 1.062,
+            width: 300,
+            height: 250,
+            ad: 'ad-markup',
+            iurl: 'https://s.adroll.com/a/IYR/N36/IYRN366MFVDITBAGNNT5U6.jpg'
+          }
+        ],
+        refererInfo: {
+          referer: 'http://examplereferer.com'
+        },
+        gdprConsent: {
+          consentString: 'BOONm0NOONm0NABABAENAa-AAAARh7______b9_3__7_9uz_Kv_K7Vf7nnG072lPVA9LTOQ6gEaY',
+          gdprApplies: true
+        },
+      };
+    });
 
     it('exists and is an object', function () {
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
@@ -116,10 +119,95 @@ describe('triplelift adapter', function () {
     });
 
     it('should add tdid to the payload if included', function () {
+      const id = '6bca7f6b-a98a-46c0-be05-6020f7604598';
+      bidRequests[0].userId.tdid = id;
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
       const payload = request.data;
       expect(payload).to.exist;
-      expect(payload.user).to.deep.equal({ext: {eids: [{source: 'adserver.org', uids: [{id: '6bca7f6b-a98a-46c0-be05-6020f7604598', ext: {rtiPartner: 'TDID'}}]}]}});
+      expect(payload.user).to.deep.equal({ext: {eids: [{source: 'adserver.org', uids: [{id, ext: {rtiPartner: 'TDID'}}]}]}});
+    });
+
+    it('should add idl_env to the payload if included', function () {
+      const id = 'XY6104gr0njcH9UDIR7ysFFJcm2XNpqeJTYslleJ_cMlsFOfZI';
+      bidRequests[0].userId.idl_env = id;
+      const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
+      const payload = request.data;
+      expect(payload).to.exist;
+      expect(payload.user).to.deep.equal({ext: {eids: [{source: 'liveramp.com', uids: [{id, ext: {rtiPartner: 'idl'}}]}]}});
+    });
+
+    it('should add both tdid and idl_env to the payload if both are included', function () {
+      const tdidId = '6bca7f6b-a98a-46c0-be05-6020f7604598';
+      const idlEnvId = 'XY6104gr0njcH9UDIR7ysFFJcm2XNpqeJTYslleJ_cMlsFOfZI';
+      bidRequests[0].userId.tdid = tdidId;
+      bidRequests[0].userId.idl_env = idlEnvId;
+
+      const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
+      const payload = request.data;
+
+      expect(payload).to.exist;
+      expect(payload.user).to.deep.equal({
+        ext: {
+          eids: [
+            {
+              source: 'adserver.org',
+              uids: [
+                {
+                  id: tdidId,
+                  ext: { rtiPartner: 'TDID' }
+                }
+              ],
+            },
+            {
+              source: 'liveramp.com',
+              uids: [
+                {
+                  id: idlEnvId,
+                  ext: { rtiPartner: 'idl' }
+                }
+              ]
+            }
+          ]
+        }
+      });
+    });
+
+    it('should add user ids from multiple bid requests', function () {
+      const tdidId = '6bca7f6b-a98a-46c0-be05-6020f7604598';
+      const idlEnvId = 'XY6104gr0njcH9UDIR7ysFFJcm2XNpqeJTYslleJ_cMlsFOfZI';
+
+      const bidRequestsMultiple = [
+        { ...bidRequests[0], userId: { tdid: tdidId } },
+        { ...bidRequests[0], userId: { idl_env: idlEnvId } },
+      ];
+
+      const request = tripleliftAdapterSpec.buildRequests(bidRequestsMultiple, bidderRequest);
+      const payload = request.data;
+
+      expect(payload.user).to.deep.equal({
+        ext: {
+          eids: [
+            {
+              source: 'adserver.org',
+              uids: [
+                {
+                  id: tdidId,
+                  ext: { rtiPartner: 'TDID' }
+                }
+              ],
+            },
+            {
+              source: 'liveramp.com',
+              uids: [
+                {
+                  id: idlEnvId,
+                  ext: { rtiPartner: 'idl' }
+                }
+              ]
+            }
+          ]
+        }
+      });
     });
 
     it('should return a query string for TL call', function () {
