@@ -19,7 +19,7 @@ export function Renderer(options) {
   this.id = id;
 
   // a renderer may push to the command queue to delay rendering until the
-  // render function is loaded by loadScript, at which point the the command
+  // render function is loaded by loadExternalScript, at which point the the command
   // queue will be processed
   this.loaded = loaded;
   this.cmd = [];
@@ -71,7 +71,7 @@ Renderer.prototype.handleVideoEvent = function({ id, eventName }) {
 
 /*
  * Calls functions that were pushed to the command queue before the
- * renderer was loaded by `loadScript`
+ * renderer was loaded by `loadExternalScript`
  */
 Renderer.prototype.process = function() {
   while (this.cmd.length > 0) {

@@ -53,60 +53,9 @@ export function loadExternalScript(url, moduleCode, callback) {
         _requestCache[url].callbacks[i]();
       }
     } catch (e) {
-      utils.logError('Error executing callback', 'adloader.js:loadScript', e);
+      utils.logError('Error executing callback', 'adloader.js:loadExternalScript', e);
     }
   });
-};
-
-/**
- *
- * @deprecated
- * Do not use this function. Will be removed in the next release. If external resources are required, use #loadExternalScript instead.
- */
-export function loadScript(tagSrc, callback, cacheRequest) {
-  // var noop = () => {};
-  //
-  // callback = callback || noop;
-  if (!tagSrc) {
-    utils.logError('Error attempting to request empty URL', 'adloader.js:loadScript');
-    return;
-  }
-
-  if (cacheRequest) {
-    if (_requestCache[tagSrc]) {
-      if (callback && typeof callback === 'function') {
-        if (_requestCache[tagSrc].loaded) {
-          // invokeCallbacks immediately
-          callback();
-        } else {
-          // queue the callback
-          _requestCache[tagSrc].callbacks.push(callback);
-        }
-      }
-    } else {
-      _requestCache[tagSrc] = {
-        loaded: false,
-        callbacks: []
-      };
-      if (callback && typeof callback === 'function') {
-        _requestCache[tagSrc].callbacks.push(callback);
-      }
-
-      requestResource(tagSrc, function () {
-        _requestCache[tagSrc].loaded = true;
-        try {
-          for (let i = 0; i < _requestCache[tagSrc].callbacks.length; i++) {
-            _requestCache[tagSrc].callbacks[i]();
-          }
-        } catch (e) {
-          utils.logError('Error executing callback', 'adloader.js:loadScript', e);
-        }
-      });
-    }
-  } else {
-    // trigger one time request
-    requestResource(tagSrc, callback);
-  }
 };
 
 function requestResource(tagSrc, callback) {
