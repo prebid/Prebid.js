@@ -110,6 +110,36 @@ describe('+widespaceAdatperTest', function () {
     navigator.connection.type = 'wifi';
   }
 
+  // localStorage vars
+  let fakeLocalStorage = {};
+  let lsSetStub;
+  let lsGetStub;
+  let lsRemoveStub;
+
+  beforeEach(function() {
+    lsSetStub = sinon.stub(window.localStorage, 'setItem').callsFake(function (name, value) {
+      fakeLocalStorage[name] = value;
+    });
+
+    lsGetStub = sinon.stub(window.localStorage, 'getItem').callsFake(function (key) {
+      return fakeLocalStorage[key] || null;
+    });
+
+    lsRemoveStub = sinon.stub(window.localStorage, 'removeItem').callsFake(function (key) {
+      if (key && (fakeLocalStorage[key] !== null || fakeLocalStorage[key] !== undefined)) {
+        delete fakeLocalStorage[key];
+      }
+      return true;
+    });
+  });
+
+  afterEach(function() {
+    lsSetStub.restore();
+    lsGetStub.restore();
+    lsRemoveStub.restore();
+    fakeLocalStorage = {};
+  });
+
   describe('+bidRequestValidity', function () {
     it('bidRequest with sid and currency params', function () {
       expect(spec.isBidRequestValid({
@@ -143,35 +173,6 @@ describe('+widespaceAdatperTest', function () {
   describe('+bidRequest', function () {
     const request = spec.buildRequests(bidRequest, bidderRequest);
     const UrlRegExp = /^((ftp|http|https):)?\/\/[^ "]+$/;
-
-    let fakeLocalStorage = {};
-    let lsSetStub;
-    let lsGetStub;
-    let lsRemoveStub;
-
-    beforeEach(function() {
-      lsSetStub = sinon.stub(window.localStorage, 'setItem').callsFake(function (name, value) {
-        fakeLocalStorage[name] = value;
-      });
-
-      lsGetStub = sinon.stub(window.localStorage, 'getItem').callsFake(function (key) {
-        return fakeLocalStorage[key] || null;
-      });
-
-      lsRemoveStub = sinon.stub(window.localStorage, 'removeItem').callsFake(function (key) {
-        if (key && (fakeLocalStorage[key] !== null || fakeLocalStorage[key] !== undefined)) {
-          delete fakeLocalStorage[key];
-        }
-        return true;
-      });
-    });
-
-    afterEach(function() {
-      lsSetStub.restore();
-      lsGetStub.restore();
-      lsRemoveStub.restore();
-      fakeLocalStorage = {};
-    });
 
     it('-bidRequest method is POST', function () {
       expect(request[0].method).to.equal('POST');
