@@ -73,7 +73,7 @@ function sendMessage(auctionId, bidWonId) {
   function formatBid(bid) {
     return utils.pick(bid, [
       'bidder',
-      'bidId', bidId => (utils.deepAccess(bid, 'bidResponse.seatBidId')) ? utils.deepAccess(bid, 'bidResponse.seatBidId') : bidId,
+      'bidId', bidId => utils.deepAccess(bid, 'bidResponse.seatBidId')|| bidId,
       'status',
       'error',
       'source', (source, bid) => {
