@@ -1,11 +1,12 @@
 /**
- * This module adds PubCommonId to the User ID module
+ * This module adds Custom Id to the User ID module
  * The {@link module:modules/userId} module is required
  * @module modules/customIdSystem
  * @requires module:modules/userId
  */
 
-import * as utils from '../../src/utils';
+import * as utils from '../src/utils';
+import {submodule} from '../src/hook';
 
 /** @type {Submodule} */
 export const customIdSubmodule = {
@@ -48,3 +49,5 @@ export const customIdSubmodule = {
     utils.logError('User ID - customData submodule requires either data or cookie name to be defined')
   }
 };
+
+submodule('userId', customIdSubmodule);
