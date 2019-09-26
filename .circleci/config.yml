@@ -52,4 +52,4 @@ jobs:
       # run e2e tests
       - run:
           name: Functional testing
-          command: echo "127.0.0.1 test.localhost" | sudo tee -a /etc/hosts && gulp e2e-test --host=test.localhost --ci --file=./test/spec/e2e/banner/basic_banner_ad.spec.js
+          command: echo "127.0.0.1 test.localhost" | sudo tee -a /etc/hosts && gulp e2e-test --host=test.localhost --file=./test/spec/e2e/banner/basic_banner_ad.spec.js

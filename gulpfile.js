@@ -223,12 +223,6 @@ function test(done) {
     let wdioConf = path.join(__dirname, 'wdio.conf.js');
     let wdioOpts;
 
-    if (argv.ci) {
-      process.env.RUN_CONTEXT = 'CI';
-    } else {
-      process.env.RUN_CONTEXT = 'LOCAL';
-    }
-
     if (argv.file) {
       wdioOpts = [
         wdioConf,
