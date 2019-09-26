@@ -76,7 +76,7 @@ import {getGlobal} from '../../src/prebidGlobal';
 import {gdprDataHandler} from '../../src/adapterManager';
 import CONSTANTS from '../../src/constants.json';
 import {module} from '../../src/hook';
-import {unifiedIdSubmodule} from './unifiedIdSystem.js';
+// import {unifiedIdSubmodule} from './unifiedIdSystem.js';
 import {pubCommonIdSubmodule} from './pubCommonIdSystem.js';
 // import {customIdSubmodule} from './customIdSystem.js';
 
@@ -467,7 +467,7 @@ init(config);
 
 // add submodules after init has been called
 attachIdSystem(pubCommonIdSubmodule);
-attachIdSystem(unifiedIdSubmodule);
+// attachIdSystem(unifiedIdSubmodule);
 // attachIdSystem(customIdSubmodule);
 
 module('userId', attachIdSystem);
