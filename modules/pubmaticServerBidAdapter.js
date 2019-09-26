@@ -124,7 +124,7 @@ function _createImpressionObject(bid, conf) {
     id: bid.bidId,
     tagid: bid.params.adUnitId,
     bidfloor: _parseSlotParam('kadfloor', bid.params.kadfloor),
-    secure: window.location.protocol === 'https:' ? 1 : 0,
+    secure: 1,
     banner: {
       pos: 0,
       topframe: utils.inIframe() ? 0 : 1,
