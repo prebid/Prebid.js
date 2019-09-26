@@ -73,6 +73,14 @@ export function notifyTranslationModule(fn) {
 getHook('registerAdserver').before(notifyTranslationModule);
 
 function obtainVastUrl(bid) {
+  const vastUrl = bid && bid.vastUrl;
+
+  if (vastUrl) {
+    logInfo(`VAST url found in the bid - ${vastUrl}`);
+
+    return encodeURIComponent(vastUrl);
+  }
+
   const cacheUrl = config.getConfig('cache.url');
   if (cacheUrl) {
     const composedCacheUrl = `${cacheUrl}?uuid=${bid.videoCacheKey}`;
@@ -80,14 +88,6 @@ function obtainVastUrl(bid) {
     logInfo(`VAST url is taken from cache.url: ${composedCacheUrl}`);
 
     return encodeURIComponent(composedCacheUrl);
-  }
-
-  const vastUrl = bid && bid.vastUrl;
-
-  if (vastUrl) {
-    logInfo(`VAST url found in the bid - ${vastUrl}`);
-
-    return encodeURIComponent(vastUrl);
   }
 }
 

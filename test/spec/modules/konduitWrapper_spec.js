@@ -55,6 +55,8 @@ describe('The Konduit vast wrapper module', function () {
     config.setConfig({ cache: { url: 'https://cached.url.com' } });
     const bid = createBid(10, 'video1', 15, '10.00_15s', '123', '395');
 
+    delete bid.vastUrl;
+
     const expectedUrl = encodeURIComponent(`https://cached.url.com?uuid=${bid.videoCacheKey}`);
 
     const url = parse(buildVastUrl({
