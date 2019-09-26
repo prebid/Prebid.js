@@ -6,13 +6,34 @@ Konduit Wrapper is a prebid module to generate Konduit wrapped VAST tag URLs for
 ### Setup
 
 ```
+var videoAdUnit = [{
+  code: 'videoAd',
+  mediaTypes: {
+    video: {
+      playerSize: [640, 480],
+      context: 'instream'
+    }
+  },
+  bids: [{
+    bidder: 'appnexus',
+    params: {
+      placementId: 13232361,
+      video: {
+        skippable: true,
+        playback_method: ['auto_play_sound_off']
+      }
+    }
+  }]
+}];
+
 pbjs.que.push(function(){
   pbjs.addAdUnits(videoAdUnit);
   pbjs.requestBids({
     timeout : 700,
     bidsBackHandler : function(bids) {
-      var videoUrl = pbjs.adServers.konduit.buildVastUrl({
-        bid: winnerBid,
+      var winnerBid = pbjs.getHighestCpmBids('videoAd')[0];
+      var vastTagUrl = pbjs.adServers.konduit.buildVastUrl({
+        bid: winnerBid, // just in case if you want to pass your bid
         params: {
           konduit_id: 'your_konduit_id'
         }
@@ -22,6 +43,19 @@ pbjs.que.push(function(){
     }
   });
 });
+
+function invokeVideoPlayer(vastTagUrl) {
+    videojs("video_player_id").ready(function() {
+      this.vastClient({
+        adTagUrl: vastTagUrl,
+        playAdAlways: true,
+        verbosity: 4,
+        autoplay: true
+      });
+
+      this.play();
+    });
+  }
 ```
 
 Function parameters:
