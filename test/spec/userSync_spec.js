@@ -418,9 +418,12 @@ describe('user sync', function () {
           it('should return false if type is iframe and iframeEnabled is false', function () {
             const userSync = newUserSync({
               config: {
-                pixelEnabled: true,
-                iframeEnabled: false,
-                enabledBidders: ['testBidder'],
+                filterSettings: {
+                  iframe: {
+                    bidders: ['testBidder'],
+                    filter: 'exclude'
+                  }
+                }
               }
             });
             expect(userSync.canBidderRegisterSync('iframe', 'testBidder')).to.equal(false);
@@ -440,9 +443,12 @@ describe('user sync', function () {
           it('should return false if type is image and pixelEnabled is false', function () {
             const userSync = newUserSync({
               config: {
-                pixelEnabled: false,
-                iframeEnabled: true,
-                enabledBidders: ['testBidder'],
+                filterSettings: {
+                  image: {
+                    bidders: ['testBidder'],
+                    filter: 'exclude'
+                  }
+                }
               }
             });
             expect(userSync.canBidderRegisterSync('image', 'testBidder')).to.equal(false);
@@ -464,9 +470,16 @@ describe('user sync', function () {
           it('should return false since testBidder is not in enabledBidders', function () {
             const userSync = newUserSync({
               config: {
-                pixelEnabled: true,
-                iframeEnabled: true,
-                enabledBidders: ['otherTestBidder'],
+                filterSettings: {
+                  image: {
+                    bidders: ['otherTestBidder'],
+                    filter: 'include'
+                  },
+                  iframe: {
+                    bidders: ['otherTestBidder'],
+                    filter: 'include'
+                  }
+                }
               }
             });
             expect(userSync.canBidderRegisterSync('iframe', 'testBidder')).to.equal(false);

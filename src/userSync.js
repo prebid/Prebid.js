@@ -36,7 +36,7 @@ export function newUserSync(userSyncDependencies) {
 
   // for now - default both to false in case filterSettings config is absent/misconfigured
   let permittedPixels = {
-    image: false,
+    image: true,
     iframe: false
   };
 
