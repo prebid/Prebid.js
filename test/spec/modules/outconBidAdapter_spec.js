@@ -8,8 +8,7 @@ describe('outconBidAdapter', function () {
         bidder: 'outcon',
         params: {
           pod: '5d603538eba7192ae14e39a4',
-          env: 'test',
-          bidId: '12345678'
+          env: 'test'
         }
       })).to.equal(true);
     });
@@ -19,8 +18,7 @@ describe('outconBidAdapter', function () {
         params: {
           internalId: '12345678',
           publisher: '5d5d66f2306ea4114a37c7c2',
-          env: 'test',
-          bidId: '12345678'
+          env: 'test'
         }
       })).to.equal(true);
     });
@@ -31,39 +29,30 @@ describe('outconBidAdapter', function () {
         bidder: 'outcon',
         params: {
           pod: '5d603538eba7192ae14e39a4',
-          env: 'test',
-          bidId: '12345678'
+          env: 'test'
         }
-      }])).to.eql({
-        method: 'GET',
-        url: 'http://test.outcondigital.com:8048/ad/get?pod=5d603538eba7192ae14e39a4&bidId=12345678&demo=true',
-        data: {}
-      });
+      }])).to.have.keys('method', 'url', 'data');
     });
+
     it('Build requests with internalID and publisherID params', function () {
       expect(spec.buildRequests([{
         bidder: 'outcon',
         params: {
           internalId: '12345678',
           publisher: '5d5d66f2306ea4114a37c7c2',
-          env: 'test',
-          bidId: '12345678'
+          env: 'test'
         }
-      }])).to.eql({
-        method: 'GET',
-        url: 'http://test.outcondigital.com:8048/ad/get?internalId=12345678&publisher=5d5d66f2306ea4114a37c7c2&bidId=12345678&demo=true',
-        data: {}
-      });
+      }])).to.have.keys('method', 'url', 'data');
     });
   });
+
   describe('interpretResponse', function () {
     const bidRequest = {
       method: 'GET',
       url: 'http://test.outcondigital.com:8048/ad/',
       data: {
         pod: '5d603538eba7192ae14e39a4',
-        env: 'test',
-        bidId: '12345678'
+        env: 'test'
       }
     };
     const bidResponse = {
