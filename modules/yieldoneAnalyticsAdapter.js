@@ -6,7 +6,7 @@ import { targeting } from '../src/targeting';
 import { auctionManager } from '../src/auctionManager';
 import * as utils from '../src/utils';
 
-const ANALYTICS_CODE = 'y1';
+const ANALYTICS_CODE = 'yieldone';
 const analyticsType = 'endpoint';
 // const VERSION = '1.0.0';
 const defaultUrl = 'http://pool.tsukiji.iponweb.net/hba';
