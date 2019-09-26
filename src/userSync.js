@@ -1,5 +1,5 @@
-import * as utils from 'src/utils';
-import { config } from 'src/config';
+import * as utils from './utils';
+import { config } from './config';
 import includes from 'core-js/library/fn/array/includes';
 
 // Set userSync default values

@@ -1,4 +1,4 @@
-import {registerBidder} from 'src/adapters/bidderFactory';
+import {registerBidder} from '../src/adapters/bidderFactory';
 
 const BIDDER_CODE = 'between';
 

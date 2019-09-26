@@ -1,6 +1,6 @@
-import * as utils from 'src/utils';
-import { BANNER } from 'src/mediaTypes';
-import {registerBidder} from 'src/adapters/bidderFactory';
+import * as utils from '../src/utils';
+import { BANNER } from '../src/mediaTypes';
+import {registerBidder} from '../src/adapters/bidderFactory';
 import find from 'core-js/library/fn/array/find';
 
 const VERSION = '1.1';

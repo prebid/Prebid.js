@@ -1,11 +1,23 @@
 'use strict';
 
-import {registerBidder} from 'src/adapters/bidderFactory';
-import { BANNER, VIDEO } from 'src/mediaTypes';
+import * as utils from '../src/utils';
+import {registerBidder} from '../src/adapters/bidderFactory';
+import { BANNER, VIDEO } from '../src/mediaTypes';
 
 function RhythmOneBidAdapter() {
   this.code = 'rhythmone';
   this.supportedMediaTypes = [VIDEO, BANNER];
+
+  let SUPPORTED_VIDEO_PROTOCOLS = [2, 3, 5, 6];
+  let SUPPORTED_VIDEO_MIMES = ['video/mp4'];
+  let SUPPORTED_VIDEO_PLAYBACK_METHODS = [1, 2, 3, 4];
+  let SUPPORTED_VIDEO_DELIVERY = [1];
+  let SUPPORTED_VIDEO_API = [1, 2, 5];
+  let slotsToBids = {};
+  let that = this;
+  let version = '1.0.2.1';
+  let loadStart = Date.now();
+  var win = typeof window !== 'undefined' ? window : {};
 
   this.isBidRequestValid = function (bid) {
     return true;
@@ -53,7 +65,7 @@ function RhythmOneBidAdapter() {
     data.bidder_version = version;
     if (gdprConsent) {
       data.gdpr_consent = gdprConsent.consentString;
-      data.gdpr = (typeof gdprConsent.gdprApplies === 'boolean') ? gdprConsent.gdprApplies : true;
+      data.gdpr = (typeof gdprConsent.gdprApplies === 'boolean') ? gdprConsent.gdprApplies : false;
     }
 
     for (let k in data) {
@@ -70,6 +82,124 @@ function RhythmOneBidAdapter() {
     }
   };
 
+  function frameImp(BRs) {
+    var imp = [];
+    for (var i = 0; i < BRs.length; i++) {
+      slotsToBids[BRs[i].adUnitCode || BRs[i].placementCode] = BRs[i];
+      var impObj = {};
+      impObj.id = BRs[i].adUnitCode;
+      impObj.bidfloor = parseFloat(utils.deepAccess(BRs[i], 'params.floor')) || 0;
+      impObj.secure = win.location.protocol === 'https:' ? 1 : 0;
+      if (utils.deepAccess(BRs[i], 'mediaTypes.banner') || utils.deepAccess(BRs[i], 'mediaType') === 'banner') {
+        impObj.banner = frameBanner(BRs[i]);
+      }
+      if (utils.deepAccess(BRs[i], 'mediaTypes.video') || utils.deepAccess(BRs[i], 'mediaType') === 'video') {
+        impObj.video = frameVideo(BRs[i]);
+      }
+      impObj.ext = frameExt(BRs[i]);
+      imp.push(impObj);
+    }
+    return imp;
+  }
+
+  function frameSite(bidderRequest) {
+    return {
+      domain: attempt(function() {
+        var d = win.document.location.ancestorOrigins;
+        if (d && d.length > 0) {
+          return d[d.length - 1];
+        }
+        return win.top.document.location.hostname; // try/catch is in the attempt function
+      }, ''),
+      page: attempt(function() {
+        var l;
+        // try/catch is in the attempt function
+        try {
+          l = win.top.document.location.href.toString();
+        } catch (ex) {
+          l = win.document.location.href.toString();
+        }
+        return l;
+      }, ''),
+      ref: attempt(function() {
+        if (bidderRequest && bidderRequest.refererInfo) {
+          return bidderRequest.refererInfo.referer;
+        }
+        return '';
+      }, '')
+    }
+  }
+
+  function frameDevice() {
+    return {
+      ua: navigator.userAgent,
+      devicetype: /(ios|ipod|ipad|iphone|android)/i.test(win.navigator.userAgent) ? 1 : /(smart[-]?tv|hbbtv|appletv|googletv|hdmi|netcast\.tv|viera|nettv|roku|\bdtv\b|sonydtv|inettvbrowser|\btv\b)/i.test(win.navigator.userAgent) ? 3 : 2,
+      ip: '', // Empty Ip string is required, server gets the ip from HTTP header
+      dnt: utils.getDNT() ? 1 : 0,
+    }
+  }
+
+  function frameBanner(bid) {
+    var sizes = utils.parseSizesInput(bid.sizes).map(size => size.split('x'));
+    return {
+      w: parseInt(sizes[0][0]),
+      h: parseInt(sizes[0][1])
+    }
+  }
+
+  function frameVideo(bid) {
+    var size = [];
+    if (utils.deepAccess(bid, 'mediaTypes.video.playerSize')) {
+      if (utils.isArray(bid.mediaTypes.video.playerSize[0])) {
+        size = bid.mediaTypes.video.playerSize[0];
+      } else if (utils.isNumber(bid.mediaTypes.video.playerSize[0])) {
+        size = bid.mediaTypes.video.playerSize;
+      }
+    }
+    return {
+      mimes: utils.deepAccess(bid, 'mediaTypes.video.mimes') || SUPPORTED_VIDEO_MIMES,
+      protocols: utils.deepAccess(bid, 'mediaTypes.video.protocols') || SUPPORTED_VIDEO_PROTOCOLS,
+      w: size[0],
+      h: size[1],
+      startdelay: utils.deepAccess(bid, 'mediaTypes.video.startdelay') || 0,
+      skip: utils.deepAccess(bid, 'mediaTypes.video.skip') || 0,
+      playbackmethod: utils.deepAccess(bid, 'mediaTypes.video.playbackmethod') || SUPPORTED_VIDEO_PLAYBACK_METHODS,
+      delivery: utils.deepAccess(bid, 'mediaTypes.video.delivery') || SUPPORTED_VIDEO_DELIVERY,
+      api: utils.deepAccess(bid, 'mediaTypes.video.api') || SUPPORTED_VIDEO_API,
+    }
+  }
+
+  function frameExt(bid) {
+    return {
+      bidder: {
+        placementId: (bid.params && bid.params['placementId']) ? bid.params['placementId'] : '',
+        zone: (bid.params && bid.params['zone']) ? bid.params['zone'] : '1r',
+        path: (bid.params && bid.params['path']) ? bid.params['path'] : 'mvo'
+      }
+    }
+  }
+
+  function frameBid(BRs, bidderRequest) {
+    return {
+      id: BRs[0].bidderRequestId,
+      imp: frameImp(BRs),
+      site: frameSite(bidderRequest),
+      device: frameDevice(),
+      user: {
+        ext: {
+          consent: utils.deepAccess(bidderRequest, 'gdprConsent.gdprApplies') ? bidderRequest.gdprConsent.consentString : ''
+        }
+      },
+      at: 1,
+      tmax: 1000,
+      regs: {
+        ext: {
+          gdpr: utils.deepAccess(bidderRequest, 'gdprConsent.gdprApplies') ? Boolean(bidderRequest.gdprConsent.gdprApplies & 1) : false
+        }
+      }
+    };
+  }
+
   function getFirstParam(key, validBidRequests) {
     for (let i = 0; i < validBidRequests.length; i++) {
       if (validBidRequests[i].params && validBidRequests[i].params[key]) {
@@ -78,10 +208,12 @@ function RhythmOneBidAdapter() {
     }
   }
 
-  let slotsToBids = {};
-  let that = this;
-  let version = '1.0.1.0';
-  let loadStart = Date.now();
+  function attempt(valueFunction, defaultValue) {
+    try {
+      return valueFunction();
+    } catch (ex) { }
+    return defaultValue;
+  }
 
   this.buildRequests = function (BRs, bidderRequest) {
     let fallbackPlacementId = getFirstParam('placementId', BRs);
@@ -89,132 +221,26 @@ function RhythmOneBidAdapter() {
       return [];
     }
 
+    var rmpUrl = getFirstParam('endpoint', BRs) || '//tag.1rx.io/rmp/{placementId}/0/{path}?z={zone}';
+    var defaultZone = getFirstParam('zone', BRs) || '1r';
+    var defaultPath = getFirstParam('path', BRs) || 'mvo';
+
+    rmpUrl = rmpUrl.replace(/\{placementId\}/i, fallbackPlacementId);
+    rmpUrl = rmpUrl.replace(/\{zone\}/i, defaultZone);
+    rmpUrl = rmpUrl.replace(/\{path\}/i, defaultPath);
+
+    var fat = /(^v|(\.0)+$)/gi;
+    var prebidVersion = '$prebid.version$';
+    rmpUrl += '&hbv=' + prebidVersion.replace(fat, '') + ',' + version.replace(fat, '');
+
+    var bidRequest = frameBid(BRs, bidderRequest);
     loadStart = Date.now();
-    slotsToBids = {};
 
-    let query = [];
-    let w = (typeof window !== 'undefined' ? window : {});
-
-    function p(k, v, d) {
-      if (v instanceof Array) { v = v.join((d || ',')); }
-      if (typeof v !== 'undefined') { query.push(encodeURIComponent(k) + '=' + encodeURIComponent(v)); }
-    }
-
-    function attempt(valueFunction, defaultValue) {
-      try {
-        return valueFunction();
-      } catch (ex) { }
-      return defaultValue;
-    }
-
-    p('domain', attempt(function() {
-      var d = w.document.location.ancestorOrigins;
-      if (d && d.length > 0) {
-        return d[d.length - 1];
-      }
-      return w.top.document.location.hostname; // try/catch is in the attempt function
-    }, ''));
-    p('url', attempt(function() {
-      var l;
-      // try/catch is in the attempt function
-      try {
-        l = w.top.document.location.href.toString();
-      } catch (ex) {
-        l = w.document.location.href.toString();
-      }
-      return l;
-    }, ''));
-
-    function getRMPUrl() {
-      let url = getFirstParam('endpoint', BRs) || '//tag.1rx.io/rmp/{placementId}/0/{path}?z={zone}';
-      let defaultZone = getFirstParam('zone', BRs) || '1r';
-      let defaultPath = getFirstParam('path', BRs) || 'mvo';
-
-      url = url.replace(/\{placementId\}/i, fallbackPlacementId);
-      url = url.replace(/\{zone\}/i, defaultZone);
-      url = url.replace(/\{path\}/i, defaultPath);
-
-      p('title', attempt(function() { return w.top.document.title; }, '')); // try/catch is in the attempt function
-      p('dsh', (w.screen ? w.screen.height : ''));
-      p('dsw', (w.screen ? w.screen.width : ''));
-      p('tz', (new Date()).getTimezoneOffset());
-      p('dtype', ((/(ios|ipod|ipad|iphone|android)/i).test(w.navigator.userAgent) ? 1 : ((/(smart[-]?tv|hbbtv|appletv|googletv|hdmi|netcast\.tv|viera|nettv|roku|\bdtv\b|sonydtv|inettvbrowser|\btv\b)/i).test(w.navigator.userAgent) ? 3 : 2)));
-      p('flash', attempt(function() {
-        let n = w.navigator;
-        let p = n.plugins;
-        let m = n.mimeTypes;
-        let t = 'application/x-shockwave-flash';
-        let x = w.ActiveXObject;
-
-        if (p &&
-          p['Shockwave Flash'] &&
-          m &&
-          m[t] &&
-          m[t].enabledPlugin) {
-          return 1;
-        }
-
-        if (x) {
-          try {
-            if ((new w.ActiveXObject('ShockwaveFlash.ShockwaveFlash'))) {
-              return 1;
-            }
-          } catch (e) { }
-        }
-
-        return 0;
-      }, 0));
-
-      let heights = [];
-      let widths = [];
-      let floors = [];
-      let mediaTypes = [];
-      let i = 0;
-      let configuredPlacements = [];
-      let fat = /(^v|(\.0)+$)/gi;
-
-      p('hbv', w.$$PREBID_GLOBAL$$.version.replace(fat, '') + ',' + version.replace(fat, ''));
-
-      for (; i < BRs.length; i++) {
-        let th = [];
-        let tw = [];
-        let params = BRs[i].params || {};
-
-        slotsToBids[BRs[i].adUnitCode || BRs[i].placementCode] = BRs[i];
-
-        if (BRs[i].sizes.length > 0 && typeof BRs[i].sizes[0] === 'number') {
-          BRs[i].sizes = [BRs[i].sizes];
-        }
-
-        for (let j = 0; j < BRs[i].sizes.length; j++) {
-          tw.push(BRs[i].sizes[j][0]);
-          th.push(BRs[i].sizes[j][1]);
-        }
-        configuredPlacements.push(BRs[i].adUnitCode || BRs[i].placementCode);
-        heights.push(th.join('|'));
-        widths.push(tw.join('|'));
-        mediaTypes.push((BRs[i].mediaTypes && BRs[i].mediaTypes.video ? 'v' : 'd'));
-        floors.push(params.floor || 0);
-      }
-
-      p('imp', configuredPlacements);
-      p('w', widths);
-      p('h', heights);
-      p('floor', floors);
-      p('t', mediaTypes);
-      if (bidderRequest && bidderRequest.gdprConsent) {
-        p('gdpr_consent', bidderRequest.gdprConsent.consentString);
-        p('gdpr', (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') ? bidderRequest.gdprConsent.gdprApplies : true);
-      }
-      url += '&' + query.join('&') + '&';
-
-      return url;
-    }
-
-    return [{
-      method: 'GET',
-      url: getRMPUrl()
-    }];
+    return {
+      method: 'POST',
+      url: rmpUrl,
+      data: JSON.stringify(bidRequest)
+    };
   };
 
   this.interpretResponse = function (serverResponse) {
@@ -244,13 +270,13 @@ function RhythmOneBidAdapter() {
         creativeId: bid.crid,
         currency: 'USD',
         netRevenue: true,
-        ttl: 1000
+        ttl: 350
       };
 
       if (bidRequest.mediaTypes && bidRequest.mediaTypes.video) {
         bidResponse.vastUrl = bid.nurl;
         bidResponse.mediaType = 'video';
-        bidResponse.ttl = 10000;
+        bidResponse.ttl = 600;
       } else {
         bidResponse.ad = bid.adm;
       }

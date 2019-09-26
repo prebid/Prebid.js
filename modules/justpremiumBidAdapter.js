@@ -1,5 +1,5 @@
-import { registerBidder } from 'src/adapters/bidderFactory'
-import { getTopWindowLocation } from 'src/utils'
+import { registerBidder } from '../src/adapters/bidderFactory'
+import { getTopWindowLocation } from '../src/utils'
 
 const BIDDER_CODE = 'justpremium'
 const ENDPOINT_URL = '//pre.ads.justpremium.com/v/2.0/t/xhr'

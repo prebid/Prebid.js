@@ -1,10 +1,10 @@
-import * as utils from 'src/utils';
+import * as utils from '../src/utils';
 import {
   config
-} from 'src/config';
+} from '../src/config';
 import {
   registerBidder
-} from 'src/adapters/bidderFactory';
+} from '../src/adapters/bidderFactory';
 const BIDDER_CODE = 'smartadserver';
 export const spec = {
   code: BIDDER_CODE,

@@ -22,7 +22,6 @@ var adUnits = [
         }]
     },{
         code: 'video-test-div',
-        sizes: [640, 480],
         mediaTypes: {
             video: {
                 context: 'instream',
@@ -32,7 +31,7 @@ var adUnits = [
         bids: [{
             bidder: "conversant",
             params: {
-                site_id: '88563',
+                site_id: '108060',
                 api: [2],
                 protocols: [1, 2],
                 mimes: ['video/mp4']

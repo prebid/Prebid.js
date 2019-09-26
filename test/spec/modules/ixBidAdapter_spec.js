@@ -5,7 +5,8 @@ import { newBidder } from 'src/adapters/bidderFactory';
 import { spec } from 'modules/ixBidAdapter';
 
 describe('IndexexchangeAdapter', function () {
-  const IX_ENDPOINT = 'http://as.casalemedia.com/cygnus';
+  const IX_INSECURE_ENDPOINT = 'http://as.casalemedia.com/cygnus';
+  const IX_SECURE_ENDPOINT = 'https://as-sec.casalemedia.com/cygnus';
   const BIDDER_VERSION = 7.2;
 
   const DEFAULT_BANNER_VALID_BID = [
@@ -28,6 +29,17 @@ describe('IndexexchangeAdapter', function () {
       auctionId: '1aa2bb3cc4dd'
     }
   ];
+  const DEFAULT_BANNER_OPTION = {
+    gdprConsent: {
+      gdprApplies: true,
+      consentString: '3huaa11=qu3198ae',
+      vendorData: {}
+    },
+    refererInfo: {
+      referer: 'http://www.prebid.org',
+      canonicalUrl: 'http://www.prebid.org/the/link/to/the/page'
+    }
+  };
   const DEFAULT_BANNER_BID_RESPONSE = {
     cur: 'USD',
     id: '11a22b33c44d',
@@ -198,7 +210,7 @@ describe('IndexexchangeAdapter', function () {
   });
 
   describe('buildRequestsBanner', function () {
-    const request = spec.buildRequests(DEFAULT_BANNER_VALID_BID);
+    const request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_BANNER_OPTION);
     const requestUrl = request.url;
     const requestMethod = request.method;
     const query = request.data;
@@ -206,12 +218,12 @@ describe('IndexexchangeAdapter', function () {
     const bidWithoutMediaType = utils.deepClone(DEFAULT_BANNER_VALID_BID);
     delete bidWithoutMediaType[0].mediaTypes;
     bidWithoutMediaType[0].sizes = [[300, 250], [300, 600]];
-    const requestWithoutMediaType = spec.buildRequests(bidWithoutMediaType);
+    const requestWithoutMediaType = spec.buildRequests(bidWithoutMediaType, DEFAULT_BANNER_OPTION);
     const queryWithoutMediaType = requestWithoutMediaType.data;
 
     it('request should be made to IX endpoint with GET method', function () {
       expect(requestMethod).to.equal('GET');
-      expect(requestUrl).to.equal(IX_ENDPOINT);
+      expect(requestUrl).to.equal(IX_INSECURE_ENDPOINT);
     });
 
     it('query object (version, siteID and request) should be correct', function () {
@@ -227,10 +239,8 @@ describe('IndexexchangeAdapter', function () {
 
       expect(payload.id).to.equal(DEFAULT_BANNER_VALID_BID[0].bidderRequestId);
       expect(payload.site).to.exist;
-      expect(payload.site.page).to.exist;
-      expect(payload.site.page).to.contain('http');
-      expect(payload.site.ref).to.exist;
-      expect(payload.site.ref).to.be.a('string');
+      expect(payload.site.page).to.equal(DEFAULT_BANNER_OPTION.refererInfo.referer);
+      expect(payload.site.ref).to.equal(document.referrer);
       expect(payload.ext).to.exist;
       expect(payload.ext.source).to.equal('prebid');
       expect(payload.imp).to.exist;
@@ -269,10 +279,8 @@ describe('IndexexchangeAdapter', function () {
 
       expect(payload.id).to.equal(DEFAULT_BANNER_VALID_BID[0].bidderRequestId);
       expect(payload.site).to.exist;
-      expect(payload.site.page).to.exist;
-      expect(payload.site.page).to.contain('http');
-      expect(payload.site.ref).to.exist;
-      expect(payload.site.ref).to.be.a('string');
+      expect(payload.site.page).to.equal(DEFAULT_BANNER_OPTION.refererInfo.referer);
+      expect(payload.site.ref).to.equal(document.referrer);
       expect(payload.ext).to.exist;
       expect(payload.ext.source).to.equal('prebid');
       expect(payload.imp).to.exist;
@@ -340,9 +348,9 @@ describe('IndexexchangeAdapter', function () {
         }
       });
 
-      const requestWithFirstPartyData = spec.buildRequests(DEFAULT_BANNER_VALID_BID);
+      const requestWithFirstPartyData = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_BANNER_OPTION);
       const pageUrl = JSON.parse(requestWithFirstPartyData.data.r).site.page;
-      const expectedPageUrl = `${utils.getTopWindowUrl()}?ab=123&cd=123%23ab&e%2Ff=456&h%3Fg=456%23cd`;
+      const expectedPageUrl = DEFAULT_BANNER_OPTION.refererInfo.referer + '?ab=123&cd=123%23ab&e%2Ff=456&h%3Fg=456%23cd';
 
       expect(pageUrl).to.equal(expectedPageUrl);
     });
@@ -354,10 +362,10 @@ describe('IndexexchangeAdapter', function () {
         }
       });
 
-      const requestFirstPartyDataNumber = spec.buildRequests(DEFAULT_BANNER_VALID_BID);
+      const requestFirstPartyDataNumber = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_BANNER_OPTION);
       const pageUrl = JSON.parse(requestFirstPartyDataNumber.data.r).site.page;
 
-      expect(pageUrl).to.equal(utils.getTopWindowUrl());
+      expect(pageUrl).to.equal(DEFAULT_BANNER_OPTION.refererInfo.referer);
     });
 
     it('should not set first party or timeout if it is not present', function () {
@@ -365,18 +373,18 @@ describe('IndexexchangeAdapter', function () {
         ix: {}
       });
 
-      const requestWithoutConfig = spec.buildRequests(DEFAULT_BANNER_VALID_BID);
+      const requestWithoutConfig = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_BANNER_OPTION);
       const pageUrl = JSON.parse(requestWithoutConfig.data.r).site.page;
 
-      expect(pageUrl).to.equal(utils.getTopWindowUrl());
+      expect(pageUrl).to.equal(DEFAULT_BANNER_OPTION.refererInfo.referer);
       expect(requestWithoutConfig.data.t).to.be.undefined;
     });
 
     it('should not set first party or timeout if it is setConfig is not called', function () {
-      const requestWithoutConfig = spec.buildRequests(DEFAULT_BANNER_VALID_BID);
+      const requestWithoutConfig = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_BANNER_OPTION);
       const pageUrl = JSON.parse(requestWithoutConfig.data.r).site.page;
 
-      expect(pageUrl).to.equal(utils.getTopWindowUrl());
+      expect(pageUrl).to.equal(DEFAULT_BANNER_OPTION.refererInfo.referer);
       expect(requestWithoutConfig.data.t).to.be.undefined;
     });
 
@@ -416,7 +424,12 @@ describe('IndexexchangeAdapter', function () {
           currency: 'USD',
           ttl: 35,
           netRevenue: true,
-          dealId: undefined
+          dealId: undefined,
+          meta: {
+            networkId: 50,
+            brandId: 303325,
+            brandName: 'OECTA'
+          }
         }
       ];
       const result = spec.interpretResponse({ body: DEFAULT_BANNER_BID_RESPONSE });
@@ -437,7 +450,12 @@ describe('IndexexchangeAdapter', function () {
           currency: 'USD',
           ttl: 35,
           netRevenue: true,
-          dealId: undefined
+          dealId: undefined,
+          meta: {
+            networkId: 50,
+            brandId: 303325,
+            brandName: 'OECTA'
+          }
         }
       ];
       const result = spec.interpretResponse({ body: bidResponse });
@@ -458,7 +476,12 @@ describe('IndexexchangeAdapter', function () {
           currency: 'JPY',
           ttl: 35,
           netRevenue: true,
-          dealId: undefined
+          dealId: undefined,
+          meta: {
+            networkId: 50,
+            brandId: 303325,
+            brandName: 'OECTA'
+          }
         }
       ];
       const result = spec.interpretResponse({ body: bidResponse });
@@ -479,7 +502,12 @@ describe('IndexexchangeAdapter', function () {
           currency: 'USD',
           ttl: 35,
           netRevenue: true,
-          dealId: 'deal'
+          dealId: 'deal',
+          meta: {
+            networkId: 50,
+            brandId: 303325,
+            brandName: 'OECTA'
+          }
         }
       ];
       const result = spec.interpretResponse({ body: bidResponse });
@@ -487,14 +515,7 @@ describe('IndexexchangeAdapter', function () {
     });
 
     it('bidrequest should have consent info if gdprApplies and consentString exist', function () {
-      const options = {
-        gdprConsent: {
-          gdprApplies: true,
-          consentString: '3huaa11=qu3198ae',
-          vendorData: {}
-        }
-      };
-      const validBidWithConsent = spec.buildRequests(DEFAULT_BANNER_VALID_BID, options);
+      const validBidWithConsent = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_BANNER_OPTION);
       const requestWithConsent = JSON.parse(validBidWithConsent.data.r);
 
       expect(requestWithConsent.regs.ext.gdpr).to.equal(1);
@@ -536,6 +557,39 @@ describe('IndexexchangeAdapter', function () {
 
       expect(requestWithConsent.regs).to.be.undefined;
       expect(requestWithConsent.user).to.be.undefined;
+    });
+
+    it('bidrequest should not have page if options is undefined', function () {
+      const options = {};
+      const validBidWithoutreferInfo = spec.buildRequests(DEFAULT_BANNER_VALID_BID, options);
+      const requestWithoutreferInfo = JSON.parse(validBidWithoutreferInfo.data.r);
+
+      expect(requestWithoutreferInfo.site.page).to.be.undefined;
+      expect(validBidWithoutreferInfo.url).to.equal(IX_SECURE_ENDPOINT);
+    });
+
+    it('bidrequest should not have page if options.refererInfo is an empty object', function () {
+      const options = {
+        refererInfo: {}
+      };
+      const validBidWithoutreferInfo = spec.buildRequests(DEFAULT_BANNER_VALID_BID, options);
+      const requestWithoutreferInfo = JSON.parse(validBidWithoutreferInfo.data.r);
+
+      expect(requestWithoutreferInfo.site.page).to.be.undefined;
+      expect(validBidWithoutreferInfo.url).to.equal(IX_SECURE_ENDPOINT);
+    });
+
+    it('bidrequest should sent to secure endpoint if page url is secure', function () {
+      const options = {
+        refererInfo: {
+          referer: 'https://www.prebid.org'
+        }
+      };
+      const validBidWithoutreferInfo = spec.buildRequests(DEFAULT_BANNER_VALID_BID, options);
+      const requestWithoutreferInfo = JSON.parse(validBidWithoutreferInfo.data.r);
+
+      expect(requestWithoutreferInfo.site.page).to.equal(options.refererInfo.referer);
+      expect(validBidWithoutreferInfo.url).to.equal(IX_SECURE_ENDPOINT);
     });
   });
 });

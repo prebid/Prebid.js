@@ -6,10 +6,10 @@ import * as utils from 'src/utils';
 describe('E-Planning Adapter', function () {
   const adapter = newBidder('spec');
   const CI = '12345';
-  const ADUNIT_CODE = 'adunit-code';
+  const ADUNIT_CODE = 'adunit-co:de';
   const ADUNIT_CODE2 = 'adunit-code-dos';
   const CLEAN_ADUNIT_CODE2 = 'adunitcodedos';
-  const CLEAN_ADUNIT_CODE = 'adunitcode';
+  const CLEAN_ADUNIT_CODE = 'adunitco_de';
   const BID_ID = '123456789';
   const BID_ID2 = '987654321';
   const CPM = 1.3;

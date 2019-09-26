@@ -1,13 +1,13 @@
-import * as utils from 'src/utils';
+import * as utils from '../src/utils';
 import {
   registerBidder
-} from 'src/adapters/bidderFactory';
+} from '../src/adapters/bidderFactory';
 import {
   BANNER
-} from 'src/mediaTypes';
+} from '../src/mediaTypes';
 import {
   config
-} from 'src/config';
+} from '../src/config';
 
 const BIDDER_CODE = 'emx_digital';
 const ENDPOINT = 'hb.emxdgt.com';

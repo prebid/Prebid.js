@@ -1,9 +1,9 @@
-import * as utils from 'src/utils';
-import { BANNER } from 'src/mediaTypes';
-import { config } from 'src/config';
+import * as utils from '../src/utils';
+import { BANNER } from '../src/mediaTypes';
+import { config } from '../src/config';
 import isArray from 'core-js/library/fn/array/is-array';
 import isInteger from 'core-js/library/fn/number/is-integer';
-import { registerBidder } from 'src/adapters/bidderFactory';
+import { registerBidder } from '../src/adapters/bidderFactory';
 
 const BIDDER_CODE = 'ix';
 const BANNER_SECURE_BID_URL = 'https://as-sec.casalemedia.com/cygnus';
@@ -13,17 +13,6 @@ const ENDPOINT_VERSION = 7.2;
 const CENT_TO_DOLLAR_FACTOR = 100;
 const TIME_TO_LIVE = 35;
 const NET_REVENUE = true;
-
-// Always start by assuming the protocol is HTTPS. This way, it will work
-// whether the page protocol is HTTP or HTTPS. Then check if the page is
-// actually HTTP.If we can guarantee it is, then, and only then, set protocol to
-// HTTP.
-let isSecureWeb = true;
-if (utils.getTopWindowLocation().protocol.indexOf('https') !== 0) {
-  isSecureWeb = false;
-}
-const baseUrl = isSecureWeb ? BANNER_SECURE_BID_URL : BANNER_INSECURE_BID_URL;
-
 const PRICE_TO_DOLLAR_FACTOR = {
   JPY: 1
 };
@@ -87,6 +76,11 @@ function parseBid(rawBid, currency) {
   bid.netRevenue = NET_REVENUE;
   bid.currency = currency;
   bid.creativeId = rawBid.hasOwnProperty('crid') ? rawBid.crid : '-';
+
+  bid.meta = {};
+  bid.meta.networkId = utils.deepAccess(rawBid, 'ext.dspid');
+  bid.meta.brandId = utils.deepAccess(rawBid, 'ext.advbrandid');
+  bid.meta.brandName = utils.deepAccess(rawBid, 'ext.advbrand');
 
   return bid;
 }
@@ -196,6 +190,11 @@ export const spec = {
     const bannerImps = [];
     let validBidRequest = null;
     let bannerImp = null;
+    // Always start by assuming the protocol is HTTPS. This way, it will work
+    // whether the page protocol is HTTP or HTTPS. Then check if the page is
+    // actually HTTP.If we can guarantee it is, then, and only then, set protocol to
+    // HTTP.
+    let baseUrl = BANNER_SECURE_BID_URL;
 
     for (let i = 0; i < validBidRequests.length; i++) {
       validBidRequest = validBidRequests[i];
@@ -212,29 +211,41 @@ export const spec = {
 
     r.imp = bannerImps;
     r.site = {};
-    r.site.page = utils.getTopWindowUrl();
-    r.site.ref = utils.getTopWindowReferrer();
     r.ext = {};
     r.ext.source = 'prebid';
 
-    // Apply GDPR information to the request if GDPR is enabled.
-    if (options && options.gdprConsent) {
-      const gdprConsent = options.gdprConsent;
+    if (document.referrer && document.referrer !== '') {
+      r.site.ref = document.referrer;
+    }
 
-      if (gdprConsent.hasOwnProperty('gdprApplies')) {
-        r.regs = {
-          ext: {
-            gdpr: gdprConsent.gdprApplies ? 1 : 0
-          }
-        };
+    // Apply GDPR information to the request if GDPR is enabled.
+    if (options) {
+      if (options.gdprConsent) {
+        const gdprConsent = options.gdprConsent;
+
+        if (gdprConsent.hasOwnProperty('gdprApplies')) {
+          r.regs = {
+            ext: {
+              gdpr: gdprConsent.gdprApplies ? 1 : 0
+            }
+          };
+        }
+
+        if (gdprConsent.hasOwnProperty('consentString')) {
+          r.user = {
+            ext: {
+              consent: gdprConsent.consentString || ''
+            }
+          };
+        }
       }
 
-      if (gdprConsent.hasOwnProperty('consentString')) {
-        r.user = {
-          ext: {
-            consent: gdprConsent.consentString || ''
-          }
-        };
+      if (options.refererInfo) {
+        r.site.page = options.refererInfo.referer;
+
+        if (options.refererInfo.referer && options.refererInfo.referer.indexOf('https') !== 0) {
+          baseUrl = BANNER_INSECURE_BID_URL;
+        }
       }
     }
 

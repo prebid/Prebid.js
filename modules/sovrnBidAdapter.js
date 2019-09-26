@@ -1,7 +1,6 @@
-import * as utils from 'src/utils'
-import { registerBidder } from 'src/adapters/bidderFactory'
-import { BANNER } from 'src/mediaTypes'
-import { REPO_AND_VERSION } from 'src/constants'
+import * as utils from '../src/utils'
+import { registerBidder } from '../src/adapters/bidderFactory'
+import { BANNER } from '../src/mediaTypes'
 const errorUrl = 'https://pcb.aws.lijit.com/c'
 let errorpxls = []
 
@@ -65,7 +64,7 @@ export const spec = {
       }
 
       let url = `//ap.lijit.com/rtb/bid?` +
-        `src=${REPO_AND_VERSION}`;
+        `src=$$REPO_AND_VERSION$$`;
       if (iv) url += `&iv=${iv}`;
 
       return {
@@ -152,7 +151,7 @@ export class LogError {
     this.error.m = e.message
     this.error.s = e.stack
     this.error.d = data
-    this.error.v = REPO_AND_VERSION
+    this.error.v = $$REPO_AND_VERSION$$
     this.error.u = utils.getTopWindowLocation().href
     this.error.ua = navigator.userAgent
   }

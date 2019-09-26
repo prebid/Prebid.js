@@ -1,10 +1,9 @@
 import { expect } from 'chai';
 import { spec } from 'modules/sortableBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
-import { REPO_AND_VERSION } from 'src/constants';
 import * as utils from 'src/utils';
 
-const ENDPOINT = `//c.deployads.com/openrtb2/auction?src=${REPO_AND_VERSION}&host=${utils.getTopWindowLocation().host}`;
+const ENDPOINT = `//c.deployads.com/openrtb2/auction?src=$$REPO_AND_VERSION$$&host=${utils.getTopWindowLocation().host}`;
 
 describe('sortableBidAdapter', function() {
   const adapter = newBidder(spec);

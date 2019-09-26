@@ -91,7 +91,7 @@ describe('AdxcgAdapter', function () {
       expect(query.pbjs).to.equal('$prebid.version$')
       expect(query.adzoneid).to.equal('1')
       expect(query.format).to.equal('300x250|640x360|1x1')
-      expect(query.jsonp).to.be.empty
+      expect(query.jsonp).to.be.undefined
       expect(query.prebidBidIds).to.equal('84ab500420319d')
     })
   })
@@ -128,8 +128,8 @@ describe('AdxcgAdapter', function () {
       let parsedRequestUrl = url.parse(request.url)
       let query = parsedRequestUrl.search
 
-      expect(query.gdpr).to.be.empty
-      expect(query.gdpr_consent).to.be.empty
+      expect(query.gdpr).to.be.undefined
+      expect(query.gdpr_consent).to.be.undefined
     })
   })
 
@@ -235,6 +235,14 @@ describe('AdxcgAdapter', function () {
                 'label': 'SPONSORED',
                 'value': 'sponsoredByContent'
               }
+            }, {
+              'id': 5,
+              'required': 0,
+              'icon': {
+                'url': 'iconContent',
+                'w': 400,
+                'h': 400
+              }
             }],
             'link': {
               'url': 'linkContent'
@@ -307,7 +315,15 @@ describe('AdxcgAdapter', function () {
       expect(result[0].native.clickUrl).to.equal('linkContent')
       expect(result[0].native.impressionTrackers).to.deep.equal(['impressionTracker1', 'impressionTracker2'])
       expect(result[0].native.title).to.equal('titleContent')
-      expect(result[0].native.image).to.equal('imageContent')
+
+      expect(result[0].native.image.url).to.equal('imageContent')
+      expect(result[0].native.image.height).to.equal(600)
+      expect(result[0].native.image.width).to.equal(600)
+
+      expect(result[0].native.icon.url).to.equal('iconContent')
+      expect(result[0].native.icon.height).to.equal(400)
+      expect(result[0].native.icon.width).to.equal(400)
+
       expect(result[0].native.body).to.equal('descriptionContent')
       expect(result[0].native.sponsoredBy).to.equal('sponsoredByContent')
     })

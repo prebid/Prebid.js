@@ -1,6 +1,6 @@
-import * as utils from 'src/utils';
+import * as utils from '../src/utils';
 import { formatQS as buildQueryString } from '../src/url';
-import { registerBidder } from 'src/adapters/bidderFactory';
+import { registerBidder } from '../src/adapters/bidderFactory';
 
 /**
  * @module {BidderSpec} YieldbotBidAdapter
