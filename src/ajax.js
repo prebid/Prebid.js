@@ -1,10 +1,8 @@
 import {parse as parseURL, format as formatURL} from './url';
 import { config } from './config';
-var Promise = require('es6-promise').Promise;
-//var Promise = require("native-promise-only");
+import Promise from 'promise-polyfill';
 
 var utils = require('./utils');
-import mockResponse from '../src/mock_response.json';
 
 const XHR_DONE = 4;
 
@@ -107,7 +105,6 @@ export function ajaxBuilderPromise(timeout = 3000, {request} = {}) {
   return function(url, data, options = {}) {
     return new Promise((resolve, reject) => {
       try {
-        //resolve(mockResponse);
         let x;
         let method = options.method || (data ? 'POST' : 'GET');
         let parser = document.createElement('a');

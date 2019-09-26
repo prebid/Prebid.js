@@ -4,8 +4,8 @@ import { flatten, getBidderCodes, getDefinedParams, shuffle, timestamp, getBidde
 import { getLabels, resolveStatus } from './sizeMapping';
 import { processNativeAdUnitParams, nativeAdapters } from './native';
 import { newBidder } from './adapters/bidderFactory';
-import { ajaxBuilder } from './ajax';
-import { ajaxBuilderPromise } from './ajax';
+import { ajaxBuilder, ajaxBuilderPromise } from './ajax';
+
 import { config, RANDOM } from './config';
 import includes from 'core-js/library/fn/array/includes';
 import find from 'core-js/library/fn/array/find';
