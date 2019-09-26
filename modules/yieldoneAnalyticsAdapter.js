@@ -70,7 +70,7 @@ const AnalyticsAdapter = Object.assign(adapter({analyticsType}), {
       }
     }
     if (
-        eventType === CONSTANTS.EVENTS.AUCTION_END || eventType === CONSTANTS.EVENTS.BID_WON
+      eventType === CONSTANTS.EVENTS.AUCTION_END || eventType === CONSTANTS.EVENTS.BID_WON
     ) {
       args.adServerTargeting = targeting.getAllTargeting(
         auctionManager.getAdUnitCodes(),
@@ -83,15 +83,15 @@ const AnalyticsAdapter = Object.assign(adapter({analyticsType}), {
     if (!events) return;
     delete AnalyticsAdapter.eventsStorage[auctionId];
     ajax(
-        url,
-        {
-          success: function() {},
-          error: function() {}
-        },
-        JSON.stringify(events),
-        {
-          method: 'POST'
-        }
+      url,
+      {
+        success: function() {},
+        error: function() {}
+      },
+      JSON.stringify(events),
+      {
+        method: 'POST'
+      }
     );
   }
 });
