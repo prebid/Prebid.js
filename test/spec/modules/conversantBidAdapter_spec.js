@@ -6,6 +6,7 @@ var Adapter = require('modules/conversantBidAdapter');
 
 describe('Conversant adapter tests', function() {
   const siteId = '108060';
+  const versionPattern = /^\d+\.\d+\.\d+(.)*$/;
 
   const bidRequests = [
     // banner with single size
@@ -211,7 +212,7 @@ describe('Conversant adapter tests', function() {
     expect(payload.imp[0]).to.have.property('secure', 0);
     expect(payload.imp[0]).to.have.property('bidfloor', 0.5);
     expect(payload.imp[0]).to.have.property('displaymanager', 'Prebid.js');
-    expect(payload.imp[0]).to.have.property('displaymanagerver').that.matches(/^\d+\.\d+\.\d+$/);
+    expect(payload.imp[0]).to.have.property('displaymanagerver').that.matches(versionPattern);
     expect(payload.imp[0]).to.have.property('tagid', 'tagid-1');
     expect(payload.imp[0]).to.have.property('banner');
     expect(payload.imp[0].banner).to.have.property('pos', 1);
@@ -223,7 +224,7 @@ describe('Conversant adapter tests', function() {
     expect(payload.imp[1]).to.have.property('secure', 0);
     expect(payload.imp[1]).to.have.property('bidfloor', 0);
     expect(payload.imp[1]).to.have.property('displaymanager', 'Prebid.js');
-    expect(payload.imp[1]).to.have.property('displaymanagerver').that.matches(/^\d+\.\d+\.\d+$/);
+    expect(payload.imp[1]).to.have.property('displaymanagerver').that.matches(versionPattern);
     expect(payload.imp[1]).to.not.have.property('tagid');
     expect(payload.imp[1]).to.have.property('banner');
     expect(payload.imp[1].banner).to.not.have.property('pos');
@@ -234,7 +235,7 @@ describe('Conversant adapter tests', function() {
     expect(payload.imp[2]).to.have.property('secure', 0);
     expect(payload.imp[2]).to.have.property('bidfloor', 0);
     expect(payload.imp[2]).to.have.property('displaymanager', 'Prebid.js');
-    expect(payload.imp[2]).to.have.property('displaymanagerver').that.matches(/^\d+\.\d+\.\d+$/);
+    expect(payload.imp[2]).to.have.property('displaymanagerver').that.matches(versionPattern);
     expect(payload.imp[2]).to.have.property('banner');
     expect(payload.imp[2].banner).to.have.property('pos', 2);
     expect(payload.imp[2].banner).to.have.property('format');
@@ -244,7 +245,7 @@ describe('Conversant adapter tests', function() {
     expect(payload.imp[3]).to.have.property('secure', 0);
     expect(payload.imp[3]).to.have.property('bidfloor', 0);
     expect(payload.imp[3]).to.have.property('displaymanager', 'Prebid.js');
-    expect(payload.imp[3]).to.have.property('displaymanagerver').that.matches(/^\d+\.\d+\.\d+$/);
+    expect(payload.imp[3]).to.have.property('displaymanagerver').that.matches(versionPattern);
     expect(payload.imp[3]).to.not.have.property('tagid');
     expect(payload.imp[3]).to.have.property('video');
     expect(payload.imp[3].video).to.not.have.property('pos');
@@ -263,7 +264,7 @@ describe('Conversant adapter tests', function() {
     expect(payload.imp[4]).to.have.property('secure', 0);
     expect(payload.imp[4]).to.have.property('bidfloor', 0);
     expect(payload.imp[4]).to.have.property('displaymanager', 'Prebid.js');
-    expect(payload.imp[4]).to.have.property('displaymanagerver').that.matches(/^\d+\.\d+\.\d+$/);
+    expect(payload.imp[4]).to.have.property('displaymanagerver').that.matches(versionPattern);
     expect(payload.imp[4]).to.not.have.property('tagid');
     expect(payload.imp[4]).to.have.property('video');
     expect(payload.imp[4].video).to.not.have.property('pos');
@@ -282,7 +283,7 @@ describe('Conversant adapter tests', function() {
     expect(payload.imp[5]).to.have.property('secure', 0);
     expect(payload.imp[5]).to.have.property('bidfloor', 0);
     expect(payload.imp[5]).to.have.property('displaymanager', 'Prebid.js');
-    expect(payload.imp[5]).to.have.property('displaymanagerver').that.matches(/^\d+\.\d+\.\d+$/);
+    expect(payload.imp[5]).to.have.property('displaymanagerver').that.matches(versionPattern);
     expect(payload.imp[5]).to.not.have.property('tagid');
     expect(payload.imp[5]).to.have.property('video');
     expect(payload.imp[5].video).to.not.have.property('pos');
