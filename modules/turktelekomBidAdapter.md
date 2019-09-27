@@ -14,25 +14,33 @@ Türk Telekom Bid Adapter supports Banner and Video (instream and outstream).
     var adUnits = [
            {
                code: 'test-div',
-               sizes: [[300, 250]],
+               mediaTypes: {
+                   banner: {
+                       sizes: [[300, 250], [300,600]]
+                   }
+               },
                bids: [
                    {
                        bidder: "turktelekom",
                        params: {
-                           uid: '17',
+                           uid: 17,
                            priceType: 'gross' // by default is 'net'
                        }
                    }
                ]
            },{
                code: 'test-div',
-               sizes: [[640, 360]],
-               mediaTypes: { video: {} },
+               mediaTypes: {
+                   video: {
+                       playerSize: [[640, 360]],
+                       context: 'instream'
+                   }
+               },
                bids: [
                    {
                        bidder: "turktelekom",
                        params: {
-                           uid: 7697
+                           uid: 19
                        }
                    }
                ]
