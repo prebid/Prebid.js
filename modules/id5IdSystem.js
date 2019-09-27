@@ -7,21 +7,12 @@
 
 import * as utils from '../src/utils'
 import {ajax} from '../src/ajax';
+import {format} from '../src/url';
 import {submodule} from '../src/hook';
 
-const ID5_ENDPOINT = 'https://id5-sync.com/g/v1';
-
-function buildUrl(config, consentData, storedUserId) {
-  const hasGdpr = (consentData && utils.isBoolean(consentData.gdprApplies) && consentData.gdprApplies) ? 1 : 0;
-  const gdprConsentString = hasGdpr ? consentData.consentString : ''
-  const urlParams = [
-    `1puid=${storedUserId ? storedUserId.id5id : ''}`,
-    `gdpr=${hasGdpr}`,
-    `gdpr_consent=${gdprConsentString}`
-  ].join('&');
-
-  return `${ID5_ENDPOINT}/${config.partner}.json?${urlParams}`;
-};
+const ID5_PROTOCOL = 'https';
+const ID5_HOSTNAME = 'id5-sync.com';
+const ID5_PATH = '/g/v1';
 
 function fetchId(configParams, consentData, cachedIdObj) {
   if (!configParams || typeof configParams.partner !== 'number') {
@@ -29,9 +20,22 @@ function fetchId(configParams, consentData, cachedIdObj) {
     return undefined;
   }
 
-  const url = buildUrl(configParams, consentData, this.decode(cachedIdObj));
+  const url = {
+    protocol: ID5_PROTOCOL,
+    hostname: ID5_HOSTNAME,
+    pathname: `${ID5_PATH}/${config.partner}.json`
+  };
+
+  const storedUserId = this.decode(cachedIdObj);
+  const hasGdpr = (consentData && utils.isBoolean(consentData.gdprApplies) && consentData.gdprApplies) ? 1 : 0;
+  const searchParams = {
+    '1puid': storedUserId ? storedUserId.id5id : '',
+    gdpr: hasGdpr,
+    gdpr_consent: hasGdpr ? consentData.consentString : ''
+  };
+
   return function (callback) {
-    ajax(url, response => {
+    ajax(format(url), response => {
       let responseObj;
       if (response) {
         try {
@@ -41,7 +45,7 @@ function fetchId(configParams, consentData, cachedIdObj) {
         }
       }
       callback(responseObj);
-    }, undefined, { method: 'GET', withCredentials: true });
+    }, searchParams, { method: 'GET', withCredentials: true });
   };
 };
 
