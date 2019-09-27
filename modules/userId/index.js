@@ -342,7 +342,9 @@ function initSubmodules(submodules, consentData) {
           let shouldRefresh = true;
           if (utils.isNumber(refreshInSeconds) && refreshInSeconds > 0) {
             const storedDate = new Date(getStoredValue(submodule.config.storage, 'last'));
-            shouldRefresh = (storedDate && (Date.now() - storedDate.getTime() > refreshInSeconds * 1000));
+            if (!storedDate || (Date.now() - storedDate.getTime() <= refreshInSeconds * 1000)) {
+              shouldRefresh = false;
+            }
           }
           if (shouldRefresh) {
             const refreshIdResult = submodule.submodule.refreshId(submodule.config.params, consentData, storedId);
