@@ -80,7 +80,7 @@ export const liveIntentIdSubmodule = {
 
     return function (callback) {
       ajax(url, response => {
-        let responseObj;
+        let responseObj = {};
         if (response) {
           try {
             responseObj = JSON.parse(response);
