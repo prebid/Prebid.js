@@ -43,12 +43,13 @@ export const spec = {
 
     bidRequests.forEach((request) => {
       serverRequest.p.push(addPlacement(request));
-      const userId = getUserId(request)
-      if (userId) {
-        const pubcid = userId.pubcid;
+      const pubcid = getPubcId(request)
+      if (pubcid) {
         serverRequest.pubcid = pubcid;
-      } else {
-        serverRequest.pubcid = request.crumbs.pubcid;
+      } else if (request.crumbs) {
+        if (request.crumbs.pubcid) {
+          serverRequest.pubcid = request.crumbs.pubcid;
+        }
       }
     });
     serverRequest.p = '[' + serverRequest.p.toString() + ']';
@@ -103,8 +104,13 @@ function addPlacement(request) {
     callback_id: request.bidId,
     sizes: request.sizes
   }
-  if (request.params && request.params.placementId) {
-    placementInfo.ym_placement_id = request.params.placementId
+  if (request.params) {
+    if (request.params.placementId) {
+      placementInfo.ym_placement_id = request.params.placementId;
+    }
+    if (request.params.bidFloor) {
+      placementInfo.bidFloor = request.params.bidFloor;
+    }
   }
   return JSON.stringify(placementInfo);
 }
@@ -311,10 +317,10 @@ function isMraid() {
   return !!(window.mraid);
 }
 
-function getUserId(request) {
-  let userId;
-  if (request && request.userId && typeof request.userId === 'object') {
-    userId = request.userId;
+function getPubcId(request) {
+  let pubcid;
+  if (request && request.userId && request.userId.pubcid && typeof request.userId === 'object') {
+    pubcid = request.userId.pubcid;
   }
-  return userId;
+  return pubcid;
 }

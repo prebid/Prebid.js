@@ -957,7 +957,7 @@ describe('the rubicon adapter', function () {
             });
           });
 
-          it('should not send more than 10 bids in a request', function () {
+          it('should not send more than 10 bids in a request (split into separate requests with <= 10 bids each)', function () {
             sandbox.stub(config, 'getConfig').callsFake((key) => {
               const config = {
                 'rubicon.singleRequest': true
@@ -965,27 +965,44 @@ describe('the rubicon adapter', function () {
               return config[key];
             });
 
-            for (let i = 0; i < 20; i++) {
+            let serverRequests;
+            let data;
+
+            // TEST '10' BIDS, add 9 to 1 existing bid
+            for (let i = 0; i < 9; i++) {
               let bidCopy = clone(bidderRequest.bids[0]);
               bidCopy.params.zoneId = `${i}0000`;
               bidderRequest.bids.push(bidCopy);
             }
-
-            const serverRequests = spec.buildRequests(bidderRequest.bids, bidderRequest);
-
-            // if bids are greater than 10, additional bids are dropped
+            serverRequests = spec.buildRequests(bidderRequest.bids, bidderRequest);
+            // '10' bids per SRA request: so there should be 1 request
+            expect(serverRequests.length).to.equal(1);
+            // and that one request should have data from 10 bids
             expect(serverRequests[0].bidRequest).to.have.lengthOf(10);
-
             // check that slots param value matches
-            const foundSlotsCount = serverRequests[0].data.indexOf('&slots=10&');
-            expect(foundSlotsCount !== -1).to.equal(true);
-
+            expect(serverRequests[0].data.indexOf('&slots=10&') !== -1).to.equal(true);
             // check that zone_id has 10 values (since all zone_ids are unique all should exist in get param)
-            const data = parseQuery(serverRequests[0].data);
-
+            data = parseQuery(serverRequests[0].data);
             expect(data).to.be.a('object');
             expect(data).to.have.property('zone_id');
             expect(data.zone_id.split(';')).to.have.lengthOf(10);
+
+            // TEST '100' BIDS, add 90 to the previously added 10
+            for (let i = 0; i < 90; i++) {
+              let bidCopy = clone(bidderRequest.bids[0]);
+              bidCopy.params.zoneId = `${(i + 10)}0000`;
+              bidderRequest.bids.push(bidCopy);
+            }
+            serverRequests = spec.buildRequests(bidderRequest.bids, bidderRequest);
+            // '100' bids: should be '10' SRA requests
+            expect(serverRequests.length).to.equal(10);
+            // check that each request has 10 items
+            serverRequests.forEach((serverRequest) => {
+              // and that one request should have data from 10 bids
+              expect(serverRequest.bidRequest).to.have.lengthOf(10);
+              // check that slots param value matches
+              expect(serverRequest.data.indexOf('&slots=10&') !== -1).to.equal(true);
+            });
           });
 
           it('should not group bid requests if singleRequest does not equal true', function () {
@@ -1060,6 +1077,19 @@ describe('the rubicon adapter', function () {
             expect(serverRequests).that.is.an('array').of.length(3);
           });
         });
+
+        describe('user id config', function() {
+          it('should send tpid_tdid when userId defines tdid', function () {
+            const clonedBid = clone(bidderRequest.bids[0]);
+            clonedBid.userId = {
+              tdid: 'abcd-efgh-ijkl-mnop-1234'
+            };
+            let [request] = spec.buildRequests([clonedBid], bidderRequest);
+            let data = parseQuery(request.data);
+
+            expect(data['tpid_tdid']).to.equal('abcd-efgh-ijkl-mnop-1234');
+          });
+        })
       });
 
       describe('for video requests', function () {
@@ -1111,6 +1141,34 @@ describe('the rubicon adapter', function () {
           positionBidderRequest.bids[0].mediaTypes.video.pos = 1;
           let [request] = spec.buildRequests(positionBidderRequest.bids, positionBidderRequest);
           expect(request.data.imp[0].video.pos).to.equal(1);
+        });
+
+        it('should send correct bidfloor to PBS', function() {
+          createVideoBidderRequest();
+
+          bidderRequest.bids[0].params.floor = 0.1;
+          let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          expect(request.data.imp[0].bidfloor).to.equal(0.1);
+
+          bidderRequest.bids[0].params.floor = 5.5;
+          [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          expect(request.data.imp[0].bidfloor).to.equal(5.5);
+
+          bidderRequest.bids[0].params.floor = '1.7';
+          [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          expect(request.data.imp[0].bidfloor).to.equal(1.7);
+
+          bidderRequest.bids[0].params.floor = 0;
+          [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          expect(request.data.imp[0].bidfloor).to.equal(0);
+
+          bidderRequest.bids[0].params.floor = undefined;
+          [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          expect(request.data.imp[0]).to.not.haveOwnProperty('bidfloor');
+
+          bidderRequest.bids[0].params.floor = null;
+          [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          expect(request.data.imp[0]).to.not.haveOwnProperty('bidfloor');
         });
 
         it('should send request with proper ad position when mediaTypes.video.pos is not defined', function () {

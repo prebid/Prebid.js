@@ -1,8 +1,8 @@
 import * as utils from '../src/utils'
 
 import { config } from '../src/config'
-import { registerBidder } from '../src/adapters/bidderFactory'
 import includes from 'core-js/library/fn/array/includes';
+import { registerBidder } from '../src/adapters/bidderFactory'
 
 const BIDDER_CODE = 'gumgum'
 const ALIAS_BIDDER_CODE = ['gg']
@@ -24,6 +24,14 @@ function _getBrowserParams() {
     const connection = window.navigator && (window.navigator.connection || window.navigator.mozConnection || window.navigator.webkitConnection)
     const Mbps = connection && (connection.downlink || connection.bandwidth)
     return Mbps ? Math.round(Mbps * 1024) : null // 1 megabit -> 1024 kilobits
+  }
+  function getOgURL () {
+    let ogURL = ''
+    const ogURLSelector = "meta[property='og:url']"
+    const head = document && document.getElementsByTagName('head')[0]
+    const ogURLElement = head.querySelector(ogURLSelector)
+    ogURL = ogURLElement ? ogURLElement.content : null
+    return ogURL
   }
   if (browserParams.vw) {
     // we've already initialized browserParams, just return it.
@@ -47,7 +55,8 @@ function _getBrowserParams() {
     pu: topUrl,
     ce: utils.cookiesAreEnabled(),
     dpr: topWindow.devicePixelRatio || 1,
-    jcsi: JSON.stringify({ t: 0, rq: 8 })
+    jcsi: JSON.stringify({ t: 0, rq: 8 }),
+    ogu: getOgURL()
   }
 
   ns = getNetworkSpeed()
@@ -64,6 +73,14 @@ function _getBrowserParams() {
 
 function getWrapperCode(wrapper, data) {
   return wrapper.replace('AD_JSON', window.btoa(JSON.stringify(data)))
+}
+
+function _getTradeDeskIDParam(bidRequest) {
+  const unifiedIdObj = {};
+  if (bidRequest.userId && bidRequest.userId.tdid) {
+    unifiedIdObj.tdid = bidRequest.userId.tdid;
+  }
+  return unifiedIdObj;
 }
 
 // TODO: use getConfig()
@@ -161,7 +178,7 @@ function buildRequests (validBidRequests, bidderRequest) {
       sizes: bidRequest.sizes,
       url: BID_ENDPOINT,
       method: 'GET',
-      data: Object.assign(data, _getBrowserParams(), _getDigiTrustQueryParams())
+      data: Object.assign(data, _getBrowserParams(), _getDigiTrustQueryParams(), _getTradeDeskIDParam(bidRequest))
     })
   });
   return bids;

@@ -271,10 +271,10 @@ export function ImproveDigitalAdServerJSClient(endPoint) {
       STANDARD: 0,
       SECURE: 1
     },
-    AD_SERVER_BASE_URL: 'ad.360yield.com',
+    AD_SERVER_BASE_URL: 'ice.360yield.com',
     END_POINT: endPoint || 'hb',
     AD_SERVER_URL_PARAM: 'jsonp=',
-    CLIENT_VERSION: 'JS-5.3.0',
+    CLIENT_VERSION: 'JS-6.0.0',
     MAX_URL_LENGTH: 2083,
     ERROR_CODES: {
       MISSING_PLACEMENT_PARAMS: 2,

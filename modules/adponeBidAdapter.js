@@ -59,6 +59,13 @@ export const spec = {
     });
 
     return answer;
+  },
+
+  onBidWon: bid => {
+    const bidString = JSON.stringify(bid);
+    const encodedBuf = window.btoa(bidString);
+    const img = new Image(1, 1);
+    img.src = `https://rtb.adpone.com/prebid/analytics?q=${encodedBuf}`;
   }
 
 };

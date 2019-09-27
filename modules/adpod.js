@@ -16,16 +16,17 @@ import * as utils from '../src/utils';
 import { addBidToAuction, doCallbacksIfTimedout, AUCTION_IN_PROGRESS, callPrebidCache } from '../src/auction';
 import { checkAdUnitSetup } from '../src/prebid';
 import { checkVideoBidSetup } from '../src/video';
-import { setupBeforeHookFnOnce } from '../src/hook';
+import { setupBeforeHookFnOnce, module } from '../src/hook';
 import { store } from '../src/videoCache';
 import { config } from '../src/config';
 import { ADPOD } from '../src/mediaTypes';
 import Set from 'core-js/library/fn/set';
 import find from 'core-js/library/fn/array/find';
+
 const from = require('core-js/library/fn/array/from');
 
-export const TARGETING_KEY_PB_CAT_DUR = 'hb_pb_cat_dur';
-export const TARGETING_KEY_CACHE_ID = 'hb_cache_id'
+const TARGETING_KEY_PB_CAT_DUR = 'hb_pb_cat_dur';
+const TARGETING_KEY_CACHE_ID = 'hb_cache_id';
 
 let queueTimeDelay = 50;
 let queueSizeLimit = 5;
@@ -256,8 +257,8 @@ export function checkAdUnitSetupHook(fn, adUnits) {
       let errMsg = `Detected missing or incorrectly setup fields for an adpod adUnit.  Please review the following fields of adUnitCode: ${adUnit.code}.  This adUnit will be removed from the auction.`;
 
       let playerSize = !!(videoConfig.playerSize && utils.isArrayOfNums(videoConfig.playerSize));
-      let adPodDurationSec = !!(videoConfig.adPodDurationSec && utils.isNumber(videoConfig.adPodDurationSec));
-      let durationRangeSec = !!(videoConfig.durationRangeSec && utils.isArrayOfNums(videoConfig.durationRangeSec));
+      let adPodDurationSec = !!(videoConfig.adPodDurationSec && utils.isNumber(videoConfig.adPodDurationSec) && videoConfig.adPodDurationSec > 0);
+      let durationRangeSec = !!(videoConfig.durationRangeSec && utils.isArrayOfNums(videoConfig.durationRangeSec) && videoConfig.durationRangeSec.every(range => range > 0));
 
       if (!playerSize || !adPodDurationSec || !durationRangeSec) {
         errMsg += (!playerSize) ? '\nmediaTypes.video.playerSize' : '';
@@ -385,12 +386,13 @@ config.getConfig('adpod', config => adpodSetConfig(config.adpod));
 /**
  * This function initializes the adpod module's hooks.  This is called by the corresponding adserver video module.
  */
-export function initAdpodHooks() {
+function initAdpodHooks() {
   setupBeforeHookFnOnce(callPrebidCache, callPrebidCacheHook);
   setupBeforeHookFnOnce(checkAdUnitSetup, checkAdUnitSetupHook);
   setupBeforeHookFnOnce(checkVideoBidSetup, checkVideoBidSetupHook);
 }
 
+initAdpodHooks()
 /**
  *
  * @param {Array[Object]} bids list of 'winning' bids that need to be cached
@@ -428,3 +430,24 @@ export function sortByPricePerSecond(a, b) {
   }
   return 0;
 }
+
+const sharedMethods = {
+  TARGETING_KEY_PB_CAT_DUR: TARGETING_KEY_PB_CAT_DUR,
+  TARGETING_KEY_CACHE_ID: TARGETING_KEY_CACHE_ID,
+  'sortByPricePerSecond': sortByPricePerSecond,
+  'callPrebidCacheAfterAuction': callPrebidCacheAfterAuction
+}
+Object.freeze(sharedMethods);
+
+module('adpod', function shareAdpodUtilities(...args) {
+  if (!utils.isPlainObject(args[0])) {
+    utils.logError('Adpod module needs plain object to share methods with submodule');
+    return;
+  }
+  function addMethods(object, func) {
+    for (let name in func) {
+      object[name] = func[name];
+    }
+  }
+  addMethods(args[0], sharedMethods);
+});
