@@ -5,9 +5,9 @@ import { Renderer } from '../src/Renderer';
 import { BANNER, VIDEO } from '../src/mediaTypes';
 
 const BIDDER_CODE = 'yieldone';
-const ENDPOINT_URL = '//y.one.impact-ad.jp/h_bid';
-const USER_SYNC_URL = '//y.one.impact-ad.jp/push_sync';
-const VIDEO_PLAYER_URL = '//img.ak.impact-ad.jp/ic/pone/ivt/firstview/js/dac-video-prebid.min.js';
+const ENDPOINT_URL = 'https://y.one.impact-ad.jp/h_bid';
+const USER_SYNC_URL = 'https://y.one.impact-ad.jp/push_sync';
+const VIDEO_PLAYER_URL = 'https://img.ak.impact-ad.jp/ic/pone/ivt/firstview/js/dac-video-prebid.min.js';
 
 export const spec = {
   code: BIDDER_CODE,

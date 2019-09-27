@@ -7,15 +7,15 @@ import { VIDEO, BANNER } from '../src/mediaTypes';
 import find from 'core-js/library/fn/array/find';
 import includes from 'core-js/library/fn/array/includes';
 
-const ADAPTER_VERSION = '1.5';
+const ADAPTER_VERSION = '1.7';
 const ADAPTER_NAME = 'BFIO_PREBID';
 const OUTSTREAM = 'outstream';
 
-export const VIDEO_ENDPOINT = '//reachms.bfmio.com/bid.json?exchange_id=';
-export const BANNER_ENDPOINT = '//display.bfmio.com/prebid_display';
+export const VIDEO_ENDPOINT = 'https://reachms.bfmio.com/bid.json?exchange_id=';
+export const BANNER_ENDPOINT = 'https://display.bfmio.com/prebid_display';
 export const OUTSTREAM_SRC = '//player-cdn.beachfrontmedia.com/playerapi/loader/outstream.js';
 
-export const VIDEO_TARGETING = ['mimes', 'playbackmethod', 'maxduration'];
+export const VIDEO_TARGETING = ['mimes', 'playbackmethod', 'maxduration', 'placement'];
 export const DEFAULT_MIMES = ['video/mp4', 'application/javascript'];
 
 let appId = '';
@@ -123,12 +123,12 @@ export const spec = {
     } else if (syncOptions.iframeEnabled) {
       syncs.push({
         type: 'iframe',
-        url: `//sync.bfmio.com/sync_iframe?ifg=1&id=${appId}&gdpr=${gdprApplies ? 1 : 0}&gc=${consentString || ''}&gce=1`
+        url: `https://sync.bfmio.com/sync_iframe?ifg=1&id=${appId}&gdpr=${gdprApplies ? 1 : 0}&gc=${consentString || ''}&gce=1`
       });
     } else if (syncOptions.pixelEnabled) {
       syncs.push({
         type: 'image',
-        url: `//sync.bfmio.com/syncb?pid=144&id=${appId}&gdpr=${gdprApplies ? 1 : 0}&gc=${consentString || ''}&gce=1`
+        url: `https://sync.bfmio.com/syncb?pid=144&id=${appId}&gdpr=${gdprApplies ? 1 : 0}&gc=${consentString || ''}&gce=1`
       });
     }
 

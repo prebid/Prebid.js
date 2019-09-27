@@ -30,7 +30,7 @@ function getCapabilities() {
 
 exports.config = {
   specs: [
-    './test/spec/lfe2e/specs/*.js'
+    './test/spec/e2e/**/*.spec.js'
   ],
   services: ['browserstack'],
   user: process.env.BROWSERSTACK_USERNAME,
