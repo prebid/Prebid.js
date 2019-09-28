@@ -23,7 +23,7 @@ function fetchId(configParams, consentData, cachedIdObj) {
   const url = {
     protocol: ID5_PROTOCOL,
     hostname: ID5_HOSTNAME,
-    pathname: `${ID5_PATH}/${config.partner}.json`
+    pathname: `${ID5_PATH}/${configParams.partner}.json`
   };
 
   const storedUserId = this.decode(cachedIdObj);
