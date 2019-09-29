@@ -506,6 +506,7 @@ describe('User ID', function() {
         }
       });
 
+      // check config has been set correctly
       expect(auctionDelay).to.equal(0);
       expect(syncDelay).to.equal(77);
 
