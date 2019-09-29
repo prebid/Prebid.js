@@ -50,6 +50,16 @@ describe('User ID', function() {
     };
   }
 
+  function addConfig(cfg, name, value) {
+    if (cfg && cfg.userSync && cfg.userSync.userIds) {
+      cfg.userSync.userIds.forEach(element => {
+        if (element[name] !== undefined) { element[name] = Object.assign(element[name], value); } else { element[name] = value; }
+      });
+    }
+
+    return cfg;
+  }
+
   before(function() {
     utils.setCookie('_pubcid_optout', '', EXPIRED_COOKIE_DATE);
     localStorage.removeItem('_pbjs_id_optout');
@@ -60,11 +70,13 @@ describe('User ID', function() {
     beforeEach(function() {
       utils.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
       utils.setCookie('pubcid_alt', 'altpubcid200000', (new Date(Date.now() + 5000).toUTCString()));
+      sinon.spy(utils, 'setCookie');
     });
 
     afterEach(function () {
       $$PREBID_GLOBAL$$.requestBids.removeAll();
       config.resetConfig();
+      utils.setCookie.restore();
     });
 
     after(function() {
@@ -138,7 +150,7 @@ describe('User ID', function() {
       expect(pubcid1).to.not.equal(pubcid2);
     });
 
-    it('Check new cookie', function () {
+    it('Use existing cookie', function () {
       let adUnits = [getAdUnitMock()];
       let innerAdUnits;
 
@@ -152,6 +164,46 @@ describe('User ID', function() {
           expect(bid.userId.pubcid).to.equal('altpubcid200000');
         });
       });
+      // Because the cookie exists already, there should be no setCookie call by default
+      expect(utils.setCookie.callCount).to.equal(0);
+    });
+
+    it('Extend cookie', function () {
+      let adUnits = [getAdUnitMock()];
+      let innerAdUnits;
+      let customConfig = getConfigMock(['pubCommonId', 'pubcid_alt', 'cookie']);
+      customConfig = addConfig(customConfig, 'params', {extend: true});
+
+      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule]);
+      init(config);
+      config.setConfig(customConfig);
+      requestBidsHook((config) => { innerAdUnits = config.adUnits }, {adUnits});
+      innerAdUnits.forEach((unit) => {
+        unit.bids.forEach((bid) => {
+          expect(bid).to.have.deep.nested.property('userId.pubcid');
+          expect(bid.userId.pubcid).to.equal('altpubcid200000');
+        });
+      });
+      // Because extend is true, the cookie will be updated even if it exists already
+      expect(utils.setCookie.callCount).to.equal(1);
+    });
+
+    it('Disable auto create', function () {
+      let adUnits = [getAdUnitMock()];
+      let innerAdUnits;
+      let customConfig = getConfigMock(['pubCommonId', 'pubcid', 'cookie']);
+      customConfig = addConfig(customConfig, 'params', {create: false});
+
+      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule]);
+      init(config);
+      config.setConfig(customConfig);
+      requestBidsHook((config) => { innerAdUnits = config.adUnits }, {adUnits});
+      innerAdUnits.forEach((unit) => {
+        unit.bids.forEach((bid) => {
+          expect(bid).to.not.have.deep.nested.property('userId.pubcid');
+        });
+      });
+      expect(utils.setCookie.callCount).to.equal(0);
     });
   });
 
@@ -352,9 +404,9 @@ describe('User ID', function() {
         getId: function() {
           const storedId = utils.getCookie('MOCKID');
           if (storedId) {
-            return {'MOCKID': storedId};
+            return {id: {'MOCKID': storedId}};
           }
-          return mockIdCallback;
+          return {callback: mockIdCallback};
         }
       };
 
@@ -798,8 +850,9 @@ describe('User ID', function() {
             'mid': value['MOCKID']
           };
         },
-        getId: function() {
-          return {'MOCKID': '1234'}
+        getId: function(params, storedId) {
+          if (storedId) return {};
+          return {id: {'MOCKID': '1234'}};
         }
       });
 
@@ -830,6 +883,77 @@ describe('User ID', function() {
         utils.setCookie('MOCKID', '', EXPIRED_COOKIE_DATE);
         done();
       }, {adUnits});
+    });
+  });
+
+  describe('callbacks at the end of auction', function() {
+    let xhr;
+    let requests;
+
+    beforeEach(function() {
+      requests = [];
+      xhr = sinon.useFakeXMLHttpRequest();
+      xhr.onCreate = request => requests.push(request);
+      sinon.stub(events, 'getEvents').returns([]);
+      sinon.stub(utils, 'triggerPixel');
+      utils.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
+      utils.setCookie('unifiedid', '', EXPIRED_COOKIE_DATE);
+    });
+
+    afterEach(function() {
+      xhr.restore();
+      events.getEvents.restore();
+      utils.triggerPixel.restore();
+      utils.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
+      utils.setCookie('unifiedid', '', EXPIRED_COOKIE_DATE);
+    });
+
+    it('pubcid callback with url', function () {
+      let adUnits = [getAdUnitMock()];
+      let innerAdUnits;
+      let customCfg = getConfigMock(['pubCommonId', 'pubcid_alt', 'cookie']);
+      customCfg = addConfig(customCfg, 'params', {pixelUrl: '/any/pubcid/url'});
+
+      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule]);
+      init(config);
+      config.setConfig(customCfg);
+      requestBidsHook((config) => { innerAdUnits = config.adUnits }, {adUnits});
+
+      expect(utils.triggerPixel.called).to.be.false;
+      events.emit(CONSTANTS.EVENTS.AUCTION_END, {});
+      expect(utils.triggerPixel.getCall(0).args[0]).to.include('/any/pubcid/url');
+    });
+
+    it('unifiedid callback with url', function () {
+      let adUnits = [getAdUnitMock()];
+      let innerAdUnits;
+      let customCfg = getConfigMock(['unifiedId', 'unifiedid', 'cookie']);
+      addConfig(customCfg, 'params', {url: '/any/unifiedid/url'});
+
+      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule]);
+      init(config);
+      config.setConfig(customCfg);
+      requestBidsHook((config) => { innerAdUnits = config.adUnits }, {adUnits});
+
+      expect(requests).to.be.empty;
+      events.emit(CONSTANTS.EVENTS.AUCTION_END, {});
+      expect(requests[0].url).to.equal('/any/unifiedid/url');
+    });
+
+    it('unifiedid callback with partner', function () {
+      let adUnits = [getAdUnitMock()];
+      let innerAdUnits;
+      let customCfg = getConfigMock(['unifiedId', 'unifiedid', 'cookie']);
+      addConfig(customCfg, 'params', {partner: 'rubicon'});
+
+      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule]);
+      init(config);
+      config.setConfig(customCfg);
+      requestBidsHook((config) => { innerAdUnits = config.adUnits }, {adUnits});
+
+      expect(requests).to.be.empty;
+      events.emit(CONSTANTS.EVENTS.AUCTION_END, {});
+      expect(requests[0].url).to.equal('//match.adsrvr.org/track/rid?ttd_pid=rubicon&fmt=json');
     });
   });
 });

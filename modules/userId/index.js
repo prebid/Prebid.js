@@ -9,12 +9,27 @@
 
 /**
  * @function
- * @summary performs action to obtain id and return a value in the callback's response argument
+ * @summary performs action to obtain id and return a value in the callback's response argument.
+ *  If IdResponse#id is defined, then it will be written to the current active storage.
+ *  If IdResponse#callback is defined, then it'll called at the end of auction.
+ *  It's permissible to return neither, one, or both fields.
  * @name Submodule#getId
  * @param {SubmoduleParams} configParams
  * @param {ConsentData|undefined} consentData
  * @param {(Object|undefined)} cacheIdObj
- * @return {(Object|function)} id data or a callback, the callback is called on the auction end event
+ * @return {(IdResponse|undefined)} A response object that contains id and/or callback.
+ */
+
+/**
+ * @function
+ * @summary Similar to Submodule#getId, this optional method returns response to for id that exists already.
+ *  If IdResponse#id is defined, then it will be written to the current active storage even if it exists already.
+ *  If IdResponse#callback is defined, then it'll called at the end of auction.
+ *  It's permissible to return neither, one, or both fields.
+ * @name Submodule#extendId
+ * @param {SubmoduleParams} configParams
+ * @param {Object} storedId - existing id, if any
+ * @return {(IdResponse|function(callback:function))} A response object that contains id and/or callback.
  */
 
 /**
@@ -52,6 +67,9 @@
  * @typedef {Object} SubmoduleParams
  * @property {(string|undefined)} partner - partner url param value
  * @property {(string|undefined)} url - webservice request url used to load Id data
+ * @property {(string|undefined)} pixelUrl - publisher pixel to extend/modify cookies
+ * @property {(boolean|undefined)} create - create id if missing.  default is true.
+ * @property {(boolean|undefined)} extend - extend expiration time on each access.  default is false.
  * @property {(string|undefined)} pid - placement id url param value
  */
 
@@ -68,6 +86,12 @@
  * @property {(string|undefined)} consentString
  * @property {(Object|undefined)} vendorData
  * @property {(boolean|undefined)} gdprApplies
+ */
+
+/**
+ * @typedef {Object} IdResponse
+ * @property {(Object|undefined)} id - id data
+ * @property {(function|undefined)} callback - function that will return an id
  */
 
 import find from 'core-js/library/fn/array/find';
@@ -125,7 +149,7 @@ function setStoredValue(storage, value) {
     const valueStr = utils.isPlainObject(value) ? JSON.stringify(value) : value;
     const expiresStr = (new Date(Date.now() + (storage.expires * (60 * 60 * 24 * 1000)))).toUTCString();
     if (storage.type === COOKIE) {
-      utils.setCookie(storage.name, valueStr, expiresStr);
+      utils.setCookie(storage.name, valueStr, expiresStr, 'Lax');
       if (typeof storage.refreshInSeconds === 'number') {
         utils.setCookie(`${storage.name}_last`, new Date().toUTCString(), expiresStr);
       }
@@ -198,8 +222,6 @@ function processSubmoduleCallbacks(submodules, cb) {
   const done = cb ? utils.delayExecution(cb, submodules.length) : function() { };
   submodules.forEach(function(submodule) {
     submodule.callback(function callbackCompleted(idObj) {
-      // clear callback, this prop is used to test if all submodule callbacks are complete below
-      submodule.callback = undefined;
       // if valid, id data should be saved to cookie/html storage
       if (idObj) {
         if (submodule.config.storage) {
@@ -212,6 +234,9 @@ function processSubmoduleCallbacks(submodules, cb) {
       }
       done();
     });
+
+    // clear callback, this prop is used to test if all submodule callbacks are complete below
+    submodule.callback = undefined;
   });
 }
 
@@ -331,7 +356,7 @@ function getUserIds() {
   // initialize submodules only when undefined
   initializeSubmodulesAndExecuteCallbacks();
   return getCombinedSubmoduleIds(initializedSubmodules);
-};
+}
 
 /**
  * @param {SubmoduleContainer[]} submodules
@@ -349,39 +374,48 @@ function initSubmodules(submodules, consentData) {
     // 1. storage: retrieve user id data from cookie/html storage or with the submodule's getId method
     // 2. value: pass directly to bids
     if (submodule.config.storage) {
-      const storedId = getStoredValue(submodule.config.storage);
-      if (storedId) {
-        // cache decoded value (this is copied to every adUnit bid)
-        submodule.idObj = submodule.submodule.decode(storedId);
-      }
+      let storedId = getStoredValue(submodule.config.storage);
+      let response;
+
       let refreshNeeded = false;
       if (typeof submodule.config.storage.refreshInSeconds === 'number') {
         const storedDate = new Date(getStoredValue(submodule.config.storage, 'last'));
         refreshNeeded = storedDate && (Date.now() - storedDate.getTime() > submodule.config.storage.refreshInSeconds * 1000);
       }
-      if (!storedId || refreshNeeded) {
-        // getId will return user id data or a function that will load the data
-        const getIdResult = submodule.submodule.getId(submodule.config.params, consentData, storedId);
 
-        // If the getId result has a type of function, it is asynchronous and cannot be called until later
-        if (typeof getIdResult === 'function') {
-          submodule.callback = getIdResult;
-        } else if (getIdResult) {
-          // A getId result that is not a function is assumed to be valid user id data, which should be saved to users local storage or cookies
-          setStoredValue(submodule.config.storage, getIdResult);
-          // cache decoded value (this is copied to every adUnit bid)
-          submodule.idObj = submodule.submodule.decode(getIdResult);
+      if (!storedId || refreshNeeded) {
+        // No previously saved id.  Request one from submodule.
+        response = submodule.submodule.getId(submodule.config.params, consentData, storedId);
+      } else if (typeof submodule.submodule.extendId === 'function') {
+        // If the id exists already, give submodule a chance to decide additional actions that need to be taken
+        response = submodule.submodule.extendId(submodule.config.params, storedId);
+      }
+
+      if (utils.isPlainObject(response)) {
+        if (response.id) {
+          // A getId/extendId result assumed to be valid user id data, which should be saved to users local storage or cookies
+          setStoredValue(submodule.config.storage, response.id);
+          storedId = response.id;
         }
+
+        if (typeof response.callback === 'function') {
+          // Save async callback to be invoked after auction
+          submodule.callback = response.callback;
+        }
+      }
+
+      if (storedId) {
+        // cache decoded value (this is copied to every adUnit bid)
+        submodule.idObj = submodule.submodule.decode(storedId);
       }
     } else if (submodule.config.value) {
       // cache decoded value (this is copied to every adUnit bid)
       submodule.idObj = submodule.config.value;
     } else {
-      const result = submodule.submodule.getId(submodule.config.params, consentData, undefined);
-      if (typeof result === 'function') {
-        submodule.callback = result;
-      } else {
-        submodule.idObj = submodule.submodule.decode();
+      const response = submodule.submodule.getId(submodule.config.params, consentData, undefined);
+      if (utils.isPlainObject(response)) {
+        if (typeof response.callback === 'function') { submodule.callback = response.callback; }
+        if (response.id) { submodule.idObj = submodule.submodule.decode(response.id); }
       }
     }
     carry.push(submodule);
@@ -482,7 +516,7 @@ export function init(config) {
   ].filter(i => i !== null);
 
   // exit immediately if opt out cookie or local storage keys exists.
-  if (validStorageTypes.indexOf(COOKIE) !== -1 && utils.getCookie('_pbjs_id_optout')) {
+  if (validStorageTypes.indexOf(COOKIE) !== -1 && (utils.getCookie('_pbjs_id_optout') || utils.getCookie('_pubcid_optout'))) {
     utils.logInfo(`${MODULE_NAME} - opt-out cookie found, exit module`);
     return;
   }
