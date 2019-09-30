@@ -67,7 +67,6 @@ export const spec = {
     });
 
     const payload = {
-      u: utils.getTopWindowUrl(),
       pt: 'net',
       auids: auids.join(','),
       sizes: utils.getKeys(sizeMap).join(','),
@@ -77,13 +76,18 @@ export const spec = {
       wrapperVersion: '$prebid.version$'
     };
 
-    if (bidderRequest && bidderRequest.gdprConsent) {
-      if (bidderRequest.gdprConsent.consentString) {
-        payload.gdpr_consent = bidderRequest.gdprConsent.consentString;
+    if (bidderRequest) {
+      if (bidderRequest.refererInfo && bidderRequest.refererInfo.referer) {
+        payload.u = encodeURIComponent(bidderRequest.refererInfo.referer);
       }
-      payload.gdpr_applies =
-        (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean')
-          ? Number(bidderRequest.gdprConsent.gdprApplies) : 1;
+      if (bidderRequest.gdprConsent) {
+        if (bidderRequest.gdprConsent.consentString) {
+          payload.gdpr_consent = bidderRequest.gdprConsent.consentString;
+        }
+        payload.gdpr_applies =
+            (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean')
+              ? Number(bidderRequest.gdprConsent.gdprApplies) : 1;
+      }
     }
 
     return {

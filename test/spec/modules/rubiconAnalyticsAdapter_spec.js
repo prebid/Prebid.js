@@ -453,7 +453,8 @@ const ANALYTICS_MESSAGE = {
       },
       'bidwonStatus': 'success'
     }
-  ]
+  ],
+  'wrapperName': '10000_fakewrapper_test'
 };
 
 function performStandardAuction() {
@@ -492,6 +493,9 @@ describe('rubicon analytics adapter', function () {
       s2sConfig: {
         timeout: 1000,
         accountId: 10000,
+      },
+      rubicon: {
+        wrapperName: '10000_fakewrapper_test'
       }
     })
   });
