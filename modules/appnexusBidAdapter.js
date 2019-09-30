@@ -41,7 +41,7 @@ const VIEWABILITY_FILE_NAME = 'trk.js';
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['appnexusAst', 'brealtime', 'emxdigital', 'pagescience', 'defymedia', 'gourmetads', 'matomy', 'featureforward', 'oftmedia', 'districtm'],
+  aliases: ['appnexusAst', 'brealtime', 'emxdigital', 'pagescience', 'defymedia', 'gourmetads', 'matomy', 'featureforward', 'districtm'],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   /**
