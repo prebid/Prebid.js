@@ -1,7 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/inskinBidAdapter';
-
-var bidFactory = require('src/bidfactory.js');
+import { createBid } from 'src/bidfactory';
 
 const ENDPOINT = 'https://mfad.inskinad.com/api/v2';
 
@@ -83,6 +82,9 @@ const RESPONSE = {
           'type': 'html',
           'body': '<html></html>',
           'data': {
+            'customData': {
+              'pubCPM': 1
+            },
             'height': 90,
             'width': 728,
             'imageUrl': 'https://static.adzerk.net/Advertisers/b0ab77db8a7848c8b78931aed022a5ef.gif',
@@ -99,11 +101,11 @@ const RESPONSE = {
   }
 };
 
-describe('InSkin BidAdapter', () => {
+describe('InSkin BidAdapter', function () {
   let bidRequests;
   let adapter = spec;
 
-  beforeEach(() => {
+  beforeEach(function () {
     bidRequests = [
       {
         bidder: 'inskin',
@@ -121,8 +123,8 @@ describe('InSkin BidAdapter', () => {
     ];
   });
 
-  describe('bid request validation', () => {
-    it('should accept valid bid requests', () => {
+  describe('bid request validation', function () {
+    it('should accept valid bid requests', function () {
       let bid = {
         bidder: 'inskin',
         params: {
@@ -133,7 +135,7 @@ describe('InSkin BidAdapter', () => {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
-    it('should accept valid bid requests with extra fields', () => {
+    it('should accept valid bid requests with extra fields', function () {
       let bid = {
         bidder: 'inskin',
         params: {
@@ -145,7 +147,7 @@ describe('InSkin BidAdapter', () => {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
-    it('should reject bid requests without siteId', () => {
+    it('should reject bid requests without siteId', function () {
       let bid = {
         bidder: 'inskin',
         params: {
@@ -155,7 +157,7 @@ describe('InSkin BidAdapter', () => {
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
-    it('should reject bid requests without networkId', () => {
+    it('should reject bid requests without networkId', function () {
       let bid = {
         bidder: 'inskin',
         params: {
@@ -166,45 +168,65 @@ describe('InSkin BidAdapter', () => {
     });
   });
 
-  describe('buildRequests validation', () => {
-    it('creates request data', () => {
+  describe('buildRequests validation', function () {
+    it('creates request data', function () {
       let request = spec.buildRequests(bidRequests);
 
       expect(request).to.exist.and.to.be.a('object');
     });
 
-    it('request to inskin should contain a url', () => {
+    it('request to inskin should contain a url', function () {
       let request = spec.buildRequests(bidRequests);
 
       expect(request.url).to.have.string('inskinad.com');
     });
 
-    it('requires valid bids to make request', () => {
+    it('requires valid bids to make request', function () {
       let request = spec.buildRequests([]);
       expect(request.bidRequest).to.be.empty;
     });
 
-    it('sends bid request to ENDPOINT via POST', () => {
+    it('sends bid request to ENDPOINT via POST', function () {
       let request = spec.buildRequests(bidRequests);
 
       expect(request.method).to.have.string('POST');
     });
+
+    it('should add gdpr consent information to the request', function () {
+      let consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
+      let bidderRequest = {
+        'bidderCode': 'inskin',
+        'gdprConsent': {
+          consentString: consentString,
+          gdprApplies: true
+        }
+      };
+      bidderRequest.bids = bidRequests;
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.consent.gdprConsentString).to.exist;
+      expect(payload.consent.gdprConsentRequired).to.exist;
+      expect(payload.consent.gdprConsentString).to.exist.and.to.equal(consentString);
+      expect(payload.consent.gdprConsentRequired).to.exist.and.to.be.true;
+    });
   });
-  describe('interpretResponse validation', () => {
-    it('response should have valid bidderCode', () => {
+  describe('interpretResponse validation', function () {
+    it('response should have valid bidderCode', function () {
       let bidRequest = spec.buildRequests(REQUEST.bidRequest);
-      let bid = bidFactory.createBid(1, bidRequest.bidRequest[0]);
+      let bid = createBid(1, bidRequest.bidRequest[0]);
 
       expect(bid.bidderCode).to.equal('inskin');
     });
 
-    it('response should include objects for all bids', () => {
+    it('response should include objects for all bids', function () {
       let bids = spec.interpretResponse(RESPONSE, REQUEST);
 
       expect(bids.length).to.equal(2);
     });
 
-    it('registers bids', () => {
+    it('registers bids', function () {
       let bids = spec.interpretResponse(RESPONSE, REQUEST);
       bids.forEach(b => {
         expect(b).to.have.property('cpm');
@@ -222,34 +244,41 @@ describe('InSkin BidAdapter', () => {
       });
     });
 
-    it('handles nobid responses', () => {
+    it('cpm is correctly set', function () {
+      let bids = spec.interpretResponse(RESPONSE, REQUEST);
+
+      expect(bids[0].cpm).to.equal(0.5);
+      expect(bids[1].cpm).to.equal(1);
+    });
+
+    it('handles nobid responses', function () {
       let EMPTY_RESP = Object.assign({}, RESPONSE, {'body': {'decisions': null}})
       let bids = spec.interpretResponse(EMPTY_RESP, REQUEST);
 
       expect(bids).to.be.empty;
     });
 
-    it('handles no server response', () => {
+    it('handles no server response', function () {
       let bids = spec.interpretResponse(null, REQUEST);
 
       expect(bids).to.be.empty;
     });
   });
-  describe('getUserSyncs', () => {
-    it('handles empty sync options', () => {
+  describe('getUserSyncs', function () {
+    it('handles empty sync options', function () {
       let opts = spec.getUserSyncs({});
 
       expect(opts).to.be.empty;
     });
 
-    it('should return two sync urls if pixel syncs are enabled', () => {
+    it('should return two sync urls if pixel syncs are enabled', function () {
       let syncOptions = {'pixelEnabled': true};
       let opts = spec.getUserSyncs(syncOptions);
 
       expect(opts.length).to.equal(2);
     });
 
-    it('should return three sync urls if pixel and iframe syncs are enabled', () => {
+    it('should return three sync urls if pixel and iframe syncs are enabled', function () {
       let syncOptions = {'iframeEnabled': true, 'pixelEnabled': true};
       let opts = spec.getUserSyncs(syncOptions);
 

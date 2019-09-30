@@ -1,5 +1,5 @@
-import * as utils from 'src/utils';
-import { registerBidder } from 'src/adapters/bidderFactory';
+import * as utils from '../src/utils';
+import { registerBidder } from '../src/adapters/bidderFactory';
 
 const BIDDER_CODE = 'inskin';
 
@@ -26,10 +26,11 @@ export const spec = {
    * Make a server request from the list of BidRequests.
    *
    * @param {validBidRequests[]} - an array of bids
+   * @param {bidderRequest} - the full bidder request object
    * @return ServerRequest Info describing the request to the server.
    */
 
-  buildRequests: function(validBidRequests) {
+  buildRequests: function(validBidRequests, bidderRequest) {
     // Do we need to group by bidder? i.e. to make multiple requests for
     // different endpoints.
 
@@ -55,6 +56,15 @@ export const spec = {
       includePricingData: true,
       parallel: true
     }, validBidRequests[0].params);
+
+    if (bidderRequest && bidderRequest.gdprConsent) {
+      data.consent = {
+        gdprVendorId: 150,
+        gdprConsentString: bidderRequest.gdprConsent.consentString,
+        // will check if the gdprApplies field was populated with a boolean value (ie from page config).  If it's undefined, then default to true
+        gdprConsentRequired: (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') ? bidderRequest.gdprConsent.gdprApplies : true
+      };
+    }
 
     validBidRequests.map(bid => {
       let config = CONFIG[bid.bidder];
@@ -106,9 +116,15 @@ export const spec = {
 
       if (serverResponse) {
         const decision = serverResponse.decisions && serverResponse.decisions[bidId];
-        const price = decision && decision.pricing && decision.pricing.clearPrice;
+        const data = decision && decision.contents && decision.contents[0] && decision.contents[0].data;
+        const pubCPM = data && data.customData && data.customData.pubCPM;
+        const clearPrice = decision && decision.pricing && decision.pricing.clearPrice;
+        const price = pubCPM || clearPrice;
 
         if (decision && price) {
+          decision.impressionUrl += ('&property:pubcpm=' + price);
+          bidObj.price = price;
+
           bid.requestId = bidId;
           bid.cpm = price;
           bid.width = decision.width;
@@ -139,6 +155,7 @@ export const spec = {
         const id = 'ism_tag_' + Math.floor((Math.random() * 10e16));
         window[id] = {
           bidId: e.data.bidId,
+          bidPrice: bidsMap[e.data.bidId].price,
           serverResponse
         };
         const script = document.createElement('script');

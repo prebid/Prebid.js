@@ -1,11 +1,15 @@
-import { registerBidder } from 'src/adapters/bidderFactory';
-import { getTopWindowLocation, parseSizesInput, logError, generateUUID, deepAccess, isEmpty } from '../src/utils';
+import { registerBidder } from '../src/adapters/bidderFactory';
+import { parseSizesInput, logError, generateUUID, isEmpty, deepAccess, logWarn, logMessage } from '../src/utils';
 import { BANNER, VIDEO } from '../src/mediaTypes';
-import find from 'core-js/library/fn/array/find';
+import { config } from '../src/config';
+import { Renderer } from '../src/Renderer';
+import { userSync } from '../src/userSync';
 
 const BIDDER_CODE = 'sonobi';
 const STR_ENDPOINT = 'https://apex.go.sonobi.com/trinity.json';
 const PAGEVIEW_ID = generateUUID();
+const SONOBI_DIGITRUST_KEY = 'fhnS5drwmH';
+const OUTSTREAM_REDNERER_URL = 'https://mtrx.go.sonobi.com/sbi_outstream_renderer.js';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -24,7 +28,7 @@ export const spec = {
    * @param {BidRequest[]} validBidRequests - an array of bids
    * @return {object} ServerRequest - Info describing the request to the server.
    */
-  buildRequests: (validBidRequests) => {
+  buildRequests: (validBidRequests, bidderRequest) => {
     const bids = validBidRequests.map(bid => {
       let slotIdentifier = _validateSlot(bid);
       if (/^[\/]?[\d]+[[\/].+[\/]?]?$/.test(slotIdentifier)) {
@@ -46,22 +50,65 @@ export const spec = {
 
     const payload = {
       'key_maker': JSON.stringify(data),
-      'ref': getTopWindowLocation().host,
+      'ref': bidderRequest.refererInfo.referer,
       's': generateUUID(),
       'pv': PAGEVIEW_ID,
       'vp': _getPlatform(),
       'lib_name': 'prebid',
-      'lib_v': '$prebid.version$'
+      'lib_v': '$prebid.version$',
+      'us': 0,
     };
 
-    if (validBidRequests[0].params.hfa) {
-      payload.hfa = validBidRequests[0].params.hfa;
+    if (config.getConfig('userSync') && config.getConfig('userSync').syncsPerBidder) {
+      payload.us = config.getConfig('userSync').syncsPerBidder;
     }
+
+    // use userSync's internal function to determine if we can drop an iframe sync pixel
+    if (_iframeAllowed()) {
+      payload.ius = 1;
+    } else {
+      payload.ius = 0;
+    }
+
+    if (deepAccess(validBidRequests[0], 'params.hfa')) {
+      payload.hfa = deepAccess(validBidRequests[0], 'params.hfa');
+    } else if (deepAccess(validBidRequests[0], 'userId.pubcid')) {
+      payload.hfa = `PRE-${validBidRequests[0].userId.pubcid}`;
+    } else if (deepAccess(validBidRequests[0], 'crumbs.pubcid')) {
+      payload.hfa = `PRE-${validBidRequests[0].crumbs.pubcid}`;
+    }
+
+    if (deepAccess(validBidRequests[0], 'userId.tdid')) {
+      payload.tdid = validBidRequests[0].userId.tdid;
+    }
+
     if (validBidRequests[0].params.referrer) {
       payload.ref = validBidRequests[0].params.referrer;
     }
 
-    // If there is no key_maker data, then dont make the request.
+    // Apply GDPR parameters to request.
+    if (bidderRequest && bidderRequest.gdprConsent) {
+      payload.gdpr = bidderRequest.gdprConsent.gdprApplies ? 'true' : 'false';
+      if (bidderRequest.gdprConsent.consentString) {
+        payload.consent_string = bidderRequest.gdprConsent.consentString;
+      }
+    }
+
+    const digitrust = _getDigiTrustObject(SONOBI_DIGITRUST_KEY);
+
+    if (digitrust) {
+      payload.digid = digitrust.id;
+      payload.digkeyv = digitrust.keyv;
+    }
+
+    if (validBidRequests[0].schain) {
+      payload.schain = JSON.stringify(validBidRequests[0].schain)
+    }
+    if (deepAccess(validBidRequests[0], 'userId') && Object.keys(validBidRequests[0].userId).length > 0) {
+      payload.userid = JSON.stringify(validBidRequests[0].userId);
+    }
+
+    // If there is no key_maker data, then don't make the request.
     if (isEmpty(data)) {
       return null;
     }
@@ -78,24 +125,31 @@ export const spec = {
    * Unpack the response from the server into a list of bids.
    *
    * @param {*} serverResponse A successful response from the server.
-   * @param {*} bidderRequests - Info describing the request to the server.
+   * @param {*} bidderRequest - Info describing the request to the server.
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
-  interpretResponse: (serverResponse, { bidderRequests }) => {
+  interpretResponse: (serverResponse, bidderRequest) => {
     const bidResponse = serverResponse.body;
     const bidsReturned = [];
-
+    const referrer = bidderRequest.data.ref;
     if (Object.keys(bidResponse.slots).length === 0) {
       return bidsReturned;
     }
 
     Object.keys(bidResponse.slots).forEach(slot => {
-      const bidId = _getBidIdFromTrinityKey(slot);
-      const bidRequest = find(bidderRequests, bidReqest => bidReqest.bidId === bidId);
-      const videoMediaType = deepAccess(bidRequest, 'mediaTypes.video');
-      const mediaType = bidRequest.mediaType || (videoMediaType ? 'video' : null);
-      const createCreative = _creative(mediaType);
       const bid = bidResponse.slots[slot];
+      const bidId = _getBidIdFromTrinityKey(slot);
+      const bidRequest = _findBidderRequest(bidderRequest.bidderRequests, bidId);
+      let mediaType = null;
+      if (bid.sbi_ct === 'video') {
+        mediaType = 'video';
+        const context = deepAccess(bidRequest, 'mediaTypes.video.context');
+        if (context === 'outstream') {
+          mediaType = 'outstream';
+        }
+      }
+
+      const createCreative = _creative(mediaType, referrer);
       if (bid.sbi_aid && bid.sbi_mouse && bid.sbi_size) {
         const [
           width = 1,
@@ -108,7 +162,8 @@ export const spec = {
           height: Number(height),
           ad: createCreative(bidResponse.sbi_dc, bid.sbi_aid),
           ttl: 500,
-          creativeId: bid.sbi_aid,
+          creativeId: bid.sbi_crid || bid.sbi_aid,
+          aid: bid.sbi_aid,
           netRevenue: true,
           currency: 'USD'
         };
@@ -117,13 +172,27 @@ export const spec = {
           bids.dealId = bid.sbi_dozer;
         }
 
-        const creativeType = bid.sbi_ct;
-        if (creativeType && (creativeType === 'video' || creativeType === 'outstream')) {
+        if (mediaType === 'video') {
           bids.mediaType = 'video';
           bids.vastUrl = createCreative(bidResponse.sbi_dc, bid.sbi_aid);
           delete bids.ad;
           delete bids.width;
           delete bids.height;
+        } else if (mediaType === 'outstream' && bidRequest) {
+          bids.mediaType = 'video';
+          bids.vastUrl = createCreative(bidResponse.sbi_dc, bid.sbi_aid);
+          bids.renderer = newRenderer(bidRequest.adUnitCode, bids, deepAccess(
+            bidRequest,
+            'renderer.options'
+          ));
+          let videoSize = deepAccess(bidRequest, 'params.sizes');
+          if (Array.isArray(videoSize) && Array.isArray(videoSize[0])) { // handle case of multiple sizes
+            videoSize = videoSize[0] // Only take the first size for outstream
+          }
+          if (videoSize) {
+            bids.width = videoSize[0];
+            bids.height = videoSize[1];
+          }
         }
         bidsReturned.push(bids);
       }
@@ -144,12 +213,18 @@ export const spec = {
           });
         });
       }
-    } catch (e) {
-      logError(e)
-    }
+    } catch (e) {}
     return syncs;
   }
 };
+
+function _findBidderRequest(bidderRequests, bidId) {
+  for (let i = 0; i < bidderRequests.length; i++) {
+    if (bidderRequests[i].bidId === bidId) {
+      return bidderRequests[i];
+    }
+  }
+}
 
 function _validateSize (bid) {
   if (bid.params.sizes) {
@@ -172,16 +247,16 @@ function _validateFloor (bid) {
   return '';
 }
 
-const _creative = (mediaType) => (sbi_dc, sbi_aid) => {
-  if (mediaType === 'video') {
-    return _videoCreative(sbi_dc, sbi_aid)
+const _creative = (mediaType, referer) => (sbiDc, sbiAid) => {
+  if (mediaType === 'video' || mediaType === 'outstream') {
+    return _videoCreative(sbiDc, sbiAid, referer)
   }
-  const src = 'https://' + sbi_dc + 'apex.go.sonobi.com/sbi.js?aid=' + sbi_aid + '&as=null' + '&ref=' + getTopWindowLocation().host;
+  const src = `https://${sbiDc}apex.go.sonobi.com/sbi.js?aid=${sbiAid}&as=null&ref=${encodeURIComponent(referer)}`;
   return '<script type="text/javascript" src="' + src + '"></script>';
 };
 
-function _videoCreative(sbi_dc, sbi_aid) {
-  return `https://${sbi_dc}apex.go.sonobi.com/vast.xml?vid=${sbi_aid}&ref=${getTopWindowLocation().host}`
+function _videoCreative(sbiDc, sbiAid, referer) {
+  return `https://${sbiDc}apex.go.sonobi.com/vast.xml?vid=${sbiAid}&ref=${encodeURIComponent(referer)}`
 }
 
 function _getBidIdFromTrinityKey (key) {
@@ -212,6 +287,67 @@ export function _getPlatform(context = window) {
     return 'tablet'
   }
   return 'desktop';
+}
+
+// https://github.com/digi-trust/dt-cdn/wiki/Integration-Guide
+function _getDigiTrustObject(key) {
+  function getDigiTrustId() {
+    let digiTrustUser = window.DigiTrust && (config.getConfig('digiTrustId') || window.DigiTrust.getUser({member: key}));
+    return (digiTrustUser && digiTrustUser.success && digiTrustUser.identity) || null;
+  }
+  let digiTrustId = getDigiTrustId();
+  // Verify there is an ID and this user has not opted out
+  if (!digiTrustId || (digiTrustId.privacy && digiTrustId.privacy.optout)) {
+    return null;
+  }
+  return digiTrustId;
+}
+
+function newRenderer(adUnitCode, bid, rendererOptions = {}) {
+  const renderer = Renderer.install({
+    id: bid.aid,
+    url: OUTSTREAM_REDNERER_URL,
+    config: rendererOptions,
+    loaded: false,
+    adUnitCode
+  });
+
+  try {
+    renderer.setRender(outstreamRender);
+  } catch (err) {
+    logWarn('Prebid Error calling setRender on renderer', err);
+  }
+
+  renderer.setEventHandlers({
+    impression: () => logMessage('Sonobi outstream video impression event'),
+    loaded: () => logMessage('Sonobi outstream video loaded event'),
+    ended: () => {
+      logMessage('Sonobi outstream renderer video event');
+      // document.querySelector(`#${adUnitCode}`).style.display = 'none';
+    }
+  });
+  return renderer;
+}
+
+function outstreamRender(bid) {
+  // push to render queue because SbiOutstreamRenderer may not be loaded yet
+  bid.renderer.push(() => {
+    const [
+      width,
+      height
+    ] = bid.getSize().split('x');
+    const renderer = new window.SbiOutstreamRenderer();
+    renderer.init({
+      vastUrl: bid.vastUrl,
+      height,
+      width,
+    });
+    renderer.setRootElement(bid.adUnitCode);
+  });
+}
+
+function _iframeAllowed() {
+  return userSync.canBidderRegisterSync('iframe', BIDDER_CODE);
 }
 
 registerBidder(spec);

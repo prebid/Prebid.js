@@ -1,6 +1,6 @@
-import * as utils from 'src/utils';
-import {registerBidder} from 'src/adapters/bidderFactory';
-import { config } from 'src/config';
+import * as utils from '../src/utils';
+import {registerBidder} from '../src/adapters/bidderFactory';
+import { config } from '../src/config';
 const BIDDER_CODE = 'visx';
 const ENDPOINT_URL = '//t.visx.net/hb';
 const TIME_TO_LIVE = 360;
@@ -22,38 +22,73 @@ export const spec = {
   isBidRequestValid: function(bid) {
     return !!bid.params.uid;
   },
-  buildRequests: function(validBidRequests) {
+  buildRequests: function(validBidRequests, bidderRequest) {
     const auids = [];
     const bidsMap = {};
+    const slotsMapByUid = {};
+    const sizeMap = {};
     const bids = validBidRequests || [];
     const currency =
       config.getConfig(`currency.bidderCurrencyDefault.${BIDDER_CODE}`) ||
       config.getConfig('currency.adServerCurrency') ||
       DEFAULT_CUR;
-    let priceType = 'net';
     let reqId;
 
     bids.forEach(bid => {
-      if (bid.params.priceType === 'gross') {
-        priceType = 'gross';
-      }
-      if (!bidsMap[bid.params.uid]) {
-        bidsMap[bid.params.uid] = [bid];
-        auids.push(bid.params.uid);
-      } else {
-        bidsMap[bid.params.uid].push(bid);
-      }
       reqId = bid.bidderRequestId;
+      const {params: {uid}, adUnitCode} = bid;
+      auids.push(uid);
+      const sizesId = utils.parseSizesInput(bid.sizes);
+
+      if (!slotsMapByUid[uid]) {
+        slotsMapByUid[uid] = {};
+      }
+      const slotsMap = slotsMapByUid[uid];
+      if (!slotsMap[adUnitCode]) {
+        slotsMap[adUnitCode] = {adUnitCode, bids: [bid], parents: []};
+      } else {
+        slotsMap[adUnitCode].bids.push(bid);
+      }
+      const slot = slotsMap[adUnitCode];
+
+      sizesId.forEach((sizeId) => {
+        sizeMap[sizeId] = true;
+        if (!bidsMap[uid]) {
+          bidsMap[uid] = {};
+        }
+
+        if (!bidsMap[uid][sizeId]) {
+          bidsMap[uid][sizeId] = [slot];
+        } else {
+          bidsMap[uid][sizeId].push(slot);
+        }
+        slot.parents.push({parent: bidsMap[uid], key: sizeId, uid});
+      });
     });
 
     const payload = {
-      u: utils.getTopWindowUrl(),
-      pt: priceType,
+      pt: 'net',
       auids: auids.join(','),
-      test: 1,
+      sizes: utils.getKeys(sizeMap).join(','),
       r: reqId,
       cur: currency,
+      wrapperType: 'Prebid_js',
+      wrapperVersion: '$prebid.version$'
     };
+
+    if (bidderRequest) {
+      if (bidderRequest.refererInfo && bidderRequest.refererInfo.referer) {
+        payload.u = encodeURIComponent(bidderRequest.refererInfo.referer);
+      }
+      if (bidderRequest.gdprConsent) {
+        if (bidderRequest.gdprConsent.consentString) {
+          payload.gdpr_consent = bidderRequest.gdprConsent.consentString;
+        }
+        payload.gdpr_applies =
+            (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean')
+              ? Number(bidderRequest.gdprConsent.gdprApplies) : 1;
+      }
+    }
 
     return {
       method: 'GET',
@@ -65,8 +100,8 @@ export const spec = {
   interpretResponse: function(serverResponse, bidRequest) {
     serverResponse = serverResponse && serverResponse.body;
     const bidResponses = [];
+    const bidsWithoutSizeMatching = [];
     const bidsMap = bidRequest.bidsMap;
-    const priceType = bidRequest.data.pt;
     const currency = bidRequest.data.cur;
 
     let errorMessage;
@@ -78,17 +113,29 @@ export const spec = {
 
     if (!errorMessage && serverResponse.seatbid) {
       serverResponse.seatbid.forEach(respItem => {
-        _addBidResponse(_getBidFromResponse(respItem), bidsMap, priceType, currency, bidResponses);
+        _addBidResponse(_getBidFromResponse(respItem), bidsMap, currency, bidResponses, bidsWithoutSizeMatching);
+      });
+      bidsWithoutSizeMatching.forEach(serverBid => {
+        _addBidResponse(serverBid, bidsMap, currency, bidResponses);
       });
     }
     if (errorMessage) utils.logError(errorMessage);
     return bidResponses;
   },
-  getUserSyncs: function(syncOptions) {
+  getUserSyncs: function(syncOptions, serverResponses, gdprConsent) {
     if (syncOptions.pixelEnabled) {
+      var query = [];
+      if (gdprConsent) {
+        if (gdprConsent.consentString) {
+          query.push('gdpr_consent=' + encodeURIComponent(gdprConsent.consentString));
+        }
+        query.push('gdpr_applies=' + encodeURIComponent(
+          (typeof gdprConsent.gdprApplies === 'boolean')
+            ? Number(gdprConsent.gdprApplies) : 1));
+      }
       return [{
         type: 'image',
-        url: ADAPTER_SYNC_URL
+        url: ADAPTER_SYNC_URL + (query.length ? '?' + query.join('&') : '')
       }];
     }
   }
@@ -105,7 +152,7 @@ function _getBidFromResponse(respItem) {
   return respItem && respItem.bid && respItem.bid[0];
 }
 
-function _addBidResponse(serverBid, bidsMap, priceType, currency, bidResponses) {
+function _addBidResponse(serverBid, bidsMap, currency, bidResponses, bidsWithoutSizeMatching) {
   if (!serverBid) return;
   let errorMessage;
   if (!serverBid.auid) errorMessage = LOG_ERROR_MESS.noAuid + JSON.stringify(serverBid);
@@ -113,21 +160,42 @@ function _addBidResponse(serverBid, bidsMap, priceType, currency, bidResponses) 
   else {
     const awaitingBids = bidsMap[serverBid.auid];
     if (awaitingBids) {
-      awaitingBids.forEach(bid => {
-        const bidResponse = {
+      const sizeId = bidsWithoutSizeMatching ? `${serverBid.w}x${serverBid.h}` : Object.keys(awaitingBids)[0];
+      if (awaitingBids[sizeId]) {
+        const slot = awaitingBids[sizeId][0];
+
+        const bid = slot.bids.shift();
+        bidResponses.push({
           requestId: bid.bidId,
+          bidderCode: spec.code,
           cpm: serverBid.price,
           width: serverBid.w,
           height: serverBid.h,
           creativeId: serverBid.auid,
           currency: currency || DEFAULT_CUR,
-          netRevenue: priceType !== 'gross',
+          netRevenue: true,
           ttl: TIME_TO_LIVE,
           ad: serverBid.adm,
           dealId: serverBid.dealid
-        };
-        bidResponses.push(bidResponse);
-      });
+        });
+
+        if (!slot.bids.length) {
+          slot.parents.forEach(({parent, key, uid}) => {
+            const index = parent[key].indexOf(slot);
+            if (index > -1) {
+              parent[key].splice(index, 1);
+            }
+            if (!parent[key].length) {
+              delete parent[key];
+              if (!utils.getKeys(parent).length) {
+                delete bidsMap[uid];
+              }
+            }
+          });
+        }
+      } else {
+        bidsWithoutSizeMatching && bidsWithoutSizeMatching.push(serverBid);
+      }
     } else {
       errorMessage = LOG_ERROR_MESS.noPlacementCode + serverBid.auid;
     }

@@ -1,17 +1,16 @@
-import { version } from '../package.json';
-import { config } from 'src/config';
-import { registerBidder } from 'src/adapters/bidderFactory';
+import { config } from '../src/config';
+import { registerBidder } from '../src/adapters/bidderFactory';
 import {
   cookiesAreEnabled,
   parseQueryStringParameters,
   parseSizesInput,
   getTopWindowReferrer
-} from 'src/utils';
+} from '../src/utils';
 import includes from 'core-js/library/fn/array/includes';
 import find from 'core-js/library/fn/array/find';
 
 const BIDDER_CODE = 'widespace';
-const WS_ADAPTER_VERSION = '2.0.0';
+const WS_ADAPTER_VERSION = '2.0.1';
 const LOCAL_STORAGE_AVAILABLE = window.localStorage;
 const COOKIE_ENABLED = cookiesAreEnabled();
 const LS_KEYS = {
@@ -34,11 +33,11 @@ export const spec = {
     return false;
   },
 
-  buildRequests: function(validBidRequests) {
+  buildRequests: function(validBidRequests, bidderRequest) {
     let serverRequests = [];
     const REQUEST_SERVER_URL = getEngineUrl();
     const DEMO_DATA_PARAMS = ['gender', 'country', 'region', 'postal', 'city', 'yob'];
-    const PERF_DATA = getData(LS_KEYS.PERF_DATA).map(perf_data => JSON.parse(perf_data));
+    const PERF_DATA = getData(LS_KEYS.PERF_DATA).map(perfData => JSON.parse(perfData));
     const CUST_DATA = getData(LS_KEYS.CUST_DATA, false)[0];
     const LC_UID = getLcuid();
 
@@ -60,12 +59,13 @@ export const spec = {
         'sid': bid.params.sid,
         'lcuid': LC_UID,
         'vol': isInHostileIframe ? '' : visibleOnLoad(document.getElementById(bid.adUnitCode)),
+        'gdprCmp': bidderRequest && bidderRequest.gdprConsent ? 1 : 0,
         'hb': '1',
         'hb.cd': CUST_DATA ? encodedParamValue(CUST_DATA) : '',
         'hb.floor': bid.bidfloor || '',
         'hb.spb': i === 0 ? pixelSyncPossibility() : -1,
         'hb.ver': WS_ADAPTER_VERSION,
-        'hb.name': `prebidjs-${version}`,
+        'hb.name': 'prebidjs-$prebid.version$',
         'hb.bidId': bid.bidId,
         'hb.sizes': parseSizesInput(bid.sizes).join(','),
         'hb.currency': bid.params.cur || bid.params.currency || ''
@@ -100,6 +100,15 @@ export const spec = {
           val => includes(val, 'WS_DEBUG_FORCEADID')
         ) || '').split('=')[1];
         data.forceAdId = DEBUG_AD;
+      }
+
+      // GDPR Consent info
+      if (data.gdprCmp) {
+        const { gdprApplies, consentString, vendorData } = bidderRequest.gdprConsent;
+        const hasGlobalScope = vendorData && vendorData.hasGlobalScope;
+        data.gdprApplies = gdprApplies ? 1 : gdprApplies === undefined ? '' : 0;
+        data.gdprConsentData = consentString;
+        data.gdprHasGlobalScope = hasGlobalScope ? 1 : hasGlobalScope === undefined ? '' : 0;
       }
 
       // Remove empty params

@@ -1,5 +1,6 @@
 import { loadScript } from './adloader';
 import * as utils from './utils';
+import find from 'core-js/library/fn/array/find';
 
 /**
  * @typedef {object} Renderer
@@ -10,7 +11,7 @@ import * as utils from './utils';
  */
 
 export function Renderer(options) {
-  const { url, config, id, callback, loaded } = options;
+  const { url, config, id, callback, loaded, adUnitCode } = options;
   this.url = url;
   this.config = config;
   this.handlers = {};
@@ -35,12 +36,16 @@ export function Renderer(options) {
     this.process();
   });
 
-  // we expect to load a renderer url once only so cache the request to load script
-  loadScript(url, this.callback, true);
+  if (!isRendererDefinedOnAdUnit(adUnitCode)) {
+    // we expect to load a renderer url once only so cache the request to load script
+    loadScript(url, this.callback, true);
+  } else {
+    utils.logWarn(`External Js not loaded by Renderer since renderer url and callback is already defined on adUnit ${adUnitCode}`);
+  }
 }
 
-Renderer.install = function({ url, config, id, callback, loaded }) {
-  return new Renderer({ url, config, id, callback, loaded });
+Renderer.install = function({ url, config, id, callback, loaded, adUnitCode }) {
+  return new Renderer({ url, config, id, callback, loaded, adUnitCode });
 };
 
 Renderer.prototype.getConfig = function() {
@@ -76,3 +81,29 @@ Renderer.prototype.process = function() {
     }
   }
 };
+
+/**
+ * Checks whether creative rendering should be done by Renderer or not.
+ * @param {Object} renderer Renderer object installed by adapter
+ * @returns {Boolean}
+ */
+export function isRendererRequired(renderer) {
+  return !!(renderer && renderer.url);
+}
+
+/**
+ * Render the bid returned by the adapter
+ * @param {Object} renderer Renderer object installed by adapter
+ * @param {Object} bid Bid response
+ */
+export function executeRenderer(renderer, bid) {
+  renderer.render(bid);
+}
+
+function isRendererDefinedOnAdUnit(adUnitCode) {
+  const adUnits = $$PREBID_GLOBAL$$.adUnits;
+  const adUnit = find(adUnits, adUnit => {
+    return adUnit.code === adUnitCode;
+  });
+  return !!(adUnit && adUnit.renderer && adUnit.renderer.url && adUnit.renderer.render);
+}

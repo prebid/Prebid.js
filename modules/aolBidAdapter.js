@@ -1,8 +1,6 @@
-import * as utils from 'src/utils';
-import { registerBidder } from 'src/adapters/bidderFactory';
-import { config } from 'src/config';
-import { EVENTS } from 'src/constants.json';
-import { BANNER } from 'src/mediaTypes';
+import * as utils from '../src/utils';
+import { registerBidder } from '../src/adapters/bidderFactory';
+import { BANNER } from '../src/mediaTypes';
 
 const AOL_BIDDERS_CODES = {
   AOL: 'aol',
@@ -31,37 +29,23 @@ const SYNC_TYPES = {
   }
 };
 
-const pubapiTemplate = template`//${'host'}/pubapi/3.0/${'network'}/${'placement'}/${'pageid'}/${'sizeid'}/ADTECH;v=2;cmd=bid;cors=yes;alias=${'alias'};misc=${'misc'}${'bidfloor'}${'keyValues'}${'consentData'}`;
-const nexageBaseApiTemplate = template`//${'host'}/bidRequest?`;
+const pubapiTemplate = template`${'host'}/pubapi/3.0/${'network'}/${'placement'}/${'pageid'}/${'sizeid'}/ADTECH;v=2;cmd=bid;cors=yes;alias=${'alias'};misc=${'misc'};${'dynamicParams'}`;
+const nexageBaseApiTemplate = template`${'host'}/bidRequest?`;
 const nexageGetApiTemplate = template`dcn=${'dcn'}&pos=${'pos'}&cmd=bid${'dynamicParams'}`;
 const MP_SERVER_MAP = {
   us: 'adserver-us.adtech.advertising.com',
   eu: 'adserver-eu.adtech.advertising.com',
   as: 'adserver-as.adtech.advertising.com'
 };
-const NEXAGE_SERVER = 'hb.nexage.com';
+const NEXAGE_SERVER = 'c2shb.ssp.yahoo.com';
 const ONE_DISPLAY_TTL = 60;
 const ONE_MOBILE_TTL = 3600;
+const DEFAULT_PROTO = 'https';
 
-$$PREBID_GLOBAL$$.aolGlobals = {
-  pixelsDropped: false
+const NUMERIC_VALUES = {
+  TRUE: 1,
+  FALSE: 0
 };
-
-let showCpmAdjustmentWarning = (function() {
-  let showCpmWarning = true;
-
-  return function() {
-    let bidderSettings = $$PREBID_GLOBAL$$.bidderSettings;
-    if (showCpmWarning && bidderSettings && bidderSettings.aol &&
-      typeof bidderSettings.aol.bidCpmAdjustment === 'function') {
-      utils.logWarn(
-        'bidCpmAdjustment is active for the AOL adapter. ' +
-        'As of Prebid 0.14, AOL can bid in net – please contact your accounts team to enable.'
-      );
-      showCpmWarning = false; // warning is shown at most once
-    }
-  };
-})();
 
 function template(strings, ...keys) {
   return function(...values) {
@@ -73,46 +57,6 @@ function template(strings, ...keys) {
     });
     return result.join('');
   };
-}
-
-function parsePixelItems(pixels) {
-  let itemsRegExp = /(img|iframe)[\s\S]*?src\s*=\s*("|')(.*?)\2/gi;
-  let tagNameRegExp = /\w*(?=\s)/;
-  let srcRegExp = /src=("|')(.*?)\1/;
-  let pixelsItems = [];
-
-  if (pixels) {
-    let matchedItems = pixels.match(itemsRegExp);
-    if (matchedItems) {
-      matchedItems.forEach(item => {
-        let tagName = item.match(tagNameRegExp)[0];
-        let url = item.match(srcRegExp)[2];
-
-        if (tagName && tagName) {
-          pixelsItems.push({
-            type: tagName === SYNC_TYPES.IMAGE.TAG ? SYNC_TYPES.IMAGE.TYPE : SYNC_TYPES.IFRAME.TYPE,
-            url: url
-          });
-        }
-      });
-    }
-  }
-
-  return pixelsItems;
-}
-
-function formatMarketplaceBidFloor(bidFloor) {
-  return (typeof bidFloor !== 'undefined') ? `;bidfloor=${bidFloor.toString()}` : '';
-}
-
-function formatMarketplaceKeyValues(keyValues) {
-  let formattedKeyValues = '';
-
-  utils._each(keyValues, (value, key) => {
-    formattedKeyValues += `;kv${key}=${encodeURIComponent(value)}`;
-  });
-
-  return formattedKeyValues;
 }
 
 function _isMarketplaceBidder(bidder) {
@@ -173,8 +117,6 @@ export const spec = {
     });
   },
   interpretResponse({body}, bidRequest) {
-    showCpmAdjustmentWarning();
-
     if (!body) {
       utils.logError('Empty bid response', bidRequest.bidderCode, body);
     } else {
@@ -185,15 +127,11 @@ export const spec = {
       }
     }
   },
-  getUserSyncs(options, bidResponses) {
-    let bidResponse = bidResponses[0];
+  getUserSyncs(options, serverResponses) {
+    const bidResponse = !utils.isEmpty(serverResponses) && serverResponses[0].body;
 
-    if (config.getConfig('aol.userSyncOn') === EVENTS.BID_RESPONSE) {
-      if (!$$PREBID_GLOBAL$$.aolGlobals.pixelsDropped && bidResponse && bidResponse.ext && bidResponse.ext.pixels) {
-        $$PREBID_GLOBAL$$.aolGlobals.pixelsDropped = true;
-
-        return parsePixelItems(bidResponse.ext.pixels);
-      }
+    if (bidResponse && bidResponse.ext && bidResponse.ext.pixels) {
+      return this.parsePixelItems(bidResponse.ext.pixels);
     }
 
     return [];
@@ -261,18 +199,16 @@ export const spec = {
     // Set region param, used by AOL analytics.
     params.region = regionParam;
 
-    return pubapiTemplate({
+    return this.applyProtocol(pubapiTemplate({
       host: server,
       network: params.network,
       placement: parseInt(params.placement),
       pageid: params.pageId || 0,
       sizeid: params.sizeId || 0,
       alias: params.alias || utils.getUniqueIdentifierStr(),
-      misc: new Date().getTime(), // cache busting,
-      bidfloor: formatMarketplaceBidFloor(params.bidFloor),
-      keyValues: formatMarketplaceKeyValues(params.keyValues),
-      consentData: this.formatMarketplaceConsentData(consentData)
-    });
+      misc: new Date().getTime(), // cache busting
+      dynamicParams: this.formatMarketplaceDynamicParams(params, consentData)
+    }));
   },
   buildOneMobileGetUrl(bid, consentData) {
     let {dcn, pos, ext} = bid.params;
@@ -284,19 +220,39 @@ export const spec = {
     return nexageApi;
   },
   buildOneMobileBaseUrl(bid) {
-    return nexageBaseApiTemplate({
+    return this.applyProtocol(nexageBaseApiTemplate({
       host: bid.params.host || NEXAGE_SERVER
+    }));
+  },
+  applyProtocol(url) {
+    if (/^https?:\/\//i.test(url)) {
+      return url;
+    }
+    return (url.indexOf('//') === 0) ? `${DEFAULT_PROTO}:${url}` : `${DEFAULT_PROTO}://${url}`;
+  },
+  formatMarketplaceDynamicParams(params = {}, consentData) {
+    let queryParams = {};
+
+    if (params.bidFloor) {
+      queryParams.bidfloor = params.bidFloor;
+    }
+
+    Object.assign(queryParams, this.formatKeyValues(params.keyValues));
+    Object.assign(queryParams, this.formatConsentData(consentData));
+
+    let paramsFormatted = '';
+    utils._each(queryParams, (value, key) => {
+      paramsFormatted += `${key}=${encodeURIComponent(value)};`;
     });
+
+    return paramsFormatted;
   },
   formatOneMobileDynamicParams(params = {}, consentData) {
     if (this.isSecureProtocol()) {
-      params.secure = 1;
+      params.secure = NUMERIC_VALUES.TRUE;
     }
 
-    if (this.isConsentRequired(consentData)) {
-      params.euconsent = consentData.consentString;
-      params.gdpr = 1;
-    }
+    Object.assign(params, this.formatConsentData(consentData));
 
     let paramsFormatted = '';
     utils._each(params, (value, key) => {
@@ -312,27 +268,72 @@ export const spec = {
     };
 
     if (this.isConsentRequired(consentData)) {
-      openRtbObject.user = {
-        ext: {
-          consent: consentData.consentString
-        }
-      };
       openRtbObject.regs = {
         ext: {
-          gdpr: 1
+          gdpr: NUMERIC_VALUES.TRUE
         }
       };
+
+      if (consentData.consentString) {
+        openRtbObject.user = {
+          ext: {
+            consent: consentData.consentString
+          }
+        };
+      }
     }
 
     return openRtbObject;
   },
   isConsentRequired(consentData) {
-    return !!(consentData && consentData.consentString && consentData.gdprApplies);
+    return !!(consentData && consentData.gdprApplies);
   },
-  formatMarketplaceConsentData(consentData) {
-    let consentRequired = this.isConsentRequired(consentData);
+  formatKeyValues(keyValues) {
+    let keyValuesHash = {};
 
-    return consentRequired ? `;euconsent=${consentData.consentString};gdpr=1` : '';
+    utils._each(keyValues, (value, key) => {
+      keyValuesHash[`kv${key}`] = value;
+    });
+
+    return keyValuesHash;
+  },
+  formatConsentData(consentData) {
+    let params = {};
+
+    if (this.isConsentRequired(consentData)) {
+      params.gdpr = NUMERIC_VALUES.TRUE;
+
+      if (consentData.consentString) {
+        params.euconsent = consentData.consentString;
+      }
+    }
+
+    return params;
+  },
+  parsePixelItems(pixels) {
+    let itemsRegExp = /(img|iframe)[\s\S]*?src\s*=\s*("|')(.*?)\2/gi;
+    let tagNameRegExp = /\w*(?=\s)/;
+    let srcRegExp = /src=("|')(.*?)\1/;
+    let pixelsItems = [];
+
+    if (pixels) {
+      let matchedItems = pixels.match(itemsRegExp);
+      if (matchedItems) {
+        matchedItems.forEach(item => {
+          let tagName = item.match(tagNameRegExp)[0];
+          let url = item.match(srcRegExp)[2];
+
+          if (tagName && tagName) {
+            pixelsItems.push({
+              type: tagName === SYNC_TYPES.IMAGE.TAG ? SYNC_TYPES.IMAGE.TYPE : SYNC_TYPES.IFRAME.TYPE,
+              url: url
+            });
+          }
+        });
+      }
+    }
+
+    return pixelsItems;
   },
 
   _parseBidResponse(response, bidRequest) {
@@ -357,38 +358,20 @@ export const spec = {
       }
     }
 
-    let bidResponse = {
+    return {
       bidderCode: bidRequest.bidderCode,
       requestId: bidRequest.bidId,
       ad: bidData.adm,
       cpm: cpm,
       width: bidData.w,
       height: bidData.h,
-      creativeId: bidData.crid,
+      creativeId: bidData.crid || 0,
       pubapiId: response.id,
-      currency: response.cur,
+      currency: response.cur || 'USD',
       dealId: bidData.dealid,
       netRevenue: true,
       ttl: bidRequest.ttl
     };
-
-    if (response.ext && response.ext.pixels) {
-      if (config.getConfig('aol.userSyncOn') !== EVENTS.BID_RESPONSE) {
-        bidResponse.ad += this.formatPixels(response.ext.pixels);
-      }
-    }
-
-    return bidResponse;
-  },
-  formatPixels(pixels) {
-    let formattedPixels = pixels.replace(/<\/?script( type=('|")text\/javascript('|")|)?>/g, '');
-
-    return '<script>var w=window,prebid;' +
-      'for(var i=0;i<10;i++){w = w.parent;prebid=w.$$PREBID_GLOBAL$$;' +
-      'if(prebid && prebid.aolGlobals && !prebid.aolGlobals.pixelsDropped){' +
-      'try{prebid.aolGlobals.pixelsDropped=true;' + formattedPixels + 'break;}' +
-      'catch(e){continue;}' +
-      '}}</script>';
   },
   isOneMobileBidder: _isOneMobileBidder,
   isSecureProtocol() {

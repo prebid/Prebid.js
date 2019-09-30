@@ -1,9 +1,9 @@
-import adapter from 'src/AnalyticsAdapter';
-import adaptermanager from 'src/adaptermanager';
-import CONSTANTS from 'src/constants.json';
-import { ajax } from 'src/ajax';
-import { config } from 'src/config';
-import * as utils from 'src/utils';
+import adapter from '../src/AnalyticsAdapter';
+import adapterManager from '../src/adapterManager';
+import CONSTANTS from '../src/constants.json';
+import { ajax } from '../src/ajax';
+import { config } from '../src/config';
+import * as utils from '../src/utils';
 
 const {
   EVENTS: {
@@ -28,40 +28,13 @@ config.getConfig('s2sConfig', ({s2sConfig}) => {
 });
 
 export const SEND_TIMEOUT = 3000;
-const INTEGRATION = 'pbjs';
+const DEFAULT_INTEGRATION = 'pbjs';
 
 const cache = {
   auctions: {},
   targeting: {},
   timeouts: {},
 };
-
-// basically lodash#pick that also allows transformation functions and property renaming
-function _pick(obj, properties) {
-  return properties.reduce((newObj, prop, i) => {
-    if (typeof prop === 'function') {
-      return newObj;
-    }
-
-    let newProp = prop;
-    let match = prop.match(/^(.+?)\sas\s(.+?)$/i);
-
-    if (match) {
-      prop = match[1];
-      newProp = match[2];
-    }
-
-    let value = obj[prop];
-    if (typeof properties[i + 1] === 'function') {
-      value = properties[i + 1](value, newObj);
-    }
-    if (typeof value !== 'undefined') {
-      newObj[newProp] = value;
-    }
-
-    return newObj;
-  }, {});
-}
 
 function stringProperties(obj) {
   return Object.keys(obj).reduce((newObj, prop) => {
@@ -98,7 +71,7 @@ function formatSource(src) {
 
 function sendMessage(auctionId, bidWonId) {
   function formatBid(bid) {
-    return _pick(bid, [
+    return utils.pick(bid, [
       'bidder',
       'bidId',
       'status',
@@ -113,7 +86,7 @@ function sendMessage(auctionId, bidWonId) {
       'clientLatencyMillis',
       'serverLatencyMillis',
       'params',
-      'bidResponse', bidResponse => bidResponse ? _pick(bidResponse, [
+      'bidResponse', bidResponse => bidResponse ? utils.pick(bidResponse, [
         'bidPriceUSD',
         'dealId',
         'dimensions',
@@ -122,7 +95,7 @@ function sendMessage(auctionId, bidWonId) {
     ]);
   }
   function formatBidWon(bid) {
-    return Object.assign(formatBid(bid), _pick(bid.adUnit, [
+    return Object.assign(formatBid(bid), utils.pick(bid.adUnit, [
       'adUnitCode',
       'transactionId',
       'videoAdFormat', () => bid.videoAdFormat,
@@ -131,23 +104,29 @@ function sendMessage(auctionId, bidWonId) {
       adserverTargeting: stringProperties(cache.targeting[bid.adUnit.adUnitCode] || {}),
       bidwonStatus: 'success', // hard-coded for now
       accountId,
+      siteId: bid.siteId,
+      zoneId: bid.zoneId,
       samplingFactor
     });
   }
   let referrer = config.getConfig('pageUrl') || utils.getTopWindowUrl();
   let message = {
     eventTimeMillis: Date.now(),
-    integration: INTEGRATION,
+    integration: config.getConfig('rubicon.int_type') || DEFAULT_INTEGRATION,
     version: '$prebid.version$',
     referrerUri: referrer
   };
+  const wrapperName = config.getConfig('rubicon.wrapperName');
+  if (wrapperName) {
+    message.wrapperName = wrapperName;
+  }
   let auctionCache = cache.auctions[auctionId];
   if (auctionCache && !auctionCache.sent) {
     let adUnitMap = Object.keys(auctionCache.bids).reduce((adUnits, bidId) => {
       let bid = auctionCache.bids[bidId];
       let adUnit = adUnits[bid.adUnit.adUnitCode];
       if (!adUnit) {
-        adUnit = adUnits[bid.adUnit.adUnitCode] = _pick(bid.adUnit, [
+        adUnit = adUnits[bid.adUnit.adUnitCode] = utils.pick(bid.adUnit, [
           'adUnitCode',
           'transactionId',
           'mediaTypes',
@@ -155,6 +134,15 @@ function sendMessage(auctionId, bidWonId) {
           'adserverTargeting', () => stringProperties(cache.targeting[bid.adUnit.adUnitCode] || {})
         ]);
         adUnit.bids = [];
+      }
+
+      // Add site and zone id if not there and if we found a rubicon bidder
+      if ((!adUnit.siteId || !adUnit.zoneId) && rubiconAliases.indexOf(bid.bidder) !== -1) {
+        if (utils.deepAccess(bid, 'params.accountId') == accountId) {
+          adUnit.accountId = parseInt(accountId);
+          adUnit.siteId = parseInt(utils.deepAccess(bid, 'params.siteId'));
+          adUnit.zoneId = parseInt(utils.deepAccess(bid, 'params.zoneId'));
+        }
       }
 
       if (bid.videoAdFormat && !adUnit.videoAdFormat) {
@@ -171,6 +159,13 @@ function sendMessage(auctionId, bidWonId) {
 
       return adUnits;
     }, {});
+
+    // We need to mark each cached bid response with its appropriate rubicon site-zone id
+    // This allows the bidWon events to have these params even in the case of a delayed render
+    Object.keys(auctionCache.bids).forEach(function (bidId) {
+      let adCode = auctionCache.bids[bidId].adUnit.adUnitCode;
+      Object.assign(auctionCache.bids[bidId], utils.pick(adUnitMap[adCode], ['accountId', 'siteId', 'zoneId']));
+    });
 
     let auction = {
       clientTimeoutMillis: auctionCache.timeout,
@@ -214,22 +209,30 @@ function sendMessage(auctionId, bidWonId) {
   );
 }
 
-function parseBidResponse(bid) {
-  return _pick(bid, [
-    'getCpmInNewCurrency as bidPriceUSD', (fn) => {
-      if (bid.currency === 'USD') {
-        return Number(bid.cpm);
-      }
-      // use currency conversion function if present
-      if (typeof fn === 'function') {
-        return Number(fn('USD'));
-      }
-      // TODO: throw error or something if not USD and currency module wasn't present?
-    },
+function getBidPrice(bid) {
+  if (typeof bid.currency === 'string' && bid.currency.toUpperCase() === 'USD') {
+    return Number(bid.cpm);
+  }
+  // use currency conversion function if present
+  if (typeof bid.getCpmInNewCurrency === 'function') {
+    return Number(bid.getCpmInNewCurrency('USD'));
+  }
+  utils.logWarn('Rubicon Analytics Adapter: Could not determine the bidPriceUSD of the bid ', bid);
+}
+
+export function parseBidResponse(bid, previousBidResponse) {
+  // The current bidResponse for this matching requestId/bidRequestId
+  let responsePrice = getBidPrice(bid)
+  // we need to compare it with the previous one (if there was one)
+  if (previousBidResponse && previousBidResponse.bidPriceUSD > responsePrice) {
+    return previousBidResponse;
+  }
+  return utils.pick(bid, [
+    'bidPriceUSD', () => responsePrice,
     'dealId',
     'status',
     'mediaType',
-    'dimensions', () => _pick(bid, [
+    'dimensions', () => utils.pick(bid, [
       'width',
       'height'
     ])
@@ -238,6 +241,21 @@ function parseBidResponse(bid) {
 
 let samplingFactor = 1;
 let accountId;
+// List of known rubicon aliases
+// This gets updated on auction init to account for any custom aliases present
+let rubiconAliases = ['rubicon'];
+
+/*
+  Checks the alias registry for any entries of the rubicon bid adapter.
+  adds to the rubiconAliases list if found
+*/
+function setRubiconAliases(aliasRegistry) {
+  Object.keys(aliasRegistry).forEach(function (alias) {
+    if (aliasRegistry[alias] === 'rubicon') {
+      rubiconAliases.push(alias);
+    }
+  });
+}
 
 let baseAdapter = adapter({analyticsType: 'endpoint'});
 let rubiconAdapter = Object.assign({}, baseAdapter, {
@@ -288,7 +306,9 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
   track({eventType, args}) {
     switch (eventType) {
       case AUCTION_INIT:
-        let cacheEntry = _pick(args, [
+        // set the rubicon aliases
+        setRubiconAliases(adapterManager.aliasRegistry);
+        let cacheEntry = utils.pick(args, [
           'timestamp',
           'timeout'
         ]);
@@ -301,7 +321,7 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
           // mark adUnits we expect bidWon events for
           cache.auctions[args.auctionId].bidsWon[bid.adUnitCode] = false;
 
-          memo[bid.bidId] = _pick(bid, [
+          memo[bid.bidId] = utils.pick(bid, [
             'bidder', bidder => bidder.toLowerCase(),
             'bidId',
             'status', () => 'no-bid', // default a bid to no-bid until response is recieved or bid is timed out
@@ -310,7 +330,7 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
               switch (bid.bidder) {
                 // specify bidder params we want here
                 case 'rubicon':
-                  return _pick(params, [
+                  return utils.pick(params, [
                     'accountId',
                     'siteId',
                     'zoneId'
@@ -341,7 +361,7 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
                 }
               }
             },
-            'adUnit', () => _pick(bid, [
+            'adUnit', () => utils.pick(bid, [
               'adUnitCode',
               'transactionId',
               'sizes as dimensions', sizes => sizes.map(sizeToDimensions),
@@ -371,14 +391,20 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
         }, {}));
         break;
       case BID_RESPONSE:
-        let bid = cache.auctions[args.auctionId].bids[args.adId];
+        let bid = cache.auctions[args.auctionId].bids[args.requestId];
+        if (!bid) {
+          utils.logError('Rubicon Anlytics Adapter Error: Could not find associated bid request for bid response with requestId: ', args.requestId);
+          break;
+        }
         bid.source = formatSource(bid.source || args.source);
         switch (args.getStatusCode()) {
           case GOOD:
             bid.status = 'success';
+            delete bid.error; // it's possible for this to be set by a previous timeout
             break;
           case NO_BID:
             bid.status = 'no-bid';
+            delete bid.error;
             break;
           default:
             bid.status = 'error';
@@ -387,14 +413,14 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
             };
         }
         bid.clientLatencyMillis = Date.now() - cache.auctions[args.auctionId].timestamp;
-        if (typeof args.serverResponseTimeMs !== 'undefined') {
-          bid.serverLatencyMillis = args.serverResponseTimeMs;
-        }
-        bid.bidResponse = parseBidResponse(args);
+        bid.bidResponse = parseBidResponse(args, bid.bidResponse);
         break;
       case BIDDER_DONE:
         args.bids.forEach(bid => {
-          let cachedBid = cache.auctions[bid.auctionId].bids[bid.bidId];
+          let cachedBid = cache.auctions[bid.auctionId].bids[bid.bidId || bid.requestId];
+          if (typeof bid.serverResponseTimeMs !== 'undefined') {
+            cachedBid.serverLatencyMillis = bid.serverResponseTimeMs;
+          }
           if (!cachedBid.status) {
             cachedBid.status = 'no-bid';
           }
@@ -408,11 +434,11 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
         break;
       case BID_WON:
         let auctionCache = cache.auctions[args.auctionId];
-        auctionCache.bidsWon[args.adUnitCode] = args.adId;
+        auctionCache.bidsWon[args.adUnitCode] = args.requestId;
 
         // check if this BID_WON missed the boat, if so send by itself
         if (auctionCache.sent === true) {
-          sendMessage.call(this, args.auctionId, args.adId);
+          sendMessage.call(this, args.auctionId, args.requestId);
         } else if (Object.keys(auctionCache.bidsWon).reduce((memo, adUnitCode) => {
           // only send if we've received bidWon events for all adUnits in auction
           memo = memo && auctionCache.bidsWon[adUnitCode];
@@ -433,7 +459,7 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
       case BID_TIMEOUT:
         args.forEach(badBid => {
           let auctionCache = cache.auctions[badBid.auctionId];
-          let bid = auctionCache.bids[badBid.bidId];
+          let bid = auctionCache.bids[badBid.bidId || badBid.requestId];
           bid.status = 'error';
           bid.error = {
             code: 'timeout-error'
@@ -444,7 +470,7 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
   }
 });
 
-adaptermanager.registerAnalyticsAdapter({
+adapterManager.registerAnalyticsAdapter({
   adapter: rubiconAdapter,
   code: 'rubicon'
 });

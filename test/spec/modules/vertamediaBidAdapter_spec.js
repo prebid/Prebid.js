@@ -96,45 +96,45 @@ const displayEqResponse = [{
   cpm: 0.9
 }];
 
-describe('vertamediaBidAdapter', () => {
+describe('vertamediaBidAdapter', function () {
   const adapter = newBidder(spec);
 
-  describe('inherited functions', () => {
-    it('exists and is a function', () => {
+  describe('inherited functions', function () {
+    it('exists and is a function', function () {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
   });
 
-  describe('isBidRequestValid', () => {
-    it('should return true when required params found', () => {
+  describe('isBidRequestValid', function () {
+    it('should return true when required params found', function () {
       expect(spec.isBidRequestValid(VIDEO_REQUEST)).to.equal(12345);
     });
 
-    it('should return false when required params are not passed', () => {
+    it('should return false when required params are not passed', function () {
       let bid = Object.assign({}, VIDEO_REQUEST);
       delete bid.params;
       expect(spec.isBidRequestValid(bid)).to.equal(undefined);
     });
   });
 
-  describe('buildRequests', () => {
+  describe('buildRequests', function () {
     let videoBidRequests = [VIDEO_REQUEST];
     let dispalyBidRequests = [DISPLAY_REQUEST];
 
     const displayRequest = spec.buildRequests(dispalyBidRequests, {});
     const videoRequest = spec.buildRequests(videoBidRequests, {});
 
-    it('sends bid request to ENDPOINT via GET', () => {
+    it('sends bid request to ENDPOINT via GET', function () {
       expect(videoRequest.method).to.equal('GET');
       expect(displayRequest.method).to.equal('GET');
     });
 
-    it('sends bid request to correct ENDPOINT', () => {
+    it('sends bid request to correct ENDPOINT', function () {
       expect(videoRequest.url).to.equal(ENDPOINT);
       expect(displayRequest.url).to.equal(ENDPOINT);
     });
 
-    it('sends correct video bid parameters', () => {
+    it('sends correct video bid parameters', function () {
       const bid = Object.assign({}, videoRequest.data);
       delete bid.domain;
 
@@ -148,7 +148,7 @@ describe('vertamediaBidAdapter', () => {
       expect(bid).to.deep.equal(eq);
     });
 
-    it('sends correct display bid parameters', () => {
+    it('sends correct display bid parameters', function () {
       const bid = Object.assign({}, displayRequest.data);
       delete bid.domain;
 
@@ -163,18 +163,18 @@ describe('vertamediaBidAdapter', () => {
     });
   });
 
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     let serverResponse;
     let bidderRequest;
     let eqResponse;
 
-    afterEach(() => {
+    afterEach(function () {
       serverResponse = null;
       bidderRequest = null;
       eqResponse = null;
     });
 
-    it('should get correct video bid response', () => {
+    it('should get correct video bid response', function () {
       serverResponse = SERVER_VIDEO_RESPONSE;
       bidderRequest = videoBidderRequest;
       eqResponse = videoEqResponse;
@@ -182,7 +182,7 @@ describe('vertamediaBidAdapter', () => {
       bidServerResponseCheck();
     });
 
-    it('should get correct display bid response', () => {
+    it('should get correct display bid response', function () {
       serverResponse = SERVER_DISPLAY_RESPONSE;
       bidderRequest = displayBidderRequest;
       eqResponse = displayEqResponse;
@@ -203,13 +203,13 @@ describe('vertamediaBidAdapter', () => {
       expect(noBidResult.length).to.equal(0);
     }
 
-    it('handles video nobid responses', () => {
+    it('handles video nobid responses', function () {
       bidderRequest = videoBidderRequest;
 
       nobidServerResponseCheck();
     });
 
-    it('handles display nobid responses', () => {
+    it('handles display nobid responses', function () {
       bidderRequest = displayBidderRequest;
 
       nobidServerResponseCheck();

@@ -24,7 +24,7 @@ function isBidRequestValid(bid) {
     return false;
   }
 
-  if (typeof bid.params.pubId !== 'string' || bid.sizes === 'undefined' || bid.sizes.length === 0) {
+  if (typeof bid.params.pubId !== 'string' || typeof bid.sizes === 'undefined' || bid.sizes.length === 0) {
     return false;
   }
 
@@ -38,12 +38,20 @@ function isBidRequestValid(bid) {
  * @return ServerRequest Info describing the request to the server.
  */
 
-function buildRequests(validBidRequests) {
+function buildRequests(validBidRequests, bidderRequest) {
   const bids = validBidRequests.map(requestsToBids);
   const bidObject = {'bids': bids};
   const pageInfo = getPageInfo();
 
   const payload = Object.assign(bidObject, pageInfo);
+
+  if (bidderRequest && bidderRequest.gdprConsent) {
+    payload.gdprConsent = {
+      consentString: bidderRequest.gdprConsent.consentString,
+      consentRequired: bidderRequest.gdprConsent.gdprApplies
+    };
+  }
+
   const payloadString = JSON.stringify(payload);
 
   return {
@@ -82,7 +90,7 @@ function interpretResponse(serverResponse, request) {
         netRevenue: false,
         mediaType: bids.type ? bids.type : BANNER,
         ad: bid.ad,
-        ttl: bid.ttl || 6000
+        ttl: bid.ttl || 300
       });
     });
   }
@@ -154,7 +162,6 @@ function requestsToBids(bid) {
   return toRet;
 }
 
-// Va bene così, questo file va aggiunto a prebidmaster
 export const spec = {
 
   code: BIDDER_CODE,

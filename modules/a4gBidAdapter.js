@@ -1,5 +1,5 @@
-import {registerBidder} from 'src/adapters/bidderFactory';
-import * as utils from 'src/utils';
+import {registerBidder} from '../src/adapters/bidderFactory';
+import * as utils from '../src/utils';
 
 const A4G_BIDDER_CODE = 'a4g';
 const A4G_CURRENCY = 'USD';

@@ -6,7 +6,7 @@ import { VIDEO } from 'src/mediaTypes'
 import { Renderer } from 'src/Renderer'
 import { adapter } from 'modules/unrulyBidAdapter'
 
-describe('UnrulyAdapter', () => {
+describe('UnrulyAdapter', function () {
   function createOutStreamExchangeBid({
     adUnitCode = 'placement2',
     statusCode = 1,
@@ -18,7 +18,10 @@ describe('UnrulyAdapter', () => {
         'statusCode': statusCode,
         'renderer': {
           'id': 'unruly_inarticle',
-          'config': {},
+          'config': {
+            'siteId': 123456,
+            'targetingUUID': 'xxx-yyy-zzz'
+          },
           'url': 'https://video.unrulymedia.com/native/prebid-loader.js'
         },
         'adUnitCode': adUnitCode
@@ -39,7 +42,7 @@ describe('UnrulyAdapter', () => {
   let sandbox;
   let fakeRenderer;
 
-  beforeEach(() => {
+  beforeEach(function () {
     sandbox = sinon.sandbox.create();
     sandbox.stub(utils, 'logError');
     sandbox.stub(Renderer, 'install');
@@ -50,12 +53,12 @@ describe('UnrulyAdapter', () => {
     Renderer.install.returns(fakeRenderer)
   });
 
-  afterEach(() => {
+  afterEach(function () {
     sandbox.restore();
     delete parent.window.unruly
   });
 
-  it('should expose Unruly Bidder code', () => {
+  it('should expose Unruly Bidder code', function () {
     expect(adapter.code).to.equal('unruly')
   });
 
@@ -63,22 +66,22 @@ describe('UnrulyAdapter', () => {
     expect(adapter.supportedMediaTypes).to.deep.equal([ VIDEO ])
   });
 
-  describe('isBidRequestValid', () => {
-    it('should be a function', () => {
+  describe('isBidRequestValid', function () {
+    it('should be a function', function () {
       expect(typeof adapter.isBidRequestValid).to.equal('function')
     });
 
-    it('should return false if bid is falsey', () => {
+    it('should return false if bid is falsey', function () {
       expect(adapter.isBidRequestValid()).to.be.false;
     });
 
-    it('should return true if bid.mediaType is "video"', () => {
+    it('should return true if bid.mediaType is "video"', function () {
       const mockBid = { mediaType: 'video' };
 
       expect(adapter.isBidRequestValid(mockBid)).to.be.true;
     });
 
-    it('should return true if bid.mediaTypes.video.context is "outstream"', () => {
+    it('should return true if bid.mediaTypes.video.context is "outstream"', function () {
       const mockBid = {
         mediaTypes: {
           video: {
@@ -91,46 +94,48 @@ describe('UnrulyAdapter', () => {
     });
   });
 
-  describe('buildRequests', () => {
-    it('should be a function', () => {
+  describe('buildRequests', function () {
+    it('should be a function', function () {
       expect(typeof adapter.buildRequests).to.equal('function');
     });
-    it('should return an object', () => {
+    it('should return an object', function () {
       const mockBidRequests = ['mockBid'];
       expect(typeof adapter.buildRequests(mockBidRequests)).to.equal('object')
     });
-    it('should return a server request with a valid exchange url', () => {
+    it('should return a server request with a valid exchange url', function () {
       const mockBidRequests = ['mockBid'];
       expect(adapter.buildRequests(mockBidRequests).url).to.equal('https://targeting.unrulymedia.com/prebid')
     });
-    it('should return a server request with method === POST', () => {
+    it('should return a server request with method === POST', function () {
       const mockBidRequests = ['mockBid'];
       expect(adapter.buildRequests(mockBidRequests).method).to.equal('POST');
     });
-    it('should ensure contentType is `application/json`', function () {
+    it('should ensure contentType is `text/plain`', function () {
       const mockBidRequests = ['mockBid'];
       expect(adapter.buildRequests(mockBidRequests).options).to.deep.equal({
-        contentType: 'application/json'
+        contentType: 'text/plain'
       });
     });
-    it('should return a server request with valid payload', () => {
+    it('should return a server request with valid payload', function () {
       const mockBidRequests = ['mockBid'];
-      expect(adapter.buildRequests(mockBidRequests).data).to.deep.equal({bidRequests: mockBidRequests})
+      const mockBidderRequest = {bidderCode: 'mockBidder'};
+      expect(adapter.buildRequests(mockBidRequests, mockBidderRequest).data)
+        .to.deep.equal({bidRequests: mockBidRequests, bidderRequest: mockBidderRequest})
     })
   });
 
-  describe('interpretResponse', () => {
-    it('should be a function', () => {
+  describe('interpretResponse', function () {
+    it('should be a function', function () {
       expect(typeof adapter.interpretResponse).to.equal('function');
     });
-    it('should return empty array when serverResponse is undefined', () => {
+    it('should return [] when serverResponse is undefined', function () {
       expect(adapter.interpretResponse()).to.deep.equal([]);
     });
-    it('should return empty array when  serverResponse has no bids', () => {
+    it('should return [] when  serverResponse has no bids', function () {
       const mockServerResponse = { body: { bids: [] } };
       expect(adapter.interpretResponse(mockServerResponse)).to.deep.equal([])
     });
-    it('should return array of bids when receive a successful response from server', () => {
+    it('should return array of bids when receive a successful response from server', function () {
       const mockExchangeBid = createOutStreamExchangeBid({adUnitCode: 'video1', bidId: 'mockBidId'});
       const mockServerResponse = createExchangeResponse(mockExchangeBid);
       expect(adapter.interpretResponse(mockServerResponse)).to.deep.equal([
@@ -144,23 +149,30 @@ describe('UnrulyAdapter', () => {
           creativeId: 'mockBidId',
           ttl: 360,
           currency: 'USD',
-          renderer: fakeRenderer
+          renderer: fakeRenderer,
+          mediaType: 'video'
         }
       ])
     });
 
-    it('should initialize and set the renderer', () => {
-      expect(Renderer.install).not.to.have.been.called;
-      expect(fakeRenderer.setRender).not.to.have.been.called;
+    it('should initialize and set the renderer', function () {
+      expect(Renderer.install.called).to.be.false;
+      expect(fakeRenderer.setRender.called).to.be.false;
 
       const mockReturnedBid = createOutStreamExchangeBid({adUnitCode: 'video1', bidId: 'mockBidId'});
-      const mockRenderer = { url: 'value: mockRendererURL' };
+      const mockRenderer = {
+        url: 'value: mockRendererURL',
+        config: {
+          siteId: 123456,
+          targetingUUID: 'xxx-yyy-zzz'
+        }
+      };
       mockReturnedBid.ext.renderer = mockRenderer;
       const mockServerResponse = createExchangeResponse(mockReturnedBid);
 
       adapter.interpretResponse(mockServerResponse);
 
-      expect(Renderer.install).to.have.been.calledOnce;
+      expect(Renderer.install.calledOnce).to.be.true;
       sinon.assert.calledWithExactly(
         Renderer.install,
         Object.assign({}, mockRenderer, {callback: sinon.match.func})
@@ -170,7 +182,59 @@ describe('UnrulyAdapter', () => {
       sinon.assert.calledWithExactly(fakeRenderer.setRender, sinon.match.func)
     });
 
-    it('bid is placed on the bid queue when render is called', () => {
+    it('should return [] and log if bidResponse renderer config is not available', function () {
+      sinon.assert.notCalled(utils.logError)
+
+      expect(Renderer.install.called).to.be.false;
+      expect(fakeRenderer.setRender.called).to.be.false;
+
+      const mockReturnedBid = createOutStreamExchangeBid({adUnitCode: 'video1', bidId: 'mockBidId'});
+      const mockRenderer = {
+        url: 'value: mockRendererURL'
+      };
+      mockReturnedBid.ext.renderer = mockRenderer;
+      const mockServerResponse = createExchangeResponse(mockReturnedBid);
+
+      expect(adapter.interpretResponse(mockServerResponse)).to.deep.equal([]);
+
+      const logErrorCalls = utils.logError.getCalls();
+      expect(logErrorCalls.length).to.equal(2);
+
+      const [ configErrorCall, siteIdErrorCall ] = logErrorCalls;
+
+      expect(configErrorCall.args.length).to.equal(1);
+      expect(configErrorCall.args[0].message).to.equal('UnrulyBidAdapter: Missing renderer config.');
+
+      expect(siteIdErrorCall.args.length).to.equal(1);
+      expect(siteIdErrorCall.args[0].message).to.equal('UnrulyBidAdapter: Missing renderer siteId.');
+    });
+
+    it('should return [] and log if siteId is not available', function () {
+      sinon.assert.notCalled(utils.logError)
+
+      expect(Renderer.install.called).to.be.false;
+      expect(fakeRenderer.setRender.called).to.be.false;
+
+      const mockReturnedBid = createOutStreamExchangeBid({adUnitCode: 'video1', bidId: 'mockBidId'});
+      const mockRenderer = {
+        url: 'value: mockRendererURL',
+        config: {}
+      };
+      mockReturnedBid.ext.renderer = mockRenderer;
+      const mockServerResponse = createExchangeResponse(mockReturnedBid);
+
+      expect(adapter.interpretResponse(mockServerResponse)).to.deep.equal([]);
+
+      const logErrorCalls = utils.logError.getCalls();
+      expect(logErrorCalls.length).to.equal(1);
+
+      const [ siteIdErrorCall ] = logErrorCalls;
+
+      expect(siteIdErrorCall.args.length).to.equal(1);
+      expect(siteIdErrorCall.args[0].message).to.equal('UnrulyBidAdapter: Missing renderer siteId.');
+    });
+
+    it('bid is placed on the bid queue when render is called', function () {
       const exchangeBid = createOutStreamExchangeBid({ adUnitCode: 'video', vastUrl: 'value: vastUrl' });
       const exchangeResponse = createExchangeResponse(exchangeBid);
 
@@ -179,7 +243,7 @@ describe('UnrulyAdapter', () => {
       sinon.assert.calledOnce(fakeRenderer.setRender);
       fakeRenderer.setRender.firstCall.args[0]();
 
-      expect(window.top).to.have.deep.property('unruly.native.prebid.uq');
+      expect(window.top).to.have.deep.nested.property('unruly.native.prebid.uq');
 
       const uq = window.top.unruly.native.prebid.uq;
       const sentRendererConfig = uq[0][1];
@@ -188,9 +252,9 @@ describe('UnrulyAdapter', () => {
       expect(sentRendererConfig.vastUrl).to.equal('value: vastUrl');
       expect(sentRendererConfig.renderer).to.equal(fakeRenderer);
       expect(sentRendererConfig.adUnitCode).to.equal('video')
-    })
+    });
 
-    it('should ensure that renderer is placed in Prebid supply mode', () => {
+    it('should ensure that renderer is placed in Prebid supply mode', function () {
       const mockExchangeBid = createOutStreamExchangeBid({adUnitCode: 'video1', bidId: 'mockBidId'});
       const mockServerResponse = createExchangeResponse(mockExchangeBid);
 
@@ -203,4 +267,64 @@ describe('UnrulyAdapter', () => {
       expect(supplyMode).to.equal('prebid');
     });
   });
+
+  describe('getUserSyncs', () => {
+    it('should push user sync iframe if enabled', () => {
+      const mockConsent = {}
+      const response = {}
+      const syncOptions = { iframeEnabled: true }
+      const syncs = adapter.getUserSyncs(syncOptions, response, mockConsent)
+      expect(syncs[0]).to.deep.equal({
+        type: 'iframe',
+        url: 'https://video.unrulymedia.com/iframes/third-party-iframes.html'
+      });
+    })
+
+    it('should not push user sync iframe if not enabled', () => {
+      const mockConsent = {}
+      const response = {}
+      const syncOptions = { iframeEnabled: false }
+      const syncs = adapter.getUserSyncs(syncOptions, response, mockConsent);
+      expect(syncs).to.be.empty;
+    });
+  });
+
+  it('should not append consent params if gdpr does not apply', () => {
+    const mockConsent = {}
+    const response = {}
+    const syncOptions = { iframeEnabled: true }
+    const syncs = adapter.getUserSyncs(syncOptions, response, mockConsent)
+    expect(syncs[0]).to.deep.equal({
+      type: 'iframe',
+      url: 'https://video.unrulymedia.com/iframes/third-party-iframes.html'
+    })
+  });
+
+  it('should append consent params if gdpr does apply and consent is given', () => {
+    const mockConsent = {
+      gdprApplies: true,
+      consentString: 'hello'
+    };
+    const response = {}
+    const syncOptions = { iframeEnabled: true }
+    const syncs = adapter.getUserSyncs(syncOptions, response, mockConsent)
+    expect(syncs[0]).to.deep.equal({
+      type: 'iframe',
+      url: 'https://video.unrulymedia.com/iframes/third-party-iframes.html?gdpr=1&gdpr_consent=hello'
+    })
+  });
+
+  it('should append consent param if gdpr applies and no consent is given', () => {
+    const mockConsent = {
+      gdprApplies: true,
+      consentString: {}
+    };
+    const response = {};
+    const syncOptions = { iframeEnabled: true }
+    const syncs = adapter.getUserSyncs(syncOptions, response, mockConsent)
+    expect(syncs[0]).to.deep.equal({
+      type: 'iframe',
+      url: 'https://video.unrulymedia.com/iframes/third-party-iframes.html?gdpr=0'
+    })
+  })
 });

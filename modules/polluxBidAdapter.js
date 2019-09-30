@@ -1,5 +1,5 @@
-import * as utils from 'src/utils';
-import { registerBidder } from 'src/adapters/bidderFactory';
+import * as utils from '../src/utils';
+import { registerBidder } from '../src/adapters/bidderFactory';
 
 const BIDDER_CODE = 'pollux';
 const PLX_ENDPOINT_URL = '//adn.plxnt.com/prebid/v1';
@@ -34,7 +34,7 @@ export const spec = {
       return [];
     }
     const payload = [];
-    let custom_url = null;
+    let customUrl = null;
     for (let i = 0; i < validBidRequests.length; i++) {
       const bid = validBidRequests[i];
       const request = {
@@ -42,8 +42,8 @@ export const spec = {
         zones: bid.params.zone,
         sizes: bid.sizes
       };
-      if (bid.bidderUrl && !custom_url) {
-        custom_url = bid.bidderUrl;
+      if (bid.bidderUrl && !customUrl) {
+        customUrl = bid.bidderUrl;
       }
       payload.push(request);
     }
@@ -51,24 +51,24 @@ export const spec = {
     // build url parameters
     const domain = utils.getParameterByName('domain');
     const tracker2 = utils.getParameterByName('tracker2');
-    const url_params = {};
+    const urlParams = {};
     if (domain) {
-      url_params.domain = domain;
+      urlParams.domain = domain;
     } else {
-      url_params.domain = utils.getTopWindowUrl();
+      urlParams.domain = utils.getTopWindowUrl();
     }
     if (tracker2) {
-      url_params.tracker2 = tracker2;
+      urlParams.tracker2 = tracker2;
     }
     // build url
-    let bidder_url = custom_url || PLX_ENDPOINT_URL;
-    if (url_params) {
-      bidder_url = bidder_url + '?' + utils.parseQueryStringParameters(url_params);
+    let bidderUrl = customUrl || PLX_ENDPOINT_URL;
+    if (urlParams) {
+      bidderUrl = bidderUrl + '?' + utils.parseQueryStringParameters(urlParams);
     }
-    utils.logMessage('== ' + BIDDER_CODE + ' == request built: ' + bidder_url);
+    utils.logMessage('== ' + BIDDER_CODE + ' == request built: ' + bidderUrl);
     return {
       method: 'POST',
-      url: bidder_url,
+      url: bidderUrl,
       data: payloadString
     };
   },

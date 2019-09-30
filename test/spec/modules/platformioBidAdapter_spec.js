@@ -3,7 +3,7 @@ import {spec} from 'modules/platformioBidAdapter';
 import {getTopWindowLocation} from 'src/utils';
 import {newBidder} from 'src/adapters/bidderFactory';
 
-describe('Platform.io Adapter Tests', () => {
+describe('Platform.io Adapter Tests', function () {
   const slotConfigs = [{
     placementCode: '/DfpAccount1/slot1',
     bidId: 'bid12345',
@@ -77,7 +77,7 @@ describe('Platform.io Adapter Tests', () => {
     }
   }];
 
-  it('Verify build request', () => {
+  it('Verify build request', function () {
     const request = spec.buildRequests(slotConfigs);
     expect(request.url).to.equal('//piohbdisp.hb.adx1.com/');
     expect(request.method).to.equal('POST');
@@ -109,7 +109,7 @@ describe('Platform.io Adapter Tests', () => {
     expect(ortbRequest.imp[1].bidfloor).to.equal('0.000001');
   });
 
-  it('Verify parse response', () => {
+  it('Verify parse response', function () {
     const request = spec.buildRequests(slotConfigs);
     const ortbRequest = JSON.parse(request.data);
     const ortbResponse = {
@@ -137,13 +137,13 @@ describe('Platform.io Adapter Tests', () => {
     expect(bid.ttl).to.equal(360);
   });
 
-  it('Verify full passback', () => {
+  it('Verify full passback', function () {
     const request = spec.buildRequests(slotConfigs);
     const bids = spec.interpretResponse({ body: null }, request)
     expect(bids).to.have.lengthOf(0);
   });
 
-  it('Verify Native request', () => {
+  it('Verify Native request', function () {
     const request = spec.buildRequests(nativeSlotConfig);
     expect(request.url).to.equal('//piohbdisp.hb.adx1.com/');
     expect(request.method).to.equal('POST');
@@ -181,7 +181,7 @@ describe('Platform.io Adapter Tests', () => {
     expect(nativeRequest.assets[4].img.type).to.equal(3);
   });
 
-  it('Verify Native response', () => {
+  it('Verify Native response', function () {
     const request = spec.buildRequests(nativeSlotConfig);
     expect(request.url).to.equal('//piohbdisp.hb.adx1.com/');
     expect(request.method).to.equal('POST');
@@ -192,8 +192,8 @@ describe('Platform.io Adapter Tests', () => {
           { id: 1, title: { text: 'Ad Title' } },
           { id: 2, data: { value: 'Test description' } },
           { id: 3, data: { value: 'Brand' } },
-          { id: 4, img: { url: 'https://s3.amazonaws.com/adx1public/creatives_icon.png', w: 100, h: 100 } },
-          { id: 5, img: { url: 'https://s3.amazonaws.com/adx1public/creatives_image.png', w: 300, h: 300 } }
+          { id: 4, img: { url: 'https://adx1public.s3.amazonaws.com/creatives_icon.png', w: 100, h: 100 } },
+          { id: 5, img: { url: 'https://adx1public.s3.amazonaws.com/creatives_image.png', w: 300, h: 300 } }
         ],
         link: { url: 'http://brand.com/' }
       }
@@ -220,8 +220,8 @@ describe('Platform.io Adapter Tests', () => {
     expect(nativeBid).to.not.equal(null);
     expect(nativeBid.title).to.equal('Ad Title');
     expect(nativeBid.sponsoredBy).to.equal('Brand');
-    expect(nativeBid.icon.url).to.equal('https://s3.amazonaws.com/adx1public/creatives_icon.png');
-    expect(nativeBid.image.url).to.equal('https://s3.amazonaws.com/adx1public/creatives_image.png');
+    expect(nativeBid.icon.url).to.equal('https://adx1public.s3.amazonaws.com/creatives_icon.png');
+    expect(nativeBid.image.url).to.equal('https://adx1public.s3.amazonaws.com/creatives_image.png');
     expect(nativeBid.image.width).to.equal(300);
     expect(nativeBid.image.height).to.equal(300);
     expect(nativeBid.icon.width).to.equal(100);
@@ -231,7 +231,7 @@ describe('Platform.io Adapter Tests', () => {
     expect(nativeBid.impressionTrackers[0]).to.equal('http://rtb.adx1.com/log');
   });
 
-  it('Verify Video request', () => {
+  it('Verify Video request', function () {
     const request = spec.buildRequests(videoSlotConfig);
     expect(request.url).to.equal('//piohbdisp.hb.adx1.com/');
     expect(request.method).to.equal('POST');
@@ -253,7 +253,7 @@ describe('Platform.io Adapter Tests', () => {
     expect(videoRequest.imp[0].native).to.equal(null);
   });
 
-  it('Verify parse video response', () => {
+  it('Verify parse video response', function () {
     const request = spec.buildRequests(videoSlotConfig);
     const videoRequest = JSON.parse(request.data);
     const videoResponse = {
@@ -282,25 +282,25 @@ describe('Platform.io Adapter Tests', () => {
     expect(bid.ttl).to.equal(360);
   });
 
-  it('Verifies bidder code', () => {
+  it('Verifies bidder code', function () {
     expect(spec.code).to.equal('platformio');
   });
 
-  it('Verifies supported media types', () => {
+  it('Verifies supported media types', function () {
     expect(spec.supportedMediaTypes).to.have.lengthOf(3);
     expect(spec.supportedMediaTypes[0]).to.equal('banner');
     expect(spec.supportedMediaTypes[1]).to.equal('native');
     expect(spec.supportedMediaTypes[2]).to.equal('video');
   });
 
-  it('Verifies if bid request valid', () => {
+  it('Verifies if bid request valid', function () {
     expect(spec.isBidRequestValid(slotConfigs[0])).to.equal(true);
     expect(spec.isBidRequestValid(slotConfigs[1])).to.equal(true);
     expect(spec.isBidRequestValid(nativeSlotConfig[0])).to.equal(true);
     expect(spec.isBidRequestValid(videoSlotConfig[0])).to.equal(true);
   });
 
-  it('Verify app requests', () => {
+  it('Verify app requests', function () {
     const request = spec.buildRequests(appSlotConfig);
     const ortbRequest = JSON.parse(request.data);
     expect(ortbRequest.site).to.equal(null);
@@ -312,5 +312,24 @@ describe('Platform.io Adapter Tests', () => {
     expect(ortbRequest.app.bundle).to.equal('io.platform.apps');
     expect(ortbRequest.app.storeurl).to.equal('http://platform.io/apps');
     expect(ortbRequest.app.domain).to.equal('platform.io');
+  });
+
+  it('Verify GDPR', function () {
+    const bidderRequest = {
+      gdprConsent: {
+        gdprApplies: true,
+        consentString: 'serialized_gpdr_data'
+      }
+    };
+    const request = spec.buildRequests(slotConfigs, bidderRequest);
+    expect(request.url).to.equal('//piohbdisp.hb.adx1.com/');
+    expect(request.method).to.equal('POST');
+    const ortbRequest = JSON.parse(request.data);
+    expect(ortbRequest.user).to.not.equal(null);
+    expect(ortbRequest.user.ext).to.not.equal(null);
+    expect(ortbRequest.user.ext.consent).to.equal('serialized_gpdr_data');
+    expect(ortbRequest.regs).to.not.equal(null);
+    expect(ortbRequest.regs.ext).to.not.equal(null);
+    expect(ortbRequest.regs.ext.gdpr).to.equal(1);
   });
 });
