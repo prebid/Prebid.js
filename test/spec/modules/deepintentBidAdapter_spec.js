@@ -132,6 +132,17 @@ describe('Deepintent adapter', function () {
       expect(data.source.ext.type).to.equal(2);
     })
   });
+  describe('user sync check', function () {
+    it('user sync url check', function () {
+      let syncOptions = {
+        iframeEnabled: true
+      };
+      let userSync = spec.getUserSyncs(syncOptions);
+      expect(userSync).to.be.an('array').with.length.above(0);
+      expect(userSync[0].type).to.equal('iframe');
+      expect(userSync[0].url).to.equal('https://beacon.deepintent.com/usersync.html');
+    });
+  });
   describe('response check', function () {
     it('bid response check: valid bid response', function () {
       let bRequest = spec.buildRequests(request);
