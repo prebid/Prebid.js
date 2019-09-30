@@ -31,9 +31,7 @@ describe('OneVideoBidAdapter', function () {
           delivery: [2],
           playbackmethod: [1, 5],
           placement: 123,
-          sid: 134,
-          rewarded: 1,
-          inventoryid: 123
+          sid: 134
         },
         site: {
           id: 1,
@@ -69,9 +67,7 @@ describe('OneVideoBidAdapter', function () {
           delivery: [2],
           playbackmethod: [1, 5],
           placement: 123,
-          sid: 134,
-          rewarded: 1,
-          inventoryid: 123
+          sid: 134
         }
       };
       expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
@@ -88,9 +84,7 @@ describe('OneVideoBidAdapter', function () {
           delivery: [2],
           playbackmethod: [1, 5],
           placement: 123,
-          sid: 134,
-          rewarded: 1,
-          inventoryid: 123
+          sid: 134
         },
         pubId: 'brxd'
       };
@@ -120,12 +114,10 @@ describe('OneVideoBidAdapter', function () {
       const data = requests[0].data;
       const [ width, height ] = bidRequest.sizes;
       const placement = bidRequest.params.video.placement;
-      const rewarded = bidRequest.params.video.rewarded;
       expect(data.imp[0].video.w).to.equal(width);
       expect(data.imp[0].video.h).to.equal(height);
       expect(data.imp[0].ext.placement).to.equal(placement);
       expect(data.imp[0].bidfloor).to.equal(bidRequest.params.bidfloor);
-      expect(data.imp[0].ext.rewarded).to.equal(rewarded);
     });
 
     it('must parse bid size from a nested array', function () {
