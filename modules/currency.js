@@ -3,7 +3,7 @@ import { STATUS } from '../src/constants';
 import { ajax } from '../src/ajax';
 import * as utils from '../src/utils';
 import { config } from '../src/config';
-import { hooks } from '../src/hook.js';
+import { getHook } from '../src/hook.js';
 
 const DEFAULT_CURRENCY_RATE_URL = 'https://cdn.jsdelivr.net/gh/prebid/currency-file@1/latest.json?date=$$TODAY$$';
 const CURRENCY_RATE_PRECISION = 4;
@@ -11,6 +11,7 @@ const CURRENCY_RATE_PRECISION = 4;
 var bidResponseQueue = [];
 var conversionCache = {};
 var currencyRatesLoaded = false;
+var needToCallForCurrencyFile = true;
 var adServerCurrency = 'USD';
 
 export var currencySupportEnabled = false;
@@ -56,6 +57,7 @@ export function setConfig(config) {
   if (typeof config.rates === 'object') {
     currencyRates.conversions = config.rates;
     currencyRatesLoaded = true;
+    needToCallForCurrencyFile = false; // don't call if rates are already specified
   }
 
   if (typeof config.defaultRates === 'object') {
@@ -120,9 +122,11 @@ function initCurrency(url) {
 
   utils.logInfo('Installing addBidResponse decorator for currency module', arguments);
 
-  hooks['addBidResponse'].addHook(addBidResponseHook, 100);
+  getHook('addBidResponse').before(addBidResponseHook, 100);
 
-  if (!currencyRates.conversions) {
+  // call for the file if we haven't already
+  if (needToCallForCurrencyFile) {
+    needToCallForCurrencyFile = false;
     ajax(url,
       {
         success: function (response) {
@@ -144,19 +148,20 @@ function initCurrency(url) {
 function resetCurrency() {
   utils.logInfo('Uninstalling addBidResponse decorator for currency module', arguments);
 
-  hooks['addBidResponse'].removeHook(addBidResponseHook, 100);
+  getHook('addBidResponse').getHooks({hook: addBidResponseHook}).remove();
 
   adServerCurrency = 'USD';
   conversionCache = {};
   currencySupportEnabled = false;
   currencyRatesLoaded = false;
+  needToCallForCurrencyFile = true;
   currencyRates = {};
   bidderCurrencyDefault = {};
 }
 
-export function addBidResponseHook(adUnitCode, bid, fn) {
+export function addBidResponseHook(fn, adUnitCode, bid) {
   if (!bid) {
-    return fn.apply(this, arguments); // if no bid, call original and let it display warnings
+    return fn.call(this, adUnitCode); // if no bid, call original and let it display warnings
   }
 
   let bidder = bid.bidderCode || bid.bidder;
@@ -175,20 +180,20 @@ export function addBidResponseHook(adUnitCode, bid, fn) {
     bid.currency = 'USD';
   }
 
-  let fromCurrency = bid.currency;
-  let cpm = bid.cpm;
-
   // used for analytics
   bid.getCpmInNewCurrency = function(toCurrency) {
-    return (parseFloat(cpm) * getCurrencyConversion(fromCurrency, toCurrency)).toFixed(3);
+    return (parseFloat(this.cpm) * getCurrencyConversion(this.currency, toCurrency)).toFixed(3);
   };
+
+  bid.originalCpm = bid.cpm;
+  bid.originalCurrency = bid.currency;
 
   // execute immediately if the bid is already in the desired currency
   if (bid.currency === adServerCurrency) {
-    return fn.apply(this, arguments);
+    return fn.call(this, adUnitCode, bid);
   }
 
-  bidResponseQueue.push(wrapFunction(fn, this, arguments));
+  bidResponseQueue.push(wrapFunction(fn, this, [adUnitCode, bid]));
   if (!currencySupportEnabled || currencyRatesLoaded) {
     processBidResponseQueue();
   }
@@ -207,8 +212,6 @@ function wrapFunction(fn, context, params) {
       let fromCurrency = bid.currency;
       try {
         let conversion = getCurrencyConversion(fromCurrency);
-        bid.originalCpm = bid.cpm;
-        bid.originalCurrency = bid.currency;
         if (conversion !== 1) {
           bid.cpm = (parseFloat(bid.cpm) * conversion).toFixed(4);
           bid.currency = adServerCurrency;
@@ -217,7 +220,7 @@ function wrapFunction(fn, context, params) {
         utils.logWarn('Returning NO_BID, getCurrencyConversion threw error: ', e);
         params[1] = createBid(STATUS.NO_BID, {
           bidder: bid.bidderCode || bid.bidder,
-          bidId: bid.adId
+          bidId: bid.requestId
         });
       }
     }

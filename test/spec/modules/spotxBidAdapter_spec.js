@@ -2,154 +2,154 @@ import {expect} from 'chai';
 import {spec} from 'modules/spotxBidAdapter';
 
 describe('the spotx adapter', function () {
-  function getValidBidObject() {
-    return {
-      bidId: 123,
-      mediaTypes: {
-        video: {
-          playerSize: [['300', '200']]
-        }
-      },
-      params: {
-        channel_id: 12345,
-      }
+function getValidBidObject() {
+return {
+    bidId: 123,
+    mediaTypes: {
+    video: {
+        playerSize: [['300', '200']]
+    }
+    },
+    params: {
+    channel_id: 12345,
+    }
+};
+};
+
+describe('isBidRequestValid', function() {
+var bid;
+
+beforeEach(function() {
+    bid = getValidBidObject();
+});
+
+it('should fail validation if the bid isn\'t defined or not an object', function() {
+    var result = spec.isBidRequestValid();
+
+    expect(result).to.equal(false);
+
+    result = spec.isBidRequestValid('not an object');
+
+    expect(result).to.equal(false);
+});
+
+it('should succeed validation with all the right parameters', function() {
+    expect(spec.isBidRequestValid(getValidBidObject())).to.equal(true);
+});
+
+it('should succeed validation with mediaType and outstream_function or outstream_options', function() {
+    bid.mediaType = 'video';
+    bid.params.outstream_function = 'outstream_func';
+
+    expect(spec.isBidRequestValid(bid)).to.equal(true);
+
+    delete bid.params.outstream_function;
+    bid.params.outstream_options = {
+    slot: 'elemID'
     };
-  };
 
-  describe('isBidRequestValid', function() {
-    var bid;
+    expect(spec.isBidRequestValid(bid)).to.equal(true);
+});
 
-    beforeEach(function() {
-      bid = getValidBidObject();
-    });
+it('should succeed with ad_unit outstream and outstream function set', function() {
+    bid.params.ad_unit = 'outstream';
+    bid.params.outstream_function = function() {};
+    expect(spec.isBidRequestValid(bid)).to.equal(true);
+});
 
-    it('should fail validation if the bid isn\'t defined or not an object', function() {
-      var result = spec.isBidRequestValid();
+it('should succeed with ad_unit outstream, options set for outstream and slot provided', function() {
+    bid.params.ad_unit = 'outstream';
+    bid.params.outstream_options = {slot: 'ad_container_id'};
+    expect(spec.isBidRequestValid(bid)).to.equal(true);
+});
 
-      expect(result).to.equal(false);
+it('should fail without a channel_id', function() {
+    delete bid.params.channel_id;
+    expect(spec.isBidRequestValid(bid)).to.equal(false);
+});
 
-      result = spec.isBidRequestValid('not an object');
+it('should fail without playerSize', function() {
+    delete bid.mediaTypes.video.playerSize;
+    expect(spec.isBidRequestValid(bid)).to.equal(false);
+});
 
-      expect(result).to.equal(false);
-    });
+it('should fail without video', function() {
+    delete bid.mediaTypes.video;
+    expect(spec.isBidRequestValid(bid)).to.equal(false);
+});
 
-    it('should succeed validation with all the right parameters', function() {
-      expect(spec.isBidRequestValid(getValidBidObject())).to.equal(true);
-    });
+it('should fail with ad_unit outstream but no options set for outstream', function() {
+    bid.params.ad_unit = 'outstream';
+    expect(spec.isBidRequestValid(bid)).to.equal(false);
+});
 
-    it('should succeed validation with mediaType and outstream_function or outstream_options', function() {
-      bid.mediaType = 'video';
-      bid.params.outstream_function = 'outstream_func';
+it('should fail with ad_unit outstream, options set for outstream but no slot provided', function() {
+    bid.params.ad_unit = 'outstream';
+    bid.params.outstream_options = {};
+    expect(spec.isBidRequestValid(bid)).to.equal(false);
+});
+});
+describe('buildRequests', function() {
+var bid, bidRequestObj;
 
-      expect(spec.isBidRequestValid(bid)).to.equal(true);
+beforeEach(function() {
+    bid = getValidBidObject();
+    bidRequestObj = {refererInfo: {referer: 'prebid.js'}};
+});
 
-      delete bid.params.outstream_function;
-      bid.params.outstream_options = {
-        slot: 'elemID'
-      };
-
-      expect(spec.isBidRequestValid(bid)).to.equal(true);
-    });
-
-    it('should succeed with ad_unit outstream and outstream function set', function() {
-      bid.params.ad_unit = 'outstream';
-      bid.params.outstream_function = function() {};
-      expect(spec.isBidRequestValid(bid)).to.equal(true);
-    });
-
-    it('should succeed with ad_unit outstream, options set for outstream and slot provided', function() {
-      bid.params.ad_unit = 'outstream';
-      bid.params.outstream_options = {slot: 'ad_container_id'};
-      expect(spec.isBidRequestValid(bid)).to.equal(true);
-    });
-
-    it('should fail without a channel_id', function() {
-      delete bid.params.channel_id;
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
-    });
-
-    it('should fail without playerSize', function() {
-      delete bid.mediaTypes.video.playerSize;
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
-    });
-
-    it('should fail without video', function() {
-      delete bid.mediaTypes.video;
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
-    });
-
-    it('should fail with ad_unit outstream but no options set for outstream', function() {
-      bid.params.ad_unit = 'outstream';
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
-    });
-
-    it('should fail with ad_unit outstream, options set for outstream but no slot provided', function() {
-      bid.params.ad_unit = 'outstream';
-      bid.params.outstream_options = {};
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
-    });
-  });
-  describe('buildRequests', function() {
-    var bid, bidRequestObj;
-
-    beforeEach(function() {
-      bid = getValidBidObject();
-      bidRequestObj = {refererInfo: {referer: 'prebid.js'}};
-    });
-
-    it('should build a very basic request', function() {
-      var request = spec.buildRequests([bid], bidRequestObj)[0];
-      expect(request.method).to.equal('POST');
-      expect(request.url).to.equal('//search.spotxchange.com/openrtb/2.3/dados/12345');
-      expect(request.bidRequest).to.equal(bidRequestObj);
-      expect(request.data.id).to.equal(12345);
-      expect(request.data.ext.wrap_response).to.equal(1);
-      expect(request.data.imp.id).to.match(/\d+/);
-      expect(request.data.imp.secure).to.equal(0);
-      expect(request.data.imp.video).to.deep.equal({
-        ext: {
-          sdk_name: 'Prebid 1+',
-          versionOrtb: '2.3'
-        },
-        h: '200',
-        mimes: [
-          'application/javascript',
-          'video/mp4',
-          'video/webm'
-        ],
-        w: '300'
-      });
-      expect(request.data.site).to.deep.equal({
-        content: 'content',
-        id: '',
-        page: 'prebid.js'
-      });
-    });
-    it('should change request parameters based on options sent', function() {
-      var request = spec.buildRequests([bid], bidRequestObj)[0];
-      expect(request.data.imp.video.ext).to.deep.equal({
+it('should build a very basic request', function() {
+    var request = spec.buildRequests([bid], bidRequestObj)[0];
+    expect(request.method).to.equal('POST');
+    expect(request.url).to.equal('//search.spotxchange.com/openrtb/2.3/dados/12345');
+    expect(request.bidRequest).to.equal(bidRequestObj);
+    expect(request.data.id).to.equal(12345);
+    expect(request.data.ext.wrap_response).to.equal(1);
+    expect(request.data.imp.id).to.match(/\d+/);
+    expect(request.data.imp.secure).to.equal(0);
+    expect(request.data.imp.video).to.deep.equal({
+    ext: {
         sdk_name: 'Prebid 1+',
         versionOrtb: '2.3'
-      });
+    },
+    h: '200',
+    mimes: [
+        'application/javascript',
+        'video/mp4',
+        'video/webm'
+    ],
+    w: '300'
+    });
+    expect(request.data.site).to.deep.equal({
+    content: 'content',
+    id: '',
+    page: 'prebid.js'
+    });
+});
+it('should change request parameters based on options sent', function() {
+    var request = spec.buildRequests([bid], bidRequestObj)[0];
+    expect(request.data.imp.video.ext).to.deep.equal({
+    sdk_name: 'Prebid 1+',
+    versionOrtb: '2.3'
+    });
 
-      bid.params = {
-        channel_id: 54321,
-        ad_mute: 1,
-        hide_skin: 1,
-        ad_volume: 1,
-        ad_unit: 'incontent',
-        outstream_options: {foo: 'bar'},
-        outstream_function: '987',
-        custom: {bar: 'foo'},
-        price_floor: 123,
-        start_delay: true
-      };
+    bid.params = {
+    channel_id: 54321,
+    ad_mute: 1,
+    hide_skin: 1,
+    ad_volume: 1,
+    ad_unit: 'incontent',
+    outstream_options: {foo: 'bar'},
+    outstream_function: '987',
+    custom: {bar: 'foo'},
+    price_floor: 123,
+    start_delay: true
+    };
 
-      request = spec.buildRequests([bid], bidRequestObj)[0];
-      expect(request.data.id).to.equal(54321);
-      expect(request.data.imp.video.ext).to.deep.equal({
-        ad_volume: 1,
-        ad_unit: 'incontent',
+    request = spec.buildRequests([bid], bidRequestObj)[0];
+    expect(request.data.id).to.equal(54321);
+    expect(request.data.imp.video.ext).to.deep.equal({
+    ad_volume: 1,
+    ad_unit: 'incontent',
         outstream_options: {foo: 'bar'},
         outstream_function: '987',
         custom: {bar: 'foo'},

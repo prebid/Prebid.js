@@ -71,7 +71,7 @@ describe('adliveBidAdapterTests', function() {
         }
       ]
     };
-    let bids = spec.interpretResponse(serverResponse);
+    let bids = spec.interpretResponse(serverResponse, bidRequestData.bids[0]);
 
     expect(bids).to.have.lengthOf(0);
   });

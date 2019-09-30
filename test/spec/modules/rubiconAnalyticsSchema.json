@@ -1,5 +1,5 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$schema": "http://json-schema.org/draft-06/schema#",
   "title": "Prebid Auctions",
   "description": "A batched data object describing the lifecycle of an auction or multiple auction across a single page view.",
   "type": "object",
@@ -191,6 +191,9 @@
           }
         ]
       }
+    },
+    "wrapperName": {
+      "type": "string"
     }
   },
   "definitions": {

@@ -2,9 +2,11 @@ import adapterManager from './adapterManager';
 import { getBidRequest, deepAccess, logError } from './utils';
 import { config } from '../src/config';
 import includes from 'core-js/library/fn/array/includes';
+import { hook } from './hook';
 
 const VIDEO_MEDIA_TYPE = 'video';
 export const OUTSTREAM = 'outstream';
+export const INSTREAM = 'instream';
 
 /**
  * Helper functions for working with video-enabled adUnits
@@ -30,7 +32,7 @@ export const hasNonVideoBidder = adUnit =>
  * @return {Boolean} If object is valid
  */
 export function isValidVideoBid(bid, bidRequests) {
-  const bidRequest = getBidRequest(bid.adId, bidRequests);
+  const bidRequest = getBidRequest(bid.requestId, bidRequests);
 
   const videoMediaType =
     bidRequest && deepAccess(bidRequest, 'mediaTypes.video');
@@ -38,12 +40,16 @@ export function isValidVideoBid(bid, bidRequests) {
 
   // if context not defined assume default 'instream' for video bids
   // instream bids require a vast url or vast xml content
+  return checkVideoBidSetup(bid, bidRequest, videoMediaType, context);
+}
+
+export const checkVideoBidSetup = hook('sync', function(bid, bidRequest, videoMediaType, context) {
   if (!bidRequest || (videoMediaType && context !== OUTSTREAM)) {
     // xml-only video bids require a prebid cache url
     if (!config.getConfig('cache.url') && bid.vastXml && !bid.vastUrl) {
       logError(`
         This bid contains only vastXml and will not work when a prebid cache url is not specified.
-        Try enabling prebid cache with pbjs.setConfig({ cache: {url: "..."} });
+        Try enabling prebid cache with $$PREBID_GLOBAL$$.setConfig({ cache: {url: "..."} });
       `);
       return false;
     }
@@ -57,4 +63,4 @@ export function isValidVideoBid(bid, bidRequests) {
   }
 
   return true;
-}
+}, 'checkVideoBidSetup');

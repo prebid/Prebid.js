@@ -2,6 +2,7 @@ import {assert, expect} from 'chai';
 import * as url from 'src/url';
 import {spec} from 'modules/adformBidAdapter';
 import { BANNER, VIDEO } from 'src/mediaTypes';
+import { config } from 'src/config';
 
 describe('Adform adapter', function () {
   let serverResponse, bidRequest, bidResponses;
@@ -48,6 +49,24 @@ describe('Adform adapter', function () {
     it('should set correct request method', function () {
       let request = spec.buildRequests([bids[0]]);
       assert.equal(request.method, 'GET');
+    });
+
+    it('should pass request currency from config', function () {
+      config.setConfig({ currency: { adServerCurrency: 'PLN' } });
+      let request = parseUrl(spec.buildRequests(bids).url);
+
+      request.items.forEach(item => {
+        assert.equal(item.rcur, 'PLN');
+      });
+    });
+
+    it('should prefer bid currency over global config', function () {
+      config.setConfig({ currency: { adServerCurrency: 'PLN' } });
+      bids[0].params.rcur = 'USD';
+      let request = parseUrl(spec.buildRequests(bids).url);
+      const currencies = request.items.map(item => item.rcur);
+
+      assert.deepEqual(currencies, [ 'USD', 'PLN', 'PLN', 'PLN', 'PLN', 'PLN', 'PLN' ]);
     });
 
     it('should correctly form bid items', function () {
@@ -286,6 +305,8 @@ describe('Adform adapter', function () {
   });
 
   beforeEach(function () {
+    config.setConfig({ currency: {} });
+
     let sizes = [[250, 300], [300, 250], [300, 600]];
     let placementCode = ['div-01', 'div-02', 'div-03', 'div-04', 'div-05'];
     let params = [{ mid: 1, url: 'some// there' }, {adxDomain: null, mid: 2, someVar: 'someValue', pt: 'gross'}, { adxDomain: null, mid: 3, pdom: 'home' }, {mid: 5, pt: 'net'}, {mid: 6, pt: 'gross'}];

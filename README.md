@@ -66,7 +66,7 @@ module.exports = {
 }
 ```
 
-Or for Babel 6 and/or Node v8.6.0 and less:
+Or for Babel 6:
 ```javascript
             // you must manually install and specify the presets and plugins yourself
             options: {
@@ -112,11 +112,11 @@ prebid.requestBids({
     $ cd Prebid.js
     $ npm install
 
-*Note:* You need to have `NodeJS` 6.x or greater installed.
+*Note:* You need to have `NodeJS` 8.9.x or greater installed.
 
-*Note:* In the 1.24.0 release of Prebid.js we have transitioned to using gulp 4.0 from using gulp 3.9.1.  To compily with gulp's recommended setup for 4.0, you'll need to have `gulp-cli` installed globally prior to running the general `npm install`.  This shouldn't impact any other projects you may work on that use an earlier version of gulp in it's setup.
+*Note:* In the 1.24.0 release of Prebid.js we have transitioned to using gulp 4.0 from using gulp 3.9.1.  To comply with gulp's recommended setup for 4.0, you'll need to have `gulp-cli` installed globally prior to running the general `npm install`.  This shouldn't impact any other projects you may work on that use an earlier version of gulp in its setup.
 
-If you have a previous version of `gulp` installed globally, you'll need to remove it before installing `gulp-cli`.  You can check if this is installed by running `gulp -v` and seeing the version that's listed in the `CLI` field of the output.  If you have the `gulp` package installd globally, it's likely the same version that you'll see in the `Local` field.  If you already have `gulp-cli` installed, it should be a lower major version (it's at version `2.0.1` at the time of the transition).
+If you have a previous version of `gulp` installed globally, you'll need to remove it before installing `gulp-cli`.  You can check if this is installed by running `gulp -v` and seeing the version that's listed in the `CLI` field of the output.  If you have the `gulp` package installed globally, it's likely the same version that you'll see in the `Local` field.  If you already have `gulp-cli` installed, it should be a lower major version (it's at version `2.0.1` at the time of the transition).
 
 To remove the old package, you can use the command: `npm rm gulp -g`
 
@@ -207,10 +207,20 @@ gulp test-coverage
 gulp view-coverage
 ```
 
-For end-to-end testing, edit the example file `./integrationExamples/gpt/pbjs_example_gpt.html`:
+For Prebid.org members with access to BrowserStack, additional end-to-end testing can be done with:
 
-1. Change `{id}` values appropriately to set up ad units and bidders
-2. Set the path to Prebid.js in your example file as shown below (see `pbs.src`).
+```bash
+gulp e2e-test --host=test.localhost
+```
+
+To run these tests, the following items are required:
+- setup an alias of localhost in your `hosts` file (eg `127.0.0.1  test.localhost`); note - you can use any alias.  Use this alias in the command-line argument above.
+- access to [BrowserStack](https://www.browserstack.com/) account.  Assign the following variables in your bash_profile:
+```bash
+export BROWSERSTACK_USERNAME='YourUserNameHere'
+export BROWSERSTACK_ACCESS_KEY='YourAccessKeyHere'
+```
+You can get these BrowserStack values from your profile page.
 
 For development:
 
