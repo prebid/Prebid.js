@@ -37,6 +37,8 @@ export const customIdSubmodule = {
     var data = '';
     if (typeof fn == 'function') {
       data = window.fn();
+    } else {
+      utils.logError('User ID - customData submodule: Provided functionName is not a function or not accessible')
     }
     return data;
   },
@@ -47,14 +49,18 @@ export const customIdSubmodule = {
    */
   getId(data) {
     // If the page includes its own pubcid object, then use that instead.
-    var t = '';
+    var dta;
     if (data && (typeof data.cookieName == 'string' || typeof data.functionName == 'string' || data.functionName != '')) {
       try {
-        e.cookieName ? t = this.getDataFromCookieName(data.cookieName) : e.data && (t = this.getDataFromFunction(data.functionName))
+        if (data.functionName) {
+          dta = this.getDataFromFunction(data.functionName)
+        } else if (data.cookieName) {
+          dta = this.getDataFromCookieName(data.cookieName);
+        }
       } catch (e) {}
-      return t || ''
+      return dta;
     }
-    utils.logError('User ID - customData submodule requires either data or cookie name to be defined')
+    utils.logError('User ID - customData submodule requires either data or cookie name to be defined');
   }
 };
 
