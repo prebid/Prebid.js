@@ -49,9 +49,9 @@ export const spec = {
     bidResponses.push(bidResponse);
     return bidResponses;
   },
-}
-function wrapDisplayUrl(displayUrl, type) {
-  if (type == 'video') return `<html><head></head><body style='margin : 0; padding: 0;'><div><video width="100%"; height="100%"; autoplay = true><source src="${displayUrl}"></video></div></body>`;
-  if (type == 'banner') return `<html><head></head><body style='margin : 0; padding: 0;'><div><img width:"100%"; height:"100%"; src="${displayUrl}"></div></body>`;
+  wrapDisplayUrl: function(displayUrl, type) {
+    if (type == 'video') return `<html><head></head><body style='margin : 0; padding: 0;'><div><video width="100%"; height="100%"; autoplay = true><source src="${displayUrl}"></video></div></body>`;
+    if (type == 'banner') return `<html><head></head><body style='margin : 0; padding: 0;'><div><img width:"100%"; height:"100%"; src="${displayUrl}"></div></body>`;
+  }
 }
 registerBidder(spec);
