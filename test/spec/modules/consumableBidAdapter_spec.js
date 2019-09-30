@@ -1,7 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/consumableBidAdapter';
-
-var bidFactory = require('src/bidfactory.js');
+import { createBid } from 'src/bidfactory';
 
 const ENDPOINT = 'https://e.serverbid.com/api/v2';
 const SMARTSYNC_CALLBACK = 'serverbidCallBids';
@@ -44,6 +43,10 @@ const REQUEST = {
     'bidderRequestId': '109f2a181342a9',
     'auctionId': 'a4713c32-3762-4798-b342-4ab810ca770d'
   }],
+  'gdprConsent': {
+    'consentString': 'consent-test',
+    'gdprApplies': true
+  },
   'start': 1487883186070,
   'auctionStart': 1487883186069,
   'timeout': 3000
@@ -53,6 +56,7 @@ const RESPONSE = {
   'headers': null,
   'body': {
     'user': { 'key': 'ue1-2d33e91b71e74929b4aeecc23f4376f1' },
+    'pixels': [{ 'type': 'image', 'url': '//sync.serverbid.com/ss/' }],
     'decisions': {
       '2b0f82502298c9': {
         'adId': 2364764,
@@ -104,11 +108,11 @@ const RESPONSE = {
   }
 };
 
-describe('Consumable BidAdapter', () => {
+describe('Consumable BidAdapter', function () {
   let bidRequests;
   let adapter = spec;
 
-  beforeEach(() => {
+  beforeEach(function () {
     bidRequests = [
       {
         bidder: 'consumable',
@@ -128,8 +132,8 @@ describe('Consumable BidAdapter', () => {
     ];
   });
 
-  describe('bid request validation', () => {
-    it('should accept valid bid requests', () => {
+  describe('bid request validation', function () {
+    it('should accept valid bid requests', function () {
       let bid = {
         bidder: 'consumable',
         params: {
@@ -142,7 +146,7 @@ describe('Consumable BidAdapter', () => {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
-    it('should accept valid bid requests with extra fields', () => {
+    it('should accept valid bid requests with extra fields', function () {
       let bid = {
         bidder: 'consumable',
         params: {
@@ -156,7 +160,7 @@ describe('Consumable BidAdapter', () => {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
-    it('should reject bid requests without siteId', () => {
+    it('should reject bid requests without siteId', function () {
       let bid = {
         bidder: 'consumable',
         params: {
@@ -168,7 +172,7 @@ describe('Consumable BidAdapter', () => {
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
-    it('should reject bid requests without networkId', () => {
+    it('should reject bid requests without networkId', function () {
       let bid = {
         bidder: 'consumable',
         params: {
@@ -181,44 +185,44 @@ describe('Consumable BidAdapter', () => {
     });
   });
 
-  describe('buildRequests validation', () => {
-    it('creates request data', () => {
+  describe('buildRequests validation', function () {
+    it('creates request data', function () {
       let request = spec.buildRequests(bidRequests);
 
       expect(request).to.exist.and.to.be.a('object');
     });
 
-    it('request to consumable should contain a url', () => {
+    it('request to consumable should contain a url', function () {
       let request = spec.buildRequests(bidRequests);
 
       expect(request.url).to.have.string('serverbid.com');
     });
 
-    it('requires valid bids to make request', () => {
+    it('requires valid bids to make request', function () {
       let request = spec.buildRequests([]);
       expect(request.bidRequest).to.be.empty;
     });
 
-    it('sends bid request to ENDPOINT via POST', () => {
+    it('sends bid request to ENDPOINT via POST', function () {
       let request = spec.buildRequests(bidRequests);
 
       expect(request.method).to.have.string('POST');
     });
   });
-  describe('interpretResponse validation', () => {
-    it('response should have valid bidderCode', () => {
-      let bidRequest = spec.buildRequests(REQUEST.bidRequest);
-      let bid = bidFactory.createBid(1, bidRequest.bidRequest[0]);
+  describe('interpretResponse validation', function () {
+    it('response should have valid bidderCode', function () {
+      let bidRequest = spec.buildRequests(REQUEST.bidRequest, REQUEST);
+      let bid = createBid(1, bidRequest.bidRequest[0]);
 
       expect(bid.bidderCode).to.equal('consumable');
     });
 
-    it('response should include objects for all bids', () => {
+    it('response should include objects for all bids', function () {
       let bids = spec.interpretResponse(RESPONSE, REQUEST);
       expect(bids.length).to.equal(2);
     });
 
-    it('registers bids', () => {
+    it('registers bids', function () {
       let bids = spec.interpretResponse(RESPONSE, REQUEST);
       bids.forEach(b => {
         expect(b).to.have.property('cpm');
@@ -232,36 +236,43 @@ describe('Consumable BidAdapter', () => {
         expect(b).to.have.property('ad');
         expect(b).to.have.property('currency', 'USD');
         expect(b).to.have.property('creativeId');
-        expect(b).to.have.property('ttl', 360);
+        expect(b).to.have.property('ttl', 30);
         expect(b).to.have.property('netRevenue', true);
         expect(b).to.have.property('referrer');
       });
     });
 
-    it('handles nobid responses', () => {
+    it('handles nobid responses', function () {
       let EMPTY_RESP = Object.assign({}, RESPONSE, {'body': {'decisions': null}})
       let bids = spec.interpretResponse(EMPTY_RESP, REQUEST);
 
       expect(bids).to.be.empty;
     });
 
-    it('handles no server response', () => {
+    it('handles no server response', function () {
       let bids = spec.interpretResponse(null, REQUEST);
 
       expect(bids).to.be.empty;
     });
   });
-  describe('getUserSyncs', () => {
+  describe('getUserSyncs', function () {
     let syncOptions = {'iframeEnabled': true};
 
-    it('handles empty sync options', () => {
+    it('handles empty sync options', function () {
       let opts = spec.getUserSyncs({});
 
-      expect(opts).to.be.empty;
+      expect(opts).to.be.undefined;
     });
 
-    it('should return a sync url if iframe syncs are enabled', () => {
+    it('should return a sync url if iframe syncs are enabled', function () {
       let opts = spec.getUserSyncs(syncOptions);
+
+      expect(opts.length).to.equal(1);
+    });
+
+    it('should return a sync url if pixel syncs are enabled and some are returned from the server', function () {
+      let syncOptions = {'pixelEnabled': true};
+      let opts = spec.getUserSyncs(syncOptions, [RESPONSE]);
 
       expect(opts.length).to.equal(1);
     });

@@ -1,9 +1,9 @@
 // RealVu Analytics Adapter
-import adapter from 'src/AnalyticsAdapter';
-import adaptermanager from 'src/adaptermanager';
-import CONSTANTS from 'src/constants.json';
+import adapter from '../src/AnalyticsAdapter';
+import adapterManager from '../src/adapterManager';
+import CONSTANTS from '../src/constants.json';
 
-const utils = require('src/utils.js');
+const utils = require('../src/utils.js');
 
 let realvuAnalyticsAdapter = adapter({
   global: 'realvuAnalytics',
@@ -20,8 +20,8 @@ try {
 } catch (e) {
   /* continue regardless of error */
 }
-window.top1.realvu_aa_fifo = window.top1.realvu_aa_fifo || [];
-window.top1.realvu_aa = window.top1.realvu_aa || {
+
+export let lib = {
   ads: [],
   x1: 0,
   y1: 0,
@@ -35,11 +35,12 @@ window.top1.realvu_aa = window.top1.realvu_aa || {
   c: '', // owner id
   sr: '', //
   beacons: [], // array of beacons to collect while 'conf' is not responded
+  defer: [],
   init: function () {
     let z = this;
     let u = navigator.userAgent;
     z.device = u.match(/iPad|Tablet/gi) ? 'tablet' : u.match(/iPhone|iPod|Android|Opera Mini|IEMobile/gi) ? 'mobile' : 'desktop';
-    if (typeof (z.len) == 'undefined') z.len = 0; // check, meybe too much, just make it len:0,
+    if (typeof (z.len) == 'undefined') z.len = 0;
     z.ie = navigator.appVersion.match(/MSIE/);
     z.saf = (u.match(/Safari/) && !u.match(/Chrome/));
     z.ff = u.match(/Firefox/i);
@@ -53,21 +54,20 @@ window.top1.realvu_aa = window.top1.realvu_aa || {
       }
     }
     z.add_evt(window.top1, 'focus', function () {
-      window.top1.realvu_aa.foc = 1; /* window.top1.realvu_aa.log('focus',-1); */
+      window.top1.realvu_aa.foc = 1;
     });
-    // z.add_evt(window.top1, "scroll", function(){window.top1.realvu_aa.foc=1;window.top1.realvu_aa.log('scroll focus',-1);});
+    z.add_evt(window.top1, 'scroll', function () {
+      window.top1.realvu_aa.foc = 1;
+    });
     z.add_evt(window.top1, 'blur', function () {
-      window.top1.realvu_aa.foc = 0; /* window.top1.realvu_aa.log('blur',-1); */
+      window.top1.realvu_aa.foc = 0;
     });
-    // + http://www.w3.org/TR/page-visibility/
     z.add_evt(window.top1.document, 'blur', function () {
-      window.top1.realvu_aa.foc = 0; /* window.top1.realvu_aa.log('blur',-1); */
+      window.top1.realvu_aa.foc = 0;
     });
     z.add_evt(window.top1, 'visibilitychange', function () {
       window.top1.realvu_aa.foc = !window.top1.document.hidden;
-      /* window.top1.realvu_aa.log('vis-ch '+window.top1.realvu_aa.foc,-1); */
     });
-    // -
     z.doLog = (window.top1.location.search.match(/boost_log/) || document.referrer.match(/boost_log/)) ? 1 : 0;
     if (z.doLog) {
       window.setTimeout(z.scr(window.top1.location.protocol + '//ac.realvu.net/realvu_aa_viz.js'), 500);
@@ -75,22 +75,20 @@ window.top1.realvu_aa = window.top1.realvu_aa || {
   },
 
   add_evt: function (elem, evtType, func) {
-    if (elem.addEventListener) {
-      elem.addEventListener(evtType, func, true);
-    } else if (elem.attachEvent) {
-      elem.attachEvent('on' + evtType, func);
-    } else {
-      elem['on' + evtType] = func;
-    }
+    elem.addEventListener(evtType, func, true);
+    this.defer.push(function() {
+      elem.removeEventListener(evtType, func, true);
+    });
   },
 
   update: function () {
     let z = this;
-    let de = window.top1.document.documentElement;
-    z.x1 = window.top1.pageXOffset ? window.top1.pageXOffset : de.scrollLeft;
-    z.y1 = window.top1.pageYOffset ? window.top1.pageYOffset : de.scrollTop;
-    let w1 = window.top1.innerWidth ? window.top1.innerWidth : de.clientWidth;
-    let h1 = window.top1.innerHeight ? window.top1.innerHeight : de.clientHeight;
+    let t = window.top1;
+    let de = t.document.documentElement;
+    z.x1 = t.pageXOffset ? t.pageXOffset : de.scrollLeft;
+    z.y1 = t.pageYOffset ? t.pageYOffset : de.scrollTop;
+    let w1 = t.innerWidth ? t.innerWidth : de.clientWidth;
+    let h1 = t.innerHeight ? t.innerHeight : de.clientHeight;
     z.x2 = z.x1 + w1;
     z.y2 = z.y1 + h1;
   },
@@ -154,7 +152,7 @@ window.top1.realvu_aa = window.top1.realvu_aa || {
       let bk = z.beacons.shift();
       while (typeof bk != 'undefined') {
         bk.s1 = bk.s1.replace(/_sr=0*_/, '_sr=' + z.sr + '_');
-        z.log(' ' + bk.a.riff + ' ' + bk.a.unit_id + /* " "+pin.mode+ */ ' ' + bk.a.w + 'x' + bk.a.h + '@' + bk.a.x + ',' + bk.a.y +
+        z.log(' ' + bk.a.riff + ' ' + bk.a.unit_id + /* ' '+pin.mode+ */ ' ' + bk.a.w + 'x' + bk.a.h + '@' + bk.a.x + ',' + bk.a.y +
           ' <a href=\'' + bk.s1 + '\'>' + bk.f + '</a>', bk.a.num);
         if (bk.a.rnd < Math.pow(10, 1 - (z.sr.charCodeAt(0) & 7))) {
           z.scr(bk.s1, bk.a);
@@ -183,8 +181,8 @@ window.top1.realvu_aa = window.top1.realvu_aa || {
       '_f=' + f + '_r=' + a.riff +
       '_s=' + a.w + 'x' + a.h;
     if (a.p) s2 += '_p=' + a.p;
-    s2 += '_ps=' + this.enc(a.unit_id) + // 08-Jun-15 - _p= is replaced with _ps= - p-number, ps-string
-      '_dv=' + this.device +
+    if (f != 'conf') s2 += '_ps=' + this.enc(a.unit_id);
+    s2 += '_dv=' + this.device +
       // + '_a=' + this.enc(a.a)
       '_d=' + pin.mode +
       '_sr=' + this.sr +
@@ -193,7 +191,7 @@ window.top1.realvu_aa = window.top1.realvu_aa || {
   },
 
   enc: function (s1) {
-    // return escape(s1).replace(/[0-9a-f]{5,}/gi,'RANDOM').replace(/\*/g, "%2A").replace(/_/g, "%5F").replace(/\+/g,
+    // return escape(s1).replace(/[0-9a-f]{5,}/gi,'RANDOM').replace(/\*/g, '%2A').replace(/_/g, '%5F').replace(/\+/g,
     return escape(s1).replace(/\*/g, '%2A').replace(/_/g, '%5F').replace(/\+/g,
       '%2B').replace(/\./g, '%2E').replace(/\x2F/g, '%2F');
   },
@@ -469,7 +467,7 @@ window.top1.realvu_aa = window.top1.realvu_aa || {
     return null;
   },
 
-  doc: function(f) { // return document of f-iframe, keep here "n" as a parameter because of call from setTimeout()
+  doc: function(f) { // return document of f-iframe
     let d = null;
     try {
       if (f.contentDocument) d = f.contentDocument; // DOM
@@ -849,6 +847,9 @@ window.top1.realvu_aa = window.top1.realvu_aa || {
   }
 };
 
+window.top1.realvu_aa_fifo = window.top1.realvu_aa_fifo || [];
+window.top1.realvu_aa = window.top1.realvu_aa || lib;
+
 if (typeof (window.top1.boost_poll) == 'undefined') {
   window.top1.realvu_aa.init();
   window.top1.boost_poll = setInterval(function () {
@@ -937,9 +938,17 @@ realvuAnalyticsAdapter.isInView = function (adUnitCode) {
   return r;
 };
 
-adaptermanager.registerAnalyticsAdapter({
+let disableAnalyticsSuper = realvuAnalyticsAdapter.disableAnalytics;
+realvuAnalyticsAdapter.disableAnalytics = function () {
+  while (lib.defer.length) {
+    lib.defer.pop()();
+  }
+  disableAnalyticsSuper.apply(this, arguments);
+};
+
+adapterManager.registerAnalyticsAdapter({
   adapter: realvuAnalyticsAdapter,
   code: 'realvuAnalytics'
 });
 
-module.exports = realvuAnalyticsAdapter;
+export default realvuAnalyticsAdapter;

@@ -64,17 +64,17 @@ const invalidSyncBidResponse = [{
   }
 }];
 
-describe('brainy Adapter', () => {
-  describe('request', () => {
-    it('should validate bid request', () => {
+describe('brainy Adapter', function () {
+  describe('request', function () {
+    it('should validate bid request', function () {
       expect(spec.isBidRequestValid(validBidReq)).to.equal(true);
     });
-    it('should not validate incorrect bid request', () => {
+    it('should not validate incorrect bid request', function () {
       expect(spec.isBidRequestValid(invalidBidReq)).to.equal(false);
     });
   });
-  describe('build request', () => {
-    it('Verify bid request', () => {
+  describe('build request', function () {
+    it('Verify bid request', function () {
       const request = spec.buildRequests(bidReq);
       expect(request[0].method).to.equal('GET');
       expect(request[0].url).to.equal(URL);
@@ -83,14 +83,14 @@ describe('brainy Adapter', () => {
     });
   });
 
-  describe('interpretResponse', () => {
-    it('should build bid array', () => {
+  describe('interpretResponse', function () {
+    it('should build bid array', function () {
       const request = spec.buildRequests(bidReq);
       const result = spec.interpretResponse({body: bidResponse}, request[0]);
       expect(result.length).to.equal(1);
     });
 
-    it('should have all relevant fields', () => {
+    it('should have all relevant fields', function () {
       const request = spec.buildRequests(bidReq);
       const result = spec.interpretResponse({body: bidResponse}, request[0]);
       const bid = result[0];
@@ -101,25 +101,25 @@ describe('brainy Adapter', () => {
     });
   });
 
-  describe('spec.getUserSyncs', () => {
+  describe('spec.getUserSyncs', function () {
     let syncOptions
-    beforeEach(() => {
+    beforeEach(function () {
       syncOptions = {
         enabledBidders: ['brainy'],
         pixelEnabled: true
       }
     });
-    it('sucess with usersync url', () => {
+    it('sucess with usersync url', function () {
       const result = [];
       result.push({type: 'image', url: '//testparm.com/ssp-sync/p/sync?uid=2110180601155125000059&buyer=2&slot=34'});
       expect(spec.getUserSyncs(syncOptions, bidSyncResponse)).to.deep.equal(result);
     });
 
-    it('sucess without usersync url', () => {
+    it('sucess without usersync url', function () {
       const result = [];
       expect(spec.getUserSyncs(syncOptions, invalidSyncBidResponse)).to.deep.equal(result);
     });
-    it('empty response', () => {
+    it('empty response', function () {
       const serverResponse = [{body: {}}];
       const result = [];
       expect(spec.getUserSyncs(syncOptions, serverResponse)).to.deep.equal(result);

@@ -7,6 +7,7 @@ Maintainer: paul@trustx.org
 # Description
 
 Module that connects to TrustX demand source to fetch bids.
+TrustX Bid Adapter supports Banner and Video (instream and outstream).
 
 # Test Parameters
 ```
@@ -31,7 +32,23 @@ Module that connects to TrustX demand source to fetch bids.
                        bidder: "trustx",
                        params: {
                            uid: 45,
-                           priceType: 'gross'
+                           priceType: 'gross',
+                           keywords: {
+                               brandsafety: ['disaster'],
+                               topic: ['stress', 'fear']
+                           }
+                       }
+                   }
+               ]
+           },{
+               code: 'test-div',
+               sizes: [[640, 360]],
+               mediaTypes: { video: {} },
+               bids: [
+                   {
+                       bidder: "trustx",
+                       params: {
+                           uid: 7697
                        }
                    }
                ]

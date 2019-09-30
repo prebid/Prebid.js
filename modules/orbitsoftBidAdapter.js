@@ -1,6 +1,6 @@
-import * as utils from 'src/utils';
-import {registerBidder} from 'src/adapters/bidderFactory';
-import {config} from 'src/config';
+import * as utils from '../src/utils';
+import {registerBidder} from '../src/adapters/bidderFactory';
+import {config} from '../src/config';
 
 const BIDDER_CODE = 'orbitsoft';
 let styleParamsMap = {
@@ -25,7 +25,7 @@ let styleParamsMap = {
 };
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['oas', '152media'], // short code and customer aliases
+  aliases: ['oas', 'mediafuseLift'], // short code and customer aliases
   isBidRequestValid: function (bid) {
     switch (true) {
       case !('params' in bid):

@@ -1,6 +1,6 @@
 import {expect} from 'chai';
 import * as _ from 'lodash';
-import {spec, matchRequest, checkDeepArray, defaultSize} from '../../../modules/districtmDmxBidAdapter';
+import {spec, matchRequest, checkDeepArray, defaultSize} from '../../../modules/districtmDMXBidAdapter';
 
 const bidRequest = [{
   'bidder': 'districtmDMX',
@@ -420,58 +420,58 @@ const responsesNegative = {
 const emptyResponse = { body: {} };
 const emptyResponseSeatBid = { body: { seatbid: [] } };
 
-describe('DistrictM Adaptor', () => {
+describe('DistrictM Adaptor', function () {
   const districtm = spec;
-  describe('All needed functions are available', () => {
-    it(`isBidRequestValid is present and type function`, () => {
+  describe('All needed functions are available', function () {
+    it(`isBidRequestValid is present and type function`, function () {
       expect(districtm.isBidRequestValid).to.exist.and.to.be.a('function')
     });
 
-    it(`BuildRequests is present and type function`, () => {
+    it(`BuildRequests is present and type function`, function () {
       expect(districtm.buildRequests).to.exist.and.to.be.a('function')
     });
 
-    it(`interpretResponse is present and type function`, () => {
+    it(`interpretResponse is present and type function`, function () {
       expect(districtm.interpretResponse).to.exist.and.to.be.a('function')
     });
 
-    it(`getUserSyncs is present and type function`, () => {
+    it(`getUserSyncs is present and type function`, function () {
       expect(districtm.getUserSyncs).to.exist.and.to.be.a('function')
     });
   });
 
-  describe(`these properties are available or not`, () => {
-    it(`code should have a value of districtmDMX`, () => {
+  describe(`these properties are available or not`, function () {
+    it(`code should have a value of districtmDMX`, function () {
       expect(districtm.code).to.be.equal('districtmDMX');
     });
 
-    it(`timeout should not be defined`, () => {
+    it(`timeout should not be defined`, function () {
       expect(districtm.onTimeout).to.be.an('undefined');
     });
   });
 
-  describe(`isBidRequestValid test response`, () => {
+  describe(`isBidRequestValid test response`, function () {
     let params = {
       dmxid: 10001,
       memberid: 10003,
     };
-    it(`function should return true`, () => {
+    it(`function should return true`, function () {
       expect(districtm.isBidRequestValid({params})).to.be.equal(true);
     });
-    it(`function should return false`, () => {
+    it(`function should return false`, function () {
       expect(districtm.isBidRequestValid({ params: { memberid: 12345 } })).to.be.equal(false);
     });
-    it(`expect to have two property available dmxid and memberid`, () => {
+    it(`expect to have two property available dmxid and memberid`, function () {
       expect(params).to.have.property('dmxid');
       expect(params).to.have.property('memberid');
     });
   });
 
-  describe(`getUserSyncs test usage`, () => {
-    it(`return value should be an array`, () => {
+  describe(`getUserSyncs test usage`, function () {
+    it(`return value should be an array`, function () {
       expect(districtm.getUserSyncs({ iframeEnabled: true })).to.be.an('array');
     });
-    it(`array should have only one object and it should have a property type = 'iframe'`, () => {
+    it(`array should have only one object and it should have a property type = 'iframe'`, function () {
       expect(districtm.getUserSyncs({ iframeEnabled: true }).length).to.be.equal(1);
       let [userSync] = districtm.getUserSyncs({ iframeEnabled: true });
       expect(userSync).to.have.property('type');
@@ -479,53 +479,53 @@ describe('DistrictM Adaptor', () => {
     });
   });
 
-  describe(`buildRequests test usage`, () => {
+  describe(`buildRequests test usage`, function () {
     const buildRequestResults = districtm.buildRequests(bidRequest, bidderRequest);
-    it(`the function should return an array`, () => {
+    it(`the function should return an array`, function () {
       expect(buildRequestResults).to.be.an('object');
     });
-    it(`the function should return array length of 1`, () => {
+    it(`the function should return array length of 1`, function () {
       expect(buildRequestResults.data).to.be.a('string');
     });
   });
 
-  describe(`interpretResponse test usage`, () => {
+  describe(`interpretResponse test usage`, function () {
     const responseResults = districtm.interpretResponse(responses, {bidderRequest});
     const emptyResponseResults = districtm.interpretResponse(emptyResponse, {bidderRequest});
     const emptyResponseResultsNegation = districtm.interpretResponse(responsesNegative, {bidderRequest});
     const emptyResponseResultsEmptySeat = districtm.interpretResponse(emptyResponseSeatBid, {bidderRequest});
-    it(`the function should return an array`, () => {
+    it(`the function should return an array`, function () {
       expect(responseResults).to.be.an('array');
     });
-    it(`the function should return array length of 1`, () => {
+    it(`the function should return array length of 1`, function () {
       expect(responseResults.length).to.be.equal(1);
     });
-    it(`the response return nothing`, () => {
+    it(`the response return nothing`, function () {
       expect(emptyResponseResults.length).to.be.equal(0);
     });
-    it(`the response seatbid return nothing`, () => {
+    it(`the response seatbid return nothing`, function () {
       expect(emptyResponseResultsEmptySeat.length).to.be.equal(0);
     });
 
-    it(`on invalid CPM`, () => {
+    it(`on invalid CPM`, function () {
       expect(emptyResponseResultsNegation.length).to.be.equal(0);
     });
   });
 
-  describe(`Helper function testing`, () => {
+  describe(`Helper function testing`, function () {
     const bid = matchRequest('29a28a1bbc8a8d', {bidderRequest});
     const {width, height} = defaultSize(bid);
-    it(`test matchRequest`, () => {
+    it(`test matchRequest`, function () {
       expect(matchRequest('29a28a1bbc8a8d', {bidderRequest})).to.be.an('object');
     });
-    it(`test checkDeepArray`, () => {
+    it(`test checkDeepArray`, function () {
       expect(_.isEqual(checkDeepArray([728, 90]), [728, 90])).to.be.equal(true);
       expect(_.isEqual(checkDeepArray([[728, 90]]), [728, 90])).to.be.equal(true);
       expect(_.isEqual(checkDeepArray([[728, 90], [300, 250]]), [728, 90])).to.be.equal(true);
       expect(_.isEqual(checkDeepArray([[300, 250], [300, 250]]), [728, 90])).to.be.equal(false);
       expect(_.isEqual(checkDeepArray([300, 250]), [300, 250])).to.be.equal(true);
     });
-    it(`test defaultSize`, () => {
+    it(`test defaultSize`, function () {
       expect(width).to.be.equal(300);
       expect(height).to.be.equal(250);
     });
