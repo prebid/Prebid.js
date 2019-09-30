@@ -32,6 +32,14 @@ export const customIdSubmodule = {
     }
     return null
   },
+  getDataFromFunction: function(fnName) {
+    var fn = window[fnName];
+    var data = '';
+    if (typeof fn == 'function') {
+      data = window.fn();
+    }
+    return data;
+  },
   /**
    * performs action to obtain id
    * @function
@@ -40,9 +48,9 @@ export const customIdSubmodule = {
   getId(data) {
     // If the page includes its own pubcid object, then use that instead.
     var t = '';
-    if (data && (typeof data.cookieName == 'string' || data.data != '' || data.data != null)) {
+    if (data && (typeof data.cookieName == 'string' || typeof data.functionName == 'string' || data.functionName != '')) {
       try {
-        e.cookieName ? t = this.getDataFromCookieName(data.cookieName) : e.data && (t = e.data)
+        e.cookieName ? t = this.getDataFromCookieName(data.cookieName) : e.data && (t = this.getDataFromFunction(data.functionName))
       } catch (e) {}
       return t || ''
     }
