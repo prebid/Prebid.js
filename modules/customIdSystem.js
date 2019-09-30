@@ -36,7 +36,7 @@ export const customIdSubmodule = {
     var fn = window[fnName];
     var data = '';
     if (typeof fn == 'function') {
-      data = window.fn();
+      data = fn();
     } else {
       utils.logError('User ID - customData submodule: Provided functionName is not a function or not accessible')
     }
