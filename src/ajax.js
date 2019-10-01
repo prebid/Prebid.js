@@ -1,6 +1,8 @@
 import {parse as parseURL, format as formatURL} from './url';
 import { config } from './config';
 import Promise from 'promise-polyfill';
+import setAsap from 'setasap';
+Promise._immediateFn = setAsap;
 
 var utils = require('./utils');
 
