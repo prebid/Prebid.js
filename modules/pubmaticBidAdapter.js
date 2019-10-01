@@ -941,7 +941,7 @@ export const spec = {
             netRevenue: NET_REVENUE,
             cpm: 0,
             currency: respCur,
-            referrer: requestData.site && requestData.site.ref ? requestData.site.ref : '',
+            referrer: parsedReferrer,
           })
         });
       }
@@ -963,7 +963,7 @@ export const spec = {
                   br.currency = respCur;
                   br.netRevenue = NET_REVENUE;
                   br.ttl = 300;
-                  br.referrer = requestData.site && requestData.site.ref ? requestData.site.ref : '';
+                  br.referrer = parsedReferrer;
                   br.ad = bid.adm;
                   if (requestData.imp && requestData.imp.length > 0) {
                     requestData.imp.forEach(req => {

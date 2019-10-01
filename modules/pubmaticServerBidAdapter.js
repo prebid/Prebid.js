@@ -1,9 +1,9 @@
-import * as utils from 'src/utils';
-import * as ajax from 'src/ajax';
-import {userSync} from 'src/userSync';
-import { config } from 'src/config';
-import { registerBidder } from 'src/adapters/bidderFactory';
-const constants = require('src/constants.json');
+import * as utils from '../src/utils';
+import * as ajax from '../src/ajax';
+import {userSync} from '../src/userSync';
+import { config } from '../src/config';
+import { registerBidder } from '../src/adapters/bidderFactory';
+const constants = require('../src/constants.json');
 
 const BIDDER_CODE = 'pubmaticServer';
 const ENDPOINT = '//ow.pubmatic.com/openrtb/2.5/';
