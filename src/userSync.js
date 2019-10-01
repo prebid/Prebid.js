@@ -8,7 +8,8 @@ config.setDefaults({
     syncEnabled: true,
     pixelEnabled: true,
     syncsPerBidder: 5,
-    syncDelay: 3000
+    syncDelay: 3000,
+    auctionDelay: 0
   }
 });
 
