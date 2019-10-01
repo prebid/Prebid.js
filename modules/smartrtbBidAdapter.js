@@ -56,9 +56,6 @@ export const spec = {
     for (let x = 0; x < validBidRequests.length; x++) {
       let req = validBidRequests[x]
 
-      console.log(req)
-      console.log(utils.deepAccess(req, 'mediaTypes'))
-
       payload.imps.push({
         zone_id: req.params.zoneId,
         bid_id: req.bidId,
