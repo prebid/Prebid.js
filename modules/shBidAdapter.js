@@ -147,14 +147,7 @@ function createBids(bidRes, reqData) {
 
   bidRes.bids.forEach(function (bid) {
     const reqBid = bidMap[bid.bidId];
-    let currentBidRequest;
-    for (let i in reqBid.bidRequest.bids) {
-      if (bid.bidId === reqBid.bidRequest.bids[i].bidId) {
-        currentBidRequest = reqBid.bidRequest.bids[i];
-        break;
-      }
-    }
-
+    const currentBidRequest = reqBid.bidRequest.bids && reqBid.bidRequest.bids.find(requestBid => bid.bidId === requestBid.bidId);
     let bidUnit = {};
     bidUnit.cpm = bid.cpm;
     bidUnit.requestId = bid.bidId;
@@ -238,7 +231,7 @@ function createOutstreamEmbedCode(bid) {
   script.type = 'text/javascript';
   script.src = urls.pubTag;
   script.onload = function () {
-    window.ShowheroesTag=this;
+    window.ShowheroesTag = this;
   };
   script.setAttribute('data-player-host', urls.vlHost);
 
@@ -260,7 +253,7 @@ function getBannerHtml (bid, reqBid, reqData) {
   return `<html>
     <head></head>
     <body>
-      <script async src="${urls.pubTag}" 
+      <script async src="${urls.pubTag}"
               data-canvas=""
               data-noad-passback-listener=""
               onload="window.ShowheroesTag=this"
