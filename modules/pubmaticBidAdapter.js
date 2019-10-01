@@ -624,10 +624,33 @@ function _handleTTDId(eids, validBidRequests) {
   }
 }
 
+/**
+ * Produces external userid object in ortb 3.0 model.
+ */
+function _addExternalUserId(eids, value, source, atype) {
+  if (utils.isStr(value)) {
+    eids.push({
+      source,
+      uids: [{
+        id: value,
+        atype
+      }]
+    });
+  }
+}
+
 function _handleEids(payload, validBidRequests) {
   let eids = [];
   _handleDigitrustId(eids);
   _handleTTDId(eids, validBidRequests);
+  const bidRequest = validBidRequests[0];
+  if (bidRequest && bidRequest.userId) {
+    _addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.pubcid`), 'pubcommon', 1);
+    _addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.digitrustid.data.id`), 'digitru.st', 1);
+    _addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.id5id`), 'id5-sync.com', 1);
+    _addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.criteortus.${BIDDER_CODE}.userid`), 'criteortus', 1);
+    _addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.idl_env`), 'liveramp.com', 1);
+  }
   if (eids.length > 0) {
     payload.user.eids = eids;
   }

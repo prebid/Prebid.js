@@ -258,6 +258,13 @@ describe('microadBidAdapter', () => {
         );
       });
     });
+
+    it('should always use the HTTPS endpoint https://s-rtb-pb.send.microad.jp/prebid even if it is served via HTTP', () => {
+      const requests = spec.buildRequests([bidRequestTemplate], bidderRequest);
+      requests.forEach(request => {
+        expect(request.url.lastIndexOf('https', 0) === 0).to.be.true;
+      });
+    });
   });
 
   describe('interpretResponse', () => {
