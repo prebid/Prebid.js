@@ -3,7 +3,6 @@ import { targeting } from '../src/targeting';
 import { format as buildUrl } from '../src/url';
 import * as utils from '../src/utils';
 import { config } from '../src/config';
-import { getHook } from '../src/hook';
 
 const MODULE_NAME = 'Konduit';
 
@@ -65,12 +64,6 @@ export function buildVastUrl(options) {
 
   return resultingUrl;
 }
-
-export function notifyTranslationModule(fn) {
-  fn.call(this, 'konduit');
-}
-
-getHook('registerAdserver').before(notifyTranslationModule);
 
 function obtainVastUrl(bid) {
   const vastUrl = bid && bid.vastUrl;

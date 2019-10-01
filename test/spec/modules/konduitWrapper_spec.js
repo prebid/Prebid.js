@@ -1,4 +1,3 @@
-// eslint-disable-file
 import { expect } from 'chai';
 
 import parse from 'url-parse';
