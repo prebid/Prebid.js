@@ -706,7 +706,7 @@ describe('AppNexusAdapter', function () {
       });
     });
 
-    it('should populate schain if available', function () {
+    it('should populate coppa if set in config', function () {
       let bidRequest = Object.assign({}, bidRequests[0]);
       sinon.stub(config, 'getConfig')
         .withArgs('coppa')
