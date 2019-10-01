@@ -36,8 +36,7 @@ describe('Criteo RTUS', function() {
 
     let response = { 'status': 'ok', 'userid': 'sample-userid' }
     let callBackSpy = sinon.spy();
-    const idResp = criteortusIdSubmodule.getId(configParams);
-    const submoduleCallback = idResp.callback;
+    let submoduleCallback = criteortusIdSubmodule.getId(configParams);
     submoduleCallback(callBackSpy);
     requests[0].respond(
       200,
@@ -71,8 +70,7 @@ describe('Criteo RTUS', function() {
 
     let response = { 'status': 'ok', 'userid': 'sample-userid' }
     let callBackSpy = sinon.spy();
-    const idResp = criteortusIdSubmodule.getId(configParams);
-    const submoduleCallback = idResp.callback;
+    let submoduleCallback = criteortusIdSubmodule.getId(configParams);
     submoduleCallback(callBackSpy);
     requests[0].respond(
       200,

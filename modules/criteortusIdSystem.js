@@ -36,7 +36,7 @@ export const criteortusIdSubmodule = {
    * performs action to obtain id and return a value in the callback's response argument
    * @function
    * @param {SubmoduleParams} [configParams]
-   * @returns {IdResponse|undefined}
+   * @returns {function(callback:function)}
    */
   getId(configParams) {
     if (!configParams || !utils.isPlainObject(configParams.clientIdentifier)) {
@@ -46,10 +46,10 @@ export const criteortusIdSubmodule = {
 
     let uid = utils.getCookie(key);
     if (uid) {
-      return {id: uid};
+      return uid;
     } else {
       let userIds = {};
-      const resp = function(callback) {
+      return function(callback) {
         let bidders = Object.keys(configParams.clientIdentifier);
 
         function afterAllResponses() {
@@ -97,8 +97,7 @@ export const criteortusIdSubmodule = {
             })
           );
         })
-      };
-      return {callback: resp};
+      }
     }
   }
 };

@@ -773,9 +773,7 @@ describe('emoteevBidAdapter', function () {
         sinon.assert.notCalled(config.getConfig);
         sinon.assert.notCalled(utils.getParameterByName);
       });
-    });
-    describe('isBidRequestValid empty request', function() {
-      it('has intended side-effects empty request', function () {
+      it('has intended side-effects', function () {
         const invalidBidRequest = {};
         spec.isBidRequestValid(invalidBidRequest);
         sinon.assert.notCalled(utils.triggerPixel);

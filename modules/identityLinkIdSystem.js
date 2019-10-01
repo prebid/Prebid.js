@@ -29,7 +29,7 @@ export const identityLinkSubmodule = {
    * performs action to obtain id and return a value in the callback's response argument
    * @function
    * @param {SubmoduleParams} [configParams]
-   * @returns {IdResponse|undefined}
+   * @returns {function(callback:function)}
    */
   getId(configParams) {
     if (!configParams || typeof configParams.pid !== 'string') {
@@ -38,10 +38,9 @@ export const identityLinkSubmodule = {
     }
     // use protocol relative urls for http or https
     const url = `https://api.rlcdn.com/api/identity/envelope?pid=${configParams.pid}`;
-    let resp;
     // if ats library is initialised, use it to retrieve envelope. If not use standard third party endpoint
     if (window.ats) {
-      resp = function(callback) {
+      return function(callback) {
         window.ats.retrieveEnvelope(function (envelope) {
           if (envelope) {
             callback(JSON.parse(envelope).envelope);
@@ -51,11 +50,10 @@ export const identityLinkSubmodule = {
         });
       }
     } else {
-      resp = function (callback) {
+      return function (callback) {
         getEnvelope(url, callback);
       }
     }
-    return {callback: resp};
   }
 }
 // return envelope from third party endpoint

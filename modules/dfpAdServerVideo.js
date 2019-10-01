@@ -101,7 +101,7 @@ export function buildDfpVideoUrl(options) {
 
   return buildUrl({
     protocol: 'https',
-    host: 'securepubads.g.doubleclick.net',
+    host: 'pubads.g.doubleclick.net',
     pathname: '/gampad/ads',
     search: queryParams
   });
@@ -184,7 +184,7 @@ export function buildAdpodVideoUrl({code, params, callback} = {}) {
 
     const masterTag = buildUrl({
       protocol: 'https',
-      host: 'securepubads.g.doubleclick.net',
+      host: 'pubads.g.doubleclick.net',
       pathname: '/gampad/ads',
       search: queryParams
     });

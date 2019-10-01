@@ -17,7 +17,7 @@ export const tripleliftAdapterSpec = {
 
   buildRequests: function(bidRequests, bidderRequest) {
     let tlCall = STR_ENDPOINT;
-    let data = _buildPostBody(bidRequests);
+    let data = _buildPostBody(bidRequests, bidderRequest);
 
     tlCall = utils.tryAppendQueryString(tlCall, 'lib', 'prebid');
     tlCall = utils.tryAppendQueryString(tlCall, 'v', '$prebid.version$');
@@ -78,7 +78,7 @@ export const tripleliftAdapterSpec = {
   }
 }
 
-function _buildPostBody(bidRequests) {
+function _buildPostBody(bidRequests, bidderRequest) {
   let data = {};
   data.imp = bidRequests.map(function(bid, index) {
     return {
@@ -91,11 +91,7 @@ function _buildPostBody(bidRequests) {
     };
   });
 
-  let eids = [
-    ...getUnifiedIdEids(bidRequests),
-    ...getIdentityLinkEids(bidRequests)
-  ];
-
+  let eids = handleConsortiaUserIds(bidderRequest);
   if (eids.length > 0) {
     data.user = {
       ext: {eids}
@@ -103,35 +99,6 @@ function _buildPostBody(bidRequests) {
   }
 
   return data;
-}
-
-function getUnifiedIdEids(bidRequests) {
-  return getEids(bidRequests, 'tdid', 'adserver.org', 'TDID');
-}
-
-function getIdentityLinkEids(bidRequests) {
-  return getEids(bidRequests, 'idl_env', 'liveramp.com', 'idl');
-}
-
-function getEids(bidRequests, type, source, rtiPartner) {
-  return bidRequests
-    .map(getUserId(type)) // bids -> userIds of a certain type
-    .filter((x) => !!x) // filter out null userIds
-    .map(formatEid(source, rtiPartner)); // userIds -> eid objects
-}
-
-function getUserId(type) {
-  return (bid) => (bid && bid.userId && bid.userId[type]);
-}
-
-function formatEid(source, rtiPartner) {
-  return (id) => ({
-    source,
-    uids: [{
-      id,
-      ext: { rtiPartner }
-    }]
-  });
 }
 
 function _sizes(sizeArray) {
@@ -146,6 +113,23 @@ function _sizes(sizeArray) {
 
 function _isValidSize(size) {
   return (size.length === 2 && typeof size[0] === 'number' && typeof size[1] === 'number');
+}
+
+function handleConsortiaUserIds(bidderRequest) {
+  let eids = [];
+  if (bidderRequest.userId && bidderRequest.userId.tdid) {
+    eids.push({
+      source: 'adserver.org',
+      uids: [{
+        id: bidderRequest.userId.tdid,
+        ext: {
+          rtiPartner: 'TDID'
+        }
+      }]
+    });
+  }
+
+  return eids;
 }
 
 function _buildResponseObject(bidderRequest, bid) {

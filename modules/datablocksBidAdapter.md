@@ -9,7 +9,7 @@ Maintainer: support@datablocks.net
 # Description
 
 Connects to Datablocks Version 5 Platform
-Banner Native and Video
+Banner Native and 
 
 
 # Test Parameters
@@ -46,25 +46,6 @@ Banner Native and Video
             params: {
               sourceId: 12345,
               host: 'prebid.datablocks.net'
-            }
-          }, {
-        code: 'video-div',
-        mediaTypes : {
-          video: {
-            playerSize:[500,400],
-            durationRangeSec:[15,30],
-            context: "linear"
-          }
-        },
-        bids: [
-          {
-            bidder: 'datablocks',
-            params: {
-              sourceId: 12345,
-              host: 'prebid.datablocks.net',
-              video: {
-                mimes:["video/flv"]
-              }
             }
           }
         ]

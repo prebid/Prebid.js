@@ -6,9 +6,6 @@
  */
 
 import * as utils from '../../src/utils';
-import * as url from '../../src/url';
-
-const PUB_COMMON_ID = 'PublisherCommonId';
 
 /** @type {Submodule} */
 export const pubCommonIdSubmodule = {
@@ -17,26 +14,6 @@ export const pubCommonIdSubmodule = {
    * @type {string}
    */
   name: 'pubCommonId',
-  /**
-   * Return a callback function that calls the pixelUrl with id as a query parameter
-   * @param pixelUrl
-   * @param id
-   * @returns {function}
-   */
-  makeCallback: function (pixelUrl, id = '') {
-    if (!pixelUrl) {
-      return;
-    }
-
-    // Use pubcid as a cache buster
-    const urlInfo = url.parse(pixelUrl);
-    urlInfo.search.id = encodeURIComponent('pubcid:' + id);
-    const targetUrl = url.format(urlInfo);
-
-    return function () {
-      utils.triggerPixel(targetUrl);
-    };
-  },
   /**
    * decode the stored id value for passing to bid requests
    * @function
@@ -49,44 +26,17 @@ export const pubCommonIdSubmodule = {
   /**
    * performs action to obtain id
    * @function
-   * @param {SubmoduleParams} [configParams]
-   * @returns {IdResponse}
+   * @returns {string}
    */
-  getId: function ({create = true, pixelUrl} = {}) {
+  getId() {
+    // If the page includes its own pubcid object, then use that instead.
+    let pubcid;
     try {
-      if (typeof window[PUB_COMMON_ID] === 'object') {
-        // If the page includes its own pubcid module, then save a copy of id.
-        return {id: window[PUB_COMMON_ID].getId()};
+      if (typeof window['PublisherCommonId'] === 'object') {
+        pubcid = window['PublisherCommonId'].getId();
       }
-    } catch (e) {
-    }
-
-    const newId = (create) ? utils.generateUUID() : undefined;
-    return {
-      id: newId,
-      callback: this.makeCallback(pixelUrl, newId)
-    }
-  },
-  /**
-   * performs action to extend an id
-   * @function
-   * @param {SubmoduleParams} [configParams]
-   * @param {Object} storedId existing id
-   * @returns {IdResponse|undefined}
-   */
-  extendId: function({extend = false, pixelUrl} = {}, storedId) {
-    try {
-      if (typeof window[PUB_COMMON_ID] === 'object') {
-        // If the page includes its onw pubcid module, then there is nothing to do.
-        return;
-      }
-    } catch (e) {
-    }
-
-    if (extend) {
-      // When extending, only one of response fields is needed
-      const callback = this.makeCallback(pixelUrl, storedId);
-      return callback ? {callback: callback} : {id: storedId};
-    }
+    } catch (e) {}
+    // check pubcid and return if valid was otherwise create a new id
+    return (pubcid) || utils.generateUUID();
   }
 };

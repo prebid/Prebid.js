@@ -44,8 +44,7 @@ pbjs.setConfig({
                 expires: 60
             }
         }],
-        syncDelay: 5000,
-        auctionDelay: 1000
+        syncDelay: 5000
     }
 });
 ```
