@@ -1,6 +1,6 @@
 import {expect} from 'chai';
 import {newBidder} from 'src/adapters/bidderFactory';
-import {spec} from 'modules/telariaBidAdapter';
+import {spec, getTimeoutUrl} from 'modules/telariaBidAdapter';
 
 const ENDPOINT = '.ads.tremorhub.com/ad/tag';
 const AD_CODE = 'ssp-!demo!-lufip';
@@ -16,13 +16,43 @@ const REQUEST = {
   },
   'mediaType': 'video',
   'bids': [{
-    'bidder': 'tremor',
+    'bidder': 'telaria',
     'params': {
       'videoId': 'MyCoolVideo',
       'inclSync': true
     }
   }]
 };
+
+const REQUEST_WITH_SCHAIN = [{
+  'bidder': 'telaria',
+  'params': {
+    'videoId': 'MyCoolVideo',
+    'inclSync': true,
+    'schain': {
+      'ver': '1.0',
+      'complete': 1,
+      'nodes': [
+        {
+          'asi': 'exchange1.com',
+          'sid': '1234',
+          'hp': 1,
+          'rid': 'bid-request-1',
+          'name': 'publisher',
+          'domain': 'publisher.com'
+        },
+        {
+          'asi': 'exchange2.com',
+          'sid': 'abcd',
+          'hp': 1,
+          'rid': 'bid-request-2',
+          'name': 'intermediary',
+          'domain': 'intermediary.com'
+        }
+      ]
+    }
+  }
+}];
 
 const BIDDER_REQUEST = {
   'refererInfo': {
@@ -102,6 +132,8 @@ describe('TelariaAdapter', () => {
       }
     }];
 
+    const schainStub = REQUEST_WITH_SCHAIN;
+
     it('exists and is a function', () => {
       expect(spec.buildRequests).to.exist.and.to.be.a('function');
     });
@@ -146,6 +178,14 @@ describe('TelariaAdapter', () => {
       const tempRequest = spec.buildRequests(tempBid, BIDDER_REQUEST);
 
       expect(tempRequest.length).to.equal(0);
+    });
+
+    it('converts the schain object into a tag param', () => {
+      let tempBid = schainStub;
+      tempBid[0].params.adCode = 'ssp-!demo!-lufip';
+      tempBid[0].params.supplyCode = 'ssp-demo-rm6rh';
+      let builtRequests = spec.buildRequests(tempBid, BIDDER_REQUEST);
+      expect(builtRequests.length).to.equal(1);
     });
   });
 
@@ -213,6 +253,29 @@ describe('TelariaAdapter', () => {
     it('should get the correct number of sync urls', () => {
       let urls = spec.getUserSyncs({pixelEnabled: true}, responses);
       expect(urls.length).to.equal(2);
+    });
+  });
+
+  describe('onTimeout', () => {
+    const timeoutData = [{
+      adUnitCode: 'video1',
+      auctionId: 'd8d239f4-303a-4798-8c8c-dd3151ced4e7',
+      bidId: '2c749c0101ea92',
+      bidder: 'telaria',
+      params: [{
+        adCode: 'ssp-!demo!-lufip',
+        supplyCode: 'ssp-demo-rm6rh',
+        mediaId: 'MyCoolVideo'
+      }]
+    }];
+
+    it('should return a pixel url', () => {
+      let url = getTimeoutUrl(timeoutData);
+      assert(url);
+    });
+
+    it('should fire a pixel', () => {
+      expect(spec.onTimeout(timeoutData)).to.be.undefined;
     });
   });
 });
