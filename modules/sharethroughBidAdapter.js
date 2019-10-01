@@ -2,7 +2,8 @@ import { registerBidder } from '../src/adapters/bidderFactory';
 
 const VERSION = '3.0.1';
 const BIDDER_CODE = 'sharethrough';
-const STR_ENDPOINT = document.location.protocol + '//btlr.sharethrough.com/header-bid/v1';
+const STR_ENDPOINT = document.location.protocol + '//btlr.sharethrough.com/WYu2BXv1/v1';
+const DEFAULT_SIZE = [1, 1];
 
 export const sharethroughAdapterSpec = {
   code: BIDDER_CODE,
@@ -10,14 +11,15 @@ export const sharethroughAdapterSpec = {
   isBidRequestValid: bid => !!bid.params.pkey && bid.bidder === BIDDER_CODE,
 
   buildRequests: (bidRequests, bidderRequest) => {
-    return bidRequests.map(bid => {
+    return bidRequests.map(bidRequest => {
       let query = {
-        bidId: bid.bidId,
-        placement_key: bid.params.pkey,
-        hbVersion: '$prebid.version$',
-        strVersion: VERSION,
+        placement_key: bidRequest.params.pkey,
+        bidId: bidRequest.bidId,
+        consent_required: false,
+        instant_play_capable: canAutoPlayHTML5Video(),
         hbSource: 'prebid',
-        consent_required: false
+        hbVersion: '$prebid.version$',
+        strVersion: VERSION
       };
 
       if (bidderRequest && bidderRequest.gdprConsent && bidderRequest.gdprConsent.consentString) {
@@ -28,12 +30,16 @@ export const sharethroughAdapterSpec = {
         query.consent_required = !!bidderRequest.gdprConsent.gdprApplies;
       }
 
+      if (bidRequest.userId && bidRequest.userId.tdid) {
+        query.ttduid = bidRequest.userId.tdid;
+      }
+
       // Data that does not need to go to the server,
       // but we need as part of interpretResponse()
       const strData = {
-        stayInIframe: bid.params.iframe,
-        iframeSize: bid.params.iframeSize,
-        sizes: bid.sizes
+        stayInIframe: bidRequest.params.iframe,
+        iframeSize: bidRequest.params.iframeSize,
+        sizes: bidRequest.sizes
       }
 
       return {
@@ -51,8 +57,8 @@ export const sharethroughAdapterSpec = {
     }
 
     const creative = body.creatives[0];
-    let size = [0, 0];
-    if (req.strData.stayInIframe) {
+    let size = DEFAULT_SIZE;
+    if (req.strData.iframeSize || req.strData.sizes.length) {
       size = req.strData.iframeSize != undefined
         ? req.strData.iframeSize
         : getLargestSize(req.strData.sizes);
@@ -75,9 +81,9 @@ export const sharethroughAdapterSpec = {
   getUserSyncs: (syncOptions, serverResponses) => {
     const syncs = [];
     const shouldCookieSync = syncOptions.pixelEnabled &&
-                             serverResponses.length > 0 &&
-                             serverResponses[0].body &&
-                             serverResponses[0].body.cookieSyncUrls;
+      serverResponses.length > 0 &&
+      serverResponses[0].body &&
+      serverResponses[0].body.cookieSyncUrls;
 
     if (shouldCookieSync) {
       serverResponses[0].body.cookieSyncUrls.forEach(url => {
@@ -86,7 +92,16 @@ export const sharethroughAdapterSpec = {
     }
 
     return syncs;
-  }
+  },
+
+  // Empty implementation for prebid core to be able to find it
+  onTimeout: (data) => {},
+
+  // Empty implementation for prebid core to be able to find it
+  onBidWon: (bid) => {},
+
+  // Empty implementation for prebid core to be able to find it
+  onSetTargeting: (bid) => {}
 }
 
 function getLargestSize(sizes) {
@@ -100,7 +115,7 @@ function getLargestSize(sizes) {
     } else {
       return prev
     }
-  }, [0, 0]);
+  });
 }
 
 function generateAd(body, req) {
@@ -146,6 +161,27 @@ function b64EncodeUnicode(str) {
       function toSolidBytes(match, p1) {
         return String.fromCharCode('0x' + p1);
       }));
+}
+
+function canAutoPlayHTML5Video() {
+  const userAgent = navigator.userAgent;
+  if (!userAgent) return false;
+
+  const isAndroid = /Android/i.test(userAgent);
+  const isiOS = /iPhone|iPad|iPod/i.test(userAgent);
+  const chromeVersion = parseInt((/Chrome\/([0-9]+)/.exec(userAgent) || [0, 0])[1]);
+  const chromeiOSVersion = parseInt((/CriOS\/([0-9]+)/.exec(userAgent) || [0, 0])[1]);
+  const safariVersion = parseInt((/Version\/([0-9]+)/.exec(userAgent) || [0, 0])[1]);
+
+  if (
+    (isAndroid && chromeVersion >= 53) ||
+    (isiOS && (safariVersion >= 10 || chromeiOSVersion >= 53)) ||
+    !(isAndroid || isiOS)
+  ) {
+    return true;
+  } else {
+    return false;
+  }
 }
 
 registerBidder(sharethroughAdapterSpec);

@@ -2,6 +2,23 @@ import { expect } from 'chai'
 import { spec, _getPlatform } from 'modules/smartrtbBidAdapter'
 import { newBidder } from 'src/adapters/bidderFactory'
 
+const res = {
+  body: {
+    bids: [{
+      bid_id: '123',
+      cpm: 1.23,
+      w: 300,
+      h: 250,
+      html: '<b>deadbeef</b>',
+      crid: 'crid'
+    }],
+    pixels: [
+      { type: 'image', url: 'http://smrtb.com/image' },
+      { type: 'iframe', url: 'http://smrtb.com/iframe' }
+    ]
+  }
+}
+
 describe('SmartRTBBidAdapter', function () {
   const adapter = newBidder(spec)
 
@@ -62,19 +79,6 @@ describe('SmartRTBBidAdapter', function () {
 
   describe('interpretResponse', function () {
     it('should form compliant bid object response', function () {
-      let res = {
-        body: {
-          bids: [{
-            bid_id: '123',
-            cpm: 1.23,
-            w: 300,
-            h: 250,
-            html: '<b>deadbeef</b>',
-            crid: 'crid'
-          }]
-        }
-      }
-
       let ir = spec.interpretResponse(res, bidRequest)
 
       expect(ir.length).to.equal(1)
@@ -93,14 +97,14 @@ describe('SmartRTBBidAdapter', function () {
 
   describe('getUserSyncs', function () {
     it('should return iframe sync', function () {
-      let sync = spec.getUserSyncs({ iframeEnabled: true })
+      let sync = spec.getUserSyncs({ iframeEnabled: true }, [res])
       expect(sync.length).to.equal(1)
       expect(sync[0].type === 'iframe')
       expect(typeof sync[0].url === 'string')
     })
 
     it('should return pixel sync', function () {
-      let sync = spec.getUserSyncs({ pixelEnabled: true })
+      let sync = spec.getUserSyncs({ pixelEnabled: true }, [res])
       expect(sync.length).to.equal(1)
       expect(sync[0].type === 'image')
       expect(typeof sync[0].url === 'string')

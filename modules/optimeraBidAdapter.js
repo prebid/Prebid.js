@@ -1,7 +1,7 @@
-import { registerBidder } from 'src/adapters/bidderFactory';
+import { registerBidder } from '../src/adapters/bidderFactory';
 
 const BIDDER_CODE = 'optimera';
-const SCORES_BASE_URL = 'http://dyv1bugovvq1g.cloudfront.net/';
+const SCORES_BASE_URL = 'https://dyv1bugovvq1g.cloudfront.net/';
 
 export const spec = {
   code: BIDDER_CODE,

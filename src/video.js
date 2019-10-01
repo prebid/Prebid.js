@@ -42,13 +42,13 @@ export function isValidVideoBid(bid, bidRequests) {
   return checkVideoBidSetup(bid, bidRequest, videoMediaType, context);
 }
 
-const checkVideoBidSetup = hook('sync', function(bid, bidRequest, videoMediaType, context) {
+export const checkVideoBidSetup = hook('sync', function(bid, bidRequest, videoMediaType, context) {
   if (!bidRequest || (videoMediaType && context !== OUTSTREAM)) {
     // xml-only video bids require a prebid cache url
     if (!config.getConfig('cache.url') && bid.vastXml && !bid.vastUrl) {
       logError(`
         This bid contains only vastXml and will not work when a prebid cache url is not specified.
-        Try enabling prebid cache with pbjs.setConfig({ cache: {url: "..."} });
+        Try enabling prebid cache with $$PREBID_GLOBAL$$.setConfig({ cache: {url: "..."} });
       `);
       return false;
     }
