@@ -1,6 +1,11 @@
-import rubiconAnalyticsAdapter, { SEND_TIMEOUT } from 'modules/rubiconAnalyticsAdapter';
+import rubiconAnalyticsAdapter, { SEND_TIMEOUT, parseBidResponse } from 'modules/rubiconAnalyticsAdapter';
 import CONSTANTS from 'src/constants.json';
 import { config } from 'src/config';
+
+import {
+  setConfig,
+  addBidResponseHook,
+} from 'modules/currency';
 
 let Ajv = require('ajv');
 let schema = require('./rubiconAnalyticsSchema.json');
@@ -448,7 +453,8 @@ const ANALYTICS_MESSAGE = {
       },
       'bidwonStatus': 'success'
     }
-  ]
+  ],
+  'wrapperName': '10000_fakewrapper_test'
 };
 
 function performStandardAuction() {
@@ -487,6 +493,9 @@ describe('rubicon analytics adapter', function () {
       s2sConfig: {
         timeout: 1000,
         accountId: 10000,
+      },
+      rubicon: {
+        wrapperName: '10000_fakewrapper_test'
       }
     })
   });
@@ -648,6 +657,56 @@ describe('rubicon analytics adapter', function () {
       expect(message).to.deep.equal(ANALYTICS_MESSAGE);
     });
 
+    it('should pick the highest cpm bid if more than one bid per bidRequestId', function () {
+      // Only want one bid request in our mock auction
+      let bidRequested = utils.deepClone(MOCK.BID_REQUESTED);
+      bidRequested.bids.shift();
+      let auctionInit = utils.deepClone(MOCK.AUCTION_INIT);
+      auctionInit.adUnits.shift();
+
+      // clone the mock bidResponse and duplicate
+      let duplicateResponse1 = utils.deepClone(BID2);
+      duplicateResponse1.cpm = 1.0;
+      duplicateResponse1.adserverTargeting.hb_pb = '1.0';
+      duplicateResponse1.adserverTargeting.hb_adid = '1111';
+      let duplicateResponse2 = utils.deepClone(BID2);
+      duplicateResponse2.cpm = 5.5;
+      duplicateResponse2.adserverTargeting.hb_pb = '5.5';
+      duplicateResponse2.adserverTargeting.hb_adid = '5555';
+      let duplicateResponse3 = utils.deepClone(BID2);
+      duplicateResponse3.cpm = 0.1;
+      duplicateResponse3.adserverTargeting.hb_pb = '0.1';
+      duplicateResponse3.adserverTargeting.hb_adid = '3333';
+
+      const setTargeting = {
+        [duplicateResponse2.adUnitCode]: duplicateResponse2.adserverTargeting
+      };
+
+      const bidWon = Object.assign({}, duplicateResponse2, {
+        'status': 'rendered'
+      });
+
+      // spoof the auction with just our duplicates
+      events.emit(AUCTION_INIT, auctionInit);
+      events.emit(BID_REQUESTED, bidRequested);
+      events.emit(BID_RESPONSE, duplicateResponse1);
+      events.emit(BID_RESPONSE, duplicateResponse2);
+      events.emit(BID_RESPONSE, duplicateResponse3);
+      events.emit(AUCTION_END, MOCK.AUCTION_END);
+      events.emit(SET_TARGETING, setTargeting);
+      events.emit(BID_WON, bidWon);
+
+      let message = JSON.parse(requests[0].requestBody);
+      validate(message);
+      expect(message.auctions[0].adUnits[0].bids[0].bidResponse.bidPriceUSD).to.equal(5.5);
+      expect(message.auctions[0].adUnits[0].adserverTargeting.hb_pb).to.equal('5.5');
+      expect(message.auctions[0].adUnits[0].adserverTargeting.hb_adid).to.equal('5555');
+      expect(message.bidsWon.length).to.equal(1);
+      expect(message.bidsWon[0].bidResponse.bidPriceUSD).to.equal(5.5);
+      expect(message.bidsWon[0].adserverTargeting.hb_pb).to.equal('5.5');
+      expect(message.bidsWon[0].adserverTargeting.hb_adid).to.equal('5555');
+    });
+
     it('should send batched message without BID_WON if necessary and further BID_WON events individually', function () {
       events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
       events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
@@ -693,6 +752,61 @@ describe('rubicon analytics adapter', function () {
       expect(timedOutBid.status).to.equal('error');
       expect(timedOutBid.error.code).to.equal('timeout-error');
       expect(timedOutBid).to.not.have.property('bidResponse');
+    });
+
+    it('should successfully convert bid price to USD in parseBidResponse', function () {
+      // Set the rates
+      setConfig({
+        adServerCurrency: 'JPY',
+        rates: {
+          USD: {
+            JPY: 100
+          }
+        }
+      });
+
+      // set our bid response to JPY
+      const bidCopy = utils.deepClone(BID2);
+      bidCopy.currency = 'JPY';
+      bidCopy.cpm = 100;
+
+      // Now add the bidResponse hook which hooks on the currenct conversion function onto the bid response
+      let innerBid;
+      addBidResponseHook(function(adCodeId, bid) {
+        innerBid = bid;
+      }, 'elementId', bidCopy);
+
+      // Use the rubi analytics parseBidResponse Function to get the resulting cpm from the bid response!
+      const bidResponseObj = parseBidResponse(innerBid);
+      expect(bidResponseObj).to.have.property('bidPriceUSD');
+      expect(bidResponseObj.bidPriceUSD).to.equal(1.0);
+    });
+  });
+
+  describe('config with integration type', () => {
+    it('should use the integration type provided in the config instead of the default', () => {
+      sandbox.stub(config, 'getConfig').callsFake(function (key) {
+        const config = {
+          'rubicon.int_type': 'testType'
+        };
+        return config[key];
+      });
+
+      rubiconAnalyticsAdapter.enableAnalytics({
+        options: {
+          endpoint: '//localhost:9999/event',
+          accountId: 1001
+        }
+      });
+
+      performStandardAuction();
+
+      expect(requests.length).to.equal(1);
+      const request = requests[0];
+      const message = JSON.parse(request.requestBody);
+      expect(message.integration).to.equal('testType');
+
+      rubiconAnalyticsAdapter.disableAnalytics();
     });
   });
 });
