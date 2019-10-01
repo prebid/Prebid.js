@@ -32,7 +32,7 @@ describe('Open8Adapter', function() {
   });
 
   describe('buildRequests', function() {
-    let bidRequests = [
+    let validBidRequests = [
       {
         'bidder': 'open8',
         'params': {
@@ -45,9 +45,14 @@ describe('Open8Adapter', function() {
         'auctionId': 'auctionid1234',
       }
     ];
+    let bidderRequest = {
+      'refererInfo': {
+        'referer': 'https://example.com/referer'
+      }
+    };
 
     it('sends bid request to ENDPOINT via GET', function() {
-      const requests = spec.buildRequests(bidRequests);
+      const requests = spec.buildRequests(validBidRequests, bidderRequest);
       expect(requests[0].url).to.equal(ENDPOINT);
       expect(requests[0].method).to.equal('GET');
     });

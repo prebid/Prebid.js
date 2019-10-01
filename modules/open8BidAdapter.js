@@ -27,7 +27,9 @@ export const spec = {
       var slotKey = utils.getBidIdParameter('slotKey', bid.params);
       queryString = utils.tryAppendQueryString(queryString, 'slot_key', slotKey);
       queryString = utils.tryAppendQueryString(queryString, 'imp_id', generateImpId());
-      queryString = utils.tryAppendQueryString(queryString, 'location', encodeURIComponent(window.top.location.href));
+      if (bidderRequest && bidderRequest.refererInfo) {
+        queryString = utils.tryAppendQueryString(queryString, 'location', encodeURIComponent(bidderRequest.refererInfo.referer));
+      }
       queryString += ('bid_id=' + bid.bidId);
 
       requests.push({
