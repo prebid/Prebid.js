@@ -248,7 +248,7 @@ function executeBidsLoggerCall(auctionId){
             partnerBids.push({
                 'pn': bid.bidder,
                 'bidid': bid.bidId,
-                'db': bid.bidResponse ? 1 : 0,
+                'db': bid.bidResponse ? 0 : 1,
                 'kgpv': '', // todo: what to pass here?
                 'psz': bid.bidResponse ? (bid.bidResponse.dimensions.width + 'x' + bid.bidResponse.dimensions.height) : '0x0',
                 'eg': bid.bidResponse ? bid.bidResponse.bidPriceUSD : 0, // todo: check
