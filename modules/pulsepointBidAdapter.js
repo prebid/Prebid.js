@@ -40,7 +40,7 @@ export const spec = {
     const request = {
       id: bidRequests[0].bidderRequestId,
       imp: bidRequests.map(slot => impression(slot)),
-      site: site(bidRequests, bidderRequest.refererInfo),
+      site: site(bidRequests, bidderRequest),
       app: app(bidRequests),
       device: device(),
       bcat: bidRequests[0].params.bcat,
@@ -307,16 +307,16 @@ function dataAsset(id, params, type, defaultLen) {
 /**
  * Produces an OpenRTB site object.
  */
-function site(bidderRequest, refererInfo) {
-  const pubId = bidderRequest && bidderRequest.length > 0 ? bidderRequest[0].params.cp : '0';
-  const appParams = bidderRequest[0].params.app;
+function site(bidRequests, bidderRequest) {
+  const pubId = bidRequests && bidRequests.length > 0 ? bidRequests[0].params.cp : '0';
+  const appParams = bidRequests[0].params.app;
   if (!appParams) {
     return {
       publisher: {
         id: pubId.toString(),
       },
       ref: referrer(),
-      page: refererInfo.referer,
+      page: bidderRequest && bidderRequest.refererInfo ? bidderRequest.refererInfo.referer : '',
     }
   }
   return null;
