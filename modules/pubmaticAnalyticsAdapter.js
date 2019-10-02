@@ -139,8 +139,13 @@ function parseBidResponse(bid){
             utils.logWarn(LOG_PRE_FIX + 'Could not determine the bidPriceUSD of the bid ', bid);
         },
         'dealId',
+        'dealChannel',
+        'meta',
         'status',
+        'error',
+        'bidId',
         'mediaType',
+        'params', // todo: from openwrap we can send the value of kgpv in params , we need to check if we will get it here
         'dimensions', () => utils.pick(bid, [
             'width',
             'height'
@@ -157,46 +162,46 @@ function isWinningBidReceivedForAllAdUnitsInAuction(auctionCache){
 }
 
 //todo: delete this function
-function formatBidToSend(bid) {
-    return utils.pick(bid, [
-        'bidder',
-        'bidId',
-        'status',
-        'error',
-        'source', (source, bid) => {
-            if (source) {
-                return source;
-            }
-            return serverConfig && Array.isArray(serverConfig.bidders) && serverConfig.bidders.indexOf(bid.bidder) !== -1
-                ? 'server' : 'client'
-        },
-        'clientLatencyTimeMs',
-        'serverLatencyTimeMs',
-        'params', // todo: from openwrap we can send the value of kgpv in params , we need to check if we will get it here
-        'bidResponse', bidResponse => bidResponse ? utils.pick(bidResponse, [
-            'bidPriceUSD',
-            'dealId',
-            'dimensions',
-            'mediaType'
-        ]) : undefined
-    ]);
-}
+// function formatBidToSend(bid) {
+//     return utils.pick(bid, [
+//         'bidder',
+//         'bidId',
+//         'status',
+//         'error',
+//         'source', (source, bid) => {
+//             if (source) {
+//                 return source;
+//             }
+//             return serverConfig && Array.isArray(serverConfig.bidders) && serverConfig.bidders.indexOf(bid.bidder) !== -1
+//                 ? 'server' : 'client'
+//         },
+//         'clientLatencyTimeMs',
+//         'serverLatencyTimeMs',
+//         'params', // todo: from openwrap we can send the value of kgpv in params , we need to check if we will get it here
+//         'bidResponse', bidResponse => bidResponse ? utils.pick(bidResponse, [
+//             'bidPriceUSD',
+//             'dealId',
+//             'dimensions',
+//             'mediaType'
+//         ]) : undefined
+//     ]);
+// }
 
 //todo: delete this function
-function formatBidWonToSend(bid) {
-    return Object.assign(formatBid(bid), utils.pick(bid.adUnit, [
-        'adUnitCode',
-        'transactionId',
-        'videoAdFormat', () => bid.videoAdFormat,
-        'mediaTypes'
-    ]), {
-        adserverTargeting: stringProperties(cache.targeting[bid.adUnit.adUnitCode] || {}),
-        bidwonStatus: SUCCESS,
-        accountId,
-        siteId: bid.siteId, // todo: what is it?
-        zoneId: bid.zoneId // todo: what is it?
-    });
-}
+// function formatBidWonToSend(bid) {
+//     return Object.assign(formatBid(bid), utils.pick(bid.adUnit, [
+//         'adUnitCode',
+//         'transactionId',
+//         'videoAdFormat', () => bid.videoAdFormat,
+//         'mediaTypes'
+//     ]), {
+//         adserverTargeting: stringProperties(cache.targeting[bid.adUnit.adUnitCode] || {}),
+//         bidwonStatus: SUCCESS,
+//         accountId,
+//         siteId: bid.siteId, // todo: what is it?
+//         zoneId: bid.zoneId // todo: what is it?
+//     });
+// }
 
 function executeBidsLoggerCall(auctionId){
     let referrer = config.getConfig('pageUrl') || utils.getTopWindowUrl(),
@@ -253,8 +258,8 @@ function executeBidsLoggerCall(auctionId){
                 'psz': bid.bidResponse ? (bid.bidResponse.dimensions.width + 'x' + bid.bidResponse.dimensions.height) : '0x0',
                 'eg': bid.bidResponse ? bid.bidResponse.bidPriceUSD : 0, // todo: check
                 'en': bid.bidResponse ? bid.bidResponse.bidPriceUSD : 0, // todo: check
-                'di': '', // todo: get it
-                'dc': '', // todo: get it
+                'di': bid.bidResponse.dealId || '',
+                'dc': bid.bidResponse.dealChannel || '',
                 'l1': bid.clientLatencyTimeMs, //todo: do we need to rename it?
                 'l2': 0,
                 'ss': (bid.source === 'server' ? 1 : 0), //todo: is there any special handling required as per OW?
@@ -551,6 +556,7 @@ let pubmaticAdapter = Object.assign({}, baseAdapter, {
     },
 
     track({eventType, args}) {
+        // todo: can we name the functions as per events then we will not need a switch case
         switch (eventType) {
             case CONSTANTS.EVENTS.AUCTION_INIT:
                 auctionInitHandler(args);
