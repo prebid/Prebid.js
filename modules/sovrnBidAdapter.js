@@ -27,7 +27,11 @@ export const spec = {
       const loc = utils.getTopWindowLocation();
       let sovrnImps = [];
       let iv;
+      let schain;
       utils._each(bidReqs, function (bid) {
+        if(bid.schain) {
+          schain = schain || bid.schain;
+        }
         iv = iv || utils.getBidIdParameter('iv', bid.params);
         bid.sizes = ((utils.isArray(bid.sizes) && utils.isArray(bid.sizes[0])) ? bid.sizes : [bid.sizes])
         bid.sizes = bid.sizes.filter(size => utils.isArray(size))
@@ -52,6 +56,14 @@ export const spec = {
         }
       };
 
+      if(schain) {
+        sovrnBidReq.source = {
+          ext: {
+            schain
+          }
+        };
+      }
+
       if (bidderRequest && bidderRequest.gdprConsent) {
         sovrnBidReq.regs = {
           ext: {
@@ -61,6 +73,16 @@ export const spec = {
           ext: {
             consent: bidderRequest.gdprConsent.consentString
           }};
+      }
+
+      const bidRequestDigitrust = utils.deepAccess(bidRequest, 'userId.digitrustid.data');
+      if (bidRequestDigitrust && !bidRequestDigitrust.privacy.optout) {
+        sovrnBidReq.user = sovrnBidReq.user || {};
+        sovrnBidReq.user.ext = sovrnBidReq.user.ext || {}
+        sovrnBidReq.user.ext.digitrust = {
+          id: bidRequestDigitrust.id,
+          keyv: bidRequestDigitrust.keyv
+        }
       }
 
       let url = `//ap.lijit.com/rtb/bid?` +
