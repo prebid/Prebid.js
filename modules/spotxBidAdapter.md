@@ -54,9 +54,9 @@ This adapter requires setup and approval from the SpotX team.
                 ad_unit: 'outstream',
                 outstream_options: {
                     slot: 'adSlot1',
-                    content_width: 300,
-                    content_height: 250,
                     custom_override: { // This option is not mandatory though used to override default renderer parameters using EASI player options in here: https://developer.spotxchange.com/content/local/docs/sdkDocs/EASI/README.md
+                        content_width: 300,
+                        content_height: 250,
                         collapse: '1',
                         hide_fullscreen: '1',
                         unmute_on_mouse: '1',
