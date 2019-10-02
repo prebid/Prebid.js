@@ -145,7 +145,7 @@ function parseBidResponse(bid){
         'error',
         'bidId',
         'mediaType',
-        'params', // todo: from openwrap we can send the value of kgpv in params , we need to check if we will get it here
+        'params',
         'dimensions', () => utils.pick(bid, [
             'width',
             'height'
@@ -254,7 +254,7 @@ function executeBidsLoggerCall(auctionId){
                 'pn': bid.bidder,
                 'bidid': bid.bidId,
                 'db': bid.bidResponse ? 0 : 1,
-                'kgpv': '', // todo: what to pass here?
+                'kgpv': bid.params.kgpv ? bid.params.kgpv : adUnitId,
                 'psz': bid.bidResponse ? (bid.bidResponse.dimensions.width + 'x' + bid.bidResponse.dimensions.height) : '0x0',
                 'eg': bid.bidResponse ? bid.bidResponse.bidPriceUSD : 0, // todo: check
                 'en': bid.bidResponse ? bid.bidResponse.bidPriceUSD : 0, // todo: check
