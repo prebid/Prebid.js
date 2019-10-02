@@ -60,7 +60,6 @@ This adapter requires setup and approval from the SpotX team.
                         collapse: '1',
                         hide_fullscreen: '1',
                         unmute_on_mouse: '1',
-                        click_to_replay: '1',
                         continue_out_of_view: '1',
                         ad_volume: '100',
                         content_container_id: 'video1'
