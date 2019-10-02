@@ -3,10 +3,10 @@ import {registerBidder} from '../src/adapters/bidderFactory';
 import { Renderer } from '../src/Renderer';
 import { VIDEO, BANNER } from '../src/mediaTypes';
 
-const BIDDER_CODE = 'trustx';
-const ENDPOINT_URL = '//sofia.trustx.org/hb';
+const BIDDER_CODE = 'turktelekom';
+const ENDPOINT_URL = '//ssp.programattik.com/hb';
 const TIME_TO_LIVE = 360;
-const ADAPTER_SYNC_URL = '//sofia.trustx.org/push_sync';
+const ADAPTER_SYNC_URL = '//ssp.programattik.com/sync';
 const RENDERER_URL = '//acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
 
 const LOG_ERROR_MESS = {
@@ -46,7 +46,6 @@ export const spec = {
     const sizeMap = {};
     const bids = validBidRequests || [];
     let priceType = 'net';
-    let pageKeywords;
     let reqId;
 
     bids.forEach(bid => {
@@ -57,15 +56,6 @@ export const spec = {
       const {params: {uid}, adUnitCode} = bid;
       auids.push(uid);
       const sizesId = utils.parseSizesInput(bid.sizes);
-
-      if (!pageKeywords && !utils.isEmpty(bid.params.keywords)) {
-        const keywords = utils.transformBidderParamKeywords(bid.params.keywords);
-
-        if (keywords.length > 0) {
-          keywords.forEach(deleteValues);
-        }
-        pageKeywords = keywords;
-      }
 
       if (!slotsMapByUid[uid]) {
         slotsMapByUid[uid] = {};
@@ -102,10 +92,6 @@ export const spec = {
       wrapperVersion: '$prebid.version$'
     };
 
-    if (pageKeywords) {
-      payload.keywords = JSON.stringify(pageKeywords);
-    }
-
     if (bidderRequest) {
       if (bidderRequest.refererInfo && bidderRequest.refererInfo.referer) {
         payload.u = bidderRequest.refererInfo.referer;
@@ -118,8 +104,8 @@ export const spec = {
           payload.gdpr_consent = bidderRequest.gdprConsent.consentString;
         }
         payload.gdpr_applies =
-          (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean')
-            ? Number(bidderRequest.gdprConsent.gdprApplies) : 1;
+            (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean')
+              ? Number(bidderRequest.gdprConsent.gdprApplies) : 1;
       }
     }
 
@@ -168,16 +154,6 @@ export const spec = {
   }
 }
 
-function isPopulatedArray(arr) {
-  return !!(utils.isArray(arr) && arr.length > 0);
-}
-
-function deleteValues(keyPairObj) {
-  if (isPopulatedArray(keyPairObj.value) && keyPairObj.value[0] === '') {
-    delete keyPairObj.value;
-  }
-}
-
 function _getBidFromResponse(respItem) {
   if (!respItem) {
     utils.logError(LOG_ERROR_MESS.emptySeatbid);
@@ -209,7 +185,7 @@ function _addBidResponse(serverBid, bidsMap, priceType, bidResponses, RendererCo
           width: serverBid.w,
           height: serverBid.h,
           creativeId: serverBid.auid, // bid.bidId,
-          currency: 'USD',
+          currency: 'TRY',
           netRevenue: priceType !== 'gross',
           ttl: TIME_TO_LIVE,
           dealId: serverBid.dealid
