@@ -333,45 +333,48 @@ function initSubmodules(submodules, consentData) {
       if (storedId) {
         // cache decoded value (this is copied to every adUnit bid)
         submodule.idObj = submodule.submodule.decode(storedId);
-      }
-      let refreshNeeded = false;
-      if (typeof submodule.config.storage.refreshInSeconds === 'number') {
-        const storedDate = new Date(getStoredValue(submodule.config.storage, 'last'));
-        refreshNeeded = storedDate && (Date.now() - storedDate.getTime() > submodule.config.storage.refreshInSeconds * 1000);
-      }
-      if (!storedId || refreshNeeded) {
-        // getId will return user id data or a function that will load the data
-        const getIdResult = submodule.submodule.getId(submodule.config.params, consentData, storedId);
 
-        // If the getId result has a type of function, it is asynchronous and cannot be called until later
-        if (typeof getIdResult === 'function') {
-          submodule.callback = getIdResult;
-        } else if (getIdResult) {
-          // A getId result that is not a function is assumed to be valid user id data, which should be saved to users local storage or cookies
-          setStoredValue(submodule.config.storage, getIdResult);
-          // cache decoded value (this is copied to every adUnit bid)
-          submodule.idObj = submodule.submodule.decode(getIdResult);
+        // Refresh functionality
+        // if an idSystem defines refreshId() - always call it
+        // if storage.refreshInSeconds also is defined then only call refreshId when the age of the stored value > refeshInSeconds
+        const refreshInSeconds = submodule.config.storage.refreshInSeconds;
+        if (utils.isFn(submodule.submodule.refreshId)) {
+          let shouldRefresh = true;
+          if (utils.isNumber(refreshInSeconds) && refreshInSeconds > 0) {
+            const storedDate = new Date(getStoredValue(submodule.config.storage, 'last'));
+            if (!storedDate || (Date.now() - storedDate.getTime() <= refreshInSeconds * 1000)) {
+              shouldRefresh = false;
+            }
+          }
+          if (shouldRefresh) {
+            const refreshIdResult = submodule.submodule.refreshId(submodule.config.params, consentData, storedId);
+            if (utils.isFn(refreshIdResult)) {
+              submodule.callback = refreshIdResult;
+            }
+          }
         }
-      }
+        if (utils.isNumber(refreshInSeconds) && !utils.isFn(submodule.submodule.refreshId)) {
+          utils.logWarn(`${submodule.submodule.name} - storage.refreshInSeconds provided but userId system missing refreshId() implementation`);
+        }
+      } else {
+        const getIdResult = submodule.submodule.getId(submodule.config.params, consentData);
 
-      if (utils.isFn(submodule.submodule.refreshId)) {
-        // if defined, refreshId will return a function that will load an updated id to be stored for subsequent use
-        const refreshIdResult = submodule.submodule.refreshId(submodule.config.params, consentData, storedId);
-
-        // a function to be called later is expected, otherwise ignore
-        if (utils.isFn(refreshIdResult)) {
-          submodule.callback = refreshIdResult;
+        if (utils.isFn(getIdResult)) {
+          submodule.callback = getIdResult;
+        } else {
+          setStoredValue(submodule.config.storage, getIdResult, submodule.config.storage.expires);
+          submodule.idObj = submodule.submodule.decode(getIdResult);
         }
       }
     } else if (submodule.config.value) {
       // cache decoded value (this is copied to every adUnit bid)
       submodule.idObj = submodule.config.value;
     } else {
-      const result = submodule.submodule.getId(submodule.config.params, consentData, undefined);
+      const result = submodule.submodule.getId(submodule.config.params, consentData);
       if (typeof result === 'function') {
         submodule.callback = result;
       } else {
-        submodule.idObj = submodule.submodule.decode();
+        submodule.idObj = submodule.submodule.decode(result);
       }
     }
     carry.push(submodule);
