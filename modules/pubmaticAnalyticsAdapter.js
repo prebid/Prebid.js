@@ -25,8 +25,8 @@ import * as utils from '../src/utils';
 const SEND_TIMEOUT = 3000;
 const DEFAULT_INTEGRATION = 'pbjs';
 const END_POINT_HOST = 'https://t.pubmatic.com/';
-const END_POINT_BID_LOGGER = END_POINT_HOST + 'wl/?';
-const END_POINT_WIN_BID_LOGGER = END_POINT_HOST + 'wt/?';
+const END_POINT_BID_LOGGER = END_POINT_HOST + 'wl?';
+const END_POINT_WIN_BID_LOGGER = END_POINT_HOST + 'wt?';
 const LOG_PRE_FIX = 'PubMatic-Analytics: ';
 const cache = {
     auctions: {},
@@ -240,7 +240,7 @@ function executeBidsLoggerCall(auctionId){
         let adUnit = auctionCache.adUnitCodes[adUnitId],
             slotObject = {
             'sn': adUnitId,
-            'sz': adUnit.dimensions,
+            'sz': adUnit.dimensions.map(e => e[0]+"x"+e[1]),
             'ps': []
         };
         slotObject.ps = Object.keys(adUnit.bids).reduce(function(partnerBids, bidId){
@@ -276,7 +276,9 @@ function executeBidsLoggerCall(auctionId){
         null,
         JSON.stringify(outputObj),
         {
-            contentType: 'application/json'
+            contentType: 'application/x-www-form-urlencoded',
+            withCredentials : true,
+            method: 'POST'
         }
     );
 }
