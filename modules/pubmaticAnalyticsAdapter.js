@@ -139,6 +139,8 @@ function parseBidResponse(bid){
             utils.logWarn(LOG_PRE_FIX + 'Could not determine the bidPriceUSD of the bid ', bid);
         },
         'dealId',
+        'currency',
+        'cpm',
         'dealChannel',
         'meta',
         'status',
@@ -267,8 +269,8 @@ function executeBidsLoggerCall(auctionId){
                 'wb': '', // todo
                 'mi': '', // todo
                 'af': (bid.bidResponse ? bid.bidResponse.mediaType : 'banner'),
-                'ocpm': '', // todo: what to send here?
-                'ocry': '' // todo: what to send here?
+                'ocpm': bid.bidResponse.cpm,
+                'ocry': bid.bidResponse.currency
             });
             return partnerBids;
         }, [])
