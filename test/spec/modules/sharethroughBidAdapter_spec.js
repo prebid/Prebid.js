@@ -280,6 +280,31 @@ describe('sharethrough adapter spec', function () {
         }
       });
     });
+
+    it('should add a supply chain parameter if schain is present', function() {
+      // shallow copy of the first bidRequest obj, so we don't mutate
+      const bidRequest = Object.assign({}, bidRequests[0]);
+      bidRequest['schain'] = {
+        ver: '1.0',
+        complete: 1,
+        nodes: [
+          {
+            asi: 'directseller.com',
+            sid: '00001',
+            rid: 'BidRequest1',
+            hp: 1
+          }
+        ]
+      };
+
+      const builtBidRequest = spec.buildRequests([bidRequest])[0];
+      expect(builtBidRequest.data.schain).to.eq(JSON.stringify(bidRequest.schain));
+    });
+
+    it('should not add a supply chain parameter if schain is missing', function() {
+      const bidRequest = spec.buildRequests(bidRequests)[0];
+      expect(bidRequest.data).to.not.include.any.keys('schain');
+    });
   });
 
   describe('.interpretResponse', function () {
