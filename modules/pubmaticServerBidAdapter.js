@@ -7,7 +7,7 @@ const constants = require('../src/constants.json');
 
 const BIDDER_CODE = 'pubmaticServer';
 const ENDPOINT = 'https://ow.pubmatic.com/openrtb/2.5/';
-const COOKIE_SYNC = 'https://ow.pubmatic.com/cookie_sync/';
+const COOKIE_SYNC = 'https://ow.pubmatic.com/cookie_sync/?sec=1'; // Set sec=1 to identify secure flag changes at server side
 const CURRENCY = 'USD';
 const AUCTION_TYPE = 1; // PubMaticServer just picking highest bidding bid from the partners configured
 const UNDEFINED = undefined;
