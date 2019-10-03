@@ -91,7 +91,7 @@ describe('Deepintent adapter', function () {
     });
     it('bidder connection check', function () {
       let bRequest = spec.buildRequests(request);
-      expect(bRequest.url).to.equal('https://useast-x.deepintent.com/exchange');
+      expect(bRequest.url).to.equal('https://useast-x.deepintent.com/prebid');
       expect(bRequest.method).to.equal('POST');
       expect(bRequest.options.contentType).to.equal('application/json');
     });
