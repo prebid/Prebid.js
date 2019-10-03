@@ -305,6 +305,19 @@ describe('sharethrough adapter spec', function () {
       const bidRequest = spec.buildRequests(bidRequests)[0];
       expect(bidRequest.data).to.not.include.any.keys('schain');
     });
+
+    it('should include the bidfloor parameter if it is present in the bid request', function() {
+      const bidRequest = Object.assign({}, bidRequests[0]);
+      bidRequest['bidfloor'] = 0.50;
+      const builtBidRequest = spec.buildRequests([bidRequest])[0];
+      expect(builtBidRequest.data.bidfloor).to.eq(0.5);
+    });
+
+    it('should not include the bidfloor parameter if it is missing in the bid request', function() {
+      const bidRequest = Object.assign({}, bidRequests[0]);
+      const builtBidRequest = spec.buildRequests([bidRequest])[0];
+      expect(builtBidRequest.data).to.not.include.any.keys('bidfloor');
+    });
   });
 
   describe('.interpretResponse', function () {

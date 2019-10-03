@@ -45,6 +45,10 @@ export const sharethroughAdapterSpec = {
         query.schain = JSON.stringify(bidRequest.schain);
       }
 
+      if (bidRequest.bidfloor) {
+        query.bidfloor = parseFloat(bidRequest.bidfloor);
+      }
+
       // Data that does not need to go to the server,
       // but we need as part of interpretResponse()
       const strData = {
