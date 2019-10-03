@@ -42,7 +42,7 @@ export const helper = {
 
 export const spec = {
   code: 'gamoshi',
-  aliases: ['gambid', 'cleanmedia', 'viewdeos', 'adastaMedia', '9MediaOnline'],
+  aliases: ['gambid', 'cleanmedia', '9MediaOnline'],
   supportedMediaTypes: ['banner', 'video'],
 
   isBidRequestValid: function (bid) {
@@ -76,15 +76,22 @@ export const spec = {
         'ext': {}
       };
 
-      if (bidderRequest.gdprConsent &&
-        bidderRequest.gdprConsent.consentString &&
-        bidderRequest.gdprConsent.gdprApplies) {
-        rtbBidRequest.ext.gdpr_consent = {
-          consent_string: bidderRequest.gdprConsent.consentString,
-          consent_required: bidderRequest.gdprConsent.gdprApplies
-        };
-      }
+      const gdprConsent = bidderRequest.gdprConsent;
 
+      if (gdprConsent) {
+        rtbBidRequest.ext.gdpr_consent = {
+          consent_string: gdprConsent.consentString,
+          consent_required: gdprConsent.gdprApplies
+        };
+        rtbBidRequest.regs = {
+          gdpr: gdprConsent.gdprApplies === true ? 1 : 0
+        };
+        rtbBidRequest.user = {
+          ext: {
+            consent: gdprConsent.consentString
+          }
+        }
+      }
       const imp = {
         'id': transactionId,
         'instl': params.instl === 1 ? 1 : 0,
