@@ -16,7 +16,6 @@ import * as utils from '../src/utils';
         what about video bids?
             first version only banner?
             can we support as a basic version?
-        remove un-necessary export statements from Rubicon analytics adapter
         grossEcpm / netEcpm?
 */
 
@@ -267,7 +266,7 @@ function executeBidsLoggerCall(auctionId){
                 'l2': 0,
                 'ss': (bid.source === 'server' ? 1 : 0), //todo: is there any special handling required as per OW?
                 't': (bid.status == ERROR && bid.error.code == TIMEOUT_ERROR) ? 1 : 0,
-                'wb': '', // todo
+                'wb': '', // todo: MUST have
                 'mi': '', // todo
                 'af': (bid.bidResponse ? bid.bidResponse.mediaType : 'banner'),
                 'ocpm': bid.bidResponse.cpm,
