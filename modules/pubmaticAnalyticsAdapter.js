@@ -155,13 +155,14 @@ function parseBidResponse(bid){
     ]);
 }
 
-function isWinningBidReceivedForAllAdUnitsInAuction(auctionCache){
-    return Object.keys(auctionCache.adUnitCodes).reduce((accumulator, adUnitCode) => {
-        // only send if we've received bidWon events for all adUnits in auction
-        accumulator = accumulator && adUnitCode.bidWon;
-        return accumulator;
-    }, true)
-}
+// todo: delete this function
+// function isWinningBidReceivedForAllAdUnitsInAuction(auctionCache){
+//     return Object.keys(auctionCache.adUnitCodes).reduce((accumulator, adUnitCode) => {
+//         // only send if we've received bidWon events for all adUnits in auction
+//         accumulator = accumulator && adUnitCode.bidWon;
+//         return accumulator;
+//     }, true)
+// }
 
 //todo: delete this function
 // function formatBidToSend(bid) {
@@ -262,7 +263,7 @@ function executeBidsLoggerCall(auctionId){
                 'en': bid.bidResponse ? bid.bidResponse.bidPriceUSD : 0, // todo: check
                 'di': bid.bidResponse.dealId || '',
                 'dc': bid.bidResponse.dealChannel || '',
-                'l1': bid.clientLatencyTimeMs, //todo: do we need to rename it?
+                'l1': bid.clientLatencyTimeMs,
                 'l2': 0,
                 'ss': (bid.source === 'server' ? 1 : 0), //todo: is there any special handling required as per OW?
                 't': (bid.status == ERROR && bid.error.code == TIMEOUT_ERROR) ? 1 : 0,
@@ -295,121 +296,122 @@ function executeBidWonLoggerCall(auctionId, bidWonId){
 
 }
 
+// todo: delete this function
 // todo: can we split this function in two for bid-logger and bid-win-logger?
-function sendMessage(auctionId, bidWonId){
-    let referrer = config.getConfig('pageUrl') || utils.getTopWindowUrl();
-    let message = {
-        eventTimeMillis: Date.now(),
-        integration: DEFAULT_INTEGRATION, //todo: we can take this as analytics-adapter-config along with publisherId
-        version: '$prebid.version$',
-        referrerUri: referrer
-    };
-    const wrapperName = config.getConfig('rubicon.wrapperName');//todo: not needed?
+// function sendMessage(auctionId, bidWonId){
+//     let referrer = config.getConfig('pageUrl') || utils.getTopWindowUrl();
+//     let message = {
+//         eventTimeMillis: Date.now(),
+//         integration: DEFAULT_INTEGRATION, //todo: we can take this as analytics-adapter-config along with publisherId
+//         version: '$prebid.version$',
+//         referrerUri: referrer
+//     };
+//     const wrapperName = config.getConfig('rubicon.wrapperName');//todo: not needed?
 
-    if (wrapperName) { //todo: not needed?
-        message.wrapperName = wrapperName;
-    }
+//     if (wrapperName) { //todo: not needed?
+//         message.wrapperName = wrapperName;
+//     }
 
-    let auctionCache = cache.auctions[auctionId];
+//     let auctionCache = cache.auctions[auctionId];
 
-    console.log("sendMessage: cache", cache);
-    console.log("sendMessage: auctionId", auctionId);
-    return;
+//     console.log("sendMessage: cache", cache);
+//     console.log("sendMessage: auctionId", auctionId);
+//     return;
 
-    if (auctionCache && !auctionCache.sent) {
+//     if (auctionCache && !auctionCache.sent) {
         
-        // todo: move to a function
-        let adUnitMap = Object.keys(auctionCache.bids).reduce((adUnits, bidId) => {
-            let bid = auctionCache.bids[bidId];
-            let adUnit = adUnits[bid.adUnit.adUnitCode];
-            if (!adUnit) {
-                adUnit = adUnits[bid.adUnit.adUnitCode] = utils.pick(bid.adUnit, [
-                    'adUnitCode',
-                    'transactionId',
-                    'mediaTypes',
-                    'dimensions',
-                    'adserverTargeting', () => stringProperties(cache.targeting[bid.adUnit.adUnitCode] || {})
-                ]);
-                adUnit.bids = [];
-            }
+//         // todo: move to a function
+//         let adUnitMap = Object.keys(auctionCache.bids).reduce((adUnits, bidId) => {
+//             let bid = auctionCache.bids[bidId];
+//             let adUnit = adUnits[bid.adUnit.adUnitCode];
+//             if (!adUnit) {
+//                 adUnit = adUnits[bid.adUnit.adUnitCode] = utils.pick(bid.adUnit, [
+//                     'adUnitCode',
+//                     'transactionId',
+//                     'mediaTypes',
+//                     'dimensions',
+//                     'adserverTargeting', () => stringProperties(cache.targeting[bid.adUnit.adUnitCode] || {})
+//                 ]);
+//                 adUnit.bids = [];
+//             }
 
-            // Add site and zone id if not there and if we found a rubicon bidder 
-            //todo: not needed?
-            if ((!adUnit.siteId || !adUnit.zoneId) && rubiconAliases.indexOf(bid.bidder) !== -1) {
-                if (utils.deepAccess(bid, 'params.accountId') == accountId) {
-                    adUnit.accountId = parseInt(accountId);
-                    adUnit.siteId = parseInt(utils.deepAccess(bid, 'params.siteId'));
-                    adUnit.zoneId = parseInt(utils.deepAccess(bid, 'params.zoneId'));
-                }
-            }
+//             // Add site and zone id if not there and if we found a rubicon bidder 
+//             //todo: not needed?
+//             if ((!adUnit.siteId || !adUnit.zoneId) && rubiconAliases.indexOf(bid.bidder) !== -1) {
+//                 if (utils.deepAccess(bid, 'params.accountId') == accountId) {
+//                     adUnit.accountId = parseInt(accountId);
+//                     adUnit.siteId = parseInt(utils.deepAccess(bid, 'params.siteId'));
+//                     adUnit.zoneId = parseInt(utils.deepAccess(bid, 'params.zoneId'));
+//                 }
+//             }
 
-            //todo: not needed?
-            if (bid.videoAdFormat && !adUnit.videoAdFormat) {
-                adUnit.videoAdFormat = bid.videoAdFormat;
-            }
+//             //todo: not needed?
+//             if (bid.videoAdFormat && !adUnit.videoAdFormat) {
+//                 adUnit.videoAdFormat = bid.videoAdFormat;
+//             }
 
-            // determine adUnit.status from its bid statuses.  Use priority below to determine, higher index is better
-            let statusPriority = [ERROR, NO_BID, SUCCESS]; //todo: move to const in an obj
-            if (statusPriority.indexOf(bid.status) > statusPriority.indexOf(adUnit.status)) { //todo: change to hasOwnProperty
-                adUnit.status = bid.status;
-            }
+//             // determine adUnit.status from its bid statuses.  Use priority below to determine, higher index is better
+//             let statusPriority = [ERROR, NO_BID, SUCCESS]; //todo: move to const in an obj
+//             if (statusPriority.indexOf(bid.status) > statusPriority.indexOf(adUnit.status)) { //todo: change to hasOwnProperty
+//                 adUnit.status = bid.status;
+//             }
 
-            adUnit.bids.push(formatBid(bid));
+//             adUnit.bids.push(formatBid(bid));
 
-            return adUnits;
-        }, {});
+//             return adUnits;
+//         }, {});
 
-        //todo: not needed?
-        // We need to mark each cached bid response with its appropriate rubicon site-zone id
-        // This allows the bidWon events to have these params even in the case of a delayed render
-        Object.keys(auctionCache.bids).forEach(function (bidId) {
-            let adCode = auctionCache.bids[bidId].adUnit.adUnitCode;
-            Object.assign(auctionCache.bids[bidId], utils.pick(adUnitMap[adCode], ['accountId', 'siteId', 'zoneId']));
-        });
+//         //todo: not needed?
+//         // We need to mark each cached bid response with its appropriate rubicon site-zone id
+//         // This allows the bidWon events to have these params even in the case of a delayed render
+//         Object.keys(auctionCache.bids).forEach(function (bidId) {
+//             let adCode = auctionCache.bids[bidId].adUnit.adUnitCode;
+//             Object.assign(auctionCache.bids[bidId], utils.pick(adUnitMap[adCode], ['accountId', 'siteId', 'zoneId']));
+//         });
 
-        let auction = {
-            clientTimeoutMillis: auctionCache.timeout,
-            samplingFactor,
-            accountId,
-            adUnits: Object.keys(adUnitMap).map(i => adUnitMap[i])
-        };
+//         let auction = {
+//             clientTimeoutMillis: auctionCache.timeout,
+//             samplingFactor,
+//             accountId,
+//             adUnits: Object.keys(adUnitMap).map(i => adUnitMap[i])
+//         };
 
-        if (serverConfig) {
-            auction.serverTimeoutMillis = serverConfig.timeout;
-        }
+//         if (serverConfig) {
+//             auction.serverTimeoutMillis = serverConfig.timeout;
+//         }
 
-        // todo: i think we need to send each auction separately    
-        message.auctions = [auction];
+//         // todo: i think we need to send each auction separately    
+//         message.auctions = [auction];
 
-        let bidsWon = Object.keys(auctionCache.bidsWon).reduce((memo, adUnitCode) => {
-            let bidId = auctionCache.bidsWon[adUnitCode];
-            if (bidId) {
-                memo.push(formatBidWon(auctionCache.bids[bidId]));
-            }
-            return memo;
-        }, []);
+//         let bidsWon = Object.keys(auctionCache.bidsWon).reduce((memo, adUnitCode) => {
+//             let bidId = auctionCache.bidsWon[adUnitCode];
+//             if (bidId) {
+//                 memo.push(formatBidWon(auctionCache.bids[bidId]));
+//             }
+//             return memo;
+//         }, []);
 
-        if (bidsWon.length > 0) {
-            message.bidsWon = bidsWon;
-        }
+//         if (bidsWon.length > 0) {
+//             message.bidsWon = bidsWon;
+//         }
 
-        auctionCache.sent = true;
+//         auctionCache.sent = true;
 
-    } else if (bidWonId && auctionCache && auctionCache.bids[bidWonId]) {
-        message.bidsWon = [
-            formatBidWon(auctionCache.bids[bidWonId])
-        ];
-    }
+//     } else if (bidWonId && auctionCache && auctionCache.bids[bidWonId]) {
+//         message.bidsWon = [
+//             formatBidWon(auctionCache.bids[bidWonId])
+//         ];
+//     }
 
-    ajax(
-        this.getUrl(),
-        null,
-        JSON.stringify(message),
-        {
-            contentType: 'application/json'
-        }
-    );
-}
+//     ajax(
+//         this.getUrl(),
+//         null,
+//         JSON.stringify(message),
+//         {
+//             contentType: 'application/json'
+//         }
+//     );
+// }
 
 ////////////// ADAPTER EVENT HANDLER FUNCTIONS ////////////// 
 
@@ -481,18 +483,20 @@ function bidWonHandler(args){
     auctionCache.adUnitCodes[args.adUnitCode].bidWon = args.requestId;
     // check if this BID_WON missed the boat, if so send by itself
     // todo: i think we should remove these checks; and keep bidsLog and winBidLog separate
-    if (auctionCache.sent === true) {
-        sendMessage.call(this, args.auctionId, args.requestId);        
-    } else if (isWinningBidReceivedForAllAdUnitsInAuction(auctionCache)) {
-        //todo: why isWinningBidReceivedForAllAdUnitsInAuction is important?
-        //      execute logger only if we have got all winning bids
-        //         here winning bid is the rendered bids
-        //      removing delayed execution
-        // todo: are we missing the bidWin logger call then?
-        clearTimeout(cache.timeouts[args.auctionId]);
-        delete cache.timeouts[args.auctionId];
-        sendMessage.call(this, args.auctionId);
-    }
+    // if (auctionCache.sent === true) {
+    //     // sendMessage.call(this, args.auctionId, args.requestId);        
+    // } else if (isWinningBidReceivedForAllAdUnitsInAuction(auctionCache)) {
+    //     //todo: why isWinningBidReceivedForAllAdUnitsInAuction is important?
+    //     //      execute logger only if we have got all winning bids
+    //     //         here winning bid is the rendered bids
+    //     //      removing delayed execution
+    //     // todo: are we missing the bidWin logger call then?
+    //     clearTimeout(cache.timeouts[args.auctionId]);
+    //     delete cache.timeouts[args.auctionId];
+    //     // sendMessage.call(this, args.auctionId);
+    //     executeBidWonLoggerCall(this, args.auctionId, args.requestId);
+    // }
+    executeBidWonLoggerCall(args.auctionId, args.requestId);
 }
 
 function auctionEndHandler(args){
