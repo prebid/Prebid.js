@@ -2,7 +2,12 @@
 <head>
     <script>
         var PREBID_TIMEOUT = 3000;
-
+        var DIV_1 = 'div-1';
+        // var DIV_1_SIZES = [[640,480]];
+        var DIV_1_SIZES = [[640,480], [300, 250]];
+        var DIV_2 = 'div-2';
+        var DIV_2_SIZES = [[300, 250],[300, 600]];
+        
         var googletag = googletag || {};
         googletag.cmd = googletag.cmd || [];
 
@@ -31,14 +36,16 @@
             var pbjsTargetEl = document.getElementsByTagName("head")[0];
             pbjsTargetEl.insertBefore(pbjsEl, pbjsTargetEl.firstChild);
         })();
-
+        
         pbjs.que.push(function() {
-            var adUnits = [
-                {
-                    code: 'test-div',
+            var adUnits = [{
+                    code: DIV_1,
                     mediaTypes: {
                         banner: {
-                            sizes: [[300, 250]]
+                            sizes: DIV_1_SIZES
+                        },
+                        video: {
+                            playerSize: DIV_1_SIZES,
                         }
                     },
                     bids: [
@@ -47,15 +54,24 @@
                             params: {
                                 accountId: 1001,
                                 siteId: 113932,
-                                zoneId: 535510
-                            }
+                                zoneId: 535510,
+                                video: {
+                                    context: 'instream',
+                                    playerSize: [640, 480],
+                                    mimes: ['video/mp4', 'video/x-ms-wmv'],
+                                    protocols: [2, 5],
+                                    maxduration: 30,
+                                    linearity: 1,
+                                    api: [2]
+                                }
+                            },
                         }
                     ]
                 },{
-                    code: 'test-native-size',
+                    code: DIV_2,
                     mediaTypes: {
                         banner: {
-                            sizes: [[300, 50]]
+                            sizes: DIV_2_SIZES
                         }
                     },
                     bids: [
@@ -72,6 +88,10 @@
             ];
 
             pbjs.setConfig({
+                debug: true,
+                consentManagement: {
+                    allowAuctionWithoutConsent: true
+                },
                 bidderTimeout: 3000,
                 s2sConfig: {
                     'accountId': 'abc',
@@ -105,7 +125,9 @@
 
     <script>
         googletag.cmd.push(function() {
-            googletag.defineSlot('/19968336/header-bid-tag-0', [[300, 250]], 'test-div').addService(googletag.pubads());
+            googletag.defineSlot('/19968336/header-bid-tag-0', DIV_1_SIZES, DIV_1).addService(googletag.pubads());
+            googletag.defineSlot('/112115922/FL_PB_MedRect', DIV_2_SIZES, DIV_2).addService(googletag.pubads());
+            // googletag.defineSlot('/19968336/header-bid-tag1', DIV_2_SIZES, DIV_2).addService(googletag.pubads());
             
             pbjs.que.push(function() {
                 pbjs.setTargetingForGPTAsync();
@@ -115,23 +137,34 @@
             googletag.enableServices();
         });
     </script>
+    <style>
+        div{
+            border: 1px solid black;
+            border-radius: 2px;
+            min-height: 20px;
+        }
+    </style>
 </head>
 
 <body>
-<h2>Prebid.js Rubicon Analytics Example</h2>
+    <h2>Prebid.js Rubicon Analytics Adapter Example</h2>
+    
+    <h5>Div-1</h5>
+    <div id='div-1'>
+        <script>
+            googletag.cmd.push(function() {
+                googletag.display(DIV_1); 
+            });
+        </script>
+    </div>
 
-<h5>Div-1</h5>
-<div id='test-div'>
-    <script type='text/javascript'>
-        googletag.cmd.push(function() { googletag.display('test-div'); });
-    </script>
-</div>
-
-<h5>Div-2</h5>
-<div id='test-native-size'>
-    <script type='text/javascript'>
-        googletag.cmd.push(function() { googletag.display('test-native-size'); });
-    </script>
-</div>
+    <h5>Div-2</h5>
+    <div id='div-2'>
+        <script>
+            googletag.cmd.push(function() {
+                googletag.display(DIV_2);
+            });
+        </script>
+    </div>
 </body>
 </html>
