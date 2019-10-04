@@ -102,7 +102,7 @@ pbjs.setConfig({
                  name: '_li_pbid',
                  expires: 60
              }
-         }],
+        }],
         syncDelay: 5000
     }
 });
