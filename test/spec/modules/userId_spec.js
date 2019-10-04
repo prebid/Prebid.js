@@ -14,13 +14,14 @@ import {unifiedIdSubmodule} from 'modules/userId/unifiedIdSystem';
 import {pubCommonIdSubmodule} from 'modules/userId/pubCommonIdSystem';
 import {id5IdSubmodule} from 'modules/id5IdSystem';
 import {identityLinkSubmodule} from 'modules/identityLinkIdSystem';
+import {parrableIdSubmodule} from 'modules/parrableIdSystem';
 
 let assert = require('chai').assert;
 let expect = require('chai').expect;
 const EXPIRED_COOKIE_DATE = 'Thu, 01 Jan 1970 00:00:01 GMT';
 
 describe('User ID', function() {
-  function getConfigMock(configArr1, configArr2, configArr3, configArr4) {
+  function getConfigMock(configArr1, configArr2, configArr3, configArr4, configArr5) {
     return {
       userSync: {
         syncDelay: 0,
@@ -28,7 +29,8 @@ describe('User ID', function() {
           (configArr1 && configArr1.length >= 3) ? getStorageMock.apply(null, configArr1) : null,
           (configArr2 && configArr2.length >= 3) ? getStorageMock.apply(null, configArr2) : null,
           (configArr3 && configArr3.length >= 3) ? getStorageMock.apply(null, configArr3) : null,
-          (configArr4 && configArr4.length >= 3) ? getStorageMock.apply(null, configArr4) : null
+          (configArr4 && configArr4.length >= 3) ? getStorageMock.apply(null, configArr4) : null,
+          (configArr5 && configArr5.length >= 3) ? getStorageMock.apply(null, configArr5) : null
         ].filter(i => i)}
     }
   }
@@ -255,7 +257,7 @@ describe('User ID', function() {
     });
 
     it('handles config with no usersync object', function () {
-      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule]);
+      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, parrableIdSubmodule]);
       init(config);
       config.setConfig({});
       // usersync is undefined, and no logInfo message for 'User ID - usersync config updated'
@@ -263,14 +265,14 @@ describe('User ID', function() {
     });
 
     it('handles config with empty usersync object', function () {
-      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule]);
+      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, parrableIdSubmodule]);
       init(config);
       config.setConfig({ usersync: {} });
       expect(typeof utils.logInfo.args[0]).to.equal('undefined');
     });
 
     it('handles config with usersync and userIds that are empty objs', function () {
-      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule]);
+      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, parrableIdSubmodule]);
       init(config);
       config.setConfig({
         usersync: {
@@ -281,7 +283,7 @@ describe('User ID', function() {
     });
 
     it('handles config with usersync and userIds with empty names or that dont match a submodule.name', function () {
-      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule]);
+      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, parrableIdSubmodule]);
       init(config);
       config.setConfig({
         usersync: {
@@ -298,15 +300,15 @@ describe('User ID', function() {
     });
 
     it('config with 1 configuration should create 1 submodule', function () {
-      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule]);
+      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, parrableIdSubmodule]);
       init(config);
       config.setConfig(getConfigMock(['unifiedId', 'unifiedid', 'cookie']));
 
       expect(utils.logInfo.args[0][0]).to.exist.and.to.equal('User ID - usersync config updated for 1 submodules');
     });
 
-    it('config with 4 configurations should result in 4 submodules add', function () {
-      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule]);
+    it('config with 5 configurations should result in 4 submodules add', function () {
+      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, parrableIdSubmodule]);
       init(config);
       config.setConfig({
         usersync: {
@@ -322,14 +324,17 @@ describe('User ID', function() {
           }, {
             name: 'identityLink',
             storage: { name: 'idl_env', type: 'cookie' }
+          }, {
+            name: 'parrableId',
+            storage: { name: '_parrable_eid', type: 'cookie' }
           }]
         }
       });
-      expect(utils.logInfo.args[0][0]).to.exist.and.to.equal('User ID - usersync config updated for 4 submodules');
+      expect(utils.logInfo.args[0][0]).to.exist.and.to.equal('User ID - usersync config updated for 5 submodules');
     });
 
     it('config syncDelay updates module correctly', function () {
-      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule]);
+      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, parrableIdSubmodule]);
       init(config);
       config.setConfig({
         usersync: {
@@ -344,7 +349,7 @@ describe('User ID', function() {
     });
 
     it('config auctionDelay updates module correctly', function () {
-      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule]);
+      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, parrableIdSubmodule]);
       init(config);
       config.setConfig({
         usersync: {
@@ -359,7 +364,7 @@ describe('User ID', function() {
     });
 
     it('config auctionDelay defaults to 0 if not a number', function () {
-      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule]);
+      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, parrableIdSubmodule]);
       init(config);
       config.setConfig({
         usersync: {
@@ -714,6 +719,28 @@ describe('User ID', function() {
       }, {adUnits});
     });
 
+    it('test hook from parrableId cookies', function(done) {
+      const parrableCookieName = '_parrable_eid';
+      const parrableCookieValue = '01.1563917337.test-eid';
+      // simulate existing browser local storage values
+      utils.setCookie(parrableCookieName, parrableCookieValue, (new Date(Date.now() + 5000).toUTCString()));
+
+      setSubmoduleRegistry([parrableIdSubmodule]);
+      init(config);
+      config.setConfig(getConfigMock(['parrableId', parrableCookieName, 'cookie']));
+
+      requestBidsHook(function() {
+        adUnits.forEach(unit => {
+          unit.bids.forEach(bid => {
+            expect(bid).to.have.deep.nested.property('userId.parrableid');
+            expect(bid.userId.parrableid).to.equal(parrableCookieValue);
+          });
+        });
+        utils.setCookie(parrableCookieName, '', EXPIRED_COOKIE_DATE);
+        done();
+      }, {adUnits});
+    });
+
     it('test hook from id5id value-based config', function(done) {
       setSubmoduleRegistry([id5IdSubmodule]);
       init(config);
@@ -735,13 +762,15 @@ describe('User ID', function() {
       utils.setCookie('unifiedid', JSON.stringify({'TDID': 'testunifiedid'}), (new Date(Date.now() + 5000).toUTCString()));
       utils.setCookie('id5id', JSON.stringify({'ID5ID': 'testid5id'}), (new Date(Date.now() + 5000).toUTCString()));
       utils.setCookie('idl_env', 'AiGNC8Z5ONyZKSpIPf', (new Date(Date.now() + 5000).toUTCString()));
+      utils.setCookie('_parrable_eid', '01.1563917337.test-eid', (new Date(Date.now() + 5000).toUTCString()));
 
-      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule]);
+      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, parrableIdSubmodule]);
       init(config);
       config.setConfig(getConfigMock(['pubCommonId', 'pubcid', 'cookie'],
         ['unifiedId', 'unifiedid', 'cookie'],
         ['id5Id', 'id5id', 'cookie'],
-        ['identityLink', 'idl_env', 'cookie']));
+        ['identityLink', 'idl_env', 'cookie'],
+        ['parrableId', '_parrable_eid', 'cookie']));
 
       requestBidsHook(function() {
         adUnits.forEach(unit => {
@@ -758,12 +787,16 @@ describe('User ID', function() {
             // check that identityLink id data was copied to bid
             expect(bid).to.have.deep.nested.property('userId.idl_env');
             expect(bid.userId.idl_env).to.equal('AiGNC8Z5ONyZKSpIPf');
+            // check that parrableId id data was copied to bid
+            expect(bid).to.have.deep.nested.property('userId.parrableid');
+            expect(bid.userId.parrableid).to.equal('01.1563917337.test-eid');
           });
         });
         utils.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
         utils.setCookie('unifiedid', '', EXPIRED_COOKIE_DATE);
         utils.setCookie('id5id', '', EXPIRED_COOKIE_DATE);
         utils.setCookie('idl_env', '', EXPIRED_COOKIE_DATE);
+        utils.setCookie('_parrable_eid', '', EXPIRED_COOKIE_DATE);
         done();
       }, {adUnits});
     });
@@ -773,6 +806,7 @@ describe('User ID', function() {
       utils.setCookie('unifiedid', JSON.stringify({'TDID': 'cookie-value-add-module-variations'}), new Date(Date.now() + 5000).toUTCString());
       utils.setCookie('id5id', JSON.stringify({'ID5ID': 'testid5id'}), (new Date(Date.now() + 5000).toUTCString()));
       utils.setCookie('idl_env', 'AiGNC8Z5ONyZKSpIPf', new Date(Date.now() + 5000).toUTCString());
+      utils.setCookie('_parrable_eid', '01.1563917337.test-eid', (new Date(Date.now() + 5000).toUTCString()));
 
       setSubmoduleRegistry([]);
 
@@ -785,11 +819,13 @@ describe('User ID', function() {
       attachIdSystem(unifiedIdSubmodule);
       attachIdSystem(id5IdSubmodule);
       attachIdSystem(identityLinkSubmodule);
+      attachIdSystem(parrableIdSubmodule);
 
       config.setConfig(getConfigMock(['pubCommonId', 'pubcid', 'cookie'],
         ['unifiedId', 'unifiedid', 'cookie'],
         ['id5Id', 'id5id', 'cookie'],
-        ['identityLink', 'idl_env', 'cookie']));
+        ['identityLink', 'idl_env', 'cookie'],
+        ['parrableId', '_parrable_eid', 'cookie']));
 
       requestBidsHook(function() {
         adUnits.forEach(unit => {
@@ -806,12 +842,16 @@ describe('User ID', function() {
             // also check that identityLink id data was copied to bid
             expect(bid).to.have.deep.nested.property('userId.idl_env');
             expect(bid.userId.idl_env).to.equal('AiGNC8Z5ONyZKSpIPf');
+            // check that parrableId id data was copied to bid
+            expect(bid).to.have.deep.nested.property('userId.parrableid');
+            expect(bid.userId.parrableid).to.equal('01.1563917337.test-eid');
           });
         });
         utils.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
         utils.setCookie('unifiedid', '', EXPIRED_COOKIE_DATE);
         utils.setCookie('id5id', '', EXPIRED_COOKIE_DATE);
         utils.setCookie('idl_env', '', EXPIRED_COOKIE_DATE);
+        utils.setCookie('_parrable_eid', '', EXPIRED_COOKIE_DATE);
         done();
       }, {adUnits});
     });
@@ -821,9 +861,10 @@ describe('User ID', function() {
       utils.setCookie('unifiedid', JSON.stringify({'TDID': 'cookie-value-add-module-variations'}), new Date(Date.now() + 5000).toUTCString());
       utils.setCookie('id5id', JSON.stringify({'ID5ID': 'testid5id'}), (new Date(Date.now() + 5000).toUTCString()));
       utils.setCookie('idl_env', 'AiGNC8Z5ONyZKSpIPf', new Date(Date.now() + 5000).toUTCString());
+      utils.setCookie('_parrable_eid', '01.1563917337.test-eid', (new Date(Date.now() + 5000).toUTCString()));
       utils.setCookie('MOCKID', JSON.stringify({'MOCKID': '123456778'}), new Date(Date.now() + 5000).toUTCString());
 
-      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule]);
+      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, parrableIdSubmodule]);
       init(config);
 
       config.setConfig({
@@ -835,6 +876,8 @@ describe('User ID', function() {
             name: 'unifiedId', storage: { name: 'unifiedid', type: 'cookie' }
           }, {
             name: 'id5Id', storage: { name: 'id5id', type: 'cookie' }
+          }, {
+            name: 'parrableId', storage: { name: '_parrable_eid', type: 'cookie' }
           }, {
             name: 'identityLink', storage: { name: 'idl_env', type: 'cookie' }
           }, {
@@ -872,6 +915,9 @@ describe('User ID', function() {
             // also check that identityLink id data was copied to bid
             expect(bid).to.have.deep.nested.property('userId.idl_env');
             expect(bid.userId.idl_env).to.equal('AiGNC8Z5ONyZKSpIPf');
+            // check that parrableId id data was copied to bid
+            expect(bid).to.have.deep.nested.property('userId.parrableid');
+            expect(bid.userId.parrableid).to.equal('01.1563917337.test-eid');
             // check MockId data was copied to bid
             expect(bid).to.have.deep.nested.property('userId.mid');
             expect(bid.userId.mid).to.equal('123456778');
@@ -881,6 +927,7 @@ describe('User ID', function() {
         utils.setCookie('unifiedid', '', EXPIRED_COOKIE_DATE);
         utils.setCookie('id5id', '', EXPIRED_COOKIE_DATE);
         utils.setCookie('idl_env', '', EXPIRED_COOKIE_DATE);
+        utils.setCookie('_parrable_eid', '', EXPIRED_COOKIE_DATE);
         utils.setCookie('MOCKID', '', EXPIRED_COOKIE_DATE);
         done();
       }, {adUnits});
