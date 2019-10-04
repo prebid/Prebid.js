@@ -100,58 +100,6 @@ describe('Smart bid adapter tests', function () {
     expect(requestContent).to.have.property('ckid').and.to.equal(42);
   });
 
-  describe('gdpr tests', function () {
-    afterEach(function () {
-      config.resetConfig();
-      $$PREBID_GLOBAL$$.requestBids.removeAll();
-    });
-
-    it('Verify build request with GDPR', function () {
-      config.setConfig({
-        'currency': {
-          'adServerCurrency': 'EUR'
-        },
-        consentManagement: {
-          cmp: 'iab',
-          consentRequired: true,
-          timeout: 1000,
-          allowAuctionWithoutConsent: true
-        }
-      });
-      const request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, {
-        gdprConsent: {
-          consentString: 'BOKAVy4OKAVy4ABAB8AAAAAZ+A==',
-          gdprApplies: true
-        }
-      });
-      const requestContent = JSON.parse(request[0].data);
-      expect(requestContent).to.have.property('gdpr').and.to.equal(true);
-      expect(requestContent).to.have.property('gdpr_consent').and.to.equal('BOKAVy4OKAVy4ABAB8AAAAAZ+A==');
-    });
-
-    it('Verify build request with GDPR without gdprApplies', function () {
-      config.setConfig({
-        'currency': {
-          'adServerCurrency': 'EUR'
-        },
-        consentManagement: {
-          cmp: 'iab',
-          consentRequired: true,
-          timeout: 1000,
-          allowAuctionWithoutConsent: true
-        }
-      });
-      const request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, {
-        gdprConsent: {
-          consentString: 'BOKAVy4OKAVy4ABAB8AAAAAZ+A=='
-        }
-      });
-      const requestContent = JSON.parse(request[0].data);
-      expect(requestContent).to.not.have.property('gdpr');
-      expect(requestContent).to.have.property('gdpr_consent').and.to.equal('BOKAVy4OKAVy4ABAB8AAAAAZ+A==');
-    });
-  });
-
   it('Verify parse response', function () {
     const request = spec.buildRequests(DEFAULT_PARAMS);
     const bids = spec.interpretResponse(BID_RESPONSE, request[0]);
@@ -260,5 +208,118 @@ describe('Smart bid adapter tests', function () {
       iframeEnabled: true
     }, []);
     expect(syncs).to.have.lengthOf(0);
+  });
+
+  describe('gdpr tests', function () {
+    afterEach(function () {
+      config.resetConfig();
+      $$PREBID_GLOBAL$$.requestBids.removeAll();
+    });
+
+    it('Verify build request with GDPR', function () {
+      config.setConfig({
+        'currency': {
+          'adServerCurrency': 'EUR'
+        },
+        consentManagement: {
+          cmp: 'iab',
+          consentRequired: true,
+          timeout: 1000,
+          allowAuctionWithoutConsent: true
+        }
+      });
+      const request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, {
+        gdprConsent: {
+          consentString: 'BOKAVy4OKAVy4ABAB8AAAAAZ+A==',
+          gdprApplies: true
+        }
+      });
+      const requestContent = JSON.parse(request[0].data);
+      expect(requestContent).to.have.property('gdpr').and.to.equal(true);
+      expect(requestContent).to.have.property('gdpr_consent').and.to.equal('BOKAVy4OKAVy4ABAB8AAAAAZ+A==');
+    });
+
+    it('Verify build request with GDPR without gdprApplies', function () {
+      config.setConfig({
+        'currency': {
+          'adServerCurrency': 'EUR'
+        },
+        consentManagement: {
+          cmp: 'iab',
+          consentRequired: true,
+          timeout: 1000,
+          allowAuctionWithoutConsent: true
+        }
+      });
+      const request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, {
+        gdprConsent: {
+          consentString: 'BOKAVy4OKAVy4ABAB8AAAAAZ+A=='
+        }
+      });
+      const requestContent = JSON.parse(request[0].data);
+      expect(requestContent).to.not.have.property('gdpr');
+      expect(requestContent).to.have.property('gdpr_consent').and.to.equal('BOKAVy4OKAVy4ABAB8AAAAAZ+A==');
+    });
+  });
+
+  describe('Outsteam video tests', function () {
+    afterEach(function () {
+      config.resetConfig();
+      $$PREBID_GLOBAL$$.requestBids.removeAll();
+    });
+
+    var OUTSTREAM_DEFAULT_PARAMS = [{
+      adUnitCode: 'sas_42',
+      bidId: 'abcd1234',
+      bidder: 'smartadserver',
+      mediaTypes: {
+				video: {
+					context: 'outstream',
+					playerSize: [640, 480]
+				}
+			},
+      params: {
+        domain: 'http://prg.smartadserver.com',
+        siteId: '1234',
+        pageId: '5678',
+        formatId: '90',
+        target: 'test=prebid',
+        bidfloor: 0.420,
+        buId: '7569',
+        appName: 'Mozilla',
+        ckId: 42
+      },
+      requestId: 'efgh5678',
+      transactionId: 'zsfgzzg'
+    }];
+
+    it('Verify outstream video build request', function () {
+      config.setConfig({
+        'currency': {
+          'adServerCurrency': 'EUR'
+        }
+      });
+      const request = spec.buildRequests(OUTSTREAM_DEFAULT_PARAMS);
+      expect(request[0]).to.have.property('url').and.to.equal('http://prg.smartadserver.com/prebid/v1');
+      expect(request[0]).to.have.property('method').and.to.equal('POST');
+      const requestContent = JSON.parse(request[0].data);
+      expect(requestContent).to.have.property('siteid').and.to.equal('1234');
+      expect(requestContent).to.have.property('pageid').and.to.equal('5678');
+      expect(requestContent).to.have.property('formatid').and.to.equal('90');
+      expect(requestContent).to.have.property('currencyCode').and.to.equal('EUR');
+      expect(requestContent).to.have.property('bidfloor').and.to.equal(0.42);
+      expect(requestContent).to.have.property('targeting').and.to.equal('test=prebid');
+      expect(requestContent).to.have.property('tagId').and.to.equal('sas_42');
+      expect(requestContent).to.have.property('sizes');
+      expect(requestContent.sizes[0]).to.have.property('w').and.to.equal(640);
+      expect(requestContent.sizes[0]).to.have.property('h').and.to.equal(480);
+      expect(requestContent).to.have.property('pageDomain').and.to.equal(utils.getTopWindowUrl());
+      expect(requestContent).to.have.property('transactionId').and.to.not.equal(null).and.to.not.be.undefined;
+      expect(requestContent).to.have.property('buid').and.to.equal('7569');
+      expect(requestContent).to.have.property('appname').and.to.equal('Mozilla');
+      expect(requestContent).to.have.property('ckid').and.to.equal(42);
+
+
+    });
   });
 });
