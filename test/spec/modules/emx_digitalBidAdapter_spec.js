@@ -358,6 +358,28 @@ describe('emx_digital Adapter', function () {
   });
 
   describe('interpretResponse', function () {
+    let bid = {
+      'bidder': 'emx_digital',
+      'params': {
+        'tagid': '25251',
+        'video': {}
+      },
+      'mediaTypes': {
+        'video': {
+          'context': 'instream',
+          'playerSize': [640, 480]
+        }
+      },
+      'adUnitCode': 'adunit-code',
+      'sizes': [
+        [300, 250],
+        [300, 600]
+      ],
+      'bidId': '30b31c2501de1e',
+      'bidderRequestId': '22edbae3120bf6',
+      'auctionId': '1d1a01234a475'
+    };
+
     const serverResponse = {
       'id': '12819a18-56e1-4256-b836-b69a10202668',
       'seatbid': [{
@@ -458,7 +480,8 @@ describe('emx_digital Adapter', function () {
     it('returns a banner bid for non-xml creatives', function () {
       let result = spec.interpretResponse({
         body: serverResponse
-      });
+      }, { bidRequest: bid }
+      );
       const ad0 = result[0];
       const ad1 = result[1];
       expect(ad0.mediaType).to.equal('banner');
@@ -480,7 +503,8 @@ describe('emx_digital Adapter', function () {
 
       let result = spec.interpretResponse({
         body: serverResponse
-      });
+      }, { bidRequest: bid }
+      );
       const ad0 = result[0];
       const ad1 = result[1];
       expect(ad0.mediaType).to.equal('video');

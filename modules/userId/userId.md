@@ -41,20 +41,21 @@ pbjs.setConfig({
             storage: {
                 type: 'cookie',
                 name: 'idl_env',
-                expires: 60
+                expires: 30
             }
         }, {
-             name: 'liveIntentId',
-             params: {
-                 publisherId: '7798696' // Set an identifier of a publisher know to your systems 
-             },
-             storage: {
-                 type: 'cookie',
-                 name: '_li_pbid',
-                 expires: 60
-             }
-         }],
-        syncDelay: 5000
+            name: 'liveIntentId',
+            params: {
+                publisherId: '7798696' // Set an identifier of a publisher know to your systems 
+            },
+            storage: {
+                type: 'cookie',
+                name: '_li_pbid',
+                expires: 60
+            }
+        }],
+        syncDelay: 5000,
+        auctionDelay: 1000
     }
 });
 ```
@@ -89,7 +90,7 @@ pbjs.setConfig({
             storage: {
                 type: 'html5',
                 name: 'idl_env',
-                expires: 60
+                expires: 30
             }
         }, {
              name: 'liveIntentId',
