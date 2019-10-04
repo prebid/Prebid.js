@@ -10,7 +10,7 @@ import {ajax} from '../src/ajax';
 import {submodule} from '../src/hook';
 
 const PARRABLE_PROTOCOL = 'https';
-const PARRABLE_HOSTNAME = 'h.parrable.com';
+const PARRABLE_HOSTNAME = 'h.parrabletest.com';
 const PARRABLE_PATH = '/prebid';
 
 function isValidConfig(configParams) {
@@ -36,7 +36,7 @@ function fetchId(configParams, consentData, currentStoredId) {
 
   const data = {
     eid: currentStoredId || null,
-    trackers: config.partner.split(',')
+    trackers: configParams.partner.split(',')
   };
 
   const searchParams = {
