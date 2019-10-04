@@ -747,6 +747,18 @@ const OPEN_RTB_PROTOCOL = {
       utils.deepSetValue(request, 'regs.coppa', 1);
     }
 
+    if (!utils.isEmpty(s2sBidRequest.protected)) {
+      utils.deepSetValue(request, 'ext.prebid.data.bidders', s2sBidRequest.protected.allowedBidders);
+
+      if (s2sBidRequest.protected.context) {
+        utils.deepSetValue(request, 'site.ext.data', s2sBidRequest.protected.context);
+      }
+
+      if (s2sBidRequest.protected.user) {
+        utils.deepSetValue(request, 'user.ext.data', s2sBidRequest.protected.user);
+      }
+    }
+
     return request;
   },
 

@@ -60,7 +60,8 @@ const REQUEST = {
         }
       ]
     }
-  ]
+  ],
+  protected: {}
 };
 
 const VIDEO_REQUEST = {
@@ -1261,7 +1262,40 @@ describe('S2S Adapter', function () {
       adapter.callBids(REQUEST, bidRequests, addBidResponse, done, ajax);
       const parsedRequestBody = JSON.parse(requests[0].requestBody);
       expect(parsedRequestBody.source.ext.schain).to.deep.equal(schainObject);
-    })
+    });
+
+    it('passes first party data in request', () => {
+      const s2sBidRequest = utils.deepClone(REQUEST);
+      const bidRequests = utils.deepClone(BID_REQUESTS);
+
+      const context = {
+        keywords: ['power tools'],
+        search: 'drill',
+        content: { userrating: 4 },
+        data: {
+          pageType: 'article',
+          category: 'tools'
+        }
+      };
+      const user = {
+        keywords: ['a', 'b'],
+        gender: 'M',
+        yob: '1984',
+        geo: { country: 'ca' },
+        data: {
+          registered: true,
+          interests: ['cars']
+        }
+      };
+      const allowedBidders = [ 'rubicon', 'appnexus' ];
+
+      s2sBidRequest.protected = { context, user, allowedBidders };
+      adapter.callBids(s2sBidRequest, bidRequests, addBidResponse, done, ajax);
+      const parsedRequestBody = JSON.parse(requests[0].requestBody);
+      expect(parsedRequestBody.ext.prebid.data.bidders).to.deep.equal(allowedBidders);
+      expect(parsedRequestBody.site.ext.data).to.deep.equal(context);
+      expect(parsedRequestBody.user.ext.data).to.deep.equal(user);
+    });
   });
 
   describe('response handler', function () {

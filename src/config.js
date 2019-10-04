@@ -38,6 +38,9 @@ const GRANULARITY_OPTIONS = {
 
 const ALL_TOPICS = '*';
 
+export const PRE_BID_SERVER_KEY = 'preBidServer';
+const KNOWN_PROTECTED_KEYS = [ 'context', 'user' ];
+
 /**
  * @typedef {object} PrebidConfig
  *
@@ -49,6 +52,7 @@ export function newConfig() {
   let listeners = [];
   let defaults;
   let config;
+  let protectedConfig;
 
   function resetConfig() {
     defaults = {};
@@ -182,6 +186,7 @@ export function newConfig() {
     }
 
     config = newConfig;
+    protectedConfig = {};
 
     function hasGranularity(val) {
       return find(Object.keys(GRANULARITY_OPTIONS), option => val === GRANULARITY_OPTIONS[option]);
@@ -223,13 +228,40 @@ export function newConfig() {
     return subscribe(...args);
   }
 
+  function getProtectedData(bidderCode) {
+    if (typeof bidderCode !== 'string' || !protectedConfig.hasOwnProperty(bidderCode)) {
+      return {};
+    }
+
+    return protectedConfig[bidderCode];
+  }
+
   /*
    * Sets configuration given an object containing key-value pairs and calls
    * listeners that were added by the `subscribe` function
    */
-  function setConfig(options) {
+  function setConfig(options, allowedBiddersObj) {
     if (typeof options !== 'object') {
       utils.logError('setConfig options must be an object');
+      return;
+    }
+
+    if (typeof allowedBiddersObj === 'object' && Array.isArray(allowedBiddersObj.allowedBidders) && allowedBiddersObj.allowedBidders.length) {
+      const allowedBidders = allowedBiddersObj.allowedBidders;
+
+      allowedBidders.forEach(allowedBidder => {
+        protectedConfig[allowedBidder] = Object.assign({}, protectedConfig[allowedBidder], options);
+      });
+
+      const knownProtectedKeys = Object.keys(options).filter(key => includes(KNOWN_PROTECTED_KEYS, key));
+      if (knownProtectedKeys.length) {
+        const knownProtectedConfigs = knownProtectedKeys.reduce((result, key) => Object.assign(result, { [key]: options[key] }), {});
+        protectedConfig[PRE_BID_SERVER_KEY] = Object.assign({}, protectedConfig[PRE_BID_SERVER_KEY], knownProtectedConfigs);
+        const uniqAllowedBidders = new Set();
+        allowedBidders.concat(protectedConfig[PRE_BID_SERVER_KEY].allowedBidders || []).forEach(allowedBidder => uniqAllowedBidders.add(allowedBidder));
+        protectedConfig[PRE_BID_SERVER_KEY].allowedBidders = [ ...uniqAllowedBidders ];
+      }
+
       return;
     }
 
@@ -331,6 +363,7 @@ export function newConfig() {
 
   return {
     getConfig,
+    getProtectedData,
     setConfig,
     setDefaults,
     resetConfig

@@ -1,10 +1,11 @@
 import { expect } from 'chai';
 import { assert } from 'chai';
-import { newConfig } from 'src/config';
+import { newConfig, PRE_BID_SERVER_KEY } from 'src/config';
 
 const utils = require('src/utils');
 
 let getConfig;
+let getProtectedData;
 let setConfig;
 let setDefaults;
 
@@ -14,6 +15,7 @@ describe('config API', function () {
   beforeEach(function () {
     const config = newConfig();
     getConfig = config.getConfig;
+    getProtectedData = config.getProtectedData;
     setConfig = config.setConfig;
     setDefaults = config.setDefaults;
     logErrorSpy = sinon.spy(utils, 'logError');
@@ -188,5 +190,41 @@ describe('config API', function () {
     setConfig({ bidderSequence: 'fixed' });
     setConfig({ bidderSequence: 'random' });
     expect(logWarnSpy.called).to.equal(false);
+  });
+
+  it('should store data only allowed for certain bidders separate from normal config object', () => {
+    setConfig({ foo: 'bar' }, { allowedBidders: [ 'rubicon', 'appnexus' ] });
+    expect(getConfig('foo')).to.be.undefined;
+    expect(getConfig()).to.not.have.property('foo');
+  });
+
+  it('should only return protected data that specified bidder has access to', () => {
+    const context = {
+      keywords: ['power tools'],
+      search: 'drill',
+      content: { userrating: 4 },
+      data: {
+        pageType: 'article',
+        category: 'tools'
+      }
+    };
+
+    const user = {
+      keywords: ['a', 'b'],
+      gender: 'M',
+      yob: '1984',
+      geo: { country: 'ca' },
+      data: {
+        registered: true,
+        interests: ['cars']
+      }
+    };
+
+    setConfig({ context, user, foo: 'bar' }, { allowedBidders: [ 'rubicon', 'appnexus' ] });
+    setConfig({ oneBidderOnly: 'secret' }, { allowedBidders: [ 'rubicon' ] });
+    expect(getProtectedData()).to.be.empty;
+    expect(getProtectedData('rubicon')).to.deep.equal({ context, user, foo: 'bar', oneBidderOnly: 'secret' });
+    expect(getProtectedData('appnexus')).to.deep.equal({ context, user, foo: 'bar', });
+    expect(getProtectedData(PRE_BID_SERVER_KEY)).to.deep.equal({ context, user, allowedBidders: [ 'rubicon', 'appnexus' ] });
   });
 });

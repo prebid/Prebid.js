@@ -5,7 +5,7 @@ import { getLabels, resolveStatus } from './sizeMapping';
 import { processNativeAdUnitParams, nativeAdapters } from './native';
 import { newBidder } from './adapters/bidderFactory';
 import { ajaxBuilder } from './ajax';
-import { config, RANDOM } from './config';
+import { config, PRE_BID_SERVER_KEY, RANDOM } from './config';
 import includes from 'core-js/library/fn/array/includes';
 import find from 'core-js/library/fn/array/find';
 import { adunitCounter } from './adUnits';
@@ -309,6 +309,8 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
           events.emit(CONSTANTS.EVENTS.BID_REQUESTED, bidRequest);
         });
 
+        s2sBidRequest.protected = config.getProtectedData(PRE_BID_SERVER_KEY);
+
         // make bid requests
         s2sAdapter.callBids(
           s2sBidRequest,
@@ -337,6 +339,7 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
       request: requestCallbacks.request.bind(null, bidRequest.bidderCode),
       done: requestCallbacks.done
     } : undefined);
+    bidRequest.protected = config.getProtectedData(bidRequest.bidderCode);
     adapter.callBids(bidRequest, addBidResponse.bind(bidRequest), doneCb.bind(bidRequest), ajax, onTimelyResponse);
   });
 }
