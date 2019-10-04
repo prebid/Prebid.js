@@ -626,9 +626,16 @@ const OPEN_RTB_PROTOCOL = {
         if (adapter && adapter.getSpec().transformBidParams) {
           bid.params = adapter.getSpec().transformBidParams(bid.params, isOpenRtb());
         }
+
         acc[bid.bidder] = (_s2sConfig.adapterOptions && _s2sConfig.adapterOptions[bid.bidder]) ? Object.assign({}, bid.params, _s2sConfig.adapterOptions[bid.bidder]) : bid.params;
         return acc;
       }, {});
+
+      // if it exists and is a video request, pass the storedAuctionResponse
+      const storedAuctionResponse = utils.deepAccess(bidRequests, '0.bids.0.storedAuctionResponse');
+      if (storedAuctionResponse && mediaTypes.video) {
+        utils.deepSetValue(ext, 'prebid.storedauctionresponse', storedAuctionResponse);
+      }
 
       const imp = { id: adUnit.code, ext, secure: _s2sConfig.secure };
 
