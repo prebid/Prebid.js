@@ -37,6 +37,7 @@ export const spec = {
           auctionId: bidRequest.auctionId,
           transactionId: bidRequest.transactionId,
           adUnitCode: bidRequest.adUnitCode,
+          bidRequestCount: bidRequest.bidRequestCount,
           sizes: bidRequest.sizes,
           params: bidRequest.params
         }
