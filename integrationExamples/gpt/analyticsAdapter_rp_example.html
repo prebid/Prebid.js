@@ -118,6 +118,7 @@
             pbjs.requestBids({
                 bidsBackHandler: function(bidResponses) {
                     initAdserver();
+                    pbjs.setTargetingForGPTAsync();
                 }
             })
         });
@@ -127,12 +128,6 @@
         googletag.cmd.push(function() {
             googletag.defineSlot('/19968336/header-bid-tag-0', DIV_1_SIZES, DIV_1).addService(googletag.pubads());
             googletag.defineSlot('/112115922/FL_PB_MedRect', DIV_2_SIZES, DIV_2).addService(googletag.pubads());
-            // googletag.defineSlot('/19968336/header-bid-tag1', DIV_2_SIZES, DIV_2).addService(googletag.pubads());
-            
-            pbjs.que.push(function() {
-                pbjs.setTargetingForGPTAsync();
-            });
-
             googletag.pubads().enableSingleRequest();
             googletag.enableServices();
         });
