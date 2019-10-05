@@ -1,3 +1,6 @@
+
+const allowedModules = require("./allowedModules");
+
 module.exports = {
   "env": {
     "browser": true,
@@ -11,6 +14,9 @@ module.exports = {
     }
   },
   "extends": "standard",
+  "plugins": [
+    "prebid"
+  ],
   "globals": {
     "$$PREBID_GLOBAL$$": false
   },
@@ -31,5 +37,11 @@ module.exports = {
     "no-throw-literal": "off",
     "no-undef": "off",
     "no-useless-escape": "off",
-  }
+  },
+  "overrides": Object.keys(allowedModules).map((key) => ({
+    "files": key + "/**/*.js",
+    "rules": {
+      "prebid/validate-imports": ["error", allowedModules[key]]
+    }
+  }))
 };

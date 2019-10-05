@@ -29,17 +29,18 @@ const SYNC_TYPES = {
   }
 };
 
-const pubapiTemplate = template`//${'host'}/pubapi/3.0/${'network'}/${'placement'}/${'pageid'}/${'sizeid'}/ADTECH;v=2;cmd=bid;cors=yes;alias=${'alias'};misc=${'misc'};${'dynamicParams'}`;
-const nexageBaseApiTemplate = template`//${'host'}/bidRequest?`;
+const pubapiTemplate = template`${'host'}/pubapi/3.0/${'network'}/${'placement'}/${'pageid'}/${'sizeid'}/ADTECH;v=2;cmd=bid;cors=yes;alias=${'alias'};misc=${'misc'};${'dynamicParams'}`;
+const nexageBaseApiTemplate = template`${'host'}/bidRequest?`;
 const nexageGetApiTemplate = template`dcn=${'dcn'}&pos=${'pos'}&cmd=bid${'dynamicParams'}`;
 const MP_SERVER_MAP = {
   us: 'adserver-us.adtech.advertising.com',
   eu: 'adserver-eu.adtech.advertising.com',
   as: 'adserver-as.adtech.advertising.com'
 };
-const NEXAGE_SERVER = 'hb.nexage.com';
+const NEXAGE_SERVER = 'c2shb.ssp.yahoo.com';
 const ONE_DISPLAY_TTL = 60;
 const ONE_MOBILE_TTL = 3600;
+const DEFAULT_PROTO = 'https';
 
 const NUMERIC_VALUES = {
   TRUE: 1,
@@ -198,7 +199,7 @@ export const spec = {
     // Set region param, used by AOL analytics.
     params.region = regionParam;
 
-    return pubapiTemplate({
+    return this.applyProtocol(pubapiTemplate({
       host: server,
       network: params.network,
       placement: parseInt(params.placement),
@@ -207,7 +208,7 @@ export const spec = {
       alias: params.alias || utils.getUniqueIdentifierStr(),
       misc: new Date().getTime(), // cache busting
       dynamicParams: this.formatMarketplaceDynamicParams(params, consentData)
-    });
+    }));
   },
   buildOneMobileGetUrl(bid, consentData) {
     let {dcn, pos, ext} = bid.params;
@@ -219,9 +220,15 @@ export const spec = {
     return nexageApi;
   },
   buildOneMobileBaseUrl(bid) {
-    return nexageBaseApiTemplate({
+    return this.applyProtocol(nexageBaseApiTemplate({
       host: bid.params.host || NEXAGE_SERVER
-    });
+    }));
+  },
+  applyProtocol(url) {
+    if (/^https?:\/\//i.test(url)) {
+      return url;
+    }
+    return (url.indexOf('//') === 0) ? `${DEFAULT_PROTO}:${url}` : `${DEFAULT_PROTO}://${url}`;
   },
   formatMarketplaceDynamicParams(params = {}, consentData) {
     let queryParams = {};

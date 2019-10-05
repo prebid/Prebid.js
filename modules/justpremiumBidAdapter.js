@@ -1,9 +1,9 @@
 import { registerBidder } from '../src/adapters/bidderFactory'
-import { getTopWindowLocation } from '../src/utils'
+import { deepAccess } from '../src/utils';
 
 const BIDDER_CODE = 'justpremium'
 const ENDPOINT_URL = '//pre.ads.justpremium.com/v/2.0/t/xhr'
-const JP_ADAPTER_VERSION = '1.3'
+const JP_ADAPTER_VERSION = '1.4'
 const pixels = []
 const TRACK_START_TIME = Date.now()
 let LAST_PAYLOAD = {}
@@ -31,8 +31,7 @@ export const spec = {
       }).filter((value, index, self) => {
         return self.indexOf(value) === index
       }),
-      hostname: getTopWindowLocation().hostname,
-      protocol: getTopWindowLocation().protocol.replace(':', ''),
+      referer: bidderRequest.refererInfo.referer,
       sw: dim.screenWidth,
       sh: dim.screenHeight,
       ww: dim.innerWidth,
@@ -47,6 +46,14 @@ export const spec = {
       sizes[zone] = sizes[zone] || []
       sizes[zone].push.apply(sizes[zone], b.sizes)
     })
+
+    if (deepAccess(validBidRequests[0], 'userId.pubcid')) {
+      payload.pubcid = deepAccess(validBidRequests[0], 'userId.pubcid')
+    } else if (deepAccess(validBidRequests[0], 'crumbs.pubcid')) {
+      payload.pubcid = deepAccess(validBidRequests[0], 'crumbs.pubcid')
+    }
+
+    payload.uids = validBidRequests[0].userId
 
     if (bidderRequest && bidderRequest.gdprConsent) {
       payload.gdpr_consent = {
@@ -99,9 +106,9 @@ export const spec = {
   },
 
   getUserSyncs: function getUserSyncs(syncOptions, responses, gdprConsent) {
-    let url = '//pre.ads.justpremium.com/v/1.0/t/sync'
+    let url = '//pre.ads.justpremium.com/v/1.0/t/sync' + '?_c=' + 'a' + Math.random().toString(36).substring(7) + Date.now();
     if (gdprConsent && (typeof gdprConsent.gdprApplies === 'boolean')) {
-      url = url + '?consentString=' + encodeURIComponent(gdprConsent.consentString)
+      url = url + '&consentString=' + encodeURIComponent(gdprConsent.consentString)
     }
     if (syncOptions.iframeEnabled) {
       pixels.push({
