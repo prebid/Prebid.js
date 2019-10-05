@@ -1,7 +1,6 @@
 
 import { config } from './config';
 import { logMessage as utilsLogMessage, logWarn as utilsLogWarn } from './utils';
-import find from 'core-js/library/fn/array/find';
 import { addBidResponse, addBidRequest } from './auction';
 
 const OVERRIDE_KEY = '$$PREBID_GLOBAL$$:debugging';
@@ -72,14 +71,23 @@ export function addBidResponseHook(next, adUnitCode, bid) {
 export function addBidRequestHook(next, bidRequest) {
   const overrides = this;
   if (Array.isArray(overrides.bidRequests)) {
-    const override = find(overrides.bidRequests, overrideBidRequest => (typeof overrideBidRequest.bidderCode === 'undefined' || overrideBidRequest.bidderCode === bidRequest.bidderCode));
-    if (override) {
-      Object.keys(override).filter(key => ['bidderCode', 'adUnitCode'].indexOf(key) === -1).forEach(key => {
-        bidRequest[key] = override[key];
-        logMessage(`debug bidRequest override: ${key}=${override[key]}`)
+    overrides.bidRequests.forEach(overrideBidRequest => {
+      if (overrideBidRequest.bidderCode && overrideBidRequest.bidderCode !== bidRequest.bidderCode) {
+        return;
+      }
+      if (overrideBidRequest.adUnitCode && overrideBidRequest.adUnitCode !== bidRequest.adUnitCode) {
+        return;
+      }
+
+      bidRequest = Object.assign({}, bidRequest);
+
+      Object.keys(bidRequest).filter(key => ['bidderCode', 'adUnitCode'].indexOf(key) === -1).forEach(key => {
+        bidRequest[key] = bidRequest[key];
+        logMessage(`debug bidRequest override: ${key}=${bidRequest[key]}`);
       });
-    }
+    });
   }
+
   next(bidRequest);
 }
 
