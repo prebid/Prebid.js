@@ -121,7 +121,10 @@ function makeDevpackPkg() {
   var externalModules = helpers.getArgModules();
 
   const analyticsSources = helpers.getAnalyticsSources();
-  const moduleSources = helpers.getModulePaths(externalModules);
+  let moduleSources = helpers.getModulePaths(externalModules);
+  if (externalModules.length) {
+    moduleSources = moduleSources.filter(module => (externalModules.find(eModule => module.indexOf(eModule) >= 0)));
+  }
 
   return gulp.src([].concat(moduleSources, analyticsSources, 'src/prebid.js'))
     .pipe(helpers.nameModules(externalModules))
@@ -137,7 +140,10 @@ function makeWebpackPkg() {
   var externalModules = helpers.getArgModules();
 
   const analyticsSources = helpers.getAnalyticsSources();
-  const moduleSources = helpers.getModulePaths(externalModules);
+  let moduleSources = helpers.getModulePaths(externalModules);
+  if (externalModules.length) {
+    moduleSources = moduleSources.filter(module => (externalModules.find(eModule => module.indexOf(eModule) >= 0)));
+  }
 
   return gulp.src([].concat(moduleSources, analyticsSources, 'src/prebid.js'))
     .pipe(helpers.nameModules(externalModules))
