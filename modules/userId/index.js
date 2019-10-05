@@ -383,6 +383,11 @@ function initSubmodules(submodules, consentData) {
         refreshNeeded = storedDate && (Date.now() - storedDate.getTime() > submodule.config.storage.refreshInSeconds * 1000);
       }
 
+      // refresh is always needed for parrable submodule
+      if (submodule.config.name === 'parrableId') {
+        refreshNeeded = true;
+      }
+
       if (!storedId || refreshNeeded) {
         // No previously saved id.  Request one from submodule.
         response = submodule.submodule.getId(submodule.config.params, consentData, storedId);
