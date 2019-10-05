@@ -25,12 +25,13 @@ pbjs.setConfig({
         }, {
             name: "id5Id",
             params: {
-                partner: 173 // @TODO: Set your real ID5 partner ID here for production, please ask for one at http://id5.io/prebid
+                partner: 173 //Set your real ID5 partner ID here for production, please ask for one at http://id5.io/prebid
             },
             storage: {
                 type: "cookie",
                 name: "id5id",
-                expires: 5
+                expires: 5, // Expiration of cookies in days
+                refreshInSeconds: 8*3600 // User Id cache lifetime in seconds, defaulting to 'expires'
             }
         }, {
             name: 'identityLink',
@@ -40,10 +41,11 @@ pbjs.setConfig({
             storage: {
                 type: 'cookie',
                 name: 'idl_env',
-                expires: 60
+                expires: 30
             }
         }],
-        syncDelay: 5000
+        syncDelay: 5000,
+        auctionDelay: 1000
     }
 });
 ```
@@ -78,7 +80,7 @@ pbjs.setConfig({
             storage: {
                 type: 'html5',
                 name: 'idl_env',
-                expires: 60
+                expires: 30
             }
         }],
         syncDelay: 5000
