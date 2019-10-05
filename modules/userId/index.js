@@ -386,7 +386,6 @@ function initSubmodules(submodules, consentData) {
         refreshNeeded = storedDate && (Date.now() - storedDate.getTime() > submodule.config.storage.refreshInSeconds * 1000);
       }
 
-      // refresh is always needed for parrable submodule
       if (submodulesThatAlwaysRefresh.includes(submodule.config.name)) {
         refreshNeeded = true;
       }
