@@ -1,3 +1,4 @@
+/* eslint-disable no-debugger */
 import * as utils from '../src/utils';
 import {registerBidder} from '../src/adapters/bidderFactory';
 import {config} from '../src/config';
@@ -46,13 +47,12 @@ export const spec = {
   supportedMediaTypes: ['banner', 'video'],
 
   isBidRequestValid: function (bid) {
-    return !!bid.params.supplyPartnerId &&
-      typeof bid.params.supplyPartnerId === 'string' &&
-      (typeof bid.params['rtbEndpoint'] === 'undefined' || typeof bid.params['rtbEndpoint'] === 'string') &&
-      (typeof bid.params.bidfloor === 'undefined' || typeof bid.params.bidfloor === 'number') &&
-      (typeof bid.params['adpos'] === 'undefined' || typeof bid.params['adpos'] === 'number') &&
-      (typeof bid.params['protocols'] === 'undefined' || Array.isArray(bid.params['protocols'])) &&
-      (typeof bid.params.instl === 'undefined' || bid.params.instl === 0 || bid.params.instl === 1);
+    return !!bid.params.supplyPartnerId && utils.isStr(bid.params.supplyPartnerId) &&
+      (!bid.params['rtbEndpoint'] || utils.isStr(bid.params['rtbEndpoint'])) &&
+      (!bid.params.bidfloor || utils.isNumber(bid.params.bidfloor)) &&
+      (!bid.params['adpos'] || utils.isNumber(bid.params['adpos'])) &&
+      (!bid.params['protocols'] || Array.isArray(bid.params['protocols'])) &&
+      (!bid.params.instl || bid.params.instl === 0 || bid.params.instl === 1);
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
@@ -75,7 +75,7 @@ export const spec = {
         'imp': [],
         'ext': {}
       };
-
+      debugger;
       const gdprConsent = bidderRequest.gdprConsent;
 
       if (gdprConsent) {

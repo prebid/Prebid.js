@@ -227,9 +227,13 @@ describe('GamoshiAdapter', function () {
 
     it('builds request with gdpr consent', function () {
       let response = spec.buildRequests([bidRequest], bidRequest)[0];
+      expect(response.data.ext.gdpr_consent).to.exist;
       expect(response.data.ext).to.have.property('gdpr_consent');
       expect(response.data.ext.gdpr_consent.consent_string).to.equal('some string');
       expect(response.data.ext.gdpr_consent.consent_required).to.equal(true);
+
+      expect(response.data.regs.gdpr).to.exist;
+      expect(response.data.user.ext.consent).to.equal('some string');
     });
   });
 
