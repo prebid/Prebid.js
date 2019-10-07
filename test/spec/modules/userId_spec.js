@@ -326,6 +326,9 @@ describe('User ID', function() {
             storage: { name: 'idl_env', type: 'cookie' }
           }, {
             name: 'parrableId',
+            params: {
+              partner: 'parrable_test_partner_123,parrable_test_partner_456'
+            },
             storage: { name: '_parrable_eid', type: 'cookie' }
           }]
         }
@@ -877,7 +880,9 @@ describe('User ID', function() {
           }, {
             name: 'id5Id', storage: { name: 'id5id', type: 'cookie' }
           }, {
-            name: 'parrableId', storage: { name: '_parrable_eid', type: 'cookie' }
+            name: 'parrableId',
+            params: { partner: 'parrable_test_partner_123' },
+            storage: { name: '_parrable_eid', type: 'cookie' }
           }, {
             name: 'identityLink', storage: { name: 'idl_env', type: 'cookie' }
           }, {
