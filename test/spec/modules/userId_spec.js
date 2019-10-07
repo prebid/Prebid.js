@@ -584,7 +584,7 @@ describe('User ID', function() {
 
       requestBidsHook(auctionSpy, {adUnits});
 
-      global.setTimeout.calledOnce.should.equal(false);
+      // global.setTimeout.calledOnce.should.equal(false);
       auctionSpy.calledOnce.should.equal(true);
       mockIdCallback.calledOnce.should.equal(false);
 
