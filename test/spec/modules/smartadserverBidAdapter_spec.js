@@ -273,11 +273,11 @@ describe('Smart bid adapter tests', function () {
       bidId: 'abcd1234',
       bidder: 'smartadserver',
       mediaTypes: {
-				video: {
-					context: 'outstream',
-					playerSize: [640, 480]
-				}
-			},
+        video: {
+          context: 'outstream',
+          playerSize: [[640, 480]] // It seems prebid.js transforms the player size array into an array of array...
+        }
+      },
       params: {
         domain: 'http://prg.smartadserver.com',
         siteId: '1234',
@@ -318,8 +318,6 @@ describe('Smart bid adapter tests', function () {
       expect(requestContent).to.have.property('buid').and.to.equal('7569');
       expect(requestContent).to.have.property('appname').and.to.equal('Mozilla');
       expect(requestContent).to.have.property('ckid').and.to.equal(42);
-
-
     });
   });
 });
