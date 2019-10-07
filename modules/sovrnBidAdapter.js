@@ -139,8 +139,8 @@ export const spec = {
     try {
       let tracks = []
       if (serverResponses && serverResponses.length !== 0 && syncOptions.iframeEnabled) {
-        let iidArr = serverResponses.filter(rsp => rsp.body && rsp.body.ext && rsp.body.ext.iid)
-          .map(rsp => { return rsp.body.ext.iid });
+        let iidArr = serverResponses.filter(resp => resp.body && resp.body.ext && resp.body.ext.iid)
+          .map(resp => resp.body.ext.iid);
         let consentString = '';
         if (gdprConsent && gdprConsent.gdprApplies && typeof gdprConsent.consentString === 'string') {
           consentString = gdprConsent.consentString
@@ -152,9 +152,17 @@ export const spec = {
           });
         }
       }
-      if (errorpxls.length && syncOptions.pixelEnabled) {
-        tracks = tracks.concat(errorpxls)
+      if(syncOptions.pixelEnabled) {
+        if (serverResponses && serverResponses.length !== 0) {
+          serverResponses.filter(resp => resp.body && resp.body.ext && resp.body.ext.sync && resp.body.ext.sync.pixels)
+              .map(resp => resp.body.ext.sync.pixels.url)
+              .forEach(url => tracks.push({ type: 'image', url}))
+        }
+        if (errorpxls.length) {
+          tracks = tracks.concat(errorpxls)
+        }
       }
+
       return tracks
     } catch (e) {
       if (syncOptions.pixelEnabled) {
