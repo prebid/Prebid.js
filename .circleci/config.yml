@@ -36,7 +36,7 @@ aliases:
 
   - &run_endtoend_test
       name: BrowserStack End to end testing
-      command: echo "Running end to end test using workflows"
+      command: echo "127.0.0.1 test.localhost" | sudo tee -a /etc/hosts && gulp e2e-test --host=test.localhost
 
   # Download and run BrowserStack local
   - &setup_browserstack
