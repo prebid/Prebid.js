@@ -9,9 +9,7 @@ import * as utils from '../src/utils'
 import {ajax} from '../src/ajax';
 import {submodule} from '../src/hook';
 
-const PARRABLE_PROTOCOL = 'https';
-const PARRABLE_HOSTNAME = 'h.parrabletest.com';
-const PARRABLE_PATH = '/prebid';
+const PARRABLE_URL = 'https://h.parrabletest.com/prebid';
 
 function isValidConfig(configParams) {
   if (!configParams) {
@@ -27,12 +25,6 @@ function isValidConfig(configParams) {
 
 function fetchId(configParams, consentData, currentStoredId) {
   if (!isValidConfig(configParams)) return;
-
-  const url = {
-    protocol: PARRABLE_PROTOCOL,
-    hostname: PARRABLE_HOSTNAME,
-    pathname: PARRABLE_PATH
-  };
 
   const data = {
     eid: currentStoredId || null,
@@ -62,7 +54,7 @@ function fetchId(configParams, consentData, currentStoredId) {
       }
       cb(eid);
     };
-    ajax(url, onSuccess, searchParams, options);
+    ajax(PARRABLE_URL, onSuccess, searchParams, options);
   };
 
   return { callback };
