@@ -9,7 +9,7 @@ import * as utils from '../src/utils'
 import {ajax} from '../src/ajax';
 import {submodule} from '../src/hook';
 
-const PARRABLE_URL = 'https://h.parrabletest.com/prebid';
+const PARRABLE_URL = 'https://h.parrable.com/prebid';
 
 function isValidConfig(configParams) {
   if (!configParams) {
