@@ -2039,7 +2039,7 @@ describe('the rubicon adapter', function () {
           expect(bids[0].creativeId).to.equal('4259970');
           expect(bids[0].cpm).to.equal(2);
           expect(bids[0].ttl).to.equal(300);
-          expect(bids[0].netRevenue).to.equal(false);
+          expect(bids[0].netRevenue).to.equal(true);
           expect(bids[0].adserverTargeting).to.deep.equal({hb_uuid: '0c498f63-5111-4bed-98e2-9be7cb932a64'});
           expect(bids[0].mediaType).to.equal('video');
           expect(bids[0].bidderCode).to.equal('rubicon');
