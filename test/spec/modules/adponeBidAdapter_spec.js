@@ -1,5 +1,7 @@
 import { expect } from 'chai';
 import { spec } from 'modules/adponeBidAdapter';
+import {newBidder} from '../../../src/adapters/bidderFactory';
+import * as utils from '../../../src/utils';
 const EMPTY_ARRAY = [];
 describe('adponeBidAdapter', function () {
   let bid = {
@@ -13,6 +15,48 @@ describe('adponeBidAdapter', function () {
       placementId: '1',
     }
   };
+
+  describe('build requests', () => {
+    it('sends bid request to ENDPOINT via POST', function () {
+      const request = spec.buildRequests([
+        {
+          bidder: 'adpone',
+          adUnitCode: 'adunit-code',
+          sizes: [[300, 250]],
+          bidId: '30b31c1838de1e',
+          bidderRequestId: '22edbae2733bf6',
+          auctionId: '1d1a030790a475',
+          params: {
+            placementId: '1',
+          }
+        }
+      ]);
+      expect(request[0].method).to.equal('POST');
+    });
+    it('sends bid request to adpone endpoint', function () {
+      const request = spec.buildRequests([
+        {
+          bidder: 'adpone',
+          adUnitCode: 'adunit-code',
+          sizes: [[300, 250]],
+          bidId: '30b31c1838de1e',
+          bidderRequestId: '22edbae2733bf6',
+          auctionId: '1d1a030790a475',
+          params: {
+            placementId: '1',
+          }
+        }
+      ]);
+      expect(request[0].url).to.equal('https://rtb.adpone.com/bid-request?pid=1');
+    });
+  });
+
+  describe('inherited functions', () => {
+    const adapter = newBidder(spec);
+    it('exists and is a function', () => {
+      expect(adapter.callBids).to.exist.and.to.be.a('function');
+    });
+  });
 
   describe('isBidRequestValid', function () {
     it('should return true when necessary information is found', function () {
@@ -33,6 +77,37 @@ describe('adponeBidAdapter', function () {
       expect(spec.isBidRequestValid(bid)).to.be.false;
 
       bid.adUnitCode = 'adunit-code';
+    });
+
+    it('returns false when bidder not set to "adpone"', function() {
+      const invalidBid = {
+        bidder: 'enopda',
+        adUnitCode: 'adunit-code',
+        sizes: [[300, 250]],
+        bidId: '30b31c1838de1e',
+        bidderRequestId: '22edbae2733bf6',
+        auctionId: '1d1a030790a475',
+        params: {
+          placementId: '1',
+        }
+      };
+
+      expect(spec.isBidRequestValid(invalidBid)).to.be.false;
+    });
+
+    it('returns false when placmentId is not set in params', function() {
+      const invalidBid = {
+        bidder: 'adpone',
+        adUnitCode: 'adunit-code',
+        sizes: [[300, 250]],
+        bidId: '30b31c1838de1e',
+        bidderRequestId: '22edbae2733bf6',
+        auctionId: '1d1a030790a475',
+        params: {
+        }
+      };
+
+      expect(spec.isBidRequestValid(invalidBid)).to.be.false;
     });
   });
 });
@@ -99,16 +174,24 @@ describe('interpretResponse', function () {
     response = spec.interpretResponse(serverResponse, bidRequest);
     expect(response).to.deep.equal([])
   });
+  it('should add responses if the cpm is valid', function () {
+    serverResponse.body.seatbid[0].bid[0].price = 0.5;
+    let response = spec.interpretResponse(serverResponse, bidRequest);
+    expect(response).to.not.deep.equal([]);
+  });
 });
 
 describe('getUserSyncs', function () {
   it('Verifies getUserSyncs returns expected result', function () {
     expect((typeof (spec.getUserSyncs)).should.equals('function'));
-    expect(spec.getUserSyncs({iframeEnabled: false})).to.deep.equal(EMPTY_ARRAY);
-    expect(spec.getUserSyncs(null)).to.deep.equal(EMPTY_ARRAY);
     expect(spec.getUserSyncs({iframeEnabled: true})).to.deep.equal({
       type: 'iframe',
       url: 'https://eu-ads.adpone.com'
     });
+  });
+  it('Verifies that iframeEnabled: false returns an empty array', function () {
+    expect((typeof (spec.getUserSyncs)).should.equals('function'));
+    expect(spec.getUserSyncs({iframeEnabled: false})).to.deep.equal(EMPTY_ARRAY);
+    expect(spec.getUserSyncs(null)).to.deep.equal(EMPTY_ARRAY);
   });
 });

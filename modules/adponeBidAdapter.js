@@ -25,7 +25,7 @@ export const spec = {
   getUserSyncs,
 
   isBidRequestValid: bid => {
-    return !!bid.params.placementId && !!bid.bidId;
+    return !!bid.params.placementId && !!bid.bidId && bid.bidder === 'adpone'
   },
 
   buildRequests: bidRequests => {
