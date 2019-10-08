@@ -211,3 +211,13 @@ describe('getUserSyncs', function () {
     expect(spec.getUserSyncs(null)).to.deep.equal(EMPTY_ARRAY);
   });
 });
+
+describe('test onBidWon', function () {
+  it('exists and is a function', () => {
+    expect(spec.onBidWon).to.exist.and.to.be.a('function');
+  });
+  it('should return nothing', function () {
+    var response = spec.onBidWon({});
+    expect(response).to.be.an('undefined')
+  });
+});
