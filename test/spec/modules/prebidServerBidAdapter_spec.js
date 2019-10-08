@@ -33,6 +33,19 @@ const REQUEST = {
       'mediaTypes': {
         'banner': {
           'sizes': [[ 300, 250 ], [ 300, 300 ]]
+        },
+        'native': {
+          'title': {
+            'required': true,
+            'len': 800
+          },
+          'image': {
+            'required': true,
+            'sizes': [989, 742],
+          },
+          'sponsoredBy': {
+            'required': true
+          }
         }
       },
       'transactionId': '4ef956ad-fd83-406d-bd35-e4bb786ab86c',
@@ -76,6 +89,69 @@ const VIDEO_REQUEST = {
           'params': { 'placementId': '12349520' }
         }
       ]
+    }
+  ]
+};
+
+const OUTSTREAM_VIDEO_REQUEST = {
+  'account_id': '1',
+  'tid': '437fbbf5-33f5-487a-8e16-a7112903cfe5',
+  'max_bids': 1,
+  'timeout_millis': 1000,
+  'secure': 0,
+  'url': '',
+  'prebid_version': '1.4.0-pre',
+  'ad_units': [
+    {
+      'code': 'div-gpt-ad-1460505748561-0',
+      'sizes': [640, 480],
+      'mediaTypes': {
+        'video': {
+          playerSize: [[ 640, 480 ]],
+          context: 'outstream',
+          mimes: ['video/mp4']
+        },
+        banner: { sizes: [[300, 250]] }
+      },
+      'transactionId': '4ef956ad-fd83-406d-bd35-e4bb786ab86c',
+      'bids': [
+        {
+          'bid_id': '123',
+          'bidder': 'appnexus',
+          'params': { 'placementId': '12349520' }
+        }
+      ]
+    },
+    {
+      code: 'video1',
+      mediaTypes: {
+        video: {
+          playerSize: [640, 480],
+          context: 'outstream',
+          mimes: ['video/mp4']
+        }
+      },
+      bids: [
+        {
+          bidder: 'appnexus',
+          params: {
+            placementId: 13232385,
+            video: {
+              skippable: true,
+              playback_method: ['auto_play_sound_off']
+            }
+          }
+        }
+      ],
+      renderer: {
+        url: 'http://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js',
+        render: function (bid) {
+          ANOutstreamVideo.renderAd({
+            targetId: bid.adUnitCode,
+            adResponse: bid.adResponse,
+          });
+        }
+      }
     }
   ]
 };
@@ -319,6 +395,93 @@ const RESPONSE_OPENRTB_VIDEO = {
   },
 };
 
+const RESPONSE_OPENRTB_NATIVE = {
+  'id': 'c7dcf14f',
+  'seatbid': [
+    {
+      'bid': [
+        {
+          'id': '6451317310275562039',
+          'impid': 'div-gpt-ad-1460505748561-0',
+          'price': 10,
+          'adm': {
+            'ver': '1.2',
+            'assets': [
+              {
+                'id': 1,
+                'img': {
+                  'url': 'https://vcdn.adnxs.com/p/creative-image/f8/7f/0f/13/f87f0f13-230c-4f05-8087-db9216e393de.jpg',
+                  'w': 989,
+                  'h': 742,
+                  'ext': {
+                    'appnexus': {
+                      'prevent_crop': 0
+                    }
+                  }
+                }
+              },
+              {
+                'id': 0,
+                'title': {
+                  'text': 'This is a Prebid Native Creative'
+                }
+              },
+              {
+                'id': 2,
+                'data': {
+                  'value': 'Prebid.org'
+                }
+              }
+            ],
+            'link': {
+              'url': 'https://lax1-ib.adnxs.com/click?AAAAAAAAJEAAAAAAAAAkQAAAAAAAACRAAAAAAAAAJEAAAAAAAAAkQGdce2vBWudAJZpFu1er1zA7ZzddAAAAAOLoyQBtJAAAbSQAAAIAAAC8pM8FnPgWAAAAAABVU0QAVVNEAAEAAQBNXQAAAAABAgMCAAAAALsAuhVqdgAAAAA./cpcpm=AAAAAAAAAAA=/bcr=AAAAAAAA8D8=/pp=${AUCTION_PRICE}/cnd=%213Q5HCQj8-LwKELzJvi4YnPFbIAQoADEAAAAAAAAkQDoJTEFYMTo0MDc3QKcPSQAAAAAAAPA_UQAAAAAAAAAAWQAAAAAAAAAAYQAAAAAAAAAAaQAAAAAAAAAAcQAAAAAAAAAA/cca=OTMyNSNMQVgxOjQwNzc=/bn=84305/test=1/clickenc=http%3A%2F%2Fprebid.org%2Fdev-docs%2Fshow-native-ads.html'
+            },
+            'eventtrackers': [
+              {
+                'event': 1,
+                'method': 1,
+                'url': 'https://lax1-ib.adnxs.com/it?an_audit=0&test=1&referrer=http%3A%2F%2Flocalhost%3A9999%2FintegrationExamples%2Fgpt%2Fdemo_native.html&e=wqT_3QKCCKACBAAAAwDWAAUBCLvO3ekFEOe47duW2NbzQBiltJba--rq6zAqNgkAAAECCCRAEQEHEAAAJEAZEQkAIREJACkRCQAxEQmoMOLRpwY47UhA7UhIAlC8yb4uWJzxW2AAaM26dXjRkgWAAQGKAQNVU0SSAQEG8FKYAQGgAQGoAQGwAQC4AQLAAQPIAQLQAQnYAQDgAQHwAQCKAjt1ZignYScsIDI1Mjk4ODUsIDE1NjM5MTE5OTUpO3VmKCdyJywgOTc0OTQyMDQsIC4eAPQ0AZICnQIhb2pkaWlnajgtTHdLRUx6SnZpNFlBQ0NjOFZzd0FEZ0FRQVJJN1VoUTR0R25CbGdBWVAwQmFBQndBSGdBZ0FFQWlBRUFrQUVCbUFFQm9BRUJxQUVEc0FFQXVRSHpyV3FrQUFBa1FNRUI4NjFxcEFBQUpFREpBVVZpYmxDaFpRQkEyUUVBQUFBQUFBRHdQLUFCQVBVQkFBQUFBUGdCQUpnQ0FLQUNBTFVDQUFBQUFMMENBQUFBQU1BQ0FNZ0NBT0FDQU9nQ0FQZ0NBSUFEQVpBREFKZ0RBYWdEX1BpOENyb0RDVXhCV0RFNk5EQTNOLUFEcHctUUJBQ1lCQUhCQkFBQUFBQUFBQUFBeVFRQUFBQUFBQUFBQU5nRUFBLi6aAoUBITNRNUhDUWo4LUx3S0VMeiUhJG5QRmJJQVFvQUQRvVhBa1FEb0pURUZZTVRvME1EYzNRS2NQUxFUDFBBX1URDAxBQUFXHQwAWR0MAGEdDABjHQz0FwHYAgDgAq2YSOoCPmh0dHA6Ly9sb2NhbGhvc3Q6OTk5OS9pbnRlZ3JhdGlvbkV4YW1wbGVzL2dwdC9kZW1vX25hdGl2ZS5odG1sgAMAiAMBkAMAmAMUoAMBqgMAwAPgqAHIAwDYAwDgAwDoAwD4AwOABACSBAkvb3BlbnJ0YjKYBACiBA0xNzMuMjQ0LjM2LjQwqATtoySyBAwIABAAGAAgADAAOAC4BADABADIBADSBA45MzI1I0xBWDE6NDA3N9oEAggB4AQA8AS8yb4uiAUBmAUAoAX___________8BqgUkZTU5YzNlYjYtNmRkNi00MmQ5LWExMWEtM2FhMTFjOTc5MGUwwAUAyQUAAAAAAADwP9IFCQkAaVh0ANgFAeAFAfAFmfQh-gUECAAQAJAGAZgGALgGAMEGCSQk8D_IBgDaBhYKEAkQGQEBwTTgBgzyBgIIAIAHAYgHAA..&s=11ababa390e9f7983de260493fc5b91ec5b1b3d4&pp=${AUCTION_PRICE}'
+              }
+            ]
+          },
+          'adid': '97494204',
+          'adomain': [
+            'http://prebid.org'
+          ],
+          'iurl': 'https://lax1-ib.adnxs.com/cr?id=97494204',
+          'cid': '9325',
+          'crid': '97494204',
+          'cat': [
+            'IAB3-1'
+          ],
+          'ext': {
+            'prebid': {
+              'targeting': {
+                'hb_bidder': 'appnexus',
+                'hb_pb': '10.00'
+              },
+              'type': 'native',
+              'video': {
+                'duration': 0,
+                'primary_category': ''
+              }
+            },
+            'bidder': {
+              'appnexus': {
+                'brand_id': 555545,
+                'auction_id': 4676806524825984103,
+                'bidder_id': 2,
+                'bid_ad_type': 3
+              }
+            }
+          }
+        }
+      ],
+      'seat': 'appnexus'
+    }
+  ]
+};
+
 const RESPONSE_UNSUPPORTED_BIDDER = {
   'tid': '437fbbf5-33f5-487a-8e16-a7112903cfe5',
   'status': 'OK',
@@ -388,6 +551,18 @@ describe('S2S Adapter', function () {
 
     afterEach(function () {
       xhr.restore();
+    });
+
+    it('should not add outstrean without renderer', function() {
+      let ortb2Config = utils.deepClone(CONFIG);
+      ortb2Config.endpoint = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
+
+      config.setConfig({s2sConfig: ortb2Config});
+      adapter.callBids(OUTSTREAM_VIDEO_REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+
+      const requestBid = JSON.parse(requests[0].requestBody);
+      expect(requestBid.imp[0].banner).to.exist;
+      expect(requestBid.imp[0].video).to.not.exist;
     });
 
     it('exists and is a function', function () {
@@ -513,38 +688,37 @@ describe('S2S Adapter', function () {
     });
 
     it('adds digitrust id is present and user is not optout', function () {
+      let ortb2Config = utils.deepClone(CONFIG);
+      ortb2Config.endpoint = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction';
+
+      let consentConfig = { s2sConfig: ortb2Config };
+      config.setConfig(consentConfig);
+
       let digiTrustObj = {
-        success: true,
-        identity: {
-          privacy: {
-            optout: false
-          },
-          id: 'testId',
-          keyv: 'testKeyV'
-        }
+        privacy: {
+          optout: false
+        },
+        id: 'testId',
+        keyv: 'testKeyV'
       };
 
-      window.DigiTrust = {
-        getUser: () => digiTrustObj
-      };
+      let digiTrustBidRequest = utils.deepClone(BID_REQUESTS);
+      digiTrustBidRequest[0].bids[0].userId = { digitrustid: { data: digiTrustObj } };
 
-      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      adapter.callBids(REQUEST, digiTrustBidRequest, addBidResponse, done, ajax);
       let requestBid = JSON.parse(requests[0].requestBody);
 
-      expect(requestBid.digiTrust).to.deep.equal({
-        id: digiTrustObj.identity.id,
-        keyv: digiTrustObj.identity.keyv,
-        pref: 0
+      expect(requestBid.user.ext.digitrust).to.deep.equal({
+        id: digiTrustObj.id,
+        keyv: digiTrustObj.keyv
       });
 
-      digiTrustObj.identity.privacy.optout = true;
+      digiTrustObj.privacy.optout = true;
 
-      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      adapter.callBids(REQUEST, digiTrustBidRequest, addBidResponse, done, ajax);
       requestBid = JSON.parse(requests[1].requestBody);
 
-      expect(requestBid.digiTrust).to.not.exist;
-
-      delete window.DigiTrust;
+      expect(requestBid.user && request.user.ext && requestBid.user.ext.digitrust).to.not.exist;
     });
 
     it('adds device and app objects to request', function () {
@@ -567,7 +741,7 @@ describe('S2S Adapter', function () {
       });
     });
 
-    it('adds device and app objects to request for ORTB', function () {
+    it('adds device and app objects to request for OpenRTB', function () {
       const s2sConfig = Object.assign({}, CONFIG, {
         endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
       });
@@ -612,6 +786,54 @@ describe('S2S Adapter', function () {
       expect(requestBid.app).to.deep.equal({
         bundle: 'com.test.app',
         publisher: {'id': '1'}
+      });
+    });
+
+    it('adds native request for OpenRTB', function () {
+      const s2sConfig = Object.assign({}, CONFIG, {
+        endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
+      });
+
+      const _config = {
+        s2sConfig: s2sConfig
+      };
+
+      config.setConfig(_config);
+      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      const requestBid = JSON.parse(requests[0].requestBody);
+
+      expect(requestBid.imp[0].native).to.deep.equal({
+        request: JSON.stringify({
+          'context': 1,
+          'plcmttype': 1,
+          'eventtrackers': [{
+            event: 1,
+            methods: [1]
+          }],
+          'assets': [
+            {
+              'required': 1,
+              'title': {
+                'len': 800
+              }
+            },
+            {
+              'required': 1,
+              'img': {
+                'type': 3,
+                'w': 989,
+                'h': 742
+              }
+            },
+            {
+              'required': 1,
+              'data': {
+                'type': 1
+              }
+            }
+          ]
+        }),
+        ver: '1.2'
       });
     });
 
@@ -813,23 +1035,68 @@ describe('S2S Adapter', function () {
 
     it('when userId is defined on bids, it\'s properties should be copied to user.ext.tpid properties', function () {
       let ortb2Config = utils.deepClone(CONFIG);
-      ortb2Config.endpoint = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
+      ortb2Config.endpoint = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction';
 
       let consentConfig = { s2sConfig: ortb2Config };
       config.setConfig(consentConfig);
 
       let userIdBidRequest = utils.deepClone(BID_REQUESTS);
-      userIdBidRequest[0].userId = {
-        foo: 'abc123',
-        unifiedid: '1234'
+      userIdBidRequest[0].bids[0].userId = {
+        tdid: 'abc123',
+        pubcid: '1234'
       };
 
       adapter.callBids(REQUEST, userIdBidRequest, addBidResponse, done, ajax);
       let requestBid = JSON.parse(requests[0].requestBody);
-      expect(typeof requestBid.user.ext.tpid).is.equal('object');
-      expect(requestBid.user.ext.tpid.foo).is.equal('abc123');
-      expect(requestBid.user.ext.tpid.unifiedid).is.equal('1234');
-    })
+      expect(typeof requestBid.user.ext.eids).is.equal('object');
+      expect(Array.isArray(requestBid.user.ext.eids)).to.be.true;
+      expect(requestBid.user.ext.eids.filter(eid => eid.source === 'adserver.org')).is.not.empty;
+      expect(requestBid.user.ext.eids.filter(eid => eid.source === 'adserver.org')[0].uids[0].id).is.equal('abc123');
+      expect(requestBid.user.ext.eids.filter(eid => eid.source === 'pubcommon')).is.not.empty;
+      expect(requestBid.user.ext.eids.filter(eid => eid.source === 'pubcommon')[0].uids[0].id).is.equal('1234');
+    });
+
+    it('when config \'currency.adServerCurrency\' value is an array: ORTB has property \'cur\' value set to a single item array', function () {
+      let s2sConfig = utils.deepClone(CONFIG);
+      s2sConfig.endpoint = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction';
+      config.setConfig({
+        currency: {adServerCurrency: ['USD', 'GB', 'UK', 'AU']},
+        s2sConfig: s2sConfig
+      });
+
+      const bidRequests = utils.deepClone(BID_REQUESTS);
+      adapter.callBids(REQUEST, bidRequests, addBidResponse, done, ajax);
+
+      const parsedRequestBody = JSON.parse(requests[0].requestBody);
+      expect(parsedRequestBody.cur).to.deep.equal(['USD']);
+    });
+
+    it('when config \'currency.adServerCurrency\' value is a string: ORTB has property \'cur\' value set to a single item array', function () {
+      let s2sConfig = utils.deepClone(CONFIG);
+      s2sConfig.endpoint = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction';
+      config.setConfig({
+        currency: {adServerCurrency: 'NZ'},
+        s2sConfig: s2sConfig
+      });
+
+      const bidRequests = utils.deepClone(BID_REQUESTS);
+      adapter.callBids(REQUEST, bidRequests, addBidResponse, done, ajax);
+
+      const parsedRequestBody = JSON.parse(requests[1].requestBody);
+      expect(parsedRequestBody.cur).to.deep.equal(['NZ']);
+    });
+
+    it('when config \'currency.adServerCurrency\' is unset: ORTB should not define a \'cur\' property', function () {
+      let s2sConfig = utils.deepClone(CONFIG);
+      s2sConfig.endpoint = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction';
+      config.setConfig({s2sConfig: s2sConfig});
+
+      const bidRequests = utils.deepClone(BID_REQUESTS);
+      adapter.callBids(REQUEST, bidRequests, addBidResponse, done, ajax);
+
+      const parsedRequestBody = JSON.parse(requests[0].requestBody);
+      expect(typeof parsedRequestBody.cur).to.equal('undefined');
+    });
 
     it('always add ext.prebid.targeting.includebidderkeys: false for ORTB', function () {
       const s2sConfig = Object.assign({}, CONFIG, {
@@ -970,6 +1237,31 @@ describe('S2S Adapter', function () {
         }
       });
     });
+
+    it('passes schain object in request', function() {
+      const bidRequests = utils.deepClone(BID_REQUESTS);
+      const schainObject = {
+        'ver': '1.0',
+        'complete': 1,
+        'nodes': [
+          {
+            'asi': 'indirectseller.com',
+            'sid': '00001',
+            'hp': 1
+          },
+
+          {
+            'asi': 'indirectseller-2.com',
+            'sid': '00002',
+            'hp': 2
+          }
+        ]
+      };
+      bidRequests[0].bids[0].schain = schainObject;
+      adapter.callBids(REQUEST, bidRequests, addBidResponse, done, ajax);
+      const parsedRequestBody = JSON.parse(requests[0].requestBody);
+      expect(parsedRequestBody.source.ext.schain).to.deep.equal(schainObject);
+    })
   });
 
   describe('response handler', function () {
@@ -1283,6 +1575,33 @@ describe('S2S Adapter', function () {
       expect(response).to.have.property('statusMessage', 'Bid available');
       expect(response).to.have.property('videoCacheKey', 'a5ad3993');
       expect(response).to.have.property('vastUrl', 'https://prebid-cache.net/cache?uuid=a5ad3993');
+    });
+
+    it('handles OpenRTB native responses', function () {
+      sinon.stub(utils, 'getBidRequest').returns({
+        adUnitCode: 'div-gpt-ad-1460505748561-0',
+        bidder: 'appnexus',
+        bidId: '123'
+      });
+      const s2sConfig = Object.assign({}, CONFIG, {
+        endpoint: 'https://prebidserverurl/openrtb2/auction?querystring=param'
+      });
+      config.setConfig({s2sConfig});
+
+      server.respondWith(JSON.stringify(RESPONSE_OPENRTB_NATIVE));
+      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      server.respond();
+
+      sinon.assert.calledOnce(addBidResponse);
+      const response = addBidResponse.firstCall.args[1];
+      expect(response).to.have.property('statusMessage', 'Bid available');
+      expect(response).to.have.property('adm').deep.equal(RESPONSE_OPENRTB_NATIVE.seatbid[0].bid[0].adm);
+      expect(response).to.have.property('mediaType', 'native');
+      expect(response).to.have.property('bidderCode', 'appnexus');
+      expect(response).to.have.property('requestId', '123');
+      expect(response).to.have.property('cpm', 10);
+
+      utils.getBidRequest.restore();
     });
 
     it('should log warning for unsupported bidder', function () {

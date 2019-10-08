@@ -1,7 +1,7 @@
-import {registerBidder} from 'src/adapters/bidderFactory';
+import {registerBidder} from '../src/adapters/bidderFactory';
 import * as utils from '../src/utils';
 import * as urlUtils from '../src/url';
-import {BANNER, NATIVE} from 'src/mediaTypes';
+import {BANNER, NATIVE} from '../src/mediaTypes';
 import {config} from '../src/config';
 const DEFAULT_CUR = 'USD';
 const BIDDER_CODE = 'mgid';
@@ -60,10 +60,10 @@ utils._each(NATIVE_ASSETS, anAsset => { _NATIVE_ASSET_ID_TO_KEY_MAP[anAsset.ID] 
 utils._each(NATIVE_ASSETS, anAsset => { _NATIVE_ASSET_KEY_TO_ASSET_MAP[anAsset.KEY] = anAsset });
 
 export const spec = {
-  VERSION: '1.2',
+  VERSION: '1.4',
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, NATIVE],
-  reId: /^[0-9]+$/,
+  reId: /^[1-9][0-9]*$/,
   NATIVE_ASSET_ID_TO_KEY_MAP: _NATIVE_ASSET_ID_TO_KEY_MAP,
   NATIVE_ASSET_KEY_TO_ASSET_MAP: _NATIVE_ASSET_KEY_TO_ASSET_MAP,
   /**
@@ -102,10 +102,10 @@ export const spec = {
         bannerOk = sizes[f].length === 2;
       }
     }
-    return utils.isPlainObject(bid.params) && !!bid.params.accountId && !!bid.params.placementId &&
-      utils.isStr(bid.params.accountId) && utils.isStr(bid.params.placementId) &&
-      bid.params.accountId.toString().match(spec.reId) > 0 && bid.params.placementId.toString().match(spec.reId) &&
-      (bannerOk || nativeOk);
+    let acc = Number(bid.params.accountId);
+    let plcmt = Number(bid.params.placementId);
+    return (bannerOk || nativeOk) && utils.isPlainObject(bid.params) && !!bid.adUnitCode && utils.isStr(bid.adUnitCode) && (plcmt > 0 ? bid.params.placementId.toString().search(spec.reId) === 0 : true) &&
+      !!acc && acc > 0 && bid.params.accountId.toString().search(spec.reId) === 0;
   },
   /**
    * Make a server request from the list of BidRequests.
@@ -118,8 +118,9 @@ export const spec = {
     if (validBidRequests.length === 0) {
       return;
     }
-    const referer = utils.deepAccess(bidderRequest, 'refererInfo.referer');
-    const hostname = urlUtils.parse(referer).hostname;
+    const info = pageInfo();
+    const page = info.location || utils.deepAccess(bidderRequest, 'refererInfo.referer') || utils.deepAccess(bidderRequest, 'refererInfo.canonicalUrl');
+    const hostname = urlUtils.parse(page).hostname;
     let domain = extractDomainFromHost(hostname) || hostname;
     const accountId = setOnAny(validBidRequests, 'params.accountId');
     const muid = getLocalStorageSafely('mgMuidn');
@@ -127,14 +128,15 @@ export const spec = {
     if (utils.isStr(muid) && muid.length > 0) {
       url += '?muid=' + muid;
     }
-    const cur = [config.getConfig('currency.adServerCurrency') || setOnAny(validBidRequests, 'params.currency') || setOnAny(validBidRequests, 'params.cur') || DEFAULT_CUR];
-    const page = utils.deepAccess(bidderRequest, 'refererInfo.canonicalUrl') || referer;
+    const cur = [setOnAny(validBidRequests, 'params.currency') || setOnAny(validBidRequests, 'params.cur') || config.getConfig('currency.adServerCurrency') || DEFAULT_CUR];
     const secure = window.location.protocol === 'https:' ? 1 : 0;
     let imp = [];
     validBidRequests.forEach(bid => {
+      let tagid = utils.deepAccess(bid, 'params.placementId') || 0;
+      tagid = !tagid ? bid.adUnitCode : tagid + '/' + bid.adUnitCode;
       let impObj = {
         id: bid.bidId,
-        tagid: utils.deepAccess(bid, 'params.placementId'),
+        tagid,
         secure,
       };
       const bidFloor = utils.deepAccess(bid, 'params.bidFloor') || utils.deepAccess(bid, 'params.bidfloor') || 0;
@@ -164,22 +166,11 @@ export const spec = {
       return;
     }
 
-    let ext = {mgid_ver: spec.VERSION, prebid_ver: $$PREBID_GLOBAL$$.version};
-    let user = {};
-    let regs = {};
-    if (bidderRequest && bidderRequest.gdprConsent) {
-      user.ext = {
-        consent: bidderRequest.gdprConsent.consentString
-      };
-
-      regs.ext = {
-        gdpr: (bidderRequest.gdprConsent.gdprApplies ? 1 : 0)
-      };
-    }
     let request = {
       id: utils.deepAccess(bidderRequest, 'bidderRequestId'),
-      site: { domain, page },
+      site: {domain, page},
       cur: cur,
+      geo: {utcoffset: info.timeOffset},
       device: {
         ua: navigator.userAgent,
         js: 1,
@@ -188,11 +179,16 @@ export const spec = {
         w: screen.width,
         language: getLanguage()
       },
-      user,
-      regs,
-      ext,
+      ext: {mgid_ver: spec.VERSION, prebid_ver: $$PREBID_GLOBAL$$.version},
       imp
     };
+    if (bidderRequest && bidderRequest.gdprConsent) {
+      request.user = {ext: {consent: bidderRequest.gdprConsent.consentString}};
+      request.regs = {ext: {gdpr: (bidderRequest.gdprConsent.gdprApplies ? 1 : 0)}}
+    }
+    if (info.referrer) {
+      request.site.ref = info.referrer
+    }
     utils.logInfo(LOG_INFO_PREFIX + `buildRequest:`, request);
     return {
       method: 'POST',
@@ -374,11 +370,14 @@ function createBannerRequest(bid) {
       }
     }
   }
-  return {
+  let r = {
     w: sizes && sizes[0][0],
     h: sizes && sizes[0][1],
-    format,
+  };
+  if (format.length) {
+    r.format = format
   }
+  return r
 }
 
 function createNativeRequest(params) {
@@ -555,4 +554,25 @@ function parseNativeResponse(bid, newBid) {
       newBid.height = 0;
     }
   }
+}
+
+function pageInfo() {
+  var w, d, l, r, m, p, t;
+  for (w = window, d = w.document, l = d.location.href, r = d.referrer, m = 0, t = new Date(); w !== w.parent;) {
+    try {
+      p = w.parent; l = p.location.href; r = p.document.referrer; w = p;
+    } catch (e) {
+      m = top !== w.parent ? 2 : 1;
+      break
+    }
+  }
+  return {
+    location: l,
+    referrer: r || '',
+    masked: m,
+    wWidth: w.innerWidth,
+    wHeight: w.innerHeight,
+    date: t.toUTCString(),
+    timeOffset: t.getTimezoneOffset()
+  };
 }

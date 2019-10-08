@@ -140,7 +140,18 @@
                             name: "unifiedid",
                             expires: 30
                         },
-                        
+                    }, {
+                        name: "id5Id",
+                        params: {
+                            partner: 173 //Set your real ID5 partner ID here for production, please ask for one at http://id5.io/prebid
+                        },
+                        storage: {
+                            type: "cookie",
+                            name: "id5id",
+                            expires: 90,
+                            refreshInSeconds: 8*3600 // Refresh frequency of cookies, defaulting to 'expires'
+                        },
+
                     }, {
                         name: "pubCommonId",
                         storage: {
@@ -152,8 +163,19 @@
                         //     foo: '9879878907987',
                         //     bar:'93939'
                         // }
+                    },  {
+                      name: 'identityLink',
+                      params: {
+                        pid: '14' // Set your real identityLink placement ID here
+                      },
+                      storage: {
+                        type: 'cookie',
+                        name: 'idl_env',
+                        expires: 30
+                      }
                     }],
-                    syncDelay: 5000
+                    syncDelay: 5000,
+                    auctionDelay: 1000 
                 }
             });
             pbjs.addAdUnits(adUnits);

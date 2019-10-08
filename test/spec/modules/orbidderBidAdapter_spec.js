@@ -2,6 +2,7 @@ import {expect} from 'chai';
 import {spec} from 'modules/orbidderBidAdapter';
 import {newBidder} from 'src/adapters/bidderFactory';
 import openxAdapter from '../../../modules/openxAnalyticsAdapter';
+import {detectReferer} from 'src/refererDetection';
 
 describe('orbidderBidAdapter', () => {
   const adapter = newBidder(spec);
@@ -51,6 +52,12 @@ describe('orbidderBidAdapter', () => {
       expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
     });
 
+    it('accepts optional profile object', () => {
+      const bidRequest = deepClone(defaultBidRequest);
+      bidRequest.params.profile = {'key': 'value'};
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
+    });
+
     it('performs type checking', () => {
       const bidRequest = deepClone(defaultBidRequest);
       bidRequest.params.accountId = 1; // supposed to be a string
@@ -60,6 +67,12 @@ describe('orbidderBidAdapter', () => {
     it('doesn\'t accept malformed keyValues', () => {
       const bidRequest = deepClone(defaultBidRequest);
       bidRequest.params.keyValues = 'another not usable string';
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
+    });
+
+    it('doesn\'t accept malformed profile', () => {
+      const bidRequest = deepClone(defaultBidRequest);
+      bidRequest.params.profile = 'another not usable string';
       expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
     });
 
@@ -153,8 +166,15 @@ describe('orbidderBidAdapter', () => {
       adId: 'testId',
       test: 1,
       pageUrl: 'www.someurl.de',
-      referrer: 'www.somereferrer.de'
+      referrer: 'www.somereferrer.de',
+      requestId: '123req456'
     };
+
+    spec.bidParams['123req456'] = {'accountId': '123acc456'};
+
+    let bidObjClone = deepClone(bidObj);
+    bidObjClone.pageUrl = detectReferer(window)().referer;
+    bidObjClone.params = [{'accountId': '123acc456'}];
 
     beforeEach(() => {
       ajaxStub = sinon.stub(spec, 'ajaxCall');
@@ -169,13 +189,7 @@ describe('orbidderBidAdapter', () => {
       expect(ajaxStub.calledOnce).to.equal(true);
       expect(ajaxStub.firstCall.args[0].indexOf('https://')).to.equal(0);
       expect(ajaxStub.firstCall.args[0]).to.equal(`${spec.orbidderHost}/win`);
-      expect(ajaxStub.firstCall.args[1]).to.equal(JSON.stringify(bidObj));
-
-      spec.onSetTargeting(bidObj);
-      expect(ajaxStub.calledTwice).to.equal(true);
-      expect(ajaxStub.secondCall.args[0].indexOf('https://')).to.equal(0);
-      expect(ajaxStub.secondCall.args[0]).to.equal(`${spec.orbidderHost}/targeting`);
-      expect(ajaxStub.secondCall.args[1]).to.equal(JSON.stringify(bidObj));
+      expect(ajaxStub.firstCall.args[1]).to.equal(JSON.stringify(bidObjClone));
     });
   });
 

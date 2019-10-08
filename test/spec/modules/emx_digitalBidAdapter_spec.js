@@ -276,8 +276,9 @@ describe('emx_digital Adapter', function () {
     it('properly sends site information and protocol', function () {
       request = spec.buildRequests(bidderRequest.bids, bidderRequest);
       request = JSON.parse(request.data);
-      expect(request.site.domain).to.equal(window.top.document.location.host);
+      expect(request.site.domain).to.equal(utils.getTopWindowLocation().hostname);
       expect(decodeURIComponent(request.site.page)).to.equal(bidderRequest.refererInfo.referer);
+      expect(request.site.ref).to.equal(window.top.document.referrer);
     });
 
     it('builds correctly formatted request banner object', function () {
@@ -299,15 +300,15 @@ describe('emx_digital Adapter', function () {
       bidRequestWithVideo[0].mediaTypes = {
         video: {
           context: 'instream',
-          playerSize: [640, 480]
+          playerSize: [[640, 480]]
         },
       };
       bidRequestWithVideo[0].params.video = {};
       let request = spec.buildRequests(bidRequestWithVideo, bidderRequest);
       const data = JSON.parse(request.data);
       expect(data.imp[0].video).to.exist.and.to.be.a('object');
-      expect(data.imp[0].video.h).to.equal(bidRequestWithVideo[0].mediaTypes.video.playerSize[0][0]);
-      expect(data.imp[0].video.w).to.equal(bidRequestWithVideo[0].mediaTypes.video.playerSize[0][1]);
+      expect(data.imp[0].video.w).to.equal(bidRequestWithVideo[0].mediaTypes.video.playerSize[0][0]);
+      expect(data.imp[0].video.h).to.equal(bidRequestWithVideo[0].mediaTypes.video.playerSize[0][1]);
     });
 
     it('builds correctly formatted request video object for outstream', function () {
@@ -315,15 +316,15 @@ describe('emx_digital Adapter', function () {
       bidRequestWithOutstreamVideo[0].mediaTypes = {
         video: {
           context: 'outstream',
-          playerSize: [640, 480]
+          playerSize: [[640, 480]]
         },
       };
       bidRequestWithOutstreamVideo[0].params.video = {};
       let request = spec.buildRequests(bidRequestWithOutstreamVideo, bidderRequest);
       const data = JSON.parse(request.data);
       expect(data.imp[0].video).to.exist.and.to.be.a('object');
-      expect(data.imp[0].video.h).to.equal(bidRequestWithOutstreamVideo[0].mediaTypes.video.playerSize[0][0]);
-      expect(data.imp[0].video.w).to.equal(bidRequestWithOutstreamVideo[0].mediaTypes.video.playerSize[0][1]);
+      expect(data.imp[0].video.w).to.equal(bidRequestWithOutstreamVideo[0].mediaTypes.video.playerSize[0][0]);
+      expect(data.imp[0].video.h).to.equal(bidRequestWithOutstreamVideo[0].mediaTypes.video.playerSize[0][1]);
     });
 
     it('shouldn\'t contain a user obj without GDPR information', function () {
@@ -357,6 +358,28 @@ describe('emx_digital Adapter', function () {
   });
 
   describe('interpretResponse', function () {
+    let bid = {
+      'bidder': 'emx_digital',
+      'params': {
+        'tagid': '25251',
+        'video': {}
+      },
+      'mediaTypes': {
+        'video': {
+          'context': 'instream',
+          'playerSize': [640, 480]
+        }
+      },
+      'adUnitCode': 'adunit-code',
+      'sizes': [
+        [300, 250],
+        [300, 600]
+      ],
+      'bidId': '30b31c2501de1e',
+      'bidderRequestId': '22edbae3120bf6',
+      'auctionId': '1d1a01234a475'
+    };
+
     const serverResponse = {
       'id': '12819a18-56e1-4256-b836-b69a10202668',
       'seatbid': [{
@@ -457,7 +480,8 @@ describe('emx_digital Adapter', function () {
     it('returns a banner bid for non-xml creatives', function () {
       let result = spec.interpretResponse({
         body: serverResponse
-      });
+      }, { bidRequest: bid }
+      );
       const ad0 = result[0];
       const ad1 = result[1];
       expect(ad0.mediaType).to.equal('banner');
@@ -479,7 +503,8 @@ describe('emx_digital Adapter', function () {
 
       let result = spec.interpretResponse({
         body: serverResponse
-      });
+      }, { bidRequest: bid }
+      );
       const ad0 = result[0];
       const ad1 = result[1];
       expect(ad0.mediaType).to.equal('video');
@@ -511,10 +536,6 @@ describe('emx_digital Adapter', function () {
       let iframeSync = spec.getUserSyncs(syncOptionsIframe);
       expect(iframeSync.length).to.equal(1);
       expect(iframeSync[0].type).to.equal('iframe');
-
-      let pixelSync = spec.getUserSyncs(syncOptionsPixel);
-      expect(pixelSync.length).to.equal(1);
-      expect(pixelSync[0].type).to.equal('image');
     });
   });
 });

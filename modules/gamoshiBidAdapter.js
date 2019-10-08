@@ -5,10 +5,7 @@ import {Renderer} from '../src/Renderer';
 import {BANNER, VIDEO} from '../src/mediaTypes';
 
 const ENDPOINTS = {
-  'viewdeos': 'https://rtb.viewdeos.com',
-  'cleanmedia': 'https://bidder.cleanmediaads.com',
-  'gamoshi': 'https://rtb.gamoshi.io',
-  'gambid': 'https://rtb.gamoshi.io',
+  'gamoshi': 'https://rtb.gamoshi.io'
 };
 
 const DEFAULT_TTL = 360;
@@ -45,7 +42,7 @@ export const helper = {
 
 export const spec = {
   code: 'gamoshi',
-  aliases: ['gambid', 'cleanmedia', 'viewdeos'],
+  aliases: ['gambid', 'cleanmedia', 'viewdeos', '9MediaOnline'],
   supportedMediaTypes: ['banner', 'video'],
 
   isBidRequestValid: function (bid) {
@@ -61,7 +58,7 @@ export const spec = {
   buildRequests: function (validBidRequests, bidderRequest) {
     return validBidRequests.map(bidRequest => {
       const {adUnitCode, auctionId, mediaTypes, params, sizes, transactionId} = bidRequest;
-      const baseEndpoint = params['rtbEndpoint'] || ENDPOINTS[bidRequest.bidder] || ENDPOINTS['gamoshi'];
+      const baseEndpoint = params['rtbEndpoint'] || ENDPOINTS['gamoshi'];
       const rtbEndpoint = `${baseEndpoint}/r/${params.supplyPartnerId}/bidr?rformat=open_rtb&reqformat=rtb_json&bidder=prebid` + (params.query ? '&' + params.query : '');
       let url = config.getConfig('pageUrl') || bidderRequest.refererInfo.referer;
 
