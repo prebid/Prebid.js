@@ -257,9 +257,11 @@ export function newConfig() {
       if (knownProtectedKeys.length) {
         const knownProtectedConfigs = knownProtectedKeys.reduce((result, key) => Object.assign(result, { [key]: options[key] }), {});
         protectedConfig[PRE_BID_SERVER_KEY] = Object.assign({}, protectedConfig[PRE_BID_SERVER_KEY], knownProtectedConfigs);
-        const uniqAllowedBidders = new Set();
-        allowedBidders.concat(protectedConfig[PRE_BID_SERVER_KEY].allowedBidders || []).forEach(allowedBidder => uniqAllowedBidders.add(allowedBidder));
-        protectedConfig[PRE_BID_SERVER_KEY].allowedBidders = [ ...uniqAllowedBidders ];
+        const allowedBiddersSet = new Set();
+        allowedBidders.concat(protectedConfig[PRE_BID_SERVER_KEY].allowedBidders || []).forEach(allowedBidder => allowedBiddersSet.add(allowedBidder));
+        const uniqAllowedBidders = [];
+        allowedBiddersSet.forEach(uniqueBidder => uniqAllowedBidders.push(uniqueBidder));
+        protectedConfig[PRE_BID_SERVER_KEY].allowedBidders = uniqAllowedBidders;
       }
 
       return;
