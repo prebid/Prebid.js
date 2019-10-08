@@ -32,9 +32,10 @@ export const spec = {
     const isStage = !!validBidRequests[0].params.stage;
     const isOutstream = utils.deepAccess(validBidRequests[0], 'mediaTypes.video.context') === 'outstream';
     const isCustomRender = utils.deepAccess(validBidRequests[0], 'params.outstreamOptions.customRender');
+    const isNodeRender = utils.deepAccess(validBidRequests[0], 'params.outstreamOptions.slot') || utils.deepAccess(validBidRequests[0], 'params.outstreamOptions.iframe');
     const isNativeRender = utils.deepAccess(validBidRequests[0], 'renderer');
     const outstreamOptions = utils.deepAccess(validBidRequests[0], 'params.outstreamOptions');
-    const isBanner = !!validBidRequests[0].mediaTypes.banner || (isOutstream && (!isCustomRender || !isNativeRender));
+    const isBanner = !!validBidRequests[0].mediaTypes.banner || (isOutstream && (!isCustomRender && !isNativeRender && !isNodeRender));
 
     let adUnits = validBidRequests.map((bid) => {
       const vpaidMode = utils.getBidIdParameter('vpaidMode', bid.params);
@@ -62,7 +63,7 @@ export const spec = {
       if (vpaidMode && context === 'instream') {
         streamType = 1;
       }
-      if (isBanner) {
+      if (isBanner || context === 'outstream') {
         streamType = 5;
       }
 
@@ -70,6 +71,7 @@ export const spec = {
         type: streamType,
         bidId: bid.bidId,
         mediaType: isBanner ? BANNER : VIDEO,
+        context: context,
         playerId: utils.getBidIdParameter('playerId', bid.params),
         auctionId: bidderRequest.auctionId,
         bidderCode: BIDDER_CODE,
