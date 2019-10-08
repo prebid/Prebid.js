@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { spec } from 'modules/adponeBidAdapter';
 import {newBidder} from '../../../src/adapters/bidderFactory';
-import * as utils from '../../../src/utils';
+
 const EMPTY_ARRAY = [];
 describe('adponeBidAdapter', function () {
   let bid = {
@@ -91,11 +91,10 @@ describe('adponeBidAdapter', function () {
           placementId: '1',
         }
       };
-
       expect(spec.isBidRequestValid(invalidBid)).to.be.false;
     });
 
-    it('returns false when placmentId is not set in params', function() {
+    it('returns false when placementId is not set in params', function() {
       const invalidBid = {
         bidder: 'adpone',
         adUnitCode: 'adunit-code',
@@ -148,6 +147,19 @@ describe('interpretResponse', function () {
     };
   });
 
+  it('validate_response_params', function() {
+    const newResponse = spec.interpretResponse(serverResponse, bidRequest);
+    expect(newResponse[0].id).to.be.equal('613673EF-A07C-4486-8EE9-3FC71A7DC73D');
+    expect(newResponse[0].requestId).to.be.equal('1234');
+    expect(newResponse[0].cpm).to.be.equal(1);
+    expect(newResponse[0].width).to.be.equal(300);
+    expect(newResponse[0].height).to.be.equal(250);
+    expect(newResponse[0].currency).to.be.equal('USD');
+    expect(newResponse[0].netRevenue).to.be.equal(true);
+    expect(newResponse[0].ttl).to.be.equal(300);
+    expect(newResponse[0].ad).to.be.equal('<html><a href="http://www.adpone.com" target="_blank"><img src ="https://placehold.it/300x250" /></a></html>');
+  });
+
   it('should correctly reorder the server response', function () {
     const newResponse = spec.interpretResponse(serverResponse, bidRequest);
     expect(newResponse.length).to.be.equal(1);
@@ -182,6 +194,9 @@ describe('interpretResponse', function () {
 });
 
 describe('getUserSyncs', function () {
+  it('Verifies that getUserSyncs is a function', function () {
+    expect((typeof (spec.getUserSyncs)).should.equals('function'));
+  });
   it('Verifies getUserSyncs returns expected result', function () {
     expect((typeof (spec.getUserSyncs)).should.equals('function'));
     expect(spec.getUserSyncs({iframeEnabled: true})).to.deep.equal({
@@ -190,8 +205,9 @@ describe('getUserSyncs', function () {
     });
   });
   it('Verifies that iframeEnabled: false returns an empty array', function () {
-    expect((typeof (spec.getUserSyncs)).should.equals('function'));
     expect(spec.getUserSyncs({iframeEnabled: false})).to.deep.equal(EMPTY_ARRAY);
+  });
+  it('Verifies that iframeEnabled: null returns an empty array', function () {
     expect(spec.getUserSyncs(null)).to.deep.equal(EMPTY_ARRAY);
   });
 });
