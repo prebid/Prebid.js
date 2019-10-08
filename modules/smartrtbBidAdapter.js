@@ -93,6 +93,7 @@ export const spec = {
         ad: bid.html,
         vastUrl: bid.vast_url,
         vastXml: bid.vast_xml,
+        mediaType: bid.html ? 'banner' : 'video',
         ttl: 120,
         creativeId: bid.crid,
         dealId: bid.deal_id,
@@ -105,6 +106,11 @@ export const spec = {
   },
   getUserSyncs: function(syncOptions, serverResponses) {
     const syncs = []
+
+    if (!serverResponses.length || !serverResponses[0].body) {
+      return syncs
+    }
+
     let pixels = serverResponses[0].body.pixels
     if (!pixels || !pixels.length) {
       return syncs

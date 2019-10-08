@@ -17,12 +17,20 @@ Prebid adapter for Smart RTB. Requires approval and account setup.
     var adUnits = [
            {
                code: 'test-div',
-               sizes: [[300, 250]],
+               mediaTypes: {
+                   banner: {
+                       sizes: [[300,250]]
+                   },
+                   video: {
+                       context: 'outstream',
+                       playerDimension: [640, 480]
+                   }
+               },
                bids: [
                    {
                        bidder: "smartrtb",
                        params: {
-                           zoneId: "z_261b6c7e7d4d4985393b293cc903d1",
+                           zoneId: "N4zTDq3PPEHBIODv7cXK",
                            forceBid: true
                        }
                    }
