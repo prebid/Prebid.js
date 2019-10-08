@@ -28,8 +28,19 @@ export const spec = {
       let sovrnImps = [];
       let iv;
       let schain;
+      let digitrust;
+
       utils._each(bidReqs, function (bid) {
-        if(bid.schain) {
+        if (!digitrust) {
+          const bidRequestDigitrust = utils.deepAccess(bid, 'userId.digitrustid.data');
+          if (bidRequestDigitrust && (!bidRequestDigitrust.privacy || !bidRequestDigitrust.privacy.optout)) {
+            digitrust = {
+              id: bidRequestDigitrust.id,
+              keyv: bidRequestDigitrust.keyv
+            }
+          }
+        }
+        if (bid.schain) {
           schain = schain || bid.schain;
         }
         iv = iv || utils.getBidIdParameter('iv', bid.params);
@@ -56,7 +67,7 @@ export const spec = {
         }
       };
 
-      if(schain) {
+      if (schain) {
         sovrnBidReq.source = {
           ext: {
             schain
@@ -75,13 +86,12 @@ export const spec = {
           }};
       }
 
-      const bidRequestDigitrust = utils.deepAccess(bidRequest, 'userId.digitrustid.data');
-      if (bidRequestDigitrust && !bidRequestDigitrust.privacy.optout) {
+      if (digitrust) {
         sovrnBidReq.user = sovrnBidReq.user || {};
         sovrnBidReq.user.ext = sovrnBidReq.user.ext || {}
         sovrnBidReq.user.ext.digitrust = {
-          id: bidRequestDigitrust.id,
-          keyv: bidRequestDigitrust.keyv
+          id: digitrust.id,
+          keyv: digitrust.keyv
         }
       }
 
@@ -138,28 +148,31 @@ export const spec = {
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent) {
     try {
       let tracks = []
-      if (serverResponses && serverResponses.length !== 0 && syncOptions.iframeEnabled) {
-        let iidArr = serverResponses.filter(resp => resp.body && resp.body.ext && resp.body.ext.iid)
-          .map(resp => resp.body.ext.iid);
-        let consentString = '';
-        if (gdprConsent && gdprConsent.gdprApplies && typeof gdprConsent.consentString === 'string') {
-          consentString = gdprConsent.consentString
+      if (serverResponses && serverResponses.length !== 0) {
+        if (syncOptions.iframeEnabled) {
+          let iidArr = serverResponses.filter(resp => resp.body && resp.body.ext && resp.body.ext.iid)
+            .map(resp => resp.body.ext.iid);
+          let consentString = '';
+          if (gdprConsent && gdprConsent.gdprApplies && typeof gdprConsent.consentString === 'string') {
+            consentString = gdprConsent.consentString
+          }
+          if (iidArr[0]) {
+            tracks.push({
+              type: 'iframe',
+              url: '//ap.lijit.com/beacon?informer=' + iidArr[0] + '&gdpr_consent=' + consentString,
+            });
+          }
         }
-        if (iidArr[0]) {
-          tracks.push({
-            type: 'iframe',
-            url: '//ap.lijit.com/beacon?informer=' + iidArr[0] + '&gdpr_consent=' + consentString,
-          });
-        }
-      }
-      if(syncOptions.pixelEnabled) {
-        if (serverResponses && serverResponses.length !== 0) {
+
+        if (syncOptions.pixelEnabled) {
           serverResponses.filter(resp => resp.body && resp.body.ext && resp.body.ext.sync && resp.body.ext.sync.pixels)
-              .map(resp => resp.body.ext.sync.pixels.url)
-              .forEach(url => tracks.push({ type: 'image', url}))
-        }
-        if (errorpxls.length) {
-          tracks = tracks.concat(errorpxls)
+            .flatMap(resp => resp.body.ext.sync.pixels)
+            .map(pixel => pixel.url)
+            .forEach(url => tracks.push({ type: 'image', url }))
+
+          if (errorpxls.length) {
+            tracks = tracks.concat(errorpxls)
+          }
         }
       }
 

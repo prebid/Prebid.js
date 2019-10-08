@@ -1,7 +1,6 @@
-import { expect } from 'chai';
-import { spec, LogError } from 'modules/sovrnBidAdapter';
-import { newBidder } from 'src/adapters/bidderFactory';
-import { SSL_OP_SINGLE_ECDH_USE } from 'constants';
+import {expect} from 'chai';
+import {LogError, spec} from 'modules/sovrnBidAdapter';
+import {newBidder} from 'src/adapters/bidderFactory';
 
 const ENDPOINT = `//ap.lijit.com/rtb/bid?src=$$REPO_AND_VERSION$$`;
 
@@ -128,13 +127,12 @@ describe('sovrnBidAdapter', function() {
       };
       bidderRequest.bids = bidRequests;
 
-      const request = spec.buildRequests(bidRequests, bidderRequest);
-      const payload = JSON.parse(request.data);
+      const data = JSON.parse(spec.buildRequests(bidRequests, bidderRequest).data);
 
-      expect(payload.regs.ext.gdpr).to.exist.and.to.be.a('number');
-      expect(payload.regs.ext.gdpr).to.equal(1);
-      expect(payload.user.ext.consent).to.exist.and.to.be.a('string');
-      expect(payload.user.ext.consent).to.equal(consentString);
+      expect(data.regs.ext.gdpr).to.exist.and.to.be.a('number');
+      expect(data.regs.ext.gdpr).to.equal(1);
+      expect(data.user.ext.consent).to.exist.and.to.be.a('string');
+      expect(data.user.ext.consent).to.equal(consentString);
     });
 
     it('converts tagid to string', function () {
@@ -156,7 +154,68 @@ describe('sovrnBidAdapter', function() {
       const request = spec.buildRequests(ivBidRequests);
 
       expect(request.data).to.contain('"tagid":"403370"')
-    })
+    });
+
+    it('should add schain if present', () => {
+      const schainRequests = [{
+        'bidder': 'sovrn',
+        'params': {
+          'tagid': 403370
+        },
+        'adUnitCode': 'adunit-code',
+        'sizes': [
+          [300, 250],
+          [300, 600]
+        ],
+        'bidId': '30b31c1838de1e',
+        'bidderRequestId': '22edbae2733bf6',
+        'auctionId': '1d1a030790a475',
+        'schain': {
+          'ver': '1.0',
+          'complete': 1,
+          'nodes': [
+            {
+              'asi': 'directseller.com',
+              'sid': '00001',
+              'rid': 'BidRequest1',
+              'hp': 1
+            }
+          ]
+        }
+      }].concat(bidRequests);
+      const data = JSON.parse(spec.buildRequests(schainRequests).data);
+
+      expect(data.source.ext.schain.nodes.length).to.equal(1)
+    });
+
+    it('should add digitrust data if present', () => {
+      const digitrustRequests = [{
+        'bidder': 'sovrn',
+        'params': {
+          'tagid': 403370
+        },
+        'adUnitCode': 'adunit-code',
+        'sizes': [
+          [300, 250],
+          [300, 600]
+        ],
+        'bidId': '30b31c1838de1e',
+        'bidderRequestId': '22edbae2733bf6',
+        'auctionId': '1d1a030790a475',
+        'userId': {
+          'digitrustid': {
+            'data': {
+              'id': 'digitrust-id-123',
+              'keyv': 4
+            }
+          }
+        }
+      }].concat(bidRequests);
+      const data = JSON.parse(spec.buildRequests(digitrustRequests).data);
+
+      expect(data.user.ext.digitrust.id).to.equal('digitrust-id-123');
+      expect(data.user.ext.digitrust.keyv).to.equal(4);
+    });
   });
 
   describe('interpretResponse', function () {
@@ -254,8 +313,8 @@ describe('sovrnBidAdapter', function() {
   });
 
   describe('getUserSyncs ', () => {
-    let syncOptions = {iframeEnabled: true, pixelEnabled: true};
-    let iframeDisabledSyncOptions = {iframeEnabled: false, pixelEnabled: true};
+    let syncOptions = { iframeEnabled: true, pixelEnabled: false };
+    let iframeDisabledSyncOptions = { iframeEnabled: false, pixelEnabled: false };
     let serverResponse = [
       {
         'body': {
@@ -287,33 +346,54 @@ describe('sovrnBidAdapter', function() {
             }
           ],
           'ext': {
-            'iid': 13487408
+            'iid': 13487408,
+            sync: {
+              pixels: [
+                {
+                  url: 'http://idprovider1.com'
+                },
+                {
+                  url: 'http://idprovider2.com'
+                }
+              ]
+            }
           }
         },
         'headers': {}
       }
     ];
+
     it('should return if iid present on server response & iframe syncs enabled', () => {
-      let expectedReturnStatement = [
+      const expectedReturnStatement = [
         {
           'type': 'iframe',
           'url': '//ap.lijit.com/beacon?informer=13487408&gdpr_consent=',
         }
-      ]
-      let returnStatement = spec.getUserSyncs(syncOptions, serverResponse);
+      ];
+      const returnStatement = spec.getUserSyncs(syncOptions, serverResponse);
       expect(returnStatement[0]).to.deep.equal(expectedReturnStatement[0]);
-    })
+    });
 
     it('should not return if iid missing on server response', () => {
-      let returnStatement = spec.getUserSyncs(syncOptions, [])
+      const returnStatement = spec.getUserSyncs(syncOptions, []);
       expect(returnStatement).to.be.empty;
-    })
+    });
 
     it('should not return if iframe syncs disabled', () => {
-      let returnStatement = spec.getUserSyncs(iframeDisabledSyncOptions, serverResponse)
-      expect(returnStatement).to.be.empty
-    })
-  })
+      const returnStatement = spec.getUserSyncs(iframeDisabledSyncOptions, serverResponse);
+      expect(returnStatement).to.be.empty;
+    });
+
+    it('should include pixel syncs', () => {
+      let pixelEnabledOptions = { iframeEnabled: false, pixelEnabled: true };
+      const returnStatement = spec.getUserSyncs(pixelEnabledOptions, serverResponse);
+      console.log(returnStatement)
+      expect(returnStatement.length).to.equal(2);
+      expect(returnStatement).to.deep.include.members([{ type: 'image', url: 'http://idprovider1.com' },
+        { type: 'image', url: 'http://idprovider2.com' }]);
+    });
+  });
+
   describe('LogError', () => {
     it('should build and append an error object', () => {
       const thrown = {
