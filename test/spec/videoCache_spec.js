@@ -172,8 +172,7 @@ describe('The video cache', function () {
       const customKey2 = 'vasttrack_abc';
       const vastXml1 = '<VAST version="3.0">testvast1</VAST>';
       const vastXml2 = '<VAST version="3.0">testvast2</VAST>';
-      // payload.bidder = bid.bidder;
-      // payload.bidid = bid.requestId;
+
       const bids = [{
         vastXml: vastXml1,
         ttl: 25,
