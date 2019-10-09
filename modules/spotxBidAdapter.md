@@ -62,7 +62,8 @@ This adapter requires setup and approval from the SpotX team.
                         unmute_on_mouse: '1',
                         continue_out_of_view: '1',
                         ad_volume: '100',
-                        content_container_id: 'video1'
+                        content_container_id: 'video1',
+                        spotx_all_google_consent: '1'
                     }
                 }
             }
