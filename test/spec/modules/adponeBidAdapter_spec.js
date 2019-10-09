@@ -212,7 +212,7 @@ describe('getUserSyncs', function () {
   });
 });
 
-describe('test onBidWon', function () {
+describe('test onBidWon function', function () {
   it('exists and is a function', () => {
     expect(spec.onBidWon).to.exist.and.to.be.a('function');
   });
