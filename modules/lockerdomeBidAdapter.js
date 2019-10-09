@@ -14,16 +14,16 @@ export const spec = {
         requestId: bid.bidId,
         adUnitCode: bid.adUnitCode,
         adUnitId: utils.getBidIdParameter('adUnitId', bid.params),
-        sizes: bid.sizes
+        sizes: bid.mediaTypes && bid.mediaTypes.banner && bid.mediaTypes.banner.sizes
       }
     });
     const payload = {
       bidRequests: adUnitBidRequests,
-      url: utils.getTopWindowLocation().href,
-      referrer: utils.getTopWindowReferrer()
+      url: encodeURIComponent(bidderRequest.refererInfo.canonicalUrl),
+      referrer: encodeURIComponent(bidderRequest.refererInfo.referer)
     };
 
-    if (bidderRequest && bidderRequest.gdprConsent) {
+    if (bidderRequest.gdprConsent) {
       payload.gdpr = {
         applies: bidderRequest.gdprConsent.gdprApplies,
         consent: bidderRequest.gdprConsent.consentString
