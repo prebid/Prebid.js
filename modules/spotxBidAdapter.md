@@ -63,6 +63,7 @@ This adapter requires setup and approval from the SpotX team.
                         continue_out_of_view: '1',
                         ad_volume: '100',
                         content_container_id: 'video1',
+                        hide_skin: '1',
                         spotx_all_google_consent: '1'
                     }
                 }
