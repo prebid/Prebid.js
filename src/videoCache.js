@@ -70,7 +70,7 @@ function toStorageRequest(bid) {
 
   if (conf.cache && conf.cache.url && conf.cache.vasttrack) {
     payload.bidder = bid.bidder;
-    payload.bidid = bid.adId;
+    payload.bidid = bid.requestId;
   }
 
   if (typeof bid.customCacheKey === 'string' && bid.customCacheKey !== '') {
