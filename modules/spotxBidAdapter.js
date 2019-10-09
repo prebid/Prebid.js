@@ -225,6 +225,11 @@ export const spec = {
         userExt.fpc = pubcid;
       }
 
+      // Add schain object if it is present
+      if (bid && bid.schain) {
+        requestPayload.schain = bid.schain;
+      }
+
       // Only add the user object if it's not empty
       if (!utils.isEmpty(userExt)) {
         requestPayload.user = { ext: userExt };
