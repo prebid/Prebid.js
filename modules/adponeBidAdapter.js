@@ -3,15 +3,29 @@ import {registerBidder} from '../src/adapters/bidderFactory';
 
 const ADPONE_CODE = 'adpone';
 const ADPONE_ENDPOINT = 'https://rtb.adpone.com/bid-request';
+const ADPONE_SYNC_ENDPOINT = 'https://eu-ads.adpone.com';
 const ADPONE_REQUEST_METHOD = 'POST';
 const ADPONE_CURRENCY = 'EUR';
+
+function _createSync() {
+  return {
+    type: 'iframe',
+    url: ADPONE_SYNC_ENDPOINT
+  }
+}
+
+function getUserSyncs(syncOptions) {
+  return (syncOptions && syncOptions.iframeEnabled) ? _createSync() : ([]);
+}
 
 export const spec = {
   code: ADPONE_CODE,
   supportedMediaTypes: [BANNER],
 
+  getUserSyncs,
+
   isBidRequestValid: bid => {
-    return !!bid.params.placementId && !!bid.bidId;
+    return !!bid.params.placementId && !!bid.bidId && bid.bidder === 'adpone'
   },
 
   buildRequests: bidRequests => {
@@ -30,7 +44,16 @@ export const spec = {
           }))
       };
 
-      return { method: ADPONE_REQUEST_METHOD, url, data }
+      const options = {
+        withCredentials: true
+      };
+
+      return {
+        method: ADPONE_REQUEST_METHOD,
+        url,
+        data,
+        options,
+      };
     });
   },
 
@@ -66,7 +89,7 @@ export const spec = {
     const encodedBuf = window.btoa(bidString);
     const img = new Image(1, 1);
     img.src = `https://rtb.adpone.com/prebid/analytics?q=${encodedBuf}`;
-  }
+  },
 
 };
 
