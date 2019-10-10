@@ -26,7 +26,7 @@ advertly bid adapter supports Banner and Video.
           bids: [{
             bidder: 'advertly',
             params: {
-              publisherId: 2
+              publisherId: 1
             }
           }]
   
@@ -43,7 +43,7 @@ advertly bid adapter supports Banner and Video.
             bids: [{
               bidder: "advertly",
               params: {
-                publisherId: 2
+                publisherId: 1
               }
             }]
           }];
