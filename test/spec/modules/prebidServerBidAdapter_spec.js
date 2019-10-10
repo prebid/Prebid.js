@@ -1043,7 +1043,10 @@ describe('S2S Adapter', function () {
       let userIdBidRequest = utils.deepClone(BID_REQUESTS);
       userIdBidRequest[0].bids[0].userId = {
         tdid: 'abc123',
-        pubcid: '1234'
+        pubcid: '1234',
+        lipb: {
+          lipbid: 'xyz'
+        }
       };
 
       adapter.callBids(REQUEST, userIdBidRequest, addBidResponse, done, ajax);
@@ -1054,6 +1057,8 @@ describe('S2S Adapter', function () {
       expect(requestBid.user.ext.eids.filter(eid => eid.source === 'adserver.org')[0].uids[0].id).is.equal('abc123');
       expect(requestBid.user.ext.eids.filter(eid => eid.source === 'pubcommon')).is.not.empty;
       expect(requestBid.user.ext.eids.filter(eid => eid.source === 'pubcommon')[0].uids[0].id).is.equal('1234');
+      expect(requestBid.user.ext.eids.filter(eid => eid.source === 'liveIntent')).is.not.empty;
+      expect(requestBid.user.ext.eids.filter(eid => eid.source === 'liveIntent')[0].uids[0].id).is.equal('xyz');
     });
 
     it('when config \'currency.adServerCurrency\' value is an array: ORTB has property \'cur\' value set to a single item array', function () {
