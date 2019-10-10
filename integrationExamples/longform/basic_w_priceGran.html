@@ -37,7 +37,7 @@
           playerSize: [640, 480],
           adPodDurationSec: 300,
           durationRangeSec: [15, 30],
-          requireExactDuration: true
+          requireExactDuration: false
         }
       },
       bids: [
@@ -50,6 +50,27 @@
       ]
     }];
 
+    const customConfigObject = {
+      'buckets': [{
+        'precision': 2, // default is 2 if omitted - means 2.1234 rounded to 2 decimal places = 2.12
+        'min': 0,
+        'max': 5,
+        'increment': 0.01 // from $0 to $5, 1-cent increments
+      },
+      {
+        'precision': 2,
+        'min': 5,
+        'max': 8,
+        'increment': 0.05 // from $5 to $8, round down to the previous 5-cent increment
+      },
+      {
+        'precision': 2,
+        'min': 8,
+        'max': 40,
+        'increment': 0.5 // from $8 to $40, round down to the previous 50-cent increment
+      }]
+    };
+
     pbjs.que.push(function () {
       pbjs.addAdUnits(videoAdUnit);
       pbjs.setConfig({
@@ -59,7 +80,8 @@
         },
         adpod: {
           brandCategoryExclusion: true
-        }
+        },
+        priceGranularity: customConfigObject
       });
     });
 
@@ -78,12 +100,13 @@
         });
       });
     }
+
   </script>
 </head>
 
 <body>
   <h1 style="margin:20px">Prebid Freewheel Test Page</h1>
-  <h2 style="margin:20px">requireExactDuration = true</h2>
+  <h2 style="margin:20px">requireExactDuration = false</h2>
   <div class="row" style="margin: 20px">
     <div class="col-lg-6">
       <button id="loadPrebidRequestBtn" class="btn btn-secondary" type="button" onclick="loadPrebidRequest()">Load
@@ -94,7 +117,7 @@
             <div class="card-header" id="headingTwo">
               <h2 class="mb-0">
                 <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapseTwo"
-                  aria-expanded="true" aria-controls="collapseTwo">
+                  aria-expanded="false" aria-controls="collapseTwo">
                   Bids Sent to Freewheel
                 </button>
               </h2>
