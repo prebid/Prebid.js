@@ -705,6 +705,20 @@ describe('AppNexusAdapter', function () {
         ]
       });
     });
+
+    it('should populate coppa if set in config', function () {
+      let bidRequest = Object.assign({}, bidRequests[0]);
+      sinon.stub(config, 'getConfig')
+        .withArgs('coppa')
+        .returns(true);
+
+      const request = spec.buildRequests([bidRequest]);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.user.coppa).to.equal(true);
+
+      config.getConfig.restore();
+    });
   })
 
   describe('interpretResponse', function () {
