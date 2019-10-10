@@ -245,8 +245,8 @@ describe('gumgumAdapter', function () {
         'thms': 10000
       }
       let result = spec.interpretResponse({ body: inscreenServerResponse }, inscreenBidRequest);
-      expect(result[0].width).to.equal(inscreenBidRequest.sizes[0][0].toString());
-      expect(result[0].height).to.equal(inscreenBidRequest.sizes[0][1].toString());
+      expect(result[0].width).to.equal('1');
+      expect(result[0].height).to.equal('1');
     })
   })
   describe('getUserSyncs', function () {
