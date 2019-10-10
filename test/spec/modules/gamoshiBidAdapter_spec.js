@@ -232,12 +232,26 @@ describe('GamoshiAdapter', function () {
       expect(response.data.ext.gdpr_consent.consent_string).to.equal('some string');
       expect(response.data.ext.gdpr_consent.consent_required).to.equal(true);
 
-      expect(response.data.regs.gdpr).to.exist;
+      expect(response.data.regs.ext.gdpr).to.exist;
       expect(response.data.user.ext.consent).to.equal('some string');
+    });
+
+    it('build request with ID5 Id', function () {
+      const bidRequestClone = utils.deepClone(bidRequest);
+      bidRequestClone.userId = {};
+      bidRequestClone.userId.id5id = 'id5-user-id';
+      let request = spec.buildRequests([bidRequestClone], bidRequestClone)[0];
+      expect(request.data.user.ext.eids).to.deep.equal([{
+        'source': 'id5-sync.com',
+        'uids': [{
+          'id': 'id5-user-id',
+          'atype': 1
+        }]
+      }]);
     });
   });
 
-  describe('interpretResponse', function () {
+  describe('interpretResponse', () => {
     const bannerBidRequest = {
       'adUnitCode': 'adunit-code',
       'auctionId': '1d1a030790a475',

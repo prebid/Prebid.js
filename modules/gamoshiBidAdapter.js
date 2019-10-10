@@ -75,7 +75,6 @@ export const spec = {
         'imp': [],
         'ext': {}
       };
-      debugger;
       const gdprConsent = bidderRequest.gdprConsent;
 
       if (gdprConsent) {
@@ -84,7 +83,9 @@ export const spec = {
           consent_required: gdprConsent.gdprApplies
         };
         rtbBidRequest.regs = {
-          gdpr: gdprConsent.gdprApplies === true ? 1 : 0
+          ext: {
+            gdpr: gdprConsent.gdprApplies === true ? 1 : 0
+          }
         };
         rtbBidRequest.user = {
           ext: {
@@ -134,6 +135,16 @@ export const spec = {
           });
           rtbBidRequest.imp.push(videoImp);
         }
+      }
+
+      let eids = [];
+      // _handleDigitrustId(eids);
+      // _handleTTDId(eids, validBidRequests);
+      if (bidRequest && bidRequest.userId) {
+        _addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.id5id`), 'id5-sync.com', 1);
+      }
+      if (eids.length > 0) {
+        rtbBidRequest.user.ext.eids = eids;
       }
 
       if (rtbBidRequest.imp.length === 0) {
@@ -248,6 +259,21 @@ function renderOutstream(bid) {
       vastXml: bid.vastXml
     });
   });
+}
+
+/**
+ * Produces external userid object in ortb 3.0 model.
+ */
+function _addExternalUserId(eids, value, source, atype) {
+  if (utils.isStr(value)) {
+    eids.push({
+      source,
+      uids: [{
+        id: value,
+        atype
+      }]
+    });
+  }
 }
 
 registerBidder(spec);
