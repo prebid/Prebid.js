@@ -1,7 +1,7 @@
 # Overview
 
 Module Name: ShowHeroes Bidder Adapter
-o
+
 Module Type: Bidder Adapter
 
 Alias: showheroesBs

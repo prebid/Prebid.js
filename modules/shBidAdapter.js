@@ -35,7 +35,7 @@ export const spec = {
     const isNodeRender = utils.deepAccess(validBidRequests[0], 'params.outstreamOptions.slot') || utils.deepAccess(validBidRequests[0], 'params.outstreamOptions.iframe');
     const isNativeRender = utils.deepAccess(validBidRequests[0], 'renderer');
     const outstreamOptions = utils.deepAccess(validBidRequests[0], 'params.outstreamOptions');
-    const isBanner = !!validBidRequests[0].mediaTypes.banner || (isOutstream && (!isCustomRender && !isNativeRender && !isNodeRender));
+    const isBanner = !!validBidRequests[0].mediaTypes.banner || (isOutstream && !(isCustomRender || isNativeRender || isNodeRender));
 
     let adUnits = validBidRequests.map((bid) => {
       const vpaidMode = utils.getBidIdParameter('vpaidMode', bid.params);
@@ -82,7 +82,7 @@ export const spec = {
           width: sizes[0],
           height: sizes[1]
         },
-        bidRequest: bidderRequest,
+        params: bid.params,
       };
     });
 
@@ -150,7 +150,7 @@ function createBids(bidRes, reqData) {
 
   bidRes.bids.forEach(function (bid) {
     const reqBid = bidMap[bid.bidId];
-    const currentBidRequest = reqBid.bidRequest.bids && reqBid.bidRequest.bids.find(requestBid => bid.bidId === requestBid.bidId);
+    const currentBidParams = reqBid.params;
     let bidUnit = {};
     bidUnit.cpm = bid.cpm;
     bidUnit.requestId = bid.bidId;
@@ -184,9 +184,9 @@ function createBids(bidRes, reqData) {
           vastXml: bid.vastXml,
           debug: reqData.debug,
           isStage: !!reqData.meta.stage,
-          customRender: utils.getBidIdParameter('customRender', currentBidRequest.params.outstreamOptions),
-          slot: utils.getBidIdParameter('slot', currentBidRequest.params.outstreamOptions),
-          iframe: utils.getBidIdParameter('iframe', currentBidRequest.params.outstreamOptions),
+          customRender: utils.getBidIdParameter('customRender', currentBidParams.outstreamOptions),
+          slot: utils.getBidIdParameter('slot', currentBidParams.outstreamOptions),
+          iframe: utils.getBidIdParameter('iframe', currentBidParams.outstreamOptions),
         }
       });
       renderer.setRender(outstreamRender);
