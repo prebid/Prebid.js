@@ -9,7 +9,7 @@ describe('Ga', function () {
     }
     var config = { options: { trackerName: 'foo', enableDistribution: true, cpmDistribution: cpmDistribution } };
 
-    // enableAnalytics can only be called once as the 
+    // enableAnalytics can only be called once
     ga.enableAnalytics(config);
 
     it('should accept a tracker name option and output prefixed send string', function () {
