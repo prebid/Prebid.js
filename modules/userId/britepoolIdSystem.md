@@ -1,32 +1,10 @@
-## Prebid.js BritePool User ID Submodule
+## BritePool User ID Submodule
 
-There are two ways to use the BritePool User ID Submodule. The Publisher Kit may be used to create a Prebid usersync.userIds compatible array element, or you may set the Prebid usersync.userIds params manually.
+BritePool User ID Module. For assistance setting up your module please contact us prebid@britepool.com
 
-### Publisher Kit
+### Prebid Params
 
-The BritePool Publisher Kit getPrebidUserConfig() will return a usersync.userIds compatible element.
-
-api_key - Provided by BritePool
-
-Set as part of script load:
-```
-<script async type="text/javascript" id="britepool_publisher_kit" src="https://cdn.britepool.com/publisher_kit.js?api_key=xxx"></script>
-```
-
-Within your current setConfig():
-```
-pbjs.setConfig({
-    usersync: {
-        userIds: [window.britepool.getPrebidUserConfig()]
-    }
-});
-```
-
-getPrebidUserConfig(identifiers) may optionally be given additional identifiers: aaid, dtid, idfa, ilid, luid, mmid, msid, mwid, rida, ssid, hash.
-
-### Prebid params
-
-Individual params may be set for the BritePool User ID Submodule.
+Individual params may be set for the BritePool User ID Submodule. At least one identifier must be set in the params.
 ```
 pbjs.setConfig({
     usersync: {
@@ -38,33 +16,27 @@ pbjs.setConfig({
                 expires: 30
             },
             params: {
-                api_key: ’xxx’,
-                hash: ’yyyy’ // example identifier
+                url: 'https://sandbox-api.britepool.com/v1/britepool/id', // optional
+                api_key: ’xxx’, // provided by britepool
+                hash: ’yyyy’, // example identifier
+                ssid: 'r894hvfnviurfincdejkencjcv' // example identifier
             }
         }]
     }
 });
 ```
+## Parameter Descriptions for the `usersync` Configuration Section
+The below parameters apply only to the BritePool User ID Module integration.
 
-### Async Command Queue
-
-Loading dependent scripts asynchronously can be a challenge. The BritePool Publisher Kit provides a command queue similar to the Prebid (cmd, que). This will allow commands to be queued prior and after the script is async loaded.
-
-Within your code:
-```
-window.britepool = window.britepool || {};
-window.britepool.cmd = window.britepool.cmd || [];
-```
-
-An example of async loading both BritePool Publisher Kit and Prebid:
-```
-window.britepool = window.britepool || {};
-window.britepool.cmd = window.britepool.cmd || [];
-var pbjs = pbjs || {};
-pbjs.que = pbjs.que || [];
-window.britepool.cmd.push(function() {
-    pbjs.que.push(function() {
-        // Both BritePool Publisher Kit and Prebid are loaded
-    });
-});
-```
+| Param under usersync.userIds[] | Scope | Type | Description | Example |
+| --- | --- | --- | --- | --- |
+| name | Required | String | ID value for the BritePool module - `"britepoolId"` | `"britepoolId"` |
+| params | Required | Object | Details for BritePool initialization. | |
+| params.api_key | Required | String |BritePool API Key provided by BritePool | "458frgde-djd7-3ert-gyhu-12fghy76dnmko" |
+| params.url | Optional | String |BritePool API url | "https://sandbox-api.britepool.com/v1/britepool/id" |
+| params.identifier | Required | String | Where identifier in the params object is the key name. At least one identifier is required. Available Identifiers `aaid` `dtid` `idfa` `ilid` `luid` `mmid` `msid` `mwid` `rida` `ssid` `hash` | `params.ssid` `params.aaid` |
+| storage | Required | Object | The publisher must specify the local storage in which to store the results of the call to get the user ID. This can be either cookie or HTML5 storage. | |
+| storage.type | Required | String | This is where the results of the user ID will be stored. The recommended method is `localStorage` by specifying `html5`. | `"html5"` |
+| storage.name | Required | String | The name of the cookie or html5 local storage where the user ID will be stored. | `"britepoolid"` |
+| storage.expires | Optional | Integer | How long (in days) the user ID information will be stored. | `365` |
+| value | Optional | Object | Used only if the page has a separate mechanism for storing the BritePool ID. The value is an object containing the values to be sent to the adapters. In this scenario, no URL is called and nothing is added to local storage | `{"primaryBPID": "fd56yui-dvff-v5gbgtgg-4t55-45fggtgt5ttv"}` |
