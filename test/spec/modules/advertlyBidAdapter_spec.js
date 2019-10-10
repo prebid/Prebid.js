@@ -17,7 +17,7 @@ describe('The Advertly bidding adapter', function () {
       const bid = {
         bidder: 'advertly',
         params: {
-          publisherId: 2
+          publisherId: 1
         },
       };
       const isValid = spec.isBidRequestValid(bid);
@@ -29,7 +29,7 @@ describe('The Advertly bidding adapter', function () {
     const bidRequests = [{
       'bidder': 'advertly',
       'params': {
-        'publisherId': 2
+        'publisherId': 1
       },
       'adUnitCode': 'adunit-code',
       'sizes': [
@@ -83,7 +83,7 @@ describe('The Advertly bidding adapter', function () {
     {
       'bidder': 'advertly',
       'params': {
-        'publisherId': 2
+        'publisherId': 1
       },
       'mediaTypes': {
         'banner': {
@@ -98,7 +98,7 @@ describe('The Advertly bidding adapter', function () {
     {
       'bidder': 'advertly',
       'params': {
-        'publisherId': 2
+        'publisherId': 1
       },
       'mediaTypes': {
         'video': {
