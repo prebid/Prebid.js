@@ -6,14 +6,28 @@ import { newBidder } from 'src/adapters/bidderFactory';
 
 describe('Adyoulike Adapter', function () {
   const canonicalUrl = 'http://canonical.url/?t=%26';
+  const referrerUrl = 'http://referrer.url/?param=value';
   const defaultDC = 'hb-api';
+  const consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
+  const bidderRequest = {
+    'auctionId': '1d1a030790a475',
+    'bidderRequestId': '22edbae2733bf6',
+    'timeout': 3000,
+    'gdprConsent': {
+      consentString: consentString,
+      gdprApplies: true
+    },
+    refererInfo: {referer: referrerUrl}
+  };
   const bidRequestWithEmptyPlacement = [
     {
       'bidId': 'bid_id_0',
       'bidder': 'adyoulike',
       'placementCode': 'adunit/hb-0',
       'params': {},
-      'sizes': '300x250'
+      'sizes': '300x250',
+      'mediaTypes': { 'banner' : {'sizes': ['300x250', '300x600']}}
+
     }
   ];
   const bidRequestWithEmptySizes = {
@@ -39,6 +53,7 @@ describe('Adyoulike Adapter', function () {
         'placement': 'placement_0'
       },
       'sizes': '300x250',
+      'mediaTypes': { 'banner' : {'sizes': ['300x250', '300x600']}},
       'transactionId': 'bid_id_0_transaction_id'
     }
   ];
@@ -53,6 +68,7 @@ describe('Adyoulike Adapter', function () {
         'DC': 'fra01'
       },
       'sizes': '300x250',
+      'mediaTypes': { 'banner' : {'sizes': ['300x250', '300x600']}},
       'transactionId': 'bid_id_0_transaction_id'
     }
   ];
@@ -66,6 +82,7 @@ describe('Adyoulike Adapter', function () {
         'placement': 'placement_0'
       },
       'sizes': '300x250',
+      'mediaTypes': { 'banner' : {'sizes': ['300x250', '300x600']}},
       'transactionId': 'bid_id_0_transaction_id'
     },
     {
@@ -76,6 +93,7 @@ describe('Adyoulike Adapter', function () {
         'placement': 'placement_1'
       },
       'sizes': [[300, 600]],
+      'mediaTypes': { 'banner' : {'sizes': [[300, 250], [300, 600]]}},
       'transactionId': 'bid_id_1_transaction_id'
     },
     {
@@ -189,16 +207,6 @@ describe('Adyoulike Adapter', function () {
     });
 
     it('should add gdpr consent information to the request', function () {
-      let consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
-      let bidderRequest = {
-        'auctionId': '1d1a030790a475',
-        'bidderRequestId': '22edbae2733bf6',
-        'timeout': 3000,
-        'gdprConsent': {
-          consentString: consentString,
-          gdprApplies: true
-        }
-      };
       bidderRequest.bids = bidRequestWithSinglePlacement;
 
       const request = spec.buildRequests(bidRequestWithSinglePlacement, bidderRequest);
@@ -210,12 +218,13 @@ describe('Adyoulike Adapter', function () {
     });
 
     it('sends bid request to endpoint with single placement', function () {
-      const request = spec.buildRequests(bidRequestWithSinglePlacement);
+      const request = spec.buildRequests(bidRequestWithSinglePlacement, bidderRequest);
       const payload = JSON.parse(request.data);
 
       expect(request.url).to.contain(getEndpoint());
       expect(request.method).to.equal('POST');
       expect(request.url).to.contains('CanonicalUrl=' + encodeURIComponent(canonicalUrl));
+      expect(request.url).to.contains('RefererUrl=' + encodeURIComponent(referrerUrl));
 
       expect(payload.Version).to.equal('1.0');
       expect(payload.Bids['bid_id_0'].PlacementID).to.be.equal('placement_0');
@@ -225,7 +234,7 @@ describe('Adyoulike Adapter', function () {
 
     it('sends bid request to endpoint with single placement without canonical', function () {
       canonicalQuery.restore();
-      const request = spec.buildRequests(bidRequestWithSinglePlacement);
+      const request = spec.buildRequests(bidRequestWithSinglePlacement, bidderRequest);
       const payload = JSON.parse(request.data);
 
       expect(request.url).to.contain(getEndpoint());
@@ -239,12 +248,13 @@ describe('Adyoulike Adapter', function () {
     });
 
     it('sends bid request to endpoint with multiple placements', function () {
-      const request = spec.buildRequests(bidRequestMultiPlacements);
+      const request = spec.buildRequests(bidRequestMultiPlacements, bidderRequest);
       const payload = JSON.parse(request.data);
       expect(request.url).to.contain(getEndpoint());
       expect(request.method).to.equal('POST');
 
       expect(request.url).to.contains('CanonicalUrl=' + encodeURIComponent(canonicalUrl));
+      expect(request.url).to.contains('RefererUrl=' + encodeURIComponent(referrerUrl));
 
       expect(payload.Version).to.equal('1.0');
 
@@ -259,7 +269,7 @@ describe('Adyoulike Adapter', function () {
     });
 
     it('sends bid request to endpoint setted by parameters', function () {
-      const request = spec.buildRequests(bidRequestWithDCPlacement);
+      const request = spec.buildRequests(bidRequestWithDCPlacement, bidderRequest);
       const payload = JSON.parse(request.data);
 
       expect(request.url).to.contain(getEndpoint(`${defaultDC}-fra01`));
