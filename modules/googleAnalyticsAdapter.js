@@ -262,6 +262,11 @@ function sendBidWonToGa(bid) {
   checkAnalytics();
 }
 
+/**
+ * Exposed for testing purposes
+ */
+adapter.getCpmDistribution = getCpmDistribution;
+
 adapterManager.registerAnalyticsAdapter({
   adapter,
   code: 'ga'
