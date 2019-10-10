@@ -98,7 +98,7 @@ function getHostname(bidderRequest) {
 function getReferrerUrl(bidderRequest) {
   let referer = '';
   if (bidderRequest && bidderRequest.refererInfo) {
-    referer = encodeURIComponent(bidderRequest.refererInfo.referer);
+    referer = bidderRequest.refererInfo.referer;
   }
   return referer;
 }
