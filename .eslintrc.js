@@ -1,12 +1,5 @@
 
-const sharedWhiteList = [
-  "core-js/library/fn/array/find", // no ie11
-  "core-js/library/fn/array/includes", // no ie11
-  "core-js/library/fn/set", // ie11 supports Set but not Set#values
-  "core-js/library/fn/string/includes", // no ie11
-  "core-js/library/fn/number/is-integer", // no ie11,
-  "core-js/library/fn/array/from" // no ie11
-];
+const allowedModules = require("./allowedModules");
 
 module.exports = {
   "env": {
@@ -45,23 +38,10 @@ module.exports = {
     "no-undef": "off",
     "no-useless-escape": "off",
   },
-  "overrides": [{
-    "files": "modules/**/*.js",
+  "overrides": Object.keys(allowedModules).map((key) => ({
+    "files": key + "/**/*.js",
     "rules": {
-      "prebid/validate-imports": ["error", [
-        ...sharedWhiteList,
-        "jsencrypt",
-        "crypto-js"
-      ]]
+      "prebid/validate-imports": ["error", allowedModules[key]]
     }
-  }, {
-    "files": "src/**/*.js",
-    "rules": {
-      "prebid/validate-imports": ["error", [
-        ...sharedWhiteList,
-        "fun-hooks/no-eval",
-        "just-clone"
-      ]]
-    }
-  }]
+  }))
 };
