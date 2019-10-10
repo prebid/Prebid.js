@@ -59,7 +59,6 @@ function wrapURI(uri, impUrl) {
  * @param {CacheableBid} bid
  */
 function toStorageRequest(bid) {
-  const conf = config.getConfig();
   const vastValue = bid.vastXml ? bid.vastXml : wrapURI(bid.vastUrl, bid.vastImpUrl);
 
   let payload = {
@@ -68,7 +67,7 @@ function toStorageRequest(bid) {
     ttlseconds: Number(bid.ttl)
   };
 
-  if (conf.cache && conf.cache.url && conf.cache.vasttrack) {
+  if (config.getConfig('cache.vasttrack')) {
     payload.bidder = bid.bidder;
     payload.bidid = bid.requestId;
   }
