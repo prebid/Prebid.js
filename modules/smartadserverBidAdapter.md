@@ -84,3 +84,29 @@ Please reach out to your Technical account manager for more information.
 		}
     ];
 ```
+
+## Instream Video
+```
+    var videoAdUnit = {
+        code: 'test-div',
+        mediaTypes: {
+            video: {
+                context: 'instream',
+                playerSize: [640, 480]
+            }
+        },
+        bids: [{
+            bidder: "smart",
+            params: {
+                domain: 'http://ww251.smartadserver.com',
+                siteId: 326147,
+                pageId: 1153895,
+                formatId: 55710
+                bidfloor: 5,
+                video: {
+                    protocol: 6
+                }
+            }
+        }]
+    };
+```

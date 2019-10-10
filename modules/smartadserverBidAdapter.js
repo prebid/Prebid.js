@@ -1,5 +1,9 @@
 import * as utils from '../src/utils';
 import {
+  BANNER,
+  VIDEO
+} from '../src/mediaTypes';
+import {
   config
 } from '../src/config';
 import {
@@ -9,7 +13,7 @@ const BIDDER_CODE = 'smartadserver';
 export const spec = {
   code: BIDDER_CODE,
   aliases: ['smart'], // short code
-  supportedMediaTypes: ['banner', 'video'],
+  supportedMediaTypes: [BANNER, VIDEO],
   /**
    * Determines whether or not the given bid request is valid.
    *
@@ -34,52 +38,61 @@ export const spec = {
 
     // pull requested transaction ID from bidderRequest.bids[].transactionId
     return validBidRequests.map(bid => {
+      // Common bid request attributes for banner, outstream and instream.
+      var payload = {
+        siteid: bid.params.siteId,
+        pageid: bid.params.pageId,
+        formatid: bid.params.formatId,
+        currencyCode: config.getConfig('currency.adServerCurrency'),
+        bidfloor: bid.params.bidfloor || 0.0,
+        targeting: bid.params.target && bid.params.target != '' ? bid.params.target : undefined,
+        buid: bid.params.buId && bid.params.buId != '' ? bid.params.buId : undefined,
+        appname: bid.params.appName && bid.params.appName != '' ? bid.params.appName : undefined,
+        ckid: bid.params.ckId || 0,
+        tagId: bid.adUnitCode,
+        pageDomain: utils.getTopWindowUrl(),
+        transactionId: bid.transactionId,
+        timeout: config.getConfig('bidderTimeout'),
+        bidId: bid.bidId,
+        prebidVersion: '$prebid.version$'
+      };
+
       const videoMediaType = utils.deepAccess(bid, 'mediaTypes.video');
-      const context = utils.deepAccess(bid, 'mediaTypes.video.context');
-
-      if (bid.mediaType !== 'video' || (videoMediaType && context === 'outstream')) {
+      if (!videoMediaType || (videoMediaType && videoMediaType.context === 'outstream')) {
+        // For banner and outstream, sizes are handled the same way.
         var sizes = [];
-
-        if (videoMediaType && context === 'outstream') {
+        if (videoMediaType && videoMediaType.context === 'outstream') {
           sizes = videoMediaType.playerSize;
         } else {
           sizes = bid.sizes;
         }
-
-        var payload = {
-          siteid: bid.params.siteId,
-          pageid: bid.params.pageId,
-          formatid: bid.params.formatId,
-          currencyCode: config.getConfig('currency.adServerCurrency'),
-          bidfloor: bid.params.bidfloor || 0.0,
-          targeting: bid.params.target && bid.params.target != '' ? bid.params.target : undefined,
-          buid: bid.params.buId && bid.params.buId != '' ? bid.params.buId : undefined,
-          appname: bid.params.appName && bid.params.appName != '' ? bid.params.appName : undefined,
-          ckid: bid.params.ckId || 0,
-          tagId: bid.adUnitCode,
-          sizes: sizes.map(size => ({
-            w: size[0],
-            h: size[1]
-          })),
-          pageDomain: utils.getTopWindowUrl(),
-          transactionId: bid.transactionId,
-          timeout: config.getConfig('bidderTimeout'),
-          bidId: bid.bidId,
-          prebidVersion: '$prebid.version$'
-        };
-
-        if (bidderRequest && bidderRequest.gdprConsent) {
-          payload.gdpr_consent = bidderRequest.gdprConsent.consentString;
-          payload.gdpr = bidderRequest.gdprConsent.gdprApplies; // we're handling the undefined case server side
-        }
-
-        var payloadString = JSON.stringify(payload);
-        return {
-          method: 'POST',
-          url: (bid.params.domain !== undefined ? bid.params.domain : 'https://prg.smartadserver.com') + '/prebid/v1',
-          data: payloadString,
+        payload.sizes = sizes.map(size => ({
+          w: size[0],
+          h: size[1]
+        }));
+      } else if (videoMediaType && videoMediaType.context === 'instream') {
+        // Specific attributes for instream.
+        var playerSize = videoMediaType.playerSize[0];
+        payload.isVideo = true;
+        payload.videoData = {
+          videoProtocol: bid.params.video.protocol,
+          playerWidth: playerSize[0],
+          playerHeight: playerSize[1],
+          adBreak: 0 // TODO
         };
       }
+
+      if (bidderRequest && bidderRequest.gdprConsent) {
+        payload.gdpr_consent = bidderRequest.gdprConsent.consentString;
+        payload.gdpr = bidderRequest.gdprConsent.gdprApplies; // we're handling the undefined case server side
+      }
+
+      var payloadString = JSON.stringify(payload);
+      return {
+        method: 'POST',
+        url: (bid.params.domain !== undefined ? bid.params.domain : 'https://prg.smartadserver.com') + '/prebid/v1',
+        data: payloadString,
+      };
     });
   },
   /**
@@ -93,7 +106,7 @@ export const spec = {
     var response = serverResponse.body;
     try {
       if (response) {
-        const bidResponse = {
+        var bidResponse = {
           requestId: JSON.parse(bidRequest.data).bidId,
           cpm: response.cpm,
           width: response.width,
@@ -103,10 +116,18 @@ export const spec = {
           currency: response.currency,
           netRevenue: response.isNetCpm,
           ttl: response.ttl,
-          referrer: utils.getTopWindowUrl(),
-          adUrl: response.adUrl,
-          ad: response.ad
+          referrer: utils.getTopWindowUrl()
         };
+
+        if (bidRequest.data.includes('videoData')) { // TODO : isVideo in response
+          bidResponse.mediaType = VIDEO;
+          bidResponse.vastUrl = response.adUrl;
+          bidResponse.vastXml = response.ad;
+        } else {
+          bidResponse.adUrl = response.adUrl;
+          bidResponse.ad = response.ad;
+        }
+
         bidResponses.push(bidResponse);
       }
     } catch (error) {
