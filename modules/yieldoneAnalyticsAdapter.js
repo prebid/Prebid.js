@@ -18,7 +18,7 @@ let currentAuctionId = '';
 let url = defaultUrl;
 let pubId = '';
 
-const AnalyticsAdapter = Object.assign(adapter({analyticsType}), {
+const yieldoneAnalytics = Object.assign(adapter({analyticsType}), {
   getUrl() { return url; },
   track({eventType, args = {}}) {
     if (eventType === CONSTANTS.EVENTS.BID_REQUESTED) {
@@ -30,7 +30,7 @@ const AnalyticsAdapter = Object.assign(adapter({analyticsType}), {
       });
     }
     if (eventType === CONSTANTS.EVENTS.BID_TIMEOUT && utils.isArray(args)) {
-      const eventsStorage = AnalyticsAdapter.eventsStorage;
+      const eventsStorage = yieldoneAnalytics.eventsStorage;
       const reqBidders = {};
       args.forEach((bid) => {
         const reqBidId = `${bid.bidId}_${bid.auctionId}`;
@@ -51,21 +51,15 @@ const AnalyticsAdapter = Object.assign(adapter({analyticsType}), {
       args.pubId = pubId;
       currentAuctionId = args.auctionId || currentAuctionId;
       if (currentAuctionId) {
-        const eventsStorage = AnalyticsAdapter.eventsStorage;
+        const eventsStorage = yieldoneAnalytics.eventsStorage;
         if (!eventsStorage[currentAuctionId]) eventsStorage[currentAuctionId] = [];
         const referrer = args.refererInfo && args.refererInfo.referer;
         if (referrer && referrers[currentAuctionId] !== referrer) {
           referrers[currentAuctionId] = referrer;
-          eventsStorage[currentAuctionId].forEach((it) => {
-            it.page = {url: referrers[currentAuctionId]};
-          });
         }
         eventsStorage[currentAuctionId].push({
           eventType,
-          params: args,
-          page: {
-            url: referrers[currentAuctionId]
-          }
+          params: args
         });
       }
     }
@@ -76,12 +70,17 @@ const AnalyticsAdapter = Object.assign(adapter({analyticsType}), {
         auctionManager.getAdUnitCodes(),
         auctionManager.getBidsReceived()
       );
-      AnalyticsAdapter.sendStat(AnalyticsAdapter.eventsStorage[args.auctionId], args.auctionId);
+      if (yieldoneAnalytics.eventsStorage[args.auctionId]) {
+        yieldoneAnalytics.eventsStorage[args.auctionId].forEach((it) => {
+          it.page = {url: referrers[currentAuctionId]};
+        });
+      }
+      yieldoneAnalytics.sendStat(yieldoneAnalytics.eventsStorage[args.auctionId], args.auctionId);
     }
   },
   sendStat(events, auctionId) {
     if (!events) return;
-    delete AnalyticsAdapter.eventsStorage[auctionId];
+    delete yieldoneAnalytics.eventsStorage[auctionId];
     ajax(
       url,
       {
@@ -96,13 +95,13 @@ const AnalyticsAdapter = Object.assign(adapter({analyticsType}), {
   }
 });
 
-AnalyticsAdapter.eventsStorage = {};
+yieldoneAnalytics.eventsStorage = {};
 
 // save the base class function
-AnalyticsAdapter.originEnableAnalytics = AnalyticsAdapter.enableAnalytics;
+yieldoneAnalytics.originEnableAnalytics = yieldoneAnalytics.enableAnalytics;
 
 // override enableAnalytics so we can get access to the config passed in from the page
-AnalyticsAdapter.enableAnalytics = function (config) {
+yieldoneAnalytics.enableAnalytics = function (config) {
   const options = config && config.options;
   if (options) {
     if (typeof options.url === 'string') {
@@ -112,10 +111,12 @@ AnalyticsAdapter.enableAnalytics = function (config) {
       pubId = options.pubId.toString();
     }
   }
-  AnalyticsAdapter.originEnableAnalytics(config); // call the base class function
+  yieldoneAnalytics.originEnableAnalytics(config); // call the base class function
 };
 
 adapterManager.registerAnalyticsAdapter({
-  adapter: AnalyticsAdapter,
+  adapter: yieldoneAnalytics,
   code: ANALYTICS_CODE
 });
+
+export default yieldoneAnalytics;
