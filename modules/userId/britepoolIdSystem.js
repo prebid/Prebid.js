@@ -1,7 +1,7 @@
 /**
  * This module adds BritePoolId to the User ID module
  * The {@link module:modules/userId} module is required
- * @module modules/unifiedIdSystem
+ * @module modules/britepoolIdSystem
  * @requires module:modules/userId
  */
 
@@ -22,9 +22,7 @@ export const britepoolIdSubmodule = {
    * @returns {{britepoolid:string}}
    */
   decode(value) {
-    return {
-      'britepoolid': value['primaryBPID']
-    }
+    return (value && typeof value['primaryBPID'] === 'string') ? { 'britepoolid': value['primaryBPID'] } : null;
   },
   /**
    * Performs action to obtain id and return a value in the callback's response argument
