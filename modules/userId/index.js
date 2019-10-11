@@ -76,9 +76,8 @@ import {getGlobal} from '../../src/prebidGlobal';
 import {gdprDataHandler} from '../../src/adapterManager';
 import CONSTANTS from '../../src/constants.json';
 import {module} from '../../src/hook';
-// import {unifiedIdSubmodule} from './unifiedIdSystem.js';
+import {unifiedIdSubmodule} from './unifiedIdSystem.js';
 import {pubCommonIdSubmodule} from './pubCommonIdSystem.js';
-// import {customIdSubmodule} from './customIdSystem.js';
 
 const MODULE_NAME = 'User ID';
 const COOKIE = 'cookie';
@@ -250,8 +249,8 @@ function initializeSubmodulesAndExecuteCallbacks() {
 
       if (submodulesWithCallbacks.length) {
         // wait for auction complete before processing submodule callbacks
-        events.on(CONSTANTS.EVENTS.REQUEST_BIDS, function auctionEndHandler() {
-          events.off(CONSTANTS.EVENTS.REQUEST_BIDS, auctionEndHandler);
+        events.on(CONSTANTS.EVENTS.AUCTION_END, function auctionEndHandler() {
+          events.off(CONSTANTS.EVENTS.AUCTION_END, auctionEndHandler);
 
           // when syncDelay is zero, process callbacks now, otherwise dealy process with a setTimeout
           if (syncDelay > 0) {
@@ -467,7 +466,6 @@ init(config);
 
 // add submodules after init has been called
 attachIdSystem(pubCommonIdSubmodule);
-// attachIdSystem(unifiedIdSubmodule);
-// attachIdSystem(customIdSubmodule);
+attachIdSystem(unifiedIdSubmodule);
 
 module('userId', attachIdSystem);

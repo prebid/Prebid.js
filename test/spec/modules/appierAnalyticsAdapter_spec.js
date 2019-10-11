@@ -608,7 +608,7 @@ describe('Appier Prebid AnalyticsAdapter Testing', function () {
       sinon.stub(appierAnalyticsAdapter, 'createBidMessage').returns({});
       sinon.spy(appierAnalyticsAdapter, 'createCreativeMessage');
       events.emit(constants.EVENTS.AUCTION_END, args);
-      // sinon.assert.callCount(appierAnalyticsAdapter.createCreativeMessage, 1);
+      sinon.assert.callCount(appierAnalyticsAdapter.createCreativeMessage, 1);
       appierAnalyticsAdapter.sendEventMessage.restore();
       appierAnalyticsAdapter.createBidMessage.restore();
       appierAnalyticsAdapter.createCreativeMessage.restore();
