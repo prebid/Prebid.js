@@ -634,10 +634,34 @@ function _handleTTDId(eids, validBidRequests) {
   }
 }
 
+/**
+ * Produces external userid object in ortb 3.0 model.
+ */
+function _addExternalUserId(eids, value, source, atype) {
+  if (utils.isStr(value)) {
+    eids.push({
+      source,
+      uids: [{
+        id: value,
+        atype
+      }]
+    });
+  }
+}
+
 function _handleEids(payload, validBidRequests) {
   let eids = [];
   _handleDigitrustId(eids);
   _handleTTDId(eids, validBidRequests);
+  const bidRequest = validBidRequests[0];
+  if (bidRequest && bidRequest.userId) {
+    _addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.pubcid`), 'pubcommon', 1);
+    _addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.digitrustid.data.id`), 'digitru.st', 1);
+    _addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.id5id`), 'id5-sync.com', 1);
+    _addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.criteortus.${BIDDER_CODE}.userid`), 'criteortus', 1);
+    _addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.idl_env`), 'liveramp.com', 1);
+    _addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.customData`), 'customData', 1);
+  }
   if (eids.length > 0) {
     payload.user.eids = eids;
   }
@@ -941,7 +965,7 @@ export const spec = {
             netRevenue: NET_REVENUE,
             cpm: 0,
             currency: respCur,
-            referrer: requestData.site && requestData.site.ref ? requestData.site.ref : '',
+            referrer: parsedReferrer,
           })
         });
       }
@@ -963,7 +987,7 @@ export const spec = {
                   br.currency = respCur;
                   br.netRevenue = NET_REVENUE;
                   br.ttl = 300;
-                  br.referrer = requestData.site && requestData.site.ref ? requestData.site.ref : '';
+                  br.referrer = parsedReferrer;
                   br.ad = bid.adm;
                   if (requestData.imp && requestData.imp.length > 0) {
                     requestData.imp.forEach(req => {
