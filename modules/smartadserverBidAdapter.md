@@ -104,7 +104,8 @@ Please reach out to your Technical account manager for more information.
                 formatId: 55710
                 bidfloor: 5,
                 video: {
-                    protocol: 6
+                    protocol: 6,
+                    startDelay: 0
                 }
             }
         }]

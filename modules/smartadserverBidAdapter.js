@@ -78,7 +78,7 @@ export const spec = {
           videoProtocol: bid.params.video.protocol,
           playerWidth: playerSize[0],
           playerHeight: playerSize[1],
-          adBreak: 0 // TODO
+          adBreak: bid.params.video.startDelay || 0
         };
       }
 
@@ -101,13 +101,15 @@ export const spec = {
    * @param {*} serverResponse A successful response from the server.
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
-  interpretResponse: function (serverResponse, bidRequest) {
+  interpretResponse: function (serverResponse, bidRequestString) {
     const bidResponses = [];
     var response = serverResponse.body;
     try {
       if (response) {
+        const bidRequest = JSON.parse(bidRequestString.data);
+
         var bidResponse = {
-          requestId: JSON.parse(bidRequest.data).bidId,
+          requestId: bidRequest.bidId,
           cpm: response.cpm,
           width: response.width,
           height: response.height,
@@ -119,7 +121,7 @@ export const spec = {
           referrer: utils.getTopWindowUrl()
         };
 
-        if (bidRequest.data.includes('videoData')) { // TODO : isVideo in response
+        if (bidRequest.isVideo) {
           bidResponse.mediaType = VIDEO;
           bidResponse.vastUrl = response.adUrl;
           bidResponse.vastXml = response.ad;
