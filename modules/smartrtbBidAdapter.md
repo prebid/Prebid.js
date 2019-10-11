@@ -9,6 +9,7 @@ Maintainer: evanm@smrtb.com
 # Description
 
 Prebid adapter for Smart RTB. Requires approval and account setup.
+Video is supported but requires a publisher supplied adunit renderer at this time.
 
 # Test Parameters
 
@@ -21,7 +22,7 @@ Prebid adapter for Smart RTB. Requires approval and account setup.
                    banner: {
                        sizes: [[300,250]]
                    },
-                   video: {
+                   video: { /* requires publisher supplied renderer */
                        context: 'outstream',
                        playerDimension: [640, 480]
                    }
