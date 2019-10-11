@@ -193,7 +193,7 @@ function buildContext(bidRequests, bidderRequest) {
     if (bidRequest.params.integrationMode === 'amp') {
       context.amp = true;
     }
-  })
+  });
 
   return context;
 }
@@ -361,22 +361,22 @@ function hasValidVideoMediaType(bidRequest) {
  */
 function createNativeAd(id, payload, callback) {
   // Store the callback and payload in a global object to be later accessed from the creative
-  window.criteo_prebid_native_slots = window.criteo_prebid_native_slots || {};
-  window.criteo_prebid_native_slots[id] = { callback, payload };
+  var slotsName = 'criteo_prebid_native_slots';
+  window[slotsName] = window[slotsName] || {};
+  window[slotsName][id] = { callback, payload };
 
   // The creative is in an iframe so we have to get the callback and payload
   // from the parent window (doesn't work with safeframes)
-  return `<script type="text/javascript">
-    var win = window;
-    for (var i = 0; i < 10; ++i) {
-      win = win.parent;
-      if (win.criteo_prebid_native_slots) {
-        var responseSlot = win.criteo_prebid_native_slots["${id}"];
-        responseSlot.callback(responseSlot.payload);
-        break;
-      }
-    }
-  </script>`;
+  return `
+<script type="text/javascript">
+for (var i = 0; i < 10; ++i) {
+ var slots = window.parent.${slotsName};
+  if(!slots){continue;}
+  var responseSlot = slots["${id}"];
+  responseSlot.callback(responseSlot.payload);
+  break;
+}
+</script>`;
 }
 
 /**
@@ -403,7 +403,10 @@ export function tryGetCriteoFastBid() {
 
         if (verify(publisherTag, publisherTagHash, FAST_BID_PUBKEY_N, FAST_BID_PUBKEY_E)) {
           utils.logInfo('Using Criteo FastBid');
-          eval(publisherTag); // eslint-disable-line no-eval
+          const script = document.createElement('script');
+          script.type = 'text/javascript';
+          script.text = publisherTag;
+          utils.insertElement(script);
         } else {
           utils.logWarn('Invalid Criteo FastBid found');
           localStorage.removeItem(fastBidStorageKey);
