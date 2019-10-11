@@ -26,8 +26,11 @@ describe('Adyoulike Adapter', function () {
       'placementCode': 'adunit/hb-0',
       'params': {},
       'sizes': '300x250',
-      'mediaTypes': { 'banner' : {'sizes': ['300x250', '300x600']}}
-
+      'mediaTypes':
+        { 'banner':
+          {'sizes': ['300x250', '300x600']
+          }
+        }
     }
   ];
   const bidRequestWithEmptySizes = {
@@ -53,7 +56,11 @@ describe('Adyoulike Adapter', function () {
         'placement': 'placement_0'
       },
       'sizes': '300x250',
-      'mediaTypes': { 'banner' : {'sizes': ['300x250', '300x600']}},
+      'mediaTypes':
+        { 'banner':
+          {'sizes': ['300x250']
+          }
+        },
       'transactionId': 'bid_id_0_transaction_id'
     }
   ];
@@ -68,7 +75,11 @@ describe('Adyoulike Adapter', function () {
         'DC': 'fra01'
       },
       'sizes': '300x250',
-      'mediaTypes': { 'banner' : {'sizes': ['300x250', '300x600']}},
+      'mediaTypes':
+        { 'banner':
+          {'sizes': ['300x250']
+          }
+        },
       'transactionId': 'bid_id_0_transaction_id'
     }
   ];
@@ -82,7 +93,11 @@ describe('Adyoulike Adapter', function () {
         'placement': 'placement_0'
       },
       'sizes': '300x250',
-      'mediaTypes': { 'banner' : {'sizes': ['300x250', '300x600']}},
+      'mediaTypes':
+        { 'banner':
+          {'sizes': ['300x250']
+          }
+        },
       'transactionId': 'bid_id_0_transaction_id'
     },
     {
@@ -93,7 +108,11 @@ describe('Adyoulike Adapter', function () {
         'placement': 'placement_1'
       },
       'sizes': [[300, 600]],
-      'mediaTypes': { 'banner' : {'sizes': [[300, 250], [300, 600]]}},
+      'mediaTypes':
+        { 'banner':
+          {'sizes': ['300x600']
+          }
+        },
       'transactionId': 'bid_id_1_transaction_id'
     },
     {
