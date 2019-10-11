@@ -338,7 +338,6 @@ describe('Smart bid adapter tests', function () {
         }
       },
       params: {
-        domain: 'http://prg.smartadserver.com',
         siteId: '1234',
         pageId: '5678',
         formatId: '90',
@@ -377,7 +376,7 @@ describe('Smart bid adapter tests', function () {
         }
       });
       const request = spec.buildRequests(INSTREAM_DEFAULT_PARAMS);
-      expect(request[0]).to.have.property('url').and.to.equal('http://prg.smartadserver.com/prebid/v1');
+      expect(request[0]).to.have.property('url').and.to.equal('https://prg.smartadserver.com/prebid/v1');
       expect(request[0]).to.have.property('method').and.to.equal('POST');
       const requestContent = JSON.parse(request[0].data);
       expect(requestContent).to.have.property('siteid').and.to.equal('1234');
@@ -414,11 +413,11 @@ describe('Smart bid adapter tests', function () {
       expect(bid.currency).to.equal('GBP');
       expect(bid.netRevenue).to.equal(true);
       expect(bid.ttl).to.equal(300);
-      expect(bid.requestId).to.equal(DEFAULT_PARAMS[0].bidId);
+      expect(bid.requestId).to.equal(INSTREAM_DEFAULT_PARAMS[0].bidId);
       expect(bid.referrer).to.equal(utils.getTopWindowUrl());
 
       expect(function () {
-        spec.interpretResponse(BID_RESPONSE, {
+        spec.interpretResponse(INSTREAM_BID_RESPONSE, {
           data: 'invalid Json'
         })
       }).to.not.throw();
