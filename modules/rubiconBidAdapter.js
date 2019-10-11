@@ -489,6 +489,10 @@ export const spec = {
             height: bid.h || utils.deepAccess(bidRequest, 'mediaTypes.video.h') || utils.deepAccess(bidRequest, 'params.video.playerHeight'),
           };
 
+          if (bid.id) {
+            bidObject.seatBidId = bid.id;
+          }
+
           if (bid.dealid) {
             bidObject.dealId = bid.dealid;
           }
