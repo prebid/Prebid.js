@@ -159,7 +159,6 @@ describe('The video cache', function () {
       JSON.parse(request.requestBody).should.deep.equal(payload);
     });
 
-    // it('“if vasttrack is set to true in config, additional parameters should be included in request', () => {
     it('should include additional params in request payload should config.cache.vasttrack be true', () => {
       config.setConfig({
         cache: {
