@@ -1,6 +1,5 @@
 import { expect } from 'chai';
 import {config} from 'src/config';
-
 import * as utils from 'src/utils';
 import { init, requestBidsHook, setSubmoduleRegistry } from 'modules/userId/index.js';
 import { parrableIdSubmodule } from 'modules/parrableIdSystem';
