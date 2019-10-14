@@ -1660,7 +1660,43 @@ describe('PubMatic adapter', function () {
             expect(data.user.eids).to.equal(undefined);
           });
         });
-      })
+
+        describe('LiveIntent Id', function() {
+          it('send the LiveIntent id if it is present', function() {
+            bidRequests[0].userId = {};
+            bidRequests[0].userId.lipb = { lipbid: 'live-intent-user-id' };
+            let request = spec.buildRequests(bidRequests, {});
+            let data = JSON.parse(request.data);
+            expect(data.user.eids).to.deep.equal([{
+              'source': 'liveIntent',
+              'uids': [{
+                'id': 'live-intent-user-id',
+                'atype': 1
+              }]
+            }]);
+          });
+
+          it('do not pass if not string', function() {
+            bidRequests[0].userId = {};
+            bidRequests[0].userId.lipb = { lipbid: 1 };
+            let request = spec.buildRequests(bidRequests, {});
+            let data = JSON.parse(request.data);
+            expect(data.user.eids).to.equal(undefined);
+            bidRequests[0].userId.lipb.lipbid = [];
+            request = spec.buildRequests(bidRequests, {});
+            data = JSON.parse(request.data);
+            expect(data.user.eids).to.equal(undefined);
+            bidRequests[0].userId.lipb.lipbid = null;
+            request = spec.buildRequests(bidRequests, {});
+            data = JSON.parse(request.data);
+            expect(data.user.eids).to.equal(undefined);
+            bidRequests[0].userId.lipb.lipbid = {};
+            request = spec.buildRequests(bidRequests, {});
+            data = JSON.parse(request.data);
+            expect(data.user.eids).to.equal(undefined);
+          });
+        });
+      });
 
       it('Request params check for video ad', function () {
         let request = spec.buildRequests(videoBidRequests);
