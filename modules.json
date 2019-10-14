@@ -22,8 +22,6 @@
     "komoonaBidAdapter",
     "lockerdomeBidAdapter",
     "mantisBidAdapter",
-    "onedisplayBidAdapter",
-    "onemobileBidAdapter",
     "openxBidAdapter",
     "prebidServerBidAdapter",
     "pubCommonId",
