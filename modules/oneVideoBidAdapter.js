@@ -21,14 +21,8 @@ export const spec = {
     }
 
     // Video validations
-    if (typeof bid.params.video === 'undefined' && typeof bid.params.banner === 'undefined') {
+    if (typeof bid.params.video === 'undefined' || typeof bid.params.video.playerWidth === 'undefined' || typeof bid.params.video.playerHeight == 'undefined' || typeof bid.params.video.mimes == 'undefined') {
       return false;
-    }
-
-    if (typeof bid.params.banner === 'undefined') {
-      if (typeof bid.params.video === 'undefined' || typeof bid.params.video.playerWidth === 'undefined' || typeof bid.params.video.playerHeight == 'undefined' || typeof bid.params.video.mimes == 'undefined') {
-        return false;
-      }
     }
 
     // Pub Id validation
@@ -168,7 +162,7 @@ function getRequestData(bid, consentData) {
     tmax: 200
   };
 
-  if (bid.params.video) {
+  if (bid.params.video.display == undefined || bid.params.video.display == 0) {
     bidData.imp[0].video = {
       mimes: bid.params.video.mimes,
       w: bid.params.video.playerWidth,
@@ -218,15 +212,14 @@ function getRequestData(bid, consentData) {
         }
       }
     }
-  } else if (bid.params.banner) {
+  } else if (bid.params.video.display) {
     bidData.imp[0].banner = {
-      mimes: bid.params.banner.mimes,
-      w: bid.params.banner.playerWidth,
-      h: bid.params.banner.playerHeight,
-      pos: bid.params.banner.position,
+      mimes: bid.params.video.mimes,
+      w: bid.params.video.playerWidth,
+      h: bid.params.video.playerHeight,
+      pos: bid.params.video.position,
     };
   }
-
   if (isConsentRequired(consentData)) {
     bidData.regs = {
       ext: {
