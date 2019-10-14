@@ -388,7 +388,7 @@ function sendTrackRequest(trackData) {
   try {
     ajax(
       fntzAnalyticsAdapter.context.host,
-      null, // Callback
+      null,
       trackData,
       {
         method: 'GET',
