@@ -636,6 +636,8 @@ const OPEN_RTB_PROTOCOL = {
             bidObject.adserverTargeting = extPrebidTargeting;
           }
 
+          bidObject.seatBidId = bid.id;
+
           if (utils.deepAccess(bid, 'ext.prebid.type') === VIDEO) {
             bidObject.mediaType = VIDEO;
             let sizes = bidRequest.sizes && bidRequest.sizes[0];
