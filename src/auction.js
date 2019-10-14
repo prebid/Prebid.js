@@ -9,14 +9,14 @@
  */
 
 /**
- * @typedef {Object} AdUnit An object containing the adUnit configuration.
- *
- * @property {string} code A code which will be used to uniquely identify this bidder. This should be the same
- *   one as is used in the call to registerBidAdapter
- * @property {Array.<size>} sizes A list of size for adUnit.
- * @property {object} params Any bidder-specific params which the publisher used in their bid request.
- *   This is guaranteed to have passed the spec.areParamsValid() test.
- */
+  * @typedef {Object} AdUnit An object containing the adUnit configuration.
+  *
+  * @property {string} code A code which will be used to uniquely identify this bidder. This should be the same
+  *   one as is used in the call to registerBidAdapter
+  * @property {Array.<size>} sizes A list of size for adUnit.
+  * @property {object} params Any bidder-specific params which the publisher used in their bid request.
+  *   This is guaranteed to have passed the spec.areParamsValid() test.
+  */
 
 /**
  * @typedef {Array.<number>} size
@@ -81,14 +81,14 @@ const sourceInfo = {};
 const queuedCalls = [];
 
 /**
- * Creates new auction instance
- *
- * @param {Object} requestConfig
- * @param {AdUnit} requestConfig.adUnits
- * @param {AdUnitCode} requestConfig.adUnitCode
- *
- * @returns {Auction} auction instance
- */
+  * Creates new auction instance
+  *
+  * @param {Object} requestConfig
+  * @param {AdUnit} requestConfig.adUnits
+  * @param {AdUnitCode} requestConfig.adUnitCode
+  *
+  * @returns {Auction} auction instance
+  */
 export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, auctionId}) {
   let _adUnits = adUnits;
   let _labels = labels;
@@ -106,9 +106,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
   let _winningBids = [];
   let _timelyBidders = new Set();
 
-  function addBidRequests(bidderRequests) {
-    _bidderRequests = _bidderRequests.concat(bidderRequests);
-  }
+  function addBidRequests(bidderRequests) { _bidderRequests = _bidderRequests.concat(bidderRequests) };
   function addBidReceived(bidsReceived) { _bidsReceived = _bidsReceived.concat(bidsReceived); }
   function addNoBid(noBid) { _noBids = _noBids.concat(noBid); }
 
@@ -199,7 +197,6 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
 
     let bidRequests = adapterManager.makeBidRequests(_adUnits, _auctionStart, _auctionId, _timeout, _labels);
     utils.logInfo(`Bids Requested for Auction with id: ${_auctionId}`, bidRequests);
-
     bidRequests.forEach(bidRequest => {
       addBidRequest.call({
         dispatch: addBidRequests,
@@ -417,7 +414,8 @@ function tryAddVideoBid(auctionInstance, bidResponse, bidRequests, afterBidAdded
   let addBid = true;
 
   const bidderRequest = getBidRequest(bidResponse.requestId, [bidRequests]);
-  const videoMediaType = bidderRequest && deepAccess(bidderRequest, 'mediaTypes.video');
+  const videoMediaType =
+  bidderRequest && deepAccess(bidderRequest, 'mediaTypes.video');
   const context = videoMediaType && deepAccess(videoMediaType, 'context');
 
   if (config.getConfig('cache.url') && context !== OUTSTREAM) {

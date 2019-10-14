@@ -180,7 +180,7 @@ export const spec = {
         data.imp[0].bidfloor = bidFloor;
       }
       // if value is set, will overwrite with same value
-      data.imp[0].ext.rubicon.video.size_id = determineRubiconVideoSizeId(bidRequest);
+      data.imp[0].ext.rubicon.video.size_id = determineRubiconVideoSizeId(bidRequest)
 
       // if storedAuctionResponse has been set, pass SRID
       if (bidRequest.storedAuctionResponse) {
