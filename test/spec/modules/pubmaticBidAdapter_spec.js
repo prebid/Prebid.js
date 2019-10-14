@@ -1668,7 +1668,7 @@ describe('PubMatic adapter', function () {
             let request = spec.buildRequests(bidRequests, {});
             let data = JSON.parse(request.data);
             expect(data.user.eids).to.deep.equal([{
-              'source': 'liveIntent',
+              'source': 'liveintent.com',
               'uids': [{
                 'id': 'live-intent-user-id',
                 'atype': 1
