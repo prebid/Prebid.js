@@ -2,7 +2,7 @@ import {registerBidder} from '../src/adapters/bidderFactory';
 import {BANNER} from '../src/mediaTypes';
 import * as utils from '../src/utils';
 const BIDDER_CODE = 'deepintent';
-const BIDDER_ENDPOINT = 'https://useast-x.deepintent.com/prebid';
+const BIDDER_ENDPOINT = 'https://prebid.deepintent.com/prebid';
 const USER_SYNC_URL = 'https://beacon.deepintent.com/usersync.html';
 
 export const spec = {
