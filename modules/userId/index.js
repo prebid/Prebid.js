@@ -71,6 +71,8 @@
  * @property {(boolean|undefined)} create - create id if missing.  default is true.
  * @property {(boolean|undefined)} extend - extend expiration time on each access.  default is false.
  * @property {(string|undefined)} pid - placement id url param value
+ * @property {(string|undefined)} publisherId - the unique identifier of the publisher in question
+ * @property {(array|undefined)} identifiersToResolve - the identifiers from either ls|cookie to be attached to the getId query
  */
 
 /**
