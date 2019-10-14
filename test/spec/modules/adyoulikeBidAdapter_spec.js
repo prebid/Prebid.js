@@ -134,6 +134,33 @@ describe('Adyoulike Adapter', function () {
     }
   ];
 
+  const requestDataOnePlacement = {
+    'bid_id_0':
+    { 'PlacementID': 'e622af275681965d3095808561a1e510',
+      'TransactionID': '1bca18cc-c0fe-439b-88c2-8247d3448f22',
+      'Width': 300,
+      'Height': 600,
+      'AvailableSizes': '300x600'
+    }
+  }
+
+  const requestDataMultiPlacement = {
+    'bid_id_0':
+    { 'PlacementID': 'e622af275681965d3095808561a1e510',
+      'TransactionID': '1bca18cc-c0fe-439b-88c2-8247d3448f22',
+      'Width': 300,
+      'Height': 600,
+      'AvailableSizes': '300x600'
+    },
+    'bid_id_1':
+    { 'PlacementID': 'e622af275681965d3095808561a1e510',
+      'TransactionID': 'e63b2d86-ca60-4167-9cf1-497607079634',
+      'Width': 400,
+      'Height': 250,
+      'AvailableSizes': '300x250'
+    }
+  }
+
   const responseWithEmptyPlacement = [
     {
       'Placement': 'placement_0'
@@ -145,8 +172,7 @@ describe('Adyoulike Adapter', function () {
       'Placement': 'placement_0',
       'Ad': 'placement_0',
       'Price': 0.5,
-      'Height': 300,
-      'Width': 300,
+      'Height': 600,
     }
   ];
   const responseWithMultiplePlacements = [
@@ -155,16 +181,16 @@ describe('Adyoulike Adapter', function () {
       'Placement': 'placement_0',
       'Ad': 'placement_0',
       'Price': 0.5,
-      'Height': 300,
-      'Width': 300,
+      'Height': 0, // test with wrong value
+      'Width': 300
     },
     {
       'BidID': 'bid_id_1',
       'Placement': 'placement_1',
       'Ad': 'placement_1',
       'Price': 0.6,
-      'Height': 300,
-      'Width': 300,
+      'Height': 250
+      // 'Width'  test with missing value
     }
   ];
   const adapter = newBidder(spec);
@@ -317,30 +343,30 @@ describe('Adyoulike Adapter', function () {
 
     it('receive reponse with single placement', function () {
       serverResponse.body = responseWithSinglePlacement;
-      let result = spec.interpretResponse(serverResponse, bidRequestWithSinglePlacement);
+      let result = spec.interpretResponse(serverResponse, {data: '{"Bids":' + JSON.stringify(requestDataOnePlacement) + '}'});
 
       expect(result.length).to.equal(1);
       expect(result[0].cpm).to.equal(0.5);
       expect(result[0].ad).to.equal('placement_0');
       expect(result[0].width).to.equal(300);
-      expect(result[0].height).to.equal(300);
+      expect(result[0].height).to.equal(600);
     });
 
     it('receive reponse with multiple placement', function () {
       serverResponse.body = responseWithMultiplePlacements;
-      let result = spec.interpretResponse(serverResponse, bidRequestMultiPlacements);
+      let result = spec.interpretResponse(serverResponse, {data: '{"Bids":' + JSON.stringify(requestDataMultiPlacement) + '}'});
 
       expect(result.length).to.equal(2);
 
       expect(result[0].cpm).to.equal(0.5);
       expect(result[0].ad).to.equal('placement_0');
       expect(result[0].width).to.equal(300);
-      expect(result[0].height).to.equal(300);
+      expect(result[0].height).to.equal(600);
 
       expect(result[1].cpm).to.equal(0.6);
       expect(result[1].ad).to.equal('placement_1');
-      expect(result[1].width).to.equal(300);
-      expect(result[1].height).to.equal(300);
+      expect(result[1].width).to.equal(400);
+      expect(result[1].height).to.equal(250);
     });
   });
 });
