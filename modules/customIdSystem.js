@@ -19,10 +19,10 @@ export const customIdSubmodule = {
    * decode the stored id value for passing to bid requests
    * @function
    * @param {string} value
-   * @returns {{customData:string}}
+   * @returns {{firstpartyid:string}}
    */
   decode(value) {
-    return { 'customData': value }
+    return { 'firstpartyid': value }
   },
 
   getDataFromCookieName: function (e) {
@@ -38,7 +38,7 @@ export const customIdSubmodule = {
     if (typeof fn == 'function') {
       data = fn();
     } else {
-      utils.logError('User ID - customData submodule: Provided functionName is not a function or not accessible')
+      utils.logError('User ID - FirstPartyId submodule: Provided functionName is not a function or not accessible')
     }
     return data;
   },
@@ -60,7 +60,7 @@ export const customIdSubmodule = {
       } catch (e) {}
       return dta;
     }
-    utils.logError('User ID - customData submodule requires either data or cookie name to be defined');
+    utils.logError('User ID - FirstPartyId submodule requires either data or cookie name to be defined');
   }
 };
 
