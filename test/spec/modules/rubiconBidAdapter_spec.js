@@ -172,6 +172,11 @@ describe('the rubicon adapter', function () {
       'playerWidth': 640,
       'size_id': 201,
     };
+    bid.userId = {
+      lipb: {
+        lipbid: '0000-1111-2222-3333'
+      }
+    }
   }
 
   function createVideoBidderRequestNoVideo() {
@@ -1148,6 +1153,8 @@ describe('the rubicon adapter', function () {
           expect(imp.ext.rubicon.video.skip).to.equal(1);
           expect(imp.ext.rubicon.video.skipafter).to.equal(15);
           expect(post.user.ext.consent).to.equal('BOJ/P2HOJ/P2HABABMAAAAAZ+A==');
+          expect(post.user.ext.eids[0].source).to.equal('liveintent.com');
+          expect(post.user.ext.eids[0].uids[0].id).to.equal('0000-1111-2222-3333');
           expect(post.regs.ext.gdpr).to.equal(1);
           expect(post).to.have.property('ext').that.is.an('object');
           expect(post.ext.prebid.targeting.includewinners).to.equal(true);

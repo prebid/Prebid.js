@@ -237,7 +237,7 @@ export const spec = {
 
         if (bidRequest.userId.lipb && bidRequest.userId.lipb.lipbid) {
           data.user.ext.eids.push({
-            source: 'liveIntent',
+            source: 'liveintent.com',
             uids: [{
               id: bidRequest.userId.lipb.lipbid
             }]
