@@ -370,8 +370,6 @@ function initSubmodules(submodules, consentData) {
     return [];
   }
 
-  const submodulesThatAlwaysRefresh = ['parrableId'];
-
   return submodules.reduce((carry, submodule) => {
     // There are two submodule configuration types to handle: storage or value
     // 1. storage: retrieve user id data from cookie/html storage or with the submodule's getId method
@@ -384,10 +382,6 @@ function initSubmodules(submodules, consentData) {
       if (typeof submodule.config.storage.refreshInSeconds === 'number') {
         const storedDate = new Date(getStoredValue(submodule.config.storage, 'last'));
         refreshNeeded = storedDate && (Date.now() - storedDate.getTime() > submodule.config.storage.refreshInSeconds * 1000);
-      }
-
-      if (submodulesThatAlwaysRefresh.indexOf(submodule.config.name) !== -1) {
-        refreshNeeded = true;
       }
 
       if (!storedId || refreshNeeded) {
