@@ -733,7 +733,7 @@ const OPEN_RTB_PROTOCOL = {
 
       if (bidUserId.lipb && bidUserId.lipb.lipbid) {
         request.user.ext.eids.push({
-          source: 'liveIntent',
+          source: 'liveintent.com',
           uids: [{
             id: bidUserId.lipb.lipbid
           }]

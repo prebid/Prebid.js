@@ -1062,6 +1062,8 @@ describe('S2S Adapter', function () {
       expect(requestBid.user.ext.eids.filter(eid => eid.source === 'parrable.com')[0].uids[0].id).is.equal('01.1563917337.test-eid');
       expect(requestBid.user.ext.eids.filter(eid => eid.source === 'liveIntent')).is.not.empty;
       expect(requestBid.user.ext.eids.filter(eid => eid.source === 'liveIntent')[0].uids[0].id).is.equal('li-xyz');
+      expect(requestBid.user.ext.eids.filter(eid => eid.source === 'liveintent.com')).is.not.empty;
+      expect(requestBid.user.ext.eids.filter(eid => eid.source === 'liveintent.com')[0].uids[0].id).is.equal('li-xyz');
     });
 
     it('when config \'currency.adServerCurrency\' value is an array: ORTB has property \'cur\' value set to a single item array', function () {
