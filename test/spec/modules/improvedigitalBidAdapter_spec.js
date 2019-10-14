@@ -193,6 +193,15 @@ describe('Improve Digital Adapter Tests', function () {
       expect(params.bid_request.referrer).to.equal('https://blah.com/test.html');
     });
 
+    it('should add schain', function () {
+      const schain = '{"ver":"1.0","complete":1,"nodes":[{"asi":"headerlift.com","sid":"xyz","hp":1}]}';
+      const bidRequest = Object.assign({}, simpleBidRequest);
+      bidRequest.schain = schain;
+      const request = spec.buildRequests([bidRequest], bidderRequestReferrer)[0];
+      const params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
+      expect(params.bid_request.schain).to.equal(schain);
+    });
+
     it('should return 2 requests', function () {
       const requests = spec.buildRequests([
         simpleBidRequest,

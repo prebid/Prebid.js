@@ -3,7 +3,8 @@
     "digiTrustIdSystem",
     "id5IdSystem",
     "criteortusIdSystem",
-    "parrableIdSystem"
+    "parrableIdSystem",
+    "liveIntentIdSystem"
   ],
   "adpod": [
     "freeWheelAdserverVideo",
