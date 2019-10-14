@@ -211,7 +211,7 @@ export const spec = {
       }
 
       if (bidRequest.userId && typeof bidRequest.userId === 'object' &&
-        (bidRequest.userId.tdid || bidRequest.userId.pubcid)) {
+        (bidRequest.userId.tdid || bidRequest.userId.pubcid || bidRequest.userId.lipb)) {
         utils.deepSetValue(data, 'user.ext.eids', []);
 
         if (bidRequest.userId.tdid) {
@@ -231,6 +231,15 @@ export const spec = {
             source: 'pubcommon',
             uids: [{
               id: bidRequest.userId.pubcid,
+            }]
+          });
+        }
+
+        if (bidRequest.userId.lipb && bidRequest.userId.lipb.lipbid) {
+          data.user.ext.eids.push({
+            source: 'liveIntent',
+            uids: [{
+              id: bidRequest.userId.lipb.lipbid
             }]
           });
         }
