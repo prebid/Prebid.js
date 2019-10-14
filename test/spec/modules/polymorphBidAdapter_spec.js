@@ -3,7 +3,7 @@ import { polymorphAdapterSpec } from 'modules/polymorphBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
 
 const BIDDER_CODE = 'polymorph';
-const ENDPOINT_URL = '//api.adsnative.com/v1/ad-template.json';
+const ENDPOINT_URL = 'https://api.adsnative.com/v1/ad-template.json';
 const PLACEMENT_ID = 'ping';
 const NETWORK_KEY = 'abcd1234';
 const WIDGET_ID = 'xyz';

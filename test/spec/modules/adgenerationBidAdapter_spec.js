@@ -7,7 +7,7 @@ import prebid from '../../../package.json';
 
 describe('AdgenerationAdapter', function () {
   const adapter = newBidder(spec);
-  const ENDPOINT = ['http://api-test.scaleout.jp/adsv/v1', 'https://d.socdm.com/adsv/v1'];
+  const ENDPOINT = ['https://api-test.scaleout.jp/adsv/v1', 'https://d.socdm.com/adsv/v1'];
 
   describe('inherited functions', function () {
     it('exists and is a function', function () {
