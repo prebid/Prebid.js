@@ -44,22 +44,22 @@ function getUniqId() {
 
   let isUniqFromLS;
   let uniq = cookies[ UNIQ_ID_KEY ];
-  if ( !uniq ) {
+  if (!uniq) {
     try {
-      if ( window.localStorage ) {
-        uniq = window.localStorage.getItem( UNIQ_ID_KEY ) || "";
+      if (window.localStorage) {
+        uniq = window.localStorage.getItem(UNIQ_ID_KEY) || '';
         isUniqFromLS = true;
       }
-    } catch(b) {}
+    } catch (b) {}
   }
 
-  if ( uniq && isNaN( uniq ) ) {
+  if (uniq && isNaN(uniq)) {
     uniq = null;
   }
 
-  if ( uniq && isUniqFromLS ) {
+  if (uniq && isUniqFromLS) {
     let expires = new Date();
-    expires.setFullYear( expires.getFullYear() + 10 );
+    expires.setFullYear(expires.getFullYear() + 10);
 
     try {
       document.cookie = UNIQ_ID_KEY + '=' + uniq + '; path=/; expires=' + expires.toUTCString();
@@ -306,7 +306,7 @@ function prepareBidResponseParams(args) {
     event: encodeURIComponent(replaceBidder(fntzAnalyticsAdapter.context.bidResponsePriceTrack, args.bidderCode)),
     value: args.cpm,
     unit: 'usd'
-  },{
+  }, {
     event: encodeURIComponent(replaceBidder(fntzAnalyticsAdapter.context.bidResponseTimeTrack, args.bidderCode)),
     value: args.timeToRespond,
     unit: 'ms'
@@ -367,7 +367,7 @@ function prepareTrackData(evtype, args) {
       ac: getAntiCacheParam(),
     })
 
-    if(fntzAnalyticsAdapter.context.uniqId) {
+    if (fntzAnalyticsAdapter.context.uniqId) {
       trackData.fz_uniq = fntzAnalyticsAdapter.context.uniqId;
     }
 
