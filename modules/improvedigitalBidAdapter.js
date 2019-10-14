@@ -6,7 +6,7 @@ import { BANNER, NATIVE } from '../src/mediaTypes';
 const BIDDER_CODE = 'improvedigital';
 
 export const spec = {
-  version: '5.2.0',
+  version: '5.3.0',
   code: BIDDER_CODE,
   aliases: ['id'],
   supportedMediaTypes: [BANNER, NATIVE],
@@ -46,6 +46,8 @@ export const spec = {
     if (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer) {
       requestParameters.referrer = bidderRequest.refererInfo.referer;
     }
+
+    requestParameters.schain = bidRequests[0].schain;
 
     let requestObj = idClient.createRequest(
       normalizedBids, // requestObject
@@ -483,6 +485,9 @@ export function ImproveDigitalAdServerJSClient(endPoint) {
     if (requestParameters.gdpr || requestParameters.gdpr === 0) {
       impressionBidRequestObject.gdpr = requestParameters.gdpr;
     }
+    if (requestParameters.schain) {
+      impressionBidRequestObject.schain = requestParameters.schain;
+    }
     if (extraRequestParameters) {
       for (let prop in extraRequestParameters) {
         impressionBidRequestObject[prop] = extraRequestParameters[prop];
@@ -501,6 +506,9 @@ export function ImproveDigitalAdServerJSClient(endPoint) {
       impressionObject.id = placementObject.id;
     } else {
       impressionObject.id = utils.getUniqueIdentifierStr();
+    }
+    if (placementObject.adTypes) {
+      impressionObject.ad_types = placementObject.adTypes;
     }
     if (placementObject.adUnitId) {
       outputObject.adUnitId = placementObject.adUnitId;
