@@ -328,6 +328,11 @@ function createVideoRequestData(bid, bidderRequest) {
     }];
   }
 
+  let connection = navigator.connection || navigator.webkitConnection;
+  if (connection && connection.effectiveType) {
+    payload.device.connectiontype = connection.effectiveType;
+  }
+
   return payload;
 }
 
