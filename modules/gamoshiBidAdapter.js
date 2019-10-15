@@ -76,7 +76,7 @@ export const spec = {
       };
       const gdprConsent = bidderRequest.gdprConsent;
 
-      if (gdprConsent) {
+      if (gdprConsent && gdprConsent.consentString && gdprConsent.gdprApplies) {
         rtbBidRequest.ext.gdpr_consent = {
           consent_string: gdprConsent.consentString,
           consent_required: gdprConsent.gdprApplies
