@@ -27,6 +27,8 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function(bidRequests) {
+    console.log('bid requests');
+    console.log(bidRequests);
     let serverRequest = {
       p: [],
       page_url: utils.getTopWindowUrl(),
@@ -54,6 +56,9 @@ export const spec = {
       const tdid = getId(request, 'tdid');
       if (tdid) {
         serverRequest.tdid = tdid;
+      }
+      if (request.schain) {
+        serverRequest.schain = JSON.stringify(request.schain);
       }
     });
     serverRequest.p = '[' + serverRequest.p.toString() + ']';
