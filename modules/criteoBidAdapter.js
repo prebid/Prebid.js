@@ -8,9 +8,9 @@ import find from 'core-js/library/fn/array/find';
 import JSEncrypt from 'jsencrypt/bin/jsencrypt';
 import sha256 from 'crypto-js/sha256';
 
-export const ADAPTER_VERSION = 20;
+export const ADAPTER_VERSION = 21;
 const BIDDER_CODE = 'criteo';
-const CDB_ENDPOINT = '//bidder.criteo.com/cdb';
+const CDB_ENDPOINT = 'https://bidder.criteo.com/cdb';
 const CRITEO_VENDOR_ID = 91;
 const PROFILE_ID_INLINE = 207;
 export const PROFILE_ID_PUBLISHERTAG = 185;

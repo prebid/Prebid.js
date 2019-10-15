@@ -144,7 +144,7 @@ const OUTSTREAM_VIDEO_REQUEST = {
         }
       ],
       renderer: {
-        url: 'http://cdn.adnxs.com/renderer/video/ANOutstreamVideo.js',
+        url: 'http://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js',
         render: function (bid) {
           ANOutstreamVideo.renderAd({
             targetId: bid.adUnitCode,
@@ -1043,7 +1043,10 @@ describe('S2S Adapter', function () {
       let userIdBidRequest = utils.deepClone(BID_REQUESTS);
       userIdBidRequest[0].bids[0].userId = {
         tdid: 'abc123',
-        pubcid: '1234'
+        pubcid: '1234',
+        lipb: {
+          lipbid: 'li-xyz'
+        }
       };
 
       adapter.callBids(REQUEST, userIdBidRequest, addBidResponse, done, ajax);
@@ -1054,6 +1057,8 @@ describe('S2S Adapter', function () {
       expect(requestBid.user.ext.eids.filter(eid => eid.source === 'adserver.org')[0].uids[0].id).is.equal('abc123');
       expect(requestBid.user.ext.eids.filter(eid => eid.source === 'pubcommon')).is.not.empty;
       expect(requestBid.user.ext.eids.filter(eid => eid.source === 'pubcommon')[0].uids[0].id).is.equal('1234');
+      expect(requestBid.user.ext.eids.filter(eid => eid.source === 'liveintent.com')).is.not.empty;
+      expect(requestBid.user.ext.eids.filter(eid => eid.source === 'liveintent.com')[0].uids[0].id).is.equal('li-xyz');
     });
 
     it('when config \'currency.adServerCurrency\' value is an array: ORTB has property \'cur\' value set to a single item array', function () {
@@ -1237,6 +1242,31 @@ describe('S2S Adapter', function () {
         }
       });
     });
+
+    it('passes schain object in request', function() {
+      const bidRequests = utils.deepClone(BID_REQUESTS);
+      const schainObject = {
+        'ver': '1.0',
+        'complete': 1,
+        'nodes': [
+          {
+            'asi': 'indirectseller.com',
+            'sid': '00001',
+            'hp': 1
+          },
+
+          {
+            'asi': 'indirectseller-2.com',
+            'sid': '00002',
+            'hp': 2
+          }
+        ]
+      };
+      bidRequests[0].bids[0].schain = schainObject;
+      adapter.callBids(REQUEST, bidRequests, addBidResponse, done, ajax);
+      const parsedRequestBody = JSON.parse(requests[0].requestBody);
+      expect(parsedRequestBody.source.ext.schain).to.deep.equal(schainObject);
+    })
   });
 
   describe('response handler', function () {

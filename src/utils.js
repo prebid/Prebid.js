@@ -571,7 +571,7 @@ export function _map(object, callback) {
   return output;
 }
 
-var hasOwn = function (objectToCheck, propertyToCheckFor) {
+export function hasOwn(objectToCheck, propertyToCheckFor) {
   if (objectToCheck.hasOwnProperty) {
     return objectToCheck.hasOwnProperty(propertyToCheckFor);
   } else {
@@ -918,8 +918,8 @@ export function getCookie(name) {
   return m ? decodeURIComponent(m[2]) : null;
 }
 
-export function setCookie(key, value, expires) {
-  document.cookie = `${key}=${encodeURIComponent(value)}${(expires !== '') ? `; expires=${expires}` : ''}; path=/`;
+export function setCookie(key, value, expires, sameSite) {
+  document.cookie = `${key}=${encodeURIComponent(value)}${(expires !== '') ? `; expires=${expires}` : ''}; path=/${sameSite ? `; SameSite=${sameSite}` : ''}`;
 }
 
 /**

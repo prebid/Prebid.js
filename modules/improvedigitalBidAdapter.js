@@ -6,7 +6,7 @@ import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes';
 const BIDDER_CODE = 'improvedigital';
 
 export const spec = {
-  version: '5.2.0',
+  version: '5.3.0',
   code: BIDDER_CODE,
   aliases: ['id'],
   supportedMediaTypes: [BANNER, NATIVE, VIDEO],
@@ -46,6 +46,8 @@ export const spec = {
     if (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer) {
       requestParameters.referrer = bidderRequest.refererInfo.referer;
     }
+
+    requestParameters.schain = bidRequests[0].schain;
 
     let requestObj = idClient.createRequest(
       normalizedBids, // requestObject

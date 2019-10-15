@@ -685,12 +685,20 @@ const OPEN_RTB_PROTOCOL = {
       utils.deepSetValue(request, 'user.ext.digitrust', digiTrust);
     }
 
+    // pass schain object if it is present
+    const schain = utils.deepAccess(bidRequests, '0.bids.0.schain');
+    if (schain) {
+      request.source.ext = {
+        schain: schain
+      };
+    }
+
     if (!utils.isEmpty(aliases)) {
       request.ext.prebid.aliases = aliases;
     }
 
     const bidUserId = utils.deepAccess(bidRequests, '0.bids.0.userId');
-    if (bidUserId && typeof bidUserId === 'object' && (bidUserId.tdid || bidUserId.pubcid)) {
+    if (bidUserId && typeof bidUserId === 'object' && (bidUserId.tdid || bidUserId.pubcid || bidUserId.lipb)) {
       utils.deepSetValue(request, 'user.ext.eids', []);
 
       if (bidUserId.tdid) {
@@ -710,6 +718,15 @@ const OPEN_RTB_PROTOCOL = {
           source: 'pubcommon',
           uids: [{
             id: bidUserId.pubcid,
+          }]
+        });
+      }
+
+      if (bidUserId.lipb && bidUserId.lipb.lipbid) {
+        request.user.ext.eids.push({
+          source: 'liveintent.com',
+          uids: [{
+            id: bidUserId.lipb.lipbid
           }]
         });
       }
@@ -778,6 +795,8 @@ const OPEN_RTB_PROTOCOL = {
           if (extPrebidTargeting && typeof extPrebidTargeting === 'object') {
             bidObject.adserverTargeting = extPrebidTargeting;
           }
+
+          bidObject.seatBidId = bid.id;
 
           if (utils.deepAccess(bid, 'ext.prebid.type') === VIDEO) {
             bidObject.mediaType = VIDEO;
