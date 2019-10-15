@@ -9,14 +9,9 @@ import * as utils from '../src/utils';
     TODO:
         send one logger call
         send one tracker call
-        configurations
-            pub-id
-            profile-id
-            version-id
         what about video bids?
             first version only banner?
             can we support as a basic version?
-        grossEcpm / netEcpm?
 */
 
 ////////////// CONSTANTS ////////////// 
@@ -40,6 +35,10 @@ const TIMEOUT_ERROR = 'timeout-error';
 const EMPTY_STRING = '';
 const MEDIA_TYPE_BANNER = 'banner';
 const CURRENCY_USD = 'USD';
+// todo: input profileId and profileVersionId ; defaults to zero or one
+const DEFAULT_PUBLISHER_ID = 0;
+const DEFAULT_PROFILE_ID = 0;
+const DEFAULT_PROFILE_VERSION_ID = 0;
 
 ////////////// VARIABLES ////////////// 
 
@@ -47,9 +46,9 @@ let serverConfig;
 config.getConfig('s2sConfig', ({s2sConfig}) => {
     serverConfig = s2sConfig;
 });
-let publisherId = 0; // int: mandatory 
-let profileId = 0; // int: optional //todo: defaults to 0 or 1?
-let profileVersionId = 0; // int: optional //todo: defaults to 0 or 1?
+let publisherId = DEFAULT_PUBLISHER_ID; // int: mandatory 
+let profileId = DEFAULT_PROFILE_ID; // int: optional
+let profileVersionId = DEFAULT_PROFILE_VERSION_ID; // int: optional
 
 ////////////// HELPER FUNCTIONS ////////////// 
 
@@ -213,7 +212,6 @@ function executeBidsLoggerCall(auctionId){
     let referrer = config.getConfig('pageUrl') || utils.getTopWindowUrl(),
         auctionCache = cache.auctions[auctionId],
         date = new window.Date(),
-        pubId = 12,
         outputObj = {
             s: []
         },
@@ -232,8 +230,8 @@ function executeBidsLoggerCall(auctionId){
         return;
     }
 
-    pixelURL += 'pubid=' + pubId;
-    outputObj['pubid'] = pubId;
+    pixelURL += 'pubid=' + publisherId;
+    outputObj['pubid'] = publisherId;
 	outputObj['to'] = "" + auctionCache.timeout;
 	outputObj['purl'] = referrer;
 	outputObj['tst'] = date.getTime();
@@ -269,14 +267,15 @@ function executeBidsLoggerCall(auctionId){
         slotObject.ps = Object.keys(adUnit.bids).reduce(function(partnerBids, bidId){
             let bid = adUnit.bids[bidId];
             // todo: push to a function
+            // todo: number precision, is it taken care by Prebid?
             partnerBids.push({
                 'pn': bid.bidder,
                 'bidid': bid.bidId,
                 'db': bid.bidResponse ? 0 : 1,
                 'kgpv': bid.params.kgpv ? bid.params.kgpv : adUnitId,
                 'psz': bid.bidResponse ? (bid.bidResponse.dimensions.width + 'x' + bid.bidResponse.dimensions.height) : '0x0',
-                'eg': bid.bidResponse ? bid.bidResponse.bidPriceUSD : 0, // todo: check
-                'en': bid.bidResponse ? bid.bidResponse.bidPriceUSD : 0, // todo: check
+                'eg': bid.bidResponse ? bid.bidResponse.bidPriceUSD : 0, // todo: later we will need to consider grossECPM and netECPM
+                'en': bid.bidResponse ? bid.bidResponse.bidPriceUSD : 0, // todo: later we will need to consider grossECPM and netECPM
                 'di': bid.bidResponse ? (bid.bidResponse.dealId || EMPTY_STRING) : EMPTY_STRING,
                 'dc': bid.bidResponse ? (bid.bidResponse.dealChannel || EMPTY_STRING) : EMPTY_STRING,
                 'l1': bid.clientLatencyTimeMs,
@@ -285,7 +284,7 @@ function executeBidsLoggerCall(auctionId){
                 't': (bid.status == ERROR && bid.error.code == TIMEOUT_ERROR) ? 1 : 0,
                 'wb': highestsBid.bidId === bid.bidId ? 1 : 0,
                 'mi': bid.bidResponse ? (bid.bidResponse.mi || undefined) : undefined,
-                'af': bid.bidResponse ? (bid.bidResponse.mediaType || MEDIA_TYPE_BANNER) : MEDIA_TYPE_BANNER ,
+                'af': bid.bidResponse ? (bid.bidResponse.mediaType || undefined) : undefined ,
                 'ocpm': bid.bidResponse ? bid.bidResponse.cpm : 0,
                 'ocry': bid.bidResponse ? bid.bidResponse.currency : CURRENCY_USD
             });
@@ -298,7 +297,7 @@ function executeBidsLoggerCall(auctionId){
     ajax(
         pixelURL,
         null,
-        JSON.stringify(outputObj),
+        "json=" + window.encodeURIComponent(JSON.stringify(outputObj)),
         {
             contentType: 'application/x-www-form-urlencoded',
             withCredentials : true,
@@ -308,7 +307,11 @@ function executeBidsLoggerCall(auctionId){
 }
 
 // todo: we may need adUnitId as well
-function executeBidWonLoggerCall(auctionId, bidWonId){
+function executeBidWonLoggerCall(auctionId, adUnitId){
+    console.log("executeBidWonLoggerCall:", arguments); 
+    console.log("cache", cache);
+    const winningBidId = cache.auctions[auctionIdauctionId].adUnitCodes[adUnitId].bidWon;
+    const winningBid = cache.auctions[auctionIdauctionId].adUnitCodes[adUnitId].bids[winningBidId];
 
 }
 
@@ -486,6 +489,7 @@ function bidderDoneHandler(args){
     });
 }
 
+// todo: do we need this function?
 function setTargetingHandler(args){
     console.log(LOG_PRE_FIX, 'setTargetingHandler');
     // console.log(args);
@@ -512,7 +516,7 @@ function bidWonHandler(args){
     //     // sendMessage.call(this, args.auctionId);
     //     executeBidWonLoggerCall(this, args.auctionId, args.requestId);
     // }
-    executeBidWonLoggerCall(args.auctionId, args.requestId);
+    executeBidWonLoggerCall(args.auctionId, args.adUnitCode);
 }
 
 function auctionEndHandler(args){
@@ -549,10 +553,9 @@ let pubmaticAdapter = Object.assign({}, baseAdapter, {
         if (typeof config.options === 'object') {
             if (config.options.publisherId) {
                 publisherId = Number(config.options.publisherId);
-            }
-            // todo: input profileId and profileVersionId ; defaults to zero or one
-            profileId = Number(config.options.profileId) || 0;
-            profileVersionId = Number(config.options.profileVersionId) || 0;
+            }            
+            profileId = Number(config.options.profileId) || DEFAULT_PROFILE_ID;
+            profileVersionId = Number(config.options.profileVersionId) || DEFAULT_PROFILE_VERSION_ID;
         } else {
             utils.logError(LOG_PRE_FIX + 'Config not found.');
             error = true;
@@ -571,9 +574,9 @@ let pubmaticAdapter = Object.assign({}, baseAdapter, {
     },
 
     disableAnalytics() {
-        publisherId = 0;
-        profileId = 0;
-        profileVersionId = 0;
+        publisherId = DEFAULT_PUBLISHER_ID;
+        profileId = DEFAULT_PROFILE_ID;
+        profileVersionId = DEFAULT_PROFILE_VERSION_ID;
         baseAdapter.disableAnalytics.apply(this, arguments);
     },
 
