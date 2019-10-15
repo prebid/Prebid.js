@@ -313,6 +313,7 @@ export const spec = {
       'p_pos',
       'gdpr',
       'gdpr_consent',
+      'schain',
       'rf',
       'dt.id',
       'dt.keyv',
@@ -451,7 +452,22 @@ export const spec = {
       data['coppa'] = 1;
     }
 
+    if (bidRequest.schain) {
+      data.schain = spec.serializeSupplyChain(bidRequest.schain);
+    }
+
     return data;
+  },
+
+  serializeSupplyChain: function ({ ver, complete, nodes }) {
+    return `${ver},${complete}!${spec.serializeSupplyChainNodes(nodes)}`;
+  },
+
+  serializeSupplyChainNodes: function (nodes) {
+    const nodePropOrder = ['asi', 'sid', 'hp', 'rid', 'name', 'domain'];
+    return nodes.map(node => {
+      return nodePropOrder.map(prop => node[prop] || '').join(',');
+    }).join('!');
   },
 
   /**

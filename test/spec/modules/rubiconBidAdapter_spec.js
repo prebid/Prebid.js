@@ -12,7 +12,7 @@ var CONSTANTS = require('src/constants.json');
 
 const INTEGRATION = `pbjs_lite_v$prebid.version$`; // $prebid.version$ will be substituted in by gulp in built prebid
 
-describe('the rubicon adapter', function () {
+describe.only('the rubicon adapter', function () {
   let sandbox,
     bidderRequest,
     sizeMap;
