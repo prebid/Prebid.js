@@ -187,7 +187,9 @@ function getNormalizedBidRequest(bid) {
   const bidFloorCur = utils.getBidIdParameter('bidFloorCur', bid.params);
 
   let normalizedBidRequest = {};
-  if (bid.mediaType === 'video' || utils.deepAccess(bid, 'mediaTypes.video')) {
+  const videoMediaType = utils.deepAccess(bid, 'mediaTypes.video');
+  const context = utils.deepAccess(bid, 'mediaTypes.video.context');
+  if (bid.mediaType === 'video' || (videoMediaType && context !== 'outstream')) {
     normalizedBidRequest.adTypes = [ VIDEO ];
   }
   if (placementId) {
@@ -488,6 +490,9 @@ export function ImproveDigitalAdServerJSClient(endPoint) {
     }
     if (requestParameters.gdpr || requestParameters.gdpr === 0) {
       impressionBidRequestObject.gdpr = requestParameters.gdpr;
+    }
+    if (requestParameters.schain) {
+      impressionBidRequestObject.schain = requestParameters.schain;
     }
     if (extraRequestParameters) {
       for (let prop in extraRequestParameters) {
