@@ -16,7 +16,7 @@ describe('finteza analytics adapter', function () {
   let requests;
 
   beforeEach(function () {
-    setCookie('_fz_uniq', uniqCookie);
+    setCookie('_fz_uniq', uniqCookie, '');
     xhr = sinon.useFakeXMLHttpRequest();
     requests = [];
     xhr.onCreate = request => { requests.push(request) };
