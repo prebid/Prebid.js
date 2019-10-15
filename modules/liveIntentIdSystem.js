@@ -78,7 +78,7 @@ export const liveIntentIdSubmodule = {
     const queryString = utils.parseQueryStringParameters(additionalIdentifiers)
     const url = `${baseUrl}/idex/${source}/${publisherId}?${queryString}`;
 
-    const resp = function (callback) {
+    const result = function (callback) {
       ajax(url, response => {
         let responseObj = {};
         if (response) {
@@ -91,7 +91,7 @@ export const liveIntentIdSubmodule = {
         callback(responseObj);
       }, undefined, { method: 'GET', withCredentials: true });
     };
-    return {callback: resp};
+    return {callback: result};
   }
 };
 
