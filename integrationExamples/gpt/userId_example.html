@@ -143,14 +143,26 @@
                     }, {
                         name: "id5Id",
                         params: {
-                            partner: 173 // @TODO: Set your real ID5 partner ID here for production, please ask for one contact@id5.io
+                            partner: 173 //Set your real ID5 partner ID here for production, please ask for one at http://id5.io/prebid
                         },
                         storage: {
                             type: "cookie",
                             name: "id5id",
-                            expires: 90
+                            expires: 90,
+                            refreshInSeconds: 8*3600 // Refresh frequency of cookies, defaulting to 'expires'
                         },
 
+                    }, {
+                        name: "parrableId",
+                        params: {
+                            // change to Parrable Partner Client ID(s) you received from the Parrable Partners you are using
+                            partner: '30182847-e426-4ff9-b2b5-9ca1324ea09b'
+                        },
+                        storage: {
+                            type: "cookie",
+                            name: "_parrable_eid", // create a cookie with this name
+                            expires: 365           // cookie can last for a year
+                        }
                     }, {
                         name: "pubCommonId",
                         storage: {
@@ -170,10 +182,11 @@
                       storage: {
                         type: 'cookie',
                         name: 'idl_env',
-                        expires: 60
+                        expires: 30
                       }
                     }],
-                    syncDelay: 5000
+                    syncDelay: 5000,
+                    auctionDelay: 1000 
                 }
             });
             pbjs.addAdUnits(adUnits);

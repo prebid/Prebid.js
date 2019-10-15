@@ -110,6 +110,7 @@ function _createServerRequest(bidRequest, gdprConsent = {}) {
   };
   ttxRequest.ext = {
     ttx: {
+      prebidStartedAt: Date.now(),
       caller: [{
         'name': 'prebidjs',
         'version': '$prebid.version$'

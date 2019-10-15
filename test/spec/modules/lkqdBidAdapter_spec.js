@@ -40,7 +40,7 @@ describe('LKQD Bid Adapter Test', function () {
     });
   });
 
-  describe('buildRequests', function () {
+  describe('buildRequests', () => {
     const ENDPOINT = 'https://v.lkqd.net/ad';
     let bidRequests = [
       {
@@ -101,14 +101,12 @@ describe('LKQD Bid Adapter Test', function () {
       expect(requests.length).to.equal(2);
       const r1 = requests[0].data;
       expect(r1).to.not.have.property('dnt');
-      expect(r1).to.not.have.property('pageurl');
       expect(r1).to.not.have.property('contentid');
       expect(r1).to.not.have.property('contenttitle');
       expect(r1).to.not.have.property('contentlength');
       expect(r1).to.not.have.property('contenturl');
       const r2 = requests[1].data;
       expect(r2).to.not.have.property('dnt');
-      expect(r2).to.not.have.property('pageurl');
       expect(r2).to.not.have.property('contentid');
       expect(r2).to.not.have.property('contenttitle');
       expect(r2).to.not.have.property('contentlength');
