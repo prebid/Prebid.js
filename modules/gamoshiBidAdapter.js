@@ -259,31 +259,6 @@ function renderOutstream(bid) {
   });
 }
 
-// function getUnifiedIdEids(bidRequests) {
-//   return getEids(bidRequests, 'tdid', 'adserver.org', 'TDID');
-// }
-//
-// function getEids(bidRequests, type, source, rtiPartner) {
-//   return bidRequests
-//     .map(getUserId(type)) // bids -> userIds of a certain type
-//     .filter((x) => !!x) // filter out null userIds
-//     .map(formatEid(source, rtiPartner)); // userIds -> eid objects
-// }
-//
-// function getUserId(type) {
-//   return (bid) => (bid && bid.userId && bid.userId[type]);
-// }
-//
-// function formatEid(source, rtiPartner) {
-//   return (id) => ({
-//     source,
-//     uids: [{
-//       id,
-//       ext: {rtiPartner}
-//     }]
-//   });
-// }
-
 function addExternalUserId(eids, value, source, rtiPartner) {
   if (utils.isStr(value)) {
     eids.push({
