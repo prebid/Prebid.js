@@ -81,8 +81,8 @@ export function addBidRequestHook(next, bidRequest) {
 
       bidRequest = Object.assign({}, bidRequest);
 
-      Object.keys(bidRequest).filter(key => ['bidderCode', 'adUnitCode'].indexOf(key) === -1).forEach(key => {
-        bidRequest[key] = bidRequest[key];
+      Object.keys(overrideBidRequest).filter(key => ['bidderCode', 'adUnitCode'].indexOf(key) === -1).forEach(key => {
+        bidRequest[key] = overrideBidRequest[key];
         logMessage(`debug bidRequest override: ${key}=${bidRequest[key]}`);
       });
     });
