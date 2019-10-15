@@ -223,7 +223,7 @@ function interpretResponse (serverResponse, bidRequest) {
   let [width, height] = sizes[0].split('x')
 
   // return 1x1 when breakout expected
-  if (product === 5 && includes(sizes, '1x1')) {
+  if ((product === 2 || product === 5) && includes(sizes, '1x1')) {
     width = '1'
     height = '1'
   }
