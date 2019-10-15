@@ -63,6 +63,9 @@ export const spec = {
       if (tdid) {
         serverRequest.tdid = tdid;
       }
+      if (request.schain) {
+        serverRequest.schain = JSON.stringify(request.schain);
+      }
     });
     serverRequest.p = '[' + serverRequest.p.toString() + ']';
     return {
