@@ -245,7 +245,25 @@ describe('GamoshiAdapter', function () {
         'source': 'id5-sync.com',
         'uids': [{
           'id': 'id5-user-id',
-          'atype': 1
+          'ext': {
+            'rtiPartner': 'ID5ID'
+          }
+        }]
+      }]);
+    });
+
+    it('build request with unified Id', function () {
+      const bidRequestClone = utils.deepClone(bidRequest);
+      bidRequestClone.userId = {};
+      bidRequestClone.userId.tdid = 'tdid-user-id';
+      let request = spec.buildRequests([bidRequestClone], bidRequestClone)[0];
+      expect(request.data.user.ext.eids).to.deep.equal([{
+        'source': 'adserver.org',
+        'uids': [{
+          'id': 'tdid-user-id',
+          'ext': {
+            'rtiPartner': 'TDID'
+          }
         }]
       }]);
     });

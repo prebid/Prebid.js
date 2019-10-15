@@ -1,4 +1,3 @@
-/* eslint-disable no-debugger */
 import * as utils from '../src/utils';
 import {registerBidder} from '../src/adapters/bidderFactory';
 import {config} from '../src/config';
@@ -138,10 +137,9 @@ export const spec = {
       }
 
       let eids = [];
-      // _handleDigitrustId(eids);
-      // _handleTTDId(eids, validBidRequests);
       if (bidRequest && bidRequest.userId) {
-        _addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.id5id`), 'id5-sync.com', 1);
+        addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.id5id`), 'id5-sync.com', 'ID5ID');
+        addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.tdid`), 'adserver.org', 'TDID');
       }
       if (eids.length > 0) {
         rtbBidRequest.user.ext.eids = eids;
@@ -261,16 +259,40 @@ function renderOutstream(bid) {
   });
 }
 
-/**
- * Produces external userid object in ortb 3.0 model.
- */
-function _addExternalUserId(eids, value, source, atype) {
+// function getUnifiedIdEids(bidRequests) {
+//   return getEids(bidRequests, 'tdid', 'adserver.org', 'TDID');
+// }
+//
+// function getEids(bidRequests, type, source, rtiPartner) {
+//   return bidRequests
+//     .map(getUserId(type)) // bids -> userIds of a certain type
+//     .filter((x) => !!x) // filter out null userIds
+//     .map(formatEid(source, rtiPartner)); // userIds -> eid objects
+// }
+//
+// function getUserId(type) {
+//   return (bid) => (bid && bid.userId && bid.userId[type]);
+// }
+//
+// function formatEid(source, rtiPartner) {
+//   return (id) => ({
+//     source,
+//     uids: [{
+//       id,
+//       ext: {rtiPartner}
+//     }]
+//   });
+// }
+
+function addExternalUserId(eids, value, source, rtiPartner) {
   if (utils.isStr(value)) {
     eids.push({
       source,
       uids: [{
         id: value,
-        atype
+        ext: {
+          rtiPartner
+        }
       }]
     });
   }
