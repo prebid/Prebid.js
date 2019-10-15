@@ -37,6 +37,9 @@ const NO_BID = 'no-bid';
 const ERROR = 'error';
 const REQUEST_ERROR = 'request-error';
 const TIMEOUT_ERROR = 'timeout-error';
+const EMPTY_STRING = '';
+const MEDIA_TYPE_BANNER = 'banner';
+const CURRENCY_USD = 'USD';
 
 ////////////// VARIABLES ////////////// 
 
@@ -77,6 +80,7 @@ function copyRequiredBidDetails(bid){
         'status', () => NO_BID, // default a bid to NO_BID until response is recieved or bid is timed out
         'finalSource as source',
         'params',
+        'mi', // todo: need to test
         'adUnit', () => utils.pick(bid, [
             'adUnitCode',
             'transactionId',
@@ -100,7 +104,7 @@ function copyRequiredBidDetails(bid){
                     }
                     return Object.keys(types).filter(validMediaType);
                 }
-                return ['banner'];
+                return [MEDIA_TYPE_BANNER];
             }
         ])
     ]);    
@@ -128,12 +132,12 @@ function parseBidResponse(bid){
     return utils.pick(bid, [
         'bidPriceUSD', () => {
             //todo: check whether currency cases are handled here
-            if (typeof bid.currency === 'string' && bid.currency.toUpperCase() === 'USD') {
+            if (typeof bid.currency === 'string' && bid.currency.toUpperCase() === CURRENCY_USD) {
                 return Number(bid.cpm);
             }
             // use currency conversion function if present
             if (typeof bid.getCpmInNewCurrency === 'function') {
-                return Number(bid.getCpmInNewCurrency('USD'));
+                return Number(bid.getCpmInNewCurrency(CURRENCY_USD));
             }
             utils.logWarn(LOG_PRE_FIX + 'Could not determine the bidPriceUSD of the bid ', bid);
         },
@@ -250,8 +254,21 @@ function executeBidsLoggerCall(auctionId){
             'sz': adUnit.dimensions.map(e => e[0]+"x"+e[1]),
             'ps': []
         };
+
+        // todo: move to a function, pass the output to following function call 
+        const highestsBid = Object.keys(adUnit.bids).reduce(function(currentHighestBid, bidId){
+            // todo: later we will need to consider grossECPM and netECPM
+            let bid = adUnit.bids[bidId];
+            if(bid.bidResponse && bid.bidResponse.bidPriceUSD > currentHighestBid.bidPriceUSD ){
+                currentHighestBid.bidPriceUSD = bid.bidResponse.bidPriceUSD;
+                currentHighestBid.bidId = bidId;
+            }
+            return currentHighestBid;
+        }, {bidId: '', bidPriceUSD: 0});
+
         slotObject.ps = Object.keys(adUnit.bids).reduce(function(partnerBids, bidId){
             let bid = adUnit.bids[bidId];
+            // todo: push to a function
             partnerBids.push({
                 'pn': bid.bidder,
                 'bidid': bid.bidId,
@@ -260,17 +277,17 @@ function executeBidsLoggerCall(auctionId){
                 'psz': bid.bidResponse ? (bid.bidResponse.dimensions.width + 'x' + bid.bidResponse.dimensions.height) : '0x0',
                 'eg': bid.bidResponse ? bid.bidResponse.bidPriceUSD : 0, // todo: check
                 'en': bid.bidResponse ? bid.bidResponse.bidPriceUSD : 0, // todo: check
-                'di': bid.bidResponse.dealId || '',
-                'dc': bid.bidResponse.dealChannel || '',
+                'di': bid.bidResponse ? (bid.bidResponse.dealId || EMPTY_STRING) : EMPTY_STRING,
+                'dc': bid.bidResponse ? (bid.bidResponse.dealChannel || EMPTY_STRING) : EMPTY_STRING,
                 'l1': bid.clientLatencyTimeMs,
                 'l2': 0,
                 'ss': (bid.source === 'server' ? 1 : 0), //todo: is there any special handling required as per OW?
                 't': (bid.status == ERROR && bid.error.code == TIMEOUT_ERROR) ? 1 : 0,
-                'wb': '', // todo: MUST have
-                'mi': '', // todo
-                'af': (bid.bidResponse ? bid.bidResponse.mediaType : 'banner'),
-                'ocpm': bid.bidResponse.cpm,
-                'ocry': bid.bidResponse.currency
+                'wb': highestsBid.bidId === bid.bidId ? 1 : 0,
+                'mi': bid.bidResponse ? (bid.bidResponse.mi || undefined) : undefined,
+                'af': bid.bidResponse ? (bid.bidResponse.mediaType || MEDIA_TYPE_BANNER) : MEDIA_TYPE_BANNER ,
+                'ocpm': bid.bidResponse ? bid.bidResponse.cpm : 0,
+                'ocry': bid.bidResponse ? bid.bidResponse.currency : CURRENCY_USD
             });
             return partnerBids;
         }, [])
