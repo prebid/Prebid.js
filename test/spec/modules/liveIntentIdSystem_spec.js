@@ -40,7 +40,7 @@ describe('LiveIntentId', function() {
   it('should call the Custom URL of the LiveIntent Identity Exchange endpoint', function() {
     getCookieStub.returns(null);
     let callBackSpy = sinon.spy();
-    let submoduleCallback = liveIntentIdSubmodule.getId({...defaultConfigParams, ...{'url': 'https://dummy.liveintent.com'}});
+    let submoduleCallback = liveIntentIdSubmodule.getId({...defaultConfigParams, ...{'url': 'https://dummy.liveintent.com'}}).callback;
     submoduleCallback(callBackSpy);
     let request = requests[0];
     expect(request.url).to.be.eq('https://dummy.liveintent.com/idex/prebid/89899?');
@@ -55,7 +55,7 @@ describe('LiveIntentId', function() {
   it('should call the default url of the LiveIntent Identity Exchange endpoint, with a partner', function() {
     getCookieStub.returns(null);
     let callBackSpy = sinon.spy();
-    let submoduleCallback = liveIntentIdSubmodule.getId({...defaultConfigParams, ...{'url': 'https://dummy.liveintent.com', 'partner': 'rubicon'}});
+    let submoduleCallback = liveIntentIdSubmodule.getId({...defaultConfigParams, ...{'url': 'https://dummy.liveintent.com', 'partner': 'rubicon'}}).callback;
     submoduleCallback(callBackSpy);
     let request = requests[0];
     expect(request.url).to.be.eq('https://dummy.liveintent.com/idex/rubicon/89899?');
@@ -70,7 +70,7 @@ describe('LiveIntentId', function() {
   it('should call the LiveIntent Identity Exchange endpoint, with no additional query params', function() {
     getCookieStub.returns(null);
     let callBackSpy = sinon.spy();
-    let submoduleCallback = liveIntentIdSubmodule.getId(defaultConfigParams);
+    let submoduleCallback = liveIntentIdSubmodule.getId(defaultConfigParams).callback;
     submoduleCallback(callBackSpy);
     let request = requests[0];
     expect(request.url).to.be.eq('//idx.liadm.com/idex/prebid/89899?');
@@ -85,7 +85,7 @@ describe('LiveIntentId', function() {
   it('should include the LiveConnect identifier when calling the LiveIntent Identity Exchange endpoint', function() {
     getCookieStub.withArgs('_li_duid').returns('li-fpc');
     let callBackSpy = sinon.spy();
-    let submoduleCallback = liveIntentIdSubmodule.getId(defaultConfigParams);
+    let submoduleCallback = liveIntentIdSubmodule.getId(defaultConfigParams).callback;
     submoduleCallback(callBackSpy);
     let request = requests[0];
     expect(request.url).to.be.eq('//idx.liadm.com/idex/prebid/89899?duid=li-fpc&');
@@ -108,7 +108,7 @@ describe('LiveIntentId', function() {
     };
 
     let callBackSpy = sinon.spy();
-    let submoduleCallback = liveIntentIdSubmodule.getId(configParams);
+    let submoduleCallback = liveIntentIdSubmodule.getId(configParams).callback;
     submoduleCallback(callBackSpy);
     let request = requests[0];
     expect(request.url).to.be.eq('//idx.liadm.com/idex/prebid/89899?_thirdPC=third-pc&duid=li-fpc&');
@@ -131,7 +131,7 @@ describe('LiveIntentId', function() {
     };
 
     let callBackSpy = sinon.spy();
-    let submoduleCallback = liveIntentIdSubmodule.getId(configParams);
+    let submoduleCallback = liveIntentIdSubmodule.getId(configParams).callback;
     submoduleCallback(callBackSpy);
     let request = requests[0];
     expect(request.url).to.be.eq('//idx.liadm.com/idex/prebid/89899?_thirdPC=%7B%22key%22%3A%22value%22%7D&');
