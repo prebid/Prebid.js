@@ -42,6 +42,7 @@ describe('finteza analytics adapter', function () {
   });
 
   afterEach(function () {
+    setCookie('_fz_uniq', '', 'Thu, 01 Jan 1970 00:00:00 GMT');
     xhr.restore();
     events.getEvents.restore();
     fntzAnalyticsAdapter.track.restore();
