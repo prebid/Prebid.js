@@ -505,6 +505,7 @@ describe('BeachfrontAdapter', function () {
           cpm: serverResponse.bidPrice,
           creativeId: serverResponse.cmpId,
           vastUrl: serverResponse.url,
+          vastXml: undefined,
           width: width,
           height: height,
           renderer: null,
@@ -512,6 +513,28 @@ describe('BeachfrontAdapter', function () {
           currency: 'USD',
           netRevenue: true,
           ttl: 300
+        });
+      });
+
+      it('should return vast xml if found on the bid response', () => {
+        const width = 640;
+        const height = 480;
+        const bidRequest = bidRequests[0];
+        bidRequest.mediaTypes = {
+          video: {
+            playerSize: [ width, height ]
+          }
+        };
+        const serverResponse = {
+          bidPrice: 5.00,
+          url: 'http://reachms.bfmio.com/getmu?aid=bid:19c4a196-fb21-4c81-9a1a-ecc5437a39da',
+          vast: '<VAST version="3.0"></VAST>',
+          cmpId: '123abc'
+        };
+        const bidResponse = spec.interpretResponse({ body: serverResponse }, { bidRequest });
+        expect(bidResponse).to.deep.contain({
+          vastUrl: serverResponse.url,
+          vastXml: serverResponse.vast
         });
       });
 
