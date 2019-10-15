@@ -2,11 +2,17 @@ import fntzAnalyticsAdapter from 'modules/fintezaAnalyticsAdapter';
 import includes from 'core-js/library/fn/array/includes';
 import { expect } from 'chai';
 import { parse as parseURL } from 'src/url';
-import { setCookie } from 'src/utils';
 
 let adapterManager = require('src/adapterManager').default;
 let events = require('src/events');
 let constants = require('src/constants.json');
+
+function setCookie(name, value, expires) {
+  document.cookie = name + '=' + value +
+    '; path=/' +
+    (expires ? ('; expires=' + expires.toUTCString()) : '') +
+    '; SameSite=None';
+}
 
 describe('finteza analytics adapter', function () {
   const clientId = 'fntz-client-32145';
@@ -16,7 +22,7 @@ describe('finteza analytics adapter', function () {
   let requests;
 
   beforeEach(function () {
-    setCookie('_fz_uniq', uniqCookie, '');
+    setCookie('_fz_uniq', uniqCookie);
     xhr = sinon.useFakeXMLHttpRequest();
     requests = [];
     xhr.onCreate = request => { requests.push(request) };
@@ -42,7 +48,7 @@ describe('finteza analytics adapter', function () {
   });
 
   afterEach(function () {
-    setCookie('_fz_uniq', '', 'Thu, 01 Jan 1970 00:00:00 GMT');
+    setCookie('_fz_uniq', '', new Date(0));
     xhr.restore();
     events.getEvents.restore();
     fntzAnalyticsAdapter.track.restore();
