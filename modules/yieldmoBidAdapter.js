@@ -26,13 +26,9 @@ export const spec = {
    * @param {BidRequest[]} bidRequests A non-empty list of bid requests which should be sent to the Server.
    * @return ServerRequest Info describing the request to the server.
    */
-<<<<<<< HEAD
   buildRequests: function(bidRequests, bidderRequest) {
-=======
-  buildRequests: function(bidRequests) {
     console.log('bid requests');
     console.log(bidRequests);
->>>>>>> 4fd8634f... add stringified schain
     let serverRequest = {
       p: [],
       page_url: bidderRequest.refererInfo.referer,
@@ -66,9 +62,6 @@ export const spec = {
       const tdid = getId(request, 'tdid');
       if (tdid) {
         serverRequest.tdid = tdid;
-      }
-      if (request.schain) {
-        serverRequest.schain = JSON.stringify(request.schain);
       }
     });
     serverRequest.p = '[' + serverRequest.p.toString() + ']';
