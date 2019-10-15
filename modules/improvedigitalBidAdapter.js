@@ -6,7 +6,7 @@ import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes';
 const BIDDER_CODE = 'improvedigital';
 
 export const spec = {
-  version: '5.3.0',
+  version: '6.0.0',
   code: BIDDER_CODE,
   aliases: ['id'],
   supportedMediaTypes: [BANNER, NATIVE, VIDEO],
