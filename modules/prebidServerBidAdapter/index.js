@@ -5,7 +5,8 @@ import { ajax } from '../../src/ajax';
 import { STATUS, S2S, EVENTS } from '../../src/constants';
 import adapterManager from '../../src/adapterManager';
 import { config } from '../../src/config';
-import { VIDEO } from '../../src/mediaTypes';
+import { VIDEO, NATIVE } from '../../src/mediaTypes';
+import { processNativeAdUnitParams } from '../../src/native';
 import { isValid } from '../../src/adapters/bidderFactory';
 import events from '../../src/events';
 import includes from 'core-js/library/fn/array/includes';
@@ -346,7 +347,7 @@ const LEGACY_PROTOCOL = {
     return request;
   },
 
-  interpretResponse(result, bidderRequests, requestedBidders) {
+  interpretResponse(result, bidderRequests) {
     const bids = [];
     if (result.status === 'OK' || result.status === 'no_cookie') {
       if (result.bidder_status) {
@@ -431,11 +432,57 @@ const LEGACY_PROTOCOL = {
   }
 };
 
+// https://iabtechlab.com/wp-content/uploads/2016/07/OpenRTB-Native-Ads-Specification-Final-1.2.pdf#page=40
+let nativeDataIdMap = {
+  sponsoredBy: 1, // sponsored
+  body: 2, // desc
+  rating: 3,
+  likes: 4,
+  downloads: 5,
+  price: 6,
+  salePrice: 7,
+  phone: 8,
+  address: 9,
+  body2: 10, // desc2
+  cta: 12 // ctatext
+};
+let nativeDataNames = Object.keys(nativeDataIdMap);
+
+let nativeImgIdMap = {
+  icon: 1,
+  image: 3
+};
+
+let nativeEventTrackerEventMap = {
+  impression: 1,
+  'viewable-mrc50': 2,
+  'viewable-mrc100': 3,
+  'viewable-video50': 4,
+};
+
+let nativeEventTrackerMethodMap = {
+  img: 1,
+  js: 2
+};
+
+// enable reverse lookup
+[
+  nativeDataIdMap,
+  nativeImgIdMap,
+  nativeEventTrackerEventMap,
+  nativeEventTrackerMethodMap
+].forEach(map => {
+  Object.keys(map).forEach(key => {
+    map[map[key]] = key;
+  });
+});
+
 /*
  * Protocol spec for OpenRTB endpoint
  * e.g., https://<prebid-server-url>/v1/openrtb2/auction
  */
 let bidIdMap = {};
+let nativeAssetCache = {}; // store processed native params to preserve
 const OPEN_RTB_PROTOCOL = {
   buildRequest(s2sBidRequest, bidRequests, adUnits) {
     let imps = [];
@@ -443,6 +490,74 @@ const OPEN_RTB_PROTOCOL = {
 
     // transform ad unit into array of OpenRTB impression objects
     adUnits.forEach(adUnit => {
+      const nativeParams = processNativeAdUnitParams(utils.deepAccess(adUnit, 'mediaTypes.native'));
+      let nativeAssets;
+      if (nativeParams) {
+        try {
+          nativeAssets = nativeAssetCache[adUnit.code] = Object.keys(nativeParams).reduce((assets, type) => {
+            let params = nativeParams[type];
+
+            function newAsset(obj) {
+              return Object.assign({
+                required: params.required ? 1 : 0
+              }, obj ? utils.cleanObj(obj) : {});
+            }
+
+            switch (type) {
+              case 'image':
+              case 'icon':
+                let imgTypeId = nativeImgIdMap[type];
+                let asset = utils.cleanObj({
+                  type: imgTypeId,
+                  w: utils.deepAccess(params, 'sizes.0'),
+                  h: utils.deepAccess(params, 'sizes.1'),
+                  wmin: utils.deepAccess(params, 'aspect_ratios.0.min_width')
+                });
+                if (!(asset.w || asset.wmin)) {
+                  throw 'invalid img sizes (must provided sizes or aspect_ratios)';
+                }
+                if (Array.isArray(params.aspect_ratios)) {
+                  // pass aspect_ratios as ext data I guess?
+                  asset.ext = {
+                    aspectratios: params.aspect_ratios.map(
+                      ratio => `${ratio.ratio_width}:${ratio.ratio_height}`
+                    )
+                  }
+                }
+                assets.push(newAsset({
+                  img: asset
+                }));
+                break;
+              case 'title':
+                if (!params.len) {
+                  throw 'invalid title.len';
+                }
+                assets.push(newAsset({
+                  title: {
+                    len: params.len
+                  }
+                }));
+                break;
+              default:
+                let dataAssetTypeId = nativeDataIdMap[type];
+                if (dataAssetTypeId) {
+                  assets.push(newAsset({
+                    data: {
+                      type: dataAssetTypeId,
+                      len: params.len
+                    }
+                  }))
+                }
+            }
+            return assets;
+          }, []);
+        } catch (e) {
+          utils.logError('error creating native request: ' + String(e))
+        }
+      }
+      const videoParams = utils.deepAccess(adUnit, 'mediaTypes.video');
+      const bannerParams = utils.deepAccess(adUnit, 'mediaTypes.banner');
+
       adUnit.bids.forEach(bid => {
         // OpenRTB response contains the adunit code and bidder name. These are
         // combined to create a unique key for each bid since an id isn't returned
@@ -454,14 +569,13 @@ const OPEN_RTB_PROTOCOL = {
         }
       });
 
-      let banner;
+      let mediaTypes = {};
       // default to banner if mediaTypes isn't defined
-      if (utils.isEmpty(adUnit.mediaTypes)) {
+      if (!(nativeParams || videoParams || bannerParams)) {
         const sizeObjects = adUnit.sizes.map(size => ({ w: size[0], h: size[1] }));
-        banner = {format: sizeObjects};
+        mediaTypes['banner'] = {format: sizeObjects};
       }
 
-      const bannerParams = utils.deepAccess(adUnit, 'mediaTypes.banner');
       if (bannerParams && bannerParams.sizes) {
         const sizes = utils.parseSizesInput(bannerParams.sizes);
 
@@ -473,13 +587,37 @@ const OPEN_RTB_PROTOCOL = {
           return { w, h };
         });
 
-        banner = {format};
+        mediaTypes['banner'] = {format};
       }
 
-      let video;
-      const videoParams = utils.deepAccess(adUnit, 'mediaTypes.video');
       if (!utils.isEmpty(videoParams)) {
-        video = videoParams;
+        if (videoParams.context === 'outstream' && !adUnit.renderer) {
+          // Don't push oustream w/o renderer to request object.
+          utils.logError('Outstream bid without renderer cannot be sent to Prebid Server.');
+        } else {
+          mediaTypes['video'] = videoParams;
+        }
+      }
+
+      if (nativeAssets) {
+        try {
+          mediaTypes['native'] = {
+            request: JSON.stringify({
+              // TODO: determine best way to pass these and if we allow defaults
+              context: 1,
+              plcmttype: 1,
+              eventtrackers: [
+                {event: 1, methods: [1]}
+              ],
+              // TODO: figure out how to support privacy field
+              // privacy: int
+              assets: nativeAssets
+            }),
+            ver: '1.2'
+          }
+        } catch (e) {
+          utils.logError('error creating native request: ' + String(e))
+        }
       }
 
       // get bidder params in form { <bidder code>: {...params} }
@@ -494,16 +632,11 @@ const OPEN_RTB_PROTOCOL = {
 
       const imp = { id: adUnit.code, ext, secure: _s2sConfig.secure };
 
-      if (banner) { imp.banner = banner; }
-      if (video) {
-        if (video.context === 'outstream' && !adUnit.renderer) {
-          // Don't push oustream w/o renderer to request object.
-          utils.logError('Outstream bid without renderer cannot be sent to Prebid Server.');
-        } else {
-          imp.video = video;
-        }
+      Object.assign(imp, mediaTypes);
+
+      if (imp.banner || imp.video || imp.native) {
+        imps.push(imp);
       }
-      if (imp.banner || imp.video) { imps.push(imp); }
     });
 
     if (!imps.length) {
@@ -552,12 +685,20 @@ const OPEN_RTB_PROTOCOL = {
       utils.deepSetValue(request, 'user.ext.digitrust', digiTrust);
     }
 
+    // pass schain object if it is present
+    const schain = utils.deepAccess(bidRequests, '0.bids.0.schain');
+    if (schain) {
+      request.source.ext = {
+        schain: schain
+      };
+    }
+
     if (!utils.isEmpty(aliases)) {
       request.ext.prebid.aliases = aliases;
     }
 
     const bidUserId = utils.deepAccess(bidRequests, '0.bids.0.userId');
-    if (bidUserId && typeof bidUserId === 'object' && (bidUserId.tdid || bidUserId.pubcid)) {
+    if (bidUserId && typeof bidUserId === 'object' && (bidUserId.tdid || bidUserId.pubcid || bidUserId.lipb)) {
       utils.deepSetValue(request, 'user.ext.eids', []);
 
       if (bidUserId.tdid) {
@@ -577,6 +718,15 @@ const OPEN_RTB_PROTOCOL = {
           source: 'pubcommon',
           uids: [{
             id: bidUserId.pubcid,
+          }]
+        });
+      }
+
+      if (bidUserId.lipb && bidUserId.lipb.lipbid) {
+        request.user.ext.eids.push({
+          source: 'liveintent.com',
+          uids: [{
+            id: bidUserId.lipb.lipbid
           }]
         });
       }
@@ -609,7 +759,7 @@ const OPEN_RTB_PROTOCOL = {
     return request;
   },
 
-  interpretResponse(response, bidderRequests, requestedBidders) {
+  interpretResponse(response, bidderRequests) {
     const bids = [];
 
     if (response.seatbid) {
@@ -646,6 +796,8 @@ const OPEN_RTB_PROTOCOL = {
             bidObject.adserverTargeting = extPrebidTargeting;
           }
 
+          bidObject.seatBidId = bid.id;
+
           if (utils.deepAccess(bid, 'ext.prebid.type') === VIDEO) {
             bidObject.mediaType = VIDEO;
             let sizes = bidRequest.sizes && bidRequest.sizes[0];
@@ -665,6 +817,60 @@ const OPEN_RTB_PROTOCOL = {
 
             if (bid.adm) { bidObject.vastXml = bid.adm; }
             if (!bidObject.vastUrl && bid.nurl) { bidObject.vastUrl = bid.nurl; }
+          } else if (utils.deepAccess(bid, 'ext.prebid.type') === NATIVE) {
+            bidObject.mediaType = NATIVE;
+            let adm;
+            if (typeof bid.adm === 'string') {
+              adm = bidObject.adm = JSON.parse(bid.adm);
+            } else {
+              adm = bidObject.adm = bid.adm;
+            }
+
+            let trackers = {
+              [nativeEventTrackerMethodMap.img]: adm.imptrackers || [],
+              [nativeEventTrackerMethodMap.js]: adm.jstracker ? [adm.jstracker] : []
+            };
+            if (adm.eventtrackers) {
+              adm.eventtrackers.forEach(tracker => {
+                switch (tracker.method) {
+                  case nativeEventTrackerMethodMap.img:
+                    trackers[nativeEventTrackerMethodMap.img].push(tracker.url);
+                    break;
+                  case nativeEventTrackerMethodMap.js:
+                    trackers[nativeEventTrackerMethodMap.js].push(tracker.url);
+                    break;
+                }
+              });
+            }
+
+            if (utils.isPlainObject(adm) && Array.isArray(adm.assets)) {
+              let origAssets = nativeAssetCache[bidRequest.adUnitCode];
+              bidObject.native = utils.cleanObj(adm.assets.reduce((native, asset) => {
+                let origAsset = origAssets[asset.id];
+                if (utils.isPlainObject(asset.img)) {
+                  native[origAsset.img.type ? nativeImgIdMap[origAsset.img.type] : 'image'] = utils.pick(
+                    asset.img,
+                    ['url', 'w as width', 'h as height']
+                  );
+                } else if (utils.isPlainObject(asset.title)) {
+                  native['title'] = asset.title.text
+                } else if (utils.isPlainObject(asset.data)) {
+                  nativeDataNames.forEach(dataType => {
+                    if (nativeDataIdMap[dataType] === origAsset.data.type) {
+                      native[dataType] = asset.data.value;
+                    }
+                  });
+                }
+                return native;
+              }, utils.cleanObj({
+                clickUrl: adm.link,
+                clickTrackers: utils.deepAccess(adm, 'link.clicktrackers'),
+                impressionTrackers: trackers[nativeEventTrackerMethodMap.img],
+                javascriptTrackers: trackers[nativeEventTrackerMethodMap.js]
+              })));
+            } else {
+              utils.logError('prebid server native response contained no assets');
+            }
           } else { // banner
             if (bid.adm && bid.nurl) {
               bidObject.ad = bid.adm;
@@ -732,10 +938,13 @@ export function PrebidServer() {
     const adUnits = utils.deepClone(s2sBidRequest.ad_units);
 
     // at this point ad units should have a size array either directly or mapped so filter for that
-    const adUnitsWithSizes = adUnits.filter(unit => unit.sizes && unit.sizes.length);
+    const validAdUnits = adUnits.filter(unit =>
+      (unit.sizes && unit.sizes.length) ||
+      (unit.mediaTypes && unit.mediaTypes.native)
+    );
 
     // in case config.bidders contains invalid bidders, we only process those we sent requests for
-    const requestedBidders = adUnitsWithSizes
+    const requestedBidders = validAdUnits
       .map(adUnit => adUnit.bids.map(bid => bid.bidder).filter(utils.uniques))
       .reduce(utils.flatten)
       .filter(utils.uniques);
@@ -745,7 +954,7 @@ export function PrebidServer() {
       queueSync(_s2sConfig.bidders, consent);
     }
 
-    const request = protocolAdapter().buildRequest(s2sBidRequest, bidRequests, adUnitsWithSizes);
+    const request = protocolAdapter().buildRequest(s2sBidRequest, bidRequests, validAdUnits);
     const requestJson = request && JSON.stringify(request);
     if (request && requestJson) {
       ajax(

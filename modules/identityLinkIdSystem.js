@@ -29,7 +29,7 @@ export const identityLinkSubmodule = {
    * performs action to obtain id and return a value in the callback's response argument
    * @function
    * @param {SubmoduleParams} [configParams]
-   * @returns {function(callback:function)}
+   * @returns {IdResponse|undefined}
    */
   getId(configParams) {
     if (!configParams || typeof configParams.pid !== 'string') {
@@ -37,22 +37,40 @@ export const identityLinkSubmodule = {
       return;
     }
     // use protocol relative urls for http or https
-    const url = `https://api.rlcdn.com/api/identity?pid=${configParams.pid}&rt=envelope`;
-
-    return function (callback) {
-      ajax(url, response => {
-        let responseObj;
-        if (response) {
-          try {
-            responseObj = JSON.parse(response);
-          } catch (error) {
-            utils.logError(error);
+    const url = `https://api.rlcdn.com/api/identity/envelope?pid=${configParams.pid}`;
+    let resp;
+    // if ats library is initialised, use it to retrieve envelope. If not use standard third party endpoint
+    if (window.ats) {
+      resp = function(callback) {
+        window.ats.retrieveEnvelope(function (envelope) {
+          if (envelope) {
+            callback(JSON.parse(envelope).envelope);
+          } else {
+            getEnvelope(url, callback);
           }
-        }
-        callback(responseObj.envelope);
-      }, undefined, { method: 'GET' });
+        });
+      }
+    } else {
+      resp = function (callback) {
+        getEnvelope(url, callback);
+      }
     }
+    return {callback: resp};
   }
-};
+}
+// return envelope from third party endpoint
+function getEnvelope(url, callback) {
+  ajax(url, response => {
+    let responseObj;
+    if (response) {
+      try {
+        responseObj = JSON.parse(response);
+      } catch (error) {
+        utils.logError(error);
+      }
+    }
+    callback(responseObj.envelope);
+  }, undefined, {method: 'GET', withCredentials: true});
+}
 
 submodule('userId', identityLinkSubmodule);
