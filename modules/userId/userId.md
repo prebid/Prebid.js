@@ -32,6 +32,17 @@ pbjs.setConfig({
                 name: "id5id",
                 expires: 5, // Expiration of cookies in days
                 refreshInSeconds: 8*3600 // User Id cache lifetime in seconds, defaulting to 'expires'
+            },
+        }, {
+            name: 'parrableId',
+            params: {
+                // Replace the list contents with the Parrable Partner Client IDs for Parrable-aware bid adapters in use
+                partners: [ "30182847-e426-4ff9-b2b5-9ca1324ea09b" ]  
+            },
+            storage: {
+                type: 'cookie',
+                name: '_parrable_eid',
+                expires: 365
             }
         }, {
             name: 'identityLink',
@@ -42,6 +53,16 @@ pbjs.setConfig({
                 type: 'cookie',
                 name: 'idl_env',
                 expires: 30
+            }
+        }, {
+            name: 'liveIntentId',
+            params: {
+                publisherId: '7798696' // Set an identifier of a publisher know to your systems 
+            },
+            storage: {
+                type: 'cookie',
+                name: '_li_pbid',
+                expires: 60
             }
         }],
         syncDelay: 5000,
@@ -82,6 +103,16 @@ pbjs.setConfig({
                 name: 'idl_env',
                 expires: 30
             }
+        }, {
+             name: 'liveIntentId',
+             params: {
+                 publisherId: '7798696' // Set an identifier of a publisher know to your systems 
+             },
+             storage: {
+                 type: 'html5',
+                 name: '_li_pbid',
+                 expires: 60
+             }
         }],
         syncDelay: 5000
     }
