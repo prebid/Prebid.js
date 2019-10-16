@@ -1,8 +1,6 @@
 import * as utils from '../src/utils'
 import { registerBidder } from '../src/adapters/bidderFactory'
 import { BANNER } from '../src/mediaTypes'
-const errorUrl = 'https://pcb.aws.lijit.com/c'
-let errorpxls = []
 
 export const spec = {
   code: 'sovrn',
@@ -24,7 +22,6 @@ export const spec = {
    */
   buildRequests: function(bidReqs, bidderRequest) {
     try {
-      const loc = utils.getTopWindowLocation();
       let sovrnImps = [];
       let iv;
       let schain;
@@ -44,9 +41,11 @@ export const spec = {
           schain = schain || bid.schain;
         }
         iv = iv || utils.getBidIdParameter('iv', bid.params);
-        bid.sizes = ((utils.isArray(bid.sizes) && utils.isArray(bid.sizes[0])) ? bid.sizes : [bid.sizes])
-        bid.sizes = bid.sizes.filter(size => utils.isArray(size))
-        const processedSizes = bid.sizes.map(size => ({w: parseInt(size[0], 10), h: parseInt(size[1], 10)}))
+
+        let bidSizes = (bid.mediaTypes && bid.mediaTypes.banner && bid.mediaTypes.banner.sizes) || bid.sizes;
+        bidSizes = ((utils.isArray(bidSizes) && utils.isArray(bidSizes[0])) ? bidSizes : [bidSizes])
+        bidSizes = bidSizes.filter(size => utils.isArray(size))
+        const processedSizes = bidSizes.map(size => ({w: parseInt(size[0], 10), h: parseInt(size[1], 10)}))
         sovrnImps.push({
           id: bid.bidId,
           banner: {
@@ -58,12 +57,19 @@ export const spec = {
           bidfloor: utils.getBidIdParameter('bidfloor', bid.params)
         });
       });
+
+      const page = bidderRequest.refererInfo.referer
+      // clever trick to get the domain
+      const el = document.createElement('a');
+      el.href = page;
+      const domain = el.hostname;
+
       const sovrnBidReq = {
         id: utils.getUniqueIdentifierStr(),
         imp: sovrnImps,
         site: {
-          domain: loc.host,
-          page: loc.host + loc.pathname + loc.search + loc.hash
+          page,
+          domain
         }
       };
 
@@ -95,7 +101,7 @@ export const spec = {
         }
       }
 
-      let url = `//ap.lijit.com/rtb/bid?` +
+      let url = `https://ap.lijit.com/rtb/bid?` +
         `src=$$REPO_AND_VERSION$$`;
       if (iv) url += `&iv=${iv}`;
 
@@ -106,7 +112,8 @@ export const spec = {
         options: {contentType: 'text/plain'}
       }
     } catch (e) {
-      new LogError(e, {bidReqs, bidderRequest}).append()
+      console.log('error in build:')
+      console.log(e)
     }
   },
 
@@ -141,7 +148,8 @@ export const spec = {
       }
       return sovrnBidResponses
     } catch (e) {
-      new LogError(e, {id, seatbid}).append()
+      console.log('error in interpret:')
+      console.log(e)
     }
   },
 
@@ -169,57 +177,14 @@ export const spec = {
             .flatMap(resp => resp.body.ext.sync.pixels)
             .map(pixel => pixel.url)
             .forEach(url => tracks.push({ type: 'image', url }))
-
-          if (errorpxls.length) {
-            tracks = tracks.concat(errorpxls)
-          }
         }
       }
 
       return tracks
     } catch (e) {
-      if (syncOptions.pixelEnabled) {
-        return errorpxls
-      }
       return []
     }
   },
-}
-
-export class LogError {
-  constructor(e, data) {
-    utils.logError(e)
-    this.error = {}
-    this.error.t = utils.timestamp()
-    this.error.m = e.message
-    this.error.s = e.stack
-    this.error.d = data
-    this.error.v = $$REPO_AND_VERSION$$
-    this.error.u = utils.getTopWindowLocation().href
-    this.error.ua = navigator.userAgent
-  }
-  buildErrorString(obj) {
-    return errorUrl + '?b=' + btoa(JSON.stringify(obj))
-  }
-  append() {
-    let errstr = this.buildErrorString(this.error)
-    if (errstr.length > 2083) {
-      delete this.error.d
-      errstr = this.buildErrorString(this.error)
-      if (errstr.length > 2083) {
-        delete this.error.s
-        errstr = this.buildErrorString(this.error)
-        if (errstr.length > 2083) {
-          errstr = this.buildErrorString({m: 'unknown error message', t: this.error.t, u: this.error.u})
-        }
-      }
-    }
-    let obj = {type: 'image', url: errstr}
-    errorpxls.push(obj)
-  }
-  static getErrPxls() {
-    return errorpxls
-  }
 }
 
 registerBidder(spec);
