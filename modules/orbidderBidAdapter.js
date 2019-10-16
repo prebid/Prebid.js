@@ -19,7 +19,6 @@ export const spec = {
       (bid.params.accountId && (typeof bid.params.accountId === 'string')) &&
       (bid.params.placementId && (typeof bid.params.placementId === 'string')) &&
       ((typeof bid.params.bidfloor === 'undefined') || (typeof bid.params.bidfloor === 'number')) &&
-      ((typeof bid.params.keyValues === 'undefined') || (typeof bid.params.keyValues === 'object')) &&
       ((typeof bid.params.profile === 'undefined') || (typeof bid.params.profile === 'object')));
   },
 
@@ -38,6 +37,7 @@ export const spec = {
           auctionId: bidRequest.auctionId,
           transactionId: bidRequest.transactionId,
           adUnitCode: bidRequest.adUnitCode,
+          bidRequestCount: bidRequest.bidRequestCount,
           sizes: bidRequest.sizes,
           params: bidRequest.params
         }
