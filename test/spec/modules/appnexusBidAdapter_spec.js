@@ -675,6 +675,50 @@ describe('AppNexusAdapter', function () {
       const payload = JSON.parse(request.data);
       expect(payload.tpuids).to.deep.equal([{provider: 'criteo', user_id: 'sample-userid'}]);
     });
+
+    it('should populate schain if available', function () {
+      const bidRequest = Object.assign({}, bidRequests[0], {
+        schain: {
+          ver: '1.0',
+          complete: 1,
+          nodes: [
+            {
+              'asi': 'blob.com',
+              'sid': '001',
+              'hp': 1
+            }
+          ]
+        }
+      });
+
+      const request = spec.buildRequests([bidRequest]);
+      const payload = JSON.parse(request.data);
+      expect(payload.schain).to.deep.equal({
+        ver: '1.0',
+        complete: 1,
+        nodes: [
+          {
+            'asi': 'blob.com',
+            'sid': '001',
+            'hp': 1
+          }
+        ]
+      });
+    });
+
+    it('should populate coppa if set in config', function () {
+      let bidRequest = Object.assign({}, bidRequests[0]);
+      sinon.stub(config, 'getConfig')
+        .withArgs('coppa')
+        .returns(true);
+
+      const request = spec.buildRequests([bidRequest]);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.user.coppa).to.equal(true);
+
+      config.getConfig.restore();
+    });
   })
 
   describe('interpretResponse', function () {

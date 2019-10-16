@@ -36,12 +36,12 @@ const SOURCE = 'pbjs';
 const MAX_IMPS_PER_REQUEST = 15;
 const mappingFileUrl = '//acdn.adnxs.com/prebid/appnexus-mapping/mappings.json';
 const SCRIPT_TAG_START = '<script';
-const VIEWABILITY_URL_START = /http:\/\/cdn\.adnxs\.com\/v/;
+const VIEWABILITY_URL_START = /\/\/cdn\.adnxs\.com\/v/;
 const VIEWABILITY_FILE_NAME = 'trk.js';
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['appnexusAst', 'brealtime', 'emxdigital', 'pagescience', 'defymedia', 'gourmetads', 'matomy', 'featureforward', 'districtm'],
+  aliases: ['appnexusAst', 'brealtime', 'emxdigital', 'pagescience', 'defymedia', 'gourmetads', 'matomy', 'featureforward', 'districtm', 'adasta'], // @NOTE we must remove oftmedia here if there is ever a conflict
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   /**
@@ -63,9 +63,11 @@ export const spec = {
   buildRequests: function(bidRequests, bidderRequest) {
     const tags = bidRequests.map(bidToTag);
     const userObjBid = find(bidRequests, hasUserInfo);
-    let userObj;
+    let userObj = {};
+    if (config.getConfig('coppa') === true) {
+      userObj = {'coppa': true};
+    }
     if (userObjBid) {
-      userObj = {};
       Object.keys(userObjBid.params.user)
         .filter(param => includes(USER_PARAMS, param))
         .forEach(param => userObj[param] = userObjBid.params.user[param]);
@@ -116,6 +118,7 @@ export const spec = {
 
     const memberIdBid = find(bidRequests, hasMemberId);
     const member = memberIdBid ? parseInt(memberIdBid.params.member, 10) : 0;
+    const schain = bidRequests[0].schain;
 
     const payload = {
       tags: [...tags],
@@ -123,7 +126,8 @@ export const spec = {
       sdk: {
         source: SOURCE,
         version: '$prebid.version$'
-      }
+      },
+      schain: schain
     };
 
     if (member > 0) {

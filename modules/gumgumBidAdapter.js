@@ -135,7 +135,7 @@ function isBidRequestValid (bid) {
  */
 function buildRequests (validBidRequests, bidderRequest) {
   const bids = [];
-  const gdprConsent = Object.assign({ consentString: null, gdprApplies: true }, bidderRequest && bidderRequest.gdprConsent)
+  const gdprConsent = bidderRequest && bidderRequest.gdprConsent;
   utils._each(validBidRequests, bidRequest => {
     const timeout = config.getConfig('bidderTimeout');
     const {
@@ -164,8 +164,10 @@ function buildRequests (validBidRequests, bidderRequest) {
       data.ni = parseInt(params.ICV, 10);
       data.pi = 5;
     }
-    data.gdprApplies = gdprConsent.gdprApplies ? 1 : 0;
-    if (gdprConsent.gdprApplies) {
+    if (gdprConsent) {
+      data.gdprApplies = gdprConsent.gdprApplies ? 1 : 0;
+    }
+    if (data.gdprApplies) {
       data.gdprConsent = gdprConsent.consentString;
     }
 
@@ -221,7 +223,7 @@ function interpretResponse (serverResponse, bidRequest) {
   let [width, height] = sizes[0].split('x')
 
   // return 1x1 when breakout expected
-  if (product === 5 && includes(sizes, '1x1')) {
+  if ((product === 2 || product === 5) && includes(sizes, '1x1')) {
     width = '1'
     height = '1'
   }
