@@ -18,7 +18,7 @@ var validBidRequests = [
     bidder: 'ozone',
     bidderRequestId: '1c1586b27a1b5c8',
     crumbs: {pubcid: '203a0692-f728-4856-87f6-9a25a6b63715'},
-    params: { publisherId: '9876abcd12-3', customData: {'gender': 'bart', 'age': 'low'}, lotameData: {'Profile': {'tpid': 'c8ef27a0d4ba771a81159f0d2e792db4', 'Audiences': {'Audience': [{'id': '99999', 'abbr': 'sports'}, {'id': '88888', 'abbr': 'movie'}, {'id': '77777', 'abbr': 'blogger'}], 'ThirdPartyAudience': [{'id': '123', 'name': 'Automobiles'}, {'id': '456', 'name': 'Ages: 30-39'}]}}}, placementId: '1310000099', siteId: '1234567890', id: 'fea37168-78f1-4a23-a40e-88437a99377e', auctionId: '27dcb421-95c6-4024-a624-3c03816c5f99', imp: [ { id: '2899ec066a91ff8', tagid: 'undefined', secure: 1, banner: { format: [{ w: 300, h: 250 }, { w: 300, h: 600 }], h: 250, topframe: 1, w: 300 } } ] },
+    params: { publisherId: '9876abcd12-3', customData: [{'settings': {}, 'targeting': {'gender': 'bart', 'age': 'low'}}], lotameData: {'Profile': {'tpid': 'c8ef27a0d4ba771a81159f0d2e792db4', 'Audiences': {'Audience': [{'id': '99999', 'abbr': 'sports'}, {'id': '88888', 'abbr': 'movie'}, {'id': '77777', 'abbr': 'blogger'}], 'ThirdPartyAudience': [{'id': '123', 'name': 'Automobiles'}, {'id': '456', 'name': 'Ages: 30-39'}]}}}, placementId: '1310000099', siteId: '1234567890', id: 'fea37168-78f1-4a23-a40e-88437a99377e', auctionId: '27dcb421-95c6-4024-a624-3c03816c5f99', imp: [ { id: '2899ec066a91ff8', tagid: 'undefined', secure: 1, banner: { format: [{ w: 300, h: 250 }, { w: 300, h: 600 }], h: 250, topframe: 1, w: 300 } } ] },
     sizes: [[300, 250], [300, 600]],
     transactionId: '2e63c0ed-b10c-4008-aed5-84582cecfe87'
   }
@@ -45,7 +45,7 @@ var validBidRequestsNoSizes = [
     bidder: 'ozone',
     bidderRequestId: '1c1586b27a1b5c8',
     crumbs: {pubcid: '203a0692-f728-4856-87f6-9a25a6b63715'},
-    params: { publisherId: '9876abcd12-3', customData: {'gender': 'bart', 'age': 'low'}, lotameData: {'Profile': {'tpid': 'c8ef27a0d4ba771a81159f0d2e792db4', 'Audiences': {'Audience': [{'id': '99999', 'abbr': 'sports'}, {'id': '88888', 'abbr': 'movie'}, {'id': '77777', 'abbr': 'blogger'}], 'ThirdPartyAudience': [{'id': '123', 'name': 'Automobiles'}, {'id': '456', 'name': 'Ages: 30-39'}]}}}, placementId: '1310000099', siteId: '1234567890', id: 'fea37168-78f1-4a23-a40e-88437a99377e', auctionId: '27dcb421-95c6-4024-a624-3c03816c5f99', imp: [ { id: '2899ec066a91ff8', tagid: 'undefined', secure: 1, banner: { format: [{ w: 300, h: 250 }, { w: 300, h: 600 }], h: 250, topframe: 1, w: 300 } } ] },
+    params: { publisherId: '9876abcd12-3', customData: [{'settings': {}, 'targeting': {'gender': 'bart', 'age': 'low'}}], lotameData: {'Profile': {'tpid': 'c8ef27a0d4ba771a81159f0d2e792db4', 'Audiences': {'Audience': [{'id': '99999', 'abbr': 'sports'}, {'id': '88888', 'abbr': 'movie'}, {'id': '77777', 'abbr': 'blogger'}], 'ThirdPartyAudience': [{'id': '123', 'name': 'Automobiles'}, {'id': '456', 'name': 'Ages: 30-39'}]}}}, placementId: '1310000099', siteId: '1234567890', id: 'fea37168-78f1-4a23-a40e-88437a99377e', auctionId: '27dcb421-95c6-4024-a624-3c03816c5f99', imp: [ { id: '2899ec066a91ff8', tagid: 'undefined', secure: 1, banner: { format: [{ w: 300, h: 250 }, { w: 300, h: 600 }], h: 250, topframe: 1, w: 300 } } ] },
     transactionId: '2e63c0ed-b10c-4008-aed5-84582cecfe87'
   }
 ];
@@ -59,7 +59,7 @@ var validBidRequestsWithBannerMediaType = [
     bidder: 'ozone',
     bidderRequestId: '1c1586b27a1b5c8',
     crumbs: {pubcid: '203a0692-f728-4856-87f6-9a25a6b63715'},
-    params: { publisherId: '9876abcd12-3', customData: {'gender': 'bart', 'age': 'low'}, lotameData: {'Profile': {'tpid': 'c8ef27a0d4ba771a81159f0d2e792db4', 'Audiences': {'Audience': [{'id': '99999', 'abbr': 'sports'}, {'id': '88888', 'abbr': 'movie'}, {'id': '77777', 'abbr': 'blogger'}], 'ThirdPartyAudience': [{'id': '123', 'name': 'Automobiles'}, {'id': '456', 'name': 'Ages: 30-39'}]}}}, placementId: '1310000099', siteId: '1234567890', id: 'fea37168-78f1-4a23-a40e-88437a99377e', auctionId: '27dcb421-95c6-4024-a624-3c03816c5f99', imp: [ { id: '2899ec066a91ff8', tagid: 'undefined', secure: 1, banner: { format: [{ w: 300, h: 250 }, { w: 300, h: 600 }], h: 250, topframe: 1, w: 300 } } ] },
+    params: { publisherId: '9876abcd12-3', customData: [{'settings': {}, 'targeting': {'gender': 'bart', 'age': 'low'}}], lotameData: {'Profile': {'tpid': 'c8ef27a0d4ba771a81159f0d2e792db4', 'Audiences': {'Audience': [{'id': '99999', 'abbr': 'sports'}, {'id': '88888', 'abbr': 'movie'}, {'id': '77777', 'abbr': 'blogger'}], 'ThirdPartyAudience': [{'id': '123', 'name': 'Automobiles'}, {'id': '456', 'name': 'Ages: 30-39'}]}}}, placementId: '1310000099', siteId: '1234567890', id: 'fea37168-78f1-4a23-a40e-88437a99377e', auctionId: '27dcb421-95c6-4024-a624-3c03816c5f99', imp: [ { id: '2899ec066a91ff8', tagid: 'undefined', secure: 1, banner: { format: [{ w: 300, h: 250 }, { w: 300, h: 600 }], h: 250, topframe: 1, w: 300 } } ] },
     mediaTypes: {banner: {sizes: [[300, 250], [300, 600]]}},
     transactionId: '2e63c0ed-b10c-4008-aed5-84582cecfe87'
   }
@@ -73,7 +73,7 @@ var validBidRequestsWithNonBannerMediaTypesAndValidOutstreamVideo = [
     bidder: 'ozone',
     bidderRequestId: '1c1586b27a1b5c8',
     crumbs: {pubcid: '203a0692-f728-4856-87f6-9a25a6b63715'},
-    params: { publisherId: '9876abcd12-3', customData: {'gender': 'bart', 'age': 'low'}, lotameData: {'Profile': {'tpid': 'c8ef27a0d4ba771a81159f0d2e792db4', 'Audiences': {'Audience': [{'id': '99999', 'abbr': 'sports'}, {'id': '88888', 'abbr': 'movie'}, {'id': '77777', 'abbr': 'blogger'}], 'ThirdPartyAudience': [{'id': '123', 'name': 'Automobiles'}, {'id': '456', 'name': 'Ages: 30-39'}]}}}, placementId: '1310000099', siteId: '1234567890', id: 'fea37168-78f1-4a23-a40e-88437a99377e', auctionId: '27dcb421-95c6-4024-a624-3c03816c5f99', imp: [ { id: '2899ec066a91ff8', tagid: 'undefined', secure: 1, video: {skippable: true, playback_method: ['auto_play_sound_off'], targetDiv: 'some-different-div-id-to-my-adunitcode'} } ] },
+    params: { publisherId: '9876abcd12-3', customData: [{'settings': {}, 'targeting': {'gender': 'bart', 'age': 'low'}}], lotameData: {'Profile': {'tpid': 'c8ef27a0d4ba771a81159f0d2e792db4', 'Audiences': {'Audience': [{'id': '99999', 'abbr': 'sports'}, {'id': '88888', 'abbr': 'movie'}, {'id': '77777', 'abbr': 'blogger'}], 'ThirdPartyAudience': [{'id': '123', 'name': 'Automobiles'}, {'id': '456', 'name': 'Ages: 30-39'}]}}}, placementId: '1310000099', siteId: '1234567890', id: 'fea37168-78f1-4a23-a40e-88437a99377e', auctionId: '27dcb421-95c6-4024-a624-3c03816c5f99', imp: [ { id: '2899ec066a91ff8', tagid: 'undefined', secure: 1, video: {skippable: true, playback_method: ['auto_play_sound_off'], targetDiv: 'some-different-div-id-to-my-adunitcode'} } ] },
     mediaTypes: {video: {mimes: ['video/mp4'], 'context': 'outstream', 'sizes': [640, 480]}, native: {info: 'dummy data'}},
     transactionId: '2e63c0ed-b10c-4008-aed5-84582cecfe87'
   }
@@ -92,7 +92,7 @@ var validBidderRequest = {
     bidder: 'ozone',
     bidderRequestId: '1c1586b27a1b5c8',
     crumbs: {pubcid: '203a0692-f728-4856-87f6-9a25a6b63715'},
-    params: { publisherId: '9876abcd12-3', customData: {'gender': 'bart', 'age': 'low'}, lotameData: {'Profile': {'tpid': 'c8ef27a0d4ba771a81159f0d2e792db4', 'Audiences': {'Audience': [{'id': '99999', 'abbr': 'sports'}, {'id': '88888', 'abbr': 'movie'}, {'id': '77777', 'abbr': 'blogger'}], 'ThirdPartyAudience': [{'id': '123', 'name': 'Automobiles'}, {'id': '456', 'name': 'Ages: 30-39'}]}}}, placementId: '1310000099', siteId: '1234567890', id: 'fea37168-78f1-4a23-a40e-88437a99377e', auctionId: '27dcb421-95c6-4024-a624-3c03816c5f99', imp: [ { banner: { topframe: 1, w: 300, h: 250, format: [{ w: 300, h: 250 }, { w: 300, h: 600 }] }, id: '2899ec066a91ff8', secure: 1, tagid: 'undefined' } ] },
+    params: { publisherId: '9876abcd12-3', customData: [{'settings': {}, 'targeting': {'gender': 'bart', 'age': 'low'}}], lotameData: {'Profile': {'tpid': 'c8ef27a0d4ba771a81159f0d2e792db4', 'Audiences': {'Audience': [{'id': '99999', 'abbr': 'sports'}, {'id': '88888', 'abbr': 'movie'}, {'id': '77777', 'abbr': 'blogger'}], 'ThirdPartyAudience': [{'id': '123', 'name': 'Automobiles'}, {'id': '456', 'name': 'Ages: 30-39'}]}}}, placementId: '1310000099', siteId: '1234567890', id: 'fea37168-78f1-4a23-a40e-88437a99377e', auctionId: '27dcb421-95c6-4024-a624-3c03816c5f99', imp: [ { banner: { topframe: 1, w: 300, h: 250, format: [{ w: 300, h: 250 }, { w: 300, h: 600 }] }, id: '2899ec066a91ff8', secure: 1, tagid: 'undefined' } ] },
     sizes: [[300, 250], [300, 600]],
     transactionId: '2e63c0ed-b10c-4008-aed5-84582cecfe87'
   }],
@@ -118,7 +118,7 @@ var bidderRequestWithFullGdpr = {
     bidder: 'ozone',
     bidderRequestId: '1c1586b27a1b5c8',
     crumbs: {pubcid: '203a0692-f728-4856-87f6-9a25a6b63715'},
-    params: { publisherId: '9876abcd12-3', customData: {'gender': 'bart', 'age': 'low'}, lotameData: {'Profile': {'tpid': 'c8ef27a0d4ba771a81159f0d2e792db4', 'Audiences': {'Audience': [{'id': '99999', 'abbr': 'sports'}, {'id': '88888', 'abbr': 'movie'}, {'id': '77777', 'abbr': 'blogger'}], 'ThirdPartyAudience': [{'id': '123', 'name': 'Automobiles'}, {'id': '456', 'name': 'Ages: 30-39'}]}}}, placementId: '1310000099', siteId: '1234567890', id: 'fea37168-78f1-4a23-a40e-88437a99377e', auctionId: '27dcb421-95c6-4024-a624-3c03816c5f99', imp: [ { banner: { topframe: 1, w: 300, h: 250, format: [{ w: 300, h: 250 }, { w: 300, h: 600 }] }, id: '2899ec066a91ff8', secure: 1, tagid: 'undefined' } ] },
+    params: { publisherId: '9876abcd12-3', customData: [{'settings': {}, 'targeting': {'gender': 'bart', 'age': 'low'}}], lotameData: {'Profile': {'tpid': 'c8ef27a0d4ba771a81159f0d2e792db4', 'Audiences': {'Audience': [{'id': '99999', 'abbr': 'sports'}, {'id': '88888', 'abbr': 'movie'}, {'id': '77777', 'abbr': 'blogger'}], 'ThirdPartyAudience': [{'id': '123', 'name': 'Automobiles'}, {'id': '456', 'name': 'Ages: 30-39'}]}}}, placementId: '1310000099', siteId: '1234567890', id: 'fea37168-78f1-4a23-a40e-88437a99377e', auctionId: '27dcb421-95c6-4024-a624-3c03816c5f99', imp: [ { banner: { topframe: 1, w: 300, h: 250, format: [{ w: 300, h: 250 }, { w: 300, h: 600 }] }, id: '2899ec066a91ff8', secure: 1, tagid: 'undefined' } ] },
     sizes: [[300, 250], [300, 600]],
     transactionId: '2e63c0ed-b10c-4008-aed5-84582cecfe87'
   }],
@@ -156,6 +156,70 @@ var bidderRequestWithFullGdpr = {
       }
     },
     'gdprApplies': true
+  },
+};
+
+var gdpr1 = {
+  'consentString': 'BOh7mtYOh7mtYAcABBENCU-AAAAncgPIXJiiAoao0PxBFkgCAC8ACIAAQAQQAAIAAAIAAAhBGAAAQAQAEQgAAAAAAABAAAAAAAAAAAAAAACAAAAAAAACgAAAAABAAAAQAAAAAAA',
+  'vendorData': {
+    'metadata': 'BOh7mtYOh7mtYAcABBENCU-AAAAncgPIXJiiAoao0PxBFkgCAC8ACIAAQAQQAAIAAAIAAAhBGAAAQAQAEQgAAAAAAABAAAAAAAAAAAAAAACAAAAAAAACgAAAAABAAAAQAAAAAAA',
+    'gdprApplies': true,
+    'hasGlobalScope': false,
+    'cookieVersion': '1',
+    'created': '2019-05-31T12:46:48.825',
+    'lastUpdated': '2019-05-31T12:46:48.825',
+    'cmpId': '28',
+    'cmpVersion': '1',
+    'consentLanguage': 'en',
+    'consentScreen': '1',
+    'vendorListVersion': 148,
+    'maxVendorId': 631,
+    'purposeConsents': {
+      '1': true,
+      '2': true,
+      '3': true,
+      '4': true,
+      '5': true
+    },
+    'vendorConsents': {
+      '468': true,
+      '522': true,
+      '524': true, /* 524 is ozone */
+      '565': true,
+      '591': true
+    }
+  },
+  'gdprApplies': true
+};
+
+// simulating the Mirror
+var bidderRequestWithPartialGdpr = {
+  auctionId: '27dcb421-95c6-4024-a624-3c03816c5f99',
+  auctionStart: 1536838908986,
+  bidderCode: 'ozone',
+  bidderRequestId: '1c1586b27a1b5c8',
+  bids: [{
+    adUnitCode: 'div-gpt-ad-1460505748561-0',
+    auctionId: '27dcb421-95c6-4024-a624-3c03816c5f99',
+    bidId: '2899ec066a91ff8',
+    bidRequestsCount: 1,
+    bidder: 'ozone',
+    bidderRequestId: '1c1586b27a1b5c8',
+    crumbs: {pubcid: '203a0692-f728-4856-87f6-9a25a6b63715'},
+    params: { publisherId: '9876abcd12-3', customData: [{'settings': {}, 'targeting': {'gender': 'bart', 'age': 'low'}}], lotameData: {'Profile': {'tpid': 'c8ef27a0d4ba771a81159f0d2e792db4', 'Audiences': {'Audience': [{'id': '99999', 'abbr': 'sports'}, {'id': '88888', 'abbr': 'movie'}, {'id': '77777', 'abbr': 'blogger'}], 'ThirdPartyAudience': [{'id': '123', 'name': 'Automobiles'}, {'id': '456', 'name': 'Ages: 30-39'}]}}}, placementId: '1310000099', siteId: '1234567890', id: 'fea37168-78f1-4a23-a40e-88437a99377e', auctionId: '27dcb421-95c6-4024-a624-3c03816c5f99', imp: [ { banner: { topframe: 1, w: 300, h: 250, format: [{ w: 300, h: 250 }, { w: 300, h: 600 }] }, id: '2899ec066a91ff8', secure: 1, tagid: 'undefined' } ] },
+    sizes: [[300, 250], [300, 600]],
+    transactionId: '2e63c0ed-b10c-4008-aed5-84582cecfe87'
+  }],
+  doneCbCallCount: 1,
+  start: 1536838908987,
+  timeout: 3000,
+  gdprConsent: {
+    'consentString': 'BOh7mtYOh7mtYAcABBENCU-AAAAncgPIXJiiAoao0PxBFkgCAC8ACIAAQAQQAAIAAAIAAAhBGAAAQAQAEQgAAAAAAABAAAAAAAAAAAAAAACAAAAAAAACgAAAAABAAAAQAAAAAAA',
+    'gdprApplies': true,
+    'vendorData': {
+      'metadata': 'BOh7mtYOh7mtYAcABBENCU-AAAAncgPIXJiiAoao0PxBFkgCAC8ACIAAQAQQAAIAAAIAAAhBGAAAQAQAEQgAAAAAAABAAAAAAAAAAAAAAACAAAAAAAACgAAAAABAAAAQAAAAAAA',
+      'gdprApplies': true
+    }
   },
 };
 
@@ -390,7 +454,7 @@ describe('ozone Adapter', function () {
         placementId: '1310000099',
         publisherId: '9876abcd12-3',
         siteId: '1234567890',
-        customData: {'gender': 'bart', 'age': 'low'},
+        customData: [{'settings': {}, 'targeting': {'gender': 'bart', 'age': 'low'}}],
         lotameData: {'Profile': {'tpid': 'c8ef27a0d4ba771a81159f0d2e792db4', 'Audiences': {'Audience': [{'id': '99999', 'abbr': 'sports'}, {'id': '88888', 'abbr': 'movie'}, {'id': '77777', 'abbr': 'blogger'}], 'ThirdPartyAudience': [{'id': '123', 'name': 'Automobiles'}, {'id': '456', 'name': 'Ages: 30-39'}]}}},
       },
       siteId: 1234567890
@@ -615,35 +679,75 @@ describe('ozone Adapter', function () {
       }
     };
 
-    it('should not validate customData not being an object', function () {
+    it('should not validate customData not being an array', function () {
       expect(spec.isBidRequestValid(xBadCustomData)).to.equal(false);
     });
 
-    var xCustomParams = {
+    var xBadCustomData_OLD_CUSTOMDATA_VALUE = {
       bidder: BIDDER_CODE,
       params: {
         'placementId': '1234567890',
         'publisherId': '9876abcd12-3',
-        'customParams': {'info': 'this is not allowed'},
-        siteId: '1234567890'
+        'siteId': '1234567890',
+        'customData': {'gender': 'bart', 'age': 'low'}
       }
     };
 
-    it('should not validate customParams being sent', function () {
-      expect(spec.isBidRequestValid(xCustomParams)).to.equal(false);
+    it('should not validate customData being an object, not an array', function () {
+      expect(spec.isBidRequestValid(xBadCustomData_OLD_CUSTOMDATA_VALUE)).to.equal(false);
     });
 
-    var xBadCustomData = {
+    var xBadCustomData_zerocd = {
+      bidder: BIDDER_CODE,
+      params: {
+        'placementId': '1111111110',
+        'publisherId': '9876abcd12-3',
+        'siteId': '1234567890',
+        'customData': []
+      }
+    };
+
+    it('should not validate customData array having no elements', function () {
+      expect(spec.isBidRequestValid(xBadCustomData_zerocd)).to.equal(false);
+    });
+
+    var xBadCustomData_notargeting = {
       bidder: BIDDER_CODE,
       params: {
         'placementId': '1234567890',
         'publisherId': '9876abcd12-3',
-        'customData': 'this should be an object',
+        'customData': [{'settings': {}, 'xx': {'gender': 'bart', 'age': 'low'}}],
         siteId: '1234567890'
       }
     };
-    it('should not validate ozoneData being sent', function () {
-      expect(spec.isBidRequestValid(xBadCustomData)).to.equal(false);
+    it('should not validate customData[] having no "targeting"', function () {
+      expect(spec.isBidRequestValid(xBadCustomData_notargeting)).to.equal(false);
+    });
+
+    var xBadCustomData_tgt_not_obj = {
+      bidder: BIDDER_CODE,
+      params: {
+        'placementId': '1234567890',
+        'publisherId': '9876abcd12-3',
+        'customData': [{'settings': {}, 'targeting': 'this should be an object'}],
+        siteId: '1234567890'
+      }
+    };
+    it('should not validate customData[0].targeting not being an object', function () {
+      expect(spec.isBidRequestValid(xBadCustomData_tgt_not_obj)).to.equal(false);
+    });
+
+    var xBadCustomParams = {
+      bidder: BIDDER_CODE,
+      params: {
+        'placementId': '1234567890',
+        'publisherId': '9876abcd12-3',
+        'siteId': '1234567890',
+        'customParams': 'this key is no longer valid'
+      }
+    };
+    it('should not validate customParams - this is a renamed key', function () {
+      expect(spec.isBidRequestValid(xBadCustomParams)).to.equal(false);
     });
 
     var xBadLotame = {
@@ -737,7 +841,7 @@ describe('ozone Adapter', function () {
       expect(request.data).to.be.a('string');
       var data = JSON.parse(request.data);
       expect(data.imp[0].ext.ozone.lotameData).to.be.an('object');
-      expect(data.imp[0].ext.ozone.customData).to.be.an('object');
+      expect(data.imp[0].ext.ozone.customData).to.be.an('array');
       expect(request).not.to.have.key('lotameData');
       expect(request).not.to.have.key('customData');
     });
@@ -749,7 +853,7 @@ describe('ozone Adapter', function () {
       expect(request.data).to.be.a('string');
       var data = JSON.parse(request.data);
       expect(data.imp[0].ext.ozone.lotameData).to.be.an('object');
-      expect(data.imp[0].ext.ozone.customData).to.be.an('object');
+      expect(data.imp[0].ext.ozone.customData).to.be.an('array');
       expect(data.imp[0].ext.ozone.ozoneData).to.be.undefined;
       expect(request).not.to.have.key('lotameData');
       expect(request).not.to.have.key('customData');
@@ -796,6 +900,8 @@ describe('ozone Adapter', function () {
         consentString: consentString,
         gdprApplies: true,
         vendorData: {
+          metadata: consentString,
+          gdprApplies: true,
           vendorConsents: {524: true},
           purposeConsents: {1: true, 2: true, 3: true, 4: true, 5: true}
         }
@@ -804,46 +910,25 @@ describe('ozone Adapter', function () {
       const request = spec.buildRequests(validBidRequestsNoSizes, bidderRequest);
       const payload = JSON.parse(request.data);
       expect(payload.regs.ext.gdpr).to.equal(1);
-      expect(payload.regs.ext.oz_con).to.exist.and.to.equal(1);
-      expect(payload.regs.ext.gap).to.exist.and.to.be.an('array').and.to.eql([1, 2, 3, 4, 5]);
+      expect(payload.user.ext.consent).to.equal(consentString);
     });
 
-    it('should add correct gdpr consent information to the request when user has accepted only some purpose consents', function () {
+    it('should add gdpr consent information to the request when ozone is true and vendorData is missing vendorConsents (Mirror)', function () {
       let consentString = 'BOcocyaOcocyaAfEYDENCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NphLgA==';
       let bidderRequest = validBidderRequest;
       bidderRequest.gdprConsent = {
         consentString: consentString,
         gdprApplies: true,
         vendorData: {
-          vendorConsents: {524: true},
-          purposeConsents: {1: true, 4: true, 5: true}
+          metadata: consentString,
+          gdprApplies: true
         }
       }
 
       const request = spec.buildRequests(validBidRequestsNoSizes, bidderRequest);
       const payload = JSON.parse(request.data);
       expect(payload.regs.ext.gdpr).to.equal(1);
-      expect(payload.regs.ext.oz_con).to.exist.and.to.equal(1);
-      expect(payload.regs.ext.gap).to.exist.and.to.be.an('array').and.to.eql([1, 4, 5]);
-    });
-
-    it('should add gdpr consent information to the request when ozone is false', function () {
-      let consentString = 'BOcocyaOcocyaAfEYDENCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NphLgA==';
-      let bidderRequest = validBidderRequest;
-      bidderRequest.gdprConsent = {
-        consentString: consentString,
-        gdprApplies: true,
-        vendorData: {
-          vendorConsents: {}, /* 524 is not present */
-          purposeConsents: {1: true, 2: true, 3: true, 4: true, 5: true}
-        }
-      };
-
-      const request = spec.buildRequests(validBidRequestsNoSizes, bidderRequest);
-      const payload = JSON.parse(request.data);
-      expect(payload.regs.ext.gdpr).to.equal(1);
-      expect(payload.regs.ext.oz_con).to.exist.and.to.equal(0);
-      expect(payload.regs.ext.gap).to.exist.and.to.be.an('array').and.to.eql([1, 2, 3, 4, 5]);
+      expect(payload.user.ext.consent).to.equal(consentString);
     });
 
     it('should set regs.ext.gdpr flag to 0 when gdprApplies is false', function () {
@@ -853,6 +938,8 @@ describe('ozone Adapter', function () {
         consentString: consentString,
         gdprApplies: false,
         vendorData: {
+          metadata: consentString,
+          gdprApplies: true,
           vendorConsents: {}, /* 524 is not present */
           purposeConsents: {1: true, 2: true, 3: true, 4: true, 5: true}
         }
@@ -861,8 +948,6 @@ describe('ozone Adapter', function () {
       const request = spec.buildRequests(validBidRequestsNoSizes, bidderRequest);
       const payload = JSON.parse(request.data);
       expect(payload.regs.ext.gdpr).to.equal(0);
-      expect(payload.regs.ext.oz_con).to.be.undefined;
-      expect(payload.regs.ext.gap).to.be.undefined;
     });
   });
 
@@ -883,11 +968,17 @@ describe('ozone Adapter', function () {
     });
 
     it('should build bid array with gdpr', function () {
-      var validBidderRequestWithGdpr = validBidderRequest;
+      var validBidderRequestWithGdpr = bidderRequestWithFullGdpr;
       validBidderRequestWithGdpr.gdprConsent = {'gdprApplies': 1, 'consentString': 'This is the gdpr consent string'};
       const request = spec.buildRequests(validBidRequests, validBidderRequestWithGdpr);
       const result = spec.interpretResponse(validResponse, request);
       expect(result.length).to.equal(1);
+    });
+
+    it('should build bid array with only partial gdpr', function () {
+      var validBidderRequestWithGdpr = bidderRequestWithPartialGdpr;
+      validBidderRequestWithGdpr.gdprConsent = {'gdprApplies': 1, 'consentString': 'This is the gdpr consent string'};
+      const request = spec.buildRequests(validBidRequests, validBidderRequestWithGdpr);
     });
 
     it('should fail ok if no seatbid in server response', function () {
@@ -914,16 +1005,32 @@ describe('ozone Adapter', function () {
       const result = spec.interpretResponse(validBidResponse1adWith2Bidders, request);
       expect(result.length).to.equal(2);
     });
+
+    it('should have a ttl of 600', function () {
+      const request = spec.buildRequests(validBidRequests, validBidderRequest);
+      const result = spec.interpretResponse(validResponse, request);
+      expect(result[0].ttl).to.equal(300);
+    });
   });
 
   describe('userSyncs', function () {
     it('should fail gracefully if no server response', function () {
-      const result = spec.getUserSyncs('bad', false);
+      const result = spec.getUserSyncs('bad', false, gdpr1);
       expect(result).to.be.empty;
     });
     it('should fail gracefully if server response is empty', function () {
-      const result = spec.getUserSyncs('bad', []);
+      const result = spec.getUserSyncs('bad', [], gdpr1);
       expect(result).to.be.empty;
+    });
+    it('should append the various values if they exist', function() {
+      // get the cookie bag populated
+      spec.buildRequests(validBidRequests, validBidderRequest);
+      const result = spec.getUserSyncs({iframeEnabled: true}, 'good server response', gdpr1);
+      expect(result).to.be.an('array');
+      expect(result[0].url).to.include('publisherId=9876abcd12-3');
+      expect(result[0].url).to.include('siteId=1234567890');
+      expect(result[0].url).to.include('gdpr=1');
+      expect(result[0].url).to.include('gdpr_consent=BOh7mtYOh7mtYAcABBENCU-AAAAncgPIXJiiAoao0PxBFkgCAC8ACIAAQAQQAAIAAAIAAAhBGAAAQAQAEQgAAAAAAABAAAAAAAAAAAAAAACAAAAAAAACgAAAAABAAAAQAAAAAAA');
     });
   });
 

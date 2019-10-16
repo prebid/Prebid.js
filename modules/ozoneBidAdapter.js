@@ -3,19 +3,47 @@ import { registerBidder } from '../src/adapters/bidderFactory';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes';
 import {config} from '../src/config';
 import {getPriceBucketString} from '../src/cpmBucketManager';
-import { Renderer } from '../src/Renderer'
+import { Renderer } from '../src/Renderer';
 
 const BIDDER_CODE = 'ozone';
 
-const OZONEURI = 'https://elb.the-ozone-project.com/openrtb2/auction';
-const OZONECOOKIESYNC = 'https://elb.the-ozone-project.com/static/load-cookie.html';
-const OZONE_RENDERER_URL = 'https://prebid.the-ozone-project.com/ozone-renderer.js';
+// testing fake endpoint for cookie sync new code with postMessage
+// const OZONECOOKIESYNC = 'http://local.bussongs.com/prebid-cookie-sync-development.html';
+// const OZONECOOKIESYNC = 'https://betalyst.local/prebid-cookie-sync-development.html';
 
-const OZONEVERSION = '2.1.2';
+// *** DEV-ozpr
+const OZONEURI = 'https://test.ozpr.net/openrtb2/auction';
+const OZONECOOKIESYNC = 'https://test.ozpr.net/static/load-cookie.html';
+const OZONE_RENDERER_URL = 'http://silvermine.io/ozone/publishers/telegraph/ozone_files/ozone-renderer-jw-unruly.js';
+
+// *** DEV-afsheen
+// const OZONEURI = 'http://afsheen-dev.the-ozone-project.com/openrtb2/auction';
+// const OZONECOOKIESYNC = 'http://afsheen-dev.the-ozone-project.com/static/load-cookie.html';
+// const OZONE_RENDERER_URL = 'http://silvermine.io/ozone/publishers/telegraph/ozone_files/ozone-renderer-jw-unruly.js';
+
+// *** PROD ***
+// const OZONEURI = 'https://elb.the-ozone-project.com/openrtb2/auction';
+// const OZONECOOKIESYNC = 'https://elb.the-ozone-project.com/static/load-cookie.html';
+// const OZONE_RENDERER_URL = 'https://prebid.the-ozone-project.com/ozone-renderer.js';
+
+const OZONEVERSION = '2.1.5';
+
+// src/prebid.js calls src/userSync.js very early. userSync.js sets default for syncsPerBidder
+// IF you want to call this here and set your OWN custom values then you need to specify ALL the userSync keys & values,
+// not just the one you are interested in. Otherwise you will get weird problems.
+// config.setDefaults({
+//   'userSync': {
+//     syncEnabled: true,
+//     pixelEnabled: true,
+//     syncsPerBidder: 10,
+//     syncDelay: 3000
+//   }
+// });
 
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [VIDEO, BANNER],
+  cookieSyncBag: {'publisherId': null, 'siteId': null, 'pubcid': null}, /* variables we want to make available to cookie sync */
 
   /**
    * Basic check to see whether required parameters are in the request.
@@ -23,6 +51,9 @@ export const spec = {
    * @returns {boolean}
    */
   isBidRequestValid(bid) {
+    utils.logInfo('usersync : ', config.getConfig());
+    // config.setDefaults({userSync: {syncsPerBidder: 10}}); // this sets the default value unless it's set in the page config.
+
     if (!(bid.params.hasOwnProperty('placementId'))) {
       utils.logInfo('OZONE: OZONE BID ADAPTER VALIDATION FAILED : missing placementId : siteId, placementId and publisherId are REQUIRED');
       return false;
@@ -47,15 +78,27 @@ export const spec = {
       utils.logInfo('OZONE: OZONE BID ADAPTER VALIDATION FAILED : siteId must be exactly 10 numeric characters');
       return false;
     }
-    if (bid.params.hasOwnProperty('customData')) {
-      if (typeof bid.params.customData !== 'object') {
-        utils.logInfo('OZONE: OZONE BID ADAPTER VALIDATION FAILED : customData is not an object');
-        return false;
-      }
-    }
     if (bid.params.hasOwnProperty('customParams')) {
       utils.logInfo('OZONE: OZONE BID ADAPTER VALIDATION FAILED : customParams should be renamed to customData');
       return false;
+    }
+    if (bid.params.hasOwnProperty('customData')) {
+      if (!Array.isArray(bid.params.customData)) {
+        utils.logInfo('OZONE: OZONE BID ADAPTER VALIDATION FAILED : customData is not an Array');
+        return false;
+      }
+      if (bid.params.customData.length < 1) {
+        utils.logInfo('OZONE: OZONE BID ADAPTER VALIDATION FAILED : customData is an array but does not contain any elements');
+        return false;
+      }
+      if (!(bid.params.customData[0]).hasOwnProperty('targeting')) {
+        utils.logInfo('OZONE: OZONE BID ADAPTER VALIDATION FAILED : customData[0] does not contain "targeting"');
+        return false;
+      }
+      if (typeof bid.params.customData[0]['targeting'] != 'object') {
+        utils.logInfo('OZONE: OZONE BID ADAPTER VALIDATION FAILED : customData[0] targeting is not an object');
+        return false;
+      }
     }
     if (bid.params.hasOwnProperty('lotameData')) {
       if (typeof bid.params.lotameData !== 'object') {
@@ -78,6 +121,11 @@ export const spec = {
 
   buildRequests(validBidRequests, bidderRequest) {
     utils.logInfo('OZONE: ozone v' + OZONEVERSION + ' validBidRequests', validBidRequests, 'bidderRequest', bidderRequest);
+    if (validBidRequests.length > 0) {
+      this.cookieSyncBag.pubcid = utils.deepAccess(validBidRequests[0], 'crumbs.pubcid');
+      this.cookieSyncBag.siteId = utils.deepAccess(validBidRequests[0], 'params.siteId');
+      this.cookieSyncBag.publisherId = utils.deepAccess(validBidRequests[0], 'params.publisherId');
+    }
     let singleRequest = config.getConfig('ozone.singleRequest');
     singleRequest = singleRequest !== false; // undefined & true will be true
     utils.logInfo('OZONE: config ozone.singleRequest : ', singleRequest);
@@ -88,24 +136,11 @@ export const spec = {
     if (bidderRequest && bidderRequest.gdprConsent) {
       utils.logInfo('OZONE: ADDING GDPR info');
       ozoneRequest.regs = {};
-      ozoneRequest.regs.ext = {};
+      ozoneRequest.regs.ext = {}; // setting default values in case there is no additional information, like for the Mirror
       ozoneRequest.regs.ext.gdpr = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
       if (ozoneRequest.regs.ext.gdpr) {
         ozoneRequest.user = ozoneRequest.user || {};
-        if (
-          bidderRequest.gdprConsent.vendorData &&
-          bidderRequest.gdprConsent.vendorData.vendorConsents &&
-          typeof bidderRequest.gdprConsent.consentString !== 'undefined'
-        ) {
-          utils.logInfo('OZONE: found all info we need for GDPR - will add info to request object');
-          ozoneRequest.user.ext = {'consent': bidderRequest.gdprConsent.consentString};
-          // are we able to make this request?
-          let vendorConsents = bidderRequest.gdprConsent.vendorData.vendorConsents;
-          let boolGdprConsentForOzone = vendorConsents[524];
-          let arrGdprConsents = toFlatArray(bidderRequest.gdprConsent.vendorData.purposeConsents);
-          ozoneRequest.regs.ext.oz_con = boolGdprConsentForOzone ? 1 : 0;
-          ozoneRequest.regs.ext.gap = arrGdprConsents;
-        }
+        ozoneRequest.user.ext = {'consent': bidderRequest.gdprConsent.consentString};
       } else {
         utils.logInfo('OZONE: **** Failed to find required info for GDPR for request object, even though bidderRequest.gdprConsent is TRUE ****');
       }
@@ -241,10 +276,17 @@ export const spec = {
    * @returns {*}
    */
   interpretResponse(serverResponse, request) {
+    utils.logInfo('OZONE: interpretResponse: serverResponse, request', serverResponse, request);
     serverResponse = serverResponse.body || {};
     if (!serverResponse.hasOwnProperty('seatbid')) { return []; }
     if (typeof serverResponse.seatbid !== 'object') { return []; }
     let arrAllBids = [];
+    let enhancedAdserverTargeting = config.getConfig('ozone.enhancedAdserverTargeting');
+    utils.logInfo('OZONE: enhancedAdserverTargeting', enhancedAdserverTargeting);
+    if (typeof enhancedAdserverTargeting == 'undefined') {
+      enhancedAdserverTargeting = true;
+    }
+    utils.logInfo(['enhancedAdserverTargeting', enhancedAdserverTargeting]);
     serverResponse.seatbid = injectAdIdsIntoAllBidResponses(serverResponse.seatbid); // we now make sure that each bid in the bidresponse has a unique (within page) adId attribute.
     for (let i = 0; i < serverResponse.seatbid.length; i++) {
       let sb = serverResponse.seatbid[i];
@@ -264,43 +306,65 @@ export const spec = {
         let ozoneInternalKey = thisBid.bidId;
         let adserverTargeting = {};
         // all keys for all bidders for this bid have to be added to all objects returned, else some keys will not be sent to ads?
-        let allBidsForThisBidid = ozoneGetAllBidsForBidId(ozoneInternalKey, serverResponse.seatbid);
-        // add all the winning & non-winning bids for this bidId:
-        utils.logInfo('OZONE: Going to iterate allBidsForThisBidId', allBidsForThisBidid);
-        Object.keys(allBidsForThisBidid).forEach(function(bidderName, index, ar2) {
-          adserverTargeting['oz_' + bidderName] = bidderName;
-          adserverTargeting['oz_' + bidderName + '_pb'] = String(allBidsForThisBidid[bidderName].price);
-          adserverTargeting['oz_' + bidderName + '_crid'] = String(allBidsForThisBidid[bidderName].crid);
-          adserverTargeting['oz_' + bidderName + '_adv'] = String(allBidsForThisBidid[bidderName].adomain);
-          adserverTargeting['oz_' + bidderName + '_imp_id'] = String(allBidsForThisBidid[bidderName].impid);
-          adserverTargeting['oz_' + bidderName + '_adId'] = String(allBidsForThisBidid[bidderName].adId);
-          adserverTargeting['oz_' + bidderName + '_pb_r'] = getRoundedBid(allBidsForThisBidid[bidderName].price, allBidsForThisBidid[bidderName].ext.prebid.type);
-          if (allBidsForThisBidid[bidderName].hasOwnProperty('dealid')) {
-            adserverTargeting['oz_' + bidderName + '_dealid'] = String(allBidsForThisBidid[bidderName].dealid);
-          }
-        });
+        if (enhancedAdserverTargeting) {
+          let allBidsForThisBidid = ozoneGetAllBidsForBidId(ozoneInternalKey, serverResponse.seatbid);
+          // add all the winning & non-winning bids for this bidId:
+          utils.logInfo('OZONE: Going to iterate allBidsForThisBidId', allBidsForThisBidid);
+          Object.keys(allBidsForThisBidid).forEach(function(bidderName, index, ar2) {
+            adserverTargeting['oz_' + bidderName] = bidderName;
+            adserverTargeting['oz_' + bidderName + '_pb'] = String(allBidsForThisBidid[bidderName].price);
+            adserverTargeting['oz_' + bidderName + '_crid'] = String(allBidsForThisBidid[bidderName].crid);
+            adserverTargeting['oz_' + bidderName + '_adv'] = String(allBidsForThisBidid[bidderName].adomain);
+            adserverTargeting['oz_' + bidderName + '_imp_id'] = String(allBidsForThisBidid[bidderName].impid);
+            adserverTargeting['oz_' + bidderName + '_adId'] = String(allBidsForThisBidid[bidderName].adId);
+            adserverTargeting['oz_' + bidderName + '_pb_r'] = getRoundedBid(allBidsForThisBidid[bidderName].price, allBidsForThisBidid[bidderName].ext.prebid.type);
+            if (allBidsForThisBidid[bidderName].hasOwnProperty('dealid')) {
+              adserverTargeting['oz_' + bidderName + '_dealid'] = String(allBidsForThisBidid[bidderName].dealid);
+            }
+          });
+        }
         // also add in the winning bid, to be sent to dfp
         let {seat: winningSeat, bid: winningBid} = ozoneGetWinnerForRequestBid(ozoneInternalKey, serverResponse.seatbid);
         adserverTargeting['oz_auc_id'] = String(request.bidderRequest.auctionId);
         adserverTargeting['oz_winner'] = String(winningSeat);
-        adserverTargeting['oz_winner_auc_id'] = String(winningBid.id);
-        adserverTargeting['oz_winner_imp_id'] = String(winningBid.impid);
         adserverTargeting['oz_response_id'] = String(serverResponse.id);
-        adserverTargeting['oz_pb_v'] = OZONEVERSION;
+        if (enhancedAdserverTargeting) {
+          adserverTargeting['oz_winner_auc_id'] = String(winningBid.id);
+          adserverTargeting['oz_winner_imp_id'] = String(winningBid.impid);
+          adserverTargeting['oz_pb_v'] = OZONEVERSION;
+        }
         thisBid.adserverTargeting = adserverTargeting;
         arrAllBids.push(thisBid);
       }
     }
     return arrAllBids;
   },
-  getUserSyncs(optionsType, serverResponse) {
+  // http://prebid.org/dev-docs/bidder-adaptor.html#registering-user-syncs
+  getUserSyncs(optionsType, serverResponse, gdprConsent) {
+    utils.logInfo('OZONE: getUserSyncs optionsType, serverResponse, gdprConsent, cookieSyncBag', optionsType, serverResponse, gdprConsent, this.cookieSyncBag);
     if (!serverResponse || serverResponse.length === 0) {
       return [];
     }
     if (optionsType.iframeEnabled) {
+      var arrQueryString = [];
+      if (document.location.search.match(/pbjs_debug=true/)) {
+        arrQueryString.push('pbjs_debug=true');
+      }
+      arrQueryString.push('gdpr=' + (utils.deepAccess(gdprConsent, 'gdprApplies', false) ? '1' : '0'));
+      arrQueryString.push('gdpr_consent=' + utils.deepAccess(gdprConsent, 'consentString', ''));
+      arrQueryString.push('pubcid=' + this.cookieSyncBag.pubcid);
+      arrQueryString.push('publisherId=' + this.cookieSyncBag.publisherId);
+      arrQueryString.push('siteId=' + this.cookieSyncBag.siteId);
+      arrQueryString.push('cb=' + Date.now());
+
+      var strQueryString = arrQueryString.join('&');
+      if (strQueryString.length > 0) {
+        strQueryString = '?' + strQueryString;
+      }
+      utils.logInfo('OZONE: getUserSyncs going to return cookie sync url : ' + OZONECOOKIESYNC + strQueryString);
       return [{
         type: 'iframe',
-        url: OZONECOOKIESYNC
+        url: OZONECOOKIESYNC + strQueryString
       }];
     }
   }
@@ -475,7 +539,7 @@ export function ozoneAddStandardProperties(seatBid, defaultWidth, defaultHeight)
   seatBid.netRevenue = true;
   seatBid.creativeId = seatBid.crid;
   seatBid.currency = 'USD';
-  seatBid.ttl = 60;
+  seatBid.ttl = 300;
   return seatBid;
 }
 
@@ -502,11 +566,11 @@ export function getTestQuerystringValue() {
  *
  * @returns {*}
  */
-export function pgGuid() {
-  return new Date().getTime() + 'xxxxxxxx'.replace(/x/g, function(c) {
-    return Math.round((Math.random() * 36)).toString(36);
-  });
-}
+// export function pgGuid() {
+//   return new Date().getTime() + 'xxxxxxxx'.replace(/x/g, function(c) {
+//     return Math.round((Math.random() * 36)).toString(36);
+//   });
+// }
 
 function createObjectForInternalVideoRender(bid) {
   let obj = {
@@ -534,15 +598,15 @@ function outstreamRender(bid) {
             3: true,
             4: true,
             5: true}
-   to : [1,2,3,4,5]
+ to : [1,2,3,4,5]
  * @param obj
  */
-function toFlatArray(obj) {
-  let ret = [];
-  Object.keys(obj).forEach(function(key) { if (obj[key]) { ret.push(parseInt(key)); } });
-  utils.logInfo('OZONE: toFlatArray:', obj, 'returning', ret);
-  return ret;
-}
+// function toFlatArray(obj) {
+//   let ret = [];
+//   Object.keys(obj).forEach(function(key) { if (obj[key]) { ret.push(parseInt(key)); } });
+//   utils.logInfo('OZONE: toFlatArray:', obj, 'returning', ret);
+//   return ret;
+// }
 
 /**
  *
