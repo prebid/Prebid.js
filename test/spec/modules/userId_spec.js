@@ -985,6 +985,7 @@ describe('User ID', function() {
       sinon.stub(utils, 'triggerPixel');
       utils.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
       utils.setCookie('unifiedid', '', EXPIRED_COOKIE_DATE);
+      utils.setCookie('_parrable_eid', '', EXPIRED_COOKIE_DATE);
     });
 
     afterEach(function() {
@@ -993,6 +994,7 @@ describe('User ID', function() {
       utils.triggerPixel.restore();
       utils.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
       utils.setCookie('unifiedid', '', EXPIRED_COOKIE_DATE);
+      utils.setCookie('_parrable_eid', '', EXPIRED_COOKIE_DATE);
     });
 
     it('pubcid callback with url', function () {
@@ -1041,6 +1043,73 @@ describe('User ID', function() {
       expect(requests).to.be.empty;
       events.emit(CONSTANTS.EVENTS.AUCTION_END, {});
       expect(requests[0].url).to.equal('//match.adsrvr.org/track/rid?ttd_pid=rubicon&fmt=json');
+    });
+
+    it('callback for submodules that always need to refresh stored id', function(done) {
+      let adUnits = [getAdUnitMock()];
+      let innerAdUnits;
+      const parrableStoredId = '01.1111111111.test-eid';
+      const parrableRefreshedId = '02.2222222222.test-eid';
+      utils.setCookie('_parrable_eid', parrableStoredId, (new Date(Date.now() + 5000).toUTCString()));
+
+      const parrableIdSubmoduleMock = {
+        name: 'parrableId',
+        decode: function(value) {
+          return { 'parrableid': value };
+        },
+        getId: function() {
+          return {
+            callback: function(cb) {
+              cb(parrableRefreshedId);
+            }
+          };
+        }
+      };
+
+      const parrableConfigMock = {
+        userSync: {
+          syncDelay: 0,
+          userIds: [{
+            name: 'parrableId',
+            storage: {
+              type: 'cookie',
+              name: '_parrable_eid'
+            }
+          }]
+        }
+      };
+
+      setSubmoduleRegistry([parrableIdSubmoduleMock]);
+      attachIdSystem(parrableIdSubmoduleMock);
+      init(config);
+      config.setConfig(parrableConfigMock);
+
+      // make first bid request, should use stored id value
+      requestBidsHook((config) => { innerAdUnits = config.adUnits }, {adUnits});
+      innerAdUnits.forEach(unit => {
+        unit.bids.forEach(bid => {
+          expect(bid).to.have.deep.nested.property('userId.parrableid');
+          expect(bid.userId.parrableid).to.equal(parrableStoredId);
+        });
+      });
+
+      // emit an auction end event to run the mock callback
+      events.on(CONSTANTS.EVENTS.AUCTION_END, function handler(submodule) {
+        if (submodule === 'parrableIdSubmoduleMock') {
+          // make the second bid request, id should have been refreshed
+          requestBidsHook((config) => { innerAdUnits = config.adUnits }, {adUnits});
+          innerAdUnits.forEach(unit => {
+            unit.bids.forEach(bid => {
+              expect(bid).to.have.deep.nested.property('userId.parrableid');
+              expect(bid.userId.parrableid).to.equal(parrableRefreshedId);
+            });
+          });
+          events.off(CONSTANTS.EVENTS.AUCTION_END, handler);
+          done();
+        }
+      });
+
+      events.emit(CONSTANTS.EVENTS.AUCTION_END, 'parrableIdSubmoduleMock');
     });
   });
 });
