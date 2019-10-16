@@ -1,15 +1,15 @@
 import * as utils from '../src/utils';
 import { registerBidder } from '../src/adapters/bidderFactory';
 import { config } from '../src/config';
-import { BANNER, NATIVE } from '../src/mediaTypes';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes';
 
 const BIDDER_CODE = 'improvedigital';
 
 export const spec = {
-  version: '5.3.0',
+  version: '6.0.0',
   code: BIDDER_CODE,
   aliases: ['id'],
-  supportedMediaTypes: [BANNER, NATIVE],
+  supportedMediaTypes: [BANNER, NATIVE, VIDEO],
 
   /**
    * Determines whether or not the given bid request is valid.
@@ -87,6 +87,9 @@ export const spec = {
           bid.native.impressionTrackers.unshift(bidObject.nurl);
         }
         bid.mediaType = NATIVE;
+      } else if (bidObject.ad_type && bidObject.ad_type === 'video') {
+        bid.vastXml = bidObject.adm;
+        bid.mediaType = VIDEO;
       } else {
         // Banner
         let nurl = '';
@@ -186,6 +189,11 @@ function getNormalizedBidRequest(bid) {
   const bidFloorCur = utils.getBidIdParameter('bidFloorCur', bid.params);
 
   let normalizedBidRequest = {};
+  const videoMediaType = utils.deepAccess(bid, 'mediaTypes.video');
+  const context = utils.deepAccess(bid, 'mediaTypes.video.context');
+  if (bid.mediaType === 'video' || (videoMediaType && context !== 'outstream')) {
+    normalizedBidRequest.adTypes = [ VIDEO ];
+  }
   if (placementId) {
     normalizedBidRequest.placementId = placementId;
   } else {
