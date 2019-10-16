@@ -6,7 +6,10 @@ export const spec = {
   code: 'vrtcal',
   supportedMediaTypes: [BANNER],
   isBidRequestValid: function (bid) {
-    return true;// No extras params required
+	if(bid.bidId=="" || bid.auctionId=="")
+	  return false;
+	else
+	  return true;// No extras params required
   },
   buildRequests: function (bidRequests) {
     const requests = bidRequests.map(function (bid) {
@@ -18,8 +21,6 @@ export const spec = {
         imp: [{
           id: '1',
           banner: {
-            w: bid.sizes[0][0],
-            h: bid.sizes[0][1],
           },
           bidfloor: 0.75
         }],
@@ -35,6 +36,16 @@ export const spec = {
           ip: 'VRTCAL_FILLED'
         }
       };
+
+      if (typeof(bid.mediaTypes) !== 'undefined' && typeof(bid.mediaTypes.banner) !== 'undefined' && typeof(bid.mediaTypes.banner.sizes) !== 'undefined') {
+		params.imp[0].banner.w = bid.mediaTypes.banner.sizes[0][0];
+		params.imp[0].banner.h = bid.mediaTypes.banner.sizes[0][1];
+
+		}
+      else {
+		params.imp[0].banner.w = bid.sizes[0][0];
+		params.imp[0].banner.h = bid.sizes[0][1];
+      }
 
       return {method: 'POST', url: 'https://rtb.vrtcal.com/bidder_prebid.vap?ssp=1804', data: JSON.stringify(params), options: {withCredentials: false, crossOrigin: true}}
     });
@@ -68,17 +79,16 @@ export const spec = {
     }
     return bidResponses;
   },
-  getUserSyncs: function(syncOptions, serverResponses) {
-    return [];
-  },
   onBidWon: function(bid) {
-    if (!bid.nurl) { return; }
+    if (!bid.nurl) { return false; }
     const winUrl = bid.nurl.replace(
       /\$\{AUCTION_PRICE\}/,
       bid.cpm
     );
     ajax(winUrl, null);
+    return true;
   }
 };
+
 
 registerBidder(spec);
