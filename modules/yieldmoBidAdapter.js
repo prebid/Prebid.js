@@ -26,7 +26,7 @@ export const spec = {
    * @param {BidRequest[]} bidRequests A non-empty list of bid requests which should be sent to the Server.
    * @return ServerRequest Info describing the request to the server.
    */
-  buildRequests: function(bidRequests) {
+  buildRequests: function(bidRequests, bidderRequest) {
     let serverRequest = {
       p: [],
       page_url: utils.getTopWindowUrl(),
@@ -38,7 +38,12 @@ export const spec = {
       description: getPageDescription(),
       title: localWindow.document.title || '',
       w: localWindow.innerWidth,
-      h: localWindow.innerHeight
+      h: localWindow.innerHeight,
+      user: JSON.stringify({
+        // case of undefined, stringify will remove param
+        gdprApplies: bidderRequest.gdprConsent ? bidderRequest.gdprConsent.gdprApplies : undefined,
+        consentString: bidderRequest.gdprConsent ? bidderRequest.gdprConsent.consentString : undefined
+      })
     };
 
     bidRequests.forEach((request) => {
