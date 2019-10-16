@@ -268,7 +268,7 @@ describe('Smart bid adapter tests', function () {
       $$PREBID_GLOBAL$$.requestBids.removeAll();
     });
 
-    var OUTSTREAM_DEFAULT_PARAMS = [{
+    const OUTSTREAM_DEFAULT_PARAMS = [{
       adUnitCode: 'sas_42',
       bidId: 'abcd1234',
       bidder: 'smartadserver',
@@ -319,6 +319,38 @@ describe('Smart bid adapter tests', function () {
       expect(requestContent).to.have.property('appname').and.to.equal('Mozilla');
       expect(requestContent).to.have.property('ckid').and.to.equal(42);
     });
+
+    it('Verify not handled media type return empty request', function () {
+      config.setConfig({
+        'currency': {
+          'adServerCurrency': 'EUR'
+        }
+      });
+      const request = spec.buildRequests([{
+        adUnitCode: 'sas_42',
+        bidder: 'smartadserver',
+        mediaTypes: {
+          video: {
+            context: 'badcontext'
+          }
+        },
+        params: {
+          domain: 'http://prg.smartadserver.com',
+          siteId: '1234',
+          pageId: '5678',
+          formatId: '90',
+          target: 'test=prebid',
+          bidfloor: 0.420,
+          buId: '7569',
+          appName: 'Mozilla',
+          ckId: 42
+        },
+        requestId: 'efgh5678',
+        transactionId: 'zsfgzzg'
+      }, OUTSTREAM_DEFAULT_PARAMS[0]]);
+      expect(request[0]).to.be.empty;
+      expect(request[1]).to.not.be.empty;
+    });
   });
 
   describe('Instream video tests', function () {
@@ -327,7 +359,7 @@ describe('Smart bid adapter tests', function () {
       $$PREBID_GLOBAL$$.requestBids.removeAll();
     });
 
-    var INSTREAM_DEFAULT_PARAMS = [{
+    const INSTREAM_DEFAULT_PARAMS = [{
       adUnitCode: 'sas_42',
       bidId: 'abcd1234',
       bidder: 'smartadserver',

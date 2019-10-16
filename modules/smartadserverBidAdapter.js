@@ -80,6 +80,8 @@ export const spec = {
           playerHeight: playerSize[1],
           adBreak: bid.params.video.startDelay || 0
         };
+      } else {
+        return {};
       }
 
       if (bidderRequest && bidderRequest.gdprConsent) {
