@@ -23,7 +23,7 @@ export const liveIntentIdSubmodule = {
   name: MODULE_NAME,
 
   /**
-   * decode the stored id value for passing to bid requests. Note that lipb object is a  wrapper for everything, and
+   * decode the stored id value for passing to bid requests. Note that lipb object is a wrapper for everything, and
    * internally it could contain more data other than `lipbid`(e.g. `segments`) depending on the `partner` and
    * `publisherId` params.
    * @function
@@ -43,7 +43,7 @@ export const liveIntentIdSubmodule = {
    * performs action to obtain id and return a value in the callback's response argument
    * @function
    * @param {SubmoduleParams} [configParams]
-   * @returns {function(callback:function)}
+   * @returns {IdResponse|undefined}
    */
   getId(configParams) {
     const publisherId = configParams && configParams.publisherId;
@@ -78,7 +78,7 @@ export const liveIntentIdSubmodule = {
     const queryString = utils.parseQueryStringParameters(additionalIdentifiers)
     const url = `${baseUrl}/idex/${source}/${publisherId}?${queryString}`;
 
-    return function (callback) {
+    const result = function (callback) {
       ajax(url, response => {
         let responseObj = {};
         if (response) {
@@ -90,7 +90,8 @@ export const liveIntentIdSubmodule = {
         }
         callback(responseObj);
       }, undefined, { method: 'GET', withCredentials: true });
-    }
+    };
+    return {callback: result};
   }
 };
 

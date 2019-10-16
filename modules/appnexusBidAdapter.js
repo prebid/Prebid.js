@@ -36,7 +36,7 @@ const SOURCE = 'pbjs';
 const MAX_IMPS_PER_REQUEST = 15;
 const mappingFileUrl = '//acdn.adnxs.com/prebid/appnexus-mapping/mappings.json';
 const SCRIPT_TAG_START = '<script';
-const VIEWABILITY_URL_START = /http:\/\/cdn\.adnxs\.com\/v/;
+const VIEWABILITY_URL_START = /\/\/cdn\.adnxs\.com\/v/;
 const VIEWABILITY_FILE_NAME = 'trk.js';
 
 export const spec = {
