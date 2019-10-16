@@ -211,7 +211,6 @@ function parseBidResponse(bid){
 function executeBidsLoggerCall(auctionId){
     let referrer = config.getConfig('pageUrl') || utils.getTopWindowUrl(),
         auctionCache = cache.auctions[auctionId],
-        date = new window.Date(),
         outputObj = {
             s: []
         },
@@ -234,7 +233,7 @@ function executeBidsLoggerCall(auctionId){
     outputObj['pubid'] = publisherId;
 	outputObj['to'] = "" + auctionCache.timeout;
 	outputObj['purl'] = referrer;
-	outputObj['tst'] = date.getTime();
+	outputObj['tst'] = (new window.Date()).getTime();
 	outputObj['pid'] = profileId;
     outputObj['pdvid'] = profileVersionId;
     
@@ -312,6 +311,26 @@ function executeBidWonLoggerCall(auctionId, adUnitId){
     console.log("cache", cache);
     const winningBidId = cache.auctions[auctionIdauctionId].adUnitCodes[adUnitId].bidWon;
     const winningBid = cache.auctions[auctionIdauctionId].adUnitCodes[adUnitId].bids[winningBidId];
+    const enc = window.encodeURIComponent;
+
+    let pixelURL = END_POINT_WIN_BID_LOGGER;
+    pixelURL += "pubid=" + publisherId;
+    pixelURL += "&purl=" + enc(config.getConfig('pageUrl') || utils.getTopWindowUrl(),);
+    pixelURL += "&tst=" + (new window.Date()).getTime();
+    pixelURL += "&iid=" + enc(window.PWT.bidMap[slotID].getImpressionID()); //todo
+    pixelURL += "&bidid=" + enc(theBid.getBidID()); //todo
+    pixelURL += "&pid=" + enc(profileId);
+    pixelURL += "&pdvid=" + enc(profileVersionId);
+    pixelURL += "&slot=" + enc(slotID);  //todo
+    pixelURL += "&pn=" + enc(theBid.getAdapterID()); //todo
+    pixelURL += "&en=" + enc(theBid.getNetEcpm(isAnalytics)); //todo USD
+    pixelURL += "&eg=" + enc(theBid.getGrossEcpm(isAnalytics)); //todo USD
+    pixelURL += "&kgpv=" + enc(theBid.getKGPV()); //todo
+    // var pixelURL = CONFIG.getMonetizationPixelURL(),
+    //     pubId = CONFIG.getPublisherId();
+    // const isAnalytics = true; // this flag is required to get grossCpm and netCpm in dollars instead of adserver currency
+    
+    // refThis.setImageSrcToPixelURL(pixelURL);
 
 }
 
