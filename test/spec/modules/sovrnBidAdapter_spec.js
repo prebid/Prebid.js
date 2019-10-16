@@ -2,7 +2,7 @@ import {expect} from 'chai';
 import {LogError, spec} from 'modules/sovrnBidAdapter';
 import {newBidder} from 'src/adapters/bidderFactory';
 
-const ENDPOINT = `//ap.lijit.com/rtb/bid?src=$$REPO_AND_VERSION$$`;
+const ENDPOINT = `https://ap.lijit.com/rtb/bid?src=$$REPO_AND_VERSION$$`;
 
 describe('sovrnBidAdapter', function() {
   const adapter = newBidder(spec);
@@ -54,8 +54,12 @@ describe('sovrnBidAdapter', function() {
       'bidderRequestId': '22edbae2733bf6',
       'auctionId': '1d1a030790a475'
     }];
-
-    const request = spec.buildRequests(bidRequests);
+    const bidderRequest = {
+      refererInfo: {
+        referer: 'http://example.com/page.html',
+      }
+    };
+    const request = spec.buildRequests(bidRequests, bidderRequest);
 
     it('sends bid request to our endpoint via POST', function () {
       expect(request.method).to.equal('POST');
@@ -72,7 +76,7 @@ describe('sovrnBidAdapter', function() {
       expect(payload.imp[0].banner.h).to.equal(1)
     })
 
-    it('accepts a single array as a size', function() {
+    it('accepts a single array as a size', () => {
       const singleSize = [{
         'bidder': 'sovrn',
         'params': {
@@ -84,8 +88,13 @@ describe('sovrnBidAdapter', function() {
         'bidId': '30b31c1838de1e',
         'bidderRequestId': '22edbae2733bf6',
         'auctionId': '1d1a030790a475'
-      }];
-      const request = spec.buildRequests(singleSize)
+      }]
+      const bidderRequest = {
+        refererInfo: {
+          referer: 'http://example.com/page.html',
+        }
+      }
+      const request = spec.buildRequests(singleSize, bidderRequest)
       const payload = JSON.parse(request.data)
       expect(payload.imp[0].banner.format).to.deep.equal([{w: 300, h: 250}])
       expect(payload.imp[0].banner.w).to.equal(1)
@@ -108,7 +117,12 @@ describe('sovrnBidAdapter', function() {
         'bidderRequestId': '22edbae2733bf6',
         'auctionId': '1d1a030790a475'
       }];
-      const request = spec.buildRequests(ivBidRequests);
+      const bidderRequest = {
+        refererInfo: {
+          referer: 'http://example.com/page.html',
+        }
+      };
+      const request = spec.buildRequests(ivBidRequests, bidderRequest);
 
       expect(request.url).to.contain('iv=vet')
     });
@@ -120,9 +134,12 @@ describe('sovrnBidAdapter', function() {
         'auctionId': '1d1a030790a475',
         'bidderRequestId': '22edbae2733bf6',
         'timeout': 3000,
-        'gdprConsent': {
+        gdprConsent: {
           consentString: consentString,
           gdprApplies: true
+        },
+        refererInfo: {
+          referer: 'http://example.com/page.html',
         }
       };
       bidderRequest.bids = bidRequests;
@@ -151,7 +168,12 @@ describe('sovrnBidAdapter', function() {
         'bidderRequestId': '22edbae2733bf6',
         'auctionId': '1d1a030790a475'
       }];
-      const request = spec.buildRequests(ivBidRequests);
+      const bidderRequest = {
+        refererInfo: {
+          referer: 'http://example.com/page.html',
+        }
+      };
+      const request = spec.buildRequests(ivBidRequests, bidderRequest);
 
       expect(request.data).to.contain('"tagid":"403370"')
     });
@@ -183,7 +205,12 @@ describe('sovrnBidAdapter', function() {
           ]
         }
       }].concat(bidRequests);
-      const data = JSON.parse(spec.buildRequests(schainRequests).data);
+      const bidderRequest = {
+        refererInfo: {
+          referer: 'http://example.com/page.html',
+        }
+      };
+      const data = JSON.parse(spec.buildRequests(schainRequests, bidderRequest).data);
 
       expect(data.source.ext.schain.nodes.length).to.equal(1)
     });
@@ -211,7 +238,12 @@ describe('sovrnBidAdapter', function() {
           }
         }
       }].concat(bidRequests);
-      const data = JSON.parse(spec.buildRequests(digitrustRequests).data);
+      const bidderRequest = {
+        refererInfo: {
+          referer: 'http://example.com/page.html',
+        }
+      };
+      const data = JSON.parse(spec.buildRequests(digitrustRequests, bidderRequest).data);
 
       expect(data.user.ext.digitrust.id).to.equal('digitrust-id-123');
       expect(data.user.ext.digitrust.keyv).to.equal(4);
@@ -394,84 +426,42 @@ describe('sovrnBidAdapter', function() {
     });
   });
 
-  describe('LogError', () => {
-    it('should build and append an error object', () => {
-      const thrown = {
-        message: 'message',
-        stack: 'stack'
-      }
-      const data = {name: 'Oscar Hathenswiotch'}
-      const err = new LogError(thrown, data)
-      err.append()
-      const errList = LogError.getErrPxls()
-      expect(errList.length).to.equal(1)
-      const errdata = JSON.parse(atob(errList[0].url.split('=')[1]))
-      expect(errdata.d.name).to.equal('Oscar Hathenswiotch')
-    })
-    it('should drop data when there is too much', () => {
-      const thrown = {
-        message: 'message',
-        stack: 'stack'
-      }
-      const tooLong = () => {
-        let str = ''
-        for (let i = 0; i < 10000; i++) {
-          str = str + String.fromCharCode(i % 100)
+  describe('prebid 3 upgrade', () => {
+    const bidRequests = [{
+      'bidder': 'sovrn',
+      'params': {
+        'tagid': '403370'
+      },
+      'adUnitCode': 'adunit-code',
+      mediaTypes: {
+        banner: {
+          sizes: [
+            [300, 250],
+            [300, 600]
+          ]
         }
-        return str
+      },
+      'bidId': '30b31c1838de1e',
+      'bidderRequestId': '22edbae2733bf6',
+      'auctionId': '1d1a030790a475'
+    }];
+    const bidderRequest = {
+      refererInfo: {
+        referer: 'http://example.com/page.html',
       }
-      const data = {name: 'Oscar Hathenswiotch', tooLong: tooLong()}
-      const err = new LogError(thrown, data)
-      err.append()
-      const errList = LogError.getErrPxls()
-      expect(errList.length).to.equal(2)
-      const errdata = JSON.parse(atob(errList[1].url.split('=')[1]))
-      expect(errdata.d).to.be.an('undefined')
+    };
+    const request = spec.buildRequests(bidRequests, bidderRequest);
+    const payload = JSON.parse(request.data);
+
+    it('gets sizes from mediaTypes.banner', () => {
+      expect(payload.imp[0].banner.format).to.deep.equal([{w: 300, h: 250}, {w: 300, h: 600}])
+      expect(payload.imp[0].banner.w).to.equal(1)
+      expect(payload.imp[0].banner.h).to.equal(1)
     })
-    it('should drop data and stack when there is too much', () => {
-      const thrown = {
-        message: 'message',
-        stack: 'stack'
-      }
-      const tooLong = () => {
-        let str = ''
-        for (let i = 0; i < 10000; i++) {
-          str = str + String.fromCharCode(i % 100)
-        }
-        return str
-      }
-      const data = {name: 'Oscar Hathenswiotch'}
-      thrown.stack = tooLong()
-      const err = new LogError(thrown, data)
-      err.append()
-      const errList = LogError.getErrPxls()
-      expect(errList.length).to.equal(3)
-      const errdata = JSON.parse(atob(errList[2].url.split('=')[1]))
-      expect(errdata.d).to.be.an('undefined')
-      expect(errdata.s).to.be.an('undefined')
-    })
-    it('should drop send a reduced message when other reduction methods fail', () => {
-      const thrown = {
-        message: 'message',
-        stack: 'stack'
-      }
-      const tooLong = () => {
-        let str = ''
-        for (let i = 0; i < 10000; i++) {
-          str = str + String.fromCharCode(i % 100)
-        }
-        return str
-      }
-      const data = {name: 'Oscar Hathenswiotch'}
-      thrown.message = tooLong()
-      const err = new LogError(thrown, data)
-      err.append()
-      const errList = LogError.getErrPxls()
-      expect(errList.length).to.equal(4)
-      const errdata = JSON.parse(atob(errList[3].url.split('=')[1]))
-      expect(errdata.d).to.be.an('undefined')
-      expect(errdata.s).to.be.an('undefined')
-      expect(errdata.m).to.equal('unknown error message')
+
+    it('gets correct site info', () => {
+      expect(payload.site.page).to.equal('http://example.com/page.html');
+      expect(payload.site.domain).to.equal('example.com');
     })
   })
 })
