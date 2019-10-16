@@ -13,7 +13,6 @@ Connects to LockerDome Ad Server for bids.
 ```
 var adUnits = [{
     code: 'ad-div',
-    sizes: [[300, 250]],
     mediaTypes: {
         banner: {
             sizes: [[300, 250]]
