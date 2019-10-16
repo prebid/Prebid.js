@@ -14,6 +14,7 @@ import * as utils from '../src/utils';
 
 ////////////// CONSTANTS ////////////// 
 
+const ADAPTER_CODE = 'pubmatic';
 const SEND_TIMEOUT = 3000;
 const DEFAULT_INTEGRATION = 'pbjs';
 const END_POINT_HOST = 'https://t.pubmatic.com/';
@@ -156,69 +157,14 @@ function parseBidResponse(bid){
     ]);
 }
 
-// todo: delete this function
-// function isWinningBidReceivedForAllAdUnitsInAuction(auctionCache){
-//     return Object.keys(auctionCache.adUnitCodes).reduce((accumulator, adUnitCode) => {
-//         // only send if we've received bidWon events for all adUnits in auction
-//         accumulator = accumulator && adUnitCode.bidWon;
-//         return accumulator;
-//     }, true)
-// }
-
-//todo: delete this function
-// function formatBidToSend(bid) {
-//     return utils.pick(bid, [
-//         'bidder',
-//         'bidId',
-//         'status',
-//         'error',
-//         'source', (source, bid) => {
-//             if (source) {
-//                 return source;
-//             }
-//             return serverConfig && Array.isArray(serverConfig.bidders) && serverConfig.bidders.indexOf(bid.bidder) !== -1
-//                 ? 'server' : 'client'
-//         },
-//         'clientLatencyTimeMs',
-//         'serverLatencyTimeMs',
-//         'params', // todo: from openwrap we can send the value of kgpv in params , we need to check if we will get it here
-//         'bidResponse', bidResponse => bidResponse ? utils.pick(bidResponse, [
-//             'bidPriceUSD',
-//             'dealId',
-//             'dimensions',
-//             'mediaType'
-//         ]) : undefined
-//     ]);
-// }
-
-//todo: delete this function
-// function formatBidWonToSend(bid) {
-//     return Object.assign(formatBid(bid), utils.pick(bid.adUnit, [
-//         'adUnitCode',
-//         'transactionId',
-//         'videoAdFormat', () => bid.videoAdFormat,
-//         'mediaTypes'
-//     ]), {
-//         adserverTargeting: stringProperties(cache.targeting[bid.adUnit.adUnitCode] || {}),
-//         bidwonStatus: SUCCESS,
-//         accountId,
-//         siteId: bid.siteId, // todo: what is it?
-//         zoneId: bid.zoneId // todo: what is it?
-//     });
-// }
-
 function executeBidsLoggerCall(auctionId){
     let referrer = config.getConfig('pageUrl') || utils.getTopWindowUrl(),
         auctionCache = cache.auctions[auctionId],
         outputObj = {
             s: []
         },
-        pixelURL = END_POINT_BID_LOGGER,
-        impressionIDMap = {} // impID => slots[]        
+        pixelURL = END_POINT_BID_LOGGER
     ;
-
-    console.log('executeBidsLoggerCall');
-    console.log('auctionCache', auctionCache);
 
     if(!auctionCache){
         return;
@@ -324,123 +270,6 @@ function executeBidWonLoggerCall(auctionId, adUnitId){
     (new window.Image()).src = pixelURL;
 }
 
-// todo: delete this function
-// todo: can we split this function in two for bid-logger and bid-win-logger?
-// function sendMessage(auctionId, bidWonId){
-//     let referrer = config.getConfig('pageUrl') || utils.getTopWindowUrl();
-//     let message = {
-//         eventTimeMillis: Date.now(),
-//         integration: DEFAULT_INTEGRATION, //todo: we can take this as analytics-adapter-config along with publisherId
-//         version: '$prebid.version$',
-//         referrerUri: referrer
-//     };
-//     const wrapperName = config.getConfig('rubicon.wrapperName');//todo: not needed?
-
-//     if (wrapperName) { //todo: not needed?
-//         message.wrapperName = wrapperName;
-//     }
-
-//     let auctionCache = cache.auctions[auctionId];
-
-//     console.log("sendMessage: cache", cache);
-//     console.log("sendMessage: auctionId", auctionId);
-//     return;
-
-//     if (auctionCache && !auctionCache.sent) {
-        
-//         // todo: move to a function
-//         let adUnitMap = Object.keys(auctionCache.bids).reduce((adUnits, bidId) => {
-//             let bid = auctionCache.bids[bidId];
-//             let adUnit = adUnits[bid.adUnit.adUnitCode];
-//             if (!adUnit) {
-//                 adUnit = adUnits[bid.adUnit.adUnitCode] = utils.pick(bid.adUnit, [
-//                     'adUnitCode',
-//                     'transactionId',
-//                     'mediaTypes',
-//                     'dimensions',
-//                     'adserverTargeting', () => stringProperties(cache.targeting[bid.adUnit.adUnitCode] || {})
-//                 ]);
-//                 adUnit.bids = [];
-//             }
-
-//             // Add site and zone id if not there and if we found a rubicon bidder 
-//             //todo: not needed?
-//             if ((!adUnit.siteId || !adUnit.zoneId) && rubiconAliases.indexOf(bid.bidder) !== -1) {
-//                 if (utils.deepAccess(bid, 'params.accountId') == accountId) {
-//                     adUnit.accountId = parseInt(accountId);
-//                     adUnit.siteId = parseInt(utils.deepAccess(bid, 'params.siteId'));
-//                     adUnit.zoneId = parseInt(utils.deepAccess(bid, 'params.zoneId'));
-//                 }
-//             }
-
-//             //todo: not needed?
-//             if (bid.videoAdFormat && !adUnit.videoAdFormat) {
-//                 adUnit.videoAdFormat = bid.videoAdFormat;
-//             }
-
-//             // determine adUnit.status from its bid statuses.  Use priority below to determine, higher index is better
-//             let statusPriority = [ERROR, NO_BID, SUCCESS]; //todo: move to const in an obj
-//             if (statusPriority.indexOf(bid.status) > statusPriority.indexOf(adUnit.status)) { //todo: change to hasOwnProperty
-//                 adUnit.status = bid.status;
-//             }
-
-//             adUnit.bids.push(formatBid(bid));
-
-//             return adUnits;
-//         }, {});
-
-//         //todo: not needed?
-//         // We need to mark each cached bid response with its appropriate rubicon site-zone id
-//         // This allows the bidWon events to have these params even in the case of a delayed render
-//         Object.keys(auctionCache.bids).forEach(function (bidId) {
-//             let adCode = auctionCache.bids[bidId].adUnit.adUnitCode;
-//             Object.assign(auctionCache.bids[bidId], utils.pick(adUnitMap[adCode], ['accountId', 'siteId', 'zoneId']));
-//         });
-
-//         let auction = {
-//             clientTimeoutMillis: auctionCache.timeout,
-//             samplingFactor,
-//             accountId,
-//             adUnits: Object.keys(adUnitMap).map(i => adUnitMap[i])
-//         };
-
-//         if (serverConfig) {
-//             auction.serverTimeoutMillis = serverConfig.timeout;
-//         }
-
-//         // todo: i think we need to send each auction separately    
-//         message.auctions = [auction];
-
-//         let bidsWon = Object.keys(auctionCache.bidsWon).reduce((memo, adUnitCode) => {
-//             let bidId = auctionCache.bidsWon[adUnitCode];
-//             if (bidId) {
-//                 memo.push(formatBidWon(auctionCache.bids[bidId]));
-//             }
-//             return memo;
-//         }, []);
-
-//         if (bidsWon.length > 0) {
-//             message.bidsWon = bidsWon;
-//         }
-
-//         auctionCache.sent = true;
-
-//     } else if (bidWonId && auctionCache && auctionCache.bids[bidWonId]) {
-//         message.bidsWon = [
-//             formatBidWon(auctionCache.bids[bidWonId])
-//         ];
-//     }
-
-//     ajax(
-//         this.getUrl(),
-//         null,
-//         JSON.stringify(message),
-//         {
-//             contentType: 'application/json'
-//         }
-//     );
-// }
-
 ////////////// ADAPTER EVENT HANDLER FUNCTIONS ////////////// 
 
 function auctionInitHandler(args){
@@ -454,7 +283,6 @@ function auctionInitHandler(args){
 }
 
 function bidRequestedHandler(args){
-    console.log(LOG_PRE_FIX, 'bidRequestedHandler');
     args.bids.forEach(function(bid){
         if( !cache.auctions[args.auctionId].adUnitCodes.hasOwnProperty(bid.adUnitCode) ){
             cache.auctions[args.auctionId].adUnitCodes[bid.adUnitCode] = {
@@ -468,8 +296,6 @@ function bidRequestedHandler(args){
 }
 
 function bidResponseHandler(args){
-    console.log(LOG_PRE_FIX, 'bidResponseHandler');
-    //console.log(args);
     let bid = cache.auctions[args.auctionId].adUnitCodes[args.adUnitCode].bids[args.requestId]; //todo: need try-catch
     if (!bid) {
         utils.logError(LOG_PRE_FIX + 'Could not find associated bid request for bid response with requestId: ', args.requestId);
@@ -482,8 +308,6 @@ function bidResponseHandler(args){
 }
 
 function bidderDoneHandler(args){
-    console.log(LOG_PRE_FIX, 'bidderDoneHandler');
-    // console.log(args);
     args.bids.forEach(bid => {        
         let cachedBid = cache.auctions[bid.auctionId].adUnitCodes[bid.adUnit.adUnitCode].bids[bid.bidId || bid.requestId]; //todo: need try-catch
         if (typeof bid.serverResponseTimeMs !== 'undefined') {
@@ -500,37 +324,16 @@ function bidderDoneHandler(args){
 
 // todo: do we need this function?
 function setTargetingHandler(args){
-    console.log(LOG_PRE_FIX, 'setTargetingHandler');
-    // console.log(args);
     Object.assign(cache.targeting, args);
 }
 
 function bidWonHandler(args){
-    console.log(LOG_PRE_FIX, 'bidWonHandler');
-    console.log(args);
     let auctionCache = cache.auctions[args.auctionId];
     auctionCache.adUnitCodes[args.adUnitCode].bidWon = args.requestId;
-    // check if this BID_WON missed the boat, if so send by itself
-    // todo: i think we should remove these checks; and keep bidsLog and winBidLog separate
-    // if (auctionCache.sent === true) {
-    //     // sendMessage.call(this, args.auctionId, args.requestId);        
-    // } else if (isWinningBidReceivedForAllAdUnitsInAuction(auctionCache)) {
-    //     //todo: why isWinningBidReceivedForAllAdUnitsInAuction is important?
-    //     //      execute logger only if we have got all winning bids
-    //     //         here winning bid is the rendered bids
-    //     //      removing delayed execution
-    //     // todo: are we missing the bidWin logger call then?
-    //     clearTimeout(cache.timeouts[args.auctionId]);
-    //     delete cache.timeouts[args.auctionId];
-    //     // sendMessage.call(this, args.auctionId);
-    //     executeBidWonLoggerCall(this, args.auctionId, args.requestId);
-    // }
     executeBidWonLoggerCall(args.auctionId, args.adUnitCode);
 }
 
 function auctionEndHandler(args){
-    console.log(LOG_PRE_FIX, 'auctionEndHandler');
-    // console.log(args);
     // start timer to send batched payload just in case we don't hear any BID_WON events
     cache.timeouts[args.auctionId] = setTimeout(() => {
         executeBidsLoggerCall.call(this, args.auctionId);
@@ -538,8 +341,6 @@ function auctionEndHandler(args){
 }
 
 function bidTimeoutHandler(args){
-    console.log(LOG_PRE_FIX, 'bidTimeoutHandler');
-    // console.log(args);
     args.forEach(badBid => {
         let auctionCache = cache.auctions[badBid.auctionId];
         // todo: need to test
@@ -590,7 +391,6 @@ let pubmaticAdapter = Object.assign({}, baseAdapter, {
     },
 
     track({eventType, args}) {
-        // todo: can we name the functions as per events then we will not need a switch case
         switch (eventType) {
             case CONSTANTS.EVENTS.AUCTION_INIT:
                 auctionInitHandler(args);
@@ -631,7 +431,7 @@ let pubmaticAdapter = Object.assign({}, baseAdapter, {
 
 adapterManager.registerAnalyticsAdapter({
     adapter: pubmaticAdapter,
-    code: 'pubmatic'
+    code: ADAPTER_CODE
 });
 
 export default pubmaticAdapter;
