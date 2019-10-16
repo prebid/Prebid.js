@@ -87,21 +87,33 @@ export function init(config) {
 
 /**
  * get data from sub module
- * @returns {Promise} promise race  - will return submodule config or false if time out
+ * @param {AdUnit[]} adUnits received from auction
+ * @param {function} callback callback function on data received
  */
-function getProviderData(adUnits) {
-  const promises = subModules.map(sm => sm.getData(adUnits));
+function getProviderData(adUnits, callback) {
+  const callbackExpected = subModules.length;
+  let dataReceived = [];
+  let processDone = false;
+  const dataWaitTimeout = setTimeout(() => {
+    processDone = true;
+    callback(dataReceived);
+  }, _moduleConfig.auctionDelay);
 
-  // promise for timeout
-  const timeOutPromise = new Promise((resolve) => {
-    setTimeout(() => {
-      resolve({});
-    }, _moduleConfig.auctionDelay)
+  subModules.forEach(sm => {
+    sm.getData(adUnits, onDataReceived);
   });
 
-  return Promise.all(promises.map(p => {
-    return Promise.race([p, timeOutPromise]);
-  }));
+  function onDataReceived(data) {
+    if (processDone) {
+      return
+    }
+    dataReceived.push(data);
+    if (dataReceived.length === callbackExpected) {
+      processDone = true;
+      clearTimeout(dataWaitTimeout);
+      callback(dataReceived);
+    }
+  }
 }
 
 /**
@@ -111,7 +123,7 @@ function getProviderData(adUnits) {
  * @param {AdUnit[]} adUnits received from auction
  */
 export function setTargetsAfterRequestBids(next, adUnits) {
-  getProviderData(adUnits).then(data => {
+  getProviderData(adUnits, (data) => {
     if (data && Object.keys(data).length) {
       const _mergedData = deepMerge(data);
       if (Object.keys(_mergedData).length) {
@@ -119,8 +131,7 @@ export function setTargetsAfterRequestBids(next, adUnits) {
       }
     }
     next(adUnits);
-  }
-  );
+  });
 }
 
 /**
@@ -156,7 +167,7 @@ export function deepMerge(arr) {
  * @param {Object} reqBidsConfigObj - request bids object
  */
 export function requestBidsHook(fn, reqBidsConfigObj) {
-  getProviderData(reqBidsConfigObj.adUnits || getGlobal().adUnits).then(data => {
+  getProviderData(reqBidsConfigObj.adUnits || getGlobal().adUnits, (data) => {
     if (data && Object.keys(data).length) {
       const _mergedData = deepMerge(data);
       if (Object.keys(_mergedData).length) {

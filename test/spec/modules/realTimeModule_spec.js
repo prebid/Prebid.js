@@ -8,7 +8,7 @@ import {
   init as browsiInit,
   addBrowsiTag,
   isIdMatchingAdUnit,
-  _resolvePromise
+  setData
 } from 'modules/browsiRtdProvider';
 import {config} from 'src/config';
 import {makeSlot} from '../integration/faker/googletag';
@@ -90,7 +90,7 @@ describe('Real time module', function() {
       init(config);
       browsiInit(config);
       config.setConfig(conf);
-      _resolvePromise(predictions);
+      setData(predictions);
 
       // set slot
       const slots = createSlots();

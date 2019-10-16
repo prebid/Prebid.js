@@ -8,14 +8,14 @@ export const subModuleName = {
 };
 ```
 
-2. Promise that returns the real time data according to this structure:
+2. Function that returns the real time data according to the following structure:
 ```
 {
-  "slotPlacementId":{
+  "adUnitCode":{
       "key":"value",
       "key2":"value"
   },
-  "slotBPlacementId":{
+  "adUnirCode2":{
       "dataKey":"dataValue",
   }
 }

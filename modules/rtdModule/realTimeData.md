@@ -21,11 +21,11 @@ Example showing config using `browsi` sub module
 Example showing real time data object received form `browsi` real time data provider
 ```
 {
-  "slotPlacementId":{
+  "adUnitCode":{
       "key":"value",
       "key2":"value"
   },
-  "slotBPlacementId":{
+  "adUnitCode2":{
       "dataKey":"dataValue",
   }
 }

@@ -13,6 +13,7 @@
  * @property {string} pubKey
  * @property {string} url
  * @property {?string} keyName
+ * @property {number} auctionDelay
  */
 
 import {config} from '../src/config.js';
@@ -23,9 +24,10 @@ import {submodule} from '../src/hook';
 const MODULE_NAME = 'realTimeData';
 /** @type {ModuleParams} */
 let _moduleParams = {};
-
-export let _resolvePromise = null;
-const _waitForData = new Promise(resolve => _resolvePromise = resolve);
+/** @type {null|Object} */
+let _data = null;
+/** @type {null | function} */
+let _dataReadyCallback = null;
 
 /**
  * add browsi script to page
@@ -36,6 +38,8 @@ export function addBrowsiTag(bptUrl) {
   script.async = true;
   script.setAttribute('data-sitekey', _moduleParams.siteKey);
   script.setAttribute('data-pubkey', _moduleParams.pubKey);
+  script.setAttribute('prebidbpt', 'true');
+  script.setAttribute('id', 'browsi-tag');
   script.setAttribute('src', bptUrl);
   document.head.appendChild(script);
   return script;
@@ -48,9 +52,9 @@ export function addBrowsiTag(bptUrl) {
 function collectData() {
   const win = window.top;
   const doc = win.document;
-  let historicalData = null;
+  let browsiData = null;
   try {
-    historicalData = JSON.parse(utils.getDataFromLocalStorage('__brtd'))
+    browsiData = utils.getDataFromLocalStorage('__brtd');
   } catch (e) {
     utils.logError('unable to parse __brtd');
   }
@@ -60,34 +64,56 @@ function collectData() {
       sk: _moduleParams.siteKey,
       sw: (win.screen && win.screen.width) || -1,
       sh: (win.screen && win.screen.height) || -1,
-      url: encodeURIComponent(`${doc.location.protocol}//${doc.location.host}${doc.location.pathname}`)
+      url: encodeURIComponent(`${doc.location.protocol}//${doc.location.host}${doc.location.pathname}`),
     },
-    ...(historicalData && historicalData.pi ? {pi: historicalData.pi} : {}),
-    ...(historicalData && historicalData.pv ? {pv: historicalData.pv} : {}),
+    ...(browsiData ? {us: browsiData} : {us: '{}'}),
     ...(document.referrer ? {r: document.referrer} : {}),
     ...(document.title ? {at: document.title} : {})
   };
-  getPredictionsFromServer(`//${_moduleParams.url}/bpt?${serialize(predictorData)}`);
+  getPredictionsFromServer(`//${_moduleParams.url}/prebid?${toUrlParams(predictorData)}`);
+}
+
+export function setData(data) {
+  _data = data;
+
+  if (typeof _dataReadyCallback === 'function') {
+    _dataReadyCallback(_data);
+    _dataReadyCallback = null;
+  }
+}
+
+/**
+ * wait for data from server
+ * call callback when data is ready
+ * @param {function} callback
+ */
+function waitForData(callback) {
+  if (_data) {
+    _dataReadyCallback = null;
+    callback(_data);
+  } else {
+    _dataReadyCallback = callback;
+  }
 }
 
 /**
  * filter server data according to adUnits received
+ * call callback (onDone) when data is ready
  * @param {adUnit[]} adUnits
- * @return {Object} filtered data
- * @type {(function(adUnit[]): Promise<(adUnit | {}) | never | {}>)}}
+ * @param {function} onDone callback function
  */
-function sendDataToModule(adUnits) {
-  return _waitForData
-    .then((_predictionsData) => {
+function sendDataToModule(adUnits, onDone) {
+  try {
+    waitForData(_predictionsData => {
       const _predictions = _predictionsData.p;
       if (!_predictions || !Object.keys(_predictions).length) {
-        return ({})
+        onDone({});
       }
       const slots = getAllSlots();
       if (!slots) {
-        return ({})
+        onDone({});
       }
-      let dataToResolve = adUnits.reduce((rp, cau) => {
+      let dataToReturn = adUnits.reduce((rp, cau) => {
         const adUnitCode = cau && cau.code;
         if (!adUnitCode) { return rp }
         const predictionData = _predictions[adUnitCode];
@@ -101,11 +127,11 @@ function sendDataToModule(adUnits) {
         }
         return rp;
       }, {});
-      return (dataToResolve);
-    })
-    .catch((e) => {
-      return ({});
+      onDone(dataToReturn);
     });
+  } catch (e) {
+    onDone({});
+  }
 }
 
 /**
@@ -152,38 +178,41 @@ function getPredictionsFromServer(url) {
   xmlhttp.onreadystatechange = function() {
     if (xmlhttp.readyState === 4 && xmlhttp.status === 200) {
       try {
-        var data = JSON.parse(xmlhttp.responseText);
-        _resolvePromise({p: data.p, kn: data.kn});
+        const data = JSON.parse(xmlhttp.responseText);
+        if (data && data.p && data.kn) {
+          setData({p: data.p, kn: data.kn});
+        } else {
+          setData({});
+        }
         addBrowsiTag(data.u);
       } catch (err) {
         utils.logError('unable to parse data');
       }
+    } else if (xmlhttp.readyState === 4 && xmlhttp.status === 204) {
+      // unrecognized site key
+      setData({});
     }
   };
   xmlhttp.onloadend = function() {
     if (xmlhttp.status === 404) {
-      _resolvePromise({});
+      setData({});
       utils.logError('unable to get prediction data');
     }
   };
   xmlhttp.open('GET', url, true);
-  xmlhttp.onerror = function() { _resolvePromise({}) };
+  xmlhttp.onerror = function() { setData({}) };
   xmlhttp.send();
 }
 
 /**
  * serialize object and return query params string
- * @param {Object} obj
+ * @param {Object} data
  * @return {string}
  */
-function serialize(obj) {
-  let str = [];
-  for (let p in obj) {
-    if (obj.hasOwnProperty(p)) {
-      str.push(encodeURIComponent(p) + '=' + encodeURIComponent(obj[p]));
-    }
-  }
-  return str.join('&');
+function toUrlParams(data) {
+  return Object.keys(data)
+    .map(key => key + '=' + encodeURIComponent(data[key]))
+    .join('&');
 }
 
 /** @type {RtdSubmodule} */
@@ -197,7 +226,7 @@ export const browsiSubmodule = {
    * get data and send back to realTimeData module
    * @function
    * @param {adUnit[]} adUnits
-   * @returns {Promise}
+   * @param {function} onDone
    */
   getData: sendDataToModule
 };
@@ -207,6 +236,7 @@ export function init(config) {
     try {
       _moduleParams = realTimeData.dataProviders && realTimeData.dataProviders.filter(
         pr => pr.name && pr.name.toLowerCase() === 'browsi')[0].params;
+      _moduleParams.auctionDelay = realTimeData.auctionDelay;
     } catch (e) {
       _moduleParams = {};
     }
