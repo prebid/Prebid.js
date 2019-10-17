@@ -282,8 +282,9 @@ function addIdDataToAdUnitBids(adUnits, submodules) {
 /**
  * This is a common function that will initalize subModules if not already done and it will also execute subModule callbacks
  */
-function initializeSubmodulesAndExecuteCallbacks(continueAuction) {
+function initializeSubmodulesAndExecuteCallbacks(continueAuction, forcedAuctionDelay) {
   let delayed = false;
+  let newAuctionDelay = forcedAuctionDelay || auctionDelay;
 
   // initialize submodules only when undefined
   if (typeof initializedSubmodules === 'undefined') {
@@ -293,7 +294,7 @@ function initializeSubmodulesAndExecuteCallbacks(continueAuction) {
       const submodulesWithCallbacks = initializedSubmodules.filter(item => utils.isFn(item.callback));
 
       if (submodulesWithCallbacks.length) {
-        if (continueAuction && auctionDelay > 0) {
+        if (continueAuction && newAuctionDelay > 0) {
           // delay auction until ids are available
           delayed = true;
           let continued = false;
@@ -303,10 +304,10 @@ function initializeSubmodulesAndExecuteCallbacks(continueAuction) {
               continueAuction();
             }
           }
-          utils.logInfo(`${MODULE_NAME} - auction delayed by ${auctionDelay} at most to fetch ids`);
+          utils.logInfo(`${MODULE_NAME} - auction delayed by ${newAuctionDelay} at most to fetch ids`);
           processSubmoduleCallbacks(submodulesWithCallbacks, continueCallback);
 
-          setTimeout(continueCallback, auctionDelay);
+          setTimeout(continueCallback, newAuctionDelay);
         } else {
           // wait for auction complete before processing submodule callbacks
           events.on(CONSTANTS.EVENTS.AUCTION_END, function auctionEndHandler() {
@@ -354,10 +355,15 @@ export function requestBidsHook(fn, reqBidsConfigObj) {
  * This function will be exposed in global-name-space so that userIds stored by Prebid UserId module can be used by external codes as well.
  * Simple use case will be passing these UserIds to A9 wrapper solution
  */
-function getUserIds() {
-  // initialize submodules only when undefined
-  initializeSubmodulesAndExecuteCallbacks();
-  return getCombinedSubmoduleIds(initializedSubmodules);
+function getUserIds(callback, delay) {
+  if (typeof callback === 'function') {
+    initializeSubmodulesAndExecuteCallbacks(function() {
+      callback(getCombinedSubmoduleIds(initializedSubmodules));
+    }, (parseInt(delay) || 1));
+  } else {
+    initializeSubmodulesAndExecuteCallbacks(function() {}, 1);
+    return getCombinedSubmoduleIds(initializedSubmodules);
+  }
 }
 
 /**
