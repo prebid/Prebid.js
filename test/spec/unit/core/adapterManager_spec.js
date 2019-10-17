@@ -139,7 +139,7 @@ describe('adapterManager tests', function () {
 
     it('should give bidders access to bidder-specific config', function(done) {
       let mockBidders = ['rubicon', 'appnexus', 'pubmatic'];
-      let bidderRequest = getBidRequests().filter(bidRequest => mockBidders.includes(bidRequest.bidderCode));
+      let bidderRequest = getBidRequests().filter(bidRequest => includes(mockBidders, bidRequest.bidderCode));
       let adUnits = getAdUnits();
 
       let bidders = {};
