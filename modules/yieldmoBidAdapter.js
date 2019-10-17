@@ -39,7 +39,7 @@ export const spec = {
       title: localWindow.document.title || '',
       w: localWindow.innerWidth,
       h: localWindow.innerHeight,
-      user: JSON.stringify({
+      gdprConsent: JSON.stringify({
         // case of undefined, stringify will remove param
         gdprApplies: bidderRequest.gdprConsent ? bidderRequest.gdprConsent.gdprApplies : undefined,
         consentString: bidderRequest.gdprConsent ? bidderRequest.gdprConsent.consentString : undefined
