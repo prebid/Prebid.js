@@ -27,11 +27,11 @@ describe('User ID', function() {
       userSync: {
         syncDelay: 0,
         userIds: [
-          (configArr1 && configArr1.length === 3) ? getStorageMock.apply(null, configArr1) : null,
-          (configArr2 && configArr2.length === 3) ? getStorageMock.apply(null, configArr2) : null,
-          (configArr3 && configArr3.length === 3) ? getStorageMock.apply(null, configArr3) : null,
-          (configArr4 && configArr4.length === 3) ? getStorageMock.apply(null, configArr4) : null,
-          (configArr5 && configArr5.length === 3) ? getStorageMock.apply(null, configArr5) : null
+          (configArr1 && configArr1.length >= 3) ? getStorageMock.apply(null, configArr1) : null,
+          (configArr2 && configArr2.length >= 3) ? getStorageMock.apply(null, configArr2) : null,
+          (configArr3 && configArr3.length >= 3) ? getStorageMock.apply(null, configArr3) : null,
+          (configArr4 && configArr4.length >= 3) ? getStorageMock.apply(null, configArr4) : null,
+          (configArr5 && configArr5.length >= 3) ? getStorageMock.apply(null, configArr5) : null
         ].filter(i => i)}
     }
   }
