@@ -301,15 +301,15 @@ describe('User ID', function() {
     });
 
     it('config with 1 configurations should create 1 submodules', function () {
-      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, britepoolIdSubmodule]);
+      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule]);
       init(config);
       config.setConfig(getConfigMock(['unifiedId', 'unifiedid', 'cookie']));
 
       expect(utils.logInfo.args[0][0]).to.exist.and.to.equal('User ID - usersync config updated for 1 submodules');
     });
 
-    it('config with 4 configurations should result in 5 submodules add', function () {
-      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, britepoolIdSubmodule]);
+    it('config with 6 configurations should result in 6 submodules add', function () {
+      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, liveIntentIdSubmodule, britepoolIdSubmodule]);
       init(config);
       config.setConfig({
         usersync: {
@@ -335,11 +335,11 @@ describe('User ID', function() {
           }]
         }
       });
-      expect(utils.logInfo.args[0][0]).to.exist.and.to.equal('User ID - usersync config updated for 5 submodules');
+      expect(utils.logInfo.args[0][0]).to.exist.and.to.equal('User ID - usersync config updated for 6 submodules');
     });
 
     it('config syncDelay updates module correctly', function () {
-      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, britepoolIdSubmodule]);
+      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule]);
       init(config);
       config.setConfig({
         usersync: {
@@ -1089,8 +1089,6 @@ describe('User ID', function() {
       expect(requests[0].url).to.equal('//match.adsrvr.org/track/rid?ttd_pid=rubicon&fmt=json');
     });
   });
-});
-
   describe('BritePool Submodule', () => {
     const api_key = '1111';
     const aaid = '4421ea96-34a9-45df-a4ea-3c41a48a18b1';
@@ -1138,4 +1136,5 @@ describe('User ID', function() {
         done();
       });
     });
+  });
 });
