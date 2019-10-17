@@ -1696,6 +1696,42 @@ describe('PubMatic adapter', function () {
             expect(data.user.eids).to.equal(undefined);
           });
         });
+
+        describe('Parrable Id', function() {
+          it('send the Parrable id if it is present', function() {
+            bidRequests[0].userId = {};
+            bidRequests[0].userId.parrableid = 'parrable-user-id';
+            let request = spec.buildRequests(bidRequests, {});
+            let data = JSON.parse(request.data);
+            expect(data.user.eids).to.deep.equal([{
+              'source': 'parrable.com',
+              'uids': [{
+                'id': 'parrable-user-id',
+                'atype': 1
+              }]
+            }]);
+          });
+
+          it('do not pass if not string', function() {
+            bidRequests[0].userId = {};
+            bidRequests[0].userId.parrableid = 1;
+            let request = spec.buildRequests(bidRequests, {});
+            let data = JSON.parse(request.data);
+            expect(data.user.eids).to.equal(undefined);
+            bidRequests[0].userId.parrableid = [];
+            request = spec.buildRequests(bidRequests, {});
+            data = JSON.parse(request.data);
+            expect(data.user.eids).to.equal(undefined);
+            bidRequests[0].userId.parrableid = null;
+            request = spec.buildRequests(bidRequests, {});
+            data = JSON.parse(request.data);
+            expect(data.user.eids).to.equal(undefined);
+            bidRequests[0].userId.parrableid = {};
+            request = spec.buildRequests(bidRequests, {});
+            data = JSON.parse(request.data);
+            expect(data.user.eids).to.equal(undefined);
+          });
+        });
       });
 
       it('Request params check for video ad', function () {
