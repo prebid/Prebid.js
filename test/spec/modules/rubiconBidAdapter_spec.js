@@ -2096,6 +2096,7 @@ describe('the rubicon adapter', function () {
 
           expect(bids).to.be.lengthOf(1);
 
+          expect(bids[0].seatBidId).to.equal('0');
           expect(bids[0].creativeId).to.equal('4259970');
           expect(bids[0].cpm).to.equal(2);
           expect(bids[0].ttl).to.equal(300);
