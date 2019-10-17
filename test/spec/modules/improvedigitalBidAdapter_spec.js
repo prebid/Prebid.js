@@ -193,6 +193,47 @@ describe('Improve Digital Adapter Tests', function () {
       expect(params.bid_request.referrer).to.equal('https://blah.com/test.html');
     });
 
+    it('should add ad type for instream video', function () {
+      let bidRequest = Object.assign({}, simpleBidRequest);
+      bidRequest.mediaType = 'video';
+      let request = spec.buildRequests([bidRequest])[0];
+      let params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
+      expect(params.bid_request.imp[0].ad_types).to.deep.equal(['video']);
+
+      bidRequest = Object.assign({}, simpleBidRequest);
+      bidRequest.mediaTypes = {
+        video: {
+          context: 'instream',
+          playerSize: [640, 480]
+        }
+      };
+      request = spec.buildRequests([bidRequest])[0];
+      params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
+      expect(params.bid_request.imp[0].ad_types).to.deep.equal(['video']);
+    });
+
+    it('should not set ad type for outstream video', function() {
+      const bidRequest = Object.assign({}, simpleBidRequest);
+      bidRequest.mediaTypes = {
+        video: {
+          context: 'outstream',
+          playerSize: [640, 480]
+        }
+      };
+      const request = spec.buildRequests([bidRequest])[0];
+      const params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
+      expect(params.bid_request.imp[0].ad_types).to.not.exist;
+    });
+
+    it('should add schain', function () {
+      const schain = '{"ver":"1.0","complete":1,"nodes":[{"asi":"headerlift.com","sid":"xyz","hp":1}]}';
+      const bidRequest = Object.assign({}, simpleBidRequest);
+      bidRequest.schain = schain;
+      const request = spec.buildRequests([bidRequest], bidderRequestReferrer)[0];
+      const params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
+      expect(params.bid_request.schain).to.equal(schain);
+    });
+
     it('should return 2 requests', function () {
       const requests = spec.buildRequests([
         simpleBidRequest,
@@ -447,6 +488,34 @@ describe('Improve Digital Adapter Tests', function () {
     }
   };
 
+  const serverResponseVideo = {
+    'body': {
+      'id': '687a06c541d8d1',
+      'site_id': 191642,
+      'bid': [
+        {
+          'isNet': false,
+          'id': '33e9500b21129f',
+          'advid': '5279',
+          'price': 1.45888594164456,
+          'nurl': 'http://ice.360yield.com/imp_pixel?ic=wVmhKI07hCVyGC1sNdFp.6buOSiGYOw8jPyZLlcMY2RCwD4ek3Fy6.xUI7U002skGBs3objMBoNU-Frpvmb9js3NKIG0YZJgWaNdcpXY9gOXE9hY4-wxybCjVSNzhOQB-zic73hzcnJnKeoGgcfvt8fMy18-yD0aVdYWt4zbqdoITOkKNCPBEgbPFu1rcje-o7a64yZ7H3dKvtnIixXQYc1Ep86xGSBGXY6xW2KfUOMT6vnkemxO72divMkMdhR8cAuqIubbx-ZID8-xf5c9k7p6DseeBW0I8ionrlTHx.rGosgxhiFaMqtr7HiA7PBzKvPdeEYN0hQ8RYo8JzYL82hA91A3V2m9Ij6y0DfIJnnrKN8YORffhxmJ6DzwEl1zjrVFbD01bqB3Vdww8w8PQJSkKQkd313tr-atU8LS26fnBmOngEkVHwAr2WCKxuUvxHmuVBTA-Lgz7wKwMoOJCA3hFxMavVb0ZFB7CK0BUTVU6z0De92Q.FJKNCHLMbjX3vcAQ90=',
+          'h': 290,
+          'pid': 1053688,
+          'sync': [
+            'http://link1',
+            'http://link2'
+          ],
+          'crid': '422031',
+          'w': 600,
+          'cid': '99006',
+          'adm': '<VAST></VAST>',
+          'ad_type': 'video'
+        }
+      ],
+      'debug': ''
+    }
+  };
+
   const nativeEventtrackers = [
     {
       event: 1,
@@ -540,6 +609,22 @@ describe('Improve Digital Adapter Tests', function () {
           javascriptTrackers: '<script src=\"http://www.foobar.js\"></script>',
           privacyLink: 'https://www.myprivacyurl.com'
         }
+      }
+    ];
+
+    let expectedBidVideo = [
+      {
+        'vastXml': '<VAST></VAST>',
+        'adId': '33e9500b21129f',
+        'creativeId': '422031',
+        'cpm': 1.45888594164456,
+        'currency': 'USD',
+        'height': 290,
+        'mediaType': 'video',
+        'netRevenue': false,
+        'requestId': '33e9500b21129f',
+        'ttl': 300,
+        'width': 600
       }
     ];
 
@@ -657,6 +742,12 @@ describe('Improve Digital Adapter Tests', function () {
       bids = spec.interpretResponse(response);
       delete bids[0].ortbNative;
       expect(bids).to.deep.equal(expectedBids);
+    });
+
+    // Video
+    it('should return a well-formed video bid', function () {
+      const bids = spec.interpretResponse(serverResponseVideo);
+      expect(bids).to.deep.equal(expectedBidVideo);
     });
   });
 

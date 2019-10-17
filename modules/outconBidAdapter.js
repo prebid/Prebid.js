@@ -46,6 +46,7 @@ export const spec = {
       ad: wrapDisplayUrl(serverResponse.body.creatives[0].url, serverResponse.body.type),
       vastImpUrl: serverResponse.body.trackingURL,
       mediaType: serverResponse.body.type
+
     };
     bidResponses.push(bidResponse);
     return bidResponses;

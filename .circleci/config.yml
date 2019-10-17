@@ -2,49 +2,93 @@
 #
 # Check https://circleci.com/docs/2.0/language-javascript/ for more details
 #
+
+aliases: 
+  - &environment
+      docker:
+        # specify the version you desire here
+        - image: circleci/node:8.9.0
+        
+        # Specify service dependencies here if necessary
+        # CircleCI maintains a library of pre-built images
+        # documented at https://circleci.com/docs/2.0/circleci-images/
+        # - image: circleci/mongo:3.4.4
+      working_directory: ~/Prebid.js
+
+  - &restore_dep_cache
+      keys:
+        - v1-dependencies-{{ checksum "package.json" }}
+        # fallback to using the latest cache if no exact match is found
+        - v1-dependencies-
+
+  - &save_dep_cache
+      paths:
+        - node_modules
+      key: v1-dependencies-{{ checksum "package.json" }}
+
+  - &install
+      name: Install gulp cli
+      command: sudo npm install -g gulp-cli
+
+  - &run_unit_test
+      name: BrowserStack testing
+      command: gulp test --browserstack --nolintfix
+
+  - &run_endtoend_test
+      name: BrowserStack End to end testing
+      command: echo "127.0.0.1 test.localhost" | sudo tee -a /etc/hosts && gulp e2e-test --host=test.localhost
+
+  # Download and run BrowserStack local
+  - &setup_browserstack
+      name : Download BrowserStack Local binary and start it.
+      command : |
+        # Download the browserstack binary file
+        wget "https://www.browserstack.com/browserstack-local/BrowserStackLocal-linux-x64.zip"
+        # Unzip it
+        unzip BrowserStackLocal-linux-x64.zip
+        # Run the file with user's access key
+        ./BrowserStackLocal ${BROWSERSTACK_ACCESS_KEY} &
+
+  - &unit_test_steps
+    - checkout
+    - restore_cache: *restore_dep_cache
+    - run: npm install
+    - save_cache: *save_dep_cache
+    - run: *install
+    - run: *setup_browserstack
+    - run: *run_unit_test
+
+  - &endtoend_test_steps
+    - checkout
+    - restore_cache: *restore_dep_cache
+    - run: npm install
+    - save_cache: *save_dep_cache
+    - run: *install
+    - run: *setup_browserstack
+    - run: *run_endtoend_test
+
 version: 2
 jobs:
   build:
-    docker:
-      # specify the version you desire here
-      - image: circleci/node:8.9.0
+    <<: *environment
+    steps: *unit_test_steps
       
-      # Specify service dependencies here if necessary
-      # CircleCI maintains a library of pre-built images
-      # documented at https://circleci.com/docs/2.0/circleci-images/
-      # - image: circleci/mongo:3.4.4
+  e2etest:
+    <<: *environment
+    steps: *endtoend_test_steps
 
-    working_directory: ~/Prebid.js
-
-    steps:
-      - checkout
-
-      # Download and cache dependencies
-      - restore_cache:
-          keys:
-          - v1-dependencies-{{ checksum "package.json" }}
-          # fallback to using the latest cache if no exact match is found
-          - v1-dependencies-
-
-      - run: npm install
-
-      - save_cache:
-          paths:
-            - node_modules
-          key: v1-dependencies-{{ checksum "package.json" }}
-
-      - run: sudo npm install -g gulp-cli
-      # Download and run BrowserStack local
-      - run:
-          name : Download BrowserStack Local binary and start it.
-          command : |
-            # Download the browserstack binary file
-            wget "https://www.browserstack.com/browserstack-local/BrowserStackLocal-linux-x64.zip"
-            # Unzip it
-            unzip BrowserStackLocal-linux-x64.zip
-            # Run the file with user's access key
-            ./BrowserStackLocal ${BROWSERSTACK_ACCESS_KEY} &
-      # run tests!
-      - run: 
-          name: BrowserStack testing
-          command: gulp test --browserstack --nolintfix
+workflows:
+  version: 2
+  commit:
+    jobs:
+      - build
+  nightly:
+    triggers:
+      - schedule:
+          cron: "0 0 * * *"
+          filters:
+            branches:
+              only:
+                - master
+    jobs:
+      - e2etest
