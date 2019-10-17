@@ -12,7 +12,7 @@ Module that connects to 7xbid's demand sources
 ```javascript
 	var adUnits = [
     {
-      code: 'div-gpt-ad-1460505748561-1',
+      code: 'test',
       mediaTypes: {
         banner: {
           sizes: [[300, 250], [300,600]],
@@ -30,7 +30,7 @@ Module that connects to 7xbid's demand sources
       ]
     },
     {
-      code: 'div-gpt-ad-1460505748561-0',
+      code: 'test',
       mediaTypes: {
         native: {
           title: {
