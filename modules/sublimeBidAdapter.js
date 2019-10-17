@@ -188,8 +188,8 @@ function buildRequests(validBidRequests, bidderRequest) {
       url: protocol + '://' + bidHost + '/bid',
       data: payload,
       options: {
-        contentType: 'application/json',
-        withCredentials: true
+        contentType: 'text/plain',
+        withCredentials: false
       },
     }
   });
