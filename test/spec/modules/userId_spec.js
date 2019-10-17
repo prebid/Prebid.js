@@ -1093,7 +1093,7 @@ describe('User ID', function() {
         });
       });
 
-      // emit an auction end event to run the mock callback
+      // attach a handler for auction end event to run the second bid request
       events.on(CONSTANTS.EVENTS.AUCTION_END, function handler(submodule) {
         if (submodule === 'parrableIdSubmoduleMock') {
           // make the second bid request, id should have been refreshed
@@ -1109,6 +1109,7 @@ describe('User ID', function() {
         }
       });
 
+      // emit an auction end event to run the submodule callback
       events.emit(CONSTANTS.EVENTS.AUCTION_END, 'parrableIdSubmoduleMock');
     });
   });
