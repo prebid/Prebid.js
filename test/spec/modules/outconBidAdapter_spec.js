@@ -69,7 +69,7 @@ describe('outconBidAdapter', function () {
             codec: 'video/mp4'
           }
         ],
-        id: '5d6e6aef22063e392bf7f564',
+        ad: '5d6e6aef22063e392bf7f564',
         type: 'video',
         campaign: '5d42e44b306ea469593c76a2',
         trackingURL: 'http://test.outcondigital.com:8048/ad/track?track=5d6e6aef22063e392bf7f564'
