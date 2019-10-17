@@ -1,6 +1,6 @@
 /** @module adaptermanger */
 
-import { flatten, getBidderCodes, getDefinedParams, shuffle, timestamp, getBidderRequest } from './utils';
+import { flatten, getBidderCodes, getDefinedParams, shuffle, timestamp, getBidderRequest, bind } from './utils';
 import { getLabels, resolveStatus } from './sizeMapping';
 import { processNativeAdUnitParams, nativeAdapters } from './native';
 import { newBidder } from './adapters/bidderFactory';
@@ -337,9 +337,21 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
       request: requestCallbacks.request.bind(null, bidRequest.bidderCode),
       done: requestCallbacks.done
     } : undefined);
-    adapter.callBids(bidRequest, addBidResponse.bind(bidRequest), doneCb.bind(bidRequest), ajax, onTimelyResponse);
+    config.runWithBidder(
+      bidRequest.bidderCode,
+      bind.call(
+        adapter.callBids,
+        adapter,
+        bidRequest,
+        addBidResponse.bind(bidRequest),
+        doneCb.bind(bidRequest),
+        ajax,
+        onTimelyResponse,
+        config.callbackWithBidder(bidRequest.bidderCode)
+      )
+    );
   });
-}
+};
 
 function doingS2STesting() {
   return _s2sConfig && _s2sConfig.enabled && _s2sConfig.testing && s2sTestingModule;

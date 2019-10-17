@@ -3,7 +3,8 @@ import adapterManager, { gdprDataHandler } from 'src/adapterManager';
 import {
   getAdUnits,
   getServerTestingConfig,
-  getServerTestingsAds
+  getServerTestingsAds,
+  getBidRequests
 } from 'test/fixtures/fixtures';
 import CONSTANTS from 'src/constants.json';
 import * as utils from 'src/utils';
@@ -134,6 +135,87 @@ describe('adapterManager tests', function () {
       expect(cnt).to.equal(1);
       sinon.assert.calledOnce(appnexusAdapterMock.callBids);
       events.off(CONSTANTS.EVENTS.BID_REQUESTED, count);
+    });
+
+    it('should give bidders access to bidder-specific config', function(done) {
+      let mockBidders = ['rubicon', 'appnexus', 'pubmatic'];
+      let bidderRequest = getBidRequests().filter(bidRequest => mockBidders.includes(bidRequest.bidderCode));
+      let adUnits = getAdUnits();
+
+      let bidders = {};
+      let results = {};
+      let cbCount = 0;
+
+      function mock(bidder) {
+        bidders[bidder] = adapterManager.bidderRegistry[bidder];
+        adapterManager.bidderRegistry[bidder] = {
+          callBids: function(bidRequest, addBidResponse, done, ajax, timeout, configCallback) {
+            let myResults = results[bidRequest.bidderCode] = [];
+            myResults.push(config.getConfig('buildRequests'));
+            // emulate ajax callback that would register bids
+            setTimeout(configCallback(() => {
+              myResults.push(config.getConfig('interpretResponse'));
+              if (++cbCount === Object.keys(bidders).length) {
+                assertions();
+              }
+            }), 1);
+            done();
+          }
+        }
+      }
+
+      mockBidders.forEach(bidder => {
+        mock(bidder);
+      });
+
+      config.setConfig({
+        buildRequests: {
+          data: 1
+        },
+        interpretResponse: 'baseInterpret'
+      });
+      config.setBidderConfig({
+        appnexus: {
+          buildRequests: {
+            test: 2
+          },
+          interpretResponse: 'appnexusInterpret'
+        },
+        rubicon: {
+          buildRequests: 'rubiconBuild',
+          interpretResponse: 'rubiconInterpret'
+        },
+      });
+
+      adapterManager.callBids(adUnits, bidderRequest, () => {}, () => {});
+
+      function assertions() {
+        expect(results).to.deep.equal({
+          'appnexus': [
+            {
+              data: 1,
+              test: 2
+            },
+            'appnexusInterpret'
+          ],
+          'pubmatic': [
+            {
+              data: 1
+            },
+            'baseInterpret'
+          ],
+          'rubicon': [
+            'rubiconBuild',
+            'rubiconInterpret'
+          ]
+        });
+
+        // restore bid adapters
+        Object.keys(bidders).forEach(bidder => {
+          adapterManager.bidderRegistry[bidder] = bidders[bidder];
+        });
+        done();
+      }
     });
   });
 
