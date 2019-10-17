@@ -167,7 +167,7 @@ describe('YieldmoAdapter', function () {
         'gdprApplies': true
       }
       const data = spec.buildRequests(bidArray, bidderRequest).data;
-      expect(data.user).equal(JSON.stringify({
+      expect(data.gdprConsent).equal(JSON.stringify({
         'gdprApplies': true,
         'consentString': 'BOJ/P2HOJ/P2HABABMAAAAAZ+A=='
       }));
