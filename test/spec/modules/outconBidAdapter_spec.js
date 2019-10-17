@@ -87,7 +87,8 @@ describe('outconBidAdapter', function () {
         'netRevenue',
         'ttl',
         'ad',
-        'vastImpUrl'
+        'vastImpUrl',
+        'mediaType'
       ];
       let resultKeys = Object.keys(result[0]);
       resultKeys.forEach(function(key) {
