@@ -27,6 +27,16 @@ describe('YieldmoAdapter', function () {
     }
   };
   let bidArray = [bid];
+  let bidderRequest = {
+    'bidderCode': 'yieldmo',
+    'auctionId': 'e3a336ad-2761-4a1c-b421-ecc7c5294a34',
+    'bidderRequestId': '14c4ede8c693f',
+    'bids': bidArray,
+    'auctionStart': 1520001292880,
+    'timeout': 3000,
+    'start': 1520001292884,
+    'doneCbCallCount': 0
+  }
 
   describe('isBidRequestValid', function () {
     it('should return true when necessary information is found', function () {
@@ -52,7 +62,7 @@ describe('YieldmoAdapter', function () {
 
   describe('buildRequests', function () {
     it('should attempt to send bid requests to the endpoint via GET', function () {
-      const request = spec.buildRequests(bidArray);
+      const request = spec.buildRequests(bidArray, bidderRequest);
       expect(request.method).to.equal('GET');
       expect(request.url).to.be.equal(ENDPOINT);
     });
@@ -61,11 +71,11 @@ describe('YieldmoAdapter', function () {
       let bidArray = [
         { ...bid, crumbs: undefined }
       ]
-      expect(function () { spec.buildRequests(bidArray) }).not.to.throw()
+      expect(function () { spec.buildRequests(bidArray, bidderRequest) }).not.to.throw()
     })
 
     it('should place bid information into the p parameter of data', function () {
-      let placementInfo = spec.buildRequests(bidArray).data.p;
+      let placementInfo = spec.buildRequests(bidArray, bidderRequest).data.p;
       expect(placementInfo).to.equal('[{"placement_id":"adunit-code","callback_id":"30b31c1838de1e","sizes":[[300,250],[300,600]],"bidFloor":0.1}]');
 
       bidArray.push({
@@ -85,24 +95,24 @@ describe('YieldmoAdapter', function () {
       });
 
       // multiple placements
-      placementInfo = spec.buildRequests(bidArray).data.p;
+      placementInfo = spec.buildRequests(bidArray, bidderRequest).data.p;
       expect(placementInfo).to.equal('[{"placement_id":"adunit-code","callback_id":"30b31c1838de1e","sizes":[[300,250],[300,600]],"bidFloor":0.1},{"placement_id":"adunit-code-1","callback_id":"123456789","sizes":[[300,250],[300,600]],"bidFloor":0.2}]');
     });
 
     it('should add placement id if given', function () {
       bidArray[0].params.placementId = 'ym_1293871298';
-      let placementInfo = spec.buildRequests(bidArray).data.p;
+      let placementInfo = spec.buildRequests(bidArray, bidderRequest).data.p;
       expect(placementInfo).to.include('"ym_placement_id":"ym_1293871298"');
       expect(placementInfo).not.to.include('"ym_placement_id":"ym_0987654321"');
 
       bidArray[1].params.placementId = 'ym_0987654321';
-      placementInfo = spec.buildRequests(bidArray).data.p;
+      placementInfo = spec.buildRequests(bidArray, bidderRequest).data.p;
       expect(placementInfo).to.include('"ym_placement_id":"ym_1293871298"');
       expect(placementInfo).to.include('"ym_placement_id":"ym_0987654321"');
     });
 
     it('should add additional information to data parameter of request', function () {
-      const data = spec.buildRequests(bidArray).data;
+      const data = spec.buildRequests(bidArray, bidderRequest).data;
       expect(data.hasOwnProperty('page_url')).to.be.true;
       expect(data.hasOwnProperty('bust')).to.be.true;
       expect(data.hasOwnProperty('pr')).to.be.true;
@@ -129,7 +139,7 @@ describe('YieldmoAdapter', function () {
           pubcid: 'c604130c-0144-4b63-9bf2-c2bd8c8d86da2'
         }
       };
-      const data = spec.buildRequests([pubcidBid]).data;
+      const data = spec.buildRequests([pubcidBid], bidderRequest).data;
       expect(data.pubcid).to.deep.equal('c604130c-0144-4b63-9bf2-c2bd8c8d86da2');
     });
 
@@ -146,8 +156,21 @@ describe('YieldmoAdapter', function () {
           tdid,
         }
       };
-      const data = spec.buildRequests([unifiedIdBid]).data;
+      const data = spec.buildRequests([unifiedIdBid], bidderRequest).data;
       expect(data.tdid).to.deep.equal(tdid);
+    });
+
+    it('should add gdpr information to request if available', () => {
+      bidderRequest.gdprConsent = {
+        'consentString': 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==',
+        'vendorData': {'blerp': 1},
+        'gdprApplies': true
+      }
+      const data = spec.buildRequests(bidArray, bidderRequest).data;
+      expect(data.gdprConsent).equal(JSON.stringify({
+        'gdprApplies': true,
+        'consentString': 'BOJ/P2HOJ/P2HABABMAAAAAZ+A=='
+      }));
     });
   });
 
