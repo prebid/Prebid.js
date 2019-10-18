@@ -162,7 +162,7 @@ function getRequestData(bid, consentData) {
     tmax: 200
   };
 
-  if (bid.params.video.display == undefined || bid.params.video.display == 0) {
+  if (bid.params.video.display == undefined || bid.params.video.display != 1) {
     bidData.imp[0].video = {
       mimes: bid.params.video.mimes,
       w: bid.params.video.playerWidth,
@@ -212,7 +212,7 @@ function getRequestData(bid, consentData) {
         }
       }
     }
-  } else if (bid.params.video.display) {
+  } else if (bid.params.video.display == 1) {
     bidData.imp[0].banner = {
       mimes: bid.params.video.mimes,
       w: bid.params.video.playerWidth,
