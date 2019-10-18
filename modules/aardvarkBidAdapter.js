@@ -103,7 +103,7 @@ export const spec = {
       var req = requestsMap[auctionId];
       requests.push({
         method: 'GET',
-        url: `//${req.endpoint}/${auctionId}/${req.shortCodes.join('_')}/aardvark`,
+        url: `https://${req.endpoint}/${auctionId}/${req.shortCodes.join('_')}/aardvark`,
         data: req.payload,
         bidderRequest
       });
@@ -162,7 +162,7 @@ export const spec = {
 
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent) {
     const syncs = [];
-    var url = '//' + SYNC_ENDPOINT + '/cs';
+    var url = 'https://' + SYNC_ENDPOINT + '/cs';
     var gdprApplies = false;
     if (gdprConsent && (typeof gdprConsent.gdprApplies === 'boolean')) {
       gdprApplies = gdprConsent.gdprApplies;

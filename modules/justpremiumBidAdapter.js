@@ -2,7 +2,7 @@ import { registerBidder } from '../src/adapters/bidderFactory'
 import { deepAccess } from '../src/utils';
 
 const BIDDER_CODE = 'justpremium'
-const ENDPOINT_URL = '//pre.ads.justpremium.com/v/2.0/t/xhr'
+const ENDPOINT_URL = 'https://pre.ads.justpremium.com/v/2.0/t/xhr'
 const JP_ADAPTER_VERSION = '1.4'
 const pixels = []
 const TRACK_START_TIME = Date.now()
@@ -106,7 +106,7 @@ export const spec = {
   },
 
   getUserSyncs: function getUserSyncs(syncOptions, responses, gdprConsent) {
-    let url = '//pre.ads.justpremium.com/v/1.0/t/sync' + '?_c=' + 'a' + Math.random().toString(36).substring(7) + Date.now();
+    let url = 'https://pre.ads.justpremium.com/v/1.0/t/sync' + '?_c=' + 'a' + Math.random().toString(36).substring(7) + Date.now();
     if (gdprConsent && (typeof gdprConsent.gdprApplies === 'boolean')) {
       url = url + '&consentString=' + encodeURIComponent(gdprConsent.consentString)
     }
@@ -159,7 +159,7 @@ function track (data, payload, type) {
 
   let duration = Date.now() - TRACK_START_TIME
 
-  const pixelUrl = `//emea-v3.tracking.justpremium.com/tracking.gif?rid=&sid=&uid=&vr=&
+  const pixelUrl = `https://emea-v3.tracking.justpremium.com/tracking.gif?rid=&sid=&uid=&vr=&
 ru=${encodeURIComponent(pubUrl)}&tt=&siw=&sh=${payload.sh}&sw=${payload.sw}&wh=${payload.wh}&ww=${payload.ww}&an=&vn=&
 sd=&_c=&et=&aid=&said=&ei=&fc=&sp=&at=bidder&cid=&ist=&mg=&dl=&dlt=&ev=&vt=&zid=${payload.id}&dr=${duration}&di=&pr=&
 cw=&ch=&nt=&st=&jp=${encodeURIComponent(JSON.stringify(jp))}&ty=${type}`

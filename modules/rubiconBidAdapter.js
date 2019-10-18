@@ -10,8 +10,8 @@ function isSecure() {
 }
 
 // use protocol relative urls for http or https
-export const FASTLANE_ENDPOINT = '//fastlane.rubiconproject.com/a/api/fastlane.json';
-export const VIDEO_ENDPOINT = '//prebid-server.rubiconproject.com/openrtb2/auction';
+export const FASTLANE_ENDPOINT = 'https://fastlane.rubiconproject.com/a/api/fastlane.json';
+export const VIDEO_ENDPOINT = 'https://prebid-server.rubiconproject.com/openrtb2/auction';
 export const SYNC_ENDPOINT = 'https://eus.rubiconproject.com/usync.html';
 
 const DIGITRUST_PROP_NAMES = {

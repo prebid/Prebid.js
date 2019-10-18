@@ -4,9 +4,9 @@ import { Renderer } from '../src/Renderer';
 import { VIDEO, BANNER } from '../src/mediaTypes';
 
 const BIDDER_CODE = 'grid';
-const ENDPOINT_URL = '//grid.bidswitch.net/hb';
+const ENDPOINT_URL = 'https://grid.bidswitch.net/hb';
 const TIME_TO_LIVE = 360;
-const RENDERER_URL = '//acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
+const RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
 
 const LOG_ERROR_MESS = {
   noAuid: 'Bid from response has no auid parameter - ',

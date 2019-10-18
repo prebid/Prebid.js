@@ -47,7 +47,7 @@ export const spec = {
     if (!data.gdprApplies || data.consentGiven) {
       return {
         method: 'GET',
-        url: `${window.location.protocol}//udmserve.net/udm/img.fetch`,
+        url: `https://udmserve.net/udm/img.fetch`,
         data: data,
         bidParams: validBidRequests
       };
