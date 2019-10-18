@@ -16,15 +16,18 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/videojs-vast-vpaid/2.0.2/videojs_5.vast.vpaid.min.js"></script>
 
     <!-- prebid.js -->
-    <script src="../../build/dist/prebid.js" async=true></script>
+    <script src="../../build/dev/prebid.js" async=true></script>
 
 
     <script>
+
       var pbjs = pbjs || {};
       pbjs.que = pbjs.que || [];
+
       /*
        Prebid Video adUnit
        */
+
       var videoAdUnit = {
         code: 'video1',
         sizes: [640,480],
@@ -44,6 +47,7 @@
           }
         ]
       };
+
       pbjs.que.push(function(){
         pbjs.addAdUnits(videoAdUnit);
         pbjs.requestBids({
@@ -55,10 +59,12 @@
                 iu: '/19968336/prebid_cache_video_adunit'
               }
             });
+
             invokeVideoPlayer(videoUrl);
           }
         });
       });
+
       pbjs.bidderSettings =
         {
           standard: {
@@ -99,7 +105,8 @@
     <video id="vid1" class="video-js vjs-default-skin vjs-big-play-centered" controls
            data-setup='{}'
            width='640'
-           height='480'>
+           height='480'
+    >
         <source src="http://vjs.zencdn.net/v/oceans.mp4" type='video/mp4'/>
         <source src="http://vjs.zencdn.net/v/oceans.webm" type='video/webm'/>
         <source src="http://vjs.zencdn.net/v/oceans.ogv" type='video/ogg'/>
@@ -117,10 +124,12 @@
         vpaidFlashLoaderPath: "https://github.com/MailOnline/videojs-vast-vpaid/blob/RELEASE/bin/VPAIDFlash.swf?raw=true",
         autoplay: true
       });
+
       this.muted(true);
       this.play();
     });
   }
+
 </script>
 </body>
 </html>
