@@ -8,7 +8,12 @@ describe('BritePool Submodule', () => {
   const bpid = '279c0161-5152-487f-809e-05d7f7e653fd';
   const url_override = 'https://override';
   const getter_override = function(params) {
-    return Promise.resolve(JSON.stringify({ 'primaryBPID': bpid }));
+    return JSON.stringify({ 'primaryBPID': bpid });
+  };
+  const getter_callback_override = function(params) {
+    return callback => {
+      callback(JSON.stringify({ 'primaryBPID': bpid }));
+    };
   };
 
   it('sends x-api-key in header and one identifier', () => {
@@ -37,13 +42,23 @@ describe('BritePool Submodule', () => {
     expect(params.url).to.be.undefined;
   });
 
-  it('test getter override', done => {
+  it('test getter override with value', () => {
     const { params, headers, url, getter, errors } = britepoolIdSubmodule.createParams({ api_key, aaid, url: url_override, getter: getter_override });
     expect(getter).to.equal(getter_override);
     // Making sure it did not become part of params
     expect(params.getter).to.be.undefined;
-    const getId = britepoolIdSubmodule.getId({ api_key, aaid, url: url_override, getter: getter_override });
-    getId(result => {
+    const response = britepoolIdSubmodule.getId({ api_key, aaid, url: url_override, getter: getter_override });
+    assert.deepEqual(response, { 'primaryBPID': bpid });
+  });
+
+  it('test getter override with callback', done => {
+    const { params, headers, url, getter, errors } = britepoolIdSubmodule.createParams({ api_key, aaid, url: url_override, getter: getter_callback_override });
+    expect(getter).to.equal(getter_callback_override);
+    // Making sure it did not become part of params
+    expect(params.getter).to.be.undefined;
+    const response = britepoolIdSubmodule.getId({ api_key, aaid, url: url_override, getter: getter_callback_override });
+    expect(response.callback).to.not.be.undefined;
+    response.callback(result => {
       assert.deepEqual(result, { 'primaryBPID': bpid });
       done();
     });
