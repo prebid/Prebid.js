@@ -12,7 +12,7 @@ var CONSTANTS = require('src/constants.json');
 
 const INTEGRATION = `pbjs_lite_v$prebid.version$`; // $prebid.version$ will be substituted in by gulp in built prebid
 
-describe.only('the rubicon adapter', function () {
+describe('the rubicon adapter', function () {
   let sandbox,
     bidderRequest,
     sizeMap;
@@ -68,6 +68,49 @@ describe.only('the rubicon adapter', function () {
    * @param {Array.<overrideProps>} [indexOverMap]
    * @return {{status: string, cpm: number, zone_id: *, size_id: *, impression_id: *, ad_id: *, creative_id: string, type: string, targeting: *[]}}
    */
+
+  function getBidderRequest() {
+    return {
+      bidderCode: 'rubicon',
+      auctionId: 'c45dd708-a418-42ec-b8a7-b70a6c6fab0a',
+      bidderRequestId: '178e34bad3658f',
+      bids: [
+        {
+          bidder: 'rubicon',
+          params: {
+            accountId: '14062',
+            siteId: '70608',
+            zoneId: '335918',
+            userId: '12346',
+            keywords: ['a', 'b', 'c'],
+            inventory: {
+              rating: '5-star', // This actually should not be sent to frank!! causes 400
+              prodtype: ['tech', 'mobile']
+            },
+            visitor: {
+              ucat: 'new',
+              lastsearch: 'iphone',
+              likes: ['sports', 'video games']
+            },
+            position: 'atf',
+            referrer: 'localhost',
+            latLong: [40.7607823, '111.8910325']
+          },
+          adUnitCode: '/19968336/header-bid-tag-0',
+          code: 'div-1',
+          sizes: [[300, 250], [320, 50]],
+          bidId: '2ffb201a808da7',
+          bidderRequestId: '178e34bad3658f',
+          auctionId: 'c45dd708-a418-42ec-b8a7-b70a6c6fab0a',
+          transactionId: 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b'
+        }
+      ],
+      start: 1472239426002,
+      auctionStart: 1472239426000,
+      timeout: 5000
+    };
+  };
+
   function createResponseAdByIndex(i, sizeId, indexOverMap) {
     const overridePropMap = (indexOverMap && indexOverMap[i] && typeof indexOverMap[i] === 'object') ? indexOverMap[i] : {};
     const overrideProps = Object.keys(overridePropMap).reduce((aggregate, key) => {
@@ -2182,6 +2225,90 @@ describe.only('the rubicon adapter', function () {
         expect(Array.isArray(result.ranges)).to.equal(true);
         expect(result.ranges.length).to.be.greaterThan(0)
         expect(result.ranges[0]).to.deep.equal(kvPair.val);
+      });
+    });
+  });
+
+  describe.only('Supply Chain Support', function() {
+    const nodePropsOrder = ['asi', 'sid', 'hp', 'rid', 'name', 'domain'];
+    let bidRequests;
+    let schainConfig;
+
+    beforeEach(() => {
+      bidRequests = getBidderRequest();
+
+      schainConfig = {
+        ver: '1.0',
+        complete: 1,
+        nodes: [
+          {
+            asi: 'rubicon.com',
+            sid: '1234',
+            hp: 1,
+            rid: 'bid-request-1',
+            name: 'pub one',
+            domain: 'pub1.com'
+          },
+          {
+            asi: 'theexchange.com',
+            sid: '5678',
+            hp: 1,
+            rid: 'bid-request-2',
+            name: 'pub two',
+            domain: 'pub2.com'
+          },
+          {
+            asi: 'wesellads.com',
+            sid: '9876',
+            hp: 1,
+            rid: 'bid-request-3',
+            // name: 'alladsallthetime',
+            domain: 'alladsallthetime.com'
+          }
+        ]
+      };
+
+      bidRequests.bids[0].schain = schainConfig;
+    });
+
+    it('should properly serialize schain object with correct delimiters', () => {
+      const results = spec.buildRequests(bidRequests.bids, bidRequests);
+      const numNodes = schainConfig.nodes.length;
+      const schain = parseQuery(results[0].data).schain;
+
+      // each node serialization should start with an !
+      expect(schain.match(/!/g).length).to.equal(numNodes);
+
+      // 5 commas per node plus 1 for version
+      expect(schain.match(/,/g).length).to.equal(numNodes * 5 + 1);
+    });
+
+    it('should send the proper version for the schain', () => {
+      const results = spec.buildRequests(bidRequests.bids, bidRequests);
+      const schain = parseQuery(results[0].data).schain.split('!');
+      const version = schain.shift().split(',')[0];
+      expect(version).to.equal(bidRequests.bids[0].schain.ver);
+    });
+
+    it('should send the correct value for complete in schain', () => {
+      const results = spec.buildRequests(bidRequests.bids, bidRequests);
+      const schain = parseQuery(results[0].data).schain.split('!');
+      const complete = schain.shift().split(',')[1];
+      expect(complete).to.equal(String(bidRequests.bids[0].schain.complete));
+    });
+
+    it('should send available params in the right order', () => {
+      const results = spec.buildRequests(bidRequests.bids, bidRequests);
+      const schain = parseQuery(results[0].data).schain.split('!');
+      schain.shift();
+
+      schain.forEach((serializeNode, nodeIndex) => {
+        const nodeProps = serializeNode.split(',');
+        nodeProps.forEach((nodeProp, propIndex) => {
+          const node = schainConfig.nodes[nodeIndex];
+          const key = nodePropsOrder[propIndex];
+          expect(nodeProp).to.equal(node[key] ? String(node[key]) : '');
+        });
       });
     });
   });
