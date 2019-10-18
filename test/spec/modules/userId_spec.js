@@ -153,7 +153,7 @@ describe('User ID', function() {
       expect(pubcid1).to.not.equal(pubcid2);
     });
 
-    it('Check new cookie', function () {
+    it('Use existing cookie', function () {
       let adUnits = [getAdUnitMock()];
       let innerAdUnits;
 
