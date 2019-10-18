@@ -23,7 +23,7 @@ describe('outconBidAdapter', function () {
       })).to.equal(true);
     });
   });
-  
+
   describe('buildRequests', function () {
     it('Build requests with pod param', function () {
       expect(spec.buildRequests([{
@@ -92,7 +92,7 @@ describe('outconBidAdapter', function () {
         'ad',
         'vastImpUrl',
         'mediaType',
-        'vastURL'
+        'vastUrl'
       ];
       let resultKeys = Object.keys(result[0]);
       resultKeys.forEach(function(key) {
