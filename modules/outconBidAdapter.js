@@ -9,10 +9,11 @@ export const spec = {
   },
   buildRequests: function(validBidRequests) {
     for (let i = 0; i < validBidRequests.length; i++) {
-      let par = '';
       let url = '';
+      let par = '';
       if (validBidRequests[i].params.pod != undefined) par = 'get?pod=' + validBidRequests[i].params.pod + '&bidId=' + validBidRequests[i].bidId;
       else par = 'get?internalId=' + validBidRequests[i].params.internalId + '&publisher=' + validBidRequests[i].params.publisher + '&bidId=' + validBidRequests[i].bidId;
+      par = par + '&vast=true';
       switch (validBidRequests[i].params.env) {
         case 'test':
           par = par + '&demo=true';
@@ -45,8 +46,8 @@ export const spec = {
       ttl: config.getConfig('_bidderTimeout'),
       ad: wrapDisplayUrl(serverResponse.body.creatives[0].url, serverResponse.body.type),
       vastImpUrl: serverResponse.body.trackingURL,
-      mediaType: serverResponse.body.type
-
+      mediaType: serverResponse.body.type,
+      vastUrl: serverResponse.body.vastURL
     };
     bidResponses.push(bidResponse);
     return bidResponses;

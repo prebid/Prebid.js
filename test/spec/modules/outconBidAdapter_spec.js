@@ -52,7 +52,8 @@ describe('outconBidAdapter', function () {
       url: 'http://test.outcondigital.com:8048/ad/',
       data: {
         pod: '5d603538eba7192ae14e39a4',
-        env: 'test'
+        env: 'test',
+        vast: 'true'
       }
     };
     const bidResponse = {
@@ -72,7 +73,8 @@ describe('outconBidAdapter', function () {
         ad: '5d6e6aef22063e392bf7f564',
         type: 'video',
         campaign: '5d42e44b306ea469593c76a2',
-        trackingURL: 'http://test.outcondigital.com:8048/ad/track?track=5d6e6aef22063e392bf7f564'
+        trackingURL: 'http://test.outcondigital.com:8048/ad/track?track=5d6e6aef22063e392bf7f564',
+        vastURL: 'http://test.outcondigital.com:8048/outcon.xml?impression=5d6e6aef22063e392bf7f564&demo=true'
       },
     };
     it('check all the keys that are needed to interpret the response', function () {
@@ -88,7 +90,8 @@ describe('outconBidAdapter', function () {
         'ttl',
         'ad',
         'vastImpUrl',
-        'mediaType'
+        'mediaType',
+        'vastURL'
       ];
       let resultKeys = Object.keys(result[0]);
       resultKeys.forEach(function(key) {
