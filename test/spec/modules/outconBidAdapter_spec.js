@@ -23,6 +23,7 @@ describe('outconBidAdapter', function () {
       })).to.equal(true);
     });
   });
+  
   describe('buildRequests', function () {
     it('Build requests with pod param', function () {
       expect(spec.buildRequests([{
