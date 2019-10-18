@@ -27,7 +27,7 @@ function makeAdUnitNameMap() {
         const map = {};
         slots.forEach((slot) => {
           const id = slot.getSlotElementId();
-          const name = slot.getAdUnitPath();
+          const name = (slot.getAdUnitPath() || '').split('/').pop();
           map[id] = name;
         });
         return map;
