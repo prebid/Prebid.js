@@ -58,6 +58,7 @@ export const spec = {
 function wrapDisplayUrl(displayUrl, type) {
   if (type == 'video') return `<html><head></head><body style='margin : 0; padding: 0;'><div><video width="100%"; height="100%"; autoplay = true><source src="${displayUrl}"></video></div></body>`;
   if (type == 'banner') return `<html><head></head><body style='margin : 0; padding: 0;'><div><img width:"100%"; height:"100%"; src="${displayUrl}"></div></body>`;
+  return null;
 }
 
 registerBidder(spec);
