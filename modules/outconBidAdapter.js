@@ -2,6 +2,7 @@ import {registerBidder} from '../src/adapters/bidderFactory';
 import {config} from '../src/config';
 
 const BIDDER_CODE = 'outcon';
+
 export const spec = {
   code: BIDDER_CODE,
   isBidRequestValid: function(bid) {
