@@ -44,7 +44,7 @@ export const spec = {
       creativeId: serverResponse.body.creatives[0].id,
       currency: serverResponse.body.cur,
       netRevenue: true,
-      ttl: config.getConfig('_bidderTimeout'),
+      ttl: 300,
       ad: wrapDisplayUrl(serverResponse.body.creatives[0].url, serverResponse.body.type),
       vastImpUrl: serverResponse.body.trackingURL,
       mediaType: serverResponse.body.type,
