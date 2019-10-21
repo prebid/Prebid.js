@@ -122,7 +122,7 @@ const displayEqResponse = [{
   cpm: 0.9
 }];
 
-describe.only('viewdeosDXBidAdapter', function () { // todo remove only
+describe('viewdeosDXBidAdapter', function () { // todo remove only
   const adapter = newBidder(spec);
 
   describe('user syncs as image', function () {
