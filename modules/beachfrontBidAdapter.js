@@ -152,7 +152,8 @@ function createRenderer(bidRequest) {
         height: bid.height,
         expandInView: getPlayerBidParam(bidRequest, 'expandInView', false),
         collapseOnComplete: getPlayerBidParam(bidRequest, 'collapseOnComplete', true),
-        progressColor: getPlayerBidParam(bidRequest, 'progressColor')
+        progressColor: getPlayerBidParam(bidRequest, 'progressColor'),
+        adPosterColor: getPlayerBidParam(bidRequest, 'adPosterColor')
       });
     });
   });
