@@ -167,11 +167,12 @@ describe('YieldmoAdapter', function () {
         'gdprApplies': true
       }
       const data = spec.buildRequests(bidArray, bidderRequest).data;
-      expect(data.gdprConsent).equal(JSON.stringify({
+      expect(data.userConsent).equal(JSON.stringify({
         'gdprApplies': true,
-        'consentString': 'BOJ/P2HOJ/P2HABABMAAAAAZ+A=='
+        'cmp': 'BOJ/P2HOJ/P2HABABMAAAAAZ+A=='
       }));
     });
+
     it('should add schain if it is in the bidRequest', () => {
       const schain = {'ver': '1.0', 'complete': 1, 'nodes': [{'asi': 'indirectseller.com', 'sid': '00001', 'hp': 1}]};
       bidArray[0].schain = schain;
