@@ -2234,10 +2234,8 @@ describe('the rubicon adapter', function () {
     let bidRequests;
     let schainConfig;
 
-    beforeEach(() => {
-      bidRequests = getBidderRequest();
-
-      schainConfig = {
+    const getSupplyChainConfig = () => {
+      return {
         ver: '1.0',
         complete: 1,
         nodes: [
@@ -2267,7 +2265,11 @@ describe('the rubicon adapter', function () {
           }
         ]
       };
+    };
 
+    beforeEach(() => {
+      bidRequests = getBidderRequest();
+      schainConfig = getSupplyChainConfig();
       bidRequests.bids[0].schain = schainConfig;
     });
 
@@ -2310,6 +2312,14 @@ describe('the rubicon adapter', function () {
           expect(nodeProp).to.equal(node[key] ? String(node[key]) : '');
         });
       });
+    });
+
+    it('should copy the schain JSON to to bid.source.ext.schain', () => {
+      createVideoBidderRequest();
+      const schain = getSupplyChainConfig();
+      bidderRequest.bids[0].schain = schain;
+      const request = spec.buildRequests(bidderRequest.bids, bidderRequest);
+      expect(request[0].data.source.ext.schain).to.deep.equal(schain);
     });
   });
 });

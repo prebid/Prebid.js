@@ -240,6 +240,10 @@ export const spec = {
         utils.deepSetValue(data, 'regs.coppa', 1);
       }
 
+      if (bidRequest.schain) {
+        utils.deepSetValue(data, 'source.ext.schain', bidRequest.schain);
+      }
+
       return {
         method: 'POST',
         url: VIDEO_ENDPOINT,
