@@ -47,7 +47,7 @@ describe('justpremium adapter', function () {
 
   let bidderRequest = {
     refererInfo: {
-      referer: 'http://justpremium.com'
+      referer: 'https://justpremium.com'
     }
   }
 
@@ -73,7 +73,7 @@ describe('justpremium adapter', function () {
       const jpxRequest = JSON.parse(request.data)
       expect(jpxRequest).to.not.equal(null)
       expect(jpxRequest.zone).to.not.equal('undefined')
-      expect(bidderRequest.refererInfo.referer).to.equal('http://justpremium.com')
+      expect(bidderRequest.refererInfo.referer).to.equal('https://justpremium.com')
       expect(jpxRequest.sw).to.equal(window.top.screen.width)
       expect(jpxRequest.sh).to.equal(window.top.screen.height)
       expect(jpxRequest.ww).to.equal(window.top.innerWidth)

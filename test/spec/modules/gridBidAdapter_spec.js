@@ -47,7 +47,7 @@ describe('TheMediaGrid Adapter', function () {
       });
       return res;
     }
-    const bidderRequest = {refererInfo: {referer: 'http://example.com'}};
+    const bidderRequest = {refererInfo: {referer: 'https://example.com'}};
     const referrer = bidderRequest.refererInfo.referer;
     let bidRequests = [
       {

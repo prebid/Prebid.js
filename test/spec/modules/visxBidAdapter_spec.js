@@ -42,7 +42,7 @@ describe('VisxAdapter', function () {
   describe('buildRequests', function () {
     const bidderRequest = {
       refererInfo: {
-        referer: 'http://example.com'
+        referer: 'https://example.com'
       }
     };
     const encodedReferrer = encodeURIComponent(bidderRequest.refererInfo.referer);

@@ -35,8 +35,8 @@ describe('IndexexchangeAdapter', function () {
       vendorData: {}
     },
     refererInfo: {
-      referer: 'http://www.prebid.org',
-      canonicalUrl: 'http://www.prebid.org/the/link/to/the/page'
+      referer: 'https://www.prebid.org',
+      canonicalUrl: 'https://www.prebid.org/the/link/to/the/page'
     }
   };
   const DEFAULT_BANNER_BID_RESPONSE = {
@@ -61,7 +61,7 @@ describe('IndexexchangeAdapter', function () {
               advbrandid: 303325,
               advbrand: 'OECTA'
             },
-            adm: '<a target="_blank" href="http://www.indexexchange.com"></a>'
+            adm: '<a target="_blank" href="https://www.indexexchange.com"></a>'
           }
         ],
         seat: '3970'
@@ -597,7 +597,7 @@ describe('IndexexchangeAdapter', function () {
           creativeId: '12345',
           width: 300,
           height: 250,
-          ad: '<a target="_blank" href="http://www.indexexchange.com"></a>',
+          ad: '<a target="_blank" href="https://www.indexexchange.com"></a>',
           currency: 'USD',
           ttl: 35,
           netRevenue: true,
@@ -623,7 +623,7 @@ describe('IndexexchangeAdapter', function () {
           creativeId: '-',
           width: 300,
           height: 250,
-          ad: '<a target="_blank" href="http://www.indexexchange.com"></a>',
+          ad: '<a target="_blank" href="https://www.indexexchange.com"></a>',
           currency: 'USD',
           ttl: 35,
           netRevenue: true,
@@ -649,7 +649,7 @@ describe('IndexexchangeAdapter', function () {
           creativeId: '12345',
           width: 300,
           height: 250,
-          ad: '<a target="_blank" href="http://www.indexexchange.com"></a>',
+          ad: '<a target="_blank" href="https://www.indexexchange.com"></a>',
           currency: 'JPY',
           ttl: 35,
           netRevenue: true,
@@ -675,7 +675,7 @@ describe('IndexexchangeAdapter', function () {
           creativeId: '12345',
           width: 300,
           height: 250,
-          ad: '<a target="_blank" href="http://www.indexexchange.com"></a>',
+          ad: '<a target="_blank" href="https://www.indexexchange.com"></a>',
           currency: 'USD',
           ttl: 35,
           netRevenue: true,

@@ -111,7 +111,7 @@ describe('VidazooBidAdapter', function () {
     let sandbox;
     before(function () {
       sandbox = sinon.sandbox.create();
-      sandbox.stub(utils, 'getTopWindowUrl').returns('http://www.greatsite.com');
+      sandbox.stub(utils, 'getTopWindowUrl').returns('https://www.greatsite.com');
       sandbox.stub(Date, 'now').returns(1000);
     });
 
@@ -125,7 +125,7 @@ describe('VidazooBidAdapter', function () {
           consent: 'consent_string',
           width: '300',
           height: '250',
-          url: 'http://www.greatsite.com',
+          url: 'https://www.greatsite.com',
           cb: 1000,
           bidFloor: 0.1,
           bidId: '2d52001cabd527',
@@ -141,7 +141,7 @@ describe('VidazooBidAdapter', function () {
           consent: 'consent_string',
           width: '300',
           height: '600',
-          url: 'http://www.greatsite.com',
+          url: 'https://www.greatsite.com',
           cb: 1000,
           bidFloor: 0.1,
           bidId: '2d52001cabd527',

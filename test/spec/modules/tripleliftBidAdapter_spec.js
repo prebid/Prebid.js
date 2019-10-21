@@ -89,7 +89,7 @@ describe('triplelift adapter', function () {
           }
         ],
         refererInfo: {
-          referer: 'http://examplereferer.com'
+          referer: 'https://examplereferer.com'
         },
         gdprConsent: {
           consentString: 'BOONm0NOONm0NABABAENAa-AAAARh7______b9_3__7_9uz_Kv_K7Vf7nnG072lPVA9LTOQ6gEaY',
@@ -252,7 +252,7 @@ describe('triplelift adapter', function () {
         }
       ],
       refererInfo: {
-        referer: 'http://examplereferer.com'
+        referer: 'https://examplereferer.com'
       },
       gdprConsent: {
         consentString: 'BOONm0NOONm0NABABAENAa-AAAARh7______b9_3__7_9uz_Kv_K7Vf7nnG072lPVA9LTOQ6gEaY',
@@ -326,7 +326,7 @@ describe('triplelift adapter', function () {
           }
         ],
         refererInfo: {
-          referer: 'http://examplereferer.com'
+          referer: 'https://examplereferer.com'
         },
         gdprConsent: {
           consentString: 'BOONm0NOONm0NABABAENAa-AAAARh7______b9_3__7_9uz_Kv_K7Vf7nnG072lPVA9LTOQ6gEaY',

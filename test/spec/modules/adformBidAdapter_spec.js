@@ -38,7 +38,7 @@ describe('Adform adapter', function () {
       let parsedUrl = parseUrl(spec.buildRequests([bids[0]]).url);
       let query = parsedUrl.query;
 
-      assert.equal(parsedUrl.path, '//newDomain/adx');
+      assert.equal(parsedUrl.path, 'https://newDomain/adx');
       assert.equal(query.tid, 45);
       assert.equal(query.rp, 4);
       assert.equal(query.fd, 1);

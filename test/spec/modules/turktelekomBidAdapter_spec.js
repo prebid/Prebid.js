@@ -50,7 +50,7 @@ describe('TurkTelekomAdapter', function () {
 
     const bidderRequest = {
       refererInfo: {
-        referer: 'http://example.com'
+        referer: 'https://example.com'
       }
     };
     const referrer = bidderRequest.refererInfo.referer;
@@ -735,12 +735,12 @@ describe('TurkTelekomAdapter', function () {
     expect(spyRendererInstall.calledTwice).to.equal(true);
     expect(spyRendererInstall.getCall(0).args[0]).to.deep.equal({
       id: 'e6e65553fc8',
-      url: '//acdn.adnxs.com/video/outstream/ANOutstreamVideo.js',
+      url: 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js',
       loaded: false
     });
     expect(spyRendererInstall.getCall(1).args[0]).to.deep.equal({
       id: 'c8fdcb3f269f',
-      url: '//acdn.adnxs.com/video/outstream/ANOutstreamVideo.js',
+      url: 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js',
       loaded: false
     });
 
