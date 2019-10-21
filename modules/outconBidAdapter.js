@@ -50,6 +50,12 @@ export const spec = {
       mediaType: serverResponse.body.type,
       vastUrl: serverResponse.body.vastURL
     };
+    if (serverResponse.body.type == 'video') {
+      Object.assign(bidResponse, {
+        vastUrl: serverResponse.body.vastURL,
+        ttl: 3600
+      });
+    }
     bidResponses.push(bidResponse);
     return bidResponses;
   },
