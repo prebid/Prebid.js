@@ -4,6 +4,7 @@ const BIDDER_CODE = 'outcon';
 
 export const spec = {
   code: BIDDER_CODE,
+  supportedMediaTypes: ['banner', 'video'],
   isBidRequestValid: function(bid) {
     return !!((bid.params.pod || (bid.params.internalId && bid.params.publisher)) && bid.params.env);
   },
