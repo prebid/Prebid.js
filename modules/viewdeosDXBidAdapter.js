@@ -1,8 +1,8 @@
-import * as utils from "../src/utils";
-import {registerBidder} from "../src/adapters/bidderFactory";
-import {VIDEO, BANNER} from "../src/mediaTypes";
-import {Renderer} from "../src/Renderer";
-import findIndex from "core-js/library/fn/array/find-index";
+import * as utils from '../src/utils';
+import {registerBidder} from '../src/adapters/bidderFactory';
+import {VIDEO, BANNER} from '../src/mediaTypes';
+import {Renderer} from '../src/Renderer';
+import findIndex from 'core-js/library/fn/array/find-index';
 
 const URL = '//hb.sync.viewdeos.com/auction/';
 const OUTSTREAM_SRC = '//player.sync.viewdeos.com/outstream-unit/2.01/outstream.min.js';
