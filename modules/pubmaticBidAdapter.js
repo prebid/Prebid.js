@@ -920,6 +920,11 @@ export const spec = {
       };
     }
 
+    // coppa compliance
+    if (config.getConfig('coppa') === true) {
+      utils.deepSetValue(payload, 'regs.coppa', 1);
+    }
+
     _handleDealCustomTargetings(payload, dctrArr, validBidRequests);
     _handleEids(payload, validBidRequests);
     _blockedIabCategoriesValidation(payload, blockedIabCategories);
@@ -1017,6 +1022,11 @@ export const spec = {
     if (gdprConsent) {
       syncurl += '&gdpr=' + (gdprConsent.gdprApplies ? 1 : 0);
       syncurl += '&gdpr_consent=' + encodeURIComponent(gdprConsent.consentString || '');
+    }
+
+    // coppa compliance
+    if (config.getConfig('coppa') === true) {
+      syncurl += '&coppa=1';
     }
 
     if (syncOptions.iframeEnabled) {

@@ -1171,6 +1171,46 @@ describe('PubMatic adapter', function () {
           // should have called DigiTrust.getUser() once
           expect(window.DigiTrust.getUser.calledOnce).to.equal(true);
         });
+
+        it('should NOT include coppa flag in bid request if coppa config is not present', () => {
+          const request = spec.buildRequests(bidRequests, {});
+          let data = JSON.parse(request.data);
+          if (data.regs) {
+            // in case GDPR is set then data.regs will exist
+            expect(data.regs.coppa).to.equal(undefined);
+          } else {
+            expect(data.regs).to.equal(undefined);
+          }
+        });
+
+        it('should include coppa flag in bid request if coppa is set to true', () => {
+          sandbox.stub(config, 'getConfig').callsFake(key => {
+            const config = {
+              'coppa': true
+            };
+            return config[key];
+          });
+          const request = spec.buildRequests(bidRequests, {});
+          let data = JSON.parse(request.data);
+          expect(data.regs.coppa).to.equal(1);
+        });
+
+        it('should NOT include coppa flag in bid request if coppa is set to false', () => {
+          sandbox.stub(config, 'getConfig').callsFake(key => {
+            const config = {
+              'coppa': false
+            };
+            return config[key];
+          });
+          const request = spec.buildRequests(bidRequests, {});
+          let data = JSON.parse(request.data);
+          if (data.regs) {
+            // in case GDPR is set then data.regs will exist
+            expect(data.regs.coppa).to.equal(undefined);
+          } else {
+            expect(data.regs).to.equal(undefined);
+          }
+        });
       });
 
       describe('AdsrvrOrgId from config', function() {
