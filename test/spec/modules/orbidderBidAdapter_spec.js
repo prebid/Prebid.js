@@ -10,6 +10,7 @@ describe('orbidderBidAdapter', () => {
     bidId: 'd66fa86787e0b0ca900a96eacfd5f0bb',
     auctionId: 'ccc4c7cdfe11cfbd74065e6dd28413d8',
     transactionId: 'd58851660c0c4461e4aa06344fc9c0c6',
+    bidRequestCount: 1,
     adUnitCode: 'adunit-code',
     sizes: [[300, 250], [300, 600]],
     params: {
@@ -46,12 +47,6 @@ describe('orbidderBidAdapter', () => {
       expect(spec.isBidRequestValid(defaultBidRequest)).to.equal(true);
     });
 
-    it('accepts optional keyValues object', () => {
-      const bidRequest = deepClone(defaultBidRequest);
-      bidRequest.params.keyValues = {'key': 'value'};
-      expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
-    });
-
     it('accepts optional profile object', () => {
       const bidRequest = deepClone(defaultBidRequest);
       bidRequest.params.profile = {'key': 'value'};
@@ -61,12 +56,6 @@ describe('orbidderBidAdapter', () => {
     it('performs type checking', () => {
       const bidRequest = deepClone(defaultBidRequest);
       bidRequest.params.accountId = 1; // supposed to be a string
-      expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
-    });
-
-    it('doesn\'t accept malformed keyValues', () => {
-      const bidRequest = deepClone(defaultBidRequest);
-      bidRequest.params.keyValues = 'another not usable string';
       expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
     });
 

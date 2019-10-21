@@ -61,6 +61,7 @@ describe('33acrossBidAdapter:', function () {
       },
       ext: {
         ttx: {
+          prebidStartedAt: 1,
           caller: [{
             'name': 'prebidjs',
             'version': '$prebid.version$'
@@ -183,6 +184,7 @@ describe('33acrossBidAdapter:', function () {
     ];
 
     sandbox = sinon.sandbox.create();
+    sandbox.stub(Date, 'now').returns(1);
     sandbox.stub(document, 'getElementById').withArgs('div-id').returns(element);
     sandbox.stub(utils, 'getWindowTop').returns(win);
     sandbox.stub(utils, 'getWindowSelf').returns(win);

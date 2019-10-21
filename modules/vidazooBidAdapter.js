@@ -29,7 +29,7 @@ function buildRequest(bid, topWindowUrl, size, bidderRequest) {
     method: 'GET',
     url: `${URL}/prebid/${cId}`,
     data: {
-      url: topWindowUrl,
+      url: encodeURIComponent(topWindowUrl),
       cb: Date.now(),
       bidFloor: bidFloor,
       bidId: bidId,
@@ -38,7 +38,7 @@ function buildRequest(bid, topWindowUrl, size, bidderRequest) {
       width,
       height
     }
-  }
+  };
 
   utils._each(ext, (value, key) => {
     dto.data['ext.' + key] = value;
@@ -48,7 +48,7 @@ function buildRequest(bid, topWindowUrl, size, bidderRequest) {
 }
 
 function buildRequests(validBidRequests, bidderRequest) {
-  const topWindowUrl = utils.getTopWindowUrl();
+  const topWindowUrl = bidderRequest.refererInfo.referer;
   const requests = [];
   validBidRequests.forEach(validBidRequest => {
     const sizes = utils.parseSizesInput(validBidRequest.sizes);
