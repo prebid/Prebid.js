@@ -1,10 +1,17 @@
 ## User ID Example Configuration
 
-Example showing `cookie` storage for user id data for both submodules
+Example showing `cookie` storage for user id data for each of the submodules
 ```
 pbjs.setConfig({
     userSync: {
         userIds: [{
+            name: "pubCommonId",
+            storage: {
+                type: "cookie",
+                name: "_pubcid",
+                expires: 60
+            }
+        }, {
             name: "unifiedId",
             params: {
                 partner: "prebid",
@@ -16,19 +23,55 @@ pbjs.setConfig({
                 expires: 60
             }
         }, {
-            name: "pubCommonId",
+            name: "id5Id",
+            params: {
+                partner: 173 //Set your real ID5 partner ID here for production, please ask for one at http://id5.io/prebid
+            },
             storage: {
                 type: "cookie",
-                name: "_pubcid",
+                name: "id5id",
+                expires: 5, // Expiration of cookies in days
+                refreshInSeconds: 8*3600 // User Id cache lifetime in seconds, defaulting to 'expires'
+            },
+        }, {
+            name: 'parrableId',
+            params: {
+                // Replace partner with comma-separated (if more than one) Parrable Partner Client ID(s) for Parrable-aware bid adapters in use
+                partner: "30182847-e426-4ff9-b2b5-9ca1324ea09b"
+            },
+            storage: {
+                type: 'cookie',
+                name: '_parrable_eid',
+                expires: 365
+            }
+        }, {
+            name: 'identityLink',
+            params: {
+                pid: '999' // Set your real identityLink placement ID here 
+            },
+            storage: {
+                type: 'cookie',
+                name: 'idl_env',
+                expires: 30
+            }
+        }, {
+            name: 'liveIntentId',
+            params: {
+                publisherId: '7798696' // Set an identifier of a publisher know to your systems 
+            },
+            storage: {
+                type: 'cookie',
+                name: '_li_pbid',
                 expires: 60
             }
         }],
-        syncDelay: 5000
+        syncDelay: 5000,
+        auctionDelay: 1000
     }
 });
 ```
 
-Example showing `localStorage` for user id data for both submodules
+Example showing `localStorage` for user id data for some submodules
 ```
 pbjs.setConfig({
     usersync: {
@@ -50,6 +93,26 @@ pbjs.setConfig({
                 name: "pubcid",
                 expires: 60
             }
+        }, {
+            name: 'identityLink',
+            params: {
+                pid: '999' // Set your real identityLink placement ID here 
+            },
+            storage: {
+                type: 'html5',
+                name: 'idl_env',
+                expires: 30
+            }
+        }, {
+             name: 'liveIntentId',
+             params: {
+                 publisherId: '7798696' // Set an identifier of a publisher know to your systems 
+             },
+             storage: {
+                 type: 'html5',
+                 name: '_li_pbid',
+                 expires: 60
+             }
         }],
         syncDelay: 5000
     }
@@ -65,6 +128,10 @@ pbjs.setConfig({
             value: {
               "providedPubCommonId": "1234567890"
             }
+        },
+        {
+            name: "id5Id",
+            value: { "id5id": "ID5-abcdef" }
         }],
         syncDelay: 5000
     }
