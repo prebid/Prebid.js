@@ -13,14 +13,11 @@ const DISPLAY_REQUEST = {
   'auctionId': '2e41f65424c87c',
   'adUnitCode': 'adunit-code',
   'bidId': '84ab500420319d',
-  'mediaType': {'banner': {'sizes': [300, 250]}}
+  'mediaTypes': {'banner': {'sizes': [[300, 250], [300, 600]]}}
 };
 
 const VIDEO_REQUEST = {
   'bidder': 'viewdeos',
-  'mediaTypes': {
-    'video': {}
-  },
   'params': {
     'aid': 12345
   },
@@ -28,7 +25,7 @@ const VIDEO_REQUEST = {
   'auctionId': '2e41f65424c87c',
   'adUnitCode': 'adunit-code',
   'bidId': '84ab500420319d',
-  'mediaType': {'video': {'sizes': [[480, 360], [640, 480]], 'context': 'instream'}}
+  'mediaTypes': {'video': {'playerSize': [480, 360], 'context': 'instream'}}
 };
 
 const SERVER_VIDEO_RESPONSE = {
@@ -210,7 +207,7 @@ describe('viewdeosDXBidAdapter', function () { // todo remove only
         callbackId: '84ab500420319d',
         ad_type: 'video',
         aid: 12345,
-        sizes: '480x360,640x480'
+        sizes: '480x360'
       };
 
       expect(bid).to.deep.equal(eq);
@@ -224,7 +221,7 @@ describe('viewdeosDXBidAdapter', function () { // todo remove only
         callbackId: '84ab500420319d',
         ad_type: 'display',
         aid: 12345,
-        sizes: '300x250'
+        sizes: '300x250,300x600'
       };
 
       expect(bid).to.deep.equal(eq);
@@ -238,11 +235,11 @@ describe('viewdeosDXBidAdapter', function () { // todo remove only
         callbackId: '84ab500420319d',
         ad_type: 'display',
         aid: 12345,
-        sizes: '300x250',
+        sizes: '300x250,300x600',
         callbackId2: '84ab500420319d',
         ad_type2: 'video',
         aid2: 12345,
-        sizes2: '480x360,640x480'
+        sizes2: '480x360'
       };
 
       expect(bid).to.deep.equal(eq);
