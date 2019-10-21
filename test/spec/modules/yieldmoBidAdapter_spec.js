@@ -172,6 +172,12 @@ describe('YieldmoAdapter', function () {
         'consentString': 'BOJ/P2HOJ/P2HABABMAAAAAZ+A=='
       }));
     });
+    it('should add schain if it is in the bidRequest', () => {
+      const schain = {'ver': '1.0', 'complete': 1, 'nodes': [{'asi': 'indirectseller.com', 'sid': '00001', 'hp': 1}]};
+      bidArray[0].schain = schain;
+      const request = spec.buildRequests([bidArray[0]]);
+      expect(request.data.schain).equal(JSON.stringify(schain));
+    })
   });
 
   describe('interpretResponse', function () {
