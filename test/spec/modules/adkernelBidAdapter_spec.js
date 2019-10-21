@@ -379,8 +379,8 @@ describe('Adkernel adapter', function () {
 
   describe('adapter configuration', () => {
     it('should have aliases', () => {
-      expect(spec.aliases).to.have.lengthOf(3);
-      expect(spec.aliases).to.be.eql(['headbidding', 'adsolut', 'oftmediahb']);
+      expect(spec.aliases).to.have.lengthOf(4);
+      expect(spec.aliases).to.be.eql(['headbidding', 'adsolut', 'oftmediahb', 'audiencemedia']);
     });
   });
 });

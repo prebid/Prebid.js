@@ -4,7 +4,6 @@ import { BANNER, VIDEO } from '../src/mediaTypes';
 
 const BIDDER_CODE = 'conversant';
 const URL = '//web.hb.ad.cpe.dotomi.com/s2s/header/24';
-const VERSION = '2.2.4';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -24,7 +23,7 @@ export const spec = {
     }
 
     if (!utils.isStr(bid.params.site_id)) {
-      utils.logWarn(BIDDER_CODE + ': site_id must be specified as a string')
+      utils.logWarn(BIDDER_CODE + ': site_id must be specified as a string');
       return false;
     }
 
@@ -67,7 +66,7 @@ export const spec = {
         secure: secure,
         bidfloor: bidfloor || 0,
         displaymanager: 'Prebid.js',
-        displaymanagerver: VERSION
+        displaymanagerver: '$prebid.version$'
       };
 
       copyOptProperty(bid.params.tag_id, imp, 'tagid');
