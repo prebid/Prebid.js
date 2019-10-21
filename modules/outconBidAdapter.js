@@ -47,8 +47,7 @@ export const spec = {
       ttl: 300,
       ad: wrapDisplayUrl(serverResponse.body.creatives[0].url, serverResponse.body.type),
       vastImpUrl: serverResponse.body.trackingURL,
-      mediaType: serverResponse.body.type,
-      vastUrl: serverResponse.body.vastURL
+      mediaType: serverResponse.body.type
     };
     if (serverResponse.body.type == 'video') {
       Object.assign(bidResponse, {
