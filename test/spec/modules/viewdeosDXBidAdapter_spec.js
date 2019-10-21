@@ -1,6 +1,6 @@
-import {expect} from 'chai';
-import {spec} from 'modules/viewdeosDXBidAdapter';
-import {newBidder} from 'src/adapters/bidderFactory';
+import {expect} from "chai";
+import {spec} from "modules/viewdeosDXBidAdapter";
+import {newBidder} from "src/adapters/bidderFactory";
 
 const ENDPOINT = '//hb.sync.viewdeos.com/auction/';
 
@@ -13,7 +13,7 @@ const DISPLAY_REQUEST = {
   'auctionId': '2e41f65424c87c',
   'adUnitCode': 'adunit-code',
   'bidId': '84ab500420319d',
-  'sizes': [300, 250]
+  'mediaType': {'banner': {sizes: [300, 250]}}
 };
 
 const VIDEO_REQUEST = {
@@ -28,7 +28,7 @@ const VIDEO_REQUEST = {
   'auctionId': '2e41f65424c87c',
   'adUnitCode': 'adunit-code',
   'bidId': '84ab500420319d',
-  'sizes': [[480, 360], [640, 480]]
+  'mediaType': {'video': {sizes: [[480, 360], [640, 480]], 'context': 'instream'}}
 };
 
 const SERVER_VIDEO_RESPONSE = {
@@ -122,7 +122,7 @@ const displayEqResponse = [{
   cpm: 0.9
 }];
 
-describe('viewdeosDXBidAdapter', function () { // todo remove only
+describe.only('viewdeosDXBidAdapter', function () { // todo remove only
   const adapter = newBidder(spec);
 
   describe('user syncs as image', function () {

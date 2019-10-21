@@ -1,8 +1,8 @@
-import * as utils from '../src/utils';
-import {registerBidder} from '../src/adapters/bidderFactory';
-import {VIDEO, BANNER} from '../src/mediaTypes';
-import {Renderer} from '../src/Renderer';
-import findIndex from 'core-js/library/fn/array/find-index';
+import * as utils from "../src/utils";
+import {registerBidder} from "../src/adapters/bidderFactory";
+import {VIDEO, BANNER} from "../src/mediaTypes";
+import {Renderer} from "../src/Renderer";
+import findIndex from "core-js/library/fn/array/find-index";
 
 const URL = '//hb.sync.viewdeos.com/auction/';
 const OUTSTREAM_SRC = '//player.sync.viewdeos.com/outstream-unit/2.01/outstream.min.js';
@@ -147,12 +147,12 @@ function bidToTag(bidRequests, bidderRequest) {
 function prepareRTBRequestParams(_index, bid) {
   const mediaType = utils.deepAccess(bid, 'mediaTypes.video') ? VIDEO : DISPLAY;
   const index = !_index ? '' : `${_index + 1}`;
-
+  const sizes = bid.sizes ? bid.sizes : (mediaType == VIDEO ? utils.deepAccess(bid, 'mediaTypes.video.playerSize') : utils.deepAccess(bid, 'mediaTypes.banner.sizes'));
   return {
     ['callbackId' + index]: bid.bidId,
     ['aid' + index]: bid.params.aid,
     ['ad_type' + index]: mediaType,
-    ['sizes' + index]: utils.parseSizesInput(bid.sizes).join()
+    ['sizes' + index]: utils.parseSizesInput(sizes).join()
   };
 }
 
