@@ -1043,4 +1043,66 @@ describe('User ID', function() {
       expect(requests[0].url).to.equal('//match.adsrvr.org/track/rid?ttd_pid=rubicon&fmt=json');
     });
   });
+
+  describe('getUserIds', function() {
+    it('is a function', function() {
+      init(config);
+      expect($$PREBID_GLOBAL$$.getUserIds).to.be.a('function');
+    });
+
+    it('synchronous call', function() {
+      config.setConfig({
+        usersync: {
+          userIds: [
+            {
+              name: 'pubCommonId',
+              storage: {
+                type: 'html5',
+                name: 'pubcid',
+                expires: 60
+              }
+            }
+          ]
+        }
+      });
+      init(config);
+      console.log($$PREBID_GLOBAL$$.getUserIds());
+      // sinon.stub(events, 'getEvents').returns([]);
+      // sinon.stub(utils, 'triggerPixel');
+      // expect($$PREBID_GLOBAL$$.getUserIds).to.be.a('function');
+      // give a call check whether it calls the requird function with expected arguments
+      // and then check whether returned value is as expected
+      expect($$PREBID_GLOBAL$$.getUserIds()).to.be.a('object');
+    });
+
+    it('asynchronous call', function() {
+      // let sandbox = sinon.createSandbox();
+      // sandbox.stub(global, 'setTimeout');
+      config.setConfig({
+        usersync: {
+          userIds: [
+            {
+              name: 'pubCommonId',
+              storage: {
+                type: 'html5',
+                name: 'pubcid',
+                expires: 60
+              }
+            }
+          ]
+        }
+      });
+      init(config);
+      // let result;
+      const callback = function(userIds) {
+        // result = userIds;
+        console.log(userIds);
+      };
+      $$PREBID_GLOBAL$$.getUserIds(callback, 100);
+      // global.setTimeout.calledOnce.should.equal(true);
+      // global.setTimeout.calledWith(callback, 100);
+      // sandbox.restore();
+      // config.resetConfig();
+    });
+  });
 });
