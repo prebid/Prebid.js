@@ -2,9 +2,18 @@ import * as utils from '../src/utils';
 import { registerBidder } from '../src/adapters/bidderFactory';
 import { BANNER } from '../src/mediaTypes';
 
+const PROTOCOL = getProtocol();
 const BIDDER_CODE = 'polymorph';
-const URL = 'https://api.adsnative.com/v1/ad-template.json';
-const USER_SYNC_URL = 'https://rudy.adsnative.com/cm.gif';
+const URL = '//api.adsnative.com/v1/ad-template.json';
+const USER_SYNC_URL = PROTOCOL + '//rudy.adsnative.com/cm.gif';
+
+function getProtocol() {
+  if (location.protocol && location.protocol.indexOf('https') === 0) {
+    return 'https:';
+  } else {
+    return 'http:';
+  }
+}
 
 export const polymorphAdapterSpec = {
   code: BIDDER_CODE,

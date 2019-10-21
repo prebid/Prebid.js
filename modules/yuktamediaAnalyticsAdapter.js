@@ -110,13 +110,14 @@ function mapBidResponse(bidResponse, status) {
 
 function send(data, status) {
   let location = utils.getTopWindowLocation();
+  let secure = location.protocol == 'https:';
   if (typeof data !== 'undefined' && typeof data.auctionInit !== 'undefined') {
     data.auctionInit = Object.assign({ host: location.host, path: location.pathname, hash: location.hash, search: location.search }, data.auctionInit);
   }
   data.initOptions = initOptions;
 
   let yuktamediaAnalyticsRequestUrl = url.format({
-    protocol: 'https',
+    protocol: secure ? 'https' : 'http',
     hostname: 'analytics-prebid.yuktamedia.com',
     pathname: status == 'auctionEnd' ? '/api/bids' : '/api/bid/won',
     search: {

@@ -123,7 +123,7 @@ const Helpers = {
    * @return {string} url
    */
   getEndpointUrl(params) {
-    return (params && params.qa && params.qa.url) || ('https:' + CONSTANTS.ENDPOINT_URL);
+    return (params && params.qa && params.qa.url) || (Reporter.getPageProtocol() + CONSTANTS.ENDPOINT_URL);
   },
 
   /**
