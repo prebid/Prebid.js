@@ -4,7 +4,6 @@ import { getGlobal } from './prebidGlobal';
 import { flatten, uniques, isGptPubadsDefined, adUnitsFilter, getLatestHighestCpmBid, isArrayOfNums } from './utils';
 import { listenMessagesFromCreative } from './secureCreatives';
 import { userSync } from './userSync.js';
-import { loadScript } from './adloader';
 import { config } from './config';
 import { auctionManager } from './auctionManager';
 import { targeting, getHighestCpmBidsFromBidPool } from './targeting';
@@ -586,17 +585,6 @@ $$PREBID_GLOBAL$$.registerAnalyticsAdapter = function (options) {
 $$PREBID_GLOBAL$$.createBid = function (statusCode) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.createBid', arguments);
   return createBid(statusCode);
-};
-
-/**
- * @deprecated this function will be removed in the next release. Prebid has deprected external JS loading.
- * @param  {string} tagSrc [description]
- * @param  {Function} callback [description]
- * @alias module:pbjs.loadScript
- */
-$$PREBID_GLOBAL$$.loadScript = function (tagSrc, callback, useCache) {
-  utils.logInfo('Invoking $$PREBID_GLOBAL$$.loadScript', arguments);
-  loadScript(tagSrc, callback, useCache);
 };
 
 /**
