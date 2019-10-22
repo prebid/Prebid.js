@@ -16,18 +16,24 @@
         var PREBID_TIMEOUT = 1000;
   
         var adUnits = [{
-          code: 'div-gpt-ad-1460505748561-0',
           mediaTypes: {
             banner: {
-              sizes: [[300, 250], [300,600]],
+              sizes: [[300, 250], [300,600], [975, 250]],
             }
           },
           // Replace this object to test a new Adapter!
           bids: [{
-            bidder: 'appnexus',
+            bids: [{
+            bidder: 'proxistore',
+            sizes: [300, 600],
             params: {
-              placementId: 13144370
-            }
+              website: 'example.fr',
+              language: 'fr'
+            },
+            auctionId: 442133079,
+            bidId: 464646969,
+            transactionId: 511916005
+          }]
           }]
   
         }];
