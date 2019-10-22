@@ -1,9 +1,13 @@
-import { registerBidder } from 'src/adapters/bidderFactory'
-import { getTopWindowLocation } from 'src/utils'
+import { registerBidder } from '../src/adapters/bidderFactory'
+import { deepAccess } from '../src/utils';
 
 const BIDDER_CODE = 'justpremium'
-const ENDPOINT_URL = getTopWindowLocation().protocol + '//pre.ads.justpremium.com/v/2.0/t/xhr'
+const ENDPOINT_URL = '//pre.ads.justpremium.com/v/2.0/t/xhr'
+const JP_ADAPTER_VERSION = '1.4'
 const pixels = []
+const TRACK_START_TIME = Date.now()
+let LAST_PAYLOAD = {}
+let AD_UNIT_IDS = []
 
 export const spec = {
   code: BIDDER_CODE,
@@ -13,17 +17,21 @@ export const spec = {
     return !!(bid && bid.params && bid.params.zone)
   },
 
-  buildRequests: (validBidRequests) => {
+  buildRequests: (validBidRequests, bidderRequest) => {
     const c = preparePubCond(validBidRequests)
     const dim = getWebsiteDim()
+    AD_UNIT_IDS = validBidRequests.map(b => {
+      return b.adUnitCode
+    }).filter((value, index, self) => {
+      return self.indexOf(value) === index
+    })
     const payload = {
       zone: validBidRequests.map(b => {
         return parseInt(b.params.zone)
       }).filter((value, index, self) => {
         return self.indexOf(value) === index
       }),
-      hostname: getTopWindowLocation().hostname,
-      protocol: getTopWindowLocation().protocol.replace(':', ''),
+      referer: bidderRequest.refererInfo.referer,
       sw: dim.screenWidth,
       sh: dim.screenHeight,
       ww: dim.innerWidth,
@@ -38,7 +46,30 @@ export const spec = {
       sizes[zone] = sizes[zone] || []
       sizes[zone].push.apply(sizes[zone], b.sizes)
     })
+
+    if (deepAccess(validBidRequests[0], 'userId.pubcid')) {
+      payload.pubcid = deepAccess(validBidRequests[0], 'userId.pubcid')
+    } else if (deepAccess(validBidRequests[0], 'crumbs.pubcid')) {
+      payload.pubcid = deepAccess(validBidRequests[0], 'crumbs.pubcid')
+    }
+
+    payload.uids = validBidRequests[0].userId
+
+    if (bidderRequest && bidderRequest.gdprConsent) {
+      payload.gdpr_consent = {
+        consent_string: bidderRequest.gdprConsent.consentString,
+        consent_required: (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') ? bidderRequest.gdprConsent.gdprApplies : true
+      }
+    }
+
+    payload.version = {
+      prebid: '$prebid.version$',
+      jp_adapter: JP_ADAPTER_VERSION
+    }
+
     const payloadString = JSON.stringify(payload)
+
+    LAST_PAYLOAD = payload
 
     return {
       method: 'POST',
@@ -64,7 +95,8 @@ export const spec = {
           cpm: bid.price,
           netRevenue: true,
           currency: bid.currency || 'USD',
-          ttl: bid.ttl || spec.time
+          ttl: bid.ttl || spec.time,
+          format: bid.format
         }
         bidResponses.push(bidResponse)
       }
@@ -73,15 +105,66 @@ export const spec = {
     return bidResponses
   },
 
-  getUserSyncs: (syncOptions) => {
+  getUserSyncs: function getUserSyncs(syncOptions, responses, gdprConsent) {
+    let url = '//pre.ads.justpremium.com/v/1.0/t/sync' + '?_c=' + 'a' + Math.random().toString(36).substring(7) + Date.now();
+    if (gdprConsent && (typeof gdprConsent.gdprApplies === 'boolean')) {
+      url = url + '&consentString=' + encodeURIComponent(gdprConsent.consentString)
+    }
     if (syncOptions.iframeEnabled) {
       pixels.push({
         type: 'iframe',
-        src: '//us-u.openx.net/w/1.0/pd?plm=10&ph=26e53f82-d199-49df-9eca-7b350c0f9646'
+        url: url
       })
     }
     return pixels
+  },
+
+  onTimeout: (timeoutData) => {
+    timeoutData.forEach((data) => {
+      if (AD_UNIT_IDS.indexOf(data.adUnitCode) != -1) {
+        track(data, LAST_PAYLOAD, 'btm')
+      }
+    })
+  },
+
+}
+
+export let pixel = {
+  fire(url) {
+    let img = document.createElement('img')
+    img.src = url
+    img.id = 'jp-pixel-track'
+    img.style.cssText = 'display:none !important;'
+    document.body.appendChild(img)
   }
+};
+
+function track (data, payload, type) {
+  let pubUrl = ''
+
+  let jp = {
+    auc: data.adUnitCode,
+    to: data.timeout
+  }
+
+  if (window.top == window) {
+    pubUrl = window.location.href
+  } else {
+    try {
+      pubUrl = window.top.location.href
+    } catch (e) {
+      pubUrl = document.referrer
+    }
+  }
+
+  let duration = Date.now() - TRACK_START_TIME
+
+  const pixelUrl = `//emea-v3.tracking.justpremium.com/tracking.gif?rid=&sid=&uid=&vr=&
+ru=${encodeURIComponent(pubUrl)}&tt=&siw=&sh=${payload.sh}&sw=${payload.sw}&wh=${payload.wh}&ww=${payload.ww}&an=&vn=&
+sd=&_c=&et=&aid=&said=&ei=&fc=&sp=&at=bidder&cid=&ist=&mg=&dl=&dlt=&ev=&vt=&zid=${payload.id}&dr=${duration}&di=&pr=&
+cw=&ch=&nt=&st=&jp=${encodeURIComponent(JSON.stringify(jp))}&ty=${type}`
+
+  pixel.fire(pixelUrl);
 }
 
 function findBid (params, bids) {

@@ -1,7 +1,7 @@
-import * as utils from 'src/utils';
-import {registerBidder} from 'src/adapters/bidderFactory';
-import {BANNER} from 'src/mediaTypes';
-export const URL = '//prebid.nininin.com';
+import * as utils from '../src/utils';
+import {registerBidder} from '../src/adapters/bidderFactory';
+import {BANNER} from '../src/mediaTypes';
+export const URL = '//prebid.cootlogix.com';
 const BIDDER_CODE = 'vidazoo';
 const CURRENCY = 'USD';
 const TTL_SECONDS = 60 * 5;
@@ -19,7 +19,7 @@ function isBidRequestValid(bid) {
   return !!(params.cId && params.pId);
 }
 
-function buildRequest(bid, topWindowUrl, size) {
+function buildRequest(bid, topWindowUrl, size, bidderRequest) {
   const {params, bidId} = bid;
   const {bidFloor, cId, pId, ext} = params;
   // Prebid's util function returns AppNexus style sizes (i.e. 300x250)
@@ -29,15 +29,16 @@ function buildRequest(bid, topWindowUrl, size) {
     method: 'GET',
     url: `${URL}/prebid/${cId}`,
     data: {
-      url: topWindowUrl,
+      url: encodeURIComponent(topWindowUrl),
       cb: Date.now(),
       bidFloor: bidFloor,
       bidId: bidId,
       publisherId: pId,
+      consent: bidderRequest.gdprConsent && bidderRequest.gdprConsent.consentString,
       width,
       height
     }
-  }
+  };
 
   utils._each(ext, (value, key) => {
     dto.data['ext.' + key] = value;
@@ -46,13 +47,13 @@ function buildRequest(bid, topWindowUrl, size) {
   return dto;
 }
 
-function buildRequests(validBidRequests) {
-  const topWindowUrl = utils.getTopWindowUrl();
+function buildRequests(validBidRequests, bidderRequest) {
+  const topWindowUrl = bidderRequest.refererInfo.referer;
   const requests = [];
   validBidRequests.forEach(validBidRequest => {
     const sizes = utils.parseSizesInput(validBidRequest.sizes);
     sizes.forEach(size => {
-      const request = buildRequest(validBidRequest, topWindowUrl, size);
+      const request = buildRequest(validBidRequest, topWindowUrl, size, bidderRequest);
       requests.push(request);
     });
   });
@@ -91,7 +92,7 @@ function getUserSyncs(syncOptions, responses) {
   if (iframeEnabled) {
     return [{
       type: 'iframe',
-      url: '//static.nininin.com/basev/sync/user_sync.html'
+      url: '//static.cootlogix.com/basev/sync/user_sync.html'
     }];
   }
 

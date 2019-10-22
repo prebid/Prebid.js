@@ -60,10 +60,23 @@ function wrapURI(uri, impUrl) {
  */
 function toStorageRequest(bid) {
   const vastValue = bid.vastXml ? bid.vastXml : wrapURI(bid.vastUrl, bid.vastImpUrl);
-  return {
+
+  let payload = {
     type: 'xml',
-    value: vastValue
+    value: vastValue,
+    ttlseconds: Number(bid.ttl)
   };
+
+  if (config.getConfig('cache.vasttrack')) {
+    payload.bidder = bid.bidder;
+    payload.bidid = bid.requestId;
+  }
+
+  if (typeof bid.customCacheKey === 'string' && bid.customCacheKey !== '') {
+    payload.key = bid.customCacheKey;
+  }
+
+  return payload;
 }
 
 /**
@@ -87,7 +100,7 @@ function toStorageRequest(bid) {
  */
 function shimStorageCallback(done) {
   return {
-    success: function(responseBody) {
+    success: function (responseBody) {
       let ids;
       try {
         ids = JSON.parse(responseBody).responses
@@ -102,7 +115,7 @@ function shimStorageCallback(done) {
         done(new Error("The cache server didn't respond with a responses property."), []);
       }
     },
-    error: function(statusText, responseBody) {
+    error: function (statusText, responseBody) {
       done(new Error(`Error storing video ad in the cache: ${statusText}: ${JSON.stringify(responseBody)}`), []);
     }
   }
@@ -113,7 +126,7 @@ function shimStorageCallback(done) {
  *
  * @param {CacheableBid[]} bids A list of bid objects which should be cached.
  * @param {videoCacheStoreCallback} [done] An optional callback which should be executed after
- *   the data has been stored in the cache.
+ * the data has been stored in the cache.
  */
 export function store(bids, done) {
   const requestData = {

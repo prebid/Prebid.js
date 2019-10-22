@@ -1,9 +1,9 @@
-import * as utils from 'src/utils';
-import {registerBidder} from 'src/adapters/bidderFactory';
-import { BANNER } from 'src/mediaTypes';
+import * as utils from '../src/utils';
+import {registerBidder} from '../src/adapters/bidderFactory';
+import { BANNER } from '../src/mediaTypes';
 
 const BIDDER_CODE = 'brainy';
-const BASE_URL = '//proparm.co.jp/ssp/p/pbjs';
+const BASE_URL = '//proparm.jp/ssp/p/pbjs';
 
 /**
  * Check if the browser supports flash
@@ -126,6 +126,29 @@ export const spec = {
     });
 
     return bidResponses;
+  },
+
+  /**
+   * SyncURLがある場合にレスポンスを解析してURLを返す
+   * @param  {object} syncOptions     Syncの設定
+   * @param  {object} serverResponses SSPからのレスポンス
+   * @return {object}                 表示タイプとURLが入ったオブジェクト
+   */
+  getUserSyncs: function(syncOptions, serverResponses) {
+    const syncs = [];
+    if (syncOptions.pixelEnabled) {
+      const brainyResponseObj = serverResponses[0].body;
+      if (!brainyResponseObj) {
+        return [];
+      }
+      if (brainyResponseObj.syncUrl && brainyResponseObj.syncUrl != 'null' && brainyResponseObj.syncUrl.length > 0) {
+        syncs.push({
+          type: 'image',
+          url: brainyResponseObj.syncUrl
+        });
+      }
+    }
+    return syncs;
   }
 };
 registerBidder(spec);

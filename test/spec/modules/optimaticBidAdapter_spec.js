@@ -2,10 +2,10 @@ import { expect } from 'chai';
 import { spec, ENDPOINT } from 'modules/optimaticBidAdapter';
 import * as utils from 'src/utils';
 
-describe('OptimaticBidAdapter', () => {
+describe('OptimaticBidAdapter', function () {
   let bidRequest;
 
-  beforeEach(() => {
+  beforeEach(function () {
     bidRequest = {
       bidder: 'optimatic',
       params: {
@@ -20,49 +20,49 @@ describe('OptimaticBidAdapter', () => {
     };
   });
 
-  describe('spec.isBidRequestValid', () => {
-    it('should return true when the required params are passed', () => {
+  describe('spec.isBidRequestValid', function () {
+    it('should return true when the required params are passed', function () {
       expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
     });
 
-    it('should return false when the "bidfloor" param is missing', () => {
+    it('should return false when the "bidfloor" param is missing', function () {
       bidRequest.params = {
         placement: '2chy7Gc2eSQL'
       };
       expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
     });
 
-    it('should return false when the "placement" param is missing', () => {
+    it('should return false when the "placement" param is missing', function () {
       bidRequest.params = {
         bidfloor: 5.00
       };
       expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
     });
 
-    it('should return false when no bid params are passed', () => {
+    it('should return false when no bid params are passed', function () {
       bidRequest.params = {};
       expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
     });
 
-    it('should return false when a bid request is not passed', () => {
+    it('should return false when a bid request is not passed', function () {
       expect(spec.isBidRequestValid()).to.equal(false);
       expect(spec.isBidRequestValid({})).to.equal(false);
     });
   });
 
-  describe('spec.buildRequests', () => {
-    it('should create a POST request for every bid', () => {
+  describe('spec.buildRequests', function () {
+    it('should create a POST request for every bid', function () {
       const requests = spec.buildRequests([ bidRequest ]);
       expect(requests[0].method).to.equal('POST');
       expect(requests[0].url).to.equal(ENDPOINT + bidRequest.params.placement);
     });
 
-    it('should attach the bid request object', () => {
+    it('should attach the bid request object', function () {
       const requests = spec.buildRequests([ bidRequest ]);
       expect(requests[0].bidRequest).to.equal(bidRequest);
     });
 
-    it('should attach request data', () => {
+    it('should attach request data', function () {
       const requests = spec.buildRequests([ bidRequest ]);
       const data = requests[0].data;
       const [ width, height ] = bidRequest.sizes;
@@ -71,7 +71,7 @@ describe('OptimaticBidAdapter', () => {
       expect(data.imp[0].bidfloor).to.equal(bidRequest.params.bidfloor);
     });
 
-    it('must parse bid size from a nested array', () => {
+    it('must parse bid size from a nested array', function () {
       const width = 640;
       const height = 480;
       bidRequest.sizes = [[ width, height ]];
@@ -81,7 +81,7 @@ describe('OptimaticBidAdapter', () => {
       expect(data.imp[0].video.h).to.equal(height);
     });
 
-    it('must parse bid size from a string', () => {
+    it('must parse bid size from a string', function () {
       const width = 640;
       const height = 480;
       bidRequest.sizes = `${width}x${height}`;
@@ -91,7 +91,7 @@ describe('OptimaticBidAdapter', () => {
       expect(data.imp[0].video.h).to.equal(height);
     });
 
-    it('must handle an empty bid size', () => {
+    it('must handle an empty bid size', function () {
       bidRequest.sizes = [];
       const requests = spec.buildRequests([ bidRequest ]);
       const data = requests[0].data;
@@ -100,25 +100,25 @@ describe('OptimaticBidAdapter', () => {
     });
   });
 
-  describe('spec.interpretResponse', () => {
-    it('should return no bids if the response is not valid', () => {
+  describe('spec.interpretResponse', function () {
+    it('should return no bids if the response is not valid', function () {
       const bidResponse = spec.interpretResponse({ body: null }, { bidRequest });
       expect(bidResponse.length).to.equal(0);
     });
 
-    it('should return no bids if the response "nurl" and "adm" are missing', () => {
+    it('should return no bids if the response "nurl" and "adm" are missing', function () {
       const serverResponse = {seatbid: [{bid: [{price: 5.01}]}]};
       const bidResponse = spec.interpretResponse({ body: serverResponse }, { bidRequest });
       expect(bidResponse.length).to.equal(0);
     });
 
-    it('should return no bids if the response "price" is missing', () => {
+    it('should return no bids if the response "price" is missing', function () {
       const serverResponse = {seatbid: [{bid: [{adm: '<VAST></VAST>'}]}]};
       const bidResponse = spec.interpretResponse({ body: serverResponse }, { bidRequest });
       expect(bidResponse.length).to.equal(0);
     });
 
-    it('should return a valid bid response with just "adm"', () => {
+    it('should return a valid bid response with just "adm"', function () {
       const serverResponse = {seatbid: [{bid: [{id: 1, price: 5.01, adm: '<VAST></VAST>'}]}], cur: 'USD'};
       const bidResponse = spec.interpretResponse({ body: serverResponse }, { bidRequest });
       let o = {
@@ -137,7 +137,7 @@ describe('OptimaticBidAdapter', () => {
       expect(bidResponse).to.deep.equal(o);
     });
 
-    it('should return a valid bid response with just "nurl"', () => {
+    it('should return a valid bid response with just "nurl"', function () {
       const serverResponse = {seatbid: [{bid: [{id: 1, price: 5.01, nurl: 'https://mg-bid-win.optimatic.com/win/134eb262-948a-463e-ad93-bc8b622d399c?wp=${AUCTION_PRICE}'}]}], cur: 'USD'};
       const bidResponse = spec.interpretResponse({ body: serverResponse }, { bidRequest });
       let o = {
@@ -156,7 +156,7 @@ describe('OptimaticBidAdapter', () => {
       expect(bidResponse).to.deep.equal(o);
     });
 
-    it('should return a valid bid response with "nurl" when both nurl and adm exist', () => {
+    it('should return a valid bid response with "nurl" when both nurl and adm exist', function () {
       const serverResponse = {seatbid: [{bid: [{id: 1, price: 5.01, adm: '<VAST></VAST>', nurl: 'https://mg-bid-win.optimatic.com/win/134eb262-948a-463e-ad93-bc8b622d399c?wp=${AUCTION_PRICE}'}]}], cur: 'USD'};
       const bidResponse = spec.interpretResponse({ body: serverResponse }, { bidRequest });
       let o = {

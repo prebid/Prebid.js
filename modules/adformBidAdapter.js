@@ -1,7 +1,8 @@
 'use strict';
 
-import {registerBidder} from 'src/adapters/bidderFactory';
-import { BANNER, VIDEO } from 'src/mediaTypes';
+import {registerBidder} from '../src/adapters/bidderFactory';
+import { config } from '../src/config';
+import { BANNER, VIDEO } from '../src/mediaTypes';
 
 const BIDDER_CODE = 'adform';
 export const spec = {
@@ -11,10 +12,13 @@ export const spec = {
     return !!(bid.params.mid);
   },
   buildRequests: function (validBidRequests, bidderRequest) {
-    var i, l, j, k, bid, _key, _value, reqParams, netRevenue;
+    var i, l, j, k, bid, _key, _value, reqParams, netRevenue, gdprObject;
+    const currency = config.getConfig('currency.adServerCurrency');
+
     var request = [];
     var globalParams = [ [ 'adxDomain', 'adx.adform.net' ], [ 'fd', 1 ], [ 'url', null ], [ 'tid', null ] ];
     var bids = JSON.parse(JSON.stringify(validBidRequests));
+    var bidder = (bids[0] && bids[0].bidder) || BIDDER_CODE
     for (i = 0, l = bids.length; i < l; i++) {
       bid = bids[i];
       if ((bid.params.priceType === 'net') || (bid.params.pt === 'net')) {
@@ -30,6 +34,7 @@ export const spec = {
       }
       reqParams = bid.params;
       reqParams.transactionId = bid.transactionId;
+      reqParams.rcur = reqParams.rcur || currency;
       request.push(formRequestUrl(reqParams));
     }
 
@@ -38,9 +43,13 @@ export const spec = {
     request.push('pt=' + netRevenue);
     request.push('stid=' + validBidRequests[0].auctionId);
 
-    if (bidderRequest && bidderRequest.gdprConsent) {
-      request.push('gdpr=' + bidderRequest.gdprConsent.gdprApplies);
-      request.push('gdpr_consent=' + bidderRequest.gdprConsent.consentString);
+    if (bidderRequest && bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies) {
+      gdprObject = {
+        gdpr: bidderRequest.gdprConsent.gdprApplies,
+        gdpr_consent: bidderRequest.gdprConsent.consentString
+      };
+      request.push('gdpr=' + gdprObject.gdpr);
+      request.push('gdpr_consent=' + gdprObject.gdpr_consent);
     }
 
     for (i = 1, l = globalParams.length; i < l; i++) {
@@ -56,7 +65,8 @@ export const spec = {
       url: request.join('&'),
       bids: validBidRequests,
       netRevenue: netRevenue,
-      bidder: 'adform'
+      bidder,
+      gdpr: gdprObject
     };
 
     function formRequestUrl(reqData) {
@@ -102,16 +112,19 @@ export const spec = {
           vastXml: response.vast_content,
           mediaType: type
         };
+        if (bidRequest.gdpr) {
+          bidObject.gdpr = bidRequest.gdpr.gdpr;
+          bidObject.gdpr_consent = bidRequest.gdpr.gdpr_consent;
+        }
         bidRespones.push(bidObject);
       }
     }
-
     return bidRespones;
 
     function verifySize(adItem, validSizes) {
       for (var j = 0, k = validSizes.length; j < k; j++) {
-        if (adItem.width === validSizes[j][0] &&
-            adItem.height === validSizes[j][1]) {
+        if (adItem.width == validSizes[j][0] &&
+            adItem.height == validSizes[j][1]) {
           return true;
         }
       }

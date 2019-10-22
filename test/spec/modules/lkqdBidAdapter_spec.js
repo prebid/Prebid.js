@@ -2,16 +2,16 @@ import { spec } from 'modules/lkqdBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
 const { expect } = require('chai');
 
-describe('LKQD Bid Adapter Test', () => {
+describe('LKQD Bid Adapter Test', function () {
   const adapter = newBidder(spec);
 
-  describe('inherited functions', () => {
-    it('exists and is a function', () => {
+  describe('inherited functions', function () {
+    it('exists and is a function', function () {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
   });
 
-  describe('isBidRequestValid', () => {
+  describe('isBidRequestValid', function () {
     let bid = {
       'bidder': 'lkqd',
       'params': {
@@ -26,11 +26,11 @@ describe('LKQD Bid Adapter Test', () => {
       'transactionId': 'd6f6b392-54a9-454c-85fb-a2fd882c4a2d',
     };
 
-    it('should return true when required params found', () => {
+    it('should return true when required params found', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
-    it('should return false when required params are not passed', () => {
+    it('should return false when required params are not passed', function () {
       let bid = Object.assign({}, bid);
       delete bid.params;
       bid.params = {
@@ -41,7 +41,7 @@ describe('LKQD Bid Adapter Test', () => {
   });
 
   describe('buildRequests', () => {
-    const ENDPOINT = 'https://ssp.lkqd.net/ad?';
+    const ENDPOINT = 'https://v.lkqd.net/ad';
     let bidRequests = [
       {
         'bidder': 'lkqd',
@@ -73,47 +73,61 @@ describe('LKQD Bid Adapter Test', () => {
       }
     ];
 
-    it('should populate available parameters', () => {
+    it('should populate available parameters', function () {
       const requests = spec.buildRequests(bidRequests);
       expect(requests.length).to.equal(2);
-      const r1 = requests[0].url;
-      expect(r1).to.contain('?pid=263');
-      expect(r1).to.contain('&sid=662921');
-      expect(r1).to.contain('&width=300');
-      expect(r1).to.contain('&height=250');
-      const r2 = requests[1].url;
-      expect(r2).to.contain('?pid=263');
-      expect(r2).to.contain('&sid=662921');
-      expect(r2).to.contain('&width=640');
-      expect(r2).to.contain('&height=480');
+      const r1 = requests[0].data;
+      expect(r1).to.have.property('pid');
+      expect(r1.pid).to.equal('263');
+      expect(r1).to.have.property('sid');
+      expect(r1.sid).to.equal('662921');
+      expect(r1).to.have.property('width');
+      expect(r1.width).to.equal(300);
+      expect(r1).to.have.property('height');
+      expect(r1.height).to.equal(250);
+      const r2 = requests[1].data;
+      expect(r2).to.have.property('pid');
+      expect(r2.pid).to.equal('263');
+      expect(r2).to.have.property('sid');
+      expect(r2.sid).to.equal('662921');
+      expect(r2).to.have.property('width');
+      expect(r2.width).to.equal(640);
+      expect(r2).to.have.property('height');
+      expect(r2.height).to.equal(480);
     });
 
-    it('should not populate unspecified parameters', () => {
+    it('should not populate unspecified parameters', function () {
       const requests = spec.buildRequests(bidRequests);
       expect(requests.length).to.equal(2);
-      const r1 = requests[0].url;
-      expect(r1).to.contain('‌&contentid=[CONTENT_ID]');
-      expect(r1).to.contain('‌&contenttitle=[CONTENT_TITLE]');
-      expect(r1).to.contain('‌&contentlength=[CONTENT_LENGTH]');
-      expect(r1).to.contain('&height=250');
-      const r2 = requests[1].url;
-      expect(r2).to.contain('‌&contentid=[CONTENT_ID]');
-      expect(r2).to.contain('‌&contenttitle=[CONTENT_TITLE]');
-      expect(r2).to.contain('‌&contentlength=[CONTENT_LENGTH]');
-      expect(r2).to.contain('‌&contenturl=[CONTENT_URL]');
+      const r1 = requests[0].data;
+      expect(r1).to.not.have.property('dnt');
+      expect(r1).to.not.have.property('contentid');
+      expect(r1).to.not.have.property('contenttitle');
+      expect(r1).to.not.have.property('contentlength');
+      expect(r1).to.not.have.property('contenturl');
+      const r2 = requests[1].data;
+      expect(r2).to.not.have.property('dnt');
+      expect(r2).to.not.have.property('contentid');
+      expect(r2).to.not.have.property('contenttitle');
+      expect(r2).to.not.have.property('contentlength');
+      expect(r2).to.not.have.property('contenturl');
     });
 
-    it('should handle single size request', () => {
+    it('should handle single size request', function () {
       const requests = spec.buildRequests(bidRequest);
       expect(requests.length).to.equal(1);
-      const r1 = requests[0].url;
-      expect(r1).to.contain('?pid=263');
-      expect(r1).to.contain('&sid=662921');
-      expect(r1).to.contain('&width=640');
-      expect(r1).to.contain('&height=480');
+      const r1 = requests[0].data;
+      expect(r1).to.have.property('pid');
+      expect(r1.pid).to.equal('263');
+      expect(r1).to.have.property('sid');
+      expect(r1.sid).to.equal('662921');
+      expect(r1).to.have.property('width');
+      expect(r1.width).to.equal(640);
+      expect(r1).to.have.property('height');
+      expect(r1.height).to.equal(480);
     });
 
-    it('sends bid request to ENDPOINT via GET', () => {
+    it('sends bid request to ENDPOINT via GET', function () {
       const requests = spec.buildRequests(bidRequests);
       expect(requests.length).to.equal(2);
       const r1 = requests[0];
@@ -125,7 +139,7 @@ describe('LKQD Bid Adapter Test', () => {
     });
   });
 
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     let bidRequest = {
       'url': 'https://ssp.lkqd.net/ad?pid=263&sid=662921&output=vast&execution=any&placement=&playinit=auto&volume=100&timeout=&width=300%E2%80%8C&height=250&pbt=[PREBID_TOKEN]%E2%80%8C&dnt=[DO_NOT_TRACK]%E2%80%8C&pageurl=[PAGEURL]%E2%80%8C&contentid=[CONTENT_ID]%E2%80%8C&contenttitle=[CONTENT_TITLE]%E2%80%8C&contentlength=[CONTENT_LENGTH]%E2%80%8C&contenturl=[CONTENT_URL]&prebid=true%E2%80%8C&rnd=874313435?bidId=253dcb69fb2577&bidWidth=300&bidHeight=250&',
       'data': {
@@ -306,7 +320,7 @@ https://creative.lkqd.net/internal/lkqd_300x250.mp4
 </Ad>
 </VAST>`;
 
-    it('should correctly parse valid bid response', () => {
+    it('should correctly parse valid bid response', function () {
       const BIDDER_CODE = 'lkqd';
       let bidResponses = spec.interpretResponse(serverResponse, bidRequest);
       expect(bidResponses.length).to.equal(1);
@@ -324,7 +338,7 @@ https://creative.lkqd.net/internal/lkqd_300x250.mp4
       expect(bidResponse.mediaType).to.equal('video');
     });
 
-    it('safely handles XML parsing failure from invalid bid response', () => {
+    it('safely handles XML parsing failure from invalid bid response', function () {
       let invalidServerResponse = {};
       invalidServerResponse.body = '<Ad id="677477"><InLine></AdSystem></InLine></Ad>';
 
@@ -332,7 +346,7 @@ https://creative.lkqd.net/internal/lkqd_300x250.mp4
       expect(result.length).to.equal(0);
     });
 
-    it('handles nobid responses', () => {
+    it('handles nobid responses', function () {
       let nobidResponse = {};
       nobidResponse.body = '<?xml version=\'1.0\' encoding=\'UTF-8\'?><VAST version=\'2.0\'></VAST>';
 

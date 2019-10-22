@@ -2,10 +2,10 @@ import {expect} from 'chai';
 import {spec} from 'modules/orbitsoftBidAdapter';
 
 const ENDPOINT_URL = 'https://orbitsoft.com/php/ads/hb.phps';
-describe('Orbitsoft adapter', () => {
-  describe('implementation', () => {
-    describe('for requests', () => {
-      it('should accept valid bid', () => {
+describe('Orbitsoft adapter', function () {
+  describe('implementation', function () {
+    describe('for requests', function () {
+      it('should accept valid bid', function () {
         let validBid = {
             bidder: 'orbitsoft',
             params: {
@@ -18,7 +18,7 @@ describe('Orbitsoft adapter', () => {
         expect(isValid).to.equal(true);
       });
 
-      it('should reject invalid bid', () => {
+      it('should reject invalid bid', function () {
         let invalidBid = {
             bidder: 'orbitsoft'
           },
@@ -27,8 +27,8 @@ describe('Orbitsoft adapter', () => {
         expect(isValid).to.equal(false);
       });
     });
-    describe('for requests', () => {
-      it('should accept valid bid with styles', () => {
+    describe('for requests', function () {
+      it('should accept valid bid with styles', function () {
         let validBid = {
             bidder: 'orbitsoft',
             params: {
@@ -91,7 +91,7 @@ describe('Orbitsoft adapter', () => {
         expect(requestUrlParams).have.property('c6', '5B99FE');
       });
 
-      it('should accept valid bid with custom params', () => {
+      it('should accept valid bid with custom params', function () {
         let validBid = {
             bidder: 'orbitsoft',
             params: {
@@ -112,7 +112,7 @@ describe('Orbitsoft adapter', () => {
         expect(requestUrlCustomParams).have.property('c.clickUrl', 'http://testclickurl.com');
       });
 
-      it('should reject invalid bid without requestUrl', () => {
+      it('should reject invalid bid without requestUrl', function () {
         let invalidBid = {
             bidder: 'orbitsoft',
             params: {
@@ -124,7 +124,7 @@ describe('Orbitsoft adapter', () => {
         expect(isValid).to.equal(false);
       });
 
-      it('should reject invalid bid without placementId', () => {
+      it('should reject invalid bid without placementId', function () {
         let invalidBid = {
             bidder: 'orbitsoft',
             params: {
@@ -136,8 +136,8 @@ describe('Orbitsoft adapter', () => {
         expect(isValid).to.equal(false);
       });
     });
-    describe('bid responses', () => {
-      it('should return complete bid response', () => {
+    describe('bid responses', function () {
+      it('should return complete bid response', function () {
         let serverResponse = {
           body: {
             callback_uid: '265b29b70cc106',
@@ -168,7 +168,7 @@ describe('Orbitsoft adapter', () => {
         expect(bids[0].adUrl).to.have.string('https://orbitsoft.com/php/ads/hb.html');
       });
 
-      it('should return empty bid response', () => {
+      it('should return empty bid response', function () {
         let bidRequests = [
           {
             bidder: 'orbitsoft',
@@ -189,7 +189,7 @@ describe('Orbitsoft adapter', () => {
         expect(bids).to.be.lengthOf(0);
       });
 
-      it('should return empty bid response on incorrect size', () => {
+      it('should return empty bid response on incorrect size', function () {
         let bidRequests = [
           {
             bidder: 'orbitsoft',
@@ -212,7 +212,7 @@ describe('Orbitsoft adapter', () => {
         expect(bids).to.be.lengthOf(0);
       });
 
-      it('should return empty bid response with error', () => {
+      it('should return empty bid response with error', function () {
         let bidRequests = [
           {
             bidder: 'orbitsoft',
@@ -228,7 +228,7 @@ describe('Orbitsoft adapter', () => {
         expect(bids).to.be.lengthOf(0);
       });
 
-      it('should return empty bid response on empty body', () => {
+      it('should return empty bid response on empty body', function () {
         let bidRequests = [
           {
             bidder: 'orbitsoft',

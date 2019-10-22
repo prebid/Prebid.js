@@ -20,7 +20,10 @@ function newWebpackConfig(codeCoverage) {
     webpackConfig.module.rules.push({
       enforce: 'post',
       exclude: /(node_modules)|(test)|(integrationExamples)|(build)|polyfill.js|(src\/adapters\/analytics\/ga.js)/,
-      loader: 'istanbul-instrumenter-loader',
+      use: {
+        loader: 'istanbul-instrumenter-loader',
+        options: { esModules: true }
+      },
       test: /\.js$/
     })
   }
@@ -34,7 +37,6 @@ function newPluginsArray(browserstack) {
     'karma-es5-shim',
     'karma-mocha',
     'karma-chai',
-    'karma-requirejs',
     'karma-sinon',
     'karma-sourcemap-loader',
     'karma-spec-reporter',
@@ -43,12 +45,12 @@ function newPluginsArray(browserstack) {
   ];
   if (browserstack) {
     plugins.push('karma-browserstack-launcher');
-    plugins.push('karma-firefox-launcher');
-    plugins.push('karma-opera-launcher');
-    plugins.push('karma-safari-launcher');
-    plugins.push('karma-script-launcher');
-    plugins.push('karma-ie-launcher');
   }
+  plugins.push('karma-firefox-launcher');
+  plugins.push('karma-opera-launcher');
+  plugins.push('karma-safari-launcher');
+  plugins.push('karma-script-launcher');
+  plugins.push('karma-ie-launcher');
   return plugins;
 }
 
@@ -83,7 +85,8 @@ function setBrowsers(karmaConf, browserstack) {
   if (browserstack) {
     karmaConf.browserStack = {
       username: process.env.BROWSERSTACK_USERNAME,
-      accessKey: process.env.BROWSERSTACK_ACCESS_KEY
+      accessKey: process.env.BROWSERSTACK_ACCESS_KEY,
+      build: 'Prebidjs Unit Tests ' + new Date().toLocaleString()
     }
     if (process.env.TRAVIS) {
       karmaConf.browserStack.startTunnel = false;
@@ -92,7 +95,19 @@ function setBrowsers(karmaConf, browserstack) {
     karmaConf.customLaunchers = require('./browsers.json')
     karmaConf.browsers = Object.keys(karmaConf.customLaunchers);
   } else {
-    karmaConf.browsers = ['ChromeHeadless'];
+    var isDocker = require('is-docker')();
+    if (isDocker) {
+      karmaConf.customLaunchers = karmaConf.customLaunchers || {};
+      karmaConf.customLaunchers.ChromeCustom = {
+        base: 'ChromeHeadless',
+        // We must disable the Chrome sandbox when running Chrome inside Docker (Chrome's sandbox needs
+        // more permissions than Docker allows by default)
+        flags: ['--no-sandbox']
+      }
+      karmaConf.browsers = ['ChromeCustom'];
+    } else {
+      karmaConf.browsers = ['ChromeHeadless'];
+    }
   }
 }
 
@@ -113,6 +128,7 @@ module.exports = function(codeCoverage, browserstack, watchMode, file) {
 
     webpack: webpackConfig,
     webpackMiddleware: {
+      stats: 'errors-only',
       noInfo: true
     },
     // frameworks to use

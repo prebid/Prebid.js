@@ -1,6 +1,7 @@
 import {expect} from 'chai';
 import {spec as adapter, URL} from 'modules/vidazooBidAdapter';
 import * as utils from 'src/utils';
+
 const BID = {
   'bidId': '2d52001cabd527',
   'params': {
@@ -17,6 +18,15 @@ const BID = {
   'sizes': [[300, 250], [300, 600]],
   'bidderRequestId': '1fdb5ff1b6eaa7',
   'requestId': 'b0777d85-d061-450e-9bc7-260dd54bbb7a'
+};
+
+const BIDDER_REQUEST = {
+  'gdprConsent': {
+    'consentString': 'consent_string'
+  },
+  'refererInfo': {
+    'referer': 'http://www.greatsite.com'
+  }
 };
 
 const SERVER_RESPONSE = {
@@ -47,31 +57,31 @@ const SYNC_OPTIONS = {
   'pixelEnabled': true
 };
 
-describe('VidazooBidAdapter', () => {
-  describe('validtae spec', () => {
-    it('exists and is a function', () => {
+describe('VidazooBidAdapter', function () {
+  describe('validtae spec', function () {
+    it('exists and is a function', function () {
       expect(adapter.isBidRequestValid).to.exist.and.to.be.a('function');
     });
 
-    it('exists and is a function', () => {
+    it('exists and is a function', function () {
       expect(adapter.buildRequests).to.exist.and.to.be.a('function');
     });
 
-    it('exists and is a function', () => {
+    it('exists and is a function', function () {
       expect(adapter.interpretResponse).to.exist.and.to.be.a('function');
     });
 
-    it('exists and is a function', () => {
+    it('exists and is a function', function () {
       expect(adapter.getUserSyncs).to.exist.and.to.be.a('function');
     });
 
-    it('exists and is a string', () => {
+    it('exists and is a string', function () {
       expect(adapter.code).to.exist.and.to.be.a('string');
     });
   });
 
-  describe('validate bid requests', () => {
-    it('should require cId', () => {
+  describe('validate bid requests', function () {
+    it('should require cId', function () {
       const isValid = adapter.isBidRequestValid({
         params: {
           pId: 'pid'
@@ -80,7 +90,7 @@ describe('VidazooBidAdapter', () => {
       expect(isValid).to.be.false;
     });
 
-    it('should require pId', () => {
+    it('should require pId', function () {
       const isValid = adapter.isBidRequestValid({
         params: {
           cId: 'cid'
@@ -89,7 +99,7 @@ describe('VidazooBidAdapter', () => {
       expect(isValid).to.be.false;
     });
 
-    it('should validate correctly', () => {
+    it('should validate correctly', function () {
       const isValid = adapter.isBidRequestValid({
         params: {
           cId: 'cid',
@@ -100,24 +110,24 @@ describe('VidazooBidAdapter', () => {
     });
   });
 
-  describe('build requests', () => {
+  describe('build requests', function () {
     let sandbox;
-    before(() => {
+    before(function () {
       sandbox = sinon.sandbox.create();
-      sandbox.stub(utils, 'getTopWindowUrl').returns('http://www.greatsite.com');
       sandbox.stub(Date, 'now').returns(1000);
     });
 
-    it('should build request for each size', () => {
-      const requests = adapter.buildRequests([BID]);
+    it('should build request for each size', function () {
+      const requests = adapter.buildRequests([BID], BIDDER_REQUEST);
       expect(requests).to.have.length(2);
       expect(requests[0]).to.deep.equal({
         method: 'GET',
         url: `${URL}/prebid/59db6b3b4ffaa70004f45cdc`,
         data: {
+          consent: 'consent_string',
           width: '300',
           height: '250',
-          url: 'http://www.greatsite.com',
+          url: 'http%3A%2F%2Fwww.greatsite.com',
           cb: 1000,
           bidFloor: 0.1,
           bidId: '2d52001cabd527',
@@ -130,9 +140,10 @@ describe('VidazooBidAdapter', () => {
         method: 'GET',
         url: `${URL}/prebid/59db6b3b4ffaa70004f45cdc`,
         data: {
+          consent: 'consent_string',
           width: '300',
           height: '600',
-          url: 'http://www.greatsite.com',
+          url: 'http%3A%2F%2Fwww.greatsite.com',
           cb: 1000,
           bidFloor: 0.1,
           bidId: '2d52001cabd527',
@@ -143,28 +154,28 @@ describe('VidazooBidAdapter', () => {
       });
     });
 
-    after(() => {
+    after(function () {
       sandbox.restore();
     });
   });
 
-  describe('interpret response', () => {
-    it('should return empty array when there is no response', () => {
+  describe('interpret response', function () {
+    it('should return empty array when there is no response', function () {
       const responses = adapter.interpretResponse(null);
       expect(responses).to.be.empty;
     });
 
-    it('should return empty array when there is no ad', () => {
+    it('should return empty array when there is no ad', function () {
       const responses = adapter.interpretResponse({price: 1, ad: ''});
       expect(responses).to.be.empty;
     });
 
-    it('should return empty array when there is no price', () => {
+    it('should return empty array when there is no price', function () {
       const responses = adapter.interpretResponse({price: null, ad: 'great ad'});
       expect(responses).to.be.empty;
     });
 
-    it('should return an array of interpreted responses', () => {
+    it('should return an array of interpreted responses', function () {
       const responses = adapter.interpretResponse(SERVER_RESPONSE, REQUEST);
       expect(responses).to.have.length(1);
       expect(responses[0]).to.deep.equal({
@@ -180,7 +191,7 @@ describe('VidazooBidAdapter', () => {
       });
     });
 
-    it('should take default TTL', () => {
+    it('should take default TTL', function () {
       const serverResponse = utils.deepClone(SERVER_RESPONSE);
       delete serverResponse.body.exp;
       const responses = adapter.interpretResponse(serverResponse, REQUEST);

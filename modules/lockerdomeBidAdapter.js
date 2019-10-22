@@ -1,6 +1,6 @@
-import * as utils from 'src/utils';
-import {BANNER} from 'src/mediaTypes';
-import {registerBidder} from 'src/adapters/bidderFactory';
+import * as utils from '../src/utils';
+import {BANNER} from '../src/mediaTypes';
+import {registerBidder} from '../src/adapters/bidderFactory';
 
 export const spec = {
   code: 'lockerdome',
@@ -8,19 +8,31 @@ export const spec = {
   isBidRequestValid: function(bid) {
     return !!bid.params.adUnitId;
   },
-  buildRequests: function(bidRequests) {
+  buildRequests: function(bidRequests, bidderRequest) {
     const adUnitBidRequests = bidRequests.map(function (bid) {
       return {
         requestId: bid.bidId,
+        adUnitCode: bid.adUnitCode,
         adUnitId: utils.getBidIdParameter('adUnitId', bid.params),
-        sizes: bid.sizes
+        sizes: bid.mediaTypes && bid.mediaTypes.banner && bid.mediaTypes.banner.sizes
       }
     });
+
+    const bidderRequestCanonicalUrl = (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.canonicalUrl) || '';
+    const bidderRequestReferer = (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer) || '';
     const payload = {
       bidRequests: adUnitBidRequests,
-      url: utils.getTopWindowLocation().href,
-      referrer: utils.getTopWindowReferrer()
+      url: encodeURIComponent(bidderRequestCanonicalUrl),
+      referrer: encodeURIComponent(bidderRequestReferer)
     };
+
+    if (bidderRequest && bidderRequest.gdprConsent) {
+      payload.gdpr = {
+        applies: bidderRequest.gdprConsent.gdprApplies,
+        consent: bidderRequest.gdprConsent.consentString
+      };
+    }
+
     const payloadString = JSON.stringify(payload);
     return {
       method: 'POST',
