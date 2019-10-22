@@ -1,7 +1,6 @@
 import Adapter from '../../src/adapter';
 import { createBid } from '../../src/bidfactory';
 import * as utils from '../../src/utils';
-import { ajax } from '../../src/ajax';
 import { STATUS, S2S, EVENTS } from '../../src/constants';
 import adapterManager from '../../src/adapterManager';
 import { config } from '../../src/config';
@@ -11,6 +10,7 @@ import { isValid } from '../../src/adapters/bidderFactory';
 import events from '../../src/events';
 import includes from 'core-js/library/fn/array/includes';
 import { S2S_VENDORS } from './config.js';
+import { ajax } from '../../src/ajax';
 
 const getConfig = config.getConfig;
 
@@ -148,7 +148,6 @@ function queueSync(bidderCodes, gdprConsent) {
     }
   }
   const jsonPayload = JSON.stringify(payload);
-
   ajax(_s2sConfig.syncEndpoint,
     (response) => {
       try {
@@ -698,7 +697,7 @@ const OPEN_RTB_PROTOCOL = {
     }
 
     const bidUserId = utils.deepAccess(bidRequests, '0.bids.0.userId');
-    if (bidUserId && typeof bidUserId === 'object' && (bidUserId.tdid || bidUserId.pubcid)) {
+    if (bidUserId && typeof bidUserId === 'object' && (bidUserId.tdid || bidUserId.pubcid || bidUserId.parrableid || bidUserId.lipb)) {
       utils.deepSetValue(request, 'user.ext.eids', []);
 
       if (bidUserId.tdid) {
@@ -718,6 +717,24 @@ const OPEN_RTB_PROTOCOL = {
           source: 'pubcommon',
           uids: [{
             id: bidUserId.pubcid,
+          }]
+        });
+      }
+
+      if (bidUserId.parrableid) {
+        request.user.ext.eids.push({
+          source: 'parrable.com',
+          uids: [{
+            id: bidUserId.parrableid
+          }]
+        });
+      }
+
+      if (bidUserId.lipb && bidUserId.lipb.lipbid) {
+        request.user.ext.eids.push({
+          source: 'liveintent.com',
+          uids: [{
+            id: bidUserId.lipb.lipbid
           }]
         });
       }
@@ -786,6 +803,8 @@ const OPEN_RTB_PROTOCOL = {
           if (extPrebidTargeting && typeof extPrebidTargeting === 'object') {
             bidObject.adserverTargeting = extPrebidTargeting;
           }
+
+          bidObject.seatBidId = bid.id;
 
           if (utils.deepAccess(bid, 'ext.prebid.type') === VIDEO) {
             bidObject.mediaType = VIDEO;
@@ -940,7 +959,11 @@ export function PrebidServer() {
 
     if (_s2sConfig && _s2sConfig.syncEndpoint) {
       let consent = (Array.isArray(bidRequests) && bidRequests.length > 0) ? bidRequests[0].gdprConsent : undefined;
-      queueSync(_s2sConfig.bidders, consent);
+      let syncBidders = _s2sConfig.bidders
+        .map(bidder => adapterManager.aliasRegistry[bidder] || bidder)
+        .filter((bidder, index, array) => (array.indexOf(bidder) === index));
+
+      queueSync(syncBidders, consent);
     }
 
     const request = protocolAdapter().buildRequest(s2sBidRequest, bidRequests, validAdUnits);

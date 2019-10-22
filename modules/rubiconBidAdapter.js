@@ -83,6 +83,7 @@ var sizeMap = {
   126: '200x600',
   144: '980x600',
   145: '980x150',
+  152: '1000x250',
   156: '640x320',
   159: '320x250',
   179: '250x600',
@@ -409,9 +410,8 @@ export const spec = {
     };
 
     // add p_pos only if specified and valid
-    if (params.position === 'atf' || params.position === 'btf') {
-      data['p_pos'] = params.position;
-    }
+    // For SRA we need to explicitly put empty semi colons so AE treats it as empty, instead of copying the latter value
+    data['p_pos'] = (params.position === 'atf' || params.position === 'btf') ? params.position : '';
 
     if ((bidRequest.userId || {}).tdid) {
       data['tpid_tdid'] = bidRequest.userId.tdid;
@@ -484,10 +484,14 @@ export const spec = {
             cpm: bid.price || 0,
             bidderCode: seatbid.seat,
             ttl: 300,
-            netRevenue: config.getConfig('rubicon.netRevenue') || false,
+            netRevenue: config.getConfig('rubicon.netRevenue') || true,
             width: bid.w || utils.deepAccess(bidRequest, 'mediaTypes.video.w') || utils.deepAccess(bidRequest, 'params.video.playerWidth'),
             height: bid.h || utils.deepAccess(bidRequest, 'mediaTypes.video.h') || utils.deepAccess(bidRequest, 'params.video.playerHeight'),
           };
+
+          if (bid.id) {
+            bidObject.seatBidId = bid.id;
+          }
 
           if (bid.dealid) {
             bidObject.dealId = bid.dealid;
