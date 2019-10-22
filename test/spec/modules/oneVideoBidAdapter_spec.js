@@ -31,7 +31,7 @@ describe('OneVideoBidAdapter', function () {
           delivery: [2],
           playbackmethod: [1, 5],
           sid: 134,
-          rewarded: 1,,
+          rewarded: 1,
           placement: 1,
           inventoryid: 123
         },
