@@ -226,7 +226,7 @@ function HandleEids(bidRequests) {
     AddExternalUserId(eids, utils.deepAccess(bidRequest, `userId.id5id`), 'id5-sync.com', 1);
   }
   if (eids.length > 0) {
-    return {user: {ext: eids}};
+    return {user: {ext: {eids}}};
   }
 
   return undefined;

@@ -587,7 +587,7 @@ describe('Livewrapped adapter tests', function () {
     let result = spec.buildRequests(testbidRequest.bids, testbidRequest);
     let data = JSON.parse(result.data);
 
-    expect(data.rtbData.user.ext).to.deep.equal([{
+    expect(data.rtbData.user.ext.eids).to.deep.equal([{
       'source': 'id5-sync.com',
       'uids': [{
         'id': 'id5-user-id',
@@ -606,7 +606,7 @@ describe('Livewrapped adapter tests', function () {
     let result = spec.buildRequests(testbidRequest.bids, testbidRequest);
     let data = JSON.parse(result.data);
 
-    expect(data.rtbData.user.ext).to.deep.equal([{
+    expect(data.rtbData.user.ext.eids).to.deep.equal([{
       'source': 'pubcommon',
       'uids': [{
         'id': 'publisher-common-id',
@@ -733,7 +733,7 @@ describe('Livewrapped adapter tests', function () {
             auctionId: '13e674db-d4d8-4e19-9d28-ff38177db8bf',
             creativeId: '52cbd598-2715-4c43-a06f-229fc170f945:427077',
             ttl: 120,
-            meta: {metadata: "metadata"}
+            meta: {metadata: 'metadata'}
           }
         ],
         currency: 'USD'
@@ -750,7 +750,7 @@ describe('Livewrapped adapter tests', function () {
         creativeId: '52cbd598-2715-4c43-a06f-229fc170f945:427077',
         netRevenue: true,
         currency: 'USD',
-        meta: {metadata: "metadata"}
+        meta: {metadata: 'metadata'}
       }];
 
       let bids = spec.interpretResponse({body: lwResponse});
