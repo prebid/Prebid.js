@@ -20,10 +20,10 @@ export const spec = {
     }
     const gdprConsent = bidderRequest.gdprConsent;
     const refererInfo = bidderRequest.refererInfo;
-
+    
     const account = getAccount(validBidRequests);
     const targets = validBidRequests.map(bid => bid.params.data).reduce(mergeTargets, {});
-    const gdprParams = (gdprConsent && gdprConsent.consentString) ? [ 'xt' + gdprConsent.consentString ] : [];
+    const gdprParams = (gdprConsent && gdprConsent.consentString) ? [ 'xt' + gdprConsent.consentString, 'tlall' ] : [];
     const refererParams = (refererInfo && refererInfo.referer) ? [ 'xf' + base64urlEncode(refererInfo.referer) ] : [];
     const targetsParams = Object.keys(targets).map(targetCode => targetCode + targets[targetCode].join(';'));
     const slotsParams = validBidRequests.map(bid => 'sl' + bidToSlotName(bid));
