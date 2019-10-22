@@ -171,6 +171,7 @@ function requestsToBids(bid) {
 }
 
 function getUserSyncs(syncOptions, serverResponses, gdprConsent) {
+  const syncs = [];
   if (syncOptions.iframeEnabled) {
     const rnd = new Date().getTime();
     let params = '?cb=' + rnd;
@@ -182,11 +183,12 @@ function getUserSyncs(syncOptions, serverResponses, gdprConsent) {
       }
     }
 
-    return [{
+    syncs.push({
       type: 'iframe',
       url: USER_SYNC_ENDPOINT + params
-    }];
+    });
   }
+  return syncs;
 }
 
 export const spec = {

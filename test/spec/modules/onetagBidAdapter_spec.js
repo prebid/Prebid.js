@@ -164,7 +164,7 @@ describe('onetag', function () {
     });
     it('Returns an empty array if iframeEnabled is false', function () {
       const syncs = spec.getUserSyncs({ iframeEnabled: false });
-      expect(syncs).to.equal(undefined);
+      expect(syncs).to.be.an('array').that.is.empty;
     });
   });
 });
