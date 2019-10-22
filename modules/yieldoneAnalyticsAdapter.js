@@ -79,7 +79,7 @@ const yieldoneAnalytics = Object.assign(adapter({analyticsType}), {
         const reqBidId = `${bid.bidId}_${bid.auctionId}`;
         const reqBidderId = `${bid.bidder}_${bid.auctionId}`;
         if (!eventsStorage[bid.auctionId]) eventsStorage[bid.auctionId] = [];
-        if (requestedBidders[reqBidderId] && requestedBids[reqBidId]) {
+        if ((requestedBidders[reqBidderId] || reqBidders[bid.bidder]) && requestedBids[reqBidId]) {
           if (!reqBidders[bid.bidder]) {
             reqBidders[bid.bidder] = requestedBidders[reqBidderId];
             reqBidders[bid.bidder].pubId = pubId;
