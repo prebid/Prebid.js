@@ -1,18 +1,20 @@
 import {registerBidder} from '../src/adapters/bidderFactory';
-import {config} from '../src/config';
 
 const BIDDER_CODE = 'outcon';
+
 export const spec = {
   code: BIDDER_CODE,
+  supportedMediaTypes: ['banner', 'video'],
   isBidRequestValid: function(bid) {
     return !!((bid.params.pod || (bid.params.internalId && bid.params.publisher)) && bid.params.env);
   },
   buildRequests: function(validBidRequests) {
     for (let i = 0; i < validBidRequests.length; i++) {
-      let par = '';
       let url = '';
+      let par = '';
       if (validBidRequests[i].params.pod != undefined) par = 'get?pod=' + validBidRequests[i].params.pod + '&bidId=' + validBidRequests[i].bidId;
       else par = 'get?internalId=' + validBidRequests[i].params.internalId + '&publisher=' + validBidRequests[i].params.publisher + '&bidId=' + validBidRequests[i].bidId;
+      par = par + '&vast=true';
       switch (validBidRequests[i].params.env) {
         case 'test':
           par = par + '&demo=true';
@@ -42,10 +44,17 @@ export const spec = {
       creativeId: serverResponse.body.creatives[0].id,
       currency: serverResponse.body.cur,
       netRevenue: true,
-      ttl: config.getConfig('_bidderTimeout'),
+      ttl: 300,
       ad: wrapDisplayUrl(serverResponse.body.creatives[0].url, serverResponse.body.type),
-      vastImpUrl: serverResponse.body.trackingURL
+      vastImpUrl: serverResponse.body.trackingURL,
+      mediaType: serverResponse.body.type
     };
+    if (serverResponse.body.type == 'video') {
+      Object.assign(bidResponse, {
+        vastUrl: serverResponse.body.vastURL,
+        ttl: 3600
+      });
+    }
     bidResponses.push(bidResponse);
     return bidResponses;
   },
@@ -54,6 +63,7 @@ export const spec = {
 function wrapDisplayUrl(displayUrl, type) {
   if (type == 'video') return `<html><head></head><body style='margin : 0; padding: 0;'><div><video width="100%"; height="100%"; autoplay = true><source src="${displayUrl}"></video></div></body>`;
   if (type == 'banner') return `<html><head></head><body style='margin : 0; padding: 0;'><div><img width:"100%"; height:"100%"; src="${displayUrl}"></div></body>`;
+  return null;
 }
 
 registerBidder(spec);
