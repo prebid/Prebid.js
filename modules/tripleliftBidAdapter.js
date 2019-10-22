@@ -80,6 +80,7 @@ export const tripleliftAdapterSpec = {
 
 function _buildPostBody(bidRequests) {
   let data = {};
+  let { schain } = bidRequests[0];
   data.imp = bidRequests.map(function(bid, index) {
     return {
       id: index,
@@ -101,7 +102,11 @@ function _buildPostBody(bidRequests) {
       ext: {eids}
     };
   }
-
+  if (schain) {
+    data.ext = {
+      schain
+    }
+  }
   return data;
 }
 
