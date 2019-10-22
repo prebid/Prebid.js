@@ -39,10 +39,10 @@ export const spec = {
       title: localWindow.document.title || '',
       w: localWindow.innerWidth,
       h: localWindow.innerHeight,
-      gdprConsent: JSON.stringify({
+      userConsent: JSON.stringify({
         // case of undefined, stringify will remove param
-        gdprApplies: bidderRequest.gdprConsent ? bidderRequest.gdprConsent.gdprApplies : undefined,
-        consentString: bidderRequest.gdprConsent ? bidderRequest.gdprConsent.consentString : undefined
+        gdprApplies: bidderRequest && bidderRequest.gdprConsent ? bidderRequest.gdprConsent.gdprApplies : undefined,
+        cmp: bidderRequest && bidderRequest.gdprConsent ? bidderRequest.gdprConsent.consentString : undefined
       })
     };
 
