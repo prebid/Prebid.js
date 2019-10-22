@@ -1,19 +1,19 @@
 import {expect} from 'chai';
-import {spec} from 'modules/somoaudienceBidAdapter';
+import {spec} from 'modules/somoBidAdapter';
 import * as utils from 'src/utils';
 
 describe('Somo Audience Adapter Tests', function () {
   describe('isBidRequestValid', function () {
     it('should return false when given an invalid bid', function () {
       const bid = {
-        bidder: 'somoaudience',
+        bidder: 'somo',
       };
       const isValid = spec.isBidRequestValid(bid);
       expect(isValid).to.equal(false);
     });
     it('should return true when given a placementId bid', function () {
       const bid = {
-        bidder: 'somoaudience',
+        bidder: 'somo',
         params: {
           placementId: 'test'
         }
@@ -27,7 +27,7 @@ describe('Somo Audience Adapter Tests', function () {
     describe('buildBannerRequests', function () {
       it('should properly build a banner request with type not defined and sizes not defined', function () {
         const bidRequests = [{
-          bidder: 'somoaudience',
+          bidder: 'somo',
           params: {
             placementId: 'test'
           }
@@ -49,7 +49,7 @@ describe('Somo Audience Adapter Tests', function () {
 
       it('should properly build a banner request with sizes defined in 2d array', function () {
         const bidRequests = [{
-          bidder: 'somoaudience',
+          bidder: 'somo',
           sizes: [[300, 250]],
           params: {
             placementId: 'test'
@@ -71,7 +71,7 @@ describe('Somo Audience Adapter Tests', function () {
       });
       it('should properly build a banner request with sizes defined in 1d array', function () {
         const bidRequests = [{
-          bidder: 'somoaudience',
+          bidder: 'somo',
           sizes: [300, 250],
           params: {
             placementId: 'test'
@@ -99,7 +99,7 @@ describe('Somo Audience Adapter Tests', function () {
       it('should populate optional banner parameters', function () {
         const bidRequests = [
           {
-            bidder: 'somoaudience',
+            bidder: 'somo',
             sizes: [[300, 200]],
             mediaType: 'banner',
             params: {
@@ -128,7 +128,7 @@ describe('Somo Audience Adapter Tests', function () {
     describe('buildVideoRequests', function () {
       it('should properly build a video request with sizes defined', function () {
         const bidRequests = [{
-          bidder: 'somoaudience',
+          bidder: 'somo',
           mediaTypes: {
             video: {}
           },
@@ -151,7 +151,7 @@ describe('Somo Audience Adapter Tests', function () {
 
       it('should properly build a video request with sizes defined in 2d array', function () {
         const bidRequests = [{
-          bidder: 'somoaudience',
+          bidder: 'somo',
           mediaTypes: {
             video: {}
           },
@@ -173,7 +173,7 @@ describe('Somo Audience Adapter Tests', function () {
       });
       it('should properly build a video request with sizes not defined', function () {
         const bidRequests = [{
-          bidder: 'somoaudience',
+          bidder: 'somo',
           mediaType: 'video',
           params: {
             placementId: 'test'
@@ -199,7 +199,7 @@ describe('Somo Audience Adapter Tests', function () {
       it('should populate optional video parameters', function () {
         const bidRequests = [
           {
-            bidder: 'somoaudience',
+            bidder: 'somo',
             sizes: [[200, 300]],
             mediaType: 'video',
             params: {
@@ -242,7 +242,7 @@ describe('Somo Audience Adapter Tests', function () {
     describe('buildSiteRequests', function () {
       it('should fill in basic site parameters', function () {
         const bidRequests = [{
-          bidder: 'somoaudience',
+          bidder: 'somo',
           params: {
             placementId: 'test'
           }
@@ -258,7 +258,7 @@ describe('Somo Audience Adapter Tests', function () {
 
       it('should fill in optional site parameters', function () {
         const bidRequests = [{
-          bidder: 'somoaudience',
+          bidder: 'somo',
           params: {
             placementId: 'test',
             site: {
@@ -285,7 +285,7 @@ describe('Somo Audience Adapter Tests', function () {
     describe('buildAppRequests', function () {
       it('should fill in app parameters', function () {
         const bidRequests = [{
-          bidder: 'somoaudience',
+          bidder: 'somo',
           params: {
             placementId: 'test',
             app: {
@@ -325,7 +325,7 @@ describe('Somo Audience Adapter Tests', function () {
 
       it('should properly build request with gdpr consent', function () {
         const bidRequests = [{
-          bidder: 'somoaudience',
+          bidder: 'somo',
           params: {
             placementId: 'test'
           }
@@ -342,7 +342,7 @@ describe('Somo Audience Adapter Tests', function () {
       it('should properly build request with gdpr not applies', function () {
         bidderRequest.gdprConsent.gdprApplies = false;
         const bidRequests = [{
-          bidder: 'somoaudience',
+          bidder: 'somo',
           params: {
             placementId: 'test'
           }
@@ -362,7 +362,7 @@ describe('Somo Audience Adapter Tests', function () {
       it('should populate optional parameters', function () {
         const bidRequests = [
           {
-            bidder: 'somoaudience',
+            bidder: 'somo',
             params: {
               placementId: 'test',
               bcat: ['IAB-2', 'IAB-7'],
@@ -389,7 +389,7 @@ describe('Somo Audience Adapter Tests', function () {
     it('Verify banner parse response', function () {
       const bidRequests = [
         {
-          bidder: 'somoaudience',
+          bidder: 'somo',
           params: {
             placementId: 'test',
           },
@@ -417,7 +417,7 @@ describe('Somo Audience Adapter Tests', function () {
     it('Verify video parse response', function () {
       const bidRequests = [
         {
-          bidder: 'somoaudience',
+          bidder: 'somo',
           mediaTypes: {
             video: {
             }

@@ -30,7 +30,6 @@ describe('OneVideoBidAdapter', function () {
           position: 1,
           delivery: [2],
           playbackmethod: [1, 5],
-          placement: 123,
           sid: 134,
           rewarded: 1,,
           placement: 1,
@@ -69,7 +68,6 @@ describe('OneVideoBidAdapter', function () {
           position: 1,
           delivery: [2],
           playbackmethod: [1, 5],
-          placement: 123,
           sid: 134,
           rewarded: 1,
           placement: 1,
@@ -89,7 +87,6 @@ describe('OneVideoBidAdapter', function () {
           position: 1,
           delivery: [2],
           playbackmethod: [1, 5],
-          placement: 123,
           sid: 134,
           rewarded: 1,
           placement: 1,
@@ -127,7 +124,6 @@ describe('OneVideoBidAdapter', function () {
       const inventoryid = bidRequest.params.video.inventoryid;
       expect(data.imp[0].video.w).to.equal(width);
       expect(data.imp[0].video.h).to.equal(height);
-      expect(data.imp[0].ext.placement).to.equal(placement);
       expect(data.imp[0].bidfloor).to.equal(bidRequest.params.bidfloor);
       expect(data.imp[0].ext.rewarded).to.equal(rewarded);
       expect(data.imp[0].video.placement).to.equal(placement);

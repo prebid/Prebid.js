@@ -190,9 +190,6 @@ function getRequestData(bid, consentData) {
   if (bid.params.video.playbackmethod) {
     bidData.imp[0].video.playbackmethod = bid.params.video.playbackmethod
   }
-  if (bid.params.video.placement) {
-    bidData.imp[0].ext.placement = bid.params.video.placement
-  }
   if (bid.params.video.rewarded) {
     bidData.imp[0].ext.rewarded = bid.params.video.rewarded
   }
