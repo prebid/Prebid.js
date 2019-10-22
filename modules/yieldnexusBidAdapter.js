@@ -198,7 +198,7 @@ export const spec = {
 };
 
 function newRenderer(bidRequest, bid, rendererOptions = {}) {
-  let rendererUrl = '//s.wlplayer.com/video/latest/renderer.js';
+  let rendererUrl = 'https://s.wlplayer.com/video/latest/renderer.js';
   if (bid.ext && bid.ext.renderer_url) {
     rendererUrl = bid.ext.renderer_url;
   }

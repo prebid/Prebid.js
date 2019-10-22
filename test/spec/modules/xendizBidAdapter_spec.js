@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { spec } from 'modules/xendizBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
 
-const VALID_ENDPOINT = '//prebid.xendiz.com/request';
+const VALID_ENDPOINT = 'https://prebid.xendiz.com/request';
 const bidRequest = {
   bidder: 'xendiz',
   adUnitCode: 'test-div',

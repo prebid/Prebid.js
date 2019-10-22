@@ -38,7 +38,7 @@ describe('BizzclickBidAdapter', function () {
       expect(serverRequest.method).to.equal('POST');
     });
     it('Returns valid URL', function () {
-      expect(serverRequest.url).to.equal('//supply.bizzclick.com/?c=o&m=multi');
+      expect(serverRequest.url).to.equal('https://supply.bizzclick.com/?c=o&m=multi');
     });
     it('Returns valid data if array of bids is valid', function () {
       let data = serverRequest.data;
@@ -111,7 +111,7 @@ describe('BizzclickBidAdapter', function () {
       expect(userSync[0].type).to.exist;
       expect(userSync[0].url).to.exist;
       expect(userSync[0].type).to.be.equal('image');
-      expect(userSync[0].url).to.be.equal('//supply.bizzclick.com/?c=o&m=cookie');
+      expect(userSync[0].url).to.be.equal('https://supply.bizzclick.com/?c=o&m=cookie');
     });
   });
 });

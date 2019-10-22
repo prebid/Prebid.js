@@ -2,10 +2,10 @@ import {expect} from 'chai';
 import {spec} from 'modules/admanBidAdapter';
 import {newBidder} from 'src/adapters/bidderFactory';
 
-const ENDPOINT = '//bidtor.admanmedia.com/prebid';
+const ENDPOINT = 'https://bidtor.admanmedia.com/prebid';
 const BANNER = '<script type="text/javascript" async="true" src="https://bogus.script"></script>"';
 const VAST = '<VAST version="3.0"></VAST>';
-const USER_SYNC_IFRAME_URL = '//cs.admanmedia.com/sync_tag/html';
+const USER_SYNC_IFRAME_URL = 'https://cs.admanmedia.com/sync_tag/html';
 
 describe('admanBidAdapter', function() {
   const adapter = newBidder(spec);

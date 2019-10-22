@@ -33,7 +33,7 @@ describe('Somo Audience Adapter Tests', function () {
           }
         }];
         const request = spec.buildRequests(bidRequests);
-        expect(request[0].url).to.equal('//publisher-east.mobileadtrading.com/rtb/bid?s=test');
+        expect(request[0].url).to.equal('https://publisher-east.mobileadtrading.com/rtb/bid?s=test');
         expect(request[0].method).to.equal('POST');
         const ortbRequest = request[0].data;
         expect(ortbRequest.site).to.not.equal(null);
@@ -56,7 +56,7 @@ describe('Somo Audience Adapter Tests', function () {
           }
         }];
         const request = spec.buildRequests(bidRequests);
-        expect(request[0].url).to.equal('//publisher-east.mobileadtrading.com/rtb/bid?s=test');
+        expect(request[0].url).to.equal('https://publisher-east.mobileadtrading.com/rtb/bid?s=test');
         expect(request[0].method).to.equal('POST');
         const ortbRequest = request[0].data;
         expect(ortbRequest.site).to.not.equal(null);
@@ -78,7 +78,7 @@ describe('Somo Audience Adapter Tests', function () {
           }
         }];
         const request = spec.buildRequests(bidRequests);
-        expect(request[0].url).to.equal('//publisher-east.mobileadtrading.com/rtb/bid?s=test');
+        expect(request[0].url).to.equal('https://publisher-east.mobileadtrading.com/rtb/bid?s=test');
         expect(request[0].method).to.equal('POST');
         const ortbRequest = request[0].data;
         expect(ortbRequest.site).to.not.equal(null);
@@ -290,7 +290,7 @@ describe('Somo Audience Adapter Tests', function () {
             placementId: 'test',
             app: {
               bundle: 'com.somoaudience.apps',
-              storeUrl: 'http://somoaudience.com/apps',
+              storeUrl: 'https://somoaudience.com/apps',
               domain: 'somoaudience.com',
               name: 'Generic SomoAudience App 5',
               cat: 'IAB-25',
@@ -305,7 +305,7 @@ describe('Somo Audience Adapter Tests', function () {
         expect(ortbRequest.site).to.equal(null);
         expect(ortbRequest.app).to.not.be.null;
         expect(ortbRequest.app.bundle).to.equal('com.somoaudience.apps');
-        expect(ortbRequest.app.storeUrl).to.equal('http://somoaudience.com/apps');
+        expect(ortbRequest.app.storeUrl).to.equal('https://somoaudience.com/apps');
         expect(ortbRequest.app.domain).to.equal('somoaudience.com');
         expect(ortbRequest.app.name).to.equal('Generic SomoAudience App 5');
         expect(ortbRequest.app.ver).to.equal('5.423-s');

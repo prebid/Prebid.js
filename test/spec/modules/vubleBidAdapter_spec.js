@@ -88,7 +88,7 @@ describe('VubleAdapter', function () {
     let sandbox;
     before(function () {
       sandbox = sinon.sandbox.create();
-      sandbox.stub(utils, 'getTopWindowUrl').returns('http://www.vuble.tv/');
+      sandbox.stub(utils, 'getTopWindowUrl').returns('https://www.vuble.tv/');
     });
 
     // Bids to be formatted
@@ -115,7 +115,7 @@ describe('VubleAdapter', function () {
         env: 'com',
         pubId: '8',
         zoneId: '2468',
-        referrer: 'http://www.vuble.fr/'
+        referrer: 'https://www.vuble.fr/'
       },
       sizes: '640x360',
       mediaTypes: {
@@ -130,7 +130,7 @@ describe('VubleAdapter', function () {
     // Formatted requets
     let request1 = {
       method: 'POST',
-      url: '//player.mediabong.net/prebid/request',
+      url: 'https://player.mediabong.net/prebid/request',
       data: {
         width: '640',
         height: '360',
@@ -138,7 +138,7 @@ describe('VubleAdapter', function () {
         zone_id: '12345',
         context: 'instream',
         floor_price: 5.5,
-        url: 'http://www.vuble.tv/',
+        url: 'https://www.vuble.tv/',
         env: 'net',
         bid_id: 'abdc',
         adUnitCode: ''
@@ -146,7 +146,7 @@ describe('VubleAdapter', function () {
     };
     let request2 = {
       method: 'POST',
-      url: '//player.mediabong.com/prebid/request',
+      url: 'https://player.mediabong.com/prebid/request',
       data: {
         width: '640',
         height: '360',
@@ -154,7 +154,7 @@ describe('VubleAdapter', function () {
         zone_id: '2468',
         context: 'outstream',
         floor_price: 0,
-        url: 'http://www.vuble.fr/',
+        url: 'https://www.vuble.fr/',
         env: 'com',
         bid_id: 'efgh',
         adUnitCode: 'code'
@@ -178,7 +178,7 @@ describe('VubleAdapter', function () {
         status: 'ok',
         cpm: 5.00,
         creativeId: '2468',
-        url: 'https//player.mediabong.net/prebid/ad/a1b2c3d4',
+        url: 'https://player.mediabong.net/prebid/ad/a1b2c3d4',
         dealId: 'MDB-TEST-1357'
       }
     };
@@ -196,7 +196,7 @@ describe('VubleAdapter', function () {
         adUnitCode: 'code'
       },
       method: 'POST',
-      url: '//player.mediabong.net/prebid/request'
+      url: 'https://player.mediabong.net/prebid/request'
     };
     // Formatted reponse
     let result = {
@@ -209,7 +209,7 @@ describe('VubleAdapter', function () {
       dealId: 'MDB-TEST-1357',
       netRevenue: true,
       currency: 'USD',
-      vastUrl: 'https//player.mediabong.net/prebid/ad/a1b2c3d4',
+      vastUrl: 'https://player.mediabong.net/prebid/ad/a1b2c3d4',
       mediaType: 'video'
     };
 
@@ -256,13 +256,13 @@ describe('VubleAdapter', function () {
         status: 'ok',
         cpm: 5.00,
         creativeId: '2468',
-        url: 'https//player.mediabong.net/prebid/ad/a1b2c3d4'
+        url: 'https://player.mediabong.net/prebid/ad/a1b2c3d4'
       }
     };
     // Formatted reponse
     let result = {
       type: 'iframe',
-      url: 'http://player.mediabong.net/csifr?1234'
+      url: 'https://player.mediabong.net/csifr?1234'
     };
 
     it('should return an empty array', function () {
@@ -276,7 +276,7 @@ describe('VubleAdapter', function () {
     });
 
     it('should be equal to the expected result', function () {
-      response.body.iframeSync = 'http://player.mediabong.net/csifr?1234';
+      response.body.iframeSync = 'https://player.mediabong.net/csifr?1234';
       expect(adapter.getUserSyncs(syncOptions, [response])).to.deep.equal([result]);
     })
   });

@@ -264,7 +264,7 @@ function newRenderer(bidRequest, bid, rendererOptions = {}) {
     url:
       (bidRequest.params && bidRequest.params.rendererUrl) ||
       (bid.ext && bid.ext.renderer_url) ||
-      '//s.wlplayer.com/video/latest/renderer.js',
+      'https://s.wlplayer.com/video/latest/renderer.js',
     config: rendererOptions,
     loaded: false
   });

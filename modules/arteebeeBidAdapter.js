@@ -69,7 +69,7 @@ function makePrebidRequest(req, bidderRequest) {
   var host = req.params.host || DEFAULT_HOST;
   var ssp = req.params.ssp || DEFAULT_SSP;
 
-  var url = window.location.protocol + '//' + host + '/rtb/bid/' + ssp + '?type=json&register=0';
+  var url = 'https://' + host + '/rtb/bid/' + ssp + '?type=json&register=0';
 
   const payload = makeRtbRequest(req, bidderRequest);
   const payloadString = JSON.stringify(payload);

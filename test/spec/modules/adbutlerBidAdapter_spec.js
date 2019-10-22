@@ -79,7 +79,7 @@ describe('AdButler adapter', function () {
 
         let [domain] = request.url.split('/adserve/');
 
-        expect(domain).to.equal('http://servedbyadbutler.com');
+        expect(domain).to.equal('https://servedbyadbutler.com');
       });
 
       it('should set the keyword parameter', function () {
@@ -129,9 +129,9 @@ describe('AdButler adapter', function () {
               width: 300,
               height: 250,
               place: 0,
-              ad_code: '<img src="http://image.source.com/img" alt="" title="" border="0" width="300" height="250">',
+              ad_code: '<img src="https://image.source.com/img" alt="" title="" border="0" width="300" height="250">',
               tracking_pixels: [
-                'http://tracking.pixel.com/params=info'
+                'https://tracking.pixel.com/params=info'
               ]
             }
           },
@@ -146,7 +146,7 @@ describe('AdButler adapter', function () {
         expect(bids[0].currency).to.equal('USD');
         expect(bids[0].netRevenue).to.equal(true);
         expect(bids[0].ad).to.have.length.above(1);
-        expect(bids[0].ad).to.have.string('http://tracking.pixel.com/params=info');
+        expect(bids[0].ad).to.have.string('https://tracking.pixel.com/params=info');
       });
 
       it('should return empty bid response', function () {

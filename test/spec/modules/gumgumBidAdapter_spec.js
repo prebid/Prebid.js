@@ -161,8 +161,8 @@ describe('gumgumAdapter', function () {
         'du': null,
         'price': 0,
         'zi': 0,
-        'impurl': 'http://g2.gumgum.com/ad/view',
-        'clsurl': 'http://g2.gumgum.com/ad/close'
+        'impurl': 'https://g2.gumgum.com/ad/view',
+        'clsurl': 'https://g2.gumgum.com/ad/close'
       },
       'pag': {
         't': 'ggumtest',
@@ -233,8 +233,8 @@ describe('gumgumAdapter', function () {
           'du': null,
           'price': 1,
           'zi': 0,
-          'impurl': 'http://g2.gumgum.com/ad/view',
-          'clsurl': 'http://g2.gumgum.com/ad/close'
+          'impurl': 'https://g2.gumgum.com/ad/view',
+          'clsurl': 'https://g2.gumgum.com/ad/close'
         },
         'pag': {
           't': 'ggumtest',

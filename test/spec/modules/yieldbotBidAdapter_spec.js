@@ -131,7 +131,7 @@ describe('Yieldbot Adapter Unit Tests', function() {
 
   const INTERPRET_RESPONSE_BID_REQUEST = {
     method: 'GET',
-    url: '//i.yldbt.com/m/1234/v1/init',
+    url: 'https://i.yldbt.com/m/1234/v1/init',
     data: {
       cts_js: 1518184900582,
       cts_ns: 1518184900582,
@@ -148,7 +148,7 @@ describe('Yieldbot Adapter Unit Tests', function() {
       la: 'en-US',
       to: 5,
       sd: '2560x1440',
-      lo: 'http://localhost:9999/test/spec/e2e/gpt-examples/gpt_yieldbot.html',
+      lo: 'https://localhost:9999/test/spec/e2e/gpt-examples/gpt_yieldbot.html',
       r: '',
       e: '',
       sn: 'leaderboard|medrec|medrec|skyscraper',
@@ -178,7 +178,7 @@ describe('Yieldbot Adapter Unit Tests', function() {
     body: {
       pvi: 'jdg03ai5kp9k1rkheh',
       subdomain_iframe: 'ads-adseast-vpc',
-      url_prefix: 'http://ads-adseast-vpc.yldbt.com/m/',
+      url_prefix: 'https://ads-adseast-vpc.yldbt.com/m/',
       slots: [
         {
           slot: 'leaderboard',
@@ -495,8 +495,8 @@ describe('Yieldbot Adapter Unit Tests', function() {
       YieldbotAdapter.lastPageviewTime = lastPageviewTime;
       expect(YieldbotAdapter.lastPageviewTime, 'lastPageviewTime').to.equal(lastPageviewTime);
 
-      const urlPrefix = YieldbotAdapter.urlPrefix('http://here.there.com/ad/');
-      expect(YieldbotAdapter.urlPrefix(), 'urlPrefix').to.equal('http://here.there.com/ad/');
+      const urlPrefix = YieldbotAdapter.urlPrefix('https://here.there.com/ad/');
+      expect(YieldbotAdapter.urlPrefix(), 'urlPrefix').to.equal('https://here.there.com/ad/');
 
       for (idx = 0; idx < cookieLabels.length; idx++) {
         cookieValue = YieldbotAdapter.getCookie('__ybot' + cookieLabels[idx]);
@@ -710,7 +710,6 @@ describe('Yieldbot Adapter Unit Tests', function() {
 
   describe('urlPrefix', function() {
     const cookieName = '__ybotc';
-    const protocol = document.location.protocol;
     afterEach(function() {
       YieldbotAdapter.deleteCookie(cookieName);
       expect(YieldbotAdapter.getCookie(cookieName)).to.equal(null);
@@ -718,20 +717,20 @@ describe('Yieldbot Adapter Unit Tests', function() {
 
     it('should set the default prefix if cookie does not exist', function(done) {
       const urlPrefix = YieldbotAdapter.urlPrefix();
-      expect(urlPrefix).to.equal('//i.yldbt.com/m/');
+      expect(urlPrefix).to.equal('https://i.yldbt.com/m/');
       done();
     });
 
     it('should return prefix if cookie exists', function() {
-      YieldbotAdapter.setCookie(cookieName, protocol + '//closest.az.com/path/', 2000, '/');
+      YieldbotAdapter.setCookie(cookieName, 'https://closest.az.com/path/', 2000, '/');
       const urlPrefix = YieldbotAdapter.urlPrefix();
-      expect(urlPrefix).to.equal(protocol + '//closest.az.com/path/');
+      expect(urlPrefix).to.equal('https://closest.az.com/path/');
     });
 
     it('should reset prefix if default already set', function() {
       const defaultUrlPrefix = YieldbotAdapter.urlPrefix();
-      const url = protocol + '//close.az.com/path/';
-      expect(defaultUrlPrefix).to.equal('//i.yldbt.com/m/');
+      const url = 'https://close.az.com/path/';
+      expect(defaultUrlPrefix).to.equal('https://i.yldbt.com/m/');
 
       let urlPrefix = YieldbotAdapter.urlPrefix(url);
       expect(urlPrefix, 'reset prefix').to.equal(url);
@@ -741,19 +740,19 @@ describe('Yieldbot Adapter Unit Tests', function() {
     });
 
     it('should set containing document protocol', function() {
-      let urlPrefix = YieldbotAdapter.urlPrefix('http://close.az.com/path/');
-      expect(urlPrefix, 'http - use: ' + protocol).to.equal(protocol + '//close.az.com/path/');
+      let urlPrefix = YieldbotAdapter.urlPrefix('https://close.az.com/path/');
+      expect(urlPrefix, 'https- use: ').to.equal('https://close.az.com/path/');
 
       urlPrefix = YieldbotAdapter.urlPrefix('https://close.az.com/path/');
-      expect(urlPrefix, 'https - use: ' + protocol).to.equal(protocol + '//close.az.com/path/');
+      expect(urlPrefix, 'https - use: ').to.equal('https://close.az.com/path/');
     });
 
     it('should fallback to default for invalid argument', function() {
       let urlPrefix = YieldbotAdapter.urlPrefix('//close.az.com/path/');
-      expect(urlPrefix, 'Url w/o protocol').to.equal('//i.yldbt.com/m/');
+      expect(urlPrefix, 'Url w/o protocol').to.equal('https://i.yldbt.com/m/');
 
       urlPrefix = YieldbotAdapter.urlPrefix('mumble');
-      expect(urlPrefix, 'Invalid Url').to.equal('//i.yldbt.com/m/');
+      expect(urlPrefix, 'Invalid Url').to.equal('https://i.yldbt.com/m/');
     });
   });
 
@@ -918,7 +917,7 @@ describe('Yieldbot Adapter Unit Tests', function() {
 
     it('should have the correct bidUrl form', function() {
       const request = YieldbotAdapter.buildRequests(FIXTURE_BID_REQUESTS)[0];
-      const bidUrl = '//i.yldbt.com/m/1234/v1/init';
+      const bidUrl = 'https://i.yldbt.com/m/1234/v1/init';
       expect(request.url).to.equal(bidUrl);
     });
 
@@ -954,12 +953,12 @@ describe('Yieldbot Adapter Unit Tests', function() {
       const cookieName = '__ybotc';
       YieldbotAdapter.setCookie(
         cookieName,
-        'http://close.edge.adserver.com/',
+        'https://close.edge.adserver.com/',
         2000,
         '/');
 
       const request = YieldbotAdapter.buildRequests(FIXTURE_BID_REQUESTS)[0];
-      expect(request.url).to.match(/^http:\/\/close\.edge\.adserver\.com\//);
+      expect(request.url).to.match(/^https:\/\/close\.edge\.adserver\.com\//);
     });
 
     it('should be adapter loaded before navigation start time', function() {
@@ -1046,22 +1045,21 @@ describe('Yieldbot Adapter Unit Tests', function() {
     });
 
     it('should set edge server Url prefix', function() {
-      FIXTURE_SERVER_RESPONSE.body.url_prefix = 'http://close.edge.adserver.com/';
+      FIXTURE_SERVER_RESPONSE.body.url_prefix = 'https://close.edge.adserver.com/';
       const responses = YieldbotAdapter.interpretResponse(
         FIXTURE_SERVER_RESPONSE,
         FIXTURE_BID_REQUEST
       );
       const edgeServerUrlPrefix = YieldbotAdapter.getCookie('__ybotc');
 
-      const protocol = document.location.protocol;
-      const beginsRegex = new RegExp('^' + protocol + '\/\/close\.edge\.adserver\.com\/');
-      const containsRegex = new RegExp(protocol + '\/\/close\.edge\.adserver\.com\/');
+      const beginsRegex = new RegExp('^' + 'https:\/\/close\.edge\.adserver\.com\/');
+      const containsRegex = new RegExp('https:\/\/close\.edge\.adserver\.com\/');
       expect(edgeServerUrlPrefix).to.match(beginsRegex);
       expect(responses[0].ad).to.match(containsRegex);
     });
 
     it('should not use document.open() in ad markup', function() {
-      FIXTURE_SERVER_RESPONSE.body.url_prefix = 'http://close.edge.adserver.com/';
+      FIXTURE_SERVER_RESPONSE.body.url_prefix = 'https://close.edge.adserver.com/';
       const responses = YieldbotAdapter.interpretResponse(
         FIXTURE_SERVER_RESPONSE,
         FIXTURE_BID_REQUEST
@@ -1369,7 +1367,7 @@ describe('Yieldbot Adapter Unit Tests', function() {
     });
 
     it('should use (new Date()).getTime() for timestamps in ad markup', function() {
-      FIXTURE_SERVER_RESPONSE.body.url_prefix = 'http://close.edge.adserver.com/';
+      FIXTURE_SERVER_RESPONSE.body.url_prefix = 'https://close.edge.adserver.com/';
       const responses = YieldbotAdapter.interpretResponse(
         FIXTURE_SERVER_RESPONSE,
         FIXTURE_BID_REQUEST

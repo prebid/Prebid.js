@@ -8,7 +8,7 @@ describe('POLLUX Bid Adapter tests', function () {
   const setup_single_bid = [{
     placementCode: 'div-gpt-ad-1460505661587-0',
     bidId: '789s6354sfg856',
-    bidderUrl: '//adn.polluxnetwork.com/prebid/v1',
+    bidderUrl: 'https://adn.polluxnetwork.com/prebid/v1',
     sizes: [[728, 90], [300, 250]],
     params: {zone: '1806,276'}
   }];
@@ -125,7 +125,7 @@ describe('POLLUX Bid Adapter tests', function () {
           cpm: '2.15',
           width: '728',
           height: '90',
-          ad: 'http://adn.polluxnetwork.com/zone/276?_plx_prebid=1&_plx_campaign=1125',
+          ad: 'https://adn.polluxnetwork.com/zone/276?_plx_prebid=1&_plx_campaign=1125',
           ad_type: 'url',
           creativeId: '1125',
           referrer: 'http://www.example.com'
@@ -143,7 +143,7 @@ describe('POLLUX Bid Adapter tests', function () {
     expect(bids[0].netRevenue).to.equal(true);
     expect(bids[0].currency).to.equal('EUR');
     expect(bids[0].referrer).to.equal('http://www.example.com');
-    expect(bids[0].adUrl).to.equal('http://adn.polluxnetwork.com/zone/276?_plx_prebid=1&_plx_campaign=1125');
+    expect(bids[0].adUrl).to.equal('https://adn.polluxnetwork.com/zone/276?_plx_prebid=1&_plx_campaign=1125');
     expect(bids[0]).to.not.have.property('ad');
   });
 

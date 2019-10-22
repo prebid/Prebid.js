@@ -719,7 +719,7 @@ describe('The Criteo bidding adapter', function () {
             impid: 'test-requestId',
             bidId: 'abc123',
             cpm: 1.23,
-            displayurl: 'http://test-ad',
+            displayurl: 'https://test-ad',
             width: 728,
             height: 90,
             zoneid: 123,
@@ -741,7 +741,7 @@ describe('The Criteo bidding adapter', function () {
       expect(bids[0].requestId).to.equal('test-bidId');
       expect(bids[0].adId).to.equal('abc123');
       expect(bids[0].cpm).to.equal(1.23);
-      expect(bids[0].vastUrl).to.equal('http://test-ad');
+      expect(bids[0].vastUrl).to.equal('https://test-ad');
       expect(bids[0].mediaType).to.equal(VIDEO);
     });
 

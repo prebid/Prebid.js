@@ -31,7 +31,7 @@ export const spec = {
       url = urlConfig.isv + '/layers/t_pbjs_2.json';
       params = {};
     } else {
-      url = '//' + (urlConfig.sv || DEFAULT_SV) + '/hb/1/' + urlConfig.ci + '/' + dfpClientId + '/' + (utils.getTopWindowLocation().hostname || FILE) + '/' + sec;
+      url = 'https://' + (urlConfig.sv || DEFAULT_SV) + '/hb/1/' + urlConfig.ci + '/' + dfpClientId + '/' + (utils.getTopWindowLocation().hostname || FILE) + '/' + sec;
       const referrerUrl = utils.getTopWindowReferrer();
       const spacesString = getSpacesString(bidRequests);
       params = {
@@ -128,10 +128,6 @@ function getUrlConfig(bidRequests) {
     });
   });
 
-  if (config.sv) {
-    config.sv = '//' + config.sv;
-  }
-
   return config;
 }
 function isTestRequest(bidRequests) {
@@ -144,7 +140,7 @@ function getTestConfig(bidRequests) {
   bidRequests.forEach(br => isv = isv || br.params.isv);
   return {
     t: true,
-    isv: '//' + (isv || DEFAULT_ISV)
+    isv: 'https://' + (isv || DEFAULT_ISV)
   };
 }
 function getSpacesString(bids) {

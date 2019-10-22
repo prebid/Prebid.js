@@ -3,7 +3,7 @@ import * as utils from '../src/utils';
 
 const TR_BIDDER_CODE = 'trafficroots';
 const TR_CURRENCY = 'USD';
-const TR_DEFAULT_BID_URL = '//service.trafficroots.com/prebid';
+const TR_DEFAULT_BID_URL = 'https://service.trafficroots.com/prebid';
 const TR_TTL = 60;
 
 const LOCATION_PARAM_NAME = 'siteurl';

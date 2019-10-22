@@ -38,7 +38,7 @@ describe('WeboramaAdapter', function () {
       expect(serverRequest.method).to.equal('POST');
     });
     it('Returns valid URL', function () {
-      expect(serverRequest.url).to.equal('//supply.nl.weborama.fr/?c=o&m=multi');
+      expect(serverRequest.url).to.equal('https://supply.nl.weborama.fr/?c=o&m=multi');
     });
     it('Returns valid data if array of bids is valid', function () {
       let data = serverRequest.data;
@@ -112,7 +112,7 @@ describe('WeboramaAdapter', function () {
       expect(userSync[0].type).to.exist;
       expect(userSync[0].url).to.exist;
       expect(userSync[0].type).to.be.equal('image');
-      expect(userSync[0].url).to.be.equal('//supply.nl.weborama.fr/?c=o&m=cookie');
+      expect(userSync[0].url).to.be.equal('https://supply.nl.weborama.fr/?c=o&m=cookie');
     });
   });
 });

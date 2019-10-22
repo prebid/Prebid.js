@@ -286,7 +286,7 @@ describe('UOL Bid Adapter', function () {
 
   describe('getUserSyncs', function () {
     let syncOptions = { iframeEnabled: true };
-    let serverResponses = [{ body: { trackingPixel: 'https://www.uol.com.br' } }, { body: { trackingPixel: 'http://www.dynad.net/' } }];
+    let serverResponses = [{ body: { trackingPixel: 'https://www.uol.com.br' } }, { body: { trackingPixel: 'https://www.dynad.net/' } }];
 
     it('should return the two sync params for iframeEnabled bids with a trackingPixel response', function () {
       expect(spec.getUserSyncs(syncOptions, serverResponses)).to.have.length(2);

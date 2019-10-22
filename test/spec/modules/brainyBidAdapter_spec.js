@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { spec } from 'modules/brainyBidAdapter';
 
-const URL = '//proparm.jp/ssp/p/pbjs';
+const URL = 'https://proparm.jp/ssp/p/pbjs';
 const BIDDER_CODE = 'brainy';
 
 const validBidReq = {
@@ -35,8 +35,8 @@ const correctReq = {
 
 const bidResponse = {
   ad_id: '1036e9746c-d186-49ae-90cb-2796d0f9b223',
-  adm: '<img src=\'http://placehold.it/300x250/ffff6d/000000/?text=everrise300x250\'>',
-  syncUrl: '//testparm.com/ssp-sync/p/sync?uid=2110180601155125000059&buyer=2&slot=34',
+  adm: '<img src=\'https://placehold.it/300x250/ffff6d/000000/?text=everrise300x250\'>',
+  syncUrl: 'https://testparm.com/ssp-sync/p/sync?uid=2110180601155125000059&buyer=2&slot=34',
   cpm: 100,
   height: 250,
   width: 300
@@ -45,8 +45,8 @@ const bidResponse = {
 const bidSyncResponse = [{
   body: {
     ad_id: '1036e9746c-d186-49ae-90cb-2796d0f9b223',
-    adm: '<img src=\'http://placehold.it/300x250/ffff6d/000000/?text=everrise300x250\'>',
-    syncUrl: '//testparm.com/ssp-sync/p/sync?uid=2110180601155125000059&buyer=2&slot=34',
+    adm: '<img src=\'https://placehold.it/300x250/ffff6d/000000/?text=everrise300x250\'>',
+    syncUrl: 'https://testparm.com/ssp-sync/p/sync?uid=2110180601155125000059&buyer=2&slot=34',
     cpm: 100,
     height: 250,
     width: 300
@@ -56,7 +56,7 @@ const bidSyncResponse = [{
 const invalidSyncBidResponse = [{
   body: {
     ad_id: '1036e9746c-d186-49ae-90cb-2796d0f9b223',
-    adm: '<img src=\'http://placehold.it/300x250/ffff6d/000000/?text=everrise300x250\'>',
+    adm: '<img src=\'https://placehold.it/300x250/ffff6d/000000/?text=everrise300x250\'>',
     syncUrl: 'null',
     cpm: 100,
     height: 250,
@@ -111,7 +111,7 @@ describe('brainy Adapter', function () {
     });
     it('sucess with usersync url', function () {
       const result = [];
-      result.push({type: 'image', url: '//testparm.com/ssp-sync/p/sync?uid=2110180601155125000059&buyer=2&slot=34'});
+      result.push({type: 'image', url: 'https://testparm.com/ssp-sync/p/sync?uid=2110180601155125000059&buyer=2&slot=34'});
       expect(spec.getUserSyncs(syncOptions, bidSyncResponse)).to.deep.equal(result);
     });
 

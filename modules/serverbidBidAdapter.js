@@ -157,12 +157,12 @@ export const spec = {
       if (bidder === 'connectad') {
         return [{
           type: 'iframe',
-          url: '//cdn.connectad.io/connectmyusers.php'
+          url: 'https://cdn.connectad.io/connectmyusers.php'
         }];
       } else {
         return [{
           type: 'iframe',
-          url: '//s.zkcdn.net/ss/' + siteId + '.html'
+          url: 'https://s.zkcdn.net/ss/' + siteId + '.html'
         }];
       }
     } else {

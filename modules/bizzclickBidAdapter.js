@@ -3,8 +3,8 @@ import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes';
 import * as utils from '../src/utils';
 
 const BIDDER_CODE = 'bizzclick';
-const URL = '//supply.bizzclick.com/?c=o&m=multi';
-const URL_SYNC = '//supply.bizzclick.com/?c=o&m=cookie';
+const URL = 'https://supply.bizzclick.com/?c=o&m=multi';
+const URL_SYNC = 'https://supply.bizzclick.com/?c=o&m=cookie';
 
 function isBidResponseValid(bid) {
   if (!bid.requestId || !bid.cpm || !bid.creativeId || !bid.ttl || !bid.currency) {

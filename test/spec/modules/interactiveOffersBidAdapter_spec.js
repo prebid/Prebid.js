@@ -31,7 +31,7 @@ describe('interactiveOffers adapter', function () {
             bidder: 'interactiveOffers',
             params: {
               pubId: '42',
-              loc: 'http://test.com/prebid',
+              loc: 'https://test.com/prebid',
               tmax: 1500
             }
           },
@@ -40,7 +40,7 @@ describe('interactiveOffers adapter', function () {
 
         let buildRequest = spec.buildRequests([validBid])[0];
         let requestUrlCustomParams = buildRequest.data;
-        expect(requestUrlCustomParams).have.property('loc', 'http://test.com/prebid');
+        expect(requestUrlCustomParams).have.property('loc', 'https://test.com/prebid');
         expect(requestUrlCustomParams).have.property('tmax', 1500);
       });
 

@@ -38,7 +38,7 @@ describe('OnePlanetOnlyAdapter', function () {
       expect(serverRequest.method).to.equal('POST');
     });
     it('Returns valid URL', function () {
-      expect(serverRequest.url).to.equal('//show.oneplanetonly.com/prebid?siteId=5');
+      expect(serverRequest.url).to.equal('https://show.oneplanetonly.com/prebid?siteId=5');
     });
     it('Returns valid data if array of bids is valid', function () {
       let data = serverRequest.data;

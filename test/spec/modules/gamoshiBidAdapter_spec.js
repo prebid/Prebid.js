@@ -13,7 +13,7 @@ describe('GamoshiAdapter', function () {
       expect(helper.getTopFrame()).to.equal(0);
     });
     it('verify domain parsing', function () {
-      expect(helper.getTopWindowDomain('http://www.domain.com')).to.equal('www.domain.com');
+      expect(helper.getTopWindowDomain('https://www.domain.com')).to.equal('www.domain.com');
     });
   });
   describe('Is String start with search ', function () {
@@ -80,7 +80,7 @@ describe('GamoshiAdapter', function () {
       },
       'sizes': [[300, 250], [300, 600]],
       'transactionId': 'a123456789',
-      refererInfo: {referer: 'http://examplereferer.com'},
+      refererInfo: {referer: 'https://examplereferer.com'},
       gdprConsent: {
         consentString: 'some string',
         gdprApplies: true
@@ -114,13 +114,13 @@ describe('GamoshiAdapter', function () {
     });
 
     it('builds request correctly', function () {
-      let stub = sinon.stub(utils, 'getTopWindowUrl').returns('http://www.test.com/page.html');
+      let stub = sinon.stub(utils, 'getTopWindowUrl').returns('https://www.test.com/page.html');
       let bidRequest2 = deepClone(bidRequest);
-      bidRequest2.refererInfo.referer = 'http://www.test.com/page.html';
+      bidRequest2.refererInfo.referer = 'https://www.test.com/page.html';
       let response = spec.buildRequests([bidRequest], bidRequest2)[0];
       expect(response.data.site.domain).to.equal('www.test.com');
-      expect(response.data.site.page).to.equal('http://www.test.com/page.html');
-      expect(response.data.site.ref).to.equal('http://www.test.com/page.html');
+      expect(response.data.site.page).to.equal('https://www.test.com/page.html');
+      expect(response.data.site.ref).to.equal('https://www.test.com/page.html');
       expect(response.data.imp.length).to.equal(1);
       expect(response.data.imp[0].id).to.equal(bidRequest.transactionId);
       expect(response.data.imp[0].instl).to.equal(0);
@@ -282,7 +282,7 @@ describe('GamoshiAdapter', function () {
       'sizes': [[300, 250], [300, 600]],
       'transactionId': 'a123456789',
       'bidId': '111',
-      refererInfo: {referer: 'http://examplereferer.com'}
+      refererInfo: {referer: 'https://examplereferer.com'}
     };
 
     const videoBidRequest = {
@@ -297,7 +297,7 @@ describe('GamoshiAdapter', function () {
       'sizes': [[300, 250], [300, 600]],
       'transactionId': 'a123456789',
       'bidId': '111',
-      refererInfo: {referer: 'http://examplereferer.com'}
+      refererInfo: {referer: 'https://examplereferer.com'}
     };
 
     const rtbResponse = {
@@ -306,8 +306,8 @@ describe('GamoshiAdapter', function () {
       'cur': 'USD',
       'ext': {
         'utrk': [
-          {'type': 'iframe', 'url': '//rtb.gamoshi.io/user/sync/1'},
-          {'type': 'image', 'url': '//rtb.gamoshi.io/user/sync/2'}
+          {'type': 'iframe', 'url': 'https://rtb.gamoshi.io/user/sync/1'},
+          {'type': 'image', 'url': 'https://rtb.gamoshi.io/user/sync/2'}
         ]
       },
       'seatbid': [
@@ -329,9 +329,9 @@ describe('GamoshiAdapter', function () {
               'h': 600,
               'w': 120,
               'ext': {
-                'vast_url': 'http://my.vast.com',
+                'vast_url': 'https://my.vast.com',
                 'utrk': [
-                  {'type': 'iframe', 'url': '//p.partner1.io/user/sync/1'}
+                  {'type': 'iframe', 'url': 'https://p.partner1.io/user/sync/1'}
                 ]
               }
             }
@@ -356,7 +356,7 @@ describe('GamoshiAdapter', function () {
               'w': 300,
               'ext': {
                 'utrk': [
-                  {'type': 'image', 'url': '//p.partner2.io/user/sync/1'}
+                  {'type': 'image', 'url': 'https://p.partner2.io/user/sync/1'}
                 ]
               }
             }

@@ -103,7 +103,7 @@ describe('CleanmedianetAdapter', function() {
       },
       sizes: [[300, 250], [300, 600]],
       transactionId: 'a123456789',
-      refererInfo: { referer: 'http://examplereferer.com' },
+      refererInfo: { referer: 'https://examplereferer.com' },
       gdprConsent: {
         consentString: 'some string',
         gdprApplies: true
@@ -133,13 +133,13 @@ describe('CleanmedianetAdapter', function() {
     it('builds request correctly', function() {
       let stub = sinon
         .stub(utils, 'getTopWindowUrl')
-        .returns('http://www.test.com/page.html');
+        .returns('https://www.test.com/page.html');
       let bidRequest2 = deepClone(bidRequest);
-      bidRequest2.refererInfo.referer = 'http://www.test.com/page.html';
+      bidRequest2.refererInfo.referer = 'https://www.test.com/page.html';
       let response = spec.buildRequests([bidRequest], bidRequest2)[0];
       expect(response.data.site.domain).to.equal('www.test.com');
-      expect(response.data.site.page).to.equal('http://www.test.com/page.html');
-      expect(response.data.site.ref).to.equal('http://www.test.com/page.html');
+      expect(response.data.site.page).to.equal('https://www.test.com/page.html');
+      expect(response.data.site.ref).to.equal('https://www.test.com/page.html');
       expect(response.data.imp.length).to.equal(1);
       expect(response.data.imp[0].id).to.equal(bidRequest.transactionId);
       expect(response.data.imp[0].instl).to.equal(0);
@@ -290,7 +290,7 @@ describe('CleanmedianetAdapter', function() {
       sizes: [[300, 250], [300, 600]],
       transactionId: 'a123456789',
       bidId: '111',
-      refererInfo: { referer: 'http://examplereferer.com' }
+      refererInfo: { referer: 'https://examplereferer.com' }
     };
 
     const videoBidRequest = {
@@ -305,7 +305,7 @@ describe('CleanmedianetAdapter', function() {
       sizes: [[300, 250], [300, 600]],
       transactionId: 'a123456789',
       bidId: '111',
-      refererInfo: { referer: 'http://examplereferer.com' }
+      refererInfo: { referer: 'https://examplereferer.com' }
     };
 
     const rtbResponse = {
@@ -314,8 +314,8 @@ describe('CleanmedianetAdapter', function() {
       cur: 'USD',
       ext: {
         utrk: [
-          { type: 'iframe', url: '//bidder.cleanmediaads.com/user/sync/1' },
-          { type: 'image', url: '//bidder.cleanmediaads.com/user/sync/2' }
+          { type: 'iframe', url: 'https://bidder.cleanmediaads.com/user/sync/1' },
+          { type: 'image', url: 'https://bidder.cleanmediaads.com/user/sync/2' }
         ]
       },
       seatbid: [
@@ -339,8 +339,8 @@ describe('CleanmedianetAdapter', function() {
               h: 600,
               w: 120,
               ext: {
-                vast_url: 'http://my.vast.com',
-                utrk: [{ type: 'iframe', url: '//p.partner1.io/user/sync/1' }]
+                vast_url: 'https://my.vast.com',
+                utrk: [{ type: 'iframe', url: 'https://p.partner1.io/user/sync/1' }]
               }
             }
           ]
@@ -365,7 +365,7 @@ describe('CleanmedianetAdapter', function() {
               h: 250,
               w: 300,
               ext: {
-                utrk: [{ type: 'image', url: '//p.partner2.io/user/sync/1' }]
+                utrk: [{ type: 'image', url: 'https://p.partner2.io/user/sync/1' }]
               }
             }
           ]

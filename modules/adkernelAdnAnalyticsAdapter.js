@@ -115,7 +115,7 @@ function sendAll() {
 }
 
 analyticsAdapter.ajaxCall = function ajaxCall(data) {
-  ajax(`//${analyticsAdapter.context.host}/hb-analytics`, () => {
+  ajax(`https://${analyticsAdapter.context.host}/hb-analytics`, () => {
   }, data);
 };
 

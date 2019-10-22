@@ -2,7 +2,7 @@ import {expect} from 'chai';
 import {spec} from 'modules/adtelligentBidAdapter';
 import {newBidder} from 'src/adapters/bidderFactory';
 
-const ENDPOINT = '//hb.adtelligent.com/auction/';
+const ENDPOINT = 'https://hb.adtelligent.com/auction/';
 
 const DISPLAY_REQUEST = {
   'bidder': 'adtelligent',
@@ -34,7 +34,7 @@ const VIDEO_REQUEST = {
 const SERVER_VIDEO_RESPONSE = {
   'source': {'aid': 12345, 'pubId': 54321},
   'bids': [{
-    'vastUrl': 'http://rtb.adtelligent.com/vast/?adid=44F2AEB9BFC881B3',
+    'vastUrl': 'https://rtb.adtelligent.com/vast/?adid=44F2AEB9BFC881B3',
     'requestId': '2e41f65424c87c',
     'url': '44F2AEB9BFC881B3',
     'creative_id': 342516,
@@ -97,7 +97,7 @@ const displayBidderRequestWithGdpr = {
 };
 
 const videoEqResponse = [{
-  vastUrl: 'http://rtb.adtelligent.com/vast/?adid=44F2AEB9BFC881B3',
+  vastUrl: 'https://rtb.adtelligent.com/vast/?adid=44F2AEB9BFC881B3',
   requestId: '2e41f65424c87c',
   creativeId: 342516,
   mediaType: 'video',

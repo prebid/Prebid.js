@@ -94,7 +94,7 @@ function sendAll() {
       {rtb: events}
     );
     ajax(
-      `//${vubleAnalytics.context.host}/rtb.php`,
+      `https://${vubleAnalytics.context.host}/rtb.php`,
       undefined,
       JSON.stringify(req)
     );

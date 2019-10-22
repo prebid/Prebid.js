@@ -35,7 +35,7 @@ export const spec = {
     applyGdpr(bidderRequest, request);
     return {
       method: 'POST',
-      url: '//hb.kumma.com/',
+      url: 'https://hb.kumma.com/',
       data: JSON.stringify(request),
     };
   },

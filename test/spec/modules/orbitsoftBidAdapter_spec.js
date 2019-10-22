@@ -99,7 +99,7 @@ describe('Orbitsoft adapter', function () {
               requestUrl: ENDPOINT_URL,
               customParams: {
                 cacheBuster: 'bf4d7c1',
-                clickUrl: 'http://testclickurl.com'
+                clickUrl: 'https://testclickurl.com'
               }
             }
           },
@@ -109,7 +109,7 @@ describe('Orbitsoft adapter', function () {
         let buildRequest = spec.buildRequests([validBid])[0];
         let requestUrlCustomParams = buildRequest.data;
         expect(requestUrlCustomParams).have.property('c.cacheBuster', 'bf4d7c1');
-        expect(requestUrlCustomParams).have.property('c.clickUrl', 'http://testclickurl.com');
+        expect(requestUrlCustomParams).have.property('c.clickUrl', 'https://testclickurl.com');
       });
 
       it('should reject invalid bid without requestUrl', function () {

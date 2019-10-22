@@ -106,7 +106,7 @@ describe('yieldoneBidAdapter', function() {
           'p': '36891',
           'sz': '300x250,336x280',
           'cb': 12892917383,
-          'r': 'http%3A%2F%2Flocalhost%3A9876%2F%3Fid%3D74552836',
+          'r': 'https%3A%2F%2Flocalhost%3A9876%2F%3Fid%3D74552836',
           'uid': '23beaa6af6cdde',
           't': 'i'
         }
@@ -171,7 +171,7 @@ describe('yieldoneBidAdapter', function() {
           'w': '640',
           'h': '360',
           'cb': 12892917383,
-          'r': 'http%3A%2F%2Flocalhost%3A9876%2F%3Fid%3D74552836',
+          'r': 'https%3A%2F%2Flocalhost%3A9876%2F%3Fid%3D74552836',
           'uid': '23beaa6af6cdde',
           't': 'i'
         }

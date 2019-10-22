@@ -74,7 +74,7 @@ describe('Vuble Prebid Analytic', function () {
               env: 'com',
               pubId: '8',
               zoneId: '2468',
-              referrer: 'http://www.vuble.fr/'
+              referrer: 'https://www.vuble.fr/'
             },
             sizes: '640x360',
             mediaTypes: {
@@ -96,7 +96,7 @@ describe('Vuble Prebid Analytic', function () {
         zone_id: '12345',
         context: 'instream',
         floor_price: 5.5,
-        url: 'http://www.vuble.tv/',
+        url: 'https://www.vuble.tv/',
         env: 'net',
         bid_id: 'abdc'
       });

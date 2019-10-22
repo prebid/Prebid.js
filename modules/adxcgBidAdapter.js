@@ -272,7 +272,7 @@ export const spec = {
     if (syncOptions.iframeEnabled) {
       return [{
         type: 'iframe',
-        url: '//cdn.adxcg.net/pb-sync.html'
+        url: 'https://cdn.adxcg.net/pb-sync.html'
       }]
     }
   }

@@ -3,8 +3,8 @@ import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes';
 import * as utils from '../src/utils';
 
 const BIDDER_CODE = 'smartyads';
-const URL = '//ssp-nj.webtradehub.com/?c=o&m=multi';
-const URL_SYNC = '//ssp-nj.webtradehub.com/?c=o&m=cookie';
+const URL = 'https://ssp-nj.webtradehub.com/?c=o&m=multi';
+const URL_SYNC = 'https://ssp-nj.webtradehub.com/?c=o&m=cookie';
 
 function isBidResponseValid(bid) {
   if (!bid.requestId || !bid.cpm || !bid.creativeId ||

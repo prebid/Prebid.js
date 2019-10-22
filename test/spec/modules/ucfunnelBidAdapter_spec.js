@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { spec } from 'modules/ucfunnelBidAdapter';
 import {BANNER, VIDEO, NATIVE} from 'src/mediaTypes';
 
-const URL = '//hb.aralego.com/header';
+const URL = 'https://hb.aralego.com/header';
 const BIDDER_CODE = 'ucfunnel';
 const validBannerBidReq = {
   bidder: BIDDER_CODE,
@@ -102,7 +102,7 @@ describe('ucfunnel Adapter', function () {
     const request = spec.buildRequests([validBannerBidReq]);
     it('should create a POST request for every bid', function () {
       expect(request[0].method).to.equal('GET');
-      expect(request[0].url).to.equal(location.protocol + spec.ENDPOINT);
+      expect(request[0].url).to.equal(spec.ENDPOINT);
     });
 
     it('should attach the bid request object', function () {

@@ -3,8 +3,8 @@ import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes'
 import * as utils from '../src/utils'
 
 const BIDDER_CODE = 'decenterads'
-const URL = '//supply.decenterads.com/?c=o&m=multi'
-const URL_SYNC = '//supply.decenterads.com/?c=o&m=cookie'
+const URL = 'https://supply.decenterads.com/?c=o&m=multi'
+const URL_SYNC = 'https://supply.decenterads.com/?c=o&m=cookie'
 
 export const spec = {
   code: BIDDER_CODE,

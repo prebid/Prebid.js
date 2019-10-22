@@ -12,7 +12,7 @@ const mock = {
       spotType: 'rectangle',
       gdprPrivacyConsent: true,
       qa: {
-        //    url: 'http://ia-test08.inner-active.mobi:8080/simpleM2M/requestJsonAd',
+        //    url: 'https://ia-test08.inner-active.mobi:8080/simpleM2M/requestJsonAd',
         cpm: 10
       },
       customParams: {
@@ -116,7 +116,7 @@ describe('FyberAdapter', function () {
 
     const request = requests[0];
 
-    it('Verify build request http method', function () {
+    it('Verify build request httpsmethod', function () {
       expect(request.method).to.equal('GET');
     });
 

@@ -2,7 +2,7 @@ import {expect} from 'chai';
 import {spec} from 'modules/videoreachBidAdapter';
 import {newBidder} from 'src/adapters/bidderFactory';
 
-const ENDPOINT_URL = '//a.videoreach.com/hb/';
+const ENDPOINT_URL = 'https://a.videoreach.com/hb/';
 
 describe('videoreachBidAdapter', function () {
   describe('isBidRequestValid', function () {

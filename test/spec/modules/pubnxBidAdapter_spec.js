@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { spec } from 'modules/pubnxBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
 
-const BASE_URI = '//hb.pubnxserv.com/vzhbidder/bid?';
+const BASE_URI = 'https://hb.pubnxserv.com/vzhbidder/bid?';
 
 describe('PubNXAdapter', function () {
   const adapter = newBidder(spec);

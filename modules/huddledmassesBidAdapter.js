@@ -2,8 +2,8 @@ import { registerBidder } from '../src/adapters/bidderFactory';
 import * as utils from '../src/utils';
 
 const BIDDER_CODE = 'huddledmasses';
-const URL = '//huddledmassessupply.com/?c=o&m=multi';
-const URL_SYNC = '//huddledmassessupply.com/?c=o&m=cookie';
+const URL = 'https://huddledmassessupply.com/?c=o&m=multi';
+const URL_SYNC = 'https://huddledmassessupply.com/?c=o&m=cookie';
 
 let sizeObj = {
   '468x60': 1,

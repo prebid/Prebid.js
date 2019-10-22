@@ -154,7 +154,7 @@ const MOCK = {
       ],
       'timeout': 3000,
       'refererInfo': {
-        'referer': 'http://www.test.com/page.html', 'reachedTop': true, 'numIframes': 0, 'stack': ['http://www.test.com/page.html']
+        'referer': 'https://www.test.com/page.html', 'reachedTop': true, 'numIframes': 0, 'stack': ['https://www.test.com/page.html']
       }
     }
     ],
@@ -162,7 +162,7 @@ const MOCK = {
     'winningBids': [],
     'timeout': 3000,
     'config': {
-      'accountId': 1001, 'endpoint': '//localhost:9999/event'
+      'accountId': 1001, 'endpoint': 'https://localhost:9999/event'
     }
   },
   BID_REQUESTED: {
@@ -270,7 +270,7 @@ const ANALYTICS_MESSAGE = {
   'eventTimeMillis': 1519767013781,
   'integration': 'pbjs',
   'version': '$prebid.version$',
-  'referrerUri': 'http://www.test.com/page.html',
+  'referrerUri': 'https://www.test.com/page.html',
   'auctions': [
     {
       'clientTimeoutMillis': 3000,
@@ -487,7 +487,7 @@ describe('rubicon analytics adapter', function () {
 
     sandbox.stub(events, 'getEvents').returns([]);
 
-    sandbox.stub(utils, 'getTopWindowUrl').returns('http://www.test.com/page.html');
+    sandbox.stub(utils, 'getTopWindowUrl').returns('https://www.test.com/page.html');
 
     clock = sandbox.useFakeTimers(1519767013781);
 
@@ -512,7 +512,7 @@ describe('rubicon analytics adapter', function () {
 
     rubiconAnalyticsAdapter.enableAnalytics({
       options: {
-        endpoint: '//localhost:9999/event'
+        endpoint: 'https://localhost:9999/event'
       }
     });
 
@@ -545,7 +545,7 @@ describe('rubicon analytics adapter', function () {
       it('should sample', function () {
         rubiconAnalyticsAdapter.enableAnalytics({
           options: {
-            endpoint: '//localhost:9999/event',
+            endpoint: 'https://localhost:9999/event',
             accountId: 1001,
             samplingFactor: 10
           }
@@ -559,7 +559,7 @@ describe('rubicon analytics adapter', function () {
       it('should unsample', function () {
         rubiconAnalyticsAdapter.enableAnalytics({
           options: {
-            endpoint: '//localhost:9999/event',
+            endpoint: 'https://localhost:9999/event',
             accountId: 1001,
             samplingFactor: 20
           }
@@ -573,7 +573,7 @@ describe('rubicon analytics adapter', function () {
       it('should throw errors for invalid samplingFactor', function () {
         rubiconAnalyticsAdapter.enableAnalytics({
           options: {
-            endpoint: '//localhost:9999/event',
+            endpoint: 'https://localhost:9999/event',
             accountId: 1001,
             samplingFactor: 30
           }
@@ -589,7 +589,7 @@ describe('rubicon analytics adapter', function () {
       it('should sample', function () {
         rubiconAnalyticsAdapter.enableAnalytics({
           options: {
-            endpoint: '//localhost:9999/event',
+            endpoint: 'https://localhost:9999/event',
             accountId: 1001,
             sampling: 0.1
           }
@@ -603,7 +603,7 @@ describe('rubicon analytics adapter', function () {
       it('should unsample', function () {
         rubiconAnalyticsAdapter.enableAnalytics({
           options: {
-            endpoint: '//localhost:9999/event',
+            endpoint: 'https://localhost:9999/event',
             accountId: 1001,
             sampling: 0.05
           }
@@ -617,7 +617,7 @@ describe('rubicon analytics adapter', function () {
       it('should throw errors for invalid samplingFactor', function () {
         rubiconAnalyticsAdapter.enableAnalytics({
           options: {
-            endpoint: '//localhost:9999/event',
+            endpoint: 'https://localhost:9999/event',
             accountId: 1001,
             sampling: 1 / 30
           }
@@ -635,7 +635,7 @@ describe('rubicon analytics adapter', function () {
     beforeEach(function () {
       rubiconAnalyticsAdapter.enableAnalytics({
         options: {
-          endpoint: '//localhost:9999/event',
+          endpoint: 'https://localhost:9999/event',
           accountId: 1001
         }
       });
@@ -651,7 +651,7 @@ describe('rubicon analytics adapter', function () {
       expect(requests.length).to.equal(1);
       let request = requests[0];
 
-      expect(request.url).to.equal('//localhost:9999/event');
+      expect(request.url).to.equal('https://localhost:9999/event');
 
       let message = JSON.parse(request.requestBody);
       validate(message);
@@ -796,7 +796,7 @@ describe('rubicon analytics adapter', function () {
 
       rubiconAnalyticsAdapter.enableAnalytics({
         options: {
-          endpoint: '//localhost:9999/event',
+          endpoint: 'https://localhost:9999/event',
           accountId: 1001
         }
       });

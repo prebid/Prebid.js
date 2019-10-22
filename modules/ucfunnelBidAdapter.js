@@ -12,7 +12,7 @@ const VIDEO_CONTEXT = {
 
 export const spec = {
   code: BIDDER_CODE,
-  ENDPOINT: '//hb.aralego.com/header',
+  ENDPOINT: 'https://hb.aralego.com/header',
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
   /**
    * Check if the bid is a valid zone ID in either number or string form
@@ -44,7 +44,7 @@ export const spec = {
     return bids.map(bid => {
       return {
         method: 'GET',
-        url: location.protocol + spec.ENDPOINT,
+        url: spec.ENDPOINT,
         data: getRequestData(bid, bidderRequest),
         bidRequest: bid
       }
@@ -122,12 +122,12 @@ export const spec = {
     if (syncOptions.iframeEnabled) {
       return [{
         type: 'iframe',
-        url: '//cdn.aralego.com/ucfad/cookie/sync.html'
+        url: 'https://cdn.aralego.com/ucfad/cookie/sync.html'
       }];
     } else if (syncOptions.pixelEnabled) {
       return [{
         type: 'image',
-        url: '//sync.aralego.com/idSync'
+        url: 'https://sync.aralego.com/idSync'
       }];
     }
   }

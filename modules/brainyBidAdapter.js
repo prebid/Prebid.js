@@ -3,7 +3,7 @@ import {registerBidder} from '../src/adapters/bidderFactory';
 import { BANNER } from '../src/mediaTypes';
 
 const BIDDER_CODE = 'brainy';
-const BASE_URL = '//proparm.jp/ssp/p/pbjs';
+const BASE_URL = 'https://proparm.jp/ssp/p/pbjs';
 
 /**
  * Check if the browser supports flash

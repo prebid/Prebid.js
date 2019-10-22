@@ -3,7 +3,7 @@ import { spec } from 'modules/sortableBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
 import * as utils from 'src/utils';
 
-const ENDPOINT = `//c.deployads.com/openrtb2/auction?src=$$REPO_AND_VERSION$$&host=${utils.getTopWindowLocation().host}`;
+const ENDPOINT = `https://c.deployads.com/openrtb2/auction?src=$$REPO_AND_VERSION$$&host=${utils.getTopWindowLocation().host}`;
 
 describe('sortableBidAdapter', function() {
   const adapter = newBidder(spec);
@@ -181,7 +181,7 @@ describe('sortableBidAdapter', function() {
                   'adm': '<!-- creative -->',
                   'attr': [5],
                   'h': 90,
-                  'nurl': 'http://nurl',
+                  'nurl': 'https://nurl',
                   'w': 728
                 }
               ],
@@ -204,7 +204,7 @@ describe('sortableBidAdapter', function() {
       'netRevenue': true,
       'mediaType': 'banner',
       'ttl': 60,
-      'ad': '<!-- creative --><div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="http://nurl"></div>'
+      'ad': '<!-- creative --><div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="https://nurl"></div>'
     };
 
     it('should get the correct bid response', function () {
@@ -238,7 +238,7 @@ describe('sortableBidAdapter', function() {
       delete noAdmResponse.body.seatbid[0].bid[0].adm;
       let noAdmResult = Object.assign({}, expectedBid);
       delete noAdmResult.ad;
-      noAdmResult.adUrl = 'http://nurl';
+      noAdmResult.adUrl = 'https://nurl';
       let result = spec.interpretResponse(noAdmResponse);
       expect(result.length).to.equal(1);
       expect(result[0]).to.deep.equal(noAdmResult);

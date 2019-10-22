@@ -25,7 +25,7 @@ let getVASTAd = () => {
     <Ad>
       <Wrapper>
         <AdSystem>Lifestreet wrapper</AdSystem>
-        <VASTAdTagURI><![CDATA[http://lifestreet.com]]></VASTAdTagURI>
+        <VASTAdTagURI><![CDATA[https//lifestreet.com]]></VASTAdTagURI>
         <Impression></Impression>
         <Creatives></Creatives>
       </Wrapper>
@@ -57,7 +57,7 @@ let getDefaultBidResponse = (isBanner, noBid = 0) => {
 };
 
 describe('LifestreetAdapter', function () {
-  const LIFESTREET_URL = '//ads.lfstmedia.com/gate/';
+  const LIFESTREET_URL = 'https://ads.lfstmedia.com/gate/';
   const ADAPTER_VERSION = 'prebidJS-2.0';
 
   describe('buildRequests()', function () {
@@ -195,14 +195,14 @@ describe('LifestreetAdapter', function () {
     it('should return formatted VAST bid response with vastUrl', function () {
       let bidRequest = getDefaultBidRequest().bids[0];
       let bidResponse = { body: getDefaultBidResponse(false) };
-      bidResponse.body.vastUrl = 'http://lifestreet.com'; // set vastUrl
+      bidResponse.body.vastUrl = 'https://lifestreet.com'; // set vastUrl
       let formattedBidResponse = spec.interpretResponse(bidResponse, bidRequest);
       expect(formattedBidResponse).to.deep.equal([{
         requestId: bidRequest.bidId,
         cpm: 1.0,
         width: 160,
         height: 600,
-        vastUrl: 'http://lifestreet.com',
+        vastUrl: 'https://lifestreet.com',
         creativeId: 'test',
         currency: 'USD',
         dealId: 'test',

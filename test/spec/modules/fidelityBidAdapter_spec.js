@@ -114,7 +114,7 @@ describe('FidelityAdapter', function () {
 
     it('sends bid request to ENDPOINT via GET', function () {
       const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
-      expect(request.url).to.equal('//t.fidelity-media.com/delivery/hb.php');
+      expect(request.url).to.equal('https://t.fidelity-media.com/delivery/hb.php');
       expect(request.method).to.equal('GET');
     });
   })
@@ -165,7 +165,7 @@ describe('FidelityAdapter', function () {
   });
 
   describe('user sync', function () {
-    const syncUrl = '//x.fidelity-media.com/delivery/matches.php?type=iframe';
+    const syncUrl = 'https://x.fidelity-media.com/delivery/matches.php?type=iframe';
 
     it('should register the sync iframe', function () {
       expect(spec.getUserSyncs({})).to.be.undefined;

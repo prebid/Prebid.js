@@ -151,7 +151,7 @@ describe('BeachfrontAdapter', function () {
             playerSize: [ width, height ]
           }
         };
-        const topLocation = parseUrl('http://www.example.com?foo=bar', { decodeSearchAsString: true });
+        const topLocation = parseUrl('https://www.example.com?foo=bar', { decodeSearchAsString: true });
         const bidderRequest = {
           refererInfo: {
             referer: topLocation.href
@@ -295,7 +295,7 @@ describe('BeachfrontAdapter', function () {
             sizes: [ width, height ]
           }
         };
-        const topLocation = parseUrl('http://www.example.com?foo=bar', { decodeSearchAsString: true });
+        const topLocation = parseUrl('https://www.example.com?foo=bar', { decodeSearchAsString: true });
         const bidderRequest = {
           refererInfo: {
             referer: topLocation.href
@@ -478,7 +478,7 @@ describe('BeachfrontAdapter', function () {
         const bidRequest = bidRequests[0];
         bidRequest.mediaTypes = { video: {} };
         const serverResponse = {
-          url: 'http://reachms.bfmio.com/getmu?aid=bid:19c4a196-fb21-4c81-9a1a-ecc5437a39da'
+          url: 'https://reachms.bfmio.com/getmu?aid=bid:19c4a196-fb21-4c81-9a1a-ecc5437a39da'
         };
         const bidResponse = spec.interpretResponse({ body: serverResponse }, { bidRequest });
         expect(bidResponse.length).to.equal(0);
@@ -495,7 +495,7 @@ describe('BeachfrontAdapter', function () {
         };
         const serverResponse = {
           bidPrice: 5.00,
-          url: 'http://reachms.bfmio.com/getmu?aid=bid:19c4a196-fb21-4c81-9a1a-ecc5437a39da',
+          url: 'https://reachms.bfmio.com/getmu?aid=bid:19c4a196-fb21-4c81-9a1a-ecc5437a39da',
           cmpId: '123abc'
         };
         const bidResponse = spec.interpretResponse({ body: serverResponse }, { bidRequest });
@@ -524,7 +524,7 @@ describe('BeachfrontAdapter', function () {
         };
         const serverResponse = {
           bidPrice: 5.00,
-          url: 'http://reachms.bfmio.com/getmu?aid=bid:19c4a196-fb21-4c81-9a1a-ecc5437a39da',
+          url: 'https://reachms.bfmio.com/getmu?aid=bid:19c4a196-fb21-4c81-9a1a-ecc5437a39da',
           cmpId: '123abc'
         };
         const bidResponse = spec.interpretResponse({ body: serverResponse }, { bidRequest });
@@ -546,7 +546,7 @@ describe('BeachfrontAdapter', function () {
         };
         const serverResponse = {
           bidPrice: 5.00,
-          url: 'http://reachms.bfmio.com/getmu?aid=bid:19c4a196-fb21-4c81-9a1a-ecc5437a39da',
+          url: 'https://reachms.bfmio.com/getmu?aid=bid:19c4a196-fb21-4c81-9a1a-ecc5437a39da',
           cmpId: '123abc'
         };
         const bidResponse = spec.interpretResponse({ body: serverResponse }, { bidRequest });
@@ -580,7 +580,7 @@ describe('BeachfrontAdapter', function () {
         };
         const serverResponse = {
           bidPrice: 5.00,
-          url: 'http://reachms.bfmio.com/getmu?aid=bid:19c4a196-fb21-4c81-9a1a-ecc5437a39da',
+          url: 'https://reachms.bfmio.com/getmu?aid=bid:19c4a196-fb21-4c81-9a1a-ecc5437a39da',
           cmpId: '123abc'
         };
         const bidResponse = spec.interpretResponse({ body: serverResponse }, { bidRequest });
@@ -661,7 +661,7 @@ describe('BeachfrontAdapter', function () {
       beforeEach(function () {
         bidResponse = {
           bidPrice: 5.00,
-          url: 'http://reachms.bfmio.com/getmu?aid=bid:19c4a196-fb21-4c81-9a1a-ecc5437a39da',
+          url: 'https://reachms.bfmio.com/getmu?aid=bid:19c4a196-fb21-4c81-9a1a-ecc5437a39da',
           cmpId: '123abc'
         };
       });

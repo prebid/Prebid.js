@@ -126,10 +126,10 @@ export const YieldbotAdapter = {
   urlPrefix: function(prefix) {
     const cookieName = '__ybotc';
     const pIdx = prefix ? prefix.indexOf(':') : -1;
-    const url = pIdx !== -1 ? document.location.protocol + prefix.substr(pIdx + 1) : null;
+    const url = pIdx !== -1 ? 'https:' + prefix.substr(pIdx + 1) : null;
     let cookieValue = url || this.getCookie(cookieName);
     if (!cookieValue) {
-      cookieValue = '//i.yldbt.com/m/';
+      cookieValue = 'https://i.yldbt.com/m/';
     }
     this.setCookie(cookieName, cookieValue, this._sessionTimeout, '/');
     return cookieValue;

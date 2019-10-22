@@ -6,7 +6,7 @@ import includes from 'core-js/library/fn/array/includes';
 
 const BIDDER_CODE = 'emx_digital';
 const ENDPOINT = 'hb.emxdgt.com';
-const RENDERER_URL = '//js.brealtime.com/outstream/1.30.0/bundle.js';
+const RENDERER_URL = 'https://js.brealtime.com/outstream/1.30.0/bundle.js';
 const ADAPTER_VERSION = '1.41.0';
 const DEFAULT_CUR = 'USD';
 
@@ -192,7 +192,7 @@ export const spec = {
     const emxImps = [];
     const timeout = bidRequest.timeout || '';
     const timestamp = Date.now();
-    const url = location.protocol + '//' + ENDPOINT + ('?t=' + timeout + '&ts=' + timestamp + '&src=pbjs');
+    const url = 'https://' + ENDPOINT + ('?t=' + timeout + '&ts=' + timestamp + '&src=pbjs');
     const secure = location.protocol.indexOf('https') > -1 ? 1 : 0;
     const domain = utils.getTopWindowLocation().hostname;
     const page = bidRequest.refererInfo.referer;
@@ -275,7 +275,7 @@ export const spec = {
     if (syncOptions.iframeEnabled) {
       syncs.push({
         type: 'iframe',
-        url: '//biddr.brealtime.com/check.html'
+        url: 'https://biddr.brealtime.com/check.html'
       });
     }
     return syncs;

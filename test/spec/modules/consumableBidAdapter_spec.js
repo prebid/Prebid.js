@@ -56,7 +56,7 @@ const RESPONSE = {
   'headers': null,
   'body': {
     'user': { 'key': 'ue1-2d33e91b71e74929b4aeecc23f4376f1' },
-    'pixels': [{ 'type': 'image', 'url': '//sync.serverbid.com/ss/' }],
+    'pixels': [{ 'type': 'image', 'url': 'https://sync.serverbid.com/ss/' }],
     'decisions': {
       '2b0f82502298c9': {
         'adId': 2364764,

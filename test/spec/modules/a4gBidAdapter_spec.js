@@ -8,7 +8,7 @@ describe('a4gAdapterTests', function () {
         bidder: 'a4g',
         params: {
           zoneId: 59304,
-          deliveryUrl: 'http://dev01.ad4game.com/v1/bid'
+          deliveryUrl: 'https://dev01.ad4game.com/v1/bid'
         }
       })).to.equal(true);
     });
@@ -26,7 +26,7 @@ describe('a4gAdapterTests', function () {
       expect(spec.isBidRequestValid({
         bidder: 'a4g',
         params: {
-          deliveryUrl: 'http://dev01.ad4game.com/v1/bid'
+          deliveryUrl: 'https://dev01.ad4game.com/v1/bid'
         }
       })).to.equal(false);
     });
@@ -49,7 +49,7 @@ describe('a4gAdapterTests', function () {
       'bidId': '51ef8751f9aead',
       'params': {
         'zoneId': 59354,
-        'deliveryUrl': '//dev01.ad4game.com/v1/bid'
+        'deliveryUrl': 'https://dev01.ad4game.com/v1/bid'
       },
       'adUnitCode': 'div-gpt-ad-1460505748561-0',
       'transactionId': 'd7b773de-ceaa-484d-89ca-d9f51b8d61ec',

@@ -14,7 +14,7 @@ export const spec = {
     return isValid;
   },
   buildRequests: function(validBidRequests, bidderRequest) {
-    const ENDPOINT_URL = '//bidtor.admanmedia.com/prebid';
+    const ENDPOINT_URL = 'https://bidtor.admanmedia.com/prebid';
     const bids = validBidRequests.map(buildRequestObject);
     const payload = {
       referer: utils.getTopWindowUrl(),
@@ -51,7 +51,7 @@ export const spec = {
     if (syncOptions.iframeEnabled) {
       return [{
         type: 'iframe',
-        url: '//cs.admanmedia.com/sync_tag/html'
+        url: 'https://cs.admanmedia.com/sync_tag/html'
       }];
     }
   }

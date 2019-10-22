@@ -28,7 +28,7 @@ describe('iqmBidAdapter', function () {
       seatbid: [{
         bid: [{
           nurl: 'nurl',
-          adm: '<img src"http://www.imgurl.com" />',
+          adm: '<img src"https://www.imgurl.com" />',
           crid: 'cr-65981',
           impid: 'bid000',
           price: 0.99,
@@ -66,7 +66,7 @@ describe('iqmBidAdapter', function () {
       seatbid: [{
         bid: [{
           nurl: 'nurl',
-          adm: '<img src"http://www.imgurl.com" />',
+          adm: '<img src"https://www.imgurl.com" />',
           crid: 'cr-65981',
           price: 0.99,
           w: 300,
@@ -212,7 +212,7 @@ describe('iqmBidAdapter', function () {
         expect(bid).to.have.property('width', 300);
         expect(bid).to.have.property('height', 250);
         expect(bid).to.have.property('ttl', 300);
-        expect(bid).to.have.property('ad', '<img src"http://www.imgurl.com" />');
+        expect(bid).to.have.property('ad', '<img src"https://www.imgurl.com" />');
       });
     });
   });

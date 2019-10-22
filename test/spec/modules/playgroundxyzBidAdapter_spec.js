@@ -84,7 +84,7 @@ describe('playgroundxyzBidAdapter', function () {
             'adid': '91673066',
             'adm': '<script src=\'pgxyz\'></script>',
             'adomain': [ 'pg.xyz' ],
-            'iurl': 'http://pgxyz.com/cr?id=91673066',
+            'iurl': 'https://pgxyz.com/cr?id=91673066',
             'cid': 'c_id',
             'crid': 'c_rid',
             'h': 50,
@@ -184,7 +184,7 @@ describe('playgroundxyzBidAdapter', function () {
   });
 
   describe('getUserSyncs', function () {
-    const syncUrl = '//ib.adnxs.com/getuidnb?https://ads.playground.xyz/usersync?partner=appnexus&uid=$UID';
+    const syncUrl = 'https://ib.adnxs.com/getuidnb?https://ads.playground.xyz/usersync?partner=appnexus&uid=$UID';
 
     describe('when iframeEnabled is true', function () {
       const syncOptions = {

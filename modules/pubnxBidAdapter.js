@@ -1,7 +1,7 @@
 import * as utils from '../src/utils';
 import { registerBidder } from '../src/adapters/bidderFactory';
 const BIDDER_CODE = 'pubnx';
-const BASE_URI = '//hb.pubnxserv.com/vzhbidder/bid?';
+const BASE_URI = 'https://hb.pubnxserv.com/vzhbidder/bid?';
 
 export const spec = {
   code: BIDDER_CODE,

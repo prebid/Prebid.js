@@ -126,7 +126,7 @@ describe('gjirafaAdapterTest', function () {
         'minCPM': 0,
         'minCPC': 0,
         'allowExplicit': 0,
-        'referrer': 'http://localhost:9999/integrationExamples/gpt/hello_world.html?pbjs_debug=true',
+        'referrer': 'https://localhost:9999/integrationExamples/gpt/hello_world.html?pbjs_debug=true',
         'requestid': '26ee8fe87940da7',
         'bidid': '2962dbedc4768bf'
       }

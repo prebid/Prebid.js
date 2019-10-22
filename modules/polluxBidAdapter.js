@@ -2,7 +2,7 @@ import * as utils from '../src/utils';
 import { registerBidder } from '../src/adapters/bidderFactory';
 
 const BIDDER_CODE = 'pollux';
-const PLX_ENDPOINT_URL = '//adn.plxnt.com/prebid/v1';
+const PLX_ENDPOINT_URL = 'https://adn.plxnt.com/prebid/v1';
 const PLX_CURRENCY = 'EUR';
 const PLX_TTL = 3600;
 const PLX_NETREVENUE = true;

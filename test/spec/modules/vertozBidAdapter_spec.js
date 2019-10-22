@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { spec } from 'modules/vertozBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
 
-const BASE_URI = '//hb.vrtzads.com/vzhbidder/bid?';
+const BASE_URI = 'https://hb.vrtzads.com/vzhbidder/bid?';
 
 describe('VertozAdapter', function () {
   const adapter = newBidder(spec);

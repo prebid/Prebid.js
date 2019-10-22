@@ -1,9 +1,9 @@
 import * as utils from '../src/utils';
 import {registerBidder} from '../src/adapters/bidderFactory';
 const BIDDER_CODE = 'danmarket';
-const ENDPOINT_URL = '//ads.danmarketplace.com/hb';
+const ENDPOINT_URL = 'https://ads.danmarketplace.com/hb';
 const TIME_TO_LIVE = 360;
-const ADAPTER_SYNC_URL = '//ads.danmarketplace.com/push_sync';
+const ADAPTER_SYNC_URL = 'https://ads.danmarketplace.com/push_sync';
 const LOG_ERROR_MESS = {
   noAuid: 'Bid from response has no auid parameter - ',
   noAdm: 'Bid from response has no adm parameter - ',

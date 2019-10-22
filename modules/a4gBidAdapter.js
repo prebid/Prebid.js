@@ -3,7 +3,7 @@ import * as utils from '../src/utils';
 
 const A4G_BIDDER_CODE = 'a4g';
 const A4G_CURRENCY = 'USD';
-const A4G_DEFAULT_BID_URL = '//ads.ad4game.com/v1/bid';
+const A4G_DEFAULT_BID_URL = 'https://ads.ad4game.com/v1/bid';
 const A4G_TTL = 120;
 
 const LOCATION_PARAM_NAME = 'siteurl';

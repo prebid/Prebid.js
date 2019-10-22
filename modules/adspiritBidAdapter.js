@@ -21,7 +21,7 @@ export const spec = {
       bidRequest.adspiritConId = spec.genAdConId(bidRequest);
       reqUrl = spec.getBidderHost(bidRequest);
       placementId = utils.getBidIdParameter('placementId', bidRequest.params);
-      reqUrl = '//' + reqUrl + RTB_URL + '&pid=' + placementId + '&ref=' + encodeURIComponent(utils.getTopWindowUrl()) + '&scx=' + (screen.width) + '&scy=' + (screen.height) + '&wcx=' + ('innerWidth' in window ? window.innerWidth : page.clientWidth) + '&wcy=' + ('innerHeight' in window ? window.innerHeight : page.clientHeight) + '&async=' + bidRequest.adspiritConId + '&t=' + Math.round(Math.random() * 100000);
+      reqUrl = 'https://' + reqUrl + RTB_URL + '&pid=' + placementId + '&ref=' + encodeURIComponent(utils.getTopWindowUrl()) + '&scx=' + (screen.width) + '&scy=' + (screen.height) + '&wcx=' + ('innerWidth' in window ? window.innerWidth : page.clientWidth) + '&wcy=' + ('innerHeight' in window ? window.innerHeight : page.clientHeight) + '&async=' + bidRequest.adspiritConId + '&t=' + Math.round(Math.random() * 100000);
       requests.push({
         method: 'GET',
         url: reqUrl,

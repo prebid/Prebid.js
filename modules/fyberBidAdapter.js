@@ -19,8 +19,8 @@ const CONSTANTS = {
   },
 
   DISPLAY_AD: 20,
-  ENDPOINT_URL: '//ad-tag.inner-active.mobi/simpleM2M/requestJsonAd',
-  EVENTS_ENDPOINT_URL: '//vast-events.inner-active.mobi/Event',
+  ENDPOINT_URL: 'https://ad-tag.inner-active.mobi/simpleM2M/requestJsonAd',
+  EVENTS_ENDPOINT_URL: 'https://vast-events.inner-active.mobi/Event',
   RESPONSE_HEADERS_NAME: {
     PRICING_VALUE: 'X-IA-Pricing-Value',
     AD_H: 'X-IA-Ad-Height',

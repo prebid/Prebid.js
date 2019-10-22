@@ -4,7 +4,7 @@ import {BANNER, NATIVE} from '../src/mediaTypes';
 import find from 'core-js/library/fn/array/find';
 
 const BIDDER_CODE = 'bridgewell';
-const REQUEST_ENDPOINT = '//rec.scupio.com/recweb/prebid.aspx?cb=' + Math.random();
+const REQUEST_ENDPOINT = 'https://rec.scupio.com/recweb/prebid.aspx?cb=' + Math.random();
 const BIDDER_VERSION = '0.0.2';
 
 export const spec = {

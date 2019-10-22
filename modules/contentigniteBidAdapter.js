@@ -32,8 +32,7 @@ export const spec = {
         zoneCounters[zoneID] = 0;
       }
 
-      requestURI =
-        location.protocol + '//serve.connectignite.com/adserve/;type=hbr;';
+      requestURI = 'https://serve.connectignite.com/adserve/;type=hbr;';
       requestURI += `ID=${encodeURIComponent(accountID)};`;
       requestURI += `setID=${encodeURIComponent(zoneID)};`;
       requestURI += `pid=${spec.pageID};`;

@@ -4,7 +4,7 @@ import { config } from '../src/config';
 import find from 'core-js/library/fn/array/find';
 
 const BIDDER_CODE = 'livewrapped';
-export const URL = '//lwadm.com/ad';
+export const URL = 'https://lwadm.com/ad';
 const VERSION = '1.1';
 
 export const spec = {

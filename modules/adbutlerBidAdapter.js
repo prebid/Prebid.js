@@ -41,7 +41,7 @@ export const spec = {
         domain = 'servedbyadbutler.com';
       }
 
-      requestURI = location.protocol + '//' + domain + '/adserve/;type=hbr;';
+      requestURI = 'https://' + domain + '/adserve/;type=hbr;';
       requestURI += 'ID=' + encodeURIComponent(accountID) + ';';
       requestURI += 'setID=' + encodeURIComponent(zoneID) + ';';
       requestURI += 'pid=' + encodeURIComponent(spec.pageID) + ';';

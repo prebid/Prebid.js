@@ -290,11 +290,11 @@ describe('ccxAdapter', function () {
       usersync: [
         {
           type: 'image',
-          url: 'http://foo.sync?param=1'
+          url: 'https://foo.sync?param=1'
         },
         {
           type: 'iframe',
-          url: 'http://foo.sync?param=2'
+          url: 'https://foo.sync?param=2'
         }
       ]
     }
@@ -361,11 +361,11 @@ describe('ccxAdapter', function () {
       let expectedSyncs = [
         {
           type: 'image',
-          url: 'http://foo.sync?param=1'
+          url: 'https://foo.sync?param=1'
         },
         {
           type: 'iframe',
-          url: 'http://foo.sync?param=2'
+          url: 'https://foo.sync?param=2'
         }
       ];
       expect(spec.getUserSyncs(syncOptions, [{body: response}])).to.deep.have.same.members(expectedSyncs);
@@ -378,7 +378,7 @@ describe('ccxAdapter', function () {
       };
       let expectedSyncs = [
         {
-          type: 'image', url: 'http://foo.sync?param=1'
+          type: 'image', url: 'https://foo.sync?param=1'
         }
       ];
       expect(spec.getUserSyncs(syncOptions, [{body: response}])).to.deep.have.same.members(expectedSyncs);
@@ -388,7 +388,7 @@ describe('ccxAdapter', function () {
       let syncOptions = {iframeEnabled: true, pixelEnabled: false};
       let expectedSyncs = [
         {
-          type: 'iframe', url: 'http://foo.sync?param=2'
+          type: 'iframe', url: 'https://foo.sync?param=2'
         }
       ];
       expect(spec.getUserSyncs(syncOptions, [{body: response}])).to.deep.have.same.members(expectedSyncs);

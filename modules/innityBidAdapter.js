@@ -2,7 +2,7 @@ import * as utils from '../src/utils';
 import { registerBidder } from '../src/adapters/bidderFactory';
 
 const BIDDER_CODE = 'innity';
-const ENDPOINT = location.protocol + '//as.innity.com/synd/';
+const ENDPOINT = 'https://as.innity.com/synd/';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -46,7 +46,7 @@ export const spec = {
       currency: 'USD',
       netRevenue: true,
       ttl: 60,
-      ad: '<script src="' + location.protocol + '//cdn.innity.net/frame_util.js"></script>' + res.tag,
+      ad: '<script src="' + 'https://cdn.innity.net/frame_util.js"></script>' + res.tag,
     };
     return [bidResponse];
   }

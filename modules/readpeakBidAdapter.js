@@ -3,7 +3,7 @@ import { registerBidder } from '../src/adapters/bidderFactory';
 import { config } from '../src/config';
 import { NATIVE } from '../src/mediaTypes';
 
-export const ENDPOINT = '//app.readpeak.com/header/prebid';
+export const ENDPOINT = 'https://app.readpeak.com/header/prebid';
 
 const NATIVE_DEFAULTS = {
   TITLE_LEN: 70,

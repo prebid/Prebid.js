@@ -4,8 +4,8 @@ import {VIDEO, BANNER} from '../src/mediaTypes';
 import {Renderer} from '../src/Renderer';
 import findIndex from 'core-js/library/fn/array/find-index';
 
-const URL = '//hb.adtelligent.com/auction/';
-const OUTSTREAM_SRC = '//player.adtelligent.com/outstream-unit/2.01/outstream.min.js';
+const URL = 'https://hb.adtelligent.com/auction/';
+const OUTSTREAM_SRC = 'https://player.adtelligent.com/outstream-unit/2.01/outstream.min.js';
 const BIDDER_CODE = 'adtelligent';
 const OUTSTREAM = 'outstream';
 const DISPLAY = 'display';

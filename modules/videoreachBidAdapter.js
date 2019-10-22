@@ -1,7 +1,7 @@
 import {registerBidder} from '../src/adapters/bidderFactory';
 const utils = require('../src/utils');
 const BIDDER_CODE = 'videoreach';
-const ENDPOINT_URL = '//a.videoreach.com/hb/';
+const ENDPOINT_URL = 'https://a.videoreach.com/hb/';
 
 export const spec = {
   code: BIDDER_CODE,

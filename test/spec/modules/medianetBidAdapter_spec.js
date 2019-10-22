@@ -7,9 +7,9 @@ let VALID_BID_REQUEST = [{
     'params': {
       'cid': 'customer_id',
       'site': {
-        'page': 'http://media.net/prebidtest',
+        'page': 'https://media.net/prebidtest',
         'domain': 'media.net',
-        'ref': 'http://media.net/prebidtest'
+        'ref': 'https://media.net/prebidtest'
       }
     },
     'adUnitCode': 'div-gpt-ad-1460505748561-0',
@@ -24,9 +24,9 @@ let VALID_BID_REQUEST = [{
     'params': {
       'cid': 'customer_id',
       'site': {
-        'page': 'http://media.net/prebidtest',
+        'page': 'https://media.net/prebidtest',
         'domain': 'media.net',
-        'ref': 'http://media.net/prebidtest'
+        'ref': 'https://media.net/prebidtest'
       }
     },
     'adUnitCode': 'div-gpt-ad-1460505748561-123',
@@ -43,9 +43,9 @@ let VALID_BID_REQUEST = [{
       'cid': 'customer_id',
       'bidfloor': 'abcdef',
       'site': {
-        'page': 'http://media.net/prebidtest',
+        'page': 'https://media.net/prebidtest',
         'domain': 'media.net',
-        'ref': 'http://media.net/prebidtest'
+        'ref': 'https://media.net/prebidtest'
       }
     },
     'adUnitCode': 'div-gpt-ad-1460505748561-0',
@@ -60,9 +60,9 @@ let VALID_BID_REQUEST = [{
     'params': {
       'cid': 'customer_id',
       'site': {
-        'page': 'http://media.net/prebidtest',
+        'page': 'https://media.net/prebidtest',
         'domain': 'media.net',
-        'ref': 'http://media.net/prebidtest'
+        'ref': 'https://media.net/prebidtest'
       }
     },
     'adUnitCode': 'div-gpt-ad-1460505748561-123',
@@ -78,9 +78,9 @@ let VALID_BID_REQUEST = [{
     'params': {
       'cid': 'customer_id',
       'site': {
-        'page': 'http://media.net/prebidtest',
+        'page': 'https://media.net/prebidtest',
         'domain': 'media.net',
-        'ref': 'http://media.net/prebidtest'
+        'ref': 'https://media.net/prebidtest'
       }
     },
     'adUnitCode': 'div-gpt-ad-1460505748561-0',
@@ -125,9 +125,9 @@ let VALID_BID_REQUEST = [{
     'params': {
       'cid': 'customer_id',
       'site': {
-        'page': 'http://media.net/prebidtest',
+        'page': 'https://media.net/prebidtest',
         'domain': 'media.net',
-        'ref': 'http://media.net/prebidtest'
+        'ref': 'https://media.net/prebidtest'
       }
     },
     'adUnitCode': 'div-gpt-ad-1460505748561-123',
@@ -173,9 +173,9 @@ let VALID_BID_REQUEST = [{
   },
   VALID_PAYLOAD_INVALID_BIDFLOOR = {
     'site': {
-      'page': 'http://media.net/prebidtest',
+      'page': 'https://media.net/prebidtest',
       'domain': 'media.net',
-      'ref': 'http://media.net/prebidtest'
+      'ref': 'https://media.net/prebidtest'
     },
     'ext': {
       'customer_id': 'customer_id',
@@ -213,9 +213,9 @@ let VALID_BID_REQUEST = [{
         'cid': 'customer_id',
         'bidfloor': 'abcdef',
         'site': {
-          'page': 'http://media.net/prebidtest',
+          'page': 'https://media.net/prebidtest',
           'domain': 'media.net',
-          'ref': 'http://media.net/prebidtest'
+          'ref': 'https://media.net/prebidtest'
         }
       }
     }, {
@@ -243,9 +243,9 @@ let VALID_BID_REQUEST = [{
       'all': {
         'cid': 'customer_id',
         'site': {
-          'page': 'http://media.net/prebidtest',
+          'page': 'https://media.net/prebidtest',
           'domain': 'media.net',
-          'ref': 'http://media.net/prebidtest'
+          'ref': 'https://media.net/prebidtest'
         }
       }
     }],
@@ -253,9 +253,9 @@ let VALID_BID_REQUEST = [{
   },
   VALID_PAYLOAD_NATIVE = {
     'site': {
-      'page': 'http://media.net/prebidtest',
+      'page': 'https://media.net/prebidtest',
       'domain': 'media.net',
-      'ref': 'http://media.net/prebidtest'
+      'ref': 'https://media.net/prebidtest'
     },
     'ext': {
       'customer_id': 'customer_id',
@@ -293,9 +293,9 @@ let VALID_BID_REQUEST = [{
       'all': {
         'cid': 'customer_id',
         'site': {
-          'page': 'http://media.net/prebidtest',
+          'page': 'https://media.net/prebidtest',
           'domain': 'media.net',
-          'ref': 'http://media.net/prebidtest'
+          'ref': 'https://media.net/prebidtest'
         }
       }
     }, {
@@ -324,9 +324,9 @@ let VALID_BID_REQUEST = [{
       'all': {
         'cid': 'customer_id',
         'site': {
-          'page': 'http://media.net/prebidtest',
+          'page': 'https://media.net/prebidtest',
           'domain': 'media.net',
-          'ref': 'http://media.net/prebidtest'
+          'ref': 'https://media.net/prebidtest'
         }
       }
     }],
@@ -334,9 +334,9 @@ let VALID_BID_REQUEST = [{
   },
   VALID_PAYLOAD = {
     'site': {
-      'page': 'http://media.net/prebidtest',
+      'page': 'https://media.net/prebidtest',
       'domain': 'media.net',
-      'ref': 'http://media.net/prebidtest'
+      'ref': 'https://media.net/prebidtest'
     },
     'ext': {
       'customer_id': 'customer_id',
@@ -373,9 +373,9 @@ let VALID_BID_REQUEST = [{
       'all': {
         'cid': 'customer_id',
         'site': {
-          'page': 'http://media.net/prebidtest',
+          'page': 'https://media.net/prebidtest',
           'domain': 'media.net',
-          'ref': 'http://media.net/prebidtest'
+          'ref': 'https://media.net/prebidtest'
         }
       }
     }, {
@@ -403,9 +403,9 @@ let VALID_BID_REQUEST = [{
       'all': {
         'cid': 'customer_id',
         'site': {
-          'page': 'http://media.net/prebidtest',
+          'page': 'https://media.net/prebidtest',
           'domain': 'media.net',
-          'ref': 'http://media.net/prebidtest'
+          'ref': 'https://media.net/prebidtest'
         }
       }
     }],
@@ -417,9 +417,9 @@ let VALID_BID_REQUEST = [{
       PAGE_META = JSON.parse(JSON.stringify(VALID_PAYLOAD));
     } catch (e) {}
     PAGE_META.site = Object.assign(PAGE_META.site, {
-      'canonical_url': 'http://localhost:9999/canonical-test',
-      'twitter_url': 'http://localhost:9999/twitter-test',
-      'og_url': 'http://localhost:9999/fb-test'
+      'canonical_url': 'https://localhost:9999/canonical-test',
+      'twitter_url': 'https://localhost:9999/twitter-test',
+      'og_url': 'https://localhost:9999/fb-test'
     });
     return PAGE_META;
   })(),
@@ -492,10 +492,10 @@ let VALID_BID_REQUEST = [{
     'ext': {
       'csUrl': [{
         'type': 'image',
-        'url': 'http://cs.media.net/cksync.php'
+        'url': 'https://cs.media.net/cksync.php'
       }, {
         'type': 'iframe',
-        'url': 'http://contextual.media.net/checksync.php?&vsSync=1'
+        'url': 'https://contextual.media.net/checksync.php?&vsSync=1'
       }]
     }
   },
@@ -514,10 +514,10 @@ let VALID_BID_REQUEST = [{
     'ext': {
       'csUrl': [{
         'type': 'image',
-        'url': 'http://cs.media.net/cksync.php'
+        'url': 'https://cs.media.net/cksync.php'
       }, {
         'type': 'iframe',
-        'url': 'http://contextual.media.net/checksync.php?&vsSync=1'
+        'url': 'https://contextual.media.net/checksync.php?&vsSync=1'
       }]
     }
   },
@@ -534,10 +534,10 @@ let VALID_BID_REQUEST = [{
     'ext': {
       'csUrl': [{
         'type': 'image',
-        'url': 'http://cs.media.net/cksync.php'
+        'url': 'https://cs.media.net/cksync.php'
       }, {
         'type': 'iframe',
-        'url': 'http://contextual.media.net/checksync.php?&vsSync=1'
+        'url': 'https://contextual.media.net/checksync.php?&vsSync=1'
       }]
     }
   },
@@ -546,9 +546,9 @@ let VALID_BID_REQUEST = [{
     'params': {
       'cid': 'customer_id',
       'site': {
-        'page': 'http://media.net/prebidtest',
+        'page': 'https://media.net/prebidtest',
         'domain': 'media.net',
-        'ref': 'http://media.net/prebidtest'
+        'ref': 'https://media.net/prebidtest'
       }
     },
     'adUnitCode': 'div-gpt-ad-1460505748561-0',
@@ -563,9 +563,9 @@ let VALID_BID_REQUEST = [{
     'params': {
       'cid': 'customer_id',
       'site': {
-        'page': 'http://media.net/prebidtest',
+        'page': 'https://media.net/prebidtest',
         'domain': 'media.net',
-        'ref': 'http://media.net/prebidtest'
+        'ref': 'https://media.net/prebidtest'
       }
     },
     'adUnitCode': 'div-gpt-ad-1460505748561-123',
@@ -586,8 +586,8 @@ let VALID_BID_REQUEST = [{
   VALID_PAYLOAD_FOR_GDPR = {
     'site': {
       'domain': 'media.net',
-      'page': 'http://media.net/prebidtest',
-      'ref': 'http://media.net/prebidtest'
+      'page': 'https://media.net/prebidtest',
+      'ref': 'https://media.net/prebidtest'
     },
     'ext': {
       'customer_id': 'customer_id',
@@ -625,9 +625,9 @@ let VALID_BID_REQUEST = [{
       'all': {
         'cid': 'customer_id',
         'site': {
-          'page': 'http://media.net/prebidtest',
+          'page': 'https://media.net/prebidtest',
           'domain': 'media.net',
-          'ref': 'http://media.net/prebidtest'
+          'ref': 'https://media.net/prebidtest'
         }
       }
     }, {
@@ -655,9 +655,9 @@ let VALID_BID_REQUEST = [{
       'all': {
         'cid': 'customer_id',
         'site': {
-          'page': 'http://media.net/prebidtest',
+          'page': 'https://media.net/prebidtest',
           'domain': 'media.net',
-          'ref': 'http://media.net/prebidtest'
+          'ref': 'https://media.net/prebidtest'
         }
       }
     }],
@@ -750,13 +750,13 @@ describe('Media.net bid adapter', function () {
       it('should pass canonical, twitter and fb paramters if available', () => {
         let documentStub = sandbox.stub(window.top.document, 'querySelector');
         documentStub.withArgs('link[rel="canonical"]').returns({
-          href: 'http://localhost:9999/canonical-test'
+          href: 'https://localhost:9999/canonical-test'
         });
         documentStub.withArgs('meta[property="og:url"]').returns({
-          content: 'http://localhost:9999/fb-test'
+          content: 'https://localhost:9999/fb-test'
         });
         documentStub.withArgs('meta[name="twitter:url"]').returns({
-          content: 'http://localhost:9999/twitter-test'
+          content: 'https://localhost:9999/twitter-test'
         });
         let bidReq = spec.buildRequests(VALID_BID_REQUEST, VALID_AUCTIONDATA);
         expect(JSON.parse(bidReq.data)).to.deep.equal(VALID_PAYLOAD_PAGE_META);

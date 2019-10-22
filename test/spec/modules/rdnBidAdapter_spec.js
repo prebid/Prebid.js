@@ -67,11 +67,11 @@ describe('rdnBidAdapter', function() {
     it('allows url override', () => {
       config.setConfig({
         rdn: {
-          endpoint: '//test.rakuten.com'
+          endpoint: 'https://test.rakuten.com'
         }
       });
       const request = spec.buildRequests(bidRequests)[0];
-      expect(request.url).to.equal('//test.rakuten.com');
+      expect(request.url).to.equal('https://test.rakuten.com');
     })
   });
 

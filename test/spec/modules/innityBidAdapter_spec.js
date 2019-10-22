@@ -94,7 +94,7 @@ describe('innityAdapterTest', function () {
       expect(result[0].creativeId).to.equal('148186');
       expect(result[0].currency).to.equal('USD');
       expect(result[0].ttl).to.equal(60);
-      expect(result[0].ad).to.equal('<script src="http://cdn.innity.net/frame_util.js"></script><script>innity=true;</script>');
+      expect(result[0].ad).to.equal('<script src="https://cdn.innity.net/frame_util.js"></script><script>innity=true;</script>');
     });
   });
 });

@@ -4,7 +4,7 @@ import { newBidder } from 'src/adapters/bidderFactory';
 import { deepClone } from 'src/utils';
 import * as utils from 'src/utils';
 
-const ENDPOINT = '//d.admp.io/hb/multi?url=';
+const ENDPOINT = 'https://d.admp.io/hb/multi?url=';
 
 describe('GiantsAdapter', function () {
   const adapter = newBidder(spec);
@@ -256,7 +256,7 @@ describe('GiantsAdapter', function () {
           'height': 600,
           'width': 300,
           'zoneId': '584072408',
-          'adUrl': '//d.admp.io/pbc/v1/cache-banner/f7aca005-8171-4299-90bf-0750a864a61c',
+          'adUrl': 'https://d.admp.io/pbc/v1/cache-banner/f7aca005-8171-4299-90bf-0750a864a61c',
           'cpm': 0.5
         }
       ]

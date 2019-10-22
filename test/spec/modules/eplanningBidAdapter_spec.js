@@ -76,9 +76,9 @@ describe('E-Planning Adapter', function () {
         }],
       }],
       'cs': [
-        'http://a-sync-url.com/',
+        'https://a-sync-url.com/',
         {
-          'u': 'http://another-sync-url.com/test.php?&partner=123456&endpoint=us-east',
+          'u': 'https://another-sync-url.com/test.php?&partner=123456&endpoint=us-east',
           'ifr': true
         }
       ]
@@ -121,9 +121,9 @@ describe('E-Planning Adapter', function () {
       },
       ],
       'cs': [
-        'http://a-sync-url.com/',
+        'https://a-sync-url.com/',
         {
-          'u': 'http://another-sync-url.com/test.php?&partner=123456&endpoint=us-east',
+          'u': 'https://another-sync-url.com/test.php?&partner=123456&endpoint=us-east',
           'ifr': true
         }
       ]
@@ -141,9 +141,9 @@ describe('E-Planning Adapter', function () {
         'k': 'spname',
       }],
       'cs': [
-        'http://a-sync-url.com/',
+        'https://a-sync-url.com/',
         {
-          'u': 'http://another-sync-url.com/test.php?&partner=123456&endpoint=us-east',
+          'u': 'https://another-sync-url.com/test.php?&partner=123456&endpoint=us-east',
           'ifr': true
         }
       ]
@@ -158,9 +158,9 @@ describe('E-Planning Adapter', function () {
         'k': 'ROS'
       },
       'cs': [
-        'http://a-sync-url.com/',
+        'https://a-sync-url.com/',
         {
-          'u': 'http://another-sync-url.com/test.php?&partner=123456&endpoint=us-east',
+          'u': 'https://another-sync-url.com/test.php?&partner=123456&endpoint=us-east',
           'ifr': true
         }
       ]
@@ -192,7 +192,7 @@ describe('E-Planning Adapter', function () {
 
     it('should create the url correctly', function () {
       const url = spec.buildRequests(bidRequests).url;
-      expect(url).to.equal('//ads.us.e-planning.net/hb/1/' + CI + '/1/localhost/ROS');
+      expect(url).to.equal('https://ads.us.e-planning.net/hb/1/' + CI + '/1/localhost/ROS');
     });
 
     it('should return GET method', function () {
@@ -274,7 +274,7 @@ describe('E-Planning Adapter', function () {
 
     it('should return the testing url when the request has the t parameter', function () {
       const url = spec.buildRequests([testBid]).url;
-      const expectedUrl = '//' + TEST_ISV + '/layers/t_pbjs_2.json';
+      const expectedUrl = 'https://' + TEST_ISV + '/layers/t_pbjs_2.json';
       expect(url).to.equal(expectedUrl);
     });
 

@@ -4,7 +4,7 @@ import { BANNER } from '../src/mediaTypes'
 
 export const BIDDER_CODE = 'aduptech';
 export const PUBLISHER_PLACEHOLDER = '{PUBLISHER}';
-export const ENDPOINT_URL = window.location.protocol + '//rtb.d.adup-tech.com/prebid/' + PUBLISHER_PLACEHOLDER + '_bid';
+export const ENDPOINT_URL = 'https://rtb.d.adup-tech.com/prebid/' + PUBLISHER_PLACEHOLDER + '_bid';
 export const ENDPOINT_METHOD = 'POST';
 
 export const spec = {

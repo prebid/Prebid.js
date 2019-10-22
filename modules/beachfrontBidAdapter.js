@@ -13,7 +13,7 @@ const OUTSTREAM = 'outstream';
 
 export const VIDEO_ENDPOINT = 'https://reachms.bfmio.com/bid.json?exchange_id=';
 export const BANNER_ENDPOINT = 'https://display.bfmio.com/prebid_display';
-export const OUTSTREAM_SRC = '//player-cdn.beachfrontmedia.com/playerapi/loader/outstream.js';
+export const OUTSTREAM_SRC = 'https://player-cdn.beachfrontmedia.com/playerapi/loader/outstream.js';
 
 export const VIDEO_TARGETING = ['mimes', 'playbackmethod', 'maxduration', 'placement'];
 export const DEFAULT_MIMES = ['video/mp4', 'application/javascript'];

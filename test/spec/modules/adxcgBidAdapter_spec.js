@@ -63,7 +63,7 @@ describe('AdxcgAdapter', function () {
     })
   })
 
-  describe('request function http', function () {
+  describe('request function https', function () {
     let bid = {
       'bidder': 'adxcg',
       'params': {
@@ -394,7 +394,7 @@ describe('AdxcgAdapter', function () {
 
     it('should return iframe sync option', function () {
       expect(spec.getUserSyncs(syncoptionsIframe)[0].type).to.equal('iframe')
-      expect(spec.getUserSyncs(syncoptionsIframe)[0].url).to.equal('//cdn.adxcg.net/pb-sync.html')
+      expect(spec.getUserSyncs(syncoptionsIframe)[0].url).to.equal('https://cdn.adxcg.net/pb-sync.html')
     })
   })
 })

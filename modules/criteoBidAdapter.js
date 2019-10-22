@@ -16,7 +16,7 @@ const PROFILE_ID_INLINE = 207;
 export const PROFILE_ID_PUBLISHERTAG = 185;
 
 // Unminified source code can be found in: https://github.com/Prebid-org/prebid-js-external-js-criteo/blob/master/dist/prod.js
-const PUBLISHER_TAG_URL = '//static.criteo.net/js/ld/publishertag.prebid.js';
+const PUBLISHER_TAG_URL = 'https://static.criteo.net/js/ld/publishertag.prebid.js';
 
 export const FAST_BID_PUBKEY = `-----BEGIN PUBLIC KEY-----
 MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDO1BjAITkFTtP0IMzmF7qsqhpu

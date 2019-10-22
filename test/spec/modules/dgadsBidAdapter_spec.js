@@ -189,7 +189,7 @@ describe('dgadsBidAdapter', function () {
       banner: {
         bids: {
           ads: {
-            ad: '<a href="http://ads-tr.bigmining.com/ad/p/r?_cid=RTdQaXxTSkcm9Wvw5kNIQn2lELdIIE4314NKTTaZnt9bTiOE4PWrDmRC2bI3chxXDt02FAJxTLAy6ngYs91%2BxyfVUoR56nHdBKUYt5iVW7GwQ4v2CXG4wOhbex74avCPdd78HKPOnP%2FRYwsjMijxPw%3D%3D"><img src="https://ads-tr.bigmining.com/img/300_250_1.jpg" width="300" height="250"></a><IMG src=https://ads-tr.bigmining.com/ad/p/c?_cid=RTdQaXxTSkcm9Wvw5kNIQn2lELdIIE4314NKTTaZnt%2BpBwBx3ioQpptCqZ7GEdkHn3y7VbwrM6JPIBnNm0aBvO%2BYsUCm1nqDckBxSYRZ%2BBlkVxs6oLlxzrnoq30DVRV4Gdfn3kFBmXkTiNr74ednNwtTaE%2BXTpFEIyHpG73GeQcvzdbSXkz5eQQOJKa7VHJ2uZmWAaMxYniSj3EikGKa6A%3D%3D border=0 width=0 height=0>',
+            ad: '<a href="https://ads-tr.bigmining.com/ad/p/r?_cid=RTdQaXxTSkcm9Wvw5kNIQn2lELdIIE4314NKTTaZnt9bTiOE4PWrDmRC2bI3chxXDt02FAJxTLAy6ngYs91%2BxyfVUoR56nHdBKUYt5iVW7GwQ4v2CXG4wOhbex74avCPdd78HKPOnP%2FRYwsjMijxPw%3D%3D"><img src="https://ads-tr.bigmining.com/img/300_250_1.jpg" width="300" height="250"></a><IMG src=https://ads-tr.bigmining.com/ad/p/c?_cid=RTdQaXxTSkcm9Wvw5kNIQn2lELdIIE4314NKTTaZnt%2BpBwBx3ioQpptCqZ7GEdkHn3y7VbwrM6JPIBnNm0aBvO%2BYsUCm1nqDckBxSYRZ%2BBlkVxs6oLlxzrnoq30DVRV4Gdfn3kFBmXkTiNr74ednNwtTaE%2BXTpFEIyHpG73GeQcvzdbSXkz5eQQOJKa7VHJ2uZmWAaMxYniSj3EikGKa6A%3D%3D border=0 width=0 height=0>',
             cpm: 1.22,
             w: 300,
             h: 250,
@@ -215,7 +215,7 @@ describe('dgadsBidAdapter', function () {
             isNative: 1,
             impressionTrackers: ['https://ads-tr.bigmining.com/ad/view/beacon.gif'],
             clickTrackers: ['https://ads-tr.bigmining.com/ad/view/beacon.png'],
-            clickUrl: 'http://www.garage.co.jp/ja/'
+            clickUrl: 'https://www.garage.co.jp/ja/'
           },
         }
       }
@@ -232,7 +232,7 @@ describe('dgadsBidAdapter', function () {
         netRevenue: true,
         ttl: 60,
         referrer: utils.getTopWindowUrl(),
-        ad: '<a href="http://ads-tr.bigmining.com/ad/p/r?_cid=RTdQaXxTSkcm9Wvw5kNIQn2lELdIIE4314NKTTaZnt9bTiOE4PWrDmRC2bI3chxXDt02FAJxTLAy6ngYs91%2BxyfVUoR56nHdBKUYt5iVW7GwQ4v2CXG4wOhbex74avCPdd78HKPOnP%2FRYwsjMijxPw%3D%3D"><img src="https://ads-tr.bigmining.com/img/300_250_1.jpg" width="300" height="250"></a><IMG src=https://ads-tr.bigmining.com/ad/p/c?_cid=RTdQaXxTSkcm9Wvw5kNIQn2lELdIIE4314NKTTaZnt%2BpBwBx3ioQpptCqZ7GEdkHn3y7VbwrM6JPIBnNm0aBvO%2BYsUCm1nqDckBxSYRZ%2BBlkVxs6oLlxzrnoq30DVRV4Gdfn3kFBmXkTiNr74ednNwtTaE%2BXTpFEIyHpG73GeQcvzdbSXkz5eQQOJKa7VHJ2uZmWAaMxYniSj3EikGKa6A%3D%3D border=0 width=0 height=0>',
+        ad: '<a href="https://ads-tr.bigmining.com/ad/p/r?_cid=RTdQaXxTSkcm9Wvw5kNIQn2lELdIIE4314NKTTaZnt9bTiOE4PWrDmRC2bI3chxXDt02FAJxTLAy6ngYs91%2BxyfVUoR56nHdBKUYt5iVW7GwQ4v2CXG4wOhbex74avCPdd78HKPOnP%2FRYwsjMijxPw%3D%3D"><img src="https://ads-tr.bigmining.com/img/300_250_1.jpg" width="300" height="250"></a><IMG src=https://ads-tr.bigmining.com/ad/p/c?_cid=RTdQaXxTSkcm9Wvw5kNIQn2lELdIIE4314NKTTaZnt%2BpBwBx3ioQpptCqZ7GEdkHn3y7VbwrM6JPIBnNm0aBvO%2BYsUCm1nqDckBxSYRZ%2BBlkVxs6oLlxzrnoq30DVRV4Gdfn3kFBmXkTiNr74ednNwtTaE%2BXTpFEIyHpG73GeQcvzdbSXkz5eQQOJKa7VHJ2uZmWAaMxYniSj3EikGKa6A%3D%3D border=0 width=0 height=0>',
       },
       native: {
         requestId: '2f6ac468a9c15e',
@@ -250,7 +250,7 @@ describe('dgadsBidAdapter', function () {
           title: 'title',
           body: 'description',
           sponsoredBy: 'sponsoredBy',
-          clickUrl: 'http://www.garage.co.jp/ja/',
+          clickUrl: 'https://www.garage.co.jp/ja/',
           impressionTrackers: ['https://ads-tr.bigmining.com/ad/view/beacon.gif'],
           clickTrackers: ['https://ads-tr.bigmining.com/ad/view/beacon.png']
         },

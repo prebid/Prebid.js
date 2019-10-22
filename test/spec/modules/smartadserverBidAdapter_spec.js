@@ -24,7 +24,7 @@ describe('Smart bid adapter tests', function () {
     ],
     bidder: 'smartadserver',
     params: {
-      domain: 'http://prg.smartadserver.com',
+      domain: 'https://prg.smartadserver.com',
       siteId: '1234',
       pageId: '5678',
       formatId: '90',
@@ -48,7 +48,7 @@ describe('Smart bid adapter tests', function () {
     ],
     bidder: 'smartadserver',
     params: {
-      domain: 'http://prg.smartadserver.com',
+      domain: 'https://prg.smartadserver.com',
       siteId: '1234',
       pageId: '5678',
       formatId: '90'
@@ -65,9 +65,9 @@ describe('Smart bid adapter tests', function () {
       currency: 'GBP',
       isNetCpm: true,
       ttl: 300,
-      adUrl: 'http://awesome.fake.url',
+      adUrl: 'https://awesome.fake.url',
       ad: '< --- awesome script --- >',
-      cSyncUrl: 'http://awesome.fake.csync.url'
+      cSyncUrl: 'https://awesome.fake.csync.url'
     }
   };
 
@@ -78,7 +78,7 @@ describe('Smart bid adapter tests', function () {
       }
     });
     const request = spec.buildRequests(DEFAULT_PARAMS);
-    expect(request[0]).to.have.property('url').and.to.equal('http://prg.smartadserver.com/prebid/v1');
+    expect(request[0]).to.have.property('url').and.to.equal('https://prg.smartadserver.com/prebid/v1');
     expect(request[0]).to.have.property('method').and.to.equal('POST');
     const requestContent = JSON.parse(request[0].data);
     expect(requestContent).to.have.property('siteid').and.to.equal('1234');
@@ -158,7 +158,7 @@ describe('Smart bid adapter tests', function () {
     expect(bids).to.have.lengthOf(1);
     const bid = bids[0];
     expect(bid.cpm).to.equal(12);
-    expect(bid.adUrl).to.equal('http://awesome.fake.url');
+    expect(bid.adUrl).to.equal('https://awesome.fake.url');
     expect(bid.ad).to.equal('< --- awesome script --- >');
     expect(bid.width).to.equal(300);
     expect(bid.height).to.equal(250);
@@ -249,7 +249,7 @@ describe('Smart bid adapter tests', function () {
     }, [BID_RESPONSE]);
     expect(syncs).to.have.lengthOf(1);
     expect(syncs[0].type).to.equal('iframe');
-    expect(syncs[0].url).to.equal('http://awesome.fake.csync.url');
+    expect(syncs[0].url).to.equal('https://awesome.fake.csync.url');
 
     syncs = spec.getUserSyncs({
       iframeEnabled: false

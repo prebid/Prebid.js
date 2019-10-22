@@ -64,16 +64,16 @@ describe('ReadPeakAdapter', function () {
               id: 2,
               img: {
                 type: 3,
-                url: 'http://url.to/image',
+                url: 'https://url.to/image',
                 w: 750,
                 h: 500,
               },
             }],
             link: {
-              url: 'http://url.to/target'
+              url: 'https://url.to/target'
             },
             imptrackers: [
-              'http://url.to/pixeltracker'
+              'https://url.to/pixeltracker'
             ],
           }
         }],
@@ -81,7 +81,7 @@ describe('ReadPeakAdapter', function () {
     }
     serverRequest = {
       method: 'POST',
-      url: 'http://localhost:60080/header/prebid',
+      url: 'https://localhost:60080/header/prebid',
       data: JSON.stringify({
         'id': '178e34bad3658f',
         'imp': [
@@ -101,7 +101,7 @@ describe('ReadPeakAdapter', function () {
           },
           'id': '11bc5dd5-7421-4dd8-c926-40fa653bec77',
           'ref': '',
-          'page': 'http://localhost',
+          'page': 'https://localhost',
           'domain': 'localhost'
         },
         'app': null,
@@ -199,9 +199,9 @@ describe('ReadPeakAdapter', function () {
 
       expect(bidResponse.native.title).to.equal('Title')
       expect(bidResponse.native.body).to.equal('Description')
-      expect(bidResponse.native.image).to.deep.equal({url: 'http://url.to/image', width: 750, height: 500})
-      expect(bidResponse.native.clickUrl).to.equal('http%3A%2F%2Furl.to%2Ftarget')
-      expect(bidResponse.native.impressionTrackers).to.contain('http://url.to/pixeltracker')
+      expect(bidResponse.native.image).to.deep.equal({url: 'https://url.to/image', width: 750, height: 500})
+      expect(bidResponse.native.clickUrl).to.equal('https%3A%2F%2Furl.to%2Ftarget')
+      expect(bidResponse.native.impressionTrackers).to.contain('https://url.to/pixeltracker')
     });
   });
 });

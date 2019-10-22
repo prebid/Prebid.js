@@ -31,7 +31,7 @@ export const spec = {
       const gaxObjParams = bidRequests[i];
       serverRequests.push({
         method: 'GET',
-        url: '//' + ENDPOINT + '/adx/request?wid=' + gaxObjParams.params.siteId + '&zid=' + gaxObjParams.params.zoneId + '&hb=pbjs&bidid=' + gaxObjParams.bidId + '&urf=' + encodeURIComponent(utils.getTopWindowUrl())
+        url: 'https://' + ENDPOINT + '/adx/request?wid=' + gaxObjParams.params.siteId + '&zid=' + gaxObjParams.params.zoneId + '&hb=pbjs&bidid=' + gaxObjParams.bidId + '&urf=' + encodeURIComponent(utils.getTopWindowUrl())
       });
     }
     return serverRequests;
@@ -60,7 +60,7 @@ export const spec = {
     if (syncOptions.iframeEnabled) {
       return [{
         type: 'iframe',
-        url: '//' + ENDPOINT + '/adx/usersync'
+        url: 'https://' + ENDPOINT + '/adx/usersync'
       }];
     }
   }

@@ -7,7 +7,7 @@ const PREBID_ENDPOINT = 'prebid.xendiz.com';
 const SYNC_ENDPOINT = 'https://advsync.com/xendiz/ssp/?pixel=1';
 
 const buildURI = () => {
-  return `//${PREBID_ENDPOINT}/request`;
+  return `https://${PREBID_ENDPOINT}/request`;
 }
 
 const getDevice = () => {

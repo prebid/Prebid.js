@@ -4,7 +4,7 @@ import { config } from '../src/config';
 import { BANNER } from '../src/mediaTypes';
 
 const BIDDER_CODE = 'sortable';
-const SERVER_URL = 'c.deployads.com';
+const SERVER_URL = 'https://c.deployads.com';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -91,7 +91,7 @@ export const spec = {
 
     return {
       method: 'POST',
-      url: `//${SERVER_URL}/openrtb2/auction?src=$$REPO_AND_VERSION$$&host=${loc.host}`,
+      url: `${SERVER_URL}/openrtb2/auction?src=$$REPO_AND_VERSION$$&host=${loc.host}`,
       data: JSON.stringify(sortableBidReq),
       options: {contentType: 'text/plain'}
     };
@@ -133,7 +133,7 @@ export const spec = {
   getUserSyncs: (syncOptions, responses, gdprConsent) => {
     const sortableConfig = config.getConfig('sortable');
     if (syncOptions.iframeEnabled && sortableConfig && !!sortableConfig.siteId) {
-      let syncUrl = `//${SERVER_URL}/sync?f=html&s=${sortableConfig.siteId}&u=${encodeURIComponent(utils.getTopWindowLocation())}`;
+      let syncUrl = `${SERVER_URL}/sync?f=html&s=${sortableConfig.siteId}&u=${encodeURIComponent(utils.getTopWindowLocation())}`;
 
       if (gdprConsent) {
         syncUrl += '&g=' + (gdprConsent.gdprApplies ? 1 : 0);
@@ -148,7 +148,7 @@ export const spec = {
   },
 
   onTimeout(details) {
-    fetch(`//${SERVER_URL}/prebid/timeout`, {
+    fetch(`${SERVER_URL}/prebid/timeout`, {
       method: 'POST',
       body: JSON.stringify(details),
       mode: 'no-cors',

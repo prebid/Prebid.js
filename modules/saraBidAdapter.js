@@ -1,8 +1,8 @@
 import * as utils from '../src/utils';
 import {registerBidder} from '../src/adapters/bidderFactory';
 const BIDDER_CODE = 'sara';
-const ENDPOINT_URL = '//ad.sara.media/hb';
-const ADAPTER_SYNC_URL = '//ad.sara.media/push_sync';
+const ENDPOINT_URL = 'https://ad.sara.media/hb';
+const ADAPTER_SYNC_URL = 'https://ad.sara.media/push_sync';
 const TIME_TO_LIVE = 360;
 const LOG_ERROR_MESS = {
   noAuid: 'Bid from response has no auid parameter - ',

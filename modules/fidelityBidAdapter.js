@@ -31,7 +31,7 @@ export const spec = {
 
       return {
         method: 'GET',
-        url: '//' + server + '/delivery/hb.php',
+        url: 'https://' + server + '/delivery/hb.php',
         data: payload
       };
     });
@@ -60,7 +60,7 @@ export const spec = {
   },
   getUserSyncs: function getUserSyncs(syncOptions, serverResponses, gdprConsent) {
     if (syncOptions.iframeEnabled) {
-      var url = '//' + BIDDER_SERVER + '/delivery/matches.php';
+      var url = 'https://' + BIDDER_SERVER + '/delivery/matches.php';
       var payload = {
         type: 'iframe'
       };

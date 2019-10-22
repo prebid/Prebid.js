@@ -67,12 +67,12 @@ describe('YieldNexusAdapter', () => {
     });
 
     it('builds request correctly', () => {
-      let stub = sinon.stub(utils, 'getTopWindowUrl').returns('http://www.test.com/page.html');
+      let stub = sinon.stub(utils, 'getTopWindowUrl').returns('https://www.test.com/page.html');
 
       let response;
       response = spec.buildRequests([bidRequest])[0];
       expect(response.data.site.domain).to.equal('www.test.com');
-      expect(response.data.site.page).to.equal('http://www.test.com/page.html');
+      expect(response.data.site.page).to.equal('https://www.test.com/page.html');
       expect(response.data.site.ref).to.equal('');
       expect(response.data.imp.length).to.equal(1);
       expect(response.data.imp[0].id).to.equal(bidRequest.transactionId);
@@ -195,8 +195,8 @@ describe('YieldNexusAdapter', () => {
       'cur': 'USD',
       'ext': {
         'utrk': [
-          {'type': 'iframe', 'url': '//ssp.ynxs.io/user/sync/1'},
-          {'type': 'image', 'url': '//ssp.ynxs.io/user/sync/2'}
+          {'type': 'iframe', 'url': 'https://ssp.ynxs.io/user/sync/1'},
+          {'type': 'image', 'url': 'https://ssp.ynxs.io/user/sync/2'}
         ]
       },
       'seatbid': [
@@ -207,14 +207,14 @@ describe('YieldNexusAdapter', () => {
               'id': '0',
               'impid': '1',
               'price': 2.016,
-              'adm': '<img width="300px" height="250px" src="http://test.com/test.gif">',
+              'adm': '<img width="300px" height="250px" src="https://test.com/test.gif">',
               'adomain': ['nike.com'],
               'h': 600,
               'w': 120,
               'ext': {
-                'vast_url': 'http://vast.tag.com',
+                'vast_url': 'https://vast.tag.com',
                 'utrk': [
-                  {'type': 'iframe', 'url': '//pix.usersync.io/user-sync'}
+                  {'type': 'iframe', 'url': 'https://pix.usersync.io/user-sync'}
                 ]
               }
             }
@@ -228,13 +228,13 @@ describe('YieldNexusAdapter', () => {
               'impid': '1',
               'price': 3,
               'adid': '542jlhdfd2112jnjf3x',
-              'adm': '<img width="300px" height="250px" src="http://test.com/test.gif">',
+              'adm': '<img width="300px" height="250px" src="https://test.com/test.gif">',
               'adomain': ['adidas.com'],
               'h': 250,
               'w': 300,
               'ext': {
                 'utrk': [
-                  {'type': 'image', 'url': '//pix.usersync.io/user-sync'}
+                  {'type': 'image', 'url': 'https://pix.usersync.io/user-sync'}
                 ]
               }
             }

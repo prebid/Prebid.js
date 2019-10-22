@@ -5,7 +5,7 @@ import * as url from '../src/url';
 import { BANNER, NATIVE } from '../src/mediaTypes';
 
 const BIDDER_CODE = 'medianet';
-const BID_URL = '//prebid.media.net/rtb/prebid';
+const BID_URL = 'https://prebid.media.net/rtb/prebid';
 const SLOT_VISIBILITY = {
   NOT_DETERMINED: 0,
   ABOVE_THE_FOLD: 1,

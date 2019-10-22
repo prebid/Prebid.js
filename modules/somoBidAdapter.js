@@ -28,7 +28,7 @@ export const spec = {
 
       return {
         method: 'POST',
-        url: '//publisher-east.mobileadtrading.com/rtb/bid?s=' + bidRequest.params.placementId.toString(),
+        url: 'https://publisher-east.mobileadtrading.com/rtb/bid?s=' + bidRequest.params.placementId.toString(),
         data: da,
         bidRequest: bidRequest
       };
@@ -41,7 +41,7 @@ export const spec = {
 
   getUserSyncs: (syncOptions, serverResponses, gdprConsent) => {
     const syncs = [];
-    var url = '//publisher-east.mobileadtrading.com/usersync';
+    var url = 'https://publisher-east.mobileadtrading.com/usersync';
 
     if (syncOptions.pixelEnabled) {
       if (gdprConsent && typeof gdprConsent.consentString === 'string') {

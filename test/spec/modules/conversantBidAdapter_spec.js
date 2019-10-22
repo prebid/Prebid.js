@@ -200,7 +200,7 @@ describe('Conversant adapter tests', function() {
   it('Verify buildRequest', function() {
     const request = spec.buildRequests(bidRequests);
     expect(request.method).to.equal('POST');
-    expect(request.url).to.equal('//web.hb.ad.cpe.dotomi.com/s2s/header/24');
+    expect(request.url).to.equal('https://web.hb.ad.cpe.dotomi.com/s2s/header/24');
     const payload = request.data;
 
     expect(payload).to.have.property('id', 'req000');
@@ -371,7 +371,7 @@ describe('Conversant adapter tests', function() {
     requests.forEach((unit) => {
       Object.assign(unit, {crumbs: {pubcid: 12345}});
     });
-    //  construct http post payload
+    //  construct httpspost payload
     const payload = spec.buildRequests(requests).data;
     expect(payload).to.have.deep.nested.property('user.ext.fpc', 12345);
   });
@@ -384,7 +384,7 @@ describe('Conversant adapter tests', function() {
     requests.forEach((unit) => {
       Object.assign(unit, {userId: {pubcid: 67890}});
     });
-    //  construct http post payload
+    //  construct httpspost payload
     const payload = spec.buildRequests(requests).data;
     expect(payload).to.have.deep.nested.property('user.ext.fpc', 67890);
   });

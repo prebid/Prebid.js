@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { spec } from 'modules/colombiaBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
 
-const HOST_NAME = document.location.protocol + '//' + window.location.host;
+const HOST_NAME = 'https://' + window.location.host;
 const ENDPOINT = 'https://ade.clmbtech.com/cde/prebid.htm';
 
 describe('colombiaBidAdapter', function() {
@@ -93,7 +93,7 @@ describe('colombiaBidAdapter', function() {
           'w': '300',
           'h': '250',
           'cb': 12892917383,
-          'r': 'http%3A%2F%2Flocalhost%3A9876%2F%3Fid%3D74552836',
+          'r': 'https%3A%2F%2Flocalhost%3A9876%2F%3Fid%3D74552836',
           'uid': '23beaa6af6cdde',
           't': 'i',
 		  'd': HOST_NAME

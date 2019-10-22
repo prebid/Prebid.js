@@ -32,7 +32,7 @@ export const spec = {
     const payload = {
       id: bidRequests[0].auctionId,
       site: {
-        domain: window.location.protocol + '//' + topLocation.hostname,
+        domain: 'https://' + topLocation.hostname,
         name: topLocation.hostname,
         page: topLocation.href,
       },
@@ -104,7 +104,7 @@ export const spec = {
   getUserSyncs: function (syncOptions) {
     return [{
       type: 'image',
-      url: '//ib.adnxs.com/getuidnb?https://ads.playground.xyz/usersync?partner=appnexus&uid=$UID'
+      url: 'https://ib.adnxs.com/getuidnb?https://ads.playground.xyz/usersync?partner=appnexus&uid=$UID'
     }];
   }
 }

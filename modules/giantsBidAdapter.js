@@ -4,7 +4,7 @@ import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes';
 import includes from 'core-js/library/fn/array/includes';
 
 const BIDDER_CODE = 'giants';
-const URL = '//d.admp.io/hb';
+const URL = 'https://d.admp.io/hb';
 const VIDEO_TARGETING = ['id', 'mimes', 'minduration', 'maxduration',
   'startdelay', 'skippable', 'playback_method', 'frameworks'];
 const NATIVE_MAPPING = {
@@ -115,7 +115,7 @@ export const spec = {
     if (syncOptions.iframeEnabled) {
       return [{
         type: 'iframe',
-        url: '//d.admp.io/ping'
+        url: 'https://d.admp.io/ping'
       }];
     }
   }

@@ -35,7 +35,7 @@ export const spec = {
     applyGdpr(bidderRequest, request);
     return {
       method: 'POST',
-      url: '//piohbdisp.hb.adx1.com/',
+      url: 'https://piohbdisp.hb.adx1.com/',
       data: JSON.stringify(request),
     };
   },

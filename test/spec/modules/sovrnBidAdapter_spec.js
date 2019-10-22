@@ -3,7 +3,7 @@ import { spec, LogError } from 'modules/sovrnBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
 import { SSL_OP_SINGLE_ECDH_USE } from 'constants';
 
-const ENDPOINT = `//ap.lijit.com/rtb/bid?src=$$REPO_AND_VERSION$$`;
+const ENDPOINT = `https://ap.lijit.com/rtb/bid?src=$$REPO_AND_VERSION$$`;
 
 describe('sovrnBidAdapter', function() {
   const adapter = newBidder(spec);
@@ -267,7 +267,7 @@ describe('sovrnBidAdapter', function() {
                   'id': 'a_448326_16c2ada014224bee815a90d2248322f5',
                   'impid': '2a3826aae345f4',
                   'price': 1.0099999904632568,
-                  'nurl': 'http://localhost/rtb/impression?bannerid=220958&campaignid=3890&rtb_tid=15588614-75d2-40ab-b27e-13d2127b3c2e&rpid=1295&seatid=seat1&zoneid=448326&cb=26900712&tid=a_448326_16c2ada014224bee815a90d2248322f5',
+                  'nurl': 'https://localhost/rtb/impression?bannerid=220958&campaignid=3890&rtb_tid=15588614-75d2-40ab-b27e-13d2127b3c2e&rpid=1295&seatid=seat1&zoneid=448326&cb=26900712&tid=a_448326_16c2ada014224bee815a90d2248322f5',
                   'adm': 'yo a creative',
                   'crid': 'cridprebidrtb',
                   'w': 160,
@@ -277,7 +277,7 @@ describe('sovrnBidAdapter', function() {
                   'id': 'a_430392_beac4c1515da4576acf6cb9c5340b40c',
                   'impid': '3cf96fd26ed4c5',
                   'price': 1.0099999904632568,
-                  'nurl': 'http://localhost/rtb/impression?bannerid=220957&campaignid=3890&rtb_tid=5bc0e68b-3492-448d-a6f9-26fa3fd0b646&rpid=1295&seatid=seat1&zoneid=430392&cb=62735099&tid=a_430392_beac4c1515da4576acf6cb9c5340b40c',
+                  'nurl': 'https://localhost/rtb/impression?bannerid=220957&campaignid=3890&rtb_tid=5bc0e68b-3492-448d-a6f9-26fa3fd0b646&rpid=1295&seatid=seat1&zoneid=430392&cb=62735099&tid=a_430392_beac4c1515da4576acf6cb9c5340b40c',
                   'adm': 'yo a creative',
                   'crid': 'cridprebidrtb',
                   'w': 300,
@@ -297,7 +297,7 @@ describe('sovrnBidAdapter', function() {
       let expectedReturnStatement = [
         {
           'type': 'iframe',
-          'url': '//ap.lijit.com/beacon?informer=13487408&gdpr_consent=',
+          'url': 'https://ap.lijit.com/beacon?informer=13487408&gdpr_consent=',
         }
       ]
       let returnStatement = spec.getUserSyncs(syncOptions, serverResponse);
