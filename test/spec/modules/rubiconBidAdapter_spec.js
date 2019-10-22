@@ -2229,7 +2229,7 @@ describe('the rubicon adapter', function () {
     });
   });
 
-  describe.only('Supply Chain Support', function() {
+  describe('Supply Chain Support', function() {
     const nodePropsOrder = ['asi', 'sid', 'hp', 'rid', 'name', 'domain'];
     let bidRequests;
     let schainConfig;
