@@ -38,7 +38,6 @@ Connects to One Video demand source to fetch bids.
                 display: 1,
                 rewarded: 1
               },
-             },
               site: {
                 id: 1,
                 page: 'http://abhi12345.com',
