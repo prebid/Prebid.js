@@ -5,6 +5,13 @@ import find from 'core-js/library/fn/array/find';
 import includes from 'core-js/library/fn/array/includes';
 import {parse as parseUrl} from '../src/url';
 
+/*
+ * In case you're AdKernel whitelable platform's client who needs branded adapter to
+ * work with Adkernel platform - DO NOT COPY THIS ADAPTER UNDER NEW NAME
+ *
+ * Please contact prebid@adkernel.com and we'll add your adapter as an alias.
+ */
+
 const VIDEO_TARGETING = ['mimes', 'minduration', 'maxduration', 'protocols',
   'startdelay', 'linearity', 'boxingallowed', 'playbackmethod', 'delivery',
   'pos', 'api', 'ext'];
@@ -16,7 +23,7 @@ const VERSION = '1.3';
 export const spec = {
 
   code: 'adkernel',
-  aliases: ['headbidding'],
+  aliases: ['headbidding', 'adsolut', 'oftmediahb', 'audiencemedia'],
   supportedMediaTypes: [BANNER, VIDEO],
   isBidRequestValid: function(bidRequest) {
     return 'params' in bidRequest &&

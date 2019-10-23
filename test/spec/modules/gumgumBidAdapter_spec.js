@@ -113,7 +113,7 @@ describe('gumgumAdapter', function () {
       const gdprConsent = { consentString: 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==', gdprApplies: true };
       const fakeBidRequest = { gdprConsent: gdprConsent };
       const bidRequest = spec.buildRequests(bidRequests, fakeBidRequest)[0];
-      expect(bidRequest.data.gdprApplies).to.eq(true);
+      expect(bidRequest.data.gdprApplies).to.eq(1);
       expect(bidRequest.data.gdprConsent).to.eq('BOJ/P2HOJ/P2HABABMAAAAAZ+A==');
     });
     it('should handle gdprConsent is present but values are undefined case', function () {

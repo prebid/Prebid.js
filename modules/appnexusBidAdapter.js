@@ -3,8 +3,10 @@ import * as utils from '../src/utils';
 import { config } from '../src/config';
 import { registerBidder, getIabSubCategory } from '../src/adapters/bidderFactory';
 import { BANNER, NATIVE, VIDEO, ADPOD } from '../src/mediaTypes';
+import { auctionManager } from '../src/auctionManager';
 import find from 'core-js/library/fn/array/find';
 import includes from 'core-js/library/fn/array/includes';
+import { OUTSTREAM, INSTREAM } from '../src/video';
 
 const BIDDER_CODE = 'appnexus';
 const URL = '//ib.adnxs.com/ut/v3/prebid';
@@ -33,10 +35,13 @@ const NATIVE_MAPPING = {
 const SOURCE = 'pbjs';
 const MAX_IMPS_PER_REQUEST = 15;
 const mappingFileUrl = '//acdn.adnxs.com/prebid/appnexus-mapping/mappings.json';
+const SCRIPT_TAG_START = '<script';
+const VIEWABILITY_URL_START = /\/\/cdn\.adnxs\.com\/v/;
+const VIEWABILITY_FILE_NAME = 'trk.js';
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['appnexusAst', 'brealtime', 'emxdigital', 'pagescience', 'defymedia', 'gourmetads', 'matomy', 'featureforward', 'oftmedia', 'districtm'],
+  aliases: ['appnexusAst', 'brealtime', 'emxdigital', 'pagescience', 'defymedia', 'gourmetads', 'matomy', 'featureforward', 'oftmedia', 'districtm', 'adasta'],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   /**
@@ -58,9 +63,11 @@ export const spec = {
   buildRequests: function(bidRequests, bidderRequest) {
     const tags = bidRequests.map(bidToTag);
     const userObjBid = find(bidRequests, hasUserInfo);
-    let userObj;
+    let userObj = {};
+    if (config.getConfig('coppa') === true) {
+      userObj = {'coppa': true};
+    }
     if (userObjBid) {
-      userObj = {};
       Object.keys(userObjBid.params.user)
         .filter(param => includes(USER_PARAMS, param))
         .forEach(param => userObj[param] = userObjBid.params.user[param]);
@@ -111,6 +118,7 @@ export const spec = {
 
     const memberIdBid = find(bidRequests, hasMemberId);
     const member = memberIdBid ? parseInt(memberIdBid.params.member, 10) : 0;
+    const schain = bidRequests[0].schain;
 
     const payload = {
       tags: [...tags],
@@ -118,7 +126,8 @@ export const spec = {
       sdk: {
         source: SOURCE,
         version: '$prebid.version$'
-      }
+      },
+      schain: schain
     };
 
     if (member > 0) {
@@ -283,6 +292,16 @@ export const spec = {
     }
 
     return params;
+  },
+
+  /**
+   * Add element selector to javascript tracker to improve native viewability
+   * @param {Bid} bid
+   */
+  onBidWon: function(bid) {
+    if (bid.native) {
+      reloadViewabilityScriptWithCorrectParameters(bid);
+    }
   }
 }
 
@@ -294,6 +313,91 @@ function deleteValues(keyPairObj) {
   if (isPopulatedArray(keyPairObj.value) && keyPairObj.value[0] === '') {
     delete keyPairObj.value;
   }
+}
+
+function reloadViewabilityScriptWithCorrectParameters(bid) {
+  let viewJsPayload = getAppnexusViewabilityScriptFromJsTrackers(bid.native.javascriptTrackers);
+
+  if (viewJsPayload) {
+    let prebidParams = 'pbjs_adid=' + bid.adId + ';pbjs_auc=' + bid.adUnitCode;
+
+    let jsTrackerSrc = getViewabilityScriptUrlFromPayload(viewJsPayload)
+
+    let newJsTrackerSrc = jsTrackerSrc.replace('dom_id=%native_dom_id%', prebidParams);
+
+    // find iframe containing script tag
+    let frameArray = document.getElementsByTagName('iframe');
+
+    // boolean var to modify only one script. That way if there are muliple scripts,
+    // they won't all point to the same creative.
+    let modifiedAScript = false;
+
+    // first, loop on all ifames
+    for (let i = 0; i < frameArray.length && !modifiedAScript; i++) {
+      let currentFrame = frameArray[i];
+      try {
+        // IE-compatible, see https://stackoverflow.com/a/3999191/2112089
+        let nestedDoc = currentFrame.contentDocument || currentFrame.contentWindow.document;
+
+        if (nestedDoc) {
+          // if the doc is present, we look for our jstracker
+          let scriptArray = nestedDoc.getElementsByTagName('script');
+          for (let j = 0; j < scriptArray.length && !modifiedAScript; j++) {
+            let currentScript = scriptArray[j];
+            if (currentScript.getAttribute('data-src') == jsTrackerSrc) {
+              currentScript.setAttribute('src', newJsTrackerSrc);
+              currentScript.setAttribute('data-src', '');
+              if (currentScript.removeAttribute) {
+                currentScript.removeAttribute('data-src');
+              }
+              modifiedAScript = true;
+            }
+          }
+        }
+      } catch (exception) {
+        // trying to access a cross-domain iframe raises a SecurityError
+        // this is expected and ignored
+        if (!(exception instanceof DOMException && exception.name === 'SecurityError')) {
+          // all other cases are raised again to be treated by the calling function
+          throw exception;
+        }
+      }
+    }
+  }
+}
+
+function strIsAppnexusViewabilityScript(str) {
+  let regexMatchUrlStart = str.match(VIEWABILITY_URL_START);
+  let viewUrlStartInStr = regexMatchUrlStart != null && regexMatchUrlStart.length >= 1;
+
+  let regexMatchFileName = str.match(VIEWABILITY_FILE_NAME);
+  let fileNameInStr = regexMatchFileName != null && regexMatchFileName.length >= 1;
+
+  return str.startsWith(SCRIPT_TAG_START) && fileNameInStr && viewUrlStartInStr;
+}
+
+function getAppnexusViewabilityScriptFromJsTrackers(jsTrackerArray) {
+  let viewJsPayload;
+  if (utils.isStr(jsTrackerArray) && strIsAppnexusViewabilityScript(jsTrackerArray)) {
+    viewJsPayload = jsTrackerArray;
+  } else if (utils.isArray(jsTrackerArray)) {
+    for (let i = 0; i < jsTrackerArray.length; i++) {
+      let currentJsTracker = jsTrackerArray[i];
+      if (strIsAppnexusViewabilityScript(currentJsTracker)) {
+        viewJsPayload = currentJsTracker;
+      }
+    }
+  }
+  return viewJsPayload;
+}
+
+function getViewabilityScriptUrlFromPayload(viewJsPayload) {
+  // extracting the content of the src attribute
+  // -> substring between src=" and "
+  let indexOfFirstQuote = viewJsPayload.indexOf('src="') + 5; // offset of 5: the length of 'src=' + 1
+  let indexOfSecondQuote = viewJsPayload.indexOf('"', indexOfFirstQuote);
+  let jsTrackerSrc = viewJsPayload.substring(indexOfFirstQuote, indexOfSecondQuote);
+  return jsTrackerSrc;
 }
 
 function formatRequest(payload, bidderRequest) {
@@ -381,40 +485,59 @@ function newBid(serverBid, rtbBid, bidderRequest) {
   }
 
   if (rtbBid.rtb.video) {
+    // shared video properties used for all 3 contexts
     Object.assign(bid, {
       width: rtbBid.rtb.video.player_width,
       height: rtbBid.rtb.video.player_height,
-      vastUrl: rtbBid.rtb.video.asset_url,
       vastImpUrl: rtbBid.notify_url,
       ttl: 3600
     });
 
     const videoContext = utils.deepAccess(bidRequest, 'mediaTypes.video.context');
-    if (videoContext === ADPOD) {
-      const iabSubCatId = getIabSubCategory(bidRequest.bidder, rtbBid.brand_category_id);
-      bid.meta = Object.assign({}, bid.meta, { iabSubCatId });
-      bid.video = {
-        context: ADPOD,
-        durationSeconds: Math.floor(rtbBid.rtb.video.duration_ms / 1000),
-      };
-    }
+    switch (videoContext) {
+      case ADPOD:
+        const iabSubCatId = getIabSubCategory(bidRequest.bidder, rtbBid.brand_category_id);
+        bid.meta = Object.assign({}, bid.meta, { iabSubCatId });
+        bid.video = {
+          context: ADPOD,
+          durationSeconds: Math.floor(rtbBid.rtb.video.duration_ms / 1000),
+        };
+        bid.vastUrl = rtbBid.rtb.video.asset_url;
+        break;
+      case OUTSTREAM:
+        bid.adResponse = serverBid;
+        bid.adResponse.ad = bid.adResponse.ads[0];
+        bid.adResponse.ad.video = bid.adResponse.ad.rtb.video;
+        bid.vastXml = rtbBid.rtb.video.content;
 
-    // This supports Outstream Video
-    if (rtbBid.renderer_url) {
-      const rendererOptions = utils.deepAccess(
-        bidderRequest.bids[0],
-        'renderer.options'
-      );
-
-      Object.assign(bid, {
-        adResponse: serverBid,
-        renderer: newRenderer(bid.adUnitCode, rtbBid, rendererOptions)
-      });
-      bid.adResponse.ad = bid.adResponse.ads[0];
-      bid.adResponse.ad.video = bid.adResponse.ad.rtb.video;
+        if (rtbBid.renderer_url) {
+          const videoBid = find(bidderRequest.bids, bid => bid.bidId === serverBid.uuid);
+          const rendererOptions = utils.deepAccess(videoBid, 'renderer.options');
+          bid.renderer = newRenderer(bid.adUnitCode, rtbBid, rendererOptions);
+        }
+        break;
+      case INSTREAM:
+        bid.vastUrl = rtbBid.rtb.video.asset_url;
+        break;
     }
   } else if (rtbBid.rtb[NATIVE]) {
     const nativeAd = rtbBid.rtb[NATIVE];
+
+    // setting up the jsTracker:
+    // we put it as a data-src attribute so that the tracker isn't called
+    // until we have the adId (see onBidWon)
+    let jsTrackerDisarmed = rtbBid.viewability.config.replace('src=', 'data-src=');
+
+    let jsTrackers = nativeAd.javascript_trackers;
+
+    if (jsTrackers == undefined) {
+      jsTrackers = jsTrackerDisarmed;
+    } else if (utils.isStr(jsTrackers)) {
+      jsTrackers = [jsTrackers, jsTrackerDisarmed];
+    } else {
+      jsTrackers.push(jsTrackerDisarmed);
+    }
+
     bid[NATIVE] = {
       title: nativeAd.title,
       body: nativeAd.desc,
@@ -433,7 +556,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
       displayUrl: nativeAd.displayurl,
       clickTrackers: nativeAd.link.click_trackers,
       impressionTrackers: nativeAd.impression_trackers,
-      javascriptTrackers: nativeAd.javascript_trackers
+      javascriptTrackers: jsTrackers
     };
     if (nativeAd.main_img) {
       bid['native'].image = {
@@ -551,11 +674,13 @@ function bidToTag(bid) {
     tag.video = Object.assign({}, tag.video, {custom_renderer_present: true});
   }
 
-  if (
-    (utils.isEmpty(bid.mediaType) && utils.isEmpty(bid.mediaTypes)) ||
-    (bid.mediaType === BANNER || (bid.mediaTypes && bid.mediaTypes[BANNER]))
-  ) {
+  let adUnit = find(auctionManager.getAdUnits(), au => bid.transactionId === au.transactionId);
+  if (adUnit && adUnit.mediaTypes && adUnit.mediaTypes.banner) {
     tag.ad_types.push(BANNER);
+  }
+
+  if (tag.ad_types.length === 0) {
+    delete tag.ad_types;
   }
 
   return tag;
