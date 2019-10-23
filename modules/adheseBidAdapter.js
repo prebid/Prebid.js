@@ -84,7 +84,18 @@ function adResponse(bid, ad) {
     width: Number(ad.width),
     height: Number(ad.height),
     creativeId: adDetails.creativeId,
-    dealId: adDetails.dealId
+    dealId: adDetails.dealId,
+    adhese: {
+      creativeId: adDetails.creativeId,
+      dealId: adDetails.dealId,
+      priority: adDetails.priority,
+      orderProperty: adDetails.orderProperty,
+      adFormat: adDetails.adFormat,
+      adType: adDetails.adType,
+      adspaceId: adDetails.adspaceId,
+      libId: adDetails.libId,
+      viewableImpressionCounter: adDetails.viewableImpressionCounter
+    }
   });
 
   if (bidResponse.mediaType === VIDEO) {
@@ -151,10 +162,24 @@ function getPrice(ad) {
 function getAdDetails(ad) {
   let creativeId = '';
   let dealId = '';
+  let priority = -1;
+  let orderProperty = {};
+  let adFormat = '';
+  let adType = '';
+  let adspaceId = '';
+  let libId = '';
+  let viewableImpressionCounter = '';
 
   if (isAdheseAd(ad)) {
     creativeId = ad.id;
     dealId = ad.orderId;
+    priority = ad.priority;
+    orderProperty = ad.orderProperty;
+    adFormat = ad.adFormat;
+    adType = ad.adType;
+    libId = ad.libId;
+    adspaceId = ad.adspaceId;
+    viewableImpressionCounter = ad.viewableImpressionCounter;
   } else {
     creativeId = ad.origin + (ad.originInstance ? '-' + ad.originInstance : '');
     if (ad.originData && ad.originData.seatbid && ad.originData.seatbid.length) {
@@ -166,7 +191,7 @@ function getAdDetails(ad) {
       }
     }
   }
-  return { creativeId: creativeId, dealId: dealId };
+  return { creativeId: creativeId, dealId: dealId, priority: priority, orderProperty: orderProperty, adFormat: adFormat, adType: adType, libId: libId, adspaceId: adspaceId, viewableImpressionCounter: viewableImpressionCounter };
 }
 
 function base64urlEncode(s) {
