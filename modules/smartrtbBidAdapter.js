@@ -17,11 +17,8 @@ function getDomain () {
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [ 'banner', 'video' ],
-  aliases: ['smrtb'],
   isBidRequestValid: function(bid) {
-    return (bid.params.pubId !== null &&
-      bid.params.medId !== null &&
-      bid.params.zoneId !== null);
+    return (bid.params.zoneId !== null);
   },
   buildRequests: function(validBidRequests, bidderRequest) {
     let stack = (bidderRequest.refererInfo &&
