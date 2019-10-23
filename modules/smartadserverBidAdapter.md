@@ -3,7 +3,7 @@
 ```
 Module Name: Smart Ad Server Bidder Adapter
 Module Type: Bidder Adapter
-Maintainer: gcarnec@smartadserver.com
+Maintainer: support@smartadserver.com
 ```
 
 # Description
