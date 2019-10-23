@@ -60,6 +60,10 @@ export const spec = {
   },
   buildRequests(bidRequest, bidderRequest) {
     let timeout = config.getConfig('bidderTimeout');
+    let schain = null;
+    try{
+      schain = bidRequest[0].schain
+    }catch(e) {}
     let dmxRequest = {
       id: utils.generateUUID(),
       cur: ['USD'],
@@ -80,6 +84,12 @@ export const spec = {
       dmxRequest.user.ext = {};
       dmxRequest.user.ext.consent = bidderRequest.gdprConsent.consentString;
     }
+    try{
+      schain = bidRequest[0].schain;
+      dmxRequest.source = {};
+      dmxRequest.source.ext = {};
+      dmxRequest.source.ext.schain = schain || {}
+    }catch(e) {}
     let tosendtags = bidRequest.map(dmx => {
       var obj = {};
       obj.id = dmx.bidId;
@@ -96,14 +106,12 @@ export const spec = {
       return obj;
     });
     dmxRequest.imp = tosendtags;
+
+
     return {
       method: 'POST',
       url: DMXURI,
       data: JSON.stringify(dmxRequest),
-      options: {
-        contentType: 'application/json',
-        withCredentials: true
-      },
       bidderRequest
     }
   },
