@@ -8,27 +8,6 @@ const FEATURES_VERSION = '1';
 const ENDPOINT = 'https://mp.4dex.io/prebid';
 const SUPPORTED_MEDIA_TYPES = ['banner'];
 const ADAGIO_TAG_URL = '//script.4dex.io/localstore.js';
-const ADSRV_EVENTS = {
-  GPT: {
-    IMPRESSION_VIEWABLE: 'impressionViewable',
-    SLOT_ON_LOAD: 'slotOnLoad',
-    SLOT_RENDER_ENDED: 'slotRenderEnded',
-    SLOT_REQUESTED: 'slotRequested',
-    SLOT_RESPONSE_RECEIVED: 'slotResponseReceived',
-    SLOT_VISIBILITY_CHANGED: 'slotVisibilityChanged',
-  },
-  SAS: {
-    CALL: 'call',
-    CLEAN: 'clean',
-    BEFORE_RENDER: 'beforeRender',
-    CMP_ANSWERED: 'CmpAnswered',
-    CMP_CALLED: 'CmpCalled',
-    LOAD: 'load',
-    NOAD: 'noad',
-    RENDER: 'render',
-    RESET: 'reset'
-  }
-};
 
 function canAccessTopWindow() {
   try {
@@ -55,40 +34,6 @@ function initAdagio() {
     } else {
       utils.logWarn('Adagio Script not found');
     }
-  }
-
-  const adagioEnqueue = function adagioEnqueue(action, data) {
-    w.ADAGIO.queue.push({ action, data, ts: Date.now() });
-  }
-
-  // Listen to ad-server events in current window as we can
-  // in a Post-Bid scenario.
-  window.googletag = window.googletag || {};
-  window.googletag.cmd = window.googletag.cmd || [];
-  window.googletag.cmd.push(function() {
-    const gptEvents = Object.keys(ADSRV_EVENTS.GPT).map(key => ADSRV_EVENTS.GPT[key]);
-    gptEvents.forEach(eventName => {
-      window.googletag.pubads().addEventListener(eventName, args => {
-        adagioEnqueue('gpt-event', { eventName, args });
-      });
-    });
-  });
-
-  window.sas = window.sas || {};
-  window.sas.cmd = window.sas.cmd || [];
-  window.sas.cmd.push(function() {
-    const sasEvents = Object.keys(ADSRV_EVENTS.SAS).map(key => ADSRV_EVENTS.SAS[key]);
-    sasEvents.forEach(eventName => {
-      window.sas.events.on(eventName, args => {
-        adagioEnqueue('sas-event', { eventName, args });
-      });
-    });
-  });
-
-  if (window.advstLib && typeof window.advstLib === 'function') {
-    advstLib().eventHandler.addListener('renderEndedEvent', function(e) {
-      adagioEnqueue('adthk-event', { eventName: 'renderEndedEvent', args: e.detail });
-    });
   }
 
   // First, try to load adagio-js from localStorage.
