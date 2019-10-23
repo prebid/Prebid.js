@@ -61,9 +61,6 @@ export const spec = {
   buildRequests(bidRequest, bidderRequest) {
     let timeout = config.getConfig('bidderTimeout');
     let schain = null;
-    try {
-      schain = bidRequest[0].schain
-    } catch (e) {}
     let dmxRequest = {
       id: utils.generateUUID(),
       cur: ['USD'],
