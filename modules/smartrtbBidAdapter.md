@@ -24,7 +24,7 @@ Video is supported but requires a publisher supplied adunit renderer at this tim
                    },
                    video: { /* requires publisher supplied renderer */
                        context: 'outstream',
-                       playerSize: [640, 480]
+                       playerDimension: [640, 480]
                    }
                },
                bids: [
