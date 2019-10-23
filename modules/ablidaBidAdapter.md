@@ -22,7 +22,8 @@ Module that connects to Ablida's bidder for bids.
                    {
                        bidder: 'ablida',
                        params: {
-                           placementId: 'mediumrectangle-demo'
+                           placementId: 'mediumrectangle-demo',
+                           categories: ['automotive', 'news-and-politics'] // optional: categories of page
                        }
                    }
                ]

@@ -39,7 +39,7 @@ export const spec = {
         width: size[0],
         height: size[1],
         bidId: bidRequest.bidId,
-        category: bidRequest.params.category,
+        categories: bidRequest.params.categories,
         referer: bidderRequest.refererInfo.referer,
         jaySupported: jaySupported,
         device: device
