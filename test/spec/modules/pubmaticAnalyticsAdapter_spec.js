@@ -218,7 +218,7 @@ const MOCK = {
     {
       'bidId': '3bd4ebb1c900e2',
       'bidder': 'pubmatic',
-      'adUnitCode': '/19968336/header-bid-tag-0',
+      'adUnitCode': '/19968336/header-bid-tag-1',
       'auctionId': '25c6d7f5-699a-4bfc-87c9-996f915341fa'
     }
   ]
@@ -319,7 +319,7 @@ describe('pubmatic analytics adapter', function () {
       events.emit(BID_WON, MOCK.BID_WON[0]);
       events.emit(BID_WON, MOCK.BID_WON[1]);
 
-      clock.tick(3000 + 1000); // read from the const
+      clock.tick(3000 + 1000);
       expect(requests.length).to.equal(1);
       let request = requests[0];
       expect(request.url).to.equal('https://t.pubmatic.com/wl?pubid=9999');
@@ -384,14 +384,12 @@ describe('pubmatic analytics adapter', function () {
       events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
       events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
       events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[0]);
-      //  events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[1]);
       events.emit(BIDDER_DONE, MOCK.BIDDER_DONE);
       events.emit(AUCTION_END, MOCK.AUCTION_END);
       events.emit(SET_TARGETING, MOCK.SET_TARGETING);
       events.emit(BID_WON, MOCK.BID_WON[0]);
-      // events.emit(BID_WON, MOCK.BID_WON[1]);
 
-      clock.tick(3000 + 1000); // read from the const
+      clock.tick(3000 + 1000);
       expect(requests.length).to.equal(1);
       let request = requests[0];
       let data = getLoggerJsonFromRequest(request.requestBody);
@@ -419,24 +417,81 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[1].ps[0].ocry).to.equal('USD');
     });
 
-    // it('Logger: post-timeout check', function() {
-    //   events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
-    //   events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
-    //   events.emit(BID_TIMEOUT, MOCK.BID_TIMEOUT);
-    //   console.log('BID_TIMEOUT');
-    //   events.emit(AUCTION_END, MOCK.AUCTION_END);
-    //   console.log('AUCTION_END');
+    it('Logger: post-timeout check without bid response', function() {
+      // db = 1 and t = 1 means bidder did NOT respond with a bid but we got a timeout notification
+      events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
+      events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
+      events.emit(BID_TIMEOUT, MOCK.BID_TIMEOUT);
+      events.emit(AUCTION_END, MOCK.AUCTION_END);
+      // events.emit(SET_TARGETING, MOCK.SET_TARGETING);
+      // events.emit(BID_WON, MOCK.BID_WON[0]);
+      // events.emit(BID_WON, MOCK.BID_WON[1]);
+      clock.tick(3000 + 1000);
 
-    //   // events.emit(SET_TARGETING, MOCK.SET_TARGETING);
-    //   // events.emit(BID_WON, MOCK.BID_WON[0]);
-    //   // events.emit(BID_WON, MOCK.BID_WON[1]);
-    //   clock.tick(3000 + 1000);
+      expect(requests.length).to.equal(1);
+      let request = requests[0];
+      let data = getLoggerJsonFromRequest(request.requestBody);
+      console.log(JSON.stringify(data));
+      expect(data.s[1].sn).to.equal('/19968336/header-bid-tag-1');
+      expect(data.s[1].sz).to.deep.equal(['1000x300', '970x250', '728x90']);
+      expect(data.s[1].ps).to.be.an('array');
+      expect(data.s[1].ps.length).to.equal(1);
+      expect(data.s[1].ps[0].pn).to.equal('pubmatic');
+      expect(data.s[1].ps[0].bidid).to.equal('3bd4ebb1c900e2');
+      expect(data.s[1].ps[0].db).to.equal(1);
+      expect(data.s[1].ps[0].kgpv).to.equal('this-is-a-kgpv');
+      expect(data.s[1].ps[0].psz).to.equal('0x0');
+      expect(data.s[1].ps[0].eg).to.equal(0);
+      expect(data.s[1].ps[0].en).to.equal(0);
+      expect(data.s[1].ps[0].di).to.equal('');
+      expect(data.s[1].ps[0].dc).to.equal('');
+      expect(data.s[1].ps[0].mi).to.equal(undefined);
+      expect(data.s[1].ps[0].l1).to.equal(0);
+      expect(data.s[1].ps[0].l2).to.equal(0);
+      expect(data.s[1].ps[0].ss).to.equal(0);
+      expect(data.s[1].ps[0].t).to.equal(1);
+      expect(data.s[1].ps[0].wb).to.equal(0);
+      expect(data.s[1].ps[0].af).to.equal(undefined);
+      expect(data.s[1].ps[0].ocpm).to.equal(0);
+      expect(data.s[1].ps[0].ocry).to.equal('USD');
+    });
 
-    //   expect(requests.length).to.equal(1);
-    //   let request = requests[0];
-    //   let data = getLoggerJsonFromRequest(request.requestBody);
-    //   console.log(JSON.stringify(data));
-    // });
+    it('Logger: post-timeout check with bid response', function() {
+      // db = 1 and t = 1 means bidder did NOT respond with a bid but we got a timeout notification
+      events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
+      events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
+      events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[1]);
+      events.emit(BID_TIMEOUT, MOCK.BID_TIMEOUT);
+      events.emit(AUCTION_END, MOCK.AUCTION_END);
+      clock.tick(3000 + 1000);
+
+      expect(requests.length).to.equal(1);
+      let request = requests[0];
+      let data = getLoggerJsonFromRequest(request.requestBody);
+      console.log(JSON.stringify(data));
+      expect(data.s[1].sn).to.equal('/19968336/header-bid-tag-1');
+      expect(data.s[1].sz).to.deep.equal(['1000x300', '970x250', '728x90']);
+      expect(data.s[1].ps).to.be.an('array');
+      expect(data.s[1].ps.length).to.equal(1);
+      expect(data.s[1].ps[0].pn).to.equal('pubmatic');
+      expect(data.s[1].ps[0].bidid).to.equal('3bd4ebb1c900e2');
+      expect(data.s[1].ps[0].db).to.equal(0);
+      expect(data.s[1].ps[0].kgpv).to.equal('this-is-a-kgpv');
+      expect(data.s[1].ps[0].psz).to.equal('728x90');
+      expect(data.s[1].ps[0].eg).to.equal(1.52);
+      expect(data.s[1].ps[0].en).to.equal(1.52);
+      expect(data.s[1].ps[0].di).to.equal('the-deal-id');
+      expect(data.s[1].ps[0].dc).to.equal('PMP');
+      expect(data.s[1].ps[0].mi).to.equal('matched-impression');
+      expect(data.s[1].ps[0].l1).to.equal(3214);
+      expect(data.s[1].ps[0].l2).to.equal(0);
+      expect(data.s[1].ps[0].ss).to.equal(1);
+      expect(data.s[1].ps[0].t).to.equal(1);
+      expect(data.s[1].ps[0].wb).to.equal(1);
+      expect(data.s[1].ps[0].af).to.equal('banner');
+      expect(data.s[1].ps[0].ocpm).to.equal(1.52);
+      expect(data.s[1].ps[0].ocry).to.equal('USD');
+    });
 
     // it('Logger: currency conversion check', function(){});
   })

@@ -332,14 +332,19 @@ function auctionEndHandler(args) {
 }
 
 function bidTimeoutHandler(args) {
+  // db = 1 and t = 1 means bidder did NOT respond with a bid but we got a timeout notification
+  // db = 0 and t = 1 means bidder did  respond with a bid but post timeout
   args.forEach(badBid => {
     let auctionCache = cache.auctions[badBid.auctionId];
-    // todo: need to test
-    let bid = auctionCache.adUnitCodes[badBid.adUnit.adUnitCode].bids[badBid.bidId || badBid.requestId]; // todo: need try-catch
-    bid.status = ERROR;
-    bid.error = {
-      code: TIMEOUT_ERROR
-    };
+    let bid = auctionCache.adUnitCodes[badBid.adUnitCode].bids[ badBid.bidId || badBid.requestId ]; // todo: need try-catch
+    if (bid) {
+      bid.status = ERROR;
+      bid.error = {
+        code: TIMEOUT_ERROR
+      };
+    } else {
+      utils.logWarn(LOG_PRE_FIX + 'bid not found');
+    }
   });
 }
 
