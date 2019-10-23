@@ -102,6 +102,13 @@ function initDigitrustFacade(config) {
       callCount: 0,
       initCallback: null
     },
+    initialize: function (config) {
+      /* This method is present to catch an edge case where DigiTrust publishers transition
+       * to Prebid with minimal integration, but have not removed old DigiTrust.initialize call.
+       * It should not be used */
+      utils.logInfo('Warning - call to Digitrust.initialize within a Prebid integration. Please initialize through pbjs.configure with the userSync option');
+      initializeDigiTrust(config);
+    },
     getUser: function (obj, callback) {
       var isAsync = !!isFunc(callback);
       var cb = isAsync ? callback : noop;
