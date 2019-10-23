@@ -93,12 +93,10 @@ export const spec = {
       }
 
       if (digitrust) {
-        sovrnBidReq.user = sovrnBidReq.user || {};
-        sovrnBidReq.user.ext = sovrnBidReq.user.ext || {}
-        sovrnBidReq.user.ext.digitrust = {
+        utils.deepSetValue(sovrnBidReq, 'user.ext.digitrust', {
           id: digitrust.id,
           keyv: digitrust.keyv
-        }
+        })
       }
 
       let url = `https://ap.lijit.com/rtb/bid?` +
@@ -158,7 +156,7 @@ export const spec = {
       let tracks = []
       if (serverResponses && serverResponses.length !== 0) {
         if (syncOptions.iframeEnabled) {
-          let iidArr = serverResponses.filter(resp => resp.body && resp.body.ext && resp.body.ext.iid)
+          let iidArr = serverResponses.filter(resp => utils.deepAccess(resp, 'body.ext.iid'))
             .map(resp => resp.body.ext.iid);
           let consentString = '';
           if (gdprConsent && gdprConsent.gdprApplies && typeof gdprConsent.consentString === 'string') {
@@ -173,7 +171,7 @@ export const spec = {
         }
 
         if (syncOptions.pixelEnabled) {
-          serverResponses.filter(resp => resp.body && resp.body.ext && resp.body.ext.sync && resp.body.ext.sync.pixels)
+          serverResponses.filter(resp => utils.deepAccess(resp, 'body.ext.sync.pixels'))
             .flatMap(resp => resp.body.ext.sync.pixels)
             .map(pixel => pixel.url)
             .forEach(url => tracks.push({ type: 'image', url }))
