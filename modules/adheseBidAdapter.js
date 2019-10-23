@@ -136,7 +136,7 @@ function getbaseAdResponse(response) {
 }
 
 function isAdheseAd(ad) {
-  return !ad.origin || ad.origin === 'JERLICIA';
+  return !ad.origin || ad.origin === 'JERLICIA' || ad.origin === 'DALE';
 }
 
 function getMediaType(markup) {
