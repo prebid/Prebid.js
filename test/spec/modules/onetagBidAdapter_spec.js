@@ -166,5 +166,43 @@ describe('onetag', function () {
       const syncs = spec.getUserSyncs({ iframeEnabled: false });
       expect(syncs).to.be.an('array').that.is.empty;
     });
+    it('Must pass gdpr params when gdprApplies is true', function () {
+      const syncs = spec.getUserSyncs({ iframeEnabled: true }, {}, {
+        gdprApplies: true, consentString: 'foo'
+      });
+      expect(syncs[0].type).to.equal('iframe');
+      expect(syncs[0].url).to.include(sync_endpoint);
+      expect(syncs[0].url).to.match(/(?:[?&](?:gdpr_consent=foo([^&]*)|gdpr=1([^&]*)|[^&]*))+$/);
+    });
+    it('Must pass gdpr params when gdprApplies is false', function () {
+      const syncs = spec.getUserSyncs({ iframeEnabled: true }, {}, {
+        gdprApplies: false, consentString: 'foo'
+      });
+      expect(syncs[0].type).to.equal('iframe');
+      expect(syncs[0].url).to.include(sync_endpoint);
+      expect(syncs[0].url).to.match(/(?:[?&](?:gdpr_consent=foo([^&]*)|gdpr=0([^&]*)))+$/);
+    });
+    it('Must pass gdpr consent string param when gdprApplies is undefined', function () {
+      const syncs = spec.getUserSyncs({ iframeEnabled: true }, {}, {
+        consentString: 'foo'
+      });
+      expect(syncs[0].type).to.equal('iframe');
+      expect(syncs[0].url).to.include(sync_endpoint);
+      expect(syncs[0].url).to.match(/(?:[?&](?:gdpr_consent=foo([^&]*)))+$/);
+    });
+    it('Must pass no gdpr params when consentString is null', function () {
+      const syncs = spec.getUserSyncs({ iframeEnabled: true }, {}, {
+        consentString: null
+      });
+      expect(syncs[0].type).to.equal('iframe');
+      expect(syncs[0].url).to.include(sync_endpoint);
+      expect(syncs[0].url).to.not.match(/(?:[?&](?:gdpr_consent=([^&]*)|gdpr=([^&]*)))+$/);
+    });
+    it('Must pass no gdpr param when gdprConsent is empty', function () {
+      const syncs = spec.getUserSyncs({ iframeEnabled: true }, {}, {});
+      expect(syncs[0].type).to.equal('iframe');
+      expect(syncs[0].url).to.include(sync_endpoint);
+      expect(syncs[0].url).to.not.match(/(?:[?&](?:gdpr_consent=([^&]*)|gdpr=([^&]*)))+$/);
+    });
   });
 });
