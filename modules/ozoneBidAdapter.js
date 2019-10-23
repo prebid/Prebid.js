@@ -8,10 +8,10 @@ import { Renderer } from '../src/Renderer'
 const BIDDER_CODE = 'ozone';
 
 const OZONEURI = 'https://elb.the-ozone-project.com/openrtb2/auction';
-const OZONE_RENDERER_URL = 'https://prebid.the-ozone-project.com/ozone-renderer.js'
-
 const OZONECOOKIESYNC = 'https://elb.the-ozone-project.com/static/load-cookie.html';
-const OZONEVERSION = '2.0.0';
+const OZONE_RENDERER_URL = 'https://prebid.the-ozone-project.com/ozone-renderer.js';
+
+const OZONEVERSION = '2.1.2';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -57,12 +57,6 @@ export const spec = {
       utils.logInfo('OZONE: OZONE BID ADAPTER VALIDATION FAILED : customParams should be renamed to customData');
       return false;
     }
-    if (bid.params.hasOwnProperty('ozoneData')) {
-      if (typeof bid.params.ozoneData !== 'object') {
-        utils.logInfo('OZONE: OZONE BID ADAPTER VALIDATION FAILED : ozoneData is not an object');
-        return false;
-      }
-    }
     if (bid.params.hasOwnProperty('lotameData')) {
       if (typeof bid.params.lotameData !== 'object') {
         utils.logInfo('OZONE: OZONE BID ADAPTER VALIDATION FAILED : lotameData is not an object');
@@ -71,11 +65,11 @@ export const spec = {
     }
     if (bid.hasOwnProperty('mediaTypes') && bid.mediaTypes.hasOwnProperty(VIDEO)) {
       if (!bid.mediaTypes.video.hasOwnProperty('context')) {
-        utils.logInfo('OZONE: [WARNING] No context key/value in bid. Rejecting bid: ', ozoneBidRequest);
+        utils.logInfo('OZONE: [WARNING] No context key/value in bid. Rejecting bid: ', bid);
         return false;
       }
       if (bid.mediaTypes.video.context !== 'outstream') {
-        utils.logInfo('OZONE: [WARNING] Only outstream video is supported. Rejecting bid: ', ozoneBidRequest);
+        utils.logInfo('OZONE: [WARNING] Only outstream video is supported. Rejecting bid: ', bid);
         return false;
       }
     }
@@ -90,18 +84,35 @@ export const spec = {
     let htmlParams = validBidRequests[0].params; // the html page config params will be included in each element
     let ozoneRequest = {}; // we only want to set specific properties on this, not validBidRequests[0].params
     delete ozoneRequest.test; // don't allow test to be set in the config - ONLY use $_GET['pbjs_debug']
-    if (bidderRequest.gdprConsent) {
+
+    if (bidderRequest && bidderRequest.gdprConsent) {
       utils.logInfo('OZONE: ADDING GDPR info');
       ozoneRequest.regs = {};
       ozoneRequest.regs.ext = {};
-      ozoneRequest.regs.ext.gdpr = bidderRequest.gdprConsent.gdprApplies === true ? 1 : 0;
+      ozoneRequest.regs.ext.gdpr = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
       if (ozoneRequest.regs.ext.gdpr) {
-        ozoneRequest.user = {};
-        ozoneRequest.user.ext = {'consent': bidderRequest.gdprConsent.consentString};
+        ozoneRequest.user = ozoneRequest.user || {};
+        if (
+          bidderRequest.gdprConsent.vendorData &&
+          bidderRequest.gdprConsent.vendorData.vendorConsents &&
+          typeof bidderRequest.gdprConsent.consentString !== 'undefined'
+        ) {
+          utils.logInfo('OZONE: found all info we need for GDPR - will add info to request object');
+          ozoneRequest.user.ext = {'consent': bidderRequest.gdprConsent.consentString};
+          // are we able to make this request?
+          let vendorConsents = bidderRequest.gdprConsent.vendorData.vendorConsents;
+          let boolGdprConsentForOzone = vendorConsents[524];
+          let arrGdprConsents = toFlatArray(bidderRequest.gdprConsent.vendorData.purposeConsents);
+          ozoneRequest.regs.ext.oz_con = boolGdprConsentForOzone ? 1 : 0;
+          ozoneRequest.regs.ext.gap = arrGdprConsents;
+        }
+      } else {
+        utils.logInfo('OZONE: **** Failed to find required info for GDPR for request object, even though bidderRequest.gdprConsent is TRUE ****');
       }
     } else {
-      utils.logInfo('OZONE: WILL NOT ADD GDPR info');
+      utils.logInfo('OZONE: WILL NOT ADD GDPR info; no bidderRequest.gdprConsent object was present.');
     }
+
     ozoneRequest.device = {'w': window.innerWidth, 'h': window.innerHeight};
     let tosendtags = validBidRequests.map(ozoneBidRequest => {
       var obj = {};
@@ -123,10 +134,24 @@ export const spec = {
           arrBannerSizes = ozoneBidRequest.mediaTypes[BANNER].sizes; /* Note - if there is a sizes element in the config root it will be pushed into here */
           utils.logInfo('OZONE: setting banner size from the mediaTypes.banner element for bidId ' + obj.id + ': ', arrBannerSizes);
         }
-        // Video integration is not complete yet
         if (ozoneBidRequest.mediaTypes.hasOwnProperty(VIDEO)) {
           obj.video = ozoneBidRequest.mediaTypes[VIDEO];
-          utils.logInfo('OZONE: setting video object from the mediaTypes.video element: ' + obj.id + ':', obj.video);
+          // we need to duplicate some of the video values
+          let wh = getWidthAndHeightFromVideoObject(obj.video);
+          utils.logInfo('OZONE: setting video object from the mediaTypes.video element: ' + obj.id + ':', obj.video, 'wh=', wh);
+          if (wh && typeof wh === 'object') {
+            obj.video.w = wh['w'];
+            obj.video.h = wh['h'];
+            if (playerSizeIsNestedArray(obj.video)) { // this should never happen; it was in the original spec for this change though.
+              utils.logInfo('OZONE: setting obj.video.format to be an array of objects');
+              obj.video.format = [wh];
+            } else {
+              utils.logInfo('OZONE: setting obj.video.format to be an object');
+              obj.video.format = wh;
+            }
+          } else {
+            utils.logInfo('OZONE: cannot set w, h & format values for video; the config is not right');
+          }
         }
         // Native integration is not complete yet
         if (ozoneBidRequest.mediaTypes.hasOwnProperty(NATIVE)) {
@@ -156,9 +181,6 @@ export const spec = {
       obj.ext.ozone.oz_pb_v = OZONEVERSION;
       if (ozoneBidRequest.params.hasOwnProperty('customData')) {
         obj.ext.ozone.customData = ozoneBidRequest.params.customData;
-      }
-      if (ozoneBidRequest.params.hasOwnProperty('ozoneData')) {
-        obj.ext.ozone.ozoneData = ozoneBidRequest.params.ozoneData;
       }
       if (ozoneBidRequest.params.hasOwnProperty('lotameData')) {
         obj.ext.ozone.lotameData = ozoneBidRequest.params.lotameData;
@@ -226,8 +248,8 @@ export const spec = {
     serverResponse.seatbid = injectAdIdsIntoAllBidResponses(serverResponse.seatbid); // we now make sure that each bid in the bidresponse has a unique (within page) adId attribute.
     for (let i = 0; i < serverResponse.seatbid.length; i++) {
       let sb = serverResponse.seatbid[i];
-      const {defaultWidth, defaultHeight} = defaultSize(request.bidderRequest.bids[i]);
       for (let j = 0; j < sb.bid.length; j++) {
+        const {defaultWidth, defaultHeight} = defaultSize(request.bidderRequest.bids[j]); // there should be the same number of bids as requests, so index [j] should always exist.
         let thisBid = ozoneAddStandardProperties(sb.bid[j], defaultWidth, defaultHeight);
 
         // from https://github.com/prebid/Prebid.js/pull/1082
@@ -310,6 +332,13 @@ export function checkDeepArray(Arr) {
   }
 }
 export function defaultSize(thebidObj) {
+  if (!thebidObj) {
+    utils.logInfo('OZONE: defaultSize received empty bid obj! going to return fixed default size');
+    return {
+      'defaultHeight': 250,
+      'defaultWidth': 300
+    };
+  }
   const {sizes} = thebidObj;
   const returnObject = {};
   returnObject.defaultWidth = checkDeepArray(sizes)[0];
@@ -374,14 +403,14 @@ export function getRoundedBid(price, mediaType) {
   let theConfigObject = getGranularityObject(mediaType, mediaTypeGranularity, strBuckets, objBuckets);
   let theConfigKey = getGranularityKeyName(mediaType, mediaTypeGranularity, strBuckets);
 
-  utils.logInfo('getRoundedBid. price:', price, 'mediaType:', mediaType, 'configkey:', theConfigKey, 'configObject:', theConfigObject, 'mediaTypeGranularity:', mediaTypeGranularity, 'strBuckets:', strBuckets);
+  utils.logInfo('OZONE: getRoundedBid. price:', price, 'mediaType:', mediaType, 'configkey:', theConfigKey, 'configObject:', theConfigObject, 'mediaTypeGranularity:', mediaTypeGranularity, 'strBuckets:', strBuckets);
 
   let priceStringsObj = getPriceBucketString(
     price,
     theConfigObject,
     config.getConfig('currency.granularityMultiplier')
   );
-  utils.logInfo('priceStringsObj', priceStringsObj);
+  utils.logInfo('OZONE: priceStringsObj', priceStringsObj);
   // by default, without any custom granularity set, you get granularity name : 'medium'
   let granularityNamePriceStringsKeyMapping = {
     'medium': 'med',
@@ -497,6 +526,81 @@ function onOutstreamRendererLoaded(bid) {
 
 function outstreamRender(bid) {
   window.ozoneVideo.outstreamRender(bid);
+}
+
+/**
+ * convert {1: true,
+            2: true,
+            3: true,
+            4: true,
+            5: true}
+   to : [1,2,3,4,5]
+ * @param obj
+ */
+function toFlatArray(obj) {
+  let ret = [];
+  Object.keys(obj).forEach(function(key) { if (obj[key]) { ret.push(parseInt(key)); } });
+  utils.logInfo('OZONE: toFlatArray:', obj, 'returning', ret);
+  return ret;
+}
+
+/**
+ *
+ * @param objVideo will be like {"playerSize":[640,480],"mimes":["video/mp4"],"context":"outstream"} or POSSIBLY {"playerSize":[[640,480]],"mimes":["video/mp4"],"context":"outstream"}
+ * @return object {w,h} or null
+ */
+export function getWidthAndHeightFromVideoObject(objVideo) {
+  let playerSize = getPlayerSizeFromObject(objVideo);
+  if (!playerSize) {
+    return null;
+  }
+  if (playerSize[0] && typeof playerSize[0] === 'object') {
+    utils.logInfo('OZONE: getWidthAndHeightFromVideoObject found nested array inside playerSize.', playerSize[0]);
+    playerSize = playerSize[0];
+    if (typeof playerSize[0] !== 'number' && typeof playerSize[0] !== 'string') {
+      utils.logInfo('OZONE: getWidthAndHeightFromVideoObject found non-number/string type inside the INNER array in playerSize. This is totally wrong - cannot continue.', playerSize[0]);
+      return null;
+    }
+  }
+  if (playerSize.length !== 2) {
+    utils.logInfo('OZONE: getWidthAndHeightFromVideoObject found playerSize with length of ' + playerSize.length + '. This is totally wrong - cannot continue.');
+    return null;
+  }
+  return ({'w': playerSize[0], 'h': playerSize[1]});
+}
+
+/**
+ * @param objVideo will be like {"playerSize":[640,480],"mimes":["video/mp4"],"context":"outstream"} or POSSIBLY {"playerSize":[[640,480]],"mimes":["video/mp4"],"context":"outstream"}
+ * @return object {w,h} or null
+ */
+export function playerSizeIsNestedArray(objVideo) {
+  let playerSize = getPlayerSizeFromObject(objVideo);
+  if (!playerSize) {
+    return null;
+  }
+  if (playerSize.length < 1) {
+    return null;
+  }
+  return (playerSize[0] && typeof playerSize[0] === 'object');
+}
+
+/**
+ * Common functionality when looking at a video object, to get the playerSize
+ * @param objVideo
+ * @returns {*}
+ */
+function getPlayerSizeFromObject(objVideo) {
+  utils.logInfo('OZONE: getPlayerSizeFromObject received object', objVideo);
+  if (!objVideo.hasOwnProperty('playerSize')) {
+    utils.logError('OZONE: getPlayerSizeFromObject FAILED: no playerSize in video object', objVideo);
+    return null;
+  }
+  let playerSize = objVideo.playerSize;
+  if (typeof playerSize !== 'object') {
+    utils.logError('OZONE: getPlayerSizeFromObject FAILED: playerSize is not an object/array', objVideo);
+    return null;
+  }
+  return playerSize;
 }
 
 registerBidder(spec);

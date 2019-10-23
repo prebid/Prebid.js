@@ -10,6 +10,7 @@ describe('orbidderBidAdapter', () => {
     bidId: 'd66fa86787e0b0ca900a96eacfd5f0bb',
     auctionId: 'ccc4c7cdfe11cfbd74065e6dd28413d8',
     transactionId: 'd58851660c0c4461e4aa06344fc9c0c6',
+    bidRequestCount: 1,
     adUnitCode: 'adunit-code',
     sizes: [[300, 250], [300, 600]],
     params: {
@@ -46,9 +47,9 @@ describe('orbidderBidAdapter', () => {
       expect(spec.isBidRequestValid(defaultBidRequest)).to.equal(true);
     });
 
-    it('accepts optional keyValues object', () => {
+    it('accepts optional profile object', () => {
       const bidRequest = deepClone(defaultBidRequest);
-      bidRequest.params.keyValues = {'key': 'value'};
+      bidRequest.params.profile = {'key': 'value'};
       expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
     });
 
@@ -58,9 +59,9 @@ describe('orbidderBidAdapter', () => {
       expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
     });
 
-    it('doesn\'t accept malformed keyValues', () => {
+    it('doesn\'t accept malformed profile', () => {
       const bidRequest = deepClone(defaultBidRequest);
-      bidRequest.params.keyValues = 'another not usable string';
+      bidRequest.params.profile = 'another not usable string';
       expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
     });
 
@@ -178,12 +179,6 @@ describe('orbidderBidAdapter', () => {
       expect(ajaxStub.firstCall.args[0].indexOf('https://')).to.equal(0);
       expect(ajaxStub.firstCall.args[0]).to.equal(`${spec.orbidderHost}/win`);
       expect(ajaxStub.firstCall.args[1]).to.equal(JSON.stringify(bidObjClone));
-
-      spec.onSetTargeting(bidObj);
-      expect(ajaxStub.calledTwice).to.equal(true);
-      expect(ajaxStub.secondCall.args[0].indexOf('https://')).to.equal(0);
-      expect(ajaxStub.secondCall.args[0]).to.equal(`${spec.orbidderHost}/targeting`);
-      expect(ajaxStub.secondCall.args[1]).to.equal(JSON.stringify(bidObjClone));
     });
   });
 

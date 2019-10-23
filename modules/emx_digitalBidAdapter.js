@@ -1,13 +1,14 @@
-import * as utils from 'src/utils';
-import { registerBidder } from 'src/adapters/bidderFactory';
-import { BANNER, VIDEO } from 'src/mediaTypes';
-import { config } from 'src/config';
-import { Renderer } from 'src/Renderer';
+import * as utils from '../src/utils';
+import { registerBidder } from '../src/adapters/bidderFactory';
+import { BANNER, VIDEO } from '../src/mediaTypes';
+import { Renderer } from '../src/Renderer';
 import includes from 'core-js/library/fn/array/includes';
 
 const BIDDER_CODE = 'emx_digital';
 const ENDPOINT = 'hb.emxdgt.com';
 const RENDERER_URL = '//js.brealtime.com/outstream/1.30.0/bundle.js';
+const ADAPTER_VERSION = '1.41.1';
+const DEFAULT_CUR = 'USD';
 
 export const emxAdapter = {
   validateSizes: (sizes) => {
@@ -38,15 +39,32 @@ export const emxAdapter = {
       h: sizes[0][1]
     };
   },
-  formatVideoResponse: (bidResponse, emxBid) => {
+  formatVideoResponse: (bidResponse, emxBid, bidRequest) => {
     bidResponse.vastXml = emxBid.adm;
-    if (!emxBid.renderer && (!emxBid.mediaTypes || !emxBid.mediaTypes.video || !emxBid.mediaTypes.video.context || emxBid.mediaTypes.video.context === 'outstream')) {
+    if (bidRequest.bidRequest && bidRequest.bidRequest.mediaTypes && bidRequest.bidRequest.mediaTypes.video && bidRequest.bidRequest.mediaTypes.video.context === 'outstream') {
       bidResponse.renderer = emxAdapter.createRenderer(bidResponse, {
-        id: emxBid.bidId,
+        id: emxBid.id,
         url: RENDERER_URL
       });
     }
     return bidResponse;
+  },
+  isMobile: () => {
+    return (/(ios|ipod|ipad|iphone|android)/i).test(navigator.userAgent);
+  },
+  isConnectedTV: () => {
+    return (/(smart[-]?tv|hbbtv|appletv|googletv|hdmi|netcast\.tv|viera|nettv|roku|\bdtv\b|sonydtv|inettvbrowser|\btv\b)/i).test(navigator.userAgent);
+  },
+  getDevice: () => {
+    return {
+      ua: navigator.userAgent,
+      js: 1,
+      dnt: (navigator.doNotTrack === 'yes' || navigator.doNotTrack === '1' || navigator.msDoNotTrack === '1') ? 1 : 0,
+      h: screen.height,
+      w: screen.width,
+      devicetype: emxAdapter.isMobile() ? 1 : emxAdapter.isConnectedTV() ? 3 : 2,
+      language: (navigator.language || navigator.browserLanguage || navigator.userLanguage || navigator.systemLanguage),
+    };
   },
   cleanProtocols: (video) => {
     if (video.protocols && includes(video.protocols, 7)) {
@@ -85,10 +103,30 @@ export const emxAdapter = {
     return renderer;
   },
   buildVideo: (bid) => {
-    bid.params.video = bid.params.video || {};
-    bid.params.video.h = bid.mediaTypes.video.playerSize[0][0];
-    bid.params.video.w = bid.mediaTypes.video.playerSize[0][1];
-    return emxAdapter.cleanProtocols(bid.params.video);
+    let videoObj = Object.assign(bid.mediaTypes.video, bid.params.video);
+
+    if (utils.isArray(bid.mediaTypes.video.playerSize[0])) {
+      videoObj['w'] = bid.mediaTypes.video.playerSize[0][0];
+      videoObj['h'] = bid.mediaTypes.video.playerSize[0][1];
+    } else {
+      videoObj['w'] = bid.mediaTypes.video.playerSize[0];
+      videoObj['h'] = bid.mediaTypes.video.playerSize[1];
+    }
+    return emxAdapter.cleanProtocols(videoObj);
+  },
+  parseResponse: (bidResponseAdm) => {
+    try {
+      return decodeURIComponent(bidResponseAdm.replace(/%(?![0-9][0-9a-fA-F]+)/g, '%25'));
+    } catch (err) {
+      utils.logError('emx_digitalBidAdapter', 'error', err);
+    }
+  },
+  getReferrer: () => {
+    try {
+      return window.top.document.referrer;
+    } catch (err) {
+      return document.referrer;
+    }
   },
   getGdpr: (bidRequests, emxData) => {
     if (bidRequests.gdprConsent) {
@@ -150,60 +188,66 @@ export const spec = {
 
     return true;
   },
-  buildRequests: function (validBidRequests, bidderRequest) {
-    const page = bidderRequest.refererInfo.referer;
-    let emxImps = [];
-    const timeout = config.getConfig('bidderTimeout');
+  buildRequests: function (validBidRequests, bidRequest) {
+    const emxImps = [];
+    const timeout = bidRequest.timeout || '';
     const timestamp = Date.now();
-    const url = location.protocol + '//' + ENDPOINT + ('?t=' + timeout + '&ts=' + timestamp);
-    const networkProtocol = location.protocol.indexOf('https') > -1 ? 1 : 0;
+    const url = location.protocol + '//' + ENDPOINT + ('?t=' + timeout + '&ts=' + timestamp + '&src=pbjs');
+    const secure = location.protocol.indexOf('https') > -1 ? 1 : 0;
+    const domain = utils.getTopWindowLocation().hostname;
+    const page = bidRequest.refererInfo.referer;
+    const device = emxAdapter.getDevice();
+    const ref = emxAdapter.getReferrer();
 
     utils._each(validBidRequests, function (bid) {
-      let tagId = utils.getBidIdParameter('tagid', bid.params);
-      let bidFloor = parseFloat(utils.getBidIdParameter('bidfloor', bid.params)) || 0;
+      let tagid = utils.getBidIdParameter('tagid', bid.params);
+      let bidfloor = parseFloat(utils.getBidIdParameter('bidfloor', bid.params)) || 0;
       let isVideo = !!bid.mediaTypes.video;
       let data = {
         id: bid.bidId,
         tid: bid.transactionId,
-        tagid: tagId,
-        secure: networkProtocol
+        tagid,
+        secure
       };
       let typeSpecifics = isVideo ? { video: emxAdapter.buildVideo(bid) } : { banner: emxAdapter.buildBanner(bid) };
-      let emxBid = Object.assign(data, typeSpecifics);
+      let bidfloorObj = bidfloor > 0 ? { bidfloor, bidfloorcur: DEFAULT_CUR } : {};
+      let emxBid = Object.assign(data, typeSpecifics, bidfloorObj);
 
-      if (bidFloor > 0) {
-        emxBid.bidfloor = bidFloor
-      }
       emxImps.push(emxBid);
     });
 
     let emxData = {
-      id: bidderRequest.auctionId,
+      id: bidRequest.auctionId,
       imp: emxImps,
+      device,
       site: {
-        domain: window.top.document.location.host,
-        page: page
+        domain,
+        page,
+        ref
       },
-      version: '1.30.0'
+      cur: DEFAULT_CUR,
+      version: ADAPTER_VERSION
     };
 
-    emxData = emxAdapter.getGdpr(bidderRequest, Object.assign({}, emxData));
+    emxData = emxAdapter.getGdpr(bidRequest, Object.assign({}, emxData));
     return {
       method: 'POST',
       url: url,
       data: JSON.stringify(emxData),
       options: {
         withCredentials: true
-      }
+      },
+      bidRequest
     };
   },
-  interpretResponse: function (serverResponse) {
+  interpretResponse: function (serverResponse, bidRequest) {
     let emxBidResponses = [];
     let response = serverResponse.body || {};
     if (response.seatbid && response.seatbid.length > 0 && response.seatbid[0].bid) {
       response.seatbid.forEach(function (emxBid) {
         emxBid = emxBid.bid[0];
         let isVideo = false;
+        let adm = emxAdapter.parseResponse(emxBid.adm) || '';
         let bidResponse = {
           requestId: emxBid.id,
           cpm: emxBid.price,
@@ -214,11 +258,11 @@ export const spec = {
           currency: 'USD',
           netRevenue: true,
           ttl: emxBid.ttl,
-          ad: decodeURIComponent(emxBid.adm)
+          ad: adm
         };
         if (emxBid.adm && emxBid.adm.indexOf('<?xml version=') > -1) {
           isVideo = true;
-          bidResponse = emxAdapter.formatVideoResponse(bidResponse, Object.assign({}, emxBid));
+          bidResponse = emxAdapter.formatVideoResponse(bidResponse, Object.assign({}, emxBid), bidRequest);
         }
         bidResponse.mediaType = (isVideo ? VIDEO : BANNER);
         emxBidResponses.push(bidResponse);
@@ -232,12 +276,6 @@ export const spec = {
       syncs.push({
         type: 'iframe',
         url: '//biddr.brealtime.com/check.html'
-      });
-    }
-    if (syncOptions.pixelEnabled) {
-      syncs.push({
-        type: 'image',
-        url: '//edba.brealtime.com/'
       });
     }
     return syncs;

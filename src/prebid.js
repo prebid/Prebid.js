@@ -276,18 +276,15 @@ $$PREBID_GLOBAL$$.setTargetingForAst = function(adUnitCodes) {
   events.emit(SET_TARGETING, targeting.getAllTargeting());
 };
 
-function emitAdRenderFail(reason, message, bid) {
-  const data = {};
-
-  data.reason = reason;
-  data.message = message;
-  if (bid) {
-    data.bid = bid;
-  }
+function emitAdRenderFail({ reason, message, bid, id }) {
+  const data = { reason, message };
+  if (bid) data.bid = bid;
+  if (id) data.adId = id;
 
   utils.logError(message);
   events.emit(AD_RENDER_FAILED, data);
 }
+
 /**
  * This function will render the ad (based on params) in the given iframe document passed through.
  * Note that doc SHOULD NOT be the parent document page as we can't doc.write() asynchronously
@@ -323,9 +320,18 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
           executeRenderer(renderer, bid);
         } else if ((doc === document && !utils.inIframe()) || mediaType === 'video') {
           const message = `Error trying to write ad. Ad render call ad id ${id} was prevented from writing to the main document.`;
-          emitAdRenderFail(PREVENT_WRITING_ON_MAIN_DOCUMENT, message, bid);
+          emitAdRenderFail({ reason: PREVENT_WRITING_ON_MAIN_DOCUMENT, message, bid, id });
         } else if (ad) {
-          doc.open('text/html', 'replace');
+          // will check if browser is firefox and below version 67, if so execute special doc.open()
+          // for details see: https://github.com/prebid/Prebid.js/pull/3524
+          // TODO remove this browser specific code at later date (when Firefox < 67 usage is mostly gone)
+          if (navigator.userAgent && navigator.userAgent.toLowerCase().indexOf('firefox/') > -1) {
+            const firefoxVerRegx = /firefox\/([\d\.]+)/;
+            let firefoxVer = navigator.userAgent.toLowerCase().match(firefoxVerRegx)[1]; // grabs the text in the 1st matching group
+            if (firefoxVer && parseInt(firefoxVer, 10) < 67) {
+              doc.open('text/html', 'replace');
+            }
+          }
           doc.write(ad);
           doc.close();
           setRenderSize(doc, width, height);
@@ -343,19 +349,19 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
           utils.callBurl(bid);
         } else {
           const message = `Error trying to write ad. No ad for bid response id: ${id}`;
-          emitAdRenderFail(NO_AD, message, bid);
+          emitAdRenderFail({ reason: NO_AD, message, bid, id });
         }
       } else {
         const message = `Error trying to write ad. Cannot find ad by given id : ${id}`;
-        emitAdRenderFail(CANNOT_FIND_AD, message);
+        emitAdRenderFail({ reason: CANNOT_FIND_AD, message, id });
       }
     } catch (e) {
       const message = `Error trying to write ad Id :${id} to the page:${e.message}`;
-      emitAdRenderFail(EXCEPTION, message);
+      emitAdRenderFail({ reason: EXCEPTION, message, id });
     }
   } else {
     const message = `Error trying to write ad Id :${id} to the page. Missing document or adId`;
-    emitAdRenderFail(MISSING_DOC_OR_ADID, message);
+    emitAdRenderFail({ reason: MISSING_DOC_OR_ADID, message, id });
   }
 };
 
@@ -381,12 +387,12 @@ $$PREBID_GLOBAL$$.removeAdUnit = function (adUnitCode) {
   }
 
   adUnitCodes.forEach((adUnitCode) => {
-    for (let i = 0; i < $$PREBID_GLOBAL$$.adUnits.length; i++) {
+    for (let i = $$PREBID_GLOBAL$$.adUnits.length - 1; i >= 0; i--) {
       if ($$PREBID_GLOBAL$$.adUnits[i].code === adUnitCode) {
         $$PREBID_GLOBAL$$.adUnits.splice(i, 1);
       }
     }
-  })
+  });
 };
 
 /**

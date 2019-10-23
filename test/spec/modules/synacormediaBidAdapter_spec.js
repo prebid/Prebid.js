@@ -7,6 +7,7 @@ describe('synacormediaBidAdapter ', function () {
     let bid;
     beforeEach(function () {
       bid = {
+        sizes: [300, 250],
         params: {
           seatId: 'prebid',
           placementId: '1234'
@@ -18,14 +19,26 @@ describe('synacormediaBidAdapter ', function () {
       assert(spec.isBidRequestValid(bid));
     });
 
+    it('should return false when sizes are missing', function () {
+      delete bid.sizes;
+      assert.isFalse(spec.isBidRequestValid(bid));
+    });
+
+    it('should return false when the only size is unwanted', function () {
+      bid.sizes = [[1, 1]];
+      assert.isFalse(spec.isBidRequestValid(bid));
+    });
+
     it('should return false when seatId param is missing', function () {
       delete bid.params.seatId;
       assert.isFalse(spec.isBidRequestValid(bid));
     });
+
     it('should return false when placementId param is missing', function () {
       delete bid.params.placementId;
       assert.isFalse(spec.isBidRequestValid(bid));
     });
+
     it('should return false when params is missing or null', function () {
       assert.isFalse(spec.isBidRequestValid({ params: null }));
       assert.isFalse(spec.isBidRequestValid({}));
@@ -403,6 +416,122 @@ describe('synacormediaBidAdapter ', function () {
       assert.isUndefined(req);
       req = spec.buildRequests([validBidReqInvalidSize], bidderRequest);
       assert.isUndefined(req);
+    });
+    it('should use all the video params in the impression request', function () {
+      let validBidRequestVideo = {
+        bidder: 'synacormedia',
+        params: {
+          seatId: 'prebid',
+          placementId: '1234',
+          video: {
+            minduration: 30,
+            maxduration: 45,
+            startdelay: 1,
+            linearity: 1,
+            placement: 1,
+            mimes: ['video/mp4'],
+            protocols: [1],
+            api: 1
+          }
+        },
+        mediaTypes: {
+          video: {
+            context: 'instream',
+            playerSize: [[ 640, 480 ]]
+          }
+        },
+        adUnitCode: 'video1',
+        transactionId: '93e5def8-29aa-4fe8-bd3a-0298c39f189a',
+        sizes: [[ 640, 480 ]],
+        bidId: '2624fabbb078e8',
+        bidderRequestId: '117954d20d7c9c',
+        auctionId: 'defd525f-4f1e-4416-a4cb-ae53be90e706',
+        src: 'client',
+        bidRequestsCount: 1
+      };
+
+      let req = spec.buildRequests([validBidRequestVideo], bidderRequest);
+      expect(req).to.have.property('method', 'POST');
+      expect(req).to.have.property('url');
+      expect(req.url).to.contain('//prebid.technoratimedia.com/openrtb/bids/prebid?src=$$REPO_AND_VERSION$$');
+      expect(req.data.id).to.equal('xyz123');
+      expect(req.data.imp).to.eql([
+        {
+          video: {
+            h: 480,
+            pos: 0,
+            w: 640,
+            minduration: 30,
+            maxduration: 45,
+            startdelay: 1,
+            linearity: 1,
+            placement: 1,
+            mimes: ['video/mp4'],
+            protocols: [1],
+            api: 1
+          },
+          id: 'v2624fabbb078e8-640x480',
+          tagid: '1234',
+        }
+      ]);
+    });
+    it('should move any video params in the mediaTypes object to params.video object', function () {
+      let validBidRequestVideo = {
+        bidder: 'synacormedia',
+        params: {
+          seatId: 'prebid',
+          placementId: '1234',
+          video: {
+            minduration: 30,
+            maxduration: 45,
+            protocols: [1],
+            api: 1
+          }
+        },
+        mediaTypes: {
+          video: {
+            context: 'instream',
+            playerSize: [[ 640, 480 ]],
+            startdelay: 1,
+            linearity: 1,
+            placement: 1,
+            mimes: ['video/mp4']
+          }
+        },
+        adUnitCode: 'video1',
+        transactionId: '93e5def8-29aa-4fe8-bd3a-0298c39f189a',
+        sizes: [[ 640, 480 ]],
+        bidId: '2624fabbb078e8',
+        bidderRequestId: '117954d20d7c9c',
+        auctionId: 'defd525f-4f1e-4416-a4cb-ae53be90e706',
+        src: 'client',
+        bidRequestsCount: 1
+      };
+
+      let req = spec.buildRequests([validBidRequestVideo], bidderRequest);
+      expect(req).to.have.property('method', 'POST');
+      expect(req).to.have.property('url');
+      expect(req.url).to.contain('//prebid.technoratimedia.com/openrtb/bids/prebid?src=$$REPO_AND_VERSION$$');
+      expect(req.data.id).to.equal('xyz123');
+      expect(req.data.imp).to.eql([
+        {
+          video: {
+            h: 480,
+            pos: 0,
+            w: 640,
+            minduration: 30,
+            maxduration: 45,
+            startdelay: 1,
+            linearity: 1,
+            placement: 1,
+            mimes: ['video/mp4'],
+            protocols: [1],
+            api: 1
+          },
+          id: 'v2624fabbb078e8-640x480',
+          tagid: '1234',
+        }
+      ]);
     });
   });
 

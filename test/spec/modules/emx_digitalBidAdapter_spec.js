@@ -276,8 +276,9 @@ describe('emx_digital Adapter', function () {
     it('properly sends site information and protocol', function () {
       request = spec.buildRequests(bidderRequest.bids, bidderRequest);
       request = JSON.parse(request.data);
-      expect(request.site.domain).to.equal(window.top.document.location.host);
+      expect(request.site.domain).to.equal(utils.getTopWindowLocation().hostname);
       expect(decodeURIComponent(request.site.page)).to.equal(bidderRequest.refererInfo.referer);
+      expect(request.site.ref).to.equal(window.top.document.referrer);
     });
 
     it('builds correctly formatted request banner object', function () {
@@ -299,15 +300,15 @@ describe('emx_digital Adapter', function () {
       bidRequestWithVideo[0].mediaTypes = {
         video: {
           context: 'instream',
-          playerSize: [640, 480]
+          playerSize: [[640, 480]]
         },
       };
       bidRequestWithVideo[0].params.video = {};
       let request = spec.buildRequests(bidRequestWithVideo, bidderRequest);
       const data = JSON.parse(request.data);
       expect(data.imp[0].video).to.exist.and.to.be.a('object');
-      expect(data.imp[0].video.h).to.equal(bidRequestWithVideo[0].mediaTypes.video.playerSize[0][0]);
-      expect(data.imp[0].video.w).to.equal(bidRequestWithVideo[0].mediaTypes.video.playerSize[0][1]);
+      expect(data.imp[0].video.w).to.equal(bidRequestWithVideo[0].mediaTypes.video.playerSize[0][0]);
+      expect(data.imp[0].video.h).to.equal(bidRequestWithVideo[0].mediaTypes.video.playerSize[0][1]);
     });
 
     it('builds correctly formatted request video object for outstream', function () {
@@ -315,15 +316,15 @@ describe('emx_digital Adapter', function () {
       bidRequestWithOutstreamVideo[0].mediaTypes = {
         video: {
           context: 'outstream',
-          playerSize: [640, 480]
+          playerSize: [[640, 480]]
         },
       };
       bidRequestWithOutstreamVideo[0].params.video = {};
       let request = spec.buildRequests(bidRequestWithOutstreamVideo, bidderRequest);
       const data = JSON.parse(request.data);
       expect(data.imp[0].video).to.exist.and.to.be.a('object');
-      expect(data.imp[0].video.h).to.equal(bidRequestWithOutstreamVideo[0].mediaTypes.video.playerSize[0][0]);
-      expect(data.imp[0].video.w).to.equal(bidRequestWithOutstreamVideo[0].mediaTypes.video.playerSize[0][1]);
+      expect(data.imp[0].video.w).to.equal(bidRequestWithOutstreamVideo[0].mediaTypes.video.playerSize[0][0]);
+      expect(data.imp[0].video.h).to.equal(bidRequestWithOutstreamVideo[0].mediaTypes.video.playerSize[0][1]);
     });
 
     it('shouldn\'t contain a user obj without GDPR information', function () {
@@ -357,6 +358,28 @@ describe('emx_digital Adapter', function () {
   });
 
   describe('interpretResponse', function () {
+    let bid = {
+      'bidder': 'emx_digital',
+      'params': {
+        'tagid': '25251',
+        'video': {}
+      },
+      'mediaTypes': {
+        'video': {
+          'context': 'instream',
+          'playerSize': [640, 480]
+        }
+      },
+      'adUnitCode': 'adunit-code',
+      'sizes': [
+        [300, 250],
+        [300, 600]
+      ],
+      'bidId': '30b31c2501de1e',
+      'bidderRequestId': '22edbae3120bf6',
+      'auctionId': '1d1a01234a475'
+    };
+
     const serverResponse = {
       'id': '12819a18-56e1-4256-b836-b69a10202668',
       'seatbid': [{
@@ -457,7 +480,8 @@ describe('emx_digital Adapter', function () {
     it('returns a banner bid for non-xml creatives', function () {
       let result = spec.interpretResponse({
         body: serverResponse
-      });
+      }, { bidRequest: bid }
+      );
       const ad0 = result[0];
       const ad1 = result[1];
       expect(ad0.mediaType).to.equal('banner');
@@ -479,7 +503,8 @@ describe('emx_digital Adapter', function () {
 
       let result = spec.interpretResponse({
         body: serverResponse
-      });
+      }, { bidRequest: bid }
+      );
       const ad0 = result[0];
       const ad1 = result[1];
       expect(ad0.mediaType).to.equal('video');
@@ -502,6 +527,15 @@ describe('emx_digital Adapter', function () {
       });
       expect(result.length).to.equal(0);
     });
+
+    it('should not throw an error when decoding an improperly encoded adm', function () {
+      serverResponse.seatbid[0].bid[0].adm = '<script\\ src\\=\\\"https\\:\\/\\/nym1\\-ib\\.adnxs\\.com\\/ab\\?an_audit\\=0\\&referrer=https%3A%2F%2Fwww.emxdigital.com%3Ftest%3DhAiE3%VVl%26prebid%3D%25123%25\\&e\\=wqT_3QLPCfBDzwQAAAMA1gAFAQj2iaPtBRCdw\\-qeto72gkEYlNWN2smGoJhTKjYJzGJi83G9KkARzGJi83G9KkAZAAAAgD0KEkAhzGIJGwApESTIMQAAAGBmZu4_MMvWgAc4zApAzApIAlDo\\-YEUWNbsR2AAaIrFCnjOpQWAAQGKAQNVU0SSBQbwQJgB2AWgAVqoAQGwAQC4AQLAAQTIAQLQAQnYAQDgAQDwAQCKAjp1ZignYScsIDI4OTEwMSwgMTU3MTM0MTU1OCk7ARwscicsIDQxOTc1MDE2Nh4A9DQBkgLhAiE3VVlCWndpQmpwOEpFT2o1Z1JRWUFDRFc3RWN3QURnQVFBUkl6QXBReTlhQUIxZ0FZTHdFYUFCd0NuZ0FnQUZFaUFFQWtBRUFtQUVBb0FFQnFBRURzQUVBdVFGS1I2cF9jYjBxUU1FQlNrZXFmM0c5S2tESkFaR1JfRy1UVnRNXzJRRUFBQUFBQUFEd1AtQUJBUFVCQUFBQUFJQUNBSWdDcVlMWEJaQUNBWmdDQUtBQ0FLZ0NBTFVDQUFBQUFMMENBQUFBQU9BQ0FPZ0NBUGdDQUlBREFaZ0RBYWdEZ1k2ZkNib0RDVTVaVFRJNk5ESTRNdUFEOHhQNEE0NnV2Z3lJQkFDUUJBQ1lCQUd5QkFvSXFZTFhCUkNPcnI0TXdRUUFBQUFBQUFBQUFNa0VBQUFBBXgMQURSQgkJLEF3Q0ZBMkFRQThRUQ0SYEFBQVBnRUFJZ0Z1aUUumgKJASE2eElrelE2ZQGgMXV4SElBUW9BREU5Q3RlamNMMHFRRG9KVGxsTk1qbzBNamd5UVBNVFMRWAxQQV9VEQwMQUFBVx0MAFkdDABhHQwAYw0MAaXwi2VBQS7YAqwD4AK30UbqAlxodHRwczovL3d3dy5jZWxlYnV6ei5jb20vZy90YXlsb3Itc3dpZnQtZGVidXRzLXJlZC1oYWlyLWluLXN1Z2FybGFuZC12aWRlby8_YmlkZHJfZGVidWc9dHJ1ZfICEwoPQ1VTVE9NX01PREVMX0lEEgDyAhoKFkNVU1RPERY8TEVBRl9OQU1FEgDyAh4KGjYdAPQqAUFTVF9NT0RJRklFRBIAgAMAiAMBkAMAmAMUoAMBqgMAwAOsAsgDANgDlCHgAwDoAwD4AwOABACSBAkvb3BlbnJ0YjKYBACiBA8xNDQuMTIxLjIzMy4yMzeoBIkWsgQMCAAQABgAIAAwADgAuAQAwAQAyASxgoIB0gQOMTM1NiNOWU0yOjQyODLaBAIIAeAEAPAE6PmBFPoEEgkAAAAAZqdHQBEAAAAgWpRewIgFAZgFAKAF____________AaoFFjQ5MTgxNTcxMzQxNTU2NTI2OTQ5ZTHABQDJBQAAAAAAAPA_0gUJCQAAAAAAAAAA2AUB4AUB8AXW7gr6BQQIABAAkAYAmAYAuAYAwQYAAAAAAADwP8gGANAGwgTaBhYKEAAAAAAAAAAAAAAABQpQEAAYAOAGAfIGAggAgAcBiAcAoAcB\\&s\\=630dbbd55f593c7bfd9e7bccc4dbaa28203daaed\\&pp\\=\\$\\{EMX_MACRO\\}\\\"\\>\\<\\/script\\>';
+      serverResponse.seatbid[1].bid[0].adm = '%3F%%3Demx%3C3prebid'
+
+      assert.doesNotThrow(() => spec.interpretResponse({
+        body: serverResponse
+      }));
+    });
   });
 
   describe('getUserSyncs', function () {
@@ -511,10 +545,6 @@ describe('emx_digital Adapter', function () {
       let iframeSync = spec.getUserSyncs(syncOptionsIframe);
       expect(iframeSync.length).to.equal(1);
       expect(iframeSync[0].type).to.equal('iframe');
-
-      let pixelSync = spec.getUserSyncs(syncOptionsPixel);
-      expect(pixelSync.length).to.equal(1);
-      expect(pixelSync[0].type).to.equal('image');
     });
   });
 });

@@ -118,7 +118,8 @@ function getAdUnitCopyForPrebidServer(adUnits) {
   adUnitsCopy.forEach((adUnit) => {
     // filter out client side bids
     adUnit.bids = adUnit.bids.filter((bid) => {
-      return includes(adaptersServerSide, bid.bidder) && (!doingS2STesting() || bid.finalSource !== s2sTestingModule.CLIENT);
+      return includes(adaptersServerSide, bid.bidder) &&
+        (!doingS2STesting() || bid.finalSource !== s2sTestingModule.CLIENT);
     }).map((bid) => {
       bid.bid_id = utils.getUniqueIdentifierStr();
       return bid;
@@ -170,20 +171,33 @@ adapterManager.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTi
 
   let clientBidderCodes = bidderCodes;
   let clientTestAdapters = [];
+
   if (_s2sConfig.enabled) {
     // if s2sConfig.bidderControl testing is turned on
     if (doingS2STesting()) {
       // get all adapters doing client testing
-      clientTestAdapters = s2sTestingModule.getSourceBidderMap(adUnits)[s2sTestingModule.CLIENT];
+      const bidderMap = s2sTestingModule.getSourceBidderMap(adUnits);
+      clientTestAdapters = bidderMap[s2sTestingModule.CLIENT];
     }
 
     // these are called on the s2s adapter
     let adaptersServerSide = _s2sConfig.bidders;
 
     // don't call these client side (unless client request is needed for testing)
-    clientBidderCodes = bidderCodes.filter((elm) => {
-      return !includes(adaptersServerSide, elm) || includes(clientTestAdapters, elm);
-    });
+    clientBidderCodes = bidderCodes.filter(elm =>
+      !includes(adaptersServerSide, elm) || includes(clientTestAdapters, elm)
+    );
+
+    const adUnitsContainServerRequests = adUnits => Boolean(
+      find(adUnits, adUnit => find(adUnit.bids, bid => (
+        bid.bidSource ||
+        (_s2sConfig.bidderControl && _s2sConfig.bidderControl[bid.bidder])
+      ) && bid.finalSource === s2sTestingModule.SERVER))
+    );
+
+    if (isTestingServerOnly() && adUnitsContainServerRequests(adUnits)) {
+      clientBidderCodes.length = 0;
+    }
 
     let adUnitsS2SCopy = getAdUnitCopyForPrebidServer(adUnits);
     let tid = utils.generateUUID();
@@ -330,6 +344,10 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
 function doingS2STesting() {
   return _s2sConfig && _s2sConfig.enabled && _s2sConfig.testing && s2sTestingModule;
 }
+
+function isTestingServerOnly() {
+  return Boolean(doingS2STesting() && _s2sConfig.testServerOnly);
+};
 
 function getSupportedMediaTypes(bidderCode) {
   let result = [];
