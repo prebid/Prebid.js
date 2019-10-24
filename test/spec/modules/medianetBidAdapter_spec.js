@@ -9,12 +9,17 @@ let VALID_BID_REQUEST = [{
       'site': {
         'page': 'http://media.net/prebidtest',
         'domain': 'media.net',
-        'ref': 'http://media.net/prebidtest'
+        'ref': 'http://media.net/prebidtest',
+        'isTop': true
       }
     },
     'adUnitCode': 'div-gpt-ad-1460505748561-0',
     'transactionId': '277b631f-92f5-4844-8b19-ea13c095d3f1',
-    'sizes': [[300, 250]],
+    'mediaTypes': {
+      'banner': {
+        'sizes': [[300, 250]],
+      }
+    },
     'bidId': '28f8f8130a583e',
     'bidderRequestId': '1e9b1f07797c1c',
     'auctionId': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
@@ -26,7 +31,8 @@ let VALID_BID_REQUEST = [{
       'site': {
         'page': 'http://media.net/prebidtest',
         'domain': 'media.net',
-        'ref': 'http://media.net/prebidtest'
+        'ref': 'http://media.net/prebidtest',
+        'isTop': true
       }
     },
     'adUnitCode': 'div-gpt-ad-1460505748561-123',
@@ -45,12 +51,18 @@ let VALID_BID_REQUEST = [{
       'site': {
         'page': 'http://media.net/prebidtest',
         'domain': 'media.net',
-        'ref': 'http://media.net/prebidtest'
+        'ref': 'http://media.net/prebidtest',
+        'isTop': true
       }
     },
     'adUnitCode': 'div-gpt-ad-1460505748561-0',
     'transactionId': '277b631f-92f5-4844-8b19-ea13c095d3f1',
     'sizes': [[300, 250]],
+    'mediaTypes': {
+      'banner': {
+        'sizes': [[300, 250]],
+      }
+    },
     'bidId': '28f8f8130a583e',
     'bidderRequestId': '1e9b1f07797c1c',
     'auctionId': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
@@ -62,12 +74,18 @@ let VALID_BID_REQUEST = [{
       'site': {
         'page': 'http://media.net/prebidtest',
         'domain': 'media.net',
-        'ref': 'http://media.net/prebidtest'
+        'ref': 'http://media.net/prebidtest',
+        'isTop': true
       }
     },
     'adUnitCode': 'div-gpt-ad-1460505748561-123',
     'transactionId': 'c52a5c62-3c2b-4b90-9ff8-ec1487754822',
     'sizes': [[300, 251]],
+    'mediaTypes': {
+      'banner': {
+        'sizes': [[300, 251]],
+      }
+    },
     'bidId': '3f97ca71b1e5c2',
     'bidderRequestId': '1e9b1f07797c1c',
     'auctionId': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
@@ -80,12 +98,18 @@ let VALID_BID_REQUEST = [{
       'site': {
         'page': 'http://media.net/prebidtest',
         'domain': 'media.net',
-        'ref': 'http://media.net/prebidtest'
+        'ref': 'http://media.net/prebidtest',
+        'isTop': true
       }
     },
     'adUnitCode': 'div-gpt-ad-1460505748561-0',
     'transactionId': '277b631f-92f5-4844-8b19-ea13c095d3f1',
     'sizes': [[300, 250]],
+    'mediaTypes': {
+      'banner': {
+        'sizes': [[300, 250]],
+      }
+    },
     'bidId': '28f8f8130a583e',
     'bidderRequestId': '1e9b1f07797c1c',
     'auctionId': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
@@ -127,12 +151,18 @@ let VALID_BID_REQUEST = [{
       'site': {
         'page': 'http://media.net/prebidtest',
         'domain': 'media.net',
-        'ref': 'http://media.net/prebidtest'
+        'ref': 'http://media.net/prebidtest',
+        'isTop': true
       }
     },
     'adUnitCode': 'div-gpt-ad-1460505748561-123',
     'transactionId': 'c52a5c62-3c2b-4b90-9ff8-ec1487754822',
     'sizes': [[300, 251]],
+    'mediaTypes': {
+      'banner': {
+        'sizes': [[300, 251]],
+      }
+    },
     'bidId': '3f97ca71b1e5c2',
     'bidderRequestId': '1e9b1f07797c1c',
     'auctionId': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
@@ -170,12 +200,18 @@ let VALID_BID_REQUEST = [{
   }],
   VALID_AUCTIONDATA = {
     'timeout': config.getConfig('bidderTimeout'),
+    'refererInfo': {
+      referer: 'http://media.net/prebidtest',
+      stack: ['http://media.net/prebidtest'],
+      reachedTop: true
+    }
   },
   VALID_PAYLOAD_INVALID_BIDFLOOR = {
     'site': {
       'page': 'http://media.net/prebidtest',
       'domain': 'media.net',
-      'ref': 'http://media.net/prebidtest'
+      'ref': 'http://media.net/prebidtest',
+      'isTop': true
     },
     'ext': {
       'customer_id': 'customer_id',
@@ -215,7 +251,8 @@ let VALID_BID_REQUEST = [{
         'site': {
           'page': 'http://media.net/prebidtest',
           'domain': 'media.net',
-          'ref': 'http://media.net/prebidtest'
+          'ref': 'http://media.net/prebidtest',
+          'isTop': true
         }
       }
     }, {
@@ -245,7 +282,8 @@ let VALID_BID_REQUEST = [{
         'site': {
           'page': 'http://media.net/prebidtest',
           'domain': 'media.net',
-          'ref': 'http://media.net/prebidtest'
+          'ref': 'http://media.net/prebidtest',
+          'isTop': true
         }
       }
     }],
@@ -255,7 +293,8 @@ let VALID_BID_REQUEST = [{
     'site': {
       'page': 'http://media.net/prebidtest',
       'domain': 'media.net',
-      'ref': 'http://media.net/prebidtest'
+      'ref': 'http://media.net/prebidtest',
+      'isTop': true
     },
     'ext': {
       'customer_id': 'customer_id',
@@ -295,7 +334,8 @@ let VALID_BID_REQUEST = [{
         'site': {
           'page': 'http://media.net/prebidtest',
           'domain': 'media.net',
-          'ref': 'http://media.net/prebidtest'
+          'ref': 'http://media.net/prebidtest',
+          'isTop': true
         }
       }
     }, {
@@ -326,7 +366,8 @@ let VALID_BID_REQUEST = [{
         'site': {
           'page': 'http://media.net/prebidtest',
           'domain': 'media.net',
-          'ref': 'http://media.net/prebidtest'
+          'ref': 'http://media.net/prebidtest',
+          'isTop': true
         }
       }
     }],
@@ -336,7 +377,8 @@ let VALID_BID_REQUEST = [{
     'site': {
       'page': 'http://media.net/prebidtest',
       'domain': 'media.net',
-      'ref': 'http://media.net/prebidtest'
+      'ref': 'http://media.net/prebidtest',
+      'isTop': true
     },
     'ext': {
       'customer_id': 'customer_id',
@@ -375,7 +417,8 @@ let VALID_BID_REQUEST = [{
         'site': {
           'page': 'http://media.net/prebidtest',
           'domain': 'media.net',
-          'ref': 'http://media.net/prebidtest'
+          'ref': 'http://media.net/prebidtest',
+          'isTop': true
         }
       }
     }, {
@@ -405,7 +448,8 @@ let VALID_BID_REQUEST = [{
         'site': {
           'page': 'http://media.net/prebidtest',
           'domain': 'media.net',
-          'ref': 'http://media.net/prebidtest'
+          'ref': 'http://media.net/prebidtest',
+          'isTop': true
         }
       }
     }],
@@ -548,12 +592,18 @@ let VALID_BID_REQUEST = [{
       'site': {
         'page': 'http://media.net/prebidtest',
         'domain': 'media.net',
-        'ref': 'http://media.net/prebidtest'
+        'ref': 'http://media.net/prebidtest',
+        'isTop': true
       }
     },
     'adUnitCode': 'div-gpt-ad-1460505748561-0',
     'transactionId': '277b631f-92f5-4844-8b19-ea13c095d3f1',
     'sizes': [300, 250],
+    'mediaTypes': {
+      'banner': {
+        'sizes': [[300, 250]],
+      }
+    },
     'bidId': '28f8f8130a583e',
     'bidderRequestId': '1e9b1f07797c1c',
     'auctionId': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
@@ -565,12 +615,18 @@ let VALID_BID_REQUEST = [{
       'site': {
         'page': 'http://media.net/prebidtest',
         'domain': 'media.net',
-        'ref': 'http://media.net/prebidtest'
+        'ref': 'http://media.net/prebidtest',
+        'isTop': true
       }
     },
     'adUnitCode': 'div-gpt-ad-1460505748561-123',
     'transactionId': 'c52a5c62-3c2b-4b90-9ff8-ec1487754822',
     'sizes': [300, 251],
+    'mediaTypes': {
+      'banner': {
+        'sizes': [[300, 251]],
+      }
+    },
     'bidId': '3f97ca71b1e5c2',
     'bidderRequestId': '1e9b1f07797c1c',
     'auctionId': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
@@ -581,13 +637,20 @@ let VALID_BID_REQUEST = [{
       'consentString': 'consentString',
       'gdprApplies': true,
     },
-    'timeout': 3000
+    'timeout': 3000,
+    refererInfo: {
+      referer: 'http://media.net/prebidtest',
+      stack: ['http://media.net/prebidtest'],
+      reachedTop: true
+    }
   },
   VALID_PAYLOAD_FOR_GDPR = {
     'site': {
       'domain': 'media.net',
       'page': 'http://media.net/prebidtest',
-      'ref': 'http://media.net/prebidtest'
+      'ref': 'http://media.net/prebidtest',
+      'isTop': true
+
     },
     'ext': {
       'customer_id': 'customer_id',
@@ -627,7 +690,8 @@ let VALID_BID_REQUEST = [{
         'site': {
           'page': 'http://media.net/prebidtest',
           'domain': 'media.net',
-          'ref': 'http://media.net/prebidtest'
+          'ref': 'http://media.net/prebidtest',
+          'isTop': true
         }
       }
     }, {
@@ -657,7 +721,8 @@ let VALID_BID_REQUEST = [{
         'site': {
           'page': 'http://media.net/prebidtest',
           'domain': 'media.net',
-          'ref': 'http://media.net/prebidtest'
+          'ref': 'http://media.net/prebidtest',
+          'isTop': true
         }
       }
     }],
