@@ -6,7 +6,7 @@
 import events from './events';
 import { fireNativeTrackers, getAssetMessage } from './native';
 import { EVENTS } from './constants';
-import { isSlotMatchingAdUnitCode, logWarn, replaceAuctionPrice } from './utils';
+import { logWarn, replaceAuctionPrice } from './utils';
 import { auctionManager } from './auctionManager';
 import find from 'core-js/library/fn/array/find';
 import { isRendererRequired, executeRenderer } from './Renderer';
@@ -98,7 +98,7 @@ function resizeRemoteCreative({ adId, adUnitCode, width, height }) {
     return parentDivEle && parentDivEle.querySelector(elmType);
   }
 
-  function getElementIdBasedOnAdServer(adId,  adUnitCode) {
+  function getElementIdBasedOnAdServer(adId, adUnitCode) {
     if (window.googletag) {
       return getDfpElementId(adId)
     } else if (window.apntag) {
