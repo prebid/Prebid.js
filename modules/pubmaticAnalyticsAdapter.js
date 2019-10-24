@@ -259,7 +259,16 @@ function executeBidWonLoggerCall(auctionId, adUnitId) {
   pixelURL += '&en=' + enc(winningBid.bidResponse.bidPriceUSD); // todo: later we will need to consider grossECPM and netECPM
   pixelURL += '&eg=' + enc(winningBid.bidResponse.bidPriceUSD); // todo: later we will need to consider grossECPM and netECPM
   pixelURL += '&kgpv=' + enc(winningBid.params.kgpv || adUnitId);
-  (new window.Image()).src = pixelURL;
+  ajax(
+    pixelURL,
+    null,
+    null,
+    {
+      contentType: 'application/x-www-form-urlencoded',
+      withCredentials: true,
+      method: 'GET'
+    }
+  );
 }
 
 /// /////////// ADAPTER EVENT HANDLER FUNCTIONS //////////////
