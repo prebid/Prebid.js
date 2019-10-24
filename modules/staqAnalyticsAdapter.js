@@ -165,9 +165,7 @@ function trackAuctionEnd(args) {
 }
 
 function trackBidTimeout(args) {
-  return args.map(arg =>
-    createHbEvent(arg.auctionId, arg.bidderCode, STAQ_EVENTS.TIMEOUT)
-  );
+  return args.map(arg => createHbEvent(arg.auctionId, arg.bidderCode, STAQ_EVENTS.TIMEOUT));
 }
 
 function createHbEvent(auctionId, adapter, event, adUnitCode = undefined, value = 0, time = 0, bidWon = undefined, eventArgs) {
