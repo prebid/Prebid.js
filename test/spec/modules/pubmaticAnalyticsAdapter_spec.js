@@ -302,8 +302,8 @@ describe('pubmatic analytics adapter', function () {
     // -- mi: matched impression
     // -- kgpv case w/w/o
     // -- defaultBids flag
-    // - Logger: Currency conversion
     // - Logger: mark post-time-out bids
+    // - Logger: Currency conversion
     // - Tracker: bid details
     // - Tracker: w/o profileId, profileVersionId
     // - Tracker: Currency conversion
@@ -431,7 +431,6 @@ describe('pubmatic analytics adapter', function () {
       expect(requests.length).to.equal(1);
       let request = requests[0];
       let data = getLoggerJsonFromRequest(request.requestBody);
-      console.log(JSON.stringify(data));
       expect(data.s[1].sn).to.equal('/19968336/header-bid-tag-1');
       expect(data.s[1].sz).to.deep.equal(['1000x300', '970x250', '728x90']);
       expect(data.s[1].ps).to.be.an('array');
@@ -468,7 +467,6 @@ describe('pubmatic analytics adapter', function () {
       expect(requests.length).to.equal(1);
       let request = requests[0];
       let data = getLoggerJsonFromRequest(request.requestBody);
-      console.log(JSON.stringify(data));
       expect(data.s[1].sn).to.equal('/19968336/header-bid-tag-1');
       expect(data.s[1].sz).to.deep.equal(['1000x300', '970x250', '728x90']);
       expect(data.s[1].ps).to.be.an('array');
@@ -493,6 +491,56 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[1].ps[0].ocry).to.equal('USD');
     });
 
-    // it('Logger: currency conversion check', function(){});
+    it('Logger: currency conversion check', function() {
+      setConfig({
+        adServerCurrency: 'JPY',
+        rates: {
+          USD: {
+            JPY: 100
+          }
+        }
+      });
+      const bidCopy = utils.deepClone(BID2);
+      bidCopy.currency = 'JPY';
+      bidCopy.cpm = 100;
+
+      events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
+      events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
+      events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[0]);
+      events.emit(BID_RESPONSE, bidCopy);
+      events.emit(BIDDER_DONE, MOCK.BIDDER_DONE);
+      events.emit(AUCTION_END, MOCK.AUCTION_END);
+      events.emit(SET_TARGETING, MOCK.SET_TARGETING);
+      events.emit(BID_WON, MOCK.BID_WON[0]);
+      events.emit(BID_WON, MOCK.BID_WON[1]);
+
+      clock.tick(3000 + 1000);
+      expect(requests.length).to.equal(1);
+      let request = requests[0];
+      expect(request.url).to.equal('https://t.pubmatic.com/wl?pubid=9999');
+      let data = getLoggerJsonFromRequest(request.requestBody);
+      expect(data.s[1].sn).to.equal('/19968336/header-bid-tag-1');
+      expect(data.s[1].sz).to.deep.equal(['1000x300', '970x250', '728x90']);
+      expect(data.s[1].ps).to.be.an('array');
+      expect(data.s[1].ps.length).to.equal(1);
+      expect(data.s[1].ps[0].pn).to.equal('pubmatic');
+      expect(data.s[1].ps[0].bidid).to.equal('3bd4ebb1c900e2');
+      expect(data.s[1].ps[0].db).to.equal(0);
+      expect(data.s[1].ps[0].kgpv).to.equal('this-is-a-kgpv');
+      expect(data.s[1].ps[0].psz).to.equal('728x90');
+      expect(data.s[1].ps[0].eg).to.equal(undefined); // bidPriceUSD is not getting set as currency module is not added
+      expect(data.s[1].ps[0].en).to.equal(undefined); // bidPriceUSD is not getting set as currency module is not added
+      expect(data.s[1].ps[0].di).to.equal('the-deal-id');
+      expect(data.s[1].ps[0].dc).to.equal('PMP');
+      expect(data.s[1].ps[0].mi).to.equal('matched-impression');
+      expect(data.s[1].ps[0].l1).to.equal(3214);
+      expect(data.s[1].ps[0].l2).to.equal(0);
+      expect(data.s[1].ps[0].ss).to.equal(1);
+      expect(data.s[1].ps[0].t).to.equal(0);
+      expect(data.s[1].ps[0].wb).to.equal(0); // bidPriceUSD is not getting set as currency module is not added, so unable to set wb to 1
+      expect(data.s[1].ps[0].af).to.equal('banner');
+      expect(data.s[1].ps[0].ocpm).to.equal(100);
+      expect(data.s[1].ps[0].ocry).to.equal('JPY');
+    });
   })
 });
