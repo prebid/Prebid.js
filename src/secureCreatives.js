@@ -79,7 +79,7 @@ export function _sendAdToCreative(adObject, remoteDomain, source) {
   }
 }
 
-function resizeRemoteCreative({ adUnitCode, width, height }) {
+function resizeRemoteCreative({ adId, adUnitCode, width, height }) {
   // resize both container div + iframe
   ['div:last-child', 'div:last-child iframe'].forEach(elmType => {
     let element = getElementByAdUnit(elmType);
@@ -93,14 +93,14 @@ function resizeRemoteCreative({ adUnitCode, width, height }) {
   });
 
   function getElementByAdUnit(elmType) {
-    let id = getElementIdBasedOnAdServer(adUnitCode);
+    let id = getElementIdBasedOnAdServer(adId, adUnitCode);
     let parentDivEle = document.getElementById(id);
     return parentDivEle && parentDivEle.querySelector(elmType);
   }
 
-  function getElementIdBasedOnAdServer(adUnitCode) {
+  function getElementIdBasedOnAdServer(adId,  adUnitCode) {
     if (window.googletag) {
-      return getDfpElementId(adUnitCode)
+      return getDfpElementId(adId)
     } else if (window.apntag) {
       return getAstElementId(adUnitCode)
     } else {
@@ -108,8 +108,10 @@ function resizeRemoteCreative({ adUnitCode, width, height }) {
     }
   }
 
-  function getDfpElementId(adUnitCode) {
-    return find(window.googletag.pubads().getSlots().filter(isSlotMatchingAdUnitCode(adUnitCode)), slot => slot).getSlotElementId()
+  function getDfpElementId(adId) {
+    return find(window.googletag.pubads().getSlots().filter(function(s) {
+      return s.getTargetingMap()['hb_adid'].includes(adId);
+    }), slot => slot).getSlotElementId();
   }
 
   function getAstElementId(adUnitCode) {
