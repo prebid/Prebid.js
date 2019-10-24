@@ -10,6 +10,7 @@ const USYNCURL = 'https://ads.pubmatic.com/AdServer/js/showad.js#PIX&kdntuid=1&p
 const DEFAULT_CURRENCY = 'USD';
 const AUCTION_TYPE = 1;
 const PUBMATIC_DIGITRUST_KEY = 'nFIn8aLzbd';
+const PUBMATIC_ALIAS = 'pubmatic2';
 const UNDEFINED = undefined;
 const DEFAULT_WIDTH = 0;
 const DEFAULT_HEIGHT = 0;
@@ -634,10 +635,34 @@ function _handleTTDId(eids, validBidRequests) {
   }
 }
 
+/**
+ * Produces external userid object in ortb 3.0 model.
+ */
+function _addExternalUserId(eids, value, source, atype) {
+  if (utils.isStr(value)) {
+    eids.push({
+      source,
+      uids: [{
+        id: value,
+        atype
+      }]
+    });
+  }
+}
+
 function _handleEids(payload, validBidRequests) {
   let eids = [];
   _handleDigitrustId(eids);
   _handleTTDId(eids, validBidRequests);
+  const bidRequest = validBidRequests[0];
+  if (bidRequest && bidRequest.userId) {
+    _addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.pubcid`), 'pubcommon', 1);
+    _addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.digitrustid.data.id`), 'digitru.st', 1);
+    _addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.id5id`), 'id5-sync.com', 1);
+    _addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.criteortus.${BIDDER_CODE}.userid`), 'criteortus', 1);
+    _addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.idl_env`), 'liveramp.com', 1);
+    _addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.firstpartyid`), 'firstpartyid', 1);
+  }
   if (eids.length > 0) {
     payload.user.eids = eids;
   }
@@ -783,6 +808,7 @@ function _handleDealCustomTargetings(payload, dctrArr, validBidRequests) {
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
+  aliases: [PUBMATIC_ALIAS],
   /**
   * Determines whether or not the given bid request is valid. Valid bid request must have placementId and hbid
   *
