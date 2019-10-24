@@ -17,7 +17,7 @@ Connects to One Video demand source to fetch bids.
               sizes: [640,480],
               mediaTypes: {
                 video: {
-                  context: "outstream"
+                  context: "instream"
                 }
               },
               bids: [
