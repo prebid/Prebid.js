@@ -166,18 +166,17 @@ describe('', function() {
   };
 
   const bidTimeoutArgsV1 = [{
-      bidId: '2baa51527bd015',
-      bidderCode: 'AppNexus',
-      adUnitCode: 'container-1',
-      auctionId: '66529d4c-8998-47c2-ab3e-5b953490b98f'
-    },
-    {
-      bidId: '6fe3b4c2c23092',
-      bidderCode: 'AppNexus',
-      adUnitCode: 'container-2',
-      auctionId: '66529d4c-8998-47c2-ab3e-5b953490b98f'
-    }
-  ];
+    bidId: '2baa51527bd015',
+    bidderCode: 'AppNexus',
+    adUnitCode: 'container-1',
+    auctionId: '66529d4c-8998-47c2-ab3e-5b953490b98f'
+  },
+  {
+    bidId: '6fe3b4c2c23092',
+    bidderCode: 'AppNexus',
+    adUnitCode: 'container-2',
+    auctionId: '66529d4c-8998-47c2-ab3e-5b953490b98f'
+  }];
 
   describe('Analytics adapter', function() {
     let ajaxStub;
