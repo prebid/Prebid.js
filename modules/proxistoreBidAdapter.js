@@ -81,9 +81,7 @@ function buildRequests(bidRequests, bidderRequest) {
   var requests = [];
   for (var i = 0; i < bidRequests.length; i++) {
     var prebidReq = _createServerRequest(bidRequests[i], bidderRequest);
-    if (prebidReq) {
-      requests.push(prebidReq);
-    }
+    requests.push(prebidReq);
   }
   return requests;
 }
