@@ -32,7 +32,10 @@ Connects to One Video demand source to fetch bids.
                       api: [1],
                       position: 1,
                       delivery: [2],
-                      playbackmethod: [2]
+                      playbackmethod: [1,5],
+                      sid: <scpid>,
+                      rewarded: 1,
+                      display: 1
                     },
                     site: {
                       id: 1,
