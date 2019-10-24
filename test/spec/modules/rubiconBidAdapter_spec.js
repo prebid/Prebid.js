@@ -2229,7 +2229,7 @@ describe('the rubicon adapter', function () {
     });
   });
 
-  describe('Supply Chain Support', function() {
+  describe.only('Supply Chain Support', function() {
     const nodePropsOrder = ['asi', 'sid', 'hp', 'rid', 'name', 'domain'];
     let bidRequests;
     let schainConfig;
@@ -2276,7 +2276,7 @@ describe('the rubicon adapter', function () {
     it('should properly serialize schain object with correct delimiters', () => {
       const results = spec.buildRequests(bidRequests.bids, bidRequests);
       const numNodes = schainConfig.nodes.length;
-      const schain = parseQuery(results[0].data).schain;
+      const schain = parseQuery(results[0].data).rp_schain;
 
       // each node serialization should start with an !
       expect(schain.match(/!/g).length).to.equal(numNodes);
@@ -2287,21 +2287,21 @@ describe('the rubicon adapter', function () {
 
     it('should send the proper version for the schain', () => {
       const results = spec.buildRequests(bidRequests.bids, bidRequests);
-      const schain = parseQuery(results[0].data).schain.split('!');
+      const schain = parseQuery(results[0].data).rp_schain.split('!');
       const version = schain.shift().split(',')[0];
       expect(version).to.equal(bidRequests.bids[0].schain.ver);
     });
 
     it('should send the correct value for complete in schain', () => {
       const results = spec.buildRequests(bidRequests.bids, bidRequests);
-      const schain = parseQuery(results[0].data).schain.split('!');
+      const schain = parseQuery(results[0].data).rp_schain.split('!');
       const complete = schain.shift().split(',')[1];
       expect(complete).to.equal(String(bidRequests.bids[0].schain.complete));
     });
 
     it('should send available params in the right order', () => {
       const results = spec.buildRequests(bidRequests.bids, bidRequests);
-      const schain = parseQuery(results[0].data).schain.split('!');
+      const schain = parseQuery(results[0].data).rp_schain.split('!');
       schain.shift();
 
       schain.forEach((serializeNode, nodeIndex) => {

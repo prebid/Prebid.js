@@ -317,7 +317,7 @@ export const spec = {
       'p_pos',
       'gdpr',
       'gdpr_consent',
-      'schain',
+      'rp_schain',
       'rf',
       'dt.id',
       'dt.keyv',
@@ -458,7 +458,7 @@ export const spec = {
 
     // if SupplyChain is supplied and contains all required fields
     if (bidRequest.schain && hasValidSupplyChainParams(bidRequest.schain)) {
-      data.schain = spec.serializeSupplyChain(bidRequest.schain);
+      data.rp_schain = spec.serializeSupplyChain(bidRequest.schain);
     }
 
     return data;
@@ -1010,7 +1010,7 @@ export function hasValidSupplyChainParams(schain) {
  * @returns {String}
  */
 export function encodeParam(key, param) {
-  if (key === 'schain') return `schain=${param}`;
+  if (key === 'rp_schain') return `rp_schain=${param}`;
   return `${key}=${encodeURIComponent(param)}`;
 }
 
