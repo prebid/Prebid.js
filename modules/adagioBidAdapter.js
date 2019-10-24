@@ -2,12 +2,59 @@ import find from 'core-js/library/fn/array/find';
 import * as utils from '../src/utils';
 import {registerBidder} from '../src/adapters/bidderFactory';
 import { loadExternalScript } from '../src/adloader'
+import JSEncrypt from 'jsencrypt/bin/jsencrypt';
+import sha256 from 'crypto-js/sha256';
+
 const BIDDER_CODE = 'adagio';
 const VERSION = '2.0.0';
 const FEATURES_VERSION = '1';
 const ENDPOINT = 'https://mp.4dex.io/prebid';
 const SUPPORTED_MEDIA_TYPES = ['banner'];
 const ADAGIO_TAG_URL = '//script.4dex.io/localstore.js';
+const ADAGIO_LOCALSTORAGE_KEY = 'adagioScript';
+
+export const ADAGIO_PUBKEY = `-----BEGIN PUBLIC KEY-----
+MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC9el0+OEn6fvEh1RdVHQu4cnT0
+jFSzIbGJJyg3cKqvtE6A0iaz9PkIdJIvSSSNrmJv+lRGKPEyRA/VnzJIieL39Ngl
+t0b0lsHN+W4n9kitS/DZ/xnxWK/9vxhv0ZtL1LL/rwR5Mup7rmJbNtDoNBw4TIGj
+pV6EP3MTLosuUEpLaQIDAQAB
+-----END PUBLIC KEY-----`;
+
+export function getAdagioScript() {
+  try {
+    const w = utils.getWindowTop();
+    const ls = w.localStorage.getItem(ADAGIO_LOCALSTORAGE_KEY);
+
+    if (!ls) {
+      utils.logWarn('Adagio Script not found');
+      return;
+    }
+
+    const hashRgx = /^(\/\/ hash: (.+)\n)(.+\n)$/;
+
+    if (!hashRgx.test(ls)) {
+      utils.logWarn('No hash found in Adagio script');
+      w.localStorage.removeItem(ADAGIO_LOCALSTORAGE_KEY);
+    } else {
+      const r = ls.match(hashRgx);
+      const hash = r[2];
+      const content = r[3];
+
+      var jsEncrypt = new JSEncrypt();
+      jsEncrypt.setPublicKey(ADAGIO_PUBKEY);
+
+      if (jsEncrypt.verify(content, hash, sha256)) {
+        utils.logInfo('Start Adagio script');
+        Function(ls)(); // eslint-disable-line no-new-func
+      } else {
+        utils.logWarn('Invalid Adagio script found');
+        w.localStorage.removeItem(ADAGIO_LOCALSTORAGE_KEY);
+      }
+    }
+  } catch (err) {
+    //
+  }
+}
 
 function canAccessTopWindow() {
   try {
@@ -27,20 +74,8 @@ function initAdagio() {
   w.ADAGIO.versions = w.ADAGIO.versions || {};
   w.ADAGIO.versions.adagioBidderAdapter = VERSION;
 
-  const getAdagioTag = function getAdagioTag() {
-    const ls = w.localStorage.getItem('adagioScript');
-    if (ls !== null) {
-      Function(ls)(); // eslint-disable-line no-new-func
-    } else {
-      utils.logWarn('Adagio Script not found');
-    }
-  }
+  getAdagioScript();
 
-  // First, try to load adagio-js from localStorage.
-  getAdagioTag();
-
-  // Then prepare localstore.js to update localStorage adagio-sj script with
-  // the very last version.
   loadExternalScript(ADAGIO_TAG_URL, BIDDER_CODE)
 }
 

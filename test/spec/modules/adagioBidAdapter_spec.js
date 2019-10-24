@@ -1,12 +1,22 @@
 import { expect } from 'chai';
-import { spec } from 'modules/adagioBidAdapter';
+import { getAdagioScript, spec } from 'modules/adagioBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
 import * as utils from 'src/utils';
 
 describe('adagioAdapter', () => {
+  let utilsMock;
   const adapter = newBidder(spec);
   const ENDPOINT = 'https://mp.4dex.io/prebid';
   const VERSION = '2.0.0';
+
+  beforeEach(function() {
+    localStorage.removeItem('adagioScript');
+    utilsMock = sinon.mock(utils);
+  });
+
+  afterEach(function() {
+    utilsMock.restore();
+  });
 
   describe('inherited functions', () => {
     it('exists and is a function', () => {
@@ -622,6 +632,66 @@ describe('adagioAdapter', () => {
       expect(result[0].url).contain('setuid');
       expect(result[1].type).to.equal('image');
       expect(emptyResult).to.equal(false);
+    });
+  });
+
+  describe('getAdagioScript', () => {
+    const VALID_HASH = 'Lddcw3AADdQDrPtbRJkKxvA+o1CtScGDIMNRpHB3NnlC/FYmy/9RKXelKrYj/sjuWusl5YcOpo+lbGSkk655i8EKuDiOvK6ae/imxSrmdziIp+S/TA6hTFJXcB8k1Q9OIp4CMCT52jjXgHwX6G0rp+uYoCR25B1jHaHnpH26A6I=';
+    const INVALID_HASH = 'invalid';
+    const VALID_SCRIPT_CONTENT = 'var _ADAGIO=function(){};(_ADAGIO)();\n';
+    const INVALID_SCRIPT_CONTENT = 'var _ADAGIO=function(){//corrupted};(_ADAGIO)();\n';
+    const ADAGIO_LOCALSTORAGE_KEY = 'adagioScript';
+
+    it('should verify valid hash with valid script', function () {
+      localStorage.setItem(ADAGIO_LOCALSTORAGE_KEY, '// hash: ' + VALID_HASH + '\n' + VALID_SCRIPT_CONTENT);
+
+      utilsMock.expects('logInfo').withExactArgs('Start Adagio script').once();
+      utilsMock.expects('logWarn').withExactArgs('No hash found in Adagio script').never();
+      utilsMock.expects('logWarn').withExactArgs('Invalid Adagio script found').never();
+
+      getAdagioScript();
+
+      expect(localStorage.getItem(ADAGIO_LOCALSTORAGE_KEY)).to.equals('// hash: ' + VALID_HASH + '\n' + VALID_SCRIPT_CONTENT);
+      utilsMock.verify();
+    });
+
+    it('should verify valid hash with invalid script', function () {
+      localStorage.setItem(ADAGIO_LOCALSTORAGE_KEY, '// hash: ' + VALID_HASH + '\n' + INVALID_SCRIPT_CONTENT);
+
+      utilsMock.expects('logInfo').withExactArgs('Start Adagio script').never();
+      utilsMock.expects('logWarn').withExactArgs('No hash found in Adagio script').never();
+      utilsMock.expects('logWarn').withExactArgs('Invalid Adagio script found').once();
+
+      getAdagioScript();
+
+      expect(localStorage.getItem(ADAGIO_LOCALSTORAGE_KEY)).to.be.null;
+      utilsMock.verify();
+    });
+
+    it('should verify invalid hash with valid script', function () {
+      localStorage.setItem(ADAGIO_LOCALSTORAGE_KEY, '// hash: ' + INVALID_HASH + '\n' + VALID_SCRIPT_CONTENT);
+
+      utilsMock.expects('logInfo').withExactArgs('Start Adagio script').never();
+      utilsMock.expects('logWarn').withExactArgs('No hash found in Adagio script').never();
+      utilsMock.expects('logWarn').withExactArgs('Invalid Adagio script found').once();
+
+      getAdagioScript();
+
+      expect(localStorage.getItem(ADAGIO_LOCALSTORAGE_KEY)).to.be.null;
+      utilsMock.verify();
+    });
+
+    it('should verify missing hash', function () {
+      localStorage.setItem(ADAGIO_LOCALSTORAGE_KEY, VALID_SCRIPT_CONTENT);
+
+      utilsMock.expects('logInfo').withExactArgs('Start Adagio script').never();
+      utilsMock.expects('logWarn').withExactArgs('No hash found in Adagio script').once();
+      utilsMock.expects('logWarn').withExactArgs('Invalid Adagio script found').never();
+
+      getAdagioScript();
+
+      expect(localStorage.getItem(ADAGIO_LOCALSTORAGE_KEY)).to.be.null;
+      utilsMock.verify();
     });
   });
 });
