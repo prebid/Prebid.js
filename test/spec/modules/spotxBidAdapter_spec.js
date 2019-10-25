@@ -183,21 +183,7 @@ describe('the spotx adapter', function () {
       expect(request.data.imp.bidfloor).to.equal(123);
       expect(request.data.ext).to.deep.equal({
         number_of_ads: 2,
-        wrap_response: 1,
-        source: {
-          ext: {
-            schain: {
-              complete: 1,
-              nodes: [
-                {
-                  asi: 'indirectseller.com',
-                  sid: '00001',
-                  hp: 1
-                }
-              ]
-            }
-          }
-        }
+        wrap_response: 1
       });
       expect(request.data.user.ext).to.deep.equal({
         consented_providers_settings: GOOGLE_CONSENT,
@@ -208,6 +194,21 @@ describe('the spotx adapter', function () {
           }]
         }],
         fpc: 'pubcid_1'
+      })
+
+      expect(request.data.source).to.deep.equal({
+        ext: {
+          schain: {
+            complete: 1,
+            nodes: [
+              {
+                asi: 'indirectseller.com',
+                sid: '00001',
+                hp: 1
+              }
+            ]
+          }
+        }
       })
     });
 
