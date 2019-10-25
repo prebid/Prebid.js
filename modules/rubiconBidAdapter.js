@@ -410,9 +410,8 @@ export const spec = {
     };
 
     // add p_pos only if specified and valid
-    if (params.position === 'atf' || params.position === 'btf') {
-      data['p_pos'] = params.position;
-    }
+    // For SRA we need to explicitly put empty semi colons so AE treats it as empty, instead of copying the latter value
+    data['p_pos'] = (params.position === 'atf' || params.position === 'btf') ? params.position : '';
 
     if ((bidRequest.userId || {}).tdid) {
       data['tpid_tdid'] = bidRequest.userId.tdid;
