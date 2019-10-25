@@ -2,10 +2,20 @@ import { expect } from 'chai'
 import * as utils from 'src/utils'
 import { spec } from 'modules/rdnBidAdapter'
 import { newBidder } from 'src/adapters/bidderFactory'
+import {config} from '../../../src/config';
 
 describe('rdnBidAdapter', function() {
   const adapter = newBidder(spec);
   const ENDPOINT = 'https://s-bid.rmp.rakuten.co.jp/h';
+  let sandbox;
+
+  beforeEach(function() {
+    config.resetConfig();
+  });
+
+  afterEach(function () {
+    config.resetConfig();
+  });
 
   describe('inherited functions', () => {
     it('exists and is a function', () => {
@@ -53,6 +63,16 @@ describe('rdnBidAdapter', function() {
       expect(request.url).to.equal(ENDPOINT);
       expect(request.method).to.equal('GET')
     })
+
+    it('allows url override', () => {
+      config.setConfig({
+        rdn: {
+          endpoint: '//test.rakuten.com'
+        }
+      });
+      const request = spec.buildRequests(bidRequests)[0];
+      expect(request.url).to.equal('//test.rakuten.com');
+    })
   });
 
   describe('interpretResponse', () => {
@@ -75,6 +95,9 @@ describe('rdnBidAdapter', function() {
 
     const serverResponse = {
       noAd: [],
+      noAd2: {
+        requestId: 'biequa9oaph4we'
+      },
       banner: {
         requestId: 'biequa9oaph4we',
         cpm: 37.66,
@@ -93,10 +116,15 @@ describe('rdnBidAdapter', function() {
     it('handles nobid responses', () => {
       const result = spec.interpretResponse(
         { body: serverResponse.noAd },
-
         bidRequests.banner
       );
-      expect(result.length).to.equal(1)
+      expect(result.length).to.equal(0);
+
+      const result2 = spec.interpretResponse(
+        { body: serverResponse.noAd2 },
+        bidRequests.banner
+      );
+      expect(result2.length).to.equal(0);
     })
   });
   describe('spec.getUserSyncs', function () {

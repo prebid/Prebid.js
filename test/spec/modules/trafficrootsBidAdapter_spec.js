@@ -70,7 +70,7 @@ describe('trafficrootsAdapterTests', () => {
 
     it('bidRequest data', () => {
       const request = spec.buildRequests(bidRequests);
-      expect(request.data).to.exists;
+      expect(request.data).to.exist;
     });
 
     it('bidRequest zoneIds', () => {

@@ -4,6 +4,7 @@ import {registerBidder} from '../src/adapters/bidderFactory';
 
 export const spec = {
   code: 'orbidder',
+  bidParams: {},
   orbidderHost: (() => {
     let ret = 'https://orbidder.otto.de';
     try {
@@ -14,7 +15,11 @@ export const spec = {
   })(),
 
   isBidRequestValid(bid) {
-    return !!(bid.sizes && bid.bidId);
+    return !!(bid.sizes && bid.bidId && bid.params &&
+      (bid.params.accountId && (typeof bid.params.accountId === 'string')) &&
+      (bid.params.placementId && (typeof bid.params.placementId === 'string')) &&
+      ((typeof bid.params.bidfloor === 'undefined') || (typeof bid.params.bidfloor === 'number')) &&
+      ((typeof bid.params.profile === 'undefined') || (typeof bid.params.profile === 'object')));
   },
 
   buildRequests(validBidRequests, bidderRequest) {
@@ -24,7 +29,7 @@ export const spec = {
         referer = bidderRequest.refererInfo.referer || '';
       }
       const ret = {
-        url: `${this.orbidderHost}/bid`,
+        url: `${spec.orbidderHost}/bid`,
         method: 'POST',
         data: {
           pageUrl: referer,
@@ -32,16 +37,16 @@ export const spec = {
           auctionId: bidRequest.auctionId,
           transactionId: bidRequest.transactionId,
           adUnitCode: bidRequest.adUnitCode,
+          bidRequestCount: bidRequest.bidRequestCount,
           sizes: bidRequest.sizes,
           params: bidRequest.params
         }
       };
-      if (bidRequest && bidRequest.gdprConsent) {
+      spec.bidParams[bidRequest.bidId] = bidRequest.params;
+      if (bidderRequest && bidderRequest.gdprConsent) {
         ret.data.gdprConsent = {
-          consentString: bidRequest.gdprConsent.consentString,
-          consentRequired: (typeof bidRequest.gdprConsent.gdprApplies === 'boolean')
-            ? bidRequest.gdprConsent.gdprApplies
-            : true
+          consentString: bidderRequest.gdprConsent.consentString,
+          consentRequired: (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') && bidderRequest.gdprConsent.gdprApplies
         };
       }
       return ret;
@@ -66,11 +71,18 @@ export const spec = {
     return bidResponses;
   },
 
-  onBidWon(winObj) {
+  onBidWon(bid) {
+    this.onHandler(bid, '/win');
+  },
+
+  onHandler (bid, route) {
     const getRefererInfo = detectReferer(window);
-    const refererInfo = getRefererInfo();
-    winObj.pageUrl = refererInfo.referer;
-    spec.ajaxCall(`${this.orbidderHost}/win`, JSON.stringify(winObj));
+
+    bid.pageUrl = getRefererInfo().referer;
+    if (spec.bidParams[bid.requestId] && (typeof bid.params === 'undefined')) {
+      bid.params = [spec.bidParams[bid.requestId]];
+    }
+    spec.ajaxCall(`${spec.orbidderHost}${route}`, JSON.stringify(bid));
   },
 
   ajaxCall(endpoint, data) {

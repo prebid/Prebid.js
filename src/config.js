@@ -1,24 +1,20 @@
 /*
  * Module for getting and setting Prebid configuration.
- *
- * Prebid previously defined these properties directly on the global object:
- * pbjs.logging = true;
- *
- * Defining and access properties in this way is now deprecated, but these will
- * continue to work during a deprecation window.
  */
 import { isValidPriceConfig } from './cpmBucketManager';
 import find from 'core-js/library/fn/array/find';
 import includes from 'core-js/library/fn/array/includes';
-import { createHook } from './hook';
-const utils = require('./utils');
+import { parseQS } from './url';
 
-const DEFAULT_DEBUG = false;
+const utils = require('./utils');
+const CONSTANTS = require('./constants');
+
+const DEFAULT_DEBUG = (parseQS(window.location.search)[CONSTANTS.DEBUG_MODE] || '').toUpperCase() === 'TRUE';
 const DEFAULT_BIDDER_TIMEOUT = 3000;
 const DEFAULT_PUBLISHER_DOMAIN = window.location.origin;
 const DEFAULT_ENABLE_SEND_ALL_BIDS = true;
 const DEFAULT_DISABLE_AJAX_TIMEOUT = false;
-const DEFAULT_BID_CACHE = true;
+const DEFAULT_BID_CACHE = false;
 
 const DEFAULT_TIMEOUTBUFFER = 400;
 
@@ -56,7 +52,7 @@ export function newConfig() {
 
   function resetConfig() {
     defaults = {};
-    config = {
+    let newConfig = {
       // `debug` is equivalent to legacy `pbjs.logging` property
       _debug: DEFAULT_DEBUG,
       get debug() {
@@ -173,6 +169,20 @@ export function newConfig() {
 
     };
 
+    if (config) {
+      callSubscribers(
+        Object.keys(config).reduce((memo, topic) => {
+          if (config[topic] !== newConfig[topic]) {
+            memo[topic] = newConfig[topic] || {};
+          }
+          return memo;
+        },
+        {})
+      );
+    }
+
+    config = newConfig;
+
     function hasGranularity(val) {
       return find(Object.keys(GRANULARITY_OPTIONS), option => val === GRANULARITY_OPTIONS[option]);
     }
@@ -217,7 +227,7 @@ export function newConfig() {
    * Sets configuration given an object containing key-value pairs and calls
    * listeners that were added by the `subscribe` function
    */
-  let setConfig = createHook('asyncSeries', function setConfig(options) {
+  function setConfig(options) {
     if (typeof options !== 'object') {
       utils.logError('setConfig options must be an object');
       return;
@@ -237,7 +247,7 @@ export function newConfig() {
     });
 
     callSubscribers(topicalConfig);
-  });
+  }
 
   /**
    * Sets configuration defaults which setConfig values can be applied on top of

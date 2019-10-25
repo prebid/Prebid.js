@@ -144,6 +144,35 @@ describe('+widespaceAdatperTest', function () {
     const request = spec.buildRequests(bidRequest, bidderRequest);
     const UrlRegExp = /^((ftp|http|https):)?\/\/[^ "]+$/;
 
+    let fakeLocalStorage = {};
+    let lsSetStub;
+    let lsGetStub;
+    let lsRemoveStub;
+
+    beforeEach(function() {
+      lsSetStub = sinon.stub(window.localStorage, 'setItem').callsFake(function (name, value) {
+        fakeLocalStorage[name] = value;
+      });
+
+      lsGetStub = sinon.stub(window.localStorage, 'getItem').callsFake(function (key) {
+        return fakeLocalStorage[key] || null;
+      });
+
+      lsRemoveStub = sinon.stub(window.localStorage, 'removeItem').callsFake(function (key) {
+        if (key && (fakeLocalStorage[key] !== null || fakeLocalStorage[key] !== undefined)) {
+          delete fakeLocalStorage[key];
+        }
+        return true;
+      });
+    });
+
+    afterEach(function() {
+      lsSetStub.restore();
+      lsGetStub.restore();
+      lsRemoveStub.restore();
+      fakeLocalStorage = {};
+    });
+
     it('-bidRequest method is POST', function () {
       expect(request[0].method).to.equal('POST');
     });
@@ -153,7 +182,7 @@ describe('+widespaceAdatperTest', function () {
     });
 
     it('-bidRequest data exist', function () {
-      expect(request[0].data).to.exists;
+      expect(request[0].data).to.exist;
     });
 
     it('-bidRequest data is form data', function () {
@@ -161,7 +190,7 @@ describe('+widespaceAdatperTest', function () {
     });
 
     it('-bidRequest options have header type', function () {
-      expect(request[0].options.contentType).to.exists;
+      expect(request[0].options.contentType).to.exist;
     });
 
     it('-cookie test for wsCustomData ', function () {

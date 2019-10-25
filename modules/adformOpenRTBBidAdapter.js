@@ -8,6 +8,7 @@ import {
   NATIVE
 } from '../src/mediaTypes';
 import * as utils from '../src/utils';
+import { config } from '../src/config';
 
 const BIDDER_CODE = 'adformOpenRTB';
 const NATIVE_ASSET_IDS = { 0: 'title', 2: 'icon', 3: 'image', 5: 'sponsoredBy', 4: 'body', 1: 'cta' };
@@ -56,6 +57,8 @@ export const spec = {
     const test = setOnAny(validBidRequests, 'params.test');
     const publisher = setOnAny(validBidRequests, 'params.publisher');
     const siteId = setOnAny(validBidRequests, 'params.siteId');
+    const currency = config.getConfig('currency.adServerCurrency');
+    const cur = currency && [ currency ];
 
     const imp = validBidRequests.map((bid, id) => {
       bid.netRevenue = pt;
@@ -66,11 +69,28 @@ export const spec = {
         };
         if (props) {
           asset.id = props.id;
+          let wmin, hmin, w, h;
+          let aRatios = bidParams.aspect_ratios;
+
+          if (aRatios && aRatios[0]) {
+            aRatios = aRatios[0];
+            wmin = aRatios.min_width || 0;
+            hmin = aRatios.ratio_height * wmin / aRatios.ratio_width | 0;
+          }
+
+          if (bidParams.sizes) {
+            const sizes = flatten(bidParams.sizes);
+            w = sizes[0];
+            h = sizes[1];
+          }
+
           asset[props.name] = {
             len: bidParams.len,
-            wmin: bidParams.sizes && bidParams.sizes[0],
-            hmin: bidParams.sizes && bidParams.sizes[1],
-            type: props.type
+            type: props.type,
+            wmin,
+            hmin,
+            w,
+            h
           };
 
           return asset;
@@ -94,6 +114,7 @@ export const spec = {
       device: { ua },
       source: { tid, fd: 1 },
       ext: { pt },
+      cur,
       imp
     };
 
@@ -122,9 +143,13 @@ export const spec = {
     }
     const { seatbid, cur } = serverResponse.body;
 
+    const bidResponses = flatten(seatbid.map(seat => seat.bid)).reduce((result, bid) => {
+      result[bid.impid - 1] = bid;
+      return result;
+    }, []);
+
     return bids.map((bid, id) => {
-      const _cbid = seatbid && seatbid[id] && seatbid[id].bid;
-      const bidResponse = _cbid && _cbid[0];
+      const bidResponse = bidResponses[id];
       if (bidResponse) {
         return {
           requestId: bid.bidId,
@@ -170,4 +195,8 @@ function setOnAny(collection, key) {
       return result;
     }
   }
+}
+
+function flatten(arr) {
+  return [].concat(...arr);
 }

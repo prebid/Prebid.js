@@ -2,24 +2,37 @@
 
 import { getAdUnitSizes, logWarn } from '../src/utils';
 import { registerBidder } from '../src/adapters/bidderFactory';
-import { BANNER } from '../src/mediaTypes';
-import { REPO_AND_VERSION } from '../src/constants';
+import { BANNER, VIDEO } from '../src/mediaTypes';
+import includes from 'core-js/library/fn/array/includes';
 
-const SYNACOR_URL = '//prebid.technoratimedia.com';
+const BID_HOST = '//prebid.technoratimedia.com';
+const USER_SYNC_HOST = '//ad-cdn.technoratimedia.com';
+const VIDEO_PARAMS = [ 'minduration', 'maxduration', 'startdelay', 'placement', 'linearity', 'mimes', 'protocols', 'api' ];
+const BLOCKED_AD_SIZES = [
+  '1x1',
+  '1x2'
+];
 export const spec = {
   code: 'synacormedia',
-  supportedMediaTypes: [ BANNER ],
+  supportedMediaTypes: [ BANNER, VIDEO ],
   sizeMap: {},
 
-  isBidRequestValid: function(bid) {
-    return !!(bid && bid.params && bid.params.placementId && bid.params.seatId);
+  isVideoBid: function(bid) {
+    return bid.mediaTypes !== undefined &&
+      bid.mediaTypes.hasOwnProperty('video');
   },
+  isBidRequestValid: function(bid) {
+    const hasRequiredParams = bid && bid.params && bid.params.hasOwnProperty('placementId') && bid.params.hasOwnProperty('seatId');
+    const hasAdSizes = bid && getAdUnitSizes(bid).filter(size => BLOCKED_AD_SIZES.indexOf(size.join('x')) === -1).length > 0
+    return !!(hasRequiredParams && hasAdSizes);
+  },
+
   buildRequests: function(validBidReqs, bidderRequest) {
     if (!validBidReqs || !validBidReqs.length || !bidderRequest) {
       return;
     }
-    let refererInfo = bidderRequest.refererInfo;
-    let openRtbBidRequest = {
+    const refererInfo = bidderRequest.refererInfo;
+    const openRtbBidRequest = {
       id: bidderRequest.auctionId,
       site: {
         domain: location.hostname,
@@ -32,6 +45,7 @@ export const spec = {
       imp: []
     };
     let seatId = null;
+
     validBidReqs.forEach((bid, i) => {
       if (seatId && seatId !== bid.params.seatId) {
         logWarn(`Synacormedia: there is an inconsistent seatId: ${bid.params.seatId} but only sending bid requests for ${seatId}, you should double check your configuration`);
@@ -39,23 +53,55 @@ export const spec = {
       } else {
         seatId = bid.params.seatId;
       }
-      let placementId = bid.params.placementId;
-      let size = getAdUnitSizes(bid)[0];
-      this.sizeMap[bid.bidId] = size;
-      openRtbBidRequest.imp.push({
-        id: bid.bidId,
-        tagid: placementId,
-        banner: {
-          w: size[0],
-          h: size[1],
-          pos: 0
-        }
-      });
+      const placementId = bid.params.placementId;
+      const bidFloor = bid.params.bidfloor ? parseFloat(bid.params.bidfloor) : null;
+      if (isNaN(bidFloor)) {
+        logWarn(`Synacormedia: there is an invalid bid floor: ${bid.params.bidfloor}`);
+      }
+      let pos = parseInt(bid.params.pos);
+      if (isNaN(pos)) {
+        logWarn(`Synacormedia: there is an invalid POS: ${bid.params.pos}`);
+        pos = 0;
+      }
+      const videoOrBannerKey = this.isVideoBid(bid) ? 'video' : 'banner';
+      getAdUnitSizes(bid)
+        .filter(size => BLOCKED_AD_SIZES.indexOf(size.join('x')) === -1)
+        .forEach((size, i) => {
+          if (!size || size.length != 2) {
+            return;
+          }
+          const size0 = size[0];
+          const size1 = size[1];
+          const imp = {
+            id: `${videoOrBannerKey.substring(0, 1)}${bid.bidId}-${size0}x${size1}`,
+            tagid: placementId
+          };
+          if (bidFloor !== null && !isNaN(bidFloor)) {
+            imp.bidfloor = bidFloor;
+          }
+
+          const videoOrBannerValue = {
+            w: size0,
+            h: size1,
+            pos
+          };
+          if (videoOrBannerKey === 'video') {
+            if (bid.mediaTypes.video) {
+              this.setValidVideoParams(bid.mediaTypes.video, bid.params.video);
+            }
+            if (bid.params.video) {
+              this.setValidVideoParams(bid.params.video, videoOrBannerValue);
+            }
+          }
+          imp[videoOrBannerKey] = videoOrBannerValue;
+          openRtbBidRequest.imp.push(imp);
+        });
     });
+
     if (openRtbBidRequest.imp.length && seatId) {
       return {
         method: 'POST',
-        url: `${SYNACOR_URL}/openrtb/bids/${seatId}?src=${REPO_AND_VERSION}`,
+        url: `${BID_HOST}/openrtb/bids/${seatId}?src=$$REPO_AND_VERSION$$`,
         data: openRtbBidRequest,
         options: {
           contentType: 'application/json',
@@ -64,41 +110,50 @@ export const spec = {
       };
     }
   },
+
+  setValidVideoParams: function (sourceObj, destObj) {
+    Object.keys(sourceObj)
+      .filter(param => includes(VIDEO_PARAMS, param) && sourceObj[param] !== null && (!isNaN(parseInt(sourceObj[param], 10)) || !(sourceObj[param].length < 1)))
+      .forEach(param => destObj[param] = Array.isArray(sourceObj[param]) ? sourceObj[param] : parseInt(sourceObj[param], 10));
+  },
   interpretResponse: function(serverResponse) {
+    const updateMacros = (bid, r) => {
+      return r ? r.replace(/\${AUCTION_PRICE}/g, bid.price) : r;
+    };
+
     if (!serverResponse.body || typeof serverResponse.body != 'object') {
       logWarn('Synacormedia: server returned empty/non-json response: ' + JSON.stringify(serverResponse.body));
       return;
     }
+
     const {id, seatbid: seatbids} = serverResponse.body;
     let bids = [];
     if (id && seatbids) {
       seatbids.forEach(seatbid => {
         seatbid.bid.forEach(bid => {
-          let size = this.sizeMap[bid.impid] || [0, 0];
-          let price = parseFloat(bid.price);
-          let creative = bid.adm.replace(/\${([^}]*)}/g, (match, key) => {
-            switch (key) {
-              case 'AUCTION_SEAT_ID': return seatbid.seat;
-              case 'AUCTION_ID': return id;
-              case 'AUCTION_BID_ID': return bid.id;
-              case 'AUCTION_IMP_ID': return bid.impid;
-              case 'AUCTION_PRICE': return price;
-              case 'AUCTION_CURRENCY': return 'USD';
-            }
-            return match;
-          });
-          bids.push({
-            requestId: bid.impid,
-            cpm: price,
-            width: size[0],
-            height: size[1],
-            creativeId: seatbid.seat + '~' + bid.crid,
+          const creative = updateMacros(bid, bid.adm);
+          const nurl = updateMacros(bid, bid.nurl);
+          const [, impType, impid, width, height] = bid.impid.match(/^([vb])(.*)-(.*)x(.*)$/);
+          const isVideo = impType == 'v';
+          const bidObj = {
+            requestId: impid,
+            adId: bid.id.replace(/~/g, '-'),
+            cpm: parseFloat(bid.price),
+            width: parseInt(width, 10),
+            height: parseInt(height, 10),
+            creativeId: `${seatbid.seat}_${bid.crid}`,
             currency: 'USD',
             netRevenue: true,
-            mediaType: BANNER,
+            mediaType: isVideo ? VIDEO : BANNER,
             ad: creative,
             ttl: 60
-          });
+          };
+          if (isVideo) {
+            const [, uuid] = nurl.match(/ID=([^&]*)&?/);
+            bidObj.videoCacheKey = encodeURIComponent(uuid);
+            bidObj.vastUrl = nurl;
+          }
+          bids.push(bidObj);
         });
       });
     }
@@ -109,7 +164,7 @@ export const spec = {
     if (syncOptions.iframeEnabled) {
       syncs.push({
         type: 'iframe',
-        url: `${SYNACOR_URL}/usersync/html?src=${REPO_AND_VERSION}`
+        url: `${USER_SYNC_HOST}/html/usersync.html?src=$$REPO_AND_VERSION$$`
       });
     } else {
       logWarn('Synacormedia: Please enable iframe based user sync.');

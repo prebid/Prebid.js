@@ -43,6 +43,10 @@ const REQUEST = {
     'bidderRequestId': '109f2a181342a9',
     'auctionId': 'a4713c32-3762-4798-b342-4ab810ca770d'
   }],
+  'gdprConsent': {
+    'consentString': 'consent-test',
+    'gdprApplies': true
+  },
   'start': 1487883186070,
   'auctionStart': 1487883186069,
   'timeout': 3000
@@ -52,6 +56,7 @@ const RESPONSE = {
   'headers': null,
   'body': {
     'user': { 'key': 'ue1-2d33e91b71e74929b4aeecc23f4376f1' },
+    'pixels': [{ 'type': 'image', 'url': '//sync.serverbid.com/ss/' }],
     'decisions': {
       '2b0f82502298c9': {
         'adId': 2364764,
@@ -206,7 +211,7 @@ describe('Consumable BidAdapter', function () {
   });
   describe('interpretResponse validation', function () {
     it('response should have valid bidderCode', function () {
-      let bidRequest = spec.buildRequests(REQUEST.bidRequest);
+      let bidRequest = spec.buildRequests(REQUEST.bidRequest, REQUEST);
       let bid = createBid(1, bidRequest.bidRequest[0]);
 
       expect(bid.bidderCode).to.equal('consumable');
@@ -256,11 +261,18 @@ describe('Consumable BidAdapter', function () {
     it('handles empty sync options', function () {
       let opts = spec.getUserSyncs({});
 
-      expect(opts).to.be.empty;
+      expect(opts).to.be.undefined;
     });
 
     it('should return a sync url if iframe syncs are enabled', function () {
       let opts = spec.getUserSyncs(syncOptions);
+
+      expect(opts.length).to.equal(1);
+    });
+
+    it('should return a sync url if pixel syncs are enabled and some are returned from the server', function () {
+      let syncOptions = {'pixelEnabled': true};
+      let opts = spec.getUserSyncs(syncOptions, [RESPONSE]);
 
       expect(opts.length).to.equal(1);
     });

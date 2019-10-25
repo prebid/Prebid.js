@@ -1,14 +1,14 @@
 /** @module pbjs */
 
 import { getGlobal } from './prebidGlobal';
-import { flatten, uniques, isGptPubadsDefined, adUnitsFilter, removeRequestId, getLatestHighestCpmBid } from './utils';
+import { flatten, uniques, isGptPubadsDefined, adUnitsFilter, getLatestHighestCpmBid, isArrayOfNums } from './utils';
 import { listenMessagesFromCreative } from './secureCreatives';
 import { userSync } from './userSync.js';
 import { loadScript } from './adloader';
 import { config } from './config';
 import { auctionManager } from './auctionManager';
 import { targeting, getHighestCpmBidsFromBidPool } from './targeting';
-import { createHook } from './hook';
+import { hook } from './hook';
 import { sessionLoader } from './debugging';
 import includes from 'core-js/library/fn/array/includes';
 import { adunitCounter } from './adUnits';
@@ -69,6 +69,62 @@ function setRenderSize(doc, width, height) {
   }
 }
 
+export const checkAdUnitSetup = hook('sync', function (adUnits) {
+  adUnits.forEach((adUnit) => {
+    const mediaTypes = adUnit.mediaTypes;
+    const normalizedSize = utils.getAdUnitSizes(adUnit);
+
+    if (mediaTypes && mediaTypes.banner) {
+      const banner = mediaTypes.banner;
+      if (banner.sizes) {
+        // make sure we always send [[h,w]] format
+        banner.sizes = normalizedSize;
+        adUnit.sizes = normalizedSize;
+      } else {
+        utils.logError('Detected a mediaTypes.banner object did not include sizes.  This is a required field for the mediaTypes.banner object.  Removing invalid mediaTypes.banner object from request.');
+        delete adUnit.mediaTypes.banner;
+      }
+    } else if (adUnit.sizes) {
+      utils.logWarn('Usage of adUnits.sizes will eventually be deprecated.  Please define size dimensions within the corresponding area of the mediaTypes.<object> (eg mediaTypes.banner.sizes).');
+      adUnit.sizes = normalizedSize;
+    }
+
+    if (mediaTypes && mediaTypes.video) {
+      const video = mediaTypes.video;
+      if (video.playerSize) {
+        if (Array.isArray(video.playerSize) && video.playerSize.length === 1 && video.playerSize.every(plySize => isArrayOfNums(plySize, 2))) {
+          adUnit.sizes = video.playerSize;
+        } else if (isArrayOfNums(video.playerSize, 2)) {
+          let newPlayerSize = [];
+          newPlayerSize.push(video.playerSize);
+          utils.logInfo(`Transforming video.playerSize from [${video.playerSize}] to [[${newPlayerSize}]] so it's in the proper format.`);
+          adUnit.sizes = video.playerSize = newPlayerSize;
+        } else {
+          utils.logError('Detected incorrect configuration of mediaTypes.video.playerSize.  Please specify only one set of dimensions in a format like: [[640, 480]]. Removing invalid mediaTypes.video.playerSize property from request.');
+          delete adUnit.mediaTypes.video.playerSize;
+        }
+      }
+    }
+
+    if (mediaTypes && mediaTypes.native) {
+      const nativeObj = mediaTypes.native;
+      if (nativeObj.image && nativeObj.image.sizes && !Array.isArray(nativeObj.image.sizes)) {
+        utils.logError('Please use an array of sizes for native.image.sizes field.  Removing invalid mediaTypes.native.image.sizes property from request.');
+        delete adUnit.mediaTypes.native.image.sizes;
+      }
+      if (nativeObj.image && nativeObj.image.aspect_ratios && !Array.isArray(nativeObj.image.aspect_ratios)) {
+        utils.logError('Please use an array of sizes for native.image.aspect_ratios field.  Removing invalid mediaTypes.native.image.aspect_ratios property from request.');
+        delete adUnit.mediaTypes.native.image.aspect_ratios;
+      }
+      if (nativeObj.icon && nativeObj.icon.sizes && !Array.isArray(nativeObj.icon.sizes)) {
+        utils.logError('Please use an array of sizes for native.icon.sizes field.  Removing invalid mediaTypes.native.icon.sizes property from request.');
+        delete adUnit.mediaTypes.native.icon.sizes;
+      }
+    }
+  });
+  return adUnits;
+}, 'checkAdUnitSetup');
+
 /// ///////////////////////////////
 //                              //
 //    Start Public APIs         //
@@ -116,10 +172,10 @@ $$PREBID_GLOBAL$$.getAdserverTargeting = function (adUnitCode) {
 
 function getBids(type) {
   const responses = auctionManager[type]()
-    .filter(adUnitsFilter.bind(this, auctionManager.getAdUnitCodes()));
+    .filter(utils.bind.call(adUnitsFilter, this, auctionManager.getAdUnitCodes()));
 
   // find the last auction id to get responses for most recent auction only
-  const currentAuctionId = responses && responses.length && responses[responses.length - 1].auctionId;
+  const currentAuctionId = auctionManager.getLastAuctionId();
 
   return responses
     .map(bid => bid.adUnitCode)
@@ -128,7 +184,7 @@ function getBids(type) {
     .filter(bids => bids && bids[0] && bids[0].adUnitCode)
     .map(bids => {
       return {
-        [bids[0].adUnitCode]: { bids: bids.map(removeRequestId) }
+        [bids[0].adUnitCode]: { bids }
       };
     })
     .reduce((a, b) => Object.assign(a, b), {});
@@ -165,9 +221,7 @@ $$PREBID_GLOBAL$$.getBidResponses = function () {
 
 $$PREBID_GLOBAL$$.getBidResponsesForAdUnitCode = function (adUnitCode) {
   const bids = auctionManager.getBidsReceived().filter(bid => bid.adUnitCode === adUnitCode);
-  return {
-    bids: bids.map(removeRequestId)
-  };
+  return { bids };
 };
 
 /**
@@ -206,33 +260,31 @@ $$PREBID_GLOBAL$$.setTargetingForGPTAsync = function (adUnit, customSlotMatching
 
 /**
  * Set query string targeting on all AST (AppNexus Seller Tag) ad units. Note that this function has to be called after all ad units on page are defined. For working example code, see [Using Prebid.js with AppNexus Publisher Ad Server](http://prebid.org/dev-docs/examples/use-prebid-with-appnexus-ad-server.html).
+ * @param  {(string|string[])} adUnitCode adUnitCode or array of adUnitCodes
  * @alias module:pbjs.setTargetingForAst
  */
-$$PREBID_GLOBAL$$.setTargetingForAst = function() {
+$$PREBID_GLOBAL$$.setTargetingForAst = function(adUnitCodes) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.setTargetingForAn', arguments);
   if (!targeting.isApntagDefined()) {
     utils.logError('window.apntag is not defined on the page');
     return;
   }
 
-  targeting.setTargetingForAst();
+  targeting.setTargetingForAst(adUnitCodes);
 
   // emit event
   events.emit(SET_TARGETING, targeting.getAllTargeting());
 };
 
-function emitAdRenderFail(reason, message, bid) {
-  const data = {};
-
-  data.reason = reason;
-  data.message = message;
-  if (bid) {
-    data.bid = bid;
-  }
+function emitAdRenderFail({ reason, message, bid, id }) {
+  const data = { reason, message };
+  if (bid) data.bid = bid;
+  if (id) data.adId = id;
 
   utils.logError(message);
   events.emit(AD_RENDER_FAILED, data);
 }
+
 /**
  * This function will render the ad (based on params) in the given iframe document passed through.
  * Note that doc SHOULD NOT be the parent document page as we can't doc.write() asynchronously
@@ -268,8 +320,18 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
           executeRenderer(renderer, bid);
         } else if ((doc === document && !utils.inIframe()) || mediaType === 'video') {
           const message = `Error trying to write ad. Ad render call ad id ${id} was prevented from writing to the main document.`;
-          emitAdRenderFail(PREVENT_WRITING_ON_MAIN_DOCUMENT, message, bid);
+          emitAdRenderFail({ reason: PREVENT_WRITING_ON_MAIN_DOCUMENT, message, bid, id });
         } else if (ad) {
+          // will check if browser is firefox and below version 67, if so execute special doc.open()
+          // for details see: https://github.com/prebid/Prebid.js/pull/3524
+          // TODO remove this browser specific code at later date (when Firefox < 67 usage is mostly gone)
+          if (navigator.userAgent && navigator.userAgent.toLowerCase().indexOf('firefox/') > -1) {
+            const firefoxVerRegx = /firefox\/([\d\.]+)/;
+            let firefoxVer = navigator.userAgent.toLowerCase().match(firefoxVerRegx)[1]; // grabs the text in the 1st matching group
+            if (firefoxVer && parseInt(firefoxVer, 10) < 67) {
+              doc.open('text/html', 'replace');
+            }
+          }
           doc.write(ad);
           doc.close();
           setRenderSize(doc, width, height);
@@ -287,36 +349,50 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
           utils.callBurl(bid);
         } else {
           const message = `Error trying to write ad. No ad for bid response id: ${id}`;
-          emitAdRenderFail(NO_AD, message, bid);
+          emitAdRenderFail({ reason: NO_AD, message, bid, id });
         }
       } else {
         const message = `Error trying to write ad. Cannot find ad by given id : ${id}`;
-        emitAdRenderFail(CANNOT_FIND_AD, message);
+        emitAdRenderFail({ reason: CANNOT_FIND_AD, message, id });
       }
     } catch (e) {
       const message = `Error trying to write ad Id :${id} to the page:${e.message}`;
-      emitAdRenderFail(EXCEPTION, message);
+      emitAdRenderFail({ reason: EXCEPTION, message, id });
     }
   } else {
     const message = `Error trying to write ad Id :${id} to the page. Missing document or adId`;
-    emitAdRenderFail(MISSING_DOC_OR_ADID, message);
+    emitAdRenderFail({ reason: MISSING_DOC_OR_ADID, message, id });
   }
 };
 
 /**
- * Remove adUnit from the $$PREBID_GLOBAL$$ configuration
- * @param  {string} adUnitCode the adUnitCode to remove
+ * Remove adUnit from the $$PREBID_GLOBAL$$ configuration, if there are no addUnitCode(s) it will remove all
+ * @param  {string| Array} adUnitCode the adUnitCode(s) to remove
  * @alias module:pbjs.removeAdUnit
  */
 $$PREBID_GLOBAL$$.removeAdUnit = function (adUnitCode) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.removeAdUnit', arguments);
-  if (adUnitCode) {
-    for (var i = 0; i < $$PREBID_GLOBAL$$.adUnits.length; i++) {
+
+  if (!adUnitCode) {
+    $$PREBID_GLOBAL$$.adUnits = [];
+    return;
+  }
+
+  let adUnitCodes;
+
+  if (utils.isArray(adUnitCode)) {
+    adUnitCodes = adUnitCode;
+  } else {
+    adUnitCodes = [adUnitCode];
+  }
+
+  adUnitCodes.forEach((adUnitCode) => {
+    for (let i = $$PREBID_GLOBAL$$.adUnits.length - 1; i >= 0; i--) {
       if ($$PREBID_GLOBAL$$.adUnits[i].code === adUnitCode) {
         $$PREBID_GLOBAL$$.adUnits.splice(i, 1);
       }
     }
-  }
+  });
 };
 
 /**
@@ -326,9 +402,10 @@ $$PREBID_GLOBAL$$.removeAdUnit = function (adUnitCode) {
  * @param {Array} requestOptions.adUnits
  * @param {Array} requestOptions.adUnitCodes
  * @param {Array} requestOptions.labels
+ * @param {String} requestOptions.auctionId
  * @alias module:pbjs.requestBids
  */
-$$PREBID_GLOBAL$$.requestBids = createHook('asyncSeries', function ({ bidsBackHandler, timeout, adUnits, adUnitCodes, labels } = {}) {
+$$PREBID_GLOBAL$$.requestBids = hook('async', function ({ bidsBackHandler, timeout, adUnits, adUnitCodes, labels, auctionId } = {}) {
   events.emit(REQUEST_BIDS);
   const cbTimeout = timeout || config.getConfig('bidderTimeout');
   adUnits = adUnits || $$PREBID_GLOBAL$$.adUnits;
@@ -342,6 +419,8 @@ $$PREBID_GLOBAL$$.requestBids = createHook('asyncSeries', function ({ bidsBackHa
     // otherwise derive adUnitCodes from adUnits
     adUnitCodes = adUnits && adUnits.map(unit => unit.code);
   }
+
+  adUnits = checkAdUnitSetup(adUnits);
 
   /*
    * for a given adunit which supports a set of mediaTypes
@@ -395,7 +474,13 @@ $$PREBID_GLOBAL$$.requestBids = createHook('asyncSeries', function ({ bidsBackHa
     return;
   }
 
-  const auction = auctionManager.createAuction({adUnits, adUnitCodes, callback: bidsBackHandler, cbTimeout, labels});
+  const auction = auctionManager.createAuction({adUnits, adUnitCodes, callback: bidsBackHandler, cbTimeout, labels, auctionId});
+
+  let adUnitsLen = adUnits.length;
+  if (adUnitsLen > 15) {
+    utils.logInfo(`Current auction ${auction.getAuctionId()} contains ${adUnitsLen} adUnits.`, adUnits);
+  }
+
   adUnitCodes.forEach(code => targeting.setLatestAuctionForAdUnit(code, auction.getAuctionId()));
   auction.callBids();
   return auction;
@@ -590,8 +675,7 @@ $$PREBID_GLOBAL$$.aliasBidder = function (bidderCode, alias) {
  * @return {Array<AdapterBidResponse>} A list of bids that have been rendered.
 */
 $$PREBID_GLOBAL$$.getAllWinningBids = function () {
-  return auctionManager.getAllWinningBids()
-    .map(removeRequestId);
+  return auctionManager.getAllWinningBids();
 };
 
 /**
@@ -600,8 +684,7 @@ $$PREBID_GLOBAL$$.getAllWinningBids = function () {
  */
 $$PREBID_GLOBAL$$.getAllPrebidWinningBids = function () {
   return auctionManager.getBidsReceived()
-    .filter(bid => bid.status === CONSTANTS.BID_STATUS.BID_TARGETING_SET)
-    .map(removeRequestId);
+    .filter(bid => bid.status === CONSTANTS.BID_STATUS.BID_TARGETING_SET);
 };
 
 /**
@@ -613,8 +696,7 @@ $$PREBID_GLOBAL$$.getAllPrebidWinningBids = function () {
  */
 $$PREBID_GLOBAL$$.getHighestCpmBids = function (adUnitCode) {
   let bidsReceived = getHighestCpmBidsFromBidPool(auctionManager.getBidsReceived(), getLatestHighestCpmBid);
-  return targeting.getWinningBids(adUnitCode, bidsReceived)
-    .map(removeRequestId);
+  return targeting.getWinningBids(adUnitCode, bidsReceived);
 };
 
 /**
@@ -752,6 +834,7 @@ function processQueue(queue) {
  * @alias module:pbjs.processQueue
  */
 $$PREBID_GLOBAL$$.processQueue = function() {
+  hook.ready();
   processQueue($$PREBID_GLOBAL$$.que);
   processQueue($$PREBID_GLOBAL$$.cmd);
 };

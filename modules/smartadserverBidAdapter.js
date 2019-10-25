@@ -16,7 +16,7 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
-    return !!(bid.params && bid.params.siteId && bid.params.pageId && bid.params.formatId && bid.params.domain);
+    return !!(bid.params && bid.params.siteId && bid.params.pageId && bid.params.formatId);
   },
   /**
    * Make a server request from the list of BidRequests.
@@ -63,7 +63,7 @@ export const spec = {
       var payloadString = JSON.stringify(payload);
       return {
         method: 'POST',
-        url: bid.params.domain + '/prebid/v1',
+        url: (bid.params.domain !== undefined ? bid.params.domain : 'https://prg.smartadserver.com') + '/prebid/v1',
         data: payloadString,
       };
     });

@@ -21,6 +21,10 @@ var adUnits = [{
     },
     bids: [{
         bidder: 'orbidder'
+        params: {
+            accountId: "someAccount",
+            placementId: "somePlace"
+        }
     }]
 }];
 ```
