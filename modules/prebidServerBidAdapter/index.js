@@ -698,7 +698,7 @@ const OPEN_RTB_PROTOCOL = {
     }
 
     const bidUserId = utils.deepAccess(bidRequests, '0.bids.0.userId');
-    if (bidUserId && typeof bidUserId === 'object' && (bidUserId.tdid || bidUserId.pubcid || bidUserId.parrableid || bidUserId.lipb)) {
+    if (bidUserId && typeof bidUserId === 'object' && (bidUserId.tdid || bidUserId.pubcid || bidUserId.parrableid || bidUserId.lipb || bidUserId.britepoolid)) {
       utils.deepSetValue(request, 'user.ext.eids', []);
 
       if (bidUserId.tdid) {
@@ -736,6 +736,15 @@ const OPEN_RTB_PROTOCOL = {
           source: 'liveintent.com',
           uids: [{
             id: bidUserId.lipb.lipbid
+          }]
+        });
+      }
+
+      if (bidUserId.britepoolid) {
+        request.user.ext.eids.push({
+          source: 'britepool.com',
+          uids: [{
+            id: bidUserId.britepoolid
           }]
         });
       }
