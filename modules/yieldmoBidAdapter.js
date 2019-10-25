@@ -114,7 +114,7 @@ function addPlacement(request) {
   const placementInfo = {
     placement_id: request.adUnitCode,
     callback_id: request.bidId,
-    sizes: request.sizes
+    sizes: request.mediaTypes.banner.sizes
   }
   if (request.params) {
     if (request.params.placementId) {
