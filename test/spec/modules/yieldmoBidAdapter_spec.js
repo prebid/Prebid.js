@@ -15,7 +15,11 @@ describe('YieldmoAdapter', function () {
       bidFloor: 0.1
     },
     adUnitCode: 'adunit-code',
-    sizes: [[300, 250], [300, 600]],
+    mediaTypes: {
+      banner: {
+        sizes: [[300, 250], [300, 600]]
+      }
+    },
     bidId: '30b31c1838de1e',
     bidderRequestId: '22edbae2733bf6',
     auctionId: '1d1a030790a475',
@@ -76,7 +80,7 @@ describe('YieldmoAdapter', function () {
 
     it('should place bid information into the p parameter of data', function () {
       let placementInfo = spec.buildRequests(bidArray, bidderRequest).data.p;
-      expect(placementInfo).to.equal('[{"placement_id":"adunit-code","callback_id":"30b31c1838de1e","sizes":[[300,250],[300,600]],"bidFloor":0.1}]');
+      expect(placementInfo).to.equal('[{"placement_id":"adunit-code","callback_id":"30b31c1838de1e","mediaTypes":{"banner":{"sizes":[[300,250],[300,600]]}},"bidFloor":0.1}]');
 
       bidArray.push({
         bidder: 'yieldmo',
@@ -84,7 +88,11 @@ describe('YieldmoAdapter', function () {
           bidFloor: 0.2
         },
         adUnitCode: 'adunit-code-1',
-        sizes: [[300, 250], [300, 600]],
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 250], [300, 600]]
+          }
+        },
         bidId: '123456789',
         bidderRequestId: '987654321',
         auctionId: '0246810',
@@ -96,7 +104,7 @@ describe('YieldmoAdapter', function () {
 
       // multiple placements
       placementInfo = spec.buildRequests(bidArray, bidderRequest).data.p;
-      expect(placementInfo).to.equal('[{"placement_id":"adunit-code","callback_id":"30b31c1838de1e","sizes":[[300,250],[300,600]],"bidFloor":0.1},{"placement_id":"adunit-code-1","callback_id":"123456789","sizes":[[300,250],[300,600]],"bidFloor":0.2}]');
+      expect(placementInfo).to.equal('[{"placement_id":"adunit-code","callback_id":"30b31c1838de1e","mediaTypes":{"banner":{sizes":[[300,250],[300,600]]}},"bidFloor":0.1},{"placement_id":"adunit-code-1","callback_id":"123456789","mediaTypes":{"banner":{"sizes":[[300,250],[300,600]]}},"bidFloor":0.2}]');
     });
 
     it('should add placement id if given', function () {
@@ -131,7 +139,11 @@ describe('YieldmoAdapter', function () {
         bidder: 'yieldmo',
         params: {},
         adUnitCode: 'adunit-code',
-        sizes: [[300, 250], [300, 600]],
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 250], [300, 600]]
+          }
+        },
         bidId: '30b31c1838de1e',
         bidderRequestId: '22edbae2733bf6',
         auctionId: '1d1a030790a475',
@@ -148,7 +160,11 @@ describe('YieldmoAdapter', function () {
         bidder: 'yieldmo',
         params: {},
         adUnitCode: 'adunit-code',
-        sizes: [[300, 250], [300, 600]],
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 250], [300, 600]]
+          }
+        },
         bidId: '30b31c1838de1e',
         bidderRequestId: '22edbae2733bf6',
         auctionId: '1d1a030790a475',
