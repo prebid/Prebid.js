@@ -88,7 +88,7 @@ export const spec = {
     });
     // adding schain object
     if (bidRequests[0].schain) {
-      data['supplyChain'] = validBidRequests[0].schain;
+      data['supplyChain'] = getSupplyChain(bidRequests[0].schain);
     }
     let reqUrl = utils.getTopWindowLocation().protocol === 'http:' ? URL : SECURE_URL;
     return {
@@ -161,12 +161,20 @@ export const spec = {
     } catch (e) {
       utils.logError(e);
     }
-  },
+  }
+
+};
+
+function getSupplyChain (supplyChain) {
+  return {
+    complete: supplyChain.complete,
+    nodes: supplyChain.nodes
+  }
 };
 
 function getCreative(ad) {
   return ad && ad.creatives && ad.creatives.length && find(ad.creatives, creative => creative.adId);
-}
+};
 /**
  * Unpack the Server's Bid into a Prebid-compatible one.
  * @param serverBid
