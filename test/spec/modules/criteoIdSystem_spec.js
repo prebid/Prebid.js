@@ -1,17 +1,9 @@
-import { getRefererInfo } from 'src/refererDetection'
 import { criteoIdSubmodule } from 'modules/criteoIdSystem';
 import * as utils from 'src/utils';
 import * as ajaxLib from 'src/ajax';
+import * as urlLib from 'src/url';
 
 const pastDateString = new Date(0).toString()
-
-function extractProtocolHost (url, returnOnlyHost = false) {
-  var a = document.createElement('a');
-  a.href = url;
-  return returnOnlyHost
-    ? `${a.hostname}`
-    : `${a.protocol}//${a.hostname}${a.port ? ':' + a.port : ''}/`;
-}
 
 function mockResponse(responseText, fakeResponse = (url, callback) => callback(responseText)) {
   return function() {
@@ -30,6 +22,7 @@ describe('CriteoId module', function () {
   let setLocalStorageStub;
   let removeFromLocalStorageStub;
   let timeStampStub;
+  let parseUrlStub;
   let ajaxBuilderStub;
   let triggerPixelStub;
 
@@ -41,6 +34,7 @@ describe('CriteoId module', function () {
     removeFromLocalStorageStub = sinon.stub(utils, 'removeDataFromLocalStorage');
     timeStampStub = sinon.stub(utils, 'timestamp').returns(nowTimestamp);
     ajaxBuilderStub = sinon.stub(ajaxLib, 'ajaxBuilder').callsFake(mockResponse('{}'));
+    parseUrlStub = sinon.stub(urlLib, 'parse').returns({protocol: 'https', hostname: 'testdev.com'})
     triggerPixelStub = sinon.stub(utils, 'triggerPixel');
     done();
   });
@@ -54,6 +48,7 @@ describe('CriteoId module', function () {
     timeStampStub.restore();
     ajaxBuilderStub.restore();
     triggerPixelStub.restore();
+    parseUrlStub.restore();
   });
 
   const storageTestCases = [
@@ -89,9 +84,7 @@ describe('CriteoId module', function () {
     ajaxBuilderStub.callsFake(mockResponse(undefined, ajaxStub))
 
     criteoIdSubmodule.getId();
-    const topUrl = extractProtocolHost(getRefererInfo().referer)
-    const domain = extractProtocolHost(document.location.href, true)
-    const expectedUrl = `https://gum.criteo.com/sid/json?origin=prebid&topUrl=${encodeURIComponent(topUrl)}&domain=${encodeURIComponent(domain)}&bundle=bundle&cw=1&pbt=1`;
+    const expectedUrl = `https://gum.criteo.com/sid/json?origin=prebid&topUrl=https%3A%2F%2Ftestdev.com%2F&domain=testdev.com&bundle=bundle&cw=1&pbt=1`;
 
     expect(ajaxStub.calledWith(expectedUrl)).to.be.true;
 

@@ -7,6 +7,7 @@
 
 import * as utils from '../src/utils'
 import * as ajax from '../src/ajax'
+import * as urlLib from '../src/url'
 import { getRefererInfo } from '../src/refererDetection'
 import { submodule } from '../src/hook';
 
@@ -26,11 +27,10 @@ function areCookiesWriteable() {
 }
 
 function extractProtocolHost (url, returnOnlyHost = false) {
-  var a = document.createElement('a');
-  a.href = url;
+  const parsedUrl = urlLib.parse(url)
   return returnOnlyHost
-    ? `${a.hostname}`
-    : `${a.protocol}//${a.hostname}${a.port ? ':' + a.port : ''}/`;
+    ? `${parsedUrl.hostname}`
+    : `${parsedUrl.protocol}://${parsedUrl.hostname}${parsedUrl.port ? ':' + parsedUrl.port : ''}/`;
 }
 
 function getFromAllStorages(key) {
@@ -111,28 +111,21 @@ export const criteoIdSubmodule = {
   /**
    * decode the stored id value for passing to bid requests
    * @function
-   * @returns {{criteo:Object}}
+   * @returns {{criteoId: string} | undefined}
    */
-  decode() {
-    const localData = getCriteoDataFromAllStorages();
-
-    if (localData.bidId) {
-      return { 'criteoId': localData.bidId }
-    }
+  decode(bidId) {
+    return bidId;
   },
   /**
-   * performs action to obtain id and return a value in the callback's response argument
+   * get the Criteo Id from local storages and initiate a new user sync
    * @function
-   * @param {SubmoduleParams} [configParams]
-   * @returns {function(callback:function)}
+   * @returns {{id: {criteoId: string} | undefined}}}
    */
-  getId(configParams) {
+  getId() {
     let localData = getCriteoDataFromAllStorages();
     callCriteoUserSync(localData);
 
-    if (localData.bidId) {
-      return { 'criteoId': localData.bidId }
-    }
+    return { id: localData.bidId ? { criteoId: localData.bidId } : undefined }
   }
 };
 
