@@ -172,7 +172,7 @@ export const spec = {
 
         if (syncOptions.pixelEnabled) {
           serverResponses.filter(resp => utils.deepAccess(resp, 'body.ext.sync.pixels'))
-            .flatMap(resp => resp.body.ext.sync.pixels)
+            .reduce((acc, resp) => acc.concat(resp.body.ext.sync.pixels), [])
             .map(pixel => pixel.url)
             .forEach(url => tracks.push({ type: 'image', url }))
         }
