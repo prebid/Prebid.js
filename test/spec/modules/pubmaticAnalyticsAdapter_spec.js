@@ -224,18 +224,6 @@ const MOCK = {
   ]
 };
 
-function performStandardAuction() {
-  events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
-  events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
-  events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[0]);
-  events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[1]);
-  events.emit(BIDDER_DONE, MOCK.BIDDER_DONE);
-  events.emit(AUCTION_END, MOCK.AUCTION_END);
-  events.emit(SET_TARGETING, MOCK.SET_TARGETING);
-  events.emit(BID_WON, MOCK.BID_WON[0]);
-  events.emit(BID_WON, MOCK.BID_WON[1]);
-}
-
 function getLoggerJsonFromRequest(requestBody) {
   return JSON.parse(decodeURIComponent(requestBody.split('json=')[1]));
 }
@@ -296,19 +284,7 @@ describe('pubmatic analytics adapter', function () {
       pubmaticAnalyticsAdapter.disableAnalytics();
     });
 
-    // test cases
-    // - Logger: best case consists all
-    // -- dealId, dealChannel
-    // -- mi: matched impression
-    // -- kgpv case w/w/o
-    // -- defaultBids flag
-    // - Logger: mark post-time-out bids
-    // - Logger: Currency conversion
-    // - Tracker: bid details
-    // - Tracker: w/o profileId, profileVersionId
-    // - Tracker: Currency conversion
-
-    it('Logger: best case', function() {
+    it('Logger: best case + win tracker', function() {
       events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
       events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
       events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[0]);
@@ -320,8 +296,8 @@ describe('pubmatic analytics adapter', function () {
       events.emit(BID_WON, MOCK.BID_WON[1]);
 
       clock.tick(3000 + 1000);
-      expect(requests.length).to.equal(1);
-      let request = requests[0];
+      expect(requests.length).to.equal(3); // 1 logger and 2 win-tracker
+      let request = requests[2]; // logger is executed late, trackers execute first
       expect(request.url).to.equal('https://t.pubmatic.com/wl?pubid=9999');
       let data = getLoggerJsonFromRequest(request.requestBody);
       expect(data.pubid).to.equal('9999');
@@ -378,6 +354,24 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[1].ps[0].af).to.equal('banner');
       expect(data.s[1].ps[0].ocpm).to.equal(1.52);
       expect(data.s[1].ps[0].ocry).to.equal('USD');
+
+      // tracker slot1
+      let firstTracker = requests[0].url;
+      expect(firstTracker.split('?')[0]).to.equal('https://t.pubmatic.com/wt');
+      data = {};
+      firstTracker.split('?')[1].split('&').map(e => e.split('=')).forEach(e => data[e[0]] = e[1]);
+      expect(data.pubid).to.equal('9999');
+      expect(decodeURIComponent(data.purl)).to.equal('http://www.test.com/page.html');
+      expect(data.tst).to.equal('1519767013781');
+      expect(data.iid).to.equal('25c6d7f5-699a-4bfc-87c9-996f915341fa');
+      expect(data.bidid).to.equal('2ecff0db240757');
+      expect(data.pid).to.equal('1111');
+      expect(data.pdvid).to.equal('20');
+      expect(decodeURIComponent(data.slot)).to.equal('/19968336/header-bid-tag-0');
+      expect(decodeURIComponent(data.kgpv)).to.equal('/19968336/header-bid-tag-0');
+      expect(data.pn).to.equal('pubmatic');
+      expect(data.eg).to.equal('1.23');
+      expect(data.en).to.equal('1.23');
     });
 
     it('Logger: when bid is not submitted, default bid status 1 check', function() {
@@ -390,8 +384,8 @@ describe('pubmatic analytics adapter', function () {
       events.emit(BID_WON, MOCK.BID_WON[0]);
 
       clock.tick(3000 + 1000);
-      expect(requests.length).to.equal(1);
-      let request = requests[0];
+      expect(requests.length).to.equal(2); // 1 logger and 1 win-tracker
+      let request = requests[1]; // logger is executed late, trackers execute first
       let data = getLoggerJsonFromRequest(request.requestBody);
       expect(data.s[1].sn).to.equal('/19968336/header-bid-tag-1');
       expect(data.s[1].sz).to.deep.equal(['1000x300', '970x250', '728x90']);
@@ -423,12 +417,9 @@ describe('pubmatic analytics adapter', function () {
       events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
       events.emit(BID_TIMEOUT, MOCK.BID_TIMEOUT);
       events.emit(AUCTION_END, MOCK.AUCTION_END);
-      // events.emit(SET_TARGETING, MOCK.SET_TARGETING);
-      // events.emit(BID_WON, MOCK.BID_WON[0]);
-      // events.emit(BID_WON, MOCK.BID_WON[1]);
       clock.tick(3000 + 1000);
 
-      expect(requests.length).to.equal(1);
+      expect(requests.length).to.equal(1); // 1 logger and 0 win-tracker
       let request = requests[0];
       let data = getLoggerJsonFromRequest(request.requestBody);
       expect(data.s[1].sn).to.equal('/19968336/header-bid-tag-1');
@@ -464,7 +455,7 @@ describe('pubmatic analytics adapter', function () {
       events.emit(AUCTION_END, MOCK.AUCTION_END);
       clock.tick(3000 + 1000);
 
-      expect(requests.length).to.equal(1);
+      expect(requests.length).to.equal(1); // 1 logger and 0 win-tracker
       let request = requests[0];
       let data = getLoggerJsonFromRequest(request.requestBody);
       expect(data.s[1].sn).to.equal('/19968336/header-bid-tag-1');
@@ -515,8 +506,8 @@ describe('pubmatic analytics adapter', function () {
       events.emit(BID_WON, MOCK.BID_WON[1]);
 
       clock.tick(3000 + 1000);
-      expect(requests.length).to.equal(1);
-      let request = requests[0];
+      expect(requests.length).to.equal(3); // 1 logger and 2 win-tracker
+      let request = requests[2]; // logger is executed late, trackers execute first
       expect(request.url).to.equal('https://t.pubmatic.com/wl?pubid=9999');
       let data = getLoggerJsonFromRequest(request.requestBody);
       expect(data.s[1].sn).to.equal('/19968336/header-bid-tag-1');
