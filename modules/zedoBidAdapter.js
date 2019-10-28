@@ -86,6 +86,10 @@ export const spec = {
       }
       data['placements'].push(placement);
     });
+    // adding schain object
+    if (bidRequests[0].schain) {
+      data['supplyChain'] = validBidRequests[0].schain;
+    }
     let reqUrl = utils.getTopWindowLocation().protocol === 'http:' ? URL : SECURE_URL;
     return {
       method: 'GET',
