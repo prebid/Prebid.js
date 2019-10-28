@@ -63,16 +63,13 @@ describe('CriteoId module', function () {
     getLocalStorageStub.withArgs('cto_bidid').returns(testCase.localStorage);
 
     const id = criteoIdSubmodule.getId();
-    expect(id).to.be.deep.equal(testCase.expected ? { criteoId: testCase.expected } : undefined);
+    expect(id).to.be.deep.equal({id: testCase.expected ? { criteoId: testCase.expected } : undefined});
   }))
 
-  storageTestCases.forEach(testCase => it('decode() should return the bidId when it exists in local storages', function () {
-    getCookieStub.withArgs('cto_bidid').returns(testCase.cookie);
-    getLocalStorageStub.withArgs('cto_bidid').returns(testCase.localStorage);
-
-    const id = criteoIdSubmodule.decode();
-    expect(id).to.be.deep.equal(testCase.expected ? { criteoId: testCase.expected } : undefined);
-  }))
+  it('decode() should return the bidId when it exists in local storages', function () {
+    const id = criteoIdSubmodule.decode('testDecode');
+    expect(id).to.equal('testDecode')
+  });
 
   it('should call user sync url with the right params', function () {
     getCookieStub.withArgs('cto_test_cookie').returns('1');
