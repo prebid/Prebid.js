@@ -416,7 +416,7 @@ describe('sovrnBidAdapter', function() {
       expect(returnStatement).to.be.empty;
     });
 
-    it.only('should include pixel syncs', () => {
+    it('should include pixel syncs', () => {
       let pixelEnabledOptions = { iframeEnabled: false, pixelEnabled: true };
       const resp2 = {
         'body': {
