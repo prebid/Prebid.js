@@ -1,113 +1,97 @@
 <!--
-  Before testing our ad you need to use our geolocaiton widget.
-  I've added it to this webpage.
-  Click on update your position and type "Ayguesvives" then click on V for this example.
-  our widget will set a cookie that geolocation and an ad will be displayed after you'll reload the page.
+  This page calls a single bidder for a single ad slot. It can be considered a "hello world" example for using
+  Prebid with the Google Publisher Tag.
+  It also makes a good test page for new adapter PR submissions. Simply set your server's Bid Params object in the
+  bids array inside the adUnits, and it will use your adapter to load an ad.
+  NOTE that many ad servers won't send back an ad if the URL is localhost... so you might need to
+  set an alias in your /etc/hosts file so that you can load this page from a different domain.
 -->
 
 <html>
-  <head>
-      <script async src="../../build/dev/prebid.js"></script>
-      <script async src="https://www.googletagservices.com/tag/js/gpt.js"></script>
-      <link rel="stylesheet" href="https://abs.proxistore.com/assets/css/proxistore.min.css">
-      <script src="https://abs.proxistore.com/js/proxistore.min.js"></script>
-      <script type="text/javascript">
-        
-      </script>
-      <script>
+<head>
+    <script async src="../../build/dev/prebid.js"></script>
+    <script async src="https://www.googletagservices.com/tag/js/gpt.js"></script>
+    <script>
         var FAILSAFE_TIMEOUT = 3300;
         var PREBID_TIMEOUT = 1000;
 
-        //We have to set a cookie or no ad will be displayed
-        //You need to set the domain of this cookie to ".proxistore.com" ot it will send an empty array
-
-
         var adUnits = [{
-          code: 'div-gpt-ad-1460505748561-0',
-          mediaTypes: {
-            banner: {
-              sizes: [[300, 250], [300, 600], [970, 250]],
-            }
-          },
-          // Replace this object to test a new Adapter!
-          bids: [{
-            bidder: 'proxistore',
-            sizes: [[300, 250], [300, 600], [970, 250]],
-            params: {
-              website: 'lefigaro.fr',
-              language: 'fr'
+            mediaTypes: {
+                banner: {
+                    sizes: [[300, 250], [300,600], [975, 250]],
+                }
             },
-            auctionId: 442133079,
-            bidId: 464646969,
-            transactionId: 511916005
-          }]
-  
+            // Replace this object to test a new Adapter!
+            bids: [{
+                bids: [{
+                    bidder: 'proxistore',
+                    sizes: [300, 600],
+                    params: {
+                        website: 'example.fr',
+                        language: 'fr'
+                    },
+                    auctionId: 442133079,
+                    bidId: 464646969,
+                    transactionId: 511916005
+                }]
+            }]
+
         }];
-  
+
         var pbjs = pbjs || {};
         pbjs.que = pbjs.que || [];
-  
-      </script>
-  
-      <script>
+
+    </script>
+
+    <script>
         var googletag = googletag || {};
         googletag.cmd = googletag.cmd || [];
         googletag.cmd.push(function() {
-          googletag.pubads().disableInitialLoad();
+            googletag.pubads().disableInitialLoad();
         });
-  
+
         pbjs.que.push(function() {
-          pbjs.addAdUnits(adUnits);
-          pbjs.requestBids({
-            bidsBackHandler: sendAdserverRequest,
-            timeout: PREBID_TIMEOUT
-          });
-        });
-  
-        function sendAdserverRequest() {
-          if (pbjs.adserverRequestSent) return;
-          pbjs.adserverRequestSent = true;
-          googletag.cmd.push(function() {
-            pbjs.que.push(function() {
-              pbjs.setTargetingForGPTAsync();
-              googletag.pubads().refresh();
+            pbjs.addAdUnits(adUnits);
+            pbjs.requestBids({
+                bidsBackHandler: sendAdserverRequest,
+                timeout: PREBID_TIMEOUT
             });
-          });
-        }
-  
-        setTimeout(function() {
-          sendAdserverRequest();
-        }, FAILSAFE_TIMEOUT);
-  
-      </script>
-  
-      <script>
-        googletag.cmd.push(function () {
-          googletag.defineSlot('/19968336/header-bid-tag-0', [[300, 250], [300, 600]], 'div-gpt-ad-1460505748561-0').addService(googletag.pubads());
-  
-          googletag.pubads().enableSingleRequest();
-          googletag.enableServices();
         });
-      </script>
-  </head>
-  
-  <body>
-  <h2>Prebid.js Test</h2>
-  <div id="widgetId"></div>
-  <script>
-    Proxistore.config({
-        language: "en",
-        darkTheme: false,
-        widgetIds:["widgetId"],
-    });      
-  </script>
 
-  <h5>Div-1</h5>
+        function sendAdserverRequest() {
+            if (pbjs.adserverRequestSent) return;
+            pbjs.adserverRequestSent = true;
+            googletag.cmd.push(function() {
+                pbjs.que.push(function() {
+                    pbjs.setTargetingForGPTAsync();
+                    googletag.pubads().refresh();
+                });
+            });
+        }
 
-  <div id='div-gpt-ad-1460505748561-0'>
-      <script type='text/javascript'>
+        setTimeout(function() {
+            sendAdserverRequest();
+        }, FAILSAFE_TIMEOUT);
+
+    </script>
+
+    <script>
+        googletag.cmd.push(function () {
+            googletag.defineSlot('/19968336/header-bid-tag-0', [[300, 250], [300, 600]], 'div-gpt-ad-1460505748561-0').addService(googletag.pubads());
+
+            googletag.pubads().enableSingleRequest();
+            googletag.enableServices();
+        });
+    </script>
+</head>
+
+<body>
+<h2>Prebid.js Test</h2>
+<h5>Div-1</h5>
+<div id='div-gpt-ad-1460505748561-0'>
+    <script type='text/javascript'>
         googletag.cmd.push(function() { googletag.display('div-gpt-ad-1460505748561-0'); });
-      </script>
-  </div>
-  </body>
-  </html>
+    </script>
+</div>
+</body>
+</html>
