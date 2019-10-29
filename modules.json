@@ -3,6 +3,7 @@
   "aardvarkBidAdapter",
   "aolBidAdapter",
   "appnexusBidAdapter",
+  "consentManagement",
   "consumableBidAdapter",
   "emx_digitalBidAdapter",
   "googleAnalyticsAdapter",
