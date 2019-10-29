@@ -321,14 +321,14 @@ export const spec = {
 
     const orderedParams = [
       'tpid_tdid',
-      'tpid_liveintent.com',
-      'tg_v.LIseg',
       'account_id',
       'site_id',
       'zone_id',
       'size_id',
       'alt_size_ids',
       'p_pos',
+      'tpid_liveintent.com',
+      'tg_v.LIseg',
       'gdpr',
       'gdpr_consent',
       'rf',
@@ -439,7 +439,7 @@ export const spec = {
       if (bidRequest.userId.lipb && bidRequest.userId.lipb.lipbid) {
         data['tpid_liveintent.com'] = bidRequest.userId.lipb.lipbid;
         if (Array.isArray(bidRequest.userId.lipb.segments) && bidRequest.userId.lipb.segments.length) {
-          data['tg_v.LIseg'] = bidRequest.userId.lipb.segments.join();
+          data['tg_v.LIseg'] = bidRequest.userId.lipb.segments.join(',');
         }
       }
     }
