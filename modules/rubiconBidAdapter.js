@@ -5,13 +5,9 @@ import {BANNER, VIDEO} from '../src/mediaTypes';
 
 const DEFAULT_INTEGRATION = 'pbjs_lite';
 
-function isSecure() {
-  return location.protocol === 'https:';
-}
-
-// use protocol relative urls for http or https
-export const FASTLANE_ENDPOINT = '//fastlane.rubiconproject.com/a/api/fastlane.json';
-export const VIDEO_ENDPOINT = '//prebid-server.rubiconproject.com/openrtb2/auction';
+// always use https, regardless of whether or not current page is secure
+export const FASTLANE_ENDPOINT = 'https://fastlane.rubiconproject.com/a/api/fastlane.json';
+export const VIDEO_ENDPOINT = 'https://prebid-server.rubiconproject.com/openrtb2/auction';
 export const SYNC_ENDPOINT = 'https://eus.rubiconproject.com/usync.html';
 
 const DIGITRUST_PROP_NAMES = {
@@ -153,7 +149,7 @@ export const spec = {
         imp: [{
           exp: 300,
           id: bidRequest.adUnitCode,
-          secure: isSecure() || bidRequest.params.secure ? 1 : 0,
+          secure: 1,
           ext: {
             rubicon: bidRequest.params
           },
@@ -397,7 +393,7 @@ export const spec = {
       'size_id': parsedSizes[0],
       'alt_size_ids': parsedSizes.slice(1).join(',') || undefined,
       'rp_floor': (params.floor = parseFloat(params.floor)) > 0.01 ? params.floor : 0.01,
-      'rp_secure': isSecure() ? '1' : '0',
+      'rp_secure': '1',
       'tk_flint': `${configIntType || DEFAULT_INTEGRATION}_v$prebid.version$`,
       'x_source.tid': bidRequest.transactionId,
       'p_screen_res': _getScreenResolution(),
