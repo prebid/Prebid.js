@@ -56,6 +56,20 @@ describe('triplelift adapter', function () {
   describe('buildRequests', function () {
     let bidRequests;
     let bidderRequest;
+    const schain = {
+      validation: 'strict',
+      config: {
+        ver: '1.0',
+        complete: 1,
+        nodes: [
+          {
+            asi: 'indirectseller.com',
+            sid: '00001',
+            hp: 1,
+          }
+        ]
+      }
+    };
 
     this.beforeEach(() => {
       bidRequests = [
@@ -71,6 +85,7 @@ describe('triplelift adapter', function () {
           bidderRequestId: '22edbae2733bf6',
           auctionId: '1d1a030790a475',
           userId: {},
+          schain,
         }
       ];
 
@@ -220,6 +235,17 @@ describe('triplelift adapter', function () {
       expect(url).to.match(new RegExp('(?:' + prebid.version + ')'))
       expect(url).to.match(/(?:referrer)/);
     });
+    it('should return schain when present', function() {
+      const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
+      const { data: payload } = request;
+      expect(payload.ext.schain).to.deep.equal(schain);
+    });
+    it('should not create root level ext when schain is not present', function() {
+      bidRequests[0].schain = undefined;
+      const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
+      const { data: payload } = request;
+      expect(payload.ext).to.deep.equal(undefined);
+    });
   });
 
   describe('interpretResponse', function () {
@@ -280,7 +306,7 @@ describe('triplelift adapter', function () {
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
     });
 
-    it('should return multile responses to support SRA', function () {
+    it('should return multiple responses to support SRA', function () {
       let response = {
         body: {
           bids: [

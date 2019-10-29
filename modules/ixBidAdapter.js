@@ -187,7 +187,7 @@ export const spec = {
     let validBidRequest = null;
     let bannerImp = null;
 
-    // Always use HTTPS as the protocol.
+    // Always use secure HTTPS protocol.
     let baseUrl = BANNER_SECURE_BID_URL;
 
     for (let i = 0; i < validBidRequests.length; i++) {

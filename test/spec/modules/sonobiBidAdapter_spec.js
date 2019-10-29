@@ -19,87 +19,222 @@ describe('SonobiBidAdapter', function () {
   })
 
   describe('.isBidRequestValid', function () {
-    let bid = {
-      'bidder': 'sonobi',
-      'params': {
-        'ad_unit': '/7780971/sparks_prebid_MR',
-        'sizes': [[300, 250], [300, 600]],
-        'floor': '1'
-      },
-      'adUnitCode': 'adunit-code',
-      'sizes': [[300, 250], [300, 600]],
-      'bidId': '30b31c1838de1e',
-      'bidderRequestId': '22edbae2733bf6',
-      'auctionId': '1d1a030790a475',
-    }
+    it('should return false if there are no params', () => {
+      const bid = {
+        'bidder': 'sonobi',
+        'adUnitCode': 'adunit-code',
+        'mediaTypes': {
+          banner: {
+            sizes: [[300, 250], [300, 600]]
+          }
+        },
+        'bidId': '30b31c1838de1e',
+        'bidderRequestId': '22edbae2733bf6',
+        'auctionId': '1d1a030790a475',
+      };
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
 
-    it('should return true when required params found', function () {
-      expect(spec.isBidRequestValid(bid)).to.equal(true)
-    })
+    it('should return false if there is no placement_id param and no ad_unit param', () => {
+      const bid = {
+        'bidder': 'sonobi',
+        'adUnitCode': 'adunit-code',
+        params: {
+          placementId: '1a2b3c4d5e6f1a2b3c4d',
+        },
+        'mediaTypes': {
+          banner: {
+            sizes: [[300, 250], [300, 600]]
+          }
+        },
+        'bidId': '30b31c1838de1e',
+        'bidderRequestId': '22edbae2733bf6',
+        'auctionId': '1d1a030790a475',
+      };
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
 
-    it('should return true when bid.params.placement_id and bid.params.sizes are found', function () {
-      let bid = Object.assign({}, bid)
-      delete bid.params
-      delete bid.sizes
-      bid.params = {
-        'placement_id': '1a2b3c4d5e6f1a2b3c4d',
-        'sizes': [[300, 250], [300, 600]],
-      }
+    it('should return false if there is no mediaTypes', () => {
+      const bid = {
+        'bidder': 'sonobi',
+        'adUnitCode': 'adunit-code',
+        params: {
+          placement_id: '1a2b3c4d5e6f1a2b3c4d'
+        },
+        'mediaTypes': {
+        },
+        'bidId': '30b31c1838de1e',
+        'bidderRequestId': '22edbae2733bf6',
+        'auctionId': '1d1a030790a475',
+      };
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
 
-      expect(spec.isBidRequestValid(bid)).to.equal(true)
-    })
+    it('should return true if the bid is valid', () => {
+      const bid = {
+        'bidder': 'sonobi',
+        'adUnitCode': 'adunit-code',
+        params: {
+          placement_id: '1a2b3c4d5e6f1a2b3c4d'
+        },
+        'mediaTypes': {
+          banner: {
+            sizes: [[300, 250], [300, 600]]
+          }
+        },
+        'bidId': '30b31c1838de1e',
+        'bidderRequestId': '22edbae2733bf6',
+        'auctionId': '1d1a030790a475',
+      };
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
+    });
 
-    it('should return true when bid.params.placement_id and bid.sizes are found', function () {
-      let bid = Object.assign({}, bid)
-      delete bid.params
-      bid.sizes = [[300, 250], [300, 600]]
-      bid.params = {
-        'placement_id': '1a2b3c4d5e6f1a2b3c4d',
-      }
+    describe('banner', () => {
+      it('should return false if there are no banner sizes and no param sizes', () => {
+        const bid = {
+          'bidder': 'sonobi',
+          'adUnitCode': 'adunit-code',
+          params: {
+            placement_id: '1a2b3c4d5e6f1a2b3c4d'
+          },
+          'mediaTypes': {
+            banner: {
 
-      expect(spec.isBidRequestValid(bid)).to.equal(true)
-    })
+            }
+          },
+          'bidId': '30b31c1838de1e',
+          'bidderRequestId': '22edbae2733bf6',
+          'auctionId': '1d1a030790a475',
+        };
+        expect(spec.isBidRequestValid(bid)).to.equal(false);
+      });
 
-    it('should return true when bid.params.ad_unit and bid.params.sizes are found', function () {
-      let bid = Object.assign({}, bid)
-      delete bid.params
-      delete bid.sizes
-      bid.params = {
-        'ad_unit': '/7780971/sparks_prebid_MR',
-        'sizes': [[300, 250], [300, 600]],
-      }
+      it('should return true if there is banner sizes and no param sizes', () => {
+        const bid = {
+          'bidder': 'sonobi',
+          'adUnitCode': 'adunit-code',
+          params: {
+            placement_id: '1a2b3c4d5e6f1a2b3c4d'
+          },
+          'mediaTypes': {
+            banner: {
+              sizes: [[300, 250], [300, 600]]
+            }
+          },
+          'bidId': '30b31c1838de1e',
+          'bidderRequestId': '22edbae2733bf6',
+          'auctionId': '1d1a030790a475',
+        };
+        expect(spec.isBidRequestValid(bid)).to.equal(true);
+      });
 
-      expect(spec.isBidRequestValid(bid)).to.equal(true)
-    })
+      it('should return true if there is param sizes and no banner sizes', () => {
+        const bid = {
+          'bidder': 'sonobi',
+          'adUnitCode': 'adunit-code',
+          params: {
+            placement_id: '1a2b3c4d5e6f1a2b3c4d',
+            sizes: [[300, 250], [300, 600]]
+          },
+          'mediaTypes': {
+            banner: {
+            }
+          },
+          'bidId': '30b31c1838de1e',
+          'bidderRequestId': '22edbae2733bf6',
+          'auctionId': '1d1a030790a475',
+        };
+        expect(spec.isBidRequestValid(bid)).to.equal(true);
+      });
+    });
 
-    it('should return true when bid.params.ad_unit and bid.sizes are found', function () {
-      let bid = Object.assign({}, bid)
-      delete bid.params
-      bid.sizes = [[300, 250], [300, 600]]
-      bid.params = {
-        'ad_unit': '/7780971/sparks_prebid_MR',
-      }
+    describe('video', () => {
+      describe('instream', () => {
+        it('should return false if there is no playerSize defined in the video mediaType', () => {
+          const bid = {
+            'bidder': 'sonobi',
+            'adUnitCode': 'adunit-code',
+            params: {
+              placement_id: '1a2b3c4d5e6f1a2b3c4d',
+              sizes: [[300, 250], [300, 600]]
+            },
+            'mediaTypes': {
+              video: {
+                context: 'instream'
+              }
+            },
+            'bidId': '30b31c1838de1e',
+            'bidderRequestId': '22edbae2733bf6',
+            'auctionId': '1d1a030790a475',
+          };
+          expect(spec.isBidRequestValid(bid)).to.equal(false);
+        });
 
-      expect(spec.isBidRequestValid(bid)).to.equal(true)
-    })
+        it('should return true if there is playerSize defined on the video mediaType', () => {
+          const bid = {
+            'bidder': 'sonobi',
+            'adUnitCode': 'adunit-code',
+            params: {
+              placement_id: '1a2b3c4d5e6f1a2b3c4d',
+            },
+            'mediaTypes': {
+              video: {
+                context: 'instream',
+                playerSize: [300, 250]
+              }
+            },
+            'bidId': '30b31c1838de1e',
+            'bidderRequestId': '22edbae2733bf6',
+            'auctionId': '1d1a030790a475',
+          };
+          expect(spec.isBidRequestValid(bid)).to.equal(true);
+        });
+      });
 
-    it('should return false when no params are found', function () {
-      let bid = Object.assign({}, bid)
-      delete bid.params
-      expect(spec.isBidRequestValid(bid)).to.equal(false)
-    })
+      describe('outstream', () => {
+        it('should return false if there is no param sizes', () => {
+          const bid = {
+            'bidder': 'sonobi',
+            'adUnitCode': 'adunit-code',
+            params: {
+              placement_id: '1a2b3c4d5e6f1a2b3c4d',
+            },
+            'mediaTypes': {
+              video: {
+                context: 'outstream',
+                playerSize: [300, 250]
+              }
+            },
+            'bidId': '30b31c1838de1e',
+            'bidderRequestId': '22edbae2733bf6',
+            'auctionId': '1d1a030790a475',
+          };
+          expect(spec.isBidRequestValid(bid)).to.equal(false);
+        });
 
-    it('should return false when bid.params.placement_id and bid.params.ad_unit are not found', function () {
-      let bid = Object.assign({}, bid)
-      delete bid.params
-      bid.params = {
-        'placement_id': 0,
-        'ad_unit': 0,
-        'sizes': [[300, 250], [300, 600]],
-      }
-      expect(spec.isBidRequestValid(bid)).to.equal(false)
-    })
-  })
+        it('should return true if there is param sizes', () => {
+          const bid = {
+            'bidder': 'sonobi',
+            'adUnitCode': 'adunit-code',
+            params: {
+              placement_id: '1a2b3c4d5e6f1a2b3c4d',
+              sizes: [300, 250]
+
+            },
+            'mediaTypes': {
+              video: {
+                context: 'outstream'
+              }
+            },
+            'bidId': '30b31c1838de1e',
+            'bidderRequestId': '22edbae2733bf6',
+            'auctionId': '1d1a030790a475',
+          };
+          expect(spec.isBidRequestValid(bid)).to.equal(true);
+        });
+      });
+    });
+  });
 
   describe('.buildRequests', function () {
     beforeEach(function() {

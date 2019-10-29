@@ -93,9 +93,11 @@ describe('TheMediaGrid Adapter', function () {
       expect(payload).to.have.property('auids', '1');
       expect(payload).to.have.property('sizes', '300x250,300x600');
       expect(payload).to.have.property('r', '22edbae2733bf6');
+      expect(payload).to.have.property('wrapperType', 'Prebid_js');
+      expect(payload).to.have.property('wrapperVersion', '$prebid.version$');
     });
 
-    it('auids must not be duplicated', function () {
+    it('sizes must not be duplicated', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
       expect(request.data).to.be.an('string');
       const payload = parseRequest(request.data);

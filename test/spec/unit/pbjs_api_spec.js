@@ -2033,17 +2033,6 @@ describe('Unit: Prebid Module', function () {
     });
   });
 
-  describe('loadScript', function () {
-    it('should call adloader.loadScript', function () {
-      const tagSrc = '';
-      const callback = Function;
-      const useCache = false;
-
-      $$PREBID_GLOBAL$$.loadScript(tagSrc, callback, useCache);
-      assert.ok(adloader.loadScriptStub.calledWith(tagSrc, callback, useCache), 'called adloader.loadScript');
-    });
-  });
-
   describe('aliasBidder', function () {
     it('should call adapterManager.aliasBidder', function () {
       const aliasBidAdapterSpy = sinon.spy(adapterManager, 'aliasBidAdapter');

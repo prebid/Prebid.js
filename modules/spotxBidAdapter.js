@@ -227,7 +227,7 @@ export const spec = {
 
       // Add schain object if it is present
       if (bid && bid.schain) {
-        requestPayload['ext']['source'] = {
+        requestPayload['source'] = {
           ext: {
             schain: bid.schain
           }
