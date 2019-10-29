@@ -69,9 +69,6 @@ describe('SmartRTBBidAdapter', function () {
     it('should return a bidder code of smartrtb', function () {
       expect(spec.code).to.equal('smartrtb')
     })
-    it('should alias smrtb', function () {
-      expect(spec.aliases.length > 0 && spec.aliases[0] === 'smrtb').to.be.true
-    })
   })
 
   describe('isBidRequestValid', function () {
