@@ -70,7 +70,7 @@ const SERVER_DISPLAY_RESPONSE_WITH_MIXED_SYNCS = {
     'width': 300,
     'cpm': 0.9
   }],
-  'cookieURLs': ['link1', 'link2'],
+  'cookieURLs': ['link3', 'link4'],
   'cookieURLSTypes': ['image', 'iframe']
 };
 

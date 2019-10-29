@@ -18,7 +18,7 @@ export const spec = {
     return !!utils.deepAccess(bid, 'params.aid');
   },
   getUserSyncs: function (syncOptions, serverResponses) {
-    var syncs = [];
+    const syncs = [];
 
     function addSyncs(bid) {
       const uris = bid.cookieURLs;
@@ -95,11 +95,11 @@ export const spec = {
 function parseRTBResponse(serverResponse, bidderRequest) {
   const isInvalidValidResp = !serverResponse || !utils.isArray(serverResponse.bids);
 
-  let bids = [];
+  const bids = [];
 
   if (isInvalidValidResp) {
-    let extMessage = serverResponse && serverResponse.ext && serverResponse.ext.message ? `: ${serverResponse.ext.message}` : '';
-    let errorMessage = `in response for ${bidderRequest.bidderCode} adapter ${extMessage}`;
+    const extMessage = serverResponse && serverResponse.ext && serverResponse.ext.message ? `: ${serverResponse.ext.message}` : '';
+    const errorMessage = `in response for ${bidderRequest.bidderCode} adapter ${extMessage}`;
 
     utils.logError(errorMessage);
 
@@ -122,13 +122,13 @@ function parseRTBResponse(serverResponse, bidderRequest) {
 }
 
 function bidToTag(bidRequests, bidderRequest) {
-  let tag = {
-    domain: utils.getTopWindowLocation().hostname
+  const tag = {
+    domain: utils.deepAccess(bidderRequest, 'refererInfo.referer')
   };
 
-  if (bidderRequest && bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies) {
+  if (utils.deepAccess(bidderRequest, 'gdprConsent.gdprApplies')) {
     tag.gdpr = 1;
-    tag.gdpr_consent = bidderRequest.gdprConsent.consentString;
+    tag.gdpr_consent = utils.deepAccess(bidderRequest, 'gdprConsent.consentString');
   }
 
   for (let i = 0, length = bidRequests.length; i < length; i++) {
@@ -175,7 +175,7 @@ function getMediaType(bidderRequest) {
  * @returns {object}
  */
 function createBid(bidResponse, mediaType) {
-  let bid = {
+  const bid = {
     requestId: bidResponse.requestId,
     creativeId: bidResponse.cmpId,
     height: bidResponse.height,
