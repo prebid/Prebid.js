@@ -236,13 +236,22 @@ export const spec = {
         }
 
         if (bidRequest.userId.lipb && bidRequest.userId.lipb.lipbid) {
-          data.user.ext.eids.push({
-            source: 'liveintent.com',
-            uids: [{
-              id: bidRequest.userId.lipb.lipbid
-            }]
-          });
-        }
+            data.user.ext.eids.push({
+              source: 'liveintent.com',
+              uids: [{
+                id: bidRequest.userId.lipb.lipbid
+              }]
+            });
+
+            utils.deepSetValue(data, 'tpid', {
+              source: 'liveintent.com',
+              uid: bidRequest.userId.lipb.lipbid
+            });
+
+            if (Array.isArray(bidRequest.userId.lipb.segments) && bidRequest.userId.lipb.segments.length) {
+              utils.deepSetValue(data, 'rp.target.LIseg', bidRequest.userId.lipb.segments);
+            }
+          }
       }
 
       if (config.getConfig('coppa') === true) {
