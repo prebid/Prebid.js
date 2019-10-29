@@ -168,13 +168,13 @@ describe('viewdeosDXBidAdapter', function () { // todo remove only
 
   describe('isBidRequestValid', function () {
     it('should return true when required params found', function () {
-      expect(spec.isBidRequestValid(VIDEO_REQUEST)).to.equal(12345);
+      expect(spec.isBidRequestValid(VIDEO_REQUEST)).to.equal(true);
     });
 
     it('should return false when required params are not passed', function () {
       let bid = Object.assign({}, VIDEO_REQUEST);
       delete bid.params;
-      expect(spec.isBidRequestValid(bid)).to.equal(undefined);
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
   });
 

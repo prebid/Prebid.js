@@ -28,8 +28,8 @@ export const spec = {
         uris.forEach((uri, i) => {
           const type = types[i] || 'image';
 
-          if ((!syncOptions.pixelEnabled && type == 'image') ||
-            (!syncOptions.iframeEnabled && type == 'iframe')) {
+          if ((!syncOptions.pixelEnabled && type === 'image') ||
+            (!syncOptions.iframeEnabled && type === 'iframe')) {
             return;
           }
 
@@ -147,7 +147,7 @@ function bidToTag(bidRequests, bidderRequest) {
 function prepareRTBRequestParams(_index, bid) {
   const mediaType = utils.deepAccess(bid, 'mediaTypes.video') ? VIDEO : DISPLAY;
   const index = !_index ? '' : `${_index + 1}`;
-  const sizes = bid.sizes ? bid.sizes : (mediaType == VIDEO ? utils.deepAccess(bid, 'mediaTypes.video.playerSize') : utils.deepAccess(bid, 'mediaTypes.banner.sizes'));
+  const sizes = bid.sizes ? bid.sizes : (mediaType === VIDEO ? utils.deepAccess(bid, 'mediaTypes.video.playerSize') : utils.deepAccess(bid, 'mediaTypes.banner.sizes'));
   return {
     ['callbackId' + index]: bid.bidId,
     ['aid' + index]: bid.params.aid,
