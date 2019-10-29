@@ -15,7 +15,7 @@ export const spec = {
   aliases: ['viewdeos'],
   supportedMediaTypes: [VIDEO, BANNER],
   isBidRequestValid: function (bid) {
-    return bid && bid.params && bid.params.aid;
+    return !!utils.deepAccess(bid, 'params.aid');
   },
   getUserSyncs: function (syncOptions, serverResponses) {
     var syncs = [];
@@ -24,9 +24,9 @@ export const spec = {
       const uris = bid.cookieURLs;
       const types = bid.cookieURLSTypes || [];
 
-      if (uris && uris.length) {
+      if (Array.isArray(uris)) {
         uris.forEach((uri, i) => {
-          let type = types[i] || 'image';
+          const type = types[i] || 'image';
 
           if ((!syncOptions.pixelEnabled && type == 'image') ||
             (!syncOptions.iframeEnabled && type == 'iframe')) {
@@ -42,7 +42,7 @@ export const spec = {
     }
 
     if (syncOptions.pixelEnabled || syncOptions.iframeEnabled) {
-      serverResponses && serverResponses.length && serverResponses.forEach((response) => {
+      utils.isArray(serverResponses) && serverResponses.forEach((response) => {
         if (response.body) {
           if (utils.isArray(response.body)) {
             response.body.forEach(b => {
@@ -93,7 +93,7 @@ export const spec = {
 };
 
 function parseRTBResponse(serverResponse, bidderRequest) {
-  const isInvalidValidResp = !serverResponse || !serverResponse.bids || !serverResponse.bids.length;
+  const isInvalidValidResp = !serverResponse || !utils.isArray(serverResponse.bids);
 
   let bids = [];
 
