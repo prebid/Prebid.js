@@ -23,7 +23,7 @@ const outstreamRender = bid => {
         showBigPlayButton: false,
         showProgressBar: 'bar',
         showVolume: false,
-        allowFullscreen: false,
+        allowFullscreen: true,
         skippable: false,
       }
     });
