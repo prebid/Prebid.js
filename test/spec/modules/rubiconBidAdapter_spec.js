@@ -321,7 +321,7 @@ describe('the rubicon adapter', function () {
           let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
           let data = parseQuery(request.data);
 
-          expect(request.url).to.equal('//fastlane.rubiconproject.com/a/api/fastlane.json');
+          expect(request.url).to.equal('https://fastlane.rubiconproject.com/a/api/fastlane.json');
 
           let expectedQuery = {
             'account_id': '14062',
@@ -380,6 +380,42 @@ describe('the rubicon adapter', function () {
 	      expect(data['p_pos']).to.equal(undefined);
         });
 
+        it('should correctly send p_pos in sra fashion', function() {
+          sandbox.stub(config, 'getConfig').callsFake((key) => {
+            const config = {
+              'rubicon.singleRequest': true
+            };
+            return config[key];
+          });
+          // first one is atf
+          var sraPosRequest = utils.deepClone(bidderRequest);
+
+          // second is not present
+          const bidCopy = utils.deepClone(sraPosRequest.bids[0]);
+          delete bidCopy.params.position;
+          sraPosRequest.bids.push(bidCopy);
+
+          // third is btf
+          const bidCopy1 = utils.deepClone(sraPosRequest.bids[0]);
+          bidCopy1.params.position = 'btf';
+          sraPosRequest.bids.push(bidCopy1);
+
+          // fourth is invalid (aka not atf or btf)
+          const bidCopy2 = utils.deepClone(sraPosRequest.bids[0]);
+          bidCopy2.params.position = 'unknown';
+          sraPosRequest.bids.push(bidCopy2);
+
+          // fifth is not present
+          const bidCopy3 = utils.deepClone(sraPosRequest.bids[0]);
+          delete bidCopy3.params.position;
+          sraPosRequest.bids.push(bidCopy3);
+
+          let [request] = spec.buildRequests(sraPosRequest.bids, sraPosRequest);
+          let data = parseQuery(request.data);
+
+          expect(data['p_pos']).to.equal('atf;;btf;;');
+        });
+
         it('ad engine query params should be ordered correctly', function () {
           sandbox.stub(Math, 'random').callsFake(() => 0.1);
           let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
@@ -423,7 +459,7 @@ describe('the rubicon adapter', function () {
           let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
           let data = parseQuery(request.data);
 
-          expect(request.url).to.equal('//fastlane.rubiconproject.com/a/api/fastlane.json');
+          expect(request.url).to.equal('https://fastlane.rubiconproject.com/a/api/fastlane.json');
 
           // test that all values above are both present and correct
           Object.keys(expectedQuery).forEach(key => {
@@ -439,7 +475,7 @@ describe('the rubicon adapter', function () {
           [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
           data = parseQuery(request.data);
 
-          expect(request.url).to.equal('//fastlane.rubiconproject.com/a/api/fastlane.json');
+          expect(request.url).to.equal('https://fastlane.rubiconproject.com/a/api/fastlane.json');
 
           // test that all values above are both present and correct
           Object.keys(expectedQuery).forEach(key => {
@@ -936,7 +972,7 @@ describe('the rubicon adapter', function () {
               expect(item).to.have.property('bidRequest');
 
               expect(item.method).to.equal('GET');
-              expect(item.url).to.equal('//fastlane.rubiconproject.com/a/api/fastlane.json');
+              expect(item.url).to.equal('https://fastlane.rubiconproject.com/a/api/fastlane.json');
               expect(item.data).to.be.a('string');
 
               // 'bidRequest' type must be 'array' if SRA enabled

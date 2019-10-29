@@ -174,8 +174,8 @@ function _parseAdSlot(bid) {
       utils.logWarn(LOG_WARN_PREFIX + 'AdSlot Error: adSlot not in required format');
       return;
     }
-    bid.params.width = parseInt(splits[0]);
-    bid.params.height = parseInt(splits[1]);
+    bid.params.width = parseInt(splits[0], 10);
+    bid.params.height = parseInt(splits[1], 10);
   } else if (bid.hasOwnProperty('mediaTypes') &&
          bid.mediaTypes.hasOwnProperty(BANNER) &&
           bid.mediaTypes.banner.hasOwnProperty('sizes')) {
@@ -441,8 +441,8 @@ function _createBannerRequest(bid) {
         utils.logWarn(LOG_WARN_PREFIX + 'Error: mediaTypes.banner.size missing for adunit: ' + bid.params.adUnit + '. Ignoring the banner impression in the adunit.');
         return bannerObj;
       } else {
-        bannerObj.w = parseInt(sizes[0][0]);
-        bannerObj.h = parseInt(sizes[0][1]);
+        bannerObj.w = parseInt(sizes[0][0], 10);
+        bannerObj.h = parseInt(sizes[0][1], 10);
         sizes = sizes.splice(1, sizes.length - 1);
       }
     } else {
@@ -482,11 +482,11 @@ function _createVideoRequest(bid) {
     }
     // read playersize and assign to h and w.
     if (utils.isArray(bid.mediaTypes.video.playerSize[0])) {
-      videoObj.w = parseInt(bid.mediaTypes.video.playerSize[0][0]);
-      videoObj.h = parseInt(bid.mediaTypes.video.playerSize[0][1]);
+      videoObj.w = parseInt(bid.mediaTypes.video.playerSize[0][0], 10);
+      videoObj.h = parseInt(bid.mediaTypes.video.playerSize[0][1], 10);
     } else if (utils.isNumber(bid.mediaTypes.video.playerSize[0])) {
-      videoObj.w = parseInt(bid.mediaTypes.video.playerSize[0]);
-      videoObj.h = parseInt(bid.mediaTypes.video.playerSize[1]);
+      videoObj.w = parseInt(bid.mediaTypes.video.playerSize[0], 10);
+      videoObj.h = parseInt(bid.mediaTypes.video.playerSize[1], 10);
     }
     if (bid.params.video.hasOwnProperty('skippable')) {
       videoObj.ext = {
@@ -650,6 +650,8 @@ function _handleEids(payload, validBidRequests) {
     _addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.id5id`), 'id5-sync.com', 1);
     _addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.criteortus.${BIDDER_CODE}.userid`), 'criteortus', 1);
     _addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.idl_env`), 'liveramp.com', 1);
+    _addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.lipb.lipbid`), 'liveintent.com', 1);
+    _addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.parrableid`), 'parrable.com', 1);
   }
   if (eids.length > 0) {
     payload.user.eids = eids;
@@ -918,6 +920,11 @@ export const spec = {
       };
     }
 
+    // coppa compliance
+    if (config.getConfig('coppa') === true) {
+      utils.deepSetValue(payload, 'regs.coppa', 1);
+    }
+
     _handleDealCustomTargetings(payload, dctrArr, validBidRequests);
     _handleEids(payload, validBidRequests);
     _blockedIabCategoriesValidation(payload, blockedIabCategories);
@@ -1015,6 +1022,11 @@ export const spec = {
     if (gdprConsent) {
       syncurl += '&gdpr=' + (gdprConsent.gdprApplies ? 1 : 0);
       syncurl += '&gdpr_consent=' + encodeURIComponent(gdprConsent.consentString || '');
+    }
+
+    // coppa compliance
+    if (config.getConfig('coppa') === true) {
+      syncurl += '&coppa=1';
     }
 
     if (syncOptions.iframeEnabled) {
