@@ -232,6 +232,7 @@ export const spec = {
           });
         }
 
+        // support liveintent ID
         if (bidRequest.userId.lipb && bidRequest.userId.lipb.lipbid) {
           data.user.ext.eids.push({
             source: 'liveintent.com',
@@ -320,6 +321,8 @@ export const spec = {
 
     const orderedParams = [
       'tpid_tdid',
+      'tpid_liveintent.com',
+      'tg_v.LIseg',
       'account_id',
       'site_id',
       'zone_id',
@@ -427,8 +430,18 @@ export const spec = {
     // For SRA we need to explicitly put empty semi colons so AE treats it as empty, instead of copying the latter value
     data['p_pos'] = (params.position === 'atf' || params.position === 'btf') ? params.position : '';
 
-    if ((bidRequest.userId || {}).tdid) {
-      data['tpid_tdid'] = bidRequest.userId.tdid;
+    if (bidRequest.userId) {
+      if (bidRequest.userId.tdid) {
+        data['tpid_tdid'] = bidRequest.userId.tdid;
+      }
+
+      // support liveintent ID
+      if (bidRequest.userId.lipb && bidRequest.userId.lipb.lipbid) {
+        data['tpid_liveintent.com'] = bidRequest.userId.lipb.lipbid;
+        if (Array.isArray(bidRequest.userId.lipb.segments) && bidRequest.userId.lipb.segments.length) {
+          data['tg_v.LIseg'] = bidRequest.userId.lipb.segments.join();
+        }
+      }
     }
 
     if (bidderRequest.gdprConsent) {
