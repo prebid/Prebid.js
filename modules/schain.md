@@ -12,7 +12,7 @@ Refer:
 ## Sample code for passing the schain object
 ```
 pbjs.setConfig( {
-    "schain":
+    "schain": {
     	"validation": "strict",
     	"config": {
 			"ver":"1.0",
@@ -28,7 +28,7 @@ pbjs.setConfig( {
 				   "asi":"indirectseller-2.com",
 				   "sid":"00002",
 				   "hp":1
-			    },
+			    }
 			]
 		}
 	}

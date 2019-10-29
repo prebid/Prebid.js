@@ -5,13 +5,9 @@ import {BANNER, VIDEO} from '../src/mediaTypes';
 
 const DEFAULT_INTEGRATION = 'pbjs_lite';
 
-function isSecure() {
-  return location.protocol === 'https:';
-}
-
-// use protocol relative urls for http or https
-export const FASTLANE_ENDPOINT = '//fastlane.rubiconproject.com/a/api/fastlane.json';
-export const VIDEO_ENDPOINT = '//prebid-server.rubiconproject.com/openrtb2/auction';
+// always use https, regardless of whether or not current page is secure
+export const FASTLANE_ENDPOINT = 'https://fastlane.rubiconproject.com/a/api/fastlane.json';
+export const VIDEO_ENDPOINT = 'https://prebid-server.rubiconproject.com/openrtb2/auction';
 export const SYNC_ENDPOINT = 'https://eus.rubiconproject.com/usync.html';
 
 const DIGITRUST_PROP_NAMES = {
@@ -83,6 +79,7 @@ var sizeMap = {
   126: '200x600',
   144: '980x600',
   145: '980x150',
+  152: '1000x250',
   156: '640x320',
   159: '320x250',
   179: '250x600',
@@ -152,7 +149,7 @@ export const spec = {
         imp: [{
           exp: 300,
           id: bidRequest.adUnitCode,
-          secure: isSecure() || bidRequest.params.secure ? 1 : 0,
+          secure: 1,
           ext: {
             rubicon: bidRequest.params
           },
@@ -395,9 +392,8 @@ export const spec = {
       'zone_id': params.zoneId,
       'size_id': parsedSizes[0],
       'alt_size_ids': parsedSizes.slice(1).join(',') || undefined,
-      'p_pos': params.position === 'atf' || params.position === 'btf' ? params.position : 'unknown',
       'rp_floor': (params.floor = parseFloat(params.floor)) > 0.01 ? params.floor : 0.01,
-      'rp_secure': isSecure() ? '1' : '0',
+      'rp_secure': '1',
       'tk_flint': `${configIntType || DEFAULT_INTEGRATION}_v$prebid.version$`,
       'x_source.tid': bidRequest.transactionId,
       'p_screen_res': _getScreenResolution(),
@@ -408,6 +404,10 @@ export const spec = {
       'tg_fl.eid': bidRequest.code,
       'rf': _getPageUrl(bidRequest, bidderRequest)
     };
+
+    // add p_pos only if specified and valid
+    // For SRA we need to explicitly put empty semi colons so AE treats it as empty, instead of copying the latter value
+    data['p_pos'] = (params.position === 'atf' || params.position === 'btf') ? params.position : '';
 
     if ((bidRequest.userId || {}).tdid) {
       data['tpid_tdid'] = bidRequest.userId.tdid;
@@ -480,10 +480,14 @@ export const spec = {
             cpm: bid.price || 0,
             bidderCode: seatbid.seat,
             ttl: 300,
-            netRevenue: config.getConfig('rubicon.netRevenue') || false,
+            netRevenue: config.getConfig('rubicon.netRevenue') || true,
             width: bid.w || utils.deepAccess(bidRequest, 'mediaTypes.video.w') || utils.deepAccess(bidRequest, 'params.video.playerWidth'),
             height: bid.h || utils.deepAccess(bidRequest, 'mediaTypes.video.h') || utils.deepAccess(bidRequest, 'params.video.playerHeight'),
           };
+
+          if (bid.id) {
+            bidObject.seatBidId = bid.id;
+          }
 
           if (bid.dealid) {
             bidObject.dealId = bid.dealid;
@@ -768,8 +772,14 @@ function addVideoParameters(data, bidRequest) {
   if (typeof data.imp[0].video === 'object' && data.imp[0].video.skipafter === undefined) {
     data.imp[0].video.skipafter = bidRequest.params.video.skipdelay;
   }
+  // video.pos can already be specified by adunit.mediatypes.video.pos.
+  // but if not, it might be specified in the params
   if (typeof data.imp[0].video === 'object' && data.imp[0].video.pos === undefined) {
-    data.imp[0].video.pos = bidRequest.params.position === 'atf' ? 1 : (bidRequest.params.position === 'btf' ? 3 : 0);
+    if (bidRequest.params.position === 'atf') {
+      data.imp[0].video.pos = 1;
+    } else if (bidRequest.params.position === 'btf') {
+      data.imp[0].video.pos = 3;
+    }
   }
 
   const size = parseSizes(bidRequest, 'video')
