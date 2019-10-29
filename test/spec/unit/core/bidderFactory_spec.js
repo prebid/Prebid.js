@@ -365,7 +365,7 @@ describe('bidders created by newBidder', function () {
       expect(addBidResponseStub.calledOnce).to.equal(true);
       expect(addBidResponseStub.firstCall.args[0]).to.equal('mock/placement');
       let bidObject = addBidResponseStub.firstCall.args[1];
-      // checking additional fields
+      // checking the fields added by our code
       expect(bidObject.originalCpm).to.equal(bid.cpm);
       expect(bidObject.originalCurrency).to.equal(bid.currency);
       expect(doneStub.calledOnce).to.equal(true);
