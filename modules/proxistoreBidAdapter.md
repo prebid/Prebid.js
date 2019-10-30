@@ -24,9 +24,12 @@ Example for a website 'example.com' in French
 ```
 var adUnits = [
 {
-    sizes: [
-        [300, 600]
-    ],     
+    code: 'half-page',
+    mediaTypes: {
+            banner: {
+                sizes: [[300,600]]
+        }
+    },  
     bids: [
     {
         bidder: 'proxistore',
@@ -37,9 +40,12 @@ var adUnits = [
     }]
 },
 {
-    sizes: [
-        [300, 250]
-    ],     
+    code: 'rectangle',
+    mediaTypes: {
+            banner: {
+                sizes: [[300,250]]
+        }
+    },   
     bids: [{
         bidder: 'proxistore',
         params: {
@@ -48,10 +54,13 @@ var adUnits = [
         }
     }]
 },
-{
-    sizes: [
-        [970, 250]
-    ],     
+{   
+    code: 'leaderboard',
+    mediaTypes: {
+            banner: {
+                sizes: [[970,250]]
+        }
+    },  
     bids: [{
         bidder: 'proxistore',
         params: {
