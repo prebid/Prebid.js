@@ -241,10 +241,10 @@ export const spec = {
             }]
           });
 
-          data.tpid = {
+          utils.deepSetValue(data, 'user.ext.tpid', {
             source: 'liveintent.com',
             uid: bidRequest.userId.lipb.lipbid
-          };
+          });
 
           if (Array.isArray(bidRequest.userId.lipb.segments) && bidRequest.userId.lipb.segments.length) {
             utils.deepSetValue(data, 'rp.target.LIseg', bidRequest.userId.lipb.segments);

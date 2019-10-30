@@ -1222,9 +1222,9 @@ describe('the rubicon adapter', function () {
           expect(post.user.ext.consent).to.equal('BOJ/P2HOJ/P2HABABMAAAAAZ+A==');
           expect(post.user.ext.eids[0].source).to.equal('liveintent.com');
           expect(post.user.ext.eids[0].uids[0].id).to.equal('0000-1111-2222-3333');
-          expect(post.tpid).that.is.an('object');
-          expect(post.tpid.source).to.equal('liveintent.com');
-          expect(post.tpid.uid).to.equal('0000-1111-2222-3333');
+          expect(post.user.ext.tpid).that.is.an('object');
+          expect(post.user.ext.tpid.source).to.equal('liveintent.com');
+          expect(post.user.ext.tpid.uid).to.equal('0000-1111-2222-3333');
           expect(post.rp).that.is.an('object');
           expect(post.rp.target).that.is.an('object');
           expect(post.rp.target.LIseg).that.is.an('array');
