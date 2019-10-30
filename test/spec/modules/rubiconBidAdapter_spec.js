@@ -316,7 +316,7 @@ describe('the rubicon adapter', function () {
           let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
           let data = parseQuery(request.data);
 
-          expect(request.url).to.equal('//fastlane.rubiconproject.com/a/api/fastlane.json');
+          expect(request.url).to.equal('https://fastlane.rubiconproject.com/a/api/fastlane.json');
 
           let expectedQuery = {
             'account_id': '14062',
@@ -454,7 +454,7 @@ describe('the rubicon adapter', function () {
           let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
           let data = parseQuery(request.data);
 
-          expect(request.url).to.equal('//fastlane.rubiconproject.com/a/api/fastlane.json');
+          expect(request.url).to.equal('https://fastlane.rubiconproject.com/a/api/fastlane.json');
 
           // test that all values above are both present and correct
           Object.keys(expectedQuery).forEach(key => {
@@ -470,7 +470,7 @@ describe('the rubicon adapter', function () {
           [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
           data = parseQuery(request.data);
 
-          expect(request.url).to.equal('//fastlane.rubiconproject.com/a/api/fastlane.json');
+          expect(request.url).to.equal('https://fastlane.rubiconproject.com/a/api/fastlane.json');
 
           // test that all values above are both present and correct
           Object.keys(expectedQuery).forEach(key => {
@@ -967,7 +967,7 @@ describe('the rubicon adapter', function () {
               expect(item).to.have.property('bidRequest');
 
               expect(item.method).to.equal('GET');
-              expect(item.url).to.equal('//fastlane.rubiconproject.com/a/api/fastlane.json');
+              expect(item.url).to.equal('https://fastlane.rubiconproject.com/a/api/fastlane.json');
               expect(item.data).to.be.a('string');
 
               // 'bidRequest' type must be 'array' if SRA enabled

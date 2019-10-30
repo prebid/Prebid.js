@@ -6,8 +6,8 @@ import { Renderer } from '../src/Renderer';
 import * as url from '../src/url';
 
 const BIDDER_CODE = 'zedo';
-const URL = '//z2.zedo.com/asw/fmh.json';
-const SECURE_URL = '//saxp.zedo.com/asw/fmh.json';
+const URL = 'http://z2.zedo.com/asw/fmh.json';
+const SECURE_URL = 'https://saxp.zedo.com/asw/fmh.json';
 const DIM_TYPE = {
   '7': 'display',
   '9': 'display',
