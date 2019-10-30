@@ -398,7 +398,8 @@ export const spec = {
                         ad: firstSummary ? bid.adm : '',
                         cpm: (parseFloat(summary.bid) || 0).toFixed(2),
                         serverSideResponseTime: partnerResponseTimeObj[summary.bidder] || 0,
-                        mi: miObj.hasOwnProperty(summary.bidder) ? miObj[summary.bidder] : UNDEFINED
+                        mi: miObj.hasOwnProperty(summary.bidder) ? miObj[summary.bidder] : UNDEFINED,
+                        regexPattern: summary.regex || undefined
                       }
                       break;
                     default:
@@ -434,7 +435,9 @@ export const spec = {
                                 - setting serverSideResponseTime as -1, in cases where errorCode is 1,2 or 6. In these cases we do not log this bid in logger
                                 - explicitly setting serverSideResponseTime = 0, where errorCode is 5, i.e. PARTNER_TIMEDOUT_ERROR
                             */
-                            mi: miObj.hasOwnProperty(summary.bidder) ? miObj[summary.bidder] : undefined
+                            mi: miObj.hasOwnProperty(summary.bidder) ? miObj[summary.bidder] : undefined,
+                            regexPattern: summary.regex || undefined
+
                           }
                         }
                       });
