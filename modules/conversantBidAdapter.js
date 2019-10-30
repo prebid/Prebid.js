@@ -3,7 +3,7 @@ import {registerBidder} from '../src/adapters/bidderFactory';
 import { BANNER, VIDEO } from '../src/mediaTypes';
 
 const BIDDER_CODE = 'conversant';
-const URL = '//web.hb.ad.cpe.dotomi.com/s2s/header/24';
+const URL = 'https://web.hb.ad.cpe.dotomi.com/s2s/header/24';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -44,26 +44,24 @@ export const spec = {
    * Make a server request from the list of BidRequests.
    *
    * @param {BidRequest[]} validBidRequests - an array of bids
+   * @param bidderRequest
    * @return {ServerRequest} Info describing the request to the server.
    */
   buildRequests: function(validBidRequests, bidderRequest) {
-    const loc = utils.getTopWindowLocation();
-    const page = loc.href;
-    const isPageSecure = (loc.protocol === 'https:') ? 1 : 0;
+    const page = (bidderRequest && bidderRequest.refererInfo) ? bidderRequest.refererInfo.referer : '';
     let siteId = '';
     let requestId = '';
     let pubcid = null;
 
     const conversantImps = validBidRequests.map(function(bid) {
       const bidfloor = utils.getBidIdParameter('bidfloor', bid.params);
-      const secure = isPageSecure || (utils.getBidIdParameter('secure', bid.params) ? 1 : 0);
 
       siteId = utils.getBidIdParameter('site_id', bid.params);
       requestId = bid.auctionId;
 
       const imp = {
         id: bid.bidId,
-        secure: secure,
+        secure: 1,
         bidfloor: bidfloor || 0,
         displaymanager: 'Prebid.js',
         displaymanagerver: '$prebid.version$'
@@ -154,6 +152,7 @@ export const spec = {
    * Unpack the response from the server into a list of bids.
    *
    * @param {*} serverResponse A successful response from the server.
+   * @param bidRequest
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function(serverResponse, bidRequest) {
@@ -249,7 +248,7 @@ function getDevice() {
  *
  * [[300, 250], [300, 600]] => [{w: 300, h: 250}, {w: 300, h: 600}]
  *
- * @param {number[2][]|number[2]} bidSizes - arrays of widths and heights
+ * @param {Array.<Array.<number>>} bidSizes - arrays of widths and heights
  * @returns {object[]} Array of objects with w and h
  */
 function convertSizes(bidSizes) {
