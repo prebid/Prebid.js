@@ -114,7 +114,7 @@ function bidResponseAvailable(request, response) {
         creative_id: idToBidMap[id].crid,
         creativeId: idToBidMap[id].crid,
         adId: id,
-        ttl: DEFAULT_BID_TTL,
+        ttl: idToBidMap[id].exp || DEFAULT_BID_TTL,
         netRevenue: DEFAULT_NET_REVENUE,
         currency: DEFAULT_CURRENCY
       };
@@ -144,7 +144,6 @@ function bidResponseAvailable(request, response) {
 
 function applyExt(bid, ortbBid) {
   if (ortbBid && ortbBid.ext) {
-    bid.ttl = ortbBid.ext.ttl || bid.ttl;
     bid.currency = ortbBid.ext.currency || bid.currency;
     bid.netRevenue = ortbBid.ext.netRevenue != null ? ortbBid.ext.netRevenue : bid.netRevenue;
   }

@@ -200,7 +200,30 @@ describe('PulsePoint Adapter Tests', function () {
     expect(bid.ttl).to.equal(20);
   });
 
-  it('Verify use ttl in ext', function () {
+  it('Verify ttl applied to bid', function () {
+    const request = spec.buildRequests(slotConfigs, bidderRequest);
+    const ortbRequest = request.data;
+    const ortbResponse = {
+      seatbid: [{
+        bid: [{
+          impid: ortbRequest.imp[0].id,
+          price: 1.25,
+          adm: 'This is an Ad',
+          crid: 'Creative#123',
+          exp: 50
+        }]
+      }]
+    };
+    const bids = spec.interpretResponse({ body: ortbResponse }, request);
+    expect(bids).to.have.lengthOf(1);
+    // verify first bid
+    const bid = bids[0];
+    expect(bid.cpm).to.equal(1.25);
+    expect(bid.ad).to.equal('This is an Ad');
+    expect(bid.ttl).to.equal(50);
+  });
+
+  it('Verify applying params in ext', function () {
     const request = spec.buildRequests(slotConfigs, bidderRequest);
     const ortbRequest = request.data;
     const ortbResponse = {
@@ -210,7 +233,6 @@ describe('PulsePoint Adapter Tests', function () {
           price: 1.25,
           adm: 'This is an Ad',
           ext: {
-            ttl: 30,
             netRevenue: false,
             currency: 'INR'
           }
@@ -221,7 +243,6 @@ describe('PulsePoint Adapter Tests', function () {
     expect(bids).to.have.lengthOf(1);
     // verify first bid
     const bid = bids[0];
-    expect(bid.ttl).to.equal(30);
     expect(bid.netRevenue).to.equal(false);
     expect(bid.currency).to.equal('INR');
   });
