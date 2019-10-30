@@ -13,7 +13,7 @@ describe('ProxistoreBidAdapter', function () {
     }
   };
   let bid = {
-    sizes: [300, 600],
+    sizes: [[300, 600]],
     params: {
       website: 'example.fr',
       language: 'fr'
@@ -22,7 +22,6 @@ describe('ProxistoreBidAdapter', function () {
     bidId: 464646969,
     transactionId: 511916005
   };
-
   describe('isBidRequestValid', function () {
     it('it should be true if required params are presents', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
@@ -61,13 +60,13 @@ describe('ProxistoreBidAdapter', function () {
           width: 300,
         }]
     };
-    const badResponse = {body: []};
+    const badResponse = { body: [] };
     const interpretedResponse = spec.interpretResponse(responses, bid)[0];
     it('should send an empty array if body is empty', function () {
       expect(spec.interpretResponse(badResponse, bid)).to.be.an('array');
       expect(spec.interpretResponse(badResponse, bid).length).equal(0);
     });
-    it('should interprnet the response correctly if it is valid', function() {
+    it('should interprnet the response correctly if it is valid', function () {
       expect(interpretedResponse.cpm).equal(6.25);
       expect(interpretedResponse.creativeId).equal('48fd47c9-ce35-4fda-804b-17e16c8c36ac');
       expect(interpretedResponse.currency).equal('EUR');
@@ -79,7 +78,7 @@ describe('ProxistoreBidAdapter', function () {
   });
 
   describe('interpretResponse', function () {
-    it('should aways return an empty array', function() {
+    it('should aways return an empty array', function () {
       expect(spec.getUserSyncs()).to.be.an('array');
       expect(spec.getUserSyncs().length).equal(0);
     });
