@@ -5,7 +5,8 @@ const _requestCache = {};
 // The below list contains modules or vendors whom Prebid allows to load external JS.
 const _approvedLoadExternalJSList = [
   'criteo',
-  'outstream'
+  'outstream',
+  'adagio'
 ]
 
 /**
