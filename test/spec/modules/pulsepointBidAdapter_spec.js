@@ -1,7 +1,7 @@
 /* eslint dot-notation:0, quote-props:0 */
 import {expect} from 'chai';
 import {spec} from 'modules/pulsepointBidAdapter';
-import {deepClone, getTopWindowLocation} from 'src/utils';
+import {deepClone} from 'src/utils';
 
 describe('PulsePoint Adapter Tests', function () {
   const slotConfigs = [{
@@ -138,9 +138,14 @@ describe('PulsePoint Adapter Tests', function () {
       }
     }
   }];
+  const bidderRequest = {
+    refererInfo: {
+      referer: 'https://publisher.com/home'
+    }
+  };
 
   it('Verify build request', function () {
-    const request = spec.buildRequests(slotConfigs);
+    const request = spec.buildRequests(slotConfigs, bidderRequest);
     expect(request.url).to.equal('https://bid.contextweb.com/header/ortb?src=prebid');
     expect(request.method).to.equal('POST');
     const ortbRequest = request.data;
@@ -149,7 +154,7 @@ describe('PulsePoint Adapter Tests', function () {
     expect(ortbRequest.site.publisher).to.not.equal(null);
     expect(ortbRequest.site.publisher.id).to.equal('p10000');
     expect(ortbRequest.site.ref).to.equal(window.top.document.referrer);
-    expect(ortbRequest.site.page).to.equal(getTopWindowLocation().href);
+    expect(ortbRequest.site.page).to.equal('https://publisher.com/home');
     expect(ortbRequest.imp).to.have.lengthOf(2);
     // device object
     expect(ortbRequest.device).to.not.equal(null);
@@ -167,7 +172,7 @@ describe('PulsePoint Adapter Tests', function () {
   });
 
   it('Verify parse response', function () {
-    const request = spec.buildRequests(slotConfigs);
+    const request = spec.buildRequests(slotConfigs, bidderRequest);
     const ortbRequest = request.data;
     const ortbResponse = {
       seatbid: [{
@@ -196,7 +201,7 @@ describe('PulsePoint Adapter Tests', function () {
   });
 
   it('Verify use ttl in ext', function () {
-    const request = spec.buildRequests(slotConfigs);
+    const request = spec.buildRequests(slotConfigs, bidderRequest);
     const ortbRequest = request.data;
     const ortbResponse = {
       seatbid: [{
@@ -222,13 +227,13 @@ describe('PulsePoint Adapter Tests', function () {
   });
 
   it('Verify full passback', function () {
-    const request = spec.buildRequests(slotConfigs);
+    const request = spec.buildRequests(slotConfigs, bidderRequest);
     const bids = spec.interpretResponse({ body: null }, request)
     expect(bids).to.have.lengthOf(0);
   });
 
   it('Verify Native request', function () {
-    const request = spec.buildRequests(nativeSlotConfig);
+    const request = spec.buildRequests(nativeSlotConfig, bidderRequest);
     expect(request.url).to.equal('https://bid.contextweb.com/header/ortb?src=prebid');
     expect(request.method).to.equal('POST');
     const ortbRequest = request.data;
@@ -266,7 +271,7 @@ describe('PulsePoint Adapter Tests', function () {
   });
 
   it('Verify Native response', function () {
-    const request = spec.buildRequests(nativeSlotConfig);
+    const request = spec.buildRequests(nativeSlotConfig, bidderRequest);
     expect(request.url).to.equal('https://bid.contextweb.com/header/ortb?src=prebid');
     expect(request.method).to.equal('POST');
     const ortbRequest = request.data;
@@ -355,7 +360,7 @@ describe('PulsePoint Adapter Tests', function () {
   });
 
   it('Verify app requests', function () {
-    const request = spec.buildRequests(appSlotConfig);
+    const request = spec.buildRequests(appSlotConfig, bidderRequest);
     const ortbRequest = request.data;
     // site object
     expect(ortbRequest.site).to.equal(null);
@@ -368,13 +373,13 @@ describe('PulsePoint Adapter Tests', function () {
   });
 
   it('Verify GDPR', function () {
-    const bidderRequest = {
+    const bidderRequestGdpr = {
       gdprConsent: {
         gdprApplies: true,
         consentString: 'serialized_gpdr_data'
       }
     };
-    const request = spec.buildRequests(slotConfigs, bidderRequest);
+    const request = spec.buildRequests(slotConfigs, Object.assign({}, bidderRequest, bidderRequestGdpr));
     expect(request.url).to.equal('https://bid.contextweb.com/header/ortb?src=prebid');
     expect(request.method).to.equal('POST');
     const ortbRequest = request.data;
@@ -389,7 +394,7 @@ describe('PulsePoint Adapter Tests', function () {
   });
 
   it('Verify Video request', function () {
-    const request = spec.buildRequests(videoSlotConfig);
+    const request = spec.buildRequests(videoSlotConfig, bidderRequest);
     expect(request.url).to.equal('https://bid.contextweb.com/header/ortb?src=prebid');
     expect(request.method).to.equal('POST');
     const ortbRequest = request.data;
@@ -409,7 +414,7 @@ describe('PulsePoint Adapter Tests', function () {
   });
 
   it('Verify Video response', function () {
-    const request = spec.buildRequests(videoSlotConfig);
+    const request = spec.buildRequests(videoSlotConfig, bidderRequest);
     expect(request.url).to.equal('https://bid.contextweb.com/header/ortb?src=prebid');
     expect(request.method).to.equal('POST');
     const ortbRequest = request.data;
@@ -433,7 +438,7 @@ describe('PulsePoint Adapter Tests', function () {
   });
 
   it('Verify extra parameters', function () {
-    let request = spec.buildRequests(additionalParamsConfig);
+    let request = spec.buildRequests(additionalParamsConfig, bidderRequest);
     let ortbRequest = request.data;
     expect(ortbRequest).to.not.equal(null);
     expect(ortbRequest.imp).to.have.lengthOf(1);
@@ -448,7 +453,7 @@ describe('PulsePoint Adapter Tests', function () {
     expect(ortbRequest.imp[0].ext.prebid.extra_key4).to.eql([1, 2, 3]);
     expect(Object.keys(ortbRequest.imp[0].ext.prebid)).to.eql(['extra_key1', 'extra_key2', 'extra_key3', 'extra_key4']);
     // attempting with a configuration with no unknown params.
-    request = spec.buildRequests(outstreamSlotConfig);
+    request = spec.buildRequests(outstreamSlotConfig, bidderRequest);
     ortbRequest = request.data;
     expect(ortbRequest).to.not.equal(null);
     expect(ortbRequest.imp).to.have.lengthOf(1);
@@ -456,7 +461,7 @@ describe('PulsePoint Adapter Tests', function () {
   });
 
   it('Verify ortb parameters', function () {
-    const request = spec.buildRequests(ortbParamsSlotConfig);
+    const request = spec.buildRequests(ortbParamsSlotConfig, bidderRequest);
     const ortbRequest = request.data;
     expect(ortbRequest).to.not.equal(null);
     expect(ortbRequest.bcat).to.eql(['IAB-1', 'IAB-20']);
@@ -472,7 +477,8 @@ describe('PulsePoint Adapter Tests', function () {
   });
 
   it('Verify outstream renderer', function () {
-    const request = spec.buildRequests(outstreamSlotConfig, {bids: [outstreamSlotConfig[0]]});
+    const bidderRequestOutstream = Object.assign({}, bidderRequest, {bids: [outstreamSlotConfig[0]]});
+    const request = spec.buildRequests(outstreamSlotConfig, bidderRequestOutstream);
     const ortbRequest = request.data;
     expect(ortbRequest).to.not.be.null;
     expect(ortbRequest.imp[0]).to.not.be.null;
@@ -521,7 +527,7 @@ describe('PulsePoint Adapter Tests', function () {
         }
       }
     };
-    const request = spec.buildRequests(bidRequests);
+    const request = spec.buildRequests(bidRequests, bidderRequest);
     expect(request).to.be.not.null;
     const ortbRequest = request.data;
     expect(request.data).to.be.not.null;

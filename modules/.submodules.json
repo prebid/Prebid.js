@@ -2,7 +2,9 @@
   "userId": [
     "digiTrustIdSystem",
     "id5IdSystem",
-    "criteortusIdSystem"
+    "criteortusIdSystem",
+    "parrableIdSystem",
+    "liveIntentIdSystem"
   ],
   "adpod": [
     "freeWheelAdserverVideo",
