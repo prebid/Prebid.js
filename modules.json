@@ -5,6 +5,7 @@
   "appnexusBidAdapter",
   "consentManagement",
   "consumableBidAdapter",
+  "dfpAdServerVideo",
   "emx_digitalBidAdapter",
   "googleAnalyticsAdapter",
   "ixBidAdapter",
