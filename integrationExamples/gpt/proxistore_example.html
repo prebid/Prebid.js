@@ -10,8 +10,6 @@
 <head>
     <script async src="../../build/dev/prebid.js"></script>
     <script async src="https://www.googletagservices.com/tag/js/gpt.js"></script>
-    <link rel="stylesheet" href="https://abs.proxistore.com/assets/css/proxistore.min.css">
-    <script src="https://abs.proxistore.com/js/proxistore.min.js"></script>
     <script type="text/javascript">
 
     </script>
@@ -21,7 +19,7 @@
 
         var adUnits = [
             {
-                code: 'half-page',
+                code: 'div-test-half-page',
                 mediaTypes: {
                     banner: {
                         sizes: [[300, 600]]
@@ -107,7 +105,7 @@
 
     <script>
         googletag.cmd.push(function () {
-            googletag.defineSlot('/19968336/header-bid-tag-0', [[300, 250], [300, 600]], 'div-gpt-ad-1460505748561-0').addService(googletag.pubads());
+            googletag.defineSlot('/19968336/header-bid-tag-0', [[300, 250], [300, 600]], 'div-test-half-page').addService(googletag.pubads());
 
             googletag.pubads().enableSingleRequest();
             googletag.enableServices();
@@ -117,20 +115,12 @@
 
 <body>
     <h2>Prebid.js Test</h2>
-    <div id="widgetId"></div>
-    <script>
-        Proxistore.config({
-            language: "en",
-            darkTheme: false,
-            widgetIds: ["widgetId"],
-        });      
-    </script>
 
     <h5>Div-1</h5>
 
-    <div id='div-gpt-ad-1460505748561-0'>
+    <div id='div-test-half-page'>
         <script type='text/javascript'>
-            googletag.cmd.push(function () { googletag.display('div-gpt-ad-1460505748561-0'); });
+            googletag.cmd.push(function () { googletag.display('div-test-half-page'); });
         </script>
     </div>
 </body>
