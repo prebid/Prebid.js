@@ -216,11 +216,25 @@ export function newConfig() {
   function _getConfig() {
     if (currBidder && bidderConfig && utils.isPlainObject(bidderConfig[currBidder])) {
       let currBidderConfig = bidderConfig[currBidder];
-      return Object.keys(config).reduce((memo, topic) => {
-        if (utils.isPlainObject(currBidderConfig[topic])) {
-          memo[topic] = Object.assign({}, config[topic], currBidderConfig[topic]);
-        } else {
+
+      const configTopicSet = Object.keys(config).concat(Object.keys(currBidderConfig)).reduce((set, key) => {
+        set.add(key);
+        return set;
+      }, new Set());
+      const uniqTopics = [];
+      configTopicSet.forEach(key => uniqTopics.push(key));
+
+      return uniqTopics.reduce((memo, topic) => {
+        if (!currBidderConfig[topic]) {
+          memo[topic] = config[topic];
+        } else if (!config[topic]) {
           memo[topic] = currBidderConfig[topic];
+        } else {
+          if (utils.isPlainObject(currBidderConfig[topic])) {
+            memo[topic] = Object.assign({}, config[topic], currBidderConfig[topic]);
+          } else {
+            memo[topic] = currBidderConfig[topic];
+          }
         }
         return memo;
       }, {});
@@ -359,13 +373,12 @@ export function newConfig() {
   function setBidderConfig(config) {
     try {
       check(config);
-      Object.keys(config).forEach(bidder => {
-        check(config[bidder]);
+      config.bidders.forEach(bidder => {
         if (!bidderConfig[bidder]) {
-          bidderConfig[bidder] = {}
+          bidderConfig[bidder] = {};
         }
-        Object.keys(config[bidder]).forEach(topic => {
-          let option = config[bidder][topic];
+        Object.keys(config.config).forEach(topic => {
+          let option = config.config[topic];
           if (utils.isPlainObject(option)) {
             bidderConfig[bidder][topic] = Object.assign({}, bidderConfig[bidder][topic] || {}, option);
           } else {
@@ -379,6 +392,12 @@ export function newConfig() {
     function check(obj) {
       if (!utils.isPlainObject(obj)) {
         throw 'setBidderConfig bidder options must be an object';
+      }
+      if (!(Array.isArray(obj.bidders) && obj.bidders.length)) {
+        throw 'setBidderConfig bidder options must contain a bidders list with at least 1 bidder';
+      }
+      if (!utils.isPlainObject(obj.config)) {
+        throw 'setBidderConfig bidder options must contain a config object';
       }
     }
   }

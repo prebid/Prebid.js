@@ -152,9 +152,12 @@ describe('adapterManager tests', function () {
           callBids: function(bidRequest, addBidResponse, done, ajax, timeout, configCallback) {
             let myResults = results[bidRequest.bidderCode] = [];
             myResults.push(config.getConfig('buildRequests'));
+            myResults.push(config.getConfig('test1'));
+            myResults.push(config.getConfig('test2'));
             // emulate ajax callback that would register bids
             setTimeout(configCallback(() => {
               myResults.push(config.getConfig('interpretResponse'));
+              myResults.push(config.getConfig('afterInterpretResponse'));
               if (++cbCount === Object.keys(bidders).length) {
                 assertions();
               }
@@ -172,19 +175,32 @@ describe('adapterManager tests', function () {
         buildRequests: {
           data: 1
         },
-        interpretResponse: 'baseInterpret'
+        test1: { speedy: true },
+        interpretResponse: 'baseInterpret',
+        afterInterpretResponse: 'anotherBaseInterpret'
       });
       config.setBidderConfig({
-        appnexus: {
+        bidders: [ 'appnexus' ],
+        config: {
           buildRequests: {
             test: 2
           },
+          test1: { fun: { safe: true, cheap: false } },
           interpretResponse: 'appnexusInterpret'
-        },
-        rubicon: {
+        }
+      });
+      config.setBidderConfig({
+        bidders: [ 'rubicon' ],
+        config: {
           buildRequests: 'rubiconBuild',
           interpretResponse: 'rubiconInterpret'
-        },
+        }
+      });
+      config.setBidderConfig({
+        bidders: [ 'appnexus', 'rubicon' ],
+        config: {
+          test2: { amazing: true }
+        }
       });
 
       adapterManager.callBids(adUnits, bidderRequest, () => {}, () => {});
@@ -196,17 +212,26 @@ describe('adapterManager tests', function () {
               data: 1,
               test: 2
             },
-            'appnexusInterpret'
+            { fun: { safe: true, cheap: false }, speedy: true },
+            { amazing: true },
+            'appnexusInterpret',
+            'anotherBaseInterpret'
           ],
           'pubmatic': [
             {
               data: 1
             },
-            'baseInterpret'
+            { speedy: true },
+            undefined,
+            'baseInterpret',
+            'anotherBaseInterpret'
           ],
           'rubicon': [
             'rubiconBuild',
-            'rubiconInterpret'
+            { speedy: true },
+            { amazing: true },
+            'rubiconInterpret',
+            'anotherBaseInterpret'
           ]
         });
 
