@@ -165,7 +165,7 @@ export const spec = {
           if (iidArr[0]) {
             tracks.push({
               type: 'iframe',
-              url: '//ap.lijit.com/beacon?informer=' + iidArr[0] + '&gdpr_consent=' + consentString,
+              url: 'https://ap.lijit.com/beacon?informer=' + iidArr[0] + '&gdpr_consent=' + consentString,
             });
           }
         }
