@@ -29,6 +29,16 @@ const BIDDER_REQUEST_1 = {
   gdprConsent: {
     consentString: 'consent-test',
     gdprApplies: false
+  },
+  refererInfo: {
+    referer: 'http://example.com/page.html',
+    reachedTop: true,
+    numIframes: 2,
+    stack: [
+      'http://example.com/page.html',
+      'http://example.com/iframe1.html',
+      'http://example.com/iframe2.html'
+    ]
   }
 };
 
@@ -75,6 +85,16 @@ const BIDDER_REQUEST_2 = {
   gdprConsent: {
     consentString: 'consent-test',
     gdprApplies: true
+  },
+  refererInfo: {
+    referer: 'http://example.com/page.html',
+    reachedTop: true,
+    numIframes: 2,
+    stack: [
+      'http://example.com/page.html',
+      'http://example.com/iframe1.html',
+      'http://example.com/iframe2.html'
+    ]
   }
 };
 
@@ -149,7 +169,8 @@ const BUILD_REQUESTS_OUTPUT = {
   method: 'POST',
   url: 'https://e.serverbid.com/api/v2',
   data: '',
-  bidRequest: BIDDER_REQUEST_2.bidRequest
+  bidRequest: BIDDER_REQUEST_2.bidRequest,
+  bidderRequest: BIDDER_REQUEST_2
 };
 
 describe('Consumable BidAdapter', function () {
@@ -231,6 +252,12 @@ describe('Consumable BidAdapter', function () {
 
       expect(request.method).to.have.string('POST');
     });
+
+    it('passes through bidderRequest', function () {
+      let request = spec.buildRequests(BIDDER_REQUEST_1.bidRequest, BIDDER_REQUEST_1);
+
+      expect(request.bidderRequest).to.equal(BIDDER_REQUEST_1);
+    })
   });
   describe('interpretResponse validation', function () {
     it('response should have valid bidderCode', function () {
