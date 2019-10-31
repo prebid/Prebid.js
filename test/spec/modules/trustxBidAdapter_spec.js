@@ -53,7 +53,7 @@ describe('TrustXAdapter', function () {
         referer: 'http://example.com'
       }
     };
-    const encodedReferer = encodeURIComponent(bidderRequest.refererInfo.referer);
+    const referrer = bidderRequest.refererInfo.referer;
 
     let bidRequests = [
       {
@@ -95,7 +95,7 @@ describe('TrustXAdapter', function () {
       const request = spec.buildRequests([bidRequests[0]], bidderRequest);
       expect(request.data).to.be.an('string');
       const payload = parseRequest(request.data);
-      expect(payload).to.have.property('u', encodedReferer);
+      expect(payload).to.have.property('u', referrer);
       expect(payload).to.have.property('pt', 'net');
       expect(payload).to.have.property('auids', '43');
       expect(payload).to.have.property('sizes', '300x250,300x600');
@@ -108,7 +108,7 @@ describe('TrustXAdapter', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
       expect(request.data).to.be.an('string');
       const payload = parseRequest(request.data);
-      expect(payload).to.have.property('u', encodedReferer);
+      expect(payload).to.have.property('u', referrer);
       expect(payload).to.have.property('pt', 'net');
       expect(payload).to.have.property('auids', '43,43,45');
       expect(payload).to.have.property('sizes', '300x250,300x600,728x90');
@@ -120,7 +120,7 @@ describe('TrustXAdapter', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
       expect(request.data).to.be.an('string');
       const payload = parseRequest(request.data);
-      expect(payload).to.have.property('u', encodedReferer);
+      expect(payload).to.have.property('u', referrer);
       expect(payload).to.have.property('pt', 'gross');
       expect(payload).to.have.property('auids', '43,43,45');
       expect(payload).to.have.property('sizes', '300x250,300x600,728x90');
@@ -133,7 +133,7 @@ describe('TrustXAdapter', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
       expect(request.data).to.be.an('string');
       const payload = parseRequest(request.data);
-      expect(payload).to.have.property('u', encodedReferer);
+      expect(payload).to.have.property('u', referrer);
       expect(payload).to.have.property('pt', 'net');
       expect(payload).to.have.property('auids', '43,43,45');
       expect(payload).to.have.property('sizes', '300x250,300x600,728x90');
@@ -166,6 +166,55 @@ describe('TrustXAdapter', function () {
       const payload = parseRequest(request.data);
       expect(payload).to.have.property('gdpr_consent', 'AAA');
       expect(payload).to.have.property('gdpr_applies', '1');
+    });
+
+    it('should convert keyword params to proper form and attaches to request', function () {
+      const bidRequestWithKeywords = [].concat(bidRequests);
+      bidRequestWithKeywords[1] = Object.assign({},
+        bidRequests[1],
+        {
+          params: {
+            uid: '43',
+            keywords: {
+              single: 'val',
+              singleArr: ['val'],
+              singleArrNum: [5],
+              multiValMixed: ['value1', 2, 'value3'],
+              singleValNum: 123,
+              emptyStr: '',
+              emptyArr: [''],
+              badValue: {'foo': 'bar'} // should be dropped
+            }
+          }
+        }
+      );
+
+      const request = spec.buildRequests(bidRequestWithKeywords, bidderRequest);
+      expect(request.data).to.be.an('string');
+      const payload = parseRequest(request.data);
+      expect(payload.keywords).to.be.an('string');
+      payload.keywords = JSON.parse(payload.keywords);
+
+      expect(payload.keywords).to.deep.equal([{
+        'key': 'single',
+        'value': ['val']
+      }, {
+        'key': 'singleArr',
+        'value': ['val']
+      }, {
+        'key': 'singleArrNum',
+        'value': ['5']
+      }, {
+        'key': 'multiValMixed',
+        'value': ['value1', '2', 'value3']
+      }, {
+        'key': 'singleValNum',
+        'value': ['123']
+      }, {
+        'key': 'emptyStr'
+      }, {
+        'key': 'emptyArr'
+      }]);
     });
   });
 
@@ -735,12 +784,12 @@ describe('TrustXAdapter', function () {
     expect(spyRendererInstall.calledTwice).to.equal(true);
     expect(spyRendererInstall.getCall(0).args[0]).to.deep.equal({
       id: 'e6e65553fc8',
-      url: '//cdn.adnxs.com/renderer/video/ANOutstreamVideo.js',
+      url: '//acdn.adnxs.com/video/outstream/ANOutstreamVideo.js',
       loaded: false
     });
     expect(spyRendererInstall.getCall(1).args[0]).to.deep.equal({
       id: 'c8fdcb3f269f',
-      url: '//cdn.adnxs.com/renderer/video/ANOutstreamVideo.js',
+      url: '//acdn.adnxs.com/video/outstream/ANOutstreamVideo.js',
       loaded: false
     });
 

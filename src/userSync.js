@@ -8,7 +8,8 @@ config.setDefaults({
     syncEnabled: true,
     pixelEnabled: true,
     syncsPerBidder: 5,
-    syncDelay: 3000
+    syncDelay: 3000,
+    auctionDelay: 0
   }
 });
 
@@ -152,7 +153,7 @@ export function newUserSync(userSyncDependencies) {
    */
   publicApi.registerSync = (type, bidder, url) => {
     if (hasFiredBidder.has(bidder)) {
-      return utils.logWarn(`already registered syncs for "${bidder}"`);
+      return utils.logMessage(`already fired syncs for "${bidder}", ignoring registerSync call`);
     }
     if (!usConfig.syncEnabled || !utils.isArray(queue[type])) {
       return utils.logWarn(`User sync type "${type}" not supported`);

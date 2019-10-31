@@ -5,7 +5,7 @@ import includes from 'core-js/library/fn/array/includes';
 import { parse } from './url';
 const CONSTANTS = require('./constants');
 
-export { default as deepAccess } from 'dlv';
+export { default as deepAccess } from 'dlv/index';
 export { default as deepSetValue } from 'dset';
 
 var tArr = 'Array';
@@ -571,7 +571,7 @@ export function _map(object, callback) {
   return output;
 }
 
-var hasOwn = function (objectToCheck, propertyToCheckFor) {
+export function hasOwn(objectToCheck, propertyToCheckFor) {
   if (objectToCheck.hasOwnProperty) {
     return objectToCheck.hasOwnProperty(propertyToCheckFor);
   } else {
@@ -918,8 +918,8 @@ export function getCookie(name) {
   return m ? decodeURIComponent(m[2]) : null;
 }
 
-export function setCookie(key, value, expires) {
-  document.cookie = `${key}=${encodeURIComponent(value)}${(expires !== '') ? `; expires=${expires}` : ''}; path=/`;
+export function setCookie(key, value, expires, sameSite) {
+  document.cookie = `${key}=${encodeURIComponent(value)}${(expires !== '') ? `; expires=${expires}` : ''}; path=/${sameSite ? `; SameSite=${sameSite}` : ''}`;
 }
 
 /**
@@ -1135,6 +1135,53 @@ export function isInteger(value) {
  */
 export function convertCamelToUnderscore(value) {
   return value.replace(/(?:^|\.?)([A-Z])/g, function (x, y) { return '_' + y.toLowerCase() }).replace(/^_/, '');
+}
+
+/**
+ * Returns a new object with undefined properties removed from given object
+ * @param obj the object to clean
+ */
+export function cleanObj(obj) {
+  return Object.keys(obj).reduce((newObj, key) => {
+    if (typeof obj[key] !== 'undefined') {
+      newObj[key] = obj[key];
+    }
+    return newObj;
+  }, {})
+}
+
+/**
+ * Create a new object with selected properties.  Also allows property renaming and transform functions.
+ * @param obj the original object
+ * @param properties An array of desired properties
+ */
+export function pick(obj, properties) {
+  if (typeof obj !== 'object') {
+    return {};
+  }
+  return properties.reduce((newObj, prop, i) => {
+    if (typeof prop === 'function') {
+      return newObj;
+    }
+
+    let newProp = prop;
+    let match = prop.match(/^(.+?)\sas\s(.+?)$/i);
+
+    if (match) {
+      prop = match[1];
+      newProp = match[2];
+    }
+
+    let value = obj[prop];
+    if (typeof properties[i + 1] === 'function') {
+      value = properties[i + 1](value, newObj);
+    }
+    if (typeof value !== 'undefined') {
+      newObj[newProp] = value;
+    }
+
+    return newObj;
+  }, {});
 }
 
 /**

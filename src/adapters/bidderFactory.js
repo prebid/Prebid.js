@@ -9,7 +9,7 @@ import CONSTANTS from '../constants.json';
 import events from '../events';
 import includes from 'core-js/library/fn/array/includes';
 import { ajax } from '../ajax';
-import { logWarn, logError, parseQueryStringParameters, delayExecution, parseSizesInput, getBidderRequest, flatten, uniques, timestamp, setDataInLocalStorage, getDataFromLocalStorage, deepAccess } from '../utils';
+import { logWarn, logError, parseQueryStringParameters, delayExecution, parseSizesInput, getBidderRequest, flatten, uniques, timestamp, setDataInLocalStorage, getDataFromLocalStorage, deepAccess, isArray } from '../utils';
 import { ADPOD } from '../mediaTypes';
 import { getHook } from '../hook';
 
@@ -290,7 +290,7 @@ export function newBidder(spec) {
           }
 
           if (bids) {
-            if (bids.forEach) {
+            if (isArray(bids)) {
               bids.forEach(addBidUsingRequestMap);
             } else {
               addBidUsingRequestMap(bids);
