@@ -472,7 +472,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
     currency: 'USD',
     netRevenue: true,
     ttl: 300,
-    adUnitCode: bidRequest.adUnitCode,
+    adUnitCode: 'div-gpt-ad-1460505748561-0',
     appnexus: {
       buyerMemberId: rtbBid.buyer_member_id,
       dealPriority: rtbBid.deal_priority,

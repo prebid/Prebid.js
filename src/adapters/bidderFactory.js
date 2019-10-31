@@ -12,6 +12,7 @@ import { ajax } from '../ajax';
 import { logWarn, logError, parseQueryStringParameters, delayExecution, parseSizesInput, getBidderRequest, flatten, uniques, timestamp, setDataInLocalStorage, getDataFromLocalStorage, deepAccess, isArray } from '../utils';
 import { ADPOD } from '../mediaTypes';
 import { getHook } from '../hook';
+import mockResponse from '../mock_response.json';
 
 /**
  * This file aims to support Adapters during the Prebid 0.x -> 1.x transition.
@@ -168,7 +169,7 @@ export function newBidder(spec) {
       return Object.freeze(spec);
     },
     registerSyncs,
-    callBids: function(bidderRequest, addBidResponse, done, ajax, onTimelyResponse) {
+    callBids: function(bidderRequest, addBidResponse, done, ajaxBuilderPromise, onTimelyResponse) {
       if (!Array.isArray(bidderRequest.bids)) {
         return;
       }
@@ -217,7 +218,8 @@ export function newBidder(spec) {
       // Server requests have returned and been processed. Since `ajax` accepts a single callback,
       // we need to rig up a function which only executes after all the requests have been responded.
       const onResponse = delayExecution(afterAllResponses, requests.length)
-      requests.forEach(processRequest);
+      //requests.forEach(processRequest);
+      requests.forEach(processRequestPromise)
 
       function formatGetParameters(data) {
         if (data) {
@@ -317,6 +319,89 @@ export function newBidder(spec) {
 
         // If the server responds with an error, there's not much we can do. Log it, and make sure to
         // call onResponse() so that we're one step closer to calling done().
+        function onFailure(err) {
+          onTimelyResponse(spec.code);
+
+          logError(`Server call for ${spec.code} failed: ${err}. Continuing without bids.`);
+          onResponse();
+        }
+      }
+
+      function processRequestPromise(request) {
+        switch (request.method) {
+          case 'GET':
+            onSuccess(ajaxBuilderPromise(
+              `${request.url}${formatGetParameters(request.data)}`,
+              undefined,
+              Object.assign({
+                method: 'GET',
+                withCredentials: true
+              }, request.options)
+            ));
+            break;
+          case 'POST':
+            onSuccess(ajaxBuilderPromise(
+              request.url,
+              typeof request.data === 'string' ? request.data : JSON.stringify(request.data),
+              Object.assign({
+                method: 'POST',
+                contentType: 'text/plain',
+                withCredentials: true
+              }, request.options)
+            ));
+            break;
+          default:
+            logWarn(`Skipping invalid request from ${spec.code}. Request type ${request.type} must be GET or POST`);
+            onResponse();
+        }
+        function onSuccess(responseObj) {
+          onTimelyResponse(spec.code);
+
+          try {
+            var response = mockResponse;
+          } catch (e) { /* response might not be JSON... that's ok. */ }
+
+          // Make response headers available for #1742. These are lazy-loaded because most adapters won't need them.
+          response = {
+            body: response,
+            headers: headerParser(responseObj)
+          };
+          responses.push(response);
+
+          let bids;
+          try {
+            bids = spec.interpretResponse(response, request);
+          } catch (err) {
+            logError(`Bidder ${spec.code} failed to interpret the server's response. Continuing without bids`, null, err);
+            onResponse();
+            return;
+          }
+
+          if (bids) {
+            if (bids.forEach) {
+              bids.forEach(addBidUsingRequestMap);
+            } else {
+              addBidUsingRequestMap(bids);
+            }
+          }
+          onResponse(bids);
+
+          function addBidUsingRequestMap(bid) {
+            const bidRequest = bidRequestMap[bid.requestId];
+            if (bidRequest) {
+              const prebidBid = Object.assign(createBid(CONSTANTS.STATUS.GOOD, bidRequest), bid);
+              addBidWithCode(bidRequest.adUnitCode, prebidBid);
+            } else {
+              logWarn(`Bidder ${spec.code} made bid for unknown request ID: ${bid.requestId}. Ignoring.`);
+            }
+          }
+
+          function headerParser(xmlHttpResponse) {
+            return {
+              get: responseObj.getResponseHeader.bind(responseObj)
+            };
+          }
+        }
         function onFailure(err) {
           onTimelyResponse(spec.code);
 
