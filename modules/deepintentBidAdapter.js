@@ -10,6 +10,7 @@ export const spec = {
   supportedMediaTypes: [BANNER],
   aliases: [],
 
+  // tagId is mandatory param
   isBidRequestValid: bid => {
     let valid = false;
     if (bid && bid.params && bid.params.tagId) {
