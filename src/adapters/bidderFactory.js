@@ -330,21 +330,17 @@ export function newBidder(spec) {
       function processRequestPromise(request) {
         switch (request.method) {
           case 'GET':
-            ajaxBuilderPromise(
+            onSuccess(ajaxBuilderPromise(
               `${request.url}${formatGetParameters(request.data)}`,
               undefined,
               Object.assign({
                 method: 'GET',
                 withCredentials: true
               }, request.options)
-            ).then(function(response) {
-              onSuccess(response)
-            }).catch(function(err) {
-              onFailure(err);
-            });
+            ));
             break;
           case 'POST':
-            ajaxBuilderPromise(
+            onSuccess(ajaxBuilderPromise(
               request.url,
               typeof request.data === 'string' ? request.data : JSON.stringify(request.data),
               Object.assign({
@@ -352,11 +348,7 @@ export function newBidder(spec) {
                 contentType: 'text/plain',
                 withCredentials: true
               }, request.options)
-            ).then(function(response) {
-              onSuccess(response)
-            }).catch(function(err) {
-              onFailure(err);
-            });
+            ));
             break;
           default:
             logWarn(`Skipping invalid request from ${spec.code}. Request type ${request.type} must be GET or POST`);

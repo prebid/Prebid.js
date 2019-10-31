@@ -1,8 +1,5 @@
 import {parse as parseURL, format as formatURL} from './url';
 import { config } from './config';
-import Promise from 'promise-polyfill';
-import setAsap from 'setasap';
-Promise._immediateFn = setAsap;
 
 var utils = require('./utils');
 
@@ -43,7 +40,7 @@ export function ajaxBuilder(timeout = 3000, {request, done} = {}) {
       x = new window.XMLHttpRequest();
       done(parser.origin);
       callbacks.success(x.responseText, x);
-      return;
+      //return;
       x.onreadystatechange = function () {
         if (x.readyState === XHR_DONE) {
           if (typeof done === 'function') {
@@ -105,7 +102,6 @@ export function ajaxBuilder(timeout = 3000, {request, done} = {}) {
 
 export function ajaxBuilderPromise(timeout = 3000, {request} = {}) {
   return function(url, data, options = {}) {
-    return new Promise((resolve, reject) => {
       try {
         let x;
         let method = options.method || (data ? 'POST' : 'GET');
@@ -113,15 +109,12 @@ export function ajaxBuilderPromise(timeout = 3000, {request} = {}) {
         parser.href = url;
 
         x = new window.XMLHttpRequest();
-        resolve(x);
         x.onreadystatechange = function () {
           if (x.readyState === XHR_DONE) {
             let status = x.status;
             if ((status >= 200 && status < 300) || status === 304) {
               console.log('x:::', JSON.stringify(x));
-              resolve(x);
             } else {
-              reject(x.statusText);
             }
           }
         };
@@ -160,15 +153,16 @@ export function ajaxBuilderPromise(timeout = 3000, {request} = {}) {
         if (typeof request === 'function') {
           request(parser.origin);
         }
-  
-        // if (method === 'POST' && data) {
-        //   x.send(data);
-        // } else {
-        //   x.send();
-        // }
+        let init = Object.assign({}, options);
+        fetch(url, init).then(function(response){
+          console.log('promise::::', response);
+          if(response.ok) {
+            return response.json();
+          }
+        });
+        
       } catch (error) {
         utils.logError('xhr construction', error);
       }
-    });
   }
 }
