@@ -53,7 +53,7 @@ describe('onetag', function () {
       const data = JSON.parse(d);
       it('Should contains all keys', function () {
         expect(data).to.be.an('object');
-        expect(data).to.have.all.keys('location', 'masked', 'referrer', 'sHeight', 'sWidth', 'timeOffset', 'date', 'wHeight', 'wWidth', 'bids');
+        expect(data).to.have.all.keys('location', 'masked', 'referrer', 'sHeight', 'sWidth', 'timeOffset', 'date', 'wHeight', 'wWidth', 'oHeight', 'oWidth', 'aWidth', 'aHeight', 'sLeft', 'sTop', 'hLength', 'bids');
         expect(data.location).to.be.a('string');
         expect(data.masked).to.be.a('number');
         expect(data.referrer).to.be.a('string');
@@ -61,6 +61,13 @@ describe('onetag', function () {
         expect(data.sWidth).to.be.a('number');
         expect(data.wWidth).to.be.a('number');
         expect(data.wHeight).to.be.a('number');
+        expect(data.oHeight).to.be.a('number');
+        expect(data.oWidth).to.be.a('number');
+        expect(data.aWidth).to.be.a('number');
+        expect(data.aHeight).to.be.a('number');
+        expect(data.sLeft).to.be.a('number');
+        expect(data.sTop).to.be.a('number');
+        expect(data.hLength).to.be.a('number');
         expect(data.timeOffset).to.be.a('number');
         expect(data.date).to.be.a('string');
         expect(data.bids).to.be.an('array');
@@ -144,6 +151,58 @@ describe('onetag', function () {
         const serverResponses = spec.interpretResponse('invalid_response');
         expect(serverResponses).to.be.an('array').that.is.empty;
       });
+    });
+  });
+  describe('getUserSyncs', function () {
+    const sync_endpoint = 'https://onetag-sys.com/usync/';
+    it('Returns an iframe if iframeEnabled is true', function () {
+      const syncs = spec.getUserSyncs({iframeEnabled: true});
+      expect(syncs).to.be.an('array');
+      expect(syncs.length).to.equal(1);
+      expect(syncs[0].type).to.equal('iframe');
+      expect(syncs[0].url).to.include(sync_endpoint);
+    });
+    it('Returns an empty array if iframeEnabled is false', function () {
+      const syncs = spec.getUserSyncs({ iframeEnabled: false });
+      expect(syncs).to.be.an('array').that.is.empty;
+    });
+    it('Must pass gdpr params when gdprApplies is true', function () {
+      const syncs = spec.getUserSyncs({ iframeEnabled: true }, {}, {
+        gdprApplies: true, consentString: 'foo'
+      });
+      expect(syncs[0].type).to.equal('iframe');
+      expect(syncs[0].url).to.include(sync_endpoint);
+      expect(syncs[0].url).to.match(/(?:[?&](?:gdpr_consent=foo([^&]*)|gdpr=1([^&]*)|[^&]*))+$/);
+    });
+    it('Must pass gdpr params when gdprApplies is false', function () {
+      const syncs = spec.getUserSyncs({ iframeEnabled: true }, {}, {
+        gdprApplies: false, consentString: 'foo'
+      });
+      expect(syncs[0].type).to.equal('iframe');
+      expect(syncs[0].url).to.include(sync_endpoint);
+      expect(syncs[0].url).to.match(/(?:[?&](?:gdpr_consent=foo([^&]*)|gdpr=0([^&]*)))+$/);
+    });
+    it('Must pass gdpr consent string param when gdprApplies is undefined', function () {
+      const syncs = spec.getUserSyncs({ iframeEnabled: true }, {}, {
+        consentString: 'foo'
+      });
+      expect(syncs[0].type).to.equal('iframe');
+      expect(syncs[0].url).to.include(sync_endpoint);
+      expect(syncs[0].url).to.match(/(?:[?&](?:gdpr_consent=foo([^&]*)))+$/);
+    });
+    it('Must pass no gdpr params when consentString is null', function () {
+      const syncs = spec.getUserSyncs({ iframeEnabled: true }, {}, {
+        consentString: null
+      });
+      expect(syncs[0].type).to.equal('iframe');
+      expect(syncs[0].url).to.include(sync_endpoint);
+      expect(syncs[0].url).to.not.match(/(?:[?&](?:gdpr_consent=([^&]*)|gdpr=([^&]*)))+$/);
+    });
+    it('Must pass no gdpr param when gdprConsent is empty', function () {
+      const syncs = spec.getUserSyncs({ iframeEnabled: true }, {}, {});
+      expect(syncs[0].type).to.equal('iframe');
+      expect(syncs[0].url).to.include(sync_endpoint);
+      expect(syncs[0].url).to.not.match(/(?:[?&](?:gdpr_consent=([^&]*)|gdpr=([^&]*)))+$/);
     });
   });
 });

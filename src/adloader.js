@@ -4,6 +4,7 @@ import * as utils from './utils';
 const _requestCache = {};
 const _vendorWhitelist = [
   'criteo',
+  'adagio'
 ]
 
 /**

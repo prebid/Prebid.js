@@ -13,7 +13,11 @@ Module that connects to Conversant's demand sources.  Supports banners and video
 var adUnits = [
     {
         code: 'banner-test-div',
-        sizes: [[300, 250]],
+        mediaTypes: {
+            banner: {        
+                sizes: [[300, 250],[300,600]]
+            }
+        },
         bids: [{
             bidder: "conversant",
             params: {
