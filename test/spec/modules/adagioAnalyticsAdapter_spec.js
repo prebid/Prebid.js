@@ -6,7 +6,7 @@ let adapterManager = require('src/adapterManager').default;
 let events = require('src/events');
 let constants = require('src/constants.json');
 
-describe('adagio analytics adapter', () => {
+describe.skip('adagio analytics adapter', () => {
   let xhr;
   let requests;
   let sandbox
@@ -40,7 +40,7 @@ describe('adagio analytics adapter', () => {
       adagioAnalyticsAdapter.disableAnalytics();
     });
 
-    it.skip('builds and sends auction data', () => {
+    it('builds and sends auction data', () => {
       const w = utils.getWindowTop();
 
       let bidRequest = {
