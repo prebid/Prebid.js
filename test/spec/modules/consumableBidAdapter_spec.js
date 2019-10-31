@@ -19,7 +19,11 @@ const BIDDER_REQUEST_1 = {
         unitName: 'cnsmbl-unit'
       },
       placementCode: 'header-bid-tag-1',
-      sizes: [[300, 250], [300, 600]],
+      mediaTypes: {
+        banner: {
+          sizes: [[300, 250], [300, 600]]
+        }
+      },
       bidId: '23acc48ad47af5',
       auctionId: '0fb4905b-9456-4152-86be-c6f6d259ba99',
       bidderRequestId: '1c56ad30b9b8ca8',
@@ -56,10 +60,14 @@ const BIDDER_REQUEST_2 = {
         unitName: 'cnsmbl-unit'
       },
       placementCode: 'div-gpt-ad-1487778092495-0',
-      sizes: [
-        [728, 90],
-        [970, 90]
-      ],
+      mediaTypes: {
+        banner: {
+          sizes: [
+            [728, 90],
+            [970, 90]
+          ]
+        }
+      },
       bidId: '2b0f82502298c9',
       bidderRequestId: '109f2a181342a9',
       auctionId: 'a4713c32-3762-4798-b342-4ab810ca770d'
@@ -73,10 +81,14 @@ const BIDDER_REQUEST_2 = {
         unitName: 'cnsmbl-unit'
       },
       placementCode: 'div-gpt-ad-1487778092495-0',
-      sizes: [
-        [728, 90],
-        [970, 90]
-      ],
+      mediaTypes: {
+        banner: {
+          sizes: [
+            [728, 90],
+            [970, 90]
+          ]
+        }
+      },
       bidId: '123',
       bidderRequestId: '109f2a181342a9',
       auctionId: 'a4713c32-3762-4798-b342-4ab810ca770d'

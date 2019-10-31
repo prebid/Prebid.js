@@ -63,9 +63,10 @@ export const spec = {
     }
 
     validBidRequests.map(bid => {
+      const sizes = bid.mediaTypes && bid.mediaTypes.banner && bid.mediaTypes.banner.sizes || bid.sizes || [];
       const placement = Object.assign({
         divName: bid.bidId,
-        adTypes: bid.adTypes || getSize(bid.sizes)
+        adTypes: bid.adTypes || getSize(sizes)
       }, bid.params);
 
       if (placement.networkId && placement.siteId && placement.unitId && placement.unitName) {
