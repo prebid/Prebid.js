@@ -320,21 +320,21 @@ export const spec = {
     const containsTgI = /^tg_i/
 
     const orderedParams = [
-      'tpid_tdid',
       'account_id',
       'site_id',
       'zone_id',
       'size_id',
       'alt_size_ids',
       'p_pos',
-      'tpid_liveintent.com',
-      'tg_v.LIseg',
       'gdpr',
       'gdpr_consent',
-      'rf',
+      'tpid_tdid',
+      'tpid_liveintent.com',
+      'tg_v.LIseg',
       'dt.id',
       'dt.keyv',
       'dt.pref',
+      'rf',
       'p_geo.latitude',
       'p_geo.longitude',
       'kw'
