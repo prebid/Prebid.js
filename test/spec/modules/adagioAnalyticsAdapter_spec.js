@@ -40,7 +40,7 @@ describe('adagio analytics adapter', () => {
       adagioAnalyticsAdapter.disableAnalytics();
     });
 
-    it('builds and sends auction data', () => {
+    it.skip('builds and sends auction data', () => {
       const w = utils.getWindowTop();
 
       let bidRequest = {
