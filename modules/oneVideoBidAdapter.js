@@ -148,13 +148,6 @@ function getRequestData(bid, consentData) {
       id: '1',
       secure: isSecure(),
       bidfloor: bid.params.bidfloor,
-      video: {
-        mimes: bid.params.video.mimes,
-        w: bid.params.video.playerWidth,
-        h: bid.params.video.playerHeight,
-        linearity: 1,
-        protocols: bid.params.video.protocols || [2, 5]
-      },
       ext: {
         hb: 1,
       }
@@ -169,50 +162,64 @@ function getRequestData(bid, consentData) {
     tmax: 200
   };
 
-  if (bid.params.video.maxbitrate) {
-    bidData.imp[0].video.maxbitrate = bid.params.video.maxbitrate
-  }
-  if (bid.params.video.maxduration) {
-    bidData.imp[0].video.maxduration = bid.params.video.maxduration
-  }
-  if (bid.params.video.minduration) {
-    bidData.imp[0].video.minduration = bid.params.video.minduration
-  }
-  if (bid.params.video.api) {
-    bidData.imp[0].video.api = bid.params.video.api
-  }
-  if (bid.params.video.delivery) {
-    bidData.imp[0].video.delivery = bid.params.video.delivery
-  }
-  if (bid.params.video.position) {
-    bidData.imp[0].video.pos = bid.params.video.position
-  }
-  if (bid.params.video.playbackmethod) {
-    bidData.imp[0].video.playbackmethod = bid.params.video.playbackmethod
-  }
-  if (bid.params.video.placement) {
-    bidData.imp[0].ext.placement = bid.params.video.placement
-  }
-  if (bid.params.video.rewarded) {
-    bidData.imp[0].ext.rewarded = bid.params.video.rewarded
-  }
-  if (bid.params.site && bid.params.site.id) {
-    bidData.site.id = bid.params.site.id
-  }
-  if (bid.params.video.sid) {
-    bidData.source = {
-      ext: {
-        schain: {
-          complete: 1,
-          nodes: [{
-            sid: bid.params.video.sid,
-            rid: bidData.id,
-          }]
+  if (bid.params.video.display == undefined || bid.params.video.display != 1) {
+    bidData.imp[0].video = {
+      mimes: bid.params.video.mimes,
+      w: bid.params.video.playerWidth,
+      h: bid.params.video.playerHeight,
+      pos: bid.params.video.position,
+    };
+    if (bid.params.video.maxbitrate) {
+      bidData.imp[0].video.maxbitrate = bid.params.video.maxbitrate
+    }
+    if (bid.params.video.maxduration) {
+      bidData.imp[0].video.maxduration = bid.params.video.maxduration
+    }
+    if (bid.params.video.minduration) {
+      bidData.imp[0].video.minduration = bid.params.video.minduration
+    }
+    if (bid.params.video.api) {
+      bidData.imp[0].video.api = bid.params.video.api
+    }
+    if (bid.params.video.delivery) {
+      bidData.imp[0].video.delivery = bid.params.video.delivery
+    }
+    if (bid.params.video.position) {
+      bidData.imp[0].video.pos = bid.params.video.position
+    }
+    if (bid.params.video.playbackmethod) {
+      bidData.imp[0].video.playbackmethod = bid.params.video.playbackmethod
+    }
+    if (bid.params.video.placement) {
+      bidData.imp[0].ext.placement = bid.params.video.placement
+    }
+    if (bid.params.video.rewarded) {
+      bidData.imp[0].ext.rewarded = bid.params.video.rewarded
+    }
+    if (bid.params.site && bid.params.site.id) {
+      bidData.site.id = bid.params.site.id
+    }
+    if (bid.params.video.sid) {
+      bidData.source = {
+        ext: {
+          schain: {
+            complete: 1,
+            nodes: [{
+              sid: bid.params.video.sid,
+              rid: bidData.id,
+            }]
+          }
         }
       }
     }
+  } else if (bid.params.video.display == 1) {
+    bidData.imp[0].banner = {
+      mimes: bid.params.video.mimes,
+      w: bid.params.video.playerWidth,
+      h: bid.params.video.playerHeight,
+      pos: bid.params.video.position,
+    };
   }
-
   if (isConsentRequired(consentData)) {
     bidData.regs = {
       ext: {
