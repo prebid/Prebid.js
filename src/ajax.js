@@ -1,5 +1,6 @@
 import {parse as parseURL, format as formatURL} from './url';
 import { config } from './config';
+import 'whatwg-fetch'
 
 var utils = require('./utils');
 
