@@ -63,7 +63,7 @@ export const spec = {
     }
 
     validBidRequests.map(bid => {
-      const sizes = bid.mediaTypes && bid.mediaTypes.banner && bid.mediaTypes.banner.sizes || bid.sizes || [];
+      const sizes = (bid.mediaTypes && bid.mediaTypes.banner && bid.mediaTypes.banner.sizes) || bid.sizes || [];
       const placement = Object.assign({
         divName: bid.bidId,
         adTypes: bid.adTypes || getSize(sizes)
