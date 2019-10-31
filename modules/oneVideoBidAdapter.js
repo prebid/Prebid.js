@@ -161,7 +161,7 @@ function getRequestData(bid, consentData) {
     },
     tmax: 200
   };
-  
+
   if (bid.params.video.display == undefined || bid.params.video.display != 1) {
     bidData.imp[0].video = {
       mimes: bid.params.video.mimes,
