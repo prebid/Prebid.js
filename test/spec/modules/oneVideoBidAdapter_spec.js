@@ -212,4 +212,140 @@ describe('OneVideoBidAdapter', function () {
       expect(data.source.ext.schain.nodes[0].rid).to.equal(data.id);
     });
   });
+  describe('should send banner object', function () {
+    it('should send banner object when display is 1', function () {
+      bidRequest = {
+        mediaTypes: {
+          video: {
+            context: 'instream',
+            playerSize: [640, 480]
+          }
+        },
+        bidder: 'oneVideo',
+        sizes: [640, 480],
+        bidId: '30b3efwfwe1e',
+        adUnitCode: 'video1',
+        params: {
+          video: {
+            playerWidth: 640,
+            playerHeight: 480,
+            mimes: ['video/mp4', 'application/javascript'],
+            protocols: [2, 5],
+            api: [2],
+            position: 1,
+            delivery: [2],
+            playbackmethod: [1, 5],
+            placement: 123,
+            sid: 134,
+            display: 1
+          },
+          site: {
+            id: 1,
+            page: 'https://www.yahoo.com/',
+            referrer: 'http://www.yahoo.com'
+          },
+          pubId: 'OneMDisplay'
+        }
+      };
+      const requests = spec.buildRequests([ bidRequest ]);
+      const data = requests[0].data;
+      const width = bidRequest.params.video.playerWidth;
+      const height = bidRequest.params.video.playerHeight;
+      const position = bidRequest.params.video.position;
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
+      expect(data.imp[0].banner.w).to.equal(width);
+      expect(data.imp[0].banner.h).to.equal(height);
+      expect(data.imp[0].banner.pos).to.equal(position);
+      expect(data.imp[0].banner.mimes).to.equal(bidRequest.params.video.mimes);
+    });
+    it('should send video object when display is other than 1', function () {
+      bidRequest = {
+        mediaTypes: {
+          video: {
+            context: 'instream',
+            playerSize: [640, 480]
+          }
+        },
+        bidder: 'oneVideo',
+        sizes: [640, 480],
+        bidId: '30b3efwfwe1e',
+        adUnitCode: 'video1',
+        params: {
+          video: {
+            playerWidth: 640,
+            playerHeight: 480,
+            mimes: ['video/mp4', 'application/javascript'],
+            protocols: [2, 5],
+            api: [2],
+            position: 1,
+            delivery: [2],
+            playbackmethod: [1, 5],
+            placement: 123,
+            sid: 134,
+            display: 12
+          },
+          site: {
+            id: 1,
+            page: 'https://www.yahoo.com/',
+            referrer: 'http://www.yahoo.com'
+          },
+          pubId: 'OneMDisplay'
+        }
+      };
+      const requests = spec.buildRequests([ bidRequest ]);
+      const data = requests[0].data;
+      const width = bidRequest.params.video.playerWidth;
+      const height = bidRequest.params.video.playerHeight;
+      const position = bidRequest.params.video.position;
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
+      expect(data.imp[0].video.w).to.equal(width);
+      expect(data.imp[0].video.h).to.equal(height);
+      expect(data.imp[0].video.pos).to.equal(position);
+      expect(data.imp[0].video.mimes).to.equal(bidRequest.params.video.mimes);
+    });
+    it('should send video object when display is not passed', function () {
+      bidRequest = {
+        mediaTypes: {
+          video: {
+            context: 'instream',
+            playerSize: [640, 480]
+          }
+        },
+        bidder: 'oneVideo',
+        sizes: [640, 480],
+        bidId: '30b3efwfwe1e',
+        adUnitCode: 'video1',
+        params: {
+          video: {
+            playerWidth: 640,
+            playerHeight: 480,
+            mimes: ['video/mp4', 'application/javascript'],
+            protocols: [2, 5],
+            api: [2],
+            position: 1,
+            delivery: [2],
+            playbackmethod: [1, 5],
+            placement: 123,
+            sid: 134
+          },
+          site: {
+            id: 1,
+            page: 'https://www.yahoo.com/',
+            referrer: 'http://www.yahoo.com'
+          },
+          pubId: 'OneMDisplay'
+        }
+      };
+      const requests = spec.buildRequests([ bidRequest ]);
+      const data = requests[0].data;
+      const width = bidRequest.params.video.playerWidth;
+      const height = bidRequest.params.video.playerHeight;
+      const position = bidRequest.params.video.position;
+      expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
+      expect(data.imp[0].video.w).to.equal(width);
+      expect(data.imp[0].video.h).to.equal(height);
+      expect(data.imp[0].video.pos).to.equal(position);
+      expect(data.imp[0].video.mimes).to.equal(bidRequest.params.video.mimes);
+    });
+  });
 });
