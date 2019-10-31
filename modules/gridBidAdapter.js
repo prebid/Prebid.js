@@ -5,6 +5,7 @@ import { VIDEO, BANNER } from '../src/mediaTypes';
 
 const BIDDER_CODE = 'grid';
 const ENDPOINT_URL = '//grid.bidswitch.net/hb';
+const SYNC_URL = '//x.bidswitch.net/sync?ssp=iow_labs';
 const TIME_TO_LIVE = 360;
 const RENDERER_URL = '//acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
 
@@ -136,6 +137,14 @@ export const spec = {
     }
     if (errorMessage) utils.logError(errorMessage);
     return bidResponses;
+  },
+  getUserSyncs: function(syncOptions) {
+    if (syncOptions.pixelEnabled) {
+      return [{
+        type: 'image',
+        url: SYNC_URL
+      }];
+    }
   }
 };
 
