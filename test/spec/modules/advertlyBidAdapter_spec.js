@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { spec } from 'modules/advertlyBidAdapter';
 
-const ENDPOINT = 'http://ads.advertly.com/www/admin/plugins/Prebid/getAd.php';
+const ENDPOINT = '//api.advertly.com/www/admin/plugins/Prebid/getAd.php';
 
 describe('The Advertly bidding adapter', function () {
   describe('isBidRequestValid', function () {
