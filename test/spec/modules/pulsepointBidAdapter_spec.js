@@ -200,7 +200,7 @@ describe('PulsePoint Adapter Tests', function () {
     expect(bid.ttl).to.equal(20);
   });
 
-  it('Verify use ttl in ext', function () {
+  it('Verify ttl/currency applied to bid', function () {
     const request = spec.buildRequests(slotConfigs, bidderRequest);
     const ortbRequest = request.data;
     const ortbResponse = {
@@ -208,22 +208,31 @@ describe('PulsePoint Adapter Tests', function () {
         bid: [{
           impid: ortbRequest.imp[0].id,
           price: 1.25,
-          adm: 'This is an Ad',
-          ext: {
-            ttl: 30,
-            netRevenue: false,
-            currency: 'INR'
-          }
+          adm: 'This is an Ad#1',
+          crid: 'Creative#123',
+          exp: 50,
+          cur: 'GBP'
+        }, {
+          impid: ortbRequest.imp[1].id,
+          price: 1.25,
+          adm: 'This is an Ad#2',
+          crid: 'Creative#123'
         }]
       }]
     };
     const bids = spec.interpretResponse({ body: ortbResponse }, request);
-    expect(bids).to.have.lengthOf(1);
+    expect(bids).to.have.lengthOf(2);
     // verify first bid
     const bid = bids[0];
-    expect(bid.ttl).to.equal(30);
-    expect(bid.netRevenue).to.equal(false);
-    expect(bid.currency).to.equal('INR');
+    expect(bid.cpm).to.equal(1.25);
+    expect(bid.ad).to.equal('This is an Ad#1');
+    expect(bid.ttl).to.equal(50);
+    expect(bid.currency).to.equal('GBP');
+    const secondBid = bids[1];
+    expect(secondBid.cpm).to.equal(1.25);
+    expect(secondBid.ad).to.equal('This is an Ad#2');
+    expect(secondBid.ttl).to.equal(20);
+    expect(secondBid.currency).to.equal('USD');
   });
 
   it('Verify full passback', function () {
