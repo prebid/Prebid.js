@@ -2,8 +2,6 @@ import {expect} from 'chai';
 import {spec} from 'modules/conversantBidAdapter';
 import * as utils from 'src/utils';
 
-var Adapter = require('modules/conversantBidAdapter');
-
 describe('Conversant adapter tests', function() {
   const siteId = '108060';
   const versionPattern = /^\d+\.\d+\.\d+(.)*$/;
@@ -16,7 +14,6 @@ describe('Conversant adapter tests', function() {
         site_id: siteId,
         position: 1,
         tag_id: 'tagid-1',
-        secure: false,
         bidfloor: 0.5
       },
       placementCode: 'pcode000',
@@ -30,8 +27,7 @@ describe('Conversant adapter tests', function() {
     {
       bidder: 'conversant',
       params: {
-        site_id: siteId,
-        secure: false
+        site_id: siteId
       },
       mediaTypes: {
         banner: {
@@ -50,8 +46,7 @@ describe('Conversant adapter tests', function() {
       params: {
         site_id: siteId,
         position: 2,
-        tag_id: '',
-        secure: false
+        tag_id: ''
       },
       placementCode: 'pcode002',
       transactionId: 'tx002',
@@ -198,9 +193,15 @@ describe('Conversant adapter tests', function() {
   });
 
   it('Verify buildRequest', function() {
-    const request = spec.buildRequests(bidRequests);
+    const page = 'http://test.com?a=b&c=123';
+    const bidderRequest = {
+      refererInfo: {
+        referer: page
+      }
+    };
+    const request = spec.buildRequests(bidRequests, bidderRequest);
     expect(request.method).to.equal('POST');
-    expect(request.url).to.equal('//web.hb.ad.cpe.dotomi.com/s2s/header/24');
+    expect(request.url).to.equal('https://web.hb.ad.cpe.dotomi.com/s2s/header/24');
     const payload = request.data;
 
     expect(payload).to.have.property('id', 'req000');
@@ -209,7 +210,7 @@ describe('Conversant adapter tests', function() {
     expect(payload.imp).to.be.an('array').with.lengthOf(6);
 
     expect(payload.imp[0]).to.have.property('id', 'bid000');
-    expect(payload.imp[0]).to.have.property('secure', 0);
+    expect(payload.imp[0]).to.have.property('secure', 1);
     expect(payload.imp[0]).to.have.property('bidfloor', 0.5);
     expect(payload.imp[0]).to.have.property('displaymanager', 'Prebid.js');
     expect(payload.imp[0]).to.have.property('displaymanagerver').that.matches(versionPattern);
@@ -221,7 +222,7 @@ describe('Conversant adapter tests', function() {
     expect(payload.imp[0]).to.not.have.property('video');
 
     expect(payload.imp[1]).to.have.property('id', 'bid001');
-    expect(payload.imp[1]).to.have.property('secure', 0);
+    expect(payload.imp[1]).to.have.property('secure', 1);
     expect(payload.imp[1]).to.have.property('bidfloor', 0);
     expect(payload.imp[1]).to.have.property('displaymanager', 'Prebid.js');
     expect(payload.imp[1]).to.have.property('displaymanagerver').that.matches(versionPattern);
@@ -232,7 +233,7 @@ describe('Conversant adapter tests', function() {
     expect(payload.imp[1].banner.format).to.deep.equal([{w: 728, h: 90}, {w: 468, h: 60}]);
 
     expect(payload.imp[2]).to.have.property('id', 'bid002');
-    expect(payload.imp[2]).to.have.property('secure', 0);
+    expect(payload.imp[2]).to.have.property('secure', 1);
     expect(payload.imp[2]).to.have.property('bidfloor', 0);
     expect(payload.imp[2]).to.have.property('displaymanager', 'Prebid.js');
     expect(payload.imp[2]).to.have.property('displaymanagerver').that.matches(versionPattern);
@@ -242,7 +243,7 @@ describe('Conversant adapter tests', function() {
     expect(payload.imp[2].banner.format).to.deep.equal([{w: 300, h: 600}, {w: 160, h: 600}]);
 
     expect(payload.imp[3]).to.have.property('id', 'bid003');
-    expect(payload.imp[3]).to.have.property('secure', 0);
+    expect(payload.imp[3]).to.have.property('secure', 1);
     expect(payload.imp[3]).to.have.property('bidfloor', 0);
     expect(payload.imp[3]).to.have.property('displaymanager', 'Prebid.js');
     expect(payload.imp[3]).to.have.property('displaymanagerver').that.matches(versionPattern);
@@ -261,7 +262,7 @@ describe('Conversant adapter tests', function() {
     expect(payload.imp[3]).to.not.have.property('banner');
 
     expect(payload.imp[4]).to.have.property('id', 'bid004');
-    expect(payload.imp[4]).to.have.property('secure', 0);
+    expect(payload.imp[4]).to.have.property('secure', 1);
     expect(payload.imp[4]).to.have.property('bidfloor', 0);
     expect(payload.imp[4]).to.have.property('displaymanager', 'Prebid.js');
     expect(payload.imp[4]).to.have.property('displaymanagerver').that.matches(versionPattern);
@@ -280,7 +281,7 @@ describe('Conversant adapter tests', function() {
     expect(payload.imp[4]).to.not.have.property('banner');
 
     expect(payload.imp[5]).to.have.property('id', 'bid005');
-    expect(payload.imp[5]).to.have.property('secure', 0);
+    expect(payload.imp[5]).to.have.property('secure', 1);
     expect(payload.imp[5]).to.have.property('bidfloor', 0);
     expect(payload.imp[5]).to.have.property('displaymanager', 'Prebid.js');
     expect(payload.imp[5]).to.have.property('displaymanagerver').that.matches(versionPattern);
@@ -299,8 +300,7 @@ describe('Conversant adapter tests', function() {
     expect(payload).to.have.property('site');
     expect(payload.site).to.have.property('id', siteId);
     expect(payload.site).to.have.property('mobile').that.is.oneOf([0, 1]);
-    const loc = utils.getTopWindowLocation();
-    const page = loc.href;
+
     expect(payload.site).to.have.property('page', page);
 
     expect(payload).to.have.property('device');
@@ -365,7 +365,7 @@ describe('Conversant adapter tests', function() {
 
   it('Verify publisher commond id support', function() {
     // clone bidRequests
-    let requests = utils.deepClone(bidRequests)
+    let requests = utils.deepClone(bidRequests);
 
     // add pubcid to every entry
     requests.forEach((unit) => {
@@ -378,7 +378,7 @@ describe('Conversant adapter tests', function() {
 
   it('Verify User ID publisher commond id support', function() {
     // clone bidRequests
-    let requests = utils.deepClone(bidRequests)
+    let requests = utils.deepClone(bidRequests);
 
     // add pubcid to every entry
     requests.forEach((unit) => {
@@ -415,4 +415,4 @@ describe('Conversant adapter tests', function() {
     expect(payload).to.have.deep.nested.property('user.ext.consent', '');
     expect(payload).to.not.have.deep.nested.property('regs.ext.gdpr');
   });
-})
+});
