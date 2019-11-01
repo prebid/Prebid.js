@@ -309,7 +309,7 @@ function bidResponseHandler(args) {
 
 function bidderDoneHandler(args) {
   args.bids.forEach(bid => {
-    let cachedBid = cache.auctions[bid.auctionId].adUnitCodes[bid.adUnit.adUnitCode].bids[bid.bidId || bid.requestId]; // todo: need try-catch
+    let cachedBid = cache.auctions[bid.auctionId].adUnitCodes[bid.adUnitCode].bids[bid.bidId || bid.requestId]; // todo: need try-catch
     if (typeof bid.serverResponseTimeMs !== 'undefined') {
       cachedBid.serverLatencyTimeMs = bid.serverResponseTimeMs;
     }
