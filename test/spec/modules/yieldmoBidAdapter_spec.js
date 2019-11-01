@@ -80,8 +80,8 @@ describe('YieldmoAdapter', function () {
 
     it('should place bid information into the p parameter of data', function () {
       let placementInfo = spec.buildRequests(bidArray, bidderRequest).data.p;
-      expect(placementInfo).to.equal('[{"placement_id":"adunit-code","callback_id":"30b31c1838de1e","mediaTypes":{"banner":{"sizes":[[300,250],[300,600]]}},"bidFloor":0.1}]');
-
+      expect(placementInfo).to.equal('[{"placement_id":"adunit-code","callback_id":"30b31c1838de1e","sizes":[[300,250],[300,600]],"bidFloor":0.1}]');
+      // console.log('placementInfo! ', placementInfo);
       bidArray.push({
         bidder: 'yieldmo',
         params: {
@@ -104,7 +104,7 @@ describe('YieldmoAdapter', function () {
 
       // multiple placements
       placementInfo = spec.buildRequests(bidArray, bidderRequest).data.p;
-      expect(placementInfo).to.equal('[{"placement_id":"adunit-code","callback_id":"30b31c1838de1e","mediaTypes":{"banner":{sizes":[[300,250],[300,600]]}},"bidFloor":0.1},{"placement_id":"adunit-code-1","callback_id":"123456789","mediaTypes":{"banner":{"sizes":[[300,250],[300,600]]}},"bidFloor":0.2}]');
+      expect(placementInfo).to.equal('[{"placement_id":"adunit-code","callback_id":"30b31c1838de1e","sizes":[[300,250],[300,600]],"bidFloor":0.1},{"placement_id":"adunit-code-1","callback_id":"123456789","sizes":[[300,250],[300,600]],"bidFloor":0.2}]');
     });
 
     it('should add placement id if given', function () {
