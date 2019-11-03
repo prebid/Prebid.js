@@ -107,11 +107,11 @@ function sendDataToModule(adUnits, onDone) {
     waitForData(_predictionsData => {
       const _predictions = _predictionsData.p;
       if (!_predictions || !Object.keys(_predictions).length) {
-        onDone({});
+        return onDone({});
       }
       const slots = getAllSlots();
       if (!slots) {
-        onDone({});
+        return onDone({});
       }
       let dataToReturn = adUnits.reduce((rp, cau) => {
         const adUnitCode = cau && cau.code;
@@ -127,7 +127,7 @@ function sendDataToModule(adUnits, onDone) {
         }
         return rp;
       }, {});
-      onDone(dataToReturn);
+      return onDone(dataToReturn);
     });
   } catch (e) {
     onDone({});

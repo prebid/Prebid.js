@@ -120,9 +120,9 @@ describe('Real time module', function() {
 
       requestBidsHook(afterBidHook, {adUnits: adUnits1});
       function afterBidHook(adUnits) {
-        adUnits.forEach(unit => {
+        adUnits.adUnits.forEach(unit => {
           unit.bids.forEach(bid => {
-            expect(bid).to.have.property('bv');
+            expect(bid.realTimeData).to.have.property('bv');
           });
         });
 
