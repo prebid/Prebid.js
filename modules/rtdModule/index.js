@@ -70,12 +70,15 @@ export function attachRealTimeDataProvider(submodule) {
 
 export function init(config) {
   const confListener = config.getConfig(MODULE_NAME, ({realTimeData}) => {
-    if (!realTimeData.dataProviders || typeof (realTimeData.auctionDelay) == 'undefined') {
+    if (!realTimeData.dataProviders) {
       utils.logError('missing parameters for real time module');
       return;
     }
     confListener(); // unsubscribe config listener
     _moduleConfig = realTimeData;
+    if (typeof (_moduleConfig.auctionDelay) == 'undefined') {
+      _moduleConfig.auctionDelay = 0;
+    }
     // delay bidding process only if auctionDelay > 0
     if (!_moduleConfig.auctionDelay > 0) {
       getHook('bidsBackCallback').before(setTargetsAfterRequestBids);
@@ -140,7 +143,7 @@ export function setTargetsAfterRequestBids(next, adUnits) {
  * @return {Object} merged object
  */
 export function deepMerge(arr) {
-  if (!arr.length) {
+  if (!Array.isArray(arr) || !arr.length) {
     return {};
   }
   return arr.reduce((merged, obj) => {
@@ -199,7 +202,7 @@ function addIdDataToAdUnitBids(adUnits, data) {
   adUnits.forEach(adUnit => {
     adUnit.bids = adUnit.bids.map(bid => {
       const rd = data[adUnit.code] || {};
-      return Object.assign(bid, rd);
+      return Object.assign(bid, {realTimeData: rd});
     })
   });
 }

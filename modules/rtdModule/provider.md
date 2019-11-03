@@ -15,7 +15,7 @@ export const subModuleName = {
       "key":"value",
       "key2":"value"
   },
-  "adUnirCode2":{
+  "adUnitCode2":{
       "dataKey":"dataValue",
   }
 }
