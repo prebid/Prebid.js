@@ -9,7 +9,7 @@ import CONSTANTS from '../constants.json';
 import events from '../events';
 import includes from 'core-js/library/fn/array/includes';
 import { ajax } from '../ajax';
-import { logWarn, logError, parseQueryStringParameters, delayExecution, parseSizesInput, getBidderRequest, flatten, uniques, timestamp, setDataInLocalStorage, getDataFromLocalStorage, deepAccess, isArray } from '../utils';
+import { logWarn, logError, parseQueryStringParameters, delayExecution, parseSizesInput, getBidderRequest, flatten, uniques, timestamp, setDataInLocalStorage, getDataFromLocalStorage, deepAccess } from '../utils';
 import { ADPOD } from '../mediaTypes';
 import { getHook } from '../hook';
 import mockResponse from '../mock_response.json';
@@ -169,7 +169,7 @@ export function newBidder(spec) {
       return Object.freeze(spec);
     },
     registerSyncs,
-    callBids: function(bidderRequest, addBidResponse, done, ajaxBuilderPromise, onTimelyResponse) {
+    callBids: function(bidderRequest, addBidResponse, done, ajaxBuilderFetch, onTimelyResponse) {
       if (!Array.isArray(bidderRequest.bids)) {
         return;
       }
@@ -219,7 +219,7 @@ export function newBidder(spec) {
       // we need to rig up a function which only executes after all the requests have been responded.
       const onResponse = delayExecution(afterAllResponses, requests.length)
       //requests.forEach(processRequest);
-      requests.forEach(processRequestPromise)
+      requests.forEach(processRequestFetch)
 
       function formatGetParameters(data) {
         if (data) {
@@ -292,7 +292,7 @@ export function newBidder(spec) {
           }
 
           if (bids) {
-            if (isArray(bids)) {
+            if (bids.forEach) {
               bids.forEach(addBidUsingRequestMap);
             } else {
               addBidUsingRequestMap(bids);
@@ -327,20 +327,24 @@ export function newBidder(spec) {
         }
       }
 
-      function processRequestPromise(request) {
+      function processRequestFetch(request) {
         switch (request.method) {
           case 'GET':
-            onSuccess(ajaxBuilderPromise(
+            ajaxBuilderFetch(
               `${request.url}${formatGetParameters(request.data)}`,
               undefined,
               Object.assign({
                 method: 'GET',
                 withCredentials: true
               }, request.options)
-            ));
+            ).then(function(response) {
+              onSuccess(response)
+            }).catch(function(err) {
+              onFailure(err);
+            });
             break;
           case 'POST':
-            onSuccess(ajaxBuilderPromise(
+            ajaxBuilderFetch(
               request.url,
               typeof request.data === 'string' ? request.data : JSON.stringify(request.data),
               Object.assign({
@@ -348,7 +352,11 @@ export function newBidder(spec) {
                 contentType: 'text/plain',
                 withCredentials: true
               }, request.options)
-            ));
+            ).then(function(response) {
+              onSuccess(response)
+            }).catch(function(err) {
+              onFailure(err);
+            });
             break;
           default:
             logWarn(`Skipping invalid request from ${spec.code}. Request type ${request.type} must be GET or POST`);
@@ -358,7 +366,7 @@ export function newBidder(spec) {
           onTimelyResponse(spec.code);
 
           try {
-            var response = mockResponse;
+            var response = mockResponse;  
           } catch (e) { /* response might not be JSON... that's ok. */ }
 
           // Make response headers available for #1742. These are lazy-loaded because most adapters won't need them.

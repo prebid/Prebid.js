@@ -4,7 +4,7 @@ import { flatten, getBidderCodes, getDefinedParams, shuffle, timestamp, getBidde
 import { getLabels, resolveStatus } from './sizeMapping';
 import { processNativeAdUnitParams, nativeAdapters } from './native';
 import { newBidder } from './adapters/bidderFactory';
-import { ajaxBuilder, ajaxBuilderPromise } from './ajax';
+import { ajaxBuilder, ajaxBuilderFetch } from './ajax';
 
 import { config, RANDOM } from './config';
 import includes from 'core-js/library/fn/array/includes';
@@ -338,7 +338,7 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
     //   request: requestCallbacks.request.bind(null, bidRequest.bidderCode),
     //   done: requestCallbacks.done
     // } : undefined);
-    let ajax = ajaxBuilderPromise(requestBidsTimeout, requestCallbacks ? {
+    let ajax = ajaxBuilderFetch(requestBidsTimeout, requestCallbacks ? {
       request: requestCallbacks.request.bind(null, bidRequest.bidderCode),
       done: requestCallbacks.done
     } : undefined);
