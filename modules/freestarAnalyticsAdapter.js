@@ -3,6 +3,7 @@ import adapter from 'src/AnalyticsAdapter';
 import CONSTANTS from 'src/constants.json';
 import adapterManager from 'src/adapterManager';
 import { auctionManager } from 'src/auctionManager';
+import $$PREBID_GLOBAL$$ from "../";
 
 const utils = require('src/utils');
 
@@ -13,7 +14,7 @@ const analyticsType = 'endpoint';
  * @param adId
  * @returns {*|Object}
  */
-pbjs.findBidByAdId = function(adId) {
+$$PREBID_GLOBAL$$.findBidByAdId = function(adId) {
   const bid = auctionManager.findBidByAdId(adId);
   return bid;
 }
