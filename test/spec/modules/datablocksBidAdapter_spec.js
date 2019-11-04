@@ -84,12 +84,35 @@ let nativeBid = {
   transactionId: '0a4e9788-4def-4b94-bc25-564d7cac99f6'
 }
 
+let videoBid = {
+  adUnitCode: '/19968336/header-bid-tag-0',
+  auctionId: '160c78a4-f808-410f-b682-d8728f3a79e1',
+  bidId: '332045ee374b99',
+  bidder: 'datablocks',
+  bidderRequestId: '15d9012765e36d',
+  mediaTypes: {
+    video: {
+      context: 'instream',
+      playerSize: [501, 400],
+      durationRangeSec: [15, 60]
+    }
+  },
+  params: {
+    sourceId: 7560,
+    host: 'v5demo.datablocks.net',
+    video: {
+      minduration: 14
+    }
+  },
+  transactionId: '0a4e9788-4def-4b94-bc25-564d7cac99f7'
+}
+
 const bidderRequest = {
   auctionId: '8bfef1be-d3ac-4d18-8859-754c7b4cf017',
   auctionStart: Date.now(),
   biddeCode: 'datablocks',
   bidderRequestId: '10c47a5fc3c41',
-  bids: [bid, bid2, nativeBid],
+  bids: [bid, bid2, nativeBid, videoBid],
   refererInfo: {
     numIframes: 0,
     reachedTop: true,
@@ -140,6 +163,18 @@ let resObject = {
         crid: '177432',
         cat: [],
         api: []
+      }, {
+        id: '1090738575',
+        impid: '15d9012765e36f',
+        price: 25.000000,
+        cid: '12345',
+        adid: '12345',
+        crid: '123456',
+        nurl: 'http://click.v5demo.datablocks.net/m//?fcid=435235435432',
+        cat: [],
+        api: [],
+        w: 500,
+        h: 400
       }]
     }],
     cur: 'USD',
@@ -175,6 +210,11 @@ let bidRequest = {
       native: {request: '{"native":{"assets":[{"id":"1","required":true,"title":{"len":140}},{"id":"2","required":true,"data":{"type":2}},{"id":"3","img":{"w":728,"h":90,"type":3}}]}}'},
       secure: false,
       tagid: '/19968336/header-bid-tag-0'
+    }, {
+      id: '15d9012765e36f',
+      video: {w: 500, h: 400, minduration: 15, maxduration: 60},
+      secure: false,
+      tagid: '/19968336/header-bid-tag-0'
     }],
     site: {
       domain: '',
@@ -198,7 +238,7 @@ describe('DatablocksAdapter', function() {
   });
 
   describe('buildRequests', function() {
-    let requests = spec.buildRequests([bid, bid2, nativeBid], bidderRequest);
+    let requests = spec.buildRequests([bid, bid2, nativeBid, videoBid], bidderRequest);
     it('Creates an array of request objects', function() {
       expect(requests).to.be.an('array').that.is.not.empty;
     });
@@ -232,6 +272,9 @@ describe('DatablocksAdapter', function() {
             expect(imp.native.request).to.be.a('string');
             let native = JSON.parse(imp.native.request);
             expect(native).to.be.a('object');
+          } else if (imp.video) {
+            expect(imp).to.have.all.keys('video', 'id', 'secure', 'tagid');
+            expect(imp.video).to.have.all.keys('w', 'h', 'minduration', 'maxduration')
           } else {
             expect(true).to.equal(false);
           }
@@ -276,6 +319,10 @@ describe('DatablocksAdapter', function() {
           expect(dataItem.native.title).to.be.a('string');
           expect(dataItem.native.body).to.be.a('string');
           expect(dataItem.native.clickUrl).to.be.a('string');
+        } else if (dataItem.mediaType == 'video') {
+          expect(dataItem.vastUrl).to.be.a('string');
+          expect(dataItem.width).to.be.a('number');
+          expect(dataItem.height).to.be.a('number');
         }
       }
       it('Returns an empty array if invalid response is passed', function() {

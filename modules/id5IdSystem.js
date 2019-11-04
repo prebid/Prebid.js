@@ -31,19 +31,19 @@ export const id5IdSubmodule = {
    * @param {SubmoduleParams} [configParams]
    * @param {ConsentData} [consentData]
    * @param {(Object|undefined)} cacheIdObj
-   * @returns {(Object|function(callback:function))}
+   * @returns {IdResponse|undefined}
    */
   getId(configParams, consentData, cacheIdObj) {
     if (!configParams || typeof configParams.partner !== 'number') {
       utils.logError(`User ID - ID5 submodule requires partner to be defined as a number`);
       return undefined;
     }
-    const hasGdpr = (typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies) ? 1 : 0;
+    const hasGdpr = (consentData && typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies) ? 1 : 0;
     const gdprConsentString = hasGdpr ? consentData.consentString : '';
     const storedUserId = this.decode(cacheIdObj);
     const url = `https://id5-sync.com/g/v1/${configParams.partner}.json?1puid=${storedUserId ? storedUserId.id5id : ''}&gdpr=${hasGdpr}&gdpr_consent=${gdprConsentString}`;
 
-    return function (callback) {
+    const resp = function (callback) {
       ajax(url, response => {
         let responseObj;
         if (response) {
@@ -55,7 +55,8 @@ export const id5IdSubmodule = {
         }
         callback(responseObj);
       }, undefined, { method: 'GET', withCredentials: true });
-    }
+    };
+    return {callback: resp};
   }
 };
 
