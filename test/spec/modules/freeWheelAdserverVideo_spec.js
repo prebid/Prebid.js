@@ -237,20 +237,26 @@ describe('freeWheel adserver module', function() {
     expect(targeting['preroll_1']).to.deep.include({'hb_cache_id': '123'});
   });
 
-  it('should apply filteredBids function to bids if configured', function() {
+  it('should apply minDealTier to bids if configured', function() {
     config.setConfig({
       adpod: {
         deferCaching: true,
-        prioritizeDeals: true
+        prioritizeDeals: true,
+        dealTier: {
+          'appnexus': {
+            prefix: 'tier',
+            minDealTier: 5
+          }
+        }
       }
     });
 
     let tier2Bid = createBid(10, 'preroll_1', 15, 'tier2_395_15s', '123', '395');
-    tier2Bid['video']['dealTier'] = 'tier2'
+    tier2Bid['video']['dealTier'] = 2
     tier2Bid['adserverTargeting']['hb_pb'] = '10.00'
 
     let tier7Bid = createBid(11, 'preroll_1', 45, 'tier7_395_15s', '123', '395');
-    tier7Bid['video']['dealTier'] = 'tier7'
+    tier7Bid['video']['dealTier'] = 7
     tier7Bid['adserverTargeting']['hb_pb'] = '11.00'
 
     let bid = createBid(15, 'preroll_1', 15, '15.00_395_90s', '123', '395');
@@ -266,11 +272,6 @@ describe('freeWheel adserver module', function() {
     adpodUtils.getTargeting({
       callback: function(errorMsg, targetingResult) {
         targeting = targetingResult;
-      },
-      filterBids: {
-        'appnexus': function(bid) {
-          return bid.video.dealTier == 'tier7'
-        }
       }
     });
 

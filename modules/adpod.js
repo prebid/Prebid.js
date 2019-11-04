@@ -453,7 +453,7 @@ export function sortByPricePerSecond(a, b) {
  * @param {function} callback
  * @returns targeting kvs for adUnitCodes
  */
-export function getTargeting({codes, callback, filterBids} = {}) {
+export function getTargeting({codes, callback} = {}) {
   if (!callback) {
     utils.logError('No callback function was defined in the getTargeting call.  Aborting getTargeting().');
     return;
@@ -471,11 +471,12 @@ export function getTargeting({codes, callback, filterBids} = {}) {
   let prioritizeDeals = config.getConfig('adpod.prioritizeDeals');
   if (prioritizeDeals) {
     let [otherBids, highPriorityDealBids] = bids.reduce((partitions, bid) => {
-      let bidderCode = bid.bidderCode
-      if (filterBids && filterBids[bidderCode]) {
-        partitions[Number(filterBids[bidderCode].call(null, bid))].push(bid);
-      } else if (bid.video.dealTier) {
-        partitions[1].push(bid);
+      let bidDealTier = utils.deepAccess(bid, 'video.dealTier');
+      let minDealTier = config.getConfig(`adpod.dealTier.${bid.bidderCode}.minDealTier`);
+      if (minDealTier && bidDealTier) {
+        partitions[Number(bidDealTier > minDealTier)].push(bid);
+      } else if (bidDealTier) {
+        partitions[1].push(bid)
       } else {
         partitions[0].push(bid);
       }
