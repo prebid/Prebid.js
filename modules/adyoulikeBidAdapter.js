@@ -206,12 +206,14 @@ function createBid(response, bidRequests) {
   }
 
   // In case we don't retreive the size from the adserver, use the given one.
-  if (!response.Width || response.Width === '0') {
-    response.Width = bidRequests[response.BidID].Width;
-  }
+  if (bidRequests && bidRequests[response.BidID]) {
+    if (!response.Width || response.Width === '0') {
+      response.Width = bidRequests[response.BidID].Width;
+    }
 
-  if (!response.Height || response.Height === '0') {
-    response.Height = bidRequests[response.BidID].Height;
+    if (!response.Height || response.Height === '0') {
+      response.Height = bidRequests[response.BidID].Height;
+    }
   }
 
   return {
