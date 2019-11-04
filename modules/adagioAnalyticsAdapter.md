@@ -1,7 +1,7 @@
 # Overview
 
 Module Name: Adagio Analytics Adapter
-Module Type: Adagio Adapter
+Module Type: Analytics Adapter
 Maintainer: dev@adagio.io
 
 # Description
