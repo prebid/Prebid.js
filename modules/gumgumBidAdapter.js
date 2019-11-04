@@ -41,7 +41,7 @@ function _getBrowserParams(topWindowUrl) {
   try {
     topWindow = global.top;
     topScreen = topWindow.screen;
-    topUrl = topWindowUrl || utils.getTopWindowUrl();
+    topUrl = topWindowUrl || '';
   } catch (error) {
     utils.logError(error);
     return browserParams
