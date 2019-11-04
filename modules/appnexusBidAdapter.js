@@ -498,8 +498,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
       case ADPOD:
         const iabSubCatId = getIabSubCategory(bidRequest.bidder, rtbBid.brand_category_id);
         bid.meta = Object.assign({}, bid.meta, { iabSubCatId });
-        const adpodDealPrefix = config.getConfig(`adpod.dealTier.${bidRequest.bidder}.prefix`);
-        const dealTier = (adpodDealPrefix) ? adpodDealPrefix + rtbBid.rtb.dealPriority : rtbBid.rtb.dealPriority;
+        const dealTier = rtbBid.rtb.dealPriority;
         bid.video = {
           context: ADPOD,
           durationSeconds: Math.floor(rtbBid.rtb.video.duration_ms / 1000),

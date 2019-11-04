@@ -772,7 +772,13 @@ describe('adpod.js', function () {
         adpod: {
           deferCaching: true,
           brandCategoryExclusion: true,
-          prioritizeDeals: true
+          prioritizeDeals: true,
+          dealTier: {
+            'appnexus': {
+              'prefix': 'tier',
+              'minDealTier': 5
+            }
+          }
         }
       });
 
@@ -780,6 +786,7 @@ describe('adpod.js', function () {
         adId: 'adId01277',
         auctionId: 'no_defer_123',
         mediaType: 'video',
+        bidderCode: 'appnexus',
         cpm: 5,
         pbMg: '5.00',
         adserverTargeting: {
@@ -792,7 +799,7 @@ describe('adpod.js', function () {
           context: ADPOD,
           durationSeconds: 15,
           durationBucket: 15,
-          dealTier: 'tier7'
+          dealTier: 7
         }
       };
 
@@ -800,6 +807,7 @@ describe('adpod.js', function () {
         adId: 'adId46547',
         auctionId: 'no_defer_123',
         mediaType: 'video',
+        bidderCode: 'appnexus',
         cpm: 12,
         pbMg: '12.00',
         adserverTargeting: {

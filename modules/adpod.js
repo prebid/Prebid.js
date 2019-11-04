@@ -116,7 +116,8 @@ function getPricePartForAdpodKey(bid) {
   let pricePart
   let prioritizeDeals = config.getConfig('adpod.prioritizeDeals');
   if (prioritizeDeals && utils.deepAccess(bid, 'video.dealTier')) {
-    pricePart = utils.deepAccess(bid, 'video.dealTier');
+    const adpodDealPrefix = config.getConfig(`adpod.dealTier.${bid.bidderCode}.prefix`);
+    pricePart = (adpodDealPrefix) ? adpodDealPrefix + utils.deepAccess(bid, 'video.dealTier') : utils.deepAccess(bid, 'video.dealTier');
   } else {
     const granularity = getPriceGranularity(bid.mediaType);
     pricePart = getPriceByGranularity(granularity)(bid);
@@ -474,7 +475,11 @@ export function getTargeting({codes, callback} = {}) {
       let bidDealTier = utils.deepAccess(bid, 'video.dealTier');
       let minDealTier = config.getConfig(`adpod.dealTier.${bid.bidderCode}.minDealTier`);
       if (minDealTier && bidDealTier) {
-        partitions[Number(bidDealTier > minDealTier)].push(bid);
+        if (bidDealTier >= minDealTier) {
+          partitions[1].push(bid)
+        } else {
+          partitions[0].push(bid)
+        }
       } else if (bidDealTier) {
         partitions[1].push(bid)
       } else {
