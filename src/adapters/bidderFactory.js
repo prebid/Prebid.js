@@ -301,6 +301,9 @@ export function newBidder(spec) {
           function addBidUsingRequestMap(bid) {
             const bidRequest = bidRequestMap[bid.requestId];
             if (bidRequest) {
+              // creating a copy of original values as cpm and currency are modified later
+              bid.originalCpm = bid.cpm;
+              bid.originalCurrency = bid.currency;
               const prebidBid = Object.assign(createBid(CONSTANTS.STATUS.GOOD, bidRequest), bid);
               addBidWithCode(bidRequest.adUnitCode, prebidBid);
             } else {
