@@ -399,7 +399,7 @@ describe('sovrnBidAdapter', function() {
       const expectedReturnStatement = [
         {
           'type': 'iframe',
-          'url': '//ap.lijit.com/beacon?informer=13487408&gdpr_consent=',
+          'url': 'https://ap.lijit.com/beacon?informer=13487408&gdpr_consent=',
         }
       ];
       const returnStatement = spec.getUserSyncs(syncOptions, serverResponse);
