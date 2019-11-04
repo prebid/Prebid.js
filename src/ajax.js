@@ -41,7 +41,6 @@ export function ajaxBuilder(timeout = 3000, {request, done} = {}) {
       x = new window.XMLHttpRequest();
       done(parser.origin);
       callbacks.success(x.responseText, x);
-      //return;
       x.onreadystatechange = function () {
         if (x.readyState === XHR_DONE) {
           if (typeof done === 'function') {
@@ -118,7 +117,6 @@ export function ajaxBuilderFetch(timeout = 3000, {request} = {}) {
         if (typeof request === 'function') {
           request(parser.origin);
         }
-        let init = Object.assign({}, options);
         return fetch(url, {
           credentials: 'same-origin', // 'include', default: 'omit'
           method: method, // 'GET', 'PUT', 'DELETE', etc.
