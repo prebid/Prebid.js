@@ -4,7 +4,7 @@ import { registerBidder } from '../src/adapters/bidderFactory';
 const BIDDER_CODE = 'underdogmedia';
 const UDM_ADAPTER_VERSION = '3.0V';
 const UDM_VENDOR_ID = '159';
-const prebidVersion = '$prebid.version$' 
+const prebidVersion = '$prebid.version$';
 
 utils.logMessage(`Initializing UDM Adapter. PBJS Version: ${prebidVersion} with adapter version: ${UDM_ADAPTER_VERSION}  Updated 20191028`);
 
