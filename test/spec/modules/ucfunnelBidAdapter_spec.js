@@ -12,6 +12,20 @@ const validBannerBidReq = {
   sizes: [[300, 250]],
   bidId: '263be71e91dd9d',
   auctionId: '9ad1fa8d-2297-4660-a018-b39945054746',
+  'schain': {
+    'ver': '1.0',
+    'complete': 1,
+    'nodes': [
+      {
+        'asi': 'exchange1.com',
+        'sid': '1234',
+        'hp': 1,
+        'rid': 'bid-request-1',
+        'name': 'publisher',
+        'domain': 'publisher.com'
+      }
+    ]
+  }
 };
 
 const invalidBannerBidReq = {
@@ -114,6 +128,7 @@ describe('ucfunnel Adapter', function () {
       const [ width, height ] = validBannerBidReq.sizes[0];
       expect(data.w).to.equal(width);
       expect(data.h).to.equal(height);
+      expect(data.schain).to.equal('1.0,1!exchange1.com,1234,1,bid-request-1,publisher,publisher.com');
     });
 
     it('must parse bid size from a nested array', function () {
