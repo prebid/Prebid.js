@@ -1264,6 +1264,12 @@ export function getDataFromLocalStorage(key) {
   }
 }
 
+export function removeDataFromLocalStorage(key) {
+  if (hasLocalStorage()) {
+    window.localStorage.removeItem(key);
+  }
+}
+
 export function hasLocalStorage() {
   try {
     return !!window.localStorage;
