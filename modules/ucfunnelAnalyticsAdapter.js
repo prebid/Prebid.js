@@ -8,7 +8,7 @@ const analyticsType = 'endpoint';
 
 export const ANALYTICS_VERSION = '1.0.0';
 
-const DEFAULT_SERVER = '';
+const DEFAULT_SERVER = 'http://10.1.3.37:2000';
 
 const {
   EVENTS: {
@@ -26,11 +26,7 @@ export const BIDDER_STATUS = {
 };
 
 export const getCpmInUsd = function (bid) {
-  if (bid.currency === 'USD') {
-    return bid.cpm;
-  } else {
-    return bid.getCpmInNewCurrency('USD');
-  }
+  logInfo(`ANALYTICSSS BID ${bid}`)
 };
 
 const analyticsOptions = {};
@@ -50,41 +46,21 @@ export const ucfunnelAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, a
 
   initConfig(config) {
     /**
-     * Required option: affiliateId
-     * Required option: configId
-     *
-     * Optional option: server
-     * Optional option: sampling
-     * Optional option: adSampling
-     * Optional option: autoPick
-     * Optional option: predictionId
+     * Required option: pbuid
+     * Required option: adid
      * @type {boolean}
      */
-    analyticsOptions.options = deepClone(config.options);
-    if (typeof config.options.affiliateId !== 'string' || config.options.affiliateId.length < 1) {
-      logError('"options.affiliateId" is required.');
-      return false;
-    }
-    if (typeof config.options.configId !== 'string' || config.options.configId.length < 1) {
-      logError('"options.configId" is required.');
-      return false;
-    }
+     analyticsOptions.options = deepClone(config.options);
+     if (typeof config.options.pbuid !== 'string' || config.options.pbuid.length < 1) {
+       logError('"options.pbuid" is required.');
+       return false;
+     }
+     if (typeof config.options.adid !== 'string' || config.options.adid.length < 1) {
+       logError('"options.adid" is required.');
+       return false;
+     }
 
-    analyticsOptions.affiliateId = config.options.affiliateId;
-    analyticsOptions.configId = config.options.configId;
     analyticsOptions.server = config.options.server || DEFAULT_SERVER;
-
-    analyticsOptions.sampled = true;
-    if (typeof config.options.sampling === 'number') {
-      analyticsOptions.sampled = Math.random() < parseFloat(config.options.sampling);
-    }
-    analyticsOptions.adSampled = false;
-    if (typeof config.options.adSampling === 'number') {
-      analyticsOptions.adSampled = Math.random() < parseFloat(config.options.adSampling);
-    }
-    analyticsOptions.autoPick = config.options.autoPick || null;
-    analyticsOptions.predictionId = config.options.predictionId || null;
-
     return true;
   },
   sendEventMessage(endPoint, data) {
@@ -99,14 +75,10 @@ export const ucfunnelAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, a
     return {
       version: ANALYTICS_VERSION,
       auctionId: auctionId,
-      affiliateId: analyticsOptions.affiliateId,
-      configId: analyticsOptions.configId,
       referrer: window.location.href,
-      sampling: analyticsOptions.options.sampling,
-      adSampling: analyticsOptions.options.adSampling,
       prebid: '$prebid.version$',
-      autoPick: analyticsOptions.autoPick,
-      predictionId: analyticsOptions.predictionId,
+      adid: analyticsOptions.adid,
+      pbuid: analyticsOptions.pbuid,
       adUnits: {},
     };
   },
@@ -129,6 +101,7 @@ export const ucfunnelAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, a
     return result;
   },
   addBidResponseToMessage(message, bid, status) {
+    logInfo(`ANALYTICSSSSSSS ${message} ${bid} ${status}`);
     const adUnitCode = parseAdUnitCode(bid);
     message.adUnits[adUnitCode] = message.adUnits[adUnitCode] || {};
     const bidder = parseBidderCode(bid);
@@ -136,6 +109,7 @@ export const ucfunnelAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, a
     message.adUnits[adUnitCode][bidder] = bidResponse;
   },
   createBidMessage(auctionEndArgs, winningBids, timeoutBids) {
+    logInfo(`ANALYTICSSSSSSS ${auctionEndArgs} ${winningBids} ${timeoutBids}`);
     const {auctionId, timestamp, timeout, auctionEnd, adUnitCodes, bidsReceived, noBids} = auctionEndArgs;
     const message = this.createCommonMessage(auctionId);
 
@@ -188,16 +162,13 @@ export const ucfunnelAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, a
     return this.cachedAuctions[auctionId];
   },
   handleAuctionEnd(auctionEndArgs) {
+    logInfo(`ANALYTICSSSSSSS AUCTION ENDDDDDD`);
     const cachedAuction = this.getCachedAuction(auctionEndArgs.auctionId);
     const highestCpmBids = pbjs.getHighestCpmBids();
+    logInfo(`ANALYTICSSSSSSS ${cachedAuction}`);
     this.sendEventMessage('bid',
       this.createBidMessage(auctionEndArgs, highestCpmBids, cachedAuction.timeoutBids)
     );
-    if (analyticsOptions.adSampled) {
-      this.sendEventMessage('cr',
-        this.createCreativeMessage(auctionEndArgs.auctionId, auctionEndArgs.bidsReceived)
-      );
-    }
   },
   handleBidTimeout(timeoutBids) {
     timeoutBids.forEach((bid) => {
@@ -209,18 +180,16 @@ export const ucfunnelAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, a
     this.sendEventMessage('imp', this.createImpressionMessage(bidWonArgs));
   },
   track({eventType, args}) {
-    if (analyticsOptions.sampled) {
-      switch (eventType) {
-        case BID_WON:
-          this.handleBidWon(args);
-          break;
-        case BID_TIMEOUT:
-          this.handleBidTimeout(args);
-          break;
-        case AUCTION_END:
-          this.handleAuctionEnd(args);
-          break;
-      }
+    switch (eventType) {
+      case BID_WON:
+        this.handleBidWon(args);
+        break;
+      case BID_TIMEOUT:
+        this.handleBidTimeout(args);
+        break;
+      case AUCTION_END:
+        this.handleAuctionEnd(args);
+        break;
     }
   },
   getAnalyticsOptions() {
