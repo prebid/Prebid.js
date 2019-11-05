@@ -7,6 +7,7 @@ import includes from 'core-js/library/fn/array/includes';
 import Set from 'core-js/library/fn/set';
 import { parseQS } from './url';
 
+const from = require('core-js/library/fn/array/from');
 const utils = require('./utils');
 const CONSTANTS = require('./constants');
 
@@ -219,7 +220,7 @@ export function newConfig() {
       let currBidderConfig = bidderConfig[currBidder];
       const configTopicSet = new Set(Object.keys(config).concat(Object.keys(currBidderConfig)));
 
-      return [ ...configTopicSet ].reduce((memo, topic) => {
+      return from(configTopicSet).reduce((memo, topic) => {
         if (!currBidderConfig[topic]) {
           memo[topic] = config[topic];
         } else if (!config[topic]) {
