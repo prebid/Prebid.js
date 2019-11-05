@@ -9,7 +9,8 @@ config.setDefaults({
     pixelEnabled: true,
     syncsPerBidder: 5,
     syncDelay: 3000,
-    auctionDelay: 0
+    auctionDelay: 0,
+    allowDuplicates: true
   }
 });
 
@@ -130,11 +131,11 @@ export function newUserSync(userSyncDependencies) {
    * @params {string} bidder The name of the bidder adding a sync
    * @returns {object} The updated version of numAdapterBids
    */
-  function incrementAdapterBids(numAdapterBids, bidder) {
-    if (!numAdapterBids[bidder]) {
-      numAdapterBids[bidder] = 1;
+  function incrementAdapterBids(numAdapterBids, bidderOrUrl) {
+    if (!numAdapterBids[bidderOrUrl]) {
+      numAdapterBids[bidderOrUrl] = 1;
     } else {
-      numAdapterBids[bidder] += 1;
+      numAdapterBids[bidderOrUrl] += 1;
     }
     return numAdapterBids;
   }
@@ -152,6 +153,7 @@ export function newUserSync(userSyncDependencies) {
    * userSync.registerSync('image', 'rubicon', 'http://example.com/pixel')
    */
   publicApi.registerSync = (type, bidder, url) => {
+    const bidderOrUrl = usConfig.allowDuplicates === true ? bidder : url;
     if (hasFiredBidder.has(bidder)) {
       return utils.logMessage(`already fired syncs for "${bidder}", ignoring registerSync call`);
     }
@@ -161,8 +163,8 @@ export function newUserSync(userSyncDependencies) {
     if (!bidder) {
       return utils.logWarn(`Bidder is required for registering sync`);
     }
-    if (usConfig.syncsPerBidder !== 0 && Number(numAdapterBids[bidder]) >= usConfig.syncsPerBidder) {
-      return utils.logWarn(`Number of user syncs exceeded for "${bidder}"`);
+    if (usConfig.syncsPerBidder !== 0 && Number(numAdapterBids[bidderOrUrl]) >= usConfig.syncsPerBidder) {
+      return utils.logWarn(`Number of user syncs exceeded for "${bidderOrUrl}"`);
     }
 
     const canBidderRegisterSync = publicApi.canBidderRegisterSync(type, bidder);
@@ -172,7 +174,7 @@ export function newUserSync(userSyncDependencies) {
 
     // the bidder's pixel has passed all checks and is allowed to register
     queue[type].push([bidder, url]);
-    numAdapterBids = incrementAdapterBids(numAdapterBids, bidder);
+    numAdapterBids = incrementAdapterBids(numAdapterBids, bidderOrUrl);
   };
 
   /**
