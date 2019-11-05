@@ -158,6 +158,28 @@ function parseSizes(bid) {
   return transformSizes(bid.sizes);
 }
 
+function getSupplyChain(schain) {
+  var supplyChain = '';
+  if (schain != null && schain.nodes) {
+    supplyChain = schain.ver + ',' + schain.complete;
+    for (let i = 0; i < schain.nodes.length; i++) {
+      supplyChain += '!';
+      supplyChain += (schain.nodes[i].asi) ? encodeURIComponent(schain.nodes[i].asi) : '';
+      supplyChain += ',';
+      supplyChain += (schain.nodes[i].sid) ? encodeURIComponent(schain.nodes[i].sid) : '';
+      supplyChain += ',';
+      supplyChain += (schain.nodes[i].hp) ? encodeURIComponent(schain.nodes[i].hp) : '';
+      supplyChain += ',';
+      supplyChain += (schain.nodes[i].rid) ? encodeURIComponent(schain.nodes[i].rid) : '';
+      supplyChain += ',';
+      supplyChain += (schain.nodes[i].name) ? encodeURIComponent(schain.nodes[i].name) : '';
+      supplyChain += ',';
+      supplyChain += (schain.nodes[i].domain) ? encodeURIComponent(schain.nodes[i].domain) : '';
+    }
+  }
+  return supplyChain;
+}
+
 function getRequestData(bid, bidderRequest) {
   const size = parseSizes(bid);
   const loc = utils.getTopWindowLocation();
@@ -169,6 +191,7 @@ function getRequestData(bid, bidderRequest) {
   const videoContext = utils.deepAccess(bid, 'mediaTypes.video.context');
   const videoMediaType = utils.deepAccess(bid, 'mediaTypes.video');
   const userIdTdid = (bid.userId && bid.userId.tdid) ? bid.userId.tdid : '';
+  const supplyChain = getSupplyChain(bid.schain);
   // general bid data
   let bidData = {
     ver: VER,
@@ -182,7 +205,8 @@ function getRequestData(bid, bidderRequest) {
     adid: utils.getBidIdParameter('adid', bid.params),
     w: size[0],
     h: size[1],
-    tdid: userIdTdid
+    tdid: userIdTdid,
+    schain: supplyChain
   };
 
   if (bid.mediaType === 'video' || videoMediaType) {

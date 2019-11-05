@@ -36,8 +36,8 @@ export const BIDDER_CODE = 'emoteev';
  */
 export const ADAPTER_VERSION = '1.35.0';
 
-export const DOMAIN = 'prebid.emoteev.io';
-export const DOMAIN_STAGING = 'prebid-staging.emoteev.io';
+export const DOMAIN = 'prebid.emoteev.xyz';
+export const DOMAIN_STAGING = 'prebid-staging.emoteev.xyz';
 export const DOMAIN_DEVELOPMENT = 'localhost:3000';
 
 /**

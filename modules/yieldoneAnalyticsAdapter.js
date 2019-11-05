@@ -18,6 +18,49 @@ let currentAuctionId = '';
 let url = defaultUrl;
 let pubId = '';
 
+function makeAdUnitNameMap() {
+  if (window.googletag && window.googletag.pubads) {
+    const p = googletag.pubads();
+    if (p && p.getSlots) {
+      const slots = p.getSlots();
+      if (slots && slots.length) {
+        const map = {};
+        slots.forEach((slot) => {
+          const id = slot.getSlotElementId();
+          const name = (slot.getAdUnitPath() || '').split('/').pop();
+          map[id] = name;
+        });
+        return map;
+      }
+    }
+  }
+}
+
+function addAdUnitNameForArray(ar, map) {
+  if (utils.isArray(ar)) {
+    ar.forEach((it) => { addAdUnitName(it, map) });
+  }
+}
+
+function addAdUnitName(params, map) {
+  if (params.adUnitCode && map[params.adUnitCode]) {
+    params.adUnitName = map[params.adUnitCode];
+  }
+  if (utils.isArray(params.adUnits)) {
+    params.adUnits.forEach((adUnit) => {
+      if (adUnit.code && map[adUnit.code]) {
+        adUnit.name = map[adUnit.code];
+      }
+    });
+  }
+  if (utils.isArray(params.adUnitCodes)) {
+    params.adUnitNames = params.adUnitCodes.map((code) => map[code]);
+  }
+  ['bids', 'bidderRequests', 'bidsReceived', 'noBids'].forEach((it) => {
+    addAdUnitNameForArray(params[it], map);
+  });
+}
+
 const yieldoneAnalytics = Object.assign(adapter({analyticsType}), {
   getUrl() { return url; },
   track({eventType, args = {}}) {
@@ -36,7 +79,7 @@ const yieldoneAnalytics = Object.assign(adapter({analyticsType}), {
         const reqBidId = `${bid.bidId}_${bid.auctionId}`;
         const reqBidderId = `${bid.bidder}_${bid.auctionId}`;
         if (!eventsStorage[bid.auctionId]) eventsStorage[bid.auctionId] = [];
-        if (requestedBidders[reqBidderId] && requestedBids[reqBidId]) {
+        if ((requestedBidders[reqBidderId] || reqBidders[bid.bidder]) && requestedBids[reqBidId]) {
           if (!reqBidders[bid.bidder]) {
             reqBidders[bid.bidder] = requestedBidders[reqBidderId];
             reqBidders[bid.bidder].pubId = pubId;
@@ -73,6 +116,10 @@ const yieldoneAnalytics = Object.assign(adapter({analyticsType}), {
       if (yieldoneAnalytics.eventsStorage[args.auctionId]) {
         yieldoneAnalytics.eventsStorage[args.auctionId].forEach((it) => {
           it.page = {url: referrers[currentAuctionId]};
+          const adUnitNameMap = makeAdUnitNameMap();
+          if (adUnitNameMap) {
+            addAdUnitName(it.params, adUnitNameMap);
+          }
         });
       }
       yieldoneAnalytics.sendStat(yieldoneAnalytics.eventsStorage[args.auctionId], args.auctionId);
