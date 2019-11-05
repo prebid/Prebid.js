@@ -4,6 +4,7 @@
 import { isValidPriceConfig } from './cpmBucketManager';
 import find from 'core-js/library/fn/array/find';
 import includes from 'core-js/library/fn/array/includes';
+import Set from 'core-js/library/fn/set';
 import { parseQS } from './url';
 
 const utils = require('./utils');
@@ -216,15 +217,9 @@ export function newConfig() {
   function _getConfig() {
     if (currBidder && bidderConfig && utils.isPlainObject(bidderConfig[currBidder])) {
       let currBidderConfig = bidderConfig[currBidder];
+      const configTopicSet = new Set(Object.keys(config).concat(Object.keys(currBidderConfig)));
 
-      const configTopicSet = Object.keys(config).concat(Object.keys(currBidderConfig)).reduce((set, key) => {
-        set.add(key);
-        return set;
-      }, new Set());
-      const uniqTopics = [];
-      configTopicSet.forEach(key => uniqTopics.push(key));
-
-      return uniqTopics.reduce((memo, topic) => {
+      return [ ...configTopicSet ].reduce((memo, topic) => {
         if (!currBidderConfig[topic]) {
           memo[topic] = config[topic];
         } else if (!config[topic]) {
