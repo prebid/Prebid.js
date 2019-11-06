@@ -18,7 +18,7 @@ let expect = require('chai').expect;
 describe('Real time module', function() {
   const conf = {
     'realTimeData': {
-      'auctionDelay': 1500,
+      'auctionDelay': 250,
       dataProviders: [{
         'name': 'browsi',
         'params': {
@@ -69,16 +69,8 @@ describe('Real time module', function() {
 
   function createSlots() {
     const slot1 = makeSlot({code: '/57778053/Browsi_Demo_300x250', divId: 'browsiAd_1'});
-    const slot2 = makeSlot({code: '/57778053/Browsi_Demo_Low', divId: 'browsiAd_2'});
-    return [
-      slot1,
-      slot2
-    ];
+    return [slot1];
   }
-
-  before(function() {
-
-  });
 
   describe('Real time module with browsi provider', function() {
     afterEach(function () {
@@ -87,6 +79,7 @@ describe('Real time module', function() {
 
     it('check module using bidsBackCallback', function () {
       let adUnits1 = [getAdUnitMock('browsiAd_1')];
+      let targeting = [];
       init(config);
       browsiInit(config);
       config.setConfig(conf);
@@ -96,50 +89,52 @@ describe('Real time module', function() {
       const slots = createSlots();
       window.googletag.pubads().setSlots(slots);
 
-      setTargetsAfterRequestBids(afterBidHook, adUnits1);
       function afterBidHook() {
         slots.map(s => {
-          let targeting = [];
+          targeting = [];
           s.getTargeting().map(value => {
-            let temp = [];
-            temp.push(Object.keys(value).toString());
-            temp.push(value[Object.keys(value)]);
-            targeting.push(temp);
+            targeting.push(Object.keys(value).toString());
           });
-          expect(targeting.indexOf('bv')).to.be.greaterThan(-1);
         });
       }
+      setTargetsAfterRequestBids(afterBidHook, adUnits1, true);
+
+      setTimeout(() => {
+        expect(targeting.indexOf('bv')).to.be.greaterThan(-1);
+      }, 200);
     });
 
     it('check module using requestBidsHook', function () {
+      console.log('entrance', new Date().getMinutes() + ':' + new Date().getSeconds());
       let adUnits1 = [getAdUnitMock('browsiAd_1')];
+      let targeting = [];
+      let dataReceived = null;
 
       // set slot
       const slotsB = createSlots();
       window.googletag.pubads().setSlots(slotsB);
 
+      function afterBidHook(data) {
+        dataReceived = data;
+        slotsB.map(s => {
+          targeting = [];
+          s.getTargeting().map(value => {
+            targeting.push(Object.keys(value).toString());
+          });
+        });
+      }
       requestBidsHook(afterBidHook, {adUnits: adUnits1});
-      function afterBidHook(adUnits) {
-        adUnits.adUnits.forEach(unit => {
+      setTimeout(() => {
+        expect(targeting.indexOf('bv')).to.be.greaterThan(-1);
+        dataReceived.adUnits.forEach(unit => {
           unit.bids.forEach(bid => {
             expect(bid.realTimeData).to.have.property('bv');
           });
         });
-
-        slotsB.map(s => {
-          let targeting = [];
-          s.getTargeting().map(value => {
-            let temp = [];
-            temp.push(Object.keys(value).toString());
-            temp.push(value[Object.keys(value)]);
-            targeting.push(temp);
-          });
-          expect(targeting.indexOf('bv')).to.be.greaterThan(-1);
-        });
-      }
+      }, 200);
     });
 
-    it('check object dep merger', function () {
+    it('check object deep merge', function () {
       const obj1 = {
         id1: {
           key: 'value',
