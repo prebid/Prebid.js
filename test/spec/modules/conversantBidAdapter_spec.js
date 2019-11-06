@@ -415,4 +415,104 @@ describe('Conversant adapter tests', function() {
     expect(payload).to.have.deep.nested.property('user.ext.consent', '');
     expect(payload).to.not.have.deep.nested.property('regs.ext.gdpr');
   });
+
+  describe('direct reading pubcid', function() {
+    const ID_NAME = '_pubcid';
+    const CUSTOM_ID_NAME = 'myid';
+    const EXP = '_exp';
+    const TIMEOUT = 2000;
+
+    function cleanUp(key) {
+      window.document.cookie = key + '=; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+      localStorage.removeItem(key);
+      localStorage.removeItem(key + EXP);
+    }
+
+    function expStr(timeout) {
+      return (new Date(Date.now() + timeout * 60 * 60 * 24 * 1000)).toUTCString();
+    }
+
+    afterEach(() => {
+      cleanUp(ID_NAME);
+      cleanUp(CUSTOM_ID_NAME);
+    });
+
+    it('reading cookie', function() {
+      // clone bidRequests
+      const requests = utils.deepClone(bidRequests);
+
+      // add a pubcid cookie
+      utils.setCookie(ID_NAME, '12345', expStr(TIMEOUT));
+
+      //  construct http post payload
+      const payload = spec.buildRequests(requests).data;
+      expect(payload).to.have.deep.nested.property('user.ext.fpc', '12345');
+    });
+
+    it('reading custom cookie', function() {
+      // clone bidRequests
+      const requests = utils.deepClone(bidRequests);
+      requests[0].params.pubcid_name = CUSTOM_ID_NAME;
+
+      // add a pubcid cookie
+      utils.setCookie(CUSTOM_ID_NAME, '12345', expStr(TIMEOUT));
+
+      //  construct http post payload
+      const payload = spec.buildRequests(requests).data;
+      expect(payload).to.have.deep.nested.property('user.ext.fpc', '12345');
+    });
+
+    it('reading local storage with empty exp time', function() {
+      // clone bidRequests
+      const requests = utils.deepClone(bidRequests);
+
+      // add a pubcid in local storage
+      utils.setDataInLocalStorage(ID_NAME + EXP, '');
+      utils.setDataInLocalStorage(ID_NAME, 'abcde');
+
+      //  construct http post payload
+      const payload = spec.buildRequests(requests).data;
+      expect(payload).to.have.deep.nested.property('user.ext.fpc', 'abcde');
+    });
+
+    it('reading local storage with valid exp time', function() {
+      // clone bidRequests
+      const requests = utils.deepClone(bidRequests);
+
+      // add a pubcid in local storage
+      utils.setDataInLocalStorage(ID_NAME + EXP, expStr(TIMEOUT));
+      utils.setDataInLocalStorage(ID_NAME, 'fghijk');
+
+      //  construct http post payload
+      const payload = spec.buildRequests(requests).data;
+      expect(payload).to.have.deep.nested.property('user.ext.fpc', 'fghijk');
+    });
+
+    it('reading expired local storage', function() {
+      // clone bidRequests
+      const requests = utils.deepClone(bidRequests);
+
+      // add a pubcid in local storage
+      utils.setDataInLocalStorage(ID_NAME + EXP, expStr(-TIMEOUT));
+      utils.setDataInLocalStorage(ID_NAME, 'lmnopq');
+
+      //  construct http post payload
+      const payload = spec.buildRequests(requests).data;
+      expect(payload).to.not.have.deep.nested.property('user.ext.fpc');
+    });
+
+    it('reading local storage with custom name', function() {
+      // clone bidRequests
+      const requests = utils.deepClone(bidRequests);
+      requests[0].params.pubcid_name = CUSTOM_ID_NAME;
+
+      // add a pubcid in local storage
+      utils.setDataInLocalStorage(CUSTOM_ID_NAME + EXP, expStr(TIMEOUT));
+      utils.setDataInLocalStorage(CUSTOM_ID_NAME, 'fghijk');
+
+      //  construct http post payload
+      const payload = spec.buildRequests(requests).data;
+      expect(payload).to.have.deep.nested.property('user.ext.fpc', 'fghijk');
+    });
+  });
 });

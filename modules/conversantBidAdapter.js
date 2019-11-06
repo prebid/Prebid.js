@@ -52,11 +52,14 @@ export const spec = {
     let siteId = '';
     let requestId = '';
     let pubcid = null;
+    let pubcidName = '_pubcid';
 
     const conversantImps = validBidRequests.map(function(bid) {
       const bidfloor = utils.getBidIdParameter('bidfloor', bid.params);
 
-      siteId = utils.getBidIdParameter('site_id', bid.params);
+      siteId = utils.getBidIdParameter('site_id', bid.params) || siteId;
+      pubcidName = utils.getBidIdParameter('pubcid_name', bid.params) || pubcidName;
+
       requestId = bid.auctionId;
 
       const imp = {
@@ -130,6 +133,10 @@ export const spec = {
           }
         };
       }
+    }
+
+    if (!pubcid) {
+      pubcid = readStoredValue(pubcidName);
     }
 
     // Add common id if available
@@ -285,6 +292,37 @@ function copyOptProperty(src, dst, dstName) {
   if (src) {
     dst[dstName] = src;
   }
+}
+
+/**
+ * Look for a stored value from both cookie and local storage and return the first value found.
+ * @param key Key for the search
+ * @return {string} Stored value
+ */
+function readStoredValue(key) {
+  let storedValue;
+  try {
+    // check cookies first
+    storedValue = utils.getCookie(key);
+
+    if (!storedValue) {
+      // check expiration time before reading local storage
+      const storedValueExp = utils.getDataFromLocalStorage(`${key}_exp`);
+      if (storedValueExp === '' || (storedValueExp && (new Date(storedValueExp)).getTime() - Date.now() > 0)) {
+        storedValue = utils.getDataFromLocalStorage(key);
+        storedValue = storedValue ? decodeURIComponent(storedValue) : storedValue;
+      }
+    }
+
+    // deserialize JSON if needed
+    if (utils.isStr(storedValue) && storedValue.charAt(0) === '{') {
+      storedValue = JSON.parse(storedValue);
+    }
+  } catch (e) {
+    utils.logError(e);
+  }
+
+  return storedValue;
 }
 
 registerBidder(spec);
