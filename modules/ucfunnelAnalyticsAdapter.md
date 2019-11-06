@@ -14,9 +14,10 @@ Analytics adapter for ucfunnel
 
 ```
 {
-  provider: 'appierAnalytics',
+  provider: 'ucfunnelAnalytics',
   options: {
-    
+    pbuid: "PBUID_FROM_UCFUNNEL"
+    adid: "BIDDING_ADID_FROM_UCFUNNEL"
   }
 }
 ```
