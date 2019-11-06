@@ -240,7 +240,8 @@ describe('OneVideoBidAdapter', function () {
             position: 1,
             delivery: [2],
             playbackmethod: [1, 5],
-            placement: 123,
+            placement: 1,
+            inventoryid: 123,
             sid: 134,
             display: 1
           },
@@ -261,6 +262,7 @@ describe('OneVideoBidAdapter', function () {
       expect(data.imp[0].banner.w).to.equal(width);
       expect(data.imp[0].banner.h).to.equal(height);
       expect(data.imp[0].banner.pos).to.equal(position);
+      expect(data.imp[0].ext.inventoryid).to.equal(bidRequest.params.video.inventoryid);
       expect(data.imp[0].banner.mimes).to.equal(bidRequest.params.video.mimes);
     });
     it('should send video object when display is other than 1', function () {
