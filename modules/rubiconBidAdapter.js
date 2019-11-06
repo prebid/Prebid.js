@@ -5,13 +5,9 @@ import {BANNER, VIDEO} from '../src/mediaTypes';
 
 const DEFAULT_INTEGRATION = 'pbjs_lite';
 
-function isSecure() {
-  return location.protocol === 'https:';
-}
-
-// use protocol relative urls for http or https
-export const FASTLANE_ENDPOINT = '//fastlane.rubiconproject.com/a/api/fastlane.json';
-export const VIDEO_ENDPOINT = '//prebid-server.rubiconproject.com/openrtb2/auction';
+// always use https, regardless of whether or not current page is secure
+export const FASTLANE_ENDPOINT = 'https://fastlane.rubiconproject.com/a/api/fastlane.json';
+export const VIDEO_ENDPOINT = 'https://prebid-server.rubiconproject.com/openrtb2/auction';
 export const SYNC_ENDPOINT = 'https://eus.rubiconproject.com/usync.html';
 
 const DIGITRUST_PROP_NAMES = {
@@ -48,6 +44,7 @@ var sizeMap = {
   39: '750x100',
   40: '750x200',
   41: '750x300',
+  42: '2x4',
   43: '320x50',
   44: '300x50',
   48: '300x300',
@@ -92,8 +89,11 @@ var sizeMap = {
   199: '640x200',
   213: '1030x590',
   214: '980x360',
+  221: '1x1',
   229: '320x180',
   232: '580x400',
+  234: '6x6',
+  251: '2x2',
   257: '400x600',
   264: '970x1000',
   265: '1920x1080',
@@ -153,7 +153,7 @@ export const spec = {
         imp: [{
           exp: 300,
           id: bidRequest.adUnitCode,
-          secure: isSecure() || bidRequest.params.secure ? 1 : 0,
+          secure: 1,
           ext: {
             rubicon: bidRequest.params
           },
@@ -212,7 +212,7 @@ export const spec = {
       }
 
       if (bidRequest.userId && typeof bidRequest.userId === 'object' &&
-        (bidRequest.userId.tdid || bidRequest.userId.pubcid)) {
+        (bidRequest.userId.tdid || bidRequest.userId.pubcid || bidRequest.userId.lipb)) {
         utils.deepSetValue(data, 'user.ext.eids', []);
 
         if (bidRequest.userId.tdid) {
@@ -234,6 +234,25 @@ export const spec = {
               id: bidRequest.userId.pubcid,
             }]
           });
+        }
+
+        // support liveintent ID
+        if (bidRequest.userId.lipb && bidRequest.userId.lipb.lipbid) {
+          data.user.ext.eids.push({
+            source: 'liveintent.com',
+            uids: [{
+              id: bidRequest.userId.lipb.lipbid
+            }]
+          });
+
+          data.user.ext.tpid = {
+            source: 'liveintent.com',
+            uid: bidRequest.userId.lipb.lipbid
+          };
+
+          if (Array.isArray(bidRequest.userId.lipb.segments) && bidRequest.userId.lipb.segments.length) {
+            utils.deepSetValue(data, 'rp.target.LIseg', bidRequest.userId.lipb.segments);
+          }
         }
       }
 
@@ -305,7 +324,6 @@ export const spec = {
     const containsTgI = /^tg_i/
 
     const orderedParams = [
-      'tpid_tdid',
       'account_id',
       'site_id',
       'zone_id',
@@ -314,10 +332,13 @@ export const spec = {
       'p_pos',
       'gdpr',
       'gdpr_consent',
-      'rf',
+      'tpid_tdid',
+      'tpid_liveintent.com',
+      'tg_v.LIseg',
       'dt.id',
       'dt.keyv',
       'dt.pref',
+      'rf',
       'p_geo.latitude',
       'p_geo.longitude',
       'kw'
@@ -397,7 +418,7 @@ export const spec = {
       'size_id': parsedSizes[0],
       'alt_size_ids': parsedSizes.slice(1).join(',') || undefined,
       'rp_floor': (params.floor = parseFloat(params.floor)) > 0.01 ? params.floor : 0.01,
-      'rp_secure': isSecure() ? '1' : '0',
+      'rp_secure': '1',
       'tk_flint': `${configIntType || DEFAULT_INTEGRATION}_v$prebid.version$`,
       'x_source.tid': bidRequest.transactionId,
       'p_screen_res': _getScreenResolution(),
@@ -413,8 +434,18 @@ export const spec = {
     // For SRA we need to explicitly put empty semi colons so AE treats it as empty, instead of copying the latter value
     data['p_pos'] = (params.position === 'atf' || params.position === 'btf') ? params.position : '';
 
-    if ((bidRequest.userId || {}).tdid) {
-      data['tpid_tdid'] = bidRequest.userId.tdid;
+    if (bidRequest.userId) {
+      if (bidRequest.userId.tdid) {
+        data['tpid_tdid'] = bidRequest.userId.tdid;
+      }
+
+      // support liveintent ID
+      if (bidRequest.userId.lipb && bidRequest.userId.lipb.lipbid) {
+        data['tpid_liveintent.com'] = bidRequest.userId.lipb.lipbid;
+        if (Array.isArray(bidRequest.userId.lipb.segments) && bidRequest.userId.lipb.segments.length) {
+          data['tg_v.LIseg'] = bidRequest.userId.lipb.segments.join(',');
+        }
+      }
     }
 
     if (bidderRequest.gdprConsent) {

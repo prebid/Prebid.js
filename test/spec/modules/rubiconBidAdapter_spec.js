@@ -172,6 +172,12 @@ describe('the rubicon adapter', function () {
       'playerWidth': 640,
       'size_id': 201,
     };
+    bid.userId = {
+      lipb: {
+        lipbid: '0000-1111-2222-3333',
+        segments: ['segA', 'segB']
+      }
+    }
   }
 
   function createVideoBidderRequestNoVideo() {
@@ -316,7 +322,7 @@ describe('the rubicon adapter', function () {
           let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
           let data = parseQuery(request.data);
 
-          expect(request.url).to.equal('//fastlane.rubiconproject.com/a/api/fastlane.json');
+          expect(request.url).to.equal('https://fastlane.rubiconproject.com/a/api/fastlane.json');
 
           let expectedQuery = {
             'account_id': '14062',
@@ -454,7 +460,7 @@ describe('the rubicon adapter', function () {
           let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
           let data = parseQuery(request.data);
 
-          expect(request.url).to.equal('//fastlane.rubiconproject.com/a/api/fastlane.json');
+          expect(request.url).to.equal('https://fastlane.rubiconproject.com/a/api/fastlane.json');
 
           // test that all values above are both present and correct
           Object.keys(expectedQuery).forEach(key => {
@@ -470,7 +476,7 @@ describe('the rubicon adapter', function () {
           [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
           data = parseQuery(request.data);
 
-          expect(request.url).to.equal('//fastlane.rubiconproject.com/a/api/fastlane.json');
+          expect(request.url).to.equal('https://fastlane.rubiconproject.com/a/api/fastlane.json');
 
           // test that all values above are both present and correct
           Object.keys(expectedQuery).forEach(key => {
@@ -967,7 +973,7 @@ describe('the rubicon adapter', function () {
               expect(item).to.have.property('bidRequest');
 
               expect(item.method).to.equal('GET');
-              expect(item.url).to.equal('//fastlane.rubiconproject.com/a/api/fastlane.json');
+              expect(item.url).to.equal('https://fastlane.rubiconproject.com/a/api/fastlane.json');
               expect(item.data).to.be.a('string');
 
               // 'bidRequest' type must be 'array' if SRA enabled
@@ -1147,6 +1153,36 @@ describe('the rubicon adapter', function () {
 
             expect(data['tpid_tdid']).to.equal('abcd-efgh-ijkl-mnop-1234');
           });
+
+          describe('LiveIntent support', function () {
+            it('should send tpid_liveintent.com when userId defines lipd', function () {
+              const clonedBid = utils.deepClone(bidderRequest.bids[0]);
+              clonedBid.userId = {
+                lipb: {
+                  lipbid: '0000-1111-2222-3333'
+                }
+              };
+              let [request] = spec.buildRequests([clonedBid], bidderRequest);
+              let data = parseQuery(request.data);
+
+              expect(data['tpid_liveintent.com']).to.equal('0000-1111-2222-3333');
+            });
+
+            it('should send tg_v.LIseg when userId defines lipd.segments', function () {
+              const clonedBid = utils.deepClone(bidderRequest.bids[0]);
+              clonedBid.userId = {
+                lipb: {
+                  lipbid: '1111-2222-3333-4444',
+                  segments: ['segD', 'segE']
+                }
+              };
+              let [request] = spec.buildRequests([clonedBid], bidderRequest);
+              const unescapedData = unescape(request.data);
+
+              expect(unescapedData.indexOf('&tpid_liveintent.com=1111-2222-3333-4444&') !== -1).to.equal(true);
+              expect(unescapedData.indexOf('&tg_v.LIseg=segD,segE&') !== -1).to.equal(true);
+            });
+          });
         })
       });
 
@@ -1184,6 +1220,16 @@ describe('the rubicon adapter', function () {
           expect(imp.ext.rubicon.video.skip).to.equal(1);
           expect(imp.ext.rubicon.video.skipafter).to.equal(15);
           expect(post.user.ext.consent).to.equal('BOJ/P2HOJ/P2HABABMAAAAAZ+A==');
+          expect(post.user.ext.eids[0].source).to.equal('liveintent.com');
+          expect(post.user.ext.eids[0].uids[0].id).to.equal('0000-1111-2222-3333');
+          expect(post.user.ext.tpid).that.is.an('object');
+          expect(post.user.ext.tpid.source).to.equal('liveintent.com');
+          expect(post.user.ext.tpid.uid).to.equal('0000-1111-2222-3333');
+          expect(post.rp).that.is.an('object');
+          expect(post.rp.target).that.is.an('object');
+          expect(post.rp.target.LIseg).that.is.an('array');
+          expect(post.rp.target.LIseg[0]).to.equal('segA');
+          expect(post.rp.target.LIseg[1]).to.equal('segB');
           expect(post.regs.ext.gdpr).to.equal(1);
           expect(post).to.have.property('ext').that.is.an('object');
           expect(post.ext.prebid.targeting.includewinners).to.equal(true);
