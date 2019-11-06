@@ -9,10 +9,10 @@
 
 /**
  * @function
- * @summary return teal time data
+ * @summary return real time data
  * @name RtdSubmodule#getData
- * @param {adUnit[]} adUnits
- * @return {Promise}
+ * @param {AdUnit[]} adUnits
+ * @param {function} onDone
  */
 
 /**
@@ -76,7 +76,7 @@ export function init(config) {
     }
     confListener(); // unsubscribe config listener
     _moduleConfig = realTimeData;
-    if (typeof (_moduleConfig.auctionDelay) == 'undefined') {
+    if (typeof (_moduleConfig.auctionDelay) === 'undefined') {
       _moduleConfig.auctionDelay = 0;
     }
     // delay bidding process only if auctionDelay > 0
