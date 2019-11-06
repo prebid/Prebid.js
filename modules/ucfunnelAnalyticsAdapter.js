@@ -8,7 +8,7 @@ const analyticsType = 'endpoint';
 
 export const ANALYTICS_VERSION = '1.0.0';
 
-const DEFAULT_SERVER = 'http://10.1.3.37:2000';
+const DEFAULT_SERVER = 'https://hbwa.aralego.com';
 
 const {
   EVENTS: {
@@ -59,7 +59,8 @@ export const ucfunnelAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, a
        logError('"options.adid" is required.');
        return false;
      }
-
+    analyticsOptions.pbuid =  config.options.pbuid
+    analyticsOptions.adid =  config.options.adid
     analyticsOptions.server = config.options.server || DEFAULT_SERVER;
     return true;
   },
@@ -76,7 +77,6 @@ export const ucfunnelAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, a
       version: ANALYTICS_VERSION,
       auctionId: auctionId,
       referrer: window.location.href,
-      prebid: '$prebid.version$',
       adid: analyticsOptions.adid,
       pbuid: analyticsOptions.pbuid,
       adUnits: {},
@@ -101,7 +101,6 @@ export const ucfunnelAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, a
     return result;
   },
   addBidResponseToMessage(message, bid, status) {
-    logInfo(`ANALYTICSSSSSSS ${message} ${bid} ${status}`);
     const adUnitCode = parseAdUnitCode(bid);
     message.adUnits[adUnitCode] = message.adUnits[adUnitCode] || {};
     const bidder = parseBidderCode(bid);
@@ -109,7 +108,6 @@ export const ucfunnelAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, a
     message.adUnits[adUnitCode][bidder] = bidResponse;
   },
   createBidMessage(auctionEndArgs, winningBids, timeoutBids) {
-    logInfo(`ANALYTICSSSSSSS ${auctionEndArgs} ${winningBids} ${timeoutBids}`);
     const {auctionId, timestamp, timeout, auctionEnd, adUnitCodes, bidsReceived, noBids} = auctionEndArgs;
     const message = this.createCommonMessage(auctionId);
 
@@ -162,10 +160,8 @@ export const ucfunnelAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, a
     return this.cachedAuctions[auctionId];
   },
   handleAuctionEnd(auctionEndArgs) {
-    logInfo(`ANALYTICSSSSSSS AUCTION ENDDDDDD`);
     const cachedAuction = this.getCachedAuction(auctionEndArgs.auctionId);
     const highestCpmBids = pbjs.getHighestCpmBids();
-    logInfo(`ANALYTICSSSSSSS ${cachedAuction}`);
     this.sendEventMessage('bid',
       this.createBidMessage(auctionEndArgs, highestCpmBids, cachedAuction.timeoutBids)
     );
