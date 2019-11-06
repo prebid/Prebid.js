@@ -107,7 +107,7 @@ describe('OneVideoBidAdapter', function () {
     it('should create a POST request for every bid', function () {
       const requests = spec.buildRequests([ bidRequest ]);
       expect(requests[0].method).to.equal('POST');
-      expect(requests[0].url).to.equal(location.protocol + spec.ENDPOINT + bidRequest.params.pubId);
+      expect(requests[0].url).to.equal(spec.ENDPOINT + bidRequest.params.pubId);
     });
 
     it('should attach the bid request object', function () {
