@@ -222,7 +222,7 @@ function executeBidsLoggerCall(auctionId) {
         'en': bid.bidResponse ? bid.bidResponse.bidPriceUSD : 0, // todo: later we will need to consider grossECPM and netECPM
         'di': bid.bidResponse ? (bid.bidResponse.dealId || EMPTY_STRING) : EMPTY_STRING,
         'dc': bid.bidResponse ? (bid.bidResponse.dealChannel || EMPTY_STRING) : EMPTY_STRING,
-        'l1': bid.clientLatencyTimeMs || 0,
+        'l1': bid.bidResponse ? bid.clientLatencyTimeMs : 0,
         'l2': 0,
         'ss': (bid.source === 'server' ? 1 : 0), // todo: is there any special handling required as per OW?
         't': (bid.status == ERROR && bid.error.code == TIMEOUT_ERROR) ? 1 : 0,
