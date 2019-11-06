@@ -1,7 +1,7 @@
 /* eslint dot-notation:0, quote-props:0 */
 import * as utils from '../src/utils';
-import { registerBidder } from '../src/adapters/bidderFactory';
-import { Renderer } from '../src/Renderer';
+import {registerBidder} from '../src/adapters/bidderFactory';
+import {Renderer} from '../src/Renderer';
 
 const NATIVE_DEFAULTS = {
   TITLE_LEN: 100,
@@ -47,6 +47,7 @@ export const spec = {
       badv: bidRequests[0].params.badv,
       user: user(bidRequests[0], bidderRequest),
       regs: regs(bidderRequest),
+      source: source(bidRequests[0].schain),
     };
     return {
       method: 'POST',
@@ -424,6 +425,16 @@ function addExternalUserId(eids, value, source) {
 function regs(bidderRequest) {
   if (bidderRequest && bidderRequest.gdprConsent) {
     return { ext: { gdpr: bidderRequest.gdprConsent.gdprApplies ? 1 : 0 } };
+  }
+  return null;
+}
+
+/**
+ * Creates source object with supply chain
+ */
+function source(supplyChain) {
+  if (supplyChain) {
+    return {ext: {schain: supplyChain}};
   }
   return null;
 }
