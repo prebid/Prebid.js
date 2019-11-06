@@ -9,6 +9,8 @@ const SYNC_URL = '//x.bidswitch.net/sync?ssp=iow_labs';
 const TIME_TO_LIVE = 360;
 const RENDERER_URL = '//acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
 
+let hasSynced = false;
+
 const LOG_ERROR_MESS = {
   noAuid: 'Bid from response has no auid parameter - ',
   noAdm: 'Bid from response has no adm parameter - ',
@@ -138,12 +140,23 @@ export const spec = {
     if (errorMessage) utils.logError(errorMessage);
     return bidResponses;
   },
-  getUserSyncs: function(syncOptions) {
-    if (syncOptions.pixelEnabled) {
-      return [{
+  getUserSyncs: function (syncOptions, responses, gdprConsent) {
+    if (!hasSynced && syncOptions.pixelEnabled) {
+      let params = '';
+
+      if (gdprConsent && typeof gdprConsent.consentString === 'string') {
+        if (typeof gdprConsent.gdprApplies === 'boolean') {
+          params += `&gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
+        } else {
+          params += `&gdpr_consent=${gdprConsent.consentString}`;
+        }
+      }
+
+      hasSynced = true;
+      return {
         type: 'image',
-        url: SYNC_URL
-      }];
+        url: SYNC_URL + params
+      };
     }
   }
 };
