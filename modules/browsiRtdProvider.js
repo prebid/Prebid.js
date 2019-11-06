@@ -19,6 +19,7 @@
 import {config} from '../src/config.js';
 import * as utils from '../src/utils';
 import {submodule} from '../src/hook';
+import {ajax} from '../src/ajax';
 
 /** @type {string} */
 const MODULE_NAME = 'realTimeData';
@@ -174,34 +175,33 @@ export function isIdMatchingAdUnit(id, allSlots, whitelist) {
  * @param {string} url server url with query params
  */
 function getPredictionsFromServer(url) {
-  const xmlhttp = new XMLHttpRequest();
-  xmlhttp.onreadystatechange = function() {
-    if (xmlhttp.readyState === 4 && xmlhttp.status === 200) {
-      try {
-        const data = JSON.parse(xmlhttp.responseText);
-        if (data && data.p && data.kn) {
-          setData({p: data.p, kn: data.kn});
-        } else {
+  ajax(url,
+    {
+      success: function (response, req) {
+        if (req.status === 200) {
+          try {
+            const data = JSON.parse(response);
+            if (data && data.p && data.kn) {
+              setData({p: data.p, kn: data.kn});
+            } else {
+              setData({});
+            }
+            addBrowsiTag(data.u);
+          } catch (err) {
+            utils.logError('unable to parse data');
+            setData({})
+          }
+        } else if (req.status === 204) {
+          // unrecognized site key
           setData({});
         }
-        addBrowsiTag(data.u);
-      } catch (err) {
-        utils.logError('unable to parse data');
+      },
+      error: function () {
+        setData({});
+        utils.logError('unable to get prediction data');
       }
-    } else if (xmlhttp.readyState === 4 && xmlhttp.status === 204) {
-      // unrecognized site key
-      setData({});
     }
-  };
-  xmlhttp.onloadend = function() {
-    if (xmlhttp.status === 404) {
-      setData({});
-      utils.logError('unable to get prediction data');
-    }
-  };
-  xmlhttp.open('GET', url, true);
-  xmlhttp.onerror = function() { setData({}) };
-  xmlhttp.send();
+  );
 }
 
 /**
