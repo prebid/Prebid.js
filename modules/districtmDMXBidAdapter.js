@@ -102,14 +102,19 @@ export const spec = {
       };
       return obj;
     });
-    dmxRequest.imp = tosendtags;
 
-    return {
-      method: 'POST',
-      url: DMXURI,
-      data: JSON.stringify(dmxRequest),
-      bidderRequest
+    if(tosendtags.length <= 5) {
+      dmxRequest.imp = tosendtags;
+      return {
+        method: 'POST',
+        url: DMXURI,
+        data: JSON.stringify(dmxRequest),
+        bidderRequest
+       }
+    }else{
+      return upto5(tosendtags, dmxRequest, bidderRequest, DMXURI);
     }
+
   },
   test() {
     return window.location.href.indexOf('dmTest=true') !== -1 ? 1 : 0;
@@ -123,6 +128,27 @@ export const spec = {
     }
   }
 }
+
+export function upto5(allimps, dmxRequest, bidderRequest, DMXURI){
+  let start = 0, step = 5, req = [];
+  while(allimps.length !== 0) {
+    if(allimps.length >= 5) {
+      req.push(allimps.splice(start, step))
+    }else {
+      req.push(allimps.splice(start, allimps.length))
+    }
+  }
+  return req.map( r => {
+    dmxRequest.imp = r;
+    return {
+      method: 'POST',
+      url: DMXURI,
+      data: JSON.stringify(dmxRequest),
+      bidderRequest
+    }
+  })
+}
+
 
 /**
  * Function matchRequest(id: string, BidRequest: object)
