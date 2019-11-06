@@ -98,8 +98,8 @@ function buildBanner(bid) {
       let sizes = utils.deepAccess(bid, 'mediaTypes.banner.sizes');
       if (utils.isArray(sizes) && sizes.length > 0) {
         return {
-          h: sizes[0][0],
-          w: sizes[0][1]
+          h: sizes[0][1],
+          w: sizes[0][0]
         }
       }
     } else {

@@ -115,8 +115,8 @@ describe('Deepintent adapter', function () {
       let bRequest = spec.buildRequests(request);
       let data = JSON.parse(bRequest.data);
       expect(data.imp[0].banner).to.be.a('object');
-      expect(data.imp[0].banner.w).to.equal(250);
-      expect(data.imp[0].banner.h).to.equal(300);
+      expect(data.imp[0].banner.w).to.equal(300);
+      expect(data.imp[0].banner.h).to.equal(250);
     });
     it('bid request check : custom params', function () {
       let bRequest = spec.buildRequests(request);
