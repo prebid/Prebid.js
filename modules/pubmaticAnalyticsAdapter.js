@@ -152,6 +152,12 @@ function parseBidResponse(bid) {
   ]);
 }
 
+function getDomainFromUrl(url) {
+  let a = window.document.createElement('a');
+  a.href = url;
+  return a.hostname;
+}
+
 function executeBidsLoggerCall(auctionId) {
   let referrer = config.getConfig('pageUrl') || utils.getTopWindowUrl();
   let auctionCache = cache.auctions[auctionId];
@@ -171,6 +177,7 @@ function executeBidsLoggerCall(auctionId) {
   outputObj['iid'] = '' + auctionId;
   outputObj['to'] = '' + auctionCache.timeout;
   outputObj['purl'] = referrer;
+  outputObj['pdomain'] = getDomainFromUrl(referrer);
   outputObj['tst'] = (new window.Date()).getTime();
   outputObj['pid'] = '' + profileId;
   outputObj['pdvid'] = '' + profileVersionId;
