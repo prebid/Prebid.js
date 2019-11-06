@@ -68,7 +68,7 @@ export const spec = {
 
 function formatResponse(bid) {
   return {
-    requestId: bid && bid.id ? bid.id : undefined,
+    requestId: bid && bid.impid ? bid.impid : undefined,
     cpm: bid && bid.price ? bid.price : 0.0,
     width: bid && bid.w ? bid.w : 0,
     height: bid && bid.h ? bid.h : 0,

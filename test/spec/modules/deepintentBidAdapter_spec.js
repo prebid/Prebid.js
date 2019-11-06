@@ -149,7 +149,7 @@ describe('Deepintent adapter', function () {
       let data = JSON.parse(bRequest.data);
       let bResponse = spec.interpretResponse(bannerResponse, request);
       expect(bResponse).to.be.an('array').with.length.above(0);
-      expect(bResponse[0].requestId).to.equal(bannerResponse.body.seatbid[0].bid[0].id);
+      expect(bResponse[0].requestId).to.equal(bannerResponse.body.seatbid[0].bid[0].impid);
       expect(bResponse[0].width).to.equal(bannerResponse.body.seatbid[0].bid[0].w);
       expect(bResponse[0].height).to.equal(bannerResponse.body.seatbid[0].bid[0].h);
       expect(bResponse[0].currency).to.equal('USD');
