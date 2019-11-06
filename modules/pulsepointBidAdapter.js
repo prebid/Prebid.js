@@ -1,7 +1,7 @@
 /* eslint dot-notation:0, quote-props:0 */
 import * as utils from '../src/utils';
-import {registerBidder} from '../src/adapters/bidderFactory';
-import {Renderer} from '../src/Renderer';
+import { registerBidder } from '../src/adapters/bidderFactory';
+import { Renderer } from '../src/Renderer';
 
 const NATIVE_DEFAULTS = {
   TITLE_LEN: 100,
