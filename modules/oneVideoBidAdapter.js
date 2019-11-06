@@ -201,19 +201,6 @@ function getRequestData(bid, consentData) {
     if (bid.params.site && bid.params.site.id) {
       bidData.site.id = bid.params.site.id
     }
-    if (bid.params.video.sid) {
-      bidData.source = {
-        ext: {
-          schain: {
-            complete: 1,
-            nodes: [{
-              sid: bid.params.video.sid,
-              rid: bidData.id,
-            }]
-          }
-        }
-      }
-    }
   } else if (bid.params.video.display == 1) {
     bidData.imp[0].banner = {
       mimes: bid.params.video.mimes,
@@ -224,6 +211,19 @@ function getRequestData(bid, consentData) {
   }
   if (bid.params.video.inventoryid) {
     bidData.imp[0].ext.inventoryid = bid.params.video.inventoryid
+  }
+  if (bid.params.video.sid) {
+    bidData.source = {
+      ext: {
+        schain: {
+          complete: 1,
+          nodes: [{
+            sid: bid.params.video.sid,
+            rid: bidData.id,
+          }]
+        }
+      }
+    }
   }
   if (isConsentRequired(consentData)) {
     bidData.regs = {
