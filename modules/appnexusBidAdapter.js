@@ -498,9 +498,11 @@ function newBid(serverBid, rtbBid, bidderRequest) {
       case ADPOD:
         const iabSubCatId = getIabSubCategory(bidRequest.bidder, rtbBid.brand_category_id);
         bid.meta = Object.assign({}, bid.meta, { iabSubCatId });
+        const dealTier = rtbBid.rtb.dealPriority;
         bid.video = {
           context: ADPOD,
           durationSeconds: Math.floor(rtbBid.rtb.video.duration_ms / 1000),
+          dealTier
         };
         bid.vastUrl = rtbBid.rtb.video.asset_url;
         break;
