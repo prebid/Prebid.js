@@ -283,7 +283,8 @@ function executeBidWonLoggerCall(auctionId, adUnitId) {
 function auctionInitHandler(args) {
   let cacheEntry = utils.pick(args, [
     'timestamp',
-    'timeout'
+    'timeout',
+    'bidderDonePendingCount', () => args.bidderRequests.length,
   ]);
   cacheEntry.adUnitCodes = {};
   cache.auctions[args.auctionId] = cacheEntry;
@@ -315,6 +316,7 @@ function bidResponseHandler(args) {
 }
 
 function bidderDoneHandler(args) {
+  cache.auctions[args.auctionId].bidderDonePendingCount--;
   args.bids.forEach(bid => {
     let cachedBid = cache.auctions[bid.auctionId].adUnitCodes[bid.adUnitCode].bids[bid.bidId || bid.requestId]; // todo: need try-catch
     if (typeof bid.serverResponseTimeMs !== 'undefined') {
@@ -341,7 +343,7 @@ function bidWonHandler(args) {
 }
 
 function auctionEndHandler(args) {
-  // start timer to send batched payload just in case we don't hear any BID_WON events
+  // todo: if for the given auction bidderDonePendingCount == 0 then execute logger call sooner
   cache.timeouts[args.auctionId] = setTimeout(() => {
     executeBidsLoggerCall.call(this, args.auctionId);
   }, SEND_TIMEOUT);
