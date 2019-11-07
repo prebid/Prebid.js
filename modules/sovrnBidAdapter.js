@@ -1,4 +1,5 @@
 import * as utils from '../src/utils'
+import {parse} from '../src/url'
 import { registerBidder } from '../src/adapters/bidderFactory'
 import { BANNER } from '../src/mediaTypes'
 
@@ -59,10 +60,9 @@ export const spec = {
       });
 
       const page = bidderRequest.refererInfo.referer
+
       // clever trick to get the domain
-      const el = document.createElement('a');
-      el.href = page;
-      const domain = el.hostname;
+      const domain = parse(page).hostname
 
       const sovrnBidReq = {
         id: utils.getUniqueIdentifierStr(),

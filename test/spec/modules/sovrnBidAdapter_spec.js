@@ -76,7 +76,7 @@ describe('sovrnBidAdapter', function() {
       expect(payload.imp[0].banner.h).to.equal(1)
     })
 
-    it('accepts a single array as a size', () => {
+    it('accepts a single array as a size', function() {
       const singleSize = [{
         'bidder': 'sovrn',
         'params': {
@@ -178,7 +178,7 @@ describe('sovrnBidAdapter', function() {
       expect(request.data).to.contain('"tagid":"403370"')
     });
 
-    it('should add schain if present', () => {
+    it('should add schain if present', function() {
       const schainRequests = [{
         'bidder': 'sovrn',
         'params': {
@@ -215,7 +215,7 @@ describe('sovrnBidAdapter', function() {
       expect(data.source.ext.schain.nodes.length).to.equal(1)
     });
 
-    it('should add digitrust data if present', () => {
+    it('should add digitrust data if present', function() {
       const digitrustRequests = [{
         'bidder': 'sovrn',
         'params': {
@@ -344,7 +344,7 @@ describe('sovrnBidAdapter', function() {
     });
   });
 
-  describe('getUserSyncs ', () => {
+  describe('getUserSyncs ', function() {
     let syncOptions = { iframeEnabled: true, pixelEnabled: false };
     let iframeDisabledSyncOptions = { iframeEnabled: false, pixelEnabled: false };
     let serverResponse = [
@@ -395,7 +395,7 @@ describe('sovrnBidAdapter', function() {
       }
     ];
 
-    it('should return if iid present on server response & iframe syncs enabled', () => {
+    it('should return if iid present on server response & iframe syncs enabled', function() {
       const expectedReturnStatement = [
         {
           'type': 'iframe',
@@ -406,17 +406,17 @@ describe('sovrnBidAdapter', function() {
       expect(returnStatement[0]).to.deep.equal(expectedReturnStatement[0]);
     });
 
-    it('should not return if iid missing on server response', () => {
+    it('should not return if iid missing on server response', function() {
       const returnStatement = spec.getUserSyncs(syncOptions, []);
       expect(returnStatement).to.be.empty;
     });
 
-    it('should not return if iframe syncs disabled', () => {
+    it('should not return if iframe syncs disabled', function() {
       const returnStatement = spec.getUserSyncs(iframeDisabledSyncOptions, serverResponse);
       expect(returnStatement).to.be.empty;
     });
 
-    it('should include pixel syncs', () => {
+    it('should include pixel syncs', function() {
       let pixelEnabledOptions = { iframeEnabled: false, pixelEnabled: true };
       const resp2 = {
         'body': {
@@ -474,7 +474,7 @@ describe('sovrnBidAdapter', function() {
     });
   });
 
-  describe('prebid 3 upgrade', () => {
+  describe('prebid 3 upgrade', function() {
     const bidRequests = [{
       'bidder': 'sovrn',
       'params': {
@@ -501,13 +501,13 @@ describe('sovrnBidAdapter', function() {
     const request = spec.buildRequests(bidRequests, bidderRequest);
     const payload = JSON.parse(request.data);
 
-    it('gets sizes from mediaTypes.banner', () => {
+    it('gets sizes from mediaTypes.banner', function() {
       expect(payload.imp[0].banner.format).to.deep.equal([{w: 300, h: 250}, {w: 300, h: 600}])
       expect(payload.imp[0].banner.w).to.equal(1)
       expect(payload.imp[0].banner.h).to.equal(1)
     })
 
-    it('gets correct site info', () => {
+    it('gets correct site info', function() {
       expect(payload.site.page).to.equal('http://example.com/page.html');
       expect(payload.site.domain).to.equal('example.com');
     })
