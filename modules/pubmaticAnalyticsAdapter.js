@@ -67,6 +67,27 @@ function formatSource(src) {
   return src.toLowerCase();
 }
 
+function setMediaTypes(types, bid) {
+  if (bid.mediaType && validMediaType(bid.mediaType)) {
+    return [bid.mediaType];
+  }
+  if (Array.isArray(types)) {
+    return types.filter(validMediaType);
+  }
+  if (typeof types === 'object') {
+    if (!bid.sizes) {
+      bid.dimensions = [];
+      utils._each(types, (type) =>
+        bid.dimensions = bid.dimensions.concat(
+          type.sizes.map(sizeToDimensions)
+        )
+      );
+    }
+    return Object.keys(types).filter(validMediaType);
+  }
+  return [MEDIA_TYPE_BANNER];
+}
+
 function copyRequiredBidDetails(bid) {
   return utils.pick(bid, [
     'bidder', bidder => bidder.toLowerCase(),
@@ -78,27 +99,7 @@ function copyRequiredBidDetails(bid) {
       'adUnitCode',
       'transactionId',
       'sizes as dimensions', sizes => sizes.map(sizeToDimensions),
-      'mediaTypes', (types) => {
-        // todo: move to a smaller function
-        if (bid.mediaType && validMediaType(bid.mediaType)) {
-          return [bid.mediaType];
-        }
-        if (Array.isArray(types)) {
-          return types.filter(validMediaType);
-        }
-        if (typeof types === 'object') {
-          if (!bid.sizes) {
-            bid.dimensions = [];
-            utils._each(types, (type) =>
-              bid.dimensions = bid.dimensions.concat(
-                type.sizes.map(sizeToDimensions)
-              )
-            );
-          }
-          return Object.keys(types).filter(validMediaType);
-        }
-        return [MEDIA_TYPE_BANNER];
-      }
+      'mediaTypes', (types) => setMediaTypes(types, bid)
     ])
   ]);
 }
@@ -183,10 +184,10 @@ function executeBidsLoggerCall(auctionId) {
   outputObj['pdvid'] = '' + profileVersionId;
 
   // GDPR support // todo unit test case
-  if(auctionCache.gdprConsent){
+  if (auctionCache.gdprConsent) {
     outputObj['cns'] = auctionCache.gdprConsent.consentString || '';
-    outputObj['gdpr'] = auctionCache.gdprConsent.gdprApplies ||  0;
-    pixelURL += "&gdEn=1";
+    outputObj['gdpr'] = auctionCache.gdprConsent.gdprApplies || 0;
+    pixelURL += '&gdEn=1';
   }
 
   outputObj.s = Object.keys(auctionCache.adUnitCodes).reduce(function(slotsArray, adUnitId) {
