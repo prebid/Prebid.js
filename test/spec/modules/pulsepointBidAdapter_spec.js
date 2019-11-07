@@ -239,15 +239,15 @@ describe('PulsePoint Adapter Tests', function () {
           price: 1.25,
           adm: 'This is an Ad#1',
           crid: 'Creative#123',
-          exp: 50,
-          cur: 'GBP'
+          exp: 50
         }, {
           impid: ortbRequest.imp[1].id,
           price: 1.25,
           adm: 'This is an Ad#2',
           crid: 'Creative#123'
         }]
-      }]
+      }],
+      cur: 'GBP'
     };
     const bids = spec.interpretResponse({ body: ortbResponse }, request);
     expect(bids).to.have.lengthOf(2);
@@ -261,7 +261,7 @@ describe('PulsePoint Adapter Tests', function () {
     expect(secondBid.cpm).to.equal(1.25);
     expect(secondBid.ad).to.equal('This is an Ad#2');
     expect(secondBid.ttl).to.equal(20);
-    expect(secondBid.currency).to.equal('USD');
+    expect(secondBid.currency).to.equal('GBP');
   });
 
   it('Verify full passback', function () {

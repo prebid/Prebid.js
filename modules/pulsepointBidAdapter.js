@@ -117,7 +117,7 @@ function bidResponseAvailable(request, response) {
         adId: id,
         ttl: idToBidMap[id].exp || DEFAULT_BID_TTL,
         netRevenue: DEFAULT_NET_REVENUE,
-        currency: idToBidMap[id].cur || DEFAULT_CURRENCY
+        currency: bidResponse.cur || DEFAULT_CURRENCY
       };
       if (idToImpMap[id]['native']) {
         bid['native'] = nativeResponse(idToImpMap[id], idToBidMap[id]);
