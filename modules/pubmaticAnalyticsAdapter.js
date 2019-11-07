@@ -159,6 +159,18 @@ function getDomainFromUrl(url) {
   return a.hostname;
 }
 
+function getHighestBidForAdUnit(adUnit) {
+  return Object.keys(adUnit.bids).reduce(function(currentHighestBid, bidId) {
+    // todo: later we will need to consider grossECPM and netECPM
+    let bid = adUnit.bids[bidId];
+    if (bid.bidResponse && bid.bidResponse.bidPriceUSD > currentHighestBid.bidPriceUSD) {
+      currentHighestBid.bidPriceUSD = bid.bidResponse.bidPriceUSD;
+      currentHighestBid.bidId = bidId;
+    }
+    return currentHighestBid;
+  }, {bidId: '', bidPriceUSD: 0});
+}
+
 function executeBidsLoggerCall(auctionId) {
   let referrer = config.getConfig('pageUrl') || utils.getTopWindowUrl();
   let auctionCache = cache.auctions[auctionId];
@@ -199,15 +211,7 @@ function executeBidsLoggerCall(auctionId) {
     };
 
     // todo: move to a function, pass the output to following function call
-    const highestsBid = Object.keys(adUnit.bids).reduce(function(currentHighestBid, bidId) {
-      // todo: later we will need to consider grossECPM and netECPM
-      let bid = adUnit.bids[bidId];
-      if (bid.bidResponse && bid.bidResponse.bidPriceUSD > currentHighestBid.bidPriceUSD) {
-        currentHighestBid.bidPriceUSD = bid.bidResponse.bidPriceUSD;
-        currentHighestBid.bidId = bidId;
-      }
-      return currentHighestBid;
-    }, {bidId: '', bidPriceUSD: 0});
+    const highestsBid = getHighestBidForAdUnit(adUnit);
 
     slotObject.ps = Object.keys(adUnit.bids).reduce(function(partnerBids, bidId) {
       let bid = adUnit.bids[bidId];
