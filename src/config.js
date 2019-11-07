@@ -300,11 +300,12 @@ export function newConfig() {
       return;
     }
 
-    listeners.push({ topic, callback });
+    const nl = { topic, callback };
+    listeners.push(nl);
 
     // save and call this function to remove the listener
     return function unsubscribe() {
-      listeners.splice(listeners.indexOf(listener), 1);
+      listeners.splice(listeners.indexOf(nl), 1);
     };
   }
 
