@@ -94,9 +94,9 @@ export const spec = {
       obj.secure = 1;
       obj.banner = {
         topframe: 1,
-        w: dmx.sizes[0][0] || 0,
-        h: dmx.sizes[0][1] || 0,
-        format: dmx.sizes.map(s => {
+        w: cleanSizes(dmx.sizes, 'w'),
+        h: cleanSizes(dmx.sizes, 'h'),
+        format: cleanSizes(dmx.sizes).map(s => {
           return {w: s[0], h: s[1]};
         }).filter(obj => typeof obj.w === 'number' && typeof obj.h === 'number')
       };
@@ -127,6 +127,75 @@ export const spec = {
       }];
     }
   }
+}
+
+export function cleanSizes(sizes, value){
+  const supportedSize = [
+    {
+      size: [300, 250],
+      s: 100
+    },
+    {
+      size: [728, 90],
+      s: 95
+    },
+    {
+      size: [300, 600],
+      s: 90
+    },
+    {
+      size: [160, 600],
+      s: 88
+    },
+    {
+      size: [320, 50],
+      s: 85
+    },
+    {
+      size: [300, 50],
+      s: 80
+    },
+    {
+      size: [970, 250],
+      s: 75
+    },
+    {
+      size: [970, 90],
+      s: 60
+    },
+  ];
+  let newArray = shuffle(sizes, supportedSize);
+  switch(value) {
+    case 'w':
+      return newArray[0][0] || 0;
+    break;
+    case 'h':
+      return newArray[0][1] || 0;
+    break;
+    case 'size':
+      return newArray;
+    default:
+      return [];
+  }
+}
+
+export function shuffle(sizes, list){
+    let remove_sizes = sizes.filter( size => {
+      return list.map( l => `${l.size[0]}x${l.size[1]}`).includes(`${size[0]}x${size[1]}`)
+    })
+  let re_order = remove_sizes.reduce((results, current) => {
+      if(results.length === 0) {
+        results.push(current);
+        return results;
+      }
+      results.push(current);
+      results = list.filter( l => results.map( r => `${r[0]}x${r[1]}`).includes(`${l.size[0]}x${l.size[1]}`))
+      results = results.sort(function(a, b) {
+        return b.s - a.s;
+      })
+    return results.map( r => r.size);
+  }, [])
+  return re_order;
 }
 
 export function upto5(allimps, dmxRequest, bidderRequest, DMXURI){
