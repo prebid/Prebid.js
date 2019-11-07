@@ -8,7 +8,7 @@ const analyticsType = 'endpoint';
 
 export const ANALYTICS_VERSION = '1.0.0';
 
-const DEFAULT_SERVER = 'https://hbwa.aralego.com';
+const ANALYTICS_SERVER = 'https://hbwa.aralego.com';
 
 const {
   EVENTS: {
@@ -25,10 +25,6 @@ export const BIDDER_STATUS = {
   TIMEOUT: 'timeout'
 };
 
-export const getCpmInUsd = function (bid) {
-  logInfo(`ANALYTICSSS BID ${bid}`)
-};
-
 const analyticsOptions = {};
 
 export const parseBidderCode = function (bid) {
@@ -40,28 +36,26 @@ export const parseAdUnitCode = function (bidResponse) {
   return bidResponse.adUnitCode.toLowerCase();
 };
 
-export const ucfunnelAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, analyticsType}), {
-
+export const ucfunnelAnalyticsAdapter = Object.assign(adapter({ANALYTICS_SERVER, analyticsType}), {
   cachedAuctions: {},
-
   initConfig(config) {
     /**
      * Required option: pbuid
      * Required option: adid
      * @type {boolean}
      */
-     analyticsOptions.options = deepClone(config.options);
-     if (typeof config.options.pbuid !== 'string' || config.options.pbuid.length < 1) {
-       logError('"options.pbuid" is required.');
-       return false;
-     }
-     if (typeof config.options.adid !== 'string' || config.options.adid.length < 1) {
-       logError('"options.adid" is required.');
-       return false;
-     }
-    analyticsOptions.pbuid =  config.options.pbuid
-    analyticsOptions.adid =  config.options.adid
-    analyticsOptions.server = config.options.server || DEFAULT_SERVER;
+    analyticsOptions.options = deepClone(config.options);
+    if (typeof config.options.pbuid !== 'string' || config.options.pbuid.length < 1) {
+      logError('"options.pbuid" is required.');
+      return false;
+    }
+    if (typeof config.options.adid !== 'string' || config.options.adid.length < 1) {
+      logError('"options.adid" is required.');
+      return false;
+    }
+    analyticsOptions.pbuid = config.options.pbuid
+    analyticsOptions.adid = config.options.adid
+    analyticsOptions.server = ANALYTICS_SERVER;
     return true;
   },
   sendEventMessage(endPoint, data) {
@@ -93,9 +87,6 @@ export const ucfunnelAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, a
         time: bid.timeToRespond,
         cpm: bid.cpm,
         currency: bid.currency,
-        originalCpm: bid.originalCpm || bid.cpm,
-        cpmUsd: getCpmInUsd(bid),
-        originalCurrency: bid.originalCurrency || bid.currency,
       });
     }
     return result;
@@ -108,18 +99,15 @@ export const ucfunnelAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, a
     message.adUnits[adUnitCode][bidder] = bidResponse;
   },
   createBidMessage(auctionEndArgs, winningBids, timeoutBids) {
-    const {auctionId, timestamp, timeout, auctionEnd, adUnitCodes, bidsReceived, noBids} = auctionEndArgs;
+    const {auctionId, timestamp, auctionEnd, adUnitCodes, bidsReceived, noBids} = auctionEndArgs;
     const message = this.createCommonMessage(auctionId);
 
     message.auctionElapsed = (auctionEnd - timestamp);
-    message.timeout = timeout;
 
     adUnitCodes.forEach((adUnitCode) => {
       message.adUnits[adUnitCode] = {};
     });
 
-    // We handled noBids first because when currency conversion is enabled, a bid with a foreign currency
-    // will be set to NO_BID initially, and then set to BID after the currency rate json file is fully loaded.
     // In this situation, the bid exists in both noBids and bids arrays.
     noBids.forEach(bid => this.addBidResponseToMessage(message, bid, BIDDER_STATUS.NO_BID));
 
@@ -141,16 +129,6 @@ export const ucfunnelAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, a
   createImpressionMessage(bid) {
     const message = this.createCommonMessage(bid.auctionId);
     this.addBidResponseToMessage(message, bid, BIDDER_STATUS.BID_WON);
-    return message;
-  },
-  createCreativeMessage(auctionId, bids) {
-    const message = this.createCommonMessage(auctionId);
-    bids.forEach((bid) => {
-      const adUnitCode = parseAdUnitCode(bid);
-      const bidder = parseBidderCode(bid);
-      message.adUnits[adUnitCode] = message.adUnits[adUnitCode] || {};
-      message.adUnits[adUnitCode][bidder] = {ad: bid.ad};
-    });
     return message;
   },
   getCachedAuction(auctionId) {
