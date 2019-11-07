@@ -144,7 +144,7 @@ function parseBidResponse(bid) {
     'bidId',
     'mediaType',
     'params',
-    'mi', // todo: need to test
+    'mi',
     'dimensions', () => utils.pick(bid, [
       'width',
       'height'
@@ -182,12 +182,12 @@ function executeBidsLoggerCall(auctionId) {
   outputObj['pid'] = '' + profileId;
   outputObj['pdvid'] = '' + profileVersionId;
 
-  // if (CONFIG.getGdpr()) {
-  // consentString = gdprData && gdprData.c ? encodeURIComponent(gdprData.c) : "";
-  // outputObj[CONSTANTS.CONFIG.GDPR_CONSENT] = gdprData && gdprData.g;
-  // outputObj[CONSTANTS.CONFIG.CONSENT_STRING] = consentString;
-  // pixelURL += "&gdEn=" + (CONFIG.getGdpr() ? 1 : 0);
-  // }
+  // GDPR support // todo unit test case
+  if(auctionCache.gdprConsent){
+    outputObj['cns'] = auctionCache.gdprConsent.consentString || '';
+    outputObj['gdpr'] = auctionCache.gdprConsent.gdprApplies ||  0;
+    pixelURL += "&gdEn=1";
+  }
 
   outputObj.s = Object.keys(auctionCache.adUnitCodes).reduce(function(slotsArray, adUnitId) {
     let adUnit = auctionCache.adUnitCodes[adUnitId];
@@ -291,6 +291,7 @@ function auctionInitHandler(args) {
 }
 
 function bidRequestedHandler(args) {
+  cache.auctions[args.auctionId].gdprConsent = args.gdprConsent || undefined;
   args.bids.forEach(function(bid) {
     if (!cache.auctions[args.auctionId].adUnitCodes.hasOwnProperty(bid.adUnitCode)) {
       cache.auctions[args.auctionId].adUnitCodes[bid.adUnitCode] = {
@@ -331,7 +332,6 @@ function bidderDoneHandler(args) {
   });
 }
 
-// todo: do we need this function?
 function setTargetingHandler(args) {
   Object.assign(cache.targeting, args);
 }
@@ -372,7 +372,6 @@ let baseAdapter = adapter({analyticsType: 'endpoint'});
 let pubmaticAdapter = Object.assign({}, baseAdapter, {
 
   enableAnalytics(config = {}) {
-    // todo: move to a function
     let error = false;
     if (typeof config.options === 'object') {
       if (config.options.publisherId) {
