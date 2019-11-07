@@ -435,9 +435,7 @@ function regs(bidderRequest) {
 function source(schain) {
   if (schain) {
     return {
-      ext: {
-        schain
-      }
+      ext: { schain }
     };
   }
   return null;
