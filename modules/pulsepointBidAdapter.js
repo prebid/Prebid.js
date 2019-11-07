@@ -432,9 +432,13 @@ function regs(bidderRequest) {
 /**
  * Creates source object with supply chain
  */
-function source(supplyChain) {
-  if (supplyChain) {
-    return {ext: {schain: supplyChain}};
+function source(schain) {
+  if (schain) {
+    return {
+      ext: {
+        schain
+      }
+    };
   }
   return null;
 }
