@@ -306,7 +306,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.iid).to.equal('25c6d7f5-699a-4bfc-87c9-996f915341fa');
       expect(data.to).to.equal('3000');
       expect(data.purl).to.equal('http://www.test.com/page.html');
-      expect(data.pdomain).to.equal('www.test.com');
+      expect(data.orig).to.equal('www.test.com');
       expect(data.tst).to.equal(1519767016781);
       expect(data.s).to.be.an('array');
       expect(data.s.length).to.equal(2);

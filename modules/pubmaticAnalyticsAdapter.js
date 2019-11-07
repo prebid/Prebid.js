@@ -177,7 +177,7 @@ function executeBidsLoggerCall(auctionId) {
   outputObj['iid'] = '' + auctionId;
   outputObj['to'] = '' + auctionCache.timeout;
   outputObj['purl'] = referrer;
-  outputObj['pdomain'] = getDomainFromUrl(referrer);
+  outputObj['orig'] = getDomainFromUrl(referrer);
   outputObj['tst'] = (new window.Date()).getTime();
   outputObj['pid'] = '' + profileId;
   outputObj['pdvid'] = '' + profileVersionId;
