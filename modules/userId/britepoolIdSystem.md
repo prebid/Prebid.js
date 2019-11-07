@@ -1,6 +1,6 @@
 ## BritePool User ID Submodule
 
-BritePool User ID Module. For assistance setting up your module please contact us prebid@britepool.com
+BritePool User ID Module. For assistance setting up your module please contact us at [prebid@britepool.com](prebid@britepool.com).
 
 ### Prebid Params
 
