@@ -374,6 +374,7 @@ describe('Conversant adapter tests', function() {
     //  construct http post payload
     const payload = spec.buildRequests(requests).data;
     expect(payload).to.have.deep.nested.property('user.ext.fpc', 12345);
+    expect(payload).to.not.have.nested.property('user.ext.eids');
   });
 
   it('Verify User ID publisher commond id support', function() {
@@ -387,6 +388,7 @@ describe('Conversant adapter tests', function() {
     //  construct http post payload
     const payload = spec.buildRequests(requests).data;
     expect(payload).to.have.deep.nested.property('user.ext.fpc', 67890);
+    expect(payload).to.not.have.nested.property('user.ext.eids');
   });
 
   it('Verify GDPR bid request', function() {
@@ -414,5 +416,23 @@ describe('Conversant adapter tests', function() {
     const payload = spec.buildRequests(bidRequests, bidRequest).data;
     expect(payload).to.have.deep.nested.property('user.ext.consent', '');
     expect(payload).to.not.have.deep.nested.property('regs.ext.gdpr');
+  });
+
+  describe('Extended ID', function() {
+    it('Verify unifiedid and liveramp', function() {
+      // clone bidRequests
+      let requests = utils.deepClone(bidRequests);
+
+      // add pubcid to every entry
+      requests.forEach((unit) => {
+        Object.assign(unit, {userId: {pubcid: 112233, tdid: 223344, idl_env: 334455}});
+      });
+      //  construct http post payload
+      const payload = spec.buildRequests(requests).data;
+      expect(payload).to.have.deep.nested.property('user.ext.eids', [
+        {source: 'adserver.org', uids: [{id: 223344, atype: 1}]},
+        {source: 'liveramp.com', uids: [{id: 334455, atype: 1}]}
+      ]);
+    });
   });
 });
