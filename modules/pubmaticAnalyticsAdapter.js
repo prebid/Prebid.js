@@ -171,6 +171,34 @@ function getHighestBidForAdUnit(adUnit) {
   }, {bidId: '', bidPriceUSD: 0});
 }
 
+function gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId) {
+  const highestsBid = getHighestBidForAdUnit(adUnit);
+  return Object.keys(adUnit.bids).reduce(function(partnerBids, bidId) {
+    let bid = adUnit.bids[bidId];
+    partnerBids.push({
+      'pn': bid.bidder,
+      'bidid': bid.bidId,
+      'db': bid.bidResponse ? 0 : 1,
+      'kgpv': bid.params.kgpv ? bid.params.kgpv : adUnitId,
+      'psz': bid.bidResponse ? (bid.bidResponse.dimensions.width + 'x' + bid.bidResponse.dimensions.height) : '0x0',
+      'eg': bid.bidResponse ? bid.bidResponse.bidPriceUSD : 0, // todo: later we will need to consider grossECPM and netECPM, precision
+      'en': bid.bidResponse ? bid.bidResponse.bidPriceUSD : 0, // todo: later we will need to consider grossECPM and netECPM, precision
+      'di': bid.bidResponse ? (bid.bidResponse.dealId || EMPTY_STRING) : EMPTY_STRING,
+      'dc': bid.bidResponse ? (bid.bidResponse.dealChannel || EMPTY_STRING) : EMPTY_STRING,
+      'l1': bid.bidResponse ? bid.clientLatencyTimeMs : 0,
+      'l2': 0,
+      'ss': (bid.source === 'server' ? 1 : 0), // todo: is there any special handling required as per OW?
+      't': (bid.status == ERROR && bid.error.code == TIMEOUT_ERROR) ? 1 : 0,
+      'wb': highestsBid.bidId === bid.bidId ? 1 : 0,
+      'mi': bid.bidResponse ? (bid.bidResponse.mi || undefined) : undefined,
+      'af': bid.bidResponse ? (bid.bidResponse.mediaType || undefined) : undefined,
+      'ocpm': bid.bidResponse ? bid.bidResponse.cpm : 0,
+      'ocry': bid.bidResponse ? bid.bidResponse.currency : CURRENCY_USD
+    });
+    return partnerBids;
+  }, [])
+}
+
 function executeBidsLoggerCall(auctionId) {
   let referrer = config.getConfig('pageUrl') || utils.getTopWindowUrl();
   let auctionCache = cache.auctions[auctionId];
@@ -207,42 +235,14 @@ function executeBidsLoggerCall(auctionId) {
     let slotObject = {
       'sn': adUnitId,
       'sz': adUnit.dimensions.map(e => e[0] + 'x' + e[1]),
-      'ps': []
+      'ps': gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId)
     };
-
-    // todo: move to a function, pass the output to following function call
-    const highestsBid = getHighestBidForAdUnit(adUnit);
-
-    slotObject.ps = Object.keys(adUnit.bids).reduce(function(partnerBids, bidId) {
-      let bid = adUnit.bids[bidId];
-      // todo: push to a function
-      // todo: number precision, is it taken care by Prebid?
-      partnerBids.push({
-        'pn': bid.bidder,
-        'bidid': bid.bidId,
-        'db': bid.bidResponse ? 0 : 1,
-        'kgpv': bid.params.kgpv ? bid.params.kgpv : adUnitId,
-        'psz': bid.bidResponse ? (bid.bidResponse.dimensions.width + 'x' + bid.bidResponse.dimensions.height) : '0x0',
-        'eg': bid.bidResponse ? bid.bidResponse.bidPriceUSD : 0, // todo: later we will need to consider grossECPM and netECPM
-        'en': bid.bidResponse ? bid.bidResponse.bidPriceUSD : 0, // todo: later we will need to consider grossECPM and netECPM
-        'di': bid.bidResponse ? (bid.bidResponse.dealId || EMPTY_STRING) : EMPTY_STRING,
-        'dc': bid.bidResponse ? (bid.bidResponse.dealChannel || EMPTY_STRING) : EMPTY_STRING,
-        'l1': bid.bidResponse ? bid.clientLatencyTimeMs : 0,
-        'l2': 0,
-        'ss': (bid.source === 'server' ? 1 : 0), // todo: is there any special handling required as per OW?
-        't': (bid.status == ERROR && bid.error.code == TIMEOUT_ERROR) ? 1 : 0,
-        'wb': highestsBid.bidId === bid.bidId ? 1 : 0,
-        'mi': bid.bidResponse ? (bid.bidResponse.mi || undefined) : undefined,
-        'af': bid.bidResponse ? (bid.bidResponse.mediaType || undefined) : undefined,
-        'ocpm': bid.bidResponse ? bid.bidResponse.cpm : 0,
-        'ocry': bid.bidResponse ? bid.bidResponse.currency : CURRENCY_USD
-      });
-      return partnerBids;
-    }, [])
     slotsArray.push(slotObject);
     return slotsArray;
   }, []);
+
   auctionCache.sent = true;
+
   ajax(
     pixelURL,
     null,
