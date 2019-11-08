@@ -580,12 +580,19 @@ const OPEN_RTB_PROTOCOL = {
       }
 
       if (bidUserId.lipb && bidUserId.lipb.lipbid) {
-        request.user.ext.eids.push({
+        const liveIntent = {
           source: 'liveintent.com',
           uids: [{
             id: bidUserId.lipb.lipbid
           }]
-        });
+        };
+
+        if (Array.isArray(bidUserId.lipb.segments) && bidUserId.lipb.segments.length) {
+          liveIntent.ext = {
+            segments: bidUserId.lipb.segments
+          };
+        }
+        request.user.ext.eids.push(liveIntent);
       }
     }
 

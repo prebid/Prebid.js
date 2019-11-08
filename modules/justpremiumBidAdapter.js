@@ -3,7 +3,7 @@ import { deepAccess } from '../src/utils';
 
 const BIDDER_CODE = 'justpremium'
 const ENDPOINT_URL = 'https://pre.ads.justpremium.com/v/2.0/t/xhr'
-const JP_ADAPTER_VERSION = '1.4'
+const JP_ADAPTER_VERSION = '1.5'
 const pixels = []
 const TRACK_START_TIME = Date.now()
 let LAST_PAYLOAD = {}
@@ -44,7 +44,7 @@ export const spec = {
       const zone = b.params.zone
       const sizes = payload.sizes
       sizes[zone] = sizes[zone] || []
-      sizes[zone].push.apply(sizes[zone], b.sizes)
+      sizes[zone].push.apply(sizes[zone], b.mediaTypes && b.mediaTypes.banner && b.mediaTypes.banner.sizes)
     })
 
     if (deepAccess(validBidRequests[0], 'userId.pubcid')) {
@@ -85,7 +85,7 @@ export const spec = {
     bidRequests.bids.forEach(adUnit => {
       let bid = findBid(adUnit.params, body.bid)
       if (bid) {
-        let size = (adUnit.sizes && adUnit.sizes.length && adUnit.sizes[0]) || []
+        let size = (adUnit.mediaTypes && adUnit.mediaTypes.banner && adUnit.mediaTypes.banner.sizes && adUnit.mediaTypes.banner.sizes.length && adUnit.mediaTypes.banner.sizes[0]) || []
         let bidResponse = {
           requestId: adUnit.bidId,
           creativeId: bid.id,
@@ -101,7 +101,6 @@ export const spec = {
         bidResponses.push(bidResponse)
       }
     })
-
     return bidResponses
   },
 

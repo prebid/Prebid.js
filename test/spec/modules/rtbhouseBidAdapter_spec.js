@@ -19,7 +19,11 @@ describe('RTBHouseAdapter', () => {
         'region': 'prebid-eu'
       },
       'adUnitCode': 'adunit-code',
-      'sizes': [[300, 250], [300, 600]],
+      'mediaTypes': {
+        'banner': {
+          'sizes': [[300, 250], [300, 600]],
+        }
+      },
       'bidId': '30b31c1838de1e',
       'bidderRequestId': '22edbae2733bf6',
       'auctionId': '1d1a030790a475'
@@ -27,6 +31,13 @@ describe('RTBHouseAdapter', () => {
 
     it('should return true when required params found', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
+    });
+
+    it('Checking backward compatibility. should return true', function () {
+      let bid2 = Object.assign({}, bid);
+      delete bid2.mediaTypes;
+      bid2.sizes = [[300, 250], [300, 600]];
+      expect(spec.isBidRequestValid(bid2)).to.equal(true);
     });
 
     it('should return false when required params are not passed', function () {
@@ -49,7 +60,11 @@ describe('RTBHouseAdapter', () => {
           'test': 1
         },
         'adUnitCode': 'adunit-code',
-        'sizes': [[300, 250], [300, 600]],
+        'mediaTypes': {
+          'banner': {
+            'sizes': [[300, 250], [300, 600]],
+          }
+        },
         'bidId': '30b31c1838de1e',
         'bidderRequestId': '22edbae2733bf6',
         'auctionId': '1d1a030790a475',
