@@ -5,7 +5,7 @@ import * as bidderFactory from 'src/adapters/bidderFactory';
 import { deepClone } from 'src/utils';
 import { config } from 'src/config';
 
-const ENDPOINT = '//hb.1ad4good.org/prebid';
+const ENDPOINT = 'https://hb.1ad4good.org/prebid';
 
 describe('AdforgoodAdapter', function () {
   const adapter = newBidder(spec);
