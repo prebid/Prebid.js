@@ -1,5 +1,7 @@
 {
   "userId": [
+    "unifiedIdSystem",
+    "pubCommonIdSystem",
     "digiTrustIdSystem",
     "id5IdSystem",
     "criteortusIdSystem",
