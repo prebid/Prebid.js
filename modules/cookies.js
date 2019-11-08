@@ -27,7 +27,7 @@ export function setConfig (config) {
   // default values
   if (typeof config !== 'object') config = {}
   config.namespace = config.namespace || 'prebid.'
-  config.data = config.data || getCookieObj(document, config.namespace)
+  config.data = config.data || getCookieObj(document)
   config.from = Array.isArray(config.from)
     ? config.from
     : (config.from ? [ config.from ] : [ 'bidResponse', 'creative' ])
