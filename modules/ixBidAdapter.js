@@ -6,7 +6,6 @@ import { registerBidder } from '../src/adapters/bidderFactory';
 
 const BIDDER_CODE = 'ix';
 const BANNER_SECURE_BID_URL = 'https://as-sec.casalemedia.com/cygnus';
-const BANNER_INSECURE_BID_URL = 'http://as.casalemedia.com/cygnus';
 const SUPPORTED_AD_TYPES = [BANNER];
 const ENDPOINT_VERSION = 7.2;
 const CENT_TO_DOLLAR_FACTOR = 100;
@@ -188,10 +187,7 @@ export const spec = {
     let validBidRequest = null;
     let bannerImp = null;
 
-    // Always start by assuming the protocol is HTTPS. This way, it will work
-    // whether the page protocol is HTTP or HTTPS. Then check if the page is
-    // actually HTTP.If we can guarantee it is, then, and only then, set protocol to
-    // HTTP.
+    // Always use secure HTTPS protocol.
     let baseUrl = BANNER_SECURE_BID_URL;
 
     for (let i = 0; i < validBidRequests.length; i++) {
@@ -258,10 +254,6 @@ export const spec = {
 
       if (options.refererInfo) {
         r.site.page = options.refererInfo.referer;
-
-        if (options.refererInfo.referer && options.refererInfo.referer.indexOf('https') !== 0) {
-          baseUrl = BANNER_INSECURE_BID_URL;
-        }
       }
     }
 

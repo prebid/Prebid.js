@@ -41,7 +41,7 @@ function _getBrowserParams(topWindowUrl) {
   try {
     topWindow = global.top;
     topScreen = topWindow.screen;
-    topUrl = topWindowUrl || utils.getTopWindowUrl();
+    topUrl = topWindowUrl || '';
   } catch (error) {
     utils.logError(error);
     return browserParams
@@ -75,22 +75,20 @@ function getWrapperCode(wrapper, data) {
   return wrapper.replace('AD_JSON', window.btoa(JSON.stringify(data)))
 }
 
-function _getTradeDeskIDParam(bidRequest) {
+function _getTradeDeskIDParam(userId) {
   const unifiedIdObj = {};
-  if (bidRequest.userId && bidRequest.userId.tdid) {
-    unifiedIdObj.tdid = bidRequest.userId.tdid;
+  if (userId.tdid) {
+    unifiedIdObj.tdid = userId.tdid;
   }
   return unifiedIdObj;
 }
 
-// TODO: use getConfig()
-function _getDigiTrustQueryParams() {
-  function getDigiTrustId () {
-    var digiTrustUser = (window.DigiTrust && window.DigiTrust.getUser) ? window.DigiTrust.getUser(DT_CREDENTIALS) : {};
-    return (digiTrustUser && digiTrustUser.success && digiTrustUser.identity) || '';
-  };
-
-  let digiTrustId = getDigiTrustId();
+function _getDigiTrustQueryParams(userId) {
+  let digiTrustId = userId.digitrustid && userId.digitrustid.data;
+  if (!digiTrustId) {
+    const digiTrustUser = (window.DigiTrust && window.DigiTrust.getUser) ? window.DigiTrust.getUser(DT_CREDENTIALS) : {};
+    digiTrustId = (digiTrustUser && digiTrustUser.success && digiTrustUser.identity) || '';
+  }
   // Verify there is an ID and this user has not opted out
   if (!digiTrustId || (digiTrustId.privacy && digiTrustId.privacy.optout)) {
     return {};
@@ -137,15 +135,17 @@ function isBidRequestValid (bid) {
  */
 function buildRequests (validBidRequests, bidderRequest) {
   const bids = [];
-  const gdprConsent = Object.assign({ consentString: null, gdprApplies: true }, bidderRequest && bidderRequest.gdprConsent)
+  const gdprConsent = bidderRequest && bidderRequest.gdprConsent;
   utils._each(validBidRequests, bidRequest => {
     const timeout = config.getConfig('bidderTimeout');
     const {
       bidId,
       params = {},
-      transactionId
+      transactionId,
+      userId = {}
     } = bidRequest;
     const data = {};
+    const sizes = bidRequest.mediaTypes && bidRequest.mediaTypes.banner && bidRequest.mediaTypes.banner.sizes;
     const topWindowUrl = bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer;
     if (pageViewId) {
       data.pv = pageViewId
@@ -165,8 +165,10 @@ function buildRequests (validBidRequests, bidderRequest) {
       data.ni = parseInt(params.ICV, 10);
       data.pi = 5;
     }
-    data.gdprApplies = gdprConsent.gdprApplies;
-    if (gdprConsent.gdprApplies) {
+    if (gdprConsent) {
+      data.gdprApplies = gdprConsent.gdprApplies ? 1 : 0;
+    }
+    if (data.gdprApplies) {
       data.gdprConsent = gdprConsent.consentString;
     }
 
@@ -176,10 +178,10 @@ function buildRequests (validBidRequests, bidderRequest) {
       tId: transactionId,
       pi: data.pi,
       selector: params.selector,
-      sizes: bidRequest.sizes || bidRequest.mediatype[banner].sizes,
+      sizes: sizes || bidRequest.sizes,
       url: BID_ENDPOINT,
       method: 'GET',
-      data: Object.assign(data, _getBrowserParams(topWindowUrl), _getDigiTrustQueryParams(), _getTradeDeskIDParam(bidRequest))
+      data: Object.assign(data, _getBrowserParams(topWindowUrl), _getDigiTrustQueryParams(userId), _getTradeDeskIDParam(userId))
     })
   });
   return bids;
@@ -222,7 +224,7 @@ function interpretResponse (serverResponse, bidRequest) {
   let [width, height] = sizes[0].split('x')
 
   // return 1x1 when breakout expected
-  if (product === 5 && includes(sizes, '1x1')) {
+  if ((product === 2 || product === 5) && includes(sizes, '1x1')) {
     width = '1'
     height = '1'
   }

@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import {spec} from 'modules/spotxBidAdapter';
+import {spec, GOOGLE_CONSENT} from 'modules/spotxBidAdapter';
 
 describe('the spotx adapter', function () {
   function getValidBidObject() {
@@ -142,23 +142,74 @@ describe('the spotx adapter', function () {
         outstream_function: '987',
         custom: {bar: 'foo'},
         price_floor: 123,
-        start_delay: true
+        start_delay: true,
+        number_of_ads: 2,
+        spotx_all_google_consent: 1
       };
+
+      bid.userId = {
+        id5id: 'id5id_1'
+      };
+
+      bid.crumbs = {
+        pubcid: 'pubcid_1'
+      };
+
+      bid.schain = {
+        complete: 1,
+        nodes: [
+          {
+            asi: 'indirectseller.com',
+            sid: '00001',
+            hp: 1
+          }
+        ]
+      }
 
       request = spec.buildRequests([bid], bidRequestObj)[0];
       expect(request.data.id).to.equal(54321);
       expect(request.data.imp.video.ext).to.deep.equal({
         ad_volume: 1,
-        ad_unit: 'incontent',
         hide_skin: 1,
+        ad_unit: 'incontent',
         outstream_options: {foo: 'bar'},
         outstream_function: '987',
         custom: {bar: 'foo'},
         sdk_name: 'Prebid 1+',
         versionOrtb: '2.3'
       });
+
       expect(request.data.imp.video.startdelay).to.equal(1);
       expect(request.data.imp.bidfloor).to.equal(123);
+      expect(request.data.ext).to.deep.equal({
+        number_of_ads: 2,
+        wrap_response: 1
+      });
+      expect(request.data.user.ext).to.deep.equal({
+        consented_providers_settings: GOOGLE_CONSENT,
+        eids: [{
+          source: 'id5-sync.com',
+          uids: [{
+            id: 'id5id_1'
+          }]
+        }],
+        fpc: 'pubcid_1'
+      })
+
+      expect(request.data.source).to.deep.equal({
+        ext: {
+          schain: {
+            complete: 1,
+            nodes: [
+              {
+                asi: 'indirectseller.com',
+                sid: '00001',
+                hp: 1
+              }
+            ]
+          }
+        }
+      })
     });
 
     it('should process premarket bids', function() {
