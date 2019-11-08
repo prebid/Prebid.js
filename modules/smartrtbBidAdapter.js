@@ -1,4 +1,6 @@
+
 import * as utils from '../src/utils';
+import { config } from '../src/config';
 import {registerBidder} from '../src/adapters/bidderFactory';
 const BIDDER_CODE = 'smartrtb';
 
@@ -14,6 +16,7 @@ function getDomain () {
 
 export const spec = {
   code: BIDDER_CODE,
+  supportedMediaTypes: [ 'banner', 'video' ],
   aliases: ['smrtb'],
   isBidRequestValid: function(bid) {
     return (bid.params.pubId !== null &&
@@ -25,9 +28,11 @@ export const spec = {
       bidderRequest.refererInfo.stack ? bidderRequest.refererInfo
       : [])
 
+    let spb = (config.getConfig('userSync') && config.getConfig('userSync').syncsPerBidder)
+      ? config.getConfig('userSync').syncsPerBidder : 5
+
     const payload = {
       start_time: utils.timestamp(),
-      tmax: 120,
       language: window.navigator.userLanguage || window.navigator.language,
       site: {
         domain: getDomain(),
@@ -36,7 +41,9 @@ export const spec = {
         https: (window.location.protocol === 'https:'),
         referrer: bidderRequest.refererInfo.referer
       },
-      imps: []
+      imps: [],
+      user_ids: validBidRequests[0].userId,
+      sync_limit: spb
     };
 
     if (bidderRequest && bidderRequest.gdprConsent) {
@@ -50,24 +57,30 @@ export const spec = {
       let req = validBidRequests[x]
 
       payload.imps.push({
-        pub_id: req.params.pubId,
-        med_id: req.params.medId,
         zone_id: req.params.zoneId,
         bid_id: req.bidId,
         imp_id: req.transactionId,
         sizes: req.sizes,
-        force_bid: req.params.forceBid
+        force_bid: req.params.forceBid,
+        media_types: utils.deepAccess(req, 'mediaTypes'),
+        has_renderer: (req.renderer !== undefined)
       });
     }
 
+    let params = validBidRequests[0].params
+    let url = params.endpoint ? params.endpoint : '//market-global.smrtb.com/json/publisher/prebid'
     return {
       method: 'POST',
-      url: '//pubs.smrtb.com/json/publisher/prebid',
+      url: url,
       data: JSON.stringify(payload)
     };
   },
   interpretResponse: function(serverResponse, bidRequest) {
     const bidResponses = [];
+    if (!serverResponse || !serverResponse.body) {
+      return bidResponses
+    }
+
     let res = serverResponse.body;
     if (!res.bids || !res.bids.length) {
       return []
@@ -82,8 +95,12 @@ export const spec = {
         width: bid.w,
         height: bid.h,
         ad: bid.html,
+        vastUrl: bid.vast_url,
+        vastXml: bid.vast_xml,
+        mediaType: bid.html ? 'banner' : 'video',
         ttl: 120,
         creativeId: bid.crid,
+        dealId: bid.deal_id,
         netRevenue: true,
         currency: 'USD'
       })
@@ -93,16 +110,23 @@ export const spec = {
   },
   getUserSyncs: function(syncOptions, serverResponses) {
     const syncs = []
-    if (syncOptions.iframeEnabled) {
-      syncs.push({
-        type: 'iframe',
-        url: '//ads.smrtb.com/sync'
-      });
-    } else if (syncOptions.pixelEnabled) {
-      syncs.push({
-        type: 'image',
-        url: '//ads.smrtb.com/sync'
-      });
+
+    if (!serverResponses.length || !serverResponses[0].body) {
+      return syncs
+    }
+
+    let pixels = serverResponses[0].body.pixels
+    if (!pixels || !pixels.length) {
+      return syncs
+    }
+
+    for (let x = 0; x < pixels.length; x++) {
+      let pixel = pixels[x]
+
+      if ((pixel.type === 'iframe' && syncOptions.iframeEnabled) ||
+        (pixel.type === 'image' && syncOptions.pixelEnabled)) {
+        syncs.push(pixel)
+      }
     }
     return syncs;
   }

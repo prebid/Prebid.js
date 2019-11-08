@@ -15,7 +15,6 @@ describe('LockerDomeAdapter', function () {
     },
     adUnitCode: 'ad-1',
     transactionId: 'b55e97d7-792c-46be-95a5-3df40b115734',
-    sizes: [[300, 250]],
     bidId: '2652ca954bce9',
     bidderRequestId: '14a54fade69854',
     auctionId: 'd4c83108-615d-4c2c-9384-dac9ffd4fd72'
@@ -31,7 +30,6 @@ describe('LockerDomeAdapter', function () {
     },
     adUnitCode: 'ad-2',
     transactionId: '73459f05-c482-4706-b2b7-72e6f6264ce6',
-    sizes: [[300, 600]],
     bidId: '4510f2834773ce',
     bidderRequestId: '14a54fade69854',
     auctionId: 'd4c83108-615d-4c2c-9384-dac9ffd4fd72'
@@ -51,18 +49,24 @@ describe('LockerDomeAdapter', function () {
 
   describe('buildRequests', function () {
     it('should generate a valid single POST request for multiple bid requests', function () {
-      const request = spec.buildRequests(bidRequests);
+      const bidderRequest = {
+        refererInfo: {
+          canonicalUrl: 'https://example.com/canonical',
+          referer: 'https://example.com'
+        }
+      };
+      const request = spec.buildRequests(bidRequests, bidderRequest);
       expect(request.method).to.equal('POST');
       expect(request.url).to.equal('https://lockerdome.com/ladbid/prebid');
       expect(request.data).to.exist;
 
       const requestData = JSON.parse(request.data);
 
-      expect(requestData.url).to.equal(utils.getTopWindowLocation().href);
-      expect(requestData.referrer).to.equal(utils.getTopWindowReferrer());
-
       const bids = requestData.bidRequests;
       expect(bids).to.have.lengthOf(2);
+
+      expect(requestData.url).to.equal(encodeURIComponent(bidderRequest.refererInfo.canonicalUrl));
+      expect(requestData.referrer).to.equal(encodeURIComponent(bidderRequest.refererInfo.referer));
 
       expect(bids[0].requestId).to.equal('2652ca954bce9');
       expect(bids[0].adUnitCode).to.equal('ad-1');
@@ -84,6 +88,10 @@ describe('LockerDomeAdapter', function () {
         gdprConsent: {
           consentString: 'AAABBB',
           gdprApplies: true
+        },
+        refererInfo: {
+          canonicalUrl: 'https://example.com/canonical',
+          referer: 'https://example.com'
         }
       };
       const request = spec.buildRequests(bidRequests, bidderRequest);
@@ -129,7 +137,14 @@ describe('LockerDomeAdapter', function () {
         }
       };
 
-      const request = spec.buildRequests(bidRequests);
+      const bidderRequest = {
+        refererInfo: {
+          canonicalUrl: 'https://example.com/canonical',
+          referer: 'https://example.com'
+        }
+      };
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
       const interpretedResponse = spec.interpretResponse(serverResponse, request);
 
       expect(interpretedResponse).to.have.lengthOf(2);

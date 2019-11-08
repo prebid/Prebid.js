@@ -15,8 +15,11 @@ const LOG_ERROR_MESS = {
   emptySeatbid: 'Seatbid array from response has an empty item',
   emptyResponse: 'Response is empty',
   hasEmptySeatbidArray: 'Response has empty seatbid array',
-  hasNoArrayOfBids: 'Seatbid from response has no array of bid objects - '
+  hasNoArrayOfBids: 'Seatbid from response has no array of bid objects - ',
+  notAllowedCurrency: 'Currency is not supported - ',
+  currencyMismatch: 'Currency from the request is not match currency from the response - '
 };
+const currencyWhiteList = ['EUR', 'USD', 'GBP', 'PLN'];
 export const spec = {
   code: BIDDER_CODE,
   isBidRequestValid: function(bid) {
@@ -33,6 +36,11 @@ export const spec = {
       config.getConfig('currency.adServerCurrency') ||
       DEFAULT_CUR;
     let reqId;
+
+    if (currencyWhiteList.indexOf(currency) === -1) {
+      utils.logError(LOG_ERROR_MESS.notAllowedCurrency + currency);
+      return;
+    }
 
     bids.forEach(bid => {
       reqId = bid.bidderRequestId;
@@ -78,7 +86,7 @@ export const spec = {
 
     if (bidderRequest) {
       if (bidderRequest.refererInfo && bidderRequest.refererInfo.referer) {
-        payload.u = encodeURIComponent(bidderRequest.refererInfo.referer);
+        payload.u = bidderRequest.refererInfo.referer;
       }
       if (bidderRequest.gdprConsent) {
         if (bidderRequest.gdprConsent.consentString) {
@@ -158,43 +166,48 @@ function _addBidResponse(serverBid, bidsMap, currency, bidResponses, bidsWithout
   if (!serverBid.auid) errorMessage = LOG_ERROR_MESS.noAuid + JSON.stringify(serverBid);
   if (!serverBid.adm) errorMessage = LOG_ERROR_MESS.noAdm + JSON.stringify(serverBid);
   else {
+    const reqCurrency = currency || DEFAULT_CUR;
     const awaitingBids = bidsMap[serverBid.auid];
     if (awaitingBids) {
-      const sizeId = bidsWithoutSizeMatching ? `${serverBid.w}x${serverBid.h}` : Object.keys(awaitingBids)[0];
-      if (awaitingBids[sizeId]) {
-        const slot = awaitingBids[sizeId][0];
-
-        const bid = slot.bids.shift();
-        bidResponses.push({
-          requestId: bid.bidId,
-          bidderCode: spec.code,
-          cpm: serverBid.price,
-          width: serverBid.w,
-          height: serverBid.h,
-          creativeId: serverBid.auid,
-          currency: currency || DEFAULT_CUR,
-          netRevenue: true,
-          ttl: TIME_TO_LIVE,
-          ad: serverBid.adm,
-          dealId: serverBid.dealid
-        });
-
-        if (!slot.bids.length) {
-          slot.parents.forEach(({parent, key, uid}) => {
-            const index = parent[key].indexOf(slot);
-            if (index > -1) {
-              parent[key].splice(index, 1);
-            }
-            if (!parent[key].length) {
-              delete parent[key];
-              if (!utils.getKeys(parent).length) {
-                delete bidsMap[uid];
-              }
-            }
-          });
-        }
+      if (serverBid.cur && serverBid.cur !== reqCurrency) {
+        errorMessage = LOG_ERROR_MESS.currencyMismatch + reqCurrency + ' - ' + serverBid.cur;
       } else {
-        bidsWithoutSizeMatching && bidsWithoutSizeMatching.push(serverBid);
+        const sizeId = bidsWithoutSizeMatching ? `${serverBid.w}x${serverBid.h}` : Object.keys(awaitingBids)[0];
+        if (awaitingBids[sizeId]) {
+          const slot = awaitingBids[sizeId][0];
+
+          const bid = slot.bids.shift();
+          bidResponses.push({
+            requestId: bid.bidId,
+            bidderCode: spec.code,
+            cpm: serverBid.price,
+            width: serverBid.w,
+            height: serverBid.h,
+            creativeId: serverBid.auid,
+            currency: reqCurrency,
+            netRevenue: true,
+            ttl: TIME_TO_LIVE,
+            ad: serverBid.adm,
+            dealId: serverBid.dealid
+          });
+
+          if (!slot.bids.length) {
+            slot.parents.forEach(({parent, key, uid}) => {
+              const index = parent[key].indexOf(slot);
+              if (index > -1) {
+                parent[key].splice(index, 1);
+              }
+              if (!parent[key].length) {
+                delete parent[key];
+                if (!utils.getKeys(parent).length) {
+                  delete bidsMap[uid];
+                }
+              }
+            });
+          }
+        } else {
+          bidsWithoutSizeMatching && bidsWithoutSizeMatching.push(serverBid);
+        }
       }
     } else {
       errorMessage = LOG_ERROR_MESS.noPlacementCode + serverBid.auid;
