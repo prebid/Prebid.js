@@ -21,7 +21,11 @@ describe('gumgumAdapter', function () {
         'bidfloor': 0.05
       },
       'adUnitCode': 'adunit-code',
-      'sizes': [[300, 250], [300, 600], [1, 1]],
+      'mediaTypes': {
+        'banner': {
+          sizes: [[300, 250], [300, 600], [1, 1]]
+        }
+      },
       'bidId': '30b31c1838de1e',
       'bidderRequestId': '22edbae2733bf6',
       'auctionId': '1d1a030790a475',
@@ -113,7 +117,7 @@ describe('gumgumAdapter', function () {
       const gdprConsent = { consentString: 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==', gdprApplies: true };
       const fakeBidRequest = { gdprConsent: gdprConsent };
       const bidRequest = spec.buildRequests(bidRequests, fakeBidRequest)[0];
-      expect(bidRequest.data.gdprApplies).to.eq(true);
+      expect(bidRequest.data.gdprApplies).to.eq(1);
       expect(bidRequest.data.gdprConsent).to.eq('BOJ/P2HOJ/P2HABABMAAAAAZ+A==');
     });
     it('should handle gdprConsent is present but values are undefined case', function () {
@@ -245,8 +249,8 @@ describe('gumgumAdapter', function () {
         'thms': 10000
       }
       let result = spec.interpretResponse({ body: inscreenServerResponse }, inscreenBidRequest);
-      expect(result[0].width).to.equal(inscreenBidRequest.sizes[0][0].toString());
-      expect(result[0].height).to.equal(inscreenBidRequest.sizes[0][1].toString());
+      expect(result[0].width).to.equal('1');
+      expect(result[0].height).to.equal('1');
     })
   })
   describe('getUserSyncs', function () {

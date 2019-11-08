@@ -7,6 +7,8 @@ describe('YieldmoAdapter', function () {
   const adapter = newBidder(spec);
   const ENDPOINT = 'https://ads.yieldmo.com/exchange/prebid';
 
+  let tdid = '8d146286-91d4-4958-aff4-7e489dd1abd6';
+
   let bid = {
     bidder: 'yieldmo',
     params: {
@@ -19,6 +21,9 @@ describe('YieldmoAdapter', function () {
     auctionId: '1d1a030790a475',
     crumbs: {
       pubcid: 'c604130c-0144-4b63-9bf2-c2bd8c8d86da'
+    },
+    userId: {
+      tdid,
     }
   };
   let bidArray = [bid];
@@ -109,7 +114,7 @@ describe('YieldmoAdapter', function () {
       expect(data.hasOwnProperty('h')).to.be.true;
       expect(data.hasOwnProperty('w')).to.be.true;
       expect(data.hasOwnProperty('pubcid')).to.be.true;
-    })
+    });
 
     it('should add pubcid as parameter of request', function () {
       const pubcidBid = {
@@ -126,7 +131,24 @@ describe('YieldmoAdapter', function () {
       };
       const data = spec.buildRequests([pubcidBid]).data;
       expect(data.pubcid).to.deep.equal('c604130c-0144-4b63-9bf2-c2bd8c8d86da2');
-    })
+    });
+
+    it('should add unified id as parameter of request', function () {
+      const unifiedIdBid = {
+        bidder: 'yieldmo',
+        params: {},
+        adUnitCode: 'adunit-code',
+        sizes: [[300, 250], [300, 600]],
+        bidId: '30b31c1838de1e',
+        bidderRequestId: '22edbae2733bf6',
+        auctionId: '1d1a030790a475',
+        userId: {
+          tdid,
+        }
+      };
+      const data = spec.buildRequests([unifiedIdBid]).data;
+      expect(data.tdid).to.deep.equal(tdid);
+    });
   });
 
   describe('interpretResponse', function () {

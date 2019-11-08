@@ -102,18 +102,10 @@ export const spec = {
   },
 
   getUserSyncs: function (syncOptions) {
-    if (syncOptions.iframeEnabled) {
-      return [{
-        type: 'iframe',
-        url: '//acdn.adnxs.com/ib/static/usersync/v3/async_usersync.html'
-      }];
-    }
-    if (syncOptions.pixelEnabled) {
-      return [{
-        type: 'image',
-        url: '//ib.adnxs.com/getuidnb?https://ads.playground.xyz/usersync?partner=appnexus&uid=$UID'
-      }];
-    }
+    return [{
+      type: 'image',
+      url: '//ib.adnxs.com/getuidnb?https://ads.playground.xyz/usersync?partner=appnexus&uid=$UID'
+    }];
   }
 }
 
@@ -174,7 +166,7 @@ function isMobile() {
 }
 
 function isConnectedTV() {
-  return (/(smart[-]?tv|hbbtv|appletv|googletv|hdmi|netcast\.tv|viera|nettv|roku|\bdtv\b|sonydtv|inettvbrowser|\btv\b)/i).test(global.navigator.userAgent);
+  return (/(smart[-]?tv|hbbtv|appletv|googletv|hdmi|netcast\.tv|viera|nettv|roku|\bdtv\b|sonydtv|inettvbrowser|\btv\b)/i).test(navigator.userAgent);
 }
 
 registerBidder(spec);
