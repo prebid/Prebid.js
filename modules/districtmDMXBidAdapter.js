@@ -103,18 +103,17 @@ export const spec = {
       return obj;
     });
 
-    if(tosendtags.length <= 5) {
+    if (tosendtags.length <= 5) {
       dmxRequest.imp = tosendtags;
       return {
         method: 'POST',
         url: DMXURI,
         data: JSON.stringify(dmxRequest),
         bidderRequest
-       }
-    }else{
+      }
+    } else {
       return upto5(tosendtags, dmxRequest, bidderRequest, DMXURI);
     }
-
   },
   test() {
     return window.location.href.indexOf('dmTest=true') !== -1 ? 1 : 0;
@@ -129,7 +128,7 @@ export const spec = {
   }
 }
 
-export function cleanSizes(sizes, value){
+export function cleanSizes(sizes, value) {
   const supportedSize = [
     {
       size: [300, 250],
@@ -165,49 +164,49 @@ export function cleanSizes(sizes, value){
     },
   ];
   let newArray = shuffle(sizes, supportedSize);
-  switch(value) {
+  switch (value) {
     case 'w':
       return newArray[0][0] || 0;
-    break;
     case 'h':
       return newArray[0][1] || 0;
-    break;
     case 'size':
       return newArray;
     default:
-      return [];
+      return newArray;
   }
 }
 
-export function shuffle(sizes, list){
-    let remove_sizes = sizes.filter( size => {
-      return list.map( l => `${l.size[0]}x${l.size[1]}`).includes(`${size[0]}x${size[1]}`)
-    })
-  let re_order = remove_sizes.reduce((results, current) => {
-      if(results.length === 0) {
-        results.push(current);
-        return results;
-      }
+export function shuffle(sizes, list) {
+  let removeSizes = sizes.filter(size => {
+    return !list.map(l => `${l.size[0]}x${l.size[1]}`).includes(`${size[0]}x${size[1]}`)
+  })
+  let reOrder = sizes.reduce((results, current) => {
+    if (results.length === 0) {
       results.push(current);
-      results = list.filter( l => results.map( r => `${r[0]}x${r[1]}`).includes(`${l.size[0]}x${l.size[1]}`))
-      results = results.sort(function(a, b) {
-        return b.s - a.s;
-      })
-    return results.map( r => r.size);
+      return results;
+    }
+    results.push(current);
+    results = list.filter(l => results.map(r => `${r[0]}x${r[1]}`).includes(`${l.size[0]}x${l.size[1]}`))
+    results = results.sort(function(a, b) {
+      return b.s - a.s;
+    })
+    return results.map(r => r.size);
   }, [])
-  return re_order;
+  return [...reOrder, ...removeSizes];
 }
 
-export function upto5(allimps, dmxRequest, bidderRequest, DMXURI){
-  let start = 0, step = 5, req = [];
-  while(allimps.length !== 0) {
-    if(allimps.length >= 5) {
+export function upto5(allimps, dmxRequest, bidderRequest, DMXURI) {
+  let start = 0;
+  let step = 5;
+  let req = [];
+  while (allimps.length !== 0) {
+    if (allimps.length >= 5) {
       req.push(allimps.splice(start, step))
-    }else {
+    } else {
       req.push(allimps.splice(start, allimps.length))
     }
   }
-  return req.map( r => {
+  return req.map(r => {
     dmxRequest.imp = r;
     return {
       method: 'POST',
@@ -217,7 +216,6 @@ export function upto5(allimps, dmxRequest, bidderRequest, DMXURI){
     }
   })
 }
-
 
 /**
  * Function matchRequest(id: string, BidRequest: object)
