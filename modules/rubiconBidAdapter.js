@@ -260,6 +260,10 @@ export const spec = {
         utils.deepSetValue(data, 'regs.coppa', 1);
       }
 
+      if (bidRequest.schain && hasValidSupplyChainParams(bidRequest.schain)) {
+        utils.deepSetValue(data, 'source.ext.schain', bidRequest.schain);
+      }
+
       return {
         method: 'POST',
         url: VIDEO_ENDPOINT,
@@ -277,7 +281,7 @@ export const spec = {
           url: FASTLANE_ENDPOINT,
           data: spec.getOrderedParams(bidParams).reduce((paramString, key) => {
             const propValue = bidParams[key];
-            return ((utils.isStr(propValue) && propValue !== '') || utils.isNumber(propValue)) ? `${paramString}${key}=${encodeURIComponent(propValue)}&` : paramString;
+            return ((utils.isStr(propValue) && propValue !== '') || utils.isNumber(propValue)) ? `${paramString}${encodeParam(key, propValue)}&` : paramString;
           }, '') + `slots=1&rand=${Math.random()}`,
           bidRequest
         };
@@ -308,7 +312,7 @@ export const spec = {
             url: FASTLANE_ENDPOINT,
             data: spec.getOrderedParams(combinedSlotParams).reduce((paramString, key) => {
               const propValue = combinedSlotParams[key];
-              return ((utils.isStr(propValue) && propValue !== '') || utils.isNumber(propValue)) ? `${paramString}${key}=${encodeURIComponent(propValue)}&` : paramString;
+              return ((utils.isStr(propValue) && propValue !== '') || utils.isNumber(propValue)) ? `${paramString}${encodeParam(key, propValue)}&` : paramString;
             }, '') + `slots=${bidsInGroup.length}&rand=${Math.random()}`,
             bidRequest: bidsInGroup
           });
@@ -332,6 +336,8 @@ export const spec = {
       'p_pos',
       'gdpr',
       'gdpr_consent',
+      'rp_schain',
+      'rf',
       'tpid_tdid',
       'tpid_liveintent.com',
       'tg_v.LIseg',
@@ -482,7 +488,36 @@ export const spec = {
       data['coppa'] = 1;
     }
 
+    // if SupplyChain is supplied and contains all required fields
+    if (bidRequest.schain && hasValidSupplyChainParams(bidRequest.schain)) {
+      data.rp_schain = spec.serializeSupplyChain(bidRequest.schain);
+    }
+
     return data;
+  },
+
+  /**
+   * Serializes schain params according to OpenRTB requirements
+   * @param {Object} supplyChain
+   * @returns {String}
+   */
+  serializeSupplyChain: function (supplyChain) {
+    const supplyChainIsValid = hasValidSupplyChainParams(supplyChain);
+    if (!supplyChainIsValid) return '';
+    const { ver, complete, nodes } = supplyChain;
+    return `${ver},${complete}!${spec.serializeSupplyChainNodes(nodes)}`;
+  },
+
+  /**
+   * Properly sorts schain object params
+   * @param {Array} nodes
+   * @returns {String}
+   */
+  serializeSupplyChainNodes: function (nodes) {
+    const nodePropOrder = ['asi', 'sid', 'hp', 'rid', 'name', 'domain'];
+    return nodes.map(node => {
+      return nodePropOrder.map(prop => encodeURIComponent(node[prop] || '')).join(',');
+    }).join('!');
   },
 
   /**
@@ -980,6 +1015,35 @@ export function hasValidVideoParams(bid) {
     }
   })
   return isValid;
+}
+
+/**
+ * Make sure the required params are present
+ * @param {Object} schain
+ * @param {Bool}
+ */
+export function hasValidSupplyChainParams(schain) {
+  let isValid = false;
+  const requiredFields = ['asi', 'sid', 'hp'];
+  if (!schain.nodes) return isValid;
+  isValid = schain.nodes.reduce((status, node) => {
+    if (!status) return status;
+    return requiredFields.every(field => node[field]);
+  }, true);
+  if (!isValid) utils.logError('Rubicon: required schain params missing');
+  return isValid;
+}
+
+/**
+ * Creates a URL key value param, encoding the
+ * param unless the key is schain
+ * @param {String} key
+ * @param {String} param
+ * @returns {String}
+ */
+export function encodeParam(key, param) {
+  if (key === 'rp_schain') return `rp_schain=${param}`;
+  return `${key}=${encodeURIComponent(param)}`;
 }
 
 /**
