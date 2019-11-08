@@ -113,9 +113,10 @@ export function bidWonListener (bid, doc) {
  */
 function syncCookies (data, doc) {
   Object.keys(data).forEach((name) => {
-    if (cookieConfig.namespace === '*' || name.startsWith(cookieConfig.namespace)) 
-    setCookie(name, data[name], cookieConfig.expires, cookieConfig.sameSite, doc)
-    logMessage('Synchronizing cookies. Set "' + name + '" to "' + data[name] + '"')
+    if (cookieConfig.namespace === '*' || name.startsWith(cookieConfig.namespace)) {
+      setCookie(name, data[name], cookieConfig.expires, cookieConfig.sameSite, doc)
+      logMessage('Synchronizing cookies. Set "' + name + '" to "' + data[name] + '"')
+    }
   })
 }
 
