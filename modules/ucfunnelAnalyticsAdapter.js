@@ -37,7 +37,9 @@ export const parseAdUnitCode = function (bidResponse) {
 };
 
 export const ucfunnelAnalyticsAdapter = Object.assign(adapter({ANALYTICS_SERVER, analyticsType}), {
+
   cachedAuctions: {},
+
   initConfig(config) {
     /**
      * Required option: pbuid
@@ -53,6 +55,11 @@ export const ucfunnelAnalyticsAdapter = Object.assign(adapter({ANALYTICS_SERVER,
       logError('"options.adid" is required.');
       return false;
     }
+    analyticsOptions.sampled = true;
+    if (typeof config.options.sampling === 'number') {
+      analyticsOptions.sampled = Math.random() < parseFloat(config.options.sampling);
+    }
+
     analyticsOptions.pbuid = config.options.pbuid
     analyticsOptions.adid = config.options.adid
     analyticsOptions.server = ANALYTICS_SERVER;
@@ -71,6 +78,8 @@ export const ucfunnelAnalyticsAdapter = Object.assign(adapter({ANALYTICS_SERVER,
       version: ANALYTICS_VERSION,
       auctionId: auctionId,
       referrer: window.location.href,
+      sampling: analyticsOptions.options.sampling,
+      prebid: '$prebid.version$',
       adid: analyticsOptions.adid,
       pbuid: analyticsOptions.pbuid,
       adUnits: {},
@@ -154,16 +163,18 @@ export const ucfunnelAnalyticsAdapter = Object.assign(adapter({ANALYTICS_SERVER,
     this.sendEventMessage('imp', this.createImpressionMessage(bidWonArgs));
   },
   track({eventType, args}) {
-    switch (eventType) {
-      case BID_WON:
-        this.handleBidWon(args);
-        break;
-      case BID_TIMEOUT:
-        this.handleBidTimeout(args);
-        break;
-      case AUCTION_END:
-        this.handleAuctionEnd(args);
-        break;
+    if (analyticsOptions.sampled) {
+      switch (eventType) {
+        case BID_WON:
+          this.handleBidWon(args);
+          break;
+        case BID_TIMEOUT:
+          this.handleBidTimeout(args);
+          break;
+        case AUCTION_END:
+          this.handleAuctionEnd(args);
+          break;
+      }
     }
   },
   getAnalyticsOptions() {

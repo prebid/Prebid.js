@@ -20,6 +20,7 @@ describe('ucfunnel Prebid AnalyticsAdapter Testing', function () {
       const configOptions = {
         pbuid: pbuid,
         adid: adid,
+        sampling: 0,
       };
 
       ucfunnelAnalyticsAdapter.enableAnalytics({
@@ -184,6 +185,8 @@ describe('ucfunnel Prebid AnalyticsAdapter Testing', function () {
           pbuid: pbuid,
           adid: adid,
           // referrer: window.location.href,
+          sampling: 0,
+          prebid: '$prebid.version$',
         });
       }
 
@@ -279,7 +282,6 @@ describe('ucfunnel Prebid AnalyticsAdapter Testing', function () {
           assertHavingRequiredMessageFields(result);
           expect(result).to.deep.include({
             auctionElapsed: 100,
-            timeout: 3000,
             adUnits: {
               'adunit_1': {
                 'ucfunnel': {
@@ -302,14 +304,6 @@ describe('ucfunnel Prebid AnalyticsAdapter Testing', function () {
               'adunit_2': {
                 // this bid result exists in both bid and noBid arrays and should be treated as bid
                 'ucfunnel': {
-                  prebidWon: false,
-                  isTimeout: false,
-                  time: 120,
-                  cpm: 0.09,
-                  currency: 'USD',
-                  status: BIDDER_STATUS.BID,
-                },
-                'ucfunnelx': {
                   prebidWon: false,
                   isTimeout: true,
                   status: BIDDER_STATUS.TIMEOUT,
@@ -396,6 +390,7 @@ describe('ucfunnel Prebid AnalyticsAdapter Testing', function () {
     const configOptions = {
       pbuid: pbuid,
       adid: adid,
+      sampling: 1,
     };
 
     beforeEach(function () {
@@ -437,6 +432,7 @@ describe('ucfunnel Prebid AnalyticsAdapter Testing', function () {
     const configOptions = {
       pbuid: pbuid,
       adid: adid,
+      sampling: 0,
     };
 
     beforeEach(function () {
@@ -454,6 +450,7 @@ describe('ucfunnel Prebid AnalyticsAdapter Testing', function () {
       expect(ucfunnelAnalyticsAdapter.getAnalyticsOptions().options).to.deep.equal(configOptions);
       expect(ucfunnelAnalyticsAdapter.getAnalyticsOptions().pbuid).to.equal(configOptions.pbuid);
       expect(ucfunnelAnalyticsAdapter.getAnalyticsOptions().adid).to.equal(configOptions.adid);
+      expect(ucfunnelAnalyticsAdapter.getAnalyticsOptions().sampled).to.equal(false);
     });
 
     it('should not enable Analytics when adid is missing', function () {
@@ -474,6 +471,21 @@ describe('ucfunnel Prebid AnalyticsAdapter Testing', function () {
       };
       const validConfig = ucfunnelAnalyticsAdapter.initConfig(configOptions);
       expect(validConfig).to.equal(false);
+    });
+    it('should fall back to default value when sampling factor is not number', function () {
+      const configOptions = {
+        options: {
+          pbuid: pbuid,
+          adid: adid,
+          sampling: 'string',
+        }
+      };
+      ucfunnelAnalyticsAdapter.enableAnalytics({
+        provider: 'ucfunnelAnalytics',
+        options: configOptions
+      });
+
+      expect(ucfunnelAnalyticsAdapter.getAnalyticsOptions().sampled).to.equal(false);
     });
   });
 });
