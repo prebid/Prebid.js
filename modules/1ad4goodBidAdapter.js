@@ -1,6 +1,6 @@
 import * as utils from '../src/utils';
 import { registerBidder } from '../src/adapters/bidderFactory';
-import { BANNER, NATIVE, VIDEO, ADPOD } from '../src/mediaTypes';
+import { BANNER, VIDEO } from '../src/mediaTypes';
 import find from 'core-js/library/fn/array/find';
 import includes from 'core-js/library/fn/array/includes';
 
@@ -25,7 +25,7 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function(bid) {
-    return !!(bid.params.placementId || (bid.params.member && bid.params.invCode));
+    return !!(bid.params.placementId);
   },
 
   /**
@@ -62,9 +62,6 @@ export const spec = {
       };
     }
 
-    const memberIdBid = find(bidRequests, hasMemberId);
-    const member = memberIdBid ? parseInt(memberIdBid.params.member, 10) : 0;
-
     const payload = {
       tags: [...tags],
       user: userObj,
@@ -73,10 +70,6 @@ export const spec = {
         version: '$prebid.version$'
       }
     };
-
-    if (member > 0) {
-      payload.member_id = member;
-    }
 
     if (appDeviceObjBid) {
       payload.device = appDeviceObj
@@ -139,14 +132,8 @@ export const spec = {
     return bids;
   },
 
-  getUserSyncs: function(syncOptions) {
-    // user sync is not supported
-  },
-
   transformBidParams: function(params, isOpenRtb) {
     params = utils.convertTypes({
-      'member': 'string',
-      'invCode': 'string',
       'placementId': 'number',
       'keywords': utils.transformBidderParamKeywords
     }, params);
@@ -236,7 +223,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
     netRevenue: true,
     ttl: 300,
     adUnitCode: bidRequest.adUnitCode,
-    appnexus: {
+    ads4good: {
       buyerMemberId: rtbBid.buyer_member_id,
       dealPriority: rtbBid.deal_priority,
       dealCode: rtbBid.deal_code
@@ -255,18 +242,6 @@ function newBid(serverBid, rtbBid, bidderRequest) {
       vastImpUrl: rtbBid.notify_url,
       ttl: 3600
     });
-
-    const videoContext = utils.deepAccess(bidRequest, 'mediaTypes.video.context');
-    if (videoContext === ADPOD) {
-      // adpods are not supported atm
-    }
-
-    // This supports Outstream Video
-    if (rtbBid.renderer_url) {
-      // outstream is not supported ATM
-    }
-  } else if (rtbBid.rtb[NATIVE]) {
-    // NATIVE NOT SUPPORTED atm
   } else {
     Object.assign(bid, {
       width: rtbBid.rtb.banner.width,
@@ -293,8 +268,6 @@ function bidToTag(bid) {
   tag.uuid = bid.bidId;
   if (bid.params.placementId) {
     tag.id = parseInt(bid.params.placementId, 10);
-  } else {
-    tag.code = bid.params.invCode;
   }
   if (bid.params.cpm) {
     tag.cpm = bid.params.cpm;
@@ -334,17 +307,6 @@ function bidToTag(bid) {
       keywords.forEach(deleteValues);
     }
     tag.keywords = keywords;
-  }
-
-  if (bid.mediaType === NATIVE || utils.deepAccess(bid, `mediaTypes.${NATIVE}`)) {
-    tag.ad_types.push(NATIVE);
-    if (tag.sizes.length === 0) {
-      tag.sizes = transformSizes([1, 1]);
-    }
-
-    if (bid.nativeParams) {
-      // native is not supported atm
-    }
   }
 
   const videoMediaType = utils.deepAccess(bid, `mediaTypes.${VIDEO}`);
@@ -408,10 +370,6 @@ function hasUserInfo(bid) {
   return !!bid.params.user;
 }
 
-function hasMemberId(bid) {
-  return !!parseInt(bid.params.member, 10);
-}
-
 function hasAppDeviceInfo(bid) {
   if (bid.params) {
     return !!bid.params.app
@@ -433,8 +391,6 @@ function parseMediaType(rtbBid) {
   const adType = rtbBid.ad_type;
   if (adType === VIDEO) {
     return VIDEO;
-  } else if (adType === NATIVE) {
-    return NATIVE;
   } else {
     return BANNER;
   }

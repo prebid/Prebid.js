@@ -33,17 +33,6 @@ describe('AdforgoodAdapter', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
-    it('should return true when required params found', function () {
-      let bid = Object.assign({}, bid);
-      delete bid.params;
-      bid.params = {
-        'member': '1234',
-        'invCode': 'ABCD'
-      };
-
-      expect(spec.isBidRequestValid(bid)).to.equal(true);
-    });
-
     it('should return false when required params are not passed', function () {
       let bid = Object.assign({}, bid);
       delete bid.params;
@@ -98,7 +87,7 @@ describe('AdforgoodAdapter', function () {
     });
 
     it('should populate the ad_types array on all requests', function () {
-      ['banner', 'video', 'native'].forEach(type => {
+      ['banner', 'video'].forEach(type => {
         const bidRequest = Object.assign({}, bidRequests[0]);
         bidRequest.mediaTypes = {};
         bidRequest.mediaTypes[type] = {};
@@ -215,29 +204,29 @@ describe('AdforgoodAdapter', function () {
       });
     });
 
-    it('should always populated tags[].sizes with 1,1 for native if otherwise not defined', function () {
-      let bidRequest = Object.assign({},
-        bidRequests[0],
-        {
-          mediaType: 'native',
-          nativeParams: {
-            image: { required: true }
-          }
-        }
-      );
-      bidRequest.sizes = [[150, 100], [300, 250]];
+    // it('should always populated tags[].sizes with 1,1 for native if otherwise not defined', function () {
+    //   let bidRequest = Object.assign({},
+    //     bidRequests[0],
+    //     {
+    //       mediaType: 'native',
+    //       nativeParams: {
+    //         image: { required: true }
+    //       }
+    //     }
+    //   );
+    //   bidRequest.sizes = [[150, 100], [300, 250]];
 
-      let request = spec.buildRequests([bidRequest]);
-      let payload = JSON.parse(request.data);
-      expect(payload.tags[0].sizes).to.deep.equal([{width: 150, height: 100}, {width: 300, height: 250}]);
+    //   let request = spec.buildRequests([bidRequest]);
+    //   let payload = JSON.parse(request.data);
+    //   expect(payload.tags[0].sizes).to.deep.equal([{width: 150, height: 100}, {width: 300, height: 250}]);
 
-      delete bidRequest.sizes;
+    //   delete bidRequest.sizes;
 
-      request = spec.buildRequests([bidRequest]);
-      payload = JSON.parse(request.data);
+    //   request = spec.buildRequests([bidRequest]);
+    //   payload = JSON.parse(request.data);
 
-      expect(payload.tags[0].sizes).to.deep.equal([{width: 1, height: 1}]);
-    });
+    //   expect(payload.tags[0].sizes).to.deep.equal([{width: 1, height: 1}]);
+    // });
 
     it('should convert keyword params to proper form and attaches to request', function () {
       let bidRequest = Object.assign({},
@@ -466,7 +455,7 @@ describe('AdforgoodAdapter', function () {
           'ttl': 300,
           'netRevenue': true,
           'adUnitCode': 'code',
-          'appnexus': {
+          'ads4good': {
             'buyerMemberId': 958
           }
         }
@@ -539,7 +528,7 @@ describe('AdforgoodAdapter', function () {
         }]
       }
       let result = spec.interpretResponse({ body: responseWithDeal }, {bidderRequest});
-      expect(Object.keys(result[0].appnexus)).to.include.members(['buyerMemberId', 'dealPriority', 'dealCode']);
+      expect(Object.keys(result[0].ads4good)).to.include.members(['buyerMemberId', 'dealPriority', 'dealCode']);
     });
 
     it('should add advertiser id', function() {
