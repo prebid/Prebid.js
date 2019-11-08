@@ -309,7 +309,7 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
         auctionManager.addWinningBid(bid);
 
         // emit 'bid won' event here
-        events.emit(BID_WON, bid);
+        events.emit(BID_WON, bid, doc);
 
         const { height, width, ad, mediaType, adUrl, renderer } = bid;
 
