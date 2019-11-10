@@ -6,7 +6,7 @@
 import events from './events';
 import { fireNativeTrackers, getAssetMessage } from './native';
 import { EVENTS } from './constants';
-import { isSlotMatchingAdUnitCode, logWarn, replaceAuctionPrice } from './utils';
+import { logWarn, replaceAuctionPrice } from './utils';
 import { auctionManager } from './auctionManager';
 import find from 'core-js/library/fn/array/find';
 import { isRendererRequired, executeRenderer } from './Renderer';
@@ -79,9 +79,9 @@ export function _sendAdToCreative(adObject, remoteDomain, source) {
   }
 }
 
-function resizeRemoteCreative({ adUnitCode, width, height }) {
+function resizeRemoteCreative({ adId, adUnitCode, width, height }) {
   // resize both container div + iframe
-  ['div:last-child', 'div:last-child iframe'].forEach(elmType => {
+  ['div[id^="google_ads_iframe"]', 'iframe[id^="google_ads_iframe"]'].forEach(elmType => {
     let element = getElementByAdUnit(elmType);
     if (element) {
       let elementStyle = element.style;
@@ -98,9 +98,9 @@ function resizeRemoteCreative({ adUnitCode, width, height }) {
     return parentDivEle && parentDivEle.querySelector(elmType);
   }
 
-  function getElementIdBasedOnAdServer(adUnitCode) {
+  function getElementIdBasedOnAdServer(adId, adUnitCode) {
     if (window.googletag) {
-      return getDfpElementId(adUnitCode)
+      return getDfpElementId(adId)
     } else if (window.apntag) {
       return getAstElementId(adUnitCode)
     } else {
@@ -108,8 +108,10 @@ function resizeRemoteCreative({ adUnitCode, width, height }) {
     }
   }
 
-  function getDfpElementId(adUnitCode) {
-    return find(window.googletag.pubads().getSlots().filter(isSlotMatchingAdUnitCode(adUnitCode)), slot => slot).getSlotElementId()
+  function getDfpElementId(adId) {
+    return find(window.googletag.pubads().getSlots().filter(s =>
+      includes(s.getTargeting('hb_adid'), adId)
+    ), slot => slot).getSlotElementId();
   }
 
   function getAstElementId(adUnitCode) {
