@@ -9,6 +9,7 @@ import { EVENTS } from './constants';
 import { logWarn, replaceAuctionPrice } from './utils';
 import { auctionManager } from './auctionManager';
 import find from 'core-js/library/fn/array/find';
+import includes from 'core-js/library/fn/array/includes';
 import { isRendererRequired, executeRenderer } from './Renderer';
 
 const BID_WON = EVENTS.BID_WON;
