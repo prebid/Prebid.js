@@ -139,7 +139,7 @@ export function cleanSizes(sizes, value) {
       s: 95
     },
     {
-      size: [300, 600],
+      size: [320, 50],
       s: 90
     },
     {
@@ -147,7 +147,7 @@ export function cleanSizes(sizes, value) {
       s: 88
     },
     {
-      size: [320, 50],
+      size: [300, 600],
       s: 85
     },
     {
@@ -192,7 +192,13 @@ export function shuffle(sizes, list) {
     })
     return results.map(r => r.size);
   }, [])
-  return [...reOrder, ...removeSizes];
+  return removeDuplicate([...reOrder, ...removeSizes]);
+}
+
+export function removeDuplicate(arrayValue){
+  return arrayValue.filter((elem, index) => {
+    return arrayValue.map(e => `${e[0]}x${e[1]}`).indexOf(`${elem[0]}x${elem[1]}`) === index
+  })
 }
 
 export function upto5(allimps, dmxRequest, bidderRequest, DMXURI) {
