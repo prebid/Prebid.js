@@ -70,6 +70,14 @@ export const spec = {
         publisher: { id: String(bidRequest[0].params.memberid) || null }
       }
     }
+    try {
+      let params = config.getConfig('dmx');
+      dmxRequest.user = params.user || {};
+      let site = params.site || {};
+      dmxRequest.site = {...dmxRequest.site, ...site}
+    } catch (e) {
+
+    }
     if (!dmxRequest.test) {
       delete dmxRequest.test;
     }
@@ -195,7 +203,7 @@ export function shuffle(sizes, list) {
   return removeDuplicate([...reOrder, ...removeSizes]);
 }
 
-export function removeDuplicate(arrayValue){
+export function removeDuplicate(arrayValue) {
   return arrayValue.filter((elem, index) => {
     return arrayValue.map(e => `${e[0]}x${e[1]}`).indexOf(`${elem[0]}x${elem[1]}`) === index
   })
