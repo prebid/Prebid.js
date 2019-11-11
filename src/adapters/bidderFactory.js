@@ -167,6 +167,7 @@ export function newBidder(spec) {
     getSpec: function() {
       return Object.freeze(spec);
     },
+    registerSyncs,
     callBids: function(bidderRequest, addBidResponse, done, ajax, onTimelyResponse, configEnabledCallback) {
       if (!Array.isArray(bidderRequest.bids)) {
         return;
