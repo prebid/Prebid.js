@@ -186,7 +186,7 @@ export function cleanSizes(sizes, value) {
 
 export function shuffle(sizes, list) {
   let removeSizes = sizes.filter(size => {
-    return !list.map(l => `${l.size[0]}x${l.size[1]}`).includes(`${size[0]}x${size[1]}`)
+    return list.map(l => `${l.size[0]}x${l.size[1]}`).indexOf(`${size[0]}x${size[1]}`) === -1
   })
   let reOrder = sizes.reduce((results, current) => {
     if (results.length === 0) {
@@ -194,7 +194,7 @@ export function shuffle(sizes, list) {
       return results;
     }
     results.push(current);
-    results = list.filter(l => results.map(r => `${r[0]}x${r[1]}`).includes(`${l.size[0]}x${l.size[1]}`))
+    results = list.filter(l => results.map(r => `${r[0]}x${r[1]}`).indexOf(`${l.size[0]}x${l.size[1]}`) !== -1);
     results = results.sort(function(a, b) {
       return b.s - a.s;
     })
