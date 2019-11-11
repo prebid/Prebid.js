@@ -1,5 +1,5 @@
 /**
- * This middleware will be used to find matching request hitting the ut endpoint by ast.
+ * This middleware will be used to find matching request hitting the ut endpoint by prebid.
  * As of now it only uses the request payload to compare with httpRequest.body defined in expectations dir.
  * Matching headers or cookies can also be the use case.
  */
@@ -7,9 +7,11 @@
 const glob = require('glob');
 const path = require('path');
 const deepEqual = require('deep-equal');
+console.log('helloooo:::');
 
 module.exports = function (req, res, next) {
   let reqBody;
+  console.log('in middleware:::');
   try {
     if (req.method === 'GET') {
       reqBody = JSON.parse(req.query.q);
@@ -20,7 +22,7 @@ module.exports = function (req, res, next) {
     // error
   }
 
-  // ast uses uuid to match request response pairs.
+  // prebid uses uuid to match request response pairs.
   // On each request new uuid is generated, so here i am grabbing the uuid from incoming request and adding it to matched response.
   let uuidObj = {};
   if (reqBody && reqBody.uuid) {
@@ -46,10 +48,14 @@ module.exports = function (req, res, next) {
   });
 
   // Parse all the expectation to find response for this request
-  glob.sync('./tests/mock-server/expectations/**/*.js').some((file) => {
+  glob.sync('./test/mock-server/expectations/**/*.js').some((file) => {
+    console.log('file:::', file);
     file = require(path.resolve(file));
+    console.log('file after resolve:::', file);
     let expectedReqBody = JSON.parse(JSON.stringify(file.getRequest().httpRequest.body));
-
+    console.log('expectedReqBody', JSON.stringify(expectedReqBody));
+    console.log('reqBody', JSON.stringify(reqBody));
+    console.log('equal:::', deepEqual(reqBody, expectedReqBody));
     // respond to all requests
     // TODO send a 404 if resource not found
     res.set({

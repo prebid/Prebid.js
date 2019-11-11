@@ -4,22 +4,28 @@ const app = module.exports = express();
 const port = (argv.port) ? argv.port : 3000;
 const bodyParser = require('body-parser');
 const renderCreative = require('./request-middlewares/prebid-request.js');
+const cors = require('cors');
 
 app.use(express.static(__dirname + '/content'));
 app.use(bodyParser.text({type: 'text/plain'}));
+app.use(cors({
+  credentials: true,
+  origin: 'http://test.localhost:9999'
+}));
 
 app.locals = {
   'port': port,
   'host': 'localhost'
 };
 
-// get type will be used to test ast jsonp requests
+// get type will be used to test prebid jsonp requests
 app.get('/', renderCreative, (request, response) => {
   response.send();
 });
 
-// ast make POST type request to ut endpoint so here we will match ut endpoint request.
+// prebid make POST type request to ut endpoint so here we will match ut endpoint request.
 app.post('/', renderCreative, (request, response) => {
+  console.log('post calll');
   response.send();
 });
 
