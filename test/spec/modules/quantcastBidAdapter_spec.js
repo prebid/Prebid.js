@@ -83,17 +83,10 @@ describe('Quantcast adapter', function () {
   });
 
   describe('`buildRequests`', function () {
-    it('selects protocol and port', function () {
-      switch (window.location.protocol) {
-        case 'https:':
-          expect(QUANTCAST_PROTOCOL).to.equal('https');
-          expect(QUANTCAST_PORT).to.equal('8443');
-          break;
-        default:
-          expect(QUANTCAST_PROTOCOL).to.equal('http');
-          expect(QUANTCAST_PORT).to.equal('8080');
-          break;
-      }
+    it('sends secure bid requests', function () {
+      const requests = qcSpec.buildRequests([bidRequest]);
+      const url = parse(requests[0]['url']);
+      expect(url.protocol).to.equal('https');
     });
 
     it('sends bid requests to Quantcast Canary Endpoint if `publisherId` is `test-publisher`', function () {

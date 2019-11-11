@@ -11,14 +11,8 @@ export const QUANTCAST_TEST_DOMAIN = 's2s-canary.quantserve.com';
 export const QUANTCAST_NET_REVENUE = true;
 export const QUANTCAST_TEST_PUBLISHER = 'test-publisher';
 export const QUANTCAST_TTL = 4;
-export const QUANTCAST_PROTOCOL =
-  window.location.protocol === 'http:'
-    ? 'http'
-    : 'https';
-export const QUANTCAST_PORT =
-  QUANTCAST_PROTOCOL === 'http'
-    ? '8080'
-    : '8443';
+export const QUANTCAST_PROTOCOL = 'https';
+export const QUANTCAST_PORT = '8443';
 
 function extractBidSizes(bid) {
   const bidSizes = [];
