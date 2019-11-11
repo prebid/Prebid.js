@@ -456,9 +456,11 @@ $$PREBID_GLOBAL$$.requestBids = hook('async', function ({ bidsBackHandler, timeo
         // drop the bidder from the ad unit if it's not compatible
         utils.logWarn(utils.unsupportedBidderMessage(adUnit, bidder));
         adUnit.bids = adUnit.bids.filter(bid => bid.bidder !== bidder);
+      } else {
+        adunitCounter.incrementBidderRequestsCounter(adUnit.code, bidder);
       }
     });
-    adunitCounter.incrementCounter(adUnit.code);
+    adunitCounter.incrementRequestsCounter(adUnit.code);
   });
 
   if (!adUnits || adUnits.length === 0) {

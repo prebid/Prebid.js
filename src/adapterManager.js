@@ -100,7 +100,9 @@ function getBids({bidderCode, auctionId, bidderRequestId, adUnits, labels, src})
               bidderRequestId,
               auctionId,
               src,
-              bidRequestsCount: adunitCounter.getCounter(adUnit.code),
+              bidRequestsCount: adunitCounter.getRequestsCounter(adUnit.code),
+              bidderRequestsCount: adunitCounter.getBidderRequestsCounter(adUnit.code, bid.bidder),
+              bidderWinsCount: adunitCounter.getBidderWinsCounter(adUnit.code, bid.bidder),
             }));
           }
           return bids;
@@ -488,6 +490,7 @@ adapterManager.callTimedOutBidders = function(adUnits, timedOutBidders, cbTimeou
 adapterManager.callBidWonBidder = function(bidder, bid, adUnits) {
   // Adding user configured params to bidWon event data
   bid.params = utils.getUserConfiguredParams(adUnits, bid.adUnitCode, bid.bidder);
+  adunitCounter.incrementBidderWinsCounter(bid.adUnitCode, bid.bidder);
   tryCallBidderMethod(bidder, 'onBidWon', bid);
 };
 
