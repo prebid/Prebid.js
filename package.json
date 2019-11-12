@@ -1,6 +1,6 @@
 {
   "name": "prebid.js",
-  "version": "2.27.0-pre",
+  "version": "2.40.0-pre",
   "description": "Header Bidding Management Library",
   "main": "src/prebid.js",
   "scripts": {
@@ -21,7 +21,7 @@
   "author": "the prebid.js contributors",
   "license": "Apache-2.0",
   "engines": {
-    "node": ">=4.0"
+    "node": ">=8.9.0"
   },
   "devDependencies": {
     "@babel/core": "^7.2.2",
@@ -46,7 +46,7 @@
     "gulp-concat": "^2.6.0",
     "gulp-connect": "^5.7.0",
     "gulp-eslint": "^4.0.0",
-    "gulp-footer": "github:prebid/gulp-footer#master",
+    "gulp-footer": "^2.0.2",
     "gulp-header": "^1.7.1",
     "gulp-if": "^2.0.2",
     "gulp-js-escape": "^1.0.1",
@@ -58,7 +58,7 @@
     "is-docker": "^1.1.0",
     "istanbul": "^0.4.5",
     "istanbul-instrumenter-loader": "^3.0.0",
-    "karma": "^4.2.0",
+    "karma": "^3.1.3",
     "karma-babel-preprocessor": "^6.0.1",
     "karma-browserstack-launcher": "^1.3.0",
     "karma-chai": "^0.1.0",
@@ -76,10 +76,9 @@
     "karma-sourcemap-loader": "^0.3.7",
     "karma-spec-reporter": "^0.0.31",
     "karma-webpack": "^3.0.5",
-    "lodash": "^4.17.15",
+    "lodash": "^4.17.4",
     "mocha": "^5.0.0",
     "opn": "^5.4.0",
-    "querystringify": "0.0.3",
     "resolve-from": "^5.0.0",
     "sinon": "^4.1.3",
     "through2": "^2.0.3",
@@ -91,7 +90,7 @@
     "webdriverio": "^4.13.2",
     "webpack": "^3.0.0",
     "webpack-bundle-analyzer": "^3.3.2",
-    "webpack-stream": "^5.2.1",
+    "webpack-stream": "^3.2.0",
     "yargs": "^1.3.1"
   },
   "dependencies": {

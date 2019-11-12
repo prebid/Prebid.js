@@ -5,7 +5,7 @@ import includes from 'core-js/library/fn/array/includes';
 import { parse } from './url';
 const CONSTANTS = require('./constants');
 
-export { default as deepAccess } from 'dlv';
+export { default as deepAccess } from 'dlv/index';
 export { default as deepSetValue } from 'dset';
 
 var tArr = 'Array';
@@ -571,7 +571,7 @@ export function _map(object, callback) {
   return output;
 }
 
-var hasOwn = function (objectToCheck, propertyToCheckFor) {
+export function hasOwn(objectToCheck, propertyToCheckFor) {
   if (objectToCheck.hasOwnProperty) {
     return objectToCheck.hasOwnProperty(propertyToCheckFor);
   } else {
@@ -918,8 +918,8 @@ export function getCookie(name) {
   return m ? decodeURIComponent(m[2]) : null;
 }
 
-export function setCookie(key, value, expires) {
-  document.cookie = `${key}=${encodeURIComponent(value)}${(expires !== '') ? `; expires=${expires}` : ''}; path=/`;
+export function setCookie(key, value, expires, sameSite) {
+  document.cookie = `${key}=${encodeURIComponent(value)}${(expires !== '') ? `; expires=${expires}` : ''}; path=/${sameSite ? `; SameSite=${sameSite}` : ''}`;
 }
 
 /**
@@ -1261,6 +1261,12 @@ export function setDataInLocalStorage(key, value) {
 export function getDataFromLocalStorage(key) {
   if (hasLocalStorage()) {
     return window.localStorage.getItem(key);
+  }
+}
+
+export function removeDataFromLocalStorage(key) {
+  if (hasLocalStorage()) {
+    window.localStorage.removeItem(key);
   }
 }
 
