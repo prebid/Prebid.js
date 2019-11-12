@@ -53,9 +53,8 @@ export function setConfig (config) {
 config.getConfig('cookies', config => setConfig(config.cookies))
 
 /**
- * Adds the `Cookie`-Header to the bidRequest.
+ * Adds the cookies property to the bidderRequest of buildRequests.
  *
- * @param {function} fn - Previous function.
  * @param {object} bidRequest - Bid request configuration.
  */
 export function bidRequestedListener (bidRequest) {
@@ -149,7 +148,7 @@ function localStorageIsEnabled (doc) {
     docWindow.localStorage.setItem('prebid.test', 'prebid.test')
     docWindow.localStorage.removeItem('prebid.test')
     return true
-  } catch(e) {
+  } catch (e) {
     return false
   }
 }
