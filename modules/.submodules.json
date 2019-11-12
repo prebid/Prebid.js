@@ -10,5 +10,8 @@
   "adpod": [
     "freeWheelAdserverVideo",
     "dfpAdServerVideo"
+  ],
+  "rtdModule": [
+    "browsiRtdProvider"
   ]
 }
