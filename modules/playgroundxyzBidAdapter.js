@@ -28,8 +28,8 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
-    const existingBidderCode = this.winningAds.find(winningAd => this.aliases.includes(winningAd.bidderCode));
-    return existingBidderCode ? false : !!(bid.params.placementId);
+    const existingWonAuction = this.winningAds && this.winningAds.length > 0;
+    return existingWonAuction ? false : !!(bid.params.placementId);
   },
 
   /**
@@ -144,6 +144,7 @@ function mapImpression(bid) {
         placement_id: parseInt(bid.params.placementId, 10)
       },
       pxyz: {
+        // pass through the format(s) on the page through to our adserver
         formats: window && window.xyzAds ? window.xyzAds : [],
         adapter: {
           vendor: 'prebid',

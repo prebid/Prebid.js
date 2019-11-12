@@ -256,21 +256,7 @@ describe('playgroundxyzBidAdapter', function () {
       // now shouldn't be allowed
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
-
-    it('Should allow subsequent bids if the previous bid wasn\'t our bidder code', function () {
-      const alternateBid = {...bid};
-      alternateBid.bidderCode = 'invalidBidderCode';
-      // initially, should be allowed
-      expect(spec.isBidRequestValid(alternateBid)).to.equal(true);
-      // when bid is won, make sure ads update
-      spec.onBidWon(alternateBid);
-      expect(spec.winningAds.length).to.equal(1);
-      // should be allowed
-      expect(spec.isBidRequestValid(alternateBid)).to.equal(true);
-      spec.onBidWon(bid);
-      expect(spec.winningAds.length).to.equal(2);
-      // now shouldn't be allowed
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
-    });
+    
   });
+
 });
