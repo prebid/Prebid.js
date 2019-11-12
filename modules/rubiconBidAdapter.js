@@ -337,7 +337,6 @@ export const spec = {
       'gdpr',
       'gdpr_consent',
       'rp_schain',
-      'rf',
       'tpid_tdid',
       'tpid_liveintent.com',
       'tg_v.LIseg',
