@@ -1274,7 +1274,6 @@ describe('S2S Adapter', function () {
       server.respondWith(JSON.stringify(cacheResponse));
 
       config.setConfig({ s2sConfig: CONFIG });
-      debugger; // eslint-disable-line
       adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
       server.respond();
       sinon.assert.calledOnce(addBidResponse);
