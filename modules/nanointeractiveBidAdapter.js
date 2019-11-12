@@ -72,7 +72,7 @@ function createSingleBidRequest(bid, bidderRequest) {
   const location = utils.deepAccess(bidderRequest, 'refererInfo.referer');
   const origin = utils.getOrigin();
 
-  nanoPid = bid.params[SSP_PLACEMENT_ID];
+  nanoPid = bid.params[SSP_PLACEMENT_ID] || nanoPid;
 
   const data = {
     [SSP_PLACEMENT_ID]: bid.params[SSP_PLACEMENT_ID],
