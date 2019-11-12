@@ -10,15 +10,26 @@ export const spec = {
   code: BIDDER_CODE,
   aliases: ['playgroundxyz', 'pxyz'],
   supportedMediaTypes: [BANNER],
+  winningAds: [],
 
   /**
-   * Determines whether or not the given bid request is valid.
-   *
+   * @description The onBidWon function will be called when a bid from the adapter won the auction.
+   * @param {object} bid - the winning bid
+   * @returns {void} no return value
+   */
+  onBidWon: function(bid) {
+    // when a winning bid is placed
+    this.winningAds.push(bid);
+  },
+
+  /**
+   * @description Determines whether or not the given bid request is valid.
    * @param {object} bid The bid to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
-    return !!(bid.params.placementId);
+    const existingBidderCode = this.winningAds.find(winningAd => this.aliases.includes(winningAd.bidderCode));
+    return existingBidderCode ? false : !!(bid.params.placementId);
   },
 
   /**
@@ -101,7 +112,7 @@ export const spec = {
     return bids;
   },
 
-  getUserSyncs: function (syncOptions) {
+  getUserSyncs: function (syncOptions, serverResponses) {
     return [{
       type: 'image',
       url: '//ib.adnxs.com/getuidnb?https://ads.playground.xyz/usersync?partner=appnexus&uid=$UID'
@@ -133,6 +144,7 @@ function mapImpression(bid) {
         placement_id: parseInt(bid.params.placementId, 10)
       },
       pxyz: {
+        formats: window && window.xyzAds ? window.xyzAds : [],
         adapter: {
           vendor: 'prebid',
           prebid: '$prebid.version$'

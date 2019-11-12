@@ -9,6 +9,15 @@ const GDPR_CONSENT = 'XYZ-CONSENT';
 describe('playgroundxyzBidAdapter', function () {
   const adapter = newBidder(spec);
 
+  describe('Public hooks', function () {
+    it('should export the bidder spec functions', function () {
+      expect(spec.isBidRequestValid).to.be.a('function');
+      expect(spec.buildRequests).to.be.a('function');
+      expect(spec.interpretResponse).to.be.a('function');
+      expect(spec.onBidWon).to.be.a('function');
+    });
+  });
+
   describe('inherited functions', function () {
     it('exists and is a function', function () {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
@@ -209,5 +218,57 @@ describe('playgroundxyzBidAdapter', function () {
         expect(result[0].url).to.equal(syncUrl);
       });
     });
-  })
+  });
+
+  describe.only('Subsequent playground ads', function () {
+    let bid
+    beforeEach(function () {
+      bid = {
+        'bidderCode': 'playgroundxyz',
+        'params': {
+          'placementId': '10433394'
+        }
+      };
+      spec.winningAds = [];
+    });
+
+    it('Should update winning ads when onBidWon is called', function () {
+      spec.onBidWon(bid);
+      expect(spec.winningAds.length).to.equal(1);
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
+
+    it('Should update winning ads when onBidWon is called with pxyz alias', function () {
+      bid.bidderCode = 'pxyz';
+      spec.onBidWon(bid);
+      expect(spec.winningAds.length).to.equal(1);
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
+
+    it('Should allow request before first ad has been rendered', function () {
+      // initially, should be allowed
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
+      // when bid is won, make sure ads update
+      spec.onBidWon(bid);
+      expect(spec.winningAds.length).to.equal(1);
+      // now shouldn't be allowed
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
+
+    it('Should allow subsequent bids if the previous bid wasn\'t our bidder code', function () {
+      const alternateBid = {...bid};
+      alternateBid.bidderCode = 'invalidBidderCode';
+      // initially, should be allowed
+      expect(spec.isBidRequestValid(alternateBid)).to.equal(true);
+      // when bid is won, make sure ads update
+      spec.onBidWon(alternateBid);
+      expect(spec.winningAds.length).to.equal(1);
+      // should be allowed
+      expect(spec.isBidRequestValid(alternateBid)).to.equal(true);
+      spec.onBidWon(bid);
+      expect(spec.winningAds.length).to.equal(2);
+      // now shouldn't be allowed
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
+  });
 });
