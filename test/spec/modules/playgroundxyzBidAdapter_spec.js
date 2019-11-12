@@ -15,6 +15,8 @@ describe('playgroundxyzBidAdapter', function () {
       expect(spec.buildRequests).to.be.a('function');
       expect(spec.interpretResponse).to.be.a('function');
       expect(spec.onBidWon).to.be.a('function');
+      expect(spec.getUserSyncs).to.be.a('function');
+      
     });
   });
 
