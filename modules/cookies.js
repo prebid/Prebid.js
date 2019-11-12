@@ -1,5 +1,5 @@
 import { config } from '../src/config.js';
-import { cookiesAreEnabled, setCookie, logInfo, logMessage, logWarn } from '../src/utils.js'
+import { cookiesAreEnabled, setCookie, logInfo, logWarn } from '../src/utils.js'
 
 let cookieConfig = {}
 let enabled = false
@@ -13,7 +13,7 @@ let active = false
  * @param {string} config.namespace - Namespace of cookies that will be set and send.
  * @param {string} config.prefix - Adds a prefix when storing data. Prefix is removed when data is send.
  * @param {array<string>} config.from - Limits the cookies to set. Possible values: `creative`, `winningBidResponse`, `bidResponse`
- * @param {string} config.storage - Storage to use to store data. Can be: `cookies` or `localStorage`.
+ * @param {array<string>} config.storages - Storage to use to store data. Can be: `cookies` or `localStorage`.
  * @param {string} config.expires - Sane-cookie-date. Only in cookies-store.
  * @param {string} config.sameSite - Set to `Lax` to send cookies to third parties. Only in cookies-store.
  */
@@ -31,9 +31,11 @@ export function setConfig (config) {
 
   // default values
   if (typeof config !== 'object') config = {}
-  config.storage = config.storage || (cookiesAreEnabled() ? 'cookies' : 'localStorage')
   config.namespace = config.namespace || 'prebid.'
   config.prefix = config.prefix || (config.namespace === '*' ? '' : 'prebid.')
+  config.storages = Array.isArray(config.storages)
+    ? config.storages
+    : (config.storages ? [ config.storages ] : [ 'cookies', 'localStorage' ])
   config.from = Array.isArray(config.from)
     ? config.from
     : (config.from ? [ config.from ] : [ 'creative', 'winningBidResponse', 'bidResponse' ])
@@ -172,15 +174,20 @@ function syncData (data, doc, options = {}) {
       if (options.removePrefix && name.startsWith(cookieConfig.prefix)) {
         name = name.substr(cookieConfig.prefix.length)
       }
-      if (typeof doc === 'undefined' || doc === document) {
-        logMessage(`Synchronizing cookies. Set "${name}" to "${data[key]}" via ${cookieConfig.storage}`)
-      }
-      if (cookieConfig.storage === 'cookies') {
-        setCookie(name, data[key], cookieConfig.expires, cookieConfig.sameSite, doc)
-      } else if (cookieConfig.storage === 'localStorage') {
-        const docWindow = (doc) ? (doc.parentWindow || doc.defaultView) : window
-        docWindow.localStorage.setItem(name, data[key])
-      }
+
+      cookieConfig.storages.find((storage) => {
+        if (storage === 'cookies') {
+          if (!cookiesAreEnabled()) return false
+          setCookie(name, data[key], cookieConfig.expires, cookieConfig.sameSite, doc)
+          return true
+        } else if (storage === 'localStorage') {
+          if (!localStorageIsEnabled(doc)) return false
+          const docWindow = (doc) ? (doc.parentWindow || doc.defaultView) : window
+          docWindow.localStorage.setItem(name, data[key])
+          return true
+        }
+        return false
+      })
     }
   })
 }
