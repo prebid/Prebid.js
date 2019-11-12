@@ -220,7 +220,7 @@ describe('playgroundxyzBidAdapter', function () {
     });
   });
 
-  describe.only('Subsequent playground ads', function () {
+  describe('Subsequent playground ads', function () {
     let bid
     beforeEach(function () {
       bid = {
