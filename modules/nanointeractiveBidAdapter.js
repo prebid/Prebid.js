@@ -19,7 +19,6 @@ var nanoPid = '5a1ec660eb0a191dfa591172';
 export const spec = {
 
   code: BIDDER_CODE,
-  supportedMediaTypes: [BANNER],
   aliases: ['ni'],
 
   isBidRequestValid(bid) {
