@@ -82,7 +82,6 @@ export const checkAdUnitSetup = hook('sync', function (adUnits) {
     return cleanSizes;
   }
 
-  // adUnits.forEach((adUnit) => {
   return adUnits.filter(adUnit => {
     const mediaTypes = adUnit.mediaTypes;
     if (!mediaTypes || Object.keys(mediaTypes).length === 0) {
