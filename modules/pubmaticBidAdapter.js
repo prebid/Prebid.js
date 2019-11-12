@@ -200,7 +200,7 @@ function _parseAdSlot(bid) {
 function _initConf(refererInfo) {
   return {
     pageURL: (refererInfo && refererInfo.referer) ? refererInfo.referer : window.location.href,
-    refURL: window.document.referrer    
+    refURL: window.document.referrer
   };
 }
 
