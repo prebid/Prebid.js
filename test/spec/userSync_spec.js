@@ -265,7 +265,6 @@ describe('user sync', function () {
 
   it('should throw a warning and default to basic resgistration rules when filterSettings config is invalid', function () {
     // invalid config - passed invalid filter option
-    debugger; // eslint-disable-line
     const userSync1 = newTestUserSync({
       filterSettings: {
         iframe: {
