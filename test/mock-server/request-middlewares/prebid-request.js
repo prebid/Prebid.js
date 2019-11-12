@@ -7,11 +7,9 @@
 const glob = require('glob');
 const path = require('path');
 const deepEqual = require('deep-equal');
-console.log('helloooo:::');
 
 module.exports = function (req, res, next) {
   let reqBody;
-  console.log('in middleware:::');
   try {
     if (req.method === 'GET') {
       reqBody = JSON.parse(req.query.q);
@@ -49,13 +47,8 @@ module.exports = function (req, res, next) {
 
   // Parse all the expectation to find response for this request
   glob.sync('./test/mock-server/expectations/**/*.js').some((file) => {
-    console.log('file:::', file);
     file = require(path.resolve(file));
-    console.log('file after resolve:::', file);
     let expectedReqBody = JSON.parse(JSON.stringify(file.getRequest().httpRequest.body));
-    console.log('expectedReqBody', JSON.stringify(expectedReqBody));
-    console.log('reqBody', JSON.stringify(reqBody));
-    console.log('equal:::', deepEqual(reqBody, expectedReqBody));
     // respond to all requests
     // TODO send a 404 if resource not found
     res.set({
