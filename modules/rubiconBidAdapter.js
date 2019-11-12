@@ -155,7 +155,7 @@ export const spec = {
           id: bidRequest.adUnitCode,
           secure: 1,
           ext: {
-            rubicon: bidRequest.params
+            [bidRequest.bidder]: bidRequest.params
           },
           video: utils.deepAccess(bidRequest, 'mediaTypes.video') || {}
         }],
@@ -175,12 +175,20 @@ export const spec = {
           }
         }
       }
+
+      // Add alias if it is there
+      if (bidRequest.bidder !== 'rubicon') {
+        data.ext.prebid.aliases = {
+          [bidRequest.bidder]: 'rubicon'
+        }
+      }
+
       const bidFloor = parseFloat(utils.deepAccess(bidRequest, 'params.floor'));
       if (!isNaN(bidFloor)) {
         data.imp[0].bidfloor = bidFloor;
       }
       // if value is set, will overwrite with same value
-      data.imp[0].ext.rubicon.video.size_id = determineRubiconVideoSizeId(bidRequest)
+      data.imp[0].ext[bidRequest.bidder].video.size_id = determineRubiconVideoSizeId(bidRequest)
 
       appendSiteAppDevice(data, bidRequest, bidderRequest);
 
@@ -337,7 +345,6 @@ export const spec = {
       'gdpr',
       'gdpr_consent',
       'rp_schain',
-      'rf',
       'tpid_tdid',
       'tpid_liveintent.com',
       'tg_v.LIseg',
