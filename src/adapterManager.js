@@ -476,7 +476,7 @@ function tryCallBidderMethod(bidder, method, param) {
     const spec = adapter.getSpec();
     if (spec && spec[method] && typeof spec[method] === 'function') {
       utils.logInfo(`Invoking ${bidder}.${method}`);
-      spec[method](param);
+      config.runWithBidder(bidder, bind.call(spec[method], spec, param));
     }
   } catch (e) {
     utils.logWarn(`Error calling ${method} of ${bidder}`);
