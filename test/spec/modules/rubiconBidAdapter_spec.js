@@ -1282,6 +1282,22 @@ describe('the rubicon adapter', function () {
           expect(post.ext.prebid.cache.vastxml.returnCreative).to.equal(false)
         });
 
+        it('should add alias name to PBS Request', function() {
+          createVideoBidderRequest();
+
+          bidderRequest.bidderCode = 'superRubicon';
+          bidderRequest.bids[0].bidder = 'superRubicon';
+          let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+
+          // should have the aliases object sent to PBS
+          expect(request.data.ext.prebid).to.haveOwnProperty('aliases');
+          expect(request.data.ext.prebid.aliases).to.deep.equal({superRubicon: 'rubicon'});
+
+          // should have the imp ext bidder params be under the alias name not rubicon superRubicon
+          expect(request.data.imp[0].ext).to.have.property('superRubicon').that.is.an('object');
+          expect(request.data.imp[0].ext).to.not.haveOwnProperty('rubicon');
+        });
+
         it('should send correct bidfloor to PBS', function() {
           createVideoBidderRequest();
 
@@ -2311,7 +2327,7 @@ describe('the rubicon adapter', function () {
     });
   });
 
-  describe.only('Supply Chain Support', function() {
+  describe('Supply Chain Support', function() {
     const nodePropsOrder = ['asi', 'sid', 'hp', 'rid', 'name', 'domain'];
     let bidRequests;
     let schainConfig;
