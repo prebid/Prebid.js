@@ -32,7 +32,6 @@ export const spec = {
               nBid.creativeId = nBid.crid;
               nBid.currency = 'USD';
               nBid.ttl = 60;
-
               return nBid;
             } else {
               oBid.cpm = oBid.price;
