@@ -91,7 +91,7 @@ describe('AdxcgAdapter', function () {
       expect(query.pbjs).to.equal('$prebid.version$')
       expect(query.adzoneid).to.equal('1')
       expect(query.format).to.equal('300x250|640x360|1x1')
-      expect(query.jsonp).to.be.empty
+      expect(query.jsonp).to.be.undefined
       expect(query.prebidBidIds).to.equal('84ab500420319d')
     })
   })
@@ -128,8 +128,58 @@ describe('AdxcgAdapter', function () {
       let parsedRequestUrl = url.parse(request.url)
       let query = parsedRequestUrl.search
 
-      expect(query.gdpr).to.be.empty
-      expect(query.gdpr_consent).to.be.empty
+      expect(query.gdpr).to.be.undefined
+      expect(query.gdpr_consent).to.be.undefined
+    })
+  })
+
+  describe('userid pubcid should be passed to querystring', function () {
+    let bid = [{
+      'bidder': 'adxcg',
+      'params': {
+        'adzoneid': '1'
+      },
+      'adUnitCode': 'adunit-code',
+      'sizes': [[300, 250], [640, 360], [1, 1]],
+      'bidId': '84ab500420319d',
+      'bidderRequestId': '7101db09af0db2',
+      'auctionId': '1d1a030790a475',
+    }]
+
+    let bidderRequests = {};
+
+    bid[0].userId = {'pubcid': 'pubcidabcd'};
+
+    it('should send pubcid if available', function () {
+      let request = spec.buildRequests(bid, bidderRequests)
+      let parsedRequestUrl = url.parse(request.url)
+      let query = parsedRequestUrl.search
+      expect(query.pubcid).to.equal('pubcidabcd')
+    })
+  })
+
+  describe('userid tdid should be passed to querystring', function () {
+    let bid = [{
+      'bidder': 'adxcg',
+      'params': {
+        'adzoneid': '1'
+      },
+      'adUnitCode': 'adunit-code',
+      'sizes': [[300, 250], [640, 360], [1, 1]],
+      'bidId': '84ab500420319d',
+      'bidderRequestId': '7101db09af0db2',
+      'auctionId': '1d1a030790a475',
+    }]
+
+    let bidderRequests = {};
+
+    bid[0].userId = {'tdid': 'tdidabcd'};
+
+    it('should send pubcid if available', function () {
+      let request = spec.buildRequests(bid, bidderRequests)
+      let parsedRequestUrl = url.parse(request.url)
+      let query = parsedRequestUrl.search
+      expect(query.tdid).to.equal('tdidabcd');
     })
   })
 
@@ -235,6 +285,14 @@ describe('AdxcgAdapter', function () {
                 'label': 'SPONSORED',
                 'value': 'sponsoredByContent'
               }
+            }, {
+              'id': 5,
+              'required': 0,
+              'icon': {
+                'url': 'iconContent',
+                'w': 400,
+                'h': 400
+              }
             }],
             'link': {
               'url': 'linkContent'
@@ -307,7 +365,15 @@ describe('AdxcgAdapter', function () {
       expect(result[0].native.clickUrl).to.equal('linkContent')
       expect(result[0].native.impressionTrackers).to.deep.equal(['impressionTracker1', 'impressionTracker2'])
       expect(result[0].native.title).to.equal('titleContent')
-      expect(result[0].native.image).to.equal('imageContent')
+
+      expect(result[0].native.image.url).to.equal('imageContent')
+      expect(result[0].native.image.height).to.equal(600)
+      expect(result[0].native.image.width).to.equal(600)
+
+      expect(result[0].native.icon.url).to.equal('iconContent')
+      expect(result[0].native.icon.height).to.equal(400)
+      expect(result[0].native.icon.width).to.equal(400)
+
       expect(result[0].native.body).to.equal('descriptionContent')
       expect(result[0].native.sponsoredBy).to.equal('sponsoredByContent')
     })

@@ -1,6 +1,6 @@
-import * as utils from 'src/utils';
-import {config} from 'src/config';
-import {registerBidder} from 'src/adapters/bidderFactory';
+import * as utils from '../src/utils';
+import {config} from '../src/config';
+import {registerBidder} from '../src/adapters/bidderFactory';
 
 const BIDDER_CODE = 'dspx';
 const ENDPOINT_URL = 'https://buyer.dspx.tv/request/';
@@ -20,7 +20,7 @@ export const spec = {
       const placementId = params.placement;
 
       const rnd = Math.floor(Math.random() * 99999999999);
-      const referrer = encodeURIComponent(bidderRequest.refererInfo.referer);
+      const referrer = bidderRequest.refererInfo.referer;
       const bidId = bidRequest.bidId;
       const payload = {
         _f: 'html',

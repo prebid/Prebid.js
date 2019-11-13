@@ -1,0 +1,17 @@
+{
+  "userId": [
+    "digiTrustIdSystem",
+    "id5IdSystem",
+    "criteortusIdSystem",
+    "parrableIdSystem",
+    "liveIntentIdSystem",
+    "criteoIdSystem"
+  ],
+  "adpod": [
+    "freeWheelAdserverVideo",
+    "dfpAdServerVideo"
+  ],
+  "rtdModule": [
+    "browsiRtdProvider"
+  ]
+}

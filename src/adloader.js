@@ -4,6 +4,7 @@ import * as utils from './utils';
 const _requestCache = {};
 const _vendorWhitelist = [
   'criteo',
+  'adagio'
 ]
 
 /**
@@ -12,7 +13,7 @@ const _vendorWhitelist = [
  * @param {string} url the url to load
  * @param {string} moduleCode bidderCode or module code of the module requesting this resource
  */
-exports.loadExternalScript = function(url, moduleCode) {
+export function loadExternalScript(url, moduleCode) {
   if (!moduleCode || !url) {
     utils.logError('cannot load external script without url and moduleCode');
     return;
@@ -41,7 +42,7 @@ exports.loadExternalScript = function(url, moduleCode) {
  * @deprecated
  * Do not use this function. Will be removed in the next release. If external resources are required, use #loadExternalScript instead.
  */
-exports.loadScript = function (tagSrc, callback, cacheRequest) {
+export function loadScript(tagSrc, callback, cacheRequest) {
   // var noop = () => {};
   //
   // callback = callback || noop;

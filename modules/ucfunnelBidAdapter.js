@@ -1,6 +1,6 @@
-import * as utils from 'src/utils';
-import {registerBidder} from 'src/adapters/bidderFactory';
-import {BANNER, VIDEO, NATIVE} from 'src/mediaTypes';
+import * as utils from '../src/utils';
+import {registerBidder} from '../src/adapters/bidderFactory';
+import {BANNER, VIDEO, NATIVE} from '../src/mediaTypes';
 
 const VER = 'ADGENT_PREBID-2018011501';
 const BIDDER_CODE = 'ucfunnel';
@@ -68,7 +68,7 @@ export const spec = {
       dealId: ad.deal || null,
       currency: 'USD',
       netRevenue: true,
-      ttl: 1000
+      ttl: 1800
     };
 
     if (ad.creative_type) {
@@ -158,6 +158,28 @@ function parseSizes(bid) {
   return transformSizes(bid.sizes);
 }
 
+function getSupplyChain(schain) {
+  var supplyChain = '';
+  if (schain != null && schain.nodes) {
+    supplyChain = schain.ver + ',' + schain.complete;
+    for (let i = 0; i < schain.nodes.length; i++) {
+      supplyChain += '!';
+      supplyChain += (schain.nodes[i].asi) ? encodeURIComponent(schain.nodes[i].asi) : '';
+      supplyChain += ',';
+      supplyChain += (schain.nodes[i].sid) ? encodeURIComponent(schain.nodes[i].sid) : '';
+      supplyChain += ',';
+      supplyChain += (schain.nodes[i].hp) ? encodeURIComponent(schain.nodes[i].hp) : '';
+      supplyChain += ',';
+      supplyChain += (schain.nodes[i].rid) ? encodeURIComponent(schain.nodes[i].rid) : '';
+      supplyChain += ',';
+      supplyChain += (schain.nodes[i].name) ? encodeURIComponent(schain.nodes[i].name) : '';
+      supplyChain += ',';
+      supplyChain += (schain.nodes[i].domain) ? encodeURIComponent(schain.nodes[i].domain) : '';
+    }
+  }
+  return supplyChain;
+}
+
 function getRequestData(bid, bidderRequest) {
   const size = parseSizes(bid);
   const loc = utils.getTopWindowLocation();
@@ -168,7 +190,8 @@ function getRequestData(bid, bidderRequest) {
   const dnt = (navigator.doNotTrack == 'yes' || navigator.doNotTrack == '1' || navigator.msDoNotTrack == '1') ? 1 : 0;
   const videoContext = utils.deepAccess(bid, 'mediaTypes.video.context');
   const videoMediaType = utils.deepAccess(bid, 'mediaTypes.video');
-
+  const userIdTdid = (bid.userId && bid.userId.tdid) ? bid.userId.tdid : '';
+  const supplyChain = getSupplyChain(bid.schain);
   // general bid data
   let bidData = {
     ver: VER,
@@ -181,7 +204,9 @@ function getRequestData(bid, bidderRequest) {
     ru: ref,
     adid: utils.getBidIdParameter('adid', bid.params),
     w: size[0],
-    h: size[1]
+    h: size[1],
+    tdid: userIdTdid,
+    schain: supplyChain
   };
 
   if (bid.mediaType === 'video' || videoMediaType) {

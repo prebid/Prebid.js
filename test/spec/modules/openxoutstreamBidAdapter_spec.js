@@ -13,12 +13,6 @@ describe('OpenXOutstreamAdapter', function () {
   const CR_ID = '2052941939925262540';
   const AD_ID = '1991358644725162800';
 
-  describe('inherited functions', function () {
-    it('exists and is a function', function () {
-      expect(adapter.callBids).to.exist.and.to.be.a('function');
-    });
-  });
-
   describe('isBidRequestValid', function () {
     describe('when request is for a banner ad', function () {
       let bannerBid;
@@ -44,28 +38,23 @@ describe('OpenXOutstreamAdapter', function () {
           bannerBid.params = {delDomain: 'test-delivery-domain'}
         });
 
-        it('should return false when there is no ad unit id and size', function () {
+        it('should return false if there is no adunit id and sizes are defined', function () {
+          bannerBid.mediaTypes.banner.sizes = [720, 90];
           expect(spec.isBidRequestValid(bannerBid)).to.equal(false);
         });
 
-        it('should return true if there is an adunit id ', function () {
+        it('should return true if there is delivery domain and unit', function () {
           bannerBid.params.unit = '12345678';
           expect(spec.isBidRequestValid(bannerBid)).to.equal(true);
         });
-
-        it('should return true if there is no adunit id and sizes are defined', function () {
-          bannerBid.mediaTypes.banner.sizes = [720, 90];
-          expect(spec.isBidRequestValid(bannerBid)).to.equal(true);
-        });
-
-        it('should return false if no sizes are defined ', function () {
+        it('should return false if there is unit but no delivery domain', function () {
+          bannerBid.params = {unit: '12345678'};
           expect(spec.isBidRequestValid(bannerBid)).to.equal(false);
         });
-
-        it('should return false if sizes empty ', function () {
-          bannerBid.mediaTypes.banner.sizes = [];
+        it('shoud return false if there is no delivery domain and no unit', function () {
+          bannerBid.params = {};
           expect(spec.isBidRequestValid(bannerBid)).to.equal(false);
-        });
+        })
       });
     });
   });
@@ -85,33 +74,22 @@ describe('OpenXOutstreamAdapter', function () {
       'auctionId': '1d1a030790a475'
     }];
 
+    const mockBidderRequest = {refererInfo: {}};
+
     it('should send bid request to openx url via GET, with mediaType specified as banner', function () {
-      const request = spec.buildRequests(bidRequestsWithMediaType);
+      const request = spec.buildRequests(bidRequestsWithMediaType, mockBidderRequest);
       const params = bidRequestsWithMediaType[0].params;
       expect(request[0].url).to.equal(`https://` + params.delDomain + URLBASE);
       expect(request[0].method).to.equal('GET');
     });
 
-    it('should send ad unit ids when any are defined', function () {
+    it('should send ad unit ids, height, and width when any are defined', function () {
       const bidRequestsWithUnitIds = [{
         'bidder': BIDDER,
         'params': {
-          'delDomain': 'test-del-domain'
-        },
-        'adUnitCode': 'adunit-code',
-        'sizes': [300, 250],
-        mediaTypes: {
-          banner: {
-            sizes: [[300, 250], [300, 600]]
-          }
-        },
-        'bidId': 'test-bid-id-1',
-        'bidderRequestId': 'test-bid-request-1',
-        'auctionId': 'test-auction-1'
-      }, {
-        'bidder': BIDDER,
-        'params': {
           'unit': '540141567',
+          'height': '200',
+          'width': '250',
           'delDomain': 'test-del-domain'
         },
         'adUnitCode': 'adunit-code',
@@ -123,9 +101,28 @@ describe('OpenXOutstreamAdapter', function () {
         'bidId': 'test-bid-id-2',
         'bidderRequestId': 'test-bid-request-2',
         'auctionId': 'test-auction-2'
+      }, {
+        'bidder': BIDDER,
+        'params': {
+          'delDomain': 'test-del-domain'
+        },
+        'adUnitCode': 'adunit-code',
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 250], [300, 600]]
+          }
+        },
+        'bidId': 'test-bid-id-1',
+        'bidderRequestId': 'test-bid-request-1',
+        'auctionId': 'test-auction-1'
       }];
-      const request = spec.buildRequests(bidRequestsWithUnitIds);
-      expect(request[0].data.auid).to.equal(`${bidRequestsWithUnitIds[1].params.unit}`);
+      const request = spec.buildRequests(bidRequestsWithUnitIds, mockBidderRequest);
+      expect(request[0].data.auid).to.equal(`${bidRequestsWithUnitIds[0].params.unit}`);
+      expect(request[0].data.vht).to.not.equal(`${bidRequestsWithUnitIds[0].params.height}`);
+      expect(request[0].data.vwd).to.not.equal(`${bidRequestsWithUnitIds[0].params.width}`);
+      expect(request[0].data.vht).to.equal('184');
+      expect(request[0].data.vwd).to.equal('414');
+      expect(request[0].data.aus).to.equal('304x184%7C412x184%7C375x184%7C414x184');
     });
 
     describe('interpretResponse', function () {
@@ -147,9 +144,9 @@ describe('OpenXOutstreamAdapter', function () {
         };
         serverRequest = {
           payload: {
-            bids: [{
+            bid: {
               bidId: '2d36ac90d654af',
-            }],
+            },
           }
         };
       });
@@ -207,7 +204,8 @@ describe('OpenXOutstreamAdapter', function () {
   }
   const getTemplateAdResponse = (vastUrl) => {
     return {
-      availability_zone: 'us-east-1a',
+      loader: 'openxoutstream',
+      availability_zone: '',
       data: [
         {
           ads: [

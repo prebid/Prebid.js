@@ -67,7 +67,7 @@ describe('LifestreetAdapter', function () {
 
     it('should not return request when no bids are present', function () {
       let [request] = spec.buildRequests([]);
-      expect(request).to.be.empty;
+      expect(request).to.be.undefined;
     });
 
     let bidRequest = getDefaultBidRequest();

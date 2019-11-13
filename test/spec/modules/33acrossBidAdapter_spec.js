@@ -58,6 +58,15 @@ describe('33acrossBidAdapter:', function () {
         ext: {
           gdpr: 0
         }
+      },
+      ext: {
+        ttx: {
+          prebidStartedAt: 1,
+          caller: [{
+            'name': 'prebidjs',
+            'version': '$prebid.version$'
+          }]
+        }
       }
     };
 
@@ -175,6 +184,7 @@ describe('33acrossBidAdapter:', function () {
     ];
 
     sandbox = sinon.sandbox.create();
+    sandbox.stub(Date, 'now').returns(1);
     sandbox.stub(document, 'getElementById').withArgs('div-id').returns(element);
     sandbox.stub(utils, 'getWindowTop').returns(win);
     sandbox.stub(utils, 'getWindowSelf').returns(win);
@@ -329,8 +339,8 @@ describe('33acrossBidAdapter:', function () {
 
         utils.getWindowTop.restore();
         utils.getWindowSelf.restore();
-        sandbox.stub(utils, 'getWindowTop').returns(win);
-        sandbox.stub(utils, 'getWindowSelf').returns({});
+        sandbox.stub(utils, 'getWindowTop').returns({});
+        sandbox.stub(utils, 'getWindowSelf').returns(win);
 
         expect(spec.buildRequests(bidRequests)).to.deep.equal([ serverRequest ]);
       });
@@ -484,7 +494,7 @@ describe('33acrossBidAdapter:', function () {
           height: 250,
           ad: '<html><h3>I am an ad</h3></html>',
           ttl: 60,
-          creativeId: '23455',
+          creativeId: 1,
           currency: 'USD',
           netRevenue: true
         };
@@ -520,8 +530,7 @@ describe('33acrossBidAdapter:', function () {
                 crid: 1,
                 h: 250,
                 w: 300,
-                price: 0.0940,
-                crid: 1
+                price: 0.0940
               },
               {
                 id: '2',
@@ -529,8 +538,7 @@ describe('33acrossBidAdapter:', function () {
                 crid: 2,
                 h: 250,
                 w: 300,
-                price: 0.0938,
-                crid: 2
+                price: 0.0938
               }
               ]
             },
@@ -571,11 +579,11 @@ describe('33acrossBidAdapter:', function () {
       syncs = [
         {
           type: 'iframe',
-          url: 'https://de.tynt.com/deb/v2?m=xch&rt=html&id=id1'
+          url: 'https://ssc-cms.33across.com/ps/?m=xch&rt=html&ru=deb&id=id1'
         },
         {
           type: 'iframe',
-          url: 'https://de.tynt.com/deb/v2?m=xch&rt=html&id=id2'
+          url: 'https://ssc-cms.33across.com/ps/?m=xch&rt=html&ru=deb&id=id2'
         },
       ];
       bidRequests = [
@@ -612,73 +620,140 @@ describe('33acrossBidAdapter:', function () {
       ];
     });
 
-    context('when gdpr does not apply', function() {
-      let gdprConsent;
-
-      beforeEach(function() {
-        gdprConsent = {
-          gdprApplies: false
-        };
-      });
-
-      context('when iframe is not enabled', function() {
-        it('returns empty sync array', function() {
-          const syncOptions = {};
-
-          spec.buildRequests(bidRequests);
-
-          expect(spec.getUserSyncs(syncOptions, {}, gdprConsent)).to.deep.equal([]);
-        });
-      });
-
-      context('when iframe is enabled', function() {
-        it('returns sync array equal to number of unique siteIDs', function() {
-          const syncOptions = {
-            iframeEnabled: true
-          };
-
-          spec.buildRequests(bidRequests);
-
-          expect(spec.getUserSyncs(syncOptions, {}, gdprConsent)).to.deep.equal(syncs);
-        });
-      });
-    });
-
-    context('when consent data is not defined', function() {
-      context('when iframe is not enabled', function() {
-        it('returns empty sync array', function() {
-          const syncOptions = {};
-
-          spec.buildRequests(bidRequests);
-
-          expect(spec.getUserSyncs(syncOptions)).to.deep.equal([]);
-        });
-      });
-
-      context('when iframe is enabled', function() {
-        it('returns sync array equal to number of unique siteIDs', function() {
-          const syncOptions = {
-            iframeEnabled: true
-          };
-
-          spec.buildRequests(bidRequests);
-
-          expect(spec.getUserSyncs(syncOptions)).to.deep.equal(syncs);
-        });
-      });
-    });
-
-    context('when gdpr applies', function() {
+    context('when iframe is not enabled', function() {
       it('returns empty sync array', function() {
         const syncOptions = {};
-        const gdprConsent = {
-          gdprApplies: true
-        };
 
         spec.buildRequests(bidRequests);
 
-        expect(spec.getUserSyncs(syncOptions, {}, gdprConsent)).to.deep.equal([]);
+        expect(spec.getUserSyncs(syncOptions)).to.deep.equal([]);
       });
-    })
+    });
+
+    context('when iframe is enabled', function() {
+      let syncOptions;
+      beforeEach(function() {
+        syncOptions = {
+          iframeEnabled: true
+        };
+      });
+
+      context('when there is no gdpr consent data', function() {
+        it('returns sync urls with undefined consent string as param', function() {
+          spec.buildRequests(bidRequests);
+
+          const syncResults = spec.getUserSyncs(syncOptions, {}, undefined);
+          const expectedSyncs = [
+            {
+              type: 'iframe',
+              url: `${syncs[0].url}&gdpr_consent=undefined`
+            },
+            {
+              type: 'iframe',
+              url: `${syncs[1].url}&gdpr_consent=undefined`
+            }
+          ]
+
+          expect(syncResults).to.deep.equal(expectedSyncs);
+        })
+      });
+
+      context('when gdpr applies but there is no consent string', function() {
+        it('returns sync urls with undefined consent string as param and gdpr=1', function() {
+          spec.buildRequests(bidRequests);
+
+          const syncResults = spec.getUserSyncs(syncOptions, {}, {gdprApplies: true});
+          const expectedSyncs = [
+            {
+              type: 'iframe',
+              url: `${syncs[0].url}&gdpr_consent=undefined&gdpr=1`
+            },
+            {
+              type: 'iframe',
+              url: `${syncs[1].url}&gdpr_consent=undefined&gdpr=1`
+            }
+          ];
+
+          expect(syncResults).to.deep.equal(expectedSyncs);
+        });
+      });
+
+      context('when gdpr applies and there is consent string', function() {
+        it('returns sync urls with gdpr_consent=consent string as param and gdpr=1', function() {
+          spec.buildRequests(bidRequests);
+
+          const syncResults = spec.getUserSyncs(syncOptions, {}, {gdprApplies: true, consentString: 'consent123A'});
+          const expectedSyncs = [
+            {
+              type: 'iframe',
+              url: `${syncs[0].url}&gdpr_consent=consent123A&gdpr=1`
+            },
+            {
+              type: 'iframe',
+              url: `${syncs[1].url}&gdpr_consent=consent123A&gdpr=1`
+            }
+          ];
+
+          expect(syncResults).to.deep.equal(expectedSyncs);
+        });
+      });
+
+      context('when gdpr does not apply and there is no consent string', function() {
+        it('returns sync urls with undefined consent string as param and gdpr=0', function() {
+          spec.buildRequests(bidRequests);
+
+          const syncResults = spec.getUserSyncs(syncOptions, {}, {gdprApplies: false});
+          const expectedSyncs = [
+            {
+              type: 'iframe',
+              url: `${syncs[0].url}&gdpr_consent=undefined&gdpr=0`
+            },
+            {
+              type: 'iframe',
+              url: `${syncs[1].url}&gdpr_consent=undefined&gdpr=0`
+            }
+          ];
+          expect(syncResults).to.deep.equal(expectedSyncs);
+        });
+      });
+
+      context('when gdpr is unknown and there is consent string', function() {
+        it('returns sync urls with only consent string as param', function() {
+          spec.buildRequests(bidRequests);
+
+          const syncResults = spec.getUserSyncs(syncOptions, {}, {consentString: 'consent123A'});
+          const expectedSyncs = [
+            {
+              type: 'iframe',
+              url: `${syncs[0].url}&gdpr_consent=consent123A`
+            },
+            {
+              type: 'iframe',
+              url: `${syncs[1].url}&gdpr_consent=consent123A`
+            }
+          ];
+          expect(syncResults).to.deep.equal(expectedSyncs);
+        });
+      });
+
+      context('when gdpr does not apply and there is consent string (yikes!)', function() {
+        it('returns sync urls with consent string as param and gdpr=0', function() {
+          spec.buildRequests(bidRequests);
+
+          const syncResults = spec.getUserSyncs(syncOptions, {}, {gdprApplies: false, consentString: 'consent123A'});
+          const expectedSyncs = [
+            {
+              type: 'iframe',
+              url: `${syncs[0].url}&gdpr_consent=consent123A&gdpr=0`
+            },
+            {
+              type: 'iframe',
+              url: `${syncs[1].url}&gdpr_consent=consent123A&gdpr=0`
+            }
+          ];
+          expect(syncResults).to.deep.equal(expectedSyncs);
+        });
+      });
+    });
   });
 });

@@ -16,10 +16,93 @@ Working examples can be found in [the developer docs](http://prebid.org/dev-docs
 
 **Table of Contents**
 
+- [Usage](#Usage)
 - [Install](#Install)
 - [Build](#Build)
 - [Run](#Run)
 - [Contribute](#Contribute)
+
+<a name="Usage"></a>
+
+## Usage (as a npm dependency)
+
+*Note:* Requires Prebid.js v1.38.0+
+
+Prebid.js depends on Babel and some Babel Plugins in order to run correctly in the browser.  Here are some examples for 
+configuring webpack to work with Prebid.js.
+
+With Babel 7:
+```javascript
+// webpack.conf.js
+let path = require('path');
+module.exports = {
+  mode: 'production',
+  module: {
+    rules: [
+      
+      // this rule can be excluded if you don't require babel-loader for your other application files
+      {
+        test: /\.m?js$/,
+        exclude: /node_modules/,
+        use: {
+          loader: 'babel-loader',
+        }
+      },
+      
+      // this separate rule is required to make sure that the Prebid.js files are babel-ified.  this rule will
+      // override the regular exclusion from above (for being inside node_modules).
+      {
+        test: /.js$/,
+        include: new RegExp(`\\${path.sep}prebid\.js`),
+        use: {
+          loader: 'babel-loader',
+          // presets and plugins for Prebid.js must be manually specified separate from your other babel rule.
+          // this can be accomplished by requiring prebid's .babelrc.js file (requires Babel 7 and Node v8.9.0+)
+          options: require('prebid.js/.babelrc.js')
+        }
+      }
+    ]
+  }
+}
+```
+
+Or for Babel 6:
+```javascript
+            // you must manually install and specify the presets and plugins yourself
+            options: {
+              plugins: [
+                "transform-object-assign", // required (for IE support) and "babel-plugin-transform-object-assign" 
+                                           // must be installed as part of your package.
+                require('prebid.js/plugins/pbjsGlobals.js') // required!
+              ],
+              presets: [
+                ["env", {                 // you can use other presets if you wish.
+                  "targets": {            // this example is using "babel-presets-env", which must be installed if you
+                    "browsers": [         // follow this example.
+                      ... // your browser targets. they should probably match the targets you're using for the rest 
+                          // of your application
+                    ]
+                  }
+                }]
+              ]
+            }
+```
+
+Then you can use Prebid.js as any other npm depedendency
+
+```javascript
+import prebid from 'prebid.js';
+import 'prebid.js/modules/rubiconBidAdapter'; // imported modules will register themselves automatically with prebid
+import 'prebid.js/modules/appnexusBidAdapter';
+prebid.processQueue();  // required to process existing pbjs.queue blocks and setup any further pbjs.queue execution
+
+prebid.requestBids({
+  ...
+})
+
+```
+
+
 
 <a name="Install"></a>
 
@@ -29,11 +112,11 @@ Working examples can be found in [the developer docs](http://prebid.org/dev-docs
     $ cd Prebid.js
     $ npm install
 
-*Note:* You need to have `NodeJS` 4.x or greater installed.
+*Note:* You need to have `NodeJS` 8.9.x or greater installed.
 
-*Note:* In the 1.24.0 release of Prebid.js we have transitioned to using gulp 4.0 from using gulp 3.9.1.  To compily with gulp's recommended setup for 4.0, you'll need to have `gulp-cli` installed globally prior to running the general `npm install`.  This shouldn't impact any other projects you may work on that use an earlier version of gulp in it's setup.
+*Note:* In the 1.24.0 release of Prebid.js we have transitioned to using gulp 4.0 from using gulp 3.9.1.  To comply with gulp's recommended setup for 4.0, you'll need to have `gulp-cli` installed globally prior to running the general `npm install`.  This shouldn't impact any other projects you may work on that use an earlier version of gulp in its setup.
 
-If you have a previous version of `gulp` installed globally, you'll need to remove it before installing `gulp-cli`.  You can check if this is installed by running `gulp -v` and seeing the version that's listed in the `CLI` field of the output.  If you have the `gulp` package installd globally, it's likely the same version that you'll see in the `Local` field.  If you already have `gulp-cli` installed, it should be a lower major version (it's at version `2.0.1` at the time of the transition).
+If you have a previous version of `gulp` installed globally, you'll need to remove it before installing `gulp-cli`.  You can check if this is installed by running `gulp -v` and seeing the version that's listed in the `CLI` field of the output.  If you have the `gulp` package installed globally, it's likely the same version that you'll see in the `Local` field.  If you already have `gulp-cli` installed, it should be a lower major version (it's at version `2.0.1` at the time of the transition).
 
 To remove the old package, you can use the command: `npm rm gulp -g`
 
@@ -124,10 +207,20 @@ gulp test-coverage
 gulp view-coverage
 ```
 
-For end-to-end testing, edit the example file `./integrationExamples/gpt/pbjs_example_gpt.html`:
+For Prebid.org members with access to BrowserStack, additional end-to-end testing can be done with:
 
-1. Change `{id}` values appropriately to set up ad units and bidders
-2. Set the path to Prebid.js in your example file as shown below (see `pbs.src`).
+```bash
+gulp e2e-test --host=test.localhost
+```
+
+To run these tests, the following items are required:
+- setup an alias of localhost in your `hosts` file (eg `127.0.0.1  test.localhost`); note - you can use any alias.  Use this alias in the command-line argument above.
+- access to [BrowserStack](https://www.browserstack.com/) account.  Assign the following variables in your bash_profile:
+```bash
+export BROWSERSTACK_USERNAME='YourUserNameHere'
+export BROWSERSTACK_ACCESS_KEY='YourAccessKeyHere'
+```
+You can get these BrowserStack values from your profile page.
 
 For development:
 
@@ -217,7 +310,7 @@ For instructions on writing tests for Prebid.js, see [Testing Prebid.js](http://
 
 ### Supported Browsers
 
-Prebid.js is supported on IE10+ and modern browsers.
+Prebid.js is supported on IE11 and modern browsers.
 
 ### Governance
 Review our governance model [here](https://github.com/prebid/Prebid.js/tree/master/governance.md).

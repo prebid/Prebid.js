@@ -1,5 +1,5 @@
-import * as utils from 'src/utils';
-import { registerBidder } from 'src/adapters/bidderFactory';
+import * as utils from '../src/utils';
+import { registerBidder } from '../src/adapters/bidderFactory';
 
 const BIDDER_CODE = 'consumable';
 
@@ -28,10 +28,7 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
 
-  buildRequests: function(validBidRequests) {
-    // Do we need to group by bidder? i.e. to make multiple requests for
-    // different endpoints.
-
+  buildRequests: function(validBidRequests, bidderRequest) {
     let ret = {
       method: 'POST',
       url: '',
@@ -50,18 +47,26 @@ export const spec = {
     const data = Object.assign({
       placements: [],
       time: Date.now(),
-      user: {},
-      url: utils.getTopWindowUrl(),
+      url: bidderRequest.refererInfo.referer,
       referrer: document.referrer,
-      enableBotFiltering: true,
-      includePricingData: true,
-      parallel: true
+      source: [{
+        'name': 'prebidjs',
+        'version': '$prebid.version$'
+      }]
     }, validBidRequests[0].params);
 
+    if (bidderRequest && bidderRequest.gdprConsent) {
+      data.gdpr = {
+        consent: bidderRequest.gdprConsent.consentString,
+        applies: (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') ? bidderRequest.gdprConsent.gdprApplies : true
+      };
+    }
+
     validBidRequests.map(bid => {
+      const sizes = (bid.mediaTypes && bid.mediaTypes.banner && bid.mediaTypes.banner.sizes) || bid.sizes || [];
       const placement = Object.assign({
         divName: bid.bidId,
-        adTypes: bid.adTypes || getSize(bid.sizes)
+        adTypes: bid.adTypes || getSize(sizes)
       }, bid.params);
 
       if (placement.networkId && placement.siteId && placement.unitId && placement.unitName) {
@@ -71,6 +76,7 @@ export const spec = {
 
     ret.data = JSON.stringify(data);
     ret.bidRequest = validBidRequests;
+    ret.bidderRequest = bidderRequest;
     ret.url = BASE_URI;
 
     return ret;
@@ -111,9 +117,9 @@ export const spec = {
           bid.ad = retrieveAd(decision, bid.unitId, bid.unitName);
           bid.currency = 'USD';
           bid.creativeId = decision.adId;
-          bid.ttl = 360;
+          bid.ttl = 30;
           bid.netRevenue = true;
-          bid.referrer = utils.getTopWindowUrl();
+          bid.referrer = bidRequest.bidderRequest.refererInfo.referer;
 
           bidResponses.push(bid);
         }
@@ -123,12 +129,16 @@ export const spec = {
     return bidResponses;
   },
 
-  getUserSyncs: function(syncOptions) {
+  getUserSyncs: function(syncOptions, serverResponses) {
     if (syncOptions.iframeEnabled) {
       return [{
         type: 'iframe',
         url: '//sync.serverbid.com/ss/' + siteId + '.html'
       }];
+    }
+
+    if (syncOptions.pixelEnabled && serverResponses.length > 0) {
+      return serverResponses[0].body.pixels;
     } else {
       utils.logWarn(bidder + ': Please enable iframe based user syncing.');
     }
@@ -192,12 +202,7 @@ function getSize(sizes) {
 }
 
 function retrieveAd(decision, unitId, unitName) {
-  let oad = decision.contents && decision.contents[0] && decision.contents[0].body + utils.createTrackPixelHtml(decision.impressionUrl);
-  let cb = Math.round(new Date().getTime());
-  let ad = '<script type=\'text/javascript\'>document.write(\'<div id=\"' + unitName + '-' + unitId + '\">\');</script>' + oad;
-  ad += '<script type=\'text/javascript\'>document.write(\'</div>\');</script>';
-  ad += '<script type=\'text/javascript\'>document.write(\'<div class=\"' + unitName + '\"></div>\');</script>';
-  ad += '<script type=\'text/javascript\'>document.write(\'<scr\'+\'ipt type=\"text/javascript\" src=\"https://yummy.consumable.com/' + unitId + '/' + unitName + '/widget/unit.js?cb=' + cb + '\" charset=\"utf-8\" async></scr\'+\'ipt>\');</script>'
+  let ad = decision.contents && decision.contents[0] && decision.contents[0].body + utils.createTrackPixelHtml(decision.impressionUrl);
 
   return ad;
 }

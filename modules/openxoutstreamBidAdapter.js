@@ -1,12 +1,12 @@
-import { config } from 'src/config';
-import { registerBidder } from 'src/adapters/bidderFactory';
-import * as utils from 'src/utils';
-import { BANNER } from 'src/mediaTypes';
+import { config } from '../src/config';
+import { registerBidder } from '../src/adapters/bidderFactory';
+import * as utils from '../src/utils';
+import { BANNER } from '../src/mediaTypes';
 
 const SUPPORTED_AD_TYPES = [BANNER];
 const BIDDER_CODE = 'openxoutstream';
 const BIDDER_CONFIG = 'hb_pb_ym';
-const BIDDER_VERSION = '1.0.0';
+const BIDDER_VERSION = '1.0.1';
 const CURRENCY = 'USD';
 const NET_REVENUE = true;
 const TIME_TO_LIVE = 300;
@@ -20,28 +20,21 @@ export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: SUPPORTED_AD_TYPES,
   isBidRequestValid: function(bidRequest) {
-    if (bidRequest.params.delDomain) {
-      return !!bidRequest.params.unit || utils.deepAccess(bidRequest, 'mediaTypes.banner.sizes.length') > 0;
-    }
-    return false;
+    return !!(bidRequest.params.delDomain && bidRequest.params.unit)
   },
   buildRequests: function(bidRequests, bidderRequest) {
     if (bidRequests.length === 0) {
       return [];
     }
     let requests = [];
-    requests.push(buildOXBannerRequest(bidRequests, bidderRequest));
+    bidRequests.forEach(bid => {
+      requests.push(buildOXBannerRequest(bid, bidderRequest));
+    })
     return requests;
   },
-  interpretResponse: function(serverResponse, serverRequest) {
-    return handleVastResponse(serverResponse, serverRequest.payload)
+  interpretResponse: function(bid, serverResponse) {
+    return handleVastResponse(bid, serverResponse.payload)
   },
-
-  transformBidParams: function(params, isOpenRtb) {
-    return utils.convertTypes({
-      'unit': 'string',
-    }, params);
-  }
 };
 
 function getViewportDimensions(isIfr) {
@@ -70,25 +63,28 @@ function getViewportDimensions(isIfr) {
   return `${width}x${height}`;
 }
 
-function buildCommonQueryParamsFromBids(bids, bidderRequest) {
+function buildCommonQueryParamsFromBids(bid, bidderRequest) {
   const isInIframe = utils.inIframe();
   let defaultParams;
+  const height = '184';
+  const width = '414';
+  const aus = '304x184%7C412x184%7C375x184%7C414x184';
   defaultParams = {
-    ju: config.getConfig('pageUrl') || utils.getTopWindowUrl(),
-    jr: utils.getTopWindowReferrer(),
+    ju: config.getConfig('pageUrl') || bidderRequest.refererInfo.referer,
     ch: document.charSet || document.characterSet,
     res: `${screen.width}x${screen.height}x${screen.colorDepth}`,
     ifr: isInIframe,
     tz: new Date().getTimezoneOffset(),
     tws: getViewportDimensions(isInIframe),
     be: 1,
-    bc: bids[0].params.bc || `${BIDDER_CONFIG}_${BIDDER_VERSION}`,
-    auid: '540141567',
-    dddid: utils._map(bids, bid => bid.transactionId).join(','),
+    bc: bid.params.bc || `${BIDDER_CONFIG}_${BIDDER_VERSION}`,
+    auid: bid.params.unit,
+    dddid: bid.transactionId,
     openrtb: '%7B%22mimes%22%3A%5B%22video%2Fmp4%22%5D%7D',
     nocache: new Date().getTime(),
-    vht: bids[0].params.height || bids[0].sizes[0][1],
-    vwd: bids[0].params.width || bids[0].sizes[0][0]
+    vht: height,
+    vwd: width,
+    aus: aus
   };
 
   if (utils.deepAccess(bidderRequest, 'gdprConsent')) {
@@ -110,24 +106,23 @@ function buildCommonQueryParamsFromBids(bids, bidderRequest) {
   return defaultParams;
 }
 
-function buildOXBannerRequest(bids, bidderRequest) {
-  let queryParams = buildCommonQueryParamsFromBids(bids, bidderRequest);
-  queryParams.aus = utils._map(bids, bid => utils.parseSizesInput(bid.sizes).join(',')).join('|');
+function buildOXBannerRequest(bid, bidderRequest) {
+  let queryParams = buildCommonQueryParamsFromBids(bid, bidderRequest);
 
-  if (bids.some(bid => bid.params.doNotTrack)) {
+  if (bid.params.doNotTrack) {
     queryParams.ns = 1;
   }
 
-  if (bids.some(bid => bid.params.coppa)) {
+  if (config.getConfig('coppa') === true || bid.params.coppa) {
     queryParams.tfcd = 1;
   }
 
-  let url = `https://${bids[0].params.delDomain}/v/1.0/avjp`
+  let url = `https://${bid.params.delDomain}/v/1.0/avjp`;
   return {
     method: 'GET',
     url: url,
     data: queryParams,
-    payload: {'bids': bids}
+    payload: {'bid': bid}
   };
 }
 
@@ -146,7 +141,7 @@ function handleVastResponse(response, serverResponse) {
     const ymAdsScript = '<script type="text/javascript"> window.__ymAds =' + adResponseString + '</script>';
 
     let bidResponse = {};
-    bidResponse.requestId = serverResponse.bids[0].bidId;
+    bidResponse.requestId = serverResponse.bid.bidId;
     bidResponse.bidderCode = BIDDER_CODE;
     bidResponse.netRevenue = NET_REVENUE;
     bidResponse.currency = CURRENCY;
@@ -185,7 +180,8 @@ function createPlacementDiv() {
  */
 const getTemplateAdResponse = (vastUrl) => {
   return {
-    availability_zone: 'us-east-1a',
+    loader: 'openxoutstream',
+    availability_zone: '',
     data: [
       {
         ads: [

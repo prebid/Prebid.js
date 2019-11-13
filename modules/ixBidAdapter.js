@@ -1,29 +1,16 @@
-import * as utils from 'src/utils';
-import { BANNER } from 'src/mediaTypes';
-import { config } from 'src/config';
-import isArray from 'core-js/library/fn/array/is-array';
+import * as utils from '../src/utils';
+import { BANNER } from '../src/mediaTypes';
+import { config } from '../src/config';
 import isInteger from 'core-js/library/fn/number/is-integer';
-import { registerBidder } from 'src/adapters/bidderFactory';
+import { registerBidder } from '../src/adapters/bidderFactory';
 
 const BIDDER_CODE = 'ix';
 const BANNER_SECURE_BID_URL = 'https://as-sec.casalemedia.com/cygnus';
-const BANNER_INSECURE_BID_URL = 'http://as.casalemedia.com/cygnus';
 const SUPPORTED_AD_TYPES = [BANNER];
 const ENDPOINT_VERSION = 7.2;
 const CENT_TO_DOLLAR_FACTOR = 100;
 const TIME_TO_LIVE = 35;
 const NET_REVENUE = true;
-
-// Always start by assuming the protocol is HTTPS. This way, it will work
-// whether the page protocol is HTTP or HTTPS. Then check if the page is
-// actually HTTP.If we can guarantee it is, then, and only then, set protocol to
-// HTTP.
-let isSecureWeb = true;
-if (utils.getTopWindowLocation().protocol.indexOf('https') !== 0) {
-  isSecureWeb = false;
-}
-const baseUrl = isSecureWeb ? BANNER_SECURE_BID_URL : BANNER_INSECURE_BID_URL;
-
 const PRICE_TO_DOLLAR_FACTOR = {
   JPY: 1
 };
@@ -88,6 +75,11 @@ function parseBid(rawBid, currency) {
   bid.currency = currency;
   bid.creativeId = rawBid.hasOwnProperty('crid') ? rawBid.crid : '-';
 
+  bid.meta = {};
+  bid.meta.networkId = utils.deepAccess(rawBid, 'ext.dspid');
+  bid.meta.brandId = utils.deepAccess(rawBid, 'ext.advbrandid');
+  bid.meta.brandName = utils.deepAccess(rawBid, 'ext.advbrand');
+
   return bid;
 }
 
@@ -98,7 +90,7 @@ function parseBid(rawBid, currency) {
  * @return {boolean}      True if this is a valid size format, and false otherwise.
  */
 function isValidSize(size) {
-  return isArray(size) && size.length === 2 && isInteger(size[0]) && isInteger(size[1]);
+  return Array.isArray(size) && size.length === 2 && isInteger(size[0]) && isInteger(size[1]);
 }
 
 /**
@@ -191,8 +183,12 @@ export const spec = {
    */
   buildRequests: function (validBidRequests, options) {
     const bannerImps = [];
+    const userEids = [];
     let validBidRequest = null;
     let bannerImp = null;
+
+    // Always use secure HTTPS protocol.
+    let baseUrl = BANNER_SECURE_BID_URL;
 
     for (let i = 0; i < validBidRequests.length; i++) {
       validBidRequest = validBidRequests[i];
@@ -202,6 +198,21 @@ export const spec = {
       bannerImps.push(bannerImp);
     }
 
+    // RTI ids will be included in the bid request if the function getIdentityInfo() is loaded
+    // and if the data for the partner exist
+    if (window.headertag && typeof window.headertag.getIdentityInfo === 'function') {
+      let identityInfo = window.headertag.getIdentityInfo();
+      if (identityInfo && typeof identityInfo === 'object') {
+        for (const partnerName in identityInfo) {
+          if (identityInfo.hasOwnProperty(partnerName)) {
+            let response = identityInfo[partnerName];
+            if (!response.responsePending && response.data && typeof response.data === 'object' && Object.keys(response.data).length) {
+              userEids.push(response.data);
+            }
+          }
+        }
+      }
+    }
     const r = {};
 
     // Since bidderRequestId are the same for different bid request, just use the first one.
@@ -209,29 +220,40 @@ export const spec = {
 
     r.imp = bannerImps;
     r.site = {};
-    r.site.page = utils.getTopWindowUrl();
-    r.site.ref = utils.getTopWindowReferrer();
     r.ext = {};
     r.ext.source = 'prebid';
+    if (userEids.length > 0) {
+      r.user = {};
+      r.user.eids = userEids;
+    }
+
+    if (document.referrer && document.referrer !== '') {
+      r.site.ref = document.referrer;
+    }
 
     // Apply GDPR information to the request if GDPR is enabled.
-    if (options && options.gdprConsent) {
-      const gdprConsent = options.gdprConsent;
+    if (options) {
+      if (options.gdprConsent) {
+        const gdprConsent = options.gdprConsent;
 
-      if (gdprConsent.hasOwnProperty('gdprApplies')) {
-        r.regs = {
-          ext: {
-            gdpr: gdprConsent.gdprApplies ? 1 : 0
-          }
-        };
+        if (gdprConsent.hasOwnProperty('gdprApplies')) {
+          r.regs = {
+            ext: {
+              gdpr: gdprConsent.gdprApplies ? 1 : 0
+            }
+          };
+        }
+
+        if (gdprConsent.hasOwnProperty('consentString')) {
+          r.user = r.user || {};
+          r.user.ext = {
+            consent: gdprConsent.consentString || ''
+          };
+        }
       }
 
-      if (gdprConsent.hasOwnProperty('consentString')) {
-        r.user = {
-          ext: {
-            consent: gdprConsent.consentString || ''
-          }
-        };
+      if (options.refererInfo) {
+        r.site.page = options.refererInfo.referer;
       }
     }
 

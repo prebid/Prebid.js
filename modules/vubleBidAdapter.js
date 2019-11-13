@@ -1,8 +1,8 @@
 // Vuble Adapter
 
-import * as utils from 'src/utils';
-import {registerBidder} from 'src/adapters/bidderFactory';
-import { Renderer } from 'src/Renderer';
+import * as utils from '../src/utils';
+import {registerBidder} from '../src/adapters/bidderFactory';
+import { Renderer } from '../src/Renderer';
 
 const BIDDER_CODE = 'vuble';
 
@@ -23,7 +23,7 @@ const outstreamRender = bid => {
         showBigPlayButton: false,
         showProgressBar: 'bar',
         showVolume: false,
-        allowFullscreen: false,
+        allowFullscreen: true,
         skippable: false,
       }
     });

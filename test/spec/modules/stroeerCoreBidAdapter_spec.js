@@ -298,7 +298,7 @@ describe('stroeerCore bid adapter', function () {
 
         assert.equal(serverRequestInfo.method, 'POST');
         assert.isObject(serverRequestInfo.data);
-        assert.equal(serverRequestInfo.url, 'http://hb.adscale.de/dsh');
+        assert.equal(serverRequestInfo.url, 'https://hb.adscale.de/dsh');
       });
 
       describe('should use custom url if provided', () => {
@@ -306,7 +306,7 @@ describe('stroeerCore bid adapter', function () {
           {
             protocol: 'http:',
             params: {sid: 'ODA=', host: 'other.com', port: '234', path: '/xyz'},
-            expected: 'http://other.com:234/xyz'
+            expected: 'https://other.com:234/xyz'
           },
           {
             protocol: 'https:',
@@ -321,7 +321,7 @@ describe('stroeerCore bid adapter', function () {
           {
             protocol: 'http:',
             params: {sid: 'ODA=', port: '234', path: '/xyz'},
-            expected: 'http://hb.adscale.de:234/xyz'
+            expected: 'https://hb.adscale.de:234/xyz'
           },
         ];
 
@@ -1002,7 +1002,7 @@ describe('stroeerCore bid adapter', function () {
       assert.isTrue(utils.insertElement.calledOnce);
       const element = utils.insertElement.lastCall.args[0];
 
-      assertConnectJs(element, '//js.adscale.de/userconnect.js', 'NDA=');
+      assertConnectJs(element, 'https://js.adscale.de/userconnect.js', 'NDA=');
     });
 
     it('should still perform user connect when no sid found', () => {
@@ -1015,7 +1015,7 @@ describe('stroeerCore bid adapter', function () {
       assert.isTrue(utils.insertElement.calledOnce);
       const element = utils.insertElement.lastCall.args[0];
 
-      assertConnectJs(element, '//js.adscale.de/userconnect.js');
+      assertConnectJs(element, 'https://js.adscale.de/userconnect.js');
     });
 
     it('should not perform user connect when there was no response', () => {

@@ -5,7 +5,7 @@ import { newBidder } from 'src/adapters/bidderFactory';
 import { spec } from 'modules/ixBidAdapter';
 
 describe('IndexexchangeAdapter', function () {
-  const IX_ENDPOINT = 'http://as.casalemedia.com/cygnus';
+  const IX_SECURE_ENDPOINT = 'https://as-sec.casalemedia.com/cygnus';
   const BIDDER_VERSION = 7.2;
 
   const DEFAULT_BANNER_VALID_BID = [
@@ -28,6 +28,17 @@ describe('IndexexchangeAdapter', function () {
       auctionId: '1aa2bb3cc4dd'
     }
   ];
+  const DEFAULT_BANNER_OPTION = {
+    gdprConsent: {
+      gdprApplies: true,
+      consentString: '3huaa11=qu3198ae',
+      vendorData: {}
+    },
+    refererInfo: {
+      referer: 'http://www.prebid.org',
+      canonicalUrl: 'http://www.prebid.org/the/link/to/the/page'
+    }
+  };
   const DEFAULT_BANNER_BID_RESPONSE = {
     cur: 'USD',
     id: '11a22b33c44d',
@@ -56,6 +67,19 @@ describe('IndexexchangeAdapter', function () {
         seat: '3970'
       }
     ]
+  };
+  const DEFAULT_IDENTITY_RESPONSE = {
+    IdentityIp: {
+      responsePending: false,
+      data: {
+        source: 'identityinc.com',
+        uids: [
+          {
+            id: 'identityid'
+          }
+        ]
+      }
+    }
   };
 
   describe('inherited functions', function () {
@@ -197,8 +221,173 @@ describe('IndexexchangeAdapter', function () {
     });
   });
 
+  describe('buildRequestsIdentity', function () {
+    let request;
+    let query;
+    let testCopy;
+
+    beforeEach(function() {
+      window.headertag = {};
+      window.headertag.getIdentityInfo = function() {
+        return testCopy;
+      };
+      request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_BANNER_OPTION);
+      query = request.data;
+    });
+    afterEach(function() {
+      delete window.headertag;
+    });
+    describe('buildRequestSingleRTI', function() {
+      before(function() {
+        testCopy = JSON.parse(JSON.stringify(DEFAULT_IDENTITY_RESPONSE));
+      });
+      it('payload should have correct format and value (single identity partner)', function () {
+        const payload = JSON.parse(query.r);
+
+        expect(payload.user).to.exist;
+        expect(payload.user.eids).to.exist;
+        expect(payload.user.eids).to.be.an('array');
+        expect(payload.user.eids).to.have.lengthOf(1);
+      });
+
+      it('identity data in impression should have correct format and value (single identity partner)', function () {
+        const impression = JSON.parse(query.r).user.eids;
+        expect(impression[0].source).to.equal(testCopy.IdentityIp.data.source);
+        expect(impression[0].uids[0].id).to.equal(testCopy.IdentityIp.data.uids[0].id);
+      });
+    });
+
+    describe('buildRequestMultipleIds', function() {
+      before(function() {
+        testCopy = JSON.parse(JSON.stringify(DEFAULT_IDENTITY_RESPONSE));
+        testCopy.IdentityIp.data.uids.push({
+          id: '1234567'
+        },
+        {
+          id: '2019-04-01TF2:34:41'
+        });
+      });
+      it('payload should have correct format and value (single identity w/ multi ids)', function () {
+        const payload = JSON.parse(query.r);
+
+        expect(payload.user).to.exist;
+        expect(payload.user.eids).to.exist;
+        expect(payload.user.eids).to.be.an('array');
+        expect(payload.user.eids).to.have.lengthOf(1);
+      });
+
+      it('identity data in impression should have correct format and value (single identity w/ multi ids)', function () {
+        const impression = JSON.parse(query.r).user.eids;
+
+        expect(impression[0].source).to.equal(testCopy.IdentityIp.data.source);
+        expect(impression[0].uids).to.have.lengthOf(3);
+      });
+    });
+
+    describe('buildRequestMultipleRTI', function() {
+      before(function() {
+        testCopy = JSON.parse(JSON.stringify(DEFAULT_IDENTITY_RESPONSE));
+        testCopy.JackIp = {
+          responsePending: false,
+          data: {
+            source: 'jackinc.com',
+            uids: [
+              {
+                id: 'jackid'
+              }
+            ]
+          }
+        }
+        testCopy.GenericIp = {
+          responsePending: false,
+          data: {
+            source: 'genericip.com',
+            uids: [
+              {
+                id: 'genericipenvelope'
+              }
+            ]
+          }
+        }
+      });
+      it('payload should have correct format and value (multiple identity partners)', function () {
+        const payload = JSON.parse(query.r);
+
+        expect(payload.user).to.exist;
+        expect(payload.user.eids).to.exist;
+        expect(payload.user.eids).to.be.an('array');
+        expect(payload.user.eids).to.have.lengthOf(3);
+      });
+
+      it('identity data in impression should have correct format and value (multiple identity partners)', function () {
+        const impression = JSON.parse(query.r).user.eids;
+
+        expect(impression[0].source).to.equal(testCopy.IdentityIp.data.source);
+        expect(impression[0].uids).to.have.lengthOf(1);
+
+        expect(impression[1].source).to.equal(testCopy.JackIp.data.source);
+        expect(impression[1].uids).to.have.lengthOf(1);
+
+        expect(impression[2].source).to.equal(testCopy.GenericIp.data.source);
+        expect(impression[2].uids).to.have.lengthOf(1);
+      });
+    });
+
+    describe('buildRequestNoData', function() {
+      beforeEach(function() {
+        testCopy = JSON.parse(JSON.stringify(DEFAULT_IDENTITY_RESPONSE));
+      });
+
+      it('payload should not have any user eids with an undefined identity data response', function () {
+        window.headertag.getIdentityInfo = function() {
+          return undefined;
+        };
+        request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_BANNER_OPTION);
+        query = request.data;
+        const payload = JSON.parse(query.r);
+
+        expect(payload.user).to.exist;
+        expect(payload.user.eids).to.not.exist;
+      });
+
+      it('payload should have user eids if least one partner data is available', function () {
+        testCopy.GenericIp = {
+          responsePending: true,
+          data: {}
+        }
+        request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_BANNER_OPTION);
+        query = request.data;
+        const payload = JSON.parse(query.r);
+
+        expect(payload.user).to.exist;
+        expect(payload.user.eids).to.exist;
+      });
+
+      it('payload should not have any user eids if identity data is pending for all partners', function () {
+        testCopy.IdentityIp.responsePending = true;
+        request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_BANNER_OPTION);
+        query = request.data;
+        const payload = JSON.parse(query.r);
+
+        expect(payload.user).to.exist;
+        expect(payload.user.eids).to.not.exist;
+      });
+
+      it('payload should not have any user eids if identity data is pending or not available for all partners', function () {
+        testCopy.IdentityIp.responsePending = false;
+        testCopy.IdentityIp.data = {};
+        request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_BANNER_OPTION);
+        query = request.data;
+        const payload = JSON.parse(query.r);
+
+        expect(payload.user).to.exist;
+        expect(payload.user.eids).to.not.exist;
+      });
+    });
+  });
+
   describe('buildRequestsBanner', function () {
-    const request = spec.buildRequests(DEFAULT_BANNER_VALID_BID);
+    const request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_BANNER_OPTION);
     const requestUrl = request.url;
     const requestMethod = request.method;
     const query = request.data;
@@ -206,12 +395,12 @@ describe('IndexexchangeAdapter', function () {
     const bidWithoutMediaType = utils.deepClone(DEFAULT_BANNER_VALID_BID);
     delete bidWithoutMediaType[0].mediaTypes;
     bidWithoutMediaType[0].sizes = [[300, 250], [300, 600]];
-    const requestWithoutMediaType = spec.buildRequests(bidWithoutMediaType);
+    const requestWithoutMediaType = spec.buildRequests(bidWithoutMediaType, DEFAULT_BANNER_OPTION);
     const queryWithoutMediaType = requestWithoutMediaType.data;
 
     it('request should be made to IX endpoint with GET method', function () {
       expect(requestMethod).to.equal('GET');
-      expect(requestUrl).to.equal(IX_ENDPOINT);
+      expect(requestUrl).to.equal(IX_SECURE_ENDPOINT);
     });
 
     it('query object (version, siteID and request) should be correct', function () {
@@ -227,10 +416,8 @@ describe('IndexexchangeAdapter', function () {
 
       expect(payload.id).to.equal(DEFAULT_BANNER_VALID_BID[0].bidderRequestId);
       expect(payload.site).to.exist;
-      expect(payload.site.page).to.exist;
-      expect(payload.site.page).to.contain('http');
-      expect(payload.site.ref).to.exist;
-      expect(payload.site.ref).to.be.a('string');
+      expect(payload.site.page).to.equal(DEFAULT_BANNER_OPTION.refererInfo.referer);
+      expect(payload.site.ref).to.equal(document.referrer);
       expect(payload.ext).to.exist;
       expect(payload.ext.source).to.equal('prebid');
       expect(payload.imp).to.exist;
@@ -269,10 +456,8 @@ describe('IndexexchangeAdapter', function () {
 
       expect(payload.id).to.equal(DEFAULT_BANNER_VALID_BID[0].bidderRequestId);
       expect(payload.site).to.exist;
-      expect(payload.site.page).to.exist;
-      expect(payload.site.page).to.contain('http');
-      expect(payload.site.ref).to.exist;
-      expect(payload.site.ref).to.be.a('string');
+      expect(payload.site.page).to.equal(DEFAULT_BANNER_OPTION.refererInfo.referer);
+      expect(payload.site.ref).to.equal(document.referrer);
       expect(payload.ext).to.exist;
       expect(payload.ext.source).to.equal('prebid');
       expect(payload.imp).to.exist;
@@ -340,9 +525,9 @@ describe('IndexexchangeAdapter', function () {
         }
       });
 
-      const requestWithFirstPartyData = spec.buildRequests(DEFAULT_BANNER_VALID_BID);
+      const requestWithFirstPartyData = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_BANNER_OPTION);
       const pageUrl = JSON.parse(requestWithFirstPartyData.data.r).site.page;
-      const expectedPageUrl = `${utils.getTopWindowUrl()}?ab=123&cd=123%23ab&e%2Ff=456&h%3Fg=456%23cd`;
+      const expectedPageUrl = DEFAULT_BANNER_OPTION.refererInfo.referer + '?ab=123&cd=123%23ab&e%2Ff=456&h%3Fg=456%23cd';
 
       expect(pageUrl).to.equal(expectedPageUrl);
     });
@@ -354,10 +539,10 @@ describe('IndexexchangeAdapter', function () {
         }
       });
 
-      const requestFirstPartyDataNumber = spec.buildRequests(DEFAULT_BANNER_VALID_BID);
+      const requestFirstPartyDataNumber = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_BANNER_OPTION);
       const pageUrl = JSON.parse(requestFirstPartyDataNumber.data.r).site.page;
 
-      expect(pageUrl).to.equal(utils.getTopWindowUrl());
+      expect(pageUrl).to.equal(DEFAULT_BANNER_OPTION.refererInfo.referer);
     });
 
     it('should not set first party or timeout if it is not present', function () {
@@ -365,18 +550,18 @@ describe('IndexexchangeAdapter', function () {
         ix: {}
       });
 
-      const requestWithoutConfig = spec.buildRequests(DEFAULT_BANNER_VALID_BID);
+      const requestWithoutConfig = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_BANNER_OPTION);
       const pageUrl = JSON.parse(requestWithoutConfig.data.r).site.page;
 
-      expect(pageUrl).to.equal(utils.getTopWindowUrl());
+      expect(pageUrl).to.equal(DEFAULT_BANNER_OPTION.refererInfo.referer);
       expect(requestWithoutConfig.data.t).to.be.undefined;
     });
 
     it('should not set first party or timeout if it is setConfig is not called', function () {
-      const requestWithoutConfig = spec.buildRequests(DEFAULT_BANNER_VALID_BID);
+      const requestWithoutConfig = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_BANNER_OPTION);
       const pageUrl = JSON.parse(requestWithoutConfig.data.r).site.page;
 
-      expect(pageUrl).to.equal(utils.getTopWindowUrl());
+      expect(pageUrl).to.equal(DEFAULT_BANNER_OPTION.refererInfo.referer);
       expect(requestWithoutConfig.data.t).to.be.undefined;
     });
 
@@ -416,7 +601,12 @@ describe('IndexexchangeAdapter', function () {
           currency: 'USD',
           ttl: 35,
           netRevenue: true,
-          dealId: undefined
+          dealId: undefined,
+          meta: {
+            networkId: 50,
+            brandId: 303325,
+            brandName: 'OECTA'
+          }
         }
       ];
       const result = spec.interpretResponse({ body: DEFAULT_BANNER_BID_RESPONSE });
@@ -437,7 +627,12 @@ describe('IndexexchangeAdapter', function () {
           currency: 'USD',
           ttl: 35,
           netRevenue: true,
-          dealId: undefined
+          dealId: undefined,
+          meta: {
+            networkId: 50,
+            brandId: 303325,
+            brandName: 'OECTA'
+          }
         }
       ];
       const result = spec.interpretResponse({ body: bidResponse });
@@ -458,7 +653,12 @@ describe('IndexexchangeAdapter', function () {
           currency: 'JPY',
           ttl: 35,
           netRevenue: true,
-          dealId: undefined
+          dealId: undefined,
+          meta: {
+            networkId: 50,
+            brandId: 303325,
+            brandName: 'OECTA'
+          }
         }
       ];
       const result = spec.interpretResponse({ body: bidResponse });
@@ -479,7 +679,12 @@ describe('IndexexchangeAdapter', function () {
           currency: 'USD',
           ttl: 35,
           netRevenue: true,
-          dealId: 'deal'
+          dealId: 'deal',
+          meta: {
+            networkId: 50,
+            brandId: 303325,
+            brandName: 'OECTA'
+          }
         }
       ];
       const result = spec.interpretResponse({ body: bidResponse });
@@ -487,14 +692,7 @@ describe('IndexexchangeAdapter', function () {
     });
 
     it('bidrequest should have consent info if gdprApplies and consentString exist', function () {
-      const options = {
-        gdprConsent: {
-          gdprApplies: true,
-          consentString: '3huaa11=qu3198ae',
-          vendorData: {}
-        }
-      };
-      const validBidWithConsent = spec.buildRequests(DEFAULT_BANNER_VALID_BID, options);
+      const validBidWithConsent = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_BANNER_OPTION);
       const requestWithConsent = JSON.parse(validBidWithConsent.data.r);
 
       expect(requestWithConsent.regs.ext.gdpr).to.equal(1);
@@ -536,6 +734,39 @@ describe('IndexexchangeAdapter', function () {
 
       expect(requestWithConsent.regs).to.be.undefined;
       expect(requestWithConsent.user).to.be.undefined;
+    });
+
+    it('bidrequest should not have page if options is undefined', function () {
+      const options = {};
+      const validBidWithoutreferInfo = spec.buildRequests(DEFAULT_BANNER_VALID_BID, options);
+      const requestWithoutreferInfo = JSON.parse(validBidWithoutreferInfo.data.r);
+
+      expect(requestWithoutreferInfo.site.page).to.be.undefined;
+      expect(validBidWithoutreferInfo.url).to.equal(IX_SECURE_ENDPOINT);
+    });
+
+    it('bidrequest should not have page if options.refererInfo is an empty object', function () {
+      const options = {
+        refererInfo: {}
+      };
+      const validBidWithoutreferInfo = spec.buildRequests(DEFAULT_BANNER_VALID_BID, options);
+      const requestWithoutreferInfo = JSON.parse(validBidWithoutreferInfo.data.r);
+
+      expect(requestWithoutreferInfo.site.page).to.be.undefined;
+      expect(validBidWithoutreferInfo.url).to.equal(IX_SECURE_ENDPOINT);
+    });
+
+    it('bidrequest should sent to secure endpoint if page url is secure', function () {
+      const options = {
+        refererInfo: {
+          referer: 'https://www.prebid.org'
+        }
+      };
+      const validBidWithoutreferInfo = spec.buildRequests(DEFAULT_BANNER_VALID_BID, options);
+      const requestWithoutreferInfo = JSON.parse(validBidWithoutreferInfo.data.r);
+
+      expect(requestWithoutreferInfo.site.page).to.equal(options.refererInfo.referer);
+      expect(validBidWithoutreferInfo.url).to.equal(IX_SECURE_ENDPOINT);
     });
   });
 });

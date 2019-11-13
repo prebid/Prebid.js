@@ -1,6 +1,6 @@
-import * as utils from 'src/utils';
-import { BANNER, NATIVE } from 'src/mediaTypes';
-import { registerBidder } from 'src/adapters/bidderFactory';
+import * as utils from '../src/utils';
+import { BANNER, NATIVE } from '../src/mediaTypes';
+import { registerBidder } from '../src/adapters/bidderFactory';
 import includes from 'core-js/library/fn/array/includes';
 
 const BIDDER_CODE = 'rtbhouse';
@@ -43,9 +43,12 @@ export const spec = {
     const request = {
       id: validBidRequests[0].auctionId,
       imp: validBidRequests.map(slot => mapImpression(slot)),
-      site: mapSite(validBidRequests),
+      site: mapSite(validBidRequests, bidderRequest),
       cur: DEFAULT_CURRENCY_ARR,
-      test: validBidRequests[0].params.test || 0
+      test: validBidRequests[0].params.test || 0,
+      source: {
+        tid: validBidRequests[0].transactionId
+      }
     };
     if (bidderRequest && bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies) {
       const consentStr = (bidderRequest.gdprConsent.consentString)
@@ -89,12 +92,19 @@ registerBidder(spec);
  * @returns {object} Imp by OpenRTB 2.5 §3.2.4
  */
 function mapImpression(slot) {
-  return {
+  const imp = {
     id: slot.bidId,
     banner: mapBanner(slot),
     native: mapNative(slot),
     tagid: slot.adUnitCode.toString()
   };
+
+  const bidfloor = parseFloat(slot.params.bidfloor);
+  if (bidfloor) {
+    imp.bidfloor = bidfloor
+  }
+
+  return imp;
 }
 
 /**
@@ -105,10 +115,11 @@ function mapBanner(slot) {
   if (slot.mediaType === 'banner' ||
     utils.deepAccess(slot, 'mediaTypes.banner') ||
     (!slot.mediaType && !slot.mediaTypes)) {
+    var sizes = slot.sizes || slot.mediaTypes.banner.sizes;
     return {
-      w: slot.sizes[0][0],
-      h: slot.sizes[0][1],
-      format: slot.sizes.map(size => ({
+      w: sizes[0][0],
+      h: sizes[0][1],
+      format: sizes.map(size => ({
         w: size[0],
         h: size[1]
       }))
@@ -118,9 +129,10 @@ function mapBanner(slot) {
 
 /**
  * @param {object} slot Ad Unit Params by Prebid
+ * @param {object} bidderRequest by Prebid
  * @returns {object} Site by OpenRTB 2.5 §3.2.13
  */
-function mapSite(slot) {
+function mapSite(slot, bidderRequest) {
   const pubId = slot && slot.length > 0
     ? slot[0].params.publisherId
     : 'unknown';
@@ -128,7 +140,7 @@ function mapSite(slot) {
     publisher: {
       id: pubId.toString(),
     },
-    page: utils.getTopWindowUrl(),
+    page: bidderRequest.refererInfo.referer,
     name: utils.getOrigin()
   }
 }

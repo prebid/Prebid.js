@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { spec, ENDPOINT } from 'modules/readpeakBidAdapter';
 import * as utils from 'src/utils';
-import { config } from 'src/config';
+import {config} from 'src/config';
 
 describe('ReadPeakAdapter', function () {
   let bidRequest
@@ -150,6 +150,12 @@ describe('ReadPeakAdapter', function () {
     });
 
     it('should attach request data', function () {
+      config.setConfig({
+        currency: {
+          adServerCurrency: 'EUR'
+        }
+      });
+
       const request = spec.buildRequests([ bidRequest ]);
 
       const data = JSON.parse(request.data);
@@ -168,7 +174,8 @@ describe('ReadPeakAdapter', function () {
         page: utils.getTopWindowLocation().href,
         domain: utils.getTopWindowLocation().hostname,
       });
-      expect(data.device).to.deep.contain({ ua: navigator.userAgent });
+      expect(data.device).to.deep.contain({ ua: navigator.userAgent, language: navigator.language });
+      expect(data.cur).to.deep.equal(['EUR']);
     });
   });
 

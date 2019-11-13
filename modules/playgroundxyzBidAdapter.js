@@ -1,9 +1,10 @@
-import * as utils from 'src/utils';
-import { registerBidder } from 'src/adapters/bidderFactory';
-import { BANNER } from 'src/mediaTypes';
+import * as utils from '../src/utils';
+import { registerBidder } from '../src/adapters/bidderFactory';
+import { BANNER } from '../src/mediaTypes';
 
 const BIDDER_CODE = 'playgroundxyz';
 const URL = 'https://ads.playground.xyz/host-config/prebid?v=2';
+const DEFAULT_CURRENCY = 'USD';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -86,11 +87,12 @@ export const spec = {
       return bids;
     }
 
+    const currency = serverResponse.cur || DEFAULT_CURRENCY;
     serverResponse.seatbid.forEach(sBid => {
       if (sBid.hasOwnProperty('bid')) {
         sBid.bid.forEach(iBid => {
           if (iBid.price !== 0) {
-            const bid = newBid(iBid);
+            const bid = newBid(iBid, currency);
             bids.push(bid);
           }
         });
@@ -100,22 +102,14 @@ export const spec = {
   },
 
   getUserSyncs: function (syncOptions) {
-    if (syncOptions.iframeEnabled) {
-      return [{
-        type: 'iframe',
-        url: '//acdn.adnxs.com/ib/static/usersync/v3/async_usersync.html'
-      }];
-    }
-    if (syncOptions.pixelEnabled) {
-      return [{
-        type: 'image',
-        url: '//ib.adnxs.com/getuidnb?https://ads.playground.xyz/usersync?partner=appnexus&uid=$UID'
-      }];
-    }
+    return [{
+      type: 'image',
+      url: '//ib.adnxs.com/getuidnb?https://ads.playground.xyz/usersync?partner=appnexus&uid=$UID'
+    }];
   }
 }
 
-function newBid(bid) {
+function newBid(bid, currency) {
   return {
     requestId: bid.impid,
     mediaType: BANNER,
@@ -126,7 +120,7 @@ function newBid(bid) {
     height: bid.h,
     ttl: 300,
     netRevenue: true,
-    currency: 'USD',
+    currency: currency,
   };
 }
 
@@ -172,7 +166,7 @@ function isMobile() {
 }
 
 function isConnectedTV() {
-  return (/(smart[-]?tv|hbbtv|appletv|googletv|hdmi|netcast\.tv|viera|nettv|roku|\bdtv\b|sonydtv|inettvbrowser|\btv\b)/i).test(global.navigator.userAgent);
+  return (/(smart[-]?tv|hbbtv|appletv|googletv|hdmi|netcast\.tv|viera|nettv|roku|\bdtv\b|sonydtv|inettvbrowser|\btv\b)/i).test(navigator.userAgent);
 }
 
 registerBidder(spec);
