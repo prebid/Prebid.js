@@ -12,6 +12,7 @@ const utils = require('./utils');
 const CONSTANTS = require('./constants');
 
 const DEFAULT_DEBUG = (parseQS(window.location.search)[CONSTANTS.DEBUG_MODE] || '').toUpperCase() === 'TRUE';
+const DEFAULT_TEST_BIDS = (parseQS(window.location.search)[CONSTANTS.TEST_BIDS_MODE] || '').toUpperCase() === 'TRUE';
 const DEFAULT_BIDDER_TIMEOUT = 3000;
 const DEFAULT_PUBLISHER_DOMAIN = window.location.origin;
 const DEFAULT_ENABLE_SEND_ALL_BIDS = true;
@@ -64,6 +65,15 @@ export function newConfig() {
       },
       set debug(val) {
         this._debug = val;
+      },
+
+      // when this mode is enabled all bidders are expected to return test-bids
+      _testBids: DEFAULT_TEST_BIDS,
+      get testBids() {
+        return this._testBids;
+      },
+      set testBids(val) {
+        this._testBids = val;
       },
 
       // default timeout for all bids
