@@ -925,6 +925,10 @@ export const spec = {
       utils.deepSetValue(payload, 'regs.coppa', 1);
     }
 
+    if(config.getConfig('testBids') === true) {
+      payload.test = 1;
+    }
+
     _handleDealCustomTargetings(payload, dctrArr, validBidRequests);
     _handleEids(payload, validBidRequests);
     _blockedIabCategoriesValidation(payload, blockedIabCategories);
