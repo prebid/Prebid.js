@@ -359,10 +359,11 @@ const OPEN_RTB_PROTOCOL = {
                   type: imgTypeId,
                   w: utils.deepAccess(params, 'sizes.0'),
                   h: utils.deepAccess(params, 'sizes.1'),
-                  wmin: utils.deepAccess(params, 'aspect_ratios.0.min_width')
+                  wmin: utils.deepAccess(params, 'aspect_ratios.0.min_width'),
+                  hmin: utils.deepAccess(params, 'aspect_ratios.0.min_height')
                 });
-                if (!(asset.w || asset.wmin)) {
-                  throw 'invalid img sizes (must provided sizes or aspect_ratios)';
+                if (!((asset.w && asset.h) || (asset.hmin && asset.wmin))) {
+                  throw 'invalid img sizes (must provide sizes or min_height & min_width if using aspect_ratios)';
                 }
                 if (Array.isArray(params.aspect_ratios)) {
                   // pass aspect_ratios as ext data I guess?
