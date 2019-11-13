@@ -925,7 +925,7 @@ export const spec = {
       utils.deepSetValue(payload, 'regs.coppa', 1);
     }
 
-    if(config.getConfig('testbids') === true) {
+    if (config.getConfig('testbids') === true) {
       payload.test = 1;
     }
 

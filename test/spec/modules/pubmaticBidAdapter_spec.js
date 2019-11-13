@@ -1211,6 +1211,36 @@ describe('PubMatic adapter', function () {
             expect(data.regs).to.equal(undefined);
           }
         });
+
+        it('should NOT include test flag in bid request if testbids config is not present', () => {
+          const request = spec.buildRequests(bidRequests, {});
+          let data = JSON.parse(request.data);
+          expect(data.test).to.equal(undefined);
+        });
+
+        it('should include test flag in bid request if testbids is set to true', () => {
+          sandbox.stub(config, 'getConfig').callsFake(key => {
+            const config = {
+              'testbids': true
+            };
+            return config[key];
+          });
+          const request = spec.buildRequests(bidRequests, {});
+          let data = JSON.parse(request.data);
+          expect(data.test).to.equal(1);
+        });
+
+        it('should NOT include test flag in bid request if testbids is set to false', () => {
+          sandbox.stub(config, 'getConfig').callsFake(key => {
+            const config = {
+              'testbids': false
+            };
+            return config[key];
+          });
+          const request = spec.buildRequests(bidRequests, {});
+          let data = JSON.parse(request.data);
+          expect(data.test).to.equal(undefined);
+        });
       });
 
       describe('AdsrvrOrgId from config', function() {
