@@ -614,6 +614,43 @@ describe('auctionmanager.js', function () {
       // reset bidderSettings so we don't mess up further tests
       $$PREBID_GLOBAL$$.bidderSettings = {};
     });
+
+    it('should adjust bids and set custom renderer', function () {
+      const bid = Object.assign({},
+        createBid(2),
+        fixtures.getBidResponses()[1]
+      );
+
+      assert.equal(bid.bidderCode, 'appnexus');
+      assert.equal(bid.cpm, 10);
+
+      $$PREBID_GLOBAL$$.bidderSettings =
+      {
+        appnexus: {
+          bidAdjustment: function (bidObj) {
+            if (bidObj.dealId === 'specialDeal') {
+              bidObj.renderer = 'specialDealRenderer';
+            }
+            return bidObj;
+          },
+        }
+      };
+
+      // match
+      const bidTest1 = Object.assign({}, bid, {
+        dealId: 'specialDeal',
+      });
+      adjustBids(bidTest1);
+      assert.equal(bidTest1.renderer, 'specialDealRenderer');
+
+      // no-match
+      const bidTest2 = Object.assign({}, bid);
+      adjustBids(bidTest2);
+      assert.equal(bidTest2.renderer, undefined);
+
+      // reset bidderSettings so we don't mess up further tests
+      $$PREBID_GLOBAL$$.bidderSettings = {};
+    });
   });
 
   describe('addBidResponse', function () {

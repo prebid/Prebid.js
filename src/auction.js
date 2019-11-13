@@ -676,26 +676,34 @@ function setKeys(keyValues, bidderSettings, custBidObj) {
 }
 
 export function adjustBids(bid) {
-  let code = bid.bidderCode;
-  let bidPriceAdjusted = bid.cpm;
-  let bidCpmAdjustment;
+  const code = bid.bidderCode;
   if ($$PREBID_GLOBAL$$.bidderSettings) {
-    if (code && $$PREBID_GLOBAL$$.bidderSettings[code] && typeof $$PREBID_GLOBAL$$.bidderSettings[code].bidCpmAdjustment === 'function') {
-      bidCpmAdjustment = $$PREBID_GLOBAL$$.bidderSettings[code].bidCpmAdjustment;
-    } else if ($$PREBID_GLOBAL$$.bidderSettings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD] && typeof $$PREBID_GLOBAL$$.bidderSettings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD].bidCpmAdjustment === 'function') {
-      bidCpmAdjustment = $$PREBID_GLOBAL$$.bidderSettings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD].bidCpmAdjustment;
+    const lookupFunction = function(fnName) {
+      if (code && $$PREBID_GLOBAL$$.bidderSettings[code] && typeof $$PREBID_GLOBAL$$.bidderSettings[code][fnName] === 'function') {
+        return $$PREBID_GLOBAL$$.bidderSettings[code][fnName];
+      } else if ($$PREBID_GLOBAL$$.bidderSettings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD] && typeof $$PREBID_GLOBAL$$.bidderSettings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD][fnName] === 'function') {
+        return $$PREBID_GLOBAL$$.bidderSettings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD][fnName];
+      }
     }
+    const bidCpmAdjustment = lookupFunction('bidCpmAdjustment');
     if (bidCpmAdjustment) {
       try {
-        bidPriceAdjusted = bidCpmAdjustment(bid.cpm, Object.assign({}, bid));
+        const bidPriceAdjusted = bidCpmAdjustment(bid.cpm, Object.assign({}, bid));
+        if (bidPriceAdjusted >= 0) {
+          bid.cpm = bidPriceAdjusted;
+        }
+      } catch (e) {
+        utils.logError('Error during bid cpm adjustment', 'bidmanager.js', e);
+      }
+    }
+    const bidAdjustment = lookupFunction('bidAdjustment');
+    if (bidAdjustment) {
+      try {
+        bidAdjustment(bid);
       } catch (e) {
         utils.logError('Error during bid adjustment', 'bidmanager.js', e);
       }
     }
-  }
-
-  if (bidPriceAdjusted >= 0) {
-    bid.cpm = bidPriceAdjusted;
   }
 }
 
