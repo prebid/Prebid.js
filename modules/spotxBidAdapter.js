@@ -212,12 +212,18 @@ export const spec = {
 
       // ID5 fied
       if (bid && bid.userId && bid.userId.id5id) {
-        userExt.eids = [{
-          source: 'id5-sync.com',
-          uids: [{
-            id: bid.userId.id5id
-          }]
-        }];
+        if (userExt.eids === undefined) {
+          userExt.eids = [];
+        }
+
+        userExt.eids.push(
+          {
+            source: 'id5-sync.com',
+            uids: [{
+              id: bid.userId.id5id
+            }]
+          }
+        )
       }
 
       // Add common id if available
@@ -232,6 +238,24 @@ export const spec = {
             schain: bid.schain
           }
         };
+      }
+
+      if (bid && bid.userId && bid.userId.tdid) {
+        if (userExt.eids === undefined) {
+          userExt.eids = [];
+        }
+
+        userExt.eids.push(
+          {
+            source: 'adserver.org',
+            uids: [{
+              id: bid.userId.tdid,
+              ext: {
+                rtiPartner: 'TDID'
+              }
+            }]
+          }
+        )
       }
 
       // Only add the user object if it's not empty
