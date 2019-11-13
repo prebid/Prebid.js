@@ -168,7 +168,7 @@ export function newBidder(spec) {
       return Object.freeze(spec);
     },
     registerSyncs,
-    callBids: function(bidderRequest, addBidResponse, done, ajax, onTimelyResponse) {
+    callBids: function(bidderRequest, addBidResponse, done, ajax, onTimelyResponse, configEnabledCallback) {
       if (!Array.isArray(bidderRequest.bids)) {
         return;
       }
@@ -216,7 +216,7 @@ export function newBidder(spec) {
       // Callbacks don't compose as nicely as Promises. We should call done() once _all_ the
       // Server requests have returned and been processed. Since `ajax` accepts a single callback,
       // we need to rig up a function which only executes after all the requests have been responded.
-      const onResponse = delayExecution(afterAllResponses, requests.length)
+      const onResponse = delayExecution(configEnabledCallback(afterAllResponses), requests.length)
       requests.forEach(processRequest);
 
       function formatGetParameters(data) {
@@ -233,7 +233,7 @@ export function newBidder(spec) {
             ajax(
               `${request.url}${formatGetParameters(request.data)}`,
               {
-                success: onSuccess,
+                success: configEnabledCallback(onSuccess),
                 error: onFailure
               },
               undefined,
@@ -247,7 +247,7 @@ export function newBidder(spec) {
             ajax(
               request.url,
               {
-                success: onSuccess,
+                success: configEnabledCallback(onSuccess),
                 error: onFailure
               },
               typeof request.data === 'string' ? request.data : JSON.stringify(request.data),
