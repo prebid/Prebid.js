@@ -4,16 +4,52 @@
 
 import adapter from '../src/AnalyticsAdapter';
 import adapterManager from '../src/adapterManager';
+import CONSTANTS from '../src/constants.json';
+import * as utils from '../src/utils';
 
-// This config makes Prebid.js call this function on each event:
-//   `window['AdagioPrebidAnalytics']('on', eventType, args)`
-// If it is missing, then Prebid.js will immediately log an error,
-// instead of queueing the events until the function appears.
-var adagioAdapter = adapter({
-  global: 'AdagioPrebidAnalytics',
-  handler: 'on',
-  analyticsType: 'bundle'
+const emptyUrl = '';
+const analyticsType = 'endpoint';
+const events = Object.keys(CONSTANTS.EVENTS).map(key => CONSTANTS.EVENTS[key]);
+const VERSION = '2.0.0';
+
+const adagioEnqueue = function adagioEnqueue(action, data) {
+  utils.getWindowTop().ADAGIO.queue.push({ action, data, ts: Date.now() });
+}
+
+function canAccessTopWindow() {
+  try {
+    if (utils.getWindowTop().location.href) {
+      return true;
+    }
+  } catch (error) {
+    return false;
+  }
+}
+
+let adagioAdapter = Object.assign(adapter({ emptyUrl, analyticsType }), {
+  track: function({ eventType, args }) {
+    if (typeof args !== 'undefined' && events.indexOf(eventType) !== -1) {
+      adagioEnqueue('pb-analytics-event', { eventName: eventType, args });
+    }
+  }
 });
+
+adagioAdapter.originEnableAnalytics = adagioAdapter.enableAnalytics;
+
+adagioAdapter.enableAnalytics = config => {
+  if (!canAccessTopWindow()) {
+    return;
+  }
+
+  const w = utils.getWindowTop();
+
+  w.ADAGIO = w.ADAGIO || {};
+  w.ADAGIO.queue = w.ADAGIO.queue || [];
+  w.ADAGIO.versions = w.ADAGIO.versions || {};
+  w.ADAGIO.versions.adagioAnalyticsAdapter = VERSION;
+
+  adagioAdapter.originEnableAnalytics(config);
+}
 
 adapterManager.registerAnalyticsAdapter({
   adapter: adagioAdapter,
