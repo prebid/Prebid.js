@@ -510,10 +510,11 @@ const OPEN_RTB_PROTOCOL = {
                   type: imgTypeId,
                   w: utils.deepAccess(params, 'sizes.0'),
                   h: utils.deepAccess(params, 'sizes.1'),
-                  wmin: utils.deepAccess(params, 'aspect_ratios.0.min_width')
+                  wmin: utils.deepAccess(params, 'aspect_ratios.0.min_width'),
+                  hmin: utils.deepAccess(params, 'aspect_ratios.0.min_height')
                 });
-                if (!(asset.w || asset.wmin)) {
-                  throw 'invalid img sizes (must provided sizes or aspect_ratios)';
+                if (!((asset.w && asset.h) || (asset.hmin && asset.wmin))) {
+                  throw 'invalid img sizes (must provide sizes or min_height & min_width if using aspect_ratios)';
                 }
                 if (Array.isArray(params.aspect_ratios)) {
                   // pass aspect_ratios as ext data I guess?
@@ -731,12 +732,19 @@ const OPEN_RTB_PROTOCOL = {
       }
 
       if (bidUserId.lipb && bidUserId.lipb.lipbid) {
-        request.user.ext.eids.push({
+        const liveIntent = {
           source: 'liveintent.com',
           uids: [{
             id: bidUserId.lipb.lipbid
           }]
-        });
+        };
+
+        if (Array.isArray(bidUserId.lipb.segments) && bidUserId.lipb.segments.length) {
+          liveIntent.ext = {
+            segments: bidUserId.lipb.segments
+          };
+        }
+        request.user.ext.eids.push(liveIntent);
       }
     }
 

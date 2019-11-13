@@ -41,6 +41,15 @@ const REQUEST = {
             'required': true,
             'sizes': [989, 742],
           },
+          'icon': {
+            'required': true,
+            'aspect_ratios': [{
+              'min_height': 10,
+              'min_width': 10,
+              'ratio_height': 1,
+              'ratio_width': 1
+            }]
+          },
           'sponsoredBy': {
             'required': true
           }
@@ -419,13 +428,26 @@ const RESPONSE_OPENRTB_NATIVE = {
                 }
               },
               {
+                'id': 2,
+                'img': {
+                  'url': 'https://vcdn.adnxs.com/p/creative-image/1a/3e/e9/5b/1a3ee95b-06cd-4260-98c7-0258627c9197.png',
+                  'w': 127,
+                  'h': 83,
+                  'ext': {
+                    'appnexus': {
+                      'prevent_crop': 0
+                    }
+                  }
+                }
+              },
+              {
                 'id': 0,
                 'title': {
                   'text': 'This is a Prebid Native Creative'
                 }
               },
               {
-                'id': 2,
+                'id': 3,
                 'data': {
                   'value': 'Prebid.org'
                 }
@@ -831,6 +853,17 @@ describe('S2S Adapter', function () {
             },
             {
               'required': 1,
+              'img': {
+                'type': 1,
+                'wmin': 10,
+                'hmin': 10,
+                'ext': {
+                  'aspectratios': ['1:1']
+                }
+              }
+            },
+            {
+              'required': 1,
               'data': {
                 'type': 1
               }
@@ -1050,7 +1083,8 @@ describe('S2S Adapter', function () {
         pubcid: '1234',
         parrableid: '01.1563917337.test-eid',
         lipb: {
-          lipbid: 'li-xyz'
+          lipbid: 'li-xyz',
+          segments: ['segA', 'segB']
         }
       };
 
@@ -1066,6 +1100,9 @@ describe('S2S Adapter', function () {
       expect(requestBid.user.ext.eids.filter(eid => eid.source === 'parrable.com')[0].uids[0].id).is.equal('01.1563917337.test-eid');
       expect(requestBid.user.ext.eids.filter(eid => eid.source === 'liveintent.com')).is.not.empty;
       expect(requestBid.user.ext.eids.filter(eid => eid.source === 'liveintent.com')[0].uids[0].id).is.equal('li-xyz');
+      expect(requestBid.user.ext.eids.filter(eid => eid.source === 'liveintent.com')[0].ext.segments.length).is.equal(2);
+      expect(requestBid.user.ext.eids.filter(eid => eid.source === 'liveintent.com')[0].ext.segments[0]).is.equal('segA');
+      expect(requestBid.user.ext.eids.filter(eid => eid.source === 'liveintent.com')[0].ext.segments[1]).is.equal('segB');
     });
 
     it('when config \'currency.adServerCurrency\' value is an array: ORTB has property \'cur\' value set to a single item array', function () {

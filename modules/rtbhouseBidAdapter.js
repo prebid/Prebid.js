@@ -115,10 +115,11 @@ function mapBanner(slot) {
   if (slot.mediaType === 'banner' ||
     utils.deepAccess(slot, 'mediaTypes.banner') ||
     (!slot.mediaType && !slot.mediaTypes)) {
+    var sizes = slot.sizes || slot.mediaTypes.banner.sizes;
     return {
-      w: slot.sizes[0][0],
-      h: slot.sizes[0][1],
-      format: slot.sizes.map(size => ({
+      w: sizes[0][0],
+      h: sizes[0][1],
+      format: sizes.map(size => ({
         w: size[0],
         h: size[1]
       }))
