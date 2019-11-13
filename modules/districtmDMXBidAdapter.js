@@ -22,7 +22,7 @@ export const spec = {
             if (oBid.price < nBid.price) {
               const bid = matchRequest(nBid.impid, bidRequest);
               const {width, height} = defaultSize(bid);
-              nBid.cpm = nBid.price;
+              nBid.cpm = parseFloat(nBid.price).toFixed(2);
               nBid.bidId = nBid.impid;
               nBid.requestId = nBid.impid;
               nBid.width = nBid.w || width;
