@@ -1,7 +1,6 @@
 # Overview
 
 Module Name: Revcontent Adapater
-Module Type: Bidder Adapter
 Maintainer: dev@revcontent.com
 
 # Description
@@ -10,34 +9,13 @@ Revcontent Adpater
 
 # Test Parameters
 ```
-    var adUnits = [
-        code: '/19968336/prebid_native_example_1',
-        sizes: [
-            [360, 360]
-        ],
+    var adUnits = [{
+        code: '/19968336/header-bid-tag-1',
         mediaTypes: {
-            native: {
-                image: {
-                    required: false,
-                    sizes: [100, 50]
-                },
-                title: {
-                    required: false,
-                    len: 140
-                },
-                sponsoredBy: {
-                    required: false
-                },
-                clickUrl: {
-                    required: false
-                },
-                body: {
-                    required: false
-                },
-                icon: {
-                    required: false,
-                    sizes: [50, 50]
-                }
+            banner: {
+                sizes: [
+                    [300, 250]
+                ]
             }
         },
         bids: [{
@@ -48,5 +26,5 @@ Revcontent Adpater
                 widgetId: 599995,                                   // Optional
             }
         }]
-    ];
+    }];
 ```

@@ -1,116 +1,86 @@
-<!--
-  This page calls a single bidder for a single ad slot. It can be considered a "hello world" example for using
-  Prebid with the Google Publisher Tag.
-  It also makes a good test page for new adapter PR submissions. Simply set your server's Bid Params object in the
-  bids array inside the adUnits, and it will use your adapter to load an ad.
-  NOTE that many ad servers won't send back an ad if the URL is localhost... so you might need to
-  set an alias in your /etc/hosts file so that you can load this page from a different domain.
--->
-
 <html>
+
     <head>
+        <link rel="icon" type="image/png" href="/favicon.png">
+        <script async src="//www.googletagservices.com/tag/js/gpt.js"></script>
         <script async src="../../build/dev/prebid.js"></script>
-        <script async src="https://www.googletagservices.com/tag/js/gpt.js"></script>
         <script>
-            var FAILSAFE_TIMEOUT = 3300;
+            var sizes = [
+                [300, 250]
+            ];
             var PREBID_TIMEOUT = 1000;
+            var FAILSAFE_TIMEOUT = 3000;
 
             var adUnits = [{
-                    code: 'div-gpt-ad-1460505748561-0',
-                    mediaTypes: {
-                        native: {
-                            image: {
-                                required: false,
-                                sizes: [100, 50]
-                            },
-                            title: {
-                                required: false,
-                                len: 140
-                            },
-                            sponsoredBy: {
-                                required: false
-                            },
-                            clickUrl: {
-                                required: false
-                            },
-                            body: {
-                                required: false
-                            },
-                            icon: {
-                                required: false,
-                                sizes: [50, 50]
-                            }
-                        }
-                    },
-                    // Replace this object to test a new Adapter!
-                    bids: [{
-                            bidder: 'revcontent',
-                            params: {
-                                widgetId: 66621,
-                                apiKey: '8a33fa9cf220ae685dcc3544f847cdda858d3b1c',
-                                userId: 673
-                            }
-                        }]
+                code: '/19968336/header-bid-tag-1',
+                mediaTypes: {
+                    banner: {
+                        sizes: sizes
+                    }
+                },
+                bids: [{
+                    bidder: 'revcontent',
+                    params: {
+                        apiKey: '8a33fa9cf220ae685dcc3544f847cdda858d3b1c',
+                        userId: 673
+                    }
+                }]
+            }];
 
-                }];
+            // ======== DO NOT EDIT BELOW THIS LINE =========== //
+            var googletag = googletag || {};
+            googletag.cmd = googletag.cmd || [];
+            googletag.cmd.push(function() {
+                googletag.pubads().disableInitialLoad();
+            });
 
             var pbjs = pbjs || {};
             pbjs.que = pbjs.que || [];
 
-        </script>
-
-        <script>
-            var googletag = googletag || {};
-            googletag.cmd = googletag.cmd || [];
-            googletag.cmd.push(function () {
-                googletag.pubads().disableInitialLoad();
-            });
-
-            pbjs.que.push(function () {
+            pbjs.que.push(function() {
                 pbjs.addAdUnits(adUnits);
                 pbjs.requestBids({
-                    bidsBackHandler: sendAdserverRequest,
+                    bidsBackHandler: initAdserver,
                     timeout: PREBID_TIMEOUT
                 });
             });
 
-            function sendAdserverRequest() {
-                if (pbjs.adserverRequestSent)
-                    return;
-                pbjs.adserverRequestSent = true;
-                googletag.cmd.push(function () {
-                    pbjs.que.push(function () {
-                        pbjs.setTargetingForGPTAsync();
-                        googletag.pubads().refresh();
-                    });
+            function initAdserver() {
+                if (pbjs.initAdserverSet) return;
+                pbjs.initAdserverSet = true;
+                googletag.cmd.push(function() {
+                    pbjs.setTargetingForGPTAsync && pbjs.setTargetingForGPTAsync();
+                    googletag.pubads().refresh();
                 });
             }
-
-            setTimeout(function () {
-                sendAdserverRequest();
+            
+            // in case PBJS doesn't load
+            setTimeout(function() {
+                initAdserver();
             }, FAILSAFE_TIMEOUT);
 
-        </script>
-
-        <script>
-            googletag.cmd.push(function () {
-                googletag.defineSlot('/19968336/header-bid-tag-0', [[300, 250], [300, 600]], 'div-gpt-ad-1460505748561-0').addService(googletag.pubads());
-
+            googletag.cmd.push(function() {
+                googletag.defineSlot('/19968336/header-bid-tag-1', sizes, 'div-1')
+                	.addService(googletag.pubads());
                 googletag.pubads().enableSingleRequest();
                 googletag.enableServices();
             });
+
         </script>
+
     </head>
 
     <body>
-        <h2>Prebid.js Test</h2>
+        <h2>Basic Prebid.js Example</h2>
         <h5>Div-1</h5>
-        <div id='div-gpt-ad-1460505748561-0'>
+        <div id='div-1'>
             <script type='text/javascript'>
-                googletag.cmd.push(function () {
-                    googletag.display('div-gpt-ad-1460505748561-0');
+                googletag.cmd.push(function() {
+                    googletag.display('div-1');
                 });
+
             </script>
         </div>
     </body>
+
 </html>

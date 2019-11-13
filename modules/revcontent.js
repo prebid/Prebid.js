@@ -49,6 +49,7 @@ export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: SUPPORTED_MEDIA_TYPES,
   buildRequests: (validBidRequests, bidderRequest) => {
+    utils.logInfo('starting buildRequests');
     const page = bidderRequest.refererInfo.referer;
     const ua = navigator.userAgent;
     const pt = setOnAny(validBidRequests, 'params.pt') || setOnAny(validBidRequests, 'params.priceType') || 'net';
@@ -138,6 +139,7 @@ export const spec = {
     };
   },
   interpretResponse: function (serverResponse, { bids }) {
+    utils.logInfo('starting interpretResponse');
     if (!serverResponse.body) {
       return;
     }
