@@ -68,12 +68,12 @@ export function newConfig() {
       },
 
       // when this mode is enabled all bidders are expected to return test-bids
-      _testBids: DEFAULT_TEST_BIDS,
-      get testBids() {
-        return this._testBids;
+      _testbids: DEFAULT_TEST_BIDS,
+      get testbids() {
+        return this._testbids;
       },
-      set testBids(val) {
-        this._testBids = val;
+      set testbids(val) {
+        this._testbids = val;
       },
 
       // default timeout for all bids

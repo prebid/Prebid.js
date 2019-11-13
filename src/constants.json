@@ -10,7 +10,7 @@
     "BD_SETTING_STANDARD": "standard"
   },
   "DEBUG_MODE": "pbjs_debug",
-  "TEST_BIDS_MODE": "pbjs_test_bids",
+  "TEST_BIDS_MODE": "pbjs_testbids",
   "STATUS": {
     "GOOD": 1,
     "NO_BID": 2
