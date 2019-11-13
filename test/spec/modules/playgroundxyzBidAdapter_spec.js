@@ -16,7 +16,6 @@ describe('playgroundxyzBidAdapter', function () {
       expect(spec.interpretResponse).to.be.a('function');
       expect(spec.onBidWon).to.be.a('function');
       expect(spec.getUserSyncs).to.be.a('function');
-      
     });
   });
 
@@ -256,7 +255,5 @@ describe('playgroundxyzBidAdapter', function () {
       // now shouldn't be allowed
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
-    
   });
-
 });
