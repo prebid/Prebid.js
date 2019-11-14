@@ -18,6 +18,18 @@ describe('justpremium adapter', function () {
     {
       adUnitCode: 'div-gpt-ad-1471513102552-1',
       bidder: 'justpremium',
+      crumbs: {
+        pubcid: '0000000'
+      },
+      userId: {
+        tdid: '1111111',
+        id5id: '2222222',
+        digitrustid: {
+          data: {
+            id: '3333333'
+          }
+        }
+      },
       params: {
         zone: 28313,
         allow: ['lb', 'wp']
@@ -35,7 +47,7 @@ describe('justpremium adapter', function () {
 
   let bidderRequest = {
     refererInfo: {
-      referer: 'http://justpremium.com'
+      referer: 'https://justpremium.com'
     }
   }
 
@@ -61,16 +73,20 @@ describe('justpremium adapter', function () {
       const jpxRequest = JSON.parse(request.data)
       expect(jpxRequest).to.not.equal(null)
       expect(jpxRequest.zone).to.not.equal('undefined')
-      expect(bidderRequest.refererInfo.referer).to.equal('http://justpremium.com')
+      expect(bidderRequest.refererInfo.referer).to.equal('https://justpremium.com')
       expect(jpxRequest.sw).to.equal(window.top.screen.width)
       expect(jpxRequest.sh).to.equal(window.top.screen.height)
       expect(jpxRequest.ww).to.equal(window.top.innerWidth)
       expect(jpxRequest.wh).to.equal(window.top.innerHeight)
       expect(jpxRequest.c).to.not.equal('undefined')
       expect(jpxRequest.id).to.equal(adUnits[0].params.zone)
-      expect(jpxRequest.sizes).to.not.equal('undefined')
+      expect(jpxRequest.mediaTypes && jpxRequest.mediaTypes.banner && jpxRequest.mediaTypes.banner.sizes).to.not.equal('undefined')
       expect(jpxRequest.version.prebid).to.equal('$prebid.version$')
-      expect(jpxRequest.version.jp_adapter).to.equal('1.4')
+      expect(jpxRequest.version.jp_adapter).to.equal('1.5')
+      expect(jpxRequest.pubcid).to.equal('0000000')
+      expect(jpxRequest.uids.tdid).to.equal('1111111')
+      expect(jpxRequest.uids.id5id).to.equal('2222222')
+      expect(jpxRequest.uids.digitrustid.data.id).to.equal('3333333')
     })
   })
 

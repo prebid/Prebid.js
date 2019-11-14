@@ -3,8 +3,10 @@ import * as utils from '../src/utils';
 import { config } from '../src/config';
 import { registerBidder, getIabSubCategory } from '../src/adapters/bidderFactory';
 import { BANNER, NATIVE, VIDEO, ADPOD } from '../src/mediaTypes';
+import { auctionManager } from '../src/auctionManager';
 import find from 'core-js/library/fn/array/find';
 import includes from 'core-js/library/fn/array/includes';
+import { OUTSTREAM, INSTREAM } from '../src/video';
 
 const BIDDER_CODE = 'appnexus';
 const URL = '//ib.adnxs.com/ut/v3/prebid';
@@ -34,12 +36,12 @@ const SOURCE = 'pbjs';
 const MAX_IMPS_PER_REQUEST = 15;
 const mappingFileUrl = '//acdn.adnxs.com/prebid/appnexus-mapping/mappings.json';
 const SCRIPT_TAG_START = '<script';
-const VIEWABILITY_URL_START = /http:\/\/cdn\.adnxs\.com\/v/;
+const VIEWABILITY_URL_START = /\/\/cdn\.adnxs\.com\/v/;
 const VIEWABILITY_FILE_NAME = 'trk.js';
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['appnexusAst', 'brealtime', 'emxdigital', 'pagescience', 'defymedia', 'gourmetads', 'matomy', 'featureforward', 'oftmedia', 'districtm'],
+  aliases: ['appnexusAst', 'brealtime', 'emxdigital', 'pagescience', 'defymedia', 'gourmetads', 'matomy', 'featureforward', 'oftmedia', 'districtm', 'adasta'],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   /**
@@ -61,9 +63,11 @@ export const spec = {
   buildRequests: function(bidRequests, bidderRequest) {
     const tags = bidRequests.map(bidToTag);
     const userObjBid = find(bidRequests, hasUserInfo);
-    let userObj;
+    let userObj = {};
+    if (config.getConfig('coppa') === true) {
+      userObj = {'coppa': true};
+    }
     if (userObjBid) {
-      userObj = {};
       Object.keys(userObjBid.params.user)
         .filter(param => includes(USER_PARAMS, param))
         .forEach(param => userObj[param] = userObjBid.params.user[param]);
@@ -114,6 +118,7 @@ export const spec = {
 
     const memberIdBid = find(bidRequests, hasMemberId);
     const member = memberIdBid ? parseInt(memberIdBid.params.member, 10) : 0;
+    const schain = bidRequests[0].schain;
 
     const payload = {
       tags: [...tags],
@@ -121,7 +126,8 @@ export const spec = {
       sdk: {
         source: SOURCE,
         version: '$prebid.version$'
-      }
+      },
+      schain: schain
     };
 
     if (member > 0) {
@@ -479,37 +485,42 @@ function newBid(serverBid, rtbBid, bidderRequest) {
   }
 
   if (rtbBid.rtb.video) {
+    // shared video properties used for all 3 contexts
     Object.assign(bid, {
       width: rtbBid.rtb.video.player_width,
       height: rtbBid.rtb.video.player_height,
-      vastUrl: rtbBid.rtb.video.asset_url,
       vastImpUrl: rtbBid.notify_url,
       ttl: 3600
     });
 
     const videoContext = utils.deepAccess(bidRequest, 'mediaTypes.video.context');
-    if (videoContext === ADPOD) {
-      const iabSubCatId = getIabSubCategory(bidRequest.bidder, rtbBid.brand_category_id);
-      bid.meta = Object.assign({}, bid.meta, { iabSubCatId });
-      bid.video = {
-        context: ADPOD,
-        durationSeconds: Math.floor(rtbBid.rtb.video.duration_ms / 1000),
-      };
-    }
+    switch (videoContext) {
+      case ADPOD:
+        const iabSubCatId = getIabSubCategory(bidRequest.bidder, rtbBid.brand_category_id);
+        bid.meta = Object.assign({}, bid.meta, { iabSubCatId });
+        const dealTier = rtbBid.rtb.dealPriority;
+        bid.video = {
+          context: ADPOD,
+          durationSeconds: Math.floor(rtbBid.rtb.video.duration_ms / 1000),
+          dealTier
+        };
+        bid.vastUrl = rtbBid.rtb.video.asset_url;
+        break;
+      case OUTSTREAM:
+        bid.adResponse = serverBid;
+        bid.adResponse.ad = bid.adResponse.ads[0];
+        bid.adResponse.ad.video = bid.adResponse.ad.rtb.video;
+        bid.vastXml = rtbBid.rtb.video.content;
 
-    // This supports Outstream Video
-    if (rtbBid.renderer_url) {
-      const rendererOptions = utils.deepAccess(
-        bidderRequest.bids[0],
-        'renderer.options'
-      );
-
-      Object.assign(bid, {
-        adResponse: serverBid,
-        renderer: newRenderer(bid.adUnitCode, rtbBid, rendererOptions)
-      });
-      bid.adResponse.ad = bid.adResponse.ads[0];
-      bid.adResponse.ad.video = bid.adResponse.ad.rtb.video;
+        if (rtbBid.renderer_url) {
+          const videoBid = find(bidderRequest.bids, bid => bid.bidId === serverBid.uuid);
+          const rendererOptions = utils.deepAccess(videoBid, 'renderer.options');
+          bid.renderer = newRenderer(bid.adUnitCode, rtbBid, rendererOptions);
+        }
+        break;
+      case INSTREAM:
+        bid.vastUrl = rtbBid.rtb.video.asset_url;
+        break;
     }
   } else if (rtbBid.rtb[NATIVE]) {
     const nativeAd = rtbBid.rtb[NATIVE];
@@ -665,11 +676,13 @@ function bidToTag(bid) {
     tag.video = Object.assign({}, tag.video, {custom_renderer_present: true});
   }
 
-  if (
-    (utils.isEmpty(bid.mediaType) && utils.isEmpty(bid.mediaTypes)) ||
-    (bid.mediaType === BANNER || (bid.mediaTypes && bid.mediaTypes[BANNER]))
-  ) {
+  let adUnit = find(auctionManager.getAdUnits(), au => bid.transactionId === au.transactionId);
+  if (adUnit && adUnit.mediaTypes && adUnit.mediaTypes.banner) {
     tag.ad_types.push(BANNER);
+  }
+
+  if (tag.ad_types.length === 0) {
+    delete tag.ad_types;
   }
 
   return tag;
