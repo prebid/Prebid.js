@@ -53,7 +53,7 @@ export const spec = {
     const page = bidderRequest.refererInfo.referer;
     const ua = navigator.userAgent;
     const pt = setOnAny(validBidRequests, 'params.pt') || setOnAny(validBidRequests, 'params.priceType') || 'net';
-    const tid = validBidRequests[0].transactionId; // ??? check with ssp
+    const tid = validBidRequests[0].transactionId;
     const test = setOnAny(validBidRequests, 'params.test');
     const userId = setOnAny(validBidRequests, 'params.userId');
     const widgetId = setOnAny(validBidRequests, 'params.widgetId');
@@ -62,6 +62,7 @@ export const spec = {
     const cur = currency && [currency];
 
     const imp = validBidRequests.map((bid, id) => {
+      utils.logInfo('starting validBidRequests');
       bid.netRevenue = pt;
       const assets = utils._map(bid.nativeParams, (bidParams, key) => {
         const props = NATIVE_PARAMS[key];
@@ -130,7 +131,7 @@ export const spec = {
 
     return {
       method: 'POST',
-      url: '//cache.revcontent.dev/rtb?widgetId=' + widgetId + '&apiKey=' + apiKey + '&userId=' + userId,
+      url: '//trends-s0.revcontent.com/rtb?widgetId=' + widgetId + '&apiKey=' + apiKey + '&userId=' + userId,
       data: JSON.stringify(request),
       options: {
         contentType: 'application/json'
@@ -172,6 +173,7 @@ export const spec = {
 registerBidder(spec);
 
 function parseNative(bid) {
+  utils.logInfo('starting parseNative');
   const {assets, link, imptrackers, jstracker} = bid.native;
   const result = {
     clickUrl: link.url,
@@ -191,6 +193,7 @@ function parseNative(bid) {
 }
 
 function setOnAny(collection, key) {
+  utils.logInfo('starting setOnAny');
   for (let i = 0, result; i < collection.length; i++) {
     result = utils.deepAccess(collection[i], key);
     if (result) {
@@ -200,5 +203,6 @@ function setOnAny(collection, key) {
 }
 
 function flatten(arr) {
+  utils.logInfo('starting flatten');
   return [].concat(...arr);
 }
