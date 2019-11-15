@@ -272,6 +272,20 @@ export const spec = {
         utils.deepSetValue(data, 'source.ext.schain', bidRequest.schain);
       }
 
+      const siteData = Object.assign({}, bidRequest.params.inventory, config.getConfig('context'));
+      const userData = Object.assign({}, bidRequest.params.visitor, config.getConfig('user'));
+      if (!utils.isEmpty(siteData) || !utils.isEmpty(userData)) {
+        utils.deepSetValue(data, 'ext.prebid.data.bidders', [ bidderRequest.bidderCode ]);
+
+        if (!utils.isEmpty(siteData)) {
+          utils.deepSetValue(data, 'site.ext.data', siteData);
+        }
+
+        if (!utils.isEmpty(userData)) {
+          utils.deepSetValue(data, 'user.ext.data', userData);
+        }
+      }
+
       return {
         method: 'POST',
         url: VIDEO_ENDPOINT,
@@ -435,7 +449,6 @@ export const spec = {
       'tk_flint': `${configIntType || DEFAULT_INTEGRATION}_v$prebid.version$`,
       'x_source.tid': bidRequest.transactionId,
       'p_screen_res': _getScreenResolution(),
-      'kw': Array.isArray(params.keywords) ? params.keywords.join(',') : '',
       'tk_user_key': params.userId,
       'p_geo.latitude': isNaN(parseFloat(latitude)) ? undefined : parseFloat(latitude).toFixed(4),
       'p_geo.longitude': isNaN(parseFloat(longitude)) ? undefined : parseFloat(longitude).toFixed(4),
@@ -470,22 +483,30 @@ export const spec = {
     }
 
     // visitor properties
-    if (params.visitor !== null && typeof params.visitor === 'object') {
-      Object.keys(params.visitor).forEach((key) => {
-        if (params.visitor[key] != null) {
-          data[`tg_v.${key}`] = params.visitor[key].toString(); // initialize array;
-        }
-      });
-    }
+    const visitorData = Object.assign({}, params.visitor, config.getConfig('user'));
+    Object.keys(visitorData).forEach((key) => {
+      if (visitorData[key] != null && key !== 'keywords') {
+        data[`tg_v.${key}`] = typeof visitorData[key] === 'object' && !Array.isArray(visitorData[key])
+          ? JSON.stringify(visitorData[key])
+          : visitorData[key].toString(); // initialize array;
+      }
+    });
 
     // inventory properties
-    if (params.inventory !== null && typeof params.inventory === 'object') {
-      Object.keys(params.inventory).forEach((key) => {
-        if (params.inventory[key] != null) {
-          data[`tg_i.${key}`] = params.inventory[key].toString();
-        }
-      });
-    }
+    const inventoryData = Object.assign({}, params.inventory, config.getConfig('context'));
+    Object.keys(inventoryData).forEach((key) => {
+      if (inventoryData[key] != null && key !== 'keywords') {
+        data[`tg_i.${key}`] = typeof inventoryData[key] === 'object' && !Array.isArray(inventoryData[key])
+          ? JSON.stringify(inventoryData[key])
+          : inventoryData[key].toString();
+      }
+    });
+
+    // keywords
+    const keywords = (params.keywords || []).concat(
+      utils.deepAccess(config.getConfig('user'), 'keywords') || [],
+      utils.deepAccess(config.getConfig('context'), 'keywords') || []);
+    data.kw = keywords.length ? keywords.join(',') : '';
 
     // digitrust properties
     const digitrustParams = _getDigiTrustQueryParams(bidRequest, 'FASTLANE');

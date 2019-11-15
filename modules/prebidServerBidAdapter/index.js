@@ -294,6 +294,43 @@ function transformHeightWidth(adUnit) {
   return sizesObj;
 }
 
+function addFirstPartyDataToRequest(request) {
+  const bidderConfig = config.getBidderConfig();
+  let context = {};
+  let user = {};
+  const allowedBidders = [];
+  Object.keys(bidderConfig).forEach(bidder => {
+    const currBidderConfig = bidderConfig[bidder];
+    let isAllowed = false;
+
+    if (currBidderConfig.context) {
+      context = Object.assign({}, context, currBidderConfig.context);
+      isAllowed = true;
+    }
+
+    if (currBidderConfig.user) {
+      user = Object.assign({}, user, currBidderConfig.user);
+      isAllowed = true;
+    }
+
+    if (isAllowed) {
+      allowedBidders.push(bidder);
+    }
+  });
+
+  if (allowedBidders.length) {
+    utils.deepSetValue(request, 'ext.prebid.data.bidders', allowedBidders);
+
+    if (!utils.isEmpty(context)) {
+      utils.deepSetValue(request, 'site.ext.data', context);
+    }
+
+    if (!utils.isEmpty(user)) {
+      utils.deepSetValue(request, 'user.ext.data', user);
+    }
+  }
+}
+
 /*
  * Protocol spec for legacy endpoint
  * e.g., https://<prebid-server-url>/v1/auction
@@ -771,6 +808,8 @@ const OPEN_RTB_PROTOCOL = {
     if (getConfig('coppa') === true) {
       utils.deepSetValue(request, 'regs.coppa', 1);
     }
+
+    addFirstPartyDataToRequest(request);
 
     return request;
   },
