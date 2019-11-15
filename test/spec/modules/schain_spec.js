@@ -1,4 +1,4 @@
-import {isValidSchainConfig, isSchainObjectValid, copySchainObjectInAdunits} from '../../../modules/schain';
+import {isValidSchainConfig, isSchainObjectValid} from '../../../modules/schain';
 import { expect } from 'chai';
 
 describe('#isValidSchainConfig: module config validation', function() {
@@ -243,44 +243,4 @@ describe('#isSchainObjectValid: schain object validation', function() {
     schainConfig = {};
     expect(isSchainObjectValid(schainConfig, false)).to.true;
   })
-});
-
-describe('Passing schain object to adUnits', function() {
-  let schainConfig;
-
-  beforeEach(function() {
-    schainConfig = {
-      'ver': '1.0',
-      'complete': 1,
-      'nodes': [
-        {
-          'asi': 'indirectseller.com',
-          'sid': '00001',
-          'hp': 1
-        },
-
-        {
-          'asi': 'indirectseller-2.com',
-          'sid': '00002',
-          'hp': 2
-        }
-      ]
-    };
-  });
-
-  it('schain object should be applied to all adUnits', function() {
-    let adUnits = [
-      {
-        bids: [{}, {}]
-      },
-      {
-        bids: [{}, {}]
-      }
-    ];
-    copySchainObjectInAdunits(adUnits, schainConfig);
-    expect(adUnits[0].bids[0].schain).to.equal(schainConfig);
-    expect(adUnits[0].bids[1].schain).to.equal(schainConfig);
-    expect(adUnits[1].bids[0].schain).to.equal(schainConfig);
-    expect(adUnits[1].bids[1].schain).to.equal(schainConfig);
-  });
 });
