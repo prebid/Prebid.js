@@ -1625,16 +1625,16 @@ describe('PubMatic adapter', function () {
           });
         });
 
-        describe('CriteoRTUS Id', function() {
+        describe('Criteo Id', function() {
           it('send the criteo id if it is present', function() {
             bidRequests[0].userId = {};
-            bidRequests[0].userId.criteortus = {pubmatic: {userid: 'criteo-rtus-user-id'}};
+            bidRequests[0].userId.criteoId = 'criteo-user-id';
             let request = spec.buildRequests(bidRequests, {});
             let data = JSON.parse(request.data);
             expect(data.user.eids).to.deep.equal([{
-              'source': 'criteortus',
+              'source': 'criteo.com',
               'uids': [{
-                'id': 'criteo-rtus-user-id',
+                'id': 'criteo-user-id',
                 'atype': 1
               }]
             }]);
@@ -1642,23 +1642,19 @@ describe('PubMatic adapter', function () {
 
           it('do not pass if not string', function() {
             bidRequests[0].userId = {};
-            bidRequests[0].userId.criteortus = {appnexus: {userid: 'criteo-rtus-user-id'}};
+            bidRequests[0].userId.criteoId = 1;
             let request = spec.buildRequests(bidRequests, {});
             let data = JSON.parse(request.data);
             expect(data.user.eids).to.equal(undefined);
-            bidRequests[0].userId.criteortus = {pubmatic: {userid: 1}};
+            bidRequests[0].userId.criteoId = [];
             request = spec.buildRequests(bidRequests, {});
             data = JSON.parse(request.data);
             expect(data.user.eids).to.equal(undefined);
-            bidRequests[0].userId.criteortus = {pubmatic: {userid: []}};
+            bidRequests[0].userId.criteoId = null;
             request = spec.buildRequests(bidRequests, {});
             data = JSON.parse(request.data);
             expect(data.user.eids).to.equal(undefined);
-            bidRequests[0].userId.criteortus = {pubmatic: {userid: null}};
-            request = spec.buildRequests(bidRequests, {});
-            data = JSON.parse(request.data);
-            expect(data.user.eids).to.equal(undefined);
-            bidRequests[0].userId.criteortus = {pubmatic: {userid: {}}};
+            bidRequests[0].userId.criteoId = {};
             request = spec.buildRequests(bidRequests, {});
             data = JSON.parse(request.data);
             expect(data.user.eids).to.equal(undefined);

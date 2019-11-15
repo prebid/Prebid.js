@@ -21,7 +21,11 @@ describe('gumgumAdapter', function () {
         'bidfloor': 0.05
       },
       'adUnitCode': 'adunit-code',
-      'sizes': [[300, 250], [300, 600], [1, 1]],
+      'mediaTypes': {
+        'banner': {
+          sizes: [[300, 250], [300, 600], [1, 1]]
+        }
+      },
       'bidId': '30b31c1838de1e',
       'bidderRequestId': '22edbae2733bf6',
       'auctionId': '1d1a030790a475',
