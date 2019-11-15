@@ -38,7 +38,7 @@ export const spec = {
       const referrerUrl = utils.getTopWindowReferrer();
 
       if (utils.hasLocalStorage()) {
-        registerViewability(bidRequests);
+        registerViewabilityAllBids(bidRequests);
       }
 
       params = {
@@ -140,9 +140,12 @@ function getUrlConfig(bidRequests) {
   return config;
 }
 function isTestRequest(bidRequests) {
-  let isTest = false;
-  bidRequests.forEach(bid => isTest = bid.params.t);
-  return isTest;
+  for (let i = 0; i < bidRequests.length; i++) {
+    if (bidRequests[i].params.t) {
+      return true;
+    }
+  }
+  return false;
 }
 function getTestConfig(bidRequests) {
   let isv;
@@ -209,15 +212,45 @@ function getCharset() {
   }
 }
 
-function registerViewability(bids) {
-  bids.forEach(bid => {
-    if (document.getElementById(bid.adUnitCode)) {
-      visibilityHandler({
-        name: bid.adUnitCode,
-        div: document.getElementById(bid.adUnitCode)
+function waitForElementsPresent(elements) {
+  const observer = new MutationObserver(function (mutationList, observer) {
+    mutationList.forEach(mr => {
+      mr.addedNodes.forEach(ad => {
+        let index = elements.indexOf(ad.id);
+        if (index >= 0) {
+          registerViewability(ad);
+          elements.splice(index, 1);
+          if (!elements.length) {
+            observer.disconnect();
+          }
+        }
       });
+    });
+  });
+  const config = {childList: true, subtree: true, characterData: true, attributes: true, attributeOldValue: true};
+  observer.observe(document.body, config);
+}
+
+function registerViewability(div) {
+  visibilityHandler({
+    name: div.id,
+    div: div
+  });
+}
+
+function registerViewabilityAllBids(bids) {
+  let elementsNotPresent = [];
+  bids.forEach(bid => {
+    let div = document.getElementById(bid.adUnitCode);
+    if (div) {
+      registerViewability(div);
+    } else {
+      elementsNotPresent.push(bid.adUnitCode);
     }
   });
+  if (elementsNotPresent.length) {
+    waitForElementsPresent(elementsNotPresent);
+  }
 }
 
 function getViewabilityTracker() {
@@ -338,14 +371,13 @@ function getViewabilityTracker() {
 
 function visibilityHandler(obj) {
   if (obj.div) {
-    registerRender(obj);
-    getViewabilityTracker().onView(obj.div, registerView.bind(undefined, obj));
+    registerAuction(STORAGE_RENDER_PREFIX + obj.name);
+    getViewabilityTracker().onView(obj.div, registerAuction.bind(undefined, STORAGE_VIEW_PREFIX + obj.name));
   }
 }
 
-function registerRender(obj) {
+function registerAuction(storageID) {
   let value;
-  let storageID = STORAGE_RENDER_PREFIX + obj.name;
   try {
     value = utils.getDataFromLocalStorage(storageID);
     value = value ? window.parseInt(value, 10) + 1 : 1;
@@ -356,19 +388,4 @@ function registerRender(obj) {
 
   return true;
 }
-
-function registerView(obj) {
-  let value;
-  let storageID = STORAGE_VIEW_PREFIX + obj.name;
-  try {
-    value = utils.getDataFromLocalStorage(storageID);
-    value = value ? window.parseInt(value, 10) + 1 : 1;
-    utils.setDataInLocalStorage(storageID, value);
-  } catch (exc) {
-    return false;
-  }
-
-  return true;
-}
-
 registerBidder(spec);

@@ -409,8 +409,10 @@ describe('E-Planning Adapter', function () {
       element.id = id || ADUNIT_CODE_VIEW;
       element.style.width = '50px';
       element.style.height = '50px';
-      frameElement.style.width = '100px';
-      frameElement.style.height = '100px';
+      if (frameElement) {
+        frameElement.style.width = '100px';
+        frameElement.style.height = '100px';
+      }
       element.style.background = 'black';
       document.body.appendChild(element);
     }
@@ -506,12 +508,9 @@ describe('E-Planning Adapter', function () {
       hasLocalStorageStub.returns(false);
       const response = spec.buildRequests(bidRequests);
 
-      // no rompe funcionamiento de buildRequests
-      // envia F en vs
       expect(response.url).to.equal('//ads.us.e-planning.net/hb/1/' + CI + '/1/localhost/ROS');
       expect(response.data.vs).to.equal('F');
 
-      // sin localStorage no se llama a funciones de set y get
       sinon.assert.notCalled(getLocalStorageSpy);
       sinon.assert.notCalled(setDataInLocalStorageSpy);
     });
@@ -520,34 +519,23 @@ describe('E-Planning Adapter', function () {
       createElementVisible();
       const response = spec.buildRequests(bidRequests);
       expect(response.url).to.equal('//ads.us.e-planning.net/hb/1/' + CI + '/1/localhost/ROS');
-      // envia F en vs ya que solo tiene un render
+
       expect(response.data.vs).to.equal('F');
 
       sinon.assert.called(getLocalStorageSpy);
       sinon.assert.called(setDataInLocalStorageSpy);
       sinon.assert.calledWith(getLocalStorageSpy, storageIdRender);
       sinon.assert.calledWith(setDataInLocalStorageSpy, storageIdRender);
-      // registra un render
+
       expect(utils.getDataFromLocalStorage(storageIdRender)).to.equal('1');
     });
-    it('should create the url correctly with element is not defined', function() {
-      // No creo el elemento
 
-      const response = spec.buildRequests(bidRequests);
-      // no rompe funcioanmiento de buildRequests
-      expect(response.url).to.equal('//ads.us.e-planning.net/hb/1/' + CI + '/1/localhost/ROS');
-      // envia F en vs
-      expect(response.data.vs).to.equal('F');
-      expect(utils.getDataFromLocalStorage(storageIdRender)).to.equal(null);
-      expect(utils.getDataFromLocalStorage(storageIdView)).to.equal(null);
-    });
     context('when element is fully in view', function() {
       let respuesta;
       beforeEach(function () {
         createElementVisible();
       });
       it('when you have a render', function() {
-        // envia F en vs ya que solo tiene un render
         respuesta = spec.buildRequests(bidRequests);
         clock.tick(1005);
 
@@ -557,7 +545,6 @@ describe('E-Planning Adapter', function () {
         expect(utils.getDataFromLocalStorage(storageIdView)).to.equal('1');
       });
       it('when you have more than four render', function() {
-        // envia 0 en vs ya que no tiene viewability
         utils.setDataInLocalStorage(storageIdRender, 4);
         respuesta = spec.buildRequests(bidRequests);
         clock.tick(1005);
@@ -568,12 +555,11 @@ describe('E-Planning Adapter', function () {
         expect(utils.getDataFromLocalStorage(storageIdView)).to.equal('1');
       });
       it('when you have more than four render and already record visibility', function() {
-        // envia a ya que tiene ratio 10
         utils.setDataInLocalStorage(storageIdRender, 4);
         utils.setDataInLocalStorage(storageIdView, 4);
         respuesta = spec.buildRequests(bidRequests);
         clock.tick(1005);
-        // el 5 viewability no llega a registrarse
+
         expect(respuesta.data.vs).to.equal('a');
 
         expect(utils.getDataFromLocalStorage(storageIdRender)).to.equal('5');
@@ -588,7 +574,6 @@ describe('E-Planning Adapter', function () {
       });
 
       it('when you have a render', function() {
-        // envia F en vs ya que no tiene renders
         respuesta = spec.buildRequests(bidRequests);
         clock.tick(1005);
         expect(respuesta.data.vs).to.equal('F');
@@ -597,7 +582,6 @@ describe('E-Planning Adapter', function () {
         expect(utils.getDataFromLocalStorage(storageIdView)).to.equal(null);
       });
       it('when you have more than four render', function() {
-        // envia 0 en vs ya que no tiene views
         utils.setDataInLocalStorage(storageIdRender, 4);
         respuesta = spec.buildRequests(bidRequests);
         clock.tick(1005);
@@ -704,7 +688,6 @@ describe('E-Planning Adapter', function () {
           expect(utils.getDataFromLocalStorage('pbsr_' + ac)).to.equal('6');
           expect(utils.getDataFromLocalStorage('pbvi_' + ac)).to.equal('6');
         });
-        // en buildrequest no llego a registrarse render y view
         expect('aaa').to.equal(respuesta.data.vs);
       });
       it('none visible', function() {
@@ -718,7 +701,7 @@ describe('E-Planning Adapter', function () {
           expect(utils.getDataFromLocalStorage('pbsr_' + ac)).to.equal('6');
           expect(utils.getDataFromLocalStorage('pbvi_' + ac)).to.equal('5');
         });
-        // en buildrequest no llego a registrarse render y view
+
         expect('aaa').to.equal(respuesta.data.vs);
       });
       it('some visible and others not visible', function() {
@@ -734,7 +717,6 @@ describe('E-Planning Adapter', function () {
           expect(utils.getDataFromLocalStorage('pbsr_' + ac)).to.equal('6');
           expect(utils.getDataFromLocalStorage('pbvi_' + ac)).to.equal('5');
         });
-        // en buildrequest no llego a registrarse render y view
         expect('aaa').to.equal(respuesta.data.vs);
       });
     });
