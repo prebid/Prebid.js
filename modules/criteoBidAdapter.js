@@ -379,9 +379,6 @@ for (var i = 0; i < 10; ++i) {
 </script>`;
 }
 
-/**
- * @return {boolean}
- */
 export function tryGetCriteoFastBid() {
   try {
     const fastBidStorageKey = 'criteo_fast_bid';
