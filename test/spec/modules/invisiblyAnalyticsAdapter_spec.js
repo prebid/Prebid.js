@@ -211,6 +211,7 @@ describe('Invisibly Analytics Adapter test suite', function() {
         events.emit(constants.EVENTS.BID_REQUESTED, MOCK.BID_REQUESTED);
         events.emit(constants.EVENTS.BID_RESPONSE, MOCK.BID_RESPONSE);
         events.emit(constants.EVENTS.BID_WON, MOCK.BID_WON);
+        invisiblyAdapter.flush();
         sinon.assert.callCount(invisiblyAdapter.track, 0);
       });
       // spec to test custom api endpoint

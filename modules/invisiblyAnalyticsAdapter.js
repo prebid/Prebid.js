@@ -66,9 +66,7 @@ let invisiblyAdapter = Object.assign(
     track({ eventType, args }) {
       handleEvent(eventType, args);
     },
-    sendEvent({ event }) {
-      sendEvent(event);
-    }
+    sendEvent
   }
 );
 
@@ -165,7 +163,6 @@ function handleEvent(eventType, eventArgs) {
     }
     case BID_RESPONSE: {
       invisiblyEvent = eventArgs;
-      delete invisiblyEvent.ad;
       break;
     }
     case NO_BID: {
@@ -174,8 +171,6 @@ function handleEvent(eventType, eventArgs) {
     }
     case BID_WON: {
       invisiblyEvent = eventArgs;
-      delete invisiblyEvent.ad;
-      delete invisiblyEvent.adUrl;
       break;
     }
     case BIDDER_DONE: {
@@ -199,7 +194,6 @@ function handleEvent(eventType, eventArgs) {
       break;
     }
     default:
-      console.log('invalid event, not fired');
       return;
   }
   invisiblyEvent.eventType = eventType;
