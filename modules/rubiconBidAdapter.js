@@ -272,8 +272,8 @@ export const spec = {
         utils.deepSetValue(data, 'source.ext.schain', bidRequest.schain);
       }
 
-      const siteData = Object.assign({}, bidRequest.params.inventory, config.getConfig('context'));
-      const userData = Object.assign({}, bidRequest.params.visitor, config.getConfig('user'));
+      const siteData = Object.assign({}, bidRequest.params.inventory, config.getConfig('fpd.context'));
+      const userData = Object.assign({}, bidRequest.params.visitor, config.getConfig('fpd.user'));
       if (!utils.isEmpty(siteData) || !utils.isEmpty(userData)) {
         utils.deepSetValue(data, 'ext.prebid.data.bidders', [ bidderRequest.bidderCode ]);
 
@@ -483,7 +483,7 @@ export const spec = {
     }
 
     // visitor properties
-    const visitorData = Object.assign({}, params.visitor, config.getConfig('user'));
+    const visitorData = Object.assign({}, params.visitor, config.getConfig('fpd.user'));
     Object.keys(visitorData).forEach((key) => {
       if (visitorData[key] != null && key !== 'keywords') {
         data[`tg_v.${key}`] = typeof visitorData[key] === 'object' && !Array.isArray(visitorData[key])
@@ -493,7 +493,7 @@ export const spec = {
     });
 
     // inventory properties
-    const inventoryData = Object.assign({}, params.inventory, config.getConfig('context'));
+    const inventoryData = Object.assign({}, params.inventory, config.getConfig('fpd.context'));
     Object.keys(inventoryData).forEach((key) => {
       if (inventoryData[key] != null && key !== 'keywords') {
         data[`tg_i.${key}`] = typeof inventoryData[key] === 'object' && !Array.isArray(inventoryData[key])
@@ -504,8 +504,8 @@ export const spec = {
 
     // keywords
     const keywords = (params.keywords || []).concat(
-      utils.deepAccess(config.getConfig('user'), 'keywords') || [],
-      utils.deepAccess(config.getConfig('context'), 'keywords') || []);
+      utils.deepAccess(config.getConfig('fpd.user'), 'keywords') || [],
+      utils.deepAccess(config.getConfig('fpd.context'), 'keywords') || []);
     data.kw = keywords.length ? keywords.join(',') : '';
 
     // digitrust properties

@@ -947,7 +947,7 @@ describe('the rubicon adapter', function () {
             });
           });
 
-          it('should use protected data in bidder request over the bid params, if present', () => {
+          it('should use first party data from getConfig over the bid params, if present', () => {
             const context = {
               keywords: ['e', 'f'],
               rating: '4-star'
@@ -961,10 +961,12 @@ describe('the rubicon adapter', function () {
 
             sandbox.stub(config, 'getConfig').callsFake(key => {
               const config = {
-                context,
-                user
+                fpd: {
+                  context,
+                  user
+                }
               };
-              return config[key];
+              return utils.deepAccess(config, key);
             });
 
             const expectedQuery = {
@@ -1594,10 +1596,12 @@ describe('the rubicon adapter', function () {
 
           sandbox.stub(config, 'getConfig').callsFake(key => {
             const config = {
-              context,
-              user
+              fpd: {
+                context,
+                user
+              }
             };
-            return config[key];
+            return utils.deepAccess(config, key);
           });
 
           const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);

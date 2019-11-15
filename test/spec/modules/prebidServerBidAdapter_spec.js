@@ -1337,7 +1337,7 @@ describe('S2S Adapter', function () {
       };
       const allowedBidders = [ 'rubicon', 'appnexus' ];
 
-      config.setBidderConfig({ bidders: allowedBidders, config: { context, user } });
+      config.setBidderConfig({ bidders: allowedBidders, config: { fpd: { context, user } } });
       adapter.callBids(s2sBidRequest, bidRequests, addBidResponse, done, ajax);
       const parsedRequestBody = JSON.parse(requests[0].requestBody);
       expect(parsedRequestBody.ext.prebid.data.bidders).to.deep.equal(allowedBidders);

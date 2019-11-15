@@ -301,20 +301,18 @@ function addFirstPartyDataToRequest(request) {
   const allowedBidders = [];
   Object.keys(bidderConfig).forEach(bidder => {
     const currBidderConfig = bidderConfig[bidder];
-    let isAllowed = false;
-
-    if (currBidderConfig.context) {
-      context = Object.assign({}, context, currBidderConfig.context);
-      isAllowed = true;
-    }
-
-    if (currBidderConfig.user) {
-      user = Object.assign({}, user, currBidderConfig.user);
-      isAllowed = true;
-    }
-
-    if (isAllowed) {
+    if (currBidderConfig.fpd) {
       allowedBidders.push(bidder);
+    } else {
+      return;
+    }
+
+    if (currBidderConfig.fpd.context) {
+      context = Object.assign({}, context, currBidderConfig.fpd.context);
+    }
+
+    if (currBidderConfig.fpd.user) {
+      user = Object.assign({}, user, currBidderConfig.fpd.user);
     }
   });
 
