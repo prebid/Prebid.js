@@ -198,9 +198,6 @@ function getRequestData(bid, consentData) {
     if (bid.params.video.rewarded) {
       bidData.imp[0].ext.rewarded = bid.params.video.rewarded
     }
-    if (bid.params.site && bid.params.site.id) {
-      bidData.site.id = bid.params.site.id
-    }
   } else if (bid.params.video.display == 1) {
     bidData.imp[0].banner = {
       mimes: bid.params.video.mimes,
@@ -208,6 +205,9 @@ function getRequestData(bid, consentData) {
       h: bid.params.video.playerHeight,
       pos: bid.params.video.position,
     };
+    if (bid.params.video.placement) {
+      bidData.imp[0].banner.placement = bid.params.video.placement
+    }
   }
   if (bid.params.video.inventoryid) {
     bidData.imp[0].ext.inventoryid = bid.params.video.inventoryid

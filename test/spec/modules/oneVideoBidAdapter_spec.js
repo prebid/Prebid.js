@@ -264,6 +264,7 @@ describe('OneVideoBidAdapter', function () {
       expect(data.imp[0].banner.pos).to.equal(position);
       expect(data.imp[0].ext.inventoryid).to.equal(bidRequest.params.video.inventoryid);
       expect(data.imp[0].banner.mimes).to.equal(bidRequest.params.video.mimes);
+      expect(data.imp[0].banner.placement).to.equal(bidRequest.params.video.placement);
     });
     it('should send video object when display is other than 1', function () {
       bidRequest = {
