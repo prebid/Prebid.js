@@ -10,7 +10,9 @@ const sharedWhiteList = [
 
 module.exports = {
   'modules': [
-    ...sharedWhiteList,
+    ...sharedWhiteList, 
+    'jsencrypt',
+    'crypto-js',
     'rsa-signature-verify-lite-3'
   ],
   'src': [
