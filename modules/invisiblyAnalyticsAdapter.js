@@ -74,7 +74,6 @@ invisiblyAdapter.originEnableAnalytics = invisiblyAdapter.enableAnalytics;
 invisiblyAdapter.enableAnalytics = function(config) {
   initOptions = config.options || {};
   initOptions.url = initOptions.url || DEFAULT_EVENT_URL;
-  initOptions.account = initOptions.account;
   if (initOptions.url && initOptions.account) {
     invisiblyAnalyticsEnabled = true;
     invisiblyAdapter.originEnableAnalytics(config);
