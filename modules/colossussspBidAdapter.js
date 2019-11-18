@@ -42,7 +42,7 @@ export const spec = {
    * @param {BidRequest[]} validBidRequests A non-empty list of valid bid requests that should be sent to the Server.
    * @return ServerRequest Info describing the request to the server.
    */
-  buildRequests: (validBidRequests) => {
+  buildRequests: (validBidRequests, bidderRequest) => {
     let winTop = window;
     try {
       window.top.location.toString();
@@ -50,7 +50,7 @@ export const spec = {
     } catch (e) {
       utils.logMessage(e);
     };
-    let location = utils.getTopWindowLocation();
+    let location = bidderRequest.referer;
     let placements = [];
     let request = {
       'deviceWidth': winTop.screen.width,
@@ -61,13 +61,15 @@ export const spec = {
       'page': location.pathname,
       'placements': placements
     };
+    
     for (let i = 0; i < validBidRequests.length; i++) {
       let bid = validBidRequests[i];
+      let traff = bid.params.traffic || BANNER
       let placement = {
         placementId: bid.params.placement_id,
         bidId: bid.bidId,
-        sizes: bid.sizes,
-        traffic: bid.params.traffic || BANNER
+        sizes: bid.mediaTypes[traff].sizes,
+        traffic: traff
       };
       placements.push(placement);
     }

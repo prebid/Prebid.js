@@ -11,7 +11,11 @@ describe('ColossussspAdapter', function () {
     },
     placementCode: 'placementid_0',
     auctionId: '74f78609-a92d-4cf1-869f-1b244bbfb5d2',
-    sizes: [[300, 250]],
+    mediatTypes: {
+      banner: {
+        sizes: [[300, 250]]
+      }
+    },
     transactionId: '3bb2f6da-87a6-4029-aeb0-bfe951372e62'
   };
 
@@ -52,11 +56,12 @@ describe('ColossussspAdapter', function () {
       let placements = data['placements'];
       for (let i = 0; i < placements.length; i++) {
         let placement = placements[i];
-        expect(placement).to.have.all.keys('placementId', 'bidId', 'traffic', 'sizes');
+        expect(placement).to.have.all.keys('placementId', 'bidId', 'traffic', 'mediatTypes');
+        expect(placement.mediatTypes).to.have.all.keys('banner');
         expect(placement.placementId).to.be.a('number');
         expect(placement.bidId).to.be.a('string');
         expect(placement.traffic).to.be.a('string');
-        expect(placement.sizes).to.be.an('array');
+        expect(placement.mediatTypes.banner.sizes).to.be.an('array');
       }
     });
     it('Returns empty data if no valid requests are passed', function () {
