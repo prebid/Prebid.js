@@ -212,10 +212,7 @@ export const spec = {
 
       // ID5 fied
       if (bid && bid.userId && bid.userId.id5id) {
-        if (userExt.eids === undefined) {
-          userExt.eids = [];
-        }
-
+        userExt.eids = userExt.eids || [];
         userExt.eids.push(
           {
             source: 'id5-sync.com',
@@ -241,10 +238,7 @@ export const spec = {
       }
 
       if (bid && bid.userId && bid.userId.tdid) {
-        if (userExt.eids === undefined) {
-          userExt.eids = [];
-        }
-
+        userExt.eids = userExt.eids || [];
         userExt.eids.push(
           {
             source: 'adserver.org',
