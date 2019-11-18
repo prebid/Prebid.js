@@ -266,4 +266,12 @@ function createRenderer (bid, rendererParams) {
   return renderer;
 }
 
+export function resetUserSync() {
+  hasSynced = false;
+}
+
+export function getSyncUrl() {
+  return SYNC_URL;
+}
+
 registerBidder(spec);
