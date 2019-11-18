@@ -12,7 +12,7 @@ var CONSTANTS = require('src/constants.json');
 
 const INTEGRATION = `pbjs_lite_v$prebid.version$`; // $prebid.version$ will be substituted in by gulp in built prebid
 
-describe('the rubicon adapter', function () {
+describe.only('the rubicon adapter', function () {
   let sandbox,
     bidderRequest,
     sizeMap;
@@ -279,6 +279,7 @@ describe('the rubicon adapter', function () {
             accountId: '14062',
             siteId: '70608',
             zoneId: '335918',
+            pchain: 'GAM:11111-reseller1:22222',
             userId: '12346',
             keywords: ['a', 'b', 'c'],
             inventory: {
@@ -360,7 +361,7 @@ describe('the rubicon adapter', function () {
   describe('buildRequests implementation', function () {
     describe('for requests', function () {
       describe('to fastlane', function () {
-        it('should make a well-formed request objects', function () {
+        it('should make a well-formed request object', function () {
           sandbox.stub(Math, 'random').callsFake(() => 0.1);
           let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
           let data = parseQuery(request.data);
@@ -379,6 +380,7 @@ describe('the rubicon adapter', function () {
             'rand': '0.1',
             'tk_flint': INTEGRATION,
             'x_source.tid': 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b',
+            'x_source.pchain': 'GAM:11111-reseller1:22222',
             'p_screen_res': /\d+x\d+/,
             'tk_user_key': '12346',
             'kw': 'a,b,c',
@@ -460,11 +462,20 @@ describe('the rubicon adapter', function () {
           expect(data['p_pos']).to.equal('atf;;btf;;');
         });
 
+        it('should not send x_source.pchain to AE if params.pchain is not specified', function() {
+	      var noPchainRequest = utils.deepClone(bidderRequest);
+	      delete noPchainRequest.bids[0].params.pchain;
+
+	      let [request] = spec.buildRequests(noPchainRequest.bids, noPchainRequest);
+          expect(request.data).to.contain('&site_id=70608&');
+          expect(request.data).to.not.contain('x_source.pchain');
+        });
+
         it('ad engine query params should be ordered correctly', function () {
           sandbox.stub(Math, 'random').callsFake(() => 0.1);
           let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
 
-          const referenceOrdering = ['account_id', 'site_id', 'zone_id', 'size_id', 'alt_size_ids', 'p_pos', 'rf', 'p_geo.latitude', 'p_geo.longitude', 'kw', 'tg_v.ucat', 'tg_v.lastsearch', 'tg_v.likes', 'tg_i.rating', 'tg_i.prodtype', 'tk_flint', 'x_source.tid', 'p_screen_res', 'rp_floor', 'rp_secure', 'tk_user_key', 'tg_fl.eid', 'slots', 'rand'];
+          const referenceOrdering = ['account_id', 'site_id', 'zone_id', 'size_id', 'alt_size_ids', 'p_pos', 'rf', 'p_geo.latitude', 'p_geo.longitude', 'kw', 'tg_v.ucat', 'tg_v.lastsearch', 'tg_v.likes', 'tg_i.rating', 'tg_i.prodtype', 'tk_flint', 'x_source.tid', 'x_source.pchain', 'p_screen_res', 'rp_floor', 'rp_secure', 'tk_user_key', 'tg_fl.eid', 'slots', 'rand'];
 
           request.data.split('&').forEach((item, i) => {
             expect(item.split('=')[0]).to.equal(referenceOrdering[i]);
