@@ -226,6 +226,34 @@ describe('teadsBidAdapter', () => {
       checkMediaTypesSizes(mediaTypesPlayerSize, '32x34')
     });
 
+    it('should add schain info to payload if available', function () {
+      const bidRequest = Object.assign({}, bidRequests[0], {
+        schain: {
+          ver: '1.0',
+          complete: 1,
+          nodes: [{
+            asi: 'example.com',
+            sid: '00001',
+            hp: 1
+          }]
+        }
+      });
+
+      const request = spec.buildRequests([bidRequest], bidderResquestDefault);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.schain).to.exist;
+      expect(payload.schain).to.deep.equal({
+        ver: '1.0',
+        complete: 1,
+        nodes: [{
+          asi: 'example.com',
+          sid: '00001',
+          hp: 1
+        }]
+      });
+    });
+
     it('should use good mediaTypes video sizes', function() {
       const mediaTypesVideoSizes = {
         'mediaTypes': {
