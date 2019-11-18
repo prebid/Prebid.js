@@ -15,13 +15,8 @@ describe('ColossussspAdapter', function () {
     transactionId: '3bb2f6da-87a6-4029-aeb0-bfe951372e62'
   };
 
-<<<<<<< HEAD
-  describe('isBidRequestValid', () => {
-    it('Should return true when placement_id can be cast to a number', () => {
-=======
   describe('isBidRequestValid', function () {
     it('Should return true when placement_id can be cast to a number', function () {
->>>>>>> upstream/master
       expect(spec.isBidRequestValid(bid)).to.be.true;
     });
     it('Should return false when placement_id is not a number', function () {
