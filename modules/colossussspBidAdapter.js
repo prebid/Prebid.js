@@ -52,7 +52,6 @@ export const spec = {
       location = winTop.location;
       utils.logMessage(e);
     };
-    
     let placements = [];
     let request = {
       'deviceWidth': winTop.screen.width,
