@@ -3,8 +3,8 @@ import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes';
 import * as utils from '../src/utils';
 
 const BIDDER_CODE = 'colossusssp';
-const URL = '//colossusssp.com/?c=o&m=multi';
-const URL_SYNC = '//colossusssp.com/?c=o&m=cookie';
+const G_URL = '//colossusssp.com/?c=o&m=multi';
+const G_URL_SYNC = '//colossusssp.com/?c=o&m=cookie';
 
 function isBidResponseValid(bid) {
   if (!bid.requestId || !bid.cpm || !bid.creativeId || !bid.ttl || !bid.currency) {
@@ -50,7 +50,7 @@ export const spec = {
     } catch (e) {
       utils.logMessage(e);
     };
-    let location = bidderRequest.referer;
+    let location = new URL((bidderRequest && bidderRequest.refererInfo ? bidderRequest.refererInfo.referer : window.top.location.toString()));
     let placements = [];
     let request = {
       'deviceWidth': winTop.screen.width,
@@ -61,7 +61,7 @@ export const spec = {
       'page': location.pathname,
       'placements': placements
     };
-    
+
     for (let i = 0; i < validBidRequests.length; i++) {
       let bid = validBidRequests[i];
       let traff = bid.params.traffic || BANNER
@@ -75,7 +75,7 @@ export const spec = {
     }
     return {
       method: 'POST',
-      url: URL,
+      url: G_URL,
       data: request
     };
   },
@@ -105,7 +105,7 @@ export const spec = {
   getUserSyncs: () => {
     return [{
       type: 'image',
-      url: URL_SYNC
+      url: G_URL_SYNC
     }];
   }
 };
