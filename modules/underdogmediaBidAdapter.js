@@ -1,32 +1,60 @@
-import * as utils from 'src/utils';
-import { config } from 'src/config';
-import { registerBidder } from 'src/adapters/bidderFactory';
+import * as utils from '../src/utils';
+import { config } from '../src/config';
+import { registerBidder } from '../src/adapters/bidderFactory';
 const BIDDER_CODE = 'underdogmedia';
-const UDM_ADAPTER_VERSION = '1.0';
+const UDM_ADAPTER_VERSION = '3.0V';
+const UDM_VENDOR_ID = '159';
+const prebidVersion = '$prebid.version$';
+
+utils.logMessage(`Initializing UDM Adapter. PBJS Version: ${prebidVersion} with adapter version: ${UDM_ADAPTER_VERSION}  Updated 20191028`);
 
 export const spec = {
   code: BIDDER_CODE,
   bidParams: [],
 
   isBidRequestValid: function (bid) {
-    return !!((bid.params && bid.params.siteId) && (bid.sizes && bid.sizes.length > 0));
+    const bidSizes = bid.mediaTypes && bid.mediaTypes.banner && bid.mediaTypes.banner.sizes ? bid.mediaTypes.banner.sizes : bid.sizes;
+    return !!((bid.params && bid.params.siteId) && (bidSizes && bidSizes.length > 0));
   },
 
-  buildRequests: function (validBidRequests) {
+  buildRequests: function (validBidRequests, bidderRequest) {
     var sizes = [];
     var siteId = 0;
 
     validBidRequests.forEach(bidParam => {
-      sizes = utils.flatten(sizes, utils.parseSizesInput(bidParam.sizes));
+      let bidParamSizes = bidParam.mediaTypes && bidParam.mediaTypes.banner && bidParam.mediaTypes.banner.sizes ? bidParam.mediaTypes.banner.sizes : bidParam.sizes;
+      sizes = utils.flatten(sizes, utils.parseSizesInput(bidParamSizes));
       siteId = bidParam.params.siteId;
     });
 
-    return {
-      method: 'GET',
-      url: `${window.location.protocol}//udmserve.net/udm/img.fetch`,
-      data: `tid=1;dt=10;sid=${siteId};sizes=${sizes.join(',')}`,
-      bidParams: validBidRequests
-    };
+    let data = {
+      tid: 1,
+      dt: 10,
+      sid: siteId,
+      sizes: sizes.join(',')
+    }
+
+    if (bidderRequest && bidderRequest.gdprConsent) {
+      if (typeof bidderRequest.gdprConsent.gdprApplies !== 'undefined') {
+        data.gdprApplies = !!(bidderRequest.gdprConsent.gdprApplies);
+      }
+      if (bidderRequest.gdprConsent.vendorData && bidderRequest.gdprConsent.vendorData.vendorConsents &&
+        typeof bidderRequest.gdprConsent.vendorData.vendorConsents[UDM_VENDOR_ID] !== 'undefined') {
+        data.consentGiven = !!(bidderRequest.gdprConsent.vendorData.vendorConsents[UDM_VENDOR_ID]);
+      }
+      if (typeof bidderRequest.gdprConsent.consentString !== 'undefined') {
+        data.consentData = bidderRequest.gdprConsent.consentString;
+      }
+    }
+
+    if (!data.gdprApplies || data.consentGiven) {
+      return {
+        method: 'GET',
+        url: 'https://udmserve.net/udm/img.fetch',
+        data: data,
+        bidParams: validBidRequests
+      };
+    }
   },
 
   interpretResponse: function (serverResponse, bidRequest) {
@@ -41,14 +69,15 @@ export const spec = {
           mid.useCount = 0;
         }
 
-        var size_not_found = true;
-        utils.parseSizesInput(bidParam.sizes).forEach(size => {
+        var sizeNotFound = true;
+        const bidParamSizes = bidParam.mediaTypes && bidParam.mediaTypes.banner && bidParam.mediaTypes.banner.sizes ? bidParam.mediaTypes.banner.sizes : bidParam.sizes
+        utils.parseSizesInput(bidParamSizes).forEach(size => {
           if (size === mid.width + 'x' + mid.height) {
-            size_not_found = false;
+            sizeNotFound = false;
           }
         });
 
-        if (size_not_found) {
+        if (sizeNotFound) {
           return;
         }
 
@@ -84,7 +113,7 @@ export const spec = {
   },
 };
 
-function makeNotification (bid, mid, bidParam) {
+function makeNotification(bid, mid, bidParam) {
   var url = mid.notification_url;
 
   url += UDM_ADAPTER_VERSION;

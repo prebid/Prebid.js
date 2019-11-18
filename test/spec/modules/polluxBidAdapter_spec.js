@@ -2,6 +2,7 @@ import {expect} from 'chai';
 import {spec} from 'modules/polluxBidAdapter';
 import {utils} from 'src/utils';
 import {newBidder} from 'src/adapters/bidderFactory';
+import { parseQS } from 'src/url';
 
 describe('POLLUX Bid Adapter tests', function () {
   // ad units setup
@@ -24,7 +25,7 @@ describe('POLLUX Bid Adapter tests', function () {
     params: {zone: '276'}
   }];
 
-  it('TEST: verify buildRequests no valid bid requests', () => {
+  it('TEST: verify buildRequests no valid bid requests', function () {
     let request = spec.buildRequests(false);
     expect(request).to.not.equal(null);
     expect(request).to.not.have.property('method');
@@ -47,7 +48,7 @@ describe('POLLUX Bid Adapter tests', function () {
     expect(request).to.not.have.property('data');
   });
 
-  it('TEST: verify buildRequests single bid', () => {
+  it('TEST: verify buildRequests single bid', function () {
     const request = spec.buildRequests(setup_single_bid);
     expect(request.method).to.equal('POST');
     const requested_bids = JSON.parse(request.data);
@@ -70,7 +71,7 @@ describe('POLLUX Bid Adapter tests', function () {
     expect(requested_bids[0].zones).to.equal('1806,276');
   });
 
-  it('TEST: verify buildRequests multi bid', () => {
+  it('TEST: verify buildRequests multi bid', function () {
     const request = spec.buildRequests(setup_multi_bid);
     expect(request.method).to.equal('POST');
     const requested_bids = JSON.parse(request.data);
@@ -102,7 +103,7 @@ describe('POLLUX Bid Adapter tests', function () {
     expect(requested_bids[1].zones).to.equal('276');
   });
 
-  it('TEST: verify interpretResponse empty', () => {
+  it('TEST: verify interpretResponse empty', function () {
     let bids = spec.interpretResponse(false, {});
     expect(bids).to.not.equal(null);
     expect(bids).to.have.lengthOf(0);
@@ -117,7 +118,7 @@ describe('POLLUX Bid Adapter tests', function () {
     expect(bids).to.have.lengthOf(0);
   });
 
-  it('TEST: verify interpretResponse ad_type url', () => {
+  it('TEST: verify interpretResponse ad_type url', function () {
     const serverResponse = {
       body: [
         {
@@ -147,7 +148,7 @@ describe('POLLUX Bid Adapter tests', function () {
     expect(bids[0]).to.not.have.property('ad');
   });
 
-  it('TEST: verify interpretResponse ad_type html', () => {
+  it('TEST: verify interpretResponse ad_type html', function () {
     const serverResponse = {
       body: [
         {
@@ -176,19 +177,18 @@ describe('POLLUX Bid Adapter tests', function () {
     expect(bids[0].ad).to.equal('<html><h3>I am an ad</h3></html>');
   });
 
-  it('TEST: verify url and query params', () => {
+  it('TEST: verify url and query params', function () {
     const URL = require('url-parse');
-    const querystringify = require('querystringify');
     const request = spec.buildRequests(setup_single_bid);
     const parsedUrl = new URL('https:' + request.url);
     expect(parsedUrl.origin).to.equal('https://adn.polluxnetwork.com');
     expect(parsedUrl.pathname).to.equal('/prebid/v1');
     expect(parsedUrl).to.have.property('query');
-    const parsedQuery = querystringify.parse(parsedUrl.query);
+    const parsedQuery = parseQS(parsedUrl.query);
     expect(parsedQuery).to.have.property('domain').and.to.have.length.above(1);
   });
 
-  it('TEST: verify isBidRequestValid', () => {
+  it('TEST: verify isBidRequestValid', function () {
     expect(spec.isBidRequestValid({})).to.equal(false);
     expect(spec.isBidRequestValid({params: {}})).to.equal(false);
     expect(spec.isBidRequestValid(setup_single_bid[0])).to.equal(true);
@@ -196,11 +196,11 @@ describe('POLLUX Bid Adapter tests', function () {
     expect(spec.isBidRequestValid(setup_multi_bid[1])).to.equal(true);
   });
 
-  it('TEST: verify bidder code', () => {
+  it('TEST: verify bidder code', function () {
     expect(spec.code).to.equal('pollux');
   });
 
-  it('TEST: verify bidder aliases', () => {
+  it('TEST: verify bidder aliases', function () {
     expect(spec.aliases).to.have.lengthOf(1);
     expect(spec.aliases[0]).to.equal('plx');
   });

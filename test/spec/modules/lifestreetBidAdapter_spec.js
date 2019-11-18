@@ -56,45 +56,45 @@ let getDefaultBidResponse = (isBanner, noBid = 0) => {
   };
 };
 
-describe('LifestreetAdapter', () => {
+describe('LifestreetAdapter', function () {
   const LIFESTREET_URL = '//ads.lfstmedia.com/gate/';
   const ADAPTER_VERSION = 'prebidJS-2.0';
 
-  describe('buildRequests()', () => {
-    it('method exists and is a function', () => {
+  describe('buildRequests()', function () {
+    it('method exists and is a function', function () {
       expect(spec.buildRequests).to.exist.and.to.be.a('function');
     });
 
-    it('should not return request when no bids are present', () => {
+    it('should not return request when no bids are present', function () {
       let [request] = spec.buildRequests([]);
-      expect(request).to.be.empty;
+      expect(request).to.be.undefined;
     });
 
     let bidRequest = getDefaultBidRequest();
     let [request] = spec.buildRequests(bidRequest.bids);
-    it('should return request for Lifestreet endpoint', () => {
+    it('should return request for Lifestreet endpoint', function () {
       expect(request.url).to.contain(LIFESTREET_URL);
     });
 
-    it('should use json adapter', () => {
+    it('should use json adapter', function () {
       expect(request.url).to.contain('/prebid/');
     });
 
-    it('should contain slot', () => {
+    it('should contain slot', function () {
       expect(request.url).to.contain('slot166704');
     });
-    it('should contain adkey', () => {
+    it('should contain adkey', function () {
       expect(request.url).to.contain('adkey=78c');
     });
-    it('should contain ad_size', () => {
+    it('should contain ad_size', function () {
       expect(request.url).to.contain('ad_size=160x600');
     });
 
-    it('should contain location and rferrer paramters', () => {
+    it('should contain location and rferrer paramters', function () {
       expect(request.url).to.contain('__location=');
       expect(request.url).to.contain('__referrer=');
     });
-    it('should contain info parameters', () => {
+    it('should contain info parameters', function () {
       expect(request.url).to.contain('__wn=');
       expect(request.url).to.contain('__sf=');
       expect(request.url).to.contain('__fif=');
@@ -103,19 +103,60 @@ describe('LifestreetAdapter', () => {
       expect(request.url).to.contain('__pp=');
     });
 
-    it('should contain HB enabled', () => {
+    it('should contain HB enabled', function () {
       expect(request.url).to.contain('__hb=1');
     });
-    it('should include gzip', () => {
+    it('should include gzip', function () {
       expect(request.url).to.contain('__gz=1');
     });
+    it('should not contain __gdpr parameter', function () {
+      expect(request.url).to.not.contain('__gdpr');
+    });
+    it('should not contain __concent parameter', function () {
+      expect(request.url).to.not.contain('__consent');
+    });
 
-    it('should contain the right version of adapter', () => {
+    it('should contain the right version of adapter', function () {
       expect(request.url).to.contain('__hbver=' + ADAPTER_VERSION);
     });
+
+    it('should contain __gdpr and __consent parameters', function () {
+      const options = {
+        gdprConsent: {
+          gdprApplies: true,
+          consentString: 'test',
+          vendorData: {}
+        }
+      };
+      let [request] = spec.buildRequests(bidRequest.bids, options);
+      expect(request.url).to.contain('__gdpr=1');
+      expect(request.url).to.contain('__consent=test');
+    });
+    it('should contain __gdpr parameters', function () {
+      const options = {
+        gdprConsent: {
+          gdprApplies: true,
+          vendorData: {}
+        }
+      };
+      let [request] = spec.buildRequests(bidRequest.bids, options);
+      expect(request.url).to.contain('__gdpr=1');
+      expect(request.url).to.not.contain('__consent');
+    });
+    it('should contain __consent parameters', function () {
+      const options = {
+        gdprConsent: {
+          consentString: 'test',
+          vendorData: {}
+        }
+      };
+      let [request] = spec.buildRequests(bidRequest.bids, options);
+      expect(request.url).to.not.contain('__gdpr');
+      expect(request.url).to.contain('__consent=test');
+    });
   });
-  describe('interpretResponse()', () => {
-    it('should return formatted bid response with required properties', () => {
+  describe('interpretResponse()', function () {
+    it('should return formatted bid response with required properties', function () {
       let bidRequest = getDefaultBidRequest().bids[0];
       let bidResponse = { body: getDefaultBidResponse(true) };
       let formattedBidResponse = spec.interpretResponse(bidResponse, bidRequest);
@@ -133,7 +174,7 @@ describe('LifestreetAdapter', () => {
         mediaType: 'banner'
       }]);
     });
-    it('should return formatted VAST bid response with required properties', () => {
+    it('should return formatted VAST bid response with required properties', function () {
       let bidRequest = getDefaultBidRequest().bids[0];
       let bidResponse = { body: getDefaultBidResponse(false) };
       let formattedBidResponse = spec.interpretResponse(bidResponse, bidRequest);
@@ -151,7 +192,7 @@ describe('LifestreetAdapter', () => {
         mediaType: 'video'
       }]);
     });
-    it('should return formatted VAST bid response with vastUrl', () => {
+    it('should return formatted VAST bid response with vastUrl', function () {
       let bidRequest = getDefaultBidRequest().bids[0];
       let bidResponse = { body: getDefaultBidResponse(false) };
       bidResponse.body.vastUrl = 'http://lifestreet.com'; // set vastUrl
@@ -171,7 +212,7 @@ describe('LifestreetAdapter', () => {
       }]);
     });
 
-    it('should return no-bid', () => {
+    it('should return no-bid', function () {
       let bidRequest = getDefaultBidRequest().bids[0];
       let bidResponse = { body: getDefaultBidResponse(true, true) };
       let formattedBidResponse = spec.interpretResponse(bidResponse, bidRequest);

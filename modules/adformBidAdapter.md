@@ -21,7 +21,7 @@ Banner and video formats are supported.
                        params: {
                            adxDomain: 'adx.adform.net', //optional
                            mid: '292063',
-                           priceType: 'gross' // default is 'net'
+                           priceType: 'net' // default is 'gross'
                        }
                    }
                ]

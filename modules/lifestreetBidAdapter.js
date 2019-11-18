@@ -1,6 +1,6 @@
-import * as utils from 'src/utils';
-import {registerBidder} from 'src/adapters/bidderFactory';
-import { BANNER, VIDEO } from 'src/mediaTypes';
+import * as utils from '../src/utils';
+import {registerBidder} from '../src/adapters/bidderFactory';
+import { BANNER, VIDEO } from '../src/mediaTypes';
 
 const BIDDER_CODE = 'lifestreet';
 const ADAPTER_VERSION = 'prebidJS-2.0';
@@ -12,7 +12,7 @@ const urlTemplate = template`//ads.lfstmedia.com/gate/${'adapter'}/${'slot'}?adk
  *
  * @param {BidRequest} bid The bid params to use for formatting a request
  */
-function formatBidRequest(bid) {
+function formatBidRequest(bid, bidderRequest) {
   let url = urlTemplate({
     adapter: 'prebid',
     slot: bid.params.slot,
@@ -27,6 +27,16 @@ function formatBidRequest(bid) {
     stamp: new Date().getTime(),
     hbver: ADAPTER_VERSION
   });
+
+  if (bidderRequest && bidderRequest.gdprConsent) {
+    if (bidderRequest.gdprConsent.gdprApplies !== undefined) {
+      const gdpr = '&__gdpr=' + (bidderRequest.gdprConsent.gdprApplies ? '1' : '0');
+      url += gdpr;
+    }
+    if (bidderRequest.gdprConsent.consentString !== undefined) {
+      url += '&__consent=' + bidderRequest.gdprConsent.consentString;
+    }
+  }
 
   return {
     method: 'GET',
@@ -95,9 +105,9 @@ export const spec = {
    * @param {validBidRequests[]} - an array of bids
    * @return ServerRequest Info describing the request to the server.
   */
-  buildRequests: function(validBidRequests) {
+  buildRequests: function(validBidRequests, bidderRequest) {
     return validBidRequests.map(bid => {
-      return formatBidRequest(bid)
+      return formatBidRequest(bid, bidderRequest)
     });
   },
 

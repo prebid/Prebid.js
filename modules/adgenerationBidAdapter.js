@@ -1,7 +1,7 @@
-import * as utils from 'src/utils';
-// import {config} from 'src/config';
-import {registerBidder} from 'src/adapters/bidderFactory';
-import { BANNER, NATIVE } from 'src/mediaTypes';
+import * as utils from '../src/utils';
+import {registerBidder} from '../src/adapters/bidderFactory';
+import {BANNER, NATIVE} from '../src/mediaTypes';
+import {config} from '../src/config';
 const ADG_BIDDER_CODE = 'adgeneration';
 
 export const spec = {
@@ -23,7 +23,8 @@ export const spec = {
    * @param {validBidRequests[]} - an array of bids
    * @return ServerRequest Info describing the request to the server.
    */
-  buildRequests: function (validBidRequests) {
+  buildRequests: function (validBidRequests, bidderRequest) {
+    const ADGENE_PREBID_VERSION = '1.0.1';
     let serverRequests = [];
     for (let i = 0, len = validBidRequests.length; i < len; i++) {
       const validReq = validBidRequests[i];
@@ -38,12 +39,16 @@ export const spec = {
       data = utils.tryAppendQueryString(data, 'hb', 'true');
       data = utils.tryAppendQueryString(data, 't', 'json3');
       data = utils.tryAppendQueryString(data, 'transactionid', validReq.transactionId);
-
+      data = utils.tryAppendQueryString(data, 'sizes', getSizes(validReq));
+      data = utils.tryAppendQueryString(data, 'currency', getCurrencyType());
+      data = utils.tryAppendQueryString(data, 'pbver', '$prebid.version$');
+      data = utils.tryAppendQueryString(data, 'sdkname', 'prebidjs');
+      data = utils.tryAppendQueryString(data, 'adapterver', ADGENE_PREBID_VERSION);
       // native以外にvideo等の対応が入った場合は要修正
       if (!validReq.mediaTypes || !validReq.mediaTypes.native) {
         data = utils.tryAppendQueryString(data, 'imark', '1');
       }
-
+      data = utils.tryAppendQueryString(data, 'tp', bidderRequest.refererInfo.referer);
       // remove the trailing "&"
       if (data.lastIndexOf('&') === data.length - 1) {
         data = data.substring(0, data.length - 1);
@@ -61,37 +66,34 @@ export const spec = {
    * Unpack the response from the server into a list of bids.
    *
    * @param {ServerResponse} serverResponse A successful response from the server.
-   * @param {BidRequest} bidRequest
+   * @param {BidRequest} bidRequests
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function (serverResponse, bidRequests) {
     const body = serverResponse.body;
-    const bidResponses = [];
-    let bidRequest = {};
-    if (body.results && body.results.length > 0) {
-      bidRequest = bidRequests.bidRequest;
-      const bidResponse = {
-        requestId: bidRequest.bidId,
-        cpm: body.cpm || 0,
-        width: bidRequest.sizes[0][0],
-        height: bidRequest.sizes[0][1],
-        creativeId: body.creativeid || '',
-        dealId: body.dealid || '',
-        currency: 'JPY',
-        netRevenue: true,
-        ttl: body.ttl || 10,
-        referrer: utils.getTopWindowUrl(),
-      };
-      if (bidRequest.mediaTypes && bidRequest.mediaTypes.native) {
-        bidResponse.native = createNativeAd(body);
-        bidResponse.mediaType = NATIVE;
-      } else {
-        // banner
-        bidResponse.ad = createAd(body, bidRequest);
-      }
-      bidResponses.push(bidResponse);
+    if (!body.results || body.results.length < 1) {
+      return [];
     }
-    return bidResponses; // noAdは空を返す
+    const bidRequest = bidRequests.bidRequest;
+    const bidResponse = {
+      requestId: bidRequest.bidId,
+      cpm: body.cpm || 0,
+      width: body.w ? body.w : 1,
+      height: body.h ? body.h : 1,
+      creativeId: body.creativeid || '',
+      dealId: body.dealid || '',
+      currency: getCurrencyType(),
+      netRevenue: true,
+      ttl: body.ttl || 10,
+    };
+    if (isNative(body)) {
+      bidResponse.native = createNativeAd(body);
+      bidResponse.mediaType = NATIVE;
+    } else {
+      // banner
+      bidResponse.ad = createAd(body, bidRequest);
+    }
+    return [bidResponse];
   },
 
   /**
@@ -115,6 +117,11 @@ function createAd(body, bidRequest) {
   ad = appendChildToBody(ad, body.beacon);
   if (removeWrapper(ad)) return removeWrapper(ad);
   return ad;
+}
+
+function isNative(body) {
+  if (!body) return false;
+  return body.native_ad && body.native_ad.assets.length > 0;
 }
 
 function createNativeAd(body) {
@@ -148,6 +155,9 @@ function createNativeAd(body) {
           break;
         case 6:
           native.cta = assets[i].data.value;
+          break;
+        case 502:
+          native.privacyLink = encodeURIComponent(assets[i].data.value);
           break;
       }
     }
@@ -193,6 +203,34 @@ function removeWrapper(ad) {
   const lastBodyIndex = ad.lastIndexOf('</body>');
   if (bodyIndex === -1 || lastBodyIndex === -1) return false;
   return ad.substr(bodyIndex, lastBodyIndex).replace('<body>', '').replace('</body>', '');
+}
+
+/**
+ * request
+ * @param validReq request
+ * @returns {?string} 300x250,320x50...
+ */
+function getSizes(validReq) {
+  const sizes = validReq.sizes;
+  if (!sizes || sizes.length < 1) return null;
+  let sizesStr = '';
+  for (const i in sizes) {
+    const size = sizes[i];
+    if (size.length !== 2) return null;
+    sizesStr += `${size[0]}x${size[1]},`;
+  }
+  if (sizesStr || sizesStr.lastIndexOf(',') === sizesStr.length - 1) {
+    sizesStr = sizesStr.substring(0, sizesStr.length - 1);
+  }
+  return sizesStr;
+}
+
+/**
+ * @return {?string} USD or JPY
+ */
+function getCurrencyType() {
+  if (config.getConfig('currency.adServerCurrency') && config.getConfig('currency.adServerCurrency').toUpperCase() === 'USD') return 'USD';
+  return 'JPY';
 }
 
 registerBidder(spec);

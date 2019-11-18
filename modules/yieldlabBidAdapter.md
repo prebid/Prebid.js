@@ -3,7 +3,7 @@
 ```
 Module Name: Yieldlab Bidder Adapter
 Module Type: Bidder Adapter
-Maintainer: api@platform-lunar.com
+Maintainer: solutions@yieldlab.de
 ```
 
 # Description
@@ -14,30 +14,35 @@ Module that connects to Yieldlab's demand sources
 ```
     var adUnits = [
            {
-               code: "test1",
-               sizes: [[800, 250]]
+               code: "banner",
+               sizes: [[728, 90]],
                bids: [{
                    bidder: "yieldlab",
                    params: {
-                       placement: "4206978",
-                       accountId: "2358365",
-                       adSize: "800x250"
+                       adslotId: "5220336",
+                       supplyId: "1381604",
+                       adSize: "728x90",
+                       targeting: {
+                           key1: "value1",
+                           key2: "value2"
+                       },
+                       extId: "abc"
                    }
                }]
            }, {
-               code: "test2",
-               sizes: [[1, 1]],
+               code: "video",
+               sizes: [[640, 480]],
                mediaTypes: {
                    video: {
-                       context: "instream"
+                       context: "instream" // or "outstream"
                    }
                },
                bids: [{
                    bidder: "yieldlab",
                    params: {
-                       placementId: "4207034",
-                       accountId: "2358365",
-                       adSize: "1x1"
+                       adslotId: "5220339",
+                       supplyId: "1381604",
+                       adSize: "640x480"
                    }
                }]
            }

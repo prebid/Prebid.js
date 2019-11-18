@@ -1,6 +1,5 @@
-import * as utils from 'src/utils';
-import { registerBidder } from 'src/adapters/bidderFactory';
-import find from 'core-js/library/fn/array/find';
+import * as utils from '../src/utils';
+import { registerBidder } from '../src/adapters/bidderFactory';
 
 const ENDPOINT = 'hb.gammaplatform.com';
 const BIDDER_CODE = 'gamma';
@@ -8,6 +7,7 @@ const BIDDER_CODE = 'gamma';
 export const spec = {
   code: BIDDER_CODE,
   aliases: ['gamma'],
+  supportedMediaTypes: ['banner', 'video'],
 
   /**
    * Determines whether or not the given bid request is valid.
@@ -26,11 +26,15 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function(bidRequests) {
-    const gaxObjParams = find(bidRequests, hasParamInfo);
-    return {
-      method: 'GET',
-      url: '//' + ENDPOINT + '/adx/request?wid=' + gaxObjParams.params.siteId + '&zid=' + gaxObjParams.params.zoneId + '&hb=pbjs&bidid=' + gaxObjParams.bidId + '&urf=' + utils.getTopWindowUrl()
-    };
+    const serverRequests = [];
+    for (var i = 0, len = bidRequests.length; i < len; i++) {
+      const gaxObjParams = bidRequests[i];
+      serverRequests.push({
+        method: 'GET',
+        url: '//' + ENDPOINT + '/adx/request?wid=' + gaxObjParams.params.siteId + '&zid=' + gaxObjParams.params.zoneId + '&hb=pbjs&bidid=' + gaxObjParams.bidId + '&urf=' + encodeURIComponent(utils.getTopWindowUrl())
+      });
+    }
+    return serverRequests;
   },
 
   /**
@@ -85,15 +89,12 @@ function newBid(serverBid) {
   if (serverBid.type == 'video') {
     Object.assign(bid, {
       vastXml: serverBid.seatbid[0].bid[0].vastXml,
+      vastUrl: serverBid.seatbid[0].bid[0].vastUrl,
       ttl: 3600
     });
   }
 
   return bid;
-}
-
-function hasParamInfo(bid) {
-  return !!bid.params;
 }
 
 registerBidder(spec);

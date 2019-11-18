@@ -1,6 +1,6 @@
-import * as utils from 'src/utils';
-import { BANNER, NATIVE } from 'src/mediaTypes';
-import {registerBidder} from 'src/adapters/bidderFactory';
+import * as utils from '../src/utils';
+import { BANNER, NATIVE } from '../src/mediaTypes';
+import {registerBidder} from '../src/adapters/bidderFactory';
 
 const BIDDER_CODE = 'quantum';
 const ENDPOINT_URL = '//s.sspqns.com/hb';
@@ -25,7 +25,7 @@ export const spec = {
    * @param {validBidRequests[]} - an array of bids
    * @return ServerRequest Info describing the request to the server.
    */
-  buildRequests: function (bidRequests) {
+  buildRequests: function (bidRequests, bidderRequest) {
     return bidRequests.map(bid => {
       const qtxRequest = {};
       let bidId = '';
@@ -55,6 +55,12 @@ export const spec = {
         bidId = bid.bidId;
       }
       qtxRequest.auid = placementId;
+
+      if (bidderRequest && bidderRequest.gdprConsent) {
+        qtxRequest.quantx_user_consent_string = bidderRequest.gdprConsent.consentString;
+        qtxRequest.quantx_gdpr = bidderRequest.gdprConsent.gdprApplies === true ? 1 : 0;
+      };
+
       const url = devEnpoint || ENDPOINT_URL;
 
       return {
@@ -64,7 +70,8 @@ export const spec = {
         mediaType: mediaType,
         renderMode: renderMode,
         url: url,
-        'data': qtxRequest
+        'data': qtxRequest,
+        bidderRequest
       };
     });
   },
@@ -99,12 +106,15 @@ export const spec = {
       if (serverBody.cobj) {
         bid.cobj = serverBody.cobj;
       }
+      if (!utils.isEmpty(bidRequest.sizes)) {
+        bid.width = bidRequest.sizes[0][0];
+        bid.height = bidRequest.sizes[0][1];
+      }
 
       bid.nurl = serverBody.nurl;
       bid.sync = serverBody.sync;
       if (bidRequest.renderMode && bidRequest.renderMode === 'banner') {
-        bid.width = 300;
-        bid.height = 225;
+        bid.mediaType = 'banner';
         if (serverBody.native) {
           const adAssetsUrl = '//cdn.elasticad.net/native/serve/js/quantx/quantumAd/';
           let assets = serverBody.native.assets;
@@ -117,7 +127,7 @@ export const spec = {
 
           let jstracker = '';
           if (serverBody.native.jstracker) {
-            jstracker = serverBody.native.jstracker;
+            jstracker = encodeURIComponent(serverBody.native.jstracker);
           }
 
           if (serverBody.nurl) {
@@ -127,6 +137,7 @@ export const spec = {
           let ad = {};
           ad['trackers'] = trackers;
           ad['jstrackers'] = jstracker;
+          ad['eventtrackers'] = serverBody.native.eventtrackers || [];
 
           for (let i = 0; i < assets.length; i++) {
             let asset = assets[i];
@@ -193,7 +204,7 @@ export const spec = {
             ad['clicktrackers'] = link.clicktrackers;
           }
 
-          ad['main_image'] = '//resize-ssp.elasticad.net/scalecrop-290x130/' + window.btoa(ad['main_image']) + '/external';
+          ad['main_image'] = '//resize-ssp.adux.com/scalecrop-290x130/' + window.btoa(ad['main_image']) + '/external';
 
           bid.ad = '<div id="ead_' + id + '\">' +
             '<div class="ad_container ead_' + id + '" style="clear: both; display:inline-block;width:100%">' +
@@ -216,6 +227,7 @@ export const spec = {
         }
       } else {
         // native
+        bid.mediaType = 'native';
         if (bidRequest.mediaType === 'native') {
           if (serverBody.native) {
             let assets = serverBody.native.assets;
@@ -239,13 +251,21 @@ export const spec = {
                   native.title = asset['title']['text'];
                   break;
                 case 2:
-                  native.icon = asset['img'];
+                  native.icon = {
+                    url: asset['img']['url'],
+                    width: asset['img']['w'],
+                    height: asset['img']['h']
+                  };
                   break;
                 case 3:
                   native.body = asset['data']['value'];
                   break;
                 case 4:
-                  native.image = asset['img'];
+                  native.image = {
+                    url: asset['img']['url'],
+                    width: asset['img']['w'],
+                    height: asset['img']['h']
+                  };
                   break;
                 case 10:
                   native.sponsoredBy = asset['data']['value'];
@@ -262,6 +282,7 @@ export const spec = {
             if (link.clicktrackers) {
               native.clickTrackers = link.clicktrackers;
             }
+            native.eventtrackers = native.eventtrackers || [];
 
             bid.qtx_native = utils.deepClone(serverBody.native);
             bid.native = native;
@@ -278,23 +299,21 @@ export const spec = {
    * Register the user sync pixels which should be dropped after the auction.
    *
    * @param {SyncOptions} syncOptions Which user syncs are allowed?
-   * @param {ServerResponse[]} serverResponses List of server's responses.
+   * @param {ServerResponse} serverResponse A successful response from the server
    * @return {UserSync[]} The user syncs which should be dropped.
    */
-  getUserSyncs: function (syncOptions, serverResponses) {
-    const syncs = []
-    if (syncOptions.iframeEnabled) {
-      syncs.push({
-        type: 'iframe',
-        url: '//acdn.adnxs.com/ib/static/usersync/v3/async_usersync.html'
-      });
-    }
-    if (syncOptions.pixelEnabled && serverResponses.length > 0) {
-      syncs.push({
-        type: 'image',
-        url: serverResponses[0].body.sync[0]
-      });
-    }
+  getUserSyncs: function (syncOptions, serverResponse) {
+    const syncs = [];
+    utils._each(serverResponse, function(serverResponse) {
+      if (serverResponse.body && serverResponse.body.sync) {
+        utils._each(serverResponse.body.sync, function (pixel) {
+          syncs.push({
+            type: 'image',
+            url: pixel
+          });
+        });
+      }
+    });
     return syncs;
   }
 }

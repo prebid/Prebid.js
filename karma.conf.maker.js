@@ -20,7 +20,10 @@ function newWebpackConfig(codeCoverage) {
     webpackConfig.module.rules.push({
       enforce: 'post',
       exclude: /(node_modules)|(test)|(integrationExamples)|(build)|polyfill.js|(src\/adapters\/analytics\/ga.js)/,
-      loader: 'istanbul-instrumenter-loader',
+      use: {
+        loader: 'istanbul-instrumenter-loader',
+        options: { esModules: true }
+      },
       test: /\.js$/
     })
   }
@@ -32,9 +35,8 @@ function newPluginsArray(browserstack) {
     'karma-chrome-launcher',
     'karma-coverage-istanbul-reporter',
     'karma-es5-shim',
-    'karma-expect',
     'karma-mocha',
-    'karma-requirejs',
+    'karma-chai',
     'karma-sinon',
     'karma-sourcemap-loader',
     'karma-spec-reporter',
@@ -43,13 +45,12 @@ function newPluginsArray(browserstack) {
   ];
   if (browserstack) {
     plugins.push('karma-browserstack-launcher');
-    plugins.push('karma-sauce-launcher');
-    plugins.push('karma-firefox-launcher');
-    plugins.push('karma-opera-launcher');
-    plugins.push('karma-safari-launcher');
-    plugins.push('karma-script-launcher');
-    plugins.push('karma-ie-launcher');
   }
+  plugins.push('karma-firefox-launcher');
+  plugins.push('karma-opera-launcher');
+  plugins.push('karma-safari-launcher');
+  plugins.push('karma-script-launcher');
+  plugins.push('karma-ie-launcher');
   return plugins;
 }
 
@@ -64,8 +65,6 @@ function setReporters(karmaConf, codeCoverage, browserstack) {
       suppressSkipped: false,
       suppressPassed: true
     };
-  } else {
-    karmaConf.reporters = ['progress'];
   }
   if (codeCoverage) {
     karmaConf.reporters.push('coverage-istanbul');
@@ -86,12 +85,29 @@ function setBrowsers(karmaConf, browserstack) {
   if (browserstack) {
     karmaConf.browserStack = {
       username: process.env.BROWSERSTACK_USERNAME,
-      accessKey: process.env.BROWSERSTACK_KEY
+      accessKey: process.env.BROWSERSTACK_ACCESS_KEY,
+      build: 'Prebidjs Unit Tests ' + new Date().toLocaleString()
+    }
+    if (process.env.TRAVIS) {
+      karmaConf.browserStack.startTunnel = false;
+      karmaConf.browserStack.tunnelIdentifier = process.env.BROWSERSTACK_LOCAL_IDENTIFIER;
     }
     karmaConf.customLaunchers = require('./browsers.json')
     karmaConf.browsers = Object.keys(karmaConf.customLaunchers);
   } else {
-    karmaConf.browsers = ['ChromeHeadless'];
+    var isDocker = require('is-docker')();
+    if (isDocker) {
+      karmaConf.customLaunchers = karmaConf.customLaunchers || {};
+      karmaConf.customLaunchers.ChromeCustom = {
+        base: 'ChromeHeadless',
+        // We must disable the Chrome sandbox when running Chrome inside Docker (Chrome's sandbox needs
+        // more permissions than Docker allows by default)
+        flags: ['--no-sandbox']
+      }
+      karmaConf.browsers = ['ChromeCustom'];
+    } else {
+      karmaConf.browsers = ['ChromeHeadless'];
+    }
   }
 }
 
@@ -112,11 +128,12 @@ module.exports = function(codeCoverage, browserstack, watchMode, file) {
 
     webpack: webpackConfig,
     webpackMiddleware: {
+      stats: 'errors-only',
       noInfo: true
     },
     // frameworks to use
     // available frameworks: https://npmjs.org/browse/keyword/karma-adapter
-    frameworks: ['es5-shim', 'mocha', 'expect', 'sinon'],
+    frameworks: ['es5-shim', 'mocha', 'chai', 'sinon'],
 
     files: files,
 
@@ -139,7 +156,11 @@ module.exports = function(codeCoverage, browserstack, watchMode, file) {
     // enable / disable watching file and executing tests whenever any file changes
     autoWatch: true,
 
-    reporters: ['progress'],
+    reporters: ['mocha'],
+    mochaReporter: {
+      showDiff: true,
+      output: 'minimal'
+    },
 
     // Continuous Integration mode
     // if true, Karma captures browsers, runs the tests and exits
