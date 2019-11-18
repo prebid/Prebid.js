@@ -44,13 +44,15 @@ export const spec = {
    */
   buildRequests: (validBidRequests, bidderRequest) => {
     let winTop = window;
+    let location;
     try {
-      window.top.location.toString();
+      location = new URL(bidderRequest.refererInfo.referer)
       winTop = window.top;
     } catch (e) {
+      location = window.top.location;
       utils.logMessage(e);
     };
-    let location = new URL((bidderRequest && bidderRequest.refererInfo ? bidderRequest.refererInfo.referer : window.top.location.toString()));
+    
     let placements = [];
     let request = {
       'deviceWidth': winTop.screen.width,
