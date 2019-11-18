@@ -49,7 +49,7 @@ export const spec = {
       location = new URL(bidderRequest.refererInfo.referer)
       winTop = window.top;
     } catch (e) {
-      location = window.top.location;
+      location = winTop.location;
       utils.logMessage(e);
     };
     
