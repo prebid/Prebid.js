@@ -223,7 +223,7 @@ function executeBidsLoggerCall(auctionId) {
   outputObj['pid'] = '' + profileId;
   outputObj['pdvid'] = '' + profileVersionId;
 
-  // GDPR support // todo unit test case
+  // GDPR support
   if (auctionCache.gdprConsent) {
     outputObj['cns'] = auctionCache.gdprConsent.consentString || '';
     outputObj['gdpr'] = auctionCache.gdprConsent.gdprApplies || 0;
