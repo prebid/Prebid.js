@@ -144,6 +144,12 @@ export const spec = {
       userExt.fpc = pubcid;
     }
 
+    // Add Eids if available
+    const eids = collectEids(validBidRequests);
+    if (eids.length > 0) {
+      userExt.eids = eids;
+    }
+
     // Only add the user object if it's not empty
     if (!utils.isEmpty(userExt)) {
       payload.user = {ext: userExt};
@@ -291,6 +297,45 @@ function isVideoRequest(bid) {
 function copyOptProperty(src, dst, dstName) {
   if (src) {
     dst[dstName] = src;
+  }
+}
+
+/**
+ * Collect IDs from validBidRequests and store them as an extended id array
+ * @param bidRequests valid bid requests
+ */
+function collectEids(bidRequests) {
+  const request = bidRequests[0]; // bidRequests have the same userId object
+  const eids = [];
+
+  addEid(eids, request, 'userId.tdid', 'adserver.org');
+  addEid(eids, request, 'userId.idl_env', 'liveramp.com');
+  addEid(eids, request, 'userId.criteoId', 'criteo.com');
+  addEid(eids, request, 'userId.id5id', 'id5-sync.com');
+  addEid(eids, request, 'userId.parrableid', 'parrable.com');
+  addEid(eids, request, 'userId.digitrustid.data.id', 'digitru.st');
+  addEid(eids, request, 'userId.lipb.lipbid', 'liveintent.com');
+
+  return eids;
+}
+
+/**
+ * Extract and push a single extended id into eids array
+ * @param eids Array of extended IDs
+ * @param idObj Object containing IDs
+ * @param keyPath Nested properties expressed as a path
+ * @param source Source for the ID
+ */
+function addEid(eids, idObj, keyPath, source) {
+  const id = utils.deepAccess(idObj, keyPath);
+  if (id) {
+    eids.push({
+      source: source,
+      uids: [{
+        id: id,
+        atype: 1
+      }]
+    });
   }
 }
 
