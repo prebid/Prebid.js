@@ -21,9 +21,7 @@ const END_POINT_BID_LOGGER = END_POINT_HOST + 'wl?';
 const END_POINT_WIN_BID_LOGGER = END_POINT_HOST + 'wt?';
 const LOG_PRE_FIX = 'PubMatic-Analytics: ';
 const cache = {
-  auctions: {},
-  targeting: {},
-  timeouts: {},
+  auctions: {}
 };
 const SUCCESS = 'success';
 const NO_BID = 'no-bid';
@@ -310,7 +308,7 @@ function bidRequestedHandler(args) {
 }
 
 function bidResponseHandler(args) {
-  let bid = cache.auctions[args.auctionId].adUnitCodes[args.adUnitCode].bids[args.requestId]; // todo: need try-catch
+  let bid = cache.auctions[args.auctionId].adUnitCodes[args.adUnitCode].bids[args.requestId];
   if (!bid) {
     utils.logError(LOG_PRE_FIX + 'Could not find associated bid request for bid response with requestId: ', args.requestId);
     return;
@@ -324,7 +322,7 @@ function bidResponseHandler(args) {
 function bidderDoneHandler(args) {
   cache.auctions[args.auctionId].bidderDonePendingCount--;
   args.bids.forEach(bid => {
-    let cachedBid = cache.auctions[bid.auctionId].adUnitCodes[bid.adUnitCode].bids[bid.bidId || bid.requestId]; // todo: need try-catch
+    let cachedBid = cache.auctions[bid.auctionId].adUnitCodes[bid.adUnitCode].bids[bid.bidId || bid.requestId];
     if (typeof bid.serverResponseTimeMs !== 'undefined') {
       cachedBid.serverLatencyTimeMs = bid.serverResponseTimeMs;
     }
@@ -359,7 +357,7 @@ function bidTimeoutHandler(args) {
   // db = 0 and t = 1 means bidder did  respond with a bid but post timeout
   args.forEach(badBid => {
     let auctionCache = cache.auctions[badBid.auctionId];
-    let bid = auctionCache.adUnitCodes[badBid.adUnitCode].bids[ badBid.bidId || badBid.requestId ]; // todo: need try-catch
+    let bid = auctionCache.adUnitCodes[badBid.adUnitCode].bids[ badBid.bidId || badBid.requestId ];
     if (bid) {
       bid.status = ERROR;
       bid.error = {
