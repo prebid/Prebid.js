@@ -18,12 +18,17 @@ The NasmediaAdmixer adapter doesn't support multiple sizes per ad-unit and will 
     var adUnits = [
       {
         code: 'banner-ad-div',
-        sizes: [[320, 480]],  // banner size
+        mediaTypes: { 
+          banner: { // banner size
+            sizes: [[300, 250]]
+          }
+        },
         bids: [
           {
             bidder: 'nasmediaAdmixer',
             params: {
-              ax_key: 'ajj7jba3',  //required parameter
+              media_key: 'ajj7jba3',  //required
+              adunit_id: '20432504',  //required
             }
           }
         ]
