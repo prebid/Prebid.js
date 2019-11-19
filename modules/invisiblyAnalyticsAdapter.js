@@ -206,7 +206,6 @@ function sendEvent(event) {
 
   if (event.eventType === AUCTION_END) {
     flush();
-    //clearInterval(flushInterval);
   }
 }
 
