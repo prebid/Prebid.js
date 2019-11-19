@@ -5,17 +5,9 @@ import { ajax } from '../src/ajax';
 import { config } from '../src/config';
 import * as utils from '../src/utils';
 
-/*
-    TODO:
-        what about video bids?
-            first version only banner?
-            can we support as a basic version?
-*/
-
 /// /////////// CONSTANTS //////////////
-
 const ADAPTER_CODE = 'pubmatic';
-const SEND_TIMEOUT = 3000;
+const SEND_TIMEOUT = 2000;
 const END_POINT_HOST = 'https://t.pubmatic.com/';
 const END_POINT_BID_LOGGER = END_POINT_HOST + 'wl?';
 const END_POINT_WIN_BID_LOGGER = END_POINT_HOST + 'wt?';
@@ -335,10 +327,6 @@ function bidderDoneHandler(args) {
   });
 }
 
-function setTargetingHandler(args) {
-  Object.assign(cache.targeting, args);
-}
-
 function bidWonHandler(args) {
   let auctionCache = cache.auctions[args.auctionId];
   auctionCache.adUnitCodes[args.adUnitCode].bidWon = args.requestId;
@@ -347,7 +335,7 @@ function bidWonHandler(args) {
 
 function auctionEndHandler(args) {
   // todo: if for the given auction bidderDonePendingCount == 0 then execute logger call sooner
-  cache.timeouts[args.auctionId] = setTimeout(() => {
+  setTimeout(() => {
     executeBidsLoggerCall.call(this, args.auctionId);
   }, SEND_TIMEOUT);
 }
@@ -411,31 +399,21 @@ let pubmaticAdapter = Object.assign({}, baseAdapter, {
       case CONSTANTS.EVENTS.AUCTION_INIT:
         auctionInitHandler(args);
         break;
-
       case CONSTANTS.EVENTS.BID_REQUESTED:
         bidRequestedHandler(args);
         break;
-
       case CONSTANTS.EVENTS.BID_RESPONSE:
         bidResponseHandler(args);
         break;
-
       case CONSTANTS.EVENTS.BIDDER_DONE:
         bidderDoneHandler(args);
         break;
-
-      case CONSTANTS.EVENTS.SET_TARGETING:
-        setTargetingHandler(args);
-        break;
-
       case CONSTANTS.EVENTS.BID_WON:
         bidWonHandler(args);
         break;
-
       case CONSTANTS.EVENTS.AUCTION_END:
         auctionEndHandler(args);
         break;
-
       case CONSTANTS.EVENTS.BID_TIMEOUT:
         bidTimeoutHandler(args);
         break;
