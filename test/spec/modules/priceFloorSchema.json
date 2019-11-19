@@ -1,0 +1,77 @@
+{
+  "$schema": "http://json-schema.org/draft-06/schema#",
+  "description": "A Price Floors object which is parsed and used to enforce dynamic floors depending on the properties of the json",
+  "type": "object",
+  "title": "Price Floors Enforcement",
+  "required": [
+    "currency",
+    "schema",
+    "values",
+    "default"
+  ],
+  "properties": {
+    "currency": {
+      "type": "string",
+      "description": "The three digit Currency Code which the floors are provided in",
+      "examples": [
+        "USD",
+        "EUR",
+        "JPY"
+      ],
+      "pattern": "^[a-zA-Z]{3}$"
+    },
+    "fields": {
+      "type": "array",
+      "description": "The list of fields to be used for matching criteria of a bid response with a price floor",
+      "required": [
+        "fields"
+      ],
+      "items": {
+        "type": "string",
+        "description": "The allowed bidResponse field types to be enforced",
+        "enum": [
+          "gptSlot",
+          "mediaType",
+          "size",
+          "adUnitCode"
+        ]
+      }
+    },
+    "values": {
+      "type": "array",
+      "description": "The list of data points which map to a bid floor",
+      "items": {
+        "type": "object",
+        "description": "A single mapping of field value to a bid floor",
+        "required": [
+          "key",
+          "floor"
+        ],
+        "properties": {
+          "key": {
+            "type": "string",
+            "description": "The deliminated mapping",
+            "examples": [
+              "/1111/homepage/top-rect|banner"
+            ],
+            "pattern": "^(.*)$"
+          },
+          "floor": {
+            "type": "number",
+            "description": "The floor to be enforced based on the key",
+            "examples": [
+              0.8
+            ]
+          }
+        }
+      }
+    },
+    "default": {
+      "type": "number",
+      "description": "The default floor to use if no entry in the value matches a bid response",
+      "examples": [
+        0.75
+      ]
+    }
+  }
+}
