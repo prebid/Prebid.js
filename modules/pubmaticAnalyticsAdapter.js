@@ -334,10 +334,10 @@ function bidWonHandler(args) {
 }
 
 function auctionEndHandler(args) {
-  // todo: if for the given auction bidderDonePendingCount == 0 then execute logger call sooner
+  // if for the given auction bidderDonePendingCount == 0 then execute logger call sooners
   setTimeout(() => {
     executeBidsLoggerCall.call(this, args.auctionId);
-  }, SEND_TIMEOUT);
+  }, (cache.auctions[args.auctionId].bidderDonePendingCount === 0 ? 500 : SEND_TIMEOUT));
 }
 
 function bidTimeoutHandler(args) {
