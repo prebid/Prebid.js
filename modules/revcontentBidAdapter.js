@@ -1,17 +1,12 @@
+// jshint esversion: 6, es3: false, node: true
 'use strict';
 
 import {
   registerBidder
 } from '../src/adapters/bidderFactory';
-import {
-  NATIVE
-} from '../src/mediaTypes';
 import * as utils from '../src/utils';
-import { config } from '../src/config';
 
 const BIDDER_CODE = 'revcontent';
-const SUPPORTED_MEDIA_TYPES = ['banner', 'native'];
-
 const NATIVE_ASSET_IDS = {0: 'title', 2: 'icon', 3: 'image', 5: 'sponsoredBy', 4: 'body', 1: 'cta'};
 const NATIVE_PARAMS = {
   title: {
@@ -47,100 +42,65 @@ const NATIVE_PARAMS = {
 
 export const spec = {
   code: BIDDER_CODE,
-  supportedMediaTypes: SUPPORTED_MEDIA_TYPES,
+  supportedMediaTypes: ['banner', 'native', 'video'],
+  isBidRequestValid: function (bid) {
+    return (typeof bid.params.apiKey !== 'undefined' && typeof bid.params.userId !== 'undefined');
+  },
   buildRequests: (validBidRequests, bidderRequest) => {
     utils.logInfo('starting buildRequests');
-    const page = bidderRequest.refererInfo.referer;
-    const ua = navigator.userAgent;
-    const pt = setOnAny(validBidRequests, 'params.pt') || setOnAny(validBidRequests, 'params.priceType') || 'net';
-    const tid = validBidRequests[0].transactionId;
-    const test = setOnAny(validBidRequests, 'params.test');
+
     const userId = setOnAny(validBidRequests, 'params.userId');
     const widgetId = setOnAny(validBidRequests, 'params.widgetId');
     const apiKey = setOnAny(validBidRequests, 'params.apiKey');
-    const currency = config.getConfig('currency.adServerCurrency');
-    const cur = currency && [currency];
 
-    const imp = validBidRequests.map((bid, id) => {
-      utils.logInfo('starting validBidRequests');
-      bid.netRevenue = pt;
-      const assets = utils._map(bid.nativeParams, (bidParams, key) => {
-        const props = NATIVE_PARAMS[key];
-        const asset = {
-          required: bidParams.required & 1,
-        };
-        if (props) {
-          asset.id = props.id;
-          let wmin, hmin, w, h;
-          let aRatios = bidParams.aspect_ratios;
+    let serverRequests = [];
+    var refererInfo;
+    if (bidderRequest && bidderRequest.refererInfo) {
+      refererInfo = bidderRequest.refererInfo;
+    }
 
-          if (aRatios && aRatios[0]) {
-            aRatios = aRatios[0];
-            wmin = aRatios.min_width || 0;
-            hmin = aRatios.ratio_height * wmin / aRatios.ratio_width | 0;
-          }
+    var endpoint = '//trends-s0.revcontent.com/rtb?apiKey=' + apiKey + '&userId=' + userId;
 
-          if (bidParams.sizes) {
-            const sizes = flatten(bidParams.sizes);
-            w = sizes[0];
-            h = sizes[1];
-          }
+    if (!isNaN(widgetId) && widgetId > 0) {
+      endpoint = endpoint + '&widgetId=' + widgetId;
+    }
 
-          asset[props.name] = {
-            len: bidParams.len,
-            type: props.type,
-            wmin,
-            hmin,
-            w,
-            h
-          };
-
-          return asset;
-        }
-      }).filter(Boolean);
-
-      return {
-        id: id + 1,
-        tagid: bid.params.mid,
-        native: {
-          request: {
-            assets
-          }
-        }
+    validBidRequests.forEach((bid, i) => {
+      let data = {
+        'placementid': bid.params.placementId,
+        'cur': 'usd',
+        'ua': navigator.userAgent,
+        'loc': utils.getTopWindowUrl(),
+        'topframe': (window.parent === window.self) ? 1 : 0,
+        'sw': screen && screen.width,
+        'sh': screen && screen.height,
+        'cb': Math.floor(Math.random() * 99999999999),
+        'tpaf': 1,
+        'cks': 1,
+        'requestid': bid.bidId,
+        'transactionId': validBidRequests[0].transactionId
       };
+
+      if (refererInfo && refererInfo.referer) {
+        data.referer = refererInfo.referer;
+      } else {
+        data.referer = '';
+      }
+
+      serverRequests.push({
+        method: 'POST',
+        options: {
+          contentType: 'application/json'
+        },
+        url: endpoint,
+        data: JSON.stringify(data),
+        bid: validBidRequests
+      });
     });
 
-    const request = {
-      id: bidderRequest.auctionId,
-      site: {page},
-      device: {ua},
-      source: {tid, fd: 1},
-      ext: {pt},
-      cur,
-      imp
-    };
-
-    if (test) {
-      request.is_debug = !!test;
-      request.test = 1;
-    }
-    if (utils.deepAccess(bidderRequest, 'gdprConsent.gdprApplies')) {
-      request.user = {ext: {consent: bidderRequest.gdprConsent.consentString}};
-      request.regs = {ext: {gdpr: bidderRequest.gdprConsent.gdprApplies & 1}};
-    }
-
-    return {
-      method: 'POST',
-      url: '//trends-s0.revcontent.com/rtb?widgetId=' + widgetId + '&apiKey=' + apiKey + '&userId=' + userId,
-      data: JSON.stringify(request),
-      options: {
-        contentType: 'application/json'
-      },
-      bids: validBidRequests
-    };
+    return serverRequests;
   },
   interpretResponse: function (serverResponse, { bids }) {
-    utils.logInfo('starting interpretResponse');
     if (!serverResponse.body) {
       return;
     }
@@ -161,7 +121,7 @@ export const spec = {
           ttl: 360,
           netRevenue: bid.netRevenue === 'net',
           currency: cur,
-          mediaType: NATIVE,
+          mediaType: 'banner',
           bidderCode: BIDDER_CODE,
           native: parseNative(bidResponse)
         };
@@ -173,7 +133,6 @@ export const spec = {
 registerBidder(spec);
 
 function parseNative(bid) {
-  utils.logInfo('starting parseNative');
   const {assets, link, imptrackers, jstracker} = bid.native;
   const result = {
     clickUrl: link.url,
@@ -193,7 +152,6 @@ function parseNative(bid) {
 }
 
 function setOnAny(collection, key) {
-  utils.logInfo('starting setOnAny');
   for (let i = 0, result; i < collection.length; i++) {
     result = utils.deepAccess(collection[i], key);
     if (result) {
@@ -203,6 +161,5 @@ function setOnAny(collection, key) {
 }
 
 function flatten(arr) {
-  utils.logInfo('starting flatten');
   return [].concat(...arr);
 }

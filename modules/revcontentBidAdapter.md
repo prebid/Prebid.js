@@ -23,7 +23,7 @@ Revcontent Adpater
             params: {
                 apiKey: '8a33sdfsdfdsfsdfssss544f8sdfsdfsdfd3b1c',  // Required
                 userId: 69565,                                      // Required
-                widgetId: 599995,                                   // Optional
+                widgetId: 599995                                    // Optional
             }
         }]
     }];
