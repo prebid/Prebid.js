@@ -58,15 +58,8 @@ export const spec = {
       };
 
       const videoMediaType = utils.deepAccess(bid, 'mediaTypes.video');
-      if (!videoMediaType || (videoMediaType && videoMediaType.context === 'outstream')) {
-        // For banner and outstream, sizes are handled the same way.
-        var sizes = [];
-        if (videoMediaType && videoMediaType.context === 'outstream') {
-          sizes = videoMediaType.playerSize;
-        } else {
-          sizes = bid.sizes;
-        }
-        payload.sizes = sizes.map(size => ({
+      if (!videoMediaType) {
+        payload.sizes = bid.sizes.map(size => ({
           w: size[0],
           h: size[1]
         }));

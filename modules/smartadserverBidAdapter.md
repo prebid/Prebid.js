@@ -61,31 +61,6 @@ Please reach out to your Technical account manager for more information.
     ];
 ```
 
-## Outstream Video
-```
-    var adUnits = [
-        {
-            code: 'test-div',
-            mediaTypes: {
-                video: {
-                    context: 'outstream',
-                    playerSize: [640, 480]
-                }
-            },
-            bids: [{
-                bidder: "smart",
-                params: {
-                    domain: 'http://ww251.smartadserver.com',
-                    siteId: 207435,
-                    pageId: 896536,
-                    formatId: 85089,
-                    bidfloor: 5
-                }
-            }]
-        }
-    ];
-```
-
 ## Instream Video
 ```
     var videoAdUnit = {
