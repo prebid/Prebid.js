@@ -115,3 +115,25 @@ Our demand and adapter supports multiple sizes per placement, as such a single d
 ###### 4. Implementation Checking
 
 Once the bidder is live in your Prebid configuration you may confirm it is making requests to our end point by looking for requests to `https://dmx.districtm.io/b/v1`. 
+
+
+###### 5. Setting first party data 
+
+```code
+pbjs.setConfig({
+    dmx: {
+        user: {
+            'gender': 'M',
+            'yob': 1992,
+            // keywords example
+            'keywords': 'automotive,dodge,engine,car'
+            
+        },
+        site: {
+            cat: ['IAB-12'],
+            pagecat: ['IAB-14'],
+            sectioncat: ['IAB-24']
+        }
+    }
+});
+```
