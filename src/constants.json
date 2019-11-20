@@ -33,6 +33,7 @@
     "BID_WON": "bidWon",
     "BIDDER_DONE": "bidderDone",
     "SET_TARGETING": "setTargeting",
+    "BEFORE_REQUEST_BIDS": "beforeRequestBids",
     "REQUEST_BIDS": "requestBids",
     "ADD_AD_UNITS": "addAdUnits",
     "AD_RENDER_FAILED" : "adRenderFailed"
