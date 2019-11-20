@@ -30,8 +30,9 @@ function inImageRender(bid) {
   });
 }
 
-function createRenderer() {
+function createRenderer(bid) {
   const renderer = Renderer.install({
+    id: bid.requestId,
     url: 'https://st.astraone.io/prebidrenderer.js',
     loaded: false
   });
@@ -60,9 +61,7 @@ function buildBid(bidDada) {
     content: bidDada.content
   };
 
-  Object.assign(bid, {
-    renderer: createRenderer(bid)
-  });
+  bid.renderer = createRenderer(bid);
 
   return bid;
 }
