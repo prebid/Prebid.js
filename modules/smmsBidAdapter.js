@@ -2,9 +2,9 @@ import * as utils from '../src/utils';
 import { registerBidder } from '../src/adapters/bidderFactory';
 
 const BIDDER_CODE = 'smms';
-const ENDPOINT_BANNER = '//bidder.mediams.mb.softbank.jp/api/v1/prebid/banner';
-const ENDPOINT_NATIVE = '//bidder.mediams.mb.softbank.jp/api/v1/prebid/native';
-const COOKIE_SYNC_URL = '//bidder.mediams.mb.softbank.jp/api/v1/cookie/gen';
+const ENDPOINT_BANNER = 'https://bidder.mediams.mb.softbank.jp/api/v1/prebid/banner';
+const ENDPOINT_NATIVE = 'https://bidder.mediams.mb.softbank.jp/api/v1/prebid/native';
+const COOKIE_SYNC_URL = 'https://bidder.mediams.mb.softbank.jp/api/v1/cookie/gen';
 const SUPPORTED_MEDIA_TYPES = ['banner', 'native'];
 const SUPPORTED_CURRENCIES = ['USD', 'JPY'];
 const DEFAULT_CURRENCY = 'JPY';
@@ -29,13 +29,12 @@ export function _getUrlVars(url) {
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['smms'], // short code
   supportedMediaTypes: SUPPORTED_MEDIA_TYPES,
   isBidRequestValid: function(bid) {
     let valid = !!(bid.params.placementId);
     if (valid && bid.params.hasOwnProperty('currency')) {
       if (SUPPORTED_CURRENCIES.indexOf(bid.params.currency) === -1) {
-        console.log('Invalid currency type, we support only JPY and USD!');
+        utils.logError('Invalid currency type, we support only JPY and USD!');
         valid = false;
       }
     }
@@ -54,6 +53,7 @@ export const spec = {
     if (bidderRequest && bidderRequest.refererInfo) {
       refererInfo = bidderRequest.refererInfo;
     }
+
     const g = (typeof (geparams) !== 'undefined' && typeof (geparams) == 'object' && geparams) ? geparams : {};
     validBidRequests.forEach((bid, i) => {
       let endpoint = ENDPOINT_BANNER;
@@ -62,14 +62,15 @@ export const spec = {
         'cur': bid.params.hasOwnProperty('currency') ? bid.params.currency : DEFAULT_CURRENCY,
         'ua': navigator.userAgent,
         'adtk': _encodeURIComponent(g.lat ? '0' : '1'),
-        'loc': utils.getTopWindowUrl(),
+        'loc': (refererInfo && refererInfo.referer) ? refererInfo.referer : '',
         'topframe': (window.parent == window.self) ? 1 : 0,
         'sw': screen && screen.width,
         'sh': screen && screen.height,
         'cb': Math.floor(Math.random() * 99999999999),
         'tpaf': 1,
         'cks': 1,
-        'requestid': bid.bidId
+        'requestid': bid.bidId,
+        'referer': (refererInfo && refererInfo.referer) ? refererInfo.referer : ''
       };
 
       if (bid.hasOwnProperty('nativeParams')) {
@@ -77,12 +78,6 @@ export const spec = {
         data.tkf = 1; // return url tracker
         data.ad_track = '1';
         data.apiv = '1.1.0';
-      }
-
-      if (refererInfo && refererInfo.referer) {
-        data.referer = refererInfo.referer;
-      } else {
-        data.referer = '';
       }
 
       serverRequests.push({

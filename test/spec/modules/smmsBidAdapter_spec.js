@@ -2,8 +2,8 @@ import {expect} from 'chai';
 import {spec, _getUrlVars} from 'modules/smmsBidAdapter';
 import * as utils from 'src/utils';
 
-const BASE_URI = '//bidder.mediams.mb.softbank.jp/api/v1/prebid/banner'
-const NATIVE_BASE_URI = '//bidder.mediams.mb.softbank.jp/api/v1/prebid/native'
+const BASE_URI = 'https://bidder.mediams.mb.softbank.jp/api/v1/prebid/banner'
+const NATIVE_BASE_URI = 'https://bidder.mediams.mb.softbank.jp/api/v1/prebid/native'
 
 describe('smms adapter', function() {
   let bidRequests;
