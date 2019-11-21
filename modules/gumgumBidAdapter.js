@@ -177,7 +177,7 @@ function buildRequests (validBidRequests, bidderRequest) {
       data.fp = params.bidfloor;
     }
     if (params.inScreen) {
-      data.t = params.inScreen;
+      (utils.isNumber(params.inScreen)) ? data.pubId = params.inScreen : data.t = params.inScreen;
       data.pi = 2;
     }
     if (params.inSlot) {
