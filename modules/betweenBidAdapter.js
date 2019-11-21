@@ -1,4 +1,5 @@
 import {registerBidder} from '../src/adapters/bidderFactory';
+import * as utils from '../src/utils';
 
 const BIDDER_CODE = 'between';
 
@@ -13,7 +14,22 @@ export const spec = {
    * @return boolean True  if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function(bid) {
-    return !!(bid.params.w && bid.params.h && bid.params.s);
+    if (bid && bid.params) {
+      if (typeof bid.params !== 'object' || Array.isArray(bid.params)) {
+        utils.logError(BIDDER_CODE + ': the type of bid.params is not object.');
+        return false;
+      } else if (!(bid.params.w && bid.params.h && bid.params.s) ||
+        !utils.isNumber(bid.params.w) || !utils.isNumber(bid.params.h) ||
+        !utils.isNumber(bid.params.s)) {
+        utils.logError(BIDDER_CODE + ': the value of adUnits params is wrong or absent.');
+        return false;
+      } else {
+        return true;
+      }
+    } else {
+      utils.logError(BIDDER_CODE + ': empty bid object.');
+      return false;
+    }
   },
   /**
    * Make a server request from the list of BidRequests.

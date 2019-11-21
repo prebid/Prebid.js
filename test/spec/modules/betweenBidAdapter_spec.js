@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { spec } from 'modules/betweenBidAdapter';
 
 describe('betweenBidAdapterTests', function () {
-  it('validate_pub_params', function () {
+  it('validate_pub_params: valid bid', function () {
     expect(spec.isBidRequestValid({
       bidder: 'between',
       params: {
@@ -12,6 +12,40 @@ describe('betweenBidAdapterTests', function () {
       }
     })).to.equal(true);
   });
+
+  it('validate_pub_params: empty bid', function () {
+    expect(spec.isBidRequestValid()).to.equal(false);
+  });
+
+  it('validate_pub_params: bid.params.s is not a number', function () {
+    expect(spec.isBidRequestValid({
+      bidder: 'between',
+      params: {
+        w: 240,
+        h: 400,
+        s: '1112'
+      }
+    })).to.equal(false);
+  });
+
+  it('validate_pub_params: bid.params.w is absent', function () {
+    expect(spec.isBidRequestValid({
+      bidder: 'between',
+      params: {
+        h: 400,
+        s: 1112
+      }
+    })).to.equal(false);
+  });
+
+  it('validate_pub_params: bid.params is absent', function () {
+    expect(spec.isBidRequestValid({
+      bidder: 'between',
+      params: {
+      }
+    })).to.equal(false);
+  });
+
   it('validate_generated_params', function () {
     let bidRequestData = [{
       bidId: 'bid1234',
