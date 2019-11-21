@@ -86,9 +86,9 @@ function _buildRequests(validBidRequests, bidderRequest) {
       method: 'POST',
       url: BIDDER_ENDPOINT,
       data: {
-        id: utils.generateUUID(),
+        id: bidRequest.bidId,
         imp: {
-          id: index,
+          id: bidRequest.bidId,
           bidfloor: utils.getBidIdParameter('bidfloor', bidRequest.params),
           banner: {
             format: _getSizes(bidRequest)

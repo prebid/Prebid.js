@@ -60,7 +60,7 @@ describe('adrollBidAdapter', function() {
     it('builds a request with a complete imp object', function () {
       const request = spec.buildRequests([validBid], {})[0];
 
-      expect(request.data.imp.id).to.equal(0);
+      expect(request.data.imp.id).to.equal('bid_id');
       expect(request.data.imp.bidfloor).to.be.equal(1);
       expect(request.data.imp.banner).to.exist.and.to.be.a('object');
     });
