@@ -154,19 +154,19 @@ describe('invibesBidAdapter:', function () {
     });
 
     it('sends query string params from localstorage 1', function () {
-      localStorage.ivbs = JSON.stringify({bvci: 1 });
+      localStorage.ivbs = JSON.stringify({ bvci: 1 });
       const request = spec.buildRequests(bidRequests, { auctionStart: Date.now() });
       expect(request.data.bvci).to.equal(1);
     });
 
     it('sends query string params from localstorage 2', function () {
-      localStorage.ivbs = JSON.stringify({invibbvlog: true });
+      localStorage.ivbs = JSON.stringify({ invibbvlog: true });
       const request = spec.buildRequests(bidRequests, { auctionStart: Date.now() });
       expect(request.data.invibbvlog).to.equal(true);
     });
 
     it('does not send query string params from localstorage if unknwon', function () {
-      localStorage.ivbs = JSON.stringify({someparam: true });
+      localStorage.ivbs = JSON.stringify({ someparam: true });
       const request = spec.buildRequests(bidRequests, { auctionStart: Date.now() });
       expect(request.data.someparam).to.be.undefined;
     });
