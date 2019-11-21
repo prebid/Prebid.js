@@ -180,7 +180,8 @@ function bundle(dev, moduleArr) {
     }
   }
 
-  var entries = [helpers.getBuiltPrebidCoreFile(dev)].concat(helpers.getBuiltModules(dev, modules));
+  var core = !argv.core ? [ ] : [helpers.getBuiltPrebidCoreFile(dev)];
+  var entries = core.concat(helpers.getBuiltModules(dev, modules));
 
   var outputFileName = argv.bundleName ? argv.bundleName : 'prebid.js';
 
@@ -198,6 +199,12 @@ function bundle(dev, moduleArr) {
   )
     .pipe(gulpif(dev, sourcemaps.init({loadMaps: true})))
     .pipe(concat(outputFileName))
+    .pipe(gulpif(!argv.core, header(
+      'window.<%= global %>=window.<%= global %>||{};' +
+      'window.<%= global %>.que=window.<%= global %>.que||[];' +
+      'window.<%= global %>.que.push(function(){', { global: prebid.globalVarName }
+    )))
+    .pipe(gulpif(!argv.core, footer('});')))
     .pipe(gulpif(!argv.manualEnable, footer('\n<%= global %>.processQueue();', {
       global: prebid.globalVarName
     }
