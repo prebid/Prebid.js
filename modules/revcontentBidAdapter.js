@@ -52,6 +52,7 @@ export const spec = {
     const userId = setOnAny(validBidRequests, 'params.userId');
     const widgetId = setOnAny(validBidRequests, 'params.widgetId');
     const apiKey = setOnAny(validBidRequests, 'params.apiKey');
+    const domain = setOnAny(validBidRequests, 'params.domain');
 
     let serverRequests = [];
     var refererInfo;
@@ -59,43 +60,122 @@ export const spec = {
       refererInfo = bidderRequest.refererInfo;
     }
 
-    var endpoint = '//trends-s0.revcontent.com/rtb?apiKey=' + apiKey + '&userId=' + userId;
+    var endpoint = '//cache.revcontent.dev/rtb?apiKey=' + apiKey + '&userId=' + userId;
 
     if (!isNaN(widgetId) && widgetId > 0) {
       endpoint = endpoint + '&widgetId=' + widgetId;
     }
 
-    validBidRequests.forEach((bid, i) => {
-      let data = {
-        'placementid': bid.params.placementId,
-        'cur': 'usd',
-        'ua': navigator.userAgent,
-        'loc': utils.getTopWindowUrl(),
-        'topframe': (window.parent === window.self) ? 1 : 0,
-        'sw': screen && screen.width,
-        'sh': screen && screen.height,
-        'cb': Math.floor(Math.random() * 99999999999),
-        'tpaf': 1,
-        'cks': 1,
-        'requestid': bid.bidId,
-        'transactionId': validBidRequests[0].transactionId
-      };
+    const imp = validBidRequests.map((bid, id) => {
+      const assets = utils._map(bid.nativeParams, (bidParams, key) => {
+        const props = NATIVE_PARAMS[key];
+        const asset = {
+          required: bidParams.required & 1,
+        };
+        if (props) {
+          asset.id = props.id;
+          let wmin, hmin, w, h;
+          let aRatios = bidParams.aspect_ratios;
 
-      if (refererInfo && refererInfo.referer) {
-        data.referer = refererInfo.referer;
-      } else {
-        data.referer = '';
-      }
+          if (aRatios && aRatios[0]) {
+            aRatios = aRatios[0];
+            wmin = aRatios.min_width || 0;
+            hmin = aRatios.ratio_height * wmin / aRatios.ratio_width | 0;
+          }
 
-      serverRequests.push({
-        method: 'POST',
-        options: {
-          contentType: 'application/json'
+          if (bidParams.sizes) {
+            const sizes = flatten(bidParams.sizes);
+            w = sizes[0];
+            h = sizes[1];
+          }
+
+          asset[props.name] = {
+            len: bidParams.len,
+            type: props.type,
+            wmin,
+            hmin,
+            w,
+            h
+          };
+
+          return asset;
+        }
+      }).filter(Boolean);
+
+      let secure = location.protocol === 'https:';
+
+      return {
+        id: id + 1,
+        tagid: bid.params.mid,
+        native: {
+          request: {
+            ver: '1.1',
+            context: 2,
+            contextsubtype: 21,
+            plcmttype: 4,
+            plcmtcnt: 4,
+            assets: assets
+          },
+          ver: '1.1',
+          battr: [1, 3, 8, 11, 17]
         },
-        url: endpoint,
-        data: JSON.stringify(data),
-        bid: validBidRequests
-      });
+        instl: 0,
+        bidfloor: 0.1,
+        secure: secure ? '1' : '0'
+      };
+    });
+
+    let data = {
+      id: bidderRequest.auctionId,
+      imp: imp,
+      site: {
+        id: widgetId,
+        domain: domain,
+        page: refererInfo,
+        cat: 'IAB17',
+        publisher: {
+          id: userId,
+          domain: domain
+        }
+      },
+      devices: {
+        ua: navigator.userAgent,
+        language: 'en'
+      },
+      user: {
+        id: 1
+      },
+      at: 2,
+      bcat: [
+        'IAB24',
+        'IAB25',
+        'IAB25-1',
+        'IAB25-2',
+        'IAB25-3',
+        'IAB25-4',
+        'IAB25-5',
+        'IAB25-6',
+        'IAB25-7',
+        'IAB26',
+        'IAB26-1',
+        'IAB26-2',
+        'IAB26-3',
+        'IAB26-4'
+      ]
+    };
+
+    console.log('OUR RTB:');
+    console.log(data);
+    console.log('----');
+
+    serverRequests.push({
+      method: 'POST',
+      options: {
+        contentType: 'application/json'
+      },
+      url: endpoint,
+      data: JSON.stringify(data),
+      bid: validBidRequests
     });
 
     return serverRequests;
