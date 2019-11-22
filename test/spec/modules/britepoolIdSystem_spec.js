@@ -49,7 +49,7 @@ describe('BritePool Submodule', () => {
     // Making sure it did not become part of params
     expect(params.getter).to.be.undefined;
     const response = britepoolIdSubmodule.getId({ api_key, aaid, url: url_override, getter: getter_override });
-    assert.deepEqual(response, { 'primaryBPID': bpid });
+    assert.deepEqual(response, { id: { 'primaryBPID': bpid } });
   });
 
   it('test getter override with callback', done => {
