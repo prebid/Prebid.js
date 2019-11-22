@@ -698,7 +698,7 @@ const OPEN_RTB_PROTOCOL = {
     }
 
     const bidUserId = utils.deepAccess(bidRequests, '0.bids.0.userId');
-    if (bidUserId && typeof bidUserId === 'object' && (bidUserId.tdid || bidUserId.pubcid || bidUserId.parrableid || bidUserId.lipb || bidUserId.id5id || || bidUserId.britepoolid)) {
+    if (bidUserId && typeof bidUserId === 'object' && (bidUserId.tdid || bidUserId.pubcid || bidUserId.parrableid || bidUserId.lipb || bidUserId.id5id || bidUserId.britepoolid)) {
       utils.deepSetValue(request, 'user.ext.eids', []);
 
       if (bidUserId.tdid) {
