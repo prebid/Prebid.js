@@ -473,7 +473,7 @@ $$PREBID_GLOBAL$$.requestBids = hook('async', function ({ bidsBackHandler, timeo
     }
     return;
   }
-  
+
   // https://github.com/prebid/Prebid.js/issues/4149
   // this event will be fired after conditional adunit processing but before adunits are copied to bidrequests. It will pass in the array of adunits and allow the page function to alter the contents.
   events.emit(BEFORE_REQUEST_BIDS, adUnits);
