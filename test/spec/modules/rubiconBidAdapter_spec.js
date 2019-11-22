@@ -1239,36 +1239,65 @@ describe('the rubicon adapter', function () {
           });
         })
 
-        describe('Prebid AdSlot config', function () {
-          it('should not send pbAdSlot if undefined', function () {
-            const clonedBid = utils.deepClone(bidderRequest.bids[0]);
-            clonedBid.context = {};
-            let [request] = spec.buildRequests([clonedBid], bidderRequest);
-            let data = parseQuery(request.data);
-            expect(typeof data['tg_i.dfp_ad_unit_code']).to.equal('undefined');
+        describe('Prebid AdSlot', function () {
+          beforeEach(function () {
+            // enforce that the bid at 0 does not have a 'context' property
+            if (bidderRequest.bids[0].hasOwnProperty('context')) {
+              delete bidderRequest.bids[0].context;
+            }
           });
 
-          it('should not send pbAdSlot if value is an empty string', function () {
-            const clonedBid = utils.deepClone(bidderRequest.bids[0]);
-            clonedBid.context = { pbAdSlot: '' };
-            let [request] = spec.buildRequests([clonedBid], bidderRequest);
-            let data = parseQuery(request.data);
-            expect(typeof data['tg_i.dfp_ad_unit_code']).to.equal('undefined');
+          it('should not send \"tg_i.dfp_ad_unit_code\" if \"context\" object is not valid', function () {
+            const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+            const data = parseQuery(request.data);
+
+            expect(data).to.be.an('Object');
+            expect(data).to.not.have.property('tg_i.dfp_ad_unit_code');
           });
 
-          it('should send pbAdSlot if value is a non-empty string', function () {
-            const clonedBid = utils.deepClone(bidderRequest.bids[0]);
-            clonedBid.context = { pbAdSlot: 'abc' };
-            let [request] = spec.buildRequests([clonedBid], bidderRequest);
-            let data = parseQuery(request.data);
+          it('should not send \"tg_i.dfp_ad_unit_code\" if \"context.pbAdSlot\" is undefined', function () {
+            bidderRequest.bids[0].context = {};
+
+            const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+            const data = parseQuery(request.data);
+
+            expect(data).to.be.an('Object');
+            expect(data).to.not.have.property('tg_i.dfp_ad_unit_code');
+          });
+
+          it('should not send \"tg_i.dfp_ad_unit_code\" if \"context.pbAdSlot\" value is an empty string', function () {
+            bidderRequest.bids[0].context = {
+              pbAdSlot: ''
+            };
+
+            const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+            const data = parseQuery(request.data);
+
+            expect(data).to.be.an('Object');
+            expect(data).to.not.have.property('tg_i.dfp_ad_unit_code');
+          });
+
+          it('should send \"tg_i.dfp_ad_unit_code\" if \"context.pbAdSlot\" value is a valid string', function () {
+            bidderRequest.bids[0].context = {
+              pbAdSlot: 'abc'
+            };
+
+            const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+            const data = parseQuery(request.data);
+
+            expect(data).to.be.an('Object');
+            expect(data).to.have.property('tg_i.dfp_ad_unit_code');
             expect(data['tg_i.dfp_ad_unit_code']).to.equal('abc');
           });
 
-          it('should send pbAdSlot removing a leading slash', function () {
-            const clonedBid = utils.deepClone(bidderRequest.bids[0]);
-            clonedBid.context = { pbAdSlot: '/a/b/c' };
-            let [request] = spec.buildRequests([clonedBid], bidderRequest);
-            let data = parseQuery(request.data);
+          it('should send \"tg_i.dfp_ad_unit_code\" if \"context.pbAdSlot\" value is a valid string, but all leading slash characters should be removed', function () {
+            bidderRequest.bids[0].context = { pbAdSlot: '/a/b/c' };
+
+            const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+            const data = parseQuery(request.data);
+
+            expect(data).to.be.an('Object');
+            expect(data).to.have.property('tg_i.dfp_ad_unit_code');
             expect(data['tg_i.dfp_ad_unit_code']).to.equal('a/b/c');
           });
         });

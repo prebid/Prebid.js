@@ -630,17 +630,16 @@ const OPEN_RTB_PROTOCOL = {
         return acc;
       }, {});
 
+      const imp = { id: adUnit.code, ext, secure: _s2sConfig.secure };
+
       /**
-       * Prebid AdSlot is passed to the oRTB request at imp[].ext.context.data.adslot
+       * Prebid AdSlot
        * @type {(string|undefined)}
-       * @see {@link https://github.com/prebid/Prebid.js/issues/4149|Issue}
        */
       const pbAdSlot = utils.deepAccess(adUnit, 'context.pbAdSlot');
       if (typeof pbAdSlot === 'string' && pbAdSlot) {
-        utils.deepSetValue(ext, 'context.data.adslot', pbAdSlot);
+        utils.deepSetValue(imp, 'ext.context.data.adslot', pbAdSlot);
       }
-
-      const imp = { id: adUnit.code, ext, secure: _s2sConfig.secure };
 
       Object.assign(imp, mediaTypes);
 
