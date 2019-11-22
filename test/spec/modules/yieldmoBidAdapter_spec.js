@@ -39,7 +39,12 @@ describe('YieldmoAdapter', function () {
     'auctionStart': 1520001292880,
     'timeout': 3000,
     'start': 1520001292884,
-    'doneCbCallCount': 0
+    'doneCbCallCount': 0,
+    'refererInfo': {
+      'numIframes': 1,
+      'reachedTop': true,
+      'referer': 'yieldmo.com'
+    }
   }
 
   describe('isBidRequestValid', function () {
@@ -191,7 +196,7 @@ describe('YieldmoAdapter', function () {
     it('should add schain if it is in the bidRequest', () => {
       const schain = {'ver': '1.0', 'complete': 1, 'nodes': [{'asi': 'indirectseller.com', 'sid': '00001', 'hp': 1}]};
       bidArray[0].schain = schain;
-      const request = spec.buildRequests([bidArray[0]]);
+      const request = spec.buildRequests([bidArray[0]], bidderRequest);
       expect(request.data.schain).equal(JSON.stringify(schain));
     })
   });

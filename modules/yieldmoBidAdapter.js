@@ -29,9 +29,9 @@ export const spec = {
   buildRequests: function(bidRequests, bidderRequest) {
     let serverRequest = {
       p: [],
-      page_url: utils.getTopWindowUrl(),
+      page_url: bidderRequest.refererInfo.referer,
       bust: new Date().getTime().toString(),
-      pr: utils.getTopWindowReferrer(),
+      pr: bidderRequest.refererInfo.referer,
       scrd: localWindow.devicePixelRatio || 0,
       dnt: getDNT(),
       e: getEnvironment(),
