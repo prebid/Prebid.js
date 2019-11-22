@@ -113,7 +113,7 @@ describe('NewborntownWebAdapter', function() {
                   'impid': '1',
                   'price': 0.3001,
                   'adid': '1573540665390299172',
-                  'nurl': 'http://us-west.solortb.com/winnotice?price=${AUCTION_PRICE}&ssp=4&req_unique_id=740016d1-175b-4c19-9744-58a59632dabe&unique_id=06b08e40-2489-439a-8f9e-6413f3dd0bc8&isbidder=1&up=bQyvVo7tgbBVW2dDXzTdBP95Mv35YqqEika0T_btI1h6xjqA8GSXQe51_2CCHQcfuwAEOgdwN8u3VgUHmCuqNPKiBmIPaYUOQBBKjJr05zeKtabKnGT7_JJKcurrXqQ5Sl804xJear_qf2-jOaKB4w',
+                  'nurl': 'https://us-west.solortb.com/winnotice?price=${AUCTION_PRICE}&ssp=4&req_unique_id=740016d1-175b-4c19-9744-58a59632dabe&unique_id=06b08e40-2489-439a-8f9e-6413f3dd0bc8&isbidder=1&up=bQyvVo7tgbBVW2dDXzTdBP95Mv35YqqEika0T_btI1h6xjqA8GSXQe51_2CCHQcfuwAEOgdwN8u3VgUHmCuqNPKiBmIPaYUOQBBKjJr05zeKtabKnGT7_JJKcurrXqQ5Sl804xJear_qf2-jOaKB4w',
                   'adm': "<div id='grumi-container'></div>",
                   'adomain': [
                     'newborntown.com'

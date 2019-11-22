@@ -3,8 +3,7 @@ import {registerBidder} from '../src/adapters/bidderFactory';
 import {BANNER, NATIVE} from '../src/mediaTypes';
 const BIDDER_CODE = 'newborntownWeb';
 
-let useSSL = document.location.protocol == 'https:';
-const REQUEST_URL = (useSSL ? 'https:' : 'http:') + '//us-west.solortb.com/adx/api/rtb?from=4'
+const REQUEST_URL = 'https://us-west.solortb.com/adx/api/rtb?from=4'
 
 function randomn(n) {
   return parseInt((Math.random() + 1) * Math.pow(10, n - 1)) + '';
