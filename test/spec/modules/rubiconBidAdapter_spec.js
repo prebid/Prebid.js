@@ -1238,6 +1238,40 @@ describe('the rubicon adapter', function () {
             });
           });
         })
+
+        describe('Prebid AdSlot config', function () {
+          it('should not send pbAdSlot if undefined', function () {
+            const clonedBid = utils.deepClone(bidderRequest.bids[0]);
+            clonedBid.context = {};
+            let [request] = spec.buildRequests([clonedBid], bidderRequest);
+            let data = parseQuery(request.data);
+            expect(typeof data['tg_i.dfp_ad_unit_code']).to.equal('undefined');
+          });
+
+          it('should not send pbAdSlot if value is an empty string', function () {
+            const clonedBid = utils.deepClone(bidderRequest.bids[0]);
+            clonedBid.context = { pbAdSlot: '' };
+            let [request] = spec.buildRequests([clonedBid], bidderRequest);
+            let data = parseQuery(request.data);
+            expect(typeof data['tg_i.dfp_ad_unit_code']).to.equal('undefined');
+          });
+
+          it('should send pbAdSlot if value is a non-empty string', function () {
+            const clonedBid = utils.deepClone(bidderRequest.bids[0]);
+            clonedBid.context = { pbAdSlot: 'abc' };
+            let [request] = spec.buildRequests([clonedBid], bidderRequest);
+            let data = parseQuery(request.data);
+            expect(data['tg_i.dfp_ad_unit_code']).to.equal('abc');
+          });
+
+          it('should send pbAdSlot removing a leading slash', function () {
+            const clonedBid = utils.deepClone(bidderRequest.bids[0]);
+            clonedBid.context = { pbAdSlot: '/a/b/c' };
+            let [request] = spec.buildRequests([clonedBid], bidderRequest);
+            let data = parseQuery(request.data);
+            expect(data['tg_i.dfp_ad_unit_code']).to.equal('a/b/c');
+          });
+        });
       });
 
       describe('for video requests', function () {

@@ -449,6 +449,16 @@ export const spec = {
     // For SRA we need to explicitly put empty semi colons so AE treats it as empty, instead of copying the latter value
     data['p_pos'] = (params.position === 'atf' || params.position === 'btf') ? params.position : '';
 
+    /**
+     * Prebid AdSlot is passed as tg_i.dfp_ad_unit_code
+     * @type {(string|undefined)}
+     * @see {@link https://github.com/prebid/Prebid.js/issues/4149|Issue}
+     */
+    const pbAdSlot = utils.deepAccess(bidRequest, 'context.pbAdSlot');
+    if (typeof pbAdSlot === 'string' && pbAdSlot) {
+      data['tg_i.dfp_ad_unit_code'] = pbAdSlot.replace(/^\/+/, '');
+    }
+
     if (bidRequest.userId) {
       if (bidRequest.userId.tdid) {
         data['tpid_tdid'] = bidRequest.userId.tdid;
