@@ -38,7 +38,9 @@ export const britepoolIdSubmodule = {
       // First let's rule out that the response is not a function
       if (typeof getterResponse !== 'function') {
         // Optimization to return value from getter
-        return britepoolIdSubmodule.normalizeValue(getterResponse);
+        return {
+          id: britepoolIdSubmodule.normalizeValue(getterResponse)
+        };
       }
     }
     // Return for async operation
