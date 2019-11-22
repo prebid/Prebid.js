@@ -1,6 +1,6 @@
 /**
  * This module houses the functionality to evaluate and process adpod adunits/bids.  Specifically there are several hooked functions,
- * that either supplement the base function (ie to check something additional or unique to adpod objects) or to replace the base funtion
+ * that either supplement the base function (ie to check something additional or unique to adpod objects) or to replace the base function
  * entirely when appropriate.
  *
  * Brief outline of each hook:
