@@ -38,7 +38,9 @@ export const britepoolIdSubmodule = {
       // First let's rule out that the response is not a function
       if (typeof getterResponse !== 'function') {
         // Optimization to return value from getter
-        return britepoolIdSubmodule.normalizeValue(getterResponse);
+        return {
+          id: britepoolIdSubmodule.normalizeValue(getterResponse)
+        };
       }
     }
     // Return for async operation
@@ -69,7 +71,7 @@ export const britepoolIdSubmodule = {
               if (error !== '') utils.logError(error);
               callback();
             }
-          }, JSON.stringify(params), { customHeaders: headers, contentType: 'application/json', method: 'POST' });
+          }, JSON.stringify(params), { customHeaders: headers, contentType: 'application/json', method: 'POST', withCredentials: true });
         }
       }
     }
@@ -90,12 +92,10 @@ export const britepoolIdSubmodule = {
         return { errors };
       }
     } else {
-      if (typeof params.api_key !== 'string' || Object.keys(params).length < 2) {
-        errors.push('User ID - britepoolId submodule requires api_key and at least one identifier to be defined');
-        return { errors };
+      if (params.api_key) {
+        // Add x-api-key into the header
+        headers['x-api-key'] = params.api_key;
       }
-      // Add x-api-key into the header
-      headers['x-api-key'] = params.api_key;
     }
     const url = params.url || 'https://api.britepool.com/v1/britepool/id';
     const getter = params.getter;
