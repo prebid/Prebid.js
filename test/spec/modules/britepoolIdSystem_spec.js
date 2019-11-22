@@ -30,9 +30,10 @@ describe('BritePool Submodule', () => {
     expect(params).to.eql({ aaid, idfa });
   });
 
-  it('fails without api_key', () => {
+  it('allows call without api_key', () => {
     const { params, headers, url, errors } = britepoolIdSubmodule.createParams({ aaid, idfa });
-    expect(errors.length).to.equal(1);
+    expect(params).to.eql({ aaid, idfa });
+    expect(errors.length).to.equal(0);
   });
 
   it('test url override', () => {
