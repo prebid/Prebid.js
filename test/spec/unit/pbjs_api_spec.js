@@ -1974,9 +1974,37 @@ describe('Unit: Prebid Module', function () {
     });
 
     describe('beforeRequestBids', function () {
+      let bidRequestedHandler;
+      let beforeRequestBidsHandler;
+      let bidsBackHandler = function bidsBackHandler() {};
+
+      let bidsBackSpy;
+      let bidRequestedSpy;
+      let beforeRequestBidsSpy;
+
+      beforeEach(function () {
+        resetAuction();
+        bidsBackSpy = sinon.spy(bidsBackHandler);
+        googletag.pubads().setSlots(createSlotArrayScenario2());
+      });
+
+      afterEach(function () {
+        bidsBackSpy.resetHistory();
+
+        if (bidRequestedSpy) {
+          $$PREBID_GLOBAL$$.offEvent('bidRequested', bidRequestedSpy);
+          bidRequestedSpy.resetHistory();
+        }
+
+        if (beforeRequestBidsSpy) {
+          $$PREBID_GLOBAL$$.offEvent('beforeRequestBids', beforeRequestBidsSpy);
+          beforeRequestBidsSpy.resetHistory();
+        }
+      });
+
       it('should allow creation of a context.pbAdSlot property on adUnits from inside the event handler', function () {
         // verify adUnits passed to handler then alter the adUnits
-        const beforeRequestBidsHandler = function beforeRequestBidsHandler(beforeRequestBidsAdUnits) {
+        beforeRequestBidsHandler = function beforeRequestBidsHandler(beforeRequestBidsAdUnits) {
           expect(beforeRequestBidsAdUnits).to.be.a('array');
           expect(beforeRequestBidsAdUnits).to.have.lengthOf(1);
           expect(beforeRequestBidsAdUnits[0]).to.be.a('object');
@@ -1984,13 +2012,13 @@ describe('Unit: Prebid Module', function () {
           expect(beforeRequestBidsAdUnits[0]).to.not.have.property('context')
           // alter the adUnit by adding the property for context.pbAdSlot
           beforeRequestBidsAdUnits[0].context = {
-            pbAdSlot: 'foobar'
+            pbAdSlot: '/19968336/header-bid-tag-pbadslot-0'
           };
         };
-        const beforeRequestBidsSpy = sinon.spy(beforeRequestBidsHandler);
+        beforeRequestBidsSpy = sinon.spy(beforeRequestBidsHandler);
 
         // use this handler to verify if the adUnits alterations were applied successfully by the beforeRequestBids handler
-        const bidRequestedHandler = function bidRequestedHandler(bidRequest) {
+        bidRequestedHandler = function bidRequestedHandler(bidRequest) {
           expect(bidRequest).to.be.a('object');
           expect(bidRequest).to.have.property('bids');
           expect(bidRequest.bids).to.be.a('array');
@@ -2000,14 +2028,9 @@ describe('Unit: Prebid Module', function () {
           expect(bid).to.have.property('context');
           expect(bid.context).to.be.a('object');
           expect(bid.context).to.have.property('pbAdSlot');
-          expect(bid.context.pbAdSlot).to.equal('foobar');
+          expect(bid.context.pbAdSlot).to.equal('/19968336/header-bid-tag-pbadslot-0');
         };
-        const bidRequestedSpy = sinon.spy(bidRequestedHandler);
-
-        const bidsBackHandler = function bidsBackHandler() {};
-        const bidsBackSpy = sinon.spy(bidsBackHandler);
-
-        googletag.pubads().setSlots(createSlotArrayScenario2());
+        bidRequestedSpy = sinon.spy(bidRequestedHandler);
 
         $$PREBID_GLOBAL$$.onEvent('beforeRequestBids', beforeRequestBidsSpy);
         $$PREBID_GLOBAL$$.onEvent('bidRequested', bidRequestedSpy);
@@ -2033,19 +2056,98 @@ describe('Unit: Prebid Module', function () {
         sinon.assert.calledOnce(bidRequestedSpy);
       });
 
+      it('should allow creation of a context.pbAdSlot property on adUnits from inside the event handler', function () {
+        // verify adUnits passed to handler then alter the adUnits
+        beforeRequestBidsHandler = function beforeRequestBidsHandler(beforeRequestBidsAdUnits) {
+          expect(beforeRequestBidsAdUnits).to.be.a('array');
+          expect(beforeRequestBidsAdUnits).to.have.lengthOf(2);
+          expect(beforeRequestBidsAdUnits[0]).to.be.a('object');
+          expect(beforeRequestBidsAdUnits[1]).to.be.a('object');
+          // adUnit should not contain a context property yet
+          expect(beforeRequestBidsAdUnits[0]).to.not.have.property('context')
+          expect(beforeRequestBidsAdUnits[1]).to.not.have.property('context')
+          // alter the adUnit by adding the property for context.pbAdSlot
+          beforeRequestBidsAdUnits[0].context = {
+            pbAdSlot: '/19968336/header-bid-tag-pbadslot-0'
+          };
+          beforeRequestBidsAdUnits[1].context = {
+            pbAdSlot: '/19968336/header-bid-tag-pbadslot-1'
+          };
+        };
+        beforeRequestBidsSpy = sinon.spy(beforeRequestBidsHandler);
+
+        // use this handler to verify if the adUnits alterations were applied successfully by the beforeRequestBids handler
+        bidRequestedHandler = function bidRequestedHandler(bidRequest) {
+          expect(bidRequest).to.be.a('object');
+          expect(bidRequest).to.have.property('bids');
+          expect(bidRequest.bids).to.be.a('array');
+          expect(bidRequest.bids).to.have.lengthOf(2);
+          const bid0 = bidRequest['bids'][0];
+          expect(bid0).to.be.a('object');
+          expect(bid0).to.have.property('context');
+          expect(bid0.context).to.be.a('object');
+          expect(bid0.context).to.have.property('pbAdSlot');
+          expect(bid0.context.pbAdSlot).to.equal('/19968336/header-bid-tag-pbadslot-0');
+
+          const bid1 = bidRequest['bids'][1];
+          expect(bid1).to.be.a('object');
+          expect(bid1).to.have.property('context');
+          expect(bid1.context).to.be.a('object');
+          expect(bid1.context).to.have.property('pbAdSlot');
+          expect(bid1.context.pbAdSlot).to.equal('/19968336/header-bid-tag-pbadslot-1');
+        };
+        bidRequestedSpy = sinon.spy(bidRequestedHandler);
+
+        $$PREBID_GLOBAL$$.onEvent('beforeRequestBids', beforeRequestBidsSpy);
+        $$PREBID_GLOBAL$$.onEvent('bidRequested', bidRequestedSpy);
+        $$PREBID_GLOBAL$$.requestBids({
+          adUnits: [{
+            code: '/19968336/header-bid-tag-0',
+            mediaTypes: {
+              banner: {
+                sizes: [[750, 350]]
+              }
+            },
+            bids: [{
+              bidder: 'appnexus',
+              params: {
+                placementId: 13122370
+              }
+            }]
+          }, {
+            code: '/19968336/header-bid-tag-1',
+            mediaTypes: {
+              banner: {
+                sizes: [[750, 350]]
+              }
+            },
+            bids: [{
+              bidder: 'appnexus',
+              params: {
+                placementId: 14122380
+              }
+            }]
+          }],
+          bidsBackHandler: bidsBackSpy
+        });
+
+        sinon.assert.calledOnce(beforeRequestBidsSpy);
+        sinon.assert.calledOnce(bidRequestedSpy);
+      });
+
       it('should not create a context property on adUnits if not added by handler', function () {
         // verify adUnits passed to handler then alter the adUnits
-        const beforeRequestBidsHandler = function beforeRequestBidsHandler(beforeRequestBidsAdUnits) {
+        beforeRequestBidsHandler = function beforeRequestBidsHandler(beforeRequestBidsAdUnits) {
           expect(beforeRequestBidsAdUnits).to.be.a('array');
           expect(beforeRequestBidsAdUnits).to.have.lengthOf(1);
           expect(beforeRequestBidsAdUnits[0]).to.be.a('object');
           // adUnit should not contain a context property yet
           expect(beforeRequestBidsAdUnits[0]).to.not.have.property('context')
         };
-        const beforeRequestBidsSpy = sinon.spy(beforeRequestBidsHandler);
+        beforeRequestBidsSpy = sinon.spy(beforeRequestBidsHandler);
 
         // use this handler to verify if the adUnits alterations were applied successfully by the beforeRequestBids handler
-        const bidRequestedHandler = function bidRequestedHandler(bidRequest) {
+        bidRequestedHandler = function bidRequestedHandler(bidRequest) {
           expect(bidRequest).to.be.a('object');
           expect(bidRequest).to.have.property('bids');
           expect(bidRequest.bids).to.be.a('array');
@@ -2054,12 +2156,7 @@ describe('Unit: Prebid Module', function () {
           expect(bid).to.be.a('object');
           expect(bid).to.not.have.property('context');
         };
-        const bidRequestedSpy = sinon.spy(bidRequestedHandler);
-
-        const bidsBackHandler = function bidsBackHandler() {};
-        const bidsBackSpy = sinon.spy(bidsBackHandler);
-
-        googletag.pubads().setSlots(createSlotArrayScenario2());
+        bidRequestedSpy = sinon.spy(bidRequestedHandler);
 
         $$PREBID_GLOBAL$$.onEvent('beforeRequestBids', beforeRequestBidsSpy);
         $$PREBID_GLOBAL$$.onEvent('bidRequested', bidRequestedSpy);
