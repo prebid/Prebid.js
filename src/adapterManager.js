@@ -65,6 +65,7 @@ function getBids({bidderCode, auctionId, bidderRequestId, adUnits, labels, src})
           }
 
           bid = Object.assign({}, bid, getDefinedParams(adUnit, [
+            'context',
             'mediaType',
             'renderer'
           ]));
@@ -161,6 +162,12 @@ export let gdprDataHandler = {
 };
 
 adapterManager.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTimeout, labels) {
+  /**
+   * emit and pass adunits for external modification
+   * @see {@link https://github.com/prebid/Prebid.js/issues/4149|Issue}
+   */
+  events.emit(CONSTANTS.EVENTS.BEFORE_REQUEST_BIDS, adUnits);
+
   let bidRequests = [];
 
   let bidderCodes = getBidderCodes(adUnits);

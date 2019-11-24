@@ -1972,6 +1972,119 @@ describe('Unit: Prebid Module', function () {
       assert.ok(spyEventsOn.calledWith('bidWon', Function));
       events.on.restore();
     });
+
+    describe('beforeRequestBids', function () {
+      it('should allow creation of a context.pbAdSlot property on adUnits from inside the event handler', function () {
+        // verify adUnits passed to handler then alter the adUnits
+        const beforeRequestBidsHandler = function beforeRequestBidsHandler(beforeRequestBidsAdUnits) {
+          expect(beforeRequestBidsAdUnits).to.be.a('array');
+          expect(beforeRequestBidsAdUnits).to.have.lengthOf(1);
+          expect(beforeRequestBidsAdUnits[0]).to.be.a('object');
+          // adUnit should not contain a context property yet
+          expect(beforeRequestBidsAdUnits[0]).to.not.have.property('context')
+          // alter the adUnit by adding the property for context.pbAdSlot
+          beforeRequestBidsAdUnits[0].context = {
+            pbAdSlot: 'foobar'
+          };
+        };
+        const beforeRequestBidsSpy = sinon.spy(beforeRequestBidsHandler);
+
+        // use this handler to verify if the adUnits alterations were applied successfully by the beforeRequestBids handler
+        const bidRequestedHandler = function bidRequestedHandler(bidRequest) {
+          expect(bidRequest).to.be.a('object');
+          expect(bidRequest).to.have.property('bids');
+          expect(bidRequest.bids).to.be.a('array');
+          expect(bidRequest.bids).to.have.lengthOf(1);
+          const bid = bidRequest['bids'][0];
+          expect(bid).to.be.a('object');
+          expect(bid).to.have.property('context');
+          expect(bid.context).to.be.a('object');
+          expect(bid.context).to.have.property('pbAdSlot');
+          expect(bid.context.pbAdSlot).to.equal('foobar');
+        };
+        const bidRequestedSpy = sinon.spy(bidRequestedHandler);
+
+        const bidsBackHandler = function bidsBackHandler() {};
+        const bidsBackSpy = sinon.spy(bidsBackHandler);
+
+        googletag.pubads().setSlots(createSlotArrayScenario2());
+
+        $$PREBID_GLOBAL$$.onEvent('beforeRequestBids', beforeRequestBidsSpy);
+        $$PREBID_GLOBAL$$.onEvent('bidRequested', bidRequestedSpy);
+        $$PREBID_GLOBAL$$.requestBids({
+          adUnits: [{
+            code: '/19968336/header-bid-tag-0',
+            mediaTypes: {
+              banner: {
+                sizes: [[750, 350]]
+              }
+            },
+            bids: [{
+              bidder: 'appnexus',
+              params: {
+                placementId: 13122370
+              }
+            }]
+          }],
+          bidsBackHandler: bidsBackSpy
+        });
+
+        sinon.assert.calledOnce(beforeRequestBidsSpy);
+        sinon.assert.calledOnce(bidRequestedSpy);
+      });
+
+      it('should not create a context property on adUnits if not added by handler', function () {
+        // verify adUnits passed to handler then alter the adUnits
+        const beforeRequestBidsHandler = function beforeRequestBidsHandler(beforeRequestBidsAdUnits) {
+          expect(beforeRequestBidsAdUnits).to.be.a('array');
+          expect(beforeRequestBidsAdUnits).to.have.lengthOf(1);
+          expect(beforeRequestBidsAdUnits[0]).to.be.a('object');
+          // adUnit should not contain a context property yet
+          expect(beforeRequestBidsAdUnits[0]).to.not.have.property('context')
+        };
+        const beforeRequestBidsSpy = sinon.spy(beforeRequestBidsHandler);
+
+        // use this handler to verify if the adUnits alterations were applied successfully by the beforeRequestBids handler
+        const bidRequestedHandler = function bidRequestedHandler(bidRequest) {
+          expect(bidRequest).to.be.a('object');
+          expect(bidRequest).to.have.property('bids');
+          expect(bidRequest.bids).to.be.a('array');
+          expect(bidRequest.bids).to.have.lengthOf(1);
+          const bid = bidRequest['bids'][0];
+          expect(bid).to.be.a('object');
+          expect(bid).to.not.have.property('context');
+        };
+        const bidRequestedSpy = sinon.spy(bidRequestedHandler);
+
+        const bidsBackHandler = function bidsBackHandler() {};
+        const bidsBackSpy = sinon.spy(bidsBackHandler);
+
+        googletag.pubads().setSlots(createSlotArrayScenario2());
+
+        $$PREBID_GLOBAL$$.onEvent('beforeRequestBids', beforeRequestBidsSpy);
+        $$PREBID_GLOBAL$$.onEvent('bidRequested', bidRequestedSpy);
+        $$PREBID_GLOBAL$$.requestBids({
+          adUnits: [{
+            code: '/19968336/header-bid-tag-0',
+            mediaTypes: {
+              banner: {
+                sizes: [[750, 350]]
+              }
+            },
+            bids: [{
+              bidder: 'appnexus',
+              params: {
+                placementId: 13122370
+              }
+            }]
+          }],
+          bidsBackHandler: bidsBackSpy
+        });
+
+        sinon.assert.calledOnce(beforeRequestBidsSpy);
+        sinon.assert.calledOnce(bidRequestedSpy);
+      });
+    });
   });
 
   describe('offEvent', function () {
