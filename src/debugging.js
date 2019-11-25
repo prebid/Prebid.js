@@ -55,7 +55,7 @@ export function disableOverrides() {
   logMessage('bidder overrides disabled');
 }
 
-export function addBidResponseHook(next, adUnitCode, bid) {
+export function addBidResponseHook(next, adUnitCode, bid, bidRequests) {
   let overrides = this;
   if (Array.isArray(overrides.bidders) && overrides.bidders.indexOf(bid.bidderCode) === -1) {
     logWarn(`bidder '${bid.bidderCode}' excluded from auction by bidder overrides`);
@@ -84,7 +84,7 @@ export function addBidResponseHook(next, adUnitCode, bid) {
   next(adUnitCode, bid);
 }
 
-export function addBidRequestHook(next, bidRequest) {
+export function addBidRequestHook(next, adUnitCode, bidRequest) {
   const overrides = this;
   if (Array.isArray(overrides.bidRequests)) {
     overrides.bidRequests.forEach(overrideBidRequest => {
