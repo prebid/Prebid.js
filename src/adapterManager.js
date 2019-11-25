@@ -323,6 +323,8 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
           s2sAjax
         );
       }
+    } else {
+      utils.logError('s2sAdapter "' + _s2sConfig.adapter + '" was not found in registry.');
     }
   }
 
