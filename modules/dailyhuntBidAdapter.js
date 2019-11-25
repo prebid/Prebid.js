@@ -62,6 +62,12 @@ function buildParams(bid) {
     params.subSlots = 'web-3';
     params.ad_type = '2,3';
   }
+  if (!params.nwFill) {
+    params.nwFill = true;
+  }
+  if (!params.partnerId) {
+    params.partnerId = 'DH';
+  }
   params.requestId = bid.bidId;
   params.format = 'json';
   return params;
