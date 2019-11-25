@@ -154,29 +154,31 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
       _auctionEnd = Date.now();
 
       events.emit(CONSTANTS.EVENTS.AUCTION_END, getProperties());
-      try {
-        if (_callback != null) {
-          const adUnitCodes = _adUnitCodes;
-          const bids = _bidsReceived
-            .filter(utils.bind.call(adUnitsFilter, this, adUnitCodes))
-            .reduce(groupByPlacement, {});
-          _callback.apply($$PREBID_GLOBAL$$, [bids, timedOut]);
-          _callback = null;
+      bidsBackCallback(_adUnitCodes, function () {
+        try {
+          if (_callback != null) {
+            const adUnitCodes = _adUnitCodes;
+            const bids = _bidsReceived
+              .filter(utils.bind.call(adUnitsFilter, this, adUnitCodes))
+              .reduce(groupByPlacement, {});
+            _callback.apply($$PREBID_GLOBAL$$, [bids, timedOut]);
+            _callback = null;
+          }
+        } catch (e) {
+          utils.logError('Error executing bidsBackHandler', null, e);
+        } finally {
+          // Calling timed out bidders
+          if (timedOutBidders.length) {
+            adapterManager.callTimedOutBidders(adUnits, timedOutBidders, _timeout);
+          }
+          // Only automatically sync if the publisher has not chosen to "enableOverride"
+          let userSyncConfig = config.getConfig('userSync') || {};
+          if (!userSyncConfig.enableOverride) {
+            // Delay the auto sync by the config delay
+            syncUsers(userSyncConfig.syncDelay);
+          }
         }
-      } catch (e) {
-        utils.logError('Error executing bidsBackHandler', null, e);
-      } finally {
-        // Calling timed out bidders
-        if (timedOutBidders.length) {
-          adapterManager.callTimedOutBidders(adUnits, timedOutBidders, _timeout);
-        }
-        // Only automatically sync if the publisher has not chosen to "enableOverride"
-        let userSyncConfig = config.getConfig('userSync') || {};
-        if (!userSyncConfig.enableOverride) {
-          // Delay the auto sync by the config delay
-          syncUsers(userSyncConfig.syncDelay);
-        }
-      }
+      })
     }
   }
 
@@ -198,10 +200,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
     let bidRequests = adapterManager.makeBidRequests(_adUnits, _auctionStart, _auctionId, _timeout, _labels);
     utils.logInfo(`Bids Requested for Auction with id: ${_auctionId}`, bidRequests);
     bidRequests.forEach(bidRequest => {
-      addBidRequest.call({
-        dispatch: addBidRequests,
-        context: newAuction
-      }, bidRequest);
+      addBidRequests(bidRequest);
     });
 
     let requests = {};
@@ -331,9 +330,11 @@ export const addBidResponse = hook('async', function(adUnitCode, bid) {
   this.dispatch.call(this.bidderRequest, adUnitCode, bid);
 }, 'addBidResponse');
 
-export const addBidRequest = hook('async', function(bidRequest) {
-  this.dispatch.call(this.context, bidRequest);
-}, 'addBidRequest');
+export const bidsBackCallback = hook('async', function (adUnits, callback) {
+  if (callback) {
+    callback();
+  }
+}, 'bidsBackCallback');
 
 export function auctionCallbacks(auctionDone, auctionInstance) {
   let outstandingBidsAdded = 0;

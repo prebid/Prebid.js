@@ -1,6 +1,6 @@
 /** @module adaptermanger */
 
-import { flatten, getBidderCodes, getDefinedParams, shuffle, timestamp, getBidderRequest } from './utils';
+import { flatten, getBidderCodes, getDefinedParams, shuffle, timestamp, getBidderRequest, bind } from './utils';
 import { getLabels, resolveStatus } from './sizeMapping';
 import { processNativeAdUnitParams, nativeAdapters } from './native';
 import { newBidder } from './adapters/bidderFactory';
@@ -337,9 +337,21 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
       request: requestCallbacks.request.bind(null, bidRequest.bidderCode),
       done: requestCallbacks.done
     } : undefined);
-    adapter.callBids(bidRequest, addBidResponse.bind(bidRequest), doneCb.bind(bidRequest), ajax, onTimelyResponse);
+    config.runWithBidder(
+      bidRequest.bidderCode,
+      bind.call(
+        adapter.callBids,
+        adapter,
+        bidRequest,
+        addBidResponse.bind(bidRequest),
+        doneCb.bind(bidRequest),
+        ajax,
+        onTimelyResponse,
+        config.callbackWithBidder(bidRequest.bidderCode)
+      )
+    );
   });
-}
+};
 
 function doingS2STesting() {
   return _s2sConfig && _s2sConfig.enabled && _s2sConfig.testing && s2sTestingModule;
@@ -464,7 +476,7 @@ function tryCallBidderMethod(bidder, method, param) {
     const spec = adapter.getSpec();
     if (spec && spec[method] && typeof spec[method] === 'function') {
       utils.logInfo(`Invoking ${bidder}.${method}`);
-      spec[method](param);
+      config.runWithBidder(bidder, bind.call(spec[method], spec, param));
     }
   } catch (e) {
     utils.logWarn(`Error calling ${method} of ${bidder}`);

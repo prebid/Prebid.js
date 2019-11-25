@@ -5,8 +5,11 @@ import { VIDEO, BANNER } from '../src/mediaTypes';
 
 const BIDDER_CODE = 'grid';
 const ENDPOINT_URL = '//grid.bidswitch.net/hb';
+const SYNC_URL = '//x.bidswitch.net/sync?ssp=iow_labs';
 const TIME_TO_LIVE = 360;
 const RENDERER_URL = '//acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
+
+let hasSynced = false;
 
 const LOG_ERROR_MESS = {
   noAuid: 'Bid from response has no auid parameter - ',
@@ -136,6 +139,25 @@ export const spec = {
     }
     if (errorMessage) utils.logError(errorMessage);
     return bidResponses;
+  },
+  getUserSyncs: function (syncOptions, responses, gdprConsent) {
+    if (!hasSynced && syncOptions.pixelEnabled) {
+      let params = '';
+
+      if (gdprConsent && typeof gdprConsent.consentString === 'string') {
+        if (typeof gdprConsent.gdprApplies === 'boolean') {
+          params += `&gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
+        } else {
+          params += `&gdpr_consent=${gdprConsent.consentString}`;
+        }
+      }
+
+      hasSynced = true;
+      return {
+        type: 'image',
+        url: SYNC_URL + params
+      };
+    }
   }
 };
 
@@ -242,6 +264,14 @@ function createRenderer (bid, rendererParams) {
   }
 
   return renderer;
+}
+
+export function resetUserSync() {
+  hasSynced = false;
+}
+
+export function getSyncUrl() {
+  return SYNC_URL;
 }
 
 registerBidder(spec);
