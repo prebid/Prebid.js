@@ -46,6 +46,10 @@ export const spec = {
       hb_version: '$prebid.version$'
     };
 
+    if (validBidRequests[0].schain) {
+      payload.schain = validBidRequests[0].schain;
+    }
+
     let gdpr = bidderRequest.gdprConsent;
     if (bidderRequest && gdpr) {
       let isCmp = (typeof gdpr.gdprApplies === 'boolean')
