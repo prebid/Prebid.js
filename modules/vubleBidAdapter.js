@@ -57,7 +57,8 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
-    if (utils.isEmpty(bid.sizes) || utils.parseSizesInput(bid.sizes).length == 0) {
+    let rawSizes = utils.deepAccess(bid, 'mediaTypes.video.playerSize') || bid.sizes;
+    if (utils.isEmpty(rawSizes) || utils.parseSizesInput(rawSizes).length == 0) {
       return false;
     }
 
@@ -81,7 +82,8 @@ export const spec = {
   buildRequests: function (validBidRequests) {
     return validBidRequests.map(bidRequest => {
       // We take the first size
-      let size = utils.parseSizesInput(bidRequest.sizes)[0].split('x');
+      let rawSize = utils.deepAccess(bidRequest, 'mediaTypes.video.playerSize') || bidRequest.sizes;
+      let size = utils.parseSizesInput(rawSize)[0].split('x');
 
       // Get the page's url
       let referrer = utils.getTopWindowUrl();

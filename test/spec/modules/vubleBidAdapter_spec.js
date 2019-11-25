@@ -36,9 +36,25 @@ describe('VubleAdapter', function () {
         }
       },
     };
+    let bid2 = {
+      bidder: 'vuble',
+      params: {
+        env: 'net',
+        pubId: '3',
+        zoneId: '12345',
+        floorPrice: 5.00 // optional
+      },
+      mediaTypes: {
+        video: {
+          context: 'instream',
+          playerSize: [640, 360]
+        }
+      },
+    };
 
     it('should be true', function () {
       expect(adapter.isBidRequestValid(bid)).to.be.true;
+      expect(adapter.isBidRequestValid(bid2)).to.be.true;
     });
 
     it('should be false because the sizes are missing or in the wrong format', function () {
@@ -126,6 +142,22 @@ describe('VubleAdapter', function () {
       bidId: 'efgh',
       adUnitCode: 'code'
     };
+    let bid3 = {
+      bidder: 'vuble',
+      params: {
+        env: 'net',
+        pubId: '3',
+        zoneId: '3579',
+      },
+      mediaTypes: {
+        video: {
+          context: 'instream',
+          playerSize: [640, 360]
+        }
+      },
+      bidId: 'ijkl',
+      adUnitCode: ''
+    };
 
     // Formatted requets
     let request1 = {
@@ -160,10 +192,25 @@ describe('VubleAdapter', function () {
         adUnitCode: 'code'
       }
     };
+    let request3 = {
+      method: 'POST',
+      url: 'https://player.mediabong.net/prebid/request',
+      data: {
+        width: '640',
+        height: '360',
+        pub_id: '3',
+        zone_id: '3579',
+        context: 'instream',
+        floor_price: 0,
+        url: 'https://www.vuble.tv/',
+        env: 'net',
+        bid_id: 'ijkl',
+        adUnitCode: ''
+      }
+    };
 
     it('must return the right formatted requests', function () {
-      let rs = adapter.buildRequests([bid1, bid2]);
-      expect(adapter.buildRequests([bid1, bid2])).to.deep.equal([request1, request2]);
+      expect(adapter.buildRequests([bid1, bid2, bid3])).to.deep.equal([request1, request2, request3]);
     });
 
     after(function () {
