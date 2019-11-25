@@ -491,6 +491,29 @@ function updateSubmodules() {
 }
 
 /**
+ * Retrieve the referrer url from the top frame. For use when running inside
+ * an iframe. https://github.com/prebid/Prebid.js/issues/4211
+ */
+ export function getTopFrameReferrer() {
+   try {
+     // force an exception in x-domain environments. #1509
+     window.top.location.toString();
+     let referrerLoc = '';
+     let currentWindow;
+     do {
+       currentWindow = currentWindow ? currentWindow.parent : window;
+       if (currentWindow.document && currentWindow.document.referrer) {
+         referrerLoc = currentWindow.document.referrer;
+       }
+     }
+     while (currentWindow !== window.top);
+     return referrerLoc;
+   } catch (e) {
+     return window.document.referrer;
+   }
+ }
+
+/**
  * enable submodule in User ID
  * @param {Submodule} submodule
  */
