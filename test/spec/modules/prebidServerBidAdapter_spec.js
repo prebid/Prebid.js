@@ -951,6 +951,7 @@ describe('S2S Adapter', function () {
 
       let userIdBidRequest = utils.deepClone(BID_REQUESTS);
       userIdBidRequest[0].bids[0].userId = {
+        criteoId: '44VmRDeUE3ZGJ5MzRkRVJHU3BIUlJ6TlFPQUFU',
         tdid: 'abc123',
         pubcid: '1234',
         parrableid: '01.1563917337.test-eid',
@@ -966,6 +967,8 @@ describe('S2S Adapter', function () {
       expect(Array.isArray(requestBid.user.ext.eids)).to.be.true;
       expect(requestBid.user.ext.eids.filter(eid => eid.source === 'adserver.org')).is.not.empty;
       expect(requestBid.user.ext.eids.filter(eid => eid.source === 'adserver.org')[0].uids[0].id).is.equal('abc123');
+      expect(requestBid.user.ext.eids.filter(eid => eid.source === 'criteo.com')).is.not.empty;
+      expect(requestBid.user.ext.eids.filter(eid => eid.source === 'criteo.com')[0].uids[0].id).is.equal('44VmRDeUE3ZGJ5MzRkRVJHU3BIUlJ6TlFPQUFU');
       expect(requestBid.user.ext.eids.filter(eid => eid.source === 'pubcommon')).is.not.empty;
       expect(requestBid.user.ext.eids.filter(eid => eid.source === 'pubcommon')[0].uids[0].id).is.equal('1234');
       expect(requestBid.user.ext.eids.filter(eid => eid.source === 'parrable.com')).is.not.empty;

@@ -547,7 +547,7 @@ const OPEN_RTB_PROTOCOL = {
     }
 
     const bidUserId = utils.deepAccess(bidRequests, '0.bids.0.userId');
-    if (bidUserId && typeof bidUserId === 'object' && (bidUserId.tdid || bidUserId.pubcid || bidUserId.parrableid || bidUserId.lipb || bidUserId.id5id)) {
+    if (bidUserId && typeof bidUserId === 'object' && (bidUserId.tdid || bidUserId.pubcid || bidUserId.parrableid || bidUserId.lipb || bidUserId.id5id || bidUserId.criteoId)) {
       utils.deepSetValue(request, 'user.ext.eids', []);
 
       if (bidUserId.tdid) {
@@ -601,6 +601,15 @@ const OPEN_RTB_PROTOCOL = {
           source: 'id5-sync.com',
           uids: [{
             id: bidUserId.id5id,
+          }]
+        });
+      }
+
+      if (bidUserId.criteoId) {
+        request.user.ext.eids.push({
+          source: 'criteo.com',
+          uids: [{
+            id: bidUserId.criteoId
           }]
         });
       }
