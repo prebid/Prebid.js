@@ -65,11 +65,7 @@ module.exports = function (req, res, next) {
         });
       }
       res.type('json');
-      if (req.method === 'GET') {
-        response = 'apntag.handleCb(' + JSON.stringify(response) + ');';
-      } else {
-        response = JSON.stringify(response);
-      }
+      response = JSON.stringify(response);
       res.write(response);
       return true;
     }

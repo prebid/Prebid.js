@@ -313,9 +313,9 @@ function setupE2e(done) {
 }
 
 gulp.task('updatepath', function(){
-  return gulp.src(['build/dev/*.js'])
+  return gulp.src(['build/dist/*.js'])
   .pipe(replace('ib.adnxs.com/ut/v3/prebid', host + ':' + mockServerPort + '/'))
-  .pipe(gulp.dest('build/dev'));
+  .pipe(gulp.dest('build/dist'));
 });
 
 // support tasks
@@ -350,7 +350,7 @@ gulp.task('mockserver', function() {
 gulp.task('serve', gulp.series(clean, lint, gulp.parallel('build-bundle-dev', watch, test)));
 gulp.task('default', gulp.series(clean, makeWebpackPkg));
 
-gulp.task('e2e-test', gulp.series(clean, setupE2e, 'build-bundle-dev', 'updatepath', gulp.parallel('mockserver', watch, test)));
+gulp.task('e2e-test', gulp.series(clean, setupE2e, 'build-bundle-prod', 'updatepath', gulp.parallel('mockserver', watch, test)));
 // other tasks
 gulp.task(bundleToStdout);
 gulp.task('bundle', gulpBundle.bind(null, false)); // used for just concatenating pre-built files with no build step
