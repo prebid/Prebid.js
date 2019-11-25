@@ -79,16 +79,16 @@ export const spec = {
    * @param {validBidRequests[]} - an array of bids
    * @return ServerRequest Info describing the request to the server.
    */
-  buildRequests: function (validBidRequests) {
+  buildRequests: function (validBidRequests, bidderRequest) {
     return validBidRequests.map(bidRequest => {
       // We take the first size
       let rawSize = utils.deepAccess(bidRequest, 'mediaTypes.video.playerSize') || bidRequest.sizes;
       let size = utils.parseSizesInput(rawSize)[0].split('x');
 
       // Get the page's url
-      let referrer = utils.getTopWindowUrl();
+      let referer = (bidderRequest && bidderRequest.refererInfo) ? bidderRequest.refererInfo.referer : '';
       if (bidRequest.params.referrer) {
-        referrer = bidRequest.params.referrer;
+        referer = bidRequest.params.referrer;
       }
 
       // Get Video Context
@@ -102,7 +102,7 @@ export const spec = {
         zone_id: bidRequest.params.zoneId,
         context: context,
         floor_price: bidRequest.params.floorPrice ? bidRequest.params.floorPrice : 0,
-        url: referrer,
+        url: referer,
         env: bidRequest.params.env,
         bid_id: bidRequest.bidId,
         adUnitCode: bidRequest.adUnitCode

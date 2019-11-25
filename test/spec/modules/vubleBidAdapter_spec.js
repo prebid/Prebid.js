@@ -101,12 +101,6 @@ describe('VubleAdapter', function () {
   });
 
   describe('Check buildRequests method', function () {
-    let sandbox;
-    before(function () {
-      sandbox = sinon.sandbox.create();
-      sandbox.stub(utils, 'getTopWindowUrl').returns('https://www.vuble.tv/');
-    });
-
     // Bids to be formatted
     let bid1 = {
       bidder: 'vuble',
@@ -170,7 +164,7 @@ describe('VubleAdapter', function () {
         zone_id: '12345',
         context: 'instream',
         floor_price: 5.5,
-        url: 'https://www.vuble.tv/',
+        url: '',
         env: 'net',
         bid_id: 'abdc',
         adUnitCode: ''
@@ -208,13 +202,22 @@ describe('VubleAdapter', function () {
         adUnitCode: ''
       }
     };
+    let bidderRequest = {
+      refererInfo: {
+        referer: 'https://www.vuble.tv/',
+        reachedTop: true,
+        numIframes: 1,
+        stack: [
+          'http://example.com/page.html',
+          'http://example.com/iframe1.html',
+          'http://example.com/iframe2.html'
+        ]
+      }
+    };
 
     it('must return the right formatted requests', function () {
-      expect(adapter.buildRequests([bid1, bid2, bid3])).to.deep.equal([request1, request2, request3]);
-    });
-
-    after(function () {
-      sandbox.restore();
+      expect(adapter.buildRequests([bid1, bid2])).to.deep.equal([request1, request2]);
+      expect(adapter.buildRequests([bid3], bidderRequest)).to.deep.equal([request3]);
     });
   });
 
