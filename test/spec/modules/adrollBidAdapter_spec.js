@@ -12,12 +12,12 @@ describe('adrollBidAdapter', function() {
       ip: 'ip',
       bidfloor: 1,
       sizes: [[300, 200]],
-      placementId: '1',
+      zoneId: 'zone1',
       publisherId: 'publisher_id'
     }
   };
   let bidWithoutValidId = { id: '' };
-  let bidWithoutId = { params: { placementId: '1' } };
+  let bidWithoutId = { params: { zoneId: 'zone1' } };
 
   describe('isBidRequestValid', function() {
     it('validates the bids correctly when the bid has an id', function() {
@@ -63,6 +63,7 @@ describe('adrollBidAdapter', function() {
       expect(request.data.imp.id).to.equal('bid_id');
       expect(request.data.imp.bidfloor).to.be.equal(1);
       expect(request.data.imp.banner).to.exist.and.to.be.a('object');
+      expect(request.data.imp.ext.zone.id).to.be.equal("zone1");
     });
 
     it('includes the sizes into the request correctly', function () {

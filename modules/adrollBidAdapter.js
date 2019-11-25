@@ -92,6 +92,11 @@ function _buildRequests(validBidRequests, bidderRequest) {
           bidfloor: utils.getBidIdParameter('bidfloor', bidRequest.params),
           banner: {
             format: _getSizes(bidRequest)
+          },
+          ext: {
+            zone: {
+              id: utils.getBidIdParameter('zoneId', bidRequest.params)
+            }
           }
         },
 
