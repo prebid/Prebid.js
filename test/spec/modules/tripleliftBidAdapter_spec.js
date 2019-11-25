@@ -366,7 +366,7 @@ describe('triplelift adapter', function () {
   });
 
   describe('getUserSyncs', function() {
-    let expectedSyncUrl = 'https://ib.3lift.com/sync?gdpr=true&cmp_cs=' + GDPR_CONSENT_STR + '&';
+    let expectedSyncUrl = 'https://eb2.3lift.com/sync?gdpr=true&cmp_cs=' + GDPR_CONSENT_STR + '&';
 
     it('returns undefined when syncing is not enabled', function() {
       expect(tripleliftAdapterSpec.getUserSyncs({})).to.equal(undefined);
