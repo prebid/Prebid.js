@@ -92,7 +92,7 @@ export const spec = {
       // Get Video Context
       let context = utils.deepAccess(bidRequest, 'mediaTypes.video.context');
 
-      let url = '//player.mediabong.' + bidRequest.params.env + '/prebid/request';
+      let url = 'https://player.mediabong.' + bidRequest.params.env + '/prebid/request';
       let data = {
         width: size[0],
         height: size[1],
