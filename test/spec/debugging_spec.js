@@ -1,6 +1,6 @@
 
 import { expect } from 'chai';
-import { sessionLoader, addBidResponseHook, getConfig, disableOverrides, boundHook, boundBidRequestsHook } from 'src/debugging';
+import { sessionLoader, addBidResponseHook, getConfig, disableOverrides, boundBidResponseHook, boundBidRequestsHook, addBidRequestHook } from 'src/debugging';
 import { addBidResponse, addBidRequest } from 'src/auction';
 import { config } from 'src/config';
 
@@ -31,7 +31,7 @@ describe('bid overrides', function () {
         enabled: true
       });
 
-      expect(addBidResponse.getHooks().some(hook => hook.hook === boundHook)).to.equal(true);
+      expect(addBidResponse.getHooks().some(hook => hook.hook === boundBidResponseHook)).to.equal(true);
     });
 
     it('should override bidRequest when enabled with setConfig', function () {
@@ -47,7 +47,7 @@ describe('bid overrides', function () {
       sessionLoader({
         getItem: () => ('{"enabled": true}')
       });
-      expect(addBidResponse.getHooks().some(hook => hook.hook === boundHook)).to.equal(true);
+      expect(addBidResponse.getHooks().some(hook => hook.hook === boundBidResponseHook)).to.equal(true);
     });
 
     it('should not throw if sessionStorage is inaccessible', function () {
@@ -64,6 +64,8 @@ describe('bid overrides', function () {
   describe('hook', function () {
     let mockBids;
     let bids;
+    let mockBidRequests;
+    let bidRequests;
 
     beforeEach(function () {
       let baseBid = {
@@ -93,9 +95,29 @@ describe('bid overrides', function () {
         let next = (adUnitCode, bid) => {
           bids.push(bid);
         };
-        addBidResponseHook.bind(overrides)(next, bid.adUnitCode, bid)
+        addBidResponseHook.bind(overrides)(next, bid.adUnitCode, bid);
       });
     }
+
+    describe('bidRequest', function () {
+      function runBidRequestHook(overrides) {
+        mockBidRequests.forEach(bidRequest => {
+          let next = (bidRequest) => {
+            bidRequests.push(bidRequest);
+          };
+          addBidRequestHook.bind(overrides)(next, bidRequest);
+        })
+      }
+
+      it('should allow us to exclude bidders', function () {
+        runBidRequestHook({
+          enabled: true,
+          bids: [{
+            cpm: 2
+          }]
+        });
+      });
+    })
 
     it('should allow us to exclude bidders', function () {
       run({

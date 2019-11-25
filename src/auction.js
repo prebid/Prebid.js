@@ -200,6 +200,12 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
     let bidRequests = adapterManager.makeBidRequests(_adUnits, _auctionStart, _auctionId, _timeout, _labels);
     utils.logInfo(`Bids Requested for Auction with id: ${_auctionId}`, bidRequests);
     bidRequests.forEach(bidRequest => {
+      /**
+      addBidRequest.call({
+        dispatch: addBidRequests,
+        context: newAuction
+      }, bidRequest);
+      */
       addBidRequests(bidRequest);
     });
 
@@ -329,6 +335,10 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
 export const addBidResponse = hook('async', function(adUnitCode, bid) {
   this.dispatch.call(this.bidderRequest, adUnitCode, bid);
 }, 'addBidResponse');
+
+export const addBidRequest = hook('async', function(adUnitCode, bidRequest) {
+  this.dispatch.call(this.context, bidRequest);
+}, 'addBidRequest');
 
 export const bidsBackCallback = hook('async', function (adUnits, callback) {
   if (callback) {

@@ -1,12 +1,28 @@
 
 import { config } from './config';
 import { logMessage as utilsLogMessage, logWarn as utilsLogWarn } from './utils';
-import { addBidResponse, addBidRequest } from './auction';
+import { addBidRequest, addBidResponse } from './auction';
 
 const OVERRIDE_KEY = '$$PREBID_GLOBAL$$:debugging';
 
-export let boundHook;
+/**
+ * @todo update debugging sub-system so that it reads debugging.bidRequests and updates the bidRequest object
+ * Make this a general hook so any value after bidder+adUnitCode gets merged into the bidRequest Object.
+ *
+ * 2. update Rubicon bid adapter to look in the bidRequest and pass SRID through to PBS video requests
+ *
+ * 3. update pbsBidAdapter to look for the debugging info and pass it through to PBS.
+ `* Which would end up setting imp.ext.prebid.storedauctionresponse before sending to PBS.
+ *
+ * ISSUE PBS, PBJS Changes
+ * In order to utilize this feature,
+ * the PrebidServerBidAdapter in Prebid.js could to be updated to pass the storedauctionrequestid and/or storedbidrequestid in the openrtb field(s).
+ * e.g. We may be able to have a simple invocation mechanism like adding a pbjs_stored_auction_response_id=111111111 to the page's query string.
+ * Or perhaps we can utilize the existing pbjs.setConfig("debugging") functionality. This feature will be worked out at a later time.
+ */
 export let boundBidRequestsHook;
+
+export let boundBidResponseHook;
 
 function logMessage(msg) {
   utilsLogMessage('DEBUG: ' + msg);
@@ -17,8 +33,8 @@ function logWarn(msg) {
 }
 
 function removeHook() {
-  addBidResponse.getHooks({hook: boundHook}).remove();
-  addBidResponse.getHooks({hook: boundBidRequestsHook}).remove();
+  addBidResponse.getHooks({hook: boundBidResponseHook}).remove();
+  addBidRequest.getHooks({hook: boundBidRequestsHook}).remove();
 }
 
 function enableOverrides(overrides, fromSession = false) {
@@ -27,8 +43,8 @@ function enableOverrides(overrides, fromSession = false) {
 
   removeHook();
 
-  boundHook = addBidResponseHook.bind(overrides);
-  addBidResponse.before(boundHook, 5);
+  boundBidResponseHook = addBidResponseHook.bind(overrides);
+  addBidResponse.before(boundBidResponseHook, 5);
 
   boundBidRequestsHook = addBidRequestHook.bind(overrides);
   addBidRequest.before(boundBidRequestsHook, 5);
