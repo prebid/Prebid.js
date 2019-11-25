@@ -47,6 +47,7 @@ export const spec = {
       badv: bidRequests[0].params.badv,
       user: user(bidRequests[0], bidderRequest),
       regs: regs(bidderRequest),
+      source: source(bidRequests[0].schain),
     };
     return {
       method: 'POST',
@@ -114,9 +115,9 @@ function bidResponseAvailable(request, response) {
         creative_id: idToBidMap[id].crid,
         creativeId: idToBidMap[id].crid,
         adId: id,
-        ttl: DEFAULT_BID_TTL,
+        ttl: idToBidMap[id].exp || DEFAULT_BID_TTL,
         netRevenue: DEFAULT_NET_REVENUE,
-        currency: DEFAULT_CURRENCY
+        currency: bidResponse.cur || DEFAULT_CURRENCY
       };
       if (idToImpMap[id]['native']) {
         bid['native'] = nativeResponse(idToImpMap[id], idToBidMap[id]);
@@ -135,19 +136,10 @@ function bidResponseAvailable(request, response) {
         bid.width = idToImpMap[id].banner.w;
         bid.height = idToImpMap[id].banner.h;
       }
-      applyExt(bid, idToBidMap[id])
       bids.push(bid);
     }
   });
   return bids;
-}
-
-function applyExt(bid, ortbBid) {
-  if (ortbBid && ortbBid.ext) {
-    bid.ttl = ortbBid.ext.ttl || bid.ttl;
-    bid.currency = ortbBid.ext.currency || bid.currency;
-    bid.netRevenue = ortbBid.ext.netRevenue != null ? ortbBid.ext.netRevenue : bid.netRevenue;
-  }
 }
 
 /**
@@ -433,6 +425,18 @@ function addExternalUserId(eids, value, source) {
 function regs(bidderRequest) {
   if (bidderRequest && bidderRequest.gdprConsent) {
     return { ext: { gdpr: bidderRequest.gdprConsent.gdprApplies ? 1 : 0 } };
+  }
+  return null;
+}
+
+/**
+ * Creates source object with supply chain
+ */
+function source(schain) {
+  if (schain) {
+    return {
+      ext: { schain }
+    };
   }
   return null;
 }
