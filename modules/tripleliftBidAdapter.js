@@ -63,19 +63,32 @@ export const tripleliftAdapterSpec = {
   },
 
   getUserSyncs: function(syncOptions) {
+    let syncType = _getSyncType(syncOptions);
+    if (!syncType) return;
+
     let ibCall = 'https://eb2.3lift.com/sync?';
+
+    if (syncType === 'image') {
+      ibCall = utils.tryAppendQueryString(ibCall, 'px', 1);
+      ibCall = utils.tryAppendQueryString(ibCall, 'src', 'prebid');
+    }
+
     if (consentString !== null) {
       ibCall = utils.tryAppendQueryString(ibCall, 'gdpr', gdprApplies);
       ibCall = utils.tryAppendQueryString(ibCall, 'cmp_cs', consentString);
     }
 
-    if (syncOptions.iframeEnabled) {
-      return [{
-        type: 'iframe',
-        url: ibCall
-      }];
-    }
+    return [{
+      type: syncType,
+      url: ibCall
+    }];
   }
+}
+
+function _getSyncType(syncOptions) {
+  if (!syncOptions) return;
+  if (syncOptions.iframeEnabled) return 'iframe';
+  if (syncOptions.pixelEnabled) return 'image';
 }
 
 function _buildPostBody(bidRequests) {

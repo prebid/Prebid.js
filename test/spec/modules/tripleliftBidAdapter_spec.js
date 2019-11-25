@@ -366,7 +366,8 @@ describe('triplelift adapter', function () {
   });
 
   describe('getUserSyncs', function() {
-    let expectedSyncUrl = 'https://eb2.3lift.com/sync?gdpr=true&cmp_cs=' + GDPR_CONSENT_STR + '&';
+    let expectedIframeSyncUrl = 'https://eb2.3lift.com/sync?gdpr=true&cmp_cs=' + GDPR_CONSENT_STR + '&';
+    let expectedImageSyncUrl = 'https://eb2.3lift.com/sync?px=1&src=prebid&gdpr=true&cmp_cs=' + GDPR_CONSENT_STR + '&';
 
     it('returns undefined when syncing is not enabled', function() {
       expect(tripleliftAdapterSpec.getUserSyncs({})).to.equal(undefined);
@@ -378,7 +379,26 @@ describe('triplelift adapter', function () {
       };
       let result = tripleliftAdapterSpec.getUserSyncs(syncOptions);
       expect(result[0].type).to.equal('iframe');
-      expect(result[0].url).to.equal(expectedSyncUrl);
+      expect(result[0].url).to.equal(expectedIframeSyncUrl);
+    });
+
+    it('returns image user sync pixel when iframe syncing is disabled', function() {
+      let syncOptions = {
+        pixelEnabled: true
+      };
+      let result = tripleliftAdapterSpec.getUserSyncs(syncOptions);
+      expect(result[0].type).to.equal('image')
+      expect(result[0].url).to.equal(expectedImageSyncUrl);
+    });
+
+    it('returns iframe user sync pixel when both options are enabled', function() {
+      let syncOptions = {
+        pixelEnabled: true,
+        iframeEnabled: true
+      };
+      let result = tripleliftAdapterSpec.getUserSyncs(syncOptions);
+      expect(result[0].type).to.equal('iframe');
+      expect(result[0].url).to.equal(expectedIframeSyncUrl);
     });
   });
 });
