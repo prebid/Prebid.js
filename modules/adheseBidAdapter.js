@@ -11,7 +11,7 @@ export const spec = {
   supportedMediaTypes: [BANNER, VIDEO],
 
   isBidRequestValid: function(bid) {
-    return !!(bid.params.account && bid.params.location && (bid.params.format || bid.sizes));
+    return !!(bid.params.account && bid.params.location && (bid.params.format || bid.mediaTypes.banner.sizes));
   },
 
   buildRequests: function(validBidRequests, bidderRequest) {
@@ -126,17 +126,18 @@ function bidToSlotName(bid) {
   if (bid.params.format) {
     return bid.params.location + '-' + bid.params.format;
   }
-  
-  var sizes = bid.sizes;
+
+  var sizes = bid.mediaTypes.banner.sizes;
   var format = '';
   sizes.sort();
-  sizes.forEach(function(size){
-    format += (format.length>0?'_':'') + size[0] + 'x' + size[1];
+  sizes.forEach(function(size) {
+    format += (format.length > 0 ? '_' : '') + size[0] + 'x' + size[1];
   });
-  if (format.length>0)
+  if (format.length > 0) {
     return bid.params.location + '-' + format;
-  else 
+  } else {
     return bid.params.location;
+  }
 }
 
 function getAccount(validBidRequests) {
