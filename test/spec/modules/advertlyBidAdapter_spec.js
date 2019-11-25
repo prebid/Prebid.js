@@ -3,11 +3,11 @@ import { spec } from 'modules/advertlyBidAdapter';
 
 const ENDPOINT = 'http://api.advertly.com/www/admin/plugins/Prebid/getAd.php';
 
-describe('The Advertly bidding adapter', function () {
+describe('The ADVERTLY bidding adapter', function () {
   describe('isBidRequestValid', function () {
     it('should return false when given an invalid bid', function () {
       const bid = {
-        bidder: 'advertly',
+        bidder: 'ADVERTLY',
       };
       const isValid = spec.isBidRequestValid(bid);
       expect(isValid).to.equal(false);
@@ -15,7 +15,7 @@ describe('The Advertly bidding adapter', function () {
 
     it('should return true when given a publisherId in bid', function () {
       const bid = {
-        bidder: 'advertly',
+        bidder: 'ADVERTLY',
         params: {
           publisherId: 2
         },
@@ -27,7 +27,7 @@ describe('The Advertly bidding adapter', function () {
 
   describe('buildRequests', function () {
     const bidRequests = [{
-      'bidder': 'advertly',
+      'bidder': 'ADVERTLY',
       'params': {
         'publisherId': 2
       },
@@ -81,7 +81,7 @@ describe('The Advertly bidding adapter', function () {
 
   const request = [
     {
-      'bidder': 'advertly',
+      'bidder': 'ADVERTLY',
       'params': {
         'publisherId': 2
       },
@@ -96,7 +96,7 @@ describe('The Advertly bidding adapter', function () {
       'src': 'client',
     },
     {
-      'bidder': 'advertly',
+      'bidder': 'ADVERTLY',
       'params': {
         'publisherId': 2
       },

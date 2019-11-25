@@ -1,7 +1,7 @@
 # Overview
 
 ```
-Module Name:  Advertly Bid Adapter
+Module Name:  ADVERTLY Bid Adapter
 Module Type:  Bidder Adapter
 Maintainer :  support@advertly.com
 ```
@@ -24,7 +24,7 @@ advertly bid adapter supports Banner and Video.
             }
           },
           bids: [{
-            bidder: 'advertly',
+            bidder: 'ADVERTLY',
             params: {
               publisherId: 2
             }
@@ -41,7 +41,7 @@ advertly bid adapter supports Banner and Video.
               },
             },
             bids: [{
-              bidder: "advertly",
+              bidder: "ADVERTLY",
               params: {
                 publisherId: 2
               }

@@ -6,7 +6,7 @@ import { ajax } from '../src/ajax';
 import {Renderer} from '../src/Renderer';
 
 const SUPPORTED_AD_TYPES = [BANNER, VIDEO];
-const BIDDER_CODE = 'advertly';
+const BIDDER_CODE = 'ADVERTLY';
 const DOMAIN = 'http://api.advertly.com/';
 const RENDERER_URL = '//acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
 
