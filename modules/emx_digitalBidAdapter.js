@@ -7,7 +7,7 @@ import includes from 'core-js/library/fn/array/includes';
 const BIDDER_CODE = 'emx_digital';
 const ENDPOINT = 'hb.emxdgt.com';
 const RENDERER_URL = '//js.brealtime.com/outstream/1.30.0/bundle.js';
-const ADAPTER_VERSION = '1.41.0';
+const ADAPTER_VERSION = '1.41.1';
 const DEFAULT_CUR = 'USD';
 
 export const emxAdapter = {
@@ -116,7 +116,7 @@ export const emxAdapter = {
   },
   parseResponse: (bidResponseAdm) => {
     try {
-      return decodeURIComponent(bidResponseAdm);
+      return decodeURIComponent(bidResponseAdm.replace(/%(?![0-9][0-9a-fA-F]+)/g, '%25'));
     } catch (err) {
       utils.logError('emx_digitalBidAdapter', 'error', err);
     }

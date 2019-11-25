@@ -368,7 +368,11 @@ describe('The Criteo bidding adapter', function () {
   });
 
   describe('buildRequests', function () {
+    const refererUrl = 'https://criteo.com?pbt_debug=1&pbt_nolog=1';
     const bidderRequest = {
+      refererInfo: {
+        referer: refererUrl
+      },
       timeout: 3000,
       gdprConsent: {
         gdprApplies: 1,
@@ -385,10 +389,23 @@ describe('The Criteo bidding adapter', function () {
       config.resetConfig();
     });
 
-    it('should properly build a zoneId request', function () {
-      const publisherUrl = 'https://criteo.com?pbt_debug=1&pbt_nolog=1';
-      utilsMock.expects('getTopWindowUrl').withExactArgs().once().returns(publisherUrl);
+    it('should properly build a request if refererInfo is not provided', function () {
+      const bidderRequest = {};
+      const bidRequests = [
+        {
+          bidder: 'criteo',
+          adUnitCode: 'bid-123',
+          transactionId: 'transaction-123',
+          sizes: [[728, 90]],
+          params: {}
+        },
+      ];
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const ortbRequest = request.data;
+      expect(ortbRequest.publisher.url).to.equal('');
+    });
 
+    it('should properly build a zoneId request', function () {
       const bidRequests = [
         {
           bidder: 'criteo',
@@ -407,7 +424,7 @@ describe('The Criteo bidding adapter', function () {
       expect(request.url).to.match(/^https:\/\/bidder\.criteo\.com\/cdb\?profileId=207&av=\d+&wv=[^&]+&cb=\d+&im=1&debug=1&nolog=1/);
       expect(request.method).to.equal('POST');
       const ortbRequest = request.data;
-      expect(ortbRequest.publisher.url).to.equal(publisherUrl);
+      expect(ortbRequest.publisher.url).to.equal(refererUrl);
       expect(ortbRequest.slots).to.have.lengthOf(1);
       expect(ortbRequest.slots[0].impid).to.equal('bid-123');
       expect(ortbRequest.slots[0].transactionid).to.equal('transaction-123');
@@ -421,6 +438,9 @@ describe('The Criteo bidding adapter', function () {
 
     it('should properly build a networkId request', function () {
       const bidderRequest = {
+        refererInfo: {
+          referer: refererUrl
+        },
         timeout: 3000,
         gdprConsent: {
           gdprApplies: 0,
@@ -451,7 +471,7 @@ describe('The Criteo bidding adapter', function () {
       expect(request.url).to.match(/^https:\/\/bidder\.criteo\.com\/cdb\?profileId=207&av=\d+&wv=[^&]+&cb=\d/);
       expect(request.method).to.equal('POST');
       const ortbRequest = request.data;
-      expect(ortbRequest.publisher.url).to.equal(utils.getTopWindowUrl());
+      expect(ortbRequest.publisher.url).to.equal(refererUrl);
       expect(ortbRequest.publisher.networkid).to.equal(456);
       expect(ortbRequest.slots).to.have.lengthOf(1);
       expect(ortbRequest.slots[0].impid).to.equal('bid-123');
@@ -465,7 +485,12 @@ describe('The Criteo bidding adapter', function () {
     });
 
     it('should properly build a mixed request', function () {
-      const bidderRequest = { timeout: 3000 };
+      const bidderRequest = {
+        refererInfo: {
+          referer: refererUrl
+        },
+        timeout: 3000
+      };
       const bidRequests = [
         {
           bidder: 'criteo',
@@ -490,7 +515,7 @@ describe('The Criteo bidding adapter', function () {
       expect(request.url).to.match(/^https:\/\/bidder\.criteo\.com\/cdb\?profileId=207&av=\d+&wv=[^&]+&cb=\d/);
       expect(request.method).to.equal('POST');
       const ortbRequest = request.data;
-      expect(ortbRequest.publisher.url).to.equal(utils.getTopWindowUrl());
+      expect(ortbRequest.publisher.url).to.equal(refererUrl);
       expect(ortbRequest.publisher.networkid).to.equal(456);
       expect(ortbRequest.slots).to.have.lengthOf(2);
       expect(ortbRequest.slots[0].impid).to.equal('bid-123');
@@ -517,9 +542,9 @@ describe('The Criteo bidding adapter', function () {
           },
         },
       ];
-      const bidderRequest = { timeout: 3000,
-        gdprConsent: {
-        },
+      const bidderRequest = {
+        timeout: 3000,
+        gdprConsent: {},
       };
 
       const ortbRequest = spec.buildRequests(bidRequests, bidderRequest).data;
