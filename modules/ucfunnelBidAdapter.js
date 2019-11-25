@@ -64,7 +64,7 @@ export const spec = {
     let bid = {
       requestId: bidRequest.bidId,
       cpm: ad.cpm || 0,
-      creativeId: ad.ad_id,
+      creativeId: ad.ad_id || bidRequest.params.adid,
       dealId: ad.deal || null,
       currency: 'USD',
       netRevenue: true,
@@ -108,10 +108,11 @@ export const spec = {
         break;
       case BANNER:
       default:
+        var size = parseSizes(bidRequest);
         Object.assign(bid, {
-          width: ad.width,
-          height: ad.height,
-          ad: ad.adm
+          width: ad.width || size[0],
+          height: ad.height || size[1],
+          ad: ad.adm || ''
         });
     }
 
