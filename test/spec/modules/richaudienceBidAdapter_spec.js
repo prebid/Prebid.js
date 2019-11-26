@@ -267,9 +267,6 @@ describe('Richaudience adapter tests', function () {
         cmpApi: 'iab',
         timeout: 5000,
         allowAuctionWithoutConsent: true
-      },
-      pubcid: {
-        enable: false
       }
     });
     it('Verify build id5', function () {
