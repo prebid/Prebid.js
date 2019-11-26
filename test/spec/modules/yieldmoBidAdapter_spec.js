@@ -193,6 +193,13 @@ describe('YieldmoAdapter', function () {
       }));
     });
 
+    it('should add ccpa information to request if available', () => {
+      const privacy = '1YNY';
+      bidderRequest.us_privacy = privacy;
+      const data = spec.buildRequests(bidArray, bidderRequest).data;
+      expect(data.us_privacy).equal(privacy);
+    });
+
     it('should add schain if it is in the bidRequest', () => {
       const schain = {'ver': '1.0', 'complete': 1, 'nodes': [{'asi': 'indirectseller.com', 'sid': '00001', 'hp': 1}]};
       bidArray[0].schain = schain;

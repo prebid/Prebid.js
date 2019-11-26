@@ -43,7 +43,8 @@ export const spec = {
         // case of undefined, stringify will remove param
         gdprApplies: bidderRequest && bidderRequest.gdprConsent ? bidderRequest.gdprConsent.gdprApplies : undefined,
         cmp: bidderRequest && bidderRequest.gdprConsent ? bidderRequest.gdprConsent.consentString : undefined
-      })
+      }),
+      us_privacy: bidderRequest && bidderRequest.us_privacy,
     };
 
     bidRequests.forEach((request) => {
@@ -74,7 +75,6 @@ export const spec = {
   /**
    * Makes Yieldmo Ad Server response compatible to Prebid specs
    * @param serverResponse successful response from Ad Server
-   * @param bidderRequest original bidRequest
    * @return {Bid[]} an array of bids
    */
   interpretResponse: function(serverResponse) {
