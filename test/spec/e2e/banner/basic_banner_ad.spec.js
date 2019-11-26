@@ -30,7 +30,7 @@ describe('Prebid.js Banner Ad Unit Test', function () {
   });
 
   // TODO: Add below test again. Removed the test since we are testing only for appnexus endpoint now and appnexus adapter does not set AdserverTargetting.
-  
+
   // it('should load the targeting keys with correct values', function () {
   //   const result = browser.execute(function () {
   //     return window.top.pbjs.getAdserverTargeting('div-gpt-ad-1460505748561-1');
