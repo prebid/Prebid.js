@@ -119,10 +119,6 @@ export const spec = {
   }
 };
 
-function getScheme() {
-  return ((document.location.protocol === 'https:') ? 'https' : 'http') + '://';
-}
-
 function getSrcPageUrl(params) {
   return (params && params['srcPageUrl']) || encodeURIComponent(document.location.href);
 }
@@ -177,7 +173,7 @@ export const getTimeoutUrl = function(timeoutData) {
   let params = utils.deepAccess(timeoutData, '0.params.0');
 
   if (!utils.isEmpty(params)) {
-    let url = `${getScheme()}${EVENTS_ENDPOINT}`;
+    let url = `https://${EVENTS_ENDPOINT}`;
 
     url += `?srcPageUrl=${getSrcPageUrl(params)}`;
     url += `${getUrlParams(params)}`;
@@ -216,7 +212,7 @@ function generateUrl(bid, bidderRequest) {
   let adCode = utils.deepAccess(bid, 'params.adCode');
 
   if (supplyCode && adCode) {
-    let url = `${getScheme()}${supplyCode}.${TAG_ENDPOINT}?adCode=${adCode}`;
+    let url = `https://${supplyCode}.${TAG_ENDPOINT}?adCode=${adCode}`;
 
     if (width) {
       url += (`&playerWidth=${width}`);
