@@ -18,7 +18,8 @@ export const spec = {
     return !!(bid.sizes && bid.bidId && bid.params &&
       (bid.params.accountId && (typeof bid.params.accountId === 'string')) &&
       (bid.params.placementId && (typeof bid.params.placementId === 'string')) &&
-      ((typeof bid.params.keyValues === 'undefined') || (typeof bid.params.keyValues === 'object')));
+      ((typeof bid.params.bidfloor === 'undefined') || (typeof bid.params.bidfloor === 'number')) &&
+      ((typeof bid.params.profile === 'undefined') || (typeof bid.params.profile === 'object')));
   },
 
   buildRequests(validBidRequests, bidderRequest) {
@@ -36,17 +37,16 @@ export const spec = {
           auctionId: bidRequest.auctionId,
           transactionId: bidRequest.transactionId,
           adUnitCode: bidRequest.adUnitCode,
+          bidRequestCount: bidRequest.bidRequestCount,
           sizes: bidRequest.sizes,
           params: bidRequest.params
         }
       };
       spec.bidParams[bidRequest.bidId] = bidRequest.params;
-      if (bidRequest && bidRequest.gdprConsent) {
+      if (bidderRequest && bidderRequest.gdprConsent) {
         ret.data.gdprConsent = {
-          consentString: bidRequest.gdprConsent.consentString,
-          consentRequired: (typeof bidRequest.gdprConsent.gdprApplies === 'boolean')
-            ? bidRequest.gdprConsent.gdprApplies
-            : true
+          consentString: bidderRequest.gdprConsent.consentString,
+          consentRequired: (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') && bidderRequest.gdprConsent.gdprApplies
         };
       }
       return ret;
@@ -71,15 +71,18 @@ export const spec = {
     return bidResponses;
   },
 
-  onBidWon(winObj) {
+  onBidWon(bid) {
+    this.onHandler(bid, '/win');
+  },
+
+  onHandler (bid, route) {
     const getRefererInfo = detectReferer(window);
 
-    winObj.pageUrl = getRefererInfo().referer;
-    if (spec.bidParams[winObj.adId]) {
-      winObj.params = spec.bidParams[winObj.adId];
+    bid.pageUrl = getRefererInfo().referer;
+    if (spec.bidParams[bid.requestId] && (typeof bid.params === 'undefined')) {
+      bid.params = [spec.bidParams[bid.requestId]];
     }
-
-    spec.ajaxCall(`${spec.orbidderHost}/win`, JSON.stringify(winObj));
+    spec.ajaxCall(`${spec.orbidderHost}${route}`, JSON.stringify(bid));
   },
 
   ajaxCall(endpoint, data) {

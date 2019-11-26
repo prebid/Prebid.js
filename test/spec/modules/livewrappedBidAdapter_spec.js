@@ -303,6 +303,64 @@ describe('Livewrapped adapter tests', function () {
       expect(data).to.deep.equal(expectedQuery);
     });
 
+    it('should make a well-formed single request object with optional parameters', function() {
+      sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
+      sandbox.stub(utils, 'cookiesAreEnabled').callsFake(() => true);
+      let testbidRequest = clone(bidderRequest);
+      delete testbidRequest.bids[0].params.userId;
+      delete testbidRequest.bids[0].params.seats;
+      delete testbidRequest.bids[0].params.adUnitId;
+      testbidRequest.bids[0].params.options = {keyvalues: [{key: 'key', value: 'value'}]};
+      let result = spec.buildRequests(testbidRequest.bids, testbidRequest);
+      let data = JSON.parse(result.data);
+
+      let expectedQuery = {
+        auctionId: 'F7557995-65F5-4682-8782-7D5D34D82A8C',
+        publisherId: '26947112-2289-405D-88C1-A7340C57E63E',
+        url: 'http://www.domain.com',
+        version: '1.1',
+        cookieSupport: true,
+        adRequests: [{
+          callerAdUnitId: 'panorama_d_1',
+          bidId: '2ffb201a808da7',
+          transactionId: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D',
+          formats: [{width: 980, height: 240}, {width: 980, height: 120}],
+          options: {keyvalues: [{key: 'key', value: 'value'}]}
+        }]
+      };
+
+      expect(data).to.deep.equal(expectedQuery);
+    });
+
+    it('should make a well-formed single request object with ad blocker revovered parameter', function() {
+      sandbox.stub(utils, 'getWindowTop').returns({ I12C: { Morph: 1 } });
+      sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
+      sandbox.stub(utils, 'cookiesAreEnabled').callsFake(() => true);
+      let testbidRequest = clone(bidderRequest);
+      delete testbidRequest.bids[0].params.userId;
+      delete testbidRequest.bids[0].params.seats;
+      delete testbidRequest.bids[0].params.adUnitId;
+      let result = spec.buildRequests(testbidRequest.bids, testbidRequest);
+      let data = JSON.parse(result.data);
+
+      let expectedQuery = {
+        auctionId: 'F7557995-65F5-4682-8782-7D5D34D82A8C',
+        publisherId: '26947112-2289-405D-88C1-A7340C57E63E',
+        url: 'http://www.domain.com',
+        version: '1.1',
+        cookieSupport: true,
+        rcv: true,
+        adRequests: [{
+          callerAdUnitId: 'panorama_d_1',
+          bidId: '2ffb201a808da7',
+          transactionId: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D',
+          formats: [{width: 980, height: 240}, {width: 980, height: 120}]
+        }]
+      };
+
+      expect(data).to.deep.equal(expectedQuery);
+    });
+
     it('should pass gdpr true parameters', function() {
       sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
       sandbox.stub(utils, 'cookiesAreEnabled').callsFake(() => true);
@@ -519,6 +577,44 @@ describe('Livewrapped adapter tests', function () {
     });
   });
 
+  it('should make use of Id5-Id if available', function() {
+    sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
+    sandbox.stub(utils, 'cookiesAreEnabled').callsFake(() => true);
+    let testbidRequest = clone(bidderRequest);
+    delete testbidRequest.bids[0].params.userId;
+    testbidRequest.bids[0].userId = {};
+    testbidRequest.bids[0].userId.id5id = 'id5-user-id';
+    let result = spec.buildRequests(testbidRequest.bids, testbidRequest);
+    let data = JSON.parse(result.data);
+
+    expect(data.rtbData.user.ext.eids).to.deep.equal([{
+      'source': 'id5-sync.com',
+      'uids': [{
+        'id': 'id5-user-id',
+        'atype': 1
+      }]
+    }]);
+  });
+
+  it('should make use of publisher common Id if available', function() {
+    sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
+    sandbox.stub(utils, 'cookiesAreEnabled').callsFake(() => true);
+    let testbidRequest = clone(bidderRequest);
+    delete testbidRequest.bids[0].params.userId;
+    testbidRequest.bids[0].userId = {};
+    testbidRequest.bids[0].userId.pubcid = 'publisher-common-id';
+    let result = spec.buildRequests(testbidRequest.bids, testbidRequest);
+    let data = JSON.parse(result.data);
+
+    expect(data.rtbData.user.ext.eids).to.deep.equal([{
+      'source': 'pubcommon',
+      'uids': [{
+        'id': 'publisher-common-id',
+        'atype': 1
+      }]
+    }]);
+  });
+
   describe('interpretResponse', function () {
     it('should handle single success response', function() {
       let lwResponse = {
@@ -533,7 +629,8 @@ describe('Livewrapped adapter tests', function () {
             bidId: '32e50fad901ae89',
             auctionId: '13e674db-d4d8-4e19-9d28-ff38177db8bf',
             creativeId: '52cbd598-2715-4c43-a06f-229fc170f945:427077',
-            ttl: 120
+            ttl: 120,
+            meta: undefined
           }
         ],
         currency: 'USD'
@@ -549,7 +646,8 @@ describe('Livewrapped adapter tests', function () {
         ttl: 120,
         creativeId: '52cbd598-2715-4c43-a06f-229fc170f945:427077',
         netRevenue: true,
-        currency: 'USD'
+        currency: 'USD',
+        meta: undefined
       }];
 
       let bids = spec.interpretResponse({body: lwResponse});
@@ -570,7 +668,8 @@ describe('Livewrapped adapter tests', function () {
             bidId: '32e50fad901ae89',
             auctionId: '13e674db-d4d8-4e19-9d28-ff38177db8bf',
             creativeId: '52cbd598-2715-4c43-a06f-229fc170f945:427077',
-            ttl: 120
+            ttl: 120,
+            meta: undefined
           },
           {
             id: '38e5ddf4-3c01-11e8-86a7-0a44794250d4',
@@ -582,7 +681,8 @@ describe('Livewrapped adapter tests', function () {
             bidId: '42e50fad901ae89',
             auctionId: '13e674db-d4d8-4e19-9d28-ff38177db8bf',
             creativeId: '62cbd598-2715-4c43-a06f-229fc170f945:427077',
-            ttl: 120
+            ttl: 120,
+            meta: undefined
           }
         ],
         currency: 'USD'
@@ -598,7 +698,8 @@ describe('Livewrapped adapter tests', function () {
         ttl: 120,
         creativeId: '52cbd598-2715-4c43-a06f-229fc170f945:427077',
         netRevenue: true,
-        currency: 'USD'
+        currency: 'USD',
+        meta: undefined
       }, {
         requestId: '42e50fad901ae89',
         bidderCode: 'livewrapped',
@@ -609,7 +710,47 @@ describe('Livewrapped adapter tests', function () {
         ttl: 120,
         creativeId: '62cbd598-2715-4c43-a06f-229fc170f945:427077',
         netRevenue: true,
+        currency: 'USD',
+        meta: undefined
+      }];
+
+      let bids = spec.interpretResponse({body: lwResponse});
+
+      expect(bids).to.deep.equal(expectedResponse);
+    })
+
+    it('should return meta-data', function() {
+      let lwResponse = {
+        ads: [
+          {
+            id: '28e5ddf4-3c01-11e8-86a7-0a44794250d4',
+            callerId: 'site_outsider_0',
+            tag: '<span>ad</span>',
+            width: 300,
+            height: 250,
+            cpmBid: 2.565917,
+            bidId: '32e50fad901ae89',
+            auctionId: '13e674db-d4d8-4e19-9d28-ff38177db8bf',
+            creativeId: '52cbd598-2715-4c43-a06f-229fc170f945:427077',
+            ttl: 120,
+            meta: {metadata: 'metadata'}
+          }
+        ],
         currency: 'USD'
+      };
+
+      let expectedResponse = [{
+        requestId: '32e50fad901ae89',
+        bidderCode: 'livewrapped',
+        cpm: 2.565917,
+        width: 300,
+        height: 250,
+        ad: '<span>ad</span>',
+        ttl: 120,
+        creativeId: '52cbd598-2715-4c43-a06f-229fc170f945:427077',
+        netRevenue: true,
+        currency: 'USD',
+        meta: {metadata: 'metadata'}
       }];
 
       let bids = spec.interpretResponse({body: lwResponse});

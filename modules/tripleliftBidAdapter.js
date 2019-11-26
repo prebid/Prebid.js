@@ -3,7 +3,7 @@ import { registerBidder } from '../src/adapters/bidderFactory';
 import * as utils from '../src/utils';
 
 const BIDDER_CODE = 'triplelift';
-const STR_ENDPOINT = document.location.protocol + '//tlx.3lift.com/header/auction?';
+const STR_ENDPOINT = 'https://tlx.3lift.com/header/auction?';
 let gdprApplies = true;
 let consentString = null;
 
@@ -80,6 +80,7 @@ export const tripleliftAdapterSpec = {
 
 function _buildPostBody(bidRequests) {
   let data = {};
+  let { schain } = bidRequests[0];
   data.imp = bidRequests.map(function(bid, index) {
     return {
       id: index,
@@ -88,10 +89,55 @@ function _buildPostBody(bidRequests) {
       banner: {
         format: _sizes(bid.sizes)
       }
-    }
+    };
   });
 
+  let eids = [
+    ...getUnifiedIdEids(bidRequests),
+    ...getIdentityLinkEids(bidRequests)
+  ];
+
+  if (eids.length > 0) {
+    data.user = {
+      ext: {eids}
+    };
+  }
+
+  if (schain) {
+    data.ext = {
+      schain
+    }
+  }
   return data;
+}
+
+function getUnifiedIdEids(bidRequests) {
+  return getEids(bidRequests, 'tdid', 'adserver.org', 'TDID');
+}
+
+function getIdentityLinkEids(bidRequests) {
+  return getEids(bidRequests, 'idl_env', 'liveramp.com', 'idl');
+}
+
+function getEids(bidRequests, type, source, rtiPartner) {
+  return bidRequests
+    .map(getUserId(type)) // bids -> userIds of a certain type
+    .filter((x) => !!x) // filter out null userIds
+    .map(formatEid(source, rtiPartner)); // userIds -> eid objects
+}
+
+function getUserId(type) {
+  return (bid) => (bid && bid.userId && bid.userId[type]);
+}
+
+function formatEid(source, rtiPartner) {
+  return (id) => ({
+    source,
+    uids: [{
+      id,
+      ext: { rtiPartner }
+    }]
+  });
 }
 
 function _sizes(sizeArray) {

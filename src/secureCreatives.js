@@ -4,7 +4,7 @@
  */
 
 import events from './events';
-import { fireNativeTrackers } from './native';
+import { fireNativeTrackers, getAssetMessage } from './native';
 import { EVENTS } from './constants';
 import { isSlotMatchingAdUnitCode, logWarn, replaceAuctionPrice } from './utils';
 import { auctionManager } from './auctionManager';
@@ -31,7 +31,7 @@ function receiveMessage(ev) {
       return bid.adId === data.adId;
     });
 
-    if (data.message === 'Prebid Request') {
+    if (adObject && data.message === 'Prebid Request') {
       _sendAdToCreative(adObject, data.adServerDomain, ev.source);
 
       // save winning bids
@@ -45,8 +45,16 @@ function receiveMessage(ev) {
     //   message: 'Prebid Native',
     //   adId: '%%PATTERN:hb_adid%%'
     // }), '*');
-    if (data.message === 'Prebid Native') {
-      fireNativeTrackers(data, adObject);
+    if (adObject && data.message === 'Prebid Native') {
+      if (data.action === 'assetRequest') {
+        const message = getAssetMessage(data, adObject);
+        ev.source.postMessage(JSON.stringify(message), ev.origin);
+        return;
+      }
+
+      const trackerType = fireNativeTrackers(data, adObject);
+      if (trackerType === 'click') { return; }
+
       auctionManager.addWinningBid(adObject);
       events.emit(BID_WON, adObject);
     }
@@ -74,7 +82,8 @@ export function _sendAdToCreative(adObject, remoteDomain, source) {
 function resizeRemoteCreative({ adUnitCode, width, height }) {
   // resize both container div + iframe
   ['div', 'iframe'].forEach(elmType => {
-    let element = getElementByAdUnit(elmType);
+    // not select element that gets removed after dfp render
+    let element = getElementByAdUnit(elmType + ':not([style*="display: none"])');
     if (element) {
       let elementStyle = element.style;
       elementStyle.width = width + 'px';

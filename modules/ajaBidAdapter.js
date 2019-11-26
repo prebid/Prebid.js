@@ -1,7 +1,7 @@
 import { Renderer } from '../src/Renderer';
 import * as utils from '../src/utils';
 import { registerBidder } from '../src/adapters/bidderFactory';
-import { VIDEO, BANNER } from '../src/mediaTypes';
+import { VIDEO, BANNER, NATIVE } from '../src/mediaTypes';
 
 const BIDDER_CODE = 'aja';
 const URL = '//ad.as.amanad.adtdp.com/v2/prebid';
@@ -14,7 +14,7 @@ const AD_TYPE = {
 
 export const spec = {
   code: BIDDER_CODE,
-  supportedMediaTypes: [VIDEO, BANNER],
+  supportedMediaTypes: [VIDEO, BANNER, NATIVE],
 
   isBidRequestValid: function(bid) {
     return !!(bid.params.asi);
@@ -30,6 +30,10 @@ export const spec = {
       queryString = utils.tryAppendQueryString(queryString, 'skt', SDK_TYPE);
       queryString = utils.tryAppendQueryString(queryString, 'prebid_id', bid.bidId);
       queryString = utils.tryAppendQueryString(queryString, 'prebid_ver', '$prebid.version$');
+
+      if (bidderRequest && bidderRequest.refererInfo) {
+        queryString = utils.tryAppendQueryString(queryString, 'page_url', bidderRequest.refererInfo.referer);
+      }
 
       bidRequests.push({
         method: 'GET',
@@ -86,6 +90,42 @@ export const spec = {
       } catch (error) {
         utils.logError('Error appending tracking pixel', error);
       }
+    } else if (AD_TYPE.NATIVE === ad.ad_type) {
+      const nativeAds = ad.native.template_and_ads.ads;
+
+      nativeAds.forEach(nativeAd => {
+        const assets = nativeAd.assets;
+
+        Object.assign(bid, {
+          mediaType: NATIVE
+        });
+
+        bid.native = {
+          title: assets.title,
+          body: assets.description,
+          cta: assets.cta_text,
+          sponsoredBy: assets.sponsor,
+          clickUrl: assets.lp_link,
+          impressionTrackers: nativeAd.imps,
+          privacyLink: assets.adchoice_url,
+        };
+
+        if (assets.img_main !== undefined) {
+          bid.native.image = {
+            url: assets.img_main,
+            width: parseInt(assets.img_main_width, 10),
+            height: parseInt(assets.img_main_height, 10)
+          };
+        }
+
+        if (assets.img_icon !== undefined) {
+          bid.native.icon = {
+            url: assets.img_icon,
+            width: parseInt(assets.img_icon_width, 10),
+            height: parseInt(assets.img_icon_height, 10)
+          };
+        }
+      });
     }
 
     return [bid];

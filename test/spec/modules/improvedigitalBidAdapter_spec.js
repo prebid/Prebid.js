@@ -7,7 +7,7 @@ describe('Improve Digital Adapter Tests', function () {
   let idClient = new ImproveDigitalAdServerJSClient('hb');
 
   const METHOD = 'GET';
-  const URL = '//ad.360yield.com/hb';
+  const URL = 'https://ice.360yield.com/hb';
   const PARAM_PREFIX = 'jsonp=';
 
   const simpleBidRequest = {
@@ -19,7 +19,8 @@ describe('Improve Digital Adapter Tests', function () {
     transactionId: 'f183e871-fbed-45f0-a427-c8a63c4c01eb',
     bidId: '33e9500b21129f',
     bidderRequestId: '2772c1e566670b',
-    auctionId: '192721e36a0239'
+    auctionId: '192721e36a0239',
+    sizes: [[300, 250], [160, 600], ['blah', 150], [-1, 300], [300, -5]]
   };
 
   const simpleSmartTagBidRequest = {
@@ -32,11 +33,17 @@ describe('Improve Digital Adapter Tests', function () {
     }
   };
 
-  const bidderRequest = {
-    'gdprConsent': {
-      'consentString': 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==',
-      'vendorData': {},
-      'gdprApplies': true
+  const bidderRequestGdpr = {
+    gdprConsent: {
+      consentString: 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==',
+      vendorData: {},
+      gdprApplies: true
+    },
+  };
+
+  const bidderRequestReferrer = {
+    refererInfo: {
+      referer: 'https://blah.com/test.html',
     },
   };
 
@@ -126,7 +133,7 @@ describe('Improve Digital Adapter Tests', function () {
       expect(params.bid_request.imp[0].kvw).to.deep.equal(keyValues);
     });
 
-    it('should add size', function () {
+    it('should add single size filter', function () {
       let bidRequest = Object.assign({}, simpleBidRequest);
       const size = {
         w: 800,
@@ -136,6 +143,9 @@ describe('Improve Digital Adapter Tests', function () {
       const request = spec.buildRequests([bidRequest])[0];
       const params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
       expect(params.bid_request.imp[0].banner).to.deep.equal(size);
+      // When single size filter is set, format shouldn't be populated. This
+      // is to maintain backward compatibily
+      expect(params.bid_request.imp[0].banner.format).to.not.exist;
     });
 
     it('should add currency', function () {
@@ -147,11 +157,97 @@ describe('Improve Digital Adapter Tests', function () {
       getConfigStub.restore();
     });
 
+    it('should add bid floor', function () {
+      const bidRequest = Object.assign({}, simpleBidRequest);
+      let request = spec.buildRequests([bidRequest])[0];
+      let params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
+      // Floor price currency shouldn't be populated without a floor price
+      expect(params.bid_request.imp[0].bidfloorcur).to.not.exist;
+
+      // Default floor price currency
+      bidRequest.params.bidFloor = 0.05;
+      request = spec.buildRequests([bidRequest])[0];
+      params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
+      expect(params.bid_request.imp[0].bidfloor).to.equal(0.05);
+      expect(params.bid_request.imp[0].bidfloorcur).to.equal('USD');
+
+      // Floor price currency
+      bidRequest.params.bidFloorCur = 'eUR';
+      request = spec.buildRequests([bidRequest])[0];
+      params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
+      expect(params.bid_request.imp[0].bidfloor).to.equal(0.05);
+      expect(params.bid_request.imp[0].bidfloorcur).to.equal('EUR');
+    });
+
     it('should add GDPR consent string', function () {
       const bidRequest = Object.assign({}, simpleBidRequest);
-      const request = spec.buildRequests([bidRequest], bidderRequest)[0];
+      const request = spec.buildRequests([bidRequest], bidderRequestGdpr)[0];
       const params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
       expect(params.bid_request.gdpr).to.equal('BOJ/P2HOJ/P2HABABMAAAAAZ+A==');
+    });
+
+    it('should add referrer', function () {
+      const bidRequest = Object.assign({}, simpleBidRequest);
+      const request = spec.buildRequests([bidRequest], bidderRequestReferrer)[0];
+      const params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
+      expect(params.bid_request.referrer).to.equal('https://blah.com/test.html');
+    });
+
+    it('should add ad type for instream video', function () {
+      let bidRequest = Object.assign({}, simpleBidRequest);
+      bidRequest.mediaType = 'video';
+      let request = spec.buildRequests([bidRequest])[0];
+      let params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
+      expect(params.bid_request.imp[0].ad_types).to.deep.equal(['video']);
+
+      bidRequest = Object.assign({}, simpleBidRequest);
+      bidRequest.mediaTypes = {
+        video: {
+          context: 'instream',
+          playerSize: [640, 480]
+        }
+      };
+      request = spec.buildRequests([bidRequest])[0];
+      params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
+      expect(params.bid_request.imp[0].ad_types).to.deep.equal(['video']);
+    });
+
+    it('should not set Prebid sizes in bid request for instream video', function () {
+      const getConfigStub = sinon.stub(config, 'getConfig');
+      getConfigStub.withArgs('improvedigital.usePrebidSizes').returns(true);
+      const bidRequest = Object.assign({}, simpleBidRequest);
+      bidRequest.mediaTypes = {
+        video: {
+          context: 'instream',
+          playerSize: [640, 480]
+        }
+      };
+      const request = spec.buildRequests([bidRequest])[0];
+      const params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
+      expect(params.bid_request.imp[0].banner.format).to.not.exist;
+      getConfigStub.restore();
+    });
+
+    it('should not set ad type for outstream video', function() {
+      const bidRequest = Object.assign({}, simpleBidRequest);
+      bidRequest.mediaTypes = {
+        video: {
+          context: 'outstream',
+          playerSize: [640, 480]
+        }
+      };
+      const request = spec.buildRequests([bidRequest])[0];
+      const params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
+      expect(params.bid_request.imp[0].ad_types).to.not.exist;
+    });
+
+    it('should add schain', function () {
+      const schain = '{"ver":"1.0","complete":1,"nodes":[{"asi":"headerlift.com","sid":"xyz","hp":1}]}';
+      const bidRequest = Object.assign({}, simpleBidRequest);
+      bidRequest.schain = schain;
+      const request = spec.buildRequests([bidRequest], bidderRequestReferrer)[0];
+      const params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
+      expect(params.bid_request.schain).to.equal(schain);
     });
 
     it('should return 2 requests', function () {
@@ -174,6 +270,40 @@ describe('Improve Digital Adapter Tests', function () {
       expect(requests.length).to.equal(1);
       getConfigStub.restore();
     });
+
+    it('should set Prebid sizes in bid request', function () {
+      const getConfigStub = sinon.stub(config, 'getConfig');
+      getConfigStub.withArgs('improvedigital.usePrebidSizes').returns(true);
+      const request = spec.buildRequests([simpleBidRequest])[0];
+      const params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
+      expect(params.bid_request.imp[0].banner).to.deep.equal({
+        format: [
+          { w: 300, h: 250 },
+          { w: 160, h: 600 }
+        ]
+      });
+      getConfigStub.restore();
+    });
+
+    it('should not add single size filter when using Prebid sizes', function () {
+      const getConfigStub = sinon.stub(config, 'getConfig');
+      getConfigStub.withArgs('improvedigital.usePrebidSizes').returns(true);
+      const bidRequest = Object.assign({}, simpleBidRequest);
+      const size = {
+        w: 800,
+        h: 600
+      };
+      bidRequest.params.size = size;
+      const request = spec.buildRequests([bidRequest])[0];
+      const params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
+      expect(params.bid_request.imp[0].banner).to.deep.equal({
+        format: [
+          { w: 300, h: 250 },
+          { w: 160, h: 600 }
+        ]
+      });
+      getConfigStub.restore();
+    });
   });
 
   const serverResponse = {
@@ -186,7 +316,7 @@ describe('Improve Digital Adapter Tests', function () {
           'id': '33e9500b21129f',
           'advid': '5279',
           'price': 1.45888594164456,
-          'nurl': 'http://ad.360yield.com/imp_pixel?ic=wVmhKI07hCVyGC1sNdFp.6buOSiGYOw8jPyZLlcMY2RCwD4ek3Fy6.xUI7U002skGBs3objMBoNU-Frpvmb9js3NKIG0YZJgWaNdcpXY9gOXE9hY4-wxybCjVSNzhOQB-zic73hzcnJnKeoGgcfvt8fMy18-yD0aVdYWt4zbqdoITOkKNCPBEgbPFu1rcje-o7a64yZ7H3dKvtnIixXQYc1Ep86xGSBGXY6xW2KfUOMT6vnkemxO72divMkMdhR8cAuqIubbx-ZID8-xf5c9k7p6DseeBW0I8ionrlTHx.rGosgxhiFaMqtr7HiA7PBzKvPdeEYN0hQ8RYo8JzYL82hA91A3V2m9Ij6y0DfIJnnrKN8YORffhxmJ6DzwEl1zjrVFbD01bqB3Vdww8w8PQJSkKQkd313tr-atU8LS26fnBmOngEkVHwAr2WCKxuUvxHmuVBTA-Lgz7wKwMoOJCA3hFxMavVb0ZFB7CK0BUTVU6z0De92Q.FJKNCHLMbjX3vcAQ90=',
+          'nurl': 'http://ice.360yield.com/imp_pixel?ic=wVmhKI07hCVyGC1sNdFp.6buOSiGYOw8jPyZLlcMY2RCwD4ek3Fy6.xUI7U002skGBs3objMBoNU-Frpvmb9js3NKIG0YZJgWaNdcpXY9gOXE9hY4-wxybCjVSNzhOQB-zic73hzcnJnKeoGgcfvt8fMy18-yD0aVdYWt4zbqdoITOkKNCPBEgbPFu1rcje-o7a64yZ7H3dKvtnIixXQYc1Ep86xGSBGXY6xW2KfUOMT6vnkemxO72divMkMdhR8cAuqIubbx-ZID8-xf5c9k7p6DseeBW0I8ionrlTHx.rGosgxhiFaMqtr7HiA7PBzKvPdeEYN0hQ8RYo8JzYL82hA91A3V2m9Ij6y0DfIJnnrKN8YORffhxmJ6DzwEl1zjrVFbD01bqB3Vdww8w8PQJSkKQkd313tr-atU8LS26fnBmOngEkVHwAr2WCKxuUvxHmuVBTA-Lgz7wKwMoOJCA3hFxMavVb0ZFB7CK0BUTVU6z0De92Q.FJKNCHLMbjX3vcAQ90=',
           'h': 290,
           'pid': 1053688,
           'sync': [
@@ -196,7 +326,7 @@ describe('Improve Digital Adapter Tests', function () {
           'crid': '422031',
           'w': 600,
           'cid': '99006',
-          'adm': 'document.writeln(\"<a href=\\\"http:\\/\\/ad.360yield.com\\/click\\/wVmhKEKFeJufyP3hFfp7fv95ynoKe7vnG9V-j8EyAzklSoKRkownAclw4Zzcw-OcbJMg2KfjNiO8GoO9WP1jbNM8Q5GtmClbG9hZPBS4v6oBBiDi50AjRqHQsDAoBOJrIJtVyCfrnAIxvbysozCpLt20ov6jz2JPi6fe.D55HNeDLDyiLNgxVPa3y9jJZf65JBirCjOoZ-1Mj1BLB.57VdMaEhpGjjl5HnPgw0Pv7Hm1BO7PB9nCXJ9IwOH3IrKo.Wyy1iKDk6zeGwGOkQHSOMuQnCHyD35x6bhDQrpl5H6fTRTR8D2m5.-Zjh3fs8SKlo0i25EjKPw65iF.tvgcnq01U08OIh86EeSciamJgV0hNsk20TcTubfsoPN4are4nQ0y2gB-lz9tf3AjqHpSz5NoJWrpWtnrBHbjm.dS1XUQB1tzcLpIkA34nDe2eNxRZbZkZNSSs.Y8jQemfbjuLpttcemHqidFZo3xp37eSfUImw.HbyFdnK-wxFDYudgsIDxGJWI=\\/\\/http%3A%2F%2Fwww.improvedigital.com\\\" target=\\\"_blank\\\"><img style=\\\"border: 0;\\\" border=\\\"0\\\" width=\\\"600\\\" height=\\\"290\\\" src=\\\"http:\\/\\/creative.360yield.com\\/file\\/221728\\/ImproveDigital600x290.jpg\\\" alt=\\\"\\\"\\/><\\/a>\");document.writeln(\"<improvedigital_ad_output_information tp_id=\\\"\\\" buyer_id=\\\"0\\\" rtb_advertiser=\\\"\\\" campaign_id=\\\"99006\\\" line_item_id=\\\"268515\\\" creative_id=\\\"422031\\\" crid=\\\"0\\\" placement_id=\\\"1053688\\\"><\\/improvedigital_ad_output_information>\");'
+          'adm': 'document.writeln(\"<a href=\\\"http:\\/\\/ice.360yield.com\\/click\\/wVmhKEKFeJufyP3hFfp7fv95ynoKe7vnG9V-j8EyAzklSoKRkownAclw4Zzcw-OcbJMg2KfjNiO8GoO9WP1jbNM8Q5GtmClbG9hZPBS4v6oBBiDi50AjRqHQsDAoBOJrIJtVyCfrnAIxvbysozCpLt20ov6jz2JPi6fe.D55HNeDLDyiLNgxVPa3y9jJZf65JBirCjOoZ-1Mj1BLB.57VdMaEhpGjjl5HnPgw0Pv7Hm1BO7PB9nCXJ9IwOH3IrKo.Wyy1iKDk6zeGwGOkQHSOMuQnCHyD35x6bhDQrpl5H6fTRTR8D2m5.-Zjh3fs8SKlo0i25EjKPw65iF.tvgcnq01U08OIh86EeSciamJgV0hNsk20TcTubfsoPN4are4nQ0y2gB-lz9tf3AjqHpSz5NoJWrpWtnrBHbjm.dS1XUQB1tzcLpIkA34nDe2eNxRZbZkZNSSs.Y8jQemfbjuLpttcemHqidFZo3xp37eSfUImw.HbyFdnK-wxFDYudgsIDxGJWI=\\/\\/http%3A%2F%2Fwww.improvedigital.com\\\" target=\\\"_blank\\\"><img style=\\\"border: 0;\\\" border=\\\"0\\\" width=\\\"600\\\" height=\\\"290\\\" src=\\\"http:\\/\\/creative.360yield.com\\/file\\/221728\\/ImproveDigital600x290.jpg\\\" alt=\\\"\\\"\\/><\\/a>\");document.writeln(\"<improvedigital_ad_output_information tp_id=\\\"\\\" buyer_id=\\\"0\\\" rtb_advertiser=\\\"\\\" campaign_id=\\\"99006\\\" line_item_id=\\\"268515\\\" creative_id=\\\"422031\\\" crid=\\\"0\\\" placement_id=\\\"1053688\\\"><\\/improvedigital_ad_output_information>\");'
         }
       ],
       'debug': ''
@@ -223,7 +353,7 @@ describe('Improve Digital Adapter Tests', function () {
           'crid': '422033',
           'w': 700,
           'cid': '99006',
-          'adm': 'document.writeln(\"<a href=\\\"http:\\/\\/ad.360yield.com\\/click\\/wVmhKEKFeJufyP3hFfp7fv95ynoKe7vnG9V-j8EyAzklSoKRkownAclw4Zzcw-OcbJMg2KfjNiO8GoO9WP1jbNM8Q5GtmClbG9hZPBS4v6oBBiDi50AjRqHQsDAoBOJrIJtVyCfrnAIxvbysozCpLt20ov6jz2JPi6fe.D55HNeDLDyiLNgxVPa3y9jJZf65JBirCjOoZ-1Mj1BLB.57VdMaEhpGjjl5HnPgw0Pv7Hm1BO7PB9nCXJ9IwOH3IrKo.Wyy1iKDk6zeGwGOkQHSOMuQnCHyD35x6bhDQrpl5H6fTRTR8D2m5.-Zjh3fs8SKlo0i25EjKPw65iF.tvgcnq01U08OIh86EeSciamJgV0hNsk20TcTubfsoPN4are4nQ0y2gB-lz9tf3AjqHpSz5NoJWrpWtnrBHbjm.dS1XUQB1tzcLpIkA34nDe2eNxRZbZkZNSSs.Y8jQemfbjuLpttcemHqidFZo3xp37eSfUImw.HbyFdnK-wxFDYudgsIDxGJWI=\\/\\/http%3A%2F%2Fwww.improvedigital.com\\\" target=\\\"_blank\\\"><img style=\\\"border: 0;\\\" border=\\\"0\\\" width=\\\"600\\\" height=\\\"290\\\" src=\\\"http:\\/\\/creative.360yield.com\\/file\\/221728\\/ImproveDigital600x290.jpg\\\" alt=\\\"\\\"\\/><\\/a>\");document.writeln(\"<improvedigital_ad_output_information tp_id=\\\"\\\" buyer_id=\\\"0\\\" rtb_advertiser=\\\"\\\" campaign_id=\\\"99006\\\" line_item_id=\\\"268515\\\" creative_id=\\\"422031\\\" crid=\\\"0\\\" placement_id=\\\"1053688\\\"><\\/improvedigital_ad_output_information>\");'
+          'adm': 'document.writeln(\"<a href=\\\"http:\\/\\/ice.360yield.com\\/click\\/wVmhKEKFeJufyP3hFfp7fv95ynoKe7vnG9V-j8EyAzklSoKRkownAclw4Zzcw-OcbJMg2KfjNiO8GoO9WP1jbNM8Q5GtmClbG9hZPBS4v6oBBiDi50AjRqHQsDAoBOJrIJtVyCfrnAIxvbysozCpLt20ov6jz2JPi6fe.D55HNeDLDyiLNgxVPa3y9jJZf65JBirCjOoZ-1Mj1BLB.57VdMaEhpGjjl5HnPgw0Pv7Hm1BO7PB9nCXJ9IwOH3IrKo.Wyy1iKDk6zeGwGOkQHSOMuQnCHyD35x6bhDQrpl5H6fTRTR8D2m5.-Zjh3fs8SKlo0i25EjKPw65iF.tvgcnq01U08OIh86EeSciamJgV0hNsk20TcTubfsoPN4are4nQ0y2gB-lz9tf3AjqHpSz5NoJWrpWtnrBHbjm.dS1XUQB1tzcLpIkA34nDe2eNxRZbZkZNSSs.Y8jQemfbjuLpttcemHqidFZo3xp37eSfUImw.HbyFdnK-wxFDYudgsIDxGJWI=\\/\\/http%3A%2F%2Fwww.improvedigital.com\\\" target=\\\"_blank\\\"><img style=\\\"border: 0;\\\" border=\\\"0\\\" width=\\\"600\\\" height=\\\"290\\\" src=\\\"http:\\/\\/creative.360yield.com\\/file\\/221728\\/ImproveDigital600x290.jpg\\\" alt=\\\"\\\"\\/><\\/a>\");document.writeln(\"<improvedigital_ad_output_information tp_id=\\\"\\\" buyer_id=\\\"0\\\" rtb_advertiser=\\\"\\\" campaign_id=\\\"99006\\\" line_item_id=\\\"268515\\\" creative_id=\\\"422031\\\" crid=\\\"0\\\" placement_id=\\\"1053688\\\"><\\/improvedigital_ad_output_information>\");'
         }
       ],
       'debug': ''
@@ -240,7 +370,7 @@ describe('Improve Digital Adapter Tests', function () {
           id: '33e9500b21129f',
           advid: '5279',
           price: 1.45888594164456,
-          nurl: 'http://ad.360yield.com/imp_pixel?ic=wVm',
+          nurl: 'http://ice.360yield.com/imp_pixel?ic=wVm',
           h: 290,
           pid: 1053688,
           sync: [
@@ -272,13 +402,61 @@ describe('Improve Digital Adapter Tests', function () {
               {
                 data: {
                   type: 3,
-                  value: 'Should get ignored'
+                  value: '4' // rating
+                }
+              },
+              {
+                data: {
+                  type: 4,
+                  value: '10105' // likes
+                }
+              },
+              {
+                data: {
+                  type: 5,
+                  value: '150000' // downloads
+                }
+              },
+              {
+                data: {
+                  type: 6,
+                  value: '3.99' // price
+                }
+              },
+              {
+                data: {
+                  type: 7,
+                  value: '4.49' // salePrice
+                }
+              },
+              {
+                data: {
+                  type: 8,
+                  value: '(123) 456-7890' // phone
+                }
+              },
+              {
+                data: {
+                  type: 9,
+                  value: '123 Main Street, Anywhere USA' // address
+                }
+              },
+              {
+                data: {
+                  type: 10,
+                  value: 'body2'
+                }
+              },
+              {
+                data: {
+                  type: 11,
+                  value: 'https://myurl.com' // displayUrl
                 }
               },
               {
                 data: {
                   type: 12,
-                  value: 'Do it'
+                  value: 'Do it' // cta
                 }
               },
               {
@@ -296,6 +474,7 @@ describe('Improve Digital Adapter Tests', function () {
                   h: 30,
                   w: 40
                 }
+
               },
               {
                 img: {
@@ -316,7 +495,8 @@ describe('Improve Digital Adapter Tests', function () {
               'http://imptrack1.com',
               'http://imptrack2.com'
             ],
-            jstracker: '<script src=\"http://www.foobar.js\"></script>'
+            jstracker: '<script src=\"http://www.foobar.js\"></script>',
+            privacy: 'https://www.myprivacyurl.com'
           }
         }
       ],
@@ -324,10 +504,51 @@ describe('Improve Digital Adapter Tests', function () {
     }
   };
 
+  const serverResponseVideo = {
+    'body': {
+      'id': '687a06c541d8d1',
+      'site_id': 191642,
+      'bid': [
+        {
+          'isNet': false,
+          'id': '33e9500b21129f',
+          'advid': '5279',
+          'price': 1.45888594164456,
+          'nurl': 'http://ice.360yield.com/imp_pixel?ic=wVmhKI07hCVyGC1sNdFp.6buOSiGYOw8jPyZLlcMY2RCwD4ek3Fy6.xUI7U002skGBs3objMBoNU-Frpvmb9js3NKIG0YZJgWaNdcpXY9gOXE9hY4-wxybCjVSNzhOQB-zic73hzcnJnKeoGgcfvt8fMy18-yD0aVdYWt4zbqdoITOkKNCPBEgbPFu1rcje-o7a64yZ7H3dKvtnIixXQYc1Ep86xGSBGXY6xW2KfUOMT6vnkemxO72divMkMdhR8cAuqIubbx-ZID8-xf5c9k7p6DseeBW0I8ionrlTHx.rGosgxhiFaMqtr7HiA7PBzKvPdeEYN0hQ8RYo8JzYL82hA91A3V2m9Ij6y0DfIJnnrKN8YORffhxmJ6DzwEl1zjrVFbD01bqB3Vdww8w8PQJSkKQkd313tr-atU8LS26fnBmOngEkVHwAr2WCKxuUvxHmuVBTA-Lgz7wKwMoOJCA3hFxMavVb0ZFB7CK0BUTVU6z0De92Q.FJKNCHLMbjX3vcAQ90=',
+          'h': 290,
+          'pid': 1053688,
+          'sync': [
+            'http://link1',
+            'http://link2'
+          ],
+          'crid': '422031',
+          'w': 600,
+          'cid': '99006',
+          'adm': '<VAST></VAST>',
+          'ad_type': 'video'
+        }
+      ],
+      'debug': ''
+    }
+  };
+
+  const nativeEventtrackers = [
+    {
+      event: 1,
+      method: 1,
+      url: 'http://www.mytracker.com/imptracker'
+    },
+    {
+      event: 1,
+      method: 2,
+      url: 'http://www.mytracker.com/tracker.js'
+    }
+  ];
+
   describe('interpretResponse', function () {
     let expectedBid = [
       {
-        'ad': '<img src=\"http://ad.360yield.com/imp_pixel?ic=wVmhKI07hCVyGC1sNdFp.6buOSiGYOw8jPyZLlcMY2RCwD4ek3Fy6.xUI7U002skGBs3objMBoNU-Frpvmb9js3NKIG0YZJgWaNdcpXY9gOXE9hY4-wxybCjVSNzhOQB-zic73hzcnJnKeoGgcfvt8fMy18-yD0aVdYWt4zbqdoITOkKNCPBEgbPFu1rcje-o7a64yZ7H3dKvtnIixXQYc1Ep86xGSBGXY6xW2KfUOMT6vnkemxO72divMkMdhR8cAuqIubbx-ZID8-xf5c9k7p6DseeBW0I8ionrlTHx.rGosgxhiFaMqtr7HiA7PBzKvPdeEYN0hQ8RYo8JzYL82hA91A3V2m9Ij6y0DfIJnnrKN8YORffhxmJ6DzwEl1zjrVFbD01bqB3Vdww8w8PQJSkKQkd313tr-atU8LS26fnBmOngEkVHwAr2WCKxuUvxHmuVBTA-Lgz7wKwMoOJCA3hFxMavVb0ZFB7CK0BUTVU6z0De92Q.FJKNCHLMbjX3vcAQ90=\" width=\"0\" height=\"0\" style=\"display:none\"><script>document.writeln(\"<a href=\\\"http:\\/\\/ad.360yield.com\\/click\\/wVmhKEKFeJufyP3hFfp7fv95ynoKe7vnG9V-j8EyAzklSoKRkownAclw4Zzcw-OcbJMg2KfjNiO8GoO9WP1jbNM8Q5GtmClbG9hZPBS4v6oBBiDi50AjRqHQsDAoBOJrIJtVyCfrnAIxvbysozCpLt20ov6jz2JPi6fe.D55HNeDLDyiLNgxVPa3y9jJZf65JBirCjOoZ-1Mj1BLB.57VdMaEhpGjjl5HnPgw0Pv7Hm1BO7PB9nCXJ9IwOH3IrKo.Wyy1iKDk6zeGwGOkQHSOMuQnCHyD35x6bhDQrpl5H6fTRTR8D2m5.-Zjh3fs8SKlo0i25EjKPw65iF.tvgcnq01U08OIh86EeSciamJgV0hNsk20TcTubfsoPN4are4nQ0y2gB-lz9tf3AjqHpSz5NoJWrpWtnrBHbjm.dS1XUQB1tzcLpIkA34nDe2eNxRZbZkZNSSs.Y8jQemfbjuLpttcemHqidFZo3xp37eSfUImw.HbyFdnK-wxFDYudgsIDxGJWI=\\/\\/http%3A%2F%2Fwww.improvedigital.com\\\" target=\\\"_blank\\\"><img style=\\\"border: 0;\\\" border=\\\"0\\\" width=\\\"600\\\" height=\\\"290\\\" src=\\\"http:\\/\\/creative.360yield.com\\/file\\/221728\\/ImproveDigital600x290.jpg\\\" alt=\\\"\\\"\\/><\\/a>\");document.writeln(\"<improvedigital_ad_output_information tp_id=\\\"\\\" buyer_id=\\\"0\\\" rtb_advertiser=\\\"\\\" campaign_id=\\\"99006\\\" line_item_id=\\\"268515\\\" creative_id=\\\"422031\\\" crid=\\\"0\\\" placement_id=\\\"1053688\\\"><\\/improvedigital_ad_output_information>\");</script>',
+        'ad': '<img src=\"http://ice.360yield.com/imp_pixel?ic=wVmhKI07hCVyGC1sNdFp.6buOSiGYOw8jPyZLlcMY2RCwD4ek3Fy6.xUI7U002skGBs3objMBoNU-Frpvmb9js3NKIG0YZJgWaNdcpXY9gOXE9hY4-wxybCjVSNzhOQB-zic73hzcnJnKeoGgcfvt8fMy18-yD0aVdYWt4zbqdoITOkKNCPBEgbPFu1rcje-o7a64yZ7H3dKvtnIixXQYc1Ep86xGSBGXY6xW2KfUOMT6vnkemxO72divMkMdhR8cAuqIubbx-ZID8-xf5c9k7p6DseeBW0I8ionrlTHx.rGosgxhiFaMqtr7HiA7PBzKvPdeEYN0hQ8RYo8JzYL82hA91A3V2m9Ij6y0DfIJnnrKN8YORffhxmJ6DzwEl1zjrVFbD01bqB3Vdww8w8PQJSkKQkd313tr-atU8LS26fnBmOngEkVHwAr2WCKxuUvxHmuVBTA-Lgz7wKwMoOJCA3hFxMavVb0ZFB7CK0BUTVU6z0De92Q.FJKNCHLMbjX3vcAQ90=\" width=\"0\" height=\"0\" style=\"display:none\"><script>document.writeln(\"<a href=\\\"http:\\/\\/ice.360yield.com\\/click\\/wVmhKEKFeJufyP3hFfp7fv95ynoKe7vnG9V-j8EyAzklSoKRkownAclw4Zzcw-OcbJMg2KfjNiO8GoO9WP1jbNM8Q5GtmClbG9hZPBS4v6oBBiDi50AjRqHQsDAoBOJrIJtVyCfrnAIxvbysozCpLt20ov6jz2JPi6fe.D55HNeDLDyiLNgxVPa3y9jJZf65JBirCjOoZ-1Mj1BLB.57VdMaEhpGjjl5HnPgw0Pv7Hm1BO7PB9nCXJ9IwOH3IrKo.Wyy1iKDk6zeGwGOkQHSOMuQnCHyD35x6bhDQrpl5H6fTRTR8D2m5.-Zjh3fs8SKlo0i25EjKPw65iF.tvgcnq01U08OIh86EeSciamJgV0hNsk20TcTubfsoPN4are4nQ0y2gB-lz9tf3AjqHpSz5NoJWrpWtnrBHbjm.dS1XUQB1tzcLpIkA34nDe2eNxRZbZkZNSSs.Y8jQemfbjuLpttcemHqidFZo3xp37eSfUImw.HbyFdnK-wxFDYudgsIDxGJWI=\\/\\/http%3A%2F%2Fwww.improvedigital.com\\\" target=\\\"_blank\\\"><img style=\\\"border: 0;\\\" border=\\\"0\\\" width=\\\"600\\\" height=\\\"290\\\" src=\\\"http:\\/\\/creative.360yield.com\\/file\\/221728\\/ImproveDigital600x290.jpg\\\" alt=\\\"\\\"\\/><\\/a>\");document.writeln(\"<improvedigital_ad_output_information tp_id=\\\"\\\" buyer_id=\\\"0\\\" rtb_advertiser=\\\"\\\" campaign_id=\\\"99006\\\" line_item_id=\\\"268515\\\" creative_id=\\\"422031\\\" crid=\\\"0\\\" placement_id=\\\"1053688\\\"><\\/improvedigital_ad_output_information>\");</script>',
         'adId': '33e9500b21129f',
         'creativeId': '422031',
         'cpm': 1.45888594164456,
@@ -344,7 +565,7 @@ describe('Improve Digital Adapter Tests', function () {
     let expectedTwoBids = [
       expectedBid[0],
       {
-        'ad': '<img src=\"http://link/imp_pixel?ic=wVmhKI07hCVyGC1sNdFp.6buOSiGYOw8jPyZLlcMY2RCwD4ek3Fy6.xUI7U002skGBs3objMBoNU-Frpvmb9js3NKIG0YZJgWaNdcpXY9gOXE9hY4-wxybCjVSNzhOQB-zic73hzcnJnKeoGgcfvt8fMy18-yD0aVdYWt4zbqdoITOkKNCPBEgbPFu1rcje-o7a64yZ7H3dKvtnIixXQYc1Ep86xGSBGXY6xW2KfUOMT6vnkemxO72divMkMdhR8cAuqIubbx-ZID8-xf5c9k7p6DseeBW0I8ionrlTHx.rGosgxhiFaMqtr7HiA7PBzKvPdeEYN0hQ8RYo8JzYL82hA91A3V2m9Ij6y0DfIJnnrKN8YORffhxmJ6DzwEl1zjrVFbD01bqB3Vdww8w8PQJSkKQkd313tr-atU8LS26fnBmOngEkVHwAr2WCKxuUvxHmuVBTA-Lgz7wKwMoOJCA3hFxMavVb0ZFB7CK0BUTVU6z0De92Q.FJKNCHLMbjX3vcAQ90=\" width=\"0\" height=\"0\" style=\"display:none\"><script>document.writeln(\"<a href=\\\"http:\\/\\/ad.360yield.com\\/click\\/wVmhKEKFeJufyP3hFfp7fv95ynoKe7vnG9V-j8EyAzklSoKRkownAclw4Zzcw-OcbJMg2KfjNiO8GoO9WP1jbNM8Q5GtmClbG9hZPBS4v6oBBiDi50AjRqHQsDAoBOJrIJtVyCfrnAIxvbysozCpLt20ov6jz2JPi6fe.D55HNeDLDyiLNgxVPa3y9jJZf65JBirCjOoZ-1Mj1BLB.57VdMaEhpGjjl5HnPgw0Pv7Hm1BO7PB9nCXJ9IwOH3IrKo.Wyy1iKDk6zeGwGOkQHSOMuQnCHyD35x6bhDQrpl5H6fTRTR8D2m5.-Zjh3fs8SKlo0i25EjKPw65iF.tvgcnq01U08OIh86EeSciamJgV0hNsk20TcTubfsoPN4are4nQ0y2gB-lz9tf3AjqHpSz5NoJWrpWtnrBHbjm.dS1XUQB1tzcLpIkA34nDe2eNxRZbZkZNSSs.Y8jQemfbjuLpttcemHqidFZo3xp37eSfUImw.HbyFdnK-wxFDYudgsIDxGJWI=\\/\\/http%3A%2F%2Fwww.improvedigital.com\\\" target=\\\"_blank\\\"><img style=\\\"border: 0;\\\" border=\\\"0\\\" width=\\\"600\\\" height=\\\"290\\\" src=\\\"http:\\/\\/creative.360yield.com\\/file\\/221728\\/ImproveDigital600x290.jpg\\\" alt=\\\"\\\"\\/><\\/a>\");document.writeln(\"<improvedigital_ad_output_information tp_id=\\\"\\\" buyer_id=\\\"0\\\" rtb_advertiser=\\\"\\\" campaign_id=\\\"99006\\\" line_item_id=\\\"268515\\\" creative_id=\\\"422031\\\" crid=\\\"0\\\" placement_id=\\\"1053688\\\"><\\/improvedigital_ad_output_information>\");</script>',
+        'ad': '<img src=\"http://link/imp_pixel?ic=wVmhKI07hCVyGC1sNdFp.6buOSiGYOw8jPyZLlcMY2RCwD4ek3Fy6.xUI7U002skGBs3objMBoNU-Frpvmb9js3NKIG0YZJgWaNdcpXY9gOXE9hY4-wxybCjVSNzhOQB-zic73hzcnJnKeoGgcfvt8fMy18-yD0aVdYWt4zbqdoITOkKNCPBEgbPFu1rcje-o7a64yZ7H3dKvtnIixXQYc1Ep86xGSBGXY6xW2KfUOMT6vnkemxO72divMkMdhR8cAuqIubbx-ZID8-xf5c9k7p6DseeBW0I8ionrlTHx.rGosgxhiFaMqtr7HiA7PBzKvPdeEYN0hQ8RYo8JzYL82hA91A3V2m9Ij6y0DfIJnnrKN8YORffhxmJ6DzwEl1zjrVFbD01bqB3Vdww8w8PQJSkKQkd313tr-atU8LS26fnBmOngEkVHwAr2WCKxuUvxHmuVBTA-Lgz7wKwMoOJCA3hFxMavVb0ZFB7CK0BUTVU6z0De92Q.FJKNCHLMbjX3vcAQ90=\" width=\"0\" height=\"0\" style=\"display:none\"><script>document.writeln(\"<a href=\\\"http:\\/\\/ice.360yield.com\\/click\\/wVmhKEKFeJufyP3hFfp7fv95ynoKe7vnG9V-j8EyAzklSoKRkownAclw4Zzcw-OcbJMg2KfjNiO8GoO9WP1jbNM8Q5GtmClbG9hZPBS4v6oBBiDi50AjRqHQsDAoBOJrIJtVyCfrnAIxvbysozCpLt20ov6jz2JPi6fe.D55HNeDLDyiLNgxVPa3y9jJZf65JBirCjOoZ-1Mj1BLB.57VdMaEhpGjjl5HnPgw0Pv7Hm1BO7PB9nCXJ9IwOH3IrKo.Wyy1iKDk6zeGwGOkQHSOMuQnCHyD35x6bhDQrpl5H6fTRTR8D2m5.-Zjh3fs8SKlo0i25EjKPw65iF.tvgcnq01U08OIh86EeSciamJgV0hNsk20TcTubfsoPN4are4nQ0y2gB-lz9tf3AjqHpSz5NoJWrpWtnrBHbjm.dS1XUQB1tzcLpIkA34nDe2eNxRZbZkZNSSs.Y8jQemfbjuLpttcemHqidFZo3xp37eSfUImw.HbyFdnK-wxFDYudgsIDxGJWI=\\/\\/http%3A%2F%2Fwww.improvedigital.com\\\" target=\\\"_blank\\\"><img style=\\\"border: 0;\\\" border=\\\"0\\\" width=\\\"600\\\" height=\\\"290\\\" src=\\\"http:\\/\\/creative.360yield.com\\/file\\/221728\\/ImproveDigital600x290.jpg\\\" alt=\\\"\\\"\\/><\\/a>\");document.writeln(\"<improvedigital_ad_output_information tp_id=\\\"\\\" buyer_id=\\\"0\\\" rtb_advertiser=\\\"\\\" campaign_id=\\\"99006\\\" line_item_id=\\\"268515\\\" creative_id=\\\"422031\\\" crid=\\\"0\\\" placement_id=\\\"1053688\\\"><\\/improvedigital_ad_output_information>\");</script>',
         'adId': '1234',
         'creativeId': '422033',
         'cpm': 1.23,
@@ -373,8 +594,17 @@ describe('Improve Digital Adapter Tests', function () {
         native: {
           title: 'Native title',
           body: 'Native body',
+          body2: 'body2',
           cta: 'Do it',
           sponsoredBy: 'Improve Digital',
+          rating: '4',
+          likes: '10105',
+          downloads: '150000',
+          price: '3.99',
+          salePrice: '4.49',
+          phone: '(123) 456-7890',
+          address: '123 Main Street, Anywhere USA',
+          displayUrl: 'https://myurl.com',
           icon: {
             url: 'http://blah.com/icon.jpg',
             height: 30,
@@ -388,12 +618,29 @@ describe('Improve Digital Adapter Tests', function () {
           clickUrl: 'http://advertiser.com',
           clickTrackers: ['http://click.tracker.com/click?impid=123'],
           impressionTrackers: [
-            'http://ad.360yield.com/imp_pixel?ic=wVm',
+            'http://ice.360yield.com/imp_pixel?ic=wVm',
             'http://imptrack1.com',
             'http://imptrack2.com'
           ],
-          javascriptTrackers: '<script src=\"http://www.foobar.js\"></script>'
+          javascriptTrackers: '<script src=\"http://www.foobar.js\"></script>',
+          privacyLink: 'https://www.myprivacyurl.com'
         }
+      }
+    ];
+
+    let expectedBidVideo = [
+      {
+        'vastXml': '<VAST></VAST>',
+        'adId': '33e9500b21129f',
+        'creativeId': '422031',
+        'cpm': 1.45888594164456,
+        'currency': 'USD',
+        'height': 290,
+        'mediaType': 'video',
+        'netRevenue': false,
+        'requestId': '33e9500b21129f',
+        'ttl': 300,
+        'width': 600
       }
     ];
 
@@ -494,8 +741,29 @@ describe('Improve Digital Adapter Tests', function () {
 
     // Native ads
     it('should return a well-formed native ad bid', function () {
-      const bids = spec.interpretResponse(serverResponseNative);
+      let bids = spec.interpretResponse(serverResponseNative);
+      expect(bids[0].ortbNative).to.deep.equal(serverResponseNative.body.bid[0].native);
+      delete bids[0].ortbNative;
       expect(bids).to.deep.equal(expectedBidNative);
+
+      // eventtrackers
+      const response = JSON.parse(JSON.stringify(serverResponseNative));
+      const expectedBids = JSON.parse(JSON.stringify(expectedBidNative));
+      response.body.bid[0].native.eventtrackers = nativeEventtrackers;
+      expectedBids[0].native.impressionTrackers = [
+        'http://ice.360yield.com/imp_pixel?ic=wVm',
+        'http://www.mytracker.com/imptracker'
+      ];
+      expectedBids[0].native.javascriptTrackers = '<script src=\"http://www.mytracker.com/tracker.js\"></script>';
+      bids = spec.interpretResponse(response);
+      delete bids[0].ortbNative;
+      expect(bids).to.deep.equal(expectedBids);
+    });
+
+    // Video
+    it('should return a well-formed video bid', function () {
+      const bids = spec.interpretResponse(serverResponseVideo);
+      expect(bids).to.deep.equal(expectedBidVideo);
     });
   });
 

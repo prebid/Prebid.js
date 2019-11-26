@@ -114,7 +114,7 @@ describe('Renderer', function () {
       $$PREBID_GLOBAL$$.adUnits = [{
         code: 'video1',
         renderer: {
-          url: 'http://cdn.adnxs.com/renderer/video/ANOutstreamVideo.js',
+          url: 'http://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js',
           render: sinon.spy()
         }
       }]

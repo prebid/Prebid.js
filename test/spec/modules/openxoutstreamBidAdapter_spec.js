@@ -13,12 +13,6 @@ describe('OpenXOutstreamAdapter', function () {
   const CR_ID = '2052941939925262540';
   const AD_ID = '1991358644725162800';
 
-  describe('inherited functions', function () {
-    it('exists and is a function', function () {
-      expect(adapter.callBids).to.exist.and.to.be.a('function');
-    });
-  });
-
   describe('isBidRequestValid', function () {
     describe('when request is for a banner ad', function () {
       let bannerBid;
@@ -80,8 +74,10 @@ describe('OpenXOutstreamAdapter', function () {
       'auctionId': '1d1a030790a475'
     }];
 
+    const mockBidderRequest = {refererInfo: {}};
+
     it('should send bid request to openx url via GET, with mediaType specified as banner', function () {
-      const request = spec.buildRequests(bidRequestsWithMediaType);
+      const request = spec.buildRequests(bidRequestsWithMediaType, mockBidderRequest);
       const params = bidRequestsWithMediaType[0].params;
       expect(request[0].url).to.equal(`https://` + params.delDomain + URLBASE);
       expect(request[0].method).to.equal('GET');
@@ -92,12 +88,11 @@ describe('OpenXOutstreamAdapter', function () {
         'bidder': BIDDER,
         'params': {
           'unit': '540141567',
-          'height': '300',
+          'height': '200',
           'width': '250',
           'delDomain': 'test-del-domain'
         },
         'adUnitCode': 'adunit-code',
-        sizes: [300, 250],
         mediaTypes: {
           banner: {
             sizes: [[728, 90]]
@@ -112,7 +107,6 @@ describe('OpenXOutstreamAdapter', function () {
           'delDomain': 'test-del-domain'
         },
         'adUnitCode': 'adunit-code',
-        'sizes': [300, 250],
         mediaTypes: {
           banner: {
             sizes: [[300, 250], [300, 600]]
@@ -122,10 +116,13 @@ describe('OpenXOutstreamAdapter', function () {
         'bidderRequestId': 'test-bid-request-1',
         'auctionId': 'test-auction-1'
       }];
-      const request = spec.buildRequests(bidRequestsWithUnitIds);
+      const request = spec.buildRequests(bidRequestsWithUnitIds, mockBidderRequest);
       expect(request[0].data.auid).to.equal(`${bidRequestsWithUnitIds[0].params.unit}`);
-      expect(request[0].data.vht).to.equal(`${bidRequestsWithUnitIds[0].params.height}`);
-      expect(request[0].data.vwd).to.equal(`${bidRequestsWithUnitIds[0].params.width}`);
+      expect(request[0].data.vht).to.not.equal(`${bidRequestsWithUnitIds[0].params.height}`);
+      expect(request[0].data.vwd).to.not.equal(`${bidRequestsWithUnitIds[0].params.width}`);
+      expect(request[0].data.vht).to.equal('184');
+      expect(request[0].data.vwd).to.equal('414');
+      expect(request[0].data.aus).to.equal('304x184%7C412x184%7C375x184%7C414x184');
     });
 
     describe('interpretResponse', function () {
@@ -207,7 +204,8 @@ describe('OpenXOutstreamAdapter', function () {
   }
   const getTemplateAdResponse = (vastUrl) => {
     return {
-      availability_zone: 'us-east-1a',
+      loader: 'openxoutstream',
+      availability_zone: '',
       data: [
         {
           ads: [

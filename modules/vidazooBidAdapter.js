@@ -1,7 +1,7 @@
 import * as utils from '../src/utils';
 import {registerBidder} from '../src/adapters/bidderFactory';
 import {BANNER} from '../src/mediaTypes';
-export const URL = '//prebid.nininin.com';
+export const URL = '//prebid.cootlogix.com';
 const BIDDER_CODE = 'vidazoo';
 const CURRENCY = 'USD';
 const TTL_SECONDS = 60 * 5;
@@ -29,7 +29,7 @@ function buildRequest(bid, topWindowUrl, size, bidderRequest) {
     method: 'GET',
     url: `${URL}/prebid/${cId}`,
     data: {
-      url: topWindowUrl,
+      url: encodeURIComponent(topWindowUrl),
       cb: Date.now(),
       bidFloor: bidFloor,
       bidId: bidId,
@@ -38,7 +38,7 @@ function buildRequest(bid, topWindowUrl, size, bidderRequest) {
       width,
       height
     }
-  }
+  };
 
   utils._each(ext, (value, key) => {
     dto.data['ext.' + key] = value;
@@ -48,7 +48,7 @@ function buildRequest(bid, topWindowUrl, size, bidderRequest) {
 }
 
 function buildRequests(validBidRequests, bidderRequest) {
-  const topWindowUrl = utils.getTopWindowUrl();
+  const topWindowUrl = bidderRequest.refererInfo.referer;
   const requests = [];
   validBidRequests.forEach(validBidRequest => {
     const sizes = utils.parseSizesInput(validBidRequest.sizes);
@@ -92,7 +92,7 @@ function getUserSyncs(syncOptions, responses) {
   if (iframeEnabled) {
     return [{
       type: 'iframe',
-      url: '//static.nininin.com/basev/sync/user_sync.html'
+      url: '//static.cootlogix.com/basev/sync/user_sync.html'
     }];
   }
 
