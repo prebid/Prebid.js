@@ -87,13 +87,6 @@ function adResponse(bid, ad) {
     adhese: {
       creativeId: adDetails.creativeId,
       dealId: adDetails.dealId,
-      priority: adDetails.priority,
-      orderProperty: adDetails.orderProperty,
-      adFormat: adDetails.adFormat,
-      adType: adDetails.adType,
-      adspaceId: adDetails.adspaceId,
-      libId: adDetails.libId,
-      viewableImpressionCounter: adDetails.viewableImpressionCounter,
       originData: adDetails.originData
     }
   });
@@ -148,7 +141,7 @@ function getbaseAdResponse(response) {
 }
 
 function isAdheseAd(ad) {
-  return !ad.origin || ad.origin === 'JERLICIA' || ad.origin === 'DALE';
+  return !ad.origin || ad.origin === 'JERLICIA';
 }
 
 function getMediaType(markup) {
@@ -174,38 +167,27 @@ function getPrice(ad) {
 function getAdDetails(ad) {
   let creativeId = '';
   let dealId = '';
-  let priority = -1;
-  let orderProperty = {};
-  let adFormat = '';
-  let adType = '';
-  let adspaceId = '';
-  let libId = '';
-  let viewableImpressionCounter = '';
-  let originData = '';
+  let originData = {};
 
   if (isAdheseAd(ad)) {
     creativeId = ad.id;
     dealId = ad.orderId;
-    priority = ad.priority;
-    orderProperty = ad.orderProperty;
-    adFormat = ad.adFormat;
-    adType = ad.adType;
-    libId = ad.libId;
-    adspaceId = ad.adspaceId;
-    viewableImpressionCounter = ad.viewableImpressionCounter;
+    originData =  { priority: ad.priority, orderProperty: ad.orderProperty, adFormat: ad.adFormat, adType: ad.adType, libId: ad.libId, adspaceId: ad.adspaceId, viewableImpressionCounter: ad.viewableImpressionCounter };
   } else {
     creativeId = ad.origin + (ad.originInstance ? '-' + ad.originInstance : '');
-    if (ad.originData && ad.originData.seatbid && ad.originData.seatbid.length) {
+    if (ad.originData) {
       originData = ad.originData;
-      const seatbid = ad.originData.seatbid[0];
-      if (seatbid.bid && seatbid.bid.length) {
-        const bid = seatbid.bid[0];
-        creativeId = String(bid.crid || '');
-        dealId = String(bid.dealid || '');
+      if (ad.originData.seatbid && ad.originData.seatbid.length) {
+        const seatbid = ad.originData.seatbid[0];
+        if (seatbid.bid && seatbid.bid.length) {
+          const bid = seatbid.bid[0];
+          creativeId = String(bid.crid || '');
+          dealId = String(bid.dealid || '');
+        }
       }
     }
   }
-  return { creativeId: creativeId, dealId: dealId, priority: priority, orderProperty: orderProperty, adFormat: adFormat, adType: adType, libId: libId, adspaceId: adspaceId, viewableImpressionCounter: viewableImpressionCounter, originData: originData };
+  return { creativeId: creativeId, dealId: dealId, originData: originData };
 }
 
 function base64urlEncode(s) {
