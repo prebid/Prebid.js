@@ -7,7 +7,7 @@ const TIME_TO_LIVE = 300;
 const NET_REVENUE = true;
 const SYNC_ENDPOINT = 'https://static.yieldmo.com/blank.min.html?orig=';
 const SERVER_ENDPOINT = 'https://ads.yieldmo.com/exchange/prebid';
-const localWindow = getTopWindow();
+const localWindow = utils.getWindowTop();
 
 export const spec = {
   code: BIDDER_CODE,
@@ -177,14 +177,6 @@ function getPageDescription() {
     return document.querySelector('meta[name="description"]').getAttribute('content'); // Value of the description metadata from the publisher's page.
   } else {
     return '';
-  }
-}
-
-function getTopWindow() {
-  try {
-    return window.top;
-  } catch (e) {
-    return window;
   }
 }
 
