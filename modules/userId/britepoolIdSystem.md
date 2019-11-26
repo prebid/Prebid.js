@@ -40,4 +40,3 @@ The below parameters apply only to the BritePool User ID Module integration.
 | storage.name | Required | String | The name of the cookie or html5 local storage where the user ID will be stored. | `"britepoolid"` |
 | storage.expires | Optional | Integer | How long (in days) the user ID information will be stored. | `365` |
 | value | Optional | Object | Used only if the page has a separate mechanism for storing the BritePool ID. The value is an object containing the values to be sent to the adapters. In this scenario, no URL is called and nothing is added to local storage | `{"primaryBPID": "fd56yui-dvff-v5gbgtgg-4t55-45fggtgt5ttv"}` |
-
