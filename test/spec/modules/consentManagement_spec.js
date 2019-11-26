@@ -28,17 +28,17 @@ describe.only('consentManagement', function () {
       });
 
       it('should use system default values', function () {
-        setConsentConfig({});
+        setConsentConfig({}, 'gdpr');
         expect(userCMP).to.be.equal('iab');
         expect(consentTimeout).to.be.equal(10000);
         expect(allowAuction).to.be.true;
-        sinon.assert.callCount(utils.logInfo, 5);
+        sinon.assert.callCount(utils.logInfo, 4);
       });
 
       it('should use system default values for USP', function () {
         setConsentConfig({}, 'usp');
         expect(consentTimeoutUSP).to.be.equal(50);
-        sinon.assert.callCount(utils.logInfo, 5);
+        sinon.assert.callCount(utils.logInfo, 4);
       });
     });
 
@@ -51,7 +51,8 @@ describe.only('consentManagement', function () {
         let allConfig = {
           cmpApi: 'iab',
           timeout: 7500,
-          allowAuctionWithoutConsent: false
+          allowAuctionWithoutConsent: false,
+          consentAPIs: ['gdpr']
         };
 
         setConsentConfig(allConfig);
@@ -71,6 +72,7 @@ describe.only('consentManagement', function () {
           cmpApi: 'static',
           timeout: 7500,
           allowAuctionWithoutConsent: false,
+          consentAPIs: ['static'],
           consentData: {
             getConsentData: {
               'gdprApplies': true,
@@ -462,7 +464,7 @@ describe.only('consentManagement', function () {
           }
         };
 
-        setConsentConfig(staticConfig);
+        setConsentConfig(staticConfig, 'static');
         expect(userCMP).to.be.equal('static');
         expect(consentTimeout).to.be.equal(0); // should always return without a timeout when config is used
         expect(allowAuction).to.be.false;
@@ -475,13 +477,15 @@ describe.only('consentManagement', function () {
     let goodConfigWithCancelAuction = {
       cmpApi: 'iab',
       timeout: 7500,
-      allowAuctionWithoutConsent: false
+      allowAuctionWithoutConsent: false,
+      consentAPIs: ['gdpr']
     };
 
     let goodConfigWithAllowAuction = {
       cmpApi: 'iab',
       timeout: 7500,
-      allowAuctionWithoutConsent: true
+      allowAuctionWithoutConsent: true,
+      consentAPIs: ['gdpr']
     };
 
     let didHookReturn;
@@ -510,7 +514,7 @@ describe.only('consentManagement', function () {
         let badCMPConfig = {
           cmpApi: 'bad'
         };
-        setConsentConfig(badCMPConfig);
+        setConsentConfig(badCMPConfig, 'bad');
         expect(userCMP).to.be.equal(badCMPConfig.cmpApi);
 
         requestBidsHook(() => {
@@ -523,11 +527,11 @@ describe.only('consentManagement', function () {
       });
 
       it('should throw proper errors when CMP is not found', function () {
-        setConsentConfig(goodConfigWithCancelAuction);
+        setConsentConfig(goodConfigWithCancelAuction, 'gdpr');
 
         requestBidsHook(() => {
           didHookReturn = true;
-        }, {});
+        }, {}, 'gdpr');
         let consent = gdprDataHandler.getConsentData();
         // throw 2 errors; one for no bidsBackHandler and for CMP not being found (this is an error due to gdpr config)
         sinon.assert.calledTwice(utils.logError);
@@ -561,7 +565,7 @@ describe.only('consentManagement', function () {
         cmpStub = sinon.stub(window, '__cmp').callsFake((...args) => {
           args[2](testConsentData);
         });
-        setConsentConfig(goodConfigWithAllowAuction);
+        setConsentConfig(goodConfigWithAllowAuction, 'gdpr');
         requestBidsHook(() => {}, {});
         cmpStub.restore();
 
@@ -625,7 +629,7 @@ describe.only('consentManagement', function () {
           args[2](testConsentData.data.msgName, testConsentData.data);
         });
 
-        setConsentConfig(goodConfigWithAllowAuction);
+        setConsentConfig(goodConfigWithAllowAuction, 'gdpr');
         requestBidsHook(() => {
           didHookReturn = true;
         }, {adUnits: [{ sizes: [[300, 250]] }]});
@@ -699,7 +703,7 @@ describe.only('consentManagement', function () {
       function testIFramedPage(testName, messageFormatString) {
         it(`should return the consent string from a postmessage + addEventListener response - ${testName}`, (done) => {
           stringifyResponse = messageFormatString;
-          setConsentConfig(goodConfigWithAllowAuction);
+          setConsentConfig(goodConfigWithAllowAuction, 'gdpr');
           requestBidsHook(() => {
             let consent = gdprDataHandler.getConsentData();
             sinon.assert.notCalled(utils.logWarn);
@@ -712,7 +716,7 @@ describe.only('consentManagement', function () {
       }
     });
 
-    describe('CCPA workflow for iframed page', function () {
+    describe('USP workflow for iframed page', function () {
       let ifr = null;
       let stringifyResponse = false;
 
@@ -814,7 +818,7 @@ describe.only('consentManagement', function () {
           args[2](testConsentData);
         });
 
-        setConsentConfig(goodConfigWithAllowAuction);
+        setConsentConfig(goodConfigWithAllowAuction, 'gdpr');
 
         requestBidsHook(() => {
           didHookReturn = true;
@@ -828,7 +832,7 @@ describe.only('consentManagement', function () {
         expect(consent.gdprApplies).to.be.true;
       });
 
-      it('CCPA: performs lookup check and stores consentData for a valid existing user', function () {
+      it('USP: performs lookup check and stores consentData for a valid existing user', function () {
         let testConsentData = {
           consentString: '1YY'
         };
@@ -860,7 +864,7 @@ describe.only('consentManagement', function () {
           args[2](testConsentData);
         });
 
-        setConsentConfig(goodConfigWithCancelAuction);
+        setConsentConfig(goodConfigWithCancelAuction, 'gdpr');
 
         requestBidsHook(() => {
           didHookReturn = true;
@@ -880,7 +884,7 @@ describe.only('consentManagement', function () {
           args[2](testConsentData);
         });
 
-        setConsentConfig(goodConfigWithAllowAuction);
+        setConsentConfig(goodConfigWithAllowAuction, 'gdpr');
 
         requestBidsHook(() => {
           didHookReturn = true;

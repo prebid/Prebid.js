@@ -10,7 +10,6 @@ import { gdprDataHandler, ccpaDataHandler } from '../src/adapterManager';
 import includes from 'core-js/library/fn/array/includes';
 import strIncludes from 'core-js/library/fn/string/includes';
 
-const DEFAULT_CMP = 'iab';
 const DEFAULT_CONSENT_TIMEOUT = 10000;
 const DEFAULT_CONSENT_TIMEOUT_USP = 50;
 const DEFAULT_ALLOW_AUCTION_WO_CONSENT = true;
@@ -512,14 +511,21 @@ export function resetConsentData() {
  * @param {object} config required; consentManagement module config settings; cmp (string), timeout (int), allowAuctionWithoutConsent (boolean)
  */
 export function setConsentConfig(config, consentModule) {
-  if (utils.isStr(config.cmpApi)) {
-    userCMP = config.cmpApi;
-  } else {
-    userCMP = DEFAULT_CMP;
-    utils.logInfo(`consentManagement config did not specify cmp.  Using system default setting (${DEFAULT_CMP}).`);
+  if (consentModule) {
+    if (['gdpr', 'iab'].includes(consentModule)) {
+      userCMP = 'iab';
+    }
+
+    if (consentModule === 'static') {
+      userCMP = 'static';
+    }
+
+    if (!['gdpr', 'iab', 'static', 'usp'].includes(consentModule) && consentModule) {
+      userCMP = consentModule;
+    }
   }
 
-  if (utils.isNumber(config.timeout))  {
+  if (utils.isNumber(config.timeout)) {
     consentTimeout = config.timeout;
   } else {
     consentTimeout = DEFAULT_CONSENT_TIMEOUT;
@@ -556,7 +562,7 @@ export function setConsentConfig(config, consentModule) {
     addedConsentHookUSP = true;
   }
 
-  if (!addedConsentHook && consentModule !== 'usp') {
+  if (!addedConsentHook && consentModule === 'gdpr') {
     $$PREBID_GLOBAL$$.requestBids.before(requestBidsHook, 50);
     addedConsentHook = true;
   }
@@ -565,6 +571,5 @@ export function setConsentConfig(config, consentModule) {
 config.getConfig('consentManagement', config => {
   const consentManagement = { ...config.consentManagement };
   const consentChecks = consentManagement.consentAPIs ? new Set([...consentManagement.consentAPIs]) : new Set([]);
-  if (utils.isStr(config.cmpApi)) consentChecks.add('iab');
   [...consentChecks].map(module => setConsentConfig(consentManagement, module));
 });
