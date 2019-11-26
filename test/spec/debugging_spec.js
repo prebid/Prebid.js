@@ -64,8 +64,6 @@ describe('bid overrides', function () {
   describe('hook', function () {
     let mockBids;
     let bids;
-    let mockBidRequests;
-    let bidRequests;
 
     beforeEach(function () {
       let baseBid = {
@@ -98,26 +96,6 @@ describe('bid overrides', function () {
         addBidResponseHook.bind(overrides)(next, bid.adUnitCode, bid);
       });
     }
-
-    describe('bidRequest', function () {
-      function runBidRequestHook(overrides) {
-        mockBidRequests.forEach(bidRequest => {
-          let next = (bidRequest) => {
-            bidRequests.push(bidRequest);
-          };
-          addBidRequestHook.bind(overrides)(next, bidRequest);
-        })
-      }
-
-      it('should allow us to exclude bidders', function () {
-        runBidRequestHook({
-          enabled: true,
-          bids: [{
-            cpm: 2
-          }]
-        });
-      });
-    })
 
     it('should allow us to exclude bidders', function () {
       run({

@@ -5,23 +5,7 @@ import { addBidRequest, addBidResponse } from './auction';
 
 const OVERRIDE_KEY = '$$PREBID_GLOBAL$$:debugging';
 
-/**
- * @todo update debugging sub-system so that it reads debugging.bidRequests and updates the bidRequest object
- * Make this a general hook so any value after bidder+adUnitCode gets merged into the bidRequest Object.
- *
- * 2. update Rubicon bid adapter to look in the bidRequest and pass SRID through to PBS video requests
- *
- * 3. update pbsBidAdapter to look for the debugging info and pass it through to PBS.
- `* Which would end up setting imp.ext.prebid.storedauctionresponse before sending to PBS.
- *
- * ISSUE PBS, PBJS Changes
- * In order to utilize this feature,
- * the PrebidServerBidAdapter in Prebid.js could to be updated to pass the storedauctionrequestid and/or storedbidrequestid in the openrtb field(s).
- * e.g. We may be able to have a simple invocation mechanism like adding a pbjs_stored_auction_response_id=111111111 to the page's query string.
- * Or perhaps we can utilize the existing pbjs.setConfig("debugging") functionality. This feature will be worked out at a later time.
- */
 export let boundBidRequestsHook;
-
 export let boundBidResponseHook;
 
 function logMessage(msg) {
@@ -33,8 +17,12 @@ function logWarn(msg) {
 }
 
 function removeHook() {
-  addBidResponse.getHooks({hook: boundBidResponseHook}).remove();
-  addBidRequest.getHooks({hook: boundBidRequestsHook}).remove();
+  if (boundBidResponseHook) {
+    addBidResponse.getHooks({hook: boundBidResponseHook}).remove();
+  }
+  if (boundBidRequestsHook) {
+    addBidRequest.getHooks({hook: boundBidRequestsHook}).remove();
+  }
 }
 
 function enableOverrides(overrides, fromSession = false) {
@@ -55,7 +43,7 @@ export function disableOverrides() {
   logMessage('bidder overrides disabled');
 }
 
-export function addBidResponseHook(next, adUnitCode, bid, bidRequests) {
+export function addBidResponseHook(next, adUnitCode, bid) {
   let overrides = this;
   if (Array.isArray(overrides.bidders) && overrides.bidders.indexOf(bid.bidderCode) === -1) {
     logWarn(`bidder '${bid.bidderCode}' excluded from auction by bidder overrides`);
@@ -84,27 +72,37 @@ export function addBidResponseHook(next, adUnitCode, bid, bidRequests) {
   next(adUnitCode, bid);
 }
 
-export function addBidRequestHook(next, adUnitCode, bidRequest) {
+export function addBidRequestHook(next, bidRequests) {
   const overrides = this;
-  if (Array.isArray(overrides.bidRequests)) {
-    overrides.bidRequests.forEach(overrideBidRequest => {
-      if (overrideBidRequest.bidderCode && overrideBidRequest.bidderCode !== bidRequest.bidderCode) {
-        return;
-      }
-      if (overrideBidRequest.adUnitCode && overrideBidRequest.adUnitCode !== bidRequest.adUnitCode) {
-        return;
-      }
-
-      bidRequest = Object.assign({}, bidRequest);
-
-      Object.keys(overrideBidRequest).filter(key => ['bidderCode', 'adUnitCode'].indexOf(key) === -1).forEach(key => {
-        bidRequest[key] = overrideBidRequest[key];
-        logMessage(`debug bidRequest override: ${key}=${bidRequest[key]}`);
-      });
-    });
+  if (!Array.isArray(overrides.bidRequests)) {
+    next(bidRequests);
+    return;
   }
 
-  next(bidRequest);
+  bidRequests.forEach(bidRequest => {
+    if (Array.isArray(overrides.bidders) && overrides.bidders.indexOf(bidRequest.bidderCode) === -1) {
+      logWarn(`bidRequest '${bidRequest.bidderCode}' excluded from auction by bidder overrides`);
+      return;
+    }
+
+    bidRequest.bids.forEach(bid => {
+      overrides.bidRequests.forEach(override => {
+        if (override.bidder && override.bidder !== bidRequest.bidderCode) {
+          return;
+        }
+        if (override.adUnitCode && override.adUnitCode !== bid.adUnitCode) {
+          return;
+        }
+
+        Object.keys(override).filter(key => (['adUnitCode', 'bidder'].indexOf(key) === -1)).forEach(key => {
+          bid[key] = override[key];
+          logMessage(`debug bidRequest override: ${key}=${override[key]}`);
+        });
+      });
+    });
+  });
+
+  next(bidRequests);
 }
 
 export function getConfig(debugging) {
