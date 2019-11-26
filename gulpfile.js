@@ -341,7 +341,7 @@ gulp.task('build', gulp.series(clean, 'build-bundle-prod'));
 gulp.task('build-postbid', gulp.series(escapePostbidConfig, buildPostbid));
 
 gulp.task('mockserver', function() {
-  return gulp.src(prebidLocation)
+  return gulp.src('./')
     .pipe(shell('node ./test/mock-server/index.js --port='+mockServerPort, function (err, stdout, stderr) {
       console.log(stdout);
       console.log(stderr);

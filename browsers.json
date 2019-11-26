@@ -1,28 +1,4 @@
 {
-  "bs_edge_17_windows_10": {
-    "base": "BrowserStack",
-    "os_version": "10",
-    "browser": "edge",
-    "browser_version": "17.0",
-    "device": null,
-    "os": "Windows"
-  },
-  "bs_edge_16_windows_10": {
-    "base": "BrowserStack",
-    "os_version": "10",
-    "browser": "edge",
-    "browser_version": "16.0",
-    "device": null,
-    "os": "Windows"
-  },
-  "bs_ie_11_windows_10": {
-    "base": "BrowserStack",
-    "os_version": "10",
-    "browser": "ie",
-    "browser_version": "11.0",
-    "device": null,
-    "os": "Windows"
-  },
   "bs_chrome_74_windows_10": {
     "base": "BrowserStack",
     "os_version": "10",
@@ -38,37 +14,5 @@
     "browser_version": "75.0",
     "device": null,
     "os": "Windows"
-  },
-  "bs_firefox_66_windows_10": {
-    "base": "BrowserStack",
-    "os_version": "10",
-    "browser": "firefox",
-    "browser_version": "66.0",
-    "device": null,
-    "os": "Windows"
-  },
-  "bs_firefox_67_windows_10": {
-    "base": "BrowserStack",
-    "os_version": "10",
-    "browser": "firefox",
-    "browser_version": "67.0",
-    "device": null,
-    "os": "Windows"
-  },
-  "bs_safari_11_mac_high_sierra": {
-    "base": "BrowserStack",
-    "os_version": "High Sierra",
-    "browser": "safari",
-    "browser_version": "11.1",
-    "device": null,
-    "os": "OS X"
-  },
-  "bs_safari_12_mac_mojave": {
-    "base": "BrowserStack",
-    "os_version": "Mojave",
-    "browser": "safari",
-    "browser_version": "12.0",
-    "device": null,
-    "os": "OS X"
   }
 }
