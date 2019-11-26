@@ -6,18 +6,18 @@ import {config} from 'src/config';
 describe('OneVideoBidAdapter', function () {
   let bidRequest;
   let bidderRequest = {
-        'bidderCode': 'oneVideo',
-        'auctionId': 'e158486f-8c7f-472f-94ce-b0cbfbb50ab4',
-        'bidderRequestId': '1e498b84fffc39',
-        'bids': bidRequest,
-        'auctionStart': 1520001292880,
-        'timeout': 3000,
-        'start': 1520001292884,
-        'doneCbCallCount': 0,
-        'refererInfo': {
-        'numIframes': 1,
-        'reachedTop': true,
-        'referer': 'test.com'
+    'bidderCode': 'oneVideo',
+    'auctionId': 'e158486f-8c7f-472f-94ce-b0cbfbb50ab4',
+    'bidderRequestId': '1e498b84fffc39',
+    'bids': bidRequest,
+    'auctionStart': 1520001292880,
+    'timeout': 3000,
+    'start': 1520001292884,
+    'doneCbCallCount': 0,
+    'refererInfo': {
+      'numIframes': 1,
+      'reachedTop': true,
+      'referer': 'test.com'
     }
   };
   let mockConfig;
