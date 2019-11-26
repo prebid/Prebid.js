@@ -371,6 +371,7 @@ describe('triplelift adapter', function () {
 
     it('returns undefined when syncing is not enabled', function() {
       expect(tripleliftAdapterSpec.getUserSyncs({})).to.equal(undefined);
+      expect(tripleliftAdapterSpec.getUserSyncs()).to.equal(undefined);
     });
 
     it('returns iframe user sync pixel when iframe syncing is enabled', function() {
