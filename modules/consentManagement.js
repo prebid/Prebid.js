@@ -6,7 +6,7 @@
  */
 import * as utils from '../src/utils';
 import { config } from '../src/config';
-import { gdprDataHandler } from '../src/adapterManager';
+import { gdprDataHandler, ccpaDataHandler } from '../src/adapterManager';
 import includes from 'core-js/library/fn/array/includes';
 import strIncludes from 'core-js/library/fn/string/includes';
 
@@ -22,9 +22,19 @@ export let staticConsentData;
 let consentData;
 let addedConsentHook = false;
 
+// ccpa constants
+export let userCCPA;
+export let consentTimeoutCCPA;
+
+// ccpa globals
+let consentDataCCPA;
+let addedConsentHookCCPA = false;
+
 // add new CMPs here, with their dedicated lookup function
 const cmpCallMap = {
   'iab': lookupIabConsent,
+  'gdpr': lookupIabConsent,
+  'ccpa': lookupCcpaConsent,
   'static': lookupStaticConsentData
 };
 
@@ -182,6 +192,138 @@ function lookupIabConsent(cmpSuccess, cmpError, hookConfig) {
   }
 }
 
+function lookupCcpaConsent(ccpaSucess, cmpError, hookConfig) {
+  function handleCmpResponseCallbacks() {
+    const ccpaResponse = {};
+
+    function afterEach() {
+      if (ccpaResponse.consentString) {
+        ccpaSucess(ccpaResponse, hookConfig);
+      }
+    }
+
+    return {
+      consentDataCallback: function (consentResponse) {
+        ccpaResponse.consentString = consentResponse.consentString;
+        afterEach();
+      }
+    }
+  }
+
+  let callbackHandler = handleCmpResponseCallbacks();
+  let uspapiCallbacks = {};
+  let ccpaFunction;
+
+  // to collect the consent information from the user, we perform two calls to the CMP in parallel:
+  // first to collect the user's consent choices represented in an encoded string (via getConsentData)
+  // second to collect the user's full unparsed consent information (via getVendorConsents)
+
+  // the following code also determines where the CMP is located and uses the proper workflow to communicate with it:
+  // check to see if CMP is found on the same window level as prebid and call it directly if so
+  // check to see if prebid is in a safeframe (with CMP support)
+  // else assume prebid may be inside an iframe and use the IAB CMP locator code to see if CMP's located in a higher parent window. this works in cross domain iframes
+  // if the CMP is not found, the iframe function will call the cmpError exit callback to abort the rest of the CMP workflow
+  try {
+    ccpaFunction = window.__uspapi || utils.getWindowTop().__uspapi;
+  } catch (e) { }
+
+  if (utils.isFn(ccpaFunction)) {
+    ccpaFunction('getConsentData', null, callbackHandler.consentDataCallback);
+  } else if (inASafeFrame() && typeof window.$sf.ext.uspapi === 'function') {
+    callCcpaWhileInSafeFrame('getConsentData', callbackHandler.consentDataCallback);
+  } else {
+    // find the CMP frame
+    let f = window;
+    let ccpaFrame;
+    while (!ccpaFrame) {
+      try {
+        if (f.frames['__uspapiLocator']) ccpaFrame = f;
+      } catch (e) { }
+      if (f === window.top) break;
+      f = f.parent;
+    }
+
+    if (!ccpaFrame) {
+      return cmpError('CCPA not found.', hookConfig);
+    }
+
+    callCcpaWhileInIframe('getConsentData', ccpaFrame, callbackHandler.consentDataCallback);
+  }
+
+  function inASafeFrame() {
+    return !!(window.$sf && window.$sf.ext);
+  }
+
+  function callCcpaWhileInSafeFrame(commandName, callback) {
+    function sfCallback(msgName, data) {
+      if (msgName === 'cmpReturn') {
+        let responseObj = (commandName === 'getConsentData') ? data.vendorConsentData : data.vendorConsents;
+        callback(responseObj);
+      }
+    }
+
+    // find sizes from adUnits object
+    let adUnits = hookConfig.adUnits;
+    let width = 1;
+    let height = 1;
+    if (Array.isArray(adUnits) && adUnits.length > 0) {
+      let sizes = utils.getAdUnitSizes(adUnits[0]);
+      width = sizes[0][0];
+      height = sizes[0][1];
+    }
+
+    window.$sf.ext.register(width, height, sfCallback);
+    window.$sf.ext.ccpa(commandName);
+  }
+
+  function callCcpaWhileInIframe(commandName, ccpaFrame, moduleCallback) {
+    /* Setup up a __ccpa function to do the postMessage and stash the callback.
+      This function behaves (from the caller's perspective identicially to the in-frame __ccpa call */
+    window.__uspapi = function (cmd, ver, callback) {
+      let callId = Math.random() + '';
+      let msg = {
+        __uspapiCall: {
+          command: cmd,
+          version: ver,
+          callId: callId
+        }
+      };
+      uspapiCallbacks[callId] = callback;
+      ccpaFrame.postMessage(msg, '*');
+    };
+
+    /** when we get the return message, call the stashed callback */
+    window.addEventListener('message', readPostMessageResponse, false);
+
+    // call ccpa
+    window.__uspapi(commandName, 1, ccpaIframeCallback);
+
+    function readPostMessageResponse(event) {
+      let res = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+      if (res.__uspapiReturn && res.__uspapiReturn.callId) {
+        let i = res.__uspapiReturn;
+        if (typeof uspapiCallbacks[i.callId] !== 'undefined') {
+          uspapiCallbacks[i.callId](i.returnValue, i.success);
+          delete uspapiCallbacks[i.callId];
+        }
+      }
+    }
+
+    function removePostMessageListener() {
+      window.removeEventListener('message', readPostMessageResponse, false);
+    }
+
+    function ccpaIframeCallback(consentObject) {
+      removePostMessageListener();
+      moduleCallback(consentObject);
+    }
+  }
+}
+
+export function requestCcpaBidsHook(next, reqBidsConfigObj) {
+  requestBidsHook(next, reqBidsConfigObj, true);
+}
+
 /**
  * If consentManagement module is enabled (ie included in setConfig), this hook function will attempt to fetch the
  * user's encoded consent string from the supported CMP.  Once obtained, the module will store this
@@ -190,7 +332,15 @@ function lookupIabConsent(cmpSuccess, cmpError, hookConfig) {
  * @param {object} reqBidsConfigObj required; This is the same param that's used in pbjs.requestBids.
  * @param {function} fn required; The next function in the chain, used by hook.js
  */
-export function requestBidsHook(fn, reqBidsConfigObj) {
+export function requestBidsHook(fn, reqBidsConfigObj, isCCPA = false) {
+  let userModule = userCMP;
+  let processFn = processCmpData;
+
+  if (isCCPA) {
+    userModule = 'ccpa';
+    processFn = processCcpaData; // @TJ
+  }
+
   // preserves all module related variables for the current auction instance (used primiarily for concurrent auctions)
   const hookConfig = {
     context: this,
@@ -199,7 +349,8 @@ export function requestBidsHook(fn, reqBidsConfigObj) {
     adUnits: reqBidsConfigObj.adUnits || $$PREBID_GLOBAL$$.adUnits,
     bidsBackHandler: reqBidsConfigObj.bidsBackHandler,
     haveExited: false,
-    timer: null
+    timer: null,
+    userModule: userModule
   };
 
   // in case we already have consent (eg during bid refresh)
@@ -207,17 +358,17 @@ export function requestBidsHook(fn, reqBidsConfigObj) {
     return exitModule(null, hookConfig);
   }
 
-  if (!includes(Object.keys(cmpCallMap), userCMP)) {
-    utils.logWarn(`CMP framework (${userCMP}) is not a supported framework.  Aborting consentManagement module and resuming auction.`);
+  if (!includes(Object.keys(cmpCallMap), userModule)) {
+    utils.logWarn(`CMP framework (${userModule}) is not a supported framework.  Aborting consentManagement module and resuming auction.`);
     return hookConfig.nextFn.apply(hookConfig.context, hookConfig.args);
   }
 
-  cmpCallMap[userCMP].call(this, processCmpData, cmpFailed, hookConfig);
+  cmpCallMap[userModule].call(this, processFn, cmpFailed, hookConfig);
 
   // only let this code run if module is still active (ie if the callbacks used by CMPs haven't already finished)
   if (!hookConfig.haveExited) {
     if (consentTimeout === 0) {
-      processCmpData(undefined, hookConfig);
+      processFn(undefined, hookConfig);
     } else {
       hookConfig.timer = setTimeout(cmpTimedOut.bind(null, hookConfig), consentTimeout);
     }
@@ -249,6 +400,17 @@ function processCmpData(consentObject, hookConfig) {
 
     exitModule(null, hookConfig);
   }
+}
+
+function processCcpaData (consentObject, hookConfig) {
+  if (!(consentObject && consentObject.consentString)) {
+    cmpFailed(`CCPA returned unexpected value during lookup process.`, hookConfig, consentObject);
+    return;
+  }
+
+  clearTimeout(hookConfig.timer);
+  storeCcpaConsentData(consentObject);
+  exitModule(null, hookConfig);
 }
 
 /**
@@ -285,6 +447,13 @@ function storeConsentData(cmpConsentObject) {
     gdprApplies: (cmpConsentObject) ? cmpConsentObject.getConsentData.gdprApplies : undefined
   };
   gdprDataHandler.setConsentData(consentData);
+}
+
+function storeCcpaConsentData(consentObject) {
+  consentData = {
+    consentString: consentObject ? consentObject.consentString : undefined
+  };
+  ccpaDataHandler.setConsentData(consentData);
 }
 
 /**
@@ -336,13 +505,14 @@ function exitModule(errMsg, hookConfig, extraArgs) {
 export function resetConsentData() {
   consentData = undefined;
   gdprDataHandler.setConsentData(null);
+  ccpaDataHandler.setConsentData(null);
 }
 
 /**
  * A configuration function that initializes some module variables, as well as add a hook into the requestBids function
  * @param {object} config required; consentManagement module config settings; cmp (string), timeout (int), allowAuctionWithoutConsent (boolean)
  */
-export function setConsentConfig(config) {
+export function setConsentConfig(config, consentModule) {
   if (utils.isStr(config.cmpApi)) {
     userCMP = config.cmpApi;
   } else {
@@ -374,9 +544,21 @@ export function setConsentConfig(config) {
       utils.logError(`consentManagement config with cmpApi: 'static' did not specify consentData. No consents will be available to adapters.`);
     }
   }
-  if (!addedConsentHook) {
-    $$PREBID_GLOBAL$$.requestBids.before(requestBidsHook, 50);
+
+  if (consentModule === 'ccpa' && !addedConsentHookCCPA) {
+    $$PREBID_GLOBAL$$.requestBids.before(requestCcpaBidsHook, 50);
+    addedConsentHookCCPA = true;
   }
-  addedConsentHook = true;
+
+  if (!addedConsentHook && consentModule !== 'ccpa') {
+    $$PREBID_GLOBAL$$.requestBids.before(requestBidsHook, 50);
+    addedConsentHook = true;
+  }
 }
-config.getConfig('consentManagement', config => setConsentConfig(config.consentManagement));
+
+config.getConfig('consentManagement', config => {
+  const consentManagement = { ...config.consentManagement };
+  const consentChecks = consentManagement.consentAPIs ? new Set([...consentManagement.consentAPIs]) : new Set([]);
+  if (utils.isStr(config.cmpApi)) consentChecks.add('iab');
+  [...consentChecks].map(module => setConsentConfig(consentManagement, module));
+});

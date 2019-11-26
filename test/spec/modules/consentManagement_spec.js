@@ -1,5 +1,13 @@
-import {setConsentConfig, requestBidsHook, resetConsentData, userCMP, consentTimeout, allowAuction, staticConsentData} from 'modules/consentManagement';
-import {gdprDataHandler} from 'src/adapterManager';
+import {
+  setConsentConfig,
+  requestBidsHook,
+  resetConsentData,
+  userCMP,
+  consentTimeout,
+  allowAuction,
+  staticConsentData,
+} from 'modules/consentManagement';
+import {gdprDataHandler, ccpaDataHandler} from 'src/adapterManager';
 import * as utils from 'src/utils';
 import { config } from 'src/config';
 
@@ -43,6 +51,17 @@ describe('consentManagement', function () {
         expect(userCMP).to.be.equal('iab');
         expect(consentTimeout).to.be.equal(7500);
         expect(allowAuction).to.be.false;
+
+        setConsentConfig({
+          'allowAuction': true
+        });
+      });
+    });
+
+    describe('valid setConfigConsent value for CCPA', function() {
+      afterEach(function () {
+        config.resetConfig();
+        $$PREBID_GLOBAL$$.requestBids.removeAll();
       });
     });
 
@@ -697,6 +716,77 @@ describe('consentManagement', function () {
       }
     });
 
+    describe('CCPA workflow for iframed page', function () {
+      let ifr = null;
+      let stringifyResponse = false;
+
+      beforeEach(function () {
+        sinon.stub(utils, 'logError');
+        sinon.stub(utils, 'logWarn');
+        ifr = createIFrameMarker();
+        window.addEventListener('message', ccpaMessageHandler, false);
+      });
+
+      afterEach(function () {
+        config.resetConfig();
+        $$PREBID_GLOBAL$$.requestBids.removeAll();
+        delete window.__cmp;
+        utils.logError.restore();
+        utils.logWarn.restore();
+        resetConsentData();
+        document.body.removeChild(ifr);
+        window.removeEventListener('message', ccpaMessageHandler);
+      });
+
+      function createIFrameMarker() {
+        var ifr = document.createElement('iframe');
+        ifr.width = 0;
+        ifr.height = 0;
+        ifr.name = '__uspapiLocator';
+        document.body.appendChild(ifr);
+        return ifr;
+      }
+
+      function ccpaMessageHandler(event) {
+        if (event && event.data) {
+          var data = event.data;
+          if (data.__uspapiCall) {
+            var callId = data.__uspapiCall.callId;
+            var response = {
+              __uspapiReturn: {
+                callId,
+                returnValue: { consentString: '1NN' },
+                success: true
+              }
+            };
+            event.source.postMessage(stringifyResponse ? JSON.stringify(response) : response, '*');
+          }
+        }
+      }
+
+      let _goodConfigWithAllowAuction = { ...goodConfigWithAllowAuction };
+      _goodConfigWithAllowAuction.consentAPIs = ['ccpa'];
+
+      // Run tests with JSON response and String response
+      // from CMP window postMessage listener.
+      testIFramedPage('with/JSON response', false);
+      // testIFramedPage('with/String response', true);
+
+      function testIFramedPage(testName, messageFormatString) {
+        it(`should return the consent string from a postmessage + addEventListener response - ${testName}`, (done) => {
+          stringifyResponse = messageFormatString;
+          setConsentConfig(_goodConfigWithAllowAuction, 'ccpa');
+          requestBidsHook(() => {
+            let consent = ccpaDataHandler.getConsentData();
+            sinon.assert.notCalled(utils.logWarn);
+            sinon.assert.notCalled(utils.logError);
+            expect(consent.consentString).to.equal('1NN');
+            done();
+          }, {}, true);
+        });
+      }
+    });
+
     describe('CMP workflow for normal pages:', function () {
       let cmpStub = sinon.stub();
 
@@ -705,6 +795,7 @@ describe('consentManagement', function () {
         sinon.stub(utils, 'logError');
         sinon.stub(utils, 'logWarn');
         window.__cmp = function() {};
+        window.__uspapi = function() {};
       });
 
       afterEach(function () {
@@ -714,6 +805,7 @@ describe('consentManagement', function () {
         utils.logError.restore();
         utils.logWarn.restore();
         delete window.__cmp;
+        delete window.__uspapi;
         resetConsentData();
       });
 
@@ -738,6 +830,30 @@ describe('consentManagement', function () {
         expect(didHookReturn).to.be.true;
         expect(consent.consentString).to.equal(testConsentData.consentData);
         expect(consent.gdprApplies).to.be.true;
+      });
+
+      it('CCPA: performs lookup check and stores consentData for a valid existing user', function () {
+        let testConsentData = {
+          consentString: '1YY'
+        };
+        cmpStub = sinon.stub(window, '__uspapi').callsFake((...args) => {
+          args[2](testConsentData);
+        });
+
+        let _goodConfigWithAllowAuction = { ...goodConfigWithAllowAuction };
+        _goodConfigWithAllowAuction.consentAPIs = ['ccpa'];
+
+        setConsentConfig(_goodConfigWithAllowAuction, 'ccpa');
+
+        requestBidsHook(() => {
+          didHookReturn = true;
+        }, {}, true);
+        let consent = ccpaDataHandler.getConsentData();
+
+        sinon.assert.notCalled(utils.logWarn);
+        sinon.assert.notCalled(utils.logError);
+        expect(didHookReturn).to.be.true;
+        expect(consent.consentString).to.equal(testConsentData.consentString);
       });
 
       it('throws an error when processCmpData check failed while config had allowAuction set to false', function () {

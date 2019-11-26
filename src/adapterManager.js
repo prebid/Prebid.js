@@ -160,6 +160,16 @@ export let gdprDataHandler = {
   }
 };
 
+export let ccpaDataHandler = {
+  consentData: null,
+  setConsentData: function(consentInfo) {
+    ccpaDataHandler.consentData = consentInfo;
+  },
+  getConsentData: function() {
+    return ccpaDataHandler.consentData;
+  }
+};
+
 adapterManager.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTimeout, labels) {
   let bidRequests = [];
 
