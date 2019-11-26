@@ -6,6 +6,7 @@ import {
   consentTimeout,
   allowAuction,
   staticConsentData,
+  consentTimeoutUSP
 } from 'modules/consentManagement';
 import {gdprDataHandler, ccpaDataHandler} from 'src/adapterManager';
 import * as utils from 'src/utils';
@@ -14,7 +15,7 @@ import { config } from 'src/config';
 let assert = require('chai').assert;
 let expect = require('chai').expect;
 
-describe('consentManagement', function () {
+describe.only('consentManagement', function () {
   describe('setConsentConfig tests:', function () {
     describe('empty setConsentConfig value', function () {
       beforeEach(function () {
@@ -31,7 +32,13 @@ describe('consentManagement', function () {
         expect(userCMP).to.be.equal('iab');
         expect(consentTimeout).to.be.equal(10000);
         expect(allowAuction).to.be.true;
-        sinon.assert.callCount(utils.logInfo, 4);
+        sinon.assert.callCount(utils.logInfo, 5);
+      });
+
+      it('should use system default values for USP', function () {
+        setConsentConfig({}, 'usp');
+        expect(consentTimeoutUSP).to.be.equal(50);
+        sinon.assert.callCount(utils.logInfo, 5);
       });
     });
 
@@ -51,17 +58,6 @@ describe('consentManagement', function () {
         expect(userCMP).to.be.equal('iab');
         expect(consentTimeout).to.be.equal(7500);
         expect(allowAuction).to.be.false;
-
-        setConsentConfig({
-          'allowAuction': true
-        });
-      });
-    });
-
-    describe('valid setConfigConsent value for CCPA', function() {
-      afterEach(function () {
-        config.resetConfig();
-        $$PREBID_GLOBAL$$.requestBids.removeAll();
       });
     });
 
@@ -765,7 +761,7 @@ describe('consentManagement', function () {
       }
 
       let _goodConfigWithAllowAuction = { ...goodConfigWithAllowAuction };
-      _goodConfigWithAllowAuction.consentAPIs = ['ccpa'];
+      _goodConfigWithAllowAuction.consentAPIs = ['usp'];
 
       // Run tests with JSON response and String response
       // from CMP window postMessage listener.
@@ -775,7 +771,7 @@ describe('consentManagement', function () {
       function testIFramedPage(testName, messageFormatString) {
         it(`should return the consent string from a postmessage + addEventListener response - ${testName}`, (done) => {
           stringifyResponse = messageFormatString;
-          setConsentConfig(_goodConfigWithAllowAuction, 'ccpa');
+          setConsentConfig(_goodConfigWithAllowAuction, 'usp');
           requestBidsHook(() => {
             let consent = ccpaDataHandler.getConsentData();
             sinon.assert.notCalled(utils.logWarn);
@@ -841,9 +837,9 @@ describe('consentManagement', function () {
         });
 
         let _goodConfigWithAllowAuction = { ...goodConfigWithAllowAuction };
-        _goodConfigWithAllowAuction.consentAPIs = ['ccpa'];
+        _goodConfigWithAllowAuction.consentAPIs = ['usp'];
 
-        setConsentConfig(_goodConfigWithAllowAuction, 'ccpa');
+        setConsentConfig(_goodConfigWithAllowAuction, 'usp');
 
         requestBidsHook(() => {
           didHookReturn = true;

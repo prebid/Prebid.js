@@ -12,6 +12,7 @@ import strIncludes from 'core-js/library/fn/string/includes';
 
 const DEFAULT_CMP = 'iab';
 const DEFAULT_CONSENT_TIMEOUT = 10000;
+const DEFAULT_CONSENT_TIMEOUT_USP = 50;
 const DEFAULT_ALLOW_AUCTION_WO_CONSENT = true;
 
 export let userCMP;
@@ -22,19 +23,16 @@ export let staticConsentData;
 let consentData;
 let addedConsentHook = false;
 
-// ccpa constants
-export let userCCPA;
-export let consentTimeoutCCPA;
-
-// ccpa globals
-let consentDataCCPA;
-let addedConsentHookCCPA = false;
+// usp
+export let consentTimeoutUSP;
+let addedConsentHookUSP = false;
 
 // add new CMPs here, with their dedicated lookup function
 const cmpCallMap = {
   'iab': lookupIabConsent,
   'gdpr': lookupIabConsent,
-  'ccpa': lookupCcpaConsent,
+  'ccpa': lookupUspConsent,
+  'usp': lookupUspConsent,
   'static': lookupStaticConsentData
 };
 
@@ -192,7 +190,7 @@ function lookupIabConsent(cmpSuccess, cmpError, hookConfig) {
   }
 }
 
-function lookupCcpaConsent(ccpaSucess, cmpError, hookConfig) {
+function lookupUspConsent(ccpaSucess, cmpError, hookConfig) {
   function handleCmpResponseCallbacks() {
     const ccpaResponse = {};
 
@@ -332,13 +330,13 @@ export function requestCcpaBidsHook(next, reqBidsConfigObj) {
  * @param {object} reqBidsConfigObj required; This is the same param that's used in pbjs.requestBids.
  * @param {function} fn required; The next function in the chain, used by hook.js
  */
-export function requestBidsHook(fn, reqBidsConfigObj, isCCPA = false) {
+export function requestBidsHook(fn, reqBidsConfigObj, isUSP = false) {
   let userModule = userCMP;
   let processFn = processCmpData;
 
-  if (isCCPA) {
-    userModule = 'ccpa';
-    processFn = processCcpaData; // @TJ
+  if (isUSP) {
+    userModule = 'usp';
+    processFn = processCcpaData;
   }
 
   // preserves all module related variables for the current auction instance (used primiarily for concurrent auctions)
@@ -367,10 +365,11 @@ export function requestBidsHook(fn, reqBidsConfigObj, isCCPA = false) {
 
   // only let this code run if module is still active (ie if the callbacks used by CMPs haven't already finished)
   if (!hookConfig.haveExited) {
-    if (consentTimeout === 0) {
+    let timeout = userModule === 'usp' ? consentTimeoutUSP : consentTimeout;
+    if (timeout === 0) {
       processFn(undefined, hookConfig);
     } else {
-      hookConfig.timer = setTimeout(cmpTimedOut.bind(null, hookConfig), consentTimeout);
+      hookConfig.timer = setTimeout(cmpTimedOut.bind(null, hookConfig), timeout);
     }
   }
 }
@@ -520,11 +519,18 @@ export function setConsentConfig(config, consentModule) {
     utils.logInfo(`consentManagement config did not specify cmp.  Using system default setting (${DEFAULT_CMP}).`);
   }
 
-  if (utils.isNumber(config.timeout)) {
+  if (utils.isNumber(config.timeout))  {
     consentTimeout = config.timeout;
   } else {
     consentTimeout = DEFAULT_CONSENT_TIMEOUT;
     utils.logInfo(`consentManagement config did not specify timeout.  Using system default setting (${DEFAULT_CONSENT_TIMEOUT}).`);
+  }
+
+  if (utils.isNumber(config.uspTimeout)) {
+    consentTimeoutUSP = config.uspTimeout
+  } else {
+    consentTimeoutUSP = DEFAULT_CONSENT_TIMEOUT_USP;
+    utils.logInfo(`consentManagement config did not specify timeout f or USP. Using system default setting: (${DEFAULT_CONSENT_TIMEOUT_USP}).`);
   }
 
   if (typeof config.allowAuctionWithoutConsent === 'boolean') {
@@ -545,12 +551,12 @@ export function setConsentConfig(config, consentModule) {
     }
   }
 
-  if (consentModule === 'ccpa' && !addedConsentHookCCPA) {
+  if (consentModule === 'usp' && !addedConsentHookUSP) {
     $$PREBID_GLOBAL$$.requestBids.before(requestCcpaBidsHook, 50);
-    addedConsentHookCCPA = true;
+    addedConsentHookUSP = true;
   }
 
-  if (!addedConsentHook && consentModule !== 'ccpa') {
+  if (!addedConsentHook && consentModule !== 'usp') {
     $$PREBID_GLOBAL$$.requestBids.before(requestBidsHook, 50);
     addedConsentHook = true;
   }
