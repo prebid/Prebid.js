@@ -5,7 +5,21 @@ import {config} from 'src/config';
 
 describe('OneVideoBidAdapter', function () {
   let bidRequest;
-  let bidderRequest;
+  let bidderRequest = {
+        'bidderCode': 'oneVideo',
+        'auctionId': 'e158486f-8c7f-472f-94ce-b0cbfbb50ab4',
+        'bidderRequestId': '1e498b84fffc39',
+        'bids': bidRequest,
+        'auctionStart': 1520001292880,
+        'timeout': 3000,
+        'start': 1520001292884,
+        'doneCbCallCount': 0,
+        'refererInfo': {
+        'numIframes': 1,
+        'reachedTop': true,
+        'referer': 'test.com'
+    }
+  };
   let mockConfig;
 
   beforeEach(function () {
@@ -111,7 +125,7 @@ describe('OneVideoBidAdapter', function () {
     });
 
     it('should attach the bid request object', function () {
-      const requests = spec.buildRequests([ bidRequest ]);
+      const requests = spec.buildRequests([ bidRequest ], bidderRequest);
       expect(requests[0].bidRequest).to.equal(bidRequest);
     });
 
@@ -134,7 +148,7 @@ describe('OneVideoBidAdapter', function () {
       const width = 640;
       const height = 480;
       bidRequest.sizes = [[ width, height ]];
-      const requests = spec.buildRequests([ bidRequest ]);
+      const requests = spec.buildRequests([ bidRequest ], bidderRequest);
       const data = requests[0].data;
       expect(data.imp[0].video.w).to.equal(width);
       expect(data.imp[0].video.h).to.equal(height);
@@ -253,7 +267,7 @@ describe('OneVideoBidAdapter', function () {
           pubId: 'OneMDisplay'
         }
       };
-      const requests = spec.buildRequests([ bidRequest ]);
+      const requests = spec.buildRequests([ bidRequest ], bidderRequest);
       const data = requests[0].data;
       const width = bidRequest.params.video.playerWidth;
       const height = bidRequest.params.video.playerHeight;
@@ -301,7 +315,7 @@ describe('OneVideoBidAdapter', function () {
           pubId: 'OneMDisplay'
         }
       };
-      const requests = spec.buildRequests([ bidRequest ]);
+      const requests = spec.buildRequests([ bidRequest ], bidderRequest);
       const data = requests[0].data;
       const width = bidRequest.params.video.playerWidth;
       const height = bidRequest.params.video.playerHeight;
@@ -345,7 +359,7 @@ describe('OneVideoBidAdapter', function () {
           pubId: 'OneMDisplay'
         }
       };
-      const requests = spec.buildRequests([ bidRequest ]);
+      const requests = spec.buildRequests([ bidRequest ], bidderRequest);
       const data = requests[0].data;
       const width = bidRequest.params.video.playerWidth;
       const height = bidRequest.params.video.playerHeight;
