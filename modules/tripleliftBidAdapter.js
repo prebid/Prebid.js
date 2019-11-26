@@ -66,21 +66,21 @@ export const tripleliftAdapterSpec = {
     let syncType = _getSyncType(syncOptions);
     if (!syncType) return;
 
-    let ibCall = 'https://eb2.3lift.com/sync?';
+    let syncEndpoint = 'https://eb2.3lift.com/sync?';
 
     if (syncType === 'image') {
-      ibCall = utils.tryAppendQueryString(ibCall, 'px', 1);
-      ibCall = utils.tryAppendQueryString(ibCall, 'src', 'prebid');
+      syncEndpoint = utils.tryAppendQueryString(syncEndpoint, 'px', 1);
+      syncEndpoint = utils.tryAppendQueryString(syncEndpoint, 'src', 'prebid');
     }
 
     if (consentString !== null) {
-      ibCall = utils.tryAppendQueryString(ibCall, 'gdpr', gdprApplies);
-      ibCall = utils.tryAppendQueryString(ibCall, 'cmp_cs', consentString);
+      syncEndpoint = utils.tryAppendQueryString(syncEndpoint, 'gdpr', gdprApplies);
+      syncEndpoint = utils.tryAppendQueryString(syncEndpoint, 'cmp_cs', consentString);
     }
 
     return [{
       type: syncType,
-      url: ibCall
+      url: syncEndpoint
     }];
   }
 }
