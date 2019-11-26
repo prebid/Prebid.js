@@ -1,7 +1,8 @@
-import { deepAccess, getDefinedParams, logWarn } from '../src/utils';
-import { processNativeAdUnitParams } from '../src/native';
+// import { deepAccess, getDefinedParams, console.log } from '../src/utils';
+// import { processNativeAdUnitParams } from '../src/native';
+
 /**
- * Given an Ad Unit or a Bid as an input, returns a boolean telling if the Ad Unit/ Bid is active or not based on label checks on the Ad unit/tBid object
+ * Given an Ad Unit or a Bid as an input, returns a boolean telling if the Ad Unit/ Bid is active based on label checks on the Ad unit/Bid object
  * @param {Object<BidOrAdUnit>} bidOrAdUnit Either the Ad Unit object or the Bid object
  * @param {Array<string>} activeLabels List of active labels passed as an argument to pbjs.requestBids function
  * @returns {boolean} Represents if the Ad Unit or the Bid is active or not
@@ -11,20 +12,20 @@ function isLabelActivated(bidOrAdUnit, activeLabels) {
   const labelsFound = Object.keys(bidOrAdUnit).filter(prop => prop === 'labelAny' || prop === 'labelAll');
   if (labelsFound && labelsFound.length > 1) {
     const lastDeclaredOperator = labelsFound[labelsFound.length - 1];
-    logWarn(`Ad Unit ${bidOrAdUnit.code} has multiple label operators. Using the last declared operator ${lastDeclaredOperator}`);
+    console.log(`Ad Unit ${bidOrAdUnit.code} has multiple label operators. Using the last declared operator ${lastDeclaredOperator}`);
     labelOperator = lastDeclaredOperator;
   } else {
     labelOperator = labelsFound[0];
   }
   if (labelOperator === 'labelAll') {
     if (bidOrAdUnit.labelAll.length === 0) {
-      logWarn(`Ad Unit ${bidOrAdUnit.code} has property labelAll with an empty array. Ad Unit is still enabled!`);
+      console.log(`Ad Unit ${bidOrAdUnit.code} has property labelAll with an empty array. Ad Unit is still enabled!`);
       return true;
     }
     return bidOrAdUnit.labelAll.every(label => activeLabels.includes(label));
   } else if (labelOperator === 'labelAny') {
     if (bidOrAdUnit.labelAny.length === 0) {
-      logWarn(`Ad Unit ${bidOrAdUnit.code} has property labelAny with an empty array. Ad Unit is still enabled!`);
+      console.log(`Ad Unit ${bidOrAdUnit.code} has property labelAny with an empty array. Ad Unit is still enabled!`);
       return true;
     }
     return bidOrAdUnit.labelAny.some(label => activeLabels.includes(label));
@@ -46,6 +47,8 @@ function getFilteredMediaTypes(mediaTypes) {
     activeViewportHeight,
     transformedMediaTypes;
 
+  transformedMediaTypes = Object.assign({}, mediaTypes);
+
   let activeSizeBucket = {
     banner: undefined,
     video: undefined,
@@ -53,53 +56,40 @@ function getFilteredMediaTypes(mediaTypes) {
   }
 
   try {
-    activeViewportWidth = getWindowTop().innerWidth;
-    activeViewportHeight = getWindowTop().innerHeight;
+    // activeViewportWidth = getWindowTop().innerWidth;
+    // activeViewportHeight = getWindowTop().innerHeight;
+    activeViewportWidth = 820;
+    activeViewportHeight = 300;
   } catch (e) {
-    logWarn('Unfriendly iFrame blocks Viewport size to be evaluated correctly');
+    console.log('Unfriendly iFrame blocks Viewport size to be evaluated correctly');
     activeViewportWidth = window.innerWidth;
     activeViewportHeight = window.innerHeight;
   }
   const activeViewport = [activeViewportWidth, activeViewportHeight];
-  transformedMediaTypes = Object.keys(mediaTypes).map(mediaType => {
+  Object.keys(mediaTypes).map(mediaType => {
     const sizeConfig = mediaTypes[mediaType].sizeConfig;
     if (sizeConfig) {
       activeSizeBucket[mediaType] = getActiveSizeBucket(sizeConfig, activeViewport);
       const filteredSizeConfig = sizeConfig.filter(config => config.minViewPort === activeSizeBucket[mediaType] && isSizeConfigActivated(mediaType, config));
-      mediaTypes[mediaType] = Object.assign({ filteredSizeConfig }, mediaTypes[mediaType]);
+      transformedMediaTypes[mediaType] = Object.assign({ filteredSizeConfig }, mediaTypes[mediaType]);
 
       // transform mediaTypes object
-      return getTransformedMediaTypes(mediaTypes, mediaType);
+      const config = {
+        banner: 'sizes',
+        video: 'playerSize'
+      };
+
+      if (transformedMediaTypes[mediaType].filteredSizeConfig.length > 0) {
+        if (mediaType !== 'native') {
+          transformedMediaTypes[mediaType][config[mediaType]] = transformedMediaTypes[mediaType].filteredSizeConfig[0][config[mediaType]];
+        }
+      } else {
+        delete transformedMediaTypes[mediaType];
+      }
     }
-  }).filter(transformedMediaType => {
-    console.log('transformedMediaType', transformedMediaType);
-  });
+  })
   return { mediaTypes, activeSizeBucket, activeViewport, transformedMediaTypes };
 };
-
-/**
- * This function takes information out of the sizeConfig property of the mediaTypes object and replaces it with the suitable property
- * for that media type. For example, 'sizes' in the case of 'banner' media type and 'playerSize' in the case of 'video' media type.
- * @param {object<MediaTypes>} mediaTypes The mediaTypes object with the sizeConfig property
- * @returns {object<MediaTypes>} The mediaTypes object in the expected format
- */
-
-// WIP
-function getTransformedMediaTypes(mediaTypes, mediaType) {
-  const transformedMediaTypes = Object.assign({}, mediaTypes);
-  const config = {
-    banner: 'sizes',
-    video: 'playerSize'
-  };
-
-  if (transformedMediaTypes[mediaType].filteredSizeConfig.length > 0) {
-    if (mediaType !== 'native') {
-      transformedMediaTypes[mediaType][config[mediaType]] = transformedMediaTypes[mediaType].filteredSizeConfig[0][config[mediaType]];
-    }
-  }
-
-  return transformedMediaTypes;
-}
 
 /**
  * Evaluates the given sizeConfig object and checks for various properties to determine if the sizeConfig is active or not. For example,
@@ -145,6 +135,34 @@ function getActiveSizeBucket(sizeConfig, activeViewport) {
     })
   return activeSizeBucket;
 }
+
+// const mediaTypes = {
+//   banner: {
+//     sizeConfig: [
+//       { minViewPort: [0, 0], sizes: [] },
+//       { minViewPort: [800, 0], sizes: [[300, 250], [300, 600]] },
+//       { minViewPort: [850, 0], sizes: [[200, 200], [400, 400]] }
+//     ]
+//   },
+//   video: {
+//     context: 'outstream',
+//     sizeConfig: [
+//       { minViewPort: [0, 0], playerSize: [] },    // no video if < 800px
+//       { minViewPort: [800, 0], playerSize: [640, 480] },
+//       { minViewPort: [1000, 1200], playerSize: [700, 600] }
+//     ],
+//     renderer: {}
+//   },
+//   native: {
+//     sizeConfig: [
+//       { minViewPort: [0, 0], active: false },
+//       { minViewPort: [900, 0], active: true }
+//     ],
+//     image: { sizes: [[150, 50]] }
+//   }
+// };
+
+// console.log('getFilteredMediaTypes', JSON.stringify(getFilteredMediaTypes(mediaTypes)));
 
 // WIP
 // function getBids({ bidderCode, auctionId, bidderRequestId, adUnits, labels, src }) {
