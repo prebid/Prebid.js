@@ -12,7 +12,7 @@ import events from 'src/events';
 import CONSTANTS from 'src/constants.json';
 import {unifiedIdSubmodule} from 'modules/userId/unifiedIdSystem';
 import {pubCommonIdSubmodule} from 'modules/userId/pubCommonIdSystem';
-import {britepoolIdSubmodule} from 'modules/userId/britepoolIdSystem';
+import {britepoolIdSubmodule} from 'modules/britepoolIdSystem';
 import {id5IdSubmodule} from 'modules/id5IdSystem';
 import {identityLinkSubmodule} from 'modules/identityLinkIdSystem';
 import {liveIntentIdSubmodule} from 'modules/liveIntentIdSystem';

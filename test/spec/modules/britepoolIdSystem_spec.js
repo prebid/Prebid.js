@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import {britepoolIdSubmodule} from 'modules/userId/britepoolIdSystem';
+import {britepoolIdSubmodule} from 'modules/britepoolIdSystem';
 
 describe('BritePool Submodule', () => {
   const api_key = '1111';
