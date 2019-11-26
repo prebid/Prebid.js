@@ -262,7 +262,7 @@ describe('Richaudience adapter tests', function () {
   });
 
   describe('UID test', function () {
-    raPBJS.setConfig({
+    pbjs.setConfig({
       consentManagement: {
         cmpApi: 'iab',
         timeout: 5000,
