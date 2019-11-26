@@ -85,8 +85,6 @@ function adResponse(bid, ad) {
     creativeId: adDetails.creativeId,
     dealId: adDetails.dealId,
     adhese: {
-      creativeId: adDetails.creativeId,
-      dealId: adDetails.dealId,
       originData: adDetails.originData
     }
   });
