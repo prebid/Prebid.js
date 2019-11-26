@@ -5,44 +5,16 @@ const BIDDER_CODE = 'dailyhunt';
 const BIDDER_ALIAS = 'dh';
 const SUPPORTED_MEDIA_TYPES = ['banner', 'native'];
 
-const STAGE_PREBID_ENDPOINT_URL = 'https://prebidstage.dailyhunt.in/openrtb2/auction';
-const DEV_PREBID_ENDPOINT_URL = 'http://api.adengine.com:8000/openrtb2/auction';
 const PROD_PREBID_ENDPOINT_URL = 'https://money.dailyhunt.in/openrtb2/auction';
 
 const PROD_ENDPOINT_URL = 'https://money.dailyhunt.in/openx/ads/index.php';
-const STAGE_ENDPOINT_URL = 'http://192.168.24.127:8084/openx/ads/index.php';
-const DEV_ENDPOINT_URL = 'http://api.adengine.com/openx/ads/index.php';
-
-function getPrebidServerEndpoint(env) {
-  switch (env) {
-    case 'prod':
-      return PROD_PREBID_ENDPOINT_URL;
-    case 'stage':
-      return STAGE_PREBID_ENDPOINT_URL;
-    case 'dev':
-      return DEV_PREBID_ENDPOINT_URL;
-  }
-}
-
-function getNativeEndpoint(env) {
-  switch (env) {
-    case 'prod':
-      return PROD_ENDPOINT_URL;
-    case 'stage':
-      return STAGE_ENDPOINT_URL;
-    case 'dev':
-      return DEV_ENDPOINT_URL;
-  }
-}
 
 function buildParams(bid) {
   let params = {...bid.params};
-  if (!params.env) {
-    params.env = 'prod';
-  }
+  params.env = 'prod';
   let hasWeb5Size = false;
   let hasWeb3Size = false;
-  bid.sizes.forEach((size, i) => {
+  bid && bid.sizes && bid.sizes.forEach((size, i) => {
     if (!hasWeb3Size && size[0] == 300 && size[1] == 250) {
       hasWeb3Size = true;
     }
@@ -68,7 +40,7 @@ function buildParams(bid) {
   if (!params.partnerId) {
     params.partnerId = 'DH';
   }
-  params.requestId = bid.bidId;
+  params.pbRequestId = bid.bidId;
   params.format = 'json';
   return params;
 }
@@ -95,24 +67,21 @@ export const spec = {
 
     validBidRequests.forEach((bid, i) => {
       let params = buildParams(bid);
-      let endPoint = '';
       let request = '';
       if (bid.nativeParams) {
-        endPoint = getNativeEndpoint(params.env);
         request = {
           method: 'GET',
-          'url': endPoint,
+          url: PROD_ENDPOINT_URL,
           data: decodeURIComponent(utils.parseQueryStringParameters(params))
         };
       } else {
-        endPoint = getPrebidServerEndpoint(params.env);
         let ortbReq = {
           id: bidderRequest.auctionId,
           imp: [{
             id: i.toString(),
-            'banner': {
-              'id': 'banner-' + bidderRequest.auctionId,
-              'format': [
+            banner: {
+              id: 'banner-' + bidderRequest.auctionId,
+              format: [
                 {
                   'h': 250,
                   'w': 300
@@ -138,7 +107,7 @@ export const spec = {
         };
         request = {
           method: 'POST',
-          url: endPoint,
+          url: PROD_PREBID_ENDPOINT_URL,
           data: JSON.stringify(ortbReq),
           options: {
             contentType: 'application/json',
@@ -156,15 +125,15 @@ export const spec = {
     let bidResponses = [];
     if (!request.bids) {
       let bid = serverResponse.body[0][0].ad;
-      if (bid.typeId == '-1') {
+      if (bid.typeId != 2 && bid.typeId != 3) {
         return bidResponses;
       }
       let impTrackers = [];
       impTrackers.push(bid.beaconUrl);
       impTrackers = (bid.beaconUrlAdditional && bid.beaconUrlAdditional.length !== 0) ? impTrackers.concat(bid.beaconUrlAdditional) : impTrackers;
       let bidResponse = {
-        requestId: bid.requestId,
-        cpm: '10',
+        requestId: bid.pbRequestId,
+        cpm: bid.price,
         creativeId: bid.bannerid,
         currency: 'USD',
         ttl: 360,

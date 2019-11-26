@@ -1,13 +1,12 @@
 import { expect } from 'chai';
 import { spec } from 'modules/dailyhuntBidAdapter';
-import { newBidder } from 'src/adapters/bidderFactory';
-import * as bidderFactory from 'src/adapters/bidderFactory';
 
 const PROD_PREBID_ENDPOINT_URL = 'https://money.dailyhunt.in/openrtb2/auction';
 
 const PROD_ENDPOINT_URL = 'https://money.dailyhunt.in/openx/ads/index.php';
 
 const _encodeURIComponent = function (a) {
+  if (!a) { return }
   let b = window.encodeURIComponent(a);
   b = b.replace(/'/g, '%27');
   return b;
