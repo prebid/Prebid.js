@@ -170,7 +170,7 @@ function getAdDetails(ad) {
   if (isAdheseAd(ad)) {
     creativeId = ad.id;
     dealId = ad.orderId;
-    originData =  { priority: ad.priority, orderProperty: ad.orderProperty, adFormat: ad.adFormat, adType: ad.adType, libId: ad.libId, adspaceId: ad.adspaceId, viewableImpressionCounter: ad.viewableImpressionCounter };
+    originData = { priority: ad.priority, orderProperty: ad.orderProperty, adFormat: ad.adFormat, adType: ad.adType, libId: ad.libId, adspaceId: ad.adspaceId, viewableImpressionCounter: ad.viewableImpressionCounter };
   } else {
     creativeId = ad.origin + (ad.originInstance ? '-' + ad.originInstance : '');
     if (ad.originData) {
