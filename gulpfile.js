@@ -32,7 +32,6 @@ var prebid = require('./package.json');
 var dateString = 'Updated : ' + (new Date()).toISOString().substring(0, 10);
 var banner = '/* <%= prebid.name %> v<%= prebid.version %>\n' + dateString + ' */\n';
 var port = 9999;
-const prebidLocation = './src/prebid.js';
 const mockServerPort = 3000;
 const host = argv.host ? argv.host : 'localhost';
 
