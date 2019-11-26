@@ -23,7 +23,7 @@ const VERSION = '1.3';
 export const spec = {
 
   code: 'adkernel',
-  aliases: ['headbidding', 'adsolut', 'oftmediahb'],
+  aliases: ['headbidding', 'adsolut', 'oftmediahb', 'audiencemedia', 'waardex_ak'],
   supportedMediaTypes: [BANNER, VIDEO],
   isBidRequestValid: function(bidRequest) {
     return 'params' in bidRequest &&
@@ -43,7 +43,7 @@ export const spec = {
         const request = buildRtbRequest(impDispatch[host][zoneId], auctionId, gdprConsent, bidderRequest.refererInfo);
         requests.push({
           method: 'POST',
-          url: `${window.location.protocol}//${host}/hb?zone=${zoneId}&v=${VERSION}`,
+          url: `https://${host}/hb?zone=${zoneId}&v=${VERSION}`,
           data: JSON.stringify(request)
         });
       });

@@ -1,6 +1,6 @@
 import * as utils from '../src/utils';
 import { registerBidder } from '../src/adapters/bidderFactory';
-import { BANNER } from '../src/mediaTypes';
+import { BANNER, VIDEO } from '../src/mediaTypes';
 
 const BIDDER_CODE = 'cedato';
 const BID_URL = '//h.cedatoplayer.com/hb';
@@ -14,7 +14,7 @@ const NET_REVENUE = true;
 
 export const spec = {
   code: BIDDER_CODE,
-  supportedMediaTypes: [BANNER],
+  supportedMediaTypes: [BANNER, VIDEO],
 
   isBidRequestValid: function(bid) {
     return !!(
@@ -31,19 +31,23 @@ export const spec = {
     const params = req.params;
     const at = FIRST_PRICE;
     const site = { id: params.player_id, domain: document.domain };
-    const device = { ua: navigator.userAgent, ip: '' };
+    const device = { ua: navigator.userAgent };
     const user = { id: getUserID() }
     const currency = CURRENCY;
     const tmax = bidderRequest.timeout;
 
     const imp = bidRequests.map(req => {
-      const banner = { 'format': getFormats(utils.deepAccess(req, 'mediaTypes.banner.sizes')) };
+      const banner = getMediaType(req, 'banner');
+      const video = getMediaType(req, 'video');
       const bidfloor = params.bidfloor;
       const bidId = req.bidId;
+      const adUnitCode = req.adUnitCode;
 
       return {
         bidId,
         banner,
+        video,
+        adUnitCode,
         bidfloor,
       };
     });
@@ -68,38 +72,24 @@ export const spec = {
 
     return {
       method: 'POST',
-      url: BID_URL,
+      url: params.bid_url || BID_URL,
       data: JSON.stringify(payload),
+      bidderRequest
     };
   },
 
-  interpretResponse: function(resp) {
-    if (resp.body === '') return [];
+  interpretResponse: function(resp, {bidderRequest}) {
+    resp = resp.body;
+    const bids = [];
 
-    const bids = resp.body.seatbid[0].bid.map(bid => {
-      const cpm = bid.price;
-      const requestId = bid.uuid;
-      const width = bid.w;
-      const height = bid.h;
-      const creativeId = bid.crid;
-      const dealId = bid.dealid;
-      const currency = resp.body.cur;
-      const netRevenue = NET_REVENUE;
-      const ttl = TTL;
-      const ad = bid.adm;
+    if (!resp) {
+      return bids;
+    }
 
-      return {
-        cpm,
-        requestId,
-        width,
-        height,
-        creativeId,
-        dealId,
-        currency,
-        netRevenue,
-        ttl,
-        ad,
-      };
+    resp.seatbid[0].bid.map(serverBid => {
+      const bid = newBid(serverBid, bidderRequest);
+      bid.currency = resp.cur;
+      bids.push(bid);
     });
 
     return bids;
@@ -114,6 +104,73 @@ export const spec = {
     }
     return syncs;
   }
+}
+
+function getMediaType(req, type) {
+  const { mediaTypes } = req;
+
+  if (!mediaTypes) {
+    return;
+  }
+
+  switch (type) {
+    case 'banner':
+      if (mediaTypes.banner) {
+        const { sizes } = mediaTypes.banner;
+        return {
+          format: getFormats(sizes)
+        };
+      }
+      break;
+
+    case 'video':
+      if (mediaTypes.video) {
+        const { playerSize, context } = mediaTypes.video;
+        return {
+          context: context,
+          format: getFormats(playerSize)
+        };
+      }
+  }
+}
+
+function newBid(serverBid, bidderRequest) {
+  const bidRequest = utils.getBidRequest(serverBid.uuid, [bidderRequest]);
+
+  const cpm = serverBid.price;
+  const requestId = serverBid.uuid;
+  const width = serverBid.w;
+  const height = serverBid.h;
+  const creativeId = serverBid.crid;
+  const dealId = serverBid.dealid;
+  const mediaType = serverBid.media_type;
+  const netRevenue = NET_REVENUE;
+  const ttl = TTL;
+
+  const bid = {
+    cpm,
+    requestId,
+    width,
+    height,
+    mediaType,
+    creativeId,
+    dealId,
+    netRevenue,
+    ttl,
+  };
+
+  if (mediaType == 'video') {
+    const videoContext = utils.deepAccess(bidRequest, 'mediaTypes.video.context');
+
+    if (videoContext == 'instream') {
+      bid.vastUrl = serverBid.vast_url;
+      bid.vastImpUrl = serverBid.notify_url;
+    }
+  } else {
+    bid.ad = serverBid.adm;
+  }
+
+  return bid;
 }
 
 const getSync = (type, gdprConsent) => {
