@@ -93,7 +93,8 @@ function adResponse(bid, ad) {
       adType: adDetails.adType,
       adspaceId: adDetails.adspaceId,
       libId: adDetails.libId,
-      viewableImpressionCounter: adDetails.viewableImpressionCounter
+      viewableImpressionCounter: adDetails.viewableImpressionCounter,
+      originData: adDetails.originData
     }
   });
 
@@ -128,11 +129,9 @@ function bidToSlotName(bid) {
   }
 
   var sizes = bid.mediaTypes.banner.sizes;
-  var format = '';
   sizes.sort();
-  sizes.forEach(function(size) {
-    format += (format.length > 0 ? '_' : '') + size[0] + 'x' + size[1];
-  });
+  var format = sizes.map(size => size[0] + 'x' + size[1]).join('_');
+
   if (format.length > 0) {
     return bid.params.location + '-' + format;
   } else {
@@ -182,6 +181,7 @@ function getAdDetails(ad) {
   let adspaceId = '';
   let libId = '';
   let viewableImpressionCounter = '';
+  let originData = '';
 
   if (isAdheseAd(ad)) {
     creativeId = ad.id;
@@ -196,6 +196,7 @@ function getAdDetails(ad) {
   } else {
     creativeId = ad.origin + (ad.originInstance ? '-' + ad.originInstance : '');
     if (ad.originData && ad.originData.seatbid && ad.originData.seatbid.length) {
+      originData = ad.originData;
       const seatbid = ad.originData.seatbid[0];
       if (seatbid.bid && seatbid.bid.length) {
         const bid = seatbid.bid[0];
@@ -204,7 +205,7 @@ function getAdDetails(ad) {
       }
     }
   }
-  return { creativeId: creativeId, dealId: dealId, priority: priority, orderProperty: orderProperty, adFormat: adFormat, adType: adType, libId: libId, adspaceId: adspaceId, viewableImpressionCounter: viewableImpressionCounter };
+  return { creativeId: creativeId, dealId: dealId, priority: priority, orderProperty: orderProperty, adFormat: adFormat, adType: adType, libId: libId, adspaceId: adspaceId, viewableImpressionCounter: viewableImpressionCounter, originData: originData };
 }
 
 function base64urlEncode(s) {
