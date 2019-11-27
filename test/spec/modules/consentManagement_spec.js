@@ -730,7 +730,6 @@ describe.only('consentManagement', function () {
       afterEach(function () {
         config.resetConfig();
         $$PREBID_GLOBAL$$.requestBids.removeAll();
-        delete window.__cmp;
         utils.logError.restore();
         utils.logWarn.restore();
         resetConsentData();
@@ -830,30 +829,6 @@ describe.only('consentManagement', function () {
         expect(didHookReturn).to.be.true;
         expect(consent.consentString).to.equal(testConsentData.consentData);
         expect(consent.gdprApplies).to.be.true;
-      });
-
-      it('USP: performs lookup check and stores consentData for a valid existing user', function () {
-        let testConsentData = {
-          usPrivacy: '1YY'
-        };
-        cmpStub = sinon.stub(window, '__uspapi').callsFake((...args) => {
-          args[2](testConsentData);
-        });
-
-        let _goodConfigWithAllowAuction = { ...goodConfigWithAllowAuction };
-        _goodConfigWithAllowAuction.consentAPIs = ['usp'];
-
-        setConsentConfig(_goodConfigWithAllowAuction, 'usp');
-
-        requestBidsHook(() => {
-          didHookReturn = true;
-        }, {}, true);
-        let consent = uspDataHandler.getConsentData();
-
-        sinon.assert.notCalled(utils.logWarn);
-        sinon.assert.notCalled(utils.logError);
-        expect(didHookReturn).to.be.true;
-        expect(consent.usPrivacy).to.equal(testConsentData.usPrivacy);
       });
 
       it('throws an error when processCmpData check failed while config had allowAuction set to false', function () {
