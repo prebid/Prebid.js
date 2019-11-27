@@ -214,18 +214,22 @@ function getCharset() {
 
 function waitForElementsPresent(elements) {
   const observer = new MutationObserver(function (mutationList, observer) {
-    mutationList.forEach(mr => {
-      mr.addedNodes.forEach(ad => {
-        let index = elements.indexOf(ad.id);
-        if (index >= 0) {
-          registerViewability(ad);
-          elements.splice(index, 1);
-          if (!elements.length) {
-            observer.disconnect();
-          }
+    if (mutationList && mutationList.isArray()) {
+      mutationList.forEach(mr => {
+        if (mr && mr.addedNodes && mr.addedNodes.isArray()) {
+          mr.addedNodes.forEach(ad => {
+            let index = elements.indexOf(ad.id);
+            if (index >= 0) {
+              registerViewability(ad);
+              elements.splice(index, 1);
+              if (!elements.length) {
+                observer.disconnect();
+              }
+            }
+          });
         }
       });
-    });
+    }
   });
   const config = {childList: true, subtree: true, characterData: true, attributes: true, attributeOldValue: true};
   observer.observe(document.body, config);
