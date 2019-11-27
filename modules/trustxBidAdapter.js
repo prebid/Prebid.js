@@ -121,6 +121,9 @@ export const spec = {
           (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean')
             ? Number(bidderRequest.gdprConsent.gdprApplies) : 1;
       }
+      if (bidderRequest.us_privacy) {
+        payload.us_privacy = bidderRequest.us_privacy;
+      }
     }
 
     return {
