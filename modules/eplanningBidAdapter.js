@@ -214,9 +214,9 @@ function getCharset() {
 
 function waitForElementsPresent(elements) {
   const observer = new MutationObserver(function (mutationList, observer) {
-    if (mutationList && mutationList.isArray()) {
+    if (mutationList && Array.isArray(mutationList)) {
       mutationList.forEach(mr => {
-        if (mr && mr.addedNodes && mr.addedNodes.isArray()) {
+        if (mr && mr.addedNodes && Array.isArray(mr.addedNodes)) {
           mr.addedNodes.forEach(ad => {
             let index = elements.indexOf(ad.id);
             if (index >= 0) {
