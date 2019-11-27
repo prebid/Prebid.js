@@ -3,9 +3,10 @@ import * as utils from '../src/utils';
 import { config } from '../src/config';
 import * as url from '../src/url';
 import { BANNER, NATIVE } from '../src/mediaTypes';
+import { getRefererInfo } from '../src/refererDetection';
 
 const BIDDER_CODE = 'medianet';
-const BID_URL = '//prebid.media.net/rtb/prebid';
+const BID_URL = 'https://prebid.media.net/rtb/prebid';
 const SLOT_VISIBILITY = {
   NOT_DETERMINED: 0,
   ABOVE_THE_FOLD: 1,
@@ -17,16 +18,32 @@ const EVENTS = {
 };
 const EVENT_PIXEL_URL = 'qsearch-a.akamaihd.net/log';
 
+let refererInfo = getRefererInfo();
+
 let mnData = {};
+mnData.urlData = {
+  domain: url.parse(refererInfo.referer).host,
+  page: refererInfo.referer,
+  isTop: refererInfo.reachedTop
+}
 
 $$PREBID_GLOBAL$$.medianetGlobals = {};
+
+function getTopWindowReferrer() {
+  try {
+    return window.top.document.referrer;
+  } catch (e) {
+    return document.referrer;
+  }
+}
 
 function siteDetails(site) {
   site = site || {};
   let siteData = {
-    domain: site.domain || utils.getTopWindowLocation().host,
-    page: site.page || utils.getTopWindowUrl(),
-    ref: site.ref || utils.getTopWindowReferrer()
+    domain: site.domain || mnData.urlData.domain,
+    page: site.page || mnData.urlData.page,
+    ref: site.ref || getTopWindowReferrer(),
+    isTop: site.isTop || mnData.urlData.isTop
   };
 
   return Object.assign(siteData, getPageMeta());
@@ -141,8 +158,10 @@ function slotParams(bidRequest) {
     },
     all: bidRequest.params
   };
-  if (bidRequest.sizes.length > 0) {
-    params.banner = transformSizes(bidRequest.sizes);
+  let bannerSizes = utils.deepAccess(bidRequest, 'mediaTypes.banner.sizes') || bidRequest.sizes || [];
+
+  if (bannerSizes.length > 0) {
+    params.banner = transformSizes(bannerSizes);
   }
   if (bidRequest.nativeParams) {
     try {
@@ -252,8 +271,9 @@ function getLoggingData(event, data) {
   params.cid = $$PREBID_GLOBAL$$.medianetGlobals.cid || '';
   params.crid = data.map((adunit) => utils.deepAccess(adunit, 'params.0.crid') || adunit.adUnitCode).join('|');
   params.adunit_count = data.length || 0;
-  params.dn = utils.getTopWindowLocation().host || '';
-  params.requrl = utils.getTopWindowUrl() || '';
+  params.dn = mnData.urlData.domain || '';
+  params.requrl = mnData.urlData.page || '';
+  params.istop = mnData.urlData.isTop || '';
   params.event = event.name || '';
   params.value = event.value || '';
   params.rd = event.related_data || '';
