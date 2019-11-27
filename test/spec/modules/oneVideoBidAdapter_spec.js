@@ -119,7 +119,7 @@ describe('OneVideoBidAdapter', function () {
 
   describe('spec.buildRequests', function () {
     it('should create a POST request for every bid', function () {
-      const requests = spec.buildRequests([ bidRequest ]);
+      const requests = spec.buildRequests([ bidRequest ], bidderRequest);
       expect(requests[0].method).to.equal('POST');
       expect(requests[0].url).to.equal(spec.ENDPOINT + bidRequest.params.pubId);
     });
@@ -130,7 +130,7 @@ describe('OneVideoBidAdapter', function () {
     });
 
     it('should attach request data', function () {
-      const requests = spec.buildRequests([ bidRequest ]);
+      const requests = spec.buildRequests([ bidRequest ], bidderRequest);
       const data = requests[0].data;
       const [ width, height ] = bidRequest.sizes;
       const placement = bidRequest.params.video.placement;
@@ -199,9 +199,22 @@ describe('OneVideoBidAdapter', function () {
   describe('when GDPR applies', function () {
     beforeEach(function () {
       bidderRequest = {
-        gdprConsent: {
-          consentString: 'test-gdpr-consent-string',
-          gdprApplies: true
+        'gdprConsent': {
+          'consentString': 'test-gdpr-consent-string',
+          'gdprApplies': true
+        },
+        'bidderCode': 'oneVideo',
+        'auctionId': 'e158486f-8c7f-472f-94ce-b0cbfbb50ab4',
+        'bidderRequestId': '1e498b84fffc39',
+        'bids': bidRequest,
+        'auctionStart': 1520001292880,
+        'timeout': 3000,
+        'start': 1520001292884,
+        'doneCbCallCount': 0,
+        'refererInfo': {
+          'numIframes': 1,
+          'reachedTop': true,
+          'referer': 'test.com'
         }
       };
 
@@ -225,7 +238,7 @@ describe('OneVideoBidAdapter', function () {
     });
 
     it('should send schain object', function () {
-      const requests = spec.buildRequests([ bidRequest ]);
+      const requests = spec.buildRequests([ bidRequest ], bidderRequest);
       const data = requests[0].data;
       expect(data.source.ext.schain.nodes[0].sid).to.equal(bidRequest.params.video.sid);
       expect(data.source.ext.schain.nodes[0].rid).to.equal(data.id);
