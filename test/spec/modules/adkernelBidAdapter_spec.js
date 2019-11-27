@@ -81,7 +81,6 @@ describe('Adkernel adapter', function () {
       bidId: 'Bid_Video',
       bidderRequestId: '18b2a61ea5d9a7',
       auctionId: 'de45acf1-9109-4e52-8013-f2b7cf5f6766',
-      sizes: [[640, 480]],
       params: {
         zoneId: 1,
         host: 'rtb.adkernel.com',
@@ -103,7 +102,6 @@ describe('Adkernel adapter', function () {
       },
       adUnitCode: 'ad-unit-1',
       transactionId: 'f82c64b8-c602-42a4-9791-4a268f6559ed',
-      sizes: [[300, 250], [300, 200]],
       bidId: 'Bid_01',
       bidderRequestId: 'req-001',
       auctionId: 'auc-001'
@@ -379,8 +377,8 @@ describe('Adkernel adapter', function () {
 
   describe('adapter configuration', () => {
     it('should have aliases', () => {
-      expect(spec.aliases).to.have.lengthOf(4);
-      expect(spec.aliases).to.be.eql(['headbidding', 'adsolut', 'oftmediahb', 'audiencemedia']);
+      expect(spec.aliases).to.have.lengthOf(5);
+      expect(spec.aliases).to.be.eql(['headbidding', 'adsolut', 'oftmediahb', 'audiencemedia', 'waardex_ak']);
     });
   });
 });
