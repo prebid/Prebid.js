@@ -89,15 +89,8 @@ export const spec = {
     }
     return bids;
   },
-  getUserSync: function(syncOptions) {
-    if (trackingEnabled(syncOptions)) {
-      return [{
-        type: 'iframe',
-        url: SYNC_ENDPOINT + utils.getOrigin()
-      }];
-    } else {
-      return [];
-    }
+  getUserSyncs: function(syncOptions) {
+    return [];
   }
 }
 registerBidder(spec);
