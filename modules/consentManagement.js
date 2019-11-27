@@ -189,13 +189,13 @@ function lookupIabConsent(cmpSuccess, cmpError, hookConfig) {
   }
 }
 
-function lookupUspConsent(uspSucess, cmpError, hookConfig) {
+function lookupUspConsent(uspSuccess, cmpError, hookConfig) {
   function handleCmpResponseCallbacks() {
     const uspResponse = {};
 
     function afterEach() {
       if (uspResponse.usPrivacy) {
-        uspSucess(uspResponse, hookConfig);
+        uspSuccess(uspResponse, hookConfig);
       }
     }
 
@@ -209,41 +209,36 @@ function lookupUspConsent(uspSucess, cmpError, hookConfig) {
 
   let callbackHandler = handleCmpResponseCallbacks();
   let uspapiCallbacks = {};
-  let uspFunction;
 
   // the following code also determines where the USP is located and uses the proper workflow to communicate with it:
   // check to see if USP is found on the same window level as prebid and call it directly if so
   // check to see if prebid is in a safeframe (with USP support)
   // else assume prebid may be inside an iframe and use the IAB USP locator code to see if USP's located in a higher parent window. this works in cross domain iframes
   // if the USP is not found, the iframe function will call the cmpError exit callback to abort the rest of the USP workflow
-  try {
-    uspFunction = window.__uspapi || utils.getWindowTop().__uspapi;
-  } catch (e) { }
-
-  if (utils.isFn(uspFunction)) {
-    uspFunction('getUSPData', 1, callbackHandler.consentDataCallback);
-  } else {
-    // find the CMP frame
-    let f = window;
-    let uspFrame;
-    while (!uspFrame) {
-      try {
-        if (f.frames['__uspapiLocator']) uspFrame = f;
-      } catch (e) { }
-      if (f === window.top) break;
-      f = f.parent;
-    }
-
-    if (!uspFrame) {
-      return cmpError('USP not found.', hookConfig);
-    }
-
-    callUspWhileInIframe('getUSPData', uspFrame, callbackHandler.consentDataCallback);
+  let f = window;
+  let uspFrame;
+  while (!uspFrame) {
+    try {
+      if (f.frames['__uspapiLocator']) uspFrame = f;
+    } catch (e) { }
+    if (f === window.top) break;
+    f = f.parent;
   }
 
+  if (!uspFrame) {
+    return cmpError('USP not found.', hookConfig);
+  }
+
+  callUspWhileInIframe('getUSPData', uspFrame, callbackHandler.consentDataCallback);
+
+  if (!uspFrame) {
+    return cmpError('USP frame not found.', hookConfig);
+  }
+
+  callUspWhileInIframe('getUSPData', uspFrame, callbackHandler.consentDataCallback);
+
   function callUspWhileInIframe(commandName, uspFrame, moduleCallback) {
-    /* Setup up a usp function to do the postMessage and stash the callback.
-      This function behaves (from the caller's perspective identicially to the in-frame usp call */
+    /* Setup up a __uspapi function to do the postMessage and stash the callback. */
     window.__uspapi = function (cmd, ver, callback) {
       let callId = Math.random() + '';
       let msg = {
