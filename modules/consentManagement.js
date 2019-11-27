@@ -209,7 +209,7 @@ function lookupUspConsent(uspSucess, cmpError, hookConfig) {
 
   let callbackHandler = handleCmpResponseCallbacks();
   let uspapiCallbacks = {};
-  let ccpaFunction;
+  let uspFunction;
 
   // the following code also determines where the USP is located and uses the proper workflow to communicate with it:
   // check to see if USP is found on the same window level as prebid and call it directly if so
@@ -217,11 +217,11 @@ function lookupUspConsent(uspSucess, cmpError, hookConfig) {
   // else assume prebid may be inside an iframe and use the IAB USP locator code to see if USP's located in a higher parent window. this works in cross domain iframes
   // if the USP is not found, the iframe function will call the cmpError exit callback to abort the rest of the USP workflow
   try {
-    ccpaFunction = window.__uspapi || utils.getWindowTop().__uspapi;
+    uspFunction = window.__uspapi || utils.getWindowTop().__uspapi;
   } catch (e) { }
 
-  if (utils.isFn(ccpaFunction)) {
-    ccpaFunction('getUSPData', 1, callbackHandler.consentDataCallback);
+  if (utils.isFn(uspFunction)) {
+    uspFunction('getUSPData', 1, callbackHandler.consentDataCallback);
   } else {
     // find the CMP frame
     let f = window;
@@ -238,12 +238,12 @@ function lookupUspConsent(uspSucess, cmpError, hookConfig) {
       return cmpError('USP not found.', hookConfig);
     }
 
-    callCcpaWhileInIframe('getUSPData', uspFrame, callbackHandler.consentDataCallback);
+    callUspWhileInIframe('getUSPData', uspFrame, callbackHandler.consentDataCallback);
   }
 
-  function callCcpaWhileInIframe(commandName, uspFrame, moduleCallback) {
-    /* Setup up a __ccpa function to do the postMessage and stash the callback.
-      This function behaves (from the caller's perspective identicially to the in-frame __ccpa call */
+  function callUspWhileInIframe(commandName, uspFrame, moduleCallback) {
+    /* Setup up a usp function to do the postMessage and stash the callback.
+      This function behaves (from the caller's perspective identicially to the in-frame usp call */
     window.__uspapi = function (cmd, ver, callback) {
       let callId = Math.random() + '';
       let msg = {
@@ -260,8 +260,8 @@ function lookupUspConsent(uspSucess, cmpError, hookConfig) {
     /** when we get the return message, call the stashed callback */
     window.addEventListener('message', readPostMessageResponse, false);
 
-    // call ccpa
-    window.__uspapi(commandName, 1, ccpaIframeCallback);
+    // call uspapi
+    window.__uspapi(commandName, 1, uspIframeCallback);
 
     function readPostMessageResponse(event) {
       let res = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
@@ -278,14 +278,14 @@ function lookupUspConsent(uspSucess, cmpError, hookConfig) {
       window.removeEventListener('message', readPostMessageResponse, false);
     }
 
-    function ccpaIframeCallback(consentObject) {
+    function uspIframeCallback(consentObject) {
       removePostMessageListener();
       moduleCallback(consentObject);
     }
   }
 }
 
-export function requestCcpaBidsHook(next, reqBidsConfigObj) {
+export function requestUspBidsHook(next, reqBidsConfigObj) {
   requestBidsHook(next, reqBidsConfigObj, true);
 }
 
@@ -303,7 +303,7 @@ export function requestBidsHook(fn, reqBidsConfigObj, isUSP = false) {
 
   if (isUSP) {
     userModule = 'usp';
-    processFn = processCcpaData;
+    processFn = processUspData;
   }
 
   // preserves all module related variables for the current auction instance (used primiarily for concurrent auctions)
@@ -368,7 +368,7 @@ function processCmpData(consentObject, hookConfig) {
   }
 }
 
-function processCcpaData(consentObject, hookConfig) {
+function processUspData(consentObject, hookConfig) {
   if (!(consentObject && consentObject.usPrivacy)) {
     cmpFailed(`USP returned unexpected value during lookup process.`, hookConfig, consentObject);
     return;
@@ -526,7 +526,7 @@ export function setConsentConfig(config, consentModule) {
   }
 
   if (consentModule === 'usp' && !addedConsentHookUSP) {
-    $$PREBID_GLOBAL$$.requestBids.before(requestCcpaBidsHook, 50);
+    $$PREBID_GLOBAL$$.requestBids.before(requestUspBidsHook, 50);
     addedConsentHookUSP = true;
   }
 

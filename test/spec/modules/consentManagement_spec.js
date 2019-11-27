@@ -724,7 +724,7 @@ describe.only('consentManagement', function () {
         sinon.stub(utils, 'logError');
         sinon.stub(utils, 'logWarn');
         ifr = createIFrameMarker();
-        window.addEventListener('message', ccpaMessageHandler, false);
+        window.addEventListener('message', uspMessageHandler, false);
       });
 
       afterEach(function () {
@@ -735,7 +735,7 @@ describe.only('consentManagement', function () {
         utils.logWarn.restore();
         resetConsentData();
         document.body.removeChild(ifr);
-        window.removeEventListener('message', ccpaMessageHandler);
+        window.removeEventListener('message', uspMessageHandler);
       });
 
       function createIFrameMarker() {
@@ -747,7 +747,7 @@ describe.only('consentManagement', function () {
         return ifr;
       }
 
-      function ccpaMessageHandler(event) {
+      function uspMessageHandler(event) {
         if (event && event.data) {
           var data = event.data;
           if (data.__uspapiCall) {
