@@ -160,13 +160,13 @@ export let gdprDataHandler = {
   }
 };
 
-export let ccpaDataHandler = {
+export let uspDataHandler = {
   consentData: null,
   setConsentData: function(consentInfo) {
-    ccpaDataHandler.consentData = consentInfo;
+    uspDataHandler.consentData = consentInfo;
   },
   getConsentData: function() {
-    return ccpaDataHandler.consentData;
+    return uspDataHandler.consentData;
   }
 };
 

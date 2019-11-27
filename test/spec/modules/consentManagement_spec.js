@@ -8,7 +8,7 @@ import {
   staticConsentData,
   consentTimeoutUSP
 } from 'modules/consentManagement';
-import {gdprDataHandler, ccpaDataHandler} from 'src/adapterManager';
+import {gdprDataHandler, uspDataHandler} from 'src/adapterManager';
 import * as utils from 'src/utils';
 import { config } from 'src/config';
 
@@ -755,7 +755,7 @@ describe.only('consentManagement', function () {
             var response = {
               __uspapiReturn: {
                 callId,
-                returnValue: { consentString: '1NN' },
+                returnValue: { usPrivacy: '1NN' },
                 success: true
               }
             };
@@ -777,10 +777,10 @@ describe.only('consentManagement', function () {
           stringifyResponse = messageFormatString;
           setConsentConfig(_goodConfigWithAllowAuction, 'usp');
           requestBidsHook(() => {
-            let consent = ccpaDataHandler.getConsentData();
+            let consent = uspDataHandler.getConsentData();
             sinon.assert.notCalled(utils.logWarn);
             sinon.assert.notCalled(utils.logError);
-            expect(consent.consentString).to.equal('1NN');
+            expect(consent.usPrivacy).to.equal('1NN');
             done();
           }, {}, true);
         });
@@ -834,7 +834,7 @@ describe.only('consentManagement', function () {
 
       it('USP: performs lookup check and stores consentData for a valid existing user', function () {
         let testConsentData = {
-          consentString: '1YY'
+          usPrivacy: '1YY'
         };
         cmpStub = sinon.stub(window, '__uspapi').callsFake((...args) => {
           args[2](testConsentData);
@@ -848,12 +848,12 @@ describe.only('consentManagement', function () {
         requestBidsHook(() => {
           didHookReturn = true;
         }, {}, true);
-        let consent = ccpaDataHandler.getConsentData();
+        let consent = uspDataHandler.getConsentData();
 
         sinon.assert.notCalled(utils.logWarn);
         sinon.assert.notCalled(utils.logError);
         expect(didHookReturn).to.be.true;
-        expect(consent.consentString).to.equal(testConsentData.consentString);
+        expect(consent.usPrivacy).to.equal(testConsentData.usPrivacy);
       });
 
       it('throws an error when processCmpData check failed while config had allowAuction set to false', function () {

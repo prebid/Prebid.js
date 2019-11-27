@@ -6,7 +6,7 @@
  */
 import * as utils from '../src/utils';
 import { config } from '../src/config';
-import { gdprDataHandler, ccpaDataHandler } from '../src/adapterManager';
+import { gdprDataHandler, uspDataHandler } from '../src/adapterManager';
 import includes from 'core-js/library/fn/array/includes';
 import strIncludes from 'core-js/library/fn/string/includes';
 
@@ -189,19 +189,19 @@ function lookupIabConsent(cmpSuccess, cmpError, hookConfig) {
   }
 }
 
-function lookupUspConsent(ccpaSucess, cmpError, hookConfig) {
+function lookupUspConsent(uspSucess, cmpError, hookConfig) {
   function handleCmpResponseCallbacks() {
-    const ccpaResponse = {};
+    const uspResponse = {};
 
     function afterEach() {
-      if (ccpaResponse.consentString) {
-        ccpaSucess(ccpaResponse, hookConfig);
+      if (uspResponse.usPrivacy) {
+        uspSucess(uspResponse, hookConfig);
       }
     }
 
     return {
       consentDataCallback: function (consentResponse) {
-        ccpaResponse.consentString = consentResponse.consentString;
+        uspResponse.usPrivacy = consentResponse.usPrivacy;
         afterEach();
       }
     }
@@ -211,69 +211,37 @@ function lookupUspConsent(ccpaSucess, cmpError, hookConfig) {
   let uspapiCallbacks = {};
   let ccpaFunction;
 
-  // to collect the consent information from the user, we perform two calls to the CMP in parallel:
-  // first to collect the user's consent choices represented in an encoded string (via getConsentData)
-  // second to collect the user's full unparsed consent information (via getVendorConsents)
-
-  // the following code also determines where the CMP is located and uses the proper workflow to communicate with it:
-  // check to see if CMP is found on the same window level as prebid and call it directly if so
-  // check to see if prebid is in a safeframe (with CMP support)
-  // else assume prebid may be inside an iframe and use the IAB CMP locator code to see if CMP's located in a higher parent window. this works in cross domain iframes
-  // if the CMP is not found, the iframe function will call the cmpError exit callback to abort the rest of the CMP workflow
+  // the following code also determines where the USP is located and uses the proper workflow to communicate with it:
+  // check to see if USP is found on the same window level as prebid and call it directly if so
+  // check to see if prebid is in a safeframe (with USP support)
+  // else assume prebid may be inside an iframe and use the IAB USP locator code to see if USP's located in a higher parent window. this works in cross domain iframes
+  // if the USP is not found, the iframe function will call the cmpError exit callback to abort the rest of the USP workflow
   try {
     ccpaFunction = window.__uspapi || utils.getWindowTop().__uspapi;
   } catch (e) { }
 
   if (utils.isFn(ccpaFunction)) {
-    ccpaFunction('getConsentData', null, callbackHandler.consentDataCallback);
-  } else if (inASafeFrame() && typeof window.$sf.ext.uspapi === 'function') {
-    callCcpaWhileInSafeFrame('getConsentData', callbackHandler.consentDataCallback);
+    ccpaFunction('getUSPData', 1, callbackHandler.consentDataCallback);
   } else {
     // find the CMP frame
     let f = window;
-    let ccpaFrame;
-    while (!ccpaFrame) {
+    let uspFrame;
+    while (!uspFrame) {
       try {
-        if (f.frames['__uspapiLocator']) ccpaFrame = f;
+        if (f.frames['__uspapiLocator']) uspFrame = f;
       } catch (e) { }
       if (f === window.top) break;
       f = f.parent;
     }
 
-    if (!ccpaFrame) {
-      return cmpError('CCPA not found.', hookConfig);
+    if (!uspFrame) {
+      return cmpError('USP not found.', hookConfig);
     }
 
-    callCcpaWhileInIframe('getConsentData', ccpaFrame, callbackHandler.consentDataCallback);
+    callCcpaWhileInIframe('getUSPData', uspFrame, callbackHandler.consentDataCallback);
   }
 
-  function inASafeFrame() {
-    return !!(window.$sf && window.$sf.ext);
-  }
-
-  function callCcpaWhileInSafeFrame(commandName, callback) {
-    function sfCallback(msgName, data) {
-      if (msgName === 'cmpReturn') {
-        let responseObj = (commandName === 'getConsentData') ? data.vendorConsentData : data.vendorConsents;
-        callback(responseObj);
-      }
-    }
-
-    // find sizes from adUnits object
-    let adUnits = hookConfig.adUnits;
-    let width = 1;
-    let height = 1;
-    if (Array.isArray(adUnits) && adUnits.length > 0) {
-      let sizes = utils.getAdUnitSizes(adUnits[0]);
-      width = sizes[0][0];
-      height = sizes[0][1];
-    }
-
-    window.$sf.ext.register(width, height, sfCallback);
-    window.$sf.ext.ccpa(commandName);
-  }
-
-  function callCcpaWhileInIframe(commandName, ccpaFrame, moduleCallback) {
+  function callCcpaWhileInIframe(commandName, uspFrame, moduleCallback) {
     /* Setup up a __ccpa function to do the postMessage and stash the callback.
       This function behaves (from the caller's perspective identicially to the in-frame __ccpa call */
     window.__uspapi = function (cmd, ver, callback) {
@@ -286,7 +254,7 @@ function lookupUspConsent(ccpaSucess, cmpError, hookConfig) {
         }
       };
       uspapiCallbacks[callId] = callback;
-      ccpaFrame.postMessage(msg, '*');
+      uspFrame.postMessage(msg, '*');
     };
 
     /** when we get the return message, call the stashed callback */
@@ -400,14 +368,14 @@ function processCmpData(consentObject, hookConfig) {
   }
 }
 
-function processCcpaData (consentObject, hookConfig) {
-  if (!(consentObject && consentObject.consentString)) {
-    cmpFailed(`CCPA returned unexpected value during lookup process.`, hookConfig, consentObject);
+function processCcpaData(consentObject, hookConfig) {
+  if (!(consentObject && consentObject.usPrivacy)) {
+    cmpFailed(`USP returned unexpected value during lookup process.`, hookConfig, consentObject);
     return;
   }
 
   clearTimeout(hookConfig.timer);
-  storeCcpaConsentData(consentObject);
+  storeUspConsentData(consentObject);
   exitModule(null, hookConfig);
 }
 
@@ -447,11 +415,11 @@ function storeConsentData(cmpConsentObject) {
   gdprDataHandler.setConsentData(consentData);
 }
 
-function storeCcpaConsentData(consentObject) {
+function storeUspConsentData(consentObject) {
   consentData = {
-    consentString: consentObject ? consentObject.consentString : undefined
+    usPrivacy: consentObject ? consentObject.usPrivacy : undefined
   };
-  ccpaDataHandler.setConsentData(consentData);
+  uspDataHandler.setConsentData(consentData);
 }
 
 /**
@@ -503,7 +471,7 @@ function exitModule(errMsg, hookConfig, extraArgs) {
 export function resetConsentData() {
   consentData = undefined;
   gdprDataHandler.setConsentData(null);
-  ccpaDataHandler.setConsentData(null);
+  uspDataHandler.setConsentData(null);
 }
 
 /**
