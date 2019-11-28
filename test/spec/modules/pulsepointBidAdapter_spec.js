@@ -138,6 +138,35 @@ describe('PulsePoint Adapter Tests', function () {
       }
     }
   }];
+
+  const schainParamsSlotConfig = [{
+    placementCode: '/DfpAccount1/slot1',
+    bidId: 'bid12345',
+    params: {
+      cp: 'p10000',
+      ct: 't10000',
+      cf: '1x1',
+      bcat: ['IAB-1', 'IAB-20'],
+      battr: [1, 2, 3],
+      bidfloor: 1.5,
+      badv: ['cocacola.com', 'lays.com']
+    },
+    schain: {
+      'ver': '1.0',
+      'complete': 1,
+      'nodes': [
+        {
+          'asi': 'exchange1.com',
+          'sid': '1234',
+          'hp': 1,
+          'rid': 'bid-request-1',
+          'name': 'publisher',
+          'domain': 'publisher.com'
+        }
+      ]
+    },
+  }];
+
   const bidderRequest = {
     refererInfo: {
       referer: 'https://publisher.com/home'
@@ -200,7 +229,7 @@ describe('PulsePoint Adapter Tests', function () {
     expect(bid.ttl).to.equal(20);
   });
 
-  it('Verify use ttl in ext', function () {
+  it('Verify ttl/currency applied to bid', function () {
     const request = spec.buildRequests(slotConfigs, bidderRequest);
     const ortbRequest = request.data;
     const ortbResponse = {
@@ -208,22 +237,31 @@ describe('PulsePoint Adapter Tests', function () {
         bid: [{
           impid: ortbRequest.imp[0].id,
           price: 1.25,
-          adm: 'This is an Ad',
-          ext: {
-            ttl: 30,
-            netRevenue: false,
-            currency: 'INR'
-          }
+          adm: 'This is an Ad#1',
+          crid: 'Creative#123',
+          exp: 50
+        }, {
+          impid: ortbRequest.imp[1].id,
+          price: 1.25,
+          adm: 'This is an Ad#2',
+          crid: 'Creative#123'
         }]
-      }]
+      }],
+      cur: 'GBP'
     };
     const bids = spec.interpretResponse({ body: ortbResponse }, request);
-    expect(bids).to.have.lengthOf(1);
+    expect(bids).to.have.lengthOf(2);
     // verify first bid
     const bid = bids[0];
-    expect(bid.ttl).to.equal(30);
-    expect(bid.netRevenue).to.equal(false);
-    expect(bid.currency).to.equal('INR');
+    expect(bid.cpm).to.equal(1.25);
+    expect(bid.ad).to.equal('This is an Ad#1');
+    expect(bid.ttl).to.equal(50);
+    expect(bid.currency).to.equal('GBP');
+    const secondBid = bids[1];
+    expect(secondBid.cpm).to.equal(1.25);
+    expect(secondBid.ad).to.equal('This is an Ad#2');
+    expect(secondBid.ttl).to.equal(20);
+    expect(secondBid.currency).to.equal('GBP');
   });
 
   it('Verify full passback', function () {
@@ -474,6 +512,25 @@ describe('PulsePoint Adapter Tests', function () {
     expect(ortbRequest.imp[1].bidfloor).to.equal(2.5);
     expect(ortbRequest.imp[1].video.battr).to.eql([2, 3, 4]);
     expect(ortbRequest.imp[1].ext).to.be.null;
+  });
+
+  it('Verify schain parameters', function () {
+    const request = spec.buildRequests(schainParamsSlotConfig, bidderRequest);
+    const ortbRequest = request.data;
+    expect(ortbRequest).to.not.equal(null);
+    expect(ortbRequest.source).to.not.equal(null);
+    expect(ortbRequest.source.ext).to.not.equal(null);
+    expect(ortbRequest.source.ext.schain).to.not.equal(null);
+    expect(ortbRequest.source.ext.schain.complete).to.equal(1);
+    expect(ortbRequest.source.ext.schain.ver).to.equal('1.0');
+    expect(ortbRequest.source.ext.schain.nodes).to.not.equal(null);
+    expect(ortbRequest.source.ext.schain.nodes).to.lengthOf(1);
+    expect(ortbRequest.source.ext.schain.nodes[0].asi).to.equal('exchange1.com');
+    expect(ortbRequest.source.ext.schain.nodes[0].sid).to.equal('1234');
+    expect(ortbRequest.source.ext.schain.nodes[0].hp).to.equal(1);
+    expect(ortbRequest.source.ext.schain.nodes[0].rid).to.equal('bid-request-1');
+    expect(ortbRequest.source.ext.schain.nodes[0].name).to.equal('publisher');
+    expect(ortbRequest.source.ext.schain.nodes[0].domain).to.equal('publisher.com');
   });
 
   it('Verify outstream renderer', function () {
