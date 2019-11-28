@@ -31,7 +31,7 @@ export const spec = {
       const ret = {
         url: `${spec.orbidderHost}/bid`,
         method: 'POST',
-        options: { withCredentials: true }, 
+        options: { withCredentials: true },
         data: {
           pageUrl: referer,
           bidId: bidRequest.bidId,
