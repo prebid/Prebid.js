@@ -4,7 +4,7 @@ import * as utils from '../src/utils';
 
 const BIDDER_CODE = '33across';
 const END_POINT = 'https://ssc.33across.com/api/v1/hb';
-const SYNC_ENDPOINT = 'https://de.tynt.com/deb/v2?m=xch&rt=html';
+const SYNC_ENDPOINT = 'https://ssc-cms.33across.com/ps/?m=xch&rt=html&ru=deb';
 
 const adapterState = {};
 
@@ -144,7 +144,7 @@ function _createServerRequest(bidRequest, gdprConsent = {}) {
 }
 
 // Sync object will always be of type iframe for TTX
-function _createSync({siteId, gdprConsent = {}}) {
+function _createSync({siteId = 'zzz000000000003zzz', gdprConsent = {}}) {
   const ttxSettings = config.getConfig('ttxSettings');
   const syncUrl = (ttxSettings && ttxSettings.syncUrl) || SYNC_ENDPOINT;
 

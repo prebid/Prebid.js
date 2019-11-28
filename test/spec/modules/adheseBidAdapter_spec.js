@@ -153,6 +153,16 @@ describe('AdheseAdapter', function () {
         mediaType: 'banner',
         netRevenue: NET_REVENUE,
         ttl: TTL,
+        adhese: {
+          originData: {
+            seatbid: [
+              {
+                bid: [ { crid: '60613369', dealid: null } ],
+                seat: '958'
+              }
+            ]
+          }
+        }
       }];
       expect(spec.interpretResponse(sspBannerResponse, bidRequest)).to.deep.equal(expectedResponse);
     });
@@ -185,6 +195,7 @@ describe('AdheseAdapter', function () {
         mediaType: 'video',
         netRevenue: NET_REVENUE,
         ttl: TTL,
+        adhese: { originData: {} }
       }];
       expect(spec.interpretResponse(sspVideoResponse, bidRequest)).to.deep.equal(expectedResponse);
     });
@@ -235,6 +246,17 @@ describe('AdheseAdapter', function () {
       let expectedResponse = [{
         requestId: BID_ID,
         ad: '<script id="body" type="text/javascript"></script><img src=\'https://hosts-demo.adhese.com/track/742898\' style=\'height:1px; width:1px; margin: -1px -1px; display:none;\'/>',
+        adhese: {
+          originData: {
+            adFormat: 'largeleaderboard',
+            adType: 'largeleaderboard',
+            adspaceId: '162363',
+            libId: '90511',
+            orderProperty: undefined,
+            priority: undefined,
+            viewableImpressionCounter: undefined
+          }
+        },
         cpm: 5.96,
         currency: 'USD',
         creativeId: '742898',
@@ -279,6 +301,17 @@ describe('AdheseAdapter', function () {
       let expectedResponse = [{
         requestId: BID_ID,
         vastXml: '<?xml version=\'1.0\' encoding=\'UTF-8\' standalone=\'no\'?><VAST version=\'2.0\' xmlns:xsi=\'http://www.w3.org/2001/XMLSchema-instance\' xsi:noNamespaceSchemaLocation=\'vast.xsd\'></VAST>',
+        adhese: {
+          originData: {
+            adFormat: '',
+            adType: 'preroll',
+            adspaceId: '164196',
+            libId: '89860',
+            orderProperty: undefined,
+            priority: undefined,
+            viewableImpressionCounter: undefined
+          }
+        },
         cpm: 0,
         currency: 'USD',
         creativeId: '742470',
