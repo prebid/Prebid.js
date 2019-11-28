@@ -2,7 +2,7 @@ import { registerBidder } from '../src/adapters/bidderFactory';
 
 const VERSION = '3.1.0';
 const BIDDER_CODE = 'sharethrough';
-const STR_ENDPOINT = document.location.protocol + '//btlr.sharethrough.com/WYu2BXv1/v1';
+const STR_ENDPOINT = 'https://btlr.sharethrough.com/WYu2BXv1/v1';
 const DEFAULT_SIZE = [1, 1];
 
 // this allows stubbing of utility function that is used internally by the sharethrough adapter
@@ -26,8 +26,17 @@ export const sharethroughAdapterSpec = {
         instant_play_capable: canAutoPlayHTML5Video(),
         hbSource: 'prebid',
         hbVersion: '$prebid.version$',
-        strVersion: VERSION
+        strVersion: VERSION,
       };
+
+      let secure = false;
+      if (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer) {
+        if (bidderRequest.refererInfo.referer.indexOf('http')) {
+          secure = bidderRequest.refererInfo.referer.indexOf('https');
+        }
+      }
+
+      query.secure = secure;
 
       if (bidderRequest && bidderRequest.gdprConsent && bidderRequest.gdprConsent.consentString) {
         query.consent_string = bidderRequest.gdprConsent.consentString;
