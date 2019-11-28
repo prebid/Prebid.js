@@ -23,7 +23,6 @@ describe('outconBidAdapter', function () {
       })).to.equal(true);
     });
   });
-
   describe('buildRequests', function () {
     it('Build requests with pod param', function () {
       expect(spec.buildRequests([{
@@ -34,7 +33,6 @@ describe('outconBidAdapter', function () {
         }
       }])).to.have.keys('method', 'url', 'data');
     });
-
     it('Build requests with internalID and publisherID params', function () {
       expect(spec.buildRequests([{
         bidder: 'outcon',
@@ -46,7 +44,6 @@ describe('outconBidAdapter', function () {
       }])).to.have.keys('method', 'url', 'data');
     });
   });
-
   describe('interpretResponse', function () {
     const bidRequest = {
       method: 'GET',
