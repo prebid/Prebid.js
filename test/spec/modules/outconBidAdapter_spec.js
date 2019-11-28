@@ -50,7 +50,7 @@ describe('outconBidAdapter', function () {
   describe('interpretResponse', function () {
     const bidRequest = {
       method: 'GET',
-      url: 'http://test.outcondigital.com:8048/ad/',
+      url: 'https://test.outcondigital.com/ad/',
       data: {
         pod: '5d603538eba7192ae14e39a4',
         env: 'test',
@@ -64,7 +64,7 @@ describe('outconBidAdapter', function () {
         exp: 10,
         creatives: [
           {
-            url: 'http://test.outcondigital.com/uploads/5d42e7a7306ea4689b67c122/frutas.mp4',
+            url: 'https://test.outcondigital.com/uploads/5d42e7a7306ea4689b67c122/frutas.mp4',
             size: 3,
             width: 1920,
             height: 1080,
@@ -74,8 +74,8 @@ describe('outconBidAdapter', function () {
         ad: '5d6e6aef22063e392bf7f564',
         type: 'video',
         campaign: '5d42e44b306ea469593c76a2',
-        trackingURL: 'http://test.outcondigital.com:8048/ad/track?track=5d6e6aef22063e392bf7f564',
-        vastURL: 'http://test.outcondigital.com:8048/outcon.xml?impression=5d6e6aef22063e392bf7f564&demo=true'
+        trackingURL: 'https://test.outcondigital.com/ad/track?track=5d6e6aef22063e392bf7f564',
+        vastURL: 'https://test.outcondigital.com/outcon.xml?impression=5d6e6aef22063e392bf7f564&demo=true'
       },
     };
     it('check all the keys that are needed to interpret the response', function () {
