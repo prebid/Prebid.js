@@ -10,15 +10,24 @@ const PROD_PREBID_ENDPOINT_URL = 'https://money.dailyhunt.in/openrtb2/auction';
 const PROD_ENDPOINT_URL = 'https://money.dailyhunt.in/openx/ads/index.php';
 
 function buildParams(bid) {
-  let params = {...bid.params};
+  if (!bid.params) {
+    bid.params = {
+      pagetype: "sources",
+      placementId: 12345
+    }
+  }
+  let params = { ...bid.params };
   params.env = 'prod';
+  if (params.testmode && params.testmode === true) {
+    params.customEvent = 'pb-testmode';
+  }
   let hasWeb5Size = false;
   let hasWeb3Size = false;
   bid && bid.sizes && bid.sizes.forEach((size, i) => {
     if (!hasWeb3Size && size[0] == 300 && size[1] == 250) {
       hasWeb3Size = true;
     }
-    if (!hasWeb5Size && size[0] == 300 && size[1] == 50) {
+    if (!hasWeb5Size && (size[0] == 300 || size[0] == 320) && size[1] == 50) {
       hasWeb5Size = true;
     }
   })
@@ -34,18 +43,15 @@ function buildParams(bid) {
     params.subSlots = 'web-3';
     params.ad_type = '2,3';
   }
-  if (!params.nwFill) {
-    params.nwFill = true;
-  }
   if (!params.partnerId) {
-    params.partnerId = 'DH';
+    params.partnerId = 'unknown-pb-partner';
   }
   params.pbRequestId = bid.bidId;
   params.format = 'json';
   return params;
 }
 
-const _encodeURIComponent = function(a) {
+const _encodeURIComponent = function (a) {
   let b = window.encodeURIComponent(a);
   b = b.replace(/'/g, '%27');
   return b;
@@ -72,7 +78,7 @@ export const spec = {
         request = {
           method: 'GET',
           url: PROD_ENDPOINT_URL,
-          data: decodeURIComponent(utils.parseQueryStringParameters(params))
+          data: utils.parseQueryStringParameters(params)
         };
       } else {
         let ortbReq = {
@@ -88,7 +94,7 @@ export const spec = {
                 },
                 {
                   'h': 50,
-                  'w': 300
+                  'w': 320
                 }
               ]
             },
@@ -100,9 +106,9 @@ export const spec = {
             }
           }],
           site: { id: i.toString(), page },
-          device: {userAgent},
+          device: { userAgent },
           user: {
-            id: params.clientId,
+            id: params.clientId || "",
           }
         };
         request = {
