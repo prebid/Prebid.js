@@ -7,7 +7,7 @@ import * as utils from '../src/utils';
 import find from 'core-js/library/fn/array/find';
 import { verify } from 'criteo-direct-rsa-validate/build/verify';
 
-export const ADAPTER_VERSION = 22;
+export const ADAPTER_VERSION = 24;
 const BIDDER_CODE = 'criteo';
 const CDB_ENDPOINT = 'https://bidder.criteo.com/cdb';
 const CRITEO_VENDOR_ID = 91;
