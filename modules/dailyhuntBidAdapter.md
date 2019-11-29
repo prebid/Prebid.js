@@ -20,12 +20,7 @@ Dailyhunt bid adapter supports Banner and Native.
             sizes: [[300, 250], [300, 50]],
             bids: [
                 {
-                    bidder: 'dailyhunt',
-                    params: {
-                        placementId: 12345,
-                        pageType: "sources",
-                        clientId: "<user-id>"
-                    }
+                    bidder: 'dailyhunt'
                 }
             ]
         },
@@ -50,12 +45,7 @@ Dailyhunt bid adapter supports Banner and Native.
             },
             bids: [
                 {
-                    bidder: 'dailyhunt',
-                    params: {
-                        placementId: 12345,
-                        pageType: "sources",
-                        clientId: "<user-id>"
-                    }
+                    bidder: 'dailyhunt'
                 }
             ]
         }
