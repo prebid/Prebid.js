@@ -11,7 +11,6 @@ import * as utils from '../src/utils';
  * updated 201911 for prebid 3.0
  */
 
-
 const emptyUrl = '';
 const analyticsType = 'endpoint';
 const adxcgAnalyticsVersion = 'v2.01';
