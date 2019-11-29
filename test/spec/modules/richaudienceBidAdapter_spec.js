@@ -277,7 +277,7 @@ describe('Richaudience adapter tests', function () {
       var requestContent = JSON.parse(request[0].data);
 
       expect(requestContent.user).to.deep.equal([{
-        'userId': 'd5-sync.com',
+        'userId': 'id5-sync.com',
         'source': 'id5-user-id'
       }]);
 

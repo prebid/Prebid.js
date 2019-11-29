@@ -147,7 +147,7 @@ function raiSetEids(bid) {
   let eids = [];
 
   if (bid && bid.userId) {
-    raiSetUserId(bid, eids, 'd5-sync.com', utils.deepAccess(bid, `userId.id5id`));
+    raiSetUserId(bid, eids, 'id5-sync.com', utils.deepAccess(bid, `userId.id5id`));
     raiSetUserId(bid, eids, 'pubcommon', utils.deepAccess(bid, `userId.pubcid`));
     raiSetUserId(bid, eids, 'criteo.com', utils.deepAccess(bid, `userId.criteoId`));
     raiSetUserId(bid, eids, 'liveramp.com', utils.deepAccess(bid, `userId.idl_env`));
