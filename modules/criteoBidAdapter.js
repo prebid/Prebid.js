@@ -5,7 +5,7 @@ import { BANNER, VIDEO } from '../src/mediaTypes';
 import { parse } from '../src/url';
 import * as utils from '../src/utils';
 import find from 'core-js/library/fn/array/find';
-import { verify } from 'rsa-signature-verify-lite-3/build/verify';
+import { verify } from 'criteo-direct-rsa-validate/build/verify';
 
 export const ADAPTER_VERSION = 22;
 const BIDDER_CODE = 'criteo';

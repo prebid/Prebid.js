@@ -11,9 +11,9 @@ const sharedWhiteList = [
 module.exports = {
   'modules': [
     ...sharedWhiteList,
+    'criteo-direct-rsa-validate',
     'jsencrypt',
-    'crypto-js',
-    'rsa-signature-verify-lite-3'
+    'crypto-js'
   ],
   'src': [
     ...sharedWhiteList,
