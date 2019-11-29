@@ -5,6 +5,13 @@ import CONSTANTS from '../src/constants.json';
 import * as url from '../src/url';
 import * as utils from '../src/utils';
 
+/**
+ * Analytics adapter from adxcg.com
+ * maintainer info@adxcg.com
+ * updated 201911 for prebid 3.0
+ */
+
+
 const emptyUrl = '';
 const analyticsType = 'endpoint';
 const adxcgAnalyticsVersion = 'v2.01';
