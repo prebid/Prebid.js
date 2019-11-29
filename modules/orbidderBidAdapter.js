@@ -28,6 +28,7 @@ export const spec = {
       if (bidderRequest && bidderRequest.refererInfo) {
         referer = bidderRequest.refererInfo.referer || '';
       }
+
       const ret = {
         url: `${spec.orbidderHost}/bid`,
         method: 'POST',
