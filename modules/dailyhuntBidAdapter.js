@@ -12,7 +12,7 @@ const PROD_ENDPOINT_URL = 'https://money.dailyhunt.in/openx/ads/index.php';
 function buildParams(bid) {
   if (!bid.params) {
     bid.params = {
-      pagetype: "sources",
+      pagetype: 'sources',
       placementId: 12345
     }
   }
@@ -108,7 +108,7 @@ export const spec = {
           site: { id: i.toString(), page },
           device: { userAgent },
           user: {
-            id: params.clientId || "",
+            id: params.clientId || '',
           }
         };
         request = {
