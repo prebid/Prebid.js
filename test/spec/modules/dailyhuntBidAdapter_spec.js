@@ -17,7 +17,7 @@ describe('DailyhuntAdapter', function () {
     let bid = {
       'bidder': 'dailyhunt',
       'params': {
-        'placementId': '10433394'
+        partnerId: 'pb-partnerId'
       }
     };
 
@@ -28,9 +28,7 @@ describe('DailyhuntAdapter', function () {
     it('should return false when required params are not passed', function () {
       let bid = Object.assign({}, bid);
       delete bid.params;
-      bid.params = {
-        'placementId': 0
-      };
+      bid.params = {};
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
   });

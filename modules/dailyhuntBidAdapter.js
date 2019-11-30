@@ -10,13 +10,9 @@ const PROD_PREBID_ENDPOINT_URL = 'https://money.dailyhunt.in/openrtb2/auction';
 const PROD_ENDPOINT_URL = 'https://money.dailyhunt.in/openx/ads/index.php';
 
 function buildParams(bid) {
-  if (!bid.params) {
-    bid.params = {
-      pagetype: 'sources',
-      placementId: 12345
-    }
-  }
   let params = { ...bid.params };
+  params.pagetype = 'sources';
+  params.placementId = 12345;
   params.env = 'prod';
   if (params.testmode && params.testmode === true) {
     params.customEvent = 'pb-testmode';
@@ -64,7 +60,7 @@ export const spec = {
 
   supportedMediaTypes: SUPPORTED_MEDIA_TYPES,
 
-  isBidRequestValid: bid => !!bid.params.placementId,
+  isBidRequestValid: bid => !!bid.params.partnerId,
 
   buildRequests: function (validBidRequests, bidderRequest) {
     let serverRequests = [];
