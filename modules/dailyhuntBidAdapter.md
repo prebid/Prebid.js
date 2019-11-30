@@ -17,7 +17,7 @@ Dailyhunt bid adapter supports Banner and Native.
     var adUnits = [
         {
             code: 'test-banner-adunit-code',
-            sizes: [[300, 250], [300, 50]],
+            sizes: [[300, 250], [320, 50]],
             bids: [
                 {
                     bidder: 'dailyhunt',
