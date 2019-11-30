@@ -12,7 +12,8 @@ const BID_RESPONSE = CONSTANTS.EVENTS.BID_RESPONSE;
 const BID_WON = CONSTANTS.EVENTS.BID_WON;
 const AUCTION_END = CONSTANTS.EVENTS.AUCTION_END;
 
-const URL = 'https://auction.scaleable.ai/';
+// const URL = 'https://auction.scaleable.ai/';
+const URL = 'http://localhost:8061/';
 const ANALYTICS_TYPE = 'endpoint';
 
 let auctionData = {};
@@ -70,15 +71,40 @@ const sendDataToServer = data => ajax(URL, () => {}, JSON.stringify(data));
 const onAuctionInit = args => {
   const config = scaleableAnalytics.config || {options: {}};
 
-  for (let idx = args.adUnitCodes.length; idx--;) {
-    const data = {
-      event: 'request',
-      site: config.options.site,
-      adunit: args.adUnitCodes[idx]
-    };
+  let adunitObj = {};
+  let adunits = [];
 
-    sendDataToServer(data);
+  // Loop through adunit codes first
+  args.adUnitCodes.forEach((code) => {
+    adunitObj[code] = [{
+      bidder: 'scaleable_adunit_request'
+    }]
+  });
+
+  // Loop through bidder requests and bids
+  args.bidderRequests.forEach((bidderObj) => {
+    bidderObj.bids.forEach((bidObj) => {
+      adunitObj[bidObj.adUnitCode].push({
+        bidder: bidObj.bidder,
+        params: bidObj.params
+      })
+    });
+  });
+
+  Object.entries(adunitObj).forEach(([adunitCode, bidRequests]) => {
+    adunits.push({
+      code: adunitCode,
+      bidRequests: bidRequests
+    });
+  });
+
+  const data = {
+    event: 'request',
+    site: config.options.site,
+    adunits: adunits
   }
+
+  sendDataToServer(data);
 }
 
 // Handle all events besides requests and wins
@@ -86,6 +112,8 @@ const onAuctionEnd = args => {
   for (let adunit in auctionData) {
     sendDataToServer(auctionData[adunit]);
   }
+
+  auctionData = {};
 }
 
 // Bid Win Events occur after auction end

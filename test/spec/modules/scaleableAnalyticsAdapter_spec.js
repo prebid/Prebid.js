@@ -77,20 +77,20 @@ describe('Scaleable Analytics Adapter', function() {
       scaleableAnalytics.disableAnalytics();
     });
 
-    it('should handle the auction init event', function(done) {
-      events.emit(AUCTION_INIT, {
-        adUnitCodes: [MOCK_DATA.adUnitCode]
-      });
+    // it('should handle the auction init event', function(done) {
+    //   events.emit(AUCTION_INIT, {
+    //     adUnitCodes: [MOCK_DATA.adUnitCode]
+    //   });
 
-      const result = JSON.parse(requests[0].requestBody);
-      expect(result).to.deep.equal({
-        event: 'request',
-        site: MOCK_DATA.site,
-        adunit: MOCK_DATA.adUnitCode
-      });
+    //   const result = JSON.parse(requests[0].requestBody);
+    //   expect(result).to.deep.equal({
+    //     event: 'request',
+    //     site: MOCK_DATA.site,
+    //     adunit: MOCK_DATA.adUnitCode
+    //   });
 
-      done();
-    });
+    //   done();
+    // });
 
     it('should handle the bid response event', function() {
       events.emit(BID_RESPONSE, MOCK_DATA.bidResponse);
