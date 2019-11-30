@@ -57,3 +57,8 @@ Dailyhunt bid adapter supports Banner and Native.
         }
     ];
 ```
+
+# CheckList
+```
+https://drive.google.com/open?id=1t4rmcyHl5OmRF3sYiqBi-VKEjzX6iN-A
+```
