@@ -221,9 +221,9 @@ export function newConfig() {
       const configTopicSet = new Set(Object.keys(config).concat(Object.keys(currBidderConfig)));
 
       return from(configTopicSet).reduce((memo, topic) => {
-        if (!currBidderConfig[topic]) {
+        if (typeof currBidderConfig[topic] === 'undefined') {
           memo[topic] = config[topic];
-        } else if (!config[topic]) {
+        } else if (typeof config[topic] === 'undefined') {
           memo[topic] = currBidderConfig[topic];
         } else {
           if (utils.isPlainObject(currBidderConfig[topic])) {
