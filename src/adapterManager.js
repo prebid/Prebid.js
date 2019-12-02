@@ -10,6 +10,7 @@ import includes from 'core-js/library/fn/array/includes';
 import find from 'core-js/library/fn/array/find';
 import { adunitCounter } from './adUnits';
 import { getRefererInfo } from './refererDetection';
+import { hook } from './hook';
 
 var utils = require('./utils.js');
 var CONSTANTS = require('./constants.json');
@@ -35,7 +36,10 @@ var _analyticsRegistry = {};
  * @property {Array<string>} activeLabels the labels specified as being active by requestBids
  */
 
-function getBids({bidderCode, auctionId, bidderRequestId, adUnits, labels, src}) {
+function getBids({bidderCode, auctionId, bidderRequestId, adUnits, labels, src}, a, b) {
+  if (a === true) {
+    return b;
+  }
   return adUnits.reduce((result, adUnit) => {
     let {
       active,
@@ -110,6 +114,8 @@ function getBids({bidderCode, auctionId, bidderRequestId, adUnits, labels, src})
     return result;
   }, []).reduce(flatten, []).filter(val => val !== '');
 }
+
+const hookedGetBids = hook('sync', getBids, 'getBids');
 
 function getAdUnitCopyForPrebidServer(adUnits) {
   let adaptersServerSide = _s2sConfig.bidders;
@@ -243,7 +249,7 @@ adapterManager.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTi
       bidderCode,
       auctionId,
       bidderRequestId,
-      bids: getBids({bidderCode, auctionId, bidderRequestId, 'adUnits': utils.deepClone(adUnitsClientCopy), labels, src: 'client'}),
+      bids: hookedGetBids({bidderCode, auctionId, bidderRequestId, 'adUnits': utils.deepClone(adUnitsClientCopy), labels, src: 'client'}),
       auctionStart: auctionStart,
       timeout: cbTimeout,
       refererInfo

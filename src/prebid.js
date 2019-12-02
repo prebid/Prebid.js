@@ -420,7 +420,7 @@ $$PREBID_GLOBAL$$.requestBids = hook('async', function ({ bidsBackHandler, timeo
     adUnitCodes = adUnits && adUnits.map(unit => unit.code);
   }
 
-  adUnits = checkAdUnitSetup(adUnits);
+  // adUnits = checkAdUnitSetup(adUnits);
 
   /*
    * for a given adunit which supports a set of mediaTypes

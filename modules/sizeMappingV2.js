@@ -139,15 +139,20 @@ function getActiveSizeBucket(sizeConfig, activeViewport) {
   return activeSizeBucket;
 }
 
+function getRelevantMediaTypesForBidder(sizeConfig, activeViewport) {
+  const activeSizeBucket = getActiveSizeBucket(sizeConfig, activeViewport);
+  return sizeConfig.filter(config => config.minViewPort === activeSizeBucket)[0]['relevantMediaTypes'];
+}
+
 function getBids({ bidderCode, auctionId, bidderRequestId, adUnits, labels, src }) {
   return adUnits.reduce((result, adUnit) => {
     if (isLabelActivated(adUnit, labels)) {
       if (adUnit.mediaTypes) {
         const { mediaTypes, activeSizeBucket, activeViewport, transformedMediaTypes } = getFilteredMediaTypes(adUnit.mediaTypes);
-        logInfo(`SizeMappingV2:: Size of the viewport detected: `, activeViewport);
-        logInfo(`SizeMappingV2:: Active size buckets after filtration: `, activeSizeBucket);
-        logInfo(`SizeMappingV2:: Transformed mediaTypes after filtration: `, transformedMediaTypes);
-        logInfo(`SizeMappingV2:: mediaTypes that got filtered out: `, Object.keys(mediaTypes).filter(mt => Object.keys(transformedMediaTypes).indexOf(mt) === -1));
+        logInfo(`SizeMappingV2:: AdUnit:: ${adUnit.code}, Size of the viewport detected: `, activeViewport);
+        logInfo(`SizeMappingV2:: AdUnit:: ${adUnit.code}, Active size buckets after filtration: `, activeSizeBucket);
+        logInfo(`SizeMappingV2:: AdUnit:: ${adUnit.code}, Transformed mediaTypes after filtration: `, transformedMediaTypes);
+        logInfo(`SizeMappingV2:: AdUnit:: ${adUnit.code}, mediaTypes that got filtered out: `, Object.keys(mediaTypes).filter(mt => Object.keys(transformedMediaTypes).indexOf(mt) === -1));
         result
           .push(adUnit.bids.filter(bid => bid.bidder === bidderCode)
             .reduce((bids, bid) => {
@@ -163,7 +168,7 @@ function getBids({ bidderCode, auctionId, bidderRequestId, adUnits, labels, src 
                 bid = Object.assign({}, bid, getDefinedParams(adUnit, ['mediaType', 'renderer']));
 
                 if (bid.sizeConfig) {
-                  const relevantMediaTypes = bid.sizeConfig.filter(config => config.minViewPort === activeViewPort)[0].relevantMediaTypes;
+                  const relevantMediaTypes = getRelevantMediaTypesForBidder(bid.sizeConfig, activeViewport);
                   if (relevantMediaTypes[0] !== 'none') {
                     const bidderMediaTypes = Object
                       .keys(transformedMediaTypes)
