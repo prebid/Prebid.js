@@ -117,7 +117,7 @@ export const spec = {
           mediaType: type
         };
 
-        if (!bid.renderer && utils.deepAccess(bid, 'mediaTypes.video.context') === 'outstream') {
+        if (!bid.renderer && type === VIDEO && utils.deepAccess(bid, 'mediaTypes.video.context') === 'outstream') {
           bidObject.renderer = Renderer.install({id: bid.bidId, url: OUTSTREAM_RENDERER_URL});
           bidObject.renderer.setRender(renderer);
         }
