@@ -138,7 +138,7 @@ describe('Trion adapter tests', function () {
       });
       let bidRequests = spec.buildRequests(TRION_BID_REQUEST);
       let bidUrlParams = bidRequests[0].data;
-      expect(bidUrlParams).to.include('tr_wd=1');
+      expect(bidUrlParams).to.include('tr_hd=1');
       expect(bidUrlParams).to.include('tr_vs=hidden');
     });
   });
