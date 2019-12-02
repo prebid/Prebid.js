@@ -119,6 +119,28 @@ describe('Trion adapter tests', function () {
       expect(bidUrlParams).to.include(utils.getTopWindowUrl());
       delete params.re;
     });
+
+    it('should send the correct state when there is non human traffic', function () {
+      window.navigator['__defineGetter__']('webdriver', function () {
+        return 1;
+      });
+      let bidRequests = spec.buildRequests(TRION_BID_REQUEST);
+      let bidUrlParams = bidRequests[0].data;
+      expect(bidUrlParams).to.include('tr_wd=1');
+    });
+
+    it('should send the correct states when the document is not visible', function () {
+      document['__defineGetter__']('hidden', function () {
+        return 1;
+      });
+      document['__defineGetter__']('visibilityState', function () {
+        return 'hidden';
+      });
+      let bidRequests = spec.buildRequests(TRION_BID_REQUEST);
+      let bidUrlParams = bidRequests[0].data;
+      expect(bidUrlParams).to.include('tr_wd=1');
+      expect(bidUrlParams).to.include('tr_vs=hidden');
+    });
   });
 
   describe('interpretResponse', function () {
