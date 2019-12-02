@@ -1,21 +1,12 @@
-import {
-  setConsentConfig,
-  requestBidsHook,
-  resetConsentData,
-  userCMP,
-  consentTimeout,
-  allowAuction,
-  staticConsentData,
-  consentTimeoutUSP
-} from 'modules/consentManagement';
-import {gdprDataHandler, uspDataHandler} from 'src/adapterManager';
+import {setConsentConfig, requestBidsHook, resetConsentData, userCMP, consentTimeout, allowAuction, staticConsentData} from 'modules/consentManagement';
+import {gdprDataHandler} from 'src/adapterManager';
 import * as utils from 'src/utils';
 import { config } from 'src/config';
 
 let assert = require('chai').assert;
 let expect = require('chai').expect;
 
-describe.only('consentManagement', function () {
+describe('consentManagement', function () {
   describe('setConsentConfig tests:', function () {
     describe('empty setConsentConfig value', function () {
       beforeEach(function () {
@@ -28,16 +19,10 @@ describe.only('consentManagement', function () {
       });
 
       it('should use system default values', function () {
-        setConsentConfig({}, 'gdpr');
+        setConsentConfig({});
         expect(userCMP).to.be.equal('iab');
         expect(consentTimeout).to.be.equal(10000);
         expect(allowAuction).to.be.true;
-        sinon.assert.callCount(utils.logInfo, 4);
-      });
-
-      it('should use system default values for USP', function () {
-        setConsentConfig({}, 'usp');
-        expect(consentTimeoutUSP).to.be.equal(50);
         sinon.assert.callCount(utils.logInfo, 4);
       });
     });
@@ -51,8 +36,7 @@ describe.only('consentManagement', function () {
         let allConfig = {
           cmpApi: 'iab',
           timeout: 7500,
-          allowAuctionWithoutConsent: false,
-          consentAPIs: ['gdpr']
+          allowAuctionWithoutConsent: false
         };
 
         setConsentConfig(allConfig);
@@ -72,7 +56,6 @@ describe.only('consentManagement', function () {
           cmpApi: 'static',
           timeout: 7500,
           allowAuctionWithoutConsent: false,
-          consentAPIs: ['static'],
           consentData: {
             getConsentData: {
               'gdprApplies': true,
@@ -464,7 +447,7 @@ describe.only('consentManagement', function () {
           }
         };
 
-        setConsentConfig(staticConfig, 'static');
+        setConsentConfig(staticConfig);
         expect(userCMP).to.be.equal('static');
         expect(consentTimeout).to.be.equal(0); // should always return without a timeout when config is used
         expect(allowAuction).to.be.false;
@@ -477,15 +460,13 @@ describe.only('consentManagement', function () {
     let goodConfigWithCancelAuction = {
       cmpApi: 'iab',
       timeout: 7500,
-      allowAuctionWithoutConsent: false,
-      consentAPIs: ['gdpr']
+      allowAuctionWithoutConsent: false
     };
 
     let goodConfigWithAllowAuction = {
       cmpApi: 'iab',
       timeout: 7500,
-      allowAuctionWithoutConsent: true,
-      consentAPIs: ['gdpr']
+      allowAuctionWithoutConsent: true
     };
 
     let didHookReturn;
@@ -514,7 +495,7 @@ describe.only('consentManagement', function () {
         let badCMPConfig = {
           cmpApi: 'bad'
         };
-        setConsentConfig(badCMPConfig, 'bad');
+        setConsentConfig(badCMPConfig);
         expect(userCMP).to.be.equal(badCMPConfig.cmpApi);
 
         requestBidsHook(() => {
@@ -527,11 +508,11 @@ describe.only('consentManagement', function () {
       });
 
       it('should throw proper errors when CMP is not found', function () {
-        setConsentConfig(goodConfigWithCancelAuction, 'gdpr');
+        setConsentConfig(goodConfigWithCancelAuction);
 
         requestBidsHook(() => {
           didHookReturn = true;
-        }, {}, 'gdpr');
+        }, {});
         let consent = gdprDataHandler.getConsentData();
         // throw 2 errors; one for no bidsBackHandler and for CMP not being found (this is an error due to gdpr config)
         sinon.assert.calledTwice(utils.logError);
@@ -565,7 +546,7 @@ describe.only('consentManagement', function () {
         cmpStub = sinon.stub(window, '__cmp').callsFake((...args) => {
           args[2](testConsentData);
         });
-        setConsentConfig(goodConfigWithAllowAuction, 'gdpr');
+        setConsentConfig(goodConfigWithAllowAuction);
         requestBidsHook(() => {}, {});
         cmpStub.restore();
 
@@ -629,7 +610,7 @@ describe.only('consentManagement', function () {
           args[2](testConsentData.data.msgName, testConsentData.data);
         });
 
-        setConsentConfig(goodConfigWithAllowAuction, 'gdpr');
+        setConsentConfig(goodConfigWithAllowAuction);
         requestBidsHook(() => {
           didHookReturn = true;
         }, {adUnits: [{ sizes: [[300, 250]] }]});
@@ -703,7 +684,7 @@ describe.only('consentManagement', function () {
       function testIFramedPage(testName, messageFormatString) {
         it(`should return the consent string from a postmessage + addEventListener response - ${testName}`, (done) => {
           stringifyResponse = messageFormatString;
-          setConsentConfig(goodConfigWithAllowAuction, 'gdpr');
+          setConsentConfig(goodConfigWithAllowAuction);
           requestBidsHook(() => {
             let consent = gdprDataHandler.getConsentData();
             sinon.assert.notCalled(utils.logWarn);
@@ -716,76 +697,6 @@ describe.only('consentManagement', function () {
       }
     });
 
-    describe('USP workflow for iframed page', function () {
-      let ifr = null;
-      let stringifyResponse = false;
-
-      beforeEach(function () {
-        sinon.stub(utils, 'logError');
-        sinon.stub(utils, 'logWarn');
-        ifr = createIFrameMarker();
-        window.addEventListener('message', uspMessageHandler, false);
-      });
-
-      afterEach(function () {
-        config.resetConfig();
-        $$PREBID_GLOBAL$$.requestBids.removeAll();
-        utils.logError.restore();
-        utils.logWarn.restore();
-        resetConsentData();
-        document.body.removeChild(ifr);
-        window.removeEventListener('message', uspMessageHandler);
-      });
-
-      function createIFrameMarker() {
-        var ifr = document.createElement('iframe');
-        ifr.width = 0;
-        ifr.height = 0;
-        ifr.name = '__uspapiLocator';
-        document.body.appendChild(ifr);
-        return ifr;
-      }
-
-      function uspMessageHandler(event) {
-        if (event && event.data) {
-          var data = event.data;
-          if (data.__uspapiCall) {
-            var callId = data.__uspapiCall.callId;
-            var response = {
-              __uspapiReturn: {
-                callId,
-                returnValue: { usPrivacy: '1NN' },
-                success: true
-              }
-            };
-            event.source.postMessage(stringifyResponse ? JSON.stringify(response) : response, '*');
-          }
-        }
-      }
-
-      let _goodConfigWithAllowAuction = { ...goodConfigWithAllowAuction };
-      _goodConfigWithAllowAuction.consentAPIs = ['usp'];
-
-      // Run tests with JSON response and String response
-      // from CMP window postMessage listener.
-      testIFramedPage('with/JSON response', false);
-      // testIFramedPage('with/String response', true);
-
-      function testIFramedPage(testName, messageFormatString) {
-        it(`should return the consent string from a postmessage + addEventListener response - ${testName}`, (done) => {
-          stringifyResponse = messageFormatString;
-          setConsentConfig(_goodConfigWithAllowAuction, 'usp');
-          requestBidsHook(() => {
-            let consent = uspDataHandler.getConsentData();
-            sinon.assert.notCalled(utils.logWarn);
-            sinon.assert.notCalled(utils.logError);
-            expect(consent.usPrivacy).to.equal('1NN');
-            done();
-          }, {}, true);
-        });
-      }
-    });
-
     describe('CMP workflow for normal pages:', function () {
       let cmpStub = sinon.stub();
 
@@ -794,7 +705,6 @@ describe.only('consentManagement', function () {
         sinon.stub(utils, 'logError');
         sinon.stub(utils, 'logWarn');
         window.__cmp = function() {};
-        window.__uspapi = function() {};
       });
 
       afterEach(function () {
@@ -804,7 +714,6 @@ describe.only('consentManagement', function () {
         utils.logError.restore();
         utils.logWarn.restore();
         delete window.__cmp;
-        delete window.__uspapi;
         resetConsentData();
       });
 
@@ -817,7 +726,7 @@ describe.only('consentManagement', function () {
           args[2](testConsentData);
         });
 
-        setConsentConfig(goodConfigWithAllowAuction, 'gdpr');
+        setConsentConfig(goodConfigWithAllowAuction);
 
         requestBidsHook(() => {
           didHookReturn = true;
@@ -839,7 +748,7 @@ describe.only('consentManagement', function () {
           args[2](testConsentData);
         });
 
-        setConsentConfig(goodConfigWithCancelAuction, 'gdpr');
+        setConsentConfig(goodConfigWithCancelAuction);
 
         requestBidsHook(() => {
           didHookReturn = true;
@@ -859,7 +768,7 @@ describe.only('consentManagement', function () {
           args[2](testConsentData);
         });
 
-        setConsentConfig(goodConfigWithAllowAuction, 'gdpr');
+        setConsentConfig(goodConfigWithAllowAuction);
 
         requestBidsHook(() => {
           didHookReturn = true;
