@@ -111,50 +111,48 @@ describe.only('consentManagement', function () {
       });
     });
 
-    // describe('already known consentData:', function () {
-    //   let uspStub = sinon.stub();
+    describe('already known consentData:', function () {
+      let uspStub = sinon.stub();
 
-    //   beforeEach(function () {
-    //     didHookReturn = false;
-    //     window.__uspapi = function() {};
-    //   });
+      beforeEach(function () {
+        didHookReturn = false;
+        window.__uspapi = function() {};
+      });
 
-    //   afterEach(function () {
-    //     config.resetConfig();
-    //     $$PREBID_GLOBAL$$.requestBids.removeAll();
-    //     uspStub.restore();
-    //     delete window.__uspapi;
-    //     resetConsentData();
-    //   });
+      afterEach(function () {
+        config.resetConfig();
+        $$PREBID_GLOBAL$$.requestBids.removeAll();
+        uspStub.restore();
+        delete window.__uspapi;
+        resetConsentData();
+      });
 
-    //   it('should bypass CMP and simply use previously stored consentData', function () {
-    //     let testConsentData = {
-    //       consentData: '1YY'
-    //     };
+      it('should bypass CMP and simply use previously stored consentData', function () {
+        let testConsentData = {
+          usPrivacy: '1YY'
+        };
 
-    //     uspStub = sinon.stub(window, '__uspapi').callsFake((...args) => {
-    //       args[2](testConsentData);
-    //     });
+        uspStub = sinon.stub(window, '__uspapi').callsFake((...args) => {
+          args[2](testConsentData);
+        });
 
-    //     setConsentConfig(goodConfigWithAllowAuction);
-    //     requestBidsHook(() => {}, {});
-    //     uspStub.restore();
+        setConsentConfig(goodConfigWithAllowAuction);
+        requestBidsHook(() => {}, {});
+        uspStub.restore();
 
-    //     // reset the stub to ensure it wasn't called during the second round of calls
-    //     uspStub = sinon.stub(window, '__uspapi').callsFake((...args) => {
-    //       args[2](testConsentData);
-    //     });
+        // reset the stub to ensure it wasn't called during the second round of calls
+        uspStub = sinon.stub(window, '__uspapi').callsFake((...args) => {
+          args[2](testConsentData);
+        });
 
-    //     requestBidsHook(() => {
-    //       didHookReturn = true;
-    //     }, {});
-    //     let consent = uspDataHandler.getConsentData();
-    //     // console.log('consent:', consent);
-    //     // expect(didHookReturn).to.be.true;
-    //     // expect(consent.consentString).to.equal(testConsentData.consentData);
-    //     sinon.assert.notCalled(uspStub);
-    //   });
-    // });
+        requestBidsHook(() => { didHookReturn = true; }, {});
+
+        let consent = uspDataHandler.getConsentData();
+        expect(didHookReturn).to.be.true;
+        expect(consent.consentString).to.equal(testConsentData.consentData);
+        sinon.assert.notCalled(uspStub);
+      });
+    });
 
     describe('USPAPI workflow for iframed page', function () {
       let ifr = null;
@@ -225,89 +223,49 @@ describe.only('consentManagement', function () {
       }
     });
 
-    // describe('CMP workflow for normal pages:', function () {
-    //   let cmpStub = sinon.stub();
+    describe('USPAPI workflow for normal pages:', function () {
+      let uspapiStub = sinon.stub();
 
-    //   beforeEach(function () {
-    //     didHookReturn = false;
-    //     sinon.stub(utils, 'logError');
-    //     sinon.stub(utils, 'logWarn');
-    //     window.__cmp = function() {};
-    //   });
+      beforeEach(function () {
+        didHookReturn = false;
+        sinon.stub(utils, 'logError');
+        sinon.stub(utils, 'logWarn');
+        window.__uspapi = function() {};
+      });
 
-    //   afterEach(function () {
-    //     config.resetConfig();
-    //     $$PREBID_GLOBAL$$.requestBids.removeAll();
-    //     cmpStub.restore();
-    //     utils.logError.restore();
-    //     utils.logWarn.restore();
-    //     delete window.__cmp;
-    //     resetConsentData();
-    //   });
+      afterEach(function () {
+        config.resetConfig();
+        $$PREBID_GLOBAL$$.requestBids.removeAll();
+        uspapiStub.restore();
+        utils.logError.restore();
+        utils.logWarn.restore();
+        delete window.__uspapi;
+        resetConsentData();
+      });
 
-    //   it('performs lookup check and stores consentData for a valid existing user', function () {
-    //     let testConsentData = {
-    //       gdprApplies: true,
-    //       consentData: 'BOJy+UqOJy+UqABAB+AAAAAZ+A=='
-    //     };
-    //     cmpStub = sinon.stub(window, '__cmp').callsFake((...args) => {
-    //       args[2](testConsentData);
-    //     });
+      it('performs lookup check and stores consentData for a valid existing user', function () {
+        let testConsentData = {
+          usPrivacy: '1YY'
+        };
 
-    //     setConsentConfig(goodConfigWithAllowAuction);
+        uspapiStub = sinon.stub(window, '__uspapi').callsFake((...args) => {
+          args[2](testConsentData);
+        });
 
-    //     requestBidsHook(() => {
-    //       didHookReturn = true;
-    //     }, {});
-    //     let consent = gdprDataHandler.getConsentData();
+        setConsentConfig(goodConfigWithAllowAuction);
 
-    //     sinon.assert.notCalled(utils.logWarn);
-    //     sinon.assert.notCalled(utils.logError);
-    //     expect(didHookReturn).to.be.true;
-    //     expect(consent.consentString).to.equal(testConsentData.consentData);
-    //     expect(consent.gdprApplies).to.be.true;
-    //   });
+        requestBidsHook(() => {
+          didHookReturn = true;
+        }, {});
 
-    //   it('throws an error when processCmpData check failed while config had allowAuction set to false', function () {
-    //     let testConsentData = {};
-    //     let bidsBackHandlerReturn = false;
+        let consent = uspDataHandler.getConsentData();
 
-    //     cmpStub = sinon.stub(window, '__cmp').callsFake((...args) => {
-    //       args[2](testConsentData);
-    //     });
+        sinon.assert.notCalled(utils.logWarn);
+        sinon.assert.notCalled(utils.logError);
 
-    //     setConsentConfig(goodConfigWithCancelAuction);
-
-    //     requestBidsHook(() => {
-    //       didHookReturn = true;
-    //     }, { bidsBackHandler: () => bidsBackHandlerReturn = true });
-    //     let consent = gdprDataHandler.getConsentData();
-
-    //     sinon.assert.calledOnce(utils.logError);
-    //     expect(didHookReturn).to.be.false;
-    //     expect(bidsBackHandlerReturn).to.be.true;
-    //     expect(consent).to.be.null;
-    //   });
-
-    //   it('throws a warning + stores consentData + calls callback when processCmpData check failed while config had allowAuction set to true', function () {
-    //     let testConsentData = {};
-
-    //     cmpStub = sinon.stub(window, '__cmp').callsFake((...args) => {
-    //       args[2](testConsentData);
-    //     });
-
-    //     setConsentConfig(goodConfigWithAllowAuction);
-
-    //     requestBidsHook(() => {
-    //       didHookReturn = true;
-    //     }, {});
-    //     let consent = gdprDataHandler.getConsentData();
-
-    //     sinon.assert.calledOnce(utils.logWarn);
-    //     expect(didHookReturn).to.be.true;
-    //     expect(consent.consentString).to.be.undefined;
-    //     expect(consent.gdprApplies).to.be.undefined;
-    //   });
-    // });
+        expect(didHookReturn).to.be.true;
+        expect(consent.usPrivacy).to.equal(testConsentData.usPrivacy);
+      });
+    });
   });
 });

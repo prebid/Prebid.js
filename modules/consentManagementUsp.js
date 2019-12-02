@@ -1,14 +1,13 @@
 /**
- * This module adds GDPR consentManagement support to prebid.js.  It interacts with
- * supported CMPs (Consent Management Platforms) to grab the user's consent information
- * and make it available for any GDPR supported adapters to read/pass this information to
- * their system.
+ * This module adds USPAPI (CCPA) consentManagement support to prebid.js. It
+ * interacts with supported USP Consent APIs to grab the user's consent
+ * information and make it available for any GDPR supported adapters to
+ * read/pass this information to their system.
  */
 import * as utils from '../src/utils';
 import { config } from '../src/config';
 import { uspDataHandler } from '../src/adapterManager';
 import includes from 'core-js/library/fn/array/includes';
-// import strIncludes from 'core-js/library/fn/string/includes';
 
 const DEFAULT_CONSENT_API = 'uspapi';
 const DEFAULT_CONSENT_TIMEOUT = 50;
@@ -21,7 +20,7 @@ export let allowAuction;
 let consentData;
 let addedConsentHook = false;
 
-// add new CMPs here, with their dedicated lookup function
+// consent APIs
 const uspCallMap = {
   'uspapi': lookupUpsConsent
 };
@@ -30,12 +29,12 @@ const uspCallMap = {
  * This function handles interacting with an IAB compliant CMP to obtain the consent information of the user.
  * Given the async nature of the CMP's API, we pass in acting success/error callback functions to exit this function
  * based on the appropriate result.
- * @param {function(string)} cmpSuccess acts as a success callback when CMP returns a value; pass along consentObject (string) from CMP
- * @param {function(string)} uspError acts as an error callback while interacting with CMP; pass along an error message (string)
+ * @param {function(string)} uspSuccess acts as a success callback when USPAPI returns a value; pass along consentObject (string) from UPSAPI
+ * @param {function(string)} uspError acts as an error callback while interacting with USPAPI; pass along an error message (string)
  * @param {object} hookConfig contains module related variables (see comment in requestBidsHook function)
  */
 function lookupUpsConsent(uspSuccess, uspError, hookConfig) {
-  function handleCmpResponseCallbacks() {
+  function handleUspApiResponseCallbacks() {
     const uspResponse = {};
 
     function afterEach() {
@@ -45,23 +44,22 @@ function lookupUpsConsent(uspSuccess, uspError, hookConfig) {
     }
 
     return {
-      consentDataCallback: function (consentResponse) {
+      consentDataCallback: consentResponse => {
         uspResponse.usPrivacy = consentResponse.usPrivacy;
         afterEach();
       }
-    }
+    };
   }
 
-  let callbackHandler = handleCmpResponseCallbacks();
+  let callbackHandler = handleUspApiResponseCallbacks();
   let uspapiCallbacks = {};
   let uspapiFunction;
 
-  // to collect the consent information from the user, we perform two calls to the CMP in parallel:
-  // first to collect the user's consent choices represented in an encoded string (via getUSPData)
-  // second to collect the user's full unparsed consent information (via getVendorConsents)
+  // to collect the consent information from the user, we perform a call to USPAPI
+  // to collect the user's consent choices represented as a string (via getUSPData)
 
-  // the following code also determines where the CMP is located and uses the proper workflow to communicate with it:
-  // check to see if CMP is found on the same window level as prebid and call it directly if so
+  // the following code also determines where the USPAPI is located and uses the proper workflow to communicate with it:
+  // check to see if USPAPI is found on the same window level as prebid and call it directly if so
   // check to see if prebid is in a safeframe (with CMP support)
   // else assume prebid may be inside an iframe and use the IAB CMP locator code to see if CMP's located in a higher parent window. this works in cross domain iframes
   // if the CMP is not found, the iframe function will call the uspError exit callback to abort the rest of the CMP workflow
@@ -70,7 +68,7 @@ function lookupUpsConsent(uspSuccess, uspError, hookConfig) {
   } catch (e) { }
 
   if (utils.isFn(uspapiFunction)) {
-    uspapiFunction('getUSPData', null, callbackHandler.consentDataCallback);
+    uspapiFunction('getUSPData', 1, callbackHandler.consentDataCallback);
   } else {
     // find the CMP frame
     let f = window;
@@ -181,7 +179,8 @@ export function requestBidsHook(fn, reqBidsConfigObj) {
  * @param {object} hookConfig contains module related variables (see comment in requestBidsHook function)
  */
 function processUspData(consentObject, hookConfig) {
-  if (!(consentObject && consentObject.usPrivacy)) {
+  const valid = !!(consentObject && consentObject.usPrivacy);
+  if (!valid) {
     uspapiFailed(`UPSAPI returned unexpected value during lookup process.`, hookConfig, consentObject);
     return;
   }
@@ -211,6 +210,7 @@ function uspapiFailed(errMsg, hookConfig, extraArgs) {
   if (allowAuction) {
     storeUspConsentData(undefined);
   }
+
   exitModule(errMsg, hookConfig, extraArgs);
 }
 
