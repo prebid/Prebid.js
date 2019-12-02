@@ -1,0 +1,118 @@
+<html>
+
+<head>
+    <script async src="../../build/dev/prebid.js"></script>
+    <script async src="https://www.googletagservices.com/tag/js/gpt.js"></script>
+    <script>
+        var FAILSAFE_TIMEOUT = 3300;
+        var PREBID_TIMEOUT = 1000;
+
+        var adUnits = [
+            {
+                code: 'div-test-half-page',
+                mediaTypes: {
+                    banner: {
+                        sizes: [[300, 600]]
+                    }
+                },
+                bids: [
+                    {
+                        bidder: 'proxistore',
+                        params: {
+                            website: 'example.com',
+                            language: 'fr'
+                        }
+                    }]
+            },
+            {
+                code: 'rectangle',
+                mediaTypes: {
+                    banner: {
+                        sizes: [[300, 250]]
+                    }
+                },
+                bids: [{
+                    bidder: 'proxistore',
+                    params: {
+                        website: 'example.com',
+                        language: 'fr'
+                    }
+                }]
+            },
+            {
+                code: 'leaderboard',
+                mediaTypes: {
+                    banner: {
+                        sizes: [[970, 250]]
+                    }
+                },
+                bids: [{
+                    bidder: 'proxistore',
+                    params: {
+                        website: 'example.com',
+                        language: 'fr'
+                    }
+                }]
+            }
+        ];
+
+        var pbjs = pbjs || {};
+        pbjs.que = pbjs.que || [];
+
+    </script>
+
+    <script>
+        var googletag = googletag || {};
+        googletag.cmd = googletag.cmd || [];
+        googletag.cmd.push(function () {
+            googletag.pubads().disableInitialLoad();
+        });
+
+        pbjs.que.push(function () {
+            pbjs.addAdUnits(adUnits);
+            pbjs.requestBids({
+                bidsBackHandler: sendAdserverRequest,
+                timeout: PREBID_TIMEOUT
+            });
+        });
+
+        function sendAdserverRequest() {
+            if (pbjs.adserverRequestSent) return;
+            pbjs.adserverRequestSent = true;
+            googletag.cmd.push(function () {
+                pbjs.que.push(function () {
+                    pbjs.setTargetingForGPTAsync();
+                    googletag.pubads().refresh();
+                });
+            });
+        }
+
+        setTimeout(function () {
+            sendAdserverRequest();
+        }, FAILSAFE_TIMEOUT);
+
+    </script>
+
+    <script>
+        googletag.cmd.push(function () {
+            googletag.defineSlot('/19968336/header-bid-tag-0', [[300, 250], [300, 600]], 'div-test-half-page').addService(googletag.pubads());
+
+            googletag.pubads().enableSingleRequest();
+            googletag.enableServices();
+        });
+    </script>
+</head>
+
+<body>
+    <h2>Prebid.js Test</h2>
+
+    <h5>Div-1</h5>
+
+    <div id='div-test-half-page'>
+        <script type='text/javascript'>
+            googletag.cmd.push(function () { googletag.display('div-test-half-page'); });
+        </script>
+    </div>
+</body>
+
+</html>

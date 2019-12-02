@@ -879,7 +879,7 @@ export function delayExecution(func, numRequiredCalls) {
   return function () {
     numCalls++;
     if (numCalls === numRequiredCalls) {
-      func.apply(null, arguments);
+      func.apply(this, arguments);
     }
   }
 }

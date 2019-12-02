@@ -5,7 +5,7 @@ import {VIDEO, BANNER} from 'src/mediaTypes'
 
 const bidderRequest = {
   refererInfo: {
-    referer: 'http://example.com'
+    referer: 'https://example.com'
   }
 }
 

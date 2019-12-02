@@ -227,11 +227,11 @@ describe('AolAdapter', function () {
           params: {
             placement: 1234567,
             network: '9599.1',
-            server: 'http://adserver-eu.adtech.advertising.com'
+            server: 'https://adserver-eu.adtech.advertising.com'
           }
         });
         let [request] = spec.buildRequests(bidRequest.bids);
-        expect(request.url.indexOf('http://adserver-eu.adtech.advertising.com/pubapi/3.0/'))
+        expect(request.url.indexOf('https://adserver-eu.adtech.advertising.com/pubapi/3.0/'))
           .to.equal(0);
       });
 
@@ -240,7 +240,7 @@ describe('AolAdapter', function () {
           params: {
             placement: 1234567,
             network: '9599.1',
-            server: '//adserver-eu.adtech.advertising.com'
+            server: 'https://adserver-eu.adtech.advertising.com'
           }
         });
         let [request] = spec.buildRequests(bidRequest.bids);
@@ -386,13 +386,13 @@ describe('AolAdapter', function () {
 
       it('should return One Mobile url with different host when host option is present', function () {
         let bidParams = Object.assign({
-          host: 'http://qa-hb.nexage.com'
+          host: 'https://qa-hb.nexage.com'
         }, getNexageGetBidParams());
         let bidRequest = createCustomBidRequest({
           params: bidParams
         });
         let [request] = spec.buildRequests(bidRequest.bids);
-        expect(request.url).to.contain('http://qa-hb.nexage.com/bidRequest?');
+        expect(request.url).to.contain('https://qa-hb.nexage.com/bidRequest?');
       });
 
       it('should return One Mobile url when One Mobile and Marketplace params are present', function () {

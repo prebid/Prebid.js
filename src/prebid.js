@@ -766,6 +766,7 @@ $$PREBID_GLOBAL$$.getConfig = config.getConfig;
  * ```
  */
 $$PREBID_GLOBAL$$.setConfig = config.setConfig;
+$$PREBID_GLOBAL$$.setBidderConfig = config.setBidderConfig;
 
 $$PREBID_GLOBAL$$.que.push(() => listenMessagesFromCreative());
 
