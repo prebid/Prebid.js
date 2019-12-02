@@ -98,7 +98,7 @@ export const spec = {
       response = responses[i];
       type = response.response === 'banner' ? BANNER : VIDEO;
       bid = bids[i];
-      if (VALID_RESPONSES[response.response] && (verifySize(response, bid.sizes) || type === VIDEO)) {
+      if (VALID_RESPONSES[response.response] && (verifySize(response, utils.getAdUnitSizes(bid)) || type === VIDEO)) {
         bidObject = {
           requestId: bid.bidId,
           cpm: response.win_bid,
