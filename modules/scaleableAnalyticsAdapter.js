@@ -132,6 +132,16 @@ const onAuctionEnd = args => {
       code: adunitCode,
       bidData: bidData
     });
+
+    delete auctionData[adunitCode];
+  });
+
+  // Add in any missed auction data
+  Object.entries(auctionData).forEach(([adunitCode, bidData]) => {
+    adunits.push({
+      code: adunitCode,
+      bidData: bidData
+    })
   });
 
   const data = {
@@ -140,7 +150,7 @@ const onAuctionEnd = args => {
     adunits: adunits
   }
 
-  sendDataToServer(data);
+  if (adunits.length) { sendDataToServer(data); }
 
   // Reset auctionData
   auctionData = {}

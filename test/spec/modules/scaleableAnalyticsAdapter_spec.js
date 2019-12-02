@@ -88,6 +88,10 @@ describe('Scaleable Analytics Adapter', function() {
         ttr: bidsReceivedObj.timeToRespond,
         size: bidsReceivedObj.size
       }]
+    },
+    {
+      bidData: MOCK_DATA.expectedBidTimeout[MOCK_DATA.bidTimeout[0].adUnitCode],
+      code: MOCK_DATA.bidTimeout[0].adUnitCode
     }]
   }
 
