@@ -1,7 +1,6 @@
 import Adapter from '../../src/adapter';
 import { createBid } from '../../src/bidfactory';
 import * as utils from '../../src/utils';
-import { ajax } from '../../src/ajax';
 import { STATUS, S2S, EVENTS } from '../../src/constants';
 import adapterManager from '../../src/adapterManager';
 import { config } from '../../src/config';
@@ -11,6 +10,7 @@ import { isValid } from '../../src/adapters/bidderFactory';
 import events from '../../src/events';
 import includes from 'core-js/library/fn/array/includes';
 import { S2S_VENDORS } from './config.js';
+import { ajax } from '../../src/ajax';
 
 const getConfig = config.getConfig;
 
@@ -148,7 +148,6 @@ function queueSync(bidderCodes, gdprConsent) {
     }
   }
   const jsonPayload = JSON.stringify(payload);
-
   ajax(_s2sConfig.syncEndpoint,
     (response) => {
       try {
@@ -511,10 +510,11 @@ const OPEN_RTB_PROTOCOL = {
                   type: imgTypeId,
                   w: utils.deepAccess(params, 'sizes.0'),
                   h: utils.deepAccess(params, 'sizes.1'),
-                  wmin: utils.deepAccess(params, 'aspect_ratios.0.min_width')
+                  wmin: utils.deepAccess(params, 'aspect_ratios.0.min_width'),
+                  hmin: utils.deepAccess(params, 'aspect_ratios.0.min_height')
                 });
-                if (!(asset.w || asset.wmin)) {
-                  throw 'invalid img sizes (must provided sizes or aspect_ratios)';
+                if (!((asset.w && asset.h) || (asset.hmin && asset.wmin))) {
+                  throw 'invalid img sizes (must provide sizes or min_height & min_width if using aspect_ratios)';
                 }
                 if (Array.isArray(params.aspect_ratios)) {
                   // pass aspect_ratios as ext data I guess?
@@ -698,7 +698,7 @@ const OPEN_RTB_PROTOCOL = {
     }
 
     const bidUserId = utils.deepAccess(bidRequests, '0.bids.0.userId');
-    if (bidUserId && typeof bidUserId === 'object' && (bidUserId.tdid || bidUserId.pubcid)) {
+    if (bidUserId && typeof bidUserId === 'object' && (bidUserId.tdid || bidUserId.pubcid || bidUserId.parrableid || bidUserId.lipb || bidUserId.id5id || bidUserId.criteoId)) {
       utils.deepSetValue(request, 'user.ext.eids', []);
 
       if (bidUserId.tdid) {
@@ -718,6 +718,49 @@ const OPEN_RTB_PROTOCOL = {
           source: 'pubcommon',
           uids: [{
             id: bidUserId.pubcid,
+          }]
+        });
+      }
+
+      if (bidUserId.parrableid) {
+        request.user.ext.eids.push({
+          source: 'parrable.com',
+          uids: [{
+            id: bidUserId.parrableid
+          }]
+        });
+      }
+
+      if (bidUserId.lipb && bidUserId.lipb.lipbid) {
+        const liveIntent = {
+          source: 'liveintent.com',
+          uids: [{
+            id: bidUserId.lipb.lipbid
+          }]
+        };
+
+        if (Array.isArray(bidUserId.lipb.segments) && bidUserId.lipb.segments.length) {
+          liveIntent.ext = {
+            segments: bidUserId.lipb.segments
+          };
+        }
+        request.user.ext.eids.push(liveIntent);
+      }
+
+      if (bidUserId.id5id) {
+        request.user.ext.eids.push({
+          source: 'id5-sync.com',
+          uids: [{
+            id: bidUserId.id5id,
+          }]
+        });
+      }
+
+      if (bidUserId.criteoId) {
+        request.user.ext.eids.push({
+          source: 'criteo.com',
+          uids: [{
+            id: bidUserId.criteoId
           }]
         });
       }
@@ -786,6 +829,8 @@ const OPEN_RTB_PROTOCOL = {
           if (extPrebidTargeting && typeof extPrebidTargeting === 'object') {
             bidObject.adserverTargeting = extPrebidTargeting;
           }
+
+          bidObject.seatBidId = bid.id;
 
           if (utils.deepAccess(bid, 'ext.prebid.type') === VIDEO) {
             bidObject.mediaType = VIDEO;
@@ -940,7 +985,11 @@ export function PrebidServer() {
 
     if (_s2sConfig && _s2sConfig.syncEndpoint) {
       let consent = (Array.isArray(bidRequests) && bidRequests.length > 0) ? bidRequests[0].gdprConsent : undefined;
-      queueSync(_s2sConfig.bidders, consent);
+      let syncBidders = _s2sConfig.bidders
+        .map(bidder => adapterManager.aliasRegistry[bidder] || bidder)
+        .filter((bidder, index, array) => (array.indexOf(bidder) === index));
+
+      queueSync(syncBidders, consent);
     }
 
     const request = protocolAdapter().buildRequest(s2sBidRequest, bidRequests, validAdUnits);

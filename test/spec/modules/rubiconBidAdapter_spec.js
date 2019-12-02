@@ -68,6 +68,49 @@ describe('the rubicon adapter', function () {
    * @param {Array.<overrideProps>} [indexOverMap]
    * @return {{status: string, cpm: number, zone_id: *, size_id: *, impression_id: *, ad_id: *, creative_id: string, type: string, targeting: *[]}}
    */
+
+  function getBidderRequest() {
+    return {
+      bidderCode: 'rubicon',
+      auctionId: 'c45dd708-a418-42ec-b8a7-b70a6c6fab0a',
+      bidderRequestId: '178e34bad3658f',
+      bids: [
+        {
+          bidder: 'rubicon',
+          params: {
+            accountId: '14062',
+            siteId: '70608',
+            zoneId: '335918',
+            userId: '12346',
+            keywords: ['a', 'b', 'c'],
+            inventory: {
+              rating: '5-star', // This actually should not be sent to frank!! causes 400
+              prodtype: ['tech', 'mobile']
+            },
+            visitor: {
+              ucat: 'new',
+              lastsearch: 'iphone',
+              likes: ['sports', 'video games']
+            },
+            position: 'atf',
+            referrer: 'localhost',
+            latLong: [40.7607823, '111.8910325']
+          },
+          adUnitCode: '/19968336/header-bid-tag-0',
+          code: 'div-1',
+          sizes: [[300, 250], [320, 50]],
+          bidId: '2ffb201a808da7',
+          bidderRequestId: '178e34bad3658f',
+          auctionId: 'c45dd708-a418-42ec-b8a7-b70a6c6fab0a',
+          transactionId: 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b'
+        }
+      ],
+      start: 1472239426002,
+      auctionStart: 1472239426000,
+      timeout: 5000
+    };
+  };
+
   function createResponseAdByIndex(i, sizeId, indexOverMap) {
     const overridePropMap = (indexOverMap && indexOverMap[i] && typeof indexOverMap[i] === 'object') ? indexOverMap[i] : {};
     const overrideProps = Object.keys(overridePropMap).reduce((aggregate, key) => {
@@ -172,6 +215,12 @@ describe('the rubicon adapter', function () {
       'playerWidth': 640,
       'size_id': 201,
     };
+    bid.userId = {
+      lipb: {
+        lipbid: '0000-1111-2222-3333',
+        segments: ['segA', 'segB']
+      }
+    }
   }
 
   function createVideoBidderRequestNoVideo() {
@@ -230,6 +279,7 @@ describe('the rubicon adapter', function () {
             accountId: '14062',
             siteId: '70608',
             zoneId: '335918',
+            pchain: 'GAM:11111-reseller1:22222',
             userId: '12346',
             keywords: ['a', 'b', 'c'],
             inventory: {
@@ -311,12 +361,12 @@ describe('the rubicon adapter', function () {
   describe('buildRequests implementation', function () {
     describe('for requests', function () {
       describe('to fastlane', function () {
-        it('should make a well-formed request objects', function () {
+        it('should make a well-formed request object', function () {
           sandbox.stub(Math, 'random').callsFake(() => 0.1);
           let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
           let data = parseQuery(request.data);
 
-          expect(request.url).to.equal('//fastlane.rubiconproject.com/a/api/fastlane.json');
+          expect(request.url).to.equal('https://fastlane.rubiconproject.com/a/api/fastlane.json');
 
           let expectedQuery = {
             'account_id': '14062',
@@ -330,6 +380,7 @@ describe('the rubicon adapter', function () {
             'rand': '0.1',
             'tk_flint': INTEGRATION,
             'x_source.tid': 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b',
+            'x_source.pchain': 'GAM:11111-reseller1:22222',
             'p_screen_res': /\d+x\d+/,
             'tk_user_key': '12346',
             'kw': 'a,b,c',
@@ -375,11 +426,56 @@ describe('the rubicon adapter', function () {
 	      expect(data['p_pos']).to.equal(undefined);
         });
 
+        it('should correctly send p_pos in sra fashion', function() {
+          sandbox.stub(config, 'getConfig').callsFake((key) => {
+            const config = {
+              'rubicon.singleRequest': true
+            };
+            return config[key];
+          });
+          // first one is atf
+          var sraPosRequest = utils.deepClone(bidderRequest);
+
+          // second is not present
+          const bidCopy = utils.deepClone(sraPosRequest.bids[0]);
+          delete bidCopy.params.position;
+          sraPosRequest.bids.push(bidCopy);
+
+          // third is btf
+          const bidCopy1 = utils.deepClone(sraPosRequest.bids[0]);
+          bidCopy1.params.position = 'btf';
+          sraPosRequest.bids.push(bidCopy1);
+
+          // fourth is invalid (aka not atf or btf)
+          const bidCopy2 = utils.deepClone(sraPosRequest.bids[0]);
+          bidCopy2.params.position = 'unknown';
+          sraPosRequest.bids.push(bidCopy2);
+
+          // fifth is not present
+          const bidCopy3 = utils.deepClone(sraPosRequest.bids[0]);
+          delete bidCopy3.params.position;
+          sraPosRequest.bids.push(bidCopy3);
+
+          let [request] = spec.buildRequests(sraPosRequest.bids, sraPosRequest);
+          let data = parseQuery(request.data);
+
+          expect(data['p_pos']).to.equal('atf;;btf;;');
+        });
+
+        it('should not send x_source.pchain to AE if params.pchain is not specified', function() {
+	      var noPchainRequest = utils.deepClone(bidderRequest);
+	      delete noPchainRequest.bids[0].params.pchain;
+
+	      let [request] = spec.buildRequests(noPchainRequest.bids, noPchainRequest);
+          expect(request.data).to.contain('&site_id=70608&');
+          expect(request.data).to.not.contain('x_source.pchain');
+        });
+
         it('ad engine query params should be ordered correctly', function () {
           sandbox.stub(Math, 'random').callsFake(() => 0.1);
           let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
 
-          const referenceOrdering = ['account_id', 'site_id', 'zone_id', 'size_id', 'alt_size_ids', 'p_pos', 'rf', 'p_geo.latitude', 'p_geo.longitude', 'kw', 'tg_v.ucat', 'tg_v.lastsearch', 'tg_v.likes', 'tg_i.rating', 'tg_i.prodtype', 'tk_flint', 'x_source.tid', 'p_screen_res', 'rp_floor', 'rp_secure', 'tk_user_key', 'tg_fl.eid', 'slots', 'rand'];
+          const referenceOrdering = ['account_id', 'site_id', 'zone_id', 'size_id', 'alt_size_ids', 'p_pos', 'rf', 'p_geo.latitude', 'p_geo.longitude', 'kw', 'tg_v.ucat', 'tg_v.lastsearch', 'tg_v.likes', 'tg_i.rating', 'tg_i.prodtype', 'tk_flint', 'x_source.tid', 'x_source.pchain', 'p_screen_res', 'rp_floor', 'rp_secure', 'tk_user_key', 'tg_fl.eid', 'slots', 'rand'];
 
           request.data.split('&').forEach((item, i) => {
             expect(item.split('=')[0]).to.equal(referenceOrdering[i]);
@@ -418,7 +514,7 @@ describe('the rubicon adapter', function () {
           let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
           let data = parseQuery(request.data);
 
-          expect(request.url).to.equal('//fastlane.rubiconproject.com/a/api/fastlane.json');
+          expect(request.url).to.equal('https://fastlane.rubiconproject.com/a/api/fastlane.json');
 
           // test that all values above are both present and correct
           Object.keys(expectedQuery).forEach(key => {
@@ -434,7 +530,7 @@ describe('the rubicon adapter', function () {
           [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
           data = parseQuery(request.data);
 
-          expect(request.url).to.equal('//fastlane.rubiconproject.com/a/api/fastlane.json');
+          expect(request.url).to.equal('https://fastlane.rubiconproject.com/a/api/fastlane.json');
 
           // test that all values above are both present and correct
           Object.keys(expectedQuery).forEach(key => {
@@ -931,7 +1027,7 @@ describe('the rubicon adapter', function () {
               expect(item).to.have.property('bidRequest');
 
               expect(item.method).to.equal('GET');
-              expect(item.url).to.equal('//fastlane.rubiconproject.com/a/api/fastlane.json');
+              expect(item.url).to.equal('https://fastlane.rubiconproject.com/a/api/fastlane.json');
               expect(item.data).to.be.a('string');
 
               // 'bidRequest' type must be 'array' if SRA enabled
@@ -1111,6 +1207,36 @@ describe('the rubicon adapter', function () {
 
             expect(data['tpid_tdid']).to.equal('abcd-efgh-ijkl-mnop-1234');
           });
+
+          describe('LiveIntent support', function () {
+            it('should send tpid_liveintent.com when userId defines lipd', function () {
+              const clonedBid = utils.deepClone(bidderRequest.bids[0]);
+              clonedBid.userId = {
+                lipb: {
+                  lipbid: '0000-1111-2222-3333'
+                }
+              };
+              let [request] = spec.buildRequests([clonedBid], bidderRequest);
+              let data = parseQuery(request.data);
+
+              expect(data['tpid_liveintent.com']).to.equal('0000-1111-2222-3333');
+            });
+
+            it('should send tg_v.LIseg when userId defines lipd.segments', function () {
+              const clonedBid = utils.deepClone(bidderRequest.bids[0]);
+              clonedBid.userId = {
+                lipb: {
+                  lipbid: '1111-2222-3333-4444',
+                  segments: ['segD', 'segE']
+                }
+              };
+              let [request] = spec.buildRequests([clonedBid], bidderRequest);
+              const unescapedData = unescape(request.data);
+
+              expect(unescapedData.indexOf('&tpid_liveintent.com=1111-2222-3333-4444&') !== -1).to.equal(true);
+              expect(unescapedData.indexOf('&tg_v.LIseg=segD,segE&') !== -1).to.equal(true);
+            });
+          });
         })
       });
 
@@ -1148,6 +1274,16 @@ describe('the rubicon adapter', function () {
           expect(imp.ext.rubicon.video.skip).to.equal(1);
           expect(imp.ext.rubicon.video.skipafter).to.equal(15);
           expect(post.user.ext.consent).to.equal('BOJ/P2HOJ/P2HABABMAAAAAZ+A==');
+          expect(post.user.ext.eids[0].source).to.equal('liveintent.com');
+          expect(post.user.ext.eids[0].uids[0].id).to.equal('0000-1111-2222-3333');
+          expect(post.user.ext.tpid).that.is.an('object');
+          expect(post.user.ext.tpid.source).to.equal('liveintent.com');
+          expect(post.user.ext.tpid.uid).to.equal('0000-1111-2222-3333');
+          expect(post.rp).that.is.an('object');
+          expect(post.rp.target).that.is.an('object');
+          expect(post.rp.target.LIseg).that.is.an('array');
+          expect(post.rp.target.LIseg[0]).to.equal('segA');
+          expect(post.rp.target.LIseg[1]).to.equal('segB');
           expect(post.regs.ext.gdpr).to.equal(1);
           expect(post).to.have.property('ext').that.is.an('object');
           expect(post.ext.prebid.targeting.includewinners).to.equal(true);
@@ -1155,6 +1291,22 @@ describe('the rubicon adapter', function () {
           expect(post.ext.prebid.cache).to.have.property('vastxml').that.is.an('object')
           expect(post.ext.prebid.cache.vastxml).to.have.property('returnCreative').that.is.an('boolean')
           expect(post.ext.prebid.cache.vastxml.returnCreative).to.equal(false)
+        });
+
+        it('should add alias name to PBS Request', function() {
+          createVideoBidderRequest();
+
+          bidderRequest.bidderCode = 'superRubicon';
+          bidderRequest.bids[0].bidder = 'superRubicon';
+          let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+
+          // should have the aliases object sent to PBS
+          expect(request.data.ext.prebid).to.haveOwnProperty('aliases');
+          expect(request.data.ext.prebid.aliases).to.deep.equal({superRubicon: 'rubicon'});
+
+          // should have the imp ext bidder params be under the alias name not rubicon superRubicon
+          expect(request.data.imp[0].ext).to.have.property('superRubicon').that.is.an('object');
+          expect(request.data.imp[0].ext).to.not.haveOwnProperty('rubicon');
         });
 
         it('should send correct bidfloor to PBS', function() {
@@ -2036,6 +2188,7 @@ describe('the rubicon adapter', function () {
 
           expect(bids).to.be.lengthOf(1);
 
+          expect(bids[0].seatBidId).to.equal('0');
           expect(bids[0].creativeId).to.equal('4259970');
           expect(bids[0].cpm).to.equal(2);
           expect(bids[0].ttl).to.equal(300);
@@ -2182,6 +2335,100 @@ describe('the rubicon adapter', function () {
         expect(result.ranges.length).to.be.greaterThan(0)
         expect(result.ranges[0]).to.deep.equal(kvPair.val);
       });
+    });
+  });
+
+  describe('Supply Chain Support', function() {
+    const nodePropsOrder = ['asi', 'sid', 'hp', 'rid', 'name', 'domain'];
+    let bidRequests;
+    let schainConfig;
+
+    const getSupplyChainConfig = () => {
+      return {
+        ver: '1.0',
+        complete: 1,
+        nodes: [
+          {
+            asi: 'rubicon.com',
+            sid: '1234',
+            hp: 1,
+            rid: 'bid-request-1',
+            name: 'pub one',
+            domain: 'pub1.com'
+          },
+          {
+            asi: 'theexchange.com',
+            sid: '5678',
+            hp: 1,
+            rid: 'bid-request-2',
+            name: 'pub two',
+            domain: 'pub2.com'
+          },
+          {
+            asi: 'wesellads.com',
+            sid: '9876',
+            hp: 1,
+            rid: 'bid-request-3',
+            // name: 'alladsallthetime',
+            domain: 'alladsallthetime.com'
+          }
+        ]
+      };
+    };
+
+    beforeEach(() => {
+      bidRequests = getBidderRequest();
+      schainConfig = getSupplyChainConfig();
+      bidRequests.bids[0].schain = schainConfig;
+    });
+
+    it('should properly serialize schain object with correct delimiters', () => {
+      const results = spec.buildRequests(bidRequests.bids, bidRequests);
+      const numNodes = schainConfig.nodes.length;
+      const schain = parseQuery(results[0].data).rp_schain;
+
+      // each node serialization should start with an !
+      expect(schain.match(/!/g).length).to.equal(numNodes);
+
+      // 5 commas per node plus 1 for version
+      expect(schain.match(/,/g).length).to.equal(numNodes * 5 + 1);
+    });
+
+    it('should send the proper version for the schain', () => {
+      const results = spec.buildRequests(bidRequests.bids, bidRequests);
+      const schain = parseQuery(results[0].data).rp_schain.split('!');
+      const version = schain.shift().split(',')[0];
+      expect(version).to.equal(bidRequests.bids[0].schain.ver);
+    });
+
+    it('should send the correct value for complete in schain', () => {
+      const results = spec.buildRequests(bidRequests.bids, bidRequests);
+      const schain = parseQuery(results[0].data).rp_schain.split('!');
+      const complete = schain.shift().split(',')[1];
+      expect(complete).to.equal(String(bidRequests.bids[0].schain.complete));
+    });
+
+    it('should send available params in the right order', () => {
+      const results = spec.buildRequests(bidRequests.bids, bidRequests);
+      const schain = parseQuery(results[0].data).rp_schain.split('!');
+      schain.shift();
+
+      schain.forEach((serializeNode, nodeIndex) => {
+        const nodeProps = serializeNode.split(',');
+        nodeProps.forEach((nodeProp, propIndex) => {
+          const node = schainConfig.nodes[nodeIndex];
+          const key = nodePropsOrder[propIndex];
+          expect(nodeProp).to.equal(node[key] ? String(node[key]) : '');
+        });
+      });
+    });
+
+    it('should copy the schain JSON to to bid.source.ext.schain', () => {
+      createVideoBidderRequest();
+      const schain = getSupplyChainConfig();
+      bidderRequest.bids[0].schain = schain;
+      const request = spec.buildRequests(bidderRequest.bids, bidderRequest);
+      expect(request[0].data.source.ext.schain).to.deep.equal(schain);
     });
   });
 });

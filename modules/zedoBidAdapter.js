@@ -6,8 +6,7 @@ import { Renderer } from '../src/Renderer';
 import * as url from '../src/url';
 
 const BIDDER_CODE = 'zedo';
-const URL = '//z2.zedo.com/asw/fmh.json';
-const SECURE_URL = '//saxp.zedo.com/asw/fmh.json';
+const SECURE_URL = 'https://saxp.zedo.com/asw/fmh.json';
 const DIM_TYPE = {
   '7': 'display',
   '9': 'display',
@@ -23,7 +22,6 @@ const DIM_TYPE = {
   '103': 'display'
   // '85': 'pre-mid-post-roll',
 };
-const EVENT_PIXEL_URL = 'm1.zedo.com/log/p.gif';
 const SECURE_EVENT_PIXEL_URL = 'tt1.zedo.com/log/p.gif';
 
 export const spec = {
@@ -86,10 +84,13 @@ export const spec = {
       }
       data['placements'].push(placement);
     });
-    let reqUrl = utils.getTopWindowLocation().protocol === 'http:' ? URL : SECURE_URL;
+    // adding schain object
+    if (bidRequests[0].schain) {
+      data['supplyChain'] = getSupplyChain(bidRequests[0].schain);
+    }
     return {
       method: 'GET',
-      url: reqUrl,
+      url: SECURE_URL,
       data: 'g=' + JSON.stringify(data)
     }
   },
@@ -127,7 +128,7 @@ export const spec = {
 
   getUserSyncs: function (syncOptions, responses, gdprConsent) {
     if (syncOptions.iframeEnabled) {
-      let url = utils.getTopWindowLocation().protocol === 'http:' ? 'http://d3.zedo.com/rs/us/fcs.html' : 'https://tt3.zedo.com/rs/us/fcs.html';
+      let url = 'https://tt3.zedo.com/rs/us/fcs.html';
       if (gdprConsent && typeof gdprConsent.consentString === 'string') {
         // add 'gdpr' only if 'gdprApplies' is defined
         if (typeof gdprConsent.gdprApplies === 'boolean') {
@@ -157,12 +158,20 @@ export const spec = {
     } catch (e) {
       utils.logError(e);
     }
-  },
+  }
+
+};
+
+function getSupplyChain (supplyChain) {
+  return {
+    complete: supplyChain.complete,
+    nodes: supplyChain.nodes
+  }
 };
 
 function getCreative(ad) {
   return ad && ad.creatives && ad.creatives.length && find(ad.creatives, creative => creative.adId);
-}
+};
 /**
  * Unpack the Server's Bid into a Prebid-compatible one.
  * @param serverBid
@@ -194,7 +203,7 @@ function newBid(serverBid, creativeBid, bidderRequest) {
       bidderRequest,
       'renderer.options'
     );
-    let rendererUrl = utils.getTopWindowLocation().protocol === 'http:' ? 'http://c14.zedo.com/gecko/beta/fmpbgt.min.js' : 'https://ss3.zedo.com/gecko/beta/fmpbgt.min.js';
+    let rendererUrl = 'https://ss3.zedo.com/gecko/beta/fmpbgt.min.js';
     Object.assign(bid, {
       adResponse: serverBid,
       renderer: getRenderer(bid.adUnitCode, serverBid.slotId, rendererUrl, rendererOptions)
@@ -279,8 +288,8 @@ function parseMediaType(creativeBid) {
 
 function logEvent(eid, data) {
   let getParams = {
-    protocol: utils.getTopWindowLocation().protocol === 'http:' ? 'http' : 'https',
-    hostname: utils.getTopWindowLocation().protocol === 'http:' ? EVENT_PIXEL_URL : SECURE_EVENT_PIXEL_URL,
+    protocol: 'https',
+    hostname: SECURE_EVENT_PIXEL_URL,
     search: getLoggingData(eid, data)
   };
   utils.triggerPixel(url.format(getParams).replace(/&/g, ';'));
