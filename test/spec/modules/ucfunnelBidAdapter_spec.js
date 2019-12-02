@@ -47,6 +47,8 @@ const validBannerBidRes = {
   width: 300
 };
 
+const invalidBannerBidRes = '';
+
 const validVideoBidReq = {
   bidder: BIDDER_CODE,
   params: {
@@ -157,6 +159,24 @@ describe('ucfunnel Adapter', function () {
         expect(bid.ad).to.exist;
         expect(bid.requestId).to.equal('263be71e91dd9d');
         expect(bid.cpm).to.equal(0.01);
+        expect(bid.width).to.equal(300);
+        expect(bid.height).to.equal(250);
+      });
+    });
+
+    describe('handle banner no ad', function () {
+      const request = spec.buildRequests([ validBannerBidReq ]);
+      const result = spec.interpretResponse({body: invalidBannerBidRes}, request[0]);
+      it('should build bid array for banner', function () {
+        expect(result.length).to.equal(1);
+      });
+
+      it('should have all relevant fields', function () {
+        const bid = result[0];
+
+        expect(bid.ad).to.exist;
+        expect(bid.requestId).to.equal('263be71e91dd9d');
+        expect(bid.cpm).to.equal(0);
         expect(bid.width).to.equal(300);
         expect(bid.height).to.equal(250);
       });

@@ -360,6 +360,7 @@ export const spec = {
       .concat([
         'tk_flint',
         'x_source.tid',
+        'x_source.pchain',
         'p_screen_res',
         'rp_floor',
         'rp_secure',
@@ -434,6 +435,7 @@ export const spec = {
       'rp_secure': '1',
       'tk_flint': `${configIntType || DEFAULT_INTEGRATION}_v$prebid.version$`,
       'x_source.tid': bidRequest.transactionId,
+      'x_source.pchain': params.pchain,
       'p_screen_res': _getScreenResolution(),
       'kw': Array.isArray(params.keywords) ? params.keywords.join(',') : '',
       'tk_user_key': params.userId,
