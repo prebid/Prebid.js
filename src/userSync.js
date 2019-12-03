@@ -13,7 +13,8 @@ config.setDefaults({
       }
     },
     syncsPerBidder: 5,
-    syncDelay: 3000
+    syncDelay: 3000,
+    auctionDelay: 0
   }
 });
 

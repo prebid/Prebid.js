@@ -46,7 +46,7 @@ export const spec = {
       return window === window.top ? window.location.href : window.parent === window.top ? document.referrer : null;
     };
     let getOrigins = function() {
-      var ori = [window.location.protocol + '//' + window.location.hostname];
+      var ori = ['https://' + window.location.hostname];
 
       if (window.location.ancestorOrigins) {
         for (var i = 0; i < window.location.ancestorOrigins.length; i++) {
@@ -56,7 +56,7 @@ export const spec = {
         // Derive the parent origin
         var parts = document.referrer.split('/');
 
-        ori.push(parts[0] + '//' + parts[2]);
+        ori.push('https://' + parts[2]);
 
         if (window.parent !== window.top) {
           // Additional unknown origins exist

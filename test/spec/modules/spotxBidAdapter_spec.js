@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import {spec} from 'modules/spotxBidAdapter';
+import {spec, GOOGLE_CONSENT} from 'modules/spotxBidAdapter';
 
 describe('the spotx adapter', function () {
   function getValidBidObject() {
@@ -100,7 +100,7 @@ describe('the spotx adapter', function () {
     it('should build a very basic request', function() {
       var request = spec.buildRequests([bid], bidRequestObj)[0];
       expect(request.method).to.equal('POST');
-      expect(request.url).to.equal('//search.spotxchange.com/openrtb/2.3/dados/12345');
+      expect(request.url).to.equal('https://search.spotxchange.com/openrtb/2.3/dados/12345');
       expect(request.bidRequest).to.equal(bidRequestObj);
       expect(request.data.id).to.equal(12345);
       expect(request.data.ext.wrap_response).to.equal(1);
@@ -142,23 +142,74 @@ describe('the spotx adapter', function () {
         outstream_function: '987',
         custom: {bar: 'foo'},
         price_floor: 123,
-        start_delay: true
+        start_delay: true,
+        number_of_ads: 2,
+        spotx_all_google_consent: 1
       };
+
+      bid.userId = {
+        id5id: 'id5id_1'
+      };
+
+      bid.crumbs = {
+        pubcid: 'pubcid_1'
+      };
+
+      bid.schain = {
+        complete: 1,
+        nodes: [
+          {
+            asi: 'indirectseller.com',
+            sid: '00001',
+            hp: 1
+          }
+        ]
+      }
 
       request = spec.buildRequests([bid], bidRequestObj)[0];
       expect(request.data.id).to.equal(54321);
       expect(request.data.imp.video.ext).to.deep.equal({
         ad_volume: 1,
-        ad_unit: 'incontent',
         hide_skin: 1,
+        ad_unit: 'incontent',
         outstream_options: {foo: 'bar'},
         outstream_function: '987',
         custom: {bar: 'foo'},
         sdk_name: 'Prebid 1+',
         versionOrtb: '2.3'
       });
+
       expect(request.data.imp.video.startdelay).to.equal(1);
       expect(request.data.imp.bidfloor).to.equal(123);
+      expect(request.data.ext).to.deep.equal({
+        number_of_ads: 2,
+        wrap_response: 1
+      });
+      expect(request.data.user.ext).to.deep.equal({
+        consented_providers_settings: GOOGLE_CONSENT,
+        eids: [{
+          source: 'id5-sync.com',
+          uids: [{
+            id: 'id5id_1'
+          }]
+        }],
+        fpc: 'pubcid_1'
+      })
+
+      expect(request.data.source).to.deep.equal({
+        ext: {
+          schain: {
+            complete: 1,
+            nodes: [
+              {
+                asi: 'indirectseller.com',
+                sid: '00001',
+                hp: 1
+              }
+            ]
+          }
+        }
+      })
     });
 
     it('should process premarket bids', function() {
@@ -298,7 +349,7 @@ describe('the spotx adapter', function () {
       expect(responses[0].netRevenue).to.equal(true);
       expect(responses[0].requestId).to.equal(123);
       expect(responses[0].ttl).to.equal(360);
-      expect(responses[0].vastUrl).to.equal('//search.spotxchange.com/ad/vast.html?key=cache123');
+      expect(responses[0].vastUrl).to.equal('https://search.spotxchange.com/ad/vast.html?key=cache123');
       expect(responses[0].width).to.equal(400);
       expect(responses[1].cache_key).to.equal('cache124');
       expect(responses[1].channel_id).to.equal(12345);
@@ -310,7 +361,7 @@ describe('the spotx adapter', function () {
       expect(responses[1].netRevenue).to.equal(true);
       expect(responses[1].requestId).to.equal(124);
       expect(responses[1].ttl).to.equal(360);
-      expect(responses[1].vastUrl).to.equal('//search.spotxchange.com/ad/vast.html?key=cache124');
+      expect(responses[1].vastUrl).to.equal('https://search.spotxchange.com/ad/vast.html?key=cache124');
       expect(responses[1].width).to.equal(200);
     });
   });
@@ -379,9 +430,9 @@ describe('the spotx adapter', function () {
       responses[0].renderer.render(responses[0]);
 
       expect(scriptTag.getAttribute('type')).to.equal('text/javascript');
-      expect(scriptTag.getAttribute('src')).to.equal('//js.spotx.tv/easi/v1/12345.js');
+      expect(scriptTag.getAttribute('src')).to.equal('https://js.spotx.tv/easi/v1/12345.js');
       expect(scriptTag.getAttribute('data-spotx_channel_id')).to.equal('12345');
-      expect(scriptTag.getAttribute('data-spotx_vast_url')).to.equal('//search.spotxchange.com/ad/vast.html?key=cache123');
+      expect(scriptTag.getAttribute('data-spotx_vast_url')).to.equal('https://search.spotxchange.com/ad/vast.html?key=cache123');
       expect(scriptTag.getAttribute('data-spotx_ad_unit')).to.equal('incontent');
       expect(scriptTag.getAttribute('data-spotx_collapse')).to.equal('0');
       expect(scriptTag.getAttribute('data-spotx_autoplay')).to.equal('1');
@@ -411,9 +462,9 @@ describe('the spotx adapter', function () {
       responses[0].renderer.render(responses[0]);
 
       expect(scriptTag.getAttribute('type')).to.equal('text/javascript');
-      expect(scriptTag.getAttribute('src')).to.equal('//js.spotx.tv/easi/v1/12345.js');
+      expect(scriptTag.getAttribute('src')).to.equal('https://js.spotx.tv/easi/v1/12345.js');
       expect(scriptTag.getAttribute('data-spotx_channel_id')).to.equal('12345');
-      expect(scriptTag.getAttribute('data-spotx_vast_url')).to.equal('//search.spotxchange.com/ad/vast.html?key=cache123');
+      expect(scriptTag.getAttribute('data-spotx_vast_url')).to.equal('https://search.spotxchange.com/ad/vast.html?key=cache123');
       expect(scriptTag.getAttribute('data-spotx_ad_unit')).to.equal('incontent');
       expect(scriptTag.getAttribute('data-spotx_collapse')).to.equal('0');
       expect(scriptTag.getAttribute('data-spotx_autoplay')).to.equal('1');

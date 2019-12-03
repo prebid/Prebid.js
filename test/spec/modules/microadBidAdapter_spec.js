@@ -61,14 +61,14 @@ describe('microadBidAdapter', () => {
   describe('buildRequests', () => {
     const bidderRequest = {
       refererInfo: {
-        canonicalUrl: 'http://example.com/to',
-        referer: 'http://example.com/from'
+        canonicalUrl: 'https://example.com/to',
+        referer: 'https://example.com/from'
       }
     };
     const expectedResultTemplate = {
       spot: 'spot-code',
-      url: 'http://example.com/to',
-      referrer: 'http://example.com/from',
+      url: 'https://example.com/to',
+      referrer: 'https://example.com/from',
       bid_id: 'bid-id',
       transaction_id: 'transaction-id',
       media_types: 1
@@ -127,7 +127,7 @@ describe('microadBidAdapter', () => {
     it('should use window.location.href if there is no canonicalUrl', () => {
       const bidderRequestWithoutCanonicalUrl = {
         refererInfo: {
-          referer: 'http://example.com/from'
+          referer: 'https://example.com/from'
         }
       };
       const requests = spec.buildRequests([bidRequestTemplate], bidderRequestWithoutCanonicalUrl);
@@ -256,6 +256,13 @@ describe('microadBidAdapter', () => {
             cbt: request.data.cbt
           })
         );
+      });
+    });
+
+    it('should always use the HTTPS endpoint https://s-rtb-pb.send.microad.jp/prebid even if it is served via HTTP', () => {
+      const requests = spec.buildRequests([bidRequestTemplate], bidderRequest);
+      requests.forEach(request => {
+        expect(request.url.lastIndexOf('https', 0) === 0).to.be.true;
       });
     });
   });

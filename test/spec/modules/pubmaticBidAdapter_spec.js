@@ -1171,6 +1171,46 @@ describe('PubMatic adapter', function () {
           // should have called DigiTrust.getUser() once
           expect(window.DigiTrust.getUser.calledOnce).to.equal(true);
         });
+
+        it('should NOT include coppa flag in bid request if coppa config is not present', () => {
+          const request = spec.buildRequests(bidRequests, {});
+          let data = JSON.parse(request.data);
+          if (data.regs) {
+            // in case GDPR is set then data.regs will exist
+            expect(data.regs.coppa).to.equal(undefined);
+          } else {
+            expect(data.regs).to.equal(undefined);
+          }
+        });
+
+        it('should include coppa flag in bid request if coppa is set to true', () => {
+          sandbox.stub(config, 'getConfig').callsFake(key => {
+            const config = {
+              'coppa': true
+            };
+            return config[key];
+          });
+          const request = spec.buildRequests(bidRequests, {});
+          let data = JSON.parse(request.data);
+          expect(data.regs.coppa).to.equal(1);
+        });
+
+        it('should NOT include coppa flag in bid request if coppa is set to false', () => {
+          sandbox.stub(config, 'getConfig').callsFake(key => {
+            const config = {
+              'coppa': false
+            };
+            return config[key];
+          });
+          const request = spec.buildRequests(bidRequests, {});
+          let data = JSON.parse(request.data);
+          if (data.regs) {
+            // in case GDPR is set then data.regs will exist
+            expect(data.regs.coppa).to.equal(undefined);
+          } else {
+            expect(data.regs).to.equal(undefined);
+          }
+        });
       });
 
       describe('AdsrvrOrgId from config', function() {
@@ -1473,6 +1513,260 @@ describe('PubMatic adapter', function () {
           let request = spec.buildRequests(bidRequests, {});
           let data = JSON.parse(request.data);
           expect(data.user.eids).to.deep.equal(undefined);
+        });
+      });
+
+      describe('UserIds from request', function() {
+        describe('pubcommon Id', function() {
+          it('send the pubcommon id if it is present', function() {
+            bidRequests[0].userId = {};
+            bidRequests[0].userId.pubcid = 'pub_common_user_id';
+            let request = spec.buildRequests(bidRequests, {});
+            let data = JSON.parse(request.data);
+            expect(data.user.eids).to.deep.equal([{
+              'source': 'pubcommon',
+              'uids': [{
+                'id': 'pub_common_user_id',
+                'atype': 1
+              }]
+            }]);
+          });
+
+          it('do not pass if not string', function() {
+            bidRequests[0].userId = {};
+            bidRequests[0].userId.pubcid = 1;
+            let request = spec.buildRequests(bidRequests, {});
+            let data = JSON.parse(request.data);
+            expect(data.user.eids).to.equal(undefined);
+            bidRequests[0].userId.pubcid = [];
+            request = spec.buildRequests(bidRequests, {});
+            data = JSON.parse(request.data);
+            expect(data.user.eids).to.equal(undefined);
+            bidRequests[0].userId.pubcid = null;
+            request = spec.buildRequests(bidRequests, {});
+            data = JSON.parse(request.data);
+            expect(data.user.eids).to.equal(undefined);
+            bidRequests[0].userId.pubcid = {};
+            request = spec.buildRequests(bidRequests, {});
+            data = JSON.parse(request.data);
+            expect(data.user.eids).to.equal(undefined);
+          });
+        });
+
+        describe('Digitrust Id', function() {
+          it('send the digitrust id if it is present', function() {
+            bidRequests[0].userId = {};
+            bidRequests[0].userId.digitrustid = {data: {id: 'digitrust_user_id'}};
+            let request = spec.buildRequests(bidRequests, {});
+            let data = JSON.parse(request.data);
+            expect(data.user.eids).to.deep.equal([{
+              'source': 'digitru.st',
+              'uids': [{
+                'id': 'digitrust_user_id',
+                'atype': 1
+              }]
+            }]);
+          });
+
+          it('do not pass if not string', function() {
+            bidRequests[0].userId = {};
+            bidRequests[0].userId.digitrustid = {data: {id: 1}};
+            let request = spec.buildRequests(bidRequests, {});
+            let data = JSON.parse(request.data);
+            expect(data.user.eids).to.equal(undefined);
+            bidRequests[0].userId.digitrustid = {data: {id: []}};
+            request = spec.buildRequests(bidRequests, {});
+            data = JSON.parse(request.data);
+            expect(data.user.eids).to.equal(undefined);
+            bidRequests[0].userId.digitrustid = {data: {id: null}};
+            request = spec.buildRequests(bidRequests, {});
+            data = JSON.parse(request.data);
+            expect(data.user.eids).to.equal(undefined);
+            bidRequests[0].userId.digitrustid = {data: {id: {}}};
+            request = spec.buildRequests(bidRequests, {});
+            data = JSON.parse(request.data);
+            expect(data.user.eids).to.equal(undefined);
+          });
+        });
+
+        describe('ID5 Id', function() {
+          it('send the id5 id if it is present', function() {
+            bidRequests[0].userId = {};
+            bidRequests[0].userId.id5id = 'id5-user-id';
+            let request = spec.buildRequests(bidRequests, {});
+            let data = JSON.parse(request.data);
+            expect(data.user.eids).to.deep.equal([{
+              'source': 'id5-sync.com',
+              'uids': [{
+                'id': 'id5-user-id',
+                'atype': 1
+              }]
+            }]);
+          });
+
+          it('do not pass if not string', function() {
+            bidRequests[0].userId = {};
+            bidRequests[0].userId.id5id = 1;
+            let request = spec.buildRequests(bidRequests, {});
+            let data = JSON.parse(request.data);
+            expect(data.user.eids).to.equal(undefined);
+            bidRequests[0].userId.id5id = [];
+            request = spec.buildRequests(bidRequests, {});
+            data = JSON.parse(request.data);
+            expect(data.user.eids).to.equal(undefined);
+            bidRequests[0].userId.id5id = null;
+            request = spec.buildRequests(bidRequests, {});
+            data = JSON.parse(request.data);
+            expect(data.user.eids).to.equal(undefined);
+            bidRequests[0].userId.id5id = {};
+            request = spec.buildRequests(bidRequests, {});
+            data = JSON.parse(request.data);
+            expect(data.user.eids).to.equal(undefined);
+          });
+        });
+
+        describe('Criteo Id', function() {
+          it('send the criteo id if it is present', function() {
+            bidRequests[0].userId = {};
+            bidRequests[0].userId.criteoId = 'criteo-user-id';
+            let request = spec.buildRequests(bidRequests, {});
+            let data = JSON.parse(request.data);
+            expect(data.user.eids).to.deep.equal([{
+              'source': 'criteo.com',
+              'uids': [{
+                'id': 'criteo-user-id',
+                'atype': 1
+              }]
+            }]);
+          });
+
+          it('do not pass if not string', function() {
+            bidRequests[0].userId = {};
+            bidRequests[0].userId.criteoId = 1;
+            let request = spec.buildRequests(bidRequests, {});
+            let data = JSON.parse(request.data);
+            expect(data.user.eids).to.equal(undefined);
+            bidRequests[0].userId.criteoId = [];
+            request = spec.buildRequests(bidRequests, {});
+            data = JSON.parse(request.data);
+            expect(data.user.eids).to.equal(undefined);
+            bidRequests[0].userId.criteoId = null;
+            request = spec.buildRequests(bidRequests, {});
+            data = JSON.parse(request.data);
+            expect(data.user.eids).to.equal(undefined);
+            bidRequests[0].userId.criteoId = {};
+            request = spec.buildRequests(bidRequests, {});
+            data = JSON.parse(request.data);
+            expect(data.user.eids).to.equal(undefined);
+          });
+        });
+
+        describe('IdentityLink Id', function() {
+          it('send the identity-link id if it is present', function() {
+            bidRequests[0].userId = {};
+            bidRequests[0].userId.idl_env = 'identity-link-user-id';
+            let request = spec.buildRequests(bidRequests, {});
+            let data = JSON.parse(request.data);
+            expect(data.user.eids).to.deep.equal([{
+              'source': 'liveramp.com',
+              'uids': [{
+                'id': 'identity-link-user-id',
+                'atype': 1
+              }]
+            }]);
+          });
+
+          it('do not pass if not string', function() {
+            bidRequests[0].userId = {};
+            bidRequests[0].userId.idl_env = 1;
+            let request = spec.buildRequests(bidRequests, {});
+            let data = JSON.parse(request.data);
+            expect(data.user.eids).to.equal(undefined);
+            bidRequests[0].userId.idl_env = [];
+            request = spec.buildRequests(bidRequests, {});
+            data = JSON.parse(request.data);
+            expect(data.user.eids).to.equal(undefined);
+            bidRequests[0].userId.idl_env = null;
+            request = spec.buildRequests(bidRequests, {});
+            data = JSON.parse(request.data);
+            expect(data.user.eids).to.equal(undefined);
+            bidRequests[0].userId.idl_env = {};
+            request = spec.buildRequests(bidRequests, {});
+            data = JSON.parse(request.data);
+            expect(data.user.eids).to.equal(undefined);
+          });
+        });
+
+        describe('LiveIntent Id', function() {
+          it('send the LiveIntent id if it is present', function() {
+            bidRequests[0].userId = {};
+            bidRequests[0].userId.lipb = { lipbid: 'live-intent-user-id' };
+            let request = spec.buildRequests(bidRequests, {});
+            let data = JSON.parse(request.data);
+            expect(data.user.eids).to.deep.equal([{
+              'source': 'liveintent.com',
+              'uids': [{
+                'id': 'live-intent-user-id',
+                'atype': 1
+              }]
+            }]);
+          });
+
+          it('do not pass if not string', function() {
+            bidRequests[0].userId = {};
+            bidRequests[0].userId.lipb = { lipbid: 1 };
+            let request = spec.buildRequests(bidRequests, {});
+            let data = JSON.parse(request.data);
+            expect(data.user.eids).to.equal(undefined);
+            bidRequests[0].userId.lipb.lipbid = [];
+            request = spec.buildRequests(bidRequests, {});
+            data = JSON.parse(request.data);
+            expect(data.user.eids).to.equal(undefined);
+            bidRequests[0].userId.lipb.lipbid = null;
+            request = spec.buildRequests(bidRequests, {});
+            data = JSON.parse(request.data);
+            expect(data.user.eids).to.equal(undefined);
+            bidRequests[0].userId.lipb.lipbid = {};
+            request = spec.buildRequests(bidRequests, {});
+            data = JSON.parse(request.data);
+            expect(data.user.eids).to.equal(undefined);
+          });
+        });
+
+        describe('Parrable Id', function() {
+          it('send the Parrable id if it is present', function() {
+            bidRequests[0].userId = {};
+            bidRequests[0].userId.parrableid = 'parrable-user-id';
+            let request = spec.buildRequests(bidRequests, {});
+            let data = JSON.parse(request.data);
+            expect(data.user.eids).to.deep.equal([{
+              'source': 'parrable.com',
+              'uids': [{
+                'id': 'parrable-user-id',
+                'atype': 1
+              }]
+            }]);
+          });
+
+          it('do not pass if not string', function() {
+            bidRequests[0].userId = {};
+            bidRequests[0].userId.parrableid = 1;
+            let request = spec.buildRequests(bidRequests, {});
+            let data = JSON.parse(request.data);
+            expect(data.user.eids).to.equal(undefined);
+            bidRequests[0].userId.parrableid = [];
+            request = spec.buildRequests(bidRequests, {});
+            data = JSON.parse(request.data);
+            expect(data.user.eids).to.equal(undefined);
+            bidRequests[0].userId.parrableid = null;
+            request = spec.buildRequests(bidRequests, {});
+            data = JSON.parse(request.data);
+            expect(data.user.eids).to.equal(undefined);
+            bidRequests[0].userId.parrableid = {};
+            request = spec.buildRequests(bidRequests, {});
+            data = JSON.parse(request.data);
+            expect(data.user.eids).to.equal(undefined);
+          });
         });
       });
 

@@ -1,13 +1,12 @@
 /** @module pbjs */
 
 import { getGlobal } from './prebidGlobal';
-import { flatten, uniques, isGptPubadsDefined, adUnitsFilter, getLatestHighestCpmBid, isArrayOfNums } from './utils';
+import { flatten, uniques, isGptPubadsDefined, adUnitsFilter, isArrayOfNums } from './utils';
 import { listenMessagesFromCreative } from './secureCreatives';
 import { userSync } from './userSync.js';
-import { loadScript } from './adloader';
 import { config } from './config';
 import { auctionManager } from './auctionManager';
-import { targeting, getHighestCpmBidsFromBidPool } from './targeting';
+import { targeting } from './targeting';
 import { hook } from './hook';
 import { sessionLoader } from './debugging';
 import includes from 'core-js/library/fn/array/includes';
@@ -276,18 +275,15 @@ $$PREBID_GLOBAL$$.setTargetingForAst = function(adUnitCodes) {
   events.emit(SET_TARGETING, targeting.getAllTargeting());
 };
 
-function emitAdRenderFail(reason, message, bid) {
-  const data = {};
-
-  data.reason = reason;
-  data.message = message;
-  if (bid) {
-    data.bid = bid;
-  }
+function emitAdRenderFail({ reason, message, bid, id }) {
+  const data = { reason, message };
+  if (bid) data.bid = bid;
+  if (id) data.adId = id;
 
   utils.logError(message);
   events.emit(AD_RENDER_FAILED, data);
 }
+
 /**
  * This function will render the ad (based on params) in the given iframe document passed through.
  * Note that doc SHOULD NOT be the parent document page as we can't doc.write() asynchronously
@@ -304,7 +300,6 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
       // lookup ad by ad Id
       const bid = auctionManager.findBidByAdId(id);
       if (bid) {
-        bid.status = CONSTANTS.BID_STATUS.RENDERED;
         // replace macros according to openRTB with price paid = bid.cpm
         bid.ad = utils.replaceAuctionPrice(bid.ad, bid.cpm);
         bid.adUrl = utils.replaceAuctionPrice(bid.adUrl, bid.cpm);
@@ -323,7 +318,7 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
           executeRenderer(renderer, bid);
         } else if ((doc === document && !utils.inIframe()) || mediaType === 'video') {
           const message = `Error trying to write ad. Ad render call ad id ${id} was prevented from writing to the main document.`;
-          emitAdRenderFail(PREVENT_WRITING_ON_MAIN_DOCUMENT, message, bid);
+          emitAdRenderFail({ reason: PREVENT_WRITING_ON_MAIN_DOCUMENT, message, bid, id });
         } else if (ad) {
           // will check if browser is firefox and below version 67, if so execute special doc.open()
           // for details see: https://github.com/prebid/Prebid.js/pull/3524
@@ -352,19 +347,19 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
           utils.callBurl(bid);
         } else {
           const message = `Error trying to write ad. No ad for bid response id: ${id}`;
-          emitAdRenderFail(NO_AD, message, bid);
+          emitAdRenderFail({ reason: NO_AD, message, bid, id });
         }
       } else {
         const message = `Error trying to write ad. Cannot find ad by given id : ${id}`;
-        emitAdRenderFail(CANNOT_FIND_AD, message);
+        emitAdRenderFail({ reason: CANNOT_FIND_AD, message, id });
       }
     } catch (e) {
       const message = `Error trying to write ad Id :${id} to the page:${e.message}`;
-      emitAdRenderFail(EXCEPTION, message);
+      emitAdRenderFail({ reason: EXCEPTION, message, id });
     }
   } else {
     const message = `Error trying to write ad Id :${id} to the page. Missing document or adId`;
-    emitAdRenderFail(MISSING_DOC_OR_ADID, message);
+    emitAdRenderFail({ reason: MISSING_DOC_OR_ADID, message, id });
   }
 };
 
@@ -593,17 +588,6 @@ $$PREBID_GLOBAL$$.createBid = function (statusCode) {
 };
 
 /**
- * @deprecated this function will be removed in the next release. Prebid has deprected external JS loading.
- * @param  {string} tagSrc [description]
- * @param  {Function} callback [description]
- * @alias module:pbjs.loadScript
- */
-$$PREBID_GLOBAL$$.loadScript = function (tagSrc, callback, useCache) {
-  utils.logInfo('Invoking $$PREBID_GLOBAL$$.loadScript', arguments);
-  loadScript(tagSrc, callback, useCache);
-};
-
-/**
  * Enable sending analytics data to the analytics provider of your
  * choice.
  *
@@ -698,8 +682,7 @@ $$PREBID_GLOBAL$$.getAllPrebidWinningBids = function () {
  * @return {Array} array containing highest cpm bid object(s)
  */
 $$PREBID_GLOBAL$$.getHighestCpmBids = function (adUnitCode) {
-  let bidsReceived = getHighestCpmBidsFromBidPool(auctionManager.getBidsReceived(), getLatestHighestCpmBid);
-  return targeting.getWinningBids(adUnitCode, bidsReceived);
+  return targeting.getWinningBids(adUnitCode);
 };
 
 /**
@@ -783,6 +766,7 @@ $$PREBID_GLOBAL$$.getConfig = config.getConfig;
  * ```
  */
 $$PREBID_GLOBAL$$.setConfig = config.setConfig;
+$$PREBID_GLOBAL$$.setBidderConfig = config.setBidderConfig;
 
 $$PREBID_GLOBAL$$.que.push(() => listenMessagesFromCreative());
 

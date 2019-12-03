@@ -3,7 +3,7 @@ import { BANNER } from '../src/mediaTypes';
 import { getTopWindowUrl, logWarn } from '../src/utils';
 
 const BIDDER_CODE = 'peak226';
-const URL = '//a.ad216.com/header_bid';
+const URL = 'https://a.ad216.com/header_bid';
 
 export const spec = {
   code: BIDDER_CODE,

@@ -78,8 +78,8 @@ const cannedBidderRequest = {
     canonicalUrl: undefined,
     numIframes: 0,
     reachedTop: true,
-    referer: 'http://localhost:9999/integrationExamples/gpt/hello_world_emoteev.html',
-    stack: ['http://localhost:9999/integrationExamples/gpt/hello_world_emoteev.html']
+    referer: 'https://localhost:9999/integrationExamples/gpt/hello_world_emoteev.html',
+    stack: ['https://localhost:9999/integrationExamples/gpt/hello_world_emoteev.html']
   },
   start: 1544200012839,
   timeout: 3000,
@@ -773,7 +773,9 @@ describe('emoteevBidAdapter', function () {
         sinon.assert.notCalled(config.getConfig);
         sinon.assert.notCalled(utils.getParameterByName);
       });
-      it('has intended side-effects', function () {
+    });
+    describe('isBidRequestValid empty request', function() {
+      it('has intended side-effects empty request', function () {
         const invalidBidRequest = {};
         spec.isBidRequestValid(invalidBidRequest);
         sinon.assert.notCalled(utils.triggerPixel);

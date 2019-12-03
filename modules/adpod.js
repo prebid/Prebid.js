@@ -1,6 +1,6 @@
 /**
  * This module houses the functionality to evaluate and process adpod adunits/bids.  Specifically there are several hooked functions,
- * that either supplement the base function (ie to check something additional or unique to adpod objects) or to replace the base funtion
+ * that either supplement the base function (ie to check something additional or unique to adpod objects) or to replace the base function
  * entirely when appropriate.
  *
  * Brief outline of each hook:
@@ -112,6 +112,19 @@ function createDispatcher(timeoutDuration) {
   };
 }
 
+function getPricePartForAdpodKey(bid) {
+  let pricePart
+  let prioritizeDeals = config.getConfig('adpod.prioritizeDeals');
+  if (prioritizeDeals && utils.deepAccess(bid, 'video.dealTier')) {
+    const adpodDealPrefix = config.getConfig(`adpod.dealTier.${bid.bidderCode}.prefix`);
+    pricePart = (adpodDealPrefix) ? adpodDealPrefix + utils.deepAccess(bid, 'video.dealTier') : utils.deepAccess(bid, 'video.dealTier');
+  } else {
+    const granularity = getPriceGranularity(bid.mediaType);
+    pricePart = getPriceByGranularity(granularity)(bid);
+  }
+  return pricePart
+}
+
 /**
  * This function reads certain fields from the bid to generate a specific key used for caching the bid in Prebid Cache
  * @param {Object} bid bid object to update
@@ -120,16 +133,14 @@ function createDispatcher(timeoutDuration) {
 function attachPriceIndustryDurationKeyToBid(bid, brandCategoryExclusion) {
   let initialCacheKey = bidCacheRegistry.getInitialCacheKey(bid);
   let duration = utils.deepAccess(bid, 'video.durationBucket');
-  const granularity = getPriceGranularity(bid.mediaType);
-  let cpmFixed = getPriceByGranularity(granularity)(bid);
-
+  const pricePart = getPricePartForAdpodKey(bid);
   let pcd;
 
   if (brandCategoryExclusion) {
     let category = utils.deepAccess(bid, 'meta.adServerCatId');
-    pcd = `${cpmFixed}_${category}_${duration}s`;
+    pcd = `${pricePart}_${category}_${duration}s`;
   } else {
-    pcd = `${cpmFixed}_${duration}s`;
+    pcd = `${pricePart}_${duration}s`;
   }
 
   if (!bid.adserverTargeting) {
@@ -457,7 +468,31 @@ export function getTargeting({codes, callback} = {}) {
 
   let bids = getBidsForAdpod(bidsReceived, adPodAdUnits);
   bids = (competiveExclusionEnabled || deferCachingEnabled) ? getExclusiveBids(bids) : bids;
-  bids.sort(sortByPricePerSecond);
+
+  let prioritizeDeals = config.getConfig('adpod.prioritizeDeals');
+  if (prioritizeDeals) {
+    let [otherBids, highPriorityDealBids] = bids.reduce((partitions, bid) => {
+      let bidDealTier = utils.deepAccess(bid, 'video.dealTier');
+      let minDealTier = config.getConfig(`adpod.dealTier.${bid.bidderCode}.minDealTier`);
+      if (minDealTier && bidDealTier) {
+        if (bidDealTier >= minDealTier) {
+          partitions[1].push(bid)
+        } else {
+          partitions[0].push(bid)
+        }
+      } else if (bidDealTier) {
+        partitions[1].push(bid)
+      } else {
+        partitions[0].push(bid);
+      }
+      return partitions;
+    }, [[], []]);
+    highPriorityDealBids.sort(sortByPricePerSecond);
+    otherBids.sort(sortByPricePerSecond);
+    bids = highPriorityDealBids.concat(otherBids);
+  } else {
+    bids.sort(sortByPricePerSecond);
+  }
 
   let targeting = {};
   if (deferCachingEnabled === false) {
