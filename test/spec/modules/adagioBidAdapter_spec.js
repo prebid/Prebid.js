@@ -7,7 +7,7 @@ describe('adagioAdapter', () => {
   let utilsMock;
   const adapter = newBidder(spec);
   const ENDPOINT = 'https://mp.4dex.io/prebid';
-  const VERSION = '2.0.0';
+  const VERSION = '2.0.1';
 
   beforeEach(function() {
     localStorage.removeItem('adagioScript');

@@ -6,7 +6,7 @@ import JSEncrypt from 'jsencrypt/bin/jsencrypt';
 import sha256 from 'crypto-js/sha256';
 
 const BIDDER_CODE = 'adagio';
-const VERSION = '2.0.0';
+const VERSION = '2.0.1';
 const FEATURES_VERSION = '1';
 const ENDPOINT = 'https://mp.4dex.io/prebid';
 const SUPPORTED_MEDIA_TYPES = ['banner'];
@@ -415,7 +415,7 @@ export const spec = {
           featuresVersion: FEATURES_VERSION
         },
         options: {
-          contentType: 'application/json'
+          contentType: 'text/plain'
         }
       }
     });
