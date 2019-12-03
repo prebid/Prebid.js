@@ -126,9 +126,6 @@ export const spec = {
       request.user = { ext: { consent: bidderRequest.gdprConsent.consentString } };
       request.regs = { ext: { gdpr: bidderRequest.gdprConsent.gdprApplies & 1 } };
     }
-    console.log('RTB:');
-    console.log(request);
-    console.log('----');
     return {
       method: 'POST',
       url: '//' + adxDomain + '/adx/openrtb',
