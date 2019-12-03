@@ -171,6 +171,20 @@ export const spec = {
       requestBody.device = _getDeviceObj()
       requestBody.id = bidderRequest.bids[0].auctionId
       requestBody.ext = {'ce': (utils.cookiesAreEnabled() ? 1 : 0)}
+
+      // Attaching GDPR Consent Params
+      if (bidderRequest && bidderRequest.gdprConsent) {
+        requestBody.user.ext = {
+           consent: bidderRequest.gdprConsent.consentString
+        };
+
+        requestBody.regs = {
+          ext: {
+            gdpr: (bidderRequest.gdprConsent.gdprApplies ? 1 : 0)
+          }
+        };
+      }
+
       utils._each(validBidRequests, function (bid) {
         requestBody.imp.push(_buildBid(bid))
       })
