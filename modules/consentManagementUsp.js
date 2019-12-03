@@ -213,7 +213,7 @@ function uspapiFailed(errMsg, hookConfig, extraArgs) {
 function storeUspConsentData(consentObject) {
   if (consentObject && consentObject.usPrivacy) {
     consentData = consentObject.usPrivacy;
-    uspDataHandler.setConsentData(consentData.usPrivacy);
+    uspDataHandler.setConsentData(consentData);
   }
 }
 
