@@ -324,7 +324,7 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
         );
       }
     } else {
-      utils.logError('missing prebidServerBidAdapeter');
+      utils.logError('missing ' + _s2sConfig.adapter);
     }
   }
 
