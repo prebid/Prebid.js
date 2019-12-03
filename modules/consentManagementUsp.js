@@ -254,6 +254,7 @@ function exitModule(errMsg, hookConfig, extraArgs) {
  */
 export function resetConsentData() {
   consentData = undefined;
+  consentAPI = undefined;
   uspDataHandler.setConsentData(null);
 }
 

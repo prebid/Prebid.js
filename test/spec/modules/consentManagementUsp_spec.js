@@ -33,6 +33,7 @@ describe('consentManagement', function () {
         utils.logInfo.restore();
         utils.logWarn.restore();
         config.resetConfig();
+        resetConsentData();
       });
 
       it('should not run if no config', function () {
@@ -47,6 +48,13 @@ describe('consentManagement', function () {
         expect(consentAPI).to.be.equal('iab');
         expect(consentTimeout).to.be.equal(50);
         sinon.assert.callCount(utils.logInfo, 3);
+      });
+
+      it('should exit the consent manager if config.usp is not an object', function() {
+        setConsentConfig({});
+        expect(consentAPI).to.be.undefined;
+        sinon.assert.calledOnce(utils.logWarn);
+        sinon.assert.notCalled(utils.logInfo);
       });
     });
 
