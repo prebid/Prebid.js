@@ -21,7 +21,7 @@ function createIFrameMarker() {
   return ifr;
 }
 
-describe.only('consentManagement', function () {
+describe('consentManagement', function () {
   describe('setConsentConfig tests:', function () {
     describe('empty setConsentConfig value', function () {
       beforeEach(function () {
