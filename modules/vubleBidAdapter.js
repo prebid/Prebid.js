@@ -57,7 +57,8 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
-    if (utils.isEmpty(bid.sizes) || utils.parseSizesInput(bid.sizes).length == 0) {
+    let rawSizes = utils.deepAccess(bid, 'mediaTypes.video.playerSize') || bid.sizes;
+    if (utils.isEmpty(rawSizes) || utils.parseSizesInput(rawSizes).length == 0) {
       return false;
     }
 
@@ -78,21 +79,22 @@ export const spec = {
    * @param {validBidRequests[]} - an array of bids
    * @return ServerRequest Info describing the request to the server.
    */
-  buildRequests: function (validBidRequests) {
+  buildRequests: function (validBidRequests, bidderRequest) {
     return validBidRequests.map(bidRequest => {
       // We take the first size
-      let size = utils.parseSizesInput(bidRequest.sizes)[0].split('x');
+      let rawSize = utils.deepAccess(bidRequest, 'mediaTypes.video.playerSize') || bidRequest.sizes;
+      let size = utils.parseSizesInput(rawSize)[0].split('x');
 
       // Get the page's url
-      let referrer = utils.getTopWindowUrl();
+      let referer = (bidderRequest && bidderRequest.refererInfo) ? bidderRequest.refererInfo.referer : '';
       if (bidRequest.params.referrer) {
-        referrer = bidRequest.params.referrer;
+        referer = bidRequest.params.referrer;
       }
 
       // Get Video Context
       let context = utils.deepAccess(bidRequest, 'mediaTypes.video.context');
 
-      let url = '//player.mediabong.' + bidRequest.params.env + '/prebid/request';
+      let url = 'https://player.mediabong.' + bidRequest.params.env + '/prebid/request';
       let data = {
         width: size[0],
         height: size[1],
@@ -100,7 +102,7 @@ export const spec = {
         zone_id: bidRequest.params.zoneId,
         context: context,
         floor_price: bidRequest.params.floorPrice ? bidRequest.params.floorPrice : 0,
-        url: referrer,
+        url: referer,
         env: bidRequest.params.env,
         bid_id: bidRequest.bidId,
         adUnitCode: bidRequest.adUnitCode
