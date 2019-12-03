@@ -2,7 +2,7 @@ import {
   setConsentConfig,
   requestBidsHook,
   resetConsentData,
-  userUSP,
+  consentAPI,
   consentTimeout,
   allowAuction
 } from 'modules/consentManagementUSP';
@@ -25,12 +25,18 @@ describe.only('consentManagement', function () {
         config.resetConfig();
       });
 
-      it('should use system default values', function () {
+      it('should not run if no config', function () {
         setConsentConfig({});
-        expect(userUSP).to.be.equal('uspapi');
+        expect(consentAPI).to.be.undefined;
+        expect(consentTimeout).to.be.undefined;
+        sinon.assert.callCount(utils.logWarn, 1);
+      });
+
+      it('should use system default values', function () {
+        setConsentConfig({usp: {}});
+        expect(consentAPI).to.be.equal('iab');
         expect(consentTimeout).to.be.equal(50);
-        expect(allowAuction).to.be.true;
-        sinon.assert.callCount(utils.logInfo, 4);
+        sinon.assert.callCount(utils.logInfo, 3);
       });
     });
 
@@ -41,31 +47,25 @@ describe.only('consentManagement', function () {
       });
       it('results in all user settings overriding system defaults', function () {
         let allConfig = {
-          cmpApi: 'uspapi',
-          timeout: 7500,
-          allowAuctionWithoutConsent: false
+          usp: {
+            cmpApi: 'daa',
+            timeout: 7500
+          }
         };
 
         setConsentConfig(allConfig);
-        expect(userUSP).to.be.equal('uspapi');
+        expect(consentAPI).to.be.equal('daa');
         expect(consentTimeout).to.be.equal(7500);
-        expect(allowAuction).to.be.false;
       });
     });
   });
 
   describe('requestBidsHook tests:', function () {
-    let goodConfigWithCancelAuction = {
-      cmpApi: 'uspapi',
-      timeout: 7500,
-      allowAuctionWithoutConsent: false
+    let goodConfig = {
+      cmpApi: 'iab',
+      timeout: 7500
     };
-
-    let goodConfigWithAllowAuction = {
-      cmpApi: 'uspapi',
-      timeout: 7500,
-      allowAuctionWithoutConsent: true
-    };
+    let noConfig = {};
 
     let didHookReturn;
 
@@ -90,9 +90,9 @@ describe.only('consentManagement', function () {
       });
 
       it('should throw a warning and return to hooked function when an unknown USPAPI framework ID is used', function () {
-        let badCMPConfig = { cmpApi: 'bad' };
+        let badCMPConfig = { usp: { cmpApi: 'bad' } };
         setConsentConfig(badCMPConfig);
-        expect(userUSP).to.be.equal(badCMPConfig.cmpApi);
+        expect(consentAPI).to.be.equal(badCMPConfig.cmpApi);
         requestBidsHook(() => { didHookReturn = true; }, {});
         let consent = uspDataHandler.getConsentData();
         sinon.assert.calledOnce(utils.logWarn);
@@ -100,8 +100,8 @@ describe.only('consentManagement', function () {
         expect(consent).to.be.null;
       });
 
-      it('should throw proper errors when USP is not found', function () {
-        setConsentConfig(goodConfigWithCancelAuction);
+      it('should throw proper errors when USP config is not found', function () {
+        setConsentConfig(noConfig);
         requestBidsHook(() => { didHookReturn = true; }, {});
         let consent = uspDataHandler.getConsentData();
         // throw 2 errors; one for no bidsBackHandler and for CMP not being found (this is an error due to gdpr config)
@@ -136,7 +136,7 @@ describe.only('consentManagement', function () {
           args[2](testConsentData);
         });
 
-        setConsentConfig(goodConfigWithAllowAuction);
+        setConsentConfig(goodConfig);
         requestBidsHook(() => {}, {});
         uspStub.restore();
 
@@ -211,7 +211,7 @@ describe.only('consentManagement', function () {
       function testIFramedPage(testName, messageFormatString) {
         it(`should return the consent string from a postmessage + addEventListener response - ${testName}`, (done) => {
           stringifyResponse = messageFormatString;
-          setConsentConfig(goodConfigWithAllowAuction);
+          setConsentConfig(goodConfig);
           requestBidsHook(() => {
             let consent = uspDataHandler.getConsentData();
             sinon.assert.notCalled(utils.logWarn);
@@ -252,7 +252,7 @@ describe.only('consentManagement', function () {
           args[2](testConsentData);
         });
 
-        setConsentConfig(goodConfigWithAllowAuction);
+        setConsentConfig(goodConfig);
 
         requestBidsHook(() => {
           didHookReturn = true;

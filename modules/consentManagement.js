@@ -343,6 +343,9 @@ export function resetConsentData() {
  * @param {object} config required; consentManagement module config settings; cmp (string), timeout (int), allowAuctionWithoutConsent (boolean)
  */
 export function setConsentConfig(config) {
+  // if `config.gdpr` or `config.usp` exist, assume new config format.
+  // else for backward compatability, just use `config`
+  config = config.gdpr || config.usp ? config.gdpr : config;
   if (utils.isStr(config.cmpApi)) {
     userCMP = config.cmpApi;
   } else {
