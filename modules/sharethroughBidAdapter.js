@@ -1,6 +1,6 @@
 import { registerBidder } from '../src/adapters/bidderFactory';
 
-const VERSION = '3.1.0';
+const VERSION = '3.2.0';
 const BIDDER_CODE = 'sharethrough';
 const STR_ENDPOINT = 'https://btlr.sharethrough.com/WYu2BXv1/v1';
 const DEFAULT_SIZE = [1, 1];
@@ -30,10 +30,13 @@ export const sharethroughAdapterSpec = {
       };
 
       let secure = false;
+      // https://prebid.org/dev-docs/bidder-adaptor.html#referrers
       if (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer) {
         if (bidderRequest.refererInfo.referer.indexOf('http')) {
           secure = bidderRequest.refererInfo.referer.indexOf('https');
         }
+      } else if (bidderRequest && bidderRequest.refererInfo & !bidderRequest.refererInfo.reachedTop) {
+        secure = document.location.protocol.indexOf('http') && document.location.protocol.indexOf('https');
       }
 
       query.secure = secure;
