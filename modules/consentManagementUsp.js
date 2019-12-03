@@ -10,6 +10,7 @@ import { uspDataHandler } from '../src/adapterManager';
 
 const DEFAULT_CONSENT_API = 'iab';
 const DEFAULT_CONSENT_TIMEOUT = 50;
+const USPAPI_VERSION = 1;
 
 export let consentAPI;
 export let consentTimeout;
@@ -80,7 +81,7 @@ function lookupUspConsent(uspSuccess, uspError, hookConfig) {
 
   try {
     // try to call __uspapi directly
-    uspapiFrame.__uspapi('getUSPData', 1, callbackHandler.consentDataCallback);
+    uspapiFrame.__uspapi('getUSPData', USPAPI_VERSION, callbackHandler.consentDataCallback);
   } catch (e) {
     // must not have been accessible, try using postMessage() api
     callUspApiWhileInIframe('getUSPData', uspapiFrame, callbackHandler.consentDataCallback);
@@ -107,7 +108,7 @@ function lookupUspConsent(uspSuccess, uspError, hookConfig) {
     window.addEventListener('message', readPostMessageResponse, false);
 
     // call uspapi
-    window.__uspapi(commandName, 1, uspapiCallback);
+    window.__uspapi(commandName, USPAPI_VERSION, uspapiCallback);
 
     function readPostMessageResponse(event) {
       const res = event && event.data && event.data.__uspapiReturn;
