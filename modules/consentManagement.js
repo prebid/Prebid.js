@@ -335,6 +335,7 @@ function exitModule(errMsg, hookConfig, extraArgs) {
  */
 export function resetConsentData() {
   consentData = undefined;
+  userCMP = undefined;
   gdprDataHandler.setConsentData(null);
 }
 

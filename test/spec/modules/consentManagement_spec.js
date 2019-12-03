@@ -11,11 +11,14 @@ describe('consentManagement', function () {
     describe('empty setConsentConfig value', function () {
       beforeEach(function () {
         sinon.stub(utils, 'logInfo');
+        sinon.stub(utils, 'logWarn');
       });
 
       afterEach(function () {
         utils.logInfo.restore();
+        utils.logWarn.restore();
         config.resetConfig();
+        resetConsentData();
       });
 
       it('should use system default values', function () {
@@ -25,6 +28,12 @@ describe('consentManagement', function () {
         expect(allowAuction).to.be.true;
         sinon.assert.callCount(utils.logInfo, 4);
       });
+
+      it('should exit consent manager if config is not an object', function() {
+        setConsentConfig('');
+        expect(userCMP).to.be.undefined;
+        sinon.assert.calledOnce(utils.logWarn);
+      });
     });
 
     describe('valid setConsentConfig value', function () {
@@ -32,6 +41,7 @@ describe('consentManagement', function () {
         config.resetConfig();
         $$PREBID_GLOBAL$$.requestBids.removeAll();
       });
+
       it('results in all user settings overriding system defaults', function () {
         let allConfig = {
           cmpApi: 'iab',
@@ -43,6 +53,38 @@ describe('consentManagement', function () {
         expect(userCMP).to.be.equal('iab');
         expect(consentTimeout).to.be.equal(7500);
         expect(allowAuction).to.be.false;
+      });
+
+      it('should use new consent manager config structure for gdpr', function() {
+        setConsentConfig({
+          gdpr: { cmpApi: 'iab', timeout: 8700 }
+        });
+
+        expect(userCMP).to.be.equal('iab');
+        expect(consentTimeout).to.be.equal(8700);
+      });
+
+      it('should ignore config.usp and use config.gdpr', function() {
+        setConsentConfig({
+          gdpr: { cmpApi: 'iab', timeout: 5000 },
+          usp: { cmpApi: 'iab', timeout: 50 }
+        });
+
+        expect(userCMP).to.be.equal('iab');
+        expect(consentTimeout).to.be.equal(5000);
+      });
+
+      it('should fallback to old consent manager config object if no config.gdpr', function() {
+        setConsentConfig({
+          cmpApi: 'iab',
+          timeout: 3333,
+          allowAuctionWithoutConsent: false,
+          gdpr: false
+        });
+
+        expect(userCMP).to.be.equal('iab');
+        expect(consentTimeout).to.be.equal(3333);
+        expect(allowAuction).to.be.equal(false);
       });
     });
 
