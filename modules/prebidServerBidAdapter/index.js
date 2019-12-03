@@ -779,25 +779,13 @@ const OPEN_RTB_PROTOCOL = {
         if (typeof bidRequests[0].gdprConsent.gdprApplies === 'boolean') {
           gdprApplies = bidRequests[0].gdprConsent.gdprApplies ? 1 : 0;
         }
-
-        if (request.regs) {
-          if (request.regs.ext) {
-            request.regs.ext.gdpr = gdprApplies;
-          } else {
-            request.regs.ext = { gdpr: gdprApplies };
-          }
-        } else {
-          request.regs = { ext: { gdpr: gdprApplies } };
-        }
-
+        utils.deepSetValue(request, 'regs.ext.gdpr', gdprApplies);
         utils.deepSetValue(request, 'user.ext.consent', bidRequests[0].gdprConsent.consentString);
       }
 
       // US Privacy (CCPA) support
       if (bidRequests[0].us_privacy) {
-        request.regs = request.regs || {};
-        request.regs.ext = request.regs.ext || {};
-        request.regs.ext.us_privacy = bidRequests[0].us_privacy;
+        utils.deepSetValue(request, 'regs.ext.us_privacy', bidRequests[0].us_privacy);
       }
     }
 
