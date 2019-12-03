@@ -7,7 +7,7 @@ const CONSTANTS = {
   SYNC_ENDPOINT: '//k.r66net.com/GetUserSync',
   TIME_TO_LIVE: 300,
   DEFAULT_CURRENCY: 'EUR',
-  PREBID_VERSION: 1,
+  PREBID_VERSION: 2,
   METHOD: 'GET',
   INVIBES_VENDOR_ID: 436
 };
@@ -114,7 +114,9 @@ function buildRequest(bidRequests, bidderRequest) {
     height: topWin.innerHeight,
 
     noc: !cookieDomain,
-    oi: invibes.optIn
+    oi: invibes.optIn,
+
+    kw: keywords
   };
 
   if (invibes.dom.id) {
@@ -190,7 +192,7 @@ function handleResponse(responseObj, bidRequests) {
   for (let i = 0; i < bidRequests.length; i++) {
     let bidRequest = bidRequests[i];
 
-    if (bidModel.PlacementId === bidRequest.params.placementId) {
+    if (bidModel.PlacementId == bidRequest.params.placementId) {
       let size = getBiggerSize(bidRequest.sizes);
 
       bidResponses.push({
@@ -444,7 +446,7 @@ let initDomainId = function (options) {
 
   let persistence = options.persistence || cookiePersistence;
   let state;
-  let minHC = 7;
+  let minHC = 2;
 
   let validGradTime = function (state) {
     if (!state.cr) { return false; }
@@ -468,23 +470,31 @@ let initDomainId = function (options) {
     state.id = invibes.Uid.generate();
   }
 
-  let graduate;
-
-  let setId = function () {
-    invibes.dom = {
-      id: (!state.cr && invibes.optIn > 0) ? state.id : undefined,
-      tempId: (invibes.optIn > 0) ? state.id : undefined,
-      graduate: graduate
-    };
-  };
-
-  graduate = function () {
+  let graduate = function () {
     if (!state.cr) { return; }
     delete state.cr;
     delete state.hc;
     persistence.save(state);
     setId();
-  }
+  };
+
+  let regenerateId = function () {
+    state.id = invibes.Uid.generate();
+    persistence.save(state);
+  };
+
+  let setId = function () {
+    invibes.dom = {
+      get id() {
+        return (!state.cr && invibes.optIn > 0) ? state.id : undefined;
+      },
+      get tempId() {
+        return (invibes.optIn > 0) ? state.id : undefined;
+      },
+      graduate: graduate,
+      regen: regenerateId
+    };
+  };
 
   if (state.cr && !options.noVisit) {
     if (state.hc < minHC) {
@@ -498,6 +508,75 @@ let initDomainId = function (options) {
   setId();
   ivLogger.info('Did=' + invibes.dom.id);
 };
+
+let keywords = (function () {
+  const cap = 300;
+  let headTag = document.getElementsByTagName('head')[0];
+  let metaTag = headTag ? headTag.getElementsByTagName('meta') : [];
+
+  function parse(str, cap) {
+    let parsedStr = str.replace(/[<>~|\\"`!@#$%^&*()=+?]/g, '');
+
+    function onlyUnique(value, index, self) {
+      return value !== '' && self.indexOf(value) === index;
+    }
+
+    let words = parsedStr.split(/[\s,;.:]+/);
+    let uniqueWords = words.filter(onlyUnique);
+    parsedStr = '';
+
+    for (let i = 0; i < uniqueWords.length; i++) {
+      parsedStr += uniqueWords[i];
+      if (parsedStr.length >= cap) {
+        return parsedStr;
+      }
+      if (i < uniqueWords.length - 1) {
+        parsedStr += ',';
+      }
+    }
+
+    return parsedStr;
+  }
+
+  function gt(cap, prefix) {
+    cap = cap || 300;
+    prefix = prefix || '';
+    let title = document.title || headTag
+      ? headTag.getElementsByTagName('title')[0]
+        ? headTag.getElementsByTagName('title')[0].innerHTML
+        : ''
+      : '';
+
+    return parse(prefix + ',' + title, cap);
+  }
+
+  function gmeta(metaName, cap, prefix) {
+    metaName = metaName || 'keywords';
+    cap = cap || 100;
+    prefix = prefix || '';
+    let fallbackKw = prefix;
+
+    for (let i = 0; i < metaTag.length; i++) {
+      if (metaTag[i].name && metaTag[i].name.toLowerCase() === metaName.toLowerCase()) {
+        let kw = prefix + ',' + metaTag[i].content || '';
+        return parse(kw, cap);
+      } else if (metaTag[i].name && metaTag[i].name.toLowerCase().indexOf(metaName.toLowerCase()) > -1) {
+        fallbackKw = prefix + ',' + metaTag[i].content || '';
+      }
+    }
+
+    return parse(fallbackKw, cap);
+  }
+
+  let kw = gmeta('keywords', cap);
+  if (!kw || kw.length < cap - 8) {
+    kw = gmeta('description', cap, kw);
+    if (!kw || kw.length < cap - 8) {
+      kw = gt(cap, kw);
+    }
+  }
+  return kw;
+}());
 // =====================
 
 export function resetInvibes() {

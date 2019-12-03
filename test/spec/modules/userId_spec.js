@@ -14,6 +14,7 @@ import {unifiedIdSubmodule} from 'modules/userId/unifiedIdSystem';
 import {pubCommonIdSubmodule} from 'modules/userId/pubCommonIdSystem';
 import {id5IdSubmodule} from 'modules/id5IdSystem';
 import {identityLinkSubmodule} from 'modules/identityLinkIdSystem';
+import {liveIntentIdSubmodule} from 'modules/liveIntentIdSystem';
 
 let assert = require('chai').assert;
 let expect = require('chai').expect;
@@ -305,8 +306,8 @@ describe('User ID', function() {
       expect(utils.logInfo.args[0][0]).to.exist.and.to.equal('User ID - usersync config updated for 1 submodules');
     });
 
-    it('config with 4 configurations should result in 4 submodules add', function () {
-      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule]);
+    it('config with 5 configurations should result in 5 submodules add', function () {
+      setSubmoduleRegistry([pubCommonIdSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, liveIntentIdSubmodule]);
       init(config);
       config.setConfig({
         usersync: {
@@ -322,10 +323,13 @@ describe('User ID', function() {
           }, {
             name: 'identityLink',
             storage: { name: 'idl_env', type: 'cookie' }
+          }, {
+            name: 'liveIntentId',
+            storage: { name: '_li_pbid', type: 'cookie' }
           }]
         }
       });
-      expect(utils.logInfo.args[0][0]).to.exist.and.to.equal('User ID - usersync config updated for 4 submodules');
+      expect(utils.logInfo.args[0][0]).to.exist.and.to.equal('User ID - usersync config updated for 5 submodules');
     });
 
     it('config syncDelay updates module correctly', function () {
@@ -689,6 +693,46 @@ describe('User ID', function() {
       }, {adUnits});
     });
 
+    it('test hook from liveIntentId html5', function(done) {
+      // simulate existing browser local storage values
+      localStorage.setItem('_li_pbid', JSON.stringify({'unifiedId': 'random-ls-identifier'}));
+      localStorage.setItem('_li_pbid_exp', '');
+
+      setSubmoduleRegistry([liveIntentIdSubmodule]);
+      init(config);
+      config.setConfig(getConfigMock(['liveIntentId', '_li_pbid', 'html5']));
+      requestBidsHook(function() {
+        adUnits.forEach(unit => {
+          unit.bids.forEach(bid => {
+            expect(bid).to.have.deep.nested.property('userId.lipb');
+            expect(bid.userId.lipb.lipbid).to.equal('random-ls-identifier');
+          });
+        });
+        localStorage.removeItem('_li_pbid');
+        localStorage.removeItem('_li_pbid_exp');
+        done();
+      }, {adUnits});
+    });
+
+    it('test hook from liveIntentId cookie', function(done) {
+      utils.setCookie('_li_pbid', JSON.stringify({'unifiedId': 'random-cookie-identifier'}), (new Date(Date.now() + 100000).toUTCString()));
+
+      setSubmoduleRegistry([liveIntentIdSubmodule]);
+      init(config);
+      config.setConfig(getConfigMock(['liveIntentId', '_li_pbid', 'cookie']));
+
+      requestBidsHook(function() {
+        adUnits.forEach(unit => {
+          unit.bids.forEach(bid => {
+            expect(bid).to.have.deep.nested.property('userId.lipb');
+            expect(bid.userId.lipb.lipbid).to.equal('random-cookie-identifier');
+          });
+        });
+        utils.setCookie('_li_pbid', '', EXPIRED_COOKIE_DATE);
+        done();
+      }, {adUnits});
+    });
+
     it('test hook from id5id cookies when refresh needed', function(done) {
       // simulate existing browser local storage values
       utils.setCookie('id5id', JSON.stringify({'ID5ID': 'testid5id'}), (new Date(Date.now() + 5000).toUTCString()));
@@ -726,6 +770,48 @@ describe('User ID', function() {
             expect(bid.userId.id5id).to.equal('testid5id');
           });
         });
+        done();
+      }, {adUnits});
+    });
+
+    it('test hook from liveIntentId html5', function(done) {
+      // simulate existing browser local storage values
+      localStorage.setItem('_li_pbid', JSON.stringify({'unifiedId': 'random-ls-identifier', 'segments': ['123']}));
+      localStorage.setItem('_li_pbid_exp', '');
+
+      setSubmoduleRegistry([liveIntentIdSubmodule]);
+      init(config);
+      config.setConfig(getConfigMock(['liveIntentId', '_li_pbid', 'html5']));
+      requestBidsHook(function() {
+        adUnits.forEach(unit => {
+          unit.bids.forEach(bid => {
+            expect(bid).to.have.deep.nested.property('userId.lipb');
+            expect(bid.userId.lipb.lipbid).to.equal('random-ls-identifier');
+            expect(bid.userId.lipb.segments).to.include('123');
+          });
+        });
+        localStorage.removeItem('_li_pbid');
+        localStorage.removeItem('_li_pbid_exp');
+        done();
+      }, {adUnits});
+    });
+
+    it('test hook from liveIntentId cookie', function(done) {
+      utils.setCookie('_li_pbid', JSON.stringify({'unifiedId': 'random-cookie-identifier', 'segments': ['123']}), (new Date(Date.now() + 100000).toUTCString()));
+
+      setSubmoduleRegistry([liveIntentIdSubmodule]);
+      init(config);
+      config.setConfig(getConfigMock(['liveIntentId', '_li_pbid', 'cookie']));
+
+      requestBidsHook(function() {
+        adUnits.forEach(unit => {
+          unit.bids.forEach(bid => {
+            expect(bid).to.have.deep.nested.property('userId.lipb');
+            expect(bid.userId.lipb.lipbid).to.equal('random-cookie-identifier');
+            expect(bid.userId.lipb.segments).to.include('123');
+          });
+        });
+        utils.setCookie('_li_pbid', '', EXPIRED_COOKIE_DATE);
         done();
       }, {adUnits});
     });
@@ -899,6 +985,7 @@ describe('User ID', function() {
       sinon.stub(utils, 'triggerPixel');
       utils.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
       utils.setCookie('unifiedid', '', EXPIRED_COOKIE_DATE);
+      utils.setCookie('_parrable_eid', '', EXPIRED_COOKIE_DATE);
     });
 
     afterEach(function() {
@@ -907,6 +994,7 @@ describe('User ID', function() {
       utils.triggerPixel.restore();
       utils.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
       utils.setCookie('unifiedid', '', EXPIRED_COOKIE_DATE);
+      utils.setCookie('_parrable_eid', '', EXPIRED_COOKIE_DATE);
     });
 
     it('pubcid callback with url', function () {
@@ -955,6 +1043,74 @@ describe('User ID', function() {
       expect(requests).to.be.empty;
       events.emit(CONSTANTS.EVENTS.AUCTION_END, {});
       expect(requests[0].url).to.equal('//match.adsrvr.org/track/rid?ttd_pid=rubicon&fmt=json');
+    });
+
+    it('callback for submodules that always need to refresh stored id', function(done) {
+      let adUnits = [getAdUnitMock()];
+      let innerAdUnits;
+      const parrableStoredId = '01.1111111111.test-eid';
+      const parrableRefreshedId = '02.2222222222.test-eid';
+      utils.setCookie('_parrable_eid', parrableStoredId, (new Date(Date.now() + 5000).toUTCString()));
+
+      const parrableIdSubmoduleMock = {
+        name: 'parrableId',
+        decode: function(value) {
+          return { 'parrableid': value };
+        },
+        getId: function() {
+          return {
+            callback: function(cb) {
+              cb(parrableRefreshedId);
+            }
+          };
+        }
+      };
+
+      const parrableConfigMock = {
+        userSync: {
+          syncDelay: 0,
+          userIds: [{
+            name: 'parrableId',
+            storage: {
+              type: 'cookie',
+              name: '_parrable_eid'
+            }
+          }]
+        }
+      };
+
+      setSubmoduleRegistry([parrableIdSubmoduleMock]);
+      attachIdSystem(parrableIdSubmoduleMock);
+      init(config);
+      config.setConfig(parrableConfigMock);
+
+      // make first bid request, should use stored id value
+      requestBidsHook((config) => { innerAdUnits = config.adUnits }, {adUnits});
+      innerAdUnits.forEach(unit => {
+        unit.bids.forEach(bid => {
+          expect(bid).to.have.deep.nested.property('userId.parrableid');
+          expect(bid.userId.parrableid).to.equal(parrableStoredId);
+        });
+      });
+
+      // attach a handler for auction end event to run the second bid request
+      events.on(CONSTANTS.EVENTS.AUCTION_END, function handler(submodule) {
+        if (submodule === 'parrableIdSubmoduleMock') {
+          // make the second bid request, id should have been refreshed
+          requestBidsHook((config) => { innerAdUnits = config.adUnits }, {adUnits});
+          innerAdUnits.forEach(unit => {
+            unit.bids.forEach(bid => {
+              expect(bid).to.have.deep.nested.property('userId.parrableid');
+              expect(bid.userId.parrableid).to.equal(parrableRefreshedId);
+            });
+          });
+          events.off(CONSTANTS.EVENTS.AUCTION_END, handler);
+          done();
+        }
+      });
+
+      // emit an auction end event to run the submodule callback
+      events.emit(CONSTANTS.EVENTS.AUCTION_END, 'parrableIdSubmoduleMock');
     });
   });
 });
