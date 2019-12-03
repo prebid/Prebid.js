@@ -161,8 +161,8 @@ function raiSetEids(bid) {
 function raiSetUserId(bid, eids, source, value, userId) {
   if (utils.isStr(value)) {
     eids.push({
-      userId: source,
-      source: value
+      userId: value,
+      source
     });
   }
 }

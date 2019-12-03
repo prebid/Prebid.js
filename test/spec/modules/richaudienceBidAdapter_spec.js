@@ -277,8 +277,8 @@ describe('Richaudience adapter tests', function () {
       var requestContent = JSON.parse(request[0].data);
 
       expect(requestContent.user).to.deep.equal([{
-        'userId': 'id5-sync.com',
-        'source': 'id5-user-id'
+        'userId': 'id5-user-id',
+        'source': 'id5-sync.com'
       }]);
 
       var request;
@@ -313,8 +313,8 @@ describe('Richaudience adapter tests', function () {
       var requestContent = JSON.parse(request[0].data);
 
       expect(requestContent.user).to.deep.equal([{
-        'userId': 'pubcommon',
-        'source': 'pub_common_user_id'
+        'userId': 'pub_common_user_id',
+        'source': 'pubcommon'
       }]);
 
       var request;
@@ -348,8 +348,8 @@ describe('Richaudience adapter tests', function () {
       var requestContent = JSON.parse(request[0].data);
 
       expect(requestContent.user).to.deep.equal([{
-        'userId': 'criteo.com',
-        'source': 'criteo-user-id'
+        'userId': 'criteo-user-id',
+        'source': 'criteo.com'
       }]);
 
       var request;
@@ -383,8 +383,8 @@ describe('Richaudience adapter tests', function () {
       var requestContent = JSON.parse(request[0].data);
 
       expect(requestContent.user).to.deep.equal([{
-        'userId': 'liveramp.com',
-        'source': 'identity-link-user-id'
+        'userId': 'identity-link-user-id',
+        'source': 'liveramp.com'
       }]);
 
       var request;
@@ -417,8 +417,8 @@ describe('Richaudience adapter tests', function () {
       var requestContent = JSON.parse(request[0].data)
 
       expect(requestContent.user).to.deep.equal([{
-        'userId': 'liveramp.com',
-        'source': 'identity-link-user-id'
+        'userId': 'identity-link-user-id',
+        'source': 'liveramp.com'
       }]);
 
       var request;
@@ -451,8 +451,8 @@ describe('Richaudience adapter tests', function () {
       var requestContent = JSON.parse(request[0].data)
 
       expect(requestContent.user).to.deep.equal([{
-        'userId': 'adserver.org',
-        'source': 'tdid-user-id'
+        'userId': 'tdid-user-id',
+        'source': 'adserver.org'
       }]);
 
       request;
