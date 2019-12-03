@@ -67,11 +67,16 @@ function lint(done) {
   const isFixed = function(file) {
     return file.eslint != null && file.eslint.fixed;
   }
-  return gulp.src(['src/**/*.js', 'modules/**/*.js', 'test/**/*.js'], {base: './'})
+  return gulp.src(['src/!**!/!*.js', 'modules/proxistoreBidAdapter.js', 'test/spec/modules/proxistoreBidAdapter_spec.js'], {base: './'})
     .pipe(gulpif(argv.nolintfix, eslint(), eslint({fix: true})))
     .pipe(eslint.format('stylish'))
     .pipe(eslint.failAfterError())
     .pipe(gulpif(isFixed, gulp.dest('./')));
+ /* return gulp.src(['src/!**!/!*.js', 'modules/!**!/!*.js', 'test/!**!/!*.js'], {base: './'})
+    .pipe(gulpif(argv.nolintfix, eslint(), eslint({fix: true})))
+    .pipe(eslint.format('stylish'))
+    .pipe(eslint.failAfterError())
+    .pipe(gulpif(isFixed, gulp.dest('./')));*/
 };
 
 // View the code coverage report in the browser.
