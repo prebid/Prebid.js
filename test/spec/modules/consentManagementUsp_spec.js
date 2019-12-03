@@ -4,7 +4,7 @@ import {
   resetConsentData,
   consentAPI,
   consentTimeout
-} from 'modules/consentManagementUSP';
+} from 'modules/consentManagementUsp';
 import * as utils from 'src/utils';
 import { config } from 'src/config';
 import { uspDataHandler } from 'src/adapterManager';
