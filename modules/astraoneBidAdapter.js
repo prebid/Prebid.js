@@ -1,7 +1,6 @@
 import * as utils from '../src/utils'
 import { registerBidder } from '../src/adapters/bidderFactory'
 import { BANNER } from '../src/mediaTypes'
-import {Renderer} from '../src/Renderer';
 
 const BIDDER_CODE = 'astraone';
 const SSP_ENDPOINT = 'https://ssp.astraone.io/auction/prebid';
@@ -14,7 +13,6 @@ function buildBidRequests(validBidRequests) {
       bidId: validBidRequest.bidId,
       transactionId: validBidRequest.transactionId,
       sizes: validBidRequest.sizes,
-      adUnitId: params.adUnitId,
       placement: params.placement,
       placeId: params.placeId,
       imageUrl: params.imageUrl
@@ -22,28 +20,6 @@ function buildBidRequests(validBidRequests) {
 
     return bidRequest;
   })
-}
-
-function inImageRender(bid) {
-  bid.renderer.push(() => {
-    window._ao_ssp.registerInImage(bid);
-  });
-}
-
-function createRenderer(bid) {
-  const renderer = Renderer.install({
-    id: bid.requestId,
-    url: 'https://st.astraone.io/prebidrenderer.js',
-    loaded: false
-  });
-
-  try {
-    renderer.setRender(inImageRender);
-  } catch (err) {
-    utils.logWarn('Prebid Error calling setRender on renderer', err);
-  }
-
-  return renderer;
 }
 
 function buildBid(bidDada) {
@@ -57,17 +33,40 @@ function buildBid(bidDada) {
     netRevenue: true,
     mediaType: BANNER,
     ttl: TTL,
-    ad: bidDada.content.content,
     content: bidDada.content
   };
 
-  bid.renderer = createRenderer(bid);
+  bid.ad = wrapAd(bid, bidDada);
 
   return bid;
 }
 
 function getMediaTypeFromBid(bid) {
   return bid.mediaTypes && Object.keys(bid.mediaTypes)[0]
+}
+
+function wrapAd(bid, bidDada) {
+  return `<!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title></title>
+        <script src="https://st.astraone.io/prebidrenderer.js"></script>
+        <style>html, body {width: 100%; height: 100%; margin: 0;}</style>
+    </head>
+    <body>
+        <div data-hyb-ssp-in-image-overlay="${bidDada.content.placeId}" style="width: 100%; height: 100%;"></div>
+        <script>
+            if (parent.window.frames[window.name]) {
+                var parentDocument = window.parent.document.getElementById(parent.window.frames[window.name].name);
+                parentDocument.style.height = "100%";
+                parentDocument.style.width = "100%";
+            }
+            var _html = "${encodeURIComponent(JSON.stringify(bid))}";
+            window._ao_ssp.registerInImage(JSON.parse(decodeURIComponent(_html)));
+        </script>
+    </body>
+  </html>`;
 }
 
 export const spec = {
@@ -81,7 +80,13 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid(bid) {
-    return getMediaTypeFromBid(bid) === BANNER;
+    return (
+      getMediaTypeFromBid(bid) === BANNER &&
+      !!bid.params.placeId &&
+      !!bid.params.imageUrl &&
+      !!bid.params.placement &&
+      (bid.params.placement === 'inImage')
+    );
   },
 
   /**
