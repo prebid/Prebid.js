@@ -9,16 +9,16 @@ Individual params may be set for the BritePool User ID Submodule. At least one i
 pbjs.setConfig({
     usersync: {
         userIds: [{
-            name: ’britepoolId’,
+            name: 'britepoolId',
             storage: {
-                name: ‘britepoolid’,
-                type: ‘cookie’,
+                name: 'britepoolid',
+                type: 'cookie',
                 expires: 30
             },
             params: {
                 url: 'https://sandbox-api.britepool.com/v1/britepool/id', // optional
-                api_key: ’xxx’, // provided by britepool
-                hash: ’yyyy’, // example identifier
+                api_key: 'xxx', // provided by britepool
+                hash: 'yyyy', // example identifier
                 ssid: 'r894hvfnviurfincdejkencjcv' // example identifier
             }
         }]
