@@ -468,7 +468,7 @@ export const spec = {
     }
 
     if (bidderRequest.uspConsent) {
-      data['us_privacy'] = bidderRequest.uspConsent;
+      data['us_privacy'] = encodeURIComponent(bidderRequest.uspConsent);
     }
 
     // visitor properties
@@ -695,7 +695,7 @@ export const spec = {
       }
 
       if (uspConsent) {
-        params += `${params ? '&' : '?'}us_privacy=${uspConsent}`;
+        params += `${params ? '&' : '?'}us_privacy=${encodeURIComponent(uspConsent)}`;
       }
 
       hasSynced = true;
