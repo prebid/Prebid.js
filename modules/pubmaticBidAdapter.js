@@ -198,14 +198,10 @@ function _parseAdSlot(bid) {
 }
 
 function _initConf(refererInfo) {
-  var conf = {};
-  conf.pageURL = utils.getTopWindowUrl();
-  if (refererInfo && refererInfo.referer) {
-    conf.refURL = refererInfo.referer;
-  } else {
-    conf.refURL = '';
-  }
-  return conf;
+  return {
+    pageURL: (refererInfo && refererInfo.referer) ? refererInfo.referer : window.location.href,
+    refURL: window.document.referrer
+  };
 }
 
 function _handleCustomParams(params, conf) {
