@@ -30,8 +30,8 @@ function interpretResponse(serverResponse, request) {
   const response = serverResponse.body;
   const bidResponses = [];
   var bidRequestResponses = [];
-	let bnd = {}; 
-  utils._each(response, function(bidAd) {bnd = bidAd;
+  let bnd = {}; 
+  utils._each(response, function(bidAd) { bnd = bidAd;
     bnd.adResponse = {
       content: bidAd.vastXml,
       height: bidAd.height,
