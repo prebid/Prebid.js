@@ -231,12 +231,15 @@ function newRenderer(requestId) {
  */
 function outstreamRender(bid) {
   bid.renderer.push(() => {
-    window.VOutstreamAPI.initOutstreams([{
+    const params = utils.isArray(bid.params) ? bid.params[0] : bid.params;
+    const outstreamConfig = params.outstream ? params.outstream : {};
+    const opts = Object.assign({}, outstreamConfig, {
       width: bid.width,
       height: bid.height,
       vastUrl: bid.vastUrl,
       elId: bid.adUnitCode
-    }]);
+    });
+    window.VOutstreamAPI.initOutstreams([opts]);
   });
 }
 
