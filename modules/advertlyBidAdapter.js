@@ -30,19 +30,19 @@ function interpretResponse(serverResponse, request) {
   const response = serverResponse.body;
   const bidResponses = [];
   var bidRequestResponses = [];
-
-  utils._each(response, function(bidAd) {
-    bidAd.adResponse = {
+	let bnd = {}; 
+  utils._each(response, function(bidAd) {bnd = bidAd;
+    bnd.adResponse = {
       content: bidAd.vastXml,
       height: bidAd.height,
       width: bidAd.width
     };
-    bidAd.ttl = config.getConfig('_bidderTimeout')
-    bidAd.renderer = bidAd.context === 'outstream' ? createRenderer(bidAd, {
+    bnd.ttl = config.getConfig('_bidderTimeout')
+    bnd.renderer = bidAd.context === 'outstream' ? createRenderer(bidAd, {
       id: bidAd.adUnitCode,
       url: RENDERER_URL
     }, bidAd.adUnitCode) : undefined;
-    bidResponses.push(bidAd);
+    bidResponses.push(bnd); 
   });
 
   bidRequestResponses.push({
