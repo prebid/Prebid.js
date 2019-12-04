@@ -9,7 +9,8 @@ const DEFAULT_SIZE = [1, 1];
 export const sharethroughInternal = {
   b64EncodeUnicode,
   handleIframe,
-  isLockedInFrame
+  isLockedInFrame,
+  getProtocol
 };
 
 export const sharethroughAdapterSpec = {
@@ -26,20 +27,11 @@ export const sharethroughAdapterSpec = {
         instant_play_capable: canAutoPlayHTML5Video(),
         hbSource: 'prebid',
         hbVersion: '$prebid.version$',
-        strVersion: VERSION,
+        strVersion: VERSION
       };
 
-      let secure = false;
-      // https://prebid.org/dev-docs/bidder-adaptor.html#referrers
-      if (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer) {
-        if (bidderRequest.refererInfo.referer.indexOf('http')) {
-          secure = bidderRequest.refererInfo.referer.indexOf('https');
-        }
-      } else if (bidderRequest && bidderRequest.refererInfo & !bidderRequest.refererInfo.reachedTop) {
-        secure = document.location.protocol.indexOf('http') && document.location.protocol.indexOf('https');
-      }
-
-      query.secure = secure;
+      const nonHttp = sharethroughInternal.getProtocol().indexOf('http') < 0;
+      query.secure = nonHttp || (sharethroughInternal.getProtocol().indexOf('https') > -1);
 
       if (bidderRequest && bidderRequest.gdprConsent && bidderRequest.gdprConsent.consentString) {
         query.consent_string = bidderRequest.gdprConsent.consentString;
@@ -246,6 +238,10 @@ function canAutoPlayHTML5Video() {
   } else {
     return false;
   }
+}
+
+function getProtocol() {
+  return document.location.protocol;
 }
 
 registerBidder(sharethroughAdapterSpec);
