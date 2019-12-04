@@ -324,6 +324,8 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
           s2sAjax
         );
       }
+    } else {
+      utils.logError('missing ' + _s2sConfig.adapter);
     }
   }
 
