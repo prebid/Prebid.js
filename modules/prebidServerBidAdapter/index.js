@@ -784,8 +784,8 @@ const OPEN_RTB_PROTOCOL = {
       }
 
       // US Privacy (CCPA) support
-      if (bidRequests[0].us_privacy) {
-        utils.deepSetValue(request, 'regs.ext.us_privacy', bidRequests[0].us_privacy);
+      if (bidRequests[0].uspConsent) {
+        utils.deepSetValue(request, 'regs.ext.us_privacy', bidRequests[0].uspConsent);
       }
     }
 
@@ -990,7 +990,7 @@ export function PrebidServer() {
       let gdprConsent, uspConsent;
       if (Array.isArray(bidRequests) && bidRequests.length > 0) {
         gdprConsent = bidRequests[0].gdprConsent;
-        uspConsent = bidRequests[0].us_privacy;
+        uspConsent = bidRequests[0].uspConsent;
       }
 
       let syncBidders = _s2sConfig.bidders

@@ -714,7 +714,7 @@ describe('S2S Adapter', function () {
         config.setConfig({ s2sConfig: ortb2Config });
 
         let uspBidRequest = utils.deepClone(BID_REQUESTS);
-        uspBidRequest[0].us_privacy = '1NYN';
+        uspBidRequest[0].uspConsent = '1NYN';
 
         adapter.callBids(REQUEST, uspBidRequest, addBidResponse, done, ajax);
         let requestBid = JSON.parse(requests[0].requestBody);
@@ -736,7 +736,7 @@ describe('S2S Adapter', function () {
         config.setConfig({ s2sConfig: cookieSyncConfig });
 
         let uspBidRequest = utils.deepClone(BID_REQUESTS);
-        uspBidRequest[0].us_privacy = '1YNN';
+        uspBidRequest[0].uspConsent = '1YNN';
 
         adapter.callBids(REQUEST, uspBidRequest, addBidResponse, done, ajax);
         let requestBid = JSON.parse(requests[0].requestBody);
@@ -759,7 +759,7 @@ describe('S2S Adapter', function () {
         config.setConfig({ s2sConfig: ortb2Config });
 
         let consentBidRequest = utils.deepClone(BID_REQUESTS);
-        consentBidRequest[0].us_privacy = '1NYN';
+        consentBidRequest[0].uspConsent = '1NYN';
         consentBidRequest[0].gdprConsent = {
           consentString: 'abc123',
           gdprApplies: true
@@ -788,7 +788,7 @@ describe('S2S Adapter', function () {
         config.setConfig({ s2sConfig: cookieSyncConfig });
 
         let consentBidRequest = utils.deepClone(BID_REQUESTS);
-        consentBidRequest[0].us_privacy = '1YNN';
+        consentBidRequest[0].uspConsent = '1YNN';
         consentBidRequest[0].gdprConsent = {
           consentString: 'abc123def',
           gdprApplies: true
