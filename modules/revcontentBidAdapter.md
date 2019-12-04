@@ -9,36 +9,30 @@ Revcontent Adpater
 
 # Test Parameters
 ```
+    var sizes = [
+        [300, 250]
+    ];
     var adUnits = [{
         code: '/19968336/header-bid-tag-1',
+        sizes: sizes,
         mediaTypes: {
             banner: {
-                sizes: [
-                    [300, 250]
-                ]
+                sizes: sizes
             },
             // or native
             native: {
-                image: {
-                    required: false,
-                    sizes: [100, 50]
-                },
-                title: {
-                    required: false,
-                    len: 140
-                },
-                sponsoredBy: {
-                    required: false
-                },
-                clickUrl: {
-                    required: false
-                },
-                body: {
-                    required: false
-                },
-                icon: {
-                    required: false,
-                    sizes: [50, 50]
+                native: {
+                    image: {
+                        required: false,
+                        sizes: sizes[0]
+                    },
+                    title: {
+                        required: false,
+                        len: 140
+                    },
+                    clickUrl: {
+                        required: false
+                    }
                 }
             }
         },
@@ -50,6 +44,9 @@ Revcontent Adpater
                 widgetId: 599995,                                   // Optional
                 domain: 'test.com',                                 // Optional - Default referral hostname
                 endpoint: 'trends.revcontent.com'                   // Optional/Debug - Set different endpoint
+                sizes: sizes,                                       // Required - Do not modify
+                                                                    // Required - Template required for display
+                template: '<a href="{clickUrl}"><img src="{image.url}" width="{image.width}" height="{image.height}" /> <div style="position: absolute;top: 8px;left: 16px;"><h1>{title}</h1></div></a>',
             }
         }]
     }];
