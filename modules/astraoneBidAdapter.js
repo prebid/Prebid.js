@@ -22,21 +22,21 @@ function buildBidRequests(validBidRequests) {
   })
 }
 
-function buildBid(bidDada) {
+function buildBid(bidData) {
   const bid = {
-    requestId: bidDada.bidId,
-    cpm: bidDada.price,
-    width: bidDada.width,
-    height: bidDada.height,
-    creativeId: bidDada.content.seanceId,
-    currency: bidDada.currency,
+    requestId: bidData.bidId,
+    cpm: bidData.price,
+    width: bidData.width,
+    height: bidData.height,
+    creativeId: bidData.content.seanceId,
+    currency: bidData.currency,
     netRevenue: true,
     mediaType: BANNER,
     ttl: TTL,
-    content: bidDada.content
+    content: bidData.content
   };
 
-  bid.ad = wrapAd(bid, bidDada);
+  bid.ad = wrapAd(bid, bidData);
 
   return bid;
 }
@@ -45,7 +45,7 @@ function getMediaTypeFromBid(bid) {
   return bid.mediaTypes && Object.keys(bid.mediaTypes)[0]
 }
 
-function wrapAd(bid, bidDada) {
+function wrapAd(bid, bidData) {
   return `<!DOCTYPE html>
     <html lang="en">
     <head>
@@ -55,7 +55,7 @@ function wrapAd(bid, bidDada) {
         <style>html, body {width: 100%; height: 100%; margin: 0;}</style>
     </head>
     <body>
-        <div data-hyb-ssp-in-image-overlay="${bidDada.content.placeId}" style="width: 100%; height: 100%;"></div>
+        <div data-hyb-ssp-in-image-overlay="${bidData.content.placeId}" style="width: 100%; height: 100%;"></div>
         <script>
             if (parent.window.frames[window.name]) {
                 var parentDocument = window.parent.document.getElementById(parent.window.frames[window.name].name);
