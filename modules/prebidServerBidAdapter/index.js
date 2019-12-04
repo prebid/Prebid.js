@@ -627,18 +627,18 @@ const OPEN_RTB_PROTOCOL = {
           bid.params = adapter.getSpec().transformBidParams(bid.params, isOpenRtb());
         }
         acc[bid.bidder] = (_s2sConfig.adapterOptions && _s2sConfig.adapterOptions[bid.bidder]) ? Object.assign({}, bid.params, _s2sConfig.adapterOptions[bid.bidder]) : bid.params;
-
-        // if exists, pass storedAuctionResponse
-        if (bid.storedAuctionResponse) {
-          utils.deepSetValue(acc[bid.bidder], 'prebid.storedauctionresponse', bid.storedAuctionResponse);
-        }
-
         return acc;
       }, {});
 
       const imp = { id: adUnit.code, ext, secure: _s2sConfig.secure };
 
       Object.assign(imp, mediaTypes);
+
+      // if storedAuctionResponse has been set, pass SRID
+      const storedAuctionResponseBids = bidRequests[0].bids.filter(bid => (bid.adUnitCode === adUnit.code && typeof bid.storedAuctionResponse === 'number'));
+      if (storedAuctionResponseBids.length) {
+        utils.deepSetValue(imp, 'ext.prebid.storedauctionresponse.id', storedAuctionResponseBids[0].storedAuctionResponse.toString());
+      }
 
       if (imp.banner || imp.video || imp.native) {
         imps.push(imp);

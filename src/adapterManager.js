@@ -66,7 +66,8 @@ function getBids({bidderCode, auctionId, bidderRequestId, adUnits, labels, src})
 
           bid = Object.assign({}, bid, getDefinedParams(adUnit, [
             'mediaType',
-            'renderer'
+            'renderer',
+            'storedAuctionResponse'
           ]));
 
           let {

@@ -1,12 +1,12 @@
 
 import { config } from './config';
 import { logMessage as utilsLogMessage, logWarn as utilsLogWarn } from './utils';
-import { addBidRequest, addBidResponse } from './auction';
+import { addBidderRequests, addBidResponse } from './auction';
 
 const OVERRIDE_KEY = '$$PREBID_GLOBAL$$:debugging';
 
-export let boundBidRequestsHook;
-export let boundBidResponseHook;
+export let addBidResponseBound;
+export let addBidderRequestsBound;
 
 function logMessage(msg) {
   utilsLogMessage('DEBUG: ' + msg);
@@ -16,93 +16,113 @@ function logWarn(msg) {
   utilsLogWarn('DEBUG: ' + msg);
 }
 
-function removeHook() {
-  if (boundBidResponseHook) {
-    addBidResponse.getHooks({hook: boundBidResponseHook}).remove();
-  }
-  if (boundBidRequestsHook) {
-    addBidRequest.getHooks({hook: boundBidRequestsHook}).remove();
-  }
+function addHooks(overrides) {
+  addBidResponseBound = addBidResponseHook.bind(overrides);
+  addBidResponse.before(addBidResponseBound, 5);
+
+  addBidderRequestsBound = addBidderRequestsHook.bind(overrides);
+  addBidderRequests.before(addBidderRequestsBound, 5);
 }
 
-function enableOverrides(overrides, fromSession = false) {
+function removeHooks() {
+  addBidResponse.getHooks({hook: addBidResponseBound}).remove();
+  addBidderRequests.getHooks({hook: addBidderRequestsBound}).remove();
+}
+
+export function enableOverrides(overrides, fromSession = false) {
   config.setConfig({'debug': true});
+  removeHooks();
+  addHooks(overrides);
   logMessage(`bidder overrides enabled${fromSession ? ' from session' : ''}`);
-
-  removeHook();
-
-  boundBidResponseHook = addBidResponseHook.bind(overrides);
-  addBidResponse.before(boundBidResponseHook, 5);
-
-  boundBidRequestsHook = addBidRequestHook.bind(overrides);
-  addBidRequest.before(boundBidRequestsHook, 5);
 }
 
 export function disableOverrides() {
-  removeHook();
+  removeHooks();
   logMessage('bidder overrides disabled');
 }
 
+/**
+ * @param {{bidder:string, adUnitCode:string}} overrideObj
+ * @param {string} bidderCode
+ * @param {string} adUnitCode
+ * @returns {boolean}
+ */
+export function bidExcluded(overrideObj, bidderCode, adUnitCode) {
+  if (overrideObj.bidder && overrideObj.bidder !== bidderCode) {
+    return true;
+  }
+  if (overrideObj.adUnitCode && overrideObj.adUnitCode !== adUnitCode) {
+    return true;
+  }
+  return false;
+}
+
+/**
+ * @param {string[]} bidders
+ * @param {string} bidderCode
+ * @returns {boolean}
+ */
+export function bidderExcluded(bidders, bidderCode) {
+  return (Array.isArray(bidders) && bidders.indexOf(bidderCode) === -1);
+}
+
+/**
+ * @param {Object} overrideObj
+ * @param {Object} bidObj
+ * @param {Object} bidType
+ * @returns {Object} bidObj with overridden properties
+ */
+export function applyBidOverrides(overrideObj, bidObj, bidType) {
+  return Object.keys(overrideObj).filter(key => (['adUnitCode', 'bidder'].indexOf(key) === -1)).reduce(function(result, key) {
+    logMessage(`bidder overrides changed '${result.adUnitCode}/${result.bidderCode}' ${bidType}.${key} from '${result[key]}' to '${overrideObj[key]}'`);
+    result[key] = overrideObj[key];
+    return result;
+  }, bidObj);
+}
+
 export function addBidResponseHook(next, adUnitCode, bid) {
-  let overrides = this;
-  if (Array.isArray(overrides.bidders) && overrides.bidders.indexOf(bid.bidderCode) === -1) {
+  const overrides = this;
+
+  if (bidderExcluded(overrides.bidders, bid.bidderCode)) {
     logWarn(`bidder '${bid.bidderCode}' excluded from auction by bidder overrides`);
     return;
   }
 
   if (Array.isArray(overrides.bids)) {
-    overrides.bids.forEach(overrideBid => {
-      if (overrideBid.bidder && overrideBid.bidder !== bid.bidderCode) {
-        return;
+    overrides.bids.forEach(function(overrideBid) {
+      if (!bidExcluded(overrideBid, bid.bidderCode, adUnitCode)) {
+        applyBidOverrides(overrideBid, bid, 'bidder');
       }
-      if (overrideBid.adUnitCode && overrideBid.adUnitCode !== adUnitCode) {
-        return;
-      }
-
-      bid = Object.assign({}, bid);
-
-      Object.keys(overrideBid).filter(key => ['bidder', 'adUnitCode'].indexOf(key) === -1).forEach((key) => {
-        let value = overrideBid[key];
-        logMessage(`bidder overrides changed '${adUnitCode}/${bid.bidderCode}' bid.${key} from '${bid[key]}' to '${value}'`);
-        bid[key] = value;
-      });
     });
   }
 
   next(adUnitCode, bid);
 }
 
-export function addBidRequestHook(next, bidRequests) {
+export function addBidderRequestsHook(next, bidderRequests) {
   const overrides = this;
-  if (!Array.isArray(overrides.bidRequests)) {
-    next(bidRequests);
-    return;
-  }
 
-  bidRequests.forEach(bidRequest => {
-    if (Array.isArray(overrides.bidders) && overrides.bidders.indexOf(bidRequest.bidderCode) === -1) {
-      logWarn(`bidRequest '${bidRequest.bidderCode}' excluded from auction by bidder overrides`);
-      return;
+  const includedBidderRequests = bidderRequests.filter(function(bidderRequest) {
+    if (bidderExcluded(overrides.bidders, bidderRequest.bidderCode)) {
+      logWarn(`bidRequest '${bidderRequest.bidderCode}' excluded from auction by bidder overrides`);
+      return false;
     }
+    return true;
+  });
 
-    bidRequest.bids.forEach(bid => {
-      overrides.bidRequests.forEach(override => {
-        if (override.bidder && override.bidder !== bidRequest.bidderCode) {
-          return;
-        }
-        if (override.adUnitCode && override.adUnitCode !== bid.adUnitCode) {
-          return;
-        }
-
-        Object.keys(override).filter(key => (['adUnitCode', 'bidder'].indexOf(key) === -1)).forEach(key => {
-          bid[key] = override[key];
-          logMessage(`debug bidRequest override: ${key}=${override[key]}`);
+  if (Array.isArray(overrides.bidRequests)) {
+    includedBidderRequests.forEach(function(bidderRequest) {
+      overrides.bidRequests.forEach(function(overrideBid) {
+        bidderRequest.bids.forEach(function(bid) {
+          if (!bidExcluded(overrideBid, bidderRequest.bidderCode, bid.adUnitCode)) {
+            applyBidOverrides(overrideBid, bid, 'bidRequest');
+          }
         });
       });
     });
-  });
+  }
 
-  next(bidRequests);
+  next(includedBidderRequests);
 }
 
 export function getConfig(debugging) {

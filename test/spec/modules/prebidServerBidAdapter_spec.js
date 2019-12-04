@@ -546,7 +546,8 @@ describe('S2S Adapter', function () {
             'sizes': [300, 250],
             'bidId': '123',
             'bidderRequestId': '3d1063078dfcc8',
-            'auctionId': '173afb6d132ba3'
+            'auctionId': '173afb6d132ba3',
+            'storedAuctionResponse': 11111
           }
         ],
         'auctionStart': 1510852447530,
@@ -792,31 +793,26 @@ describe('S2S Adapter', function () {
       });
     });
 
-    it('adds debugging stored resp to request for OpenRTB', function () {
+    it('adds debugging value from storedAuctionResponse to OpenRTB', function () {
       const s2sConfig = Object.assign({}, CONFIG, {
         endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
       });
-
       const _config = {
         s2sConfig: s2sConfig,
         device: { ifa: '6D92078A-8246-4BA4-AE5B-76104861E7DC' },
-        app: { bundle: 'com.test.app' },
+        app: { bundle: 'com.test.app' }
       };
 
       config.setConfig(_config);
       adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
       const requestBid = JSON.parse(requests[0].requestBody);
-      expect(requestBid.device).to.deep.equal({
-        ifa: '6D92078A-8246-4BA4-AE5B-76104861E7DC',
-        w: window.innerWidth,
-        h: window.innerHeight
-      });
-      expect(requestBid.app).to.deep.equal({
-        bundle: 'com.test.app',
-        publisher: {'id': '1'}
-      });
+      expect(requestBid.imp).to.exist.and.to.be.a('array');
+      expect(requestBid.imp).to.have.lengthOf(1);
+      expect(requestBid.imp[0].ext).to.exist.and.to.be.a('object');
+      expect(requestBid.imp[0].ext.prebid).to.exist.and.to.be.a('object');
+      expect(requestBid.imp[0].ext.prebid.storedauctionresponse).to.exist.and.to.be.a('object');
+      expect(requestBid.imp[0].ext.prebid.storedauctionresponse.id).to.equal('11111');
     });
-
 
     it('adds device.w and device.h even if the config lacks a device object', function () {
       const s2sConfig = Object.assign({}, CONFIG, {
