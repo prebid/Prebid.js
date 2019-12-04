@@ -2326,13 +2326,13 @@ describe('the rubicon adapter', function () {
       });
     });
 
-    it('should pass usp_consent if uspConsent is defined', function () {
+    it('should pass us_privacy if uspConsent is defined', function () {
       expect(spec.getUserSyncs({ iframeEnabled: true }, {}, undefined, '1NYN')).to.deep.equal({
         type: 'iframe', url: `${emilyUrl}?us_privacy=1NYN`
       });
     });
 
-    it('should pass usp_consent after gdpr if both are present', function () {
+    it('should pass us_privacy after gdpr if both are present', function () {
       expect(spec.getUserSyncs({ iframeEnabled: true }, {}, {
         consentString: 'foo'
       }, '1NYN')).to.deep.equal({
