@@ -156,6 +156,14 @@ describe('Conversant adapter tests', function() {
           price: 3.99,
           adomain: ['https://example.com'],
           id: 'bid003'
+        }, {
+          nurl: 'notify004',
+          adm: '<?xml><VAST></VAST>',
+          crid: '1004',
+          impid: 'bid004',
+          price: 4.99,
+          adomain: ['https://example.com'],
+          id: 'bid004'
         }]
       }]
     },
@@ -315,7 +323,7 @@ describe('Conversant adapter tests', function() {
   it('Verify interpretResponse', function() {
     const request = spec.buildRequests(bidRequests);
     const response = spec.interpretResponse(bidResponses, request);
-    expect(response).to.be.an('array').with.lengthOf(3);
+    expect(response).to.be.an('array').with.lengthOf(4);
 
     let bid = response[0];
     expect(bid).to.have.property('requestId', 'bid000');
@@ -352,6 +360,9 @@ describe('Conversant adapter tests', function() {
     expect(bid).to.have.property('mediaType', 'video');
     expect(bid).to.have.property('ttl', 300);
     expect(bid).to.have.property('netRevenue', true);
+
+    bid = response[3];
+    expect(bid).to.have.property('vastXml', '<?xml><VAST></VAST>');
   });
 
   it('Verify handling of bad responses', function() {
