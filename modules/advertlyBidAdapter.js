@@ -31,7 +31,7 @@ function interpretResponse(serverResponse, request) {
   const bidResponses = [];
   var bidRequestResponses = [];
   let bnd = {};
-  utils._each(response, function(bidAd) { 
+  utils._each(response, function(bidAd) {
   bnd = bidAd;
     bnd.adResponse = {
       content: bidAd.vastXml,
