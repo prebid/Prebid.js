@@ -1,7 +1,7 @@
 /** @module pbjs */
 
 import { getGlobal } from './prebidGlobal';
-import { flatten, uniques, isGptPubadsDefined, adUnitsFilter, getLatestHighestCpmBid, isArrayOfNums } from './utils';
+import { flatten, uniques, isGptPubadsDefined, adUnitsFilter, getLatestHighestCpmBid, isArrayOfNums, checkSizeConfigSetup } from './utils';
 import { listenMessagesFromCreative } from './secureCreatives';
 import { userSync } from './userSync.js';
 import { loadScript } from './adloader';
@@ -80,8 +80,20 @@ export const checkAdUnitSetup = hook('sync', function (adUnits) {
         // make sure we always send [[h,w]] format
         banner.sizes = normalizedSize;
         adUnit.sizes = normalizedSize;
+      } else if (banner.sizeConfig && Array.isArray(banner.sizeConfig)) {
+        // verify if all config objects include "minViewPort" and "sizes" property.
+        // if not, remove the mediaTypes.banner object
+        banner.sizeConfig.forEach(config => {
+          const keys = Object.keys(config);
+          if (!(includes(keys, 'minViewPort') && includes(keys, 'sizes'))) {
+            utils.logError(`Ad Unit: ${adUnit.code}: mediaTypes.banner.sizeConfig is not configured correctly. Removing the invalid mediaTypes.banner from request!`);
+            return delete adUnit.mediaTypes.banner;
+          }
+          // check if the config.sizes property is in [w, h] format, if yes, change it to [[w, h]] format.
+          config.sizes = (Array.isArray(config.sizes[0])) ? config.sizes : [config.sizes];
+        });
       } else {
-        utils.logError('Detected a mediaTypes.banner object did not include sizes.  This is a required field for the mediaTypes.banner object.  Removing invalid mediaTypes.banner object from request.');
+        utils.logError('Detected a mediaTypes.banner object did not include sizes or sizeConfig. Removing invalid mediaTypes.banner object from request.');
         delete adUnit.mediaTypes.banner;
       }
     } else if (adUnit.sizes) {
@@ -103,6 +115,18 @@ export const checkAdUnitSetup = hook('sync', function (adUnits) {
           utils.logError('Detected incorrect configuration of mediaTypes.video.playerSize.  Please specify only one set of dimensions in a format like: [[640, 480]]. Removing invalid mediaTypes.video.playerSize property from request.');
           delete adUnit.mediaTypes.video.playerSize;
         }
+      } else if (video.sizeConfig && Array.isArray(video.sizeConfig)) {
+        // verify if all config objects include "minViewPort" and "playerSize" property.
+        // if not, remove the mediaTypes.video object
+        video.sizeConfig.forEach(config => {
+          const keys = Object.keys(config);
+          if (!(includes(keys, 'minViewPort') && includes(keys, 'playerSize'))) {
+            utils.logError(`Ad Unit: ${adUnit.code}: mediaTypes.video.sizeConfig is not configured correctly. Removing the  invalid mediaTypes.video from request!`);
+            return delete adUnit.mediaTypes.video;
+          }
+          // check if the config.playerSize property is in [w, h] format, if yes, change it to [[w, h]] format.
+          config.playerSize = (Array.isArray(config.playerSize[0])) ? config.playerSize : [config.playerSize];
+        });
       }
     }
 
@@ -119,6 +143,17 @@ export const checkAdUnitSetup = hook('sync', function (adUnits) {
       if (nativeObj.icon && nativeObj.icon.sizes && !Array.isArray(nativeObj.icon.sizes)) {
         utils.logError('Please use an array of sizes for native.icon.sizes field.  Removing invalid mediaTypes.native.icon.sizes property from request.');
         delete adUnit.mediaTypes.native.icon.sizes;
+      }
+      if (nativeObj.sizeConfig) {
+        // verify if all config objects include "minViewPort" and "active" property.
+        // if not, remove the mediaTypes.native object
+        nativeObj.sizeConfig.forEach(config => {
+          const keys = Object.keys(config);
+          if (!(includes(keys, 'minViewPort') && includes(keys, 'active'))) {
+            utils.logError(`Ad Unit: ${adUnit.code}: mediaTypes.native.sizeConfig is not configured correctly. Removing the invalid mediaTypes.native from request!`);
+            return delete adUnit.mediaTypes.native;
+          }
+        });
       }
     }
   });
@@ -420,7 +455,7 @@ $$PREBID_GLOBAL$$.requestBids = hook('async', function ({ bidsBackHandler, timeo
     adUnitCodes = adUnits && adUnits.map(unit => unit.code);
   }
 
-  // adUnits = checkAdUnitSetup(adUnits);
+  adUnits = checkAdUnitSetup(adUnits);
 
   /*
    * for a given adunit which supports a set of mediaTypes
