@@ -34,6 +34,12 @@ describe('consentManagement', function () {
         expect(userCMP).to.be.undefined;
         sinon.assert.calledOnce(utils.logWarn);
       });
+
+      it('should exit consent manager if gdpr not set with new config structure', function() {
+        setConsentConfig({ usp: { cmpApi: 'iab', timeout: 50 } });
+        expect(userCMP).to.be.undefined;
+        sinon.assert.calledOnce(utils.logWarn);
+      });
     });
 
     describe('valid setConsentConfig value', function () {
@@ -57,21 +63,40 @@ describe('consentManagement', function () {
 
       it('should use new consent manager config structure for gdpr', function() {
         setConsentConfig({
-          gdpr: { cmpApi: 'iab', timeout: 8700 }
+          gdpr: { cmpApi: 'daa', timeout: 8700 }
         });
 
-        expect(userCMP).to.be.equal('iab');
+        expect(userCMP).to.be.equal('daa');
         expect(consentTimeout).to.be.equal(8700);
       });
 
-      it('should ignore config.usp and use config.gdpr', function() {
+      it('should ignore config.usp and use config.gdpr, with default cmpApi', function() {
         setConsentConfig({
-          gdpr: { cmpApi: 'iab', timeout: 5000 },
-          usp: { cmpApi: 'iab', timeout: 50 }
+          gdpr: { timeout: 5000 },
+          usp: { cmpApi: 'daa', timeout: 50 }
         });
 
         expect(userCMP).to.be.equal('iab');
         expect(consentTimeout).to.be.equal(5000);
+      });
+
+      it('should ignore config.usp and use config.gdpr, with default cmpAip and timeout', function() {
+        setConsentConfig({
+          gdpr: {},
+          usp: { cmpApi: 'daa', timeout: 50 }
+        });
+
+        expect(userCMP).to.be.equal('iab');
+        expect(consentTimeout).to.be.equal(10000);
+      });
+
+      it('should recognize config.gdpr, with default cmpAip and timeout', function() {
+        setConsentConfig({
+          gdpr: {}
+        });
+
+        expect(userCMP).to.be.equal('iab');
+        expect(consentTimeout).to.be.equal(10000);
       });
 
       it('should fallback to old consent manager config object if no config.gdpr', function() {

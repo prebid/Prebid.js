@@ -76,7 +76,7 @@ function lookupUspConsent(uspSuccess, uspError, hookConfig) {
   }
 
   if (!uspapiFrame) {
-    return uspError('CMP not found.', hookConfig);
+    return uspError('USP CMP not found.', hookConfig);
   }
 
   try {

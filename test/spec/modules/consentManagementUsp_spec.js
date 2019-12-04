@@ -56,6 +56,13 @@ describe('consentManagement', function () {
         sinon.assert.calledOnce(utils.logWarn);
         sinon.assert.notCalled(utils.logInfo);
       });
+
+      it('should exit the consent manager if only config.gdpr is an object', function() {
+        setConsentConfig({ gdpr: { cmpApi: 'iab' } });
+        expect(consentAPI).to.be.undefined;
+        sinon.assert.calledOnce(utils.logWarn);
+        sinon.assert.notCalled(utils.logInfo);
+      });
     });
 
     describe('valid setConsentConfig value', function () {
