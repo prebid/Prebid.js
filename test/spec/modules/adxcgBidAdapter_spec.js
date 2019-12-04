@@ -10,7 +10,11 @@ describe('AdxcgAdapter', function () {
         'adzoneid': '1'
       },
       'adUnitCode': 'adunit-code',
-      'sizes': [[300, 250], [640, 360], [1, 1]],
+      'mediaTypes': {
+        'banner': {
+          'sizes': [[300, 250], [640, 360], [1, 1]]
+        }
+      },
       'bidId': '84ab500420319d',
       'bidderRequestId': '7101db09af0db2',
       'auctionId': '1d1a030790a475',
@@ -27,11 +31,11 @@ describe('AdxcgAdapter', function () {
       },
       'mediaTypes': {
         'video': {
-          'context': 'instream'
+          'context': 'instream',
+          'playerSize': [[640, 480]]
         }
       },
       'adUnitCode': 'adunit-code',
-      'sizes': [[300, 250], [640, 360], [1, 1]],
       'bidId': '84ab500420319d',
       'bidderRequestId': '7101db09af0db2',
       'auctionId': '1d1a030790a475',
@@ -70,7 +74,11 @@ describe('AdxcgAdapter', function () {
         'adzoneid': '1'
       },
       'adUnitCode': 'adunit-code',
-      'sizes': [[300, 250], [640, 360], [1, 1]],
+      'mediaTypes': {
+        'banner': {
+          'sizes': [[300, 250], [640, 360], [1, 1]]
+        }
+      },
       'bidId': '84ab500420319d',
       'bidderRequestId': '7101db09af0db2',
       'auctionId': '1d1a030790a475',
@@ -81,12 +89,12 @@ describe('AdxcgAdapter', function () {
       expect(request).to.exist
       expect(request.method).to.equal('GET')
       let parsedRequestUrl = url.parse(request.url)
-      expect(parsedRequestUrl.hostname).to.equal('hbp.adxcg.net')
+      expect(parsedRequestUrl.hostname).to.equal('hbps.adxcg.net')
       expect(parsedRequestUrl.pathname).to.equal('/get/adi')
 
       let query = parsedRequestUrl.search
       expect(query.renderformat).to.equal('javascript')
-      expect(query.ver).to.equal('r20180703PB10')
+      expect(query.ver).to.equal('r20191128PB30')
       expect(query.source).to.equal('pbjs10')
       expect(query.pbjs).to.equal('$prebid.version$')
       expect(query.adzoneid).to.equal('1')
@@ -103,7 +111,11 @@ describe('AdxcgAdapter', function () {
         'adzoneid': '1'
       },
       'adUnitCode': 'adunit-code',
-      'sizes': [[300, 250], [640, 360], [1, 1]],
+      'mediaTypes': {
+        'banner': {
+          'sizes': [[300, 250], [640, 360], [1, 1]]
+        }
+      },
       'bidId': '84ab500420319d',
       'bidderRequestId': '7101db09af0db2',
       'auctionId': '1d1a030790a475',
@@ -140,7 +152,11 @@ describe('AdxcgAdapter', function () {
         'adzoneid': '1'
       },
       'adUnitCode': 'adunit-code',
-      'sizes': [[300, 250], [640, 360], [1, 1]],
+      'mediaTypes': {
+        'banner': {
+          'sizes': [[300, 250], [640, 360], [1, 1]]
+        }
+      },
       'bidId': '84ab500420319d',
       'bidderRequestId': '7101db09af0db2',
       'auctionId': '1d1a030790a475',
@@ -165,7 +181,11 @@ describe('AdxcgAdapter', function () {
         'adzoneid': '1'
       },
       'adUnitCode': 'adunit-code',
-      'sizes': [[300, 250], [640, 360], [1, 1]],
+      'mediaTypes': {
+        'banner': {
+          'sizes': [[300, 250], [640, 360], [1, 1]]
+        }
+      },
       'bidId': '84ab500420319d',
       'bidderRequestId': '7101db09af0db2',
       'auctionId': '1d1a030790a475',
@@ -183,6 +203,64 @@ describe('AdxcgAdapter', function () {
     })
   })
 
+  describe('userid id5id should be passed to querystring', function () {
+    let bid = [{
+      'bidder': 'adxcg',
+      'params': {
+        'adzoneid': '1'
+      },
+      'adUnitCode': 'adunit-code',
+      'mediaTypes': {
+        'banner': {
+          'sizes': [[300, 250], [640, 360], [1, 1]]
+        }
+      },
+      'bidId': '84ab500420319d',
+      'bidderRequestId': '7101db09af0db2',
+      'auctionId': '1d1a030790a475',
+    }]
+
+    let bidderRequests = {};
+
+    bid[0].userId = {'id5id': 'id5idsample'};
+
+    it('should send pubcid if available', function () {
+      let request = spec.buildRequests(bid, bidderRequests)
+      let parsedRequestUrl = url.parse(request.url)
+      let query = parsedRequestUrl.search
+      expect(query.id5id).to.equal('id5idsample');
+    })
+  })
+
+  describe('userid idl_env should be passed to querystring', function () {
+    let bid = [{
+      'bidder': 'adxcg',
+      'params': {
+        'adzoneid': '1'
+      },
+      'adUnitCode': 'adunit-code',
+      'mediaTypes': {
+        'banner': {
+          'sizes': [[300, 250], [640, 360], [1, 1]]
+        }
+      },
+      'bidId': '84ab500420319d',
+      'bidderRequestId': '7101db09af0db2',
+      'auctionId': '1d1a030790a475',
+    }]
+
+    let bidderRequests = {};
+
+    bid[0].userId = {'idl_env': 'idl_envsample'};
+
+    it('should send pubcid if available', function () {
+      let request = spec.buildRequests(bid, bidderRequests)
+      let parsedRequestUrl = url.parse(request.url)
+      let query = parsedRequestUrl.search
+      expect(query.idl_env).to.equal('idl_envsample');
+    })
+  })
+
   describe('response handler', function () {
     let BIDDER_REQUEST = {
       'bidder': 'adxcg',
@@ -190,7 +268,11 @@ describe('AdxcgAdapter', function () {
         'adzoneid': '1'
       },
       'adUnitCode': 'adunit-code',
-      'sizes': [[300, 250], [640, 360], [1, 1]],
+      'mediaTypes': {
+        'banner': {
+          'sizes': [[300, 250], [640, 360], [1, 1]]
+        }
+      },
       'bidId': '84ab500420319d',
       'bidderRequestId': '7101db09af0db2',
       'auctionId': '1d1a030790a475',
@@ -394,7 +476,7 @@ describe('AdxcgAdapter', function () {
 
     it('should return iframe sync option', function () {
       expect(spec.getUserSyncs(syncoptionsIframe)[0].type).to.equal('iframe')
-      expect(spec.getUserSyncs(syncoptionsIframe)[0].url).to.equal('//cdn.adxcg.net/pb-sync.html')
+      expect(spec.getUserSyncs(syncoptionsIframe)[0].url).to.equal('https://cdn.adxcg.net/pb-sync.html')
     })
   })
 })
