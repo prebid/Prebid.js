@@ -158,6 +158,10 @@ export const spec = {
       };
     }
 
+    if (bidderRequest && bidderRequest.uspConsent) {
+      payload.us_privacy = bidderRequest.uspConsent
+    }
+
     if (bidderRequest && bidderRequest.refererInfo) {
       let refererinfo = {
         rd_ref: encodeURIComponent(bidderRequest.refererInfo.referer),
