@@ -11,27 +11,8 @@ export const QUANTCAST_TEST_DOMAIN = 's2s-canary.quantserve.com';
 export const QUANTCAST_NET_REVENUE = true;
 export const QUANTCAST_TEST_PUBLISHER = 'test-publisher';
 export const QUANTCAST_TTL = 4;
-export const QUANTCAST_PROTOCOL =
-  window.location.protocol === 'http:'
-    ? 'http'
-    : 'https';
-export const QUANTCAST_PORT =
-  QUANTCAST_PROTOCOL === 'http'
-    ? '8080'
-    : '8443';
-
-function extractBidSizes(bid) {
-  const bidSizes = [];
-
-  bid.sizes.forEach(size => {
-    bidSizes.push({
-      width: size[0],
-      height: size[1]
-    });
-  });
-
-  return bidSizes;
-}
+export const QUANTCAST_PROTOCOL = 'https';
+export const QUANTCAST_PORT = '8443';
 
 function makeVideoImp(bid) {
   const video = {};
@@ -67,10 +48,17 @@ function makeVideoImp(bid) {
 }
 
 function makeBannerImp(bid) {
+  const sizes = bid.sizes || bid.mediaTypes.banner.sizes;
+
   return {
     banner: {
       battr: bid.params.battr,
-      sizes: extractBidSizes(bid),
+      sizes: sizes.map(size => {
+        return {
+          width: size[0],
+          height: size[1]
+        };
+      })
     },
     placementCode: bid.placementCode,
     bidFloor: bid.params.bidFloor || DEFAULT_BID_FLOOR
