@@ -124,7 +124,7 @@ export const spec = {
         type: 'iframe',
         url: syncUrl
       });
-    }else if (syncOptions.pixelEnabled && REFERER != null) {
+    } else if (syncOptions.pixelEnabled && REFERER != null) {
       syncs.push({
         type: 'image',
         url: `https://sync.richaudience.com/bf7c142f4339da0278e83698a02b0854/?euconsent=${gdprConsent.consentString}&referrer=${REFERER}`
