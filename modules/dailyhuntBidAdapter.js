@@ -1,9 +1,10 @@
 import { registerBidder } from '../src/adapters/bidderFactory';
+import * as mediaTypes from '../src/mediaTypes';
 import * as utils from '../src/utils';
 
 const BIDDER_CODE = 'dailyhunt';
 const BIDDER_ALIAS = 'dh';
-const SUPPORTED_MEDIA_TYPES = ['banner', 'native'];
+const SUPPORTED_MEDIA_TYPES = [mediaTypes.BANNER, mediaTypes.NATIVE];
 
 const PROD_PREBID_ENDPOINT_URL = 'https://money.dailyhunt.in/openrtb2/auction';
 
@@ -28,9 +29,7 @@ function buildParams(bid) {
     }
   })
   params.zone = 'web';
-  if (hasWeb3Size && hasWeb5Size) {
-    params.subSlots = 'web-3';
-  } else if (hasWeb5Size) {
+  if (!hasWeb3Size && hasWeb5Size) {
     params.subSlots = 'web-5';
   } else {
     params.subSlots = 'web-3';
@@ -168,12 +167,13 @@ export const spec = {
         return;
       }
       const { seatbid } = serverResponse.body;
-      let bids = request.bids
-      return bids.map((bid, id) => {
-        const _cbid = seatbid && seatbid[id] && seatbid[id].bid;
+      let bids = request.bids;
+      let index = 0;
+      return bids.reduce((accumulator, bid) => {
+        const _cbid = seatbid && seatbid[index] && seatbid[index].bid;
         const bidResponse = _cbid && _cbid[0];
         if (bidResponse) {
-          let obj = {
+          accumulator.push({
             requestId: bid.bidId,
             cpm: bidResponse.price,
             creativeId: bidResponse.crid,
@@ -183,10 +183,11 @@ export const spec = {
             netRevenue: bid.netRevenue === 'net',
             currency: 'USD',
             ad: bidResponse.adm
-          };
-          return obj;
+          });
         }
-      }).filter(Boolean);
+        index++;
+        return accumulator;
+      }, []);
     }
   },
 }
