@@ -22,8 +22,7 @@ Dailyhunt bid adapter supports Banner and Native.
                 {
                     bidder: 'dailyhunt',
                     params: {
-                      partnerId: 'pb-partnerId',
-                      clientId: '421000'
+                      partnerId: 'pb-partnerId'
                     }
                 }
             ]
@@ -51,8 +50,7 @@ Dailyhunt bid adapter supports Banner and Native.
                 {
                     bidder: 'dailyhunt',
                     params: {
-                      partnerId: 'pb-partnerId',
-                      clientId: '421000'
+                      partnerId: 'pb-partnerId'
                     }
                 }
             ]
