@@ -30,9 +30,8 @@ function interpretResponse(serverResponse, request) {
   const response = serverResponse.body;
   const bidResponses = [];
   var bidRequestResponses = [];
- 
   utils._each(response, function(bidAd) {
-   let bnd = {};
+    let bnd = {};
     Object.assign(bnd, bidAd);
     bnd = bidAd;
     bnd.adResponse = {
