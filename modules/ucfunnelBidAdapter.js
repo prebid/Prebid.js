@@ -123,12 +123,12 @@ export const spec = {
     if (syncOptions.iframeEnabled) {
       return [{
         type: 'iframe',
-        url: '//cdn.aralego.com/ucfad/cookie/sync.html'
+        url: '//cdn.aralego.net/ucfad/cookie/sync.html'
       }];
     } else if (syncOptions.pixelEnabled) {
       return [{
         type: 'image',
-        url: '//sync.aralego.com/idSync'
+        url: 'https://sync.aralego.com/idSync'
       }];
     }
   }
