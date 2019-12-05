@@ -16,6 +16,7 @@ describe('ColossussspAdapter', function () {
         sizes: [[300, 250]]
       }
     },
+<<<<<<< HEAD
     transactionId: '3bb2f6da-87a6-4029-aeb0-bfe951372e62',
     schain: {
       ver: '1.0',
@@ -31,6 +32,9 @@ describe('ColossussspAdapter', function () {
         }
       ]
     }
+=======
+    transactionId: '3bb2f6da-87a6-4029-aeb0-bfe951372e62'
+>>>>>>> upstream/master
   };
   let bidderRequest = {
     bidderCode: 'colossus',
