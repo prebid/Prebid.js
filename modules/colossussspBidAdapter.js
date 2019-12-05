@@ -63,13 +63,15 @@ export const spec = {
       'placements': placements
     };
 
-    if (bidderRequest.gdprConsent) {
-      if (bidderRequest.gdprConsent.consentString) {
-        request.gdpr_consent = bidderRequest.gdprConsent.consentString;
+    if(bidderRequest){
+      // if (bidderRequest.gdprConsent) {
+      //   if (bidderRequest.gdprConsent.consentString) {
+      //     request.gdpr_consent = bidderRequest.gdprConsent.consentString;
+      //   }
+      // }
+      if (bidderRequest.uspConsent) {
+        request.ccpa = bidderRequest.uspConsent;
       }
-    }
-    if (bidderRequest.uspConsent) {
-      request.ccpa = bidderRequest.uspConsent;
     }
 
     for (let i = 0; i < validBidRequests.length; i++) {

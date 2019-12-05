@@ -78,7 +78,7 @@ describe('ColossussspAdapter', function () {
     it('Returns valid data if array of bids is valid', function () {
       let data = serverRequest.data;
       expect(data).to.be.an('object');
-      expect(data).to.have.all.keys('deviceWidth', 'deviceHeight', 'language', 'secure', 'host', 'page', 'placements');
+      expect(data).to.have.all.keys('deviceWidth', 'deviceHeight', 'language', 'secure', 'host', 'page', 'placements', 'ccpa');
       expect(data.deviceWidth).to.be.a('number');
       expect(data.deviceHeight).to.be.a('number');
       expect(data.language).to.be.a('string');
