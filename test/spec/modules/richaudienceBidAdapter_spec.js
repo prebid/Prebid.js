@@ -621,5 +621,34 @@ describe('Richaudience adapter tests', function () {
       iframeEnabled: false
     }, [], {consentString: '', gdprApplies: true});
     expect(syncs).to.have.lengthOf(0);
+
+    pbjs.setConfig({
+      consentManagement: {
+        cmpApi: 'iab',
+        timeout: 5000,
+        allowAuctionWithoutConsent: true,
+        pixelEnabled: true
+      }
+    });
+
+    syncs = spec.getUserSyncs({
+      pixelEnabled: true
+    }, [], {
+      consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
+      referer: 'http://domain.com',
+      gdprApplies: true
+    })
+    expect(syncs).to.have.lengthOf(1);
+    expect(syncs[0].type).to.equal('image');
+
+    syncs = spec.getUserSyncs({
+      pixelEnabled: true
+    }, [], {
+      consentString: '',
+      referer: 'http://domain.com',
+      gdprApplies: true
+    })
+    expect(syncs).to.have.lengthOf(1);
+    expect(syncs[0].type).to.equal('image');
   });
 });
