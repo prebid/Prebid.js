@@ -214,6 +214,12 @@ function getRequestData(bid, bidderRequest) {
     fp: utils.getBidIdParameter('bidfloor', bid.params)
   };
 
+  if (bidderRequest && bidderRequest.uspConsent) {
+    Object.assign(bidData, {
+      usprivacy: bidderRequest.uspConsent
+    });
+  }
+
   if (bid.mediaType === 'video' || videoMediaType) {
     switch (videoContext) {
       case 'outstream':

@@ -4,6 +4,11 @@ import {BANNER, VIDEO, NATIVE} from 'src/mediaTypes';
 
 const URL = '//hb.aralego.com/header';
 const BIDDER_CODE = 'ucfunnel';
+
+const bidderRequest = {
+  uspConsent: '1YNN'
+};
+
 const validBannerBidReq = {
   bidder: BIDDER_CODE,
   params: {
@@ -116,7 +121,7 @@ describe('ucfunnel Adapter', function () {
     });
   });
   describe('build request', function () {
-    const request = spec.buildRequests([validBannerBidReq]);
+    const request = spec.buildRequests([validBannerBidReq], bidderRequest);
     it('should create a POST request for every bid', function () {
       expect(request[0].method).to.equal('GET');
       expect(request[0].url).to.equal(location.protocol + spec.ENDPOINT);
@@ -129,6 +134,7 @@ describe('ucfunnel Adapter', function () {
     it('should attach request data', function () {
       const data = request[0].data;
       const [ width, height ] = validBannerBidReq.sizes[0];
+      expect(data.usprivacy).to.equal('1YNN');
       expect(data.w).to.equal(width);
       expect(data.h).to.equal(height);
       expect(data.schain).to.equal('1.0,1!exchange1.com,1234,1,bid-request-1,publisher,publisher.com');
