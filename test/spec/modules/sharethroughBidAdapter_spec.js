@@ -40,7 +40,7 @@ const bidRequests = [
 const prebidRequests = [
   {
     method: 'GET',
-    url: document.location.protocol + '//btlr.sharethrough.com' + '/WYu2BXv1/v1',
+    url: 'https://btlr.sharethrough.com/WYu2BXv1/v1',
     data: {
       bidId: 'bidId',
       placement_key: 'pKey'
@@ -52,7 +52,7 @@ const prebidRequests = [
   },
   {
     method: 'GET',
-    url: document.location.protocol + '//btlr.sharethrough.com' + '/WYu2BXv1/v1',
+    url: 'https://btlr.sharethrough.com/WYu2BXv1/v1',
     data: {
       bidId: 'bidId',
       placement_key: 'pKey'
@@ -64,7 +64,7 @@ const prebidRequests = [
   },
   {
     method: 'GET',
-    url: document.location.protocol + '//btlr.sharethrough.com' + '/WYu2BXv1/v1',
+    url: 'https://btlr.sharethrough.com/WYu2BXv1/v1',
     data: {
       bidId: 'bidId',
       placement_key: 'pKey'
@@ -77,7 +77,7 @@ const prebidRequests = [
   },
   {
     method: 'GET',
-    url: document.location.protocol + '//btlr.sharethrough.com' + '/WYu2BXv1/v1',
+    url: 'https://btlr.sharethrough.com/WYu2BXv1/v1',
     data: {
       bidId: 'bidId',
       placement_key: 'pKey'
@@ -89,7 +89,7 @@ const prebidRequests = [
   },
   {
     method: 'GET',
-    url: document.location.protocol + '//btlr.sharethrough.com' + '/WYu2BXv1/v1',
+    url: 'https://btlr.sharethrough.com/WYu2BXv1/v1',
     data: {
       bidId: 'bidId',
       placement_key: 'pKey'
@@ -249,7 +249,7 @@ describe('sharethrough adapter spec', function () {
     });
 
     it('should set the secure parameter to false when the protocol is http', function() {
-      const stub = sinon.stub(document.location, 'protocol').returns('http:');
+      const stub = sinon.stub(sharethroughInternal, 'getProtocol').returns('http:');
       const bidRequest = spec.buildRequests(bidRequests, null)[0];
       expect(bidRequest.data.secure).to.be.false;
       stub.restore()
