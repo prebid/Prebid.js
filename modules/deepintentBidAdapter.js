@@ -4,7 +4,7 @@ import * as utils from '../src/utils';
 const BIDDER_CODE = 'deepintent';
 const BIDDER_ENDPOINT = 'https://prebid.deepintent.com/prebid';
 const USER_SYNC_URL = 'https://beacon.deepintent.com/usersync.html';
-
+const DI_M_V = '1.0.0';
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER],
@@ -29,12 +29,15 @@ export const spec = {
     return responses;
   },
   buildRequests: function (validBidRequests, bidderRequest) {
+    var user = validBidRequests.map(bid => buildUser(bid));
+    clean(user);
     const openRtbBidRequest = {
       id: utils.generateUUID(),
       at: 1,
       imp: validBidRequests.map(bid => buildImpression(bid)),
       site: buildSite(bidderRequest),
       device: buildDevice(),
+      user: user && user.length == 1 ? user[0] : {},
       source: {
         fd: 0,
         ext: {
@@ -65,6 +68,13 @@ export const spec = {
   }
 
 };
+function clean(obj) {
+  for (let propName in obj) {
+    if (obj[propName] === null || obj[propName] === undefined) {
+      delete obj[propName];
+    }
+  }
+}
 
 function formatResponse(bid) {
   return {
@@ -87,8 +97,23 @@ function buildImpression(bid) {
     tagid: bid.params.tagId || '',
     secure: window.location.protocol === 'https' ? 1 : 0,
     banner: buildBanner(bid),
+    displaymanager: 'di_prebid',
+    displaymanagerver: DI_M_V,
     ext: bid.params.custom ? bid.params.custom : {}
   };
+}
+
+function buildUser(bid) {
+  if (bid && bid.params && bid.params.user) {
+    return {
+      id: bid.params.user.id && typeof bid.params.user.id == 'string' ? bid.params.user.id : undefined,
+      buyeruid: bid.params.user.buyeruid && typeof bid.params.user.buyeruid == 'string' ? bid.params.user.buyeruid : undefined,
+      yob: bid.params.user.yob && typeof bid.params.user.yob == 'number' ? bid.params.user.yob : null,
+      gender: bid.params.user.gender && typeof bid.params.user.gender == 'string' ? bid.params.user.gender : undefined,
+      keywords: bid.params.user.keywords && typeof bid.params.user.keywords == 'string' ? bid.params.user.keywords : undefined,
+      customdata: bid.params.user.customdata && typeof bid.params.user.customdata == 'string' ? bid.params.user.customdata : undefined
+    }
+  }
 }
 
 function buildBanner(bid) {
