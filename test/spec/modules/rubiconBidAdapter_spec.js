@@ -186,8 +186,13 @@ describe('the rubicon adapter', function () {
     }
   }
 
+  function createUspBidderRequest() {
+    bidderRequest.uspConsent = '1NYN';
+  }
+
   function createVideoBidderRequest() {
     createGdprBidderRequest(true);
+    createUspBidderRequest();
 
     let bid = bidderRequest.bids[0];
     bid.mediaTypes = {
@@ -893,6 +898,23 @@ describe('the rubicon adapter', function () {
           });
         });
 
+        describe('USP Consent', function () {
+          it('should send us_privacy if bidderRequest has a value for uspConsent', function () {
+            createUspBidderRequest();
+            let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+            let data = parseQuery(request.data);
+
+            expect(data['us_privacy']).to.equal('1NYN');
+          });
+
+          it('should not send us_privacy if bidderRequest has no uspConsent value', function () {
+            let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+            let data = parseQuery(request.data);
+
+            expect(data['us_privacy']).to.equal(undefined);
+          });
+        });
+
         describe('first party data', function () {
           it('should not have any tg_v or tg_i params if all are undefined', function () {
             let params = {
@@ -1348,6 +1370,7 @@ describe('the rubicon adapter', function () {
           expect(post.rp.target.LIseg[0]).to.equal('segA');
           expect(post.rp.target.LIseg[1]).to.equal('segB');
           expect(post.regs.ext.gdpr).to.equal(1);
+          expect(post.regs.ext.us_privacy).to.equal('1NYN');
           expect(post).to.have.property('ext').that.is.an('object');
           expect(post.ext.prebid.targeting.includewinners).to.equal(true);
           expect(post.ext.prebid).to.have.property('cache').that.is.an('object')
@@ -2363,6 +2386,20 @@ describe('the rubicon adapter', function () {
     it('should pass no params if gdpr is not defined', function () {
       expect(spec.getUserSyncs({ iframeEnabled: true }, {}, undefined)).to.deep.equal({
         type: 'iframe', url: `${emilyUrl}`
+      });
+    });
+
+    it('should pass us_privacy if uspConsent is defined', function () {
+      expect(spec.getUserSyncs({ iframeEnabled: true }, {}, undefined, '1NYN')).to.deep.equal({
+        type: 'iframe', url: `${emilyUrl}?us_privacy=1NYN`
+      });
+    });
+
+    it('should pass us_privacy after gdpr if both are present', function () {
+      expect(spec.getUserSyncs({ iframeEnabled: true }, {}, {
+        consentString: 'foo'
+      }, '1NYN')).to.deep.equal({
+        type: 'iframe', url: `${emilyUrl}?gdpr_consent=foo&us_privacy=1NYN`
       });
     });
   });

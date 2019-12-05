@@ -64,13 +64,16 @@ export const spec = {
     let bid = {
       requestId: bidRequest.bidId,
       cpm: ad.cpm || 0,
-      creativeId: ad.ad_id,
+      creativeId: ad.ad_id || bidRequest.params.adid,
       dealId: ad.deal || null,
       currency: 'USD',
       netRevenue: true,
       ttl: 1800
     };
 
+    if (bidRequest.params && bidRequest.params.bidfloor && ad.cpm && ad.cpm < bidRequest.params.bidfloor) {
+      bid.cpm = 0;
+    }
     if (ad.creative_type) {
       bid.mediaType = ad.creative_type;
     }
@@ -108,10 +111,11 @@ export const spec = {
         break;
       case BANNER:
       default:
+        var size = parseSizes(bidRequest);
         Object.assign(bid, {
-          width: ad.width,
-          height: ad.height,
-          ad: ad.adm
+          width: ad.width || size[0],
+          height: ad.height || size[1],
+          ad: ad.adm || ''
         });
     }
 
@@ -206,7 +210,8 @@ function getRequestData(bid, bidderRequest) {
     w: size[0],
     h: size[1],
     tdid: userIdTdid,
-    schain: supplyChain
+    schain: supplyChain,
+    fp: utils.getBidIdParameter('bidfloor', bid.params)
   };
 
   if (bid.mediaType === 'video' || videoMediaType) {
