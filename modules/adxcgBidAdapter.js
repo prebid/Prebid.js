@@ -12,7 +12,7 @@ import includes from 'core-js/library/fn/array/includes'
  * updated to pass aditional auction and impression level parameters. added pass for video targeting parameters
  * updated to fix native support for image width/height and icon 2019.03.17
  * updated support for userid - pubcid,ttid 2019.05.28
- * updated to support prebid 3.0 -remove non https, move to banner.xx.sizes, remove utils.getTopWindowLocation,remove utils.getTopWindowUrl(),remove utils.getTopWindowReferrer()
+ * updated to support prebid 3.0 - remove non https, move to banner.xx.sizes, remove utils.getTopWindowLocation,remove utils.getTopWindowUrl(),remove utils.getTopWindowReferrer()
  */
 
 const BIDDER_CODE = 'adxcg'
