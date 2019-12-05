@@ -196,7 +196,12 @@ export const spec = {
             };
 
             if (request.video) {
-              bid.vastUrl = responseAd;
+              if (responseAd.charAt(0) === '<') {
+                bid.vastXml = responseAd;
+              } else {
+                bid.vastUrl = responseAd;
+              }
+
               bid.mediaType = 'video';
               bid.width = request.video.w;
               bid.height = request.video.h;

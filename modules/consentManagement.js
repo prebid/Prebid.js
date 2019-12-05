@@ -335,6 +335,7 @@ function exitModule(errMsg, hookConfig, extraArgs) {
  */
 export function resetConsentData() {
   consentData = undefined;
+  userCMP = undefined;
   gdprDataHandler.setConsentData(null);
 }
 
@@ -343,6 +344,13 @@ export function resetConsentData() {
  * @param {object} config required; consentManagement module config settings; cmp (string), timeout (int), allowAuctionWithoutConsent (boolean)
  */
 export function setConsentConfig(config) {
+  // if `config.gdpr` or `config.usp` exist, assume new config format.
+  // else for backward compatability, just use `config`
+  config = config.gdpr || config.usp ? config.gdpr : config;
+  if (!config || typeof config !== 'object') {
+    utils.logWarn('consentManagement config not defined, exiting consent manager');
+    return;
+  }
   if (utils.isStr(config.cmpApi)) {
     userCMP = config.cmpApi;
   } else {

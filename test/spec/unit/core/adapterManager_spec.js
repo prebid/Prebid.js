@@ -193,7 +193,7 @@ describe('adapterManager tests', function () {
         bidders: [ 'rubicon' ],
         config: {
           buildRequests: 'rubiconBuild',
-          interpretResponse: 'rubiconInterpret'
+          interpretResponse: null
         }
       });
       config.setBidderConfig({
@@ -230,7 +230,7 @@ describe('adapterManager tests', function () {
             'rubiconBuild',
             { speedy: true },
             { amazing: true },
-            'rubiconInterpret',
+            null,
             'anotherBaseInterpret'
           ]
         });
