@@ -131,6 +131,10 @@ export const spec = {
         sizes.push(utils.parseSizesInput(bid.mediaTypes.banner.sizes).join('|'))
       }
 
+      if (isNativeRequest(bid)) {
+        sizes.push('0x0')
+      }
+
       let bidfloor = utils.getBidIdParameter('bidfloor', bid.params) || 0
       bidfloors.push(bidfloor)
       // copy video params
@@ -291,6 +295,10 @@ function isVideoRequest (bid) {
 
 function isBannerRequest (bid) {
   return bid.mediaType === 'banner' || !!utils.deepAccess(bid, 'mediaTypes.banner')
+}
+
+function isNativeRequest (bid) {
+  return bid.mediaType === 'native' || !!utils.deepAccess(bid, 'mediaTypes.native')
 }
 
 registerBidder(spec)
