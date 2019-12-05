@@ -5,10 +5,13 @@
  * @requires module:modules/userId
  */
 
-import * as utils from '../../src/utils';
-import * as url from '../../src/url';
+import * as utils from '../src/utils';
+import * as url from '../src/url';
+import {submodule} from '../src/hook';
 
 const PUB_COMMON_ID = 'PublisherCommonId';
+
+const MODULE_NAME = 'pubCommonId';
 
 /** @type {Submodule} */
 export const pubCommonIdSubmodule = {
@@ -16,7 +19,7 @@ export const pubCommonIdSubmodule = {
    * used to link submodule with config
    * @type {string}
    */
-  name: 'pubCommonId',
+  name: MODULE_NAME,
   /**
    * Return a callback function that calls the pixelUrl with id as a query parameter
    * @param pixelUrl
@@ -90,3 +93,5 @@ export const pubCommonIdSubmodule = {
     }
   }
 };
+
+submodule('userId', pubCommonIdSubmodule);
