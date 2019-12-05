@@ -63,7 +63,7 @@ describe('adrollBidAdapter', function() {
       expect(request.data.imp.id).to.equal('bid_id');
       expect(request.data.imp.bidfloor).to.be.equal(1);
       expect(request.data.imp.banner).to.exist.and.to.be.a('object');
-      expect(request.data.imp.ext.zone.id).to.be.equal("zone1");
+      expect(request.data.imp.ext.zone.id).to.be.equal('zone1');
     });
 
     it('includes the sizes into the request correctly', function () {

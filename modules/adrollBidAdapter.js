@@ -7,7 +7,8 @@ import sha256 from 'crypto-js/sha256';
 const BIDDER_CODE = 'adroll';
 const BIDDER_ENDPOINT = 'https://d.adroll.com/bid/prebid/';
 const PUBLISHER_TAG_URL = 'https://s.adroll.com/prebid/pubtag.min.js';
-const ADAPTER_VERSION = 1;
+const MAX_PUBTAG_AGE_IN_DAYS = 3;
+const ADAPTER_VERSION = 2;
 
 export const FAST_BID_PUBKEY = `-----BEGIN PUBLIC KEY-----
 MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC/TZ6Gpm7gYg0j6o8LK+sKfYsl
@@ -219,13 +220,16 @@ function _getOsVersion(userAgent) {
 /**
  * @return {boolean}
  */
-export function tryGetFastBid() {
+function tryGetFastBid() {
   try {
     const fastBidStorageKey = 'nextroll_fast_bid';
+    const dateSuffix = '_set_date';
     const hashPrefix = '// Hash: ';
-    const fastBidFromStorage = localStorage.getItem(fastBidStorageKey);
 
-    if (fastBidFromStorage !== null) {
+    const fastBidFromStorage = localStorage.getItem(fastBidStorageKey);
+    const fastBidAge = localStorage.getItem(fastBidStorageKey + dateSuffix);
+
+    if (fastBidFromStorage !== null && !isFastBidTooOld(fastBidAge)) {
       // The value stored must contain the file's encrypted hash as first line
       const firstLineEndPosition = fastBidFromStorage.indexOf('\n');
       const firstLine = fastBidFromStorage.substr(0, firstLineEndPosition).trim();
@@ -252,6 +256,17 @@ export function tryGetFastBid() {
   } catch (e) {
     // Unable to get fast bid
   }
+}
+
+function isFastBidTooOld(fastBidAge) {
+  const currentDate = (new Date()).getTime();
+  const fbSetDate = parseInt(fastBidAge);
+  const maxAgeMs = MAX_PUBTAG_AGE_IN_DAYS * 1000 * 60 * 60 * 24;
+
+  if (currentDate - fbSetDate > maxAgeMs) {
+    return true
+  }
+  return false
 }
 
 /**
