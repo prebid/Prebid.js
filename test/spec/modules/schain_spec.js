@@ -452,8 +452,6 @@ describe('#makeBidRequestsHook', function() {
     });
   });
 
-  // bidderConfig tests
-  // when bad relaxed - should still go through to bidRequest
   it('should properly read from bidder schain + global schain configs', function() {
     function testCallback(bidderRequests) {
       expect(bidderRequests[0].bids[0].schain).to.exist;
