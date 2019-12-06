@@ -20,7 +20,7 @@ envivo bid adapter supports Banner and Video.
           code: 'banner-ad-slot',
           mediaTypes: {
             banner: {
-              sizes: [[300, 250], [300,600]],
+              sizes: [[300, 250]],
             }
           },
           bids: [{
