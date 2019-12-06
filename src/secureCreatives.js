@@ -6,7 +6,7 @@
 import events from './events';
 import { fireNativeTrackers, getAssetMessage } from './native';
 import { EVENTS } from './constants';
-import { isSlotMatchingAdUnitCode, logWarn, replaceAuctionPrice } from './utils';
+import { logWarn, replaceAuctionPrice } from './utils';
 import { auctionManager } from './auctionManager';
 import find from 'core-js/library/fn/array/find';
 import { isRendererRequired, executeRenderer } from './Renderer';
@@ -79,7 +79,7 @@ export function _sendAdToCreative(adObject, remoteDomain, source) {
   }
 }
 
-function resizeRemoteCreative({ adUnitCode, width, height }) {
+function resizeRemoteCreative({ adId, adUnitCode, width, height }) {
   // resize both container div + iframe
   ['div', 'iframe'].forEach(elmType => {
     // not select element that gets removed after dfp render
@@ -101,7 +101,7 @@ function resizeRemoteCreative({ adUnitCode, width, height }) {
 
   function getElementIdBasedOnAdServer(adUnitCode) {
     if (window.googletag) {
-      return getDfpElementId(adUnitCode)
+      return getDfpElementId();
     } else if (window.apntag) {
       return getAstElementId(adUnitCode)
     } else {
@@ -109,8 +109,12 @@ function resizeRemoteCreative({ adUnitCode, width, height }) {
     }
   }
 
-  function getDfpElementId(adUnitCode) {
-    return find(window.googletag.pubads().getSlots().filter(isSlotMatchingAdUnitCode(adUnitCode)), slot => slot).getSlotElementId()
+  function getDfpElementId() {
+    return window.googletag.pubads().getSlots().find(slot => {
+      return slot.getTargetingKeys().find((key) => {
+        return slot.getTargeting(key).indexOf(adId) > -1;
+      });
+    }).getSlotElementId();
   }
 
   function getAstElementId(adUnitCode) {
