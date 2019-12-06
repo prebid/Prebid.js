@@ -36,10 +36,12 @@ var _analyticsRegistry = {};
  * @property {Array<string>} activeLabels the labels specified as being active by requestBids
  */
 
-function getBids({bidderCode, auctionId, bidderRequestId, adUnits, labels, src}, a, b) {
-  if (a === true) {
-    return b;
+function getBids({bidderCode, auctionId, bidderRequestId, adUnits, labels, src}, bidsInfoFromSizeMappingV2) {
+  // if the bids information is returned from sizeMappingV2 module, just return that.
+  if (bidsInfoFromSizeMappingV2) {
+    return bidsInfoFromSizeMappingV2;
   }
+
   return adUnits.reduce((result, adUnit) => {
     let {
       active,
@@ -214,7 +216,7 @@ adapterManager.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTi
         auctionId,
         bidderRequestId,
         tid,
-        bids: getBids({bidderCode, auctionId, bidderRequestId, 'adUnits': utils.deepClone(adUnitsS2SCopy), labels, src: CONSTANTS.S2S.SRC}),
+        bids: hookedGetBids({bidderCode, auctionId, bidderRequestId, 'adUnits': utils.deepClone(adUnitsS2SCopy), labels, src: CONSTANTS.S2S.SRC}),
         auctionStart: auctionStart,
         timeout: _s2sConfig.timeout,
         src: CONSTANTS.S2S.SRC,
