@@ -1,4 +1,4 @@
-import {config} from '../src/config';
+import { config } from '../src/config';
 import adapterManager from '../src/adapterManager';
 import { isNumber, isStr, isArray, isPlainObject, hasOwn, logError, isInteger, _each, logWarn } from '../src/utils';
 
@@ -19,100 +19,101 @@ _each(MODE, mode => MODES.push(mode));
 
 // validate the supply chain object
 export function isSchainObjectValid(schainObject, returnOnError) {
-  function warnOrError(msg) {
+  let failPrefix = 'Detected something wrong within an schain config:'
+  let failMsg = '';
+
+  function appendFailMsg(msg) {
+    failMsg += '\n' + msg;
+  }
+
+  function printFailMsg() {
     if (returnOnError === true) {
-      logError(msg);
+      logError(failPrefix, schainObject, failMsg);
     } else {
-      logWarn(msg);
+      logWarn(failPrefix, schainObject, failMsg);
     }
   }
 
   if (!isPlainObject(schainObject)) {
-    warnOrError(schainErrorPrefix + `schain` + shouldBeAnObject);
+    appendFailMsg(`schain.config` + shouldBeAnObject);
+    printFailMsg();
     if (returnOnError) return false;
   }
 
   // complete: Integer
   if (!isNumber(schainObject.complete) || !isInteger(schainObject.complete)) {
-    warnOrError(schainErrorPrefix + `schain.complete` + shouldBeAnInteger);
-    if (returnOnError) return false;
+    appendFailMsg(`schain.config.complete` + shouldBeAnInteger);
   }
 
   // ver: String
   if (!isStr(schainObject.ver)) {
-    warnOrError(schainErrorPrefix + `schain.ver` + shouldBeAString);
-    if (returnOnError) return false;
+    appendFailMsg(`schain.config.ver` + shouldBeAString);
   }
 
   // ext: Object [optional]
   if (hasOwn(schainObject, 'ext')) {
     if (!isPlainObject(schainObject.ext)) {
-      warnOrError(schainErrorPrefix + `schain.ext` + shouldBeAnObject);
-      if (returnOnError) return false;
+      appendFailMsg(`schain.config.ext` + shouldBeAnObject);
     }
   }
 
   // nodes: Array of objects
-  let isEachNodeIsValid = true;
   if (!isArray(schainObject.nodes)) {
-    warnOrError(schainErrorPrefix + `schain.nodes` + shouldBeAnArray);
+    appendFailMsg(`schain.config.nodes` + shouldBeAnArray);
+    printFailMsg();
     if (returnOnError) return false;
   } else {
-    schainObject.nodes.forEach(node => {
+    schainObject.nodes.forEach((node, index) => {
       // asi: String
       if (!isStr(node.asi)) {
-        isEachNodeIsValid = isEachNodeIsValid && false;
-        warnOrError(schainErrorPrefix + `schain.nodes[].asi` + shouldBeAString);
+        appendFailMsg(`schain.config.nodes[${index}].asi` + shouldBeAString);
       }
 
       // sid: String
       if (!isStr(node.sid)) {
-        isEachNodeIsValid = isEachNodeIsValid && false;
-        warnOrError(schainErrorPrefix + `schain.nodes[].sid` + shouldBeAString);
+        appendFailMsg(`schain.config.nodes[${index}].sid` + shouldBeAString);
       }
 
       // hp: Integer
       if (!isNumber(node.hp) || !isInteger(node.hp)) {
-        isEachNodeIsValid = isEachNodeIsValid && false;
-        warnOrError(schainErrorPrefix + `schain.nodes[].hp` + shouldBeAnInteger);
+        appendFailMsg(`schain.config.nodes[${index}].hp` + shouldBeAnInteger);
       }
 
       // rid: String [Optional]
       if (hasOwn(node, 'rid')) {
         if (!isStr(node.rid)) {
-          isEachNodeIsValid = isEachNodeIsValid && false;
-          warnOrError(schainErrorPrefix + `schain.nodes[].rid` + shouldBeAString);
+          appendFailMsg(`schain.config.nodes[${index}].rid` + shouldBeAString);
         }
       }
 
       // name: String [Optional]
       if (hasOwn(node, 'name')) {
         if (!isStr(node.name)) {
-          isEachNodeIsValid = isEachNodeIsValid && false;
-          warnOrError(schainErrorPrefix + `schain.nodes[].name` + shouldBeAString);
+          appendFailMsg(`schain.config.nodes[${index}].name` + shouldBeAString);
         }
       }
 
       // domain: String [Optional]
       if (hasOwn(node, 'domain')) {
         if (!isStr(node.domain)) {
-          isEachNodeIsValid = isEachNodeIsValid && false;
-          warnOrError(schainErrorPrefix + `schain.nodes[].domain` + shouldBeAString);
+          appendFailMsg(`schain.config.nodes[${index}].domain` + shouldBeAString);
         }
       }
 
       // ext: Object [Optional]
       if (hasOwn(node, 'ext')) {
         if (!isPlainObject(node.ext)) {
-          isEachNodeIsValid = isEachNodeIsValid && false;
-          warnOrError(schainErrorPrefix + `schain.nodes[].ext` + shouldBeAnObject);
+          appendFailMsg(`schain.config.nodes[${index}].ext` + shouldBeAnObject);
         }
       }
     });
   }
 
-  if (returnOnError && !isEachNodeIsValid) {
-    return false;
+  if (failMsg.length > 0) {
+    printFailMsg();
+    if (returnOnError) {
+      return false;
+    }
   }
 
   return true;
@@ -129,7 +130,7 @@ export function isValidSchainConfig(schainObject) {
   return true;
 }
 
-function checkSchainConfig(schainObject, bidder) {
+function resolveSchainConfig(schainObject, bidder) {
   let mode = MODE.STRICT;
 
   if (isValidSchainConfig(schainObject)) {
@@ -144,14 +145,14 @@ function checkSchainConfig(schainObject, bidder) {
       if (isSchainObjectValid(schainObject.config, !!(mode === MODE.STRICT))) {
         return schainObject.config;
       } else {
-        logError(schainErrorPrefix + `the following schain config will not be passed to bidder '${bidder}' as it is not valid.`, schainObject);
+        logError(schainErrorPrefix + `due to the 'strict' validation setting, this schain config will not be passed to bidder '${bidder}'.  See above error for details.`);
       }
     }
   }
   return null;
 }
 
-function makeBidRequestsHook(fn, bidderRequests) {
+export function makeBidRequestsHook(fn, bidderRequests) {
   function getSchainForBidder(bidder) {
     let bidderSchain = bidderConfigs[bidder] && bidderConfigs[bidder].schain;
     return bidderSchain || globalSchainConfig;
@@ -165,7 +166,7 @@ function makeBidRequestsHook(fn, bidderRequests) {
     let schainConfig = getSchainForBidder(bidder);
 
     bidderRequest.bids.forEach(bid => {
-      let result = checkSchainConfig(schainConfig, bidder);
+      let result = resolveSchainConfig(schainConfig, bidder);
       if (result) {
         bid.schain = result;
       }

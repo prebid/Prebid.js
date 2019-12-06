@@ -1,4 +1,6 @@
-import {isValidSchainConfig, isSchainObjectValid} from '../../../modules/schain';
+import { isValidSchainConfig, isSchainObjectValid, makeBidRequestsHook } from '../../../modules/schain';
+import { deepClone } from '../../../src/utils';
+import {config} from '../../../src/config';
 import { expect } from 'chai';
 
 describe('#isValidSchainConfig: module config validation', function() {
@@ -243,4 +245,245 @@ describe('#isSchainObjectValid: schain object validation', function() {
     schainConfig = {};
     expect(isSchainObjectValid(schainConfig, false)).to.true;
   })
+});
+
+describe('#makeBidRequestsHook', function() {
+  const bidderRequests = [
+    {
+      'bidderCode': 'rubicon',
+      'bids': [
+        {
+          'bidder': 'rubicon',
+          'params': {
+            'accountId': 14062,
+            'siteId': 70608,
+            'zoneId': 498816
+          },
+          'mediaTypes': {
+            'banner': {
+              'sizes': [[300, 250], [300, 600]]
+            }
+          },
+          'adUnitCode': 'div-gpt-ad-1460505748561-0',
+          'sizes': [[300, 250], [300, 600]],
+          'bidId': '2e6d166eb869c3'
+
+        }
+      ],
+    },
+    {
+      'bidderCode': 'districtm',
+      'bids': [
+        {
+          'bidder': 'districtm',
+          'params': {
+            'placementId': 13144370
+          },
+          'mediaTypes': {
+            'banner': {
+              'sizes': [[300, 250], [300, 600]]
+            }
+          },
+          'adUnitCode': 'div-gpt-ad-1460505748561-0',
+          'sizes': [[300, 250], [300, 600]],
+          'bidId': '41cdeddf7b6905'
+        }
+      ],
+    },
+    {
+      'bidderCode': 'appnexus',
+      'bids': [
+        {
+          'bidder': 'appnexus',
+          'params': {
+            'placementId': 13144370
+          },
+          'mediaTypes': {
+            'banner': {
+              'sizes': [[300, 250], [300, 600]]
+            }
+          },
+          'adUnitCode': 'div-gpt-ad-1460505748561-0',
+          'sizes': [[300, 250], [300, 600]],
+          'bidId': '626cc7f1c4ccfc'
+        }
+      ],
+
+    }
+  ];
+
+  const globalSchainConfig = {
+    'schain': {
+      'validation': 'off',
+      'config': {
+        'ver': '1.0',
+        'complete': 1,
+        'nodes': [
+          {
+            'asi': 'indirectseller.com',
+            'sid': '00001',
+            'hp': 1
+          },
+
+          {
+            'asi': 'indirectseller-2.com',
+            'sid': '00002',
+            'hp': 1
+          }
+        ]
+      }
+    }
+  };
+
+  const goodStrictBidderConfig = {
+    bidders: ['appnexus'],
+    config: {
+      'schain': {
+        'validation': 'strict',
+        'config': {
+          'ver': '1.0',
+          'complete': 1,
+          'nodes': [
+            {
+              'asi': 'myoverride1.com',
+              'sid': '00001',
+              'hp': 1,
+              'name': 'node1'
+            },
+            {
+              'asi': 'myoverride2.com',
+              'sid': '00001',
+              'hp': 1,
+              'name': 'node2'
+            }
+          ]
+        }
+      }
+    }
+  }
+
+  const badStrictBidderConfig = {
+    bidders: ['appnexus'],
+    config: {
+      'schain': {
+        'validation': 'strict',
+        'config': {
+          'ver': '1.0',
+          'complete': 1,
+          'nodes': [
+            {
+              'asi': 'myoverride1.com',
+              'sid': 1,
+              'hp': 1,
+              'name': 342
+            },
+            {
+              'asi': 'myoverride2.com',
+              'sid': 2,
+              'hp': 1,
+              'name': '342'
+            }
+          ]
+        }
+      }
+    }
+  };
+
+  const goodRelaxedBidderConfig = {
+    bidders: ['districtm'],
+    config: {
+      'schain': {
+        'validation': 'relaxed',
+        'config': {
+          'ver': '1.0',
+          'complete': 1,
+          'nodes': [
+            {
+              'asi': 'myoverride.com',
+              'sid': '00001',
+              'hp': 1,
+              'name': 'goodConfig'
+            }
+          ]
+        }
+      }
+    }
+  };
+
+  const badRelaxedBidderConfig = {
+    bidders: ['districtm'],
+    config: {
+      'schain': {
+        'validation': 'relaxed',
+        'config': {
+          'ver': 1,
+          'complete': 1,
+          'nodes': [
+            {
+              'asi': 'myoverride.com',
+              'sid': 1,
+              'hp': 1
+            }
+          ]
+        }
+      }
+    }
+  };
+
+  beforeEach(function () {
+    config.setConfig(globalSchainConfig);
+  });
+
+  afterEach(function () {
+    config.resetConfig();
+
+    config.setBidderConfig({
+      bidders: ['districtm'],
+      config: {
+        schain: null
+      }
+    });
+
+    config.setBidderConfig({
+      bidders: ['appnexus'],
+      config: {
+        schain: null
+      }
+    });
+  });
+
+  // bidderConfig tests
+  // when bad relaxed - should still go through to bidRequest
+  it('should properly read from bidder schain + global schain configs', function() {
+    function testCallback(bidderRequests) {
+      expect(bidderRequests[0].bids[0].schain).to.exist;
+      expect(bidderRequests[0].bids[0].schain).to.deep.equal(globalSchainConfig.schain.config);
+      expect(bidderRequests[1].bids[0].schain).to.exist;
+      expect(bidderRequests[1].bids[0].schain).to.deep.equal(goodRelaxedBidderConfig.config.schain.config);
+      expect(bidderRequests[2].bids[0].schain).to.exist;
+      expect(bidderRequests[2].bids[0].schain).to.deep.equal(goodStrictBidderConfig.config.schain.config);
+    }
+
+    const testBidderRequests = deepClone(bidderRequests);
+    config.setBidderConfig(goodStrictBidderConfig);
+    config.setBidderConfig(goodRelaxedBidderConfig);
+
+    makeBidRequestsHook(testCallback, testBidderRequests);
+  });
+
+  it('should reject bad strict config but allow a bad relaxed config for bidders trying to override it', function () {
+    function testCallback(bidderRequests) {
+      expect(bidderRequests[0].bids[0].schain).to.exist;
+      expect(bidderRequests[0].bids[0].schain).to.deep.equal(globalSchainConfig.schain.config);
+      expect(bidderRequests[1].bids[0].schain).to.exist;
+      expect(bidderRequests[1].bids[0].schain).to.deep.equal(badRelaxedBidderConfig.config.schain.config);
+      expect(bidderRequests[2].bids[0].schain).to.be.undefined;
+    }
+
+    const testBidderRequests = deepClone(bidderRequests);
+    config.setBidderConfig(badStrictBidderConfig);
+    config.setBidderConfig(badRelaxedBidderConfig);
+
+    makeBidRequestsHook(testCallback, testBidderRequests);
+  });
 });
