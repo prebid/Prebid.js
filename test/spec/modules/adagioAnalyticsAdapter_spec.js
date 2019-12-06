@@ -6,10 +6,11 @@ let adapterManager = require('src/adapterManager').default;
 let events = require('src/events');
 let constants = require('src/constants.json');
 
-describe.skip('adagio analytics adapter', () => {
+describe('adagio analytics adapter', () => {
   let xhr;
   let requests;
   let sandbox
+  let adagioQueuePushSpy;
 
   beforeEach(() => {
     sandbox = sinon.createSandbox();
@@ -19,10 +20,17 @@ describe.skip('adagio analytics adapter', () => {
     xhr.onCreate = request => requests.push(request);
     sandbox.stub(events, 'getEvents').returns([]);
 
+    const w = utils.getWindowTop();
+
     adapterManager.registerAnalyticsAdapter({
       code: 'adagio',
       adapter: adagioAnalyticsAdapter
     });
+
+    w.ADAGIO = w.ADAGIO || {};
+    w.ADAGIO.queue = w.ADAGIO.queue || [];
+
+    adagioQueuePushSpy = sandbox.spy(w.ADAGIO.queue, 'push');
   });
 
   afterEach(() => {
@@ -89,28 +97,25 @@ describe.skip('adagio analytics adapter', () => {
       // Step 3: Send auction end event
       events.emit(constants.EVENTS.AUCTION_END, {});
 
-      expect(w.ADAGIO.queue).length(3);
+      sandbox.assert.callCount(adagioQueuePushSpy, 3);
 
-      let o = w.ADAGIO.queue.shift();
-      expect(o).to.not.be.undefined;
-      expect(o.action).to.equal('pb-analytics-event');
-      expect(o.ts).to.not.be.undefined;
-      expect(o.data).to.not.be.undefined;
-      expect(o.data).to.deep.equal({eventName: constants.EVENTS.BID_REQUESTED, args: bidRequest});
+      const call0 = adagioQueuePushSpy.getCall(0);
+      expect(call0.args[0].action).to.equal('pb-analytics-event');
+      expect(call0.args[0].ts).to.not.be.undefined;
+      expect(call0.args[0].data).to.not.be.undefined;
+      expect(call0.args[0].data).to.deep.equal({eventName: constants.EVENTS.BID_REQUESTED, args: bidRequest});
 
-      o = w.ADAGIO.queue.shift();
-      expect(o).to.not.be.undefined;
-      expect(o.action).to.equal('pb-analytics-event');
-      expect(o.ts).to.not.be.undefined;
-      expect(o.data).to.not.be.undefined;
-      expect(o.data).to.deep.equal({eventName: constants.EVENTS.BID_RESPONSE, args: bidResponse});
+      const call1 = adagioQueuePushSpy.getCall(1);
+      expect(call1.args[0].action).to.equal('pb-analytics-event');
+      expect(call1.args[0].ts).to.not.be.undefined;
+      expect(call1.args[0].data).to.not.be.undefined;
+      expect(call1.args[0].data).to.deep.equal({eventName: constants.EVENTS.BID_RESPONSE, args: bidResponse});
 
-      o = w.ADAGIO.queue.shift();
-      expect(o).to.not.be.undefined;
-      expect(o.action).to.equal('pb-analytics-event');
-      expect(o.ts).to.not.be.undefined;
-      expect(o.data).to.not.be.undefined;
-      expect(o.data).to.deep.equal({eventName: constants.EVENTS.AUCTION_END, args: {}});
+      const call2 = adagioQueuePushSpy.getCall(2);
+      expect(call2.args[0].action).to.equal('pb-analytics-event');
+      expect(call2.args[0].ts).to.not.be.undefined;
+      expect(call2.args[0].data).to.not.be.undefined;
+      expect(call2.args[0].data).to.deep.equal({eventName: constants.EVENTS.AUCTION_END, args: {}});
     });
   });
 
@@ -177,7 +182,7 @@ describe.skip('adagio analytics adapter', () => {
 
       utils.getWindowTop.restore();
 
-      expect(utils.getWindowTop().ADAGIO.queue).length(0);
+      sandbox.assert.callCount(adagioQueuePushSpy, 0);
     });
   });
 });

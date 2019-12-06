@@ -74,7 +74,6 @@ describe('AdkernelAdn adapter', function () {
       bidderRequestId: 'req1',
       auctionId: '5c66da22-426a-4bac-b153-77360bef5337',
       bidId: 'bidid_5',
-      sizes: [[1920, 1080]],
       mediaTypes: {
         video: {
           playerSize: [1920, 1080],
@@ -91,7 +90,6 @@ describe('AdkernelAdn adapter', function () {
       bidderRequestId: 'req-001',
       auctionId: 'auc-001',
       bidId: 'Bid_01',
-      sizes: [[300, 250], [300, 200]],
       mediaTypes: {
         banner: {sizes: [[300, 250], [300, 200]]},
         video: {context: 'instream', playerSize: [[640, 480]]}

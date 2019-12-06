@@ -161,6 +161,16 @@ export let gdprDataHandler = {
   }
 };
 
+export let uspDataHandler = {
+  consentData: null,
+  setConsentData: function(consentInfo) {
+    uspDataHandler.consentData = consentInfo;
+  },
+  getConsentData: function() {
+    return uspDataHandler.consentData;
+  }
+};
+
 adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, auctionId, cbTimeout, labels) {
   let bidRequests = [];
 
@@ -262,6 +272,7 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
   if (gdprDataHandler.getConsentData()) {
     bidRequests.forEach(bidRequest => {
       bidRequest['gdprConsent'] = gdprDataHandler.getConsentData();
+      bidRequest['uspConsent'] = uspDataHandler.getConsentData();
     });
   }
   return bidRequests;
@@ -324,6 +335,8 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
           s2sAjax
         );
       }
+    } else {
+      utils.logError('missing ' + _s2sConfig.adapter);
     }
   }
 
