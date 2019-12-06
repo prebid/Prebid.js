@@ -71,6 +71,9 @@ export const spec = {
       ttl: 1800
     };
 
+    if (bidRequest.params && bidRequest.params.bidfloor && ad.cpm && ad.cpm < bidRequest.params.bidfloor) {
+      bid.cpm = 0;
+    }
     if (ad.creative_type) {
       bid.mediaType = ad.creative_type;
     }
@@ -207,7 +210,8 @@ function getRequestData(bid, bidderRequest) {
     w: size[0],
     h: size[1],
     tdid: userIdTdid,
-    schain: supplyChain
+    schain: supplyChain,
+    fp: utils.getBidIdParameter('bidfloor', bid.params)
   };
 
   if (bid.mediaType === 'video' || videoMediaType) {
