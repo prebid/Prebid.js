@@ -160,9 +160,9 @@ function getFilteredMediaTypes(mediaTypes) {
 function isSizeConfigActivated(mediaType, sizeConfig) {
   switch (mediaType) {
     case 'banner':
-      return sizeConfig.sizes && sizeConfig.sizes.length > 0;
+      return sizeConfig.sizes && sizeConfig.sizes[0].length > 0;
     case 'video':
-      return sizeConfig.playerSize && sizeConfig.playerSize.length > 0;
+      return sizeConfig.playerSize && sizeConfig.playerSize[0].length > 0;
     case 'native':
       return sizeConfig.active;
     default:
@@ -207,6 +207,13 @@ function getBids({ bidderCode, auctionId, bidderRequestId, adUnits, labels, src 
         logInfo(`SizeMappingV2:: AdUnit:: ${adUnit.code}, Active size buckets after filtration: `, activeSizeBucket);
         logInfo(`SizeMappingV2:: AdUnit:: ${adUnit.code}, Transformed mediaTypes after filtration: `, transformedMediaTypes);
         logInfo(`SizeMappingV2:: AdUnit:: ${adUnit.code}, mediaTypes that got filtered out: `, Object.keys(mediaTypes).filter(mt => Object.keys(transformedMediaTypes).indexOf(mt) === -1));
+
+        // check if adUnit has any active media types remaining, if not drop the adUnit from auction,
+        // else proceed to evaluate the bids object.
+        if (Object.keys(transformedMediaTypes).length === 0) {
+          logInfo(`SizeMappingV2:: Ad Unit: ${adUnit.code} is disabled since there are no active media types after sizeConfig filtration.`);
+          return result;
+        }
         result
           .push(adUnit.bids.filter(bid => bid.bidder === bidderCode)
             .reduce((bids, bid) => {
@@ -235,10 +242,12 @@ function getBids({ bidderCode, auctionId, bidderRequestId, adUnits, labels, src 
                     if (Object.keys(bidderMediaTypes).length > 0) {
                       bid = Object.assign({}, bid, bidderMediaTypes);
                     } else {
-                      return logInfo(`SizeMappingV2:: Bidder: ${bid.bidder} in Ad Unit: ${adUnit.code} is disabled.`);
+                      logInfo(`SizeMappingV2:: Bidder: ${bid.bidder} in Ad Unit: ${adUnit.code} is disabled.`);
+                      return bids;
                     }
                   } else {
-                    return logInfo(`SizeMappingV2:: Bidder: ${bid.bidder} in Ad Unit: ${adUnit.code} is disabled due to failing sizeConfig check.`);
+                    logInfo(`SizeMappingV2:: Bidder: ${bid.bidder} in Ad Unit: ${adUnit.code} is disabled due to failing sizeConfig check.`);
+                    return bids;
                   }
                 }
                 bids.push(Object.assign({}, bid, {
