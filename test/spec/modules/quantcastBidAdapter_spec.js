@@ -337,11 +337,18 @@ describe('Quantcast adapter', function () {
   });
 
   it('propagates GDPR consent string and signal', function () {
-    const gdprConsent = { gdprApplies: true, consentString: 'consentString' }
-    const requests = qcSpec.buildRequests([bidRequest], { gdprConsent });
-    const parsed = JSON.parse(requests[0].data)
+    const bidderRequest = { gdprConsent: { gdprApplies: true, consentString: 'consentString' } }
+    const requests = qcSpec.buildRequests([bidRequest], bidderRequest);
+    const parsed = JSON.parse(requests[0].data);
     expect(parsed.gdprSignal).to.equal(1);
-    expect(parsed.gdprConsent).to.equal(gdprConsent.consentString);
+    expect(parsed.gdprConsent).to.equal('consentString');
+  });
+
+  it('propagates US Privacy/CCPA consent information', function () {
+    const bidderRequest = { uspConsent: 'consentString' }
+    const requests = qcSpec.buildRequests([bidRequest], bidderRequest);
+    const parsed = JSON.parse(requests[0].data);
+    expect(parsed.uspConsent).to.equal('consentString');
   });
 
   describe('`interpretResponse`', function () {

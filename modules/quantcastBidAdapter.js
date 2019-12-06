@@ -101,8 +101,8 @@ export const spec = {
    */
   buildRequests(bidRequests, bidderRequest) {
     const bids = bidRequests || [];
-    const gdprConsent = (bidderRequest && bidderRequest.gdprConsent) ? bidderRequest.gdprConsent : {};
-
+    const gdprConsent = utils.deepAccess(bidderRequest, 'gdprConsent') || {};
+    const uspConsent = utils.deepAccess(bidderRequest, 'uspConsent');
     const referrer = utils.deepAccess(bidderRequest, 'refererInfo.referer');
     const page = utils.deepAccess(bidderRequest, 'refererInfo.canonicalUrl') || config.getConfig('pageUrl') || utils.deepAccess(window, 'location.href');
     const domain = getDomain(page);
@@ -139,6 +139,7 @@ export const spec = {
         bidId: bid.bidId,
         gdprSignal: gdprConsent.gdprApplies ? 1 : 0,
         gdprConsent: gdprConsent.consentString,
+        uspConsent,
         prebidJsVersion: '$prebid.version$'
       };
 
