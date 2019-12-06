@@ -1,11 +1,65 @@
-import { flatten, deepAccess, getDefinedParams, getUniqueIdentifierStr, logInfo, logWarn } from '../src/utils';
+import { flatten, deepAccess, getDefinedParams, getUniqueIdentifierStr, logInfo, logWarn, logError } from '../src/utils';
 import { processNativeAdUnitParams } from '../src/native';
 import { adunitCounter } from '../src/adUnits';
+import includes from 'core-js/library/fn/array/includes';
 
 import { getHook } from '../src/hook';
 
-getHook('getBids').before(function (fn, obj) {
-  return fn(obj, true, getBids(obj));
+// Maps auctionId to a boolean value, value is set to true if Adunits are setup to use the new size mapping, else it's set to false.
+const _sizeMappingUsageMap = {};
+
+function isUsingNewSizeMapping(adUnits, auctionId) {
+  let isUsingSizeMappingV2 = false;
+  adUnits.forEach(adUnit => {
+    if (adUnit.mediaTypes) {
+      // checks for the presence of sizeConfig property at the adUnit.mediaTypes object
+      Object.keys(adUnit.mediaTypes).forEach(mediaType => {
+        if (adUnit.mediaTypes[mediaType].sizeConfig) {
+          if (isUsingSizeMappingV2 === false) {
+            isUsingSizeMappingV2 = true;
+            _sizeMappingUsageMap[auctionId] = isUsingSizeMappingV2;
+          }
+        }
+      });
+
+      // checks for the presence of sizeConfig property at the adUnit.bids.bidder object
+      adUnit.bids.forEach(bidder => {
+        if (bidder.sizeConfig && checkBidderSizeConfigFormat(bidder.sizeConfig)) {
+          if (isUsingNewSizeMapping === false) {
+            isUsingSizeMappingV2 = true;
+            _sizeMappingUsageMap[auctionId] = isUsingSizeMappingV2;
+          }
+        }
+      });
+    }
+  });
+  return isUsingSizeMappingV2;
+}
+
+function checkBidderSizeConfigFormat(sizeConfig) {
+  if (Array.isArray(sizeConfig)) {
+    sizeConfig.forEach(config => {
+      const keys = Object.keys(config);
+      if ((includes(keys, 'minViewPort') && includes(keys, 'relevantMediaTypes'))) {
+        if (Array.isArray(config.minViewPort) && Array.isArray(config.relevantMediaTypes)) {
+          return true;
+        }
+      }
+    });
+  }
+  return false;
+}
+
+getHook('getBids').before(function (fn, bidderInfo) {
+  // check if the adUnit is using sizeMappingV1 specs or sizeMappingV2 specs.
+  if (typeof _sizeMappingUsageMap[bidderInfo.auctionId] === 'undefined') {
+    isUsingNewSizeMapping(bidderInfo.adUnits, bidderInfo.auctionId);
+  }
+  if (_sizeMappingUsageMap[bidderInfo.auctionId]) {
+    return fn.call(this, bidderInfo, getBids(bidderInfo));
+  } else {
+    return fn.call(this, bidderInfo);
+  }
 });
 
 /**
