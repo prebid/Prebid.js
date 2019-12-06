@@ -917,6 +917,11 @@ export const spec = {
       };
     }
 
+    // CCPA
+    if (bidderRequest && bidderRequest.uspConsent) {
+      utils.deepSetValue(payload, 'regs.ext.us_privacy', bidderRequest.uspConsent);
+    }
+
     // coppa compliance
     if (config.getConfig('coppa') === true) {
       utils.deepSetValue(payload, 'regs.coppa', 1);
@@ -1012,13 +1017,18 @@ export const spec = {
   /**
    * Register User Sync.
    */
-  getUserSyncs: (syncOptions, responses, gdprConsent) => {
+  getUserSyncs: (syncOptions, responses, gdprConsent, uspConsent) => {
     let syncurl = USYNCURL + publisherId;
 
     // Attaching GDPR Consent Params in UserSync url
     if (gdprConsent) {
       syncurl += '&gdpr=' + (gdprConsent.gdprApplies ? 1 : 0);
       syncurl += '&gdpr_consent=' + encodeURIComponent(gdprConsent.consentString || '');
+    }
+
+    // CCPA
+    if (uspConsent) {
+      syncurl += '&us_privacy=' + encodeURIComponent(uspConsent);
     }
 
     // coppa compliance
