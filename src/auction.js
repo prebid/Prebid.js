@@ -59,6 +59,7 @@ import { userSync } from './userSync';
 import { hook } from './hook';
 import find from 'core-js/library/fn/array/find';
 import { OUTSTREAM } from './video';
+import { BANNER, VIDEO } from './mediaTypes';
 
 const { syncUsers } = userSync;
 const utils = require('./utils');
@@ -490,7 +491,24 @@ function getPreparedBidForAuction({adUnitCode, bid, bidderRequest, auctionId}) {
   }
 
   // Use the config value 'mediaTypeGranularity' if it has been defined for mediaType, else use 'customPriceBucket'
-  const mediaTypeGranularity = config.getConfig(`mediaTypePriceGranularity.${bid.mediaType}`);
+  let mediaTypeGranularity;
+  if (bid.mediaType === VIDEO ) {
+    const context = bidReq && deepAccess(bidReq, `mediaTypes.${VIDEO}.context`);
+    // first look for mediaTypePriceGranularity.video-{CONTEXT}
+    mediaTypeGranularity = config.getConfig(`mediaTypePriceGranularity.${VIDEO}-${context}`);
+    // if mediaTypeGranularity.video-{context} was not found
+    if (!mediaTypeGranularity) {
+      if (context === OUTSTREAM){
+        // use banner for outstream
+        mediaTypeGranularity = config.getConfig(`mediaTypePriceGranularity.${BANNER}`);
+      } else {
+        // use video for instream
+        mediaTypeGranularity = config.getConfig(`mediaTypePriceGranularity.${VIDEO}`);
+      }
+    }
+  } else {
+    mediaTypeGranularity = config.getConfig(`mediaTypePriceGranularity.${bid.mediaType}`);
+  }
 
   const priceStringsObj = getPriceBucketString(
     bidObject.cpm,
