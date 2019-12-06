@@ -8,7 +8,7 @@ const BIDDER_CODE = 'adroll';
 const BIDDER_ENDPOINT = 'https://d.adroll.com/bid/prebid/';
 const PUBLISHER_TAG_URL = 'https://s.adroll.com/prebid/pubtag.min.js';
 const MAX_PUBTAG_AGE_IN_DAYS = 3;
-const ADAPTER_VERSION = 2;
+const ADAPTER_VERSION = 3;
 
 export const FAST_BID_PUBKEY = `-----BEGIN PUBLIC KEY-----
 MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC/TZ6Gpm7gYg0j6o8LK+sKfYsl
@@ -221,40 +221,45 @@ function _getOsVersion(userAgent) {
  * @return {boolean}
  */
 function tryGetFastBid() {
+  const fastBidStorageKey = 'nextroll_fast_bid';
+  const dateSuffix = '_set_date';
+  const hashPrefix = '// Hash: ';
+
+  let fastBidFromStorage = null;
+  let fastBidAge = null;
+
   try {
-    const fastBidStorageKey = 'nextroll_fast_bid';
-    const dateSuffix = '_set_date';
-    const hashPrefix = '// Hash: ';
-
-    const fastBidFromStorage = localStorage.getItem(fastBidStorageKey);
-    const fastBidAge = localStorage.getItem(fastBidStorageKey + dateSuffix);
-
-    if (fastBidFromStorage !== null && !isFastBidTooOld(fastBidAge)) {
-      // The value stored must contain the file's encrypted hash as first line
-      const firstLineEndPosition = fastBidFromStorage.indexOf('\n');
-      const firstLine = fastBidFromStorage.substr(0, firstLineEndPosition).trim();
-
-      if (firstLine.substr(0, hashPrefix.length) !== hashPrefix) {
-        utils.logWarn('No hash found in FastBid');
-        localStorage.removeItem(fastBidStorageKey);
-      } else {
-        // Remove the hash part from the locally stored value
-        const publisherTagHash = firstLine.substr(hashPrefix.length);
-        const publisherTag = fastBidFromStorage.substr(firstLineEndPosition + 1);
-
-        var jsEncrypt = new JSEncrypt();
-        jsEncrypt.setPublicKey(FAST_BID_PUBKEY);
-        if (jsEncrypt.verify(publisherTag, publisherTagHash, sha256)) {
-          utils.logInfo('Using NextRoll FastBid');
-          eval(publisherTag); // eslint-disable-line no-eval
-        } else {
-          utils.logWarn('Invalid NextRoll FastBid found');
-          localStorage.removeItem(fastBidStorageKey);
-        }
-      }
-    }
+    fastBidFromStorage = localStorage.getItem(fastBidStorageKey);
+    fastBidAge = localStorage.getItem(fastBidStorageKey + dateSuffix);
   } catch (e) {
-    // Unable to get fast bid
+    return;
+  }
+
+  if (fastBidStorageKey === null || fastBidAge === null || isFastBidTooOld(fastBidAge)) {
+    return;
+  }
+
+  // The value stored must contain the file's encrypted hash as first line
+  const firstLineEndPosition = fastBidFromStorage.indexOf('\n');
+  const firstLine = fastBidFromStorage.substr(0, firstLineEndPosition).trim();
+
+  if (firstLine.substr(0, hashPrefix.length) !== hashPrefix) {
+    utils.logWarn('No hash found in FastBid');
+    localStorage.removeItem(fastBidStorageKey);
+  } else {
+    // Remove the hash part from the locally stored value
+    const publisherTagHash = firstLine.substr(hashPrefix.length);
+    const publisherTag = fastBidFromStorage.substr(firstLineEndPosition + 1);
+
+    var jsEncrypt = new JSEncrypt();
+    jsEncrypt.setPublicKey(FAST_BID_PUBKEY);
+    if (jsEncrypt.verify(publisherTag, publisherTagHash, sha256)) {
+      utils.logInfo('Using NextRoll FastBid');
+      eval(publisherTag); // eslint-disable-line no-eval
+    } else {
+      utils.logWarn('Invalid NextRoll FastBid found');
+      localStorage.removeItem(fastBidStorageKey);
+    }
   }
 }
 
