@@ -37,13 +37,7 @@ export const spec = {
       imp: validBidRequests.map(bid => buildImpression(bid)),
       site: buildSite(bidderRequest),
       device: buildDevice(),
-      user: user && user.length == 1 ? user[0] : {},
-      source: {
-        fd: 0,
-        ext: {
-          type: 2
-        }
-      }
+      user: user && user.length == 1 ? user[0] : {}
     };
 
     return {
@@ -99,10 +93,19 @@ function buildImpression(bid) {
     banner: buildBanner(bid),
     displaymanager: 'di_prebid',
     displaymanagerver: DI_M_V,
-    ext: bid.params.custom ? bid.params.custom : {}
+    ext: buildCustomParams(bid)
   };
 }
+function buildCustomParams(bid) {
+  if (bid.params && bid.params.custom) {
+    return {
+      deepintent: bid.params.custom
 
+    }
+  } else {
+    return {}
+  }
+}
 function buildUser(bid) {
   if (bid && bid.params && bid.params.user) {
     return {

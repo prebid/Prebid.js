@@ -19,14 +19,14 @@ describe('Deepintent adapter', function () {
           tagId: '100013',
           w: 728,
           h: 90,
-          user:{
-            id: "di_testuid",
-            buyeruid: "di_testbuyeruid",
+          user: {
+            id: 'di_testuid',
+            buyeruid: 'di_testbuyeruid',
             yob: 2002,
-            gender: "F"
+            gender: 'F'
           },
           custom: {
-            "position": "right-box"
+            'position': 'right-box'
           }
         }
       }
@@ -127,21 +127,15 @@ describe('Deepintent adapter', function () {
       let bRequest = spec.buildRequests(request);
       let data = JSON.parse(bRequest.data);
       expect(data.imp[0].ext).to.be.a('object');
-      expect(data.imp[0].ext.position).to.equal('right-box');
+      expect(data.imp[0].ext.deepintent.position).to.equal('right-box');
     });
-    it('bid request check: source params', function () {
-      let bRequest = spec.buildRequests(request);
-      let data = JSON.parse(bRequest.data);
-      expect(data.source.fd).to.equal(0);
-      expect(data.source.ext.type).to.equal(2);
-    });
-    it('bid request check: displaymanager check',function(){
+    it('bid request check: displaymanager check', function() {
       let bRequest = spec.buildRequests(request);
       let data = JSON.parse(bRequest.data);
       expect(data.imp[0].displaymanager).to.equal('di_prebid');
       expect(data.imp[0].displaymanagerver).to.equal('1.0.0');
     });
-    it('bid request check: user object check',function () {
+    it('bid request check: user object check', function () {
       let bRequest = spec.buildRequests(request);
       let data = JSON.parse(bRequest.data);
       expect(data.user).to.be.a('object');
