@@ -559,7 +559,7 @@ export const spec = {
             cpm: bid.price || 0,
             bidderCode: seatbid.seat,
             ttl: 300,
-            netRevenue: config.getConfig('rubicon.netRevenue') || true,
+            netRevenue: config.getConfig('rubicon.netRevenue') !== false,
             width: bid.w || utils.deepAccess(bidRequest, 'mediaTypes.video.w') || utils.deepAccess(bidRequest, 'params.video.playerWidth'),
             height: bid.h || utils.deepAccess(bidRequest, 'mediaTypes.video.h') || utils.deepAccess(bidRequest, 'params.video.playerHeight'),
           };
@@ -639,7 +639,7 @@ export const spec = {
           cpm: ad.cpm || 0,
           dealId: ad.deal,
           ttl: 300, // 5 minutes
-          netRevenue: config.getConfig('rubicon.netRevenue') || false,
+          netRevenue: config.getConfig('rubicon.netRevenue') !== false,
           rubicon: {
             advertiserId: ad.advertiser, networkId: ad.network
           },
