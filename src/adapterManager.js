@@ -162,7 +162,6 @@ export let gdprDataHandler = {
 };
 
 adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, auctionId, cbTimeout, labels) {
-// adapterManager.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTimeout, labels) {
   let bidRequests = [];
 
   let bidderCodes = getBidderCodes(adUnits);
@@ -266,7 +265,6 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
     });
   }
   return bidRequests;
-// };
 }, 'makeBidRequests');
 
 adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, requestCallbacks, requestBidsTimeout, onTimelyResponse) => {
