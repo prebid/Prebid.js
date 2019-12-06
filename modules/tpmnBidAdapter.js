@@ -119,3 +119,4 @@ function bidToRequest(bid) {
 
   return bidObj;
 }
+
