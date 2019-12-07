@@ -58,7 +58,7 @@ import { config } from './config';
 import { userSync } from './userSync';
 import { hook } from './hook';
 import find from 'core-js/library/fn/array/find';
-import { OUTSTREAM } from './video';
+import { INSTREAM, OUTSTREAM } from './video';
 import { BANNER, VIDEO } from './mediaTypes';
 
 const { syncUsers } = userSync;
@@ -528,12 +528,12 @@ export function getMediaTypeGranularity(mediaType, bidReq, mediaTypeGranularity)
   if (!utils.isPlainObject(mediaTypeGranularity)) {
     return;
   }
-  if (mediaType === VIDEO ) {
+  if (mediaType === VIDEO) {
     if (!utils.isPlainObject(bidReq)) {
       return mediaTypeGranularity[`${VIDEO}`];
     }
 
-    const context = deepAccess(bidReq,`mediaTypes.${VIDEO}.context`);
+    const context = deepAccess(bidReq, `mediaTypes.${VIDEO}.context`);
     if (utils.isStr(context)) {
       // 1. use video-CONTEXT if found in mediaTypePriceGranularity
       if (mediaTypeGranularity.hasOwnProperty(`${VIDEO}-${context}`)) {
