@@ -1,51 +1,94 @@
 import {expect} from 'chai';
 import * as url from 'src/url';
 import {spec} from 'modules/adxcgBidAdapter';
+import {deepClone} from '../../../src/utils';
 
 describe('AdxcgAdapter', function () {
-  describe('isBidRequestValid', function () {
-    let bidBanner = {
-      bidder: 'adxcg',
-      params: {
-        adzoneid: '1'
-      },
-      adUnitCode: 'adunit-code',
-      mediaTypes: {
-        banner: {
-          sizes: [
-            [300, 250],
-            [640, 360],
-            [1, 1]
-          ]
-        }
-      },
-      bidId: '84ab500420319d',
-      bidderRequestId: '7101db09af0db2',
-      auctionId: '1d1a030790a475'
-    };
+  let bidBanner = {
+    bidder: 'adxcg',
+    params: {
+      adzoneid: '1'
+    },
+    adUnitCode: 'adunit-code',
+    mediaTypes: {
+      banner: {
+        sizes: [
+          [300, 250],
+          [640, 360],
+          [1, 1]
+        ]
+      }
+    },
+    bidId: '84ab500420319d',
+    bidderRequestId: '7101db09af0db2',
+    auctionId: '1d1a030790a475'
+  };
 
-    let bidVideo = {
-      bidder: 'adxcg',
-      params: {
-        adzoneid: '1',
+  let bidVideo = {
+    bidder: 'adxcg',
+    params: {
+      adzoneid: '20',
+      video: {
         api: [2],
         protocols: [1, 2],
-        mimes: ['video/mp4', 'video/x-flv'],
+        mimes: ['video/mp4'],
         maxduration: 30
-      },
-      mediaTypes: {
-        video: {
-          context: 'instream',
-          playerSize: [[640, 480]]
-        }
-      },
-      adUnitCode: 'adunit-code',
-      bidId: '84ab500420319d',
-      bidderRequestId: '7101db09af0db2',
-      auctionId: '1d1a030790a475'
-    };
+      }
+    },
+    mediaTypes: {
+      video: {
+        context: 'instream',
+        playerSize: [[640, 480]]
+      }
+    },
+    adUnitCode: 'adunit-code',
+    bidId: '84ab500420319d',
+    bidderRequestId: '7101db09af0db2',
+    auctionId: '1d1a030790a475'
+  };
 
-    it('should return true when required params found', function () {
+  let bidNative = {
+    bidder: 'adxcg',
+    params: {
+      adzoneid: '2379'
+    },
+    mediaTypes: {
+      native: {
+        image: {
+          sendId: false,
+          required: true,
+          sizes: [80, 80]
+        },
+        title: {
+          required: true,
+          len: 75
+        },
+        body: {
+          required: true,
+          len: 200
+        },
+        sponsoredBy: {
+          required: false,
+          len: 20
+        }
+      }
+    },
+    adUnitCode: 'adunit-code',
+    bidId: '84ab500420319d',
+    bidderRequestId: '7101db09af0db2',
+    auctionId: '1d1a030790a475'
+  };
+
+  describe('isBidRequestValid', function () {
+    it('should return true when required params found bidNative', function () {
+      expect(spec.isBidRequestValid(bidNative)).to.equal(true);
+    });
+
+    it('should return true when required params found bidVideo', function () {
+      expect(spec.isBidRequestValid(bidVideo)).to.equal(true);
+    });
+
+    it('should return true when required params found bidBanner', function () {
       expect(spec.isBidRequestValid(bidBanner)).to.equal(true);
     });
 
@@ -72,28 +115,8 @@ describe('AdxcgAdapter', function () {
   });
 
   describe('request function http', function () {
-    let bid = {
-      bidder: 'adxcg',
-      params: {
-        adzoneid: '1'
-      },
-      adUnitCode: 'adunit-code',
-      mediaTypes: {
-        banner: {
-          sizes: [
-            [300, 250],
-            [640, 360],
-            [1, 1]
-          ]
-        }
-      },
-      bidId: '84ab500420319d',
-      bidderRequestId: '7101db09af0db2',
-      auctionId: '1d1a030790a475'
-    };
-
-    it('creates a valid adxcg request url', function () {
-      let request = spec.buildRequests([bid]);
+    it('creates a valid adxcg request url bidBanner', function () {
+      let request = spec.buildRequests([bidBanner]);
       expect(request).to.exist;
       expect(request.method).to.equal('GET');
       let parsedRequestUrl = url.parse(request.url);
@@ -109,33 +132,102 @@ describe('AdxcgAdapter', function () {
       expect(query.format).to.equal('300x250|640x360|1x1');
       expect(query.jsonp).to.be.undefined;
       expect(query.prebidBidIds).to.equal('84ab500420319d');
+      expect(query.bidfloors).to.equal('0');
+
+      expect(query).to.have.property('secure');
+      expect(query).to.have.property('uw');
+      expect(query).to.have.property('uh');
+      expect(query).to.have.property('dpr');
+      expect(query).to.have.property('bt');
+      expect(query).to.have.property('cookies');
+      expect(query).to.have.property('tz');
+      expect(query).to.have.property('dt');
+      expect(query).to.have.property('iob');
+      expect(query).to.have.property('rndid');
+      expect(query).to.have.property('ref');
+      expect(query).to.have.property('url');
+    });
+
+    it('creates a valid adxcg request url bidVideo', function () {
+      let request = spec.buildRequests([bidVideo]);
+      expect(request).to.exist;
+      expect(request.method).to.equal('GET');
+      let parsedRequestUrl = url.parse(request.url);
+      expect(parsedRequestUrl.hostname).to.equal('hbps.adxcg.net');
+      expect(parsedRequestUrl.pathname).to.equal('/get/adi');
+
+      let query = parsedRequestUrl.search;
+      // general part
+      expect(query.renderformat).to.equal('javascript');
+      expect(query.ver).to.equal('r20191128PB30');
+      expect(query.source).to.equal('pbjs10');
+      expect(query.pbjs).to.equal('$prebid.version$');
+      expect(query.adzoneid).to.equal('20');
+      expect(query.format).to.equal('640x480');
+      expect(query.jsonp).to.be.undefined;
+      expect(query.prebidBidIds).to.equal('84ab500420319d');
+      expect(query.bidfloors).to.equal('0');
+
+      expect(query).to.have.property('secure');
+      expect(query).to.have.property('uw');
+      expect(query).to.have.property('uh');
+      expect(query).to.have.property('dpr');
+      expect(query).to.have.property('bt');
+      expect(query).to.have.property('cookies');
+      expect(query).to.have.property('tz');
+      expect(query).to.have.property('dt');
+      expect(query).to.have.property('iob');
+      expect(query).to.have.property('rndid');
+      expect(query).to.have.property('ref');
+      expect(query).to.have.property('url');
+
+      // video specific part
+      expect(query['video.maxduration.0']).to.equal('30');
+      expect(query['video.mimes.0']).to.equal('video/mp4');
+      expect(query['video.context.0']).to.equal('instream');
+    });
+
+    it('creates a valid adxcg request url bidNative', function () {
+      let request = spec.buildRequests([bidNative]);
+      expect(request).to.exist;
+      expect(request.method).to.equal('GET');
+      let parsedRequestUrl = url.parse(request.url);
+      expect(parsedRequestUrl.hostname).to.equal('hbps.adxcg.net');
+      expect(parsedRequestUrl.pathname).to.equal('/get/adi');
+
+      let query = parsedRequestUrl.search;
+      expect(query.renderformat).to.equal('javascript');
+      expect(query.ver).to.equal('r20191128PB30');
+      expect(query.source).to.equal('pbjs10');
+      expect(query.pbjs).to.equal('$prebid.version$');
+      expect(query.adzoneid).to.equal('2379');
+      expect(query.format).to.equal('0x0');
+      expect(query.jsonp).to.be.undefined;
+      expect(query.prebidBidIds).to.equal('84ab500420319d');
+      expect(query.bidfloors).to.equal('0');
+
+      expect(query).to.have.property('secure');
+      expect(query).to.have.property('uw');
+      expect(query).to.have.property('uh');
+      expect(query).to.have.property('dpr');
+      expect(query).to.have.property('bt');
+      expect(query).to.have.property('cookies');
+      expect(query).to.have.property('tz');
+      expect(query).to.have.property('dt');
+      expect(query).to.have.property('iob');
+      expect(query).to.have.property('rndid');
+      expect(query).to.have.property('ref');
+      expect(query).to.have.property('url');
     });
   });
 
   describe('gdpr compliance', function () {
-    let bid = {
-      bidder: 'adxcg',
-      params: {
-        adzoneid: '1'
-      },
-      adUnitCode: 'adunit-code',
-      mediaTypes: {
-        banner: {
-          sizes: [
-            [300, 250],
-            [640, 360],
-            [1, 1]
-          ]
-        }
-      },
-      bidId: '84ab500420319d',
-      bidderRequestId: '7101db09af0db2',
-      auctionId: '1d1a030790a475'
-    };
-
     it('should send GDPR Consent data if gdprApplies', function () {
-      let request = spec.buildRequests([bid], {
-        gdprConsent: {gdprApplies: true, consentString: 'consentDataString'}
+      let request = spec.buildRequests([bidBanner], {
+        gdprConsent: {
+          gdprApplies: true,
+          consentString: 'consentDataString'
+        }
       });
       let parsedRequestUrl = url.parse(request.url);
       let query = parsedRequestUrl.search;
@@ -145,7 +237,7 @@ describe('AdxcgAdapter', function () {
     });
 
     it('should not send GDPR Consent data if gdprApplies is false or undefined', function () {
-      let request = spec.buildRequests([bid], {
+      let request = spec.buildRequests([bidBanner], {
         gdprConsent: {
           gdprApplies: false,
           consentString: 'consentDataString'
@@ -160,30 +252,8 @@ describe('AdxcgAdapter', function () {
   });
 
   describe('userid pubcid should be passed to querystring', function () {
-    let bid = [
-      {
-        bidder: 'adxcg',
-        params: {
-          adzoneid: '1'
-        },
-        adUnitCode: 'adunit-code',
-        mediaTypes: {
-          banner: {
-            sizes: [
-              [300, 250],
-              [640, 360],
-              [1, 1]
-            ]
-          }
-        },
-        bidId: '84ab500420319d',
-        bidderRequestId: '7101db09af0db2',
-        auctionId: '1d1a030790a475'
-      }
-    ];
-
     let bidderRequests = {};
-
+    let bid = deepClone([bidBanner]);
     bid[0].userId = {pubcid: 'pubcidabcd'};
 
     it('should send pubcid if available', function () {
@@ -195,28 +265,7 @@ describe('AdxcgAdapter', function () {
   });
 
   describe('userid tdid should be passed to querystring', function () {
-    let bid = [
-      {
-        bidder: 'adxcg',
-        params: {
-          adzoneid: '1'
-        },
-        adUnitCode: 'adunit-code',
-        mediaTypes: {
-          banner: {
-            sizes: [
-              [300, 250],
-              [640, 360],
-              [1, 1]
-            ]
-          }
-        },
-        bidId: '84ab500420319d',
-        bidderRequestId: '7101db09af0db2',
-        auctionId: '1d1a030790a475'
-      }
-    ];
-
+    let bid = deepClone([bidBanner]);
     let bidderRequests = {};
 
     bid[0].userId = {tdid: 'tdidabcd'};
@@ -230,28 +279,7 @@ describe('AdxcgAdapter', function () {
   });
 
   describe('userid id5id should be passed to querystring', function () {
-    let bid = [
-      {
-        bidder: 'adxcg',
-        params: {
-          adzoneid: '1'
-        },
-        adUnitCode: 'adunit-code',
-        mediaTypes: {
-          banner: {
-            sizes: [
-              [300, 250],
-              [640, 360],
-              [1, 1]
-            ]
-          }
-        },
-        bidId: '84ab500420319d',
-        bidderRequestId: '7101db09af0db2',
-        auctionId: '1d1a030790a475'
-      }
-    ];
-
+    let bid = deepClone([bidBanner]);
     let bidderRequests = {};
 
     bid[0].userId = {id5id: 'id5idsample'};
@@ -265,28 +293,7 @@ describe('AdxcgAdapter', function () {
   });
 
   describe('userid idl_env should be passed to querystring', function () {
-    let bid = [
-      {
-        bidder: 'adxcg',
-        params: {
-          adzoneid: '1'
-        },
-        adUnitCode: 'adunit-code',
-        mediaTypes: {
-          banner: {
-            sizes: [
-              [300, 250],
-              [640, 360],
-              [1, 1]
-            ]
-          }
-        },
-        bidId: '84ab500420319d',
-        bidderRequestId: '7101db09af0db2',
-        auctionId: '1d1a030790a475'
-      }
-    ];
-
+    let bid = deepClone([bidBanner]);
     let bidderRequests = {};
 
     bid[0].userId = {idl_env: 'idl_envsample'};
