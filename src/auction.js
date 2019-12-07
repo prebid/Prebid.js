@@ -491,25 +491,7 @@ function getPreparedBidForAuction({adUnitCode, bid, bidderRequest, auctionId}) {
   }
 
   // Use the config value 'mediaTypeGranularity' if it has been defined for mediaType, else use 'customPriceBucket'
-  let mediaTypeGranularity;
-  if (bid.mediaType === VIDEO ) {
-    const context = bidReq && deepAccess(bidReq, `mediaTypes.${VIDEO}.context`);
-    // first look for mediaTypePriceGranularity.video-{CONTEXT}
-    mediaTypeGranularity = config.getConfig(`mediaTypePriceGranularity.${VIDEO}-${context}`);
-    // if mediaTypeGranularity.video-{context} was not found
-    if (!mediaTypeGranularity) {
-      if (context === OUTSTREAM){
-        // use banner for outstream
-        mediaTypeGranularity = config.getConfig(`mediaTypePriceGranularity.${BANNER}`);
-      } else {
-        // use video for instream
-        mediaTypeGranularity = config.getConfig(`mediaTypePriceGranularity.${VIDEO}`);
-      }
-    }
-  } else {
-    mediaTypeGranularity = config.getConfig(`mediaTypePriceGranularity.${bid.mediaType}`);
-  }
-
+  const mediaTypeGranularity = getMediaTypeGranularity(bid.mediaType, bidReq, config.getConfig('mediaTypePriceGranularity'));
   const priceStringsObj = getPriceBucketString(
     bidObject.cpm,
     (typeof mediaTypeGranularity === 'object') ? mediaTypeGranularity : config.getConfig('customPriceBucket'),
@@ -537,13 +519,50 @@ function setupBidTargeting(bidObject, bidderRequest) {
 }
 
 /**
+ * @param {string} mediaType
+ * @param {BidRequest} bidReq
+ * @param {(Object|undefined)} mediaTypeGranularity
+ * @returns {undefined|*}
+ */
+export function getMediaTypeGranularity(mediaType, bidReq, mediaTypeGranularity) {
+  if (!utils.isPlainObject(mediaTypeGranularity)) {
+    return;
+  }
+  if (mediaType === VIDEO ) {
+    if (!utils.isPlainObject(bidReq)) {
+      return mediaTypeGranularity[`${VIDEO}`];
+    }
+
+    const context = deepAccess(bidReq,`mediaTypes.${VIDEO}.context`);
+    if (utils.isStr(context)) {
+      // 1. use video-CONTEXT if found in mediaTypePriceGranularity
+      if (mediaTypeGranularity.hasOwnProperty(`${VIDEO}-${context}`)) {
+        return mediaTypeGranularity[`${VIDEO}-${context}`];
+      }
+      // 2. use banner for outstream
+      if (context === OUTSTREAM) {
+        return mediaTypeGranularity[BANNER];
+      }
+      // 3. use video for instream
+      if (context === INSTREAM) {
+        return mediaTypeGranularity[VIDEO];
+      }
+    }
+    return mediaTypeGranularity[VIDEO];
+  }
+  // all other mediaTypes get granulartty by mediaType
+  return mediaTypeGranularity[mediaType];
+}
+
+/**
  * This function returns the price granularity defined. It can be either publisher defined or default value
  * @param {string} mediaType
+ * @param {BidRequest} bidReq
  * @returns {string} granularity
  */
-export const getPriceGranularity = (mediaType) => {
+export const getPriceGranularity = (mediaType, bidReq) => {
   // Use the config value 'mediaTypeGranularity' if it has been set for mediaType, else use 'priceGranularity'
-  const mediaTypeGranularity = config.getConfig(`mediaTypePriceGranularity.${mediaType}`);
+  const mediaTypeGranularity = getMediaTypeGranularity(mediaType, bidReq, config.getConfig('mediaTypePriceGranularity'));
   const granularity = (typeof mediaType === 'string' && mediaTypeGranularity) ? ((typeof mediaTypeGranularity === 'string') ? mediaTypeGranularity : 'custom') : config.getConfig('priceGranularity');
   return granularity;
 }
@@ -574,9 +593,10 @@ export const getPriceByGranularity = (granularity) => {
 /**
  * @param {string} mediaType
  * @param {string} bidderCode
+ * @param {BidRequest} bidReq
  * @returns {*}
  */
-export function getStandardBidderSettings(mediaType, bidderCode) {
+export function getStandardBidderSettings(mediaType, bidderCode, bidReq) {
   // factory for key value objs
   function createKeyVal(key, value) {
     return {
@@ -591,7 +611,7 @@ export function getStandardBidderSettings(mediaType, bidderCode) {
     };
   }
   const TARGETING_KEYS = CONSTANTS.TARGETING_KEYS;
-  const granularity = getPriceGranularity(mediaType);
+  const granularity = getPriceGranularity(mediaType, bidReq);
 
   let bidderSettings = $$PREBID_GLOBAL$$.bidderSettings;
   if (!bidderSettings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD]) {
@@ -645,7 +665,7 @@ export function getKeyValueTargetingPairs(bidderCode, custBidObj, bidReq) {
   // 1) set the keys from "standard" setting or from prebid defaults
   if (bidderSettings) {
     // initialize default if not set
-    const standardSettings = getStandardBidderSettings(custBidObj.mediaType, bidderCode);
+    const standardSettings = getStandardBidderSettings(custBidObj.mediaType, bidderCode, bidReq);
     setKeys(keyValues, standardSettings, custBidObj);
 
     // 2) set keys from specific bidder setting override if they exist
