@@ -84,7 +84,7 @@ describe('AdxcgAdapter', function () {
       expect(spec.isBidRequestValid(bidNative)).to.equal(true);
     });
 
-    it('should return true when required params found bidVideo', function () {
+    it('should return true when required params  found bidVideo', function () {
       expect(spec.isBidRequestValid(bidVideo)).to.equal(true);
     });
 
