@@ -1,8 +1,16 @@
-import { flatten, deepAccess, getDefinedParams, getUniqueIdentifierStr, logInfo, logWarn, logError } from '../src/utils';
+import {
+  flatten,
+  deepAccess,
+  getDefinedParams,
+  getUniqueIdentifierStr,
+  logInfo,
+  logWarn,
+  logError,
+  isValidMediaTypes
+} from '../src/utils';
 import { processNativeAdUnitParams } from '../src/native';
 import { adunitCounter } from '../src/adUnits';
 import includes from 'core-js/library/fn/array/includes';
-
 import { getHook } from '../src/hook';
 
 // Maps auctionId to a boolean value, value is set to true if Adunits are setup to use the new size mapping, else it's set to false.
@@ -72,12 +80,10 @@ function isLabelActivated(bidOrAdUnit, activeLabels) {
   let labelOperator;
   const labelsFound = Object.keys(bidOrAdUnit).filter(prop => prop === 'labelAny' || prop === 'labelAll');
   if (labelsFound && labelsFound.length > 1) {
-    const lastDeclaredOperator = labelsFound[labelsFound.length - 1];
-    logWarn(`SizeMappingV2:: Ad Unit: ${bidOrAdUnit.code} has multiple label operators. Using the last declared operator ${lastDeclaredOperator}`);
-    labelOperator = lastDeclaredOperator;
-  } else {
-    labelOperator = labelsFound[0];
+    logError(`SizeMappingV2:: Ad Unit: ${bidOrAdUnit.code} has multiple label operators. Using the first declared operator ${labelsFound[0]}`);
   }
+  labelOperator = labelsFound[0];
+
   if (labelOperator === 'labelAll') {
     if (bidOrAdUnit.labelAll.length === 0) {
       logWarn(`SizeMappingV2:: Ad Unit: ${bidOrAdUnit.code} has declared property labelAll with an empty array. Ad Unit is still enabled!`);
@@ -201,12 +207,11 @@ function getRelevantMediaTypesForBidder(sizeConfig, activeViewport) {
 function getBids({ bidderCode, auctionId, bidderRequestId, adUnits, labels, src }) {
   return adUnits.reduce((result, adUnit) => {
     if (isLabelActivated(adUnit, labels)) {
-      if (adUnit.mediaTypes) {
+      if (adUnit.mediaTypes && isValidMediaTypes(adUnit.mediaTypes)) {
         const { mediaTypes, activeSizeBucket, activeViewport, transformedMediaTypes } = getFilteredMediaTypes(adUnit.mediaTypes);
-        logInfo(`SizeMappingV2:: AdUnit:: ${adUnit.code}, Size of the viewport detected: `, activeViewport);
-        logInfo(`SizeMappingV2:: AdUnit:: ${adUnit.code}, Active size buckets after filtration: `, activeSizeBucket);
-        logInfo(`SizeMappingV2:: AdUnit:: ${adUnit.code}, Transformed mediaTypes after filtration: `, transformedMediaTypes);
-        logInfo(`SizeMappingV2:: AdUnit:: ${adUnit.code}, mediaTypes that got filtered out: `, Object.keys(mediaTypes).filter(mt => Object.keys(transformedMediaTypes).indexOf(mt) === -1));
+        logInfo(`SizeMappingV2:: AdUnit: ${adUnit.code}, Bidder: ${bidderCode} - Active size buckets after filtration: `, activeSizeBucket);
+        logInfo(`SizeMappingV2:: AdUnit: ${adUnit.code}, Bidder: ${bidderCode} - Transformed mediaTypes after filtration: `, transformedMediaTypes);
+        logInfo(`SizeMappingV2:: AdUnit: ${adUnit.code}, Bidder: ${bidderCode} - mediaTypes that got filtered out: `, Object.keys(mediaTypes).filter(mt => Object.keys(transformedMediaTypes).indexOf(mt) === -1));
 
         // check if adUnit has any active media types remaining, if not drop the adUnit from auction,
         // else proceed to evaluate the bids object.
@@ -263,9 +268,12 @@ function getBids({ bidderCode, auctionId, bidderRequestId, adUnits, labels, src 
                 }));
                 return bids;
               } else {
-                return logInfo(`SizeMappingV2:: Bidder: ${bid.bidder} in Ad Unit: ${adUnit.code} is disabled due to failing label check.`);
+                logInfo(`SizeMappingV2:: Bidder: ${bid.bidder} in Ad Unit: ${adUnit.code} is disabled due to failing label check.`);
+                return bids;
               }
             }, []));
+      } else {
+        logWarn(`SizeMappingV2:: Ad Unit: ${adUnit.code} has declared invalid mediaTypes or has not declared a mediaTypes property`);
       }
     } else {
       return logInfo(`SizeMappingV2:: Ad Unit: ${adUnit.code} is disabled due to failing label check.`);
