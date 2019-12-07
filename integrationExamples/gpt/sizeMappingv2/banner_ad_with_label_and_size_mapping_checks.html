@@ -1,0 +1,130 @@
+<html>
+
+<head>
+	<script async src="../../../build/dev/prebid.js"></script>
+	<script async src="https://www.googletagservices.com/tag/js/gpt.js"></script>
+	<script>
+		const FAILSAFE_TIMEOUT = 3300;
+		const PREBID_TIMEOUT = 1000;
+
+		const adUnits = [{
+			code: 'div-gpt-ad-1460505748561-0',
+			mediaTypes: {
+				banner: {
+					sizeConfig: [
+						{ minViewPort: [0, 0], sizes: [] },		// remove if < 750px
+						{ minViewPort: [750, 0], sizes: [[300, 250], [300, 600]] },		// between 750px and 1199px
+						{ minViewPort: [1200, 0], sizes: [[970, 90], [728, 90], [300, 250]] },  // between 1200px and 1599px
+						{ minViewPort: [1600, 0], sizes: [[1000, 300], [970, 90], [728, 90], [300, 250]] } // greater than 1600px
+					]
+				}
+			},
+			// incase multiple label operators are declared, it'll select the first operator, and throw a warning to the console
+			// indicating multiple label operators are present in this Ad Unit.
+			// So, in this case, it'll select 'labelAny' operator, the first declared label operator.
+			labelAny: ['desktop'],
+			labelAll: ['desktop', 'tablet'],
+			bids: [{
+				bidder: 'appnexus',
+				params: {
+					placementId: 13144370
+				}
+			}, {
+				bidder: 'rubicon',
+				params: {
+					accountId: 14062,
+					siteId: 70608,
+					zoneId: 498816
+				},
+				// Again, it'll select the labelAll opertor and 'Rubicon' will NOT participate in the auction.
+				labelAll: ['desktop', 'tablet'],
+				labelAny: ['desktop', 'tablet'],
+			}]
+		}, {
+			code: 'div-gpt-ad-1460505748561-1',
+			mediaTypes: {
+				banner: {
+					sizeConfig: [
+						{ minViewPort: [0, 0], sizes: [] },		// remove if < 750px
+						{ minViewPort: [750, 0], sizes: [[300, 250], [300, 600]] },		// between 750px and 1199px
+						{ minViewPort: [1200, 0], sizes: [[970, 90], [728, 90], [300, 250]] },  // between 1200px and 1599px
+						{ minViewPort: [1600, 0], sizes: [[1000, 300], [970, 90], [728, 90], [300, 250]] } // greater than 1600px
+					]
+				}
+			},
+			// Ad Unit will remail active.
+			labelAll: ['desktop', 'mobile', 'euro'],
+			bids: [{
+				bidder: 'appnexus',
+				params: {
+					placementId: 13144370
+				}
+			}, {
+				bidder: 'rubicon',
+				params: {
+					accountId: 14062,
+					siteId: 70608,
+					zoneId: 498816
+				},
+				labelAny: ['desktop', 'tablet'], // Rubicon will remain active
+			}]
+		}];
+		var pbjs = pbjs || {};
+		pbjs.que = pbjs.que || [];
+
+	</script>
+
+	<script>
+		var googletag = googletag || {};
+		googletag.cmd = googletag.cmd || [];
+		googletag.cmd.push(function () {
+			googletag.pubads().disableInitialLoad();
+		});
+
+		pbjs.que.push(function () {
+			pbjs.addAdUnits(adUnits);
+			pbjs.requestBids({
+				bidsBackHandler: sendAdserverRequest,
+				labels: ['desktop', 'mobile', 'euro'],
+				timeout: PREBID_TIMEOUT
+			});
+		});
+
+		function sendAdserverRequest() {
+			if (pbjs.adserverRequestSent) return;
+			pbjs.adserverRequestSent = true;
+			googletag.cmd.push(function () {
+				pbjs.que.push(function () {
+					pbjs.setTargetingForGPTAsync();
+					googletag.pubads().refresh();
+				});
+			});
+		}
+
+		setTimeout(function () {
+			sendAdserverRequest();
+		}, FAILSAFE_TIMEOUT);
+
+	</script>
+
+	<script>
+		googletag.cmd.push(function () {
+			googletag.defineSlot('/19968336/header-bid-tag-0', [728, 90], 'div-gpt-ad-1460505748561-0').addService(googletag.pubads());
+
+			googletag.pubads().enableSingleRequest();
+			googletag.enableServices();
+		});
+	</script>
+</head>
+
+<body>
+	<h2>Prebid.js Test</h2>
+	<h5>Div-1</h5>
+	<div id='div-gpt-ad-1460505748561-0'>
+		<script type='text/javascript'>
+			googletag.cmd.push(function () { googletag.display('div-gpt-ad-1460505748561-0'); });
+		</script>
+	</div>
+</body>
+
+</html>
