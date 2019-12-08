@@ -32,7 +32,6 @@ describe('rtbsolutionsBidAdapterTests', function () {
       sizes: [[240, 400]]
     });
     let request = spec.buildRequests(true, bidderRequest);
-    console.log(request);
     let req_data = request.data[0];
     expect(req_data.bid_id).to.equal('bid1234');
   });
