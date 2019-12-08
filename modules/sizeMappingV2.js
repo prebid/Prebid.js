@@ -184,9 +184,10 @@ getHook('getBids').before(function (fn, bidderInfo) {
 });
 
 /**
- * Given an Ad Unit or a Bid as an input, returns a boolean telling if the Ad Unit/ Bid is active based on label checks on the Ad unit/Bid object
+ * Given an Ad Unit or a Bid as an input, returns a boolean telling if the Ad Unit/ Bid is active based on label checks
  * @param {Object<BidOrAdUnit>} bidOrAdUnit Either the Ad Unit object or the Bid object
  * @param {Array<string>} activeLabels List of active labels passed as an argument to pbjs.requestBids function
+ * @param {string} adUnitCode Unique string identifier for an Ad Unit.
  * @returns {boolean} Represents if the Ad Unit or the Bid is active or not
  */
 function isLabelActivated(bidOrAdUnit, activeLabels, adUnitCode) {
