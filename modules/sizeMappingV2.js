@@ -119,10 +119,11 @@ function checkAdUnitSetupHook(adUnits) {
     }
 
     if (mediaTypes && mediaTypes.native) {
+      const native = mediaTypes.native;
       adUnit = validateNativeMediaType(adUnit);
 
       if (mediaTypes.native.sizeConfig) {
-        nativeObj.sizeConfig.forEach(config => {
+        native.sizeConfig.forEach(config => {
           // verify if all config objects include "minViewPort" and "active" property.
           // if not, remove the mediaTypes.native object
           const keys = Object.keys(config);
@@ -156,12 +157,12 @@ function checkBidderSizeConfigFormat(sizeConfig) {
   if (Array.isArray(sizeConfig)) {
     sizeConfig.forEach(config => {
       const keys = Object.keys(config);
-      if ((includes(keys, 'minViewPort') && includes(keys, 'relevantMediaTypes'))) {
-        if (isArrayOfNums(config.minViewPort, 2) &&
-          Array.isArray(config.relevantMediaTypes) &&
-          config.relevantMediaTypes.every(mt => (includes(['banner', 'video', 'native'], mt)) || (mt === 'none'))) {
-          didCheckPass = didCheckPass && true;
-        }
+      if ((includes(keys, 'minViewPort') &&
+        includes(keys, 'relevantMediaTypes')) &&
+        isArrayOfNums(config.minViewPort, 2) &&
+        Array.isArray(config.relevantMediaTypes) &&
+        config.relevantMediaTypes.every(mt => (includes(['banner', 'video', 'native'], mt)) || (mt === 'none'))) {
+        didCheckPass = didCheckPass && true;
       } else {
         didCheckPass = false;
       }
@@ -280,9 +281,9 @@ function getFilteredMediaTypes(mediaTypes) {
 function isSizeConfigActivated(mediaType, sizeConfig) {
   switch (mediaType) {
     case 'banner':
-      return sizeConfig.sizes && sizeConfig.sizes[0].length > 0;
+      return sizeConfig.sizes && sizeConfig.sizes.length > 0;
     case 'video':
-      return sizeConfig.playerSize && sizeConfig.playerSize[0].length > 0;
+      return sizeConfig.playerSize && sizeConfig.playerSize.length > 0;
     case 'native':
       return sizeConfig.active;
     default:
@@ -365,7 +366,7 @@ function getBids({ bidderCode, auctionId, bidderRequestId, adUnits, labels, src 
                       }, {});
 
                     if (Object.keys(bidderMediaTypes).length > 0) {
-                      bid = Object.assign({}, bid, bidderMediaTypes);
+                      bid = Object.assign({}, bid, { mediaTypes: bidderMediaTypes });
                     } else {
                       logInfo(`SizeMappingV2:: Bidder: ${bid.bidder} in Ad Unit: ${adUnit.code} is disabled.`);
                       return bids;
