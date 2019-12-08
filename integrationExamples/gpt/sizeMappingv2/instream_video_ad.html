@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<link rel="icon" type="image/png" href="/favicon.png">
+	<script async src="../../../build/dev/prebid.js"></script>
+	<meta charset="utf-8" />
+	<title>Prebid.js JW Platform Example</title>
+	<script>
+		var pbjs = pbjs || {};
+		pbjs.que = pbjs.que || [];
+
+		// define invokeVideoPlayer in advance in case we get the bids back from prebid before the entire page loads
+		var tempTag = false;
+		var invokeVideoPlayer = function (url) {
+			tempTag = url;
+		}
+		var videoAdUnit = {
+			code: 'video1',
+			mediaTypes: {
+				video: {
+					sizeConfig: [
+						{ minViewPort: [0, 0], playerSize: [] },
+						{ minViewPort: [800, 0], playerSize: [640, 480] }
+					],
+					context: 'instream'
+				}
+			},
+			bids: [{
+				bidder: 'appnexus',
+				params: {
+					placementId: 13232361,
+					video: {
+						skippable: true,
+						playback_methods: ['auto_play_sound_off']
+					}
+				}
+			}]
+		};
+
+		pbjs.que.push(function () {
+			pbjs.addAdUnits(videoAdUnit); // add your ad units to the bid request​
+			pbjs.setConfig({
+				debug: true,
+				cache: {
+					url: 'https://prebid.adnxs.com/pbc/v1/cache'
+				}
+			});
+
+			pbjs.requestBids({
+				bidsBackHandler: function (bids) {
+					var videoUrl = pbjs.adServers.dfp.buildVideoUrl({
+						adUnit: videoAdUnit,
+						params: {
+							iu: '/19968336/prebid_cache_video_adunit',
+							cust_params: {
+								section: 'blog',
+								anotherKey: 'anotherValue'
+							},
+							output: 'vast'
+						}
+					});
+					invokeVideoPlayer(videoUrl);
+				}
+			});
+		});
+</script>
+</head>
+
+<body>
+	<h2>Prebid Video - JW Platform</h2>
+	<br>
+	<br>
+	<div id="myElement1"></div>
+	<!-- This line loads a player without loading any video content -->
+	<!-- Replace this with the correct url for your player -->
+	<script src="https://content.jwplatform.com/libraries/72xIKEe6.js"></script>
+	<script>
+		// we initialize our player instance, specifying the div to load it into
+		var playerInstance = jwplayer('myElement1');
+
+		function invokeVideoPlayer(url) {
+			// this calls setup on the player we initialized
+			// this will use the settings defined in the player we loaded above unless you override them here
+			playerInstance.setup({
+				// this line loads a playlist from your jwplatform account (in either json or rss format)
+				// this can also be a single media file by specifying "file" : "content.jwplatform.com/videos/VIDEOKEY.mp4"
+				// Replace this with the correct url for your playlist
+				"playlist": "https://content.jwplatform.com/feeds/ae4tmw2D.json",
+				"width": 640,
+				"height": 480,
+				// we enable vast advertising for this player
+				"advertising": {
+					"client": "vast",
+					// url is the vast tag url that we passed in when we called invokeVideoPlayer in the header
+					"tag": url,
+				},
+			});
+		}
+		if (tempTag) {
+			invokeVideoPlayer(tempTag);
+			tempTag = false;
+		}
+
+	</script>
+</body>
+
+</html>
