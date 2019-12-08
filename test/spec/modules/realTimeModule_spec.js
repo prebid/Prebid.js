@@ -179,10 +179,10 @@ describe('Real time module', function() {
       expect(script.async).to.equal(true);
 
       const slots = createSlots();
-      const test1 = isIdMatchingAdUnit('browsiAd_1', slots, ['/57778053/Browsi_Demo_300x250']); // true
-      const test2 = isIdMatchingAdUnit('browsiAd_1', slots, ['/57778053/Browsi_Demo_300x250', '/57778053/Browsi']); // true
-      const test3 = isIdMatchingAdUnit('browsiAd_1', slots, ['/57778053/Browsi_Demo_Low']); // false
-      const test4 = isIdMatchingAdUnit('browsiAd_1', slots, []); // true
+      const test1 = isIdMatchingAdUnit('browsiAd_1', slots[0], ['/57778053/Browsi_Demo_300x250']); // true
+      const test2 = isIdMatchingAdUnit('browsiAd_1', slots[0], ['/57778053/Browsi_Demo_300x250', '/57778053/Browsi']); // true
+      const test3 = isIdMatchingAdUnit('browsiAd_1', slots[0], ['/57778053/Browsi_Demo_Low']); // false
+      const test4 = isIdMatchingAdUnit('browsiAd_1', slots[0], []); // true
 
       expect(test1).to.equal(true);
       expect(test2).to.equal(true);

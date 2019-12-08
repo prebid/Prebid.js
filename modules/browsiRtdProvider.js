@@ -13,16 +13,19 @@
  * @property {string} pubKey
  * @property {string} url
  * @property {?string} keyName
- * @property {number} auctionDelay
+ * @property {?number} auctionDelay
+ * @property {?number} timeout
  */
 
 import {config} from '../src/config.js';
 import * as utils from '../src/utils';
 import {submodule} from '../src/hook';
-import {ajax} from '../src/ajax';
+import {ajaxBuilder} from '../src/ajax';
 
 /** @type {string} */
 const MODULE_NAME = 'realTimeData';
+/** @type {number} */
+const DEF_TIMEOUT = 1000;
 /** @type {ModuleParams} */
 let _moduleParams = {};
 /** @type {null|Object} */
@@ -32,16 +35,20 @@ let _dataReadyCallback = null;
 
 /**
  * add browsi script to page
- * @param {string} bptUrl
+ * @param {Object} data
  */
-export function addBrowsiTag(bptUrl) {
+export function addBrowsiTag(data) {
   let script = document.createElement('script');
   script.async = true;
   script.setAttribute('data-sitekey', _moduleParams.siteKey);
   script.setAttribute('data-pubkey', _moduleParams.pubKey);
   script.setAttribute('prebidbpt', 'true');
   script.setAttribute('id', 'browsi-tag');
-  script.setAttribute('src', bptUrl);
+  script.setAttribute('src', data.u);
+  script.prebidData = utils.deepClone(data);
+  if (_moduleParams.keyName) {
+    script.prebidData.kn = _moduleParams.keyName;
+  }
   document.head.appendChild(script);
   return script;
 }
@@ -111,17 +118,20 @@ function sendDataToModule(adUnits, onDone) {
         return onDone({});
       }
       const slots = getAllSlots();
-      if (!slots) {
+      if (!slots || !slots.length) {
         return onDone({});
       }
       let dataToReturn = adUnits.reduce((rp, cau) => {
         const adUnitCode = cau && cau.code;
         if (!adUnitCode) { return rp }
-        const predictionData = _predictions[adUnitCode];
+        const adSlot = getSlotById(adUnitCode);
+        if (!adSlot) { return rp }
+        const macroId = getMacroId(_predictionsData.plidm, adUnitCode, adSlot);
+        const predictionData = _predictions[macroId];
         if (!predictionData) { return rp }
 
         if (predictionData.p) {
-          if (!isIdMatchingAdUnit(adUnitCode, slots, predictionData.w)) {
+          if (!isIdMatchingAdUnit(adUnitCode, adSlot, predictionData.w)) {
             return rp;
           }
           rp[adUnitCode] = getKVObject(predictionData.p, _predictionsData.kn);
@@ -157,17 +167,53 @@ function getKVObject(p, keyName) {
 /**
  * check if placement id matches one of given ad units
  * @param {number} id placement id
- * @param {Object[]} allSlots google slots on page
+ * @param {Object} slot google slot
  * @param {string[]} whitelist ad units
  * @return {boolean}
  */
-export function isIdMatchingAdUnit(id, allSlots, whitelist) {
+export function isIdMatchingAdUnit(id, slot, whitelist) {
   if (!whitelist || !whitelist.length) {
     return true;
   }
-  const slot = allSlots.filter(s => s.getSlotElementId() === id);
-  const slotAdUnits = slot.map(s => s.getAdUnitPath());
-  return slotAdUnits.some(a => whitelist.indexOf(a) !== -1);
+  const slotAdUnits = slot.getAdUnitPath();
+  return whitelist.indexOf(slotAdUnits) !== -1;
+}
+
+/**
+ * get GPT slot by placement id
+ * @param {string} id placement id
+ * @return {?Object}
+ */
+function getSlotById(id) {
+  const slots = getAllSlots();
+  if (!slots || !slots.length) {
+    return null;
+  }
+  return slots.filter(s => s.getSlotElementId() === id)[0] || null;
+}
+
+/**
+ * generate id according to macro script
+ * @param {string} macro replacement macro
+ * @param {string} id placement id
+ * @param {Object} slot google slot
+ * @return {?Object}
+ */
+function getMacroId(macro, id, slot) {
+  if (macro) {
+    try {
+      const macroString = macro
+        .replace(/<DIV_ID>/g, `${id}`)
+        .replace(/<AD_UNIT>/g, `${slot.getAdUnitPath()}`)
+        .replace(/<KEY_(\w+)>/g, (match, p1) => {
+          return (p1 && slot.getTargeting(p1).join('_')) || 'NA';
+        });
+      return eval(macroString);// eslint-disable-line no-eval
+    } catch (e) {
+      utils.logError(`failed to evaluate: ${macro}`);
+    }
+  }
+  return id;
 }
 
 /**
@@ -175,6 +221,8 @@ export function isIdMatchingAdUnit(id, allSlots, whitelist) {
  * @param {string} url server url with query params
  */
 function getPredictionsFromServer(url) {
+  let ajax = ajaxBuilder(_moduleParams.auctionDelay || _moduleParams.timeout || DEF_TIMEOUT);
+
   ajax(url,
     {
       success: function (response, req) {
@@ -182,11 +230,11 @@ function getPredictionsFromServer(url) {
           try {
             const data = JSON.parse(response);
             if (data && data.p && data.kn) {
-              setData({p: data.p, kn: data.kn});
+              setData({p: data.p, kn: data.kn, plidm: data.plidm});
             } else {
               setData({});
             }
-            addBrowsiTag(data.u);
+            addBrowsiTag(data);
           } catch (err) {
             utils.logError('unable to parse data');
             setData({})
@@ -237,6 +285,7 @@ export function init(config) {
       _moduleParams = realTimeData.dataProviders && realTimeData.dataProviders.filter(
         pr => pr.name && pr.name.toLowerCase() === 'browsi')[0].params;
       _moduleParams.auctionDelay = realTimeData.auctionDelay;
+      _moduleParams.timeout = realTimeData.timeout;
     } catch (e) {
       _moduleParams = {};
     }
