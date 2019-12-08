@@ -976,6 +976,132 @@ describe('auctionmanager.js', function () {
     });
   });
 
+  describe('addBidResponse', function () {
+    let createAuctionStub;
+    let adUnits;
+    let adUnitCodes;
+    let spec;
+    let spec1;
+    let auction;
+    let ajaxStub;
+
+    let bids = TEST_BIDS;
+    let bids1 = [mockBid({ bidderCode: BIDDER_CODE1 })];
+    let customPriceGranularityVideo = {
+      'buckets': [{
+        'min': 0,
+        'max': 3,
+        'increment': 0.01,
+        'cap': true
+      }]
+    };
+    let customPriceGranularityOutstream = utils.deepClone(customPriceGranularityVideo);
+    customPriceGranularityOutstream.buckets[0].min = 1;
+    let customPriceGranularityInstream = utils.deepClone(customPriceGranularityVideo);
+    customPriceGranularityInstream.buckets[0].min = 2;
+
+    before(function () {
+      let bidRequests = [
+        mockBidRequest(bids[0]),
+        mockBidRequest(bids1[0], { adUnitCode: ADUNIT_CODE1 })
+      ];
+      let makeRequestsStub = sinon.stub(adapterManager, 'makeBidRequests');
+      makeRequestsStub.returns(bidRequests);
+
+      ajaxStub = sinon.stub(ajaxLib, 'ajaxBuilder').callsFake(mockAjaxBuilder);
+    });
+
+    after(function () {
+      ajaxStub.restore();
+      adapterManager.makeBidRequests.restore();
+    });
+
+    beforeEach(function () {
+      adUnits = [{
+        code: ADUNIT_CODE,
+        bids: [
+          {
+            bidder: BIDDER_CODE,
+            mediaTypes: {
+              video: {
+                context: 'instream'
+              }
+            },
+            params: {
+              placementId: 'id',
+              video: {
+                size_id: 7
+              }
+            }
+          },
+        ]
+      }, {
+        code: ADUNIT_CODE1,
+        bids: [
+          {
+            bidder: BIDDER_CODE1,
+            mediaTypes: {
+              video: {
+                context: 'outstream',
+                mimes: ['video/mp4', 'video/x-flv'],
+                api: [2],
+                minduration: 15,
+                playerSize: [640, 480],
+                maxduration: 30,
+                startdelay: 0,
+                playbackmethod: [2],
+                linearity: 1,
+                skip: 1,
+                skipafter: 15,
+                pos: 1,
+                protocols: [1, 2, 3, 4, 5, 6]
+              }
+            },
+            params: {
+              placementId: 'id',
+              video: {
+                size_id: 7
+              }
+            }},
+        ]
+      }];
+      adUnitCodes = adUnits.map(({ code }) => code);
+      auction = auctionModule.newAuction({adUnits, adUnitCodes, callback: function() {}, cbTimeout: 3000});
+      createAuctionStub = sinon.stub(auctionModule, 'newAuction');
+      createAuctionStub.returns(auction);
+
+      spec = mockBidder(BIDDER_CODE, bids);
+      spec1 = mockBidder(BIDDER_CODE1, bids1);
+
+      registerBidder(spec);
+      registerBidder(spec1);
+    });
+
+    afterEach(function () {
+      auctionModule.newAuction.restore();
+    });
+
+    it('should handle video mediaType price granularities correctly', function () {
+      sinon.stub(config, 'getConfig').withArgs('mediaTypePriceGranularity').returns({
+        'banner': 'medium',
+        'video': customPriceGranularityVideo,
+        'video-instream': customPriceGranularityInstream,
+        'video-outstream': customPriceGranularityOutstream
+      });
+      const bidsCopy = [Object.assign({}, bids[0], { mediaType: 'video' })];
+      const bids1Copy = [Object.assign({}, bids1[0], { mediaType: 'video' })];
+
+      spec.interpretResponse.returns(bidsCopy);
+      spec1.interpretResponse.returns(bids1Copy);
+
+      auction.callBids();
+      assert.equal(auction.getBidsReceived()[0].pbCg, '3.00');
+      assert.equal(auction.getBidsReceived()[1].pbCg, '1.99');
+
+      config.getConfig.restore();
+    });
+  });
+
   describe('auctionCallbacks', function() {
     let bids = TEST_BIDS;
     let bidRequests;

@@ -58,7 +58,7 @@ import { config } from './config';
 import { userSync } from './userSync';
 import { hook } from './hook';
 import find from 'core-js/library/fn/array/find';
-import { INSTREAM, OUTSTREAM } from './video';
+import { OUTSTREAM } from './video';
 import { BANNER, VIDEO } from './mediaTypes';
 
 const { syncUsers } = userSync;
@@ -542,10 +542,6 @@ export function getMediaTypeGranularity(mediaType, bidReq, mediaTypeGranularity)
       // 2. use banner for outstream
       if (context === OUTSTREAM) {
         return mediaTypeGranularity[BANNER];
-      }
-      // 3. use video for instream
-      if (context === INSTREAM) {
-        return mediaTypeGranularity[VIDEO];
       }
     }
     return mediaTypeGranularity[VIDEO];
