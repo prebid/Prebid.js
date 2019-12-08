@@ -8,7 +8,7 @@ Maintainer: info@rtbsolutions.pro
 
 You can use this adapter to get a bid from rtbsolutions.
 
-About us : http://rtbsolutions.pro
+About us: http://rtbsolutions.pro
 
 
 # Test Parameters
@@ -36,7 +36,7 @@ About us : http://rtbsolutions.pro
 
 Where:
 
-* blcokId - Block ID from platform (required)
+* blockId - Block ID from platform (required)
 * s1..s4 - Sub Id (optional)
 
 # Example page
