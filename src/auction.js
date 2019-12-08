@@ -154,7 +154,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
       _auctionEnd = Date.now();
 
       events.emit(CONSTANTS.EVENTS.AUCTION_END, getProperties());
-      bidsBackCallback(_adUnitCodes, function () {
+      bidsBackCallback(_adUnits, function () {
         try {
           if (_callback != null) {
             const adUnitCodes = _adUnitCodes;
