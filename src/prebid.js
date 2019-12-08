@@ -1,7 +1,7 @@
 /** @module pbjs */
 
 import { getGlobal } from './prebidGlobal';
-import { flatten, uniques, isGptPubadsDefined, adUnitsFilter, getLatestHighestCpmBid, isArrayOfNums, checkSizeConfigSetup } from './utils';
+import { flatten, uniques, isGptPubadsDefined, adUnitsFilter, getLatestHighestCpmBid, isArrayOfNums } from './utils';
 import { listenMessagesFromCreative } from './secureCreatives';
 import { userSync } from './userSync.js';
 import { loadScript } from './adloader';
@@ -69,92 +69,96 @@ function setRenderSize(doc, width, height) {
   }
 }
 
-export const checkAdUnitSetup = hook('sync', function (adUnits) {
-  adUnits.forEach((adUnit) => {
-    const mediaTypes = adUnit.mediaTypes;
-    const normalizedSize = utils.getAdUnitSizes(adUnit);
+export function validateSizes(sizes, targLength) {
+  let cleanSizes = [];
+  if (utils.isArray(sizes) && ((targLength) ? sizes.length === targLength : sizes.length > 0)) {
+    // check if an array of arrays or array of numbers
+    if (sizes.every(sz => isArrayOfNums(sz, 2))) {
+      cleanSizes = sizes;
+    } else if (isArrayOfNums(sizes, 2)) {
+      cleanSizes.push(sizes);
+    }
+  }
+  return cleanSizes;
+}
 
+export function validateBannerMediaType(adUnit) {
+  const banner = adUnit.mediaTypes.banner;
+  const bannerSizes = validateSizes(banner.sizes);
+  if (bannerSizes.length > 0) {
+    banner.sizes = bannerSizes;
+    // Deprecation Warning: This property will be deprecated in next release in favor of adUnit.mediaTypes.banner.sizes
+    adUnit.sizes = bannerSizes;
+  } else {
+    utils.logError('Detected a mediaTypes.banner object without a proper sizes field. Please ensure the sizes are listed like: [[300, 250], ...]. Removing invalid mediaTypes.banner object from request.');
+    delete adUnit.mediaTypes.banner
+  }
+  return adUnit;
+}
+
+export function validateVideoMediaType(adUnit) {
+  const video = adUnit.mediaTypes.video;
+  let tarPlayerSizeLen = (typeof video.playerSize[0] === 'number') ? 2 : 1;
+
+  const videoSizes = validateSizes(video.playerSize, tarPlayerSizeLen);
+  if (videoSizes.length > 0) {
+    if (tarPlayerSizeLen === 2) {
+      utils.logInfo('Transforming video.playerSize from [640,480] to [[640,480]] so it\'s in the proper format.');
+    }
+    video.playerSize = videoSizes;
+    // Deprecation Warning: This property will be deprecated in next release in favor of adUnit.mediaTypes.video.playerSize
+    adUnit.sizes = videoSizes;
+  } else {
+    utils.logError('Detected incorrect configuration of mediaTypes.video.playerSize. Please specify only one set of dimensions in a format like: [[640, 480]]. Removing invalid mediaTypes.video.playerSize property from request.');
+    delete adUnit.mediaTypes.video.playerSize;
+  }
+  return adUnit;
+}
+
+export function validateNativeMediaType(adUnit) {
+  const native = adUnit.mediaTypes.native;
+  if (native.image && native.image.sizes && !Array.isArray(native.image.sizes)) {
+    utils.logError('Please use an array of sizes for native.image.sizes field.  Removing invalid mediaTypes.native.image.sizes property from request.');
+    delete adUnit.mediaTypes.native.image.sizes;
+  }
+  if (native.image && native.image.aspect_ratios && !Array.isArray(native.image.aspect_ratios)) {
+    utils.logError('Please use an array of sizes for native.image.aspect_ratios field.  Removing invalid mediaTypes.native.image.aspect_ratios property from request.');
+    delete adUnit.mediaTypes.native.image.aspect_ratios;
+  }
+  if (native.icon && native.icon.sizes && !Array.isArray(native.icon.sizes)) {
+    utils.logError('Please use an array of sizes for native.icon.sizes field.  Removing invalid mediaTypes.native.icon.sizes property from request.');
+    delete adUnit.mediaTypes.native.icon.sizes;
+  }
+  return adUnit;
+}
+
+export const checkAdUnitSetup = hook('sync', function (adUnits, filteredAdUnitsFromSizeMappingV2) {
+  if (filteredAdUnitsFromSizeMappingV2) {
+    return filteredAdUnitsFromSizeMappingV2;
+  }
+  adUnits.forEach(adUnit => {
+    const mediaTypes = adUnit.mediaTypes;
     if (mediaTypes && mediaTypes.banner) {
-      const banner = mediaTypes.banner;
-      if (banner.sizes) {
-        // make sure we always send [[h,w]] format
-        banner.sizes = normalizedSize;
-        adUnit.sizes = normalizedSize;
-      } else if (banner.sizeConfig && Array.isArray(banner.sizeConfig)) {
-        // verify if all config objects include "minViewPort" and "sizes" property.
-        // if not, remove the mediaTypes.banner object
-        banner.sizeConfig.forEach(config => {
-          const keys = Object.keys(config);
-          if (!(includes(keys, 'minViewPort') && includes(keys, 'sizes'))) {
-            utils.logError(`Ad Unit: ${adUnit.code}: mediaTypes.banner.sizeConfig is not configured correctly. Removing the invalid mediaTypes.banner from request!`);
-            return delete adUnit.mediaTypes.banner;
-          }
-          // check if the config.sizes property is in [w, h] format, if yes, change it to [[w, h]] format.
-          config.sizes = (Array.isArray(config.sizes[0])) ? config.sizes : [config.sizes];
-        });
+      if (mediaTypes.banner.sizes) {
+        adUnit = validateBannerMediaType(adUnit);
       } else {
-        utils.logError('Detected a mediaTypes.banner object did not include sizes or sizeConfig. Removing invalid mediaTypes.banner object from request.');
+        utils.logError('Detected a mediaTypes.banner object did not include required property sizes. Removing invalid mediaTypes.banner object from request.');
         delete adUnit.mediaTypes.banner;
       }
     } else if (adUnit.sizes) {
-      utils.logWarn('Usage of adUnits.sizes will eventually be deprecated.  Please define size dimensions within the corresponding area of the mediaTypes.<object> (eg mediaTypes.banner.sizes).');
-      adUnit.sizes = normalizedSize;
+      utils.logWarn('Usage of adUnits.sizes will eventually be deprecated. Please define size dimensions within the corresponding area of the mediaTypes.<object> (eg mediaTypes.banner.sizes).');
+      const bannerSizes = validateSizes(adUnit.sizes);
+      if (bannerSizes.length > 0) {
+        adUnit.sizes = bannerSizes;
+      }
     }
 
-    if (mediaTypes && mediaTypes.video) {
-      const video = mediaTypes.video;
-      if (video.playerSize) {
-        if (Array.isArray(video.playerSize) && video.playerSize.length === 1 && video.playerSize.every(plySize => isArrayOfNums(plySize, 2))) {
-          adUnit.sizes = video.playerSize;
-        } else if (isArrayOfNums(video.playerSize, 2)) {
-          let newPlayerSize = [];
-          newPlayerSize.push(video.playerSize);
-          utils.logInfo(`Transforming video.playerSize from [${video.playerSize}] to [[${newPlayerSize}]] so it's in the proper format.`);
-          adUnit.sizes = video.playerSize = newPlayerSize;
-        } else {
-          utils.logError('Detected incorrect configuration of mediaTypes.video.playerSize.  Please specify only one set of dimensions in a format like: [[640, 480]]. Removing invalid mediaTypes.video.playerSize property from request.');
-          delete adUnit.mediaTypes.video.playerSize;
-        }
-      } else if (video.sizeConfig && Array.isArray(video.sizeConfig)) {
-        // verify if all config objects include "minViewPort" and "playerSize" property.
-        // if not, remove the mediaTypes.video object
-        video.sizeConfig.forEach(config => {
-          const keys = Object.keys(config);
-          if (!(includes(keys, 'minViewPort') && includes(keys, 'playerSize'))) {
-            utils.logError(`Ad Unit: ${adUnit.code}: mediaTypes.video.sizeConfig is not configured correctly. Removing the  invalid mediaTypes.video from request!`);
-            return delete adUnit.mediaTypes.video;
-          }
-          // check if the config.playerSize property is in [w, h] format, if yes, change it to [[w, h]] format.
-          config.playerSize = (Array.isArray(config.playerSize[0])) ? config.playerSize : [config.playerSize];
-        });
-      }
+    if (mediaTypes && mediaTypes.video && mediaTypes.video.playerSize) {
+      adUnit = validateVideoMediaType(adUnit);
     }
 
     if (mediaTypes && mediaTypes.native) {
-      const nativeObj = mediaTypes.native;
-      if (nativeObj.image && nativeObj.image.sizes && !Array.isArray(nativeObj.image.sizes)) {
-        utils.logError('Please use an array of sizes for native.image.sizes field.  Removing invalid mediaTypes.native.image.sizes property from request.');
-        delete adUnit.mediaTypes.native.image.sizes;
-      }
-      if (nativeObj.image && nativeObj.image.aspect_ratios && !Array.isArray(nativeObj.image.aspect_ratios)) {
-        utils.logError('Please use an array of sizes for native.image.aspect_ratios field.  Removing invalid mediaTypes.native.image.aspect_ratios property from request.');
-        delete adUnit.mediaTypes.native.image.aspect_ratios;
-      }
-      if (nativeObj.icon && nativeObj.icon.sizes && !Array.isArray(nativeObj.icon.sizes)) {
-        utils.logError('Please use an array of sizes for native.icon.sizes field.  Removing invalid mediaTypes.native.icon.sizes property from request.');
-        delete adUnit.mediaTypes.native.icon.sizes;
-      }
-      if (nativeObj.sizeConfig) {
-        // verify if all config objects include "minViewPort" and "active" property.
-        // if not, remove the mediaTypes.native object
-        nativeObj.sizeConfig.forEach(config => {
-          const keys = Object.keys(config);
-          if (!(includes(keys, 'minViewPort') && includes(keys, 'active'))) {
-            utils.logError(`Ad Unit: ${adUnit.code}: mediaTypes.native.sizeConfig is not configured correctly. Removing the invalid mediaTypes.native from request!`);
-            return delete adUnit.mediaTypes.native;
-          }
-        });
-      }
+      adUnit = validateNativeMediaType(adUnit);
     }
   });
   return adUnits;
@@ -190,7 +194,7 @@ $$PREBID_GLOBAL$$.getAdserverTargetingForAdUnitCodeStr = function (adunitCode) {
  * @alias module:pbjs.getAdserverTargetingForAdUnitCode
  * @returns {Object}  returnObj return bids
  */
-$$PREBID_GLOBAL$$.getAdserverTargetingForAdUnitCode = function(adUnitCode) {
+$$PREBID_GLOBAL$$.getAdserverTargetingForAdUnitCode = function (adUnitCode) {
   return $$PREBID_GLOBAL$$.getAdserverTargeting(adUnitCode)[adUnitCode];
 };
 
@@ -298,7 +302,7 @@ $$PREBID_GLOBAL$$.setTargetingForGPTAsync = function (adUnit, customSlotMatching
  * @param  {(string|string[])} adUnitCode adUnitCode or array of adUnitCodes
  * @alias module:pbjs.setTargetingForAst
  */
-$$PREBID_GLOBAL$$.setTargetingForAst = function(adUnitCodes) {
+$$PREBID_GLOBAL$$.setTargetingForAst = function (adUnitCodes) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.setTargetingForAn', arguments);
   if (!targeting.isApntagDefined()) {
     utils.logError('window.apntag is not defined on the page');
@@ -465,7 +469,7 @@ $$PREBID_GLOBAL$$.requestBids = hook('async', function ({ bidsBackHandler, timeo
    */
   adUnits.forEach(adUnit => {
     // get the adunit's mediaTypes, defaulting to banner if mediaTypes isn't present
-    const adUnitMediaTypes = Object.keys(adUnit.mediaTypes || {'banner': 'banner'});
+    const adUnitMediaTypes = Object.keys(adUnit.mediaTypes || { 'banner': 'banner' });
 
     // get the bidder's mediaTypes
     const allBidders = adUnit.bids.map(bid => bid.bidder);
@@ -509,7 +513,7 @@ $$PREBID_GLOBAL$$.requestBids = hook('async', function ({ bidsBackHandler, timeo
     return;
   }
 
-  const auction = auctionManager.createAuction({adUnits, adUnitCodes, callback: bidsBackHandler, cbTimeout, labels, auctionId});
+  const auction = auctionManager.createAuction({ adUnits, adUnitCodes, callback: bidsBackHandler, cbTimeout, labels, auctionId });
 
   let adUnitsLen = adUnits.length;
   if (adUnitsLen > 15) {
@@ -839,7 +843,7 @@ $$PREBID_GLOBAL$$.que.push(() => listenMessagesFromCreative());
  *                            the Prebid script has been fully loaded.
  * @alias module:pbjs.cmd.push
  */
-$$PREBID_GLOBAL$$.cmd.push = function(command) {
+$$PREBID_GLOBAL$$.cmd.push = function (command) {
   if (typeof command === 'function') {
     try {
       command.call();
@@ -854,7 +858,7 @@ $$PREBID_GLOBAL$$.cmd.push = function(command) {
 $$PREBID_GLOBAL$$.que.push = $$PREBID_GLOBAL$$.cmd.push;
 
 function processQueue(queue) {
-  queue.forEach(function(cmd) {
+  queue.forEach(function (cmd) {
     if (typeof cmd.called === 'undefined') {
       try {
         cmd.call();
@@ -869,7 +873,7 @@ function processQueue(queue) {
 /**
  * @alias module:pbjs.processQueue
  */
-$$PREBID_GLOBAL$$.processQueue = function() {
+$$PREBID_GLOBAL$$.processQueue = function () {
   hook.ready();
   processQueue($$PREBID_GLOBAL$$.que);
   processQueue($$PREBID_GLOBAL$$.cmd);

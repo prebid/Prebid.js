@@ -5,13 +5,19 @@ import {
   getUniqueIdentifierStr,
   logInfo,
   logWarn,
-  logError,
-  isValidMediaTypes
+  isValidMediaTypes,
+  isArrayOfNums
 } from '../src/utils';
 import { processNativeAdUnitParams } from '../src/native';
 import { adunitCounter } from '../src/adUnits';
 import includes from 'core-js/library/fn/array/includes';
 import { getHook } from '../src/hook';
+import {
+  validateBannerMediaType,
+  validateVideoMediaType,
+  validateNativeMediaType,
+  validateSizes
+} from '../src/prebid';
 
 // Maps auctionId to a boolean value, value is set to true if Adunits are setup to use the new size mapping, else it's set to false.
 const _sizeMappingUsageMap = {};
@@ -25,7 +31,9 @@ function isUsingNewSizeMapping(adUnits, auctionId) {
         if (adUnit.mediaTypes[mediaType].sizeConfig) {
           if (isUsingSizeMappingV2 === false) {
             isUsingSizeMappingV2 = true;
-            _sizeMappingUsageMap[auctionId] = isUsingSizeMappingV2;
+            if (auctionId) {
+              _sizeMappingUsageMap[auctionId] = isUsingSizeMappingV2;
+            }
           }
         }
       });
@@ -33,9 +41,11 @@ function isUsingNewSizeMapping(adUnits, auctionId) {
       // checks for the presence of sizeConfig property at the adUnit.bids.bidder object
       adUnit.bids.forEach(bidder => {
         if (bidder.sizeConfig && checkBidderSizeConfigFormat(bidder.sizeConfig)) {
-          if (isUsingNewSizeMapping === false) {
+          if (isUsingNewSizeMappingV2 === false) {
             isUsingSizeMappingV2 = true;
-            _sizeMappingUsageMap[auctionId] = isUsingSizeMappingV2;
+            if (auctionId) {
+              _sizeMappingUsageMap[auctionId] = isUsingSizeMappingV2;
+            }
           }
         }
       });
@@ -44,12 +54,110 @@ function isUsingNewSizeMapping(adUnits, auctionId) {
   return isUsingSizeMappingV2;
 }
 
+function checkAdUnitSetupHook(adUnits) {
+  adUnits.forEach(adUnit => {
+    const mediaTypes = adUnit.mediaTypes;
+    if (mediaTypes && mediaTypes.banner) {
+      const banner = mediaTypes.banner;
+      if (banner.sizes) {
+        adUnit = validateBannerMediaType(adUnit);
+      } else if (banner.sizeConfig && Array.isArray(banner.sizeConfig)) {
+        banner.sizeConfig.forEach(config => {
+          // verify if all config objects include "minViewPort" and "sizes" property.
+          // if not, remove the mediaTypes.banner object
+          const keys = Object.keys(config);
+          if (!(includes(keys, 'minViewPort') && includes(keys, 'sizes'))) {
+            logError(`Ad Unit: ${adUnit.code}: mediaTypes.banner.sizeConfig is missing required property minViewPort or sizes or both. Removing the invalid mediaTypes.banner from request!`);
+            return delete adUnit.mediaTypes.banner;
+          }
+          // check if the config.sizes property is in [w, h] format, if yes, change it to [[w, h]] format.
+          const bannerSizes = validateSizes(config.sizes);
+          if (bannerSizes.length > 0 && isArrayOfNums(config.minViewPort, 2)) {
+            config.sizes = bannerSizes;
+          } else {
+            logError(`Ad Unit: ${adUnit.code}: mediaTypes.banner.sizeConfig has properties minViewPort or sizes decalared with invalid values. Removing the invalid object mediaTypes.banner from request!`);
+            return delete adUnit.mediaTypes.banner;
+          }
+        });
+      } else {
+        logError('Detected a mediaTypes.banner object did not include required property sizes. Removing invalid mediaTypes.banner object from request.');
+        delete adUnit.mediaTypes.banner;
+      }
+    } else if (adUnit.sizes) {
+      logWarn('Usage of adUnits.sizes will eventually be deprecated. Please define size dimensions within the corresponding area of the mediaTypes.<object> (eg mediaTypes.banner.sizes).');
+      const bannerSizes = validateSizes(adUnit.sizes);
+      if (bannerSizes.length > 0) {
+        adUnit.sizes = bannerSizes;
+      }
+    }
+
+    if (mediaTypes && mediaTypes.video) {
+      const video = mediaTypes.video;
+      if (video.playerSize) {
+        adUnit = validateVideoMediaType(adUnit);
+      } else if (video.sizeConfig) {
+        video.sizeConfig.forEach(config => {
+          // verify if all config objects include "minViewPort" and "playerSize" property.
+          // if not, remove the mediaTypes.video object
+          const keys = Object.keys(config);
+          if (!(includes(keys, 'minViewPort') && includes(keys, 'playerSize'))) {
+            logError(`Ad Unit: ${adUnit.code}: mediaTypes.video.sizeConfig is missing required property minViewPort or playerSize or both. Removing the invalid property mediaTypes.video.sizeConfig from request!`);
+            return delete adUnit.mediaTypes.video.sizeConfig;
+          }
+          // check if the config.playerSize property is in [w, h] format, if yes, change it to [[w, h]] format.
+          let tarPlayerSizeLen = (typeof config.playerSize[0] === 'number') ? 2 : 1;
+          const videoSizes = validateSizes(config.playerSize, tarPlayerSizeLen);
+          if (videoSizes.length > 0 && isArrayOfNums(config.minViewPort, 2)) {
+            config.playerSize = videoSizes;
+          } else {
+            logError(`Ad Unit: ${adUnit.code}: mediaTypes.video.sizeConfig has properties minViewPort or playerSize decalared with invalid values. Removing the invalid property mediaTypes.video.sizeConfig from request!`);
+            return delete adUnit.mediaTypes.video.sizeConfig;
+          }
+        });
+      }
+    }
+
+    if (mediaTypes && mediaTypes.native) {
+      adUnit = validateNativeMediaType(adUnit);
+
+      if (mediaTypes.native.sizeConfig) {
+        nativeObj.sizeConfig.forEach(config => {
+          // verify if all config objects include "minViewPort" and "active" property.
+          // if not, remove the mediaTypes.native object
+          const keys = Object.keys(config);
+          if (!(includes(keys, 'minViewPort') && includes(keys, 'active'))) {
+            logError(`Ad Unit: ${adUnit.code}: mediaTypes.native.sizeConfig is missing required property minViewPort or active or both. Removing the invalid property mediaTypes.native.sizeConfig from request!`);
+            return delete adUnit.mediaTypes.native.sizeConfig;
+          }
+
+          if (!(isArrayOfNums(config.minViewPort, 2) && typeof config.active === 'boolean')) {
+            logError(`Ad Unit: ${adUnit.code}: mediaTypes.native.sizeConfig has properties minViewPort or active decalared with invalid values. Removing the invalid property mediaTypes.native.sizeConfig from request!`);
+            return delete adUnit.mediaTypes.native.sizeConfig;
+          }
+        });
+      }
+    }
+  });
+  return adUnits;
+}
+
+getHook('checkAdUnitSetup').before(function(fn, adUnits) {
+  const usingNewSizeMapping = isUsingNewSizeMapping(adUnits);
+  if (usingNewSizeMapping) {
+    return fn.call(this, adUnits, checkAdUnitSetupHook);
+  } else {
+    return fn.call(this, adUnits);
+  }
+});
+
 function checkBidderSizeConfigFormat(sizeConfig) {
   if (Array.isArray(sizeConfig)) {
     sizeConfig.forEach(config => {
       const keys = Object.keys(config);
       if ((includes(keys, 'minViewPort') && includes(keys, 'relevantMediaTypes'))) {
-        if (Array.isArray(config.minViewPort) && Array.isArray(config.relevantMediaTypes)) {
+        if (isArrayOfNums(config.minViewPort, 2) &&
+          Array.isArray(config.relevantMediaTypes) &&
+          config.relevantMediaTypes.every(mt => typeof mt === 'string')) {
           return true;
         }
       }
@@ -76,11 +184,13 @@ getHook('getBids').before(function (fn, bidderInfo) {
  * @param {Array<string>} activeLabels List of active labels passed as an argument to pbjs.requestBids function
  * @returns {boolean} Represents if the Ad Unit or the Bid is active or not
  */
-function isLabelActivated(bidOrAdUnit, activeLabels) {
+function isLabelActivated(bidOrAdUnit, activeLabels, adUnitCode) {
   let labelOperator;
   const labelsFound = Object.keys(bidOrAdUnit).filter(prop => prop === 'labelAny' || prop === 'labelAll');
   if (labelsFound && labelsFound.length > 1) {
-    logError(`SizeMappingV2:: Ad Unit: ${bidOrAdUnit.code} has multiple label operators. Using the first declared operator ${labelsFound[0]}`);
+    logWarn(`SizeMappingV2:: ${(bidOrAdUnit.code)
+      ? (`Ad Unit: ${bidOrAdUnit.code} has multiple label operators. Using the first declared operator: ${labelsFound[0]}`)
+      : (`Bidder: ${bidOrAdUnit.bidder} in Ad Unit: ${adUnitCode} has multiple label operators. Using the first declared operator: ${labelsFound[0]}`)}`);
   }
   labelOperator = labelsFound[0];
 
@@ -89,13 +199,13 @@ function isLabelActivated(bidOrAdUnit, activeLabels) {
       logWarn(`SizeMappingV2:: Ad Unit: ${bidOrAdUnit.code} has declared property labelAll with an empty array. Ad Unit is still enabled!`);
       return true;
     }
-    return bidOrAdUnit.labelAll.every(label => activeLabels.includes(label));
+    return bidOrAdUnit.labelAll.every(label => includes(activeLabels, label));
   } else if (labelOperator === 'labelAny') {
     if (bidOrAdUnit.labelAny.length === 0) {
       logWarn(`SizeMappingV2:: Ad Unit: ${bidOrAdUnit.code} has declared property labelAny with an empty array. Ad Unit is still enabled!`);
       return true;
     }
-    return bidOrAdUnit.labelAny.some(label => activeLabels.includes(label));
+    return bidOrAdUnit.labelAny.some(label => includes(activeLabels, label));
   }
   return true;
 }
@@ -206,7 +316,7 @@ function getRelevantMediaTypesForBidder(sizeConfig, activeViewport) {
 
 function getBids({ bidderCode, auctionId, bidderRequestId, adUnits, labels, src }) {
   return adUnits.reduce((result, adUnit) => {
-    if (isLabelActivated(adUnit, labels)) {
+    if (isLabelActivated(adUnit, labels, adUnit.code)) {
       if (adUnit.mediaTypes && isValidMediaTypes(adUnit.mediaTypes)) {
         const { mediaTypes, activeSizeBucket, activeViewport, transformedMediaTypes } = getFilteredMediaTypes(adUnit.mediaTypes);
         logInfo(`SizeMappingV2:: AdUnit: ${adUnit.code}, Bidder: ${bidderCode} - Active size buckets after filtration: `, activeSizeBucket);
@@ -222,7 +332,7 @@ function getBids({ bidderCode, auctionId, bidderRequestId, adUnits, labels, src 
         result
           .push(adUnit.bids.filter(bid => bid.bidder === bidderCode)
             .reduce((bids, bid) => {
-              if (isLabelActivated(bid, labels)) {
+              if (isLabelActivated(bid, labels, adUnit.code)) {
                 // handle native params
                 const nativeParams = adUnit.nativeParams || deepAccess(adUnit, 'mediaTypes.native');
                 if (nativeParams) {
@@ -276,7 +386,8 @@ function getBids({ bidderCode, auctionId, bidderRequestId, adUnits, labels, src 
         logWarn(`SizeMappingV2:: Ad Unit: ${adUnit.code} has declared invalid mediaTypes or has not declared a mediaTypes property`);
       }
     } else {
-      return logInfo(`SizeMappingV2:: Ad Unit: ${adUnit.code} is disabled due to failing label check.`);
+      logInfo(`SizeMappingV2:: Ad Unit: ${adUnit.code} is disabled due to failing label check.`);
+      return result;
     }
     return result;
   }, []).reduce(flatten, []).filter(val => val !== '');

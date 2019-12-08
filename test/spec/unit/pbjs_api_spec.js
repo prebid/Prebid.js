@@ -1601,7 +1601,7 @@ describe('Unit: Prebid Module', function () {
             });
             expect(auctionArgs.adUnits[0].sizes).to.deep.equal([[300, 250], [300, 600]]);
             expect(auctionArgs.adUnits[0].mediaTypes.banner).to.be.undefined;
-            assert.ok(logErrorSpy.calledWith('Detected a mediaTypes.banner object did not include sizes.  This is a required field for the mediaTypes.banner object.  Removing invalid mediaTypes.banner object from request.'));
+            assert.ok(logErrorSpy.calledWith('Detected a mediaTypes.banner object did not include required property sizes. Removing invalid mediaTypes.banner object from request.'));
 
             let badVideo1 = [{
               code: 'testb2',
@@ -1619,7 +1619,7 @@ describe('Unit: Prebid Module', function () {
             expect(auctionArgs.adUnits[0].sizes).to.deep.equal([[600, 600]]);
             expect(auctionArgs.adUnits[0].mediaTypes.video.playerSize).to.be.undefined;
             expect(auctionArgs.adUnits[0].mediaTypes.video).to.exist;
-            assert.ok(logErrorSpy.calledWith('Detected incorrect configuration of mediaTypes.video.playerSize.  Please specify only one set of dimensions in a format like: [[640, 480]]. Removing invalid mediaTypes.video.playerSize property from request.'));
+            assert.ok(logErrorSpy.calledWith('Detected incorrect configuration of mediaTypes.video.playerSize. Please specify only one set of dimensions in a format like: [[640, 480]]. Removing invalid mediaTypes.video.playerSize property from request.'));
 
             let badVideo2 = [{
               code: 'testb3',
@@ -1637,7 +1637,7 @@ describe('Unit: Prebid Module', function () {
             expect(auctionArgs.adUnits[0].sizes).to.deep.equal([[600, 600]]);
             expect(auctionArgs.adUnits[0].mediaTypes.video.playerSize).to.be.undefined;
             expect(auctionArgs.adUnits[0].mediaTypes.video).to.exist;
-            assert.ok(logErrorSpy.calledWith('Detected incorrect configuration of mediaTypes.video.playerSize.  Please specify only one set of dimensions in a format like: [[640, 480]]. Removing invalid mediaTypes.video.playerSize property from request.'));
+            assert.ok(logErrorSpy.calledWith('Detected incorrect configuration of mediaTypes.video.playerSize. Please specify only one set of dimensions in a format like: [[640, 480]]. Removing invalid mediaTypes.video.playerSize property from request.'));
 
             let badNativeImgSize = [{
               code: 'testb4',
