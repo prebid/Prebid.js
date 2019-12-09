@@ -1787,13 +1787,7 @@ describe('the rubicon adapter', function () {
           expect(bids[1].rubiconTargeting.rpfl_14062).to.equal('15_tier_all_test');
         });
 
-        it('should pass netRevenue as false if set in setConfig', function () {
-          config.setConfig({
-            rubicon: {
-              netRevenue: false
-            }
-          });
-
+        it('should pass netRevenue correctly if set in setConfig', function () {
           let response = {
             'status': 'ok',
             'account_id': 14062,
@@ -1851,15 +1845,58 @@ describe('the rubicon adapter', function () {
             ]
           };
 
+          // Set to false => false
+          config.setConfig({
+            rubicon: {
+              netRevenue: false
+            }
+          });
           let bids = spec.interpretResponse({body: response}, {
             bidRequest: bidderRequest.bids[0]
           });
-
           expect(bids).to.be.lengthOf(2);
           expect(bids[0].netRevenue).to.equal(false);
           expect(bids[1].netRevenue).to.equal(false);
 
-          console.log('\n\nTEST OVER!!!\n\n');
+          // Set to true => true
+          config.setConfig({
+            rubicon: {
+              netRevenue: true
+            }
+          });
+          bids = spec.interpretResponse({body: response}, {
+            bidRequest: bidderRequest.bids[0]
+          });
+          expect(bids).to.be.lengthOf(2);
+          expect(bids[0].netRevenue).to.equal(true);
+          expect(bids[1].netRevenue).to.equal(true);
+
+          // Set to undefined => true
+          config.setConfig({
+            rubicon: {
+              netRevenue: undefined
+            }
+          });
+          bids = spec.interpretResponse({body: response}, {
+            bidRequest: bidderRequest.bids[0]
+          });
+          expect(bids).to.be.lengthOf(2);
+          expect(bids[0].netRevenue).to.equal(true);
+          expect(bids[1].netRevenue).to.equal(true);
+
+          // Set to string => true
+          config.setConfig({
+            rubicon: {
+              netRevenue: 'someString'
+            }
+          });
+          bids = spec.interpretResponse({body: response}, {
+            bidRequest: bidderRequest.bids[0]
+          });
+          expect(bids).to.be.lengthOf(2);
+          expect(bids[0].netRevenue).to.equal(true);
+          expect(bids[1].netRevenue).to.equal(true);
+
           config.resetConfig();
         });
         it('should use "network-advertiser" if no creative_id', function () {
