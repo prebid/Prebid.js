@@ -121,15 +121,21 @@ describe('Trion adapter tests', function () {
     });
 
     it('should send the correct state when there is non human traffic', function () {
+      let originalWD = window.navigator.webdriver;
       window.navigator['__defineGetter__']('webdriver', function () {
         return 1;
       });
       let bidRequests = spec.buildRequests(TRION_BID_REQUEST);
       let bidUrlParams = bidRequests[0].data;
       expect(bidUrlParams).to.include('tr_wd=1');
+      window.navigator['__defineGetter__']('webdriver', function () {
+        return originalWD;
+      });
     });
 
     it('should send the correct states when the document is not visible', function () {
+      let originalHD = document.hidden;
+      let originalVS = document.visibilityState;
       document['__defineGetter__']('hidden', function () {
         return 1;
       });
@@ -140,6 +146,12 @@ describe('Trion adapter tests', function () {
       let bidUrlParams = bidRequests[0].data;
       expect(bidUrlParams).to.include('tr_hd=1');
       expect(bidUrlParams).to.include('tr_vs=hidden');
+      document['__defineGetter__']('hidden', function () {
+        return originalHD;
+      });
+      document['__defineGetter__']('visibilityState', function () {
+        return originalVS;
+      });
     });
   });
 
