@@ -176,8 +176,12 @@ function buildRequests (validBidRequests, bidderRequest) {
     if (params.bidfloor) {
       data.fp = params.bidfloor;
     }
+    if (params.inScreenPubID) {
+      data.pubId = params.inScreenPubID;
+      data.pi = 2;
+    }
     if (params.inScreen) {
-      (utils.isNumber(params.inScreen)) ? data.pubId = params.inScreen : data.t = params.inScreen;
+      data.t = params.inScreen;
       data.pi = 2;
     }
     if (params.inSlot) {
