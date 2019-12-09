@@ -550,7 +550,7 @@ export function getMediaTypeGranularity(mediaType, bidReq, mediaTypePriceGranula
   }
   if (mediaType === VIDEO) {
     const context = deepAccess(bidReq, `mediaTypes.${VIDEO}.context`);
-    // return video.${CONTEXT} granularity if it exists
+    // return video.CONTEXT granularity if it exists
     if (typeof context === 'string' && mediaTypePriceGranularity[`${VIDEO}-${context}`]) {
       return mediaTypePriceGranularity[`${VIDEO}-${context}`];
     }
