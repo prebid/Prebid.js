@@ -5,20 +5,24 @@
         <script async src="//www.googletagservices.com/tag/js/gpt.js"></script>
         <script async src="../../build/dev/prebid.js"></script>
         <script>
-            var sizes = [
-                [300, 250]
-            ];
+            /*
+            Supported sizes:
+            ----------------
+            300x250 - Medium rectangle
+            728x90 - Leaderboard
+            300x600 - Half page or large skyscraper
+            */
+            var size = {width: 300, height: 250};
+
             var PREBID_TIMEOUT = 10000;
             var FAILSAFE_TIMEOUT = 30000;
 
             var adUnits = [{
                 code: '/19968336/header-bid-tag-1',
-                sizes: sizes,
                 mediaTypes: {
                     native: {
                         image: {
-                            required: false,
-                            sizes: sizes[0]
+                            required: false
                         },
                         title: {
                             required: false,
@@ -26,14 +30,18 @@
                         },
                         clickUrl: {
                             required: false
+                        },
+                        sponsoredBy: {
+                            id: 5,
+                            name: 'data',
+                            type: 1
                         }
                     }
                 },
                 bids: [{
                     bidder: 'revcontent',
                     params: {
-                        sizes: sizes,
-                        template: '<a href="{clickUrl}"><img src="{image.url}" width="{image.width}" height="{image.height}" /> <div style="position: absolute;top: 8px;left: 16px;"><h1>{title}</h1></div></a>',
+                        size: size,
                         apiKey: '8a33fa9cf220ae685dcc3544f847cdda858d3b1c',
                         userId: 673,
                         domain: 'test.com',
@@ -75,7 +83,7 @@
             }, FAILSAFE_TIMEOUT);
 
             googletag.cmd.push(function() {
-                googletag.defineSlot('/19968336/header-bid-tag-1', sizes, 'div-1')
+                googletag.defineSlot('/19968336/header-bid-tag-1', [[size.width, size.height]], 'div-1')
                 	.addService(googletag.pubads());
                 googletag.pubads().enableSingleRequest();
                 googletag.enableServices();

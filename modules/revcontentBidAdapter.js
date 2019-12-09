@@ -1,10 +1,9 @@
 // jshint esversion: 6, es3: false, node: true
 'use strict';
 
-import {
-  registerBidder
-} from '../src/adapters/bidderFactory';
+import {registerBidder} from '../src/adapters/bidderFactory';
 import * as utils from '../src/utils';
+import {ajax} from '../src/ajax';
 
 const BIDDER_CODE = 'revcontent';
 const NATIVE_PARAMS = {
@@ -17,10 +16,10 @@ const NATIVE_PARAMS = {
     type: 3,
     name: 'img'
   },
-  icon: {
-    id: 2,
-    type: 1,
-    name: 'img'
+  sponsoredBy: {
+    id: 5,
+    name: 'data',
+    type: 1
   }
 };
 
@@ -28,15 +27,14 @@ export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: ['banner', 'native', 'video'],
   isBidRequestValid: function (bid) {
-    return (typeof bid.params.apiKey !== 'undefined' && typeof bid.params.userId !== 'undefined') && (bid.hasOwnProperty('nativeParams') || bid.hasOwnProperty('bannerParams'));
+    return (typeof bid.params.apiKey !== 'undefined' && typeof bid.params.userId !== 'undefined' && bid.hasOwnProperty('nativeParams'));
   },
   buildRequests: (validBidRequests, bidderRequest) => {
-    const userId = setOnAny(validBidRequests, 'params.userId');
-    const widgetId = setOnAny(validBidRequests, 'params.widgetId');
-    const apiKey = setOnAny(validBidRequests, 'params.apiKey');
-
-    var domain = setOnAny(validBidRequests, 'params.domain');
-    var host = setOnAny(validBidRequests, 'params.endpoint');
+    const userId = validBidRequests[0].params.userId;
+    const widgetId = validBidRequests[0].params.widgetId;
+    const apiKey = validBidRequests[0].params.apiKey;
+    var domain = validBidRequests[0].params.domain;
+    var host = validBidRequests[0].params.endpoint;
 
     if (typeof host === 'undefined') {
       host = 'trends.revcontent.com';
@@ -78,12 +76,6 @@ export const spec = {
               hmin = aRatios.ratio_height * wmin / aRatios.ratio_width | 0;
             }
 
-            if (bidParams.sizes) {
-              const sizes = flatten(bidParams.sizes);
-              w = sizes[0];
-              h = sizes[1];
-            }
-
             asset[props.name] = {
               len: bidParams.len,
               type: props.type,
@@ -114,19 +106,6 @@ export const spec = {
             },
             ver: '1.1',
             battr: [1, 3, 8, 11, 17]
-          },
-          instl: 0,
-          bidfloor: 0.1,
-          secure: secure ? '1' : '0'
-        };
-      } else if (bid.hasOwnProperty('bannerParams')) {
-        const sizeObjects = bid.bannerParams.sizes.map(size => ({w: size[0], h: size[1]}));
-
-        return {
-          id: id + 1,
-          tagid: bid.params.mid,
-          banner: {
-            format: sizeObjects
           },
           instl: 0,
           bidfloor: 0.1,
@@ -205,23 +184,23 @@ export const spec = {
           case 3:
             ad['image'] = {
               url: asset.img.url,
-              height: originalBidRequest.bid[0].mediaTypes.native.image.sizes[1],
-              width: originalBidRequest.bid[0].mediaTypes.native.image.sizes[0]
+              height: 1,
+              width: 1
             };
             break;
           case 0:
             ad['title'] = asset.title.text;
             break;
-          case 2:
-            ad['icon'] = {
-              url: asset.img.url,
-              height: originalBidRequest.bid[0].mediaTypes.native.icon.sizes[1],
-              width: originalBidRequest.bid[0].mediaTypes.native.icon.sizes[0]
-            };
+          case 5:
+            ad['sponsoredBy'] = asset.data.value;
             break;
         }
       });
+
+      var size = originalBidRequest.bid[0].params.size;
+
       const bidResponse = {
+        bidder: BIDDER_CODE,
         requestId: originalBidRequest.bid[0].bidId,
         cpm: seatbid.bid[x]['price'],
         creativeId: seatbid.bid[x]['adid'],
@@ -232,42 +211,59 @@ export const spec = {
         bidderCode: 'revcontent',
         mediaType: 'native',
         native: ad,
-        width: originalBidRequest.bid[0].params.sizes[0][0],
-        height: originalBidRequest.bid[0].params.sizes[0][1],
-        ad: displayNative(ad, originalBidRequest.bid[0].params.template)
+        width: size.width,
+        height: size.height,
+        ad: displayNative(ad, getTemplate(size, originalBidRequest.bid[0].params.template))
       };
 
       bidResponses.push(bidResponse);
     }
 
     return bidResponses;
+  },
+  onBidWon: function (bid) {
+    var winUrl = bid.nurl;
+    winUrl = winUrl.replace(/\$\{AUCTION_PRICE\}/, bid.cpm);
+    var host = extractHostname(winUrl);
+
+    ajax(winUrl + '&viewed=1', null, {withCredentials: true});
+    ajax('https://' + host + '/imp.php', null, 'v=' + encodeURIComponent(encodeURIComponent(getQueryVariable('d', winUrl))) + '&i=' + encodeURIComponent(window.location.href), {method: 'POST', contentType: 'application/x-www-form-urlencoded'});
+
+    return true;
   }
 };
 
 registerBidder(spec);
 
 function displayNative(ad, template) {
-  for (var x in ad['image']) {
-    template = template.replace('{image.' + x + '}', ad['image'][x]);
-  }
-  template = template.replace('{title}', ad['title']);
+  template = template.replace(/{image}/g, ad['image']['url']);
+  template = template.replace(/{title}/g, ad['title']);
+  template = template.replace(/{clickUrl}/g, ad['clickUrl']);
+  template = template.replace(/{sponsoredBy}/g, ad['sponsoredBy']);
   return template;
 }
 
-function setOnAny(collection, key) {
-  for (let i = 0, result; i < collection.length; i++) {
-    result = utils.deepAccess(collection[i], key);
-    if (result) {
-      return result;
-    }
+function getTemplate(size, customTemplate) {
+  console.log(customTemplate);
+  if (typeof (customTemplate) !== 'undefined' && customTemplate !== '') {
+    return customTemplate;
   }
+
+  if (size.width == 300 && size.height == 250) {
+    return '<a href="{clickUrl}" rel="nofollow sponsored"  target="_blank" style="    border: 1px solid #eee;    width: 298px;    height: 248px;    display: block;"><div style="background-image:url({image});width: 300px;height: 165px;background-repeat: none;background-size: cover;"><div style="position: absolute;top: 160px;left:12px"><h1 style="color: #000;font-family: Arial, sans-serif;font-size: 19px; position: relative; width: 290px;margin-bottom:5px">{title}</h1> <div style="border:1px solid #000;text-align:center;width:94%;font-family:Verdana;font-size:12px;color:#000">SEE MORE</div></div></div></a>'
+  }
+
+  if (size.width == 728 && size.height == 90) {
+    return '<a href="{clickUrl}" rel="nofollow sponsored"  target="_blank" style="    border: 1px solid #eee;    width: 726px;    height: 86px;    display: block;"><div style="background-image:url({image});width: 130px;height: 88px;background-repeat: no-repeat;background-size: contain;"><div style="position: absolute;left:125px;"><h1 style="color: #000;font-family: Arial, sans-serif;font-size: 24px; position: relative; width: 100%%;margin-bottom:-5px;margin-left:20px;">{title}</h1> <div style="border:1px solid #000;text-align:center;width:35%;float:right;font-family:Verdana;font-size:12px;color:#000;margin-right:20px;">SEE MORE</div></div></div></a>';
+  }
+
+  if (size.width == 300 && size.height == 600) {
+    return '<a href="{clickUrl}" rel="nofollow sponsored"  target="_blank" style="    border: 1px solid #eee;    width: 296px;    height: 597px;    display: block;"><div style="background-image:url({image});width: 298px;height: 230px;background-repeat: no-repeat;background-size: contain;"><div style="position: absolute;top:220px;"><h1 style="color: #000;font-family: Arial, sans-serif;font-size: 41px; position: relative; width: 100%;margin-left:3px;">{title}</h1> <div style="border:1px solid #000;text-align:center;width:90%;float:right;font-family:Verdana;font-size:12px;color:#000;margin-right:17px;">SEE MORE</div></div></div></a>';
+  }
+
+  return '';
 }
 
-function flatten(arr) {
-  return [].concat(...arr);
-}
-
-// Source: https://stackoverflow.com/a/23945027/1935500
 function extractHostname(url) {
   var hostname;
   if (url.indexOf('//') > -1) {
@@ -280,4 +276,15 @@ function extractHostname(url) {
   hostname = hostname.split('?')[0];
 
   return hostname;
+}
+
+function getQueryVariable(variable, url) {
+  var query = url;
+  var vars = query.split('&');
+  for (var i = 0; i < vars.length; i++) {
+    var pair = vars[i].split('=');
+    if (decodeURIComponent(pair[0]) == variable) {
+      return decodeURIComponent(pair[1]);
+    }
+  }
 }
