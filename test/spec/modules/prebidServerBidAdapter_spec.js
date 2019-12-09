@@ -41,6 +41,15 @@ const REQUEST = {
             'required': true,
             'sizes': [989, 742],
           },
+          'icon': {
+            'required': true,
+            'aspect_ratios': [{
+              'min_height': 10,
+              'min_width': 10,
+              'ratio_height': 1,
+              'ratio_width': 1
+            }]
+          },
           'sponsoredBy': {
             'required': true
           }
@@ -419,13 +428,26 @@ const RESPONSE_OPENRTB_NATIVE = {
                 }
               },
               {
+                'id': 2,
+                'img': {
+                  'url': 'https://vcdn.adnxs.com/p/creative-image/1a/3e/e9/5b/1a3ee95b-06cd-4260-98c7-0258627c9197.png',
+                  'w': 127,
+                  'h': 83,
+                  'ext': {
+                    'appnexus': {
+                      'prevent_crop': 0
+                    }
+                  }
+                }
+              },
+              {
                 'id': 0,
                 'title': {
                   'text': 'This is a Prebid Native Creative'
                 }
               },
               {
-                'id': 2,
+                'id': 3,
                 'data': {
                   'value': 'Prebid.org'
                 }
@@ -680,6 +702,109 @@ describe('S2S Adapter', function () {
       });
     });
 
+    describe('us_privacy (ccpa) consent data', function () {
+      afterEach(function () {
+        config.resetConfig();
+        $$PREBID_GLOBAL$$.requestBids.removeAll();
+      });
+
+      it('is added to ortb2 request when in bidRequest', function () {
+        let ortb2Config = utils.deepClone(CONFIG);
+        ortb2Config.endpoint = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
+        config.setConfig({ s2sConfig: ortb2Config });
+
+        let uspBidRequest = utils.deepClone(BID_REQUESTS);
+        uspBidRequest[0].uspConsent = '1NYN';
+
+        adapter.callBids(REQUEST, uspBidRequest, addBidResponse, done, ajax);
+        let requestBid = JSON.parse(requests[0].requestBody);
+
+        expect(requestBid.regs.ext.us_privacy).is.equal('1NYN');
+
+        config.resetConfig();
+        config.setConfig({ s2sConfig: CONFIG });
+
+        adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+        requestBid = JSON.parse(requests[1].requestBody);
+
+        expect(requestBid.regs).to.not.exist;
+      });
+
+      it('is added to cookie_sync request when in bidRequest', function () {
+        let cookieSyncConfig = utils.deepClone(CONFIG);
+        cookieSyncConfig.syncEndpoint = 'https://prebid.adnxs.com/pbs/v1/cookie_sync';
+        config.setConfig({ s2sConfig: cookieSyncConfig });
+
+        let uspBidRequest = utils.deepClone(BID_REQUESTS);
+        uspBidRequest[0].uspConsent = '1YNN';
+
+        adapter.callBids(REQUEST, uspBidRequest, addBidResponse, done, ajax);
+        let requestBid = JSON.parse(requests[0].requestBody);
+
+        expect(requestBid.us_privacy).is.equal('1YNN');
+        expect(requestBid.bidders).to.contain('appnexus').and.to.have.lengthOf(1);
+        expect(requestBid.account).is.equal('1');
+      });
+    });
+
+    describe('gdpr and us_privacy (ccpa) consent data', function () {
+      afterEach(function () {
+        config.resetConfig();
+        $$PREBID_GLOBAL$$.requestBids.removeAll();
+      });
+
+      it('is added to ortb2 request when in bidRequest', function () {
+        let ortb2Config = utils.deepClone(CONFIG);
+        ortb2Config.endpoint = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
+        config.setConfig({ s2sConfig: ortb2Config });
+
+        let consentBidRequest = utils.deepClone(BID_REQUESTS);
+        consentBidRequest[0].uspConsent = '1NYN';
+        consentBidRequest[0].gdprConsent = {
+          consentString: 'abc123',
+          gdprApplies: true
+        };
+
+        adapter.callBids(REQUEST, consentBidRequest, addBidResponse, done, ajax);
+        let requestBid = JSON.parse(requests[0].requestBody);
+
+        expect(requestBid.regs.ext.us_privacy).is.equal('1NYN');
+        expect(requestBid.regs.ext.gdpr).is.equal(1);
+        expect(requestBid.user.ext.consent).is.equal('abc123');
+
+        config.resetConfig();
+        config.setConfig({ s2sConfig: CONFIG });
+
+        adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+        requestBid = JSON.parse(requests[1].requestBody);
+
+        expect(requestBid.regs).to.not.exist;
+        expect(requestBid.user).to.not.exist;
+      });
+
+      it('is added to cookie_sync request when in bidRequest', function () {
+        let cookieSyncConfig = utils.deepClone(CONFIG);
+        cookieSyncConfig.syncEndpoint = 'https://prebid.adnxs.com/pbs/v1/cookie_sync';
+        config.setConfig({ s2sConfig: cookieSyncConfig });
+
+        let consentBidRequest = utils.deepClone(BID_REQUESTS);
+        consentBidRequest[0].uspConsent = '1YNN';
+        consentBidRequest[0].gdprConsent = {
+          consentString: 'abc123def',
+          gdprApplies: true
+        };
+
+        adapter.callBids(REQUEST, consentBidRequest, addBidResponse, done, ajax);
+        let requestBid = JSON.parse(requests[0].requestBody);
+
+        expect(requestBid.us_privacy).is.equal('1YNN');
+        expect(requestBid.gdpr).is.equal(1);
+        expect(requestBid.gdpr_consent).is.equal('abc123def');
+        expect(requestBid.bidders).to.contain('appnexus').and.to.have.lengthOf(1);
+        expect(requestBid.account).is.equal('1');
+      });
+    });
+
     it('sets invalid cacheMarkup value to 0', function () {
       const s2sConfig = Object.assign({}, CONFIG, {
         cacheMarkup: 999
@@ -827,6 +952,17 @@ describe('S2S Adapter', function () {
                 'type': 3,
                 'w': 989,
                 'h': 742
+              }
+            },
+            {
+              'required': 1,
+              'img': {
+                'type': 1,
+                'wmin': 10,
+                'hmin': 10,
+                'ext': {
+                  'aspectratios': ['1:1']
+                }
               }
             },
             {
@@ -1046,6 +1182,7 @@ describe('S2S Adapter', function () {
 
       let userIdBidRequest = utils.deepClone(BID_REQUESTS);
       userIdBidRequest[0].bids[0].userId = {
+        criteoId: '44VmRDeUE3ZGJ5MzRkRVJHU3BIUlJ6TlFPQUFU',
         tdid: 'abc123',
         pubcid: '1234',
         parrableid: '01.1563917337.test-eid',
@@ -1061,6 +1198,8 @@ describe('S2S Adapter', function () {
       expect(Array.isArray(requestBid.user.ext.eids)).to.be.true;
       expect(requestBid.user.ext.eids.filter(eid => eid.source === 'adserver.org')).is.not.empty;
       expect(requestBid.user.ext.eids.filter(eid => eid.source === 'adserver.org')[0].uids[0].id).is.equal('abc123');
+      expect(requestBid.user.ext.eids.filter(eid => eid.source === 'criteo.com')).is.not.empty;
+      expect(requestBid.user.ext.eids.filter(eid => eid.source === 'criteo.com')[0].uids[0].id).is.equal('44VmRDeUE3ZGJ5MzRkRVJHU3BIUlJ6TlFPQUFU');
       expect(requestBid.user.ext.eids.filter(eid => eid.source === 'pubcommon')).is.not.empty;
       expect(requestBid.user.ext.eids.filter(eid => eid.source === 'pubcommon')[0].uids[0].id).is.equal('1234');
       expect(requestBid.user.ext.eids.filter(eid => eid.source === 'parrable.com')).is.not.empty;

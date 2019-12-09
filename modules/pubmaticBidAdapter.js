@@ -198,14 +198,10 @@ function _parseAdSlot(bid) {
 }
 
 function _initConf(refererInfo) {
-  var conf = {};
-  conf.pageURL = utils.getTopWindowUrl();
-  if (refererInfo && refererInfo.referer) {
-    conf.refURL = refererInfo.referer;
-  } else {
-    conf.refURL = '';
-  }
-  return conf;
+  return {
+    pageURL: (refererInfo && refererInfo.referer) ? refererInfo.referer : window.location.href,
+    refURL: window.document.referrer
+  };
 }
 
 function _handleCustomParams(params, conf) {
@@ -648,10 +644,11 @@ function _handleEids(payload, validBidRequests) {
     _addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.pubcid`), 'pubcommon', 1);
     _addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.digitrustid.data.id`), 'digitru.st', 1);
     _addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.id5id`), 'id5-sync.com', 1);
-    _addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.criteortus.${BIDDER_CODE}.userid`), 'criteortus', 1);
+    _addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.criteoId`), 'criteo.com', 1);// replacing criteoRtus
     _addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.idl_env`), 'liveramp.com', 1);
     _addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.lipb.lipbid`), 'liveintent.com', 1);
     _addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.parrableid`), 'parrable.com', 1);
+    _addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.britepoolid`), 'britepool.com', 1);
   }
   if (eids.length > 0) {
     payload.user.eids = eids;
@@ -920,6 +917,11 @@ export const spec = {
       };
     }
 
+    // CCPA
+    if (bidderRequest && bidderRequest.uspConsent) {
+      utils.deepSetValue(payload, 'regs.ext.us_privacy', bidderRequest.uspConsent);
+    }
+
     // coppa compliance
     if (config.getConfig('coppa') === true) {
       utils.deepSetValue(payload, 'regs.coppa', 1);
@@ -1015,13 +1017,18 @@ export const spec = {
   /**
    * Register User Sync.
    */
-  getUserSyncs: (syncOptions, responses, gdprConsent) => {
+  getUserSyncs: (syncOptions, responses, gdprConsent, uspConsent) => {
     let syncurl = USYNCURL + publisherId;
 
     // Attaching GDPR Consent Params in UserSync url
     if (gdprConsent) {
       syncurl += '&gdpr=' + (gdprConsent.gdprApplies ? 1 : 0);
       syncurl += '&gdpr_consent=' + encodeURIComponent(gdprConsent.consentString || '');
+    }
+
+    // CCPA
+    if (uspConsent) {
+      syncurl += '&us_privacy=' + encodeURIComponent(uspConsent);
     }
 
     // coppa compliance
