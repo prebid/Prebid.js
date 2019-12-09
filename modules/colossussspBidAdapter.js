@@ -64,11 +64,6 @@ export const spec = {
     };
 
     if(bidderRequest){
-      // if (bidderRequest.gdprConsent) {
-      //   if (bidderRequest.gdprConsent.consentString) {
-      //     request.gdpr_consent = bidderRequest.gdprConsent.consentString;
-      //   }
-      // }
       if (bidderRequest.uspConsent) {
         request.ccpa = bidderRequest.uspConsent;
       }
