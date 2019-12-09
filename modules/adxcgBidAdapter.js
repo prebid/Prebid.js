@@ -12,7 +12,7 @@ import includes from 'core-js/library/fn/array/includes'
  * updated to pass aditional auction and impression level parameters. added pass for video targeting parameters
  * updated to fix native support for image width/height and icon 2019.03.17
  * updated support for userid - pubcid,ttid 2019.05.28
- * updated to support prebid 3.0 -remove non https, move to banner.xx.sizes, remove utils.getTopWindowLocation,remove utils.getTopWindowUrl(),remove utils.getTopWindowReferrer()
+ * updated to support prebid 3.0 -  remove non https, move to banner.xx.sizes, remove utils.getTopWindowLocation,remove utils.getTopWindowUrl(),remove utils.getTopWindowReferrer()
  */
 
 const BIDDER_CODE = 'adxcg'
@@ -129,6 +129,10 @@ export const spec = {
 
       if (isBannerRequest(bid)) {
         sizes.push(utils.parseSizesInput(bid.mediaTypes.banner.sizes).join('|'))
+      }
+
+      if (isNativeRequest(bid)) {
+        sizes.push('0x0')
       }
 
       let bidfloor = utils.getBidIdParameter('bidfloor', bid.params) || 0
@@ -291,6 +295,10 @@ function isVideoRequest (bid) {
 
 function isBannerRequest (bid) {
   return bid.mediaType === 'banner' || !!utils.deepAccess(bid, 'mediaTypes.banner')
+}
+
+function isNativeRequest (bid) {
+  return bid.mediaType === 'native' || !!utils.deepAccess(bid, 'mediaTypes.native')
 }
 
 registerBidder(spec)
