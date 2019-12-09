@@ -145,8 +145,8 @@ describe('config API', function () {
         'cap': true
       }]
     };
-    const customPriceGranularityOutstream = utils.deepClone(customPriceGranularityVideo);
     const customPriceGranularityInstream = utils.deepClone(customPriceGranularityVideo);
+    const customPriceGranularityOutstream = utils.deepClone(customPriceGranularityVideo);
 
     setConfig({
       'mediaTypePriceGranularity': {
@@ -154,7 +154,7 @@ describe('config API', function () {
         'video': customPriceGranularityVideo,
         'video-instream': customPriceGranularityInstream,
         'video-outstream': customPriceGranularityOutstream,
-        'native': 'medium'
+        'native': 'high'
       }
     });
 
@@ -163,7 +163,7 @@ describe('config API', function () {
     expect(configResult.video).to.be.equal(customPriceGranularityVideo);
     expect(configResult['video-instream']).to.be.equal(customPriceGranularityInstream);
     expect(configResult['video-outstream']).to.be.equal(customPriceGranularityOutstream);
-    expect(configResult.native).to.be.equal('medium');
+    expect(configResult.native).to.be.equal('high');
   });
 
   it('sets priceGranularity and customPriceBucket', function () {

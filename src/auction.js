@@ -28,16 +28,27 @@
 
 /**
  * @typedef {Object} BidRequest
+ *
  * @property {string} bidderCode - adUnit bidder
- * @property {number} auctionId - random v4 UUID or value passed to makeBidRequests
- * @property {string} bidderRequestId - random string (to be used as a dynamic JSONP callback)
- * @property {string} tid - random v4 UUID
- * @property {Array.<Bid>} bids - bids array
- * @property {number} auctionStart - set to Date now() when callBids is called
- * @property {number} timeout
+ * @property {number} auctionId - random UUID
+ * @property {string} bidderRequestId - random string
+ * @property {string} tid - random UUID
+ * @property {Array.<Bid>} bids - auction bids
+ * @property {number} auctionStart - Date.now() at auction start
+ * @property {number} timeout - cancel auction timeout
  * @property {string} src - client|s2s
  * @property {refererInfo} refererInfo - referer info object
- * @
+ */
+
+/**
+ * @typedef {Object} MediaTypePriceGranularity
+ *
+ * @property {(string|{})} [banner]
+ * @property {(string|{})} [native]
+ * @property {(string|{})} [video]
+ * @property {(string|{})} [video-instream]
+ * @property {(string|{})} [video-outstream]
+
  */
 
 /**
@@ -57,7 +68,7 @@
  * @property {function(): void} callBids - sends requests to all adapters for bids
  */
 
-import { flatten, timestamp, adUnitsFilter, deepAccess, getBidRequest, getValue } from './utils';
+import { flatten, timestamp, adUnitsFilter, deepAccess, getBidRequest, getValue, isPlainObject } from './utils';
 import { parse as parseURL } from './url';
 import { getPriceBucketString } from './cpmBucketManager';
 import { getNativeTargeting } from './native';
@@ -528,35 +539,36 @@ function setupBidTargeting(bidObject, bidderRequest) {
 }
 
 /**
- * @param {string} mediaType
- * @param {BidRequest} bidReq
- * @param {(Object|undefined)} mediaTypeGranularity
- * @returns {undefined|*}
+ * @param {MediaType} mediaType
+ * @param {BidRequest} [bidReq]
+ * @param {MediaTypePriceGranularity} mediaTypePriceGranularity
+ * @returns {(Object|string|undefined)}
  */
-export function getMediaTypeGranularity(mediaType, bidReq, mediaTypeGranularity) {
-  if (!utils.isPlainObject(mediaTypeGranularity)) {
+export function getMediaTypeGranularity(mediaType, bidReq, mediaTypePriceGranularity) {
+  if (!isPlainObject(mediaTypePriceGranularity)) {
     return;
   }
-  if (mediaType === VIDEO) {
-    if (!utils.isPlainObject(bidReq)) {
-      return mediaTypeGranularity[`${VIDEO}`];
-    }
 
-    const context = deepAccess(bidReq, `mediaTypes.${VIDEO}.context`);
-    if (utils.isStr(context)) {
-      // 1. use video-CONTEXT if found in mediaTypePriceGranularity
-      if (mediaTypeGranularity.hasOwnProperty(`${VIDEO}-${context}`)) {
-        return mediaTypeGranularity[`${VIDEO}-${context}`];
+  if (mediaType) {
+    if (mediaType === VIDEO) {
+      /**
+       * if context is not defined assume default instream
+       * @type {string}
+       */
+      const context = deepAccess(bidReq, `mediaTypes.${VIDEO}.context`);
+      if (context) {
+        // if 'video.${CONTEEXT}' was set, return value
+        if (mediaTypePriceGranularity.hasOwnProperty(`${VIDEO}-${context}`)) {
+          return mediaTypePriceGranularity[`${VIDEO}-${context}`];
+        }
+        // if banner for outstream, or video for instream
+        return mediaTypePriceGranularity[(context === OUTSTREAM ? BANNER : VIDEO)];
       }
-      // 2. use banner for outstream
-      if (context === OUTSTREAM) {
-        return mediaTypeGranularity[BANNER];
-      }
+      return mediaTypePriceGranularity[VIDEO];
     }
-    return mediaTypeGranularity[VIDEO];
+    // if mediaType is not video (banner, native)
+    return mediaTypePriceGranularity[mediaType];
   }
-  // all other mediaTypes get granulartty by mediaType
-  return mediaTypeGranularity[mediaType];
 }
 
 /**

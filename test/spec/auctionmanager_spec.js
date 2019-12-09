@@ -25,6 +25,10 @@ const BIDDER_CODE1 = 'sampleBidder1';
 const ADUNIT_CODE = 'adUnit-code';
 const ADUNIT_CODE1 = 'adUnit-code-1';
 
+/**
+ * @param {Object} [opts]
+ * @returns {Bid}
+ */
 function mockBid(opts) {
   let bidderCode = opts && opts.bidderCode;
 
@@ -43,6 +47,11 @@ function mockBid(opts) {
   };
 }
 
+/**
+ * @param {Bid} bid
+ * @param {Object} [opts]
+ * @returns {BidRequest}
+ */
 function mockBidRequest(bid, opts) {
   if (!bid) {
     throw new Error('bid required');
@@ -1102,6 +1111,69 @@ describe('auctionmanager.js', function () {
     });
   });
 
+  describe.skip('getMediaTypeGranularity', function () {
+    it('should return video granularity if outstream video and "video-instream" does not exist in mediaTypePriceGranularity', function () {
+      sinon.stub(config, 'getConfig').withArgs('mediaTypePriceGranularity').returns({
+        mediaTypePriceGranularity: {
+          banner: 'low',
+          video: 'medium'
+        }
+      });
+
+      const videoBid = mockBid();
+      videoBid.mediaType = 'video';
+
+      const bidRequests = [mockBidRequest(videoBid)];
+      bidRequests[0].bids[0] = Object.assign({
+        bidId: utils.getUniqueIdentifierStr(),
+        mediaTypes: {
+          video: {
+            context: 'instream',
+            playerSize: [640, 300],
+            mimes: ['video/mp4', 'video/webm'],
+            api: [1, 2],
+            protocols: [5, 6]
+          }
+        }
+      }, bidRequests[0].bids[0]);
+      bidRequests[0].bids[0].adUnitCode = ADUNIT_CODE1;
+
+      const mediaTypeGranularity = getMediaTypeGranularity('video', bidRequests[0], config.getConfig('mediaTypePriceGranularity'))
+      expect(mediaTypeGranularity).to.equal('medium');
+
+      config.getConfig.restore();
+    });
+
+    it('should return banner granularity if outstream video and "video-outstream" does not exist in mediaTypePriceGranularity', function () {
+      sinon.stub(config, 'getConfig').withArgs('mediaTypePriceGranularity').returns({
+        mediaTypePriceGranularity: {
+          banner: 'low',
+          video: 'medium'
+        }
+      });
+
+      const videoBid = mockBid();
+      videoBid.mediaType = 'video';
+
+      const bidRequests = [mockBidRequest(videoBid)];
+      bidRequests[0].bids[0] = Object.assign({
+        bidId: utils.getUniqueIdentifierStr(),
+        mediaTypes: {
+          video: {
+            context: 'outstream',
+            playerSize: [300, 300]
+          }
+        }
+      }, bidRequests[0].bids[0]);
+      bidRequests[0].bids[0].adUnitCode = ADUNIT_CODE1;
+
+      const mediaTypeGranularity = getMediaTypeGranularity('video', bidRequests[0], config.getConfig('mediaTypePriceGranularity'))
+      expect(mediaTypeGranularity).to.equal('low');
+
+      config.getConfig.restore();
+    });
+  });
+
   describe('auctionCallbacks', function() {
     let bids = TEST_BIDS;
     let bidRequests;
@@ -1182,34 +1254,5 @@ describe('auctionmanager.js', function () {
       requests[0].respond(200, { 'Content-Type': 'application/json' }, responseBody);
       assert.equal(doneSpy.callCount, 1);
     })
-  });
-
-  describe('getMediaTypeGranularity', function () {
-    it('should get video granularity if video is instream and config.mediaTypePriceGranularity does not have a video-instream object ', function () {
-      const videoBid = mockBid();
-      videoBid.mediaType = 'video';
-
-      /**
-       * @type {Array.<BidRequest>}
-       */
-      const bidRequests = [mockBidRequest(videoBid)];
-      bidRequests[0].bids[0] = Object.assign({
-        bidId: utils.getUniqueIdentifierStr(),
-        mediaTypes: {
-          video: {
-            context: 'instream'
-          }
-        }
-      }, bidRequests[0].bids[0]);
-      bidRequests[0].bids[0].adUnitCode = ADUNIT_CODE1;
-
-      const mediaTypePriceGranularity = {
-        banner: 'low',
-        video: 'medium'
-      }
-
-      const mediaTypeGranularity = getMediaTypeGranularity('video', bidRequests[0], mediaTypePriceGranularity)
-      expect(mediaTypeGranularity).to.equal('medium');
-    });
   });
 });
