@@ -431,6 +431,20 @@ describe('PulsePoint Adapter Tests', function () {
     expect(ortbRequest.regs.ext.gdpr).to.equal(1);
   });
 
+  it('Verify CCPA', function () {
+    const bidderRequestUSPrivacy = {
+      uspConsent: '1YYY'
+    };
+    const request = spec.buildRequests(slotConfigs, Object.assign({}, bidderRequest, bidderRequestUSPrivacy));
+    expect(request.url).to.equal('https://bid.contextweb.com/header/ortb?src=prebid');
+    expect(request.method).to.equal('POST');
+    const ortbRequest = request.data;
+    // regs object
+    expect(ortbRequest.regs).to.not.equal(null);
+    expect(ortbRequest.regs.ext).to.not.equal(null);
+    expect(ortbRequest.regs.ext.us_privacy).to.equal('1YYY');
+  });
+
   it('Verify Video request', function () {
     const request = spec.buildRequests(videoSlotConfig, bidderRequest);
     expect(request.url).to.equal('https://bid.contextweb.com/header/ortb?src=prebid');
@@ -592,15 +606,53 @@ describe('PulsePoint Adapter Tests', function () {
     expect(ortbRequest.user).to.not.be.undefined;
     expect(ortbRequest.user.ext).to.not.be.undefined;
     expect(ortbRequest.user.ext.eids).to.not.be.undefined;
-    expect(ortbRequest.user.ext.eids).to.have.lengthOf(3);
+    expect(ortbRequest.user.ext.eids).to.have.lengthOf(2);
     expect(ortbRequest.user.ext.eids[0].source).to.equal('pubcommon');
     expect(ortbRequest.user.ext.eids[0].uids).to.have.lengthOf(1);
     expect(ortbRequest.user.ext.eids[0].uids[0].id).to.equal('userid_pubcid');
-    expect(ortbRequest.user.ext.eids[1].source).to.equal('ttdid');
+    expect(ortbRequest.user.ext.eids[1].source).to.equal('adserver.org');
     expect(ortbRequest.user.ext.eids[1].uids).to.have.lengthOf(1);
     expect(ortbRequest.user.ext.eids[1].uids[0].id).to.equal('userid_ttd');
-    expect(ortbRequest.user.ext.eids[2].source).to.equal('digitrust');
-    expect(ortbRequest.user.ext.eids[2].uids).to.have.lengthOf(1);
-    expect(ortbRequest.user.ext.eids[2].uids[0].id).to.equal('userid_digitrust');
+    expect(ortbRequest.user.ext.eids[1].uids[0].ext).to.not.be.null;
+    expect(ortbRequest.user.ext.eids[1].uids[0].ext.rtiPartner).to.equal('TDID');
+    expect(ortbRequest.user.ext.digitrust).to.not.be.null;
+    expect(ortbRequest.user.ext.digitrust.id).to.equal('userid_digitrust');
+    expect(ortbRequest.user.ext.digitrust.keyv).to.equal(4)
+  });
+  it('Verify new external user id partners', function () {
+    const bidRequests = deepClone(slotConfigs);
+    bidRequests[0].userId = {
+      britepoolid: 'britepool_id123',
+      criteoId: 'criteo_id234',
+      idl_env: 'idl_id123',
+      id5id: 'id5id_234',
+      parrableid: 'parrable_id234',
+      lipb: {
+        lipbid: 'liveintent_id123'
+      }
+    };
+    const userVerify = function(obj, source, id) {
+      expect(obj).to.deep.equal({
+        source,
+        uids: [{
+          id
+        }]
+      });
+    };
+    const request = spec.buildRequests(bidRequests, bidderRequest);
+    expect(request).to.be.not.null;
+    const ortbRequest = request.data;
+    expect(request.data).to.be.not.null;
+    // user object
+    expect(ortbRequest.user).to.not.be.undefined;
+    expect(ortbRequest.user.ext).to.not.be.undefined;
+    expect(ortbRequest.user.ext.eids).to.not.be.undefined;
+    expect(ortbRequest.user.ext.eids).to.have.lengthOf(6);
+    userVerify(ortbRequest.user.ext.eids[0], 'britepool.com', 'britepool_id123');
+    userVerify(ortbRequest.user.ext.eids[1], 'criteo', 'criteo_id234');
+    userVerify(ortbRequest.user.ext.eids[2], 'identityLink', 'idl_id123');
+    userVerify(ortbRequest.user.ext.eids[3], 'id5-sync.com', 'id5id_234');
+    userVerify(ortbRequest.user.ext.eids[4], 'parrable.com', 'parrable_id234');
+    userVerify(ortbRequest.user.ext.eids[5], 'liveintent.com', 'liveintent_id123');
   });
 });

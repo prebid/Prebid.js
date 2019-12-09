@@ -397,9 +397,26 @@ function user(bidRequest, bidderRequest) {
     if (bidRequest.userId) {
       ext.eids = [];
       addExternalUserId(ext.eids, bidRequest.userId.pubcid, 'pubcommon');
-      addExternalUserId(ext.eids, bidRequest.userId.tdid, 'ttdid');
-      addExternalUserId(ext.eids, utils.deepAccess(bidRequest.userId.digitrustid, 'data.id'), 'digitrust');
-      addExternalUserId(ext.eids, bidRequest.userId.id5id, 'id5id');
+      addExternalUserId(ext.eids, bidRequest.userId.britepoolid, 'britepool.com');
+      addExternalUserId(ext.eids, bidRequest.userId.criteoId, 'criteo');
+      addExternalUserId(ext.eids, bidRequest.userId.idl_env, 'identityLink');
+      addExternalUserId(ext.eids, bidRequest.userId.id5id, 'id5-sync.com');
+      addExternalUserId(ext.eids, bidRequest.userId.parrableid, 'parrable.com');
+      // liveintent
+      if (bidRequest.userId.lipb && bidRequest.userId.lipb.lipbid) {
+        addExternalUserId(ext.eids, bidRequest.userId.lipb.lipbid, 'liveintent.com');
+      }
+      // TTD
+      addExternalUserId(ext.eids, bidRequest.userId.tdid, 'adserver.org', {
+        rtiPartner: 'TDID'
+      });
+      // digitrust
+      if (utils.deepAccess(bidRequest.userId.digitrustid, 'data.id')) {
+        ext.digitrust = {
+          id: utils.deepAccess(bidRequest.userId.digitrustid, 'data.id'),
+          keyv: utils.deepAccess(bidRequest.userId.digitrustid, 'data.keyv')
+        }
+      }
     }
   }
   return { ext };
@@ -408,13 +425,15 @@ function user(bidRequest, bidderRequest) {
 /**
  * Produces external userid object in ortb 3.0 model.
  */
-function addExternalUserId(eids, value, source) {
-  if (value) {
+function addExternalUserId(eids, id, source, uidExt) {
+  if (id) {
+    var uid = { id };
+    if (uidExt) {
+      uid.ext = uidExt;
+    }
     eids.push({
       source,
-      uids: [{
-        id: value
-      }]
+      uids: [ uid ]
     });
   }
 }
@@ -423,8 +442,17 @@ function addExternalUserId(eids, value, source) {
  * Produces the regulations ortb object
  */
 function regs(bidderRequest) {
-  if (bidderRequest && bidderRequest.gdprConsent) {
-    return { ext: { gdpr: bidderRequest.gdprConsent.gdprApplies ? 1 : 0 } };
+  if (bidderRequest.gdprConsent || bidderRequest.uspConsent) {
+    var ext = {};
+    // GDPR applies attribute (actual consent value is in user object)
+    if (bidderRequest.gdprConsent) {
+      ext.gdpr = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
+    }
+    // CCPA
+    if (bidderRequest.uspConsent) {
+      ext.us_privacy = bidderRequest.uspConsent;
+    }
+    return { ext };
   }
   return null;
 }
