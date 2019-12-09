@@ -122,11 +122,11 @@ describe('gumgumAdapter', function () {
       const request = Object.assign({}, bidRequests[0]);
       delete request.params;
       request.params = {
-        'inScreen': 123
+        'inScreenPubID': 123
       };
       const bidRequest = spec.buildRequests([request])[0];
       expect(bidRequest.data).to.include.any.keys('pubId');
-      expect(bidRequest.data.pubId).to.equal(request.params.inScreen);
+      expect(bidRequest.data.pubId).to.equal(request.params.inScreenPubID);
       expect(bidRequest.data).to.not.include.any.keys('t');
     });
     it('should correctly set the request paramters depending on params field', function () {
