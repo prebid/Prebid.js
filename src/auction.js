@@ -68,7 +68,7 @@
  * @property {function(): void} callBids - sends requests to all adapters for bids
  */
 
-import { flatten, timestamp, adUnitsFilter, deepAccess, getBidRequest, getValue, isPlainObject } from './utils';
+import { flatten, timestamp, adUnitsFilter, deepAccess, getBidRequest, getValue } from './utils';
 import { parse as parseURL } from './url';
 import { getPriceBucketString } from './cpmBucketManager';
 import { getNativeTargeting } from './native';
@@ -545,30 +545,28 @@ function setupBidTargeting(bidObject, bidderRequest) {
  * @returns {(Object|string|undefined)}
  */
 export function getMediaTypeGranularity(mediaType, bidReq, mediaTypePriceGranularity) {
-  if (!isPlainObject(mediaTypePriceGranularity)) {
+  if (typeof mediaType !== 'string' || typeof mediaTypePriceGranularity !== 'object') {
     return;
   }
 
-  if (mediaType) {
-    if (mediaType === VIDEO) {
-      /**
-       * if context is not defined assume default instream
-       * @type {string}
-       */
-      const context = deepAccess(bidReq, `mediaTypes.${VIDEO}.context`);
-      if (context) {
-        // if 'video.${CONTEEXT}' was set, return value
-        if (mediaTypePriceGranularity.hasOwnProperty(`${VIDEO}-${context}`)) {
-          return mediaTypePriceGranularity[`${VIDEO}-${context}`];
-        }
-        // if banner for outstream, or video for instream
-        return mediaTypePriceGranularity[(context === OUTSTREAM ? BANNER : VIDEO)];
+  if (mediaType === VIDEO) {
+    /**
+     * if context is not defined assume default instream
+     * @type {string}
+     */
+    const context = deepAccess(bidReq, `mediaTypes.${VIDEO}.context`);
+    if (typeof context === 'string') {
+      // if 'video.${CONTEEXT}' was set, return value
+      if (mediaTypePriceGranularity.hasOwnProperty(`${VIDEO}-${context}`)) {
+        return mediaTypePriceGranularity[`${VIDEO}-${context}`];
       }
-      return mediaTypePriceGranularity[VIDEO];
+      // banner if outstream, all other contxt values use video
+      return mediaTypePriceGranularity[(context === OUTSTREAM ? BANNER : VIDEO)];
     }
-    // if mediaType is not video (banner, native)
-    return mediaTypePriceGranularity[mediaType];
+    return mediaTypePriceGranularity[VIDEO];
   }
+  // if mediaType is not video (banner, native)
+  return mediaTypePriceGranularity[mediaType];
 }
 
 /**

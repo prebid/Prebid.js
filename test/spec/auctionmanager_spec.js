@@ -1111,66 +1111,142 @@ describe('auctionmanager.js', function () {
     });
   });
 
-  describe.skip('getMediaTypeGranularity', function () {
-    it('should return video granularity if outstream video and "video-instream" does not exist in mediaTypePriceGranularity', function () {
-      sinon.stub(config, 'getConfig').withArgs('mediaTypePriceGranularity').returns({
-        mediaTypePriceGranularity: {
-          banner: 'low',
-          video: 'medium'
-        }
-      });
-
-      const videoBid = mockBid();
-      videoBid.mediaType = 'video';
-
-      const bidRequests = [mockBidRequest(videoBid)];
-      bidRequests[0].bids[0] = Object.assign({
-        bidId: utils.getUniqueIdentifierStr(),
-        mediaTypes: {
-          video: {
-            context: 'instream',
-            playerSize: [640, 300],
-            mimes: ['video/mp4', 'video/webm'],
-            api: [1, 2],
-            protocols: [5, 6]
-          }
-        }
-      }, bidRequests[0].bids[0]);
-      bidRequests[0].bids[0].adUnitCode = ADUNIT_CODE1;
-
-      const mediaTypeGranularity = getMediaTypeGranularity('video', bidRequests[0], config.getConfig('mediaTypePriceGranularity'))
-      expect(mediaTypeGranularity).to.equal('medium');
-
-      config.getConfig.restore();
+  describe('getMediaTypeGranularity', function () {
+    it('should return "undefined" for undefined mediaType', function () {
+      const bidReq = {
+        'mediaTypes': { video: { context: 'instream' } }
+      };
+      expect(getMediaTypeGranularity(undefined, bidReq, {
+        banner: 'low',
+        video: 'medium',
+        'video-instream': 'high'
+      })).to.equal(undefined);
     });
 
-    it('should return banner granularity if outstream video and "video-outstream" does not exist in mediaTypePriceGranularity', function () {
-      sinon.stub(config, 'getConfig').withArgs('mediaTypePriceGranularity').returns({
-        mediaTypePriceGranularity: {
-          banner: 'low',
-          video: 'medium'
-        }
+    describe('should return "undefined" when', function () {
+      it('undefined mediaTypePriceGranularity', function () {
+        const bidReq = {
+          'mediaTypes': { video: { context: 'instream' } }
+        };
+        expect(getMediaTypeGranularity('video', bidReq, undefined)).to.equal(undefined);
       });
 
-      const videoBid = mockBid();
-      videoBid.mediaType = 'video';
+      it('undefined mediaType and mediaTypePriceGranularity', function () {
+        const bidReq = {
+          'mediaTypes': { video: { context: 'instream' } }
+        };
+        expect(getMediaTypeGranularity(undefined, bidReq, undefined)).to.equal(undefined);
+      });
 
-      const bidRequests = [mockBidRequest(videoBid)];
-      bidRequests[0].bids[0] = Object.assign({
-        bidId: utils.getUniqueIdentifierStr(),
-        mediaTypes: {
-          video: {
-            context: 'outstream',
-            playerSize: [300, 300]
-          }
-        }
-      }, bidRequests[0].bids[0]);
-      bidRequests[0].bids[0].adUnitCode = ADUNIT_CODE1;
+      it('undefined mediaType, bidRequest and mediaTypePriceGranularity', function () {
+        expect(getMediaTypeGranularity(undefined, undefined, undefined)).to.equal(undefined);
+      });
+    });
 
-      const mediaTypeGranularity = getMediaTypeGranularity('video', bidRequests[0], config.getConfig('mediaTypePriceGranularity'))
-      expect(mediaTypeGranularity).to.equal('low');
+    it('should return "video-instream" for instream and video mediaType and mediaTypePriceGranularity["video-outstream"] is defined', function () {
+      const bidReq = {
+        'mediaTypes': { video: { context: 'instream' } }
+      };
+      expect(getMediaTypeGranularity('video', bidReq, {
+        banner: 'low',
+        video: 'medium',
+        'video-instream': 'high'
+      })).to.equal('high');
+    });
 
-      config.getConfig.restore();
+    it('should return "video-outstream" for instream and video mediaType and mediaTypePriceGranularity["video-outstream"] is defined', function () {
+      const bidReq = {
+        'mediaTypes': { video: { context: 'outstream' } }
+      };
+      expect(getMediaTypeGranularity('video', bidReq, {
+        banner: 'low',
+        video: 'medium',
+        'video-outstream': 'high'
+      })).to.equal('high');
+    });
+
+    describe('should return video when', function () {
+      it('mediaType is bidder if undefined bidRequest', function () {
+        expect(getMediaTypeGranularity('video', undefined, {
+          banner: 'low',
+          video: 'medium',
+          'video-instream': 'high'
+        })).to.equal('medium');
+      });
+
+      it('mediaType is video instream and mediaTypePriceGranularity["video-outstream"] is undefined', function () {
+        const bidReq = {
+          'mediaTypes': { video: { context: 'instream' } }
+        };
+        expect(getMediaTypeGranularity('video', bidReq, {
+          banner: 'low',
+          video: 'medium'
+        })).to.equal('medium');
+      });
+
+      it('mediaType is video and video.context is undefined', function () {
+        let bidReq = {
+          'mediaTypes': { video: {} }
+        };
+        expect(getMediaTypeGranularity('video', bidReq, {
+          banner: 'low',
+          video: 'medium'
+        })).to.equal('medium');
+
+        // also when mediaTypes.video is undefined
+        bidReq = {
+          'mediaTypes': { banner: {} }
+        };
+        expect(getMediaTypeGranularity('video', bidReq, {
+          banner: 'low',
+          video: 'medium'
+        })).to.equal('medium');
+
+        // also when mediaTypes is undefined
+        bidReq = {};
+        expect(getMediaTypeGranularity('video', bidReq, {
+          banner: 'low',
+          video: 'medium'
+        })).to.equal('medium');
+      });
+    });
+
+    describe('should return "banner', function () {
+      it('for outstream and video mediaType video if mediaTypePriceGranularity["video-outstream"] is undefined', function () {
+        const bidReq = {
+          'mediaTypes': { video: { context: 'outstream' } }
+        };
+        expect(getMediaTypeGranularity('video', bidReq, {
+          banner: 'low',
+          video: 'medium'
+        })).to.equal('low');
+      });
+
+      it('for mediaType banner', function () {
+        expect(getMediaTypeGranularity('banner', {mediaTypes: {banner: {}}}, {
+          banner: 'low',
+          video: 'medium',
+          'video-instream': 'high'
+        })).to.equal('low');
+        // bidRequest object is empty
+        expect(getMediaTypeGranularity('banner', {}, {
+          banner: 'low',
+          video: 'medium'
+        })).to.equal('low');
+        // bidRequest is undefined
+        expect(getMediaTypeGranularity('banner', undefined, {
+          banner: 'low',
+          video: 'medium'
+        })).to.equal('low');
+      });
+    });
+
+    it('should return "native" if mediaType is native', function () {
+      expect(getMediaTypeGranularity('native', {mediaTypes: {native: {}}}, {
+        banner: 'low',
+        video: 'medium',
+        native: 'high'
+      })).to.equal('high');
     });
   });
 
