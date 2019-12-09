@@ -120,7 +120,7 @@ export function resetSyncedStatus() {
 /**
  * @param  {Array} bidderCodes list of bidders to request user syncs for.
  */
-function queueSync(bidderCodes, gdprConsent) {
+function queueSync(bidderCodes, gdprConsent, uspConsent) {
   if (_synced) {
     return;
   }
@@ -147,6 +147,12 @@ function queueSync(bidderCodes, gdprConsent) {
       payload.gdpr_consent = gdprConsent.consentString;
     }
   }
+
+  // US Privace (CCPA) support
+  if (uspConsent) {
+    payload.us_privacy = uspConsent;
+  }
+
   const jsonPayload = JSON.stringify(payload);
   ajax(_s2sConfig.syncEndpoint,
     (response) => {
@@ -698,7 +704,7 @@ const OPEN_RTB_PROTOCOL = {
     }
 
     const bidUserId = utils.deepAccess(bidRequests, '0.bids.0.userId');
-    if (bidUserId && typeof bidUserId === 'object' && (bidUserId.tdid || bidUserId.pubcid || bidUserId.parrableid || bidUserId.lipb || bidUserId.id5id)) {
+    if (bidUserId && typeof bidUserId === 'object' && (bidUserId.tdid || bidUserId.pubcid || bidUserId.parrableid || bidUserId.lipb || bidUserId.id5id || bidUserId.criteoId || bidUserId.britepoolid)) {
       utils.deepSetValue(request, 'user.ext.eids', []);
 
       if (bidUserId.tdid) {
@@ -755,26 +761,41 @@ const OPEN_RTB_PROTOCOL = {
           }]
         });
       }
+
+      if (bidUserId.criteoId) {
+        request.user.ext.eids.push({
+          source: 'criteo.com',
+          uids: [{
+            id: bidUserId.criteoId
+          }]
+        });
+      }
+
+      if (bidUserId.britepoolid) {
+        request.user.ext.eids.push({
+          source: 'britepool.com',
+          uids: [{
+            id: bidUserId.britepoolid
+          }]
+        });
+      }
     }
 
-    if (bidRequests && bidRequests[0].gdprConsent) {
-      // note - gdprApplies & consentString may be undefined in certain use-cases for consentManagement module
-      let gdprApplies;
-      if (typeof bidRequests[0].gdprConsent.gdprApplies === 'boolean') {
-        gdprApplies = bidRequests[0].gdprConsent.gdprApplies ? 1 : 0;
-      }
-
-      if (request.regs) {
-        if (request.regs.ext) {
-          request.regs.ext.gdpr = gdprApplies;
-        } else {
-          request.regs.ext = { gdpr: gdprApplies };
+    if (bidRequests) {
+      if (bidRequests[0].gdprConsent) {
+        // note - gdprApplies & consentString may be undefined in certain use-cases for consentManagement module
+        let gdprApplies;
+        if (typeof bidRequests[0].gdprConsent.gdprApplies === 'boolean') {
+          gdprApplies = bidRequests[0].gdprConsent.gdprApplies ? 1 : 0;
         }
-      } else {
-        request.regs = { ext: { gdpr: gdprApplies } };
+        utils.deepSetValue(request, 'regs.ext.gdpr', gdprApplies);
+        utils.deepSetValue(request, 'user.ext.consent', bidRequests[0].gdprConsent.consentString);
       }
 
-      utils.deepSetValue(request, 'user.ext.consent', bidRequests[0].gdprConsent.consentString);
+      // US Privacy (CCPA) support
+      if (bidRequests[0].uspConsent) {
+        utils.deepSetValue(request, 'regs.ext.us_privacy', bidRequests[0].uspConsent);
+      }
     }
 
     if (getConfig('coppa') === true) {
@@ -975,12 +996,17 @@ export function PrebidServer() {
       .filter(utils.uniques);
 
     if (_s2sConfig && _s2sConfig.syncEndpoint) {
-      let consent = (Array.isArray(bidRequests) && bidRequests.length > 0) ? bidRequests[0].gdprConsent : undefined;
+      let gdprConsent, uspConsent;
+      if (Array.isArray(bidRequests) && bidRequests.length > 0) {
+        gdprConsent = bidRequests[0].gdprConsent;
+        uspConsent = bidRequests[0].uspConsent;
+      }
+
       let syncBidders = _s2sConfig.bidders
         .map(bidder => adapterManager.aliasRegistry[bidder] || bidder)
         .filter((bidder, index, array) => (array.indexOf(bidder) === index));
 
-      queueSync(syncBidders, consent);
+      queueSync(syncBidders, gdprConsent, uspConsent);
     }
 
     const request = protocolAdapter().buildRequest(s2sBidRequest, bidRequests, validAdUnits);
