@@ -243,10 +243,10 @@ function getRequestData(bid, consentData, bidRequest) {
       };
     }
   }
-  if (bidderRequest && bidderRequest.uspConsent) {
+  if (bidRequest && bidRequest.uspConsent) {
     bidData.regs = {
       ext: {
-        us_privacy: bidderRequest.uspConsent
+        us_privacy: bidRequest.uspConsent
       }
     };
   }
