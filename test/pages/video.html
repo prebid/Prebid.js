@@ -16,7 +16,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/videojs-vast-vpaid/2.0.2/videojs_5.vast.vpaid.min.js"></script>
 
     <!-- prebid.js -->
-    <script src="../../build/dist/prebid.js" async=true></script>
+    <script src="../../build/dev/prebid.js" async=true></script>
 
 
     <script>
@@ -28,27 +28,68 @@
        Prebid Video adUnit
        */
 
-      var videoAdUnit = {
-        code: 'video1',
-        sizes: [640,480],
-        mediaTypes: {
-          video: {context: 'instream',  playerSize: [640, 480]}
-        },
-        bids: [
-          {
-            bidder: 'appnexus',
-            params: {
-              placementId: '9333431',
-              video: {
-                skipppable: false,
-                playback_methods: ['auto_play_sound_off']
-              }
-            }
-          }
-        ]
-      };
+      var videoAdUnit = [{
+  code: 'video1',
+  sizes: [640, 480],
+  mediaTypes: {
+    video: {
+      context: "instream"
+    }
+  },
+  bids: [{
+    bidder: 'oneVideo',
+    params: {
+      video: {
+        playerWidth: 480,
+        playerHeight: 640,
+        mimes: ['video/mp4', 'application/javascript'],
+        protocols: [2, 5],
+        api: [2],
+        delivery: [2],
+        playbackmethod: [1, 5],
+        placement: 1,
+        //inventoryid: 34567,
+        position: 1
+        //display: 1
+      },
+      site: {
+        id: 1,
+        page: 'https://www.yahoo.com',
+        referrer: 'http://abhi12345.com'
+
+      },
+      pubId: 'brxd',
+      bidfloor: 10
+    }
+  }]
+}];
 
       pbjs.que.push(function(){
+        pbjs.setConfig({
+   consentManagement: {
+     cmpApi: 'static',
+     timeout: 1111,
+     allowAuctionWithoutConsent: false,
+     consentData: {
+       getConsentData: {
+         'gdprApplies': true,
+         'hasGlobalScope': false,
+         'consentData': 'BOOgjO9OOgjO9APABAENAi-AAAAWd7_______9____7_9uz_Gv_r_ff_3nW0739P1A_r_Oz_rm_-zzV44_lpQQRCEA'
+       },
+       getVendorConsents: {
+         'metadata': 'BOOgjO9OOgjO9APABAENAi-AAAAWd7_______9____7_9uz_Gv_r_ff_3nW0739P1A_r_Oz_rm_-zzV44_lpQQRCEA'
+
+       }
+     }
+   }
+ });
+        // pbjs.setConfig({
+        //   consentManagement: {
+        //     cmpApi: 'iab',
+        //     timeout: 1111,
+        //     allowAuctionWithoutConsent: 'cancel'
+        //   }
+        // });
         pbjs.addAdUnits(videoAdUnit);
         pbjs.requestBids({
           timeout : 700,
