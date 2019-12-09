@@ -120,37 +120,58 @@ describe('Trion adapter tests', function () {
       delete params.re;
     });
 
-    it('should send the correct state when there is non human traffic', function () {
-      let originalWD = window.navigator.webdriver;
-      window.navigator['__defineGetter__']('webdriver', function () {
-        return 1;
+    describe('webdriver', function () {
+      let originalWD;
+
+      beforeEach(function () {
+        originalWD = window.navigator.webdriver;
+        window.navigator['__defineGetter__']('webdriver', function () {
+          return 1;
+        });
       });
-      let bidRequests = spec.buildRequests(TRION_BID_REQUEST);
-      let bidUrlParams = bidRequests[0].data;
-      expect(bidUrlParams).to.include('tr_wd=1');
-      window.navigator['__defineGetter__']('webdriver', function () {
-        return originalWD;
+
+      afterEach(function () {
+        window.navigator['__defineGetter__']('webdriver', function () {
+          return originalWD;
+        });
+      });
+
+      it('should send the correct state when there is non human traffic', function () {
+        let bidRequests = spec.buildRequests(TRION_BID_REQUEST);
+        let bidUrlParams = bidRequests[0].data;
+        expect(bidUrlParams).to.include('tr_wd=1');
       });
     });
 
-    it('should send the correct states when the document is not visible', function () {
-      let originalHD = document.hidden;
-      let originalVS = document.visibilityState;
-      document['__defineGetter__']('hidden', function () {
-        return 1;
+    describe('visibility', function () {
+      let originalHD;
+      let originalVS;
+
+      beforeEach(function () {
+        originalHD = document.hidden;
+        originalVS = document.visibilityState;
+        document['__defineGetter__']('hidden', function () {
+          return 1;
+        });
+        document['__defineGetter__']('visibilityState', function () {
+          return 'hidden';
+        });
       });
-      document['__defineGetter__']('visibilityState', function () {
-        return 'hidden';
+
+      afterEach(function () {
+        document['__defineGetter__']('hidden', function () {
+          return originalHD;
+        });
+        document['__defineGetter__']('visibilityState', function () {
+          return originalVS;
+        });
       });
-      let bidRequests = spec.buildRequests(TRION_BID_REQUEST);
-      let bidUrlParams = bidRequests[0].data;
-      expect(bidUrlParams).to.include('tr_hd=1');
-      expect(bidUrlParams).to.include('tr_vs=hidden');
-      document['__defineGetter__']('hidden', function () {
-        return originalHD;
-      });
-      document['__defineGetter__']('visibilityState', function () {
-        return originalVS;
+
+      it('should send the correct states when the document is not visible', function () {
+        let bidRequests = spec.buildRequests(TRION_BID_REQUEST);
+        let bidUrlParams = bidRequests[0].data;
+        expect(bidUrlParams).to.include('tr_hd=1');
+        expect(bidUrlParams).to.include('tr_vs=hidden');
       });
     });
   });
