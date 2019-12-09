@@ -28,7 +28,16 @@
 
 /**
  * @typedef {Object} BidRequest
- * //TODO add all properties
+ * @property {string} bidderCode - adUnit bidder
+ * @property {number} auctionId - random v4 UUID or value passed to makeBidRequests
+ * @property {string} bidderRequestId - random string (to be used as a dynamic JSONP callback)
+ * @property {string} tid - random v4 UUID
+ * @property {Array.<Bid>} bids - bids array
+ * @property {number} auctionStart - set to Date now() when callBids is called
+ * @property {number} timeout
+ * @property {string} src - client|s2s
+ * @property {refererInfo} refererInfo - referer info object
+ * @
  */
 
 /**

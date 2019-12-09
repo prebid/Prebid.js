@@ -1,6 +1,6 @@
 import { getKeyValueTargetingPairs, auctionCallbacks, AUCTION_COMPLETED } from 'src/auction';
 import CONSTANTS from 'src/constants.json';
-import { adjustBids } from 'src/auction';
+import { adjustBids, getMediaTypeGranularity } from 'src/auction';
 import * as auctionModule from 'src/auction';
 import { registerBidder } from 'src/adapters/bidderFactory';
 import { createBid } from 'src/bidfactory';
@@ -1182,5 +1182,34 @@ describe('auctionmanager.js', function () {
       requests[0].respond(200, { 'Content-Type': 'application/json' }, responseBody);
       assert.equal(doneSpy.callCount, 1);
     })
+  });
+
+  describe('getMediaTypeGranularity', function () {
+    it('should get video granularity if video is instream and config.mediaTypePriceGranularity does not have a video-instream object ', function () {
+      const videoBid = mockBid();
+      videoBid.mediaType = 'video';
+
+      /**
+       * @type {Array.<BidRequest>}
+       */
+      const bidRequests = [mockBidRequest(videoBid)];
+      bidRequests[0].bids[0] = Object.assign({
+        bidId: utils.getUniqueIdentifierStr(),
+        mediaTypes: {
+          video: {
+            context: 'instream'
+          }
+        }
+      }, bidRequests[0].bids[0]);
+      bidRequests[0].bids[0].adUnitCode = ADUNIT_CODE1;
+
+      const mediaTypePriceGranularity = {
+        banner: 'low',
+        video: 'medium'
+      }
+
+      const mediaTypeGranularity = getMediaTypeGranularity('video', bidRequests[0], mediaTypePriceGranularity)
+      expect(mediaTypeGranularity).to.equal('medium');
+    });
   });
 });

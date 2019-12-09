@@ -473,7 +473,7 @@ $$PREBID_GLOBAL$$.requestBids = hook('async', function ({ bidsBackHandler, timeo
     }
     return;
   }
-
+  //  adUnits, adUnitCodes, callback, cbTimeout, labels, auctionId }
   const auction = auctionManager.createAuction({adUnits, adUnitCodes, callback: bidsBackHandler, cbTimeout, labels, auctionId});
 
   let adUnitsLen = adUnits.length;
