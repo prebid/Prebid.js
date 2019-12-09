@@ -425,12 +425,6 @@ const OPEN_RTB_PROTOCOL = {
       });
 
       let mediaTypes = {};
-      // default to banner if mediaTypes isn't defined
-      if (!(nativeParams || videoParams || bannerParams)) {
-        const sizeObjects = adUnit.sizes.map(size => ({ w: size[0], h: size[1] }));
-        mediaTypes['banner'] = {format: sizeObjects};
-      }
-
       if (bannerParams && bannerParams.sizes) {
         const sizes = utils.parseSizesInput(bannerParams.sizes);
 
@@ -811,8 +805,7 @@ export function PrebidServer() {
 
     // at this point ad units should have a size array either directly or mapped so filter for that
     const validAdUnits = adUnits.filter(unit =>
-      (unit.sizes && unit.sizes.length) ||
-      (unit.mediaTypes && unit.mediaTypes.native)
+      unit.mediaTypes && (unit.mediaTypes.native || (unit.mediaTypes.banner && unit.mediaTypes.banner.sizes) || (unit.mediaTypes.video && unit.mediaTypes.video.playerSize))
     );
 
     // in case config.bidders contains invalid bidders, we only process those we sent requests for
