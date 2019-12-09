@@ -277,7 +277,7 @@ adapterManager.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTi
   if (uspDataHandler.getConsentData()) {
     bidRequests.forEach(bidRequest => {
       bidRequest['uspConsent'] = uspDataHandler.getConsentData();
-    })
+    });
   }
   return bidRequests;
 };
