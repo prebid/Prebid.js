@@ -895,6 +895,9 @@ export const spec = {
     payload.site.page = conf.kadpageurl.trim() || payload.site.page.trim();
     payload.site.domain = _getDomainFromURL(payload.site.page);
 
+    // passing transactionId in source.tid
+    utils.deepSetValue(payload, 'source.tid', conf.transactionId);
+
     // adding schain object
     if (validBidRequests[0].schain) {
       utils.deepSetValue(payload, 'source.ext.schain', validBidRequests[0].schain);
