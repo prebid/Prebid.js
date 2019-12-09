@@ -617,7 +617,7 @@ describe('PulsePoint Adapter Tests', function () {
     expect(ortbRequest.user.ext.eids[1].uids[0].ext.rtiPartner).to.equal('TDID');
     expect(ortbRequest.user.ext.digitrust).to.not.be.null;
     expect(ortbRequest.user.ext.digitrust.id).to.equal('userid_digitrust');
-    expect(ortbRequest.user.ext.digitrust.keyv).to.equal(4)
+    expect(ortbRequest.user.ext.digitrust.keyv).to.equal(4);
   });
   it('Verify new external user id partners', function () {
     const bidRequests = deepClone(slotConfigs);

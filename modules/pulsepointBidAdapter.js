@@ -411,11 +411,16 @@ function user(bidRequest, bidderRequest) {
         rtiPartner: 'TDID'
       });
       // digitrust
-      if (utils.deepAccess(bidRequest.userId.digitrustid, 'data.id')) {
-        ext.digitrust = {
-          id: utils.deepAccess(bidRequest.userId.digitrustid, 'data.id'),
-          keyv: utils.deepAccess(bidRequest.userId.digitrustid, 'data.keyv')
+      const digitrustResponse = bidRequest.userId.digitrustid;
+      if (digitrustResponse && digitrustResponse.data) {
+        var digitrust = {};
+        if (digitrustResponse.data.id) {
+          digitrust.id = digitrustResponse.data.id;
         }
+        if (digitrustResponse.data.keyv) {
+          digitrust.keyv = digitrustResponse.data.keyv;
+        }
+        ext.digitrust = digitrust;
       }
     }
   }
