@@ -646,7 +646,7 @@ const OPEN_RTB_PROTOCOL = {
     });
 
     if (!imps.length) {
-      utils.logError('Request to Prebid Server rejected due to invalid media type(s) in adUnit.')
+      utils.logError('Request to Prebid Server rejected due to invalid media type(s) in adUnit.');
       return;
     }
     const request = {
@@ -721,7 +721,7 @@ const OPEN_RTB_PROTOCOL = {
 
       if (bidUserId.pubcid) {
         request.user.ext.eids.push({
-          source: 'pubcommon',
+          source: 'pubcid.org',
           uids: [{
             id: bidUserId.pubcid,
           }]
@@ -955,7 +955,7 @@ const isOpenRtb = () => {
 
   const endpoint = (_s2sConfig && _s2sConfig.endpoint) || '';
   return ~endpoint.indexOf(OPEN_RTB_PATH);
-}
+};
 
 /*
  * Returns the required protocol adapter to communicate with the configured
