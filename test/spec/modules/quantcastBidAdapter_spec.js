@@ -137,6 +137,7 @@ describe('Quantcast adapter', function () {
       },
       bidId: '2f7b179d443f14',
       gdprSignal: 0,
+      uspSignal: 0,
       prebidJsVersion: '$prebid.version$'
     };
 
@@ -203,6 +204,7 @@ describe('Quantcast adapter', function () {
         },
         bidId: '2f7b179d443f14',
         gdprSignal: 0,
+        uspSignal: 0,
         prebidJsVersion: '$prebid.version$'
       };
 
@@ -237,6 +239,7 @@ describe('Quantcast adapter', function () {
         },
         bidId: '2f7b179d443f14',
         gdprSignal: 0,
+        uspSignal: 0,
         prebidJsVersion: '$prebid.version$'
       };
 
@@ -267,6 +270,7 @@ describe('Quantcast adapter', function () {
         },
         bidId: '2f7b179d443f14',
         gdprSignal: 0,
+        uspSignal: 0,
         prebidJsVersion: '$prebid.version$'
       };
 
@@ -329,6 +333,7 @@ describe('Quantcast adapter', function () {
         },
         bidId: '2f7b179d443f14',
         gdprSignal: 0,
+        uspSignal: 0,
         prebidJsVersion: '$prebid.version$'
       };
 
@@ -348,6 +353,7 @@ describe('Quantcast adapter', function () {
     const bidderRequest = { uspConsent: 'consentString' }
     const requests = qcSpec.buildRequests([bidRequest], bidderRequest);
     const parsed = JSON.parse(requests[0].data);
+    expect(parsed.uspSignal).to.equal(1);
     expect(parsed.uspConsent).to.equal('consentString');
   });
 

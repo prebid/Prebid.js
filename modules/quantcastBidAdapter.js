@@ -139,6 +139,7 @@ export const spec = {
         bidId: bid.bidId,
         gdprSignal: gdprConsent.gdprApplies ? 1 : 0,
         gdprConsent: gdprConsent.consentString,
+        uspSignal: uspConsent ? 1 : 0,
         uspConsent,
         prebidJsVersion: '$prebid.version$'
       };
