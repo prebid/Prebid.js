@@ -1112,17 +1112,6 @@ describe('auctionmanager.js', function () {
   });
 
   describe('getMediaTypeGranularity', function () {
-    it('should return "undefined" for undefined mediaType', function () {
-      const bidReq = {
-        'mediaTypes': { video: { context: 'instream' } }
-      };
-      expect(getMediaTypeGranularity(undefined, bidReq, {
-        banner: 'low',
-        video: 'medium',
-        'video-instream': 'high'
-      })).to.equal(undefined);
-    });
-
     describe('should return "undefined" when', function () {
       it('undefined mediaTypePriceGranularity', function () {
         const bidReq = {
@@ -1140,6 +1129,17 @@ describe('auctionmanager.js', function () {
 
       it('undefined mediaType, bidRequest and mediaTypePriceGranularity', function () {
         expect(getMediaTypeGranularity(undefined, undefined, undefined)).to.equal(undefined);
+      });
+
+      it('undefined mediaType', function () {
+        const bidReq = {
+          'mediaTypes': { video: { context: 'instream' } }
+        };
+        expect(getMediaTypeGranularity(undefined, bidReq, {
+          banner: 'low',
+          video: 'medium',
+          'video-instream': 'high'
+        })).to.equal(undefined);
       });
     });
 

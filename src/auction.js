@@ -548,24 +548,16 @@ export function getMediaTypeGranularity(mediaType, bidReq, mediaTypePriceGranula
   if (typeof mediaType !== 'string' || typeof mediaTypePriceGranularity !== 'object') {
     return;
   }
-
   if (mediaType === VIDEO) {
-    /**
-     * if context is not defined assume default instream
-     * @type {string}
-     */
     const context = deepAccess(bidReq, `mediaTypes.${VIDEO}.context`);
-    if (typeof context === 'string') {
-      // if 'video.${CONTEEXT}' was set, return value
-      if (mediaTypePriceGranularity.hasOwnProperty(`${VIDEO}-${context}`)) {
-        return mediaTypePriceGranularity[`${VIDEO}-${context}`];
-      }
-      // banner if outstream, all other contxt values use video
-      return mediaTypePriceGranularity[(context === OUTSTREAM ? BANNER : VIDEO)];
+    // return video.${CONTEXT} granularity if it exists
+    if (typeof context === 'string' && mediaTypePriceGranularity[`${VIDEO}-${context}`]) {
+      return mediaTypePriceGranularity[`${VIDEO}-${context}`];
     }
-    return mediaTypePriceGranularity[VIDEO];
+    // context is outstream return 'banner' granularity
+    return mediaTypePriceGranularity[(context === OUTSTREAM ? BANNER : VIDEO)];
   }
-  // if mediaType is not video (banner, native)
+  // mediaType is banner, native
   return mediaTypePriceGranularity[mediaType];
 }
 
