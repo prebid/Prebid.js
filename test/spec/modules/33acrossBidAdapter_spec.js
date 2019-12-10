@@ -579,11 +579,11 @@ describe('33acrossBidAdapter:', function () {
       syncs = [
         {
           type: 'iframe',
-          url: 'https://de.tynt.com/deb/v2?m=xch&rt=html&id=id1'
+          url: 'https://ssc-cms.33across.com/ps/?m=xch&rt=html&ru=deb&id=id1'
         },
         {
           type: 'iframe',
-          url: 'https://de.tynt.com/deb/v2?m=xch&rt=html&id=id2'
+          url: 'https://ssc-cms.33across.com/ps/?m=xch&rt=html&ru=deb&id=id2'
         },
       ];
       bidRequests = [

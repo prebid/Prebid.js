@@ -119,6 +119,61 @@ describe('Trion adapter tests', function () {
       expect(bidUrlParams).to.include(utils.getTopWindowUrl());
       delete params.re;
     });
+
+    describe('webdriver', function () {
+      let originalWD;
+
+      beforeEach(function () {
+        originalWD = window.navigator.webdriver;
+        window.navigator['__defineGetter__']('webdriver', function () {
+          return 1;
+        });
+      });
+
+      afterEach(function () {
+        window.navigator['__defineGetter__']('webdriver', function () {
+          return originalWD;
+        });
+      });
+
+      it('should send the correct state when there is non human traffic', function () {
+        let bidRequests = spec.buildRequests(TRION_BID_REQUEST);
+        let bidUrlParams = bidRequests[0].data;
+        expect(bidUrlParams).to.include('tr_wd=1');
+      });
+    });
+
+    describe('visibility', function () {
+      let originalHD;
+      let originalVS;
+
+      beforeEach(function () {
+        originalHD = document.hidden;
+        originalVS = document.visibilityState;
+        document['__defineGetter__']('hidden', function () {
+          return 1;
+        });
+        document['__defineGetter__']('visibilityState', function () {
+          return 'hidden';
+        });
+      });
+
+      afterEach(function () {
+        document['__defineGetter__']('hidden', function () {
+          return originalHD;
+        });
+        document['__defineGetter__']('visibilityState', function () {
+          return originalVS;
+        });
+      });
+
+      it('should send the correct states when the document is not visible', function () {
+        let bidRequests = spec.buildRequests(TRION_BID_REQUEST);
+        let bidUrlParams = bidRequests[0].data;
+        expect(bidUrlParams).to.include('tr_hd=1');
+        expect(bidUrlParams).to.include('tr_vs=hidden');
+      });
+    });
   });
 
   describe('interpretResponse', function () {
