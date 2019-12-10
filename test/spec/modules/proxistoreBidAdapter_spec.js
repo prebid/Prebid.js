@@ -10,6 +10,11 @@ describe('ProxistoreBidAdapter', function () {
     'gdprConsent': {
       'gdprApplies': true,
       'consentString': 'CONSENT_STRING',
+      'vendorData': {
+        'vendorConsents': {
+          '418': true
+        }
+      }
     }
   };
   let bid = {
@@ -40,7 +45,12 @@ describe('ProxistoreBidAdapter', function () {
     });
     it('should contain a valid url', function () {
       expect(request[0].url).equal(url);
-    })
+    });
+    it('should give consent if proxistore is in the vendor list', function () {
+      const data = JSON.parse(request[0].data);
+      expect(data.gdpr['consentString']).equal(bidderRequest.gdprConsent.consentString);
+      expect(data.gdpr.consentGiven).equal(true);
+    });
   });
 
   describe('interpretResponse', function () {

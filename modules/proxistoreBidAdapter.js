@@ -1,6 +1,6 @@
 const { registerBidder } = require('../src/adapters/bidderFactory');
 const BIDDER_CODE = 'proxistore';
-
+const PROXISTORE_VENDOR_ID = 418;
 function _getFormatSize(sizeArr) {
   return {
     width: sizeArr[0],
@@ -31,7 +31,11 @@ function _createServerRequest(bidRequest, bidderRequest) {
       payload.gdpr.applies = true;
     }
     if ((typeof bidderRequest.gdprConsent.consentString === 'string') && bidderRequest.gdprConsent.consentString) {
-      payload.gdpr['consentString'] = bidderRequest.gdprConsent.consentString;
+      payload.gdpr.consentString = bidderRequest.gdprConsent.consentString;
+    }
+    if (bidderRequest.gdprConsent.vendorData && bidderRequest.gdprConsent.vendorData.vendorConsents &&
+      typeof bidderRequest.gdprConsent.vendorData.vendorConsents[ PROXISTORE_VENDOR_ID.toString(10) ] !== 'undefined') {
+      payload.gdpr.consentGiven = !!(bidderRequest.gdprConsent.vendorData.vendorConsents[ PROXISTORE_VENDOR_ID.toString(10) ]);
     }
   }
 
