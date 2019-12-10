@@ -68,7 +68,7 @@ import { userSync } from './userSync';
 import { hook } from './hook';
 import find from 'core-js/library/fn/array/find';
 import { OUTSTREAM } from './video';
-import { BANNER, VIDEO } from './mediaTypes';
+import { VIDEO } from './mediaTypes';
 
 const { syncUsers } = userSync;
 const utils = require('./utils');
@@ -540,13 +540,10 @@ function setupBidTargeting(bidObject, bidderRequest) {
 export function getMediaTypeGranularity(mediaType, bidReq, mediaTypePriceGranularity) {
   if (mediaType && mediaTypePriceGranularity) {
     if (mediaType === VIDEO) {
-      // const context = deepAccess(bidReq, `mediaTypes.${VIDEO}.context`);
       const context = deepAccess(bidReq, `mediaTypes.${VIDEO}.context`, 'instream');
-      if (mediaTypePriceGranularity.hasOwnProperty(`${VIDEO}-${context}`) && (mediaTypePriceGranularity[`${VIDEO}-${context}`])) {
-      // if (context && mediaTypePriceGranularity.hasOwnProperty(`${VIDEO}-${context}`) && (mediaTypePriceGranularity[`${VIDEO}-${context}`])) {
+      if (mediaTypePriceGranularity[`${VIDEO}-${context}`]) {
         return mediaTypePriceGranularity[`${VIDEO}-${context}`];
       }
-      return mediaTypePriceGranularity[(context === OUTSTREAM ? BANNER : VIDEO)];
     }
     return mediaTypePriceGranularity[mediaType];
   }
