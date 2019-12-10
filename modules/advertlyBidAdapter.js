@@ -41,7 +41,6 @@ function interpretResponse(serverResponse, request) {
     };
     bnd.ttl = config.getConfig('_bidderTimeout')
     bnd.renderer = bidAd.context === 'outstream' ? createRenderer(bidAd, {
-      id: bidAd.adUnitCode,
       url: RENDERER_URL
     }, bidAd.adUnitCode) : undefined;
     bidResponses.push(bnd);
@@ -74,7 +73,7 @@ function outstreamRender(bidAd) {
 
 function createRenderer(bidAd, rendererParams, adUnitCode) {
   const renderer = Renderer.install({
-    id: rendererParams.id,
+    id: adUnitCode,
     url: rendererParams.url,
     loaded: false,
     config: {'player_height': bidAd.height, 'player_width': bidAd.width},
