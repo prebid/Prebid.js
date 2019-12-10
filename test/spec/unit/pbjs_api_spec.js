@@ -1190,6 +1190,11 @@ describe('Unit: Prebid Module', function () {
 
       adUnits = [{
         code: 'adUnit-code',
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 250]]
+          }
+        },
         bids: [
           {bidder: BIDDER_CODE, params: {placementId: 'id'}},
         ]
@@ -1314,9 +1319,11 @@ describe('Unit: Prebid Module', function () {
           adUnits: [
             {
               code: 'test1',
+              mediaTypes: { banner: { sizes: [] } },
               bids: [],
             }, {
               code: 'test2',
+              mediaTypes: { banner: { sizes: [] } },
               bids: [],
             }
           ],
@@ -1396,9 +1403,11 @@ describe('Unit: Prebid Module', function () {
             {
               code: 'test1',
               transactionId: 'd0676a3c-ff32-45a5-af65-8175a8e7ddca',
+              mediaTypes: { banner: { sizes: [] } },
               bids: []
             }, {
               code: 'test2',
+              mediaTypes: { banner: { sizes: [] } },
               bids: []
             }
           ]
@@ -1419,9 +1428,11 @@ describe('Unit: Prebid Module', function () {
           adUnits: [
             {
               code: 'test1',
+              mediaTypes: { banner: { sizes: [] } },
               bids: []
             }, {
               code: 'test2',
+              mediaTypes: { banner: { sizes: [] } },
               bids: []
             }
           ]
@@ -1562,7 +1573,6 @@ describe('Unit: Prebid Module', function () {
             expect(auctionArgs.adUnits[0].sizes).to.deep.equal([[640, 480]]);
             expect(auctionArgs.adUnits[0].mediaTypes.video.playerSize).to.deep.equal([[640, 480]]);
             expect(auctionArgs.adUnits[0].mediaTypes.video).to.exist;
-            assert.ok(logInfoSpy.calledWith('Transforming video.playerSize from [640,480] to [[640,480]] so it\'s in the proper format.'), 'expected message was logged');
           });
 
           it('should normalize adUnit.sizes and adUnit.mediaTypes.banner.sizes', function () {
@@ -1601,7 +1611,7 @@ describe('Unit: Prebid Module', function () {
             });
             expect(auctionArgs.adUnits[0].sizes).to.deep.equal([[300, 250], [300, 600]]);
             expect(auctionArgs.adUnits[0].mediaTypes.banner).to.be.undefined;
-            assert.ok(logErrorSpy.calledWith('Detected a mediaTypes.banner object did not include sizes.  This is a required field for the mediaTypes.banner object.  Removing invalid mediaTypes.banner object from request.'));
+            assert.ok(logErrorSpy.calledWith('Detected a mediaTypes.banner object without a proper sizes field.  Please ensure the sizes are listed like: [[300, 250], ...].  Removing invalid mediaTypes.banner object from request.'));
 
             let badVideo1 = [{
               code: 'testb2',
@@ -1763,7 +1773,7 @@ describe('Unit: Prebid Module', function () {
       before(function () {
         adUnits = [{
           code: 'adUnit-code',
-          sizes: [[300, 250], [300, 600]],
+          mediaTypes: { banner: { sizes: [[300, 250], [300, 600]] } },
           bids: [
             {bidder: 'appnexus', params: {placementId: '10433394'}}
           ]
@@ -1771,13 +1781,13 @@ describe('Unit: Prebid Module', function () {
         let adUnitCodes = ['adUnit-code'];
         let auction = auctionModule.newAuction({adUnits, adUnitCodes, callback: function() {}, cbTimeout: timeout});
 
-        adUnits[0]['mediaType'] = 'native';
+        adUnits[0]['mediaTypes'] = { native: {} };
         adUnitCodes = ['adUnit-code'];
         let auction1 = auctionModule.newAuction({adUnits, adUnitCodes, callback: function() {}, cbTimeout: timeout});
 
         adUnits = [{
           code: 'adUnit-code',
-          nativeParams: {type: 'image'},
+          mediaTypes: { native: { type: 'image' } },
           sizes: [[300, 250], [300, 600]],
           bids: [
             {bidder: 'appnexus', params: {placementId: 'id'}}
@@ -1811,7 +1821,7 @@ describe('Unit: Prebid Module', function () {
       it('should call callBids function on adapterManager', function () {
         let adUnits = [{
           code: 'adUnit-code',
-          sizes: [[300, 250], [300, 600]],
+          mediaTypes: { banner: { sizes: [[300, 250], [300, 600]] } },
           bids: [
             {bidder: 'appnexus', params: {placementId: '10433394'}}
           ]
@@ -1823,8 +1833,7 @@ describe('Unit: Prebid Module', function () {
       it('splits native type to individual native assets', function () {
         let adUnits = [{
           code: 'adUnit-code',
-          nativeParams: {type: 'image'},
-          sizes: [[300, 250], [300, 600]],
+          mediaTypes: { native: { type: 'image' } },
           bids: [
             {bidder: 'appnexus', params: {placementId: 'id'}}
           ]

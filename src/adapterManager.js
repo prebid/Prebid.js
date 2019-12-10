@@ -160,6 +160,16 @@ export let gdprDataHandler = {
   }
 };
 
+export let uspDataHandler = {
+  consentData: null,
+  setConsentData: function(consentInfo) {
+    uspDataHandler.consentData = consentInfo;
+  },
+  getConsentData: function() {
+    return uspDataHandler.consentData;
+  }
+};
+
 adapterManager.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTimeout, labels) {
   let bidRequests = [];
 
@@ -261,6 +271,12 @@ adapterManager.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTi
   if (gdprDataHandler.getConsentData()) {
     bidRequests.forEach(bidRequest => {
       bidRequest['gdprConsent'] = gdprDataHandler.getConsentData();
+    });
+  }
+
+  if (uspDataHandler.getConsentData()) {
+    bidRequests.forEach(bidRequest => {
+      bidRequest['uspConsent'] = uspDataHandler.getConsentData();
     });
   }
   return bidRequests;

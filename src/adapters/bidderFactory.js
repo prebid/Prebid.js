@@ -187,7 +187,7 @@ export function newBidder(spec) {
       function afterAllResponses() {
         done();
         events.emit(CONSTANTS.EVENTS.BIDDER_DONE, bidderRequest);
-        registerSyncs(responses, bidderRequest.gdprConsent);
+        registerSyncs(responses, bidderRequest.gdprConsent, bidderRequest.uspConsent);
       }
 
       const validBidRequests = bidderRequest.bids.filter(filterAndWarn);
@@ -330,13 +330,13 @@ export function newBidder(spec) {
     }
   });
 
-  function registerSyncs(responses, gdprConsent) {
+  function registerSyncs(responses, gdprConsent, uspConsent) {
     if (spec.getUserSyncs) {
       let filterConfig = config.getConfig('userSync.filterSettings');
       let syncs = spec.getUserSyncs({
         iframeEnabled: !!(filterConfig && (filterConfig.iframe || filterConfig.all)),
         pixelEnabled: !!(filterConfig && (filterConfig.image || filterConfig.all)),
-      }, responses, gdprConsent);
+      }, responses, gdprConsent, uspConsent);
       if (syncs) {
         if (!Array.isArray(syncs)) {
           syncs = [syncs];
