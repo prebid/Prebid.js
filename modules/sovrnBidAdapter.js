@@ -155,19 +155,19 @@ export const spec = {
         if (syncOptions.iframeEnabled) {
           const iidArr = serverResponses.filter(resp => utils.deepAccess(resp, 'body.ext.iid'))
             .map(resp => resp.body.ext.iid);
-          const params = {};
+          const params = [];
           if (gdprConsent && gdprConsent.gdprApplies && typeof gdprConsent.consentString === 'string') {
-            params['gdpr_consent'] = gdprConsent.consentString
+            params.push(['gdpr_consent', gdprConsent.consentString]);
           }
           if (uspConsent) {
-            params['us_privacy'] = uspConsent;
+            params.push(['us_privacy', uspConsent]);
           }
 
           if (iidArr[0]) {
-            params.informer = iidArr[0];
+            params.push(['informer', iidArr[0]]);
             tracks.push({
               type: 'iframe',
-              url: 'https://ap.lijit.com/beacon?' + Object.entries(params).map(p => p.join('=')).join('&')
+              url: 'https://ap.lijit.com/beacon?' + params.map(p => p.join('=')).join('&')
             });
           }
         }
