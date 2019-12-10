@@ -91,7 +91,6 @@ const yieldoneAnalytics = Object.assign(adapter({analyticsType}), {
         }
       });
     } else {
-      args.pubId = pubId;
       currentAuctionId = args.auctionId || currentAuctionId;
       if (currentAuctionId) {
         const eventsStorage = yieldoneAnalytics.eventsStorage;
@@ -100,29 +99,36 @@ const yieldoneAnalytics = Object.assign(adapter({analyticsType}), {
         if (referrer && referrers[currentAuctionId] !== referrer) {
           referrers[currentAuctionId] = referrer;
         }
-        eventsStorage[currentAuctionId].push({
-          eventType,
-          params: args
-        });
-      }
-    }
-    if (
-      eventType === CONSTANTS.EVENTS.AUCTION_END || eventType === CONSTANTS.EVENTS.BID_WON
-    ) {
-      args.adServerTargeting = targeting.getAllTargeting(
-        auctionManager.getAdUnitCodes(),
-        auctionManager.getBidsReceived()
-      );
-      if (yieldoneAnalytics.eventsStorage[args.auctionId]) {
-        yieldoneAnalytics.eventsStorage[args.auctionId].forEach((it) => {
-          it.page = {url: referrers[currentAuctionId]};
-          const adUnitNameMap = makeAdUnitNameMap();
-          if (adUnitNameMap) {
-            addAdUnitName(it.params, adUnitNameMap);
+        const params = Object.assign({pubId}, args);
+        delete params.ad;
+        if (params.bidsReceived) {
+          params.bidsReceived = params.bidsReceived.map((bid) => {
+            const res = Object.assign({}, bid);
+            delete res.ad;
+            return res;
+          });
+        }
+        eventsStorage[currentAuctionId].push({eventType, params});
+
+        if (
+          eventType === CONSTANTS.EVENTS.AUCTION_END || eventType === CONSTANTS.EVENTS.BID_WON
+        ) {
+          params.adServerTargeting = targeting.getAllTargeting(
+            auctionManager.getAdUnitCodes(),
+            auctionManager.getBidsReceived()
+          );
+          if (yieldoneAnalytics.eventsStorage[currentAuctionId]) {
+            yieldoneAnalytics.eventsStorage[currentAuctionId].forEach((it) => {
+              it.page = {url: referrers[currentAuctionId]};
+              const adUnitNameMap = makeAdUnitNameMap();
+              if (adUnitNameMap) {
+                addAdUnitName(it.params, adUnitNameMap);
+              }
+            });
           }
-        });
+          yieldoneAnalytics.sendStat(yieldoneAnalytics.eventsStorage[currentAuctionId], currentAuctionId);
+        }
       }
-      yieldoneAnalytics.sendStat(yieldoneAnalytics.eventsStorage[args.auctionId], args.auctionId);
     }
   },
   sendStat(events, auctionId) {
