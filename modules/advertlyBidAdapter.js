@@ -40,7 +40,7 @@ function interpretResponse(serverResponse, request) {
       width: bidAd.width
     };
     bnd.ttl = config.getConfig('_bidderTimeout')
-    bnd.renderer = bidAd.context === 'outstream' ? createRenderer(bidAd,RENDERER_URL ) : undefined;
+    bnd.renderer = bidAd.context === 'outstream' ? createRenderer(bidAd,RENDERER_URL, bidAd.adUnitCode) : undefined;
     bidResponses.push(bnd);
   });
 
@@ -69,13 +69,13 @@ function outstreamRender(bidAd) {
   });
 }
 
-function createRenderer(bidAd, url) {
+function createRenderer(bidAd, url,adUnitCode) {
   const renderer = Renderer.install({
     id: bidAd.adUnitCode,
     url: url ,
     loaded: false,
     config: {'player_height': bidAd.height, 'player_width': bidAd.width},
-    bidAd.adUnitCode
+    adUnitCode
   });
   try {
     renderer.setRender(outstreamRender);
