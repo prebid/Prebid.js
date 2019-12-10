@@ -63,7 +63,7 @@ export const spec = {
       'placements': placements
     };
 
-    if(bidderRequest){
+    if (bidderRequest) {
       if (bidderRequest.uspConsent) {
         request.ccpa = bidderRequest.uspConsent;
       }
