@@ -27,28 +27,17 @@
  */
 
 /**
- * @typedef {Object} BidRequest
+ * @typedef {Object} BidderRequest
  *
  * @property {string} bidderCode - adUnit bidder
  * @property {number} auctionId - random UUID
- * @property {string} bidderRequestId - random string
- * @property {string} tid - random UUID
- * @property {Array.<Bid>} bids - auction bids
+ * @property {string} bidderRequestId - random string, unique key set on all bidRequest.bids[]
+ * @property {Array.<Bid>} bids
  * @property {number} auctionStart - Date.now() at auction start
- * @property {number} timeout - cancel auction timeout
- * @property {string} src - client|s2s
+ * @property {number} timeout - callback timeout
  * @property {refererInfo} refererInfo - referer info object
- */
-
-/**
- * @typedef {Object} MediaTypePriceGranularity
- *
- * @property {(string|{})} [banner]
- * @property {(string|{})} [native]
- * @property {(string|{})} [video]
- * @property {(string|{})} [video-instream]
- * @property {(string|{})} [video-outstream]
-
+ * @property {string} [tid] - random UUID (used for s2s)
+ * @property {string} [src] - s2s or client (used for s2s)
  */
 
 /**
@@ -68,7 +57,7 @@
  * @property {function(): void} callBids - sends requests to all adapters for bids
  */
 
-import { flatten, timestamp, adUnitsFilter, deepAccess, getBidRequest, getValue } from './utils';
+import {flatten, timestamp, adUnitsFilter, deepAccess, getBidRequest, getValue} from './utils';
 import { parse as parseURL } from './url';
 import { getPriceBucketString } from './cpmBucketManager';
 import { getNativeTargeting } from './native';
@@ -106,7 +95,11 @@ const queuedCalls = [];
   *
   * @param {Object} requestConfig
   * @param {AdUnit} requestConfig.adUnits
-  * @param {AdUnitCode} requestConfig.adUnitCode
+  * @param {AdUnitCode} requestConfig.adUnitCodes
+  * @param {function():void} requestConfig.callback
+  * @param {number} requestConfig.cbTimeout
+  * @param {Array.<string>} requestConfig.labels
+  * @param {string} requestConfig.auctionId
   *
   * @returns {Auction} auction instance
   */
@@ -540,25 +533,23 @@ function setupBidTargeting(bidObject, bidderRequest) {
 
 /**
  * @param {MediaType} mediaType
- * @param {BidRequest} [bidReq]
- * @param {MediaTypePriceGranularity} mediaTypePriceGranularity
+ * @param {Bid} [bidReq]
+ * @param {MediaTypePriceGranularity} [mediaTypePriceGranularity]
  * @returns {(Object|string|undefined)}
  */
 export function getMediaTypeGranularity(mediaType, bidReq, mediaTypePriceGranularity) {
-  if (typeof mediaType !== 'string' || typeof mediaTypePriceGranularity !== 'object') {
-    return;
-  }
-  if (mediaType === VIDEO) {
-    const context = deepAccess(bidReq, `mediaTypes.${VIDEO}.context`);
-    // return video.CONTEXT granularity if it exists
-    if (typeof context === 'string' && mediaTypePriceGranularity[`${VIDEO}-${context}`]) {
-      return mediaTypePriceGranularity[`${VIDEO}-${context}`];
+  if (mediaType && mediaTypePriceGranularity) {
+    if (mediaType === VIDEO) {
+      // const context = deepAccess(bidReq, `mediaTypes.${VIDEO}.context`);
+      const context = deepAccess(bidReq, `mediaTypes.${VIDEO}.context`, 'instream');
+      if (mediaTypePriceGranularity.hasOwnProperty(`${VIDEO}-${context}`) && (mediaTypePriceGranularity[`${VIDEO}-${context}`])) {
+      // if (context && mediaTypePriceGranularity.hasOwnProperty(`${VIDEO}-${context}`) && (mediaTypePriceGranularity[`${VIDEO}-${context}`])) {
+        return mediaTypePriceGranularity[`${VIDEO}-${context}`];
+      }
+      return mediaTypePriceGranularity[(context === OUTSTREAM ? BANNER : VIDEO)];
     }
-    // context is outstream return 'banner' granularity
-    return mediaTypePriceGranularity[(context === OUTSTREAM ? BANNER : VIDEO)];
+    return mediaTypePriceGranularity[mediaType];
   }
-  // mediaType is banner, native
-  return mediaTypePriceGranularity[mediaType];
 }
 
 /**
