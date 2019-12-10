@@ -118,7 +118,7 @@ describe('gumgumAdapter', function () {
       expect(bidRequest.data).to.include.any.keys('t');
       expect(bidRequest.data).to.include.any.keys('fp');
     });
-    it('should send pubId if inScreen parameter is found to be an integer', function () {
+    it('should send pubId if inScreenPubID param is specified', function () {
       const request = Object.assign({}, bidRequests[0]);
       delete request.params;
       request.params = {
