@@ -221,6 +221,10 @@ function buildCommonQueryParamsFromBids(bids, bidderRequest) {
     }
   }
 
+  if (bidderRequest && bidderRequest.uspConsent) {
+    defaultParams.us_privacy = bidderRequest.uspConsent;
+  }
+
   // normalize publisher common id
   if (utils.deepAccess(bids[0], 'crumbs.pubcid')) {
     utils.deepSetValue(bids[0], 'userId.pubcid', utils.deepAccess(bids[0], 'crumbs.pubcid'));
