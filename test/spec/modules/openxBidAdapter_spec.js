@@ -599,6 +599,44 @@ describe('OpenxAdapter', function () {
         config.getConfig.restore();
       });
 
+      describe('when us_privacy applies', function () {
+        beforeEach(function () {
+          bidderRequest = {
+            uspConsent: '1YYN',
+            refererInfo: {}
+          };
+
+          sinon.stub(config, 'getConfig').callsFake((key) => {
+            return utils.deepAccess(mockConfig, key);
+          });
+        });
+
+        it('should send a signal to specify that GDPR applies to this request', function () {
+          const request = spec.buildRequests(bidRequests, bidderRequest);
+          expect(request[0].data.us_privacy).to.equal('1YYN');
+          expect(request[1].data.us_privacy).to.equal('1YYN');
+        });
+      });
+
+      describe('when us_privacy does not applies', function () {
+        beforeEach(function () {
+          bidderRequest = {
+            refererInfo: {}
+          };
+
+          sinon.stub(config, 'getConfig').callsFake((key) => {
+            return utils.deepAccess(mockConfig, key);
+          });
+        });
+
+        it('should not send the consent string, when consent string is undefined', function () {
+          delete bidderRequest.uspConsent;
+          const request = spec.buildRequests(bidRequests, bidderRequest);
+          expect(request[0].data).to.not.have.property('us_privacy');
+          expect(request[1].data).to.not.have.property('us_privacy');
+        });
+      });
+
       describe('when GDPR applies', function () {
         beforeEach(function () {
           bidderRequest = {
