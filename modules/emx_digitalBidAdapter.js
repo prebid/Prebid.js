@@ -230,7 +230,7 @@ export const spec = {
     };
 
     emxData = emxAdapter.getGdpr(bidRequest, Object.assign({}, emxData));
-    if(bidRequest && bidRequest.uspConsent) {
+    if (bidRequest && bidRequest.uspConsent) {
       emxData.us_privacy = bidRequest.uspConsent
     }
     return {
