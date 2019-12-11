@@ -227,13 +227,49 @@ describe('GamoshiAdapter', function () {
 
     it('builds request with gdpr consent', function () {
       let response = spec.buildRequests([bidRequest], bidRequest)[0];
+      expect(response.data.ext.gdpr_consent).to.exist;
       expect(response.data.ext).to.have.property('gdpr_consent');
       expect(response.data.ext.gdpr_consent.consent_string).to.equal('some string');
       expect(response.data.ext.gdpr_consent.consent_required).to.equal(true);
+
+      expect(response.data.regs.ext.gdpr).to.exist;
+      expect(response.data.user.ext.consent).to.equal('some string');
+    });
+
+    it('build request with ID5 Id', function () {
+      const bidRequestClone = utils.deepClone(bidRequest);
+      bidRequestClone.userId = {};
+      bidRequestClone.userId.id5id = 'id5-user-id';
+      let request = spec.buildRequests([bidRequestClone], bidRequestClone)[0];
+      expect(request.data.user.ext.eids).to.deep.equal([{
+        'source': 'id5-sync.com',
+        'uids': [{
+          'id': 'id5-user-id',
+          'ext': {
+            'rtiPartner': 'ID5ID'
+          }
+        }]
+      }]);
+    });
+
+    it('build request with unified Id', function () {
+      const bidRequestClone = utils.deepClone(bidRequest);
+      bidRequestClone.userId = {};
+      bidRequestClone.userId.tdid = 'tdid-user-id';
+      let request = spec.buildRequests([bidRequestClone], bidRequestClone)[0];
+      expect(request.data.user.ext.eids).to.deep.equal([{
+        'source': 'adserver.org',
+        'uids': [{
+          'id': 'tdid-user-id',
+          'ext': {
+            'rtiPartner': 'TDID'
+          }
+        }]
+      }]);
     });
   });
 
-  describe('interpretResponse', function () {
+  describe('interpretResponse', () => {
     const bannerBidRequest = {
       'adUnitCode': 'adunit-code',
       'auctionId': '1d1a030790a475',

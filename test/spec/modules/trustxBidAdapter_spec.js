@@ -167,6 +167,63 @@ describe('TrustXAdapter', function () {
       expect(payload).to.have.property('gdpr_consent', 'AAA');
       expect(payload).to.have.property('gdpr_applies', '1');
     });
+
+    it('if usPrivacy is present payload must have us_privacy param', function () {
+      const bidderRequestWithUSP = Object.assign({uspConsent: '1YNN'}, bidderRequest);
+      const request = spec.buildRequests(bidRequests, bidderRequestWithUSP);
+      expect(request.data).to.be.an('string');
+      const payload = parseRequest(request.data);
+      expect(payload).to.have.property('us_privacy', '1YNN');
+    });
+
+    it('should convert keyword params to proper form and attaches to request', function () {
+      const bidRequestWithKeywords = [].concat(bidRequests);
+      bidRequestWithKeywords[1] = Object.assign({},
+        bidRequests[1],
+        {
+          params: {
+            uid: '43',
+            keywords: {
+              single: 'val',
+              singleArr: ['val'],
+              singleArrNum: [5],
+              multiValMixed: ['value1', 2, 'value3'],
+              singleValNum: 123,
+              emptyStr: '',
+              emptyArr: [''],
+              badValue: {'foo': 'bar'} // should be dropped
+            }
+          }
+        }
+      );
+
+      const request = spec.buildRequests(bidRequestWithKeywords, bidderRequest);
+      expect(request.data).to.be.an('string');
+      const payload = parseRequest(request.data);
+      expect(payload.keywords).to.be.an('string');
+      payload.keywords = JSON.parse(payload.keywords);
+
+      expect(payload.keywords).to.deep.equal([{
+        'key': 'single',
+        'value': ['val']
+      }, {
+        'key': 'singleArr',
+        'value': ['val']
+      }, {
+        'key': 'singleArrNum',
+        'value': ['5']
+      }, {
+        'key': 'multiValMixed',
+        'value': ['value1', '2', 'value3']
+      }, {
+        'key': 'singleValNum',
+        'value': ['123']
+      }, {
+        'key': 'emptyStr'
+      }, {
+        'key': 'emptyArr'
+      }]);
+    });
   });
 
   describe('interpretResponse', function () {
@@ -735,12 +792,12 @@ describe('TrustXAdapter', function () {
     expect(spyRendererInstall.calledTwice).to.equal(true);
     expect(spyRendererInstall.getCall(0).args[0]).to.deep.equal({
       id: 'e6e65553fc8',
-      url: '//cdn.adnxs.com/renderer/video/ANOutstreamVideo.js',
+      url: '//acdn.adnxs.com/video/outstream/ANOutstreamVideo.js',
       loaded: false
     });
     expect(spyRendererInstall.getCall(1).args[0]).to.deep.equal({
       id: 'c8fdcb3f269f',
-      url: '//cdn.adnxs.com/renderer/video/ANOutstreamVideo.js',
+      url: '//acdn.adnxs.com/video/outstream/ANOutstreamVideo.js',
       loaded: false
     });
 

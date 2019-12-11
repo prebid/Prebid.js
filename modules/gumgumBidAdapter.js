@@ -14,7 +14,7 @@ let browserParams = {};
 let pageViewId = null
 
 // TODO: potential 0 values for browserParams sent to ad server
-function _getBrowserParams() {
+function _getBrowserParams(topWindowUrl) {
   let topWindow
   let topScreen
   let topUrl
@@ -41,7 +41,7 @@ function _getBrowserParams() {
   try {
     topWindow = global.top;
     topScreen = topWindow.screen;
-    topUrl = utils.getTopWindowUrl()
+    topUrl = topWindowUrl || '';
   } catch (error) {
     utils.logError(error);
     return browserParams
@@ -75,22 +75,20 @@ function getWrapperCode(wrapper, data) {
   return wrapper.replace('AD_JSON', window.btoa(JSON.stringify(data)))
 }
 
-function _getTradeDeskIDParam(bidRequest) {
+function _getTradeDeskIDParam(userId) {
   const unifiedIdObj = {};
-  if (bidRequest.userId && bidRequest.userId.tdid) {
-    unifiedIdObj.tdid = bidRequest.userId.tdid;
+  if (userId.tdid) {
+    unifiedIdObj.tdid = userId.tdid;
   }
   return unifiedIdObj;
 }
 
-// TODO: use getConfig()
-function _getDigiTrustQueryParams() {
-  function getDigiTrustId () {
-    var digiTrustUser = (window.DigiTrust && window.DigiTrust.getUser) ? window.DigiTrust.getUser(DT_CREDENTIALS) : {};
-    return (digiTrustUser && digiTrustUser.success && digiTrustUser.identity) || '';
-  };
-
-  let digiTrustId = getDigiTrustId();
+function _getDigiTrustQueryParams(userId) {
+  let digiTrustId = userId.digitrustid && userId.digitrustid.data;
+  if (!digiTrustId) {
+    const digiTrustUser = (window.DigiTrust && window.DigiTrust.getUser) ? window.DigiTrust.getUser(DT_CREDENTIALS) : {};
+    digiTrustId = (digiTrustUser && digiTrustUser.success && digiTrustUser.identity) || '';
+  }
   // Verify there is an ID and this user has not opted out
   if (!digiTrustId || (digiTrustId.privacy && digiTrustId.privacy.optout)) {
     return {};
@@ -98,6 +96,28 @@ function _getDigiTrustQueryParams() {
   return {
     dt: digiTrustId.id
   };
+}
+
+/**
+ * Serializes the supply chain object according to IAB standards
+ * @see https://github.com/InteractiveAdvertisingBureau/openrtb/blob/master/supplychainobject.md
+ * @param {Object} schainObj supply chain object
+ * @returns {string}
+ */
+function _serializeSupplyChainObj(schainObj) {
+  let serializedSchain = `${schainObj.ver},${schainObj.complete}`;
+
+  // order of properties: asi,sid,hp,rid,name,domain
+  schainObj.nodes.map(node => {
+    serializedSchain += `!${encodeURIComponent(node['asi'] || '')},`;
+    serializedSchain += `${encodeURIComponent(node['sid'] || '')},`;
+    serializedSchain += `${encodeURIComponent(node['hp'] || '')},`;
+    serializedSchain += `${encodeURIComponent(node['rid'] || '')},`;
+    serializedSchain += `${encodeURIComponent(node['name'] || '')},`;
+    serializedSchain += `${encodeURIComponent(node['domain'] || '')}`;
+  })
+
+  return serializedSchain;
 }
 
 /**
@@ -137,20 +157,28 @@ function isBidRequestValid (bid) {
  */
 function buildRequests (validBidRequests, bidderRequest) {
   const bids = [];
-  const gdprConsent = Object.assign({ consentString: null, gdprApplies: true }, bidderRequest && bidderRequest.gdprConsent)
+  const gdprConsent = bidderRequest && bidderRequest.gdprConsent;
   utils._each(validBidRequests, bidRequest => {
     const timeout = config.getConfig('bidderTimeout');
     const {
       bidId,
       params = {},
-      transactionId
+      schain,
+      transactionId,
+      userId = {}
     } = bidRequest;
-    const data = {}
+    const data = {};
+    const sizes = bidRequest.mediaTypes && bidRequest.mediaTypes.banner && bidRequest.mediaTypes.banner.sizes;
+    const topWindowUrl = bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer;
     if (pageViewId) {
       data.pv = pageViewId
     }
     if (params.bidfloor) {
       data.fp = params.bidfloor;
+    }
+    if (params.inScreenPubID) {
+      data.pubId = params.inScreenPubID;
+      data.pi = 2;
     }
     if (params.inScreen) {
       data.t = params.inScreen;
@@ -164,9 +192,14 @@ function buildRequests (validBidRequests, bidderRequest) {
       data.ni = parseInt(params.ICV, 10);
       data.pi = 5;
     }
-    data.gdprApplies = gdprConsent.gdprApplies;
-    if (gdprConsent.gdprApplies) {
+    if (gdprConsent) {
+      data.gdprApplies = gdprConsent.gdprApplies ? 1 : 0;
+    }
+    if (data.gdprApplies) {
       data.gdprConsent = gdprConsent.consentString;
+    }
+    if (schain && schain.nodes) {
+      data.schain = _serializeSupplyChainObj(schain);
     }
 
     bids.push({
@@ -175,10 +208,10 @@ function buildRequests (validBidRequests, bidderRequest) {
       tId: transactionId,
       pi: data.pi,
       selector: params.selector,
-      sizes: bidRequest.sizes,
+      sizes: sizes || bidRequest.sizes,
       url: BID_ENDPOINT,
       method: 'GET',
-      data: Object.assign(data, _getBrowserParams(), _getDigiTrustQueryParams(), _getTradeDeskIDParam(bidRequest))
+      data: Object.assign(data, _getBrowserParams(topWindowUrl), _getDigiTrustQueryParams(userId), _getTradeDeskIDParam(userId))
     })
   });
   return bids;
