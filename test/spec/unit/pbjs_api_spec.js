@@ -406,10 +406,10 @@ describe('Unit: Prebid Module', function () {
   describe('getAdserverTargeting', function() {
     const customConfigObject = {
       'buckets': [
-        { 'precision': 2, 'min': 0, 'max': 5, 'increment': 0.01 },
-        { 'precision': 2, 'min': 5, 'max': 8, 'increment': 0.05 },
-        { 'precision': 2, 'min': 8, 'max': 20, 'increment': 0.5 },
-        { 'precision': 2, 'min': 20, 'max': 25, 'increment': 1 }
+        { 'precision': 2, 'max': 5, 'increment': 0.01 },
+        { 'precision': 2, 'max': 8, 'increment': 0.05 },
+        { 'precision': 2, 'max': 20, 'increment': 0.5 },
+        { 'precision': 2, 'max': 25, 'increment': 1 }
       ]
     };
     let currentPriceBucket;
@@ -700,18 +700,18 @@ describe('Unit: Prebid Module', function () {
       configObj.setConfig({
         'priceGranularity': {
           'buckets': [
-            { 'precision': 2, 'min': 0, 'max': 5, 'increment': 0.01 },
-            { 'precision': 2, 'min': 5, 'max': 8, 'increment': 0.05 },
-            { 'precision': 2, 'min': 8, 'max': 20, 'increment': 0.5 },
-            { 'precision': 2, 'min': 20, 'max': 25, 'increment': 1 }
+            { 'precision': 2, 'max': 5, 'increment': 0.01 },
+            { 'precision': 2, 'max': 8, 'increment': 0.05 },
+            { 'precision': 2, 'max': 20, 'increment': 0.5 },
+            { 'precision': 2, 'max': 25, 'increment': 1 }
           ]
         },
         'mediaTypePriceGranularity': {
           'banner': {
             'buckets': [
-              { 'precision': 2, 'min': 0, 'max': 5, 'increment': 0.25 },
-              { 'precision': 2, 'min': 6, 'max': 20, 'increment': 0.5 },
-              { 'precision': 2, 'min': 21, 'max': 100, 'increment': 1 }
+              { 'precision': 2, 'max': 5, 'increment': 0.25 },
+              { 'precision': 2, 'max': 20, 'increment': 0.5 },
+              { 'precision': 2, 'max': 100, 'increment': 1 }
             ]
           },
           'video': 'low',
@@ -2078,14 +2078,12 @@ describe('Unit: Prebid Module', function () {
       const error = 'Invalid custom price value passed to `setPriceGranularity()`';
       const badConfig = {
         'buckets': [{
-          'min': 0,
           'max': 3,
           'increment': 0.01,
         },
         {
-          // missing min prop
           'max': 18,
-          'increment': 0.05,
+          // missing increment prop
           'cap': true
         }
         ]
@@ -2100,7 +2098,6 @@ describe('Unit: Prebid Module', function () {
       let customPriceBucket = configObj.getConfig('customPriceBucket');
       const goodConfig = {
         'buckets': [{
-          'min': 0,
           'max': 3,
           'increment': 0.01,
           'cap': true
