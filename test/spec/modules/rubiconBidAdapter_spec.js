@@ -2455,7 +2455,7 @@ describe('the rubicon adapter', function () {
 
   describe('get price granularity', function() {
     it('should return correct buckets for all price granularity values', function() {
-      const CUSTOM_PRICE_BUCKET_ITEM = {min: 0, max: 5, increment: 0.5};
+      const CUSTOM_PRICE_BUCKET_ITEM = {max: 5, increment: 0.5};
 
       const mockConfig = {
         priceGranularity: undefined,
