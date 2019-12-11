@@ -7,7 +7,7 @@ import includes from 'core-js/library/fn/array/includes';
 const BIDDER_CODE = 'emx_digital';
 const ENDPOINT = 'hb.emxdgt.com';
 const RENDERER_URL = '//js.brealtime.com/outstream/1.30.0/bundle.js';
-const ADAPTER_VERSION = '1.41.1';
+const ADAPTER_VERSION = '1.41.2';
 const DEFAULT_CUR = 'USD';
 
 export const emxAdapter = {
@@ -230,6 +230,9 @@ export const spec = {
     };
 
     emxData = emxAdapter.getGdpr(bidRequest, Object.assign({}, emxData));
+    if (bidRequest && bidRequest.uspConsent) {
+      emxData.us_privacy = bidRequest.uspConsent
+    }
     return {
       method: 'POST',
       url: url,

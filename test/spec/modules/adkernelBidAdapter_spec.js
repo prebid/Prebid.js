@@ -161,9 +161,10 @@ describe('Adkernel adapter', function () {
     };
 
   function buildBidderRequest(url = 'https://example.com/index.html', params = {}) {
-    return Object.assign({}, params, {refererInfo: {referer: url, reachedTop: true}})
+    return Object.assign({}, params, {refererInfo: {referer: url, reachedTop: true}, timeout: 3000});
   }
   const DEFAULT_BIDDER_REQUEST = buildBidderRequest();
+
   function buildRequest(bidRequests, bidderRequest = DEFAULT_BIDDER_REQUEST, dnt = true) {
     let dntmock = sinon.stub(utils, 'getDNT').callsFake(() => dnt);
     let pbRequests = spec.buildRequests(bidRequests, bidderRequest);
@@ -265,6 +266,12 @@ describe('Adkernel adapter', function () {
     it('should\'t pass dnt if state is unknown', function () {
       let [_, bidRequests] = buildRequest([bid1_zone1], DEFAULT_BIDDER_REQUEST, false);
       expect(bidRequests[0].device).to.not.have.property('dnt');
+    });
+
+    it('should forward default bidder timeout', function() {
+      let [_, bidRequests] = buildRequest([bid1_zone1], DEFAULT_BIDDER_REQUEST);
+      let bidRequest = bidRequests[0];
+      expect(bidRequests[0]).to.have.property('tmax', 3000);
     });
   });
 
@@ -377,8 +384,8 @@ describe('Adkernel adapter', function () {
 
   describe('adapter configuration', () => {
     it('should have aliases', () => {
-      expect(spec.aliases).to.have.lengthOf(5);
-      expect(spec.aliases).to.be.eql(['headbidding', 'adsolut', 'oftmediahb', 'audiencemedia', 'waardex_ak']);
+      expect(spec.aliases).to.have.lengthOf(6);
+      expect(spec.aliases).to.include.members(['headbidding', 'adsolut', 'oftmediahb', 'audiencemedia', 'waardex_ak', 'roqoon']);
     });
   });
 });

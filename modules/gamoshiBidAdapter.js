@@ -72,7 +72,10 @@ export const spec = {
           'ua': navigator.userAgent
         },
         'imp': [],
-        'ext': {}
+        'ext': {},
+        'user': {
+          'ext': {}
+        }
       };
       const gdprConsent = bidderRequest.gdprConsent;
 

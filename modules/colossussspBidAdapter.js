@@ -3,8 +3,8 @@ import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes';
 import * as utils from '../src/utils';
 
 const BIDDER_CODE = 'colossusssp';
-const URL = '//colossusssp.com/?c=o&m=multi';
-const URL_SYNC = '//colossusssp.com/?c=o&m=cookie';
+const G_URL = 'https://colossusssp.com/?c=o&m=multi';
+const G_URL_SYNC = 'https://colossusssp.com/?c=o&m=cookie';
 
 function isBidResponseValid(bid) {
   if (!bid.requestId || !bid.cpm || !bid.creativeId || !bid.ttl || !bid.currency) {
@@ -42,15 +42,16 @@ export const spec = {
    * @param {BidRequest[]} validBidRequests A non-empty list of valid bid requests that should be sent to the Server.
    * @return ServerRequest Info describing the request to the server.
    */
-  buildRequests: (validBidRequests) => {
+  buildRequests: (validBidRequests, bidderRequest) => {
     let winTop = window;
+    let location;
     try {
-      window.top.location.toString();
+      location = new URL(bidderRequest.refererInfo.referer)
       winTop = window.top;
     } catch (e) {
+      location = winTop.location;
       utils.logMessage(e);
     };
-    let location = utils.getTopWindowLocation();
     let placements = [];
     let request = {
       'deviceWidth': winTop.screen.width,
@@ -61,19 +62,30 @@ export const spec = {
       'page': location.pathname,
       'placements': placements
     };
+
+    if (bidderRequest) {
+      if (bidderRequest.uspConsent) {
+        request.ccpa = bidderRequest.uspConsent;
+      }
+    }
+
     for (let i = 0; i < validBidRequests.length; i++) {
       let bid = validBidRequests[i];
+      let traff = bid.params.traffic || BANNER
       let placement = {
         placementId: bid.params.placement_id,
         bidId: bid.bidId,
-        sizes: bid.sizes,
-        traffic: bid.params.traffic || BANNER
+        sizes: bid.mediaTypes[traff].sizes,
+        traffic: traff
       };
+      if (bid.schain) {
+        placement.schain = bid.schain;
+      }
       placements.push(placement);
     }
     return {
       method: 'POST',
-      url: URL,
+      url: G_URL,
       data: request
     };
   },
@@ -103,7 +115,7 @@ export const spec = {
   getUserSyncs: () => {
     return [{
       type: 'image',
-      url: URL_SYNC
+      url: G_URL_SYNC
     }];
   }
 };

@@ -580,7 +580,7 @@ describe('S2S Adapter', function () {
 
     it('should not add outstrean without renderer', function () {
       let ortb2Config = utils.deepClone(CONFIG);
-      ortb2Config.endpoint = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
+      ortb2Config.endpoint = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction';
 
       config.setConfig({ s2sConfig: ortb2Config });
       adapter.callBids(OUTSTREAM_VIDEO_REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
@@ -611,7 +611,7 @@ describe('S2S Adapter', function () {
 
       it('adds gdpr consent information to ortb2 request depending on presence of module', function () {
         let ortb2Config = utils.deepClone(CONFIG);
-        ortb2Config.endpoint = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
+        ortb2Config.endpoint = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction';
 
         let consentConfig = { consentManagement: { cmpApi: 'iab' }, s2sConfig: ortb2Config };
         config.setConfig(consentConfig);
@@ -699,6 +699,109 @@ describe('S2S Adapter', function () {
 
         expect(requestBid.gdpr).is.undefined;
         expect(requestBid.gdpr_consent).is.undefined;
+      });
+    });
+
+    describe('us_privacy (ccpa) consent data', function () {
+      afterEach(function () {
+        config.resetConfig();
+        $$PREBID_GLOBAL$$.requestBids.removeAll();
+      });
+
+      it('is added to ortb2 request when in bidRequest', function () {
+        let ortb2Config = utils.deepClone(CONFIG);
+        ortb2Config.endpoint = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction';
+        config.setConfig({ s2sConfig: ortb2Config });
+
+        let uspBidRequest = utils.deepClone(BID_REQUESTS);
+        uspBidRequest[0].uspConsent = '1NYN';
+
+        adapter.callBids(REQUEST, uspBidRequest, addBidResponse, done, ajax);
+        let requestBid = JSON.parse(requests[0].requestBody);
+
+        expect(requestBid.regs.ext.us_privacy).is.equal('1NYN');
+
+        config.resetConfig();
+        config.setConfig({ s2sConfig: CONFIG });
+
+        adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+        requestBid = JSON.parse(requests[1].requestBody);
+
+        expect(requestBid.regs).to.not.exist;
+      });
+
+      it('is added to cookie_sync request when in bidRequest', function () {
+        let cookieSyncConfig = utils.deepClone(CONFIG);
+        cookieSyncConfig.syncEndpoint = 'https://prebid.adnxs.com/pbs/v1/cookie_sync';
+        config.setConfig({ s2sConfig: cookieSyncConfig });
+
+        let uspBidRequest = utils.deepClone(BID_REQUESTS);
+        uspBidRequest[0].uspConsent = '1YNN';
+
+        adapter.callBids(REQUEST, uspBidRequest, addBidResponse, done, ajax);
+        let requestBid = JSON.parse(requests[0].requestBody);
+
+        expect(requestBid.us_privacy).is.equal('1YNN');
+        expect(requestBid.bidders).to.contain('appnexus').and.to.have.lengthOf(1);
+        expect(requestBid.account).is.equal('1');
+      });
+    });
+
+    describe('gdpr and us_privacy (ccpa) consent data', function () {
+      afterEach(function () {
+        config.resetConfig();
+        $$PREBID_GLOBAL$$.requestBids.removeAll();
+      });
+
+      it('is added to ortb2 request when in bidRequest', function () {
+        let ortb2Config = utils.deepClone(CONFIG);
+        ortb2Config.endpoint = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction';
+        config.setConfig({ s2sConfig: ortb2Config });
+
+        let consentBidRequest = utils.deepClone(BID_REQUESTS);
+        consentBidRequest[0].uspConsent = '1NYN';
+        consentBidRequest[0].gdprConsent = {
+          consentString: 'abc123',
+          gdprApplies: true
+        };
+
+        adapter.callBids(REQUEST, consentBidRequest, addBidResponse, done, ajax);
+        let requestBid = JSON.parse(requests[0].requestBody);
+
+        expect(requestBid.regs.ext.us_privacy).is.equal('1NYN');
+        expect(requestBid.regs.ext.gdpr).is.equal(1);
+        expect(requestBid.user.ext.consent).is.equal('abc123');
+
+        config.resetConfig();
+        config.setConfig({ s2sConfig: CONFIG });
+
+        adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+        requestBid = JSON.parse(requests[1].requestBody);
+
+        expect(requestBid.regs).to.not.exist;
+        expect(requestBid.user).to.not.exist;
+      });
+
+      it('is added to cookie_sync request when in bidRequest', function () {
+        let cookieSyncConfig = utils.deepClone(CONFIG);
+        cookieSyncConfig.syncEndpoint = 'https://prebid.adnxs.com/pbs/v1/cookie_sync';
+        config.setConfig({ s2sConfig: cookieSyncConfig });
+
+        let consentBidRequest = utils.deepClone(BID_REQUESTS);
+        consentBidRequest[0].uspConsent = '1YNN';
+        consentBidRequest[0].gdprConsent = {
+          consentString: 'abc123def',
+          gdprApplies: true
+        };
+
+        adapter.callBids(REQUEST, consentBidRequest, addBidResponse, done, ajax);
+        let requestBid = JSON.parse(requests[0].requestBody);
+
+        expect(requestBid.us_privacy).is.equal('1YNN');
+        expect(requestBid.gdpr).is.equal(1);
+        expect(requestBid.gdpr_consent).is.equal('abc123def');
+        expect(requestBid.bidders).to.contain('appnexus').and.to.have.lengthOf(1);
+        expect(requestBid.account).is.equal('1');
       });
     });
 
@@ -881,7 +984,7 @@ describe('S2S Adapter', function () {
 
       const _config = {
         s2sConfig: s2sConfig,
-      }
+      };
 
       config.setConfig(_config);
       adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
@@ -1097,8 +1200,8 @@ describe('S2S Adapter', function () {
       expect(requestBid.user.ext.eids.filter(eid => eid.source === 'adserver.org')[0].uids[0].id).is.equal('abc123');
       expect(requestBid.user.ext.eids.filter(eid => eid.source === 'criteo.com')).is.not.empty;
       expect(requestBid.user.ext.eids.filter(eid => eid.source === 'criteo.com')[0].uids[0].id).is.equal('44VmRDeUE3ZGJ5MzRkRVJHU3BIUlJ6TlFPQUFU');
-      expect(requestBid.user.ext.eids.filter(eid => eid.source === 'pubcommon')).is.not.empty;
-      expect(requestBid.user.ext.eids.filter(eid => eid.source === 'pubcommon')[0].uids[0].id).is.equal('1234');
+      expect(requestBid.user.ext.eids.filter(eid => eid.source === 'pubcid.org')).is.not.empty;
+      expect(requestBid.user.ext.eids.filter(eid => eid.source === 'pubcid.org')[0].uids[0].id).is.equal('1234');
       expect(requestBid.user.ext.eids.filter(eid => eid.source === 'parrable.com')).is.not.empty;
       expect(requestBid.user.ext.eids.filter(eid => eid.source === 'parrable.com')[0].uids[0].id).is.equal('01.1563917337.test-eid');
       expect(requestBid.user.ext.eids.filter(eid => eid.source === 'liveintent.com')).is.not.empty;
@@ -1665,7 +1768,7 @@ describe('S2S Adapter', function () {
 
       const _config = {
         s2sConfig: s2sConfig,
-      }
+      };
 
       config.setConfig(_config);
       config.setConfig({ s2sConfig: CONFIG });

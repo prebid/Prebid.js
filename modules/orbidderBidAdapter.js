@@ -28,9 +28,11 @@ export const spec = {
       if (bidderRequest && bidderRequest.refererInfo) {
         referer = bidderRequest.refererInfo.referer || '';
       }
+
       const ret = {
         url: `${spec.orbidderHost}/bid`,
         method: 'POST',
+        options: { withCredentials: true },
         data: {
           pageUrl: referer,
           bidId: bidRequest.bidId,
@@ -86,7 +88,7 @@ export const spec = {
   },
 
   ajaxCall(endpoint, data) {
-    ajax(endpoint, null, data);
+    ajax(endpoint, null, data, { withCredentials: true });
   }
 };
 
