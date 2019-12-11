@@ -84,8 +84,7 @@ function buildRequests(validBidRequests, bidderRequest) {
       if (!s2sParams.AV_IDFA && !s2sParams.AV_URL) {
         if (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer) {
           s2sParams.AV_URL = bidderRequest.refererInfo.referer;
-        }
-        else {
+        } else {
           s2sParams.AV_URL = window.location.href;
         }
       }
