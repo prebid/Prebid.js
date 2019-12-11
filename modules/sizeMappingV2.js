@@ -1,5 +1,6 @@
 import {
   flatten,
+  deepClone,
   deepAccess,
   getDefinedParams,
   getUniqueIdentifierStr,
@@ -32,9 +33,6 @@ function isUsingNewSizeMapping(adUnits, auctionId) {
         if (adUnit.mediaTypes[mediaType].sizeConfig) {
           if (isUsingSizeMappingBool === false) {
             isUsingSizeMappingBool = true;
-            if (auctionId) {
-              _sizeMappingUsageMap[auctionId] = isUsingSizeMappingBool;
-            }
           }
         }
       });
@@ -44,14 +42,14 @@ function isUsingNewSizeMapping(adUnits, auctionId) {
         if (bidder.sizeConfig) {
           if (isUsingSizeMappingBool === false) {
             isUsingSizeMappingBool = true;
-            if (auctionId) {
-              _sizeMappingUsageMap[auctionId] = isUsingSizeMappingBool;
-            }
           }
         }
       });
     }
   });
+  if (auctionId) {
+    _sizeMappingUsageMap[auctionId] = isUsingSizeMappingBool;
+  }
   return isUsingSizeMappingBool;
 }
 
@@ -81,14 +79,8 @@ function checkAdUnitSetupHook(adUnits) {
           }
         });
       } else {
-        logError('Detected a mediaTypes.banner object did not include required property sizes. Removing invalid mediaTypes.banner object from request.');
+        logError('Detected a mediaTypes.banner object did not include required property sizes or sizeConfig. Removing invalid mediaTypes.banner object from request.');
         delete adUnit.mediaTypes.banner;
-      }
-    } else if (adUnit.sizes) {
-      logWarn('Usage of adUnits.sizes will eventually be deprecated. Please define size dimensions within the corresponding area of the mediaTypes.<object> (eg mediaTypes.banner.sizes).');
-      const bannerSizes = validateSizes(adUnit.sizes);
-      if (bannerSizes.length > 0) {
-        adUnit.sizes = bannerSizes;
       }
     }
 
@@ -228,7 +220,7 @@ function getFilteredMediaTypes(mediaTypes) {
     activeViewportHeight,
     transformedMediaTypes;
 
-  transformedMediaTypes = Object.assign({}, mediaTypes);
+  transformedMediaTypes = deepClone(mediaTypes);
 
   let activeSizeBucket = {
     banner: undefined,
@@ -259,6 +251,9 @@ function getFilteredMediaTypes(mediaTypes) {
       };
 
       if (transformedMediaTypes[mediaType].filteredSizeConfig.length > 0) {
+        // map sizes or playerSize property in filteredSizeConfig object to transformedMediaTypes.banner.sizes if mediaType is banner
+        // or transformedMediaTypes.video.playerSize if the mediaType in video.
+        // doesn't apply to native mediaType since native doesn't have any property defining 'sizes' or 'playerSize'.
         if (mediaType !== 'native') {
           transformedMediaTypes[mediaType][config[mediaType]] = transformedMediaTypes[mediaType].filteredSizeConfig[0][config[mediaType]];
         }
