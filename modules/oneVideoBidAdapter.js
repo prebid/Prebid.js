@@ -228,15 +228,12 @@ function getRequestData(bid, consentData, bidRequest) {
   if (bid.params.site && bid.params.site.id) {
     bidData.site.id = bid.params.site.id
   }
-  if (isConsentRequired(consentData)) {
-    if (bidData && bidData.regs && bidData.regs.ext) {
+  if (isConsentRequired(consentData) || (bidRequest && bidRequest.uspConsent)) {
+    bidData.regs = {
+      ext: {}
+    };
+    if (isConsentRequired(consentData)) {
       bidData.regs.ext.gdpr = 1
-    } else {
-      bidData.regs = {
-        ext: {
-          gdpr: 1
-        }
-      };
     }
 
     if (consentData.consentString) {
@@ -246,16 +243,8 @@ function getRequestData(bid, consentData, bidRequest) {
         }
       };
     }
-  }
-  if (bidRequest && bidRequest.uspConsent) {
-    if (bidData && bidData.regs && bidData.regs.ext) {
+    if (bidRequest && bidRequest.uspConsent) {
       bidData.regs.ext.us_privacy = bidRequest.uspConsent
-    } else {
-      bidData.regs = {
-        ext: {
-          us_privacy: bidRequest.uspConsent
-        }
-      };
     }
   }
 
