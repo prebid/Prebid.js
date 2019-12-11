@@ -895,6 +895,11 @@ export const spec = {
     payload.site.page = conf.kadpageurl.trim() || payload.site.page.trim();
     payload.site.domain = _getDomainFromURL(payload.site.page);
 
+    // test bids
+    if (window.location.href.indexOf('pubmaticTest=true') !== -1) {
+      payload.test = 1;
+    }
+
     // adding schain object
     if (validBidRequests[0].schain) {
       payload.source = {

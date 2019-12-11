@@ -523,7 +523,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
         }
         break;
       case INSTREAM:
-        bid.vastUrl = rtbBid.rtb.video.asset_url;
+        bid.vastUrl = rtbBid.notify_url + '&redir=' + encodeURIComponent(rtbBid.rtb.video.asset_url);
         break;
     }
   } else if (rtbBid.rtb[NATIVE]) {
