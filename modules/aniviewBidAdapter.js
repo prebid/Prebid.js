@@ -82,7 +82,7 @@ function buildRequests(validBidRequests, bidderRequest) {
       };
 
       if (s2sParams.AV_APPPKGNAME && !s2sParams.AV_URL) { s2sParams.AV_URL = s2sParams.AV_APPPKGNAME; }
-      if (!s2sParams.AV_IDFA && !s2sParams.AV_URL) { s2sParams.AV_URL = utils.getTopWindowUrl(); }
+      if (!s2sParams.AV_IDFA && !s2sParams.AV_URL) { s2sParams.AV_URL = (bidderRequest.refererInfo && bidderRequest.refererInfo.referer ? bidderRequest.refererInfo.referer : window.location.href); }
       if (s2sParams.AV_IDFA && !s2sParams.AV_AID) { s2sParams.AV_AID = s2sParams.AV_IDFA; }
       if (s2sParams.AV_AID && !s2sParams.AV_IDFA) { s2sParams.AV_IDFA = s2sParams.AV_AID; }
 
