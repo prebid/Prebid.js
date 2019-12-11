@@ -146,7 +146,7 @@ describe('gumgumAdapter', function () {
       expect(request.data).to.not.include.any.keys('eAdBuyId');
       expect(request.data).to.not.include.any.keys('adBuyId');
     });
-    it('should add consent parameters if gdprConsent is present', function () {
+    it('should add gdpr consent parameters if gdprConsent is present', function () {
       const gdprConsent = { consentString: 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==', gdprApplies: true };
       const fakeBidRequest = { gdprConsent: gdprConsent };
       const bidRequest = spec.buildRequests(bidRequests, fakeBidRequest)[0];
@@ -158,6 +158,14 @@ describe('gumgumAdapter', function () {
       const fakeBidRequest = { gdprConsent: gdprConsent };
       const bidRequest = spec.buildRequests(bidRequests, fakeBidRequest)[0];
       expect(bidRequest.data).to.not.include.any.keys('gdprConsent')
+    });
+    it('should add uspConsent parameter if it is present in the bidderRequest', function () {
+      const noUspBidRequest = spec.buildRequests(bidRequests)[0];
+      const uspConsentObj = { uspConsent: '1YYY' };
+      const bidRequest = spec.buildRequests(bidRequests, uspConsentObj)[0];
+      expect(noUspBidRequest.data).to.not.include.any.keys('uspConsent');
+      expect(bidRequest.data).to.include.any.keys('uspConsent');
+      expect(bidRequest.data.uspConsent).to.eq(uspConsentObj.uspConsent);
     });
     it('should add a tdid parameter if request contains unified id from TradeDesk', function () {
       const unifiedId = {
