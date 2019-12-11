@@ -3,6 +3,7 @@ import { registerBidder } from '../src/adapters/bidderFactory'
 import { auctionManager } from '../src/auctionManager'
 import { BANNER, VIDEO } from '../src/mediaTypes'
 import {Renderer} from '../src/Renderer';
+import find from 'core-js/library/fn/array/find';
 
 const BIDDER_CODE = 'hybrid';
 const DSP_ENDPOINT = 'https://hbe198.hybrid.ai/prebidhb';
@@ -81,7 +82,9 @@ function buildBid(bidData) {
     bid.vastXml = bidData.content;
     bid.mediaType = VIDEO;
 
-    let adUnit = auctionManager.getAdUnits().find(u => u.transactionId === bidData.transactionId);
+    let adUnit = find(auctionManager.getAdUnits(), function (unit) {
+      return unit.transactionId === bidData.transactionId;
+    });
 
     if (adUnit) {
       bid.width = adUnit.mediaTypes.video.playerSize[0][0];
@@ -178,7 +181,9 @@ export const spec = {
 
     if (serverBody && serverBody.bids && utils.isArray(serverBody.bids)) {
       return utils._map(serverBody.bids, function(bid) {
-        let rawBid = bidRequests.find(x => x.bidId === bid.bidId);
+        let rawBid = find(bidRequests, function (item) {
+          return item.bidId === bid.bidId;
+        });
         bid.placement = rawBid.placement;
         bid.transactionId = rawBid.transactionId;
         bid.placeId = rawBid.placeId;
