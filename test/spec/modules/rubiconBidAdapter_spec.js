@@ -476,7 +476,7 @@ describe('the rubicon adapter', function () {
           expect(request.data).to.not.contain('x_source.pchain');
         });
 
-        it.skip('ad engine query params should be ordered correctly', function () {
+        it('ad engine query params should be ordered correctly', function () {
           sandbox.stub(Math, 'random').callsFake(() => 0.1);
           let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
 
