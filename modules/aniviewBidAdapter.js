@@ -1,5 +1,4 @@
 import { VIDEO } from '../src/mediaTypes';
-import * as utils from '../src/utils';
 import { registerBidder } from '../src/adapters/bidderFactory';
 import { Renderer } from '../src/Renderer';
 
