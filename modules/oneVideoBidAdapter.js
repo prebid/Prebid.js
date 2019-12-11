@@ -229,11 +229,15 @@ function getRequestData(bid, consentData, bidRequest) {
     bidData.site.id = bid.params.site.id
   }
   if (isConsentRequired(consentData)) {
-    bidData.regs = {
-      ext: {
-        gdpr: 1
-      }
-    };
+    if (bidData && bidData.regs && bidData.regs.ext) {
+      bidData.regs.ext.gdpr = 1
+    } else {
+      bidData.regs = {
+        ext: {
+          gdpr: 1
+        }
+      };
+    }
 
     if (consentData.consentString) {
       bidData.user = {
@@ -244,11 +248,15 @@ function getRequestData(bid, consentData, bidRequest) {
     }
   }
   if (bidRequest && bidRequest.uspConsent) {
-    bidData.regs = {
-      ext: {
-        us_privacy: bidRequest.uspConsent
-      }
-    };
+    if (bidData && bidData.regs && bidData.regs.ext) {
+      bidData.regs.ext.us_privacy = bidRequest.uspConsent
+    } else {
+      bidData.regs = {
+        ext: {
+          us_privacy: bidRequest.uspConsent
+        }
+      };
+    }
   }
 
   return bidData;
