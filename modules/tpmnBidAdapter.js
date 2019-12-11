@@ -8,7 +8,7 @@ export const ADAPTER_VERSION = '1';
 const SUPPORTED_AD_TYPES = [BANNER];
 
 const BIDDER_CODE = 'tpmn';
-const URL = '//ad.tpmn.co.kr/prebidhb.tpmn';
+const URL = 'https://ad.tpmn.co.kr/prebidhb.tpmn';
 
 export const spec = {
   code: BIDDER_CODE,
