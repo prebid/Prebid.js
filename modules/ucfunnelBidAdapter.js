@@ -71,6 +71,9 @@ export const spec = {
       ttl: 1800
     };
 
+    if (bidRequest.params && bidRequest.params.bidfloor && ad.cpm && ad.cpm < bidRequest.params.bidfloor) {
+      bid.cpm = 0;
+    }
     if (ad.creative_type) {
       bid.mediaType = ad.creative_type;
     }
@@ -123,12 +126,12 @@ export const spec = {
     if (syncOptions.iframeEnabled) {
       return [{
         type: 'iframe',
-        url: '//cdn.aralego.com/ucfad/cookie/sync.html'
+        url: '//cdn.aralego.net/ucfad/cookie/sync.html'
       }];
     } else if (syncOptions.pixelEnabled) {
       return [{
         type: 'image',
-        url: '//sync.aralego.com/idSync'
+        url: 'https://sync.aralego.com/idSync'
       }];
     }
   }
@@ -207,7 +210,8 @@ function getRequestData(bid, bidderRequest) {
     w: size[0],
     h: size[1],
     tdid: userIdTdid,
-    schain: supplyChain
+    schain: supplyChain,
+    fp: utils.getBidIdParameter('bidfloor', bid.params)
   };
 
   if (bid.mediaType === 'video' || videoMediaType) {

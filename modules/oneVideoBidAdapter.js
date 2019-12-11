@@ -251,6 +251,13 @@ function getRequestData(bid, consentData, bidRequest) {
       };
     }
   }
+  if (bidRequest && bidRequest.uspConsent) {
+    bidData.regs = {
+      ext: {
+        us_privacy: bidRequest.uspConsent
+      }
+    };
+  }
 
   return bidData;
 }

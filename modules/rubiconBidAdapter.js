@@ -206,17 +206,12 @@ export const spec = {
           gdprApplies = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
         }
 
-        if (data.regs) {
-          if (data.regs.ext) {
-            data.regs.ext.gdpr = gdprApplies;
-          } else {
-            data.regs.ext = {gdpr: gdprApplies};
-          }
-        } else {
-          data.regs = {ext: {gdpr: gdprApplies}};
-        }
-
+        utils.deepSetValue(data, 'regs.ext.gdpr', gdprApplies);
         utils.deepSetValue(data, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
+      }
+
+      if (bidderRequest.uspConsent) {
+        utils.deepSetValue(data, 'regs.ext.us_privacy', bidderRequest.uspConsent);
       }
 
       if (bidRequest.userId && typeof bidRequest.userId === 'object' &&
@@ -344,6 +339,7 @@ export const spec = {
       'p_pos',
       'gdpr',
       'gdpr_consent',
+      'us_privacy',
       'rp_schain',
       'tpid_tdid',
       'tpid_liveintent.com',
@@ -471,6 +467,10 @@ export const spec = {
       data['gdpr_consent'] = bidderRequest.gdprConsent.consentString;
     }
 
+    if (bidderRequest.uspConsent) {
+      data['us_privacy'] = encodeURIComponent(bidderRequest.uspConsent);
+    }
+
     // visitor properties
     if (params.visitor !== null && typeof params.visitor === 'object') {
       Object.keys(params.visitor).forEach((key) => {
@@ -559,7 +559,7 @@ export const spec = {
             cpm: bid.price || 0,
             bidderCode: seatbid.seat,
             ttl: 300,
-            netRevenue: config.getConfig('rubicon.netRevenue') || true,
+            netRevenue: config.getConfig('rubicon.netRevenue') !== false, // If anything other than false, netRev is true
             width: bid.w || utils.deepAccess(bidRequest, 'mediaTypes.video.w') || utils.deepAccess(bidRequest, 'params.video.playerWidth'),
             height: bid.h || utils.deepAccess(bidRequest, 'mediaTypes.video.h') || utils.deepAccess(bidRequest, 'params.video.playerHeight'),
           };
@@ -639,7 +639,7 @@ export const spec = {
           cpm: ad.cpm || 0,
           dealId: ad.deal,
           ttl: 300, // 5 minutes
-          netRevenue: config.getConfig('rubicon.netRevenue') || false,
+          netRevenue: config.getConfig('rubicon.netRevenue') !== false, // If anything other than false, netRev is true
           rubicon: {
             advertiserId: ad.advertiser, networkId: ad.network
           },
@@ -680,7 +680,7 @@ export const spec = {
       return (adB.cpm || 0.0) - (adA.cpm || 0.0);
     });
   },
-  getUserSyncs: function (syncOptions, responses, gdprConsent) {
+  getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent) {
     if (!hasSynced && syncOptions.iframeEnabled) {
       // data is only assigned if params are available to pass to SYNC_ENDPOINT
       let params = '';
@@ -692,6 +692,10 @@ export const spec = {
         } else {
           params += `?gdpr_consent=${gdprConsent.consentString}`;
         }
+      }
+
+      if (uspConsent) {
+        params += `${params ? '&' : '?'}us_privacy=${encodeURIComponent(uspConsent)}`;
       }
 
       hasSynced = true;
