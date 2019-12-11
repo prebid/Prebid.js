@@ -259,7 +259,7 @@ function _getDigiTrustQueryParams(bidRequest = {}) {
   };
 }
 
-function _appendSiteAppDevice(request) {
+function _appendSiteAppDevice(request, pageUrl) {
   if (!request) return;
 
   // ORTB specifies app OR site
@@ -269,7 +269,7 @@ function _appendSiteAppDevice(request) {
   } else {
     request.site = {
       publisher: { id: _s2sConfig.accountId },
-      page: utils.getTopWindowUrl()
+      page: pageUrl
     }
   }
   if (typeof config.getConfig('device') === 'object') {
@@ -527,7 +527,7 @@ const OPEN_RTB_PROTOCOL = {
       request.cur = [adServerCur[0]];
     }
 
-    _appendSiteAppDevice(request);
+    _appendSiteAppDevice(request, bidRequests[0].refererInfo.referer);
 
     const digiTrust = _getDigiTrustQueryParams(bidRequests && bidRequests[0]);
     if (digiTrust) {

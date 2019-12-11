@@ -464,7 +464,10 @@ describe('S2S Adapter', function () {
         'auctionStart': 1510852447530,
         'timeout': 5000,
         'src': 's2s',
-        'doneCbCallCount': 0
+        'doneCbCallCount': 0,
+        'refererInfo': {
+          'referer': 'http://mytestpage.com'
+        }
       }
     ];
   });
