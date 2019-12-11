@@ -118,36 +118,48 @@ describe('LockerDomeAdapter', function () {
       };
       const request = spec.buildRequests(bidRequests, bidderRequest);
       const requestData = JSON.parse(request.data);
-
       expect(requestData.gdpr).to.be.an('object');
       expect(requestData.gdpr).to.have.property('applies', true);
       expect(requestData.gdpr).to.have.property('consent', 'AAABBB');
     });
-  });
 
-  it('should add schain to request if available', function () {
-    const bidderRequest = {
-      refererInfo: {
-        canonicalUrl: 'https://example.com/canonical',
-        referer: 'https://example.com'
-      }
-    };
-    const schainExpected = {
-      ver: '1.0',
-      complete: 1,
-      nodes: [
-        {
-          asi: 'indirectseller.com',
-          sid: '00001',
-          hp: 1
+    it('should add US Privacy data to request if available', function () {
+      const bidderRequest = {
+        uspConsent: 'AAABBB',
+        refererInfo: {
+          canonicalUrl: 'https://example.com/canonical',
+          referer: 'https://example.com'
         }
-      ]
-    };
+      };
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const requestData = JSON.parse(request.data);
+      expect(requestData.us_privacy).to.be.an('object');
+      expect(requestData.us_privacy).to.have.property('consent', 'AAABBB');
+    });
 
-    const request = spec.buildRequests(bidRequests, bidderRequest);
-    const requestData = JSON.parse(request.data);
-    expect(requestData.schain).to.be.an('object');
-    expect(requestData.schain).to.deep.equal(schainExpected);
+    it('should add schain to request if available', function () {
+      const bidderRequest = {
+        refererInfo: {
+          canonicalUrl: 'https://example.com/canonical',
+          referer: 'https://example.com'
+        }
+      };
+      const schainExpected = {
+        ver: '1.0',
+        complete: 1,
+        nodes: [
+          {
+            asi: 'indirectseller.com',
+            sid: '00001',
+            hp: 1
+          }
+        ]
+      };
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const requestData = JSON.parse(request.data);
+      expect(requestData.schain).to.be.an('object');
+      expect(requestData.schain).to.deep.equal(schainExpected);
+    });
   });
 
   describe('interpretResponse', function () {
