@@ -156,6 +156,14 @@ describe('Conversant adapter tests', function() {
           price: 3.99,
           adomain: ['https://example.com'],
           id: 'bid003'
+        }, {
+          nurl: 'notify004',
+          adm: '<?xml><VAST></VAST>',
+          crid: '1004',
+          impid: 'bid004',
+          price: 4.99,
+          adomain: ['https://example.com'],
+          id: 'bid004'
         }]
       }]
     },
@@ -315,7 +323,7 @@ describe('Conversant adapter tests', function() {
   it('Verify interpretResponse', function() {
     const request = spec.buildRequests(bidRequests);
     const response = spec.interpretResponse(bidResponses, request);
-    expect(response).to.be.an('array').with.lengthOf(3);
+    expect(response).to.be.an('array').with.lengthOf(4);
 
     let bid = response[0];
     expect(bid).to.have.property('requestId', 'bid000');
@@ -352,6 +360,9 @@ describe('Conversant adapter tests', function() {
     expect(bid).to.have.property('mediaType', 'video');
     expect(bid).to.have.property('ttl', 300);
     expect(bid).to.have.property('netRevenue', true);
+
+    bid = response[3];
+    expect(bid).to.have.property('vastXml', '<?xml><VAST></VAST>');
   });
 
   it('Verify handling of bad responses', function() {
@@ -393,29 +404,61 @@ describe('Conversant adapter tests', function() {
 
   it('Verify GDPR bid request', function() {
     // add gdpr info
-    const bidRequest = {
+    const bidderRequest = {
       gdprConsent: {
         consentString: 'BOJObISOJObISAABAAENAA4AAAAAoAAA',
         gdprApplies: true
       }
     };
 
-    const payload = spec.buildRequests(bidRequests, bidRequest).data;
+    const payload = spec.buildRequests(bidRequests, bidderRequest).data;
     expect(payload).to.have.deep.nested.property('user.ext.consent', 'BOJObISOJObISAABAAENAA4AAAAAoAAA');
     expect(payload).to.have.deep.nested.property('regs.ext.gdpr', 1);
   });
 
   it('Verify GDPR bid request without gdprApplies', function() {
     // add gdpr info
-    const bidRequest = {
+    const bidderRequest = {
       gdprConsent: {
         consentString: ''
       }
     };
 
-    const payload = spec.buildRequests(bidRequests, bidRequest).data;
+    const payload = spec.buildRequests(bidRequests, bidderRequest).data;
     expect(payload).to.have.deep.nested.property('user.ext.consent', '');
     expect(payload).to.not.have.deep.nested.property('regs.ext.gdpr');
+  });
+
+  describe('CCPA', function() {
+    it('should have us_privacy', function() {
+      const bidderRequest = {
+        uspConsent: '1NYN'
+      };
+
+      const payload = spec.buildRequests(bidRequests, bidderRequest).data;
+      expect(payload).to.have.deep.nested.property('regs.ext.us_privacy', '1NYN');
+      expect(payload).to.not.have.deep.nested.property('regs.ext.gdpr');
+    });
+
+    it('should have no us_privacy', function() {
+      const payload = spec.buildRequests(bidRequests, {}).data;
+      expect(payload).to.not.have.deep.nested.property('regs.ext.us_privacy');
+    });
+
+    it('should have both gdpr and us_privacy', function() {
+      const bidderRequest = {
+        gdprConsent: {
+          consentString: 'BOJObISOJObISAABAAENAA4AAAAAoAAA',
+          gdprApplies: true
+        },
+        uspConsent: '1NYN'
+      };
+
+      const payload = spec.buildRequests(bidRequests, bidderRequest).data;
+      expect(payload).to.have.deep.nested.property('user.ext.consent', 'BOJObISOJObISAABAAENAA4AAAAAoAAA');
+      expect(payload).to.have.deep.nested.property('regs.ext.gdpr', 1);
+      expect(payload).to.have.deep.nested.property('regs.ext.us_privacy', '1NYN');
+    });
   });
 
   describe('Extended ID', function() {

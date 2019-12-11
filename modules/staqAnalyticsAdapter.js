@@ -132,7 +132,7 @@ function sendAll() {
 
 analyticsAdapter.ajaxCall = function ajaxCall(data) {
   utils.logInfo('SENDING DATA: ' + data);
-  ajax(`//${analyticsAdapter.context.url}/prebid/${analyticsAdapter.context.connectionId}`, () => {}, data, { contentType: 'text/plain' });
+  ajax(`https://${analyticsAdapter.context.url}/prebid/${analyticsAdapter.context.connectionId}`, () => {}, data, { contentType: 'text/plain' });
 };
 
 function trackAuctionInit(args) {
