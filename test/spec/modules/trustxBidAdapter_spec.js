@@ -168,6 +168,14 @@ describe('TrustXAdapter', function () {
       expect(payload).to.have.property('gdpr_applies', '1');
     });
 
+    it('if usPrivacy is present payload must have us_privacy param', function () {
+      const bidderRequestWithUSP = Object.assign({uspConsent: '1YNN'}, bidderRequest);
+      const request = spec.buildRequests(bidRequests, bidderRequestWithUSP);
+      expect(request.data).to.be.an('string');
+      const payload = parseRequest(request.data);
+      expect(payload).to.have.property('us_privacy', '1YNN');
+    });
+
     it('should convert keyword params to proper form and attaches to request', function () {
       const bidRequestWithKeywords = [].concat(bidRequests);
       bidRequestWithKeywords[1] = Object.assign({},
