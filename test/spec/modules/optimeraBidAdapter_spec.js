@@ -15,7 +15,7 @@ describe('OptimeraAdapter', function () {
     let bid = {
       'bidder': 'optimera',
       'params': {
-        'clientID': '0'
+        'clientID': '9999'
       },
       'adUnitCode': 'div-0',
       'sizes': [[300, 250], [300, 600]],
@@ -47,13 +47,12 @@ describe('OptimeraAdapter', function () {
       expect(request).to.exist;
       expect(request.method).to.equal('GET');
       expect(request.payload).to.exist;
-      expect(request.data.t).to.exist;
     });
   })
 
   describe('interpretResponse', function () {
     let serverResponse = {};
-    serverResponse.body = JSON.parse('{"div-0":["RB_K","728x90K"], "timestamp":["RB_K","1507565666"]}');
+    serverResponse.body = JSON.parse('{"div-0":["RB_K","728x90K"], "timestamp":["RB_K","1507565666"], "device": { "de": { "div-0":["A1","728x90K"] }, "mo": { "div-0":["RB_K","728x90K"] }, "tb": { "div-0":["RB_K","728x90K"] } } }');
     var bidRequest = {
       'method': 'get',
       'payload': [
@@ -70,6 +69,30 @@ describe('OptimeraAdapter', function () {
     it('interpresResponse fires', function () {
       let bidResponses = spec.interpretResponse(serverResponse, bidRequest);
       expect(bidResponses[0].dealId[0]).to.equal('RB_K');
+      expect(bidResponses[0].dealId[1]).to.equal('728x90K');
+    });
+  });
+
+  describe('interpretResponse with optional device param', function () {
+    let serverResponse = {};
+    serverResponse.body = JSON.parse('{"div-0":["RB_K","728x90K"], "timestamp":["RB_K","1507565666"], "device": { "de": { "div-0":["A1","728x90K"] }, "mo": { "div-0":["RB_K","728x90K"] }, "tb": { "div-0":["RB_K","728x90K"] } } }');
+    var bidRequest = {
+      'method': 'get',
+      'payload': [
+        {
+          'bidder': 'optimera',
+          'params': {
+            'clientID': '0',
+            'device': 'de'
+          },
+          'adUnitCode': 'div-0',
+          'bidId': '307440db8538ab'
+        }
+      ]
+    }
+    it('interpresResponse fires', function () {
+      let bidResponses = spec.interpretResponse(serverResponse, bidRequest);
+      expect(bidResponses[0].dealId[0]).to.equal('A1');
       expect(bidResponses[0].dealId[1]).to.equal('728x90K');
     });
   });

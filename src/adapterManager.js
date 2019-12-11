@@ -1,6 +1,6 @@
 /** @module adaptermanger */
 
-import { flatten, getBidderCodes, getDefinedParams, shuffle, timestamp, getBidderRequest } from './utils';
+import { flatten, getBidderCodes, getDefinedParams, shuffle, timestamp, getBidderRequest, bind } from './utils';
 import { getLabels, resolveStatus } from './sizeMapping';
 import { processNativeAdUnitParams, nativeAdapters } from './native';
 import { newBidder } from './adapters/bidderFactory';
@@ -95,12 +95,14 @@ function getBids({bidderCode, auctionId, bidderRequestId, adUnits, labels, src})
             bids.push(Object.assign({}, bid, {
               adUnitCode: adUnit.code,
               transactionId: adUnit.transactionId,
-              sizes: utils.deepAccess(mediaTypes, 'banner.sizes') || [],
+              sizes: utils.deepAccess(mediaTypes, 'banner.sizes') || utils.deepAccess(mediaTypes, 'video.playerSize') || [],
               bidId: bid.bid_id || utils.getUniqueIdentifierStr(),
               bidderRequestId,
               auctionId,
               src,
-              bidRequestsCount: adunitCounter.getCounter(adUnit.code),
+              bidRequestsCount: adunitCounter.getRequestsCounter(adUnit.code),
+              bidderRequestsCount: adunitCounter.getBidderRequestsCounter(adUnit.code, bid.bidder),
+              bidderWinsCount: adunitCounter.getBidderWinsCounter(adUnit.code, bid.bidder),
             }));
           }
           return bids;
@@ -118,7 +120,8 @@ function getAdUnitCopyForPrebidServer(adUnits) {
   adUnitsCopy.forEach((adUnit) => {
     // filter out client side bids
     adUnit.bids = adUnit.bids.filter((bid) => {
-      return includes(adaptersServerSide, bid.bidder) && (!doingS2STesting() || bid.finalSource !== s2sTestingModule.CLIENT);
+      return includes(adaptersServerSide, bid.bidder) &&
+        (!doingS2STesting() || bid.finalSource !== s2sTestingModule.CLIENT);
     }).map((bid) => {
       bid.bid_id = utils.getUniqueIdentifierStr();
       return bid;
@@ -159,10 +162,18 @@ export let gdprDataHandler = {
   }
 };
 
+export let uspDataHandler = {
+  consentData: null,
+  setConsentData: function(consentInfo) {
+    uspDataHandler.consentData = consentInfo;
+  },
+  getConsentData: function() {
+    return uspDataHandler.consentData;
+  }
+};
+
 adapterManager.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTimeout, labels) {
   let bidRequests = [];
-
-  adUnits = checkBidRequestSizes(adUnits);
 
   let bidderCodes = getBidderCodes(adUnits);
   if (config.getConfig('bidderSequence') === RANDOM) {
@@ -172,20 +183,33 @@ adapterManager.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTi
 
   let clientBidderCodes = bidderCodes;
   let clientTestAdapters = [];
+
   if (_s2sConfig.enabled) {
     // if s2sConfig.bidderControl testing is turned on
     if (doingS2STesting()) {
       // get all adapters doing client testing
-      clientTestAdapters = s2sTestingModule.getSourceBidderMap(adUnits)[s2sTestingModule.CLIENT];
+      const bidderMap = s2sTestingModule.getSourceBidderMap(adUnits);
+      clientTestAdapters = bidderMap[s2sTestingModule.CLIENT];
     }
 
     // these are called on the s2s adapter
     let adaptersServerSide = _s2sConfig.bidders;
 
     // don't call these client side (unless client request is needed for testing)
-    clientBidderCodes = bidderCodes.filter((elm) => {
-      return !includes(adaptersServerSide, elm) || includes(clientTestAdapters, elm);
-    });
+    clientBidderCodes = bidderCodes.filter(elm =>
+      !includes(adaptersServerSide, elm) || includes(clientTestAdapters, elm)
+    );
+
+    const adUnitsContainServerRequests = adUnits => Boolean(
+      find(adUnits, adUnit => find(adUnit.bids, bid => (
+        bid.bidSource ||
+        (_s2sConfig.bidderControl && _s2sConfig.bidderControl[bid.bidder])
+      ) && bid.finalSource === s2sTestingModule.SERVER))
+    );
+
+    if (isTestingServerOnly() && adUnitsContainServerRequests(adUnits)) {
+      clientBidderCodes.length = 0;
+    }
 
     let adUnitsS2SCopy = getAdUnitCopyForPrebidServer(adUnits);
     let tid = utils.generateUUID();
@@ -251,70 +275,16 @@ adapterManager.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTi
       bidRequest['gdprConsent'] = gdprDataHandler.getConsentData();
     });
   }
+
+  if (uspDataHandler.getConsentData()) {
+    bidRequests.forEach(bidRequest => {
+      bidRequest['uspConsent'] = uspDataHandler.getConsentData();
+    });
+  }
   return bidRequests;
 };
 
-export function checkBidRequestSizes(adUnits) {
-  function isArrayOfNums(val) {
-    return Array.isArray(val) && val.length === 2 && utils.isInteger(val[0]) && utils.isInteger(val[1]);
-  }
-
-  adUnits.forEach((adUnit) => {
-    const mediaTypes = adUnit.mediaTypes;
-    const normalizedSize = utils.getAdUnitSizes(adUnit);
-
-    if (mediaTypes && mediaTypes.banner) {
-      const banner = mediaTypes.banner;
-      if (banner.sizes) {
-        // make sure we always send [[h,w]] format
-        banner.sizes = normalizedSize;
-        adUnit.sizes = normalizedSize;
-      } else {
-        utils.logError('Detected a mediaTypes.banner object did not include sizes.  This is a required field for the mediaTypes.banner object.  Removing invalid mediaTypes.banner object from request.');
-        delete adUnit.mediaTypes.banner;
-      }
-    } else if (adUnit.sizes) {
-      utils.logWarn('Usage of adUnits.sizes will eventually be deprecated.  Please define size dimensions within the corresponding area of the mediaTypes.<object> (eg mediaTypes.banner.sizes).');
-      adUnit.sizes = normalizedSize;
-    }
-
-    if (mediaTypes && mediaTypes.video) {
-      const video = mediaTypes.video;
-      if (video.playerSize) {
-        if (Array.isArray(video.playerSize) && video.playerSize.length === 1 && video.playerSize.every(isArrayOfNums)) {
-          adUnit.sizes = video.playerSize;
-        } else if (isArrayOfNums(video.playerSize)) {
-          let newPlayerSize = [];
-          newPlayerSize.push(video.playerSize);
-          utils.logInfo(`Transforming video.playerSize from ${video.playerSize} to ${newPlayerSize} so it's in the proper format.`);
-          adUnit.sizes = video.playerSize = newPlayerSize;
-        } else {
-          utils.logError('Detected incorrect configuration of mediaTypes.video.playerSize.  Please specify only one set of dimensions in a format like: [[640, 480]]. Removing invalid mediaTypes.video.playerSize property from request.');
-          delete adUnit.mediaTypes.video.playerSize;
-        }
-      }
-    }
-
-    if (mediaTypes && mediaTypes.native) {
-      const native = mediaTypes.native;
-      if (native.image && native.image.sizes && !Array.isArray(native.image.sizes)) {
-        utils.logError('Please use an array of sizes for native.image.sizes field.  Removing invalid mediaTypes.native.image.sizes property from request.');
-        delete adUnit.mediaTypes.native.image.sizes;
-      }
-      if (native.image && native.image.aspect_ratios && !Array.isArray(native.image.aspect_ratios)) {
-        utils.logError('Please use an array of sizes for native.image.aspect_ratios field.  Removing invalid mediaTypes.native.image.aspect_ratios property from request.');
-        delete adUnit.mediaTypes.native.image.aspect_ratios;
-      }
-      if (native.icon && native.icon.sizes && !Array.isArray(native.icon.sizes)) {
-        utils.logError('Please use an array of sizes for native.icon.sizes field.  Removing invalid mediaTypes.native.icon.sizes property from request.');
-        delete adUnit.mediaTypes.native.icon.sizes;
-      }
-    }
-  });
-  return adUnits;
-}
-
-adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, requestCallbacks, requestBidsTimeout) => {
+adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, requestCallbacks, requestBidsTimeout, onTimelyResponse) => {
   if (!bidRequests.length) {
     utils.logWarn('callBids executed with no bidRequests.  Were they filtered by labels or sizing?');
     return;
@@ -371,6 +341,8 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
           s2sAjax
         );
       }
+    } else {
+      utils.logError('missing ' + _s2sConfig.adapter);
     }
   }
 
@@ -385,13 +357,29 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
       request: requestCallbacks.request.bind(null, bidRequest.bidderCode),
       done: requestCallbacks.done
     } : undefined);
-    adapter.callBids(bidRequest, addBidResponse.bind(bidRequest), doneCb.bind(bidRequest), ajax);
+    config.runWithBidder(
+      bidRequest.bidderCode,
+      bind.call(
+        adapter.callBids,
+        adapter,
+        bidRequest,
+        addBidResponse.bind(bidRequest),
+        doneCb.bind(bidRequest),
+        ajax,
+        onTimelyResponse,
+        config.callbackWithBidder(bidRequest.bidderCode)
+      )
+    );
   });
-}
+};
 
 function doingS2STesting() {
   return _s2sConfig && _s2sConfig.enabled && _s2sConfig.testing && s2sTestingModule;
 }
+
+function isTestingServerOnly() {
+  return Boolean(doingS2STesting() && _s2sConfig.testServerOnly);
+};
 
 function getSupportedMediaTypes(bidderCode) {
   let result = [];
@@ -508,7 +496,7 @@ function tryCallBidderMethod(bidder, method, param) {
     const spec = adapter.getSpec();
     if (spec && spec[method] && typeof spec[method] === 'function') {
       utils.logInfo(`Invoking ${bidder}.${method}`);
-      spec[method](param);
+      config.runWithBidder(bidder, bind.call(spec[method], spec, param));
     }
   } catch (e) {
     utils.logWarn(`Error calling ${method} of ${bidder}`);
@@ -532,6 +520,7 @@ adapterManager.callTimedOutBidders = function(adUnits, timedOutBidders, cbTimeou
 adapterManager.callBidWonBidder = function(bidder, bid, adUnits) {
   // Adding user configured params to bidWon event data
   bid.params = utils.getUserConfiguredParams(adUnits, bid.adUnitCode, bid.bidder);
+  adunitCounter.incrementBidderWinsCounter(bid.adUnitCode, bid.bidder);
   tryCallBidderMethod(bidder, 'onBidWon', bid);
 };
 

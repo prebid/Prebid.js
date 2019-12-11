@@ -11,7 +11,7 @@ const {
 
 const SLOT_LOADED = 'slotOnload';
 
-const ENDPOINT = '//ads.openx.net/w/1.0/pban';
+const ENDPOINT = 'https://ads.openx.net/w/1.0/pban';
 
 let initOptions;
 
@@ -47,11 +47,12 @@ function onBidRequested({ auctionId, auctionStart, bids, start }) {
 function onBidResponse({
   auctionId,
   adUnitCode,
-  adId: bidId,
+  requestId: bidId,
   cpm,
   creativeId,
   responseTimestamp,
-  ts
+  ts,
+  adId
 }) {
   const adUnit = auctionMap[auctionId]['adUnitMap'][adUnitCode];
   const bid = adUnit['bidMap'][bidId];
@@ -59,6 +60,7 @@ function onBidResponse({
   bid.creativeId = creativeId;
   bid.responseTimestamp = responseTimestamp;
   bid.ts = ts;
+  bid.adId = adId;
 }
 
 function onBidTimeout(args) {
@@ -71,7 +73,7 @@ function onBidTimeout(args) {
     });
 }
 
-function onBidWon({ auctionId, adUnitCode, adId: bidId }) {
+function onBidWon({ auctionId, adUnitCode, requestId: bidId }) {
   const adUnit = auctionMap[auctionId]['adUnitMap'][adUnitCode];
   const bid = adUnit['bidMap'][bidId];
   bid.won = true;
@@ -87,9 +89,12 @@ function onSlotLoaded({ slot }) {
     targeting
   );
 
-  const bidId = slot.getTargeting('hb_adid')[0];
-  const adUnit = getAdUnitByBidId(bidId);
+  const adId = slot.getTargeting('hb_adid')[0];
+  if (!adId) {
+    return;
+  }
 
+  const adUnit = getAdUnitByAdId(adId);
   if (!adUnit) {
     return;
   }
@@ -106,14 +111,16 @@ function onSlotLoaded({ slot }) {
   sendEvent(data);
 }
 
-function getAdUnitByBidId(bidId) {
+function getAdUnitByAdId(adId) {
   let result;
 
   utils._map(auctionMap, value => value).forEach(auction => {
     utils._map(auction.adUnitMap, value => value).forEach(adUnit => {
-      if (bidId in adUnit.bidMap) {
-        result = adUnit;
-      }
+      utils._map(adUnit.bidMap, value => value).forEach(bid => {
+        if (adId === bid.adId) {
+          result = adUnit;
+        }
+      })
     });
   });
 

@@ -17,7 +17,11 @@ Please reach out to pmp@rtbhouse.com to receive your own
            // banner
            {
                code: 'test-div',
-               sizes: [[300, 250]],
+               mediaTypes: {
+	           banner: {
+                       sizes: [[300, 250]],
+                   }
+               },
                bids: [
                    {
                        bidder: "rtbhouse",
@@ -35,13 +39,16 @@ Please reach out to pmp@rtbhouse.com to receive your own
                 mediaTypes: {
                     native: {
                         title: {
-                            required: true
+                            required: true,
+                            len: 25
                         },
                         image: {
-                            required: true
+                            required: true,
+                            sizes: [300, 250]
                         },
                         body: {
-                            required: true
+                            required: true,
+                            len: 90
                         }
                     }
                 },

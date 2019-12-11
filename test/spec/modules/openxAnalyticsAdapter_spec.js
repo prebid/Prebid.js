@@ -59,7 +59,8 @@ describe('openx analytics adapter', function() {
     };
 
     const bidResponseOpenX = {
-      adId: '2f0c647b904e25',
+      requestId: '2f0c647b904e25',
+      adId: '33dddbb61d359a',
       adUnitCode: 'div-1',
       auctionId: 'add5eb0f-587d-441d-86ec-bbb722c70f79',
       cpm: 0.5,
@@ -69,7 +70,8 @@ describe('openx analytics adapter', function() {
     };
 
     const bidResponseCloseX = {
-      adId: '43d454020e9409',
+      requestId: '43d454020e9409',
+      adId: '43dddbb61d359a',
       adUnitCode: 'div-1',
       auctionId: 'add5eb0f-587d-441d-86ec-bbb722c70f79',
       cpm: 0.3,
@@ -95,13 +97,15 @@ describe('openx analytics adapter', function() {
     };
 
     const bidWonOpenX = {
-      adId: '2f0c647b904e25',
+      requestId: '2f0c647b904e25',
+      adId: '33dddbb61d359a',
       adUnitCode: 'div-1',
       auctionId: 'add5eb0f-587d-441d-86ec-bbb722c70f79'
     };
 
     const bidWonCloseX = {
-      adId: '43d454020e9409',
+      requestId: '43d454020e9409',
+      adId: '43dddbb61d359a',
       adUnitCode: 'div-1',
       auctionId: 'add5eb0f-587d-441d-86ec-bbb722c70f79'
     };
@@ -194,7 +198,7 @@ describe('openx analytics adapter', function() {
       expect(requests.length).to.equal(1);
 
       const endpoint = requests[0].url.split('?')[0];
-      expect(endpoint).to.equal('http://ads.openx.net/w/1.0/pban');
+      expect(endpoint).to.equal('https://ads.openx.net/w/1.0/pban');
     });
 
     describe('hb.ct, hb.rid, dddid, hb.asiid, hb.pubid', function() {

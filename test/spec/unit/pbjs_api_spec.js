@@ -108,6 +108,7 @@ var createSlotArrayScenario2 = function createSlotArrayScenario2() {
 
 window.googletag = {
   _slots: [],
+  _targeting: {},
   pubads: function () {
     var self = this;
     return {
@@ -117,6 +118,18 @@ window.googletag = {
 
       setSlots: function (slots) {
         self._slots = slots;
+      },
+
+      setTargeting: function(key, arrayOfValues) {
+        self._targeting[key] = arrayOfValues;
+      },
+
+      getTargeting: function() {
+        return self._targeting;
+      },
+
+      clearTargeting: function() {
+        self._targeting = {};
       }
     };
   }
@@ -393,10 +406,10 @@ describe('Unit: Prebid Module', function () {
   describe('getAdserverTargeting', function() {
     const customConfigObject = {
       'buckets': [
-        { 'precision': 2, 'min': 0, 'max': 5, 'increment': 0.01 },
-        { 'precision': 2, 'min': 5, 'max': 8, 'increment': 0.05 },
-        { 'precision': 2, 'min': 8, 'max': 20, 'increment': 0.5 },
-        { 'precision': 2, 'min': 20, 'max': 25, 'increment': 1 }
+        { 'precision': 2, 'max': 5, 'increment': 0.01 },
+        { 'precision': 2, 'max': 8, 'increment': 0.05 },
+        { 'precision': 2, 'max': 20, 'increment': 0.5 },
+        { 'precision': 2, 'max': 25, 'increment': 1 }
       ]
     };
     let currentPriceBucket;
@@ -434,7 +447,9 @@ describe('Unit: Prebid Module', function () {
             'trackers': [{
               'impression_urls': ['http://lax1-ib.adnxs.com/impression']
             }]
-          }
+          },
+          'viewability': {
+            'config': '<script type=\'text/javascript\' async=\'true\' src=\'http://cdn.adnxs.com/v/s/152/trk.js#v;vk=appnexus.com-omid;tv=native1-18h;dom_id=%native_dom_id%;st=0;d=1x1;vc=iab;vid_ccr=1;tag_id=13232354;cb=http%3A%2F%2Fams1-ib.adnxs.com%2Fvevent%3Freferrer%3Dhttp%253A%252F%252Ftestpages-pmahe.tp.adnxs.net%252F01_basic_single%26e%3DwqT_3QLNB6DNAwAAAwDWAAUBCLfl_-MFEMStk8u3lPTjRxih88aF0fq_2QsqNgkAAAECCCRAEQEHEAAAJEAZEQkAIREJACkRCQAxEQmoMOLRpwY47UhA7UhIAlCDy74uWJzxW2AAaM26dXjzjwWAAQGKAQNVU0SSAQEG8FCYAQGgAQGoAQGwAQC4AQHAAQTIAQLQAQDYAQDgAQDwAQCKAjt1ZignYScsIDI1Mjk4ODUsIDE1NTE4ODkwNzkpO3VmKCdyJywgOTc0OTQ0MDM2HgDwjZIC8QEha0RXaXBnajgtTHdLRUlQTHZpNFlBQ0NjOFZzd0FEZ0FRQVJJN1VoUTR0R25CbGdBWU1rR2FBQndMSGlrTDRBQlVvZ0JwQy1RQVFHWUFRR2dBUUdvQVFPd0FRQzVBZk90YXFRQUFDUkF3UUh6cldxa0FBQWtRTWtCbWo4dDA1ZU84VF9aQVFBQUEBAyRQQV80QUVBOVFFAQ4sQW1BSUFvQUlBdFFJBRAAdg0IeHdBSUF5QUlBNEFJQTZBSUEtQUlBZ0FNQm1BTUJxQVAFzIh1Z01KUVUxVE1UbzBNekl3NEFPVENBLi6aAmEhUXcxdGNRagUoEfQkblBGYklBUW9BRAl8AEEBqAREbzJEABRRSk1JU1EBGwRBQQGsAFURDAxBQUFXHQzwWNgCAOACrZhI6gIzaHR0cDovL3Rlc3RwYWdlcy1wbWFoZS50cC5hZG54cy5uZXQvMDFfYmFzaWNfc2luZ2xl8gITCg9DVVNUT01fTU9ERUxfSUQSAPICGgoWMhYAPExFQUZfTkFNRRIA8gIeCho2HQAIQVNUAT7wnElGSUVEEgCAAwCIAwGQAwCYAxegAwGqAwDAA-CoAcgDANgD8ao-4AMA6AMA-AMBgAQAkgQNL3V0L3YzL3ByZWJpZJgEAKIECjEwLjIuMTIuMzioBIqpB7IEDggAEAEYACAAKAAwADgCuAQAwAQAyAQA0gQOOTMyNSNBTVMxOjQzMjDaBAIIAeAEAfAEg8u-LogFAZgFAKAF______8BAxgBwAUAyQUABQEU8D_SBQkJBQt8AAAA2AUB4AUB8AWZ9CH6BQQIABAAkAYBmAYAuAYAwQYBITAAAPA_yAYA2gYWChAAOgEAGBAAGADgBgw.%26s%3D971dce9d49b6bee447c8a58774fb30b40fe98171;ts=1551889079;cet=0;cecb=\'></script>'}
         }]
       }]
     };
@@ -574,7 +589,9 @@ describe('Unit: Prebid Module', function () {
             'trackers': [{
               'impression_urls': ['http://lax1-ib.adnxs.com/impression']
             }]
-          }
+          },
+          'viewability': {
+            'config': '<script type=\'text/javascript\' async=\'true\' src=\'http://cdn.adnxs.com/v/s/152/trk.js#v;vk=appnexus.com-omid;tv=native1-18h;dom_id=%native_dom_id%;st=0;d=1x1;vc=iab;vid_ccr=1;tag_id=13232354;cb=http%3A%2F%2Fams1-ib.adnxs.com%2Fvevent%3Freferrer%3Dhttp%253A%252F%252Ftestpages-pmahe.tp.adnxs.net%252F01_basic_single%26e%3DwqT_3QLNB6DNAwAAAwDWAAUBCLfl_-MFEMStk8u3lPTjRxih88aF0fq_2QsqNgkAAAECCCRAEQEHEAAAJEAZEQkAIREJACkRCQAxEQmoMOLRpwY47UhA7UhIAlCDy74uWJzxW2AAaM26dXjzjwWAAQGKAQNVU0SSAQEG8FCYAQGgAQGoAQGwAQC4AQHAAQTIAQLQAQDYAQDgAQDwAQCKAjt1ZignYScsIDI1Mjk4ODUsIDE1NTE4ODkwNzkpO3VmKCdyJywgOTc0OTQ0MDM2HgDwjZIC8QEha0RXaXBnajgtTHdLRUlQTHZpNFlBQ0NjOFZzd0FEZ0FRQVJJN1VoUTR0R25CbGdBWU1rR2FBQndMSGlrTDRBQlVvZ0JwQy1RQVFHWUFRR2dBUUdvQVFPd0FRQzVBZk90YXFRQUFDUkF3UUh6cldxa0FBQWtRTWtCbWo4dDA1ZU84VF9aQVFBQUEBAyRQQV80QUVBOVFFAQ4sQW1BSUFvQUlBdFFJBRAAdg0IeHdBSUF5QUlBNEFJQTZBSUEtQUlBZ0FNQm1BTUJxQVAFzIh1Z01KUVUxVE1UbzBNekl3NEFPVENBLi6aAmEhUXcxdGNRagUoEfQkblBGYklBUW9BRAl8AEEBqAREbzJEABRRSk1JU1EBGwRBQQGsAFURDAxBQUFXHQzwWNgCAOACrZhI6gIzaHR0cDovL3Rlc3RwYWdlcy1wbWFoZS50cC5hZG54cy5uZXQvMDFfYmFzaWNfc2luZ2xl8gITCg9DVVNUT01fTU9ERUxfSUQSAPICGgoWMhYAPExFQUZfTkFNRRIA8gIeCho2HQAIQVNUAT7wnElGSUVEEgCAAwCIAwGQAwCYAxegAwGqAwDAA-CoAcgDANgD8ao-4AMA6AMA-AMBgAQAkgQNL3V0L3YzL3ByZWJpZJgEAKIECjEwLjIuMTIuMzioBIqpB7IEDggAEAEYACAAKAAwADgCuAQAwAQAyAQA0gQOOTMyNSNBTVMxOjQzMjDaBAIIAeAEAfAEg8u-LogFAZgFAKAF______8BAxgBwAUAyQUABQEU8D_SBQkJBQt8AAAA2AUB4AUB8AWZ9CH6BQQIABAAkAYBmAYAuAYAwQYBITAAAPA_yAYA2gYWChAAOgEAGBAAGADgBgw.%26s%3D971dce9d49b6bee447c8a58774fb30b40fe98171;ts=1551889079;cet=0;cecb=\'></script>'}
         }]
       }]
     };
@@ -606,7 +623,9 @@ describe('Unit: Prebid Module', function () {
             'trackers': [{
               'impression_urls': ['http://lax1-ib.adnxs.com/impression']
             }]
-          }
+          },
+          'viewability': {
+            'config': '<script type=\'text/javascript\' async=\'true\' src=\'http://cdn.adnxs.com/v/s/152/trk.js#v;vk=appnexus.com-omid;tv=native1-18h;dom_id=%native_dom_id%;st=0;d=1x1;vc=iab;vid_ccr=1;tag_id=13232354;cb=http%3A%2F%2Fams1-ib.adnxs.com%2Fvevent%3Freferrer%3Dhttp%253A%252F%252Ftestpages-pmahe.tp.adnxs.net%252F01_basic_single%26e%3DwqT_3QLNB6DNAwAAAwDWAAUBCLfl_-MFEMStk8u3lPTjRxih88aF0fq_2QsqNgkAAAECCCRAEQEHEAAAJEAZEQkAIREJACkRCQAxEQmoMOLRpwY47UhA7UhIAlCDy74uWJzxW2AAaM26dXjzjwWAAQGKAQNVU0SSAQEG8FCYAQGgAQGoAQGwAQC4AQHAAQTIAQLQAQDYAQDgAQDwAQCKAjt1ZignYScsIDI1Mjk4ODUsIDE1NTE4ODkwNzkpO3VmKCdyJywgOTc0OTQ0MDM2HgDwjZIC8QEha0RXaXBnajgtTHdLRUlQTHZpNFlBQ0NjOFZzd0FEZ0FRQVJJN1VoUTR0R25CbGdBWU1rR2FBQndMSGlrTDRBQlVvZ0JwQy1RQVFHWUFRR2dBUUdvQVFPd0FRQzVBZk90YXFRQUFDUkF3UUh6cldxa0FBQWtRTWtCbWo4dDA1ZU84VF9aQVFBQUEBAyRQQV80QUVBOVFFAQ4sQW1BSUFvQUlBdFFJBRAAdg0IeHdBSUF5QUlBNEFJQTZBSUEtQUlBZ0FNQm1BTUJxQVAFzIh1Z01KUVUxVE1UbzBNekl3NEFPVENBLi6aAmEhUXcxdGNRagUoEfQkblBGYklBUW9BRAl8AEEBqAREbzJEABRRSk1JU1EBGwRBQQGsAFURDAxBQUFXHQzwWNgCAOACrZhI6gIzaHR0cDovL3Rlc3RwYWdlcy1wbWFoZS50cC5hZG54cy5uZXQvMDFfYmFzaWNfc2luZ2xl8gITCg9DVVNUT01fTU9ERUxfSUQSAPICGgoWMhYAPExFQUZfTkFNRRIA8gIeCho2HQAIQVNUAT7wnElGSUVEEgCAAwCIAwGQAwCYAxegAwGqAwDAA-CoAcgDANgD8ao-4AMA6AMA-AMBgAQAkgQNL3V0L3YzL3ByZWJpZJgEAKIECjEwLjIuMTIuMzioBIqpB7IEDggAEAEYACAAKAAwADgCuAQAwAQAyAQA0gQOOTMyNSNBTVMxOjQzMjDaBAIIAeAEAfAEg8u-LogFAZgFAKAF______8BAxgBwAUAyQUABQEU8D_SBQkJBQt8AAAA2AUB4AUB8AWZ9CH6BQQIABAAkAYBmAYAuAYAwQYBITAAAPA_yAYA2gYWChAAOgEAGBAAGADgBgw.%26s%3D971dce9d49b6bee447c8a58774fb30b40fe98171;ts=1551889079;cet=0;cecb=\'></script>'}
         }]
       }]
     };
@@ -681,18 +700,18 @@ describe('Unit: Prebid Module', function () {
       configObj.setConfig({
         'priceGranularity': {
           'buckets': [
-            { 'precision': 2, 'min': 0, 'max': 5, 'increment': 0.01 },
-            { 'precision': 2, 'min': 5, 'max': 8, 'increment': 0.05 },
-            { 'precision': 2, 'min': 8, 'max': 20, 'increment': 0.5 },
-            { 'precision': 2, 'min': 20, 'max': 25, 'increment': 1 }
+            { 'precision': 2, 'max': 5, 'increment': 0.01 },
+            { 'precision': 2, 'max': 8, 'increment': 0.05 },
+            { 'precision': 2, 'max': 20, 'increment': 0.5 },
+            { 'precision': 2, 'max': 25, 'increment': 1 }
           ]
         },
         'mediaTypePriceGranularity': {
           'banner': {
             'buckets': [
-              { 'precision': 2, 'min': 0, 'max': 5, 'increment': 0.25 },
-              { 'precision': 2, 'min': 6, 'max': 20, 'increment': 0.5 },
-              { 'precision': 2, 'min': 21, 'max': 100, 'increment': 1 }
+              { 'precision': 2, 'max': 5, 'increment': 0.25 },
+              { 'precision': 2, 'max': 20, 'increment': 0.5 },
+              { 'precision': 2, 'max': 100, 'increment': 1 }
             ]
           },
           'video': 'low',
@@ -1171,6 +1190,11 @@ describe('Unit: Prebid Module', function () {
 
       adUnits = [{
         code: 'adUnit-code',
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 250]]
+          }
+        },
         bids: [
           {bidder: BIDDER_CODE, params: {placementId: 'id'}},
         ]
@@ -1295,9 +1319,11 @@ describe('Unit: Prebid Module', function () {
           adUnits: [
             {
               code: 'test1',
+              mediaTypes: { banner: { sizes: [] } },
               bids: [],
             }, {
               code: 'test2',
+              mediaTypes: { banner: { sizes: [] } },
               bids: [],
             }
           ],
@@ -1325,7 +1351,9 @@ describe('Unit: Prebid Module', function () {
     });
     var adUnitsBackup;
     var auctionManagerStub;
-    let logMessageSpy
+    let logMessageSpy;
+    let logInfoSpy;
+    let logErrorSpy;
 
     let spec = {
       code: 'sampleBidder',
@@ -1346,12 +1374,16 @@ describe('Unit: Prebid Module', function () {
           return auction;
         });
         logMessageSpy = sinon.spy(utils, 'logMessage');
+        logInfoSpy = sinon.spy(utils, 'logInfo');
+        logErrorSpy = sinon.spy(utils, 'logError');
       });
 
       afterEach(function () {
         auction.getAdUnits = adUnitsBackup;
         auctionManager.createAuction.restore();
         utils.logMessage.restore();
+        utils.logInfo.restore();
+        utils.logError.restore();
         resetAuction();
       });
 
@@ -1371,9 +1403,11 @@ describe('Unit: Prebid Module', function () {
             {
               code: 'test1',
               transactionId: 'd0676a3c-ff32-45a5-af65-8175a8e7ddca',
+              mediaTypes: { banner: { sizes: [] } },
               bids: []
             }, {
               code: 'test2',
+              mediaTypes: { banner: { sizes: [] } },
               bids: []
             }
           ]
@@ -1394,9 +1428,11 @@ describe('Unit: Prebid Module', function () {
           adUnits: [
             {
               code: 'test1',
+              mediaTypes: { banner: { sizes: [] } },
               bids: []
             }, {
               code: 'test2',
+              mediaTypes: { banner: { sizes: [] } },
               bids: []
             }
           ]
@@ -1436,6 +1472,239 @@ describe('Unit: Prebid Module', function () {
           $$PREBID_GLOBAL$$.requestBids(requestObj);
         }).not.to.throw();
       });
+
+      describe('checkAdUnitSetup', function() {
+        describe('positive tests for validating adUnits', function() {
+          it('should maintain adUnit structure and adUnit.sizes is replaced', function () {
+            let fullAdUnit = [{
+              code: 'test1',
+              sizes: [[300, 250], [300, 600]],
+              mediaTypes: {
+                banner: {
+                  sizes: [[300, 250]]
+                },
+                video: {
+                  playerSize: [[640, 480]]
+                },
+                native: {
+                  image: {
+                    sizes: [150, 150],
+                    aspect_ratios: [140, 140]
+                  },
+                  icon: {
+                    sizes: [75, 75]
+                  }
+                }
+              },
+              bids: []
+            }];
+            $$PREBID_GLOBAL$$.requestBids({
+              adUnits: fullAdUnit
+            });
+            expect(auctionArgs.adUnits[0].sizes).to.deep.equal([[640, 480]]);
+            expect(auctionArgs.adUnits[0].mediaTypes.video.playerSize).to.deep.equal([[640, 480]]);
+            expect(auctionArgs.adUnits[0].mediaTypes.native.image.sizes).to.deep.equal([150, 150]);
+            expect(auctionArgs.adUnits[0].mediaTypes.native.icon.sizes).to.deep.equal([75, 75]);
+            expect(auctionArgs.adUnits[0].mediaTypes.native.image.aspect_ratios).to.deep.equal([140, 140]);
+
+            let noOptnlFieldAdUnit = [{
+              code: 'test2',
+              bids: [],
+              sizes: [[300, 250], [300, 600]],
+              mediaTypes: {
+                banner: {
+                  sizes: [[300, 250]]
+                },
+                video: {
+                  context: 'outstream'
+                },
+                native: {
+                  image: {
+                    required: true
+                  },
+                  icon: {
+                    required: true
+                  }
+                }
+              }
+            }];
+            $$PREBID_GLOBAL$$.requestBids({
+              adUnits: noOptnlFieldAdUnit
+            });
+            expect(auctionArgs.adUnits[0].sizes).to.deep.equal([[300, 250]]);
+            expect(auctionArgs.adUnits[0].mediaTypes.video).to.exist;
+
+            let mixedAdUnit = [{
+              code: 'test3',
+              bids: [],
+              sizes: [[300, 250], [300, 600]],
+              mediaTypes: {
+                video: {
+                  context: 'outstream',
+                  playerSize: [[400, 350]]
+                },
+                native: {
+                  image: {
+                    aspect_ratios: [200, 150],
+                    required: true
+                  }
+                }
+              }
+            }];
+            $$PREBID_GLOBAL$$.requestBids({
+              adUnits: mixedAdUnit
+            });
+            expect(auctionArgs.adUnits[0].sizes).to.deep.equal([[400, 350]]);
+            expect(auctionArgs.adUnits[0].mediaTypes.video).to.exist;
+
+            let altVideoPlayerSize = [{
+              code: 'test4',
+              bids: [],
+              sizes: [[600, 600]],
+              mediaTypes: {
+                video: {
+                  playerSize: [640, 480]
+                }
+              }
+            }];
+            $$PREBID_GLOBAL$$.requestBids({
+              adUnits: altVideoPlayerSize
+            });
+            expect(auctionArgs.adUnits[0].sizes).to.deep.equal([[640, 480]]);
+            expect(auctionArgs.adUnits[0].mediaTypes.video.playerSize).to.deep.equal([[640, 480]]);
+            expect(auctionArgs.adUnits[0].mediaTypes.video).to.exist;
+          });
+
+          it('should normalize adUnit.sizes and adUnit.mediaTypes.banner.sizes', function () {
+            let normalizeAdUnit = [{
+              code: 'test5',
+              bids: [],
+              sizes: [300, 250],
+              mediaTypes: {
+                banner: {
+                  sizes: [300, 250]
+                }
+              }
+            }];
+            $$PREBID_GLOBAL$$.requestBids({
+              adUnits: normalizeAdUnit
+            });
+            expect(auctionArgs.adUnits[0].sizes).to.deep.equal([[300, 250]]);
+            expect(auctionArgs.adUnits[0].mediaTypes.banner.sizes).to.deep.equal([[300, 250]]);
+          });
+        });
+
+        describe('negative tests for validating adUnits', function() {
+          it('should throw error message and delete an object/property', function () {
+            let badBanner = [{
+              code: 'testb1',
+              bids: [],
+              sizes: [[300, 250], [300, 600]],
+              mediaTypes: {
+                banner: {
+                  name: 'test'
+                }
+              }
+            }];
+            $$PREBID_GLOBAL$$.requestBids({
+              adUnits: badBanner
+            });
+            expect(auctionArgs.adUnits[0].sizes).to.deep.equal([[300, 250], [300, 600]]);
+            expect(auctionArgs.adUnits[0].mediaTypes.banner).to.be.undefined;
+            assert.ok(logErrorSpy.calledWith('Detected a mediaTypes.banner object without a proper sizes field.  Please ensure the sizes are listed like: [[300, 250], ...].  Removing invalid mediaTypes.banner object from request.'));
+
+            let badVideo1 = [{
+              code: 'testb2',
+              bids: [],
+              sizes: [[600, 600]],
+              mediaTypes: {
+                video: {
+                  playerSize: ['600x400']
+                }
+              }
+            }];
+            $$PREBID_GLOBAL$$.requestBids({
+              adUnits: badVideo1
+            });
+            expect(auctionArgs.adUnits[0].sizes).to.deep.equal([[600, 600]]);
+            expect(auctionArgs.adUnits[0].mediaTypes.video.playerSize).to.be.undefined;
+            expect(auctionArgs.adUnits[0].mediaTypes.video).to.exist;
+            assert.ok(logErrorSpy.calledWith('Detected incorrect configuration of mediaTypes.video.playerSize.  Please specify only one set of dimensions in a format like: [[640, 480]]. Removing invalid mediaTypes.video.playerSize property from request.'));
+
+            let badVideo2 = [{
+              code: 'testb3',
+              bids: [],
+              sizes: [[600, 600]],
+              mediaTypes: {
+                video: {
+                  playerSize: [['300', '200']]
+                }
+              }
+            }];
+            $$PREBID_GLOBAL$$.requestBids({
+              adUnits: badVideo2
+            });
+            expect(auctionArgs.adUnits[0].sizes).to.deep.equal([[600, 600]]);
+            expect(auctionArgs.adUnits[0].mediaTypes.video.playerSize).to.be.undefined;
+            expect(auctionArgs.adUnits[0].mediaTypes.video).to.exist;
+            assert.ok(logErrorSpy.calledWith('Detected incorrect configuration of mediaTypes.video.playerSize.  Please specify only one set of dimensions in a format like: [[640, 480]]. Removing invalid mediaTypes.video.playerSize property from request.'));
+
+            let badNativeImgSize = [{
+              code: 'testb4',
+              bids: [],
+              mediaTypes: {
+                native: {
+                  image: {
+                    sizes: '300x250'
+                  }
+                }
+              }
+            }];
+            $$PREBID_GLOBAL$$.requestBids({
+              adUnits: badNativeImgSize
+            });
+            expect(auctionArgs.adUnits[0].mediaTypes.native.image.sizes).to.be.undefined;
+            expect(auctionArgs.adUnits[0].mediaTypes.native.image).to.exist;
+            assert.ok(logErrorSpy.calledWith('Please use an array of sizes for native.image.sizes field.  Removing invalid mediaTypes.native.image.sizes property from request.'));
+
+            let badNativeImgAspRat = [{
+              code: 'testb5',
+              bids: [],
+              mediaTypes: {
+                native: {
+                  image: {
+                    aspect_ratios: '300x250'
+                  }
+                }
+              }
+            }];
+            $$PREBID_GLOBAL$$.requestBids({
+              adUnits: badNativeImgAspRat
+            });
+            expect(auctionArgs.adUnits[0].mediaTypes.native.image.aspect_ratios).to.be.undefined;
+            expect(auctionArgs.adUnits[0].mediaTypes.native.image).to.exist;
+            assert.ok(logErrorSpy.calledWith('Please use an array of sizes for native.image.aspect_ratios field.  Removing invalid mediaTypes.native.image.aspect_ratios property from request.'));
+
+            let badNativeIcon = [{
+              code: 'testb6',
+              bids: [],
+              mediaTypes: {
+                native: {
+                  icon: {
+                    sizes: '300x250'
+                  }
+                }
+              }
+            }];
+            $$PREBID_GLOBAL$$.requestBids({
+              adUnits: badNativeIcon
+            });
+            expect(auctionArgs.adUnits[0].mediaTypes.native.icon.sizes).to.be.undefined;
+            expect(auctionArgs.adUnits[0].mediaTypes.native.icon).to.exist;
+            assert.ok(logErrorSpy.calledWith('Please use an array of sizes for native.icon.sizes field.  Removing invalid mediaTypes.native.icon.sizes property from request.'));
+          });
+        });
+      });
     });
 
     describe('multiformat requests', function () {
@@ -1447,7 +1716,9 @@ describe('Unit: Prebid Module', function () {
         adUnits = [{
           code: 'adUnit-code',
           mediaTypes: {
-            banner: {},
+            banner: {
+              sizes: [[300, 250]]
+            },
             native: {},
           },
           sizes: [[300, 250], [300, 600]],
@@ -1502,7 +1773,7 @@ describe('Unit: Prebid Module', function () {
       before(function () {
         adUnits = [{
           code: 'adUnit-code',
-          sizes: [[300, 250], [300, 600]],
+          mediaTypes: { banner: { sizes: [[300, 250], [300, 600]] } },
           bids: [
             {bidder: 'appnexus', params: {placementId: '10433394'}}
           ]
@@ -1510,13 +1781,13 @@ describe('Unit: Prebid Module', function () {
         let adUnitCodes = ['adUnit-code'];
         let auction = auctionModule.newAuction({adUnits, adUnitCodes, callback: function() {}, cbTimeout: timeout});
 
-        adUnits[0]['mediaType'] = 'native';
+        adUnits[0]['mediaTypes'] = { native: {} };
         adUnitCodes = ['adUnit-code'];
         let auction1 = auctionModule.newAuction({adUnits, adUnitCodes, callback: function() {}, cbTimeout: timeout});
 
         adUnits = [{
           code: 'adUnit-code',
-          nativeParams: {type: 'image'},
+          mediaTypes: { native: { type: 'image' } },
           sizes: [[300, 250], [300, 600]],
           bids: [
             {bidder: 'appnexus', params: {placementId: 'id'}}
@@ -1550,7 +1821,7 @@ describe('Unit: Prebid Module', function () {
       it('should call callBids function on adapterManager', function () {
         let adUnits = [{
           code: 'adUnit-code',
-          sizes: [[300, 250], [300, 600]],
+          mediaTypes: { banner: { sizes: [[300, 250], [300, 600]] } },
           bids: [
             {bidder: 'appnexus', params: {placementId: '10433394'}}
           ]
@@ -1562,8 +1833,7 @@ describe('Unit: Prebid Module', function () {
       it('splits native type to individual native assets', function () {
         let adUnits = [{
           code: 'adUnit-code',
-          nativeParams: {type: 'image'},
-          sizes: [[300, 250], [300, 600]],
+          mediaTypes: { native: { type: 'image' } },
           bids: [
             {bidder: 'appnexus', params: {placementId: 'id'}}
           ]
@@ -1772,17 +2042,6 @@ describe('Unit: Prebid Module', function () {
     });
   });
 
-  describe('loadScript', function () {
-    it('should call adloader.loadScript', function () {
-      const tagSrc = '';
-      const callback = Function;
-      const useCache = false;
-
-      $$PREBID_GLOBAL$$.loadScript(tagSrc, callback, useCache);
-      assert.ok(adloader.loadScriptStub.calledWith(tagSrc, callback, useCache), 'called adloader.loadScript');
-    });
-  });
-
   describe('aliasBidder', function () {
     it('should call adapterManager.aliasBidder', function () {
       const aliasBidAdapterSpy = sinon.spy(adapterManager, 'aliasBidAdapter');
@@ -1819,14 +2078,12 @@ describe('Unit: Prebid Module', function () {
       const error = 'Invalid custom price value passed to `setPriceGranularity()`';
       const badConfig = {
         'buckets': [{
-          'min': 0,
           'max': 3,
           'increment': 0.01,
         },
         {
-          // missing min prop
           'max': 18,
-          'increment': 0.05,
+          // missing increment prop
           'cap': true
         }
         ]
@@ -1841,7 +2098,6 @@ describe('Unit: Prebid Module', function () {
       let customPriceBucket = configObj.getConfig('customPriceBucket');
       const goodConfig = {
         'buckets': [{
-          'min': 0,
           'max': 3,
           'increment': 0.01,
           'cap': true
@@ -1895,6 +2151,65 @@ describe('Unit: Prebid Module', function () {
       assert.deepEqual($$PREBID_GLOBAL$$.adUnits, adUnits);
       $$PREBID_GLOBAL$$.removeAdUnit('adUnit1');
       assert.deepEqual($$PREBID_GLOBAL$$.adUnits, [adUnit2]);
+    });
+    it('should remove all adUnits in adUnits array if no adUnits are given', function () {
+      const adUnit1 = {
+        code: 'adUnit1',
+        bids: [{
+          bidder: 'appnexus',
+          params: { placementId: '123' }
+        }]
+      };
+      const adUnit2 = {
+        code: 'adUnit2',
+        bids: [{
+          bidder: 'rubicon',
+          params: {
+            accountId: '1234',
+            siteId: '1234',
+            zoneId: '1234'
+          }
+        }]
+      };
+      const adUnits = [adUnit1, adUnit2];
+      $$PREBID_GLOBAL$$.adUnits = adUnits;
+      $$PREBID_GLOBAL$$.removeAdUnit();
+      assert.deepEqual($$PREBID_GLOBAL$$.adUnits, []);
+    });
+    it('should remove adUnits which match addUnitCodes in adUnit array argument', function () {
+      const adUnit1 = {
+        code: 'adUnit1',
+        bids: [{
+          bidder: 'appnexus',
+          params: { placementId: '123' }
+        }]
+      };
+      const adUnit2 = {
+        code: 'adUnit2',
+        bids: [{
+          bidder: 'rubicon',
+          params: {
+            accountId: '1234',
+            siteId: '1234',
+            zoneId: '1234'
+          }
+        }]
+      };
+      const adUnit3 = {
+        code: 'adUnit3',
+        bids: [{
+          bidder: 'rubicon3',
+          params: {
+            accountId: '12345',
+            siteId: '12345',
+            zoneId: '12345'
+          }
+        }]
+      };
+      const adUnits = [adUnit1, adUnit2, adUnit3];
+      $$PREBID_GLOBAL$$.adUnits = adUnits;
+      $$PREBID_GLOBAL$$.removeAdUnit([adUnit1.code, adUnit2.code]);
+      assert.deepEqual($$PREBID_GLOBAL$$.adUnits, [adUnit3]);
     });
   });
 
@@ -1950,13 +2265,9 @@ describe('Unit: Prebid Module', function () {
   });
 
   describe('getHighestCpm', () => {
-    // it('returns an array of winning bid objects for each adUnit', () => {
-    //   const highestCpmBids = $$PREBID_GLOBAL$$.getHighestCpmBids();
-    //   expect(highestCpmBids.length).to.equal(2);
-    //   expect(highestCpmBids[0]).to.deep.equal(auctionManager.getBidsReceived()[1]);
-    //   expect(highestCpmBids[1]).to.deep.equal(auctionManager.getBidsReceived()[2]);
-    // });
-
+    after(() => {
+      resetAuction();
+    });
     it('returns an array containing the highest bid object for the given adUnitCode', function () {
       const highestCpmBids = $$PREBID_GLOBAL$$.getHighestCpmBids('/19968336/header-bid-tag-0');
       expect(highestCpmBids.length).to.equal(1);
@@ -1975,7 +2286,23 @@ describe('Unit: Prebid Module', function () {
 
       const highestCpmBids = $$PREBID_GLOBAL$$.getHighestCpmBids('/19968336/header-bid-tag-0');
       expect(highestCpmBids.length).to.equal(0);
-      resetAuction();
+    });
+
+    it('should not return rendered bid', function() {
+      let _bidsReceived = getBidResponses().slice(0, 3);
+      _bidsReceived[0].cpm = 12;
+      _bidsReceived[0].status = 'rendered';
+      _bidsReceived[1].cpm = 9;
+      _bidsReceived[2].cpm = 11;
+
+      _bidsReceived.forEach((bid) => {
+        bid.adUnitCode = '/19968336/header-bid-tag-0';
+      });
+
+      auction.getBidsReceived = function() { return _bidsReceived };
+
+      const highestCpmBids = $$PREBID_GLOBAL$$.getHighestCpmBids('/19968336/header-bid-tag-0');
+      expect(highestCpmBids[0]).to.deep.equal(auctionManager.getBidsReceived()[2]);
     });
   });
 
@@ -2163,10 +2490,10 @@ describe('Unit: Prebid Module', function () {
 
     it('should return prebid auction winning bids', function () {
       let bidsReceived = [
-        createBidReceived({bidder: 'appnexus', cpm: 7, auctionId: 1, responseTimestamp: 100, adUnitCode: 'code-0', adId: 'adid-1', status: 'targetingSet'}),
-        createBidReceived({bidder: 'rubicon', cpm: 6, auctionId: 1, responseTimestamp: 101, adUnitCode: 'code-1', adId: 'adid-2'}),
-        createBidReceived({bidder: 'appnexus', cpm: 6, auctionId: 2, responseTimestamp: 102, adUnitCode: 'code-0', adId: 'adid-3'}),
-        createBidReceived({bidder: 'rubicon', cpm: 6, auctionId: 2, responseTimestamp: 103, adUnitCode: 'code-1', adId: 'adid-4'}),
+        createBidReceived({bidder: 'appnexus', cpm: 7, auctionId: 1, responseTimestamp: 100, adUnitCode: 'code-0', adId: 'adid-1', status: 'targetingSet', requestId: 'reqid-1'}),
+        createBidReceived({bidder: 'rubicon', cpm: 6, auctionId: 1, responseTimestamp: 101, adUnitCode: 'code-1', adId: 'adid-2', requestId: 'reqid-2'}),
+        createBidReceived({bidder: 'appnexus', cpm: 6, auctionId: 2, responseTimestamp: 102, adUnitCode: 'code-0', adId: 'adid-3', requestId: 'reqid-3'}),
+        createBidReceived({bidder: 'rubicon', cpm: 6, auctionId: 2, responseTimestamp: 103, adUnitCode: 'code-1', adId: 'adid-4', requestId: 'reqid-4'}),
       ];
       auctionManagerStub.returns(bidsReceived)
       let bids = $$PREBID_GLOBAL$$.getAllPrebidWinningBids();

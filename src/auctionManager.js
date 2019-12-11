@@ -35,6 +35,7 @@ export function newAuctionManager() {
   auctionManager.addWinningBid = function(bid) {
     const auction = find(_auctions, auction => auction.getAuctionId() === bid.auctionId);
     if (auction) {
+      bid.status = CONSTANTS.BID_STATUS.RENDERED;
       auction.addWinningBid(bid);
     } else {
       utils.logWarn(`Auction not found when adding winning bid`);
@@ -76,8 +77,8 @@ export function newAuctionManager() {
       .filter(uniques);
   };
 
-  auctionManager.createAuction = function({ adUnits, adUnitCodes, callback, cbTimeout, labels }) {
-    const auction = newAuction({ adUnits, adUnitCodes, callback, cbTimeout, labels });
+  auctionManager.createAuction = function({ adUnits, adUnitCodes, callback, cbTimeout, labels, auctionId }) {
+    const auction = newAuction({ adUnits, adUnitCodes, callback, cbTimeout, labels, auctionId });
     _addAuction(auction);
     return auction;
   };

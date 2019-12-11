@@ -11,30 +11,28 @@ export const QUANTCAST_TEST_DOMAIN = 's2s-canary.quantserve.com';
 export const QUANTCAST_NET_REVENUE = true;
 export const QUANTCAST_TEST_PUBLISHER = 'test-publisher';
 export const QUANTCAST_TTL = 4;
-export const QUANTCAST_PROTOCOL =
-  window.location.protocol === 'http:'
-    ? 'http'
-    : 'https';
-export const QUANTCAST_PORT =
-  QUANTCAST_PROTOCOL === 'http'
-    ? '8080'
-    : '8443';
-
-function extractBidSizes(bid) {
-  const bidSizes = [];
-
-  bid.sizes.forEach(size => {
-    bidSizes.push({
-      width: size[0],
-      height: size[1]
-    });
-  });
-
-  return bidSizes;
-}
+export const QUANTCAST_PROTOCOL = 'https';
+export const QUANTCAST_PORT = '8443';
 
 function makeVideoImp(bid) {
-  const video = bid.params.video;
+  const video = {};
+  if (bid.params.video) {
+    video['mimes'] = bid.params.video.mimes;
+    video['minduration'] = bid.params.video.minduration;
+    video['maxduration'] = bid.params.video.maxduration;
+    video['protocols'] = bid.params.video.protocols;
+    video['startdelay'] = bid.params.video.startdelay;
+    video['linearity'] = bid.params.video.linearity;
+    video['battr'] = bid.params.video.battr;
+    video['maxbitrate'] = bid.params.video.maxbitrate;
+    video['playbackmethod'] = bid.params.video.playbackmethod;
+    video['delivery'] = bid.params.video.delivery;
+    video['placement'] = bid.params.video.placement;
+    video['api'] = bid.params.video.api;
+  }
+  if (bid.mediaTypes.video.mimes) {
+    video['mimes'] = bid.mediaTypes.video.mimes;
+  }
   if (utils.isArray(bid.mediaTypes.video.playerSize[0])) {
     video['w'] = bid.mediaTypes.video.playerSize[0][0];
     video['h'] = bid.mediaTypes.video.playerSize[0][1];
@@ -50,10 +48,17 @@ function makeVideoImp(bid) {
 }
 
 function makeBannerImp(bid) {
+  const sizes = bid.sizes || bid.mediaTypes.banner.sizes;
+
   return {
     banner: {
       battr: bid.params.battr,
-      sizes: extractBidSizes(bid),
+      sizes: sizes.map(size => {
+        return {
+          width: size[0],
+          height: size[1]
+        };
+      })
     },
     placementCode: bid.placementCode,
     bidFloor: bid.params.bidFloor || DEFAULT_BID_FLOOR
@@ -83,17 +88,7 @@ export const spec = {
    * @return boolean `true` is this is a valid bid, and `false` otherwise
    */
   isBidRequestValid(bid) {
-    if (!bid) {
-      return false;
-    }
-
-    const videoMediaType = utils.deepAccess(bid, 'mediaTypes.video');
-    const context = utils.deepAccess(bid, 'mediaTypes.video.context');
-    if (videoMediaType && context == 'outstream') {
-      return false;
-    }
-
-    return true;
+    return !!bid.params.publisherId;
   },
 
   /**
@@ -106,18 +101,28 @@ export const spec = {
    */
   buildRequests(bidRequests, bidderRequest) {
     const bids = bidRequests || [];
-    const gdprConsent = (bidderRequest && bidderRequest.gdprConsent) ? bidderRequest.gdprConsent : {};
-
+    const gdprConsent = utils.deepAccess(bidderRequest, 'gdprConsent') || {};
+    const uspConsent = utils.deepAccess(bidderRequest, 'uspConsent');
     const referrer = utils.deepAccess(bidderRequest, 'refererInfo.referer');
     const page = utils.deepAccess(bidderRequest, 'refererInfo.canonicalUrl') || config.getConfig('pageUrl') || utils.deepAccess(window, 'location.href');
     const domain = getDomain(page);
 
-    const bidRequestsList = bids.map(bid => {
+    let bidRequestsList = [];
+
+    bids.forEach(bid => {
       let imp;
-      const videoContext = utils.deepAccess(bid, 'mediaTypes.video.context');
-      if (videoContext === 'instream') {
-        imp = makeVideoImp(bid);
+      if (bid.mediaTypes) {
+        if (bid.mediaTypes.video && bid.mediaTypes.video.context === 'instream') {
+          imp = makeVideoImp(bid);
+        } else if (bid.mediaTypes.banner) {
+          imp = makeBannerImp(bid);
+        } else {
+          // Unsupported mediaType
+          utils.logInfo(`${BIDDER_CODE}: No supported mediaTypes found in ${JSON.stringify(bid.mediaTypes)}`);
+          return;
+        }
       } else {
+        // Parse as banner by default
         imp = makeBannerImp(bid);
       }
 
@@ -134,6 +139,8 @@ export const spec = {
         bidId: bid.bidId,
         gdprSignal: gdprConsent.gdprApplies ? 1 : 0,
         gdprConsent: gdprConsent.consentString,
+        uspSignal: uspConsent ? 1 : 0,
+        uspConsent,
         prebidJsVersion: '$prebid.version$'
       };
 
@@ -143,11 +150,11 @@ export const spec = {
         : QUANTCAST_DOMAIN;
       const url = `${QUANTCAST_PROTOCOL}://${qcDomain}:${QUANTCAST_PORT}/qchb`;
 
-      return {
+      bidRequestsList.push({
         data,
         method: 'POST',
         url
-      };
+      });
     });
 
     return bidRequestsList;
@@ -182,7 +189,7 @@ export const spec = {
     }
 
     const bidResponsesList = response.bids.map(bid => {
-      const { ad, cpm, width, height, creativeId, currency, videoUrl } = bid;
+      const { ad, cpm, width, height, creativeId, currency, videoUrl, dealId } = bid;
 
       const result = {
         requestId: response.requestId,
@@ -199,6 +206,10 @@ export const spec = {
       if (videoUrl !== undefined && videoUrl) {
         result['vastUrl'] = videoUrl;
         result['mediaType'] = 'video';
+      }
+
+      if (dealId !== undefined && dealId) {
+        result['dealId'] = dealId;
       }
 
       return result;

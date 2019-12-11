@@ -11,20 +11,22 @@ export const spec = {
   supportedMediaTypes: [BANNER, VIDEO],
 
   isBidRequestValid: function(bid) {
-    return !!(bid.params.account && bid.params.location && bid.params.format);
+    return !!(bid.params.account && bid.params.location && (bid.params.format || bid.mediaTypes.banner.sizes));
   },
 
   buildRequests: function(validBidRequests, bidderRequest) {
     if (validBidRequests.length === 0) {
       return null;
     }
+    const { gdprConsent, refererInfo } = bidderRequest;
 
     const account = getAccount(validBidRequests);
     const targets = validBidRequests.map(bid => bid.params.data).reduce(mergeTargets, {});
-    const gdprParams = (bidderRequest.gdprConsent && bidderRequest.gdprConsent.consentString) ? [ 'xt' + bidderRequest.gdprConsent.consentString ] : [];
+    const gdprParams = (gdprConsent && gdprConsent.consentString) ? [`xt${gdprConsent.consentString}`] : [];
+    const refererParams = (refererInfo && refererInfo.referer) ? [`xf${base64urlEncode(refererInfo.referer)}`] : [];
     const targetsParams = Object.keys(targets).map(targetCode => targetCode + targets[targetCode].join(';'));
     const slotsParams = validBidRequests.map(bid => 'sl' + bidToSlotName(bid));
-    const params = [...slotsParams, ...targetsParams, ...gdprParams].map(s => '/' + s).join('');
+    const params = [...slotsParams, ...targetsParams, ...gdprParams, ...refererParams].map(s => `/${s}`).join('');
     const cacheBuster = '?t=' + new Date().getTime();
     const uri = 'https://ads-' + account + '.adhese.com/json' + params + cacheBuster;
 
@@ -81,7 +83,10 @@ function adResponse(bid, ad) {
     width: Number(ad.width),
     height: Number(ad.height),
     creativeId: adDetails.creativeId,
-    dealId: adDetails.dealId
+    dealId: adDetails.dealId,
+    adhese: {
+      originData: adDetails.originData
+    }
   });
 
   if (bidResponse.mediaType === VIDEO) {
@@ -110,7 +115,19 @@ function mergeTargets(targets, target) {
 }
 
 function bidToSlotName(bid) {
-  return bid.params.location + '-' + bid.params.format;
+  if (bid.params.format) {
+    return bid.params.location + '-' + bid.params.format;
+  }
+
+  var sizes = bid.mediaTypes.banner.sizes;
+  sizes.sort();
+  var format = sizes.map(size => size[0] + 'x' + size[1]).join('_');
+
+  if (format.length > 0) {
+    return bid.params.location + '-' + format;
+  } else {
+    return bid.params.location;
+  }
 }
 
 function getAccount(validBidRequests) {
@@ -148,22 +165,31 @@ function getPrice(ad) {
 function getAdDetails(ad) {
   let creativeId = '';
   let dealId = '';
+  let originData = {};
 
   if (isAdheseAd(ad)) {
     creativeId = ad.id;
     dealId = ad.orderId;
+    originData = { priority: ad.priority, orderProperty: ad.orderProperty, adFormat: ad.adFormat, adType: ad.adType, libId: ad.libId, adspaceId: ad.adspaceId, viewableImpressionCounter: ad.viewableImpressionCounter };
   } else {
     creativeId = ad.origin + (ad.originInstance ? '-' + ad.originInstance : '');
-    if (ad.originData && ad.originData.seatbid && ad.originData.seatbid.length) {
-      const seatbid = ad.originData.seatbid[0];
-      if (seatbid.bid && seatbid.bid.length) {
-        const bid = seatbid.bid[0];
-        creativeId = String(bid.crid || '');
-        dealId = String(bid.dealid || '');
+    if (ad.originData) {
+      originData = ad.originData;
+      if (ad.originData.seatbid && ad.originData.seatbid.length) {
+        const seatbid = ad.originData.seatbid[0];
+        if (seatbid.bid && seatbid.bid.length) {
+          const bid = seatbid.bid[0];
+          creativeId = String(bid.crid || '');
+          dealId = String(bid.dealid || '');
+        }
       }
     }
   }
-  return { creativeId: creativeId, dealId: dealId };
+  return { creativeId: creativeId, dealId: dealId, originData: originData };
+}
+
+function base64urlEncode(s) {
+  return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
 registerBidder(spec);

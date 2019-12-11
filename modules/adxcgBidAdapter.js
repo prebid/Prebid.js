@@ -10,6 +10,9 @@ import includes from 'core-js/library/fn/array/includes'
  * updated to latest prebid repo on 2017.10.20
  * updated for gdpr compliance on 2018.05.22 -requires gdpr compliance module
  * updated to pass aditional auction and impression level parameters. added pass for video targeting parameters
+ * updated to fix native support for image width/height and icon 2019.03.17
+ * updated support for userid - pubcid,ttid 2019.05.28
+ * updated to support prebid 3.0 -  remove non https, move to banner.xx.sizes, remove utils.getTopWindowLocation,remove utils.getTopWindowUrl(),remove utils.getTopWindowReferrer()
  */
 
 const BIDDER_CODE = 'adxcg'
@@ -18,7 +21,7 @@ const SOURCE = 'pbjs10'
 const VIDEO_TARGETING = ['id', 'mimes', 'minduration', 'maxduration', 'startdelay', 'skippable', 'playback_method', 'frameworks']
 const USER_PARAMS_AUCTION = ['forcedDspIds', 'forcedCampaignIds', 'forcedCreativeIds', 'gender', 'dnt', 'language']
 const USER_PARAMS_BID = ['lineparam1', 'lineparam2', 'lineparam3']
-const BIDADAPTERVERSION = 'r20180703PB10'
+const BIDADAPTERVERSION = 'r20191128PB30'
 
 export const spec = {
   code: BIDDER_CODE,
@@ -69,8 +72,6 @@ export const spec = {
   buildRequests: function (validBidRequests, bidderRequest) {
     utils.logMessage(`buildRequests: ${JSON.stringify(validBidRequests)}`)
 
-    let location = utils.getTopWindowLocation()
-    let secure = location.protocol === 'https:'
     let dt = new Date()
     let ratio = window.devicePixelRatio || 1
     let iobavailable = window && window.IntersectionObserver && window.IntersectionObserverEntry && window.IntersectionObserverEntry.prototype && 'intersectionRatio' in window.IntersectionObserverEntry.prototype
@@ -80,16 +81,11 @@ export const spec = {
       bt = Math.min(window.PREBID_TIMEOUT, bt)
     }
 
-    let requestUrl = url.parse(location.href)
-    requestUrl.search = null
-    requestUrl.hash = null
-
     // add common parameters
     let beaconParams = {
       renderformat: 'javascript',
       ver: BIDADAPTERVERSION,
-      url: encodeURIComponent(utils.getTopWindowUrl()),
-      secure: secure ? '1' : '0',
+      secure: '1',
       source: SOURCE,
       uw: window.screen.width,
       uh: window.screen.height,
@@ -104,9 +100,10 @@ export const spec = {
       rndid: Math.floor(Math.random() * (999999 - 100000 + 1)) + 100000
     }
 
-    if (utils.getTopWindowReferrer()) {
-      beaconParams.ref = encodeURIComponent(utils.getTopWindowReferrer())
-    }
+    const referrer = utils.deepAccess(bidderRequest, 'refererInfo.referer');
+    const page = utils.deepAccess(bidderRequest, 'refererInfo.canonicalUrl') || config.getConfig('pageUrl') || utils.deepAccess(window, 'location.href');
+    beaconParams.ref = encodeURIComponent(referrer);
+    beaconParams.url = encodeURIComponent(page);
 
     if (bidderRequest && bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies) {
       beaconParams.gdpr = bidderRequest.gdprConsent.gdprApplies ? '1' : '0'
@@ -129,7 +126,14 @@ export const spec = {
     validBidRequests.forEach((bid, index) => {
       adZoneIds.push(utils.getBidIdParameter('adzoneid', bid.params))
       prebidBidIds.push(bid.bidId)
-      sizes.push(utils.parseSizesInput(bid.sizes).join('|'))
+
+      if (isBannerRequest(bid)) {
+        sizes.push(utils.parseSizesInput(bid.mediaTypes.banner.sizes).join('|'))
+      }
+
+      if (isNativeRequest(bid)) {
+        sizes.push('0x0')
+      }
 
       let bidfloor = utils.getBidIdParameter('bidfloor', bid.params) || 0
       bidfloors.push(bidfloor)
@@ -142,6 +146,7 @@ export const spec = {
         }
         // copy video context params
         beaconParams['video.context' + '.' + index] = utils.deepAccess(bid, 'mediaTypes.video.context')
+        sizes.push(utils.parseSizesInput(bid.mediaTypes.video.playerSize).join('|'))
       }
 
       // copy all custom parameters impression level parameters not supported above
@@ -158,9 +163,25 @@ export const spec = {
     beaconParams.prebidBidIds = prebidBidIds.join(',')
     beaconParams.bidfloors = bidfloors.join(',')
 
+    if (utils.isStr(utils.deepAccess(validBidRequests, '0.userId.pubcid'))) {
+      beaconParams.pubcid = validBidRequests[0].userId.pubcid;
+    }
+
+    if (utils.isStr(utils.deepAccess(validBidRequests, '0.userId.tdid'))) {
+      beaconParams.tdid = validBidRequests[0].userId.tdid;
+    }
+
+    if (utils.isStr(utils.deepAccess(validBidRequests, '0.userId.id5id'))) {
+      beaconParams.id5id = validBidRequests[0].userId.id5id;
+    }
+
+    if (utils.isStr(utils.deepAccess(validBidRequests, '0.userId.idl_env'))) {
+      beaconParams.idl_env = validBidRequests[0].userId.idl_env;
+    }
+
     let adxcgRequestUrl = url.format({
-      protocol: secure ? 'https' : 'http',
-      hostname: secure ? 'hbps.adxcg.net' : 'hbp.adxcg.net',
+      protocol: 'https',
+      hostname: 'hbps.adxcg.net',
       pathname: '/get/adi',
       search: beaconParams
     })
@@ -210,8 +231,10 @@ export const spec = {
             let nativeResponse = serverResponseOneItem.nativeResponse
 
             bid['native'] = {
-              clickUrl: encodeURIComponent(nativeResponse.link.url),
-              impressionTrackers: nativeResponse.imptrackers
+              clickUrl: nativeResponse.link.url,
+              impressionTrackers: nativeResponse.imptrackers,
+              clickTrackers: nativeResponse.clktrackers,
+              javascriptTrackers: nativeResponse.jstrackers
             }
 
             nativeResponse.assets.forEach(asset => {
@@ -220,7 +243,19 @@ export const spec = {
               }
 
               if (asset.img && asset.img.url) {
-                bid['native'].image = asset.img.url
+                let nativeImage = {}
+                nativeImage.url = asset.img.url
+                nativeImage.height = asset.img.h
+                nativeImage.width = asset.img.w
+                bid['native'].image = nativeImage
+              }
+
+              if (asset.icon && asset.icon.url) {
+                let nativeIcon = {}
+                nativeIcon.url = asset.icon.url
+                nativeIcon.height = asset.icon.h
+                nativeIcon.width = asset.icon.w
+                bid['native'].icon = nativeIcon
               }
 
               if (asset.data && asset.data.label === 'DESC' && asset.data.value) {
@@ -248,7 +283,7 @@ export const spec = {
     if (syncOptions.iframeEnabled) {
       return [{
         type: 'iframe',
-        url: '//cdn.adxcg.net/pb-sync.html'
+        url: 'https://cdn.adxcg.net/pb-sync.html'
       }]
     }
   }
@@ -256,6 +291,14 @@ export const spec = {
 
 function isVideoRequest (bid) {
   return bid.mediaType === 'video' || !!utils.deepAccess(bid, 'mediaTypes.video')
+}
+
+function isBannerRequest (bid) {
+  return bid.mediaType === 'banner' || !!utils.deepAccess(bid, 'mediaTypes.banner')
+}
+
+function isNativeRequest (bid) {
+  return bid.mediaType === 'native' || !!utils.deepAccess(bid, 'mediaTypes.native')
 }
 
 registerBidder(spec)
