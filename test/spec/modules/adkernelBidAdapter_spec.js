@@ -123,7 +123,7 @@ describe('Adkernel adapter', function () {
       }],
       cur: 'USD',
       ext: {
-        adk_usersync: ['http://adk.sync.com/sync']
+        adk_usersync: ['https://adk.sync.com/sync']
       }
     }, bidResponse2 = {
       id: 'bid2',
@@ -156,7 +156,7 @@ describe('Adkernel adapter', function () {
     }, usersyncOnlyResponse = {
       id: 'nobid1',
       ext: {
-        adk_usersync: ['http://adk.sync.com/sync']
+        adk_usersync: ['https://adk.sync.com/sync']
       }
     };
 
@@ -246,7 +246,7 @@ describe('Adkernel adapter', function () {
 
     it('should contain gdpr-related information if consent is configured', function () {
       let [_, bidRequests] = buildRequest([bid1_zone1],
-        buildBidderRequest('http://example.com/index.html',
+        buildBidderRequest('https://example.com/index.html',
           {gdprConsent: {gdprApplies: true, consentString: 'test-consent-string', vendorData: {}}}));
       let bidRequest = bidRequests[0];
       expect(bidRequest).to.have.property('regs');
@@ -320,8 +320,8 @@ describe('Adkernel adapter', function () {
     it('should issue a request for each host', function () {
       let [pbRequests, _] = buildRequest([bid1_zone1, bid3_host2]);
       expect(pbRequests).to.have.length(2);
-      expect(pbRequests[0].url).to.have.string(`//${bid1_zone1.params.host}/`);
-      expect(pbRequests[1].url).to.have.string(`//${bid3_host2.params.host}/`);
+      expect(pbRequests[0].url).to.have.string(`https://${bid1_zone1.params.host}/`);
+      expect(pbRequests[1].url).to.have.string(`https://${bid3_host2.params.host}/`);
     });
 
     it('should issue a request for each zone', function () {
@@ -378,7 +378,7 @@ describe('Adkernel adapter', function () {
       syncs = spec.getUserSyncs({iframeEnabled: true}, [{body: bidResponse1}]);
       expect(syncs).to.have.length(1);
       expect(syncs[0]).to.have.property('type', 'iframe');
-      expect(syncs[0]).to.have.property('url', 'http://adk.sync.com/sync');
+      expect(syncs[0]).to.have.property('url', 'https://adk.sync.com/sync');
     });
   });
 

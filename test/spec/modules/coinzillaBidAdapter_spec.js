@@ -57,8 +57,8 @@ describe('coinzillaBidAdapter', function () {
       'refererInfo': {
         'numIframes': 0,
         'reachedTop': true,
-        'referer': 'http://example.com',
-        'stack': ['http://example.com']
+        'referer': 'https://example.com',
+        'stack': ['https://example.com']
       }
     };
 

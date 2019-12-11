@@ -18,7 +18,7 @@ const getValidServerResponse = () => {
               id: 'e3bf2b82e3e9485113fad6c9b27f8768.1',
               impid: '1',
               price: 10.97,
-              nurl: 'http://localhost:8086/event/nurl',
+              nurl: 'https://localhost:8086/event/nurl',
               netRevenue: false,
               ttl: 800,
               adm: '<VAST></VAST>',
@@ -26,10 +26,10 @@ const getValidServerResponse = () => {
               h: 640,
               w: 480,
               ext: {
-                init: 'http://localhost:8086/vn_init.js',
+                init: 'https://localhost:8086/vn_init.js',
                 module: {
-                  min: 'http://localhost:8086/vn_module.js',
-                  log: 'http://localhost:8086/vn_module.js?log=1'
+                  min: 'https://localhost:8086/vn_module.js',
+                  log: 'https://localhost:8086/vn_module.js?log=1'
                 },
                 format: {
                   name: 'flyRoll',
@@ -45,12 +45,12 @@ const getValidServerResponse = () => {
       ext: {
         placementId,
         pixels: [
-          'http://localhost:8086/event/pxlcookiematching?uiid=1',
-          'http://localhost:8086/event/pxlcookiematching?uiid=2',
+          'https://localhost:8086/event/pxlcookiematching?uiid=1',
+          'https://localhost:8086/event/pxlcookiematching?uiid=2',
         ],
         iframes: [
-          'http://localhost:8086/event/ifrcookiematching?uiid=1',
-          'http://localhost:8086/event/ifrcookiematching?uiid=2',
+          'https://localhost:8086/event/ifrcookiematching?uiid=1',
+          'https://localhost:8086/event/ifrcookiematching?uiid=2',
         ],
       },
     },
@@ -95,7 +95,7 @@ describe('videonowAdapterTests', function() {
           params: {
             pId: '1',
             placementId,
-            url: 'http://localhost:8086/bid?p=exists',
+            url: 'https://localhost:8086/bid?p=exists',
             bidFloor: 10,
             cur: 'RUB'
           },
@@ -128,7 +128,7 @@ describe('videonowAdapterTests', function() {
             params: {
               pId: '1',
               placementId,
-              url: 'http://localhost:8086/bid',
+              url: 'https://localhost:8086/bid',
               bidFloor: 10,
               cur: 'RUB',
             },
@@ -153,11 +153,11 @@ describe('videonowAdapterTests', function() {
         auctionStart: 1565794308584,
         timeout: 3000,
         refererInfo: {
-          referer: 'http://localhost:8086/page',
+          referer: 'https://localhost:8086/page',
           reachedTop: true,
           numIframes: 0,
           stack: [
-            'http://localhost:8086/page',
+            'https://localhost:8086/page',
           ],
         },
         start: 1565794308589,
@@ -175,7 +175,7 @@ describe('videonowAdapterTests', function() {
       })
 
       it('bidRequest url', function() {
-        expect(request.url).to.equal('http://localhost:8086/bid?p=exists&profile_id=1')
+        expect(request.url).to.equal('https://localhost:8086/bid?p=exists&profile_id=1')
       })
 
       it('bidRequest data', function() {
@@ -235,7 +235,7 @@ describe('videonowAdapterTests', function() {
 
     describe('onBidWon', function() {
       const cpm = 10
-      const nurl = 'http://fakedomain.nld?price=${AUCTION_PRICE}'
+      const nurl = 'https://fakedomain.nld?price=${AUCTION_PRICE}'
       const imgSrc = replaceAuctionPrice(nurl, cpm)
       const foundPixels = () => window.document.body.querySelectorAll(`img[src="${imgSrc}"]`)
 
@@ -304,14 +304,14 @@ describe('videonowAdapterTests', function() {
     describe('interpretResponse', function() {
       const bidRequest = {
         method: 'POST',
-        url: 'http://localhost:8086/bid?profile_id=1',
+        url: 'https://localhost:8086/bid?profile_id=1',
         data: {
           id: '217b8ab59a18e8',
           cpm: 10,
           sizes: [[640, 480], [320, 200]],
           cur: 'RUB',
           placementId,
-          ref: 'http://localhost:8086/page',
+          ref: 'https://localhost:8086/page',
         },
       }
 

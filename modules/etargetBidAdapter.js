@@ -39,7 +39,7 @@ export const spec = {
       request.push(formRequestUrl(reqParams));
     }
 
-    request.unshift('//' + lastCountry + '.search.etargetnet.com/hb/?hbget=1');
+    request.unshift('https://' + lastCountry + '.search.etargetnet.com/hb/?hbget=1');
     netRevenue = 'net';
 
     if (bidderRequest && bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies) {
