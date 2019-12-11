@@ -2,7 +2,6 @@
 import { registerBidder } from '../src/adapters/bidderFactory';
 import * as utils from '../src/utils';
 import { BANNER } from '../src/mediaTypes';
-// import { config } from '../src/config';
 import {parse as parseUrl} from '../src/url';
 
 export const ADAPTER_VERSION = '1';
@@ -119,4 +118,3 @@ function bidToRequest(bid) {
 
   return bidObj;
 }
-
