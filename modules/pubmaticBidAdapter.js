@@ -641,7 +641,7 @@ function _handleEids(payload, validBidRequests) {
   _handleTTDId(eids, validBidRequests);
   const bidRequest = validBidRequests[0];
   if (bidRequest && bidRequest.userId) {
-    _addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.pubcid`), 'pubcommon', 1);
+    _addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.pubcid`), 'pubcid.org', 1);
     _addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.digitrustid.data.id`), 'digitru.st', 1);
     _addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.id5id`), 'id5-sync.com', 1);
     _addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.criteoId`), 'criteo.com', 1);// replacing criteoRtus

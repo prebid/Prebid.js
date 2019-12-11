@@ -1561,7 +1561,7 @@ describe('PubMatic adapter', function () {
             let request = spec.buildRequests(bidRequests, {});
             let data = JSON.parse(request.data);
             expect(data.user.eids).to.deep.equal([{
-              'source': 'pubcommon',
+              'source': 'pubcid.org',
               'uids': [{
                 'id': 'pub_common_user_id',
                 'atype': 1
