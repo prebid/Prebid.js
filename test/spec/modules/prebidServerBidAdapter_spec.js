@@ -492,7 +492,7 @@ describe('S2S Adapter', function () {
 
     it('should not add outstrean without renderer', function () {
       let ortb2Config = utils.deepClone(CONFIG);
-      ortb2Config.endpoint = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
+      ortb2Config.endpoint = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction';
 
       config.setConfig({ s2sConfig: ortb2Config });
       adapter.callBids(OUTSTREAM_VIDEO_REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
@@ -514,7 +514,7 @@ describe('S2S Adapter', function () {
 
       it('adds gdpr consent information to ortb2 request depending on presence of module', function () {
         let ortb2Config = utils.deepClone(CONFIG);
-        ortb2Config.endpoint = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
+        ortb2Config.endpoint = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction';
 
         let consentConfig = { consentManagement: { cmpApi: 'iab' }, s2sConfig: ortb2Config };
         config.setConfig(consentConfig);
@@ -613,7 +613,7 @@ describe('S2S Adapter', function () {
 
       it('is added to ortb2 request when in bidRequest', function () {
         let ortb2Config = utils.deepClone(CONFIG);
-        ortb2Config.endpoint = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
+        ortb2Config.endpoint = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction';
         config.setConfig({ s2sConfig: ortb2Config });
 
         let uspBidRequest = utils.deepClone(BID_REQUESTS);
@@ -658,7 +658,7 @@ describe('S2S Adapter', function () {
 
       it('is added to ortb2 request when in bidRequest', function () {
         let ortb2Config = utils.deepClone(CONFIG);
-        ortb2Config.endpoint = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
+        ortb2Config.endpoint = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction';
         config.setConfig({ s2sConfig: ortb2Config });
 
         let consentBidRequest = utils.deepClone(BID_REQUESTS);
@@ -877,7 +877,7 @@ describe('S2S Adapter', function () {
 
       const _config = {
         s2sConfig: s2sConfig,
-      }
+      };
 
       config.setConfig(_config);
       adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
@@ -1072,8 +1072,8 @@ describe('S2S Adapter', function () {
       expect(requestBid.user.ext.eids.filter(eid => eid.source === 'adserver.org')[0].uids[0].id).is.equal('abc123');
       expect(requestBid.user.ext.eids.filter(eid => eid.source === 'criteo.com')).is.not.empty;
       expect(requestBid.user.ext.eids.filter(eid => eid.source === 'criteo.com')[0].uids[0].id).is.equal('44VmRDeUE3ZGJ5MzRkRVJHU3BIUlJ6TlFPQUFU');
-      expect(requestBid.user.ext.eids.filter(eid => eid.source === 'pubcommon')).is.not.empty;
-      expect(requestBid.user.ext.eids.filter(eid => eid.source === 'pubcommon')[0].uids[0].id).is.equal('1234');
+      expect(requestBid.user.ext.eids.filter(eid => eid.source === 'pubcid.org')).is.not.empty;
+      expect(requestBid.user.ext.eids.filter(eid => eid.source === 'pubcid.org')[0].uids[0].id).is.equal('1234');
       expect(requestBid.user.ext.eids.filter(eid => eid.source === 'parrable.com')).is.not.empty;
       expect(requestBid.user.ext.eids.filter(eid => eid.source === 'parrable.com')[0].uids[0].id).is.equal('01.1563917337.test-eid');
       expect(requestBid.user.ext.eids.filter(eid => eid.source === 'liveintent.com')).is.not.empty;
