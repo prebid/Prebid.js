@@ -331,7 +331,7 @@ export function newBidder(spec) {
   });
 
   function registerSyncs(responses, gdprConsent, uspConsent) {
-    if (spec.getUserSyncs) {
+    if (spec.getUserSyncs && !adapterManager.aliasRegistry[spec.code]) {
       let filterConfig = config.getConfig('userSync.filterSettings');
       let syncs = spec.getUserSyncs({
         iframeEnabled: !!(filterConfig && (filterConfig.iframe || filterConfig.all)),
