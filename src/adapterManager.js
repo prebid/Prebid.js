@@ -36,12 +36,7 @@ var _analyticsRegistry = {};
  * @property {Array<string>} activeLabels the labels specified as being active by requestBids
  */
 
-function getBids({bidderCode, auctionId, bidderRequestId, adUnits, labels, src}, bidsInfoFromSizeMappingV2) {
-  // if the bids information is returned from sizeMappingV2 module, just return that.
-  if (bidsInfoFromSizeMappingV2) {
-    return bidsInfoFromSizeMappingV2;
-  }
-
+function getBids({bidderCode, auctionId, bidderRequestId, adUnits, labels, src}) {
   return adUnits.reduce((result, adUnit) => {
     let {
       active,

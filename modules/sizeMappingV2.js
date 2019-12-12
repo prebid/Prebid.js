@@ -138,8 +138,12 @@ function checkAdUnitSetupHook(adUnits) {
 getHook('checkAdUnitSetup').before(function (fn, adUnits) {
   const usingNewSizeMapping = isUsingNewSizeMapping(adUnits);
   if (usingNewSizeMapping) {
-    return fn.call(this, adUnits, checkAdUnitSetupHook(adUnits));
+    // if adUnits are found using the sizeMappingV2 spec, we run additional checks on them for checking the validity of sizeConfig object
+    // in addition to running the base checks on the mediaType object and return the adUnit without calling the base function.
+    adUnits = checkAdUnitSetupHook(adUnits);
+    return fn.bail(adUnits);
   } else {
+    // if presence of sizeMappingV2 spec is not detected on adUnits, we default back to the original checks defined in the base function.
     return fn.call(this, adUnits);
   }
 });
@@ -164,13 +168,17 @@ function checkBidderSizeConfigFormat(sizeConfig) {
 }
 
 getHook('getBids').before(function (fn, bidderInfo) {
-  // check if the adUnit is using sizeMappingV1 specs or sizeMappingV2 specs.
+  // check if the adUnit is using sizeMappingV2 specs and store the result in _sizeMappingUsageMap.
   if (typeof _sizeMappingUsageMap[bidderInfo.auctionId] === 'undefined') {
     isUsingNewSizeMapping(bidderInfo.adUnits, bidderInfo.auctionId);
   }
   if (_sizeMappingUsageMap[bidderInfo.auctionId]) {
-    return fn.call(this, bidderInfo, getBids(bidderInfo));
+    // if adUnit is found using sizeMappingV2 specs, run the getBids function which processes the sizeConfig object
+    // and returns the bids array for a particular bidder.
+    const bids = getBids(bidderInfo);
+    return fn.bail(bids);
   } else {
+    // if not using sizeMappingV2, default back to the getBids function defined in adapterManager.
     return fn.call(this, bidderInfo);
   }
 });

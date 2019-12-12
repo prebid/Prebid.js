@@ -132,10 +132,7 @@ export function validateNativeMediaType(adUnit) {
   return adUnit;
 }
 
-export const checkAdUnitSetup = hook('sync', function (adUnits, filteredAdUnitsFromSizeMappingV2) {
-  if (filteredAdUnitsFromSizeMappingV2) {
-    return filteredAdUnitsFromSizeMappingV2;
-  }
+export const checkAdUnitSetup = hook('sync', function (adUnits) {
   adUnits.forEach(adUnit => {
     const mediaTypes = adUnit.mediaTypes;
     if (mediaTypes && mediaTypes.banner) {
