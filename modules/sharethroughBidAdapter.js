@@ -170,7 +170,7 @@ function handleIframe () {
   var iframeBusterLoaded = false;
   if (!window.lockedInFrame) {
     var sfpIframeBusterJs = document.createElement('script');
-    sfpIframeBusterJs.src = '//native.sharethrough.com/assets/sfp-set-targeting.js';
+    sfpIframeBusterJs.src = 'https://native.sharethrough.com/assets/sfp-set-targeting.js';
     sfpIframeBusterJs.type = 'text/javascript';
     try {
       window.document.getElementsByTagName('body')[0].appendChild(sfpIframeBusterJs);
@@ -183,7 +183,7 @@ function handleIframe () {
   var clientJsLoaded = (!iframeBusterLoaded) ? !!(window.STR && window.STR.Tag) : !!(window.top.STR && window.top.STR.Tag);
   if (!clientJsLoaded) {
     var sfpJs = document.createElement('script');
-    sfpJs.src = '//native.sharethrough.com/assets/sfp.js';
+    sfpJs.src = 'https://native.sharethrough.com/assets/sfp.js';
     sfpJs.type = 'text/javascript';
 
     // only add sfp js to window.top if iframe busting successfully loaded; otherwise, add to iframe

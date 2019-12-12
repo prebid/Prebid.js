@@ -2,7 +2,7 @@ import { config } from './config';
 import clone from 'just-clone';
 import find from 'core-js/library/fn/array/find';
 import includes from 'core-js/library/fn/array/includes';
-import { parse } from './url';
+
 const CONSTANTS = require('./constants');
 
 export { default as deepAccess } from 'dlv/index';
@@ -27,10 +27,7 @@ export const internal = {
   createTrackPixelIframeHtml,
   getWindowSelf,
   getWindowTop,
-  getAncestorOrigins,
-  getTopFrameReferrer,
   getWindowLocation,
-  getTopWindowLocation,
   insertUserSyncIframe,
   insertElement,
   isFn,
@@ -169,6 +166,7 @@ export function getAdUnitSizes(adUnit) {
     } else {
       sizes.push(bannerSizes);
     }
+  // TODO - remove this else block when we're ready to deprecate adUnit.sizes for bidders
   } else if (Array.isArray(adUnit.sizes)) {
     if (Array.isArray(adUnit.sizes[0])) {
       sizes = adUnit.sizes;
@@ -243,54 +241,6 @@ function isValidGPTSingleSize(singleSize) {
   return isArray(singleSize) && singleSize.length === 2 && (!isNaN(singleSize[0]) && !isNaN(singleSize[1]));
 }
 
-/**
- * @deprecated This function will be removed soon. Use http://prebid.org/dev-docs/bidder-adaptor.html#referrers
- */
-export function getTopWindowLocation() {
-  if (inIframe()) {
-    let loc;
-    try {
-      loc = internal.getAncestorOrigins() || internal.getTopFrameReferrer();
-    } catch (e) {
-      logInfo('could not obtain top window location', e);
-    }
-    if (loc) return parse(loc, {'decodeSearchAsString': true});
-  }
-  return internal.getWindowLocation();
-}
-
-/**
- * @deprecated This function will be removed soon. Use http://prebid.org/dev-docs/bidder-adaptor.html#referrers
- */
-export function getTopFrameReferrer() {
-  try {
-    // force an exception in x-domain environments. #1509
-    window.top.location.toString();
-    let referrerLoc = '';
-    let currentWindow;
-    do {
-      currentWindow = currentWindow ? currentWindow.parent : window;
-      if (currentWindow.document && currentWindow.document.referrer) {
-        referrerLoc = currentWindow.document.referrer;
-      }
-    }
-    while (currentWindow !== window.top);
-    return referrerLoc;
-  } catch (e) {
-    return window.document.referrer;
-  }
-}
-
-/**
- * @deprecated This function will be removed soon. Use http://prebid.org/dev-docs/bidder-adaptor.html#referrers
- */
-export function getAncestorOrigins() {
-  if (window.document.location && window.document.location.ancestorOrigins &&
-    window.document.location.ancestorOrigins.length >= 1) {
-    return window.document.location.ancestorOrigins[window.document.location.ancestorOrigins.length - 1];
-  }
-}
-
 export function getWindowTop() {
   return window.top;
 }
@@ -301,30 +251,6 @@ export function getWindowSelf() {
 
 export function getWindowLocation() {
   return window.location;
-}
-
-/**
- * @deprecated This function will be removed soon. Use http://prebid.org/dev-docs/bidder-adaptor.html#referrers
- */
-export function getTopWindowUrl() {
-  let href;
-  try {
-    href = internal.getTopWindowLocation().href;
-  } catch (e) {
-    href = '';
-  }
-  return href;
-}
-
-/**
- * @deprecated This function will be removed soon. Use http://prebid.org/dev-docs/bidder-adaptor.html#referrers
- */
-export function getTopWindowReferrer() {
-  try {
-    return window.top.document.referrer;
-  } catch (e) {
-    return document.referrer;
-  }
 }
 
 /**
