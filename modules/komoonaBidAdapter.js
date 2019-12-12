@@ -2,8 +2,8 @@ import * as utils from '../src/utils';
 import { registerBidder } from '../src/adapters/bidderFactory';
 
 const BIDDER_CODE = 'komoona';
-const ENDPOINT = '//bidder.komoona.com/v1/GetSBids';
-const USYNCURL = '//s.komoona.com/sync/usync.html';
+const ENDPOINT = 'https://bidder.komoona.com/v1/GetSBids';
+const USYNCURL = 'https://s.komoona.com/sync/usync.html';
 
 export const spec = {
   code: BIDDER_CODE,

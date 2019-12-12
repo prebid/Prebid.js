@@ -78,8 +78,8 @@ const cannedBidderRequest = {
     canonicalUrl: undefined,
     numIframes: 0,
     reachedTop: true,
-    referer: 'http://localhost:9999/integrationExamples/gpt/hello_world_emoteev.html',
-    stack: ['http://localhost:9999/integrationExamples/gpt/hello_world_emoteev.html']
+    referer: 'https://localhost:9999/integrationExamples/gpt/hello_world_emoteev.html',
+    stack: ['https://localhost:9999/integrationExamples/gpt/hello_world_emoteev.html']
   },
   start: 1544200012839,
   timeout: 3000,

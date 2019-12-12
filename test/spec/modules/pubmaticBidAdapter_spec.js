@@ -719,9 +719,23 @@ describe('PubMatic adapter', function () {
         expect(request.method).to.equal('POST');
   		});
 
+      it('test flag not sent when pubmaticTest=true is absent in page url', function() {
+        let request = spec.buildRequests(bidRequests);
+        let data = JSON.parse(request.data);
+        expect(data.test).to.equal(undefined);
+      });
+
+      it('test flag set to 1 when pubmaticTest=true is present in page url', function() {
+        window.location.href += '#pubmaticTest=true';
+        // now all the test cases below will have window.location.href with #pubmaticTest=true
+        let request = spec.buildRequests(bidRequests);
+        let data = JSON.parse(request.data);
+        expect(data.test).to.equal(1);
+      });
+
   		it('Request params check', function () {
-  		  let request = spec.buildRequests(bidRequests);
-  		  let data = JSON.parse(request.data);
+        let request = spec.buildRequests(bidRequests);
+        let data = JSON.parse(request.data);
   		  expect(data.at).to.equal(1); // auction type
   		  expect(data.cur[0]).to.equal('USD'); // currency
   		  expect(data.site.domain).to.be.a('string'); // domain should be set
@@ -1562,7 +1576,7 @@ describe('PubMatic adapter', function () {
             let request = spec.buildRequests(bidRequests, {});
             let data = JSON.parse(request.data);
             expect(data.user.eids).to.deep.equal([{
-              'source': 'pubcommon',
+              'source': 'pubcid.org',
               'uids': [{
                 'id': 'pub_common_user_id',
                 'atype': 1
