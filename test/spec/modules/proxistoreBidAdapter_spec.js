@@ -34,7 +34,7 @@ describe('ProxistoreBidAdapter', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
   });
-
+ 
   describe('buildRequests', function () {
     const url = '//abs.proxistore.com/fr/v3/rtb/prebid';
     const request = spec.buildRequests([bid], bidderRequest);
