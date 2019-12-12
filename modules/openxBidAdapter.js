@@ -7,7 +7,7 @@ import {parse} from '../src/url';
 const SUPPORTED_AD_TYPES = [BANNER, VIDEO];
 const BIDDER_CODE = 'openx';
 const BIDDER_CONFIG = 'hb_pb';
-const BIDDER_VERSION = '3.0.0';
+const BIDDER_VERSION = '3.0.1';
 
 const USER_ID_CODE_TO_QUERY_ARG = {
   idl_env: 'lre', // liveramp
