@@ -1,7 +1,6 @@
 import * as utils from '../src/utils';
 import { registerBidder } from '../src/adapters/bidderFactory';
 import { config } from '../src/config';
-import { parse as parseUrl } from '../src/url';
 import find from 'core-js/library/fn/array/find';
 
 const BIDDER_CODE = 'livewrapped';
@@ -53,7 +52,7 @@ export const spec = {
     const ifa = find(bidRequests, hasIfaParam);
     const tid = find(bidRequests, hasTidParam);
     bidUrl = bidUrl ? bidUrl.params.bidUrl : URL;
-    url = url ? url.params.url : (getTopWindowLocation(bidderRequest));
+    url = url ? url.params.url : getTopWindowLocation(bidderRequest);
     test = test ? test.params.test : undefined;
     var adRequests = bidRequests.map(bidToAdRequest);
 
@@ -235,7 +234,7 @@ function handleEids(bidRequests) {
 
 function getTopWindowLocation(bidderRequest) {
   let url = bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer;
-  return parseUrl(config.getConfig('pageUrl') || url, { decodeSearchAsString: true });
+  return config.getConfig('pageUrl') || url;
 }
 
 registerBidder(spec);
