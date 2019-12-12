@@ -262,6 +262,7 @@ describe('SonobiBidAdapter', function () {
       },
       'bidder': 'sonobi',
       'params': {
+        'keywords': 'sports,news,some_other_keyword',
         'placement_id': '1a2b3c4d5e6f1a2b3c4d',
         'sizes': [[300, 250], [300, 600]],
         'floor': '1.25',
@@ -341,7 +342,7 @@ describe('SonobiBidAdapter', function () {
       expect(bidRequests.data.digkeyv).to.be.undefined;
       sandbox.restore();
       delete window.DigiTrust;
-    })
+    });
 
     it('should return a properly formatted request', function () {
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
@@ -538,6 +539,11 @@ describe('SonobiBidAdapter', function () {
       expect(bidRequests.data.ref).not.to.be.empty;
       expect(bidRequests.data.s).not.to.be.empty;
       expect(bidRequests.data.userid).to.equal(undefined);
+    });
+
+    it('should return a properly formatted request with keywrods included as a csv of strings', function() {
+      const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
+      expect(bidRequests.data.kw).to.equal('sports,news,some_other_keyword');
     });
   })
 
