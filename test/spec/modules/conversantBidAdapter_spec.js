@@ -404,29 +404,61 @@ describe('Conversant adapter tests', function() {
 
   it('Verify GDPR bid request', function() {
     // add gdpr info
-    const bidRequest = {
+    const bidderRequest = {
       gdprConsent: {
         consentString: 'BOJObISOJObISAABAAENAA4AAAAAoAAA',
         gdprApplies: true
       }
     };
 
-    const payload = spec.buildRequests(bidRequests, bidRequest).data;
+    const payload = spec.buildRequests(bidRequests, bidderRequest).data;
     expect(payload).to.have.deep.nested.property('user.ext.consent', 'BOJObISOJObISAABAAENAA4AAAAAoAAA');
     expect(payload).to.have.deep.nested.property('regs.ext.gdpr', 1);
   });
 
   it('Verify GDPR bid request without gdprApplies', function() {
     // add gdpr info
-    const bidRequest = {
+    const bidderRequest = {
       gdprConsent: {
         consentString: ''
       }
     };
 
-    const payload = spec.buildRequests(bidRequests, bidRequest).data;
+    const payload = spec.buildRequests(bidRequests, bidderRequest).data;
     expect(payload).to.have.deep.nested.property('user.ext.consent', '');
     expect(payload).to.not.have.deep.nested.property('regs.ext.gdpr');
+  });
+
+  describe('CCPA', function() {
+    it('should have us_privacy', function() {
+      const bidderRequest = {
+        uspConsent: '1NYN'
+      };
+
+      const payload = spec.buildRequests(bidRequests, bidderRequest).data;
+      expect(payload).to.have.deep.nested.property('regs.ext.us_privacy', '1NYN');
+      expect(payload).to.not.have.deep.nested.property('regs.ext.gdpr');
+    });
+
+    it('should have no us_privacy', function() {
+      const payload = spec.buildRequests(bidRequests, {}).data;
+      expect(payload).to.not.have.deep.nested.property('regs.ext.us_privacy');
+    });
+
+    it('should have both gdpr and us_privacy', function() {
+      const bidderRequest = {
+        gdprConsent: {
+          consentString: 'BOJObISOJObISAABAAENAA4AAAAAoAAA',
+          gdprApplies: true
+        },
+        uspConsent: '1NYN'
+      };
+
+      const payload = spec.buildRequests(bidRequests, bidderRequest).data;
+      expect(payload).to.have.deep.nested.property('user.ext.consent', 'BOJObISOJObISAABAAENAA4AAAAAoAAA');
+      expect(payload).to.have.deep.nested.property('regs.ext.gdpr', 1);
+      expect(payload).to.have.deep.nested.property('regs.ext.us_privacy', '1NYN');
+    });
   });
 
   describe('Extended ID', function() {

@@ -85,21 +85,31 @@ describe('user sync', function () {
   });
 
   it('should not register pixel URL since it is not supported', function () {
-    const userSync = newTestUserSync({pixelEnabled: false});
+    const userSync = newTestUserSync({filterSettings: {
+      image: {
+        bidders: '*',
+        filter: 'exclude'
+      }
+    }});
     userSync.registerSync('image', 'testBidder', 'http://example.com');
     userSync.syncUsers();
     expect(triggerPixelStub.getCall(0)).to.be.null;
   });
 
   it('should register and load an iframe', function () {
-    const userSync = newTestUserSync({iframeEnabled: true});
+    const userSync = newTestUserSync({filterSettings: {
+      iframe: {
+        bidders: '*',
+        filter: 'include'
+      }
+    }});
     userSync.registerSync('iframe', 'testBidder', 'http://example.com/iframe');
     userSync.syncUsers();
     expect(insertUserSyncIframeStub.getCall(0).args[0]).to.equal('http://example.com/iframe');
   });
 
   it('should only trigger syncs once per page per bidder', function () {
-    const userSync = newTestUserSync({pixelEnabled: true});
+    const userSync = newTestUserSync({ pixelEnabled: true });
     userSync.registerSync('image', 'testBidder', 'http://example.com/1');
     userSync.syncUsers();
     userSync.registerSync('image', 'testBidder', 'http://example.com/2');
@@ -113,7 +123,7 @@ describe('user sync', function () {
   });
 
   it('should not fire syncs if cookies are not supported', function () {
-    const userSync = newTestUserSync({pixelEnabled: true}, true);
+    const userSync = newTestUserSync({ pixelEnabled: true }, true);
     userSync.registerSync('image', 'testBidder', 'http://example.com');
     userSync.syncUsers();
     expect(triggerPixelStub.getCall(0)).to.be.null;
@@ -132,14 +142,14 @@ describe('user sync', function () {
     userSync.triggerUserSyncs();
     expect(syncUsersSpy.notCalled).to.be.true;
     // triggerUserSyncs should trigger syncUsers if enableOverride is on
-    userSync = newTestUserSync({enableOverride: true});
+    userSync = newTestUserSync({ enableOverride: true });
     syncUsersSpy = sinon.spy(userSync, 'syncUsers');
     userSync.triggerUserSyncs();
     expect(syncUsersSpy.called).to.be.true;
   });
 
   it('should limit the number of syncs per bidder', function () {
-    const userSync = newTestUserSync({syncsPerBidder: 2});
+    const userSync = newTestUserSync({ syncsPerBidder: 2 });
     userSync.registerSync('image', 'testBidder', 'http://example.com/1');
     userSync.registerSync('image', 'testBidder', 'http://example.com/2');
     userSync.registerSync('image', 'testBidder', 'http://example.com/3');
@@ -151,8 +161,8 @@ describe('user sync', function () {
     expect(triggerPixelStub.getCall(2)).to.be.null;
   });
 
-  it('should not limit the number of syncs per bidder when set to 0', function() {
-    const userSync = newTestUserSync({syncsPerBidder: 0});
+  it('should not limit the number of syncs per bidder when set to 0', function () {
+    const userSync = newTestUserSync({ syncsPerBidder: 0 });
     userSync.registerSync('image', 'testBidder', 'http://example.com/1');
     userSync.registerSync('image', 'testBidder', 'http://example.com/2');
     userSync.registerSync('image', 'testBidder', 'http://example.com/3');
@@ -182,7 +192,7 @@ describe('user sync', function () {
   });
 
   it('should disable user sync', function () {
-    const userSync = newTestUserSync({syncEnabled: false});
+    const userSync = newTestUserSync({ syncEnabled: false });
     userSync.registerSync('pixel', 'testBidder', 'http://example.com');
     expect(logWarnStub.getCall(0).args[0]).to.exist;
     userSync.syncUsers();
@@ -190,7 +200,12 @@ describe('user sync', function () {
   });
 
   it('should only sync enabled bidders', function () {
-    const userSync = newTestUserSync({enabledBidders: ['testBidderA']});
+    const userSync = newTestUserSync({filterSettings: {
+      image: {
+        bidders: ['testBidderA'],
+        filter: 'include'
+      }
+    }});
     userSync.registerSync('image', 'testBidderA', 'http://example.com/1');
     userSync.registerSync('image', 'testBidderB', 'http://example.com/2');
     userSync.syncUsers();
@@ -201,9 +216,9 @@ describe('user sync', function () {
 
   it('should register config set after instantiation', function () {
     // start with userSync off
-    const userSync = newTestUserSync({syncEnabled: false});
+    const userSync = newTestUserSync({ syncEnabled: false });
     // turn it on with setConfig()
-    config.setConfig({userSync: {syncEnabled: true}});
+    config.setConfig({ userSync: { syncEnabled: true } });
     userSync.registerSync('image', 'testBidder', 'http://example.com');
     userSync.syncUsers();
     expect(triggerPixelStub.getCall(0)).to.not.be.null;
@@ -360,8 +375,8 @@ describe('user sync', function () {
   });
 
   describe('publicAPI', function () {
-    describe('canBidderRegisterSync', function() {
-      describe('with filterSettings', function() {
+    describe('canBidderRegisterSync', function () {
+      describe('with filterSettings', function () {
         it('should return false if filter settings does not allow it', function () {
           const userSync = newUserSync({
             config: {
@@ -397,14 +412,17 @@ describe('user sync', function () {
           expect(userSync.canBidderRegisterSync('iframe', 'testBidder')).to.equal(true);
         });
       });
-      describe('almost deprecated - without filterSettings', function() {
-        describe('enabledBidders contains testBidder', function() {
+      describe('almost deprecated - without filterSettings', function () {
+        describe('enabledBidders contains testBidder', function () {
           it('should return false if type is iframe and iframeEnabled is false', function () {
             const userSync = newUserSync({
               config: {
-                pixelEnabled: true,
-                iframeEnabled: false,
-                enabledBidders: ['testBidder'],
+                filterSettings: {
+                  iframe: {
+                    bidders: ['testBidder'],
+                    filter: 'exclude'
+                  }
+                }
               }
             });
             expect(userSync.canBidderRegisterSync('iframe', 'testBidder')).to.equal(false);
@@ -424,9 +442,12 @@ describe('user sync', function () {
           it('should return false if type is image and pixelEnabled is false', function () {
             const userSync = newUserSync({
               config: {
-                pixelEnabled: false,
-                iframeEnabled: true,
-                enabledBidders: ['testBidder'],
+                filterSettings: {
+                  image: {
+                    bidders: ['testBidder'],
+                    filter: 'exclude'
+                  }
+                }
               }
             });
             expect(userSync.canBidderRegisterSync('image', 'testBidder')).to.equal(false);
@@ -444,13 +465,20 @@ describe('user sync', function () {
           });
         });
 
-        describe('enabledBidders does not container testBidder', function() {
-          it('should return false since testBidder is not in enabledBidders', function() {
+        describe('enabledBidders does not container testBidder', function () {
+          it('should return false since testBidder is not in enabledBidders', function () {
             const userSync = newUserSync({
               config: {
-                pixelEnabled: true,
-                iframeEnabled: true,
-                enabledBidders: ['otherTestBidder'],
+                filterSettings: {
+                  image: {
+                    bidders: ['otherTestBidder'],
+                    filter: 'include'
+                  },
+                  iframe: {
+                    bidders: ['otherTestBidder'],
+                    filter: 'include'
+                  }
+                }
               }
             });
             expect(userSync.canBidderRegisterSync('iframe', 'testBidder')).to.equal(false);

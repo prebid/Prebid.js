@@ -203,6 +203,7 @@ describe('OneVideoBidAdapter', function () {
           'consentString': 'test-gdpr-consent-string',
           'gdprApplies': true
         },
+        'uspConsent\'s': '1YN-',
         'bidderCode': 'oneVideo',
         'auctionId': 'e158486f-8c7f-472f-94ce-b0cbfbb50ab4',
         'bidderRequestId': '1e498b84fffc39',
@@ -235,6 +236,11 @@ describe('OneVideoBidAdapter', function () {
     it('should send the consent string', function () {
       const request = spec.buildRequests([ bidRequest ], bidderRequest);
       expect(request[0].data.user.ext.consent).to.equal(bidderRequest.gdprConsent.consentString);
+    });
+
+    it('should send the uspConsent string', function () {
+      const request = spec.buildRequests([ bidRequest ], bidderRequest);
+      expect(request[0].data.regs.ext.us_privacy).to.equal(bidderRequest.uspConsent);
     });
 
     it('should send schain object', function () {
