@@ -28,7 +28,7 @@ export const spec = {
     let serverRequests = [];
     for (let i = 0, len = validBidRequests.length; i < len; i++) {
       const validReq = validBidRequests[i];
-      const DEBUG_URL = 'http://api-test.scaleout.jp/adsv/v1';
+      const DEBUG_URL = 'https://api-test.scaleout.jp/adsv/v1';
       const URL = 'https://d.socdm.com/adsv/v1';
       const url = validReq.params.debug ? DEBUG_URL : URL;
       let data = ``;

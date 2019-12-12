@@ -147,7 +147,7 @@ describe('ebdrBidAdapter', function () {
             h: _mediaTypes == BANNER ? bid.mediaTypes[_mediaTypes].sizes[0][1] : bid.mediaTypes[_mediaTypes].playerSize[1]
           };
         });
-        const serverResponse = {id: '1d0c4017f02458', seatbid: [{bid: [{id: '23a01e95856577', impid: '23a01e95856577', price: 0.81, adid: 'abcde-12345', nurl: 'https://cdn0.bnmla.com/vtest.xml', adm: '<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<VAST version=\"2.0\"><Ad id=\"static\"><InLine><AdSystem>Static VAST</AdSystem><AdTitle>Static VAST Tag</AdTitle><Impression /><Creatives><Creative><Linear><Duration>00:00:15</Duration><TrackingEvents><Tracking event=\"start\" /><Tracking event=\"firstQuartile\" /><Tracking event=\"midpoint\" /><Tracking event=\"thirdQuartile\" /><Tracking event=\"complete\" /><Tracking event=\"pause\" /><Tracking event=\"mute\" /><Tracking event=\"fullscreen\" /></TrackingEvents><VideoClicks><ClickThrough>http://www.engagebdr.com/</ClickThrough><ClickTracking /></VideoClicks><MediaFiles><MediaFile type=\"video/mp4\" bitrate=\"160\" width=\"1918\" height=\"1080\">c</MediaFile></MediaFiles></Linear></Creative></Creatives></InLine></Ad></VAST>', adomain: ['advertiserdomain.com'], iurl: '', cid: 'campaign1', crid: 'abcde-12345', w: 300, h: 250}], seat: '19513bcfca8006'}], bidid: '19513bcfca8006', cur: 'USD'};
+        const serverResponse = {id: '1d0c4017f02458', seatbid: [{bid: [{id: '23a01e95856577', impid: '23a01e95856577', price: 0.81, adid: 'abcde-12345', nurl: 'https://cdn0.bnmla.com/vtest.xml', adm: '<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<VAST version=\"2.0\"><Ad id=\"static\"><InLine><AdSystem>Static VAST</AdSystem><AdTitle>Static VAST Tag</AdTitle><Impression /><Creatives><Creative><Linear><Duration>00:00:15</Duration><TrackingEvents><Tracking event=\"start\" /><Tracking event=\"firstQuartile\" /><Tracking event=\"midpoint\" /><Tracking event=\"thirdQuartile\" /><Tracking event=\"complete\" /><Tracking event=\"pause\" /><Tracking event=\"mute\" /><Tracking event=\"fullscreen\" /></TrackingEvents><VideoClicks><ClickThrough>https//www.engagebdr.com/</ClickThrough><ClickTracking /></VideoClicks><MediaFiles><MediaFile type=\"video/mp4\" bitrate=\"160\" width=\"1918\" height=\"1080\">c</MediaFile></MediaFiles></Linear></Creative></Creatives></InLine></Ad></VAST>', adomain: ['advertiserdomain.com'], iurl: '', cid: 'campaign1', crid: 'abcde-12345', w: 300, h: 250}], seat: '19513bcfca8006'}], bidid: '19513bcfca8006', cur: 'USD'};
         const bidResponse = spec.interpretResponse({ body: serverResponse }, ebdrReq);
         expect(bidResponse[0]).to.deep.equal({
           requestId: bidRequests[1].bidId,
@@ -189,7 +189,7 @@ describe('ebdrBidAdapter', function () {
             h: _mediaTypes == BANNER ? bid.mediaTypes[_mediaTypes].sizes[0][1] : bid.mediaTypes[_mediaTypes].playerSize[1]
           };
         });
-        const serverResponse = {id: '1d0c4017f02458', seatbid: [{bid: [{id: '2c5e8a1a84522d', impid: '2c5e8a1a84522d', price: 0.81, adid: 'abcde-12345', nurl: '', adm: '<div><img src="http://cdnin.bnmla.com/0b1c6e85e9376e3092df8c9fc8ab9095.gif" width=350 height=250 /></div>', adomain: ['advertiserdomain.com'], iurl: '', cid: 'campaign1', crid: 'abcde-12345', w: 300, h: 250}], seat: '19513bcfca8006'}], bidid: '19513bcfca8006', cur: 'USD', w: 300, h: 250};
+        const serverResponse = {id: '1d0c4017f02458', seatbid: [{bid: [{id: '2c5e8a1a84522d', impid: '2c5e8a1a84522d', price: 0.81, adid: 'abcde-12345', nurl: '', adm: '<div><img src="https://cdnin.bnmla.com/0b1c6e85e9376e3092df8c9fc8ab9095.gif" width=350 height=250 /></div>', adomain: ['advertiserdomain.com'], iurl: '', cid: 'campaign1', crid: 'abcde-12345', w: 300, h: 250}], seat: '19513bcfca8006'}], bidid: '19513bcfca8006', cur: 'USD', w: 300, h: 250};
         const bidResponse = spec.interpretResponse({ body: serverResponse }, ebdrReq);
         expect(bidResponse[0]).to.deep.equal({
           requestId: bidRequests[ 0 ].bidId,
@@ -215,14 +215,14 @@ describe('ebdrBidAdapter', function () {
       }
     });
     it('sucess with usersync url', function () {
-      const serverResponse = {id: '1d0c4017f02458', seatbid: [{bid: [{id: '2c5e8a1a84522d', impid: '2c5e8a1a84522d', price: 0.81, adid: 'abcde-12345', nurl: '', adm: '<div><img src="http://cdnin.bnmla.com/0b1c6e85e9376e3092df8c9fc8ab9095.gif" width=350 height=250 /></div>', adomain: ['advertiserdomain.com'], iurl: '//match.bnmla.com/usersync?sspid=59&redir=', cid: 'campaign1', crid: 'abcde-12345', w: 300, h: 250}], seat: '19513bcfca8006'}], bidid: '19513bcfca8006', cur: 'USD', w: 300, h: 250};
+      const serverResponse = {id: '1d0c4017f02458', seatbid: [{bid: [{id: '2c5e8a1a84522d', impid: '2c5e8a1a84522d', price: 0.81, adid: 'abcde-12345', nurl: '', adm: '<div><img src="https://cdnin.bnmla.com/0b1c6e85e9376e3092df8c9fc8ab9095.gif" width=350 height=250 /></div>', adomain: ['advertiserdomain.com'], iurl: 'https://match.bnmla.com/usersync?sspid=59&redir=', cid: 'campaign1', crid: 'abcde-12345', w: 300, h: 250}], seat: '19513bcfca8006'}], bidid: '19513bcfca8006', cur: 'USD', w: 300, h: 250};
       const result = [];
-      result.push({type: 'image', url: '//match.bnmla.com/usersync?sspid=59&redir='});
+      result.push({type: 'image', url: 'https://match.bnmla.com/usersync?sspid=59&redir='});
       expect(spec.getUserSyncs(syncOptions, { body: serverResponse })).to.deep.equal(result);
     });
 
     it('sucess without usersync url', function () {
-      const serverResponse = {id: '1d0c4017f02458', seatbid: [{bid: [{id: '2c5e8a1a84522d', impid: '2c5e8a1a84522d', price: 0.81, adid: 'abcde-12345', nurl: '', adm: '<div><img src="http://cdnin.bnmla.com/0b1c6e85e9376e3092df8c9fc8ab9095.gif" width=350 height=250 /></div>', adomain: ['advertiserdomain.com'], iurl: '', cid: 'campaign1', crid: 'abcde-12345', w: 300, h: 250}], seat: '19513bcfca8006'}], bidid: '19513bcfca8006', cur: 'USD', w: 300, h: 250};
+      const serverResponse = {id: '1d0c4017f02458', seatbid: [{bid: [{id: '2c5e8a1a84522d', impid: '2c5e8a1a84522d', price: 0.81, adid: 'abcde-12345', nurl: '', adm: '<div><img src="https://cdnin.bnmla.com/0b1c6e85e9376e3092df8c9fc8ab9095.gif" width=350 height=250 /></div>', adomain: ['advertiserdomain.com'], iurl: '', cid: 'campaign1', crid: 'abcde-12345', w: 300, h: 250}], seat: '19513bcfca8006'}], bidid: '19513bcfca8006', cur: 'USD', w: 300, h: 250};
       const result = [];
       expect(spec.getUserSyncs(syncOptions, { body: serverResponse })).to.deep.equal(result);
     });
