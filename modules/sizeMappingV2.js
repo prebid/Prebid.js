@@ -1,3 +1,8 @@
+/**
+ * This modules adds support for the new Size Mapping spec described here. https://github.com/prebid/Prebid.js/issues/4129
+ * This implementation replaces global sizeConfig with a adUnit/bidder level sizeConfig with support for labels.
+ */
+
 import {
   flatten,
   deepClone,
