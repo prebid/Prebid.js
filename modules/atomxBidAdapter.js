@@ -60,7 +60,7 @@ export const spec = {
     return validBidRequests.map(bidRequest => {
       return {
         method: 'GET',
-        url: location.protocol + '//p.ato.mx/placement',
+        url: 'https://p.ato.mx/placement',
         data: {
           v: 12,
           id: bidRequest.params.id,

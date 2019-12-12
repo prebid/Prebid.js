@@ -1,7 +1,7 @@
 const expect = require('chai').expect;
 const { host, protocol } = require('../../../helpers/testing-utils');
 
-const TEST_PAGE_URL = `${protocol}://${host}:9999/test/pages/banner.html`;
+const TEST_PAGE_URL = `${protocol}://${host}:9999/test/pages/banner.html?pbjs_debug=true`;
 const CREATIVE_IFRAME_CSS_SELECTOR = 'iframe[id="google_ads_iframe_/19968336/header-bid-tag-0_0"]';
 
 const EXPECTED_TARGETING_KEYS = {
@@ -29,18 +29,19 @@ describe('Prebid.js Banner Ad Unit Test', function () {
     }
   });
 
-  it('should load the targeting keys with correct values', function () {
-    const result = browser.execute(function () {
-      return window.top.pbjs.getAdserverTargeting('div-gpt-ad-1460505748561-1');
-    });
+  // TODO: Add below test again. Removed the test since we are testing only for appnexus endpoint now and appnexus adapter does not set AdserverTargetting.
 
-    const targetingKeys = result.value['div-gpt-ad-1460505748561-1'];
+  // it('should load the targeting keys with correct values', function () {
+  //   const result = browser.execute(function () {
+  //     return window.top.pbjs.getAdserverTargeting('div-gpt-ad-1460505748561-1');
+  //   });
+  //   const targetingKeys = result.value['div-gpt-ad-1460505748561-1'];
 
-    expect(targetingKeys).to.include(EXPECTED_TARGETING_KEYS);
-    expect(targetingKeys.hb_adid).to.be.a('string');
-    expect(targetingKeys.hb_adid_rubicon).to.be.a('string');
-    expect(targetingKeys.hb_size).to.satisfy((size) => size === '300x250' || '300x600');
-  });
+  //   expect(targetingKeys).to.include(EXPECTED_TARGETING_KEYS);
+  //   expect(targetingKeys.hb_adid).to.be.a('string');
+  //   expect(targetingKeys.hb_adid_rubicon).to.be.a('string');
+  //   expect(targetingKeys.hb_size).to.satisfy((size) => size === '300x250' || '300x600');
+  // });
 
   it('should render the Banner Ad on the page', function () {
     expect(browser.isVisible('body > div[class="GoogleActiveViewElement"] > a > img')).to.be.true;

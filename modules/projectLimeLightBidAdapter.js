@@ -4,7 +4,7 @@ import {ajax} from '../src/ajax';
 import * as utils from '../src/utils';
 
 const BIDDER_CODE = 'project-limelight';
-const URL = '//ads.project-limelight.com/hb';
+const URL = 'https://ads.project-limelight.com/hb';
 
 /**
  * Determines whether or not the given bid response is valid.
