@@ -148,8 +148,7 @@ describe('AppNexusAdapter', function () {
     });
 
     it('should not populate the ad_types array when adUnit.mediaTypes is undefined', function() {
-      const bidRequest = Object.assign({}, bidRequests[0]);
-      const request = spec.buildRequests([bidRequest]);
+      const request = spec.buildRequests(bidRequests);
       const payload = JSON.parse(request.data);
 
       expect(payload.tags[0].ad_types).to.not.exist;
