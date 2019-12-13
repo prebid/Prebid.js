@@ -29,6 +29,8 @@ import {
 // Maps auctionId to a boolean value, value is set to true if Adunits are setup to use the new size mapping, else it's set to false.
 const _sizeMappingUsageMap = {};
 
+// returns "true" if atleast one of the adUnit in the adUnits array has declared a Ad Unit or(and) Bid level sizeConfig
+// returns "false" otherwise
 export function isUsingNewSizeMapping(adUnits) {
   let isUsingSizeMappingBool = false;
   adUnits.forEach(adUnit => {
@@ -55,64 +57,99 @@ export function isUsingNewSizeMapping(adUnits) {
   return isUsingSizeMappingBool;
 }
 
+// returns "adUnits" array which have passed sizeConfig validation checks in addition to mediaTypes checks
+// deletes properties from adUnit which fail validation.
 function checkAdUnitSetupHook(adUnits) {
-  adUnits.forEach(adUnit => {
+  return adUnits.filter(adUnit => {
     const mediaTypes = adUnit.mediaTypes;
-    if (mediaTypes && mediaTypes.banner) {
+    if (!mediaTypes || Object.keys(mediaTypes).length === 0) {
+      logError(`Detected adUnit.code '${adUnit.code}' did not have a 'mediaTypes' object defined. This is a required field for the auction, so this adUnit has been removed.`);
+      return false;
+    }
+
+    if (mediaTypes.banner) {
       const banner = mediaTypes.banner;
       if (banner.sizes) {
         adUnit = validateBannerMediaType(adUnit);
-      } else if (banner.sizeConfig && Array.isArray(banner.sizeConfig)) {
-        banner.sizeConfig.forEach(config => {
-          // verify if all config objects include "minViewPort" and "sizes" property.
-          // if not, remove the mediaTypes.banner object
-          const keys = Object.keys(config);
-          if (!(includes(keys, 'minViewPort') && includes(keys, 'sizes'))) {
-            logError(`Ad Unit: ${adUnit.code}: mediaTypes.banner.sizeConfig is missing required property minViewPort or sizes or both. Removing the invalid mediaTypes.banner from request.`);
-            return delete adUnit.mediaTypes.banner;
-          }
-          // check if the config.sizes property is in [w, h] format, if yes, change it to [[w, h]] format.
-          const bannerSizes = validateSizes(config.sizes);
-          if (isArrayOfNums(config.minViewPort, 2)) {
-            config.sizes = bannerSizes;
-          } else {
-            logError(`Ad Unit: ${adUnit.code}: mediaTypes.banner.sizeConfig has properties minViewPort or sizes decalared with invalid values. Removing the invalid object mediaTypes.banner from request.`);
-            return delete adUnit.mediaTypes.banner;
-          }
-        });
+      } else if (banner.sizeConfig) {
+        if (Array.isArray(banner.sizeConfig)) {
+          banner.sizeConfig.forEach(config => {
+            // verify if all config objects include "minViewPort" and "sizes" property.
+            // if not, remove the mediaTypes.banner object
+            const keys = Object.keys(config);
+            if (!(includes(keys, 'minViewPort') && includes(keys, 'sizes'))) {
+              logError(`Ad Unit: ${adUnit.code}: mediaTypes.banner.sizeConfig is missing required property minViewPort or sizes or both. Removing the invalid mediaTypes.banner from Ad Unit.`);
+              return delete adUnit.mediaTypes.banner;
+            }
+
+            // check if the config.sizes property is in [w, h] format, if yes, change it to [[w, h]] format.
+            const bannerSizes = validateSizes(config.sizes);
+            if (isArrayOfNums(config.minViewPort, 2)) {
+              if (config.sizes.length > 0 && bannerSizes.length > 0) {
+                config.sizes = bannerSizes;
+              } else if (config.sizes.length === 0) {
+                // If a size bucket doesn't have any sizes, sizes is an empty array, i.e. sizes: []. This check takes care of that.
+                config.sizes = [config.sizes];
+              } else {
+                logError(`Ad Unit: ${adUnit.code}: mediaTypes.banner.sizeConfig has propery sizes declared with invalid value. Please ensure the sizes are listed like: [[300, 250], ...] or like: [] if no sizes are present for that size bucket. Removing the invalid object mediaTypes.banner from Ad Unit.`);
+                return delete adUnit.mediaTypes.banner;
+              }
+            } else {
+              logError(`Ad Unit: ${adUnit.code}: mediaTypes.banner.sizeConfig has property minViewPort decalared with invalid value. Please ensure minViewPort is an Array and is listed like: [700, 0]. Declaring an empty array is not allowed, instead use: [0, 0]. Removing the invalid object mediaTypes.banner from Ad Unit.`);
+              return delete adUnit.mediaTypes.banner;
+            }
+          });
+        } else {
+          logError(`Ad Unit: ${adUnit.code}: mediaTypes.banner.sizeConfig is NOT an Array. Removing the invalid object mediaTypes.banner from Ad Unit.`);
+        }
       } else {
-        logError('Detected a mediaTypes.banner object did not include required property sizes or sizeConfig. Removing invalid mediaTypes.banner object from request.');
+        logError('Detected a mediaTypes.banner object did not include required property sizes or sizeConfig. Removing invalid mediaTypes.banner object from Ad Unit.');
         delete adUnit.mediaTypes.banner;
       }
     }
 
-    if (mediaTypes && mediaTypes.video) {
+    if (mediaTypes.video) {
       const video = mediaTypes.video;
       if (video.playerSize) {
         adUnit = validateVideoMediaType(adUnit);
       } else if (video.sizeConfig) {
-        video.sizeConfig.forEach(config => {
-          // verify if all config objects include "minViewPort" and "playerSize" property.
-          // if not, remove the mediaTypes.video object
-          const keys = Object.keys(config);
-          if (!(includes(keys, 'minViewPort') && includes(keys, 'playerSize'))) {
-            logError(`Ad Unit: ${adUnit.code}: mediaTypes.video.sizeConfig is missing required property minViewPort or playerSize or both. Removing the invalid property mediaTypes.video.sizeConfig from request.`);
-            return delete adUnit.mediaTypes.video.sizeConfig;
-          }
-          // check if the config.playerSize property is in [w, h] format, if yes, change it to [[w, h]] format.
-          let tarPlayerSizeLen = (typeof config.playerSize[0] === 'number') ? 2 : 1;
-          const videoSizes = validateSizes(config.playerSize, tarPlayerSizeLen);
-          if (isArrayOfNums(config.minViewPort, 2)) {
-            config.playerSize = videoSizes;
-          } else {
-            logError(`Ad Unit: ${adUnit.code}: mediaTypes.video.sizeConfig has properties minViewPort or playerSize decalared with invalid values. Removing the invalid property mediaTypes.video.sizeConfig from request.`);
-            return delete adUnit.mediaTypes.video.sizeConfig;
-          }
-        });
+        if (Array.isArray(video.sizeConfig)) {
+          video.sizeConfig.forEach(config => {
+            // verify if all config objects include "minViewPort" and "playerSize" property.
+            // if not, remove the mediaTypes.video object
+            const keys = Object.keys(config);
+            if (!(includes(keys, 'minViewPort') && includes(keys, 'playerSize'))) {
+              logError(`Ad Unit: ${adUnit.code}: mediaTypes.video.sizeConfig is missing required property minViewPort or playerSize or both. Removing the invalid property mediaTypes.video.sizeConfig from Ad Unit.`);
+              return delete adUnit.mediaTypes.video.sizeConfig;
+            }
+            // check if the config.playerSize property is in [w, h] format, if yes, change it to [[w, h]] format.
+            let tarPlayerSizeLen = (typeof config.playerSize[0] === 'number') ? 2 : 1;
+            const videoSizes = validateSizes(config.playerSize, tarPlayerSizeLen);
+            if (isArrayOfNums(config.minViewPort, 2)) {
+              if (tarPlayerSizeLen === 2) {
+                logInfo('Transforming video.playerSize from [640,480] to [[640,480]] so it\'s in the proper format.');
+              }
+              if (config.playerSize.length > 0 && videoSizes.length > 0) {
+                config.playerSize = videoSizes;
+              } else if (config.playerSize.length === 0) {
+                // If a size bucket doesn't have any playerSize, playerSize is an empty array, i.e. playerSize: []. This check takes care of that.
+                config.playerSize = [config.playerSize];
+              } else {
+                logError(`Ad Unit: ${adUnit.code}: mediaTypes.video.sizeConfig has propery playerSize declared with invalid value. Please ensure the playerSize is listed like: [640, 480] or like: [] if no playerSize is present for that size bucket. Removing the invalid property mediaTypes.video.sizeConfig from Ad Unit.`);
+              }
+            } else {
+              logError(`Ad Unit: ${adUnit.code}: mediaTypes.video.sizeConfig has property minViewPort decalared with invalid value. Please ensure minViewPort is an Array and is listed like: [700, 0]. Declaring an empty array is not allowed, instead use: [0, 0]. Removing the invalid property mediaTypes.video.sizeConfig from Ad Unit.`);
+              return delete adUnit.mediaTypes.video.sizeConfig;
+            }
+          });
+        } else {
+          logError(`Ad Unit: ${adUnit.code}: mediaTypes.video.sizeConfig is NOT an Array. Removing the invalid property mediaTypes.video.sizeConfig from Ad Unit.`);
+          return delete adUnit.mediaTypes.video.sizeConfig;
+        }
       }
     }
 
-    if (mediaTypes && mediaTypes.native) {
+    if (mediaTypes.native) {
       const native = mediaTypes.native;
       adUnit = validateNativeMediaType(adUnit);
 
@@ -122,19 +159,20 @@ function checkAdUnitSetupHook(adUnits) {
           // if not, remove the mediaTypes.native object
           const keys = Object.keys(config);
           if (!(includes(keys, 'minViewPort') && includes(keys, 'active'))) {
-            logError(`Ad Unit: ${adUnit.code}: mediaTypes.native.sizeConfig is missing required property minViewPort or active or both. Removing the invalid property mediaTypes.native.sizeConfig from request.`);
+            logError(`Ad Unit: ${adUnit.code}: mediaTypes.native.sizeConfig is missing required property minViewPort or active or both. Removing the invalid property mediaTypes.native.sizeConfig from Ad Unit.`);
             return delete adUnit.mediaTypes.native.sizeConfig;
           }
 
           if (!(isArrayOfNums(config.minViewPort, 2) && typeof config.active === 'boolean')) {
-            logError(`Ad Unit: ${adUnit.code}: mediaTypes.native.sizeConfig has properties minViewPort or active decalared with invalid values. Removing the invalid property mediaTypes.native.sizeConfig from request.`);
+            logError(`Ad Unit: ${adUnit.code}: mediaTypes.native.sizeConfig has properties minViewPort or active decalared with invalid values. Removing the invalid property mediaTypes.native.sizeConfig from Ad Unit.`);
             return delete adUnit.mediaTypes.native.sizeConfig;
           }
         });
       }
     }
+
+    return true;
   });
-  return adUnits;
 }
 
 getHook('checkAdUnitSetup').before(function (fn, adUnits) {
