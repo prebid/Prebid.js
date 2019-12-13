@@ -23,7 +23,7 @@ const VERSION = '1.3';
 export const spec = {
 
   code: 'adkernel',
-  aliases: ['headbidding', 'adsolut', 'oftmediahb', 'audiencemedia', 'waardex_ak'],
+  aliases: ['headbidding', 'adsolut', 'oftmediahb', 'audiencemedia', 'waardex_ak', 'roqoon'],
   supportedMediaTypes: [BANNER, VIDEO],
   isBidRequestValid: function(bidRequest) {
     return 'params' in bidRequest &&
@@ -36,14 +36,14 @@ export const spec = {
   },
   buildRequests: function(bidRequests, bidderRequest) {
     let impDispatch = dispatchImps(bidRequests, bidderRequest.refererInfo);
-    const {gdprConsent, auctionId} = bidderRequest;
+    const {gdprConsent, auctionId, refererInfo, timeout} = bidderRequest;
     const requests = [];
     Object.keys(impDispatch).forEach(host => {
       Object.keys(impDispatch[host]).forEach(zoneId => {
-        const request = buildRtbRequest(impDispatch[host][zoneId], auctionId, gdprConsent, bidderRequest.refererInfo);
+        const request = buildRtbRequest(impDispatch[host][zoneId], auctionId, gdprConsent, refererInfo, timeout);
         requests.push({
           method: 'POST',
-          url: `${window.location.protocol}//${host}/hb?zone=${zoneId}&v=${VERSION}`,
+          url: `https://${host}/hb?zone=${zoneId}&v=${VERSION}`,
           data: JSON.stringify(request)
         });
       });
@@ -107,8 +107,7 @@ function dispatchImps(bidRequests, refererInfo) {
   return bidRequests.map(bidRequest => buildImp(bidRequest, secure))
     .reduce((acc, curr, index) => {
       let bidRequest = bidRequests[index];
-      let zoneId = bidRequest.params.zoneId;
-      let host = bidRequest.params.host;
+      let {zoneId, host} = bidRequest.params;
       acc[host] = acc[host] || {};
       acc[host][zoneId] = acc[host][zoneId] || [];
       acc[host][zoneId].push(curr);
@@ -126,14 +125,14 @@ function buildImp(bidRequest, secure) {
   };
 
   if (utils.deepAccess(bidRequest, `mediaTypes.banner`)) {
-    let sizes = canonicalizeSizesArray(bidRequest.mediaTypes.banner.sizes);
+    let sizes = utils.getAdUnitSizes(bidRequest);
     imp.banner = {
       format: sizes.map(wh => utils.parseGPTSingleSizeArrayToRtbSize(wh)),
       topframe: 0
     };
   } else if (utils.deepAccess(bidRequest, 'mediaTypes.video')) {
-    let size = canonicalizeSizesArray(bidRequest.mediaTypes.video.playerSize)[0];
-    imp.video = utils.parseGPTSingleSizeArrayToRtbSize(size);
+    let sizes = bidRequest.mediaTypes.video.playerSize || [];
+    imp.video = utils.parseGPTSingleSizeArrayToRtbSize(sizes[0]) || {};
     if (bidRequest.params.video) {
       Object.keys(bidRequest.params.video)
         .filter(key => includes(VIDEO_TARGETING, key))
@@ -147,26 +146,15 @@ function buildImp(bidRequest, secure) {
 }
 
 /**
- * Convert input array of sizes to canonical form Array[Array[Number]]
- * @param sizes
- * @return Array[Array[Number]]
- */
-function canonicalizeSizesArray(sizes) {
-  if (sizes.length === 2 && !utils.isArray(sizes[0])) {
-    return [sizes];
-  }
-  return sizes;
-}
-
-/**
  * Builds complete rtb request
  * @param imps collection of impressions
  * @param auctionId
  * @param gdprConsent
  * @param refInfo
+ * @param timeout
  * @return Object complete rtb request
  */
-function buildRtbRequest(imps, auctionId, gdprConsent, refInfo) {
+function buildRtbRequest(imps, auctionId, gdprConsent, refInfo, timeout) {
   let req = {
     'id': auctionId,
     'imp': imps,
@@ -178,6 +166,7 @@ function buildRtbRequest(imps, auctionId, gdprConsent, refInfo) {
       'js': 1,
       'language': getLanguage()
     },
+    'tmax': parseInt(timeout),
     'ext': {
       'adk_usersync': 1
     }

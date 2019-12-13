@@ -163,7 +163,7 @@ function RhythmOneBidAdapter() {
   }
 
   function frameBid(BRs, bidderRequest) {
-    return {
+    let bid = {
       id: BRs[0].bidderRequestId,
       imp: frameImp(BRs, bidderRequest),
       site: frameSite(bidderRequest),
@@ -181,6 +181,14 @@ function RhythmOneBidAdapter() {
         }
       }
     };
+    if (BRs[0].schain) {
+      bid.source = {
+        'ext': {
+          'schain': BRs[0].schain
+        }
+      }
+    }
+    return bid;
   }
 
   function getFirstParam(key, validBidRequests) {
@@ -197,7 +205,7 @@ function RhythmOneBidAdapter() {
       return [];
     }
 
-    var rmpUrl = getFirstParam('endpoint', BRs) || '//tag.1rx.io/rmp/{placementId}/0/{path}?z={zone}';
+    var rmpUrl = getFirstParam('endpoint', BRs) || 'https://tag.1rx.io/rmp/{placementId}/0/{path}?z={zone}';
     var defaultZone = getFirstParam('zone', BRs) || '1r';
     var defaultPath = getFirstParam('path', BRs) || 'mvo';
 
