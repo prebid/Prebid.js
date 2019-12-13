@@ -48,10 +48,10 @@ describe('MantisAdapter', function () {
     ];
 
     it('domain override', function () {
-      window.mantis_domain = 'http://foo';
+      window.mantis_domain = 'https://foo';
       const request = spec.buildRequests(bidRequests);
 
-      expect(request.url).to.include('http://foo');
+      expect(request.url).to.include('https://foo');
 
       delete window.mantis_domain;
     });
