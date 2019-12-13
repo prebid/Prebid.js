@@ -6,7 +6,12 @@ import includes from 'core-js/library/fn/array/includes';
 config.setDefaults({
   'userSync': {
     syncEnabled: true,
-    pixelEnabled: true,
+    filterSettings: {
+      image: {
+        bidders: '*',
+        filter: 'include'
+      }
+    },
     syncsPerBidder: 5,
     syncDelay: 3000,
     auctionDelay: 0
@@ -32,7 +37,7 @@ export function newUserSync(userSyncDependencies) {
 
   // for now - default both to false in case filterSettings config is absent/misconfigured
   let permittedPixels = {
-    image: false,
+    image: true,
     iframe: false
   };
 
@@ -94,7 +99,7 @@ export function newUserSync(userSyncDependencies) {
    * @private
    */
   function fireImagePixels() {
-    if (!(usConfig.pixelEnabled || permittedPixels.image)) {
+    if (!permittedPixels.image) {
       return;
     }
     forEachFire(queue.image, (sync) => {
@@ -111,7 +116,7 @@ export function newUserSync(userSyncDependencies) {
    * @private
    */
   function loadIframes() {
-    if (!(usConfig.iframeEnabled || permittedPixels.iframe)) {
+    if (!(permittedPixels.iframe)) {
       return;
     }
     forEachFire(queue.iframe, (sync) => {
@@ -272,13 +277,6 @@ export function newUserSync(userSyncDependencies) {
       if (shouldBidderBeBlocked(type, bidder)) {
         return false;
       }
-      // TODO remove this else if code that supports deprecated fields (sometime in 2.x); for now - only run if filterSettings config is not present
-    } else if (usConfig.enabledBidders && usConfig.enabledBidders.length && usConfig.enabledBidders.indexOf(bidder) < 0) {
-      return false
-    } else if (type === 'iframe' && !(usConfig.iframeEnabled || permittedPixels.iframe)) {
-      return false;
-    } else if (type === 'image' && !(usConfig.pixelEnabled || permittedPixels.image)) {
-      return false;
     }
     return true;
   }
@@ -304,8 +302,6 @@ export const userSync = newUserSync({
  *
  * @property {boolean} enableOverride
  * @property {boolean} syncEnabled
- * @property {boolean} pixelEnabled
- * @property {boolean} iframeEnabled
  * @property {int} syncsPerBidder
  * @property {string[]} enabledBidders
  * @property {Object} filterSettings
