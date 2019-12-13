@@ -61,10 +61,11 @@ export const spec = {
 
 function bidResponseAvailable(bidRequest, bidResponse) {
   let bidResponses = [];
+
   if (bidResponse.body) {
     let bidData = bidResponse.body.seatbid[0].bid[0];
     const bid = {
-      requestId: bidData.impid,
+      requestId: bidResponse.body.id,
       cpm: bidData.price,
       width: bidData.w,
       height: bidData.h,
@@ -74,6 +75,7 @@ function bidResponseAvailable(bidRequest, bidResponse) {
       adId: bidData.impid,
       netRevenue: false,
       currency: 'USD',
+      adUnitCode: bidRequest.bidRequest.adUnitCode
     };
     if (isVideo(bidRequest.bidRequest)) {
       bid.vastXml = bidData.adm;
@@ -89,7 +91,7 @@ function bidResponseAvailable(bidRequest, bidResponse) {
 
 function openRtbRequest(bidRequest, bidderRequest) {
   var openRtbRequest = {
-    id: bidRequest.bidderRequestId,
+    id: bidRequest.bidId,
     imp: [openRtbImpression(bidRequest)],
     at: 1,
     tmax: 400,
