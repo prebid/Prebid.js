@@ -1,13 +1,12 @@
 /** @module pbjs */
 
 import { getGlobal } from './prebidGlobal';
-import { flatten, uniques, isGptPubadsDefined, adUnitsFilter, getLatestHighestCpmBid, isArrayOfNums } from './utils';
+import { flatten, uniques, isGptPubadsDefined, adUnitsFilter, isArrayOfNums } from './utils';
 import { listenMessagesFromCreative } from './secureCreatives';
 import { userSync } from './userSync.js';
-import { loadScript } from './adloader';
 import { config } from './config';
 import { auctionManager } from './auctionManager';
-import { targeting, getHighestCpmBidsFromBidPool } from './targeting';
+import { targeting } from './targeting';
 import { hook } from './hook';
 import { sessionLoader } from './debugging';
 import includes from 'core-js/library/fn/array/includes';
@@ -133,32 +132,29 @@ export function validateNativeMediaType(adUnit) {
 }
 
 export const checkAdUnitSetup = hook('sync', function (adUnits) {
-  adUnits.forEach(adUnit => {
+  return adUnits.filter(adUnit => {
     const mediaTypes = adUnit.mediaTypes;
-    if (mediaTypes && mediaTypes.banner) {
-      if (mediaTypes.banner.sizes) {
-        adUnit = validateBannerMediaType(adUnit);
-      } else {
-        utils.logError('Detected a mediaTypes.banner object did not include required property sizes. Removing invalid mediaTypes.banner object from request.');
-        delete adUnit.mediaTypes.banner;
-      }
-    } else if (adUnit.sizes) {
-      utils.logWarn('Usage of adUnits.sizes will eventually be deprecated. Please define size dimensions within the corresponding area of the mediaTypes.<object> (eg mediaTypes.banner.sizes).');
-      const bannerSizes = validateSizes(adUnit.sizes);
-      if (bannerSizes.length > 0) {
-        adUnit.sizes = bannerSizes;
+    if (!mediaTypes || Object.keys(mediaTypes).length === 0) {
+      utils.logError(`Detected adUnit.code '${adUnit.code}' did not have a 'mediaTypes' object defined.  This is a required field for the auction, so this adUnit has been removed.`);
+      return false;
+    }
+
+    if (mediaTypes.banner) {
+      adUnit = validateBannerMediaType(adUnit);
+    }
+
+    if (mediaTypes.video) {
+      const video = mediaTypes.video;
+      if (video.playerSize) {
+        adUnit = validateVideoMediaType(adUnit);
       }
     }
 
-    if (mediaTypes && mediaTypes.video && mediaTypes.video.playerSize) {
-      adUnit = validateVideoMediaType(adUnit);
-    }
-
-    if (mediaTypes && mediaTypes.native) {
+    if (mediaTypes.native) {
       adUnit = validateNativeMediaType(adUnit);
     }
+    return true;
   });
-  return adUnits;
 }, 'checkAdUnitSetup');
 
 /// ///////////////////////////////
@@ -337,7 +333,6 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
       // lookup ad by ad Id
       const bid = auctionManager.findBidByAdId(id);
       if (bid) {
-        bid.status = CONSTANTS.BID_STATUS.RENDERED;
         // replace macros according to openRTB with price paid = bid.cpm
         bid.ad = utils.replaceAuctionPrice(bid.ad, bid.cpm);
         bid.adUrl = utils.replaceAuctionPrice(bid.adUrl, bid.cpm);
@@ -492,9 +487,11 @@ $$PREBID_GLOBAL$$.requestBids = hook('async', function ({ bidsBackHandler, timeo
         // drop the bidder from the ad unit if it's not compatible
         utils.logWarn(utils.unsupportedBidderMessage(adUnit, bidder));
         adUnit.bids = adUnit.bids.filter(bid => bid.bidder !== bidder);
+      } else {
+        adunitCounter.incrementBidderRequestsCounter(adUnit.code, bidder);
       }
     });
-    adunitCounter.incrementCounter(adUnit.code);
+    adunitCounter.incrementRequestsCounter(adUnit.code);
   });
 
   if (!adUnits || adUnits.length === 0) {
@@ -626,17 +623,6 @@ $$PREBID_GLOBAL$$.createBid = function (statusCode) {
 };
 
 /**
- * @deprecated this function will be removed in the next release. Prebid has deprected external JS loading.
- * @param  {string} tagSrc [description]
- * @param  {Function} callback [description]
- * @alias module:pbjs.loadScript
- */
-$$PREBID_GLOBAL$$.loadScript = function (tagSrc, callback, useCache) {
-  utils.logInfo('Invoking $$PREBID_GLOBAL$$.loadScript', arguments);
-  loadScript(tagSrc, callback, useCache);
-};
-
-/**
  * Enable sending analytics data to the analytics provider of your
  * choice.
  *
@@ -731,8 +717,7 @@ $$PREBID_GLOBAL$$.getAllPrebidWinningBids = function () {
  * @return {Array} array containing highest cpm bid object(s)
  */
 $$PREBID_GLOBAL$$.getHighestCpmBids = function (adUnitCode) {
-  let bidsReceived = getHighestCpmBidsFromBidPool(auctionManager.getBidsReceived(), getLatestHighestCpmBid);
-  return targeting.getWinningBids(adUnitCode, bidsReceived);
+  return targeting.getWinningBids(adUnitCode);
 };
 
 /**

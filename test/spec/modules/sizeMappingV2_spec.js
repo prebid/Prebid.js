@@ -116,7 +116,7 @@ function deleteSizeConfig(adUnits, config) {
   return adUnits;
 }
 
-describe.only('sizeMappingV2', function () {
+describe('sizeMappingV2', function () {
   describe('isUsingNewSizeMaping(adUntis, auctionId)', function () {
     it('should return "false" if sizeConfig is not declared both at the adUnits level and the bids level', function () {
       let adUnits = deepClone(AD_UNITS);

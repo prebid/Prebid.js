@@ -394,7 +394,9 @@ function getBids({ bidderCode, auctionId, bidderRequestId, adUnits, labels, src 
                   bidderRequestId,
                   auctionId,
                   src,
-                  bidRequestsCound: adunitCounter.getCounter(adUnit.code)
+                  bidRequestsCount: adunitCounter.getRequestsCounter(adUnit.code),
+                  bidderRequestsCount: adunitCounter.getBidderRequestsCounter(adUnit.code, bid.bidder),
+                  bidderWinsCount: adunitCounter.getBidderWinsCounter(adUnit.code, bid.bidder)
                 }));
                 return bids;
               } else {
