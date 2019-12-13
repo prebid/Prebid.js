@@ -17,7 +17,7 @@ function _getDeviceObj () {
 
 function _getSiteObj (bidderRequest) {
   let site = {}
-  let url = utils.deepAccess(bidderRequest, 'refererInfo.canonicalUrl') || config.getConfig('pageUrl') || utils.deepAccess(window, 'location.href');
+  let url = config.getConfig('pageUrl') || utils.deepAccess(window, 'location.href');
   if (url.length > 0) {
     url = url.split('?')[0]
   }
