@@ -53,16 +53,34 @@ export const spec = {
     return mediaType === VIDEO ? createVideoBidResponses(oxResponseObj, serverRequest.payload)
       : createBannerBidResponses(oxResponseObj, serverRequest.payload);
   },
-  getUserSyncs: function (syncOptions, responses) {
+  getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent) {
     if (syncOptions.iframeEnabled || syncOptions.pixelEnabled) {
       let pixelType = syncOptions.iframeEnabled ? 'iframe' : 'image';
       let url = utils.deepAccess(responses, '0.body.ads.pixels') ||
         utils.deepAccess(responses, '0.body.pixels') ||
-        'https://u.openx.net/w/1.0/pd';
+        generateDefaultSyncUrl(gdprConsent, uspConsent);
+
       return [{
         type: pixelType,
         url: url
       }];
+
+      function generateDefaultSyncUrl(gdprConsent, uspConsent){
+        let url = 'https://u.openx.net/w/1.0/pd';
+        let queryParamStrings = [];
+
+        if (gdprConsent) {
+          queryParamStrings.push('gdpr=' + (gdprConsent.gdprApplies ? 1 : 0));
+          queryParamStrings.push('gdpr_consent=' + encodeURIComponent(gdprConsent.consentString || ''));
+        }
+
+        // CCPA
+        if (uspConsent) {
+          queryParamStrings.push('us_privacy=' + encodeURIComponent(uspConsent));
+        }
+
+        return `${url}?${queryParamStrings.join('&')}`;
+      }
     }
   },
   transformBidParams: function(params, isOpenRtb) {
@@ -205,7 +223,7 @@ function buildCommonQueryParamsFromBids(bids, bidderRequest) {
     defaultParams.ph = bids[0].params.platform;
   }
 
-  if (utils.deepAccess(bidderRequest, 'gdprConsent')) {
+  if (bidderRequest.gdprConsent) {
     let gdprConsentConfig = bidderRequest.gdprConsent;
 
     if (gdprConsentConfig.consentString !== undefined) {
