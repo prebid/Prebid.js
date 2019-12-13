@@ -29,7 +29,7 @@ import {
 // Maps auctionId to a boolean value, value is set to true if Adunits are setup to use the new size mapping, else it's set to false.
 const _sizeMappingUsageMap = {};
 
-function isUsingNewSizeMapping(adUnits) {
+export function isUsingNewSizeMapping(adUnits) {
   let isUsingSizeMappingBool = false;
   adUnits.forEach(adUnit => {
     if (adUnit.mediaTypes) {
@@ -42,7 +42,7 @@ function isUsingNewSizeMapping(adUnits) {
         }
       });
 
-      // checks for the presence of sizeConfig property at the adUnit.bids.bidder object
+      // checks for the presence of sizeConfig property at the adUnit.bids[].bidder object
       adUnit.bids.forEach(bidder => {
         if (bidder.sizeConfig) {
           if (isUsingSizeMappingBool === false) {
