@@ -248,6 +248,31 @@ describe('ccxAdapter', function () {
     });
   });
 
+  describe('GDPR conformity', function () {
+    it('should transmit correct data', function () {
+      let bidsClone = utils.deepClone(bids);
+      let gdprConsent = {
+        consentString: 'awefasdfwefasdfasd',
+        gdprApplies: true
+      };
+      let response = spec.buildRequests(bidsClone, {'bids': bidsClone, 'gdprConsent': gdprConsent});
+      let data = JSON.parse(response.data);
+
+      expect(data.regs.ext.gdpr).to.equal(1);
+      expect(data.user.ext.consent).to.equal('awefasdfwefasdfasd');
+    });
+  });
+
+  describe('GDPR absence conformity', function () {
+    it('should transmit correct data', function () {
+      let response = spec.buildRequests(bids, {bids});
+      let data = JSON.parse(response.data);
+
+      expect(data.regs).to.be.undefined;
+      expect(data.user).to.be.undefined;
+    });
+  });
+
   let response = {
     id: '0b9de793-8eda-481e-a548-c187d58b28d9',
     seatbid: [
