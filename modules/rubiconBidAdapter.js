@@ -270,15 +270,22 @@ export const spec = {
       const siteData = Object.assign({}, bidRequest.params.inventory, config.getConfig('fpd.context'));
       const userData = Object.assign({}, bidRequest.params.visitor, config.getConfig('fpd.user'));
       if (!utils.isEmpty(siteData) || !utils.isEmpty(userData)) {
-        utils.deepSetValue(data, 'ext.prebid.data.bidders', [ bidderRequest.bidderCode ]);
+        const bidderData = {
+          bidders: [ bidderRequest.bidderCode ],
+          config: {
+            fpd: {}
+          }
+        };
 
         if (!utils.isEmpty(siteData)) {
-          utils.deepSetValue(data, 'site.ext.data', siteData);
+          bidderData.config.fpd.site = siteData;
         }
 
         if (!utils.isEmpty(userData)) {
-          utils.deepSetValue(data, 'user.ext.data', userData);
+          bidderData.config.fpd.user = userData;
         }
+
+        utils.deepSetValue(data, 'ext.prebid.bidderconfig.0', bidderData);
       }
 
       return {

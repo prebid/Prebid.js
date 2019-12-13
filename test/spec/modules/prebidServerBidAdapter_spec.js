@@ -1297,9 +1297,16 @@ describe('S2S Adapter', function () {
       const s2sBidRequest = utils.deepClone(REQUEST);
       const bidRequests = utils.deepClone(BID_REQUESTS);
 
-      const context = {
+      const commonContext = {
         keywords: ['power tools'],
-        search: 'drill',
+        search: 'drill'
+      };
+      const commonUser = {
+        keywords: ['a', 'b'],
+        gender: 'M'
+      };
+
+      const context = {
         content: { userrating: 4 },
         data: {
           pageType: 'article',
@@ -1307,8 +1314,6 @@ describe('S2S Adapter', function () {
         }
       };
       const user = {
-        keywords: ['a', 'b'],
-        gender: 'M',
         yob: '1984',
         geo: { country: 'ca' },
         data: {
@@ -1318,12 +1323,18 @@ describe('S2S Adapter', function () {
       };
       const allowedBidders = [ 'rubicon', 'appnexus' ];
 
+      const expected = [{
+        bidders: allowedBidders,
+        config: { fpd: { site: context, user } }
+      }];
+
+      config.setConfig({ fpd: { context: commonContext, user: commonUser } });
       config.setBidderConfig({ bidders: allowedBidders, config: { fpd: { context, user } } });
       adapter.callBids(s2sBidRequest, bidRequests, addBidResponse, done, ajax);
       const parsedRequestBody = JSON.parse(requests[0].requestBody);
-      expect(parsedRequestBody.ext.prebid.data.bidders).to.deep.equal(allowedBidders);
-      expect(parsedRequestBody.site.ext.data).to.deep.equal(context);
-      expect(parsedRequestBody.user.ext.data).to.deep.equal(user);
+      expect(parsedRequestBody.ext.prebid.bidderconfig).to.deep.equal(expected);
+      expect(parsedRequestBody.site.ext.data).to.deep.equal(commonContext);
+      expect(parsedRequestBody.user.ext.data).to.deep.equal(commonUser);
     });
   });
 

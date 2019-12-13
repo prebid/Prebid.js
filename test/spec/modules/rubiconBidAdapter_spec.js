@@ -1638,10 +1638,18 @@ describe('the rubicon adapter', function () {
             return utils.deepAccess(config, key);
           });
 
+          const expected = [{
+            bidders: [ 'rubicon' ],
+            config: {
+              fpd: {
+                site: Object.assign({}, bidderRequest.bids[0].params.inventory, context),
+                user: Object.assign({}, bidderRequest.bids[0].params.visitor, user)
+              }
+            }
+          }];
+
           const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
-          expect(request.data.ext.prebid.data.bidders).to.deep.equal([ 'rubicon' ]);
-          expect(request.data.site.ext.data).to.deep.equal(Object.assign({}, bidderRequest.bids[0].params.inventory, context));
-          expect(request.data.user.ext.data).to.deep.equal(Object.assign({}, bidderRequest.bids[0].params.visitor, user));
+          expect(request.data.ext.prebid.bidderconfig).to.deep.equal(expected);
         });
       });
 

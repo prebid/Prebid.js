@@ -11,6 +11,7 @@ import events from '../../src/events';
 import includes from 'core-js/library/fn/array/includes';
 import { S2S_VENDORS } from './config.js';
 import { ajax } from '../../src/ajax';
+import find from 'core-js/library/fn/array/find';
 
 const getConfig = config.getConfig;
 
@@ -286,38 +287,35 @@ function _appendSiteAppDevice(request, pageUrl) {
   }
 }
 
-function addFirstPartyDataToRequest(request) {
+function addBidderFirstPartyDataToRequest(request) {
   const bidderConfig = config.getBidderConfig();
-  let context = {};
-  let user = {};
-  const allowedBidders = [];
-  Object.keys(bidderConfig).forEach(bidder => {
+  const fpdConfigs = Object.keys(bidderConfig).reduce((acc, bidder) => {
     const currBidderConfig = bidderConfig[bidder];
     if (currBidderConfig.fpd) {
-      allowedBidders.push(bidder);
-    } else {
-      return;
-    }
+      const fpd = {};
+      if (currBidderConfig.fpd.context) {
+        fpd.site = currBidderConfig.fpd.context;
+      }
+      if (currBidderConfig.fpd.user) {
+        fpd.user = currBidderConfig.fpd.user;
+      }
 
-    if (currBidderConfig.fpd.context) {
-      context = Object.assign({}, context, currBidderConfig.fpd.context);
+      const matchingFpd = find(acc, addedFpd =>
+        JSON.stringify(addedFpd.config.fpd) === JSON.stringify(fpd));
+      if (matchingFpd) {
+        matchingFpd.bidders.push(bidder);
+      } else {
+        acc.push({
+          bidders: [ bidder ],
+          config: { fpd }
+        });
+      }
     }
+    return acc;
+  }, []);
 
-    if (currBidderConfig.fpd.user) {
-      user = Object.assign({}, user, currBidderConfig.fpd.user);
-    }
-  });
-
-  if (allowedBidders.length) {
-    utils.deepSetValue(request, 'ext.prebid.data.bidders', allowedBidders);
-
-    if (!utils.isEmpty(context)) {
-      utils.deepSetValue(request, 'site.ext.data', context);
-    }
-
-    if (!utils.isEmpty(user)) {
-      utils.deepSetValue(request, 'user.ext.data', user);
-    }
+  if (fpdConfigs.length) {
+    utils.deepSetValue(request, 'ext.prebid.bidderconfig', fpdConfigs);
   }
 }
 
@@ -680,7 +678,14 @@ const OPEN_RTB_PROTOCOL = {
       utils.deepSetValue(request, 'regs.coppa', 1);
     }
 
-    addFirstPartyDataToRequest(request);
+    const commonFpd = getConfig('fpd') || {};
+    if (commonFpd.context) {
+      utils.deepSetValue(request, 'site.ext.data', commonFpd.context);
+    }
+    if (commonFpd.user) {
+      utils.deepSetValue(request, 'user.ext.data', commonFpd.user);
+    }
+    addBidderFirstPartyDataToRequest(request);
 
     return request;
   },
