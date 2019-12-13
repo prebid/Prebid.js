@@ -1,10 +1,10 @@
-import { logError, replaceAuctionPrice } from "../src/utils";
-import { registerBidder } from "../src/adapters/bidderFactory";
-import { config } from "../src/config";
-import { NATIVE } from "../src/mediaTypes";
-import { parse as parseUrl } from "../src/url";
+import { logError, replaceAuctionPrice } from '../src/utils';
+import { registerBidder } from '../src/adapters/bidderFactory';
+import { config } from '../src/config';
+import { NATIVE } from '../src/mediaTypes';
+import { parse as parseUrl } from '../src/url';
 
-export const ENDPOINT = "https://app.readpeak.com/header/prebid";
+export const ENDPOINT = 'https://app.readpeak.com/header/prebid';
 
 const NATIVE_DEFAULTS = {
   TITLE_LEN: 70,
@@ -15,7 +15,7 @@ const NATIVE_DEFAULTS = {
   CTA_LEN: 50
 };
 
-const BIDDER_CODE = "readpeak";
+const BIDDER_CODE = 'readpeak';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -26,8 +26,8 @@ export const spec = {
     !!(bid && bid.params && bid.params.publisherId && bid.nativeParams),
 
   buildRequests: (bidRequests, bidderRequest) => {
-    const currencyObj = config.getConfig("currency");
-    const currency = (currencyObj && currencyObj.adServerCurrency) || "USD";
+    const currencyObj = config.getConfig('currency');
+    const currency = (currencyObj && currencyObj.adServerCurrency) || 'USD';
 
     const request = {
       id: bidRequests[0].bidderRequestId,
@@ -42,13 +42,13 @@ export const spec = {
         fd: 1,
         tid: bidRequests[0].transactionId,
         ext: {
-          prebid: "$prebid.version$"
+          prebid: '$prebid.version$'
         }
       }
     };
 
     return {
-      method: "POST",
+      method: 'POST',
       url: ENDPOINT,
       data: JSON.stringify(request)
     };
@@ -61,7 +61,7 @@ export const spec = {
 function bidResponseAvailable(bidRequest, bidResponse) {
   const idToImpMap = {};
   const idToBidMap = {};
-  if (!bidResponse["body"]) {
+  if (!bidResponse['body']) {
     return [];
   }
   bidResponse = bidResponse.body;
@@ -99,7 +99,7 @@ function impression(slot) {
     id: slot.bidId,
     native: nativeImpression(slot),
     bidfloor: slot.params.bidfloor || 0,
-    bidfloorcur: slot.params.bidfloorcur || "USD"
+    bidfloorcur: slot.params.bidfloorcur || 'USD'
   };
 }
 
@@ -139,7 +139,7 @@ function nativeImpression(slot) {
     );
     return {
       request: JSON.stringify({ assets }),
-      ver: "1.1"
+      ver: '1.1'
     };
   }
   return null;
@@ -167,33 +167,33 @@ function titleAsset(id, params, defaultLen) {
 function imageAsset(id, params, type, defaultMinWidth, defaultMinHeight) {
   return params
     ? {
-        id,
-        required: params.required ? 1 : 0,
-        img: {
-          type,
-          wmin: params.wmin || defaultMinWidth,
-          hmin: params.hmin || defaultMinHeight
-        }
+      id,
+      required: params.required ? 1 : 0,
+      img: {
+        type,
+        wmin: params.wmin || defaultMinWidth,
+        hmin: params.hmin || defaultMinHeight
       }
+    }
     : null;
 }
 
 function dataAsset(id, params, type, defaultLen) {
   return params
     ? {
-        id,
-        required: params.required ? 1 : 0,
-        data: {
-          type,
-          len: params.len || defaultLen
-        }
+      id,
+      required: params.required ? 1 : 0,
+      data: {
+        type,
+        len: params.len || defaultLen
       }
+    }
     : null;
 }
 
 function site(bidRequests, bidderRequest) {
   const url =
-    config.getConfig("pageUrl") ||
+    config.getConfig('pageUrl') ||
     (bidderRequest &&
       bidderRequest.refererInfo &&
       bidderRequest.refererInfo.referer);
@@ -201,20 +201,20 @@ function site(bidRequests, bidderRequest) {
   const pubId =
     bidRequests && bidRequests.length > 0
       ? bidRequests[0].params.publisherId
-      : "0";
+      : '0';
   const siteId =
-    bidRequests && bidRequests.length > 0 ? bidRequests[0].params.siteId : "0";
+    bidRequests && bidRequests.length > 0 ? bidRequests[0].params.siteId : '0';
   const appParams = bidRequests[0].params.app;
   if (!appParams) {
     return {
       publisher: {
         id: pubId.toString(),
-        domain: config.getConfig("publisherDomain")
+        domain: config.getConfig('publisherDomain')
       },
       id: siteId ? siteId.toString() : pubId.toString(),
       page: url,
       domain:
-        (url && parseUrl(url).domain) || config.getConfig("publisherDomain")
+        (url && parseUrl(url).hostname) || config.getConfig('publisherDomain')
     };
   }
   return undefined;
@@ -224,7 +224,7 @@ function app(bidderRequest) {
   const pubId =
     bidderRequest && bidderRequest.length > 0
       ? bidderRequest[0].params.publisherId
-      : "0";
+      : '0';
   const appParams = bidderRequest[0].params.app;
   if (appParams) {
     return {
@@ -264,20 +264,20 @@ function device() {
 function parse(rawResponse) {
   try {
     if (rawResponse) {
-      if (typeof rawResponse === "object") {
+      if (typeof rawResponse === 'object') {
         return rawResponse;
       } else {
         return JSON.parse(rawResponse);
       }
     }
   } catch (ex) {
-    logError("readpeakBidAdapter.safeParse", "ERROR", ex);
+    logError('readpeakBidAdapter.safeParse', 'ERROR', ex);
   }
   return null;
 }
 
 function nativeResponse(imp, bid) {
-  if (imp && imp["native"]) {
+  if (imp && imp['native']) {
     const nativeAd = parse(bid.adm);
     const keys = {};
     if (nativeAd && nativeAd.assets) {
@@ -289,10 +289,10 @@ function nativeResponse(imp, bid) {
         keys.image =
           asset.img && asset.id === 2
             ? {
-                url: asset.img.url,
-                width: asset.img.w || 750,
-                height: asset.img.h || 500
-              }
+              url: asset.img.url,
+              width: asset.img.w || 750,
+              height: asset.img.h || 500
+            }
             : keys.image;
         keys.cta = asset.data && asset.id === 5 ? asset.data.value : keys.cta;
       });
