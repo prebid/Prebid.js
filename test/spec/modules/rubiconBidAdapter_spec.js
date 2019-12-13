@@ -1634,10 +1634,7 @@ describe('the rubicon adapter', function () {
 
         it('should include pbAdSlot in bid request', function () {
           createVideoBidderRequest();
-          bidderRequest.bids[0].context = {
-            pbAdSlot: '1234567890'
-          }
-
+          utils.deepSetValue(bidderRequest.bids[0], 'ext.context.pbAdSlot', '1234567890 ');
           sandbox.stub(Date, 'now').callsFake(() =>
             bidderRequest.auctionStart + 100
           );

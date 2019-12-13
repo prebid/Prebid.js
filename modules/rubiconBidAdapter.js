@@ -273,7 +273,7 @@ export const spec = {
        */
       const pbAdSlot = utils.deepAccess(bidRequest, 'context.pbAdSlot');
       if (typeof pbAdSlot === 'string' && pbAdSlot) {
-        utils.deepSetValue(data.imp[0], 'context.data.adslot', pbAdSlot);
+        utils.deepSetValue(data.imp[0], 'ext.context.data.adslot', pbAdSlot);
       }
 
       return {
