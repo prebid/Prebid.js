@@ -3,7 +3,7 @@ import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes';
 import * as utils from '../src/utils';
 
 const BIDDER_CODE = 'advenue';
-const URL_MULTI = '//ssp.advenuemedia.co.uk/?c=o&m=multi';
+const URL_MULTI = 'https://ssp.advenuemedia.co.uk/?c=o&m=multi';
 
 export const spec = {
   code: BIDDER_CODE,

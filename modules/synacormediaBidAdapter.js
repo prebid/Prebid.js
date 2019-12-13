@@ -5,8 +5,8 @@ import { registerBidder } from '../src/adapters/bidderFactory';
 import { BANNER, VIDEO } from '../src/mediaTypes';
 import includes from 'core-js/library/fn/array/includes';
 
-const BID_HOST = '//prebid.technoratimedia.com';
-const USER_SYNC_HOST = '//ad-cdn.technoratimedia.com';
+const BID_HOST = 'https://prebid.technoratimedia.com';
+const USER_SYNC_HOST = 'https://ad-cdn.technoratimedia.com';
 const VIDEO_PARAMS = [ 'minduration', 'maxduration', 'startdelay', 'placement', 'linearity', 'mimes', 'protocols', 'api' ];
 const BLOCKED_AD_SIZES = [
   '1x1',

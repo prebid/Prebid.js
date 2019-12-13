@@ -440,7 +440,7 @@ function checkEventAfterTimeout() {
 }
 
 function sendEvent(eventType, eventName, data) {
-  let url = '//' + initOptions.server + '/' + eventType + '?publisherId=' + initOptions.publisherId + '&host=' + initOptions.host;
+  let url = 'https://' + initOptions.server + '/' + eventType + '?publisherId=' + initOptions.publisherId + '&host=' + initOptions.host;
   let eventData = {
     'event': eventType,
     'eventName': eventName,
@@ -463,7 +463,7 @@ function sendEvent(eventType, eventName, data) {
 }
 
 function loadServerConfig() {
-  let url = '//' + initOptions.configServer + '/c' + '?publisherId=' + initOptions.publisherId + '&host=' + initOptions.host;
+  let url = 'https://' + initOptions.configServer + '/c' + '?publisherId=' + initOptions.publisherId + '&host=' + initOptions.host;
   ajax(
     url,
     {

@@ -4,14 +4,14 @@ import { BANNER } from '../src/mediaTypes';
 
 const BIDDER_CODE = 'meazy';
 const PREBID_ENDPOINT = 'rtb-filter.meazy.co';
-const SYNC_ENDPOINT = '//sync.meazy.co/sync/iframe';
+const SYNC_ENDPOINT = 'https://sync.meazy.co/sync/iframe';
 const ENDPOINT_CONFIG = {
   defaultCurrency: ['USD'],
   availableSize: ['300x250', '320x480', '160x600']
 };
 
 const buildURI = (pid) => {
-  return `//${PREBID_ENDPOINT}/pbjs?host=${utils.getOrigin()}&api_key=${pid}`;
+  return `https://${PREBID_ENDPOINT}/pbjs?host=${utils.getOrigin()}&api_key=${pid}`;
 }
 
 const validateSize = (size) => {
