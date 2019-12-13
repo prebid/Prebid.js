@@ -35,8 +35,9 @@ function getCapabilities() {
 }
 
 exports.config = {
+  // TODO: below change is only for testing and is to be removed.
   specs: [
-    './test/spec/e2e/**/*.spec.js'
+    './test/spec/e2e/banner/*.spec.js'
   ],
   services: ['browserstack'],
   user: process.env.BROWSERSTACK_USERNAME,

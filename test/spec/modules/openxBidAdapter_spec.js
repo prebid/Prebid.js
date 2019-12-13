@@ -1764,6 +1764,85 @@ describe('OpenxAdapter', function () {
       );
       expect(syncs).to.deep.equal([{type: 'iframe', url: syncUrl}]);
     });
+
+    describe('when gdpr applies', function () {
+      let gdprConsent;
+      let gdprPixelUrl;
+      beforeEach(() => {
+        gdprConsent = {
+          consentString: 'test-gdpr-consent-string',
+          gdprApplies: true
+        };
+
+        gdprPixelUrl = 'https://testpixels.net?gdpr=1&gdpr_consent=gdpr-pixel-consent'
+      });
+
+      it('when there is a response, it should have the gdpr query params', () => {
+        let [{url}] = spec.getUserSyncs(
+          {iframeEnabled: true, pixelEnabled: true},
+          [{body: {ads: {pixels: gdprPixelUrl}}}],
+          gdprConsent
+        );
+
+        expect(url).to.have.string('gdpr_consent=gdpr-pixel-consent');
+        expect(url).to.have.string('gdpr=1');
+      });
+
+      it('when there is no response, it should append gdpr query params', () => {
+        let [{url}] = spec.getUserSyncs(
+          {iframeEnabled: true, pixelEnabled: true},
+          [],
+          gdprConsent
+        );
+        expect(url).to.have.string('gdpr_consent=test-gdpr-consent-string');
+        expect(url).to.have.string('gdpr=1');
+      });
+
+      it('should not send signals if no consent object is available', function () {
+        let [{url}] = spec.getUserSyncs(
+          {iframeEnabled: true, pixelEnabled: true},
+          [],
+        );
+        expect(url).to.not.have.string('gdpr_consent=');
+        expect(url).to.not.have.string('gdpr=');
+      });
+    });
+
+    describe('when ccpa applies', function () {
+      let usPrivacyConsent;
+      let uspPixelUrl;
+      beforeEach(() => {
+        usPrivacyConsent = 'TEST';
+        uspPixelUrl = 'https://testpixels.net?us_privacy=AAAA'
+      });
+      it('when there is a response, it should send the us privacy string from the response, ', () => {
+        let [{url}] = spec.getUserSyncs(
+          {iframeEnabled: true, pixelEnabled: true},
+          [{body: {ads: {pixels: uspPixelUrl}}}],
+          undefined,
+          usPrivacyConsent
+        );
+
+        expect(url).to.have.string('us_privacy=AAAA');
+      });
+      it('when there is no response, it send have the us privacy string', () => {
+        let [{url}] = spec.getUserSyncs(
+          {iframeEnabled: true, pixelEnabled: true},
+          [],
+          undefined,
+          usPrivacyConsent
+        );
+        expect(url).to.have.string(`us_privacy=${usPrivacyConsent}`);
+      });
+
+      it('should not send signals if no consent string is available', function () {
+        let [{url}] = spec.getUserSyncs(
+          {iframeEnabled: true, pixelEnabled: true},
+          [],
+        );
+        expect(url).to.not.have.string('us_privacy=');
+      });
+    });
   });
 
   /**
