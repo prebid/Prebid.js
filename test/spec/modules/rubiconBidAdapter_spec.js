@@ -1631,6 +1631,20 @@ describe('the rubicon adapter', function () {
           const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
           expect(request.data.regs.coppa).to.equal(1);
         });
+
+        it('should include pbAdSlot in bid request', function () {
+          createVideoBidderRequest();
+          bidderRequest.bids[0].context = {
+            pbAdSlot: '1234567890'
+          }
+
+          sandbox.stub(Date, 'now').callsFake(() =>
+            bidderRequest.auctionStart + 100
+          );
+
+          const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          expect(request.data.imp[0].context.data.adslot).to.equal('1234567890');
+        });
       });
 
       describe('combineSlotUrlParams', function () {
