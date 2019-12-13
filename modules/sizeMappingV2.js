@@ -29,7 +29,7 @@ import {
 // Maps auctionId to a boolean value, value is set to true if Adunits are setup to use the new size mapping, else it's set to false.
 const _sizeMappingUsageMap = {};
 
-function isUsingNewSizeMapping(adUnits, auctionId) {
+function isUsingNewSizeMapping(adUnits) {
   let isUsingSizeMappingBool = false;
   adUnits.forEach(adUnit => {
     if (adUnit.mediaTypes) {
@@ -52,9 +52,6 @@ function isUsingNewSizeMapping(adUnits, auctionId) {
       });
     }
   });
-  if (auctionId) {
-    _sizeMappingUsageMap[auctionId] = isUsingSizeMappingBool;
-  }
   return isUsingSizeMappingBool;
 }
 
@@ -175,7 +172,10 @@ function checkBidderSizeConfigFormat(sizeConfig) {
 getHook('getBids').before(function (fn, bidderInfo) {
   // check if the adUnit is using sizeMappingV2 specs and store the result in _sizeMappingUsageMap.
   if (typeof _sizeMappingUsageMap[bidderInfo.auctionId] === 'undefined') {
-    isUsingNewSizeMapping(bidderInfo.adUnits, bidderInfo.auctionId);
+    const isUsingSizeMappingBool = isUsingNewSizeMapping(bidderInfo.adUnits);
+
+    // populate _sizeMappingUsageMap for the first time for a particular auction
+    _sizeMappingUsageMap[bidderInfo.auctionId] = isUsingSizeMappingBool;
   }
   if (_sizeMappingUsageMap[bidderInfo.auctionId]) {
     // if adUnit is found using sizeMappingV2 specs, run the getBids function which processes the sizeConfig object
