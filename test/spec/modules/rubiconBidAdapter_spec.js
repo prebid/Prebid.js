@@ -1634,13 +1634,15 @@ describe('the rubicon adapter', function () {
 
         it('should include pbAdSlot in bid request', function () {
           createVideoBidderRequest();
-          utils.deepSetValue(bidderRequest.bids[0], 'ext.context.pbAdSlot', '1234567890 ');
+          bidderRequest.bids[0].context = {
+            pbAdSlot: '/1234567890'
+          }
           sandbox.stub(Date, 'now').callsFake(() =>
             bidderRequest.auctionStart + 100
           );
 
           const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
-          expect(request.data.imp[0].context.data.adslot).to.equal('1234567890');
+          expect(request.data.imp[0].ext.context.data.adslot).to.equal('1234567890');
         });
       });
 
