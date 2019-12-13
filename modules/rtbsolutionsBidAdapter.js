@@ -1,5 +1,6 @@
 import { registerBidder } from '../src/adapters/bidderFactory';
 import * as utils from '../src/utils';
+import { ajax } from '../src/ajax';
 
 const BIDDER_CODE = 'rtbsolutions';
 const ENDPOINT_URL = 'https://dsp-eu-lb.rtbsolutions.pro/bid/hb';
@@ -75,7 +76,7 @@ export const spec = {
     return bidResponses;
   },
   onBidWon: function(bid) {
-    fetch(this.nurls[bid.requestId])
+    ajax(this.nurls[bid.requestId], null);
   },
 
   getLanguage() {
