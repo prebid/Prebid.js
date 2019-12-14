@@ -2,7 +2,7 @@ import * as utils from '../src/utils';
 import {registerBidder} from '../src/adapters/bidderFactory';
 
 const BIDDER_CODE = 'admedia';
-const ENDPOINT_URL = '//prebid.admedia.com/bidder/';
+const ENDPOINT_URL = 'https://prebid.admedia.com/bidder/';
 
 export const spec = {
   code: BIDDER_CODE,

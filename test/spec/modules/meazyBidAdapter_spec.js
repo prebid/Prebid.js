@@ -4,7 +4,7 @@ import { spec } from 'modules/meazyBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
 
 const MEAZY_PID = '6910b7344ae566a1'
-const VALID_ENDPOINT = `//rtb-filter.meazy.co/pbjs?host=${utils.getOrigin()}&api_key=${MEAZY_PID}`;
+const VALID_ENDPOINT = `https://rtb-filter.meazy.co/pbjs?host=${utils.getOrigin()}&api_key=${MEAZY_PID}`;
 
 const bidderRequest = {
   refererInfo: {
@@ -50,7 +50,7 @@ const bidContent = {
 const bidContentExt = {
   ...bidContent,
   ext: {
-    'syncUrl': '//sync.meazy.co/sync/img?api_key=6910b7344ae566a1'
+    'syncUrl': 'https://sync.meazy.co/sync/img?api_key=6910b7344ae566a1'
   }
 };
 
@@ -158,8 +158,8 @@ describe('meazyBidAdapter', function () {
     const syncOptionsEE = { pixelEnabled: true, iframeEnabled: true };
     const syncOptionsFE = { pixelEnabled: true, iframeEnabled: false };
 
-    const successIFrame = { type: 'iframe', url: '//sync.meazy.co/sync/iframe' };
-    const successPixel = { type: 'image', url: '//sync.meazy.co/sync/img?api_key=6910b7344ae566a1' };
+    const successIFrame = { type: 'iframe', url: 'https://sync.meazy.co/sync/iframe' };
+    const successPixel = { type: 'image', url: 'https://sync.meazy.co/sync/img?api_key=6910b7344ae566a1' };
 
     it('should return an empty array', function () {
       expect(spec.getUserSyncs(syncOptionsFF, [])).to.be.empty;
