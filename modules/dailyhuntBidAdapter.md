@@ -16,8 +16,13 @@ Dailyhunt bid adapter supports Banner and Native.
 ```
     var adUnits = [
         {
-            code: 'test-banner-adunit-code',
+            code: '/83414793/prebid_test_display',
             sizes: [[300, 250], [320, 50]],
+            mediaTypes: {
+                banner : {
+                    sizes: [[300, 250], [320, 50]],
+                }
+            },
             bids: [
                 {
                     bidder: 'dailyhunt',
@@ -28,7 +33,7 @@ Dailyhunt bid adapter supports Banner and Native.
             ]
         },
         {
-            code: 'test-native-adunit-code',
+            code: '/83414793/prebid_test_native',
             sizes: [[300, 250]],
             mediaTypes: {
                 native: {
@@ -41,9 +46,9 @@ Dailyhunt bid adapter supports Banner and Native.
                     image: {
                         required: true
                     },
-                    sponsoredBy: {
+                    cta: {
                         required: true
-                    },
+                    }
                 }
             },
             bids: [
