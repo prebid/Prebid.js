@@ -168,8 +168,7 @@ export const spec = {
       }
       const { seatbid } = serverResponse.body;
       let bids = request.bids;
-      let index = 0;
-      return bids.reduce((accumulator, bid) => {
+      return bids.reduce((accumulator, bid, index) => {
         const _cbid = seatbid && seatbid[index] && seatbid[index].bid;
         const bidResponse = _cbid && _cbid[0];
         if (bidResponse) {
@@ -185,7 +184,6 @@ export const spec = {
             ad: bidResponse.adm
           });
         }
-        index++;
         return accumulator;
       }, []);
     }
