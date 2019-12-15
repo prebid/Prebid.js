@@ -19,7 +19,6 @@ var adUnits = [
    // Banner adUnit
    {
      code: 'banner-div',
-     sizes: [[300, 250]],
      bids: [{
        bidder: 'gamoshi',
        params: {
