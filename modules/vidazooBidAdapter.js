@@ -1,10 +1,12 @@
 import * as utils from '../src/utils';
-import {registerBidder} from '../src/adapters/bidderFactory';
-import {BANNER} from '../src/mediaTypes';
-export const URL = 'https://prebid.cootlogix.com';
+import { registerBidder } from '../src/adapters/bidderFactory';
+import { BANNER } from '../src/mediaTypes';
+
+export const URL = 'http://localhost:8067'; // '//prebid.cootlogix.com';
 const BIDDER_CODE = 'vidazoo';
 const CURRENCY = 'USD';
 const TTL_SECONDS = 60 * 5;
+const SESSION_NAME = '__vdz_prebid_session';
 const INTERNAL_SYNC_TYPE = {
   IFRAME: 'iframe',
   IMAGE: 'img'
@@ -20,13 +22,13 @@ function isBidRequestValid(bid) {
 }
 
 function buildRequest(bid, topWindowUrl, size, bidderRequest) {
-  const {params, bidId} = bid;
-  const {bidFloor, cId, pId, ext} = params;
+  const { params, bidId } = bid;
+  const { bidFloor, cId, pId, ext } = params;
   // Prebid's util function returns AppNexus style sizes (i.e. 300x250)
   const [width, height] = size.split('x');
 
   const dto = {
-    method: 'GET',
+    method: 'POST',
     url: `${URL}/prebid/${cId}`,
     data: {
       url: encodeURIComponent(topWindowUrl),
@@ -35,6 +37,7 @@ function buildRequest(bid, topWindowUrl, size, bidderRequest) {
       bidId: bidId,
       publisherId: pId,
       consent: bidderRequest.gdprConsent && bidderRequest.gdprConsent.consentString,
+      sessionId: getLocalStorage(SESSION_NAME) || '',
       width,
       height
     }
@@ -64,11 +67,16 @@ function interpretResponse(serverResponse, request) {
   if (!serverResponse || !serverResponse.body) {
     return [];
   }
-  const {creativeId, ad, price, exp} = serverResponse.body;
+  const { creativeId, ad, price, exp, sessionId } = serverResponse.body;
   if (!ad || !price) {
     return [];
   }
-  const {bidId, width, height} = request.data;
+
+  if (sessionId) {
+    setLocalStorage(SESSION_NAME, sessionId)
+  }
+
+  const { bidId, width, height } = request.data;
   try {
     return [{
       requestId: bidId,
@@ -86,13 +94,27 @@ function interpretResponse(serverResponse, request) {
   }
 }
 
+function setLocalStorage(key, value) {
+  try {
+    window.localStorage.setItem(key, value);
+  } catch (ex) {
+  }
+}
+
+function getLocalStorage(key) {
+  try {
+    return window.localStorage.getItem(key);
+  } catch (ex) {
+  }
+}
+
 function getUserSyncs(syncOptions, responses) {
-  const {iframeEnabled, pixelEnabled} = syncOptions;
+  const { iframeEnabled, pixelEnabled } = syncOptions;
 
   if (iframeEnabled) {
     return [{
       type: 'iframe',
-      url: 'https://static.cootlogix.com/basev/sync/user_sync.html'
+      url: '//static.cootlogix.com/basev/sync/user_sync.html'
     }];
   }
 
@@ -100,7 +122,7 @@ function getUserSyncs(syncOptions, responses) {
     const lookup = {};
     const syncs = [];
     responses.forEach(response => {
-      const {body} = response;
+      const { body } = response;
       const cookies = body ? body.cookies || [] : [];
       cookies.forEach(cookie => {
         switch (cookie.type) {

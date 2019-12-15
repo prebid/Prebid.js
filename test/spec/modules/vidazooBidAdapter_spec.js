@@ -1,5 +1,5 @@
-import {expect} from 'chai';
-import {spec as adapter, URL} from 'modules/vidazooBidAdapter';
+import { expect } from 'chai';
+import { spec as adapter, URL } from 'modules/vidazooBidAdapter';
 import * as utils from 'src/utils';
 
 const BID = {
@@ -25,7 +25,7 @@ const BIDDER_REQUEST = {
     'consentString': 'consent_string'
   },
   'refererInfo': {
-    'referer': 'https://www.greatsite.com'
+    'referer': 'http://www.greatsite.com'
   }
 };
 
@@ -118,36 +118,39 @@ describe('VidazooBidAdapter', function () {
     });
 
     it('should build request for each size', function () {
+      localStorage.setItem('__vdz_prebid_session', '12345');
       const requests = adapter.buildRequests([BID], BIDDER_REQUEST);
       expect(requests).to.have.length(2);
       expect(requests[0]).to.deep.equal({
-        method: 'GET',
+        method: 'POST',
         url: `${URL}/prebid/59db6b3b4ffaa70004f45cdc`,
         data: {
           consent: 'consent_string',
           width: '300',
           height: '250',
-          url: 'https%3A%2F%2Fwww.greatsite.com',
+          url: 'http%3A%2F%2Fwww.greatsite.com',
           cb: 1000,
           bidFloor: 0.1,
           bidId: '2d52001cabd527',
+          sessionId: '12345',
           publisherId: '59ac17c192832d0011283fe3',
           'ext.param1': 'loremipsum',
           'ext.param2': 'dolorsitamet',
         }
       });
       expect(requests[1]).to.deep.equal({
-        method: 'GET',
+        method: 'POST',
         url: `${URL}/prebid/59db6b3b4ffaa70004f45cdc`,
         data: {
           consent: 'consent_string',
           width: '300',
           height: '600',
-          url: 'https%3A%2F%2Fwww.greatsite.com',
+          url: 'http%3A%2F%2Fwww.greatsite.com',
           cb: 1000,
           bidFloor: 0.1,
           bidId: '2d52001cabd527',
           publisherId: '59ac17c192832d0011283fe3',
+          sessionId: '12345',
           'ext.param1': 'loremipsum',
           'ext.param2': 'dolorsitamet',
         }
@@ -166,12 +169,12 @@ describe('VidazooBidAdapter', function () {
     });
 
     it('should return empty array when there is no ad', function () {
-      const responses = adapter.interpretResponse({price: 1, ad: ''});
+      const responses = adapter.interpretResponse({ price: 1, ad: '' });
       expect(responses).to.be.empty;
     });
 
     it('should return empty array when there is no price', function () {
-      const responses = adapter.interpretResponse({price: null, ad: 'great ad'});
+      const responses = adapter.interpretResponse({ price: null, ad: 'great ad' });
       expect(responses).to.be.empty;
     });
 
