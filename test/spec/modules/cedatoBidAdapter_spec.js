@@ -68,7 +68,7 @@ describe('the cedato adapter', function () {
                 adomain: 'cedato.com',
                 uuid: bid.bidId,
                 crid: '1450133326',
-                adm: "<div id=\"cedato-unit\"></div>\n<script src=\"https://p.cedatoplayer.com/zplayer.js?p=952030718&cb=874433&d=localhost\" type=\"text/javascript\"></script>\n<img src='//h.cedatoplayer.com/hbwon?cb=874433&p=0.1&pi=952030718&w=300&h=250&s=952030718&d=localhost&u=a4657bf1-c373-4676-b79a-0d9de0129e38&ab=2' width=\"1\" height=\"1\"/>\n",
+                adm: "<div id=\"cedato-unit\"></div>\n<script src=\"https://p.cedatoplayer.com/zplayer.js?p=952030718&cb=874433&d=localhost\" type=\"text/javascript\"></script>\n<img src='https://h.cedatoplayer.com/hbwon?cb=874433&p=0.1&pi=952030718&w=300&h=250&s=952030718&d=localhost&u=a4657bf1-c373-4676-b79a-0d9de0129e38&ab=2' width=\"1\" height=\"1\"/>\n",
                 h: 250,
                 w: 300,
                 price: '0.1'

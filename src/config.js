@@ -1,6 +1,17 @@
 /*
  * Module for getting and setting Prebid configuration.
  */
+
+/**
+ * @typedef {Object} MediaTypePriceGranularity
+ *
+ * @property {(string|Object)} [banner]
+ * @property {(string|Object)} [native]
+ * @property {(string|Object)} [video]
+ * @property {(string|Object)} [video-instream]
+ * @property {(string|Object)} [video-outstream]
+ */
+
 import { isValidPriceConfig } from './cpmBucketManager';
 import find from 'core-js/library/fn/array/find';
 import includes from 'core-js/library/fn/array/includes';
@@ -106,7 +117,12 @@ export function newConfig() {
         return this._customPriceBucket;
       },
 
+      /**
+       * mediaTypePriceGranularity
+       * @type {MediaTypePriceGranularity}
+       */
       _mediaTypePriceGranularity: {},
+
       get mediaTypePriceGranularity() {
         return this._mediaTypePriceGranularity;
       },
