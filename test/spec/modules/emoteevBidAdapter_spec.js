@@ -803,7 +803,6 @@ describe('emoteevBidAdapter', function () {
     });
     describe('interpretResponse', function () {
       it('has intended side-effects', function () {
-        debugger; //eslint-disable-line
         spec.interpretResponse(serverResponse);
         sinon.assert.notCalled(utils.triggerPixel);
         sinon.assert.notCalled(utils.getCookie);
