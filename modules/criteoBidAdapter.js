@@ -5,10 +5,9 @@ import { BANNER, VIDEO } from '../src/mediaTypes';
 import { parse } from '../src/url';
 import * as utils from '../src/utils';
 import find from 'core-js/library/fn/array/find';
-import JSEncrypt from 'jsencrypt/bin/jsencrypt';
-import sha256 from 'crypto-js/sha256';
+import { verify } from 'criteo-direct-rsa-validate/build/verify';
 
-export const ADAPTER_VERSION = 21;
+export const ADAPTER_VERSION = 24;
 const BIDDER_CODE = 'criteo';
 const CDB_ENDPOINT = 'https://bidder.criteo.com/cdb';
 const CRITEO_VENDOR_ID = 91;
@@ -18,12 +17,8 @@ export const PROFILE_ID_PUBLISHERTAG = 185;
 // Unminified source code can be found in: https://github.com/Prebid-org/prebid-js-external-js-criteo/blob/master/dist/prod.js
 const PUBLISHER_TAG_URL = '//static.criteo.net/js/ld/publishertag.prebid.js';
 
-export const FAST_BID_PUBKEY = `-----BEGIN PUBLIC KEY-----
-MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDO1BjAITkFTtP0IMzmF7qsqhpu
-y1dGaTPHnjMU9mRZsrnfR3C0sEN5pYEzEcFRPnkJjJuhH8Rnh5+CE+LcKg0Z8ZZ7
-OmOSj0/qnYTAYCu0cR5LiyWG79KlIgUyMbp92ulGg24gAyGrVn4+v/4c53WlOEUp
-4YWvb82G0CD5NcDNpQIDAQAB
------END PUBLIC KEY-----`;
+const FAST_BID_PUBKEY_E = 65537;
+const FAST_BID_PUBKEY_N = 'ztQYwCE5BU7T9CDM5he6rKoabstXRmkzx54zFPZkWbK530dwtLBDeaWBMxHBUT55CYyboR/EZ4efghPi3CoNGfGWezpjko9P6p2EwGArtHEeS4slhu/SpSIFMjG6fdrpRoNuIAMhq1Z+Pr/+HOd1pThFKeGFr2/NhtAg+TXAzaU=';
 
 /** @type {BidderSpec} */
 export const spec = {
@@ -79,7 +74,7 @@ export const spec = {
       url = adapter.buildCdbUrl();
       data = adapter.buildCdbRequest();
     } else {
-      const context = buildContext(bidRequests);
+      const context = buildContext(bidRequests, bidderRequest);
       url = buildCdbUrl(context);
       data = buildCdbRequest(context, bidRequests, bidderRequest);
     }
@@ -121,7 +116,7 @@ export const spec = {
           width: slot.width,
           height: slot.height,
           dealId: slot.dealCode,
-        }
+        };
         if (slot.native) {
           bid.ad = createNativeAd(bidId, slot.native, bidRequest.params.nativeCallback);
         } else if (slot.video) {
@@ -177,14 +172,18 @@ function publisherTagAvailable() {
 
 /**
  * @param {BidRequest[]} bidRequests
+ * @param bidderRequest
  * @return {CriteoContext}
  */
-function buildContext(bidRequests) {
-  const url = utils.getTopWindowUrl();
-  const queryString = parse(url).search;
+function buildContext(bidRequests, bidderRequest) {
+  let referrer = '';
+  if (bidderRequest && bidderRequest.refererInfo) {
+    referrer = bidderRequest.refererInfo.referer;
+  }
+  const queryString = parse(referrer).search;
 
   const context = {
-    url: url,
+    url: referrer,
     debug: queryString['pbt_debug'] === '1',
     noLog: queryString['pbt_nolog'] === '1',
     amp: false,
@@ -194,7 +193,7 @@ function buildContext(bidRequests) {
     if (bidRequest.params.integrationMode === 'amp') {
       context.amp = true;
     }
-  })
+  });
 
   return context;
 }
@@ -362,27 +361,24 @@ function hasValidVideoMediaType(bidRequest) {
  */
 function createNativeAd(id, payload, callback) {
   // Store the callback and payload in a global object to be later accessed from the creative
-  window.criteo_prebid_native_slots = window.criteo_prebid_native_slots || {};
-  window.criteo_prebid_native_slots[id] = { callback, payload };
+  var slotsName = 'criteo_prebid_native_slots';
+  window[slotsName] = window[slotsName] || {};
+  window[slotsName][id] = { callback, payload };
 
   // The creative is in an iframe so we have to get the callback and payload
   // from the parent window (doesn't work with safeframes)
-  return `<script type="text/javascript">
-    var win = window;
-    for (var i = 0; i < 10; ++i) {
-      win = win.parent;
-      if (win.criteo_prebid_native_slots) {
-        var responseSlot = win.criteo_prebid_native_slots["${id}"];
-        responseSlot.callback(responseSlot.payload);
-        break;
-      }
-    }
-  </script>`;
+  return `
+<script type="text/javascript">
+for (var i = 0; i < 10; ++i) {
+ var slots = window.parent.${slotsName};
+  if(!slots){continue;}
+  var responseSlot = slots["${id}"];
+  responseSlot.callback(responseSlot.payload);
+  break;
+}
+</script>`;
 }
 
-/**
- * @return {boolean}
- */
 export function tryGetCriteoFastBid() {
   try {
     const fastBidStorageKey = 'criteo_fast_bid';
@@ -402,11 +398,12 @@ export function tryGetCriteoFastBid() {
         const publisherTagHash = firstLine.substr(hashPrefix.length);
         const publisherTag = fastBidFromStorage.substr(firstLineEndPosition + 1);
 
-        var jsEncrypt = new JSEncrypt();
-        jsEncrypt.setPublicKey(FAST_BID_PUBKEY);
-        if (jsEncrypt.verify(publisherTag, publisherTagHash, sha256)) {
+        if (verify(publisherTag, publisherTagHash, FAST_BID_PUBKEY_N, FAST_BID_PUBKEY_E)) {
           utils.logInfo('Using Criteo FastBid');
-          eval(publisherTag); // eslint-disable-line no-eval
+          const script = document.createElement('script');
+          script.type = 'text/javascript';
+          script.text = publisherTag;
+          utils.insertElement(script);
         } else {
           utils.logWarn('Invalid Criteo FastBid found');
           localStorage.removeItem(fastBidStorageKey);

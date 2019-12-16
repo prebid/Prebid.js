@@ -20,8 +20,36 @@ export const spec = {
    * @param {BidRequest} bid - The bid params to validate.
    * @return {boolean} True if this is a valid bid, and false otherwise.
    */
-  isBidRequestValid: bid => !!(bid.params && (bid.params.ad_unit || bid.params.placement_id) && (bid.params.sizes || bid.sizes)),
+  isBidRequestValid: (bid) => {
+    if (!bid.params) {
+      return false;
+    }
+    if (!bid.params.ad_unit && !bid.params.placement_id) {
+      return false;
+    }
 
+    if (!deepAccess(bid, 'mediaTypes.banner') && !deepAccess(bid, 'mediaTypes.video')) {
+      return false;
+    }
+
+    if (deepAccess(bid, 'mediaTypes.banner')) { // Sonobi does not support multi type bids, favor banner over video
+      if (!deepAccess(bid, 'mediaTypes.banner.sizes') && !bid.params.sizes) {
+        // sizes at the banner or params level is required.
+        return false;
+      }
+    } else if (deepAccess(bid, 'mediaTypes.video')) {
+      if (deepAccess(bid, 'mediaTypes.video.context') === 'outstream' && !bid.params.sizes) {
+        // bids.params.sizes is required for outstream video adUnits
+        return false;
+      }
+      if (deepAccess(bid, 'mediaTypes.video.context') === 'instream' && !deepAccess(bid, 'mediaTypes.video.playerSize')) {
+        // playerSize is required for instream adUnits.
+        return false;
+      }
+    }
+
+    return true;
+  },
   /**
    * Make a server request from the list of BidRequests.
    *
@@ -106,6 +134,12 @@ export const spec = {
     }
     if (deepAccess(validBidRequests[0], 'userId') && Object.keys(validBidRequests[0].userId).length > 0) {
       payload.userid = JSON.stringify(validBidRequests[0].userId);
+    }
+
+    let keywords = validBidRequests[0].params.keywords; // a CSV of keywords
+
+    if (keywords) {
+      payload.kw = keywords;
     }
 
     // If there is no key_maker data, then don't make the request.
@@ -227,10 +261,21 @@ function _findBidderRequest(bidderRequests, bidId) {
 }
 
 function _validateSize (bid) {
+  if (deepAccess(bid, 'mediaTypes.video')) {
+    return ''; // Video bids arent allowed to override sizes via the trinity request
+  }
+
   if (bid.params.sizes) {
     return parseSizesInput(bid.params.sizes).join(',');
   }
-  return parseSizesInput(bid.sizes).join(',');
+  if (deepAccess(bid, 'mediaTypes.banner.sizes')) {
+    return parseSizesInput(deepAccess(bid, 'mediaTypes.banner.sizes')).join(',');
+  }
+
+  // Handle deprecated sizes definition
+  if (bid.sizes) {
+    return parseSizesInput(bid.sizes).join(',');
+  }
 }
 
 function _validateSlot (bid) {

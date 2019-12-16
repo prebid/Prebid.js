@@ -81,7 +81,6 @@ describe('Adkernel adapter', function () {
       bidId: 'Bid_Video',
       bidderRequestId: '18b2a61ea5d9a7',
       auctionId: 'de45acf1-9109-4e52-8013-f2b7cf5f6766',
-      sizes: [[640, 480]],
       params: {
         zoneId: 1,
         host: 'rtb.adkernel.com',
@@ -103,7 +102,6 @@ describe('Adkernel adapter', function () {
       },
       adUnitCode: 'ad-unit-1',
       transactionId: 'f82c64b8-c602-42a4-9791-4a268f6559ed',
-      sizes: [[300, 250], [300, 200]],
       bidId: 'Bid_01',
       bidderRequestId: 'req-001',
       auctionId: 'auc-001'
@@ -125,7 +123,7 @@ describe('Adkernel adapter', function () {
       }],
       cur: 'USD',
       ext: {
-        adk_usersync: ['http://adk.sync.com/sync']
+        adk_usersync: ['https://adk.sync.com/sync']
       }
     }, bidResponse2 = {
       id: 'bid2',
@@ -158,14 +156,15 @@ describe('Adkernel adapter', function () {
     }, usersyncOnlyResponse = {
       id: 'nobid1',
       ext: {
-        adk_usersync: ['http://adk.sync.com/sync']
+        adk_usersync: ['https://adk.sync.com/sync']
       }
     };
 
   function buildBidderRequest(url = 'https://example.com/index.html', params = {}) {
-    return Object.assign({}, params, {refererInfo: {referer: url, reachedTop: true}})
+    return Object.assign({}, params, {refererInfo: {referer: url, reachedTop: true}, timeout: 3000});
   }
   const DEFAULT_BIDDER_REQUEST = buildBidderRequest();
+
   function buildRequest(bidRequests, bidderRequest = DEFAULT_BIDDER_REQUEST, dnt = true) {
     let dntmock = sinon.stub(utils, 'getDNT').callsFake(() => dnt);
     let pbRequests = spec.buildRequests(bidRequests, bidderRequest);
@@ -247,7 +246,7 @@ describe('Adkernel adapter', function () {
 
     it('should contain gdpr-related information if consent is configured', function () {
       let [_, bidRequests] = buildRequest([bid1_zone1],
-        buildBidderRequest('http://example.com/index.html',
+        buildBidderRequest('https://example.com/index.html',
           {gdprConsent: {gdprApplies: true, consentString: 'test-consent-string', vendorData: {}}}));
       let bidRequest = bidRequests[0];
       expect(bidRequest).to.have.property('regs');
@@ -267,6 +266,12 @@ describe('Adkernel adapter', function () {
     it('should\'t pass dnt if state is unknown', function () {
       let [_, bidRequests] = buildRequest([bid1_zone1], DEFAULT_BIDDER_REQUEST, false);
       expect(bidRequests[0].device).to.not.have.property('dnt');
+    });
+
+    it('should forward default bidder timeout', function() {
+      let [_, bidRequests] = buildRequest([bid1_zone1], DEFAULT_BIDDER_REQUEST);
+      let bidRequest = bidRequests[0];
+      expect(bidRequests[0]).to.have.property('tmax', 3000);
     });
   });
 
@@ -315,8 +320,8 @@ describe('Adkernel adapter', function () {
     it('should issue a request for each host', function () {
       let [pbRequests, _] = buildRequest([bid1_zone1, bid3_host2]);
       expect(pbRequests).to.have.length(2);
-      expect(pbRequests[0].url).to.have.string(`//${bid1_zone1.params.host}/`);
-      expect(pbRequests[1].url).to.have.string(`//${bid3_host2.params.host}/`);
+      expect(pbRequests[0].url).to.have.string(`https://${bid1_zone1.params.host}/`);
+      expect(pbRequests[1].url).to.have.string(`https://${bid3_host2.params.host}/`);
     });
 
     it('should issue a request for each zone', function () {
@@ -373,14 +378,14 @@ describe('Adkernel adapter', function () {
       syncs = spec.getUserSyncs({iframeEnabled: true}, [{body: bidResponse1}]);
       expect(syncs).to.have.length(1);
       expect(syncs[0]).to.have.property('type', 'iframe');
-      expect(syncs[0]).to.have.property('url', 'http://adk.sync.com/sync');
+      expect(syncs[0]).to.have.property('url', 'https://adk.sync.com/sync');
     });
   });
 
   describe('adapter configuration', () => {
     it('should have aliases', () => {
-      expect(spec.aliases).to.have.lengthOf(4);
-      expect(spec.aliases).to.be.eql(['headbidding', 'adsolut', 'oftmediahb', 'audiencemedia']);
+      expect(spec.aliases).to.have.lengthOf(6);
+      expect(spec.aliases).to.include.members(['headbidding', 'adsolut', 'oftmediahb', 'audiencemedia', 'waardex_ak', 'roqoon']);
     });
   });
 });

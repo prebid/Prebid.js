@@ -232,7 +232,7 @@ export const spec = {
         Object.keys(sourceIds).forEach(sourceId => {
           let impObj = sourceIds[sourceId];
           collection.push({
-            url: `${impObj.protocol}${host}/${impObj.path}/?${impObj.idParam}=${sourceId}`,
+            url: `https://${host}/${impObj.path}/?${impObj.idParam}=${sourceId}`,
             body: {
               id: bidderRequest.auctionId,
               imp: impObj.imps,
