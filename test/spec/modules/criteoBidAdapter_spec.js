@@ -596,6 +596,49 @@ describe('The Criteo bidding adapter', function () {
       expect(request.data.user.uspIab).to.equal(undefined);
     });
 
+    it('should properly build a request with ccpa consent field', function () {
+      const bidRequests = [
+        {
+          bidder: 'criteo',
+          adUnitCode: 'bid-123',
+          transactionId: 'transaction-123',
+          sizes: [[728, 90]],
+          params: {
+            zoneId: 123,
+          },
+        },
+      ];
+      const bidderRequest = {
+        timeout: 3000,
+        uspConsent: '1YNY',
+      };
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.user).to.not.be.null;
+      expect(request.data.user.uspIab).to.equal('1YNY');
+    });
+
+    it('should properly build a request with if ccpa consent field is not provided', function () {
+      const bidRequests = [
+        {
+          bidder: 'criteo',
+          adUnitCode: 'bid-123',
+          transactionId: 'transaction-123',
+          sizes: [[728, 90]],
+          params: {
+            zoneId: 123,
+          },
+        },
+      ];
+      const bidderRequest = {
+        timeout: 3000
+      };
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.user).to.not.be.null;
+      expect(request.data.user.uspIab).to.equal(undefined);
+    });
+
     it('should properly build a video request', function () {
       const bidRequests = [
         {

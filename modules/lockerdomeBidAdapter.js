@@ -38,6 +38,11 @@ export const spec = {
           consent: bidderRequest.gdprConsent.consentString
         };
       }
+      if (bidderRequest.uspConsent) {
+        payload.us_privacy = {
+          consent: bidderRequest.uspConsent
+        }
+      }
     }
 
     const payloadString = JSON.stringify(payload);

@@ -331,11 +331,11 @@ export function newBidder(spec) {
   });
 
   function registerSyncs(responses, gdprConsent, uspConsent) {
-    if (spec.getUserSyncs) {
+    if (spec.getUserSyncs && !adapterManager.aliasRegistry[spec.code]) {
       let filterConfig = config.getConfig('userSync.filterSettings');
       let syncs = spec.getUserSyncs({
-        iframeEnabled: !!(config.getConfig('userSync.iframeEnabled') || (filterConfig && (filterConfig.iframe || filterConfig.all))),
-        pixelEnabled: !!(config.getConfig('userSync.pixelEnabled') || (filterConfig && (filterConfig.image || filterConfig.all))),
+        iframeEnabled: !!(filterConfig && (filterConfig.iframe || filterConfig.all)),
+        pixelEnabled: !!(filterConfig && (filterConfig.image || filterConfig.all)),
       }, responses, gdprConsent, uspConsent);
       if (syncs) {
         if (!Array.isArray(syncs)) {
