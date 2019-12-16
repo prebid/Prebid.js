@@ -17,7 +17,18 @@ describe('LockerDomeAdapter', function () {
     transactionId: 'b55e97d7-792c-46be-95a5-3df40b115734',
     bidId: '2652ca954bce9',
     bidderRequestId: '14a54fade69854',
-    auctionId: 'd4c83108-615d-4c2c-9384-dac9ffd4fd72'
+    auctionId: 'd4c83108-615d-4c2c-9384-dac9ffd4fd72',
+    schain: {
+      ver: '1.0',
+      complete: 1,
+      nodes: [
+        {
+          asi: 'indirectseller.com',
+          sid: '00001',
+          hp: 1
+        }
+      ]
+    }
   }, {
     bidder: 'lockerdome',
     params: {
@@ -32,7 +43,18 @@ describe('LockerDomeAdapter', function () {
     transactionId: '73459f05-c482-4706-b2b7-72e6f6264ce6',
     bidId: '4510f2834773ce',
     bidderRequestId: '14a54fade69854',
-    auctionId: 'd4c83108-615d-4c2c-9384-dac9ffd4fd72'
+    auctionId: 'd4c83108-615d-4c2c-9384-dac9ffd4fd72',
+    schain: {
+      ver: '1.0',
+      complete: 1,
+      nodes: [
+        {
+          asi: 'indirectseller.com',
+          sid: '00001',
+          hp: 1
+        }
+      ]
+    }
   }];
 
   describe('isBidRequestValid', function () {
@@ -96,10 +118,47 @@ describe('LockerDomeAdapter', function () {
       };
       const request = spec.buildRequests(bidRequests, bidderRequest);
       const requestData = JSON.parse(request.data);
-
       expect(requestData.gdpr).to.be.an('object');
       expect(requestData.gdpr).to.have.property('applies', true);
       expect(requestData.gdpr).to.have.property('consent', 'AAABBB');
+    });
+
+    it('should add US Privacy data to request if available', function () {
+      const bidderRequest = {
+        uspConsent: 'AAABBB',
+        refererInfo: {
+          canonicalUrl: 'https://example.com/canonical',
+          referer: 'https://example.com'
+        }
+      };
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const requestData = JSON.parse(request.data);
+      expect(requestData.us_privacy).to.be.an('object');
+      expect(requestData.us_privacy).to.have.property('consent', 'AAABBB');
+    });
+
+    it('should add schain to request if available', function () {
+      const bidderRequest = {
+        refererInfo: {
+          canonicalUrl: 'https://example.com/canonical',
+          referer: 'https://example.com'
+        }
+      };
+      const schainExpected = {
+        ver: '1.0',
+        complete: 1,
+        nodes: [
+          {
+            asi: 'indirectseller.com',
+            sid: '00001',
+            hp: 1
+          }
+        ]
+      };
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const requestData = JSON.parse(request.data);
+      expect(requestData.schain).to.be.an('object');
+      expect(requestData.schain).to.deep.equal(schainExpected);
     });
   });
 

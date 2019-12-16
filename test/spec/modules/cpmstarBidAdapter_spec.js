@@ -59,7 +59,7 @@ describe('Cpmstar Bid Adapter', function () {
       expect(requests[0]).to.have.property('method');
       expect(requests[0]).to.have.property('url');
       expect(requests[0]).to.have.property('bidRequest');
-      expect(requests[0].url).to.include('//server.cpmstar.com/view.aspx');
+      expect(requests[0].url).to.include('https://server.cpmstar.com/view.aspx');
     });
     it('should produce a valid staging request', function () {
       var stgReq = deepClone(valid_bid_requests);
@@ -68,7 +68,7 @@ describe('Cpmstar Bid Adapter', function () {
       expect(requests[0]).to.have.property('method');
       expect(requests[0]).to.have.property('url');
       expect(requests[0]).to.have.property('bidRequest');
-      expect(requests[0].url).to.include('//staging.server.cpmstar.com/view.aspx');
+      expect(requests[0].url).to.include('https://staging.server.cpmstar.com/view.aspx');
     });
     it('should produce a valid dev request', function () {
       var devReq = deepClone(valid_bid_requests);
@@ -77,7 +77,7 @@ describe('Cpmstar Bid Adapter', function () {
       expect(requests[0]).to.have.property('method');
       expect(requests[0]).to.have.property('url');
       expect(requests[0]).to.have.property('bidRequest');
-      expect(requests[0].url).to.include('//dev.server.cpmstar.com/view.aspx');
+      expect(requests[0].url).to.include('https://dev.server.cpmstar.com/view.aspx');
     });
   })
 

@@ -116,8 +116,8 @@ const bidderRequest = {
   refererInfo: {
     numIframes: 0,
     reachedTop: true,
-    referer: 'http://v5demo.datablocks.net/test',
-    stack: ['http://v5demo.datablocks.net/test']
+    referer: 'https://v5demo.datablocks.net/test',
+    stack: ['https://v5demo.datablocks.net/test']
   },
   start: Date.now(),
   timeout: 10000
@@ -133,7 +133,7 @@ let resObject = {
         id: '1090738570',
         impid: '2966b257c81d27',
         price: 24.000000,
-        adm: '<a href="http://click.v5demo.datablocks.net/c//?fcid=1090738570"><img src="http://impression.v5demo.datablocks.net/i//?fcid=1090738570&mime=image/png" alt="RON" height="250" width="300"></a><img alt="" src="http://impression.v5demo.datablocks.net/i//?fcid=1090738570&pixel=1" width="1" height="1" >',
+        adm: '<a href="https://click.v5demo.datablocks.net/c//?fcid=1090738570"><img src="https://impression.v5demo.datablocks.net/i//?fcid=1090738570&mime=image/png" alt="RON" height="250" width="300"></a><img alt="" src="https://impression.v5demo.datablocks.net/i//?fcid=1090738570&pixel=1" width="1" height="1" >',
         cid: '55',
         adid: '177654',
         crid: '177656',
@@ -145,7 +145,7 @@ let resObject = {
         id: '1090738571',
         impid: '2966b257c81d28',
         price: 24.000000,
-        adm: '<a href="http://click.v5demo.datablocks.net/c//?fcid=1090738570"><img src="http://impression.v5demo.datablocks.net/i//?fcid=1090738570&mime=image/png" alt="RON" height="250" width="300"></a><img alt="" src="http://impression.v5demo.datablocks.net/i//?fcid=1090738570&pixel=1" width="1" height="1" >',
+        adm: '<a href="https://click.v5demo.datablocks.net/c//?fcid=1090738570"><img src="https://impression.v5demo.datablocks.net/i//?fcid=1090738570&mime=image/png" alt="RON" height="250" width="300"></a><img alt="" src="https://impression.v5demo.datablocks.net/i//?fcid=1090738570&pixel=1" width="1" height="1" >',
         cid: '55',
         adid: '177654',
         crid: '177656',
@@ -157,7 +157,7 @@ let resObject = {
         id: '1090738570',
         impid: '15d9012765e36c',
         price: 24.000000,
-        adm: '{"native":{"ver":"1.2","assets":[{"id":1,"required":1,"title":{"text":"Example Title"}},{"id":2,"required":1,"data":{"value":"Example Body"}},{"id":3,"required":1,"img":{"url":"http://example.image.com/"}}],"link":{"url":"http://click.example.com/c/264597/?fcid=29699699045816"},"imptrackers":["http://impression.example.com/i/264597/?fcid=29699699045816"]}}',
+        adm: '{"native":{"ver":"1.2","assets":[{"id":1,"required":1,"title":{"text":"Example Title"}},{"id":2,"required":1,"data":{"value":"Example Body"}},{"id":3,"required":1,"img":{"url":"https://example.image.com/"}}],"link":{"url":"https://click.example.com/c/264597/?fcid=29699699045816"},"imptrackers":["https://impression.example.com/i/264597/?fcid=29699699045816"]}}',
         cid: '132145',
         adid: '154321',
         crid: '177432',
@@ -170,7 +170,7 @@ let resObject = {
         cid: '12345',
         adid: '12345',
         crid: '123456',
-        nurl: 'http://click.v5demo.datablocks.net/m//?fcid=435235435432',
+        nurl: 'https://click.v5demo.datablocks.net/m//?fcid=435235435432',
         cat: [],
         api: [],
         w: 500,
@@ -183,7 +183,7 @@ let resObject = {
 };
 let bidRequest = {
   method: 'POST',
-  url: '//v5demo.datablocks.net/search/?sid=7560',
+  url: 'https://v5demo.datablocks.net/search/?sid=7560',
   options: {
     withCredentials: false
   },
@@ -219,7 +219,7 @@ let bidRequest = {
     site: {
       domain: '',
       id: 'blank',
-      page: 'http://v5demo.datablocks.net/test'
+      page: 'https://v5demo.datablocks.net/test'
     }
   }
 }
@@ -251,7 +251,7 @@ describe('DatablocksAdapter', function() {
       });
       it('Returns valid URL', function() {
         expect(request.url).to.exist;
-        expect(request.url).to.equal('//v5demo.datablocks.net/search/?sid=7560');
+        expect(request.url).to.equal('https://v5demo.datablocks.net/search/?sid=7560');
       });
 
       it('Should be a valid openRTB request', function() {

@@ -29,7 +29,7 @@ describe('etarget adapter', function () {
 
     it('should handle global request parameters', function () {
       let parsedUrl = parseUrl(spec.buildRequests([bids[0]]).url);
-      assert.equal(parsedUrl.path, '//sk.search.etargetnet.com/hb');
+      assert.equal(parsedUrl.path, 'https://sk.search.etargetnet.com/hb');
     });
 
     it('should set correct request method', function () {
