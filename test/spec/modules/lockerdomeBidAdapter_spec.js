@@ -162,31 +162,6 @@ describe('LockerDomeAdapter', function () {
     });
   });
 
-  it('should add schain to request if available', function () {
-    const bidderRequest = {
-      refererInfo: {
-        canonicalUrl: 'https://example.com/canonical',
-        referer: 'https://example.com'
-      }
-    };
-    const schainExpected = {
-      ver: '1.0',
-      complete: 1,
-      nodes: [
-        {
-          asi: 'indirectseller.com',
-          sid: '00001',
-          hp: 1
-        }
-      ]
-    };
-
-    const request = spec.buildRequests(bidRequests, bidderRequest);
-    const requestData = JSON.parse(request.data);
-    expect(requestData.schain).to.be.an('object');
-    expect(requestData.schain).to.deep.equal(schainExpected);
-  });
-
   describe('interpretResponse', function () {
     it('should return an empty array if an invalid response is passed', function () {
       const interpretedResponse = spec.interpretResponse({ body: {} });
