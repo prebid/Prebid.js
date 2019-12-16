@@ -33,7 +33,6 @@ function interpretResponse(serverResponse, request) {
   utils._each(response, function(bidAd) {
     let bnd = {};
     Object.assign(bnd, bidAd);
-    bnd = bidAd;
     bnd.adResponse = {
       content: bidAd.vastXml,
       height: bidAd.height,
