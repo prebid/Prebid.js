@@ -1,6 +1,7 @@
 import {expect} from 'chai';
 import * as utils from 'src/utils';
 import {spec, acceptPostMessage, getStorageData, setStorageData} from 'modules/trionBidAdapter';
+
 const CONSTANTS = require('src/constants.json');
 const adloader = require('src/adloader');
 
@@ -35,7 +36,7 @@ const TRION_BID_RESPONSE = {
 
 };
 
-const getPublisherUrl = function() {
+const getPublisherUrl = function () {
   var url = null;
   try {
     if (window.top == window) {
