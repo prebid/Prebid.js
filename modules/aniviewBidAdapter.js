@@ -111,11 +111,11 @@ function buildRequests(validBidRequests, bidderRequest) {
       }
 
       let serverDomain = bidRequest.params && bidRequest.params.serverDomain ? bidRequest.params.serverDomain : 'gov.aniview.com';
-      let serverUrl = 'https://' + serverDomain + '/api/adserver/vast3/';
+      let servingUrl = 'https://' + serverDomain + '/api/adserver/vast3/';
 
       bidRequests.push({
         method: 'GET',
-        url: serverUrl,
+        url: servingUrl,
         data: s2sParams,
         bidRequest
       });
