@@ -39,7 +39,7 @@ function interpretResponse(serverResponse, request) {
       width: bidAd.width
     };
     bnd.ttl = config.getConfig('_bidderTimeout')
-    bnd.renderer = bidAd.context === 'outstream' ? createRenderer(bidAd, RENDERER_URL, bidAd.adUnitCode) : undefined;
+    bnd.renderer = bidAd.context === 'outstream' ? createRenderer(bidAd, RENDERER_URL) : undefined;
     bidResponses.push(bnd);
   });
 
@@ -74,7 +74,7 @@ function createRenderer(bidAd, url, adUnitCode) {
     url: url,
     loaded: false,
     config: {'player_height': bidAd.height, 'player_width': bidAd.width},
-    adUnitCode
+    bidAd.adUnitCode
   });
   try {
     renderer.setRender(outstreamRender);
