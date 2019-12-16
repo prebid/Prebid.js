@@ -30,6 +30,7 @@
     "quantcastBidAdapter",
     "rhythmoneBidAdapter",
     "rubiconBidAdapter",
+    "schain",
     "sekindoUMBidAdapter",
     "serverbidBidAdapter",
     "sharethroughBidAdapter",
