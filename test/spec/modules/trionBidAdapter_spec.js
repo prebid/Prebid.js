@@ -14,6 +14,11 @@ const TRION_BID = {
     pubId: '1',
     sectionId: '2'
   },
+  mediaTypes: {
+    banner: {
+      sizes: [[300, 250], [300, 600]]
+    }
+  },
   adUnitCode: 'adunit-code',
   sizes: [[300, 250], [300, 600]],
   bidId: 'test-bid-id',

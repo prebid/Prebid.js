@@ -100,7 +100,8 @@ function buildTrionUrlParams(bid) {
   var sectionId = utils.getBidIdParameter('sectionId', bid.params);
   var re = utils.getBidIdParameter('re', bid.params);
   var url = getPublisherUrl();
-  var sizes = utils.parseSizesInput(bid.sizes).join(',');
+  var bidSizes = getBidSizesFromBidRequest(bid);
+  var sizes = utils.parseSizesInput(bidSizes).join(',');
   var isAutomated = (navigator && navigator.webdriver) ? 1 : 0;
   var isHidden = (document.hidden) ? 1 : 0;
   var visibilityState = encodeURIComponent(document.visibilityState);
@@ -137,6 +138,10 @@ function buildTrionUrlParams(bid) {
     trionUrl = trionUrl.substring(0, trionUrl.length - 1);
   }
   return trionUrl;
+}
+
+function getBidSizesFromBidRequest(bid) {
+  return (bid.mediaTypes && bid.mediaTypes.banner && bid.mediaTypes.banner.sizes) ? bid.mediaTypes.banner.sizes : bid.sizes;
 }
 
 function handlePostMessage() {
