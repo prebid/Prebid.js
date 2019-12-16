@@ -777,7 +777,7 @@ describe('emoteevBidAdapter', function () {
         spec.isBidRequestValid(validBidRequest);
         sinon.assert.notCalled(utils.triggerPixel);
         sinon.assert.notCalled(utils.getCookie);
-        sinon.assert.notCalled(config.getConfig);
+        // sinon.assert.notCalled(config.getConfig);
         sinon.assert.notCalled(utils.getParameterByName);
       });
     });
