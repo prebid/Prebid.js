@@ -850,6 +850,7 @@ describe('The Criteo bidding adapter', function () {
       utilsMock.expects('logInfo').withExactArgs('Using Criteo FastBid').once();
       utilsMock.expects('logWarn').withExactArgs('No hash found in FastBid').never();
       utilsMock.expects('logWarn').withExactArgs('Invalid Criteo FastBid found').never();
+      utilsMock.expects('insertElement').once();
 
       tryGetCriteoFastBid();
 
