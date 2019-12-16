@@ -68,7 +68,7 @@ function outstreamRender(bidAd) {
   });
 }
 
-function createRenderer(bidAd, url, adUnitCode) {
+function createRenderer(bidAd, url) {
   const renderer = Renderer.install({
     id: bidAd.adUnitCode,
     url: url,
