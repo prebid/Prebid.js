@@ -4,7 +4,7 @@ import { config } from '../src/config';
 import { registerBidder } from '../src/adapters/bidderFactory';
 
 const BIDDER_CODE = 'mytarget';
-const BIDDER_URL = '//ad.mail.ru/hbid_prebid/';
+const BIDDER_URL = 'https://ad.mail.ru/hbid_prebid/';
 const DEFAULT_CURRENCY = 'RUB';
 const DEFAULT_TTL = 180;
 
@@ -35,6 +35,12 @@ function getSiteName(referrer) {
   return sitename;
 }
 
+function getCurrency() {
+  let currency = config.getConfig('currency.adServerCurrency');
+
+  return (currency === 'USD') ? currency : DEFAULT_CURRENCY;
+}
+
 function generateRandomId() {
   return Math.random().toString(16).substring(2);
 }
@@ -60,7 +66,7 @@ export const spec = {
         page: referrer
       },
       settings: {
-        currency: DEFAULT_CURRENCY,
+        currency: getCurrency(),
         windowSize: {
           width: window.screen.width,
           height: window.screen.height

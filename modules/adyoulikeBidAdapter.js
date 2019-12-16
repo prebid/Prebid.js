@@ -18,7 +18,7 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
-    const sizes = getSize(bid.sizes);
+    const sizes = getSize(getSizeArray(bid));
     if (!bid.params || !bid.params.placement || !sizes.width || !sizes.height) {
       return false;
     }
@@ -34,12 +34,14 @@ export const spec = {
     const payload = {
       Version: VERSION,
       Bids: bidRequests.reduce((accumulator, bid) => {
-        let size = getSize(bid.sizes);
+        let sizesArray = getSizeArray(bid);
+        let size = getSize(sizesArray);
         accumulator[bid.bidId] = {};
         accumulator[bid.bidId].PlacementID = bid.params.placement;
         accumulator[bid.bidId].TransactionID = bid.transactionId;
         accumulator[bid.bidId].Width = size.width;
         accumulator[bid.bidId].Height = size.height;
+        accumulator[bid.bidId].AvailableSizes = sizesArray.join(',');
         return accumulator;
       }, {}),
       PageRefreshed: getPageRefreshed()
@@ -156,10 +158,20 @@ function createEndpointQS(bidderRequest) {
   return qs;
 }
 
+function getSizeArray(bid) {
+  let inputSize = bid.sizes;
+  if (bid.mediaTypes && bid.mediaTypes.banner) {
+    inputSize = bid.mediaTypes.banner.sizes;
+  }
+
+  return utils.parseSizesInput(inputSize);
+}
+
 /* Get parsed size from request size */
-function getSize(requestSizes) {
+function getSize(sizesArray) {
   const parsed = {};
-  const size = utils.parseSizesInput(requestSizes)[0];
+  // the main requested size is the first one
+  const size = sizesArray[0];
 
   if (typeof size !== 'string') {
     return parsed;
@@ -187,7 +199,6 @@ function createBid(response) {
 
   return {
     requestId: response.BidID,
-    bidderCode: spec.code,
     width: response.Width,
     height: response.Height,
     ad: response.Ad,

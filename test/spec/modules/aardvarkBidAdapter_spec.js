@@ -1,4 +1,5 @@
 import { expect } from 'chai';
+import * as utils from 'src/utils';
 import { spec, resetUserSync } from 'modules/aardvarkBidAdapter';
 
 describe('aardvarkAdapterTest', function () {
@@ -57,7 +58,7 @@ describe('aardvarkAdapterTest', function () {
 
     const bidderRequest = {
       refererInfo: {
-        referer: 'http://example.com'
+        referer: 'https://example.com'
       }
     };
 
@@ -71,7 +72,7 @@ describe('aardvarkAdapterTest', function () {
     it('should call the correct bidRequest url', function () {
       const requests = spec.buildRequests(bidRequests, bidderRequest);
       expect(requests.length).to.equal(1);
-      expect(requests[0].url).to.match(new RegExp('^\/\/adzone.pub.com/xiby/TdAx_RAZd/aardvark\?'));
+      expect(requests[0].url).to.match(new RegExp('^https:\/\/adzone.pub.com/xiby/TdAx_RAZd/aardvark\?'));
     });
 
     it('should have correct data', function () {
@@ -124,7 +125,7 @@ describe('aardvarkAdapterTest', function () {
 
     const bidderRequest = {
       refererInfo: {
-        referer: 'http://example.com'
+        referer: 'https://example.com'
       }
     };
 
@@ -137,9 +138,9 @@ describe('aardvarkAdapterTest', function () {
 
     it('should call the correct bidRequest urls for each auction', function () {
       const requests = spec.buildRequests(bidRequests, bidderRequest);
-      expect(requests[0].url).to.match(new RegExp('^\/\/bidder.rtk.io/Toby/TdAx/aardvark\?'));
+      expect(requests[0].url).to.match(new RegExp('^https:\/\/bidder.rtk.io/Toby/TdAx/aardvark\?'));
       expect(requests[0].data.categories.length).to.equal(2);
-      expect(requests[1].url).to.match(new RegExp('^\/\/adzone.pub.com/xiby/RAZd/aardvark\?'));
+      expect(requests[1].url).to.match(new RegExp('^https:\/\/adzone.pub.com/xiby/RAZd/aardvark\?'));
     });
 
     it('should have correct data', function () {
@@ -186,7 +187,7 @@ describe('aardvarkAdapterTest', function () {
         gdprApplies: true
       },
       refererInfo: {
-        referer: 'http://example.com'
+        referer: 'https://example.com'
       }
     };
 
@@ -216,7 +217,7 @@ describe('aardvarkAdapterTest', function () {
     const bidderRequest = {
       gdprConsent: undefined,
       refererInfo: {
-        referer: 'http://example.com'
+        referer: 'https://example.com'
       }
     };
 
@@ -234,7 +235,7 @@ describe('aardvarkAdapterTest', function () {
         body: [
           {
             media: 'banner',
-            nurl: 'http://www.nurl.com/0',
+            nurl: 'https://www.nurl.com/0',
             cpm: 0.09,
             width: 300,
             height: 250,
@@ -245,7 +246,7 @@ describe('aardvarkAdapterTest', function () {
           },
           {
             media: 'banner',
-            nurl: 'http://www.nurl.com/1',
+            nurl: 'https://www.nurl.com/1',
             cpm: 0.19,
             width: 300,
             height: 250,
@@ -306,7 +307,7 @@ describe('aardvarkAdapterTest', function () {
       const syncs = spec.getUserSyncs(syncOptions);
       expect(syncs.length).to.equal(1);
       expect(syncs[0].type).to.equal('iframe');
-      expect(syncs[0].url).to.equal('//sync.rtk.io/cs');
+      expect(syncs[0].url).to.equal('https://sync.rtk.io/cs');
     });
 
     it('should return empty, as we sync only once', function () {
@@ -340,7 +341,82 @@ describe('aardvarkAdapterTest', function () {
       const syncs = spec.getUserSyncs(syncOptions, null, gdprConsent);
       expect(syncs.length).to.equal(1);
       expect(syncs[0].type).to.equal('iframe');
-      expect(syncs[0].url).to.equal('//sync.rtk.io/cs?g=1&c=BOEFEAyOEFEAyAHABDENAI4AAAB9vABAASA');
+      expect(syncs[0].url).to.equal('https://sync.rtk.io/cs?g=1&c=BOEFEAyOEFEAyAHABDENAI4AAAB9vABAASA');
+    });
+  });
+
+  describe('reading window.top properties', function () {
+    const bidCategories = ['bcat1', 'bcat2', 'bcat3'];
+    const bidRequests = [{
+      bidder: 'aardvark',
+      params: {
+        ai: 'xiby',
+        sc: 'TdAx',
+        host: 'adzone.pub.com',
+        categories: bidCategories
+      },
+      adUnitCode: 'RTK_aaaa',
+      transactionId: '1b8389fe-615c-482d-9f1a-177fb8f7d5b0',
+      sizes: [300, 250],
+      bidId: '1abgs362e0x48a8',
+      bidderRequestId: '70deaff71c281d',
+      auctionId: '5c66da22-426a-4bac-b153-77360bef5337',
+      userId: { tdid: 'eff98622-b5fd-44fa-9a49-6e846922d532' }
+    }];
+
+    const bidderRequest = {
+      refererInfo: {
+        referer: 'https://example.com'
+      }
+    };
+
+    const topWin = {
+      innerWidth: 1366,
+      innerHeight: 768,
+      rtkcategories: ['cat1', 'cat2', 'cat3']
+    };
+
+    let sandbox;
+    beforeEach(function () {
+      sandbox = sinon.createSandbox();
+    });
+
+    afterEach(function () {
+      sandbox.restore();
+    });
+
+    it('should have window.top dimensions', function () {
+      sandbox.stub(utils, 'getWindowTop').returns(topWin);
+
+      const requests = spec.buildRequests(bidRequests, bidderRequest);
+      requests.forEach(function (requestItem) {
+        expect(requestItem.data.w).to.equal(topWin.innerWidth);
+        expect(requestItem.data.h).to.equal(topWin.innerHeight);
+      });
+    });
+
+    it('should have window dimensions, as backup', function () {
+      sandbox.stub(utils, 'getWindowTop').returns(undefined);
+
+      const requests = spec.buildRequests(bidRequests, bidderRequest);
+      requests.forEach(function (requestItem) {
+        expect(requestItem.data.w).to.equal(window.innerWidth);
+        expect(requestItem.data.h).to.equal(window.innerHeight);
+      });
+    });
+
+    it('should have window.top & bid categories', function () {
+      sandbox.stub(utils, 'getWindowTop').returns(topWin);
+
+      const requests = spec.buildRequests(bidRequests, bidderRequest);
+      requests.forEach(function (requestItem) {
+        utils._each(topWin.categories, function (cat) {
+          expect(requestItem.data.categories).to.contain(cat);
+        });
+        utils._each(bidCategories, function (cat) {
+          expect(requestItem.data.categories).to.contain(cat);
+        });
+      });
     });
   });
 });

@@ -21,7 +21,11 @@ describe('gumgumAdapter', function () {
         'bidfloor': 0.05
       },
       'adUnitCode': 'adunit-code',
-      'sizes': [[300, 250], [300, 600], [1, 1]],
+      'mediaTypes': {
+        'banner': {
+          sizes: [[300, 250], [300, 600], [1, 1]]
+        }
+      },
       'bidId': '30b31c1838de1e',
       'bidderRequestId': '22edbae2733bf6',
       'auctionId': '1d1a030790a475',
@@ -70,7 +74,29 @@ describe('gumgumAdapter', function () {
         },
         'adUnitCode': 'adunit-code',
         'sizes': [[300, 250], [300, 600]],
-        'bidId': '30b31c1838de1e'
+        'bidId': '30b31c1838de1e',
+        'schain': {
+          'ver': '1.0',
+          'complete': 1,
+          'nodes': [
+            {
+              'asi': 'exchange1.com',
+              'sid': '1234',
+              'hp': 1,
+              'rid': 'bid-request-1',
+              'name': 'publisher',
+              'domain': 'publisher.com'
+            },
+            {
+              'asi': 'exchange2.com',
+              'sid': 'abcd',
+              'hp': 1,
+              'rid': 'bid-request-2',
+              'name': 'intermediary',
+              'domain': 'intermediary.com'
+            }
+          ]
+        }
       }
     ];
 
@@ -80,11 +106,51 @@ describe('gumgumAdapter', function () {
       expect(request.method).to.equal('GET');
       expect(request.id).to.equal('30b31c1838de1e');
     });
+    it('should correctly set the request paramters depending on params field', function () {
+      const request = Object.assign({}, bidRequests[0]);
+      delete request.params;
+      request.params = {
+        'inScreen': '10433394',
+        'bidfloor': 0.05
+      };
+      const bidRequest = spec.buildRequests([request])[0];
+      expect(bidRequest.data.pi).to.equal(2);
+      expect(bidRequest.data).to.include.any.keys('t');
+      expect(bidRequest.data).to.include.any.keys('fp');
+    });
+    it('should send pubId if inScreenPubID param is specified', function () {
+      const request = Object.assign({}, bidRequests[0]);
+      delete request.params;
+      request.params = {
+        'inScreenPubID': 123
+      };
+      const bidRequest = spec.buildRequests([request])[0];
+      expect(bidRequest.data).to.include.any.keys('pubId');
+      expect(bidRequest.data.pubId).to.equal(request.params.inScreenPubID);
+      expect(bidRequest.data).to.not.include.any.keys('t');
+    });
+    it('should correctly set the request paramters depending on params field', function () {
+      const request = Object.assign({}, bidRequests[0]);
+      delete request.params;
+      request.params = {
+        'ICV': '10433395'
+      };
+      const bidRequest = spec.buildRequests([request])[0];
+      expect(bidRequest.data.pi).to.equal(5);
+      expect(bidRequest.data).to.include.any.keys('ni');
+    });
+    it('should not add additional parameters depending on params field', function () {
+      const request = spec.buildRequests(bidRequests)[0];
+      expect(request.data).to.not.include.any.keys('ni');
+      expect(request.data).to.not.include.any.keys('t');
+      expect(request.data).to.not.include.any.keys('eAdBuyId');
+      expect(request.data).to.not.include.any.keys('adBuyId');
+    });
     it('should add consent parameters if gdprConsent is present', function () {
       const gdprConsent = { consentString: 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==', gdprApplies: true };
       const fakeBidRequest = { gdprConsent: gdprConsent };
       const bidRequest = spec.buildRequests(bidRequests, fakeBidRequest)[0];
-      expect(bidRequest.data.gdprApplies).to.eq(true);
+      expect(bidRequest.data.gdprApplies).to.eq(1);
       expect(bidRequest.data.gdprConsent).to.eq('BOJ/P2HOJ/P2HABABMAAAAAZ+A==');
     });
     it('should handle gdprConsent is present but values are undefined case', function () {
@@ -92,6 +158,37 @@ describe('gumgumAdapter', function () {
       const fakeBidRequest = { gdprConsent: gdprConsent };
       const bidRequest = spec.buildRequests(bidRequests, fakeBidRequest)[0];
       expect(bidRequest.data).to.not.include.any.keys('gdprConsent')
+    });
+    it('should add a tdid parameter if request contains unified id from TradeDesk', function () {
+      const unifiedId = {
+        'userId': {
+          'tdid': 'tradedesk-id'
+        }
+      }
+      const request = Object.assign(unifiedId, bidRequests[0]);
+      const bidRequest = spec.buildRequests([request])[0];
+      expect(bidRequest.data.tdid).to.eq(unifiedId.userId.tdid);
+    });
+    it('should not add a tdid parameter if unified id is not found', function () {
+      const request = spec.buildRequests(bidRequests)[0];
+      expect(request.data).to.not.include.any.keys('tdid');
+    });
+    it('should send schain parameter in serialized form', function () {
+      const serializedForm = '1.0,1!exchange1.com,1234,1,bid-request-1,publisher,publisher.com!exchange2.com,abcd,1,bid-request-2,intermediary,intermediary.com'
+      const request = spec.buildRequests(bidRequests)[0];
+      expect(request.data).to.include.any.keys('schain');
+      expect(request.data.schain).to.eq(serializedForm);
+    });
+    it('should send ns parameter if browser contains navigator.connection property', function () {
+      const bidRequest = spec.buildRequests(bidRequests)[0];
+      const connection = window.navigator && window.navigator.connection;
+      if (connection) {
+        const downlink = connection.downlink || connection.bandwidth;
+        expect(bidRequest.data).to.include.any.keys('ns');
+        expect(bidRequest.data.ns).to.eq(Math.round(downlink * 1024));
+      } else {
+        expect(bidRequest.data).to.not.include.any.keys('ns');
+      }
     });
   })
 

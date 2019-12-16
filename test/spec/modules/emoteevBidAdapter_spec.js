@@ -15,20 +15,23 @@ import {
   DEVELOPMENT,
   EVENTS_PATH,
   eventsUrl,
+  FOOTER,
+  gdprConsent,
   getDeviceDimensions,
   getDeviceInfo,
   getDocumentDimensions,
   getUserSyncs,
   getViewDimensions,
+  IN_CONTENT,
   interpretResponse,
   isBidRequestValid,
-  isWebGLEnabled,
   ON_ADAPTER_CALLED,
   ON_BID_WON,
   ON_BIDDER_TIMEOUT,
   onBidWon,
   onAdapterCalled,
   onTimeout,
+  OVERLAY,
   PRODUCTION,
   requestsPayload,
   resolveDebug,
@@ -39,10 +42,14 @@ import {
   USER_SYNC_IMAGE_PATH,
   userSyncIframeUrl,
   userSyncImageUrl,
+  validateSizes,
+  validateContext,
+  validateExternalId,
+  VENDOR_ID,
+  WALLPAPER,
 } from 'modules/emoteevBidAdapter';
 import * as url from '../../../src/url';
 import * as utils from '../../../src/utils';
-import * as pubCommonId from '../../../modules/pubCommonId';
 import {config} from '../../../src/config';
 
 const cannedValidBidRequests = [{
@@ -53,7 +60,11 @@ const cannedValidBidRequests = [{
   bidder: 'emoteev',
   bidderRequestId: '1203b39fecc6a5',
   crumbs: {pubcid: 'f3371d16-4e8b-42b5-a770-7e5be1fdf03d'},
-  params: {adSpaceId: 5084},
+  params: {
+    adSpaceId: 5084,
+    context: IN_CONTENT,
+    externalId: 42
+  },
   sizes: [[300, 250], [250, 300], [300, 600]],
   transactionId: '58dbd732-7a39-45f1-b23e-1c24051a941c',
 }];
@@ -67,14 +78,14 @@ const cannedBidderRequest = {
     canonicalUrl: undefined,
     numIframes: 0,
     reachedTop: true,
-    referer: 'http://localhost:9999/integrationExamples/gpt/hello_world_emoteev.html',
-    stack: ['http://localhost:9999/integrationExamples/gpt/hello_world_emoteev.html']
+    referer: 'https://localhost:9999/integrationExamples/gpt/hello_world_emoteev.html',
+    stack: ['https://localhost:9999/integrationExamples/gpt/hello_world_emoteev.html']
   },
   start: 1544200012839,
   timeout: 3000,
   gdprConsent: {
     gdprApplies: true,
-    consentString: 'my consentString'
+    vendorData: {vendorConsents: {[VENDOR_ID]: true}},
   }
 };
 const serverResponse =
@@ -102,6 +113,8 @@ describe('emoteevBidAdapter', function () {
         bidId: '23a45b4e3',
         params: {
           adSpaceId: 12345,
+          context: IN_CONTENT,
+          externalId: 42
         },
         mediaTypes: {
           banner: {
@@ -120,6 +133,8 @@ describe('emoteevBidAdapter', function () {
         bidder: '', // invalid bidder
         params: {
           adSpaceId: 12345,
+          context: IN_CONTENT,
+          externalId: 42
         },
         mediaTypes: {
           banner: {
@@ -131,6 +146,8 @@ describe('emoteevBidAdapter', function () {
         bidder: 'emoteev',
         params: {
           adSpaceId: '', // invalid adSpaceId
+          context: IN_CONTENT,
+          externalId: 42
         },
         mediaTypes: {
           banner: {
@@ -142,6 +159,34 @@ describe('emoteevBidAdapter', function () {
         bidder: 'emoteev',
         params: {
           adSpaceId: 12345,
+          context: 'something', // invalid context
+          externalId: 42
+        },
+        mediaTypes: {
+          banner: {
+            sizes: [[750, 200]]
+          }
+        },
+      })).to.equal(false);
+      expect(isBidRequestValid({
+        bidder: 'emoteev',
+        params: {
+          adSpaceId: 12345,
+          context: IN_CONTENT,
+          externalId: 'lol' // invalid externalId
+        },
+        mediaTypes: {
+          banner: {
+            sizes: [[750, 200]]
+          }
+        },
+      })).to.equal(false);
+      expect(isBidRequestValid({
+        bidder: 'emoteev',
+        params: {
+          adSpaceId: 12345,
+          context: IN_CONTENT,
+          externalId: 42
         },
         mediaTypes: {
           banner: {
@@ -401,6 +446,39 @@ describe('emoteevBidAdapter', function () {
     });
   });
 
+  describe('gdprConsent', function () {
+    describe('gdpr applies, consent given', function () {
+      const bidderRequest = {
+        ...cannedBidderRequest,
+        gdprConsent: {
+          gdprApplies: true,
+          vendorData: {vendorConsents: {[VENDOR_ID]: true}},
+        }
+      };
+      expect(gdprConsent(bidderRequest)).to.deep.equal(true);
+    });
+    describe('gdpr applies, consent withdrawn', function () {
+      const bidderRequest = {
+        ...cannedBidderRequest,
+        gdprConsent: {
+          gdprApplies: true,
+          vendorData: {vendorConsents: {[VENDOR_ID]: false}},
+        }
+      };
+      expect(gdprConsent(bidderRequest)).to.deep.equal(false);
+    });
+    describe('gdpr applies, consent unknown', function () {
+      const bidderRequest = {
+        ...cannedBidderRequest,
+        gdprConsent: {
+          gdprApplies: true,
+          vendorData: {},
+        }
+      };
+      expect(gdprConsent(bidderRequest)).to.deep.equal(undefined);
+    });
+  });
+
   describe('requestsPayload', function () {
     const
       currency = 'EUR',
@@ -418,7 +496,7 @@ describe('emoteevBidAdapter', function () {
       'deviceInfo',
       'userAgent',
       'gdprApplies',
-      'gdprConsent'
+      'gdprConsent',
     );
 
     expect(payload.bidRequests[0]).to.exist.and.have.all.keys(
@@ -449,7 +527,6 @@ describe('emoteevBidAdapter', function () {
     );
     expect(payload.userAgent).to.deep.equal(navigator.userAgent);
     expect(payload.gdprApplies).to.deep.equal(cannedBidderRequest.gdprConsent.gdprApplies);
-    expect(payload.gdprConsent).to.deep.equal(cannedBidderRequest.gdprConsent.consentString);
   });
 
   describe('getViewDimensions', function () {
@@ -665,7 +742,7 @@ describe('emoteevBidAdapter', function () {
     let getParameterByNameSpy;
     beforeEach(function () {
       triggerPixelSpy = sinon.spy(utils, 'triggerPixel');
-      getCookieSpy = sinon.spy(pubCommonId, 'getCookie');
+      getCookieSpy = sinon.spy(utils, 'getCookie');
       getConfigSpy = sinon.spy(config, 'getConfig');
       getParameterByNameSpy = sinon.spy(utils, 'getParameterByName');
     });
@@ -692,15 +769,17 @@ describe('emoteevBidAdapter', function () {
         };
         spec.isBidRequestValid(validBidRequest);
         sinon.assert.notCalled(utils.triggerPixel);
-        sinon.assert.notCalled(pubCommonId.getCookie);
+        sinon.assert.notCalled(utils.getCookie);
         sinon.assert.notCalled(config.getConfig);
         sinon.assert.notCalled(utils.getParameterByName);
       });
-      it('has intended side-effects', function () {
+    });
+    describe('isBidRequestValid empty request', function() {
+      it('has intended side-effects empty request', function () {
         const invalidBidRequest = {};
         spec.isBidRequestValid(invalidBidRequest);
         sinon.assert.notCalled(utils.triggerPixel);
-        sinon.assert.notCalled(pubCommonId.getCookie);
+        sinon.assert.notCalled(utils.getCookie);
         sinon.assert.notCalled(config.getConfig);
         sinon.assert.notCalled(utils.getParameterByName);
       });
@@ -709,7 +788,7 @@ describe('emoteevBidAdapter', function () {
       it('has intended side-effects', function () {
         spec.buildRequests(cannedValidBidRequests, cannedBidderRequest);
         sinon.assert.notCalled(utils.triggerPixel);
-        sinon.assert.notCalled(pubCommonId.getCookie);
+        sinon.assert.notCalled(utils.getCookie);
         sinon.assert.callCount(config.getConfig, 3);
         sinon.assert.callCount(utils.getParameterByName, 2);
       });
@@ -718,7 +797,7 @@ describe('emoteevBidAdapter', function () {
       it('has intended side-effects', function () {
         spec.interpretResponse(serverResponse);
         sinon.assert.notCalled(utils.triggerPixel);
-        sinon.assert.notCalled(pubCommonId.getCookie);
+        sinon.assert.notCalled(utils.getCookie);
         sinon.assert.notCalled(config.getConfig);
         sinon.assert.notCalled(utils.getParameterByName);
       });
@@ -728,7 +807,7 @@ describe('emoteevBidAdapter', function () {
         const bidObject = serverResponse.body[0];
         spec.onBidWon(bidObject);
         sinon.assert.calledOnce(utils.triggerPixel);
-        sinon.assert.calledOnce(pubCommonId.getCookie);
+        sinon.assert.calledOnce(utils.getCookie);
         sinon.assert.calledOnce(config.getConfig);
         sinon.assert.calledOnce(utils.getParameterByName);
       });
@@ -737,7 +816,7 @@ describe('emoteevBidAdapter', function () {
       it('has intended side-effects', function () {
         spec.onTimeout(cannedValidBidRequests[0]);
         sinon.assert.calledOnce(utils.triggerPixel);
-        sinon.assert.notCalled(pubCommonId.getCookie);
+        sinon.assert.notCalled(utils.getCookie);
         sinon.assert.calledOnce(config.getConfig);
         sinon.assert.calledOnce(utils.getParameterByName);
       });
@@ -746,10 +825,44 @@ describe('emoteevBidAdapter', function () {
       it('has intended side-effects', function () {
         spec.getUserSyncs({});
         sinon.assert.notCalled(utils.triggerPixel);
-        sinon.assert.notCalled(pubCommonId.getCookie);
+        sinon.assert.notCalled(utils.getCookie);
         sinon.assert.calledOnce(config.getConfig);
         sinon.assert.calledOnce(utils.getParameterByName);
       });
+    });
+  });
+
+  describe('validateSizes', function () {
+    it('only accepts valid array of sizes', function () {
+      expect(validateSizes([])).to.deep.equal(false);
+      expect(validateSizes([[]])).to.deep.equal(false);
+      expect(validateSizes([[450, 450], undefined])).to.deep.equal(false);
+      expect(validateSizes([[450, 450], 'size'])).to.deep.equal(false);
+      expect(validateSizes([[1, 1]])).to.deep.equal(true);
+      expect(validateSizes([[1, 1], [450, 450]])).to.deep.equal(true);
+    });
+  });
+
+  describe('validateContext', function () {
+    it('only accepts valid context', function () {
+      expect(validateContext(IN_CONTENT)).to.deep.equal(true);
+      expect(validateContext(FOOTER)).to.deep.equal(true);
+      expect(validateContext(OVERLAY)).to.deep.equal(true);
+      expect(validateContext(WALLPAPER)).to.deep.equal(true);
+      expect(validateContext(null)).to.deep.equal(false);
+      expect(validateContext('anything else')).to.deep.equal(false);
+    });
+  });
+
+  describe('validateExternalId', function () {
+    it('only accepts a positive integer or null', function () {
+      expect(validateExternalId(0)).to.deep.equal(false);
+      expect(validateExternalId(42)).to.deep.equal(true);
+      expect(validateExternalId(42.0)).to.deep.equal(true); // edge case: valid externalId
+      expect(validateExternalId(3.14159)).to.deep.equal(false);
+      expect(validateExternalId('externalId')).to.deep.equal(false);
+      expect(validateExternalId(undefined)).to.deep.equal(true);
+      expect(validateExternalId(null)).to.deep.equal(true);
     });
   });
 });

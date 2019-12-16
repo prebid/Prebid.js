@@ -29,17 +29,18 @@ const SYNC_TYPES = {
   }
 };
 
-const pubapiTemplate = template`//${'host'}/pubapi/3.0/${'network'}/${'placement'}/${'pageid'}/${'sizeid'}/ADTECH;v=2;cmd=bid;cors=yes;alias=${'alias'};misc=${'misc'};${'dynamicParams'}`;
-const nexageBaseApiTemplate = template`//${'host'}/bidRequest?`;
+const pubapiTemplate = template`${'host'}/pubapi/3.0/${'network'}/${'placement'}/${'pageid'}/${'sizeid'}/ADTECH;v=2;cmd=bid;cors=yes;alias=${'alias'};misc=${'misc'};${'dynamicParams'}`;
+const nexageBaseApiTemplate = template`${'host'}/bidRequest?`;
 const nexageGetApiTemplate = template`dcn=${'dcn'}&pos=${'pos'}&cmd=bid${'dynamicParams'}`;
 const MP_SERVER_MAP = {
   us: 'adserver-us.adtech.advertising.com',
   eu: 'adserver-eu.adtech.advertising.com',
   as: 'adserver-as.adtech.advertising.com'
 };
-const NEXAGE_SERVER = 'hb.nexage.com';
+const NEXAGE_SERVER = 'c2shb.ssp.yahoo.com';
 const ONE_DISPLAY_TTL = 60;
 const ONE_MOBILE_TTL = 3600;
+const DEFAULT_PROTO = 'https';
 
 const NUMERIC_VALUES = {
   TRUE: 1,
@@ -105,7 +106,11 @@ export const spec = {
     return isMarketplaceBid(bid) || isMobileBid(bid);
   },
   buildRequests(bids, bidderRequest) {
-    let consentData = bidderRequest ? bidderRequest.gdprConsent : null;
+    const consentData = {};
+    if (bidderRequest) {
+      consentData.gdpr = bidderRequest.gdprConsent;
+      consentData.uspConsent = bidderRequest.uspConsent;
+    }
 
     return bids.map(bid => {
       const endpointCode = resolveEndpointCode(bid);
@@ -198,7 +203,7 @@ export const spec = {
     // Set region param, used by AOL analytics.
     params.region = regionParam;
 
-    return pubapiTemplate({
+    return this.applyProtocol(pubapiTemplate({
       host: server,
       network: params.network,
       placement: parseInt(params.placement),
@@ -207,7 +212,7 @@ export const spec = {
       alias: params.alias || utils.getUniqueIdentifierStr(),
       misc: new Date().getTime(), // cache busting
       dynamicParams: this.formatMarketplaceDynamicParams(params, consentData)
-    });
+    }));
   },
   buildOneMobileGetUrl(bid, consentData) {
     let {dcn, pos, ext} = bid.params;
@@ -219,11 +224,17 @@ export const spec = {
     return nexageApi;
   },
   buildOneMobileBaseUrl(bid) {
-    return nexageBaseApiTemplate({
+    return this.applyProtocol(nexageBaseApiTemplate({
       host: bid.params.host || NEXAGE_SERVER
-    });
+    }));
   },
-  formatMarketplaceDynamicParams(params = {}, consentData) {
+  applyProtocol(url) {
+    if (/^https?:\/\//i.test(url)) {
+      return url;
+    }
+    return (url.indexOf('//') === 0) ? `${DEFAULT_PROTO}:${url}` : `${DEFAULT_PROTO}://${url}`;
+  },
+  formatMarketplaceDynamicParams(params = {}, consentData = {}) {
     let queryParams = {};
 
     if (params.bidFloor) {
@@ -240,7 +251,7 @@ export const spec = {
 
     return paramsFormatted;
   },
-  formatOneMobileDynamicParams(params = {}, consentData) {
+  formatOneMobileDynamicParams(params = {}, consentData = {}) {
     if (this.isSecureProtocol()) {
       params.secure = NUMERIC_VALUES.TRUE;
     }
@@ -254,32 +265,27 @@ export const spec = {
 
     return paramsFormatted;
   },
-  buildOpenRtbRequestData(bid, consentData) {
+  buildOpenRtbRequestData(bid, consentData = {}) {
     let openRtbObject = {
       id: bid.params.id,
       imp: bid.params.imp
     };
 
-    if (this.isConsentRequired(consentData)) {
-      openRtbObject.regs = {
-        ext: {
-          gdpr: NUMERIC_VALUES.TRUE
-        }
-      };
-
-      if (consentData.consentString) {
-        openRtbObject.user = {
-          ext: {
-            consent: consentData.consentString
-          }
-        };
+    if (this.isEUConsentRequired(consentData)) {
+      utils.deepSetValue(openRtbObject, 'regs.ext.gdpr', NUMERIC_VALUES.TRUE);
+      if (consentData.gdpr.consentString) {
+        utils.deepSetValue(openRtbObject, 'user.ext.consent', consentData.gdpr.consentString);
       }
+    }
+
+    if (consentData.uspConsent) {
+      utils.deepSetValue(openRtbObject, 'regs.ext.us_privacy', consentData.uspConsent);
     }
 
     return openRtbObject;
   },
-  isConsentRequired(consentData) {
-    return !!(consentData && consentData.gdprApplies);
+  isEUConsentRequired(consentData) {
+    return !!(consentData && consentData.gdpr && consentData.gdpr.gdprApplies);
   },
   formatKeyValues(keyValues) {
     let keyValuesHash = {};
@@ -293,12 +299,16 @@ export const spec = {
   formatConsentData(consentData) {
     let params = {};
 
-    if (this.isConsentRequired(consentData)) {
+    if (this.isEUConsentRequired(consentData)) {
       params.gdpr = NUMERIC_VALUES.TRUE;
 
-      if (consentData.consentString) {
-        params.euconsent = consentData.consentString;
+      if (consentData.gdpr.consentString) {
+        params.euconsent = consentData.gdpr.consentString;
       }
+    }
+
+    if (consentData.uspConsent) {
+      params.us_privacy = consentData.uspConsent;
     }
 
     return params;

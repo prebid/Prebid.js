@@ -117,6 +117,16 @@ const MOCK = {
 
 const ANALYTICS_MESSAGE = {
   publisherId: 'CC411485-42BC-4F92-8389-42C503EE38D7',
+  bidAdUnits: [
+    {
+      adUnit: 'panorama_d_1',
+      timeStamp: 1519149562216
+    },
+    {
+      adUnit: 'box_d_1',
+      timeStamp: 1519149562216
+    }
+  ],
   requests: [
     {
       adUnit: 'panorama_d_1',
@@ -248,7 +258,7 @@ describe('Livewrapped analytics adapter', function () {
       expect(requests.length).to.equal(1);
       let request = requests[0];
 
-      expect(request.url).to.equal('//lwadm.com/analytics/10');
+      expect(request.url).to.equal('https://lwadm.com/analytics/10');
 
       let message = JSON.parse(request.requestBody);
 

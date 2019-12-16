@@ -4,7 +4,7 @@ commit your changes, and [open a pull request](https://help.github.com/articles/
 master branch.
 
 Pull requests must have 80% code coverage before beign considered for merge.
-Additional details about the process can be found [here](./pr_review.md).
+Additional details about the process can be found [here](./PR_REVIEW.md).
 
 ## Issues
 [prebid.org](http://prebid.org/) contains documentation that may help answer questions you have about using Prebid.js.
@@ -48,7 +48,7 @@ When you are adding code to Prebid.js, or modifying code that isn't covered by a
   - _Assert_: check that the expected results have occurred
     - e.g., use Chai assertions to check that the expected output is equal to the actual output
 - Test the public interface, not the internal implementation
-- If you need to check `adloader.loadScript` in a test, use a `stub` rather than a `spy`. `spy`s trigger a network call which can result in a `script error` and cause unrelated unit tests to fail. `stub`s will let you gather information about the `adloader.loadScript` call without affecting external resources
+- If you need to check `adloader.loadExternalScript` in a test, use a `stub` rather than a `spy`. `spy`s trigger a network call which can result in a `script error` and cause unrelated unit tests to fail. `stub`s will let you gather information about the `adloader.loadExternalScript` call without affecting external resources
 - When writing tests you may use ES2015 syntax if desired
 
 ### Test Examples

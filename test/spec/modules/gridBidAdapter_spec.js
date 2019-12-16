@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec } from 'modules/gridBidAdapter';
+import { spec, resetUserSync, getSyncUrl } from 'modules/gridBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
 
 describe('TheMediaGrid Adapter', function () {
@@ -47,6 +47,8 @@ describe('TheMediaGrid Adapter', function () {
       });
       return res;
     }
+    const bidderRequest = {refererInfo: {referer: 'https://example.com'}};
+    const referrer = bidderRequest.refererInfo.referer;
     let bidRequests = [
       {
         'bidder': 'grid',
@@ -84,29 +86,32 @@ describe('TheMediaGrid Adapter', function () {
     ];
 
     it('should attach valid params to the tag', function () {
-      const request = spec.buildRequests([bidRequests[0]]);
+      const request = spec.buildRequests([bidRequests[0]], bidderRequest);
       expect(request.data).to.be.an('string');
       const payload = parseRequest(request.data);
-      expect(payload).to.have.property('u').that.is.a('string');
+      expect(payload).to.have.property('u', referrer);
       expect(payload).to.have.property('auids', '1');
       expect(payload).to.have.property('sizes', '300x250,300x600');
       expect(payload).to.have.property('r', '22edbae2733bf6');
+      expect(payload).to.have.property('wrapperType', 'Prebid_js');
+      expect(payload).to.have.property('wrapperVersion', '$prebid.version$');
     });
 
-    it('auids must not be duplicated', function () {
-      const request = spec.buildRequests(bidRequests);
+    it('sizes must not be duplicated', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequest);
       expect(request.data).to.be.an('string');
       const payload = parseRequest(request.data);
-      expect(payload).to.have.property('u').that.is.a('string');
+      expect(payload).to.have.property('u', referrer);
       expect(payload).to.have.property('auids', '1,1,2');
       expect(payload).to.have.property('sizes', '300x250,300x600,728x90');
       expect(payload).to.have.property('r', '22edbae2733bf6');
     });
 
     it('if gdprConsent is present payload must have gdpr params', function () {
-      const request = spec.buildRequests(bidRequests, {gdprConsent: {consentString: 'AAA', gdprApplies: true}});
+      const request = spec.buildRequests(bidRequests, {gdprConsent: {consentString: 'AAA', gdprApplies: true}, refererInfo: bidderRequest.refererInfo});
       expect(request.data).to.be.an('string');
       const payload = parseRequest(request.data);
+      expect(payload).to.have.property('u', referrer);
       expect(payload).to.have.property('gdpr_consent', 'AAA');
       expect(payload).to.have.property('gdpr_applies', '1');
     });
@@ -570,6 +575,93 @@ describe('TheMediaGrid Adapter', function () {
 
       const result = spec.interpretResponse({'body': {'seatbid': fullResponse}}, request);
       expect(result).to.deep.equal(expectedResponse);
+    });
+  });
+
+  describe('user sync', function () {
+    const syncUrl = getSyncUrl();
+
+    beforeEach(function () {
+      resetUserSync();
+    });
+
+    it('should register the Emily iframe', function () {
+      let syncs = spec.getUserSyncs({
+        pixelEnabled: true
+      });
+
+      expect(syncs).to.deep.equal({type: 'image', url: syncUrl});
+    });
+
+    it('should not register the Emily iframe more than once', function () {
+      let syncs = spec.getUserSyncs({
+        pixelEnabled: true
+      });
+      expect(syncs).to.deep.equal({type: 'image', url: syncUrl});
+
+      // when called again, should still have only been called once
+      syncs = spec.getUserSyncs();
+      expect(syncs).to.equal(undefined);
+    });
+
+    it('should pass gdpr params if consent is true', function () {
+      expect(spec.getUserSyncs({ pixelEnabled: true }, {}, {
+        gdprApplies: true, consentString: 'foo'
+      })).to.deep.equal({
+        type: 'image', url: `${syncUrl}&gdpr=1&gdpr_consent=foo`
+      });
+    });
+
+    it('should pass gdpr params if consent is false', function () {
+      expect(spec.getUserSyncs({ pixelEnabled: true }, {}, {
+        gdprApplies: false, consentString: 'foo'
+      })).to.deep.equal({
+        type: 'image', url: `${syncUrl}&gdpr=0&gdpr_consent=foo`
+      });
+    });
+
+    it('should pass gdpr param gdpr_consent only when gdprApplies is undefined', function () {
+      expect(spec.getUserSyncs({ pixelEnabled: true }, {}, {
+        consentString: 'foo'
+      })).to.deep.equal({
+        type: 'image', url: `${syncUrl}&gdpr_consent=foo`
+      });
+    });
+
+    it('should pass no params if gdpr consentString is not defined', function () {
+      expect(spec.getUserSyncs({ pixelEnabled: true }, {}, {})).to.deep.equal({
+        type: 'image', url: syncUrl
+      });
+    });
+
+    it('should pass no params if gdpr consentString is a number', function () {
+      expect(spec.getUserSyncs({ pixelEnabled: true }, {}, {
+        consentString: 0
+      })).to.deep.equal({
+        type: 'image', url: syncUrl
+      });
+    });
+
+    it('should pass no params if gdpr consentString is null', function () {
+      expect(spec.getUserSyncs({ pixelEnabled: true }, {}, {
+        consentString: null
+      })).to.deep.equal({
+        type: 'image', url: syncUrl
+      });
+    });
+
+    it('should pass no params if gdpr consentString is a object', function () {
+      expect(spec.getUserSyncs({ pixelEnabled: true }, {}, {
+        consentString: {}
+      })).to.deep.equal({
+        type: 'image', url: syncUrl
+      });
+    });
+
+    it('should pass no params if gdpr is not defined', function () {
+      expect(spec.getUserSyncs({ pixelEnabled: true }, {}, undefined)).to.deep.equal({
+        type: 'image', url: syncUrl
+      });
     });
   });
 });

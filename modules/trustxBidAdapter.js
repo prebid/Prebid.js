@@ -4,10 +4,10 @@ import { Renderer } from '../src/Renderer';
 import { VIDEO, BANNER } from '../src/mediaTypes';
 
 const BIDDER_CODE = 'trustx';
-const ENDPOINT_URL = '//sofia.trustx.org/hb';
+const ENDPOINT_URL = 'https://sofia.trustx.org/hb';
 const TIME_TO_LIVE = 360;
-const ADAPTER_SYNC_URL = '//sofia.trustx.org/push_sync';
-const RENDERER_URL = '//cdn.adnxs.com/renderer/video/ANOutstreamVideo.js';
+const ADAPTER_SYNC_URL = 'https://sofia.trustx.org/push_sync';
+const RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
 
 const LOG_ERROR_MESS = {
   noAuid: 'Bid from response has no auid parameter - ',
@@ -46,6 +46,7 @@ export const spec = {
     const sizeMap = {};
     const bids = validBidRequests || [];
     let priceType = 'net';
+    let pageKeywords;
     let reqId;
 
     bids.forEach(bid => {
@@ -56,6 +57,15 @@ export const spec = {
       const {params: {uid}, adUnitCode} = bid;
       auids.push(uid);
       const sizesId = utils.parseSizesInput(bid.sizes);
+
+      if (!pageKeywords && !utils.isEmpty(bid.params.keywords)) {
+        const keywords = utils.transformBidderParamKeywords(bid.params.keywords);
+
+        if (keywords.length > 0) {
+          keywords.forEach(deleteValues);
+        }
+        pageKeywords = keywords;
+      }
 
       if (!slotsMapByUid[uid]) {
         slotsMapByUid[uid] = {};
@@ -84,7 +94,6 @@ export const spec = {
     });
 
     const payload = {
-      u: utils.getTopWindowUrl(),
       pt: priceType,
       auids: auids.join(','),
       sizes: utils.getKeys(sizeMap).join(','),
@@ -93,7 +102,14 @@ export const spec = {
       wrapperVersion: '$prebid.version$'
     };
 
+    if (pageKeywords) {
+      payload.keywords = JSON.stringify(pageKeywords);
+    }
+
     if (bidderRequest) {
+      if (bidderRequest.refererInfo && bidderRequest.refererInfo.referer) {
+        payload.u = bidderRequest.refererInfo.referer;
+      }
       if (bidderRequest.timeout) {
         payload.wtimeout = bidderRequest.timeout;
       }
@@ -104,6 +120,9 @@ export const spec = {
         payload.gdpr_applies =
           (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean')
             ? Number(bidderRequest.gdprConsent.gdprApplies) : 1;
+      }
+      if (bidderRequest.uspConsent) {
+        payload.us_privacy = bidderRequest.uspConsent;
       }
     }
 
@@ -149,6 +168,16 @@ export const spec = {
         url: ADAPTER_SYNC_URL
       }];
     }
+  }
+}
+
+function isPopulatedArray(arr) {
+  return !!(utils.isArray(arr) && arr.length > 0);
+}
+
+function deleteValues(keyPairObj) {
+  if (isPopulatedArray(keyPairObj.value) && keyPairObj.value[0] === '') {
+    delete keyPairObj.value;
   }
 }
 

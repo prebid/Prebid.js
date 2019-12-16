@@ -19,7 +19,7 @@ export const spec = {
       (bid.params.accountId && (typeof bid.params.accountId === 'string')) &&
       (bid.params.placementId && (typeof bid.params.placementId === 'string')) &&
       ((typeof bid.params.bidfloor === 'undefined') || (typeof bid.params.bidfloor === 'number')) &&
-      ((typeof bid.params.keyValues === 'undefined') || (typeof bid.params.keyValues === 'object')));
+      ((typeof bid.params.profile === 'undefined') || (typeof bid.params.profile === 'object')));
   },
 
   buildRequests(validBidRequests, bidderRequest) {
@@ -28,15 +28,18 @@ export const spec = {
       if (bidderRequest && bidderRequest.refererInfo) {
         referer = bidderRequest.refererInfo.referer || '';
       }
+
       const ret = {
         url: `${spec.orbidderHost}/bid`,
         method: 'POST',
+        options: { withCredentials: true },
         data: {
           pageUrl: referer,
           bidId: bidRequest.bidId,
           auctionId: bidRequest.auctionId,
           transactionId: bidRequest.transactionId,
           adUnitCode: bidRequest.adUnitCode,
+          bidRequestCount: bidRequest.bidRequestCount,
           sizes: bidRequest.sizes,
           params: bidRequest.params
         }
@@ -74,23 +77,18 @@ export const spec = {
     this.onHandler(bid, '/win');
   },
 
-  onSetTargeting (bid) {
-    this.onHandler(bid, '/targeting');
-  },
-
   onHandler (bid, route) {
     const getRefererInfo = detectReferer(window);
 
     bid.pageUrl = getRefererInfo().referer;
-    if (spec.bidParams[bid.adId]) {
-      bid.params = spec.bidParams[bid.adId];
+    if (spec.bidParams[bid.requestId] && (typeof bid.params === 'undefined')) {
+      bid.params = [spec.bidParams[bid.requestId]];
     }
-
     spec.ajaxCall(`${spec.orbidderHost}${route}`, JSON.stringify(bid));
   },
 
   ajaxCall(endpoint, data) {
-    ajax(endpoint, null, data);
+    ajax(endpoint, null, data, { withCredentials: true });
   }
 };
 

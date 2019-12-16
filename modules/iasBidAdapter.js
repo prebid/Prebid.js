@@ -47,7 +47,7 @@ function stringifyScreenSize() {
 }
 
 function buildRequests(bidRequests) {
-  const IAS_HOST = '//pixel.adsafeprotected.com/services/pub';
+  const IAS_HOST = 'https://pixel.adsafeprotected.com/services/pub';
   const anId = bidRequests[0].params.pubId;
 
   let queries = [];
@@ -59,6 +59,7 @@ function buildRequests(bidRequests) {
 
   queries.push(['wr', stringifyWindowSize()]);
   queries.push(['sr', stringifyScreenSize()]);
+  queries.push(['url', encodeURIComponent(window.location.href)]);
 
   const queryString = encodeURI(queries.map(qs => qs.join('=')).join('&'));
 
@@ -80,6 +81,7 @@ function getPageLevelKeywords(response) {
   let result = {};
   shallowMerge(result, response.brandSafety);
   result.fr = response.fr;
+  result.custom = response.custom;
   return result;
 }
 

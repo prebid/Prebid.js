@@ -3,7 +3,7 @@ import { BANNER, NATIVE } from '../src/mediaTypes';
 import {registerBidder} from '../src/adapters/bidderFactory';
 
 const BIDDER_CODE = 'quantum';
-const ENDPOINT_URL = '//s.sspqns.com/hb';
+const ENDPOINT_URL = 'https://s.sspqns.com/hb';
 export const spec = {
   code: BIDDER_CODE,
   aliases: ['quantx', 'qtx'], // short code
@@ -35,7 +35,7 @@ export const spec = {
 
       let devEnpoint = false;
       if (params.useDev && params.useDev === '1') {
-        devEnpoint = '//sdev.sspqns.com/hb';
+        devEnpoint = 'https://sdev.sspqns.com/hb';
       }
       let renderMode = 'native';
       for (let i = 0; i < bid.sizes.length; i++) {
@@ -116,7 +116,7 @@ export const spec = {
       if (bidRequest.renderMode && bidRequest.renderMode === 'banner') {
         bid.mediaType = 'banner';
         if (serverBody.native) {
-          const adAssetsUrl = '//cdn.elasticad.net/native/serve/js/quantx/quantumAd/';
+          const adAssetsUrl = 'https://cdn.elasticad.net/native/serve/js/quantx/quantumAd/';
           let assets = serverBody.native.assets;
           let link = serverBody.native.link;
 
@@ -204,7 +204,7 @@ export const spec = {
             ad['clicktrackers'] = link.clicktrackers;
           }
 
-          ad['main_image'] = '//resize-ssp.adux.com/scalecrop-290x130/' + window.btoa(ad['main_image']) + '/external';
+          ad['main_image'] = 'https://resize-ssp.adux.com/scalecrop-290x130/' + window.btoa(ad['main_image']) + '/external';
 
           bid.ad = '<div id="ead_' + id + '\">' +
             '<div class="ad_container ead_' + id + '" style="clear: both; display:inline-block;width:100%">' +
