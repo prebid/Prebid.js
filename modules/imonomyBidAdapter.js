@@ -1,185 +1,130 @@
-/* imonomy.js v3.1.0
-Updated : 2017-03-15 */
+import * as utils from '../src/utils';
+import { registerBidder } from '../src/adapters/bidderFactory';
 
-var utils = require('src/utils.js');
-var adloader = require('src/adloader.js');
-var bidmanager = require('src/bidmanager.js');
-var bidfactory = require('src/bidfactory.js');
-const adaptermanager = require('src/adaptermanager');
-var STATUSCODES = require('src/constants.json').STATUS;
+const BIDDER_CODE = 'imonomy';
+const ENDPOINT = 'https://b.imonomy.com/openrtb/hb/00000';
+const USYNCURL = 'https://b.imonomy.com/UserMatching/b/';
 
-function ImonomyAdapter() {
-  return {
-    callBids: _callBids
-  };
+export const spec = {
+  code: BIDDER_CODE,
 
-  function _callBids(params) {
-    var request = [];
-    var siteRef = '';
-    var screen_w = '';
-    var screen_h = '';
-    var language = '';
-    var pxr = '';
-    var keywords = '';
-    var connectiontype = '';
-    var domain = '';
-    var page = '';
-    var bid, i, l;
-    var bids = params.bids;
-    var imonomy_domain = 'b.imonomy.com';
-    var callbackName = '_hb_' + utils.getUniqueIdentifierStr();
-
-    try { siteRef = document.referrer } catch (e) { }
-    try { domain = window.location.host } catch (e) { }
-    try { pxr = window.devicePixelRatio } catch (e) { }
-    try { screen_w = screen.width || document.body.clientWidth || 0 } catch (e) { }
-    try { screen_h = screen.height || document.body.clientHeight || 0 } catch (e) { }
-    try { page = window.location.pathname + location.search + location.hash } catch (e) { }
-
-    try {
-      var meta = document.getElementsByTagName('meta') || {};
-      keywords = ('keywords' in meta) ? meta['keywords'].content : ''
-    } catch (e) {}
-
-    try {
-      var connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
-      connectiontype = (connection != undefined) ? connection.type : '';
-    } catch (e) {}
-
-    try {
-      var language_tmp = document.documentElement.lang || navigator.language || navigator.userLanguage || '';
-      language = language_tmp.split('-')[0]
-    } catch (e) {}
-
-    try {
-      var data = {
-        pxr: pxr,
-        page: page,
-        domain: domain,
-        siteRef: siteRef,
-        screen_w: screen_w,
-        screen_h: screen_h,
-        language: language,
-        keywords: keywords,
-        connectiontype: connectiontype,
-        requestId: params['requestId'],
-        bidderRequestId: params['bidderRequestId'],
-        callback: '$$PREBID_GLOBAL$$.' + callbackName,
-        publisher_id: params['bids'][0]['params']['publisher_id'],
-        bids: encodeURIComponent(JSON.stringify(params['bids']))
+  /**
+  * Determines whether or not the given bid request is valid. Valid bid request must have placementId and hbid
+  *
+  * @param {BidRequest} bid The bid params to validate.
+  * @return {boolean} True if this is a valid bid, and false otherwise.
+  */
+  isBidRequestValid: bid => {
+    return !!(bid && bid.params && bid.params.placementId && bid.params.hbid);
+  },
+  /**
+  * Make a server request from the list of BidRequests.
+  *
+  * @param {BidRequest[]} validBidRequests an array of bids
+  * @return ServerRequest Info describing the request to the server.
+  */
+  buildRequests: validBidRequests => {
+    const tags = validBidRequests.map(bid => {
+      // map each bid id to bid object to retrieve adUnit code in callback
+      let tag = {
+        uuid: bid.bidId,
+        sizes: bid.sizes,
+        trid: bid.transactionId,
+        hbid: bid.params.hbid,
+        placementid: bid.params.placementId
       };
 
-      var protocol = (document.location.protocol === 'https:') ? 'https' : 'http';
-      request.unshift(protocol + '://' + imonomy_domain + '/openrtb/hb/' + params['bids'][0]['params']['publisher_id'] + '?id=' + utils.getUniqueIdentifierStr());
-
-      for (var key in data) {
-        if (data.hasOwnProperty(key)) {
-          request.push(key + '=' + encodeURIComponent(data[key]));
-        }
+      // add floor price if specified (not mandatory)
+      if (bid.params.floorPrice) {
+        tag.floorprice = bid.params.floorPrice;
       }
 
-      for (i = 0, l = bids.length; i < l; i++) {
-        bid = bids[i];
-        request.push(formRequestUrl(bid.params));
-      }
-
-      $$PREBID_GLOBAL$$[callbackName] = handleCallback(bids);
-
-      adloader.loadScript(request.join('&'));
-    } catch (e) {
-    }
-  }
-
-  function formRequestUrl(reqData) {
-    var key;
-    var url = [];
-
-    for (key in reqData) {
-      if (reqData.hasOwnProperty(key) && reqData[key]) {
-        url.push(key, '=', reqData[key], '&');
-      }
-    }
-
-    return btoa(url.join('').slice(0, -1));
-  }
-
-  function handleCallback(bids) {
-    return function handleResponse(adItems) {
-      try {
-        var bidObject;
-        var bidder = 'imonomy';
-        var adItem;
-        var bid;
-
-        try {
-          if (adItems.um_list) {
-            _processUserMatchings(adItems.um_list);
-          }
-        } catch (e) { }
-
-        adItems = adItems.ads;
-
-        for (var i = 0, l = bids.length; i < l; i++) {
-          bid = bids[i];
-          adItem = getAdItem(adItems, bids[i].bidId);
-
-          if (adItem) {
-            bidObject = bidfactory.createBid(STATUSCODES.GOOD, bid);
-            bidObject.bidderCode = bidder;
-            bidObject.ad = adItem.ad;
-            bidObject.cpm = adItem.cpm;
-            bidObject.cur = adItem.cur;
-            bidObject.width = adItem.width;
-            bidObject.height = adItem.height;
-            bidmanager.addBidResponse(bid.placementCode, bidObject);
-          } else {
-            bidObject = bidfactory.createBid(STATUSCODES.NO_BID, bid);
-            bidObject.bidderCode = bidder;
-            bidmanager.addBidResponse(bid.placementCode, bidObject);
-          }
-        }
-      } catch (e) {
-      }
-    };
-  }
-
-  function _processUserMatchings(userMatchings) {
-    var headElem = document.getElementsByTagName('head')[0];
-    var createdElem;
-
-    utils._each(userMatchings, function (userMatching) {
-      createdElem = undefined;
-      switch (userMatching.type) {
-        case 'redirect':
-          createdElem = document.createElement('img');
-          break;
-        case 'iframe':
-          createdElem = utils.createInvisibleIframe();
-          break;
-        case 'js':
-          createdElem = document.createElement('script');
-          createdElem.type = 'text/javascript';
-          createdElem.async = true;
-          break;
-      }
-      if (createdElem) {
-        createdElem.src = decodeURIComponent(userMatching.Url);
-        headElem.insertBefore(createdElem, headElem.firstChild);
-      }
+      return tag;
     });
-  }
 
-  function getAdItem(adItems, imp) {
-    adItems = adItems || []
-    for (var i = 0, l = adItems.length; i < l; i++) {
-      if (adItems[i].impression_id == imp) {
-        return adItems[i];
+    // Imonomy server config
+    const time = new Date().getTime();
+    const kbConf = {
+      ts_as: time,
+      hb_placements: [],
+      hb_placement_bidids: {},
+      hb_floors: {},
+      cb: _generateCb(time),
+      tz: new Date().getTimezoneOffset(),
+    };
+
+    validBidRequests.forEach(bid => {
+      kbConf.hdbdid = kbConf.hdbdid || bid.params.hbid;
+      kbConf.encode_bid = kbConf.encode_bid || bid.params.encode_bid;
+      kbConf.hb_placement_bidids[bid.params.placementId] = bid.bidId;
+      if (bid.params.floorPrice) {
+        kbConf.hb_floors[bid.params.placementId] = bid.params.floorPrice;
       }
+      kbConf.hb_placements.push(bid.params.placementId);
+    });
+
+    let payload = {};
+    if (!utils.isEmpty(tags)) {
+      payload = { bids: [...tags], kbConf };
     }
 
-    return null;
+    let endpointToUse = ENDPOINT;
+    if (kbConf.hdbdid) {
+      endpointToUse = endpointToUse.replace('00000', kbConf.hdbdid);
+    }
+
+    return {
+      method: 'POST',
+      url: endpointToUse,
+      data: JSON.stringify(payload)
+    };
+  },
+  /**
+  * Unpack the response from the server into a list of bids.
+  *
+  * @param {*} response A successful response from the server.
+  * @return {Bid[]} An array of bids which were nested inside the server.
+  */
+  interpretResponse: (response) => {
+    const bidResponses = [];
+    if (response && response.body && response.body.bids) {
+      response.body.bids.forEach(bid => {
+        // The bid ID. Used to tie this bid back to the request.
+        if (bid.uuid) {
+          bid.requestId = bid.uuid;
+        } else {
+          utils.logError('No uuid for bid');
+        }
+        // The creative payload of the returned bid.
+        if (bid.creative) {
+          bid.ad = bid.creative;
+        } else {
+          utils.logError('No creative for bid');
+        }
+        bidResponses.push(bid);
+      });
+    }
+    return bidResponses;
+  },
+  /**
+  * Register User Sync.
+  */
+  getUserSyncs: syncOptions => {
+    if (syncOptions.iframeEnabled) {
+      return [{
+        type: 'iframe',
+        url: USYNCURL
+      }];
+    }
   }
+};
+
+/**
+* Generated cache baster value to be sent to bid server
+* @param {*} time current time to use for creating cb.
+*/
+function _generateCb(time) {
+  return Math.floor((time % 65536) + (Math.floor(Math.random() * 65536) * 65536));
 }
 
-adaptermanager.registerBidAdapter(new ImonomyAdapter(), 'imonomy');
-module.exports = ImonomyAdapter;
+registerBidder(spec);

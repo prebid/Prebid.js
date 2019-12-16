@@ -1,416 +1,103 @@
-describe('Piximedia adapter tests', function () {
-  var expect = require('chai').expect;
-  var urlParse = require('url-parse');
+import { expect } from 'chai';
+import { spec } from 'modules/piximediaBidAdapter';
 
-  // var querystringify = require('querystringify');
-
-  var Adapter = require('modules/piximediaBidAdapter');
-  var adLoader = require('src/adloader');
-  var bidmanager = require('src/bidmanager');
-  var utils = require('src/utils');
-  var CONSTANTS = require('src/constants.json');
-
-  let stubLoadScript;
-
-  beforeEach(function () {
-    stubLoadScript = sinon.stub(adLoader, 'loadScript');
-  });
-
-  afterEach(function () {
-    stubLoadScript.restore();
-  });
-
-  describe('creation of prebid url', function () {
-    if (typeof ($$PREBID_GLOBAL$$._bidsReceived) === 'undefined') {
-      $$PREBID_GLOBAL$$._bidsReceived = [];
-    }
-    if (typeof ($$PREBID_GLOBAL$$._bidsRequested) === 'undefined') {
-      $$PREBID_GLOBAL$$._bidsRequested = [];
-    }
-    if (typeof ($$PREBID_GLOBAL$$._adsReceived) === 'undefined') {
-      $$PREBID_GLOBAL$$._adsReceived = [];
-    }
-
-    it('should call the Piximedia prebid URL once on valid calls', function () {
-      var params = {
-        bidderCode: 'piximedia',
+describe('piximediaAdapterTest', function() {
+  describe('bidRequestValidity', function() {
+    it('bidRequest with site ID and placement ID param', function() {
+      expect(spec.isBidRequestValid({
         bidder: 'piximedia',
-        bids: [
-          {
-            bidId: '4d3819cffc4d12',
-            sizes: [[300, 250]],
-            bidder: 'piximedia',
-            params: { siteId: 'TEST', placementId: 'TEST', prebidUrl: '//resources.pm/tests/prebid/bids.js' },
-            requestId: '59c318fd382219',
-            placementCode: '/20164912/header-bid-tag-0'
-          }
-        ]
-      };
-
-      new Adapter().callBids(params);
-      sinon.assert.calledOnce(stubLoadScript);
+        params: {
+          'siteId': 'PIXIMEDIA_PREBID10',
+          'placementId': 'RG'
+        },
+      })).to.equal(true);
     });
 
-    it('should not call the Piximedia prebid URL once on invalid calls', function () {
-      var params = {
-        bidderCode: 'piximedia',
+    it('bidRequest with no required params', function() {
+      expect(spec.isBidRequestValid({
         bidder: 'piximedia',
-        bids: [
-          {
-            bidId: '4d3819cffc4d12',
-            sizes: [[300, 250]],
-            bidder: 'piximedia',
-            params: { prebidUrl: '//resources.pm/tests/prebid/bids.js' }, // this is invalid: site and placement ID are missing
-            requestId: '59c318fd382219',
-            placementCode: '/20164912/header-bid-tag-0'
-          }
-        ]
-      };
-
-      new Adapter().callBids(params);
-      sinon.assert.notCalled(stubLoadScript);
-    });
-
-    it('should call the correct Prebid URL when using the default URL', function () {
-      var params = {
-        bidderCode: 'piximedia',
-        bidder: 'piximedia',
-        bids: [
-          {
-            bidId: '4d3819cffc4d12',
-            sizes: [[300, 250]],
-            bidder: 'piximedia',
-            params: { siteId: 'TEST', placementId: 'TEST' },
-            requestId: '59c318fd382219',
-            placementCode: '/20164912/header-bid-tag-0'
-          }
-        ]
-      };
-
-      new Adapter().callBids(params);
-      var bidUrl = stubLoadScript.getCall(0).args[0];
-
-      sinon.assert.calledWith(stubLoadScript, bidUrl);
-
-      var parsedBidUrl = urlParse(bidUrl);
-
-      expect(parsedBidUrl.hostname).to.equal('static.adserver.pm');
-      expect(parsedBidUrl.query).to.equal('');
-      expect(parsedBidUrl.pathname.replace(/cbid=[a-f0-9]+/, 'cbid=210af5668b1e23').replace(/rand=[0-9]+$/, 'rand=42')).to.equal('/prebid/site_id=TEST/placement_id=TEST/jsonp=$$PREBID_GLOBAL$$.handlePiximediaCallback/sizes=300x250/cbid=210af5668b1e23/rand=42');
-    });
-
-    it('should call the correct Prebid URL when using the default URL with a deal and custom data', function () {
-      var params = {
-        bidderCode: 'piximedia',
-        bidder: 'piximedia',
-        bids: [
-          {
-            bidId: '4d3819cffc4d12',
-            sizes: [[300, 250]],
-            bidder: 'piximedia',
-            params: { siteId: 'TEST', placementId: 'TEST', dealId: 1295, custom: 'bespoke', custom2: function() { return 'bespoke2'; }, custom3: null, custom4: function() {} },
-            requestId: '59c318fd382219',
-            placementCode: '/20164912/header-bid-tag-0'
-          }
-        ]
-      };
-
-      new Adapter().callBids(params);
-      var bidUrl = stubLoadScript.getCall(0).args[0];
-
-      sinon.assert.calledWith(stubLoadScript, bidUrl);
-
-      var parsedBidUrl = urlParse(bidUrl);
-
-      expect(parsedBidUrl.hostname).to.equal('static.adserver.pm');
-      expect(parsedBidUrl.query).to.equal('');
-      expect(parsedBidUrl.pathname.replace(/cbid=[a-f0-9]+/, 'cbid=210af5668b1e23').replace(/rand=[0-9]+$/, 'rand=42')).to.equal('/prebid/site_id=TEST/placement_id=TEST/l_id=1295/custom=bespoke/custom2=bespoke2/custom3=/custom4=/jsonp=$$PREBID_GLOBAL$$.handlePiximediaCallback/sizes=300x250/cbid=210af5668b1e23/rand=42');
-    });
-
-    it('should call the correct Prebid URL when using the default URL and overridding sizes', function () {
-      var params = {
-        bidderCode: 'piximedia',
-        bidder: 'piximedia',
-        bids: [
-          {
-            bidId: '4d3819cffc4d12',
-            sizes: [[300, 250]],
-            bidder: 'piximedia',
-            params: { siteId: 'TEST', placementId: 'TEST', sizes: [[300, 600], [728, 90]] },
-            requestId: '59c318fd382219',
-            placementCode: '/20164912/header-bid-tag-0'
-          }
-        ]
-      };
-
-      new Adapter().callBids(params);
-      var bidUrl = stubLoadScript.getCall(0).args[0];
-
-      sinon.assert.calledWith(stubLoadScript, bidUrl);
-
-      var parsedBidUrl = urlParse(bidUrl);
-
-      expect(parsedBidUrl.hostname).to.equal('static.adserver.pm');
-      expect(parsedBidUrl.query).to.equal('');
-      expect(parsedBidUrl.pathname.replace(/cbid=[a-f0-9]+/, 'cbid=210af5668b1e23').replace(/rand=[0-9]+$/, 'rand=42')).to.equal('/prebid/site_id=TEST/placement_id=TEST/jsonp=$$PREBID_GLOBAL$$.handlePiximediaCallback/sizes=300x600%2C728x90/cbid=210af5668b1e23/rand=42');
-    });
-
-    it('should call the correct Prebid URL when supplying a custom URL', function () {
-      var params = {
-        bidderCode: 'piximedia',
-        bidder: 'piximedia',
-        bids: [
-          {
-            bidId: '4d3819cffc4d12',
-            sizes: [[300, 250]],
-            bidder: 'piximedia',
-            params: { siteId: 'TEST', placementId: 'TEST', prebidUrl: '//resources.pm/tests/prebid/bids.js' },
-            requestId: '59c318fd382219',
-            placementCode: '/20164912/header-bid-tag-0'
-          }
-        ]
-      };
-
-      new Adapter().callBids(params);
-      var bidUrl = stubLoadScript.getCall(0).args[0];
-
-      sinon.assert.calledWith(stubLoadScript, bidUrl);
-
-      var parsedBidUrl = urlParse(bidUrl);
-
-      expect(parsedBidUrl.hostname).to.equal('resources.pm');
-      expect(parsedBidUrl.query).to.equal('');
-      expect(parsedBidUrl.pathname.replace(/cbid=[a-f0-9]+/, 'cbid=210af5668b1e23').replace(/rand=[0-9]+$/, 'rand=42')).to.equal('/tests/prebid/bids.js/site_id=TEST/placement_id=TEST/jsonp=$$PREBID_GLOBAL$$.handlePiximediaCallback/sizes=300x250/cbid=210af5668b1e23/rand=42');
+        params: {
+        },
+      })).to.equal(false);
     });
   });
 
-  describe('handling of the callback response', function () {
-    if (typeof ($$PREBID_GLOBAL$$._bidsReceived) === 'undefined') {
-      $$PREBID_GLOBAL$$._bidsReceived = [];
-    }
-    if (typeof ($$PREBID_GLOBAL$$._bidsRequested) === 'undefined') {
-      $$PREBID_GLOBAL$$._bidsRequested = [];
-    }
-    if (typeof ($$PREBID_GLOBAL$$._adsReceived) === 'undefined') {
-      $$PREBID_GLOBAL$$._adsReceived = [];
-    }
+  describe('bidRequest', function() {
+    const bidRequests = [{
+      'bidder': 'piximedia',
+      'params': {
+        'siteId': 'PIXIMEDIA_PREBID10',
+        'placementId': 'RG'
+      },
+      'adUnitCode': 'div-gpt-ad-1460505748561-0',
+      'transactionId': 'd7b773de-ceaa-484d-89ca-d9f51b8d61ec',
+      'sizes': [300, 250],
+      'bidId': '51ef8751f9aead',
+      'bidderRequestId': '418b37f85e772c',
+      'auctionId': '18fd8b8b0bd757'
+    }];
 
-    var params = {
-      bidderCode: 'piximedia',
-      bidder: 'piximedia',
-      bids: [
-        {
-          bidId: '4d3819cffc4d12',
-          sizes: [[300, 250]],
-          bidder: 'piximedia',
-          params: { siteId: 'TEST', placementId: 'TEST', prebidUrl: '//resources.pm/tests/prebid/bids.js' },
-          requestId: '59c318fd382219',
-          placementCode: '/20164912/header-bid-tag-0'
-        }
-      ]
+    it('bidRequest HTTP method', function() {
+      const requests = spec.buildRequests(bidRequests);
+      requests.forEach(function(requestItem) {
+        expect(requestItem.method).to.equal('GET');
+      });
+    });
+
+    it('bidRequest data', function() {
+      const requests = spec.buildRequests(bidRequests);
+      expect(typeof requests[0].data.timestamp).to.equal('number');
+      expect(requests[0].data.pbsizes).to.equal('["300x250"]');
+      expect(requests[0].data.pver).to.equal('1.0');
+      expect(requests[0].data.pbparams).to.equal(JSON.stringify(bidRequests[0].params));
+      expect(requests[0].data.pbwidth).to.equal('300');
+      expect(requests[0].data.pbheight).to.equal('250');
+      expect(requests[0].data.pbbidid).to.equal('51ef8751f9aead');
+    });
+  });
+
+  describe('interpretResponse', function() {
+    const bidRequest = {
+      'method': 'GET',
+      'url': 'https://ad.piximedia.com/',
+      'data': {
+        'ver': 2,
+        'hb': 1,
+        'output': 'js',
+        'pub': 267,
+        'zone': 62546,
+        'width': '300',
+        'height': '250',
+        'callback': 'json',
+        'callback_uid': '51ef8751f9aead',
+        'url': 'https://example.com',
+        'cb': '',
+      }
     };
 
-    it('Piximedia callback function should exist', function () {
-      expect($$PREBID_GLOBAL$$.handlePiximediaCallback).to.exist.and.to.be.a('function');
-    });
+    const bidResponse = {
+      body: {
+        'bidId': '51ef8751f9aead',
+        'cpm': 4.2,
+        'width': '300',
+        'height': '250',
+        'creative_id': '1234',
+        'currency': 'EUR',
+        'adm': '<div></div>',
+      },
+      headers: {}
+    };
 
-    it('bidmanager.addBidResponse should be called once with correct arguments', function () {
-      var stubAddBidResponse = sinon.stub(bidmanager, 'addBidResponse');
-      var stubGetUniqueIdentifierStr = sinon.spy(utils, 'getUniqueIdentifierStr');
-
-      var response = {
-        foundbypm: true,
-        currency: 'EUR',
-        cpm: 1.23,
-        dealId: 9948,
-        width: 300,
-        height: 250,
-        html: '<div>ad</div>'
-      };
-
-      new Adapter().callBids(params);
-
-      var adUnits = [];
-      var unit = {};
-      unit.bids = [params];
-      unit.code = '/20164912/header-bid-tag';
-      unit.sizes = [[300, 250], [728, 90]];
-      adUnits.push(unit);
-
-      if (typeof ($$PREBID_GLOBAL$$._bidsRequested) === 'undefined') {
-        $$PREBID_GLOBAL$$._bidsRequested = [params];
-      } else {
-        $$PREBID_GLOBAL$$._bidsRequested.push(params);
-      }
-      $$PREBID_GLOBAL$$.adUnits = adUnits;
-      response.cbid = stubGetUniqueIdentifierStr.returnValues[0];
-
-      $$PREBID_GLOBAL$$.handlePiximediaCallback(response);
-
-      sinon.assert.calledOnce(stubAddBidResponse);
-      var bidPlacementCode1 = stubAddBidResponse.getCall(0).args[0];
-      var bidObject1 = stubAddBidResponse.getCall(0).args[1];
-
-      expect(bidPlacementCode1).to.equal('/20164912/header-bid-tag-0');
-      expect(bidObject1.cpm).to.equal(1.23);
-      expect(bidObject1.ad).to.equal('<div>ad</div>');
-      expect(bidObject1.width).to.equal(300);
-      expect(bidObject1.dealId).to.equal(9948);
-      expect(bidObject1.height).to.equal(250);
-      expect(bidObject1.getStatusCode()).to.equal(CONSTANTS.STATUS.GOOD);
-      expect(bidObject1.bidderCode).to.equal('piximedia');
-
-      stubAddBidResponse.restore();
-      stubGetUniqueIdentifierStr.restore();
-    });
-
-    it('bidmanager.addBidResponse should be called once with correct arguments on partial response', function () {
-      var stubAddBidResponse = sinon.stub(bidmanager, 'addBidResponse');
-      var stubGetUniqueIdentifierStr = sinon.spy(utils, 'getUniqueIdentifierStr');
-
-      // this time, we do not provide dealId
-      var response = {
-        foundbypm: true,
-        cpm: 1.23,
-        width: 300,
-        height: 250,
-        currency: 'EUR',
-        html: '<div>ad</div>'
-      };
-
-      new Adapter().callBids(params);
-
-      var adUnits = [];
-      var unit = {};
-      unit.bids = [params];
-      unit.code = '/20164912/header-bid-tag';
-      unit.sizes = [[300, 250], [728, 90]];
-      adUnits.push(unit);
-
-      if (typeof ($$PREBID_GLOBAL$$._bidsRequested) === 'undefined') {
-        $$PREBID_GLOBAL$$._bidsRequested = [params];
-      } else {
-        $$PREBID_GLOBAL$$._bidsRequested.push(params);
-      }
-      $$PREBID_GLOBAL$$.adUnits = adUnits;
-      response.cbid = stubGetUniqueIdentifierStr.returnValues[0];
-
-      $$PREBID_GLOBAL$$.handlePiximediaCallback(response);
-
-      sinon.assert.calledOnce(stubAddBidResponse);
-      var bidPlacementCode1 = stubAddBidResponse.getCall(0).args[0];
-      var bidObject1 = stubAddBidResponse.getCall(0).args[1];
-
-      expect(bidPlacementCode1).to.equal('/20164912/header-bid-tag-0');
-      expect(bidObject1.cpm).to.equal(1.23);
-      expect(bidObject1.ad).to.equal('<div>ad</div>');
-      expect(bidObject1.width).to.equal(300);
-      expect(bidObject1.height).to.equal(250);
-      expect(bidObject1.getStatusCode()).to.equal(CONSTANTS.STATUS.GOOD);
-      expect(bidObject1.bidderCode).to.equal('piximedia');
-
-      stubAddBidResponse.restore();
-      stubGetUniqueIdentifierStr.restore();
-    });
-
-    it('bidmanager.addBidResponse should be called once without any ads', function () {
-      var stubAddBidResponse = sinon.stub(bidmanager, 'addBidResponse');
-      var stubGetUniqueIdentifierStr = sinon.spy(utils, 'getUniqueIdentifierStr');
-
-      var response = {
-        foundbypm: false
-      };
-
-      new Adapter().callBids(params);
-
-      var adUnits = [];
-      var unit = {};
-      unit.bids = [params];
-      unit.code = '/20164912/header-bid-tag';
-      unit.sizes = [[300, 250], [728, 90]];
-      adUnits.push(unit);
-
-      if (typeof ($$PREBID_GLOBAL$$._bidsRequested) === 'undefined') {
-        $$PREBID_GLOBAL$$._bidsRequested = [params];
-      } else {
-        $$PREBID_GLOBAL$$._bidsRequested.push(params);
-      }
-      $$PREBID_GLOBAL$$.adUnits = adUnits;
-      response.cbid = stubGetUniqueIdentifierStr.returnValues[0];
-
-      $$PREBID_GLOBAL$$.handlePiximediaCallback(response);
-
-      sinon.assert.calledOnce(stubAddBidResponse);
-      var bidPlacementCode1 = stubAddBidResponse.getCall(0).args[0];
-      var bidObject1 = stubAddBidResponse.getCall(0).args[1];
-
-      expect(bidPlacementCode1).to.equal('/20164912/header-bid-tag-0');
-      expect(bidObject1.getStatusCode()).to.equal(CONSTANTS.STATUS.NO_BID);
-      expect(bidObject1.bidderCode).to.equal('piximedia');
-
-      stubAddBidResponse.restore();
-      stubGetUniqueIdentifierStr.restore();
-    });
-
-    it('bidmanager.addBidResponse should not be called on bogus cbid', function () {
-      var stubAddBidResponse = sinon.stub(bidmanager, 'addBidResponse');
-      var stubGetUniqueIdentifierStr = sinon.spy(utils, 'getUniqueIdentifierStr');
-
-      var response = {
-        foundbypm: false
-      };
-
-      new Adapter().callBids(params);
-
-      var adUnits = [];
-      var unit = {};
-      unit.bids = [params];
-      unit.code = '/20164912/header-bid-tag';
-      unit.sizes = [[300, 250], [728, 90]];
-      adUnits.push(unit);
-
-      if (typeof ($$PREBID_GLOBAL$$._bidsRequested) === 'undefined') {
-        $$PREBID_GLOBAL$$._bidsRequested = [params];
-      } else {
-        $$PREBID_GLOBAL$$._bidsRequested.push(params);
-      }
-      $$PREBID_GLOBAL$$.adUnits = adUnits;
-      response.cbid = stubGetUniqueIdentifierStr.returnValues[0] + '_BOGUS';
-
-      $$PREBID_GLOBAL$$.handlePiximediaCallback(response);
-
-      sinon.assert.notCalled(stubAddBidResponse);
-
-      stubAddBidResponse.restore();
-      stubGetUniqueIdentifierStr.restore();
-    });
-
-    it('bidmanager.addBidResponse should not be called on bogus response', function () {
-      var stubAddBidResponse = sinon.stub(bidmanager, 'addBidResponse');
-
-      var response = null; // this is bogus: we expect an object
-
-      new Adapter().callBids(params);
-
-      var adUnits = [];
-      var unit = {};
-      unit.bids = [params];
-      unit.code = '/20164912/header-bid-tag';
-      unit.sizes = [[300, 250], [728, 90]];
-      adUnits.push(unit);
-
-      if (typeof ($$PREBID_GLOBAL$$._bidsRequested) === 'undefined') {
-        $$PREBID_GLOBAL$$._bidsRequested = [params];
-      } else {
-        $$PREBID_GLOBAL$$._bidsRequested.push(params);
-      }
-      $$PREBID_GLOBAL$$.adUnits = adUnits;
-
-      $$PREBID_GLOBAL$$.handlePiximediaCallback(response);
-
-      sinon.assert.notCalled(stubAddBidResponse);
-
-      stubAddBidResponse.restore();
+    it('result is correct', function() {
+      const result = spec.interpretResponse(bidResponse, bidRequest);
+      expect(result[0].requestId).to.equal('51ef8751f9aead');
+      expect(result[0].cpm).to.equal(4.2);
+      expect(result[0].width).to.equal('300');
+      expect(result[0].height).to.equal('250');
+      expect(result[0].creativeId).to.equal('1234');
+      expect(result[0].currency).to.equal('EUR');
+      expect(result[0].ttl).to.equal(300);
+      expect(result[0].ad).to.equal('<div></div>');
     });
   });
 });

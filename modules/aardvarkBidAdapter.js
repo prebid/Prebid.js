@@ -1,124 +1,189 @@
-/*
- * Adapter for requesting bids from RTK Aardvark
- * To request an RTK Aardvark Header bidding account
- * or for additional integration support please contact sales@rtk.io
- */
+import * as utils from '../src/utils';
+import {registerBidder} from '../src/adapters/bidderFactory';
 
-var utils = require('src/utils.js');
-var bidfactory = require('src/bidfactory.js');
-var bidmanager = require('src/bidmanager.js');
-var adloader = require('src/adloader.js');
-var Adapter = require('src/adapter.js').default;
-var constants = require('src/constants.json');
-var adaptermanager = require('src/adaptermanager');
+const BIDDER_CODE = 'aardvark';
+const DEFAULT_ENDPOINT = 'bidder.rtk.io';
+const SYNC_ENDPOINT = 'sync.rtk.io';
+const AARDVARK_TTL = 300;
+const AARDVARK_CURRENCY = 'USD';
 
-const AARDVARK_CALLBACK_NAME = 'aardvarkResponse';
-const AARDVARK_REQUESTS_MAP = 'aardvarkRequests';
-const AARDVARK_BIDDER_CODE = 'aardvark';
-const DEFAULT_REFERRER = 'thor.rtk.io';
-const DEFAULT_ENDPOINT = 'thor.rtk.io';
+let hasSynced = false;
 
-var endpoint = DEFAULT_ENDPOINT;
-
-function requestBids(bidderCode, callbackName, bidReqs) {
-  var ref = utils.getTopWindowLocation();
-  var ai = '';
-  const scs = [];
-  const bidIds = [];
-
-  ref = ref ? ref.host : DEFAULT_REFERRER;
-
-  for (var i = 0, l = bidReqs.length, bid, _ai, _sc, _endpoint; i < l; i += 1) {
-    bid = bidReqs[i];
-    _ai = utils.getBidIdParameter('ai', bid.params);
-    _sc = utils.getBidIdParameter('sc', bid.params);
-    if (!_ai || !_ai.length || !_sc || !_sc.length) { continue; }
-
-    _endpoint = utils.getBidIdParameter('host', bid.params);
-    if (_endpoint) { endpoint = _endpoint; }
-
-    if (!ai.length) { ai = _ai; }
-    if (_sc) { scs.push(_sc); }
-
-    bidIds.push(_sc + '=' + bid.bidId);
-
-    // Create the bidIdsMap for easier mapping back later
-    $$PREBID_GLOBAL$$[AARDVARK_REQUESTS_MAP][bidderCode][bid.bidId] = bid;
-  }
-
-  if (!ai.length || !scs.length) { return utils.logWarn('Bad bid request params given for adapter $' + bidderCode + ' (' + AARDVARK_BIDDER_CODE + ')'); }
-
-  adloader.loadScript([
-    '//' + endpoint + '/', ai, '/', scs.join('_'),
-    '/aardvark/?jsonp=$$PREBID_GLOBAL$$.', callbackName,
-    '&rtkreferer=', ref, '&', bidIds.join('&')
-  ].join(''));
+export function resetUserSync() {
+  hasSynced = false;
 }
 
-function registerBidResponse(bidderCode, rawBidResponse) {
-  if (rawBidResponse.error) { return utils.logWarn('Aardvark bid received with an error, ignoring... [' + rawBidResponse.error + ']'); }
+export const spec = {
+  code: BIDDER_CODE,
+  aliases: ['adsparc', 'safereach'],
 
-  if (!rawBidResponse.cid) { return utils.logWarn('Aardvark bid received without a callback id, ignoring...'); }
+  isBidRequestValid: function(bid) {
+    return ((typeof bid.params.ai === 'string') && !!bid.params.ai.length &&
+        (typeof bid.params.sc === 'string') && !!bid.params.sc.length);
+  },
 
-  var bidObj = $$PREBID_GLOBAL$$[AARDVARK_REQUESTS_MAP][bidderCode][rawBidResponse.cid];
-  if (!bidObj) { return utils.logWarn('Aardvark request not found: ' + rawBidResponse.cid); }
+  buildRequests: function(validBidRequests, bidderRequest) {
+    var auctionCodes = [];
+    var requests = [];
+    var requestsMap = {};
+    var referer = bidderRequest.refererInfo.referer;
+    var pageCategories = [];
+    var tdId = '';
+    var width = window.innerWidth;
+    var height = window.innerHeight;
 
-  if (bidObj.params.sc !== rawBidResponse.id) { return utils.logWarn('Aardvark bid received with a non matching shortcode ' + rawBidResponse.id + ' instead of ' + bidObj.params.sc); }
+    // This reference to window.top can cause issues when loaded in an iframe if not protected with a try/catch.
+    try {
+      var topWin = utils.getWindowTop();
+      if (topWin.rtkcategories && Array.isArray(topWin.rtkcategories)) {
+        pageCategories = topWin.rtkcategories;
+      }
+      width = topWin.innerWidth;
+      height = topWin.innerHeight;
+    } catch (e) {}
 
-  var bidResponse = bidfactory.createBid(constants.STATUS.GOOD, bidObj);
-  bidResponse.bidderCode = bidObj.bidder;
-  bidResponse.cpm = rawBidResponse.cpm;
-  bidResponse.ad = rawBidResponse.adm + utils.createTrackPixelHtml(decodeURIComponent(rawBidResponse.nurl));
-  bidResponse.width = bidObj.sizes[0][0];
-  bidResponse.height = bidObj.sizes[0][1];
+    if (utils.isStr(utils.deepAccess(validBidRequests, '0.userId.tdid'))) {
+      tdId = validBidRequests[0].userId.tdid;
+    }
 
-  bidmanager.addBidResponse(bidObj.placementCode, bidResponse);
-  $$PREBID_GLOBAL$$[AARDVARK_REQUESTS_MAP][bidderCode][rawBidResponse.cid].responded = true;
-}
+    utils._each(validBidRequests, function(b) {
+      var rMap = requestsMap[b.params.ai];
+      if (!rMap) {
+        rMap = {
+          shortCodes: [],
+          payload: {
+            version: 1,
+            jsonp: false,
+            rtkreferer: referer,
+            w: width,
+            h: height
+          },
+          endpoint: DEFAULT_ENDPOINT
+        };
 
-function registerAardvarkCallback(bidderCode, callbackName) {
-  $$PREBID_GLOBAL$$[callbackName] = function(rtkResponseObj) {
-    rtkResponseObj.forEach(function(bidResponse) {
-      registerBidResponse(bidderCode, bidResponse);
+        if (tdId) {
+          rMap.payload.tdid = tdId;
+        }
+
+        if (pageCategories && pageCategories.length) {
+          rMap.payload.categories = pageCategories.slice(0);
+        }
+
+        if (b.params.categories && b.params.categories.length) {
+          rMap.payload.categories = rMap.payload.categories || []
+          utils._each(b.params.categories, function(cat) {
+            rMap.payload.categories.push(cat);
+          });
+        }
+
+        if (bidderRequest && bidderRequest.gdprConsent) {
+          rMap.payload.gdpr = false;
+          if (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') {
+            rMap.payload.gdpr = bidderRequest.gdprConsent.gdprApplies;
+          }
+          if (rMap.payload.gdpr) {
+            rMap.payload.consent = bidderRequest.gdprConsent.consentString;
+          }
+        }
+
+        requestsMap[b.params.ai] = rMap;
+        auctionCodes.push(b.params.ai);
+      }
+
+      rMap.shortCodes.push(b.params.sc);
+      rMap.payload[b.params.sc] = b.bidId;
+
+      if ((typeof b.params.host === 'string') && b.params.host.length &&
+          (b.params.host !== rMap.endpoint)) {
+        rMap.endpoint = b.params.host;
+      }
     });
 
-    for (var bidRequestId in $$PREBID_GLOBAL$$[AARDVARK_REQUESTS_MAP][bidderCode]) {
-      if ($$PREBID_GLOBAL$$[AARDVARK_REQUESTS_MAP][bidderCode].hasOwnProperty(bidRequestId)) {
-        var bidRequest = $$PREBID_GLOBAL$$[AARDVARK_REQUESTS_MAP][bidderCode][bidRequestId];
-        if (!bidRequest.responded) {
-          var bidResponse = bidfactory.createBid(constants.STATUS.NO_BID, bidRequest);
-          bidResponse.bidderCode = bidRequest.bidder;
-          bidmanager.addBidResponse(bidRequest.placementCode, bidResponse);
-        }
-      }
+    utils._each(auctionCodes, function(auctionId) {
+      var req = requestsMap[auctionId];
+      requests.push({
+        method: 'GET',
+        url: `https://${req.endpoint}/${auctionId}/${req.shortCodes.join('_')}/aardvark`,
+        data: req.payload,
+        bidderRequest
+      });
+    });
+
+    return requests;
+  },
+
+  interpretResponse: function(serverResponse, bidRequest) {
+    var bidResponses = [];
+
+    if (!Array.isArray(serverResponse.body)) {
+      serverResponse.body = [serverResponse.body];
     }
-  };
-}
 
-const AardvarkAdapter = function() {
-  var baseAdapter = new Adapter(AARDVARK_BIDDER_CODE);
+    utils._each(serverResponse.body, function(rawBid) {
+      var cpm = +(rawBid.cpm || 0);
 
-  $$PREBID_GLOBAL$$[AARDVARK_REQUESTS_MAP] = $$PREBID_GLOBAL$$[AARDVARK_REQUESTS_MAP] || {};
+      if (!cpm) {
+        return;
+      }
 
-  baseAdapter.callBids = function (params) {
-    const bidderCode = baseAdapter.getBidderCode();
-    var callbackName = AARDVARK_CALLBACK_NAME;
+      var bidResponse = {
+        requestId: rawBid.cid,
+        cpm: cpm,
+        width: rawBid.width || 0,
+        height: rawBid.height || 0,
+        currency: rawBid.currency ? rawBid.currency : AARDVARK_CURRENCY,
+        netRevenue: rawBid.netRevenue ? rawBid.netRevenue : true,
+        ttl: rawBid.ttl ? rawBid.ttl : AARDVARK_TTL,
+        creativeId: rawBid.creativeId || 0
+      };
 
-    if (bidderCode !== AARDVARK_BIDDER_CODE) { callbackName = [AARDVARK_CALLBACK_NAME, bidderCode].join('_'); }
+      if (rawBid.hasOwnProperty('dealId')) {
+        bidResponse.dealId = rawBid.dealId
+      }
 
-    $$PREBID_GLOBAL$$[AARDVARK_REQUESTS_MAP][bidderCode] = {};
+      if (rawBid.hasOwnProperty('ex')) {
+        bidResponse.ex = rawBid.ex;
+      }
 
-    registerAardvarkCallback(bidderCode, callbackName);
+      switch (rawBid.media) {
+        case 'banner':
+          bidResponse.ad = rawBid.adm + utils.createTrackPixelHtml(decodeURIComponent(rawBid.nurl));
+          break;
 
-    return requestBids(bidderCode, callbackName, params.bids || []);
-  };
+        default:
+          return utils.logError('bad Aardvark response (media)', rawBid);
+      }
 
-  return Object.assign(this, {
-    callBids: baseAdapter.callBids,
-    setBidderCode: baseAdapter.setBidderCode
-  });
+      bidResponses.push(bidResponse);
+    });
+
+    return bidResponses;
+  },
+
+  getUserSyncs: function(syncOptions, serverResponses, gdprConsent) {
+    const syncs = [];
+    var url = 'https://' + SYNC_ENDPOINT + '/cs';
+    var gdprApplies = false;
+    if (gdprConsent && (typeof gdprConsent.gdprApplies === 'boolean')) {
+      gdprApplies = gdprConsent.gdprApplies;
+    }
+
+    if (syncOptions.iframeEnabled) {
+      if (!hasSynced) {
+        hasSynced = true;
+        if (gdprApplies) {
+          url = url + '?g=1&c=' + encodeURIComponent(gdprConsent.consentString);
+        }
+        syncs.push({
+          type: 'iframe',
+          url: url
+        });
+      }
+    } else {
+      utils.logWarn('Aardvark: Please enable iframe based user sync.');
+    }
+    return syncs;
+  }
 };
 
-adaptermanager.registerBidAdapter(new AardvarkAdapter(), 'aardvark');
-
-module.exports = AardvarkAdapter;
+registerBidder(spec);

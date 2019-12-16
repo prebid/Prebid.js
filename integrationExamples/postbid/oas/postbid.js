@@ -1,3 +1,4 @@
+/* eslint-disable */
 (function(window){
   var postbid = {};
   postbid.que = [];
@@ -100,7 +101,22 @@
   }
 
   postbid.que.push(function(conf) {
-    var content = "\n      <script type=\"text/javascript\">\n      if (!Array.prototype.find) {\n        Object.defineProperty(Array.prototype, 'find', {\n          value: function(predicate) {\n            if (this == null) {\n              throw new TypeError('\"this\" is null or not defined');\n            }\n            var o = Object(this);\n            var len = o.length >>> 0;\n            if (typeof predicate !== 'function') {\n              throw new TypeError('predicate must be a function');\n            }\n            var thisArg = arguments[1];\n            var k = 0;\n            while (k < len) {\n              var kValue = o[k];\n              if (predicate.call(thisArg, kValue, k, o)) {\n                return kValue;\n              }\n              k++;\n            }\n            return undefined;\n          }\n        });\n      }\n\n      var pbjs = pbjs || {};\n      pbjs.que = pbjs.que || [];\n\n      (function() {\n          var pbjsEl = document.createElement(\"script\"); pbjsEl.type = \"text/javascript\";\n          pbjsEl.async = true; var isHttps = 'https:' === document.location.protocol;\n          pbjsEl.src = (isHttps ? \"https\" : \"http\") + \"://acdn.adnxs.com/prebid/not-for-prod/prebid.js\";\n          var pbjsTargetEl = document.getElementsByTagName(\"head\")[0];\n          pbjsTargetEl.insertBefore(pbjsEl, pbjsTargetEl.firstChild);\n      })();\n\n      pbjs.que.push(function() {\n          var adUnits = [{\n              code: '" + conf.adUnitCode + "',\n              sizes: " + conf.adUnitSizes + ",\n              bids: " + conf.adUnitBids + "\n          }];\n\n          pbjs.addAdUnits(adUnits);\n\n          pbjs.requestBids({\n              timeout: " + conf.timout + ",\n              bidsBackHandler: function() {\n                  var iframe = document.getElementById('postbid_if_3');\n\n                  var iframeDoc = iframe.contentWindow.document;\n\n                  var params = pbjs.getAdserverTargetingForAdUnitCode('" + conf.adUnitCode + "');\n\n                  // If any bidders return any creatives\n                  var bid;\n                  if(params && params['hb_adid']){\n                      bid = pbjs._bidsReceived.find(function(bid) {\n                        return bid.adId === params['hb_adid'];\n                      });\n                      pbjs.renderAd(iframeDoc, params['hb_adid']);\n                    } else {\n                      // If no bidder return any creatives,\n                      // Passback 3rd party tag in Javascript\n\n                      iframe.width = '" + conf.adUnitSizes[0] + "';\n                      iframe.height = '" + conf.adUnitSizes[1] + "';\n\n                      iframeDoc.write('" + conf.passbackTagHtml + "');\n                  }\n\n                  var iframeResize = window.parent.document.getElementById('" + conf.targetId + "');\n                  iframeResize.height = (bid.height) ? bid.height+'px' : '" + conf.adUnitSizes[1] + "px';\n                  iframeResize.width = (bid.width) ? bid.width+'px' : '" + conf.adUnitSizes[0] + "px';\n                }\n          });\n      });\n      <"+ '' +"/script>\n      <iframe id='postbid_if_3' FRAMEBORDER=\"0\" SCROLLING=\"no\" MARGINHEIGHT=\"0\" MARGINWIDTH=\"0\" TOPMARGIN=\"0\" LEFTMARGIN=\"0\" ALLOWTRANSPARENCY=\"true\" WIDTH=\"0\" HEIGHT=\"0\"></iframe>";
+    var sizes = JSON.parse(conf.adUnitSizes);
+    var timeout = conf.timeout;
+    var adUnitCode = conf.adUnitCode;
+    var adUnitBids = conf.adUnitBids;
+    var targetId = conf.targetId;
+    var passbackTagHtml = conf.passbackTagHtml;
+
+    var content = [%%postbid%%];
+    content = content.replace(/\[%%targetId%%\]/g, targetId);
+    content = content.replace(/\[%%adUnitCode%%\]/g, adUnitCode);
+    content = content.replace(/\[%%timeout%%\]/g, timeout);
+    content = content.replace(/\[%%adUnitBids%%\]/g, adUnitBids);
+    content = content.replace(/\[%%passbackTagHtml%%\]/g, passbackTagHtml);
+    content = content.replace(/\[%%sizes%%\]/g, conf.adUnitSizes);
+    content = content.replace(/\[%%size0%%\]/g, sizes[0]);
+    content = content.replace(/\[%%size1%%\]/g, sizes[1]);
 
     var iframe = createIframe(conf.targetId);
     var div = document.getElementById(conf.divId);
@@ -116,3 +132,4 @@
   window.processQue = processQue;
 
 })(window);
+/* eslint-enable */

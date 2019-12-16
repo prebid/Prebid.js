@@ -11,6 +11,7 @@ Thank you for your pull request. Please make sure this PR is scoped to one chang
 - [ ] Refactoring (no functional changes, no api changes)
 - [ ] Build related changes
 - [ ] CI related changes
+- [ ] Does this change affect user-facing APIs or examples documented on http://prebid.org?
 - [ ] Other
 
 ## Description of change
@@ -32,6 +33,9 @@ Be sure to test the integration with your adserver using the [Hello World](/inte
 - contact email of the adapter’s maintainer
 - [ ] official adapter submission
 
+For any changes that affect user-facing APIs or example code documented on http://prebid.org, please provide:
+
+- A link to a PR on the docs repo at https://github.com/prebid/prebid.github.io/
 
 ## Other information
 <!-- References to related PR or issue #s, @mentions of the person or team responsible for reviewing changes, etc. -->

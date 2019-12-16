@@ -1,23 +1,34 @@
 import adomikAnalytics from 'modules/adomikAnalyticsAdapter';
 import {expect} from 'chai';
 let events = require('src/events');
-let adaptermanager = require('src/adaptermanager');
+let adapterManager = require('src/adapterManager').default;
 let constants = require('src/constants.json');
 
 describe('Adomik Prebid Analytic', function () {
+  let sendEventStub;
+  let sendWonEventStub;
+
   describe('enableAnalytics', function () {
-    beforeEach(() => {
+    beforeEach(function () {
       sinon.spy(adomikAnalytics, 'track');
-      sinon.spy(adomikAnalytics, 'sendTypedEvent');
+      sendEventStub = sinon.stub(adomikAnalytics, 'sendTypedEvent');
+      sendWonEventStub = sinon.stub(adomikAnalytics, 'sendWonEvent');
+      sinon.stub(events, 'getEvents').returns([]);
     });
 
-    afterEach(() => {
+    afterEach(function () {
       adomikAnalytics.track.restore();
-      adomikAnalytics.sendTypedEvent.restore();
+      sendEventStub.restore();
+      sendWonEventStub.restore();
+      events.getEvents.restore();
+    });
+
+    after(function () {
+      adomikAnalytics.disableAnalytics();
     });
 
     it('should catch all events', function (done) {
-      adaptermanager.registerAnalyticsAdapter({
+      adapterManager.registerAnalyticsAdapter({
         code: 'adomik',
         adapter: adomikAnalytics
       });
@@ -33,7 +44,7 @@ describe('Adomik Prebid Analytic', function () {
         height: 10,
         statusMessage: 'Bid available',
         adId: '1234',
-        requestId: '',
+        auctionId: '',
         responseTimestamp: 1496410856397,
         requestTimestamp: 1496410856295,
         cpm: 0.1,
@@ -44,32 +55,28 @@ describe('Adomik Prebid Analytic', function () {
       }
 
       // Step 1: Initialize adapter
-      adaptermanager.enableAnalytics({
+      adapterManager.enableAnalytics({
         provider: 'adomik',
         options: initOptions
       });
       expect(adomikAnalytics.currentContext).to.deep.equal({
         uid: '123456',
         url: 'testurl',
-        debug: undefined,
         id: '',
-        timeouted: false,
-        timeout: 0,
+        timeouted: false
       });
 
-      // Step 1: Send init auction event
-      events.emit(constants.EVENTS.AUCTION_INIT, {config: initOptions, requestId: 'test-test-test', timeout: 3000});
+      // Step 2: Send init auction event
+      events.emit(constants.EVENTS.AUCTION_INIT, {config: initOptions, auctionId: 'test-test-test'});
 
       expect(adomikAnalytics.currentContext).to.deep.equal({
         uid: '123456',
         url: 'testurl',
-        debug: undefined,
         id: 'test-test-test',
-        timeouted: false,
-        timeout: 3000,
+        timeouted: false
       });
 
-      // Step 2: Send bid requested event
+      // Step 3: Send bid requested event
       events.emit(constants.EVENTS.BID_REQUESTED, { bids: [bid] });
 
       expect(adomikAnalytics.bucketEvents.length).to.equal(1);
@@ -81,7 +88,7 @@ describe('Adomik Prebid Analytic', function () {
         }
       });
 
-      // Step 3: Send bid response event
+      // Step 4: Send bid response event
       events.emit(constants.EVENTS.BID_RESPONSE, bid);
 
       expect(adomikAnalytics.bucketEvents.length).to.equal(2);
@@ -102,29 +109,23 @@ describe('Adomik Prebid Analytic', function () {
         }
       });
 
-      // Step 4: Send bid won event
+      // Step 5: Send bid won event
       events.emit(constants.EVENTS.BID_WON, bid);
 
-      expect(adomikAnalytics.bucketEvents.length).to.equal(3);
-      expect(adomikAnalytics.bucketEvents[2]).to.deep.equal({
-        type: 'winner',
-        event: {
-          id: '1234',
-          placementCode: '0000',
-        }
-      });
+      expect(adomikAnalytics.bucketEvents.length).to.equal(2);
 
-      // Step 5: Send bid timeout event
+      // Step 6: Send bid timeout event
       events.emit(constants.EVENTS.BID_TIMEOUT, {});
 
       expect(adomikAnalytics.currentContext.timeouted).to.equal(true);
 
-      // Step 6: Send auction end event
+      // Step 7: Send auction end event
       var clock = sinon.useFakeTimers();
       events.emit(constants.EVENTS.AUCTION_END, {});
 
       setTimeout(function() {
-        sinon.assert.callCount(adomikAnalytics.sendTypedEvent, 1);
+        sinon.assert.callCount(sendEventStub, 1);
+        sinon.assert.callCount(sendWonEventStub, 1);
         done();
       }, 3000);
 

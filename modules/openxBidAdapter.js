@@ -1,298 +1,412 @@
-import { config } from 'src/config';
-const bidfactory = require('src/bidfactory.js');
-const bidmanager = require('src/bidmanager.js');
-const ajax = require('src/ajax');
-const CONSTANTS = require('src/constants.json');
-const utils = require('src/utils.js');
-const adaptermanager = require('src/adaptermanager');
+import {config} from '../src/config';
+import {registerBidder} from '../src/adapters/bidderFactory';
+import * as utils from '../src/utils';
+import {BANNER, VIDEO} from '../src/mediaTypes';
+import {parse} from '../src/url';
 
-const OpenxAdapter = function OpenxAdapter() {
-  const BIDDER_CODE = 'openx';
-  const BIDDER_CONFIG = 'hb_pb';
-  const BIDDER_VERSION = '1.0.1';
-  let startTime;
-  let timeout = config.getConfig('bidderTimeout');
-  let shouldSendBoPixel = true;
+const SUPPORTED_AD_TYPES = [BANNER, VIDEO];
+const BIDDER_CODE = 'openx';
+const BIDDER_CONFIG = 'hb_pb';
+const BIDDER_VERSION = '3.0.0';
 
-  let pdNode = null;
-
-  function oxARJResponse (oxResponseObj) {
-    try {
-      oxResponseObj = JSON.parse(oxResponseObj);
-    } catch (_) {
-      // Could not parse response, changing to an empty response instead
-      oxResponseObj = {
-        ads: {}
-      };
-    }
-    let adUnits = oxResponseObj.ads.ad;
-    if (oxResponseObj.ads && oxResponseObj.ads.pixels) {
-      makePDCall(oxResponseObj.ads.pixels);
-    }
-
-    if (!adUnits) {
-      adUnits = [];
-    }
-
-    let bids = $$PREBID_GLOBAL$$._bidsRequested.find(bidSet => bidSet.bidderCode === 'openx').bids;
-    for (let i = 0; i < bids.length; i++) {
-      let bid = bids[i];
-      let auid = null;
-      let adUnit = null;
-      // find the adunit in the response
-      for (let j = 0; j < adUnits.length; j++) {
-        adUnit = adUnits[j];
-        if (String(bid.params.unit) === String(adUnit.adunitid) && adUnitHasValidSizeFromBid(adUnit, bid) && !adUnit.used) {
-          auid = adUnit.adunitid;
-          break;
-        }
-      }
-
-      let beaconParams = {
-        bd: +(new Date()) - startTime,
-        br: '0', // may be 0, t, or p
-        bt: Math.min(timeout, window.PREBID_TIMEOUT || config.getConfig('bidderTimeout')),
-        bs: window.location.hostname
-      };
-      // no fill :(
-      if (!auid || !adUnit.pub_rev) {
-        addBidResponse(null, bid);
-        continue;
-      }
-      adUnit.used = true;
-
-      beaconParams.br = beaconParams.bt < beaconParams.bd ? 't' : 'p';
-      beaconParams.bp = adUnit.pub_rev;
-      beaconParams.ts = adUnit.ts;
-      addBidResponse(adUnit, bid);
-      if (shouldSendBoPixel === true) {
-        buildBoPixel(adUnit.creative[0], beaconParams);
-      }
-    }
-  };
-
-  function getViewportDimensions(isIfr) {
-    let width;
-    let height;
-    let tWin = window;
-    let tDoc = document;
-    let docEl = tDoc.documentElement;
-    let body;
-
-    if (isIfr) {
-      try {
-        tWin = window.top;
-        tDoc = window.top.document;
-      } catch (e) {
-        return;
-      }
-      docEl = tDoc.documentElement;
-      body = tDoc.body;
-
-      width = tWin.innerWidth || docEl.clientWidth || body.clientWidth;
-      height = tWin.innerHeight || docEl.clientHeight || body.clientHeight;
-    } else {
-      docEl = tDoc.documentElement;
-      width = tWin.innerWidth || docEl.clientWidth;
-      height = tWin.innerHeight || docEl.clientHeight;
-    }
-
-    return `${width}x${height}`;
-  }
-
-  function makePDCall(pixelsUrl) {
-    let pdFrame = utils.createInvisibleIframe();
-    let name = 'openx-pd';
-    pdFrame.setAttribute('id', name);
-    pdFrame.setAttribute('name', name);
-    let rootNode = document.body;
-
-    if (!rootNode) {
-      return;
-    }
-
-    pdFrame.src = pixelsUrl;
-
-    if (pdNode) {
-      pdNode.parentNode.replaceChild(pdFrame, pdNode);
-      pdNode = pdFrame;
-    } else {
-      pdNode = rootNode.appendChild(pdFrame);
-    }
-  }
-
-  function addBidResponse(adUnit, bid) {
-    let bidResponse = bidfactory.createBid(adUnit ? CONSTANTS.STATUS.GOOD : CONSTANTS.STATUS.NO_BID, bid);
-    bidResponse.bidderCode = BIDDER_CODE;
-
-    if (adUnit) {
-      let creative = adUnit.creative[0];
-      bidResponse.ad = adUnit.html;
-      bidResponse.cpm = Number(adUnit.pub_rev) / 1000;
-      bidResponse.ad_id = adUnit.adid;
-      if (adUnit.deal_id) {
-        bidResponse.dealId = adUnit.deal_id;
-      }
-      if (creative) {
-        bidResponse.width = creative.width;
-        bidResponse.height = creative.height;
-      }
-      if (adUnit.tbd) {
-        bidResponse.tbd = adUnit.tbd;
-      }
-    }
-    bidmanager.addBidResponse(bid.placementCode, bidResponse);
-  }
-
-  function buildQueryStringFromParams(params) {
-    for (let key in params) {
-      if (params.hasOwnProperty(key)) {
-        if (!params[key]) {
-          delete params[key];
-        }
-      }
-    }
-    return utils._map(Object.keys(params), key => `${key}=${params[key]}`)
-      .join('&');
-  }
-
-  function buildBoPixel(creative, params) {
-    let img = new Image();
-    let recordPixel = creative.tracking.impression;
-    let boBase = recordPixel.match(/([^?]+\/)ri\?/);
-
-    if (boBase) {
-      img.src = `${boBase[1]}bo?${buildQueryStringFromParams(params)}`;
-    }
-  }
-
-  function adUnitHasValidSizeFromBid(adUnit, bid) {
-    let sizes = utils.parseSizesInput(bid.sizes);
-    let sizeLength = (sizes && sizes.length) || 0;
-    let found = false;
-    let creative = adUnit.creative && adUnit.creative[0];
-    let creative_size = String(creative.width) + 'x' + String(creative.height);
-
-    if (utils.isArray(sizes)) {
-      for (let i = 0; i < sizeLength; i++) {
-        let size = sizes[i];
-        if (String(size) === String(creative_size)) {
-          found = true;
-          break;
-        }
-      }
-    }
-    return found;
-  }
-
-  function formatCustomParms(customKey, customParams) {
-    let value = customParams[customKey];
-    if (Array.isArray(value)) {
-      // if value is an array, join them with commas first
-      value = value.join(',');
-    }
-    // return customKey=customValue format, escaping + to . and / to _ 
-    return (customKey + '=' + value).replace('+', '.').replace('/', '_')
-  }
-
-  function buildRequest(bids, params, delDomain) {
-    if (!utils.isArray(bids)) {
-      return;
-    }
-
-    params.auid = utils._map(bids, bid => bid.params.unit).join('%2C');
-    params.dddid = utils._map(bids, bid => bid.transactionId).join('%2C');
-    params.aus = utils._map(bids, bid => {
-      return utils.parseSizesInput(bid.sizes).join(',');
-    }).join('|');
-
-    let customParamsForAllBids = [];
-    let hasCustomParam = false;
-    bids.forEach(function (bid) {
-      if (bid.params.customParams) {
-        let customParamsForBid = utils._map(Object.keys(bid.params.customParams), customKey => formatCustomParms(customKey, bid.params.customParams));
-        let formattedCustomParams = window.btoa(customParamsForBid.join('&'));
-        hasCustomParam = true;
-        customParamsForAllBids.push(formattedCustomParams);
-      } else {
-        customParamsForAllBids.push('');
-      }
-    });
-    if (hasCustomParam) {
-      params.tps = customParamsForAllBids.join('%2C');
-    }
-
-    let customFloorsForAllBids = [];
-    let hasCustomFloor = false;
-    bids.forEach(function (bid) {
-      if (bid.params.customFloor) {
-        customFloorsForAllBids.push(bid.params.customFloor * 1000);
-        hasCustomFloor = true;
-      } else {
-        customFloorsForAllBids.push(0);
-      }
-    });
-    if (hasCustomFloor) {
-      params.aumfs = customFloorsForAllBids.join('%2C');
-    }
-
-    try {
-      let queryString = buildQueryStringFromParams(params);
-      let url = `//${delDomain}/w/1.0/arj?${queryString}`;
-      ajax.ajax(url, oxARJResponse, void (0), {
-        withCredentials: true
-      });
-    } catch (err) {
-      utils.logMessage(`Ajax call failed due to ${err}`);
-    }
-  }
-
-  function callBids(params) {
-    let isIfr;
-    const bids = params.bids || [];
-    let currentURL = (window.parent !== window) ? document.referrer : window.location.href;
-    currentURL = currentURL && encodeURIComponent(currentURL);
-    try {
-      isIfr = window.self !== window.top;
-    } catch (e) {
-      isIfr = false;
-    }
-    if (bids.length === 0) {
-      return;
-    }
-
-    let delDomain = bids[0].params.delDomain;
-    let bcOverride = bids[0].params.bc;
-
-    startTime = new Date(params.start);
-    if (params.timeout) {
-      timeout = params.timeout;
-    }
-    if (bids[0].params.hasOwnProperty('sendBoPixel') && typeof (bids[0].params.sendBoPixel) === 'boolean') {
-      shouldSendBoPixel = bids[0].params.sendBoPixel;
-    }
-
-    buildRequest(bids, {
-      ju: currentURL,
-      jr: currentURL,
-      ch: document.charSet || document.characterSet,
-      res: `${screen.width}x${screen.height}x${screen.colorDepth}`,
-      ifr: isIfr,
-      tz: startTime.getTimezoneOffset(),
-      tws: getViewportDimensions(isIfr),
-      ef: 'bt%2Cdb',
-      be: 1,
-      bc: bcOverride || `${BIDDER_CONFIG}_${BIDDER_VERSION}`,
-      nocache: new Date().getTime()
-    },
-    delDomain);
-  }
-
-  return {
-    callBids: callBids
-  };
+const USER_ID_CODE_TO_QUERY_ARG = {
+  idl_env: 'lre', // liveramp
+  pubcid: 'pubcid', // publisher common id
+  tdid: 'ttduuid' // the trade desk
 };
 
-adaptermanager.registerBidAdapter(new OpenxAdapter(), 'openx');
+export const spec = {
+  code: BIDDER_CODE,
+  supportedMediaTypes: SUPPORTED_AD_TYPES,
+  isBidRequestValid: function (bidRequest) {
+    const hasDelDomainOrPlatform = bidRequest.params.delDomain || bidRequest.params.platform;
+    if (utils.deepAccess(bidRequest, 'mediaTypes.banner') && hasDelDomainOrPlatform) {
+      return !!bidRequest.params.unit || utils.deepAccess(bidRequest, 'mediaTypes.banner.sizes.length') > 0;
+    }
 
-module.exports = OpenxAdapter;
+    return !!(bidRequest.params.unit && hasDelDomainOrPlatform);
+  },
+  buildRequests: function (bidRequests, bidderRequest) {
+    if (bidRequests.length === 0) {
+      return [];
+    }
+
+    let requests = [];
+    let [videoBids, bannerBids] = partitionByVideoBids(bidRequests);
+
+    // build banner requests
+    if (bannerBids.length > 0) {
+      requests.push(buildOXBannerRequest(bannerBids, bidderRequest));
+    }
+    // build video requests
+    if (videoBids.length > 0) {
+      videoBids.forEach(videoBid => {
+        requests.push(buildOXVideoRequest(videoBid, bidderRequest))
+      });
+    }
+
+    return requests;
+  },
+  interpretResponse: function ({body: oxResponseObj}, serverRequest) {
+    let mediaType = getMediaTypeFromRequest(serverRequest);
+
+    return mediaType === VIDEO ? createVideoBidResponses(oxResponseObj, serverRequest.payload)
+      : createBannerBidResponses(oxResponseObj, serverRequest.payload);
+  },
+  getUserSyncs: function (syncOptions, responses) {
+    if (syncOptions.iframeEnabled || syncOptions.pixelEnabled) {
+      let pixelType = syncOptions.iframeEnabled ? 'iframe' : 'image';
+      let url = utils.deepAccess(responses, '0.body.ads.pixels') ||
+        utils.deepAccess(responses, '0.body.pixels') ||
+        'https://u.openx.net/w/1.0/pd';
+      return [{
+        type: pixelType,
+        url: url
+      }];
+    }
+  },
+  transformBidParams: function(params, isOpenRtb) {
+    return utils.convertTypes({
+      'unit': 'string',
+      'customFloor': 'number'
+    }, params);
+  }
+};
+
+function isVideoRequest(bidRequest) {
+  return (utils.deepAccess(bidRequest, 'mediaTypes.video') && !utils.deepAccess(bidRequest, 'mediaTypes.banner')) || bidRequest.mediaType === VIDEO;
+}
+
+function createBannerBidResponses(oxResponseObj, {bids, startTime}) {
+  let adUnits = oxResponseObj.ads.ad;
+  let bidResponses = [];
+  for (let i = 0; i < adUnits.length; i++) {
+    let adUnit = adUnits[i];
+    let adUnitIdx = parseInt(adUnit.idx, 10);
+    let bidResponse = {};
+
+    bidResponse.requestId = bids[adUnitIdx].bidId;
+
+    if (adUnit.pub_rev) {
+      bidResponse.cpm = Number(adUnit.pub_rev) / 1000;
+    } else {
+      // No fill, do not add the bidresponse
+      continue;
+    }
+    let creative = adUnit.creative[0];
+    if (creative) {
+      bidResponse.width = creative.width;
+      bidResponse.height = creative.height;
+    }
+    bidResponse.creativeId = creative.id;
+    bidResponse.ad = adUnit.html;
+    if (adUnit.deal_id) {
+      bidResponse.dealId = adUnit.deal_id;
+    }
+    // default 5 mins
+    bidResponse.ttl = 300;
+    // true is net, false is gross
+    bidResponse.netRevenue = true;
+    bidResponse.currency = adUnit.currency;
+
+    // additional fields to add
+    if (adUnit.tbd) {
+      bidResponse.tbd = adUnit.tbd;
+    }
+    bidResponse.ts = adUnit.ts;
+
+    bidResponse.meta = {};
+    if (adUnit.brand_id) {
+      bidResponse.meta.brandId = adUnit.brand_id;
+    }
+
+    if (adUnit.adv_id) {
+      bidResponse.meta.dspid = adUnit.adv_id;
+    }
+
+    bidResponses.push(bidResponse);
+  }
+  return bidResponses;
+}
+
+function getViewportDimensions(isIfr) {
+  let width;
+  let height;
+  let tWin = window;
+  let tDoc = document;
+  let docEl = tDoc.documentElement;
+  let body;
+
+  if (isIfr) {
+    try {
+      tWin = window.top;
+      tDoc = window.top.document;
+    } catch (e) {
+      return;
+    }
+    docEl = tDoc.documentElement;
+    body = tDoc.body;
+
+    width = tWin.innerWidth || docEl.clientWidth || body.clientWidth;
+    height = tWin.innerHeight || docEl.clientHeight || body.clientHeight;
+  } else {
+    docEl = tDoc.documentElement;
+    width = tWin.innerWidth || docEl.clientWidth;
+    height = tWin.innerHeight || docEl.clientHeight;
+  }
+
+  return `${width}x${height}`;
+}
+
+function formatCustomParms(customKey, customParams) {
+  let value = customParams[customKey];
+  if (utils.isArray(value)) {
+    // if value is an array, join them with commas first
+    value = value.join(',');
+  }
+  // return customKey=customValue format, escaping + to . and / to _
+  return (customKey.toLowerCase() + '=' + value.toLowerCase()).replace('+', '.').replace('/', '_')
+}
+
+function partitionByVideoBids(bidRequests) {
+  return bidRequests.reduce(function (acc, bid) {
+    // Fallback to banner ads if nothing specified
+    if (isVideoRequest(bid)) {
+      acc[0].push(bid);
+    } else {
+      acc[1].push(bid);
+    }
+    return acc;
+  }, [[], []]);
+}
+
+function getMediaTypeFromRequest(serverRequest) {
+  return /avjp$/.test(serverRequest.url) ? VIDEO : BANNER;
+}
+
+function buildCommonQueryParamsFromBids(bids, bidderRequest) {
+  const isInIframe = utils.inIframe();
+  let defaultParams;
+
+  defaultParams = {
+    ju: config.getConfig('pageUrl') || bidderRequest.refererInfo.referer,
+    ch: document.charSet || document.characterSet,
+    res: `${screen.width}x${screen.height}x${screen.colorDepth}`,
+    ifr: isInIframe,
+    tz: new Date().getTimezoneOffset(),
+    tws: getViewportDimensions(isInIframe),
+    be: 1,
+    bc: bids[0].params.bc || `${BIDDER_CONFIG}_${BIDDER_VERSION}`,
+    dddid: utils._map(bids, bid => bid.transactionId).join(','),
+    nocache: new Date().getTime()
+  };
+
+  if (bids[0].params.platform) {
+    defaultParams.ph = bids[0].params.platform;
+  }
+
+  if (utils.deepAccess(bidderRequest, 'gdprConsent')) {
+    let gdprConsentConfig = bidderRequest.gdprConsent;
+
+    if (gdprConsentConfig.consentString !== undefined) {
+      defaultParams.gdpr_consent = gdprConsentConfig.consentString;
+    }
+
+    if (gdprConsentConfig.gdprApplies !== undefined) {
+      defaultParams.gdpr = gdprConsentConfig.gdprApplies ? 1 : 0;
+    }
+
+    if (config.getConfig('consentManagement.cmpApi') === 'iab') {
+      defaultParams.x_gdpr_f = 1;
+    }
+  }
+
+  // normalize publisher common id
+  if (utils.deepAccess(bids[0], 'crumbs.pubcid')) {
+    utils.deepSetValue(bids[0], 'userId.pubcid', utils.deepAccess(bids[0], 'crumbs.pubcid'));
+  }
+  defaultParams = appendUserIdsToQueryParams(defaultParams, bids[0].userId);
+
+  // supply chain support
+  if (bids[0].schain) {
+    defaultParams.schain = serializeSupplyChain(bids[0].schain);
+  }
+
+  return defaultParams;
+}
+
+function appendUserIdsToQueryParams(queryParams, userIds) {
+  utils._each(userIds, (userIdValue, userIdProviderKey) => {
+    if (USER_ID_CODE_TO_QUERY_ARG.hasOwnProperty(userIdProviderKey)) {
+      queryParams[USER_ID_CODE_TO_QUERY_ARG[userIdProviderKey]] = userIdValue;
+    }
+  });
+
+  return queryParams;
+}
+
+function serializeSupplyChain(supplyChain) {
+  return `${supplyChain.ver},${supplyChain.complete}!${serializeSupplyChainNodes(supplyChain.nodes)}`;
+}
+
+function serializeSupplyChainNodes(supplyChainNodes) {
+  const supplyChainNodePropertyOrder = ['asi', 'sid', 'hp', 'rid', 'name', 'domain'];
+
+  return supplyChainNodes.map(supplyChainNode => {
+    return supplyChainNodePropertyOrder.map(property => supplyChainNode[property] || '')
+      .join(',');
+  }).join('!');
+}
+
+function buildOXBannerRequest(bids, bidderRequest) {
+  let customParamsForAllBids = [];
+  let hasCustomParam = false;
+  let queryParams = buildCommonQueryParamsFromBids(bids, bidderRequest);
+  let auids = utils._map(bids, bid => bid.params.unit);
+
+  queryParams.aus = utils._map(bids, bid => utils.parseSizesInput(bid.mediaTypes.banner.sizes).join(',')).join('|');
+  queryParams.divIds = utils._map(bids, bid => encodeURIComponent(bid.adUnitCode)).join(',');
+
+  if (auids.some(auid => auid)) {
+    queryParams.auid = auids.join(',');
+  }
+
+  if (bids.some(bid => bid.params.doNotTrack)) {
+    queryParams.ns = 1;
+  }
+
+  if (config.getConfig('coppa') === true || bids.some(bid => bid.params.coppa)) {
+    queryParams.tfcd = 1;
+  }
+
+  bids.forEach(function (bid) {
+    if (bid.params.customParams) {
+      let customParamsForBid = utils._map(Object.keys(bid.params.customParams), customKey => formatCustomParms(customKey, bid.params.customParams));
+      let formattedCustomParams = window.btoa(customParamsForBid.join('&'));
+      hasCustomParam = true;
+      customParamsForAllBids.push(formattedCustomParams);
+    } else {
+      customParamsForAllBids.push('');
+    }
+  });
+  if (hasCustomParam) {
+    queryParams.tps = customParamsForAllBids.join(',');
+  }
+
+  let customFloorsForAllBids = [];
+  let hasCustomFloor = false;
+  bids.forEach(function (bid) {
+    if (bid.params.customFloor) {
+      customFloorsForAllBids.push((Math.round(bid.params.customFloor * 100) / 100) * 1000);
+      hasCustomFloor = true;
+    } else {
+      customFloorsForAllBids.push(0);
+    }
+  });
+  if (hasCustomFloor) {
+    queryParams.aumfs = customFloorsForAllBids.join(',');
+  }
+
+  let url = queryParams.ph
+    ? `https://u.openx.net/w/1.0/arj`
+    : `https://${bids[0].params.delDomain}/w/1.0/arj`;
+
+  return {
+    method: 'GET',
+    url: url,
+    data: queryParams,
+    payload: {'bids': bids, 'startTime': new Date()}
+  };
+}
+
+function buildOXVideoRequest(bid, bidderRequest) {
+  let oxVideoParams = generateVideoParameters(bid, bidderRequest);
+  let url = oxVideoParams.ph
+    ? `https://u.openx.net/v/1.0/avjp`
+    : `https://${bid.params.delDomain}/v/1.0/avjp`;
+  return {
+    method: 'GET',
+    url: url,
+    data: oxVideoParams,
+    payload: {'bid': bid, 'startTime': new Date()}
+  };
+}
+
+function generateVideoParameters(bid, bidderRequest) {
+  let queryParams = buildCommonQueryParamsFromBids([bid], bidderRequest);
+  let oxVideoConfig = utils.deepAccess(bid, 'params.video') || {};
+  let context = utils.deepAccess(bid, 'mediaTypes.video.context');
+  let playerSize = utils.deepAccess(bid, 'mediaTypes.video.playerSize');
+  let width;
+  let height;
+
+  // normalize config for video size
+  if (utils.isArray(bid.sizes) && bid.sizes.length === 2 && !utils.isArray(bid.sizes[0])) {
+    width = parseInt(bid.sizes[0], 10);
+    height = parseInt(bid.sizes[1], 10);
+  } else if (utils.isArray(bid.sizes) && utils.isArray(bid.sizes[0]) && bid.sizes[0].length === 2) {
+    width = parseInt(bid.sizes[0][0], 10);
+    height = parseInt(bid.sizes[0][1], 10);
+  } else if (utils.isArray(playerSize) && playerSize.length === 2) {
+    width = parseInt(playerSize[0], 10);
+    height = parseInt(playerSize[1], 10);
+  }
+
+  Object.keys(oxVideoConfig).forEach(function (key) {
+    if (key === 'openrtb') {
+      oxVideoConfig[key].w = width || oxVideoConfig[key].w;
+      oxVideoConfig[key].v = height || oxVideoConfig[key].v;
+      queryParams[key] = JSON.stringify(oxVideoConfig[key]);
+    } else if (!(key in queryParams) && key !== 'url') {
+      // only allow video-related attributes
+      queryParams[key] = oxVideoConfig[key];
+    }
+  });
+
+  queryParams.auid = bid.params.unit;
+  // override prebid config with openx config if available
+  queryParams.vwd = width || oxVideoConfig.vwd;
+  queryParams.vht = height || oxVideoConfig.vht;
+
+  if (context === 'outstream') {
+    queryParams.vos = '101';
+  }
+
+  if (oxVideoConfig.mimes) {
+    queryParams.vmimes = oxVideoConfig.mimes;
+  }
+
+  return queryParams;
+}
+
+function createVideoBidResponses(response, {bid, startTime}) {
+  let bidResponses = [];
+
+  if (response !== undefined && response.vastUrl !== '' && response.pub_rev !== '') {
+    let vastQueryParams = parse(response.vastUrl).search || {};
+    let bidResponse = {};
+    bidResponse.requestId = bid.bidId;
+    // default 5 mins
+    bidResponse.ttl = 300;
+    // true is net, false is gross
+    bidResponse.netRevenue = true;
+    bidResponse.currency = response.currency;
+    bidResponse.cpm = Number(response.pub_rev) / 1000;
+    bidResponse.width = response.width;
+    bidResponse.height = response.height;
+    bidResponse.creativeId = response.adid;
+    bidResponse.vastUrl = response.vastUrl;
+    bidResponse.mediaType = VIDEO;
+
+    // enrich adunit with vast parameters
+    response.ph = vastQueryParams.ph;
+    response.colo = vastQueryParams.colo;
+    response.ts = vastQueryParams.ts;
+
+    bidResponses.push(bidResponse);
+  }
+
+  return bidResponses;
+}
+
+registerBidder(spec);

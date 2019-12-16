@@ -1,122 +1,401 @@
-import Adapter from '../../../modules/underdogmediaBidAdapter';
-import bidManager from '../../../src/bidmanager';
-import adloader from '../../../src/adloader';
+import { expect } from 'chai';
+import { spec } from 'modules/underdogmediaBidAdapter';
 
-import {
-  expect
-} from 'chai';
+describe('UnderdogMedia adapter', function () {
+  let bidRequests;
+  let bidderRequest;
 
-describe('underdogmedia adapter test', () => {
-  let adapter;
-  let server;
-
-  // The third bid here is an invalid site id and should return a 'no-bid'.
-
-  var bidderRequest = {
-    bidderCode: 'underdogmedia',
-    bids: [{
-      bidder: 'underdogmedia',
-      adUnitCode: 'foo',
-      sizes: [
-        [728, 90]
-      ],
-      params: {
-        siteId: '10272'
+  beforeEach(function () {
+    bidRequests = [
+      {
+        bidder: 'underdogmedia',
+        params: {
+          siteId: 12143
+        },
+        adUnitCode: '/19968336/header-bid-tag-1',
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 250], [300, 600], [728, 90], [160, 600], [320, 50]],
+          }
+        },
+        bidId: '23acc48ad47af5',
+        auctionId: '0fb4905b-9456-4152-86be-c6f6d259ba99',
+        bidderRequestId: '1c56ad30b9b8ca8',
+        transactionId: '92489f71-1bf2-49a0-adf9-000cea934729'
       }
-    },
-    {
-      bidder: 'underdogmedia',
-      adUnitCode: 'bar',
-      sizes: [
-        [300, 250]
-      ],
-      params: {
-        siteId: '10272',
-        subId: 'TEST_SUBID'
-      }
-    },
-    {
-      bidder: 'underdogmedia',
-      adUnitCode: 'nothing',
-      sizes: [160, 600],
-      params: {
-        siteId: '31337'
-      }
+    ];
+
+    bidderRequest = {
+      timeout: 3000,
+      gdprConsent: {
+        gdprApplies: 1,
+        consentString: 'consentDataString',
+        vendorData: {
+          vendorConsents: {
+            '159': 1
+          },
+        },
+      },
     }
-    ]
-  };
-  var response = {
-    'mids': [{
-      'width': 728,
-      'notification_url': '//udmserve.net/notification_url',
-      'height': 90,
-      'cpm': 2.5,
-      'ad_code_html': 'Ad HTML for site ID 10272 size 728x90'
-    },
-    {
-      'width': 300,
-      'notification_url': '//udmserve.net/notification_url',
-      'height': 250,
-      'cpm': 2.0,
-      'ad_code_html': 'Ad HTML for site ID 10272 size 300x250'
-    }
-    ]
-  };
-
-  beforeEach(() => {
-    adapter = new Adapter();
   });
 
-  afterEach(() => {});
+  describe('implementation', function () {
+    describe('for requests', function () {
+      it('should accept valid bid', function () {
+        let validBid = {
+          bidder: 'underdogmedia',
+          params: {
+            siteId: '12143'
+          },
+          mediaTypes: {
+            banner: {
+              sizes: [[300, 250], [300, 600]]
+            }
+          }
+        };
+        const isValid = spec.isBidRequestValid(validBid);
 
-  describe('adding bids to the manager', () => {
-    let firstBid;
-    let secondBid;
-    let thirdBid;
+        expect(isValid).to.equal(true);
+      });
 
-    beforeEach(() => {
-      sinon.stub(bidManager, 'addBidResponse');
-      sinon.stub(adloader, 'loadScript');
+      it('should reject invalid bid missing sizes', function () {
+        let invalidBid = {
+          bidder: 'underdogmedia',
+          params: {
+            siteId: '12143',
+          }
+        };
+        const isValid = spec.isBidRequestValid(invalidBid);
 
-      adapter.callBids(bidderRequest);
-      $$PREBID_GLOBAL$$.handleUnderdogMediaCB(JSON.parse(JSON.stringify(response)));
-      firstBid = bidManager.addBidResponse.firstCall.args[1];
-      secondBid = bidManager.addBidResponse.secondCall.args[1];
-      thirdBid = bidManager.addBidResponse.thirdCall.args[1];
+        expect(isValid).to.equal(false);
+      });
+
+      it('should reject invalid bid missing siteId', function () {
+        let invalidBid = {
+          bidder: 'underdogmedia',
+          params: {},
+          mediaTypes: {
+            banner: {
+              sizes: [[300, 250], [300, 600]]
+            }
+          }
+        };
+        const isValid = spec.isBidRequestValid(invalidBid);
+
+        expect(isValid).to.equal(false);
+      });
+
+      it('request data should contain sid', function () {
+        let bidRequests = [
+          {
+            bidId: '3c9408cdbf2f68',
+            bidder: 'underdogmedia',
+            mediaTypes: {
+              banner: {
+                sizes: [[300, 250]]
+              }
+            },
+            params: {
+              siteId: '12143'
+            },
+            auctionId: '10b327aa396609',
+            adUnitCode: '/123456/header-bid-tag-1'
+          }
+        ];
+        const request = spec.buildRequests(bidRequests, bidderRequest);
+
+        expect(request.data.sid).to.equal('12143');
+      });
+
+      it('request data should contain sizes', function () {
+        let bidRequests = [
+          {
+            bidId: '3c9408cdbf2f68',
+            mediaTypes: {
+              banner: {
+                sizes: [[300, 250], [728, 90]]
+              }
+            },
+            bidder: 'underdogmedia',
+            params: {
+              siteId: '12143'
+            },
+            auctionId: '10b327aa396609',
+            adUnitCode: '/123456/header-bid-tag-1'
+          }
+        ];
+        const request = spec.buildRequests(bidRequests, bidderRequest);
+
+        expect(request.data.sizes).to.equal('300x250,728x90');
+      });
+
+      it('request data should contain gdpr info', function () {
+        let bidRequests = [
+          {
+            bidId: '3c9408cdbf2f68',
+            mediaTypes: {
+              banner: {
+                sizes: [[300, 250], [728, 90]]
+              }
+            },
+            bidder: 'underdogmedia',
+            params: {
+              siteId: '12143'
+            },
+            auctionId: '10b327aa396609',
+            adUnitCode: '/123456/header-bid-tag-1'
+          }
+        ];
+        const request = spec.buildRequests(bidRequests, bidderRequest);
+
+        expect(request.data.gdprApplies).to.equal(true);
+        expect(request.data.consentGiven).to.equal(true);
+        expect(request.data.consentData).to.equal('consentDataString');
+      });
+
+      it('should not build a request if no vendorConsent', function () {
+        let bidRequests = [
+          {
+            bidId: '3c9408cdbf2f68',
+            mediaTypes: {
+              banner: {
+                sizes: [[300, 250], [728, 90]]
+              }
+            },
+            bidder: 'underdogmedia',
+            params: {
+              siteId: '12143'
+            },
+            auctionId: '10b327aa396609',
+            adUnitCode: '/123456/header-bid-tag-1'
+          }
+        ];
+
+        let bidderRequest = {
+          timeout: 3000,
+          gdprConsent: {
+            gdprApplies: 1,
+            consentString: 'consentDataString',
+            vendorData: {
+              vendorConsents: {
+                '159': 0
+              },
+            },
+          },
+        }
+        const request = spec.buildRequests(bidRequests, bidderRequest);
+
+        expect(request).to.equal(undefined);
+      });
+
+      it('should properly build a request if no vendorConsent but no gdprApplies', function () {
+        let bidRequests = [
+          {
+            bidId: '3c9408cdbf2f68',
+            mediaTypes: {
+              banner: {
+                sizes: [[300, 250], [728, 90]]
+              }
+            },
+            bidder: 'underdogmedia',
+            params: {
+              siteId: '12143'
+            },
+            auctionId: '10b327aa396609',
+            adUnitCode: '/123456/header-bid-tag-1'
+          }
+        ];
+
+        let bidderRequest = {
+          timeout: 3000,
+          gdprConsent: {
+            gdprApplies: 0,
+            consentString: 'consentDataString',
+            vendorData: {
+              vendorConsents: {
+                '159': 0
+              },
+            },
+          },
+        }
+        const request = spec.buildRequests(bidRequests, bidderRequest);
+
+        expect(request.data.sizes).to.equal('300x250,728x90');
+        expect(request.data.sid).to.equal('12143');
+        expect(request.data.gdprApplies).to.equal(false);
+        expect(request.data.consentGiven).to.equal(false);
+        expect(request.data.consentData).to.equal('consentDataString');
+      });
+
+      it('should properly build a request if gdprConsent empty', function () {
+        let bidRequests = [
+          {
+            bidId: '3c9408cdbf2f68',
+            mediaTypes: {
+              banner: {
+                sizes: [[300, 250], [728, 90]]
+              }
+            },
+            bidder: 'underdogmedia',
+            params: {
+              siteId: '12143'
+            },
+            auctionId: '10b327aa396609',
+            adUnitCode: '/123456/header-bid-tag-1'
+          }
+        ];
+
+        let bidderRequest = {
+          timeout: 3000,
+          gdprConsent: {}
+        }
+        const request = spec.buildRequests(bidRequests, bidderRequest);
+
+        expect(request.data.sizes).to.equal('300x250,728x90');
+        expect(request.data.sid).to.equal('12143');
+      });
     });
 
-    afterEach(() => {
-      bidManager.addBidResponse.restore();
-      adloader.loadScript.restore();
-    });
+    describe('bid responses', function () {
+      it('should return complete bid response', function () {
+        let serverResponse = {
+          body: {
+            mids: [
+              {
+                ad_code_html: 'ad_code_html',
+                cpm: 2.5,
+                height: '600',
+                mid: '32634',
+                notification_url: 'notification_url',
+                tid: '4',
+                width: '160'
+              },
+              {
+                ad_code_html: 'ad_code_html',
+                cpm: 2.5,
+                height: '250',
+                mid: '32633',
+                notification_url: 'notification_url',
+                tid: '2',
+                width: '300'
+              },
+            ]
+          }
+        };
+        const request = spec.buildRequests(bidRequests, bidderRequest);
+        const bids = spec.interpretResponse(serverResponse, request);
 
-    it('will add a bid object for each bid', () => {
-      sinon.assert.calledThrice(bidManager.addBidResponse);
-    });
+        expect(bids).to.be.lengthOf(2);
 
-    it('will add the ad html to the bid object', () => {
-      expect(firstBid).to.have.property('ad').includes('Ad HTML for site ID 10272 size 728x90');
-      expect(secondBid).to.have.property('ad').includes('Ad HTML for site ID 10272 size 300x250').and.includes('TEST_SUBID');
-      expect(thirdBid).to.not.have.property('ad');
-    });
+        expect(bids[0].bidderCode).to.equal('underdogmedia');
+        expect(bids[0].cpm).to.equal(2.5);
+        expect(bids[0].width).to.equal('160');
+        expect(bids[0].height).to.equal('600');
+        expect(bids[0].ad).to.have.length.above(1);
+        expect(bids[0].creativeId).to.equal('32634');
+        expect(bids[0].currency).to.equal('USD');
+      });
 
-    it('will have the right size attached', () => {
-      expect(firstBid).to.have.property('width', 728);
-      expect(firstBid).to.have.property('height', 90);
-      expect(secondBid).to.have.property('width', 300);
-      expect(secondBid).to.have.property('height', 250);
-    });
+      it('should return empty bid response if mids empty', function () {
+        let serverResponse = {
+          body: {
+            mids: []
+          }
+        };
+        const request = spec.buildRequests(bidRequests, bidderRequest);
+        const bids = spec.interpretResponse(serverResponse, request);
 
-    it('will add the CPM to the bid object', () => {
-      expect(firstBid).to.have.property('cpm', 2.5);
-      expect(secondBid).to.have.property('cpm', 2.0);
-      expect(thirdBid).to.not.have.property('cpm');
-    });
+        expect(bids).to.be.lengthOf(0);
+      });
 
-    it('will add the bidder code to the bid object', () => {
-      expect(firstBid).to.have.property('bidderCode', 'underdogmedia');
-      expect(secondBid).to.have.property('bidderCode', 'underdogmedia');
-      expect(thirdBid).to.have.property('bidderCode', 'underdogmedia');
+      it('should return empty bid response on incorrect size', function () {
+        let serverResponse = {
+          body: {
+            mids: [
+              {
+                ad_code_html: 'ad_code_html',
+                cpm: 2.5,
+                height: '123',
+                mid: '32634',
+                notification_url: 'notification_url',
+                tid: '4',
+                width: '160'
+              }
+            ]
+          }
+        };
+        const request = spec.buildRequests(bidRequests, bidderRequest);
+        const bids = spec.interpretResponse(serverResponse, request);
+
+        expect(bids).to.be.lengthOf(0);
+      });
+
+      it('should return empty bid response on 0 cpm', function () {
+        let serverResponse = {
+          body: {
+            mids: [
+              {
+                ad_code_html: 'ad_code_html',
+                cpm: 0,
+                height: '600',
+                mid: '32634',
+                notification_url: 'notification_url',
+                tid: '4',
+                width: '160'
+              }
+            ]
+          }
+        };
+        const request = spec.buildRequests(bidRequests, bidderRequest);
+        const bids = spec.interpretResponse(serverResponse, request);
+
+        expect(bids).to.be.lengthOf(0);
+      });
+
+      it('should return empty bid response if no ad in response', function () {
+        let serverResponse = {
+          body: {
+            mids: [
+              {
+                ad_code_html: '',
+                cpm: 2.5,
+                height: '600',
+                mid: '32634',
+                notification_url: 'notification_url',
+                tid: '4',
+                width: '160'
+              }
+            ]
+          }
+        };
+        const request = spec.buildRequests(bidRequests, bidderRequest);
+        const bids = spec.interpretResponse(serverResponse, request);
+
+        expect(bids).to.be.lengthOf(0);
+      });
+
+      it('ad html string should contain the notification urls', function () {
+        let serverResponse = {
+          body: {
+            mids: [
+              {
+                ad_code_html: 'ad_cod_html',
+                cpm: 2.5,
+                height: '600',
+                mid: '32634',
+                notification_url: 'notification_url',
+                tid: '4',
+                width: '160'
+              }
+            ]
+          }
+        };
+        const request = spec.buildRequests(bidRequests, bidderRequest);
+        const bids = spec.interpretResponse(serverResponse, request);
+
+        expect(bids[0].ad).to.have.string('notification_url');
+        expect(bids[0].ad).to.have.string(';style=adapter');
+      });
     });
   });
 });

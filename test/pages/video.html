@@ -16,7 +16,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/videojs-vast-vpaid/2.0.2/videojs_5.vast.vpaid.min.js"></script>
 
     <!-- prebid.js -->
-    <script src="../../build/dev/prebid.js" async=true></script>
+    <script src="../../build/dist/prebid.js" async=true></script>
 
 
     <script>
@@ -32,11 +32,11 @@
         code: 'video1',
         sizes: [640,480],
         mediaTypes: {
-          video: {context: 'instream'}
+          video: {context: 'instream',  playerSize: [640, 480]}
         },
         bids: [
           {
-            bidder: 'appnexusAst',
+            bidder: 'appnexus',
             params: {
               placementId: '9333431',
               video: {

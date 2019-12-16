@@ -1,226 +1,489 @@
 import {expect} from 'chai';
-import {assert} from 'chai';
-import Adapter from 'modules/spotxBidAdapter';
-import bidManager from 'src/bidmanager';
-import adLoader from 'src/adloader';
+import {spec, GOOGLE_CONSENT} from 'modules/spotxBidAdapter';
 
-const CHANNEL_ID = 85394;
-const CACHE_KEY = 'eyJob3N0IjoiZmUwMDEuc3BvdHguZ2FkZ2V0cy5sb2QiLCJja';
-
-let bidRequest = {
-  'bidderCode': 'spotx',
-  'requestId': '4b8bb067-fca9-478b-9207-d24b87fce85c',
-  'bidderRequestId': '1bfc89fa86fd1d',
-  'timeout': 1000,
-  'bids': [
-    {
-      'bidId': '2626663210bd26',
-      'bidder': 'spotx',
-      'bidderRequestId': '145a190a61161e',
-      'mediaType': 'video',
-      'params': {
-        'placementId': '123456789',
-        'video': {
-          'ad_mute': false,
-          'autoplay': true,
-          'channel_id': CHANNEL_ID,
-          'hide_skin': false,
-          'slot': null,
-          'video_slot': null
+describe('the spotx adapter', function () {
+  function getValidBidObject() {
+    return {
+      bidId: 123,
+      mediaTypes: {
+        video: {
+          playerSize: [['300', '200']]
         }
       },
-      'placementCode': 'video1',
-      'requestId': '5e1e93aa-55cf-4f73-a56a-8a74d0584c5f',
-      'sizes': [[640, 480]],
-      'transactionId': 'df629792-c9ae-481e-9ce1-eaa83bde4cdb'
-    }
-  ]
-};
-
-let badBidRequest = {
-  'bidderCode': 'spotx',
-  'bids': [
-    {
-      'bidId': '2626663210bd26',
-      'bidder': 'spotx',
-      'mediaType': 'video',
-      'params': {
-        'placementId': '123456789',
-        'video': {
-          'slot': 'contentSpotx',
-          'video_slot': 'contentElementSpotx'
-        }
-      },
-      'placementCode': 'video1',
-    }
-  ]
-};
-
-var xhrResponse = JSON.stringify({
-  'id': CHANNEL_ID.toString(),
-  'cur': 'USD',
-  'seatbid': [
-    {
-      'bid': [
-        {
-          'id': '47e.fc9b5.90ede6',
-          'impid': '1497549328279',
-          'impression_guid': 'e2514a4651f311e7b50f113c04e90000',
-          'price': '20',
-          'adm': '<VAST><Ad><Wrapper><VASTAdTagURI><![CDATA[http:\/\/search.spotxchange.com\/\/ad\/vast.html?key=' +
-            CACHE_KEY + ']]><\/VASTAdTagURI><\/Wrapper><\/Ad><\/VAST>',
-          'adomain': 'null',
-          'crid': '47e.fc9b5.90ede6',
-          'cid': 'null',
-          'ext': {
-            'cache_key': CACHE_KEY
-          }
-        }
-      ]
-    }
-  ]
-});
-
-describe('spotx adapter tests', () => {
-  describe('callBids', () => {
-    let server;
-    let adapter;
-
-    beforeEach(() => {
-      adapter = new Adapter();
-
-      var slot = document.createElement('div');
-      slot.setAttribute('id', 'contentSpotx');
-      document.body.appendChild(slot);
-
-      var videoSlot = document.createElement('video');
-      videoSlot.setAttribute('id', 'contentElementSpotx');
-      slot.appendChild(videoSlot);
-
-      var source1 = document.createElement('source');
-      source1.setAttribute('src', 'http://rmcdn.2mdn.net/Demo/vast_inspector/android.mp4');
-      videoSlot.appendChild(source1);
-
-      bidRequest.bids[0].params.video.slot = slot;
-      bidRequest.bids[0].params.video.video_slot = videoSlot;
-
-      server = sinon.fakeServer.create();
-      server.respondImmediately = true;
-    });
-
-    afterEach(() => {
-      var slot = document.getElementById('contentSpotx');
-      while (slot.firstChild) {
-        slot.removeChild(slot.firstChild);
+      params: {
+        channel_id: 12345,
       }
-      var body = slot.parentElement;
-      body.removeChild(slot);
+    };
+  };
 
-      server.restore();
+  describe('isBidRequestValid', function() {
+    var bid;
+
+    beforeEach(function() {
+      bid = getValidBidObject();
     });
 
-    it('should load Direct AdOS onto page', () => {
-      sinon.spy(adLoader, 'loadScript');
+    it('should fail validation if the bid isn\'t defined or not an object', function() {
+      var result = spec.isBidRequestValid();
 
-      adapter.callBids(bidRequest);
+      expect(result).to.equal(false);
 
-      sinon.assert.calledOnce(adLoader.loadScript);
-      expect(adLoader.loadScript.firstCall.args[0]).to.equal('//js.spotx.tv/directsdk/v1/' + CHANNEL_ID + '.js');
-      expect(adLoader.loadScript.firstCall.args[1]).to.be.a('function');
+      result = spec.isBidRequestValid('not an object');
 
-      adLoader.loadScript.restore();
+      expect(result).to.equal(false);
     });
 
-    it('should not load Direct AdOS onto page if no bid is provided', () => {
-      sinon.spy(adLoader, 'loadScript');
-
-      adapter.callBids();
-      sinon.assert.notCalled(adLoader.loadScript);
-      adLoader.loadScript.restore();
+    it('should succeed validation with all the right parameters', function() {
+      expect(spec.isBidRequestValid(getValidBidObject())).to.equal(true);
     });
 
-    describe('bid response tests', () => {
-      let loadScriptStub;
-      let getAdServerKVPsStub;
+    it('should succeed validation with mediaType and outstream_function or outstream_options', function() {
+      bid.mediaType = 'video';
+      bid.params.outstream_function = 'outstream_func';
 
-      before(() => {
-        let response = {
-          spotx_bid: 20,
-          spotx_ad_key: CACHE_KEY
-        };
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
 
-        getAdServerKVPsStub = sinon.stub();
-        getAdServerKVPsStub.onCall(0).returns({
-          then: function (successCb) {
-            return successCb(response);
+      delete bid.params.outstream_function;
+      bid.params.outstream_options = {
+        slot: 'elemID'
+      };
+
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
+    });
+
+    it('should succeed with ad_unit outstream and outstream function set', function() {
+      bid.params.ad_unit = 'outstream';
+      bid.params.outstream_function = function() {};
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
+    });
+
+    it('should succeed with ad_unit outstream, options set for outstream and slot provided', function() {
+      bid.params.ad_unit = 'outstream';
+      bid.params.outstream_options = {slot: 'ad_container_id'};
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
+    });
+
+    it('should fail without a channel_id', function() {
+      delete bid.params.channel_id;
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
+
+    it('should fail without playerSize', function() {
+      delete bid.mediaTypes.video.playerSize;
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
+
+    it('should fail without video', function() {
+      delete bid.mediaTypes.video;
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
+
+    it('should fail with ad_unit outstream but no options set for outstream', function() {
+      bid.params.ad_unit = 'outstream';
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
+
+    it('should fail with ad_unit outstream, options set for outstream but no slot provided', function() {
+      bid.params.ad_unit = 'outstream';
+      bid.params.outstream_options = {};
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
+  });
+  describe('buildRequests', function() {
+    var bid, bidRequestObj;
+
+    beforeEach(function() {
+      bid = getValidBidObject();
+      bidRequestObj = {refererInfo: {referer: 'prebid.js'}};
+    });
+
+    it('should build a very basic request', function() {
+      var request = spec.buildRequests([bid], bidRequestObj)[0];
+      expect(request.method).to.equal('POST');
+      expect(request.url).to.equal('https://search.spotxchange.com/openrtb/2.3/dados/12345');
+      expect(request.bidRequest).to.equal(bidRequestObj);
+      expect(request.data.id).to.equal(12345);
+      expect(request.data.ext.wrap_response).to.equal(1);
+      expect(request.data.imp.id).to.match(/\d+/);
+      expect(request.data.imp.secure).to.equal(0);
+      expect(request.data.imp.video).to.deep.equal({
+        ext: {
+          sdk_name: 'Prebid 1+',
+          versionOrtb: '2.3'
+        },
+        h: '200',
+        mimes: [
+          'application/javascript',
+          'video/mp4',
+          'video/webm'
+        ],
+        w: '300'
+      });
+      expect(request.data.site).to.deep.equal({
+        content: 'content',
+        id: '',
+        page: 'prebid.js'
+      });
+    });
+    it('should change request parameters based on options sent', function() {
+      var request = spec.buildRequests([bid], bidRequestObj)[0];
+      expect(request.data.imp.video.ext).to.deep.equal({
+        sdk_name: 'Prebid 1+',
+        versionOrtb: '2.3'
+      });
+
+      bid.params = {
+        channel_id: 54321,
+        ad_mute: 1,
+        hide_skin: 1,
+        ad_volume: 1,
+        ad_unit: 'incontent',
+        outstream_options: {foo: 'bar'},
+        outstream_function: '987',
+        custom: {bar: 'foo'},
+        price_floor: 123,
+        start_delay: true,
+        number_of_ads: 2,
+        spotx_all_google_consent: 1
+      };
+
+      bid.userId = {
+        id5id: 'id5id_1',
+        tdid: 'tdid_1'
+      };
+
+      bid.crumbs = {
+        pubcid: 'pubcid_1'
+      };
+
+      bid.schain = {
+        complete: 1,
+        nodes: [
+          {
+            asi: 'indirectseller.com',
+            sid: '00001',
+            hp: 1
           }
-        });
+        ]
+      }
 
-        getAdServerKVPsStub.onCall(1).returns({
-          then: function (successCb, failureCb) {
-            return failureCb();
-          }
-        });
+      request = spec.buildRequests([bid], bidRequestObj)[0];
+      expect(request.data.id).to.equal(54321);
+      expect(request.data.imp.video.ext).to.deep.equal({
+        ad_volume: 1,
+        hide_skin: 1,
+        ad_unit: 'incontent',
+        outstream_options: {foo: 'bar'},
+        outstream_function: '987',
+        custom: {bar: 'foo'},
+        sdk_name: 'Prebid 1+',
+        versionOrtb: '2.3'
+      });
 
-        window.SpotX = {
-          DirectAdOS: function(options) {
-            return {
-              getAdServerKVPs: getAdServerKVPsStub
+      expect(request.data.imp.video.startdelay).to.equal(1);
+      expect(request.data.imp.bidfloor).to.equal(123);
+      expect(request.data.ext).to.deep.equal({
+        number_of_ads: 2,
+        wrap_response: 1
+      });
+      expect(request.data.user.ext).to.deep.equal({
+        consented_providers_settings: GOOGLE_CONSENT,
+        eids: [{
+          source: 'id5-sync.com',
+          uids: [{
+            id: 'id5id_1'
+          }]
+        },
+        {
+          source: 'adserver.org',
+          uids: [{
+            id: 'tdid_1',
+            ext: {
+              rtiPartner: 'TDID'
             }
+          }]
+        }],
+        fpc: 'pubcid_1'
+      })
+
+      expect(request.data.source).to.deep.equal({
+        ext: {
+          schain: {
+            complete: 1,
+            nodes: [
+              {
+                asi: 'indirectseller.com',
+                sid: '00001',
+                hp: 1
+              }
+            ]
           }
-        };
+        }
+      })
+    });
 
-        loadScriptStub = sinon.stub(adLoader, 'loadScript', function(url, callback) {
-          callback();
-        });
+    it('should process premarket bids', function() {
+      var request;
+      sinon.stub(Date, 'now').returns(1000);
+
+      bid.params.pre_market_bids = [{
+        vast_url: 'prebid.js',
+        deal_id: '123abc',
+        price: 12,
+        currency: 'USD'
+      }];
+
+      request = spec.buildRequests([bid], bidRequestObj)[0];
+      expect(request.data.imp.video.ext.pre_market_bids).to.deep.equal([
+        {
+          'cur': 'USD',
+          'ext': {
+            'event_log': [
+              {}
+            ]
+          },
+          'id': '123abc',
+          'seatbid': [
+            {
+              'bid': [
+                {
+                  'adm': '<?xml version="1.0" encoding="utf-8"?><VAST version="2.0"><Ad><Wrapper><VASTAdTagURI>prebid.js</VASTAdTagURI></Wrapper></Ad></VAST>',
+                  'dealid': '123abc',
+                  'impid': 1000,
+                  'price': 12,
+                }
+              ]
+            }
+          ]
+        }
+      ]);
+      Date.now.restore();
+    });
+
+    it('should pass GDPR params', function() {
+      var request;
+
+      bidRequestObj.gdprConsent = {
+        consentString: 'consent123',
+        gdprApplies: true
+      };
+
+      request = spec.buildRequests([bid], bidRequestObj)[0];
+
+      expect(request.data.regs.ext.gdpr).to.equal(1);
+      expect(request.data.user.ext.consent).to.equal('consent123');
+    });
+  });
+
+  describe('interpretResponse', function() {
+    var serverResponse, bidderRequestObj;
+
+    beforeEach(function() {
+      bidderRequestObj = {
+        bidRequest: {
+          bids: [{
+            mediaTypes: {
+              video: {
+                playerSize: [['400', '300']]
+              }
+            },
+            bidId: 123,
+            params: {
+              player_width: 400,
+              player_height: 300,
+              content_page_url: 'prebid.js',
+              ad_mute: 1,
+              outstream_options: {foo: 'bar'},
+              outstream_function: 'function'
+            }
+          }, {
+            mediaTypes: {
+              video: {
+                playerSize: [['200', '100']]
+              }
+            },
+            bidId: 124,
+            params: {
+              player_width: 200,
+              player_height: 100,
+              content_page_url: 'prebid.js',
+              ad_mute: 1,
+              outstream_options: {foo: 'bar'},
+              outstream_function: 'function'
+            }
+          }]
+        }
+      };
+
+      serverResponse = {
+        body: {
+          id: 12345,
+          seatbid: [{
+            bid: [{
+              impid: 123,
+              cur: 'USD',
+              price: 12,
+              crid: 321,
+              w: 400,
+              h: 300,
+              ext: {
+                cache_key: 'cache123',
+                slot: 'slot123'
+              }
+            }, {
+              impid: 124,
+              cur: 'USD',
+              price: 13,
+              w: 200,
+              h: 100,
+              ext: {
+                cache_key: 'cache124',
+                slot: 'slot124'
+              }
+            }]
+          }]
+        }
+      };
+    });
+
+    it('should return an array of bid responses', function() {
+      var responses = spec.interpretResponse(serverResponse, bidderRequestObj);
+      expect(responses).to.be.an('array').with.length(2);
+      expect(responses[0].cache_key).to.equal('cache123');
+      expect(responses[0].channel_id).to.equal(12345);
+      expect(responses[0].cpm).to.equal(12);
+      expect(responses[0].creativeId).to.equal(321);
+      expect(responses[0].currency).to.equal('USD');
+      expect(responses[0].height).to.equal(300);
+      expect(responses[0].mediaType).to.equal('video');
+      expect(responses[0].netRevenue).to.equal(true);
+      expect(responses[0].requestId).to.equal(123);
+      expect(responses[0].ttl).to.equal(360);
+      expect(responses[0].vastUrl).to.equal('https://search.spotxchange.com/ad/vast.html?key=cache123');
+      expect(responses[0].width).to.equal(400);
+      expect(responses[1].cache_key).to.equal('cache124');
+      expect(responses[1].channel_id).to.equal(12345);
+      expect(responses[1].cpm).to.equal(13);
+      expect(responses[1].creativeId).to.equal('');
+      expect(responses[1].currency).to.equal('USD');
+      expect(responses[1].height).to.equal(100);
+      expect(responses[1].mediaType).to.equal('video');
+      expect(responses[1].netRevenue).to.equal(true);
+      expect(responses[1].requestId).to.equal(124);
+      expect(responses[1].ttl).to.equal(360);
+      expect(responses[1].vastUrl).to.equal('https://search.spotxchange.com/ad/vast.html?key=cache124');
+      expect(responses[1].width).to.equal(200);
+    });
+  });
+
+  describe('oustreamRender', function() {
+    var serverResponse, bidderRequestObj;
+
+    beforeEach(function() {
+      bidderRequestObj = {
+        bidRequest: {
+          bids: [{
+            mediaTypes: {
+              video: {
+                playerSize: [['400', '300']]
+              }
+            },
+            bidId: 123,
+            params: {
+              ad_unit: 'outstream',
+              player_width: 400,
+              player_height: 300,
+              content_page_url: 'prebid.js',
+              outstream_options: {
+                ad_mute: 1,
+                foo: 'bar',
+                slot: 'slot123',
+                playersize_auto_adapt: true,
+                custom_override: {
+                  digitrust_opt_out: 1,
+                  vast_url: 'bad_vast'
+                }
+              },
+            }
+          }]
+        }
+      };
+
+      serverResponse = {
+        body: {
+          id: 12345,
+          seatbid: [{
+            bid: [{
+              impid: 123,
+              cur: 'USD',
+              price: 12,
+              crid: 321,
+              w: 400,
+              h: 300,
+              ext: {
+                cache_key: 'cache123',
+                slot: 'slot123'
+              }
+            }]
+          }]
+        }
+      };
+    });
+
+    it('should attempt to insert the EASI script', function() {
+      var scriptTag;
+      sinon.stub(window.document, 'getElementById').returns({
+        appendChild: sinon.stub().callsFake(function(script) { scriptTag = script })
       });
+      var responses = spec.interpretResponse(serverResponse, bidderRequestObj);
 
-      after(() => {
-        loadScriptStub.restore();
-      });
+      responses[0].renderer.render(responses[0]);
 
-      it('should add bid response on success', (done) => {
-        sinon.stub(bidManager, 'addBidResponse', (placementCode, bid) => {
-          expect(placementCode).to.equal('video1');
-          expect(bid.bidderCode).to.equal('spotx');
-          expect(bid.cpm).to.equal(20);
-          expect(bid.mediaType).to.equal('video');
-          expect(bid.statusMessage).to.equal('Bid available');
-          expect(bid.vastUrl).to.equal('//search.spotxchange.com/ad/vast.html?key=' + CACHE_KEY);
+      expect(scriptTag.getAttribute('type')).to.equal('text/javascript');
+      expect(scriptTag.getAttribute('src')).to.equal('https://js.spotx.tv/easi/v1/12345.js');
+      expect(scriptTag.getAttribute('data-spotx_channel_id')).to.equal('12345');
+      expect(scriptTag.getAttribute('data-spotx_vast_url')).to.equal('https://search.spotxchange.com/ad/vast.html?key=cache123');
+      expect(scriptTag.getAttribute('data-spotx_ad_unit')).to.equal('incontent');
+      expect(scriptTag.getAttribute('data-spotx_collapse')).to.equal('0');
+      expect(scriptTag.getAttribute('data-spotx_autoplay')).to.equal('1');
+      expect(scriptTag.getAttribute('data-spotx_blocked_autoplay_override_mode')).to.equal('1');
+      expect(scriptTag.getAttribute('data-spotx_video_slot_can_autoplay')).to.equal('1');
+      expect(scriptTag.getAttribute('data-spotx_digitrust_opt_out')).to.equal('1');
+      expect(scriptTag.getAttribute('data-spotx_content_width')).to.equal('400');
+      expect(scriptTag.getAttribute('data-spotx_content_height')).to.equal('300');
+      window.document.getElementById.restore();
+    });
 
-          bidManager.addBidResponse.restore();
-          done();
-        });
-
-        server.respondWith((request) => {
-          if (request.url.match(/openrtb\/2.3\/dados/) && request.method === 'POST') {
-            request.respond(200, {}, xhrResponse);
+    it('should append into an iframe', function() {
+      var scriptTag;
+      sinon.stub(window.document, 'getElementById').returns({
+        nodeName: 'IFRAME',
+        contentDocument: {
+          body: {
+            appendChild: sinon.stub().callsFake(function(script) { scriptTag = script })
           }
-        });
-
-        adapter.callBids(bidRequest);
+        }
       });
 
-      it('should add failed bid response on error', (done) => {
-        sinon.stub(bidManager, 'addBidResponse', (placementCode, bid) => {
-          expect(placementCode).to.equal('video1');
-          expect(bid.bidderCode).to.equal('spotx');
-          expect(bid.statusMessage).to.equal('Bid returned empty or error response');
-          expect(bid.cpm).to.be.undefined;
-          expect(bid.vastUrl).to.be.undefined;
+      bidderRequestObj.bidRequest.bids[0].params.outstream_options.in_iframe = 'iframeId';
 
-          bidManager.addBidResponse.restore();
-          done();
-        });
+      var responses = spec.interpretResponse(serverResponse, bidderRequestObj);
 
-        server.respondWith((request) => {
-          if (request.url.match(/openrtb\/2.3\/dados/) && request.method === 'POST') {
-            request.respond(204, {}, '');
-          }
-        });
+      responses[0].renderer.render(responses[0]);
 
-        adapter.callBids(bidRequest);
-      });
+      expect(scriptTag.getAttribute('type')).to.equal('text/javascript');
+      expect(scriptTag.getAttribute('src')).to.equal('https://js.spotx.tv/easi/v1/12345.js');
+      expect(scriptTag.getAttribute('data-spotx_channel_id')).to.equal('12345');
+      expect(scriptTag.getAttribute('data-spotx_vast_url')).to.equal('https://search.spotxchange.com/ad/vast.html?key=cache123');
+      expect(scriptTag.getAttribute('data-spotx_ad_unit')).to.equal('incontent');
+      expect(scriptTag.getAttribute('data-spotx_collapse')).to.equal('0');
+      expect(scriptTag.getAttribute('data-spotx_autoplay')).to.equal('1');
+      expect(scriptTag.getAttribute('data-spotx_blocked_autoplay_override_mode')).to.equal('1');
+      expect(scriptTag.getAttribute('data-spotx_video_slot_can_autoplay')).to.equal('1');
+      expect(scriptTag.getAttribute('data-spotx_digitrust_opt_out')).to.equal('1');
+      expect(scriptTag.getAttribute('data-spotx_content_width')).to.equal('400');
+      expect(scriptTag.getAttribute('data-spotx_content_height')).to.equal('300');
+      window.document.getElementById.restore();
     });
   });
 });

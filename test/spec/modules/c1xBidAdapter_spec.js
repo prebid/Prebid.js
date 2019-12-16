@@ -1,186 +1,182 @@
-import {expect} from 'chai';
-import C1XAdapter from 'modules/c1xBidAdapter';
-import bidmanager from 'src/bidmanager';
-import adLoader from 'src/adloader';
+import { expect } from 'chai';
+import { c1xAdapter } from 'modules/c1xBidAdapter';
+import { newBidder } from 'src/adapters/bidderFactory';
 
-let getDefaultBidRequest = () => {
-  return {
-    bidderCode: 'c1x',
-    bids: [{
-      bidder: 'c1x',
-      sizes: [[300, 250], [300, 600]],
-      params: {
-        siteId: '999',
-        pixelId: '9999',
-        placementCode: 'div-c1x-ht',
-        domain: 'http://c1exchange.com/'
-      }
-    }]
-  };
-};
+const ENDPOINT = 'https://ht.c1exchange.com/ht';
+const BIDDER_CODE = 'c1x';
 
-let getDefaultBidResponse = () => {
-  return {
-    bid: true,
-    adId: 'div-c1x-ht',
-    cpm: 3.31,
-    ad: '<div><a target=\"_new\" href=\"http://c1exchange.com\"><img src=\"https://placeholdit.imgix.net/~text?txtsize=38&txt=C1X%20Ad%20300x250&w=300&h=250&txttrack=0\"></a></div>',
-    width: 300,
-    height: 250
-  };
-};
+describe('C1XAdapter', function () {
+  const adapter = newBidder(c1xAdapter);
 
-describe('c1x adapter tests: ', () => {
-  let pbjs = window.$$PREBID_GLOBAL$$ || {};
-  let stubLoadScript;
-  let adapter;
-
-  function createBidderRequest(bids) {
-    let bidderRequest = getDefaultBidRequest();
-    if (bids && Array.isArray(bids)) {
-      bidderRequest.bids = bids;
-    }
-    return bidderRequest;
-  }
-
-  beforeEach(() => {
-    adapter = new C1XAdapter();
-  });
-
-  describe('check callBids()', () => {
-    it('exists and is a function', () => {
+  describe('inherited functions', function () {
+    it('exists and is a function', function () {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
   });
-  describe('creation of bid url', () => {
-    beforeEach(() => {
-      stubLoadScript = sinon.stub(adLoader, 'loadScript');
+
+  describe('isBidRequestValid', function () {
+    let bid = {
+      'bidder': BIDDER_CODE,
+      'adUnitCode': 'adunit-code',
+      'sizes': [[300, 250], [300, 600]],
+      'params': {
+        'siteId': '9999'
+      }
+    };
+
+    it('should return true when required params are passed', function () {
+      expect(c1xAdapter.isBidRequestValid(bid)).to.equal(true);
     });
-    afterEach(() => {
-      stubLoadScript.restore();
-    });
-    it('should be called only once', () => {
-      adapter.callBids(getDefaultBidRequest());
-      sinon.assert.calledOnce(stubLoadScript);
-      expect(window._c1xResponse).to.exist.and.to.be.a('function');
-    });
-    it('require parameters before call', () => {
-      let xhr;
-      let requests;
-      xhr = sinon.useFakeXMLHttpRequest();
-      requests = [];
-      xhr.onCreate = request => requests.push(request);
-      adapter.callBids(getDefaultBidRequest());
-      expect(requests).to.be.empty;
-      xhr.restore();
-    });
-    it('should send with correct parameters', () => {
-      adapter.callBids(getDefaultBidRequest());
-      let expectedUrl = stubLoadScript.getCall(0).args[0];
-      sinon.assert.calledWith(stubLoadScript, expectedUrl);
-    });
-    it('should hit endpoint with optional param', () => {
-      let bids = [{
-        bidder: 'c1x',
-        sizes: [[300, 250], [300, 600]],
-        params: {
-          siteId: '999',
-          placementCode: 'div-c1x-ht',
-          endpoint: 'http://ht-integration.c1exchange.com:9000/ht',
-          floorPriceMap: {
-            '300x250': 4.00
-          },
-          dspid: '4288'
-        }
-      }];
-      adapter.callBids(createBidderRequest(bids));
-      let expectedUrl = stubLoadScript.getCall(0).args[0];
-      sinon.assert.calledWith(stubLoadScript, expectedUrl);
-      bids[0].sizes = [[728, 90]];
-      adapter.callBids(createBidderRequest(bids));
-      sinon.assert.calledTwice(stubLoadScript);
-    });
-    it('should hit default bidder endpoint', () => {
-      let bid = getDefaultBidRequest();
-      bid.bids[0].params.endpoint = null;
-      adapter.callBids(bid);
-      let expectedUrl = stubLoadScript.getCall(0).args[0];
-      sinon.assert.calledWith(stubLoadScript, expectedUrl);
-    });
-    it('should throw error msg if no site id provided', () => {
-      let bid = getDefaultBidRequest();
-      bid.bids[0].params.siteId = '';
-      adapter.callBids(bid);
-      sinon.assert.notCalled(stubLoadScript);
-    });
-    it('should not inject audience pixel if no pixelId provided', () => {
-      let bid = getDefaultBidRequest();
-      let responsePId;
-      bid.bids[0].params.pixelId = '';
-      adapter.callBids(bid);
+
+    it('should return false when required params are not found', function () {
+      let bid = Object.assign({}, bid);
+      delete bid.params;
+      bid.params = {
+        'siteId': null
+      };
+      expect(c1xAdapter.isBidRequestValid(bid)).to.equal(false);
     });
   });
-  describe('bid response', () => {
-    let server;
-    let stubAddBidResponse;
-    beforeEach(() => {
-      adapter = new C1XAdapter();
-      server = sinon.fakeServer.create();
-      stubAddBidResponse = sinon.stub(bidmanager, 'addBidResponse');
+
+  describe('buildRequests', function () {
+    let bidRequests = [
+      {
+        'bidder': BIDDER_CODE,
+        'params': {
+          'siteId': '9999'
+        },
+        'adUnitCode': 'adunit-code',
+        'sizes': [[300, 250], [300, 600]],
+        'bidId': '30b31c1838de1e',
+        'bidderRequestId': '22edbae2733bf6',
+        'auctionId': '1d1a030790a475',
+      }
+    ];
+
+    const parseRequest = (data) => {
+      const parsedData = '{"' + data.replace(/=|&/g, (foundChar) => {
+        if (foundChar == '=') return '":"';
+        else if (foundChar == '&') return '","';
+      }) + '"}'
+      return parsedData;
+    };
+
+    it('sends bid request to ENDPOINT via GET', function () {
+      const request = c1xAdapter.buildRequests(bidRequests);
+      expect(request.url).to.equal(ENDPOINT);
+      expect(request.method).to.equal('GET');
     });
 
-    afterEach(() => {
-      server.restore();
-      stubAddBidResponse.restore();
+    it('should generate correct bid Id tag', function () {
+      const request = c1xAdapter.buildRequests(bidRequests);
+      expect(request.bids[0].adUnitCode).to.equal('adunit-code');
+      expect(request.bids[0].bidId).to.equal('30b31c1838de1e');
     });
 
-    it('callback function should exist', function () {
-      expect(pbjs._c1xResponse).to.exist.and.to.be.a('function');
+    it('should convert params to proper form and attach to request', function () {
+      const request = c1xAdapter.buildRequests(bidRequests);
+      const originalPayload = parseRequest(request.data);
+      const payloadObj = JSON.parse(originalPayload);
+      expect(payloadObj.adunits).to.equal('1');
+      expect(payloadObj.a1s).to.equal('300x250,300x600');
+      expect(payloadObj.a1).to.equal('adunit-code');
+      expect(payloadObj.site).to.equal('9999');
     });
-    it('should get JSONP from c1x bidder', function () {
-      let responses = [];
-      let stubC1XResponseFunc = sinon.stub(pbjs, '_c1xResponse');
-      responses.push(getDefaultBidResponse());
-      window._c1xResponse(JSON.stringify(responses));
-      sinon.assert.calledOnce(stubC1XResponseFunc);
-      stubC1XResponseFunc.restore();
+
+    it('should convert floor price to proper form and attach to request', function () {
+      let bidRequest = Object.assign({},
+        bidRequests[0],
+        {
+          'params': {
+            'siteId': '9999',
+            'floorPriceMap': {
+              '300x250': 4.35
+            }
+          }
+        });
+      const request = c1xAdapter.buildRequests([bidRequest]);
+      const originalPayload = parseRequest(request.data);
+      const payloadObj = JSON.parse(originalPayload);
+      expect(payloadObj.a1p).to.equal('4.35');
     });
-    it('should be added to bidmanager after returned from bidder', () => {
-      let responses = [];
-      responses.push(getDefaultBidResponse());
-      pbjs._c1xResponse(responses);
-      sinon.assert.calledOnce(stubAddBidResponse);
+
+    it('should convert pageurl to proper form and attach to request', function () {
+      let bidRequest = Object.assign({},
+        bidRequests[0],
+        {
+          'params': {
+            'siteId': '9999',
+            'pageurl': 'https://c1exchange.com/'
+          }
+        });
+      const request = c1xAdapter.buildRequests([bidRequest]);
+      const originalPayload = parseRequest(request.data);
+      const payloadObj = JSON.parse(originalPayload);
+      expect(payloadObj.pageurl).to.equal('https://c1exchange.com/');
     });
-    it('should send correct arguments to bidmanager.addBidResponse', () => {
-      let responses = [];
-      responses.push(getDefaultBidResponse());
-      pbjs._c1xResponse(JSON.stringify(responses));
-      var responseAdId = stubAddBidResponse.getCall(0).args[0];
-      var bidObject = stubAddBidResponse.getCall(0).args[1];
-      expect(responseAdId).to.equal('div-c1x-ht');
-      expect(bidObject.cpm).to.equal(3.31);
-      expect(bidObject.width).to.equal(300);
-      expect(bidObject.height).to.equal(250);
-      expect(bidObject.ad).to.equal('<div><a target=\"_new\" href=\"http://c1exchange.com\"><img src=\"https://placeholdit.imgix.net/~text?txtsize=38&txt=C1X%20Ad%20300x250&w=300&h=250&txttrack=0\"></a></div>');
-      expect(bidObject.bidderCode).to.equal('c1x');
-      sinon.assert.calledOnce(stubAddBidResponse);
+
+    it('should convert GDPR Consent to proper form and attach to request', function () {
+      let consentString = 'BOP2gFWOQIFovABABAENBGAAAAAAMw';
+      let bidderRequest = {
+        'bidderCode': 'c1x',
+        'gdprConsent': {
+          'consentString': consentString,
+          'gdprApplies': true
+        }
+      }
+      bidderRequest.bids = bidRequests;
+
+      const request = c1xAdapter.buildRequests(bidRequests, bidderRequest);
+      const originalPayload = parseRequest(request.data);
+      const payloadObj = JSON.parse(originalPayload);
+      expect(payloadObj['consent_string']).to.equal('BOP2gFWOQIFovABABAENBGAAAAAAMw');
+      expect(payloadObj['consent_required']).to.equal('true');
     });
-    it('should response to bidmanager when it is a no bid', () => {
-      let responses = [];
-      responses.push({'bid': false, 'adId': 'div-gpt-ad-1494499685685-0'});
-      pbjs._c1xResponse(responses);
-      let responseAdId = stubAddBidResponse.getCall(0).args[0];
-      let bidObject = stubAddBidResponse.getCall(0).args[1];
-      expect(responseAdId).to.equal('div-gpt-ad-1494499685685-0');
-      expect(bidObject.statusMessage).to.equal('Bid returned empty or error response');
-      sinon.assert.calledOnce(stubAddBidResponse);
+  });
+
+  describe('interpretResponse', function () {
+    let response = {
+      'bid': true,
+      'cpm': 1.5,
+      'ad': '<!-- Creative -->',
+      'width': 300,
+      'height': 250,
+      'crid': '8888',
+      'adId': 'c1x-test',
+      'bidType': 'GROSS_BID'
+    };
+
+    it('should get correct bid response', function () {
+      let expectedResponse = [
+        {
+          width: 300,
+          height: 250,
+          cpm: 1.5,
+          ad: '<!-- Creative -->',
+          creativeId: '8888',
+          currency: 'USD',
+          ttl: 300,
+          netRevenue: false,
+          requestId: 'yyyy'
+        }
+      ];
+      let bidderRequest = {};
+      bidderRequest.bids = [
+        { adUnitCode: 'c1x-test',
+          bidId: 'yyyy' }
+      ];
+      let result = c1xAdapter.interpretResponse({ body: [response] }, bidderRequest);
+      expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
     });
-    it('should show error when bidder sends invalid bid responses', () => {
-      let responses;
-      pbjs._c1xResponse(responses);
-      let bidObject = stubAddBidResponse.getCall(0).args[1];
-      expect(bidObject.statusMessage).to.equal('Bid returned empty or error response');
-      sinon.assert.calledOnce(stubAddBidResponse);
+
+    it('handles nobid responses', function () {
+      let response = {
+        bid: false,
+        adId: 'c1x-test'
+      };
+      let bidderRequest = {};
+      let result = c1xAdapter.interpretResponse({ body: [response] }, bidderRequest);
+      expect(result.length).to.equal(0);
     });
   });
 });

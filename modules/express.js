@@ -1,5 +1,5 @@
 
-import * as utils from 'src/utils';
+import * as utils from '../src/utils';
 
 const MODULE_NAME = 'express';
 
@@ -20,6 +20,8 @@ $$PREBID_GLOBAL$$.express = function(adUnits = $$PREBID_GLOBAL$$.adUnits) {
     utils.logWarn('no valid adUnits found, not loading ' + MODULE_NAME);
   }
 
+  // store gpt slots in a more performant hash lookup by elementId (adUnit code)
+  var gptSlotCache = {};
   // put adUnits in a more performant hash lookup by code.
   var adUnitsCache = adUnits.reduce(function (cache, adUnit) {
     if (adUnit.code && adUnit.bids) {
@@ -72,7 +74,7 @@ $$PREBID_GLOBAL$$.express = function(adUnits = $$PREBID_GLOBAL$$.adUnits) {
         const adUnit = adUnitsCache[elemId];
 
         if (adUnit) {
-          adUnit._gptSlot = gptSlot;
+          gptSlotCache[elemId] = gptSlot; // store by elementId
           adUnit.sizes = adUnit.sizes || mapGptSlotSizes(gptSlot.getSizes());
           adUnits.push(adUnit);
           gptSlots.splice(i, 1);
@@ -141,7 +143,7 @@ $$PREBID_GLOBAL$$.express = function(adUnits = $$PREBID_GLOBAL$$.adUnits) {
               $$PREBID_GLOBAL$$.setTargetingForGPTAsync();
               fGptRefresh.apply(pads(), [
                 adUnits.map(function (adUnit) {
-                  return adUnit._gptSlot;
+                  return gptSlotCache[adUnit.code];
                 })
               ]);
             }
@@ -157,7 +159,7 @@ $$PREBID_GLOBAL$$.express = function(adUnits = $$PREBID_GLOBAL$$.adUnits) {
       // get already displayed adUnits from aGptSlots if provided, else all defined gptSlots
       aGptSlots = defaultSlots(aGptSlots);
       var adUnits = pickAdUnits(/* mutated: */ aGptSlots).filter(function (adUnit) {
-        return adUnit._gptSlot._displayed;
+        return gptSlotCache[adUnit.code]._displayed;
       });
 
       if (aGptSlots.length) {
@@ -171,7 +173,7 @@ $$PREBID_GLOBAL$$.express = function(adUnits = $$PREBID_GLOBAL$$.adUnits) {
             $$PREBID_GLOBAL$$.setTargetingForGPTAsync();
             fGptRefresh.apply(pads(), [
               adUnits.map(function (adUnit) {
-                return adUnit._gptSlot
+                return gptSlotCache[adUnit.code];
               }),
               options
             ]);

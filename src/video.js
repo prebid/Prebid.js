@@ -1,16 +1,24 @@
-import { videoAdapters } from './adaptermanager';
-import { getBidRequest, deepAccess } from './utils';
+import adapterManager from './adapterManager';
+import { getBidRequest, deepAccess, logError } from './utils';
+import { config } from '../src/config';
+import includes from 'core-js/library/fn/array/includes';
+import { hook } from './hook';
 
 const VIDEO_MEDIA_TYPE = 'video';
-const OUTSTREAM = 'outstream';
+export const OUTSTREAM = 'outstream';
+export const INSTREAM = 'instream';
 
 /**
  * Helper functions for working with video-enabled adUnits
  */
-export const videoAdUnit = adUnit => adUnit.mediaType === VIDEO_MEDIA_TYPE;
-const nonVideoBidder = bid => !videoAdapters.includes(bid.bidder);
+export const videoAdUnit = adUnit => {
+  const mediaType = adUnit.mediaType === VIDEO_MEDIA_TYPE;
+  const mediaTypes = deepAccess(adUnit, 'mediaTypes.video');
+  return mediaType || mediaTypes;
+};
+export const videoBidder = bid => includes(adapterManager.videoAdapters, bid.bidder);
 export const hasNonVideoBidder = adUnit =>
-  adUnit.bids.filter(nonVideoBidder).length;
+  adUnit.bids.filter(bid => !videoBidder(bid)).length;
 
 /**
  * @typedef {object} VideoBid
@@ -19,11 +27,12 @@ export const hasNonVideoBidder = adUnit =>
 
 /**
  * Validate that the assets required for video context are present on the bid
- * @param {VideoBid} bid video bid to validate
- * @return {boolean} If object is valid
+ * @param {VideoBid} bid Video bid to validate
+ * @param {BidRequest[]} bidRequests All bid requests for an auction
+ * @return {Boolean} If object is valid
  */
-export function isValidVideoBid(bid) {
-  const bidRequest = getBidRequest(bid.adId);
+export function isValidVideoBid(bid, bidRequests) {
+  const bidRequest = getBidRequest(bid.requestId, bidRequests);
 
   const videoMediaType =
     bidRequest && deepAccess(bidRequest, 'mediaTypes.video');
@@ -31,7 +40,20 @@ export function isValidVideoBid(bid) {
 
   // if context not defined assume default 'instream' for video bids
   // instream bids require a vast url or vast xml content
+  return checkVideoBidSetup(bid, bidRequest, videoMediaType, context);
+}
+
+export const checkVideoBidSetup = hook('sync', function(bid, bidRequest, videoMediaType, context) {
   if (!bidRequest || (videoMediaType && context !== OUTSTREAM)) {
+    // xml-only video bids require a prebid cache url
+    if (!config.getConfig('cache.url') && bid.vastXml && !bid.vastUrl) {
+      logError(`
+        This bid contains only vastXml and will not work when a prebid cache url is not specified.
+        Try enabling prebid cache with $$PREBID_GLOBAL$$.setConfig({ cache: {url: "..."} });
+      `);
+      return false;
+    }
+
     return !!(bid.vastUrl || bid.vastXml);
   }
 
@@ -41,4 +63,4 @@ export function isValidVideoBid(bid) {
   }
 
   return true;
-}
+}, 'checkVideoBidSetup');

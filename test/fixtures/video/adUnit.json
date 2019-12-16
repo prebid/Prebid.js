@@ -4,7 +4,7 @@
   "mediaType": "video",
   "bids": [
     {
-      "bidder": "appnexusAst",
+      "bidder": "appnexus",
       "params": {
         "placementId": "9333431",
         "video": {

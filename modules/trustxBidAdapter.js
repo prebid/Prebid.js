@@ -1,165 +1,288 @@
-const utils = require('src/utils.js');
-const bidfactory = require('src/bidfactory.js');
-const bidmanager = require('src/bidmanager.js');
-const adloader = require('src/adloader');
-const adaptermanager = require('src/adaptermanager');
-const CONSTANTS = require('src/constants.json');
+import * as utils from '../src/utils';
+import {registerBidder} from '../src/adapters/bidderFactory';
+import { Renderer } from '../src/Renderer';
+import { VIDEO, BANNER } from '../src/mediaTypes';
 
-var TrustxAdapter = function TrustxAdapter() {
-  const bidderCode = 'trustx';
-  const reqHost = '//sofia.trustx.org';
-  const reqPath = '/hb?';
-  const LOG_ERROR_MESS = {
-    noAuid: 'Bid from response has no auid parameter - ',
-    noAdm: 'Bid from response has no adm parameter - ',
-    noBid: 'Array of bid objects is empty',
-    noPlacementCode: 'Can\'t find placementCode for bid with auid - ',
-    havePCodeFor: ', placementCode is available only for the following uids - ',
-    emptyUids: 'Uids should be not empty',
-    emptySeatbid: 'Seatbid array from response has empty item',
-    emptyResponse: 'Response is empty',
-    hasEmptySeatbidArray: 'Response has empty seatbid array',
-    hasNoArrayOfBids: 'Seatbid from response has no array of bid objects - '
-  };
+const BIDDER_CODE = 'trustx';
+const ENDPOINT_URL = 'https://sofia.trustx.org/hb';
+const TIME_TO_LIVE = 360;
+const ADAPTER_SYNC_URL = 'https://sofia.trustx.org/push_sync';
+const RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
 
-  function _makeHandler(auids, placementMap) {
-    var cbName = bidderCode + '_callback_wrapper_' + auids.join('_');
-    $$PREBID_GLOBAL$$[cbName] = function(resp) {
-      delete $$PREBID_GLOBAL$$[cbName];
-      _responseProcessing(resp, auids, placementMap);
-    };
-    return '$$PREBID_GLOBAL$$.' + cbName;
-  }
-
-  function _sendRequest(auids, placementMap) {
-    var query = [];
-    var path = reqPath;
-    query.push('u=' + encodeURIComponent(location.href));
-    query.push('auids=' + encodeURIComponent(auids.join(',')));
-    query.push('cb=' + _makeHandler(auids, placementMap));
-    query.push('pt=' + (window.globalPrebidTrustxPriceType === 'net' ? 'net' : 'gross'));
-
-    adloader.loadScript(reqHost + path + query.join('&'));
-  }
-
-  function _callBids(params) {
-    var auids = [];
-    var placementMap = {};
-    var hasBid;
-    var bid;
-    var bids = params.bids || [];
-    for (var i = 0; i < bids.length; i++) {
-      bid = bids[i];
-      if (bid && bid.bidder === bidderCode && bid.placementCode) {
-        hasBid = true;
-        if (bid.params && bid.params.uid) {
-          if (!placementMap[bid.params.uid]) {
-            placementMap[bid.params.uid] = [bid.placementCode];
-            auids.push(bid.params.uid);
-          } else {
-            placementMap[bid.params.uid].push(bid.placementCode);
-          }
-        }
-      }
-    }
-
-    if (auids.length) {
-      _sendRequest(auids, placementMap);
-    } else if (hasBid) {
-      utils.logError(LOG_ERROR_MESS.emptyUids);
-    }
-  }
-
-  function _getBidFromResponse(resp) {
-    if (!resp) {
-      utils.logError(LOG_ERROR_MESS.emptySeatbid);
-    } else if (!resp.bid) {
-      utils.logError(LOG_ERROR_MESS.hasNoArrayOfBids + JSON.stringify(resp));
-    } else if (!resp.bid[0]) {
-      utils.logError(LOG_ERROR_MESS.noBid);
-    }
-    return resp && resp.bid && resp.bid[0];
-  }
-
-  function _forEachPlacement(error, bid, placementCode) {
-    var bidObject;
-    if (error) {
-      bidObject = bidfactory.createBid(CONSTANTS.STATUS.NO_BID, bid);
-    } else {
-      bidObject = bidfactory.createBid(CONSTANTS.STATUS.GOOD, bid);
-      bidObject.cpm = bid.price;
-      bidObject.ad = bid.adm;
-      bidObject.width = bid.w;
-      bidObject.height = bid.h;
-      if (bid.dealid) {
-        bidObject.dealId = bid.dealid;
-      }
-    }
-    bidObject.bidderCode = bidderCode;
-    bidmanager.addBidResponse(placementCode, bidObject);
-  }
-
-  function _addBidResponse(bid, auids, placementMap) {
-    if (!bid) return;
-    var errorMessage, placementCodes;
-    if (!bid.auid) errorMessage = LOG_ERROR_MESS.noAuid + JSON.stringify(bid);
-    else {
-      placementCodes = placementMap.hasOwnProperty(bid.auid) && placementMap[bid.auid];
-      if (!placementCodes) {
-        errorMessage = LOG_ERROR_MESS.noPlacementCode + bid.auid + LOG_ERROR_MESS.havePCodeFor + auids.join(',');
-      }
-    }
-
-    if (!errorMessage) {
-      if (!bid.adm) errorMessage = LOG_ERROR_MESS.noAdm + JSON.stringify(bid);
-
-      var l = placementCodes.length;
-      while (l--) {
-        _forEachPlacement(errorMessage, bid, placementCodes[l]);
-      }
-
-      delete placementMap[bid.auid];
-    }
-
-    if (errorMessage) {
-      utils.logError(errorMessage);
-    }
-  }
-
-  function _responseProcessing(resp, auids, placementMap) {
-    var errorMessage;
-
-    if (!resp) errorMessage = LOG_ERROR_MESS.emptyResponse;
-    else if (resp.seatbid && !resp.seatbid.length) errorMessage = LOG_ERROR_MESS.hasEmptySeatbidArray;
-
-    if (!errorMessage) {
-      resp = resp.seatbid || [];
-      var l = resp.length;
-      while (l--) {
-        _addBidResponse(_getBidFromResponse(resp[l]), auids, placementMap);
-      }
-    }
-
-    var n, bidObj;
-    for (var auid in placementMap) {
-      if (placementMap.hasOwnProperty(auid) && placementMap[auid]) {
-        n = placementMap[auid].length;
-        while (n--) {
-          bidObj = bidfactory.createBid(CONSTANTS.STATUS.NO_BID);
-          bidObj.bidderCode = bidderCode;
-          bidmanager.addBidResponse(placementMap[auid][n], bidObj);
-        }
-      }
-    }
-
-    if (errorMessage) utils.logError(errorMessage);
-  }
-
-  return {
-    callBids: _callBids
-  };
+const LOG_ERROR_MESS = {
+  noAuid: 'Bid from response has no auid parameter - ',
+  noAdm: 'Bid from response has no adm parameter - ',
+  noBid: 'Array of bid objects is empty',
+  noPlacementCode: 'Can\'t find in requested bids the bid with auid - ',
+  emptyUids: 'Uids should be not empty',
+  emptySeatbid: 'Seatbid array from response has empty item',
+  emptyResponse: 'Response is empty',
+  hasEmptySeatbidArray: 'Response has empty seatbid array',
+  hasNoArrayOfBids: 'Seatbid from response has no array of bid objects - '
 };
+export const spec = {
+  code: BIDDER_CODE,
+  supportedMediaTypes: [ BANNER, VIDEO ],
+  /**
+   * Determines whether or not the given bid request is valid.
+   *
+   * @param {BidRequest} bid The bid params to validate.
+   * @return boolean True if this is a valid bid, and false otherwise.
+   */
+  isBidRequestValid: function(bid) {
+    return !!bid.params.uid;
+  },
+  /**
+   * Make a server request from the list of BidRequests.
+   *
+   * @param {BidRequest[]} validBidRequests - an array of bids
+   * @param {bidderRequest} - bidder request object
+   * @return ServerRequest Info describing the request to the server.
+   */
+  buildRequests: function(validBidRequests, bidderRequest) {
+    const auids = [];
+    const bidsMap = {};
+    const slotsMapByUid = {};
+    const sizeMap = {};
+    const bids = validBidRequests || [];
+    let priceType = 'net';
+    let pageKeywords;
+    let reqId;
 
-adaptermanager.registerBidAdapter(new TrustxAdapter(), 'trustx');
+    bids.forEach(bid => {
+      if (bid.params.priceType === 'gross') {
+        priceType = 'gross';
+      }
+      reqId = bid.bidderRequestId;
+      const {params: {uid}, adUnitCode} = bid;
+      auids.push(uid);
+      const sizesId = utils.parseSizesInput(bid.sizes);
 
-module.exports = TrustxAdapter;
+      if (!pageKeywords && !utils.isEmpty(bid.params.keywords)) {
+        const keywords = utils.transformBidderParamKeywords(bid.params.keywords);
+
+        if (keywords.length > 0) {
+          keywords.forEach(deleteValues);
+        }
+        pageKeywords = keywords;
+      }
+
+      if (!slotsMapByUid[uid]) {
+        slotsMapByUid[uid] = {};
+      }
+      const slotsMap = slotsMapByUid[uid];
+      if (!slotsMap[adUnitCode]) {
+        slotsMap[adUnitCode] = {adUnitCode, bids: [bid], parents: []};
+      } else {
+        slotsMap[adUnitCode].bids.push(bid);
+      }
+      const slot = slotsMap[adUnitCode];
+
+      sizesId.forEach((sizeId) => {
+        sizeMap[sizeId] = true;
+        if (!bidsMap[uid]) {
+          bidsMap[uid] = {};
+        }
+
+        if (!bidsMap[uid][sizeId]) {
+          bidsMap[uid][sizeId] = [slot];
+        } else {
+          bidsMap[uid][sizeId].push(slot);
+        }
+        slot.parents.push({parent: bidsMap[uid], key: sizeId, uid});
+      });
+    });
+
+    const payload = {
+      pt: priceType,
+      auids: auids.join(','),
+      sizes: utils.getKeys(sizeMap).join(','),
+      r: reqId,
+      wrapperType: 'Prebid_js',
+      wrapperVersion: '$prebid.version$'
+    };
+
+    if (pageKeywords) {
+      payload.keywords = JSON.stringify(pageKeywords);
+    }
+
+    if (bidderRequest) {
+      if (bidderRequest.refererInfo && bidderRequest.refererInfo.referer) {
+        payload.u = bidderRequest.refererInfo.referer;
+      }
+      if (bidderRequest.timeout) {
+        payload.wtimeout = bidderRequest.timeout;
+      }
+      if (bidderRequest.gdprConsent) {
+        if (bidderRequest.gdprConsent.consentString) {
+          payload.gdpr_consent = bidderRequest.gdprConsent.consentString;
+        }
+        payload.gdpr_applies =
+          (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean')
+            ? Number(bidderRequest.gdprConsent.gdprApplies) : 1;
+      }
+      if (bidderRequest.uspConsent) {
+        payload.us_privacy = bidderRequest.uspConsent;
+      }
+    }
+
+    return {
+      method: 'GET',
+      url: ENDPOINT_URL,
+      data: utils.parseQueryStringParameters(payload).replace(/\&$/, ''),
+      bidsMap: bidsMap,
+    };
+  },
+  /**
+   * Unpack the response from the server into a list of bids.
+   *
+   * @param {*} serverResponse A successful response from the server.
+   * @param {*} bidRequest
+   * @return {Bid[]} An array of bids which were nested inside the server.
+   */
+  interpretResponse: function(serverResponse, bidRequest, RendererConst = Renderer) {
+    serverResponse = serverResponse && serverResponse.body;
+    const bidResponses = [];
+    const bidsMap = bidRequest.bidsMap;
+    const priceType = bidRequest.data.pt;
+
+    let errorMessage;
+
+    if (!serverResponse) errorMessage = LOG_ERROR_MESS.emptyResponse;
+    else if (serverResponse.seatbid && !serverResponse.seatbid.length) {
+      errorMessage = LOG_ERROR_MESS.hasEmptySeatbidArray;
+    }
+
+    if (!errorMessage && serverResponse.seatbid) {
+      serverResponse.seatbid.forEach(respItem => {
+        _addBidResponse(_getBidFromResponse(respItem), bidsMap, priceType, bidResponses, RendererConst);
+      });
+    }
+    if (errorMessage) utils.logError(errorMessage);
+    return bidResponses;
+  },
+  getUserSyncs: function(syncOptions) {
+    if (syncOptions.pixelEnabled) {
+      return [{
+        type: 'image',
+        url: ADAPTER_SYNC_URL
+      }];
+    }
+  }
+}
+
+function isPopulatedArray(arr) {
+  return !!(utils.isArray(arr) && arr.length > 0);
+}
+
+function deleteValues(keyPairObj) {
+  if (isPopulatedArray(keyPairObj.value) && keyPairObj.value[0] === '') {
+    delete keyPairObj.value;
+  }
+}
+
+function _getBidFromResponse(respItem) {
+  if (!respItem) {
+    utils.logError(LOG_ERROR_MESS.emptySeatbid);
+  } else if (!respItem.bid) {
+    utils.logError(LOG_ERROR_MESS.hasNoArrayOfBids + JSON.stringify(respItem));
+  } else if (!respItem.bid[0]) {
+    utils.logError(LOG_ERROR_MESS.noBid);
+  }
+  return respItem && respItem.bid && respItem.bid[0];
+}
+
+function _addBidResponse(serverBid, bidsMap, priceType, bidResponses, RendererConst) {
+  if (!serverBid) return;
+  let errorMessage;
+  if (!serverBid.auid) errorMessage = LOG_ERROR_MESS.noAuid + JSON.stringify(serverBid);
+  if (!serverBid.adm) errorMessage = LOG_ERROR_MESS.noAdm + JSON.stringify(serverBid);
+  else {
+    const awaitingBids = bidsMap[serverBid.auid];
+    if (awaitingBids) {
+      const sizeId = `${serverBid.w}x${serverBid.h}`;
+      if (awaitingBids[sizeId]) {
+        const slot = awaitingBids[sizeId][0];
+
+        const bid = slot.bids.shift();
+        const bidResponse = {
+          requestId: bid.bidId, // bid.bidderRequestId,
+          bidderCode: spec.code,
+          cpm: serverBid.price,
+          width: serverBid.w,
+          height: serverBid.h,
+          creativeId: serverBid.auid, // bid.bidId,
+          currency: 'USD',
+          netRevenue: priceType !== 'gross',
+          ttl: TIME_TO_LIVE,
+          dealId: serverBid.dealid
+        };
+        if (serverBid.content_type === 'video') {
+          bidResponse.vastXml = serverBid.adm;
+          bidResponse.mediaType = VIDEO;
+          bidResponse.adResponse = {
+            content: bidResponse.vastXml
+          };
+          if (!bid.renderer && (!bid.mediaTypes || !bid.mediaTypes.video || bid.mediaTypes.video.context === 'outstream')) {
+            bidResponse.renderer = createRenderer(bidResponse, {
+              id: bid.bidId,
+              url: RENDERER_URL
+            }, RendererConst);
+          }
+        } else {
+          bidResponse.ad = serverBid.adm;
+          bidResponse.mediaType = BANNER;
+        }
+
+        bidResponses.push(bidResponse);
+
+        if (!slot.bids.length) {
+          slot.parents.forEach(({parent, key, uid}) => {
+            const index = parent[key].indexOf(slot);
+            if (index > -1) {
+              parent[key].splice(index, 1);
+            }
+            if (!parent[key].length) {
+              delete parent[key];
+              if (!utils.getKeys(parent).length) {
+                delete bidsMap[uid];
+              }
+            }
+          });
+        }
+      }
+    } else {
+      errorMessage = LOG_ERROR_MESS.noPlacementCode + serverBid.auid;
+    }
+  }
+  if (errorMessage) {
+    utils.logError(errorMessage);
+  }
+}
+
+function outstreamRender (bid) {
+  bid.renderer.push(() => {
+    window.ANOutstreamVideo.renderAd({
+      targetId: bid.adUnitCode,
+      adResponse: bid.adResponse
+    });
+  });
+}
+
+function createRenderer (bid, rendererParams, RendererConst) {
+  const rendererInst = RendererConst.install({
+    id: rendererParams.id,
+    url: rendererParams.url,
+    loaded: false
+  });
+
+  try {
+    rendererInst.setRender(outstreamRender);
+  } catch (err) {
+    utils.logWarn('Prebid Error calling setRender on renderer', err);
+  }
+
+  return rendererInst;
+}
+
+registerBidder(spec);

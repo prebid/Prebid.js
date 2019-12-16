@@ -1,78 +1,168 @@
-import {expect} from 'chai';
-import SekindoUMAdapter from '../../../modules/sekindoUMBidAdapter';
-var bidManager = require('src/bidmanager');
+import { expect } from 'chai';
+import { spec } from 'modules/sekindoUMBidAdapter';
+import { newBidder } from 'src/adapters/bidderFactory';
 
-describe('sekindoUM Adapter Tests', () => {
-  let _sekindoUMAdapter;
-  var addBidResponseSpy;
+describe('sekindoUMAdapter', function () {
+  const adapter = newBidder(spec);
 
-  const bidderRequest = {
-    bidderCode: 'sekindoUM',
-    bids: [{
-      bidder: 'sekindoUM',
-      bidId: 'sekindo_bidId',
-      bidderRequestId: 'sekindo_bidderRequestId',
-      requestId: 'sekindo_requestId',
-      placementCode: 'foo',
-      params: {
-        spaceId: 14071
-      }
-    }]
+  const bannerParams = {
+    'spaceId': '14071'
   };
 
-  beforeEach(() => {
-    _sekindoUMAdapter = new SekindoUMAdapter();
+  const videoParams = {
+    'spaceId': '14071',
+    'video': {
+      playerWidth: 300,
+      playerHeight: 250,
+      vid_vastType: 2 // optional
+    }
+  };
+
+  var bidRequests = {
+    'bidder': 'sekindoUM',
+    'params': bannerParams,
+    'adUnitCode': 'adunit-code',
+    'sizes': [[300, 250], [300, 600]],
+    'bidId': '30b31c1838de1e',
+    'bidderRequestId': '22edbae2733bf6',
+    'auctionId': '1d1a030790a475',
+    'mediaType': 'banner'
+  };
+
+  describe('inherited functions', function () {
+    it('exists and is a function', function () {
+      expect(adapter.callBids).to.exist.and.to.be.a('function');
+    });
   });
 
-  describe('sekindoUM callBids', () => {
-    beforeEach(() => {
-      _sekindoUMAdapter.callBids(bidderRequest);
+  describe('isBidRequestValid', function () {
+    it('should return true when required params found', function () {
+      bidRequests.mediaType = 'banner';
+      bidRequests.params = bannerParams;
+      expect(spec.isBidRequestValid(bidRequests)).to.equal(true);
     });
 
-    it('Verify sekindo script tag was created', () => {
-      var scriptTags = document.getElementsByTagName('script');
-      var sekindoTagExists = 0;
-      for (var i = 0; i < scriptTags.length; i++) {
-        if (scriptTags[i].src.match('hb.sekindo.com') != null) {
-          sekindoTagExists = 1;
-          break;
-        }
-      }
-      expect(sekindoTagExists).to.equal(1);
+    it('should return false when required video params are missing', function () {
+      bidRequests.mediaType = 'video';
+      bidRequests.params = bannerParams;
+      expect(spec.isBidRequestValid(bidRequests)).to.equal(false);
+    });
+
+    it('should return true when required Video params found', function () {
+      bidRequests.mediaType = 'video';
+      bidRequests.params = videoParams;
+      expect(spec.isBidRequestValid(bidRequests)).to.equal(true);
     });
   });
 
-  describe('Should submit bid responses correctly', function () {
-    beforeEach(function () {
-      addBidResponseSpy = sinon.stub(bidManager, 'addBidResponse');
-      $$PREBID_GLOBAL$$._bidsRequested.push(bidderRequest);
-      _sekindoUMAdapter = new SekindoUMAdapter();
+  describe('buildRequests', function () {
+    it('banner data should be a query string and method = GET', function () {
+      bidRequests.mediaType = 'banner';
+      bidRequests.params = bannerParams;
+      const request = spec.buildRequests([bidRequests]);
+      expect(request[0].data).to.be.a('string');
+      expect(request[0].method).to.equal('GET');
     });
 
-    afterEach(function () {
-      addBidResponseSpy.restore();
+    it('with gdprConsent, banner data should be a query string and method = GET', function () {
+      bidRequests.mediaType = 'banner';
+      bidRequests.params = bannerParams;
+      const request = spec.buildRequests([bidRequests], {'gdprConsent': {'consentString': 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==', 'vendorData': {}, 'gdprApplies': true}});
+      expect(request[0].data).to.be.a('string');
+      expect(request[0].method).to.equal('GET');
     });
 
-    it('Should correctly submit valid bid to the bid manager', function () {
-      var HB_bid = {
-        adId: 'sekindoUM_bidId',
-        cpm: 0.23,
-        width: 300,
-        height: 250,
-        ad: '<h1>test ad</h1>'
+    it('video data should be a query string and method = GET', function () {
+      bidRequests.mediaType = 'video';
+      bidRequests.params = videoParams;
+      const request = spec.buildRequests([bidRequests]);
+      expect(request[0].data).to.be.a('string');
+      expect(request[0].method).to.equal('GET');
+    });
+  });
+
+  describe('interpretResponse', function () {
+    it('banner should get correct bid response', function () {
+      let response = {
+        'headers': function(header) {
+          return 'dummy header';
+        },
+        'body': {'id': '30b31c1838de1e', 'bidderCode': 'sekindoUM', 'cpm': 2.1951, 'width': 300, 'height': 250, 'ad': '<h1>sekindo creative<\/h1>', 'ttl': 36000, 'creativeId': '323774', 'netRevenue': true, 'currency': 'USD'}
       };
 
-      $$PREBID_GLOBAL$$.sekindoCB(bidderRequest.bids[0].bidId, HB_bid);
-      var firstBid = addBidResponseSpy.getCall(0).args[1];
-      var placementCode1 = addBidResponseSpy.getCall(0).args[0];
+      bidRequests.mediaType = 'banner';
+      bidRequests.params = bannerParams;
+      let expectedResponse = [
+        {
+          'requestId': '30b31c1838de1e',
+          'bidderCode': 'sekindoUM',
+          'cpm': 2.1951,
+          'width': 300,
+          'height': 250,
+          'creativeId': '323774',
+          'currency': 'USD',
+          'netRevenue': true,
+          'ttl': 36000,
+          'ad': '<h1>sekindo creative</h1>'
+        }
+      ];
+      let result = spec.interpretResponse(response, bidRequests);
+      expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse[0]));
+    });
 
-      expect(firstBid.getStatusCode()).to.equal(1);
-      expect(firstBid.bidderCode).to.equal('sekindoUM');
-      expect(firstBid.cpm).to.equal(0.23);
-      expect(firstBid.ad).to.equal('<h1>test ad</h1>');
-      expect(placementCode1).to.equal('foo');
+    it('vastXml video should get correct bid response', function () {
+      let response = {
+        'headers': function(header) {
+          return 'dummy header';
+        },
+        'body': {'id': '30b31c1838de1e', 'bidderCode': 'sekindoUM', 'cpm': 2.1951, 'width': 300, 'height': 250, 'vastXml': '<vast/>', 'ttl': 36000, 'creativeId': '323774', 'netRevenue': true, 'currency': 'USD'}
+      };
 
-      expect(addBidResponseSpy.getCalls().length).to.equal(1);
+      bidRequests.mediaType = 'video';
+      bidRequests.params = videoParams;
+      let expectedResponse = [
+        {
+          'requestId': '30b31c1838de1e',
+          'bidderCode': 'sekindoUM',
+          'cpm': 2.1951,
+          'width': 300,
+          'height': 250,
+          'creativeId': '323774',
+          'currency': 'USD',
+          'netRevenue': true,
+          'ttl': 36000,
+          'vastXml': '<vast/>'
+        }
+      ];
+      let result = spec.interpretResponse(response, bidRequests);
+      expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse[0]));
+    });
+
+    it('vastUrl video should get correct bid response', function () {
+      let response = {
+        'headers': function(header) {
+          return 'dummy header';
+        },
+        'body': {'id': '30b31c1838de1e', 'bidderCode': 'sekindoUM', 'cpm': 2.1951, 'width': 300, 'height': 250, 'vastUrl': 'https://vastUrl', 'ttl': 36000, 'creativeId': '323774', 'netRevenue': true, 'currency': 'USD'}
+      };
+      bidRequests.mediaType = 'video';
+      bidRequests.params = videoParams;
+      let expectedResponse = [
+        {
+          'requestId': '30b31c1838de1e',
+          'bidderCode': 'sekindoUM',
+          'cpm': 2.1951,
+          'width': 300,
+          'height': 250,
+          'creativeId': '323774',
+          'currency': 'USD',
+          'netRevenue': true,
+          'ttl': 36000,
+          'vastUrl': 'https://vastUrl'
+        }
+      ];
+      let result = spec.interpretResponse(response, bidRequests);
+      expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse[0]));
     });
   });
 });

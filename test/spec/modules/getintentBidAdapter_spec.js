@@ -1,146 +1,142 @@
-import Adapter from '../../../modules/getintentBidAdapter';
-import bidManager from '../../../src/bidmanager';
-import {expect} from 'chai';
+import { expect } from 'chai'
+import { spec } from 'modules/getintentBidAdapter'
 
-var assert = require('chai').assert;
-
-describe('getintent media adapter test', () => {
-  let adapter;
-
-  window.gi_hb = {
-    makeBid: function(bidRequest, callback) {
-      var pid = bidRequest.pid;
-      var tid = bidRequest.tid;
-
-      if (pid == 'p1' || pid == 'p2') {
-        callback({
-          ad: `Ad Markup ${pid} ${tid}`,
-          cpm: 2.71,
-          size: `${bidRequest.size}`
-        }, bidRequest);
-      } else if (pid == 'p3') {
-        callback({
-          no_bid: 1
-        }, bidRequest);
-      } else if (pid == 'p4') {
-        callback({
-          vast_url: `http://test.com?pid=${pid}&tid=${tid}`,
-          cpm: 2.88,
-          size: `${bidRequest.size}`
-        }, bidRequest);
+describe('GetIntent Adapter Tests:', function () {
+  const bidRequests = [{
+    bidId: 'bid12345',
+    params: {
+      pid: 'p1000',
+      tid: 't1000'
+    },
+    sizes: [[300, 250]]
+  },
+  {
+    bidId: 'bid54321',
+    params: {
+      pid: 'p1000',
+      tid: 't1000'
+    },
+    sizes: [[50, 50], [100, 100]]
+  }]
+  const videoBidRequest = {
+    bidId: 'bid789',
+    params: {
+      pid: 'p1001',
+      tid: 't1001',
+      video: {
+        mimes: ['video/mp4', 'application/javascript'],
+        max_dur: 20,
+        api: [1, 2],
+        skippable: true
       }
-    }
+    },
+    sizes: [300, 250],
+    mediaType: 'video'
   };
 
-  function callOut() {
-    adapter.callBids({
-      bidderCode: 'getintent',
-      bids: [
-        {
-          bidder: 'getintent',
-          adUnitCode: 'test1',
-          sizes: [[320, 240]],
-          params: {
-            pid: 'p1',
-            tid: 't1',
-            cur: 'USD'
-          }
-        },
-        {
-          bidder: 'getintent',
-          adUnitCode: 'test2',
-          sizes: [[720, 90]],
-          params: {
-            pid: 'p2',
-            tid: 't1',
-            cur: 'USD'
-          }
-        },
-        {
-          bidder: 'getintent',
-          adUnitCode: 'test3',
-          sizes: [[400, 500]],
-          params: {
-            pid: 'p3',
-            tid: 't2',
-            cur: 'USD'
-          }
-        },
-        {
-          bidder: 'getintent',
-          adUnitCode: 'test4',
-          mediaType: 'video',
-          sizes: [[480, 352]],
-          params: {
-            pid: 'p4',
-            tid: 't3',
-            cur: 'USD'
-          }
-        }
-      ]
-    });
-  }
-
-  beforeEach(() => {
-    adapter = new Adapter();
+  it('Verify build request', function () {
+    const serverRequests = spec.buildRequests(bidRequests);
+    let serverRequest = serverRequests[0];
+    expect(serverRequest.url).to.equal('https://px.adhigh.net/rtb/direct_banner');
+    expect(serverRequest.method).to.equal('GET');
+    expect(serverRequest.data.bid_id).to.equal('bid12345');
+    expect(serverRequest.data.pid).to.equal('p1000');
+    expect(serverRequest.data.tid).to.equal('t1000');
+    expect(serverRequest.data.size).to.equal('300x250');
+    expect(serverRequest.data.is_video).to.equal(false);
+    serverRequest = serverRequests[1];
+    expect(serverRequest.data.size).to.equal('50x50,100x100');
   });
 
-  afterEach(() => {
+  it('Verify build video request', function () {
+    const serverRequests = spec.buildRequests([videoBidRequest]);
+    let serverRequest = serverRequests[0];
+    expect(serverRequest.url).to.equal('https://px.adhigh.net/rtb/direct_vast');
+    expect(serverRequest.method).to.equal('GET');
+    expect(serverRequest.data.bid_id).to.equal('bid789');
+    expect(serverRequest.data.pid).to.equal('p1001');
+    expect(serverRequest.data.tid).to.equal('t1001');
+    expect(serverRequest.data.size).to.equal('300x250');
+    expect(serverRequest.data.is_video).to.equal(true);
+    expect(serverRequest.data.mimes).to.equal('video/mp4,application/javascript');
+    expect(serverRequest.data.max_dur).to.equal(20);
+    expect(serverRequest.data.api).to.equal('1,2');
+    expect(serverRequest.data.skippable).to.equal(true);
   });
 
-  describe('adding bids to the manager', () => {
-    let firstBid;
-    let secondBid;
-    let thirdBid;
-    let videoBid;
+  it('Verify parse response', function () {
+    const serverResponse = {
+      body: {
+        bid_id: 'bid12345',
+        cpm: 2.25,
+        currency: 'USD',
+        size: '300x250',
+        creative_id: '1000',
+        ad: 'Ad markup'
+      },
+      headers: {
+      }
+    };
+    const bids = spec.interpretResponse(serverResponse);
+    expect(bids).to.have.lengthOf(1);
+    const bid = bids[0];
+    expect(bid.cpm).to.equal(2.25);
+    expect(bid.currency).to.equal('USD');
+    expect(bid.creativeId).to.equal('1000');
+    expect(bid.width).to.equal(300);
+    expect(bid.height).to.equal(250);
+    expect(bid.requestId).to.equal('bid12345');
+    expect(bid.mediaType).to.equal('banner');
+    expect(bid.ad).to.equal('Ad markup');
+  });
 
-    beforeEach(() => {
-      sinon.stub(bidManager, 'addBidResponse');
-      callOut();
-      firstBid = bidManager.addBidResponse.firstCall.args[1];
-      secondBid = bidManager.addBidResponse.secondCall.args[1];
-      thirdBid = bidManager.addBidResponse.thirdCall.args[1];
-      videoBid = bidManager.addBidResponse.lastCall.args[1];
-    });
+  it('Verify parse video response', function () {
+    const serverResponse = {
+      body: {
+        bid_id: 'bid789',
+        cpm: 3.25,
+        currency: 'USD',
+        size: '300x250',
+        creative_id: '2000',
+        vast_url: 'https://vast.xml/url'
+      },
+      headers: {
+      }
+    };
+    const bids = spec.interpretResponse(serverResponse);
+    expect(bids).to.have.lengthOf(1);
+    const bid = bids[0];
+    expect(bid.cpm).to.equal(3.25);
+    expect(bid.currency).to.equal('USD');
+    expect(bid.creativeId).to.equal('2000');
+    expect(bid.width).to.equal(300);
+    expect(bid.height).to.equal(250);
+    expect(bid.requestId).to.equal('bid789');
+    expect(bid.mediaType).to.equal('video');
+    expect(bid.vastUrl).to.equal('https://vast.xml/url');
+  });
 
-    afterEach(() => {
-      bidManager.addBidResponse.restore();
-    });
+  it('Verify bidder code', function () {
+    expect(spec.code).to.equal('getintent');
+  });
 
-    it('was called four times', () => {
-      assert.strictEqual(bidManager.addBidResponse.callCount, 4);
-    });
+  it('Verify bidder aliases', function () {
+    expect(spec.aliases).to.have.lengthOf(1);
+    expect(spec.aliases[0]).to.equal('getintentAdapter');
+  });
 
-    it('will respond to the first bid', () => {
-      expect(firstBid).to.have.property('ad', 'Ad Markup p1 t1');
-      expect(firstBid).to.have.property('cpm', 2.71);
-      expect(firstBid).to.have.property('width', '320');
-      expect(firstBid).to.have.property('height', '240');
-    });
+  it('Verify supported media types', function () {
+    expect(spec.supportedMediaTypes).to.have.lengthOf(2);
+    expect(spec.supportedMediaTypes[0]).to.equal('video');
+    expect(spec.supportedMediaTypes[1]).to.equal('banner');
+  });
 
-    it('will respond to the second bid', () => {
-      expect(secondBid).to.have.property('ad', 'Ad Markup p2 t1');
-      expect(secondBid).to.have.property('cpm', 2.71);
-      expect(secondBid).to.have.property('width', '720');
-      expect(secondBid).to.have.property('height', '90');
-    });
-
-    it('wont respond to the third bid', () => {
-      expect(thirdBid).to.not.have.property('ad');
-      expect(thirdBid).to.not.have.property('cpm');
-    });
-
-    it('will add the bidder code to the bid object', () => {
-      expect(firstBid).to.have.property('bidderCode', 'getintent');
-      expect(secondBid).to.have.property('bidderCode', 'getintent');
-      expect(thirdBid).to.have.property('bidderCode', 'getintent');
-    });
-
-    it('will respond to the video bid', () => {
-      expect(videoBid).to.have.property('vastUrl', 'http://test.com?pid=p4&tid=t3');
-      expect(videoBid).to.have.property('cpm', 2.88);
-      expect(videoBid).to.have.property('width', '480');
-      expect(videoBid).to.have.property('height', '352');
-    });
+  it('Verify if bid request valid', function () {
+    expect(spec.isBidRequestValid(bidRequests[0])).to.equal(true);
+    expect(spec.isBidRequestValid(bidRequests[1])).to.equal(true);
+    expect(spec.isBidRequestValid({})).to.equal(false);
+    expect(spec.isBidRequestValid({ params: {} })).to.equal(false);
+    expect(spec.isBidRequestValid({ params: { test: 123 } })).to.equal(false);
+    expect(spec.isBidRequestValid({ params: { pid: 111, tid: 222 } })).to.equal(true);
   });
 });

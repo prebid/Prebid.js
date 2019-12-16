@@ -1,244 +1,139 @@
-describe('jcm adapter tests', function () {
-  var expect = require('chai').expect;
-  var urlParse = require('url-parse');
+import { expect } from 'chai';
+import { spec } from 'modules/jcmBidAdapter';
+import { newBidder } from 'src/adapters/bidderFactory';
 
-  // FYI: querystringify will perform encoding/decoding
-  var querystringify = require('querystringify');
+const ENDPOINT = 'https://media.adfrontiers.com/';
 
-  var adapter = require('modules/jcmBidAdapter');
-  var adLoader = require('src/adloader');
-  var bidmanager = require('src/bidmanager');
+describe('jcmAdapter', function () {
+  const adapter = newBidder(spec);
 
-  let stubLoadScript;
-
-  beforeEach(function () {
-    stubLoadScript = sinon.stub(adLoader, 'loadScript');
-  });
-
-  afterEach(function () {
-    stubLoadScript.restore();
-  });
-
-  describe('creation of bid url', function () {
-    if (typeof ($$PREBID_GLOBAL$$._bidsReceived) === 'undefined') {
-      $$PREBID_GLOBAL$$._bidsReceived = [];
-    }
-    if (typeof ($$PREBID_GLOBAL$$._bidsRequested) === 'undefined') {
-      $$PREBID_GLOBAL$$._bidsRequested = [];
-    }
-    if (typeof ($$PREBID_GLOBAL$$._adsReceived) === 'undefined') {
-      $$PREBID_GLOBAL$$._adsReceived = [];
-    }
-
-    it('should be called only once', function () {
-      var params = {
-        bidderCode: 'jcm',
-        bidder: 'jcm',
-        bids: [
-          {
-		          bidId: '3c9408cdbf2f68',
-     		          sizes: [[300, 250], [300, 300]],
-            bidder: 'jcm',
-            params: { siteId: '3608', adSizes: '300x250' },
-            requestId: '10b327aa396609',
-            placementCode: '/19968336/header-bid-tag-0'
-          }
-
-        ]
-      };
-
-      adapter().callBids(params);
-
-      sinon.assert.calledOnce(stubLoadScript);
-    });
-
-    it('should fix parameter name', function () {
-      var params = {
-        bidderCode: 'jcm',
-        bidder: 'jcm',
-        bids: [
-          {
-            bidId: '3c9408cdbf2f68',
-            sizes: [[300, 250]],
-            bidder: 'jcm',
-            params: { siteId: '3608', adSizes: '300x250' },
-            requestId: '10b327aa396609',
-            placementCode: '/19968336/header-bid-tag-0'
-          }
-
-        ]
-      };
-
-      adapter().callBids(params);
-      var bidUrl = stubLoadScript.getCall(0).args[0];
-
-      sinon.assert.calledWith(stubLoadScript, bidUrl);
-
-      var parsedBidUrl = urlParse(bidUrl);
-      var parsedBidUrlQueryString = querystringify.parse(parsedBidUrl.query);
-
-      expect(parsedBidUrl.hostname).to.equal('media.adfrontiers.com');
-      expect(parsedBidUrl.pathname).to.equal('/pq');
-
-      expect(parsedBidUrlQueryString).to.have.property('t').and.to.equal('hb');
-      expect(parsedBidUrlQueryString).to.have.property('bids');
-
-      var bidObjArr = JSON.parse(parsedBidUrlQueryString.bids);
-      expect(bidObjArr).to.have.property('bids');
-      var bidObj = bidObjArr.bids[0];
-
-      expect(bidObj).to.have.property('adSizes').and.to.equal('300x250');
-      expect(bidObj).to.have.property('siteId').and.to.equal('3608');
-      expect(bidObj).to.have.property('callbackId').and.to.equal('3c9408cdbf2f68');
+  describe('inherited functions', function () {
+    it('exists and is a function', function () {
+      expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
   });
 
-  describe('placement by size', function () {
-    if (typeof ($$PREBID_GLOBAL$$._bidsReceived) === 'undefined') {
-      $$PREBID_GLOBAL$$._bidsReceived = [];
-    }
-    if (typeof ($$PREBID_GLOBAL$$._bidsRequested) === 'undefined') {
-      $$PREBID_GLOBAL$$._bidsRequested = [];
-    }
-    if (typeof ($$PREBID_GLOBAL$$._adsReceived) === 'undefined') {
-      $$PREBID_GLOBAL$$._adsReceived = [];
-    }
-
-    it('should be called with specific parameters for two bids', function () {
-      var params = {
-        bidderCode: 'jcm',
-        bidder: 'jcm',
-        bids: [
-          {
-            bidId: '3c9408cdbf2f68',
-            sizes: [[300, 250]],
-            bidder: 'jcm',
-            params: { siteId: '3608', adSizes: '300x250' },
-            requestId: '10b327aa396609',
-            placementCode: '/19968336/header-bid-tag-0'
-          },
-          {
-            bidId: '3c9408cdbf2f69',
-            sizes: [[728, 90]],
-            bidder: 'jcm',
-            params: { siteId: '3608', adSizes: '728x90' },
-            requestId: '10b327aa396610',
-            placementCode: '/19968336/header-bid-tag-1'
-          }
-
-        ]
-      };
-
-      adapter().callBids(params);
-      var bidUrl = stubLoadScript.getCall(0).args[0];
-
-      sinon.assert.calledWith(stubLoadScript, bidUrl);
-
-      var parsedBidUrl = urlParse(bidUrl);
-      var parsedBidUrlQueryString = querystringify.parse(parsedBidUrl.query);
-
-      expect(parsedBidUrl.hostname).to.equal('media.adfrontiers.com');
-      expect(parsedBidUrl.pathname).to.equal('/pq');
-
-      expect(parsedBidUrlQueryString).to.have.property('t').and.to.equal('hb');
-      expect(parsedBidUrlQueryString).to.have.property('bids');
-
-      var bidObjArr = JSON.parse(parsedBidUrlQueryString.bids);
-      expect(bidObjArr).to.have.property('bids');
-      var bidObj1 = bidObjArr.bids[0];
-
-      expect(bidObj1).to.have.property('adSizes').and.to.equal('300x250');
-      expect(bidObj1).to.have.property('siteId').and.to.equal('3608');
-      expect(bidObj1).to.have.property('callbackId').and.to.equal('3c9408cdbf2f68');
-
-      var bidObj2 = bidObjArr.bids[1];
-
-      expect(bidObj2).to.have.property('adSizes').and.to.equal('728x90');
-      expect(bidObj2).to.have.property('siteId').and.to.equal('3608');
-      expect(bidObj2).to.have.property('callbackId').and.to.equal('3c9408cdbf2f69');
-    });
-  });
-
-  describe('handling of the callback response', function () {
-    if (typeof ($$PREBID_GLOBAL$$._bidsReceived) === 'undefined') {
-      $$PREBID_GLOBAL$$._bidsReceived = [];
-    }
-    if (typeof ($$PREBID_GLOBAL$$._bidsRequested) === 'undefined') {
-      $$PREBID_GLOBAL$$._bidsRequested = [];
-    }
-    if (typeof ($$PREBID_GLOBAL$$._adsReceived) === 'undefined') {
-      $$PREBID_GLOBAL$$._adsReceived = [];
-    }
-
-    var params = {
-      bidderCode: 'jcm',
-      bidder: 'jcm',
-      bidderRequestId: '2068db3c904101',
-      bids: [
-        {
-          bidId: '3c9408cdbf2f68',
-          sizes: [[300, 250]],
-          bidder: 'jcm',
-          params: { siteId: '3608', adSizes: '300x250' },
-          requestId: '10b327aa396609',
-          placementCode: '/19968336/header-bid-tag-0'
-        },
-        {
-          bidId: '3c9408cdbf2f69',
-          sizes: [[728, 90]],
-          bidder: 'jcm',
-          params: { siteId: '3608', adSizes: '728x90' },
-          requestId: '10b327aa396610',
-          placementCode: '/19968336/header-bid-tag-1'
-        }
-
-      ]
+  describe('isBidRequestValid', function () {
+    let bid = {
+      'bidder': 'jcm',
+      'params': {
+        'siteId': '3608'
+      },
+      'adUnitCode': 'adunit-code',
+      'sizes': [[300, 250], [300, 600]],
+      'bidId': '30b31c1838de1e',
+      'bidderRequestId': '22edbae2733bf6',
+      'auctionId': '1d1a030790a475',
     };
 
-    var response = '{"bids":[{"width":300,"cpm":3,"ad":"%3Cimg+src%3D%22http%3A%2F%2Fmedia.adfrontiers.com%2Fimgs%2Fpartnership_300x250.png%22%3E","callbackId":"3c9408cdbf2f68","height":250},{"width":728,"cpm":0,"ad":"%3Cimg+src%3D%22http%3A%2F%2Fmedia.adfrontiers.com%2Fimgs%2Fpartnership_728x90.png%22%3E","callbackId":"3c9408cdbf2f69","height":90}]}';
-
-    it('callback function should exist', function () {
-      expect(pbjs.processJCMResponse).to.exist.and.to.be.a('function');
+    it('should return true when required params found', function () {
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
-    it('bidmanager.addBidResponse should be called twice with correct arguments', function () {
-      var stubAddBidResponse = sinon.stub(bidmanager, 'addBidResponse');
+    it('should return false when required params are not passed', function () {
+      let bid = Object.assign({}, bid);
+      delete bid.params;
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
+  });
 
-      adapter().callBids(params);
-
-      var adUnits = new Array();
-      var unit = new Object();
-      unit.bids = [params];
-      unit.code = '/19968336/header-bid-tag';
-      unit.sizes = [[300, 250], [728, 90]];
-      adUnits.push(unit);
-
-      if (typeof ($$PREBID_GLOBAL$$._bidsRequested) === 'undefined') {
-        $$PREBID_GLOBAL$$._bidsRequested = [params];
-      } else {
-        $$PREBID_GLOBAL$$._bidsRequested.push(params);
+  describe('buildRequests', function () {
+    let bidRequests = [
+      {
+        'bidder': 'jcm',
+        'params': {
+          'siteId': '3608'
+        },
+        'adUnitCode': 'adunit-code',
+        'sizes': [[300, 250], [300, 600]],
+        'bidId': '30b31c1838de1e',
+        'bidderRequestId': '22edbae2733bf6',
+        'auctionId': '1d1a030790a475',
       }
-      $$PREBID_GLOBAL$$.adUnits = adUnits;
-      pbjs.processJCMResponse(response);
 
-      var bidPlacementCode1 = stubAddBidResponse.getCall(0).args[0];
-      var bidObject1 = stubAddBidResponse.getCall(0).args[1];
-      var bidPlacementCode2 = stubAddBidResponse.getCall(1).args[0];
-      var bidObject2 = stubAddBidResponse.getCall(1).args[1];
+    ];
 
-      expect(bidPlacementCode1).to.equal('/19968336/header-bid-tag-0');
-      expect(bidObject1.cpm).to.equal(3);
-      expect(bidObject1.ad).to.equal('<img src="http://media.adfrontiers.com/imgs/partnership_300x250.png">');
-      expect(bidObject1.width).to.equal(300);
-      expect(bidObject1.height).to.equal(250);
-      expect(bidObject1.getStatusCode()).to.equal(1);
-      expect(bidObject1.bidderCode).to.equal('jcm');
+    const request = spec.buildRequests(bidRequests);
 
-      expect(bidPlacementCode2).to.equal('/19968336/header-bid-tag-1');
-      expect(bidObject2.getStatusCode()).to.equal(2);
+    it('sends bid request to ENDPOINT via GET', function () {
+      expect(request.method).to.equal('GET');
+    });
 
-      sinon.assert.calledTwice(stubAddBidResponse);
-      stubAddBidResponse.restore();
+    it('sends correct bid parameters', function () {
+      const payloadArr = request.data.split('&');
+      expect(request.method).to.equal('GET');
+      expect(payloadArr.length).to.equal(4);
+      expect(payloadArr[0]).to.equal('t=hb');
+      expect(payloadArr[1]).to.equal('ver=1.0');
+      expect(payloadArr[2]).to.equal('compact=true');
+      const adReqStr = request.data.split('&bids=')[1];
+      const adReq = JSON.parse(decodeURIComponent(adReqStr));
+      const adReqBid = JSON.parse(decodeURIComponent(adReqStr)).bids[0];
+      expect(adReqBid.siteId).to.equal('3608');
+      expect(adReqBid.callbackId).to.equal('30b31c1838de1e');
+      expect(adReqBid.adSizes).to.equal('300x250,300x600');
+    });
+  });
+
+  describe('interpretResponse', function () {
+    it('should get correct bid response', function () {
+      let serverResponse = {'bids': [{'width': 300, 'height': 250, 'creativeId': '29681110', 'ad': '<!-- Creative -->', 'cpm': 0.5, 'callbackId': '30b31c1838de1e'}]};
+
+      let expectedResponse = [
+        {
+          'requestId': '30b31c1838de1e',
+          'bidderCode': 'jcm',
+          'cpm': 0.5,
+          'creativeId': '29681110',
+          'width': 300,
+          'height': 250,
+          'ttl': 60,
+          'currency': 'USA',
+          'netRevenue': true,
+          'ad': '<!-- Creative -->',
+        }
+      ];
+
+      let result = spec.interpretResponse({ body: serverResponse });
+      expect(Object.keys(result[0]).length).to.equal(Object.keys(expectedResponse[0]).length);
+      expect(Object.keys(result[0]).requestId).to.equal(Object.keys(expectedResponse[0]).requestId);
+      expect(Object.keys(result[0]).bidderCode).to.equal(Object.keys(expectedResponse[0]).bidderCode);
+      expect(Object.keys(result[0]).cpm).to.equal(Object.keys(expectedResponse[0]).cpm);
+      expect(Object.keys(result[0]).creativeId).to.equal(Object.keys(expectedResponse[0]).creativeId);
+      expect(Object.keys(result[0]).width).to.equal(Object.keys(expectedResponse[0]).width);
+      expect(Object.keys(result[0]).height).to.equal(Object.keys(expectedResponse[0]).height);
+      expect(Object.keys(result[0]).ttl).to.equal(Object.keys(expectedResponse[0]).ttl);
+      expect(Object.keys(result[0]).currency).to.equal(Object.keys(expectedResponse[0]).currency);
+      expect(Object.keys(result[0]).netRevenue).to.equal(Object.keys(expectedResponse[0]).netRevenue);
+
+      expect(Object.keys(result[0]).ad).to.equal(Object.keys(expectedResponse[0]).ad);
+    });
+
+    it('handles nobid responses', function () {
+      let serverResponse = {'bids': []};
+
+      let result = spec.interpretResponse({ body: serverResponse });
+      expect(result.length).to.equal(0);
+    });
+  });
+  describe('getUserSyncs', function () {
+    it('Verifies sync iframe option', function () {
+      expect(spec.getUserSyncs({})).to.be.undefined;
+      expect(spec.getUserSyncs({ iframeEnabled: false })).to.be.undefined;
+      const options = spec.getUserSyncs({ iframeEnabled: true });
+      expect(options).to.not.be.undefined;
+      expect(options).to.have.lengthOf(1);
+      expect(options[0].type).to.equal('iframe');
+      expect(options[0].url).to.equal('https://media.adfrontiers.com/hb/jcm_usersync.html');
+    });
+
+    it('Verifies sync image option', function () {
+      expect(spec.getUserSyncs({ image: false })).to.be.undefined;
+      const options = spec.getUserSyncs({ image: true });
+      expect(options).to.not.be.undefined;
+      expect(options).to.have.lengthOf(1);
+      expect(options[0].type).to.equal('image');
+      expect(options[0].url).to.equal('https://media.adfrontiers.com/hb/jcm_usersync.png');
     });
   });
 });

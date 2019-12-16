@@ -1,45 +1,23 @@
-var bidfactory = require('src/bidfactory.js');
-var bidmanager = require('src/bidmanager.js');
-var adloader = require('src/adloader.js');
-var utils = require('src/utils.js');
-var adaptermanager = require('src/adaptermanager');
+import * as utils from '../src/utils';
+import {registerBidder} from '../src/adapters/bidderFactory';
+const BIDDER_CODE = 'jcm';
+const URL = 'https://media.adfrontiers.com/pq'
 
-var JCMAdapter = function JCMAdapter() {
-  window.pbjs = window.pbjs || {};
-  window.pbjs.processJCMResponse = function(JCMResponse) {
-    if (JCMResponse) {
-      var JCMRespObj = JSON.parse(JCMResponse);
-      if (JCMRespObj) {
-        var bids = JCMRespObj.bids;
-        for (var i = 0; i < bids.length; i++) {
-          var bid = bids[i];
-          var bidObject;
-          if (bid.cpm > 0) {
-            bidObject = bidfactory.createBid(1);
-            bidObject.bidderCode = 'jcm';
-            bidObject.cpm = bid.cpm;
-            bidObject.ad = decodeURIComponent(bid.ad.replace(/\+/g, '%20'));
-            bidObject.width = bid.width;
-            bidObject.height = bid.height;
-            bidmanager.addBidResponse(utils.getBidRequest(bid.callbackId).placementCode, bidObject);
-          } else {
-            bidObject = bidfactory.createBid(2);
-            bidObject.bidderCode = 'jcm';
-            bidmanager.addBidResponse(utils.getBidRequest(bid.callbackId).placementCode, bidObject);
-          }
-        }
-      }
-    }
-  };
+export const spec = {
+  code: BIDDER_CODE,
+  aliases: ['jcarter'],
+  isBidRequestValid: function(bid) {
+    return !!(bid.params && bid.params.siteId && bid.bidId);
+  },
 
-  function _callBids(params) {
-    var BidRequest = {
+  buildRequests: function(validBidRequests) {
+    var BidRequestStr = {
       bids: []
     };
 
-    for (var i = 0; i < params.bids.length; i++) {
+    for (var i = 0; i < validBidRequests.length; i++) {
       var adSizes = '';
-      var bid = params.bids[i];
+      var bid = validBidRequests[i];
       for (var x = 0; x < bid.sizes.length; x++) {
         adSizes += utils.parseGPTSingleSizeArray(bid.sizes[x]);
         if (x !== (bid.sizes.length - 1)) {
@@ -47,23 +25,65 @@ var JCMAdapter = function JCMAdapter() {
         }
       }
 
-      BidRequest.bids.push({
+      BidRequestStr.bids.push({
         'callbackId': bid.bidId,
         'siteId': bid.params.siteId,
-        'adSizes': adSizes
+        'adSizes': adSizes,
       });
     }
 
-    var JSONStr = JSON.stringify(BidRequest);
-    var reqURL = document.location.protocol + '//media.adfrontiers.com/pq?t=hb&bids=' + encodeURIComponent(JSONStr);
-    adloader.loadScript(reqURL);
+    var JSONStr = JSON.stringify(BidRequestStr);
+    var dataStr = 't=hb&ver=1.0&compact=true&bids=' + encodeURIComponent(JSONStr);
+
+    return {
+      method: 'GET',
+      url: URL,
+      data: dataStr
+    }
+  },
+
+  interpretResponse: function(serverResponse) {
+    const bidResponses = [];
+    serverResponse = serverResponse.body;
+    // loop through serverResponses
+    if (serverResponse) {
+      if (serverResponse.bids) {
+        var bids = serverResponse.bids;
+        for (var i = 0; i < bids.length; i++) {
+          var bid = bids[i];
+          const bidResponse = {
+            requestId: bid.callbackId,
+            bidderCode: spec.code,
+            cpm: bid.cpm,
+            width: bid.width,
+            height: bid.height,
+            creativeId: bid.creativeId,
+            currency: 'USD',
+            netRevenue: bid.netRevenue,
+            ttl: bid.ttl,
+            ad: decodeURIComponent(bid.ad.replace(/\+/g, '%20'))
+          };
+          bidResponses.push(bidResponse);
+        };
+      };
+    }
+    return bidResponses;
+  },
+
+  getUserSyncs: function(syncOptions) {
+    if (syncOptions.iframeEnabled) {
+      return [{
+        type: 'iframe',
+        url: 'https://media.adfrontiers.com/hb/jcm_usersync.html'
+      }];
+    }
+    if (syncOptions.image) {
+      return [{
+        type: 'image',
+        url: 'https://media.adfrontiers.com/hb/jcm_usersync.png'
+      }];
+    }
   }
+}
 
-  return {
-    callBids: _callBids
-  };
-};
-
-adaptermanager.registerBidAdapter(new JCMAdapter(), 'jcm');
-
-module.exports = JCMAdapter;
+registerBidder(spec);

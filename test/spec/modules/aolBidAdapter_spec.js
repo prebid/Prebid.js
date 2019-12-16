@@ -1,7 +1,9 @@
 import {expect} from 'chai';
 import * as utils from 'src/utils';
-import AolAdapter from 'modules/aolBidAdapter';
-import bidmanager from 'src/bidmanager';
+import {spec} from 'modules/aolBidAdapter';
+import {config} from 'src/config';
+
+const DEFAULT_AD_CONTENT = '<script>logInfo(\'ad\');</script>';
 
 let getDefaultBidResponse = () => {
   return {
@@ -12,10 +14,11 @@ let getDefaultBidResponse = () => {
         id: 1,
         impid: '245730051428950632',
         price: 0.09,
-        adm: '<script>logInfo(\'ad\');</script>',
-        crid: '0',
+        adm: DEFAULT_AD_CONTENT,
+        crid: 'creative-id',
         h: 90,
         w: 728,
+        dealid: 'deal-id',
         ext: {sizeid: 225}
       }]
     }]
@@ -53,29 +56,32 @@ let getNexagePostBidParams = () => {
 let getDefaultBidRequest = () => {
   return {
     bidderCode: 'aol',
-    requestId: 'd3e07445-ab06-44c8-a9dd-5ef9af06d2a6',
+    auctionId: 'd3e07445-ab06-44c8-a9dd-5ef9af06d2a6',
     bidderRequestId: '7101db09af0db2',
     start: new Date().getTime(),
     bids: [{
       bidder: 'aol',
       bidId: '84ab500420319d',
       bidderRequestId: '7101db09af0db2',
-      requestId: 'd3e07445-ab06-44c8-a9dd-5ef9af06d2a6',
+      auctionId: 'd3e07445-ab06-44c8-a9dd-5ef9af06d2a6',
       placementCode: 'foo',
       params: getMarketplaceBidParams()
     }]
   };
 };
 
-describe('AolAdapter', () => {
-  const MARKETPLACE_URL = 'adserver-us.adtech.advertising.com/pubapi/3.0/';
-  const NEXAGE_URL = 'hb.nexage.com/bidRequest?';
+let getPixels = () => {
+  return '<script>document.write(\'<img src="img.org"></iframe>' +
+    '<iframe src="pixels1.org"></iframe>\');</script>';
+};
 
-  let adapter;
+describe('AolAdapter', function () {
+  const MARKETPLACE_URL = 'https://adserver-us.adtech.advertising.com/pubapi/3.0/';
+  const NEXAGE_URL = 'https://c2shb.ssp.yahoo.com/bidRequest?';
+  const ONE_DISPLAY_TTL = 60;
+  const ONE_MOBILE_TTL = 3600;
 
-  beforeEach(() => adapter = new AolAdapter());
-
-  function createBidderRequest({bids, params} = {}) {
+  function createCustomBidRequest({bids, params} = {}) {
     var bidderRequest = getDefaultBidRequest();
     if (bids && Array.isArray(bids)) {
       bidderRequest.bids = bids;
@@ -86,620 +92,705 @@ describe('AolAdapter', () => {
     return bidderRequest;
   }
 
-  describe('callBids()', () => {
-    it('exists and is a function', () => {
-      expect(adapter.callBids).to.exist.and.to.be.a('function');
+  describe('interpretResponse()', function () {
+    let bidderSettingsBackup;
+    let bidResponse;
+    let bidRequest;
+    let logWarnSpy;
+    let isOneMobileBidderStub;
+
+    beforeEach(function () {
+      bidderSettingsBackup = $$PREBID_GLOBAL$$.bidderSettings;
+      bidRequest = {
+        bidderCode: 'test-bidder-code',
+        bidId: 'bid-id',
+        ttl: 1234
+      };
+      bidResponse = {
+        body: getDefaultBidResponse()
+      };
+      logWarnSpy = sinon.spy(utils, 'logWarn');
+      isOneMobileBidderStub = sinon.stub(spec, 'isOneMobileBidder');
     });
 
-    describe('bid request', () => {
-      describe('Marketplace api', () => {
-        let xhr;
-        let requests;
+    afterEach(function () {
+      $$PREBID_GLOBAL$$.bidderSettings = bidderSettingsBackup;
+      logWarnSpy.restore();
+      isOneMobileBidderStub.restore();
+    });
 
-        beforeEach(() => {
-          xhr = sinon.useFakeXMLHttpRequest();
-          requests = [];
-          xhr.onCreate = request => requests.push(request);
-        });
+    it('should return formatted bid response with required properties', function () {
+      let formattedBidResponse = spec.interpretResponse(bidResponse, bidRequest);
+      expect(formattedBidResponse).to.deep.equal({
+        bidderCode: bidRequest.bidderCode,
+        requestId: 'bid-id',
+        ad: DEFAULT_AD_CONTENT,
+        cpm: 0.09,
+        width: 728,
+        height: 90,
+        creativeId: 'creative-id',
+        pubapiId: '245730051428950632',
+        currency: 'USD',
+        dealId: 'deal-id',
+        netRevenue: true,
+        ttl: bidRequest.ttl
+      });
+    });
+  });
 
-        afterEach(() => xhr.restore());
+  describe('buildRequests()', function () {
+    it('method exists and is a function', function () {
+      expect(spec.buildRequests).to.exist.and.to.be.a('function');
+    });
 
-        it('requires parameters to be made', () => {
-          adapter.callBids({});
-          expect(requests).to.be.empty;
-        });
-
-        it('should hit the Marketplace api endpoint with the Marketplace config', () => {
-          adapter.callBids(getDefaultBidRequest());
-          expect(requests[0].url).to.contain(MARKETPLACE_URL);
-        });
-
-        it('should hit the Marketplace via onedisplay bidder code', () => {
-          let bidRequest = createBidderRequest({
-            bids: [{
-              bidder: 'onedisplay'
-            }],
-            params: getMarketplaceBidParams()
-          });
-
-          adapter.callBids(bidRequest);
-          expect(requests[0].url).to.contain(MARKETPLACE_URL);
-        });
-
-        it('should hit the Marketplace via onedisplay bidder code when Marketplace and Nexage params are present', () => {
-          let bidParams = Object.assign(getMarketplaceBidParams(), getNexageGetBidParams());
-          let bidRequest = createBidderRequest({
-            bids: [{
-              bidder: 'onedisplay'
-            }],
-            params: bidParams
-          });
-
-          adapter.callBids(bidRequest);
-          expect(requests[0].url).to.contain(MARKETPLACE_URL);
-        });
-
-        it('should hit the Marketplace via onedisplay bidder code when Nexage params are present', () => {
-          let bidParams = Object.assign(getMarketplaceBidParams(), getNexageGetBidParams(), getNexagePostBidParams());
-          let bidRequest = createBidderRequest({
-            bids: [{
-              bidder: 'onedisplay'
-            }],
-            params: bidParams
-          });
-
-          adapter.callBids(bidRequest);
-          expect(requests[0].url).to.contain(MARKETPLACE_URL);
-        });
-
-        it('should not resolve endpoint for onedisplay bidder code when only Nexage params are present', () => {
-          let bidParams = Object.assign(getNexageGetBidParams(), getNexagePostBidParams());
-
-          adapter.callBids(createBidderRequest({
-            bids: [{
-              bidder: 'onedisplay'
-            }],
-            params: bidParams
-          }));
-          expect(requests.length).to.equal(0);
-        });
-
-        it('should hit endpoint based on the region config option', () => {
-          adapter.callBids(createBidderRequest({
-            params: {
-              placement: 1234567,
-              network: '9599.1',
-              region: 'eu'
-            }
-          }));
-          expect(requests[0].url).to.contain('adserver-eu.adtech.advertising.com/pubapi/3.0/');
-        });
-
-        it('should hit the default endpoint in case of unknown region config option', () => {
-          adapter.callBids(createBidderRequest({
-            params: {
-              placement: 1234567,
-              network: '9599.1',
-              region: 'an'
-            }
-          }));
-          expect(requests[0].url).to.contain(MARKETPLACE_URL);
-        });
-
-        it('should hit endpoint based on the server config option', () => {
-          adapter.callBids(createBidderRequest({
-            params: {
-              placement: 1234567,
-              network: '9599.1',
-              server: 'adserver-eu.adtech.advertising.com'
-            }
-          }));
-          expect(requests[0].url).to.contain('adserver-eu.adtech.advertising.com/pubapi/3.0/');
-        });
-
-        it('should be the pubapi bid request', () => {
-          adapter.callBids(getDefaultBidRequest());
-          expect(requests[0].url).to.contain('cmd=bid;');
-        });
-
-        it('should be the version 2 of pubapi', () => {
-          adapter.callBids(getDefaultBidRequest());
-          expect(requests[0].url).to.contain('v=2;');
-        });
-
-        it('should contain cache busting', () => {
-          adapter.callBids(getDefaultBidRequest());
-          expect(requests[0].url).to.match(/misc=\d+/);
-        });
-
-        it('should contain required params - placement & network', () => {
-          adapter.callBids(createBidderRequest({
-            params: {
-              placement: 1234567,
-              network: '9599.1'
-            }
-          }));
-          expect(requests[0].url).to.contain('/pubapi/3.0/9599.1/1234567/');
-        });
-
-        it('should contain pageId and sizeId of 0 if params are missing', () => {
-          adapter.callBids(createBidderRequest({
-            params: {
-              placement: 1234567,
-              network: '9599.1'
-            }
-          }));
-          expect(requests[0].url).to.contain('/pubapi/3.0/9599.1/1234567/0/0/ADTECH;');
-        });
-
-        it('should contain pageId optional param', () => {
-          adapter.callBids(createBidderRequest({
-            params: {
-              placement: 1234567,
-              network: '9599.1',
-              pageId: 12345
-            }
-          }));
-          expect(requests[0].url).to.contain('/pubapi/3.0/9599.1/1234567/12345/');
-        });
-
-        it('should contain sizeId optional param', () => {
-          adapter.callBids(createBidderRequest({
-            params: {
-              placement: 1234567,
-              network: '9599.1',
-              sizeId: 12345
-            }
-          }));
-          expect(requests[0].url).to.contain('/12345/ADTECH;');
-        });
-
-        it('should contain generated alias if alias param is missing', () => {
-          adapter.callBids(createBidderRequest({
-            params: {
-              placement: 1234567,
-              network: '9599.1'
-            }
-          }));
-          expect(requests[0].url).to.match(/alias=\w+?;/);
-        });
-
-        it('should contain alias optional param', () => {
-          adapter.callBids(createBidderRequest({
-            params: {
-              placement: 1234567,
-              network: '9599.1',
-              alias: 'desktop_articlepage_something_box_300_250'
-            }
-          }));
-          expect(requests[0].url).to.contain('alias=desktop_articlepage_something_box_300_250');
-        });
-
-        it('should not contain bidfloor if bidFloor param is missing', () => {
-          adapter.callBids(createBidderRequest({
-            params: {
-              placement: 1234567,
-              network: '9599.1'
-            }
-          }));
-          expect(requests[0].url).not.to.contain('bidfloor=');
-        });
-
-        it('should contain bidFloor optional param', () => {
-          adapter.callBids(createBidderRequest({
-            params: {
-              placement: 1234567,
-              network: '9599.1',
-              bidFloor: 0.80
-            }
-          }));
-          expect(requests[0].url).to.contain('bidfloor=0.8');
-        });
+    describe('Marketplace', function () {
+      it('should not return request when no bids are present', function () {
+        let [request] = spec.buildRequests([]);
+        expect(request).to.be.undefined;
       });
 
-      describe('Nexage api', () => {
-        let xhr;
-        let requests;
+      it('should return request for Marketplace endpoint', function () {
+        let bidRequest = getDefaultBidRequest();
+        let [request] = spec.buildRequests(bidRequest.bids);
+        expect(request.url.indexOf(MARKETPLACE_URL)).to.equal(0);
+      });
 
-        beforeEach(() => {
-          xhr = sinon.useFakeXMLHttpRequest();
-          requests = [];
-          xhr.onCreate = request => requests.push(request);
+      it('should return request for Marketplace via onedisplay bidder code', function () {
+        let bidRequest = createCustomBidRequest({
+          bids: [{
+            bidder: 'onedisplay'
+          }],
+          params: getMarketplaceBidParams()
         });
 
-        afterEach(() => xhr.restore());
+        let [request] = spec.buildRequests(bidRequest.bids);
+        expect(request.url.indexOf(MARKETPLACE_URL)).to.equal(0);
+      });
 
-        it('requires parameters to be made', () => {
-          adapter.callBids({});
-          expect(requests).to.be.empty;
+      it('should return Marketplace request via onedisplay bidder code when' +
+        'Marketplace and One Mobile GET params are present', () => {
+        let bidParams = Object.assign(getMarketplaceBidParams(), getNexageGetBidParams());
+        let bidRequest = createCustomBidRequest({
+          bids: [{
+            bidder: 'onedisplay'
+          }],
+          params: bidParams
         });
 
-        it('should hit the nexage api endpoint with the nexage config', () => {
-          adapter.callBids(createBidderRequest({
-            params: getNexageGetBidParams()
-          }));
+        let [request] = spec.buildRequests(bidRequest.bids);
+        expect(request.url.indexOf(MARKETPLACE_URL)).to.equal(0);
+      });
 
-          expect(requests[0].url).to.contain(NEXAGE_URL);
+      it('should return Marketplace request via onedisplay bidder code when' +
+        'Marketplace and One Mobile GET + POST params are present', () => {
+        let bidParams = Object.assign(getMarketplaceBidParams(), getNexageGetBidParams(), getNexagePostBidParams());
+        let bidRequest = createCustomBidRequest({
+          bids: [{
+            bidder: 'onedisplay'
+          }],
+          params: bidParams
         });
 
-        it('should hit the nexage api custom endpoint if specified in the nexage config', () => {
-          let bidParams = Object.assign({
-            host: 'qa-hb.nexage.com'
-          }, getNexageGetBidParams());
+        let [request] = spec.buildRequests(bidRequest.bids);
+        expect(request.url.indexOf(MARKETPLACE_URL)).to.equal(0);
+      });
 
-          adapter.callBids(createBidderRequest({
-            params: bidParams
-          }));
-          expect(requests[0].url).to.contain('qa-hb.nexage.com/bidRequest?');
+      it('should not resolve endpoint for onedisplay bidder code ' +
+        'when only One Mobile params are present', () => {
+        let bidParams = Object.assign(getNexageGetBidParams(), getNexagePostBidParams());
+        let bidRequest = createCustomBidRequest({
+          bids: [{
+            bidder: 'onedisplay'
+          }],
+          params: bidParams
         });
 
-        it('should hit nexage api when nexage and marketplace params are present', () => {
-          let bidParams = Object.assign(getNexageGetBidParams(), getMarketplaceBidParams());
+        let [request] = spec.buildRequests(bidRequest.bids);
+        expect(request).to.be.undefined;
+      });
 
-          adapter.callBids(createBidderRequest({
-            params: bidParams
-          }));
-          expect(requests[0].url).to.contain(NEXAGE_URL);
+      it('should return Marketplace URL for eu region', function () {
+        let bidRequest = createCustomBidRequest({
+          params: {
+            placement: 1234567,
+            network: '9599.1',
+            region: 'eu'
+          }
         });
+        let [request] = spec.buildRequests(bidRequest.bids);
+        expect(request.url.indexOf('https://adserver-eu.adtech.advertising.com/pubapi/3.0/'))
+          .to.equal(0);
+      });
 
-        it('should hit nexage api via onemobile bidder code when nexage and marketplace params are present', () => {
-          let bidParams = Object.assign(getNexageGetBidParams(), getMarketplaceBidParams());
-
-          adapter.callBids(createBidderRequest({
-            bids: [{
-              bidder: 'onemobile'
-            }],
-            params: bidParams
-          }));
-          expect(requests[0].url).to.contain(NEXAGE_URL);
+      it('should return insecure MP URL if insecure server option is present', function () {
+        let bidRequest = createCustomBidRequest({
+          params: {
+            placement: 1234567,
+            network: '9599.1',
+            server: 'https://adserver-eu.adtech.advertising.com'
+          }
         });
+        let [request] = spec.buildRequests(bidRequest.bids);
+        expect(request.url.indexOf('https://adserver-eu.adtech.advertising.com/pubapi/3.0/'))
+          .to.equal(0);
+      });
 
-        it('should not resolve endpoint for onemobile bidder code when only Marketplace params are present', () => {
-          adapter.callBids(createBidderRequest({
-            bids: [{
-              bidder: 'onemobile'
-            }],
-            params: getMarketplaceBidParams()
-          }));
-
-          expect(requests.length).to.equal(0);
+      it('should return a secure MP URL if relative proto server option is present', function () {
+        let bidRequest = createCustomBidRequest({
+          params: {
+            placement: 1234567,
+            network: '9599.1',
+            server: 'https://adserver-eu.adtech.advertising.com'
+          }
         });
+        let [request] = spec.buildRequests(bidRequest.bids);
+        expect(request.url.indexOf('https://adserver-eu.adtech.advertising.com/pubapi/3.0/'))
+          .to.equal(0);
+      });
 
-        it('should contain required params - dcn & pos', () => {
-          adapter.callBids(createBidderRequest({
-            params: getNexageGetBidParams()
-          }));
-
-          expect(requests[0].url).to.contain(NEXAGE_URL + 'dcn=2c9d2b50015c5ce9db6aeeed8b9500d6&pos=header');
+      it('should return a secure MP URL when server option without protocol is present', function () {
+        let bidRequest = createCustomBidRequest({
+          params: {
+            placement: 1234567,
+            network: '9599.1',
+            server: 'adserver-eu.adtech.advertising.com'
+          }
         });
+        let [request] = spec.buildRequests(bidRequest.bids);
+        expect(request.url.indexOf('https://adserver-eu.adtech.advertising.com/pubapi/3.0/'))
+          .to.equal(0);
+      });
 
-        it('should contain cmd=bid by default', () => {
-          adapter.callBids(createBidderRequest({
-            params: {
-              dcn: '54321123',
-              pos: 'footer-2324'
+      it('should return default Marketplace URL in case of unknown region config option', function () {
+        let bidRequest = createCustomBidRequest({
+          params: {
+            placement: 1234567,
+            network: '9599.1',
+            region: 'an'
+          }
+        });
+        let [request] = spec.buildRequests(bidRequest.bids);
+        expect(request.url.indexOf(MARKETPLACE_URL)).to.equal(0);
+      });
+
+      it('should return url with pubapi bid option', function () {
+        let bidRequest = getDefaultBidRequest();
+        let [request] = spec.buildRequests(bidRequest.bids);
+        expect(request.url).to.contain('cmd=bid;');
+      });
+
+      it('should return url with version 2 of pubapi', function () {
+        let bidRequest = getDefaultBidRequest();
+        let [request] = spec.buildRequests(bidRequest.bids);
+        expect(request.url).to.contain('v=2;');
+      });
+
+      it('should return url with cache busting option', function () {
+        let bidRequest = getDefaultBidRequest();
+        let [request] = spec.buildRequests(bidRequest.bids);
+        expect(request.url).to.match(/misc=\d+/);
+      });
+
+      it('should return url with default pageId and sizeId', function () {
+        let bidRequest = createCustomBidRequest({
+          params: {
+            placement: 1234567,
+            network: '9599.1'
+          }
+        });
+        let [request] = spec.buildRequests(bidRequest.bids);
+        expect(request.url).to.contain('/pubapi/3.0/9599.1/1234567/0/0/ADTECH;');
+      });
+
+      it('should return url with custom pageId and sizeId when options are present', function () {
+        let bidRequest = createCustomBidRequest({
+          params: {
+            placement: 1234567,
+            network: '9599.1',
+            pageId: 1111,
+            sizeId: 2222
+          }
+        });
+        let [request] = spec.buildRequests(bidRequest.bids);
+        expect(request.url).to.contain('/pubapi/3.0/9599.1/1234567/1111/2222/ADTECH;');
+      });
+
+      it('should return url with default alias if alias param is missing', function () {
+        let bidRequest = getDefaultBidRequest();
+        let [request] = spec.buildRequests(bidRequest.bids);
+        expect(request.url).to.match(/alias=\w+?;/);
+      });
+
+      it('should return url with custom alias if it is present', function () {
+        let bidRequest = createCustomBidRequest({
+          params: {
+            placement: 1234567,
+            network: '9599.1',
+            alias: 'desktop_articlepage_something_box_300_250'
+          }
+        });
+        let [request] = spec.buildRequests(bidRequest.bids);
+        expect(request.url).to.contain('alias=desktop_articlepage_something_box_300_250');
+      });
+
+      it('should return url without bidfloor option if is is missing', function () {
+        let bidRequest = getDefaultBidRequest();
+        let [request] = spec.buildRequests(bidRequest.bids);
+        expect(request.url).not.to.contain('bidfloor=');
+      });
+
+      it('should return url with bidFloor option if it is present', function () {
+        let bidRequest = createCustomBidRequest({
+          params: {
+            placement: 1234567,
+            network: '9599.1',
+            bidFloor: 0.80
+          }
+        });
+        let [request] = spec.buildRequests(bidRequest.bids);
+        expect(request.url).to.contain('bidfloor=0.8');
+      });
+
+      it('should return url with key values if keyValues param is present', function () {
+        let bidRequest = createCustomBidRequest({
+          params: {
+            placement: 1234567,
+            network: '9599.1',
+            keyValues: {
+              age: 25,
+              height: 3.42,
+              test: 'key'
             }
-          }));
-          expect(requests[0].url).to.contain('hb.nexage.com/bidRequest?dcn=54321123&pos=footer-2324&cmd=bid');
+          }
         });
+        let [request] = spec.buildRequests(bidRequest.bids);
+        expect(request.url).to.contain('kvage=25;kvheight=3.42;kvtest=key');
+      });
 
-        it('should contain optional parameters if they are set', () => {
-          adapter.callBids(createBidderRequest({
-            params: {
-              dcn: '54321123',
-              pos: 'footer-2324',
-              ext: {
-                param1: 'val1',
-                param2: 'val2',
-                param3: 'val3',
-                param4: 'val4'
-              }
-            }
-          }));
-          expect(requests[0].url).to.contain('hb.nexage.com/bidRequest?dcn=54321123&pos=footer-2324&cmd=bid' +
-            '&param1=val1&param2=val2&param3=val3&param4=val4');
-        });
-
-        it('should hit the nexage api endpoint with post data with the openrtb config', () => {
-          let bidConfig = getNexagePostBidParams();
-
-          adapter.callBids(createBidderRequest({
-            params: bidConfig
-          }));
-          expect(requests[0].url).to.contain(NEXAGE_URL);
-          expect(requests[0].requestBody).to.deep.equal(bidConfig);
-          expect(requests[0].requestHeaders).to.have.property('x-openrtb-version');
-        });
-
-        it('should not hit the nexage api endpoint with post data with the openrtb config' +
-          ' if a required parameter is missing', () => {
-          let bidConfig = getNexagePostBidParams();
-
-          bidConfig.imp[0].id = null;
-          adapter.callBids(createBidderRequest({
-            params: bidConfig
-          }));
-          expect(requests).to.be.empty;
-        })
-        ;
+      it('should return request object for One Display when configuration is present', function () {
+        let bidRequest = getDefaultBidRequest();
+        let [request] = spec.buildRequests(bidRequest.bids);
+        expect(request.method).to.equal('GET');
+        expect(request.ttl).to.equal(ONE_DISPLAY_TTL);
       });
     });
 
-    describe('bid response', () => {
-      let server;
-
-      beforeEach(() => {
-        server = sinon.fakeServer.create();
-        sinon.stub(bidmanager, 'addBidResponse');
+    describe('One Mobile', function () {
+      it('should return One Mobile url when One Mobile get params are present', function () {
+        let bidRequest = createCustomBidRequest({
+          params: getNexageGetBidParams()
+        });
+        let [request] = spec.buildRequests(bidRequest.bids);
+        expect(request.url).to.contain(NEXAGE_URL);
       });
 
-      afterEach(() => {
-        server.restore();
-        bidmanager.addBidResponse.restore();
+      it('should return One Mobile url with different host when host option is present', function () {
+        let bidParams = Object.assign({
+          host: 'https://qa-hb.nexage.com'
+        }, getNexageGetBidParams());
+        let bidRequest = createCustomBidRequest({
+          params: bidParams
+        });
+        let [request] = spec.buildRequests(bidRequest.bids);
+        expect(request.url).to.contain('https://qa-hb.nexage.com/bidRequest?');
       });
 
-      it('should be added to bidmanager if returned from pubapi', () => {
-        server.respondWith(JSON.stringify(getDefaultBidResponse()));
-        adapter.callBids(getDefaultBidRequest());
-        server.respond();
-        expect(bidmanager.addBidResponse.calledOnce).to.be.true;
+      it('should return One Mobile url when One Mobile and Marketplace params are present', function () {
+        let bidParams = Object.assign(getNexageGetBidParams(), getMarketplaceBidParams());
+        let bidRequest = createCustomBidRequest({
+          params: bidParams
+        });
+        let [request] = spec.buildRequests(bidRequest.bids);
+        expect(request.url).to.contain(NEXAGE_URL);
       });
 
-      it('should be added to bidmanager if returned from nexage GET bid request', () => {
-        server.respondWith(JSON.stringify(getDefaultBidResponse()));
-        adapter.callBids(createBidderRequest({
+      it('should return One Mobile url for onemobile bidder code ' +
+        'when One Mobile GET and Marketplace params are present', () => {
+        let bidParams = Object.assign(getNexageGetBidParams(), getMarketplaceBidParams());
+        let bidRequest = createCustomBidRequest({
+          bids: [{
+            bidder: 'onemobile'
+          }],
+          params: bidParams
+        });
+        let [request] = spec.buildRequests(bidRequest.bids);
+        expect(request.url).to.contain(NEXAGE_URL);
+      });
+
+      it('should not return any url for onemobile bidder code' +
+        'when only Marketplace params are present', () => {
+        let bidRequest = createCustomBidRequest({
+          bids: [{
+            bidder: 'onemobile'
+          }],
+          params: getMarketplaceBidParams()
+        });
+        let [request] = spec.buildRequests(bidRequest.bids);
+        expect(request).to.be.undefined;
+      });
+
+      it('should return One Mobile url with required params - dcn & pos', function () {
+        let bidRequest = createCustomBidRequest({
+          params: getNexageGetBidParams()
+        });
+        let [request] = spec.buildRequests(bidRequest.bids);
+        expect(request.url).to.contain(NEXAGE_URL + 'dcn=2c9d2b50015c5ce9db6aeeed8b9500d6&pos=header');
+      });
+
+      it('should return One Mobile url with cmd=bid option', function () {
+        let bidRequest = createCustomBidRequest({
+          params: getNexageGetBidParams()
+        });
+        let [request] = spec.buildRequests(bidRequest.bids);
+        expect(request.url).to.contain('cmd=bid');
+      });
+
+      it('should return One Mobile url with generic params if ext option is present', function () {
+        let bidRequest = createCustomBidRequest({
           params: {
             dcn: '54321123',
-            pos: 'footer-2324'
+            pos: 'footer-2324',
+            ext: {
+              param1: 'val1',
+              param2: 'val2',
+              param3: 'val3',
+              param4: 'val4'
+            }
           }
-        }));
-        server.respond();
-        expect(bidmanager.addBidResponse.calledOnce).to.be.true;
+        });
+        let [request] = spec.buildRequests(bidRequest.bids);
+        expect(request.url).to.equal('https://c2shb.ssp.yahoo.com/bidRequest?dcn=54321123&pos=footer-2324&cmd=bid' +
+          '&param1=val1&param2=val2&param3=val3&param4=val4');
       });
 
-      it('should be added to bidmanager if returned from nexage POST bid request', () => {
-        server.respondWith(JSON.stringify(getDefaultBidResponse()));
-        adapter.callBids(createBidderRequest({
+      it('should return request object for One Mobile POST endpoint when POST configuration is present', function () {
+        let bidConfig = getNexagePostBidParams();
+        let bidRequest = createCustomBidRequest({
+          params: bidConfig
+        });
+
+        let [request] = spec.buildRequests(bidRequest.bids);
+        expect(request.url).to.contain(NEXAGE_URL);
+        expect(request.method).to.equal('POST');
+        expect(request.ttl).to.equal(ONE_MOBILE_TTL);
+        expect(request.data).to.deep.equal(bidConfig);
+        expect(request.options).to.deep.equal({
+          contentType: 'application/json',
+          customHeaders: {
+            'x-openrtb-version': '2.2'
+          }
+        });
+      });
+
+      it('should not return request object for One Mobile POST endpoint' +
+        'if required parameters are missed', () => {
+        let bidRequest = createCustomBidRequest({
           params: {
-            id: 'id-1',
-            imp: [{
-              id: 'id-2',
-              banner: {
-                w: '100',
-                h: '100'
-              },
-              tagid: 'header1'
-            }]
+            imp: []
           }
-        }));
-        server.respond();
-        expect(bidmanager.addBidResponse.calledOnce).to.be.true;
-        var bidResponse = bidmanager.addBidResponse.firstCall.args[1];
+        });
+        let [request] = spec.buildRequests(bidRequest.bids);
+        expect(request).to.be.undefined;
       });
+    });
+  });
 
-      it('should be added to bidmanager with correct bidderCode', () => {
-        server.respondWith(JSON.stringify(getDefaultBidResponse()));
-        adapter.callBids(getDefaultBidRequest());
-        server.respond();
-        expect(bidmanager.addBidResponse.calledOnce).to.be.true;
-        expect(bidmanager.addBidResponse.firstCall.args[1]).to.have.property('bidderCode', 'aol');
-      });
+  describe('buildOpenRtbRequestData', () => {
+    const bid = {
+      params: {
+        id: 'bid-id',
+        imp: []
+      }
+    };
+    let euConsentRequiredStub;
 
-      it('should have adId matching the bidId from related bid request', () => {
-        server.respondWith(JSON.stringify(getDefaultBidResponse()));
-        adapter.callBids(getDefaultBidRequest());
-        server.respond();
-        expect(bidmanager.addBidResponse.calledOnce).to.be.true;
-        expect(bidmanager.addBidResponse.firstCall.args[1])
-          .to.have.property('adId', '84ab500420319d');
-      });
+    beforeEach(function () {
+      euConsentRequiredStub = sinon.stub(spec, 'isEUConsentRequired');
+    });
 
-      it('should be added to bidmanager as invalid in case of empty response', () => {
-        server.respondWith('');
-        adapter.callBids(getDefaultBidRequest());
-        server.respond();
-        expect(bidmanager.addBidResponse.calledOnce).to.be.true;
-        expect(bidmanager.addBidResponse.firstCall.args[1].getStatusCode()).to.equal(2);
-      });
+    afterEach(function () {
+      euConsentRequiredStub.restore();
+    });
 
-      it('should be added to bidmanager as invalid in case of invalid JSON response', () => {
-        server.respondWith('{foo:{bar:{baz:');
-        adapter.callBids(getDefaultBidRequest());
-        server.respond();
-        expect(bidmanager.addBidResponse.calledOnce).to.be.true;
-        expect(bidmanager.addBidResponse.firstCall.args[1].getStatusCode()).to.equal(2);
-      });
-
-      it('should be added to bidmanager as invalid in case of no bid data', () => {
-        let bidResponse = getDefaultBidResponse();
-        bidResponse.seatbid = [];
-        server.respondWith(JSON.stringify(bidResponse));
-
-        adapter.callBids(getDefaultBidRequest());
-        server.respond();
-        expect(bidmanager.addBidResponse.calledOnce).to.be.true;
-        expect(bidmanager.addBidResponse.firstCall.args[1].getStatusCode()).to.equal(2);
-      });
-
-      it('should have adId matching the bidId from bid request in case of no bid data', () => {
-        let bidResponse = getDefaultBidResponse();
-        bidResponse.seatbid = [];
-        server.respondWith(JSON.stringify(bidResponse));
-
-        adapter.callBids(getDefaultBidRequest());
-        server.respond();
-        expect(bidmanager.addBidResponse.calledOnce).to.be.true;
-        expect(bidmanager.addBidResponse.firstCall.args[1])
-          .to.have.property('adId', '84ab500420319d');
-      });
-
-      it('should be added to bidmanager as invalid in case of empty price', () => {
-        let bidResponse = getDefaultBidResponse();
-        bidResponse.seatbid[0].bid[0].price = undefined;
-
-        server.respondWith(JSON.stringify(bidResponse));
-        adapter.callBids(getDefaultBidRequest());
-        server.respond();
-        expect(bidmanager.addBidResponse.calledOnce).to.be.true;
-        expect(bidmanager.addBidResponse.firstCall.args[1].getStatusCode()).to.equal(2);
-      });
-
-      it('should be added to bidmanager with attributes from pubapi response', () => {
-        let bidResponse = getDefaultBidResponse();
-        bidResponse.seatbid[0].bid[0].crid = '12345';
-
-        server.respondWith(JSON.stringify(bidResponse));
-        adapter.callBids(getDefaultBidRequest());
-        server.respond();
-        expect(bidmanager.addBidResponse.calledOnce).to.be.true;
-        let addedBidResponse = bidmanager.addBidResponse.firstCall.args[1];
-        expect(addedBidResponse.ad).to.equal('<script>logInfo(\'ad\');</script>');
-        expect(addedBidResponse.cpm).to.equal(0.09);
-        expect(addedBidResponse.width).to.equal(728);
-        expect(addedBidResponse.height).to.equal(90);
-        expect(addedBidResponse.creativeId).to.equal('12345');
-        expect(addedBidResponse.pubapiId).to.equal('245730051428950632');
-      });
-
-      it('should be added to bidmanager including pixels from pubapi response', () => {
-        let bidResponse = getDefaultBidResponse();
-        bidResponse.ext = {
-          pixels: '<script>document.write(\'<img src="pixel.gif">\');</script>'
-        };
-
-        server.respondWith(JSON.stringify(bidResponse));
-        adapter.callBids(getDefaultBidRequest());
-        server.respond();
-        expect(bidmanager.addBidResponse.calledOnce).to.be.true;
-        let addedBidResponse = bidmanager.addBidResponse.firstCall.args[1];
-        expect(addedBidResponse.ad).to.equal(
-          '<script>logInfo(\'ad\');</script>' +
-          '<script>if(!parent.$$PREBID_GLOBAL$$.aolGlobals.pixelsDropped){' +
-          'parent.$$PREBID_GLOBAL$$.aolGlobals.pixelsDropped=true;' +
-          'document.write(\'<img src="pixel.gif">\');}</script>'
-        );
-      });
-
-      it('should be added to bidmanager including dealid from pubapi response', () => {
-        let bidResponse = getDefaultBidResponse();
-        bidResponse.seatbid[0].bid[0].dealid = '12345';
-
-        server.respondWith(JSON.stringify(bidResponse));
-        adapter.callBids(getDefaultBidRequest());
-        server.respond();
-        expect(bidmanager.addBidResponse.calledOnce).to.be.true;
-        let addedBidResponse = bidmanager.addBidResponse.firstCall.args[1];
-        expect(addedBidResponse.dealId).to.equal('12345');
-      });
-
-      it('should be added to bidmanager including encrypted price from pubapi response', () => {
-        let bidResponse = getDefaultBidResponse();
-        bidResponse.seatbid[0].bid[0].ext.encp = 'a9334987';
-        server.respondWith(JSON.stringify(bidResponse));
-
-        adapter.callBids(getDefaultBidRequest());
-        server.respond();
-        expect(bidmanager.addBidResponse.calledOnce).to.be.true;
-        let addedBidResponse = bidmanager.addBidResponse.firstCall.args[1];
-        expect(addedBidResponse.cpm).to.equal('a9334987');
-      });
-
-      it('should not render pixels on pubapi response when no parameter is set', () => {
-        let bidResponse = getDefaultBidResponse();
-        bidResponse.ext = {
-          pixels: '<script>document.write(\'<iframe src="pixels.org"></iframe>\');</script>'
-        };
-        server.respondWith(JSON.stringify(bidResponse));
-        adapter.callBids(getDefaultBidRequest());
-        server.respond();
-        expect(bidmanager.addBidResponse.calledOnce).to.be.true;
-        expect(document.body.querySelectorAll('iframe[src="pixels.org"]').length).to.equal(0);
-      });
-
-      it('should render pixels from pubapi response when param userSyncOn is set with \'bidResponse\'', () => {
-        let bidResponse = getDefaultBidResponse();
-        bidResponse.ext = {
-          pixels: '<script>document.write(\'<iframe src="pixels.org"></iframe>' +
-          '<iframe src="pixels1.org"></iframe>\');</script>'
-        };
-
-        server.respondWith(JSON.stringify(bidResponse));
-        let bidRequest = getDefaultBidRequest();
-        bidRequest.bids[0].params.userSyncOn = 'bidResponse';
-        adapter.callBids(bidRequest);
-        server.respond();
-
-        expect(bidmanager.addBidResponse.calledOnce).to.be.true;
-
-        let assertPixelsItem = (pixelsItemSelector) => {
-          let pixelsItem = document.body.querySelectorAll(pixelsItemSelector)[0];
-
-          expect(pixelsItem.width).to.equal('1');
-          expect(pixelsItem.height).to.equal('1');
-          expect(pixelsItem.style.display).to.equal('none');
-        };
-
-        assertPixelsItem('iframe[src="pixels.org"]');
-        assertPixelsItem('iframe[src="pixels1.org"]');
-        expect($$PREBID_GLOBAL$$.aolGlobals.pixelsDropped).to.be.true;
-      });
-
-      it('should not render pixels if it was rendered before', () => {
-        $$PREBID_GLOBAL$$.aolGlobals.pixelsDropped = true;
-        let bidResponse = getDefaultBidResponse();
-        bidResponse.ext = {
-          pixels: '<script>document.write(\'<iframe src="test.com"></iframe>' +
-          '<iframe src="test2.org"></iframe>\');</script>'
-        };
-        server.respondWith(JSON.stringify(bidResponse));
-
-        let bidRequest = getDefaultBidRequest();
-        bidRequest.bids[0].params.userSyncOn = 'bidResponse';
-        adapter.callBids(bidRequest);
-        server.respond();
-
-        expect(bidmanager.addBidResponse.calledOnce).to.be.true;
-
-        let assertPixelsItem = (pixelsItemSelector) => {
-          let pixelsItems = document.body.querySelectorAll(pixelsItemSelector);
-
-          expect(pixelsItems.length).to.equal(0);
-        };
-
-        assertPixelsItem('iframe[src="test.com"]');
-        assertPixelsItem('iframe[src="test2.com"]');
+    it('returns the basic bid info when regulation data is omitted', () => {
+      expect(spec.buildOpenRtbRequestData(bid)).to.deep.equal({
+        id: 'bid-id',
+        imp: []
       });
     });
 
-    describe('when bidCpmAdjustment is set', () => {
-      let bidderSettingsBackup;
-      let server;
-
-      beforeEach(() => {
-        bidderSettingsBackup = $$PREBID_GLOBAL$$.bidderSettings;
-        server = sinon.fakeServer.create();
-      });
-
-      afterEach(() => {
-        $$PREBID_GLOBAL$$.bidderSettings = bidderSettingsBackup;
-        server.restore();
-        if (utils.logWarn.restore) {
-          utils.logWarn.restore();
+    it('returns the basic bid info with gdpr data when gdpr consent data is included', () => {
+      let consentData = {
+        gdpr: {
+          consentString: 'someEUConsent'
+        }
+      };
+      euConsentRequiredStub.returns(true);
+      expect(spec.buildOpenRtbRequestData(bid, consentData)).to.deep.equal({
+        id: 'bid-id',
+        imp: [],
+        regs: {
+          ext: {
+            gdpr: 1
+          }
+        },
+        user: {
+          ext: {
+            consent: 'someEUConsent'
+          }
         }
       });
+    });
 
-      it('should show warning in the console', function() {
-        sinon.spy(utils, 'logWarn');
-        server.respondWith(JSON.stringify(getDefaultBidResponse()));
-        $$PREBID_GLOBAL$$.bidderSettings = {
-          aol: {
-            bidCpmAdjustment: function() {}
+    it('returns the basic bid info with CCPA data when CCPA consent data is included', () => {
+      let consentData = {
+        uspConsent: 'someUSPConsent'
+      };
+      expect(spec.buildOpenRtbRequestData(bid, consentData)).to.deep.equal({
+        id: 'bid-id',
+        imp: [],
+        regs: {
+          ext: {
+            us_privacy: 'someUSPConsent'
           }
-        };
-        adapter.callBids(getDefaultBidRequest());
-        server.respond();
-        expect(utils.logWarn.calledOnce).to.be.true;
+        }
       });
+    });
+
+    it('returns the basic bid info with GDPR and CCPA data when GDPR and CCPA consent data is included', () => {
+      let consentData = {
+        gdpr: {
+          consentString: 'someEUConsent'
+        },
+        uspConsent: 'someUSPConsent'
+      };
+      euConsentRequiredStub.returns(true);
+      expect(spec.buildOpenRtbRequestData(bid, consentData)).to.deep.equal({
+        id: 'bid-id',
+        imp: [],
+        regs: {
+          ext: {
+            gdpr: 1,
+            us_privacy: 'someUSPConsent'
+          }
+        },
+        user: {
+          ext: {
+            consent: 'someEUConsent'
+          }
+        }
+      });
+    });
+  });
+
+  describe('getUserSyncs()', function () {
+    let serverResponses;
+    let bidResponse;
+
+    beforeEach(function () {
+      bidResponse = getDefaultBidResponse();
+      bidResponse.ext = {
+        pixels: getPixels()
+      };
+
+      serverResponses = [
+        {body: bidResponse}
+      ];
+    });
+
+    it('should return user syncs if pixels are present in the response', function () {
+      let userSyncs = spec.getUserSyncs({}, serverResponses);
+
+      expect(userSyncs).to.deep.equal([
+        {type: 'image', url: 'img.org'},
+        {type: 'iframe', url: 'pixels1.org'}
+      ]);
+    });
+
+    it('should not return user syncs if pixels are not present', function () {
+      bidResponse.ext.pixels = null;
+      let userSyncs = spec.getUserSyncs({}, serverResponses);
+
+      expect(userSyncs).to.deep.equal([]);
+    });
+  });
+
+  describe('isOneMobileBidder()', function () {
+    it('should return false when when bidderCode is not present', () => {
+      expect(spec.isOneMobileBidder(null)).to.be.false;
+    });
+
+    it('should return false for unknown bidder code', function () {
+      expect(spec.isOneMobileBidder('unknownBidder')).to.be.false;
+    });
+
+    it('should return true for aol bidder code', function () {
+      expect(spec.isOneMobileBidder('aol')).to.be.true;
+    });
+
+    it('should return true for one mobile bidder code', function () {
+      expect(spec.isOneMobileBidder('onemobile')).to.be.true;
+    });
+  });
+
+  describe('isEUConsentRequired()', function () {
+    it('should return false when consentData object is not present', function () {
+      expect(spec.isEUConsentRequired(null)).to.be.false;
+    });
+
+    it('should return true when gdprApplies equals true and consentString is not present', function () {
+      let consentData = {
+        gdpr: {
+          consentString: null,
+          gdprApplies: true
+        }
+      };
+
+      expect(spec.isEUConsentRequired(consentData)).to.be.true;
+    });
+
+    it('should return false when consentString is present and gdprApplies equals false', function () {
+      let consentData = {
+        gdpr: {
+          consentString: 'consent-string',
+          gdprApplies: false
+        }
+      };
+
+      expect(spec.isEUConsentRequired(consentData)).to.be.false;
+    });
+
+    it('should return true when consentString is present and gdprApplies equals true', function () {
+      let consentData = {
+        gdpr: {
+          consentString: 'consent-string',
+          gdprApplies: true
+        }
+      };
+
+      expect(spec.isEUConsentRequired(consentData)).to.be.true;
+    });
+  });
+
+  describe('formatMarketplaceDynamicParams()', function () {
+    let formatConsentDataStub;
+    let formatKeyValuesStub;
+
+    beforeEach(function () {
+      formatConsentDataStub = sinon.stub(spec, 'formatConsentData');
+      formatKeyValuesStub = sinon.stub(spec, 'formatKeyValues');
+    });
+
+    afterEach(function () {
+      formatConsentDataStub.restore();
+      formatKeyValuesStub.restore();
+    });
+
+    it('should return empty string when params are not present', function () {
+      expect(spec.formatMarketplaceDynamicParams()).to.be.equal('');
+    });
+
+    it('should return formatted EU consent params when formatConsentData returns GDPR data', function () {
+      formatConsentDataStub.returns({
+        euconsent: 'test-consent',
+        gdpr: 1
+      });
+      expect(spec.formatMarketplaceDynamicParams()).to.be.equal('euconsent=test-consent;gdpr=1;');
+    });
+
+    it('should return formatted US privacy params when formatConsentData returns USP data', function () {
+      formatConsentDataStub.returns({
+        us_privacy: 'test-usp-consent'
+      });
+      expect(spec.formatMarketplaceDynamicParams()).to.be.equal('us_privacy=test-usp-consent;');
+    });
+
+    it('should return formatted EU and USP consent params when formatConsentData returns all data', function () {
+      formatConsentDataStub.returns({
+        euconsent: 'test-consent',
+        gdpr: 1,
+        us_privacy: 'test-usp-consent'
+      });
+      expect(spec.formatMarketplaceDynamicParams()).to.be.equal(
+        'euconsent=test-consent;gdpr=1;us_privacy=test-usp-consent;');
+    });
+
+    it('should return formatted params when formatKeyValues returns data', function () {
+      formatKeyValuesStub.returns({
+        param1: 'val1',
+        param2: 'val2',
+        param3: 'val3'
+      });
+      expect(spec.formatMarketplaceDynamicParams()).to.be.equal('param1=val1;param2=val2;param3=val3;');
+    });
+
+    it('should return formatted bid floor param when it is present', function () {
+      let params = {
+        bidFloor: 0.45
+      };
+      expect(spec.formatMarketplaceDynamicParams(params)).to.be.equal('bidfloor=0.45;');
+    });
+  });
+
+  describe('formatOneMobileDynamicParams()', function () {
+    let euConsentRequiredStub;
+    let secureProtocolStub;
+
+    beforeEach(function () {
+      euConsentRequiredStub = sinon.stub(spec, 'isEUConsentRequired');
+      secureProtocolStub = sinon.stub(spec, 'isSecureProtocol');
+    });
+
+    afterEach(function () {
+      euConsentRequiredStub.restore();
+      secureProtocolStub.restore();
+    });
+
+    it('should return empty string when params are not present', function () {
+      expect(spec.formatOneMobileDynamicParams()).to.be.equal('');
+    });
+
+    it('should return formatted params when params are present', function () {
+      let params = {
+        param1: 'val1',
+        param2: 'val2',
+        param3: 'val3'
+      };
+      expect(spec.formatOneMobileDynamicParams(params)).to.contain('&param1=val1&param2=val2&param3=val3');
+    });
+
+    it('should return formatted gdpr params when isEUConsentRequired returns true', function () {
+      let consentData = {
+        gdpr: {
+          consentString: 'test-consent'
+        }
+      };
+      euConsentRequiredStub.returns(true);
+      expect(spec.formatOneMobileDynamicParams({}, consentData)).to.be.equal('&gdpr=1&euconsent=test-consent');
+    });
+
+    it('should return formatted US privacy params when consentData contains USP data', function () {
+      let consentData = {
+        uspConsent: 'test-usp-consent'
+      };
+      expect(spec.formatMarketplaceDynamicParams({}, consentData)).to.be.equal('us_privacy=test-usp-consent;');
+    });
+
+    it('should return formatted EU and USP consent params when consentData contains gdpr and usp values', function () {
+      euConsentRequiredStub.returns(true);
+      let consentData = {
+        gdpr: {
+          consentString: 'test-consent'
+        },
+        uspConsent: 'test-usp-consent'
+      };
+      expect(spec.formatMarketplaceDynamicParams({}, consentData)).to.be.equal(
+        'gdpr=1;euconsent=test-consent;us_privacy=test-usp-consent;');
+    });
+
+    it('should return formatted secure param when isSecureProtocol returns true', function () {
+      secureProtocolStub.returns(true);
+      expect(spec.formatOneMobileDynamicParams()).to.be.equal('&secure=1');
     });
   });
 });

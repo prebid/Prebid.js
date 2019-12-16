@@ -10,8 +10,7 @@
  */
 
 import { ajax } from './ajax';
-
-const BASE_URL = 'https://prebid.adnxs.com/pbc/v1/cache'
+import { config } from '../src/config';
 
 /**
  * @typedef {object} CacheableUrlBid
@@ -33,18 +32,20 @@ const BASE_URL = 'https://prebid.adnxs.com/pbc/v1/cache'
  * Function which wraps a URI that serves VAST XML, so that it can be loaded.
  *
  * @param {string} uri The URI where the VAST content can be found.
+ * @param {string} impUrl An impression tracker URL for the delivery of the video ad
  * @return A VAST URL which loads XML from the given URI.
  */
-function wrapURI(uri) {
+function wrapURI(uri, impUrl) {
   // Technically, this is vulnerable to cross-script injection by sketchy vastUrl bids.
   // We could make sure it's a valid URI... but since we're loading VAST XML from the
   // URL they provide anyway, that's probably not a big deal.
+  let vastImp = (impUrl) ? `<![CDATA[${impUrl}]]>` : ``;
   return `<VAST version="3.0">
     <Ad>
       <Wrapper>
         <AdSystem>prebid.org wrapper</AdSystem>
         <VASTAdTagURI><![CDATA[${uri}]]></VASTAdTagURI>
-        <Impression></Impression>
+        <Impression>${vastImp}</Impression>
         <Creatives></Creatives>
       </Wrapper>
     </Ad>
@@ -58,11 +59,24 @@ function wrapURI(uri) {
  * @param {CacheableBid} bid
  */
 function toStorageRequest(bid) {
-  const vastValue = bid.vastXml ? bid.vastXml : wrapURI(bid.vastUrl);
-  return {
+  const vastValue = bid.vastXml ? bid.vastXml : wrapURI(bid.vastUrl, bid.vastImpUrl);
+
+  let payload = {
     type: 'xml',
-    value: vastValue
+    value: vastValue,
+    ttlseconds: Number(bid.ttl)
   };
+
+  if (config.getConfig('cache.vasttrack')) {
+    payload.bidder = bid.bidder;
+    payload.bidid = bid.requestId;
+  }
+
+  if (typeof bid.customCacheKey === 'string' && bid.customCacheKey !== '') {
+    payload.key = bid.customCacheKey;
+  }
+
+  return payload;
 }
 
 /**
@@ -86,7 +100,7 @@ function toStorageRequest(bid) {
  */
 function shimStorageCallback(done) {
   return {
-    success: function(responseBody) {
+    success: function (responseBody) {
       let ids;
       try {
         ids = JSON.parse(responseBody).responses
@@ -101,7 +115,7 @@ function shimStorageCallback(done) {
         done(new Error("The cache server didn't respond with a responses property."), []);
       }
     },
-    error: function(statusText, responseBody) {
+    error: function (statusText, responseBody) {
       done(new Error(`Error storing video ad in the cache: ${statusText}: ${JSON.stringify(responseBody)}`), []);
     }
   }
@@ -112,19 +126,19 @@ function shimStorageCallback(done) {
  *
  * @param {CacheableBid[]} bids A list of bid objects which should be cached.
  * @param {videoCacheStoreCallback} [done] An optional callback which should be executed after
- *   the data has been stored in the cache.
+ * the data has been stored in the cache.
  */
 export function store(bids, done) {
   const requestData = {
     puts: bids.map(toStorageRequest)
   };
 
-  ajax(BASE_URL, shimStorageCallback(done), JSON.stringify(requestData), {
+  ajax(config.getConfig('cache.url'), shimStorageCallback(done), JSON.stringify(requestData), {
     contentType: 'text/plain',
     withCredentials: true
   });
 }
 
 export function getCacheUrl(id) {
-  return `${BASE_URL}?uuid=${id}`;
+  return `${config.getConfig('cache.url')}?uuid=${id}`;
 }

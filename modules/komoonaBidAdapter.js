@@ -1,117 +1,121 @@
-import Adapter from 'src/adapter';
-import bidfactory from 'src/bidfactory';
-import bidmanager from 'src/bidmanager';
-import * as utils from 'src/utils';
-import { ajax } from 'src/ajax';
-import { STATUS } from 'src/constants';
-import adaptermanager from 'src/adaptermanager';
+import * as utils from '../src/utils';
+import { registerBidder } from '../src/adapters/bidderFactory';
 
-const ENDPOINT = '//bidder.komoona.com/v1/GetSBids';
+const BIDDER_CODE = 'komoona';
+const ENDPOINT = 'https://bidder.komoona.com/v1/GetSBids';
+const USYNCURL = 'https://s.komoona.com/sync/usync.html';
 
-function KomoonaAdapter() {
-  let baseAdapter = new Adapter('komoona');
-  let bidRequests = {};
+export const spec = {
+  code: BIDDER_CODE,
 
-  /* Prebid executes this function when the page asks to send out bid requests */
-  baseAdapter.callBids = function(bidRequest) {
-    const bids = bidRequest.bids || [];
-    const tags = bids
-      .filter(bid => valid(bid))
-      .map(bid => {
-        // map request id to bid object to retrieve adUnit code in callback
-        bidRequests[bid.bidId] = bid;
+  /**
+  * Determines whether or not the given bid request is valid. Valid bid request must have placementId and hbid
+  *
+  * @param {BidRequest} bid The bid params to validate.
+  * @return boolean True if this is a valid bid, and false otherwise.
+  */
+  isBidRequestValid: bid => {
+    return !!(bid && bid.params && bid.params.placementId && bid.params.hbid);
+  },
+  /**
+  * Make a server request from the list of BidRequests.
+  *
+  * @param {validBidRequests[]} - an array of bids
+  * @return ServerRequest Info describing the request to the server.
+  */
+  buildRequests: validBidRequests => {
+    const tags = validBidRequests.map(bid => {
+      // map each bid id to bid object to retrieve adUnit code in callback
+      let tag = {
+        uuid: bid.bidId,
+        sizes: bid.sizes,
+        trid: bid.transactionId,
+        hbid: bid.params.hbid,
+        placementid: bid.params.placementId
+      };
 
-        let tag = {};
-        tag.sizes = bid.sizes;
-        tag.uuid = bid.bidId;
-        tag.placementid = bid.params.placementId;
-        tag.hbid = bid.params.hbid;
+      // add floor price if specified (not mandatory)
+      if (bid.params.floorPrice) {
+        tag.floorprice = bid.params.floorPrice;
+      }
 
-        return tag;
-      });
+      return tag;
+    });
 
+    // Komoona server config
+    const time = new Date().getTime();
+    const kbConf = {
+      ts_as: time,
+      hb_placements: [],
+      hb_placement_bidids: {},
+      hb_floors: {},
+      cb: _generateCb(time),
+      tz: new Date().getTimezoneOffset(),
+    };
+
+    validBidRequests.forEach(bid => {
+      kbConf.hdbdid = kbConf.hdbdid || bid.params.hbid;
+      kbConf.encode_bid = kbConf.encode_bid || bid.params.encode_bid;
+      kbConf.hb_placement_bidids[bid.params.placementId] = bid.bidId;
+      if (bid.params.floorPrice) {
+        kbConf.hb_floors[bid.params.placementId] = bid.params.floorPrice;
+      }
+      kbConf.hb_placements.push(bid.params.placementId);
+    });
+
+    let payload = {};
     if (!utils.isEmpty(tags)) {
-      const payload = JSON.stringify({bids: [...tags]});
-
-      ajax(ENDPOINT, handleResponse, payload, {
-        contentType: 'text/plain',
-        withCredentials: true
-      });
+      payload = { bids: [...tags], kbConf: kbConf };
     }
-  };
 
-  /* Notify Prebid of bid responses so bids can get in the auction */
-  function handleResponse(response) {
-    let parsed;
-
+    return {
+      method: 'POST',
+      url: ENDPOINT,
+      data: JSON.stringify(payload)
+    };
+  },
+  /**
+  * Unpack the response from the server into a list of bids.
+  *
+  * @param {*} response A successful response from the server.
+  * @return {Bid[]} An array of bids which were nested inside the server.
+  */
+  interpretResponse: (response, request) => {
+    const bidResponses = [];
     try {
-      parsed = JSON.parse(response);
+      if (response.body && response.body.bids) {
+        response.body.bids.forEach(bid => {
+          // The bid ID. Used to tie this bid back to the request.
+          bid.requestId = bid.uuid;
+          // The creative payload of the returned bid.
+          bid.ad = bid.creative;
+          bidResponses.push(bid);
+        });
+      }
     } catch (error) {
       utils.logError(error);
     }
-
-    if (!parsed || parsed.error) {
-      let errorMessage = `in response for ${baseAdapter.getBidderCode()} adapter`;
-      if (parsed && parsed.error) { errorMessage += `: ${parsed.error}`; }
-      utils.logError(errorMessage);
-
-      // signal this response is complete
-      Object.keys(bidRequests)
-        .map(bidId => bidRequests[bidId].placementCode)
-        .forEach(placementCode => {
-          bidmanager.addBidResponse(placementCode, createBid(STATUS.NO_BID));
-        });
-
-      return;
-    }
-
-    parsed.bids.forEach(tag => {
-      let status;
-      if (tag.cpm > 0 && tag.creative) {
-        status = STATUS.GOOD;
-      } else {
-        status = STATUS.NO_BID;
-      }
-
-      tag.bidId = tag.uuid; // bidfactory looks for bidId on requested bid
-      const bid = createBid(status, tag);
-      const placement = bidRequests[bid.adId].placementCode;
-
-      bidmanager.addBidResponse(placement, bid);
-    });
-  }
-
-  /* Check that a bid has required paramters */
-  function valid(bid) {
-    if (bid.params.placementId && bid.params.hbid) {
-      return bid;
-    } else {
-      utils.logError('bid requires placementId and hbid params');
+    return bidResponses;
+  },
+  /**
+  * Register User Sync.
+  */
+  getUserSyncs: syncOptions => {
+    if (syncOptions.iframeEnabled) {
+      return [{
+        type: 'iframe',
+        url: USYNCURL
+      }];
     }
   }
+};
 
-  /* Create and return a bid object based on status and tag */
-  function createBid(status, tag) {
-    let bid = bidfactory.createBid(status, tag);
-    bid.code = baseAdapter.getBidderCode();
-    bid.bidderCode = baseAdapter.getBidderCode();
-
-    if (status === STATUS.GOOD) {
-      bid.cpm = tag.cpm;
-      bid.width = tag.width;
-      bid.height = tag.height;
-      bid.ad = tag.creative;
-    }
-
-    return bid;
-  }
-
-  return Object.assign(this, {
-    callBids: baseAdapter.callBids,
-    setBidderCode: baseAdapter.setBidderCode,
-  });
+/**
+* Generated cache baster value to be sent to bid server
+* @param {*} time current time to use for creating cb.
+*/
+function _generateCb(time) {
+  return Math.floor((time % 65536) + (Math.floor(Math.random() * 65536) * 65536));
 }
 
-adaptermanager.registerBidAdapter(new KomoonaAdapter(), 'komoona');
-
-module.exports = KomoonaAdapter;
+registerBidder(spec);

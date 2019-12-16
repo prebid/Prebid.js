@@ -1,160 +1,130 @@
-import Adapter from 'src/adapter';
-import bidfactory from 'src/bidfactory';
-import bidmanager from 'src/bidmanager';
-import { ajax } from 'src/ajax';
-import { STATUS } from 'src/constants';
-import * as utils from 'src/utils';
-import adaptermanager from 'src/adaptermanager';
+import * as utils from '../src/utils';
+import {registerBidder} from '../src/adapters/bidderFactory';
+const BIDDER_CODE = 'marsmedia';
 
-const MARS_BIDDER_CODE = 'marsmedia';
-const MARS_BIDDER_URL = '//bid306.rtbsrv.com:9306/bidder/?bid=3mhdom';
+function getDomain() {
+  if (!utils.inIframe()) {
+    return window.location.hostname
+  }
+  let origins = window.document.location.ancestorOrigins
+  if (origins && origins.length > 0) {
+    return origins[origins.length - 1]
+  }
+}
 
-var MarsmediaBidAdapter = function MarsmediaBidAdapter() {
-  function _callBids(bidderRequest) {
-    var bids = bidderRequest.bids || [];
+export const spec = {
+  code: BIDDER_CODE,
+  aliases: ['mars'],
+  isBidRequestValid: function(bid) {
+    return (bid.params.publisherID !== null);
+  },
+  buildRequests: function(validBidRequests, bidderRequest) {
+    try {
+      let protocol = (window.location.protocol === 'https:');
+      const parse = getSize(validBidRequests[0].sizes);
+      const publisherId = validBidRequests[0].params.publisherID;
+      const payload = {
+        id: validBidRequests[0].bidId,
+        cur: ['USD'],
 
-    bids.forEach(bid => {
-      try {
-        ajax(
-          MARS_BIDDER_URL,
-          {
-            success: handleBidResponse,
-            error: handleBidError
+        language: window.navigator.userLanguage || window.navigator.language,
+        site: {
+          id: publisherId,
+          domain: getDomain(),
+          page: document.URL,
+          ref: document.referrer,
+          publisher: {
+            id: publisherId,
+            domain: getDomain()
+          }
+        },
+        imp: [{
+          id: utils.getUniqueIdentifierStr(),
+          banner: {
+            w: parse.width,
+            h: parse.height,
+            secure: protocol
           },
-          buildCallParams(bid, bidderRequest),
-          {}
-        );
-      } catch (err) {
-        utils.logError('Error sending marsmedia request for publisher id: ' + bid.params.publisherID, null, err);
-        handleBidError();
-      }
-
-      function handleBidResponse(res) {
-        try {
-          utils.logMessage('Register bid for publisher ID: ' + bid.params.publisherID);
-          addBid(res, bid);
-        } catch (err) {
-          utils.logError('Error processing response for publisher ID: ' + bid.params.publisherID, null, err);
-          handleBidError();
+          bidfloor: parseFloat(validBidRequests[0].params.floor) > 0 ? validBidRequests[0].params.floor : 0
+        }],
+        device: {
+          ua: navigator.userAgent
+        },
+        user: {
+          id: publisherId
+        },
+        publisher: {
+          id: publisherId,
+          domain: getDomain()
         }
+      };
+
+      if (bidderRequest && bidderRequest.gdprConsent) {
+        payload.gdpr = {
+          applies: bidderRequest.gdprConsent.gdprApplies,
+          consent: bidderRequest.gdprConsent.consentString
+        };
       }
 
-      function addBid(res, bid) {
-        var obj;
-        try {
-          obj = JSON.parse(res);
-        } catch (err) {
-          throw 'Faild to parse bid response';
-        }
+      return {
+        method: 'POST',
+        url: 'https://bid306.rtbsrv.com/bidder/?bid=3mhdom',
+        data: JSON.stringify(payload)
+      };
+    } catch (e) {
+      utils.logError(e, {validBidRequests, bidderRequest});
+    }
+  },
+  interpretResponse: function(serverResponse, bidRequest) {
+    const bidResponses = [];
+    let res = serverResponse.body;
+    if (!res) {
+      return []
+    }
 
-        if (Object.keys(obj).length === 0 || Object.keys(bid).length === 0) {
-          throw 'Empty Bid';
-        }
+    for (let x = 0; x < res.seatbid.length; x++) {
+      var bidAd = res.seatbid[x].bid[0];
 
-        var ad = obj.seatbid[0].bid[0];
-        var bid_params = bidfactory.createBid(STATUS.GOOD, bid);
-        var sizes = bid.sizes[0];
-        bid_params.un_id = obj.id;
-        bid_params.bidderCode = bid.bidder;
-        bid_params.cpm = Number(ad.price);
-        bid_params.price = Number(ad.price);
-        bid_params.width = sizes[0];
-        bid_params.height = sizes[1];
-        bid_params.ad = ad.adm;
-        bid_params.cid = ad.cid;
-        bid_params.seat = obj.seatbid[0].seat;
+      bidResponses.push({
+        requestId: res.id,
+        cpm: Number(bidAd.price),
+        width: bidAd.w,
+        height: bidAd.h,
+        ad: bidAd.adm,
+        ttl: 60,
+        creativeId: bidAd.cid,
+        netRevenue: true,
+        currency: 'USD'
+      })
+    }
 
-        bidmanager.addBidResponse(bid.placementCode, bid_params);
-      }
-
-      function handleBidError() {
-        var bidObj = bidfactory.createBid(STATUS.NO_BID, bid);
-        bidObj.bidderCode = bid.bidder;
-        bidmanager.addBidResponse(bid.bidid, bidObj);
-      }
-    });
+    return bidResponses;
+  },
+  getUserSyncs: function(syncOptions, serverResponses) {
+    return [];
   }
-
-  function buildCallParams(bidRequest) {
-    if (typeof bidRequest.params === 'undefined') {
-      throw 'No params';
-    }
-
-    if (typeof bidRequest.sizes === 'undefined' || bidRequest.sizes.length === 0) {
-      throw 'No sizes';
-    }
-
-    if (typeof bidRequest.params.floor === 'undefined') {
-      throw 'No floor';
-    } else if (isNaN(Number(bidRequest.params.floor))) {
-      throw 'Floor must be numeric value';
-    }
-
-    var sizes = bidRequest.sizes[0];
-    var floor = (typeof bidRequest.params.floor !== 'undefined' && bidRequest.params.floor === '') ? 0 : bidRequest.params.floor;
-    var protocol = (window.location.protocol === 'https') ? 1 : 0;
-    var publisher_id = (typeof bidRequest.params.publisherID !== 'undefined') ? bidRequest.params.publisherID : '';
-    var params = {};
-    params.id = utils.generateUUID();
-
-    params.cur = ['USD'];
-
-    params.imp = [{
-      id: params.id,
-      banner: {
-        w: sizes[0],
-        h: sizes[1],
-        secure: protocol
-      },
-      bidfloor: floor
-    }];
-
-    params.device = {
-      ua: navigator.userAgent
-    };
-
-    params.user = {
-      id: publisher_id
-    };
-
-    params.app = {
-      id: params.id,
-      domain: document.domain,
-      publisher: {
-        id: publisher_id
-      }
-    };
-
-    params.site = {
-      'id': publisher_id,
-      'domain': window.location.hostname,
-      'page': document.URL,
-      'ref': document.referrer,
-      'publisher': {
-        'id': publisher_id,
-        'domain': window.location.hostname
-      }
-    };
-
-    params.publisher = {
-      'id': publisher_id,
-      'domain': window.location.hostname
-    };
-
-    return JSON.stringify(params);
-  }
-
-  return Object.assign(new Adapter(MARS_BIDDER_CODE), {
-    callBids: _callBids,
-    createNew: MarsmediaBidAdapter.createNew,
-    buildCallParams: buildCallParams
-  });
 };
 
-MarsmediaBidAdapter.createNew = function() {
-  return new MarsmediaBidAdapter();
-};
+function getSize(requestSizes) {
+  const parsed = {};
+  const size = utils.parseSizesInput(requestSizes)[0];
 
-adaptermanager.registerBidAdapter(new MarsmediaBidAdapter(), MARS_BIDDER_CODE);
+  if (typeof size !== 'string') {
+    return parsed;
+  }
 
-module.exports = MarsmediaBidAdapter;
+  const parsedSize = size.toUpperCase().split('X');
+  const width = parseInt(parsedSize[0], 10);
+  if (width) {
+    parsed.width = width;
+  }
+
+  const height = parseInt(parsedSize[1], 10);
+  if (height) {
+    parsed.height = height;
+  }
+
+  return parsed;
+}
+
+registerBidder(spec);

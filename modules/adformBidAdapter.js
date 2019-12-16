@@ -1,26 +1,33 @@
-var utils = require('src/utils');
-var adloader = require('src/adloader');
-var bidmanager = require('src/bidmanager');
-var bidfactory = require('src/bidfactory');
-var STATUSCODES = require('src/constants.json').STATUS;
-var adaptermanager = require('src/adaptermanager');
-var Adapter = require('src/adapter').default;
+'use strict';
 
-const ADFORM_BIDDER_CODE = 'adform';
+import { registerBidder } from '../src/adapters/bidderFactory';
+import { config } from '../src/config';
+import { BANNER, VIDEO } from '../src/mediaTypes';
+import { Renderer } from '../src/Renderer';
+import * as utils from '../src/utils';
 
-function AdformAdapter() {
-  let baseAdapter = new Adapter(ADFORM_BIDDER_CODE);
+const OUTSTREAM_RENDERER_URL = 'https://s2.adform.net/banners/scripts/video/outstream/render.js';
 
-  function _callBids(params) {
-    var bid, _value, _key, i, j, k, l, reqParams;
-    var bids = params.bids;
+const BIDDER_CODE = 'adform';
+export const spec = {
+  code: BIDDER_CODE,
+  supportedMediaTypes: [ BANNER, VIDEO ],
+  isBidRequestValid: function (bid) {
+    return !!(bid.params.mid);
+  },
+  buildRequests: function (validBidRequests, bidderRequest) {
+    var i, l, j, k, bid, _key, _value, reqParams, netRevenue, gdprObject;
+    const currency = config.getConfig('currency.adServerCurrency');
+
     var request = [];
-    var callbackName = '_adf_' + utils.getUniqueIdentifierStr();
-    var globalParams = [ [ 'adxDomain', 'adx.adform.net' ], ['fd', 1], [ 'url', null ], [ 'tid', null ], [ 'callback', '$$PREBID_GLOBAL$$.' + callbackName ] ];
-
+    var globalParams = [ [ 'adxDomain', 'adx.adform.net' ], [ 'fd', 1 ], [ 'url', null ], [ 'tid', null ] ];
+    var bids = JSON.parse(JSON.stringify(validBidRequests));
+    var bidder = (bids[0] && bids[0].bidder) || BIDDER_CODE;
     for (i = 0, l = bids.length; i < l; i++) {
       bid = bids[i];
-
+      if ((bid.params.priceType === 'net') || (bid.params.pt === 'net')) {
+        netRevenue = 'net';
+      }
       for (j = 0, k = globalParams.length; j < k; j++) {
         _key = globalParams[j][0];
         _value = bid[_key] || bid.params[_key];
@@ -29,143 +36,116 @@ function AdformAdapter() {
           globalParams[j][1] = _value;
         }
       }
-
       reqParams = bid.params;
       reqParams.transactionId = bid.transactionId;
+      reqParams.rcur = reqParams.rcur || currency;
       request.push(formRequestUrl(reqParams));
     }
 
-    request.unshift('//' + globalParams[0][1] + '/adx/?rp=4');
+    request.unshift('https://' + globalParams[0][1] + '/adx/?rp=4');
+    netRevenue = netRevenue || 'gross';
+    request.push('pt=' + netRevenue);
+    request.push('stid=' + validBidRequests[0].auctionId);
+
+    if (bidderRequest && bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies) {
+      gdprObject = {
+        gdpr: bidderRequest.gdprConsent.gdprApplies,
+        gdpr_consent: bidderRequest.gdprConsent.consentString
+      };
+      request.push('gdpr=' + gdprObject.gdpr);
+      request.push('gdpr_consent=' + gdprObject.gdpr_consent);
+    }
 
     for (i = 1, l = globalParams.length; i < l; i++) {
       _key = globalParams[i][0];
       _value = globalParams[i][1];
       if (_value) {
-        request.push(globalParams[i][0] + '=' + encodeURIComponent(_value));
+        request.push(_key + '=' + encodeURIComponent(_value));
       }
     }
 
-    $$PREBID_GLOBAL$$[callbackName] = handleCallback(bids);
-
-    adloader.loadScript(request.join('&'));
-  };
-
-  function formRequestUrl(reqData) {
-    var key;
-    var url = [];
-
-    for (key in reqData) {
-      if (reqData.hasOwnProperty(key) && reqData[key]) { url.push(key, '=', reqData[key], '&'); }
-    }
-
-    return encode64(url.join('').slice(0, -1));
-  }
-
-  function handleCallback(bids) {
-    return function handleResponse(adItems) {
-      var bidObject;
-      var bidder = baseAdapter.getBidderCode();
-      var adItem;
-      var bid;
-      for (var i = 0, l = adItems.length; i < l; i++) {
-        adItem = adItems[i];
-        bid = bids[i];
-        if (adItem && adItem.response === 'banner' &&
-            verifySize(adItem, bid.sizes)) {
-          bidObject = bidfactory.createBid(STATUSCODES.GOOD, bid);
-          bidObject.bidderCode = bidder;
-          bidObject.cpm = adItem.win_bid;
-          bidObject.cur = adItem.win_cur;
-          bidObject.ad = adItem.banner;
-          bidObject.width = adItem.width;
-          bidObject.height = adItem.height;
-          bidObject.dealId = adItem.deal_id;
-          bidObject.transactionId = bid.transactionId;
-          bidmanager.addBidResponse(bid.placementCode, bidObject);
-        } else {
-          bidObject = bidfactory.createBid(STATUSCODES.NO_BID, bid);
-          bidObject.bidderCode = bidder;
-          bidmanager.addBidResponse(bid.placementCode, bidObject);
-        }
-      }
+    return {
+      method: 'GET',
+      url: request.join('&'),
+      bids: validBidRequests,
+      netRevenue: netRevenue,
+      bidder,
+      gdpr: gdprObject
     };
+
+    function formRequestUrl(reqData) {
+      var key;
+      var url = [];
+
+      for (key in reqData) {
+        if (reqData.hasOwnProperty(key) && reqData[key]) { url.push(key, '=', reqData[key], '&'); }
+      }
+
+      return encodeURIComponent(btoa(url.join('').slice(0, -1)));
+    }
+  },
+  interpretResponse: function (serverResponse, bidRequest) {
+    const VALID_RESPONSES = {
+      banner: 1,
+      vast_content: 1,
+      vast_url: 1
+    };
+    var bidObject, response, bid, type;
+    var bidRespones = [];
+    var bids = bidRequest.bids;
+    var responses = serverResponse.body;
+    for (var i = 0; i < responses.length; i++) {
+      response = responses[i];
+      type = response.response === 'banner' ? BANNER : VIDEO;
+      bid = bids[i];
+      if (VALID_RESPONSES[response.response] && (verifySize(response, utils.getAdUnitSizes(bid)) || type === VIDEO)) {
+        bidObject = {
+          requestId: bid.bidId,
+          cpm: response.win_bid,
+          width: response.width,
+          height: response.height,
+          creativeId: bid.bidId,
+          dealId: response.deal_id,
+          currency: response.win_cur,
+          netRevenue: bidRequest.netRevenue !== 'gross',
+          ttl: 360,
+          ad: response.banner,
+          bidderCode: bidRequest.bidder,
+          transactionId: bid.transactionId,
+          vastUrl: response.vast_url,
+          vastXml: response.vast_content,
+          mediaType: type
+        };
+
+        if (!bid.renderer && type === VIDEO && utils.deepAccess(bid, 'mediaTypes.video.context') === 'outstream') {
+          bidObject.renderer = Renderer.install({id: bid.bidId, url: OUTSTREAM_RENDERER_URL});
+          bidObject.renderer.setRender(renderer);
+        }
+
+        if (bidRequest.gdpr) {
+          bidObject.gdpr = bidRequest.gdpr.gdpr;
+          bidObject.gdpr_consent = bidRequest.gdpr.gdpr_consent;
+        }
+        bidRespones.push(bidObject);
+      }
+    }
+    return bidRespones;
+
+    function renderer(bid) {
+      bid.renderer.push(() => {
+        window.Adform.renderOutstream(bid);
+      });
+    }
 
     function verifySize(adItem, validSizes) {
       for (var j = 0, k = validSizes.length; j < k; j++) {
-        if (adItem.width === validSizes[j][0] &&
-            adItem.height === validSizes[j][1]) {
+        if (adItem.width == validSizes[j][0] &&
+            adItem.height == validSizes[j][1]) {
           return true;
         }
       }
-
       return false;
     }
   }
-
-  function encode64(input) {
-    var out = [];
-    var chr1;
-    var chr2;
-    var chr3;
-    var enc1;
-    var enc2;
-    var enc3;
-    var enc4;
-    var i = 0;
-    var _keyStr = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_=';
-
-    input = utf8_encode(input);
-
-    while (i < input.length) {
-      chr1 = input.charCodeAt(i++);
-      chr2 = input.charCodeAt(i++);
-      chr3 = input.charCodeAt(i++);
-
-      enc1 = chr1 >> 2;
-      enc2 = ((chr1 & 3) << 4) | (chr2 >> 4);
-      enc3 = ((chr2 & 15) << 2) | (chr3 >> 6);
-      enc4 = chr3 & 63;
-
-      if (isNaN(chr2)) {
-        enc3 = enc4 = 64;
-      } else if (isNaN(chr3)) {
-        enc4 = 64;
-      }
-
-      out.push(_keyStr.charAt(enc1), _keyStr.charAt(enc2));
-      if (enc3 !== 64) { out.push(_keyStr.charAt(enc3)); }
-      if (enc4 !== 64) { out.push(_keyStr.charAt(enc4)); }
-    }
-
-    return out.join('');
-  }
-
-  function utf8_encode(string) {
-    string = string.replace(/\r\n/g, '\n');
-    var utftext = '';
-
-    for (var n = 0; n < string.length; n++) {
-      var c = string.charCodeAt(n);
-
-      if (c < 128) {
-        utftext += String.fromCharCode(c);
-      } else if ((c > 127) && (c < 2048)) {
-        utftext += String.fromCharCode((c >> 6) | 192);
-        utftext += String.fromCharCode((c & 63) | 128);
-      } else {
-        utftext += String.fromCharCode((c >> 12) | 224);
-        utftext += String.fromCharCode(((c >> 6) & 63) | 128);
-        utftext += String.fromCharCode((c & 63) | 128);
-      }
-    }
-
-    return utftext;
-  }
-
-  return Object.assign(this, baseAdapter, {
-    callBids: _callBids
-  });
-}
-
-adaptermanager.registerBidAdapter(new AdformAdapter(), ADFORM_BIDDER_CODE);
-module.exports = AdformAdapter;
+};
+registerBidder(spec);

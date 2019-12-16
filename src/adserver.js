@@ -1,17 +1,17 @@
-import {formatQS} from './url';
-import {getWinningBids} from './targeting';
+import { formatQS } from './url';
+import { targeting } from './targeting';
 
 // Adserver parent class
 const AdServer = function(attr) {
   this.name = attr.adserver;
   this.code = attr.code;
   this.getWinningBidByCode = function() {
-    return getWinningBids(this.code)[0];
+    return targeting.getWinningBids(this.code)[0];
   };
 };
 
 // DFP ad server
-exports.dfpAdserver = function (options, urlComponents) {
+export function dfpAdserver(options, urlComponents) {
   var adserver = new AdServer(options);
   adserver.urlComponents = urlComponents;
 
@@ -31,7 +31,7 @@ exports.dfpAdserver = function (options, urlComponents) {
   adserver.appendQueryParams = function() {
     var bid = adserver.getWinningBidByCode();
     if (bid) {
-      this.urlComponents.search.description_url = encodeURIComponent(bid.descriptionUrl);
+      this.urlComponents.search.description_url = encodeURIComponent(bid.vastUrl);
       this.urlComponents.search.cust_params = getCustomParams(bid.adserverTargeting);
       this.urlComponents.search.correlator = Date.now();
     }

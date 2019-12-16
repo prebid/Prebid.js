@@ -1,205 +1,247 @@
-var CONSTANTS = require('src/constants.json');
-var utils = require('src/utils.js');
-var bidfactory = require('src/bidfactory.js');
-var bidmanager = require('src/bidmanager.js');
-var adloader = require('src/adloader');
-var adaptermanager = require('src/adaptermanager');
+import * as utils from '../src/utils';
+import * as url from '../src/url';
+import { registerBidder } from '../src/adapters/bidderFactory';
+import { BANNER } from '../src/mediaTypes';
+import { config } from '../src/config';
 
-/**
- * Adapter for requesting bids from Brightcom
- */
-var BrightcomAdapter = function BrightcomAdapter() {
-  // Set Brightcom Bidder URL
-  var brightcomUrl = 'hb.iselephant.com/auc/ortb';
+const BIDDER_CODE = 'brightcom';
+const URL = 'https://brightcombid.marphezis.com/hb';
 
-  // Define the bidder code
-  var brightcomBidderCode = 'brightcom';
+export const spec = {
+  code: BIDDER_CODE,
+  supportedMediaTypes: [BANNER],
+  isBidRequestValid,
+  buildRequests,
+  interpretResponse,
+  getUserSyncs
+};
 
-  // Define the callback function
-  var brightcomCallbackFunction = 'window.$$PREBID_GLOBAL$$=window.$$PREBID_GLOBAL$$||window.parent.$$PREBID_GLOBAL$$||window.top.$$PREBID_GLOBAL$$;window.$$PREBID_GLOBAL$$.brightcomResponse';
+function buildRequests(bidReqs, bidderRequest) {
+  try {
+    let referrer = '';
+    if (bidderRequest && bidderRequest.refererInfo) {
+      referrer = bidderRequest.refererInfo.referer;
+    }
+    const brightcomImps = [];
+    const publisherId = utils.getBidIdParameter('publisherId', bidReqs[0].params);
+    utils._each(bidReqs, function (bid) {
+      let bidSizes = (bid.mediaTypes && bid.mediaTypes.banner && bid.mediaTypes.banner.sizes) || bid.sizes;
+      bidSizes = ((utils.isArray(bidSizes) && utils.isArray(bidSizes[0])) ? bidSizes : [bidSizes]);
+      bidSizes = bidSizes.filter(size => utils.isArray(size));
+      const processedSizes = bidSizes.map(size => ({w: parseInt(size[0], 10), h: parseInt(size[1], 10)}));
 
-  // Manage the requested and received ad units' codes, to know which are invalid (didn't return)
-  const reqAdUnitsCode = [];
-  const resAdUnitsCode = [];
+      const element = document.getElementById(bid.adUnitCode);
+      const minSize = _getMinSize(processedSizes);
+      const viewabilityAmount = _isViewabilityMeasurable(element)
+        ? _getViewability(element, utils.getWindowTop(), minSize)
+        : 'na';
+      const viewabilityAmountRounded = isNaN(viewabilityAmount) ? viewabilityAmount : Math.round(viewabilityAmount);
 
-  function _callBids(params) {
-    var bidRequests = params.bids || [];
-
-    // Get page data
-    var siteDomain = window.location.host;
-    var sitePage = window.location.href;
-
-    // Prepare impressions object
-    var brightcomImps = [];
-
-    // Prepare a variable for publisher id
-    var pubId = '';
-
-    // Go through the requests and build array of impressions
-    utils._each(bidRequests, function(bid) {
-      // Get impression details
-      var tagId = utils.getBidIdParameter('tagId', bid.params);
-      var ref = utils.getBidIdParameter('ref', bid.params);
-      var adWidth = 0;
-      var adHeight = 0;
-
-      // If no publisher id is set, use the current
-      if (pubId === '') {
-        // Get the current publisher id (if it doesn't exist, it'll return '')
-        pubId = utils.getBidIdParameter('pubId', bid.params);
-      }
-
-      // Brightcom supports only 1 size per impression
-      // Check if the array contains 1 size or array of sizes
-      if (bid.sizes.length === 2 && typeof bid.sizes[0] === 'number' && typeof bid.sizes[1] === 'number') {
-        // The array contains 1 size (the items are the values)
-        adWidth = bid.sizes[0];
-        adHeight = bid.sizes[1];
-      } else {
-        // The array contains array of sizes, use the first size
-        adWidth = bid.sizes[0][0];
-        adHeight = bid.sizes[0][1];
-      }
-
-      // Build the impression
-      var imp = {
-        id: utils.getUniqueIdentifierStr(),
+      const imp = {
+        id: bid.bidId,
         banner: {
-          w: adWidth,
-          h: adHeight
+          format: processedSizes,
+          ext: {
+            viewability: viewabilityAmountRounded
+          }
         },
-        tagid: tagId
+        tagid: String(bid.adUnitCode)
       };
-
-      // If ref exists, create it (in the "ext" object)
-      if (ref !== '') {
-        imp.ext = {
-          refoverride: ref
-        };
+      const bidFloor = utils.getBidIdParameter('bidFloor', bid.params);
+      if (bidFloor) {
+        imp.bidfloor = bidFloor;
       }
-
-      // Add current impression to collection
       brightcomImps.push(imp);
-      // Add mapping to current bid via impression id
-      // bidmanager.pbCallbackMap[imp.id] = bid;
-
-      // Add current ad unit's code to tracking
-      reqAdUnitsCode.push(bid.placementCode);
     });
-
-    // Build the bid request
-    var brightcomBidReq = {
+    const brightcomBidReq = {
       id: utils.getUniqueIdentifierStr(),
       imp: brightcomImps,
       site: {
+        domain: url.parse(referrer).host,
+        page: referrer,
         publisher: {
-          id: pubId
-        },
-        domain: siteDomain,
-        page: sitePage
-      }
+          id: publisherId
+        }
+      },
+      device: {
+        devicetype: _getDeviceType(),
+        w: screen.width,
+        h: screen.height
+      },
+      tmax: config.getConfig('bidderTimeout')
     };
 
-    // Add timeout data, if available
-    var PREBID_TIMEOUT = PREBID_TIMEOUT || 0;
-    var curTimeout = PREBID_TIMEOUT;
-    if (curTimeout > 0) {
-      brightcomBidReq.tmax = curTimeout;
-    }
+    return {
+      method: 'POST',
+      url: URL,
+      data: JSON.stringify(brightcomBidReq),
+      options: {contentType: 'text/plain', withCredentials: false}
+    };
+  } catch (e) {
+    utils.logError(e, {bidReqs, bidderRequest});
+  }
+}
 
-    // Define the bid request call URL
-    var bidRequestCallUrl = 'https://' + brightcomUrl +
-        '?callback=' + encodeURIComponent(brightcomCallbackFunction) +
-        '&request=' + encodeURIComponent(JSON.stringify(brightcomBidReq));
-
-    // Add the call to get the bid
-    adloader.loadScript(bidRequestCallUrl);
+function isBidRequestValid(bid) {
+  if (bid.bidder !== BIDDER_CODE || typeof bid.params === 'undefined') {
+    return false;
   }
 
-  // expose the callback to the global object:
-  $$PREBID_GLOBAL$$.brightcomResponse = function(brightcomResponseObj) {
-    var bid = {};
+  if (typeof bid.params.publisherId === 'undefined') {
+    return false;
+  }
 
-    // Make sure response is valid
-    if (
-      (brightcomResponseObj) && (brightcomResponseObj.id) &&
-        (brightcomResponseObj.seatbid) && (brightcomResponseObj.seatbid.length !== 0) &&
-        (brightcomResponseObj.seatbid[0].bid) && (brightcomResponseObj.seatbid[0].bid.length !== 0)
-    ) {
-      // Go through the received bids
-      brightcomResponseObj.seatbid[0].bid.forEach(function(curBid) {
-        // Get the bid request data
-        var bidRequest = $$PREBID_GLOBAL$$._bidsRequested.find(bidSet => bidSet.bidderCode === 'brightcom').bids[0]; // this assumes a single request only
+  return true;
+}
 
-        // Make sure the bid exists
-        if (bidRequest) {
-          var placementCode = bidRequest.placementCode;
-          bidRequest.status = CONSTANTS.STATUS.GOOD;
-
-          curBid.placementCode = placementCode;
-          curBid.size = bidRequest.sizes;
-
-          // Get the creative
-          var responseCreative = curBid.adm;
-          // Build the NURL element
-          var responseNurl = '<img src="' + curBid.nurl + '" width="1" height="1" style="display:none" />';
-          // Build the ad to display:
-          var responseAd = decodeURIComponent(responseCreative + responseNurl);
-
-          // Create a valid bid
-          bid = bidfactory.createBid(1);
-
-          // Set the bid data
-          bid.creative_id = curBid.Id;
-          bid.bidderCode = brightcomBidderCode;
-          bid.cpm = parseFloat(curBid.price);
-
-          // Brightcom tag is in <script> block, so use bid.ad, not bid.adurl
-          bid.ad = responseAd;
-
-          // Since Brightcom currently supports only 1 size, if multiple sizes are provided - take the first
-          var adWidth, adHeight;
-          if ((bidRequest.sizes.length === 2) && (typeof bidRequest.sizes[0] === 'number') && (typeof bidRequest.sizes[1] === 'number')) {
-            // Only one size is provided
-            adWidth = bidRequest.sizes[0];
-            adHeight = bidRequest.sizes[1];
-          } else {
-            // And array of sizes is provided. Take the first.
-            adWidth = bidRequest.sizes[0][0];
-            adHeight = bidRequest.sizes[0][1];
-          }
-
-          // Set the ad's width and height
-          bid.width = adWidth;
-          bid.height = adHeight;
-
-          // Add the bid
-          bidmanager.addBidResponse(placementCode, bid);
-
-          // Add current ad unit's code to tracking
-          resAdUnitsCode.push(placementCode);
-        }
+function interpretResponse(serverResponse) {
+  if (!serverResponse.body || typeof serverResponse.body != 'object') {
+    utils.logWarn('Brightcom server returned empty/non-json response: ' + JSON.stringify(serverResponse.body));
+    return [];
+  }
+  const { body: {id, seatbid} } = serverResponse;
+  try {
+    const brightcomBidResponses = [];
+    if (id &&
+      seatbid &&
+      seatbid.length > 0 &&
+      seatbid[0].bid &&
+      seatbid[0].bid.length > 0) {
+      seatbid[0].bid.map(brightcomBid => {
+        brightcomBidResponses.push({
+          requestId: brightcomBid.impid,
+          cpm: parseFloat(brightcomBid.price),
+          width: parseInt(brightcomBid.w),
+          height: parseInt(brightcomBid.h),
+          creativeId: brightcomBid.crid || brightcomBid.id,
+          currency: 'USD',
+          netRevenue: true,
+          mediaType: BANNER,
+          ad: _getAdMarkup(brightcomBid),
+          ttl: 60
+        });
       });
     }
+    return brightcomBidResponses;
+  } catch (e) {
+    utils.logError(e, {id, seatbid});
+  }
+}
 
-    // Define all unreceived ad unit codes as invalid (if Brightcom don't want to bid on an impression, it won't include it in the response)
-    for (var i = 0; i < reqAdUnitsCode.length; i++) {
-      var adUnitCode = reqAdUnitsCode[i];
-      // Check if current ad unit code was NOT received
-      if (resAdUnitsCode.indexOf(adUnitCode) === -1) {
-        // Current ad unit wasn't returned. Define it as invalid.
-        bid = bidfactory.createBid(2);
-        bid.bidderCode = brightcomBidderCode;
-        bidmanager.addBidResponse(adUnitCode, bid);
-      }
+// Don't do user sync for now
+function getUserSyncs(syncOptions, responses, gdprConsent) {
+  return [];
+}
+
+function _isMobile() {
+  return (/(ios|ipod|ipad|iphone|android)/i).test(navigator.userAgent);
+}
+
+function _isConnectedTV() {
+  return (/(smart[-]?tv|hbbtv|appletv|googletv|hdmi|netcast\.tv|viera|nettv|roku|\bdtv\b|sonydtv|inettvbrowser|\btv\b)/i).test(navigator.userAgent);
+}
+
+function _getDeviceType() {
+  return _isMobile() ? 1 : _isConnectedTV() ? 3 : 2;
+}
+
+function _getAdMarkup(bid) {
+  let adm = bid.adm;
+  if ('nurl' in bid) {
+    adm += utils.createTrackPixelHtml(bid.nurl);
+  }
+  return adm;
+}
+
+function _isViewabilityMeasurable(element) {
+  return !_isIframe() && element !== null;
+}
+
+function _getViewability(element, topWin, { w, h } = {}) {
+  return utils.getWindowTop().document.visibilityState === 'visible'
+    ? _getPercentInView(element, topWin, { w, h })
+    : 0;
+}
+
+function _isIframe() {
+  try {
+    return utils.getWindowSelf() !== utils.getWindowTop();
+  } catch (e) {
+    return true;
+  }
+}
+
+function _getMinSize(sizes) {
+  return sizes.reduce((min, size) => size.h * size.w < min.h * min.w ? size : min);
+}
+
+function _getBoundingBox(element, { w, h } = {}) {
+  let { width, height, left, top, right, bottom } = element.getBoundingClientRect();
+
+  if ((width === 0 || height === 0) && w && h) {
+    width = w;
+    height = h;
+    right = left + w;
+    bottom = top + h;
+  }
+
+  return { width, height, left, top, right, bottom };
+}
+
+function _getIntersectionOfRects(rects) {
+  const bbox = {
+    left: rects[0].left,
+    right: rects[0].right,
+    top: rects[0].top,
+    bottom: rects[0].bottom
+  };
+
+  for (let i = 1; i < rects.length; ++i) {
+    bbox.left = Math.max(bbox.left, rects[i].left);
+    bbox.right = Math.min(bbox.right, rects[i].right);
+
+    if (bbox.left >= bbox.right) {
+      return null;
     }
-  };
 
-  return {
-    callBids: _callBids
-  };
-};
+    bbox.top = Math.max(bbox.top, rects[i].top);
+    bbox.bottom = Math.min(bbox.bottom, rects[i].bottom);
 
-adaptermanager.registerBidAdapter(new BrightcomAdapter(), 'brightcom');
+    if (bbox.top >= bbox.bottom) {
+      return null;
+    }
+  }
 
-module.exports = BrightcomAdapter;
+  bbox.width = bbox.right - bbox.left;
+  bbox.height = bbox.bottom - bbox.top;
+
+  return bbox;
+}
+
+function _getPercentInView(element, topWin, { w, h } = {}) {
+  const elementBoundingBox = _getBoundingBox(element, { w, h });
+
+  // Obtain the intersection of the element and the viewport
+  const elementInViewBoundingBox = _getIntersectionOfRects([ {
+    left: 0,
+    top: 0,
+    right: topWin.innerWidth,
+    bottom: topWin.innerHeight
+  }, elementBoundingBox ]);
+
+  let elementInViewArea, elementTotalArea;
+
+  if (elementInViewBoundingBox !== null) {
+    // Some or all of the element is in view
+    elementInViewArea = elementInViewBoundingBox.width * elementInViewBoundingBox.height;
+    elementTotalArea = elementBoundingBox.width * elementBoundingBox.height;
+
+    return ((elementInViewArea / elementTotalArea) * 100);
+  }
+
+  // No overlap between element and the viewport; therefore, the element
+  // lies completely out of view
+  return 0;
+}
+
+registerBidder(spec);

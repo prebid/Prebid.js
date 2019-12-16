@@ -1,119 +1,137 @@
-import { ajax } from 'src/ajax'
-import bidfactory from 'src/bidfactory'
-import bidmanager from 'src/bidmanager'
-import * as utils from 'src/utils'
-import { STATUS } from 'src/constants'
-import { Renderer } from 'src/Renderer'
-import adaptermanager from 'src/adaptermanager'
+import * as utils from '../src/utils'
+import { Renderer } from '../src/Renderer'
+import { registerBidder } from '../src/adapters/bidderFactory'
+import { VIDEO } from '../src/mediaTypes'
 
-function createRenderHandler({ bidResponseBid, rendererConfig }) {
-  function createApi() {
-    parent.window.unruly['native'].prebid = parent.window.unruly['native'].prebid || {}
-    parent.window.unruly['native'].prebid.uq = parent.window.unruly['native'].prebid.uq || []
+function configureUniversalTag (exchangeRenderer) {
+  if (!exchangeRenderer.config) throw new Error('UnrulyBidAdapter: Missing renderer config.')
+  if (!exchangeRenderer.config.siteId) throw new Error('UnrulyBidAdapter: Missing renderer siteId.')
 
-    return {
-      render(bidResponseBid) {
-        parent.window.unruly['native'].prebid.uq.push(['render', bidResponseBid])
-      },
-      onLoaded(bidResponseBid) {}
-    }
-  }
-
-  parent.window.unruly = parent.window.unruly || {}
-  parent.window.unruly['native'] = parent.window.unruly['native'] || {}
-  parent.window.unruly['native'].siteId = parent.window.unruly['native'].siteId || rendererConfig.siteId
-
-  const api = createApi()
-  return {
-    render() {
-      api.render(bidResponseBid)
-    },
-    onRendererLoad() {
-      api.onLoaded(bidResponseBid)
-    }
-  }
+  parent.window.unruly = parent.window.unruly || {};
+  parent.window.unruly['native'] = parent.window.unruly['native'] || {};
+  parent.window.unruly['native'].siteId = parent.window.unruly['native'].siteId || exchangeRenderer.config.siteId;
+  parent.window.unruly['native'].supplyMode = 'prebid';
 }
 
-function createBidResponseHandler(bidRequestBids) {
-  return {
-    onBidResponse(responseBody) {
-      try {
-        const exchangeResponse = JSON.parse(responseBody)
-        exchangeResponse.bids.forEach((exchangeBid) => {
-          const bidResponseBid = bidfactory.createBid(exchangeBid.ext.statusCode, exchangeBid)
-
-          Object.assign(
-            bidResponseBid,
-            exchangeBid
-          )
-
-          if (exchangeBid.ext.renderer) {
-            const rendererParams = exchangeBid.ext.renderer
-            const renderHandler = createRenderHandler({
-              bidResponseBid,
-              rendererConfig: rendererParams.config
-            })
-
-            bidResponseBid.renderer = Renderer.install(
-              Object.assign(
-                {},
-                rendererParams,
-                { callback: () => renderHandler.onRendererLoad() }
-              )
-            )
-            bidResponseBid.renderer.setRender(() => renderHandler.render())
-          }
-
-          bidmanager.addBidResponse(exchangeBid.ext.placementCode, bidResponseBid)
-        })
-      } catch (error) {
-        utils.logError(error);
-        bidRequestBids.forEach(bidRequestBid => {
-          const bidResponseBid = bidfactory.createBid(STATUS.NO_BID)
-          bidmanager.addBidResponse(bidRequestBid.placementCode, bidResponseBid)
-        })
-      }
-    }
-  }
+function configureRendererQueue () {
+  parent.window.unruly['native'].prebid = parent.window.unruly['native'].prebid || {};
+  parent.window.unruly['native'].prebid.uq = parent.window.unruly['native'].prebid.uq || [];
 }
 
-function UnrulyAdapter() {
-  const adapter = {
-    exchangeUrl: 'https://targeting.unrulymedia.com/prebid',
-    callBids({ bids: bidRequestBids }) {
-      if (!bidRequestBids || bidRequestBids.length === 0) {
-        return
-      }
-
-      const videoMediaType = utils.deepAccess(bidRequestBids[0], 'mediaTypes.video')
-      const context = utils.deepAccess(bidRequestBids[0], 'mediaTypes.video.context')
-      if (videoMediaType && context !== 'outstream') {
-        return
-      }
-
-      const payload = {
-        bidRequests: bidRequestBids
-      }
-
-      const bidResponseHandler = createBidResponseHandler(bidRequestBids)
-
-      ajax(
-        adapter.exchangeUrl,
-        bidResponseHandler.onBidResponse,
-        JSON.stringify(payload),
-        {
-          contentType: 'application/json',
-          withCredentials: true
-        }
-      )
-    }
-  }
-
-  return adapter
+function notifyRenderer (bidResponseBid) {
+  parent.window.unruly['native'].prebid.uq.push(['render', bidResponseBid]);
 }
 
-adaptermanager.registerBidAdapter(new UnrulyAdapter(), 'unruly', {
-  supportedMediaTypes: ['video']
+const serverResponseToBid = (bid, rendererInstance) => ({
+  requestId: bid.bidId,
+  cpm: bid.cpm,
+  width: bid.width,
+  height: bid.height,
+  vastUrl: bid.vastUrl,
+  netRevenue: true,
+  creativeId: bid.bidId,
+  ttl: 360,
+  currency: 'USD',
+  renderer: rendererInstance,
+  mediaType: VIDEO
 });
 
-module.exports = UnrulyAdapter
+const buildPrebidResponseAndInstallRenderer = bids =>
+  bids
+    .filter(serverBid => {
+      const hasConfig = !!utils.deepAccess(serverBid, 'ext.renderer.config');
+      const hasSiteId = !!utils.deepAccess(serverBid, 'ext.renderer.config.siteId');
+
+      if (!hasConfig) utils.logError(new Error('UnrulyBidAdapter: Missing renderer config.'));
+      if (!hasSiteId) utils.logError(new Error('UnrulyBidAdapter: Missing renderer siteId.'));
+
+      return hasSiteId
+    })
+    .map(serverBid => {
+      const exchangeRenderer = utils.deepAccess(serverBid, 'ext.renderer');
+
+      configureUniversalTag(exchangeRenderer);
+      configureRendererQueue();
+
+      const rendererInstance = Renderer.install(Object.assign({}, exchangeRenderer, { callback: () => {} }));
+      return { rendererInstance, serverBid };
+    })
+    .map(
+      ({rendererInstance, serverBid}) => {
+        const prebidBid = serverResponseToBid(serverBid, rendererInstance);
+
+        const rendererConfig = Object.assign(
+          {},
+          prebidBid,
+          {
+            renderer: rendererInstance,
+            adUnitCode: serverBid.ext.adUnitCode
+          }
+        );
+
+        rendererInstance.setRender(() => { notifyRenderer(rendererConfig) });
+
+        return prebidBid;
+      }
+    );
+
+export const adapter = {
+  code: 'unruly',
+  supportedMediaTypes: [ VIDEO ],
+  isBidRequestValid: function(bid) {
+    if (!bid) return false;
+
+    const context = utils.deepAccess(bid, 'mediaTypes.video.context');
+
+    return bid.mediaType === 'video' || context === 'outstream';
+  },
+
+  buildRequests: function(validBidRequests, bidderRequest) {
+    const url = 'https://targeting.unrulymedia.com/prebid';
+    const method = 'POST';
+    const data = {
+      bidRequests: validBidRequests,
+      bidderRequest
+    };
+    const options = { contentType: 'text/plain' };
+
+    return {
+      url,
+      method,
+      data,
+      options
+    };
+  },
+
+  interpretResponse: function(serverResponse = {}) {
+    const serverResponseBody = serverResponse.body;
+    const noBidsResponse = [];
+    const isInvalidResponse = !serverResponseBody || !serverResponseBody.bids;
+
+    return isInvalidResponse
+      ? noBidsResponse
+      : buildPrebidResponseAndInstallRenderer(serverResponseBody.bids);
+  },
+
+  getUserSyncs: function(syncOptions, response, gdprConsent) {
+    let params = '';
+    if (gdprConsent && 'gdprApplies' in gdprConsent) {
+      if (gdprConsent.gdprApplies && typeof gdprConsent.consentString === 'string') {
+        params += `?gdpr=1&gdpr_consent=${gdprConsent.consentString}`;
+      } else {
+        params += `?gdpr=0`;
+      }
+    }
+
+    const syncs = []
+    if (syncOptions.iframeEnabled) {
+      syncs.push({
+        type: 'iframe',
+        url: 'https://video.unrulymedia.com/iframes/third-party-iframes.html' + params
+      });
+    }
+    return syncs;
+  }
+};
+
+registerBidder(adapter);

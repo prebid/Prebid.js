@@ -1,67 +1,90 @@
 import { isValidVideoBid } from 'src/video';
-const utils = require('src/utils');
 
-describe('video.js', () => {
-  afterEach(() => {
-    utils.getBidRequest.restore();
+describe('video.js', function () {
+  it('validates valid instream bids', function () {
+    const bid = {
+      adId: '456xyz',
+      vastUrl: 'http://www.example.com/vastUrl',
+      requestId: '123abc'
+    };
+    const bidRequests = [{
+      bids: [{
+        bidId: '123abc',
+        bidder: 'appnexus',
+        mediaTypes: {
+          video: { context: 'instream' }
+        }
+      }]
+    }];
+    const valid = isValidVideoBid(bid, bidRequests);
+    expect(valid).to.equal(true);
   });
 
-  it('validates valid instream bids', () => {
-    sinon.stub(utils, 'getBidRequest', () => ({
-      bidder: 'appnexusAst',
-      mediaTypes: {
-        video: { context: 'instream' },
-      },
-    }));
-
-    const valid = isValidVideoBid({
-      vastUrl: 'http://www.example.com/vastUrl'
-    });
-
-    expect(valid).to.be(true);
+  it('catches invalid instream bids', function () {
+    const bid = {
+      requestId: '123abc'
+    };
+    const bidRequests = [{
+      bids: [{
+        bidId: '123abc',
+        bidder: 'appnexus',
+        mediaTypes: {
+          video: { context: 'instream' }
+        }
+      }]
+    }];
+    const valid = isValidVideoBid(bid, bidRequests);
+    expect(valid).to.equal(false);
   });
 
-  it('catches invalid instream bids', () => {
-    sinon.stub(utils, 'getBidRequest', () => ({
-      bidder: 'appnexusAst',
-      mediaTypes: {
-        video: { context: 'instream' },
-      },
-    }));
+  it('catches invalid bids when prebid-cache is disabled', function () {
+    const bidRequests = [{
+      bids: [{
+        bidder: 'vastOnlyVideoBidder',
+        mediaTypes: { video: {} },
+      }]
+    }];
 
-    const valid = isValidVideoBid({});
+    const valid = isValidVideoBid({ vastXml: '<xml>vast</xml>' }, bidRequests);
 
-    expect(valid).to.be(false);
+    expect(valid).to.equal(false);
   });
 
-  it('validates valid outstream bids', () => {
-    sinon.stub(utils, 'getBidRequest', () => ({
-      bidder: 'appnexusAst',
-      mediaTypes: {
-        video: { context: 'outstream' },
-      },
-    }));
-
-    const valid = isValidVideoBid({
+  it('validates valid outstream bids', function () {
+    const bid = {
+      requestId: '123abc',
       renderer: {
         url: 'render.url',
         render: () => true,
       }
-    });
-
-    expect(valid).to.be(true);
+    };
+    const bidRequests = [{
+      bids: [{
+        bidId: '123abc',
+        bidder: 'appnexus',
+        mediaTypes: {
+          video: { context: 'outstream' }
+        }
+      }]
+    }];
+    const valid = isValidVideoBid(bid, bidRequests);
+    expect(valid).to.equal(true);
   });
 
-  it('catches invalid outstream bids', () => {
-    sinon.stub(utils, 'getBidRequest', () => ({
-      bidder: 'appnexusAst',
-      mediaTypes: {
-        video: { context: 'outstream' },
-      },
-    }));
-
-    const valid = isValidVideoBid({});
-
-    expect(valid).to.be(false);
+  it('catches invalid outstream bids', function () {
+    const bid = {
+      requestId: '123abc'
+    };
+    const bidRequests = [{
+      bids: [{
+        bidId: '123abc',
+        bidder: 'appnexus',
+        mediaTypes: {
+          video: { context: 'outstream' }
+        }
+      }]
+    }];
+    const valid = isValidVideoBid(bid, bidRequests);
+    expect(valid).to.equal(false);
   });
 });

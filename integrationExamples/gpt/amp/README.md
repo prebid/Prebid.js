@@ -1,3 +1,10 @@
+##WARNING
+The below documented method of deploying prebid on AMP requires remote.html
+This is being deprecated on March 29th. A new method the requires Prebid Server
+is being developed, see [Prebid Server](http://github.com/prebid/prebid-server).
+
+## Old method:
+
 This README provides steps to run amp example page.
 
 Add following entries to your hosts file
