@@ -1,8 +1,7 @@
 import * as utils from '../src/utils';
 import { registerBidder } from '../src/adapters/bidderFactory';
 import { BANNER } from '../src/mediaTypes';
-
-export const URL = 'http://localhost:8067'; // '//prebid.cootlogix.com';
+export const URL = 'https://prebid.cootlogix.com';
 const BIDDER_CODE = 'vidazoo';
 const CURRENCY = 'USD';
 const TTL_SECONDS = 60 * 5;
@@ -73,7 +72,7 @@ function interpretResponse(serverResponse, request) {
   }
 
   if (sessionId) {
-    setLocalStorage(SESSION_NAME, sessionId)
+    setLocalStorage(SESSION_NAME, sessionId);
   }
 
   const { bidId, width, height } = request.data;
@@ -114,7 +113,7 @@ function getUserSyncs(syncOptions, responses) {
   if (iframeEnabled) {
     return [{
       type: 'iframe',
-      url: '//static.cootlogix.com/basev/sync/user_sync.html'
+      url: 'https://static.cootlogix.com/basev/sync/user_sync.html'
     }];
   }
 
