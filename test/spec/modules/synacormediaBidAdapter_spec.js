@@ -133,10 +133,10 @@ describe('synacormediaBidAdapter ', function () {
       auctionStart: 1553624929697,
       timeout: 700,
       refererInfo: {
-        referer: 'http://localhost:9999/test/pages/video.html?pbjs_debug=true',
+        referer: 'https://localhost:9999/test/pages/video.html?pbjs_debug=true',
         reachedTop: true,
         numIframes: 0,
-        stack: [ 'http://localhost:9999/test/pages/video.html?pbjs_debug=true' ]
+        stack: [ 'https://localhost:9999/test/pages/video.html?pbjs_debug=true' ]
       },
       start: 1553624929700
     };
@@ -197,7 +197,7 @@ describe('synacormediaBidAdapter ', function () {
       expect(req).be.an('object');
       expect(req).to.have.property('method', 'POST');
       expect(req).to.have.property('url');
-      expect(req.url).to.contain('//prebid.technoratimedia.com/openrtb/bids/prebid?');
+      expect(req.url).to.contain('https://prebid.technoratimedia.com/openrtb/bids/prebid?');
       expect(req.data).to.exist.and.to.be.an('object');
       expect(req.data.id).to.equal('xyz123');
       expect(req.data.imp).to.eql([expectedDataImp1, expectedDataImp2]);
@@ -207,7 +207,7 @@ describe('synacormediaBidAdapter ', function () {
       expect(reqVideo).be.an('object');
       expect(reqVideo).to.have.property('method', 'POST');
       expect(reqVideo).to.have.property('url');
-      expect(reqVideo.url).to.contain('//prebid.technoratimedia.com/openrtb/bids/prebid?');
+      expect(reqVideo.url).to.contain('https://prebid.technoratimedia.com/openrtb/bids/prebid?');
       expect(reqVideo.data).to.exist.and.to.be.an('object');
       expect(reqVideo.data.id).to.equal('VideoAuctionId124');
       expect(reqVideo.data.imp).to.eql([expectedDataVideo1]);
@@ -227,7 +227,7 @@ describe('synacormediaBidAdapter ', function () {
       expect(req).to.exist.and.be.an('object');
       expect(req).to.have.property('method', 'POST');
       expect(req).to.have.property('url');
-      expect(req.url).to.contain('//prebid.technoratimedia.com/openrtb/bids/prebid?');
+      expect(req.url).to.contain('https://prebid.technoratimedia.com/openrtb/bids/prebid?');
       expect(req.data.id).to.equal('xyz123');
       expect(req.data.imp).to.eql([expectedDataImp1, expectedDataImp2, {
         banner: {
@@ -254,7 +254,7 @@ describe('synacormediaBidAdapter ', function () {
       let req = spec.buildRequests([mismatchedSeatBidRequest, validBidRequest], bidderRequest);
       expect(req).to.have.property('method', 'POST');
       expect(req).to.have.property('url');
-      expect(req.url).to.contain('//prebid.technoratimedia.com/openrtb/bids/somethingelse?');
+      expect(req.url).to.contain('https://prebid.technoratimedia.com/openrtb/bids/somethingelse?');
       expect(req.data.id).to.equal('xyz123');
       expect(req.data.imp).to.eql([
         {
@@ -283,7 +283,7 @@ describe('synacormediaBidAdapter ', function () {
       let req = spec.buildRequests([badFloorBidRequest], bidderRequest);
       expect(req).to.have.property('method', 'POST');
       expect(req).to.have.property('url');
-      expect(req.url).to.contain('//prebid.technoratimedia.com/openrtb/bids/prebid?src=$$REPO_AND_VERSION$$');
+      expect(req.url).to.contain('https://prebid.technoratimedia.com/openrtb/bids/prebid?src=$$REPO_AND_VERSION$$');
       expect(req.data.id).to.equal('xyz123');
       expect(req.data.imp).to.eql([
         {
@@ -310,7 +310,7 @@ describe('synacormediaBidAdapter ', function () {
       let req = spec.buildRequests([badFloorBidRequest], bidderRequest);
       expect(req).to.have.property('method', 'POST');
       expect(req).to.have.property('url');
-      expect(req.url).to.contain('//prebid.technoratimedia.com/openrtb/bids/prebid?src=$$REPO_AND_VERSION$$');
+      expect(req.url).to.contain('https://prebid.technoratimedia.com/openrtb/bids/prebid?src=$$REPO_AND_VERSION$$');
       expect(req.data.id).to.equal('xyz123');
       expect(req.data.imp).to.eql([
         {
@@ -338,7 +338,7 @@ describe('synacormediaBidAdapter ', function () {
       let req = spec.buildRequests([newPosBidRequest], bidderRequest);
       expect(req).to.have.property('method', 'POST');
       expect(req).to.have.property('url');
-      expect(req.url).to.contain('//prebid.technoratimedia.com/openrtb/bids/prebid?src=$$REPO_AND_VERSION$$');
+      expect(req.url).to.contain('https://prebid.technoratimedia.com/openrtb/bids/prebid?src=$$REPO_AND_VERSION$$');
       expect(req.data.id).to.equal('xyz123');
       expect(req.data.imp).to.eql([
         {
@@ -365,7 +365,7 @@ describe('synacormediaBidAdapter ', function () {
       let req = spec.buildRequests([newPosBidRequest], bidderRequest);
       expect(req).to.have.property('method', 'POST');
       expect(req).to.have.property('url');
-      expect(req.url).to.contain('//prebid.technoratimedia.com/openrtb/bids/prebid?src=$$REPO_AND_VERSION$$');
+      expect(req.url).to.contain('https://prebid.technoratimedia.com/openrtb/bids/prebid?src=$$REPO_AND_VERSION$$');
       expect(req.data.id).to.equal('xyz123');
       expect(req.data.imp).to.eql([
         {
@@ -453,7 +453,7 @@ describe('synacormediaBidAdapter ', function () {
       let req = spec.buildRequests([validBidRequestVideo], bidderRequest);
       expect(req).to.have.property('method', 'POST');
       expect(req).to.have.property('url');
-      expect(req.url).to.contain('//prebid.technoratimedia.com/openrtb/bids/prebid?src=$$REPO_AND_VERSION$$');
+      expect(req.url).to.contain('https://prebid.technoratimedia.com/openrtb/bids/prebid?src=$$REPO_AND_VERSION$$');
       expect(req.data.id).to.equal('xyz123');
       expect(req.data.imp).to.eql([
         {
@@ -511,7 +511,7 @@ describe('synacormediaBidAdapter ', function () {
       let req = spec.buildRequests([validBidRequestVideo], bidderRequest);
       expect(req).to.have.property('method', 'POST');
       expect(req).to.have.property('url');
-      expect(req.url).to.contain('//prebid.technoratimedia.com/openrtb/bids/prebid?src=$$REPO_AND_VERSION$$');
+      expect(req.url).to.contain('https://prebid.technoratimedia.com/openrtb/bids/prebid?src=$$REPO_AND_VERSION$$');
       expect(req.data.id).to.equal('xyz123');
       expect(req.data.imp).to.eql([
         {
@@ -542,7 +542,7 @@ describe('synacormediaBidAdapter ', function () {
       price: 0.13,
       crid: '1022-250',
       adm: '<script src=\"//uat-net.technoratimedia.com/openrtb/tags?ID=k5JkFVQ1RJT05fSU1QX0lEPXYyZjczN&AUCTION_PRICE=${AUCTION_PRICE}\"></script>',
-      nurl: '//uat-net.technoratimedia.com/openrtb/tags?ID=k5JkFVQ1RJT05fSU1QX0lEPXYyZjczN&AUCTION_PRICE=${AUCTION_PRICE}'
+      nurl: 'https://uat-net.technoratimedia.com/openrtb/tags?ID=k5JkFVQ1RJT05fSU1QX0lEPXYyZjczN&AUCTION_PRICE=${AUCTION_PRICE}'
     };
     let bidResponse2 = {
       id: '10865933907263800~9999~0',
@@ -550,7 +550,7 @@ describe('synacormediaBidAdapter ', function () {
       price: 1.99,
       crid: '9993-013',
       adm: '<script src=\"//uat-net.technoratimedia.com/openrtb/tags?ID=OTk5OX4wJkFVQ1RJT05fU0VBVF9JR&AUCTION_PRICE=${AUCTION_PRICE}\"></script>',
-      nurl: '//uat-net.technoratimedia.com/openrtb/tags?ID=OTk5OX4wJkFVQ1RJT05fU0VBVF9JR&AUCTION_PRICE=${AUCTION_PRICE}'
+      nurl: 'https://uat-net.technoratimedia.com/openrtb/tags?ID=OTk5OX4wJkFVQ1RJT05fU0VBVF9JR&AUCTION_PRICE=${AUCTION_PRICE}'
     };
 
     let serverResponse;
@@ -685,7 +685,7 @@ describe('synacormediaBidAdapter ', function () {
       expect(usersyncs).to.be.an('array').that.is.not.empty;
       expect(usersyncs[0]).to.have.property('type', 'iframe');
       expect(usersyncs[0]).to.have.property('url');
-      expect(usersyncs[0].url).to.contain('//ad-cdn.technoratimedia.com/html/usersync.html');
+      expect(usersyncs[0].url).to.contain('https://ad-cdn.technoratimedia.com/html/usersync.html');
     });
 
     it('should not return a usersync when iframes are not enabled', function () {

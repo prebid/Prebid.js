@@ -108,7 +108,7 @@ describe('rtbdemandAdapter', function () {
 
     it('sends bid request to ENDPOINT via GET', function () {
       const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
-      expect(request.url).to.equal('//bidding.rtbdemand.com/hb');
+      expect(request.url).to.equal('https://bidding.rtbdemand.com/hb');
       expect(request.method).to.equal('GET');
     });
   })
@@ -159,7 +159,7 @@ describe('rtbdemandAdapter', function () {
   });
 
   describe('user sync', function () {
-    const syncUrl = '//bidding.rtbdemand.com/delivery/matches.php?type=iframe';
+    const syncUrl = 'https://bidding.rtbdemand.com/delivery/matches.php?type=iframe';
 
     it('should register the sync iframe', function () {
       expect(spec.getUserSyncs({})).to.be.undefined;
