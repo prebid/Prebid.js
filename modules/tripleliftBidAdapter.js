@@ -82,7 +82,7 @@ export const tripleliftAdapterSpec = {
       syncEndpoint = utils.tryAppendQueryString(syncEndpoint, 'cmp_cs', consentString);
     }
 
-    if (typeof usPrivacy === 'string' && usPrivacy.length > 0) {
+    if (usPrivacy) {
       syncEndpoint = utils.tryAppendQueryString(syncEndpoint, 'us_privacy', usPrivacy);
     }
 
