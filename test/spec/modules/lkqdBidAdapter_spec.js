@@ -62,7 +62,8 @@ describe('LKQD Bid Adapter Test', () => {
         'bidder': 'lkqd',
         'params': {
           'siteId': '662921',
-          'placementId': '263'
+          'placementId': '263',
+          'schain': '1.0,1!exchange1.com,1234%21abcd,1,bid-request-1,publisher%2c%20Inc.,publisher.com'
         },
         'adUnitCode': 'lkqd',
         'sizes': [640, 480],
@@ -97,12 +98,14 @@ describe('LKQD Bid Adapter Test', () => {
       expect(r1).to.not.have.string('&contenttitle=');
       expect(r1).to.not.have.string('&contentlength=');
       expect(r1).to.not.have.string('&contenturl=');
+      expect(r1).to.not.have.string('&schain=');
       const r2 = requests[1].data;
       expect(r2).to.not.have.string('&dnt=');
       expect(r2).to.not.have.string('&contentid=');
       expect(r2).to.not.have.string('&contenttitle=');
       expect(r2).to.not.have.string('&contentlength=');
       expect(r2).to.not.have.string('&contenturl=');
+      expect(r2).to.not.have.string('&schain=');
     });
 
     it('should handle single size request', () => {
@@ -113,6 +116,7 @@ describe('LKQD Bid Adapter Test', () => {
       expect(r1).to.have.string('&sid=662921&');
       expect(r1).to.have.string('&width=640&');
       expect(r1).to.have.string('&height=480&');
+      expect(r1).to.have.string('&schain=1.0,1!exchange1.com,1234%21abcd,1,bid-request-1,publisher%2c%20Inc.,publisher.com&');
     });
 
     it('sends bid request to ENDPOINT via GET', () => {

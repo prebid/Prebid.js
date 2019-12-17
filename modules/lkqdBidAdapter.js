@@ -164,6 +164,9 @@ function buildRequests(validBidRequests, bidderRequest) {
       if (bidRequest.params.hasOwnProperty('contentUrl') && bidRequest.params.contentUrl != null) {
         sspData.contenturl = bidRequest.params.contentUrl;
       }
+      if (bidRequest.params.hasOwnProperty('schain') && bidRequest.params.schain) {
+        sspData.schain = bidRequest.params.schain;
+      }
 
       // random number to prevent caching
       sspData.rnd = Math.floor(Math.random() * 999999999);
