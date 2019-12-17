@@ -96,9 +96,9 @@ function buildRequests(validBidRequests, bidderRequest) {
       s2sParams.AV_WIDTH = playerWidth;
       s2sParams.AV_HEIGHT = playerHeight;
       s2sParams.s2s = '1';
-      s2sParams.bidId = bidRequest.bidId;
       s2sParams.bidWidth = playerWidth;
       s2sParams.bidHeight = playerHeight;
+      s2sParams.bidId = bidRequest.bidId;
 
       if (bidderRequest && bidderRequest.gdprConsent) {
         if (bidderRequest.gdprConsent.gdprApplies) {
