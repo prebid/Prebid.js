@@ -12,7 +12,7 @@ const ADD_AD_UNITS = CONSTANTS.EVENTS.ADD_AD_UNITS;
 
 const AnalyticsAdapter = require('src/AnalyticsAdapter').default;
 const config = {
-  url: 'http://localhost:9999/endpoint',
+  url: 'https://localhost:9999/endpoint',
   analyticsType: 'endpoint'
 };
 

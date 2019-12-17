@@ -55,7 +55,7 @@ describe('MyTarget Adapter', function() {
 
     it('should build single POST request for multiple bids', function() {
       expect(bidRequest.method).to.equal('POST');
-      expect(bidRequest.url).to.equal('//ad.mail.ru/hbid_prebid/');
+      expect(bidRequest.url).to.equal('https://ad.mail.ru/hbid_prebid/');
       expect(bidRequest.data).to.be.an('object');
       expect(bidRequest.data.places).to.be.an('array');
       expect(bidRequest.data.places).to.have.lengthOf(2);
