@@ -7,7 +7,7 @@ import {Renderer} from '../src/Renderer';
 
 const SUPPORTED_AD_TYPES = [BANNER, VIDEO];
 const BIDDER_CODE = 'envivo';
-const DOMAIN = 'http://ad.nvivo.tv/';
+const DOMAIN = 'https://ad.nvivo.tv/';
 const RENDERER_URL = '//acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
 
 function isBidRequestValid(bid) {
