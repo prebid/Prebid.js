@@ -74,7 +74,7 @@ function createRenderer(bidAd, url) {
     url: url,
     loaded: false,
     config: {'player_height': bidAd.height, 'player_width': bidAd.width},
-    bidAd.adUnitCode
+    adUnitCode: bidAd.adUnitCode
   });
   try {
     renderer.setRender(outstreamRender);
