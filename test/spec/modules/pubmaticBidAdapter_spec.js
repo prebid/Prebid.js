@@ -719,9 +719,23 @@ describe('PubMatic adapter', function () {
         expect(request.method).to.equal('POST');
   		});
 
+      it('test flag not sent when pubmaticTest=true is absent in page url', function() {
+        let request = spec.buildRequests(bidRequests);
+        let data = JSON.parse(request.data);
+        expect(data.test).to.equal(undefined);
+      });
+
+      it('test flag set to 1 when pubmaticTest=true is present in page url', function() {
+        window.location.href += '#pubmaticTest=true';
+        // now all the test cases below will have window.location.href with #pubmaticTest=true
+        let request = spec.buildRequests(bidRequests);
+        let data = JSON.parse(request.data);
+        expect(data.test).to.equal(1);
+      });
+
   		it('Request params check', function () {
-  		  let request = spec.buildRequests(bidRequests);
-  		  let data = JSON.parse(request.data);
+        let request = spec.buildRequests(bidRequests);
+        let data = JSON.parse(request.data);
   		  expect(data.at).to.equal(1); // auction type
   		  expect(data.cur[0]).to.equal('USD'); // currency
   		  expect(data.site.domain).to.be.a('string'); // domain should be set
@@ -737,6 +751,7 @@ describe('PubMatic adapter', function () {
   		  expect(data.user.geo.lon).to.equal(parseFloat(bidRequests[0].params.lon)); // Lognitude
   		  expect(data.ext.wrapper.wv).to.equal($$REPO_AND_VERSION$$); // Wrapper Version
   		  expect(data.ext.wrapper.transactionId).to.equal(bidRequests[0].transactionId); // Prebid TransactionId
+        expect(data.source.tid).to.equal(bidRequests[0].transactionId); // Prebid TransactionId
   		  expect(data.ext.wrapper.wiid).to.equal(bidRequests[0].params.wiid); // OpenWrap: Wrapper Impression ID
   		  expect(data.ext.wrapper.profile).to.equal(parseInt(bidRequests[0].params.profId)); // OpenWrap: Wrapper Profile ID
   		  expect(data.ext.wrapper.version).to.equal(parseInt(bidRequests[0].params.verId)); // OpenWrap: Wrapper Profile Version ID
@@ -982,6 +997,43 @@ describe('PubMatic adapter', function () {
   		  expect(data.imp[0].ext.pmZoneId).to.equal(bidRequests[0].params.pmzoneid.split(',').slice(0, 50).map(id => id.trim()).join()); // pmzoneid
   		});
 
+      it('Request params check with USP/CCPA Consent', function () {
+        let bidRequest = {
+          uspConsent: '1NYN'
+        };
+        let request = spec.buildRequests(bidRequests, bidRequest);
+        let data = JSON.parse(request.data);
+        expect(data.regs.ext.us_privacy).to.equal('1NYN');// USP/CCPAs
+        expect(data.at).to.equal(1); // auction type
+        expect(data.cur[0]).to.equal('USD'); // currency
+        expect(data.site.domain).to.be.a('string'); // domain should be set
+        expect(data.site.page).to.equal(bidRequests[0].params.kadpageurl); // forced pageURL
+        expect(data.site.publisher.id).to.equal(bidRequests[0].params.publisherId); // publisher Id
+        expect(data.user.yob).to.equal(parseInt(bidRequests[0].params.yob)); // YOB
+        expect(data.user.gender).to.equal(bidRequests[0].params.gender); // Gender
+        expect(data.device.geo.lat).to.equal(parseFloat(bidRequests[0].params.lat)); // Latitude
+        expect(data.device.geo.lon).to.equal(parseFloat(bidRequests[0].params.lon)); // Lognitude
+        expect(data.user.geo.lat).to.equal(parseFloat(bidRequests[0].params.lat)); // Latitude
+        expect(data.user.geo.lon).to.equal(parseFloat(bidRequests[0].params.lon)); // Lognitude
+        expect(data.ext.wrapper.wv).to.equal($$REPO_AND_VERSION$$); // Wrapper Version
+        expect(data.ext.wrapper.transactionId).to.equal(bidRequests[0].transactionId); // Prebid TransactionId
+        expect(data.ext.wrapper.wiid).to.equal(bidRequests[0].params.wiid); // OpenWrap: Wrapper Impression ID
+        expect(data.ext.wrapper.profile).to.equal(parseInt(bidRequests[0].params.profId)); // OpenWrap: Wrapper Profile ID
+        expect(data.ext.wrapper.version).to.equal(parseInt(bidRequests[0].params.verId)); // OpenWrap: Wrapper Profile Version ID
+
+        expect(data.imp[0].id).to.equal(bidRequests[0].bidId); // Prebid bid id is passed as id
+        expect(data.imp[0].bidfloor).to.equal(parseFloat(bidRequests[0].params.kadfloor)); // kadfloor
+        expect(data.imp[0].tagid).to.equal('/15671365/DMDemo'); // tagid
+        expect(data.imp[0].banner.w).to.equal(300); // width
+        expect(data.imp[0].banner.h).to.equal(250); // height
+        expect(data.imp[0].ext.pmZoneId).to.equal(bidRequests[0].params.pmzoneid.split(',').slice(0, 50).map(id => id.trim()).join()); // pmzoneid
+
+        // second request without USP/CCPA
+        let request2 = spec.buildRequests(bidRequests, {});
+        let data2 = JSON.parse(request2.data);
+        expect(data2.regs).to.equal(undefined);// USP/CCPAs
+      });
+
       it('Request should have digitrust params', function() {
         window.DigiTrust = {
           getUser: function () {
@@ -1170,6 +1222,46 @@ describe('PubMatic adapter', function () {
           expect(data.user.eids).to.deep.equal(undefined);
           // should have called DigiTrust.getUser() once
           expect(window.DigiTrust.getUser.calledOnce).to.equal(true);
+        });
+
+        it('should NOT include coppa flag in bid request if coppa config is not present', () => {
+          const request = spec.buildRequests(bidRequests, {});
+          let data = JSON.parse(request.data);
+          if (data.regs) {
+            // in case GDPR is set then data.regs will exist
+            expect(data.regs.coppa).to.equal(undefined);
+          } else {
+            expect(data.regs).to.equal(undefined);
+          }
+        });
+
+        it('should include coppa flag in bid request if coppa is set to true', () => {
+          sandbox.stub(config, 'getConfig').callsFake(key => {
+            const config = {
+              'coppa': true
+            };
+            return config[key];
+          });
+          const request = spec.buildRequests(bidRequests, {});
+          let data = JSON.parse(request.data);
+          expect(data.regs.coppa).to.equal(1);
+        });
+
+        it('should NOT include coppa flag in bid request if coppa is set to false', () => {
+          sandbox.stub(config, 'getConfig').callsFake(key => {
+            const config = {
+              'coppa': false
+            };
+            return config[key];
+          });
+          const request = spec.buildRequests(bidRequests, {});
+          let data = JSON.parse(request.data);
+          if (data.regs) {
+            // in case GDPR is set then data.regs will exist
+            expect(data.regs.coppa).to.equal(undefined);
+          } else {
+            expect(data.regs).to.equal(undefined);
+          }
         });
       });
 
@@ -1473,6 +1565,296 @@ describe('PubMatic adapter', function () {
           let request = spec.buildRequests(bidRequests, {});
           let data = JSON.parse(request.data);
           expect(data.user.eids).to.deep.equal(undefined);
+        });
+      });
+
+      describe('UserIds from request', function() {
+        describe('pubcommon Id', function() {
+          it('send the pubcommon id if it is present', function() {
+            bidRequests[0].userId = {};
+            bidRequests[0].userId.pubcid = 'pub_common_user_id';
+            let request = spec.buildRequests(bidRequests, {});
+            let data = JSON.parse(request.data);
+            expect(data.user.eids).to.deep.equal([{
+              'source': 'pubcid.org',
+              'uids': [{
+                'id': 'pub_common_user_id',
+                'atype': 1
+              }]
+            }]);
+          });
+
+          it('do not pass if not string', function() {
+            bidRequests[0].userId = {};
+            bidRequests[0].userId.pubcid = 1;
+            let request = spec.buildRequests(bidRequests, {});
+            let data = JSON.parse(request.data);
+            expect(data.user.eids).to.equal(undefined);
+            bidRequests[0].userId.pubcid = [];
+            request = spec.buildRequests(bidRequests, {});
+            data = JSON.parse(request.data);
+            expect(data.user.eids).to.equal(undefined);
+            bidRequests[0].userId.pubcid = null;
+            request = spec.buildRequests(bidRequests, {});
+            data = JSON.parse(request.data);
+            expect(data.user.eids).to.equal(undefined);
+            bidRequests[0].userId.pubcid = {};
+            request = spec.buildRequests(bidRequests, {});
+            data = JSON.parse(request.data);
+            expect(data.user.eids).to.equal(undefined);
+          });
+        });
+
+        describe('Digitrust Id', function() {
+          it('send the digitrust id if it is present', function() {
+            bidRequests[0].userId = {};
+            bidRequests[0].userId.digitrustid = {data: {id: 'digitrust_user_id'}};
+            let request = spec.buildRequests(bidRequests, {});
+            let data = JSON.parse(request.data);
+            expect(data.user.eids).to.deep.equal([{
+              'source': 'digitru.st',
+              'uids': [{
+                'id': 'digitrust_user_id',
+                'atype': 1
+              }]
+            }]);
+          });
+
+          it('do not pass if not string', function() {
+            bidRequests[0].userId = {};
+            bidRequests[0].userId.digitrustid = {data: {id: 1}};
+            let request = spec.buildRequests(bidRequests, {});
+            let data = JSON.parse(request.data);
+            expect(data.user.eids).to.equal(undefined);
+            bidRequests[0].userId.digitrustid = {data: {id: []}};
+            request = spec.buildRequests(bidRequests, {});
+            data = JSON.parse(request.data);
+            expect(data.user.eids).to.equal(undefined);
+            bidRequests[0].userId.digitrustid = {data: {id: null}};
+            request = spec.buildRequests(bidRequests, {});
+            data = JSON.parse(request.data);
+            expect(data.user.eids).to.equal(undefined);
+            bidRequests[0].userId.digitrustid = {data: {id: {}}};
+            request = spec.buildRequests(bidRequests, {});
+            data = JSON.parse(request.data);
+            expect(data.user.eids).to.equal(undefined);
+          });
+        });
+
+        describe('ID5 Id', function() {
+          it('send the id5 id if it is present', function() {
+            bidRequests[0].userId = {};
+            bidRequests[0].userId.id5id = 'id5-user-id';
+            let request = spec.buildRequests(bidRequests, {});
+            let data = JSON.parse(request.data);
+            expect(data.user.eids).to.deep.equal([{
+              'source': 'id5-sync.com',
+              'uids': [{
+                'id': 'id5-user-id',
+                'atype': 1
+              }]
+            }]);
+          });
+
+          it('do not pass if not string', function() {
+            bidRequests[0].userId = {};
+            bidRequests[0].userId.id5id = 1;
+            let request = spec.buildRequests(bidRequests, {});
+            let data = JSON.parse(request.data);
+            expect(data.user.eids).to.equal(undefined);
+            bidRequests[0].userId.id5id = [];
+            request = spec.buildRequests(bidRequests, {});
+            data = JSON.parse(request.data);
+            expect(data.user.eids).to.equal(undefined);
+            bidRequests[0].userId.id5id = null;
+            request = spec.buildRequests(bidRequests, {});
+            data = JSON.parse(request.data);
+            expect(data.user.eids).to.equal(undefined);
+            bidRequests[0].userId.id5id = {};
+            request = spec.buildRequests(bidRequests, {});
+            data = JSON.parse(request.data);
+            expect(data.user.eids).to.equal(undefined);
+          });
+        });
+
+        describe('Criteo Id', function() {
+          it('send the criteo id if it is present', function() {
+            bidRequests[0].userId = {};
+            bidRequests[0].userId.criteoId = 'criteo-user-id';
+            let request = spec.buildRequests(bidRequests, {});
+            let data = JSON.parse(request.data);
+            expect(data.user.eids).to.deep.equal([{
+              'source': 'criteo.com',
+              'uids': [{
+                'id': 'criteo-user-id',
+                'atype': 1
+              }]
+            }]);
+          });
+
+          it('do not pass if not string', function() {
+            bidRequests[0].userId = {};
+            bidRequests[0].userId.criteoId = 1;
+            let request = spec.buildRequests(bidRequests, {});
+            let data = JSON.parse(request.data);
+            expect(data.user.eids).to.equal(undefined);
+            bidRequests[0].userId.criteoId = [];
+            request = spec.buildRequests(bidRequests, {});
+            data = JSON.parse(request.data);
+            expect(data.user.eids).to.equal(undefined);
+            bidRequests[0].userId.criteoId = null;
+            request = spec.buildRequests(bidRequests, {});
+            data = JSON.parse(request.data);
+            expect(data.user.eids).to.equal(undefined);
+            bidRequests[0].userId.criteoId = {};
+            request = spec.buildRequests(bidRequests, {});
+            data = JSON.parse(request.data);
+            expect(data.user.eids).to.equal(undefined);
+          });
+        });
+
+        describe('IdentityLink Id', function() {
+          it('send the identity-link id if it is present', function() {
+            bidRequests[0].userId = {};
+            bidRequests[0].userId.idl_env = 'identity-link-user-id';
+            let request = spec.buildRequests(bidRequests, {});
+            let data = JSON.parse(request.data);
+            expect(data.user.eids).to.deep.equal([{
+              'source': 'liveramp.com',
+              'uids': [{
+                'id': 'identity-link-user-id',
+                'atype': 1
+              }]
+            }]);
+          });
+
+          it('do not pass if not string', function() {
+            bidRequests[0].userId = {};
+            bidRequests[0].userId.idl_env = 1;
+            let request = spec.buildRequests(bidRequests, {});
+            let data = JSON.parse(request.data);
+            expect(data.user.eids).to.equal(undefined);
+            bidRequests[0].userId.idl_env = [];
+            request = spec.buildRequests(bidRequests, {});
+            data = JSON.parse(request.data);
+            expect(data.user.eids).to.equal(undefined);
+            bidRequests[0].userId.idl_env = null;
+            request = spec.buildRequests(bidRequests, {});
+            data = JSON.parse(request.data);
+            expect(data.user.eids).to.equal(undefined);
+            bidRequests[0].userId.idl_env = {};
+            request = spec.buildRequests(bidRequests, {});
+            data = JSON.parse(request.data);
+            expect(data.user.eids).to.equal(undefined);
+          });
+        });
+
+        describe('LiveIntent Id', function() {
+          it('send the LiveIntent id if it is present', function() {
+            bidRequests[0].userId = {};
+            bidRequests[0].userId.lipb = { lipbid: 'live-intent-user-id' };
+            let request = spec.buildRequests(bidRequests, {});
+            let data = JSON.parse(request.data);
+            expect(data.user.eids).to.deep.equal([{
+              'source': 'liveintent.com',
+              'uids': [{
+                'id': 'live-intent-user-id',
+                'atype': 1
+              }]
+            }]);
+          });
+
+          it('do not pass if not string', function() {
+            bidRequests[0].userId = {};
+            bidRequests[0].userId.lipb = { lipbid: 1 };
+            let request = spec.buildRequests(bidRequests, {});
+            let data = JSON.parse(request.data);
+            expect(data.user.eids).to.equal(undefined);
+            bidRequests[0].userId.lipb.lipbid = [];
+            request = spec.buildRequests(bidRequests, {});
+            data = JSON.parse(request.data);
+            expect(data.user.eids).to.equal(undefined);
+            bidRequests[0].userId.lipb.lipbid = null;
+            request = spec.buildRequests(bidRequests, {});
+            data = JSON.parse(request.data);
+            expect(data.user.eids).to.equal(undefined);
+            bidRequests[0].userId.lipb.lipbid = {};
+            request = spec.buildRequests(bidRequests, {});
+            data = JSON.parse(request.data);
+            expect(data.user.eids).to.equal(undefined);
+          });
+        });
+
+        describe('Parrable Id', function() {
+          it('send the Parrable id if it is present', function() {
+            bidRequests[0].userId = {};
+            bidRequests[0].userId.parrableid = 'parrable-user-id';
+            let request = spec.buildRequests(bidRequests, {});
+            let data = JSON.parse(request.data);
+            expect(data.user.eids).to.deep.equal([{
+              'source': 'parrable.com',
+              'uids': [{
+                'id': 'parrable-user-id',
+                'atype': 1
+              }]
+            }]);
+          });
+
+          it('do not pass if not string', function() {
+            bidRequests[0].userId = {};
+            bidRequests[0].userId.parrableid = 1;
+            let request = spec.buildRequests(bidRequests, {});
+            let data = JSON.parse(request.data);
+            expect(data.user.eids).to.equal(undefined);
+            bidRequests[0].userId.parrableid = [];
+            request = spec.buildRequests(bidRequests, {});
+            data = JSON.parse(request.data);
+            expect(data.user.eids).to.equal(undefined);
+            bidRequests[0].userId.parrableid = null;
+            request = spec.buildRequests(bidRequests, {});
+            data = JSON.parse(request.data);
+            expect(data.user.eids).to.equal(undefined);
+            bidRequests[0].userId.parrableid = {};
+            request = spec.buildRequests(bidRequests, {});
+            data = JSON.parse(request.data);
+            expect(data.user.eids).to.equal(undefined);
+          });
+        });
+
+        describe('Britepool Id', function() {
+          it('send the Britepool id if it is present', function() {
+            bidRequests[0].userId = {};
+            bidRequests[0].userId.britepoolid = 'britepool-user-id';
+            let request = spec.buildRequests(bidRequests, {});
+            let data = JSON.parse(request.data);
+            expect(data.user.eids).to.deep.equal([{
+              'source': 'britepool.com',
+              'uids': [{
+                'id': 'britepool-user-id',
+                'atype': 1
+              }]
+            }]);
+          });
+
+          it('do not pass if not string', function() {
+            bidRequests[0].userId = {};
+            bidRequests[0].userId.britepoolid = 1;
+            let request = spec.buildRequests(bidRequests, {});
+            let data = JSON.parse(request.data);
+            expect(data.user.eids).to.equal(undefined);
+            bidRequests[0].userId.britepoolid = [];
+            request = spec.buildRequests(bidRequests, {});
+            data = JSON.parse(request.data);
+            expect(data.user.eids).to.equal(undefined);
+            bidRequests[0].userId.britepoolid = null;
+            request = spec.buildRequests(bidRequests, {});
+            data = JSON.parse(request.data);
+            expect(data.user.eids).to.equal(undefined);
+            bidRequests[0].userId.britepoolid = {};
+            request = spec.buildRequests(bidRequests, {});
+            data = JSON.parse(request.data);
+            expect(data.user.eids).to.equal(undefined);
+          });
         });
       });
 
@@ -2112,6 +2494,78 @@ describe('PubMatic adapter', function () {
         let response = spec.interpretResponse(nativeBidResponse, request);
 
         expect(response[0].mediaType).to.equal('native');
+      });
+    });
+
+    describe('getUserSyncs', function() {
+      const syncurl = 'https://ads.pubmatic.com/AdServer/js/showad.js#PIX&kdntuid=1&p=5670';
+      let sandbox;
+      beforeEach(function () {
+        sandbox = sinon.sandbox.create();
+      });
+      afterEach(function() {
+        sandbox.restore();
+      })
+
+      it('execute only if iframeEnabled', function() {
+        expect(spec.getUserSyncs({ iframeEnabled: true }, {}, undefined, undefined)).to.deep.equal([{
+          type: 'iframe', url: syncurl
+        }]);
+        expect(spec.getUserSyncs({ iframeEnabled: false }, {}, undefined, undefined)).to.equal(undefined);
+      });
+
+      it('CCPA/USP', function() {
+        expect(spec.getUserSyncs({ iframeEnabled: true }, {}, undefined, '1NYN')).to.deep.equal([{
+          type: 'iframe', url: `${syncurl}&us_privacy=1NYN`
+        }]);
+      });
+
+      it('GDPR', function() {
+        expect(spec.getUserSyncs({ iframeEnabled: true }, {}, {gdprApplies: true, consentString: 'foo'}, undefined)).to.deep.equal([{
+          type: 'iframe', url: `${syncurl}&gdpr=1&gdpr_consent=foo`
+        }]);
+        expect(spec.getUserSyncs({ iframeEnabled: true }, {}, {gdprApplies: false, consentString: 'foo'}, undefined)).to.deep.equal([{
+          type: 'iframe', url: `${syncurl}&gdpr=0&gdpr_consent=foo`
+        }]);
+        expect(spec.getUserSyncs({ iframeEnabled: true }, {}, {gdprApplies: true, consentString: undefined}, undefined)).to.deep.equal([{
+          type: 'iframe', url: `${syncurl}&gdpr=1&gdpr_consent=`
+        }]);
+      });
+
+      it('COPPA: true', function() {
+        sandbox.stub(config, 'getConfig').callsFake(key => {
+          const config = {
+            'coppa': true
+          };
+          return config[key];
+        });
+        expect(spec.getUserSyncs({ iframeEnabled: true }, {}, undefined, undefined)).to.deep.equal([{
+          type: 'iframe', url: `${syncurl}&coppa=1`
+        }]);
+      });
+
+      it('COPPA: false', function() {
+        sandbox.stub(config, 'getConfig').callsFake(key => {
+          const config = {
+            'coppa': false
+          };
+          return config[key];
+        });
+        expect(spec.getUserSyncs({ iframeEnabled: true }, {}, undefined, undefined)).to.deep.equal([{
+          type: 'iframe', url: `${syncurl}`
+        }]);
+      });
+
+      it('GDPR + COPPA:true + CCPA/USP', function() {
+        sandbox.stub(config, 'getConfig').callsFake(key => {
+          const config = {
+            'coppa': true
+          };
+          return config[key];
+        });
+        expect(spec.getUserSyncs({ iframeEnabled: true }, {}, {gdprApplies: true, consentString: 'foo'}, '1NYN')).to.deep.equal([{
+          type: 'iframe', url: `${syncurl}&gdpr=1&gdpr_consent=foo&us_privacy=1NYN&coppa=1`
+        }]);
       });
     });
   });

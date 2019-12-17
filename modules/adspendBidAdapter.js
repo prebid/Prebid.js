@@ -5,8 +5,8 @@ import { registerBidder } from '../src/adapters/bidderFactory';
 import { BANNER } from '../src/mediaTypes';
 
 const BIDDER_CODE = 'adspend';
-const BID_URL = '//rtb.com.ru/headerbidding-bid';
-const SYNC_URL = '//rtb.com.ru/headerbidding-sync?uid={UUID}';
+const BID_URL = 'https://rtb.com.ru/headerbidding-bid';
+const SYNC_URL = 'https://rtb.com.ru/headerbidding-sync?uid={UUID}';
 const COOKIE_NAME = 'hb-adspend-id';
 const UUID_LEN = 36;
 const TTL = 10000;

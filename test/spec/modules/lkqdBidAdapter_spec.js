@@ -161,7 +161,7 @@ https://t.lkqd.net/t?ev=3&tsid=662921&env=3&cb=761218674439&format=0&did=2&osid=
 ]]>
 </Impression>
 <Impression>
-<![CDATA[ http://t.lkqd.net/t?ev=16&env=1&pid=2&sid=71 ]]>
+<![CDATA[ https//t.lkqd.net/t?ev=16&env=1&pid=2&sid=71 ]]>
 </Impression>
 <Impression>
 <![CDATA[
@@ -174,7 +174,7 @@ https://t.lkqd.net/t?ev=9&tsid=662921&env=3&cb=761218674439&format=0&did=2&osid=
 ]]>
 </Error>
 <Error>
-<![CDATA[ http://t.lkqd.net/t?ev=17&env=1&pid=2&sid=71 ]]>
+<![CDATA[ https//t.lkqd.net/t?ev=17&env=1&pid=2&sid=71 ]]>
 </Error>
 <Creatives>
 <Creative>
@@ -182,7 +182,7 @@ https://t.lkqd.net/t?ev=9&tsid=662921&env=3&cb=761218674439&format=0&did=2&osid=
 <Duration>00:00:30</Duration>
 <TrackingEvents>
 <Tracking event="firstQuartile">
-<![CDATA[ http://t.lkqd.net/t?ev=18&env=1&pid=2&sid=71 ]]>
+<![CDATA[ https//t.lkqd.net/t?ev=18&env=1&pid=2&sid=71 ]]>
 </Tracking>
 <Tracking event="firstQuartile">
 <![CDATA[
@@ -195,19 +195,19 @@ https://test.com/?iamatrackingpixelforcloudwatchiamatrackingpixelforcloudwatchia
 ]]>
 </Tracking>
 <Tracking event="pause">
-<![CDATA[ http://t.lkqd.net/t?ev=18&env=1&pid=2&sid=71 ]]>
+<![CDATA[ https//t.lkqd.net/t?ev=18&env=1&pid=2&sid=71 ]]>
 </Tracking>
 <Tracking event="fullscreen">
-<![CDATA[ http://t.lkqd.net/t?ev=18&env=1&pid=2&sid=71 ]]>
+<![CDATA[ https//t.lkqd.net/t?ev=18&env=1&pid=2&sid=71 ]]>
 </Tracking>
 <Tracking event="mute">
-<![CDATA[ http://t.lkqd.net/t?ev=18&env=1&pid=2&sid=71 ]]>
+<![CDATA[ https//t.lkqd.net/t?ev=18&env=1&pid=2&sid=71 ]]>
 </Tracking>
 <Tracking event="unmute">
-<![CDATA[ http://t.lkqd.net/t?ev=18&env=1&pid=2&sid=71 ]]>
+<![CDATA[ https//t.lkqd.net/t?ev=18&env=1&pid=2&sid=71 ]]>
 </Tracking>
 <Tracking event="complete">
-<![CDATA[ http://t.lkqd.net/t?ev=18&env=1&pid=2&sid=71 ]]>
+<![CDATA[ https//t.lkqd.net/t?ev=18&env=1&pid=2&sid=71 ]]>
 </Tracking>
 <Tracking event="complete">
 <![CDATA[
@@ -220,7 +220,7 @@ https://test.com/?iamatrackingpixelforcloudwatchiamatrackingpixelforcloudwatchia
 ]]>
 </Tracking>
 <Tracking event="thirdQuartile">
-<![CDATA[ http://t.lkqd.net/t?ev=18&env=1&pid=2&sid=71 ]]>
+<![CDATA[ https//t.lkqd.net/t?ev=18&env=1&pid=2&sid=71 ]]>
 </Tracking>
 <Tracking event="thirdQuartile">
 <![CDATA[
@@ -233,7 +233,7 @@ https://test.com/?iamatrackingpixelforcloudwatchiamatrackingpixelforcloudwatchia
 ]]>
 </Tracking>
 <Tracking event="midpoint">
-<![CDATA[ http://t.lkqd.net/t?ev=18&env=1&pid=2&sid=71 ]]>
+<![CDATA[ https//t.lkqd.net/t?ev=18&env=1&pid=2&sid=71 ]]>
 </Tracking>
 <Tracking event="midpoint">
 <![CDATA[
@@ -246,7 +246,7 @@ https://test.com/?iamatrackingpixelforcloudwatchiamatrackingpixelforcloudwatchia
 ]]>
 </Tracking>
 <Tracking event="start">
-<![CDATA[ http://t.lkqd.net/t?ev=18&env=1&pid=2&sid=71 ]]>
+<![CDATA[ https//t.lkqd.net/t?ev=18&env=1&pid=2&sid=71 ]]>
 </Tracking>
 <Tracking event="start">
 <![CDATA[
@@ -261,7 +261,7 @@ https://test.com/?iamatrackingpixelforcloudwatchiamatrackingpixelforcloudwatchia
 </TrackingEvents>
 <VideoClicks>
 <ClickThrough>
-<![CDATA[ http://www.lkqd.com/ ]]>
+<![CDATA[ https//www.lkqd.com/ ]]>
 </ClickThrough>
 <ClickTracking>
 <![CDATA[
@@ -269,7 +269,7 @@ https://t.lkqd.net/t?ev=8&tsid=662921&env=3&cb=761218674439&format=0&did=2&osid=
 ]]>
 </ClickTracking>
 <ClickTracking>
-<![CDATA[ http://t.lkqd.net/t?ev=18&env=1&pid=2&sid=71 ]]>
+<![CDATA[ https//t.lkqd.net/t?ev=18&env=1&pid=2&sid=71 ]]>
 </ClickTracking>
 <ClickTracking>
 <![CDATA[
@@ -296,7 +296,7 @@ https://creative.lkqd.net/internal/lkqd_300x250.mp4
 <Companion width="300" height="250" id="medium_rectangle">
 <HTMLResource>
 <![CDATA[
-<a href="http://www.lkqd.com/" border="0" target="_blank"><img style="border:0; width:300px; height:250px;" src="https://ad.lkqd.net/serve/87123789f4ede3dcb692a277cff145ad.jpg"/></a>
+<a href="https://www.lkqd.com/" border="0" target="_blank"><img style="border:0; width:300px; height:250px;" src="https://ad.lkqd.net/serve/87123789f4ede3dcb692a277cff145ad.jpg"/></a>
 ]]>
 </HTMLResource>
 </Companion>
