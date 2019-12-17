@@ -64,23 +64,6 @@ export const spec = {
         type: pixelType,
         url: url
       }];
-
-      function generateDefaultSyncUrl(gdprConsent, uspConsent){
-        let url = 'https://u.openx.net/w/1.0/pd';
-        let queryParamStrings = [];
-
-        if (gdprConsent) {
-          queryParamStrings.push('gdpr=' + (gdprConsent.gdprApplies ? 1 : 0));
-          queryParamStrings.push('gdpr_consent=' + encodeURIComponent(gdprConsent.consentString || ''));
-        }
-
-        // CCPA
-        if (uspConsent) {
-          queryParamStrings.push('us_privacy=' + encodeURIComponent(uspConsent));
-        }
-
-        return `${url}?${queryParamStrings.join('&')}`;
-      }
     }
   },
   transformBidParams: function(params, isOpenRtb) {
@@ -90,6 +73,23 @@ export const spec = {
     }, params);
   }
 };
+
+function generateDefaultSyncUrl(gdprConsent, uspConsent) {
+  let url = 'https://u.openx.net/w/1.0/pd';
+  let queryParamStrings = [];
+
+  if (gdprConsent) {
+    queryParamStrings.push('gdpr=' + (gdprConsent.gdprApplies ? 1 : 0));
+    queryParamStrings.push('gdpr_consent=' + encodeURIComponent(gdprConsent.consentString || ''));
+  }
+
+  // CCPA
+  if (uspConsent) {
+    queryParamStrings.push('us_privacy=' + encodeURIComponent(uspConsent));
+  }
+
+  return `${url}${queryParamStrings.length > 0 ? '?' + queryParamStrings.join('&') : ''}`;
+}
 
 function isVideoRequest(bidRequest) {
   return (utils.deepAccess(bidRequest, 'mediaTypes.video') && !utils.deepAccess(bidRequest, 'mediaTypes.banner')) || bidRequest.mediaType === VIDEO;
