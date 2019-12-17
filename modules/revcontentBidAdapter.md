@@ -1,7 +1,7 @@
 # Overview
 
 Module Name: Revcontent Adapater
-Maintainer: dev@revcontent.com
+Maintainer: aziz@revcontent.com
 
 # Description
 
