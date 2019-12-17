@@ -273,7 +273,7 @@ describe('Undertone Adapter', function () {
         arguments: [{ iframeEnabled: true, pixelEnabled: true }, {}, null, 'YN12'],
         expect: {
           type: 'iframe',
-          pixels: ['//cdn.undertone.com/js/usersync.html?ccpa=YN12']
+          pixels: ['https://cdn.undertone.com/js/usersync.html?ccpa=YN12']
         }
       },
       {
@@ -289,7 +289,7 @@ describe('Undertone Adapter', function () {
         arguments: [{ iframeEnabled: true, pixelEnabled: true }, {}, {gdprApplies: true, consentString: '234234'}, 'YN12'],
         expect: {
           type: 'iframe',
-          pixels: ['//cdn.undertone.com/js/usersync.html?gdpr=1&gdprstr=234234&ccpa=YN12']
+          pixels: ['https://cdn.undertone.com/js/usersync.html?gdpr=1&gdprstr=234234&ccpa=YN12']
         }
       },
       {
@@ -315,8 +315,8 @@ describe('Undertone Adapter', function () {
         arguments: [{ pixelEnabled: true }, {}, null, 'YN12'],
         expect: {
           type: 'image',
-          pixels: ['//usr.undertone.com/userPixel/syncOne?id=1&of=2&ccpa=YN12',
-            '//usr.undertone.com/userPixel/syncOne?id=2&of=2&ccpa=YN12']
+          pixels: ['https://usr.undertone.com/userPixel/syncOne?id=1&of=2&ccpa=YN12',
+            'https://usr.undertone.com/userPixel/syncOne?id=2&of=2&ccpa=YN12']
         }
       },
       {
@@ -333,8 +333,8 @@ describe('Undertone Adapter', function () {
         arguments: [{ pixelEnabled: true }, {}, {gdprApplies: true, consentString: '234234'}, 'YN12'],
         expect: {
           type: 'image',
-          pixels: ['//usr.undertone.com/userPixel/syncOne?id=1&of=2&gdpr=1&gdprstr=234234&ccpa=YN12',
-            '//usr.undertone.com/userPixel/syncOne?id=2&of=2&gdpr=1&gdprstr=234234&ccpa=YN12']
+          pixels: ['https://usr.undertone.com/userPixel/syncOne?id=1&of=2&gdpr=1&gdprstr=234234&ccpa=YN12',
+            'https://usr.undertone.com/userPixel/syncOne?id=2&of=2&gdpr=1&gdprstr=234234&ccpa=YN12']
         }
       }
     ];
