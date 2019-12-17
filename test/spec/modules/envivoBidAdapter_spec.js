@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { spec } from 'modules/envivoBidAdapter';
 
-const ENDPOINT = 'http://ad.nvivo.tv/ads/www/admin/plugins/Prebid/getAd.php';
+const ENDPOINT = 'https://ad.nvivo.tv/ads/www/admin/plugins/Prebid/getAd.php';
 
 describe('The Envivo bidding adapter', function () {
   describe('isBidRequestValid', function () {
