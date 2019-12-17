@@ -17,7 +17,6 @@ function createIFrameMarker() {
   ifr.width = 0;
   ifr.height = 0;
   ifr.name = '__uspapiLocator';
-  ifr.id = '__uspapiLocator';
   document.body.appendChild(ifr);
   return ifr;
 }
@@ -267,12 +266,6 @@ describe('consentManagement', function () {
       });
 
       it('Workflow for normal page withoout iframe locater', function() {
-        // remove locator iframe
-        let ifr = document.getElementById('__uspapiLocator');
-        console.log('IFRAME:', ifr);
-        // ifr.remove();
-        // ifr.parentNode.removeChild(ifr);
-
         let testConsentData = {
           uspString: '1NY'
         };
