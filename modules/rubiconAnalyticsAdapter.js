@@ -315,10 +315,10 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
         ]);
         cacheEntry.bids = {};
         cacheEntry.bidsWon = {};
+        cacheEntry.referrer = args.bidderRequests[0].refererInfo.referer;
         cache.auctions[args.auctionId] = cacheEntry;
         break;
       case BID_REQUESTED:
-        cache.auctions[args.auctionId].referrer = args.refererInfo.referer;
         Object.assign(cache.auctions[args.auctionId].bids, args.bids.reduce((memo, bid) => {
           // mark adUnits we expect bidWon events for
           cache.auctions[args.auctionId].bidsWon[bid.adUnitCode] = false;
