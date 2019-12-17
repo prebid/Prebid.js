@@ -28,7 +28,7 @@ describe('ProjectLimeLightAdapter', function () {
       expect(serverRequest.method).to.equal('POST');
     });
     it('Returns valid URL', function () {
-      expect(serverRequest.url).to.equal('//ads.project-limelight.com/hb');
+      expect(serverRequest.url).to.equal('https://ads.project-limelight.com/hb');
     });
     it('Returns valid data if array of bids is valid', function () {
       let data = serverRequest.data;

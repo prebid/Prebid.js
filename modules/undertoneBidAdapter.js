@@ -6,10 +6,10 @@ import * as urlUtils from '../src/url';
 import { registerBidder } from '../src/adapters/bidderFactory';
 
 const BIDDER_CODE = 'undertone';
-const URL = '//hb.undertone.com/hb';
-const FRAME_USER_SYNC = '//cdn.undertone.com/js/usersync.html';
-const PIXEL_USER_SYNC_1 = '//usr.undertone.com/userPixel/syncOne?id=1&of=2';
-const PIXEL_USER_SYNC_2 = '//usr.undertone.com/userPixel/syncOne?id=2&of=2';
+const URL = 'https://hb.undertone.com/hb';
+const FRAME_USER_SYNC = 'https://cdn.undertone.com/js/usersync.html';
+const PIXEL_USER_SYNC_1 = 'https://usr.undertone.com/userPixel/syncOne?id=1&of=2';
+const PIXEL_USER_SYNC_2 = 'https://usr.undertone.com/userPixel/syncOne?id=2&of=2';
 
 function getCanonicalUrl() {
   try {
@@ -80,6 +80,10 @@ export const spec = {
       reqUrl += `&${gdprParams}`;
     }
 
+    if (bidderRequest.uspConsent) {
+      reqUrl += `&ccpa=${bidderRequest.uspConsent}`;
+    }
+
     validBidRequests.map(bidReq => {
       const bid = {
         bidRequestId: bidReq.bidId,
@@ -124,30 +128,41 @@ export const spec = {
     }
     return bids;
   },
-  getUserSyncs: function(syncOptions, serverResponses, gdprConsent) {
+  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, usPrivacy) {
     const syncs = [];
 
     let gdprParams = getGdprQueryParams(gdprConsent);
-    let iframeGdprParams = '';
-    let pixelGdprParams = '';
+    let iframePrivacyParams = '';
+    let pixelPrivacyParams = '';
+
     if (gdprParams) {
-      iframeGdprParams += `?${gdprParams}`;
-      pixelGdprParams += `&${gdprParams}`;
+      iframePrivacyParams += `?${gdprParams}`;
+      pixelPrivacyParams += `&${gdprParams}`;
+    }
+
+    if (usPrivacy) {
+      if (iframePrivacyParams != '') {
+        iframePrivacyParams += '&'
+      } else {
+        iframePrivacyParams += '?'
+      }
+      iframePrivacyParams += `ccpa=${usPrivacy}`;
+      pixelPrivacyParams += `&ccpa=${usPrivacy}`;
     }
 
     if (syncOptions.iframeEnabled) {
       syncs.push({
         type: 'iframe',
-        url: FRAME_USER_SYNC + iframeGdprParams
+        url: FRAME_USER_SYNC + iframePrivacyParams
       });
     } else if (syncOptions.pixelEnabled) {
       syncs.push({
         type: 'image',
-        url: PIXEL_USER_SYNC_1 + pixelGdprParams
+        url: PIXEL_USER_SYNC_1 + pixelPrivacyParams
       },
       {
         type: 'image',
-        url: PIXEL_USER_SYNC_2 + pixelGdprParams
+        url: PIXEL_USER_SYNC_2 + pixelPrivacyParams
       });
     }
     return syncs;
