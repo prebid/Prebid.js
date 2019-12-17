@@ -70,7 +70,7 @@ export const spec = {
         },
         device: {
           ua: navigator.userAgent,
-          dnt: (navigator.doNotTrack == 'yes' || navigator.doNotTrack == '1' || navigator.msDoNotTrack == '1') ? 1 : 0,
+          dnt: utils.getDNT() ? 1 : 0,
           h: screen.height,
           w: screen.width,
           language: navigator.language
@@ -234,7 +234,7 @@ export const spec = {
 
 function newRenderer(bidRequest, bid, rendererOptions = {}) {
   const renderer = Renderer.install({
-    url: (bidRequest.params && bidRequest.params.rendererUrl) || (bid.ext && bid.ext.renderer_url) || '//s.wlplayer.com/video/latest/renderer.js',
+    url: (bidRequest.params && bidRequest.params.rendererUrl) || (bid.ext && bid.ext.renderer_url) || 'https://s.gamoshi.io/video/latest/renderer.js',
     config: rendererOptions,
     loaded: false,
   });
