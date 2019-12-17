@@ -18,13 +18,13 @@ export const spec = {
       switch (validBidRequests[i].params.env) {
         case 'test':
           par = par + '&demo=true';
-          url = 'http://test.outcondigital.com:8048/ad/' + par;
+          url = 'https://test.outcondigital.com/ad/' + par;
           break;
         case 'api':
-          url = 'http://api.outcondigital.com:8048/ad/' + par;
+          url = 'https://api.outcondigital.com/ad/' + par;
           break;
         case 'stg':
-          url = 'http://stg.outcondigital.com:8048/ad/' + par;
+          url = 'https://stg.outcondigital.com/ad/' + par;
           break;
       }
       return {

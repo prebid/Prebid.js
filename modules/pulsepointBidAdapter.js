@@ -47,6 +47,7 @@ export const spec = {
       badv: bidRequests[0].params.badv,
       user: user(bidRequests[0], bidderRequest),
       regs: regs(bidderRequest),
+      source: source(bidRequests[0].schain),
     };
     return {
       method: 'POST',
@@ -116,7 +117,7 @@ function bidResponseAvailable(request, response) {
         adId: id,
         ttl: idToBidMap[id].exp || DEFAULT_BID_TTL,
         netRevenue: DEFAULT_NET_REVENUE,
-        currency: idToBidMap[id].cur || DEFAULT_CURRENCY
+        currency: bidResponse.cur || DEFAULT_CURRENCY
       };
       if (idToImpMap[id]['native']) {
         bid['native'] = nativeResponse(idToImpMap[id], idToBidMap[id]);
@@ -396,9 +397,31 @@ function user(bidRequest, bidderRequest) {
     if (bidRequest.userId) {
       ext.eids = [];
       addExternalUserId(ext.eids, bidRequest.userId.pubcid, 'pubcommon');
-      addExternalUserId(ext.eids, bidRequest.userId.tdid, 'ttdid');
-      addExternalUserId(ext.eids, utils.deepAccess(bidRequest.userId.digitrustid, 'data.id'), 'digitrust');
-      addExternalUserId(ext.eids, bidRequest.userId.id5id, 'id5id');
+      addExternalUserId(ext.eids, bidRequest.userId.britepoolid, 'britepool.com');
+      addExternalUserId(ext.eids, bidRequest.userId.criteoId, 'criteo');
+      addExternalUserId(ext.eids, bidRequest.userId.idl_env, 'identityLink');
+      addExternalUserId(ext.eids, bidRequest.userId.id5id, 'id5-sync.com');
+      addExternalUserId(ext.eids, bidRequest.userId.parrableid, 'parrable.com');
+      // liveintent
+      if (bidRequest.userId.lipb && bidRequest.userId.lipb.lipbid) {
+        addExternalUserId(ext.eids, bidRequest.userId.lipb.lipbid, 'liveintent.com');
+      }
+      // TTD
+      addExternalUserId(ext.eids, bidRequest.userId.tdid, 'adserver.org', {
+        rtiPartner: 'TDID'
+      });
+      // digitrust
+      const digitrustResponse = bidRequest.userId.digitrustid;
+      if (digitrustResponse && digitrustResponse.data) {
+        var digitrust = {};
+        if (digitrustResponse.data.id) {
+          digitrust.id = digitrustResponse.data.id;
+        }
+        if (digitrustResponse.data.keyv) {
+          digitrust.keyv = digitrustResponse.data.keyv;
+        }
+        ext.digitrust = digitrust;
+      }
     }
   }
   return { ext };
@@ -407,13 +430,15 @@ function user(bidRequest, bidderRequest) {
 /**
  * Produces external userid object in ortb 3.0 model.
  */
-function addExternalUserId(eids, value, source) {
-  if (value) {
+function addExternalUserId(eids, id, source, uidExt) {
+  if (id) {
+    var uid = { id };
+    if (uidExt) {
+      uid.ext = uidExt;
+    }
     eids.push({
       source,
-      uids: [{
-        id: value
-      }]
+      uids: [ uid ]
     });
   }
 }
@@ -422,8 +447,29 @@ function addExternalUserId(eids, value, source) {
  * Produces the regulations ortb object
  */
 function regs(bidderRequest) {
-  if (bidderRequest && bidderRequest.gdprConsent) {
-    return { ext: { gdpr: bidderRequest.gdprConsent.gdprApplies ? 1 : 0 } };
+  if (bidderRequest.gdprConsent || bidderRequest.uspConsent) {
+    var ext = {};
+    // GDPR applies attribute (actual consent value is in user object)
+    if (bidderRequest.gdprConsent) {
+      ext.gdpr = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
+    }
+    // CCPA
+    if (bidderRequest.uspConsent) {
+      ext.us_privacy = bidderRequest.uspConsent;
+    }
+    return { ext };
+  }
+  return null;
+}
+
+/**
+ * Creates source object with supply chain
+ */
+function source(schain) {
+  if (schain) {
+    return {
+      ext: { schain }
+    };
   }
   return null;
 }
