@@ -1,7 +1,7 @@
-import {expect} from 'chai';
-import {spec as adapter, URL} from 'modules/vidazooBidAdapter';
+import { expect } from 'chai';
+import { spec as adapter, URL } from 'modules/vidazooBidAdapter';
 import * as utils from 'src/utils';
-​
+
 const BID = {
   'bidId': '2d52001cabd527',
   'params': {
@@ -19,7 +19,7 @@ const BID = {
   'bidderRequestId': '1fdb5ff1b6eaa7',
   'requestId': 'b0777d85-d061-450e-9bc7-260dd54bbb7a'
 };
-​
+
 const BIDDER_REQUEST = {
   'gdprConsent': {
     'consentString': 'consent_string'
@@ -28,7 +28,7 @@ const BIDDER_REQUEST = {
     'referer': 'http://www.greatsite.com'
   }
 };
-​
+
 const SERVER_RESPONSE = {
   body: {
     'ad': '<iframe>console.log("hello world")</iframe>',
@@ -44,7 +44,7 @@ const SERVER_RESPONSE = {
     }]
   }
 };
-​
+
 const REQUEST = {
   data: {
     width: 300,
@@ -52,34 +52,34 @@ const REQUEST = {
     bidId: '2d52001cabd527'
   }
 };
-​
+
 const SYNC_OPTIONS = {
   'pixelEnabled': true
 };
-​
+
 describe('VidazooBidAdapter', function () {
   describe('validtae spec', function () {
     it('exists and is a function', function () {
       expect(adapter.isBidRequestValid).to.exist.and.to.be.a('function');
     });
-​
+
     it('exists and is a function', function () {
       expect(adapter.buildRequests).to.exist.and.to.be.a('function');
     });
-​
+
     it('exists and is a function', function () {
       expect(adapter.interpretResponse).to.exist.and.to.be.a('function');
     });
-​
+
     it('exists and is a function', function () {
       expect(adapter.getUserSyncs).to.exist.and.to.be.a('function');
     });
-​
+
     it('exists and is a string', function () {
       expect(adapter.code).to.exist.and.to.be.a('string');
     });
   });
-​
+
   describe('validate bid requests', function () {
     it('should require cId', function () {
       const isValid = adapter.isBidRequestValid({
@@ -89,7 +89,7 @@ describe('VidazooBidAdapter', function () {
       });
       expect(isValid).to.be.false;
     });
-​
+
     it('should require pId', function () {
       const isValid = adapter.isBidRequestValid({
         params: {
@@ -98,7 +98,7 @@ describe('VidazooBidAdapter', function () {
       });
       expect(isValid).to.be.false;
     });
-​
+
     it('should validate correctly', function () {
       const isValid = adapter.isBidRequestValid({
         params: {
@@ -109,14 +109,14 @@ describe('VidazooBidAdapter', function () {
       expect(isValid).to.be.true;
     });
   });
-​
+
   describe('build requests', function () {
     let sandbox;
     before(function () {
       sandbox = sinon.sandbox.create();
       sandbox.stub(Date, 'now').returns(1000);
     });
-​
+
     it('should build request for each size', function () {
       localStorage.setItem('__vdz_prebid_session', '12345');
       const requests = adapter.buildRequests([BID], BIDDER_REQUEST);
@@ -156,28 +156,28 @@ describe('VidazooBidAdapter', function () {
         }
       });
     });
-​
+
     after(function () {
       sandbox.restore();
     });
   });
-​
+
   describe('interpret response', function () {
     it('should return empty array when there is no response', function () {
       const responses = adapter.interpretResponse(null);
       expect(responses).to.be.empty;
     });
-​
+
     it('should return empty array when there is no ad', function () {
-      const responses = adapter.interpretResponse({price: 1, ad: ''});
+      const responses = adapter.interpretResponse({ price: 1, ad: '' });
       expect(responses).to.be.empty;
     });
-​
+
     it('should return empty array when there is no price', function () {
-      const responses = adapter.interpretResponse({price: null, ad: 'great ad'});
+      const responses = adapter.interpretResponse({ price: null, ad: 'great ad' });
       expect(responses).to.be.empty;
     });
-​
+
     it('should return an array of interpreted responses', function () {
       const responses = adapter.interpretResponse(SERVER_RESPONSE, REQUEST);
       expect(responses).to.have.length(1);
@@ -193,7 +193,7 @@ describe('VidazooBidAdapter', function () {
         ad: '<iframe>console.log("hello world")</iframe>'
       });
     });
-​
+
     it('should take default TTL', function () {
       const serverResponse = utils.deepClone(SERVER_RESPONSE);
       delete serverResponse.body.exp;
