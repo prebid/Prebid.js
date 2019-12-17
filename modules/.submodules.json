@@ -4,10 +4,15 @@
     "id5IdSystem",
     "criteortusIdSystem",
     "parrableIdSystem",
-    "liveIntentIdSystem"
+    "britepoolIdSystem",
+    "liveIntentIdSystem",
+    "criteoIdSystem"
   ],
   "adpod": [
     "freeWheelAdserverVideo",
     "dfpAdServerVideo"
+  ],
+  "rtdModule": [
+    "browsiRtdProvider"
   ]
 }

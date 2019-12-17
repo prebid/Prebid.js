@@ -32,6 +32,9 @@ var prebid = require('./package.json');
 var dateString = 'Updated : ' + (new Date()).toISOString().substring(0, 10);
 var banner = '/* <%= prebid.name %> v<%= prebid.version %>\n' + dateString + ' */\n';
 var port = 9999;
+const mockServerPort = 4444;
+const host = argv.host ? argv.host : 'localhost';
+const { spawn } = require('child_process');
 
 // these modules must be explicitly listed in --modules to be included in the build, won't be part of "all" modules
 var explicitModules = [
@@ -234,12 +237,26 @@ function test(done) {
         wdioConf
       ];
     }
+
+    //run mock-server
+    const mockServer = spawn('node', ['./test/mock-server/index.js', '--port='+mockServerPort]);
+    mockServer.stdout.on('data', (data) => {
+      console.log(`stdout: ${data}`);
+    });
+    mockServer.stderr.on('data', (data) => {
+      console.log(`stderr: ${data}`);
+    });
+
     execa(wdioCmd, wdioOpts, { stdio: 'inherit' })
       .then(stdout => {
+        //kill mock server
+        mockServer.kill('SIGINT');
         done();
         process.exit(0);
       })
       .catch(err => {
+        //kill mock server
+        mockServer.kill('SIGINT');
         done(new Error(`Tests failed with error: ${err}`));
         process.exit(1);
       });
@@ -309,6 +326,12 @@ function setupE2e(done) {
   done();
 }
 
+gulp.task('updatepath', function(){
+  return gulp.src(['build/dist/*.js'])
+  .pipe(replace('ib.adnxs.com/ut/v3/prebid', host + ':' + mockServerPort + '/'))
+  .pipe(gulp.dest('build/dist'));
+});
+
 // support tasks
 gulp.task(lint);
 gulp.task(watch);
@@ -334,7 +357,7 @@ gulp.task('build-postbid', gulp.series(escapePostbidConfig, buildPostbid));
 gulp.task('serve', gulp.series(clean, lint, gulp.parallel('build-bundle-dev', watch, test)));
 gulp.task('default', gulp.series(clean, makeWebpackPkg));
 
-gulp.task('e2e-test', gulp.series(clean, setupE2e, gulp.parallel('build-bundle-prod', watch), test))
+gulp.task('e2e-test', gulp.series(clean, setupE2e, gulp.parallel('build-bundle-prod', watch), 'updatepath', test));
 // other tasks
 gulp.task(bundleToStdout);
 gulp.task('bundle', gulpBundle.bind(null, false)); // used for just concatenating pre-built files with no build step

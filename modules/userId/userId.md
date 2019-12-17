@@ -36,8 +36,8 @@ pbjs.setConfig({
         }, {
             name: 'parrableId',
             params: {
-                // Replace the list contents with the Parrable Partner Client IDs for Parrable-aware bid adapters in use
-                partners: [ "30182847-e426-4ff9-b2b5-9ca1324ea09b" ]  
+                // Replace partner with comma-separated (if more than one) Parrable Partner Client ID(s) for Parrable-aware bid adapters in use
+                partner: "30182847-e426-4ff9-b2b5-9ca1324ea09b"
             },
             storage: {
                 type: 'cookie',

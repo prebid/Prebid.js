@@ -3,7 +3,7 @@ import {registerBidder} from '../src/adapters/bidderFactory';
 const BIDDER_CODE = 'oneVideo';
 export const spec = {
   code: 'oneVideo',
-  ENDPOINT: '//ads.adaptv.advertising.com/rtb/openrtb?ext_id=',
+  ENDPOINT: 'https://ads.adaptv.advertising.com/rtb/openrtb?ext_id=',
   SYNC_ENDPOINT1: 'https://cm.g.doubleclick.net/pixel?google_nid=adaptv_dbm&google_cm&google_sc',
   SYNC_ENDPOINT2: 'https://pr-bh.ybp.yahoo.com/sync/adaptv_ortb/{combo_uid}',
   SYNC_ENDPOINT3: 'https://sync-tm.everesttech.net/upi/pid/m7y5t93k?redir=https%3A%2F%2Fsync.adap.tv%2Fsync%3Ftype%3Dgif%26key%3Dtubemogul%26uid%3D%24%7BUSER_ID%7D',
@@ -45,8 +45,10 @@ export const spec = {
     return bids.map(bid => {
       return {
         method: 'POST',
-        url: location.protocol + spec.ENDPOINT + bid.params.pubId,
-        data: getRequestData(bid, consentData),
+        /** removing adding local protocal since we
+         * can get cookie data only if we call with https. */
+        url: spec.ENDPOINT + bid.params.pubId,
+        data: getRequestData(bid, consentData, bidRequest),
         bidRequest: bid
       }
     })
@@ -136,10 +138,10 @@ function isConsentRequired(consentData) {
   return !!(consentData && consentData.gdprApplies);
 }
 
-function getRequestData(bid, consentData) {
-  let loc = utils.getTopWindowLocation();
+function getRequestData(bid, consentData, bidRequest) {
+  let loc = bidRequest.refererInfo.referer;
   let page = (bid.params.site && bid.params.site.page) ? (bid.params.site.page) : (loc.href);
-  let ref = (bid.params.site && bid.params.site.referrer) ? bid.params.site.referrer : utils.getTopWindowReferrer();
+  let ref = (bid.params.site && bid.params.site.referrer) ? bid.params.site.referrer : bidRequest.refererInfo.referer;
   let bidData = {
     id: utils.generateUUID(),
     at: 2,
@@ -148,13 +150,6 @@ function getRequestData(bid, consentData) {
       id: '1',
       secure: isSecure(),
       bidfloor: bid.params.bidfloor,
-      video: {
-        mimes: bid.params.video.mimes,
-        w: bid.params.video.playerWidth,
-        h: bid.params.video.playerHeight,
-        linearity: 1,
-        protocols: bid.params.video.protocols || [2, 5]
-      },
       ext: {
         hb: 1,
       }
@@ -169,35 +164,53 @@ function getRequestData(bid, consentData) {
     tmax: 200
   };
 
-  if (bid.params.video.maxbitrate) {
-    bidData.imp[0].video.maxbitrate = bid.params.video.maxbitrate
+  if (bid.params.video.display == undefined || bid.params.video.display != 1) {
+    bidData.imp[0].video = {
+      mimes: bid.params.video.mimes,
+      w: bid.params.video.playerWidth,
+      h: bid.params.video.playerHeight,
+      pos: bid.params.video.position,
+    };
+    if (bid.params.video.maxbitrate) {
+      bidData.imp[0].video.maxbitrate = bid.params.video.maxbitrate
+    }
+    if (bid.params.video.maxduration) {
+      bidData.imp[0].video.maxduration = bid.params.video.maxduration
+    }
+    if (bid.params.video.minduration) {
+      bidData.imp[0].video.minduration = bid.params.video.minduration
+    }
+    if (bid.params.video.api) {
+      bidData.imp[0].video.api = bid.params.video.api
+    }
+    if (bid.params.video.delivery) {
+      bidData.imp[0].video.delivery = bid.params.video.delivery
+    }
+    if (bid.params.video.position) {
+      bidData.imp[0].video.pos = bid.params.video.position
+    }
+    if (bid.params.video.playbackmethod) {
+      bidData.imp[0].video.playbackmethod = bid.params.video.playbackmethod
+    }
+    if (bid.params.video.placement) {
+      bidData.imp[0].video.placement = bid.params.video.placement
+    }
+    if (bid.params.video.rewarded) {
+      bidData.imp[0].ext.rewarded = bid.params.video.rewarded
+    }
+  } else if (bid.params.video.display == 1) {
+    bidData.imp[0].banner = {
+      mimes: bid.params.video.mimes,
+      w: bid.params.video.playerWidth,
+      h: bid.params.video.playerHeight,
+      pos: bid.params.video.position,
+    };
+    if (bid.params.video.placement) {
+      bidData.imp[0].banner.placement = bid.params.video.placement
+    }
   }
-  if (bid.params.video.maxduration) {
-    bidData.imp[0].video.maxduration = bid.params.video.maxduration
-  }
-  if (bid.params.video.minduration) {
-    bidData.imp[0].video.minduration = bid.params.video.minduration
-  }
-  if (bid.params.video.api) {
-    bidData.imp[0].video.api = bid.params.video.api
-  }
-  if (bid.params.video.delivery) {
-    bidData.imp[0].video.delivery = bid.params.video.delivery
-  }
-  if (bid.params.video.position) {
-    bidData.imp[0].video.pos = bid.params.video.position
-  }
-  if (bid.params.video.playbackmethod) {
-    bidData.imp[0].video.playbackmethod = bid.params.video.playbackmethod
-  }
-  if (bid.params.video.placement) {
-    bidData.imp[0].ext.placement = bid.params.video.placement
-  }
-  if (bid.params.video.rewarded) {
-    bidData.imp[0].ext.rewarded = bid.params.video.rewarded
-  }
-  if (bid.params.site && bid.params.site.id) {
-    bidData.site.id = bid.params.site.id
+  if (bid.params.video.inventoryid) {
+    bidData.imp[0].ext.inventoryid = bid.params.video.inventoryid
   }
   if (bid.params.video.sid) {
     bidData.source = {
@@ -212,7 +225,9 @@ function getRequestData(bid, consentData) {
       }
     }
   }
-
+  if (bid.params.site && bid.params.site.id) {
+    bidData.site.id = bid.params.site.id
+  }
   if (isConsentRequired(consentData)) {
     bidData.regs = {
       ext: {
@@ -227,6 +242,13 @@ function getRequestData(bid, consentData) {
         }
       };
     }
+  }
+  if (bidRequest && bidRequest.uspConsent) {
+    bidData.regs = {
+      ext: {
+        us_privacy: bidRequest.uspConsent
+      }
+    };
   }
 
   return bidData;

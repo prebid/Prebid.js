@@ -5,6 +5,7 @@ import { deepClone } from 'src/utils';
 import prebid from '../../../package.json';
 
 const ENDPOINT = 'https://tlx.3lift.com/header/auction?';
+const GDPR_CONSENT_STR = 'BOONm0NOONm0NABABAENAa-AAAARh7______b9_3__7_9uz_Kv_K7Vf7nnG072lPVA9LTOQ6gEaY';
 
 describe('triplelift adapter', function () {
   const adapter = newBidder(tripleliftAdapterSpec);
@@ -56,6 +57,20 @@ describe('triplelift adapter', function () {
   describe('buildRequests', function () {
     let bidRequests;
     let bidderRequest;
+    const schain = {
+      validation: 'strict',
+      config: {
+        ver: '1.0',
+        complete: 1,
+        nodes: [
+          {
+            asi: 'indirectseller.com',
+            sid: '00001',
+            hp: 1,
+          }
+        ]
+      }
+    };
 
     this.beforeEach(() => {
       bidRequests = [
@@ -71,6 +86,7 @@ describe('triplelift adapter', function () {
           bidderRequestId: '22edbae2733bf6',
           auctionId: '1d1a030790a475',
           userId: {},
+          schain,
         }
       ];
 
@@ -92,7 +108,7 @@ describe('triplelift adapter', function () {
           referer: 'http://examplereferer.com'
         },
         gdprConsent: {
-          consentString: 'BOONm0NOONm0NABABAENAa-AAAARh7______b9_3__7_9uz_Kv_K7Vf7nnG072lPVA9LTOQ6gEaY',
+          consentString: GDPR_CONSENT_STR,
           gdprApplies: true
         },
       };
@@ -220,6 +236,17 @@ describe('triplelift adapter', function () {
       expect(url).to.match(new RegExp('(?:' + prebid.version + ')'))
       expect(url).to.match(/(?:referrer)/);
     });
+    it('should return schain when present', function() {
+      const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
+      const { data: payload } = request;
+      expect(payload.ext.schain).to.deep.equal(schain);
+    });
+    it('should not create root level ext when schain is not present', function() {
+      bidRequests[0].schain = undefined;
+      const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
+      const { data: payload } = request;
+      expect(payload.ext).to.deep.equal(undefined);
+    });
   });
 
   describe('interpretResponse', function () {
@@ -255,7 +282,7 @@ describe('triplelift adapter', function () {
         referer: 'http://examplereferer.com'
       },
       gdprConsent: {
-        consentString: 'BOONm0NOONm0NABABAENAa-AAAARh7______b9_3__7_9uz_Kv_K7Vf7nnG072lPVA9LTOQ6gEaY',
+        consentString: GDPR_CONSENT_STR,
         gdprApplies: true
       }
     };
@@ -280,7 +307,7 @@ describe('triplelift adapter', function () {
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
     });
 
-    it('should return multile responses to support SRA', function () {
+    it('should return multiple responses to support SRA', function () {
       let response = {
         body: {
           bids: [
@@ -329,12 +356,50 @@ describe('triplelift adapter', function () {
           referer: 'http://examplereferer.com'
         },
         gdprConsent: {
-          consentString: 'BOONm0NOONm0NABABAENAa-AAAARh7______b9_3__7_9uz_Kv_K7Vf7nnG072lPVA9LTOQ6gEaY',
+          consentString: GDPR_CONSENT_STR,
           gdprApplies: true
         }
       };
       let result = tripleliftAdapterSpec.interpretResponse(response, {bidderRequest});
       expect(result).to.have.length(2);
+    });
+  });
+
+  describe('getUserSyncs', function() {
+    let expectedIframeSyncUrl = 'https://eb2.3lift.com/sync?gdpr=true&cmp_cs=' + GDPR_CONSENT_STR + '&';
+    let expectedImageSyncUrl = 'https://eb2.3lift.com/sync?px=1&src=prebid&gdpr=true&cmp_cs=' + GDPR_CONSENT_STR + '&';
+
+    it('returns undefined when syncing is not enabled', function() {
+      expect(tripleliftAdapterSpec.getUserSyncs({})).to.equal(undefined);
+      expect(tripleliftAdapterSpec.getUserSyncs()).to.equal(undefined);
+    });
+
+    it('returns iframe user sync pixel when iframe syncing is enabled', function() {
+      let syncOptions = {
+        iframeEnabled: true
+      };
+      let result = tripleliftAdapterSpec.getUserSyncs(syncOptions);
+      expect(result[0].type).to.equal('iframe');
+      expect(result[0].url).to.equal(expectedIframeSyncUrl);
+    });
+
+    it('returns image user sync pixel when iframe syncing is disabled', function() {
+      let syncOptions = {
+        pixelEnabled: true
+      };
+      let result = tripleliftAdapterSpec.getUserSyncs(syncOptions);
+      expect(result[0].type).to.equal('image')
+      expect(result[0].url).to.equal(expectedImageSyncUrl);
+    });
+
+    it('returns iframe user sync pixel when both options are enabled', function() {
+      let syncOptions = {
+        pixelEnabled: true,
+        iframeEnabled: true
+      };
+      let result = tripleliftAdapterSpec.getUserSyncs(syncOptions);
+      expect(result[0].type).to.equal('iframe');
+      expect(result[0].url).to.equal(expectedIframeSyncUrl);
     });
   });
 });

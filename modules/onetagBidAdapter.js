@@ -3,6 +3,7 @@
 const { registerBidder } = require('../src/adapters/bidderFactory');
 
 const ENDPOINT = 'https://onetag-sys.com/prebid-request';
+const USER_SYNC_ENDPOINT = 'https://onetag-sys.com/usync/';
 const BIDDER_CODE = 'onetag';
 const BANNER = 'banner';
 
@@ -120,8 +121,15 @@ function getPageInfo() {
     masked: m,
     wWidth: w.innerWidth,
     wHeight: w.innerHeight,
+    oWidth: w.outerWidth,
+    oHeight: w.outerHeight,
     sWidth: s.width,
     sHeight: s.height,
+    aWidth: s.availWidth,
+    aHeight: s.availHeight,
+    sLeft: 'screenLeft' in w ? w.screenLeft : w.screenX,
+    sTop: 'screenTop' in w ? w.screenTop : w.screenY,
+    hLength: history.length,
     date: t.toUTCString(),
     timeOffset: t.getTimezoneOffset()
   };
@@ -162,6 +170,27 @@ function requestsToBids(bid) {
   return toRet;
 }
 
+function getUserSyncs(syncOptions, serverResponses, gdprConsent) {
+  const syncs = [];
+  if (syncOptions.iframeEnabled) {
+    const rnd = new Date().getTime();
+    let params = '?cb=' + rnd;
+
+    if (gdprConsent && typeof gdprConsent.consentString === 'string') {
+      params += '&gdpr_consent=' + gdprConsent.consentString;
+      if (typeof gdprConsent.gdprApplies === 'boolean') {
+        params += '&gdpr=' + (gdprConsent.gdprApplies ? 1 : 0);
+      }
+    }
+
+    syncs.push({
+      type: 'iframe',
+      url: USER_SYNC_ENDPOINT + params
+    });
+  }
+  return syncs;
+}
+
 export const spec = {
 
   code: BIDDER_CODE,
@@ -170,6 +199,7 @@ export const spec = {
   isBidRequestValid: isBidRequestValid,
   buildRequests: buildRequests,
   interpretResponse: interpretResponse,
+  getUserSyncs: getUserSyncs
 
 };
 

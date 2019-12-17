@@ -23,7 +23,8 @@ import {
   area,
   get,
   getViewabilityDescription,
-  mergeArrays
+  mergeArrays,
+  documentFocus
 } from 'modules/viBidAdapter';
 
 describe('ratioToPercentageCeil', () => {
@@ -890,5 +891,21 @@ describe('mergeSizes', () => {
         [[400, 500], [500, 600]]
       )
     ).to.deep.equal([[1, 2], [2, 4], [400, 500], [500, 600]]);
+  });
+});
+
+describe('documentFocus', () => {
+  it('calls hasFocus function if it present, converting boolean to an int 0/1 value, returns undefined otherwise', () => {
+    expect(
+      documentFocus({
+        hasFocus: () => true
+      })
+    ).to.equal(1);
+    expect(
+      documentFocus({
+        hasFocus: () => false
+      })
+    ).to.equal(0);
+    expect(documentFocus({})).to.be.undefined;
   });
 });
