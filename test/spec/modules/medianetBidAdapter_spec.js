@@ -262,6 +262,7 @@ let VALID_BID_REQUEST = [{
       'customer_id': 'customer_id',
       'prebid_version': $$PREBID_GLOBAL$$.version,
       'gdpr_applies': false,
+      'usp_applies': false,
       'screen': {
         'w': 1000,
         'h': 1000
@@ -345,6 +346,7 @@ let VALID_BID_REQUEST = [{
       'customer_id': 'customer_id',
       'prebid_version': $$PREBID_GLOBAL$$.version,
       'gdpr_applies': false,
+      'usp_applies': false,
       'screen': {
         'w': 1000,
         'h': 1000
@@ -429,6 +431,7 @@ let VALID_BID_REQUEST = [{
       'customer_id': 'customer_id',
       'prebid_version': $$PREBID_GLOBAL$$.version,
       'gdpr_applies': false,
+      'usp_applies': false,
       'screen': {
         'w': 1000,
         'h': 1000
@@ -511,6 +514,7 @@ let VALID_BID_REQUEST = [{
       'customer_id': 'customer_id',
       'prebid_version': $$PREBID_GLOBAL$$.version,
       'gdpr_applies': false,
+      'usp_applies': false,
       'screen': {
         'w': 1000,
         'h': 1000
@@ -830,6 +834,7 @@ let VALID_BID_REQUEST = [{
       'consentString': 'consentString',
       'gdprApplies': true,
     },
+    'uspConsent': '1NYN',
     'timeout': 3000,
     refererInfo: {
       referer: 'http://media.net/prebidtest',
@@ -850,6 +855,8 @@ let VALID_BID_REQUEST = [{
       'prebid_version': $$PREBID_GLOBAL$$.version,
       'gdpr_consent_string': 'consentString',
       'gdpr_applies': true,
+      'usp_applies': true,
+      'usp_consent_string': '1NYN',
       'screen': {
         'w': 1000,
         'h': 1000
