@@ -19,7 +19,7 @@ var adUnits = [{
     code: 'test-div',
     mediaTypes: {
         banner: {
-            sizes: [1, 1],
+            sizes: [1, 1]
         }
     },
     bids: [{
@@ -137,7 +137,7 @@ var adUnits = [{
 			code: 'div-gpt-ad-1574864639578-0',
 			mediaTypes: {
 				banner: {
-					sizes: [1, 1],
+					sizes: [1, 1]
 				}
 			},
 			bids: [{
