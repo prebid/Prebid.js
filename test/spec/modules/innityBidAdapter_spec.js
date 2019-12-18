@@ -29,7 +29,7 @@ describe('innityAdapterTest', () => {
         'pub': 267,
         'zone': 62546
       },
-      'adUnitCode': 'div-gpt-ad-1460505748561-0',
+      'adUnitCode': '/19968336/header-bid-tag-0',
       'transactionId': 'd7b773de-ceaa-484d-89ca-d9f51b8d61ec',
       'sizes': [300, 250],
       'bidId': '51ef8751f9aead',
@@ -37,15 +37,21 @@ describe('innityAdapterTest', () => {
       'auctionId': '18fd8b8b0bd757'
     }];
 
+    const bidderRequest = {
+      refererInfo: {
+        referer: 'https://example.com'
+      }
+    };
+
     it('bidRequest HTTP method', () => {
-      const requests = spec.buildRequests(bidRequests);
+      const requests = spec.buildRequests(bidRequests, bidderRequest);
       requests.forEach(function(requestItem) {
         expect(requestItem.method).to.equal('GET');
       });
     });
 
     it('bidRequest data', () => {
-      const requests = spec.buildRequests(bidRequests);
+      const requests = spec.buildRequests(bidRequests, bidderRequest);
       expect(requests[0].data.pub).to.equal(267);
       expect(requests[0].data.zone).to.equal(62546);
       expect(requests[0].data.width).to.equal('300');
@@ -94,7 +100,7 @@ describe('innityAdapterTest', () => {
       expect(result[0].creativeId).to.equal('148186');
       expect(result[0].currency).to.equal('USD');
       expect(result[0].ttl).to.equal(60);
-      expect(result[0].ad).to.equal('<script src="http://cdn.innity.net/frame_util.js"></script><script>innity=true;</script>');
+      expect(result[0].ad).to.equal('<script src="https://cdn.innity.net/frame_util.js"></script><script>innity=true;</script>');
     });
   });
 });
