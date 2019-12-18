@@ -111,7 +111,7 @@ export const spec = {
       const hasFavoredMediaType =
         params.favoredMediaType && this.supportedMediaTypes.includes(params.favoredMediaType);
 
-      if ((!mediaTypes || mediaTypes.banner)) {
+      if (!mediaTypes || mediaTypes.banner) {
         if (!hasFavoredMediaType || params.favoredMediaType === BANNER) {
           const bannerImp = Object.assign({}, imp, {
             banner: {
