@@ -198,7 +198,7 @@ function interpretResponse(serverResponse, bidRequest) {
         let bidResponse = {};
         if (bidRequest && bidRequest.data && typeof bidRequest.data === 'string') {
           let sspData = new URLSearchParams(bidRequest.data);
-          if (sspData && sspData.get('bidId') && sspData.get('bidId') !== '') {
+          if (sspData && sspData.get('bidId')) {
             let sspXmlString = serverResponse.body;
             let sspXml = new window.DOMParser().parseFromString(sspXmlString, 'text/xml');
             if (sspXml && sspXml.getElementsByTagName('parsererror').length == 0) {
