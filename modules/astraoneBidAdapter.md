@@ -19,7 +19,7 @@ var adUnits = [{
     code: 'test-div',
     mediaTypes: {
         banner: {
-            sizes: [],
+            sizes: [1, 1]
         }
     },
     bids: [{
@@ -57,7 +57,7 @@ var adUnits = [{
     <script>
         var adUnits = [{
             code: 'test-div',
-            sizes: [],``
+            sizes: [1, 1],
             bids: [{
                 bidder: "astraone",
                 params: {
@@ -137,7 +137,7 @@ var adUnits = [{
 			code: 'div-gpt-ad-1574864639578-0',
 			mediaTypes: {
 				banner: {
-					sizes: [],
+					sizes: [1, 1]
 				}
 			},
 			bids: [{
