@@ -34,8 +34,8 @@ describe('Somo Audience Adapter Tests', function () {
         }];
         const bidderRequest = {
           refererInfo: {
-            referer: 'https:/www.test.com/page?var=val',
-            canonicalUrl: 'https:/www.test.com/page'
+            referer: 'https://www.test.com/page?var=val',
+            canonicalUrl: 'https://www.test.com/page'
           }
         };
 
@@ -44,8 +44,8 @@ describe('Somo Audience Adapter Tests', function () {
         expect(request[0].method).to.equal('POST');
         const ortbRequest = request[0].data;
         expect(ortbRequest.site).to.not.equal(null);
-        expect(ortbRequest.site.ref).to.equal('https:/www.test.com/page?var=val');
-        expect(ortbRequest.site.page).to.equal('https:/www.test.com/page');
+        expect(ortbRequest.site.ref).to.equal('https://www.test.com/page?var=val');
+        expect(ortbRequest.site.page).to.equal('https://www.test.com/page');
         expect(ortbRequest.site.domain).to.not.be.undefined;
         expect(ortbRequest.imp).to.have.lengthOf(1);
         expect(ortbRequest.device).to.not.equal(null);
@@ -69,8 +69,8 @@ describe('Somo Audience Adapter Tests', function () {
 
         const bidderRequest = {
           refererInfo: {
-            referer: 'https:/www.test.com/page?var=val',
-            canonicalUrl: 'https:/www.test.com/page'
+            referer: 'https://www.test.com/page?var=val',
+            canonicalUrl: 'https://www.test.com/page'
           }
         }
 
@@ -79,8 +79,8 @@ describe('Somo Audience Adapter Tests', function () {
         expect(request[0].method).to.equal('POST');
         const ortbRequest = request[0].data;
         expect(ortbRequest.site).to.not.equal(null);
-        expect(ortbRequest.site.ref).to.equal('https:/www.test.com/page?var=val');
-        expect(ortbRequest.site.page).to.equal('https:/www.test.com/page');
+        expect(ortbRequest.site.ref).to.equal('https://www.test.com/page?var=val');
+        expect(ortbRequest.site.page).to.equal('https://www.test.com/page');
         expect(ortbRequest.site.domain).to.not.be.undefined;
         expect(ortbRequest.imp).to.have.lengthOf(1);
         expect(ortbRequest.imp[0].bidfloor).to.not.be.null;
@@ -103,8 +103,8 @@ describe('Somo Audience Adapter Tests', function () {
 
         const bidderRequest = {
           refererInfo: {
-            referer: 'https:/www.test.com/page?var=val',
-            canonicalUrl: 'https:/www.test.com/page'
+            referer: 'https://www.test.com/page?var=val',
+            canonicalUrl: 'https://www.test.com/page'
           }
         };
 
@@ -113,8 +113,8 @@ describe('Somo Audience Adapter Tests', function () {
         expect(request[0].method).to.equal('POST');
         const ortbRequest = request[0].data;
         expect(ortbRequest.site).to.not.equal(null);
-        expect(ortbRequest.site.ref).to.equal('https:/www.test.com/page?var=val');
-        expect(ortbRequest.site.page).to.equal('https:/www.test.com/page');
+        expect(ortbRequest.site.ref).to.equal('https://www.test.com/page?var=val');
+        expect(ortbRequest.site.page).to.equal('https://www.test.com/page');
         expect(ortbRequest.site.domain).to.not.be.undefined;
         expect(ortbRequest.imp).to.have.lengthOf(1);
         expect(ortbRequest.imp[0].bidfloor).to.not.be.null;
@@ -176,16 +176,16 @@ describe('Somo Audience Adapter Tests', function () {
 
         const bidderRequest = {
           refererInfo: {
-            referer: 'https:/www.test.com/page?var=val',
-            canonicalUrl: 'https:/www.test.com/page'
+            referer: 'https://www.test.com/page?var=val',
+            canonicalUrl: 'https://www.test.com/page'
           }
         };
 
         const request = spec.buildRequests(bidRequests, bidderRequest);
         const ortbRequest = request[0].data;
         expect(ortbRequest.site).to.not.equal(null);
-        expect(ortbRequest.site.ref).to.equal('https:/www.test.com/page?var=val');
-        expect(ortbRequest.site.page).to.equal('https:/www.test.com/page');
+        expect(ortbRequest.site.ref).to.equal('https://www.test.com/page?var=val');
+        expect(ortbRequest.site.page).to.equal('https://www.test.com/page');
         expect(ortbRequest.site.domain).to.not.be.undefined;
         expect(ortbRequest.imp).to.have.lengthOf(1);
         expect(ortbRequest.imp[0].video).to.not.equal(null);
@@ -208,16 +208,16 @@ describe('Somo Audience Adapter Tests', function () {
 
         const bidderRequest = {
           refererInfo: {
-            referer: 'https:/www.test.com/page?var=val',
-            canonicalUrl: 'https:/www.test.com/page'
+            referer: 'https://www.test.com/page?var=val',
+            canonicalUrl: 'https://www.test.com/page'
           }
         };
 
         const request = spec.buildRequests(bidRequests, bidderRequest);
         const ortbRequest = request[0].data;
         expect(ortbRequest.site).to.not.equal(null);
-        expect(ortbRequest.site.ref).to.equal('https:/www.test.com/page?var=val');
-        expect(ortbRequest.site.page).to.equal('https:/www.test.com/page');
+        expect(ortbRequest.site.ref).to.equal('https://www.test.com/page?var=val');
+        expect(ortbRequest.site.page).to.equal('https://www.test.com/page');
         expect(ortbRequest.site.domain).to.not.be.undefined;
         expect(ortbRequest.imp).to.have.lengthOf(1);
         expect(ortbRequest.imp[0].video).to.not.equal(null);
@@ -306,8 +306,8 @@ describe('Somo Audience Adapter Tests', function () {
 
         const bidderRequest = {
           refererInfo: {
-            referer: 'https:/www.test.com/page?var=val',
-            canonicalUrl: 'https:/www.test.com/page'
+            referer: 'https://www.test.com/page?var=val',
+            canonicalUrl: 'https://www.test.com/page'
           }
         };
 
@@ -315,8 +315,8 @@ describe('Somo Audience Adapter Tests', function () {
         const ortbRequest = request[0].data;
         expect(ortbRequest.app).to.equal(null);
         expect(ortbRequest.site).to.not.equal(null);
-        expect(ortbRequest.site.ref).to.equal('https:/www.test.com/page?var=val');
-        expect(ortbRequest.site.page).to.equal('https:/www.test.com/page');
+        expect(ortbRequest.site.ref).to.equal('https://www.test.com/page?var=val');
+        expect(ortbRequest.site.page).to.equal('https://www.test.com/page');
         expect(ortbRequest.site.domain).to.not.be.undefined;
       });
 
