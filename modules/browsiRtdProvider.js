@@ -202,13 +202,12 @@ function getSlotById(id) {
 function getMacroId(macro, id, slot) {
   if (macro) {
     try {
-      const macroString = macro
+      return macro
         .replace(/<DIV_ID>/g, `${id}`)
         .replace(/<AD_UNIT>/g, `${slot.getAdUnitPath()}`)
         .replace(/<KEY_(\w+)>/g, (match, p1) => {
           return (p1 && slot.getTargeting(p1).join('_')) || 'NA';
         });
-      return eval(macroString);// eslint-disable-line no-eval
     } catch (e) {
       utils.logError(`failed to evaluate: ${macro}`);
     }
