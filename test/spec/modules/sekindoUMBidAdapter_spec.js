@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { spec } from 'modules/sekindoUMBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
 
-describe('sekindoUMAdapter', () => {
+describe('sekindoUMAdapter', function () {
   const adapter = newBidder(spec);
 
   const bannerParams = {
@@ -29,34 +29,34 @@ describe('sekindoUMAdapter', () => {
     'mediaType': 'banner'
   };
 
-  describe('inherited functions', () => {
-    it('exists and is a function', () => {
+  describe('inherited functions', function () {
+    it('exists and is a function', function () {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
   });
 
-  describe('isBidRequestValid', () => {
-    it('should return true when required params found', () => {
+  describe('isBidRequestValid', function () {
+    it('should return true when required params found', function () {
       bidRequests.mediaType = 'banner';
       bidRequests.params = bannerParams;
       expect(spec.isBidRequestValid(bidRequests)).to.equal(true);
     });
 
-    it('should return false when required video params are missing', () => {
+    it('should return false when required video params are missing', function () {
       bidRequests.mediaType = 'video';
       bidRequests.params = bannerParams;
       expect(spec.isBidRequestValid(bidRequests)).to.equal(false);
     });
 
-    it('should return true when required Video params found', () => {
+    it('should return true when required Video params found', function () {
       bidRequests.mediaType = 'video';
       bidRequests.params = videoParams;
       expect(spec.isBidRequestValid(bidRequests)).to.equal(true);
     });
   });
 
-  describe('buildRequests', () => {
-    it('banner data should be a query string and method = GET', () => {
+  describe('buildRequests', function () {
+    it('banner data should be a query string and method = GET', function () {
       bidRequests.mediaType = 'banner';
       bidRequests.params = bannerParams;
       const request = spec.buildRequests([bidRequests]);
@@ -64,7 +64,15 @@ describe('sekindoUMAdapter', () => {
       expect(request[0].method).to.equal('GET');
     });
 
-    it('video data should be a query string and method = GET', () => {
+    it('with gdprConsent, banner data should be a query string and method = GET', function () {
+      bidRequests.mediaType = 'banner';
+      bidRequests.params = bannerParams;
+      const request = spec.buildRequests([bidRequests], {'gdprConsent': {'consentString': 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==', 'vendorData': {}, 'gdprApplies': true}});
+      expect(request[0].data).to.be.a('string');
+      expect(request[0].method).to.equal('GET');
+    });
+
+    it('video data should be a query string and method = GET', function () {
       bidRequests.mediaType = 'video';
       bidRequests.params = videoParams;
       const request = spec.buildRequests([bidRequests]);
@@ -73,8 +81,8 @@ describe('sekindoUMAdapter', () => {
     });
   });
 
-  describe('interpretResponse', () => {
-    it('banner should get correct bid response', () => {
+  describe('interpretResponse', function () {
+    it('banner should get correct bid response', function () {
       let response = {
         'headers': function(header) {
           return 'dummy header';
@@ -102,7 +110,7 @@ describe('sekindoUMAdapter', () => {
       expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse[0]));
     });
 
-    it('vastXml video should get correct bid response', () => {
+    it('vastXml video should get correct bid response', function () {
       let response = {
         'headers': function(header) {
           return 'dummy header';
@@ -130,12 +138,12 @@ describe('sekindoUMAdapter', () => {
       expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse[0]));
     });
 
-    it('vastUrl video should get correct bid response', () => {
+    it('vastUrl video should get correct bid response', function () {
       let response = {
         'headers': function(header) {
           return 'dummy header';
         },
-        'body': {'id': '30b31c1838de1e', 'bidderCode': 'sekindoUM', 'cpm': 2.1951, 'width': 300, 'height': 250, 'vastUrl': '//vastUrl', 'ttl': 36000, 'creativeId': '323774', 'netRevenue': true, 'currency': 'USD'}
+        'body': {'id': '30b31c1838de1e', 'bidderCode': 'sekindoUM', 'cpm': 2.1951, 'width': 300, 'height': 250, 'vastUrl': 'https://vastUrl', 'ttl': 36000, 'creativeId': '323774', 'netRevenue': true, 'currency': 'USD'}
       };
       bidRequests.mediaType = 'video';
       bidRequests.params = videoParams;
@@ -150,7 +158,7 @@ describe('sekindoUMAdapter', () => {
           'currency': 'USD',
           'netRevenue': true,
           'ttl': 36000,
-          'vastUrl': '//vastUrl'
+          'vastUrl': 'https://vastUrl'
         }
       ];
       let result = spec.interpretResponse(response, bidRequests);

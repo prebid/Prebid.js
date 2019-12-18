@@ -1,8 +1,9 @@
-import { getSlotTargeting, getAdServerTargeting } from 'test/fixtures/fixtures';
-import { cookiesAreEnabled } from '../../src/utils';
+import { getAdServerTargeting } from 'test/fixtures/fixtures';
+import { expect } from 'chai';
+import CONSTANTS from 'src/constants.json';
+import * as utils from 'src/utils';
 
 var assert = require('assert');
-var utils = require('../../src/utils');
 
 describe('Utils', function () {
   var obj_string = 's',
@@ -101,7 +102,7 @@ describe('Utils', function () {
       var obj = getAdServerTargeting();
 
       var output = utils.transformAdServerTargetingObj(obj[Object.keys(obj)[0]]);
-      var expected = 'foobar=0x0%2C300x250%2C300x600&hb_size=300x250&hb_pb=10.00&hb_adid=233bcbee889d46d&hb_bidder=appnexus&hb_size_triplelift=0x0&hb_pb_triplelift=10.00&hb_adid_triplelift=222bb26f9e8bd&hb_bidder_triplelift=triplelift&hb_size_appnexus=300x250&hb_pb_appnexus=10.00&hb_adid_appnexus=233bcbee889d46d&hb_bidder_appnexus=appnexus&hb_size_pagescience=300x250&hb_pb_pagescience=10.00&hb_adid_pagescience=25bedd4813632d7&hb_bidder_pagescienc=pagescience&hb_size_brightcom=300x250&hb_pb_brightcom=10.00&hb_adid_brightcom=26e0795ab963896&hb_bidder_brightcom=brightcom&hb_size_brealtime=300x250&hb_pb_brealtime=10.00&hb_adid_brealtime=275bd666f5a5a5d&hb_bidder_brealtime=brealtime&hb_size_pubmatic=300x250&hb_pb_pubmatic=10.00&hb_adid_pubmatic=28f4039c636b6a7&hb_bidder_pubmatic=pubmatic&hb_size_rubicon=300x600&hb_pb_rubicon=10.00&hb_adid_rubicon=29019e2ab586a5a&hb_bidder_rubicon=rubicon';
+      var expected = 'foobar=0x0%2C300x250%2C300x600&' + CONSTANTS.TARGETING_KEYS.SIZE + '=300x250&' + CONSTANTS.TARGETING_KEYS.PRICE_BUCKET + '=10.00&' + CONSTANTS.TARGETING_KEYS.AD_ID + '=233bcbee889d46d&' + CONSTANTS.TARGETING_KEYS.BIDDER + '=appnexus&' + CONSTANTS.TARGETING_KEYS.SIZE + '_triplelift=0x0&' + CONSTANTS.TARGETING_KEYS.PRICE_BUCKET + '_triplelift=10.00&' + CONSTANTS.TARGETING_KEYS.AD_ID + '_triplelift=222bb26f9e8bd&' + CONSTANTS.TARGETING_KEYS.BIDDER + '_triplelift=triplelift&' + CONSTANTS.TARGETING_KEYS.SIZE + '_appnexus=300x250&' + CONSTANTS.TARGETING_KEYS.PRICE_BUCKET + '_appnexus=10.00&' + CONSTANTS.TARGETING_KEYS.AD_ID + '_appnexus=233bcbee889d46d&' + CONSTANTS.TARGETING_KEYS.BIDDER + '_appnexus=appnexus&' + CONSTANTS.TARGETING_KEYS.SIZE + '_pagescience=300x250&' + CONSTANTS.TARGETING_KEYS.PRICE_BUCKET + '_pagescience=10.00&' + CONSTANTS.TARGETING_KEYS.AD_ID + '_pagescience=25bedd4813632d7&' + CONSTANTS.TARGETING_KEYS.BIDDER + '_pagescienc=pagescience&' + CONSTANTS.TARGETING_KEYS.SIZE + '_brightcom=300x250&' + CONSTANTS.TARGETING_KEYS.PRICE_BUCKET + '_brightcom=10.00&' + CONSTANTS.TARGETING_KEYS.AD_ID + '_brightcom=26e0795ab963896&' + CONSTANTS.TARGETING_KEYS.BIDDER + '_brightcom=brightcom&' + CONSTANTS.TARGETING_KEYS.SIZE + '_brealtime=300x250&' + CONSTANTS.TARGETING_KEYS.PRICE_BUCKET + '_brealtime=10.00&' + CONSTANTS.TARGETING_KEYS.AD_ID + '_brealtime=275bd666f5a5a5d&' + CONSTANTS.TARGETING_KEYS.BIDDER + '_brealtime=brealtime&' + CONSTANTS.TARGETING_KEYS.SIZE + '_pubmatic=300x250&' + CONSTANTS.TARGETING_KEYS.PRICE_BUCKET + '_pubmatic=10.00&' + CONSTANTS.TARGETING_KEYS.AD_ID + '_pubmatic=28f4039c636b6a7&' + CONSTANTS.TARGETING_KEYS.BIDDER + '_pubmatic=pubmatic&' + CONSTANTS.TARGETING_KEYS.SIZE + '_rubicon=300x600&' + CONSTANTS.TARGETING_KEYS.PRICE_BUCKET + '_rubicon=10.00&' + CONSTANTS.TARGETING_KEYS.AD_ID + '_rubicon=29019e2ab586a5a&' + CONSTANTS.TARGETING_KEYS.BIDDER + '_rubicon=rubicon';
       assert.equal(output, expected);
     });
 
@@ -227,6 +228,56 @@ describe('Utils', function () {
     it('return undefined if the input is not a number 2', function () {
       var size = ['foo', 300];
       var output = utils.parseGPTSingleSizeArray(size);
+      assert.equal(output, undefined);
+    });
+  });
+
+  describe('parseGPTSingleSizeArrayToRtbSize', function () {
+    it('should return size string with input single size array', function () {
+      var size = [300, 250];
+      var output = utils.parseGPTSingleSizeArrayToRtbSize(size);
+      assert.deepEqual(output, {w: 300, h: 250});
+    });
+
+    it('should return size string with input single size array', function () {
+      var size = ['300', '250'];
+      var output = utils.parseGPTSingleSizeArrayToRtbSize(size);
+      assert.deepEqual(output, {w: 300, h: 250});
+    });
+
+    it('return undefined using string input', function () {
+      var size = '1';
+      var output = utils.parseGPTSingleSizeArrayToRtbSize(size);
+      assert.equal(output, undefined);
+    });
+
+    it('return undefined using number input', function () {
+      var size = 1;
+      var output = utils.parseGPTSingleSizeArrayToRtbSize(size);
+      assert.equal(output, undefined);
+    });
+
+    it('return undefined using one length single array', function () {
+      var size = [300];
+      var output = utils.parseGPTSingleSizeArrayToRtbSize(size);
+      assert.equal(output, undefined);
+    });
+
+    it('return undefined if the input is empty', function () {
+      var size = '';
+      var output = utils.parseGPTSingleSizeArrayToRtbSize(size);
+      assert.equal(output, undefined);
+    });
+
+    it('return undefined if the input is not a number', function () {
+      var size = ['foo', 'bar'];
+      var output = utils.parseGPTSingleSizeArrayToRtbSize(size);
+      assert.equal(output, undefined);
+    });
+
+    it('return undefined if the input is not a number 2', function () {
+      var size = [300, 'foo'];
+      var output = utils.parseGPTSingleSizeArrayToRtbSize(size);
       assert.equal(output, undefined);
     });
   });
@@ -359,6 +410,33 @@ describe('Utils', function () {
     });
   });
 
+  describe('isPlainObject', function () {
+    it('should return false with input string', function () {
+      var output = utils.isPlainObject(obj_string);
+      assert.deepEqual(output, false);
+    });
+
+    it('should return false with input number', function () {
+      var output = utils.isPlainObject(obj_number);
+      assert.deepEqual(output, false);
+    });
+
+    it('should return true with input object', function () {
+      var output = utils.isPlainObject(obj_object);
+      assert.deepEqual(output, true);
+    });
+
+    it('should return false with input array', function () {
+      var output = utils.isPlainObject(obj_array);
+      assert.deepEqual(output, false);
+    });
+
+    it('should return false with input function', function () {
+      var output = utils.isPlainObject(obj_function);
+      assert.deepEqual(output, false);
+    });
+  });
+
   describe('isEmpty', function () {
     it('should return true with empty object', function () {
       var output = utils.isEmpty(obj_object);
@@ -479,11 +557,11 @@ describe('Utils', function () {
 
   describe('getHighestCpm', function () {
     it('should pick the existing highest cpm', function () {
-      var previous = {
+      let previous = {
         cpm: 2,
         timeToRespond: 100
       };
-      var current = {
+      let current = {
         cpm: 1,
         timeToRespond: 100
       };
@@ -491,11 +569,11 @@ describe('Utils', function () {
     });
 
     it('should pick the new highest cpm', function () {
-      var previous = {
+      let previous = {
         cpm: 1,
         timeToRespond: 100
       };
-      var current = {
+      let current = {
         cpm: 2,
         timeToRespond: 100
       };
@@ -503,15 +581,43 @@ describe('Utils', function () {
     });
 
     it('should pick the fastest cpm in case of tie', function () {
-      var previous = {
+      let previous = {
         cpm: 1,
         timeToRespond: 100
       };
-      var current = {
+      let current = {
         cpm: 1,
         timeToRespond: 50
       };
       assert.equal(utils.getHighestCpm(previous, current), current);
+    });
+
+    it('should pick the oldest in case of tie using responseTimeStamp', function () {
+      let previous = {
+        cpm: 1,
+        timeToRespond: 100,
+        responseTimestamp: 1000
+      };
+      let current = {
+        cpm: 1,
+        timeToRespond: 50,
+        responseTimestamp: 2000
+      };
+      assert.equal(utils.getOldestHighestCpmBid(previous, current), previous);
+    });
+
+    it('should pick the latest in case of tie using responseTimeStamp', function () {
+      let previous = {
+        cpm: 1,
+        timeToRespond: 100,
+        responseTimestamp: 1000
+      };
+      let current = {
+        cpm: 1,
+        timeToRespond: 50,
+        responseTimestamp: 2000
+      };
+      assert.equal(utils.getLatestHighestCpmBid(previous, current), current);
     });
   });
 
@@ -555,7 +661,7 @@ describe('Utils', function () {
       var value2 = utils.deepAccess(obj, 'test.first');
       assert.equal(value2, 11);
 
-      var value3 = utils.deepAccess(obj, 1);
+      var value3 = utils.deepAccess(obj, '1');
       assert.equal(value3, 2);
     });
 
@@ -567,6 +673,29 @@ describe('Utils', function () {
       });
 
       assert.equal(value, undefined);
+    });
+  });
+
+  describe('deepSetValue', function() {
+    it('should set existing properties at various depths', function() {
+      const testObj = {
+        prop: 'value',
+        nestedObj: {
+          nestedProp: 'nestedValue'
+        }
+      };
+      utils.deepSetValue(testObj, 'prop', 'newValue');
+      assert.equal(testObj.prop, 'newValue');
+      utils.deepSetValue(testObj, 'nestedObj.nestedProp', 'newNestedValue');
+      assert.equal(testObj.nestedObj.nestedProp, 'newNestedValue');
+    });
+
+    it('should create object levels between top and bottom of given path if they do not exist', function() {
+      const testObj = {};
+      utils.deepSetValue(testObj, 'level1.level2', 'value');
+      assert.notEqual(testObj.level1, undefined);
+      assert.notEqual(testObj.level1.level2, undefined);
+      assert.equal(testObj.level1.level2, 'value');
     });
   });
 
@@ -584,8 +713,8 @@ describe('Utils', function () {
     });
   });
 
-  describe('getDefinedParams', () => {
-    it('builds an object consisting of defined params', () => {
+  describe('getDefinedParams', function () {
+    it('builds an object consisting of defined params', function () {
       const adUnit = {
         mediaType: 'video',
         comeWithMe: 'ifuwant2live',
@@ -603,8 +732,8 @@ describe('Utils', function () {
     });
   });
 
-  describe('deepClone', () => {
-    it('deep copies objects', () => {
+  describe('deepClone', function () {
+    it('deep copies objects', function () {
       const adUnit = [{
         code: 'swan',
         mediaTypes: {video: {context: 'outstream'}},
@@ -621,6 +750,176 @@ describe('Utils', function () {
       const adUnitCopy = utils.deepClone(adUnit);
       expect(adUnitCopy[0].renderer.url).to.be.a('string');
       expect(adUnitCopy[0].renderer.render).to.be.a('function');
+    });
+  });
+
+  describe('getUserConfiguredParams', function () {
+    const adUnits = [{
+      code: 'adUnit1',
+      bids: [{
+        bidder: 'bidder1',
+        params: {
+          key1: 'value1'
+        }
+      }, {
+        bidder: 'bidder2'
+      }]
+    }];
+
+    it('should return params configured', function () {
+      const output = utils.getUserConfiguredParams(adUnits, 'adUnit1', 'bidder1');
+      const expected = [{
+        key1: 'value1'
+      }];
+      assert.deepEqual(output, expected);
+    });
+
+    it('should return array containting empty object, if bidder present and no params are configured', function () {
+      const output = utils.getUserConfiguredParams(adUnits, 'adUnit1', 'bidder2');
+      const expected = [{}];
+      assert.deepEqual(output, expected);
+    });
+
+    it('should return empty array, if bidder is not present', function () {
+      const output = utils.getUserConfiguredParams(adUnits, 'adUnit1', 'bidder3');
+      const expected = [];
+      assert.deepEqual(output, expected);
+    });
+
+    it('should return empty array, if adUnit is not present', function () {
+      const output = utils.getUserConfiguredParams(adUnits, 'adUnit2', 'bidder3');
+      const expected = [];
+      assert.deepEqual(output, expected);
+    });
+  });
+
+  describe('convertCamelToUnderscore', function () {
+    it('returns converted string value using underscore syntax instead of camelCase', function () {
+      let var1 = 'placementIdTest';
+      let test1 = utils.convertCamelToUnderscore(var1);
+      expect(test1).to.equal('placement_id_test');
+
+      let var2 = 'my_test_value';
+      let test2 = utils.convertCamelToUnderscore(var2);
+      expect(test2).to.equal(var2);
+    });
+  });
+
+  describe('getAdUnitSizes', function () {
+    it('returns an empty response when adUnits is undefined', function () {
+      let sizes = utils.getAdUnitSizes();
+      expect(sizes).to.be.undefined;
+    });
+
+    it('returns an empty array when invalid data is present in adUnit object', function () {
+      let sizes = utils.getAdUnitSizes({ sizes: 300 });
+      expect(sizes).to.deep.equal([]);
+    });
+
+    it('retuns an array of arrays when reading from adUnit.sizes', function () {
+      let sizes = utils.getAdUnitSizes({ sizes: [300, 250] });
+      expect(sizes).to.deep.equal([[300, 250]]);
+
+      sizes = utils.getAdUnitSizes({ sizes: [[300, 250], [300, 600]] });
+      expect(sizes).to.deep.equal([[300, 250], [300, 600]]);
+    });
+
+    it('returns an array of arrays when reading from adUnit.mediaTypes.banner.sizes', function () {
+      let sizes = utils.getAdUnitSizes({ mediaTypes: { banner: { sizes: [300, 250] } } });
+      expect(sizes).to.deep.equal([[300, 250]]);
+
+      sizes = utils.getAdUnitSizes({ mediaTypes: { banner: { sizes: [[300, 250], [300, 600]] } } });
+      expect(sizes).to.deep.equal([[300, 250], [300, 600]]);
+    });
+  });
+
+  describe('transformBidderParamKeywords', function () {
+    it('returns an array of objects when keyvalue is an array', function () {
+      let keywords = {
+        genre: ['rock', 'pop']
+      };
+      let result = utils.transformBidderParamKeywords(keywords);
+      expect(result).to.deep.equal([{
+        key: 'genre',
+        value: ['rock', 'pop']
+      }]);
+    });
+
+    it('returns an array of objects when keyvalue is a string', function () {
+      let keywords = {
+        genre: 'opera'
+      };
+      let result = utils.transformBidderParamKeywords(keywords);
+      expect(result).to.deep.equal([{
+        key: 'genre',
+        value: ['opera']
+      }]);
+    });
+
+    it('returns an array of objects when keyvalue is a number', function () {
+      let keywords = {
+        age: 15
+      };
+      let result = utils.transformBidderParamKeywords(keywords);
+      expect(result).to.deep.equal([{
+        key: 'age',
+        value: ['15']
+      }]);
+    });
+
+    it('returns an array of objects when using multiple keys with values of differing types', function () {
+      let keywords = {
+        genre: 'classical',
+        mix: ['1', 2, '3', 4],
+        age: 10
+      };
+      let result = utils.transformBidderParamKeywords(keywords);
+      expect(result).to.deep.equal([{
+        key: 'genre',
+        value: ['classical']
+      }, {
+        key: 'mix',
+        value: ['1', '2', '3', '4']
+      }, {
+        key: 'age',
+        value: ['10']
+      }]);
+    });
+
+    it('returns an array of objects when the keyvalue uses an empty string', function() {
+      let keywords = {
+        test: [''],
+        test2: ''
+      };
+      let result = utils.transformBidderParamKeywords(keywords);
+      expect(result).to.deep.equal([{
+        key: 'test',
+        value: ['']
+      }, {
+        key: 'test2',
+        value: ['']
+      }]);
+    });
+
+    describe('insertElement', function () {
+      it('returns a node at the top of the target by default', function () {
+        const toInsert = document.createElement('div');
+        const target = document.getElementsByTagName('body')[0];
+        const inserted = utils.insertElement(toInsert, document, 'body');
+        expect(inserted).to.equal(target.firstChild);
+      });
+      it('returns a node at bottom of target if 4th argument is true', function () {
+        const toInsert = document.createElement('div');
+        const target = document.getElementsByTagName('html')[0];
+        const inserted = utils.insertElement(toInsert, document, 'html', true);
+        expect(inserted).to.equal(target.lastChild);
+      });
+      it('returns a node at top of the head if no target is given', function () {
+        const toInsert = document.createElement('div');
+        const target = document.getElementsByTagName('head')[0];
+        const inserted = utils.insertElement(toInsert);
+        expect(inserted).to.equal(target.firstChild);
+      });
     });
   });
 });

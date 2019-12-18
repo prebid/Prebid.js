@@ -1,7 +1,9 @@
-import * as utils from 'src/utils';
-import { registerBidder } from 'src/adapters/bidderFactory';
+import * as utils from '../src/utils';
+import { registerBidder } from '../src/adapters/bidderFactory';
 
 const BIDDER_CODE = 'ias';
+
+const otherBidIds = [];
 
 function isBidRequestValid(bid) {
   const { pubId, adUnitPath } = bid.params;
@@ -37,15 +39,15 @@ function stringifySlot(bidRequest) {
 }
 
 function stringifyWindowSize() {
-  return [window.innerWidth || -1, window.innerHeight || -1].join('.');
+  return [ window.innerWidth || -1, window.innerHeight || -1 ].join('.');
 }
 
 function stringifyScreenSize() {
-  return [(window.screen && window.screen.width) || -1, (window.screen && window.screen.height) || -1].join('.');
+  return [ (window.screen && window.screen.width) || -1, (window.screen && window.screen.height) || -1 ].join('.');
 }
 
 function buildRequests(bidRequests) {
-  const IAS_HOST = '//pixel.adsafeprotected.com/services/pub';
+  const IAS_HOST = 'https://pixel.adsafeprotected.com/services/pub';
   const anId = bidRequests[0].params.pubId;
 
   let queries = [];
@@ -57,21 +59,29 @@ function buildRequests(bidRequests) {
 
   queries.push(['wr', stringifyWindowSize()]);
   queries.push(['sr', stringifyScreenSize()]);
+  queries.push(['url', encodeURIComponent(window.location.href)]);
 
   const queryString = encodeURI(queries.map(qs => qs.join('=')).join('&'));
+
+  bidRequests.forEach(function (request) {
+    if (bidRequests[0].bidId != request.bidId) {
+      otherBidIds.push(request.bidId);
+    }
+  });
 
   return {
     method: 'GET',
     url: IAS_HOST,
     data: queryString,
     bidRequest: bidRequests[0]
-  }
+  };
 }
 
 function getPageLevelKeywords(response) {
   let result = {};
   shallowMerge(result, response.brandSafety);
   result.fr = response.fr;
+  result.custom = response.custom;
   return result;
 }
 
@@ -95,7 +105,7 @@ function interpretResponse(serverResponse, request) {
     height: 200,
     creativeId: 434,
     dealId: 42,
-    currency: 'usd',
+    currency: 'USD',
     netRevenue: true,
     ttl: 360
   };
@@ -103,6 +113,13 @@ function interpretResponse(serverResponse, request) {
   shallowMerge(commonBidResponse, getPageLevelKeywords(iasResponse));
   commonBidResponse.slots = iasResponse.slots;
   bidResponses.push(commonBidResponse);
+
+  otherBidIds.forEach(function (bidId) {
+    var otherResponse = Object.assign({}, commonBidResponse);
+    otherResponse.requestId = bidId;
+    bidResponses.push(otherResponse);
+  });
+
   return bidResponses;
 }
 

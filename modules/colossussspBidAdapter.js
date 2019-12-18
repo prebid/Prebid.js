@@ -1,44 +1,31 @@
-import { registerBidder } from 'src/adapters/bidderFactory';
-import * as utils from 'src/utils';
+import { registerBidder } from '../src/adapters/bidderFactory';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes';
+import * as utils from '../src/utils';
 
 const BIDDER_CODE = 'colossusssp';
-const URL = '//colossusssp.com/?c=o&m=multi';
-const URL_SYNC = '//colossusssp.com/?c=o&m=cookie';
+const G_URL = 'https://colossusssp.com/?c=o&m=multi';
+const G_URL_SYNC = 'https://colossusssp.com/?c=o&m=cookie';
 
-let sizeObj = {
-  '468x60': 1,
-  '728x90': 2,
-  '300x600': 10,
-  '300x250': 15,
-  '300x100': 19,
-  '320x50': 43,
-  '300x50': 44,
-  '300x300': 48,
-  '300x1050': 54,
-  '970x90': 55,
-  '970x250': 57,
-  '1000x90': 58,
-  '320x80': 59,
-  '640x480': 65,
-  '320x480': 67,
-  '320x320': 72,
-  '320x160': 73,
-  '480x300': 83,
-  '970x310': 94,
-  '970x210': 96,
-  '480x320': 101,
-  '768x1024': 102,
-  '1000x300': 113,
-  '320x100': 117,
-  '800x250': 118,
-  '200x600': 119
-};
+function isBidResponseValid(bid) {
+  if (!bid.requestId || !bid.cpm || !bid.creativeId || !bid.ttl || !bid.currency) {
+    return false;
+  }
 
-utils._each(sizeObj, (item, key) => sizeObj[item] = key);
+  switch (bid.mediaType) {
+    case BANNER:
+      return Boolean(bid.width && bid.height && bid.ad);
+    case VIDEO:
+      return Boolean(bid.vastUrl);
+    case NATIVE:
+      return Boolean(bid.native);
+    default:
+      return false;
+  }
+}
 
 export const spec = {
   code: BIDDER_CODE,
-
+  supportedMediaTypes: [BANNER, VIDEO, NATIVE],
   /**
    * Determines whether or not the given bid request is valid.
    *
@@ -46,9 +33,7 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: (bid) => {
-    return (!isNaN(bid.params.placement_id) &&
-    ((bid.params.sizes !== undefined && bid.params.sizes.length > 0 && bid.params.sizes.some((sizeIndex) => sizeObj[sizeIndex] !== undefined)) ||
-    (bid.sizes !== undefined && bid.sizes.length > 0 && bid.sizes.map((size) => `${size[0]}x${size[1]}`).some((size) => sizeObj[size] !== undefined))));
+    return Boolean(bid.bidId && bid.params && !isNaN(bid.params.placement_id));
   },
 
   /**
@@ -57,15 +42,16 @@ export const spec = {
    * @param {BidRequest[]} validBidRequests A non-empty list of valid bid requests that should be sent to the Server.
    * @return ServerRequest Info describing the request to the server.
    */
-  buildRequests: (validBidRequests) => {
+  buildRequests: (validBidRequests, bidderRequest) => {
     let winTop = window;
+    let location;
     try {
-      window.top.location.toString();
+      location = new URL(bidderRequest.refererInfo.referer)
       winTop = window.top;
     } catch (e) {
+      location = winTop.location;
       utils.logMessage(e);
     };
-    let location = utils.getTopWindowLocation();
     let placements = [];
     let request = {
       'deviceWidth': winTop.screen.width,
@@ -76,17 +62,30 @@ export const spec = {
       'page': location.pathname,
       'placements': placements
     };
+
+    if (bidderRequest) {
+      if (bidderRequest.uspConsent) {
+        request.ccpa = bidderRequest.uspConsent;
+      }
+    }
+
     for (let i = 0; i < validBidRequests.length; i++) {
       let bid = validBidRequests[i];
-      let placement = {};
-      placement['placementId'] = bid.params.placement_id;
-      placement['bidId'] = bid.bidId;
-      placement['sizes'] = bid.sizes;
+      let traff = bid.params.traffic || BANNER
+      let placement = {
+        placementId: bid.params.placement_id,
+        bidId: bid.bidId,
+        sizes: bid.mediaTypes[traff].sizes,
+        traffic: traff
+      };
+      if (bid.schain) {
+        placement.schain = bid.schain;
+      }
       placements.push(placement);
     }
     return {
       method: 'POST',
-      url: URL,
+      url: G_URL,
       data: request
     };
   },
@@ -103,15 +102,7 @@ export const spec = {
       serverResponse = serverResponse.body;
       for (let i = 0; i < serverResponse.length; i++) {
         let resItem = serverResponse[i];
-        if (resItem.width && !isNaN(resItem.width) &&
-            resItem.height && !isNaN(resItem.height) &&
-            resItem.requestId && typeof resItem.requestId === 'string' &&
-            resItem.cpm && !isNaN(resItem.cpm) &&
-            resItem.ad && typeof resItem.ad === 'string' &&
-            resItem.ttl && !isNaN(resItem.ttl) &&
-            resItem.creativeId && typeof resItem.creativeId === 'string' &&
-            resItem.netRevenue && typeof resItem.netRevenue === 'boolean' &&
-            resItem.currency && typeof resItem.currency === 'string') {
+        if (isBidResponseValid(resItem)) {
           response.push(resItem);
         }
       }
@@ -124,7 +115,7 @@ export const spec = {
   getUserSyncs: () => {
     return [{
       type: 'image',
-      url: URL_SYNC
+      url: G_URL_SYNC
     }];
   }
 };

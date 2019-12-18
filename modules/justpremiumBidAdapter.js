@@ -1,8 +1,9 @@
-import { registerBidder } from 'src/adapters/bidderFactory'
-import { getTopWindowLocation } from 'src/utils'
+import { registerBidder } from '../src/adapters/bidderFactory'
+import { deepAccess } from '../src/utils';
 
 const BIDDER_CODE = 'justpremium'
-const ENDPOINT_URL = getTopWindowLocation().protocol + '//pre.ads.justpremium.com/v/2.0/t/xhr'
+const ENDPOINT_URL = 'https://pre.ads.justpremium.com/v/2.0/t/xhr'
+const JP_ADAPTER_VERSION = '1.6'
 const pixels = []
 
 export const spec = {
@@ -13,7 +14,7 @@ export const spec = {
     return !!(bid && bid.params && bid.params.zone)
   },
 
-  buildRequests: (validBidRequests) => {
+  buildRequests: (validBidRequests, bidderRequest) => {
     const c = preparePubCond(validBidRequests)
     const dim = getWebsiteDim()
     const payload = {
@@ -22,8 +23,7 @@ export const spec = {
       }).filter((value, index, self) => {
         return self.indexOf(value) === index
       }),
-      hostname: getTopWindowLocation().hostname,
-      protocol: getTopWindowLocation().protocol.replace(':', ''),
+      referer: bidderRequest.refererInfo.referer,
       sw: dim.screenWidth,
       sh: dim.screenHeight,
       ww: dim.innerWidth,
@@ -36,8 +36,29 @@ export const spec = {
       const zone = b.params.zone
       const sizes = payload.sizes
       sizes[zone] = sizes[zone] || []
-      sizes[zone].push.apply(sizes[zone], b.sizes)
+      sizes[zone].push.apply(sizes[zone], b.mediaTypes && b.mediaTypes.banner && b.mediaTypes.banner.sizes)
     })
+
+    if (deepAccess(validBidRequests[0], 'userId.pubcid')) {
+      payload.pubcid = deepAccess(validBidRequests[0], 'userId.pubcid')
+    } else if (deepAccess(validBidRequests[0], 'crumbs.pubcid')) {
+      payload.pubcid = deepAccess(validBidRequests[0], 'crumbs.pubcid')
+    }
+
+    payload.uids = validBidRequests[0].userId
+
+    if (bidderRequest && bidderRequest.gdprConsent) {
+      payload.gdpr_consent = {
+        consent_string: bidderRequest.gdprConsent.consentString,
+        consent_required: (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') ? bidderRequest.gdprConsent.gdprApplies : true
+      }
+    }
+
+    payload.version = {
+      prebid: '$prebid.version$',
+      jp_adapter: JP_ADAPTER_VERSION
+    }
+
     const payloadString = JSON.stringify(payload)
 
     return {
@@ -54,7 +75,7 @@ export const spec = {
     bidRequests.bids.forEach(adUnit => {
       let bid = findBid(adUnit.params, body.bid)
       if (bid) {
-        let size = (adUnit.sizes && adUnit.sizes.length && adUnit.sizes[0]) || []
+        let size = (adUnit.mediaTypes && adUnit.mediaTypes.banner && adUnit.mediaTypes.banner.sizes && adUnit.mediaTypes.banner.sizes.length && adUnit.mediaTypes.banner.sizes[0]) || []
         let bidResponse = {
           requestId: adUnit.bidId,
           creativeId: bid.id,
@@ -64,24 +85,28 @@ export const spec = {
           cpm: bid.price,
           netRevenue: true,
           currency: bid.currency || 'USD',
-          ttl: bid.ttl || spec.time
+          ttl: bid.ttl || spec.time,
+          format: bid.format
         }
         bidResponses.push(bidResponse)
       }
     })
-
     return bidResponses
   },
 
-  getUserSyncs: (syncOptions) => {
+  getUserSyncs: function getUserSyncs(syncOptions, responses, gdprConsent) {
+    let url = 'https://pre.ads.justpremium.com/v/1.0/t/sync' + '?_c=' + 'a' + Math.random().toString(36).substring(7) + Date.now();
+    if (gdprConsent && (typeof gdprConsent.gdprApplies === 'boolean')) {
+      url = url + '&consentString=' + encodeURIComponent(gdprConsent.consentString)
+    }
     if (syncOptions.iframeEnabled) {
       pixels.push({
         type: 'iframe',
-        src: '//us-u.openx.net/w/1.0/pd?plm=10&ph=26e53f82-d199-49df-9eca-7b350c0f9646'
+        url: url
       })
     }
     return pixels
-  }
+  },
 }
 
 function findBid (params, bids) {
