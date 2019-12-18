@@ -396,7 +396,7 @@ describe('CleanmedianetAdapter', function() {
       expect(ad0.cpm).to.equal(rtbResponse.seatbid[1].bid[0].price);
       expect(ad0.width).to.equal(rtbResponse.seatbid[1].bid[0].w);
       expect(ad0.height).to.equal(rtbResponse.seatbid[1].bid[0].h);
-      expect(ad0.ttl).to.equal(60 * 10);
+      expect(ad0.ttl).to.equal(360);
       expect(ad0.creativeId).to.equal(rtbResponse.seatbid[1].bid[0].crid);
       expect(ad0.netRevenue).to.equal(true);
       expect(ad0.currency).to.equal(
@@ -420,7 +420,7 @@ describe('CleanmedianetAdapter', function() {
       expect(ad0.cpm).to.equal(rtbResponse.seatbid[0].bid[0].price);
       expect(ad0.width).to.equal(rtbResponse.seatbid[0].bid[0].w);
       expect(ad0.height).to.equal(rtbResponse.seatbid[0].bid[0].h);
-      expect(ad0.ttl).to.equal(60 * 10);
+      expect(ad0.ttl).to.equal(360);
       expect(ad0.creativeId).to.equal(rtbResponse.seatbid[0].bid[0].crid);
       expect(ad0.netRevenue).to.equal(true);
       expect(ad0.currency).to.equal(
