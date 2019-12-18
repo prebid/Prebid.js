@@ -1547,6 +1547,9 @@ describe('S2S Adapter', function () {
 
     it('should set the bidResponse currency to whats in the PBS response', function() {
       server.respondWith(JSON.stringify(RESPONSE_OPENRTB));
+      let ortb2Config = utils.deepClone(CONFIG);
+      ortb2Config.endpoint = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction';
+      config.setConfig({ s2sConfig: ortb2Config });
       adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
       server.respond();
       sinon.assert.calledOnce(addBidResponse);
@@ -1557,6 +1560,9 @@ describe('S2S Adapter', function () {
     it('should set the default bidResponse currency when not specified in OpenRTB', function() {
       let modifiedResponse = utils.deepClone(RESPONSE_OPENRTB);
       modifiedResponse.cur = '';
+      let ortb2Config = utils.deepClone(CONFIG);
+      ortb2Config.endpoint = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction';
+      config.setConfig({ s2sConfig: ortb2Config });
       server.respondWith(JSON.stringify(modifiedResponse));
       adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
       server.respond();
@@ -1567,7 +1573,6 @@ describe('S2S Adapter', function () {
 
     it('should pass through default adserverTargeting if present in bidObject', function () {
       server.respondWith(JSON.stringify(RESPONSE));
-
       config.setConfig({ s2sConfig: CONFIG });
       adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
       server.respond();
