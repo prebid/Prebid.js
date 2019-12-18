@@ -15,7 +15,7 @@ describe('FidelityAdapter', function () {
     let bid = {
       'bidder': 'fidelity',
       'params': {
-        'zoneid': '37',
+        'zoneid': '27248',
         'floor': '0.05',
         'server': 'x.fidelity-media.com',
       },
@@ -34,7 +34,7 @@ describe('FidelityAdapter', function () {
       let bid = Object.assign({}, bid);
       delete bid.params;
       bid.params = {
-        'zoneid': '37',
+        'zoneid': '27248',
       };
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
@@ -58,7 +58,7 @@ describe('FidelityAdapter', function () {
         {
           bidder: 'fidelity',
           params: {
-            zoneid: '37',
+            zoneid: '27248',
             floor: '0.05',
             server: 'x.fidelity-media.com',
           },
