@@ -33,11 +33,9 @@ export const spec = {
     const spaces = getSpaces(bidRequests);
     const pageUrl = bidderRequest.refererInfo.referer;
     const getDomain = (url) => {
-      try {
-        return new URL(url).hostname || FILE;
-      } catch (e) {
-        return FILE;
-      }
+      let anchor = document.createElement('a');
+      anchor.href = url;
+      return anchor.hostname;
     }
     if (urlConfig.t) {
       url = 'https://' + urlConfig.isv + '/layers/t_pbjs_2.json';
