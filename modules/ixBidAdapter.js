@@ -264,6 +264,10 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
       }
     }
 
+    if (bidderRequest.uspConsent) {
+      utils.deepSetValue(r, 'regs.ext.us_privacy', bidderRequest.uspConsent);
+    }
+
     if (bidderRequest.refererInfo) {
       r.site.page = bidderRequest.refererInfo.referer;
     }
