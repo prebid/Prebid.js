@@ -72,7 +72,10 @@ export const spec = {
     if (publisherTagAvailable()) {
       // eslint-disable-next-line no-undef
       const adapter = new Criteo.PubTag.Adapters.Prebid(PROFILE_ID_PUBLISHERTAG, ADAPTER_VERSION, bidRequests, bidderRequest, '$prebid.version$');
-      adapter.setEnableSendAllBids(config.getConfig('enableSendAllBids'));
+      const enableSendAllBids = config.getConfig('enableSendAllBids');
+      if (adapter.setEnableSendAllBids && typeof adapter.setEnableSendAllBids === 'function' && typeof enableSendAllBids === 'boolean') {
+        adapter.setEnableSendAllBids(enableSendAllBids);
+      }
       url = adapter.buildCdbUrl();
       data = adapter.buildCdbRequest();
     } else {
@@ -121,8 +124,10 @@ export const spec = {
           dealId: slot.dealCode,
         };
         if (slot.native) {
-          if (bidRequest.params.nativeCallback || config.getConfig('enableSendAllBids')) {
+          if (bidRequest.params.nativeCallback) {
             bid.ad = createNativeAd(bidId, slot.native, bidRequest.params.nativeCallback);
+          } else if (config.getConfig('enableSendAllBids') === true) {
+            return;
           } else {
             bid.native = createPrebidNativeAd(slot.native);
             bid.mediaType = NATIVE;
