@@ -118,6 +118,17 @@ describe('gumgumAdapter', function () {
       expect(bidRequest.data).to.include.any.keys('t');
       expect(bidRequest.data).to.include.any.keys('fp');
     });
+    it('should send pubId if inScreenPubID param is specified', function () {
+      const request = Object.assign({}, bidRequests[0]);
+      delete request.params;
+      request.params = {
+        'inScreenPubID': 123
+      };
+      const bidRequest = spec.buildRequests([request])[0];
+      expect(bidRequest.data).to.include.any.keys('pubId');
+      expect(bidRequest.data.pubId).to.equal(request.params.inScreenPubID);
+      expect(bidRequest.data).to.not.include.any.keys('t');
+    });
     it('should correctly set the request paramters depending on params field', function () {
       const request = Object.assign({}, bidRequests[0]);
       delete request.params;

@@ -2,7 +2,7 @@ import {registerBidder} from '../src/adapters/bidderFactory';
 import * as utils from '../src/utils';
 import {BANNER} from '../src/mediaTypes';
 
-const ENDPOINT_URL = '//x.padsquad.com/auction';
+const ENDPOINT_URL = 'https://x.padsquad.com/auction';
 
 const DEFAULT_BID_TTL = 30;
 const DEFAULT_CURRENCY = 'USD';

@@ -68,7 +68,7 @@ export const spec = {
 
       return {
         method: 'POST',
-        url: '//bid306.rtbsrv.com/bidder/?bid=3mhdom',
+        url: 'https://bid306.rtbsrv.com/bidder/?bid=3mhdom',
         data: JSON.stringify(payload)
       };
     } catch (e) {
