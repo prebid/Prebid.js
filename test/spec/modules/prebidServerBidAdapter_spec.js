@@ -353,6 +353,7 @@ const RESPONSE_OPENRTB = {
       'seat': 'appnexus'
     },
   ],
+  'cur': 'EUR',
   'ext': {
     'responsetimemillis': {
       'appnexus': 8,
@@ -1544,9 +1545,34 @@ describe('S2S Adapter', function () {
       expect(response).to.have.property('dealId', 'test-dealid');
     });
 
+    it('should set the bidResponse currency to whats in the PBS response', function() {
+      server.respondWith(JSON.stringify(RESPONSE_OPENRTB));
+      let ortb2Config = utils.deepClone(CONFIG);
+      ortb2Config.endpoint = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction';
+      config.setConfig({ s2sConfig: ortb2Config });
+      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      server.respond();
+      sinon.assert.calledOnce(addBidResponse);
+      const pbjsResponse = addBidResponse.firstCall.args[1];
+      expect(pbjsResponse).to.have.property('currency', 'EUR');
+    });
+
+    it('should set the default bidResponse currency when not specified in OpenRTB', function() {
+      let modifiedResponse = utils.deepClone(RESPONSE_OPENRTB);
+      modifiedResponse.cur = '';
+      let ortb2Config = utils.deepClone(CONFIG);
+      ortb2Config.endpoint = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction';
+      config.setConfig({ s2sConfig: ortb2Config });
+      server.respondWith(JSON.stringify(modifiedResponse));
+      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      server.respond();
+      sinon.assert.calledOnce(addBidResponse);
+      const pbjsResponse = addBidResponse.firstCall.args[1];
+      expect(pbjsResponse).to.have.property('currency', 'USD');
+    });
+
     it('should pass through default adserverTargeting if present in bidObject', function () {
       server.respondWith(JSON.stringify(RESPONSE));
-
       config.setConfig({ s2sConfig: CONFIG });
       adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
       server.respond();
