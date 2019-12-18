@@ -300,7 +300,8 @@ describe('SonobiBidAdapter', function () {
         'reachedTop': true,
         'referer': 'https://example.com',
         'stack': ['https://example.com']
-      }
+      },
+      uspConsent: 'someCCPAString'
     };
     it('should include the digitrust id and keyv', () => {
       window.DigiTrust = {
@@ -545,7 +546,12 @@ describe('SonobiBidAdapter', function () {
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
       expect(bidRequests.data.kw).to.equal('sports,news,some_other_keyword');
     });
-  })
+
+    it('should return a properly formatted request with us_privacy included', function() {
+      const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
+      expect(bidRequests.data.us_privacy).to.equal('someCCPAString');
+    });
+  });
 
   describe('.interpretResponse', function () {
     const bidRequests = {
