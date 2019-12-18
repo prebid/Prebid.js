@@ -130,8 +130,6 @@ export const spec = {
           const playerSize = mediaTypes.video.playerSize || sizes;
           const videoImp = Object.assign({}, imp, {
             video: {
-              w: playerSize ? playerSize[0][0] : 300,
-              h: playerSize ? playerSize[0][1] : 250,
               protocols: params.protocols || [1, 2, 3, 4, 5, 6],
               pos: params.pos || 0,
               ext: {
@@ -139,6 +137,18 @@ export const spec = {
               }
             }
           });
+
+          if (utils.isArray(playerSize[0])) {
+            videoImp.video.w = playerSize[0][0];
+            videoImp.video.h = playerSize[0][1];
+          } else if (utils.isNumber(playerSize[0])) {
+            videoImp.video.w = playerSize[0];
+            videoImp.video.h = playerSize[1];
+          } else {
+            videoImp.video.w = 300;
+            videoImp.video.h = 250;
+          }
+
           rtbBidRequest.imp.push(videoImp);
         }
       }
