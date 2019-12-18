@@ -99,6 +99,7 @@ describe('FidelityAdapter', function () {
       let uspConsentString = '1YN-';
       bidderRequest.gdprConsent = {
         gdprApplies: true,
+        allowAuctionWithoutConsent: true,
         consentString: consentString,
         vendorData: {
           vendorConsents: {
