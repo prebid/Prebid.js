@@ -72,6 +72,7 @@ describe('FidelityAdapter', function () {
       ],
       start: 1472239426002,
       auctionStart: 1472239426000,
+      timeout: 5000,
       refererInfo: {
         referer: 'http://test.com/index.html'
       }
