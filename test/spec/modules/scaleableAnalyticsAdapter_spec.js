@@ -39,7 +39,10 @@ describe('Scaleable Analytics Adapter', function() {
       adUnitCode: '12345',
       bidderCode: 'test-code',
       cpm: 3.14,
-      timeToRespond: 285
+      timeToRespond: 285,
+      params: [{
+        test: 'value'
+      }]
     },
     bidTimeout: [
       {
@@ -148,6 +151,7 @@ describe('Scaleable Analytics Adapter', function() {
         code: MOCK_DATA.bidResponse.bidderCode,
         cpm: MOCK_DATA.bidResponse.cpm,
         ttr: MOCK_DATA.bidResponse.timeToRespond,
+        params: MOCK_DATA.bidResponse.params,
         event: 'win',
         site: MOCK_DATA.site
       });

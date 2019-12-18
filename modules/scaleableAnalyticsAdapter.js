@@ -165,7 +165,8 @@ const onBidWon = args => {
     adunit: args.adUnitCode,
     code: args.bidderCode,
     cpm: args.cpm,
-    ttr: args.timeToRespond
+    ttr: args.timeToRespond,
+    params: args.params
   };
 
   sendDataToServer(data);
