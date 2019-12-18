@@ -4,7 +4,7 @@ import { userSync } from '../src/userSync';
 
 const BIDDER_CODE = 'c1x';
 const URL = 'https://ht.c1exchange.com/ht';
-const PIXEL_ENDPOINT = '//px.c1exchange.com/pubpixel/';
+const PIXEL_ENDPOINT = 'https://px.c1exchange.com/pubpixel/';
 const LOG_MSG = {
   invalidBid: 'C1X: [ERROR] bidder returns an invalid bid',
   noSite: 'C1X: [ERROR] no site id supplied',
@@ -41,7 +41,6 @@ export const c1xAdapter = {
     // flattened tags in a tag object
     tagObj = c1xTags.reduce((current, next) => Object.assign(current, next));
     const pixelId = tagObj.pixelId;
-    const useSSL = document.location.protocol;
 
     payload = {
       adunits: adunits.toString(),
@@ -58,7 +57,7 @@ export const c1xAdapter = {
     }
 
     if (pixelId) {
-      pixelUrl = (useSSL ? 'https:' : 'http:') + PIXEL_ENDPOINT + pixelId;
+      pixelUrl = PIXEL_ENDPOINT + pixelId;
       if (payload.consent_required) {
         pixelUrl += '&gdpr=' + (bidderRequest.gdprConsent.gdprApplies ? 1 : 0);
         pixelUrl += '&consent=' + encodeURIComponent(bidderRequest.gdprConsent.consentString || '');
