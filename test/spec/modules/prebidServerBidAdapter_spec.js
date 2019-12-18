@@ -353,6 +353,7 @@ const RESPONSE_OPENRTB = {
       'seat': 'appnexus'
     },
   ],
+  'cur': 'EUR',
   'ext': {
     'responsetimemillis': {
       'appnexus': 8,
@@ -1542,6 +1543,26 @@ describe('S2S Adapter', function () {
       server.respond();
       const response = addBidResponse.firstCall.args[1];
       expect(response).to.have.property('dealId', 'test-dealid');
+    });
+
+    it('should set the bidResponse currency to whats in the PBS response', function() {
+      server.respondWith(JSON.stringify(RESPONSE_OPENRTB));
+      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      server.respond();
+      sinon.assert.calledOnce(addBidResponse);
+      const pbjsResponse = addBidResponse.firstCall.args[1];
+      expect(pbjsResponse).to.have.property('currency', 'EUR');
+    });
+
+    it('should set the default bidResponse currency when not specified in OpenRTB', function() {
+      let modifiedResponse = utils.deepClone(RESPONSE_OPENRTB);
+      modifiedResponse.cur = '';
+      server.respondWith(JSON.stringify(modifiedResponse));
+      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      server.respond();
+      sinon.assert.calledOnce(addBidResponse);
+      const pbjsResponse = addBidResponse.firstCall.args[1];
+      expect(pbjsResponse).to.have.property('currency', 'USD');
     });
 
     it('should pass through default adserverTargeting if present in bidObject', function () {
