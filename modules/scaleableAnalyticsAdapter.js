@@ -11,8 +11,7 @@ const AUCTION_INIT = CONSTANTS.EVENTS.AUCTION_INIT;
 const BID_WON = CONSTANTS.EVENTS.BID_WON;
 const AUCTION_END = CONSTANTS.EVENTS.AUCTION_END;
 
-// const URL = 'https://auction.scaleable.ai/';
-const URL = 'http://localhost:8061/';
+const URL = 'https://auction.scaleable.ai/';
 const ANALYTICS_TYPE = 'endpoint';
 
 let auctionData = {};
