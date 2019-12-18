@@ -98,18 +98,11 @@ describe('Scaleable Analytics Adapter', function() {
   let xhr;
   let requests;
 
-  before(function() {
-    xhr = sinon.useFakeXMLHttpRequest();
-    xhr.onCreate = request => requests.push(request);
-  });
-
-  after(function() {
-    xhr.restore();
-  });
-
   describe('Event Handling', function() {
     beforeEach(function() {
+      xhr = sinon.useFakeXMLHttpRequest();
       requests = [];
+      xhr.onCreate = request => requests.push(request);
       sinon.stub(events, 'getEvents').returns([]);
 
       scaleableAnalytics.enableAnalytics({
@@ -121,6 +114,7 @@ describe('Scaleable Analytics Adapter', function() {
     });
 
     afterEach(function() {
+      xhr.restore();
       events.getEvents.restore();
       scaleableAnalytics.disableAnalytics();
     });
