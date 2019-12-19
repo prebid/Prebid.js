@@ -42,7 +42,7 @@ export const spec = {
       request.push(formRequestUrl(reqParams));
     }
 
-    request.unshift('//' + globalParams[0][1] + '/adx/?rp=4');
+    request.unshift('https://' + globalParams[0][1] + '/adx/?rp=4');
     netRevenue = netRevenue || 'gross';
     request.push('pt=' + netRevenue);
     request.push('stid=' + validBidRequests[0].auctionId);

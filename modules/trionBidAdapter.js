@@ -74,16 +74,34 @@ function getSyncUrl() {
   var pubSectionArray = unParsedPubAndSection.split(':') || [];
   var pubId = pubSectionArray[0] || -1;
   var sectionId = pubSectionArray[1] || -1;
-  var url = utils.getTopWindowUrl();
+  var url = getPublisherUrl();
   return USER_SYNC_URL + `?p=${pubId}&s=${sectionId}&u=${url}`;
+}
+
+function getPublisherUrl() {
+  var url = '';
+  try {
+    if (window.top == window) {
+      url = window.location.href;
+    } else {
+      try {
+        url = window.top.location.href;
+      } catch (e) {
+        url = document.referrer;
+      }
+    }
+  } catch (e) {
+  }
+  return url
 }
 
 function buildTrionUrlParams(bid) {
   var pubId = utils.getBidIdParameter('pubId', bid.params);
   var sectionId = utils.getBidIdParameter('sectionId', bid.params);
   var re = utils.getBidIdParameter('re', bid.params);
-  var url = utils.getTopWindowUrl();
-  var sizes = utils.parseSizesInput(bid.sizes).join(',');
+  var url = getPublisherUrl();
+  var bidSizes = getBidSizesFromBidRequest(bid);
+  var sizes = utils.parseSizesInput(bidSizes).join(',');
   var isAutomated = (navigator && navigator.webdriver) ? 1 : 0;
   var isHidden = (document.hidden) ? 1 : 0;
   var visibilityState = encodeURIComponent(document.visibilityState);
@@ -120,6 +138,10 @@ function buildTrionUrlParams(bid) {
     trionUrl = trionUrl.substring(0, trionUrl.length - 1);
   }
   return trionUrl;
+}
+
+function getBidSizesFromBidRequest(bid) {
+  return (bid.mediaTypes && bid.mediaTypes.banner && bid.mediaTypes.banner.sizes) ? bid.mediaTypes.banner.sizes : bid.sizes;
 }
 
 function handlePostMessage() {

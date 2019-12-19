@@ -56,7 +56,7 @@ describe('admediaAdapterTests', function () {
       'refererInfo': {
         'numIframes': 0,
         'reachedTop': true,
-        'referer': 'http://test.com/index.html?pbjs_debug=true'
+        'referer': 'https://test.com/index.html?pbjs_debug=true'
       }
 
     };
@@ -68,7 +68,7 @@ describe('admediaAdapterTests', function () {
     });
 
     it('bidRequest url', function () {
-      expect(request.url).to.equal('//prebid.admedia.com/bidder/');
+      expect(request.url).to.equal('https://prebid.admedia.com/bidder/');
     });
 
     it('bidRequest data', function () {

@@ -23,6 +23,50 @@ let pbaUrl = 'https://pba.aws.lijit.com/analytics'
 let currentAuctions = {};
 const analyticsType = 'endpoint'
 
+const getClosestTop = () => {
+  let topFrame = window;
+  let err = false;
+  try {
+    while (topFrame.parent.document !== topFrame.document) {
+      if (topFrame.parent.document) {
+        topFrame = topFrame.parent;
+      } else {
+        throw new Error();
+      }
+    }
+  } catch (e) {
+    bException = true;
+  }
+
+  return {
+    topFrame,
+    err
+  };
+};
+
+const getBestPageUrl = ({err: crossDomainError, topFrame}) => {
+  let sBestPageUrl = '';
+
+  if (!crossDomainError) {
+    // easy case- we can get top frame location
+    sBestPageUrl = topFrame.location.href;
+  } else {
+    try {
+      try {
+        sBestPageUrl = window.top.location.href;
+      } catch (e) {
+        let aOrigins = window.location.ancestorOrigins;
+        sBestPageUrl = aOrigins[aOrigins.length - 1];
+      }
+    } catch (e) {
+      sBestPageUrl = topFrame.document.referrer;
+    }
+  }
+
+  return sBestPageUrl;
+};
+const rootURL = getBestPageUrl(getClosestTop())
+
 let sovrnAnalyticsAdapter = Object.assign(adapter({url: pbaUrl, analyticsType}), {
   track({ eventType, args }) {
     try {
@@ -95,7 +139,7 @@ class BidWinner {
     this.body.prebidVersion = $$REPO_AND_VERSION$$
     this.body.sovrnId = sovrnId
     this.body.winningBid = JSON.parse(JSON.stringify(event))
-    this.body.url = utils.getTopWindowLocation().href
+    this.body.url = rootURL
     this.body.payload = 'winner'
     delete this.body.winningBid.ad
   }
@@ -135,7 +179,7 @@ class AuctionData {
       bidder: config.getConfig('bidderTimeout'),
     }
     this.auction.priceGranularity = config.getConfig('priceGranularity')
-    this.auction.url = utils.getTopWindowLocation().href
+    this.auction.url = rootURL
     this.auction.requests = []
     this.auction.unsynced = []
     this.dropBidFields = ['auctionId', 'ad', 'requestId', 'bidderCode']
@@ -246,7 +290,7 @@ class LogError {
     this.error.data = data
     this.error.prebidVersion = $$REPO_AND_VERSION$$
     this.error.sovrnId = sovrnId
-    this.error.url = utils.getTopWindowLocation().href
+    this.error.url = rootURL
     this.error.userAgent = navigator.userAgent
   }
   send() {

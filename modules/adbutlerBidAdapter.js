@@ -16,15 +16,15 @@ export const spec = {
   },
 
   buildRequests: function (validBidRequests) {
-    var i;
-    var zoneID;
-    var bidRequest;
-    var accountID;
-    var keyword;
-    var domain;
-    var requestURI;
-    var serverRequests = [];
-    var zoneCounters = {};
+    let i;
+    let zoneID;
+    let bidRequest;
+    let accountID;
+    let keyword;
+    let domain;
+    let requestURI;
+    let serverRequests = [];
+    let zoneCounters = {};
 
     for (i = 0; i < validBidRequests.length; i++) {
       bidRequest = validBidRequests[i];
@@ -41,7 +41,7 @@ export const spec = {
         domain = 'servedbyadbutler.com';
       }
 
-      requestURI = location.protocol + '//' + domain + '/adserve/;type=hbr;';
+      requestURI = 'https://' + domain + '/adserve/;type=hbr;';
       requestURI += 'ID=' + encodeURIComponent(accountID) + ';';
       requestURI += 'setID=' + encodeURIComponent(zoneID) + ';';
       requestURI += 'pid=' + encodeURIComponent(spec.pageID) + ';';
@@ -64,16 +64,16 @@ export const spec = {
   },
 
   interpretResponse: function (serverResponse, bidRequest) {
-    var bidObj = bidRequest.bidRequest;
-    var bidResponses = [];
-    var bidResponse = {};
-    var isCorrectSize = false;
-    var isCorrectCPM = true;
-    var CPM;
-    var minCPM;
-    var maxCPM;
-    var width;
-    var height;
+    const bidObj = bidRequest.bidRequest;
+    let bidResponses = [];
+    let bidResponse = {};
+    let isCorrectSize = false;
+    let isCorrectCPM = true;
+    let CPM;
+    let minCPM;
+    let maxCPM;
+    let width;
+    let height;
 
     serverResponse = serverResponse.body;
     if (serverResponse && serverResponse.status === 'SUCCESS' && bidObj) {
@@ -92,7 +92,7 @@ export const spec = {
       }
 
       // Ensure that response ad matches one of the placement sizes.
-      utils._each(bidObj.sizes, function (size) {
+      utils._each(utils.deepAccess(bidObj, 'mediaTypes.banner.sizes', []), function (size) {
         if (width === size[0] && height === size[1]) {
           isCorrectSize = true;
         }
@@ -109,7 +109,7 @@ export const spec = {
         bidResponse.currency = 'USD';
         bidResponse.netRevenue = true;
         bidResponse.ttl = config.getConfig('_bidderTimeout');
-        bidResponse.referrer = utils.getTopWindowUrl();
+        bidResponse.referrer = utils.deepAccess(bidObj, 'refererInfo.referer');
         bidResponses.push(bidResponse);
       }
     }
@@ -117,9 +117,9 @@ export const spec = {
   },
 
   addTrackingPixels: function (trackingPixels) {
-    var trackingPixelMarkup = '';
+    let trackingPixelMarkup = '';
     utils._each(trackingPixels, function (pixelURL) {
-      var trackingPixel = '<img height="0" width="0" border="0" style="display:none;" src="';
+      let trackingPixel = '<img height="0" width="0" border="0" style="display:none;" src="';
       trackingPixel += pixelURL;
       trackingPixel += '">';
 

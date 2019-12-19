@@ -4,7 +4,7 @@ import { config } from '../src/config';
 import find from 'core-js/library/fn/array/find';
 
 const BIDDER_CODE = 'livewrapped';
-export const URL = '//lwadm.com/ad';
+export const URL = 'https://lwadm.com/ad';
 const VERSION = '1.1';
 
 export const spec = {
@@ -52,7 +52,7 @@ export const spec = {
     const ifa = find(bidRequests, hasIfaParam);
     const tid = find(bidRequests, hasTidParam);
     bidUrl = bidUrl ? bidUrl.params.bidUrl : URL;
-    url = url ? url.params.url : (config.getConfig('pageUrl') || utils.getTopWindowUrl());
+    url = url ? url.params.url : getTopWindowLocation(bidderRequest);
     test = test ? test.params.test : undefined;
     var adRequests = bidRequests.map(bidToAdRequest);
 
@@ -72,7 +72,7 @@ export const spec = {
       cookieSupport: !utils.isSafariBrowser() && utils.cookiesAreEnabled(),
       rcv: getAdblockerRecovered(),
       adRequests: [...adRequests],
-      rtbData: HandleEids(bidRequests)
+      rtbData: handleEids(bidRequests)
     };
     const payloadString = JSON.stringify(payload);
     return {
@@ -218,7 +218,7 @@ function AddExternalUserId(eids, value, source, atype, rtiPartner) {
   }
 }
 
-function HandleEids(bidRequests) {
+function handleEids(bidRequests) {
   let eids = [];
   const bidRequest = bidRequests[0];
   if (bidRequest && bidRequest.userId) {
@@ -230,6 +230,11 @@ function HandleEids(bidRequests) {
   }
 
   return undefined;
+}
+
+function getTopWindowLocation(bidderRequest) {
+  let url = bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer;
+  return config.getConfig('pageUrl') || url;
 }
 
 registerBidder(spec);

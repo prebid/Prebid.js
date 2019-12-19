@@ -236,12 +236,13 @@ function getRequestData(bid, consentData, bidRequest) {
   if (bid.params.site && bid.params.site.id) {
     bidData.site.id = bid.params.site.id
   }
-  if (isConsentRequired(consentData)) {
+  if (isConsentRequired(consentData) || (bidRequest && bidRequest.uspConsent)) {
     bidData.regs = {
-      ext: {
-        gdpr: 1
-      }
+      ext: {}
     };
+    if (isConsentRequired(consentData)) {
+      bidData.regs.ext.gdpr = 1
+    }
 
     if (consentData.consentString) {
       bidData.user = {
@@ -250,13 +251,9 @@ function getRequestData(bid, consentData, bidRequest) {
         }
       };
     }
-  }
-  if (bidRequest && bidRequest.uspConsent) {
-    bidData.regs = {
-      ext: {
-        us_privacy: bidRequest.uspConsent
-      }
-    };
+    if (bidRequest && bidRequest.uspConsent) {
+      bidData.regs.ext.us_privacy = bidRequest.uspConsent
+    }
   }
 
   return bidData;

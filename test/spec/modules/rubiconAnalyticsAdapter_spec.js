@@ -230,7 +230,10 @@ const MOCK = {
     ],
     'auctionStart': 1519149536560,
     'timeout': 5000,
-    'start': 1519149562216
+    'start': 1519149562216,
+    'refererInfo': {
+      'referer': 'http://www.test.com/page.html', 'reachedTop': true, 'numIframes': 0, 'stack': ['http://www.test.com/page.html']
+    }
   },
   BID_RESPONSE: [
     BID,
@@ -486,8 +489,6 @@ describe('rubicon analytics adapter', function () {
     xhr.onCreate = request => requests.push(request);
 
     sandbox.stub(events, 'getEvents').returns([]);
-
-    sandbox.stub(utils, 'getTopWindowUrl').returns('http://www.test.com/page.html');
 
     clock = sandbox.useFakeTimers(1519767013781);
 

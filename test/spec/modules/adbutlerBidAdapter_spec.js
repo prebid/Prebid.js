@@ -16,7 +16,11 @@ describe('AdButler adapter', function () {
           maxCPM: '5.00'
         },
         placementCode: '/19968336/header-bid-tag-1',
-        sizes: [[300, 250], [300, 600]],
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 250], [300, 600]],
+          },
+        },
         bidId: '23acc48ad47af5',
         auctionId: '0fb4905b-9456-4152-86be-c6f6d259ba99',
         bidderRequestId: '1c56ad30b9b8ca8',
@@ -79,7 +83,7 @@ describe('AdButler adapter', function () {
 
         let [domain] = request.url.split('/adserve/');
 
-        expect(domain).to.equal('http://servedbyadbutler.com');
+        expect(domain).to.equal('https://servedbyadbutler.com');
       });
 
       it('should set the keyword parameter', function () {
@@ -97,7 +101,6 @@ describe('AdButler adapter', function () {
               params: {
                 accountID: '107878',
                 zoneID: '86133',
-                domain: 'servedbyadbutler.com.dan.test'
               }
             }, {
               sizes: [[300, 250]],
@@ -105,7 +108,6 @@ describe('AdButler adapter', function () {
               params: {
                 accountID: '107878',
                 zoneID: '86133',
-                domain: 'servedbyadbutler.com.dan.test'
               }
             },
           ],
@@ -151,11 +153,13 @@ describe('AdButler adapter', function () {
 
       it('should return empty bid response', function () {
         let serverResponse = {
-            status: 'NO_ELIGIBLE_ADS',
-            zone_id: 210083,
-            width: 300,
-            height: 250,
-            place: 0
+            body: {
+              status: 'NO_ELIGIBLE_ADS',
+              zone_id: 210083,
+              width: 300,
+              height: 250,
+              place: 0
+            }
           },
           bids = spec.interpretResponse(serverResponse, {'bidRequest': bidRequests[0]});
 
@@ -164,13 +168,15 @@ describe('AdButler adapter', function () {
 
       it('should return empty bid response on incorrect size', function () {
         let serverResponse = {
-            status: 'SUCCESS',
-            account_id: 167283,
-            zone_id: 210083,
-            cpm: 1.5,
-            width: 728,
-            height: 90,
-            place: 0
+            body: {
+              status: 'SUCCESS',
+              account_id: 167283,
+              zone_id: 210083,
+              cpm: 1.5,
+              width: 728,
+              height: 90,
+              place: 0
+            }
           },
           bids = spec.interpretResponse(serverResponse, {'bidRequest': bidRequests[0]});
 
@@ -179,13 +185,15 @@ describe('AdButler adapter', function () {
 
       it('should return empty bid response with CPM too low', function () {
         let serverResponse = {
-            status: 'SUCCESS',
-            account_id: 167283,
-            zone_id: 210093,
-            cpm: 0.75,
-            width: 300,
-            height: 250,
-            place: 0
+            body: {
+              status: 'SUCCESS',
+              account_id: 167283,
+              zone_id: 210093,
+              cpm: 0.75,
+              width: 300,
+              height: 250,
+              place: 0
+            }
           },
           bids = spec.interpretResponse(serverResponse, {'bidRequest': bidRequests[0]});
 
@@ -194,13 +202,15 @@ describe('AdButler adapter', function () {
 
       it('should return empty bid response with CPM too high', function () {
         let serverResponse = {
-            status: 'SUCCESS',
-            account_id: 167283,
-            zone_id: 210093,
-            cpm: 7.00,
-            width: 300,
-            height: 250,
-            place: 0
+            body: {
+              status: 'SUCCESS',
+              account_id: 167283,
+              zone_id: 210093,
+              cpm: 7,
+              width: 300,
+              height: 250,
+              place: 0
+            }
           },
           bids = spec.interpretResponse(serverResponse, {'bidRequest': bidRequests[0]});
 

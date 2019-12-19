@@ -41,7 +41,7 @@ export const spec = {
 
       return {
         method: 'GET',
-        url: '//' + server + '/hb',
+        url: 'https://' + server + '/hb',
         data: payload
       };
     });
@@ -72,7 +72,7 @@ export const spec = {
     if (syncOptions.iframeEnabled) {
       return [{
         type: 'iframe',
-        url: '//' + BIDDER_SERVER + '/delivery/matches.php?type=iframe',
+        url: 'https://' + BIDDER_SERVER + '/delivery/matches.php?type=iframe',
       }];
     }
   }

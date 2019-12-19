@@ -42,7 +42,7 @@ describe('PulsePoint Adapter Tests', function () {
       ct: 't10000',
       app: {
         bundle: 'com.pulsepoint.apps',
-        storeUrl: 'http://pulsepoint.com/apps',
+        storeUrl: 'https://pulsepoint.com/apps',
         domain: 'pulsepoint.com',
       }
     }
@@ -318,10 +318,10 @@ describe('PulsePoint Adapter Tests', function () {
         assets: [
           { title: { text: 'Ad Title' } },
           { data: { type: 1, value: 'Sponsored By: Brand' } },
-          { img: { type: 3, url: 'http://images.cdn.brand.com/123' } }
+          { img: { type: 3, url: 'https://images.cdn.brand.com/123' } }
         ],
-        link: { url: 'http://brand.clickme.com/' },
-        imptrackers: ['http://imp1.trackme.com/', 'http://imp1.contextweb.com/']
+        link: { url: 'https://brand.clickme.com/' },
+        imptrackers: ['https://imp1.trackme.com/', 'https://imp1.contextweb.com/']
       }
     };
     const ortbResponse = {
@@ -344,11 +344,11 @@ describe('PulsePoint Adapter Tests', function () {
     expect(nativeBid).to.not.equal(null);
     expect(nativeBid.title).to.equal('Ad Title');
     expect(nativeBid.sponsoredBy).to.equal('Sponsored By: Brand');
-    expect(nativeBid.image).to.equal('http://images.cdn.brand.com/123');
-    expect(nativeBid.clickUrl).to.equal(encodeURIComponent('http://brand.clickme.com/'));
+    expect(nativeBid.image).to.equal('https://images.cdn.brand.com/123');
+    expect(nativeBid.clickUrl).to.equal(encodeURIComponent('https://brand.clickme.com/'));
     expect(nativeBid.impressionTrackers).to.have.lengthOf(2);
-    expect(nativeBid.impressionTrackers[0]).to.equal('http://imp1.trackme.com/');
-    expect(nativeBid.impressionTrackers[1]).to.equal('http://imp1.contextweb.com/');
+    expect(nativeBid.impressionTrackers[0]).to.equal('https://imp1.trackme.com/');
+    expect(nativeBid.impressionTrackers[1]).to.equal('https://imp1.contextweb.com/');
   });
 
   it('Verifies bidder code', function () {
@@ -406,7 +406,7 @@ describe('PulsePoint Adapter Tests', function () {
     expect(ortbRequest.app.publisher).to.not.equal(null);
     expect(ortbRequest.app.publisher.id).to.equal('p10000');
     expect(ortbRequest.app.bundle).to.equal('com.pulsepoint.apps');
-    expect(ortbRequest.app.storeurl).to.equal('http://pulsepoint.com/apps');
+    expect(ortbRequest.app.storeurl).to.equal('https://pulsepoint.com/apps');
     expect(ortbRequest.app.domain).to.equal('pulsepoint.com');
   });
 
@@ -475,7 +475,7 @@ describe('PulsePoint Adapter Tests', function () {
         bid: [{
           impid: ortbRequest.imp[0].id,
           price: 1.25,
-          adm: '<VAST><Creative>http://pulsepoint.video.mp4</Creative></VAST>'
+          adm: '<VAST><Creative>https//pulsepoint.video.mp4</Creative></VAST>'
         }]
       }]
     };
@@ -559,7 +559,7 @@ describe('PulsePoint Adapter Tests', function () {
         bid: [{
           impid: ortbRequest.imp[0].id,
           price: 1.25,
-          adm: '<VAST><Creative>http://pulsepoint.video.mp4</Creative></VAST>',
+          adm: '<VAST><Creative>https//pulsepoint.video.mp4</Creative></VAST>',
           ext: {
             outstream: {
               type: 'Inline',
@@ -567,7 +567,7 @@ describe('PulsePoint Adapter Tests', function () {
                 text: 'ADVERTISEMENT',
                 skipaftersec: 5
               },
-              rendererUrl: 'http://tag.contextweb.com/hb-outstr-renderer.js'
+              rendererUrl: 'https://tag.contextweb.com/hb-outstr-renderer.js'
             }
           }
         }]
@@ -577,7 +577,7 @@ describe('PulsePoint Adapter Tests', function () {
     const bid = bids[0];
     expect(bid.cpm).to.equal(1.25);
     expect(bid.renderer).to.not.be.null;
-    expect(bid.renderer.url).to.equal('http://tag.contextweb.com/hb-outstr-renderer.js');
+    expect(bid.renderer.url).to.equal('https://tag.contextweb.com/hb-outstr-renderer.js');
     expect(bid.renderer.getConfig()).to.not.be.null;
     expect(bid.renderer.getConfig().defaultOptions).to.eql(ortbResponse.seatbid[0].bid[0].ext.outstream.config);
     expect(bid.renderer.getConfig().rendererOptions).to.eql(outstreamSlotConfig[0].renderer.options);

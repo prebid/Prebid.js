@@ -276,9 +276,9 @@ describe('emx_digital Adapter', function () {
     it('properly sends site information and protocol', function () {
       request = spec.buildRequests(bidderRequest.bids, bidderRequest);
       request = JSON.parse(request.data);
-      expect(request.site.domain).to.equal(utils.getTopWindowLocation().hostname);
-      expect(decodeURIComponent(request.site.page)).to.equal(bidderRequest.refererInfo.referer);
-      expect(request.site.ref).to.equal(window.top.document.referrer);
+      expect(request.site).to.have.property('domain', 'example.com');
+      expect(request.site).to.have.property('page', 'https://example.com/index.html?pbjs_debug=true');
+      expect(request.site).to.have.property('ref', window.top.document.referrer);
     });
 
     it('builds correctly formatted request banner object', function () {
