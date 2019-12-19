@@ -20,7 +20,7 @@ Module that connects to Adfinity demand sources
                     }
                 },
                 bids: [{
-                        bidder: 'afinity',
+                        bidder: 'adfinity',
                         params: {
                             placement_id: 0,
                             traffic: 'banner'
