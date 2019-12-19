@@ -13,7 +13,6 @@ const NULL_SIZE = '1x1';
 const FILE = 'file';
 const STORAGE_RENDER_PREFIX = 'pbsr_';
 const STORAGE_VIEW_PREFIX = 'pbvi_';
-const EPL_VENDOR_ID = 90;
 
 export const spec = {
   code: BIDDER_CODE,
@@ -68,12 +67,7 @@ export const spec = {
       if (bidderRequest && bidderRequest.gdprConsent) {
         if (typeof bidderRequest.gdprConsent.gdprApplies !== 'undefined') {
           params.gdpr = bidderRequest.gdprConsent.gdprApplies ? '1' : '0';
-          var status;
-          if (bidderRequest.gdprConsent.vendorData && bidderRequest.gdprConsent.vendorData.vendorConsents &&
-            typeof bidderRequest.gdprConsent.vendorData.vendorConsents[EPL_VENDOR_ID.toString()] !== 'undefined') {
-            status = bidderRequest.gdprConsent.vendorData.vendorConsents[EPL_VENDOR_ID.toString()];
-          }
-          if (typeof bidderRequest.gdprConsent.consentString !== 'undefined' && status) {
+          if (typeof bidderRequest.gdprConsent.consentString !== 'undefined') {
             params.gdprcs = bidderRequest.gdprConsent.consentString;
           }
         }
