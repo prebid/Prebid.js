@@ -212,18 +212,18 @@ function openRtbSite(bidRequest, bidderRequest) {
 }
 
 function getDomainFromUrl(url) {
-    var domain = url;
+  var domain = url;
 
-    if (url.indexOf("//") > -1) {
-      domain = url.split('/')[2];
-    } else {
-      domain = url.split('/')[0];
-    }
+  if (url.indexOf('//') > -1) {
+    domain = url.split('/')[2];
+  } else {
+    domain = url.split('/')[0];
+  }
 
-    domain = domain.split(':')[0];
-    domain = domain.split('?')[0];
+  domain = domain.split(':')[0];
+  domain = domain.split('?')[0];
 
-    return domain;
+  return domain;
 }
 
 function openRtbApp(bidRequest) {
