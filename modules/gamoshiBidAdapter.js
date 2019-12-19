@@ -4,14 +4,28 @@ import {config} from '../src/config';
 import {Renderer} from '../src/Renderer';
 import {BANNER, VIDEO} from '../src/mediaTypes';
 
+const ENDPOINTS = {
+  'gamoshi': 'https://rtb.gamoshi.io'
+};
+
+const DEFAULT_TTL = 360;
+
 export const helper = {
-  getTopWindowDomain: function (url) {
-    const domainStart = url.indexOf('://') + '://'.length;
-    return url.substring(domainStart, url.indexOf('/', domainStart) < 0 ? url.length : url.indexOf('/', domainStart));
+  getTopFrame: function () {
+    try {
+      return window.top === window ? 1 : 0;
+    } catch (e) {
+    }
+    return 0;
   },
   startsWith: function (str, search) {
     return str.substr(0, search.length) === search;
   },
+  getTopWindowDomain: function (url) {
+    const domainStart = url.indexOf('://') + '://'.length;
+    return url.substring(domainStart, url.indexOf('/', domainStart) < 0 ? url.length : url.indexOf('/', domainStart));
+  },
+
   getMediaType: function (bid) {
     if (bid.ext) {
       if (bid.ext.media_type) {
@@ -27,44 +41,25 @@ export const helper = {
 };
 
 export const spec = {
-  code: 'cleanmedianet',
-  aliases: [],
-  supportedMediaTypes: [BANNER, VIDEO],
+  code: 'gamoshi',
+  aliases: ['gambid', 'cleanmedia', '9MediaOnline'],
+  supportedMediaTypes: ['banner', 'video'],
 
   isBidRequestValid: function (bid) {
-    return (
-      !!bid.params.supplyPartnerId &&
-      typeof bid.params.supplyPartnerId === 'string' &&
-      (typeof bid.params.bidfloor === 'undefined' ||
-        typeof bid.params.bidfloor === 'number') &&
-      (typeof bid.params['adpos'] === 'undefined' ||
-        typeof bid.params['adpos'] === 'number') &&
-      (typeof bid.params['protocols'] === 'undefined' ||
-        Array.isArray(bid.params['protocols'])) &&
-      (typeof bid.params.instl === 'undefined' ||
-        bid.params.instl === 0 ||
-        bid.params.instl === 1)
-    );
+    return !!bid.params.supplyPartnerId && utils.isStr(bid.params.supplyPartnerId) &&
+      (!bid.params['rtbEndpoint'] || utils.isStr(bid.params['rtbEndpoint'])) &&
+      (!bid.params.bidfloor || utils.isNumber(bid.params.bidfloor)) &&
+      (!bid.params['adpos'] || utils.isNumber(bid.params['adpos'])) &&
+      (!bid.params['protocols'] || Array.isArray(bid.params['protocols'])) &&
+      (!bid.params.instl || bid.params.instl === 0 || bid.params.instl === 1);
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
     return validBidRequests.map(bidRequest => {
-      const {
-        adUnitCode,
-        auctionId,
-        mediaTypes,
-        params,
-        sizes,
-        transactionId
-      } = bidRequest;
-      const baseEndpoint = 'https://bidder.cleanmediaads.com';
-      const rtbEndpoint =
-        `${baseEndpoint}/r/${
-          params.supplyPartnerId
-        }/bidr?rformat=open_rtb&reqformat=rtb_json&bidder=prebid` +
-        (params.query ? '&' + params.query : '');
-      let url =
-        config.getConfig('pageUrl') || bidderRequest.refererInfo.referer;
+      const {adUnitCode, auctionId, mediaTypes, params, sizes, transactionId} = bidRequest;
+      const baseEndpoint = params['rtbEndpoint'] || ENDPOINTS['gamoshi'];
+      const rtbEndpoint = `${baseEndpoint}/r/${params.supplyPartnerId}/bidr?rformat=open_rtb&reqformat=rtb_json&bidder=prebid` + (params.query ? '&' + params.query : '');
+      let url = config.getConfig('pageUrl') || bidderRequest.refererInfo.referer;
 
       const rtbBidRequest = {
         id: auctionId,
@@ -86,28 +81,24 @@ export const spec = {
           ext: {}
         }
       };
+      const gdprConsent = bidderRequest.gdprConsent;
 
-      if (
-        bidderRequest.gdprConsent &&
-        bidderRequest.gdprConsent.consentString &&
-        bidderRequest.gdprConsent.gdprApplies
-      ) {
+      if (gdprConsent && gdprConsent.consentString && gdprConsent.gdprApplies) {
         rtbBidRequest.ext.gdpr_consent = {
-          consent_string: bidderRequest.gdprConsent.consentString,
-          consent_required: bidderRequest.gdprConsent.gdprApplies
+          consent_string: gdprConsent.consentString,
+          consent_required: gdprConsent.gdprApplies
         };
         rtbBidRequest.regs = {
           ext: {
-            gdpr: bidderRequest.gdprConsent.gdprApplies === true ? 1 : 0
+            gdpr: gdprConsent.gdprApplies === true ? 1 : 0
           }
         };
         rtbBidRequest.user = {
           ext: {
-            consent: bidderRequest.gdprConsent.consentString
+            consent: gdprConsent.consentString
           }
         }
       }
-
       const imp = {
         id: transactionId,
         instl: params.instl === 1 ? 1 : 0,
@@ -118,8 +109,7 @@ export const spec = {
       };
 
       const hasFavoredMediaType =
-        params.favoredMediaType &&
-        this.supportedMediaTypes.includes(params.favoredMediaType);
+        params.favoredMediaType && this.supportedMediaTypes.includes(params.favoredMediaType);
 
       if (!mediaTypes || mediaTypes.banner) {
         if (!hasFavoredMediaType || params.favoredMediaType === BANNER) {
@@ -137,15 +127,17 @@ export const spec = {
 
       if (mediaTypes && mediaTypes.video) {
         if (!hasFavoredMediaType || params.favoredMediaType === VIDEO) {
-          let videoImp = {
+          const playerSize = mediaTypes.video.playerSize || sizes;
+          const videoImp = Object.assign({}, imp, {
             video: {
               protocols: params.protocols || [1, 2, 3, 4, 5, 6],
               pos: params.pos || 0,
-              ext: {context: mediaTypes.video.context}
+              ext: {
+                context: mediaTypes.video.context
+              }
             }
-          };
+          });
 
-          let playerSize = mediaTypes.video.playerSize || sizes;
           if (utils.isArray(playerSize[0])) {
             videoImp.video.w = playerSize[0][0];
             videoImp.video.h = playerSize[0][1];
@@ -157,21 +149,24 @@ export const spec = {
             videoImp.video.h = 250;
           }
 
-          videoImp = Object.assign({}, imp, videoImp);
           rtbBidRequest.imp.push(videoImp);
         }
+      }
+
+      let eids = [];
+      if (bidRequest && bidRequest.userId) {
+        addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.id5id`), 'id5-sync.com', 'ID5ID');
+        addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.tdid`), 'adserver.org', 'TDID');
+      }
+      if (eids.length > 0) {
+        rtbBidRequest.user.ext.eids = eids;
       }
 
       if (rtbBidRequest.imp.length === 0) {
         return;
       }
 
-      return {
-        method: 'POST',
-        url: rtbEndpoint,
-        data: rtbBidRequest,
-        bidRequest
-      };
+      return {method: 'POST', url: rtbEndpoint, data: rtbBidRequest, bidRequest};
     });
   },
 
@@ -182,10 +177,7 @@ export const spec = {
       return [];
     }
 
-    const bids = response.seatbid.reduce(
-      (acc, seatBid) => acc.concat(seatBid.bid),
-      []
-    );
+    const bids = response.seatbid.reduce((acc, seatBid) => acc.concat(seatBid.bid), []);
     let outBids = [];
 
     bids.forEach(bid => {
@@ -194,36 +186,23 @@ export const spec = {
         cpm: bid.price,
         width: bid.w,
         height: bid.h,
-        ttl: 360,
+        ttl: DEFAULT_TTL,
         creativeId: bid.crid || bid.adid,
         netRevenue: true,
         currency: bid.cur || response.cur,
         mediaType: helper.getMediaType(bid)
       };
 
-      if (
-        utils.deepAccess(
-          bidRequest.bidRequest,
-          'mediaTypes.' + outBid.mediaType
-        )
-      ) {
+      if (utils.deepAccess(bidRequest.bidRequest, 'mediaTypes.' + outBid.mediaType)) {
         if (outBid.mediaType === BANNER) {
           outBids.push(Object.assign({}, outBid, {ad: bid.adm}));
         } else if (outBid.mediaType === VIDEO) {
-          const context = utils.deepAccess(
-            bidRequest.bidRequest,
-            'mediaTypes.video.context'
-          );
-          outBids.push(
-            Object.assign({}, outBid, {
-              vastUrl: bid.ext.vast_url,
-              vastXml: bid.adm,
-              renderer:
-                context === 'outstream'
-                  ? newRenderer(bidRequest.bidRequest, bid)
-                  : undefined
-            })
-          );
+          const context = utils.deepAccess(bidRequest.bidRequest, 'mediaTypes.video.context');
+          outBids.push(Object.assign({}, outBid, {
+            vastUrl: bid.ext.vast_url,
+            vastXml: bid.adm,
+            renderer: context === 'outstream' ? newRenderer(bidRequest.bidRequest, bid) : undefined
+          }));
         }
       }
     });
@@ -232,21 +211,14 @@ export const spec = {
 
   getUserSyncs: function (syncOptions, serverResponses, gdprConsent) {
     const syncs = [];
-    const gdprApplies =
-      gdprConsent && typeof gdprConsent.gdprApplies === 'boolean'
-        ? gdprConsent.gdprApplies
-        : false;
-    const suffix = gdprApplies
-      ? 'gc=' + encodeURIComponent(gdprConsent.consentString)
-      : 'gc=missing';
+    const gdprApplies = gdprConsent && (typeof gdprConsent.gdprApplies === 'boolean') ? gdprConsent.gdprApplies : false;
+    const suffix = gdprApplies ? 'gc=' + encodeURIComponent(gdprConsent.consentString) : 'gc=missing';
     serverResponses.forEach(resp => {
       if (resp.body) {
         const bidResponse = resp.body;
         if (bidResponse.ext && Array.isArray(bidResponse.ext['utrk'])) {
           bidResponse.ext['utrk'].forEach(pixel => {
-            const url =
-              pixel.url +
-              (pixel.url.indexOf('?') > 0 ? '&' + suffix : '?' + suffix);
+            const url = pixel.url + (pixel.url.indexOf('?') > 0 ? '&' + suffix : '?' + suffix);
             return syncs.push({type: pixel.type, url});
           });
         }
@@ -256,11 +228,7 @@ export const spec = {
               seatBid.bid.forEach(bid => {
                 if (bid.ext && Array.isArray(bid.ext['utrk'])) {
                   bid.ext['utrk'].forEach(pixel => {
-                    const url =
-                      pixel.url +
-                      (pixel.url.indexOf('?') > 0
-                        ? '&' + suffix
-                        : '?' + suffix);
+                    const url = pixel.url + (pixel.url.indexOf('?') > 0 ? '&' + suffix : '?' + suffix);
                     return syncs.push({type: pixel.type, url});
                   });
                 }
@@ -276,12 +244,9 @@ export const spec = {
 
 function newRenderer(bidRequest, bid, rendererOptions = {}) {
   const renderer = Renderer.install({
-    url:
-      (bidRequest.params && bidRequest.params.rendererUrl) ||
-      (bid.ext && bid.ext.renderer_url) ||
-      'https://s.wlplayer.com/video/latest/renderer.js',
+    url: (bidRequest.params && bidRequest.params.rendererUrl) || (bid.ext && bid.ext.renderer_url) || 'https://s.gamoshi.io/video/latest/renderer.js',
     config: rendererOptions,
-    loaded: false
+    loaded: false,
   });
   try {
     renderer.setRender(renderOutstream);
@@ -301,15 +266,28 @@ function renderOutstream(bid) {
       width: bid.width,
       height: bid.height,
       events: {
-        ALL_ADS_COMPLETED: () =>
-          window.setTimeout(() => {
-            window['GamoshiPlayer'].removeAd(unitId);
-          }, 300)
+        ALL_ADS_COMPLETED: () => window.setTimeout(() => {
+          window['GamoshiPlayer'].removeAd(unitId);
+        }, 300)
       },
       vastUrl: bid.vastUrl,
       vastXml: bid.vastXml
     });
   });
+}
+
+function addExternalUserId(eids, value, source, rtiPartner) {
+  if (utils.isStr(value)) {
+    eids.push({
+      source,
+      uids: [{
+        id: value,
+        ext: {
+          rtiPartner
+        }
+      }]
+    });
+  }
 }
 
 registerBidder(spec);

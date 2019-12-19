@@ -82,7 +82,6 @@ let sovrnAnalyticsAdapter = Object.assign(adapter({url: pbaUrl, analyticsType}),
       }
       switch (eventType) {
         case BID_REQUESTED:
-          console.log(args)
           currentAuctions[args.auctionId].bidRequested(args)
           break
         case BID_ADJUSTMENT:

@@ -14,82 +14,82 @@ describe('CleanmedianetAdapter', function () {
     });
   });
 
-  describe('inherited functions', function () {
-    it('exists and is a function', function () {
+  describe('inherited functions', function() {
+    it('exists and is a function', function() {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
   });
 
-  describe('isBidRequestValid', function () {
-    it('should validate supply-partner ID', function () {
-      expect(spec.isBidRequestValid({params: {}})).to.equal(false);
+  describe('isBidRequestValid', function() {
+    it('should validate supply-partner ID', function() {
+      expect(spec.isBidRequestValid({ params: {} })).to.equal(false);
       expect(
-        spec.isBidRequestValid({params: {supplyPartnerId: 123}})
+        spec.isBidRequestValid({ params: { supplyPartnerId: 123 } })
       ).to.equal(false);
       expect(
-        spec.isBidRequestValid({params: {supplyPartnerId: '123'}})
+        spec.isBidRequestValid({ params: { supplyPartnerId: '123' } })
       ).to.equal(true);
     });
 
-    it('should validate bid floor', function () {
+    it('should validate bid floor', function() {
       expect(
-        spec.isBidRequestValid({params: {supplyPartnerId: '123'}})
+        spec.isBidRequestValid({ params: { supplyPartnerId: '123' } })
       ).to.equal(true); // bidfloor has a default
       expect(
         spec.isBidRequestValid({
-          params: {supplyPartnerId: '123', bidfloor: '123'}
+          params: { supplyPartnerId: '123', bidfloor: '123' }
         })
       ).to.equal(false);
       expect(
         spec.isBidRequestValid({
-          params: {supplyPartnerId: '123', bidfloor: 0.1}
+          params: { supplyPartnerId: '123', bidfloor: 0.1 }
         })
       ).to.equal(true);
     });
 
-    it('should validate adpos', function () {
+    it('should validate adpos', function() {
       expect(
-        spec.isBidRequestValid({params: {supplyPartnerId: '123'}})
+        spec.isBidRequestValid({ params: { supplyPartnerId: '123' } })
       ).to.equal(true); // adpos has a default
       expect(
         spec.isBidRequestValid({
-          params: {supplyPartnerId: '123', adpos: '123'}
+          params: { supplyPartnerId: '123', adpos: '123' }
         })
       ).to.equal(false);
       expect(
         spec.isBidRequestValid({
-          params: {supplyPartnerId: '123', adpos: 0.1}
+          params: { supplyPartnerId: '123', adpos: 0.1 }
         })
       ).to.equal(true);
     });
 
-    it('should validate instl', function () {
+    it('should validate instl', function() {
       expect(
-        spec.isBidRequestValid({params: {supplyPartnerId: '123'}})
+        spec.isBidRequestValid({ params: { supplyPartnerId: '123' } })
       ).to.equal(true); // adpos has a default
       expect(
         spec.isBidRequestValid({
-          params: {supplyPartnerId: '123', instl: '123'}
+          params: { supplyPartnerId: '123', instl: '123' }
         })
       ).to.equal(false);
       expect(
         spec.isBidRequestValid({
-          params: {supplyPartnerId: '123', instl: -1}
+          params: { supplyPartnerId: '123', instl: -1 }
         })
       ).to.equal(false);
       expect(
-        spec.isBidRequestValid({params: {supplyPartnerId: '123', instl: 0}})
+        spec.isBidRequestValid({ params: { supplyPartnerId: '123', instl: 0 } })
       ).to.equal(true);
       expect(
-        spec.isBidRequestValid({params: {supplyPartnerId: '123', instl: 1}})
+        spec.isBidRequestValid({ params: { supplyPartnerId: '123', instl: 1 } })
       ).to.equal(true);
       expect(
-        spec.isBidRequestValid({params: {supplyPartnerId: '123', instl: 2}})
+        spec.isBidRequestValid({ params: { supplyPartnerId: '123', instl: 2 } })
       ).to.equal(false);
     });
   });
 
-  describe('buildRequests', function () {
+  describe('buildRequests', function() {
     const bidRequest = {
       adUnitCode: 'adunit-code',
       auctionId: '1d1a030790a475',
@@ -101,13 +101,13 @@ describe('CleanmedianetAdapter', function () {
       },
       sizes: [[300, 250], [300, 600]],
       transactionId: 'a123456789',
-      refererInfo: {referer: 'http://examplereferer.com'},
+      refererInfo: { referer: 'https://examplereferer.com' },
       gdprConsent: {
         consentString: 'some string',
         gdprApplies: true
       }
     };
-    it('returns an array', function () {
+    it('returns an array', function() {
       let response;
       response = spec.buildRequests([]);
       expect(Array.isArray(response)).to.equal(true);
@@ -128,13 +128,13 @@ describe('CleanmedianetAdapter', function () {
       expect(response.length).to.equal(2);
     });
 
-    it('builds request correctly', function () {
+    it('builds request correctly', function() {
       let bidRequest2 = utils.deepClone(bidRequest);
-      bidRequest2.refererInfo.referer = 'http://www.test.com/page.html';
+      bidRequest2.refererInfo.referer = 'https://www.test.com/page.html';
       let response = spec.buildRequests([bidRequest], bidRequest2)[0];
       expect(response.data.site.domain).to.equal('www.test.com');
-      expect(response.data.site.page).to.equal('http://www.test.com/page.html');
-      expect(response.data.site.ref).to.equal('http://www.test.com/page.html');
+      expect(response.data.site.page).to.equal('https://www.test.com/page.html');
+      expect(response.data.site.ref).to.equal('https://www.test.com/page.html');
       expect(response.data.imp.length).to.equal(1);
       expect(response.data.imp[0].id).to.equal(bidRequest.transactionId);
       expect(response.data.imp[0].instl).to.equal(0);
@@ -170,7 +170,7 @@ describe('CleanmedianetAdapter', function () {
       );
     });
 
-    it('builds request banner object correctly', function () {
+    it('builds request banner object correctly', function() {
       let response;
       const bidRequestWithBanner = utils.deepClone(bidRequest);
       bidRequestWithBanner.mediaTypes = {
@@ -194,7 +194,7 @@ describe('CleanmedianetAdapter', function () {
       );
     });
 
-    it('builds request video object correctly', function () {
+    it('builds request video object correctly', function() {
       let response;
       const bidRequestWithVideo = utils.deepClone(bidRequest);
       bidRequestWithVideo.mediaTypes = {
@@ -218,7 +218,7 @@ describe('CleanmedianetAdapter', function () {
       );
     });
 
-    it('builds request video object correctly with context', function () {
+    it('builds request video object correctly with context', function() {
       let response;
       const bidRequestWithVideo = utils.deepClone(bidRequest);
       bidRequestWithVideo.mediaTypes = {
@@ -261,7 +261,7 @@ describe('CleanmedianetAdapter', function () {
       expect(response.data.imp[1].video.h).to.equal(254);
     });
 
-    it('builds request with gdpr consent', function () {
+    it('builds request with gdpr consent', function() {
       let response = spec.buildRequests([bidRequest], bidRequest)[0];
       expect(response.data.ext).to.have.property('gdpr_consent');
       expect(response.data.ext.gdpr_consent.consent_string).to.equal(
@@ -271,7 +271,7 @@ describe('CleanmedianetAdapter', function () {
     });
   });
 
-  describe('interpretResponse', function () {
+  describe('interpretResponse', function() {
     const bannerBidRequest = {
       adUnitCode: 'adunit-code',
       auctionId: '1d1a030790a475',
@@ -284,7 +284,7 @@ describe('CleanmedianetAdapter', function () {
       sizes: [[300, 250], [300, 600]],
       transactionId: 'a123456789',
       bidId: '111',
-      refererInfo: {referer: 'http://examplereferer.com'}
+      refererInfo: { referer: 'https://examplereferer.com' }
     };
 
     const videoBidRequest = {
@@ -299,7 +299,7 @@ describe('CleanmedianetAdapter', function () {
       sizes: [[300, 250], [300, 600]],
       transactionId: 'a123456789',
       bidId: '111',
-      refererInfo: {referer: 'http://examplereferer.com'}
+      refererInfo: { referer: 'https://examplereferer.com' }
     };
 
     const rtbResponse = {
@@ -308,8 +308,8 @@ describe('CleanmedianetAdapter', function () {
       cur: 'USD',
       ext: {
         utrk: [
-          {type: 'iframe', url: '//bidder.cleanmediaads.com/user/sync/1'},
-          {type: 'image', url: '//bidder.cleanmediaads.com/user/sync/2'}
+          { type: 'iframe', url: '//bidder.cleanmediaads.com/user/sync/1' },
+          { type: 'image', url: '//bidder.cleanmediaads.com/user/sync/2' }
         ]
       },
       seatbid: [
@@ -333,8 +333,8 @@ describe('CleanmedianetAdapter', function () {
               h: 600,
               w: 120,
               ext: {
-                vast_url: 'http://my.vast.com',
-                utrk: [{type: 'iframe', url: '//p.partner1.io/user/sync/1'}]
+                vast_url: 'https://my.vast.com',
+                utrk: [{ type: 'iframe', url: '//p.partner1.io/user/sync/1' }]
               }
             }
           ]
@@ -359,7 +359,7 @@ describe('CleanmedianetAdapter', function () {
               h: 250,
               w: 300,
               ext: {
-                utrk: [{type: 'image', url: '//p.partner2.io/user/sync/1'}]
+                utrk: [{ type: 'image', url: '//p.partner2.io/user/sync/1' }]
               }
             }
           ]
@@ -367,7 +367,7 @@ describe('CleanmedianetAdapter', function () {
       ]
     };
 
-    it('returns an empty array on missing response', function () {
+    it('returns an empty array on missing response', function() {
       let response;
 
       response = spec.interpretResponse(undefined, {
@@ -376,15 +376,15 @@ describe('CleanmedianetAdapter', function () {
       expect(Array.isArray(response)).to.equal(true);
       expect(response.length).to.equal(0);
 
-      response = spec.interpretResponse({}, {bidRequest: bannerBidRequest});
+      response = spec.interpretResponse({}, { bidRequest: bannerBidRequest });
       expect(Array.isArray(response)).to.equal(true);
       expect(response.length).to.equal(0);
     });
 
-    it('aggregates banner bids from all seat bids', function () {
+    it('aggregates banner bids from all seat bids', function() {
       const response = spec.interpretResponse(
-        {body: rtbResponse},
-        {bidRequest: bannerBidRequest}
+        { body: rtbResponse },
+        { bidRequest: bannerBidRequest }
       );
       expect(Array.isArray(response)).to.equal(true);
       expect(response.length).to.equal(1);
@@ -394,7 +394,7 @@ describe('CleanmedianetAdapter', function () {
       expect(ad0.cpm).to.equal(rtbResponse.seatbid[1].bid[0].price);
       expect(ad0.width).to.equal(rtbResponse.seatbid[1].bid[0].w);
       expect(ad0.height).to.equal(rtbResponse.seatbid[1].bid[0].h);
-      expect(ad0.ttl).to.equal(60 * 10);
+      expect(ad0.ttl).to.equal(360);
       expect(ad0.creativeId).to.equal(rtbResponse.seatbid[1].bid[0].crid);
       expect(ad0.netRevenue).to.equal(true);
       expect(ad0.currency).to.equal(
@@ -405,10 +405,10 @@ describe('CleanmedianetAdapter', function () {
       expect(ad0.vastUrl).to.be.an('undefined');
     });
 
-    it('aggregates video bids from all seat bids', function () {
+    it('aggregates video bids from all seat bids', function() {
       const response = spec.interpretResponse(
-        {body: rtbResponse},
-        {bidRequest: videoBidRequest}
+        { body: rtbResponse },
+        { bidRequest: videoBidRequest }
       );
       expect(Array.isArray(response)).to.equal(true);
       expect(response.length).to.equal(1);
@@ -418,7 +418,7 @@ describe('CleanmedianetAdapter', function () {
       expect(ad0.cpm).to.equal(rtbResponse.seatbid[0].bid[0].price);
       expect(ad0.width).to.equal(rtbResponse.seatbid[0].bid[0].w);
       expect(ad0.height).to.equal(rtbResponse.seatbid[0].bid[0].h);
-      expect(ad0.ttl).to.equal(60 * 10);
+      expect(ad0.ttl).to.equal(360);
       expect(ad0.creativeId).to.equal(rtbResponse.seatbid[0].bid[0].crid);
       expect(ad0.netRevenue).to.equal(true);
       expect(ad0.currency).to.equal(
@@ -429,8 +429,8 @@ describe('CleanmedianetAdapter', function () {
       expect(ad0.vastUrl).to.equal(rtbResponse.seatbid[0].bid[0].ext.vast_url);
     });
 
-    it('aggregates user-sync pixels', function () {
-      const response = spec.getUserSyncs({}, [{body: rtbResponse}]);
+    it('aggregates user-sync pixels', function() {
+      const response = spec.getUserSyncs({}, [{ body: rtbResponse }]);
       expect(Array.isArray(response)).to.equal(true);
       expect(response.length).to.equal(4);
       expect(response[0].type).to.equal(rtbResponse.ext.utrk[0].type);
@@ -455,7 +455,7 @@ describe('CleanmedianetAdapter', function () {
       );
     });
 
-    it('supports configuring outstream renderers', function () {
+    it('supports configuring outstream renderers', function() {
       const videoResponse = {
         id: '64f32497-b2f7-48ec-9205-35fc39894d44',
         bidid: 'imp_5c24924de4b0d106447af333',
@@ -505,13 +505,13 @@ describe('CleanmedianetAdapter', function () {
       const videoRequest = utils.deepClone(videoBidRequest);
       videoRequest.mediaTypes.video.context = 'outstream';
       const result = spec.interpretResponse(
-        {body: videoResponse},
-        {bidRequest: videoRequest}
+        { body: videoResponse },
+        { bidRequest: videoRequest }
       );
       expect(result[0].renderer).to.not.equal(undefined);
     });
 
-    it('validates in/existing of gdpr consent', function () {
+    it('validates in/existing of gdpr consent', function() {
       let videoResponse = {
         id: '64f32497-b2f7-48ec-9205-35fc39894d44',
         bidid: 'imp_5c24924de4b0d106447af333',
@@ -564,7 +564,7 @@ describe('CleanmedianetAdapter', function () {
       };
       let result = spec.getUserSyncs(
         {},
-        [{body: videoResponse}],
+        [{ body: videoResponse }],
         gdprConsent
       );
       expect(result).to.be.an('array');
@@ -575,7 +575,7 @@ describe('CleanmedianetAdapter', function () {
       );
 
       gdprConsent.gdprApplies = false;
-      result = spec.getUserSyncs({}, [{body: videoResponse}], gdprConsent);
+      result = spec.getUserSyncs({}, [{ body: videoResponse }], gdprConsent);
       expect(result).to.be.an('array');
       expect(result.length).to.equal(1);
       expect(result[0].type).to.equal('image');
@@ -585,7 +585,7 @@ describe('CleanmedianetAdapter', function () {
 
       videoResponse.ext.utrk[0].url =
         'https://bidder.cleanmediaads.com/pix/1275/scm';
-      result = spec.getUserSyncs({}, [{body: videoResponse}], gdprConsent);
+      result = spec.getUserSyncs({}, [{ body: videoResponse }], gdprConsent);
       expect(result).to.be.an('array');
       expect(result.length).to.equal(1);
       expect(result[0].type).to.equal('image');
