@@ -80,10 +80,12 @@ function getSegments() {
 }
 
 function setSegments() {
-  pageTracking().then(segments => utils.setCookie(A1_COOKIE_NAME, segments.map(x => `${x}`).join('_')));
+  pageTracking(segments => {
+    utils.setCookie(A1_COOKIE_NAME, segments.map(x => `${x}`).join('_'));
+  });
 }
 
-function pageTracking() {
+function pageTracking(f) {
   const script = document.createElement('script');
 
   script.type = 'text/javascript';
@@ -91,16 +93,13 @@ function pageTracking() {
 
   document.head.appendChild(script);
 
-  return new Promise((resolve, reject) => {
-    a1tracker.send(A1_OID, (error, data) => {
-      if (error) {
-        reject(new Error(error));
-        return;
-      }
+  a1tracker.send(A1_OID, (error, data) => {
+    if (error) {
+      throw error;
+    }
 
-      resolve(data.segments);
-    });
-  })
+    f(data.segments);
+  });
 }
 
 registerBidder(spec);
