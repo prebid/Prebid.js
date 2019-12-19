@@ -1,9 +1,14 @@
-import * as utils from 'src/utils';
-import {registerBidder} from 'src/adapters/bidderFactory';
+import * as utils from '../src/utils';
+import {registerBidder} from '../src/adapters/bidderFactory';
+import { Renderer } from '../src/Renderer';
+import { VIDEO, BANNER } from '../src/mediaTypes';
+
 const BIDDER_CODE = 'trustx';
-const ENDPOINT_URL = '//sofia.trustx.org/hb';
+const ENDPOINT_URL = 'https://sofia.trustx.org/hb';
 const TIME_TO_LIVE = 360;
-const ADAPTER_SYNC_URL = '//sofia.trustx.org/push_sync';
+const ADAPTER_SYNC_URL = 'https://sofia.trustx.org/push_sync';
+const RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
+
 const LOG_ERROR_MESS = {
   noAuid: 'Bid from response has no auid parameter - ',
   noAdm: 'Bid from response has no adm parameter - ',
@@ -17,6 +22,7 @@ const LOG_ERROR_MESS = {
 };
 export const spec = {
   code: BIDDER_CODE,
+  supportedMediaTypes: [ BANNER, VIDEO ],
   /**
    * Determines whether or not the given bid request is valid.
    *
@@ -30,13 +36,17 @@ export const spec = {
    * Make a server request from the list of BidRequests.
    *
    * @param {BidRequest[]} validBidRequests - an array of bids
+   * @param {bidderRequest} - bidder request object
    * @return ServerRequest Info describing the request to the server.
    */
-  buildRequests: function(validBidRequests) {
+  buildRequests: function(validBidRequests, bidderRequest) {
     const auids = [];
     const bidsMap = {};
+    const slotsMapByUid = {};
+    const sizeMap = {};
     const bids = validBidRequests || [];
     let priceType = 'net';
+    let pageKeywords;
     let reqId;
 
     bids.forEach(bid => {
@@ -44,25 +54,82 @@ export const spec = {
         priceType = 'gross';
       }
       reqId = bid.bidderRequestId;
-      if (!bidsMap[bid.params.uid]) {
-        bidsMap[bid.params.uid] = [bid];
-        auids.push(bid.params.uid);
-      } else {
-        bidsMap[bid.params.uid].push(bid);
+      const {params: {uid}, adUnitCode} = bid;
+      auids.push(uid);
+      const sizesId = utils.parseSizesInput(bid.sizes);
+
+      if (!pageKeywords && !utils.isEmpty(bid.params.keywords)) {
+        const keywords = utils.transformBidderParamKeywords(bid.params.keywords);
+
+        if (keywords.length > 0) {
+          keywords.forEach(deleteValues);
+        }
+        pageKeywords = keywords;
       }
+
+      if (!slotsMapByUid[uid]) {
+        slotsMapByUid[uid] = {};
+      }
+      const slotsMap = slotsMapByUid[uid];
+      if (!slotsMap[adUnitCode]) {
+        slotsMap[adUnitCode] = {adUnitCode, bids: [bid], parents: []};
+      } else {
+        slotsMap[adUnitCode].bids.push(bid);
+      }
+      const slot = slotsMap[adUnitCode];
+
+      sizesId.forEach((sizeId) => {
+        sizeMap[sizeId] = true;
+        if (!bidsMap[uid]) {
+          bidsMap[uid] = {};
+        }
+
+        if (!bidsMap[uid][sizeId]) {
+          bidsMap[uid][sizeId] = [slot];
+        } else {
+          bidsMap[uid][sizeId].push(slot);
+        }
+        slot.parents.push({parent: bidsMap[uid], key: sizeId, uid});
+      });
     });
 
     const payload = {
-      u: utils.getTopWindowUrl(),
       pt: priceType,
       auids: auids.join(','),
-      r: reqId
+      sizes: utils.getKeys(sizeMap).join(','),
+      r: reqId,
+      wrapperType: 'Prebid_js',
+      wrapperVersion: '$prebid.version$'
     };
+
+    if (pageKeywords) {
+      payload.keywords = JSON.stringify(pageKeywords);
+    }
+
+    if (bidderRequest) {
+      if (bidderRequest.refererInfo && bidderRequest.refererInfo.referer) {
+        payload.u = bidderRequest.refererInfo.referer;
+      }
+      if (bidderRequest.timeout) {
+        payload.wtimeout = bidderRequest.timeout;
+      }
+      if (bidderRequest.gdprConsent) {
+        if (bidderRequest.gdprConsent.consentString) {
+          payload.gdpr_consent = bidderRequest.gdprConsent.consentString;
+        }
+        payload.gdpr_applies =
+          (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean')
+            ? Number(bidderRequest.gdprConsent.gdprApplies) : 1;
+      }
+      if (bidderRequest.uspConsent) {
+        payload.us_privacy = bidderRequest.uspConsent;
+      }
+    }
 
     return {
       method: 'GET',
       url: ENDPOINT_URL,
-      data: payload,
+      data: utils.parseQueryStringParameters(payload).replace(/\&$/, ''),
       bidsMap: bidsMap,
     };
   },
@@ -73,8 +140,8 @@ export const spec = {
    * @param {*} bidRequest
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
-  interpretResponse: function(serverResponse, bidRequest) {
-    serverResponse = serverResponse && serverResponse.body
+  interpretResponse: function(serverResponse, bidRequest, RendererConst = Renderer) {
+    serverResponse = serverResponse && serverResponse.body;
     const bidResponses = [];
     const bidsMap = bidRequest.bidsMap;
     const priceType = bidRequest.data.pt;
@@ -88,7 +155,7 @@ export const spec = {
 
     if (!errorMessage && serverResponse.seatbid) {
       serverResponse.seatbid.forEach(respItem => {
-        _addBidResponse(_getBidFromResponse(respItem), bidsMap, priceType, bidResponses);
+        _addBidResponse(_getBidFromResponse(respItem), bidsMap, priceType, bidResponses, RendererConst);
       });
     }
     if (errorMessage) utils.logError(errorMessage);
@@ -104,6 +171,16 @@ export const spec = {
   }
 }
 
+function isPopulatedArray(arr) {
+  return !!(utils.isArray(arr) && arr.length > 0);
+}
+
+function deleteValues(keyPairObj) {
+  if (isPopulatedArray(keyPairObj.value) && keyPairObj.value[0] === '') {
+    delete keyPairObj.value;
+  }
+}
+
 function _getBidFromResponse(respItem) {
   if (!respItem) {
     utils.logError(LOG_ERROR_MESS.emptySeatbid);
@@ -115,7 +192,7 @@ function _getBidFromResponse(respItem) {
   return respItem && respItem.bid && respItem.bid[0];
 }
 
-function _addBidResponse(serverBid, bidsMap, priceType, bidResponses) {
+function _addBidResponse(serverBid, bidsMap, priceType, bidResponses, RendererConst) {
   if (!serverBid) return;
   let errorMessage;
   if (!serverBid.auid) errorMessage = LOG_ERROR_MESS.noAuid + JSON.stringify(serverBid);
@@ -123,7 +200,11 @@ function _addBidResponse(serverBid, bidsMap, priceType, bidResponses) {
   else {
     const awaitingBids = bidsMap[serverBid.auid];
     if (awaitingBids) {
-      awaitingBids.forEach(bid => {
+      const sizeId = `${serverBid.w}x${serverBid.h}`;
+      if (awaitingBids[sizeId]) {
+        const slot = awaitingBids[sizeId][0];
+
+        const bid = slot.bids.shift();
         const bidResponse = {
           requestId: bid.bidId, // bid.bidderRequestId,
           bidderCode: spec.code,
@@ -134,11 +215,42 @@ function _addBidResponse(serverBid, bidsMap, priceType, bidResponses) {
           currency: 'USD',
           netRevenue: priceType !== 'gross',
           ttl: TIME_TO_LIVE,
-          ad: serverBid.adm,
           dealId: serverBid.dealid
         };
+        if (serverBid.content_type === 'video') {
+          bidResponse.vastXml = serverBid.adm;
+          bidResponse.mediaType = VIDEO;
+          bidResponse.adResponse = {
+            content: bidResponse.vastXml
+          };
+          if (!bid.renderer && (!bid.mediaTypes || !bid.mediaTypes.video || bid.mediaTypes.video.context === 'outstream')) {
+            bidResponse.renderer = createRenderer(bidResponse, {
+              id: bid.bidId,
+              url: RENDERER_URL
+            }, RendererConst);
+          }
+        } else {
+          bidResponse.ad = serverBid.adm;
+          bidResponse.mediaType = BANNER;
+        }
+
         bidResponses.push(bidResponse);
-      });
+
+        if (!slot.bids.length) {
+          slot.parents.forEach(({parent, key, uid}) => {
+            const index = parent[key].indexOf(slot);
+            if (index > -1) {
+              parent[key].splice(index, 1);
+            }
+            if (!parent[key].length) {
+              delete parent[key];
+              if (!utils.getKeys(parent).length) {
+                delete bidsMap[uid];
+              }
+            }
+          });
+        }
+      }
     } else {
       errorMessage = LOG_ERROR_MESS.noPlacementCode + serverBid.auid;
     }
@@ -146,6 +258,31 @@ function _addBidResponse(serverBid, bidsMap, priceType, bidResponses) {
   if (errorMessage) {
     utils.logError(errorMessage);
   }
+}
+
+function outstreamRender (bid) {
+  bid.renderer.push(() => {
+    window.ANOutstreamVideo.renderAd({
+      targetId: bid.adUnitCode,
+      adResponse: bid.adResponse
+    });
+  });
+}
+
+function createRenderer (bid, rendererParams, RendererConst) {
+  const rendererInst = RendererConst.install({
+    id: rendererParams.id,
+    url: rendererParams.url,
+    loaded: false
+  });
+
+  try {
+    rendererInst.setRender(outstreamRender);
+  } catch (err) {
+    utils.logWarn('Prebid Error calling setRender on renderer', err);
+  }
+
+  return rendererInst;
 }
 
 registerBidder(spec);

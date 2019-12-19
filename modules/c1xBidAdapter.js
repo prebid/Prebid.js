@@ -1,10 +1,10 @@
-import { registerBidder } from 'src/adapters/bidderFactory';
-import * as utils from 'src/utils';
-import { userSync } from 'src/userSync';
+import { registerBidder } from '../src/adapters/bidderFactory';
+import * as utils from '../src/utils';
+import { userSync } from '../src/userSync';
 
 const BIDDER_CODE = 'c1x';
 const URL = 'https://ht.c1exchange.com/ht';
-const PIXEL_ENDPOINT = '//px.c1exchange.com/pubpixel/';
+const PIXEL_ENDPOINT = 'https://px.c1exchange.com/pubpixel/';
 const LOG_MSG = {
   invalidBid: 'C1X: [ERROR] bidder returns an invalid bid',
   noSite: 'C1X: [ERROR] no site id supplied',
@@ -14,7 +14,7 @@ const LOG_MSG = {
 
 /**
  * Adapter for requesting bids from C1X header tag server.
- * v3.0 (c) C1X Inc., 2017
+ * v3.1 (c) C1X Inc., 2018
  */
 
 export const c1xAdapter = {
@@ -29,9 +29,10 @@ export const c1xAdapter = {
     return !!(bid.adUnitCode && siteId);
   },
 
-  buildRequests: function(bidRequests) {
+  buildRequests: function(bidRequests, bidderRequest) {
     let payload = {};
     let tagObj = {};
+    let pixelUrl = '';
     const adunits = bidRequests.length;
     const rnd = new Date().getTime();
     const c1xTags = bidRequests.map(bidToTag);
@@ -40,7 +41,6 @@ export const c1xAdapter = {
     // flattened tags in a tag object
     tagObj = c1xTags.reduce((current, next) => Object.assign(current, next));
     const pixelId = tagObj.pixelId;
-    const useSSL = document.location.protocol;
 
     payload = {
       adunits: adunits.toString(),
@@ -48,15 +48,26 @@ export const c1xAdapter = {
       response: 'json',
       compress: 'gzip'
     }
-    Object.assign(payload, tagObj);
 
-    let payloadString = stringifyPayload(payload);
+    // for GDPR support
+    if (bidderRequest && bidderRequest.gdprConsent) {
+      payload['consent_string'] = bidderRequest.gdprConsent.consentString;
+      payload['consent_required'] = (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') ? bidderRequest.gdprConsent.gdprApplies.toString() : 'true'
+      ;
+    }
 
     if (pixelId) {
-      const pixelUrl = (useSSL ? 'https:' : 'http:') + PIXEL_ENDPOINT + pixelId;
+      pixelUrl = PIXEL_ENDPOINT + pixelId;
+      if (payload.consent_required) {
+        pixelUrl += '&gdpr=' + (bidderRequest.gdprConsent.gdprApplies ? 1 : 0);
+        pixelUrl += '&consent=' + encodeURIComponent(bidderRequest.gdprConsent.consentString || '');
+      }
       userSync.registerSync('image', BIDDER_CODE, pixelUrl);
     }
 
+    Object.assign(payload, tagObj);
+
+    let payloadString = stringifyPayload(payload);
     // ServerRequest object
     return {
       method: 'GET',

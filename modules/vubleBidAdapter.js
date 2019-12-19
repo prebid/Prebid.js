@@ -1,7 +1,8 @@
 // Vuble Adapter
 
-import * as utils from 'src/utils';
-import {registerBidder} from 'src/adapters/bidderFactory';
+import * as utils from '../src/utils';
+import {registerBidder} from '../src/adapters/bidderFactory';
+import { Renderer } from '../src/Renderer';
 
 const BIDDER_CODE = 'vuble';
 
@@ -11,6 +12,39 @@ const CURRENCIES = {
   net: 'USD'
 };
 const TTL = 60;
+
+const outstreamRender = bid => {
+  bid.renderer.push(() => {
+    window.ANOutstreamVideo.renderAd({
+      sizes: [bid.width, bid.height],
+      targetId: bid.adUnitCode,
+      adResponse: bid.adResponse,
+      rendererOptions: {
+        showBigPlayButton: false,
+        showProgressBar: 'bar',
+        showVolume: false,
+        allowFullscreen: true,
+        skippable: false,
+      }
+    });
+  });
+}
+
+const createRenderer = (bid, serverResponse) => {
+  const renderer = Renderer.install({
+    id: serverResponse.renderer_id,
+    url: serverResponse.renderer_url,
+    loaded: false,
+  });
+
+  try {
+    renderer.setRender(outstreamRender);
+  } catch (err) {
+    utils.logWarn('Prebid Error calling setRender on renderer', err);
+  }
+
+  return renderer;
+}
 
 export const spec = {
   code: BIDDER_CODE,
@@ -23,7 +57,8 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
-    if (utils.isEmpty(bid.sizes) || utils.parseSizesInput(bid.sizes).length == 0) {
+    let rawSizes = utils.deepAccess(bid, 'mediaTypes.video.playerSize') || bid.sizes;
+    if (utils.isEmpty(rawSizes) || utils.parseSizesInput(rawSizes).length == 0) {
       return false;
     }
 
@@ -44,31 +79,33 @@ export const spec = {
    * @param {validBidRequests[]} - an array of bids
    * @return ServerRequest Info describing the request to the server.
    */
-  buildRequests: function (validBidRequests) {
-    return validBidRequests.map(bid => {
+  buildRequests: function (validBidRequests, bidderRequest) {
+    return validBidRequests.map(bidRequest => {
       // We take the first size
-      let size = utils.parseSizesInput(bid.sizes)[0].split('x');
+      let rawSize = utils.deepAccess(bidRequest, 'mediaTypes.video.playerSize') || bidRequest.sizes;
+      let size = utils.parseSizesInput(rawSize)[0].split('x');
 
       // Get the page's url
-      let referrer = utils.getTopWindowUrl();
-      if (bid.params.referrer) {
-        referrer = bid.params.referrer;
+      let referer = (bidderRequest && bidderRequest.refererInfo) ? bidderRequest.refererInfo.referer : '';
+      if (bidRequest.params.referrer) {
+        referer = bidRequest.params.referrer;
       }
 
       // Get Video Context
-      let context = utils.deepAccess(bid, 'mediaTypes.video.context');
+      let context = utils.deepAccess(bidRequest, 'mediaTypes.video.context');
 
-      let url = '//player.mediabong.' + bid.params.env + '/prebid/request';
+      let url = 'https://player.mediabong.' + bidRequest.params.env + '/prebid/request';
       let data = {
         width: size[0],
         height: size[1],
-        pub_id: bid.params.pubId,
-        zone_id: bid.params.zoneId,
+        pub_id: bidRequest.params.pubId,
+        zone_id: bidRequest.params.zoneId,
         context: context,
-        floor_price: bid.params.floorPrice ? bid.params.floorPrice : 0,
-        url: referrer,
-        env: bid.params.env,
-        bid_id: bid.bidId
+        floor_price: bidRequest.params.floorPrice ? bidRequest.params.floorPrice : 0,
+        url: referer,
+        env: bidRequest.params.env,
+        bid_id: bidRequest.bidId,
+        adUnitCode: bidRequest.adUnitCode
       };
 
       return {
@@ -85,30 +122,47 @@ export const spec = {
    * @param {ServerResponse} serverResponse A successful response from the server.
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
-  interpretResponse: function (serverResponse, bid) {
+  interpretResponse: function (serverResponse, bidRequest) {
     const responseBody = serverResponse.body;
 
     if (typeof responseBody !== 'object' || responseBody.status !== 'ok') {
       return [];
     }
 
-    let responses = [];
-    let reponse = {
-      requestId: bid.data.bid_id,
+    let bids = [];
+    let bid = {
+      requestId: bidRequest.data.bid_id,
       cpm: responseBody.cpm,
-      width: bid.data.width,
-      height: bid.data.height,
+      width: bidRequest.data.width,
+      height: bidRequest.data.height,
       ttl: TTL,
       creativeId: responseBody.creativeId,
       dealId: responseBody.dealId,
       netRevenue: true,
-      currency: CURRENCIES[bid.data.env],
+      currency: CURRENCIES[bidRequest.data.env],
       vastUrl: responseBody.url,
       mediaType: 'video'
     };
-    responses.push(reponse);
 
-    return responses;
+    if (responseBody.renderer_url) {
+      let adResponse = {
+        ad: {
+          video: {
+            content: responseBody.content
+          }
+        }
+      };
+
+      Object.assign(bid, {
+        adResponse: adResponse,
+        adUnitCode: bidRequest.data.adUnitCode,
+        renderer: createRenderer(bid, responseBody)
+      });
+    }
+
+    bids.push(bid);
+
+    return bids;
   },
 
   /**

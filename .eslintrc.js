@@ -1,9 +1,22 @@
+
+const allowedModules = require("./allowedModules");
+
 module.exports = {
   "env": {
     "browser": true,
     "commonjs": true
   },
+  "settings": {
+    "import/resolver": {
+      "node": {
+        "moduleDirectory": ["node_modules", "./"]
+      }
+    }
+  },
   "extends": "standard",
+  "plugins": [
+    "prebid"
+  ],
   "globals": {
     "$$PREBID_GLOBAL$$": false
   },
@@ -19,11 +32,16 @@ module.exports = {
     // Violations of these styles should be fixed, and the exceptions removed over time.
     //
     // See Issue #1111.
-    "camelcase": "off",
     "eqeqeq": "off",
     "no-return-assign": "off",
     "no-throw-literal": "off",
     "no-undef": "off",
     "no-useless-escape": "off",
-  }
+  },
+  "overrides": Object.keys(allowedModules).map((key) => ({
+    "files": key + "/**/*.js",
+    "rules": {
+      "prebid/validate-imports": ["error", allowedModules[key]]
+    }
+  }))
 };

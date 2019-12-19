@@ -2,16 +2,16 @@ import { expect } from 'chai';
 import { spec } from 'modules/rtbdemandBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
 
-describe('rtbdemandAdapter', () => {
+describe('rtbdemandAdapter', function () {
   const adapter = newBidder(spec);
 
-  describe('inherited functions', () => {
-    it('exists and is a function', () => {
+  describe('inherited functions', function () {
+    it('exists and is a function', function () {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
   });
 
-  describe('isBidRequestValid', () => {
+  describe('isBidRequestValid', function () {
     let bid = {
       'bidder': 'rtbdemand',
       'params': {
@@ -26,11 +26,11 @@ describe('rtbdemandAdapter', () => {
       'auctionId': '1d1a030790a475',
     };
 
-    it('should return true when required params found', () => {
+    it('should return true when required params found', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
-    it('should return true when required params found', () => {
+    it('should return true when required params found', function () {
       let bid = Object.assign({}, bid);
       delete bid.params;
       bid.params = {
@@ -39,7 +39,7 @@ describe('rtbdemandAdapter', () => {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
-    it('should return false when required params are not passed', () => {
+    it('should return false when required params are not passed', function () {
       let bid = Object.assign({}, bid);
       delete bid.params;
       bid.params = {
@@ -49,7 +49,7 @@ describe('rtbdemandAdapter', () => {
     });
   });
 
-  describe('buildRequests', () => {
+  describe('buildRequests', function () {
     let bidderRequest = {
       bidderCode: 'rtbdemand',
       auctionId: 'c45dd708-a418-42ec-b8a7-b70a6c6fab0a',
@@ -89,7 +89,7 @@ describe('rtbdemandAdapter', () => {
       timeout: 5000
     };
 
-    it('should add source and verison to the tag', () => {
+    it('should add source and verison to the tag', function () {
       const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
       const payload = request.data;
       expect(payload.from).to.exist;
@@ -106,14 +106,14 @@ describe('rtbdemandAdapter', () => {
       expect(payload.tmax).to.exist;
     });
 
-    it('sends bid request to ENDPOINT via GET', () => {
+    it('sends bid request to ENDPOINT via GET', function () {
       const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
-      expect(request.url).to.equal('//bidding.rtbdemand.com/hb');
+      expect(request.url).to.equal('https://bidding.rtbdemand.com/hb');
       expect(request.method).to.equal('GET');
     });
   })
 
-  describe('interpretResponse', () => {
+  describe('interpretResponse', function () {
     let response = {
       'id': '543210',
       'seatbid': [ {
@@ -128,7 +128,7 @@ describe('rtbdemandAdapter', () => {
       } ]
     };
 
-    it('should get correct bid response', () => {
+    it('should get correct bid response', function () {
       let expectedResponse = [
         {
           requestId: 'bidId-123456-1',
@@ -147,7 +147,7 @@ describe('rtbdemandAdapter', () => {
       expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse[0]));
     });
 
-    it('handles nobid responses', () => {
+    it('handles nobid responses', function () {
       let response = {
         'id': '543210',
         'seatbid': [ ]
@@ -158,10 +158,10 @@ describe('rtbdemandAdapter', () => {
     });
   });
 
-  describe('user sync', () => {
-    const syncUrl = '//bidding.rtbdemand.com/delivery/matches.php?type=iframe';
+  describe('user sync', function () {
+    const syncUrl = 'https://bidding.rtbdemand.com/delivery/matches.php?type=iframe';
 
-    it('should register the sync iframe', () => {
+    it('should register the sync iframe', function () {
       expect(spec.getUserSyncs({})).to.be.undefined;
       expect(spec.getUserSyncs({iframeEnabled: false})).to.be.undefined;
       const options = spec.getUserSyncs({iframeEnabled: true});

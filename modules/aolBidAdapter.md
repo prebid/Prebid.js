@@ -22,7 +22,6 @@ Module that connects to AOL's demand sources
                     params: {
                         placement: '3611253',
                         network: '9599.1',
-                        bidFloor: '0.80',
                         keyValues: {
                             test: 'key'
                         }

@@ -38,6 +38,10 @@ Please use ```platformio``` as the bidder code.
                   pubId: '29521',
                   siteId: '26048',
                   placementId: '123',
+                  bidFloor: '0.001', // optional
+                  ifa: 'XXX-XXX', // optional
+                  latitude: '40.712775', // optional
+                  longitude: '-74.005973', // optional
               }
           }]
       },
@@ -76,7 +80,7 @@ Please use ```platformio``` as the bidder code.
                   size: '640X480',
                   placementId: '123',
                   video: {
-                      skippable: true,
+                      skipppable: true,
                   }
               }
           }]

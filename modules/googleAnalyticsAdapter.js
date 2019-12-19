@@ -2,10 +2,10 @@
  * ga.js - analytics adapter for google analytics
  */
 
-var events = require('src/events');
-var utils = require('src/utils');
-var CONSTANTS = require('src/constants.json');
-var adaptermanager = require('src/adaptermanager');
+var events = require('../src/events');
+var utils = require('../src/utils');
+var CONSTANTS = require('../src/constants.json');
+var adapterManager = require('../src/adapterManager').default;
 
 var BID_REQUESTED = CONSTANTS.EVENTS.BID_REQUESTED;
 var BID_TIMEOUT = CONSTANTS.EVENTS.BID_TIMEOUT;
@@ -19,8 +19,11 @@ var _enableCheck = true;
 var _category = 'Prebid.js Bids';
 var _eventCount = 0;
 var _enableDistribution = false;
+var _cpmDistribution = null;
 var _trackerSend = null;
 var _sampled = true;
+
+let adapter = {};
 
 /**
  * This will enable sending data to google analytics. Only call once, or duplicate data will be sent!
@@ -28,7 +31,7 @@ var _sampled = true;
  * @param  {object} options use to configure adapter;
  * @return {[type]}    [description]
  */
-exports.enableAnalytics = function ({ provider, options }) {
+adapter.enableAnalytics = function ({ provider, options }) {
   _gaGlobal = provider || 'ga';
   _trackerSend = options && options.trackerName ? options.trackerName + '.send' : 'send';
   _sampled = typeof options === 'undefined' || typeof options.sampling === 'undefined' ||
@@ -39,6 +42,9 @@ exports.enableAnalytics = function ({ provider, options }) {
   }
   if (options && typeof options.enableDistribution !== 'undefined') {
     _enableDistribution = options.enableDistribution;
+  }
+  if (options && typeof options.cpmDistribution === 'function') {
+    _cpmDistribution = options.cpmDistribution;
   }
 
   var bid = null;
@@ -101,7 +107,7 @@ exports.enableAnalytics = function ({ provider, options }) {
   };
 };
 
-exports.getTrackerSend = function getTrackerSend() {
+adapter.getTrackerSend = function getTrackerSend() {
   return _trackerSend;
 };
 
@@ -164,6 +170,9 @@ function getLoadTimeDistribution(time) {
 }
 
 function getCpmDistribution(cpm) {
+  if (_cpmDistribution) {
+    return _cpmDistribution(cpm);
+  }
   var distribution;
   if (cpm >= 0 && cpm < 0.5) {
     distribution = '$0-0.5';
@@ -235,7 +244,8 @@ function sendBidTimeouts(timedOutBidders) {
   _analyticsQueue.push(function () {
     utils._each(timedOutBidders, function (bidderCode) {
       _eventCount++;
-      window[_gaGlobal](_trackerSend, 'event', _category, 'Timeouts', bidderCode, _disableInteraction);
+      var bidderName = bidderCode.bidder;
+      window[_gaGlobal](_trackerSend, 'event', _category, 'Timeouts', bidderName, _disableInteraction);
     });
   });
 
@@ -252,7 +262,14 @@ function sendBidWonToGa(bid) {
   checkAnalytics();
 }
 
-adaptermanager.registerAnalyticsAdapter({
-  adapter: exports,
+/**
+ * Exposed for testing purposes
+ */
+adapter.getCpmDistribution = getCpmDistribution;
+
+adapterManager.registerAnalyticsAdapter({
+  adapter,
   code: 'ga'
 });
+
+export default adapter;

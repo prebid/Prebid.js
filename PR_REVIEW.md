@@ -14,10 +14,16 @@ For modules and core platform updates, the initial reviewer should request an ad
 - Review for obvious errors or bad coding practice / use best judgement here.
 - If the change is a new feature / change to core prebid.js - review the change with a Tech Lead on the project and make sure they agree with the nature of change.
 - If the change results in needing updates to docs (such as public API change, module interface etc), add a label for "needs docs" and inform the submitter they must submit a docs PR to update the appropriate area of Prebid.org **before the PR can merge**. Help them with finding where the docs are located on prebid.org if needed. 
+  - Below are some examples of bidder specific updates that should require docs update (in their dev-docs/bidders/bidder.md file):
+    - Add support for GDPR consentManagement module > add `gdpr_supported: true`
+    - Add support for userId module > add `userId: pubCommon, digitrust, newProviderHere`
+    - Add support for video and/or native mediaTypes > add `media_types: video, native`
+    - Add support for COPPA > add `coppa_supported: true`
 - If all above is good, add a `LGTM` comment and request 1 additional core member to review.
 - Once there is 2 `LGTM` on the PR, merge to master
 - Ask the submitter to add a PR for documentation if applicable.
 - Add a line into the [draft release](https://github.com/prebid/Prebid.js/releases) notes for this submission. If no draft release is available, create one using [this template]( https://gist.github.com/mkendall07/c3af6f4691bed8a46738b3675cb5a479)
+- Add the PR to the appropriate project board (I.E. 1.23.0 Release) for the week, [see](https://github.com/prebid/Prebid.js/projects)
 
 ### New Adapter or updates to adapter process
 - Follow steps above for general review process. In addition, please verify the following:
@@ -34,13 +40,14 @@ For modules and core platform updates, the initial reviewer should request an ad
 - Adapters may not use the $$PREBID_GLOBAL$$ variable
 - All adapters must support the creation of multiple concurrent instances. This means, for example, that adapters cannot rely on mutable global variables.
 - Adapters may not globally override or default the standard ad server targeting values: hb_adid, hb_bidder, hb_pb, hb_deal, or hb_size, hb_source, hb_format.
+- After a new adapter is approved, let the submitter know they may open a PR in the [headerbid-expert repository](https://github.com/prebid/headerbid-expert) to have their adapter recognized by the [Headerbid Expert extension](https://chrome.google.com/webstore/detail/headerbid-expert/cgfkddgbnfplidghapbbnngaogeldmop). The PR should be to the [bidder patterns file](https://github.com/prebid/headerbid-expert/blob/master/bidderPatterns.js), adding an entry with their adapter's name and the url the adapter uses to send and receive bid responses.
 
 ## Ticket Coordinator
 
 Each week, Prebid Org assigns one person to keep an eye on incoming issues and PRs. That person should:
-- Review issues and PRs at least once per weekday for new items.
+- Review issues and PRs at least once per weekday for new items. Encourage a 48 "SLA" on PRs/issues assigned. Aim for touchpoint once every 48/hours. 
 - For PRs: assign PRs to individuals on the PR review list. Try to be equitable -- not all PRs are created equally. Use the "Assigned" field and add the "Needs Review" label.
-- For Issues: try to address questions and troubleshooting requests on your own, assigning them to others as needed.
+- For Issues: try to address questions and troubleshooting requests on your own, assigning them to others as needed. Please add labels as appropriate (I.E. bug, question, backlog etc).
 - Issues that are questions or troubleshooting requests may be closed if the originator doesn't respond within a week to requests for confirmation or details.
 - Issues that are bug reports should be left open and assigned to someone in PR rotation to confirm or deny the bug status.
 - It's polite to check with others before assigning them large tasks.

@@ -1,6 +1,6 @@
-import * as utils from 'src/utils';
-import { VIDEO, BANNER } from 'src/mediaTypes';
-import { registerBidder } from 'src/adapters/bidderFactory';
+import * as utils from '../src/utils';
+import { VIDEO, BANNER } from '../src/mediaTypes';
+import { registerBidder } from '../src/adapters/bidderFactory';
 const BIDDER_CODE = 'ebdr';
 export const spec = {
   code: BIDDER_CODE,
@@ -57,7 +57,7 @@ export const spec = {
     };
     return {
       method: 'GET',
-      url: '//' + rtbServerDomain + '/hb?' + '&zoneid=' + zoneid + '&br=' + encodeURIComponent(JSON.stringify(ebdrBidReq)),
+      url: 'https://' + rtbServerDomain + '/hb?' + '&zoneid=' + zoneid + '&br=' + encodeURIComponent(JSON.stringify(ebdrBidReq)),
       bids: ebdrReq
     };
   },
@@ -105,6 +105,24 @@ export const spec = {
       ebdrResponseImps.push(response);
     });
     return ebdrResponseImps;
+  },
+  getUserSyncs: function(syncOptions, serverResponses) {
+    const syncs = []
+    if (syncOptions.pixelEnabled) {
+      const ebdrResponseObj = serverResponses.body;
+      if (!ebdrResponseObj || !ebdrResponseObj.seatbid || ebdrResponseObj.seatbid.length === 0 || !ebdrResponseObj.seatbid[0].bid || ebdrResponseObj.seatbid[0].bid.length === 0) {
+        return [];
+      }
+      ebdrResponseObj.seatbid[0].bid.forEach(ebdrBid => {
+        if (ebdrBid.iurl && ebdrBid.iurl.length > 0) {
+          syncs.push({
+            type: 'image',
+            url: ebdrBid.iurl
+          });
+        }
+      });
+    }
+    return syncs;
   }
 }
 function getWidthAndHeight(bid) {

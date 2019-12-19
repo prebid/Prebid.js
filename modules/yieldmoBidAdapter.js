@@ -1,5 +1,5 @@
-import * as utils from 'src/utils';
-import { registerBidder } from 'src/adapters/bidderFactory';
+import * as utils from '../src/utils';
+import { registerBidder } from '../src/adapters/bidderFactory';
 
 const BIDDER_CODE = 'yieldmo';
 const CURRENCY = 'USD';
@@ -7,7 +7,7 @@ const TIME_TO_LIVE = 300;
 const NET_REVENUE = true;
 const SYNC_ENDPOINT = 'https://static.yieldmo.com/blank.min.html?orig=';
 const SERVER_ENDPOINT = 'https://ads.yieldmo.com/exchange/prebid';
-const localWindow = getTopWindow();
+const localWindow = utils.getWindowTop();
 
 export const spec = {
   code: BIDDER_CODE,
@@ -26,22 +26,44 @@ export const spec = {
    * @param {BidRequest[]} bidRequests A non-empty list of bid requests which should be sent to the Server.
    * @return ServerRequest Info describing the request to the server.
    */
-  buildRequests: function(bidRequests) {
+  buildRequests: function(bidRequests, bidderRequest) {
     let serverRequest = {
       p: [],
-      page_url: utils.getTopWindowUrl(),
+      page_url: bidderRequest.refererInfo.referer,
       bust: new Date().getTime().toString(),
-      pr: utils.getTopWindowReferrer(),
+      pr: bidderRequest.refererInfo.referer,
       scrd: localWindow.devicePixelRatio || 0,
       dnt: getDNT(),
       e: getEnvironment(),
       description: getPageDescription(),
       title: localWindow.document.title || '',
       w: localWindow.innerWidth,
-      h: localWindow.innerHeight
+      h: localWindow.innerHeight,
+      userConsent: JSON.stringify({
+        // case of undefined, stringify will remove param
+        gdprApplies: bidderRequest && bidderRequest.gdprConsent ? bidderRequest.gdprConsent.gdprApplies : undefined,
+        cmp: bidderRequest && bidderRequest.gdprConsent ? bidderRequest.gdprConsent.consentString : undefined
+      }),
+      us_privacy: bidderRequest && bidderRequest.us_privacy,
     };
+
     bidRequests.forEach((request) => {
       serverRequest.p.push(addPlacement(request));
+      const pubcid = getId(request, 'pubcid');
+      if (pubcid) {
+        serverRequest.pubcid = pubcid;
+      } else if (request.crumbs) {
+        if (request.crumbs.pubcid) {
+          serverRequest.pubcid = request.crumbs.pubcid;
+        }
+      }
+      const tdid = getId(request, 'tdid');
+      if (tdid) {
+        serverRequest.tdid = tdid;
+      }
+      if (request.schain) {
+        serverRequest.schain = JSON.stringify(request.schain);
+      }
     });
     serverRequest.p = '[' + serverRequest.p.toString() + ']';
     return {
@@ -53,7 +75,6 @@ export const spec = {
   /**
    * Makes Yieldmo Ad Server response compatible to Prebid specs
    * @param serverResponse successful response from Ad Server
-   * @param bidderRequest original bidRequest
    * @return {Bid[]} an array of bids
    */
   interpretResponse: function(serverResponse) {
@@ -93,10 +114,15 @@ function addPlacement(request) {
   const placementInfo = {
     placement_id: request.adUnitCode,
     callback_id: request.bidId,
-    sizes: request.sizes
+    sizes: request.mediaTypes.banner.sizes
   }
-  if (request.params && request.params.placementId) {
-    placementInfo.ym_placement_id = request.params.placementId
+  if (request.params) {
+    if (request.params.placementId) {
+      placementInfo.ym_placement_id = request.params.placementId;
+    }
+    if (request.params.bidFloor) {
+      placementInfo.bidFloor = request.params.bidFloor;
+    }
   }
   return JSON.stringify(placementInfo);
 }
@@ -111,7 +137,7 @@ function createNewBid(response) {
     cpm: response.cpm,
     width: response.width,
     height: response.height,
-    creativeId: response.creativeId,
+    creativeId: response.creative_id,
     currency: CURRENCY,
     netRevenue: NET_REVENUE,
     ttl: TIME_TO_LIVE,
@@ -151,14 +177,6 @@ function getPageDescription() {
     return document.querySelector('meta[name="description"]').getAttribute('content'); // Value of the description metadata from the publisher's page.
   } else {
     return '';
-  }
-}
-
-function getTopWindow() {
-  try {
-    return window.top;
-  } catch (e) {
-    return window;
   }
 }
 
@@ -301,4 +319,18 @@ function isSuperSandboxedIframe() {
  */
 function isMraid() {
   return !!(window.mraid);
+}
+
+/**
+ * Gets an id from the userId object if it exists
+ * @param {*} request
+ * @param {*} idType
+ * @returns an id if there is one, or undefined
+ */
+function getId(request, idType) {
+  let id;
+  if (request && request.userId && request.userId[idType] && typeof request.userId === 'object') {
+    id = request.userId[idType];
+  }
+  return id;
 }
