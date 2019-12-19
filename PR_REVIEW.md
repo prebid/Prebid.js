@@ -16,9 +16,11 @@ For modules and core platform updates, the initial reviewer should request an ad
 - If the change results in needing updates to docs (such as public API change, module interface etc), add a label for "needs docs" and inform the submitter they must submit a docs PR to update the appropriate area of Prebid.org **before the PR can merge**. Help them with finding where the docs are located on prebid.org if needed. 
   - Below are some examples of bidder specific updates that should require docs update (in their dev-docs/bidders/bidder.md file):
     - Add support for GDPR consentManagement module > add `gdpr_supported: true`
+    - Add support for US Privacy consentManagement module > add `usp_supported: true`
     - Add support for userId module > add `userId: pubCommon, digitrust, newProviderHere`
     - Add support for video and/or native mediaTypes > add `media_types: video, native`
     - Add support for COPPA > add `coppa_supported: true`
+    - Add support for SChain > add `schain_supported: true`
 - If all above is good, add a `LGTM` comment and request 1 additional core member to review.
 - Once there is 2 `LGTM` on the PR, merge to master
 - Ask the submitter to add a PR for documentation if applicable.
@@ -29,7 +31,7 @@ For modules and core platform updates, the initial reviewer should request an ad
 - Follow steps above for general review process. In addition, please verify the following:
 - Verify that bidder has submitted valid bid params and that bids are being received.
 - Verify that bidder is not manipulating the prebid.js auction in any way or doing things that go against the principles of the project. If unsure check with the Tech Lead.
-- Verify that  the bidder is being as efficient as possible, ideally not loading an external library, however if they do load a library it should be cached.
+- Verify that the bidder is being as efficient as possible, ideally not loading an external library, however if they do load a library it should be cached.
 - Verify that code re-use is being done properly and that changes introduced by a bidder don't impact other bidders.
 - If the adapter being submitted is an alias type, check with the bidder contact that is being aliased to make sure it's allowed.
 - If the adapter is triggering any user syncs make sure they are using the user sync module in the Prebid.js core.
