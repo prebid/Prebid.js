@@ -11,7 +11,7 @@ const PRIMETIME_URL = PROTOCOL + '://cdn.stickyadstv.com/prime-time/';
 const USER_SYNC_URL = PROTOCOL + '://ads.stickyadstv.com/auto-user-sync';
 
 function getProtocol() {
-    return 'https';
+  return 'https';
 }
 
 function isValidUrl(str) {
