@@ -25,7 +25,22 @@ Module that connects to Adfinity demand sources
                             placement_id: 0,
                             traffic: 'banner'
                         }
-                    }]
+                    },
+                    {
+                        bidder: 'afinity',
+                        params: {
+                            placement_id: 0,
+                            traffic: 'video'
+                        }
+                    },
+                    {
+                        bidder: 'afinity',
+                        params: {
+                            placement_id: 0,
+                            traffic: 'native'
+                        }
+                    }
+                    ]
                 }
             ];
 ```
