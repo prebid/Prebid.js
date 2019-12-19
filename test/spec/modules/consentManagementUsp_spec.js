@@ -245,6 +245,48 @@ describe('consentManagement', function () {
       }
     });
 
+    describe('test without iframe locater', function() {
+      let uspapiStub = sinon.stub();
+
+      beforeEach(function () {
+        didHookReturn = false;
+        sinon.stub(utils, 'logError');
+        sinon.stub(utils, 'logWarn');
+        window.__uspapi = function() {};
+      });
+
+      afterEach(function () {
+        config.resetConfig();
+        $$PREBID_GLOBAL$$.requestBids.removeAll();
+        uspapiStub.restore();
+        utils.logError.restore();
+        utils.logWarn.restore();
+        delete window.__uspapi;
+        resetConsentData();
+      });
+
+      it('Workflow for normal page withoout iframe locater', function() {
+        let testConsentData = {
+          uspString: '1NY'
+        };
+
+        uspapiStub = sinon.stub(window, '__uspapi').callsFake((...args) => {
+          args[2](testConsentData, true);
+        });
+
+        setConsentConfig(goodConfig);
+        requestBidsHook(() => { didHookReturn = true; }, {});
+
+        let consent = uspDataHandler.getConsentData();
+
+        sinon.assert.notCalled(utils.logWarn);
+        sinon.assert.notCalled(utils.logError);
+
+        expect(didHookReturn).to.be.true;
+        expect(consent).to.equal(testConsentData.uspString);
+      });
+    });
+
     describe('USPAPI workflow for normal pages:', function () {
       let uspapiStub = sinon.stub();
       let ifr = null;
