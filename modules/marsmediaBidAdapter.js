@@ -28,8 +28,13 @@ function MarsmediaAdapter() {
 
   function frameImp(BRs, bidderRequest) {
     var impList = [];
-    var isSecure = (window.location.protocol === 'https:');
-
+    var isSecure = 0;
+    if (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.stack.length) {
+      // clever trick to get the protocol
+      var el = document.createElement('a');
+      el.href = bidderRequest.refererInfo.stack[0];
+      isSecure = (el.protocol == 'https:') ? 1 : 0;
+    }
     for (var i = 0; i < BRs.length; i++) {
       slotsToBids[BRs[i].adUnitCode] = BRs[i];
       var impObj = {};
@@ -63,8 +68,15 @@ function MarsmediaAdapter() {
     if (bidderRequest && bidderRequest.refererInfo) {
       var ri = bidderRequest.refererInfo;
       site.ref = ri.referer;
-      site.page = document.URL;
-      site.domain = window.location.hostname;
+
+      if (ri.stack.length) {
+        site.page = ri.stack[ri.stack.length - 1];
+
+        // clever trick to get the domain
+        var el = document.createElement('a');
+        el.href = ri.stack[0];
+        site.domain = el.hostname;
+      }
     }
     return site;
   }
@@ -240,7 +252,7 @@ function MarsmediaAdapter() {
       };
 
       if (bidRequest.mediaTypes && bidRequest.mediaTypes.video) {
-        bidResponse.vastUrl = bid.nurl;
+        bidResponse.vastUrl = bid.adm;
         bidResponse.mediaType = 'video';
         bidResponse.ttl = 600;
       } else {
