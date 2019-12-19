@@ -6,10 +6,10 @@ const BIDDER_SERVER = 'x.fidelity-media.com';
 const FIDELITY_VENDOR_ID = 408;
 export const spec = {
   code: BIDDER_CODE,
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function isBidRequestValid(bid) {
     return !!(bid && bid.params && bid.params.zoneid);
   },
-  buildRequests: function(validBidRequests, bidderRequest) {
+  buildRequests: function buildRequests(validBidRequests, bidderRequest) {
     return validBidRequests.map(bidRequest => {
       var server = bidRequest.params.server || BIDDER_SERVER;
 
@@ -24,19 +24,19 @@ export const spec = {
         subid: 'hb',
         flashver: getFlashVersion(),
         tmax: bidderRequest.timeout,
-        defloc: utils.getTopWindowUrl(),
-        referrer: utils.getTopWindowReferrer(),
+        defloc: bidderRequest.refererInfo.referer,
+        referrer: getTopWindowReferrer(),
       };
-      setConsentParams(bidderRequest.gdprConsent, payload);
+      setConsentParams(bidderRequest.gdprConsent, bidderRequest.uspConsent, payload);
 
       return {
         method: 'GET',
-        url: '//' + server + '/delivery/hb.php',
+        url: 'https://' + server + '/delivery/hb.php',
         data: payload
       };
     });
   },
-  interpretResponse: function(serverResponse) {
+  interpretResponse: function interpretResponse(serverResponse) {
     serverResponse = serverResponse.body;
     const bidResponses = [];
     if (serverResponse && serverResponse.seatbid) {
@@ -58,13 +58,13 @@ export const spec = {
     }
     return bidResponses;
   },
-  getUserSyncs: function getUserSyncs(syncOptions, serverResponses, gdprConsent) {
+  getUserSyncs: function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
     if (syncOptions.iframeEnabled) {
-      var url = '//' + BIDDER_SERVER + '/delivery/matches.php';
+      var url = 'https://' + BIDDER_SERVER + '/delivery/matches.php';
       var payload = {
         type: 'iframe'
       };
-      setConsentParams(gdprConsent, payload);
+      setConsentParams(gdprConsent, uspConsent, payload);
 
       return [{
         type: 'iframe',
@@ -89,7 +89,15 @@ function getFlashVersion() {
   return result || '';
 }
 
-function setConsentParams(gdprConsent, payload) {
+function getTopWindowReferrer() {
+  try {
+    return window.top.document.referrer;
+  } catch (e) {
+    return '';
+  }
+}
+
+function setConsentParams(gdprConsent, uspConsent, payload) {
   if (gdprConsent) {
     payload.gdpr = 0;
     payload.consent_str = '';
@@ -103,6 +111,9 @@ function setConsentParams(gdprConsent, payload) {
     if (gdprConsent.vendorData && gdprConsent.vendorData.vendorConsents && typeof gdprConsent.vendorData.vendorConsents[FIDELITY_VENDOR_ID.toString(10)] !== 'undefined') {
       payload.consent_given = gdprConsent.vendorData.vendorConsents[FIDELITY_VENDOR_ID.toString(10)] ? 1 : 0;
     }
+  }
+  if (typeof uspConsent !== 'undefined') {
+    payload.us_privacy = uspConsent;
   }
 }
 
