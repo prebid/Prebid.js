@@ -68,7 +68,7 @@ function setRenderSize(doc, width, height) {
   }
 }
 
-export function validateSizes(sizes, targLength) {
+function validateSizes(sizes, targLength) {
   let cleanSizes = [];
   if (utils.isArray(sizes) && ((targLength) ? sizes.length === targLength : sizes.length > 0)) {
     // check if an array of arrays or array of numbers
@@ -81,7 +81,7 @@ export function validateSizes(sizes, targLength) {
   return cleanSizes;
 }
 
-export function validateBannerMediaType(adUnit) {
+function validateBannerMediaType(adUnit) {
   const banner = adUnit.mediaTypes.banner;
   const bannerSizes = validateSizes(banner.sizes);
   if (bannerSizes.length > 0) {
@@ -95,7 +95,7 @@ export function validateBannerMediaType(adUnit) {
   return adUnit;
 }
 
-export function validateVideoMediaType(adUnit) {
+function validateVideoMediaType(adUnit) {
   const video = adUnit.mediaTypes.video;
   let tarPlayerSizeLen = (typeof video.playerSize[0] === 'number') ? 2 : 1;
 
@@ -114,7 +114,7 @@ export function validateVideoMediaType(adUnit) {
   return adUnit;
 }
 
-export function validateNativeMediaType(adUnit) {
+function validateNativeMediaType(adUnit) {
   const native = adUnit.mediaTypes.native;
   if (native.image && native.image.sizes && !Array.isArray(native.image.sizes)) {
     utils.logError('Please use an array of sizes for native.image.sizes field.  Removing invalid mediaTypes.native.image.sizes property from request.');
@@ -130,6 +130,13 @@ export function validateNativeMediaType(adUnit) {
   }
   return adUnit;
 }
+
+export const adUnitSetupChecks = {
+  validateBannerMediaType,
+  validateVideoMediaType,
+  validateNativeMediaType,
+  validateSizes
+};
 
 export const checkAdUnitSetup = hook('sync', function (adUnits) {
   return adUnits.filter(adUnit => {

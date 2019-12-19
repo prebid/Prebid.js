@@ -20,10 +20,7 @@ import { adunitCounter } from '../src/adUnits';
 import includes from 'core-js/library/fn/array/includes';
 import { getHook } from '../src/hook';
 import {
-  validateBannerMediaType,
-  validateVideoMediaType,
-  validateNativeMediaType,
-  validateSizes
+  adUnitSetupChecks
 } from '../src/prebid';
 
 // Maps auctionId to a boolean value, value is set to true if Adunits are setup to use the new size mapping, else it's set to false.
@@ -70,7 +67,7 @@ export function checkAdUnitSetupHook(adUnits) {
     if (mediaTypes.banner) {
       const banner = mediaTypes.banner;
       if (banner.sizes) {
-        adUnit = validateBannerMediaType(adUnit);
+        adUnit = adUnitSetupChecks.validateBannerMediaType(adUnit);
       } else if (banner.sizeConfig) {
         if (Array.isArray(banner.sizeConfig)) {
           let deleteBannerMediaType = false;
@@ -85,7 +82,7 @@ export function checkAdUnitSetupHook(adUnits) {
             }
 
             // check if the config.sizes property is in [w, h] format, if yes, change it to [[w, h]] format.
-            const bannerSizes = validateSizes(config.sizes);
+            const bannerSizes = adUnitSetupChecks.validateSizes(config.sizes);
             if (isArrayOfNums(config.minViewPort, 2)) {
               if (config.sizes.length > 0 && bannerSizes.length > 0) {
                 config.sizes = bannerSizes;
@@ -107,6 +104,7 @@ export function checkAdUnitSetupHook(adUnits) {
           }
         } else {
           logError(`Ad Unit: ${adUnit.code}: mediaTypes.banner.sizeConfig is NOT an Array. Removing the invalid object mediaTypes.banner from Ad Unit.`);
+          delete adUnit.mediaTypes.banner;
         }
       } else {
         logError('Detected a mediaTypes.banner object did not include required property sizes or sizeConfig. Removing invalid mediaTypes.banner object from Ad Unit.');
@@ -117,7 +115,7 @@ export function checkAdUnitSetupHook(adUnits) {
     if (mediaTypes.video) {
       const video = mediaTypes.video;
       if (video.playerSize) {
-        adUnit = validateVideoMediaType(adUnit);
+        adUnit = adUnitSetupChecks.validateVideoMediaType(adUnit);
       } else if (video.sizeConfig) {
         if (Array.isArray(video.sizeConfig)) {
           let deleteVideoMediaType = false;
@@ -132,7 +130,7 @@ export function checkAdUnitSetupHook(adUnits) {
             }
             // check if the config.playerSize property is in [w, h] format, if yes, change it to [[w, h]] format.
             let tarPlayerSizeLen = (typeof config.playerSize[0] === 'number') ? 2 : 1;
-            const videoSizes = validateSizes(config.playerSize, tarPlayerSizeLen);
+            const videoSizes = adUnitSetupChecks.validateSizes(config.playerSize, tarPlayerSizeLen);
             if (isArrayOfNums(config.minViewPort, 2)) {
               if (tarPlayerSizeLen === 2) {
                 logInfo('Transforming video.playerSize from [640,480] to [[640,480]] so it\'s in the proper format.');
@@ -163,7 +161,7 @@ export function checkAdUnitSetupHook(adUnits) {
 
     if (mediaTypes.native) {
       const native = mediaTypes.native;
-      adUnit = validateNativeMediaType(adUnit);
+      adUnit = adUnitSetupChecks.validateNativeMediaType(adUnit);
 
       if (mediaTypes.native.sizeConfig) {
         native.sizeConfig.forEach(config => {
