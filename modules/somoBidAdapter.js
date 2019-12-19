@@ -197,15 +197,33 @@ function openRtbSite(bidRequest, bidderRequest) {
         .forEach(param => site[param] = bidRequest.params.site[param]);
     }
     if (typeof site.domain === 'undefined' &&
-            typeof window.URL === 'function' &&
             typeof site.page !== 'undefined') {
-      site.domain = (new window.URL(site.page)).hostname;
+      if (typeof window.URL === 'function') {
+        site.domain = (new window.URL(site.page)).hostname;
+      } else {
+        site.domain = getDomainFromUrl(site.page);
+      }
     }
 
     return site;
   } else {
     return null;
   }
+}
+
+function getDomainFromUrl(url) {
+    var domain = url;
+
+    if (url.indexOf("//") > -1) {
+      domain = url.split('/')[2];
+    } else {
+      domain = url.split('/')[0];
+    }
+
+    domain = domain.split(':')[0];
+    domain = domain.split('?')[0];
+
+    return domain;
 }
 
 function openRtbApp(bidRequest) {
