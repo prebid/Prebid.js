@@ -187,69 +187,69 @@ describe('Yieldone Prebid Analytic', function () {
       const expectedEvents = [
         {
           eventType: constants.EVENTS.AUCTION_INIT,
-          page: {url: testReferrer},
           params: {
             config: initOptions,
-            auctionId: auctionId,
-            pubId: initOptions.pubId
+            auctionId: auctionId
           }
         },
         {
           eventType: constants.EVENTS.BID_REQUESTED,
-          page: {url: testReferrer},
-          params: Object.assign({pubId: initOptions.pubId}, request[0])
+          params: Object.assign(request[0])
         },
         {
           eventType: constants.EVENTS.BID_REQUESTED,
-          page: {url: testReferrer},
-          params: Object.assign({pubId: initOptions.pubId}, request[1])
+          params: Object.assign(request[1])
         },
         {
           eventType: constants.EVENTS.BID_REQUESTED,
-          page: {url: testReferrer},
-          params: Object.assign({pubId: initOptions.pubId}, request[2])
+          params: Object.assign(request[2])
         },
         {
           eventType: constants.EVENTS.BID_RESPONSE,
-          page: {url: testReferrer},
-          params: Object.assign({pubId: initOptions.pubId}, preparedResponses[0])
+          params: Object.assign(preparedResponses[0])
         },
         {
           eventType: constants.EVENTS.BID_RESPONSE,
-          page: {url: testReferrer},
-          params: Object.assign({pubId: initOptions.pubId}, preparedResponses[1])
+          params: Object.assign(preparedResponses[1])
         },
         {
           eventType: constants.EVENTS.BID_RESPONSE,
-          page: {url: testReferrer},
-          params: Object.assign({pubId: initOptions.pubId}, preparedResponses[2])
+          params: Object.assign(preparedResponses[2])
         },
         {
           eventType: constants.EVENTS.BID_TIMEOUT,
-          page: {url: testReferrer},
-          params: Object.assign({pubId: initOptions.pubId}, request[2])
+          params: Object.assign(request[2])
         },
         {
           eventType: constants.EVENTS.AUCTION_END,
-          page: {url: testReferrer},
           params: {
             auctionId: auctionId,
-            pubId: initOptions.pubId,
             adServerTargeting: fakeTargeting,
             bidsReceived: preparedResponses.slice(0, 3)
           }
         }
       ];
+      const expectedResult = {
+        pubId: initOptions.pubId,
+        page: {url: testReferrer},
+        wrapper_version: '$prebid.version$',
+        events: expectedEvents
+      };
 
-      const preparedWinnerParams = Object.assign({pubId: initOptions.pubId, adServerTargeting: fakeTargeting}, winner);
+      const preparedWinnerParams = Object.assign({adServerTargeting: fakeTargeting}, winner);
       delete preparedWinnerParams.ad;
       const wonExpectedEvents = [
         {
           eventType: constants.EVENTS.BID_WON,
-          page: {url: testReferrer},
           params: preparedWinnerParams
         }
       ];
+      const wonExpectedResult = {
+        pubId: initOptions.pubId,
+        page: {url: testReferrer},
+        wrapper_version: '$prebid.version$',
+        events: wonExpectedEvents
+      };
 
       adapterManager.enableAnalytics({
         provider: 'yieldone',
@@ -270,7 +270,7 @@ describe('Yieldone Prebid Analytic', function () {
 
       events.emit(constants.EVENTS.AUCTION_END, auctionEnd);
 
-      expect(yieldoneAnalytics.eventsStorage[auctionId]).to.deep.equal(expectedEvents);
+      expect(yieldoneAnalytics.eventsStorage[auctionId]).to.deep.equal(expectedResult);
 
       delete yieldoneAnalytics.eventsStorage[auctionId];
 
@@ -278,7 +278,7 @@ describe('Yieldone Prebid Analytic', function () {
         events.emit(constants.EVENTS.BID_WON, winner);
 
         sinon.assert.callCount(sendStatStub, 2);
-        expect(yieldoneAnalytics.eventsStorage[auctionId]).to.deep.equal(wonExpectedEvents);
+        expect(yieldoneAnalytics.eventsStorage[auctionId]).to.deep.equal(wonExpectedResult);
 
         delete yieldoneAnalytics.eventsStorage[auctionId];
         done();

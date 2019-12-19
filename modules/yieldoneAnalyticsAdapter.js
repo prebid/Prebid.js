@@ -78,12 +78,11 @@ const yieldoneAnalytics = Object.assign(adapter({analyticsType}), {
       args.forEach((bid) => {
         const reqBidId = `${bid.bidId}_${bid.auctionId}`;
         const reqBidderId = `${bid.bidder}_${bid.auctionId}`;
-        if (!eventsStorage[bid.auctionId]) eventsStorage[bid.auctionId] = [];
+        if (!eventsStorage[bid.auctionId]) eventsStorage[bid.auctionId] = {events: []};
         if ((requestedBidders[reqBidderId] || reqBidders[bid.bidder]) && requestedBids[reqBidId]) {
           if (!reqBidders[bid.bidder]) {
             reqBidders[bid.bidder] = requestedBidders[reqBidderId];
-            reqBidders[bid.bidder].pubId = pubId;
-            eventsStorage[bid.auctionId].push({eventType, params: reqBidders[bid.bidder]});
+            eventsStorage[bid.auctionId].events.push({eventType, params: reqBidders[bid.bidder]});
             delete requestedBidders[reqBidderId];
           }
           reqBidders[bid.bidder].bids.push(requestedBids[reqBidId]);
@@ -94,12 +93,12 @@ const yieldoneAnalytics = Object.assign(adapter({analyticsType}), {
       currentAuctionId = args.auctionId || currentAuctionId;
       if (currentAuctionId) {
         const eventsStorage = yieldoneAnalytics.eventsStorage;
-        if (!eventsStorage[currentAuctionId]) eventsStorage[currentAuctionId] = [];
+        if (!eventsStorage[currentAuctionId]) eventsStorage[currentAuctionId] = {events: []};
         const referrer = args.refererInfo && args.refererInfo.referer;
         if (referrer && referrers[currentAuctionId] !== referrer) {
           referrers[currentAuctionId] = referrer;
         }
-        const params = Object.assign({pubId}, args);
+        const params = Object.assign({}, args);
         delete params.ad;
         if (params.bidsReceived) {
           params.bidsReceived = params.bidsReceived.map((bid) => {
@@ -108,7 +107,7 @@ const yieldoneAnalytics = Object.assign(adapter({analyticsType}), {
             return res;
           });
         }
-        eventsStorage[currentAuctionId].push({eventType, params});
+        eventsStorage[currentAuctionId].events.push({eventType, params});
 
         if (
           eventType === CONSTANTS.EVENTS.AUCTION_END || eventType === CONSTANTS.EVENTS.BID_WON
@@ -118,8 +117,10 @@ const yieldoneAnalytics = Object.assign(adapter({analyticsType}), {
             auctionManager.getBidsReceived()
           );
           if (yieldoneAnalytics.eventsStorage[currentAuctionId]) {
-            yieldoneAnalytics.eventsStorage[currentAuctionId].forEach((it) => {
-              it.page = {url: referrers[currentAuctionId]};
+            yieldoneAnalytics.eventsStorage[currentAuctionId].page = {url: referrers[currentAuctionId]};
+            yieldoneAnalytics.eventsStorage[currentAuctionId].pubId = pubId;
+            yieldoneAnalytics.eventsStorage[currentAuctionId].wrapper_version = '$prebid.version$';
+            yieldoneAnalytics.eventsStorage[currentAuctionId].events.forEach((it) => {
               const adUnitNameMap = makeAdUnitNameMap();
               if (adUnitNameMap) {
                 addAdUnitName(it.params, adUnitNameMap);
