@@ -75,6 +75,7 @@ const bidderRequest = {
   }],
   'auctionStart': 1529511035677,
   'timeout': 700,
+  'uspConsent': '1NY',
   'gdprConsent': {
     'consentString': 'BOPqNzUOPqNzUAHABBAAA5AAAAAAAA',
     'vendorData': {
@@ -523,6 +524,12 @@ describe('DistrictM Adaptor', function () {
     const buildRequestResults = districtm.buildRequests(bidRequest, bidderRequest);
     it(`the function should return an array`, function () {
       expect(buildRequestResults).to.be.an('object');
+    });
+    it(`contain gdpr consent & ccpa`, function() {
+      const bidr = JSON.parse(buildRequestResults.data)
+      expect(bidr.regs.ext.gdpr).to.be.equal(1);
+      expect(bidr.regs.ext.us_privacy).to.be.equal('1NY');
+      expect(bidr.user.ext.consent).to.be.an('string');
     });
     it(`the function should return array length of 1`, function () {
       expect(buildRequestResults.data).to.be.a('string');
