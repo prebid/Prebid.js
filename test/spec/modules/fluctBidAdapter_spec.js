@@ -36,10 +36,10 @@ describe('fluctAdapter', function () {
       let bid = Object.assign({}, bid);
       delete bid.params;
       bid.params = {
-        dfpUnitCode: '/1000/dfp_unit_code',
         tagId: '10000:100000001',
+        groupId: '1000000002',
       };
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
     it('should return false when groupId is not passed', function () {
