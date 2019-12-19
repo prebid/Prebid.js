@@ -18,7 +18,7 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: (bid) => {
-    return !!(bid.params.groupId && bid.params.tagId && bid.params.dfpUnitCode);
+    return !!(bid.params.groupId && bid.params.tagId);
   },
 
   /**

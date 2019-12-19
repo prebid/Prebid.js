@@ -25,9 +25,9 @@ var adUnits = [
             {
                 bidder: 'fluct',
                 params: {
-                    dfpUnitCode: '/62532913/s_fluct.test_hb_prebid_11940',
                     tagId: '25405:1000192893',
                     groupId: '1000105712',
+                    dfpUnitCode: '/62532913/s_fluct.test_hb_prebid_11940', // Optional
                 }
             }
         ]
