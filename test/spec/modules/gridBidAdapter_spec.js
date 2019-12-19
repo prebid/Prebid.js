@@ -131,6 +131,14 @@ describe('TheMediaGrid Adapter', function () {
       expect(payload).to.have.property('gdpr_consent', 'AAA');
       expect(payload).to.have.property('gdpr_applies', '1');
     });
+
+    it('if usPrivacy is present payload must have us_privacy param', function () {
+      const bidderRequestWithUSP = Object.assign({uspConsent: '1YNN'}, bidderRequest);
+      const request = spec.buildRequests(bidRequests, bidderRequestWithUSP);
+      expect(request.data).to.be.an('string');
+      const payload = parseRequest(request.data);
+      expect(payload).to.have.property('us_privacy', '1YNN');
+    });
   });
 
   describe('interpretResponse', function () {
@@ -661,6 +669,12 @@ describe('TheMediaGrid Adapter', function () {
     it('should pass no params if gdpr is not defined', function () {
       expect(spec.getUserSyncs({ pixelEnabled: true }, {}, undefined)).to.deep.equal({
         type: 'image', url: syncUrl
+      });
+    });
+
+    it('should pass usPrivacy param if it is available', function() {
+      expect(spec.getUserSyncs({ pixelEnabled: true }, {}, {}, '1YNN')).to.deep.equal({
+        type: 'image', url: `${syncUrl}&us_privacy=1YNN`
       });
     });
   });
