@@ -3,7 +3,7 @@
 ```
 Module Name: fluct Bid Adapter
 Module Type: Bidder Adapter
-Maintainer: fluct_developer@fluct.jp
+Maintainer: developer@fluct.jp
 ```
 
 # Description
