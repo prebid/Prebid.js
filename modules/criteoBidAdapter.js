@@ -70,6 +70,7 @@ export const spec = {
     }
 
     if (publisherTagAvailable()) {
+      // eslint-disable-next-line no-undef
       const adapter = new Criteo.PubTag.Adapters.Prebid(PROFILE_ID_PUBLISHERTAG, ADAPTER_VERSION, bidRequests, bidderRequest, '$prebid.version$');
       url = adapter.buildCdbUrl();
       data = adapter.buildCdbRequest();
@@ -93,6 +94,7 @@ export const spec = {
     const body = response.body || response;
 
     if (publisherTagAvailable()) {
+      // eslint-disable-next-line no-undef
       const adapter = Criteo.PubTag.Adapters.Prebid.GetAdapter(request);
       if (adapter) {
         return adapter.interpretResponse(body, request);
@@ -137,6 +139,7 @@ export const spec = {
    */
   onTimeout: (timeoutData) => {
     if (publisherTagAvailable()) {
+      // eslint-disable-next-line no-undef
       const adapter = Criteo.PubTag.Adapters.Prebid.GetAdapter(timeoutData.auctionId);
       adapter.handleBidTimeout();
     }
@@ -147,6 +150,7 @@ export const spec = {
    */
   onBidWon: (bid) => {
     if (publisherTagAvailable()) {
+      // eslint-disable-next-line no-undef
       const adapter = Criteo.PubTag.Adapters.Prebid.GetAdapter(bid.auctionId);
       adapter.handleBidWon(bid);
     }
@@ -157,6 +161,7 @@ export const spec = {
    */
   onSetTargeting: (bid) => {
     if (publisherTagAvailable()) {
+      // eslint-disable-next-line no-undef
       const adapter = Criteo.PubTag.Adapters.Prebid.GetAdapter(bid.auctionId);
       adapter.handleSetTargeting(bid);
     }
@@ -167,6 +172,7 @@ export const spec = {
  * @return {boolean}
  */
 function publisherTagAvailable() {
+  // eslint-disable-next-line no-undef
   return typeof Criteo !== 'undefined' && Criteo.PubTag && Criteo.PubTag.Adapters && Criteo.PubTag.Adapters.Prebid;
 }
 

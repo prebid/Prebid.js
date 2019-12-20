@@ -24,6 +24,7 @@ function isInitialized() {
   if (window.DigiTrust == null) {
     return false;
   }
+  // eslint-disable-next-line no-undef
   return DigiTrust.isClient; // this is set to true after init
 }
 
@@ -240,6 +241,7 @@ var ResultWrapper = function (opts) {
   this.retryId = 0;
 
   this.executeIdRequest = function (configParams) {
+    // eslint-disable-next-line no-undef
     DigiTrust.getUser({ member: 'prebid' }, function (idResult) {
       me.idObj = idResult;
       var cb = function () {
