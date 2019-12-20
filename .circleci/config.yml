@@ -47,7 +47,7 @@ aliases:
         # Unzip it
         unzip BrowserStackLocal-linux-x64.zip
         # Run the file with user's access key
-        ./BrowserStackLocal ${BROWSERSTACK_ACCESS_KEY} &
+        ./BrowserStackLocal ${LnDDeVPXu9KnYJzxyD44} &
 
   - &unit_test_steps
     - checkout
