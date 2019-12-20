@@ -3,7 +3,7 @@ import {spec} from 'modules/admixerBidAdapter';
 import {newBidder} from 'src/adapters/bidderFactory';
 
 const BIDDER_CODE = 'admixer';
-const ENDPOINT_URL = '//inv-nets.admixer.net/prebid.1.0.aspx';
+const ENDPOINT_URL = 'https://inv-nets.admixer.net/prebid.1.0.aspx';
 const ZONE_ID = '2eb6bd58-865c-47ce-af7f-a918108c3fd2';
 
 describe('AdmixerAdapter', function () {

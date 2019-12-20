@@ -3,7 +3,7 @@ import {registerBidder} from '../src/adapters/bidderFactory';
 
 const BIDDER_CODE = 'admixer';
 const ALIASES = ['go2net'];
-const ENDPOINT_URL = '//inv-nets.admixer.net/prebid.1.0.aspx';
+const ENDPOINT_URL = 'https://inv-nets.admixer.net/prebid.1.0.aspx';
 export const spec = {
   code: BIDDER_CODE,
   aliases: ALIASES,
@@ -18,7 +18,6 @@ export const spec = {
    * Make a server request from the list of BidRequests.
    */
   buildRequests: function (validRequest, bidderRequest) {
-    console.log(arguments);
     const payload = {
       imps: [],
       referrer: encodeURIComponent(bidderRequest.refererInfo.referer),
