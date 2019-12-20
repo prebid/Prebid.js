@@ -142,6 +142,7 @@ export function checkAdUnitSetupHook(adUnits) {
                 config.playerSize = [config.playerSize];
               } else {
                 logError(`Ad Unit: ${adUnit.code}: mediaTypes.video.sizeConfig[${index}] has propery playerSize declared with invalid value. Please ensure the playerSize is listed like: [640, 480] or like: [] if no playerSize is present for that size bucket.`);
+                deleteVideoMediaType = true;
               }
             } else {
               logError(`Ad Unit: ${adUnit.code}: mediaTypes.video.sizeConfig[${index}] has property minViewPort decalared with invalid value. Please ensure minViewPort is an Array and is listed like: [700, 0]. Declaring an empty array is not allowed, instead use: [0, 0].`);
