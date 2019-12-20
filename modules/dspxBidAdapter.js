@@ -46,8 +46,8 @@ export const spec = {
       if (params.dvt !== undefined) {
         payload.dvt = params.dvt;
       }
-      if (isDev){
-          payload.prebidDevMode = 1;
+      if (isDev) {
+        payload.prebidDevMode = 1;
       }
       return {
         method: 'GET',
