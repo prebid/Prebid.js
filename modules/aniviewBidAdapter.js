@@ -49,16 +49,16 @@ function buildRequests(validBidRequests, bidderRequest) {
 
   for (let i = 0; i < validBidRequests.length; i++) {
     let bidRequest = validBidRequests[i];
-	var sizes = [[640, 480]];
+    var sizes = [[640, 480]];
 
-	if(bidRequest.mediaTypes && bidRequest.mediaTypes.video && bidRequest.mediaTypes.video.playerSize) {
+    if (bidRequest.mediaTypes && bidRequest.mediaTypes.video && bidRequest.mediaTypes.video.playerSize) {
       sizes = bidRequest.mediaTypes.video.playerSize;
-	} else {
-      if(bidRequest.sizes) {
+    } else {
+      if (bidRequest.sizes) {
         sizes = bidRequest.sizes;
-	  }
-	}
-	if(sizes.length === 2 && typeof sizes[0] === 'number') {
+      }
+    }
+    if (sizes.length === 2 && typeof sizes[0] === 'number') {
       sizes = [[sizes[0], sizes[1]]];
     }
 
