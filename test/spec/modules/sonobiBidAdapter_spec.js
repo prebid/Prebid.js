@@ -299,7 +299,9 @@ describe('SonobiBidAdapter', function () {
         'reachedTop': true,
         'referer': 'http://example.com',
         'stack': ['http://example.com']
-      }
+      },
+      uspConsent: 'someCCPAString'
+
     };
     it('should include the digitrust id and keyv', () => {
       window.DigiTrust = {
@@ -538,6 +540,11 @@ describe('SonobiBidAdapter', function () {
       expect(bidRequests.data.ref).not.to.be.empty;
       expect(bidRequests.data.s).not.to.be.empty;
       expect(bidRequests.data.userid).to.equal(undefined);
+    });
+
+    it('should return a properly formatted request with us_privacy included', function() {
+      const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
+      expect(bidRequests.data.us_privacy).to.equal('someCCPAString');
     });
   })
 

@@ -136,6 +136,10 @@ export const spec = {
       payload.userid = JSON.stringify(validBidRequests[0].userId);
     }
 
+    if (bidderRequest && bidderRequest.uspConsent) {
+      payload.us_privacy = bidderRequest.uspConsent;
+    }
+
     // If there is no key_maker data, then don't make the request.
     if (isEmpty(data)) {
       return null;
@@ -230,7 +234,7 @@ export const spec = {
   /**
    * Register User Sync.
    */
-  getUserSyncs: (syncOptions, serverResponses) => {
+  getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent) => {
     const syncs = [];
     try {
       if (syncOptions.pixelEnabled) {
