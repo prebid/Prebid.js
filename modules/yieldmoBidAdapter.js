@@ -45,12 +45,8 @@ export const spec = {
         // case of undefined, stringify will remove param
         gdprApplies: bidderRequest && bidderRequest.gdprConsent ? bidderRequest.gdprConsent.gdprApplies : undefined,
         cmp: bidderRequest && bidderRequest.gdprConsent ? bidderRequest.gdprConsent.consentString : undefined
-<<<<<<< HEAD
       }),
       us_privacy: bidderRequest && bidderRequest.us_privacy,
-=======
-      })
->>>>>>> 17108a40... change parameter namves
     };
 
     bidRequests.forEach((request) => {
