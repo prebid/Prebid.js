@@ -234,6 +234,16 @@ describe('BeachfrontAdapter', function () {
         expect(data.imp[0].video).to.deep.contain({ mimes, playbackmethod, maxduration, placement });
       });
 
+      it('must add US privacy data to the request', function () {
+        const bidRequest = bidRequests[0];
+        bidRequest.mediaTypes = { video: {} };
+        const uspConsent = '2112YYZ';
+        const bidderRequest = { uspConsent };
+        const requests = spec.buildRequests([ bidRequest ], bidderRequest);
+        const data = requests[0].data;
+        expect(data.regs.ext.us_privacy).to.equal(uspConsent);
+      });
+
       it('must add GDPR consent data to the request', function () {
         const bidRequest = bidRequests[0];
         bidRequest.mediaTypes = { video: {} };
@@ -370,6 +380,16 @@ describe('BeachfrontAdapter', function () {
         const requests = spec.buildRequests([ bidRequest ]);
         const data = requests[0].data;
         expect(data.slots[0].sizes).to.deep.contain({ w: width, h: height });
+      });
+
+      it('must add US privacy data to the request', function () {
+        const bidRequest = bidRequests[0];
+        bidRequest.mediaTypes = { banner: {} };
+        const uspConsent = '2112YYZ';
+        const bidderRequest = { uspConsent };
+        const requests = spec.buildRequests([ bidRequest ], bidderRequest);
+        const data = requests[0].data;
+        expect(data.usPrivacy).to.equal(uspConsent);
       });
 
       it('must add GDPR consent data to the request', function () {
