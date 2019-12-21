@@ -62,8 +62,8 @@ function buildRequests(validBidRequests, bidderRequest) {
       sizes = [[sizes[0], sizes[1]]];
     }
 
-    for (let j = 0; j < bidRequest.sizes.length; j++) {
-      let size = bidRequest.sizes[j];
+    for (let j = 0; j < sizes.length; j++) {
+      let size = sizes[j];
       let playerWidth;
       let playerHeight;
       if (size && size.length == 2) {
