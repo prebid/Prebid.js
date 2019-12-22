@@ -94,7 +94,6 @@ export const spec = {
       }
 
       if (validBidRequests[0].schain) {
-        console.log('schain was found: ', validBidRequests[0].schain);
         utils.deepSetValue(rtbBidRequest, 'source.ext.schain', validBidRequests[0].schain);
       }
 
@@ -229,9 +228,7 @@ export const spec = {
           bidResponse.ext['utrk']
             .forEach(pixel => {
               const url = pixel.url + (pixel.url.indexOf('?') > 0 ? '&' + suffix : '?' + suffix);
-              if (url.indexOf('')) {
-                return syncs.push({type: pixel.type, url});
-              }
+              return syncs.push({type: pixel.type, url});
             });
         }
 
