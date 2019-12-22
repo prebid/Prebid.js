@@ -77,9 +77,9 @@ export const spec = {
         },
         imp: [],
         ext: {},
-        user: {
-          ext: {}
-        }
+        user: {ext: {}},
+        source: {ext: {}},
+        regs: {ext: {}}
       };
       const gdprConsent = bidderRequest.gdprConsent;
 
@@ -88,17 +88,20 @@ export const spec = {
           consent_string: gdprConsent.consentString,
           consent_required: gdprConsent.gdprApplies
         };
-        rtbBidRequest.regs = {
-          ext: {
-            gdpr: gdprConsent.gdprApplies === true ? 1 : 0
-          }
-        };
-        rtbBidRequest.user = {
-          ext: {
-            consent: gdprConsent.consentString
-          }
-        }
+
+        utils.deepSetValue(rtbBidRequest, 'regs.ext.gdpr', gdprConsent.gdprApplies === true ? 1 : 0);
+        utils.deepSetValue(rtbBidRequest, 'user.ext.consent', gdprConsent.consentString);
       }
+
+      if (validBidRequests[0].schain) {
+        console.log('schain was found: ', validBidRequests[0].schain);
+        utils.deepSetValue(rtbBidRequest, 'source.ext.schain', validBidRequests[0].schain);
+      }
+
+      if (bidderRequest && bidderRequest.uspConsent) {
+        utils.deepSetValue(rtbBidRequest, 'regs.ext.us_privacy', bidderRequest.uspConsent);
+      }
+
       const imp = {
         id: transactionId,
         instl: params.instl === 1 ? 1 : 0,
@@ -166,7 +169,12 @@ export const spec = {
         return;
       }
 
-      return {method: 'POST', url: rtbEndpoint, data: rtbBidRequest, bidRequest};
+      return {
+        method: 'POST',
+        url: rtbEndpoint,
+        data: rtbBidRequest,
+        bidRequest
+      };
     });
   },
 
@@ -209,34 +217,51 @@ export const spec = {
     return outBids;
   },
 
-  getUserSyncs: function (syncOptions, serverResponses, gdprConsent) {
+  getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent) {
     const syncs = [];
     const gdprApplies = gdprConsent && (typeof gdprConsent.gdprApplies === 'boolean') ? gdprConsent.gdprApplies : false;
     const suffix = gdprApplies ? 'gc=' + encodeURIComponent(gdprConsent.consentString) : 'gc=missing';
+
     serverResponses.forEach(resp => {
       if (resp.body) {
         const bidResponse = resp.body;
         if (bidResponse.ext && Array.isArray(bidResponse.ext['utrk'])) {
-          bidResponse.ext['utrk'].forEach(pixel => {
-            const url = pixel.url + (pixel.url.indexOf('?') > 0 ? '&' + suffix : '?' + suffix);
-            return syncs.push({type: pixel.type, url});
-          });
+          bidResponse.ext['utrk']
+            .forEach(pixel => {
+              const url = pixel.url + (pixel.url.indexOf('?') > 0 ? '&' + suffix : '?' + suffix);
+              if (url.indexOf('')) {
+                return syncs.push({type: pixel.type, url});
+              }
+            });
         }
+
         if (Array.isArray(bidResponse.seatbid)) {
           bidResponse.seatbid.forEach(seatBid => {
             if (Array.isArray(seatBid.bid)) {
               seatBid.bid.forEach(bid => {
                 if (bid.ext && Array.isArray(bid.ext['utrk'])) {
-                  bid.ext['utrk'].forEach(pixel => {
-                    const url = pixel.url + (pixel.url.indexOf('?') > 0 ? '&' + suffix : '?' + suffix);
-                    return syncs.push({type: pixel.type, url});
-                  });
+                  bid.ext['utrk']
+                    .forEach(pixel => {
+                      const url = pixel.url + (pixel.url.indexOf('?') > 0 ? '&' + suffix : '?' + suffix);
+                      return syncs.push({type: pixel.type, url});
+                    });
                 }
               });
             }
           });
         }
       }
+    });
+
+    const gdpr = gdprApplies ? 1 : 0;
+    const consentString = gdprApplies && gdprConsent.consent_string ? gdprConsent.consent_string : '';
+    const uspConsentString = uspConsent || '';
+
+    syncs.forEach((syncData) => {
+      syncData.url = syncData.url
+        .replace('[GDPR]', gdpr)
+        .replace('[CONSENT]', consentString)
+        .replace('[US_PRIVACY]', uspConsentString);
     });
     return syncs;
   }
