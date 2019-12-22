@@ -100,6 +100,7 @@ function buildRequests(validBidRequests, bidderRequest) {
       s2sParams.bidHeight = playerHeight;
       s2sParams.bidId = bidRequest.bidId;
       s2sParams.pbjs = 1;
+      s2sParams.tgt = 10;
       s2sParams.s2s = '1';
 
       if (bidderRequest && bidderRequest.gdprConsent) {
