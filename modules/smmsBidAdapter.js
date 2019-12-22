@@ -54,6 +54,7 @@ export const spec = {
       refererInfo = bidderRequest.refererInfo;
     }
 
+    // eslint-disable-next-line no-undef
     const g = (typeof (geparams) !== 'undefined' && typeof (geparams) == 'object' && geparams) ? geparams : {};
     validBidRequests.forEach((bid, i) => {
       let endpoint = ENDPOINT_BANNER;

@@ -63,27 +63,26 @@ function lookupUspConsent(uspSuccess, uspError, hookConfig) {
   // - use the USPAPI locator code to see if USP's located in the current window or an ancestor window. This works in friendly or cross domain iframes
   // - if USPAPI is not found, the iframe function will call the uspError exit callback to abort the rest of the USPAPI workflow
   // - try to call the __uspapi() function directly, otherwise use the postMessage() api
-
   // find the CMP frame/window
-  let f = window;
-  let uspapiFrame;
-  while (!uspapiFrame) {
-    try {
-      if (f.frames['__uspapiLocator']) uspapiFrame = f;
-    } catch (e) { }
-    if (f === window.top) break;
-    f = f.parent;
-  }
-
-  if (!uspapiFrame) {
-    return uspError('USP CMP not found.', hookConfig);
-  }
 
   try {
     // try to call __uspapi directly
-    uspapiFrame.__uspapi('getUSPData', USPAPI_VERSION, callbackHandler.consentDataCallback);
+    window.__uspapi('getUSPData', USPAPI_VERSION, callbackHandler.consentDataCallback);
   } catch (e) {
     // must not have been accessible, try using postMessage() api
+    let f = window;
+    let uspapiFrame;
+    while (!uspapiFrame) {
+      try {
+        if (f.frames['__uspapiLocator']) uspapiFrame = f;
+      } catch (e) { }
+      if (f === window.top) break;
+      f = f.parent;
+    }
+
+    if (!uspapiFrame) {
+      return uspError('USP CMP not found.', hookConfig);
+    }
     callUspApiWhileInIframe('getUSPData', uspapiFrame, callbackHandler.consentDataCallback);
   }
 
