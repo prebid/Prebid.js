@@ -52,11 +52,14 @@ export const spec = {
     let siteId = '';
     let requestId = '';
     let pubcid = null;
+    let pubcidName = '_pubcid';
 
     const conversantImps = validBidRequests.map(function(bid) {
       const bidfloor = utils.getBidIdParameter('bidfloor', bid.params);
 
-      siteId = utils.getBidIdParameter('site_id', bid.params);
+      siteId = utils.getBidIdParameter('site_id', bid.params) || siteId;
+      pubcidName = utils.getBidIdParameter('pubcid_name', bid.params) || pubcidName;
+
       requestId = bid.auctionId;
 
       const imp = {
@@ -119,22 +122,34 @@ export const spec = {
 
     let userExt = {};
 
-    // Add GDPR flag and consent string
-    if (bidderRequest && bidderRequest.gdprConsent) {
-      userExt.consent = bidderRequest.gdprConsent.consentString;
+    if (bidderRequest) {
+      // Add GDPR flag and consent string
+      if (bidderRequest.gdprConsent) {
+        userExt.consent = bidderRequest.gdprConsent.consentString;
 
-      if (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') {
-        payload.regs = {
-          ext: {
-            gdpr: (bidderRequest.gdprConsent.gdprApplies ? 1 : 0)
-          }
-        };
+        if (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') {
+          utils.deepSetValue(payload, 'regs.ext.gdpr', bidderRequest.gdprConsent.gdprApplies ? 1 : 0);
+        }
       }
+
+      if (bidderRequest.uspConsent) {
+        utils.deepSetValue(payload, 'regs.ext.us_privacy', bidderRequest.uspConsent);
+      }
+    }
+
+    if (!pubcid) {
+      pubcid = readStoredValue(pubcidName);
     }
 
     // Add common id if available
     if (pubcid) {
       userExt.fpc = pubcid;
+    }
+
+    // Add Eids if available
+    const eids = collectEids(validBidRequests);
+    if (eids.length > 0) {
+      userExt.eids = eids;
     }
 
     // Only add the user object if it's not empty
@@ -183,7 +198,12 @@ export const spec = {
             };
 
             if (request.video) {
-              bid.vastUrl = responseAd;
+              if (responseAd.charAt(0) === '<') {
+                bid.vastXml = responseAd;
+              } else {
+                bid.vastUrl = responseAd;
+              }
+
               bid.mediaType = 'video';
               bid.width = request.video.w;
               bid.height = request.video.h;
@@ -285,6 +305,76 @@ function copyOptProperty(src, dst, dstName) {
   if (src) {
     dst[dstName] = src;
   }
+}
+
+/**
+ * Collect IDs from validBidRequests and store them as an extended id array
+ * @param bidRequests valid bid requests
+ */
+function collectEids(bidRequests) {
+  const request = bidRequests[0]; // bidRequests have the same userId object
+  const eids = [];
+
+  addEid(eids, request, 'userId.tdid', 'adserver.org');
+  addEid(eids, request, 'userId.idl_env', 'liveramp.com');
+  addEid(eids, request, 'userId.criteoId', 'criteo.com');
+  addEid(eids, request, 'userId.id5id', 'id5-sync.com');
+  addEid(eids, request, 'userId.parrableid', 'parrable.com');
+  addEid(eids, request, 'userId.digitrustid.data.id', 'digitru.st');
+  addEid(eids, request, 'userId.lipb.lipbid', 'liveintent.com');
+
+  return eids;
+}
+
+/**
+ * Extract and push a single extended id into eids array
+ * @param eids Array of extended IDs
+ * @param idObj Object containing IDs
+ * @param keyPath Nested properties expressed as a path
+ * @param source Source for the ID
+ */
+function addEid(eids, idObj, keyPath, source) {
+  const id = utils.deepAccess(idObj, keyPath);
+  if (id) {
+    eids.push({
+      source: source,
+      uids: [{
+        id: id,
+        atype: 1
+      }]
+    });
+  }
+}
+
+/**
+ * Look for a stored value from both cookie and local storage and return the first value found.
+ * @param key Key for the search
+ * @return {string} Stored value
+ */
+function readStoredValue(key) {
+  let storedValue;
+  try {
+    // check cookies first
+    storedValue = utils.getCookie(key);
+
+    if (!storedValue) {
+      // check expiration time before reading local storage
+      const storedValueExp = utils.getDataFromLocalStorage(`${key}_exp`);
+      if (storedValueExp === '' || (storedValueExp && (new Date(storedValueExp)).getTime() - Date.now() > 0)) {
+        storedValue = utils.getDataFromLocalStorage(key);
+        storedValue = storedValue ? decodeURIComponent(storedValue) : storedValue;
+      }
+    }
+
+    // deserialize JSON if needed
+    if (utils.isStr(storedValue) && storedValue.charAt(0) === '{') {
+      storedValue = JSON.parse(storedValue);
+    }
+  } catch (e) {
+    utils.logError(e);
+  }
+
+  return storedValue;
 }
 
 registerBidder(spec);

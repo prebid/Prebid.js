@@ -158,6 +158,10 @@ export const spec = {
       };
     }
 
+    if (bidderRequest && bidderRequest.uspConsent) {
+      payload.us_privacy = bidderRequest.uspConsent
+    }
+
     if (bidderRequest && bidderRequest.refererInfo) {
       let refererinfo = {
         rd_ref: encodeURIComponent(bidderRequest.refererInfo.referer),
@@ -498,9 +502,11 @@ function newBid(serverBid, rtbBid, bidderRequest) {
       case ADPOD:
         const iabSubCatId = getIabSubCategory(bidRequest.bidder, rtbBid.brand_category_id);
         bid.meta = Object.assign({}, bid.meta, { iabSubCatId });
+        const dealTier = rtbBid.rtb.dealPriority;
         bid.video = {
           context: ADPOD,
           durationSeconds: Math.floor(rtbBid.rtb.video.duration_ms / 1000),
+          dealTier
         };
         bid.vastUrl = rtbBid.rtb.video.asset_url;
         break;
@@ -517,7 +523,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
         }
         break;
       case INSTREAM:
-        bid.vastUrl = rtbBid.rtb.video.asset_url;
+        bid.vastUrl = rtbBid.notify_url + '&redir=' + encodeURIComponent(rtbBid.rtb.video.asset_url);
         break;
     }
   } else if (rtbBid.rtb[NATIVE]) {

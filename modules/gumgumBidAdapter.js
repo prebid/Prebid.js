@@ -41,7 +41,7 @@ function _getBrowserParams(topWindowUrl) {
   try {
     topWindow = global.top;
     topScreen = topWindow.screen;
-    topUrl = topWindowUrl || utils.getTopWindowUrl();
+    topUrl = topWindowUrl || '';
   } catch (error) {
     utils.logError(error);
     return browserParams
@@ -99,6 +99,28 @@ function _getDigiTrustQueryParams(userId) {
 }
 
 /**
+ * Serializes the supply chain object according to IAB standards
+ * @see https://github.com/InteractiveAdvertisingBureau/openrtb/blob/master/supplychainobject.md
+ * @param {Object} schainObj supply chain object
+ * @returns {string}
+ */
+function _serializeSupplyChainObj(schainObj) {
+  let serializedSchain = `${schainObj.ver},${schainObj.complete}`;
+
+  // order of properties: asi,sid,hp,rid,name,domain
+  schainObj.nodes.map(node => {
+    serializedSchain += `!${encodeURIComponent(node['asi'] || '')},`;
+    serializedSchain += `${encodeURIComponent(node['sid'] || '')},`;
+    serializedSchain += `${encodeURIComponent(node['hp'] || '')},`;
+    serializedSchain += `${encodeURIComponent(node['rid'] || '')},`;
+    serializedSchain += `${encodeURIComponent(node['name'] || '')},`;
+    serializedSchain += `${encodeURIComponent(node['domain'] || '')}`;
+  })
+
+  return serializedSchain;
+}
+
+/**
  * Determines whether or not the given bid request is valid.
  *
  * @param {BidRequest} bid The bid params to validate.
@@ -141,16 +163,22 @@ function buildRequests (validBidRequests, bidderRequest) {
     const {
       bidId,
       params = {},
+      schain,
       transactionId,
       userId = {}
     } = bidRequest;
     const data = {};
+    const sizes = bidRequest.mediaTypes && bidRequest.mediaTypes.banner && bidRequest.mediaTypes.banner.sizes;
     const topWindowUrl = bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer;
     if (pageViewId) {
       data.pv = pageViewId
     }
     if (params.bidfloor) {
       data.fp = params.bidfloor;
+    }
+    if (params.inScreenPubID) {
+      data.pubId = params.inScreenPubID;
+      data.pi = 2;
     }
     if (params.inScreen) {
       data.t = params.inScreen;
@@ -170,6 +198,9 @@ function buildRequests (validBidRequests, bidderRequest) {
     if (data.gdprApplies) {
       data.gdprConsent = gdprConsent.consentString;
     }
+    if (schain && schain.nodes) {
+      data.schain = _serializeSupplyChainObj(schain);
+    }
 
     bids.push({
       id: bidId,
@@ -177,7 +208,7 @@ function buildRequests (validBidRequests, bidderRequest) {
       tId: transactionId,
       pi: data.pi,
       selector: params.selector,
-      sizes: bidRequest.sizes || bidRequest.mediatype[banner].sizes,
+      sizes: sizes || bidRequest.sizes,
       url: BID_ENDPOINT,
       method: 'GET',
       data: Object.assign(data, _getBrowserParams(topWindowUrl), _getDigiTrustQueryParams(userId), _getTradeDeskIDParam(userId))

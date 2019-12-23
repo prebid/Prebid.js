@@ -5,6 +5,7 @@ import { deepClone } from 'src/utils';
 import prebid from '../../../package.json';
 
 const ENDPOINT = 'https://tlx.3lift.com/header/auction?';
+const GDPR_CONSENT_STR = 'BOONm0NOONm0NABABAENAa-AAAARh7______b9_3__7_9uz_Kv_K7Vf7nnG072lPVA9LTOQ6gEaY';
 
 describe('triplelift adapter', function () {
   const adapter = newBidder(tripleliftAdapterSpec);
@@ -107,7 +108,7 @@ describe('triplelift adapter', function () {
           referer: 'http://examplereferer.com'
         },
         gdprConsent: {
-          consentString: 'BOONm0NOONm0NABABAENAa-AAAARh7______b9_3__7_9uz_Kv_K7Vf7nnG072lPVA9LTOQ6gEaY',
+          consentString: GDPR_CONSENT_STR,
           gdprApplies: true
         },
       };
@@ -235,6 +236,12 @@ describe('triplelift adapter', function () {
       expect(url).to.match(new RegExp('(?:' + prebid.version + ')'))
       expect(url).to.match(/(?:referrer)/);
     });
+    it('should return us_privacy param when CCPA info is available', function() {
+      bidderRequest.uspConsent = '1YYY';
+      const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
+      const url = request.url;
+      expect(url).to.match(/(\?|&)us_privacy=1YYY/);
+    });
     it('should return schain when present', function() {
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
       const { data: payload } = request;
@@ -281,7 +288,7 @@ describe('triplelift adapter', function () {
         referer: 'http://examplereferer.com'
       },
       gdprConsent: {
-        consentString: 'BOONm0NOONm0NABABAENAa-AAAARh7______b9_3__7_9uz_Kv_K7Vf7nnG072lPVA9LTOQ6gEaY',
+        consentString: GDPR_CONSENT_STR,
         gdprApplies: true
       }
     };
@@ -355,12 +362,57 @@ describe('triplelift adapter', function () {
           referer: 'http://examplereferer.com'
         },
         gdprConsent: {
-          consentString: 'BOONm0NOONm0NABABAENAa-AAAARh7______b9_3__7_9uz_Kv_K7Vf7nnG072lPVA9LTOQ6gEaY',
+          consentString: GDPR_CONSENT_STR,
           gdprApplies: true
         }
       };
       let result = tripleliftAdapterSpec.interpretResponse(response, {bidderRequest});
       expect(result).to.have.length(2);
+    });
+  });
+
+  describe('getUserSyncs', function() {
+    let expectedIframeSyncUrl = 'https://eb2.3lift.com/sync?gdpr=true&cmp_cs=' + GDPR_CONSENT_STR + '&';
+    let expectedImageSyncUrl = 'https://eb2.3lift.com/sync?px=1&src=prebid&gdpr=true&cmp_cs=' + GDPR_CONSENT_STR + '&';
+
+    it('returns undefined when syncing is not enabled', function() {
+      expect(tripleliftAdapterSpec.getUserSyncs({})).to.equal(undefined);
+      expect(tripleliftAdapterSpec.getUserSyncs()).to.equal(undefined);
+    });
+
+    it('returns iframe user sync pixel when iframe syncing is enabled', function() {
+      let syncOptions = {
+        iframeEnabled: true
+      };
+      let result = tripleliftAdapterSpec.getUserSyncs(syncOptions);
+      expect(result[0].type).to.equal('iframe');
+      expect(result[0].url).to.equal(expectedIframeSyncUrl);
+    });
+
+    it('returns image user sync pixel when iframe syncing is disabled', function() {
+      let syncOptions = {
+        pixelEnabled: true
+      };
+      let result = tripleliftAdapterSpec.getUserSyncs(syncOptions);
+      expect(result[0].type).to.equal('image')
+      expect(result[0].url).to.equal(expectedImageSyncUrl);
+    });
+
+    it('returns iframe user sync pixel when both options are enabled', function() {
+      let syncOptions = {
+        pixelEnabled: true,
+        iframeEnabled: true
+      };
+      let result = tripleliftAdapterSpec.getUserSyncs(syncOptions);
+      expect(result[0].type).to.equal('iframe');
+      expect(result[0].url).to.equal(expectedIframeSyncUrl);
+    });
+    it('sends us_privacy param when info is available', function() {
+      let syncOptions = {
+        iframeEnabled: true
+      };
+      let result = tripleliftAdapterSpec.getUserSyncs(syncOptions, null, null, '1YYY');
+      expect(result[0].url).to.match(/(\?|&)us_privacy=1YYY/);
     });
   });
 });
