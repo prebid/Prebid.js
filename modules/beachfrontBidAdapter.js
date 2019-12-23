@@ -105,9 +105,9 @@ export const spec = {
     }
   },
 
-  getUserSyncs(syncOptions, serverResponses = [], gdprConsent = {}) {
+  getUserSyncs(syncOptions, serverResponses = [], gdprConsent = {}, uspConsent = '') {
     let syncs = [];
-    let { gdprApplies, consentString } = gdprConsent;
+    let { gdprApplies, consentString = '' } = gdprConsent;
     let bannerResponse = find(serverResponses, (res) => utils.isArray(res.body));
 
     if (bannerResponse) {
@@ -124,12 +124,12 @@ export const spec = {
     } else if (syncOptions.iframeEnabled) {
       syncs.push({
         type: 'iframe',
-        url: `https://sync.bfmio.com/sync_iframe?ifg=1&id=${appId}&gdpr=${gdprApplies ? 1 : 0}&gc=${consentString || ''}&gce=1`
+        url: `https://sync.bfmio.com/sync_iframe?ifg=1&id=${appId}&gdpr=${gdprApplies ? 1 : 0}&gc=${consentString}&gce=1&us_privacy=${uspConsent}`
       });
     } else if (syncOptions.pixelEnabled) {
       syncs.push({
         type: 'image',
-        url: `https://sync.bfmio.com/syncb?pid=144&id=${appId}&gdpr=${gdprApplies ? 1 : 0}&gc=${consentString || ''}&gce=1`
+        url: `https://sync.bfmio.com/syncb?pid=144&id=${appId}&gdpr=${gdprApplies ? 1 : 0}&gc=${consentString}&gce=1&us_privacy=${uspConsent}`
       });
     }
 
