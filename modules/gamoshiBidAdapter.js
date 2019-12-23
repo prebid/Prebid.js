@@ -218,8 +218,28 @@ export const spec = {
 
   getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent) {
     const syncs = [];
-    const gdprApplies = gdprConsent && (typeof gdprConsent.gdprApplies === 'boolean') ? gdprConsent.gdprApplies : false;
-    const suffix = gdprApplies ? 'gc=' + encodeURIComponent(gdprConsent.consentString) : 'gc=missing';
+    let gdprApplies = false;
+    let consentString = '';
+    let uspConsentString = '';
+
+    if (gdprConsent && (typeof gdprConsent.gdprApplies === 'boolean')) {
+      gdprApplies = gdprConsent.gdprApplies;
+    }
+    let gdpr = gdprApplies ? 1 : 0;
+
+    if (gdprApplies && gdprConsent.consentString) {
+      consentString = encodeURIComponent(gdprConsent.consentString)
+    }
+
+    if (uspConsent) {
+      uspConsentString = encodeURIComponent(uspConsent);
+    }
+
+    const macros = {
+      gdpr: gdpr,
+      consent: consentString,
+      uspConsent: uspConsentString
+    };
 
     serverResponses.forEach(resp => {
       if (resp.body) {
@@ -227,7 +247,7 @@ export const spec = {
         if (bidResponse.ext && Array.isArray(bidResponse.ext['utrk'])) {
           bidResponse.ext['utrk']
             .forEach(pixel => {
-              const url = pixel.url + (pixel.url.indexOf('?') > 0 ? '&' + suffix : '?' + suffix);
+              const url = replaceMacros(pixel.url, macros);
               return syncs.push({type: pixel.type, url});
             });
         }
@@ -239,7 +259,7 @@ export const spec = {
                 if (bid.ext && Array.isArray(bid.ext['utrk'])) {
                   bid.ext['utrk']
                     .forEach(pixel => {
-                      const url = pixel.url + (pixel.url.indexOf('?') > 0 ? '&' + suffix : '?' + suffix);
+                      const url = replaceMacros(pixel.url, macros);
                       return syncs.push({type: pixel.type, url});
                     });
                 }
@@ -250,16 +270,6 @@ export const spec = {
       }
     });
 
-    const gdpr = gdprApplies ? 1 : 0;
-    const consentString = gdprApplies && gdprConsent.consent_string ? gdprConsent.consent_string : '';
-    const uspConsentString = uspConsent || '';
-
-    syncs.forEach((syncData) => {
-      syncData.url = syncData.url
-        .replace('[GDPR]', gdpr)
-        .replace('[CONSENT]', consentString)
-        .replace('[US_PRIVACY]', uspConsentString);
-    });
     return syncs;
   }
 };
@@ -310,6 +320,13 @@ function addExternalUserId(eids, value, source, rtiPartner) {
       }]
     });
   }
+}
+
+function replaceMacros(url, macros) {
+  return url
+    .replace('[GDPR]', macros.gdpr)
+    .replace('[CONSENT]', macros.consent)
+    .replace('[US_PRIVACY]', macros.uspConsent);
 }
 
 registerBidder(spec);

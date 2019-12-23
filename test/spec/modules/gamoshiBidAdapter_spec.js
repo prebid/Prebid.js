@@ -91,7 +91,7 @@ describe('GamoshiAdapter', () => {
       'cur': 'USD',
       'ext': {
         'utrk': [
-          {'type': 'iframe', 'url': '//rtb.gamoshi.io/user/sync/1'},
+          {'type': 'iframe', 'url': '//rtb.gamoshi.io/user/sync/1?gdpr=[GDPR]&consent=[CONSENT]&usp=[US_PRIVACY]'},
           {'type': 'image', 'url': '//rtb.gamoshi.io/user/sync/2'}
         ]
       },
@@ -185,7 +185,7 @@ describe('GamoshiAdapter', () => {
       'ext': {
         'utrk': [{
           'type': 'image',
-          'url': 'https://rtb.gamoshi.io/pix/1275/scm?cb=1545900621675'
+          'url': 'https://rtb.gamoshi.io/pix/1275/scm?cb=1545900621675&gdpr=[GDPR]&consent=[CONSENT]&us_privacy=[US_PRIVACY]'
         }]
       }
     };
@@ -505,13 +505,13 @@ describe('GamoshiAdapter', () => {
       expect(Array.isArray(response)).to.equal(true);
       expect(response.length).to.equal(4);
       expect(response[0].type).to.equal(rtbResponse.ext.utrk[0].type);
-      expect(response[0].url).to.equal(rtbResponse.ext.utrk[0].url + '?gc=missing');
+      expect(response[0].url).to.equal('//rtb.gamoshi.io/user/sync/1?gdpr=0&consent=&usp=');
       expect(response[1].type).to.equal(rtbResponse.ext.utrk[1].type);
-      expect(response[1].url).to.equal(rtbResponse.ext.utrk[1].url + '?gc=missing');
+      expect(response[1].url).to.equal('//rtb.gamoshi.io/user/sync/2');
       expect(response[2].type).to.equal(rtbResponse.seatbid[0].bid[0].ext.utrk[0].type);
-      expect(response[2].url).to.equal(rtbResponse.seatbid[0].bid[0].ext.utrk[0].url + '?gc=missing');
+      expect(response[2].url).to.equal('//p.partner1.io/user/sync/1');
       expect(response[3].type).to.equal(rtbResponse.seatbid[1].bid[0].ext.utrk[0].type);
-      expect(response[3].url).to.equal(rtbResponse.seatbid[1].bid[0].ext.utrk[0].url + '?gc=missing');
+      expect(response[3].url).to.equal('//p.partner2.io/user/sync/1');
     });
 
     it('supports configuring outstream renderers', () => {
@@ -522,25 +522,40 @@ describe('GamoshiAdapter', () => {
     });
 
     it('validates in/existing of gdpr consent', () => {
-      let result = spec.getUserSyncs({}, [{body: videoResponse}], gdprConsent);
+      let result = spec.getUserSyncs({}, [{body: videoResponse}], gdprConsent, 'gamoshiCCPA');
       expect(result).to.be.an('array');
       expect(result.length).to.equal(1);
       expect(result[0].type).to.equal('image');
-      expect(result[0].url).to.equal('https://rtb.gamoshi.io/pix/1275/scm?cb=1545900621675&gc=consent%20string');
+      expect(result[0].url).to.equal('https://rtb.gamoshi.io/pix/1275/scm?cb=1545900621675&gdpr=1&consent=consent%20string&us_privacy=gamoshiCCPA');
 
       gdprConsent.gdprApplies = false;
-      result = spec.getUserSyncs({}, [{body: videoResponse}], gdprConsent);
+      result = spec.getUserSyncs({}, [{body: videoResponse}], gdprConsent, 'gamoshiCCPA');
       expect(result).to.be.an('array');
       expect(result.length).to.equal(1);
       expect(result[0].type).to.equal('image');
-      expect(result[0].url).to.equal('https://rtb.gamoshi.io/pix/1275/scm?cb=1545900621675&gc=missing');
+      expect(result[0].url).to.equal('https://rtb.gamoshi.io/pix/1275/scm?cb=1545900621675&gdpr=0&consent=&us_privacy=gamoshiCCPA');
 
       videoResponse.ext.utrk[0].url = 'https://rtb.gamoshi.io/pix/1275/scm';
       result = spec.getUserSyncs({}, [{body: videoResponse}], gdprConsent);
       expect(result).to.be.an('array');
       expect(result.length).to.equal(1);
       expect(result[0].type).to.equal('image');
-      expect(result[0].url).to.equal('https://rtb.gamoshi.io/pix/1275/scm?gc=missing');
+      expect(result[0].url).to.equal('https://rtb.gamoshi.io/pix/1275/scm');
+    });
+
+    it('validates existence of gdpr, gdpr consent and usp consent', () => {
+      let result = spec.getUserSyncs({}, [{body: videoResponse}], gdprConsent, 'gamoshiCCPA');
+      expect(result).to.be.an('array');
+      expect(result.length).to.equal(1);
+      expect(result[0].type).to.equal('image');
+      expect(result[0].url).to.equal('https://rtb.gamoshi.io/pix/1275/scm?cb=1545900621675&gdpr=1&consent=consent%20string&us_privacy=gamoshiCCPA');
+
+      gdprConsent.gdprApplies = false;
+      result = spec.getUserSyncs({}, [{body: videoResponse}], gdprConsent, '');
+      expect(result).to.be.an('array');
+      expect(result.length).to.equal(1);
+      expect(result[0].type).to.equal('image');
+      expect(result[0].url).to.equal('https://rtb.gamoshi.io/pix/1275/scm?cb=1545900621675&gdpr=0&consent=&us_privacy=');
     });
   });
 });
