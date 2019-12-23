@@ -27,8 +27,6 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function(bidRequests, bidderRequest) {
-    console.log('bid requests');
-    console.log(bidRequests);
     let serverRequest = {
       p: [],
       page_url: bidderRequest.refererInfo.referer,

@@ -4,10 +4,7 @@
 Module Name:  Yieldmo Bid Adapter
 Module Type:  Bidder Adapter
 Maintainer: opensource@yieldmo.com
-<<<<<<< HEAD
-=======
 Note: Our ads will only render in mobile
->>>>>>> 889e5f0f... update maintainer email
 ```
 
 # Description
