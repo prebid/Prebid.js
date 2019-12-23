@@ -1,4 +1,4 @@
-import { registerBidder } from 'src/adapters/bidderFactory';
+import { registerBidder } from '../src/adapters/bidderFactory';
 
 const ENDPOINT = 'https://hb.gammaplatform.com';
 const ENDPOINT_USERSYNC = 'https://cm-supply-web.gammaplatform.com';
@@ -25,7 +25,7 @@ export const spec = {
    * @param {BidRequest[]} bidRequests A non-empty list of bid requests which should be sent to the Server.
    * @return ServerRequest Info describing the request to the server.
    */
-  buildRequests: function(bidRequests) {
+  buildRequests: function(bidRequests, bidderRequest) {
     const serverRequests = [];
     const bidderRequestReferer = (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer) || '';
     for (var i = 0, len = bidRequests.length; i < len; i++) {
