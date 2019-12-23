@@ -254,6 +254,19 @@ describe('UnderdogMedia adapter', function () {
         expect(request.data.sizes).to.equal('300x250,728x90');
         expect(request.data.sid).to.equal('12143');
       });
+
+      it('should have uspConsent if defined', function () {
+        const uspConsent = '1YYN'
+        bidderRequest.uspConsent = uspConsent
+        const request = spec.buildRequests(bidRequests, bidderRequest);
+        expect(request.data.uspConsent).to.equal(uspConsent);
+      });
+
+      it('should not have uspConsent if not defined', function () {
+        bidderRequest.uspConsent = undefined
+        const request = spec.buildRequests(bidRequests, bidderRequest);
+        expect(request.data.uspConsent).to.be.undefined;
+      });
     });
 
     describe('bid responses', function () {
