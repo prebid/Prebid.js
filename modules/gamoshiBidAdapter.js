@@ -235,7 +235,7 @@ export const spec = {
       uspConsentString = encodeURIComponent(uspConsent);
     }
 
-    const macros = {
+    const macroValues = {
       gdpr: gdpr,
       consent: consentString,
       uspConsent: uspConsentString
@@ -247,8 +247,8 @@ export const spec = {
         if (bidResponse.ext && Array.isArray(bidResponse.ext['utrk'])) {
           bidResponse.ext['utrk']
             .forEach(pixel => {
-              const url = replaceMacros(pixel.url, macros);
-              return syncs.push({type: pixel.type, url});
+              const url = replaceMacros(pixel.url, macroValues);
+              syncs.push({type: pixel.type, url});
             });
         }
 
@@ -259,8 +259,8 @@ export const spec = {
                 if (bid.ext && Array.isArray(bid.ext['utrk'])) {
                   bid.ext['utrk']
                     .forEach(pixel => {
-                      const url = replaceMacros(pixel.url, macros);
-                      return syncs.push({type: pixel.type, url});
+                      const url = replaceMacros(pixel.url, macroValues);
+                      syncs.push({type: pixel.type, url});
                     });
                 }
               });
