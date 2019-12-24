@@ -3,8 +3,8 @@ import { registerBidder } from '../src/adapters/bidderFactory';
 import { BANNER, VIDEO } from '../src/mediaTypes';
 
 const BIDDER_CODE = 'cedato';
-const BID_URL = '//h.cedatoplayer.com/hb';
-const SYNC_URL = '//h.cedatoplayer.com/hb_usync?uid={UUID}';
+const BID_URL = 'https://h.cedatoplayer.com/hb';
+const SYNC_URL = 'https://h.cedatoplayer.com/hb_usync?uid={UUID}';
 const COOKIE_NAME = 'hb-cedato-id';
 const UUID_LEN = 36;
 const TTL = 10000;
@@ -35,6 +35,9 @@ export const spec = {
     const user = { id: getUserID() }
     const currency = CURRENCY;
     const tmax = bidderRequest.timeout;
+    const auctionId = bidderRequest.auctionId;
+    const auctionStart = bidderRequest.auctionStart;
+    const bidderRequestId = bidderRequest.bidderRequestId;
 
     const imp = bidRequests.map(req => {
       const banner = getMediaType(req, 'banner');
@@ -42,6 +45,8 @@ export const spec = {
       const bidfloor = params.bidfloor;
       const bidId = req.bidId;
       const adUnitCode = req.adUnitCode;
+      const bidRequestsCount = req.bidRequestsCount;
+      const transactionId = req.transactionId;
 
       return {
         bidId,
@@ -49,6 +54,8 @@ export const spec = {
         video,
         adUnitCode,
         bidfloor,
+        bidRequestsCount,
+        transactionId
       };
     });
 
@@ -61,13 +68,19 @@ export const spec = {
       imp,
       currency,
       tmax,
+      auctionId,
+      auctionStart,
+      bidderRequestId
     };
 
-    if (bidderRequest && bidderRequest.gdprConsent) {
-      payload.gdpr_consent = {
-        consent_string: bidderRequest.gdprConsent.consentString,
-        consent_required: bidderRequest.gdprConsent.gdprApplies
-      };
+    if (bidderRequest) {
+      payload.referer_info = bidderRequest.refererInfo;
+      if (bidderRequest.gdprConsent) {
+        payload.gdpr_consent = {
+          consent_string: bidderRequest.gdprConsent.consentString,
+          consent_required: bidderRequest.gdprConsent.gdprApplies
+        };
+      }
     }
 
     return {

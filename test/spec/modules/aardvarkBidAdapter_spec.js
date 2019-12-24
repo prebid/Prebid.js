@@ -58,7 +58,7 @@ describe('aardvarkAdapterTest', function () {
 
     const bidderRequest = {
       refererInfo: {
-        referer: 'http://example.com'
+        referer: 'https://example.com'
       }
     };
 
@@ -72,7 +72,7 @@ describe('aardvarkAdapterTest', function () {
     it('should call the correct bidRequest url', function () {
       const requests = spec.buildRequests(bidRequests, bidderRequest);
       expect(requests.length).to.equal(1);
-      expect(requests[0].url).to.match(new RegExp('^\/\/adzone.pub.com/xiby/TdAx_RAZd/aardvark\?'));
+      expect(requests[0].url).to.match(new RegExp('^https:\/\/adzone.pub.com/xiby/TdAx_RAZd/aardvark\?'));
     });
 
     it('should have correct data', function () {
@@ -125,7 +125,7 @@ describe('aardvarkAdapterTest', function () {
 
     const bidderRequest = {
       refererInfo: {
-        referer: 'http://example.com'
+        referer: 'https://example.com'
       }
     };
 
@@ -138,9 +138,9 @@ describe('aardvarkAdapterTest', function () {
 
     it('should call the correct bidRequest urls for each auction', function () {
       const requests = spec.buildRequests(bidRequests, bidderRequest);
-      expect(requests[0].url).to.match(new RegExp('^\/\/bidder.rtk.io/Toby/TdAx/aardvark\?'));
+      expect(requests[0].url).to.match(new RegExp('^https:\/\/bidder.rtk.io/Toby/TdAx/aardvark\?'));
       expect(requests[0].data.categories.length).to.equal(2);
-      expect(requests[1].url).to.match(new RegExp('^\/\/adzone.pub.com/xiby/RAZd/aardvark\?'));
+      expect(requests[1].url).to.match(new RegExp('^https:\/\/adzone.pub.com/xiby/RAZd/aardvark\?'));
     });
 
     it('should have correct data', function () {
@@ -187,7 +187,7 @@ describe('aardvarkAdapterTest', function () {
         gdprApplies: true
       },
       refererInfo: {
-        referer: 'http://example.com'
+        referer: 'https://example.com'
       }
     };
 
@@ -217,7 +217,7 @@ describe('aardvarkAdapterTest', function () {
     const bidderRequest = {
       gdprConsent: undefined,
       refererInfo: {
-        referer: 'http://example.com'
+        referer: 'https://example.com'
       }
     };
 
@@ -235,7 +235,7 @@ describe('aardvarkAdapterTest', function () {
         body: [
           {
             media: 'banner',
-            nurl: 'http://www.nurl.com/0',
+            nurl: 'https://www.nurl.com/0',
             cpm: 0.09,
             width: 300,
             height: 250,
@@ -246,7 +246,7 @@ describe('aardvarkAdapterTest', function () {
           },
           {
             media: 'banner',
-            nurl: 'http://www.nurl.com/1',
+            nurl: 'https://www.nurl.com/1',
             cpm: 0.19,
             width: 300,
             height: 250,
@@ -307,7 +307,7 @@ describe('aardvarkAdapterTest', function () {
       const syncs = spec.getUserSyncs(syncOptions);
       expect(syncs.length).to.equal(1);
       expect(syncs[0].type).to.equal('iframe');
-      expect(syncs[0].url).to.equal('//sync.rtk.io/cs');
+      expect(syncs[0].url).to.equal('https://sync.rtk.io/cs');
     });
 
     it('should return empty, as we sync only once', function () {
@@ -341,7 +341,7 @@ describe('aardvarkAdapterTest', function () {
       const syncs = spec.getUserSyncs(syncOptions, null, gdprConsent);
       expect(syncs.length).to.equal(1);
       expect(syncs[0].type).to.equal('iframe');
-      expect(syncs[0].url).to.equal('//sync.rtk.io/cs?g=1&c=BOEFEAyOEFEAyAHABDENAI4AAAB9vABAASA');
+      expect(syncs[0].url).to.equal('https://sync.rtk.io/cs?g=1&c=BOEFEAyOEFEAyAHABDENAI4AAAB9vABAASA');
     });
   });
 
@@ -366,7 +366,7 @@ describe('aardvarkAdapterTest', function () {
 
     const bidderRequest = {
       refererInfo: {
-        referer: 'http://example.com'
+        referer: 'https://example.com'
       }
     };
 
