@@ -1,6 +1,6 @@
 import { registerBidder } from '../src/adapters/bidderFactory';
 
-const VERSION = '3.1.0';
+const VERSION = '3.2.0';
 const BIDDER_CODE = 'sharethrough';
 const STR_ENDPOINT = 'https://btlr.sharethrough.com/WYu2BXv1/v1';
 const DEFAULT_SIZE = [1, 1];
@@ -9,7 +9,8 @@ const DEFAULT_SIZE = [1, 1];
 export const sharethroughInternal = {
   b64EncodeUnicode,
   handleIframe,
-  isLockedInFrame
+  isLockedInFrame,
+  getProtocol
 };
 
 export const sharethroughAdapterSpec = {
@@ -28,6 +29,9 @@ export const sharethroughAdapterSpec = {
         hbVersion: '$prebid.version$',
         strVersion: VERSION
       };
+
+      const nonHttp = sharethroughInternal.getProtocol().indexOf('http') < 0;
+      query.secure = nonHttp || (sharethroughInternal.getProtocol().indexOf('https') > -1);
 
       if (bidderRequest && bidderRequest.gdprConsent && bidderRequest.gdprConsent.consentString) {
         query.consent_string = bidderRequest.gdprConsent.consentString;
@@ -234,6 +238,10 @@ function canAutoPlayHTML5Video() {
   } else {
     return false;
   }
+}
+
+function getProtocol() {
+  return document.location.protocol;
 }
 
 registerBidder(sharethroughAdapterSpec);

@@ -896,51 +896,6 @@ describe('IndexexchangeAdapter', function () {
       expect(result[0]).to.deep.equal(expectedParse[0]);
     });
 
-    it('bidrequest should have consent info if gdprApplies and consentString exist', function () {
-      const validBidWithConsent = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_OPTION);
-      const requestWithConsent = JSON.parse(validBidWithConsent[0].data.r);
-
-      expect(requestWithConsent.regs.ext.gdpr).to.equal(1);
-      expect(requestWithConsent.user.ext.consent).to.equal('3huaa11=qu3198ae');
-    });
-
-    it('bidrequest should not have consent field if consentString is undefined', function () {
-      const options = {
-        gdprConsent: {
-          gdprApplies: true,
-          vendorData: {}
-        }
-      };
-      const validBidWithConsent = spec.buildRequests(DEFAULT_BANNER_VALID_BID, options);
-      const requestWithConsent = JSON.parse(validBidWithConsent[0].data.r);
-
-      expect(requestWithConsent.regs.ext.gdpr).to.equal(1);
-      expect(requestWithConsent.user).to.be.undefined;
-    });
-
-    it('bidrequest should not have gdpr field if gdprApplies is undefined', function () {
-      const options = {
-        gdprConsent: {
-          consentString: '3huaa11=qu3198ae',
-          vendorData: {}
-        }
-      };
-      const validBidWithConsent = spec.buildRequests(DEFAULT_BANNER_VALID_BID, options);
-      const requestWithConsent = JSON.parse(validBidWithConsent[0].data.r);
-
-      expect(requestWithConsent.regs).to.be.undefined;
-      expect(requestWithConsent.user.ext.consent).to.equal('3huaa11=qu3198ae');
-    });
-
-    it('bidrequest should not have consent info if options.gdprConsent is undefined', function () {
-      const options = {};
-      const validBidWithConsent = spec.buildRequests(DEFAULT_BANNER_VALID_BID, options);
-      const requestWithConsent = JSON.parse(validBidWithConsent[0].data.r);
-
-      expect(requestWithConsent.regs).to.be.undefined;
-      expect(requestWithConsent.user).to.be.undefined;
-    });
-
     it('bidrequest should not have page if options is undefined', function () {
       const options = {};
       const validBidWithoutreferInfo = spec.buildRequests(DEFAULT_BANNER_VALID_BID, options);
@@ -972,6 +927,85 @@ describe('IndexexchangeAdapter', function () {
 
       expect(requestWithoutreferInfo.site.page).to.equal(options.refererInfo.referer);
       expect(validBidWithoutreferInfo[0].url).to.equal(IX_SECURE_ENDPOINT);
+    });
+  });
+
+  describe('bidrequest consent', function() {
+    it('should have consent info if gdprApplies and consentString exist', function () {
+      const validBidWithConsent = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_OPTION);
+      const requestWithConsent = JSON.parse(validBidWithConsent[0].data.r);
+
+      expect(requestWithConsent.regs.ext.gdpr).to.equal(1);
+      expect(requestWithConsent.user.ext.consent).to.equal('3huaa11=qu3198ae');
+    });
+
+    it('should not have consent field if consentString is undefined', function () {
+      const options = {
+        gdprConsent: {
+          gdprApplies: true,
+          vendorData: {}
+        }
+      };
+      const validBidWithConsent = spec.buildRequests(DEFAULT_BANNER_VALID_BID, options);
+      const requestWithConsent = JSON.parse(validBidWithConsent[0].data.r);
+
+      expect(requestWithConsent.regs.ext.gdpr).to.equal(1);
+      expect(requestWithConsent.user).to.be.undefined;
+    });
+
+    it('should not have gdpr field if gdprApplies is undefined', function () {
+      const options = {
+        gdprConsent: {
+          consentString: '3huaa11=qu3198ae',
+          vendorData: {}
+        }
+      };
+      const validBidWithConsent = spec.buildRequests(DEFAULT_BANNER_VALID_BID, options);
+      const requestWithConsent = JSON.parse(validBidWithConsent[0].data.r);
+
+      expect(requestWithConsent.regs).to.be.undefined;
+      expect(requestWithConsent.user.ext.consent).to.equal('3huaa11=qu3198ae');
+    });
+
+    it('should not have consent info if options.gdprConsent is undefined', function () {
+      const options = {};
+      const validBidWithConsent = spec.buildRequests(DEFAULT_BANNER_VALID_BID, options);
+      const requestWithConsent = JSON.parse(validBidWithConsent[0].data.r);
+
+      expect(requestWithConsent.regs).to.be.undefined;
+      expect(requestWithConsent.user).to.be.undefined;
+    });
+
+    it('should have us_privacy if uspConsent is defined', function() {
+      const options = {
+        uspConsent: '1YYN'
+      };
+      const validBidWithUspConsent = spec.buildRequests(DEFAULT_BANNER_VALID_BID, options);
+      const requestWithUspConsent = JSON.parse(validBidWithUspConsent[0].data.r);
+
+      expect(requestWithUspConsent.regs.ext.us_privacy).to.equal('1YYN');
+    });
+
+    it('should not have us_privacy if uspConsent undefined', function() {
+      const options = {};
+      const validBidWithUspConsent = spec.buildRequests(DEFAULT_BANNER_VALID_BID, options);
+      const requestWithUspConsent = JSON.parse(validBidWithUspConsent[0].data.r);
+
+      expect(requestWithUspConsent.regs).to.be.undefined;
+    });
+
+    it('should have both gdpr and us_privacy if both are defined', function() {
+      const options = {
+        gdprConsent: {
+          gdprApplies: true,
+          vendorData: {}
+        },
+        uspConsent: '1YYN'
+      };
+      const validBidWithConsent = spec.buildRequests(DEFAULT_BANNER_VALID_BID, options);
+      const requestWithConsent = JSON.parse(validBidWithConsent[0].data.r);
+      expect(requestWithConsent.regs.ext.gdpr).to.equal(1);
+      expect(requestWithConsent.regs.ext.us_privacy).to.equal('1YYN');
     });
   });
 });

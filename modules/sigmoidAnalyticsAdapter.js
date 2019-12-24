@@ -232,11 +232,14 @@ sigmoidAdapter.buildUtmTagData = function () {
 };
 
 function send(eventType, data, sendDataType) {
+  // eslint-disable-next-line no-undef
   AWS.config.credentials = new AWS.Credentials({
     accessKeyId: 'accesskey', secretAccessKey: 'secretkey'
   });
 
+  // eslint-disable-next-line no-undef
   AWS.config.region = 'us-east-1';
+  // eslint-disable-next-line no-undef
   AWS.config.credentials.get(function(err) {
     // attach event listener
     if (err) {
@@ -244,6 +247,7 @@ function send(eventType, data, sendDataType) {
       return;
     }
     // create kinesis service object
+    // eslint-disable-next-line no-undef
     var kinesis = new AWS.Kinesis({
       apiVersion: '2013-12-02'
     });
