@@ -412,7 +412,7 @@ function getBids({ bidderCode, auctionId, bidderRequestId, adUnits, labels, src 
                 if (bid.sizeConfig) {
                   const relevantMediaTypes = getRelevantMediaTypesForBidder(bid.sizeConfig, activeViewport);
                   if (relevantMediaTypes.length === 0) {
-                    logError(`SizeMappingV2:: Bidder: ${bid.bidder} in Ad Unit: ${adUnit.code} has not configured sizeConfig property correctly. This bidder won't be eligible for sizeConfig checks and will remain active.`);
+                    logError(`SizeMappingV2:: AdUnit: ${adUnit.code}, Bidder: ${bidderCode} - sizeConfig is not configured properly. This bidder won't be eligible for sizeConfig checks and will remail active.`);
                     bid = Object.assign({}, bid);
                   } else if (relevantMediaTypes[0] !== 'none') {
                     const bidderMediaTypes = Object
@@ -426,11 +426,11 @@ function getBids({ bidderCode, auctionId, bidderRequestId, adUnits, labels, src 
                     if (Object.keys(bidderMediaTypes).length > 0) {
                       bid = Object.assign({}, bid, { mediaTypes: bidderMediaTypes });
                     } else {
-                      logInfo(`SizeMappingV2:: Bidder: ${bid.bidder} in Ad Unit: ${adUnit.code} is disabled.`);
+                      logInfo(`SizeMappingV2:: AdUnit: ${adUnit.code}, Bidder: ${bid.bidder} - 'relevantMediaTypes' for this bidder does not match with any of the active mediaTypes at the Ad Unit level. This bidder is disabled.`);
                       return bids;
                     }
                   } else {
-                    logInfo(`SizeMappingV2:: Bidder: ${bid.bidder} in Ad Unit: ${adUnit.code} is disabled due to failing sizeConfig check.`);
+                    logInfo(`SizeMappingV2:: AdUnit: ${adUnit.code}, Bidder: ${bid.bidder} - 'relevantMediaTypes' is set to 'none' in sizeConfig for current viewport size. This bidder is disabled.`);
                     return bids;
                   }
                 }
@@ -449,7 +449,7 @@ function getBids({ bidderCode, auctionId, bidderRequestId, adUnits, labels, src 
                 }));
                 return bids;
               } else {
-                logInfo(`SizeMappingV2:: Bidder: ${bid.bidder} in Ad Unit: ${adUnit.code} is disabled due to failing label check.`);
+                logInfo(`SizeMappingV2:: AdUnit: ${adUnit.code}, Bidder: ${bid.bidder} - Label check for this bidder has failed. This bidder is disabled.`);
                 return bids;
               }
             }, []));
