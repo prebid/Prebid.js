@@ -7,7 +7,7 @@ import {Renderer} from '../src/Renderer';
 
 const SUPPORTED_AD_TYPES = [BANNER, VIDEO];
 const BIDDER_CODE = 'advertly';
-const DOMAIN = 'http://api.advertly.com/';
+const DOMAIN = 'https://api.advertly.com/';
 const RENDERER_URL = '//acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
 
 function isBidRequestValid(bid) {
