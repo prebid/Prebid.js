@@ -3,6 +3,7 @@
   "aolBidAdapter",
   "appnexusBidAdapter",
   "consentManagement",
+  "consentManagementUsp",
   "emx_digitalBidAdapter",
   "audienceNetworkBidAdapter",
   "ixBidAdapter",
