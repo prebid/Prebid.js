@@ -179,7 +179,7 @@ describe('YieldmoAdapter', function () {
       const data = spec.buildRequests([unifiedIdBid], bidderRequest).data;
       expect(data.tdid).to.deep.equal(tdid);
     });
-    
+
     it('should add gdpr information to request if available', () => {
       bidderRequest.gdprConsent = {
         'consentString': 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==',
@@ -252,26 +252,7 @@ describe('YieldmoAdapter', function () {
     });
   });
 
-  describe('getUserSync', function () {
-    const SYNC_ENDPOINT = 'https://static.yieldmo.com/blank.min.html?orig=';
-    let options = {
-      iframeEnabled: true,
-      pixelEnabled: true
-    };
-
-    it('should return a tracker with type and url as parameters', function () {
-      if (/iPhone|iPad|iPod/i.test(window.navigator.userAgent)) {
-        expect(spec.getUserSync(options)).to.deep.equal([{
-          type: 'iframe',
-          url: SYNC_ENDPOINT + utils.getOrigin()
-        }]);
-
-        options.iframeEnabled = false;
-        expect(spec.getUserSync(options)).to.deep.equal([]);
-      } else {
-        // not ios, so tracker will fail
-        expect(spec.getUserSync(options)).to.deep.equal([]);
-      }
-    });
+  describe('getUserSyncs', function () {
+    expect(spec.getUserSyncs({})).to.deep.equal([]);
   });
 });

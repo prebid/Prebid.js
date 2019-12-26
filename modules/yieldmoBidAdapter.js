@@ -88,8 +88,8 @@ export const spec = {
     }
     return bids;
   },
-  getUserSyncs: function(syncOptions) {	
-    return [];	
+  getUserSyncs: function(syncOptions) {
+    return [];
   }
 }
 registerBidder(spec);
