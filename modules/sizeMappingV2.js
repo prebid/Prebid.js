@@ -324,7 +324,26 @@ function getFilteredMediaTypes(mediaTypes) {
       }
     }
   })
-  return { mediaTypes, activeSizeBucket, activeViewport, transformedMediaTypes };
+
+  // filter out 'undefined' values from activeSizeBucket object and attach sizes/playerSize information against the active size bucket.
+  const sizeBucketToSizeMap = Object
+    .keys(activeSizeBucket)
+    .filter(mediaType => activeSizeBucket[mediaType] !== undefined)
+    .reduce((sizeBucketToSizeMap, mediaType) => {
+      sizeBucketToSizeMap[mediaType] = {
+        activeSizeBucket: activeSizeBucket[mediaType],
+        activeSizeDimensions: (mediaType === 'banner') ? (
+          // banner mediaType gets deleted incase no sizes are specified for a given size bucket, that's why this check is necessary
+          (transformedMediaTypes.banner) ? (transformedMediaTypes.banner.sizes) : ([])
+        ) : ((mediaType === 'video') ? (
+        // video mediaType gets deleted incase no playerSize is specified for a given size bucket, that's why this check is necessary
+          (transformedMediaTypes.video) ? (transformedMediaTypes.video.playerSize) : ([])
+        ) : ('NA'))
+      };
+      return sizeBucketToSizeMap;
+    }, {});
+
+  return { mediaTypes, sizeBucketToSizeMap, activeViewport, transformedMediaTypes };
 };
 
 /**
@@ -339,9 +358,12 @@ function getFilteredMediaTypes(mediaTypes) {
 function isSizeConfigActivated(mediaType, sizeConfig) {
   switch (mediaType) {
     case 'banner':
-      return sizeConfig.sizes && sizeConfig.sizes.length > 0;
+      // we need this check, sizeConfig.sizes[0].length > 0, in place because a sizeBucket can have sizes: [],
+      // gets converted to sizes: [[]] in the checkAdUnitSetupHook function
+      return sizeConfig.sizes && sizeConfig.sizes.length > 0 && sizeConfig.sizes[0].length > 0;
     case 'video':
-      return sizeConfig.playerSize && sizeConfig.playerSize.length > 0;
+      // for why we need the last check, read the above comment
+      return sizeConfig.playerSize && sizeConfig.playerSize.length > 0 && sizeConfig.playerSize[0].length > 0;
     case 'native':
       return sizeConfig.active;
     default:
@@ -354,7 +376,7 @@ function isSizeConfigActivated(mediaType, sizeConfig) {
  * @param {Array<SizeConfig>} sizeConfig SizeConfig defines the characteristics of an Ad Unit categorised into multiple size buckets per media type
  * @param {Array} activeViewport Viewport size of the browser in the form [w, h] (w -> width, h -> height)
  * Calculated at the time of making call to pbjs.requestBids function
- * @returns {Array} The active size bucket matching the activeViewPort
+ * @returns {Array} The active size bucket matching the activeViewPort, for example: [750, 0]
  */
 function getActiveSizeBucket(sizeConfig, activeViewport) {
   let activeSizeBucket = [];
@@ -384,11 +406,12 @@ function getBids({ bidderCode, auctionId, bidderRequestId, adUnits, labels, src 
   return adUnits.reduce((result, adUnit) => {
     if (isLabelActivated(adUnit, labels, adUnit.code)) {
       if (adUnit.mediaTypes && isValidMediaTypes(adUnit.mediaTypes)) {
-        const { mediaTypes, activeSizeBucket, activeViewport, transformedMediaTypes } = getFilteredMediaTypes(adUnit.mediaTypes);
-        logInfo(`SizeMappingV2:: AdUnit: ${adUnit.code}, Bidder: ${bidderCode} - Active size buckets after filtration: `, activeSizeBucket);
-        logInfo(`SizeMappingV2:: AdUnit: ${adUnit.code}, Bidder: ${bidderCode} - Transformed mediaTypes after filtration: `, transformedMediaTypes);
-        logInfo(`SizeMappingV2:: AdUnit: ${adUnit.code}, Bidder: ${bidderCode} - mediaTypes that got filtered out: `, Object.keys(mediaTypes).filter(mt => Object.keys(transformedMediaTypes).indexOf(mt) === -1));
-
+        const { mediaTypes, sizeBucketToSizeMap, activeViewport, transformedMediaTypes } = getFilteredMediaTypes(adUnit.mediaTypes);
+        const filteredMediaTypes = Object.keys(mediaTypes).filter(mt => Object.keys(transformedMediaTypes).indexOf(mt) === -1)
+        logInfo(`SizeMappingV2:: AdUnit: ${adUnit.code}, Bidder: ${bidderCode} - Active size buckets after filtration: `, sizeBucketToSizeMap);
+        if (filteredMediaTypes.length > 0) {
+          logInfo(`SizeMappingV2:: AdUnit: ${adUnit.code}, Bidder: ${bidderCode} - mediaTypes that got filtered out: ${filteredMediaTypes}`);
+        }
         // check if adUnit has any active media types remaining, if not drop the adUnit from auction,
         // else proceed to evaluate the bids object.
         if (Object.keys(transformedMediaTypes).length === 0) {
