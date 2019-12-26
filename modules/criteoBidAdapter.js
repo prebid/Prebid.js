@@ -7,7 +7,7 @@ import * as utils from '../src/utils';
 import find from 'core-js/library/fn/array/find';
 import { verify } from 'criteo-direct-rsa-validate/build/verify';
 
-export const ADAPTER_VERSION = 24;
+export const ADAPTER_VERSION = 25;
 const BIDDER_CODE = 'criteo';
 const CDB_ENDPOINT = 'https://bidder.criteo.com/cdb';
 const CRITEO_VENDOR_ID = 91;
@@ -289,6 +289,9 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
     if (typeof bidderRequest.gdprConsent.consentString !== 'undefined') {
       request.gdprConsent.consentData = bidderRequest.gdprConsent.consentString;
     }
+  }
+  if (bidderRequest && bidderRequest.uspConsent) {
+    request.user.uspIab = bidderRequest.uspConsent;
   }
   return request;
 }
