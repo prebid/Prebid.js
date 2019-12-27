@@ -2,17 +2,19 @@ import * as utils from '../src/utils';
 import { config } from '../src/config';
 import { registerBidder } from '../src/adapters/bidderFactory';
 const BIDDER_CODE = 'underdogmedia';
-const UDM_ADAPTER_VERSION = '1.13V';
+const UDM_ADAPTER_VERSION = '3.0V';
 const UDM_VENDOR_ID = '159';
+const prebidVersion = '$prebid.version$';
 
-utils.logMessage(`Initializing UDM Adapter. PBJS Version: ${$$PREBID_GLOBAL$$.version} with adapter version: ${UDM_ADAPTER_VERSION}  Updated 20180604`);
+utils.logMessage(`Initializing UDM Adapter. PBJS Version: ${prebidVersion} with adapter version: ${UDM_ADAPTER_VERSION}  Updated 20191028`);
 
 export const spec = {
   code: BIDDER_CODE,
   bidParams: [],
 
   isBidRequestValid: function (bid) {
-    return !!((bid.params && bid.params.siteId) && (bid.sizes && bid.sizes.length > 0));
+    const bidSizes = bid.mediaTypes && bid.mediaTypes.banner && bid.mediaTypes.banner.sizes ? bid.mediaTypes.banner.sizes : bid.sizes;
+    return !!((bid.params && bid.params.siteId) && (bidSizes && bidSizes.length > 0));
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
@@ -20,7 +22,8 @@ export const spec = {
     var siteId = 0;
 
     validBidRequests.forEach(bidParam => {
-      sizes = utils.flatten(sizes, utils.parseSizesInput(bidParam.sizes));
+      let bidParamSizes = bidParam.mediaTypes && bidParam.mediaTypes.banner && bidParam.mediaTypes.banner.sizes ? bidParam.mediaTypes.banner.sizes : bidParam.sizes;
+      sizes = utils.flatten(sizes, utils.parseSizesInput(bidParamSizes));
       siteId = bidParam.params.siteId;
     });
 
@@ -47,7 +50,7 @@ export const spec = {
     if (!data.gdprApplies || data.consentGiven) {
       return {
         method: 'GET',
-        url: `${window.location.protocol}//udmserve.net/udm/img.fetch`,
+        url: 'https://udmserve.net/udm/img.fetch',
         data: data,
         bidParams: validBidRequests
       };
@@ -67,7 +70,8 @@ export const spec = {
         }
 
         var sizeNotFound = true;
-        utils.parseSizesInput(bidParam.sizes).forEach(size => {
+        const bidParamSizes = bidParam.mediaTypes && bidParam.mediaTypes.banner && bidParam.mediaTypes.banner.sizes ? bidParam.mediaTypes.banner.sizes : bidParam.sizes
+        utils.parseSizesInput(bidParamSizes).forEach(size => {
           if (size === mid.width + 'x' + mid.height) {
             sizeNotFound = false;
           }

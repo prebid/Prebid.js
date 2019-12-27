@@ -6,7 +6,7 @@ import find from 'core-js/library/fn/array/find';
 import includes from 'core-js/library/fn/array/includes';
 
 const BIDDER_CODE = 'xhb';
-const URL = '//ib.adnxs.com/ut/v3/prebid';
+const URL = 'https://ib.adnxs.com/ut/v3/prebid';
 const VIDEO_TARGETING = ['id', 'mimes', 'minduration', 'maxduration',
   'startdelay', 'skippable', 'playback_method', 'frameworks'];
 const USER_PARAMS = ['age', 'external_uid', 'segments', 'gender', 'dnt', 'language'];
@@ -126,7 +126,7 @@ export const spec = {
     if (syncOptions.iframeEnabled) {
       return [{
         type: 'iframe',
-        url: '//acdn.adnxs.com/ib/static/usersync/v3/async_usersync.html'
+        url: 'https://acdn.adnxs.com/ib/static/usersync/v3/async_usersync.html'
       }];
     }
   }

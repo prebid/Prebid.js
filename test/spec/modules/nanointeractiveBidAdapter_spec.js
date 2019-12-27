@@ -178,8 +178,8 @@ describe('nanointeractive adapter tests', function () {
       let sandbox;
 
       function getMocks() {
-        let mockOriginAddress = 'http://localhost';
-        let mockRefAddress = 'http://some-ref.test';
+        let mockOriginAddress = 'https://localhost';
+        let mockRefAddress = 'https://some-ref.test';
         return {
           'windowLocationAddress': mockRefAddress,
           'originAddress': mockOriginAddress,

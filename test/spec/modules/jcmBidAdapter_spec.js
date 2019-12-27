@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { spec } from 'modules/jcmBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
 
-const ENDPOINT = '//media.adfrontiers.com/';
+const ENDPOINT = 'https://media.adfrontiers.com/';
 
 describe('jcmAdapter', function () {
   const adapter = newBidder(spec);
@@ -124,7 +124,7 @@ describe('jcmAdapter', function () {
       expect(options).to.not.be.undefined;
       expect(options).to.have.lengthOf(1);
       expect(options[0].type).to.equal('iframe');
-      expect(options[0].url).to.equal('//media.adfrontiers.com/hb/jcm_usersync.html');
+      expect(options[0].url).to.equal('https://media.adfrontiers.com/hb/jcm_usersync.html');
     });
 
     it('Verifies sync image option', function () {
@@ -133,7 +133,7 @@ describe('jcmAdapter', function () {
       expect(options).to.not.be.undefined;
       expect(options).to.have.lengthOf(1);
       expect(options[0].type).to.equal('image');
-      expect(options[0].url).to.equal('//media.adfrontiers.com/hb/jcm_usersync.png');
+      expect(options[0].url).to.equal('https://media.adfrontiers.com/hb/jcm_usersync.png');
     });
   });
 });
