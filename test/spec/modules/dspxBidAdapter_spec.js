@@ -3,6 +3,7 @@ import { spec } from 'modules/dspxBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
 
 const ENDPOINT_URL = 'https://buyer.dspx.tv/request/';
+const ENDPOINT_URL_DEV = 'https://dcbuyer.dspx.tv/request/';
 
 describe('dspxAdapter', function () {
   const adapter = newBidder(spec);
@@ -61,7 +62,22 @@ describe('dspxAdapter', function () {
       'bidId': '30b31c1838de1e',
       'bidderRequestId': '22edbae2733bf6',
       'auctionId': '1d1a030790a475'
-    }];
+    },
+    {
+      'bidder': 'dspx',
+      'params': {
+        'placement': '101',
+        'devMode': true
+      },
+      'sizes': [
+        [300, 250]
+      ],
+      'bidId': '30b31c1838de1e',
+      'bidderRequestId': '22edbae2733bf6',
+      'auctionId': '1d1a030790a475'
+    }
+
+    ];
 
     let bidderRequest = {
       refererInfo: {
@@ -72,8 +88,16 @@ describe('dspxAdapter', function () {
     const request = spec.buildRequests(bidRequests, bidderRequest);
     it('sends bid request to our endpoint via GET', function () {
       expect(request[0].method).to.equal('GET');
+      expect(request[0].url).to.equal(ENDPOINT_URL);
       let data = request[0].data.replace(/rnd=\d+\&/g, '').replace(/ref=.*\&bid/g, 'bid');
       expect(data).to.equal('_f=html&alternative=prebid_js&inventory_item_id=6682&srw=300&srh=250&idt=100&bid_id=30b31c1838de1e&pfilter%5Bfloorprice%5D=1000000&pfilter%5Bprivate_auction%5D=0&pfilter%5Bgeo%5D%5Bcountry%5D=DE&bcat=IAB2%2CIAB4&dvt=desktop');
+    });
+
+    it('sends bid request to our DEV endpoint via GET', function () {
+      expect(request[1].method).to.equal('GET');
+      expect(request[1].url).to.equal(ENDPOINT_URL_DEV);
+      let data = request[1].data.replace(/rnd=\d+\&/g, '').replace(/ref=.*\&bid/g, 'bid');
+      expect(data).to.equal('_f=html&alternative=prebid_js&inventory_item_id=101&srw=300&srh=250&idt=100&bid_id=30b31c1838de1e&prebidDevMode=1');
     });
   });
 
@@ -103,7 +127,6 @@ describe('dspxAdapter', function () {
       currency: 'EUR',
       netRevenue: true,
       ttl: 300,
-      referrer: '',
       ad: '<!-- test creative -->'
     }];
 

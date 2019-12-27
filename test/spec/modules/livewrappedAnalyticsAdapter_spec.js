@@ -258,7 +258,7 @@ describe('Livewrapped analytics adapter', function () {
       expect(requests.length).to.equal(1);
       let request = requests[0];
 
-      expect(request.url).to.equal('//lwadm.com/analytics/10');
+      expect(request.url).to.equal('https://lwadm.com/analytics/10');
 
       let message = JSON.parse(request.requestBody);
 

@@ -1,5 +1,19 @@
-import {isSchainObjectValid, copySchainObjectInAdunits} from '../../../modules/schain';
+import {isValidSchainConfig, isSchainObjectValid, copySchainObjectInAdunits} from '../../../modules/schain';
 import { expect } from 'chai';
+
+describe('#isValidSchainConfig: module config validation', function() {
+  it('if config is undefined or not an objct then return false', function() {
+    expect(isValidSchainConfig()).to.false;
+    expect(isValidSchainConfig('')).to.false;
+    expect(isValidSchainConfig([])).to.false;
+    expect(isValidSchainConfig(12)).to.false;
+    expect(isValidSchainConfig(3.14)).to.false;
+  })
+
+  it('if config is an object then return true', function() {
+    expect(isValidSchainConfig({})).to.true;
+  })
+});
 
 describe('#isSchainObjectValid: schain object validation', function() {
   let schainConfig;
@@ -224,6 +238,9 @@ describe('#isSchainObjectValid: schain object validation', function() {
         }
       ]
     };
+    expect(isSchainObjectValid(schainConfig, false)).to.true;
+
+    schainConfig = {};
     expect(isSchainObjectValid(schainConfig, false)).to.true;
   })
 });

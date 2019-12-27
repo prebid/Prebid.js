@@ -4,7 +4,7 @@ import { BANNER } from '../src/mediaTypes';
 const BIDDER_CODE = 'microad';
 
 const ENDPOINT_URLS = {
-  'production': '//s-rtb-pb.send.microad.jp/prebid',
+  'production': 'https://s-rtb-pb.send.microad.jp/prebid',
   'test': 'https://rtbtest.send.microad.jp/prebid'
 };
 export let ENVIRONMENT = 'production';

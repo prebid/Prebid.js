@@ -1,15 +1,13 @@
-import { expect } from 'chai';
-import { spec } from 'modules/cleanmedianetBidAdapter';
-import { helper } from 'modules/cleanmedianetBidAdapter';
+import {expect} from 'chai';
+import {spec, helper} from 'modules/cleanmedianetBidAdapter';
 import * as utils from 'src/utils';
-import { newBidder } from '../../../src/adapters/bidderFactory';
-import { deepClone } from 'src/utils';
+import {newBidder} from '../../../src/adapters/bidderFactory';
 
 const supplyPartnerId = '123';
 const adapter = newBidder(spec);
-describe('CleanmedianetAdapter', function() {
-  describe('Is String start with search ', function() {
-    it('check if a string started with', function() {
+describe('CleanmedianetAdapter', function () {
+  describe('Is String start with search ', function () {
+    it('check if a string started with', function () {
       expect(helper.startsWith('cleanmediaads.com', 'cleanmediaads')).to.equal(
         true
       );
@@ -103,7 +101,7 @@ describe('CleanmedianetAdapter', function() {
       },
       sizes: [[300, 250], [300, 600]],
       transactionId: 'a123456789',
-      refererInfo: { referer: 'http://examplereferer.com' },
+      refererInfo: { referer: 'https://examplereferer.com' },
       gdprConsent: {
         consentString: 'some string',
         gdprApplies: true
@@ -131,15 +129,12 @@ describe('CleanmedianetAdapter', function() {
     });
 
     it('builds request correctly', function() {
-      let stub = sinon
-        .stub(utils, 'getTopWindowUrl')
-        .returns('http://www.test.com/page.html');
-      let bidRequest2 = deepClone(bidRequest);
-      bidRequest2.refererInfo.referer = 'http://www.test.com/page.html';
+      let bidRequest2 = utils.deepClone(bidRequest);
+      bidRequest2.refererInfo.referer = 'https://www.test.com/page.html';
       let response = spec.buildRequests([bidRequest], bidRequest2)[0];
       expect(response.data.site.domain).to.equal('www.test.com');
-      expect(response.data.site.page).to.equal('http://www.test.com/page.html');
-      expect(response.data.site.ref).to.equal('http://www.test.com/page.html');
+      expect(response.data.site.page).to.equal('https://www.test.com/page.html');
+      expect(response.data.site.ref).to.equal('https://www.test.com/page.html');
       expect(response.data.imp.length).to.equal(1);
       expect(response.data.imp[0].id).to.equal(bidRequest.transactionId);
       expect(response.data.imp[0].instl).to.equal(0);
@@ -173,7 +168,6 @@ describe('CleanmedianetAdapter', function() {
       expect(response.data.imp[0].bidfloor).to.equal(
         bidRequestWithBidfloorEquals1.params.bidfloor
       );
-      stub.restore();
     });
 
     it('builds request banner object correctly', function() {
@@ -290,7 +284,7 @@ describe('CleanmedianetAdapter', function() {
       sizes: [[300, 250], [300, 600]],
       transactionId: 'a123456789',
       bidId: '111',
-      refererInfo: { referer: 'http://examplereferer.com' }
+      refererInfo: { referer: 'https://examplereferer.com' }
     };
 
     const videoBidRequest = {
@@ -305,7 +299,7 @@ describe('CleanmedianetAdapter', function() {
       sizes: [[300, 250], [300, 600]],
       transactionId: 'a123456789',
       bidId: '111',
-      refererInfo: { referer: 'http://examplereferer.com' }
+      refererInfo: { referer: 'https://examplereferer.com' }
     };
 
     const rtbResponse = {
@@ -329,7 +323,7 @@ describe('CleanmedianetAdapter', function() {
               price: 2.016,
               adid: '579ef31bfa788b9d2000d562',
               nurl:
-                'https://bidder.cleanmediaads.com/pix/monitoring/win_notice/imp_5b05b9fde4b09084267a556f/im.gif?r=imp_5b05b9fde4b09084267a556f&i=1&a=579ef31bfa788b9d2000d562&b=0&p=${AUCTION_PRICE}',
+                'https://bidder.cleanmediaads.com/pix/monitoring/win_notice/imp_5b05b9fde4b09084267a556f/im.gif?r=imp_5b05b9fde4b09084267a556f&i=1&a=579ef31bfa788b9d2000d562&b=0',
               adm:
                 '<?xml version="1.0" encoding="UTF-8"?><VAST version="2.0">↵<Ad id="99aaef40-bbc0-4829-8599-f5313ea27ee9">↵<Wrapper>↵<AdSystem version="2.0"><![CDATA[cleanmediaads.com]]></AdSystem>↵<VASTAdTagURI><![CDATA[https://static.gambid.io/demo/vast.xml]]></VASTAdTagURI>↵<Error><![CDATA[https://bidder.cleanmediaads.com/pix/1707/verror/imp_5c4dcd32e4b044440442782e/im.gif?r=imp_5c4dcd32e4b044440442782e&i=99aaef40-bbc0-4829-8599-f5313ea27ee9&a=1274&b=gb_1&error=[ERRORCODE]]]></Error>↵<Impression><![CDATA[https://bidder.cleanmediaads.com/pix/1707/vimp/imp_5c4dcd32e4b044440442782e/im.gif?r=imp_5c4dcd32e4b044440442782e&i=99aaef40-bbc0-4829-8599-f5313ea27ee9&a=1274&b=gb_1]]></Impression>↵<Creatives>↵<Creative AdID="1274">↵<Linear>↵<TrackingEvents>↵<Tracking event="start"><![CDATA[https://bidder.cleanmediaads.com/pix/1707/start/imp_5c4dcd32e4b044440442782e/im.gif?r=imp_5c4dcd32e4b044440442782e&i=99aaef40-bbc0-4829-8599-f5313ea27ee9&a=1274&b=gb_1]]></Tracking>↵<Tracking event="firstQuartile"><![CDATA[https://bidder.cleanmediaads.com/pix/1707/fq/imp_5c4dcd32e4b044440442782e/im.gif?r=imp_5c4dcd32e4b044440442782e&i=99aaef40-bbc0-4829-8599-f5313ea27ee9&a=1274&b=gb_1]]></Tracking>↵<Tracking event="midpoint"><![CDATA[https://bidder.cleanmediaads.com/pix/1707/mp/imp_5c4dcd32e4b044440442782e/im.gif?r=imp_5c4dcd32e4b044440442782e&i=99aaef40-bbc0-4829-8599-f5313ea27ee9&a=1274&b=gb_1]]></Tracking>↵<Tracking event="thirdQuartile"><![CDATA[https://bidder.cleanmediaads.com/pix/1707/tq/imp_5c4dcd32e4b044440442782e/im.gif?r=imp_5c4dcd32e4b044440442782e&i=99aaef40-bbc0-4829-8599-f5313ea27ee9&a=1274&b=gb_1]]></Tracking>↵<Tracking event="complete"><![CDATA[https://bidder.cleanmediaads.com/pix/1707/comp/imp_5c4dcd32e4b044440442782e/im.gif?r=imp_5c4dcd32e4b044440442782e&i=99aaef40-bbc0-4829-8599-f5313ea27ee9&a=1274&b=gb_1]]></Tracking>↵</TrackingEvents>↵</Linear>↵</Creative>↵</Creatives>↵</Wrapper></Ad>↵</VAST>',
               adomain: ['aaa.com'],
@@ -339,7 +333,7 @@ describe('CleanmedianetAdapter', function() {
               h: 600,
               w: 120,
               ext: {
-                vast_url: 'http://my.vast.com',
+                vast_url: 'https://my.vast.com',
                 utrk: [{ type: 'iframe', url: '//p.partner1.io/user/sync/1' }]
               }
             }
@@ -355,7 +349,7 @@ describe('CleanmedianetAdapter', function() {
               price: 3,
               adid: '542jlhdfd2112jnjf3x',
               nurl:
-                'https://bidder.cleanmediaads.com/pix/monitoring/win_notice/imp_5b05b9fde4b09084267a556f/im.gif?r=imp_5b05b9fde4b09084267a556f&i=1&a=579ef31bfa788b9d2000d562&b=0&p=${AUCTION_PRICE}',
+                'https://bidder.cleanmediaads.com/pix/monitoring/win_notice/imp_5b05b9fde4b09084267a556f/im.gif?r=imp_5b05b9fde4b09084267a556f&i=1&a=579ef31bfa788b9d2000d562&b=0',
               adm:
                 '<img width="300px" height="250px" src="https://dummyimage.com/300x250/030d00/52b31e.gif&text=Cleanmedia+Demo" onclick="window.open(\'https://www.cleanmediaads.com\')"> <img width="0px" height="0px" src="https://bidder.cleanmediaads.com/pix/monitoring/imp/imp_5b05b9fde4b09084267a556f/im.gif?r=imp_5b05b9fde4b09084267a556f&i=1&a=579ef31bfa788b9d2000d562&b=0"/>',
               adomain: ['bbb.com'],
@@ -400,7 +394,7 @@ describe('CleanmedianetAdapter', function() {
       expect(ad0.cpm).to.equal(rtbResponse.seatbid[1].bid[0].price);
       expect(ad0.width).to.equal(rtbResponse.seatbid[1].bid[0].w);
       expect(ad0.height).to.equal(rtbResponse.seatbid[1].bid[0].h);
-      expect(ad0.ttl).to.equal(60 * 10);
+      expect(ad0.ttl).to.equal(360);
       expect(ad0.creativeId).to.equal(rtbResponse.seatbid[1].bid[0].crid);
       expect(ad0.netRevenue).to.equal(true);
       expect(ad0.currency).to.equal(
@@ -424,7 +418,7 @@ describe('CleanmedianetAdapter', function() {
       expect(ad0.cpm).to.equal(rtbResponse.seatbid[0].bid[0].price);
       expect(ad0.width).to.equal(rtbResponse.seatbid[0].bid[0].w);
       expect(ad0.height).to.equal(rtbResponse.seatbid[0].bid[0].h);
-      expect(ad0.ttl).to.equal(60 * 10);
+      expect(ad0.ttl).to.equal(360);
       expect(ad0.creativeId).to.equal(rtbResponse.seatbid[0].bid[0].crid);
       expect(ad0.netRevenue).to.equal(true);
       expect(ad0.currency).to.equal(
@@ -477,7 +471,7 @@ describe('CleanmedianetAdapter', function() {
                 price: 5.0,
                 adid: '1274',
                 nurl:
-                  'https://bidder.cleanmediaads.com/pix/1275/win_notice/imp_5c24924de4b0d106447af333/im.gif?r=imp_5c24924de4b0d106447af333&i=afbb5852-7cea-4a81-aa9a-a41aab505c23&a=1274&b=gb_1&p=${AUCTION_PRICE}',
+                  'https://bidder.cleanmediaads.com/pix/1275/win_notice/imp_5c24924de4b0d106447af333/im.gif?r=imp_5c24924de4b0d106447af333&i=afbb5852-7cea-4a81-aa9a-a41aab505c23&a=1274&b=gb_1',
                 adomain: [],
                 adm:
                   '<?xml version="1.0" encoding="UTF-8"?><VAST version="2.0">\n<Ad id="afbb5852-7cea-4a81-aa9a-a41aab505c23">\n<Wrapper>\n<AdSystem version="2.0"><![CDATA[cleanmediaads.com]]></AdSystem>\n<VASTAdTagURI><![CDATA[https://static.gambid.io/demo/vast.xml]]></VASTAdTagURI>\n<Error><![CDATA[https://bidder.cleanmediaads.com/pix/1275/verror/imp_5c24924de4b0d106447af333/im.gif?r=imp_5c24924de4b0d106447af333&i=afbb5852-7cea-4a81-aa9a-a41aab505c23&a=1274&b=gb_1&error=[ERRORCODE]]]></Error>\n<Impression><![CDATA[https://bidder.cleanmediaads.com/pix/1275/vimp/imp_5c24924de4b0d106447af333/im.gif?r=imp_5c24924de4b0d106447af333&i=afbb5852-7cea-4a81-aa9a-a41aab505c23&a=1274&b=gb_1]]></Impression>\n<Creatives>\n<Creative AdID="1274">\n<Linear>\n<TrackingEvents>\n<Tracking event="start"><![CDATA[https://bidder.cleanmediaads.com/pix/1275/start/imp_5c24924de4b0d106447af333/im.gif?r=imp_5c24924de4b0d106447af333&i=afbb5852-7cea-4a81-aa9a-a41aab505c23&a=1274&b=gb_1]]></Tracking>\n<Tracking event="firstQuartile"><![CDATA[https://bidder.cleanmediaads.com/pix/1275/fq/imp_5c24924de4b0d106447af333/im.gif?r=imp_5c24924de4b0d106447af333&i=afbb5852-7cea-4a81-aa9a-a41aab505c23&a=1274&b=gb_1]]></Tracking>\n<Tracking event="midpoint"><![CDATA[https://bidder.cleanmediaads.com/pix/1275/mp/imp_5c24924de4b0d106447af333/im.gif?r=imp_5c24924de4b0d106447af333&i=afbb5852-7cea-4a81-aa9a-a41aab505c23&a=1274&b=gb_1]]></Tracking>\n<Tracking event="thirdQuartile"><![CDATA[https://bidder.cleanmediaads.com/pix/1275/tq/imp_5c24924de4b0d106447af333/im.gif?r=imp_5c24924de4b0d106447af333&i=afbb5852-7cea-4a81-aa9a-a41aab505c23&a=1274&b=gb_1]]></Tracking>\n<Tracking event="complete"><![CDATA[https://bidder.cleanmediaads.com/pix/1275/comp/imp_5c24924de4b0d106447af333/im.gif?r=imp_5c24924de4b0d106447af333&i=afbb5852-7cea-4a81-aa9a-a41aab505c23&a=1274&b=gb_1]]></Tracking>\n</TrackingEvents>\n</Linear>\n</Creative>\n</Creatives>\n</Wrapper>\n</Ad>\n</VAST>\n',
@@ -508,7 +502,7 @@ describe('CleanmedianetAdapter', function() {
           ]
         }
       };
-      const videoRequest = deepClone(videoBidRequest);
+      const videoRequest = utils.deepClone(videoBidRequest);
       videoRequest.mediaTypes.video.context = 'outstream';
       const result = spec.interpretResponse(
         { body: videoResponse },
@@ -533,7 +527,7 @@ describe('CleanmedianetAdapter', function() {
                 price: 5.0,
                 adid: '1274',
                 nurl:
-                  'https://bidder.cleanmediaads.com/pix/1275/win_notice/imp_5c24924de4b0d106447af333/im.gif?r=imp_5c24924de4b0d106447af333&i=afbb5852-7cea-4a81-aa9a-a41aab505c23&a=1274&b=gb_1&p=${AUCTION_PRICE}',
+                  'https://bidder.cleanmediaads.com/pix/1275/win_notice/imp_5c24924de4b0d106447af333/im.gif?r=imp_5c24924de4b0d106447af333&i=afbb5852-7cea-4a81-aa9a-a41aab505c23&a=1274&b=gb_1',
                 adomain: [],
                 adm:
                   '<?xml version="1.0" encoding="UTF-8"?><VAST version="2.0">\n<Ad id="afbb5852-7cea-4a81-aa9a-a41aab505c23">\n<Wrapper>\n<AdSystem version="2.0"><![CDATA[cleanmediaads.com]]></AdSystem>\n<VASTAdTagURI><![CDATA[https://static.gambid.io/demo/vast.xml]]></VASTAdTagURI>\n<Error><![CDATA[https://bidder.cleanmediaads.com/pix/1275/verror/imp_5c24924de4b0d106447af333/im.gif?r=imp_5c24924de4b0d106447af333&i=afbb5852-7cea-4a81-aa9a-a41aab505c23&a=1274&b=gb_1&error=[ERRORCODE]]]></Error>\n<Impression><![CDATA[https://bidder.cleanmediaads.com/pix/1275/vimp/imp_5c24924de4b0d106447af333/im.gif?r=imp_5c24924de4b0d106447af333&i=afbb5852-7cea-4a81-aa9a-a41aab505c23&a=1274&b=gb_1]]></Impression>\n<Creatives>\n<Creative AdID="1274">\n<Linear>\n<TrackingEvents>\n<Tracking event="start"><![CDATA[https://bidder.cleanmediaads.com/pix/1275/start/imp_5c24924de4b0d106447af333/im.gif?r=imp_5c24924de4b0d106447af333&i=afbb5852-7cea-4a81-aa9a-a41aab505c23&a=1274&b=gb_1]]></Tracking>\n<Tracking event="firstQuartile"><![CDATA[https://bidder.cleanmediaads.com/pix/1275/fq/imp_5c24924de4b0d106447af333/im.gif?r=imp_5c24924de4b0d106447af333&i=afbb5852-7cea-4a81-aa9a-a41aab505c23&a=1274&b=gb_1]]></Tracking>\n<Tracking event="midpoint"><![CDATA[https://bidder.cleanmediaads.com/pix/1275/mp/imp_5c24924de4b0d106447af333/im.gif?r=imp_5c24924de4b0d106447af333&i=afbb5852-7cea-4a81-aa9a-a41aab505c23&a=1274&b=gb_1]]></Tracking>\n<Tracking event="thirdQuartile"><![CDATA[https://bidder.cleanmediaads.com/pix/1275/tq/imp_5c24924de4b0d106447af333/im.gif?r=imp_5c24924de4b0d106447af333&i=afbb5852-7cea-4a81-aa9a-a41aab505c23&a=1274&b=gb_1]]></Tracking>\n<Tracking event="complete"><![CDATA[https://bidder.cleanmediaads.com/pix/1275/comp/imp_5c24924de4b0d106447af333/im.gif?r=imp_5c24924de4b0d106447af333&i=afbb5852-7cea-4a81-aa9a-a41aab505c23&a=1274&b=gb_1]]></Tracking>\n</TrackingEvents>\n</Linear>\n</Creative>\n</Creatives>\n</Wrapper>\n</Ad>\n</VAST>\n',
