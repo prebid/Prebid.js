@@ -40,7 +40,7 @@ const bidRequests = [
 const prebidRequests = [
   {
     method: 'GET',
-    url: 'https://btlr.sharethrough.com' + '/WYu2BXv1/v1',
+    url: 'https://btlr.sharethrough.com/WYu2BXv1/v1',
     data: {
       bidId: 'bidId',
       placement_key: 'pKey'
@@ -52,7 +52,7 @@ const prebidRequests = [
   },
   {
     method: 'GET',
-    url: 'https://btlr.sharethrough.com' + '/WYu2BXv1/v1',
+    url: 'https://btlr.sharethrough.com/WYu2BXv1/v1',
     data: {
       bidId: 'bidId',
       placement_key: 'pKey'
@@ -64,7 +64,7 @@ const prebidRequests = [
   },
   {
     method: 'GET',
-    url: 'https://btlr.sharethrough.com' + '/WYu2BXv1/v1',
+    url: 'https://btlr.sharethrough.com/WYu2BXv1/v1',
     data: {
       bidId: 'bidId',
       placement_key: 'pKey'
@@ -77,7 +77,7 @@ const prebidRequests = [
   },
   {
     method: 'GET',
-    url: 'https://btlr.sharethrough.com' + '/WYu2BXv1/v1',
+    url: 'https://btlr.sharethrough.com/WYu2BXv1/v1',
     data: {
       bidId: 'bidId',
       placement_key: 'pKey'
@@ -89,7 +89,7 @@ const prebidRequests = [
   },
   {
     method: 'GET',
-    url: 'https://btlr.sharethrough.com' + '/WYu2BXv1/v1',
+    url: 'https://btlr.sharethrough.com/WYu2BXv1/v1',
     data: {
       bidId: 'bidId',
       placement_key: 'pKey'
@@ -120,9 +120,9 @@ const bidderResponse = {
   header: { get: (header) => header }
 };
 
-const setUserAgent = (str) => {
+const setUserAgent = (uaString) => {
   window.navigator['__defineGetter__']('userAgent', function () {
-    return str;
+    return uaString;
   });
 };
 
@@ -217,10 +217,8 @@ describe('sharethrough adapter spec', function () {
     it('should return an array of requests', function () {
       const builtBidRequests = spec.buildRequests(bidRequests);
 
-      expect(builtBidRequests[0].url).to.eq(
-        'https://btlr.sharethrough.com/WYu2BXv1/v1');
-      expect(builtBidRequests[1].url).to.eq(
-        'https://btlr.sharethrough.com/WYu2BXv1/v1');
+      expect(builtBidRequests[0].url).to.eq('https://btlr.sharethrough.com/WYu2BXv1/v1');
+      expect(builtBidRequests[1].url).to.eq('https://btlr.sharethrough.com/WYu2BXv1/v1');
       expect(builtBidRequests[0].method).to.eq('GET');
     });
 
@@ -248,6 +246,27 @@ describe('sharethrough adapter spec', function () {
       setUserAgent(undefined);
       builtBidRequests = spec.buildRequests(bidRequests);
       expect(builtBidRequests[0].data.instant_play_capable).to.be.false;
+    });
+
+    it('should set the secure parameter to false when the protocol is http', function() {
+      const stub = sinon.stub(sharethroughInternal, 'getProtocol').returns('http:');
+      const bidRequest = spec.buildRequests(bidRequests, null)[0];
+      expect(bidRequest.data.secure).to.be.false;
+      stub.restore()
+    });
+
+    it('should set the secure parameter to true when the protocol is https', function() {
+      const stub = sinon.stub(sharethroughInternal, 'getProtocol').returns('https:');
+      const bidRequest = spec.buildRequests(bidRequests, null)[0];
+      expect(bidRequest.data.secure).to.be.true;
+      stub.restore()
+    });
+
+    it('should set the secure parameter to true when the protocol is neither http or https', function() {
+      const stub = sinon.stub(sharethroughInternal, 'getProtocol').returns('about:');
+      const bidRequest = spec.buildRequests(bidRequests, null)[0];
+      expect(bidRequest.data.secure).to.be.true;
+      stub.restore()
     });
 
     it('should add consent parameters if gdprConsent is present', function () {

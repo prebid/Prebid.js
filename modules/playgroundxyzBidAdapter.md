@@ -8,23 +8,30 @@ Maintainer: tech+prebid@playgroundxyz.com
 
 # Description
 
-Connects to playgroundxyz ad server for bids.
+Connects to the Playground XYZ marketplace for demand.
 
-Playground XYZ bid adapter supports Banner.
+This bid adapter supports the Banner media type only.
 
 # Test Parameters
-```
+
+```js
 var adUnits = [
-   // Banner adUnit
-   {
-       code: 'banner-div',
-       sizes: [[300, 250], [300,600]],
-       bids: [{
-         bidder: 'playgroundxyz',
-         params: {
-           placementId: '10433394'
-         }
-       }]
-   }
+  // Banner adUnit
+  {
+    code: 'div-gpt-ad-1460505748561-0',
+    mediaTypes: {
+      banner: {
+        sizes: [[300, 250]],
+      }
+    },
+    sizes: [[300, 250]],
+    bids: [{
+      bidder: 'playgroundxyz',
+      params: {
+        placementId: '13473562'
+      }
+    }]
+  }
 ];
 ```
+

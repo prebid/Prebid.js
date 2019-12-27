@@ -84,6 +84,24 @@ const bidderReqGdpr = {
   }
 };
 
+const bidderReqCcpa = {
+  refererInfo: {
+    referer: 'http://prebid.org/dev-docs/bidder-adaptor.html'
+  },
+  uspConsent: 'NY12'
+};
+
+const bidderReqCcpaAndGdpr = {
+  refererInfo: {
+    referer: 'http://prebid.org/dev-docs/bidder-adaptor.html'
+  },
+  gdprConsent: {
+    gdprApplies: true,
+    consentString: 'acdefgh'
+  },
+  uspConsent: 'NY12'
+};
+
 const validBidRes = {
   ad: '<div>Hello</div>',
   publisherId: 12345,
@@ -137,7 +155,7 @@ describe('Undertone Adapter', function () {
     });
   });
   describe('build request', function () {
-    it('should send request to correct url via POST not in GDPR', function () {
+    it('should send request to correct url via POST not in GDPR or CCPA', function () {
       const request = spec.buildRequests(bidReq, bidderReq);
       const domainStart = bidderReq.refererInfo.referer.indexOf('//');
       const domainEnd = bidderReq.refererInfo.referer.indexOf('/', domainStart + 2);
@@ -151,8 +169,29 @@ describe('Undertone Adapter', function () {
       const domainStart = bidderReq.refererInfo.referer.indexOf('//');
       const domainEnd = bidderReq.refererInfo.referer.indexOf('/', domainStart + 2);
       const domain = bidderReq.refererInfo.referer.substring(domainStart + 2, domainEnd);
-      let gdpr = bidderReqGdpr.gdprConsent.gdprApplies ? 1 : 0
+      let gdpr = bidderReqGdpr.gdprConsent.gdprApplies ? 1 : 0;
       const REQ_URL = `${URL}?pid=${bidReq[0].params.publisherId}&domain=${domain}&gdpr=${gdpr}&gdprstr=${bidderReqGdpr.gdprConsent.consentString}`;
+      expect(request.url).to.equal(REQ_URL);
+      expect(request.method).to.equal('POST');
+    });
+    it('should send request to correct url via POST when in CCPA', function () {
+      const request = spec.buildRequests(bidReq, bidderReqCcpa);
+      const domainStart = bidderReq.refererInfo.referer.indexOf('//');
+      const domainEnd = bidderReq.refererInfo.referer.indexOf('/', domainStart + 2);
+      const domain = bidderReq.refererInfo.referer.substring(domainStart + 2, domainEnd);
+      let ccpa = bidderReqCcpa.uspConsent;
+      const REQ_URL = `${URL}?pid=${bidReq[0].params.publisherId}&domain=${domain}&ccpa=${ccpa}`;
+      expect(request.url).to.equal(REQ_URL);
+      expect(request.method).to.equal('POST');
+    });
+    it('should send request to correct url via POST when in GDPR and CCPA', function () {
+      const request = spec.buildRequests(bidReq, bidderReqCcpaAndGdpr);
+      const domainStart = bidderReq.refererInfo.referer.indexOf('//');
+      const domainEnd = bidderReq.refererInfo.referer.indexOf('/', domainStart + 2);
+      const domain = bidderReq.refererInfo.referer.substring(domainStart + 2, domainEnd);
+      let ccpa = bidderReqCcpaAndGdpr.uspConsent;
+      let gdpr = bidderReqCcpaAndGdpr.gdprConsent.gdprApplies ? 1 : 0;
+      const REQ_URL = `${URL}?pid=${bidReq[0].params.publisherId}&domain=${domain}&gdpr=${gdpr}&gdprstr=${bidderReqGdpr.gdprConsent.consentString}&ccpa=${ccpa}`;
       expect(request.url).to.equal(REQ_URL);
       expect(request.method).to.equal('POST');
     });
@@ -214,7 +253,7 @@ describe('Undertone Adapter', function () {
   describe('getUserSyncs', () => {
     let testParams = [
       {
-        name: 'with iframe and no gdpr data',
+        name: 'with iframe and no gdpr or ccpa data',
         arguments: [{ iframeEnabled: true, pixelEnabled: true }, {}, null],
         expect: {
           type: 'iframe',
@@ -230,7 +269,15 @@ describe('Undertone Adapter', function () {
         }
       },
       {
-        name: 'with iframe and no gdpr off',
+        name: 'with iframe and ccpa on',
+        arguments: [{ iframeEnabled: true, pixelEnabled: true }, {}, null, 'YN12'],
+        expect: {
+          type: 'iframe',
+          pixels: ['https://cdn.undertone.com/js/usersync.html?ccpa=YN12']
+        }
+      },
+      {
+        name: 'with iframe and no gdpr off or ccpa',
         arguments: [{ iframeEnabled: true, pixelEnabled: true }, {}, {gdprApplies: false}],
         expect: {
           type: 'iframe',
@@ -238,7 +285,15 @@ describe('Undertone Adapter', function () {
         }
       },
       {
-        name: 'with pixels and no gdpr data',
+        name: 'with iframe and gdpr and ccpa',
+        arguments: [{ iframeEnabled: true, pixelEnabled: true }, {}, {gdprApplies: true, consentString: '234234'}, 'YN12'],
+        expect: {
+          type: 'iframe',
+          pixels: ['https://cdn.undertone.com/js/usersync.html?gdpr=1&gdprstr=234234&ccpa=YN12']
+        }
+      },
+      {
+        name: 'with pixels and no gdpr or ccpa data',
         arguments: [{ pixelEnabled: true }, {}, null],
         expect: {
           type: 'image',
@@ -256,12 +311,30 @@ describe('Undertone Adapter', function () {
         }
       },
       {
+        name: 'with pixels and ccpa on',
+        arguments: [{ pixelEnabled: true }, {}, null, 'YN12'],
+        expect: {
+          type: 'image',
+          pixels: ['https://usr.undertone.com/userPixel/syncOne?id=1&of=2&ccpa=YN12',
+            'https://usr.undertone.com/userPixel/syncOne?id=2&of=2&ccpa=YN12']
+        }
+      },
+      {
         name: 'with pixels and gdpr off',
         arguments: [{ pixelEnabled: true }, {}, {gdprApplies: false}],
         expect: {
           type: 'image',
           pixels: ['https://usr.undertone.com/userPixel/syncOne?id=1&of=2&gdpr=0&gdprstr=',
             'https://usr.undertone.com/userPixel/syncOne?id=2&of=2&gdpr=0&gdprstr=']
+        }
+      },
+      {
+        name: 'with pixels and gdpr and ccpa on',
+        arguments: [{ pixelEnabled: true }, {}, {gdprApplies: true, consentString: '234234'}, 'YN12'],
+        expect: {
+          type: 'image',
+          pixels: ['https://usr.undertone.com/userPixel/syncOne?id=1&of=2&gdpr=1&gdprstr=234234&ccpa=YN12',
+            'https://usr.undertone.com/userPixel/syncOne?id=2&of=2&gdpr=1&gdprstr=234234&ccpa=YN12']
         }
       }
     ];
