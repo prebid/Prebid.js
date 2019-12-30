@@ -35,7 +35,6 @@ function getCapabilities() {
 }
 
 exports.config = {
-  // TODO: below change is only for testing and is to be removed.
   specs: [
     './test/spec/e2e/**/*.spec.js'
   ],
