@@ -24,8 +24,7 @@ import {
 } from '../src/prebid';
 
 // '_sizeMappingUsageMap' maps 'auctionId' to an object that contains information whether the particular auction is using size mapping V2 (the new size mapping spec),
-// and contains additional information on adUnits for each auction.
-
+// and it also contains additional information on adUnits for each auction.
 const _sizeMappingUsageMap = {};
 
 // returns "true" if atleast one of the adUnit in the adUnits array has declared a Ad Unit or(and) Bid level sizeConfig
@@ -201,6 +200,7 @@ getHook('checkAdUnitSetup').before(function (fn, adUnits) {
   }
 });
 
+// checks if the sizeConfig object declared at the Bidder level is in the right format or not.
 function checkBidderSizeConfigFormat(sizeConfig) {
   let didCheckPass = true;
   if (Array.isArray(sizeConfig)) {
@@ -407,6 +407,8 @@ function getRelevantMediaTypesForBidder(sizeConfig, activeViewport) {
   return [];
 }
 
+// populates '_sizeMappingUsageMap' for a given auctionId with relevant adUnit information returned from the call to 'getFilteredMediaTypes' function
+// returns adUnit details object.
 function getAdUnitDetail(auctionId, adUnit) {
   const adUnitDetail = _sizeMappingUsageMap[auctionId].adUnits.filter(adUnitDetail => adUnitDetail.adUnitCode === adUnit.code);
 
