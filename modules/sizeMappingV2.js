@@ -23,7 +23,9 @@ import {
   adUnitSetupChecks
 } from '../src/prebid';
 
-// Maps auctionId to a boolean value, value is set to true if Adunits are setup to use the new size mapping, else it's set to false.
+// '_sizeMappingUsageMap' maps 'auctionId' to an object that contains information whether the particular auction is using size mapping V2 (the new size mapping spec),
+// and contains additional information on adUnits for each auction.
+
 const _sizeMappingUsageMap = {};
 
 // returns "true" if atleast one of the adUnit in the adUnits array has declared a Ad Unit or(and) Bid level sizeConfig
@@ -224,9 +226,12 @@ getHook('getBids').before(function (fn, bidderInfo) {
     const isUsingSizeMappingBool = isUsingNewSizeMapping(bidderInfo.adUnits);
 
     // populate _sizeMappingUsageMap for the first time for a particular auction
-    _sizeMappingUsageMap[bidderInfo.auctionId] = isUsingSizeMappingBool;
+    _sizeMappingUsageMap[bidderInfo.auctionId] = {
+      usingSizeMappingV2: isUsingSizeMappingBool,
+      adUnits: []
+    };
   }
-  if (_sizeMappingUsageMap[bidderInfo.auctionId]) {
+  if (_sizeMappingUsageMap[bidderInfo.auctionId].usingSizeMappingV2) {
     // if adUnit is found using sizeMappingV2 specs, run the getBids function which processes the sizeConfig object
     // and returns the bids array for a particular bidder.
     const bids = getBids(bidderInfo);
@@ -402,16 +407,41 @@ function getRelevantMediaTypesForBidder(sizeConfig, activeViewport) {
   return [];
 }
 
+function getAdUnitDetail(auctionId, adUnit) {
+  const adUnitDetail = _sizeMappingUsageMap[auctionId].adUnits.filter(adUnitDetail => adUnitDetail.adUnitCode === adUnit.code);
+
+  if (adUnitDetail.length > 0) {
+    return adUnitDetail[0];
+  } else {
+    const { mediaTypes, sizeBucketToSizeMap, activeViewport, transformedMediaTypes } = getFilteredMediaTypes(adUnit.mediaTypes);
+
+    const adUnitDetail = {
+      adUnitCode: adUnit.code,
+      mediaTypes,
+      sizeBucketToSizeMap,
+      activeViewport,
+      transformedMediaTypes
+    };
+
+    // 'filteredMediaTypes' are the mediaTypes that got removed/filtered-out from adUnit.mediaTypes after sizeConfig filtration.
+    const filteredMediaTypes = Object.keys(mediaTypes).filter(mt => Object.keys(transformedMediaTypes).indexOf(mt) === -1)
+
+    logInfo(`SizeMappingV2:: AdUnit: ${adUnit.code} - Active size buckets after filtration: `, sizeBucketToSizeMap);
+    if (filteredMediaTypes.length > 0) {
+      logInfo(`SizeMappingV2:: AdUnit: ${adUnit.code} - mediaTypes that got filtered out: ${filteredMediaTypes}`);
+    }
+
+    _sizeMappingUsageMap[auctionId].adUnits.push(adUnitDetail);
+    return adUnitDetail;
+  }
+}
+
 function getBids({ bidderCode, auctionId, bidderRequestId, adUnits, labels, src }) {
   return adUnits.reduce((result, adUnit) => {
     if (isLabelActivated(adUnit, labels, adUnit.code)) {
       if (adUnit.mediaTypes && isValidMediaTypes(adUnit.mediaTypes)) {
-        const { mediaTypes, sizeBucketToSizeMap, activeViewport, transformedMediaTypes } = getFilteredMediaTypes(adUnit.mediaTypes);
-        const filteredMediaTypes = Object.keys(mediaTypes).filter(mt => Object.keys(transformedMediaTypes).indexOf(mt) === -1)
-        logInfo(`SizeMappingV2:: AdUnit: ${adUnit.code}, Bidder: ${bidderCode} - Active size buckets after filtration: `, sizeBucketToSizeMap);
-        if (filteredMediaTypes.length > 0) {
-          logInfo(`SizeMappingV2:: AdUnit: ${adUnit.code}, Bidder: ${bidderCode} - mediaTypes that got filtered out: ${filteredMediaTypes}`);
-        }
+        const { activeViewport, transformedMediaTypes } = getAdUnitDetail(auctionId, adUnit);
+
         // check if adUnit has any active media types remaining, if not drop the adUnit from auction,
         // else proceed to evaluate the bids object.
         if (Object.keys(transformedMediaTypes).length === 0) {
