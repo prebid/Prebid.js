@@ -1,5 +1,5 @@
 import {expect} from 'chai'
-import {spec} from 'modules/shBidAdapter'
+import {spec} from 'modules/showheroes-bsBidAdapter'
 import {newBidder} from 'src/adapters/bidderFactory'
 import {VIDEO, BANNER} from 'src/mediaTypes'
 

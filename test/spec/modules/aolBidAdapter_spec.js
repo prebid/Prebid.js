@@ -495,6 +495,94 @@ describe('AolAdapter', function () {
     });
   });
 
+  describe('buildOpenRtbRequestData', () => {
+    const bid = {
+      params: {
+        id: 'bid-id',
+        imp: []
+      }
+    };
+    let euConsentRequiredStub;
+
+    beforeEach(function () {
+      euConsentRequiredStub = sinon.stub(spec, 'isEUConsentRequired');
+    });
+
+    afterEach(function () {
+      euConsentRequiredStub.restore();
+    });
+
+    it('returns the basic bid info when regulation data is omitted', () => {
+      expect(spec.buildOpenRtbRequestData(bid)).to.deep.equal({
+        id: 'bid-id',
+        imp: []
+      });
+    });
+
+    it('returns the basic bid info with gdpr data when gdpr consent data is included', () => {
+      let consentData = {
+        gdpr: {
+          consentString: 'someEUConsent'
+        }
+      };
+      euConsentRequiredStub.returns(true);
+      expect(spec.buildOpenRtbRequestData(bid, consentData)).to.deep.equal({
+        id: 'bid-id',
+        imp: [],
+        regs: {
+          ext: {
+            gdpr: 1
+          }
+        },
+        user: {
+          ext: {
+            consent: 'someEUConsent'
+          }
+        }
+      });
+    });
+
+    it('returns the basic bid info with CCPA data when CCPA consent data is included', () => {
+      let consentData = {
+        uspConsent: 'someUSPConsent'
+      };
+      expect(spec.buildOpenRtbRequestData(bid, consentData)).to.deep.equal({
+        id: 'bid-id',
+        imp: [],
+        regs: {
+          ext: {
+            us_privacy: 'someUSPConsent'
+          }
+        }
+      });
+    });
+
+    it('returns the basic bid info with GDPR and CCPA data when GDPR and CCPA consent data is included', () => {
+      let consentData = {
+        gdpr: {
+          consentString: 'someEUConsent'
+        },
+        uspConsent: 'someUSPConsent'
+      };
+      euConsentRequiredStub.returns(true);
+      expect(spec.buildOpenRtbRequestData(bid, consentData)).to.deep.equal({
+        id: 'bid-id',
+        imp: [],
+        regs: {
+          ext: {
+            gdpr: 1,
+            us_privacy: 'someUSPConsent'
+          }
+        },
+        user: {
+          ext: {
+            consent: 'someEUConsent'
+          }
+        }
+      });
+    });
+  });
+
   describe('getUserSyncs()', function () {
     let serverResponses;
     let bidResponse;
@@ -545,36 +633,42 @@ describe('AolAdapter', function () {
     });
   });
 
-  describe('isConsentRequired()', function () {
+  describe('isEUConsentRequired()', function () {
     it('should return false when consentData object is not present', function () {
-      expect(spec.isConsentRequired(null)).to.be.false;
+      expect(spec.isEUConsentRequired(null)).to.be.false;
     });
 
     it('should return true when gdprApplies equals true and consentString is not present', function () {
       let consentData = {
-        consentString: null,
-        gdprApplies: true
+        gdpr: {
+          consentString: null,
+          gdprApplies: true
+        }
       };
 
-      expect(spec.isConsentRequired(consentData)).to.be.true;
+      expect(spec.isEUConsentRequired(consentData)).to.be.true;
     });
 
     it('should return false when consentString is present and gdprApplies equals false', function () {
       let consentData = {
-        consentString: 'consent-string',
-        gdprApplies: false
+        gdpr: {
+          consentString: 'consent-string',
+          gdprApplies: false
+        }
       };
 
-      expect(spec.isConsentRequired(consentData)).to.be.false;
+      expect(spec.isEUConsentRequired(consentData)).to.be.false;
     });
 
     it('should return true when consentString is present and gdprApplies equals true', function () {
       let consentData = {
-        consentString: 'consent-string',
-        gdprApplies: true
+        gdpr: {
+          consentString: 'consent-string',
+          gdprApplies: true
+        }
       };
 
-      expect(spec.isConsentRequired(consentData)).to.be.true;
+      expect(spec.isEUConsentRequired(consentData)).to.be.true;
     });
   });
 
@@ -596,12 +690,29 @@ describe('AolAdapter', function () {
       expect(spec.formatMarketplaceDynamicParams()).to.be.equal('');
     });
 
-    it('should return formatted params when formatConsentData returns data', function () {
+    it('should return formatted EU consent params when formatConsentData returns GDPR data', function () {
       formatConsentDataStub.returns({
         euconsent: 'test-consent',
         gdpr: 1
       });
       expect(spec.formatMarketplaceDynamicParams()).to.be.equal('euconsent=test-consent;gdpr=1;');
+    });
+
+    it('should return formatted US privacy params when formatConsentData returns USP data', function () {
+      formatConsentDataStub.returns({
+        us_privacy: 'test-usp-consent'
+      });
+      expect(spec.formatMarketplaceDynamicParams()).to.be.equal('us_privacy=test-usp-consent;');
+    });
+
+    it('should return formatted EU and USP consent params when formatConsentData returns all data', function () {
+      formatConsentDataStub.returns({
+        euconsent: 'test-consent',
+        gdpr: 1,
+        us_privacy: 'test-usp-consent'
+      });
+      expect(spec.formatMarketplaceDynamicParams()).to.be.equal(
+        'euconsent=test-consent;gdpr=1;us_privacy=test-usp-consent;');
     });
 
     it('should return formatted params when formatKeyValues returns data', function () {
@@ -622,16 +733,16 @@ describe('AolAdapter', function () {
   });
 
   describe('formatOneMobileDynamicParams()', function () {
-    let consentRequiredStub;
+    let euConsentRequiredStub;
     let secureProtocolStub;
 
     beforeEach(function () {
-      consentRequiredStub = sinon.stub(spec, 'isConsentRequired');
+      euConsentRequiredStub = sinon.stub(spec, 'isEUConsentRequired');
       secureProtocolStub = sinon.stub(spec, 'isSecureProtocol');
     });
 
     afterEach(function () {
-      consentRequiredStub.restore();
+      euConsentRequiredStub.restore();
       secureProtocolStub.restore();
     });
 
@@ -648,12 +759,33 @@ describe('AolAdapter', function () {
       expect(spec.formatOneMobileDynamicParams(params)).to.contain('&param1=val1&param2=val2&param3=val3');
     });
 
-    it('should return formatted gdpr params when isConsentRequired returns true', function () {
+    it('should return formatted gdpr params when isEUConsentRequired returns true', function () {
       let consentData = {
-        consentString: 'test-consent'
+        gdpr: {
+          consentString: 'test-consent'
+        }
       };
-      consentRequiredStub.returns(true);
+      euConsentRequiredStub.returns(true);
       expect(spec.formatOneMobileDynamicParams({}, consentData)).to.be.equal('&gdpr=1&euconsent=test-consent');
+    });
+
+    it('should return formatted US privacy params when consentData contains USP data', function () {
+      let consentData = {
+        uspConsent: 'test-usp-consent'
+      };
+      expect(spec.formatMarketplaceDynamicParams({}, consentData)).to.be.equal('us_privacy=test-usp-consent;');
+    });
+
+    it('should return formatted EU and USP consent params when consentData contains gdpr and usp values', function () {
+      euConsentRequiredStub.returns(true);
+      let consentData = {
+        gdpr: {
+          consentString: 'test-consent'
+        },
+        uspConsent: 'test-usp-consent'
+      };
+      expect(spec.formatMarketplaceDynamicParams({}, consentData)).to.be.equal(
+        'gdpr=1;euconsent=test-consent;us_privacy=test-usp-consent;');
     });
 
     it('should return formatted secure param when isSecureProtocol returns true', function () {

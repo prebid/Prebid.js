@@ -20,7 +20,7 @@ export const spec = {
       const placementId = params.placement;
 
       const rnd = Math.floor(Math.random() * 99999999999);
-      const referrer = encodeURIComponent(bidderRequest.refererInfo.referer);
+      const referrer = bidderRequest.refererInfo.referer;
       const bidId = bidRequest.bidId;
       const payload = {
         _f: 'html',

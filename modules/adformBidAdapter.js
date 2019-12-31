@@ -98,7 +98,7 @@ export const spec = {
       response = responses[i];
       type = response.response === 'banner' ? BANNER : VIDEO;
       bid = bids[i];
-      if (VALID_RESPONSES[response.response] && (verifySize(response, bid.sizes) || type === VIDEO)) {
+      if (VALID_RESPONSES[response.response] && (verifySize(response, utils.getAdUnitSizes(bid)) || type === VIDEO)) {
         bidObject = {
           requestId: bid.bidId,
           cpm: response.win_bid,
@@ -117,7 +117,7 @@ export const spec = {
           mediaType: type
         };
 
-        if (!bid.renderer && utils.deepAccess(bid, 'mediaTypes.video.context') === 'outstream') {
+        if (!bid.renderer && type === VIDEO && utils.deepAccess(bid, 'mediaTypes.video.context') === 'outstream') {
           bidObject.renderer = Renderer.install({id: bid.bidId, url: OUTSTREAM_RENDERER_URL});
           bidObject.renderer.setRender(renderer);
         }

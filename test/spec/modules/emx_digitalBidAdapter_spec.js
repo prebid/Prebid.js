@@ -355,6 +355,14 @@ describe('emx_digital Adapter', function () {
       expect(request.regs.ext).to.have.property('gdpr', 0);
       expect(request).to.not.have.property('user');
     });
+    it('should add us privacy info to request', function() {
+      let consentString = '1YNN';
+      bidderRequest.uspConsent = consentString;
+      let request = spec.buildRequests(bidderRequest.bids, bidderRequest);
+      request = JSON.parse(request.data);
+      expect(request.us_privacy).to.exist;
+      expect(request.us_privacy).to.exist.and.to.equal(consentString);
+    });
   });
 
   describe('interpretResponse', function () {

@@ -21,7 +21,11 @@ describe('gumgumAdapter', function () {
         'bidfloor': 0.05
       },
       'adUnitCode': 'adunit-code',
-      'sizes': [[300, 250], [300, 600], [1, 1]],
+      'mediaTypes': {
+        'banner': {
+          sizes: [[300, 250], [300, 600], [1, 1]]
+        }
+      },
       'bidId': '30b31c1838de1e',
       'bidderRequestId': '22edbae2733bf6',
       'auctionId': '1d1a030790a475',
@@ -70,7 +74,29 @@ describe('gumgumAdapter', function () {
         },
         'adUnitCode': 'adunit-code',
         'sizes': [[300, 250], [300, 600]],
-        'bidId': '30b31c1838de1e'
+        'bidId': '30b31c1838de1e',
+        'schain': {
+          'ver': '1.0',
+          'complete': 1,
+          'nodes': [
+            {
+              'asi': 'exchange1.com',
+              'sid': '1234',
+              'hp': 1,
+              'rid': 'bid-request-1',
+              'name': 'publisher',
+              'domain': 'publisher.com'
+            },
+            {
+              'asi': 'exchange2.com',
+              'sid': 'abcd',
+              'hp': 1,
+              'rid': 'bid-request-2',
+              'name': 'intermediary',
+              'domain': 'intermediary.com'
+            }
+          ]
+        }
       }
     ];
 
@@ -91,6 +117,17 @@ describe('gumgumAdapter', function () {
       expect(bidRequest.data.pi).to.equal(2);
       expect(bidRequest.data).to.include.any.keys('t');
       expect(bidRequest.data).to.include.any.keys('fp');
+    });
+    it('should send pubId if inScreenPubID param is specified', function () {
+      const request = Object.assign({}, bidRequests[0]);
+      delete request.params;
+      request.params = {
+        'inScreenPubID': 123
+      };
+      const bidRequest = spec.buildRequests([request])[0];
+      expect(bidRequest.data).to.include.any.keys('pubId');
+      expect(bidRequest.data.pubId).to.equal(request.params.inScreenPubID);
+      expect(bidRequest.data).to.not.include.any.keys('t');
     });
     it('should correctly set the request paramters depending on params field', function () {
       const request = Object.assign({}, bidRequests[0]);
@@ -135,6 +172,12 @@ describe('gumgumAdapter', function () {
     it('should not add a tdid parameter if unified id is not found', function () {
       const request = spec.buildRequests(bidRequests)[0];
       expect(request.data).to.not.include.any.keys('tdid');
+    });
+    it('should send schain parameter in serialized form', function () {
+      const serializedForm = '1.0,1!exchange1.com,1234,1,bid-request-1,publisher,publisher.com!exchange2.com,abcd,1,bid-request-2,intermediary,intermediary.com'
+      const request = spec.buildRequests(bidRequests)[0];
+      expect(request.data).to.include.any.keys('schain');
+      expect(request.data.schain).to.eq(serializedForm);
     });
     it('should send ns parameter if browser contains navigator.connection property', function () {
       const bidRequest = spec.buildRequests(bidRequests)[0];

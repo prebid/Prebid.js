@@ -258,11 +258,12 @@ describe('Adform adapter', function () {
       };
     });
 
-    it('should set a renderer for an outstream context', function () {
-      serverResponse.body = [serverResponse.body[3]];
-      bidRequest.bids = [bidRequest.bids[6]];
+    it('should set a renderer only for an outstream context', function () {
+      serverResponse.body = [serverResponse.body[3], serverResponse.body[2]];
+      bidRequest.bids = [bidRequest.bids[6], bidRequest.bids[6]];
       let result = spec.interpretResponse(serverResponse, bidRequest);
       assert.ok(result[0].renderer);
+      assert.equal(result[1].renderer, undefined);
     });
 
     describe('verifySizes', function () {
@@ -314,9 +315,9 @@ describe('Adform adapter', function () {
   beforeEach(function () {
     config.setConfig({ currency: {} });
 
-    let sizes = [[250, 300], [300, 250], [300, 600]];
+    let sizes = [[250, 300], [300, 250], [300, 600], [600, 300]];
     let placementCode = ['div-01', 'div-02', 'div-03', 'div-04', 'div-05'];
-    let mediaTypes = [{video: {context: 'outstream'}}];
+    let mediaTypes = [{video: {context: 'outstream'}, banner: {sizes: sizes[3]}}];
     let params = [{ mid: 1, url: 'some// there' }, {adxDomain: null, mid: 2, someVar: 'someValue', pt: 'gross'}, { adxDomain: null, mid: 3, pdom: 'home' }, {mid: 5, pt: 'net'}, {mid: 6, pt: 'gross'}];
     bids = [
       {

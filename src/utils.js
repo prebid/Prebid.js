@@ -954,7 +954,7 @@ export function delayExecution(func, numRequiredCalls) {
   return function () {
     numCalls++;
     if (numCalls === numRequiredCalls) {
-      func.apply(null, arguments);
+      func.apply(this, arguments);
     }
   }
 }
@@ -1261,6 +1261,12 @@ export function setDataInLocalStorage(key, value) {
 export function getDataFromLocalStorage(key) {
   if (hasLocalStorage()) {
     return window.localStorage.getItem(key);
+  }
+}
+
+export function removeDataFromLocalStorage(key) {
+  if (hasLocalStorage()) {
+    window.localStorage.removeItem(key);
   }
 }
 

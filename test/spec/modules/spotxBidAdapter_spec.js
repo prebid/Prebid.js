@@ -148,7 +148,8 @@ describe('the spotx adapter', function () {
       };
 
       bid.userId = {
-        id5id: 'id5id_1'
+        id5id: 'id5id_1',
+        tdid: 'tdid_1'
       };
 
       bid.crumbs = {
@@ -191,6 +192,15 @@ describe('the spotx adapter', function () {
           source: 'id5-sync.com',
           uids: [{
             id: 'id5id_1'
+          }]
+        },
+        {
+          source: 'adserver.org',
+          uids: [{
+            id: 'tdid_1',
+            ext: {
+              rtiPartner: 'TDID'
+            }
           }]
         }],
         fpc: 'pubcid_1'

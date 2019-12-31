@@ -4,6 +4,7 @@
   "aolBidAdapter",
   "appnexusBidAdapter",
   "consentManagement",
+  "consentManagementUsp",
   "consumableBidAdapter",
   "dfpAdServerVideo",
   "emx_digitalBidAdapter",

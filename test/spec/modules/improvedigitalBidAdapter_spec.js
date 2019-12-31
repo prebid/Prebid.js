@@ -212,6 +212,22 @@ describe('Improve Digital Adapter Tests', function () {
       expect(params.bid_request.imp[0].ad_types).to.deep.equal(['video']);
     });
 
+    it('should not set Prebid sizes in bid request for instream video', function () {
+      const getConfigStub = sinon.stub(config, 'getConfig');
+      getConfigStub.withArgs('improvedigital.usePrebidSizes').returns(true);
+      const bidRequest = Object.assign({}, simpleBidRequest);
+      bidRequest.mediaTypes = {
+        video: {
+          context: 'instream',
+          playerSize: [640, 480]
+        }
+      };
+      const request = spec.buildRequests([bidRequest])[0];
+      const params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
+      expect(params.bid_request.imp[0].banner.format).to.not.exist;
+      getConfigStub.restore();
+    });
+
     it('should not set ad type for outstream video', function() {
       const bidRequest = Object.assign({}, simpleBidRequest);
       bidRequest.mediaTypes = {
