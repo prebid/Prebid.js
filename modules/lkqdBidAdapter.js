@@ -38,25 +38,23 @@ function buildRequests(validBidRequests, bidderRequest) {
 
     let sizes = [];
     // if width/height not provided to the ad unit for some reason then attempt request with default 640x480 size
-    if ((!bidRequest.sizes || !bidRequest.sizes.length) && (!bidRequest.mediaTypes || !bidRequest.mediaTypes.banner || !bidRequest.mediaTypes.banner.sizes || !bidRequest.mediaTypes.banner.sizes.length)) {
+    let bidRequestSizes = bidRequest.sizes;
+    let bidRequestDeepSizes = utils.deepAccess(bidRequest, 'mediaTypes.banner.sizes');
+    if ((!bidRequestSizes || !bidRequestSizes.length) && (!bidRequestDeepSizes || !bidRequestDeepSizes.length)) {
       utils.logWarn('Warning: Could not find valid width/height parameters on the provided adUnit');
       sizes = [[640, 480]];
     }
 
     // JWPlayer demo page uses sizes: [640,480] instead of sizes: [[640,480]] so need to handle single-layer array as well as nested arrays
-    if (bidRequest.sizes) {
-      sizes = bidRequest.sizes;
-      if (bidRequest.sizes.length === 2 && typeof bidRequest.sizes[0] === 'number' && typeof bidRequest.sizes[1] === 'number') {
-        let adWidth = bidRequest.sizes[0];
-        let adHeight = bidRequest.sizes[1];
-        sizes = [[adWidth, adHeight]];
+    if (bidRequestSizes && bidRequestSizes.length > 0) {
+      sizes = bidRequestSizes;
+      if (bidRequestSizes.length === 2 && typeof bidRequestSizes[0] === 'number' && typeof bidRequestSizes[1] === 'number') {
+        sizes = [bidRequestSizes];
       }
-    } else if (bidRequest.mediaTypes && bidRequest.mediaTypes.banner && bidRequest.mediaTypes.banner.sizes) {
-      sizes = bidRequest.mediaTypes.banner.sizes;
-      if (bidRequest.mediaTypes.banner.sizes.length === 2 && typeof bidRequest.mediaTypes.banner.sizes[0] === 'number' && typeof bidRequest.mediaTypes.banner.sizes[1] === 'number') {
-        let adWidth = bidRequest.mediaTypes.banner.sizes[0];
-        let adHeight = bidRequest.mediaTypes.banner.sizes[1];
-        sizes = [[adWidth, adHeight]];
+    } else if (bidRequestDeepSizes && bidRequestDeepSizes.length > 0) {
+      sizes = bidRequestDeepSizes;
+      if (bidRequestDeepSizes.length === 2 && typeof bidRequestDeepSizes[0] === 'number' && typeof bidRequestDeepSizes[1] === 'number') {
+        sizes = [bidRequestDeepSizes];
       }
     }
 
@@ -138,6 +136,9 @@ function buildRequests(validBidRequests, bidderRequest) {
       if (bidRequest.params.hasOwnProperty('flrmp') && bidRequest.params.flrmp != null) {
         sspData.flrmp = bidRequest.params.flrmp;
       }
+      if (bidRequest.params.hasOwnProperty('schain') && bidRequest.params.schain != null) {
+        sspData.schain = bidRequest.params.schain;
+      }
       if (bidRequest.params.hasOwnProperty('placement') && bidRequest.params.placement != null) {
         sspData.placement = bidRequest.params.placement;
       }
@@ -179,7 +180,7 @@ function buildRequests(validBidRequests, bidderRequest) {
       bidRequests.push({
         method: 'GET',
         url: sspUrl,
-        data: Object.keys(sspData).map(function (key) { return key + '=' + sspData[key]} ).join('&') + '&'
+        data: Object.keys(sspData).map(function (key) { return key + '=' + sspData[key] }).join('&') + '&'
       });
     }
   }
@@ -197,19 +198,42 @@ function interpretResponse(serverResponse, bidRequest) {
       try {
         let bidResponse = {};
         if (bidRequest && bidRequest.data && typeof bidRequest.data === 'string') {
-          let sspData = new URLSearchParams(bidRequest.data);
-          if (sspData && sspData.get('bidId') && sspData.get('bidId') !== '') {
+          let sspData;
+          let sspBidId;
+          let sspBidWidth;
+          let sspBidHeight;
+          if (window.URLSearchParams) {
+            sspData = new URLSearchParams(bidRequest.data);
+            sspBidId = sspData.get('bidId');
+            sspBidWidth = sspData.get('bidWidth');
+            sspBidHeight = sspData.get('bidHeight');
+          } else {
+            if (bidRequest.data.indexOf('bidId=') >= 0) {
+              sspBidId = bidRequest.data.substr(bidRequest.data.indexOf('bidId=') + 6, bidRequest.data.length);
+              sspBidId = sspBidId.split('&')[0];
+            }
+            if (bidRequest.data.indexOf('bidWidth=') >= 0) {
+              sspBidWidth = bidRequest.data.substr(bidRequest.data.indexOf('bidWidth=') + 9, bidRequest.data.length);
+              sspBidWidth = sspBidWidth.split('&')[0];
+            }
+            if (bidRequest.data.indexOf('bidHeight=') >= 0) {
+              sspBidHeight = bidRequest.data.substr(bidRequest.data.indexOf('bidHeight=') + 10, bidRequest.data.length);
+              sspBidHeight = sspBidHeight.split('&')[0];
+            }
+          }
+
+          if (sspBidId) {
             let sspXmlString = serverResponse.body;
             let sspXml = new window.DOMParser().parseFromString(sspXmlString, 'text/xml');
             if (sspXml && sspXml.getElementsByTagName('parsererror').length == 0) {
               let sspUrl = bidRequest.url.concat();
 
-              bidResponse.requestId = sspData.get('bidId');
+              bidResponse.requestId = sspBidId;
               bidResponse.bidderCode = BIDDER_CODE;
               bidResponse.ad = '';
               bidResponse.cpm = parseFloat(sspXml.getElementsByTagName('Pricing')[0].textContent);
-              bidResponse.width = sspData.get('bidWidth');
-              bidResponse.height = sspData.get('bidHeight');
+              bidResponse.width = sspBidWidth;
+              bidResponse.height = sspBidHeight;
               bidResponse.ttl = BID_TTL_DEFAULT;
               bidResponse.creativeId = sspXml.getElementsByTagName('Ad')[0].getAttribute('id');
               bidResponse.currency = sspXml.getElementsByTagName('Pricing')[0].getAttribute('currency');
