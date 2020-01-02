@@ -61,6 +61,10 @@ export const spec = {
       };
     }
 
+    if (bidderRequest && bidderRequest.uspConsent) {
+      payload.us_privacy = bidderRequest.uspConsent
+    }
+
     const payloadString = JSON.stringify(payload);
     return {
       method: 'POST',
