@@ -1,6 +1,5 @@
 import * as utils from '../src/utils';
 import { registerBidder } from '../src/adapters/bidderFactory';
-// import { config } from 'src/config';
 
 const BIDDER_CODE = 'freewheel-ssp';
 
@@ -274,7 +273,7 @@ export const spec = {
       }
     }
 
-    var location = utils.getTopWindowUrl();
+    var location = bidderRequest.refererInfo.referer;
     if (isValidUrl(location)) {
       requestParams.loc = location;
     }
