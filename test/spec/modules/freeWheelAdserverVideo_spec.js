@@ -219,7 +219,7 @@ describe('freeWheel adserver module', function() {
       }
     });
 
-    requests[0].respond(
+    server.requests[0].respond(
       200,
       { 'Content-Type': 'text/plain' },
       JSON.stringify({'responses': bidsReceived.slice(1)})
@@ -269,7 +269,7 @@ describe('freeWheel adserver module', function() {
       }
     });
 
-    requests[0].respond(
+    server.requests[0].respond(
       200,
       { 'Content-Type': 'text/plain' },
       JSON.stringify({'responses': [tier7Bid, bid]})

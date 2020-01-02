@@ -1285,7 +1285,7 @@ describe('S2S Adapter', function () {
       };
       bidRequests[0].bids[0].schain = schainObject;
       adapter.callBids(REQUEST, bidRequests, addBidResponse, done, ajax);
-      const parsedRequestBody = JSON.parse(requests[0].requestBody);
+      const parsedRequestBody = JSON.parse(server.requests[0].requestBody);
       expect(parsedRequestBody.source.ext.schain).to.deep.equal(schainObject);
     })
   });

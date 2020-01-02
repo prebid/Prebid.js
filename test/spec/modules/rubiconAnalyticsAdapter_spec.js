@@ -694,7 +694,7 @@ describe('rubicon analytics adapter', function () {
       events.emit(SET_TARGETING, setTargeting);
       events.emit(BID_WON, bidWon);
 
-      let message = JSON.parse(requests[0].requestBody);
+      let message = JSON.parse(server.requests[0].requestBody);
       validate(message);
       expect(message.auctions[0].adUnits[0].bids[0].bidResponse.bidPriceUSD).to.equal(5.5);
       expect(message.auctions[0].adUnits[0].adserverTargeting.hb_pb).to.equal('5.5');
