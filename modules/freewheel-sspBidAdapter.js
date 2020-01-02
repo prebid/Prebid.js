@@ -252,7 +252,7 @@ export const spec = {
     };
 
     // Add GDPR flag and consent string
-    if (bidderRequest.gdprConsent) {
+    if (bidderRequest && bidderRequest.gdprConsent) {
       requestParams._fw_gdpr_consent = bidderRequest.gdprConsent.consentString;
 
       if (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') {
@@ -273,7 +273,7 @@ export const spec = {
       }
     }
 
-    var location = bidderRequest.refererInfo.referer;
+    var location = (bidderRequest && bidderRequest.refererInfo) ? bidderRequest.refererInfo.referer : getTopMostWindow().location.href;
     if (isValidUrl(location)) {
       requestParams.loc = location;
     }
