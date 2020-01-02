@@ -590,6 +590,24 @@ describe('AppNexusAdapter', function () {
       expect(payload.gdpr_consent.consent_required).to.exist.and.to.be.true;
     });
 
+    it('should add us privacy string to payload', function() {
+      let consentString = '1YA-';
+      let bidderRequest = {
+        'bidderCode': 'appnexus',
+        'auctionId': '1d1a030790a475',
+        'bidderRequestId': '22edbae2733bf6',
+        'timeout': 3000,
+        'uspConsent': consentString
+      };
+      bidderRequest.bids = bidRequests;
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.us_privacy).to.exist;
+      expect(payload.us_privacy).to.exist.and.to.equal(consentString);
+    });
+
     it('supports sending hybrid mobile app parameters', function () {
       let appRequest = Object.assign({},
         bidRequests[0],
@@ -674,6 +692,50 @@ describe('AppNexusAdapter', function () {
       const request = spec.buildRequests([bidRequest]);
       const payload = JSON.parse(request.data);
       expect(payload.tpuids).to.deep.equal([{provider: 'criteo', user_id: 'sample-userid'}]);
+    });
+
+    it('should populate schain if available', function () {
+      const bidRequest = Object.assign({}, bidRequests[0], {
+        schain: {
+          ver: '1.0',
+          complete: 1,
+          nodes: [
+            {
+              'asi': 'blob.com',
+              'sid': '001',
+              'hp': 1
+            }
+          ]
+        }
+      });
+
+      const request = spec.buildRequests([bidRequest]);
+      const payload = JSON.parse(request.data);
+      expect(payload.schain).to.deep.equal({
+        ver: '1.0',
+        complete: 1,
+        nodes: [
+          {
+            'asi': 'blob.com',
+            'sid': '001',
+            'hp': 1
+          }
+        ]
+      });
+    });
+
+    it('should populate coppa if set in config', function () {
+      let bidRequest = Object.assign({}, bidRequests[0]);
+      sinon.stub(config, 'getConfig')
+        .withArgs('coppa')
+        .returns(true);
+
+      const request = spec.buildRequests([bidRequest]);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.user.coppa).to.equal(true);
+
+      config.getConfig.restore();
     });
   })
 

@@ -29,7 +29,7 @@ export const unifiedIdSubmodule = {
    * performs action to obtain id and return a value in the callback's response argument
    * @function
    * @param {SubmoduleParams} [configParams]
-   * @returns {function(callback:function)}
+   * @returns {IdResponse|undefined}
    */
   getId(configParams) {
     if (!configParams || (typeof configParams.partner !== 'string' && typeof configParams.url !== 'string')) {
@@ -39,7 +39,7 @@ export const unifiedIdSubmodule = {
     // use protocol relative urls for http or https
     const url = configParams.url || `//match.adsrvr.org/track/rid?ttd_pid=${configParams.partner}&fmt=json`;
 
-    return function (callback) {
+    const resp = function (callback) {
       ajax(url, response => {
         let responseObj;
         if (response) {
@@ -50,8 +50,9 @@ export const unifiedIdSubmodule = {
           }
         }
         callback(responseObj);
-      }, undefined, { method: 'GET', withCredentials: true });
-    }
+      }, undefined, {method: 'GET', withCredentials: true});
+    };
+    return {callback: resp};
   }
 };
 

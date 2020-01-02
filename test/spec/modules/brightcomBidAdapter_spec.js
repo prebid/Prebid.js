@@ -45,10 +45,11 @@ describe('brightcomBidAdapter', function() {
         'publisherId': 1234567
       },
       'adUnitCode': 'adunit-code',
-      'sizes': [
-        [300, 250],
-        [300, 600]
-      ],
+      'mediaTypes': {
+        'banner': {
+          'sizes': [[300, 250], [300, 600]]
+        }
+      },
       'bidId': '5fb26ac22bde4',
       'bidderRequestId': '4bf93aeb730cb9',
       'auctionId': 'ffe9a1f7-7b67-4bda-a8e0-9ee5dc9f442e'
@@ -71,10 +72,11 @@ describe('brightcomBidAdapter', function() {
         'publisherId': 1234567
       },
       'adUnitCode': 'adunit-code',
-      'sizes': [
-        [300, 250],
-        [300, 600]
-      ],
+      'mediaTypes': {
+        'banner': {
+          'sizes': [[300, 250], [300, 600]]
+        }
+      },
       'bidId': '5fb26ac22bde4',
       'bidderRequestId': '4bf93aeb730cb9',
       'auctionId': 'ffe9a1f7-7b67-4bda-a8e0-9ee5dc9f442e',
@@ -84,7 +86,7 @@ describe('brightcomBidAdapter', function() {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
-    it('should return false when tagid not passed correctly', function () {
+    it('should return false when publisherId not passed correctly', function () {
       bid.params.publisherId = undefined;
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
@@ -114,7 +116,7 @@ describe('brightcomBidAdapter', function() {
     });
 
     it('accepts a single array as a size', function() {
-      bidRequests[0].sizes = [300, 250];
+      bidRequests[0].mediaTypes.banner.sizes = [300, 250];
       const request = spec.buildRequests(bidRequests);
       const payload = JSON.parse(request.data);
       expect(payload.imp[0].banner.format).to.deep.equal([{w: 300, h: 250}]);
@@ -169,7 +171,7 @@ describe('brightcomBidAdapter', function() {
     context('when width or height of the element is zero', function() {
       it('try to use alternative values', function() {
         Object.assign(element, { width: 0, height: 0 });
-        bidRequests[0].sizes = [[800, 2400]];
+        bidRequests[0].mediaTypes.banner.sizes = [[800, 2400]];
         const request = spec.buildRequests(bidRequests);
         const payload = JSON.parse(request.data);
         expect(payload.imp[0].banner.ext.viewability).to.equal(25);
