@@ -20,6 +20,7 @@ let pubId = '';
 
 function makeAdUnitNameMap() {
   if (window.googletag && window.googletag.pubads) {
+    // eslint-disable-next-line no-undef
     const p = googletag.pubads();
     if (p && p.getSlots) {
       const slots = p.getSlots();

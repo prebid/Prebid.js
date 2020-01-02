@@ -236,6 +236,12 @@ describe('triplelift adapter', function () {
       expect(url).to.match(new RegExp('(?:' + prebid.version + ')'))
       expect(url).to.match(/(?:referrer)/);
     });
+    it('should return us_privacy param when CCPA info is available', function() {
+      bidderRequest.uspConsent = '1YYY';
+      const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
+      const url = request.url;
+      expect(url).to.match(/(\?|&)us_privacy=1YYY/);
+    });
     it('should return schain when present', function() {
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
       const { data: payload } = request;
@@ -400,6 +406,13 @@ describe('triplelift adapter', function () {
       let result = tripleliftAdapterSpec.getUserSyncs(syncOptions);
       expect(result[0].type).to.equal('iframe');
       expect(result[0].url).to.equal(expectedIframeSyncUrl);
+    });
+    it('sends us_privacy param when info is available', function() {
+      let syncOptions = {
+        iframeEnabled: true
+      };
+      let result = tripleliftAdapterSpec.getUserSyncs(syncOptions, null, null, '1YYY');
+      expect(result[0].url).to.match(/(\?|&)us_privacy=1YYY/);
     });
   });
 });
