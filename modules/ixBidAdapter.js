@@ -314,6 +314,9 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
 export const spec = {
 
   code: BIDDER_CODE,
+
+  aliases: ['indexExchange'],
+
   supportedMediaTypes: SUPPORTED_AD_TYPES,
 
   /**

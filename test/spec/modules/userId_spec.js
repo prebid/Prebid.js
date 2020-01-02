@@ -10,7 +10,7 @@ import {config} from 'src/config';
 import * as utils from 'src/utils';
 import events from 'src/events';
 import CONSTANTS from 'src/constants.json';
-import {unifiedIdSubmodule} from 'modules/userId/unifiedIdSystem';
+import {unifiedIdSubmodule} from 'modules/unifiedIdSystem';
 import {pubCommonIdSubmodule} from 'modules/userId/pubCommonIdSystem';
 import {britepoolIdSubmodule} from 'modules/britepoolIdSystem';
 import {id5IdSubmodule} from 'modules/id5IdSystem';
@@ -529,7 +529,7 @@ describe('User ID', function() {
       // check user sync is delayed after auction is ended
       mockIdCallback.calledOnce.should.equal(false);
       events.on.calledOnce.should.equal(true);
-      events.on.calledWith(CONSTANTS.EVENTS.AUCTION_END, sinon.match.func);
+      events.on.calledWith(CONSTANTS.EVENTS.REQUEST_BIDS, sinon.match.func);
 
       // once auction is ended, sync user ids after delay
       events.on.callArg(1);
@@ -563,7 +563,7 @@ describe('User ID', function() {
       // sync delay after auction is ended
       mockIdCallback.calledOnce.should.equal(false);
       events.on.calledOnce.should.equal(true);
-      events.on.calledWith(CONSTANTS.EVENTS.AUCTION_END, sinon.match.func);
+      events.on.calledWith(CONSTANTS.EVENTS.REQUEST_BIDS, sinon.match.func);
 
       // once auction is ended, if no sync delay, fetch ids
       events.on.callArg(1);
@@ -1055,7 +1055,7 @@ describe('User ID', function() {
       requestBidsHook((config) => { innerAdUnits = config.adUnits }, {adUnits});
 
       expect(utils.triggerPixel.called).to.be.false;
-      events.emit(CONSTANTS.EVENTS.AUCTION_END, {});
+      events.emit(CONSTANTS.EVENTS.REQUEST_BIDS, {});
       expect(utils.triggerPixel.getCall(0).args[0]).to.include('/any/pubcid/url');
     });
 
@@ -1071,7 +1071,7 @@ describe('User ID', function() {
       requestBidsHook((config) => { innerAdUnits = config.adUnits }, {adUnits});
 
       expect(requests).to.be.empty;
-      events.emit(CONSTANTS.EVENTS.AUCTION_END, {});
+      events.emit(CONSTANTS.EVENTS.REQUEST_BIDS, {});
       expect(requests[0].url).to.equal('/any/unifiedid/url');
     });
 
@@ -1087,7 +1087,7 @@ describe('User ID', function() {
       requestBidsHook((config) => { innerAdUnits = config.adUnits }, {adUnits});
 
       expect(requests).to.be.empty;
-      events.emit(CONSTANTS.EVENTS.AUCTION_END, {});
+      events.emit(CONSTANTS.EVENTS.REQUEST_BIDS, {});
       expect(requests[0].url).to.equal('//match.adsrvr.org/track/rid?ttd_pid=rubicon&fmt=json');
     });
 
@@ -1140,7 +1140,7 @@ describe('User ID', function() {
       });
 
       // attach a handler for auction end event to run the second bid request
-      events.on(CONSTANTS.EVENTS.AUCTION_END, function handler(submodule) {
+      events.on(CONSTANTS.EVENTS.REQUEST_BIDS, function handler(submodule) {
         if (submodule === 'parrableIdSubmoduleMock') {
           // make the second bid request, id should have been refreshed
           requestBidsHook((config) => { innerAdUnits = config.adUnits }, {adUnits});
@@ -1150,13 +1150,13 @@ describe('User ID', function() {
               expect(bid.userId.parrableid).to.equal(parrableRefreshedId);
             });
           });
-          events.off(CONSTANTS.EVENTS.AUCTION_END, handler);
+          events.off(CONSTANTS.EVENTS.REQUEST_BIDS, handler);
           done();
         }
       });
 
       // emit an auction end event to run the submodule callback
-      events.emit(CONSTANTS.EVENTS.AUCTION_END, 'parrableIdSubmoduleMock');
+      events.emit(CONSTANTS.EVENTS.REQUEST_BIDS, 'parrableIdSubmoduleMock');
     });
   });
 });
