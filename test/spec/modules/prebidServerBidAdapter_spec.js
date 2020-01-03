@@ -1629,20 +1629,14 @@ describe('S2S Adapter', function () {
   });
 
   describe('s2sConfig', function () {
-    let xhr;
-    let requests;
     let logErrorSpy;
 
     beforeEach(function () {
-      xhr = sinon.useFakeXMLHttpRequest();
-      requests = [];
-      xhr.onCreate = request => requests.push(request);
       logErrorSpy = sinon.spy(utils, 'logError');
       resetSyncedStatus();
     });
 
     afterEach(function () {
-      xhr.restore();
       utils.logError.restore();
     });
 
@@ -1872,7 +1866,7 @@ describe('S2S Adapter', function () {
 
       adapter.callBids(request, bidRequest, addBidResponse, done, ajax);
 
-      const requestBid = JSON.parse(requests[0].requestBody);
+      const requestBid = JSON.parse(server.requests[0].requestBody);
       expect(requestBid.bidders).to.deep.equal(['appnexus', 'rubicon']);
     });
   });
