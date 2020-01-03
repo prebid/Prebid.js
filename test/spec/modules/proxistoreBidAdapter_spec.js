@@ -10,7 +10,11 @@ describe('ProxistoreBidAdapter', function () {
     'gdprConsent': {
       'gdprApplies': true,
       'consentString': 'CONSENT_STRING',
-      'consentGiven': true
+      'vendorData': {
+        'vendorConsents': {
+          '418': true
+        }
+      }
     }
   };
   let bid = {
@@ -41,7 +45,13 @@ describe('ProxistoreBidAdapter', function () {
     });
     it('should contain a valid url', function () {
       expect(request[0].url).equal(url);
-    })
+    });
+    it('should have the value consentGiven to true bc we have 418 in the vendor list', function () {
+      const data = JSON.parse(request[0].data);
+      expect(data.gdpr.consentString).equal(bidderRequest.gdprConsent.consentString);
+      expect(data.gdpr.applies).to.be.true;
+      expect(data.gdpr.consentGiven).to.be.true;
+    });
   });
 
   describe('interpretResponse', function () {
@@ -74,6 +84,7 @@ describe('ProxistoreBidAdapter', function () {
       expect(interpretedResponse.height).equal(600);
       expect(interpretedResponse.width).equal(300);
       expect(interpretedResponse.requestId).equal('923756713');
+      expect(interpretedResponse.netRevenue).to.be.true;
       expect(interpretedResponse.netRevenue).to.be.true;
     })
   });
