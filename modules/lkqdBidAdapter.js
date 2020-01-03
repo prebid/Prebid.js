@@ -39,7 +39,7 @@ function buildRequests(validBidRequests, bidderRequest) {
     let sizes = [];
     // if width/height not provided to the ad unit for some reason then attempt request with default 640x480 size
     let bidRequestSizes = bidRequest.sizes;
-    let bidRequestDeepSizes = utils.deepAccess(bidRequest, 'mediaTypes.banner.sizes');
+    let bidRequestDeepSizes = utils.deepAccess(bidRequest, 'mediaTypes.video.playerSize');
     if ((!bidRequestSizes || !bidRequestSizes.length) && (!bidRequestDeepSizes || !bidRequestDeepSizes.length)) {
       utils.logWarn('Warning: Could not find valid width/height parameters on the provided adUnit');
       sizes = [[640, 480]];
