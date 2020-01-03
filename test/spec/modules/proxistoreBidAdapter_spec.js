@@ -10,6 +10,7 @@ describe('ProxistoreBidAdapter', function () {
     'gdprConsent': {
       'gdprApplies': true,
       'consentString': 'CONSENT_STRING',
+      'consentGiven': true
     }
   };
   let bid = {
@@ -66,7 +67,7 @@ describe('ProxistoreBidAdapter', function () {
       expect(spec.interpretResponse(badResponse, bid)).to.be.an('array');
       expect(spec.interpretResponse(badResponse, bid).length).equal(0);
     });
-    it('should interprnet the response correctly if it is valid', function () {
+    it('should interpret the response correctly if it is valid', function () {
       expect(interpretedResponse.cpm).equal(6.25);
       expect(interpretedResponse.creativeId).equal('48fd47c9-ce35-4fda-804b-17e16c8c36ac');
       expect(interpretedResponse.currency).equal('EUR');
