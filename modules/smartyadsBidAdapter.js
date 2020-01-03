@@ -68,7 +68,7 @@ export const spec = {
       placements.push({
         placementId: bid.params.placementId,
         bidId: bid.bidId,
-        sizes: (traff != NATIVE) ? (bid.mediaTypes[traff].sizes || bid.sizes) : [],
+        sizes: bid.mediaTypes && bid.mediaTypes[traff] && bid.mediaTypes[traff].sizes ? bid.mediaTypes[traff].sizes : [],
         traffic: traff
       });
       if (bid.schain) {

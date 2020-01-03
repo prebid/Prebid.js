@@ -33,7 +33,7 @@ describe('SmartyadsAdapter', function () {
       expect(serverRequest.method).to.equal('POST');
     });
     it('Returns valid URL', function () {
-      expect(serverRequest.url).to.equal('//ssp-nj.webtradehub.com/?c=o&m=multi');
+      expect(serverRequest.url).to.equal('https://ssp-nj.webtradehub.com/?c=o&m=multi');
     });
     it('Returns valid data if array of bids is valid', function () {
       let data = serverRequest.data;
@@ -46,7 +46,7 @@ describe('SmartyadsAdapter', function () {
       expect(data.host).to.be.a('string');
       expect(data.page).to.be.a('string');
       let placement = data['placements'][0];
-      expect(placement).to.have.keys('placementId', 'bidId', 'traffic');
+      expect(placement).to.have.keys('placementId', 'bidId', 'traffic', 'sizes');
       expect(placement.placementId).to.equal(0);
       expect(placement.bidId).to.equal('23fhj33i987f');
       expect(placement.traffic).to.equal('banner');
@@ -224,7 +224,7 @@ describe('SmartyadsAdapter', function () {
       expect(userSync[0].type).to.exist;
       expect(userSync[0].url).to.exist;
       expect(userSync[0].type).to.be.equal('image');
-      expect(userSync[0].url).to.be.equal('//ssp-nj.webtradehub.com/?c=o&m=cookie');
+      expect(userSync[0].url).to.be.equal('https://ssp-nj.webtradehub.com/?c=o&m=cookie');
     });
   });
 });
