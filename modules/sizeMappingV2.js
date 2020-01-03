@@ -17,7 +17,9 @@ export const internal = {
   checkBidderSizeConfigFormat,
   getActiveSizeBucket,
   getFilteredMediaTypes,
-  getAdUnitDetail
+  getAdUnitDetail,
+  getRelevantMediaTypesForBidder,
+  isLabelActivated
 };
 
 // 'sizeMappingInternalStore' contains information whether a particular auction is using size mapping V2 (the new size mapping spec),
@@ -459,7 +461,7 @@ export function getAdUnitDetail(auctionId, adUnit) {
 
 export function getBids({ bidderCode, auctionId, bidderRequestId, adUnits, labels, src }) {
   return adUnits.reduce((result, adUnit) => {
-    if (isLabelActivated(adUnit, labels, adUnit.code)) {
+    if (internal.isLabelActivated(adUnit, labels, adUnit.code)) {
       if (adUnit.mediaTypes && utils.isValidMediaTypes(adUnit.mediaTypes)) {
         const { activeViewport, transformedMediaTypes } = internal.getAdUnitDetail(auctionId, adUnit);
 
@@ -472,7 +474,7 @@ export function getBids({ bidderCode, auctionId, bidderRequestId, adUnits, label
         result
           .push(adUnit.bids.filter(bid => bid.bidder === bidderCode)
             .reduce((bids, bid) => {
-              if (isLabelActivated(bid, labels, adUnit.code)) {
+              if (internal.isLabelActivated(bid, labels, adUnit.code)) {
                 // handle native params
                 const nativeParams = adUnit.nativeParams || utils.deepAccess(adUnit, 'mediaTypes.native');
                 if (nativeParams) {
@@ -484,7 +486,7 @@ export function getBids({ bidderCode, auctionId, bidderRequestId, adUnits, label
                 bid = Object.assign({}, bid, utils.getDefinedParams(adUnit, ['mediaType', 'renderer']));
 
                 if (bid.sizeConfig) {
-                  const relevantMediaTypes = getRelevantMediaTypesForBidder(bid.sizeConfig, activeViewport);
+                  const relevantMediaTypes = internal.getRelevantMediaTypesForBidder(bid.sizeConfig, activeViewport);
                   if (relevantMediaTypes.length === 0) {
                     utils.logError(`SizeMappingV2:: AdUnit: ${adUnit.code}, Bidder: ${bidderCode} - sizeConfig is not configured properly. This bidder won't be eligible for sizeConfig checks and will remail active.`);
                     bid = Object.assign({}, bid);

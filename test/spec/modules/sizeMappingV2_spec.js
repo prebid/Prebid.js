@@ -1173,37 +1173,14 @@ describe('sizeMappingV2', function () {
       const expectedSizeBucketToSizeMap = {
         banner: {
           activeSizeBucket: [1600, 0],
-          activeSizeDimensions: [
-            [
-              1000,
-              300
-            ],
-            [
-              970,
-              90
-            ],
-            [
-              728,
-              90
-            ],
-            [
-              300,
-              250
-            ]
-          ]
+          activeSizeDimensions: [[1000, 300], [970, 90], [728, 90], [300, 250]]
         },
         video: {
-          activeSizeBucket: [
-            1200,
-            0
-          ],
+          activeSizeBucket: [1200, 0],
           activeSizeDimensions: []
         },
         native: {
-          activeSizeBucket: [
-            1000,
-            0
-          ],
+          activeSizeBucket: [1000, 0],
           activeSizeDimensions: 'NA'
         }
       };
@@ -1212,116 +1189,16 @@ describe('sizeMappingV2', function () {
         banner: {
           filteredSizeConfig: [
             {
-              minViewPort: [
-                1600,
-                0
-              ],
-              sizes: [
-                [
-                  1000,
-                  300
-                ],
-                [
-                  970,
-                  90
-                ],
-                [
-                  728,
-                  90
-                ],
-                [
-                  300,
-                  250
-                ]
-              ]
+              minViewPort: [1600, 0], sizes: [[1000, 300], [970, 90], [728, 90], [300, 250]]
             }
           ],
           sizeConfig: [
-            {
-              minViewPort: [
-                0,
-                0
-              ],
-              sizes: [],
-            },
-            {
-              minViewPort: [
-                750,
-                0
-              ],
-              sizes: [
-                [
-                  300,
-                  250
-                ],
-                [
-                  300,
-                  600
-                ]
-              ]
-            },
-            {
-              minViewPort: [
-                1200,
-                0
-              ],
-              sizes: [
-                [
-                  970,
-                  90
-                ],
-                [
-                  728,
-                  90
-                ],
-                [
-                  300,
-                  250
-                ]
-              ]
-            },
-            {
-              minViewPort: [
-                1600,
-                0
-              ],
-              sizes: [
-                [
-                  1000,
-                  300
-                ],
-                [
-                  970,
-                  90
-                ],
-                [
-                  728,
-                  90
-                ],
-                [
-                  300,
-                  250
-                ]
-              ]
-            }
+            { minViewPort: [0, 0], sizes: [] },
+            { minViewPort: [750, 0], sizes: [[300, 250], [300, 600]] },
+            { minViewPort: [1200, 0], sizes: [[970, 90], [728, 90], [300, 250]] },
+            { minViewPort: [1600, 0], sizes: [[1000, 300], [970, 90], [728, 90], [300, 250]] }
           ],
-          sizes: [
-            [
-              1000,
-              300
-            ],
-            [
-              970,
-              90
-            ],
-            [
-              728,
-              90
-            ],
-            [
-              300,
-              250
-            ]
+          sizes: [[1000, 300], [970, 90], [728, 90], [300, 250]
           ]
         }
       }
@@ -1368,7 +1245,7 @@ describe('sizeMappingV2', function () {
           zoneId: 498816
         },
         sizeConfig: [
-          { minViewPort: [0, 0], sizes: [] },
+          { minViewPort: [0, 0], relevantMediaTypes: ['none'] },
           { minViewPort: [700, 0], relevantMediaTypes: ['banner'] }
         ]
       }],
@@ -1411,10 +1288,20 @@ describe('sizeMappingV2', function () {
         .stub(internal, 'getAdUnitDetail')
         .withArgs('6d51e2d7-1447-4242-b6af-aaa5525a2c6e', basic_AdUnit[0])
         .returns(adUnitDetailFixture);
+
+      sinon.spy(internal, 'getRelevantMediaTypesForBidder');
+
+      sinon.spy(utils, 'logInfo');
+      sinon.spy(utils, 'logError');
+      sinon.spy(utils, 'logWarn');
     });
 
     afterEach(function () {
       internal.getAdUnitDetail.restore();
+      internal.getRelevantMediaTypesForBidder.restore();
+      utils.logInfo.restore();
+      utils.logError.restore();
+      utils.logWarn.restore();
     });
 
     it('should return an array of bids specific to the bidder', function () {
@@ -1431,7 +1318,7 @@ describe('sizeMappingV2', function () {
         }
       }
 
-      const bidRequests = getBids({
+      const bidRequests_1 = getBids({
         bidderCode: 'appnexus',
         auctionId: '6d51e2d7-1447-4242-b6af-aaa5525a2c6e',
         bidderRequestId: '393a43193a0ac',
@@ -1439,7 +1326,255 @@ describe('sizeMappingV2', function () {
         labels: [],
         src: 'client'
       });
-      expect(bidRequests[0].mediaTypes).to.deep.equal(expectedMediaTypes);
+      expect(bidRequests_1[0].mediaTypes).to.deep.equal(expectedMediaTypes);
+      expect(bidRequests_1[0].bidder).to.equal('appnexus');
+
+      const bidRequests_2 = getBids({
+        bidderCode: 'rubicon',
+        auctionId: '6d51e2d7-1447-4242-b6af-aaa5525a2c6e',
+        bidderRequestId: '393a43193a0aa',
+        adUnits: basic_AdUnit,
+        labels: [],
+        src: 'client'
+      });
+      expect(bidRequests_2[0]).to.be.undefined;
+      sinon.assert.callCount(internal.getRelevantMediaTypesForBidder, 1);
     });
+
+    it('should log an error message if ad unit is disabled because there are no active media types left after size config filtration', function () {
+      internal.getAdUnitDetail.restore();
+
+      const adUnit = utils.deepClone(basic_AdUnit);
+      adUnit[0].mediaTypes.banner.sizeConfig = [
+        { minViewPort: [0, 0], sizes: [] },
+        { minViewPort: [600, 0], sizes: [[300, 200], [400, 600]] }
+      ];
+
+      const adUnitDetailFixture = {
+        adUnitCode: 'adUnit1',
+        mediaTypes: {
+          banner: {
+            sizeConfig: [
+              { minViewPort: [0, 0], sizes: [] },
+              { minViewPort: [600, 0], sizes: [[300, 200], [400, 600]] }
+            ]
+          }
+        },
+        sizeBucketToSizeMap: {
+          banner: {
+            activeSizeBucket: [0, 0],
+            activeSizeDimensions: [[]]
+          }
+        },
+        activeViewport: [560, 260],
+        transformedMediaTypes: {}
+      };
+
+      sinon
+        .stub(internal, 'getAdUnitDetail')
+        .withArgs('6d51e2d7-1447-4242-b6af-aaa5525a2c6e', adUnit[0])
+        .returns(adUnitDetailFixture);
+
+      const bidRequests = getBids({
+        bidderCode: 'appnexus',
+        auctionId: '6d51e2d7-1447-4242-b6af-aaa5525a2c6e',
+        bidderRequestId: '393a43193a0ac',
+        adUnits: adUnit,
+        labels: [],
+        src: 'client'
+      });
+      expect(bidRequests[0]).to.be.undefined;
+      sinon.assert.callCount(utils.logInfo, 1);
+      sinon.assert.calledWith(utils.logInfo, `SizeMappingV2:: Ad Unit: adUnit1 is disabled since there are no active media types after sizeConfig filtration.`);
+    });
+
+    it('should throw an error if bidder level sizeConfig is not configured properly', function () {
+      internal.getAdUnitDetail.restore();
+
+      const adUnit = utils.deepClone(basic_AdUnit);
+      adUnit[0].bids[1].sizeConfig = [
+        { minViewPort: [], relevantMediaTypes: ['none'] },
+        { minViewPort: [700, 0], relevantMediaTypes: ['banner'] }
+      ];
+
+      sinon
+        .stub(internal, 'getAdUnitDetail')
+        .withArgs('6d51e2d7-1447-4242-b6af-aaa5525a2c6e', adUnit[0])
+        .returns(adUnitDetailFixture);
+
+      const bidRequests = getBids({
+        bidderCode: 'rubicon',
+        auctionId: '6d51e2d7-1447-4242-b6af-aaa5525a2c6e',
+        bidderRequestId: '393a43193a0ac',
+        adUnits: adUnit,
+        labels: [],
+        src: 'client'
+      });
+
+      expect(bidRequests[0]).to.not.be.undefined;
+      sinon.assert.callCount(utils.logError, 1);
+      sinon.assert.calledWith(utils.logError, `SizeMappingV2:: AdUnit: adUnit1, Bidder: rubicon - sizeConfig is not configured properly. This bidder won't be eligible for sizeConfig checks and will remail active.`);
+    });
+
+    it('should ensure bidder relevantMediaTypes is a subset of active media types at the ad unit level', function () {
+      internal.getAdUnitDetail.restore();
+
+      const adUnit = utils.deepClone(basic_AdUnit);
+      adUnit[0].bids[1].sizeConfig = [
+        { minViewPort: [0, 0], relevantMediaTypes: ['none'] },
+        { minViewPort: [400, 0], relevantMediaTypes: ['banner'] }
+      ];
+
+      sinon
+        .stub(internal, 'getAdUnitDetail')
+        .withArgs('6d51e2d7-1447-4242-b6af-aaa5525a2c6e', adUnit[0])
+        .returns(adUnitDetailFixture);
+
+      const bidRequests = getBids({
+        bidderCode: 'rubicon',
+        auctionId: '6d51e2d7-1447-4242-b6af-aaa5525a2c6e',
+        bidderRequestId: '393a43193a0ac',
+        adUnits: adUnit,
+        labels: [],
+        src: 'client'
+      });
+      expect(bidRequests[0]).to.not.be.undefined;
+      expect(bidRequests[0].mediaTypes.banner).to.not.be.undefined;
+      expect(bidRequests[0].mediaTypes.banner.sizes).to.deep.equal([[300, 200], [400, 600]]);
+    });
+
+    it('should logInfo if bidder relevantMediaTypes contains media type that is not active at the ad unit level', function () {
+      internal.getAdUnitDetail.restore();
+
+      const adUnit = utils.deepClone(basic_AdUnit);
+      adUnit[0].mediaTypes = {
+        banner: {
+          sizeConfig: [
+            { minViewPort: [0, 0], sizes: [] },
+            { minViewPort: [700, 0], sizes: [[300, 200], [400, 600]] }
+          ]
+        },
+        native: {
+          sizeConfig: [
+            { minViewPort: [0, 0], active: false },
+            { minViewPort: [400, 0], active: true }
+          ]
+        }
+      };
+
+      adUnit[0].bids[1].sizeConfig = [
+        { minViewPort: [0, 0], relevantMediaTypes: ['none'] },
+        { minViewPort: [200, 0], relevantMediaTypes: ['banner'] }
+      ]
+
+      const adUnitDetailFixture = {
+        adUnitCode: 'adUnit1',
+        mediaTypes: {
+          banner: {
+            sizeConfig: [
+              { minViewPort: [0, 0], sizes: [] },
+              { minViewPort: [700, 0], sizes: [[300, 200], [400, 600]] }
+            ]
+          },
+          native: {
+            sizeConfig: [
+              { minViewPort: [0, 0], active: false },
+              { minViewPort: [400, 0], active: true }
+            ]
+          }
+        },
+        sizeBucketToSizeMap: {
+          banner: {
+            activeSizeBucket: [0, 0],
+            activeSizeDimensions: [[]]
+          },
+          native: {
+            activeSizeBucket: [400, 0],
+            activeSizeDimensions: 'NA'
+          }
+        },
+        activeViewport: [560, 260],
+        transformedMediaTypes: {
+          native: {}
+        }
+      };
+
+      sinon
+        .stub(internal, 'getAdUnitDetail')
+        .withArgs('6d51e2d7-1447-4242-b6af-aaa5525a2c6e', adUnit[0])
+        .returns(adUnitDetailFixture);
+
+      const bidRequests = getBids({
+        bidderCode: 'rubicon',
+        auctionId: '6d51e2d7-1447-4242-b6af-aaa5525a2c6e',
+        bidderRequestId: '393a43193a0ac',
+        adUnits: adUnit,
+        labels: [],
+        src: 'client'
+      });
+      expect(bidRequests[0]).to.be.undefined;
+      sinon.assert.callCount(utils.logInfo, 1);
+      sinon.assert.calledWith(utils.logInfo, `SizeMappingV2:: AdUnit: adUnit1, Bidder: rubicon - 'relevantMediaTypes' for this bidder does not match with any of the active mediaTypes at the Ad Unit level. This bidder is disabled.`);
+    });
+
+    it('should throw a warning if mediaTypes object is not correctly formatted', function () {
+      sinon
+        .stub(utils, 'isValidMediaTypes')
+        .returns(false);
+
+      getBids({
+        bidderCode: 'appnexus',
+        auctionId: '6d51e2d7-1447-4242-b6af-aaa5525a2c6e',
+        bidderRequestId: '393a43193a0ac',
+        adUnits: basic_AdUnit,
+        labels: [],
+        src: 'client'
+      });
+      sinon.assert.callCount(utils.logWarn, 1);
+      sinon.assert.calledWith(utils.logWarn, `SizeMappingV2:: Ad Unit: adUnit1 has declared invalid mediaTypes or has not declared a mediaTypes property`);
+
+      utils.isValidMediaTypes.restore();
+    });
+
+    it('should log a message if ad unit is disabled due to a failing label check', function () {
+      sinon
+        .stub(internal, 'isLabelActivated')
+        .onFirstCall()
+        .returns(false);
+
+      getBids({
+        bidderCode: 'appnexus',
+        auctionId: '6d51e2d7-1447-4242-b6af-aaa5525a2c6e',
+        bidderRequestId: '393a43193a0ac',
+        adUnits: basic_AdUnit,
+        labels: [],
+        src: 'client'
+      });
+
+      sinon.assert.callCount(utils.logInfo, 1);
+      sinon.assert.calledWith(utils.logInfo, `SizeMappingV2:: Ad Unit: adUnit1 is disabled due to failing label check.`);
+
+      internal.isLabelActivated.restore();
+    });
+
+    it('should log a message if bidder is disabled due to a failing label check', function () {
+      const stub = sinon.stub(internal, 'isLabelActivated')
+      stub.onFirstCall().returns(true);
+      stub.onSecondCall().returns(false);
+
+      getBids({
+        bidderCode: 'appnexus',
+        auctionId: '6d51e2d7-1447-4242-b6af-aaa5525a2c6e',
+        bidderRequestId: '393a43193a0ac',
+        adUnits: basic_AdUnit,
+        labels: [],
+        src: 'client'
+      });
+
+      sinon.assert.callCount(utils.logInfo, 1);
+      sinon.assert.calledWith(utils.logInfo, `SizeMappingV2:: AdUnit: adUnit1, Bidder: appnexus - Label check for this bidder has failed. This bidder is disabled.`);
+
+      internal.isLabelActivated.restore();
+    })
   });
 });
