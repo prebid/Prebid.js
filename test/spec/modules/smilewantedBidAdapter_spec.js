@@ -151,11 +151,11 @@ describe('smilewantedBidAdapterTests', function () {
   it('SmileWanted - Verify build request with referrer', function () {
     const request = spec.buildRequests(DISPLAY_REQUEST, {
       refererInfo: {
-        referer: 'http://localhost/Prebid.js/integrationExamples/gpt/hello_world.html'
+        referer: 'https://localhost/Prebid.js/integrationExamples/gpt/hello_world.html'
       }
     });
     const requestContent = JSON.parse(request[0].data);
-    expect(requestContent).to.have.property('pageDomain').and.to.equal('http://localhost/Prebid.js/integrationExamples/gpt/hello_world.html');
+    expect(requestContent).to.have.property('pageDomain').and.to.equal('https://localhost/Prebid.js/integrationExamples/gpt/hello_world.html');
   });
 
   describe('gdpr tests', function () {

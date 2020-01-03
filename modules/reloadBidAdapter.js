@@ -182,7 +182,7 @@ function ReloadClientTool(args) {
 
     if (typeof _memFile.srvUrl === 'string' && _memFile.srvUrl !== '') effSrvUrl = _memFile.srvUrl;
 
-    return _getProtocolString() + effSrvUrl + '/bid';
+    return 'https://' + effSrvUrl + '/bid';
 
     function getBidServerUrl (idx) {
       return 'bidsrv' + getTwoDigitString(idx) + '.reload.net';
@@ -409,14 +409,6 @@ function ReloadClientTool(args) {
     } catch (err) {
       return null;
     }
-  }
-
-  function _getProtocolString () {
-    var wnd = null;
-    try { wnd = top; } catch (err) { wnd = window; }
-
-    if (wnd.location.protocol.toLowerCase().indexOf('http:') >= 0) return 'http://';
-    else return 'https://';
   }
 };
 

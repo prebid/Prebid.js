@@ -1,7 +1,41 @@
 import {expect} from 'chai';
 import * as _ from 'lodash';
-import {spec, matchRequest, checkDeepArray, defaultSize} from '../../../modules/districtmDMXBidAdapter';
+import {spec, matchRequest, checkDeepArray, defaultSize, upto5, cleanSizes, shuffle} from '../../../modules/districtmDMXBidAdapter';
 
+const supportedSize = [
+  {
+    size: [300, 250],
+    s: 100
+  },
+  {
+    size: [728, 90],
+    s: 95
+  },
+  {
+    size: [300, 600],
+    s: 90
+  },
+  {
+    size: [160, 600],
+    s: 88
+  },
+  {
+    size: [320, 50],
+    s: 85
+  },
+  {
+    size: [300, 50],
+    s: 80
+  },
+  {
+    size: [970, 250],
+    s: 75
+  },
+  {
+    size: [970, 90],
+    s: 60
+  },
+];
 const bidRequest = [{
   'bidder': 'districtmDMX',
   'params': {
@@ -41,6 +75,7 @@ const bidderRequest = {
   }],
   'auctionStart': 1529511035677,
   'timeout': 700,
+  'uspConsent': '1NY',
   'gdprConsent': {
     'consentString': 'BOPqNzUOPqNzUAHABBAAA5AAAAAAAA',
     'vendorData': {
@@ -422,6 +457,12 @@ const emptyResponseSeatBid = { body: { seatbid: [] } };
 
 describe('DistrictM Adaptor', function () {
   const districtm = spec;
+  describe('verification of upto5', function() {
+    it('upto5 function should always break 12 imps into 3 request same for 15', function() {
+      expect(upto5([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], bidRequest, bidderRequest, 'https://google').length).to.be.equal(3)
+      expect(upto5([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15], bidRequest, bidderRequest, 'https://google').length).to.be.equal(3)
+    })
+  })
   describe('All needed functions are available', function () {
     it(`isBidRequestValid is present and type function`, function () {
       expect(districtm.isBidRequestValid).to.exist.and.to.be.a('function')
@@ -483,6 +524,12 @@ describe('DistrictM Adaptor', function () {
     const buildRequestResults = districtm.buildRequests(bidRequest, bidderRequest);
     it(`the function should return an array`, function () {
       expect(buildRequestResults).to.be.an('object');
+    });
+    it(`contain gdpr consent & ccpa`, function() {
+      const bidr = JSON.parse(buildRequestResults.data)
+      expect(bidr.regs.ext.gdpr).to.be.equal(1);
+      expect(bidr.regs.ext.us_privacy).to.be.equal('1NY');
+      expect(bidr.user.ext.consent).to.be.an('string');
     });
     it(`the function should return array length of 1`, function () {
       expect(buildRequestResults.data).to.be.a('string');

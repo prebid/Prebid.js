@@ -1,4 +1,5 @@
 import * as utils from '../src/utils'
+import {parse} from '../src/url'
 import { registerBidder } from '../src/adapters/bidderFactory'
 import { BANNER } from '../src/mediaTypes'
 
@@ -59,10 +60,9 @@ export const spec = {
       });
 
       const page = bidderRequest.refererInfo.referer
+
       // clever trick to get the domain
-      const el = document.createElement('a');
-      el.href = page;
-      const domain = el.hostname;
+      const domain = parse(page).hostname
 
       const sovrnBidReq = {
         id: utils.getUniqueIdentifierStr(),
@@ -81,15 +81,12 @@ export const spec = {
         };
       }
 
-      if (bidderRequest && bidderRequest.gdprConsent) {
-        sovrnBidReq.regs = {
-          ext: {
-            gdpr: +bidderRequest.gdprConsent.gdprApplies
-          }};
-        sovrnBidReq.user = {
-          ext: {
-            consent: bidderRequest.gdprConsent.consentString
-          }};
+      if (bidderRequest.gdprConsent) {
+        utils.deepSetValue(sovrnBidReq, 'regs.ext.gdpr', +bidderRequest.gdprConsent.gdprApplies);
+        utils.deepSetValue(sovrnBidReq, 'user.ext.consent', bidderRequest.gdprConsent.consentString)
+      }
+      if (bidderRequest.uspConsent) {
+        utils.deepSetValue(sovrnBidReq, 'regs.ext.us_privacy', bidderRequest.uspConsent);
       }
 
       if (digitrust) {
@@ -151,28 +148,33 @@ export const spec = {
     }
   },
 
-  getUserSyncs: function(syncOptions, serverResponses, gdprConsent) {
+  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
     try {
-      let tracks = []
+      const tracks = []
       if (serverResponses && serverResponses.length !== 0) {
         if (syncOptions.iframeEnabled) {
-          let iidArr = serverResponses.filter(resp => utils.deepAccess(resp, 'body.ext.iid'))
+          const iidArr = serverResponses.filter(resp => utils.deepAccess(resp, 'body.ext.iid'))
             .map(resp => resp.body.ext.iid);
-          let consentString = '';
+          const params = [];
           if (gdprConsent && gdprConsent.gdprApplies && typeof gdprConsent.consentString === 'string') {
-            consentString = gdprConsent.consentString
+            params.push(['gdpr_consent', gdprConsent.consentString]);
           }
+          if (uspConsent) {
+            params.push(['us_privacy', uspConsent]);
+          }
+
           if (iidArr[0]) {
+            params.push(['informer', iidArr[0]]);
             tracks.push({
               type: 'iframe',
-              url: '//ap.lijit.com/beacon?informer=' + iidArr[0] + '&gdpr_consent=' + consentString,
+              url: 'https://ap.lijit.com/beacon?' + params.map(p => p.join('=')).join('&')
             });
           }
         }
 
         if (syncOptions.pixelEnabled) {
           serverResponses.filter(resp => utils.deepAccess(resp, 'body.ext.sync.pixels'))
-            .flatMap(resp => resp.body.ext.sync.pixels)
+            .reduce((acc, resp) => acc.concat(resp.body.ext.sync.pixels), [])
             .map(pixel => pixel.url)
             .forEach(url => tracks.push({ type: 'image', url }))
         }

@@ -97,6 +97,15 @@ describe('Yieldone Prebid Analytic', function () {
               mediaTypes: {banner: {sizes: [[300, 250], [336, 280]]}},
               params: {param_1: '111', param_2: '222'},
               sizes: [[300, 250], [336, 280]]
+            },
+            {
+              adUnitCode: '0000',
+              auctionId: auctionId,
+              bidId: '14151',
+              bidder: 'biddertest_3',
+              mediaTypes: {banner: {sizes: [[300, 250], [336, 280]]}},
+              params: {param_1: '333', param_2: '222'},
+              sizes: [[300, 250], [336, 280]]
             }
           ]
         }
@@ -138,6 +147,11 @@ describe('Yieldone Prebid Analytic', function () {
         },
         {
           bidId: '12131',
+          auctionId: auctionId,
+          bidder: 'biddertest_3'
+        },
+        {
+          bidId: '14151',
           auctionId: auctionId,
           bidder: 'biddertest_3'
         }
@@ -234,7 +248,7 @@ describe('Yieldone Prebid Analytic', function () {
       events.emit(constants.EVENTS.BID_RESPONSE, responses[1]);
       events.emit(constants.EVENTS.BID_RESPONSE, responses[2]);
 
-      events.emit(constants.EVENTS.BID_TIMEOUT, [responses[3]]);
+      events.emit(constants.EVENTS.BID_TIMEOUT, [responses[3], responses[4]]);
 
       events.emit(constants.EVENTS.AUCTION_END, {auctionId: auctionId});
 

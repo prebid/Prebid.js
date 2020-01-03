@@ -454,11 +454,11 @@ describe('33acrossBidAdapter:', function () {
       ttxRequest = new TtxRequestBuilder()
         .withSite({
           id: SITE_ID,
-          page: 'http://test-url.com'
+          page: 'https://test-url.com'
         })
         .build();
       serverRequest = new ServerRequestBuilder()
-        .withUrl('//staging-ssc.33across.com/api/v1/hb')
+        .withUrl('https://staging-ssc.33across.com/api/v1/hb')
         .withData(ttxRequest)
         .withOptions({
           contentType: 'text/plain',
@@ -579,11 +579,11 @@ describe('33acrossBidAdapter:', function () {
       syncs = [
         {
           type: 'iframe',
-          url: 'https://de.tynt.com/deb/v2?m=xch&rt=html&id=id1'
+          url: 'https://ssc-cms.33across.com/ps/?m=xch&rt=html&ru=deb&id=id1'
         },
         {
           type: 'iframe',
-          url: 'https://de.tynt.com/deb/v2?m=xch&rt=html&id=id2'
+          url: 'https://ssc-cms.33across.com/ps/?m=xch&rt=html&ru=deb&id=id2'
         },
       ];
       bidRequests = [

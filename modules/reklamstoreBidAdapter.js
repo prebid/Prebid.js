@@ -3,7 +3,7 @@ import { registerBidder } from '../src/adapters/bidderFactory';
 import { BANNER } from '../src/mediaTypes';
 
 const BIDDER_CODE = 'reklamstore';
-const ENDPOINT_URL = '//ads.rekmob.com/m/prebid';
+const ENDPOINT_URL = 'https://ads.rekmob.com/m/prebid';
 const CURRENCY = 'USD';
 const TIME_TO_LIVE = 360;
 

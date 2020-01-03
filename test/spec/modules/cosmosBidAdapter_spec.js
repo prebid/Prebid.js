@@ -87,7 +87,7 @@ describe('Cosmos adapter', function () {
             'id': '82DAAE22-FF66-4FAB-84AB-347B0C5CD02C',
             'impid': '39f5cc6eff9b37',
             'price': 0.858309,
-            'adm': '<?xml version=\"1.0" encoding=\"UTF-8"?><VAST version=\"2.0"><Ad id=\"1"><InLine><AdSystem>CosmosHQ</AdSystem><AdTitle>VAST 2.0 Instream Test 1</AdTitle><Description>VAST 2.0 Instream Test 1</Description><Impression>https://track.cosmoshq.com/event?data=%7B%22id%22%3A%221566011421045%22%2C%22bid%22%3A%2282DAAE22-FF66-4FAB-84AB-347B0C5CD02C%22%2C%22ts%22%3A%2220190817031021%22%2C%22pid%22%3A1001%2C%22plcid%22%3A1%2C%22aid%22%3A1%2C%22did%22%3A1%2C%22cid%22%3A%2222918%22%2C%22af%22%3A3%2C%22at%22%3A1%2C%22w%22%3A300%2C%22h%22%3A250%2C%22crid%22%3A%22v55jutrh%22%2C%22pp%22%3A0.858309%2C%22cp%22%3A0.858309%2C%22mg%22%3A0%7D&amp;type=1</Impression><Impression>http://track.dsp.impression.com/impression</Impression><Creatives><Creative AdID=\"1"><Linear><Duration>00:00:60</Duration><TrackingEvents/><MediaFiles><MediaFile delivery=\"progressive" type=\"video/mp4" bitrate=\"500" width=\"400" height=\"300" scalable=\"true" maintainAspectRatio=\"true">http://sync.cosmoshq.com/static/video/SampleVideo_1280x720_10mb.mp4</MediaFile></MediaFiles></Linear></Creative></Creatives></InLine></Ad></VAST>',
+            'adm': '<?xml version=\"1.0" encoding=\"UTF-8"?><VAST version=\"2.0"><Ad id=\"1"><InLine><AdSystem>CosmosHQ</AdSystem><AdTitle>VAST 2.0 Instream Test 1</AdTitle><Description>VAST 2.0 Instream Test 1</Description><Impression>https://track.cosmoshq.com/event?data=%7B%22id%22%3A%221566011421045%22%2C%22bid%22%3A%2282DAAE22-FF66-4FAB-84AB-347B0C5CD02C%22%2C%22ts%22%3A%2220190817031021%22%2C%22pid%22%3A1001%2C%22plcid%22%3A1%2C%22aid%22%3A1%2C%22did%22%3A1%2C%22cid%22%3A%2222918%22%2C%22af%22%3A3%2C%22at%22%3A1%2C%22w%22%3A300%2C%22h%22%3A250%2C%22crid%22%3A%22v55jutrh%22%2C%22pp%22%3A0.858309%2C%22cp%22%3A0.858309%2C%22mg%22%3A0%7D&amp;type=1</Impression><Impression>https//track.dsp.impression.com/impression</Impression><Creatives><Creative AdID=\"1"><Linear><Duration>00:00:60</Duration><TrackingEvents/><MediaFiles><MediaFile delivery=\"progressive" type=\"video/mp4" bitrate=\"500" width=\"400" height=\"300" scalable=\"true" maintainAspectRatio=\"true">https//sync.cosmoshq.com/static/video/SampleVideo_1280x720_10mb.mp4</MediaFile></MediaFiles></Linear></Creative></Creatives></InLine></Ad></VAST>',
             'adid': 'v55jutrh',
             'adomain': ['febreze.com'],
             'iurl': 'https://thetradedesk-t-general.s3.amazonaws.com/AdvertiserLogos/vgl908z.png',
@@ -202,7 +202,7 @@ describe('Cosmos adapter', function () {
 
       it('build request object: endpoint check', function () {
         let request = spec.buildRequests(bannerBidRequests);
-        expect(request[0].url).to.equal('//bid.cosmoshq.com/openrtb2/bids');
+        expect(request[0].url).to.equal('https://bid.cosmoshq.com/openrtb2/bids');
         expect(request[0].method).to.equal('POST');
       });
 
