@@ -41,7 +41,6 @@ describe('ProxistoreBidAdapter', function () {
       expect(request.method).to.exist;
       expect(request.url).to.exist;
       expect(request.data).to.exist;
-      console.log(request);
     });
     it('request method should be POST', function () {
       expect(request.method).to.equal('POST');
