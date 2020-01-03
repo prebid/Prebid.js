@@ -1,6 +1,7 @@
 const { registerBidder } = require('../src/adapters/bidderFactory');
 const BIDDER_CODE = 'proxistore';
 const PROXISTORE_VENDOR_ID = 418;
+
 function _getFormatSize(sizeArr) {
   return {
     width: sizeArr[0],
@@ -8,14 +9,14 @@ function _getFormatSize(sizeArr) {
   }
 }
 
-function _createServerRequest(bidRequest, bidderRequest) {
+function _createServerRequest(bidRequests, bidderRequest) {
   const payload = {
-    bidId: bidRequest.bidId,
-    auctionId: bidRequest.auctionId,
-    transactionId: bidRequest.transactionId,
-    sizes: bidRequest.sizes.map(_getFormatSize),
-    website: bidRequest.params.website,
-    language: bidRequest.params.language,
+    bidId: bidRequests.map(req => req.bidId),
+    auctionId: bidRequests[0].auctionId,
+    transactionId: bidRequests[0].transactionId,
+    sizes: bidRequests.map(x => x.sizes).map(e => [].concat.apply([], e)).map(req => req.sizes.map(_getFormatSize)),
+    website: bidRequests[0].params.website,
+    language: bidRequests[0].params.language,
     gdpr: {
       applies: false
     }
@@ -41,7 +42,7 @@ function _createServerRequest(bidRequest, bidderRequest) {
 
   return {
     method: 'POST',
-    url: bidRequest.params.url || '//abs.proxistore.com/' + bidRequest.params.language + '/v3/rtb/prebid',
+    url: bidRequests[0].params.url || '//abs.proxistore.com/' + payload.language + '/v3/rtb/prebid',
     data: JSON.stringify(payload),
     options: options
   };
@@ -82,12 +83,8 @@ function isBidRequestValid(bid) {
  * @return ServerRequest Info describing the request to the server.
  */
 function buildRequests(bidRequests, bidderRequest) {
-  var requests = [];
-  for (var i = 0; i < bidRequests.length; i++) {
-    var prebidReq = _createServerRequest(bidRequests[i], bidderRequest);
-    requests.push(prebidReq);
-  }
-  return requests;
+  var request = _createServerRequest(bidRequests, bidderRequest);
+  return request;
 }
 
 /**
