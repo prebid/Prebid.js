@@ -224,7 +224,7 @@ export const spec = {
       var env = (typeof utils.getParameterByName === 'function') && (utils.getParameterByName('nobid-env'));
       if (!env) ret = 'https://ads.servenobid.com/';
       else if (env == 'beta') ret = 'https://beta.servenobid.com/';
-      else if (env == 'dev') ret = '//localhost:8282/';
+      else if (env == 'dev') ret = 'https://localhost:8282/';
       else if (env == 'qa') ret = 'https://qa-ads.nobid.com/';
       return ret;
     }

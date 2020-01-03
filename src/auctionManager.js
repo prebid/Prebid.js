@@ -35,6 +35,7 @@ export function newAuctionManager() {
   auctionManager.addWinningBid = function(bid) {
     const auction = find(_auctions, auction => auction.getAuctionId() === bid.auctionId);
     if (auction) {
+      bid.status = CONSTANTS.BID_STATUS.RENDERED;
       auction.addWinningBid(bid);
     } else {
       utils.logWarn(`Auction not found when adding winning bid`);

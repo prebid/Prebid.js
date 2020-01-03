@@ -29,7 +29,7 @@ describe('reklamstoreBidAdapterTests', function() {
   it('validate_generated_params', function() {
     let bidderRequest = {
       refererInfo: {
-        referer: 'http://reklamstore.com'
+        referer: 'https://reklamstore.com'
       }
     };
     request = spec.buildRequests(bidRequestData.bids, bidderRequest);
@@ -47,11 +47,11 @@ describe('reklamstoreBidAdapterTests', function() {
         h: 250,
         syncs: [{
           type: 'image',
-          url: 'http://link1'
+          url: 'https://link1'
         },
         {
           type: 'iframe',
-          url: 'http://link2'
+          url: 'https://link2'
         }
         ]
       }
@@ -77,8 +77,8 @@ describe('reklamstoreBidAdapterTests', function() {
   it('should return user syncs', function () {
     const syncs = spec.getUserSyncs({pixelEnabled: true, iframeEnabled: true}, [serverResponse]);
     const expected = [
-      { type: 'image', url: 'http://link1' },
-      { type: 'iframe', url: 'http://link2' },
+      { type: 'image', url: 'https://link1' },
+      { type: 'iframe', url: 'https://link2' },
     ];
     expect(syncs).to.deep.equal(expected);
   });
