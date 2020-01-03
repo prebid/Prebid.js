@@ -36,18 +36,21 @@ describe('ProxistoreBidAdapter', function () {
   describe('buildRequests', function () {
     const url = '//abs.proxistore.com/fr/v3/rtb/prebid';
     const request = spec.buildRequests([bid], bidderRequest);
-    it('should return an empty array if no cookie sent', function () {
-      expect(request).to.be.an('array');
-      expect(request.length).to.equal(1);
+    it('should return a valid object', function () {
+      expect(request).to.be.an('object');
+      expect(request.method).to.exist;
+      expect(request.url).to.exist;
+      expect(request.data).to.exist;
+      console.log(request);
     });
     it('request method should be POST', function () {
-      expect(request[0].method).to.equal('POST');
+      expect(request.method).to.equal('POST');
     });
     it('should contain a valid url', function () {
-      expect(request[0].url).equal(url);
+      expect(request.url).equal(url);
     });
     it('should have the value consentGiven to true bc we have 418 in the vendor list', function () {
-      const data = JSON.parse(request[0].data);
+      const data = JSON.parse(request.data);
       expect(data.gdpr.consentString).equal(bidderRequest.gdprConsent.consentString);
       expect(data.gdpr.applies).to.be.true;
       expect(data.gdpr.consentGiven).to.be.true;

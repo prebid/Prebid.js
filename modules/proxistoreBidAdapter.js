@@ -2,19 +2,12 @@ const { registerBidder } = require('../src/adapters/bidderFactory');
 const BIDDER_CODE = 'proxistore';
 const PROXISTORE_VENDOR_ID = 418;
 
-function _getFormatSize(sizeArr) {
-  return {
-    width: sizeArr[0],
-    height: sizeArr[1]
-  }
-}
-
 function _createServerRequest(bidRequests, bidderRequest) {
   const payload = {
     bidId: bidRequests.map(req => req.bidId),
     auctionId: bidRequests[0].auctionId,
     transactionId: bidRequests[0].transactionId,
-    sizes: bidRequests.map(x => x.sizes).map(e => [].concat.apply([], e)).map(req => req.sizes.map(_getFormatSize)),
+    sizes: bidRequests.map(x => x.sizes).map(x => { return {'width': x[0], 'height': x[1]} }),
     website: bidRequests[0].params.website,
     language: bidRequests[0].params.language,
     gdpr: {
