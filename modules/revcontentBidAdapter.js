@@ -25,7 +25,7 @@ const NATIVE_PARAMS = {
 
 export const spec = {
   code: BIDDER_CODE,
-  supportedMediaTypes: ['banner', 'native', 'video'],
+  supportedMediaTypes: ['native'],
   isBidRequestValid: function (bid) {
     return (typeof bid.params.apiKey !== 'undefined' && typeof bid.params.userId !== 'undefined' && bid.hasOwnProperty('nativeParams'));
   },
@@ -50,13 +50,11 @@ export const spec = {
       domain = extractHostname(refererInfo);
     }
 
-    var endpoint = '//' + host + '/rtb?apiKey=' + apiKey + '&userId=' + userId;
+    var endpoint = 'https://' + host + '/rtb?apiKey=' + apiKey + '&userId=' + userId;
 
     if (!isNaN(widgetId) && widgetId > 0) {
       endpoint = endpoint + '&widgetId=' + widgetId;
     }
-
-    let secure = location.protocol === 'https:';
 
     const imp = validBidRequests.map((bid, id) => {
       if (bid.hasOwnProperty('nativeParams')) {
@@ -109,7 +107,7 @@ export const spec = {
           },
           instl: 0,
           bidfloor: 0.1,
-          secure: secure ? '1' : '0'
+          secure: '1'
         };
       }
     });
@@ -265,6 +263,9 @@ function getTemplate(size, customTemplate) {
 }
 
 function extractHostname(url) {
+  if (typeof url == 'undefined' || url == null) {
+    return '';
+  }
   var hostname;
   if (url.indexOf('//') > -1) {
     hostname = url.split('/')[2];
