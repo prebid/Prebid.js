@@ -17,7 +17,8 @@ function isBidResponseValid(bid) {
     case VIDEO:
       return Boolean(bid.vastUrl);
     case NATIVE:
-      return Boolean(bid.native);
+      const n = bid.native
+      return Boolean(n) && Boolean(n.title) && Boolean(n.body) && Boolean(n.image) && Boolean(n.impression_trackers);
     default:
       return false;
   }
@@ -57,7 +58,7 @@ export const spec = {
       'deviceWidth': winTop.screen.width,
       'deviceHeight': winTop.screen.height,
       'language': (navigator && navigator.language) ? navigator.language : '',
-      'secure': location.protocol === 'https:' ? 1 : 0,
+      'secure': location.protocol === 1,
       'host': location.host,
       'page': location.pathname,
       'placements': placements

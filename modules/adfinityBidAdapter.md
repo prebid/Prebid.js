@@ -12,34 +12,55 @@ Module that connects to Adfinity demand sources
 
 # Test Parameters
 ```
-    var adUnits = [{
-                code: 'placementid_0',
-                mediaTypes: {
-                    banner: {
-                        sizes: [[300, 250], [300,600]]
-                    }
+    var adUnits = [
+                {
+                    code: 'placementid_0',
+                    mediaTypes: {
+                        banner: {
+                            sizes: [[300, 250], [300,600]]
+                        }
+                    },
+                    bids: [{
+                            bidder: 'adfinity',
+                            params: {
+                                placement_id: 0,
+                                traffic: 'banner'
+                            }
+                        }
+                    ]
                 },
-                bids: [{
-                        bidder: 'adfinity',
-                        params: {
-                            placement_id: 0,
-                            traffic: 'banner'
+                {
+                    code: 'placementid_0',
+                    mediaTypes: {
+                        native: {
+                            
                         }
                     },
-                    {
-                        bidder: 'afinity',
-                        params: {
-                            placement_id: 0,
-                            traffic: 'video'
+                    bids: [
+                        {
+                            bidder: 'adfinity',
+                            params: {
+                                placement_id: 0,
+                                traffic: 'native'
+                            }
+                        }
+                    ]
+                },
+                {
+                    code: 'placementid_0',
+                    mediaTypes: {
+                        video: {
+                            sizes: [[300, 250], [300,600]]
                         }
                     },
-                    {
-                        bidder: 'afinity',
-                        params: {
-                            placement_id: 0,
-                            traffic: 'native'
+                    bids: [
+                        {
+                            bidder: 'adfinity',
+                            params: {
+                                placement_id: 0,
+                                traffic: 'video'
+                            }
                         }
-                    }
                     ]
                 }
             ];
