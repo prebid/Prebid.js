@@ -104,6 +104,9 @@ export const spec = {
           (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean')
             ? Number(bidderRequest.gdprConsent.gdprApplies) : 1;
       }
+      if (bidderRequest.uspConsent) {
+        payload.us_privacy = bidderRequest.uspConsent;
+      }
     }
 
     return {
@@ -140,7 +143,7 @@ export const spec = {
     if (errorMessage) utils.logError(errorMessage);
     return bidResponses;
   },
-  getUserSyncs: function (syncOptions, responses, gdprConsent) {
+  getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent) {
     if (!hasSynced && syncOptions.pixelEnabled) {
       let params = '';
 
@@ -150,6 +153,9 @@ export const spec = {
         } else {
           params += `&gdpr_consent=${gdprConsent.consentString}`;
         }
+      }
+      if (uspConsent) {
+        params += `&us_privacy=${uspConsent}`;
       }
 
       hasSynced = true;
