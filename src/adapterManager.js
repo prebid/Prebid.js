@@ -11,7 +11,6 @@ import includes from 'core-js/library/fn/array/includes';
 import find from 'core-js/library/fn/array/find';
 import { adunitCounter } from './adUnits';
 import { getRefererInfo } from './refererDetection';
-import { hook } from './hook';
 
 var utils = require('./utils.js');
 var CONSTANTS = require('./constants.json');
