@@ -296,8 +296,8 @@ export function setConsentConfig(config) {
   utils.logInfo('USPAPI consentManagement module has been activated...');
 
   if (consentAPI === 'static') {
-    if (utils.isPlainObject(config.consentData)) {
-      staticConsentData = config.consentData;
+    if (utils.isPlainObject(config.consentData) && utils.isPlainObject(config.consentData.getUSPData)) {
+      if (config.consentData.getUSPData.uspString) staticConsentData = { usPrivacy: config.consentData.getUSPData.uspString };
       consentTimeout = 0;
     } else {
       utils.logError(`consentManagement config with cmpApi: 'static' did not specify consentData. No consents will be available to adapters.`);

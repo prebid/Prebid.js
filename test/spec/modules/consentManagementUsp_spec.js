@@ -93,11 +93,13 @@ describe('consentManagement', function () {
       });
       it('results in user settings overriding system defaults', () => {
         let staticConfig = {
-       	  usp: {
+          usp: {
             cmpApi: 'static',
             timeout: 7500,
             consentData: {
-              'usPrivacy': '1YYY'
+              getUSPData: {
+                uspString: '1YYY'
+              }
             }
           }
         };
@@ -105,7 +107,7 @@ describe('consentManagement', function () {
         setConsentConfig(staticConfig);
         expect(consentAPI).to.be.equal('static');
         expect(consentTimeout).to.be.equal(0); // should always return without a timeout when config is used
-        expect(staticConsentData).to.be.equal(staticConfig.usp.consentData);
+        expect(staticConsentData.usPrivacy).to.be.equal(staticConfig.usp.consentData.getUSPData.uspString);
       });
     });
   });
