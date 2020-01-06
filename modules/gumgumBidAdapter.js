@@ -158,6 +158,7 @@ function isBidRequestValid (bid) {
 function buildRequests (validBidRequests, bidderRequest) {
   const bids = [];
   const gdprConsent = bidderRequest && bidderRequest.gdprConsent;
+  const uspConsent = bidderRequest && bidderRequest.uspConsent;
   utils._each(validBidRequests, bidRequest => {
     const timeout = config.getConfig('bidderTimeout');
     const {
@@ -197,6 +198,9 @@ function buildRequests (validBidRequests, bidderRequest) {
     }
     if (data.gdprApplies) {
       data.gdprConsent = gdprConsent.consentString;
+    }
+    if (uspConsent) {
+      data.uspConsent = uspConsent;
     }
     if (schain && schain.nodes) {
       data.schain = _serializeSupplyChainObj(schain);

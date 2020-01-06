@@ -1,9 +1,7 @@
 import {expect} from 'chai';
-import {spec} from 'modules/gamoshiBidAdapter';
-import {helper} from 'modules/gamoshiBidAdapter';
+import {spec, helper} from 'modules/gamoshiBidAdapter';
 import * as utils from 'src/utils';
 import {newBidder} from '../../../src/adapters/bidderFactory';
-import {deepClone} from 'src/utils';
 
 const supplyPartnerId = '123';
 const adapter = newBidder(spec);
@@ -114,8 +112,7 @@ describe('GamoshiAdapter', function () {
     });
 
     it('builds request correctly', function () {
-      let stub = sinon.stub(utils, 'getTopWindowUrl').returns('http://www.test.com/page.html');
-      let bidRequest2 = deepClone(bidRequest);
+      let bidRequest2 = utils.deepClone(bidRequest);
       bidRequest2.refererInfo.referer = 'http://www.test.com/page.html';
       let response = spec.buildRequests([bidRequest], bidRequest2)[0];
       expect(response.data.site.domain).to.equal('www.test.com');
@@ -139,7 +136,6 @@ describe('GamoshiAdapter', function () {
       bidRequestWithBidfloorEquals1.params.bidfloor = 1;
       response = spec.buildRequests([bidRequestWithBidfloorEquals1], bidRequest2)[0];
       expect(response.data.imp[0].bidfloor).to.equal(bidRequestWithBidfloorEquals1.params.bidfloor);
-      stub.restore();
     });
 
     it('builds request banner object correctly', function () {
@@ -166,14 +162,23 @@ describe('GamoshiAdapter', function () {
       const bidRequestWithVideo = utils.deepClone(bidRequest);
       bidRequestWithVideo.mediaTypes = {
         video: {
-          playerSize: [302, 252]
+          playerSize: [[302, 252]]
         }
       };
       response = spec.buildRequests([bidRequestWithVideo], bidRequest)[0];
       expect(response.data.imp[0].video.w).to.equal(bidRequestWithVideo.mediaTypes.video.playerSize[0][0]);
       expect(response.data.imp[0].video.h).to.equal(bidRequestWithVideo.mediaTypes.video.playerSize[0][1]);
       expect(response.data.imp[0].video.pos).to.equal(0);
+      bidRequestWithVideo.mediaTypes = {
+        video: {
+          playerSize: [302, 252]
+        }
+      };
+
       const bidRequestWithPosEquals1 = utils.deepClone(bidRequestWithVideo);
+      expect(response.data.imp[0].video.w).to.equal(bidRequestWithVideo.mediaTypes.video.playerSize[0]);
+      expect(response.data.imp[0].video.h).to.equal(bidRequestWithVideo.mediaTypes.video.playerSize[1]);
+
       bidRequestWithPosEquals1.params.pos = 1;
       response = spec.buildRequests([bidRequestWithPosEquals1], bidRequest)[0];
       expect(response.data.imp[0].video.pos).to.equal(bidRequestWithPosEquals1.params.pos);
@@ -227,12 +232,13 @@ describe('GamoshiAdapter', function () {
 
     it('builds request with gdpr consent', function () {
       let response = spec.buildRequests([bidRequest], bidRequest)[0];
-      expect(response.data.ext.gdpr_consent).to.exist;
+
+      expect(response.data.ext.gdpr_consent).to.not.equal(null).and.not.equal(undefined);
       expect(response.data.ext).to.have.property('gdpr_consent');
       expect(response.data.ext.gdpr_consent.consent_string).to.equal('some string');
       expect(response.data.ext.gdpr_consent.consent_required).to.equal(true);
 
-      expect(response.data.regs.ext.gdpr).to.exist;
+      expect(response.data.regs.ext.gdpr).to.not.equal(null).and.not.equal(undefined);
       expect(response.data.user.ext.consent).to.equal('some string');
     });
 
@@ -320,7 +326,7 @@ describe('GamoshiAdapter', function () {
               'impid': '1',
               'price': 2.016,
               'adid': '579ef31bfa788b9d2000d562',
-              'nurl': 'https://rtb.gamoshi.io/pix/monitoring/win_notice/imp_5b05b9fde4b09084267a556f/im.gif?r=imp_5b05b9fde4b09084267a556f&i=1&a=579ef31bfa788b9d2000d562&b=0&p=${AUCTION_PRICE}',
+              'nurl': 'https://rtb.gamoshi.io/pix/monitoring/win_notice/imp_5b05b9fde4b09084267a556f/im.gif?r=imp_5b05b9fde4b09084267a556f&i=1&a=579ef31bfa788b9d2000d562&b=0',
               'adm': '<?xml version="1.0" encoding="UTF-8"?><VAST version="2.0">↵<Ad id="99aaef40-bbc0-4829-8599-f5313ea27ee9">↵<Wrapper>↵<AdSystem version="2.0"><![CDATA[gamoshi.io]]></AdSystem>↵<VASTAdTagURI><![CDATA[https://static.gambid.io/demo/vast.xml]]></VASTAdTagURI>↵<Error><![CDATA[https://rtb.gamoshi.io/pix/1707/verror/imp_5c4dcd32e4b044440442782e/im.gif?r=imp_5c4dcd32e4b044440442782e&i=99aaef40-bbc0-4829-8599-f5313ea27ee9&a=1274&b=gb_1&error=[ERRORCODE]]]></Error>↵<Impression><![CDATA[https://rtb.gamoshi.io/pix/1707/vimp/imp_5c4dcd32e4b044440442782e/im.gif?r=imp_5c4dcd32e4b044440442782e&i=99aaef40-bbc0-4829-8599-f5313ea27ee9&a=1274&b=gb_1]]></Impression>↵<Creatives>↵<Creative AdID="1274">↵<Linear>↵<TrackingEvents>↵<Tracking event="start"><![CDATA[https://rtb.gamoshi.io/pix/1707/start/imp_5c4dcd32e4b044440442782e/im.gif?r=imp_5c4dcd32e4b044440442782e&i=99aaef40-bbc0-4829-8599-f5313ea27ee9&a=1274&b=gb_1]]></Tracking>↵<Tracking event="firstQuartile"><![CDATA[https://rtb.gamoshi.io/pix/1707/fq/imp_5c4dcd32e4b044440442782e/im.gif?r=imp_5c4dcd32e4b044440442782e&i=99aaef40-bbc0-4829-8599-f5313ea27ee9&a=1274&b=gb_1]]></Tracking>↵<Tracking event="midpoint"><![CDATA[https://rtb.gamoshi.io/pix/1707/mp/imp_5c4dcd32e4b044440442782e/im.gif?r=imp_5c4dcd32e4b044440442782e&i=99aaef40-bbc0-4829-8599-f5313ea27ee9&a=1274&b=gb_1]]></Tracking>↵<Tracking event="thirdQuartile"><![CDATA[https://rtb.gamoshi.io/pix/1707/tq/imp_5c4dcd32e4b044440442782e/im.gif?r=imp_5c4dcd32e4b044440442782e&i=99aaef40-bbc0-4829-8599-f5313ea27ee9&a=1274&b=gb_1]]></Tracking>↵<Tracking event="complete"><![CDATA[https://rtb.gamoshi.io/pix/1707/comp/imp_5c4dcd32e4b044440442782e/im.gif?r=imp_5c4dcd32e4b044440442782e&i=99aaef40-bbc0-4829-8599-f5313ea27ee9&a=1274&b=gb_1]]></Tracking>↵</TrackingEvents>↵</Linear>↵</Creative>↵</Creatives>↵</Wrapper></Ad>↵</VAST>',
               'adomain': ['aaa.com'],
               'cid': '579ef268fa788b9d2000d55c',
@@ -346,7 +352,7 @@ describe('GamoshiAdapter', function () {
               'impid': '1',
               'price': 3,
               'adid': '542jlhdfd2112jnjf3x',
-              'nurl': 'https://rtb.gamoshi.io/pix/monitoring/win_notice/imp_5b05b9fde4b09084267a556f/im.gif?r=imp_5b05b9fde4b09084267a556f&i=1&a=579ef31bfa788b9d2000d562&b=0&p=${AUCTION_PRICE}',
+              'nurl': 'https://rtb.gamoshi.io/pix/monitoring/win_notice/imp_5b05b9fde4b09084267a556f/im.gif?r=imp_5b05b9fde4b09084267a556f&i=1&a=579ef31bfa788b9d2000d562&b=0',
               'adm': '<img width="300px" height="250px" src="https://dummyimage.com/300x250/030d00/52b31e.gif&text=Gamoshi+Demo" onclick="window.open(\'https://www.gamoshi.com\')"> <img width="0px" height="0px" src="https://rtb.gamoshi.io/pix/monitoring/imp/imp_5b05b9fde4b09084267a556f/im.gif?r=imp_5b05b9fde4b09084267a556f&i=1&a=579ef31bfa788b9d2000d562&b=0"/>',
               'adomain': ['bbb.com'],
               'cid': 'fgdlwjh2498ydjhg1',
@@ -444,7 +450,7 @@ describe('GamoshiAdapter', function () {
                 'impid': 'afbb5852-7cea-4a81-aa9a-a41aab505c23',
                 'price': 5.0,
                 'adid': '1274',
-                'nurl': 'https://rtb.gamoshi.io/pix/1275/win_notice/imp_5c24924de4b0d106447af333/im.gif?r=imp_5c24924de4b0d106447af333&i=afbb5852-7cea-4a81-aa9a-a41aab505c23&a=1274&b=gb_1&p=${AUCTION_PRICE}',
+                'nurl': 'https://rtb.gamoshi.io/pix/1275/win_notice/imp_5c24924de4b0d106447af333/im.gif?r=imp_5c24924de4b0d106447af333&i=afbb5852-7cea-4a81-aa9a-a41aab505c23&a=1274&b=gb_1',
                 'adomain': [],
                 'adm': '<?xml version=\"1.0\" encoding=\"UTF-8\"?><VAST version=\"2.0\">\n<Ad id=\"afbb5852-7cea-4a81-aa9a-a41aab505c23\">\n<Wrapper>\n<AdSystem version=\"2.0\"><![CDATA[gamoshi.io]]></AdSystem>\n<VASTAdTagURI><![CDATA[https://static.gambid.io/demo/vast.xml]]></VASTAdTagURI>\n<Error><![CDATA[https://rtb.gamoshi.io/pix/1275/verror/imp_5c24924de4b0d106447af333/im.gif?r=imp_5c24924de4b0d106447af333&i=afbb5852-7cea-4a81-aa9a-a41aab505c23&a=1274&b=gb_1&error=[ERRORCODE]]]></Error>\n<Impression><![CDATA[https://rtb.gamoshi.io/pix/1275/vimp/imp_5c24924de4b0d106447af333/im.gif?r=imp_5c24924de4b0d106447af333&i=afbb5852-7cea-4a81-aa9a-a41aab505c23&a=1274&b=gb_1]]></Impression>\n<Creatives>\n<Creative AdID=\"1274\">\n<Linear>\n<TrackingEvents>\n<Tracking event=\"start\"><![CDATA[https://rtb.gamoshi.io/pix/1275/start/imp_5c24924de4b0d106447af333/im.gif?r=imp_5c24924de4b0d106447af333&i=afbb5852-7cea-4a81-aa9a-a41aab505c23&a=1274&b=gb_1]]></Tracking>\n<Tracking event=\"firstQuartile\"><![CDATA[https://rtb.gamoshi.io/pix/1275/fq/imp_5c24924de4b0d106447af333/im.gif?r=imp_5c24924de4b0d106447af333&i=afbb5852-7cea-4a81-aa9a-a41aab505c23&a=1274&b=gb_1]]></Tracking>\n<Tracking event=\"midpoint\"><![CDATA[https://rtb.gamoshi.io/pix/1275/mp/imp_5c24924de4b0d106447af333/im.gif?r=imp_5c24924de4b0d106447af333&i=afbb5852-7cea-4a81-aa9a-a41aab505c23&a=1274&b=gb_1]]></Tracking>\n<Tracking event=\"thirdQuartile\"><![CDATA[https://rtb.gamoshi.io/pix/1275/tq/imp_5c24924de4b0d106447af333/im.gif?r=imp_5c24924de4b0d106447af333&i=afbb5852-7cea-4a81-aa9a-a41aab505c23&a=1274&b=gb_1]]></Tracking>\n<Tracking event=\"complete\"><![CDATA[https://rtb.gamoshi.io/pix/1275/comp/imp_5c24924de4b0d106447af333/im.gif?r=imp_5c24924de4b0d106447af333&i=afbb5852-7cea-4a81-aa9a-a41aab505c23&a=1274&b=gb_1]]></Tracking>\n</TrackingEvents>\n</Linear>\n</Creative>\n</Creatives>\n</Wrapper>\n</Ad>\n</VAST>\n',
                 'cid': '3668',
@@ -469,7 +475,7 @@ describe('GamoshiAdapter', function () {
           }]
         }
       };
-      const videoRequest = deepClone(videoBidRequest);
+      const videoRequest = utils.deepClone(videoBidRequest);
       videoRequest.mediaTypes.video.context = 'outstream';
       const result = spec.interpretResponse({body: videoResponse}, {bidRequest: videoRequest});
       expect(result[0].renderer).to.not.equal(undefined);
@@ -490,7 +496,7 @@ describe('GamoshiAdapter', function () {
                 'impid': 'afbb5852-7cea-4a81-aa9a-a41aab505c23',
                 'price': 5.0,
                 'adid': '1274',
-                'nurl': 'https://rtb.gamoshi.io/pix/1275/win_notice/imp_5c24924de4b0d106447af333/im.gif?r=imp_5c24924de4b0d106447af333&i=afbb5852-7cea-4a81-aa9a-a41aab505c23&a=1274&b=gb_1&p=${AUCTION_PRICE}',
+                'nurl': 'https://rtb.gamoshi.io/pix/1275/win_notice/imp_5c24924de4b0d106447af333/im.gif?r=imp_5c24924de4b0d106447af333&i=afbb5852-7cea-4a81-aa9a-a41aab505c23&a=1274&b=gb_1',
                 'adomain': [],
                 'adm': '<?xml version=\"1.0\" encoding=\"UTF-8\"?><VAST version=\"2.0\">\n<Ad id=\"afbb5852-7cea-4a81-aa9a-a41aab505c23\">\n<Wrapper>\n<AdSystem version=\"2.0\"><![CDATA[gamoshi.io]]></AdSystem>\n<VASTAdTagURI><![CDATA[https://static.gambid.io/demo/vast.xml]]></VASTAdTagURI>\n<Error><![CDATA[https://rtb.gamoshi.io/pix/1275/verror/imp_5c24924de4b0d106447af333/im.gif?r=imp_5c24924de4b0d106447af333&i=afbb5852-7cea-4a81-aa9a-a41aab505c23&a=1274&b=gb_1&error=[ERRORCODE]]]></Error>\n<Impression><![CDATA[https://rtb.gamoshi.io/pix/1275/vimp/imp_5c24924de4b0d106447af333/im.gif?r=imp_5c24924de4b0d106447af333&i=afbb5852-7cea-4a81-aa9a-a41aab505c23&a=1274&b=gb_1]]></Impression>\n<Creatives>\n<Creative AdID=\"1274\">\n<Linear>\n<TrackingEvents>\n<Tracking event=\"start\"><![CDATA[https://rtb.gamoshi.io/pix/1275/start/imp_5c24924de4b0d106447af333/im.gif?r=imp_5c24924de4b0d106447af333&i=afbb5852-7cea-4a81-aa9a-a41aab505c23&a=1274&b=gb_1]]></Tracking>\n<Tracking event=\"firstQuartile\"><![CDATA[https://rtb.gamoshi.io/pix/1275/fq/imp_5c24924de4b0d106447af333/im.gif?r=imp_5c24924de4b0d106447af333&i=afbb5852-7cea-4a81-aa9a-a41aab505c23&a=1274&b=gb_1]]></Tracking>\n<Tracking event=\"midpoint\"><![CDATA[https://rtb.gamoshi.io/pix/1275/mp/imp_5c24924de4b0d106447af333/im.gif?r=imp_5c24924de4b0d106447af333&i=afbb5852-7cea-4a81-aa9a-a41aab505c23&a=1274&b=gb_1]]></Tracking>\n<Tracking event=\"thirdQuartile\"><![CDATA[https://rtb.gamoshi.io/pix/1275/tq/imp_5c24924de4b0d106447af333/im.gif?r=imp_5c24924de4b0d106447af333&i=afbb5852-7cea-4a81-aa9a-a41aab505c23&a=1274&b=gb_1]]></Tracking>\n<Tracking event=\"complete\"><![CDATA[https://rtb.gamoshi.io/pix/1275/comp/imp_5c24924de4b0d106447af333/im.gif?r=imp_5c24924de4b0d106447af333&i=afbb5852-7cea-4a81-aa9a-a41aab505c23&a=1274&b=gb_1]]></Tracking>\n</TrackingEvents>\n</Linear>\n</Creative>\n</Creatives>\n</Wrapper>\n</Ad>\n</VAST>\n',
                 'cid': '3668',

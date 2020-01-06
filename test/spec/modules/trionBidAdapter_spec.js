@@ -1,6 +1,7 @@
 import {expect} from 'chai';
 import * as utils from 'src/utils';
 import {spec, acceptPostMessage, getStorageData, setStorageData} from 'modules/trionBidAdapter';
+
 const CONSTANTS = require('src/constants.json');
 const adloader = require('src/adloader');
 
@@ -12,6 +13,11 @@ const TRION_BID = {
   params: {
     pubId: '1',
     sectionId: '2'
+  },
+  mediaTypes: {
+    banner: {
+      sizes: [[300, 250], [300, 600]]
+    }
   },
   adUnitCode: 'adunit-code',
   sizes: [[300, 250], [300, 600]],
@@ -33,6 +39,23 @@ const TRION_BID_RESPONSE = {
     msg: 'response messaging'
   }
 
+};
+
+const getPublisherUrl = function () {
+  var url = null;
+  try {
+    if (window.top == window) {
+      url = window.location.href;
+    } else {
+      try {
+        url = window.top.location.href;
+      } catch (e) {
+        url = document.referrer;
+      }
+    }
+  } catch (e) {
+  }
+  return url
 };
 
 describe('Trion adapter tests', function () {
@@ -116,7 +139,7 @@ describe('Trion adapter tests', function () {
 
       let bidUrlParams = bidRequests[0].data;
       expect(bidUrlParams).to.include('re=1');
-      expect(bidUrlParams).to.include(utils.getTopWindowUrl());
+      expect(bidUrlParams).to.include(getPublisherUrl());
       delete params.re;
     });
 
@@ -245,10 +268,10 @@ describe('Trion adapter tests', function () {
 
     it('should register trion user script', function () {
       let syncs = spec.getUserSyncs({iframeEnabled: true});
-      let url = utils.getTopWindowUrl();
+      let pageUrl = getPublisherUrl();
       let pubId = 1;
       let sectionId = 2;
-      let syncString = `?p=${pubId}&s=${sectionId}&u=${url}`;
+      let syncString = `?p=${pubId}&s=${sectionId}&u=${pageUrl}`;
       expect(syncs[0]).to.deep.equal({type: 'iframe', url: USER_SYNC_URL + syncString});
     });
 

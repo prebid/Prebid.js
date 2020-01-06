@@ -15,9 +15,9 @@ describe('FidelityAdapter', function () {
     let bid = {
       'bidder': 'fidelity',
       'params': {
-        'zoneid': '37',
+        'zoneid': '27248',
         'floor': '0.05',
-        'server': 't.fidelity-media.com',
+        'server': 'x.fidelity-media.com',
       },
       'adUnitCode': 'adunit-code',
       'sizes': [[300, 250], [300, 600]],
@@ -34,7 +34,7 @@ describe('FidelityAdapter', function () {
       let bid = Object.assign({}, bid);
       delete bid.params;
       bid.params = {
-        'zoneid': '37',
+        'zoneid': '27248',
       };
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
@@ -58,9 +58,9 @@ describe('FidelityAdapter', function () {
         {
           bidder: 'fidelity',
           params: {
-            zoneid: '37',
+            zoneid: '27248',
             floor: '0.05',
-            server: 't.fidelity-media.com',
+            server: 'x.fidelity-media.com',
           },
           placementCode: '/19968336/header-bid-tag-0',
           sizes: [[300, 250], [320, 50]],
@@ -72,7 +72,10 @@ describe('FidelityAdapter', function () {
       ],
       start: 1472239426002,
       auctionStart: 1472239426000,
-      timeout: 5000
+      timeout: 5000,
+      refererInfo: {
+        referer: 'http://test.com/index.html'
+      }
     };
 
     it('should add source and verison to the tag', function () {
@@ -93,8 +96,10 @@ describe('FidelityAdapter', function () {
 
     it('should add gdpr consent information to the request', function () {
       let consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
+      let uspConsentString = '1YN-';
       bidderRequest.gdprConsent = {
         gdprApplies: true,
+        allowAuctionWithoutConsent: true,
         consentString: consentString,
         vendorData: {
           vendorConsents: {
@@ -102,6 +107,7 @@ describe('FidelityAdapter', function () {
           },
         },
       };
+      bidderRequest.uspConsent = uspConsentString;
       const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
       const payload = request.data;
       expect(payload.gdpr).to.exist.and.to.be.a('number');
@@ -110,11 +116,13 @@ describe('FidelityAdapter', function () {
       expect(payload.consent_str).to.equal(consentString);
       expect(payload.consent_given).to.exist.and.to.be.a('number');
       expect(payload.consent_given).to.equal(1);
+      expect(payload.us_privacy).to.exist.and.to.be.a('string');
+      expect(payload.us_privacy).to.equal(uspConsentString);
     });
 
     it('sends bid request to ENDPOINT via GET', function () {
       const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
-      expect(request.url).to.equal('//t.fidelity-media.com/delivery/hb.php');
+      expect(request.url).to.equal('https://x.fidelity-media.com/delivery/hb.php');
       expect(request.method).to.equal('GET');
     });
   })
@@ -165,7 +173,7 @@ describe('FidelityAdapter', function () {
   });
 
   describe('user sync', function () {
-    const syncUrl = '//x.fidelity-media.com/delivery/matches.php?type=iframe';
+    const syncUrl = 'https://x.fidelity-media.com/delivery/matches.php?type=iframe';
 
     it('should register the sync iframe', function () {
       expect(spec.getUserSyncs({})).to.be.undefined;
