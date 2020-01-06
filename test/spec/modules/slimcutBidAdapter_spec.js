@@ -2,8 +2,8 @@ import {expect} from 'chai';
 import {spec} from 'modules/slimcutBidAdapter';
 import {newBidder} from 'src/adapters/bidderFactory';
 
-const ENDPOINT = '//sb.freeskreen.com/pbr';
-const AD_SCRIPT = '<script type="text/javascript" class="slimcut" async="true" src="http://static.freeskreen.com/publisher/83/freeskreen.min.js"></script>"';
+const ENDPOINT = 'https://sb.freeskreen.com/pbr';
+const AD_SCRIPT = '<script type="text/javascript" class="slimcut" async="true" src="https://static.freeskreen.com/publisher/83/freeskreen.min.js"></script>"';
 
 describe('slimcutBidAdapter', function() {
   const adapter = newBidder(spec);
@@ -116,7 +116,7 @@ describe('slimcutBidAdapter', function() {
       const bidRequest = Object.assign({}, bidRequests[0])
       const bidderRequest = {
         refererInfo: {
-          referer: 'http://example.com/page.html',
+          referer: 'https://example.com/page.html',
           reachedTop: true,
           numIframes: 2
         }
@@ -125,7 +125,7 @@ describe('slimcutBidAdapter', function() {
       const payload = JSON.parse(request.data);
 
       expect(payload.referrer).to.exist;
-      expect(payload.referrer).to.deep.equal('http://example.com/page.html')
+      expect(payload.referrer).to.deep.equal('https://example.com/page.html')
     });
   });
 
@@ -151,7 +151,7 @@ describe('slimcutBidAdapter', function() {
     it('should get the correct number of sync urls', () => {
       let urls = spec.getUserSyncs({iframeEnabled: true}, bids);
       expect(urls.length).to.equal(1);
-      expect(urls[0].url).to.equal('//sb.freeskreen.com/async_usersync.html');
+      expect(urls[0].url).to.equal('https://sb.freeskreen.com/async_usersync.html');
     });
 
     it('should return no url if not iframe enabled', () => {

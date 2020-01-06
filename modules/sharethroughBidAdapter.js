@@ -1,9 +1,17 @@
 import { registerBidder } from '../src/adapters/bidderFactory';
 
-const VERSION = '3.0.1';
+const VERSION = '3.2.0';
 const BIDDER_CODE = 'sharethrough';
-const STR_ENDPOINT = document.location.protocol + '//btlr.sharethrough.com/WYu2BXv1/v1';
+const STR_ENDPOINT = 'https://btlr.sharethrough.com/WYu2BXv1/v1';
 const DEFAULT_SIZE = [1, 1];
+
+// this allows stubbing of utility function that is used internally by the sharethrough adapter
+export const sharethroughInternal = {
+  b64EncodeUnicode,
+  handleIframe,
+  isLockedInFrame,
+  getProtocol
+};
 
 export const sharethroughAdapterSpec = {
   code: BIDDER_CODE,
@@ -22,6 +30,9 @@ export const sharethroughAdapterSpec = {
         strVersion: VERSION
       };
 
+      const nonHttp = sharethroughInternal.getProtocol().indexOf('http') < 0;
+      query.secure = nonHttp || (sharethroughInternal.getProtocol().indexOf('https') > -1);
+
       if (bidderRequest && bidderRequest.gdprConsent && bidderRequest.gdprConsent.consentString) {
         query.consent_string = bidderRequest.gdprConsent.consentString;
       }
@@ -34,13 +45,21 @@ export const sharethroughAdapterSpec = {
         query.ttduid = bidRequest.userId.tdid;
       }
 
+      if (bidRequest.schain) {
+        query.schain = JSON.stringify(bidRequest.schain);
+      }
+
+      if (bidRequest.bidfloor) {
+        query.bidfloor = parseFloat(bidRequest.bidfloor);
+      }
+
       // Data that does not need to go to the server,
       // but we need as part of interpretResponse()
       const strData = {
-        stayInIframe: bidRequest.params.iframe,
+        skipIframeBusting: bidRequest.params.iframe,
         iframeSize: bidRequest.params.iframeSize,
         sizes: bidRequest.sizes
-      }
+      };
 
       return {
         method: 'GET',
@@ -59,7 +78,7 @@ export const sharethroughAdapterSpec = {
     const creative = body.creatives[0];
     let size = DEFAULT_SIZE;
     if (req.strData.iframeSize || req.strData.sizes.length) {
-      size = req.strData.iframeSize != undefined
+      size = req.strData.iframeSize
         ? req.strData.iframeSize
         : getLargestSize(req.strData.sizes);
     }
@@ -102,7 +121,7 @@ export const sharethroughAdapterSpec = {
 
   // Empty implementation for prebid core to be able to find it
   onSetTargeting: (bid) => {}
-}
+};
 
 function getLargestSize(sizes) {
   function area(size) {
@@ -125,33 +144,70 @@ function generateAd(body, req) {
     <div data-str-native-key="${req.data.placement_key}" data-stx-response-name="${strRespId}">
     </div>
     <script>var ${strRespId} = "${b64EncodeUnicode(JSON.stringify(body))}"</script>
-  `
+  `;
 
-  if (req.strData.stayInIframe) {
+  if (req.strData.skipIframeBusting) {
     // Don't break out of iframe
-    adMarkup = adMarkup + `<script src="//native.sharethrough.com/assets/sfp.js"></script>`
+    adMarkup = adMarkup + `<script src="//native.sharethrough.com/assets/sfp.js"></script>`;
   } else {
-    // Break out of iframe
+    // Add logic to the markup that detects whether or not in top level document is accessible
+    // this logic will deploy sfp.js and/or iframe buster script(s) as appropriate
     adMarkup = adMarkup + `
-      <script src="//native.sharethrough.com/assets/sfp-set-targeting.js"></script>
       <script>
-        (function() {
-          if (!(window.STR && window.STR.Tag) && !(window.top.STR && window.top.STR.Tag)) {
-            var sfp_js = document.createElement('script');
-            sfp_js.src = "//native.sharethrough.com/assets/sfp.js";
-            sfp_js.type = 'text/javascript';
-            sfp_js.charset = 'utf-8';
-            try {
-                window.top.document.getElementsByTagName('body')[0].appendChild(sfp_js);
-            } catch (e) {
-              console.log(e);
-            }
-          }
-        })()
-    </script>`
+        (${sharethroughInternal.isLockedInFrame.toString()})()
+      </script>
+      <script>
+        (${sharethroughInternal.handleIframe.toString()})()
+      </script>`;
   }
 
   return adMarkup;
+}
+
+function handleIframe () {
+  // only load iframe buster JS if we can access the top level document
+  // if we are 'locked in' to this frame then no point trying to bust out: we may as well render in the frame instead
+  var iframeBusterLoaded = false;
+  if (!window.lockedInFrame) {
+    var sfpIframeBusterJs = document.createElement('script');
+    sfpIframeBusterJs.src = 'https://native.sharethrough.com/assets/sfp-set-targeting.js';
+    sfpIframeBusterJs.type = 'text/javascript';
+    try {
+      window.document.getElementsByTagName('body')[0].appendChild(sfpIframeBusterJs);
+      iframeBusterLoaded = true;
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  var clientJsLoaded = (!iframeBusterLoaded) ? !!(window.STR && window.STR.Tag) : !!(window.top.STR && window.top.STR.Tag);
+  if (!clientJsLoaded) {
+    var sfpJs = document.createElement('script');
+    sfpJs.src = 'https://native.sharethrough.com/assets/sfp.js';
+    sfpJs.type = 'text/javascript';
+
+    // only add sfp js to window.top if iframe busting successfully loaded; otherwise, add to iframe
+    try {
+      if (iframeBusterLoaded) {
+        window.top.document.getElementsByTagName('body')[0].appendChild(sfpJs);
+      } else {
+        window.document.getElementsByTagName('body')[0].appendChild(sfpJs);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }
+}
+
+// determines if we are capable of busting out of the iframe we are in
+// if we catch a DOMException when trying to access top-level document, it means we're stuck in the frame we're in
+function isLockedInFrame () {
+  window.lockedInFrame = false;
+  try {
+    window.lockedInFrame = !window.top.document;
+  } catch (e) {
+    window.lockedInFrame = (e instanceof DOMException);
+  }
 }
 
 // See https://developer.mozilla.org/en-US/docs/Web/API/WindowBase64/Base64_encoding_and_decoding#The_Unicode_Problem
@@ -182,6 +238,10 @@ function canAutoPlayHTML5Video() {
   } else {
     return false;
   }
+}
+
+function getProtocol() {
+  return document.location.protocol;
 }
 
 registerBidder(sharethroughAdapterSpec);

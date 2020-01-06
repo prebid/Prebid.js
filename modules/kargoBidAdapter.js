@@ -6,7 +6,9 @@ const HOST = 'https://krk.kargo.com';
 const SYNC = 'https://crb.kargo.com/api/v1/initsyncrnd/{UUID}?seed={SEED}&idx={INDEX}';
 const SYNC_COUNT = 5;
 
-let sessionId;
+let sessionId,
+  lastPageUrl,
+  requestCounter;
 
 export const spec = {
   code: BIDDER_CODE,
@@ -31,6 +33,7 @@ export const spec = {
     }
     const transformedParams = Object.assign({}, {
       sessionId: spec._getSessionId(),
+      requestCount: spec._getRequestCount(),
       timeout: bidderRequest.timeout,
       currency: currency,
       cpmGranularity: 1,
@@ -200,6 +203,14 @@ export const spec = {
       sessionId = spec._generateRandomUuid();
     }
     return sessionId;
+  },
+
+  _getRequestCount() {
+    if (lastPageUrl === window.location.pathname) {
+      return ++requestCounter;
+    }
+    lastPageUrl = window.location.pathname;
+    return requestCounter = 0;
   },
 
   _generateRandomUuid() {

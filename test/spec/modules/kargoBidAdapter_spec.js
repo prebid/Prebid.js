@@ -34,7 +34,7 @@ describe('kargo adapter tests', function () {
   });
 
   describe('build request', function() {
-    var bids, undefinedCurrency, noAdServerCurrency, cookies = [], localStorageItems = [], sessionIds = [];
+    var bids, undefinedCurrency, noAdServerCurrency, cookies = [], localStorageItems = [], sessionIds = [], requestCount = 0;
 
     beforeEach(function () {
       undefinedCurrency = false;
@@ -49,6 +49,7 @@ describe('kargo adapter tests', function () {
           }
           return {adServerCurrency: 'USD'};
         }
+        if (key === 'debug') return true;
         throw new Error(`Config stub incomplete! Missing key "${key}"`)
       });
 
@@ -222,6 +223,7 @@ describe('kargo adapter tests', function () {
     function getExpectedKrakenParams(excludeUserIds, excludeKrux, expectedRawCRB, expectedRawCRBCookie) {
       var base = {
         timeout: 200,
+        requestCount: requestCount++,
         currency: 'USD',
         cpmGranularity: 1,
         timestamp: frozenNow.getTime(),
