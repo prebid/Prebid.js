@@ -124,7 +124,7 @@ function evaluateSizeConfig(configs) {
       typeof config.mediaQuery === 'string'
     ) {
       let ruleMatch = false;
-      
+
       if (config.mediaQuery === '') {
         ruleMatch = true;
       } else {
