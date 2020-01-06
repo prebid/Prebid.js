@@ -898,6 +898,34 @@ describe('The Criteo bidding adapter', function () {
       expect(bids).to.have.lengthOf(0);
     });
 
+    it('should not parse bid response with native when enableSendAllBids is not set', function () {
+      const response = {
+        body: {
+          slots: [{
+            impid: 'test-requestId',
+            bidId: 'abc123',
+            cpm: 1.23,
+            width: 728,
+            height: 90,
+            zoneid: 123,
+            native: {}
+          }],
+        },
+      };
+      const request = {
+        bidRequests: [{
+          adUnitCode: 'test-requestId',
+          bidId: 'test-bidId',
+          params: {
+            zoneId: 123,
+          },
+          native: true,
+        }]
+      };
+      const bids = spec.interpretResponse(response, request);
+      expect(bids).to.have.lengthOf(0);
+    });
+
     it('should properly parse a bid response with a zoneId passed as a string', function () {
       const response = {
         body: {
