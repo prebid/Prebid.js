@@ -641,7 +641,7 @@ function _handleEids(payload, validBidRequests) {
   _handleTTDId(eids, validBidRequests);
   const bidRequest = validBidRequests[0];
   if (bidRequest && bidRequest.userId) {
-    _addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.pubcid`), 'pubcommon', 1);
+    _addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.pubcid`), 'pubcid.org', 1);
     _addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.digitrustid.data.id`), 'digitru.st', 1);
     _addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.id5id`), 'id5-sync.com', 1);
     _addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.criteoId`), 'criteo.com', 1);// replacing criteoRtus
@@ -883,6 +883,7 @@ export const spec = {
     payload.ext.wrapper.profile = parseInt(conf.profId) || UNDEFINED;
     payload.ext.wrapper.version = parseInt(conf.verId) || UNDEFINED;
     payload.ext.wrapper.wiid = conf.wiid || UNDEFINED;
+    // eslint-disable-next-line no-undef
     payload.ext.wrapper.wv = $$REPO_AND_VERSION$$;
     payload.ext.wrapper.transactionId = conf.transactionId;
     payload.ext.wrapper.wp = 'pbjs';
@@ -895,26 +896,28 @@ export const spec = {
     payload.site.page = conf.kadpageurl.trim() || payload.site.page.trim();
     payload.site.domain = _getDomainFromURL(payload.site.page);
 
+    // passing transactionId in source.tid
+    utils.deepSetValue(payload, 'source.tid', conf.transactionId);
+
+    // test bids
+    if (window.location.href.indexOf('pubmaticTest=true') !== -1) {
+      payload.test = 1;
+    }
+
     // adding schain object
     if (validBidRequests[0].schain) {
-      payload.source = {
-        ext: {
-          schain: validBidRequests[0].schain
-        }
-      };
+      utils.deepSetValue(payload, 'source.ext.schain', validBidRequests[0].schain);
     }
 
     // Attaching GDPR Consent Params
     if (bidderRequest && bidderRequest.gdprConsent) {
-      payload.user.ext = {
-        consent: bidderRequest.gdprConsent.consentString
-      };
+      utils.deepSetValue(payload, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
+      utils.deepSetValue(payload, 'regs.ext.gdpr', (bidderRequest.gdprConsent.gdprApplies ? 1 : 0));
+    }
 
-      payload.regs = {
-        ext: {
-          gdpr: (bidderRequest.gdprConsent.gdprApplies ? 1 : 0)
-        }
-      };
+    // CCPA
+    if (bidderRequest && bidderRequest.uspConsent) {
+      utils.deepSetValue(payload, 'regs.ext.us_privacy', bidderRequest.uspConsent);
     }
 
     // coppa compliance
@@ -1012,13 +1015,18 @@ export const spec = {
   /**
    * Register User Sync.
    */
-  getUserSyncs: (syncOptions, responses, gdprConsent) => {
+  getUserSyncs: (syncOptions, responses, gdprConsent, uspConsent) => {
     let syncurl = USYNCURL + publisherId;
 
     // Attaching GDPR Consent Params in UserSync url
     if (gdprConsent) {
       syncurl += '&gdpr=' + (gdprConsent.gdprApplies ? 1 : 0);
       syncurl += '&gdpr_consent=' + encodeURIComponent(gdprConsent.consentString || '');
+    }
+
+    // CCPA
+    if (uspConsent) {
+      syncurl += '&us_privacy=' + encodeURIComponent(uspConsent);
     }
 
     // coppa compliance

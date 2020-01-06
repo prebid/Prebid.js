@@ -81,7 +81,7 @@ export const spec = {
     const payloadString = JSON.stringify(payload);
     return {
       method: 'POST',
-      url: `//bdf${payload.bids[0].pid}.bidfluence.com/Prebid`,
+      url: `https://bdf${payload.bids[0].pid}.bidfluence.com/Prebid`,
       data: payloadString,
       options: { contentType: 'text/plain' }
     };
