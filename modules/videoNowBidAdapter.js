@@ -1,6 +1,7 @@
 import * as utils from '../src/utils'
 import { registerBidder } from '../src/adapters/bidderFactory'
 import { BANNER } from '../src/mediaTypes'
+import { loadExternalScript } from '../src/adloader'
 
 const RTB_URL = 'https://bidder.videonow.ru/prebid'
 
@@ -127,9 +128,7 @@ function createResponseBid(bidInfo, bidId, cur, placementId) {
           init[pId] = profileData
 
           // add vn_init js on the page
-          const scr = document.createElement('script')
-          scr.src = `${initPath}${~initPath.indexOf('?') ? '&' : '?'}profileId=${pId}`
-          el && el.appendChild(scr)
+          loadExternalScript(`${initPath}${~initPath.indexOf('?') ? '&' : '?'}profileId=${pId}`, 'outstream')
         } else {
           utils.logError(`bidAdapter ${BIDDER_CODE}: ${placementId} not found`)
         }
