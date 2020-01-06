@@ -170,10 +170,7 @@ function getUserSyncs(syncOptions, serverResponses) {
 function onBidWon(bid) {
   const { nurl } = bid || {}
   if (nurl) {
-    const img = document.createElement('img')
-    img.src = utils.replaceAuctionPrice(nurl, bid.cpm)
-    img.style.cssText = 'display:none !important;'
-    document.body.appendChild(img)
+    utils.triggerPixel(utils.replaceAuctionPrice(nurl, bid.cpm));
   }
 }
 
