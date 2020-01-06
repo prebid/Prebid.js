@@ -271,7 +271,7 @@ export const spec = {
        * Prebid AdSlot
        * @type {(string|undefined)}
        */
-      const pbAdSlot = utils.deepAccess(bidRequest, 'context.pbAdSlot');
+      const pbAdSlot = utils.deepAccess(bidRequest, 'fpd.context.pbAdSlot');
       if (typeof pbAdSlot === 'string' && pbAdSlot) {
         utils.deepSetValue(data.imp[0].ext, 'context.data.adslot', pbAdSlot);
       }
@@ -502,7 +502,7 @@ export const spec = {
      * Prebid AdSlot
      * @type {(string|undefined)}
      */
-    const pbAdSlot = utils.deepAccess(bidRequest, 'context.pbAdSlot');
+    const pbAdSlot = utils.deepAccess(bidRequest, 'fpd.context.pbAdSlot');
     if (typeof pbAdSlot === 'string' && pbAdSlot) {
       data['tg_i.dfp_ad_unit_code'] = pbAdSlot.replace(/^\/+/, '');
     }

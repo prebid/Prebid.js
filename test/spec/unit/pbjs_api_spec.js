@@ -2011,17 +2011,19 @@ describe('Unit: Prebid Module', function () {
         }
       });
 
-      it('should allow creation of a context.pbAdSlot property on adUnits from inside the event handler', function () {
+      it('should allow creation of a fpd.context.pbAdSlot property on adUnits from inside the event handler', function () {
         // verify adUnits passed to handler then alter the adUnits
         beforeRequestBidsHandler = function beforeRequestBidsHandler(beforeRequestBidsAdUnits) {
           expect(beforeRequestBidsAdUnits).to.be.a('array');
           expect(beforeRequestBidsAdUnits).to.have.lengthOf(1);
           expect(beforeRequestBidsAdUnits[0]).to.be.a('object');
           // adUnit should not contain a context property yet
-          expect(beforeRequestBidsAdUnits[0]).to.not.have.property('context')
+          expect(beforeRequestBidsAdUnits[0]).to.not.have.property('fpd')
           // alter the adUnit by adding the property for context.pbAdSlot
-          beforeRequestBidsAdUnits[0].context = {
-            pbAdSlot: '/19968336/header-bid-tag-pbadslot-0'
+          beforeRequestBidsAdUnits[0].fpd = {
+            context: {
+              pbAdSlot: '/19968336/header-bid-tag-pbadslot-0'
+            }
           };
         };
         beforeRequestBidsSpy = sinon.spy(beforeRequestBidsHandler);
@@ -2034,10 +2036,12 @@ describe('Unit: Prebid Module', function () {
           expect(bidRequest.bids).to.have.lengthOf(1);
           const bid = bidRequest['bids'][0];
           expect(bid).to.be.a('object');
-          expect(bid).to.have.property('context');
-          expect(bid.context).to.be.a('object');
-          expect(bid.context).to.have.property('pbAdSlot');
-          expect(bid.context.pbAdSlot).to.equal('/19968336/header-bid-tag-pbadslot-0');
+          expect(bid).to.have.property('fpd');
+          expect(bid.fpd).to.be.a('object');
+          expect(bid.fpd).to.have.property('context');
+          expect(bid.fpd.context).to.be.a('object');
+          expect(bid.fpd.context).to.have.property('pbAdSlot');
+          expect(bid.fpd.context.pbAdSlot).to.equal('/19968336/header-bid-tag-pbadslot-0');
         };
         bidRequestedSpy = sinon.spy(bidRequestedHandler);
 
@@ -2065,7 +2069,7 @@ describe('Unit: Prebid Module', function () {
         sinon.assert.calledOnce(bidRequestedSpy);
       });
 
-      it('should allow creation of a context.pbAdSlot property on adUnits from inside the event handler', function () {
+      it('should allow creation of a fpd.context.pbAdSlot property on adUnits from inside the event handler', function () {
         // verify adUnits passed to handler then alter the adUnits
         beforeRequestBidsHandler = function beforeRequestBidsHandler(beforeRequestBidsAdUnits) {
           expect(beforeRequestBidsAdUnits).to.be.a('array');
@@ -2073,14 +2077,18 @@ describe('Unit: Prebid Module', function () {
           expect(beforeRequestBidsAdUnits[0]).to.be.a('object');
           expect(beforeRequestBidsAdUnits[1]).to.be.a('object');
           // adUnit should not contain a context property yet
-          expect(beforeRequestBidsAdUnits[0]).to.not.have.property('context')
-          expect(beforeRequestBidsAdUnits[1]).to.not.have.property('context')
+          expect(beforeRequestBidsAdUnits[0]).to.not.have.property('fpd');
+          expect(beforeRequestBidsAdUnits[1]).to.not.have.property('fpd');
           // alter the adUnit by adding the property for context.pbAdSlot
-          beforeRequestBidsAdUnits[0].context = {
-            pbAdSlot: '/19968336/header-bid-tag-pbadslot-0'
+          beforeRequestBidsAdUnits[0].fpd = {
+            context: {
+              pbAdSlot: '/19968336/header-bid-tag-pbadslot-0'
+            }
           };
-          beforeRequestBidsAdUnits[1].context = {
-            pbAdSlot: '/19968336/header-bid-tag-pbadslot-1'
+          beforeRequestBidsAdUnits[1].fpd = {
+            context: {
+              pbAdSlot: '/19968336/header-bid-tag-pbadslot-1'
+            }
           };
         };
         beforeRequestBidsSpy = sinon.spy(beforeRequestBidsHandler);
@@ -2093,17 +2101,21 @@ describe('Unit: Prebid Module', function () {
           expect(bidRequest.bids).to.have.lengthOf(2);
           const bid0 = bidRequest['bids'][0];
           expect(bid0).to.be.a('object');
-          expect(bid0).to.have.property('context');
-          expect(bid0.context).to.be.a('object');
-          expect(bid0.context).to.have.property('pbAdSlot');
-          expect(bid0.context.pbAdSlot).to.equal('/19968336/header-bid-tag-pbadslot-0');
+          expect(bid0).to.have.property('fpd');
+          expect(bid0.fpd).to.be.a('object');
+          expect(bid0.fpd).to.have.property('context');
+          expect(bid0.fpd.context).to.be.a('object');
+          expect(bid0.fpd.context).to.have.property('pbAdSlot');
+          expect(bid0.fpd.context.pbAdSlot).to.equal('/19968336/header-bid-tag-pbadslot-0');
 
           const bid1 = bidRequest['bids'][1];
           expect(bid1).to.be.a('object');
-          expect(bid1).to.have.property('context');
-          expect(bid1.context).to.be.a('object');
-          expect(bid1.context).to.have.property('pbAdSlot');
-          expect(bid1.context.pbAdSlot).to.equal('/19968336/header-bid-tag-pbadslot-1');
+          expect(bid1).to.have.property('fpd');
+          expect(bid1.fpd).to.be.a('object');
+          expect(bid1.fpd).to.have.property('context');
+          expect(bid1.fpd.context).to.be.a('object');
+          expect(bid1.fpd.context).to.have.property('pbAdSlot');
+          expect(bid1.fpd.context.pbAdSlot).to.equal('/19968336/header-bid-tag-pbadslot-1');
         };
         bidRequestedSpy = sinon.spy(bidRequestedHandler);
 

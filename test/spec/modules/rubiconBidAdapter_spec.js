@@ -1265,11 +1265,11 @@ describe('the rubicon adapter', function () {
           beforeEach(function () {
             // enforce that the bid at 0 does not have a 'context' property
             if (bidderRequest.bids[0].hasOwnProperty('context')) {
-              delete bidderRequest.bids[0].context;
+              delete bidderRequest.bids[0].fpd;
             }
           });
 
-          it('should not send \"tg_i.dfp_ad_unit_code\" if \"context\" object is not valid', function () {
+          it('should not send \"tg_i.dfp_ad_unit_code\" if \"fpd.context\" object is not valid', function () {
             const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
             const data = parseQuery(request.data);
 
@@ -1277,8 +1277,8 @@ describe('the rubicon adapter', function () {
             expect(data).to.not.have.property('tg_i.dfp_ad_unit_code');
           });
 
-          it('should not send \"tg_i.dfp_ad_unit_code\" if \"context.pbAdSlot\" is undefined', function () {
-            bidderRequest.bids[0].context = {};
+          it('should not send \"tg_i.dfp_ad_unit_code\" if \"fpd.context.pbAdSlot\" is undefined', function () {
+            bidderRequest.bids[0].fpd = {};
 
             const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
             const data = parseQuery(request.data);
@@ -1287,9 +1287,11 @@ describe('the rubicon adapter', function () {
             expect(data).to.not.have.property('tg_i.dfp_ad_unit_code');
           });
 
-          it('should not send \"tg_i.dfp_ad_unit_code\" if \"context.pbAdSlot\" value is an empty string', function () {
-            bidderRequest.bids[0].context = {
-              pbAdSlot: ''
+          it('should not send \"tg_i.dfp_ad_unit_code\" if \"fpd.context.pbAdSlot\" value is an empty string', function () {
+            bidderRequest.bids[0].fpd = {
+              context: {
+                pbAdSlot: ''
+              }
             };
 
             const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
@@ -1299,10 +1301,12 @@ describe('the rubicon adapter', function () {
             expect(data).to.not.have.property('tg_i.dfp_ad_unit_code');
           });
 
-          it('should send \"tg_i.dfp_ad_unit_code\" if \"context.pbAdSlot\" value is a valid string', function () {
-            bidderRequest.bids[0].context = {
-              pbAdSlot: 'abc'
-            };
+          it('should send \"tg_i.dfp_ad_unit_code\" if \"fpd.context.pbAdSlot\" value is a valid string', function () {
+            bidderRequest.bids[0].fpd = {
+              context: {
+                pbAdSlot: 'abc'
+              }
+            }
 
             const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
             const data = parseQuery(request.data);
@@ -1312,8 +1316,12 @@ describe('the rubicon adapter', function () {
             expect(data['tg_i.dfp_ad_unit_code']).to.equal('abc');
           });
 
-          it('should send \"tg_i.dfp_ad_unit_code\" if \"context.pbAdSlot\" value is a valid string, but all leading slash characters should be removed', function () {
-            bidderRequest.bids[0].context = { pbAdSlot: '/a/b/c' };
+          it('should send \"tg_i.dfp_ad_unit_code\" if \"fpd.context.pbAdSlot\" value is a valid string, but all leading slash characters should be removed', function () {
+            bidderRequest.bids[0].fpd = {
+              context: {
+                pbAdSlot: '/a/b/c'
+              }
+            };
 
             const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
             const data = parseQuery(request.data);
@@ -1634,9 +1642,12 @@ describe('the rubicon adapter', function () {
 
         it('should include pbAdSlot in bid request', function () {
           createVideoBidderRequest();
-          bidderRequest.bids[0].context = {
-            pbAdSlot: '1234567890'
-          }
+          bidderRequest.bids[0].fpd = {
+            context: {
+              pbAdSlot: '1234567890'
+            }
+          };
+
           sandbox.stub(Date, 'now').callsFake(() =>
             bidderRequest.auctionStart + 100
           );

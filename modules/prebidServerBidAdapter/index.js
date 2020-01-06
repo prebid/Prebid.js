@@ -485,7 +485,7 @@ const OPEN_RTB_PROTOCOL = {
        * Prebid AdSlot
        * @type {(string|undefined)}
        */
-      const pbAdSlot = utils.deepAccess(adUnit, 'context.pbAdSlot');
+      const pbAdSlot = utils.deepAccess(adUnit, 'fpd.context.pbAdSlot');
       if (typeof pbAdSlot === 'string' && pbAdSlot) {
         utils.deepSetValue(imp, 'ext.context.data.adslot', pbAdSlot);
       }

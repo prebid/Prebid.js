@@ -66,7 +66,7 @@ function getBids({bidderCode, auctionId, bidderRequestId, adUnits, labels, src})
           }
 
           bid = Object.assign({}, bid, getDefinedParams(adUnit, [
-            'context',
+            'fpd',
             'mediaType',
             'renderer'
           ]));
