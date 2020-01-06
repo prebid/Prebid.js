@@ -391,13 +391,11 @@ describe('User ID', function() {
     let mockIdCallback;
     let auctionSpy;
 
-    before(function() {
+    beforeEach(function() {
       sandbox = sinon.createSandbox();
       sandbox.stub(global, 'setTimeout');
       sandbox.stub(events, 'on');
-    });
 
-    beforeEach(function() {
       // remove cookie
       utils.setCookie('MOCKID', '', EXPIRED_COOKIE_DATE);
 
@@ -429,10 +427,6 @@ describe('User ID', function() {
     afterEach(function () {
       $$PREBID_GLOBAL$$.requestBids.removeAll();
       config.resetConfig();
-      sandbox.resetHistory();
-    });
-
-    after(function() {
       sandbox.restore();
     });
 
