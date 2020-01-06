@@ -240,7 +240,6 @@ function outstreamRender(bid) {
       elId: bid.adUnitCode
     });
     window.VOutstreamAPI.initOutstreams([opts]);
-    return opts;
   });
 }
 
