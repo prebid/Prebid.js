@@ -1,7 +1,7 @@
 import * as utils from '../src/utils';
 import {registerBidder} from '../src/adapters/bidderFactory';
 const BIDDER_CODE = 'jcm';
-const URL = '//media.adfrontiers.com/pq'
+const URL = 'https://media.adfrontiers.com/pq'
 
 export const spec = {
   code: BIDDER_CODE,
@@ -74,13 +74,13 @@ export const spec = {
     if (syncOptions.iframeEnabled) {
       return [{
         type: 'iframe',
-        url: '//media.adfrontiers.com/hb/jcm_usersync.html'
+        url: 'https://media.adfrontiers.com/hb/jcm_usersync.html'
       }];
     }
     if (syncOptions.image) {
       return [{
         type: 'image',
-        url: '//media.adfrontiers.com/hb/jcm_usersync.png'
+        url: 'https://media.adfrontiers.com/hb/jcm_usersync.png'
       }];
     }
   }

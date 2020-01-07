@@ -277,7 +277,9 @@ const spec = {
 onMessage('iframe', function (data) {
   if (window.$sf) {
     var viewed = false;
+    // eslint-disable-next-line no-undef
     $sf.ext.register(data.width, data.height, function () {
+      // eslint-disable-next-line no-undef
       if ($sf.ext.inViewPercentage() < 50 || viewed) {
         return;
       }

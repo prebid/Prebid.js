@@ -5,6 +5,12 @@ import CONSTANTS from '../src/constants.json';
 import * as url from '../src/url';
 import * as utils from '../src/utils';
 
+/**
+ * Analytics adapter from adxcg.com
+ * maintainer info@adxcg.com
+ * updated 201911 for prebid 3.0
+ */
+
 const emptyUrl = '';
 const analyticsType = 'endpoint';
 const adxcgAnalyticsVersion = 'v2.01';
@@ -107,11 +113,8 @@ function mapBidWon (bidResponse) {
 }
 
 function send (data) {
-  let location = utils.getTopWindowLocation();
-  let secure = location.protocol === 'https:';
-
   let adxcgAnalyticsRequestUrl = url.format({
-    protocol: secure ? 'https' : 'http',
+    protocol: 'https',
     hostname: adxcgAnalyticsAdapter.context.host,
     pathname: '/pbrx/v2',
     search: {
@@ -145,14 +148,13 @@ adxcgAnalyticsAdapter.enableAnalytics = function (config) {
     return;
   }
 
-  let secure = location.protocol === 'https:';
   adxcgAnalyticsAdapter.context = {
     events: {
       bidRequests: [],
       bidResponses: []
     },
     initOptions: config.options,
-    host: config.options.host || (secure ? 'hbarxs.adxcg.net' : 'hbarx.adxcg.net')
+    host: config.options.host || ('hbarxs.adxcg.net')
   };
 
   adxcgAnalyticsAdapter.originEnableAnalytics(config);

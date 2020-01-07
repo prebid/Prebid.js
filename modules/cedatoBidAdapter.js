@@ -3,10 +3,8 @@ import { registerBidder } from '../src/adapters/bidderFactory';
 import { BANNER, VIDEO } from '../src/mediaTypes';
 
 const BIDDER_CODE = 'cedato';
-const BID_URL = '//h.cedatoplayer.com/hb';
-const SYNC_URL = '//h.cedatoplayer.com/hb_usync?uid={UUID}';
-const COOKIE_NAME = 'hb-cedato-id';
-const UUID_LEN = 36;
+const BID_URL = 'https://h.cedatoplayer.com/hb';
+const SYNC_URL = 'https://h.cedatoplayer.com/hb_usync';
 const TTL = 10000;
 const CURRENCY = 'USD';
 const FIRST_PRICE = 1;
@@ -32,9 +30,11 @@ export const spec = {
     const at = FIRST_PRICE;
     const site = { id: params.player_id, domain: document.domain };
     const device = { ua: navigator.userAgent };
-    const user = { id: getUserID() }
     const currency = CURRENCY;
     const tmax = bidderRequest.timeout;
+    const auctionId = bidderRequest.auctionId;
+    const auctionStart = bidderRequest.auctionStart;
+    const bidderRequestId = bidderRequest.bidderRequestId;
 
     const imp = bidRequests.map(req => {
       const banner = getMediaType(req, 'banner');
@@ -42,6 +42,9 @@ export const spec = {
       const bidfloor = params.bidfloor;
       const bidId = req.bidId;
       const adUnitCode = req.adUnitCode;
+      const bidRequestsCount = req.bidRequestsCount;
+      const bidderWinsCount = req.bidderWinsCount;
+      const transactionId = req.transactionId;
 
       return {
         bidId,
@@ -49,6 +52,9 @@ export const spec = {
         video,
         adUnitCode,
         bidfloor,
+        bidRequestsCount,
+        bidderWinsCount,
+        transactionId
       };
     });
 
@@ -57,17 +63,24 @@ export const spec = {
       at,
       site,
       device,
-      user,
       imp,
       currency,
       tmax,
+      auctionId,
+      auctionStart,
+      bidderRequestId
     };
 
-    if (bidderRequest && bidderRequest.gdprConsent) {
-      payload.gdpr_consent = {
-        consent_string: bidderRequest.gdprConsent.consentString,
-        consent_required: bidderRequest.gdprConsent.gdprApplies
-      };
+    if (bidderRequest) {
+      payload.referer_info = bidderRequest.refererInfo;
+      payload.us_privacy = bidderRequest.uspConsent;
+
+      if (bidderRequest.gdprConsent) {
+        payload.gdpr_consent = {
+          consent_string: bidderRequest.gdprConsent.consentString,
+          consent_required: bidderRequest.gdprConsent.gdprApplies
+        };
+      }
     }
 
     return {
@@ -95,12 +108,12 @@ export const spec = {
     return bids;
   },
 
-  getUserSyncs: function(syncOptions, resps, gdprConsent) {
+  getUserSyncs: function(syncOptions, resps, gdprConsent, uspConsent) {
     const syncs = [];
     if (syncOptions.iframeEnabled) {
-      syncs.push(getSync('iframe', gdprConsent));
+      syncs.push(getSync('iframe', gdprConsent, uspConsent));
     } else if (syncOptions.pixelEnabled) {
-      syncs.push(getSync('image', gdprConsent));
+      syncs.push(getSync('image', gdprConsent, uspConsent));
     }
     return syncs;
   }
@@ -173,10 +186,9 @@ function newBid(serverBid, bidderRequest) {
   return bid;
 }
 
-const getSync = (type, gdprConsent) => {
-  const uuid = getUserID();
+const getSync = (type, gdprConsent, uspConsent = '') => {
   const syncUrl = SYNC_URL;
-  let params = '&type=' + type;
+  let params = '&type=' + type + '&us_privacy=' + uspConsent;
   if (gdprConsent && typeof gdprConsent.consentString === 'string') {
     if (typeof gdprConsent.gdprApplies === 'boolean') {
       params += `&gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
@@ -186,25 +198,9 @@ const getSync = (type, gdprConsent) => {
   }
   return {
     type: type,
-    url: syncUrl.replace('{UUID}', uuid) + params,
+    url: syncUrl + params,
   };
 }
-
-const getUserID = () => {
-  const cookieName = COOKIE_NAME;
-  const uuidLen = UUID_LEN;
-
-  const i = document.cookie.indexOf(cookieName);
-
-  if (i === -1) {
-    const uuid = utils.generateUUID();
-    document.cookie = `${cookieName}=${uuid}; path=/`;
-    return uuid;
-  }
-
-  const j = i + cookieName.length + 1;
-  return document.cookie.substring(j, j + uuidLen);
-};
 
 const getFormats = arr => arr.map((s) => {
   return { w: s[0], h: s[1] };

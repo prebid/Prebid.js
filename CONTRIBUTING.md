@@ -48,7 +48,8 @@ When you are adding code to Prebid.js, or modifying code that isn't covered by a
   - _Assert_: check that the expected results have occurred
     - e.g., use Chai assertions to check that the expected output is equal to the actual output
 - Test the public interface, not the internal implementation
-- If you need to check `adloader.loadScript` in a test, use a `stub` rather than a `spy`. `spy`s trigger a network call which can result in a `script error` and cause unrelated unit tests to fail. `stub`s will let you gather information about the `adloader.loadScript` call without affecting external resources
+- If you need to check `adloader.loadExternalScript` in a test, use a `stub` rather than a `spy`. `spy`s trigger a network call which can result in a `script error` and cause unrelated unit tests to fail. `stub`s will let you gather information about the `adloader.loadExternalScript` call without affecting external resources
+- If your test makes ajax requests, use the global xhr stub in `test/mocks/xhr`. Do not use your own `sinon.useFakeXMLHttpRequest()` or `sinon.createFakeServer()`.
 - When writing tests you may use ES2015 syntax if desired
 
 ### Test Examples

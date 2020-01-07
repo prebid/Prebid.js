@@ -6,6 +6,7 @@ import { processNativeAdUnitParams, nativeAdapters } from './native';
 import { newBidder } from './adapters/bidderFactory';
 import { ajaxBuilder } from './ajax';
 import { config, RANDOM } from './config';
+import { hook } from './hook';
 import includes from 'core-js/library/fn/array/includes';
 import find from 'core-js/library/fn/array/find';
 import { adunitCounter } from './adUnits';
@@ -101,7 +102,9 @@ function getBids({bidderCode, auctionId, bidderRequestId, adUnits, labels, src})
               bidderRequestId,
               auctionId,
               src,
-              bidRequestsCount: adunitCounter.getCounter(adUnit.code),
+              bidRequestsCount: adunitCounter.getRequestsCounter(adUnit.code),
+              bidderRequestsCount: adunitCounter.getBidderRequestsCounter(adUnit.code, bid.bidder),
+              bidderWinsCount: adunitCounter.getBidderWinsCounter(adUnit.code, bid.bidder),
             }));
           }
           return bids;
@@ -161,7 +164,17 @@ export let gdprDataHandler = {
   }
 };
 
-adapterManager.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTimeout, labels) {
+export let uspDataHandler = {
+  consentData: null,
+  setConsentData: function(consentInfo) {
+    uspDataHandler.consentData = consentInfo;
+  },
+  getConsentData: function() {
+    return uspDataHandler.consentData;
+  }
+};
+
+adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, auctionId, cbTimeout, labels) {
   let bidRequests = [];
 
   let bidderCodes = getBidderCodes(adUnits);
@@ -264,8 +277,14 @@ adapterManager.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTi
       bidRequest['gdprConsent'] = gdprDataHandler.getConsentData();
     });
   }
+
+  if (uspDataHandler.getConsentData()) {
+    bidRequests.forEach(bidRequest => {
+      bidRequest['uspConsent'] = uspDataHandler.getConsentData();
+    });
+  }
   return bidRequests;
-};
+}, 'makeBidRequests');
 
 adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, requestCallbacks, requestBidsTimeout, onTimelyResponse) => {
   if (!bidRequests.length) {
@@ -503,6 +522,7 @@ adapterManager.callTimedOutBidders = function(adUnits, timedOutBidders, cbTimeou
 adapterManager.callBidWonBidder = function(bidder, bid, adUnits) {
   // Adding user configured params to bidWon event data
   bid.params = utils.getUserConfiguredParams(adUnits, bid.adUnitCode, bid.bidder);
+  adunitCounter.incrementBidderWinsCounter(bid.adUnitCode, bid.bidder);
   tryCallBidderMethod(bidder, 'onBidWon', bid);
 };
 
