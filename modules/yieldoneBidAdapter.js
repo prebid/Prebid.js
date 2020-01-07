@@ -8,6 +8,7 @@ const BIDDER_CODE = 'yieldone';
 const ENDPOINT_URL = 'https://y.one.impact-ad.jp/h_bid';
 const USER_SYNC_URL = 'https://y.one.impact-ad.jp/push_sync';
 const VIDEO_PLAYER_URL = 'https://img.ak.impact-ad.jp/ic/pone/ivt/firstview/js/dac-video-prebid.min.js';
+const VIEWABLE_PERCENTAGE_URL = 'https://img.ak.impact-ad.jp/ic/pone/ivt/firstview/js/prebid-adformat-config.js';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -64,6 +65,7 @@ export const spec = {
     const cpm = response.cpm * 1000 || 0;
     if (width !== 0 && height !== 0 && cpm !== 0 && crid !== 0) {
       const dealId = response.dealId || '';
+      const renderId = response.renderid || '';
       const currency = response.currency || 'JPY';
       const netRevenue = (response.netRevenue === undefined) ? true : response.netRevenue;
       const referrer = utils.getTopWindowUrl();
@@ -80,7 +82,53 @@ export const spec = {
         referrer: referrer
       };
 
-      if (response.adTag) {
+      if (response.adTag && renderId === 'ViewableRendering') {
+        bidResponse.mediaType = BANNER;
+        let viewableScript = `
+        <script src="${VIEWABLE_PERCENTAGE_URL}"></script>
+        <script>
+        let width =${bidResponse.width};
+        let height =${bidResponse.height};
+        let adTag = \`${response.adTag.replace(/\\/g, '\\\\').replace(/\//g, '\\/').replace(/'/g, "\\'").replace(/"/g, '\\"')}\`;
+        let targetId ="${bidRequest.data.uc}";
+        window.YONEPBViewable = {};
+        window.YONEPBViewable.executed = false;
+        const viewablePercentage = window.pb_conf.viewablePercentage;
+        const viewableRange = height * 0.01 * viewablePercentage;
+        const iframe = document.createElement('iframe');
+        iframe.setAttribute("style", "border: 0; margin: 0 auto; left: 0; top: 0; width:" + width + "px; height:" + height + "px;");
+        iframe.frameBorder = 0; iframe.scrolling = 'no';
+        const inDap = document.createElement('script');
+        inDap.innerHTML = "inDapIF = true;";
+        iframe.appendChild(inDap);
+        window.frameElement.parentElement.appendChild(iframe);
+        const doc = iframe.contentWindow ? iframe.contentWindow.document : iframe.contentDocument;
+        if(!window.parent.$sf){
+          let target = window.top.document.getElementById(targetId);
+          window.top.addEventListener('scroll', () => {
+              const targetRect = target.getBoundingClientRect();
+              if (!window.YONEPBViewable.executed && window.top.innerHeight - targetRect.top > viewableRange) {
+                  window.YONEPBViewable.executed = true;
+                  doc.open(); doc.write(adTag); doc.close();
+                  window.frameElement.style.display = "none";
+              }
+            }, false);
+        }else{
+          let disp = function(){
+            if(!window.YONEPBViewable.executed && window.parent.$sf.ext.inViewPercentage() > viewablePercentage){
+                window.YONEPBViewable.executed = true;
+                doc.open(); doc.write(adTag); doc.close();
+                window.frameElement.style.display = "none";
+            }
+            let id = setTimeout(disp, 100);
+            if(window.YONEPBViewable.executed){clearTimeout(id);}
+          };
+          disp();
+        }
+        </script>
+        `;
+        bidResponse.ad = viewableScript;
+      } else if (response.adTag) {
         bidResponse.mediaType = BANNER;
         bidResponse.ad = response.adTag;
       } else if (response.adm) {

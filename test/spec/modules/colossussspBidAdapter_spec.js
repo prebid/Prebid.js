@@ -11,7 +11,11 @@ describe('ColossussspAdapter', function () {
     },
     placementCode: 'placementid_0',
     auctionId: '74f78609-a92d-4cf1-869f-1b244bbfb5d2',
-    sizes: [[300, 250]],
+    mediaTypes: {
+      banner: {
+        sizes: [[300, 250]]
+      }
+    },
     transactionId: '3bb2f6da-87a6-4029-aeb0-bfe951372e62'
   };
 
@@ -37,7 +41,7 @@ describe('ColossussspAdapter', function () {
       expect(serverRequest.method).to.equal('POST');
     });
     it('Returns valid URL', function () {
-      expect(serverRequest.url).to.equal('//colossusssp.com/?c=o&m=multi');
+      expect(serverRequest.url).to.equal('https://colossusssp.com/?c=o&m=multi');
     });
     it('Returns valid data if array of bids is valid', function () {
       let data = serverRequest.data;
@@ -112,7 +116,7 @@ describe('ColossussspAdapter', function () {
       expect(userSync[0].type).to.exist;
       expect(userSync[0].url).to.exist;
       expect(userSync[0].type).to.be.equal('image');
-      expect(userSync[0].url).to.be.equal('//colossusssp.com/?c=o&m=cookie');
+      expect(userSync[0].url).to.be.equal('https://colossusssp.com/?c=o&m=cookie');
     });
   });
 });

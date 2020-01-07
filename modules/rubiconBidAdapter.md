@@ -60,7 +60,7 @@ globalsupport@rubiconproject.com for more information.
          video: {
             context: 'instream',
             playerSize: [640, 480],
-            mimes: ['video/mp4', 'video/x-ms-wmv']
+            mimes: ['video/mp4', 'video/x-ms-wmv'],
             protocols: [2,5],
             maxduration:30,
             linearity: 1,

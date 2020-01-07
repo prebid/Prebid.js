@@ -12,6 +12,20 @@ const validBannerBidReq = {
   sizes: [[300, 250]],
   bidId: '263be71e91dd9d',
   auctionId: '9ad1fa8d-2297-4660-a018-b39945054746',
+  'schain': {
+    'ver': '1.0',
+    'complete': 1,
+    'nodes': [
+      {
+        'asi': 'exchange1.com',
+        'sid': '1234',
+        'hp': 1,
+        'rid': 'bid-request-1',
+        'name': 'publisher',
+        'domain': 'publisher.com'
+      }
+    ]
+  }
 };
 
 const invalidBannerBidReq = {
@@ -32,6 +46,8 @@ const validBannerBidRes = {
   height: 250,
   width: 300
 };
+
+const invalidBannerBidRes = '';
 
 const validVideoBidReq = {
   bidder: BIDDER_CODE,
@@ -114,6 +130,7 @@ describe('ucfunnel Adapter', function () {
       const [ width, height ] = validBannerBidReq.sizes[0];
       expect(data.w).to.equal(width);
       expect(data.h).to.equal(height);
+      expect(data.schain).to.equal('1.0,1!exchange1.com,1234,1,bid-request-1,publisher,publisher.com');
     });
 
     it('must parse bid size from a nested array', function () {
@@ -142,6 +159,24 @@ describe('ucfunnel Adapter', function () {
         expect(bid.ad).to.exist;
         expect(bid.requestId).to.equal('263be71e91dd9d');
         expect(bid.cpm).to.equal(0.01);
+        expect(bid.width).to.equal(300);
+        expect(bid.height).to.equal(250);
+      });
+    });
+
+    describe('handle banner no ad', function () {
+      const request = spec.buildRequests([ validBannerBidReq ]);
+      const result = spec.interpretResponse({body: invalidBannerBidRes}, request[0]);
+      it('should build bid array for banner', function () {
+        expect(result.length).to.equal(1);
+      });
+
+      it('should have all relevant fields', function () {
+        const bid = result[0];
+
+        expect(bid.ad).to.exist;
+        expect(bid.requestId).to.equal('263be71e91dd9d');
+        expect(bid.cpm).to.equal(0);
         expect(bid.width).to.equal(300);
         expect(bid.height).to.equal(250);
       });

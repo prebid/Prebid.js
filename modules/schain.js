@@ -1,6 +1,6 @@
 import {config} from '../src/config';
 import {getGlobal} from '../src/prebidGlobal';
-import { isNumber, isStr, isArray, isPlainObject, hasOwn, logError, isInteger } from '../src/utils';
+import { isNumber, isStr, isArray, isPlainObject, hasOwn, logError, isInteger, _each } from '../src/utils';
 
 // https://github.com/InteractiveAdvertisingBureau/openrtb/blob/master/supplychainobject.md
 
@@ -14,6 +14,8 @@ const MODE = {
   RELAXED: 'relaxed',
   OFF: 'off'
 };
+const MODES = []; // an array of modes
+_each(MODE, mode => MODES.push(mode));
 
 // validate the supply chain object
 export function isSchainObjectValid(schainObject, returnOnError) {
@@ -133,7 +135,7 @@ export function init(config) {
   getGlobal().requestBids.before(function(fn, reqBidsConfigObj) {
     let schainObject = config.getConfig('schain');
     if (isValidSchainConfig(schainObject)) {
-      if (isStr(schainObject.validation) && Object.values(MODE).indexOf(schainObject.validation) != -1) {
+      if (isStr(schainObject.validation) && MODES.indexOf(schainObject.validation) != -1) {
         mode = schainObject.validation;
       }
       if (mode === MODE.OFF) {

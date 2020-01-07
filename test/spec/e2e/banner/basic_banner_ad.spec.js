@@ -5,15 +5,15 @@ const TEST_PAGE_URL = `${protocol}://${host}:9999/test/pages/banner.html`;
 const CREATIVE_IFRAME_CSS_SELECTOR = 'iframe[id="google_ads_iframe_/19968336/header-bid-tag-0_0"]';
 
 const EXPECTED_TARGETING_KEYS = {
-  hb_format: 'banner',
-  hb_source: 'client',
-  hb_pb: '0.50',
-  hb_bidder: 'appnexus',
-  hb_format_appnexus: 'banner',
-  hb_source_appnexus: 'client',
-  hb_pb_appnexus: '0.50',
-  hb_bidder_appnexus: 'appnexus'
-}
+  'hb_format': 'banner',
+  'hb_source': 'client',
+  'hb_pb': '0.60',
+  'hb_bidder': 'rubicon',
+  'hb_format_rubicon': 'banner',
+  'hb_source_rubicon': 'client',
+  'hb_pb_rubicon': '0.60',
+  'hb_bidder_rubicon': 'rubicon'
+};
 
 describe('Prebid.js Banner Ad Unit Test', function () {
   before(function loadTestPage() {
@@ -38,7 +38,7 @@ describe('Prebid.js Banner Ad Unit Test', function () {
 
     expect(targetingKeys).to.include(EXPECTED_TARGETING_KEYS);
     expect(targetingKeys.hb_adid).to.be.a('string');
-    expect(targetingKeys.hb_adid_appnexus).to.be.a('string');
+    expect(targetingKeys.hb_adid_rubicon).to.be.a('string');
     expect(targetingKeys.hb_size).to.satisfy((size) => size === '300x250' || '300x600');
   });
 

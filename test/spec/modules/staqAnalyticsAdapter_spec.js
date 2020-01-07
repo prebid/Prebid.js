@@ -1,5 +1,5 @@
-import analyticsAdapter, {ExpiringQueue, getUmtSource, storage} from 'modules/staqAnalyticsAdapter';
-import {expect} from 'chai';
+import analyticsAdapter, { ExpiringQueue, getUmtSource, storage } from 'modules/staqAnalyticsAdapter';
+import { expect } from 'chai';
 import adapterManager from 'src/adapterManager';
 import CONSTANTS from 'src/constants.json';
 
@@ -32,60 +32,60 @@ const CAMPAIGN = {
   c5: '5'
 
 };
-describe('', function () {
+describe('', function() {
   let sandbox;
 
-  before(function () {
+  before(function() {
     sandbox = sinon.sandbox.create();
   });
 
-  after(function () {
+  after(function() {
     sandbox.restore();
     analyticsAdapter.disableAnalytics();
   });
 
-  describe('UTM source parser', function () {
+  describe('UTM source parser', function() {
     let stubSetItem;
     let stubGetItem;
 
-    before(function () {
+    before(function() {
       stubSetItem = sandbox.stub(storage, 'setItem');
       stubGetItem = sandbox.stub(storage, 'getItem');
     });
 
-    afterEach(function () {
+    afterEach(function() {
       sandbox.reset();
     });
 
-    it('should parse first direct visit as (direct)', function () {
+    it('should parse first direct visit as (direct)', function() {
       stubGetItem.withArgs('adk_dpt_analytics').returns(undefined);
       stubSetItem.returns(undefined);
       let source = getUmtSource('http://example.com');
       expect(source).to.be.eql(DIRECT);
     });
 
-    it('should parse visit from google as organic', function () {
+    it('should parse visit from google as organic', function() {
       stubGetItem.withArgs('adk_dpt_analytics').returns(undefined);
       stubSetItem.returns(undefined);
       let source = getUmtSource('http://example.com', 'https://www.google.com/search?q=pikachu');
       expect(source).to.be.eql(GOOGLE_ORGANIC);
     });
 
-    it('should parse referral visit', function () {
+    it('should parse referral visit', function() {
       stubGetItem.withArgs('adk_dpt_analytics').returns(undefined);
       stubSetItem.returns(undefined);
       let source = getUmtSource('http://example.com', 'http://lander.com/lander.html');
       expect(source).to.be.eql(REFERRER);
     });
 
-    it('should parse referral visit from same domain as direct', function () {
+    it('should parse referral visit from same domain as direct', function() {
       stubGetItem.withArgs('adk_dpt_analytics').returns(undefined);
       stubSetItem.returns(undefined);
       let source = getUmtSource('http://lander.com/news.html', 'http://lander.com/lander.html');
       expect(source).to.be.eql(DIRECT);
     });
 
-    it('should parse campaign visit', function () {
+    it('should parse campaign visit', function() {
       stubGetItem.withArgs('adk_dpt_analytics').returns(undefined);
       stubSetItem.returns(undefined);
       let source = getUmtSource('http://lander.com/index.html?utm_campaign=new_campaign&utm_source=adkernel&utm_medium=email&utm_c1=1&utm_c2=2&utm_c3=3&utm_c4=4&utm_c5=5');
@@ -93,12 +93,12 @@ describe('', function () {
     });
   });
 
-  describe('ExpiringQueue', function () {
+  describe('ExpiringQueue', function() {
     let timer;
-    before(function () {
+    before(function() {
       timer = sandbox.useFakeTimers(0);
     });
-    after(function () {
+    after(function() {
       timer.restore();
     });
 
@@ -135,7 +135,9 @@ describe('', function () {
       params: {},
       adUnitCode: 'container-1',
       transactionId: 'de90df62-7fd0-4fbc-8787-92d133a7dc06',
-      sizes: [[300, 250]],
+      sizes: [
+        [300, 250]
+      ],
       bidId: '208750227436c1',
       bidderRequestId: '1a6fc81528d0f6',
       auctionId: '5018eb39-f900-4370-b71e-3bb5b48d324f'
@@ -176,26 +178,26 @@ describe('', function () {
     auctionId: '66529d4c-8998-47c2-ab3e-5b953490b98f'
   }];
 
-  describe('Analytics adapter', function () {
+  describe('Analytics adapter', function() {
     let ajaxStub;
     let timer;
 
-    before(function () {
+    before(function() {
       ajaxStub = sandbox.stub(analyticsAdapter, 'ajaxCall');
       timer = sandbox.useFakeTimers(0);
     });
 
-    beforeEach(function () {
+    beforeEach(function() {
       sandbox.stub(events, 'getEvents').callsFake(() => {
         return []
       });
     });
 
-    afterEach(function () {
+    afterEach(function() {
       events.getEvents.restore();
     });
 
-    it('should be configurable', function () {
+    it('should be configurable', function() {
       adapterManager.registerAnalyticsAdapter({
         code: 'staq',
         adapter: analyticsAdapter
@@ -213,14 +215,14 @@ describe('', function () {
       expect(analyticsAdapter.context).to.have.property('connectionId', 777);
     });
 
-    it('should handle auction init event', function () {
-      events.emit(CONSTANTS.EVENTS.AUCTION_INIT, {config: {}, timeout: 3000});
+    it('should handle auction init event', function() {
+      events.emit(CONSTANTS.EVENTS.AUCTION_INIT, { config: {}, timeout: 3000 });
       const ev = analyticsAdapter.context.queue.peekAll();
       expect(ev).to.have.length(1);
-      expect(ev[0]).to.be.eql({event: 'auctionInit', auctionId: undefined});
+      expect(ev[0]).to.be.eql({ event: 'auctionInit', auctionId: undefined });
     });
 
-    it('should handle bid request event', function () {
+    it('should handle bid request event', function() {
       events.emit(CONSTANTS.EVENTS.BID_REQUESTED, REQUEST);
       const ev = analyticsAdapter.context.queue.peekAll();
       expect(ev).to.have.length(2);
@@ -233,7 +235,7 @@ describe('', function () {
       });
     });
 
-    it('should handle bid response event', function () {
+    it('should handle bid response event', function() {
       events.emit(CONSTANTS.EVENTS.BID_RESPONSE, RESPONSE);
       const ev = analyticsAdapter.context.queue.peekAll();
       expect(ev).to.have.length(3);
@@ -265,7 +267,7 @@ describe('', function () {
       })
     });
 
-    it('should handle winning bid', function () {
+    it('should handle winning bid', function() {
       events.emit(CONSTANTS.EVENTS.BID_WON, RESPONSE);
       const ev = analyticsAdapter.context.queue.peekAll();
       expect(ev).to.have.length(6);
@@ -283,7 +285,7 @@ describe('', function () {
       });
     });
 
-    it('should handle auction end event', function () {
+    it('should handle auction end event', function() {
       timer.tick(447);
       events.emit(CONSTANTS.EVENTS.AUCTION_END, RESPONSE);
       let ev = analyticsAdapter.context.queue.peekAll();
@@ -291,9 +293,8 @@ describe('', function () {
       expect(ajaxStub.calledOnce).to.be.equal(true);
       let firstCallArgs0 = ajaxStub.firstCall.args[0];
       ev = JSON.parse(firstCallArgs0);
-      // console.log('AUCTION END EVENT SHAPE ' + JSON.stringify(ev));
-      const ev6 = ev[6];
-      expect(ev6.connId).to.be.eql(777);
+      const ev6 = ev['events'][6];
+      expect(ev['connId']).to.be.eql(777);
       expect(ev6.auctionId).to.be.eql('5018eb39-f900-4370-b71e-3bb5b48d324f');
       expect(ev6.event).to.be.eql('auctionEnd');
     });
