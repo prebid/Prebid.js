@@ -5,7 +5,6 @@ import {
 
 let assert = require('chai').assert;
 let expect = require('chai').expect;
-const DIGI_VENDOR_ID = 65;
 var testHook = null;
 
 /**
