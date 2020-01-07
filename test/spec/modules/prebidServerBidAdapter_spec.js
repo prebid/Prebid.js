@@ -800,7 +800,7 @@ describe('S2S Adapter', function () {
 
       config.setConfig(_config);
       adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
-      const requestBid = JSON.parse(requests[0].requestBody);
+      const requestBid = JSON.parse(server.requests[0].requestBody);
       expect(requestBid.imp).to.exist.and.to.be.a('array');
       expect(requestBid.imp).to.have.lengthOf(1);
       expect(requestBid.imp[0].ext).to.exist.and.to.be.a('object');
