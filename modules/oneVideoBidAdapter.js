@@ -248,13 +248,6 @@ function getRequestData(bid, consentData, bidRequest) {
       bidData.regs.ext.us_privacy = bidRequest.uspConsent
     }
   }
-  if (bidRequest && bidRequest.uspConsent) {
-    bidData.regs = {
-      ext: {
-        us_privacy: bidRequest.uspConsent
-      }
-    };
-  }
 
   return bidData;
 }
