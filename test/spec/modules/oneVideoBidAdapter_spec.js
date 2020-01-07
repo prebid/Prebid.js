@@ -222,15 +222,15 @@ describe('OneVideoBidAdapter', function () {
       mockConfig = {
         consentManagement: {
           gdpr: {
-           cmpApi: 'iab',
-           timeout: 3000,
-           allowAuctionWithoutConsent: 'cancel'
-         },
-         usp: {
-           cmpApi: 'iab',
-           timeout: 1000,
-           allowAuctionWithoutConsent: 'cancel'
-         }
+            cmpApi: 'iab',
+            timeout: 3000,
+            allowAuctionWithoutConsent: 'cancel'
+          },
+          usp: {
+            cmpApi: 'iab',
+            timeout: 1000,
+            allowAuctionWithoutConsent: 'cancel'
+          }
         }
       };
     });
