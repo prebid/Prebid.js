@@ -4,7 +4,7 @@ const PROXISTORE_VENDOR_ID = 418;
 
 function _createServerRequest(bidRequests, bidderRequest) {
   const payload = {
-    bidId: bidRequests.map(req => req.bidId),
+    bidId: bidRequests.map(req => req.bidId)[0],
     auctionId: bidRequests[0].auctionId,
     transactionId: bidRequests[0].transactionId,
     sizes: bidRequests.map(x => x.sizes).map(x => { return {'width': x[0], 'height': x[1]} }),
