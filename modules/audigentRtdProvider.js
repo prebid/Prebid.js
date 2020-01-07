@@ -64,15 +64,12 @@ function getSegments(adUnits, onDone) {
 
 function getSegmentsAsync(adUnits, onDone) {
   const userIds = (getGlobal()).getUserIds();
-  let tdid = null;
 
-  if (userIds && userIds['tdid']) {
-    tdid = userIds['tdid'];
-  } else {
+  if (typeof userIds != 'undefined' && userIds != null) {
     onDone({});
   }
 
-  const url = `https://seg.ad.gt/api/v1/rtb_segments?tdid=${tdid}`;
+  const url = `https://seg.ad.gt/api/v1/rtb_segments`;
 
   ajax(url, {
     success: function (response, req) {
@@ -105,7 +102,9 @@ function getSegmentsAsync(adUnits, onDone) {
       onDone({});
       utils.logError('unable to get audigent segment data');
     }
-  }
+  },
+  JSON.stringify(userIds),
+  {contentType: 'application/json'}
   );
 }
 
