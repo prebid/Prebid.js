@@ -1,6 +1,11 @@
-import rubiconAnalyticsAdapter, { SEND_TIMEOUT } from 'modules/rubiconAnalyticsAdapter';
+import rubiconAnalyticsAdapter, { SEND_TIMEOUT, parseBidResponse } from 'modules/rubiconAnalyticsAdapter';
 import CONSTANTS from 'src/constants.json';
 import { config } from 'src/config';
+
+import {
+  setConfig,
+  addBidResponseHook,
+} from 'modules/currency';
 
 let Ajv = require('ajv');
 let schema = require('./rubiconAnalyticsSchema.json');
@@ -448,7 +453,8 @@ const ANALYTICS_MESSAGE = {
       },
       'bidwonStatus': 'success'
     }
-  ]
+  ],
+  'wrapperName': '10000_fakewrapper_test'
 };
 
 function performStandardAuction() {
@@ -487,6 +493,9 @@ describe('rubicon analytics adapter', function () {
       s2sConfig: {
         timeout: 1000,
         accountId: 10000,
+      },
+      rubicon: {
+        wrapperName: '10000_fakewrapper_test'
       }
     })
   });
@@ -693,6 +702,61 @@ describe('rubicon analytics adapter', function () {
       expect(timedOutBid.status).to.equal('error');
       expect(timedOutBid.error.code).to.equal('timeout-error');
       expect(timedOutBid).to.not.have.property('bidResponse');
+    });
+
+    it('should successfully convert bid price to USD in parseBidResponse', function () {
+      // Set the rates
+      setConfig({
+        adServerCurrency: 'JPY',
+        rates: {
+          USD: {
+            JPY: 100
+          }
+        }
+      });
+
+      // set our bid response to JPY
+      const bidCopy = utils.deepClone(BID2);
+      bidCopy.currency = 'JPY';
+      bidCopy.cpm = 100;
+
+      // Now add the bidResponse hook which hooks on the currenct conversion function onto the bid response
+      let innerBid;
+      addBidResponseHook(function(adCodeId, bid) {
+        innerBid = bid;
+      }, 'elementId', bidCopy);
+
+      // Use the rubi analytics parseBidResponse Function to get the resulting cpm from the bid response!
+      const bidResponseObj = parseBidResponse(innerBid);
+      expect(bidResponseObj).to.have.property('bidPriceUSD');
+      expect(bidResponseObj.bidPriceUSD).to.equal(1.0);
+    });
+  });
+
+  describe('config with integration type', () => {
+    it('should use the integration type provided in the config instead of the default', () => {
+      sandbox.stub(config, 'getConfig').callsFake(function (key) {
+        const config = {
+          'rubicon.int_type': 'testType'
+        };
+        return config[key];
+      });
+
+      rubiconAnalyticsAdapter.enableAnalytics({
+        options: {
+          endpoint: '//localhost:9999/event',
+          accountId: 1001
+        }
+      });
+
+      performStandardAuction();
+
+      expect(requests.length).to.equal(1);
+      const request = requests[0];
+      const message = JSON.parse(request.requestBody);
+      expect(message.integration).to.equal('testType');
+
+      rubiconAnalyticsAdapter.disableAnalytics();
     });
   });
 });

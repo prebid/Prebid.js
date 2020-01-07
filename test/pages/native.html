@@ -1,0 +1,123 @@
+<!-- This is a Test Page for Native End-to-End test -->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<title>Prebid.js Native Example</title>
+
+	<!-- Prebid.js -->
+	<script async src="../../build/dev/prebid.js"></script>
+
+	<!-- Google Publisher Tag -->
+	<script async src="https://www.googletagservices.com/tag/js/gpt.js"></script>
+
+	<script>
+		var pbjs = pbjs || {};
+		pbjs.que = pbjs.que || [];
+
+		// Prebid Native Ad Unit
+		const adUnits = [{
+			code: '/19968336/prebid_native_example_1',
+			sizes: [360, 360],
+			mediaTypes: {
+				native: {
+					title: {
+						required: true
+					},
+					image: {
+						required: true
+					},
+					sponsoredBy: {
+						required: true
+					}
+				}
+			},
+			bids: [{
+				bidder: 'appnexus',
+				params: {
+					placementId: 13232354,
+					allowSmallerSizes: true
+				}
+			}]
+		}, {
+			code: '/19968336/prebid_native_example_2',
+			sizes: [
+				[1, 1]
+			],
+			mediaTypes: {
+				native: {
+					title: {
+						required: true
+					},
+					body: {
+						required: true
+					},
+					image: {
+						required: true
+					},
+					sponsoredBy: {
+						required: true
+					},
+					icon: {
+						required: false
+					},
+				}
+			},
+			bids: [{
+				bidder: 'appnexus',
+				params: {
+					placementId: 13232354,
+					allowSmallerSizes: true
+				}
+			}]
+		}];
+	</script>
+
+	<script>
+		var googletag = googletag || {};
+		googletag.cmd = googletag.cmd || [];
+
+		googletag.cmd.push(() => {
+			googletag.pubads().disableInitialLoad();
+		});
+
+		pbjs.que.push(() => {
+			pbjs.addAdUnits(adUnits);
+			pbjs.requestBids({ bidsBackHandler: sendAdServerRequest });
+		});
+
+		function sendAdServerRequest() {
+			googletag.cmd.push(() => {
+				pbjs.que.push(() => {
+					pbjs.setTargetingForGPTAsync('/19968336/prebid_native_example_1');
+					googletag.pubads().refresh();
+				});
+			});
+		}
+	</script>
+
+	<script>
+		// GPT Setup
+		googletag.cmd.push(() => {
+			googletag
+				.defineSlot('/19968336/prebid_native_example_1', [360, 360], 'div-1')
+				.addService(googletag.pubads());
+
+			googletag.pubads().enableSingleRequest();
+			googletag.enableServices();
+		});
+	</script>
+</head>
+
+<body>
+	<h2>Prebid.js Native Ad Unit Test</h2>
+	<div id='div-1'>
+		<p>No response</p>
+		<script>
+			googletag.cmd.push(() => { googletag.display('div-1'); });
+		</script>
+	</div>
+</body>
+
+</html>

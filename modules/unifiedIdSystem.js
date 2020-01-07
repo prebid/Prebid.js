@@ -5,8 +5,9 @@
  * @requires module:modules/userId
  */
 
-import * as utils from '../../src/utils'
-import {ajax} from '../../src/ajax';
+import * as utils from '../src/utils'
+import {ajax} from '../src/ajax';
+import {submodule} from '../src/hook';
 
 /** @type {Submodule} */
 export const unifiedIdSubmodule = {
@@ -49,7 +50,9 @@ export const unifiedIdSubmodule = {
           }
         }
         callback(responseObj);
-      }, undefined, { method: 'GET' });
+      }, undefined, { method: 'GET', withCredentials: true });
     }
   }
 };
+
+submodule('userId', unifiedIdSubmodule);

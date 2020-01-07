@@ -82,6 +82,9 @@ const RESPONSE = {
           'type': 'html',
           'body': '<html></html>',
           'data': {
+            'customData': {
+              'pubCPM': 1
+            },
             'height': 90,
             'width': 728,
             'imageUrl': 'https://static.adzerk.net/Advertisers/b0ab77db8a7848c8b78931aed022a5ef.gif',
@@ -239,6 +242,13 @@ describe('InSkin BidAdapter', function () {
         expect(b).to.have.property('netRevenue', true);
         expect(b).to.have.property('referrer');
       });
+    });
+
+    it('cpm is correctly set', function () {
+      let bids = spec.interpretResponse(RESPONSE, REQUEST);
+
+      expect(bids[0].cpm).to.equal(0.5);
+      expect(bids[1].cpm).to.equal(1);
     });
 
     it('handles nobid responses', function () {

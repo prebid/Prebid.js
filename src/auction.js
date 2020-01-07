@@ -511,6 +511,41 @@ function setupBidTargeting(bidObject, bidderRequest) {
 }
 
 /**
+ * This function returns the price granularity defined. It can be either publisher defined or default value
+ * @param {string} mediaType
+ * @returns {string} granularity
+ */
+export const getPriceGranularity = (mediaType) => {
+  // Use the config value 'mediaTypeGranularity' if it has been set for mediaType, else use 'priceGranularity'
+  const mediaTypeGranularity = config.getConfig(`mediaTypePriceGranularity.${mediaType}`);
+  const granularity = (typeof mediaType === 'string' && mediaTypeGranularity) ? ((typeof mediaTypeGranularity === 'string') ? mediaTypeGranularity : 'custom') : config.getConfig('priceGranularity');
+  return granularity;
+}
+
+/**
+ * This function returns a function to get bid price by price granularity
+ * @param {string} granularity
+ * @returns {function}
+ */
+export const getPriceByGranularity = (granularity) => {
+  return (bid) => {
+    if (granularity === CONSTANTS.GRANULARITY_OPTIONS.AUTO) {
+      return bid.pbAg;
+    } else if (granularity === CONSTANTS.GRANULARITY_OPTIONS.DENSE) {
+      return bid.pbDg;
+    } else if (granularity === CONSTANTS.GRANULARITY_OPTIONS.LOW) {
+      return bid.pbLg;
+    } else if (granularity === CONSTANTS.GRANULARITY_OPTIONS.MEDIUM) {
+      return bid.pbMg;
+    } else if (granularity === CONSTANTS.GRANULARITY_OPTIONS.HIGH) {
+      return bid.pbHg;
+    } else if (granularity === CONSTANTS.GRANULARITY_OPTIONS.CUSTOM) {
+      return bid.pbCg;
+    }
+  }
+}
+
+/**
  * @param {string} mediaType
  * @param {string} bidderCode
  * @returns {*}
@@ -530,9 +565,7 @@ export function getStandardBidderSettings(mediaType, bidderCode) {
     };
   }
   const TARGETING_KEYS = CONSTANTS.TARGETING_KEYS;
-  // Use the config value 'mediaTypeGranularity' if it has been set for mediaType, else use 'priceGranularity'
-  const mediaTypeGranularity = config.getConfig(`mediaTypePriceGranularity.${mediaType}`);
-  const granularity = (typeof mediaType === 'string' && mediaTypeGranularity) ? ((typeof mediaTypeGranularity === 'string') ? mediaTypeGranularity : 'custom') : config.getConfig('priceGranularity');
+  const granularity = getPriceGranularity(mediaType);
 
   let bidderSettings = $$PREBID_GLOBAL$$.bidderSettings;
   if (!bidderSettings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD]) {
@@ -542,21 +575,7 @@ export function getStandardBidderSettings(mediaType, bidderCode) {
     bidderSettings[CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD][CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING] = [
       createKeyVal(TARGETING_KEYS.BIDDER, 'bidderCode'),
       createKeyVal(TARGETING_KEYS.AD_ID, 'adId'),
-      createKeyVal(TARGETING_KEYS.PRICE_BUCKET, function(bidResponse) {
-        if (granularity === CONSTANTS.GRANULARITY_OPTIONS.AUTO) {
-          return bidResponse.pbAg;
-        } else if (granularity === CONSTANTS.GRANULARITY_OPTIONS.DENSE) {
-          return bidResponse.pbDg;
-        } else if (granularity === CONSTANTS.GRANULARITY_OPTIONS.LOW) {
-          return bidResponse.pbLg;
-        } else if (granularity === CONSTANTS.GRANULARITY_OPTIONS.MEDIUM) {
-          return bidResponse.pbMg;
-        } else if (granularity === CONSTANTS.GRANULARITY_OPTIONS.HIGH) {
-          return bidResponse.pbHg;
-        } else if (granularity === CONSTANTS.GRANULARITY_OPTIONS.CUSTOM) {
-          return bidResponse.pbCg;
-        }
-      }),
+      createKeyVal(TARGETING_KEYS.PRICE_BUCKET, getPriceByGranularity(granularity)),
       createKeyVal(TARGETING_KEYS.SIZE, 'size'),
       createKeyVal(TARGETING_KEYS.DEAL, 'dealId'),
       createKeyVal(TARGETING_KEYS.SOURCE, 'source'),

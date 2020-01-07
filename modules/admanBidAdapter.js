@@ -17,7 +17,7 @@ export const spec = {
     const ENDPOINT_URL = '//bidtor.admanmedia.com/prebid';
     const bids = validBidRequests.map(buildRequestObject);
     const payload = {
-      referrer: utils.getTopWindowUrl(),
+      referer: utils.getTopWindowUrl(),
       bids,
       deviceWidth: screen.width
     };

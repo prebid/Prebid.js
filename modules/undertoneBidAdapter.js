@@ -41,6 +41,16 @@ function extractDomainFromHost(pageHost) {
   return domain;
 }
 
+function getGdprQueryParams(gdprConsent) {
+  if (!gdprConsent) {
+    return null;
+  }
+
+  let gdpr = gdprConsent.gdprApplies ? '1' : '0';
+  let gdprstr = gdprConsent.consentString ? gdprConsent.consentString : '';
+  return `gdpr=${gdpr}&gdprstr=${gdprstr}`;
+}
+
 export const spec = {
   code: BIDDER_CODE,
   isBidRequestValid: function(bid) {
@@ -51,7 +61,11 @@ export const spec = {
   },
   buildRequests: function(validBidRequests, bidderRequest) {
     const payload = {
-      'x-ut-hb-params': []
+      'x-ut-hb-params': [],
+      'commons': {
+        'adapterVersion': '$prebid.version$',
+        'uids': validBidRequests[0].userId
+      }
     };
     const referer = bidderRequest.refererInfo.referer;
     const hostname = urlUtils.parse(referer).hostname;
@@ -59,7 +73,12 @@ export const spec = {
     const pageUrl = getCanonicalUrl() || referer;
 
     const pubid = validBidRequests[0].params.publisherId;
-    const REQ_URL = `${URL}?pid=${pubid}&domain=${domain}`;
+    let reqUrl = `${URL}?pid=${pubid}&domain=${domain}`;
+
+    let gdprParams = getGdprQueryParams(bidderRequest.gdprConsent);
+    if (gdprParams) {
+      reqUrl += `&${gdprParams}`;
+    }
 
     validBidRequests.map(bidReq => {
       const bid = {
@@ -76,7 +95,7 @@ export const spec = {
     });
     return {
       method: 'POST',
-      url: REQ_URL,
+      url: reqUrl,
       withCredentials: true,
       data: JSON.stringify(payload)
     };
@@ -107,23 +126,28 @@ export const spec = {
   },
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent) {
     const syncs = [];
-    if (gdprConsent && gdprConsent.gdprApplies === true) {
-      return syncs;
+
+    let gdprParams = getGdprQueryParams(gdprConsent);
+    let iframeGdprParams = '';
+    let pixelGdprParams = '';
+    if (gdprParams) {
+      iframeGdprParams += `?${gdprParams}`;
+      pixelGdprParams += `&${gdprParams}`;
     }
 
     if (syncOptions.iframeEnabled) {
       syncs.push({
         type: 'iframe',
-        url: FRAME_USER_SYNC
+        url: FRAME_USER_SYNC + iframeGdprParams
       });
     } else if (syncOptions.pixelEnabled) {
       syncs.push({
         type: 'image',
-        url: PIXEL_USER_SYNC_1
+        url: PIXEL_USER_SYNC_1 + pixelGdprParams
       },
       {
         type: 'image',
-        url: PIXEL_USER_SYNC_2
+        url: PIXEL_USER_SYNC_2 + pixelGdprParams
       });
     }
     return syncs;

@@ -1,4 +1,5 @@
 import { registerBidder } from '../src/adapters/bidderFactory'
+import { deepAccess } from '../src/utils';
 
 const BIDDER_CODE = 'justpremium'
 const ENDPOINT_URL = '//pre.ads.justpremium.com/v/2.0/t/xhr'
@@ -45,6 +46,14 @@ export const spec = {
       sizes[zone] = sizes[zone] || []
       sizes[zone].push.apply(sizes[zone], b.sizes)
     })
+
+    if (deepAccess(validBidRequests[0], 'userId.pubcid')) {
+      payload.pubcid = deepAccess(validBidRequests[0], 'userId.pubcid')
+    } else if (deepAccess(validBidRequests[0], 'crumbs.pubcid')) {
+      payload.pubcid = deepAccess(validBidRequests[0], 'crumbs.pubcid')
+    }
+
+    payload.uids = validBidRequests[0].userId
 
     if (bidderRequest && bidderRequest.gdprConsent) {
       payload.gdpr_consent = {

@@ -10,7 +10,7 @@ const DEFAULT_NET_REVENUE = true;
 
 export const spec = {
   code: 'bidphysics',
-  aliases: ['yieldlift', 'padsquad'],
+  aliases: ['yieldlift'],
   supportedMediaTypes: [BANNER],
 
   isBidRequestValid: function (bid) {

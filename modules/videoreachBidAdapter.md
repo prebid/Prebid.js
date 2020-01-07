@@ -2,7 +2,7 @@
 
 **Module Name**: Video Reach Bidder Adapter  
 **Module Type**: Bidder Adapter  
-**Maintainer**: hello@videoreach.de
+**Maintainer**: hello@videoreach.com
 
 # Description
 

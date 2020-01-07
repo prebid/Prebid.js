@@ -10,6 +10,7 @@ const USYNCURL = 'https://ads.pubmatic.com/AdServer/js/showad.js#PIX&kdntuid=1&p
 const DEFAULT_CURRENCY = 'USD';
 const AUCTION_TYPE = 1;
 const PUBMATIC_DIGITRUST_KEY = 'nFIn8aLzbd';
+const PUBMATIC_ALIAS = 'pubmatic2';
 const UNDEFINED = undefined;
 const DEFAULT_WIDTH = 0;
 const DEFAULT_HEIGHT = 0;
@@ -169,7 +170,7 @@ function _parseAdSlot(bid) {
   bid.params.adUnit = splits[0];
   if (splits.length > 1) {
     // i.e size is specified in adslot, so consider that and ignore sizes array
-    splits = splits[1].split('x');
+    splits = splits.length == 2 ? splits[1].split('x') : splits.length == 3 ? splits[2].split('x') : [];
     if (splits.length != 2) {
       utils.logWarn(LOG_WARN_PREFIX + 'AdSlot Error: adSlot not in required format');
       return;
@@ -519,7 +520,7 @@ function _createImpressionObject(bid, conf) {
 
   impObj = {
     id: bid.bidId,
-    tagid: bid.params.adUnit || undefined,
+    tagid: bid.params.hashedKey || bid.params.adUnit || undefined,
     bidfloor: _parseSlotParam('kadfloor', bid.params.kadfloor),
     secure: 1,
     ext: {
@@ -634,10 +635,34 @@ function _handleTTDId(eids, validBidRequests) {
   }
 }
 
+/**
+ * Produces external userid object in ortb 3.0 model.
+ */
+function _addExternalUserId(eids, value, source, atype) {
+  if (utils.isStr(value)) {
+    eids.push({
+      source,
+      uids: [{
+        id: value,
+        atype
+      }]
+    });
+  }
+}
+
 function _handleEids(payload, validBidRequests) {
   let eids = [];
   _handleDigitrustId(eids);
   _handleTTDId(eids, validBidRequests);
+  const bidRequest = validBidRequests[0];
+  if (bidRequest && bidRequest.userId) {
+    _addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.pubcid`), 'pubcommon', 1);
+    _addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.digitrustid.data.id`), 'digitru.st', 1);
+    _addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.id5id`), 'id5-sync.com', 1);
+    _addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.criteortus.${BIDDER_CODE}.userid`), 'criteortus', 1);
+    _addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.idl_env`), 'liveramp.com', 1);
+    _addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.firstpartyid`), 'firstpartyid', 1);
+  }
   if (eids.length > 0) {
     payload.user.eids = eids;
   }
@@ -748,9 +773,42 @@ function _blockedIabCategoriesValidation(payload, blockedIabCategories) {
   }
 }
 
+function _handleDealCustomTargetings(payload, dctrArr, validBidRequests) {
+  var dctr = '';
+  var dctrLen;
+  // set dctr value in site.ext, if present in validBidRequests[0], else ignore
+  if (dctrArr.length > 0) {
+    if (validBidRequests[0].params.hasOwnProperty('dctr')) {
+      dctr = validBidRequests[0].params.dctr;
+      if (utils.isStr(dctr) && dctr.length > 0) {
+        var arr = dctr.split('|');
+        dctr = '';
+        arr.forEach(val => {
+          dctr += (val.length > 0) ? (val.trim() + '|') : '';
+        });
+        dctrLen = dctr.length;
+        if (dctr.substring(dctrLen, dctrLen - 1) === '|') {
+          dctr = dctr.substring(0, dctrLen - 1);
+        }
+        payload.site.ext = {
+          key_val: dctr.trim()
+        }
+      } else {
+        utils.logWarn(LOG_WARN_PREFIX + 'Ignoring param : dctr with value : ' + dctr + ', expects string-value, found empty or non-string value');
+      }
+      if (dctrArr.length > 1) {
+        utils.logWarn(LOG_WARN_PREFIX + 'dctr value found in more than 1 adunits. Value from 1st adunit will be picked. Ignoring values from subsequent adunits');
+      }
+    } else {
+      utils.logWarn(LOG_WARN_PREFIX + 'dctr value not found in 1st adunit, ignoring values from subsequent adunits');
+    }
+  }
+}
+
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
+  aliases: [PUBMATIC_ALIAS],
   /**
   * Determines whether or not the given bid request is valid. Valid bid request must have placementId and hbid
   *
@@ -789,11 +847,10 @@ export const spec = {
     var conf = _initConf(refererInfo);
     var payload = _createOrtbTemplate(conf);
     var bidCurrency = '';
-    var dctr = '';
-    var dctrLen;
     var dctrArr = [];
     var bid;
     var blockedIabCategories = [];
+
     validBidRequests.forEach(originalBid => {
       bid = utils.deepClone(originalBid);
       bid.params.adSlot = bid.params.adSlot || '';
@@ -845,6 +902,21 @@ export const spec = {
     payload.ext.wrapper.wp = 'pbjs';
     payload.user.gender = (conf.gender ? conf.gender.trim() : UNDEFINED);
     payload.user.geo = {};
+    payload.user.geo.lat = _parseSlotParam('lat', conf.lat);
+    payload.user.geo.lon = _parseSlotParam('lon', conf.lon);
+    payload.user.yob = _parseSlotParam('yob', conf.yob);
+    payload.device.geo = payload.user.geo;
+    payload.site.page = conf.kadpageurl.trim() || payload.site.page.trim();
+    payload.site.domain = _getDomainFromURL(payload.site.page);
+
+    // adding schain object
+    if (validBidRequests[0].schain) {
+      payload.source = {
+        ext: {
+          schain: validBidRequests[0].schain
+        }
+      };
+    }
 
     // Attaching GDPR Consent Params
     if (bidderRequest && bidderRequest.gdprConsent) {
@@ -859,46 +931,10 @@ export const spec = {
       };
     }
 
-    payload.user.geo.lat = _parseSlotParam('lat', conf.lat);
-    payload.user.geo.lon = _parseSlotParam('lon', conf.lon);
-    payload.user.yob = _parseSlotParam('yob', conf.yob);
-    payload.device.geo = payload.user.geo;
-    payload.site.page = conf.kadpageurl.trim() || payload.site.page.trim();
-    payload.site.domain = _getDomainFromURL(payload.site.page);
-
-    // set dctr value in site.ext, if present in validBidRequests[0], else ignore
-    if (dctrArr.length > 0) {
-      if (validBidRequests[0].params.hasOwnProperty('dctr')) {
-        dctr = validBidRequests[0].params.dctr;
-        if (utils.isStr(dctr) && dctr.length > 0) {
-          var arr = dctr.split('|');
-          dctr = '';
-          arr.forEach(val => {
-            dctr += (val.length > 0) ? (val.trim() + '|') : '';
-          });
-          dctrLen = dctr.length;
-          if (dctr.substring(dctrLen, dctrLen - 1) === '|') {
-            dctr = dctr.substring(0, dctrLen - 1);
-          }
-          payload.site.ext = {
-            key_val: dctr.trim()
-          }
-        } else {
-          utils.logWarn(LOG_WARN_PREFIX + 'Ignoring param : dctr with value : ' + dctr + ', expects string-value, found empty or non-string value');
-        }
-        if (dctrArr.length > 1) {
-          utils.logWarn(LOG_WARN_PREFIX + 'dctr value found in more than 1 adunits. Value from 1st adunit will be picked. Ignoring values from subsequent adunits');
-        }
-      } else {
-        utils.logWarn(LOG_WARN_PREFIX + 'dctr value not found in 1st adunit, ignoring values from subsequent adunits');
-      }
-    } else {
-      // Commenting out for prebid 1.21 release. Needs to be uncommented and changes from Prebid PR2941 to be pulled in.
-      // utils.logWarn(BIDDER_CODE + ': dctr value not found in 1st adunit, ignoring values from subsequent adunits');
-    }
-
+    _handleDealCustomTargetings(payload, dctrArr, validBidRequests);
     _handleEids(payload, validBidRequests);
     _blockedIabCategoriesValidation(payload, blockedIabCategories);
+
     return {
       method: 'POST',
       url: ENDPOINT,
@@ -915,6 +951,8 @@ export const spec = {
   interpretResponse: (response, request) => {
     const bidResponses = [];
     var respCur = DEFAULT_CURRENCY;
+    let parsedRequest = JSON.parse(request.data);
+    let parsedReferrer = parsedRequest.site && parsedRequest.site.ref ? parsedRequest.site.ref : '';
     try {
       let requestData = JSON.parse(request.data);
       if (requestData && requestData.imp && requestData.imp.length > 0) {
@@ -929,7 +967,7 @@ export const spec = {
             netRevenue: NET_REVENUE,
             cpm: 0,
             currency: respCur,
-            referrer: requestData.site && requestData.site.ref ? requestData.site.ref : '',
+            referrer: parsedReferrer,
           })
         });
       }
@@ -951,7 +989,7 @@ export const spec = {
                   br.currency = respCur;
                   br.netRevenue = NET_REVENUE;
                   br.ttl = 300;
-                  br.referrer = requestData.site && requestData.site.ref ? requestData.site.ref : '';
+                  br.referrer = parsedReferrer;
                   br.ad = bid.adm;
                   if (requestData.imp && requestData.imp.length > 0) {
                     requestData.imp.forEach(req => {

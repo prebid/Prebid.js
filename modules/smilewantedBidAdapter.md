@@ -13,6 +13,8 @@ To use us as a bidder you must have an account and an active "zoneId" on our Smi
 # Test Parameters
 
 ## Web
+
+### Display
 ```
     var adUnits = [
            {
@@ -28,4 +30,42 @@ To use us as a bidder you must have an account and an active "zoneId" on our Smi
                ]
            }
        ];
+```
+
+### Video Instream
+```
+    var videoAdUnit = {
+        code: 'video1',
+        mediaTypes: {
+            video: {
+                playerSize: [640, 480],
+                context: 'instream'
+            }
+        },
+        bids: [{
+            bidder: 'smilewanted',
+            params: {
+                zoneId: 2,
+            }
+        }]
+    };
+```
+
+### Video Outstream
+```
+    var videoAdUnit = {
+        code: 'video1',
+        mediaTypes: {
+            video: {
+                playerSize: [640, 480],
+                context: 'outstream'
+            }
+        },
+        bids: [{
+            bidder: 'smilewanted',
+            params: {
+                zoneId: 3,
+            }
+        }]
+    };
 ```

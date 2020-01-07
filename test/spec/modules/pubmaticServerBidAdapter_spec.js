@@ -266,7 +266,7 @@ describe('PubMaticServer adapter', () => {
   	describe('Request formation', () => {
   		it('Endpoint checking', () => {
   		  let request = spec.buildRequests(bidRequests);
-        expect(request.url).to.equal('//ow.pubmatic.com/openrtb/2.5/');
+        expect(request.url).to.equal('https://ow.pubmatic.com/openrtb/2.5/');
         expect(request.method).to.equal('POST');
   		});
 

@@ -182,4 +182,32 @@ describe('playgroundxyzBidAdapter', function () {
       expect(data.user.ext.consent).to.equal('XYZ-CONSENT');
     });
   });
+
+  describe('getUserSyncs', function () {
+    const syncUrl = '//ib.adnxs.com/getuidnb?https://ads.playground.xyz/usersync?partner=appnexus&uid=$UID';
+
+    describe('when iframeEnabled is true', function () {
+      const syncOptions = {
+        'iframeEnabled': true
+      }
+      it('should return one image type user sync pixel', function () {
+        let result = spec.getUserSyncs(syncOptions);
+        expect(result.length).to.equal(1);
+        expect(result[0].type).to.equal('image')
+        expect(result[0].url).to.equal(syncUrl);
+      });
+    });
+
+    describe('when iframeEnabled is false', function () {
+      const syncOptions = {
+        'iframeEnabled': false
+      }
+      it('should return one image type user sync pixel', function () {
+        let result = spec.getUserSyncs(syncOptions);
+        expect(result.length).to.equal(1);
+        expect(result[0].type).to.equal('image')
+        expect(result[0].url).to.equal(syncUrl);
+      });
+    });
+  })
 });

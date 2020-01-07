@@ -168,7 +168,7 @@ function getRequestData(bid, bidderRequest) {
   const dnt = (navigator.doNotTrack == 'yes' || navigator.doNotTrack == '1' || navigator.msDoNotTrack == '1') ? 1 : 0;
   const videoContext = utils.deepAccess(bid, 'mediaTypes.video.context');
   const videoMediaType = utils.deepAccess(bid, 'mediaTypes.video');
-
+  const userIdTdid = (bid.userId && bid.userId.tdid) ? bid.userId.tdid : '';
   // general bid data
   let bidData = {
     ver: VER,
@@ -181,7 +181,8 @@ function getRequestData(bid, bidderRequest) {
     ru: ref,
     adid: utils.getBidIdParameter('adid', bid.params),
     w: size[0],
-    h: size[1]
+    h: size[1],
+    tdid: userIdTdid
   };
 
   if (bid.mediaType === 'video' || videoMediaType) {

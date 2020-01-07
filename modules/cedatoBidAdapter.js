@@ -107,15 +107,10 @@ export const spec = {
 
   getUserSyncs: function(syncOptions, resps, gdprConsent) {
     const syncs = [];
-    if (syncOptions.pixelEnabled) {
-      resps.forEach(() => {
-        syncs.push(getSync('image', gdprConsent));
-      });
-    }
     if (syncOptions.iframeEnabled) {
-      resps.forEach(() => {
-        syncs.push(getSync('iframe', gdprConsent));
-      });
+      syncs.push(getSync('iframe', gdprConsent));
+    } else if (syncOptions.pixelEnabled) {
+      syncs.push(getSync('image', gdprConsent));
     }
     return syncs;
   }
