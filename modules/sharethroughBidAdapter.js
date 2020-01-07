@@ -41,6 +41,10 @@ export const sharethroughAdapterSpec = {
         query.consent_required = !!bidderRequest.gdprConsent.gdprApplies;
       }
 
+      if (bidderRequest && bidderRequest.uspConsent) {
+        payload.us_privacy = bidderRequest.uspConsent
+      }
+
       if (bidRequest.userId && bidRequest.userId.tdid) {
         query.ttduid = bidRequest.userId.tdid;
       }
@@ -97,7 +101,8 @@ export const sharethroughAdapterSpec = {
     }];
   },
 
-  getUserSyncs: (syncOptions, serverResponses) => {
+  getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent) => {
+    const syncParams = (uspConsent) ? `&us_privacy=${uspConsent}` : '';
     const syncs = [];
     const shouldCookieSync = syncOptions.pixelEnabled &&
       serverResponses.length > 0 &&
@@ -106,7 +111,7 @@ export const sharethroughAdapterSpec = {
 
     if (shouldCookieSync) {
       serverResponses[0].body.cookieSyncUrls.forEach(url => {
-        syncs.push({ type: 'image', url: url });
+        syncs.push({ type: 'image', url: url + syncParams });
       });
     }
 
