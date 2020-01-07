@@ -1,13 +1,11 @@
 import { expect } from 'chai'
-import { spec, pixel } from 'modules/justpremiumBidAdapter'
+import { spec } from 'modules/justpremiumBidAdapter'
 
 describe('justpremium adapter', function () {
   let sandbox;
-  let pixelStub;
 
   beforeEach(function() {
     sandbox = sinon.sandbox.create();
-    pixelStub = sandbox.stub(pixel, 'fire');
   });
 
   afterEach(function() {
@@ -82,7 +80,7 @@ describe('justpremium adapter', function () {
       expect(jpxRequest.id).to.equal(adUnits[0].params.zone)
       expect(jpxRequest.mediaTypes && jpxRequest.mediaTypes.banner && jpxRequest.mediaTypes.banner.sizes).to.not.equal('undefined')
       expect(jpxRequest.version.prebid).to.equal('$prebid.version$')
-      expect(jpxRequest.version.jp_adapter).to.equal('1.5')
+      expect(jpxRequest.version.jp_adapter).to.equal('1.6')
       expect(jpxRequest.pubcid).to.equal('0000000')
       expect(jpxRequest.uids.tdid).to.equal('1111111')
       expect(jpxRequest.uids.id5id).to.equal('2222222')
@@ -161,36 +159,6 @@ describe('justpremium adapter', function () {
       expect(options).to.not.be.undefined
       expect(options[0].type).to.equal('iframe')
       expect(options[0].url).to.match(/\/\/pre.ads.justpremium.com\/v\/1.0\/t\/sync/)
-    })
-  })
-
-  describe('onTimeout', function () {
-    it('onTimeout', function(done) {
-      spec.onTimeout([{
-        'bidId': '25cd3ec3fd6ed7',
-        'bidder': 'justpremium',
-        'adUnitCode': 'div-gpt-ad-1471513102552-1',
-        'auctionId': '6fbd0562-f613-4151-a6df-6cb446fc717b',
-        'params': [{
-          'adType': 'iab',
-          'zone': 21521
-        }],
-        'timeout': 1
-      }, {
-        'bidId': '3b51df1f254e32',
-        'bidder': 'justpremium',
-        'adUnitCode': 'div-gpt-ad-1471513102552-3',
-        'auctionId': '6fbd0562-f613-4151-a6df-6cb446fc717b',
-        'params': [{
-          'adType': 'iab',
-          'zone': 21521
-        }],
-        'timeout': 1
-      }]);
-
-      expect(pixelStub.calledOnce).to.equal(true);
-
-      done()
     })
   })
 })

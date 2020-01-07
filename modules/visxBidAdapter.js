@@ -2,10 +2,10 @@ import * as utils from '../src/utils';
 import {registerBidder} from '../src/adapters/bidderFactory';
 import { config } from '../src/config';
 const BIDDER_CODE = 'visx';
-const ENDPOINT_URL = '//t.visx.net/hb';
+const ENDPOINT_URL = 'https://t.visx.net/hb';
 const TIME_TO_LIVE = 360;
 const DEFAULT_CUR = 'EUR';
-const ADAPTER_SYNC_URL = '//t.visx.net/push_sync';
+const ADAPTER_SYNC_URL = 'https://t.visx.net/push_sync';
 const LOG_ERROR_MESS = {
   noAuid: 'Bid from response has no auid parameter - ',
   noAdm: 'Bid from response has no adm parameter - ',

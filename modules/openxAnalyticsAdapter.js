@@ -11,7 +11,7 @@ const {
 
 const SLOT_LOADED = 'slotOnload';
 
-const ENDPOINT = '//ads.openx.net/w/1.0/pban';
+const ENDPOINT = 'https://ads.openx.net/w/1.0/pban';
 
 let initOptions;
 

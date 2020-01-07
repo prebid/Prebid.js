@@ -186,8 +186,13 @@ describe('the rubicon adapter', function () {
     }
   }
 
+  function createUspBidderRequest() {
+    bidderRequest.uspConsent = '1NYN';
+  }
+
   function createVideoBidderRequest() {
     createGdprBidderRequest(true);
+    createUspBidderRequest();
 
     let bid = bidderRequest.bids[0];
     bid.mediaTypes = {
@@ -545,12 +550,12 @@ describe('the rubicon adapter', function () {
 
         it('should add referer info to request data', function () {
           let refererInfo = {
-            referer: 'http://www.prebid.org',
+            referer: 'https://www.prebid.org',
             reachedTop: true,
             numIframes: 1,
             stack: [
-              'http://www.prebid.org/page.html',
-              'http://www.prebid.org/iframe1.html',
+              'https://www.prebid.org/page.html',
+              'https://www.prebid.org/iframe1.html',
             ]
           };
 
@@ -559,7 +564,7 @@ describe('the rubicon adapter', function () {
           let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
 
           expect(parseQuery(request.data).rf).to.exist;
-          expect(parseQuery(request.data).rf).to.equal('http://www.prebid.org');
+          expect(parseQuery(request.data).rf).to.equal('https://www.prebid.org');
         });
 
         it('page_url should use params.referrer, config.getConfig("pageUrl"), bidderRequest.refererInfo in that order', function () {
@@ -567,20 +572,20 @@ describe('the rubicon adapter', function () {
           expect(parseQuery(request.data).rf).to.equal('localhost');
 
           delete bidderRequest.bids[0].params.referrer;
-          let refererInfo = { referer: 'http://www.prebid.org' };
+          let refererInfo = { referer: 'https://www.prebid.org' };
           bidderRequest = Object.assign({refererInfo}, bidderRequest);
           [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
-          expect(parseQuery(request.data).rf).to.equal('http://www.prebid.org');
+          expect(parseQuery(request.data).rf).to.equal('https://www.prebid.org');
 
           let origGetConfig = config.getConfig;
           sandbox.stub(config, 'getConfig').callsFake(function (key) {
             if (key === 'pageUrl') {
-              return 'http://www.rubiconproject.com';
+              return 'https://www.rubiconproject.com';
             }
             return origGetConfig.apply(config, arguments);
           });
           [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
-          expect(parseQuery(request.data).rf).to.equal('http://www.rubiconproject.com');
+          expect(parseQuery(request.data).rf).to.equal('https://www.rubiconproject.com');
 
           bidderRequest.bids[0].params.secure = true;
           [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
@@ -890,6 +895,23 @@ describe('the rubicon adapter', function () {
             [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
             data = parseQuery(request.data);
             expect(data['gdpr']).to.equal('0');
+          });
+        });
+
+        describe('USP Consent', function () {
+          it('should send us_privacy if bidderRequest has a value for uspConsent', function () {
+            createUspBidderRequest();
+            let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+            let data = parseQuery(request.data);
+
+            expect(data['us_privacy']).to.equal('1NYN');
+          });
+
+          it('should not send us_privacy if bidderRequest has no uspConsent value', function () {
+            let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+            let data = parseQuery(request.data);
+
+            expect(data['us_privacy']).to.equal(undefined);
           });
         });
 
@@ -1285,6 +1307,7 @@ describe('the rubicon adapter', function () {
           expect(post.rp.target.LIseg[0]).to.equal('segA');
           expect(post.rp.target.LIseg[1]).to.equal('segB');
           expect(post.regs.ext.gdpr).to.equal(1);
+          expect(post.regs.ext.us_privacy).to.equal('1NYN');
           expect(post).to.have.property('ext').that.is.an('object');
           expect(post.ext.prebid.targeting.includewinners).to.equal(true);
           expect(post.ext.prebid).to.have.property('cache').that.is.an('object')
@@ -1737,7 +1760,7 @@ describe('the rubicon adapter', function () {
           expect(bids[0].height).to.equal(50);
           expect(bids[0].cpm).to.equal(0.911);
           expect(bids[0].ttl).to.equal(300);
-          expect(bids[0].netRevenue).to.equal(false);
+          expect(bids[0].netRevenue).to.equal(true);
           expect(bids[0].rubicon.advertiserId).to.equal(7);
           expect(bids[0].rubicon.networkId).to.equal(8);
           expect(bids[0].creativeId).to.equal('crid-9');
@@ -1752,7 +1775,7 @@ describe('the rubicon adapter', function () {
           expect(bids[1].height).to.equal(250);
           expect(bids[1].cpm).to.equal(0.811);
           expect(bids[1].ttl).to.equal(300);
-          expect(bids[1].netRevenue).to.equal(false);
+          expect(bids[1].netRevenue).to.equal(true);
           expect(bids[1].rubicon.advertiserId).to.equal(7);
           expect(bids[1].rubicon.networkId).to.equal(8);
           expect(bids[1].creativeId).to.equal('crid-9');
@@ -1764,6 +1787,118 @@ describe('the rubicon adapter', function () {
           expect(bids[1].rubiconTargeting.rpfl_14062).to.equal('15_tier_all_test');
         });
 
+        it('should pass netRevenue correctly if set in setConfig', function () {
+          let response = {
+            'status': 'ok',
+            'account_id': 14062,
+            'site_id': 70608,
+            'zone_id': 530022,
+            'size_id': 15,
+            'alt_size_ids': [
+              43
+            ],
+            'tracking': '',
+            'inventory': {},
+            'ads': [
+              {
+                'status': 'ok',
+                'impression_id': '153dc240-8229-4604-b8f5-256933b9374c',
+                'size_id': '15',
+                'ad_id': '6',
+                'advertiser': 7,
+                'network': 8,
+                'creative_id': 'crid-9',
+                'type': 'script',
+                'script': 'alert(\'foo\')',
+                'campaign_id': 10,
+                'cpm': 0.811,
+                'targeting': [
+                  {
+                    'key': 'rpfl_14062',
+                    'values': [
+                      '15_tier_all_test'
+                    ]
+                  }
+                ]
+              },
+              {
+                'status': 'ok',
+                'impression_id': '153dc240-8229-4604-b8f5-256933b9374d',
+                'size_id': '43',
+                'ad_id': '7',
+                'advertiser': 7,
+                'network': 8,
+                'creative_id': 'crid-9',
+                'type': 'script',
+                'script': 'alert(\'foo\')',
+                'campaign_id': 10,
+                'cpm': 0.911,
+                'targeting': [
+                  {
+                    'key': 'rpfl_14062',
+                    'values': [
+                      '43_tier_all_test'
+                    ]
+                  }
+                ]
+              }
+            ]
+          };
+
+          // Set to false => false
+          config.setConfig({
+            rubicon: {
+              netRevenue: false
+            }
+          });
+          let bids = spec.interpretResponse({body: response}, {
+            bidRequest: bidderRequest.bids[0]
+          });
+          expect(bids).to.be.lengthOf(2);
+          expect(bids[0].netRevenue).to.equal(false);
+          expect(bids[1].netRevenue).to.equal(false);
+
+          // Set to true => true
+          config.setConfig({
+            rubicon: {
+              netRevenue: true
+            }
+          });
+          bids = spec.interpretResponse({body: response}, {
+            bidRequest: bidderRequest.bids[0]
+          });
+          expect(bids).to.be.lengthOf(2);
+          expect(bids[0].netRevenue).to.equal(true);
+          expect(bids[1].netRevenue).to.equal(true);
+
+          // Set to undefined => true
+          config.setConfig({
+            rubicon: {
+              netRevenue: undefined
+            }
+          });
+          bids = spec.interpretResponse({body: response}, {
+            bidRequest: bidderRequest.bids[0]
+          });
+          expect(bids).to.be.lengthOf(2);
+          expect(bids[0].netRevenue).to.equal(true);
+          expect(bids[1].netRevenue).to.equal(true);
+
+          // Set to string => true
+          config.setConfig({
+            rubicon: {
+              netRevenue: 'someString'
+            }
+          });
+          bids = spec.interpretResponse({body: response}, {
+            bidRequest: bidderRequest.bids[0]
+          });
+          expect(bids).to.be.lengthOf(2);
+          expect(bids[0].netRevenue).to.equal(true);
+          expect(bids[1].netRevenue).to.equal(true);
+
+          config.resetConfig();
+        });
         it('should use "network-advertiser" if no creative_id', function () {
           let response = {
             'status': 'ok',
@@ -2302,11 +2437,25 @@ describe('the rubicon adapter', function () {
         type: 'iframe', url: `${emilyUrl}`
       });
     });
+
+    it('should pass us_privacy if uspConsent is defined', function () {
+      expect(spec.getUserSyncs({ iframeEnabled: true }, {}, undefined, '1NYN')).to.deep.equal({
+        type: 'iframe', url: `${emilyUrl}?us_privacy=1NYN`
+      });
+    });
+
+    it('should pass us_privacy after gdpr if both are present', function () {
+      expect(spec.getUserSyncs({ iframeEnabled: true }, {}, {
+        consentString: 'foo'
+      }, '1NYN')).to.deep.equal({
+        type: 'iframe', url: `${emilyUrl}?gdpr_consent=foo&us_privacy=1NYN`
+      });
+    });
   });
 
   describe('get price granularity', function() {
     it('should return correct buckets for all price granularity values', function() {
-      const CUSTOM_PRICE_BUCKET_ITEM = {min: 0, max: 5, increment: 0.5};
+      const CUSTOM_PRICE_BUCKET_ITEM = {max: 5, increment: 0.5};
 
       const mockConfig = {
         priceGranularity: undefined,

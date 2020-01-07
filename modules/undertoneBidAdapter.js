@@ -6,10 +6,10 @@ import * as urlUtils from '../src/url';
 import { registerBidder } from '../src/adapters/bidderFactory';
 
 const BIDDER_CODE = 'undertone';
-const URL = '//hb.undertone.com/hb';
-const FRAME_USER_SYNC = '//cdn.undertone.com/js/usersync.html';
-const PIXEL_USER_SYNC_1 = '//usr.undertone.com/userPixel/syncOne?id=1&of=2';
-const PIXEL_USER_SYNC_2 = '//usr.undertone.com/userPixel/syncOne?id=2&of=2';
+const URL = 'https://hb.undertone.com/hb';
+const FRAME_USER_SYNC = 'https://cdn.undertone.com/js/usersync.html';
+const PIXEL_USER_SYNC_1 = 'https://usr.undertone.com/userPixel/syncOne?id=1&of=2';
+const PIXEL_USER_SYNC_2 = 'https://usr.undertone.com/userPixel/syncOne?id=2&of=2';
 
 function getCanonicalUrl() {
   try {

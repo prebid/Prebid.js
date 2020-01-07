@@ -297,8 +297,8 @@ describe('SonobiBidAdapter', function () {
       'refererInfo': {
         'numIframes': 0,
         'reachedTop': true,
-        'referer': 'http://example.com',
-        'stack': ['http://example.com']
+        'referer': 'https://example.com',
+        'stack': ['https://example.com']
       }
     };
     it('should include the digitrust id and keyv', () => {
@@ -369,7 +369,7 @@ describe('SonobiBidAdapter', function () {
     it('should return a properly formatted request with referer', function () {
       bidRequest[0].params.referrer = ''
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
-      expect(bidRequests.data.ref).to.equal('http://example.com')
+      expect(bidRequests.data.ref).to.equal('https://example.com')
     })
 
     it('should return a properly formatted request with GDPR applies set to false', function () {
@@ -390,8 +390,8 @@ describe('SonobiBidAdapter', function () {
         'refererInfo': {
           'numIframes': 0,
           'reachedTop': true,
-          'referer': 'http://example.com',
-          'stack': ['http://example.com']
+          'referer': 'https://example.com',
+          'stack': ['https://example.com']
         }
       };
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
@@ -410,8 +410,8 @@ describe('SonobiBidAdapter', function () {
         'refererInfo': {
           'numIframes': 0,
           'reachedTop': true,
-          'referer': 'http://example.com',
-          'stack': ['http://example.com']
+          'referer': 'https://example.com',
+          'stack': ['https://example.com']
         }
       };
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
@@ -547,7 +547,7 @@ describe('SonobiBidAdapter', function () {
       'url': 'https://apex.go.sonobi.com/trinity.json',
       'withCredentials': true,
       'data': {
-        'key_maker': '{"30b31c1838de1f":"1a2b3c4d5e6f1a2b3c4d|300x250,300x600|f=1.25","/7780971/sparks_prebid_LB|30b31c1838de1e":"300x250,300x600"}', 'ref': 'http://localhost/', 's': '2474372d-c0ff-4f46-aef4-a173058403d9', 'pv': 'c9cfc207-cd83-4a01-b591-8bb29389d4b0'
+        'key_maker': '{"30b31c1838de1f":"1a2b3c4d5e6f1a2b3c4d|300x250,300x600|f=1.25","/7780971/sparks_prebid_LB|30b31c1838de1e":"300x250,300x600"}', 'ref': 'https://localhost/', 's': '2474372d-c0ff-4f46-aef4-a173058403d9', 'pv': 'c9cfc207-cd83-4a01-b591-8bb29389d4b0'
       },
       'bidderRequests': [
         {
@@ -653,7 +653,7 @@ describe('SonobiBidAdapter', function () {
         'cpm': 1.07,
         'width': 300,
         'height': 600,
-        'ad': `<script type="text/javascript" src="https://mco-1-apex.go.sonobi.com/sbi.js?aid=30292e432662bd5f86d90774b944b039&as=null&ref=http%3A%2F%2Flocalhost%2F"></script>`,
+        'ad': `<script type="text/javascript" src="https://mco-1-apex.go.sonobi.com/sbi.js?aid=30292e432662bd5f86d90774b944b039&as=null&ref=https%3A%2F%2Flocalhost%2F"></script>`,
         'ttl': 500,
         'creativeId': '1234abcd',
         'netRevenue': true,
@@ -665,7 +665,7 @@ describe('SonobiBidAdapter', function () {
         'cpm': 1.25,
         'width': 300,
         'height': 250,
-        'vastUrl': 'https://mco-1-apex.go.sonobi.com/vast.xml?vid=30292e432662bd5f86d90774b944b038&ref=http%3A%2F%2Flocalhost%2F',
+        'vastUrl': 'https://mco-1-apex.go.sonobi.com/vast.xml?vid=30292e432662bd5f86d90774b944b038&ref=https%3A%2F%2Flocalhost%2F',
         'ttl': 500,
         'creativeId': '30292e432662bd5f86d90774b944b038',
         'netRevenue': true,
@@ -679,7 +679,7 @@ describe('SonobiBidAdapter', function () {
         'cpm': 1.07,
         'width': 300,
         'height': 600,
-        'ad': `<script type="text/javascript" src="https://mco-1-apex.go.sonobi.com/sbi.js?aid=30292e432662bd5f86d90774b944b038&as=null&ref=http%3A%2F%2Flocalhost%2F"></script>`,
+        'ad': `<script type="text/javascript" src="https://mco-1-apex.go.sonobi.com/sbi.js?aid=30292e432662bd5f86d90774b944b038&as=null&ref=https%3A%2F%2Flocalhost%2F"></script>`,
         'ttl': 500,
         'creativeId': '1234abcd',
         'netRevenue': true,
@@ -691,7 +691,7 @@ describe('SonobiBidAdapter', function () {
         'cpm': 1.25,
         'width': 640,
         'height': 480,
-        'vastUrl': 'https://mco-1-apex.go.sonobi.com/vast.xml?vid=30292e432662bd5f86d90774b944b038&ref=http%3A%2F%2Flocalhost%2F',
+        'vastUrl': 'https://mco-1-apex.go.sonobi.com/vast.xml?vid=30292e432662bd5f86d90774b944b038&ref=https%3A%2F%2Flocalhost%2F',
         'ttl': 500,
         'creativeId': 'somecrid',
         'netRevenue': true,
