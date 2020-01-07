@@ -35,7 +35,7 @@ const getClosestTop = () => {
       }
     }
   } catch (e) {
-    bException = true;
+    // bException = true;
   }
 
   return {
@@ -136,6 +136,7 @@ class BidWinner {
    */
   constructor(sovrnId, event) {
     this.body = {}
+    // eslint-disable-next-line no-undef
     this.body.prebidVersion = $$REPO_AND_VERSION$$
     this.body.sovrnId = sovrnId
     this.body.winningBid = JSON.parse(JSON.stringify(event))
@@ -170,6 +171,7 @@ class AuctionData {
    */
   constructor(sovrnId, auctionId) {
     this.auction = {}
+    // eslint-disable-next-line no-undef
     this.auction.prebidVersion = $$REPO_AND_VERSION$$
     this.auction.sovrnId = sovrnId
     this.auction.auctionId = auctionId
@@ -288,6 +290,7 @@ class LogError {
     this.error.message = e.message
     this.error.stack = e.stack
     this.error.data = data
+    // eslint-disable-next-line no-undef
     this.error.prebidVersion = $$REPO_AND_VERSION$$
     this.error.sovrnId = sovrnId
     this.error.url = rootURL
@@ -305,8 +308,8 @@ class LogError {
         }
       })
     }
-    if (ErrorEvent.data && error.data.ad) {
-      delete error.data.ad
+    if (ErrorEvent.data && this.error.data.ad) {
+      delete this.error.data.ad
     }
     this.error.ts = utils.timestamp()
     ajax(
