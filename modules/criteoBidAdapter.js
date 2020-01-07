@@ -8,7 +8,7 @@ import find from 'core-js/library/fn/array/find';
 import JSEncrypt from 'jsencrypt/bin/jsencrypt';
 import sha256 from 'crypto-js/sha256';
 
-export const ADAPTER_VERSION = 21;
+export const ADAPTER_VERSION = 23;
 const BIDDER_CODE = 'criteo';
 const CDB_ENDPOINT = 'https://bidder.criteo.com/cdb';
 const CRITEO_VENDOR_ID = 91;
@@ -79,7 +79,7 @@ export const spec = {
       url = adapter.buildCdbUrl();
       data = adapter.buildCdbRequest();
     } else {
-      const context = buildContext(bidRequests);
+      const context = buildContext(bidRequests, bidderRequest);
       url = buildCdbUrl(context);
       data = buildCdbRequest(context, bidRequests, bidderRequest);
     }
@@ -177,14 +177,18 @@ function publisherTagAvailable() {
 
 /**
  * @param {BidRequest[]} bidRequests
+ * @param bidderRequest
  * @return {CriteoContext}
  */
-function buildContext(bidRequests) {
-  const url = utils.getTopWindowUrl();
-  const queryString = parse(url).search;
+function buildContext(bidRequests, bidderRequest) {
+  let referrer = '';
+  if (bidderRequest && bidderRequest.refererInfo) {
+    referrer = bidderRequest.refererInfo.referer;
+  }
+  const queryString = parse(referrer).search;
 
   const context = {
-    url: url,
+    url: referrer,
     debug: queryString['pbt_debug'] === '1',
     noLog: queryString['pbt_nolog'] === '1',
     amp: false,

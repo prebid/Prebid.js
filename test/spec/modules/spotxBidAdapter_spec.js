@@ -148,7 +148,8 @@ describe('the spotx adapter', function () {
       };
 
       bid.userId = {
-        id5id: 'id5id_1'
+        id5id: 'id5id_1',
+        tdid: 'tdid_1'
       };
 
       bid.crumbs = {
@@ -183,21 +184,7 @@ describe('the spotx adapter', function () {
       expect(request.data.imp.bidfloor).to.equal(123);
       expect(request.data.ext).to.deep.equal({
         number_of_ads: 2,
-        wrap_response: 1,
-        source: {
-          ext: {
-            schain: {
-              complete: 1,
-              nodes: [
-                {
-                  asi: 'indirectseller.com',
-                  sid: '00001',
-                  hp: 1
-                }
-              ]
-            }
-          }
-        }
+        wrap_response: 1
       });
       expect(request.data.user.ext).to.deep.equal({
         consented_providers_settings: GOOGLE_CONSENT,
@@ -206,8 +193,32 @@ describe('the spotx adapter', function () {
           uids: [{
             id: 'id5id_1'
           }]
+        },
+        {
+          source: 'adserver.org',
+          uids: [{
+            id: 'tdid_1',
+            ext: {
+              rtiPartner: 'TDID'
+            }
+          }]
         }],
         fpc: 'pubcid_1'
+      })
+
+      expect(request.data.source).to.deep.equal({
+        ext: {
+          schain: {
+            complete: 1,
+            nodes: [
+              {
+                asi: 'indirectseller.com',
+                sid: '00001',
+                hp: 1
+              }
+            ]
+          }
+        }
       })
     });
 

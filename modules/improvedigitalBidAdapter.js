@@ -1,15 +1,15 @@
 import * as utils from '../src/utils';
 import { registerBidder } from '../src/adapters/bidderFactory';
 import { config } from '../src/config';
-import { BANNER, NATIVE } from '../src/mediaTypes';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes';
 
 const BIDDER_CODE = 'improvedigital';
 
 export const spec = {
-  version: '5.3.0',
+  version: '6.0.1',
   code: BIDDER_CODE,
   aliases: ['id'],
-  supportedMediaTypes: [BANNER, NATIVE],
+  supportedMediaTypes: [BANNER, NATIVE, VIDEO],
 
   /**
    * Determines whether or not the given bid request is valid.
@@ -87,6 +87,9 @@ export const spec = {
           bid.native.impressionTrackers.unshift(bidObject.nurl);
         }
         bid.mediaType = NATIVE;
+      } else if (bidObject.ad_type && bidObject.ad_type === 'video') {
+        bid.vastXml = bidObject.adm;
+        bid.mediaType = VIDEO;
       } else {
         // Banner
         let nurl = '';
@@ -167,6 +170,12 @@ export const spec = {
   }
 };
 
+function isInstreamVideo(bid) {
+  const videoMediaType = utils.deepAccess(bid, 'mediaTypes.video');
+  const context = utils.deepAccess(bid, 'mediaTypes.video.context');
+  return bid.mediaType === 'video' || (videoMediaType && context !== 'outstream');
+}
+
 function getNormalizedBidRequest(bid) {
   let adUnitId = utils.getBidIdParameter('adUnitCode', bid) || null;
   let placementId = utils.getBidIdParameter('placementId', bid.params) || null;
@@ -186,6 +195,9 @@ function getNormalizedBidRequest(bid) {
   const bidFloorCur = utils.getBidIdParameter('bidFloorCur', bid.params);
 
   let normalizedBidRequest = {};
+  if (isInstreamVideo(bid)) {
+    normalizedBidRequest.adTypes = [ VIDEO ];
+  }
   if (placementId) {
     normalizedBidRequest.placementId = placementId;
   } else {
@@ -201,7 +213,7 @@ function getNormalizedBidRequest(bid) {
     normalizedBidRequest.keyValues = keyValues;
   }
 
-  if (config.getConfig('improvedigital.usePrebidSizes') === true && bid.sizes && bid.sizes.length > 0) {
+  if (config.getConfig('improvedigital.usePrebidSizes') === true && !isInstreamVideo(bid) && bid.sizes && bid.sizes.length > 0) {
     normalizedBidRequest.format = bid.sizes;
   } else if (singleSizeFilter && singleSizeFilter.w && singleSizeFilter.h) {
     normalizedBidRequest.size = {};

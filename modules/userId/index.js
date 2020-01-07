@@ -386,6 +386,10 @@ function initSubmodules(submodules, consentData) {
         refreshNeeded = storedDate && (Date.now() - storedDate.getTime() > submodule.config.storage.refreshInSeconds * 1000);
       }
 
+      if (CONSTANTS.SUBMODULES_THAT_ALWAYS_REFRESH_ID[submodule.config.name] === true) {
+        refreshNeeded = true;
+      }
+
       if (!storedId || refreshNeeded) {
         // No previously saved id.  Request one from submodule.
         response = submodule.submodule.getId(submodule.config.params, consentData, storedId);

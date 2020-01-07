@@ -496,15 +496,16 @@ describe('BeachfrontAdapter', function () {
         const serverResponse = {
           bidPrice: 5.00,
           url: 'http://reachms.bfmio.com/getmu?aid=bid:19c4a196-fb21-4c81-9a1a-ecc5437a39da',
-          cmpId: '123abc'
+          crid: '123abc'
         };
         const bidResponse = spec.interpretResponse({ body: serverResponse }, { bidRequest });
         expect(bidResponse).to.deep.equal({
           requestId: bidRequest.bidId,
           bidderCode: spec.code,
           cpm: serverResponse.bidPrice,
-          creativeId: serverResponse.cmpId,
+          creativeId: serverResponse.crid,
           vastUrl: serverResponse.url,
+          vastXml: undefined,
           width: width,
           height: height,
           renderer: null,
@@ -512,6 +513,48 @@ describe('BeachfrontAdapter', function () {
           currency: 'USD',
           netRevenue: true,
           ttl: 300
+        });
+      });
+
+      it('should default to the legacy "cmpId" value for the creative ID', () => {
+        const width = 640;
+        const height = 480;
+        const bidRequest = bidRequests[0];
+        bidRequest.mediaTypes = {
+          video: {
+            playerSize: [ width, height ]
+          }
+        };
+        const serverResponse = {
+          bidPrice: 5.00,
+          url: 'http://reachms.bfmio.com/getmu?aid=bid:19c4a196-fb21-4c81-9a1a-ecc5437a39da',
+          cmpId: '123abc'
+        };
+        const bidResponse = spec.interpretResponse({ body: serverResponse }, { bidRequest });
+        expect(bidResponse).to.deep.contain({
+          creativeId: serverResponse.cmpId
+        });
+      });
+
+      it('should return vast xml if found on the bid response', () => {
+        const width = 640;
+        const height = 480;
+        const bidRequest = bidRequests[0];
+        bidRequest.mediaTypes = {
+          video: {
+            playerSize: [ width, height ]
+          }
+        };
+        const serverResponse = {
+          bidPrice: 5.00,
+          url: 'http://reachms.bfmio.com/getmu?aid=bid:19c4a196-fb21-4c81-9a1a-ecc5437a39da',
+          vast: '<VAST version="3.0"></VAST>',
+          crid: '123abc'
+        };
+        const bidResponse = spec.interpretResponse({ body: serverResponse }, { bidRequest });
+        expect(bidResponse).to.deep.contain({
+          vastUrl: serverResponse.url,
+          vastXml: serverResponse.vast
         });
       });
 
@@ -525,7 +568,7 @@ describe('BeachfrontAdapter', function () {
         const serverResponse = {
           bidPrice: 5.00,
           url: 'http://reachms.bfmio.com/getmu?aid=bid:19c4a196-fb21-4c81-9a1a-ecc5437a39da',
-          cmpId: '123abc'
+          crid: '123abc'
         };
         const bidResponse = spec.interpretResponse({ body: serverResponse }, { bidRequest });
         expect(bidResponse.renderer).to.deep.contain({
@@ -547,7 +590,7 @@ describe('BeachfrontAdapter', function () {
         const serverResponse = {
           bidPrice: 5.00,
           url: 'http://reachms.bfmio.com/getmu?aid=bid:19c4a196-fb21-4c81-9a1a-ecc5437a39da',
-          cmpId: '123abc'
+          crid: '123abc'
         };
         const bidResponse = spec.interpretResponse({ body: serverResponse }, { bidRequest });
         window.Beachfront = { Player: sinon.spy() };
@@ -581,7 +624,7 @@ describe('BeachfrontAdapter', function () {
         const serverResponse = {
           bidPrice: 5.00,
           url: 'http://reachms.bfmio.com/getmu?aid=bid:19c4a196-fb21-4c81-9a1a-ecc5437a39da',
-          cmpId: '123abc'
+          crid: '123abc'
         };
         const bidResponse = spec.interpretResponse({ body: serverResponse }, { bidRequest });
         window.Beachfront = { Player: sinon.spy() };
@@ -662,7 +705,7 @@ describe('BeachfrontAdapter', function () {
         bidResponse = {
           bidPrice: 5.00,
           url: 'http://reachms.bfmio.com/getmu?aid=bid:19c4a196-fb21-4c81-9a1a-ecc5437a39da',
-          cmpId: '123abc'
+          crid: '123abc'
         };
       });
 

@@ -63,23 +63,37 @@ export const tripleliftAdapterSpec = {
   },
 
   getUserSyncs: function(syncOptions) {
-    let ibCall = '//ib.3lift.com/sync?';
-    if (consentString !== null) {
-      ibCall = utils.tryAppendQueryString(ibCall, 'gdpr', gdprApplies);
-      ibCall = utils.tryAppendQueryString(ibCall, 'cmp_cs', consentString);
+    let syncType = _getSyncType(syncOptions);
+    if (!syncType) return;
+
+    let syncEndpoint = 'https://eb2.3lift.com/sync?';
+
+    if (syncType === 'image') {
+      syncEndpoint = utils.tryAppendQueryString(syncEndpoint, 'px', 1);
+      syncEndpoint = utils.tryAppendQueryString(syncEndpoint, 'src', 'prebid');
     }
 
-    if (syncOptions.iframeEnabled) {
-      return [{
-        type: 'iframe',
-        url: ibCall
-      }];
+    if (consentString !== null) {
+      syncEndpoint = utils.tryAppendQueryString(syncEndpoint, 'gdpr', gdprApplies);
+      syncEndpoint = utils.tryAppendQueryString(syncEndpoint, 'cmp_cs', consentString);
     }
+
+    return [{
+      type: syncType,
+      url: syncEndpoint
+    }];
   }
+}
+
+function _getSyncType(syncOptions) {
+  if (!syncOptions) return;
+  if (syncOptions.iframeEnabled) return 'iframe';
+  if (syncOptions.pixelEnabled) return 'image';
 }
 
 function _buildPostBody(bidRequests) {
   let data = {};
+  let { schain } = bidRequests[0];
   data.imp = bidRequests.map(function(bid, index) {
     return {
       id: index,
@@ -102,6 +116,11 @@ function _buildPostBody(bidRequests) {
     };
   }
 
+  if (schain) {
+    data.ext = {
+      schain
+    }
+  }
   return data;
 }
 
