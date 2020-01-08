@@ -89,10 +89,9 @@ function validateBannerMediaType(adUnit) {
     // Deprecation Warning: This property will be deprecated in next release in favor of adUnit.mediaTypes.banner.sizes
     adUnit.sizes = bannerSizes;
   } else {
-    utils.logError('Detected a mediaTypes.banner object without a proper sizes field. Please ensure the sizes are listed like: [[300, 250], ...]. Removing invalid mediaTypes.banner object from request.');
+    utils.logError('Detected a mediaTypes.banner object without a proper sizes field.  Please ensure the sizes are listed like: [[300, 250], ...].  Removing invalid mediaTypes.banner object from request.');
     delete adUnit.mediaTypes.banner
   }
-  return adUnit;
 }
 
 function validateVideoMediaType(adUnit) {
@@ -108,10 +107,9 @@ function validateVideoMediaType(adUnit) {
     // Deprecation Warning: This property will be deprecated in next release in favor of adUnit.mediaTypes.video.playerSize
     adUnit.sizes = videoSizes;
   } else {
-    utils.logError('Detected incorrect configuration of mediaTypes.video.playerSize. Please specify only one set of dimensions in a format like: [[640, 480]]. Removing invalid mediaTypes.video.playerSize property from request.');
+    utils.logError('Detected incorrect configuration of mediaTypes.video.playerSize.  Please specify only one set of dimensions in a format like: [[640, 480]]. Removing invalid mediaTypes.video.playerSize property from request.');
     delete adUnit.mediaTypes.video.playerSize;
   }
-  return adUnit;
 }
 
 function validateNativeMediaType(adUnit) {
@@ -128,7 +126,6 @@ function validateNativeMediaType(adUnit) {
     utils.logError('Please use an array of sizes for native.icon.sizes field.  Removing invalid mediaTypes.native.icon.sizes property from request.');
     delete adUnit.mediaTypes.native.icon.sizes;
   }
-  return adUnit;
 }
 
 export const adUnitSetupChecks = {
@@ -147,18 +144,18 @@ export const checkAdUnitSetup = hook('sync', function (adUnits) {
     }
 
     if (mediaTypes.banner) {
-      adUnit = validateBannerMediaType(adUnit);
+      validateBannerMediaType(adUnit);
     }
 
     if (mediaTypes.video) {
       const video = mediaTypes.video;
       if (video.playerSize) {
-        adUnit = validateVideoMediaType(adUnit);
+        validateVideoMediaType(adUnit);
       }
     }
 
     if (mediaTypes.native) {
-      adUnit = validateNativeMediaType(adUnit);
+      validateNativeMediaType(adUnit);
     }
     return true;
   });
@@ -194,7 +191,7 @@ $$PREBID_GLOBAL$$.getAdserverTargetingForAdUnitCodeStr = function (adunitCode) {
  * @alias module:pbjs.getAdserverTargetingForAdUnitCode
  * @returns {Object}  returnObj return bids
  */
-$$PREBID_GLOBAL$$.getAdserverTargetingForAdUnitCode = function (adUnitCode) {
+$$PREBID_GLOBAL$$.getAdserverTargetingForAdUnitCode = function(adUnitCode) {
   return $$PREBID_GLOBAL$$.getAdserverTargeting(adUnitCode)[adUnitCode];
 };
 
@@ -302,7 +299,7 @@ $$PREBID_GLOBAL$$.setTargetingForGPTAsync = function (adUnit, customSlotMatching
  * @param  {(string|string[])} adUnitCode adUnitCode or array of adUnitCodes
  * @alias module:pbjs.setTargetingForAst
  */
-$$PREBID_GLOBAL$$.setTargetingForAst = function (adUnitCodes) {
+$$PREBID_GLOBAL$$.setTargetingForAst = function(adUnitCodes) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.setTargetingForAn', arguments);
   if (!targeting.isApntagDefined()) {
     utils.logError('window.apntag is not defined on the page');
@@ -468,7 +465,7 @@ $$PREBID_GLOBAL$$.requestBids = hook('async', function ({ bidsBackHandler, timeo
    */
   adUnits.forEach(adUnit => {
     // get the adunit's mediaTypes, defaulting to banner if mediaTypes isn't present
-    const adUnitMediaTypes = Object.keys(adUnit.mediaTypes || { 'banner': 'banner' });
+    const adUnitMediaTypes = Object.keys(adUnit.mediaTypes || {'banner': 'banner'});
 
     // get the bidder's mediaTypes
     const allBidders = adUnit.bids.map(bid => bid.bidder);
@@ -514,7 +511,7 @@ $$PREBID_GLOBAL$$.requestBids = hook('async', function ({ bidsBackHandler, timeo
     return;
   }
 
-  const auction = auctionManager.createAuction({ adUnits, adUnitCodes, callback: bidsBackHandler, cbTimeout, labels, auctionId });
+  const auction = auctionManager.createAuction({adUnits, adUnitCodes, callback: bidsBackHandler, cbTimeout, labels, auctionId});
 
   let adUnitsLen = adUnits.length;
   if (adUnitsLen > 15) {
@@ -832,7 +829,7 @@ $$PREBID_GLOBAL$$.que.push(() => listenMessagesFromCreative());
  *                            the Prebid script has been fully loaded.
  * @alias module:pbjs.cmd.push
  */
-$$PREBID_GLOBAL$$.cmd.push = function (command) {
+$$PREBID_GLOBAL$$.cmd.push = function(command) {
   if (typeof command === 'function') {
     try {
       command.call();
@@ -847,7 +844,7 @@ $$PREBID_GLOBAL$$.cmd.push = function (command) {
 $$PREBID_GLOBAL$$.que.push = $$PREBID_GLOBAL$$.cmd.push;
 
 function processQueue(queue) {
-  queue.forEach(function (cmd) {
+  queue.forEach(function(cmd) {
     if (typeof cmd.called === 'undefined') {
       try {
         cmd.call();
@@ -862,7 +859,7 @@ function processQueue(queue) {
 /**
  * @alias module:pbjs.processQueue
  */
-$$PREBID_GLOBAL$$.processQueue = function () {
+$$PREBID_GLOBAL$$.processQueue = function() {
   hook.ready();
   processQueue($$PREBID_GLOBAL$$.que);
   processQueue($$PREBID_GLOBAL$$.cmd);

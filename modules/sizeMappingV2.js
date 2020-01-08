@@ -87,7 +87,7 @@ export function checkAdUnitSetupHook(adUnits) {
     if (mediaTypes.banner) {
       const banner = mediaTypes.banner;
       if (banner.sizes) {
-        adUnit = adUnitSetupChecks.validateBannerMediaType(adUnit);
+        adUnitSetupChecks.validateBannerMediaType(adUnit);
       } else if (banner.sizeConfig) {
         if (Array.isArray(banner.sizeConfig)) {
           let deleteBannerMediaType = false;
@@ -135,7 +135,7 @@ export function checkAdUnitSetupHook(adUnits) {
     if (mediaTypes.video) {
       const video = mediaTypes.video;
       if (video.playerSize) {
-        adUnit = adUnitSetupChecks.validateVideoMediaType(adUnit);
+        adUnitSetupChecks.validateVideoMediaType(adUnit);
       } else if (video.sizeConfig) {
         if (Array.isArray(video.sizeConfig)) {
           let deleteVideoMediaType = false;
@@ -182,7 +182,7 @@ export function checkAdUnitSetupHook(adUnits) {
 
     if (mediaTypes.native) {
       const native = mediaTypes.native;
-      adUnit = adUnitSetupChecks.validateNativeMediaType(adUnit);
+      adUnitSetupChecks.validateNativeMediaType(adUnit);
 
       if (mediaTypes.native.sizeConfig) {
         native.sizeConfig.forEach(config => {
