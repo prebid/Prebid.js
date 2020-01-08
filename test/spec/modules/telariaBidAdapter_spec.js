@@ -1,6 +1,7 @@
 import {expect} from 'chai';
 import {newBidder} from 'src/adapters/bidderFactory';
 import {spec, getTimeoutUrl} from 'modules/telariaBidAdapter';
+import * as utils from 'src/utils';
 
 const ENDPOINT = '.ads.tremorhub.com/ad/tag';
 const AD_CODE = 'ssp-!demo!-lufip';
@@ -269,6 +270,14 @@ describe('TelariaAdapter', () => {
       }]
     }];
 
+    beforeEach(function() {
+      sinon.stub(utils, 'triggerPixel');
+    });
+
+    afterEach(function() {
+      utils.triggerPixel.restore();
+    });
+
     it('should return a pixel url', () => {
       let url = getTimeoutUrl(timeoutData);
       assert(url);
@@ -276,6 +285,7 @@ describe('TelariaAdapter', () => {
 
     it('should fire a pixel', () => {
       expect(spec.onTimeout(timeoutData)).to.be.undefined;
+      expect(utils.triggerPixel.called).to.equal(true);
     });
   });
 });
