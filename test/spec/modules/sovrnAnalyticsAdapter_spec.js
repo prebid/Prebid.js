@@ -1,7 +1,8 @@
-import sovrnAnalyticsAdapter from '../../../modules/sovrnAnalyticsAdapter'
-import { expect } from 'chai'
-import {config} from 'src/config'
-import adaptermanager from 'src/adapterManager'
+import sovrnAnalyticsAdapter from '../../../modules/sovrnAnalyticsAdapter';
+import { expect } from 'chai';
+import {config} from 'src/config';
+import adaptermanager from 'src/adapterManager';
+import { server } from 'test/mocks/xhr';
 var assert = require('assert');
 
 let events = require('src/events');
@@ -171,16 +172,10 @@ let bidAdjustmentNoMatchingRequest = {
 let bidResponseNoMatchingRequest = bidAdjustmentNoMatchingRequest;
 
 describe('Sovrn Analytics Adapter', function () {
-  let xhr;
-  let requests;
   beforeEach(() => {
-    xhr = sinon.useFakeXMLHttpRequest();
-    xhr.onCreate = request => requests.push(request);
-    requests = [];
     sinon.stub(events, 'getEvents').returns([]);
   });
   afterEach(() => {
-    xhr.restore();
     events.getEvents.restore();
   });
 
@@ -436,7 +431,7 @@ describe('Sovrn Analytics Adapter', function () {
       emitEvent('BID_RESPONSE', bidResponse, auctionId);
       emitEvent('BID_RESPONSE', bidResponse2, auctionId)
       emitEvent('AUCTION_END', {}, auctionId);
-      let requestBody = JSON.parse(requests[0].requestBody);
+      let requestBody = JSON.parse(server.requests[0].requestBody);
       let requestsFromRequestBody = requestBody.requests[0];
       let bidsFromRequests = requestsFromRequestBody.bids[0];
       expect(requestBody).to.deep.include(expectedPostBody);
@@ -512,7 +507,7 @@ describe('Sovrn Analytics Adapter', function () {
     it('should send bid won data ', function () {
       emitEvent('AUCTION_INIT', auctionInit, auctionId);
       emitEvent('BID_WON', bidWonEvent, auctionId);
-      let requestBody = JSON.parse(requests[0].requestBody);
+      let requestBody = JSON.parse(server.requests[0].requestBody);
       expect(requestBody).to.deep.include(expectedBidWonBody);
       expect(requestBody.winningBid).to.deep.include(expectedWinningBid);
     });
@@ -536,9 +531,9 @@ describe('Sovrn Analytics Adapter', function () {
       emitEvent('AUCTION_INIT', auctionInit, auctionId)
       emitEvent('BID_REQUESTED', bidRequested, auctionId)
       emitEvent('AUCTION_END', {}, auctionId)
-      requests[0].respond(200)
+      server.requests[0].respond(200)
       emitEvent('BID_RESPONSE', bidResponse, auctionId)
-      let requestBody = JSON.parse(requests[1].requestBody)
+      let requestBody = JSON.parse(server.requests[1].requestBody)
       expect(requestBody.payload).to.equal('error')
       expect(requestBody.message).to.include('Event Received after Auction Close Auction Id')
     })

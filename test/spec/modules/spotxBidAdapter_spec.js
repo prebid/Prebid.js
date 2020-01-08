@@ -273,6 +273,30 @@ describe('the spotx adapter', function () {
       expect(request.data.regs.ext.gdpr).to.equal(1);
       expect(request.data.user.ext.consent).to.equal('consent123');
     });
+
+    it('should pass CCPA us_privacy string', function() {
+      var request;
+
+      bidRequestObj.uspConsent = '1YYY'
+
+      request = spec.buildRequests([bid], bidRequestObj)[0];
+      expect(request.data.regs.ext.us_privacy).to.equal('1YYY');
+    });
+
+    it('should pass both GDPR params and CCPA us_privacy', function() {
+      var request;
+
+      bidRequestObj.gdprConsent = {
+        consentString: 'consent123',
+        gdprApplies: true
+      };
+      bidRequestObj.uspConsent = '1YYY'
+
+      request = spec.buildRequests([bid], bidRequestObj)[0];
+      expect(request.data.regs.ext.gdpr).to.equal(1);
+      expect(request.data.user.ext.consent).to.equal('consent123');
+      expect(request.data.regs.ext.us_privacy).to.equal('1YYY');
+    });
   });
 
   describe('interpretResponse', function() {
