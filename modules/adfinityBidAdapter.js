@@ -58,7 +58,7 @@ export const spec = {
       'deviceWidth': winTop.screen.width,
       'deviceHeight': winTop.screen.height,
       'language': (navigator && navigator.language) ? navigator.language : '',
-      'secure': location.protocol === 1,
+      'secure': 1,
       'host': location.host,
       'page': location.pathname,
       'placements': placements
