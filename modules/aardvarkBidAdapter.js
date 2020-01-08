@@ -197,8 +197,9 @@ export const spec = {
    * @returns {String}
    */
   serializeSupplyChain: function (supplyChain) {
-    if (!hasValidSupplyChainParams(supplyChain)) 
+    if (!hasValidSupplyChainParams(supplyChain)) {
       return '';
+    }
 
     return `${supplyChain.ver},${supplyChain.complete}!${spec.serializeSupplyChainNodes(supplyChain.nodes)}`;
   },
@@ -216,7 +217,7 @@ export const spec = {
   },
 };
 
- /**
+/**
  * Make sure the required params are present
  * @param {Object} schain
  * @param {Bool}
@@ -228,8 +229,9 @@ export function hasValidSupplyChainParams(schain) {
   const requiredFields = ['asi', 'sid', 'hp'];
 
   let isValid = schain.nodes.reduce((status, node) => {
-    if (!status)
+    if (!status) {
       return status;
+    }
     return requiredFields.every(field => node[field]);
   }, true);
   if (!isValid) {
