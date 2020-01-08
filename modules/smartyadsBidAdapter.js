@@ -72,7 +72,7 @@ export const spec = {
         traffic: traff
       });
       if (bid.schain) {
-        placement.schain = bid.schain;
+        placements.schain = bid.schain;
       }
     }
     return {
