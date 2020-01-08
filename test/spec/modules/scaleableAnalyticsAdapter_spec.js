@@ -2,6 +2,7 @@ import scaleableAnalytics from 'modules/scaleableAnalyticsAdapter';
 import { expect } from 'chai';
 import events from 'src/events';
 import CONSTANTS from 'src/constants.json';
+import { server } from 'test/mocks/xhr';
 
 const BID_TIMEOUT = CONSTANTS.EVENTS.BID_TIMEOUT;
 const AUCTION_INIT = CONSTANTS.EVENTS.AUCTION_INIT;
@@ -98,14 +99,8 @@ describe('Scaleable Analytics Adapter', function() {
     }]
   }
 
-  let xhr;
-  let requests;
-
   describe('Event Handling', function() {
     beforeEach(function() {
-      xhr = sinon.useFakeXMLHttpRequest();
-      requests = [];
-      xhr.onCreate = request => requests.push(request);
       sinon.stub(events, 'getEvents').returns([]);
 
       scaleableAnalytics.enableAnalytics({
@@ -128,7 +123,7 @@ describe('Scaleable Analytics Adapter', function() {
         bidderRequests: MOCK_DATA.bidderRequests
       });
 
-      const result = JSON.parse(requests[0].requestBody);
+      const result = JSON.parse(server.requests[0].requestBody);
       expect(result).to.deep.equal(MOCK_DATA.expectedRequestResponse);
 
       done();
@@ -145,7 +140,7 @@ describe('Scaleable Analytics Adapter', function() {
     it('should handle the bid won event', function(done) {
       events.emit(BID_WON, MOCK_DATA.bidResponse);
 
-      const result = JSON.parse(requests[0].requestBody);
+      const result = JSON.parse(server.requests[0].requestBody);
       expect(result).to.deep.equal({
         adunit: MOCK_DATA.adUnitCode,
         code: MOCK_DATA.bidResponse.bidderCode,
@@ -162,7 +157,7 @@ describe('Scaleable Analytics Adapter', function() {
     it('should handle the auction end event', function(done) {
       events.emit(AUCTION_END, MOCK_DATA.auctionEnd);
 
-      const result = JSON.parse(requests[0].requestBody);
+      const result = JSON.parse(server.requests[0].requestBody);
       expect(result).to.deep.equal(MOCK_DATA.expectedAuctionEndResponse);
 
       done();

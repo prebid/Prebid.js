@@ -2,6 +2,7 @@ import {ajax} from '../src/ajax';
 import adapter from '../src/AnalyticsAdapter';
 import CONSTANTS from '../src/constants.json';
 import adapterManager from '../src/adapterManager';
+import {getGlobal} from '../src/prebidGlobal';
 import {logError, logInfo, deepClone} from '../src/utils';
 
 const analyticsType = 'endpoint';
@@ -148,7 +149,7 @@ export const ucfunnelAnalyticsAdapter = Object.assign(adapter({ANALYTICS_SERVER,
   },
   handleAuctionEnd(auctionEndArgs) {
     const cachedAuction = this.getCachedAuction(auctionEndArgs.auctionId);
-    const highestCpmBids = pbjs.getHighestCpmBids();
+    const highestCpmBids = getGlobal().getHighestCpmBids();
     this.sendEventMessage('bid',
       this.createBidMessage(auctionEndArgs, highestCpmBids, cachedAuction.timeoutBids)
     );
