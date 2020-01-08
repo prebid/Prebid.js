@@ -242,7 +242,6 @@ function displayNative(ad, template) {
 }
 
 function getTemplate(size, customTemplate) {
-  console.log(customTemplate);
   if (typeof (customTemplate) !== 'undefined' && customTemplate !== '') {
     return customTemplate;
   }
