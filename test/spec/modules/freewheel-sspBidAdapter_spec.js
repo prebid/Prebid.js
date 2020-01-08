@@ -86,6 +86,43 @@ describe('freewheelSSP BidAdapter Test', () => {
       expect(request.url).to.contain(ENDPOINT);
       expect(request.method).to.equal('GET');
     });
+
+    it('should add usp consent to the request', () => {
+      let uspConsentString = '1FW-SSP-uspConsent-';
+      let bidderRequest = {};
+      bidderRequest.uspConsent = uspConsentString;
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      console.log(request.data);
+      const payload = request.data;
+      expect(payload.reqType).to.equal('AdsSetup');
+      expect(payload.protocolVersion).to.equal('2.0');
+      expect(payload.zoneId).to.equal('277225');
+      expect(payload.componentId).to.equal('mustang');
+      expect(payload.playerSize).to.equal('300x600');
+      expect(payload._fw_us_privacy).to.exist.and.to.be.a('string');
+      expect(payload._fw_us_privacy).to.equal(uspConsentString);
+    });
+
+    it('should add gdpr consent to the request', () => {
+      let gdprConsentString = '1FW-SSP-gdprConsent-';
+      let bidderRequest = {
+        'gdprConsent': {
+          'consentString': gdprConsentString
+        }
+      };
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      console.log(request.data);
+      const payload = request.data;
+      expect(payload.reqType).to.equal('AdsSetup');
+      expect(payload.protocolVersion).to.equal('2.0');
+      expect(payload.zoneId).to.equal('277225');
+      expect(payload.componentId).to.equal('mustang');
+      expect(payload.playerSize).to.equal('300x600');
+      expect(payload._fw_gdpr_consent).to.exist.and.to.be.a('string');
+      expect(payload._fw_gdpr_consent).to.equal(gdprConsentString);
+    });
   })
 
   describe('interpretResponse', () => {
