@@ -11,7 +11,7 @@ const DEFAULT_PROTOCOL = 'https';
 const DEFAULT_SAC_HOST = 'sac.ayads.co'
 const DEFAULT_TTL = 600;
 const SUBLIME_ANTENNA = 'antenna.ayads.co';
-const SUBLIME_VERSION = '0.5.0';
+const SUBLIME_VERSION = '0.5.1-bundle';
 
 /**
  * Debug log message
@@ -87,7 +87,7 @@ function buildRequests(validBidRequests, bidderRequest) {
   window.sublime = window.sublime || {};
 
   let commonPayload = {
-    sublimeVersion: SUBLIME_VERSION,
+    pbav: SUBLIME_VERSION,
     // Current Prebid params
     prebidVersion: '$prebid.version$',
     currencyCode: config.getConfig('currency.adServerCurrency') || DEFAULT_CURRENCY,
@@ -239,6 +239,7 @@ function interpretResponse(serverResponse, bidRequest) {
       netRevenue: response.netRevenue || true,
       ttl: response.ttl || DEFAULT_TTL,
       ad: response.ad,
+      pbav: SUBLIME_VERSION
     };
 
     sendEvent('bid', true);
