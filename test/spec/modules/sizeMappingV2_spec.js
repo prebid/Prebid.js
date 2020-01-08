@@ -221,7 +221,7 @@ describe('sizeMappingV2', function () {
       let adUnits = utils.deepClone(AD_UNITS);
       delete adUnits[0].mediaTypes;
 
-      adUnits = checkAdUnitSetupHook(adUnits);
+      checkAdUnitSetupHook(adUnits);
       sinon.assert.callCount(utils.logError, 1);
       sinon.assert.calledWith(utils.logError, 'Detected adUnit.code \'div-gpt-ad-1460505748561-0\' did not have a \'mediaTypes\' object defined. This is a required field for the auction, so this adUnit has been removed.');
     });
@@ -253,7 +253,7 @@ describe('sizeMappingV2', function () {
         // deleteing the sizeConfig property from the first ad unit.
         delete adUnits[0].mediaTypes.banner.sizeConfig;
 
-        adUnits = checkAdUnitSetupHook(adUnits);
+        checkAdUnitSetupHook(adUnits);
         sinon.assert.callCount(utils.logError, 1);
         sinon.assert.calledWith(utils.logError, 'Detected a mediaTypes.banner object did not include required property sizes or sizeConfig. Removing invalid mediaTypes.banner object from Ad Unit.');
       });
@@ -434,7 +434,7 @@ describe('sizeMappingV2', function () {
         expect(adUnits[0].mediaTypes).to.have.property('banner');
         expect(adUnits[1].mediaTypes).to.have.property('banner');
 
-        const validatedAdUnits = checkAdUnitSetupHook(adUnits);
+        checkAdUnitSetupHook(adUnits);
 
         // after calling checkAdUnitSetupHook, the mediaTypes.banner object should still be present for both the Ad Units.
         expect(adUnits[0].mediaTypes).to.have.property('banner');
@@ -1201,7 +1201,7 @@ describe('sizeMappingV2', function () {
           sizes: [[1000, 300], [970, 90], [728, 90], [300, 250]
           ]
         }
-      }
+      };
       const { mediaTypes, sizeBucketToSizeMap, activeViewport, transformedMediaTypes } = getFilteredMediaTypes(adUnit.mediaTypes);
       expect(mediaTypes).to.deep.equal(expectedMediaTypes);
       expect(activeViewport).to.deep.equal(expectedActiveViewport);
@@ -1316,7 +1316,7 @@ describe('sizeMappingV2', function () {
           ],
           sizes: [[300, 200], [400, 600]]
         }
-      }
+      };
 
       const bidRequests_1 = getBids({
         bidderCode: 'appnexus',
@@ -1465,7 +1465,7 @@ describe('sizeMappingV2', function () {
       adUnit[0].bids[1].sizeConfig = [
         { minViewPort: [0, 0], relevantMediaTypes: ['none'] },
         { minViewPort: [200, 0], relevantMediaTypes: ['banner'] }
-      ]
+      ];
 
       const adUnitDetailFixture = {
         adUnitCode: 'adUnit1',
