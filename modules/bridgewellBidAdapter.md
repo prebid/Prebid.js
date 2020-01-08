@@ -1,8 +1,8 @@
 # Overview
 
-Module Name: Bridgewell Bidder Adapter
-Module Type: Bidder Adapter
-Maintainer: kuchunchou@bridgewell.com
+Module Name: Bridgewell Bidder Adapter  
+Module Type: Bidder Adapter  
+Maintainer: scupio@bridgewell.com
 
 # Description
 
