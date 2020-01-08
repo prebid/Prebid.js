@@ -112,7 +112,6 @@ describe('Scaleable Analytics Adapter', function() {
     });
 
     afterEach(function() {
-      xhr.restore();
       events.getEvents.restore();
       scaleableAnalytics.disableAnalytics();
     });
