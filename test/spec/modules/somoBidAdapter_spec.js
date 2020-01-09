@@ -32,13 +32,20 @@ describe('Somo Audience Adapter Tests', function () {
             placementId: 'test'
           }
         }];
-        const request = spec.buildRequests(bidRequests);
-        expect(request[0].url).to.equal('//publisher-east.mobileadtrading.com/rtb/bid?s=test');
+        const bidderRequest = {
+          refererInfo: {
+            referer: 'https://www.test.com/page?var=val',
+            canonicalUrl: 'https://www.test.com/page'
+          }
+        };
+
+        const request = spec.buildRequests(bidRequests, bidderRequest);
+        expect(request[0].url).to.equal('https://publisher-east.mobileadtrading.com/rtb/bid?s=test');
         expect(request[0].method).to.equal('POST');
         const ortbRequest = request[0].data;
         expect(ortbRequest.site).to.not.equal(null);
-        expect(ortbRequest.site.ref).to.equal(utils.getTopWindowReferrer());
-        expect(ortbRequest.site.page).to.equal(utils.getTopWindowLocation().href);
+        expect(ortbRequest.site.ref).to.equal('https://www.test.com/page?var=val');
+        expect(ortbRequest.site.page).to.equal('https://www.test.com/page');
         expect(ortbRequest.site.domain).to.not.be.undefined;
         expect(ortbRequest.imp).to.have.lengthOf(1);
         expect(ortbRequest.device).to.not.equal(null);
@@ -50,18 +57,30 @@ describe('Somo Audience Adapter Tests', function () {
       it('should properly build a banner request with sizes defined in 2d array', function () {
         const bidRequests = [{
           bidder: 'somo',
-          sizes: [[300, 250]],
+          mediaTypes: {
+            banner: {
+              sizes: [[300, 250]]
+            }
+          },
           params: {
             placementId: 'test'
           }
         }];
-        const request = spec.buildRequests(bidRequests);
-        expect(request[0].url).to.equal('//publisher-east.mobileadtrading.com/rtb/bid?s=test');
+
+        const bidderRequest = {
+          refererInfo: {
+            referer: 'https://www.test.com/page?var=val',
+            canonicalUrl: 'https://www.test.com/page'
+          }
+        }
+
+        const request = spec.buildRequests(bidRequests, bidderRequest);
+        expect(request[0].url).to.equal('https://publisher-east.mobileadtrading.com/rtb/bid?s=test');
         expect(request[0].method).to.equal('POST');
         const ortbRequest = request[0].data;
         expect(ortbRequest.site).to.not.equal(null);
-        expect(ortbRequest.site.ref).to.equal(utils.getTopWindowReferrer());
-        expect(ortbRequest.site.page).to.equal(utils.getTopWindowLocation().href);
+        expect(ortbRequest.site.ref).to.equal('https://www.test.com/page?var=val');
+        expect(ortbRequest.site.page).to.equal('https://www.test.com/page');
         expect(ortbRequest.site.domain).to.not.be.undefined;
         expect(ortbRequest.imp).to.have.lengthOf(1);
         expect(ortbRequest.imp[0].bidfloor).to.not.be.null;
@@ -72,18 +91,30 @@ describe('Somo Audience Adapter Tests', function () {
       it('should properly build a banner request with sizes defined in 1d array', function () {
         const bidRequests = [{
           bidder: 'somo',
-          sizes: [300, 250],
+          mediaTypes: {
+            banner: {
+              sizes: [300, 250]
+            }
+          },
           params: {
             placementId: 'test'
           }
         }];
-        const request = spec.buildRequests(bidRequests);
-        expect(request[0].url).to.equal('//publisher-east.mobileadtrading.com/rtb/bid?s=test');
+
+        const bidderRequest = {
+          refererInfo: {
+            referer: 'https://www.test.com/page?var=val',
+            canonicalUrl: 'https://www.test.com/page'
+          }
+        };
+
+        const request = spec.buildRequests(bidRequests, bidderRequest);
+        expect(request[0].url).to.equal('https://publisher-east.mobileadtrading.com/rtb/bid?s=test');
         expect(request[0].method).to.equal('POST');
         const ortbRequest = request[0].data;
         expect(ortbRequest.site).to.not.equal(null);
-        expect(ortbRequest.site.ref).to.equal(utils.getTopWindowReferrer());
-        expect(ortbRequest.site.page).to.equal(utils.getTopWindowLocation().href);
+        expect(ortbRequest.site.ref).to.equal('https://www.test.com/page?var=val');
+        expect(ortbRequest.site.page).to.equal('https://www.test.com/page');
         expect(ortbRequest.site.domain).to.not.be.undefined;
         expect(ortbRequest.imp).to.have.lengthOf(1);
         expect(ortbRequest.imp[0].bidfloor).to.not.be.null;
@@ -100,7 +131,11 @@ describe('Somo Audience Adapter Tests', function () {
         const bidRequests = [
           {
             bidder: 'somo',
-            sizes: [[300, 200]],
+            mediaTypes: {
+              banner: {
+                sizes: [[300, 200]]
+              }
+            },
             mediaType: 'banner',
             params: {
               placementId: 'test',
@@ -130,18 +165,27 @@ describe('Somo Audience Adapter Tests', function () {
         const bidRequests = [{
           bidder: 'somo',
           mediaTypes: {
-            video: {}
+            video: {
+              sizes: [200, 300]
+            }
           },
-          sizes: [200, 300],
           params: {
             placementId: 'test'
           }
         }];
-        const request = spec.buildRequests(bidRequests);
+
+        const bidderRequest = {
+          refererInfo: {
+            referer: 'https://www.test.com/page?var=val',
+            canonicalUrl: 'https://www.test.com/page'
+          }
+        };
+
+        const request = spec.buildRequests(bidRequests, bidderRequest);
         const ortbRequest = request[0].data;
         expect(ortbRequest.site).to.not.equal(null);
-        expect(ortbRequest.site.ref).to.equal(utils.getTopWindowReferrer());
-        expect(ortbRequest.site.page).to.equal(utils.getTopWindowLocation().href);
+        expect(ortbRequest.site.ref).to.equal('https://www.test.com/page?var=val');
+        expect(ortbRequest.site.page).to.equal('https://www.test.com/page');
         expect(ortbRequest.site.domain).to.not.be.undefined;
         expect(ortbRequest.imp).to.have.lengthOf(1);
         expect(ortbRequest.imp[0].video).to.not.equal(null);
@@ -153,18 +197,27 @@ describe('Somo Audience Adapter Tests', function () {
         const bidRequests = [{
           bidder: 'somo',
           mediaTypes: {
-            video: {}
+            video: {
+              sizes: [[200, 300]]
+            }
           },
-          sizes: [[200, 300]],
           params: {
             placementId: 'test'
           }
         }];
-        const request = spec.buildRequests(bidRequests);
+
+        const bidderRequest = {
+          refererInfo: {
+            referer: 'https://www.test.com/page?var=val',
+            canonicalUrl: 'https://www.test.com/page'
+          }
+        };
+
+        const request = spec.buildRequests(bidRequests, bidderRequest);
         const ortbRequest = request[0].data;
         expect(ortbRequest.site).to.not.equal(null);
-        expect(ortbRequest.site.ref).to.equal(utils.getTopWindowReferrer());
-        expect(ortbRequest.site.page).to.equal(utils.getTopWindowLocation().href);
+        expect(ortbRequest.site.ref).to.equal('https://www.test.com/page?var=val');
+        expect(ortbRequest.site.page).to.equal('https://www.test.com/page');
         expect(ortbRequest.site.domain).to.not.be.undefined;
         expect(ortbRequest.imp).to.have.lengthOf(1);
         expect(ortbRequest.imp[0].video).to.not.equal(null);
@@ -200,8 +253,11 @@ describe('Somo Audience Adapter Tests', function () {
         const bidRequests = [
           {
             bidder: 'somo',
-            sizes: [[200, 300]],
-            mediaType: 'video',
+            mediaTypes: {
+              video: {
+                sizes: [[200, 300]]
+              }
+            },
             params: {
               placementId: 'test',
               video: {
@@ -247,12 +303,20 @@ describe('Somo Audience Adapter Tests', function () {
             placementId: 'test'
           }
         }];
-        const request = spec.buildRequests(bidRequests);
+
+        const bidderRequest = {
+          refererInfo: {
+            referer: 'https://www.test.com/page?var=val',
+            canonicalUrl: 'https://www.test.com/page'
+          }
+        };
+
+        const request = spec.buildRequests(bidRequests, bidderRequest);
         const ortbRequest = request[0].data;
         expect(ortbRequest.app).to.equal(null);
         expect(ortbRequest.site).to.not.equal(null);
-        expect(ortbRequest.site.ref).to.equal(utils.getTopWindowReferrer());
-        expect(ortbRequest.site.page).to.equal(utils.getTopWindowLocation().href);
+        expect(ortbRequest.site.ref).to.equal('https://www.test.com/page?var=val');
+        expect(ortbRequest.site.page).to.equal('https://www.test.com/page');
         expect(ortbRequest.site.domain).to.not.be.undefined;
       });
 

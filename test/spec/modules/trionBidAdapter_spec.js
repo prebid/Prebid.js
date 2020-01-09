@@ -1,6 +1,7 @@
 import {expect} from 'chai';
 import * as utils from 'src/utils';
 import {spec, acceptPostMessage, getStorageData, setStorageData} from 'modules/trionBidAdapter';
+
 const CONSTANTS = require('src/constants.json');
 const adloader = require('src/adloader');
 
@@ -12,6 +13,11 @@ const TRION_BID = {
   params: {
     pubId: '1',
     sectionId: '2'
+  },
+  mediaTypes: {
+    banner: {
+      sizes: [[300, 250], [300, 600]]
+    }
   },
   adUnitCode: 'adunit-code',
   sizes: [[300, 250], [300, 600]],
@@ -33,6 +39,23 @@ const TRION_BID_RESPONSE = {
     msg: 'response messaging'
   }
 
+};
+
+const getPublisherUrl = function () {
+  var url = null;
+  try {
+    if (window.top == window) {
+      url = window.location.href;
+    } else {
+      try {
+        url = window.top.location.href;
+      } catch (e) {
+        url = document.referrer;
+      }
+    }
+  } catch (e) {
+  }
+  return url
 };
 
 describe('Trion adapter tests', function () {
@@ -116,8 +139,63 @@ describe('Trion adapter tests', function () {
 
       let bidUrlParams = bidRequests[0].data;
       expect(bidUrlParams).to.include('re=1');
-      expect(bidUrlParams).to.include(utils.getTopWindowUrl());
+      expect(bidUrlParams).to.include(getPublisherUrl());
       delete params.re;
+    });
+
+    describe('webdriver', function () {
+      let originalWD;
+
+      beforeEach(function () {
+        originalWD = window.navigator.webdriver;
+        window.navigator['__defineGetter__']('webdriver', function () {
+          return 1;
+        });
+      });
+
+      afterEach(function () {
+        window.navigator['__defineGetter__']('webdriver', function () {
+          return originalWD;
+        });
+      });
+
+      it('should send the correct state when there is non human traffic', function () {
+        let bidRequests = spec.buildRequests(TRION_BID_REQUEST);
+        let bidUrlParams = bidRequests[0].data;
+        expect(bidUrlParams).to.include('tr_wd=1');
+      });
+    });
+
+    describe('visibility', function () {
+      let originalHD;
+      let originalVS;
+
+      beforeEach(function () {
+        originalHD = document.hidden;
+        originalVS = document.visibilityState;
+        document['__defineGetter__']('hidden', function () {
+          return 1;
+        });
+        document['__defineGetter__']('visibilityState', function () {
+          return 'hidden';
+        });
+      });
+
+      afterEach(function () {
+        document['__defineGetter__']('hidden', function () {
+          return originalHD;
+        });
+        document['__defineGetter__']('visibilityState', function () {
+          return originalVS;
+        });
+      });
+
+      it('should send the correct states when the document is not visible', function () {
+        let bidRequests = spec.buildRequests(TRION_BID_REQUEST);
+        let bidUrlParams = bidRequests[0].data;
+        expect(bidUrlParams).to.include('tr_hd=1');
+        expect(bidUrlParams).to.include('tr_vs=hidden');
+      });
     });
   });
 
@@ -190,10 +268,10 @@ describe('Trion adapter tests', function () {
 
     it('should register trion user script', function () {
       let syncs = spec.getUserSyncs({iframeEnabled: true});
-      let url = utils.getTopWindowUrl();
+      let pageUrl = getPublisherUrl();
       let pubId = 1;
       let sectionId = 2;
-      let syncString = `?p=${pubId}&s=${sectionId}&u=${url}`;
+      let syncString = `?p=${pubId}&s=${sectionId}&u=${pageUrl}`;
       expect(syncs[0]).to.deep.equal({type: 'iframe', url: USER_SYNC_URL + syncString});
     });
 

@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import events from 'src/events';
 import CONSTANTS from 'src/constants.json';
+import { server } from 'test/mocks/xhr';
 
 const REQUEST_BIDS = CONSTANTS.EVENTS.REQUEST_BIDS;
 const BID_REQUESTED = CONSTANTS.EVENTS.BID_REQUESTED;
@@ -12,7 +13,7 @@ const ADD_AD_UNITS = CONSTANTS.EVENTS.ADD_AD_UNITS;
 
 const AnalyticsAdapter = require('src/AnalyticsAdapter').default;
 const config = {
-  url: 'http://localhost:9999/endpoint',
+  url: 'https://localhost:9999/endpoint',
   analyticsType: 'endpoint'
 };
 
@@ -20,19 +21,13 @@ describe(`
 FEATURE: Analytics Adapters API
   SCENARIO: A publisher enables analytics
     AND an  \`example\` instance of \`AnalyticsAdapter\`\n`, () => {
-  let xhr;
-  let requests;
   let adapter;
 
   beforeEach(function () {
-    xhr = sinon.useFakeXMLHttpRequest();
-    requests = [];
-    xhr.onCreate = (request) => requests.push(request);
     adapter = new AnalyticsAdapter(config);
   });
 
   afterEach(function () {
-    xhr.restore();
     adapter.disableAnalytics();
   });
 
@@ -42,7 +37,7 @@ FEATURE: Analytics Adapters API
 
     adapter.track({ eventType, args });
 
-    let result = JSON.parse(requests[0].requestBody);
+    let result = JSON.parse(server.requests[0].requestBody);
     expect(result).to.deep.equal({args: {some: 'data'}, eventType: 'bidRequested'});
   });
 
@@ -53,7 +48,7 @@ FEATURE: Analytics Adapters API
     events.emit(eventType, args);
     adapter.enableAnalytics();
 
-    let result = JSON.parse(requests[0].requestBody);
+    let result = JSON.parse(server.requests[0].requestBody);
     expect(result).to.deep.equal({args: {wat: 'wot'}, eventType: 'bidResponse'});
   });
 
@@ -73,7 +68,7 @@ FEATURE: Analytics Adapters API
       adapter.enableAnalytics();
       events.emit(eventType, args);
 
-      let result = JSON.parse(requests[0].requestBody);
+      let result = JSON.parse(server.requests[0].requestBody);
       expect(result).to.deep.equal({args: {more: 'info'}, eventType: 'bidWon'});
     });
 
@@ -84,7 +79,7 @@ FEATURE: Analytics Adapters API
       adapter.enableAnalytics();
       events.emit(eventType, args);
 
-      let result = JSON.parse(requests[0].requestBody);
+      let result = JSON.parse(server.requests[0].requestBody);
       expect(result).to.deep.equal({args: {call: 'adRenderFailed'}, eventType: 'adRenderFailed'});
     });
 
@@ -95,7 +90,7 @@ FEATURE: Analytics Adapters API
       adapter.enableAnalytics();
       events.emit(eventType, args);
 
-      let result = JSON.parse(requests[0].requestBody);
+      let result = JSON.parse(server.requests[0].requestBody);
       expect(result).to.deep.equal({args: {call: 'addAdUnits'}, eventType: 'addAdUnits'});
     });
 
@@ -106,7 +101,7 @@ FEATURE: Analytics Adapters API
       adapter.enableAnalytics();
       events.emit(eventType, args);
 
-      let result = JSON.parse(requests[0].requestBody);
+      let result = JSON.parse(server.requests[0].requestBody);
       expect(result).to.deep.equal({args: {call: 'request'}, eventType: 'requestBids'});
     });
 
@@ -117,7 +112,7 @@ FEATURE: Analytics Adapters API
       adapter.enableAnalytics();
       events.emit(eventType, args);
 
-      let result = JSON.parse(requests[0].requestBody);
+      let result = JSON.parse(server.requests[0].requestBody);
       expect(result).to.deep.equal({args: {call: 'request'}, eventType: 'bidRequested'});
     });
 
@@ -128,7 +123,7 @@ FEATURE: Analytics Adapters API
       adapter.enableAnalytics();
       events.emit(eventType, args);
 
-      let result = JSON.parse(requests[0].requestBody);
+      let result = JSON.parse(server.requests[0].requestBody);
       expect(result).to.deep.equal({args: {call: 'response'}, eventType: 'bidResponse'});
     });
 
@@ -139,7 +134,7 @@ FEATURE: Analytics Adapters API
       adapter.enableAnalytics();
       events.emit(eventType, args);
 
-      let result = JSON.parse(requests[0].requestBody);
+      let result = JSON.parse(server.requests[0].requestBody);
       expect(result).to.deep.equal({args: {call: 'timeout'}, eventType: 'bidTimeout'});
     });
 
@@ -151,7 +146,7 @@ FEATURE: Analytics Adapters API
       adapter.enableAnalytics();
       events.emit(eventType, args);
 
-      expect(requests.length).to.equal(1);
+      expect(server.requests.length).to.equal(1);
     });
 
     describe(`AND sampling is enabled\n`, function () {
@@ -174,8 +169,8 @@ FEATURE: Analytics Adapters API
         });
         events.emit(eventType, args);
 
-        expect(requests.length).to.equal(1);
-        let result = JSON.parse(requests[0].requestBody);
+        expect(server.requests.length).to.equal(1);
+        let result = JSON.parse(server.requests[0].requestBody);
         expect(result).to.deep.equal({args: {more: 'info'}, eventType: 'bidWon'});
       });
 
@@ -187,7 +182,7 @@ FEATURE: Analytics Adapters API
         });
         events.emit(eventType, args);
 
-        expect(requests.length).to.equal(0);
+        expect(server.requests.length).to.equal(0);
       });
     });
   });
