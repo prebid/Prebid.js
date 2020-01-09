@@ -22,7 +22,7 @@ let addedConsentHook = false;
 // consent APIs
 const uspCallMap = {
   'iab': lookupUspConsent,
-  'static': lookupStaticConsentDatas
+  'static': lookupStaticConsentData
 };
 
 /**
