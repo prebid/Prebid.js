@@ -48,7 +48,7 @@ export const spec = {
         /** removing adding local protocal since we
          * can get cookie data only if we call with https. */
         url: spec.ENDPOINT + bid.params.pubId,
-        data: getRequestData(bid, consentData),
+        data: getRequestData(bid, consentData, bidRequest),
         bidRequest: bid
       }
     })
@@ -138,10 +138,10 @@ function isConsentRequired(consentData) {
   return !!(consentData && consentData.gdprApplies);
 }
 
-function getRequestData(bid, consentData) {
-  let loc = utils.getTopWindowLocation();
+function getRequestData(bid, consentData, bidRequest) {
+  let loc = bidRequest.refererInfo.referer;
   let page = (bid.params.site && bid.params.site.page) ? (bid.params.site.page) : (loc.href);
-  let ref = (bid.params.site && bid.params.site.referrer) ? bid.params.site.referrer : utils.getTopWindowReferrer();
+  let ref = (bid.params.site && bid.params.site.referrer) ? bid.params.site.referrer : bidRequest.refererInfo.referer;
   let bidData = {
     id: utils.generateUUID(),
     at: 2,
@@ -198,9 +198,6 @@ function getRequestData(bid, consentData) {
     if (bid.params.video.rewarded) {
       bidData.imp[0].ext.rewarded = bid.params.video.rewarded
     }
-    if (bid.params.site && bid.params.site.id) {
-      bidData.site.id = bid.params.site.id
-    }
   } else if (bid.params.video.display == 1) {
     bidData.imp[0].banner = {
       mimes: bid.params.video.mimes,
@@ -208,6 +205,9 @@ function getRequestData(bid, consentData) {
       h: bid.params.video.playerHeight,
       pos: bid.params.video.position,
     };
+    if (bid.params.video.placement) {
+      bidData.imp[0].banner.placement = bid.params.video.placement
+    }
   }
   if (bid.params.video.inventoryid) {
     bidData.imp[0].ext.inventoryid = bid.params.video.inventoryid
@@ -225,6 +225,9 @@ function getRequestData(bid, consentData) {
       }
     }
   }
+  if (bid.params.site && bid.params.site.id) {
+    bidData.site.id = bid.params.site.id
+  }
   if (isConsentRequired(consentData)) {
     bidData.regs = {
       ext: {
@@ -239,6 +242,13 @@ function getRequestData(bid, consentData) {
         }
       };
     }
+  }
+  if (bidRequest && bidRequest.uspConsent) {
+    bidData.regs = {
+      ext: {
+        us_privacy: bidRequest.uspConsent
+      }
+    };
   }
 
   return bidData;

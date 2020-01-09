@@ -136,6 +136,12 @@ export const spec = {
       payload.userid = JSON.stringify(validBidRequests[0].userId);
     }
 
+    let keywords = validBidRequests[0].params.keywords; // a CSV of keywords
+
+    if (keywords) {
+      payload.kw = keywords;
+    }
+
     // If there is no key_maker data, then don't make the request.
     if (isEmpty(data)) {
       return null;
