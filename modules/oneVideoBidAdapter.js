@@ -228,12 +228,13 @@ function getRequestData(bid, consentData, bidRequest) {
   if (bid.params.site && bid.params.site.id) {
     bidData.site.id = bid.params.site.id
   }
-  if (isConsentRequired(consentData)) {
+  if (isConsentRequired(consentData) || (bidRequest && bidRequest.uspConsent)) {
     bidData.regs = {
-      ext: {
-        gdpr: 1
-      }
+      ext: {}
     };
+    if (isConsentRequired(consentData)) {
+      bidData.regs.ext.gdpr = 1
+    }
 
     if (consentData.consentString) {
       bidData.user = {
@@ -241,6 +242,9 @@ function getRequestData(bid, consentData, bidRequest) {
           consent: consentData.consentString
         }
       };
+    }
+    if (bidRequest && bidRequest.uspConsent) {
+      bidData.regs.ext.us_privacy = bidRequest.uspConsent
     }
   }
 
@@ -260,6 +264,7 @@ function newRenderer(bidRequest, bid) {
     bidRequest.renderer.url = 'https://cdn.vidible.tv/prod/hb-outstream-renderer/renderer.js';
     bidRequest.renderer.render = function(bid) {
       setTimeout(function () {
+        // eslint-disable-next-line no-undef
         o2PlayerRender(bid);
       }, 700)
     };

@@ -96,7 +96,7 @@ describe('atomxAdapterTest', function () {
         'cpm': 0.00009,
         'width': 300,
         'height': 250,
-        'url': 'http://atomx.com',
+        'url': 'https://atomx.com',
         'creative_id': 456,
         'code': '22aidtbx5eabd9',
       },
@@ -113,7 +113,7 @@ describe('atomxAdapterTest', function () {
       expect(result[0].creativeId).to.equal(456);
       expect(result[0].currency).to.equal('USD');
       expect(result[0].ttl).to.equal(60);
-      expect(result[0].adUrl).to.equal('http://atomx.com');
+      expect(result[0].adUrl).to.equal('https://atomx.com');
     });
   });
 });

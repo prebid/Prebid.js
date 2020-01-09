@@ -21,7 +21,7 @@ export const spec = {
     return Boolean(bid.params.ci) || Boolean(bid.params.t);
   },
 
-  buildRequests: function(bidRequests) {
+  buildRequests: function(bidRequests, bidderRequest) {
     const method = 'GET';
     const dfpClientId = '1';
     const sec = 'ROS';
@@ -30,12 +30,18 @@ export const spec = {
     const urlConfig = getUrlConfig(bidRequests);
     const pcrs = getCharset();
     const spaces = getSpaces(bidRequests);
+    const pageUrl = bidderRequest.refererInfo.referer;
+    const getDomain = (url) => {
+      let anchor = document.createElement('a');
+      anchor.href = url;
+      return anchor.hostname;
+    }
     if (urlConfig.t) {
-      url = urlConfig.isv + '/layers/t_pbjs_2.json';
+      url = 'https://' + urlConfig.isv + '/layers/t_pbjs_2.json';
       params = {};
     } else {
-      url = '//' + (urlConfig.sv || DEFAULT_SV) + '/hb/1/' + urlConfig.ci + '/' + dfpClientId + '/' + (utils.getTopWindowLocation().hostname || FILE) + '/' + sec;
-      const referrerUrl = utils.getTopWindowReferrer();
+      url = 'https://' + (urlConfig.sv || DEFAULT_SV) + '/hb/1/' + urlConfig.ci + '/' + dfpClientId + '/' + getDomain(pageUrl) + '/' + sec;
+      const referrerUrl = bidderRequest.refererInfo.referer.reachedTop ? encodeURIComponent(window.top.document.referrer) : encodeURIComponent(bidderRequest.refererInfo.referer);
 
       if (utils.hasLocalStorage()) {
         registerViewabilityAllBids(bidRequests);
@@ -44,19 +50,31 @@ export const spec = {
       params = {
         rnd: rnd,
         e: spaces.str,
-        ur: utils.getTopWindowUrl() || FILE,
+        ur: encodeURIComponent(pageUrl || FILE),
         r: 'pbjs',
         pbv: '$prebid.version$',
         ncb: '1',
         vs: spaces.vs
       };
-
       if (pcrs) {
         params.crs = pcrs;
       }
 
       if (referrerUrl) {
         params.fr = referrerUrl;
+      }
+
+      if (bidderRequest && bidderRequest.gdprConsent) {
+        if (typeof bidderRequest.gdprConsent.gdprApplies !== 'undefined') {
+          params.gdpr = bidderRequest.gdprConsent.gdprApplies ? '1' : '0';
+          if (typeof bidderRequest.gdprConsent.consentString !== 'undefined') {
+            params.gdprcs = bidderRequest.gdprConsent.consentString;
+          }
+        }
+      }
+
+      if (bidderRequest && bidderRequest.uspConsent) {
+        params.ccpa = bidderRequest.uspConsent;
       }
     }
 
@@ -133,10 +151,6 @@ function getUrlConfig(bidRequests) {
     });
   });
 
-  if (config.sv) {
-    config.sv = '//' + config.sv;
-  }
-
   return config;
 }
 function isTestRequest(bidRequests) {
@@ -152,7 +166,7 @@ function getTestConfig(bidRequests) {
   bidRequests.forEach(br => isv = isv || br.params.isv);
   return {
     t: true,
-    isv: '//' + (isv || DEFAULT_ISV)
+    isv: (isv || DEFAULT_ISV)
   };
 }
 
@@ -204,6 +218,7 @@ function getViewabilityData(bid) {
     ratio: window.parseInt(ratio * 10, 10)
   };
 }
+
 function getCharset() {
   try {
     return window.top.document.charset || window.top.document.characterSet;
@@ -231,8 +246,14 @@ function waitForElementsPresent(elements) {
       });
     }
   });
-  const config = {childList: true, subtree: true, characterData: true, attributes: true, attributeOldValue: true};
-  observer.observe(document.body, config);
+  document.addEventListener('DOMContentLoaded', function (event) {
+    var config = {
+      childList: true,
+      subtree: true,
+      characterData: true
+    };
+    observer.observe(document.body, config);
+  });
 }
 
 function registerViewability(div) {

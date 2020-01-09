@@ -7,7 +7,7 @@ describe('adagioAdapter', () => {
   let utilsMock;
   const adapter = newBidder(spec);
   const ENDPOINT = 'https://mp.4dex.io/prebid';
-  const VERSION = '2.0.0';
+  const VERSION = '2.1.0';
 
   beforeEach(function() {
     localStorage.removeItem('adagioScript');
@@ -330,11 +330,11 @@ describe('adagioAdapter', () => {
       expect(request.data.prebidVersion).to.equal('$prebid.version$');
     });
 
-    it('features params must be empty if param adUnitElementId is not found', () => {
+    it('features params "adunit_position" must be empty if adUnitElement is not found in the DOM', () => {
       const requests = spec.buildRequests([Object.assign({}, bidRequests[0], {params: {adUnitElementId: 'does-not-exist'}})], bidderRequest);
       const request = requests[0];
-      const expected = {}
-      expect(request.data.adUnits[0].features).to.deep.equal(expected);
+      expect(request.data.adUnits[0].features).to.exist;
+      expect(request.data.adUnits[0].features.adunit_position).to.deep.equal('');
     });
 
     it('features params "adunit_position" should be computed even if DOM element is display:none', () => {
