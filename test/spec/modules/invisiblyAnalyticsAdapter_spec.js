@@ -1,11 +1,10 @@
 import invisiblyAdapter from 'modules/invisiblyAnalyticsAdapter';
 import { expect } from 'chai';
+import { server } from 'test/mocks/xhr';
 let events = require('src/events');
 let constants = require('src/constants.json');
 
 describe('Invisibly Analytics Adapter test suite', function() {
-  let xhr;
-  let requests = [];
   const BID1 = {
     width: 980,
     height: 240,
@@ -168,9 +167,6 @@ describe('Invisibly Analytics Adapter test suite', function() {
 
   describe('Invisibly Analytic tests specs', function() {
     beforeEach(function() {
-      xhr = sinon.useFakeXMLHttpRequest();
-      requests = [];
-      xhr.onCreate = request => requests.push(request);
       sinon.stub(events, 'getEvents').returns([]);
       sinon.spy(invisiblyAdapter, 'track');
     });
@@ -179,7 +175,6 @@ describe('Invisibly Analytics Adapter test suite', function() {
       invisiblyAdapter.disableAnalytics();
       events.getEvents.restore();
       invisiblyAdapter.track.restore();
-      xhr.restore();
     });
 
     // specs to test invisibly account input to enableAnaylitcs
@@ -235,10 +230,10 @@ describe('Invisibly Analytics Adapter test suite', function() {
       events.emit(constants.EVENTS.AUCTION_INIT, MOCK.AUCTION_INIT);
       invisiblyAdapter.flush();
 
-      const invisiblyEvents = JSON.parse(requests[1].requestBody.substring(0));
+      const invisiblyEvents = JSON.parse(server.requests[1].requestBody.substring(0));
       // pageView is default event initially hence expecting 2 requests
-      expect(requests.length).to.equal(2);
-      expect(requests[1].url).to.equal('https://api.pymx5.com/v1/sites/events');
+      expect(server.requests.length).to.equal(2);
+      expect(server.requests[1].url).to.equal('https://api.pymx5.com/v1/sites/events');
       expect(invisiblyEvents.event_data.auctionId).to.equal(
         MOCK.AUCTION_INIT.auctionId
       );
@@ -253,9 +248,9 @@ describe('Invisibly Analytics Adapter test suite', function() {
       events.emit(constants.EVENTS.BID_ADJUSTMENT, MOCK.BID_ADJUSTMENT);
       invisiblyAdapter.flush();
 
-      const invisiblyEvents = JSON.parse(requests[0].requestBody.substring(0));
-      expect(requests.length).to.equal(1);
-      expect(requests[0].url).to.equal('https://api.pymx5.com/v1/sites/events');
+      const invisiblyEvents = JSON.parse(server.requests[0].requestBody.substring(0));
+      expect(server.requests.length).to.equal(1);
+      expect(server.requests[0].url).to.equal('https://api.pymx5.com/v1/sites/events');
       expect(invisiblyEvents.event_data.pageViewId).to.exist;
       expect(invisiblyEvents.event_data.ver).to.equal(1);
       expect(invisiblyEvents.event_type).to.equal('PREBID_bidAdjustment');
@@ -271,9 +266,9 @@ describe('Invisibly Analytics Adapter test suite', function() {
       events.emit(constants.EVENTS.BID_TIMEOUT, MOCK.BID_TIMEOUT);
       invisiblyAdapter.flush();
 
-      const invisiblyEvents = JSON.parse(requests[0].requestBody.substring(0));
-      expect(requests.length).to.equal(1);
-      expect(requests[0].url).to.equal('https://api.pymx5.com/v1/sites/events');
+      const invisiblyEvents = JSON.parse(server.requests[0].requestBody.substring(0));
+      expect(server.requests.length).to.equal(1);
+      expect(server.requests[0].url).to.equal('https://api.pymx5.com/v1/sites/events');
       expect(invisiblyEvents.event_data.pageViewId).to.exist;
       expect(invisiblyEvents.event_data.ver).to.equal(1);
       expect(invisiblyEvents.event_type).to.equal('PREBID_bidTimeout');
@@ -289,9 +284,9 @@ describe('Invisibly Analytics Adapter test suite', function() {
       events.emit(constants.EVENTS.BID_REQUESTED, MOCK.BID_REQUESTED);
       invisiblyAdapter.flush();
 
-      const invisiblyEvents = JSON.parse(requests[0].requestBody.substring(0));
-      expect(requests.length).to.equal(1);
-      expect(requests[0].url).to.equal('https://api.pymx5.com/v1/sites/events');
+      const invisiblyEvents = JSON.parse(server.requests[0].requestBody.substring(0));
+      expect(server.requests.length).to.equal(1);
+      expect(server.requests[0].url).to.equal('https://api.pymx5.com/v1/sites/events');
       expect(invisiblyEvents.event_data.pageViewId).to.exist;
       expect(invisiblyEvents.event_data.ver).to.equal(1);
       expect(invisiblyEvents.event_type).to.equal('PREBID_bidRequested');
@@ -307,9 +302,9 @@ describe('Invisibly Analytics Adapter test suite', function() {
       events.emit(constants.EVENTS.BID_RESPONSE, MOCK.BID_RESPONSE);
       invisiblyAdapter.flush();
 
-      const invisiblyEvents = JSON.parse(requests[0].requestBody.substring(0));
-      expect(requests.length).to.equal(1);
-      expect(requests[0].url).to.equal('https://api.pymx5.com/v1/sites/events');
+      const invisiblyEvents = JSON.parse(server.requests[0].requestBody.substring(0));
+      expect(server.requests.length).to.equal(1);
+      expect(server.requests[0].url).to.equal('https://api.pymx5.com/v1/sites/events');
       expect(invisiblyEvents.event_data.pageViewId).to.exist;
       expect(invisiblyEvents.event_data.ver).to.equal(1);
       expect(invisiblyEvents.event_type).to.equal('PREBID_bidResponse');
@@ -323,9 +318,9 @@ describe('Invisibly Analytics Adapter test suite', function() {
       events.emit(constants.EVENTS.NO_BID, MOCK.NO_BID);
       invisiblyAdapter.flush();
 
-      const invisiblyEvents = JSON.parse(requests[0].requestBody.substring(0));
-      expect(requests.length).to.equal(1);
-      expect(requests[0].url).to.equal('https://api.pymx5.com/v1/sites/events');
+      const invisiblyEvents = JSON.parse(server.requests[0].requestBody.substring(0));
+      expect(server.requests.length).to.equal(1);
+      expect(server.requests[0].url).to.equal('https://api.pymx5.com/v1/sites/events');
       expect(invisiblyEvents.event_data.pageViewId).to.exist;
       expect(invisiblyEvents.event_data.ver).to.equal(1);
       expect(invisiblyEvents.event_type).to.equal('PREBID_noBid');
@@ -341,9 +336,9 @@ describe('Invisibly Analytics Adapter test suite', function() {
       events.emit(constants.EVENTS.BID_WON, MOCK.BID_WON);
       invisiblyAdapter.flush();
 
-      const invisiblyEvents = JSON.parse(requests[0].requestBody.substring(0));
-      expect(requests.length).to.equal(1);
-      expect(requests[0].url).to.equal('https://api.pymx5.com/v1/sites/events');
+      const invisiblyEvents = JSON.parse(server.requests[0].requestBody.substring(0));
+      expect(server.requests.length).to.equal(1);
+      expect(server.requests[0].url).to.equal('https://api.pymx5.com/v1/sites/events');
       expect(invisiblyEvents.event_data.pageViewId).to.exist;
       expect(invisiblyEvents.event_data.ver).to.equal(1);
       expect(invisiblyEvents.event_type).to.equal('PREBID_bidWon');
@@ -356,9 +351,9 @@ describe('Invisibly Analytics Adapter test suite', function() {
       events.emit(constants.EVENTS.BIDDER_DONE, MOCK.BIDDER_DONE);
       invisiblyAdapter.flush();
 
-      const invisiblyEvents = JSON.parse(requests[0].requestBody.substring(0));
-      expect(requests.length).to.equal(1);
-      expect(requests[0].url).to.equal('https://api.pymx5.com/v1/sites/events');
+      const invisiblyEvents = JSON.parse(server.requests[0].requestBody.substring(0));
+      expect(server.requests.length).to.equal(1);
+      expect(server.requests[0].url).to.equal('https://api.pymx5.com/v1/sites/events');
       expect(invisiblyEvents.event_data.pageViewId).to.exist;
       expect(invisiblyEvents.event_data.ver).to.equal(1);
       expect(invisiblyEvents.event_type).to.equal('PREBID_bidderDone');
@@ -377,9 +372,9 @@ describe('Invisibly Analytics Adapter test suite', function() {
       events.emit(constants.EVENTS.SET_TARGETING, MOCK.SET_TARGETING);
       invisiblyAdapter.flush();
 
-      const invisiblyEvents = JSON.parse(requests[0].requestBody.substring(0));
-      expect(requests.length).to.equal(1);
-      expect(requests[0].url).to.equal('https://api.pymx5.com/v1/sites/events');
+      const invisiblyEvents = JSON.parse(server.requests[0].requestBody.substring(0));
+      expect(server.requests.length).to.equal(1);
+      expect(server.requests[0].url).to.equal('https://api.pymx5.com/v1/sites/events');
       expect(invisiblyEvents.event_data.pageViewId).to.exist;
       expect(invisiblyEvents.event_data.ver).to.equal(1);
       expect(invisiblyEvents.event_type).to.equal('PREBID_setTargeting');
@@ -398,9 +393,9 @@ describe('Invisibly Analytics Adapter test suite', function() {
       events.emit(constants.EVENTS.REQUEST_BIDS, MOCK.REQUEST_BIDS);
       invisiblyAdapter.flush();
 
-      const invisiblyEvents = JSON.parse(requests[0].requestBody.substring(0));
-      expect(requests.length).to.equal(1);
-      expect(requests[0].url).to.equal('https://api.pymx5.com/v1/sites/events');
+      const invisiblyEvents = JSON.parse(server.requests[0].requestBody.substring(0));
+      expect(server.requests.length).to.equal(1);
+      expect(server.requests[0].url).to.equal('https://api.pymx5.com/v1/sites/events');
       expect(invisiblyEvents.event_data.pageViewId).to.exist;
       expect(invisiblyEvents.event_data.ver).to.equal(1);
       expect(invisiblyEvents.event_type).to.equal('PREBID_requestBids');
@@ -414,9 +409,9 @@ describe('Invisibly Analytics Adapter test suite', function() {
       events.emit(constants.EVENTS.ADD_AD_UNITS, MOCK.ADD_AD_UNITS);
       invisiblyAdapter.flush();
 
-      const invisiblyEvents = JSON.parse(requests[0].requestBody.substring(0));
-      expect(requests.length).to.equal(1);
-      expect(requests[0].url).to.equal('https://api.pymx5.com/v1/sites/events');
+      const invisiblyEvents = JSON.parse(server.requests[0].requestBody.substring(0));
+      expect(server.requests.length).to.equal(1);
+      expect(server.requests[0].url).to.equal('https://api.pymx5.com/v1/sites/events');
       expect(invisiblyEvents.event_data.pageViewId).to.exist;
       expect(invisiblyEvents.event_data.ver).to.equal(1);
       expect(invisiblyEvents.event_type).to.equal('PREBID_addAdUnits');
@@ -430,9 +425,9 @@ describe('Invisibly Analytics Adapter test suite', function() {
       events.emit(constants.EVENTS.AD_RENDER_FAILED, MOCK.AD_RENDER_FAILED);
       invisiblyAdapter.flush();
 
-      const invisiblyEvents = JSON.parse(requests[0].requestBody.substring(0));
-      expect(requests.length).to.equal(1);
-      expect(requests[0].url).to.equal('https://api.pymx5.com/v1/sites/events');
+      const invisiblyEvents = JSON.parse(server.requests[0].requestBody.substring(0));
+      expect(server.requests.length).to.equal(1);
+      expect(server.requests[0].url).to.equal('https://api.pymx5.com/v1/sites/events');
       expect(invisiblyEvents.event_data.pageViewId).to.exist;
       expect(invisiblyEvents.event_data.ver).to.equal(1);
       expect(invisiblyEvents.event_type).to.equal('PREBID_adRenderFailed');
@@ -448,9 +443,9 @@ describe('Invisibly Analytics Adapter test suite', function() {
       events.emit(constants.EVENTS.AUCTION_END, MOCK.AUCTION_END);
       invisiblyAdapter.flush();
 
-      const invisiblyEvents = JSON.parse(requests[0].requestBody.substring(0));
-      expect(requests.length).to.equal(1);
-      expect(requests[0].url).to.equal('https://api.pymx5.com/v1/sites/events');
+      const invisiblyEvents = JSON.parse(server.requests[0].requestBody.substring(0));
+      expect(server.requests.length).to.equal(1);
+      expect(server.requests[0].url).to.equal('https://api.pymx5.com/v1/sites/events');
       expect(invisiblyEvents.event_data.pageViewId).to.exist;
       expect(invisiblyEvents.event_data.ver).to.equal(1);
       expect(invisiblyEvents.event_type).to.equal('PREBID_auctionEnd');
@@ -467,7 +462,7 @@ describe('Invisibly Analytics Adapter test suite', function() {
       events.emit(constants.EVENTS.INVALID_EVENT, MOCK.INVALID_EVENT);
       invisiblyAdapter.flush();
 
-      expect(requests.length).to.equal(0);
+      expect(server.requests.length).to.equal(0);
       sinon.assert.callCount(invisiblyAdapter.track, 0);
       sinon.assert.callCount(invisiblyAdapter.sendEvent, 0);
     });

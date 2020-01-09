@@ -419,4 +419,94 @@ describe('aardvarkAdapterTest', function () {
       });
     });
   });
+
+  describe('schain support', function() {
+    const nodePropsOrder = ['asi', 'sid', 'hp', 'rid', 'name', 'domain'];
+    let schainConfig = {
+      ver: '1.0',
+      complete: 1,
+      nodes: [
+        {
+          asi: 'rtk.io',
+          sid: '1234',
+          hp: 1,
+          rid: 'bid-request-1',
+          name: 'first pub',
+          domain: 'first.com'
+        },
+        {
+          asi: 'rtk.io',
+          sid: '5678',
+          hp: 1,
+          rid: 'bid-request-2',
+          name: 'second pub',
+          domain: 'second.com'
+        }
+      ]
+    };
+
+    const bidRequests = [{
+      bidder: 'aardvark',
+      params: {
+        ai: 'xiby',
+        sc: 'TdAx',
+      },
+      adUnitCode: 'aaa',
+      transactionId: '1b8389fe-615c-482d-9f1a-177fb8f7d5b0',
+      sizes: [300, 250],
+      bidId: '1abgs362e0x48a8',
+      bidderRequestId: '70deaff71c281d',
+      auctionId: '5c66da22-426a-4bac-b153-77360bef5337',
+      schain: schainConfig,
+    }];
+
+    const bidderRequest = {
+      gdprConsent: undefined,
+      refererInfo: {
+        referer: 'https://example.com'
+      }
+    };
+
+    it('should properly serialize schain object with correct delimiters', () => {
+      const results = spec.buildRequests(bidRequests, bidderRequest);
+      const numNodes = schainConfig.nodes.length;
+
+      const schain = results[0].data.schain;
+
+      // each node serialization should start with an !
+      expect(schain.match(/!/g).length).to.equal(numNodes);
+
+      // 5 commas per node plus 1 for version
+      expect(schain.match(/,/g).length).to.equal(numNodes * 5 + 1);
+    });
+
+    it('should send the proper version for the schain', () => {
+      const results = spec.buildRequests(bidRequests, bidderRequest);
+      const schain = decodeURIComponent(results[0].data.schain).split('!');
+      const version = schain.shift().split(',')[0];
+      expect(version).to.equal(bidRequests[0].schain.ver);
+    });
+
+    it('should send the correct value for complete in schain', () => {
+      const results = spec.buildRequests(bidRequests, bidderRequest);
+      const schain = decodeURIComponent(results[0].data.schain).split('!');
+      const complete = schain.shift().split(',')[1];
+      expect(complete).to.equal(String(bidRequests[0].schain.complete));
+    });
+
+    it('should send available params in the right order', () => {
+      const results = spec.buildRequests(bidRequests, bidderRequest);
+      const schain = decodeURIComponent(results[0].data.schain).split('!');
+      schain.shift();
+
+      schain.forEach((serializeNode, nodeIndex) => {
+        const nodeProps = serializeNode.split(',');
+        nodeProps.forEach((nodeProp, propIndex) => {
+          const node = schainConfig.nodes[nodeIndex];
+          const key = nodePropsOrder[propIndex];
+          expect(nodeProp).to.equal(node[key] ? String(node[key]) : '');
+        });
+      });
+    });
+  });
 });
