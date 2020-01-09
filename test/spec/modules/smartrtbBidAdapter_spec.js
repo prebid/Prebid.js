@@ -13,8 +13,8 @@ const br = {
       crid: 'crid'
     }],
     pixels: [
-      { type: 'image', url: 'http://smrtb.com/image' },
-      { type: 'iframe', url: 'http://smrtb.com/iframe' }
+      { type: 'image', url: 'https://smrtb.com/image' },
+      { type: 'iframe', url: 'https://smrtb.com/iframe' }
     ]
   }
 }
@@ -30,8 +30,8 @@ const vr = {
       crid: 'video_crid'
     }],
     pixels: [
-      { type: 'image', url: 'http://smrtb.com/image' },
-      { type: 'iframe', url: 'http://smrtb.com/iframe' }
+      { type: 'image', url: 'https://smrtb.com/image' },
+      { type: 'iframe', url: 'https://smrtb.com/iframe' }
     ]
   }
 }

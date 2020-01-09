@@ -82,7 +82,7 @@ describe('IndexexchangeAdapter', function () {
               advbrandid: 303325,
               advbrand: 'OECTA'
             },
-            adm: '<a target="_blank" href="http://www.indexexchange.com"></a>'
+            adm: '<a target="_blank" href="https://www.indexexchange.com"></a>'
           }
         ],
         seat: '3970'
@@ -126,8 +126,8 @@ describe('IndexexchangeAdapter', function () {
       vendorData: {}
     },
     refererInfo: {
-      referer: 'http://www.prebid.org',
-      canonicalUrl: 'http://www.prebid.org/the/link/to/the/page'
+      referer: 'https://www.prebid.org',
+      canonicalUrl: 'https://www.prebid.org/the/link/to/the/page'
     }
   };
 
@@ -160,8 +160,8 @@ describe('IndexexchangeAdapter', function () {
         }
       ],
       site: {
-        ref: 'http://ref.com/ref.html',
-        page: 'http://page.com'
+        ref: 'https://ref.com/ref.html',
+        page: 'https://page.com'
       },
     }),
     s: '21',
@@ -775,7 +775,7 @@ describe('IndexexchangeAdapter', function () {
           width: 300,
           height: 250,
           mediaType: 'banner',
-          ad: '<a target="_blank" href="http://www.indexexchange.com"></a>',
+          ad: '<a target="_blank" href="https://www.indexexchange.com"></a>',
           currency: 'USD',
           ttl: 35,
           netRevenue: true,
@@ -802,7 +802,7 @@ describe('IndexexchangeAdapter', function () {
           width: 300,
           height: 250,
           mediaType: 'banner',
-          ad: '<a target="_blank" href="http://www.indexexchange.com"></a>',
+          ad: '<a target="_blank" href="https://www.indexexchange.com"></a>',
           currency: 'USD',
           ttl: 35,
           netRevenue: true,
@@ -828,7 +828,7 @@ describe('IndexexchangeAdapter', function () {
           width: 300,
           height: 250,
           mediaType: 'banner',
-          ad: '<a target="_blank" href="http://www.indexexchange.com"></a>',
+          ad: '<a target="_blank" href="https://www.indexexchange.com"></a>',
           currency: 'JPY',
           ttl: 35,
           netRevenue: true,
@@ -855,7 +855,7 @@ describe('IndexexchangeAdapter', function () {
           width: 300,
           height: 250,
           mediaType: 'banner',
-          ad: '<a target="_blank" href="http://www.indexexchange.com"></a>',
+          ad: '<a target="_blank" href="https://www.indexexchange.com"></a>',
           currency: 'USD',
           ttl: 35,
           netRevenue: true,
