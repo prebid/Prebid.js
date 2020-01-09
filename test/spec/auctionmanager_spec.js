@@ -8,6 +8,7 @@ import { config } from 'src/config';
 import * as store from 'src/videoCache';
 import * as ajaxLib from 'src/ajax';
 import find from 'core-js/library/fn/array/find';
+import { server } from 'test/mocks/xhr';
 
 var assert = require('assert');
 
@@ -766,7 +767,6 @@ describe('auctionmanager.js', function () {
 
     describe('when auction timeout is 20', function () {
       let eventsEmitSpy;
-      let server;
 
       before(function () {
         bids = [mockBid(), mockBid({ bidderCode: BIDDER_CODE1 })];
@@ -776,8 +776,6 @@ describe('auctionmanager.js', function () {
       });
 
       beforeEach(function () {
-        server = sinon.createFakeServer();
-
         adUnits = [{
           code: ADUNIT_CODE,
           bids: [
@@ -789,7 +787,6 @@ describe('auctionmanager.js', function () {
         eventsEmitSpy = sinon.spy(events, 'emit');
       });
       afterEach(function () {
-        server.restore();
         events.emit.restore();
       });
 
@@ -1058,8 +1055,6 @@ describe('auctionmanager.js', function () {
   describe('auctionCallbacks', function() {
     let bids = TEST_BIDS;
     let bidRequests;
-    let xhr;
-    let requests;
     let doneSpy;
     let auction = {
       getBidRequests: () => bidRequests,
@@ -1070,9 +1065,6 @@ describe('auctionmanager.js', function () {
 
     beforeEach(() => {
       doneSpy = sinon.spy();
-      xhr = sinon.useFakeXMLHttpRequest();
-      requests = [];
-      xhr.onCreate = (request) => requests.push(request);
       config.setConfig({
         cache: {
           url: 'https://prebid.adnxs.com/pbc/v1/cache'
@@ -1082,7 +1074,6 @@ describe('auctionmanager.js', function () {
 
     afterEach(() => {
       doneSpy.resetHistory();
-      xhr.restore();
       config.resetConfig();
     });
 
@@ -1132,7 +1123,7 @@ describe('auctionmanager.js', function () {
       assert.equal(doneSpy.callCount, 0);
       const uuid = 'c488b101-af3e-4a99-b538-00423e5a3371';
       const responseBody = `{"responses":[{"uuid":"${uuid}"}]}`;
-      requests[0].respond(200, { 'Content-Type': 'application/json' }, responseBody);
+      server.requests[0].respond(200, { 'Content-Type': 'application/json' }, responseBody);
       assert.equal(doneSpy.callCount, 1);
     })
   });
