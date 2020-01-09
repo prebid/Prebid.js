@@ -6,6 +6,16 @@ import adapter from '../src/AnalyticsAdapter';
 import adapterManager from '../src/adapterManager';
 import * as utils from '../src/utils';
 
+// Object.entries polyfill
+const entries = Object.entries || function(obj) {
+  const ownProps = Object.keys(obj);
+  let i = ownProps.length;
+  let resArray = new Array(i); // preallocate the Array
+  while (i--) { resArray[i] = [ownProps[i], obj[ownProps[i]]]; }
+
+  return resArray;
+};
+
 const BID_TIMEOUT = CONSTANTS.EVENTS.BID_TIMEOUT;
 const AUCTION_INIT = CONSTANTS.EVENTS.AUCTION_INIT;
 const BID_WON = CONSTANTS.EVENTS.BID_WON;
@@ -86,7 +96,7 @@ const onAuctionInit = args => {
     });
   });
 
-  Object.entries(adunitObj).forEach(([adunitCode, bidRequests]) => {
+  entries(adunitObj).forEach(([adunitCode, bidRequests]) => {
     adunits.push({
       code: adunitCode,
       bidRequests: bidRequests
@@ -125,7 +135,7 @@ const onAuctionEnd = args => {
   });
 
   // Add in other data (timeouts) as we push to adunits
-  Object.entries(adunitObj).forEach(([adunitCode, bidsReceived]) => {
+  entries(adunitObj).forEach(([adunitCode, bidsReceived]) => {
     const bidData = bidsReceived.concat(auctionData[adunitCode] || []);
     adunits.push({
       code: adunitCode,
@@ -136,7 +146,7 @@ const onAuctionEnd = args => {
   });
 
   // Add in any missed auction data
-  Object.entries(auctionData).forEach(([adunitCode, bidData]) => {
+  entries(auctionData).forEach(([adunitCode, bidData]) => {
     adunits.push({
       code: adunitCode,
       bidData: bidData
