@@ -71,8 +71,6 @@ describe('freewheelSSP BidAdapter Test', () => {
 
     it('should add parameters to the tag', () => {
       const request = spec.buildRequests(bidRequests);
-      console.log(request.data);
-
       const payload = request.data;
       expect(payload.reqType).to.equal('AdsSetup');
       expect(payload.protocolVersion).to.equal('2.0');
@@ -91,9 +89,7 @@ describe('freewheelSSP BidAdapter Test', () => {
       let uspConsentString = '1FW-SSP-uspConsent-';
       let bidderRequest = {};
       bidderRequest.uspConsent = uspConsentString;
-
       const request = spec.buildRequests(bidRequests, bidderRequest);
-      console.log(request.data);
       const payload = request.data;
       expect(payload.reqType).to.equal('AdsSetup');
       expect(payload.protocolVersion).to.equal('2.0');
@@ -113,7 +109,6 @@ describe('freewheelSSP BidAdapter Test', () => {
       };
 
       const request = spec.buildRequests(bidRequests, bidderRequest);
-      console.log(request.data);
       const payload = request.data;
       expect(payload.reqType).to.equal('AdsSetup');
       expect(payload.protocolVersion).to.equal('2.0');
