@@ -77,7 +77,8 @@ describe('config API', function () {
       syncEnabled: true,
       pixelEnabled: true,
       syncsPerBidder: 5,
-      syncDelay: 3000
+      syncDelay: 3000,
+      auctionDelay: 0
     };
     setDefaults({'userSync': DEFAULT_USERSYNC});
     expect(getConfig('userSync')).to.eql(DEFAULT_USERSYNC);

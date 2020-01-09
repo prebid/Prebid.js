@@ -7,7 +7,7 @@
 	<title>Prebid.js Banner Example</title>
 
 	<!-- Prebid.js -->
-	<script async src="../../build/dev/prebid.js"></script>
+	<script async src="../../build/dist/prebid.js"></script>
 
 	<!-- Google Publisher Tag -->
 	<script async src="https://www.googletagservices.com/tag/js/gpt.js"></script>
@@ -38,9 +38,11 @@
 				}
 			},
 			bids: [{
-				bidder: 'appnexus',
+				bidder: "rubicon",
 				params: {
-					placementId: 13144370
+					accountId: 14062,
+					siteId: 70608,
+					zoneId: 498816
 				}
 			}]
 		}];
@@ -74,7 +76,7 @@
 			googletag
 				.defineSlot('/19968336/header-bid-tag-0', [[300, 250], [300, 600]], 'div-gpt-ad-1460505748561-0')
 				.addService(googletag.pubads());
-			
+
 			googletag.pubads().enableSingleRequest();
 			googletag.enableServices();
 		});
@@ -84,9 +86,9 @@
 <body>
 	<h2>Prebid.js Banner Ad Unit Test</h2>
 	<div id='div-gpt-ad-1460505748561-0'>
-      <script>
-        googletag.cmd.push(() => { googletag.display('div-gpt-ad-1460505748561-0'); });
-      </script>
+		<script>
+			googletag.cmd.push(() => { googletag.display('div-gpt-ad-1460505748561-0'); });
+		</script>
 	</div>
 	<div id="targeting-keys"></div>
 </body>

@@ -30,7 +30,7 @@ describe('The DFP video support module', function () {
     }));
 
     expect(url.protocol).to.equal('https:');
-    expect(url.host).to.equal('pubads.g.doubleclick.net');
+    expect(url.host).to.equal('securepubads.g.doubleclick.net');
 
     const queryParams = parseQS(url.query);
     expect(queryParams).to.have.property('correlator');
@@ -374,7 +374,7 @@ describe('The DFP video support module', function () {
         url = parse(masterTag);
 
         expect(url.protocol).to.equal('https:');
-        expect(url.host).to.equal('pubads.g.doubleclick.net');
+        expect(url.host).to.equal('securepubads.g.doubleclick.net');
 
         const queryParams = parseQS(url.query);
         expect(queryParams).to.have.property('correlator');
@@ -428,7 +428,7 @@ describe('The DFP video support module', function () {
         }
         url = parse(masterTag);
         expect(url.protocol).to.equal('https:');
-        expect(url.host).to.equal('pubads.g.doubleclick.net');
+        expect(url.host).to.equal('securepubads.g.doubleclick.net');
 
         const queryParams = parseQS(url.query);
         expect(queryParams).to.have.property('correlator');
