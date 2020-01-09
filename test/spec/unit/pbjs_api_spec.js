@@ -57,7 +57,7 @@ function resetAuction() {
 
 var Slot = function Slot(elementId, pathId) {
   var slot = {
-    targeting: [],
+    targeting: {},
     getSlotElementId: function getSlotElementId() {
       return elementId;
     },
@@ -67,17 +67,15 @@ var Slot = function Slot(elementId, pathId) {
     },
 
     setTargeting: function setTargeting(key, value) {
-      var obj = [];
-      obj[key] = value;
-      this.targeting.push(obj);
+      this.targeting[key] = Array.isArray(value) ? value : [value];
     },
 
-    getTargeting: function getTargeting() {
-      return this.targeting;
+    getTargeting: function getTargeting(key) {
+      return this.targeting[key] || [];
     },
 
     getTargetingKeys: function getTargetingKeys() {
-      return [];
+      return Object.getOwnPropertyNames(this.targeting);
     },
 
     clearTargeting: function clearTargeting() {
@@ -855,22 +853,6 @@ describe('Unit: Prebid Module', function () {
       resetAuction();
     });
 
-    it('should set googletag targeting keys after calling setTargetingForGPTAsync function', function () {
-      var slots = createSlotArrayScenario2();
-      window.googletag.pubads().setSlots(slots);
-      $$PREBID_GLOBAL$$.setTargetingForGPTAsync();
-
-      var targeting = [];
-      slots[1].getTargeting().map(function (value) {
-        var temp = [];
-        temp.push(Object.keys(value).toString());
-        temp.push(value[Object.keys(value)]);
-        targeting.push(temp);
-      });
-
-      assert.deepEqual(slots[1].spySetTargeting.args, targeting, 'google tag targeting options not matching');
-    });
-
     it('should set targeting when passed a string ad unit code with enableSendAllBids', function () {
       var slots = createSlotArray();
       window.googletag.pubads().setSlots(slots);
@@ -907,7 +889,7 @@ describe('Unit: Prebid Module', function () {
         new Slot('div-not-matching-adunit-code-3', config.adUnitCodes[0])
       ];
 
-      slots[1].setTargeting('hb_adid', 'someAdId');
+      slots[1].setTargeting('hb_adid', ['someAdId']);
       slots[1].spyGetSlotElementId.resetHistory();
       window.googletag.pubads().setSlots(slots);
 
