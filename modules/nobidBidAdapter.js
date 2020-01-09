@@ -163,7 +163,7 @@ function nobidInterpretResponse(response, bidRequest) {
   for (var i = 0; response.bids && i < response.bids.length; i++) {
     var bid = response.bids[i];
     if (bid.bdrid < 100 || !bidRequest || !bidRequest.bidderRequest || !bidRequest.bidderRequest.bids) continue;
-    nobid.bidResponses['' + bid.id] = bid;
+    window.nobid.bidResponses['' + bid.id] = bid;
     var reqBid = findBid(bid.divid, bidRequest.bidderRequest.bids);
     if (!reqBid) continue;
     const bidResponse = {
@@ -184,12 +184,12 @@ function nobidInterpretResponse(response, bidRequest) {
   return bidResponses;
 };
 window.nobid = window.nobid || {};
-nobid.bidResponses = nobid.bidResponses || {};
-nobid.timeoutTotal = 0;
-nobid.bidWonTotal = 0;
-nobid.renderTag = function(doc, id, win) {
+window.nobid.bidResponses = window.nobid.bidResponses || {};
+window.nobid.timeoutTotal = 0;
+window.nobid.bidWonTotal = 0;
+window.nobid.renderTag = function(doc, id, win) {
   log('nobid.renderTag()', id);
-  var bid = nobid.bidResponses['' + id];
+  var bid = window.nobid.bidResponses['' + id];
   if (bid && bid.adm2) {
     log('nobid.renderTag() found tag', id);
     var markup = bid.adm2;
@@ -292,14 +292,14 @@ export const spec = {
      * @param {data} Containing timeout specific data
      */
   onTimeout: function(data) {
-    nobid.timeoutTotal++;
-    log('Timeout total: ' + nobid.timeoutTotal, data);
-    return nobid.timeoutTotal;
+    window.nobid.timeoutTotal++;
+    log('Timeout total: ' + window.nobid.timeoutTotal, data);
+    return window.nobid.timeoutTotal;
   },
   onBidWon: function(data) {
-    nobid.bidWonTotal++;
-    log('BidWon total: ' + nobid.bidWonTotal, data);
-    return nobid.bidWonTotal;
+    window.nobid.bidWonTotal++;
+    log('BidWon total: ' + window.nobid.bidWonTotal, data);
+    return window.nobid.bidWonTotal;
   }
 }
 registerBidder(spec);
