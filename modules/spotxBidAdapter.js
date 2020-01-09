@@ -202,12 +202,12 @@ export const spec = {
         userExt.consent = bidderRequest.gdprConsent.consentString;
 
         if (typeof bidderRequest.gdprConsent.gdprApplies !== 'undefined') {
-          requestPayload.regs = {
-            ext: {
-              gdpr: (bidderRequest.gdprConsent.gdprApplies ? 1 : 0)
-            }
-          };
+          utils.deepSetValue(requestPayload, 'regs.ext.gdpr', (bidderRequest.gdprConsent.gdprApplies ? 1 : 0));
         }
+      }
+
+      if (bidderRequest && bidderRequest.uspConsent) {
+        utils.deepSetValue(requestPayload, 'regs.ext.us_privacy', bidderRequest.uspConsent);
       }
 
       // ID5 fied

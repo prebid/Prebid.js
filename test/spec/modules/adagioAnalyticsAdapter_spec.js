@@ -7,17 +7,12 @@ let events = require('src/events');
 let constants = require('src/constants.json');
 
 describe('adagio analytics adapter', () => {
-  let xhr;
-  let requests;
-  let sandbox
+  let sandbox;
   let adagioQueuePushSpy;
 
   beforeEach(() => {
     sandbox = sinon.createSandbox();
 
-    xhr = sandbox.useFakeXMLHttpRequest();
-    requests = [];
-    xhr.onCreate = request => requests.push(request);
     sandbox.stub(events, 'getEvents').returns([]);
 
     const w = utils.getWindowTop();
