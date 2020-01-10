@@ -90,6 +90,7 @@ export const spec = {
             image: nativeAd.image || nativeAd.image.url,
             icon: nativeAd.icon || nativeAd.icon.url,
             clickUrl: nativeAd.clickUrl,
+            clickTrackers: (nativeAd.clicktrackers) ? nativeAd.clicktrackers : [],
             impressionTrackers: nativeAd.impressionTrackers,
           }
         });
