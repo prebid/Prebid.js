@@ -33,24 +33,6 @@ Module that connects to SmartyAds' demand sources
                 {
                     code: 'placementId_0',
                     mediaTypes: {
-                        video: {
-                            sizes: [[300, 250]],
-                        }
-                    },
-                    bids: [
-                        {
-                            bidder: 'smartyads',
-                            params: {
-                                placementId: 0,
-                                traffic: 'video'
-                            }
-                        }
-                    ]
-                },
-                // Will return test vast xml. All video params are stored under placement in publishers UI
-                {
-                    code: 'placementId_0',
-                    mediaTypes: {
                         banner: {
                             sizes: [[300, 250]],
                         }
@@ -61,6 +43,24 @@ Module that connects to SmartyAds' demand sources
                             params: {
                                 placementId: 0,
                                 traffic: 'banner'
+                            }
+                        }
+                    ]
+                },
+                // Will return test vast xml. All video params are stored under placement in publishers UI
+                {
+                    code: 'placementId_0',
+                    mediaTypes: {
+                        video: {
+                            sizes: [[300, 250]],
+                        }
+                    },
+                    bids: [
+                        {
+                            bidder: 'smartyads',
+                            params: {
+                                placementId: 0,
+                                traffic: 'video'
                             }
                         }
                     ]
