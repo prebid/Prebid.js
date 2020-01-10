@@ -44,7 +44,8 @@ function getStroeerCore() {
     while (!win.stroeerCore && utils.getWindowTop() !== win && win.parent.location.href.length) {
       win = win.parent;
     }
-  } catch (ignore) {}
+  } catch (ignore) {
+  }
 
   win.stroeerCore = win.stroeerCore || {};
   return win.stroeerCore;
@@ -57,12 +58,23 @@ function getMostAccessibleTopWindow() {
     while (utils.getWindowTop().top !== res && res.parent.location.href.length) {
       res = res.parent;
     }
-  } catch (ignore) {}
+  } catch (ignore) {
+  }
 
   return res;
 }
 
 function elementInView(elementId) {
+  const resolveElement = (elId) => {
+    let slotInfo;
+    let win = utils.getWindowSelf();
+    if (win.SDG && (slotInfo = win.SDG.getCN().getSlotByPosition(elId)) !== null) {
+      return slotInfo.getContainer();
+    } else {
+      return win.document.getElementById(elId);
+    }
+  };
+
   const visibleInWindow = (el, win) => {
     const rect = el.getBoundingClientRect();
     const inView = (rect.top + rect.height >= 0) && (rect.top <= win.innerHeight);
@@ -75,7 +87,7 @@ function elementInView(elementId) {
   };
 
   try {
-    return visibleInWindow(utils.getWindowSelf().document.getElementById(elementId), utils.getWindowSelf());
+    return visibleInWindow(resolveElement(elementId), utils.getWindowSelf());
   } catch (e) {
     // old browser, element not found, cross-origin etc.
   }
@@ -118,29 +130,33 @@ function initUserConnect() {
 export const spec = {
   code: BIDDER_CODE,
 
-  isBidRequestValid: (function() {
+  isBidRequestValid: (function () {
     const validators = [];
 
     const createValidator = (checkFn, errorMsgFn) => {
       return (bidRequest) => {
-        if (checkFn(bidRequest)) return true;
-        else {
+        if (checkFn(bidRequest)) {
+          return true;
+        } else {
           utils.logError(`invalid bid: ${errorMsgFn(bidRequest)}`, 'ERROR');
           return false;
         }
       }
     };
 
-    validators.push(createValidator((bidReq) => typeof bidReq.params === 'object', bidReq => `bid request ${bidReq.bidId} does not have custom params`));
-    validators.push(createValidator((bidReq) => utils.isStr(bidReq.params.sid), bidReq => `bid request ${bidReq.bidId} does not have a sid string field`));
-    validators.push(createValidator((bidReq) => bidReq.params.ssat === undefined || includes([1, 2], bidReq.params.ssat), bidReq => `bid request ${bidReq.bidId} does not have a valid ssat value (must be 1 or 2)`));
+    validators.push(createValidator((bidReq) => typeof bidReq.params === 'object',
+      bidReq => `bid request ${bidReq.bidId} does not have custom params`));
+    validators.push(createValidator((bidReq) => utils.isStr(bidReq.params.sid),
+      bidReq => `bid request ${bidReq.bidId} does not have a sid string field`));
+    validators.push(createValidator((bidReq) => bidReq.params.ssat === undefined || includes([1, 2], bidReq.params.ssat),
+      bidReq => `bid request ${bidReq.bidId} does not have a valid ssat value (must be 1 or 2)`));
 
     return function (bidRequest) {
       return validators.every(f => f(bidRequest));
     }
   }()),
 
-  buildRequests: function(validBidRequests = [], bidderRequest) {
+  buildRequests: function (validBidRequests = [], bidderRequest) {
     const anyBid = bidderRequest.bids[0];
 
     setupGlobalNamespace(anyBid);
@@ -163,33 +179,28 @@ export const spec = {
 
     if (gdprConsent && gdprConsent.consentString != null && gdprConsent.gdprApplies != null) {
       payload.gdpr = {
-        consent: bidderRequest.gdprConsent.consentString,
-        applies: bidderRequest.gdprConsent.gdprApplies
+        consent: bidderRequest.gdprConsent.consentString, applies: bidderRequest.gdprConsent.gdprApplies
       };
     }
 
     validBidRequests.forEach(bid => {
       payload.bids.push({
-        bid: bid.bidId,
-        sid: bid.params.sid,
-        siz: bid.sizes,
-        viz: elementInView(bid.adUnitCode)
+        bid: bid.bidId, sid: bid.params.sid, siz: bid.sizes, viz: elementInView(bid.adUnitCode)
       });
     });
 
     return {
-      method: 'POST',
-      url: buildUrl(anyBid.params),
-      data: payload
+      method: 'POST', url: buildUrl(anyBid.params), data: payload
     }
   },
 
-  interpretResponse: function (serverResponse, serverRequest) {
+  interpretResponse: function (serverResponse) {
     const bids = [];
 
     if (serverResponse.body && typeof serverResponse.body === 'object') {
       if (serverResponse.body.tep) {
-        ajax(serverResponse.body.tep, () => {});
+        ajax(serverResponse.body.tep, () => {
+        });
       }
 
       serverResponse.body.bids.forEach(bidResponse => {
@@ -251,7 +262,7 @@ export const spec = {
     return bids;
   },
 
-  getUserSyncs: function (syncOptions, serverResponses, gdprConsent) {
+  getUserSyncs: function (syncOptions, serverResponses) {
     // WARNING: we are breaking rules by inserting sync elements ourselves instead of prebid.
     // This is ok as we are using our own prebid.js build. This is not an official adapter yet.
     // To make official we need to revisit how we do user matching along with adex, nuggad, etc.
@@ -356,6 +367,7 @@ function padEnd(str, targetLength, paddingChar) {
   }
   return str;
 }
+
 /* eslint-disable camelcase */
 // Code taken from http://pajhome.org.uk/crypt/md5/sha1.js
 /*
@@ -368,7 +380,9 @@ const chrsz = 8; // bits per input character. 8 - ASCII; 16 - Unicode
  * These are the functions you'll usually want to call
  * They take string arguments and return either hex or base-64 encoded strings
  */
-function str_hmac_sha1(key, data) { return binb2str(core_hmac_sha1(key, data)); }
+function str_hmac_sha1(key, data) {
+  return binb2str(core_hmac_sha1(key, data));
+}
 
 /*
  * Calculate the SHA-1 of an array of big-endian words, and a bit length
@@ -393,10 +407,12 @@ function core_sha1(x, len) {
     const olde = e;
 
     for (let j = 0; j < 80; j++) {
-      if (j < 16) w[j] = x[i + j];
-      else w[j] = rol(w[j - 3] ^ w[j - 8] ^ w[j - 14] ^ w[j - 16], 1);
-      const t = safe_add(safe_add(rol(a, 5), sha1_ft(j, b, c, d)),
-        safe_add(safe_add(e, w[j]), sha1_kt(j)));
+      if (j < 16) {
+        w[j] = x[i + j];
+      } else {
+        w[j] = rol(w[j - 3] ^ w[j - 8] ^ w[j - 14] ^ w[j - 16], 1);
+      }
+      const t = safe_add(safe_add(rol(a, 5), sha1_ft(j, b, c, d)), safe_add(safe_add(e, w[j]), sha1_kt(j)));
       e = d;
       d = c;
       c = rol(b, 30);
@@ -418,9 +434,15 @@ function core_sha1(x, len) {
  * iteration
  */
 function sha1_ft(t, b, c, d) {
-  if (t < 20) return (b & c) | ((~b) & d);
-  if (t < 40) return b ^ c ^ d;
-  if (t < 60) return (b & c) | (b & d) | (c & d);
+  if (t < 20) {
+    return (b & c) | ((~b) & d);
+  }
+  if (t < 40) {
+    return b ^ c ^ d;
+  }
+  if (t < 60) {
+    return (b & c) | (b & d) | (c & d);
+  }
   return b ^ c ^ d;
 }
 
@@ -428,8 +450,7 @@ function sha1_ft(t, b, c, d) {
  * Determine the appropriate additive constant for the current iteration
  */
 function sha1_kt(t) {
-  return (t < 20) ? 1518500249 : (t < 40) ? 1859775393
-    : (t < 60) ? -1894007588 : -899497514;
+  return (t < 20) ? 1518500249 : (t < 40) ? 1859775393 : (t < 60) ? -1894007588 : -899497514;
 }
 
 /*
@@ -437,7 +458,9 @@ function sha1_kt(t) {
  */
 function core_hmac_sha1(key, data) {
   let bkey = str2binb(key);
-  if (bkey.length > 16) bkey = core_sha1(bkey, key.length * chrsz);
+  if (bkey.length > 16) {
+    bkey = core_sha1(bkey, key.length * chrsz);
+  }
 
   const ipad = Array(16);
   const opad = Array(16);
@@ -491,4 +514,5 @@ function binb2str(bin) {
   }
   return str;
 }
+
 /* eslint-enable camelcase */

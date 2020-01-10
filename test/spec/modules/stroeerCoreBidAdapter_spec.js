@@ -1,6 +1,6 @@
 import {assert} from 'chai';
 import {spec} from 'modules/stroeerCoreBidAdapter';
-const utils = require('src/utils');
+import * as utils from 'src/utils';
 
 describe('stroeerCore bid adapter', function () {
   let sandbox;
@@ -51,54 +51,38 @@ describe('stroeerCore bid adapter', function () {
     bidderCode: 'stroeerCore',
     timeout: 5000,
     auctionStart: 10000,
-    bids: [
-      {
-        bidId: 'bid1',
-        bidder: 'stroeerCore',
-        adUnitCode: 'div-1',
-        sizes: [[300, 600], [160, 60]],
-        mediaType: '',
-        params: {
-          sid: 'NDA='
-        }
-      },
-      {
-        bidId: 'bid2',
-        bidder: 'stroeerCore',
-        adUnitCode: 'div-2',
-        sizes: [[728, 90]],
-        params: {
-          sid: 'ODA='
-        }
+    bids: [{
+      bidId: 'bid1',
+      bidder: 'stroeerCore',
+      adUnitCode: 'div-1',
+      sizes: [[300, 600], [160, 60]],
+      mediaType: '',
+      params: {
+        sid: 'NDA='
       }
-    ],
+    }, {
+      bidId: 'bid2',
+      bidder: 'stroeerCore',
+      adUnitCode: 'div-2',
+      sizes: [[728, 90]],
+      params: {
+        sid: 'ODA='
+      }
+    }],
   });
 
   const buildBidderResponse = () => ({
     'bids': [{
-      'bidId': 'bid1',
-      'cpm': 4.0,
-      'width': 300,
-      'height': 600,
-      'ad': '<div>tag1</div>',
-      'tracking': { 'brandId': 123 }
+      'bidId': 'bid1', 'cpm': 4.0, 'width': 300, 'height': 600, 'ad': '<div>tag1</div>', 'tracking': {'brandId': 123}
     }, {
-      'bidId': 'bid2',
-      'cpm': 7.3,
-      'width': 728,
-      'height': 90,
-      'ad': '<div>tag2</div>'
+      'bidId': 'bid2', 'cpm': 7.3, 'width': 728, 'height': 90, 'ad': '<div>tag2</div>'
     }]
   });
 
   const buildBidderResponseWithTep = () => ({
     'tep': '//hb.adscale.de/sspReqId/5f465360-cb11-44ee-b0be-b47a4f583521/39000',
     'bids': [{
-      'bidId': 'bid1',
-      'cpm': 4.0,
-      'width': 300,
-      'height': 600,
-      'ad': '<div>tag1</div>'
+      'bidId': 'bid1', 'cpm': 4.0, 'width': 300, 'height': 600, 'ad': '<div>tag1</div>'
     }]
   });
 
@@ -112,15 +96,12 @@ describe('stroeerCore bid adapter', function () {
       'bidPriceOptimisation': {
         'cp': 4,
         'rop': {
-          '0.0': 4,
-          '2.0': 6,
-          '5.3': 8.2,
-          '7.0': 10
+          '0.0': 4, '2.0': 6, '5.3': 8.2, '7.0': 10
         },
         'ropFactor': 1.2
       }
     }]
-  })
+  });
 
   const buildBidderResponseWithBidPriceOptimisationButNoBids = () => ({
     'bids': [{
@@ -128,15 +109,12 @@ describe('stroeerCore bid adapter', function () {
       'bidPriceOptimisation': {
         'cp': 4,
         'rop': {
-          '0.0': 4,
-          '2.0': 6,
-          '5.3': 8.2,
-          '7.0': 10
+          '0.0': 4, '2.0': 6, '5.3': 8.2, '7.0': 10
         },
         'ropFactor': 1.2
       }
     }]
-  })
+  });
 
   const buildBidderResponseSecondPriceAuction = () => {
     const response = buildBidderResponse();
@@ -166,8 +144,7 @@ describe('stroeerCore bid adapter', function () {
       parent,
       top,
       location: {
-        protocol,
-        href
+        protocol, href
       },
       document: {
         createElement: function () {
@@ -194,33 +171,32 @@ describe('stroeerCore bid adapter', function () {
     return win;
   };
 
-  function createElement(offsetTop = 0, id) {
+  function createElement(id, offsetTop = 0) {
     return {
       id,
       getBoundingClientRect: function () {
         return {
-          top: offsetTop,
-          height: 1
+          top: offsetTop, height: 1
         }
       }
     }
   }
 
-  function setupSingleWindow(sandbox, placementElements = [createElement(17, 'div-1'), createElement(54, 'div-2')]) {
+  function setupSingleWindow(sandBox, placementElements = [createElement('div-1', 17), createElement('div-2', 54)]) {
     const win = createWindow('http://www.xyz.com/', {
-      parent: win, top: win, frameElement: createElement(304), placementElements: placementElements
+      parent: win, top: win, frameElement: createElement(undefined, 304), placementElements: placementElements
     });
 
     win.innerHeight = 200;
 
-    sandbox.stub(utils, 'getWindowSelf').returns(win);
-    sandbox.stub(utils, 'getWindowTop').returns(win);
-    sandbox.stub(utils, 'getTopWindowReferrer').returns(win.document.referrer);
+    sandBox.stub(utils, 'getWindowSelf').returns(win);
+    sandBox.stub(utils, 'getWindowTop').returns(win);
+    sandBox.stub(utils, 'getTopWindowReferrer').returns(win.document.referrer);
 
     return win;
   }
 
-  function setupNestedWindows(sandbox, placementElements = [createElement(17, 'div-1'), createElement(54, 'div-2')]) {
+  function setupNestedWindows(sandBox, placementElements = [createElement('div-1', 17), createElement('div-2', 54)]) {
     const topWin = createWindow('http://www.abc.org/', {referrer: 'http://www.google.com/?query=monkey'});
     topWin.innerHeight = 800;
 
@@ -228,17 +204,68 @@ describe('stroeerCore bid adapter', function () {
     midWin.innerHeight = 400;
 
     const win = createWindow('http://www.xyz.com/', {
-      parent: midWin, top: topWin, frameElement: createElement(304), placementElements
+      parent: midWin, top: topWin, frameElement: createElement(undefined, 304), placementElements
     });
 
     win.innerHeight = 200;
 
-    sandbox.stub(utils, 'getWindowSelf').returns(win);
-    sandbox.stub(utils, 'getWindowTop').returns(topWin);
-    sandbox.stub(utils, 'getTopWindowReferrer').returns(topWin.document.referrer);
+    sandBox.stub(utils, 'getWindowSelf').returns(win);
+    sandBox.stub(utils, 'getWindowTop').returns(topWin);
+    sandBox.stub(utils, 'getTopWindowReferrer').returns(topWin.document.referrer);
 
     return {topWin, midWin, win};
   }
+
+  describe.only('slot location uses SDG API if available', () => {
+    let win;
+    let queriedUnitCodes = [];
+    beforeEach(() => {
+      win = setupSingleWindow(sandbox, [(createElement('div-1', 17)), (createElement('div-2', 54))]);
+      win.SDG = {
+        getCN: function () {
+          return {
+            getSlotByPosition: function (elementId) {
+              queriedUnitCodes.push(elementId);
+              return {};
+            }
+          }
+        }
+      }
+    });
+
+    it('visibility of both slots should be determined based on SDG ad unit codes', () => {
+      bidderRequest = {
+        auctionId: AUCTION_ID,
+        bidderRequestId: 'bidder-request-id-123',
+        bidderCode: 'stroeerCore',
+        timeout: 5000,
+        auctionStart: 10000,
+        bids: [{
+          bidId: 'bid1',
+          bidder: 'stroeerCore',
+          adUnitCode: 'div-1-alpha',
+          sizes: [[300, 600], [160, 60]],
+          mediaType: '',
+          params: {
+            sid: 'NDA='
+          }
+        }, {
+          bidId: 'bid2',
+          bidder: 'stroeerCore',
+          adUnitCode: 'div-2-alpha',
+          sizes: [[728, 90]],
+          params: {
+            sid: 'ODA='
+          }
+        }],
+      };
+
+      spec.buildRequests(bidderRequest.bids, bidderRequest);
+
+      assert.equal(2, queriedUnitCodes.length);
+      assert.deepEqual(['div-1-alpha', 'div-2-alpha'], queriedUnitCodes);
+    });
+  });
 
   describe('bid validation entry point', () => {
     let bidRequest;
@@ -293,8 +320,8 @@ describe('stroeerCore bid adapter', function () {
       });
 
       it('should use hardcoded url as default endpoint', () => {
-        const bidderRequest = buildBidderRequest();
-        let serverRequestInfo = spec.buildRequests(bidderRequest.bids, bidderRequest);
+        const bidReq = buildBidderRequest();
+        let serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq);
 
         assert.equal(serverRequestInfo.method, 'POST');
         assert.isObject(serverRequestInfo.data);
@@ -302,43 +329,33 @@ describe('stroeerCore bid adapter', function () {
       });
 
       describe('should use custom url if provided', () => {
-        const samples = [
-          {
-            protocol: 'http:',
-            params: {sid: 'ODA=', host: 'other.com', port: '234', path: '/xyz'},
-            expected: 'https://other.com:234/xyz'
-          },
-          {
-            protocol: 'https:',
-            params: {sid: 'ODA=', host: 'other.com', port: '234', path: '/xyz'},
-            expected: 'https://other.com:234/xyz'
-          },
-          {
-            protocol: 'https:',
-            params: {sid: 'ODA=', host: 'other.com', port: '234', securePort: '871', path: '/xyz'},
-            expected: 'https://other.com:871/xyz'
-          },
-          {
-            protocol: 'http:',
-            params: {sid: 'ODA=', port: '234', path: '/xyz'},
-            expected: 'https://hb.adscale.de:234/xyz'
-          },
-        ];
+        const samples = [{
+          protocol: 'http:', params: {sid: 'ODA=', host: 'other.com', port: '234', path: '/xyz'}, expected: 'https://other.com:234/xyz'
+        }, {
+          protocol: 'https:', params: {sid: 'ODA=', host: 'other.com', port: '234', path: '/xyz'}, expected: 'https://other.com:234/xyz'
+        }, {
+          protocol: 'https:',
+          params: {sid: 'ODA=', host: 'other.com', port: '234', securePort: '871', path: '/xyz'},
+          expected: 'https://other.com:871/xyz'
+        }, {
+          protocol: 'http:', params: {sid: 'ODA=', port: '234', path: '/xyz'}, expected: 'https://hb.adscale.de:234/xyz'
+        }, ];
 
         samples.forEach(sample => {
-          it(`should use ${sample.expected} as endpoint when given params ${JSON.stringify(sample.params)} and protocol ${sample.protocol}`, function () {
-            win.location.protocol = sample.protocol;
+          it(`should use ${sample.expected} as endpoint when given params ${JSON.stringify(sample.params)} and protocol ${sample.protocol}`,
+            function () {
+              win.location.protocol = sample.protocol;
 
-            const bidderRequest = buildBidderRequest();
-            bidderRequest.bids[0].params = sample.params;
-            bidderRequest.bids.length = 1;
+              const bidReq = buildBidderRequest();
+              bidReq.bids[0].params = sample.params;
+              bidReq.bids.length = 1;
 
-            let serverRequestInfo = spec.buildRequests(bidderRequest.bids, bidderRequest);
+              let serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq);
 
-            assert.equal(serverRequestInfo.method, 'POST');
-            assert.isObject(serverRequestInfo.data);
-            assert.equal(serverRequestInfo.url, sample.expected);
-          });
+              assert.equal(serverRequestInfo.method, 'POST');
+              assert.isObject(serverRequestInfo.data);
+              assert.equal(serverRequestInfo.url, sample.expected);
+            });
         });
       });
     });
@@ -347,15 +364,15 @@ describe('stroeerCore bid adapter', function () {
       let topWin;
       let placementElements;
       beforeEach(() => {
-        placementElements = [createElement(17, 'div-1'), createElement(54, 'div-2')];
+        placementElements = [createElement('div-1', 17), createElement('div-2', 54)];
         ({topWin} = setupNestedWindows(sandbox, placementElements));
       });
 
       it('should have expected JSON structure', () => {
         clock.tick(13500);
-        const bidderRequest = buildBidderRequest();
+        const bidReq = buildBidderRequest();
 
-        const serverRequestInfo = spec.buildRequests(bidderRequest.bids, bidderRequest);
+        const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq);
 
         const expectedTimeout = bidderRequest.timeout - (13500 - bidderRequest.auctionStart);
 
@@ -369,20 +386,11 @@ describe('stroeerCore bid adapter', function () {
           'ssl': false,
           'ssat': 2,
           'yl2': false,
-          'bids': [
-            {
-              'sid': 'NDA=',
-              'bid': 'bid1',
-              'siz': [[300, 600], [160, 60]],
-              'viz': true
-            },
-            {
-              'sid': 'ODA=',
-              'bid': 'bid2',
-              'siz': [[728, 90]],
-              'viz': true
-            }
-          ]
+          'bids': [{
+            'sid': 'NDA=', 'bid': 'bid1', 'siz': [[300, 600], [160, 60]], 'viz': true
+          }, {
+            'sid': 'ODA=', 'bid': 'bid2', 'siz': [[728, 90]], 'viz': true
+          }]
         };
 
         assert.deepEqual(serverRequestInfo.data, expectedJsonPayload);
@@ -390,73 +398,72 @@ describe('stroeerCore bid adapter', function () {
 
       describe('optional fields', () => {
         it('should use ssat value from config', () => {
-          const bidderRequest = buildBidderRequest();
-          bidderRequest.bids.length = 1;
-          bidderRequest.bids[0].params.ssat = 99;
-          const serverRequestInfo = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          const bidReq = buildBidderRequest();
+          bidReq.bids.length = 1;
+          bidReq.bids[0].params.ssat = 99;
+          const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq);
           assert.equal(99, serverRequestInfo.data.ssat);
         });
 
         it('yl2 defaults to false', () => {
-          const bidderRequest = buildBidderRequest();
-          bidderRequest.bids.length = 1;
-          const serverRequestInfo = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          const bidReq = buildBidderRequest();
+          bidReq.bids.length = 1;
+          const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq);
           assert.equal(false, serverRequestInfo.data.yl2);
         });
 
         it('should use yl2 value from config', () => {
-          const bidderRequest = buildBidderRequest();
-          bidderRequest.bids.length = 1;
-          bidderRequest.bids[0].params.yl2 = true;
-          const serverRequestInfo = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          const bidReq = buildBidderRequest();
+          bidReq.bids.length = 1;
+          bidReq.bids[0].params.yl2 = true;
+          const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq);
           assert.equal(true, serverRequestInfo.data.yl2);
         });
 
         it('should use yl2 value from localStorage', () => {
           localStorage.sdgYieldtest = '1';
-          const bidderRequest = buildBidderRequest();
-          bidderRequest.bids.length = 1;
-          bidderRequest.bids[0].params.yl2 = false;
-          const serverRequestInfo = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          const bidReq = buildBidderRequest();
+          bidReq.bids.length = 1;
+          bidReq.bids[0].params.yl2 = false;
+          const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq);
           assert.equal(true, serverRequestInfo.data.yl2);
         });
 
         it('should use 2 as default value for ssat', () => {
-          const bidderRequest = buildBidderRequest();
-          bidderRequest.bids.length = 1;
-          delete bidderRequest.bids[0].params.ssat;
-          const serverRequestInfo = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          const bidReq = buildBidderRequest();
+          bidReq.bids.length = 1;
+          delete bidReq.bids[0].params.ssat;
+          const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq);
           assert.equal(2, serverRequestInfo.data.ssat);
         });
 
         it('should use first ssat value on a list of bids', () => {
-          const bidderRequest = buildBidderRequest();
+          const bidReq = buildBidderRequest();
 
-          delete bidderRequest.bids[0].params.ssat;
+          delete bidReq.bids[0].params.ssat;
 
-          bidderRequest.bids[1].params.ssat = 1;
+          bidReq.bids[1].params.ssat = 1;
 
-          bidderRequest.bids.push({
+          bidReq.bids.push({
             bidId: 'bid3',
             bidder: 'stroeerCore',
             placementCode: 'div-1',
             sizes: [[300, 600], [160, 60]],
             mediaType: '',
             params: {
-              sid: 'NDA=',
-              ssat: 2
+              sid: 'NDA=', ssat: 2
             }
           });
-          const serverRequestInfo = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq);
 
           assert.equal(1, serverRequestInfo.data.ssat);
         });
 
         it('should skip viz field when unable to determine visibility of placement', () => {
           placementElements.length = 0;
-          const bidderRequest = buildBidderRequest();
+          const bidReq = buildBidderRequest();
 
-          const serverRequestInfo = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq);
           assert.lengthOf(serverRequestInfo.data.bids, 2);
 
           for (let bid of serverRequestInfo.data.bids) {
@@ -469,7 +476,7 @@ describe('stroeerCore bid adapter', function () {
           utils.getTopWindowReferrer.restore();
           sandbox.stub(utils, 'getTopWindowReferrer').returns('');
 
-          const bidderRequest = buildBidderRequest();
+          buildBidderRequest();
 
           const serverRequestInfo = spec.buildRequests(bidderRequest.bids, bidderRequest);
           assert.lengthOf(serverRequestInfo.data.bids, 2);
@@ -479,14 +486,13 @@ describe('stroeerCore bid adapter', function () {
           }
         });
 
-        const gdprSamples = [{consentString: 'RG9ua2V5IEtvbmc=', gdprApplies: true},
-          {consentString: 'UGluZyBQb25n', gdprApplies: false}];
+        const gdprSamples = [{consentString: 'RG9ua2V5IEtvbmc=', gdprApplies: true}, {consentString: 'UGluZyBQb25n', gdprApplies: false}];
         gdprSamples.forEach((sample) => {
           it(`should add GDPR info ${JSON.stringify(sample)} when provided`, () => {
-            const bidderRequest = buildBidderRequest();
-            bidderRequest.gdprConsent = sample;
+            const bidReq = buildBidderRequest();
+            bidReq.gdprConsent = sample;
 
-            const serverRequestInfo = spec.buildRequests(bidderRequest.bids, bidderRequest);
+            const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq);
 
             const actualGdpr = serverRequestInfo.data.gdpr;
             assert.propertyVal(actualGdpr, 'applies', sample.gdprApplies);
@@ -494,8 +500,7 @@ describe('stroeerCore bid adapter', function () {
           });
         });
 
-        const skippableGdprSamples = [
-          {consentString: null, gdprApplies: true}, //
+        const skippableGdprSamples = [{consentString: null, gdprApplies: true}, //
           {consentString: 'UGluZyBQb25n', gdprApplies: null}, //
           {consentString: null, gdprApplies: null}, //
           {consentString: undefined, gdprApplies: true}, //
@@ -503,10 +508,10 @@ describe('stroeerCore bid adapter', function () {
           {consentString: undefined, gdprApplies: undefined}];
         skippableGdprSamples.forEach((sample) => {
           it(`should not add GDPR info ${JSON.stringify(sample)} when one or more values are missing`, () => {
-            const bidderRequest = buildBidderRequest();
-            bidderRequest.gdprConsent = sample;
+            const bidReq = buildBidderRequest();
+            bidReq.gdprConsent = sample;
 
-            const serverRequestInfo = spec.buildRequests(bidderRequest.bids, bidderRequest);
+            const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq);
 
             const actualGdpr = serverRequestInfo.data.gdpr;
             assert.isUndefined(actualGdpr);
@@ -562,7 +567,7 @@ describe('stroeerCore bid adapter', function () {
       const result = spec.interpretResponse({body: bidderResponse});
       assertStandardFieldsOnBid(result[0], 'bid1', '<div>tag1</div>', 300, 600, 4);
       // default custom values
-      assertCustomFieldsOnBid(result[0], 0, 4, undefined, undefined, '<div>tag1</div>', 4, { 'brandId': 123 }, undefined);
+      assertCustomFieldsOnBid(result[0], 0, 4, undefined, undefined, '<div>tag1</div>', 4, {'brandId': 123}, undefined);
 
       assertStandardFieldsOnBid(result[1], 'bid2', '<div>tag2</div>', 728, 90, 7.3);
       // default custom values
@@ -600,7 +605,7 @@ describe('stroeerCore bid adapter', function () {
       const bidderResponse = buildBidderResponseWithBidPriceOptimisation();
 
       const result = spec.interpretResponse({body: bidderResponse});
-      assertStandardFieldsOnBid(result[0], 'bid1', '<div>tag1</div>', 300, 600, 4)
+      assertStandardFieldsOnBid(result[0], 'bid1', '<div>tag1</div>', 300, 600, 4);
       assert.propertyVal(result[0], 'cp', 4);
       result[0].should.include.keys('rop');
       assert.propertyVal(result[0], 'ropFactor', 1.2)
@@ -610,58 +615,55 @@ describe('stroeerCore bid adapter', function () {
       const bidderResponse = buildBidderResponseWithBidPriceOptimisationButNoBids();
 
       const result = spec.interpretResponse({body: bidderResponse});
-      assert.propertyVal(result[0], 'requestId', 'bid1')
-      assert.propertyVal(result[0], 'cp', 4)
+      assert.propertyVal(result[0], 'requestId', 'bid1');
+      assert.propertyVal(result[0], 'cp', 4);
       result[0].should.include.keys('rop');
       assert.propertyVal(result[0], 'ropFactor', 1.2)
     });
 
     describe('should add generateAd method on bid object', () => {
-      const externalEncTests = [
-        // full price text
-        { price: '1.570000', bidId: '123456789123456789', exchangeRate: 1.0, expectation: 'MTIzNDU2Nzg5MTIzNDU2N8y5DxfESCHg5CTVFw' },
+      const externalEncTests = [// full price text
+        {price: '1.570000', bidId: '123456789123456789', exchangeRate: 1.0, expectation: 'MTIzNDU2Nzg5MTIzNDU2N8y5DxfESCHg5CTVFw'},
         // partial price text
-        { price: '1.59', bidId: '123456789123456789123456789', exchangeRate: 1.0, expectation: 'MTIzNDU2Nzg5MTIzNDU2N8y5Dxn0eBHQELptyg' },
+        {price: '1.59', bidId: '123456789123456789123456789', exchangeRate: 1.0, expectation: 'MTIzNDU2Nzg5MTIzNDU2N8y5Dxn0eBHQELptyg'},
         // large bidId will be trimmed (> 16 characters)
-        { price: '1.59', bidId: '123456789123456789', exchangeRate: 1.0, expectation: 'MTIzNDU2Nzg5MTIzNDU2N8y5Dxn0eBHQELptyg' },
+        {price: '1.59', bidId: '123456789123456789', exchangeRate: 1.0, expectation: 'MTIzNDU2Nzg5MTIzNDU2N8y5Dxn0eBHQELptyg'},
         // small bidId will be padded (< 16 characters)
-        { price: '1.59', bidId: '123456789', exchangeRate: 1.0, expectation: 'MTIzNDU2Nzg5MDAwMDAwMDJGF0WFzgb7CQC2Nw' },
+        {price: '1.59', bidId: '123456789', exchangeRate: 1.0, expectation: 'MTIzNDU2Nzg5MDAwMDAwMDJGF0WFzgb7CQC2Nw'},
         // float instead of text
-        { price: 1.59, bidId: '123456789123456789', exchangeRate: 1.0, expectation: 'MTIzNDU2Nzg5MTIzNDU2N8y5Dxn0eBHQELptyg' },
+        {price: 1.59, bidId: '123456789123456789', exchangeRate: 1.0, expectation: 'MTIzNDU2Nzg5MTIzNDU2N8y5Dxn0eBHQELptyg'},
         // long price after applying exchange rate: 12.03 * 0.32 = 3.8495999999999997 (use 3.8496)
-        { price: 12.03, bidId: '123456789123456789', exchangeRate: 0.32, expectation: 'MTIzNDU2Nzg5MTIzNDU2N865AhTNThHQOG035A' },
+        {price: 12.03, bidId: '123456789123456789', exchangeRate: 0.32, expectation: 'MTIzNDU2Nzg5MTIzNDU2N865AhTNThHQOG035A'},
         // long price after applying exchange rate: 22.23 * 0.26 = 5.779800000000001 (use 5.7798)
-        { price: 22.23, bidId: '123456789123456789', exchangeRate: 0.26, expectation: 'MTIzNDU2Nzg5MTIzNDU2N8i5DRfNQBHQ4_a0lA' },
+        {price: 22.23, bidId: '123456789123456789', exchangeRate: 0.26, expectation: 'MTIzNDU2Nzg5MTIzNDU2N8i5DRfNQBHQ4_a0lA'},
         // somehow empty string for price
-        { price: '', bidId: '123456789123456789', exchangeRate: 1.0, expectation: 'MTIzNDU2Nzg5MTIzNDU2N_2XOiD0eBHQUWJCcw' },
-        // handle zero
-        { price: 0, bidId: '123456789123456789', exchangeRate: 1.0, expectation: 'MTIzNDU2Nzg5MTIzNDU2N82XOiD0eBHQdRlVNg' }
-      ];
+        {price: '', bidId: '123456789123456789', exchangeRate: 1.0, expectation: 'MTIzNDU2Nzg5MTIzNDU2N_2XOiD0eBHQUWJCcw'}, // handle zero
+        {price: 0, bidId: '123456789123456789', exchangeRate: 1.0, expectation: 'MTIzNDU2Nzg5MTIzNDU2N82XOiD0eBHQdRlVNg'}];
       externalEncTests.forEach(test => {
-        it(`should replace \${AUCTION_PRICE:ENC} macro with ${test.expectation} given auction price ${test.price} and exchange rate ${test.exchangeRate}`, () => {
-          const bidderResponse = buildBidderResponse();
+        it(`should replace \${AUCTION_PRICE:ENC} macro with ${test.expectation} given auction price ${test.price} and exchange rate ${test.exchangeRate}`,
+          () => {
+            const bidderResponse = buildBidderResponse();
 
-          const responseBid = bidderResponse.bids[0];
-          responseBid.exchangeRate = test.exchangeRate;
-          responseBid.ad = '<img src=\'tracker.com?p=${AUCTION_PRICE:ENC}></img>';
-          responseBid.bidId = test.bidId;
+            const responseBid = bidderResponse.bids[0];
+            responseBid.exchangeRate = test.exchangeRate;
+            responseBid.ad = '<img src=\'tracker.com?p=${AUCTION_PRICE:ENC}></img>';
+            responseBid.bidId = test.bidId;
 
-          const result = spec.interpretResponse({body: bidderResponse});
+            const result = spec.interpretResponse({body: bidderResponse});
 
-          const bid = result[0];
-          // Prebid will do this
-          bid.adId = test.bidId;
+            const bid = result[0];
+            // Prebid will do this
+            bid.adId = test.bidId;
 
-          const ad = bid.generateAd({auctionPrice: test.price});
+            const ad = bid.generateAd({auctionPrice: test.price});
 
-          const rx = /<img src='tracker.com\?p=(.*)><\/img>/g;
-          const encryptedPrice = rx.exec(ad);
-          assert.equal(encryptedPrice[1], test.expectation);
-        });
+            const rx = /<img src='tracker.com\?p=(.*)><\/img>/g;
+            const encryptedPrice = rx.exec(ad);
+            assert.equal(encryptedPrice[1], test.expectation);
+          });
       });
 
-      const internalEncTests = [
-        // full price text
+      const internalEncTests = [// full price text
         {price: '1.570000', bidId: '123456789123456789', exchangeRate: 1.0, expectation: 'MTIzNDU2Nzg5MTIzNDU2Ny0i6OIZLp-4uQ97nA'},
         // ignore exchange rate
         {price: '1.570000', bidId: '123456789123456789', exchangeRate: 0.5, expectation: 'MTIzNDU2Nzg5MTIzNDU2Ny0i6OIZLp-4uQ97nA'},
@@ -670,26 +672,27 @@ describe('stroeerCore bid adapter', function () {
         // not all combos required. Already tested on other macro (white box testing approach)
       ];
       internalEncTests.forEach(test => {
-        it(`should replace \${SSP_AUCTION_PRICE:ENC} macro with ${test.expectation} given auction price ${test.price} with exchange rate ${test.exchangeRate} ignored`, () => {
-          const bidderResponse = buildBidderResponse();
+        it(`should replace \${SSP_AUCTION_PRICE:ENC} macro with ${test.expectation} given auction price ${test.price} with exchange rate ${test.exchangeRate} ignored`,
+          () => {
+            const bidderResponse = buildBidderResponse();
 
-          const responseBid = bidderResponse.bids[0];
-          responseBid.exchangeRate = test.exchangeRate;
-          responseBid.ad = '<img src=\'tracker.com?p=${SSP_AUCTION_PRICE:ENC}></img>';
-          responseBid.bidId = test.bidId;
+            const responseBid = bidderResponse.bids[0];
+            responseBid.exchangeRate = test.exchangeRate;
+            responseBid.ad = '<img src=\'tracker.com?p=${SSP_AUCTION_PRICE:ENC}></img>';
+            responseBid.bidId = test.bidId;
 
-          const result = spec.interpretResponse({body: bidderResponse});
+            const result = spec.interpretResponse({body: bidderResponse});
 
-          const bid = result[0];
-          // Prebid will do this
-          bid.adId = test.bidId;
+            const bid = result[0];
+            // Prebid will do this
+            bid.adId = test.bidId;
 
-          const ad = bid.generateAd({auctionPrice: test.price});
+            const ad = bid.generateAd({auctionPrice: test.price});
 
-          const rx = /<img src='tracker.com\?p=(.*)><\/img>/g;
-          const encryptedPrice = rx.exec(ad);
-          assert.equal(encryptedPrice[1], test.expectation);
-        });
+            const rx = /<img src='tracker.com\?p=(.*)><\/img>/g;
+            const encryptedPrice = rx.exec(ad);
+            assert.equal(encryptedPrice[1], test.expectation);
+          });
       });
 
       it('should replace all occurrences of ${SPP_AUCTION_PRICE:ENC}', () => {
@@ -756,7 +759,8 @@ describe('stroeerCore bid adapter', function () {
         const bidderResponse = buildBidderResponse();
 
         const responseBid = bidderResponse.bids[0];
-        responseBid.ad = '<img src=\'tracker.com?p=${AUCTION_PRICE}&e=${AUCTION_PRICE:ENC}></img>\n<script>var price=${SSP_AUCTION_PRICE:ENC}</script>';
+        responseBid.ad =
+                        '<img src=\'tracker.com?p=${AUCTION_PRICE}&e=${AUCTION_PRICE:ENC}></img>\n<script>var price=${SSP_AUCTION_PRICE:ENC}</script>';
         responseBid.bidId = '123456789123456789';
 
         const result = spec.interpretResponse({body: bidderResponse});
@@ -893,15 +897,10 @@ describe('stroeerCore bid adapter', function () {
 
       describe('price truncation in generateAd', function () {
         const d = new Decrpyter('c2xzRWh5NXhpZmxndTRxYWZjY2NqZGNhTW1uZGZya3Y=');
-        const validPrices = [
-          {price: '1.5700000', expectation: '1.570000'},
-          {price: '12345678', expectation: '12345678'},
-          {price: '1234.56789', expectation: '1234.567'},
-          {price: '12345.1234', expectation: '12345.12'},
-          {price: '123456.10', expectation: '123456.1'},
-          {price: '123456.105', expectation: '123456.1'},
-          {price: '1234567.0052', expectation: '1234567'},
-        ];
+        const validPrices = [{price: '1.5700000', expectation: '1.570000'}, {price: '12345678', expectation: '12345678'},
+          {price: '1234.56789', expectation: '1234.567'}, {price: '12345.1234', expectation: '12345.12'},
+          {price: '123456.10', expectation: '123456.1'}, {price: '123456.105', expectation: '123456.1'},
+          {price: '1234567.0052', expectation: '1234567'}, ];
         validPrices.forEach(test => {
           it(`should safely truncate ${test.price} to ${test.expectation}`, () => {
             const bidderResponse = buildBidderResponse();
@@ -922,12 +921,7 @@ describe('stroeerCore bid adapter', function () {
           });
         });
 
-        const invalidPrices = [
-          { price: '123456789' },
-          { price: '123456.15' },
-          { price: '1234567.0152' },
-          { price: '1234567.1052' },
-        ];
+        const invalidPrices = [ {price: '123456789'}, {price: '123456.15'}, {price: '1234567.0152'}, {price: '1234567.1052'}, ];
         invalidPrices.forEach(test => {
           it(`should error when price is ${test.price}`, function () {
             const bidderResponse = buildBidderResponse();
@@ -953,10 +947,12 @@ describe('stroeerCore bid adapter', function () {
       win = setupSingleWindow(sandbox);
 
       // fake
-      win.document.createElement = function() {
+      win.document.createElement = function () {
         const attrs = {};
         return {
-          setAttribute: (name, value) => { attrs[name] = value },
+          setAttribute: (name, value) => {
+            attrs[name] = value
+          },
           getAttribute: (name) => attrs[name],
           hasAttribute: (name) => attrs[name] !== undefined,
           tagName: 'SCRIPT',
@@ -965,15 +961,15 @@ describe('stroeerCore bid adapter', function () {
     });
 
     function prepForUserConnect(customUserConnectJsUrl = '') {
-      const bidderRequest = buildBidderRequest();
-      assert.equal(bidderRequest.bids[0].params.sid, 'NDA=');
+      const bidReq = buildBidderRequest();
+      assert.equal(bidReq.bids[0].params.sid, 'NDA=');
 
       if (customUserConnectJsUrl) {
-        bidderRequest.bids[0].params.connectjsurl = customUserConnectJsUrl;
+        bidReq.bids[0].params.connectjsurl = customUserConnectJsUrl;
       }
 
       // To get a slot id
-      spec.buildRequests(bidderRequest.bids, bidderRequest);
+      spec.buildRequests(bidReq.bids, bidReq);
 
       sandbox.stub(utils, 'insertElement');
     }
@@ -1044,8 +1040,11 @@ function Decrpyter(encKey) {
 
 function unwebSafeBase64EncodedString(str) {
   let pad = '';
-  if (str.length % 4 === 2) pad += '==';
-  else if (str.length % 4 === 1) pad += '=';
+  if (str.length % 4 === 2) {
+    pad += '==';
+  } else if (str.length % 4 === 1) {
+    pad += '=';
+  }
 
   str = str.replace(/-/g, '+')
     .replace(/_/g, '/');
@@ -1053,7 +1052,7 @@ function unwebSafeBase64EncodedString(str) {
   return str + pad;
 }
 
-Decrpyter.prototype.decrypt = function(str) {
+Decrpyter.prototype.decrypt = function (str) {
   const unencodedStr = atob(unwebSafeBase64EncodedString(str));
   const CIPHERTEXT_SIZE = 8;
 
@@ -1098,7 +1097,9 @@ const chrsz = 8; // bits per input character. 8 - ASCII; 16 - Unicode
  * These are the functions you'll usually want to call
  * They take string arguments and return either hex or base-64 encoded strings
  */
-function str_hmac_sha1(key, data) { return binb2str(core_hmac_sha1(key, data)); }
+function str_hmac_sha1(key, data) {
+  return binb2str(core_hmac_sha1(key, data));
+}
 
 /*
  * Calculate the SHA-1 of an array of big-endian words, and a bit length
@@ -1123,10 +1124,12 @@ function core_sha1(x, len) {
     const olde = e;
 
     for (let j = 0; j < 80; j++) {
-      if (j < 16) w[j] = x[i + j];
-      else w[j] = rol(w[j - 3] ^ w[j - 8] ^ w[j - 14] ^ w[j - 16], 1);
-      const t = safe_add(safe_add(rol(a, 5), sha1_ft(j, b, c, d)),
-        safe_add(safe_add(e, w[j]), sha1_kt(j)));
+      if (j < 16) {
+        w[j] = x[i + j];
+      } else {
+        w[j] = rol(w[j - 3] ^ w[j - 8] ^ w[j - 14] ^ w[j - 16], 1);
+      }
+      const t = safe_add(safe_add(rol(a, 5), sha1_ft(j, b, c, d)), safe_add(safe_add(e, w[j]), sha1_kt(j)));
       e = d;
       d = c;
       c = rol(b, 30);
@@ -1148,9 +1151,15 @@ function core_sha1(x, len) {
  * iteration
  */
 function sha1_ft(t, b, c, d) {
-  if (t < 20) return (b & c) | ((~b) & d);
-  if (t < 40) return b ^ c ^ d;
-  if (t < 60) return (b & c) | (b & d) | (c & d);
+  if (t < 20) {
+    return (b & c) | ((~b) & d);
+  }
+  if (t < 40) {
+    return b ^ c ^ d;
+  }
+  if (t < 60) {
+    return (b & c) | (b & d) | (c & d);
+  }
   return b ^ c ^ d;
 }
 
@@ -1158,8 +1167,7 @@ function sha1_ft(t, b, c, d) {
  * Determine the appropriate additive constant for the current iteration
  */
 function sha1_kt(t) {
-  return (t < 20) ? 1518500249 : (t < 40) ? 1859775393
-    : (t < 60) ? -1894007588 : -899497514;
+  return (t < 20) ? 1518500249 : (t < 40) ? 1859775393 : (t < 60) ? -1894007588 : -899497514;
 }
 
 /*
@@ -1167,7 +1175,9 @@ function sha1_kt(t) {
  */
 function core_hmac_sha1(key, data) {
   let bkey = str2binb(key);
-  if (bkey.length > 16) bkey = core_sha1(bkey, key.length * chrsz);
+  if (bkey.length > 16) {
+    bkey = core_sha1(bkey, key.length * chrsz);
+  }
 
   const ipad = Array(16);
   const opad = Array(16);
