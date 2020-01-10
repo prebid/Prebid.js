@@ -102,7 +102,7 @@ export const sharethroughAdapterSpec = {
   },
 
   getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent) => {
-    const syncParams = (uspConsent) ? `&us_privacy=${uspConsent}` : '';
+    const syncParams = uspConsent ? `&us_privacy=${uspConsent}` : '';
     const syncs = [];
     const shouldCookieSync = syncOptions.pixelEnabled &&
       serverResponses.length > 0 &&
