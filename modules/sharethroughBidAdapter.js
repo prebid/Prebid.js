@@ -42,7 +42,7 @@ export const sharethroughAdapterSpec = {
       }
 
       if (bidderRequest && bidderRequest.uspConsent) {
-        payload.us_privacy = bidderRequest.uspConsent
+        query.us_privacy = bidderRequest.uspConsent
       }
 
       if (bidRequest.userId && bidRequest.userId.tdid) {

@@ -270,7 +270,7 @@ describe('sharethrough adapter spec', function () {
     });
 
     it('should add ccpa parameter if uspConsent is present', function () {
-      const uspConsent = "1YNN";
+      const uspConsent = '1YNN';
       const bidderRequest = { uspConsent: uspConsent };
       const bidRequest = spec.buildRequests(bidRequests, bidderRequest)[0];
       expect(bidRequest.data.us_privacy).to.eq(uspConsent);
