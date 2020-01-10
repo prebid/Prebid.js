@@ -88,7 +88,6 @@ export const spec = {
     for (let i = 0; i < serverResponse.length; i++) {
       let resItem = serverResponse[i];
       if (isBidResponseValid(resItem)) {
-        delete resItem.mediaType;
         response.push(resItem);
       }
     }
