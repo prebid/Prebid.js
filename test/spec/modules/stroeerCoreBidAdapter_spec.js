@@ -216,7 +216,7 @@ describe('stroeerCore bid adapter', function () {
     return {topWin, midWin, win};
   }
 
-  describe.only('slot location uses SDG API if available', () => {
+  describe('slot location uses SDG API if available', () => {
     let win;
     let queriedUnitCodes = [];
     beforeEach(() => {
