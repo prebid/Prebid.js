@@ -2,12 +2,19 @@ const { registerBidder } = require('../src/adapters/bidderFactory');
 const BIDDER_CODE = 'proxistore';
 const PROXISTORE_VENDOR_ID = 418;
 
+function _mapSizes(sizes) {
+  return sizes
+    .flatMap(array2d => array2d
+      .map(array1d => { return { width: array1d[0], height: array1d[1] } })
+    );
+}
+
 function _createServerRequest(bidRequests, bidderRequest) {
   const payload = {
     bidId: bidRequests.map(req => req.bidId)[0],
     auctionId: bidRequests[0].auctionId,
     transactionId: bidRequests[0].transactionId,
-    sizes: bidRequests.map(x => x.sizes).map(x => { return {'width': x[0], 'height': x[1]} }),
+    sizes: _mapSizes(bidRequests.map(x => x.sizes)),
     website: bidRequests[0].params.website,
     language: bidRequests[0].params.language,
     gdpr: {
@@ -28,8 +35,8 @@ function _createServerRequest(bidRequests, bidderRequest) {
       payload.gdpr.consentString = bidderRequest.gdprConsent.consentString;
     }
     if (bidderRequest.gdprConsent.vendorData && bidderRequest.gdprConsent.vendorData.vendorConsents &&
-      typeof bidderRequest.gdprConsent.vendorData.vendorConsents[ PROXISTORE_VENDOR_ID.toString(10) ] !== 'undefined') {
-      payload.gdpr.consentGiven = !!(bidderRequest.gdprConsent.vendorData.vendorConsents[ PROXISTORE_VENDOR_ID.toString(10) ]);
+      typeof bidderRequest.gdprConsent.vendorData.vendorConsents[PROXISTORE_VENDOR_ID.toString(10)] !== 'undefined') {
+      payload.gdpr.consentGiven = !!(bidderRequest.gdprConsent.vendorData.vendorConsents[PROXISTORE_VENDOR_ID.toString(10)]);
     }
   }
 
