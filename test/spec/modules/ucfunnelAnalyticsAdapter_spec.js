@@ -14,8 +14,6 @@ const auctionId = 'b0b39610-b941-4659-a87c-de9f62d3e13e';
 
 describe('ucfunnel Prebid AnalyticsAdapter Testing', function () {
   describe('event tracking and message cache manager', function () {
-    let xhr;
-
     beforeEach(function () {
       const configOptions = {
         pbuid: pbuid,
@@ -27,12 +25,10 @@ describe('ucfunnel Prebid AnalyticsAdapter Testing', function () {
         provider: 'ucfunnelAnalytics',
         options: configOptions
       });
-      xhr = sinon.useFakeXMLHttpRequest();
     });
 
     afterEach(function () {
       ucfunnelAnalyticsAdapter.disableAnalytics();
-      xhr.restore();
     });
 
     describe('#parseBidderCode()', function() {

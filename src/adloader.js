@@ -6,7 +6,12 @@ const _requestCache = {};
 const _approvedLoadExternalJSList = [
   'criteo',
   'outstream',
+<<<<<<< HEAD
   'adagio'
+=======
+  'adagio',
+  'browsi'
+>>>>>>> upstream/master
 ]
 
 /**
@@ -14,7 +19,11 @@ const _approvedLoadExternalJSList = [
  * Each unique URL will be loaded at most 1 time.
  * @param {string} url the url to load
  * @param {string} moduleCode bidderCode or module code of the module requesting this resource
+<<<<<<< HEAD
  * @param {function} callback callback function to be called after the script is loaded.
+=======
+ * @param {function} [callback] callback function to be called after the script is loaded.
+>>>>>>> upstream/master
  */
 export function loadExternalScript(url, moduleCode, callback) {
   if (!moduleCode || !url) {
@@ -36,10 +45,18 @@ export function loadExternalScript(url, moduleCode, callback) {
         _requestCache[url].callbacks.push(callback);
       }
     }
+<<<<<<< HEAD
     return;
   }
   _requestCache[url] = {
     loaded: false,
+=======
+    return _requestCache[url].tag;
+  }
+  _requestCache[url] = {
+    loaded: false,
+    tag: null,
+>>>>>>> upstream/master
     callbacks: []
   };
   if (callback && typeof callback === 'function') {
@@ -47,7 +64,11 @@ export function loadExternalScript(url, moduleCode, callback) {
   }
 
   utils.logWarn(`module ${moduleCode} is loading external JavaScript`);
+<<<<<<< HEAD
   requestResource(url, function () {
+=======
+  return requestResource(url, function () {
+>>>>>>> upstream/master
     _requestCache[url].loaded = true;
     try {
       for (let i = 0; i < _requestCache[url].callbacks.length; i++) {
@@ -57,15 +78,18 @@ export function loadExternalScript(url, moduleCode, callback) {
       utils.logError('Error executing callback', 'adloader.js:loadExternalScript', e);
     }
   });
+<<<<<<< HEAD
 };
+=======
+>>>>>>> upstream/master
 
-function requestResource(tagSrc, callback) {
-  var jptScript = document.createElement('script');
-  jptScript.type = 'text/javascript';
-  jptScript.async = true;
+  function requestResource(tagSrc, callback) {
+    var jptScript = document.createElement('script');
+    jptScript.type = 'text/javascript';
+    jptScript.async = true;
 
-  // Execute a callback if necessary
-  if (callback && typeof callback === 'function') {
+    _requestCache[url].tag = jptScript;
+
     if (jptScript.readyState) {
       jptScript.onreadystatechange = function () {
         if (jptScript.readyState === 'loaded' || jptScript.readyState === 'complete') {
@@ -78,10 +102,18 @@ function requestResource(tagSrc, callback) {
         callback();
       };
     }
-  }
 
-  jptScript.src = tagSrc;
+    jptScript.src = tagSrc;
 
+    // add the new script tag to the page
+    utils.insertElement(jptScript);
+
+<<<<<<< HEAD
   // add the new script tag to the page
   utils.insertElement(jptScript);
 }
+=======
+    return jptScript;
+  }
+};
+>>>>>>> upstream/master

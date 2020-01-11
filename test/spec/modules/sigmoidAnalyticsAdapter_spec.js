@@ -5,13 +5,8 @@ let adapterManager = require('src/adapterManager').default;
 let constants = require('src/constants.json');
 
 describe('sigmoid Prebid Analytic', function () {
-  let xhr;
-  before(function () {
-    xhr = sinon.useFakeXMLHttpRequest();
-  })
   after(function () {
     sigmoidAnalytic.disableAnalytics();
-    xhr.restore();
   });
 
   describe('enableAnalytics', function () {

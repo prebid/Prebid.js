@@ -2,7 +2,12 @@ import * as utils from '../src/utils';
 import { registerBidder } from '../src/adapters/bidderFactory';
 import { BANNER } from '../src/mediaTypes';
 const BIDDER_CODE = 'nobid';
-window.nobidVersion = '1.1.0';
+window.nobidVersion = '1.2.0';
+window.nobid = window.nobid || {};
+window.nobid.bidResponses = window.nobid.bidResponses || {};
+window.nobid.timeoutTotal = 0;
+window.nobid.bidWonTotal = 0;
+window.nobid.refreshCount = 0;
 function log(msg, obj) {
   utils.logInfo('-NoBid- ' + msg, obj)
 }
@@ -36,6 +41,13 @@ function nobidBuildRequests(bids, bidderRequest) {
       }
       return gdprConsent;
     }
+    var uspConsent = function(bidderRequest) {
+      var uspConsent = '';
+      if (bidderRequest && bidderRequest.uspConsent) {
+        uspConsent = bidderRequest.uspConsent;
+      }
+      return uspConsent;
+    }
     var topLocation = function(bidderRequest) {
       var ret = '';
       if (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer) {
@@ -58,7 +70,9 @@ function nobidBuildRequests(bids, bidderRequest) {
     };
     var clientDim = function() {
       try {
-        return `${screen.width}x${screen.height}`;
+        var width = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
+        var height = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
+        return `${width}x${height}`;
       } catch (e) {
         console.error(e);
       }
@@ -75,6 +89,7 @@ function nobidBuildRequests(bids, bidderRequest) {
     state['lang'] = (navigator.languages && navigator.languages[0]) || navigator.language || navigator.userLanguage;
     state['ref'] = document.referrer;
     state['gdpr'] = gdprConsent(bidderRequest);
+    state['usp'] = uspConsent(bidderRequest);
     return state;
   }
   function newAdunit(adunitObject, adunits) {
@@ -128,6 +143,9 @@ function nobidBuildRequests(bids, bidderRequest) {
     adunits.push(a);
     return adunits;
   }
+  if (typeof window.nobid.refreshLimit !== 'undefined') {
+    if (window.nobid.refreshLimit < window.nobid.refreshCount) return false;
+  }
   /* DISCOVER SLOTS */
   var divids = [];
   var siteId = 0;
@@ -153,17 +171,21 @@ function nobidBuildRequests(bids, bidderRequest) {
 function nobidInterpretResponse(response, bidRequest) {
   var findBid = function(divid, bids) {
     for (var i = 0; i < bids.length; i++) {
-      if (bids[i].adUnitCode === divid) {
+      if (bids[i].adUnitCode == divid) {
         return bids[i];
       }
     }
     return false;
   }
+  var setRefreshLimit = function(response) {
+    if (response && typeof response.rlimit !== 'undefined') window.nobid.refreshLimit = response.rlimit;
+  }
+  setRefreshLimit(response);
   var bidResponses = [];
   for (var i = 0; response.bids && i < response.bids.length; i++) {
     var bid = response.bids[i];
     if (bid.bdrid < 100 || !bidRequest || !bidRequest.bidderRequest || !bidRequest.bidderRequest.bids) continue;
-    nobid.bidResponses['' + bid.id] = bid;
+    window.nobid.bidResponses['' + bid.id] = bid;
     var reqBid = findBid(bid.divid, bidRequest.bidderRequest.bids);
     if (!reqBid) continue;
     const bidResponse = {
@@ -183,13 +205,9 @@ function nobidInterpretResponse(response, bidRequest) {
   }
   return bidResponses;
 };
-window.nobid = window.nobid || {};
-nobid.bidResponses = nobid.bidResponses || {};
-nobid.timeoutTotal = 0;
-nobid.bidWonTotal = 0;
-nobid.renderTag = function(doc, id, win) {
+window.nobid.renderTag = function(doc, id, win) {
   log('nobid.renderTag()', id);
-  var bid = nobid.bidResponses['' + id];
+  var bid = window.nobid.bidResponses['' + id];
   if (bid && bid.adm2) {
     log('nobid.renderTag() found tag', id);
     var markup = bid.adm2;
@@ -238,6 +256,7 @@ export const spec = {
     }
     const payload = nobidBuildRequests(validBidRequests, bidderRequest);
     if (!payload) return;
+    window.nobid.refreshCount++;
     const payloadString = JSON.stringify(payload).replace(/'|&|#/g, '')
     const endpoint = buildEndpoint();
     return {
@@ -266,7 +285,7 @@ export const spec = {
      * @param {ServerResponse[]} serverResponses List of server's responses.
      * @return {UserSync[]} The user syncs which should be dropped.
      */
-  getUserSyncs: function(syncOptions, serverResponses, gdprConsent) {
+  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, usPrivacy) {
     if (syncOptions.iframeEnabled) {
       let params = '';
       if (gdprConsent && typeof gdprConsent.consentString === 'string') {
@@ -277,9 +296,14 @@ export const spec = {
           params += `?gdpr_consent=${gdprConsent.consentString}`;
         }
       }
+      if (usPrivacy) {
+        if (params.length > 0) params += '&';
+        else params += '?';
+        params += 'usp_consent=' + usPrivacy;
+      }
       return [{
         type: 'iframe',
-        url: 'https://s3.amazonaws.com/nobid-public/sync.html' + params
+        url: 'https://public.servenobid.com/sync.html' + params
       }];
     } else {
       utils.logWarn('-NoBid- Please enable iframe based user sync.', syncOptions);
@@ -292,14 +316,14 @@ export const spec = {
      * @param {data} Containing timeout specific data
      */
   onTimeout: function(data) {
-    nobid.timeoutTotal++;
-    log('Timeout total: ' + nobid.timeoutTotal, data);
-    return nobid.timeoutTotal;
+    window.nobid.timeoutTotal++;
+    log('Timeout total: ' + window.nobid.timeoutTotal, data);
+    return window.nobid.timeoutTotal;
   },
   onBidWon: function(data) {
-    nobid.bidWonTotal++;
-    log('BidWon total: ' + nobid.bidWonTotal, data);
-    return nobid.bidWonTotal;
+    window.nobid.bidWonTotal++;
+    log('BidWon total: ' + window.nobid.bidWonTotal, data);
+    return window.nobid.bidWonTotal;
   }
 }
 registerBidder(spec);

@@ -1,8 +1,10 @@
 
 import * as adloader from 'src/adloader';
 
-let sandbox;
+// this export is for adloader's tests against actual implementation
+export let loadExternalScript = adloader.loadExternalScript;
 
+<<<<<<< HEAD
 export let loadExternalScript;
 export let loadExternalScriptStub;
 
@@ -15,7 +17,22 @@ beforeEach(function() {
     }
   });
 });
+=======
+let stub = createStub();
 
-afterEach(function() {
-  sandbox.restore();
+function createStub() {
+  return sinon.stub(adloader, 'loadExternalScript').callsFake((...args) => {
+    if (typeof args[2] === 'function') {
+      args[2]();
+    } else if (typeof args[3] === 'function') {
+      args[3]();
+    }
+    return document.createElement('script');
+  });
+}
+>>>>>>> upstream/master
+
+beforeEach(function() {
+  stub.restore();
+  stub = createStub();
 });

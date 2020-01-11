@@ -243,7 +243,10 @@ function getRequestData(bid, consentData, bidRequest) {
         }
       };
     }
+<<<<<<< HEAD
     // CCPA support
+=======
+>>>>>>> upstream/master
     if (bidRequest && bidRequest.uspConsent) {
       bidData.regs.ext.us_privacy = bidRequest.uspConsent
     }
@@ -265,6 +268,7 @@ function newRenderer(bidRequest, bid) {
     bidRequest.renderer.url = 'https://cdn.vidible.tv/prod/hb-outstream-renderer/renderer.js';
     bidRequest.renderer.render = function(bid) {
       setTimeout(function () {
+        // eslint-disable-next-line no-undef
         o2PlayerRender(bid);
       }, 700)
     };
