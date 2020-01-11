@@ -6,10 +6,7 @@ import { newBidder } from 'src/adapters/bidderFactory';
 
 describe('Adyoulike Adapter', function () {
   const canonicalUrl = 'https://canonical.url/?t=%26';
-<<<<<<< HEAD
-=======
   const referrerUrl = 'http://referrer.url/?param=value';
->>>>>>> upstream/master
   const defaultDC = 'hb-api';
   const consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
   const bidderRequest = {

@@ -1398,8 +1398,6 @@ describe('S2S Adapter', function () {
       });
     });
 
-<<<<<<< HEAD
-=======
     it('should set the bidResponse currency to whats in the PBS response', function() {
       server.respondWith(JSON.stringify(RESPONSE_OPENRTB));
       adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
@@ -1420,7 +1418,6 @@ describe('S2S Adapter', function () {
       expect(pbjsResponse).to.have.property('currency', 'USD');
     });
 
->>>>>>> upstream/master
     it('should pass through default adserverTargeting if present in bidObject for banner request', function () {
       const cacheResponse = utils.deepClone(RESPONSE_OPENRTB);
 

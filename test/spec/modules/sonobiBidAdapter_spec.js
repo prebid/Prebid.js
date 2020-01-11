@@ -300,12 +300,8 @@ describe('SonobiBidAdapter', function () {
         'reachedTop': true,
         'referer': 'https://example.com',
         'stack': ['https://example.com']
-<<<<<<< HEAD
-      }
-=======
       },
       uspConsent: 'someCCPAString'
->>>>>>> upstream/master
     };
     it('should include the digitrust id and keyv', () => {
       window.DigiTrust = {

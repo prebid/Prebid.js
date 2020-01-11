@@ -191,14 +191,9 @@ describe('openx analytics adapter', function() {
 
       expect(server.requests.length).to.equal(1);
 
-<<<<<<< HEAD
-      const endpoint = requests[0].url.split('?')[0];
-      expect(endpoint).to.equal('https://ads.openx.net/w/1.0/pban');
-=======
       const endpoint = server.requests[0].url.split('?')[0];
       // note IE11 returns the default secure port, so we look for this alternate value as well in these tests
       expect(endpoint).to.be.oneOf(['https://ads.openx.net/w/1.0/pban', 'https://ads.openx.net:443/w/1.0/pban']);
->>>>>>> upstream/master
     });
 
     describe('hb.ct, hb.rid, dddid, hb.asiid, hb.pubid', function() {

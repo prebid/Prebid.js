@@ -120,13 +120,7 @@ function MarsmediaAdapter() {
     });
     if (format.length) {
       return {
-<<<<<<< HEAD
-        method: 'POST',
-        url: 'https://bid306.rtbsrv.com/bidder/?bid=3mhdom',
-        data: JSON.stringify(payload)
-=======
         'format': format
->>>>>>> upstream/master
       };
     }
 

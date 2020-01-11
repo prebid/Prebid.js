@@ -40,11 +40,7 @@ const bidRequests = [
 const prebidRequests = [
   {
     method: 'GET',
-<<<<<<< HEAD
-    url: 'https://btlr.sharethrough.com' + '/WYu2BXv1/v1',
-=======
     url: 'https://btlr.sharethrough.com/WYu2BXv1/v1',
->>>>>>> upstream/master
     data: {
       bidId: 'bidId',
       placement_key: 'pKey'
@@ -56,11 +52,7 @@ const prebidRequests = [
   },
   {
     method: 'GET',
-<<<<<<< HEAD
-    url: 'https://btlr.sharethrough.com' + '/WYu2BXv1/v1',
-=======
     url: 'https://btlr.sharethrough.com/WYu2BXv1/v1',
->>>>>>> upstream/master
     data: {
       bidId: 'bidId',
       placement_key: 'pKey'
@@ -72,11 +64,7 @@ const prebidRequests = [
   },
   {
     method: 'GET',
-<<<<<<< HEAD
-    url: 'https://btlr.sharethrough.com' + '/WYu2BXv1/v1',
-=======
     url: 'https://btlr.sharethrough.com/WYu2BXv1/v1',
->>>>>>> upstream/master
     data: {
       bidId: 'bidId',
       placement_key: 'pKey'
@@ -89,11 +77,7 @@ const prebidRequests = [
   },
   {
     method: 'GET',
-<<<<<<< HEAD
-    url: 'https://btlr.sharethrough.com' + '/WYu2BXv1/v1',
-=======
     url: 'https://btlr.sharethrough.com/WYu2BXv1/v1',
->>>>>>> upstream/master
     data: {
       bidId: 'bidId',
       placement_key: 'pKey'
@@ -105,11 +89,7 @@ const prebidRequests = [
   },
   {
     method: 'GET',
-<<<<<<< HEAD
-    url: 'https://btlr.sharethrough.com' + '/WYu2BXv1/v1',
-=======
     url: 'https://btlr.sharethrough.com/WYu2BXv1/v1',
->>>>>>> upstream/master
     data: {
       bidId: 'bidId',
       placement_key: 'pKey'
@@ -237,15 +217,8 @@ describe('sharethrough adapter spec', function () {
     it('should return an array of requests', function () {
       const builtBidRequests = spec.buildRequests(bidRequests);
 
-<<<<<<< HEAD
-      expect(builtBidRequests[0].url).to.eq(
-        'https://btlr.sharethrough.com/WYu2BXv1/v1');
-      expect(builtBidRequests[1].url).to.eq(
-        'https://btlr.sharethrough.com/WYu2BXv1/v1');
-=======
       expect(builtBidRequests[0].url).to.eq('https://btlr.sharethrough.com/WYu2BXv1/v1');
       expect(builtBidRequests[1].url).to.eq('https://btlr.sharethrough.com/WYu2BXv1/v1');
->>>>>>> upstream/master
       expect(builtBidRequests[0].method).to.eq('GET');
     });
 
