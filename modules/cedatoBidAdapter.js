@@ -4,13 +4,7 @@ import { BANNER, VIDEO } from '../src/mediaTypes';
 
 const BIDDER_CODE = 'cedato';
 const BID_URL = 'https://h.cedatoplayer.com/hb';
-<<<<<<< HEAD
-const SYNC_URL = 'https://h.cedatoplayer.com/hb_usync?uid={UUID}';
-const COOKIE_NAME = 'hb-cedato-id';
-const UUID_LEN = 36;
-=======
 const SYNC_URL = 'https://h.cedatoplayer.com/hb_usync';
->>>>>>> upstream/master
 const TTL = 10000;
 const CURRENCY = 'USD';
 const FIRST_PRICE = 1;
