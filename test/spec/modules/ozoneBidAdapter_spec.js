@@ -7,7 +7,9 @@ import * as utils from '../../../src/utils';
 const OZONEURI = 'https://elb.the-ozone-project.com/openrtb2/auction';
 const BIDDER_CODE = 'ozone';
 /*
+
 NOTE - use firefox console to deep copy the objects to use here
+
  */
 var validBidRequests = [
   {
