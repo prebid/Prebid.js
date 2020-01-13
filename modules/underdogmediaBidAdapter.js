@@ -47,6 +47,10 @@ export const spec = {
       }
     }
 
+    if (bidderRequest.uspConsent) {
+      data.uspConsent = bidderRequest.uspConsent;
+    }
+
     if (!data.gdprApplies || data.consentGiven) {
       return {
         method: 'GET',

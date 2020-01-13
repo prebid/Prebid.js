@@ -31,7 +31,7 @@ describe('orbidderBidAdapter', () => {
     return spec.buildRequests(buildRequest, {
       ...bidderRequest || {},
       refererInfo: {
-        referer: 'http://localhost:9876/'
+        referer: 'https://localhost:9876/'
       }
     })[0];
   };
@@ -99,7 +99,7 @@ describe('orbidderBidAdapter', () => {
     it('sends correct bid parameters', () => {
       // we add one, because we add referer information from bidderRequest object
       expect(Object.keys(request.data).length).to.equal(Object.keys(defaultBidRequest).length + 1);
-      expect(request.data.pageUrl).to.equal('http://localhost:9876/');
+      expect(request.data.pageUrl).to.equal('https://localhost:9876/');
       // expect(request.data.referrer).to.equal('');
       Object.keys(defaultBidRequest).forEach((key) => {
         expect(defaultBidRequest[key]).to.equal(request.data[key]);

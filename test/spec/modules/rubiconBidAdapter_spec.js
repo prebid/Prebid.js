@@ -550,12 +550,12 @@ describe('the rubicon adapter', function () {
 
         it('should add referer info to request data', function () {
           let refererInfo = {
-            referer: 'http://www.prebid.org',
+            referer: 'https://www.prebid.org',
             reachedTop: true,
             numIframes: 1,
             stack: [
-              'http://www.prebid.org/page.html',
-              'http://www.prebid.org/iframe1.html',
+              'https://www.prebid.org/page.html',
+              'https://www.prebid.org/iframe1.html',
             ]
           };
 
@@ -564,7 +564,7 @@ describe('the rubicon adapter', function () {
           let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
 
           expect(parseQuery(request.data).rf).to.exist;
-          expect(parseQuery(request.data).rf).to.equal('http://www.prebid.org');
+          expect(parseQuery(request.data).rf).to.equal('https://www.prebid.org');
         });
 
         it('page_url should use params.referrer, config.getConfig("pageUrl"), bidderRequest.refererInfo in that order', function () {
@@ -572,20 +572,20 @@ describe('the rubicon adapter', function () {
           expect(parseQuery(request.data).rf).to.equal('localhost');
 
           delete bidderRequest.bids[0].params.referrer;
-          let refererInfo = { referer: 'http://www.prebid.org' };
+          let refererInfo = { referer: 'https://www.prebid.org' };
           bidderRequest = Object.assign({refererInfo}, bidderRequest);
           [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
-          expect(parseQuery(request.data).rf).to.equal('http://www.prebid.org');
+          expect(parseQuery(request.data).rf).to.equal('https://www.prebid.org');
 
           let origGetConfig = config.getConfig;
           sandbox.stub(config, 'getConfig').callsFake(function (key) {
             if (key === 'pageUrl') {
-              return 'http://www.rubiconproject.com';
+              return 'https://www.rubiconproject.com';
             }
             return origGetConfig.apply(config, arguments);
           });
           [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
-          expect(parseQuery(request.data).rf).to.equal('http://www.rubiconproject.com');
+          expect(parseQuery(request.data).rf).to.equal('https://www.rubiconproject.com');
 
           bidderRequest.bids[0].params.secure = true;
           [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
@@ -2455,7 +2455,7 @@ describe('the rubicon adapter', function () {
 
   describe('get price granularity', function() {
     it('should return correct buckets for all price granularity values', function() {
-      const CUSTOM_PRICE_BUCKET_ITEM = {min: 0, max: 5, increment: 0.5};
+      const CUSTOM_PRICE_BUCKET_ITEM = {max: 5, increment: 0.5};
 
       const mockConfig = {
         priceGranularity: undefined,

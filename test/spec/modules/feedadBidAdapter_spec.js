@@ -1,7 +1,7 @@
 import {expect} from 'chai';
 import {spec} from 'modules/feedadBidAdapter';
 import {BANNER, NATIVE, VIDEO} from '../../../src/mediaTypes';
-import * as sinon from 'sinon';
+import {server} from 'test/mocks/xhr';
 
 const CODE = 'feedad';
 
@@ -382,28 +382,15 @@ describe('FeedAdAdapter', function () {
     cases.forEach(([name, data, eventKlass]) => {
       let subject = spec[name];
       describe(name + ' handler', function () {
-        let xhr;
-        let requests;
-
-        beforeEach(function () {
-          xhr = sinon.useFakeXMLHttpRequest();
-          requests = [];
-          xhr.onCreate = xhr => requests.push(xhr);
-        });
-
-        afterEach(function () {
-          xhr.restore();
-        });
-
         it('should do nothing on empty data', function () {
           subject(undefined);
           subject(null);
-          expect(requests.length).to.equal(0);
+          expect(server.requests.length).to.equal(0);
         });
 
         it('should do nothing when bid metadata is not set', function () {
           subject(data);
-          expect(requests.length).to.equal(0);
+          expect(server.requests.length).to.equal(0);
         });
 
         it('should send tracking params when correct metadata was set', function () {
@@ -420,8 +407,8 @@ describe('FeedAdAdapter', function () {
             sdk_version: '1.0.0'
           };
           subject(data);
-          expect(requests.length).to.equal(1);
-          let call = requests[0];
+          expect(server.requests.length).to.equal(1);
+          let call = server.requests[0];
           expect(call.url).to.equal('https://api.feedad.com/1/prebid/web/events');
           expect(JSON.parse(call.requestBody)).to.deep.equal(expectedData);
           expect(call.method).to.equal('POST');

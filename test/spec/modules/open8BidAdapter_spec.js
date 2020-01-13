@@ -1,7 +1,7 @@
 import { spec } from 'modules/open8BidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
 
-const ENDPOINT = '//as.vt.open8.com/v1/control/prebid';
+const ENDPOINT = 'https://as.vt.open8.com/v1/control/prebid';
 
 describe('Open8Adapter', function() {
   const adapter = newBidder(spec);
@@ -58,9 +58,9 @@ describe('Open8Adapter', function() {
       userId: 'userid1234',
       impId: 'impid1234',
       media: 'TEST_MEDIA',
-      nurl: '//example/win',
+      nurl: 'https://example/win',
       isAdReturn: true,
-      syncPixels: ['//example/sync/pixel.gif'],
+      syncPixels: ['https://example/sync/pixel.gif'],
       syncIFs: [],
       ad: {
         bidId: 'TEST_BID_ID',
@@ -73,13 +73,13 @@ describe('Open8Adapter', function() {
         fa: 5678,
         pr: 'pr1234',
         mr: 'mr1234',
-        nurl: '//example/win',
+        nurl: 'https://example/win',
         adType: 2,
         banner: {
           w: 300,
           h: 250,
           adm: '<div></div>',
-          imps: ['//example.com/imp']
+          imps: ['https://example.com/imp']
         }
       }
     };
@@ -89,7 +89,7 @@ describe('Open8Adapter', function() {
       impId: 'impid1234',
       media: 'TEST_MEDIA',
       isAdReturn: true,
-      syncPixels: ['//example/sync/pixel.gif'],
+      syncPixels: ['https://example/sync/pixel.gif'],
       syncIFs: [],
       ad: {
         bidId: 'TEST_BID_ID',
@@ -102,10 +102,10 @@ describe('Open8Adapter', function() {
         fa: 5678,
         pr: 'pr1234',
         mr: 'mr1234',
-        nurl: '//example/win',
+        nurl: 'https://example/win',
         adType: 1,
         video: {
-          purl: '//playerexample.js',
+          purl: 'https://playerexample.js',
           vastXml: '<VAST></VAST>',
           w: 320,
           h: 180
@@ -124,14 +124,14 @@ describe('Open8Adapter', function() {
         'fa': 5678,
         'pr': 'pr1234',
         'mr': 'mr1234',
-        'nurl': '//example/win',
+        'nurl': 'https://example/win',
         'requestId': 'requestid1234',
         'cpm': 1234.56,
         'creativeId': 'creativeid1234',
         'dealId': 'TEST_DEAL_ID',
         'width': 300,
         'height': 250,
-        'ad': "<div></div><img src='//example/sync/pixel.gif' />",
+        'ad': "<div></div><img src='https://example/sync/pixel.gif' />",
         'mediaType': 'banner',
         'currency': 'JPY',
         'ttl': 360,
@@ -154,7 +154,7 @@ describe('Open8Adapter', function() {
         'fa': 5678,
         'pr': 'pr1234',
         'mr': 'mr1234',
-        'nurl': '//example/win',
+        'nurl': 'https://example/win',
         'requestId': 'requestid1234',
         'cpm': 1234.56,
         'creativeId': 'creativeid1234',

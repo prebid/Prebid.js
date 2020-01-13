@@ -1,7 +1,7 @@
 import * as utils from '../src/utils';
 import {registerBidder} from '../src/adapters/bidderFactory';
 
-const PAPYRUS_ENDPOINT = '//prebid.papyrus.global';
+const PAPYRUS_ENDPOINT = 'https://prebid.papyrus.global';
 const PAPYRUS_CODE = 'papyrus';
 
 export const spec = {
