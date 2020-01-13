@@ -9,13 +9,6 @@ function _mapSizes(sizes) {
     );
 }
 
-/**
- * Create server request
- *
- * @param bidRequests - an array of bids
- * @param bidderRequest
- * @return ServerRequest Info describing the request to the server.
- */
 function _createServerRequest(bidRequests, bidderRequest) {
   const payload = {
     bidId: bidRequests.map(req => req.bidId)[0],
