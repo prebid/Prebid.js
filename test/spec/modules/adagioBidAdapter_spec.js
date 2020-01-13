@@ -414,7 +414,16 @@ describe('adagioAdapter', () => {
       const requests = spec.buildRequests([bidRequests[0]], bidderRequest);
       const request = requests[0];
       expect(request.data.adUnits[0].features.print_number).to.equal('2');
-    })
+    });
+
+    it('organizationId param key must be a string', () => {
+      const requests = spec.buildRequests([Object.assign({}, bidRequests[0], {params: {organizationId: 1010}})], bidderRequest);
+      const request = requests[0];
+      expect(request.data.adUnits[0].params).to.exist;
+      expect(request.data.adUnits[0].params.organizationId).to.deep.equal('1010');
+      expect(request.data.adUnits[0].organizationId).to.exist;
+      expect(request.data.adUnits[0].organizationId).to.deep.equal('1010');
+    });
 
     it('GDPR consent is applied', () => {
       const requests = spec.buildRequests(bidRequests, bidderRequest);
