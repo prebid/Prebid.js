@@ -188,6 +188,9 @@ export function requestBidsHook(fn, reqBidsConfigObj) {
  * @param {object} hookConfig contains module related variables (see comment in requestBidsHook function)
  */
 function processUspData(consentObject, hookConfig) {
+  if (consentData === consentObject.usPrivacy) {
+    return exitModule(null, hookConfig);
+  }
   const valid = !!(consentObject && consentObject.usPrivacy);
   if (!valid) {
     uspapiFailed(`UPSAPI returned unexpected value during lookup process.`, hookConfig, consentObject);
@@ -297,7 +300,7 @@ export function setConsentConfig(config) {
 
   if (consentAPI === 'static') {
     if (utils.isPlainObject(config.consentData) && utils.isPlainObject(config.consentData.getUSPData)) {
-      if (config.consentData.getUSPData.uspString) staticConsentData = { usPrivacy: config.consentData.getUSPData.uspString };
+      if (config.consentData.getUSPData.uspData) staticConsentData = { usPrivacy: config.consentData.getUSPData.uspData };
       consentTimeout = 0;
     } else {
       utils.logError(`consentManagement config with cmpApi: 'static' did not specify consentData. No consents will be available to adapters.`);

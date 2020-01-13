@@ -98,7 +98,7 @@ describe('consentManagement', function () {
             timeout: 7500,
             consentData: {
               getUSPData: {
-                uspString: '1YYY'
+                uspData: '1YYY'
               }
             }
           }
@@ -107,7 +107,7 @@ describe('consentManagement', function () {
         setConsentConfig(staticConfig);
         expect(consentAPI).to.be.equal('static');
         expect(consentTimeout).to.be.equal(0); // should always return without a timeout when config is used
-        expect(staticConsentData.usPrivacy).to.be.equal(staticConfig.usp.consentData.getUSPData.uspString);
+        expect(staticConsentData.usPrivacy).to.be.equal(staticConfig.usp.consentData.getUSPData.uspData);
       });
     });
   });
