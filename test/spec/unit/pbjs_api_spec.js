@@ -1142,7 +1142,6 @@ describe('Unit: Prebid Module', function () {
   describe('requestBids', function () {
     let logMessageSpy;
     let makeRequestsStub;
-    let xhr;
     let adUnits;
     let clock;
     let bidsBackHandlerStub = sinon.stub();
@@ -1186,7 +1185,6 @@ describe('Unit: Prebid Module', function () {
       logMessageSpy = sinon.spy(utils, 'logMessage');
       makeRequestsStub = sinon.stub(adapterManager, 'makeBidRequests');
       makeRequestsStub.returns(bidRequests);
-      xhr = sinon.useFakeXMLHttpRequest();
 
       adUnits = [{
         code: 'adUnit-code',
@@ -1215,7 +1213,6 @@ describe('Unit: Prebid Module', function () {
       adapterManager.makeBidRequests.restore();
       auctionModule.newAuction.restore();
       utils.logMessage.restore();
-      xhr.restore();
     });
 
     it('should execute callback after timeout', function () {
@@ -1337,18 +1334,6 @@ describe('Unit: Prebid Module', function () {
   });
 
   describe('requestBids', function () {
-    let xhr;
-    let requests;
-
-    beforeEach(function () {
-      xhr = sinon.useFakeXMLHttpRequest();
-      requests = [];
-      xhr.onCreate = request => requests.push(request);
-    });
-
-    afterEach(function () {
-      xhr.restore();
-    });
     var adUnitsBackup;
     var auctionManagerStub;
     let logMessageSpy;

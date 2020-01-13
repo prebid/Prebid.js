@@ -676,6 +676,12 @@ describe('Mgid bid adapter', function () {
     });
   });
   describe('on bidWon', function () {
+    beforeEach(function() {
+      sinon.stub(utils, 'triggerPixel');
+    });
+    afterEach(function() {
+      utils.triggerPixel.restore();
+    });
     it('should replace nurl and burl for native', function () {
       const burl = 'burl&s=${' + 'AUCTION_PRICE}';
       const nurl = 'nurl&s=${' + 'AUCTION_PRICE}';
