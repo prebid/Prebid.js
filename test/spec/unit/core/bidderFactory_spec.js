@@ -2,10 +2,10 @@ import { newBidder, registerBidder, preloadBidderMappingFile } from 'src/adapter
 import adapterManager from 'src/adapterManager';
 import * as ajax from 'src/ajax';
 import { expect } from 'chai';
-import { STATUS } from 'src/constants';
 import { userSync } from 'src/userSync'
 import * as utils from 'src/utils';
 import { config } from 'src/config';
+import { server } from 'test/mocks/xhr';
 
 const CODE = 'sampleBidder';
 const MOCK_BIDS_REQUEST = {
@@ -792,7 +792,7 @@ describe('preload mapping url hook', function() {
   let adapterManagerStub;
 
   beforeEach(function () {
-    fakeTranslationServer = sinon.fakeServer.create();
+    fakeTranslationServer = server;
     getLocalStorageStub = sinon.stub(utils, 'getDataFromLocalStorage');
     adapterManagerStub = sinon.stub(adapterManager, 'getBidAdapter');
   });
