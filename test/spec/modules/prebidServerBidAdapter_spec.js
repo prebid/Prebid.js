@@ -1354,7 +1354,7 @@ describe('S2S Adapter', function () {
         const bidRequest = utils.deepClone(REQUEST);
         bidRequest.ad_units[0].fpd = {
           context: {
-            pbAdSlot: '/a/b/c'
+            pbAdSlot: '/abc'
           }
         };
 
@@ -1364,7 +1364,7 @@ describe('S2S Adapter', function () {
         expect(parsedRequestBody.imp).to.be.a('array');
         expect(parsedRequestBody.imp[0]).to.be.a('object');
         expect(parsedRequestBody.imp[0]).to.have.deep.nested.property('ext.context.data.adslot');
-        expect(parsedRequestBody.imp[0].ext.context.data.adslot).to.equal('/a/b/c');
+        expect(parsedRequestBody.imp[0].ext.context.data.adslot).to.equal('abc');
       });
     });
   });

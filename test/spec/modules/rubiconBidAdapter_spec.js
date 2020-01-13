@@ -1657,6 +1657,22 @@ describe('the rubicon adapter', function () {
         });
       });
 
+      it('should include pbAdSlot in bid request but should remove leading slash', function () {
+        createVideoBidderRequest();
+        bidderRequest.bids[0].fpd = {
+          context: {
+            pbAdSlot: '/1234567890'
+          }
+        };
+
+        sandbox.stub(Date, 'now').callsFake(() =>
+          bidderRequest.auctionStart + 100
+        );
+
+        const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+        expect(request.data.imp[0].ext.context.data.adslot).to.equal('1234567890');
+      });
+
       describe('combineSlotUrlParams', function () {
         it('should combine an array of slot url params', function () {
           expect(spec.combineSlotUrlParams([])).to.deep.equal({});

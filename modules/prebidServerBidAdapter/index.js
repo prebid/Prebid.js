@@ -487,7 +487,7 @@ const OPEN_RTB_PROTOCOL = {
        */
       const pbAdSlot = utils.deepAccess(adUnit, 'fpd.context.pbAdSlot');
       if (typeof pbAdSlot === 'string' && pbAdSlot) {
-        utils.deepSetValue(imp, 'ext.context.data.adslot', pbAdSlot);
+        utils.deepSetValue(imp, 'ext.context.data.adslot', pbAdSlot.replace(/^\/+/, ''));
       }
 
       Object.assign(imp, mediaTypes);
