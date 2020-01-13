@@ -280,6 +280,44 @@ describe('sharethrough adapter spec', function () {
         }
       });
     });
+
+    it('should add a supply chain parameter if schain is present', function() {
+      // shallow copy of the first bidRequest obj, so we don't mutate
+      const bidRequest = Object.assign({}, bidRequests[0]);
+      bidRequest['schain'] = {
+        ver: '1.0',
+        complete: 1,
+        nodes: [
+          {
+            asi: 'directseller.com',
+            sid: '00001',
+            rid: 'BidRequest1',
+            hp: 1
+          }
+        ]
+      };
+
+      const builtBidRequest = spec.buildRequests([bidRequest])[0];
+      expect(builtBidRequest.data.schain).to.eq(JSON.stringify(bidRequest.schain));
+    });
+
+    it('should not add a supply chain parameter if schain is missing', function() {
+      const bidRequest = spec.buildRequests(bidRequests)[0];
+      expect(bidRequest.data).to.not.include.any.keys('schain');
+    });
+
+    it('should include the bidfloor parameter if it is present in the bid request', function() {
+      const bidRequest = Object.assign({}, bidRequests[0]);
+      bidRequest['bidfloor'] = 0.50;
+      const builtBidRequest = spec.buildRequests([bidRequest])[0];
+      expect(builtBidRequest.data.bidfloor).to.eq(0.5);
+    });
+
+    it('should not include the bidfloor parameter if it is missing in the bid request', function() {
+      const bidRequest = Object.assign({}, bidRequests[0]);
+      const builtBidRequest = spec.buildRequests([bidRequest])[0];
+      expect(builtBidRequest.data).to.not.include.any.keys('bidfloor');
+    });
   });
 
   describe('.interpretResponse', function () {

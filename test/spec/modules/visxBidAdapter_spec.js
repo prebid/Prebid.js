@@ -45,7 +45,7 @@ describe('VisxAdapter', function () {
         referer: 'http://example.com'
       }
     };
-    const encodedReferrer = encodeURIComponent(bidderRequest.refererInfo.referer);
+    const referrer = bidderRequest.refererInfo.referer;
     let bidRequests = [
       {
         'bidder': 'visx',
@@ -86,7 +86,7 @@ describe('VisxAdapter', function () {
       const request = spec.buildRequests([bidRequests[0]], bidderRequest);
       const payload = request.data;
       expect(payload).to.be.an('object');
-      expect(payload).to.have.property('u', encodedReferrer);
+      expect(payload).to.have.property('u', referrer);
       expect(payload).to.have.property('pt', 'net');
       expect(payload).to.have.property('auids', '903535');
       expect(payload).to.have.property('sizes', '300x250,300x600');
@@ -98,7 +98,7 @@ describe('VisxAdapter', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
       const payload = request.data;
       expect(payload).to.be.an('object');
-      expect(payload).to.have.property('u', encodedReferrer);
+      expect(payload).to.have.property('u', referrer);
       expect(payload).to.have.property('pt', 'net');
       expect(payload).to.have.property('auids', '903535,903535,903536');
       expect(payload).to.have.property('sizes', '300x250,300x600,728x90');
@@ -111,7 +111,7 @@ describe('VisxAdapter', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
       const payload = request.data;
       expect(payload).to.be.an('object');
-      expect(payload).to.have.property('u', encodedReferrer);
+      expect(payload).to.have.property('u', referrer);
       expect(payload).to.have.property('pt', 'net');
       expect(payload).to.have.property('auids', '903535,903535,903536');
       expect(payload).to.have.property('sizes', '300x250,300x600,728x90');
@@ -124,7 +124,7 @@ describe('VisxAdapter', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
       const payload = request.data;
       expect(payload).to.be.an('object');
-      expect(payload).to.have.property('u', encodedReferrer);
+      expect(payload).to.have.property('u', referrer);
       expect(payload).to.have.property('pt', 'net');
       expect(payload).to.have.property('auids', '903535,903535,903536');
       expect(payload).to.have.property('sizes', '300x250,300x600,728x90');
@@ -138,7 +138,7 @@ describe('VisxAdapter', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
       const payload = request.data;
       expect(payload).to.be.an('object');
-      expect(payload).to.have.property('u', encodedReferrer);
+      expect(payload).to.have.property('u', referrer);
       expect(payload).to.have.property('pt', 'net');
       expect(payload).to.have.property('auids', '903535,903535,903536');
       expect(payload).to.have.property('sizes', '300x250,300x600,728x90');
@@ -149,16 +149,16 @@ describe('VisxAdapter', function () {
 
     it('should add currency from currency.bidderCurrencyDefault', function () {
       const getConfigStub = sinon.stub(config, 'getConfig').callsFake(
-        arg => arg === 'currency.bidderCurrencyDefault.visx' ? 'JPY' : 'USD');
+        arg => arg === 'currency.bidderCurrencyDefault.visx' ? 'GBP' : 'USD');
       const request = spec.buildRequests(bidRequests, bidderRequest);
       const payload = request.data;
       expect(payload).to.be.an('object');
-      expect(payload).to.have.property('u', encodedReferrer);
+      expect(payload).to.have.property('u', referrer);
       expect(payload).to.have.property('pt', 'net');
       expect(payload).to.have.property('auids', '903535,903535,903536');
       expect(payload).to.have.property('sizes', '300x250,300x600,728x90');
       expect(payload).to.have.property('r', '22edbae2733bf6');
-      expect(payload).to.have.property('cur', 'JPY');
+      expect(payload).to.have.property('cur', 'GBP');
       getConfigStub.restore();
     });
 
@@ -168,7 +168,7 @@ describe('VisxAdapter', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
       const payload = request.data;
       expect(payload).to.be.an('object');
-      expect(payload).to.have.property('u', encodedReferrer);
+      expect(payload).to.have.property('u', referrer);
       expect(payload).to.have.property('pt', 'net');
       expect(payload).to.have.property('auids', '903535,903535,903536');
       expect(payload).to.have.property('sizes', '300x250,300x600,728x90');
@@ -204,11 +204,11 @@ describe('VisxAdapter', function () {
 
   describe('interpretResponse', function () {
     const responses = [
-      {'bid': [{'price': 1.15, 'adm': '<div>test content 1</div>', 'auid': 903535, 'h': 250, 'w': 300}], 'seat': '1'},
-      {'bid': [{'price': 0.5, 'adm': '<div>test content 2</div>', 'auid': 903536, 'h': 600, 'w': 300}], 'seat': '1'},
-      {'bid': [{'price': 0.15, 'adm': '<div>test content 3</div>', 'auid': 903535, 'h': 90, 'w': 728}], 'seat': '1'},
-      {'bid': [{'price': 0, 'auid': 903537, 'h': 250, 'w': 300}], 'seat': '1'},
-      {'bid': [{'price': 0, 'adm': '<div>test content 5</div>', 'h': 250, 'w': 300}], 'seat': '1'},
+      {'bid': [{'price': 1.15, 'adm': '<div>test content 1</div>', 'auid': 903535, 'h': 250, 'w': 300, 'cur': 'EUR'}], 'seat': '1'},
+      {'bid': [{'price': 0.5, 'adm': '<div>test content 2</div>', 'auid': 903536, 'h': 600, 'w': 300, 'cur': 'EUR'}], 'seat': '1'},
+      {'bid': [{'price': 0.15, 'adm': '<div>test content 3</div>', 'auid': 903535, 'h': 90, 'w': 728, 'cur': 'EUR'}], 'seat': '1'},
+      {'bid': [{'price': 0, 'auid': 903537, 'h': 250, 'w': 300, 'cur': 'EUR'}], 'seat': '1'},
+      {'bid': [{'price': 0, 'adm': '<div>test content 5</div>', 'h': 250, 'w': 300, 'cur': 'EUR'}], 'seat': '1'},
       undefined,
       {'bid': [], 'seat': '1'},
       {'seat': '1'},
@@ -346,7 +346,7 @@ describe('VisxAdapter', function () {
           'auctionId': '1cbd2feafe5e8b',
         }
       ];
-      const getConfigStub = sinon.stub(config, 'getConfig').returns('JPY');
+      const getConfigStub = sinon.stub(config, 'getConfig').returns('PLN');
       const request = spec.buildRequests(bidRequests);
       const expectedResponse = [
         {
@@ -358,13 +358,15 @@ describe('VisxAdapter', function () {
           'height': 250,
           'ad': '<div>test content 1</div>',
           'bidderCode': 'visx',
-          'currency': 'JPY',
+          'currency': 'PLN',
           'netRevenue': true,
           'ttl': 360,
         }
       ];
 
-      const result = spec.interpretResponse({'body': {'seatbid': [responses[0]]}}, request);
+      const response = Object.assign({}, responses[0]);
+      Object.assign(response.bid[0], {'cur': 'PLN'});
+      const result = spec.interpretResponse({'body': {'seatbid': [response]}}, request);
       expect(result).to.deep.equal(expectedResponse);
       getConfigStub.restore();
     });
@@ -412,11 +414,11 @@ describe('VisxAdapter', function () {
 
     it('complicated case', function () {
       const fullResponse = [
-        {'bid': [{'price': 1.15, 'adm': '<div>test content 1</div>', 'auid': 903535, 'h': 250, 'w': 300}], 'seat': '1'},
-        {'bid': [{'price': 0.5, 'adm': '<div>test content 2</div>', 'auid': 903536, 'h': 600, 'w': 300}], 'seat': '1'},
-        {'bid': [{'price': 0.15, 'adm': '<div>test content 3</div>', 'auid': 903535, 'h': 90, 'w': 728}], 'seat': '1'},
-        {'bid': [{'price': 0.15, 'adm': '<div>test content 4</div>', 'auid': 903535, 'h': 600, 'w': 300}], 'seat': '1'},
-        {'bid': [{'price': 0.5, 'adm': '<div>test content 5</div>', 'auid': 903536, 'h': 600, 'w': 350}], 'seat': '1'},
+        {'bid': [{'price': 1.15, 'adm': '<div>test content 1</div>', 'auid': 903535, 'h': 250, 'w': 300, 'cur': 'EUR'}], 'seat': '1'},
+        {'bid': [{'price': 0.5, 'adm': '<div>test content 2</div>', 'auid': 903536, 'h': 600, 'w': 300, 'cur': 'EUR'}], 'seat': '1'},
+        {'bid': [{'price': 0.15, 'adm': '<div>test content 3</div>', 'auid': 903535, 'h': 90, 'w': 728, 'cur': 'EUR'}], 'seat': '1'},
+        {'bid': [{'price': 0.15, 'adm': '<div>test content 4</div>', 'auid': 903535, 'h': 600, 'w': 300, 'cur': 'EUR'}], 'seat': '1'},
+        {'bid': [{'price': 0.5, 'adm': '<div>test content 5</div>', 'auid': 903536, 'h': 600, 'w': 350, 'cur': 'EUR'}], 'seat': '1'},
       ];
       const bidRequests = [
         {
@@ -550,8 +552,8 @@ describe('VisxAdapter', function () {
 
     it('dublicate uids and sizes in one slot', function () {
       const fullResponse = [
-        {'bid': [{'price': 1.15, 'adm': '<div>test content 1</div>', 'auid': 903535, 'h': 250, 'w': 300}], 'seat': '1'},
-        {'bid': [{'price': 0.5, 'adm': '<div>test content 2</div>', 'auid': 903535, 'h': 250, 'w': 300}], 'seat': '1'},
+        {'bid': [{'price': 1.15, 'adm': '<div>test content 1</div>', 'auid': 903535, 'h': 250, 'w': 300, 'cur': 'EUR'}], 'seat': '1'},
+        {'bid': [{'price': 0.5, 'adm': '<div>test content 2</div>', 'auid': 903535, 'h': 250, 'w': 300, 'cur': 'EUR'}], 'seat': '1'},
       ];
       const bidRequests = [
         {
