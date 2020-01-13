@@ -116,7 +116,6 @@ describe('betweenBidAdapterTests', function () {
     expect(req_data['pubside_macro[param]']).to.equal('%26test%3Dtset');
   });
   it('validate gdprConsent', function() {
-
     let bidRequestData = [{
       bidId: 'bid1234',
       bidder: 'between',
@@ -129,17 +128,16 @@ describe('betweenBidAdapterTests', function () {
     }];
     let bidderRequest = {
       gdprConsent: {
-        consentString: "BOtGbjbOtGbjbBQABBENC3-AAAAtR7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4u_1vf99yfm1-7etr3tp_87ues2_Xur__79__3z3_9pxP78k89r7337Ew_v-_v-b7JCON_IA",
+        consentString: 'BOtGbjbOtGbjbBQABBENC3-AAAAtR7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4u_1vf99yfm1-7etr3tp_87ues2_Xur__79__3z3_9pxP78k89r7337Ew_v-_v-b7JCON_IA',
         gdprApplies: true
       }
     }
-    
+
     let request = spec.buildRequests(bidRequestData, bidderRequest);
     let req_data = request[0].data;
 
     expect(req_data.gdprApplies).to.equal(bidderRequest.gdprConsent.gdprApplies);
     expect(req_data.consentString).to.equal(bidderRequest.gdprConsent.consentString);
-
   });
   it('validate_response_params', function () {
     let serverResponse = {
@@ -198,7 +196,7 @@ describe('betweenBidAdapterTests', function () {
     let bid = bids[0];
     expect(bid.currency).to.equal('RUB');
   });
-  it('check getUserSyncs', function(){
+  it('check getUserSyncs', function() {
     const syncs = spec.getUserSyncs({}, {});
     expect(syncs).to.be.an('array').that.to.have.lengthOf(1);
     expect(syncs[0]).to.deep.equal({type: 'iframe', url: 'https://ads.betweendigital.com/sspmatch-iframe'});
