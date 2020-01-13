@@ -421,8 +421,8 @@ describe('adagioAdapter', () => {
       const request = requests[0];
       expect(request.data.adUnits[0].params).to.exist;
       expect(request.data.adUnits[0].params.organizationId).to.deep.equal('1010');
-      expect(request.data.adUnits[0].organizationId).to.exist;
-      expect(request.data.adUnits[0].organizationId).to.deep.equal('1010');
+      expect(request.data.organizationId).to.exist;
+      expect(request.data.organizationId).to.deep.equal('1010');
     });
 
     it('GDPR consent is applied', () => {
