@@ -1,7 +1,7 @@
 import {registerBidder} from '../src/adapters/bidderFactory';
 const utils = require('../src/utils');
 const BIDDER_CODE = 'videoreach';
-const ENDPOINT_URL = '//a.videoreach.de/hb/';
+const ENDPOINT_URL = '//a.videoreach.com/hb/';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -65,7 +65,7 @@ export const spec = {
   getUserSyncs: function(syncOptions, responses, gdprConsent) {
     const syncs = [];
 
-    if (syncOptions.pixelEnabled && responses.length) {
+    if (syncOptions.pixelEnabled && responses.length && responses[0].body.responses.length) {
       const SyncPixels = responses[0].body.responses[0].sync;
 
       let params = '';

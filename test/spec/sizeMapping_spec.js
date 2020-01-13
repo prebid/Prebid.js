@@ -66,13 +66,6 @@ describe('sizeMapping', function () {
       }
       return matchMediaOverride;
     });
-
-    sandbox.stub(window, 'matchMedia').callsFake((...args) => {
-      if (typeof matchMediaOverride === 'function') {
-        return matchMediaOverride.apply(window, args);
-      }
-      return matchMediaOverride;
-    });
   });
 
   afterEach(function () {
@@ -161,15 +154,14 @@ describe('sizeMapping', function () {
       });
     });
 
-    it('should filter all banner sizes but not disable adUnit if multiple mediaTypes are present', function () {
+    it('should filter all banner sizes and should disable the adUnit even if other mediaTypes are present', function () {
       matchMediaOverride = (str) => str === '(min-width: 0px) and (max-width: 767px)' ? {matches: true} : {matches: false};
-
       let status = resolveStatus(undefined, Object.assign({}, testSizes, {
         native: {
           type: 'image'
         }
       }), undefined, sizeConfig);
-      expect(status.active).to.equal(true);
+      expect(status.active).to.equal(false);
       expect(status.mediaTypes).to.deep.equal({
         banner: {
           sizes: []
@@ -210,12 +202,101 @@ describe('sizeMapping', function () {
       expect(status.mediaTypes).to.deep.equal(testSizes);
     });
 
+    it('should activate/decactivate adUnits/bidders based on labels with multiformat ads', function () {
+      matchMediaOverride = (str) => str === '(min-width: 768px) and (max-width: 1199px)' ? {matches: true} : {matches: false};
+
+      let multiFormatSizes = {
+        banner: {
+          sizes: [[728, 90], [300, 300]]
+        },
+        native: {
+          type: 'image'
+        },
+        video: {
+          context: 'outstream',
+          playerSize: [300, 300]
+        }
+      };
+
+      let status = resolveStatus({
+        labels: ['tablet', 'test'],
+        labelAll: true
+      }, multiFormatSizes, undefined, sizeConfigWithLabels);
+
+      expect(status.active).to.equal(false);
+      expect(status.mediaTypes).to.deep.equal({
+        banner: {
+          sizes: [[728, 90]]
+        },
+        native: {
+          type: 'image'
+        },
+        video: {
+          context: 'outstream',
+          playerSize: [300, 300]
+        }
+      });
+
+      status = resolveStatus({
+        labels: ['tablet']
+      }, multiFormatSizes, undefined, sizeConfigWithLabels);
+
+      expect(status.active).to.equal(true);
+      expect(status.mediaTypes).to.deep.equal({
+        banner: {
+          sizes: [[728, 90]]
+        },
+        native: {
+          type: 'image'
+        },
+        video: {
+          context: 'outstream',
+          playerSize: [300, 300]
+        }
+      });
+
+      multiFormatSizes.banner.sizes.splice(0, 1, [728, 80]);
+      status = resolveStatus({
+        labels: ['tablet']
+      }, multiFormatSizes, undefined, sizeConfigWithLabels);
+
+      expect(status.active).to.equal(false);
+      expect(status.mediaTypes).to.deep.equal({
+        banner: {
+          sizes: []
+        },
+        native: {
+          type: 'image'
+        },
+        video: {
+          context: 'outstream',
+          playerSize: [300, 300]
+        }
+      });
+
+      delete multiFormatSizes.banner;
+      status = resolveStatus({
+        labels: ['tablet']
+      }, multiFormatSizes, undefined, sizeConfigWithLabels);
+
+      expect(status.active).to.equal(true);
+      expect(status.mediaTypes).to.deep.equal({
+        native: {
+          type: 'image'
+        },
+        video: {
+          context: 'outstream',
+          playerSize: [300, 300]
+        }
+      });
+    });
+
     it('should active/deactivate adUnits/bidders based on requestBids labels', function () {
       let activeLabels = ['us-visitor', 'desktop', 'smart'];
 
       let status = resolveStatus({
-        labels: ['uk-visitor'],
-        activeLabels
+        labels: ['uk-visitor'], // from adunit
+        activeLabels // from requestBids.labels
       }, testSizes, undefined, sizeConfigWithLabels);
 
       expect(status.active).to.equal(false);

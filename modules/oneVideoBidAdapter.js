@@ -76,19 +76,22 @@ export const spec = {
       requestId: bidRequest.bidId,
       bidderCode: spec.code,
       cpm: bid.price,
-      creativeId: bid.id,
+      adId: bid.adid,
+      creativeId: bid.crid,
       width: size.width,
       height: size.height,
       mediaType: 'video',
       currency: response.cur,
       ttl: 100,
-      netRevenue: true
+      netRevenue: true,
+      adUnitCode: bidRequest.adUnitCode
     };
     if (bid.nurl) {
       bidResponse.vastUrl = bid.nurl;
     } else if (bid.adm) {
       bidResponse.vastXml = bid.adm;
     }
+    bidResponse.renderer = (bidRequest.mediaTypes.video.context === 'outstream') ? newRenderer(bidRequest, bidResponse) : undefined;
     return bidResponse;
   },
   /**
@@ -190,8 +193,24 @@ function getRequestData(bid, consentData) {
   if (bid.params.video.placement) {
     bidData.imp[0].ext.placement = bid.params.video.placement
   }
+  if (bid.params.video.rewarded) {
+    bidData.imp[0].ext.rewarded = bid.params.video.rewarded
+  }
   if (bid.params.site && bid.params.site.id) {
     bidData.site.id = bid.params.site.id
+  }
+  if (bid.params.video.sid) {
+    bidData.source = {
+      ext: {
+        schain: {
+          complete: 1,
+          nodes: [{
+            sid: bid.params.video.sid,
+            rid: bidData.id,
+          }]
+        }
+      }
+    }
   }
 
   if (isConsentRequired(consentData)) {
@@ -215,6 +234,21 @@ function getRequestData(bid, consentData) {
 
 function isSecure() {
   return document.location.protocol === 'https:';
+}
+/**
+ * Create oneVideo renderer
+ * @returns {*}
+ */
+function newRenderer(bidRequest, bid) {
+  if (!bidRequest.renderer) {
+    bidRequest.renderer = {};
+    bidRequest.renderer.url = 'https://cdn.vidible.tv/prod/hb-outstream-renderer/renderer.js';
+    bidRequest.renderer.render = function(bid) {
+      setTimeout(function () {
+        o2PlayerRender(bid);
+      }, 700)
+    };
+  }
 }
 
 registerBidder(spec);

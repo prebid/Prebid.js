@@ -1,0 +1,168 @@
+<!-- Test page for outstream video test case -->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<title>Prebid.js Video Outstream Example</title>
+
+	<!-- Load Prebid.js -->
+	<script async src="../../build/dev/prebid.js"></script>
+
+	<!-- Load Google Publisher Tag -->
+	<script async src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"></script>
+
+	<script>
+		// Load the outstream video adunit.
+		const outstreamVideoAdUnit = [{
+			code: 'video_ad_unit_1',
+			mediaTypes: {
+				video: {
+					context: 'outstream',
+					playerSize: [640, 480]
+				}
+			},
+			bids: [{
+				bidder: 'appnexus',
+				params: {
+					placementId: 13232385,
+					video: {
+						skippable: true,
+						playback_method: ['auto_play_sound_off']
+					}
+				}
+			}]
+		}, {
+			code: 'video_ad_unit_2',
+			mediaTypes: {
+				video: {
+					context: 'outstream',
+					playerSize: [640, 480]
+				}
+			},
+			bids: [{
+				bidder: 'appnexus',
+				params: {
+					placementId: 13232385,
+					video: {
+						skippable: true,
+						playback_method: ['auto_play_sound_off']
+					}
+				}
+			}]
+		}];
+
+		// Load the pbjs global and Prebid event queue
+		var pbjs = pbjs || {};
+		pbjs.que = pbjs.que || [];
+
+		// Load GPT global and GPT command queue
+		var googletag = googletag || {};
+		googletag.cmd = googletag.cmd || [];
+
+		pbjs.que.push(function () {
+			pbjs.setConfig({ debug: true });
+			pbjs.addAdUnits(outstreamVideoAdUnit);
+			pbjs.requestBids({ bidsBackHandler: initAdServer });
+		});
+
+		function initAdServer() {
+			googletag.cmd.push(function () {
+				pbjs.que.push(function () {
+					pbjs.setTargetingForGPTAsync('video_ad_unit_1');
+					googletag.pubads().refresh();
+				});
+			});
+		}
+
+		googletag.cmd.push(function () {
+			googletag
+				.defineSlot('/19968336/prebid_outstream_adunit_1', [[1, 1]], 'video_ad_unit_1')
+				.addService(googletag.pubads());
+			googletag.pubads().disableInitialLoad();
+			googletag.pubads().enableSingleRequest();
+			googletag.enableServices();
+		});
+	</script>
+</head>
+
+
+<body>
+	<div style="width:50%;margin-left:auto;margin-right:auto">
+		<p>
+			In scelerisque sem sed tortor posuere sagittis. Fusce scelerisque odio at tincidunt ultricies. Fusce egestas, erat
+			non finibus dictum, nulla arcu viverra nibh, at bibendum ligula nisi egestas magna. Nulla eu finibus nulla.
+			Pellentesque at mi eget turpis
+			consequat scelerisque. Sed lacinia, nisi sit amet egestas vestibulum, elit odio iaculis leo, et lacinia risus enim
+			non lacus. Cras nec neque eget nunc gravida maximus. Ut hendrerit convallis sollicitudin. Donec cursus erat vel
+			metus gravida,
+			et pretium justo iaculis. Curabitur condimentum blandit augue, quis interdum leo. Vivamus dapibus est nec dui
+			efficitur, eu imperdiet nulla sollicitudin. Suspendisse laoreet velit vitae arcu mollis, ac interdum lorem
+			venenatis. Aenean
+			nec purus varius, accumsan ex at, luctus arcu. Quisque consectetur tortor eros, placerat lacinia eros aliquam a.
+			Proin non porttitor libero.
+		</p>
+		<p>
+			Proin eget vulputate est. Nunc sit amet neque a tortor ullamcorper suscipit non eu neque. Quisque at massa in
+			metus feugiat rutrum. Nulla et orci orci. Aliquam erat volutpat. Cras tincidunt metus lectus, sed suscipit augue
+			mollis vitae. Sed quis condimentum
+			tortor, sit amet consectetur erat. Nulla pellentesque turpis lacus, eu venenatis massa fringilla at. Duis sed
+			pharetra turpis. Maecenas vel porttitor neque. Praesent quis felis sapien. Donec suscipit euismod dui, vitae
+			fermentum nisi ornare
+			in.
+		</p>
+		<p>
+			Suspendisse tempor felis accumsan orci finibus, imperdiet mollis arcu imperdiet. In eu dolor condimentum, pulvinar
+			nisl a, sollicitudin nunc. Ut vel lectus libero. Praesent rhoncus leo tortor, at mollis nulla sagittis eget.
+			Quisque tempus tempor augue
+			sed rutrum. Sed vitae volutpat quam. Proin vestibulum eros metus, a luctus erat condimentum eu. Vivamus
+			ullamcorper ultricies dui, ac malesuada leo finibus semper. Cras diam augue, imperdiet sed efficitur id, aliquam
+			sed purus. Praesent
+			eget turpis quis sapien interdum sagittis. Vivamus placerat nunc a tempus fermentum. Praesent laoreet leo at
+			tellus porta, ut viverra tortor pharetra. Quisque elit velit, eleifend eget imperdiet vel, suscipit ac nisi.
+			Aliquam egestas mauris
+			ut massa fringilla laoreet.
+		</p>
+		<div id='video_ad_unit_1'>
+			<p>Prebid Outstream Video Ad</p>
+			<script>googletag.cmd.push(function () { googletag.display('video_ad_unit_1') })</script>
+		</div>
+		<p>
+			Quisque ac luctus nisi, vitae ornare arcu. Proin fermentum sapien vitae odio vestibulum porta. Suspendisse
+			faucibus sapien enim, et faucibus urna tempus et. Integer porttitor justo sed faucibus blandit. Morbi semper
+			lectus vitae semper facilisis. Quisque
+			molestie accumsan arcu, eget bibendum dui euismod et. Sed in mattis lacus, nec lacinia sem. Fusce sed tortor
+			posuere, iaculis justo varius, elementum est.
+		</p>
+		<p>
+			Etiam condimentum, eros commodo semper tristique, lorem leo pharetra massa, eget cursus justo enim id urna. Sed
+			imperdiet mauris vitae ante bibendum elementum. Etiam eu dui porttitor leo imperdiet cursus. Maecenas consequat,
+			neque a dapibus viverra, nunc
+			velit volutpat nibh, ut cursus sem tortor ac arcu. Praesent convallis lacus vel nisi aliquam, in posuere libero
+			scelerisque. Curabitur et lacinia nisl. Nunc id ligula neque. Phasellus non eros et leo ultrices ultricies. Nulla
+			facilisi.
+			Donec ut augue urna. Suspendisse sodales nisi at ex faucibus, et tempus magna fermentum. Proin non arcu interdum,
+			pulvinar est at, vehicula odio. Morbi nec maximus sem. Ut eu tristique urna.
+		</p>
+		<p>
+			Pellentesque eget quam sem. Nam interdum eleifend leo, mattis sagittis metus ornare tristique. Cras pretium odio
+			lectus, vitae viverra massa consequat eget. Suspendisse porttitor pretium lectus in scelerisque. Phasellus euismod
+			porta lectus eget pharetra.
+			Ut et viverra mi, ut imperdiet lacus. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere
+			cubilia Curae; Nunc tempus sapien sit amet tortor rhoncus dignissim. Sed at augue et sem lacinia feugiat. Nulla
+			vitae convallis
+			urna. Morbi scelerisque erat quis nibh pretium, non elementum elit consectetur. Proin in feugiat nisl.
+		</p>
+		<p>
+			Morbi et ipsum purus. Integer ut pulvinar metus. Fusce maximus ex nec purus sollicitudin gravida. Vivamus dapibus
+			volutpat erat nec tristique. Aliquam mi dolor, pretium non elementum quis, viverra non est. Pellentesque egestas,
+			lectus a posuere imperdiet,
+			nisi sem elementum neque, eu volutpat arcu turpis venenatis magna. Curabitur non neque consectetur, vulputate urna
+			sed, vestibulum lacus. Aenean mollis, risus non pulvinar egestas, lectus lectus finibus dui, sit amet pretium
+			metus mauris
+			vitae nibh. In non ultricies odio.
+		</p>
+	</div>
+</body>
+
+</html>

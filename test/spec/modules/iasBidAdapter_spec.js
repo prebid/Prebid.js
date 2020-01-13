@@ -116,6 +116,9 @@ describe('iasBidAdapter is an adapter that', function () {
         it('screen size', function () {
           expect(val).to.match(/.*sr=[0-9]*\.[0-9]*/);
         });
+        it('url value', function () {
+          expect(val).to.match(/.*url=https?%3A%2F%2F[^\s$.?#].[^\s]*/);
+        });
       });
       it('has property `bidRequest` that is the first passed in bid request', function () {
         expect(spec.buildRequests(bidRequests)).to.deep.include({
@@ -227,6 +230,113 @@ describe('iasBidAdapter is an adapter that', function () {
         var adapter = spec;
         var requests = adapter.buildRequests(bidRequests);
         expect(adapter.interpretResponse(serverResponse, requests)).to.length(2);
+      });
+    });
+    describe('returns a list of bid response that with custom value', function () {
+      let bidRequests, bidResponse, slots, custom, serverResponse;
+      beforeEach(function () {
+        bidRequests = [
+          {
+            adUnitCode: 'one-div-id',
+            auctionId: 'someAuctionId',
+            bidId: 'someBidId1',
+            bidder: 'ias',
+            bidderRequestId: 'someBidderRequestId',
+            params: {
+              pubId: '1234',
+              adUnitPath: '/a/b/c'
+            },
+            sizes: [
+              [10, 20],
+              [300, 400]
+            ],
+            transactionId: 'someTransactionId'
+          },
+          {
+            adUnitCode: 'two-div-id',
+            auctionId: 'someAuctionId',
+            bidId: 'someBidId2',
+            bidder: 'ias',
+            bidderRequestId: 'someBidderRequestId',
+            params: {
+              pubId: '1234',
+              adUnitPath: '/d/e/f'
+            },
+            sizes: [
+              [50, 60]
+            ],
+            transactionId: 'someTransactionId'
+          }
+        ];
+        const request = {
+          bidRequest: {
+            bidId: '102938'
+          }
+        };
+        slots = {};
+        slots['test-div-id'] = {
+          id: '1234',
+          vw: ['60', '70']
+        };
+        slots['test-div-id-two'] = {
+          id: '5678',
+          vw: ['80', '90']
+        };
+        custom = {};
+        custom['ias-kw'] = ['IAS_1_KW', 'IAS_2_KW'];
+        serverResponse = {
+          body: {
+            brandSafety: {
+              adt: 'adtVal',
+              alc: 'alcVal',
+              dlm: 'dlmVal',
+              drg: 'drgVal',
+              hat: 'hatVal',
+              off: 'offVal',
+              vio: 'vioVal'
+            },
+            fr: 'false',
+            slots: slots,
+            custom: custom
+          },
+          headers: {}
+        };
+        bidResponse = spec.interpretResponse(serverResponse, request);
+      });
+      it('has IAS keyword `adt` as property', function () {
+        expect(bidResponse[0]).to.deep.include({ adt: 'adtVal' });
+      });
+      it('has IAS keyword `alc` as property', function () {
+        expect(bidResponse[0]).to.deep.include({ alc: 'alcVal' });
+      });
+      it('has IAS keyword `dlm` as property', function () {
+        expect(bidResponse[0]).to.deep.include({ dlm: 'dlmVal' });
+      });
+      it('has IAS keyword `drg` as property', function () {
+        expect(bidResponse[0]).to.deep.include({ drg: 'drgVal' });
+      });
+      it('has IAS keyword `hat` as property', function () {
+        expect(bidResponse[0]).to.deep.include({ hat: 'hatVal' });
+      });
+      it('has IAS keyword `off` as property', function () {
+        expect(bidResponse[0]).to.deep.include({ off: 'offVal' });
+      });
+      it('has IAS keyword `vio` as property', function () {
+        expect(bidResponse[0]).to.deep.include({ vio: 'vioVal' });
+      });
+      it('has IAS keyword `fr` as property', function () {
+        expect(bidResponse[0]).to.deep.include({ fr: 'false' });
+      });
+      it('has property `slots`', function () {
+        expect(bidResponse[0]).to.deep.include({ slots: slots });
+      });
+      it('has property `custom`', function () {
+        expect(bidResponse[0]).to.deep.include({ custom: custom });
+      });
+      it('response is the same for multiple slots', function () {
+        var adapter = spec;
+        var requests = adapter.buildRequests(bidRequests);
+        expect(adapter.interpretResponse(serverResponse, requests)).to.length(3);
       });
     });
   });

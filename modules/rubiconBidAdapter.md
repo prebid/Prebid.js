@@ -35,7 +35,7 @@ globalsupport@rubiconproject.com for more information.
                    }
                ]
            },{
-               code: 'test-div',
+               code: 'test-native-size',
                mediaTypes: {
                    banner: {
                        sizes: [[300, 50]]
@@ -53,4 +53,30 @@ globalsupport@rubiconproject.com for more information.
                ]
            }
        ];
+       
+       var videoAdUnit = {
+       code: 'myVideoAdUnit',
+       mediaTypes: {
+         video: {
+            context: 'instream',
+            playerSize: [640, 480],
+            mimes: ['video/mp4', 'video/x-ms-wmv']
+            protocols: [2,5],
+            maxduration:30,
+            linearity: 1,
+            api: [2]
+         }
+       },
+       bids: [{
+        bidder: 'rubicon',
+        params: {
+            accountId: '7780',
+            siteId: '87184',
+            zoneId: '413290',
+            video: {
+                language: 'en'
+            }
+         }
+       }]
+};
 ```

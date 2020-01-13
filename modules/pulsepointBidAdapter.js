@@ -1,6 +1,7 @@
 /* eslint dot-notation:0, quote-props:0 */
 import * as utils from '../src/utils';
 import { registerBidder } from '../src/adapters/bidderFactory';
+import { Renderer } from '../src/Renderer';
 
 const NATIVE_DEFAULTS = {
   TITLE_LEN: 100,
@@ -13,13 +14,14 @@ const NATIVE_DEFAULTS = {
 const DEFAULT_BID_TTL = 20;
 const DEFAULT_CURRENCY = 'USD';
 const DEFAULT_NET_REVENUE = true;
+const KNOWN_PARAMS = ['cp', 'ct', 'cf', 'video', 'battr', 'bcat', 'badv', 'bidfloor'];
 
 /**
  * PulsePoint Bid Adapter.
  * Contact: ExchangeTeam@pulsepoint.com
  *
  * Aliases - pulseLite and pulsepointLite are supported for backwards compatibility.
- * Formats - Display/Native/Outstream formats supported.
+ * Formats - Display/Native/Video formats supported.
  *
  */
 export const spec = {
@@ -28,7 +30,7 @@ export const spec = {
 
   aliases: ['pulseLite', 'pulsepointLite'],
 
-  supportedMediaTypes: ['banner', 'native'],
+  supportedMediaTypes: ['banner', 'native', 'video'],
 
   isBidRequestValid: bid => (
     !!(bid && bid.params && bid.params.cp && bid.params.ct)
@@ -41,12 +43,16 @@ export const spec = {
       site: site(bidRequests),
       app: app(bidRequests),
       device: device(),
+      bcat: bidRequests[0].params.bcat,
+      badv: bidRequests[0].params.badv,
+      user: user(bidRequests[0], bidderRequest),
+      regs: regs(bidderRequest),
     };
-    applyGdpr(bidderRequest, request);
     return {
       method: 'POST',
-      url: '//bid.contextweb.com/header/ortb',
-      data: JSON.stringify(request),
+      url: 'https://bid.contextweb.com/header/ortb?src=prebid',
+      data: request,
+      bidderRequest
     };
   },
 
@@ -58,12 +64,12 @@ export const spec = {
     if (syncOptions.iframeEnabled) {
       return [{
         type: 'iframe',
-        url: '//bh.contextweb.com/visitormatch'
+        url: 'https://bh.contextweb.com/visitormatch'
       }];
     } else if (syncOptions.pixelEnabled) {
       return [{
         type: 'image',
-        url: '//bh.contextweb.com/visitormatch/prebid'
+        url: 'https://bh.contextweb.com/visitormatch/prebid'
       }];
     }
   },
@@ -79,12 +85,13 @@ export const spec = {
 /**
  * Callback for bids, after the call to PulsePoint completes.
  */
-function bidResponseAvailable(bidRequest, bidResponse) {
+function bidResponseAvailable(request, response) {
   const idToImpMap = {};
   const idToBidMap = {};
-  bidResponse = bidResponse.body
+  const idToSlotConfig = {};
+  const bidResponse = response.body
   // extract the request bids and the response bids, keyed by impr-id
-  const ortbRequest = parse(bidRequest.data);
+  const ortbRequest = request.data;
   ortbRequest.imp.forEach(imp => {
     idToImpMap[imp.id] = imp;
   });
@@ -92,6 +99,11 @@ function bidResponseAvailable(bidRequest, bidResponse) {
     bidResponse.seatbid.forEach(seatBid => seatBid.bid.forEach(bid => {
       idToBidMap[bid.impid] = bid;
     }));
+  }
+  if (request.bidderRequest) {
+    request.bidderRequest.bids.forEach(bid => {
+      idToSlotConfig[bid.bidId] = bid;
+    });
   }
   const bids = [];
   Object.keys(idToImpMap).forEach(id => {
@@ -109,6 +121,15 @@ function bidResponseAvailable(bidRequest, bidResponse) {
       if (idToImpMap[id]['native']) {
         bid['native'] = nativeResponse(idToImpMap[id], idToBidMap[id]);
         bid.mediaType = 'native';
+      } else if (idToImpMap[id].video) {
+        // for outstream, a renderer is specified
+        if (idToSlotConfig[id] && utils.deepAccess(idToSlotConfig[id], 'mediaTypes.video.context') === 'outstream') {
+          bid.renderer = outstreamRenderer(utils.deepAccess(idToSlotConfig[id], 'renderer.options'), utils.deepAccess(idToBidMap[id], 'ext.outstream'));
+        }
+        bid.vastXml = idToBidMap[id].adm;
+        bid.mediaType = 'video';
+        bid.width = idToBidMap[id].w;
+        bid.height = idToBidMap[id].h;
       } else {
         bid.ad = idToBidMap[id].adm;
         bid.width = idToImpMap[id].banner.w;
@@ -138,6 +159,9 @@ function impression(slot) {
     banner: banner(slot),
     'native': nativeImpression(slot),
     tagid: slot.params.ct.toString(),
+    video: video(slot),
+    bidfloor: slot.params.bidfloor,
+    ext: ext(slot),
   };
 }
 
@@ -146,10 +170,64 @@ function impression(slot) {
  */
 function banner(slot) {
   const size = adSize(slot);
-  return slot.nativeParams ? null : {
+  return (slot.nativeParams || slot.params.video) ? null : {
     w: size[0],
     h: size[1],
+    battr: slot.params.battr,
   };
+}
+
+/**
+ * Produces an OpenRTB Video object for the slot given
+ */
+function video(slot) {
+  if (slot.params.video) {
+    return Object.assign({}, slot.params.video, {battr: slot.params.battr});
+  }
+  return null;
+}
+
+/**
+ * Unknown params are captured and sent on ext
+ */
+function ext(slot) {
+  const ext = {};
+  const knownParamsMap = {};
+  KNOWN_PARAMS.forEach(value => knownParamsMap[value] = 1);
+  Object.keys(slot.params).forEach(key => {
+    if (!knownParamsMap[key]) {
+      ext[key] = slot.params[key];
+    }
+  });
+  return Object.keys(ext).length > 0 ? { prebid: ext } : null;
+}
+
+/**
+ * Sets up the renderer on the bid, for outstream bid responses.
+ */
+function outstreamRenderer(rendererOptions, outstreamExtOptions) {
+  const renderer = Renderer.install({
+    url: outstreamExtOptions.rendererUrl,
+    config: {
+      defaultOptions: outstreamExtOptions.config,
+      rendererOptions,
+      type: outstreamExtOptions.type
+    },
+    loaded: false,
+  });
+  renderer.setRender((bid) => {
+    bid.renderer.push(() => {
+      const config = bid.renderer.getConfig();
+      new window.PulsePointOutstreamRenderer().render({
+        adUnitCode: bid.adUnitCode,
+        vastXml: bid.vastXml,
+        type: config.type,
+        defaultOptions: config.defaultOptions,
+        rendererOptions
+      });
+    });
+  });
+  return renderer;
 }
 
 /**
@@ -166,6 +244,7 @@ function nativeImpression(slot) {
     return {
       request: JSON.stringify({ assets }),
       ver: '1.1',
+      battr: slot.params.battr,
     };
   }
   return null;
@@ -312,13 +391,50 @@ function adSize(slot) {
 }
 
 /**
- * Applies GDPR parameters to request.
+ * Handles the user level attributes and produces
+ * an openrtb User object.
  */
-function applyGdpr(bidderRequest, ortbRequest) {
-  if (bidderRequest && bidderRequest.gdprConsent) {
-    ortbRequest.regs = { ext: { gdpr: bidderRequest.gdprConsent.gdprApplies ? 1 : 0 } };
-    ortbRequest.user = { ext: { consent: bidderRequest.gdprConsent.consentString } };
+function user(bidRequest, bidderRequest) {
+  var ext = {};
+  if (bidderRequest) {
+    if (bidderRequest.gdprConsent) {
+      ext.consent = bidderRequest.gdprConsent.consentString;
+    }
   }
+  if (bidRequest) {
+    if (bidRequest.userId) {
+      ext.eids = [];
+      addExternalUserId(ext.eids, bidRequest.userId.pubcid, 'pubcommon');
+      addExternalUserId(ext.eids, bidRequest.userId.tdid, 'ttdid');
+      addExternalUserId(ext.eids, utils.deepAccess(bidRequest.userId.digitrustid, 'data.id'), 'digitrust');
+      addExternalUserId(ext.eids, bidRequest.userId.id5id, 'id5id');
+    }
+  }
+  return { ext };
+}
+
+/**
+ * Produces external userid object in ortb 3.0 model.
+ */
+function addExternalUserId(eids, value, source) {
+  if (value) {
+    eids.push({
+      source,
+      uids: [{
+        id: value
+      }]
+    });
+  }
+}
+
+/**
+ * Produces the regulations ortb object
+ */
+function regs(bidderRequest) {
+  if (bidderRequest && bidderRequest.gdprConsent) {
+    return { ext: { gdpr: bidderRequest.gdprConsent.gdprApplies ? 1 : 0 } };
+  }
+  return null;
 }
 
 /**

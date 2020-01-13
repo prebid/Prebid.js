@@ -116,9 +116,15 @@ export const spec = {
 
       if (serverResponse) {
         const decision = serverResponse.decisions && serverResponse.decisions[bidId];
-        const price = decision && decision.pricing && decision.pricing.clearPrice;
+        const data = decision && decision.contents && decision.contents[0] && decision.contents[0].data;
+        const pubCPM = data && data.customData && data.customData.pubCPM;
+        const clearPrice = decision && decision.pricing && decision.pricing.clearPrice;
+        const price = pubCPM || clearPrice;
 
         if (decision && price) {
+          decision.impressionUrl += ('&property:pubcpm=' + price);
+          bidObj.price = price;
+
           bid.requestId = bidId;
           bid.cpm = price;
           bid.width = decision.width;
@@ -149,6 +155,7 @@ export const spec = {
         const id = 'ism_tag_' + Math.floor((Math.random() * 10e16));
         window[id] = {
           bidId: e.data.bidId,
+          bidPrice: bidsMap[e.data.bidId].price,
           serverResponse
         };
         const script = document.createElement('script');

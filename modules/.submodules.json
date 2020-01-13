@@ -1,9 +1,12 @@
 {
   "userId": [
     "digiTrustIdSystem",
-    "id5IdSystem"
+    "id5IdSystem",
+    "criteortusIdSystem",
+    "customIdSystem"
   ],
   "adpod": [
-    "freeWheelAdserverVideo"
+    "freeWheelAdserverVideo",
+    "dfpAdServerVideo"
   ]
 }

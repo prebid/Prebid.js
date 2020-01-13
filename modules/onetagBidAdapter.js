@@ -24,7 +24,7 @@ function isBidRequestValid(bid) {
     return false;
   }
 
-  if (typeof bid.params.pubId !== 'string' || bid.sizes === 'undefined' || bid.sizes.length === 0) {
+  if (typeof bid.params.pubId !== 'string' || typeof bid.sizes === 'undefined' || bid.sizes.length === 0) {
     return false;
   }
 
@@ -90,7 +90,7 @@ function interpretResponse(serverResponse, request) {
         netRevenue: false,
         mediaType: bids.type ? bids.type : BANNER,
         ad: bid.ad,
-        ttl: bid.ttl || 6000
+        ttl: bid.ttl || 300
       });
     });
   }

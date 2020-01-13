@@ -47,6 +47,8 @@ describe('TheMediaGrid Adapter', function () {
       });
       return res;
     }
+    const bidderRequest = {refererInfo: {referer: 'http://example.com'}};
+    const referrer = bidderRequest.refererInfo.referer;
     let bidRequests = [
       {
         'bidder': 'grid',
@@ -84,29 +86,30 @@ describe('TheMediaGrid Adapter', function () {
     ];
 
     it('should attach valid params to the tag', function () {
-      const request = spec.buildRequests([bidRequests[0]]);
+      const request = spec.buildRequests([bidRequests[0]], bidderRequest);
       expect(request.data).to.be.an('string');
       const payload = parseRequest(request.data);
-      expect(payload).to.have.property('u').that.is.a('string');
+      expect(payload).to.have.property('u', referrer);
       expect(payload).to.have.property('auids', '1');
       expect(payload).to.have.property('sizes', '300x250,300x600');
       expect(payload).to.have.property('r', '22edbae2733bf6');
     });
 
     it('auids must not be duplicated', function () {
-      const request = spec.buildRequests(bidRequests);
+      const request = spec.buildRequests(bidRequests, bidderRequest);
       expect(request.data).to.be.an('string');
       const payload = parseRequest(request.data);
-      expect(payload).to.have.property('u').that.is.a('string');
+      expect(payload).to.have.property('u', referrer);
       expect(payload).to.have.property('auids', '1,1,2');
       expect(payload).to.have.property('sizes', '300x250,300x600,728x90');
       expect(payload).to.have.property('r', '22edbae2733bf6');
     });
 
     it('if gdprConsent is present payload must have gdpr params', function () {
-      const request = spec.buildRequests(bidRequests, {gdprConsent: {consentString: 'AAA', gdprApplies: true}});
+      const request = spec.buildRequests(bidRequests, {gdprConsent: {consentString: 'AAA', gdprApplies: true}, refererInfo: bidderRequest.refererInfo});
       expect(request.data).to.be.an('string');
       const payload = parseRequest(request.data);
+      expect(payload).to.have.property('u', referrer);
       expect(payload).to.have.property('gdpr_consent', 'AAA');
       expect(payload).to.have.property('gdpr_applies', '1');
     });

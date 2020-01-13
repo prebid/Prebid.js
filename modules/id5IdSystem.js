@@ -33,7 +33,13 @@ export const id5IdSubmodule = {
    * @returns {function(callback:function)}
    */
   getId(configParams, consentData) {
-    if (!configParams || typeof configParams.partner !== 'number') {
+    if (configParams) {
+      configParams.partner = parseInt(configParams.partner);
+      if (typeof configParams.partner !== 'number') {
+        utils.logError(`User ID - ID5 submodule requires partner to be defined as a number`);
+        return;
+      }
+    } else {
       utils.logError(`User ID - ID5 submodule requires partner to be defined as a number`);
       return;
     }
