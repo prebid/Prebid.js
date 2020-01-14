@@ -45,7 +45,7 @@ export const spec = {
       bidIDs: bidIds,
       bidSizes: bidSizes,
       prebidRawBidRequests: validBidRequests
-    }, spec._getAllMetadata(tdid));
+    }, spec._getAllMetadata(tdid, bidderRequest.uspConsent));
     const encodedParams = encodeURIComponent(JSON.stringify(transformedParams));
     return Object.assign({}, bidderRequest, {
       method: 'GET',
@@ -169,13 +169,14 @@ export const spec = {
     }
   },
 
-  _getUserIds(tdid) {
+  _getUserIds(tdid, usp) {
     const crb = spec._getCrb();
     const userIds = {
       kargoID: crb.userId,
       clientID: crb.clientId,
       crbIDs: crb.syncIds || {},
-      optOut: crb.optOut
+      optOut: crb.optOut,
+      usp: usp
     };
     if (tdid) {
       userIds.tdID = tdid;
@@ -188,9 +189,9 @@ export const spec = {
     return crb.clientId;
   },
 
-  _getAllMetadata(tdid) {
+  _getAllMetadata(tdid, usp) {
     return {
-      userIDs: spec._getUserIds(tdid),
+      userIDs: spec._getUserIds(tdid, usp),
       krux: spec._getKrux(),
       pageURL: window.location.href,
       rawCRB: spec._readCookie('krg_crb'),
