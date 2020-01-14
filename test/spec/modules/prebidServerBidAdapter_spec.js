@@ -1298,7 +1298,7 @@ describe('S2S Adapter', function () {
         const bidRequest = utils.deepClone(REQUEST);
 
         adapter.callBids(bidRequest, BID_REQUESTS, addBidResponse, done, ajax);
-        const parsedRequestBody = JSON.parse(requests[0].requestBody);
+        const parsedRequestBody = JSON.parse(server.requests[0].requestBody);
 
         expect(parsedRequestBody.imp).to.be.a('array');
         expect(parsedRequestBody.imp[0]).to.be.a('object');
@@ -1314,7 +1314,7 @@ describe('S2S Adapter', function () {
         bidRequest.ad_units[0].fpd = {};
 
         adapter.callBids(bidRequest, BID_REQUESTS, addBidResponse, done, ajax);
-        const parsedRequestBody = JSON.parse(requests[0].requestBody);
+        const parsedRequestBody = JSON.parse(server.requests[0].requestBody);
 
         expect(parsedRequestBody.imp).to.be.a('array');
         expect(parsedRequestBody.imp[0]).to.be.a('object');
@@ -1334,7 +1334,7 @@ describe('S2S Adapter', function () {
         };
 
         adapter.callBids(bidRequest, BID_REQUESTS, addBidResponse, done, ajax);
-        const parsedRequestBody = JSON.parse(requests[0].requestBody);
+        const parsedRequestBody = JSON.parse(server.requests[0].requestBody);
 
         expect(parsedRequestBody.imp).to.be.a('array');
         expect(parsedRequestBody.imp[0]).to.be.a('object');
@@ -1354,7 +1354,7 @@ describe('S2S Adapter', function () {
         };
 
         adapter.callBids(bidRequest, BID_REQUESTS, addBidResponse, done, ajax);
-        const parsedRequestBody = JSON.parse(requests[0].requestBody);
+        const parsedRequestBody = JSON.parse(server.requests[0].requestBody);
 
         expect(parsedRequestBody.imp).to.be.a('array');
         expect(parsedRequestBody.imp[0]).to.be.a('object');

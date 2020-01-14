@@ -1264,7 +1264,7 @@ describe('the rubicon adapter', function () {
         describe('Prebid AdSlot', function () {
           beforeEach(function () {
             // enforce that the bid at 0 does not have a 'context' property
-            if (bidderRequest.bids[0].hasOwnProperty('context')) {
+            if (bidderRequest.bids[0].hasOwnProperty('fpd')) {
               delete bidderRequest.bids[0].fpd;
             }
           });
@@ -1657,11 +1657,11 @@ describe('the rubicon adapter', function () {
         });
       });
 
-      it('should include pbAdSlot in bid request but should remove leading slash', function () {
+      it('should include pbAdSlot in bid request', function () {
         createVideoBidderRequest();
         bidderRequest.bids[0].fpd = {
           context: {
-            pbAdSlot: '/1234567890'
+            pbAdSlot: '1234567890'
           }
         };
 
