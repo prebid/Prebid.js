@@ -1,19 +1,9 @@
 const expect = require('chai').expect;
 const { host, protocol } = require('../../../helpers/testing-utils');
 
-const TEST_PAGE_URL = `${protocol}://${host}:9999/test/pages/banner_gdpr.html?pbjs_debug=true`;
+const TEST_PAGE_URL = `${protocol}://${host}:9999/test/pages/modules/currency.html?pbjs_debug=true`;
 const CREATIVE_IFRAME_CSS_SELECTOR = 'iframe[id="google_ads_iframe_/19968336/header-bid-tag-0_0"]';
 
-const EXPECTED_TARGETING_KEYS = {
-  'hb_format': 'banner',
-  'hb_source': 'client',
-  'hb_pb': '0.60',
-  'hb_bidder': 'rubicon',
-  'hb_format_rubicon': 'banner',
-  'hb_source_rubicon': 'client',
-  'hb_pb_rubicon': '0.60',
-  'hb_bidder_rubicon': 'rubicon'
-};
 
 describe('Prebid.js Banner Ad Unit Test', function () {
   before(function loadTestPage() {
@@ -30,11 +20,7 @@ describe('Prebid.js Banner Ad Unit Test', function () {
   });
 
 
-  it('should render the Banner Ad on the page', function () { 
+  it('should render the Banner Ad on the page', function () {
     expect(browser.isVisible('body > div[class="GoogleActiveViewElement"] > a > img')).to.be.true;
   });
-
-  // it('should show consent popup on the page', function () {
-  //   expect(browser.isVisible('body > div[class="banner_banner--3pjXd "]')).to.be.true;
-  // });
 });
