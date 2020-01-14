@@ -1706,8 +1706,8 @@ describe('S2S Adapter', function () {
       expect(vendorConfig).to.have.property('adapter', 'prebidServer');
       expect(vendorConfig.bidders).to.deep.equal(['appnexus']);
       expect(vendorConfig.enabled).to.be.true;
-      expect(vendorConfig).to.have.property('endpoint', '//prebid.adnxs.com/pbs/v1/openrtb2/auction');
-      expect(vendorConfig).to.have.property('syncEndpoint', '//prebid.adnxs.com/pbs/v1/cookie_sync');
+      expect(vendorConfig).to.have.property('endpoint', 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction');
+      expect(vendorConfig).to.have.property('syncEndpoint', 'https://prebid.adnxs.com/pbs/v1/cookie_sync');
       expect(vendorConfig).to.have.property('timeout', 750);
     });
 
@@ -1727,8 +1727,8 @@ describe('S2S Adapter', function () {
       expect(vendorConfig).to.have.property('adapter', 'prebidServer');
       expect(vendorConfig.bidders).to.deep.equal(['rubicon']);
       expect(vendorConfig.enabled).to.be.true;
-      expect(vendorConfig).to.have.property('endpoint', '//prebid-server.rubiconproject.com/openrtb2/auction');
-      expect(vendorConfig).to.have.property('syncEndpoint', '//prebid-server.rubiconproject.com/cookie_sync');
+      expect(vendorConfig).to.have.property('endpoint', 'https://prebid-server.rubiconproject.com/openrtb2/auction');
+      expect(vendorConfig).to.have.property('syncEndpoint', 'https://prebid-server.rubiconproject.com/cookie_sync');
       expect(vendorConfig).to.have.property('timeout', 750);
     });
 
@@ -1739,8 +1739,8 @@ describe('S2S Adapter', function () {
         'bidders': ['rubicon'],
         'defaultVendor': 'rubicon',
         'enabled': true,
-        'endpoint': '//prebid-server.rubiconproject.com/openrtb2/auction',
-        'syncEndpoint': '//prebid-server.rubiconproject.com/cookie_sync',
+        'endpoint': 'https://prebid-server.rubiconproject.com/openrtb2/auction',
+        'syncEndpoint': 'https://prebid-server.rubiconproject.com/cookie_sync',
         'timeout': 750
       })
     });
@@ -1761,8 +1761,8 @@ describe('S2S Adapter', function () {
         accountId: 'abc',
         bidders: ['rubicon'],
         defaultVendor: 'rubicon',
-        endpoint: '//prebid-server.rubiconproject.com/openrtb2/auction',
-        syncEndpoint: '//prebid-server.rubiconproject.com/cookie_sync',
+        endpoint: 'https://prebid-server.rubiconproject.com/openrtb2/auction',
+        syncEndpoint: 'https://prebid-server.rubiconproject.com/cookie_sync',
       })
     });
 
