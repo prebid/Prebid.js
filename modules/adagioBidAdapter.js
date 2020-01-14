@@ -394,6 +394,9 @@ export const spec = {
 
     // Regroug ad units by siteId
     const groupedAdUnits = adUnits.reduce((groupedAdUnits, adUnit) => {
+      if (adUnit.params && adUnit.params.organizationId) {
+        adUnit.params.organizationId = adUnit.params.organizationId.toString();
+      }
       (groupedAdUnits[adUnit.params.organizationId] = groupedAdUnits[adUnit.params.organizationId] || []).push(adUnit);
       return groupedAdUnits;
     }, {});
