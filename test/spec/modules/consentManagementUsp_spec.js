@@ -59,7 +59,7 @@ describe('consentManagement', function () {
       });
 
       it('should exit the consent manager if only config.gdpr is an object', function() {
-        setConsentConfig({ gdpr: { cmpApi: 'iab' } });
+        setConsentConfig({ gdpr: { uspApi: 'iab' } });
         expect(consentAPI).to.be.undefined;
         sinon.assert.calledOnce(utils.logWarn);
         sinon.assert.notCalled(utils.logInfo);
@@ -75,7 +75,7 @@ describe('consentManagement', function () {
       it('results in all user settings overriding system defaults', function () {
         let allConfig = {
           usp: {
-            cmpApi: 'daa',
+            uspApi: 'daa',
             timeout: 7500
           }
         };
@@ -94,7 +94,7 @@ describe('consentManagement', function () {
       it('results in user settings overriding system defaults', () => {
         let staticConfig = {
           usp: {
-            cmpApi: 'static',
+            uspApi: 'static',
             timeout: 7500,
             consentData: {
               getUSPData: {
@@ -115,7 +115,7 @@ describe('consentManagement', function () {
   describe('requestBidsHook tests:', function () {
     let goodConfig = {
       usp: {
-        cmpApi: 'iab',
+        uspApi: 'iab',
         timeout: 7500
       }
     };
@@ -145,9 +145,9 @@ describe('consentManagement', function () {
       });
 
       it('should throw a warning and return to hooked function when an unknown USPAPI framework ID is used', function () {
-        let badCMPConfig = { usp: { cmpApi: 'bad' } };
-        setConsentConfig(badCMPConfig);
-        expect(consentAPI).to.be.equal(badCMPConfig.usp.cmpApi);
+        let badUspApiConfig = { usp: { uspApi: 'bad' } };
+        setConsentConfig(badUspApiConfig);
+        expect(consentAPI).to.be.equal(badUspApiConfig.usp.uspApi);
         requestBidsHook(() => { didHookReturn = true; }, {});
         let consent = uspDataHandler.getConsentData();
         sinon.assert.calledOnce(utils.logWarn);
@@ -155,11 +155,11 @@ describe('consentManagement', function () {
         expect(consent).to.be.null;
       });
 
-      it('should throw proper errors when USP config is not found', function () {
+      it('should throw proper errors when USPAPI config is not found', function () {
         setConsentConfig(noConfig);
         requestBidsHook(() => { didHookReturn = true; }, {});
         let consent = uspDataHandler.getConsentData();
-        // throw 2 warnings; one for no bidsBackHandler and for CMP not being found (this is an error due to gdpr config)
+        // throw 2 warnings; one for no bidsBackHandler and for USPAPI not being found (this is an error due to gdpr config)
         sinon.assert.calledTwice(utils.logWarn);
         expect(didHookReturn).to.be.true;
         expect(consent).to.be.null;
@@ -185,7 +185,7 @@ describe('consentManagement', function () {
         resetConsentData();
       });
 
-      it('should bypass CMP and simply use previously stored consentData', function () {
+      it('should bypass USPAPI and simply use previously stored consentData', function () {
         let testConsentData = {
           uspString: '1YY'
         };
@@ -252,7 +252,7 @@ describe('consentManagement', function () {
       }
 
       // Run tests with JSON response and String response
-      // from CMP window postMessage listener.
+      // from USPAPI window postMessage listener.
       testIFramedPage('with/JSON response', false);
       // testIFramedPage('with/String response', true);
 
