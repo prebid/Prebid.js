@@ -432,7 +432,7 @@ export function newConfig() {
         if (typeof cb === 'function') {
           return runWithBidder(bidder, utils.bind.call(cb, this, ...args))
         } else {
-          utils.logWarn('config.callbackWithBidder callback called with non-function');
+          utils.logWarn('config.callbackWithBidder callback is not a function');
         }
       }
     }
