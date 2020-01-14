@@ -3,10 +3,8 @@ const BIDDER_CODE = 'proxistore';
 const PROXISTORE_VENDOR_ID = 418;
 
 function _mapSizes(sizes) {
-  return sizes
-    .flatMap(array2d => array2d
-      .map(array1d => { return { width: array1d[0], height: array1d[1] } })
-    );
+  const flatSize = sizes.reduce((acc, val) => acc.concat(val), []); ;
+  return flatSize.map(array1d => { return { width: array1d[0], height: array1d[1] } });
 }
 
 function _createServerRequest(bidRequests, bidderRequest) {
