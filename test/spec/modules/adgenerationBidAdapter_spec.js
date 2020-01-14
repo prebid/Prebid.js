@@ -7,7 +7,7 @@ import prebid from '../../../package.json';
 
 describe('AdgenerationAdapter', function () {
   const adapter = newBidder(spec);
-  const ENDPOINT = ['http://api-test.scaleout.jp/adsv/v1', 'https://d.socdm.com/adsv/v1'];
+  const ENDPOINT = ['https://api-test.scaleout.jp/adsv/v1', 'https://d.socdm.com/adsv/v1'];
 
   describe('inherited functions', function () {
     it('exists and is a function', function () {
@@ -88,13 +88,13 @@ describe('AdgenerationAdapter', function () {
     ];
     const bidderRequest = {
       refererInfo: {
-        referer: 'http://example.com'
+        referer: 'https://example.com'
       }
     };
     const data = {
-      banner: `posall=SSPLOC&id=58278&sdktype=0&hb=true&t=json3&sizes=300x250%2C320x100&currency=JPY&pbver=${prebid.version}&sdkname=prebidjs&adapterver=1.0.1&imark=1&tp=http%3A%2F%2Fexample.com`,
-      bannerUSD: `posall=SSPLOC&id=58278&sdktype=0&hb=true&t=json3&sizes=300x250%2C320x100&currency=USD&pbver=${prebid.version}&sdkname=prebidjs&adapterver=1.0.1&imark=1&tp=http%3A%2F%2Fexample.com`,
-      native: 'posall=SSPLOC&id=58278&sdktype=0&hb=true&t=json3&sizes=1x1&currency=JPY&pbver=' + prebid.version + '&sdkname=prebidjs&adapterver=1.0.1&tp=http%3A%2F%2Fexample.com'
+      banner: `posall=SSPLOC&id=58278&sdktype=0&hb=true&t=json3&sizes=300x250%2C320x100&currency=JPY&pbver=${prebid.version}&sdkname=prebidjs&adapterver=1.0.1&imark=1&tp=https%3A%2F%2Fexample.com`,
+      bannerUSD: `posall=SSPLOC&id=58278&sdktype=0&hb=true&t=json3&sizes=300x250%2C320x100&currency=USD&pbver=${prebid.version}&sdkname=prebidjs&adapterver=1.0.1&imark=1&tp=https%3A%2F%2Fexample.com`,
+      native: 'posall=SSPLOC&id=58278&sdktype=0&hb=true&t=json3&sizes=1x1&currency=JPY&pbver=' + prebid.version + '&sdkname=prebidjs&adapterver=1.0.1&tp=https%3A%2F%2Fexample.com'
     };
     it('sends bid request to ENDPOINT via GET', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest)[0];
@@ -215,7 +215,7 @@ describe('AdgenerationAdapter', function () {
         dealid: 'fd5sa5fa7f',
         ttl: 1000,
         results: [
-          {ad: '<!DOCTYPE html> <head> <meta charset="UTF-8"> <script src="http://bigman-test.scaleout.jp/sdk/js/adg-script-base.js" type="text/javascript"></script> <script type="text/javascript">adsettings = {locationid  : 10696,rotation    : 0,displaytype : 1,sdktype     : "0",scheduleid  : 12827}; </script> <style>body {margin:0;padding:0;} </style> </head> <body> <div id="medibasspContainer"> <iframe src="https://sdk-temp.s3-ap-northeast-1.amazonaws.com/adg-sample-ad/300x250.html?prc=_HWL-PTe&rd=http%3A%2F%2Fapi-test.scaleout.jp%2Frd%2Fv1%2Fz%2FhKFj2gDAY2hzbT0xNzUsYjkzMzU2N2QvMTA2OTYvU1NQTE9DLzEyODI3LzI3NTMuNzQ5NC4xMjgyNy84Mjg1LzExMjc1LzEwNjk2OlNTUExPQzoqL2N0PTE1MjIyMjY1OTU3ODI7c3I9aHR0cDtkc3BpZD0zMDE7cHI9eU1pV0FySmZ6TmJCU1ZDcm5FSkZBNGQ1O3ByYj15UTtwcm89eVE7cHJvYz1KUFk7Y3JkMnk9MTAwO2NyeTJkPTAuMDE7aWR4PTA7pXNlcWlk2gAkODZhN2EzNjYtNzI2Yi1mYjFkLTc0Y2QtZmQ3MTA5NzQ2NmVip3NlcXRpbWWtMTUyMjIyNjU5NTc4MqR4dWlkuFZuME5lcXdRQVMwQUFCbC1BTnNBQUFBQQ%2Fp%2Fseqid%3D86a7a366-726b-fb1d-74cd-fd71097466eb%3Bseqctx%3Dgat3by5hZy5mdHlwZaEx%3B%2Fg%2FU%3A%3Furl%3D" style="border: 0px;" width="300" height="250" frameborder="0" scrolling="no"></iframe> </div> </body> <iframe src="http://api-test.scaleout.jp/aux/sosync?ctsv=localhost&amp;seqid=86a7a366-726b-fb1d-74cd-fd71097466eb&amp;seqtime=1522226595782" width="1" height="1" style="position:absolute;border:none;padding:0;margin:0;"></iframe>'},
+          {ad: '<!DOCTYPE html> <head> <meta charset="UTF-8"> <script src="https://bigman-test.scaleout.jp/sdk/js/adg-script-base.js" type="text/javascript"></script> <script type="text/javascript">adsettings = {locationid  : 10696,rotation    : 0,displaytype : 1,sdktype     : "0",scheduleid  : 12827}; </script> <style>body {margin:0;padding:0;} </style> </head> <body> <div id="medibasspContainer"> <iframe src="https://sdk-temp.s3-ap-northeast-1.amazonaws.com/adg-sample-ad/300x250.html?prc=_HWL-PTe&rd=https%3A%2F%2Fapi-test.scaleout.jp%2Frd%2Fv1%2Fz%2FhKFj2gDAY2hzbT0xNzUsYjkzMzU2N2QvMTA2OTYvU1NQTE9DLzEyODI3LzI3NTMuNzQ5NC4xMjgyNy84Mjg1LzExMjc1LzEwNjk2OlNTUExPQzoqL2N0PTE1MjIyMjY1OTU3ODI7c3I9aHR0cDtkc3BpZD0zMDE7cHI9eU1pV0FySmZ6TmJCU1ZDcm5FSkZBNGQ1O3ByYj15UTtwcm89eVE7cHJvYz1KUFk7Y3JkMnk9MTAwO2NyeTJkPTAuMDE7aWR4PTA7pXNlcWlk2gAkODZhN2EzNjYtNzI2Yi1mYjFkLTc0Y2QtZmQ3MTA5NzQ2NmVip3NlcXRpbWWtMTUyMjIyNjU5NTc4MqR4dWlkuFZuME5lcXdRQVMwQUFCbC1BTnNBQUFBQQ%2Fp%2Fseqid%3D86a7a366-726b-fb1d-74cd-fd71097466eb%3Bseqctx%3Dgat3by5hZy5mdHlwZaEx%3B%2Fg%2FU%3A%3Furl%3D" style="border: 0px;" width="300" height="250" frameborder="0" scrolling="no"></iframe> </div> </body> <iframe src="https://api-test.scaleout.jp/aux/sosync?ctsv=localhost&amp;seqid=86a7a366-726b-fb1d-74cd-fd71097466eb&amp;seqtime=1522226595782" width="1" height="1" style="position:absolute;border:none;padding:0;margin:0;"></iframe>'},
         ]
       },
       native: {

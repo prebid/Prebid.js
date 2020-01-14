@@ -10,12 +10,13 @@ import {config} from 'src/config';
 import * as utils from 'src/utils';
 import events from 'src/events';
 import CONSTANTS from 'src/constants.json';
-import {unifiedIdSubmodule} from 'modules/userId/unifiedIdSystem';
-import {pubCommonIdSubmodule} from 'modules/userId/pubCommonIdSystem';
+import {unifiedIdSubmodule} from 'modules/unifiedIdSystem';
+import {pubCommonIdSubmodule} from 'modules/pubCommonIdSystem';
 import {britepoolIdSubmodule} from 'modules/britepoolIdSystem';
 import {id5IdSubmodule} from 'modules/id5IdSystem';
 import {identityLinkSubmodule} from 'modules/identityLinkIdSystem';
 import {liveIntentIdSubmodule} from 'modules/liveIntentIdSystem';
+import {server} from 'test/mocks/xhr';
 
 let assert = require('chai').assert;
 let expect = require('chai').expect;
@@ -390,13 +391,11 @@ describe('User ID', function() {
     let mockIdCallback;
     let auctionSpy;
 
-    before(function() {
+    beforeEach(function() {
       sandbox = sinon.createSandbox();
       sandbox.stub(global, 'setTimeout');
       sandbox.stub(events, 'on');
-    });
 
-    beforeEach(function() {
       // remove cookie
       utils.setCookie('MOCKID', '', EXPIRED_COOKIE_DATE);
 
@@ -428,10 +427,6 @@ describe('User ID', function() {
     afterEach(function () {
       $$PREBID_GLOBAL$$.requestBids.removeAll();
       config.resetConfig();
-      sandbox.resetHistory();
-    });
-
-    after(function() {
       sandbox.restore();
     });
 
@@ -482,7 +477,7 @@ describe('User ID', function() {
       requestBidsHook(auctionSpy, {adUnits});
 
       // check auction was delayed
-      global.setTimeout.calledOnce.should.equal(true);
+      // global.setTimeout.calledOnce.should.equal(true);
       global.setTimeout.calledWith(sinon.match.func, 33);
       auctionSpy.calledOnce.should.equal(false);
 
@@ -1020,13 +1015,7 @@ describe('User ID', function() {
   });
 
   describe('callbacks at the end of auction', function() {
-    let xhr;
-    let requests;
-
     beforeEach(function() {
-      requests = [];
-      xhr = sinon.useFakeXMLHttpRequest();
-      xhr.onCreate = request => requests.push(request);
       sinon.stub(events, 'getEvents').returns([]);
       sinon.stub(utils, 'triggerPixel');
       utils.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
@@ -1035,7 +1024,6 @@ describe('User ID', function() {
     });
 
     afterEach(function() {
-      xhr.restore();
       events.getEvents.restore();
       utils.triggerPixel.restore();
       utils.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
@@ -1070,9 +1058,9 @@ describe('User ID', function() {
       config.setConfig(customCfg);
       requestBidsHook((config) => { innerAdUnits = config.adUnits }, {adUnits});
 
-      expect(requests).to.be.empty;
+      expect(server.requests).to.be.empty;
       events.emit(CONSTANTS.EVENTS.AUCTION_END, {});
-      expect(requests[0].url).to.equal('/any/unifiedid/url');
+      expect(server.requests[0].url).to.equal('/any/unifiedid/url');
     });
 
     it('unifiedid callback with partner', function () {
@@ -1086,9 +1074,9 @@ describe('User ID', function() {
       config.setConfig(customCfg);
       requestBidsHook((config) => { innerAdUnits = config.adUnits }, {adUnits});
 
-      expect(requests).to.be.empty;
+      expect(server.requests).to.be.empty;
       events.emit(CONSTANTS.EVENTS.AUCTION_END, {});
-      expect(requests[0].url).to.equal('//match.adsrvr.org/track/rid?ttd_pid=rubicon&fmt=json');
+      expect(server.requests[0].url).to.equal('//match.adsrvr.org/track/rid?ttd_pid=rubicon&fmt=json');
     });
 
     it('callback for submodules that always need to refresh stored id', function(done) {

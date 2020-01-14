@@ -113,6 +113,7 @@ describe('Yieldone Prebid Analytic', function () {
 
       const responses = [
         {
+          ad: 'test ad content 1',
           width: 300,
           height: 250,
           statusMessage: 'Bid available',
@@ -124,6 +125,7 @@ describe('Yieldone Prebid Analytic', function () {
           timeToRespond: 100
         },
         {
+          ad: 'test ad content 2',
           width: 336,
           height: 280,
           statusMessage: 'Bid available',
@@ -135,6 +137,7 @@ describe('Yieldone Prebid Analytic', function () {
           timeToRespond: 100
         },
         {
+          ad: 'test ad content 3',
           width: 300,
           height: 250,
           statusMessage: 'Bid available',
@@ -158,6 +161,7 @@ describe('Yieldone Prebid Analytic', function () {
       ];
 
       const winner = {
+        ad: 'test ad content 3',
         width: 300,
         height: 250,
         statusMessage: 'Bid available',
@@ -169,69 +173,83 @@ describe('Yieldone Prebid Analytic', function () {
         timeToRespond: 100
       };
 
+      const auctionEnd = {
+        auctionId: auctionId,
+        bidsReceived: responses.slice(0, 3)
+      };
+
+      const preparedResponses = responses.map((resp) => {
+        const res = Object.assign({}, resp);
+        delete res.ad;
+        return res;
+      });
+
       const expectedEvents = [
         {
           eventType: constants.EVENTS.AUCTION_INIT,
-          page: {url: testReferrer},
           params: {
             config: initOptions,
-            auctionId: auctionId,
-            pubId: initOptions.pubId
+            auctionId: auctionId
           }
         },
         {
           eventType: constants.EVENTS.BID_REQUESTED,
-          page: {url: testReferrer},
-          params: Object.assign({pubId: initOptions.pubId}, request[0])
+          params: Object.assign(request[0])
         },
         {
           eventType: constants.EVENTS.BID_REQUESTED,
-          page: {url: testReferrer},
-          params: Object.assign({pubId: initOptions.pubId}, request[1])
+          params: Object.assign(request[1])
         },
         {
           eventType: constants.EVENTS.BID_REQUESTED,
-          page: {url: testReferrer},
-          params: Object.assign({pubId: initOptions.pubId}, request[2])
+          params: Object.assign(request[2])
         },
         {
           eventType: constants.EVENTS.BID_RESPONSE,
-          page: {url: testReferrer},
-          params: Object.assign({pubId: initOptions.pubId}, responses[0])
+          params: Object.assign(preparedResponses[0])
         },
         {
           eventType: constants.EVENTS.BID_RESPONSE,
-          page: {url: testReferrer},
-          params: Object.assign({pubId: initOptions.pubId}, responses[1])
+          params: Object.assign(preparedResponses[1])
         },
         {
           eventType: constants.EVENTS.BID_RESPONSE,
-          page: {url: testReferrer},
-          params: Object.assign({pubId: initOptions.pubId}, responses[2])
+          params: Object.assign(preparedResponses[2])
         },
         {
           eventType: constants.EVENTS.BID_TIMEOUT,
-          page: {url: testReferrer},
-          params: Object.assign({pubId: initOptions.pubId}, request[2])
+          params: Object.assign(request[2])
         },
         {
           eventType: constants.EVENTS.AUCTION_END,
-          page: {url: testReferrer},
           params: {
             auctionId: auctionId,
-            pubId: initOptions.pubId,
-            adServerTargeting: fakeTargeting
+            adServerTargeting: fakeTargeting,
+            bidsReceived: preparedResponses.slice(0, 3)
           }
         }
       ];
+      const expectedResult = {
+        pubId: initOptions.pubId,
+        page: {url: testReferrer},
+        wrapper_version: '$prebid.version$',
+        events: expectedEvents
+      };
 
+      const preparedWinnerParams = Object.assign({adServerTargeting: fakeTargeting}, winner);
+      delete preparedWinnerParams.ad;
       const wonExpectedEvents = [
         {
           eventType: constants.EVENTS.BID_WON,
-          page: {url: testReferrer},
-          params: Object.assign({pubId: initOptions.pubId, adServerTargeting: fakeTargeting}, winner)
+          params: preparedWinnerParams
         }
       ];
+      const wonExpectedResult = {
+        pubId: initOptions.pubId,
+        page: {url: testReferrer},
+        wrapper_version: '$prebid.version$',
+        events: wonExpectedEvents
+      };
 
       adapterManager.enableAnalytics({
         provider: 'yieldone',
@@ -250,9 +268,9 @@ describe('Yieldone Prebid Analytic', function () {
 
       events.emit(constants.EVENTS.BID_TIMEOUT, [responses[3], responses[4]]);
 
-      events.emit(constants.EVENTS.AUCTION_END, {auctionId: auctionId});
+      events.emit(constants.EVENTS.AUCTION_END, auctionEnd);
 
-      expect(yieldoneAnalytics.eventsStorage[auctionId]).to.deep.equal(expectedEvents);
+      expect(yieldoneAnalytics.eventsStorage[auctionId]).to.deep.equal(expectedResult);
 
       delete yieldoneAnalytics.eventsStorage[auctionId];
 
@@ -260,7 +278,7 @@ describe('Yieldone Prebid Analytic', function () {
         events.emit(constants.EVENTS.BID_WON, winner);
 
         sinon.assert.callCount(sendStatStub, 2);
-        expect(yieldoneAnalytics.eventsStorage[auctionId]).to.deep.equal(wonExpectedEvents);
+        expect(yieldoneAnalytics.eventsStorage[auctionId]).to.deep.equal(wonExpectedResult);
 
         delete yieldoneAnalytics.eventsStorage[auctionId];
         done();
