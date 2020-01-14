@@ -28,7 +28,7 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bidRequest) {
-    return bidRequest !== undefined && !!bidRequest.params && !!bidRequest.id;
+    return bidRequest !== undefined && !!bidRequest.params && !!bidRequest.bidId;
   },
 
   /**

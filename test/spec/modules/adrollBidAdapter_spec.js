@@ -3,7 +3,6 @@ import { spec } from 'modules/adrollBidAdapter';
 
 describe('adrollBidAdapter', function() {
   let validBid = {
-    id: 'id',
     bidder: 'adroll',
     adUnitCode: 'adunit-code',
     bidId: 'bid_id',
