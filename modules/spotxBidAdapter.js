@@ -202,12 +202,12 @@ export const spec = {
         userExt.consent = bidderRequest.gdprConsent.consentString;
 
         if (typeof bidderRequest.gdprConsent.gdprApplies !== 'undefined') {
-          requestPayload.regs = {
-            ext: {
-              gdpr: (bidderRequest.gdprConsent.gdprApplies ? 1 : 0)
-            }
-          };
+          utils.deepSetValue(requestPayload, 'regs.ext.gdpr', (bidderRequest.gdprConsent.gdprApplies ? 1 : 0));
         }
+      }
+
+      if (bidderRequest && bidderRequest.uspConsent) {
+        utils.deepSetValue(requestPayload, 'regs.ext.us_privacy', bidderRequest.uspConsent);
       }
 
       // ID5 fied
@@ -308,6 +308,7 @@ export const spec = {
             channel_id: serverResponseBody.id,
             cache_key: spotxBid.ext.cache_key,
             vastUrl: 'https://search.spotxchange.com/ad/vast.html?key=' + spotxBid.ext.cache_key,
+            videoCacheKey: spotxBid.ext.cache_key,
             mediaType: VIDEO,
             width: spotxBid.w,
             height: spotxBid.h
