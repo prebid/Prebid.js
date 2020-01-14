@@ -83,19 +83,19 @@ function lookupUspConsent(uspSuccess, uspError, hookConfig) {
   } catch (e) {
     // must not have been accessible, try using postMessage() api
     let f = window;
-    let uspapiFrame;
-    while (!uspapiFrame) {
+    let usapiFrame;
+    while (!usapiFrame) {
       try {
-        if (f.frames['__uspapiLocator']) uspapiFrame = f;
+        if (f.frames['__uspapiLocator']) usapiFrame = f;
       } catch (e) { }
       if (f === window.top) break;
       f = f.parent;
     }
 
-    if (!uspapiFrame) {
+    if (!usapiFrame) {
       return uspError('USP API not found.', hookConfig);
     }
-    callUspApiWhileInIframe('getUSPData', uspapiFrame, callbackHandler.consentDataCallback);
+    callUspApiWhileInIframe('getUSPData', usapiFrame, callbackHandler.consentDataCallback);
   }
 
   function callUspApiWhileInIframe(commandName, uspapiFrame, moduleCallback) {
