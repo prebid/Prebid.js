@@ -327,7 +327,7 @@ export const spec = {
       // If mediaTypes is banner, get size from mediaTypes.banner.sizes per http://prebid.org/blog/pbjs-3
       playerSize = getBiggerSizeWithLimit(bidrequest.mediaTypes.banner.sizes, bidrequest.mediaTypes.banner.minSizeLimit, bidrequest.mediaTypes.banner.maxSizeLimit);
     }
-    
+
     if (typeof serverResponse == 'object' && typeof serverResponse.body == 'string') {
       serverResponse = serverResponse.body;
     }
@@ -363,18 +363,7 @@ export const spec = {
         netRevenue: true,
         ttl: 360
       };
-
-      var mediaTypes = bidrequest.mediaTypes || {};
-      if (mediaTypes.video) {
-        // bidResponse.vastXml = serverResponse;
-        bidResponse.mediaType = 'video';
-
-        var blob = new Blob([serverResponse], {type: 'application/xml'});
-        bidResponse.vastUrl = window.URL.createObjectURL(blob);
-      } else {
-        bidResponse.ad = formatAdHTML(bidrequest, playerSize);
-      }
-
+      bidResponse.ad = formatAdHTML(bidrequest, playerSize);
       bidResponses.push(bidResponse);
     }
 
