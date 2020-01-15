@@ -2,6 +2,7 @@ import {expect} from 'chai';
 import {spec} from 'modules/polluxBidAdapter';
 import {utils} from 'src/utils';
 import {newBidder} from 'src/adapters/bidderFactory';
+import { parseQS } from 'src/url';
 
 describe('POLLUX Bid Adapter tests', function () {
   // ad units setup
@@ -178,13 +179,12 @@ describe('POLLUX Bid Adapter tests', function () {
 
   it('TEST: verify url and query params', function () {
     const URL = require('url-parse');
-    const querystringify = require('querystringify');
     const request = spec.buildRequests(setup_single_bid);
     const parsedUrl = new URL('https:' + request.url);
     expect(parsedUrl.origin).to.equal('https://adn.polluxnetwork.com');
     expect(parsedUrl.pathname).to.equal('/prebid/v1');
     expect(parsedUrl).to.have.property('query');
-    const parsedQuery = querystringify.parse(parsedUrl.query);
+    const parsedQuery = parseQS(parsedUrl.query);
     expect(parsedQuery).to.have.property('domain').and.to.have.length.above(1);
   });
 

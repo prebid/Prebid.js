@@ -13,7 +13,11 @@ describe('UnderdogMedia adapter', function () {
           siteId: 12143
         },
         adUnitCode: '/19968336/header-bid-tag-1',
-        sizes: [[300, 250], [300, 600], [728, 90], [160, 600], [320, 50]],
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 250], [300, 600], [728, 90], [160, 600], [320, 50]],
+          }
+        },
         bidId: '23acc48ad47af5',
         auctionId: '0fb4905b-9456-4152-86be-c6f6d259ba99',
         bidderRequestId: '1c56ad30b9b8ca8',
@@ -43,7 +47,11 @@ describe('UnderdogMedia adapter', function () {
           params: {
             siteId: '12143'
           },
-          sizes: [[300, 250], [300, 600]]
+          mediaTypes: {
+            banner: {
+              sizes: [[300, 250], [300, 600]]
+            }
+          }
         };
         const isValid = spec.isBidRequestValid(validBid);
 
@@ -66,7 +74,11 @@ describe('UnderdogMedia adapter', function () {
         let invalidBid = {
           bidder: 'underdogmedia',
           params: {},
-          sizes: [[300, 250], [300, 600]]
+          mediaTypes: {
+            banner: {
+              sizes: [[300, 250], [300, 600]]
+            }
+          }
         };
         const isValid = spec.isBidRequestValid(invalidBid);
 
@@ -77,8 +89,12 @@ describe('UnderdogMedia adapter', function () {
         let bidRequests = [
           {
             bidId: '3c9408cdbf2f68',
-            sizes: [[300, 250]],
             bidder: 'underdogmedia',
+            mediaTypes: {
+              banner: {
+                sizes: [[300, 250]]
+              }
+            },
             params: {
               siteId: '12143'
             },
@@ -95,7 +111,11 @@ describe('UnderdogMedia adapter', function () {
         let bidRequests = [
           {
             bidId: '3c9408cdbf2f68',
-            sizes: [[300, 250], [728, 90]],
+            mediaTypes: {
+              banner: {
+                sizes: [[300, 250], [728, 90]]
+              }
+            },
             bidder: 'underdogmedia',
             params: {
               siteId: '12143'
@@ -113,7 +133,11 @@ describe('UnderdogMedia adapter', function () {
         let bidRequests = [
           {
             bidId: '3c9408cdbf2f68',
-            sizes: [[300, 250], [728, 90]],
+            mediaTypes: {
+              banner: {
+                sizes: [[300, 250], [728, 90]]
+              }
+            },
             bidder: 'underdogmedia',
             params: {
               siteId: '12143'
@@ -133,7 +157,11 @@ describe('UnderdogMedia adapter', function () {
         let bidRequests = [
           {
             bidId: '3c9408cdbf2f68',
-            sizes: [[300, 250], [728, 90]],
+            mediaTypes: {
+              banner: {
+                sizes: [[300, 250], [728, 90]]
+              }
+            },
             bidder: 'underdogmedia',
             params: {
               siteId: '12143'
@@ -164,7 +192,11 @@ describe('UnderdogMedia adapter', function () {
         let bidRequests = [
           {
             bidId: '3c9408cdbf2f68',
-            sizes: [[300, 250], [728, 90]],
+            mediaTypes: {
+              banner: {
+                sizes: [[300, 250], [728, 90]]
+              }
+            },
             bidder: 'underdogmedia',
             params: {
               siteId: '12143'
@@ -199,7 +231,11 @@ describe('UnderdogMedia adapter', function () {
         let bidRequests = [
           {
             bidId: '3c9408cdbf2f68',
-            sizes: [[300, 250], [728, 90]],
+            mediaTypes: {
+              banner: {
+                sizes: [[300, 250], [728, 90]]
+              }
+            },
             bidder: 'underdogmedia',
             params: {
               siteId: '12143'

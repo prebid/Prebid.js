@@ -4,7 +4,7 @@ import {spec} from 'modules/cedatoBidAdapter';
 describe('the cedato adapter', function () {
   function getValidBidObject() {
     return {
-      bidId: 123,
+      bidId: '2f4a613a702b6c',
       mediaTypes: {
         banner: {
           sizes: [[300, 250]]
@@ -48,9 +48,10 @@ describe('the cedato adapter', function () {
   });
 
   describe('interpretResponse', function() {
-    var serverResponse;
+    var bid, serverResponse, bidderRequest;
 
     beforeEach(function() {
+      bid = getValidBidObject();
       serverResponse = {
         body: {
           bidid: '0.36157306192821',
@@ -65,7 +66,7 @@ describe('the cedato adapter', function () {
                 },
                 id: '0.75549202124378',
                 adomain: 'cedato.com',
-                uuid: '2f4a613a702b6c',
+                uuid: bid.bidId,
                 crid: '1450133326',
                 adm: "<div id=\"cedato-unit\"></div>\n<script src=\"https://p.cedatoplayer.com/zplayer.js?p=952030718&cb=874433&d=localhost\" type=\"text/javascript\"></script>\n<img src='//h.cedatoplayer.com/hbwon?cb=874433&p=0.1&pi=952030718&w=300&h=250&s=952030718&d=localhost&u=a4657bf1-c373-4676-b79a-0d9de0129e38&ab=2' width=\"1\" height=\"1\"/>\n",
                 h: 250,
@@ -77,10 +78,13 @@ describe('the cedato adapter', function () {
           cur: 'USD'
         }
       };
+      bidderRequest = {
+        bids: [bid]
+      };
     });
 
     it('should return an array of bid responses', function() {
-      var responses = spec.interpretResponse(serverResponse);
+      var responses = spec.interpretResponse(serverResponse, {bidderRequest});
       expect(responses).to.be.an('array').with.length(1);
     });
   });
