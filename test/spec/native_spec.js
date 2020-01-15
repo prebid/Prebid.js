@@ -73,8 +73,8 @@ describe('native.js', function () {
     const targeting = getNativeTargeting(bid, bidRequest);
 
     expect(targeting[CONSTANTS.NATIVE_KEYS.title]).to.equal(bid.native.title);
-    expect(targeting[CONSTANTS.NATIVE_KEYS.body]).to.equal('hb_native_body:123');
-    expect(targeting[CONSTANTS.NATIVE_KEYS.clickUrl]).to.equal('hb_native_linkurl:123');
+    expect(targeting[CONSTANTS.NATIVE_KEYS.body]).to.equal('pwt_native_body:123');
+    expect(targeting[CONSTANTS.NATIVE_KEYS.clickUrl]).to.equal('pwt_native_linkurl:123');
   });
 
   it('should only include native targeting keys with values', function () {
@@ -106,7 +106,7 @@ describe('native.js', function () {
       message: 'Prebid Native',
       action: 'assetRequest',
       adId: '123',
-      assets: ['hb_native_body', 'hb_native_image', 'hb_native_linkurl'],
+      assets: ['pwt_native_body', 'pwt_native_image', 'pwt_native_linkurl'],
     };
 
     const message = getAssetMessage(messageRequest, bid);
