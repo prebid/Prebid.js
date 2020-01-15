@@ -565,10 +565,10 @@ $$PREBID_GLOBAL$$.offEvent = function (event, handler, id) {
  * @param  {string} bidderCode [description]
  * @alias module:pbjs.registerBidAdapter
  */
-$$PREBID_GLOBAL$$.registerBidAdapter = function (bidderAdaptor, bidderCode) {
+$$PREBID_GLOBAL$$.registerBidAdapter = function (bidderAdaptor, bidderCode, options) {
   utils.logInfo('Invoking $$PREBID_GLOBAL$$.registerBidAdapter', arguments);
   try {
-    adapterManager.registerBidAdapter(bidderAdaptor(), bidderCode);
+    adapterManager.registerBidAdapter(bidderAdaptor(), bidderCode, options);
   } catch (e) {
     utils.logError('Error registering bidder adapter : ' + e.message);
   }
