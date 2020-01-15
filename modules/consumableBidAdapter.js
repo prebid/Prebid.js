@@ -137,7 +137,7 @@ export const spec = {
     if (syncOptions.iframeEnabled) {
       return [{
         type: 'iframe',
-        url: '//sync.serverbid.com/ss/' + siteId + '.html'
+        url: 'https://sync.serverbid.com/ss/' + siteId + '.html'
       }];
     }
 
