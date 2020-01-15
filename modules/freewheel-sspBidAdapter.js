@@ -283,7 +283,17 @@ export const spec = {
       requestParams.loc = location;
     }
 
-    var playerSize = getBiggerSizeWithLimit(currentBidRequest.mediaTypes.banner.sizes, currentBidRequest.mediaTypes.banner.minSizeLimit, currentBidRequest.mediaTypes.banner.maxSizeLimit);
+    var playerSize = [];
+    if (currentBidRequest.sizes) {
+      // Backward compatible code, in case size still pass by sizes in bid request
+      playerSize = getBiggerSize(currentBidRequest.sizes);
+    } else if (currentBidRequest.mediaTypes.video && currentBidRequest.mediaTypes.video.playerSize) {
+      // If mediaTypes is video, get size from mediaTypes.video.playerSize per http://prebid.org/blog/pbjs-3
+      playerSize = currentBidRequest.mediaTypes.video.playerSize;
+    } else if (currentBidRequest.mediaTypes.banner.sizes) {
+      // If mediaTypes is banner, get size from mediaTypes.banner.sizes per http://prebid.org/blog/pbjs-3
+      playerSize = getBiggerSizeWithLimit(currentBidRequest.mediaTypes.banner.sizes, currentBidRequest.mediaTypes.banner.minSizeLimit, currentBidRequest.mediaTypes.banner.maxSizeLimit);
+    }
 
     if (playerSize[0] > 0 || playerSize[1] > 0) {
       requestParams.playerSize = playerSize[0] + 'x' + playerSize[1];
@@ -306,8 +316,18 @@ export const spec = {
   */
   interpretResponse: function(serverResponse, request) {
     var bidrequest = request.bidRequest;
-    var playerSize = getBiggerSizeWithLimit(bidrequest.mediaTypes.banner.sizes, bidrequest.mediaTypes.banner.minSizeLimit, bidrequest.mediaTypes.banner.maxSizeLimit);
-
+    var playerSize = [];
+    if (bidrequest.sizes) {
+      // Backward compatible code, in case size still pass by sizes in bid request
+      playerSize = getBiggerSize(bidrequest.sizes);
+    } else if (bidrequest.mediaTypes.video && bidrequest.mediaTypes.video.playerSize) {
+      // If mediaTypes is video, get size from mediaTypes.video.playerSize per http://prebid.org/blog/pbjs-3
+      playerSize = bidrequest.mediaTypes.video.playerSize;
+    } else if (bidrequest.mediaTypes.banner.sizes) {
+      // If mediaTypes is banner, get size from mediaTypes.banner.sizes per http://prebid.org/blog/pbjs-3
+      playerSize = getBiggerSizeWithLimit(bidrequest.mediaTypes.banner.sizes, bidrequest.mediaTypes.banner.minSizeLimit, bidrequest.mediaTypes.banner.maxSizeLimit);
+    }
+    
     if (typeof serverResponse == 'object' && typeof serverResponse.body == 'string') {
       serverResponse = serverResponse.body;
     }
