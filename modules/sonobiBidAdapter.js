@@ -106,10 +106,6 @@ export const spec = {
       payload.hfa = `PRE-${validBidRequests[0].crumbs.pubcid}`;
     }
 
-    if (deepAccess(validBidRequests[0], 'userId.tdid')) {
-      payload.tdid = validBidRequests[0].userId.tdid;
-    }
-
     if (validBidRequests[0].params.referrer) {
       payload.ref = validBidRequests[0].params.referrer;
     }
