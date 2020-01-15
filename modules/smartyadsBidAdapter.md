@@ -52,7 +52,8 @@ Module that connects to SmartyAds' demand sources
                     code: 'placementId_0',
                     mediaTypes: {
                         video: {
-                            sizes: [[300, 250]],
+                            playerSize: [640, 480],
+                            context: 'instream'
                         }
                     },
                     bids: [
