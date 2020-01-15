@@ -6,6 +6,7 @@ import { processNativeAdUnitParams, nativeAdapters } from './native';
 import { newBidder } from './adapters/bidderFactory';
 import { ajaxBuilder } from './ajax';
 import { config, RANDOM } from './config';
+import { hook } from './hook';
 import includes from 'core-js/library/fn/array/includes';
 import find from 'core-js/library/fn/array/find';
 import { adunitCounter } from './adUnits';
@@ -65,6 +66,7 @@ function getBids({bidderCode, auctionId, bidderRequestId, adUnits, labels, src})
           }
 
           bid = Object.assign({}, bid, getDefinedParams(adUnit, [
+            'fpd',
             'mediaType',
             'renderer'
           ]));
@@ -173,6 +175,12 @@ export let uspDataHandler = {
 };
 
 adapterManager.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTimeout, labels) {
+  /**
+   * emit and pass adunits for external modification
+   * @see {@link https://github.com/prebid/Prebid.js/issues/4149|Issue}
+   */
+  events.emit(CONSTANTS.EVENTS.BEFORE_REQUEST_BIDS, adUnits);
+
   let bidRequests = [];
 
   let bidderCodes = getBidderCodes(adUnits);
