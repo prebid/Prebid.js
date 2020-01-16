@@ -232,7 +232,7 @@ export const spec = {
         /\${AUCTION_PRICE}/,
         cpm
       );
-      pixel(bid.nurl);
+      utils.triggerPixel(bid.nurl);
     }
     if (bid.isBurl) {
       if (bid.mediaType === BANNER) {
@@ -245,7 +245,7 @@ export const spec = {
           /\${AUCTION_PRICE}/,
           cpm
         );
-        pixel(bid.burl);
+        utils.triggerPixel(bid.burl);
       }
     }
     utils.logInfo(LOG_INFO_PREFIX + `onBidWon`);
@@ -329,10 +329,6 @@ function extractDomainFromHost(pageHost) {
     domain = null;
   }
   return domain;
-}
-
-function pixel(url) {
-  (document.createElement('IMG')).src = url;
 }
 
 function getLanguage() {

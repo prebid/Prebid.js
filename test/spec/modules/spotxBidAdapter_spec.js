@@ -273,6 +273,30 @@ describe('the spotx adapter', function () {
       expect(request.data.regs.ext.gdpr).to.equal(1);
       expect(request.data.user.ext.consent).to.equal('consent123');
     });
+
+    it('should pass CCPA us_privacy string', function() {
+      var request;
+
+      bidRequestObj.uspConsent = '1YYY'
+
+      request = spec.buildRequests([bid], bidRequestObj)[0];
+      expect(request.data.regs.ext.us_privacy).to.equal('1YYY');
+    });
+
+    it('should pass both GDPR params and CCPA us_privacy', function() {
+      var request;
+
+      bidRequestObj.gdprConsent = {
+        consentString: 'consent123',
+        gdprApplies: true
+      };
+      bidRequestObj.uspConsent = '1YYY'
+
+      request = spec.buildRequests([bid], bidRequestObj)[0];
+      expect(request.data.regs.ext.gdpr).to.equal(1);
+      expect(request.data.user.ext.consent).to.equal('consent123');
+      expect(request.data.regs.ext.us_privacy).to.equal('1YYY');
+    });
   });
 
   describe('interpretResponse', function() {
@@ -360,6 +384,7 @@ describe('the spotx adapter', function () {
       expect(responses[0].requestId).to.equal(123);
       expect(responses[0].ttl).to.equal(360);
       expect(responses[0].vastUrl).to.equal('https://search.spotxchange.com/ad/vast.html?key=cache123');
+      expect(responses[0].videoCacheKey).to.equal('cache123');
       expect(responses[0].width).to.equal(400);
       expect(responses[1].cache_key).to.equal('cache124');
       expect(responses[1].channel_id).to.equal(12345);
@@ -372,6 +397,7 @@ describe('the spotx adapter', function () {
       expect(responses[1].requestId).to.equal(124);
       expect(responses[1].ttl).to.equal(360);
       expect(responses[1].vastUrl).to.equal('https://search.spotxchange.com/ad/vast.html?key=cache124');
+      expect(responses[1].videoCacheKey).to.equal('cache124');
       expect(responses[1].width).to.equal(200);
     });
   });

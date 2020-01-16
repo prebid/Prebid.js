@@ -1,6 +1,7 @@
 import rubiconAnalyticsAdapter, { SEND_TIMEOUT, parseBidResponse } from 'modules/rubiconAnalyticsAdapter';
 import CONSTANTS from 'src/constants.json';
 import { config } from 'src/config';
+import { server } from 'test/mocks/xhr';
 
 import {
   setConfig,
@@ -223,7 +224,6 @@ const MOCK = {
         'transactionId': 'c116413c-9e3f-401a-bee1-d56aec29a1d4',
         'sizes': [[1000, 300], [970, 250], [728, 90]],
         'bidId': '3bd4ebb1c900e2',
-        'seatBidId': 'aaaa-bbbb-cccc-dddd',
         'bidderRequestId': '1be65d7958826a',
         'auctionId': '25c6d7f5-699a-4bfc-87c9-996f915341fa'
       }
@@ -476,17 +476,11 @@ function performStandardAuction() {
 
 describe('rubicon analytics adapter', function () {
   let sandbox;
-  let xhr;
-  let requests;
   let oldScreen;
   let clock;
 
   beforeEach(function () {
     sandbox = sinon.sandbox.create();
-
-    xhr = sandbox.useFakeXMLHttpRequest();
-    requests = [];
-    xhr.onCreate = request => requests.push(request);
 
     sandbox.stub(events, 'getEvents').returns([]);
 
@@ -554,7 +548,7 @@ describe('rubicon analytics adapter', function () {
 
         performStandardAuction();
 
-        expect(requests.length).to.equal(1);
+        expect(server.requests.length).to.equal(1);
       });
 
       it('should unsample', function () {
@@ -568,7 +562,7 @@ describe('rubicon analytics adapter', function () {
 
         performStandardAuction();
 
-        expect(requests.length).to.equal(0);
+        expect(server.requests.length).to.equal(0);
       });
 
       it('should throw errors for invalid samplingFactor', function () {
@@ -582,7 +576,7 @@ describe('rubicon analytics adapter', function () {
 
         performStandardAuction();
 
-        expect(requests.length).to.equal(0);
+        expect(server.requests.length).to.equal(0);
         expect(utils.logError.called).to.equal(true);
       });
     });
@@ -598,7 +592,7 @@ describe('rubicon analytics adapter', function () {
 
         performStandardAuction();
 
-        expect(requests.length).to.equal(1);
+        expect(server.requests.length).to.equal(1);
       });
 
       it('should unsample', function () {
@@ -612,7 +606,7 @@ describe('rubicon analytics adapter', function () {
 
         performStandardAuction();
 
-        expect(requests.length).to.equal(0);
+        expect(server.requests.length).to.equal(0);
       });
 
       it('should throw errors for invalid samplingFactor', function () {
@@ -626,7 +620,7 @@ describe('rubicon analytics adapter', function () {
 
         performStandardAuction();
 
-        expect(requests.length).to.equal(0);
+        expect(server.requests.length).to.equal(0);
         expect(utils.logError.called).to.equal(true);
       });
     });
@@ -649,8 +643,8 @@ describe('rubicon analytics adapter', function () {
     it('should build a batched message from prebid events', function () {
       performStandardAuction();
 
-      expect(requests.length).to.equal(1);
-      let request = requests[0];
+      expect(server.requests.length).to.equal(1);
+      let request = server.requests[0];
 
       expect(request.url).to.equal('//localhost:9999/event');
 
@@ -658,6 +652,40 @@ describe('rubicon analytics adapter', function () {
       validate(message);
 
       expect(message).to.deep.equal(ANALYTICS_MESSAGE);
+    });
+
+    it('should correctly overwrite bidId if seatBidId is on the bidResponse', function () {
+      // Only want one bid request in our mock auction
+      let bidRequested = utils.deepClone(MOCK.BID_REQUESTED);
+      bidRequested.bids.shift();
+      let auctionInit = utils.deepClone(MOCK.AUCTION_INIT);
+      auctionInit.adUnits.shift();
+
+      // clone the mock bidResponse and duplicate
+      let seatBidResponse = utils.deepClone(BID2);
+      seatBidResponse.seatBidId = 'abc-123-do-re-me';
+
+      const setTargeting = {
+        [seatBidResponse.adUnitCode]: seatBidResponse.adserverTargeting
+      };
+
+      const bidWon = Object.assign({}, seatBidResponse, {
+        'status': 'rendered'
+      });
+
+      // spoof the auction with just our duplicates
+      events.emit(AUCTION_INIT, auctionInit);
+      events.emit(BID_REQUESTED, bidRequested);
+      events.emit(BID_RESPONSE, seatBidResponse);
+      events.emit(AUCTION_END, MOCK.AUCTION_END);
+      events.emit(SET_TARGETING, setTargeting);
+      events.emit(BID_WON, bidWon);
+
+      let message = JSON.parse(server.requests[0].requestBody);
+
+      validate(message);
+      expect(message.auctions[0].adUnits[0].bids[0].bidId).to.equal('abc-123-do-re-me');
+      expect(message.bidsWon[0].bidId).to.equal('abc-123-do-re-me');
     });
 
     it('should pick the highest cpm bid if more than one bid per bidRequestId', function () {
@@ -699,7 +727,7 @@ describe('rubicon analytics adapter', function () {
       events.emit(SET_TARGETING, setTargeting);
       events.emit(BID_WON, bidWon);
 
-      let message = JSON.parse(requests[0].requestBody);
+      let message = JSON.parse(server.requests[0].requestBody);
       validate(message);
       expect(message.auctions[0].adUnits[0].bids[0].bidResponse.bidPriceUSD).to.equal(5.5);
       expect(message.auctions[0].adUnits[0].adserverTargeting.hb_pb).to.equal('5.5');
@@ -724,15 +752,15 @@ describe('rubicon analytics adapter', function () {
 
       events.emit(BID_WON, MOCK.BID_WON[1]);
 
-      expect(requests.length).to.equal(2);
+      expect(server.requests.length).to.equal(2);
 
-      let message = JSON.parse(requests[0].requestBody);
+      let message = JSON.parse(server.requests[0].requestBody);
       validate(message);
       expect(message.bidsWon.length).to.equal(1);
       expect(message.auctions).to.deep.equal(ANALYTICS_MESSAGE.auctions);
       expect(message.bidsWon[0]).to.deep.equal(ANALYTICS_MESSAGE.bidsWon[0]);
 
-      message = JSON.parse(requests[1].requestBody);
+      message = JSON.parse(server.requests[1].requestBody);
       validate(message);
       expect(message.bidsWon.length).to.equal(1);
       expect(message).to.not.have.property('auctions');
@@ -747,9 +775,9 @@ describe('rubicon analytics adapter', function () {
 
       clock.tick(SEND_TIMEOUT + 1000);
 
-      expect(requests.length).to.equal(1);
+      expect(server.requests.length).to.equal(1);
 
-      let message = JSON.parse(requests[0].requestBody);
+      let message = JSON.parse(server.requests[0].requestBody);
       validate(message);
       let timedOutBid = message.auctions[0].adUnits[0].bids[0];
       expect(timedOutBid.status).to.equal('error');
@@ -804,8 +832,8 @@ describe('rubicon analytics adapter', function () {
 
       performStandardAuction();
 
-      expect(requests.length).to.equal(1);
-      const request = requests[0];
+      expect(server.requests.length).to.equal(1);
+      const request = server.requests[0];
       const message = JSON.parse(request.requestBody);
       expect(message.integration).to.equal('testType');
 
