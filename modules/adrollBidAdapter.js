@@ -82,6 +82,7 @@ export const spec = {
 }
 
 function _buildRequests(validBidRequests, bidderRequest) {
+  let topLocation = _parseUrl(bidderRequest.refererInfo.referer);
   return validBidRequests.map((bidRequest, index) => {
     return {
       method: 'POST',
@@ -101,7 +102,7 @@ function _buildRequests(validBidRequests, bidderRequest) {
           }
         },
 
-        site: _getSite(bidRequest),
+        site: _getSite(bidRequest, topLocation),
         seller: _getSeller(bidRequest),
         device: _getDevice(bidRequest),
       }
@@ -139,8 +140,7 @@ function publisherTagAvailable() {
   return typeof NextRoll !== 'undefined' && NextRoll.Adapters && NextRoll.Adapters.Prebid;
 }
 
-function _getSite(bidRequest) {
-  const topLocation = utils.getTopWindowLocation();
+function _getSite(bidRequest, topLocation) {
   return {
     page: topLocation.href,
     domain: topLocation.hostname,
@@ -216,6 +216,17 @@ function _getOsVersion(userAgent) {
   let cs = clientStrings.find(cs => cs.r.test(userAgent));
   return cs ? cs.s : 'unknown';
 }
+
+
+function _parseUrl(url) {
+  let parsed = document.createElement('a');
+  parsed.href = url;
+  return {
+    href: parsed.href,
+    hostname: parsed.hostname
+  };
+}
+
 
 /**
  * @return {boolean}
