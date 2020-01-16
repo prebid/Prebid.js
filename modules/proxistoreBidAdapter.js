@@ -40,7 +40,7 @@ function _createServerRequest(bidRequests, bidderRequest) {
 
   return {
     method: 'POST',
-    url: bidRequests[0].params.url || '//abs.proxistore.com/' + payload.language + '/v3/rtb/prebid',
+    url: bidRequests[0].params.url || 'https://abs.proxistore.com/' + payload.language + '/v3/rtb/prebid',
     data: JSON.stringify(payload),
     options: options
   };
