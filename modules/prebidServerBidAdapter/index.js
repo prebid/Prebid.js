@@ -481,6 +481,15 @@ const OPEN_RTB_PROTOCOL = {
 
       const imp = { id: adUnit.code, ext, secure: _s2sConfig.secure };
 
+      /**
+       * Prebid AdSlot
+       * @type {(string|undefined)}
+       */
+      const pbAdSlot = utils.deepAccess(adUnit, 'fpd.context.pbAdSlot');
+      if (typeof pbAdSlot === 'string' && pbAdSlot) {
+        utils.deepSetValue(imp, 'ext.context.data.adslot', pbAdSlot);
+      }
+
       Object.assign(imp, mediaTypes);
 
       if (imp.banner || imp.video || imp.native) {
@@ -778,10 +787,10 @@ const OPEN_RTB_PROTOCOL = {
           bidObject.creative_id = bid.crid;
           bidObject.creativeId = bid.crid;
           if (bid.burl) { bidObject.burl = bid.burl; }
+          bidObject.currency = (response.cur) ? response.cur : DEFAULT_S2S_CURRENCY;
 
-          // TODO: Remove when prebid-server returns ttl, currency and netRevenue
+          // TODO: Remove when prebid-server returns ttl and netRevenue
           bidObject.ttl = (bid.ttl) ? bid.ttl : DEFAULT_S2S_TTL;
-          bidObject.currency = (bid.currency) ? bid.currency : DEFAULT_S2S_CURRENCY;
           bidObject.netRevenue = (bid.netRevenue) ? bid.netRevenue : DEFAULT_S2S_NETREVENUE;
 
           bids.push({ adUnit: bid.impid, bid: bidObject });
