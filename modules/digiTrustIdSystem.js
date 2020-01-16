@@ -111,7 +111,7 @@ function initDigitrustFacade(config) {
       inter.callCount++;
 
       // wrap the initializer callback, if present
-      var checkCallInitializeCb = function (idResponse) {
+      var checkAndCallInitializeCb = function (idResponse) {
         if (inter.callCount <= 1 && isFunc(inter.initCallback)) {
           try {
             inter.initCallback(idResponse);
@@ -131,9 +131,9 @@ function initDigitrustFacade(config) {
       }
 
       if (_savedId != null) {
-        checkCallInitializeCb(_savedId);
         if (isAsync) {
-          cb(_savedId);
+          checkAndCallInitializeCb(_savedId);
+          //          cb(_savedId);
           return;
         } else {
           return _savedId;
@@ -151,9 +151,9 @@ function initDigitrustFacade(config) {
             _savedId = idResult;
           } catch (ex) {
             idResult.success = false;
+            delete idResult.identity;
           }
-          checkCallInitializeCb(idResult);
-          cb(idResult);
+          checkAndCallInitializeCb(idResult);
         },
         fail: function (statusErr, result) {
           utils.logError('DigiTrustId API error: ' + statusErr);
