@@ -5,14 +5,22 @@ const TEST_PAGE_URL = `${protocol}://${host}:9999/test/pages/consent_mgt_gdpr.ht
 const CREATIVE_IFRAME_CSS_SELECTOR = 'iframe[id="google_ads_iframe_/19968336/header-bid-tag-0_0"]';
 
 const EXPECTED_TARGETING_KEYS = {
-  'hb_format': 'banner',
-  'hb_source': 'client',
-  'hb_pb': '0.60',
-  'hb_bidder': 'rubicon',
-  'hb_format_rubicon': 'banner',
-  'hb_source_rubicon': 'client',
-  'hb_pb_rubicon': '0.60',
-  'hb_bidder_rubicon': 'rubicon'
+  hb_source: 'client',
+  hb_source_appnexus: 'client',
+  hb_pb_appnexus: '10.00',
+  hb_native_title_appn: 'This is a Prebid Native Creative',
+  hb_native_linkurl: 'http://prebid.org/dev-docs/show-native-ads.html',
+  hb_format: 'native',
+  hb_native_brand: 'Prebid.org',
+  hb_size: '0x0',
+  hb_bidder_appnexus: 'appnexus',
+  hb_native_linkurl_ap: 'http://prebid.org/dev-docs/show-native-ads.html',
+  hb_native_title: 'This is a Prebid Native Creative',
+  hb_pb: '10.00',
+  hb_native_brand_appn: 'Prebid.org',
+  hb_bidder: 'appnexus',
+  hb_format_appnexus: 'native',
+  hb_size_appnexus: '0x0'
 };
 
 describe('Prebid.js Banner Ad Unit Test', function () {
@@ -29,12 +37,23 @@ describe('Prebid.js Banner Ad Unit Test', function () {
     }
   });
 
+  it('should load the targeting keys with correct values', function () {
+    const result = browser.execute(function () {
+      return window.top.pbjs.getAdserverTargeting('/19968336/prebid_native_example_2');
+    });
+
+    const targetingKeys = result.value['/19968336/prebid_native_example_2'];
+    expect(targetingKeys).to.include(EXPECTED_TARGETING_KEYS);
+    expect(targetingKeys.hb_adid).to.be.a('string');
+    expect(targetingKeys.hb_native_body).to.be.a('string');
+    expect(targetingKeys.hb_native_body_appne).to.be.a('string');
+    expect(targetingKeys.hb_native_icon).to.be.a('string');
+    expect(targetingKeys.hb_native_icon_appne).to.be.a('string');
+    expect(targetingKeys.hb_native_image).to.be.a('string');
+    expect(targetingKeys.hb_adid_appnexus).to.be.a('string');
+  });
 
   it('should render the Banner Ad on the page', function () { 
     expect(browser.isVisible('body > div[class="GoogleActiveViewElement"] > a > img')).to.be.true;
   });
-
-  // it('should show consent popup on the page', function () {
-  //   expect(browser.isVisible('body > div[class="banner_banner--3pjXd "]')).to.be.true;
-  // });
 });

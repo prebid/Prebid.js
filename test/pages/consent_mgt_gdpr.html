@@ -80,8 +80,7 @@
   </script>
 
       <script>
-        var PREBID_TIMEOUT = 700;
-        var FAILSAFE_TIMEOUT = 2500;
+        var PREBID_TIMEOUT = 5000;
   
         var adUnits = [{
           code: 'div-gpt-ad-1460505748561-0',
@@ -99,7 +98,38 @@
             }
           }]
   
-        }];
+        }, {
+			code: '/19968336/prebid_native_example_2',
+			sizes: [
+				[1, 1]
+			],
+			mediaTypes: {
+				native: {
+					title: {
+						required: true
+					},
+					body: {
+						required: true
+					},
+					image: {
+						required: true
+					},
+					sponsoredBy: {
+						required: true
+					},
+					icon: {
+						required: false
+					},
+				}
+			},
+			bids: [{
+				bidder: 'appnexus',
+				params: {
+					placementId: 13232354,
+					allowSmallerSizes: true
+				}
+			}]
+		}];
   
         var pbjs = pbjs || {};
         pbjs.que = pbjs.que || [];
@@ -147,16 +177,11 @@
           pbjs.adserverRequestSent = true;
           googletag.cmd.push(function() {
             pbjs.que.push(function() {
-              pbjs.setTargetingForGPTAsync();
+              pbjs.setTargetingForGPTAsync('div-gpt-ad-1460505748561-0');
               googletag.pubads().refresh();
             });
           });
         }
-  
-        setTimeout(function() {
-           sendAdserverRequest();
-           console.log('timeout in main pbjs fired');
-        }, FAILSAFE_TIMEOUT);
   
       </script>  
       <script>
