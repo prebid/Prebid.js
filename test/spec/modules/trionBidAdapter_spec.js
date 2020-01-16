@@ -213,7 +213,8 @@ describe('Trion adapter tests', function () {
         };
         let bidRequests = spec.buildRequests(TRION_BID_REQUEST, TRION_BIDDER_REQUEST);
         let bidUrlParams = bidRequests[0].data;
-        expect(bidUrlParams).to.include('gdprc=test_gdpr_str');
+        let gcEncoded = encodeURIComponent(TRION_BIDDER_REQUEST.gdprConsent.consentString);
+        expect(bidUrlParams).to.include('gdprc=' + gcEncoded);
         expect(bidUrlParams).to.include('gdpr=1');
         delete TRION_BIDDER_REQUEST.gdprConsent;
       });
@@ -222,7 +223,8 @@ describe('Trion adapter tests', function () {
         TRION_BIDDER_REQUEST.uspConsent = '1YYY';
         let bidRequests = spec.buildRequests(TRION_BID_REQUEST, TRION_BIDDER_REQUEST);
         let bidUrlParams = bidRequests[0].data;
-        expect(bidUrlParams).to.include('usp=1YYY');
+        let uspEncoded = encodeURIComponent(TRION_BIDDER_REQUEST.uspConsent);
+        expect(bidUrlParams).to.include('usp=' + uspEncoded);
         delete TRION_BIDDER_REQUEST.uspConsent;
       });
     });
@@ -305,7 +307,7 @@ describe('Trion adapter tests', function () {
     });
 
     it('should register trion user script with gdpr params', function () {
-      var gdprConsent = {
+      let gdprConsent = {
         consentString: 'test_gdpr_str',
         gdprApplies: true
       };
@@ -313,17 +315,19 @@ describe('Trion adapter tests', function () {
       let pageUrl = getPublisherUrl();
       let pubId = 1;
       let sectionId = 2;
-      let syncString = `?p=${pubId}&s=${sectionId}&gc=test_gdpr_str&g=1&u=${pageUrl}`;
+      let gcEncoded = encodeURIComponent(gdprConsent.consentString);
+      let syncString = `?p=${pubId}&s=${sectionId}&gc=${gcEncoded}&g=1&u=${pageUrl}`;
       expect(syncs[0]).to.deep.equal({type: 'iframe', url: USER_SYNC_URL + syncString});
     });
 
     it('should register trion user script with us privacy params', function () {
-      var uspConsent = '1YYY';
+      let uspConsent = '1YYY';
       let syncs = spec.getUserSyncs({iframeEnabled: true}, null, null, uspConsent);
       let pageUrl = getPublisherUrl();
       let pubId = 1;
       let sectionId = 2;
-      let syncString = `?p=${pubId}&s=${sectionId}&up=1YYY&u=${pageUrl}`;
+      let uspEncoded = encodeURIComponent(uspConsent);
+      let syncString = `?p=${pubId}&s=${sectionId}&up=${uspEncoded}&u=${pageUrl}`;
       expect(syncs[0]).to.deep.equal({type: 'iframe', url: USER_SYNC_URL + syncString});
     });
 
