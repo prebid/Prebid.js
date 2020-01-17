@@ -66,62 +66,92 @@ function lookupUspConsent(uspSuccess, uspError, hookConfig) {
   }
 
   let callbackHandler = handleUspApiResponseCallbacks();
-  let uspapiCallbacks = {};
+  let uspApiCallbacks = {};
 
   // to collect the consent information from the user, we perform a call to USPAPI
   // to collect the user's consent choices represented as a string (via getUSPData)
   // the following code also determines where the USPAPI is located and uses the proper workflow to communicate with it:
 
-  // starting with the current window, traverse up through the ancestor windows until we get to window.top.
+  // starting with the current window, traverse up through the ancestor windows until we get to window.top
+  // 1. __uspapi() exists on window
+  // 2. uspapi() exists on safeframe
+  // 3. look for locator __uspapiLocator in x-domain iframe
+  // 4. if current window is not the top window, and window.top is not friendly call window.top.postMessage()
   let f = window;
-  let uspapiFound = false;
-  while (f || !uspapiFound) {
-    // 1. look for __uspapi() aattached to window
-    // 2. look for __uspapi() in friendly iframe
-    // 3. look for the __uspapiLocator frame (x-domain iframe)
-    if (windowContainsUspApi(f, USPAPI_VERSION, callbackHandler.consentDataCallback) ||
-      friendlyIframeContainsUspApi(f, callbackHandler.consentDataCallback) ||
-      iframeContainsUspApi(f, callbackHandler.consentDataCallback)) {
-      uspapiFound = true;
-      break;
+  let uspApi;
+  while (!uspApi) {
+    if (uspApiDefinedOnWindow(f, callbackHandler.consentDataCallback) ||
+      uspApiDefinedOnFriendlyIframe(f, callbackHandler.consentDataCallback) ||
+      uspApiDefinedOnIframe(f, callbackHandler.consentDataCallback)) {
+      uspApi = f;
     }
-    if (f === f.top) {
-      return uspError('USP API not found.', hookConfig);
-    }
+    if (f === f.top) break;
     f = f.parent;
   }
-  // 4. if the USP CMP is still not found, and the current window is not the top window, and window.top is not friendly,
-  // assume the CMP may be there, and call window.top.postMessage()
-  if (f && f !== f.top && !isFriendly(f.top)) {
+
+  if (f !== f.top && !inASafeFrame(f.top)) {
     callUspApiWhileInIframe(f.top, 'getUSPData', callbackHandler.consentDataCallback);
+    uspApi = f;
   }
 
-  function isFriendly(w) {
-    return w.$sf && w.$sf.ext;
+  if (!uspApi) {
+    return uspError('USPAPI not found.', hookConfig);
   }
 
-  function windowContainsUspApi(w, uspapiVersion, moduleCallback) {
-    if (typeof w.__uspapi === 'function') {
-      w.__uspapi('getUSPData', uspapiVersion, moduleCallback);
+  /**
+   * @param {Window} win
+   * @returns {boolean}
+   */
+  function inASafeFrame(win) {
+    return !!(win.$sf && win.$sf.ext);
+  }
+
+  /**
+   * @param {Window} win
+   * @param {function(consentData:Object)} moduleCallback
+   * @returns {boolean}
+   */
+  function uspApiDefinedOnWindow(win, moduleCallback) {
+    try {
+      if (utils.isFn(win.__uspapi)) {
+        win.__uspapi('getUSPData', USPAPI_VERSION, moduleCallback);
+        return true;
+      }
+    } catch (e) {}
+  }
+
+  /**
+   * @param {Window} win
+   * @param {function(consentData:Object)} moduleCallback
+   * @returns {boolean}
+   */
+  function uspApiDefinedOnFriendlyIframe(win, moduleCallback) {
+    if (inASafeFrame(win) && utils.isFn(win.$sf.ext.uspapi)) {
+      callUspApiWhileInSafeFrame(win, 'getUSPData', moduleCallback);
       return true;
     }
   }
 
-  function friendlyIframeContainsUspApi(w, moduleCallback) {
-    if (isFriendly(w) && typeof w.$sf.ext.uspapi === 'function') {
-      callUspApiWhileInSafeFrame(w, 'getUSPData', moduleCallback);
-      return true;
-    }
+  /**
+   * @param {Window} win
+   * @param {function(consentData:Object)} moduleCallback
+   * @returns {boolean}
+   */
+  function uspApiDefinedOnIframe(win, moduleCallback) {
+    try {
+      if (win.frames['__uspapiLocator']) {
+        callUspApiWhileInIframe(win, 'getUSPData', moduleCallback);
+        return true;
+      }
+    } catch (e) {}
   }
 
-  function iframeContainsUspApi(w, moduleCallback) {
-    if (w.frames['__uspapiLocator']) {
-      callUspApiWhileInIframe(w, 'getUSPData', moduleCallback);
-      return true;
-    }
-  }
-
-  function callUspApiWhileInSafeFrame(w, commandName, moduleCallback) {
+  /**
+   * @param {Window} win
+   * @param {string} commandName
+   * @param {function(consentData:Object)} moduleCallback
+   */
+  function callUspApiWhileInSafeFrame(win, commandName, moduleCallback) {
     function sfCallback(msgName, data) {
       if (msgName === 'uspapiReturn') {
         moduleCallback(data);
@@ -138,14 +168,19 @@ function lookupUspConsent(uspSuccess, uspError, hookConfig) {
       height = sizes[0][1];
     }
 
-    w.$sf.ext.register(width, height, sfCallback);
-    w.$sf.ext.cmp(commandName);
+    win.$sf.ext.register(width, height, sfCallback);
+    win.$sf.ext.cmp(commandName);
   }
 
-  function callUspApiWhileInIframe(uspapiFrame, commandName, moduleCallback) {
+  /**
+   * @param {Window} win
+   * @param {string} commandName
+   * @param {function(consentData:Object, success:true)} moduleCallback
+   */
+  function callUspApiWhileInIframe(win, commandName, moduleCallback) {
     /* Setup up a __uspapi function to do the postMessage and stash the callback.
       This function behaves, from the caller's perspective, identicially to the in-frame __uspapi call (although it is not synchronous) */
-    window.__uspapi = function (cmd, ver, callback) {
+    win.__uspapi = function (cmd, ver, callback) {
       let callId = Math.random() + '';
       let msg = {
         __uspapiCall: {
@@ -155,28 +190,28 @@ function lookupUspConsent(uspSuccess, uspError, hookConfig) {
         }
       };
 
-      uspapiCallbacks[callId] = callback;
-      uspapiFrame.postMessage(msg, '*');
+      uspApiCallbacks[callId] = callback;
+      win.postMessage(msg, '*');
     }
 
     /** when we get the return message, call the stashed callback */
-    window.addEventListener('message', readPostMessageResponse, false);
+    win.addEventListener('message', readPostMessageResponse, false);
 
     // call uspapi
-    window.__uspapi(commandName, USPAPI_VERSION, uspapiCallback);
+    win.__uspapi(commandName, null, uspApiCallback);
 
     function readPostMessageResponse(event) {
       const res = event && event.data && event.data.__uspapiReturn;
       if (res && res.callId) {
-        if (typeof uspapiCallbacks[res.callId] !== 'undefined') {
-          uspapiCallbacks[res.callId](res.returnValue, res.success);
-          delete uspapiCallbacks[res.callId];
+        if (typeof uspApiCallbacks[res.callId] !== 'undefined') {
+          uspApiCallbacks[res.callId](res.returnValue, res.success);
+          delete uspApiCallbacks[res.callId];
         }
       }
     }
 
-    function uspapiCallback(consentObject, success) {
-      window.removeEventListener('message', readPostMessageResponse, false);
+    function uspApiCallback(consentObject, success) {
+      win.removeEventListener('message', readPostMessageResponse, false);
       moduleCallback(consentObject, success);
     }
   }
