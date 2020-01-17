@@ -71,67 +71,60 @@ function lookupUspConsent(uspSuccess, uspError, hookConfig) {
   // to collect the consent information from the user, we perform a call to USPAPI
   // to collect the user's consent choices represented as a string (via getUSPData)
   // the following code also determines where the USPAPI is located and uses the proper workflow to communicate with it:
+
   // starting with the current window, traverse up through the ancestor windows until we get to window.top.
   let f = window;
   let uspapiFound = false;
-  while (!uspapiFound) {
-    // 1. look for __uspapi() in current window
-    if (windowContainsFunction(f)) {
-      try {
-        f.__uspapi('getUSPData', USPAPI_VERSION, callbackHandler.consentDataCallback);
-        uspapiFound = true;
-        break;
-      } catch (e) {}
-    }
-
+  while (f || !uspapiFound) {
+    // 1. look for __uspapi() aattached to window
     // 2. look for __uspapi() in friendly iframe
-    if (friendlyIframeContainsFunction(f)) {
-      callUspApiWhileInSafeFrame('getUSPData', f, callbackHandler.consentDataCallback)
+    // 3. look for the __uspapiLocator frame (x-domain iframe)
+    if (windowContainsUspApi(f, USPAPI_VERSION, callbackHandler.consentDataCallback) ||
+      friendlyIframeContainsUspApi(f, callbackHandler.consentDataCallback) ||
+      iframeContainsUspApi(f, callbackHandler.consentDataCallback)) {
       uspapiFound = true;
       break;
     }
-
-    // 3. look for the __uspapiLocator Frame (x-domain iframe)
-    if (locatorIframeContainsFunction(f)) {
-      callUspApiWhileInIframe('getUSPData', f, callbackHandler.consentDataCallback);
-      uspapiFound = true;
-      break;
-    }
-
-    // exit, if at top window and not found
-    if (!uspapiFound && f === f.top) {
+    if (f === f.top) {
       return uspError('USP API not found.', hookConfig);
     }
-
     f = f.parent;
   }
-
   // 4. if the USP CMP is still not found, and the current window is not the top window, and window.top is not friendly,
   // assume the CMP may be there, and call window.top.postMessage()
   if (f && f !== f.top && !isFriendly(f.top)) {
-    callUspApiWhileInIframe('getUSPData', f.top, callbackHandler.consentDataCallback);
+    callUspApiWhileInIframe(f.top, 'getUSPData', callbackHandler.consentDataCallback);
   }
 
   function isFriendly(w) {
     return w.$sf && w.$sf.ext;
   }
 
-  function windowContainsFunction(w) {
-    return typeof w['__uspapi'] === 'function';
+  function windowContainsUspApi(w, uspapiVersion, moduleCallback) {
+    if (typeof w.__uspapi === 'function') {
+      w.__uspapi('getUSPData', uspapiVersion, moduleCallback);
+      return true;
+    }
   }
 
-  function friendlyIframeContainsFunction(w) {
-    return isFriendly(w) && typeof w.$sf.ext.uspapi === 'function';
+  function friendlyIframeContainsUspApi(w, moduleCallback) {
+    if (isFriendly(w) && typeof w.$sf.ext.uspapi === 'function') {
+      callUspApiWhileInSafeFrame(w, 'getUSPData', moduleCallback);
+      return true;
+    }
   }
 
-  function locatorIframeContainsFunction(w) {
-    return w.frames['__uspapiLocator'];
+  function iframeContainsUspApi(w, moduleCallback) {
+    if (w.frames['__uspapiLocator']) {
+      callUspApiWhileInIframe(w, 'getUSPData', moduleCallback);
+      return true;
+    }
   }
 
-  function callUspApiWhileInSafeFrame(commandName, w, callback) {
+  function callUspApiWhileInSafeFrame(w, commandName, moduleCallback) {
     function sfCallback(msgName, data) {
       if (msgName === 'uspapiReturn') {
-        callback(data);
+        moduleCallback(data);
       }
     }
 
@@ -149,7 +142,7 @@ function lookupUspConsent(uspSuccess, uspError, hookConfig) {
     w.$sf.ext.cmp(commandName);
   }
 
-  function callUspApiWhileInIframe(commandName, uspapiFrame, moduleCallback) {
+  function callUspApiWhileInIframe(uspapiFrame, commandName, moduleCallback) {
     /* Setup up a __uspapi function to do the postMessage and stash the callback.
       This function behaves, from the caller's perspective, identicially to the in-frame __uspapi call (although it is not synchronous) */
     window.__uspapi = function (cmd, ver, callback) {
