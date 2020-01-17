@@ -230,22 +230,31 @@ describe('gumgumAdapter', function () {
       method: 'GET',
       pi: 3
     }
+    let expectedResponse = {
+      'ad': '<html><h3>I am an ad</h3></html>',
+      'cpm': 0,
+      'creativeId': 29593,
+      'currency': 'USD',
+      'height': '250',
+      'netRevenue': true,
+      'requestId': 12345,
+      'width': '300',
+      // dealId: DEAL_ID,
+      // referrer: REFERER,
+      ttl: 60
+    };
 
     it('should get correct bid response', function () {
-      let expectedResponse = {
-        'ad': '<html><h3>I am an ad</h3></html>',
-        'cpm': 0,
-        'creativeId': 29593,
-        'currency': 'USD',
-        'height': '250',
-        'netRevenue': true,
-        'requestId': 12345,
-        'width': '300',
-        // dealId: DEAL_ID,
-        // referrer: REFERER,
-        ttl: 60
-      };
       expect(spec.interpretResponse({ body: serverResponse }, bidRequest)).to.deep.equal([expectedResponse]);
+    });
+
+    it('should pass correct currency if found in bid response', function () {
+      const cur = 'EURO';
+      let response = Object.assign({}, serverResponse);
+      let expected = Object.assign({}, expectedResponse);
+      response.ad.cur = cur;
+      expected.currency = cur;
+      expect(spec.interpretResponse({ body: response }, bidRequest)).to.deep.equal([expected]);
     });
 
     it('handles nobid responses', function () {
