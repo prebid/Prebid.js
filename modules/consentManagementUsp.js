@@ -70,32 +70,84 @@ function lookupUspConsent(uspSuccess, uspError, hookConfig) {
 
   // to collect the consent information from the user, we perform a call to USPAPI
   // to collect the user's consent choices represented as a string (via getUSPData)
-
   // the following code also determines where the USPAPI is located and uses the proper workflow to communicate with it:
-  // - use the USPAPI locator code to see if USP's located in the current window or an ancestor window. This works in friendly or cross domain iframes
-  // - if USPAPI is not found, the iframe function will call the uspError exit callback to abort the rest of the USPAPI workflow
-  // - try to call the __uspapi() function directly, otherwise use the postMessage() api
-  // find the uspApi frame/window
 
-  try {
-    // try to call __uspapi directly
-    window.__uspapi('getUSPData', USPAPI_VERSION, callbackHandler.consentDataCallback);
-  } catch (e) {
-    // must not have been accessible, try using postMessage() api
-    let f = window;
-    let usapiFrame;
-    while (!usapiFrame) {
+  //  starting with the current window, traverse up through the ancestor windows until we get to window.top. 
+  let f = window;
+  let uspapiFound = false;
+  while (!uspapiFound) {
+    // 1. look for __uspapi() in current window
+    if (windowContainsFunction(f)) {
       try {
-        if (f.frames['__uspapiLocator']) usapiFrame = f;
-      } catch (e) { }
-      if (f === window.top) break;
-      f = f.parent;
+        f.__uspapi('getUSPData', USPAPI_VERSION, callbackHandler.consentDataCallback);
+        uspapiFound = true;
+        break;
+      } catch (e) {}
     }
 
-    if (!usapiFrame) {
+    // 2. look for __uspapi() in friendly iframe
+    if (friendlyIframeContainsFunction(f)) {
+      callCmpWhileInSafeFrame(f,  'getUSPData', callbackHandler.consentDataCallback)
+      uspapiFound = true;
+      break;
+    }
+
+    // 3. look for the __uspapiLocator Frame (x-domain iframe)
+    if (locatorIframeContainsFunction(f)) {
+      callUspApiWhileInIframe('getUSPData', f.frames['__uspapiLocator'], callbackHandler.consentDataCallback);
+      uspapiFound = true;
+      break;
+    }
+
+    // exit, if at top window and not found
+    if (f === f.top) {
       return uspError('USP API not found.', hookConfig);
     }
-    callUspApiWhileInIframe('getUSPData', usapiFrame, callbackHandler.consentDataCallback);
+
+    f = f.parent;
+  }
+
+  // 4. if the USP CMP is still not found, and the current window is not the top window, and window.top is not friendly,
+  // assume the CMP may be there, and do a window.top.postMessage().
+  if (f && f !== f.top && !isFriendly(f.top)) {
+    callUspApiWhileInIframe('getUSPData', f.top, callbackHandler.consentDataCallback);
+  }
+
+  function isFriendly(w) {
+    return w.$sf && w.$sf.ext;
+  }
+
+  function windowContainsFunction(w) {
+    return typeof w['__uspapi'] === 'function';
+  }
+
+  function friendlyIframeContainsFunction(w) {
+    return isFriendly(w) && typeof w.$sf.ext.uspapi === 'function';
+  }
+
+  function locatorIframeContainsFunction(w) {
+    return typeof w.frames['__uspapiLocator'] !== 'undefined';
+  }
+
+  function callCmpWhileInSafeFrame(w, commandName, callback) {
+    function sfCallback(msgName, data) {
+      if (msgName === 'uspapiReturn') {
+        callback(data);
+      }
+    }
+
+    // find sizes from adUnits object
+    let adUnits = hookConfig.adUnits;
+    let width = 1;
+    let height = 1;
+    if (Array.isArray(adUnits) && adUnits.length > 0) {
+      let sizes = utils.getAdUnitSizes(adUnits[0]);
+      width = sizes[0][0];
+      height = sizes[0][1];
+    }
+
+    w.$sf.ext.register(width, height, sfCallback);
+    w.$sf.ext.cmp(commandName);
   }
 
   function callUspApiWhileInIframe(commandName, uspapiFrame, moduleCallback) {
