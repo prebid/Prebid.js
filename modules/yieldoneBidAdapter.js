@@ -58,7 +58,6 @@ export const spec = {
   },
   interpretResponse: function(serverResponse, bidRequest) {
     const bidResponses = [];
-    const bidObj = bidRequest.bidRequest;
     const response = serverResponse.body;
     const crid = response.crid || 0;
     const width = response.width || 0;
@@ -69,7 +68,7 @@ export const spec = {
       const renderId = response.renderid || '';
       const currency = response.currency || 'JPY';
       const netRevenue = (response.netRevenue === undefined) ? true : response.netRevenue;
-      const referrer = utils.deepAccess(bidObj, 'refererInfo.referer');
+      const referrer = bidRequest.data.r || '';
       const bidResponse = {
         requestId: response.uid,
         cpm: cpm,
