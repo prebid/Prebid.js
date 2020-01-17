@@ -1,8 +1,8 @@
-import {registerBidder} from 'src/adapters/bidderFactory';
+import {registerBidder} from '../src/adapters/bidderFactory';
 import * as utils from '../src/utils';
 import {BANNER} from '../src/mediaTypes';
 
-const ENDPOINT_URL = '//exchange.bidphysics.com/auction';
+const ENDPOINT_URL = 'https://exchange.bidphysics.com/auction';
 
 const DEFAULT_BID_TTL = 30;
 const DEFAULT_CURRENCY = 'USD';
@@ -10,7 +10,7 @@ const DEFAULT_NET_REVENUE = true;
 
 export const spec = {
   code: 'bidphysics',
-  aliases: ['yieldlift', 'padsquad'],
+  aliases: ['yieldlift'],
   supportedMediaTypes: [BANNER],
 
   isBidRequestValid: function (bid) {

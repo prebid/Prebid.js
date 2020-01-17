@@ -1,6 +1,6 @@
-import { getKeyValueTargetingPairs, auctionCallbacks } from 'src/auction';
+import { getKeyValueTargetingPairs, auctionCallbacks, AUCTION_COMPLETED } from 'src/auction';
 import CONSTANTS from 'src/constants.json';
-import { adjustBids } from 'src/auction';
+import { adjustBids, getMediaTypeGranularity } from 'src/auction';
 import * as auctionModule from 'src/auction';
 import { registerBidder } from 'src/adapters/bidderFactory';
 import { createBid } from 'src/bidfactory';
@@ -8,6 +8,7 @@ import { config } from 'src/config';
 import * as store from 'src/videoCache';
 import * as ajaxLib from 'src/ajax';
 import find from 'core-js/library/fn/array/find';
+import { server } from 'test/mocks/xhr';
 
 var assert = require('assert');
 
@@ -25,6 +26,10 @@ const BIDDER_CODE1 = 'sampleBidder1';
 const ADUNIT_CODE = 'adUnit-code';
 const ADUNIT_CODE1 = 'adUnit-code-1';
 
+/**
+ * @param {Object} [opts]
+ * @returns {Bid}
+ */
 function mockBid(opts) {
   let bidderCode = opts && opts.bidderCode;
 
@@ -43,6 +48,11 @@ function mockBid(opts) {
   };
 }
 
+/**
+ * @param {Bid} bid
+ * @param {Object} [opts]
+ * @returns {BidRequest}
+ */
 function mockBidRequest(bid, opts) {
   if (!bid) {
     throw new Error('bid required');
@@ -757,7 +767,6 @@ describe('auctionmanager.js', function () {
 
     describe('when auction timeout is 20', function () {
       let eventsEmitSpy;
-      let server;
 
       before(function () {
         bids = [mockBid(), mockBid({ bidderCode: BIDDER_CODE1 })];
@@ -767,8 +776,6 @@ describe('auctionmanager.js', function () {
       });
 
       beforeEach(function () {
-        server = sinon.createFakeServer();
-
         adUnits = [{
           code: ADUNIT_CODE,
           bids: [
@@ -780,10 +787,10 @@ describe('auctionmanager.js', function () {
         eventsEmitSpy = sinon.spy(events, 'emit');
       });
       afterEach(function () {
-        server.restore();
         events.emit.restore();
       });
-      it('should emit BID_TIMEOUT for timed out bids', function (done) {
+
+      it('should emit BID_TIMEOUT and AUCTION_END for timed out bids', function (done) {
         const spec1 = mockBidder(BIDDER_CODE, [bids[0]]);
         registerBidder(spec1);
         const spec2 = mockBidder(BIDDER_CODE1, [bids[1]]);
@@ -797,6 +804,12 @@ describe('auctionmanager.js', function () {
           const timedOutBids = bidTimeoutCall.args[1];
           assert.equal(timedOutBids.length, 1);
           assert.equal(timedOutBids[0].bidder, BIDDER_CODE1);
+
+          const auctionEndCall = eventsEmitSpy.withArgs(CONSTANTS.EVENTS.AUCTION_END).getCalls()[0];
+          const auctionProps = auctionEndCall.args[1];
+          assert.equal(auctionProps.adUnits, adUnits);
+          assert.equal(auctionProps.timeout, 20);
+          assert.equal(auctionProps.auctionStatus, AUCTION_COMPLETED)
           done();
         }
         auction = auctionModule.newAuction({adUnits, adUnitCodes, callback: auctionCallback, cbTimeout: 20});
@@ -969,11 +982,79 @@ describe('auctionmanager.js', function () {
     });
   });
 
+  describe('getMediaTypeGranularity', function () {
+    it('video', function () {
+      let bidReq = {
+        'mediaTypes': { video: {id: '1'} }
+      };
+
+      // mediaType is video and video.context is undefined
+      expect(getMediaTypeGranularity('video', bidReq, {
+        banner: 'low',
+        video: 'medium'
+      })).to.equal('medium');
+
+      expect(getMediaTypeGranularity('video', {}, {
+        banner: 'low',
+        video: 'medium'
+      })).to.equal('medium');
+      ``
+      expect(getMediaTypeGranularity('video', undefined, {
+        banner: 'low',
+        video: 'medium'
+      })).to.equal('medium');
+
+      // also when mediaTypes.video is undefined
+      bidReq = {
+        'mediaTypes': { banner: {} }
+      };
+      expect(getMediaTypeGranularity('video', bidReq, {
+        banner: 'low',
+        video: 'medium'
+      })).to.equal('medium');
+
+      // also when mediaTypes is undefined
+      expect(getMediaTypeGranularity('video', {}, {
+        banner: 'low',
+        video: 'medium'
+      })).to.equal('medium');
+    });
+
+    it('video-outstream', function () {
+      let bidReq = { 'mediaTypes': { video: { context: 'outstream' } } };
+
+      expect(getMediaTypeGranularity('video', bidReq, {
+        'banner': 'low', 'video': 'medium', 'video-outstream': 'high'
+      })).to.equal('high');
+    });
+
+    it('video-instream', function () {
+      let bidReq = { 'mediaTypes': { video: { context: 'instream' } } };
+
+      expect(getMediaTypeGranularity('video', bidReq, {
+        banner: 'low', video: 'medium', 'video-instream': 'high'
+      })).to.equal('high');
+
+      // fall back to video if video-instream not found
+      expect(getMediaTypeGranularity('video', bidReq, {
+        banner: 'low', video: 'medium'
+      })).to.equal('medium');
+
+      expect(getMediaTypeGranularity('video', {mediaTypes: {banner: {}}}, {
+        banner: 'low', video: 'medium'
+      })).to.equal('medium');
+    });
+
+    it('native', function () {
+      expect(getMediaTypeGranularity('native', {mediaTypes: {native: {}}}, {
+        banner: 'low', video: 'medium', native: 'high'
+      })).to.equal('high');
+    });
+  });
+
   describe('auctionCallbacks', function() {
     let bids = TEST_BIDS;
     let bidRequests;
-    let xhr;
-    let requests;
     let doneSpy;
     let auction = {
       getBidRequests: () => bidRequests,
@@ -984,9 +1065,6 @@ describe('auctionmanager.js', function () {
 
     beforeEach(() => {
       doneSpy = sinon.spy();
-      xhr = sinon.useFakeXMLHttpRequest();
-      requests = [];
-      xhr.onCreate = (request) => requests.push(request);
       config.setConfig({
         cache: {
           url: 'https://prebid.adnxs.com/pbc/v1/cache'
@@ -996,7 +1074,6 @@ describe('auctionmanager.js', function () {
 
     afterEach(() => {
       doneSpy.resetHistory();
-      xhr.restore();
       config.resetConfig();
     });
 
@@ -1046,7 +1123,7 @@ describe('auctionmanager.js', function () {
       assert.equal(doneSpy.callCount, 0);
       const uuid = 'c488b101-af3e-4a99-b538-00423e5a3371';
       const responseBody = `{"responses":[{"uuid":"${uuid}"}]}`;
-      requests[0].respond(200, { 'Content-Type': 'application/json' }, responseBody);
+      server.requests[0].respond(200, { 'Content-Type': 'application/json' }, responseBody);
       assert.equal(doneSpy.callCount, 1);
     })
   });

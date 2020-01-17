@@ -11,6 +11,7 @@ s2sTesting.CLIENT = CLIENT;
 
 var testing = false; // whether testing is turned on
 var bidSource = {}; // store bidder sources determined from s2sConfing bidderControl
+s2sTesting.globalRand = Math.random(); // if 10% of bidderA and 10% of bidderB should be server-side, make it the same 10%
 
 // load s2sConfig
 config.getConfig('s2sConfig', config => {
@@ -82,7 +83,7 @@ s2sTesting.getSource = function(sourceWeights = {}, bidSources = [SERVER, CLIENT
   });
   if (!totWeight) return; // bail if no source weights
   // choose a source randomly based on weights
-  var rndWeight = Math.random() * totWeight;
+  var rndWeight = s2sTesting.globalRand * totWeight;
   for (var i = 0; i < bidSources.length; i++) {
     let source = bidSources[i];
     // choose the first source with an incremental weight > random weight

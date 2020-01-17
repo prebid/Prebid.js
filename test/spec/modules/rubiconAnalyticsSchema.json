@@ -191,6 +191,9 @@
           }
         ]
       }
+    },
+    "wrapperName": {
+      "type": "string"
     }
   },
   "definitions": {
