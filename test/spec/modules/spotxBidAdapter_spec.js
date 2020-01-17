@@ -100,7 +100,7 @@ describe('the spotx adapter', function () {
     it('should build a very basic request', function() {
       var request = spec.buildRequests([bid], bidRequestObj)[0];
       expect(request.method).to.equal('POST');
-      expect(request.url).to.equal('//search.spotxchange.com/openrtb/2.3/dados/12345');
+      expect(request.url).to.equal('https://search.spotxchange.com/openrtb/2.3/dados/12345');
       expect(request.bidRequest).to.equal(bidRequestObj);
       expect(request.data.id).to.equal(12345);
       expect(request.data.ext.wrap_response).to.equal(1);
@@ -273,6 +273,30 @@ describe('the spotx adapter', function () {
       expect(request.data.regs.ext.gdpr).to.equal(1);
       expect(request.data.user.ext.consent).to.equal('consent123');
     });
+
+    it('should pass CCPA us_privacy string', function() {
+      var request;
+
+      bidRequestObj.uspConsent = '1YYY'
+
+      request = spec.buildRequests([bid], bidRequestObj)[0];
+      expect(request.data.regs.ext.us_privacy).to.equal('1YYY');
+    });
+
+    it('should pass both GDPR params and CCPA us_privacy', function() {
+      var request;
+
+      bidRequestObj.gdprConsent = {
+        consentString: 'consent123',
+        gdprApplies: true
+      };
+      bidRequestObj.uspConsent = '1YYY'
+
+      request = spec.buildRequests([bid], bidRequestObj)[0];
+      expect(request.data.regs.ext.gdpr).to.equal(1);
+      expect(request.data.user.ext.consent).to.equal('consent123');
+      expect(request.data.regs.ext.us_privacy).to.equal('1YYY');
+    });
   });
 
   describe('interpretResponse', function() {
@@ -359,7 +383,8 @@ describe('the spotx adapter', function () {
       expect(responses[0].netRevenue).to.equal(true);
       expect(responses[0].requestId).to.equal(123);
       expect(responses[0].ttl).to.equal(360);
-      expect(responses[0].vastUrl).to.equal('//search.spotxchange.com/ad/vast.html?key=cache123');
+      expect(responses[0].vastUrl).to.equal('https://search.spotxchange.com/ad/vast.html?key=cache123');
+      expect(responses[0].videoCacheKey).to.equal('cache123');
       expect(responses[0].width).to.equal(400);
       expect(responses[1].cache_key).to.equal('cache124');
       expect(responses[1].channel_id).to.equal(12345);
@@ -371,7 +396,8 @@ describe('the spotx adapter', function () {
       expect(responses[1].netRevenue).to.equal(true);
       expect(responses[1].requestId).to.equal(124);
       expect(responses[1].ttl).to.equal(360);
-      expect(responses[1].vastUrl).to.equal('//search.spotxchange.com/ad/vast.html?key=cache124');
+      expect(responses[1].vastUrl).to.equal('https://search.spotxchange.com/ad/vast.html?key=cache124');
+      expect(responses[1].videoCacheKey).to.equal('cache124');
       expect(responses[1].width).to.equal(200);
     });
   });
@@ -440,9 +466,9 @@ describe('the spotx adapter', function () {
       responses[0].renderer.render(responses[0]);
 
       expect(scriptTag.getAttribute('type')).to.equal('text/javascript');
-      expect(scriptTag.getAttribute('src')).to.equal('//js.spotx.tv/easi/v1/12345.js');
+      expect(scriptTag.getAttribute('src')).to.equal('https://js.spotx.tv/easi/v1/12345.js');
       expect(scriptTag.getAttribute('data-spotx_channel_id')).to.equal('12345');
-      expect(scriptTag.getAttribute('data-spotx_vast_url')).to.equal('//search.spotxchange.com/ad/vast.html?key=cache123');
+      expect(scriptTag.getAttribute('data-spotx_vast_url')).to.equal('https://search.spotxchange.com/ad/vast.html?key=cache123');
       expect(scriptTag.getAttribute('data-spotx_ad_unit')).to.equal('incontent');
       expect(scriptTag.getAttribute('data-spotx_collapse')).to.equal('0');
       expect(scriptTag.getAttribute('data-spotx_autoplay')).to.equal('1');
@@ -472,9 +498,9 @@ describe('the spotx adapter', function () {
       responses[0].renderer.render(responses[0]);
 
       expect(scriptTag.getAttribute('type')).to.equal('text/javascript');
-      expect(scriptTag.getAttribute('src')).to.equal('//js.spotx.tv/easi/v1/12345.js');
+      expect(scriptTag.getAttribute('src')).to.equal('https://js.spotx.tv/easi/v1/12345.js');
       expect(scriptTag.getAttribute('data-spotx_channel_id')).to.equal('12345');
-      expect(scriptTag.getAttribute('data-spotx_vast_url')).to.equal('//search.spotxchange.com/ad/vast.html?key=cache123');
+      expect(scriptTag.getAttribute('data-spotx_vast_url')).to.equal('https://search.spotxchange.com/ad/vast.html?key=cache123');
       expect(scriptTag.getAttribute('data-spotx_ad_unit')).to.equal('incontent');
       expect(scriptTag.getAttribute('data-spotx_collapse')).to.equal('0');
       expect(scriptTag.getAttribute('data-spotx_autoplay')).to.equal('1');

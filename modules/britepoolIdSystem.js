@@ -89,7 +89,7 @@ export const britepoolIdSubmodule = {
     if (params.getter) {
       // Custom getter will not require other params
       if (typeof params.getter !== 'function') {
-        errors.push(`${MODULE_NAME} - britepoolId submodule requires getter to be a function`);
+        errors.push(`userIdTargeting - britepoolId submodule requires getter to be a function`);
         return { errors };
       }
     } else {

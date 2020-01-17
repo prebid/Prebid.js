@@ -11,7 +11,7 @@ import adapterManager from '../src/adapterManager';
 const MARS_BIDDER_CODE = 'marsmedia';
 const analyticsType = 'endpoint';
 const MARS_VERSION = '1.0.1';
-const MARS_ANALYTICS_URL = '//prebid_stats.mars.media/prebidjs/api/analytics.php';
+const MARS_ANALYTICS_URL = 'https://prebid_stats.mars.media/prebidjs/api/analytics.php';
 var events = {};
 
 var marsmediaAnalyticsAdapter = Object.assign(adapter(

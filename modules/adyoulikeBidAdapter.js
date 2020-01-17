@@ -54,6 +54,10 @@ export const spec = {
       };
     }
 
+    if (bidderRequest && bidderRequest.uspConsent) {
+      payload.uspConsent = bidderRequest.uspConsent;
+    }
+
     const data = JSON.stringify(payload);
     const options = {
       withCredentials: true
@@ -72,11 +76,19 @@ export const spec = {
    * @param {*} serverResponse A successful response from the server.
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
-  interpretResponse: function (serverResponse, bidRequest) {
+  interpretResponse: function (serverResponse, request) {
     const bidResponses = [];
+    var bidRequests = {};
+
+    try {
+      bidRequests = JSON.parse(request.data).Bids;
+    } catch (e) {
+      // json error initial request can't be read
+    }
+
     // For this adapter, serverResponse is a list
     serverResponse.body.forEach(response => {
-      const bid = createBid(response);
+      const bid = createBid(response, bidRequests);
       if (bid) {
         bidResponses.push(bid);
       }
@@ -98,7 +110,7 @@ function getHostname(bidderRequest) {
 function getReferrerUrl(bidderRequest) {
   let referer = '';
   if (bidderRequest && bidderRequest.refererInfo) {
-    referer = encodeURIComponent(bidderRequest.refererInfo.referer);
+    referer = bidderRequest.refererInfo.referer;
   }
   return referer;
 }
@@ -192,9 +204,20 @@ function getSize(sizesArray) {
 }
 
 /* Create bid from response */
-function createBid(response) {
+function createBid(response, bidRequests) {
   if (!response || !response.Ad) {
     return
+  }
+
+  // In case we don't retreive the size from the adserver, use the given one.
+  if (bidRequests && bidRequests[response.BidID]) {
+    if (!response.Width || response.Width === '0') {
+      response.Width = bidRequests[response.BidID].Width;
+    }
+
+    if (!response.Height || response.Height === '0') {
+      response.Height = bidRequests[response.BidID].Height;
+    }
   }
 
   return {

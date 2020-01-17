@@ -31,6 +31,7 @@ export const spec = {
     var tdId = '';
     var width = window.innerWidth;
     var height = window.innerHeight;
+    var schain = '';
 
     // This reference to window.top can cause issues when loaded in an iframe if not protected with a try/catch.
     try {
@@ -45,6 +46,8 @@ export const spec = {
     if (utils.isStr(utils.deepAccess(validBidRequests, '0.userId.tdid'))) {
       tdId = validBidRequests[0].userId.tdid;
     }
+
+    schain = spec.serializeSupplyChain(utils.deepAccess(validBidRequests, '0.schain'));
 
     utils._each(validBidRequests, function(b) {
       var rMap = requestsMap[b.params.ai];
@@ -63,6 +66,9 @@ export const spec = {
 
         if (tdId) {
           rMap.payload.tdid = tdId;
+        }
+        if (schain) {
+          rMap.payload.schain = schain;
         }
 
         if (pageCategories && pageCategories.length) {
@@ -103,7 +109,7 @@ export const spec = {
       var req = requestsMap[auctionId];
       requests.push({
         method: 'GET',
-        url: `//${req.endpoint}/${auctionId}/${req.shortCodes.join('_')}/aardvark`,
+        url: `https://${req.endpoint}/${auctionId}/${req.shortCodes.join('_')}/aardvark`,
         data: req.payload,
         bidderRequest
       });
@@ -162,7 +168,7 @@ export const spec = {
 
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent) {
     const syncs = [];
-    var url = '//' + SYNC_ENDPOINT + '/cs';
+    var url = 'https://' + SYNC_ENDPOINT + '/cs';
     var gdprApplies = false;
     if (gdprConsent && (typeof gdprConsent.gdprApplies === 'boolean')) {
       gdprApplies = gdprConsent.gdprApplies;
@@ -183,7 +189,55 @@ export const spec = {
       utils.logWarn('Aardvark: Please enable iframe based user sync.');
     }
     return syncs;
-  }
+  },
+
+  /**
+   * Serializes schain params according to OpenRTB requirements
+   * @param {Object} supplyChain
+   * @returns {String}
+   */
+  serializeSupplyChain: function (supplyChain) {
+    if (!hasValidSupplyChainParams(supplyChain)) {
+      return '';
+    }
+
+    return `${supplyChain.ver},${supplyChain.complete}!${spec.serializeSupplyChainNodes(supplyChain.nodes)}`;
+  },
+
+  /**
+   * Properly sorts schain object params
+   * @param {Array} nodes
+   * @returns {String}
+   */
+  serializeSupplyChainNodes: function (nodes) {
+    const nodePropOrder = ['asi', 'sid', 'hp', 'rid', 'name', 'domain'];
+    return nodes.map(node => {
+      return nodePropOrder.map(prop => encodeURIComponent(node[prop] || '')).join(',');
+    }).join('!');
+  },
 };
+
+/**
+ * Make sure the required params are present
+ * @param {Object} schain
+ * @param {Bool}
+ */
+export function hasValidSupplyChainParams(schain) {
+  if (!schain || !schain.nodes) {
+    return false;
+  }
+  const requiredFields = ['asi', 'sid', 'hp'];
+
+  let isValid = schain.nodes.reduce((status, node) => {
+    if (!status) {
+      return status;
+    }
+    return requiredFields.every(field => node[field]);
+  }, true);
+  if (!isValid) {
+    utils.logError('Aardvark: required schain params missing');
+  }
+  return isValid;
+}
 
 registerBidder(spec);

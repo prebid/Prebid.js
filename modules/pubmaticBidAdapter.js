@@ -883,6 +883,7 @@ export const spec = {
     payload.ext.wrapper.profile = parseInt(conf.profId) || UNDEFINED;
     payload.ext.wrapper.version = parseInt(conf.verId) || UNDEFINED;
     payload.ext.wrapper.wiid = conf.wiid || UNDEFINED;
+    // eslint-disable-next-line no-undef
     payload.ext.wrapper.wv = $$REPO_AND_VERSION$$;
     payload.ext.wrapper.transactionId = conf.transactionId;
     payload.ext.wrapper.wp = 'pbjs';
@@ -895,6 +896,9 @@ export const spec = {
     payload.site.page = conf.kadpageurl.trim() || payload.site.page.trim();
     payload.site.domain = _getDomainFromURL(payload.site.page);
 
+    // passing transactionId in source.tid
+    utils.deepSetValue(payload, 'source.tid', conf.transactionId);
+
     // test bids
     if (window.location.href.indexOf('pubmaticTest=true') !== -1) {
       payload.test = 1;
@@ -902,24 +906,13 @@ export const spec = {
 
     // adding schain object
     if (validBidRequests[0].schain) {
-      payload.source = {
-        ext: {
-          schain: validBidRequests[0].schain
-        }
-      };
+      utils.deepSetValue(payload, 'source.ext.schain', validBidRequests[0].schain);
     }
 
     // Attaching GDPR Consent Params
     if (bidderRequest && bidderRequest.gdprConsent) {
-      payload.user.ext = {
-        consent: bidderRequest.gdprConsent.consentString
-      };
-
-      payload.regs = {
-        ext: {
-          gdpr: (bidderRequest.gdprConsent.gdprApplies ? 1 : 0)
-        }
-      };
+      utils.deepSetValue(payload, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
+      utils.deepSetValue(payload, 'regs.ext.gdpr', (bidderRequest.gdprConsent.gdprApplies ? 1 : 0));
     }
 
     // CCPA

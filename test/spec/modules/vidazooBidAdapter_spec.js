@@ -25,7 +25,7 @@ const BIDDER_REQUEST = {
     'consentString': 'consent_string'
   },
   'refererInfo': {
-    'referer': 'http://www.greatsite.com'
+    'referer': 'https://www.greatsite.com'
   }
 };
 
@@ -127,7 +127,7 @@ describe('VidazooBidAdapter', function () {
           consent: 'consent_string',
           width: '300',
           height: '250',
-          url: 'http%3A%2F%2Fwww.greatsite.com',
+          url: 'https%3A%2F%2Fwww.greatsite.com',
           cb: 1000,
           bidFloor: 0.1,
           bidId: '2d52001cabd527',
@@ -143,7 +143,7 @@ describe('VidazooBidAdapter', function () {
           consent: 'consent_string',
           width: '300',
           height: '600',
-          url: 'http%3A%2F%2Fwww.greatsite.com',
+          url: 'https%3A%2F%2Fwww.greatsite.com',
           cb: 1000,
           bidFloor: 0.1,
           bidId: '2d52001cabd527',

@@ -197,6 +197,22 @@ describe('E-Planning Adapter', function () {
       ]
     }
   };
+  const refererUrl = 'https://localhost';
+  const bidderRequest = {
+    refererInfo: {
+      referer: refererUrl
+    },
+    gdprConsent: {
+      gdprApplies: 1,
+      consentString: 'concentDataString',
+      vendorData: {
+        vendorConsents: {
+          '90': 1
+        },
+      },
+    },
+    uspConsent: 'consentCcpa'
+  };
 
   describe('inherited functions', function () {
     it('exists and is a function', function () {
@@ -220,29 +236,28 @@ describe('E-Planning Adapter', function () {
 
   describe('buildRequests', function () {
     let bidRequests = [validBid];
-
     it('should create the url correctly', function () {
-      const url = spec.buildRequests(bidRequests).url;
-      expect(url).to.equal('//ads.us.e-planning.net/hb/1/' + CI + '/1/localhost/ROS');
+      const url = spec.buildRequests(bidRequests, bidderRequest).url;
+      expect(url).to.equal('https://ads.us.e-planning.net/hb/1/' + CI + '/1/localhost/ROS');
     });
 
     it('should return GET method', function () {
-      const method = spec.buildRequests(bidRequests).method;
+      const method = spec.buildRequests(bidRequests, bidderRequest).method;
       expect(method).to.equal('GET');
     });
 
     it('should return r parameter with value pbjs', function () {
-      const r = spec.buildRequests(bidRequests).data.r;
+      const r = spec.buildRequests(bidRequests, bidderRequest).data.r;
       expect(r).to.equal('pbjs');
     });
 
     it('should return pbv parameter with value prebid version', function () {
-      const pbv = spec.buildRequests(bidRequests).data.pbv;
+      const pbv = spec.buildRequests(bidRequests, bidderRequest).data.pbv;
       expect(pbv).to.equal('$prebid.version$');
     });
 
     it('should return e parameter with value according to the adunit sizes', function () {
-      const e = spec.buildRequests(bidRequests).data.e;
+      const e = spec.buildRequests(bidRequests, bidderRequest).data.e;
       expect(e).to.equal('300x250_0:300x250,300x600');
     });
 
@@ -259,7 +274,7 @@ describe('E-Planning Adapter', function () {
       };
       bidRequests.push(anotherBid);
 
-      const e = spec.buildRequests(bidRequests).data.e;
+      const e = spec.buildRequests(bidRequests, bidderRequest).data.e;
       expect(e).to.equal('300x250_0:300x250,300x600+100x100_0:100x100');
     });
 
@@ -272,22 +287,19 @@ describe('E-Planning Adapter', function () {
         'adUnitCode': ADUNIT_CODE,
       };
 
-      const e = spec.buildRequests([noSizeBid]).data.e;
+      const e = spec.buildRequests([noSizeBid], bidderRequest).data.e;
       expect(e).to.equal('1x1_0:1x1');
     });
 
     it('should return ur parameter with current window url', function () {
-      const ur = spec.buildRequests(bidRequests).data.ur;
-      expect(ur).to.equal(utils.getTopWindowUrl());
+      const ur = spec.buildRequests(bidRequests, bidderRequest).data.ur;
+      expect(ur).to.equal(encodeURIComponent(bidderRequest.refererInfo.referer));
     });
 
     it('should return fr parameter when there is a referrer', function () {
-      const referrer = 'thisisafakereferrer';
-      const stubGetReferrer = sinon.stub(utils, 'getTopWindowReferrer');
-      stubGetReferrer.returns(referrer);
-      const fr = spec.buildRequests(bidRequests).data.fr;
-      expect(fr).to.equal(referrer);
-      stubGetReferrer.restore()
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const dataRequest = request.data;
+      expect(dataRequest.fr).to.equal(encodeURIComponent(refererUrl));
     });
 
     it('should return crs parameter with document charset', function () {
@@ -298,20 +310,33 @@ describe('E-Planning Adapter', function () {
         expected = document.characterSet;
       }
 
-      const chset = spec.buildRequests(bidRequests).data.crs;
+      const chset = spec.buildRequests(bidRequests, bidderRequest).data.crs;
 
       expect(chset).to.equal(expected);
     });
 
     it('should return the testing url when the request has the t parameter', function () {
-      const url = spec.buildRequests([testBid]).url;
-      const expectedUrl = '//' + TEST_ISV + '/layers/t_pbjs_2.json';
+      const url = spec.buildRequests([testBid], bidderRequest).url;
+      const expectedUrl = 'https://' + TEST_ISV + '/layers/t_pbjs_2.json';
       expect(url).to.equal(expectedUrl);
     });
 
     it('should return the parameter ncb with value 1', function () {
-      const ncb = spec.buildRequests(bidRequests).data.ncb;
+      const ncb = spec.buildRequests(bidRequests, bidderRequest).data.ncb;
       expect(ncb).to.equal('1');
+    });
+
+    it('should properly build a gdpr request', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const dataRequest = request.data;
+      expect(dataRequest.gdpr).to.equal('1');
+      expect(dataRequest.gdprcs).to.equal('concentDataString');
+    });
+
+    it('should properly build a uspConsent request', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const dataRequest = request.data;
+      expect(dataRequest.ccpa).to.equal('consentCcpa');
     });
   });
 
@@ -385,7 +410,7 @@ describe('E-Planning Adapter', function () {
 
   describe('adUnits mapping to bidId', function () {
     it('should correctly map the bidId to the adunit', function () {
-      const requests = spec.buildRequests([validBid, validBid2]);
+      const requests = spec.buildRequests([validBid, validBid2], bidderRequest);
       const responses = spec.interpretResponse(responseWithTwoAdunits, requests);
       expect(responses[0].requestId).to.equal(BID_ID);
       expect(responses[1].requestId).to.equal(BID_ID2);
@@ -506,9 +531,9 @@ describe('E-Planning Adapter', function () {
     it('should create the url correctly without LocalStorage', function() {
       createElementVisible();
       hasLocalStorageStub.returns(false);
-      const response = spec.buildRequests(bidRequests);
+      const response = spec.buildRequests(bidRequests, bidderRequest);
 
-      expect(response.url).to.equal('//ads.us.e-planning.net/hb/1/' + CI + '/1/localhost/ROS');
+      expect(response.url).to.equal('https://ads.us.e-planning.net/hb/1/' + CI + '/1/localhost/ROS');
       expect(response.data.vs).to.equal('F');
 
       sinon.assert.notCalled(getLocalStorageSpy);
@@ -517,8 +542,8 @@ describe('E-Planning Adapter', function () {
 
     it('should create the url correctly with LocalStorage', function() {
       createElementVisible();
-      const response = spec.buildRequests(bidRequests);
-      expect(response.url).to.equal('//ads.us.e-planning.net/hb/1/' + CI + '/1/localhost/ROS');
+      const response = spec.buildRequests(bidRequests, bidderRequest);
+      expect(response.url).to.equal('https://ads.us.e-planning.net/hb/1/' + CI + '/1/localhost/ROS');
 
       expect(response.data.vs).to.equal('F');
 
@@ -536,7 +561,7 @@ describe('E-Planning Adapter', function () {
         createElementVisible();
       });
       it('when you have a render', function() {
-        respuesta = spec.buildRequests(bidRequests);
+        respuesta = spec.buildRequests(bidRequests, bidderRequest);
         clock.tick(1005);
 
         expect(respuesta.data.vs).to.equal('F');
@@ -546,7 +571,7 @@ describe('E-Planning Adapter', function () {
       });
       it('when you have more than four render', function() {
         utils.setDataInLocalStorage(storageIdRender, 4);
-        respuesta = spec.buildRequests(bidRequests);
+        respuesta = spec.buildRequests(bidRequests, bidderRequest);
         clock.tick(1005);
 
         expect(respuesta.data.vs).to.equal('0');
@@ -557,7 +582,7 @@ describe('E-Planning Adapter', function () {
       it('when you have more than four render and already record visibility', function() {
         utils.setDataInLocalStorage(storageIdRender, 4);
         utils.setDataInLocalStorage(storageIdView, 4);
-        respuesta = spec.buildRequests(bidRequests);
+        respuesta = spec.buildRequests(bidRequests, bidderRequest);
         clock.tick(1005);
 
         expect(respuesta.data.vs).to.equal('a');
@@ -574,7 +599,7 @@ describe('E-Planning Adapter', function () {
       });
 
       it('when you have a render', function() {
-        respuesta = spec.buildRequests(bidRequests);
+        respuesta = spec.buildRequests(bidRequests, bidderRequest);
         clock.tick(1005);
         expect(respuesta.data.vs).to.equal('F');
 
@@ -583,7 +608,7 @@ describe('E-Planning Adapter', function () {
       });
       it('when you have more than four render', function() {
         utils.setDataInLocalStorage(storageIdRender, 4);
-        respuesta = spec.buildRequests(bidRequests);
+        respuesta = spec.buildRequests(bidRequests, bidderRequest);
         clock.tick(1005);
         expect(respuesta.data.vs).to.equal('0');
 
@@ -596,7 +621,7 @@ describe('E-Planning Adapter', function () {
       let respuesta;
       it('should register visibility with more than 50%', function() {
         createPartiallyVisibleElement();
-        respuesta = spec.buildRequests(bidRequests);
+        respuesta = spec.buildRequests(bidRequests, bidderRequest);
         clock.tick(1005);
 
         expect(utils.getDataFromLocalStorage(storageIdRender)).to.equal('1');
@@ -604,7 +629,7 @@ describe('E-Planning Adapter', function () {
       });
       it('you should not register visibility with less than 50%', function() {
         createPartiallyInvisibleElement();
-        respuesta = spec.buildRequests(bidRequests);
+        respuesta = spec.buildRequests(bidRequests, bidderRequest);
         clock.tick(1005);
 
         expect(utils.getDataFromLocalStorage(storageIdRender)).to.equal('1');
@@ -617,7 +642,7 @@ describe('E-Planning Adapter', function () {
       });
       it('if the width is zero but the height is within the range', function() {
         element.style.width = '0px';
-        spec.buildRequests(bidRequests)
+        spec.buildRequests(bidRequests, bidderRequest)
         clock.tick(1005);
 
         expect(utils.getDataFromLocalStorage(storageIdRender)).to.equal('1');
@@ -625,7 +650,7 @@ describe('E-Planning Adapter', function () {
       });
       it('if the height is zero but the width is within the range', function() {
         element.style.height = '0px';
-        spec.buildRequests(bidRequests)
+        spec.buildRequests(bidRequests, bidderRequest)
         clock.tick(1005);
 
         expect(utils.getDataFromLocalStorage(storageIdRender)).to.equal('1');
@@ -634,7 +659,7 @@ describe('E-Planning Adapter', function () {
       it('if both are zero', function() {
         element.style.height = '0px';
         element.style.width = '0px';
-        spec.buildRequests(bidRequests)
+        spec.buildRequests(bidRequests, bidderRequest)
         clock.tick(1005);
 
         expect(utils.getDataFromLocalStorage(storageIdRender)).to.equal('1');
@@ -645,7 +670,7 @@ describe('E-Planning Adapter', function () {
       it('I should not register if it is not in focus', function() {
         createElementVisible();
         focusStub.returns(false);
-        spec.buildRequests(bidRequests);
+        spec.buildRequests(bidRequests, bidderRequest);
         clock.tick(1005);
         expect(utils.getDataFromLocalStorage(storageIdRender)).to.equal('1');
         expect(utils.getDataFromLocalStorage(storageIdView)).to.equal(null);
@@ -654,7 +679,7 @@ describe('E-Planning Adapter', function () {
     context('segmentBeginsBeforeTheVisibleRange', function() {
       it('segmentBeginsBeforeTheVisibleRange', function() {
         createElementOutOfRange();
-        spec.buildRequests(bidRequests);
+        spec.buildRequests(bidRequests, bidderRequest);
         clock.tick(1005);
         expect(utils.getDataFromLocalStorage(storageIdRender)).to.equal('1');
         expect(utils.getDataFromLocalStorage(storageIdView)).to.equal(null);
@@ -682,7 +707,7 @@ describe('E-Planning Adapter', function () {
         createElementVisible(ADUNIT_CODE_VIEW2);
         createElementVisible(ADUNIT_CODE_VIEW3);
 
-        respuesta = spec.buildRequests(bidRequestMultiple);
+        respuesta = spec.buildRequests(bidRequestMultiple, bidderRequest);
         clock.tick(1005);
         [ADUNIT_CODE_VIEW, ADUNIT_CODE_VIEW2, ADUNIT_CODE_VIEW3].forEach(ac => {
           expect(utils.getDataFromLocalStorage('pbsr_' + ac)).to.equal('6');
@@ -695,7 +720,7 @@ describe('E-Planning Adapter', function () {
         createElementOutOfView(ADUNIT_CODE_VIEW2);
         createElementOutOfView(ADUNIT_CODE_VIEW3);
 
-        respuesta = spec.buildRequests(bidRequestMultiple);
+        respuesta = spec.buildRequests(bidRequestMultiple, bidderRequest);
         clock.tick(1005);
         [ADUNIT_CODE_VIEW, ADUNIT_CODE_VIEW2, ADUNIT_CODE_VIEW3].forEach(ac => {
           expect(utils.getDataFromLocalStorage('pbsr_' + ac)).to.equal('6');
@@ -709,7 +734,7 @@ describe('E-Planning Adapter', function () {
         createElementOutOfView(ADUNIT_CODE_VIEW2);
         createElementOutOfView(ADUNIT_CODE_VIEW3);
 
-        respuesta = spec.buildRequests(bidRequestMultiple);
+        respuesta = spec.buildRequests(bidRequestMultiple, bidderRequest);
         clock.tick(1005);
         expect(utils.getDataFromLocalStorage('pbsr_' + ADUNIT_CODE_VIEW)).to.equal('6');
         expect(utils.getDataFromLocalStorage('pbvi_' + ADUNIT_CODE_VIEW)).to.equal('6');

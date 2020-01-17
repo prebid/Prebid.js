@@ -139,7 +139,6 @@ describe('config API', function () {
   it('set mediaTypePriceGranularity', function () {
     const customPriceGranularityVideo = {
       'buckets': [{
-        'min': 0,
         'max': 3,
         'increment': 0.01,
         'cap': true
@@ -169,7 +168,6 @@ describe('config API', function () {
   it('sets priceGranularity and customPriceBucket', function () {
     const goodConfig = {
       'buckets': [{
-        'min': 0,
         'max': 3,
         'increment': 0.01,
         'cap': true
