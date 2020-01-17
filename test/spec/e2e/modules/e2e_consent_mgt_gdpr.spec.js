@@ -53,7 +53,7 @@ describe('Prebid.js Banner Ad Unit Test', function () {
     expect(targetingKeys.hb_adid_appnexus).to.be.a('string');
   });
 
-  it('should render the Banner Ad on the page', function () { 
+  it('should render the Banner Ad on the page', function () {
     expect(browser.isVisible('body > div[class="GoogleActiveViewElement"] > a > img')).to.be.true;
   });
 });
