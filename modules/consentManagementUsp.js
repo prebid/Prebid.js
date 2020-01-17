@@ -72,7 +72,7 @@ function lookupUspConsent(uspSuccess, uspError, hookConfig) {
   // to collect the user's consent choices represented as a string (via getUSPData)
   // the following code also determines where the USPAPI is located and uses the proper workflow to communicate with it:
 
-  //  starting with the current window, traverse up through the ancestor windows until we get to window.top. 
+  //  starting with the current window, traverse up through the ancestor windows until we get to window.top.
   let f = window;
   let uspapiFound = false;
   while (!uspapiFound) {
@@ -87,7 +87,7 @@ function lookupUspConsent(uspSuccess, uspError, hookConfig) {
 
     // 2. look for __uspapi() in friendly iframe
     if (friendlyIframeContainsFunction(f)) {
-      callCmpWhileInSafeFrame(f,  'getUSPData', callbackHandler.consentDataCallback)
+      callCmpWhileInSafeFrame(f, 'getUSPData', callbackHandler.consentDataCallback)
       uspapiFound = true;
       break;
     }
@@ -108,7 +108,7 @@ function lookupUspConsent(uspSuccess, uspError, hookConfig) {
   }
 
   // 4. if the USP CMP is still not found, and the current window is not the top window, and window.top is not friendly,
-  // assume the CMP may be there, and do a window.top.postMessage().
+  // assume the CMP may be there, and call window.top.postMessage()
   if (f && f !== f.top && !isFriendly(f.top)) {
     callUspApiWhileInIframe('getUSPData', f.top, callbackHandler.consentDataCallback);
   }
