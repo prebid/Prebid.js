@@ -94,13 +94,13 @@ function lookupUspConsent(uspSuccess, uspError, hookConfig) {
 
     // 3. look for the __uspapiLocator Frame (x-domain iframe)
     if (locatorIframeContainsFunction(f)) {
-      callUspApiWhileInIframe('getUSPData', f.frames['__uspapiLocator'], callbackHandler.consentDataCallback);
+      callUspApiWhileInIframe('getUSPData', f, callbackHandler.consentDataCallback);
       uspapiFound = true;
       break;
     }
 
     // exit, if at top window and not found
-    if (f === f.top) {
+    if (!uspapiFound && f === f.top) {
       return uspError('USP API not found.', hookConfig);
     }
 
@@ -126,7 +126,7 @@ function lookupUspConsent(uspSuccess, uspError, hookConfig) {
   }
 
   function locatorIframeContainsFunction(w) {
-    return typeof w.frames['__uspapiLocator'] !== 'undefined';
+    return w.frames['__uspapiLocator'];
   }
 
   function callCmpWhileInSafeFrame(w, commandName, callback) {
