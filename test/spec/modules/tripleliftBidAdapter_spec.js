@@ -152,11 +152,22 @@ describe('triplelift adapter', function () {
       expect(payload.user).to.deep.equal({ext: {eids: [{source: 'liveramp.com', uids: [{id, ext: {rtiPartner: 'idl'}}]}]}});
     });
 
+    it('should add criteoId to the payload if included', function () {
+      const id = '87USFG9238sdfsdf0243-1sdfs84';
+      bidRequests[0].userId.criteoId = id;
+      const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
+      const payload = request.data;
+      expect(payload).to.exist;
+      expect(payload.user).to.deep.equal({ext: {eids: [{source: 'criteo.com', uids: [{id, ext: {rtiPartner: 'criteoId'}}]}]}});
+    });
+
     it('should add both tdid and idl_env to the payload if both are included', function () {
       const tdidId = '6bca7f6b-a98a-46c0-be05-6020f7604598';
       const idlEnvId = 'XY6104gr0njcH9UDIR7ysFFJcm2XNpqeJTYslleJ_cMlsFOfZI';
+      const criteoId = '87USFG9238sdfsdf0243-1sdfs84';
       bidRequests[0].userId.tdid = tdidId;
       bidRequests[0].userId.idl_env = idlEnvId;
+      bidRequests[0].userId.criteoId = criteoId;
 
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
       const payload = request.data;
@@ -182,6 +193,15 @@ describe('triplelift adapter', function () {
                   ext: { rtiPartner: 'idl' }
                 }
               ]
+            },
+            {
+              source: 'criteo.com',
+              uids: [
+                {
+                  id: criteoId,
+                  ext: { rtiPartner: 'criteoId' }
+                }
+              ]
             }
           ]
         }
@@ -191,10 +211,12 @@ describe('triplelift adapter', function () {
     it('should add user ids from multiple bid requests', function () {
       const tdidId = '6bca7f6b-a98a-46c0-be05-6020f7604598';
       const idlEnvId = 'XY6104gr0njcH9UDIR7ysFFJcm2XNpqeJTYslleJ_cMlsFOfZI';
+      const criteoId = '87USFG9238sdfsdf0243-1sdfs84';
 
       const bidRequestsMultiple = [
         { ...bidRequests[0], userId: { tdid: tdidId } },
         { ...bidRequests[0], userId: { idl_env: idlEnvId } },
+        { ...bidRequests[0], userId: { criteoId: criteoId } },
       ];
 
       const request = tripleliftAdapterSpec.buildRequests(bidRequestsMultiple, bidderRequest);
@@ -218,6 +240,15 @@ describe('triplelift adapter', function () {
                 {
                   id: idlEnvId,
                   ext: { rtiPartner: 'idl' }
+                }
+              ]
+            },
+            {
+              source: 'criteo.com',
+              uids: [
+                {
+                  id: criteoId,
+                  ext: { rtiPartner: 'criteoId' }
                 }
               ]
             }
