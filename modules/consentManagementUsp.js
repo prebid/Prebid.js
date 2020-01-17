@@ -70,7 +70,7 @@ function lookupUspConsent(uspSuccess, uspError, hookConfig) {
 
   // to collect the consent information from the user, we perform a call to USPAPI
   // to collect the user's consent choices represented as a string (via getUSPData)
-  // the following code also determines where the USPAPI is located and uses the proper workflow to communicate with it:
+  // the following code also determines where the USPAPI is locateK˚d and uses the proper workflow to communicate with it:
 
   // starting with the current window, traverse up through the ancestor windows until we get to window.top
   // 1. __uspapi() exists on window
@@ -81,7 +81,7 @@ function lookupUspConsent(uspSuccess, uspError, hookConfig) {
   let uspApi;
   while (!uspApi) {
     if (uspApiDefinedOnWindow(f, callbackHandler.consentDataCallback) ||
-      uspApiDefinedOnFriendlyIframe(f, callbackHandler.consentDataCallback) ||
+      uspApiDefinedOnSafeframe(f, callbackHandler.consentDataCallback) ||
       uspApiDefinedOnIframe(f, callbackHandler.consentDataCallback)) {
       uspApi = f;
     }
@@ -125,7 +125,7 @@ function lookupUspConsent(uspSuccess, uspError, hookConfig) {
    * @param {function(consentData:Object)} moduleCallback
    * @returns {boolean}
    */
-  function uspApiDefinedOnFriendlyIframe(win, moduleCallback) {
+  function uspApiDefinedOnSafeframe(win, moduleCallback) {
     if (inASafeFrame(win) && utils.isFn(win.$sf.ext.uspapi)) {
       callUspApiWhileInSafeFrame(win, 'getUSPData', moduleCallback);
       return true;
