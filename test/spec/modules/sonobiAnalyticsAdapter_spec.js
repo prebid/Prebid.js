@@ -1,25 +1,20 @@
 import sonobiAnalytics from 'modules/sonobiAnalyticsAdapter';
 import {expect} from 'chai';
+import {server} from 'test/mocks/xhr';
 let events = require('src/events');
 let adapterManager = require('src/adapterManager').default;
 let constants = require('src/constants.json');
 
 describe('Sonobi Prebid Analytic', function () {
-  let xhr;
-  let requests = [];
   var clock;
 
   describe('enableAnalytics', function () {
     beforeEach(function () {
-      requests = [];
-      xhr = sinon.useFakeXMLHttpRequest();
-      xhr.onCreate = request => requests.push(request);
       sinon.stub(events, 'getEvents').returns([]);
       clock = sinon.useFakeTimers(Date.now());
     });
 
     afterEach(function () {
-      xhr.restore();
       events.getEvents.restore();
       clock.restore();
     });
@@ -81,8 +76,8 @@ describe('Sonobi Prebid Analytic', function () {
       events.emit(constants.EVENTS.AUCTION_END, {auctionId: '13', bidsReceived: [bid]});
 
       clock.tick(5000);
-      expect(requests).to.have.length(1);
-      expect(JSON.parse(requests[0].requestBody)).to.have.length(3)
+      expect(server.requests).to.have.length(1);
+      expect(JSON.parse(server.requests[0].requestBody)).to.have.length(3)
       done();
     });
   });

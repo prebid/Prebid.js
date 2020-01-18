@@ -51,7 +51,7 @@ describe('HPMDNetwork Adapter', function() {
 
     it('should build single POST request for multiple bids', function() {
       expect(bidRequest.method).to.equal('POST');
-      expect(bidRequest.url).to.equal('//banner.hpmdnetwork.ru/bidder/request');
+      expect(bidRequest.url).to.equal('https://banner.hpmdnetwork.ru/bidder/request');
       expect(bidRequest.data).to.be.an('object');
       expect(bidRequest.data.places).to.be.an('array');
       expect(bidRequest.data.places).to.have.lengthOf(2);
@@ -90,14 +90,14 @@ describe('HPMDNetwork Adapter', function() {
             {
               'cpm': 20,
               'currency': 'RUB',
-              'displayUrl': '//banner.hpmdnetwork.ru/bidder/display?dbid=0&vbid=168',
+              'displayUrl': 'https://banner.hpmdnetwork.ru/bidder/display?dbid=0&vbid=168',
               'id': '1',
               'creativeId': '11111',
             },
             {
               'cpm': 30,
               'currency': 'RUB',
-              'displayUrl': '//banner.hpmdnetwork.ru/bidder/display?dbid=0&vbid=170',
+              'displayUrl': 'https://banner.hpmdnetwork.ru/bidder/display?dbid=0&vbid=170',
               'id': '2',
               'creativeId': '22222',
               'width': 300,
@@ -129,7 +129,7 @@ describe('HPMDNetwork Adapter', function() {
       expect(bids[0]).to.have.property('creativeId');
       expect(bids[0].creativeId).to.equal('11111');
       expect(bids[0].netRevenue).to.equal(true);
-      expect(bids[0].ad).to.include('<script async src="//banner.hpmdnetwork.ru/bidder/display?dbid=0&vbid=168"></script>');
+      expect(bids[0].ad).to.include('<script async src="https://banner.hpmdnetwork.ru/bidder/display?dbid=0&vbid=168"></script>');
     });
 
     it('should parse bid with sizes', function() {
@@ -142,7 +142,7 @@ describe('HPMDNetwork Adapter', function() {
       expect(bids[1]).to.have.property('creativeId');
       expect(bids[1].creativeId).to.equal('22222');
       expect(bids[1].netRevenue).to.equal(true);
-      expect(bids[1].ad).to.include('<script async src="//banner.hpmdnetwork.ru/bidder/display?dbid=0&vbid=170"></script>');
+      expect(bids[1].ad).to.include('<script async src="https://banner.hpmdnetwork.ru/bidder/display?dbid=0&vbid=170"></script>');
     });
   });
 });

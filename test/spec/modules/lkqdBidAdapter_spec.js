@@ -2,16 +2,16 @@ import { spec } from 'modules/lkqdBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
 const { expect } = require('chai');
 
-describe('LKQD Bid Adapter Test', function () {
+describe('LKQD Bid Adapter Test', () => {
   const adapter = newBidder(spec);
 
-  describe('inherited functions', function () {
-    it('exists and is a function', function () {
+  describe('inherited functions', () => {
+    it('exists and is a function', () => {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
   });
 
-  describe('isBidRequestValid', function () {
+  describe('isBidRequestValid', () => {
     let bid = {
       'bidder': 'lkqd',
       'params': {
@@ -26,11 +26,11 @@ describe('LKQD Bid Adapter Test', function () {
       'transactionId': 'd6f6b392-54a9-454c-85fb-a2fd882c4a2d',
     };
 
-    it('should return true when required params found', function () {
+    it('should return true when required params found', () => {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
-    it('should return false when required params are not passed', function () {
+    it('should return false when required params are not passed', () => {
       let bid = Object.assign({}, bid);
       delete bid.params;
       bid.params = {
@@ -62,7 +62,8 @@ describe('LKQD Bid Adapter Test', function () {
         'bidder': 'lkqd',
         'params': {
           'siteId': '662921',
-          'placementId': '263'
+          'placementId': '263',
+          'schain': '1.0,1!exchange1.com,1234%21abcd,1,bid-request-1,publisher%2c%20Inc.,publisher.com'
         },
         'adUnitCode': 'lkqd',
         'sizes': [640, 480],
@@ -73,61 +74,52 @@ describe('LKQD Bid Adapter Test', function () {
       }
     ];
 
-    it('should populate available parameters', function () {
+    it('should populate available parameters', () => {
       const requests = spec.buildRequests(bidRequests);
       expect(requests.length).to.equal(2);
       const r1 = requests[0].data;
-      expect(r1).to.have.property('pid');
-      expect(r1.pid).to.equal('263');
-      expect(r1).to.have.property('sid');
-      expect(r1.sid).to.equal('662921');
-      expect(r1).to.have.property('width');
-      expect(r1.width).to.equal(300);
-      expect(r1).to.have.property('height');
-      expect(r1.height).to.equal(250);
+      expect(r1).to.have.string('pid=263&');
+      expect(r1).to.have.string('&sid=662921&');
+      expect(r1).to.have.string('&width=300&');
+      expect(r1).to.have.string('&height=250&');
       const r2 = requests[1].data;
-      expect(r2).to.have.property('pid');
-      expect(r2.pid).to.equal('263');
-      expect(r2).to.have.property('sid');
-      expect(r2.sid).to.equal('662921');
-      expect(r2).to.have.property('width');
-      expect(r2.width).to.equal(640);
-      expect(r2).to.have.property('height');
-      expect(r2.height).to.equal(480);
+      expect(r2).to.have.string('pid=263&');
+      expect(r2).to.have.string('&sid=662921&');
+      expect(r2).to.have.string('&width=640&');
+      expect(r2).to.have.string('&height=480&');
     });
 
-    it('should not populate unspecified parameters', function () {
+    it('should not populate unspecified parameters', () => {
       const requests = spec.buildRequests(bidRequests);
       expect(requests.length).to.equal(2);
       const r1 = requests[0].data;
-      expect(r1).to.not.have.property('dnt');
-      expect(r1).to.not.have.property('contentid');
-      expect(r1).to.not.have.property('contenttitle');
-      expect(r1).to.not.have.property('contentlength');
-      expect(r1).to.not.have.property('contenturl');
+      expect(r1).to.not.have.string('&dnt=');
+      expect(r1).to.not.have.string('&contentid=');
+      expect(r1).to.not.have.string('&contenttitle=');
+      expect(r1).to.not.have.string('&contentlength=');
+      expect(r1).to.not.have.string('&contenturl=');
+      expect(r1).to.not.have.string('&schain=');
       const r2 = requests[1].data;
-      expect(r2).to.not.have.property('dnt');
-      expect(r2).to.not.have.property('contentid');
-      expect(r2).to.not.have.property('contenttitle');
-      expect(r2).to.not.have.property('contentlength');
-      expect(r2).to.not.have.property('contenturl');
+      expect(r2).to.not.have.string('&dnt=');
+      expect(r2).to.not.have.string('&contentid=');
+      expect(r2).to.not.have.string('&contenttitle=');
+      expect(r2).to.not.have.string('&contentlength=');
+      expect(r2).to.not.have.string('&contenturl=');
+      expect(r2).to.not.have.string('&schain=');
     });
 
-    it('should handle single size request', function () {
+    it('should handle single size request', () => {
       const requests = spec.buildRequests(bidRequest);
       expect(requests.length).to.equal(1);
       const r1 = requests[0].data;
-      expect(r1).to.have.property('pid');
-      expect(r1.pid).to.equal('263');
-      expect(r1).to.have.property('sid');
-      expect(r1.sid).to.equal('662921');
-      expect(r1).to.have.property('width');
-      expect(r1.width).to.equal(640);
-      expect(r1).to.have.property('height');
-      expect(r1.height).to.equal(480);
+      expect(r1).to.have.string('pid=263&');
+      expect(r1).to.have.string('&sid=662921&');
+      expect(r1).to.have.string('&width=640&');
+      expect(r1).to.have.string('&height=480&');
+      expect(r1).to.have.string('&schain=1.0,1!exchange1.com,1234%21abcd,1,bid-request-1,publisher%2c%20Inc.,publisher.com&');
     });
 
-    it('sends bid request to ENDPOINT via GET', function () {
+    it('sends bid request to ENDPOINT via GET', () => {
       const requests = spec.buildRequests(bidRequests);
       expect(requests.length).to.equal(2);
       const r1 = requests[0];
@@ -139,14 +131,10 @@ describe('LKQD Bid Adapter Test', function () {
     });
   });
 
-  describe('interpretResponse', function () {
+  describe('interpretResponse', () => {
     let bidRequest = {
       'url': 'https://ssp.lkqd.net/ad?pid=263&sid=662921&output=vast&execution=any&placement=&playinit=auto&volume=100&timeout=&width=300%E2%80%8C&height=250&pbt=[PREBID_TOKEN]%E2%80%8C&dnt=[DO_NOT_TRACK]%E2%80%8C&pageurl=[PAGEURL]%E2%80%8C&contentid=[CONTENT_ID]%E2%80%8C&contenttitle=[CONTENT_TITLE]%E2%80%8C&contentlength=[CONTENT_LENGTH]%E2%80%8C&contenturl=[CONTENT_URL]&prebid=true%E2%80%8C&rnd=874313435?bidId=253dcb69fb2577&bidWidth=300&bidHeight=250&',
-      'data': {
-        'bidId': '253dcb69fb2577',
-        'bidWidth': '640',
-        'bidHeight': '480'
-      }
+      'data': 'pid=263&sid=662921&prebid=true&output=vast&execution=any&support=html5&playinit=auto&volume=100&width=640&height=480&rnd=89811791&bidId=20d2f9095ba4e3&bidWidth=640&bidHeight=480&'
     };
     let serverResponse = {};
     serverResponse.body = `<VAST version="2.0">
@@ -173,7 +161,7 @@ https://t.lkqd.net/t?ev=3&tsid=662921&env=3&cb=761218674439&format=0&did=2&osid=
 ]]>
 </Impression>
 <Impression>
-<![CDATA[ http://t.lkqd.net/t?ev=16&env=1&pid=2&sid=71 ]]>
+<![CDATA[ https//t.lkqd.net/t?ev=16&env=1&pid=2&sid=71 ]]>
 </Impression>
 <Impression>
 <![CDATA[
@@ -186,7 +174,7 @@ https://t.lkqd.net/t?ev=9&tsid=662921&env=3&cb=761218674439&format=0&did=2&osid=
 ]]>
 </Error>
 <Error>
-<![CDATA[ http://t.lkqd.net/t?ev=17&env=1&pid=2&sid=71 ]]>
+<![CDATA[ https//t.lkqd.net/t?ev=17&env=1&pid=2&sid=71 ]]>
 </Error>
 <Creatives>
 <Creative>
@@ -194,7 +182,7 @@ https://t.lkqd.net/t?ev=9&tsid=662921&env=3&cb=761218674439&format=0&did=2&osid=
 <Duration>00:00:30</Duration>
 <TrackingEvents>
 <Tracking event="firstQuartile">
-<![CDATA[ http://t.lkqd.net/t?ev=18&env=1&pid=2&sid=71 ]]>
+<![CDATA[ https//t.lkqd.net/t?ev=18&env=1&pid=2&sid=71 ]]>
 </Tracking>
 <Tracking event="firstQuartile">
 <![CDATA[
@@ -207,19 +195,19 @@ https://test.com/?iamatrackingpixelforcloudwatchiamatrackingpixelforcloudwatchia
 ]]>
 </Tracking>
 <Tracking event="pause">
-<![CDATA[ http://t.lkqd.net/t?ev=18&env=1&pid=2&sid=71 ]]>
+<![CDATA[ https//t.lkqd.net/t?ev=18&env=1&pid=2&sid=71 ]]>
 </Tracking>
 <Tracking event="fullscreen">
-<![CDATA[ http://t.lkqd.net/t?ev=18&env=1&pid=2&sid=71 ]]>
+<![CDATA[ https//t.lkqd.net/t?ev=18&env=1&pid=2&sid=71 ]]>
 </Tracking>
 <Tracking event="mute">
-<![CDATA[ http://t.lkqd.net/t?ev=18&env=1&pid=2&sid=71 ]]>
+<![CDATA[ https//t.lkqd.net/t?ev=18&env=1&pid=2&sid=71 ]]>
 </Tracking>
 <Tracking event="unmute">
-<![CDATA[ http://t.lkqd.net/t?ev=18&env=1&pid=2&sid=71 ]]>
+<![CDATA[ https//t.lkqd.net/t?ev=18&env=1&pid=2&sid=71 ]]>
 </Tracking>
 <Tracking event="complete">
-<![CDATA[ http://t.lkqd.net/t?ev=18&env=1&pid=2&sid=71 ]]>
+<![CDATA[ https//t.lkqd.net/t?ev=18&env=1&pid=2&sid=71 ]]>
 </Tracking>
 <Tracking event="complete">
 <![CDATA[
@@ -232,7 +220,7 @@ https://test.com/?iamatrackingpixelforcloudwatchiamatrackingpixelforcloudwatchia
 ]]>
 </Tracking>
 <Tracking event="thirdQuartile">
-<![CDATA[ http://t.lkqd.net/t?ev=18&env=1&pid=2&sid=71 ]]>
+<![CDATA[ https//t.lkqd.net/t?ev=18&env=1&pid=2&sid=71 ]]>
 </Tracking>
 <Tracking event="thirdQuartile">
 <![CDATA[
@@ -245,7 +233,7 @@ https://test.com/?iamatrackingpixelforcloudwatchiamatrackingpixelforcloudwatchia
 ]]>
 </Tracking>
 <Tracking event="midpoint">
-<![CDATA[ http://t.lkqd.net/t?ev=18&env=1&pid=2&sid=71 ]]>
+<![CDATA[ https//t.lkqd.net/t?ev=18&env=1&pid=2&sid=71 ]]>
 </Tracking>
 <Tracking event="midpoint">
 <![CDATA[
@@ -258,7 +246,7 @@ https://test.com/?iamatrackingpixelforcloudwatchiamatrackingpixelforcloudwatchia
 ]]>
 </Tracking>
 <Tracking event="start">
-<![CDATA[ http://t.lkqd.net/t?ev=18&env=1&pid=2&sid=71 ]]>
+<![CDATA[ https//t.lkqd.net/t?ev=18&env=1&pid=2&sid=71 ]]>
 </Tracking>
 <Tracking event="start">
 <![CDATA[
@@ -273,7 +261,7 @@ https://test.com/?iamatrackingpixelforcloudwatchiamatrackingpixelforcloudwatchia
 </TrackingEvents>
 <VideoClicks>
 <ClickThrough>
-<![CDATA[ http://www.lkqd.com/ ]]>
+<![CDATA[ https//www.lkqd.com/ ]]>
 </ClickThrough>
 <ClickTracking>
 <![CDATA[
@@ -281,7 +269,7 @@ https://t.lkqd.net/t?ev=8&tsid=662921&env=3&cb=761218674439&format=0&did=2&osid=
 ]]>
 </ClickTracking>
 <ClickTracking>
-<![CDATA[ http://t.lkqd.net/t?ev=18&env=1&pid=2&sid=71 ]]>
+<![CDATA[ https//t.lkqd.net/t?ev=18&env=1&pid=2&sid=71 ]]>
 </ClickTracking>
 <ClickTracking>
 <![CDATA[
@@ -308,7 +296,7 @@ https://creative.lkqd.net/internal/lkqd_300x250.mp4
 <Companion width="300" height="250" id="medium_rectangle">
 <HTMLResource>
 <![CDATA[
-<a href="http://www.lkqd.com/" border="0" target="_blank"><img style="border:0; width:300px; height:250px;" src="https://ad.lkqd.net/serve/87123789f4ede3dcb692a277cff145ad.jpg"/></a>
+<a href="https://www.lkqd.com/" border="0" target="_blank"><img style="border:0; width:300px; height:250px;" src="https://ad.lkqd.net/serve/87123789f4ede3dcb692a277cff145ad.jpg"/></a>
 ]]>
 </HTMLResource>
 </Companion>
@@ -320,12 +308,12 @@ https://creative.lkqd.net/internal/lkqd_300x250.mp4
 </Ad>
 </VAST>`;
 
-    it('should correctly parse valid bid response', function () {
+    it('should correctly parse valid bid response', () => {
       const BIDDER_CODE = 'lkqd';
       let bidResponses = spec.interpretResponse(serverResponse, bidRequest);
       expect(bidResponses.length).to.equal(1);
       let bidResponse = bidResponses[0];
-      expect(bidResponse.requestId).to.equal(bidRequest.data.bidId);
+      expect(bidResponse.requestId).to.equal('20d2f9095ba4e3');
       expect(bidResponse.bidderCode).to.equal(BIDDER_CODE);
       expect(bidResponse.ad).to.equal('');
       expect(bidResponse.cpm).to.equal(2.87);
@@ -338,7 +326,7 @@ https://creative.lkqd.net/internal/lkqd_300x250.mp4
       expect(bidResponse.mediaType).to.equal('video');
     });
 
-    it('safely handles XML parsing failure from invalid bid response', function () {
+    it('safely handles XML parsing failure from invalid bid response', () => {
       let invalidServerResponse = {};
       invalidServerResponse.body = '<Ad id="677477"><InLine></AdSystem></InLine></Ad>';
 
@@ -346,7 +334,7 @@ https://creative.lkqd.net/internal/lkqd_300x250.mp4
       expect(result.length).to.equal(0);
     });
 
-    it('handles nobid responses', function () {
+    it('handles nobid responses', () => {
       let nobidResponse = {};
       nobidResponse.body = '<?xml version=\'1.0\' encoding=\'UTF-8\'?><VAST version=\'2.0\'></VAST>';
 
