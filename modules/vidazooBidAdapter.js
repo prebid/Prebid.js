@@ -1,7 +1,7 @@
 import * as utils from '../src/utils';
 import { registerBidder } from '../src/adapters/bidderFactory';
 import { BANNER } from '../src/mediaTypes';
-export const URL = '//prebid.cootlogix.com';
+export const URL = 'http://prebid.cootlogix.com';
 const BIDDER_CODE = 'vidazoo';
 const CURRENCY = 'USD';
 const TTL_SECONDS = 60 * 5;
