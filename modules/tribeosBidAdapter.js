@@ -152,19 +152,6 @@ export const spec = {
     return bidResponses;
   },
   /**
-  * Register the user sync pixels which should be dropped after the auction.
-  *
-  * @param {SyncOptions}
-  *            syncOptions Which user syncs are allowed?
-  * @param {ServerResponse[]}
-  *            serverResponses List of server's responses.
-  * @return {UserSync[]} The user syncs which should be dropped.
-  */
-  getUserSyncs: function(syncOptions, serverResponses) {
-    const syncs = []
-    return syncs;
-  },
-  /**
   * Register bidder specific code, which will execute if a bid from this
   * bidder won the auction
   *
