@@ -189,7 +189,7 @@ function bidToAdRequest(bid) {
     callerAdUnitId: bid.params.adUnitName || bid.adUnitCode || bid.placementCode,
     bidId: bid.bidId,
     transactionId: bid.transactionId,
-    formats: bid.sizes.map(sizeToFormat),
+    formats: getSizes(bid).map(sizeToFormat),
     options: bid.params.options
   };
 
@@ -202,6 +202,15 @@ function bidToAdRequest(bid) {
   }
 
   return adRequest;
+}
+
+function getSizes(bid) {
+  if (typeof utils.deepAccess(bid, 'mediaTypes.banner.sizes') !== 'undefined') {
+    return bid.mediaTypes.banner.sizes;
+  } else if (Array.isArray(bid.sizes) && bid.sizes.length > 0) {
+    return bid.sizes;
+  }
+  return [];
 }
 
 function sizeToFormat(size) {

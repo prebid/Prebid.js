@@ -398,7 +398,7 @@ describe('Livewrapped adapter tests', function () {
       delete testbidRequest.bids[0].params.userId;
       delete testbidRequest.bids[0].params.seats;
       delete testbidRequest.bids[0].params.adUnitId;
-      testbidRequest.bids[0].mediaTypes = {'native': {'nativedata': 'content parsed serverside only'},'banner': {'sizes': [[980, 240], [980, 120]]}};
+      testbidRequest.bids[0].mediaTypes = {'native': {'nativedata': 'content parsed serverside only'}, 'banner': {'sizes': [[980, 240], [980, 120]]}};
       let result = spec.buildRequests(testbidRequest.bids, testbidRequest);
       let data = JSON.parse(result.data);
 
@@ -415,6 +415,34 @@ describe('Livewrapped adapter tests', function () {
           formats: [{width: 980, height: 240}, {width: 980, height: 120}],
           native: {'nativedata': 'content parsed serverside only'},
           banner: true
+        }]
+      };
+
+      expect(data).to.deep.equal(expectedQuery);
+    });
+
+    it('should use mediaTypes.banner.sizes before legacy sizes', function() {
+      sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
+      sandbox.stub(utils, 'cookiesAreEnabled').callsFake(() => true);
+      let testbidRequest = clone(bidderRequest);
+      delete testbidRequest.bids[0].params.userId;
+      delete testbidRequest.bids[0].params.seats;
+      delete testbidRequest.bids[0].params.adUnitId;
+      testbidRequest.bids[0].mediaTypes = {'banner': {'sizes': [[728, 90]]}};
+      let result = spec.buildRequests(testbidRequest.bids, testbidRequest);
+      let data = JSON.parse(result.data);
+
+      let expectedQuery = {
+        auctionId: 'F7557995-65F5-4682-8782-7D5D34D82A8C',
+        publisherId: '26947112-2289-405D-88C1-A7340C57E63E',
+        url: 'https://www.domain.com',
+        version: '1.2',
+        cookieSupport: true,
+        adRequests: [{
+          callerAdUnitId: 'panorama_d_1',
+          bidId: '2ffb201a808da7',
+          transactionId: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D',
+          formats: [{width: 728, height: 90}]
         }]
       };
 
