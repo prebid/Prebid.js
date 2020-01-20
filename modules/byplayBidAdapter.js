@@ -4,7 +4,7 @@ import { Renderer } from '../src/Renderer';
 import { VIDEO } from '../src/mediaTypes';
 
 const BIDDER_CODE = 'byplay';
-const ENDPOINT_URL = 'https://tasp0g98f2.execute-api.ap-northeast-1.amazonaws.com/v1/bidder';
+const ENDPOINT_URL = 'https://prebid.byplay.net/bidder';
 const VIDEO_PLAYER_URL = 'https://cdn.byplay.net/prebid-byplay-v2.js';
 
 export const spec = {
@@ -18,7 +18,6 @@ export const spec = {
       const payload = {
         requestId: req.bidId,
         sectionId: req.params.sectionId,
-        ...segments,
         ...(req.params.env ? { env: req.params.env } : {})
       };
 
