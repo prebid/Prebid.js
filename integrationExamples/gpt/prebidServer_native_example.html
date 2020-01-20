@@ -59,15 +59,21 @@
             }
           }
         },
-        bids: [{
+        bids: [/*{
           bidder: 'appnexus',
           params: {
             placementId: 13232354,
             // placementId: 14141943,
             allowSmallerSizes: true
           }
-
-        }]
+        },*/ {
+		  bidder: 'livewrapped',
+		  params: {
+			adUnitId:"08d7773c-a5a4-e299-db72-e68c0c953834",
+			test: 1,
+			url: "https://vk.se"
+		  }
+		}]
       }, {
         code: '/19968336/prebid_native_example_2',
         // sizes: [[1, 1]],
@@ -93,13 +99,20 @@
             },
           }
         },
-        bids: [{
+        bids: [/*{
           bidder: 'appnexus',
           params: {
             placementId: 13232354,
             allowSmallerSizes: true
           }
-        }]
+        },*/ {
+		  bidder: 'livewrapped',
+		  params: {
+			adUnitId:"08d7773c-a5a4-e299-db72-e68c0c953834",
+			test: 1,
+			url: "https://vk.se"
+		  }
+		}]
       }];
 
       pbjs.addAdUnits(adUnits);
@@ -117,7 +130,8 @@
           bidders: ['appnexus'],
           timeout: 1000, //default value is 1000
           adapter: 'prebidServer', //if we have any other s2s adapter, default value is s2s
-          endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
+//          endpoint: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
+          endpoint: 'http://localhost:8000/openrtb2/auction'
         }
       });
       pbjs.requestBids({
@@ -133,8 +147,8 @@
   <script>
     // GPT setup
     googletag.cmd.push(function () {
-      // var slot1 = googletag.defineSlot('/19968336/prebid_native_example_1', [[360, 360]], 'div-1').addService(googletag.pubads());
-      // var slot2 = googletag.defineSlot('/19968336/prebid_native_example_2', 'fluid', 'div-2').addService(googletag.pubads());
+      var slot1 = googletag.defineSlot('/19968336/prebid_native_example_1', [[360, 360]], 'div-1').addService(googletag.pubads());
+      var slot2 = googletag.defineSlot('/19968336/prebid_native_example_2', 'fluid', 'div-2').addService(googletag.pubads());
       googletag.pubads().disableInitialLoad();
       googletag.pubads().enableSingleRequest();
       googletag.enableServices();

@@ -84,13 +84,13 @@ function setReporters(karmaConf, codeCoverage, browserstack) {
 function setBrowsers(karmaConf, browserstack) {
   if (browserstack) {
     karmaConf.browserStack = {
-      username: process.env.BROWSERSTACK_USERNAME,
-      accessKey: process.env.BROWSERSTACK_ACCESS_KEY,
+      username: 'bjrnandersson4',
+      accessKey: 'PpRXktRL4fYUhdyQgJzg',
       build: 'Prebidjs Unit Tests ' + new Date().toLocaleString()
     }
-    if (process.env.TRAVIS) {
+    if (true) {
       karmaConf.browserStack.startTunnel = false;
-      karmaConf.browserStack.tunnelIdentifier = process.env.BROWSERSTACK_LOCAL_IDENTIFIER;
+      karmaConf.browserStack.tunnelIdentifier = 'k:\test\karma';//'http://bjrnandersson4.browserstack.com';
     }
     karmaConf.customLaunchers = require('./browsers.json')
     karmaConf.browsers = Object.keys(karmaConf.customLaunchers);
