@@ -10,7 +10,7 @@ const VERSION = '2.1.0';
 const FEATURES_VERSION = '1';
 const ENDPOINT = 'https://mp.4dex.io/prebid';
 const SUPPORTED_MEDIA_TYPES = ['banner'];
-const ADAGIO_TAG_URL = '//script.4dex.io/localstore.js';
+const ADAGIO_TAG_URL = 'https://script.4dex.io/localstore.js';
 const ADAGIO_LOCALSTORAGE_KEY = 'adagioScript';
 
 export const ADAGIO_PUBKEY = `-----BEGIN PUBLIC KEY-----
