@@ -11,13 +11,13 @@ export const spec = {
   isBidRequestValid: function (bid) {
     return !!(bid && bid.params && bid.params.pubId && bid.params.sectionId);
   },
-  buildRequests: function (validBidRequests) {
+  buildRequests: function (validBidRequests, bidderRequest) {
     var bidRequests = [];
 
     for (var i = 0; i < validBidRequests.length; i++) {
       var bid = validBidRequests[i];
 
-      var trionUrlParams = buildTrionUrlParams(bid);
+      var trionUrlParams = buildTrionUrlParams(bid, bidderRequest);
 
       bidRequests.push({
         method: 'GET',
@@ -56,12 +56,12 @@ export const spec = {
 
     return bidResponses;
   },
-  getUserSyncs: function getUserSyncs(syncOptions) {
+  getUserSyncs: function getUserSyncs(syncOptions, serverResponses, gdprConsent, usPrivacy) {
     if (syncOptions.iframeEnabled) {
       handlePostMessage();
       return [{
         type: 'iframe',
-        url: getSyncUrl()
+        url: getSyncUrl(gdprConsent, usPrivacy)
       }];
     }
   }
@@ -69,13 +69,23 @@ export const spec = {
 };
 registerBidder(spec);
 
-function getSyncUrl() {
+function getSyncUrl(gdprConsent, usPrivacy) {
   var unParsedPubAndSection = getStorageData(BASE_KEY + 'lps') || ':';
   var pubSectionArray = unParsedPubAndSection.split(':') || [];
   var pubId = pubSectionArray[0] || -1;
   var sectionId = pubSectionArray[1] || -1;
   var url = getPublisherUrl();
-  return USER_SYNC_URL + `?p=${pubId}&s=${sectionId}&u=${url}`;
+  var consentParams = '';
+  if (gdprConsent) {
+    if (gdprConsent.consentString) {
+      consentParams += '&gc=' + encodeURIComponent(gdprConsent.consentString);
+    }
+    consentParams += '&g=' + (gdprConsent.gdprApplies ? 1 : 0);
+  }
+  if (usPrivacy) {
+    consentParams = '&up=' + encodeURIComponent(usPrivacy);
+  }
+  return USER_SYNC_URL + `?p=${pubId}&s=${sectionId}${consentParams}&u=${url}`;
 }
 
 function getPublisherUrl() {
@@ -95,7 +105,7 @@ function getPublisherUrl() {
   return url
 }
 
-function buildTrionUrlParams(bid) {
+function buildTrionUrlParams(bid, bidderRequest) {
   var pubId = utils.getBidIdParameter('pubId', bid.params);
   var sectionId = utils.getBidIdParameter('sectionId', bid.params);
   var re = utils.getBidIdParameter('re', bid.params);
@@ -132,7 +142,18 @@ function buildTrionUrlParams(bid) {
   trionUrl = utils.tryAppendQueryString(trionUrl, 'tr_wd', isAutomated);
   trionUrl = utils.tryAppendQueryString(trionUrl, 'tr_hd', isHidden);
   trionUrl = utils.tryAppendQueryString(trionUrl, 'tr_vs', visibilityState);
-
+  if (bidderRequest && bidderRequest.gdprConsent) {
+    var gdpr = bidderRequest.gdprConsent;
+    if (gdpr) {
+      if (gdpr.consentString) {
+        trionUrl = utils.tryAppendQueryString(trionUrl, 'gdprc', encodeURIComponent(gdpr.consentString));
+      }
+      trionUrl = utils.tryAppendQueryString(trionUrl, 'gdpr', (gdpr.gdprApplies ? 1 : 0));
+    }
+  }
+  if (bidderRequest && bidderRequest.uspConsent) {
+    trionUrl = utils.tryAppendQueryString(trionUrl, 'usp', encodeURIComponent(bidderRequest.uspConsent));
+  }
   // remove the trailing "&"
   if (trionUrl.lastIndexOf('&') === trionUrl.length - 1) {
     trionUrl = trionUrl.substring(0, trionUrl.length - 1);
