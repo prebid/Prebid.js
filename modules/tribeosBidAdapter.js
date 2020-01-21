@@ -2,7 +2,6 @@ import * as utils from '../src/utils';
 import {registerBidder} from '../src/adapters/bidderFactory';
 import * as bidfactory from '../src/bidfactory';
 import {BANNER} from '../src/mediaTypes';
-import { ajax } from '../src/ajax';
 var CONSTANTS = require('../src/constants.json');
 
 const BIDDER_CODE = 'tribeos';
@@ -158,9 +157,9 @@ export const spec = {
   * @param {Bid}
   *            The bid that won the auction
   */
-  onBidWon: function(bid) {
-    ajax(this.nurls[bid.requestId], null);
-  }
+//  onBidWon: function(bid) {
+//    ajax(this.nurls[bid.requestId], null);
+//  }
 
 }
 registerBidder(spec);
