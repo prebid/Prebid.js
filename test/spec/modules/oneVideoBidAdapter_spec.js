@@ -196,14 +196,14 @@ describe('OneVideoBidAdapter', function () {
     });
   });
 
-  describe('when GDPR applies', function () {
+  describe('when GDPR and uspConsent applies', function () {
     beforeEach(function () {
       bidderRequest = {
         'gdprConsent': {
           'consentString': 'test-gdpr-consent-string',
           'gdprApplies': true
         },
-        'uspConsent\'s': '1YN-',
+        'uspConsent': '1YN-',
         'bidderCode': 'oneVideo',
         'auctionId': 'e158486f-8c7f-472f-94ce-b0cbfbb50ab4',
         'bidderRequestId': '1e498b84fffc39',
@@ -221,9 +221,16 @@ describe('OneVideoBidAdapter', function () {
 
       mockConfig = {
         consentManagement: {
-          cmpApi: 'iab',
-          timeout: 1111,
-          allowAuctionWithoutConsent: 'cancel'
+          gdpr: {
+            cmpApi: 'iab',
+            timeout: 3000,
+            allowAuctionWithoutConsent: 'cancel'
+          },
+          usp: {
+            cmpApi: 'iab',
+            timeout: 1000,
+            allowAuctionWithoutConsent: 'cancel'
+          }
         }
       };
     });
@@ -240,6 +247,12 @@ describe('OneVideoBidAdapter', function () {
 
     it('should send the uspConsent string', function () {
       const request = spec.buildRequests([ bidRequest ], bidderRequest);
+      expect(request[0].data.regs.ext.us_privacy).to.equal(bidderRequest.uspConsent);
+    });
+
+    it('should send the uspConsent and GDPR ', function () {
+      const request = spec.buildRequests([ bidRequest ], bidderRequest);
+      expect(request[0].data.regs.ext.gdpr).to.equal(1);
       expect(request[0].data.regs.ext.us_privacy).to.equal(bidderRequest.uspConsent);
     });
 
