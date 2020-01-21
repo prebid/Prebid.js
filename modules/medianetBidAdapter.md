@@ -24,7 +24,7 @@ var adUnits = [{
         params: {
             cid: '<required-customerid-provided-by-media.net>',
             bidfloor: '<optional-float>',
-            crid: '<optional-pleacementid-provided-by-media.net>'
+            crid: '<required-pleacementid-provided-by-media.net>'
         }
     }]
 }];
@@ -43,6 +43,7 @@ var adUnits = [{
              bidder: 'medianet',
              params: {
                  cid: '8CUX0H51C',
+                 crid: '451466393',
                  // Site member is to be used only for testing
                  site: {
                      page: 'http://smoketesting.net/prebidtest/',
@@ -86,6 +87,7 @@ var adUnits = [{
                     bidder: 'medianet',
                     params: {
                         cid: '8CUX0H51C',
+                        crid: '776755783',
                         // Site member is to be used only for testing
                         site: {
                             page: 'http://smoketesting.net/prebidtest/',
