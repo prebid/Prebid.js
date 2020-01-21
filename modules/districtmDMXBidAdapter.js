@@ -27,6 +27,9 @@ export const spec = {
               nBid.requestId = nBid.impid;
               nBid.width = nBid.w || width;
               nBid.height = nBid.h || height;
+              if (nBid.dealid) {
+                nBid.dealId = nBid.dealid;
+              }
               nBid.ad = nBid.adm;
               nBid.netRevenue = true;
               nBid.creativeId = nBid.crid;
