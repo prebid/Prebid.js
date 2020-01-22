@@ -2,7 +2,7 @@ import {expect} from 'chai';
 import {spec} from 'modules/adtelligentBidAdapter';
 import {newBidder} from 'src/adapters/bidderFactory';
 
-const ENDPOINT = '//hb.adtelligent.com/auction/';
+const ENDPOINT = '//ghb.adtelligent.com/auction/';
 
 const DISPLAY_REQUEST = {
   'bidder': 'adtelligent',
