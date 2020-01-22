@@ -2,10 +2,10 @@ import * as utils from '../src/utils';
 import {registerBidder} from '../src/adapters/bidderFactory';
 import {VIDEO, BANNER} from '../src/mediaTypes';
 import {Renderer} from '../src/Renderer';
-import findIndex from 'core-js/library/fn/array/find-index';
+import find from 'core-js/library/fn/array/find';
 
-const URL = '//hb.adtelligent.com/auction/';
-const OUTSTREAM_SRC = '//player.adtelligent.com/outstream-unit/2.01/outstream.min.js';
+const URL = 'https://ghb.adtelligent.com/auction/';
+const OUTSTREAM_SRC = 'https://player.adtelligent.com/outstream-unit/2.01/outstream.min.js';
 const BIDDER_CODE = 'adtelligent';
 const OUTSTREAM = 'outstream';
 const DISPLAY = 'display';
@@ -110,12 +110,12 @@ function parseRTBResponse(serverResponse, bidderRequest) {
   }
 
   serverResponse.bids.forEach(serverBid => {
-    const requestId = findIndex(bidderRequest.bids, (bidRequest) => {
+    const request = find(bidderRequest.bids, (bidRequest) => {
       return bidRequest.bidId === serverBid.requestId;
     });
 
-    if (serverBid.cpm !== 0 && requestId !== -1) {
-      const bid = createBid(serverBid, getMediaType(bidderRequest.bids[requestId]));
+    if (serverBid.cpm !== 0 && request !== undefined) {
+      const bid = createBid(serverBid, getMediaType(request));
 
       bids.push(bid);
     }
