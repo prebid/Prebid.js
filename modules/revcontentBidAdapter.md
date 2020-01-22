@@ -54,7 +54,7 @@ Revcontent Adpater
                 widgetId: 599995,                                   // Optional
                 domain: 'test.com',                                 // Optional - Default referral hostname
                 endpoint: 'trends.revcontent.com'                   // Optional - Debug - Set different endpoint
-                bidfloor: 0.1,                                      // Optional - Bid Floor - Default 0.1
+                bidfloor: 0.1,                                      // Optional - BidFloor - Default 0.1
                 /*
                 Optional - Set different template. Template variables: 
                            {clickUrl} -> Target Url
