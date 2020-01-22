@@ -1,21 +1,20 @@
 const { registerBidder } = require('../src/adapters/bidderFactory');
 const BIDDER_CODE = 'proxistore';
+const PROXISTORE_VENDOR_ID = 418;
 
-function _getFormatSize(sizeArr) {
-  return {
-    width: sizeArr[0],
-    height: sizeArr[1]
-  }
+function _mapSizes(sizes) {
+  const flatSize = sizes.reduce((acc, val) => acc.concat(val), []); ;
+  return flatSize.map(array1d => { return { width: array1d[0], height: array1d[1] } });
 }
 
-function _createServerRequest(bidRequest, bidderRequest) {
+function _createServerRequest(bidRequests, bidderRequest) {
   const payload = {
-    bidId: bidRequest.bidId,
-    auctionId: bidRequest.auctionId,
-    transactionId: bidRequest.transactionId,
-    sizes: bidRequest.sizes.map(_getFormatSize),
-    website: bidRequest.params.website,
-    language: bidRequest.params.language,
+    bidId: bidRequests.map(req => req.bidId)[0],
+    auctionId: bidRequests[0].auctionId,
+    transactionId: bidRequests[0].transactionId,
+    sizes: _mapSizes(bidRequests.map(x => x.sizes)),
+    website: bidRequests[0].params.website,
+    language: bidRequests[0].params.language,
     gdpr: {
       applies: false
     }
@@ -31,13 +30,17 @@ function _createServerRequest(bidRequest, bidderRequest) {
       payload.gdpr.applies = true;
     }
     if ((typeof bidderRequest.gdprConsent.consentString === 'string') && bidderRequest.gdprConsent.consentString) {
-      payload.gdpr['consentString'] = bidderRequest.gdprConsent.consentString;
+      payload.gdpr.consentString = bidderRequest.gdprConsent.consentString;
+    }
+    if (bidderRequest.gdprConsent.vendorData && bidderRequest.gdprConsent.vendorData.vendorConsents &&
+      typeof bidderRequest.gdprConsent.vendorData.vendorConsents[PROXISTORE_VENDOR_ID.toString(10)] !== 'undefined') {
+      payload.gdpr.consentGiven = !!(bidderRequest.gdprConsent.vendorData.vendorConsents[PROXISTORE_VENDOR_ID.toString(10)]);
     }
   }
 
   return {
     method: 'POST',
-    url: bidRequest.params.url || '//abs.proxistore.com/' + bidRequest.params.language + '/v3/rtb/prebid',
+    url: bidRequests[0].params.url || 'https://abs.proxistore.com/' + payload.language + '/v3/rtb/prebid',
     data: JSON.stringify(payload),
     options: options
   };
@@ -78,12 +81,8 @@ function isBidRequestValid(bid) {
  * @return ServerRequest Info describing the request to the server.
  */
 function buildRequests(bidRequests, bidderRequest) {
-  var requests = [];
-  for (var i = 0; i < bidRequests.length; i++) {
-    var prebidReq = _createServerRequest(bidRequests[i], bidderRequest);
-    requests.push(prebidReq);
-  }
-  return requests;
+  var request = _createServerRequest(bidRequests, bidderRequest);
+  return request;
 }
 
 /**

@@ -288,6 +288,15 @@ export const spec = {
         utils.deepSetValue(data, 'ext.prebid.bidderconfig.0', bidderData);
       }
 
+      /**
+       * Prebid AdSlot
+       * @type {(string|undefined)}
+       */
+      const pbAdSlot = utils.deepAccess(bidRequest, 'fpd.context.pbAdSlot');
+      if (typeof pbAdSlot === 'string' && pbAdSlot) {
+        utils.deepSetValue(data.imp[0].ext, 'context.data.adslot', pbAdSlot);
+      }
+
       return {
         method: 'POST',
         url: VIDEO_ENDPOINT,
@@ -516,6 +525,15 @@ export const spec = {
       utils.deepAccess(config.getConfig('fpd.user'), 'keywords') || [],
       utils.deepAccess(config.getConfig('fpd.context'), 'keywords') || []);
     data.kw = keywords.length ? keywords.join(',') : '';
+
+    /**
+     * Prebid AdSlot
+     * @type {(string|undefined)}
+     */
+    const pbAdSlot = utils.deepAccess(bidRequest, 'fpd.context.pbAdSlot');
+    if (typeof pbAdSlot === 'string' && pbAdSlot) {
+      data['tg_i.dfp_ad_unit_code'] = pbAdSlot.replace(/^\/+/, '');
+    }
 
     // digitrust properties
     const digitrustParams = _getDigiTrustQueryParams(bidRequest, 'FASTLANE');
