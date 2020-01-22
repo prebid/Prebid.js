@@ -134,7 +134,7 @@ function bidToTag(bidRequests, bidderRequest) {
     tag.gdpr_consent = utils.deepAccess(bidderRequest, 'gdprConsent.consentString');
   }
 
-  if (utils.deepAccess(bidderRequest.uspConsent)) {
+  if (utils.deepAccess('bidderRequest.uspConsent')) {
     tag.us_privacy = bidderRequest.uspConsent;
   }
 
