@@ -3,7 +3,7 @@
 ```
 Module Name:  media.net Bid Adapter
 Module Type:  Bidder Adapter
-Maintainer: vedant.s@media.net
+Maintainer: prebid-support@media.net
 ```
 
 # Description
