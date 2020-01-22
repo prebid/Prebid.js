@@ -190,7 +190,7 @@ function gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId) {
 }
 
 function executeBidsLoggerCall(auctionId) {
-  let referrer = config.getConfig('pageUrl') || utils.getTopWindowUrl();
+  let referrer = config.getConfig('pageUrl') || cache.auctions[auctionId].referer || '';
   let auctionCache = cache.auctions[auctionId];
   let outputObj = { s: [] };
   let pixelURL = END_POINT_BID_LOGGER;
@@ -250,7 +250,7 @@ function executeBidWonLoggerCall(auctionId, adUnitId) {
   const winningBid = cache.auctions[auctionId].adUnitCodes[adUnitId].bids[winningBidId];
   let pixelURL = END_POINT_WIN_BID_LOGGER;
   pixelURL += 'pubid=' + publisherId;
-  pixelURL += '&purl=' + enc(config.getConfig('pageUrl') || utils.getTopWindowUrl());
+  pixelURL += '&purl=' + enc(config.getConfig('pageUrl') || cache.auctions[auctionId].referer || '');
   pixelURL += '&tst=' + (new window.Date()).getTime();
   pixelURL += '&iid=' + enc(auctionId);
   pixelURL += '&bidid=' + enc(winningBidId);
@@ -282,6 +282,7 @@ function auctionInitHandler(args) {
     'bidderDonePendingCount', () => args.bidderRequests.length,
   ]);
   cacheEntry.adUnitCodes = {};
+  cacheEntry.referer = args.bidderRequests[0].refererInfo.referer;
   cache.auctions[args.auctionId] = cacheEntry;
 }
 
