@@ -2,7 +2,7 @@ import {expect} from 'chai';
 import {spec} from 'modules/viewdeosDXBidAdapter';
 import {newBidder} from 'src/adapters/bidderFactory';
 
-const ENDPOINT = '//hb.sync.viewdeos.com/auction/';
+const ENDPOINT = 'https://hb.sync.viewdeos.com/auction/';
 
 const DISPLAY_REQUEST = {
   'bidder': 'viewdeos',

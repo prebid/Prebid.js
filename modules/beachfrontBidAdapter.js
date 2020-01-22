@@ -7,7 +7,7 @@ import { VIDEO, BANNER } from '../src/mediaTypes';
 import find from 'core-js/library/fn/array/find';
 import includes from 'core-js/library/fn/array/includes';
 
-const ADAPTER_VERSION = '1.8';
+const ADAPTER_VERSION = '1.9';
 const ADAPTER_NAME = 'BFIO_PREBID';
 const OUTSTREAM = 'outstream';
 
@@ -105,9 +105,9 @@ export const spec = {
     }
   },
 
-  getUserSyncs(syncOptions, serverResponses = [], gdprConsent = {}) {
+  getUserSyncs(syncOptions, serverResponses = [], gdprConsent = {}, uspConsent = '') {
     let syncs = [];
-    let { gdprApplies, consentString } = gdprConsent;
+    let { gdprApplies, consentString = '' } = gdprConsent;
     let bannerResponse = find(serverResponses, (res) => utils.isArray(res.body));
 
     if (bannerResponse) {
@@ -124,12 +124,12 @@ export const spec = {
     } else if (syncOptions.iframeEnabled) {
       syncs.push({
         type: 'iframe',
-        url: `https://sync.bfmio.com/sync_iframe?ifg=1&id=${appId}&gdpr=${gdprApplies ? 1 : 0}&gc=${consentString || ''}&gce=1`
+        url: `https://sync.bfmio.com/sync_iframe?ifg=1&id=${appId}&gdpr=${gdprApplies ? 1 : 0}&gc=${consentString}&gce=1&us_privacy=${uspConsent}`
       });
     } else if (syncOptions.pixelEnabled) {
       syncs.push({
         type: 'image',
-        url: `https://sync.bfmio.com/syncb?pid=144&id=${appId}&gdpr=${gdprApplies ? 1 : 0}&gc=${consentString || ''}&gce=1`
+        url: `https://sync.bfmio.com/syncb?pid=144&id=${appId}&gdpr=${gdprApplies ? 1 : 0}&gc=${consentString}&gce=1&us_privacy=${uspConsent}`
       });
     }
 
@@ -311,6 +311,10 @@ function createVideoRequestData(bid, bidderRequest) {
     cur: ['USD']
   };
 
+  if (bidderRequest && bidderRequest.uspConsent) {
+    payload.regs.ext.us_privacy = bidderRequest.uspConsent;
+  }
+
   if (bidderRequest && bidderRequest.gdprConsent) {
     let { gdprApplies, consentString } = bidderRequest.gdprConsent;
     payload.regs.ext.gdpr = gdprApplies ? 1 : 0;
@@ -362,6 +366,10 @@ function createBannerRequestData(bids, bidderRequest) {
     adapterVersion: ADAPTER_VERSION,
     adapterName: ADAPTER_NAME
   };
+
+  if (bidderRequest && bidderRequest.uspConsent) {
+    payload.usPrivacy = bidderRequest.uspConsent;
+  }
 
   if (bidderRequest && bidderRequest.gdprConsent) {
     let { gdprApplies, consentString } = bidderRequest.gdprConsent;

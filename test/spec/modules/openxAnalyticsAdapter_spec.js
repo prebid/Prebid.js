@@ -4,6 +4,7 @@ import { config } from 'src/config';
 import events from 'src/events';
 import CONSTANTS from 'src/constants.json';
 import * as utils from 'src/utils';
+import { server } from 'test/mocks/xhr';
 
 const {
   EVENTS: { AUCTION_INIT, BID_REQUESTED, BID_RESPONSE, BID_TIMEOUT, BID_WON }
@@ -152,12 +153,7 @@ describe('openx analytics adapter', function() {
       }, {});
     }
 
-    let xhr;
-    let requests;
-
     before(function() {
-      xhr = sinon.useFakeXMLHttpRequest();
-      xhr.onCreate = request => requests.push(request);
       sinon.stub(events, 'getEvents').returns([]);
       openxAdapter.enableAnalytics({
         options: {
@@ -167,13 +163,11 @@ describe('openx analytics adapter', function() {
     });
 
     after(function() {
-      xhr.restore();
       events.getEvents.restore();
       openxAdapter.disableAnalytics();
     });
 
     beforeEach(function() {
-      requests = [];
       openxAdapter.reset();
     });
 
@@ -185,7 +179,7 @@ describe('openx analytics adapter', function() {
         [BID_REQUESTED, bidRequestedOpenX]
       ]);
 
-      expect(requests.length).to.equal(0);
+      expect(server.requests.length).to.equal(0);
     });
 
     it('should send 1 request to the right endpoint', function() {
@@ -195,10 +189,11 @@ describe('openx analytics adapter', function() {
         [BID_RESPONSE, bidResponseOpenX]
       ]);
 
-      expect(requests.length).to.equal(1);
+      expect(server.requests.length).to.equal(1);
 
-      const endpoint = requests[0].url.split('?')[0];
-      expect(endpoint).to.equal('http://ads.openx.net/w/1.0/pban');
+      const endpoint = server.requests[0].url.split('?')[0];
+      // note IE11 returns the default secure port, so we look for this alternate value as well in these tests
+      expect(endpoint).to.be.oneOf(['https://ads.openx.net/w/1.0/pban', 'https://ads.openx.net:443/w/1.0/pban']);
     });
 
     describe('hb.ct, hb.rid, dddid, hb.asiid, hb.pubid', function() {
@@ -209,7 +204,7 @@ describe('openx analytics adapter', function() {
           [BID_RESPONSE, bidResponseOpenX]
         ]);
 
-        const queryData = getQueryData(requests[0].url);
+        const queryData = getQueryData(server.requests[0].url);
         expect(queryData).to.include({
           'hb.ct': String(bidRequestedOpenX.auctionStart),
           'hb.rid': auctionInit.auctionId,
@@ -235,7 +230,7 @@ describe('openx analytics adapter', function() {
 
         config.getConfig.restore();
 
-        const queryData = getQueryData(requests[0].url);
+        const queryData = getQueryData(server.requests[0].url);
         expect(queryData).to.include({
           'hb.cur': 'bitcoin'
         });
@@ -248,7 +243,7 @@ describe('openx analytics adapter', function() {
           [BID_RESPONSE, bidResponseOpenX]
         ]);
 
-        const queryData = getQueryData(requests[0].url);
+        const queryData = getQueryData(server.requests[0].url);
         expect(queryData).to.not.have.key('hb.cur');
       });
     });
@@ -275,7 +270,7 @@ describe('openx analytics adapter', function() {
         window.top.performance = originalPerf;
         Date.now.restore();
 
-        const queryData = getQueryData(requests[0].url);
+        const queryData = getQueryData(server.requests[0].url);
         expect(queryData).to.include({
           'hb.dcl': String(timing.domContentLoadedEventEnd - timing.fetchStart),
           'hb.dl': String(timing.loadEventEnd - timing.fetchStart),
@@ -296,7 +291,7 @@ describe('openx analytics adapter', function() {
 
         window.top.performance = originalPerf;
 
-        const queryData = getQueryData(requests[0].url);
+        const queryData = getQueryData(server.requests[0].url);
         expect(queryData).to.not.have.keys(
           'hb.dcl',
           'hb.dl',
@@ -316,7 +311,7 @@ describe('openx analytics adapter', function() {
           [BID_RESPONSE, bidResponseCloseX]
         ]);
 
-        const queryData = getQueryData(requests[0].url);
+        const queryData = getQueryData(server.requests[0].url);
         expect(queryData).to.include({
           ts: bidResponseOpenX.ts,
           auid: bidRequestedOpenX.bids[0].params.unit
@@ -331,7 +326,7 @@ describe('openx analytics adapter', function() {
           [BID_RESPONSE, bidResponseCloseX]
         ]);
 
-        const queryData = getQueryData(requests[0].url);
+        const queryData = getQueryData(server.requests[0].url);
         expect(queryData).to.include({
           auid: bidRequestedOpenX.bids[0].params.unit
         });
@@ -345,7 +340,7 @@ describe('openx analytics adapter', function() {
           [BID_RESPONSE, bidResponseCloseX]
         ]);
 
-        const queryData = getQueryData(requests[0].url);
+        const queryData = getQueryData(server.requests[0].url);
         expect(queryData).to.not.have.keys('auid', 'ts');
       });
     });
@@ -360,7 +355,7 @@ describe('openx analytics adapter', function() {
           [BID_RESPONSE, bidResponseCloseX]
         ]);
 
-        const queryData = getQueryData(requests[0].url);
+        const queryData = getQueryData(server.requests[0].url);
         const auctionStart = bidRequestedOpenX.auctionStart;
         expect(queryData).to.include({
           'hb.exn': [
@@ -393,7 +388,7 @@ describe('openx analytics adapter', function() {
           [BID_TIMEOUT, bidTimeoutOpenX]
         ]);
 
-        const queryData = getQueryData(requests[0].url);
+        const queryData = getQueryData(server.requests[0].url);
         const auctionStart = bidRequestedOpenX.auctionStart;
         expect(queryData).to.include({
           'hb.exn': [
@@ -424,7 +419,7 @@ describe('openx analytics adapter', function() {
           [BID_WON, bidWonOpenX]
         ]);
 
-        const queryData = getQueryData(requests[0].url);
+        const queryData = getQueryData(server.requests[0].url);
         expect(queryData).to.include({
           'hb.we': '0',
           'hb.g1': 'false'
@@ -438,7 +433,7 @@ describe('openx analytics adapter', function() {
           [BID_RESPONSE, bidResponseOpenX]
         ]);
 
-        const queryData = getQueryData(requests[0].url);
+        const queryData = getQueryData(server.requests[0].url);
         expect(queryData).to.include({
           'hb.we': '-1',
           'hb.g1': 'true'

@@ -75,8 +75,8 @@ describe('RTBHouseAdapter', () => {
       'refererInfo': {
         'numIframes': 0,
         'reachedTop': true,
-        'referer': 'http://example.com',
-        'stack': ['http://example.com']
+        'referer': 'https://example.com',
+        'stack': ['https://example.com']
       }
     };
 
@@ -402,10 +402,10 @@ describe('RTBHouseAdapter', () => {
         native: {
           ver: 1.1,
           link: {
-            url: 'http://example.com'
+            url: 'https://example.com'
           },
           imptrackers: [
-            'http://example.com/imptracker'
+            'https://example.com/imptracker'
           ],
           assets: [{
             id: OPENRTB.NATIVE.ASSET_ID.TITLE,
@@ -417,7 +417,7 @@ describe('RTBHouseAdapter', () => {
             id: OPENRTB.NATIVE.ASSET_ID.IMAGE,
             required: 1,
             img: {
-              url: 'http://example.com/image.jpg',
+              url: 'https://example.com/image.jpg',
               w: 150,
               h: 50
             }
@@ -446,10 +446,10 @@ describe('RTBHouseAdapter', () => {
         const bids = spec.interpretResponse({body: response}, {});
         expect(bids[0].native).to.deep.equal({
           title: 'Title text',
-          clickUrl: encodeURIComponent('http://example.com'),
-          impressionTrackers: ['http://example.com/imptracker'],
+          clickUrl: encodeURIComponent('https://example.com'),
+          impressionTrackers: ['https://example.com/imptracker'],
           image: {
-            url: encodeURIComponent('http://example.com/image.jpg'),
+            url: encodeURIComponent('https://example.com/image.jpg'),
             width: 150,
             height: 50
           },

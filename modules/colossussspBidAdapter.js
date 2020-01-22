@@ -63,6 +63,12 @@ export const spec = {
       'placements': placements
     };
 
+    if (bidderRequest) {
+      if (bidderRequest.uspConsent) {
+        request.ccpa = bidderRequest.uspConsent;
+      }
+    }
+
     for (let i = 0; i < validBidRequests.length; i++) {
       let bid = validBidRequests[i];
       let traff = bid.params.traffic || BANNER
@@ -72,6 +78,9 @@ export const spec = {
         sizes: bid.mediaTypes[traff].sizes,
         traffic: traff
       };
+      if (bid.schain) {
+        placement.schain = bid.schain;
+      }
       placements.push(placement);
     }
     return {
