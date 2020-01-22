@@ -402,5 +402,14 @@ describe('OneVideoBidAdapter', function () {
       expect(data.imp[0].video.pos).to.equal(position);
       expect(data.imp[0].video.mimes).to.equal(bidRequest.params.video.mimes);
     });
+    describe('getUserSyncs', function () {
+      const GDPR_CONSENT_STRING = 'GDPR_CONSENT_STRING';
+
+      it('should get correct user sync when iframeEnabled', function () {
+        let pixel = spec.getUserSyncs({pixelEnabled: true}, {}, {gdprApplies: true, consentString: GDPR_CONSENT_STRING})
+        expect(pixel[2].type).to.equal('image');
+        expect(pixel[2].url).to.equal('https://sync-tm.everesttech.net/upi/pid/m7y5t93k?gdpr=1&gdpr_consent=' + GDPR_CONSENT_STRING + '&redir=https%3A%2F%2Fpixel.advertising.com%2Fups%2F55986%2Fsync%3Fuid%3D%24%7BUSER_ID%7D%26_origin%3D0&gdpr=1&gdpr_consent=' + encodeURI(GDPR_CONSENT_STRING));
+      });
+    });
   });
 });
