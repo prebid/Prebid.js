@@ -23,7 +23,7 @@ const EXPECTED_TARGETING_KEYS = {
   hb_size_appnexus: '0x0'
 }
 
-describe('Prebid.js Banner Ad Unit Test', function () {
+describe('Prebid.js Price Granularity Ad Unit Test', function () {
   before(function loadTestPage() {
     browser.url(TEST_PAGE_URL).pause(3000);
     try {
