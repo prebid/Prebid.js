@@ -83,7 +83,7 @@ export const spec = {
 }
 
 function _buildRequests(validBidRequests, bidderRequest) {
-  let topLocation = _parseUrl(bidderRequest.refererInfo.referer);
+  let topLocation = _parseUrl(utils.deepAccess(bidderRequest, 'refererInfo.referer'));
   return validBidRequests.map((bidRequest, index) => {
     return {
       method: 'POST',
@@ -103,12 +103,29 @@ function _buildRequests(validBidRequests, bidderRequest) {
           }
         },
 
+        user: _getUser(validBidRequests),
         site: _getSite(bidRequest, topLocation),
         seller: _getSeller(bidRequest),
         device: _getDevice(bidRequest),
       }
     }
   })
+}
+
+function _getUser(requests) {
+  let id = utils.deepAccess(requests, '0.userId.nextroll');
+  if (id === undefined) {
+    return
+  }
+
+  return {
+    ext: {
+      eid: [{
+        "source": "nextroll",
+        id
+      }]
+    }
+  }
 }
 
 function _interpretResponse(serverResponse, _bidRequest) {
