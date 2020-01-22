@@ -1,6 +1,7 @@
 import * as utils from '../src/utils';
 import { registerBidder } from '../src/adapters/bidderFactory';
 import { BANNER } from '../src/mediaTypes';
+import { loadExternalScript } from '../src/adloader';
 import JSEncrypt from 'jsencrypt/bin/jsencrypt';
 import sha256 from 'crypto-js/sha256';
 
@@ -284,31 +285,5 @@ function isFastBidTooOld(fastBidAge) {
   }
   return false
 }
-
-/**
- * This is here to bypass the whitelist.
- * Once we're ready to merge the adapter to mainstream prebid, we should switch
- * from this function to adloader.loadExternalScript
- */
-const _requestCache = {};
-function loadExternalScript(url, moduleCode) {
-  if (!moduleCode || !url) {
-    utils.logError('cannot load external script without url and moduleCode');
-    return;
-  }
-
-  // only load each asset once
-  if (_requestCache[url]) {
-    return;
-  }
-
-  const script = document.createElement('script');
-  script.type = 'text/javascript';
-  script.async = true;
-  script.src = url;
-
-  utils.insertElement(script);
-  _requestCache[url] = true;
-};
 
 registerBidder(spec);
