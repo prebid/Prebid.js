@@ -1640,22 +1640,38 @@ describe('the rubicon adapter', function () {
           const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
           expect(request.data.regs.coppa).to.equal(1);
         });
-      });
 
-      it('should include storedAuctionResponse in video bid request', function () {
-        createVideoBidderRequest();
+        it('should include storedAuctionResponse in video bid request', function () {
+          createVideoBidderRequest();
 
-        sandbox.stub(Date, 'now').callsFake(() =>
-          bidderRequest.auctionStart + 100
-        );
+          sandbox.stub(Date, 'now').callsFake(() =>
+            bidderRequest.auctionStart + 100
+          );
 
-        const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
-        expect(request.data.imp).to.exist.and.to.be.a('array');
-        expect(request.data.imp).to.have.lengthOf(1);
-        expect(request.data.imp[0].ext).to.exist.and.to.be.a('object');
-        expect(request.data.imp[0].ext.prebid).to.exist.and.to.be.a('object');
-        expect(request.data.imp[0].ext.prebid.storedauctionresponse).to.exist.and.to.be.a('object');
-        expect(request.data.imp[0].ext.prebid.storedauctionresponse.id).to.equal('11111');
+          const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          expect(request.data.imp).to.exist.and.to.be.a('array');
+          expect(request.data.imp).to.have.lengthOf(1);
+          expect(request.data.imp[0].ext).to.exist.and.to.be.a('object');
+          expect(request.data.imp[0].ext.prebid).to.exist.and.to.be.a('object');
+          expect(request.data.imp[0].ext.prebid.storedauctionresponse).to.exist.and.to.be.a('object');
+          expect(request.data.imp[0].ext.prebid.storedauctionresponse.id).to.equal('11111');
+        });
+
+        it('should include pbAdSlot in bid request', function () {
+          createVideoBidderRequest();
+          bidderRequest.bids[0].fpd = {
+            context: {
+              pbAdSlot: '1234567890'
+            }
+          };
+
+          sandbox.stub(Date, 'now').callsFake(() =>
+            bidderRequest.auctionStart + 100
+          );
+
+          const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          expect(request.data.imp[0].ext.context.data.adslot).to.equal('1234567890');
+        });
       });
 
       it('should include pbAdSlot in bid request', function () {
@@ -1673,23 +1689,6 @@ describe('the rubicon adapter', function () {
         const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
         expect(request.data.imp[0].ext.context.data.adslot).to.equal('1234567890');
       });
-    });
-
-    it('should include pbAdSlot in bid request', function () {
-      createVideoBidderRequest();
-      bidderRequest.bids[0].fpd = {
-        context: {
-          pbAdSlot: '1234567890'
-        }
-      };
-
-      sandbox.stub(Date, 'now').callsFake(() =>
-        bidderRequest.auctionStart + 100
-      );
-
-      const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
-      expect(request.data.imp[0].ext.context.data.adslot).to.equal('1234567890');
-    });
 
       describe('combineSlotUrlParams', function () {
         it('should combine an array of slot url params', function () {
