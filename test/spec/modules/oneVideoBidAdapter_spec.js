@@ -196,13 +196,14 @@ describe('OneVideoBidAdapter', function () {
     });
   });
 
-  describe('when GDPR applies', function () {
+  describe('when GDPR and uspConsent applies', function () {
     beforeEach(function () {
       bidderRequest = {
         'gdprConsent': {
           'consentString': 'test-gdpr-consent-string',
           'gdprApplies': true
         },
+        'uspConsent': '1YN-',
         'bidderCode': 'oneVideo',
         'auctionId': 'e158486f-8c7f-472f-94ce-b0cbfbb50ab4',
         'bidderRequestId': '1e498b84fffc39',
@@ -220,9 +221,16 @@ describe('OneVideoBidAdapter', function () {
 
       mockConfig = {
         consentManagement: {
-          cmpApi: 'iab',
-          timeout: 1111,
-          allowAuctionWithoutConsent: 'cancel'
+          gdpr: {
+            cmpApi: 'iab',
+            timeout: 3000,
+            allowAuctionWithoutConsent: 'cancel'
+          },
+          usp: {
+            cmpApi: 'iab',
+            timeout: 1000,
+            allowAuctionWithoutConsent: 'cancel'
+          }
         }
       };
     });
@@ -235,6 +243,17 @@ describe('OneVideoBidAdapter', function () {
     it('should send the consent string', function () {
       const request = spec.buildRequests([ bidRequest ], bidderRequest);
       expect(request[0].data.user.ext.consent).to.equal(bidderRequest.gdprConsent.consentString);
+    });
+
+    it('should send the uspConsent string', function () {
+      const request = spec.buildRequests([ bidRequest ], bidderRequest);
+      expect(request[0].data.regs.ext.us_privacy).to.equal(bidderRequest.uspConsent);
+    });
+
+    it('should send the uspConsent and GDPR ', function () {
+      const request = spec.buildRequests([ bidRequest ], bidderRequest);
+      expect(request[0].data.regs.ext.gdpr).to.equal(1);
+      expect(request[0].data.regs.ext.us_privacy).to.equal(bidderRequest.uspConsent);
     });
 
     it('should send schain object', function () {
@@ -382,6 +401,15 @@ describe('OneVideoBidAdapter', function () {
       expect(data.imp[0].video.h).to.equal(height);
       expect(data.imp[0].video.pos).to.equal(position);
       expect(data.imp[0].video.mimes).to.equal(bidRequest.params.video.mimes);
+    });
+    describe('getUserSyncs', function () {
+      const GDPR_CONSENT_STRING = 'GDPR_CONSENT_STRING';
+
+      it('should get correct user sync when iframeEnabled', function () {
+        let pixel = spec.getUserSyncs({pixelEnabled: true}, {}, {gdprApplies: true, consentString: GDPR_CONSENT_STRING})
+        expect(pixel[2].type).to.equal('image');
+        expect(pixel[2].url).to.equal('https://sync-tm.everesttech.net/upi/pid/m7y5t93k?gdpr=1&gdpr_consent=' + GDPR_CONSENT_STRING + '&redir=https%3A%2F%2Fpixel.advertising.com%2Fups%2F55986%2Fsync%3Fuid%3D%24%7BUSER_ID%7D%26_origin%3D0&gdpr=1&gdpr_consent=' + encodeURI(GDPR_CONSENT_STRING));
+      });
     });
   });
 });

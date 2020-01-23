@@ -44,7 +44,7 @@ describe('Imonomy Adapter Tests', function () {
           width: 300,
           height: 250,
           cpm: 0.51,
-          creative: '<script type="text/javascript" src="http://creative.com/pathToNiceCreative"></script>',
+          creative: '<script type="text/javascript" src="https://creative.com/pathToNiceCreative"></script>',
           ttl: 360,
           currency: 'USD',
           netRevenue: true,
@@ -73,7 +73,7 @@ describe('Imonomy Adapter Tests', function () {
     var startTime = new Date().getTime();
 
     const request = spec.buildRequests(bidsRequest);
-    expect(request.url).to.equal('//b.imonomy.com/openrtb/hb/14567718624');
+    expect(request.url).to.equal('https://b.imonomy.com/openrtb/hb/14567718624');
     expect(request.method).to.equal('POST');
     const requestData = JSON.parse(request.data);
 
@@ -159,6 +159,6 @@ describe('Imonomy Adapter Tests', function () {
     expect(options).to.not.be.undefined;
     expect(options).to.have.lengthOf(1);
     expect(options[0].type).to.equal('iframe');
-    expect(options[0].url).to.equal('//b.imonomy.com/UserMatching/b/');
+    expect(options[0].url).to.equal('https://b.imonomy.com/UserMatching/b/');
   });
 });

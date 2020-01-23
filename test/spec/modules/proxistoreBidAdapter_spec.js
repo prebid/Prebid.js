@@ -10,6 +10,11 @@ describe('ProxistoreBidAdapter', function () {
     'gdprConsent': {
       'gdprApplies': true,
       'consentString': 'CONSENT_STRING',
+      'vendorData': {
+        'vendorConsents': {
+          '418': true
+        }
+      }
     }
   };
   let bid = {
@@ -29,18 +34,26 @@ describe('ProxistoreBidAdapter', function () {
   });
 
   describe('buildRequests', function () {
-    const url = '//abs.proxistore.com/fr/v3/rtb/prebid';
+    const url = 'https://abs.proxistore.com/fr/v3/rtb/prebid';
     const request = spec.buildRequests([bid], bidderRequest);
-    it('should return an empty array if no cookie sent', function () {
-      expect(request).to.be.an('array');
-      expect(request.length).to.equal(1);
+    it('should return a valid object', function () {
+      expect(request).to.be.an('object');
+      expect(request.method).to.exist;
+      expect(request.url).to.exist;
+      expect(request.data).to.exist;
     });
     it('request method should be POST', function () {
-      expect(request[0].method).to.equal('POST');
+      expect(request.method).to.equal('POST');
     });
     it('should contain a valid url', function () {
-      expect(request[0].url).equal(url);
-    })
+      expect(request.url).equal(url);
+    });
+    it('should have the value consentGiven to true bc we have 418 in the vendor list', function () {
+      const data = JSON.parse(request.data);
+      expect(data.gdpr.consentString).equal(bidderRequest.gdprConsent.consentString);
+      expect(data.gdpr.applies).to.be.true;
+      expect(data.gdpr.consentGiven).to.be.true;
+    });
   });
 
   describe('interpretResponse', function () {
@@ -66,13 +79,14 @@ describe('ProxistoreBidAdapter', function () {
       expect(spec.interpretResponse(badResponse, bid)).to.be.an('array');
       expect(spec.interpretResponse(badResponse, bid).length).equal(0);
     });
-    it('should interprnet the response correctly if it is valid', function () {
+    it('should interpret the response correctly if it is valid', function () {
       expect(interpretedResponse.cpm).equal(6.25);
       expect(interpretedResponse.creativeId).equal('48fd47c9-ce35-4fda-804b-17e16c8c36ac');
       expect(interpretedResponse.currency).equal('EUR');
       expect(interpretedResponse.height).equal(600);
       expect(interpretedResponse.width).equal(300);
       expect(interpretedResponse.requestId).equal('923756713');
+      expect(interpretedResponse.netRevenue).to.be.true;
       expect(interpretedResponse.netRevenue).to.be.true;
     })
   });

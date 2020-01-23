@@ -13,8 +13,8 @@ describe('TheAdxAdapter', function () {
   const adapter = newBidder(spec);
 
   describe('getUserSyncs', () => {
-    const USER_SYNC_IFRAME_URL = '//ssp.theadx.com/async_usersync_iframe.html'
-    const USER_SYNC_IMAGE_URL = '//ssp.theadx.com/async_usersync_image.gif'
+    const USER_SYNC_IFRAME_URL = 'https://ssp.theadx.com/async_usersync_iframe.html'
+    const USER_SYNC_IMAGE_URL = 'https://ssp.theadx.com/async_usersync_image.gif'
 
     expect(spec.getUserSyncs({
       iframeEnabled: true,
@@ -87,8 +87,8 @@ describe('TheAdxAdapter', function () {
     const sampleBidderRequest = {
       bidderRequestId: 'sample',
       refererInfo: {
-        canonicalUrl: 'http://domain.com/to',
-        referer: 'http://domain.com/from'
+        canonicalUrl: 'https://domain.com/to',
+        referer: 'https://domain.com/from'
       }
     }
 
@@ -449,7 +449,7 @@ describe('TheAdxAdapter', function () {
     it('returns an valid bid response on sucessful video request', function () {
       let incomingRequestId = 'XXtesting-275XX';
       let responsePrice = 6
-      let vast_url = 'http://theadx.com/vast?rid=a8ae0b48-a8db-4220-ba0c-7458f452b1f5&{FOR_COVARAGE}'
+      let vast_url = 'https://theadx.com/vast?rid=a8ae0b48-a8db-4220-ba0c-7458f452b1f5&{FOR_COVARAGE}'
 
       let responseCreativeId = '1556';
       let responseCurrency = 'TRY';
@@ -544,7 +544,7 @@ describe('TheAdxAdapter', function () {
                 assets: [{
                   id: 3,
                   img: {
-                    url: '//ads.theadx.com/winwords/120/17508/154712307258.73.jpg',
+                    url: 'https://ads.theadx.com/winwords/120/17508/154712307258.73.jpg',
                     h: 627,
                     w: 1200
                   }
@@ -566,7 +566,7 @@ describe('TheAdxAdapter', function () {
                 }, {
                   id: 2,
                   img: {
-                    url: '//ads.theadx.com/winwords/120/17508/154712307258.74.png',
+                    url: 'https://ads.theadx.com/winwords/120/17508/154712307258.74.png',
                     h: 128,
                     w: 128
                   }

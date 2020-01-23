@@ -4,14 +4,7 @@ let adapterManager = require('src/adapterManager').default;
 let constants = require('src/constants.json');
 
 describe('PubWise Prebid Analytics', function () {
-  let xhr;
-
-  before(function () {
-    xhr = sinon.useFakeXMLHttpRequest();
-  });
-
   after(function () {
-    xhr.restore();
     pubwiseAnalytics.disableAnalytics();
   });
 
