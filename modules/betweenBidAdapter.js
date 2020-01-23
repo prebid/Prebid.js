@@ -21,8 +21,10 @@ export const spec = {
    * @param {validBidRequests[]} - an array of bids
    * @return ServerRequest Info describing the request to the server.
    */
-  buildRequests: function(validBidRequests) {
+  buildRequests: function(validBidRequests, bidderRequest) {
     let requests = [];
+    const gdprConsent = bidderRequest && bidderRequest.gdprConsent;
+
     validBidRequests.forEach(i => {
       let params = {
         jst: 'hb',
@@ -54,6 +56,16 @@ export const spec = {
           params['pubside_macro[' + key + ']'] = encodeURIComponent(i.params.pubdata[key]);
         }
       }
+
+      if (gdprConsent) {
+        if (typeof gdprConsent.gdprApplies !== 'undefined') {
+          params.gdprApplies = !!gdprConsent.gdprApplies;
+        }
+        if (typeof gdprConsent.consentString !== 'undefined') {
+          params.consentString = gdprConsent.consentString;
+        }
+      }
+
       requests.push({method: 'GET', url: 'https://ads.betweendigital.com/adjson', data: params})
     })
     return requests;

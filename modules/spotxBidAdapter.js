@@ -308,6 +308,7 @@ export const spec = {
             channel_id: serverResponseBody.id,
             cache_key: spotxBid.ext.cache_key,
             vastUrl: 'https://search.spotxchange.com/ad/vast.html?key=' + spotxBid.ext.cache_key,
+            videoCacheKey: spotxBid.ext.cache_key,
             mediaType: VIDEO,
             width: spotxBid.w,
             height: spotxBid.h
