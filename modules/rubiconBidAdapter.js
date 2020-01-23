@@ -267,6 +267,15 @@ export const spec = {
         utils.deepSetValue(data, 'source.ext.schain', bidRequest.schain);
       }
 
+      /**
+       * Prebid AdSlot
+       * @type {(string|undefined)}
+       */
+      const pbAdSlot = utils.deepAccess(bidRequest, 'fpd.context.pbAdSlot');
+      if (typeof pbAdSlot === 'string' && pbAdSlot) {
+        utils.deepSetValue(data.imp[0].ext, 'context.data.adslot', pbAdSlot);
+      }
+
       return {
         method: 'POST',
         url: VIDEO_ENDPOINT,
@@ -487,6 +496,15 @@ export const spec = {
           data[`tg_i.${key}`] = params.inventory[key].toString();
         }
       });
+    }
+
+    /**
+     * Prebid AdSlot
+     * @type {(string|undefined)}
+     */
+    const pbAdSlot = utils.deepAccess(bidRequest, 'fpd.context.pbAdSlot');
+    if (typeof pbAdSlot === 'string' && pbAdSlot) {
+      data['tg_i.dfp_ad_unit_code'] = pbAdSlot.replace(/^\/+/, '');
     }
 
     // digitrust properties

@@ -1,6 +1,6 @@
 import { registerBidder } from '../src/adapters/bidderFactory';
 
-const VERSION = '3.1.0';
+const VERSION = '3.2.0';
 const BIDDER_CODE = 'sharethrough';
 const STR_ENDPOINT = 'https://btlr.sharethrough.com/WYu2BXv1/v1';
 const DEFAULT_SIZE = [1, 1];
@@ -9,7 +9,8 @@ const DEFAULT_SIZE = [1, 1];
 export const sharethroughInternal = {
   b64EncodeUnicode,
   handleIframe,
-  isLockedInFrame
+  isLockedInFrame,
+  getProtocol
 };
 
 export const sharethroughAdapterSpec = {
@@ -29,12 +30,19 @@ export const sharethroughAdapterSpec = {
         strVersion: VERSION
       };
 
+      const nonHttp = sharethroughInternal.getProtocol().indexOf('http') < 0;
+      query.secure = nonHttp || (sharethroughInternal.getProtocol().indexOf('https') > -1);
+
       if (bidderRequest && bidderRequest.gdprConsent && bidderRequest.gdprConsent.consentString) {
         query.consent_string = bidderRequest.gdprConsent.consentString;
       }
 
       if (bidderRequest && bidderRequest.gdprConsent) {
         query.consent_required = !!bidderRequest.gdprConsent.gdprApplies;
+      }
+
+      if (bidderRequest && bidderRequest.uspConsent) {
+        query.us_privacy = bidderRequest.uspConsent
       }
 
       if (bidRequest.userId && bidRequest.userId.tdid) {
@@ -93,7 +101,8 @@ export const sharethroughAdapterSpec = {
     }];
   },
 
-  getUserSyncs: (syncOptions, serverResponses) => {
+  getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent) => {
+    const syncParams = uspConsent ? `&us_privacy=${uspConsent}` : '';
     const syncs = [];
     const shouldCookieSync = syncOptions.pixelEnabled &&
       serverResponses.length > 0 &&
@@ -102,7 +111,7 @@ export const sharethroughAdapterSpec = {
 
     if (shouldCookieSync) {
       serverResponses[0].body.cookieSyncUrls.forEach(url => {
-        syncs.push({ type: 'image', url: url });
+        syncs.push({ type: 'image', url: url + syncParams });
       });
     }
 
@@ -234,6 +243,10 @@ function canAutoPlayHTML5Video() {
   } else {
     return false;
   }
+}
+
+function getProtocol() {
+  return document.location.protocol;
 }
 
 registerBidder(sharethroughAdapterSpec);

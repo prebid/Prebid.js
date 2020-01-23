@@ -105,7 +105,6 @@ describe('Real time module', function() {
     });
 
     it('check module using requestBidsHook', function () {
-      console.log('entrance', new Date().getMinutes() + ':' + new Date().getSeconds());
       let adUnits1 = [getAdUnitMock('browsiAd_1')];
       let targeting = [];
       let dataReceived = null;
