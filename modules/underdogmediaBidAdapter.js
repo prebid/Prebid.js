@@ -2,7 +2,7 @@ import * as utils from '../src/utils';
 import { config } from '../src/config';
 import { registerBidder } from '../src/adapters/bidderFactory';
 const BIDDER_CODE = 'underdogmedia';
-const UDM_ADAPTER_VERSION = '3.4V';
+const UDM_ADAPTER_VERSION = '3.5V';
 const UDM_VENDOR_ID = '159';
 const prebidVersion = '$prebid.version$';
 let USER_SYNCED = false;
