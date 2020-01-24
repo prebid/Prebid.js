@@ -2,7 +2,7 @@ import * as utils from '../src/utils';
 import { registerBidder } from '../src/adapters/bidderFactory';
 import { BANNER } from '../src/mediaTypes';
 const BIDDER_CODE = 'nobid';
-window.nobidVersion = '1.2.0';
+window.nobidVersion = '1.2.1';
 window.nobid = window.nobid || {};
 window.nobid.bidResponses = window.nobid.bidResponses || {};
 window.nobid.timeoutTotal = 0;
@@ -10,6 +10,27 @@ window.nobid.bidWonTotal = 0;
 window.nobid.refreshCount = 0;
 function log(msg, obj) {
   utils.logInfo('-NoBid- ' + msg, obj)
+}
+function nobidSetCookie(cname, cvalue, hours) {
+  var d = new Date();
+  d.setTime(d.getTime() + (hours * 60 * 60 * 1000));
+  var expires = "expires="+d.toUTCString();
+  var ccval = cname + "=" + cvalue + ";" + expires + ";path=/";
+  document.cookie = ccval;
+}
+function nobidGetCookie(cname) {
+  var name = cname + "=";
+  var ca = document.cookie.split(';');
+  for(var i = 0; i < ca.length; i++) {
+    var c = ca[i];
+    while (c.charAt(0) == ' ') {
+      c = c.substring(1);
+    }
+    if (c.indexOf(name) == 0) {
+      return c.substring(name.length, c.length);
+    }
+  }
+  return "";
 }
 function nobidBuildRequests(bids, bidderRequest) {
   var serializeState = function(divIds, siteId, adunits) {
@@ -146,6 +167,9 @@ function nobidBuildRequests(bids, bidderRequest) {
   if (typeof window.nobid.refreshLimit !== 'undefined') {
     if (window.nobid.refreshLimit < window.nobid.refreshCount) return false;
   }
+  if (nobidGetCookie('_ublock') || nobidGetCookie('_ublock')!='') {
+    return false;
+  }
   /* DISCOVER SLOTS */
   var divids = [];
   var siteId = 0;
@@ -180,7 +204,13 @@ function nobidInterpretResponse(response, bidRequest) {
   var setRefreshLimit = function(response) {
     if (response && typeof response.rlimit !== 'undefined') window.nobid.refreshLimit = response.rlimit;
   }
+  var setUserBlock = function(response) {
+    if (response && typeof response.ublock !== 'undefined') {
+      nobidSetCookie('_ublock', '1', response.ublock);
+    }
+  }
   setRefreshLimit(response);
+  setUserBlock(response);
   var bidResponses = [];
   for (var i = 0; response.bids && i < response.bids.length; i++) {
     var bid = response.bids[i];
