@@ -40,7 +40,7 @@ describe('rhythmone adapter tests', function () {
 
       var bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest);
 
-      expect(bidRequest.url).to.have.string('//tag.1rx.io/rmp/myplacement/0/mypath?z=myzone&hbv=');
+      expect(bidRequest.url).to.have.string('https://tag.1rx.io/rmp/myplacement/0/mypath?z=myzone&hbv=');
       expect(bidRequest.method).to.equal('POST');
       const openrtbRequest = JSON.parse(bidRequest.data);
       expect(openrtbRequest.site).to.not.equal(null);
@@ -113,7 +113,7 @@ describe('rhythmone adapter tests', function () {
 
       var bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest);
 
-      expect(bidRequest.url).to.have.string('//tag.1rx.io/rmp/myplacement/0/mypath?z=myzone&hbv=');
+      expect(bidRequest.url).to.have.string('https://tag.1rx.io/rmp/myplacement/0/mypath?z=myzone&hbv=');
       expect(bidRequest.method).to.equal('POST');
       const openrtbRequest = JSON.parse(bidRequest.data);
       expect(openrtbRequest.site).to.not.equal(null);
@@ -138,7 +138,7 @@ describe('rhythmone adapter tests', function () {
           {
             'impid': 'div-gpt-ad-1438287399331-1',
             'price': 1,
-            'nurl': 'http://testdomain/rmp/placementid/0/path?reqId=1636037',
+            'nurl': 'https://testdomain/rmp/placementid/0/path?reqId=1636037',
             'adomain': [
               'test.com'
             ],
@@ -156,7 +156,7 @@ describe('rhythmone adapter tests', function () {
       const bid = videoBids[0];
       expect(bid.width).to.equal(800);
       expect(bid.height).to.equal(600);
-      expect(bid.vastUrl).to.equal('http://testdomain/rmp/placementid/0/path?reqId=1636037');
+      expect(bid.vastUrl).to.equal('https://testdomain/rmp/placementid/0/path?reqId=1636037');
       expect(bid.mediaType).to.equal('video');
       expect(bid.creativeId).to.equal('cr-vid');
       expect(bid.currency).to.equal('USD');
@@ -234,7 +234,7 @@ describe('rhythmone adapter tests', function () {
                 {
                   'impid': 'div-gpt-ad-1438287399331-5',
                   'price': 1,
-                  'nurl': 'http://testdomain/rmp/placementid/0/path?reqId=1636037',
+                  'nurl': 'https://testdomain/rmp/placementid/0/path?reqId=1636037',
                   'adomain': [
                     'test.com'
                   ],
@@ -255,7 +255,7 @@ describe('rhythmone adapter tests', function () {
       const bid = forRMPMultiFormatResponse[0];
       expect(bid.width).to.equal(800);
       expect(bid.height).to.equal(600);
-      expect(bid.vastUrl).to.equal('http://testdomain/rmp/placementid/0/path?reqId=1636037');
+      expect(bid.vastUrl).to.equal('https://testdomain/rmp/placementid/0/path?reqId=1636037');
       expect(bid.mediaType).to.equal('video');
       expect(bid.creativeId).to.equal('cr-vid');
       expect(bid.currency).to.equal('USD');

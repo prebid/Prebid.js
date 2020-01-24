@@ -118,6 +118,17 @@ describe('gumgumAdapter', function () {
       expect(bidRequest.data).to.include.any.keys('t');
       expect(bidRequest.data).to.include.any.keys('fp');
     });
+    it('should send pubId if inScreenPubID param is specified', function () {
+      const request = Object.assign({}, bidRequests[0]);
+      delete request.params;
+      request.params = {
+        'inScreenPubID': 123
+      };
+      const bidRequest = spec.buildRequests([request])[0];
+      expect(bidRequest.data).to.include.any.keys('pubId');
+      expect(bidRequest.data.pubId).to.equal(request.params.inScreenPubID);
+      expect(bidRequest.data).to.not.include.any.keys('t');
+    });
     it('should correctly set the request paramters depending on params field', function () {
       const request = Object.assign({}, bidRequests[0]);
       delete request.params;
@@ -135,7 +146,7 @@ describe('gumgumAdapter', function () {
       expect(request.data).to.not.include.any.keys('eAdBuyId');
       expect(request.data).to.not.include.any.keys('adBuyId');
     });
-    it('should add consent parameters if gdprConsent is present', function () {
+    it('should add gdpr consent parameters if gdprConsent is present', function () {
       const gdprConsent = { consentString: 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==', gdprApplies: true };
       const fakeBidRequest = { gdprConsent: gdprConsent };
       const bidRequest = spec.buildRequests(bidRequests, fakeBidRequest)[0];
@@ -147,6 +158,14 @@ describe('gumgumAdapter', function () {
       const fakeBidRequest = { gdprConsent: gdprConsent };
       const bidRequest = spec.buildRequests(bidRequests, fakeBidRequest)[0];
       expect(bidRequest.data).to.not.include.any.keys('gdprConsent')
+    });
+    it('should add uspConsent parameter if it is present in the bidderRequest', function () {
+      const noUspBidRequest = spec.buildRequests(bidRequests)[0];
+      const uspConsentObj = { uspConsent: '1YYY' };
+      const bidRequest = spec.buildRequests(bidRequests, uspConsentObj)[0];
+      expect(noUspBidRequest.data).to.not.include.any.keys('uspConsent');
+      expect(bidRequest.data).to.include.any.keys('uspConsent');
+      expect(bidRequest.data.uspConsent).to.eq(uspConsentObj.uspConsent);
     });
     it('should add a tdid parameter if request contains unified id from TradeDesk', function () {
       const unifiedId = {
@@ -211,22 +230,31 @@ describe('gumgumAdapter', function () {
       method: 'GET',
       pi: 3
     }
+    let expectedResponse = {
+      'ad': '<html><h3>I am an ad</h3></html>',
+      'cpm': 0,
+      'creativeId': 29593,
+      'currency': 'USD',
+      'height': '250',
+      'netRevenue': true,
+      'requestId': 12345,
+      'width': '300',
+      // dealId: DEAL_ID,
+      // referrer: REFERER,
+      ttl: 60
+    };
 
     it('should get correct bid response', function () {
-      let expectedResponse = {
-        'ad': '<html><h3>I am an ad</h3></html>',
-        'cpm': 0,
-        'creativeId': 29593,
-        'currency': 'USD',
-        'height': '250',
-        'netRevenue': true,
-        'requestId': 12345,
-        'width': '300',
-        // dealId: DEAL_ID,
-        // referrer: REFERER,
-        ttl: 60
-      };
       expect(spec.interpretResponse({ body: serverResponse }, bidRequest)).to.deep.equal([expectedResponse]);
+    });
+
+    it('should pass correct currency if found in bid response', function () {
+      const cur = 'EURO';
+      let response = Object.assign({}, serverResponse);
+      let expected = Object.assign({}, expectedResponse);
+      response.ad.cur = cur;
+      expected.currency = cur;
+      expect(spec.interpretResponse({ body: response }, bidRequest)).to.deep.equal([expected]);
     });
 
     it('handles nobid responses', function () {

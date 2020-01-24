@@ -68,7 +68,7 @@ export const spec = {
     }
 
     let params = validBidRequests[0].params
-    let url = params.endpoint ? params.endpoint : '//market-global.smrtb.com/json/publisher/prebid'
+    let url = params.endpoint ? params.endpoint : 'https://market-global.smrtb.com/json/publisher/prebid'
     return {
       method: 'POST',
       url: url,

@@ -1,6 +1,17 @@
 /*
  * Module for getting and setting Prebid configuration.
  */
+
+/**
+ * @typedef {Object} MediaTypePriceGranularity
+ *
+ * @property {(string|Object)} [banner]
+ * @property {(string|Object)} [native]
+ * @property {(string|Object)} [video]
+ * @property {(string|Object)} [video-instream]
+ * @property {(string|Object)} [video-outstream]
+ */
+
 import { isValidPriceConfig } from './cpmBucketManager';
 import find from 'core-js/library/fn/array/find';
 import includes from 'core-js/library/fn/array/includes';
@@ -106,7 +117,12 @@ export function newConfig() {
         return this._customPriceBucket;
       },
 
+      /**
+       * mediaTypePriceGranularity
+       * @type {MediaTypePriceGranularity}
+       */
       _mediaTypePriceGranularity: {},
+
       get mediaTypePriceGranularity() {
         return this._mediaTypePriceGranularity;
       },
@@ -221,9 +237,9 @@ export function newConfig() {
       const configTopicSet = new Set(Object.keys(config).concat(Object.keys(currBidderConfig)));
 
       return from(configTopicSet).reduce((memo, topic) => {
-        if (!currBidderConfig[topic]) {
+        if (typeof currBidderConfig[topic] === 'undefined') {
           memo[topic] = config[topic];
-        } else if (!config[topic]) {
+        } else if (typeof config[topic] === 'undefined') {
           memo[topic] = currBidderConfig[topic];
         } else {
           if (utils.isPlainObject(currBidderConfig[topic])) {
