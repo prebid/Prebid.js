@@ -508,6 +508,7 @@ export function getTargeting({codes, callback} = {}) {
               [TARGETING_KEY_PB_CAT_DUR]: bid.adserverTargeting[TARGETING_KEY_PB_CAT_DUR]
             });
             adPodDurationSeconds -= bid.video.durationBucket;
+            auctionManager.addWinningBid(bid);
           }
           if (index === arr.length - 1 && adPodTargeting.length > 0) {
             adPodTargeting.push({
@@ -546,6 +547,7 @@ export function getTargeting({codes, callback} = {}) {
             adPodTargeting.push({
               [TARGETING_KEY_PB_CAT_DUR]: bid.adserverTargeting[TARGETING_KEY_PB_CAT_DUR]
             });
+            auctionManager.addWinningBid(bid);
 
             if (index === arr.length - 1 && adPodTargeting.length > 0) {
               adPodTargeting.push({

@@ -77,6 +77,7 @@ export function buildDfpVideoUrl(options) {
     urlComponents = parse(options.url, {noDecodeWholeURL: true});
 
     if (isEmpty(options.params)) {
+      flagWinningBid(bid);
       return buildUrlFromAdserverUrlComponents(urlComponents, bid, options);
     }
   }
@@ -98,6 +99,8 @@ export function buildDfpVideoUrl(options) {
 
   const descriptionUrl = getDescriptionUrl(bid, options, 'params');
   if (descriptionUrl) { queryParams.description_url = descriptionUrl; }
+
+  flagWinningBid(bid);
 
   return buildUrl({
     protocol: 'https',
@@ -257,6 +260,16 @@ function getCustParams(bid, options) {
     optCustParams,
   );
   return encodeURIComponent(formatQS(customParams));
+}
+
+/**
+ * If there is a winning bid, notify internal prebid trackers (eg analytics, adapter's onBidWon(), etc)
+ * @param {Object} bid bid object that we use in the video ad, may be empty in-case of nobid response
+ */
+function flagWinningBid(bid) {
+  if (bid) {
+    auctionManager.addWinningBid(bid);
+  }
 }
 
 registerVideoSupport('dfp', {

@@ -3,15 +3,11 @@
    access to a publisher page from creative payloads.
  */
 
-import events from './events';
 import { fireNativeTrackers, getAssetMessage } from './native';
-import { EVENTS } from './constants';
 import { isSlotMatchingAdUnitCode, logWarn, replaceAuctionPrice } from './utils';
 import { auctionManager } from './auctionManager';
 import find from 'core-js/library/fn/array/find';
 import { isRendererRequired, executeRenderer } from './Renderer';
-
-const BID_WON = EVENTS.BID_WON;
 
 export function listenMessagesFromCreative() {
   addEventListener('message', receiveMessage, false);
@@ -36,8 +32,6 @@ function receiveMessage(ev) {
 
       // save winning bids
       auctionManager.addWinningBid(adObject);
-
-      events.emit(BID_WON, adObject);
     }
 
     // handle this script from native template in an ad server
@@ -56,7 +50,6 @@ function receiveMessage(ev) {
       if (trackerType === 'click') { return; }
 
       auctionManager.addWinningBid(adObject);
-      events.emit(BID_WON, adObject);
     }
   }
 }

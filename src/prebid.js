@@ -22,7 +22,7 @@ const events = require('./events');
 const { triggerUserSyncs } = userSync;
 
 /* private variables */
-const { ADD_AD_UNITS, BID_WON, REQUEST_BIDS, SET_TARGETING, AD_RENDER_FAILED } = CONSTANTS.EVENTS;
+const { ADD_AD_UNITS, REQUEST_BIDS, SET_TARGETING, AD_RENDER_FAILED } = CONSTANTS.EVENTS;
 const { PREVENT_WRITING_ON_MAIN_DOCUMENT, NO_AD, EXCEPTION, CANNOT_FIND_AD, MISSING_DOC_OR_ADID } = CONSTANTS.AD_RENDER_FAILED_REASON;
 
 const eventValidators = {
@@ -315,9 +315,6 @@ $$PREBID_GLOBAL$$.renderAd = function (doc, id) {
         bid.adUrl = utils.replaceAuctionPrice(bid.adUrl, bid.cpm);
         // save winning bids
         auctionManager.addWinningBid(bid);
-
-        // emit 'bid won' event here
-        events.emit(BID_WON, bid);
 
         const { height, width, ad, mediaType, adUrl, renderer } = bid;
 

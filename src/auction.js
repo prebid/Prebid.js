@@ -314,6 +314,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
 
   function addWinningBid(winningBid) {
     _winningBids = _winningBids.concat(winningBid);
+    events.emit(CONSTANTS.EVENTS.BID_WON, winningBid);
     adapterManager.callBidWonBidder(winningBid.bidder, winningBid, adUnits);
   }
 
