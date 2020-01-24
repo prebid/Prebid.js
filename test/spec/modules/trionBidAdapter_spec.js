@@ -27,6 +27,13 @@ const TRION_BID = {
 
 const TRION_BID_REQUEST = [TRION_BID];
 
+const TRION_BIDDER_REQUEST = {
+  'bidderCode': 'trion',
+  'auctionId': '12345',
+  'bidderRequestId': 'abc1234',
+  'bids': TRION_BID_REQUEST
+};
+
 const TRION_BID_RESPONSE = {
   bidId: 'test-bid-id',
   sizes: [[300, 250], [300, 600]],
@@ -197,6 +204,30 @@ describe('Trion adapter tests', function () {
         expect(bidUrlParams).to.include('tr_vs=hidden');
       });
     });
+
+    describe('should call buildRequests with correct consent params', function () {
+      it('when gdpr is present', function () {
+        TRION_BIDDER_REQUEST.gdprConsent = {
+          consentString: 'test_gdpr_str',
+          gdprApplies: true
+        };
+        let bidRequests = spec.buildRequests(TRION_BID_REQUEST, TRION_BIDDER_REQUEST);
+        let bidUrlParams = bidRequests[0].data;
+        let gcEncoded = encodeURIComponent(TRION_BIDDER_REQUEST.gdprConsent.consentString);
+        expect(bidUrlParams).to.include('gdprc=' + gcEncoded);
+        expect(bidUrlParams).to.include('gdpr=1');
+        delete TRION_BIDDER_REQUEST.gdprConsent;
+      });
+
+      it('when us privacy is present', function () {
+        TRION_BIDDER_REQUEST.uspConsent = '1YYY';
+        let bidRequests = spec.buildRequests(TRION_BID_REQUEST, TRION_BIDDER_REQUEST);
+        let bidUrlParams = bidRequests[0].data;
+        let uspEncoded = encodeURIComponent(TRION_BIDDER_REQUEST.uspConsent);
+        expect(bidUrlParams).to.include('usp=' + uspEncoded);
+        delete TRION_BIDDER_REQUEST.uspConsent;
+      });
+    });
   });
 
   describe('interpretResponse', function () {
@@ -272,6 +303,31 @@ describe('Trion adapter tests', function () {
       let pubId = 1;
       let sectionId = 2;
       let syncString = `?p=${pubId}&s=${sectionId}&u=${pageUrl}`;
+      expect(syncs[0]).to.deep.equal({type: 'iframe', url: USER_SYNC_URL + syncString});
+    });
+
+    it('should register trion user script with gdpr params', function () {
+      let gdprConsent = {
+        consentString: 'test_gdpr_str',
+        gdprApplies: true
+      };
+      let syncs = spec.getUserSyncs({iframeEnabled: true}, null, gdprConsent);
+      let pageUrl = getPublisherUrl();
+      let pubId = 1;
+      let sectionId = 2;
+      let gcEncoded = encodeURIComponent(gdprConsent.consentString);
+      let syncString = `?p=${pubId}&s=${sectionId}&gc=${gcEncoded}&g=1&u=${pageUrl}`;
+      expect(syncs[0]).to.deep.equal({type: 'iframe', url: USER_SYNC_URL + syncString});
+    });
+
+    it('should register trion user script with us privacy params', function () {
+      let uspConsent = '1YYY';
+      let syncs = spec.getUserSyncs({iframeEnabled: true}, null, null, uspConsent);
+      let pageUrl = getPublisherUrl();
+      let pubId = 1;
+      let sectionId = 2;
+      let uspEncoded = encodeURIComponent(uspConsent);
+      let syncString = `?p=${pubId}&s=${sectionId}&up=${uspEncoded}&u=${pageUrl}`;
       expect(syncs[0]).to.deep.equal({type: 'iframe', url: USER_SYNC_URL + syncString});
     });
 

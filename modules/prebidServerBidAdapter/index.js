@@ -481,6 +481,15 @@ const OPEN_RTB_PROTOCOL = {
 
       const imp = { id: adUnit.code, ext, secure: _s2sConfig.secure };
 
+      /**
+       * Prebid AdSlot
+       * @type {(string|undefined)}
+       */
+      const pbAdSlot = utils.deepAccess(adUnit, 'fpd.context.pbAdSlot');
+      if (typeof pbAdSlot === 'string' && pbAdSlot) {
+        utils.deepSetValue(imp, 'ext.context.data.adslot', pbAdSlot);
+      }
+
       Object.assign(imp, mediaTypes);
 
       if (imp.banner || imp.video || imp.native) {
