@@ -5,7 +5,7 @@ import { loadExternalScript } from '../src/adloader';
 import JSEncrypt from 'jsencrypt/bin/jsencrypt';
 import sha256 from 'crypto-js/sha256';
 
-const BIDDER_CODE = 'adroll';
+const BIDDER_CODE = 'nextroll';
 const BIDDER_ENDPOINT = 'https://d.adroll.com/bid/prebid/';
 const PUBLISHER_TAG_URL = 'https://s.adroll.com/prebid/pubtag.min.js';
 const MAX_PUBTAG_AGE_IN_DAYS = 3;
@@ -48,7 +48,7 @@ export const spec = {
     }
 
     if (publisherTagAvailable()) {
-      const adapter = new NextRoll.Adapters.Prebid(ADAPTER_VERSION);
+      const adapter = new window.NextRoll.Adapters.Prebid(ADAPTER_VERSION);
       return adapter.buildRequests(validBidRequests, bidderRequest);
     }
     return _buildRequests(validBidRequests, bidderRequest);
@@ -62,7 +62,7 @@ export const spec = {
    */
   interpretResponse: function (serverResponse, bidRequest) {
     if (publisherTagAvailable()) {
-      return NextRoll.Adapters.Prebid.interpretResponse(serverResponse, bidRequest);
+      return window.NextRoll.Adapters.Prebid.interpretResponse(serverResponse, bidRequest);
     }
     return _interpretResponse(serverResponse, bidRequest);
   },
@@ -76,7 +76,7 @@ export const spec = {
    */
   getUserSyncs: function (syncOptions, serverResponses, gdprConsent) {
     if (publisherTagAvailable()) {
-      return NextRoll.Adapters.Prebid.getUserSyncs(syncOptions, serverResponses, gdprConsent);
+      return window.NextRoll.Adapters.Prebid.getUserSyncs(syncOptions, serverResponses, gdprConsent);
     }
     return [];
   }
@@ -121,7 +121,7 @@ function _getUser(requests) {
   return {
     ext: {
       eid: [{
-        "source": "nextroll",
+        'source': 'nextroll',
         id
       }]
     }
@@ -155,6 +155,7 @@ function _buildResponse(bidResponse, bid) {
 }
 
 function publisherTagAvailable() {
+  let NextRoll = window.NextRoll
   return typeof NextRoll !== 'undefined' && NextRoll.Adapters && NextRoll.Adapters.Prebid;
 }
 
@@ -235,7 +236,6 @@ function _getOsVersion(userAgent) {
   return cs ? cs.s : 'unknown';
 }
 
-
 function _parseUrl(url) {
   let parsed = document.createElement('a');
   parsed.href = url;
@@ -244,7 +244,6 @@ function _parseUrl(url) {
     hostname: parsed.hostname
   };
 }
-
 
 /**
  * @return {boolean}

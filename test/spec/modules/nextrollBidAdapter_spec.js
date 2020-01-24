@@ -1,9 +1,9 @@
 import { expect } from 'chai';
-import { spec } from 'modules/adrollBidAdapter';
+import { spec } from 'modules/nextrollBidAdapter';
 
-describe('adrollBidAdapter', function() {
+describe('nextrollBidAdapter', function() {
   let validBid = {
-    bidder: 'adroll',
+    bidder: 'nextroll',
     adUnitCode: 'adunit-code',
     bidId: 'bid_id',
     sizes: [[300, 200]],
