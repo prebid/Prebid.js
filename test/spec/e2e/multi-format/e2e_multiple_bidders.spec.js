@@ -58,8 +58,8 @@ describe('Prebid.js Multiple Bidder Ad Unit Test', function () {
     expect(browser.isVisible('body > div[class="GoogleActiveViewElement"] > a > img')).to.be.true;
   });
 
-  it('should render the native ad on the page', function () {
-    browser.scroll(0, 500).pause(3000);
+  it('should render the native ad on the  page', function () {
+    browser.frameParent();
     browser.waitForExist(CREATIVE_NATIVE_CSS_SELECTOR, 3000);
     const creativeIframe = $(CREATIVE_NATIVE_CSS_SELECTOR).value;
     browser.frame(creativeIframe);
