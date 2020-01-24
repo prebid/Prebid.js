@@ -85,7 +85,7 @@ Please reach out to your Technical account manager for more information.
                 domain: 'https://prg.smartadserver.com',
                 siteId: 326147,
                 pageId: 1153895,
-                formatId: 55710
+                formatId: 55710,
                 bidfloor: 5,
                 video: {
                     protocol: 6,
