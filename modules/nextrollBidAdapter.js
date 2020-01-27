@@ -7,11 +7,11 @@ import sha256 from 'crypto-js/sha256';
 
 const BIDDER_CODE = 'nextroll';
 const BIDDER_ENDPOINT = 'https://d.adroll.com/bid/prebid/';
-const PUBLISHER_TAG_URL = 'https://s.adroll.com/prebid/pubtag.min.js';
+const PUBTAG_URL = 'https://s.adroll.com/prebid/pubtag.min.js';
 const MAX_PUBTAG_AGE_IN_DAYS = 3;
 const ADAPTER_VERSION = 3;
 
-export const FAST_BID_PUBKEY = `-----BEGIN PUBLIC KEY-----
+export const PUBTAG_PUBKEY = `-----BEGIN PUBLIC KEY-----
 MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC/TZ6Gpm7gYg0j6o8LK+sKfYsl
 +Z3vY2flsA/KFllKyXKTTtC2nJSJlSTuNToIcXnW+2L3Q2V3yM8VExfhCtVg5oZd
 YEe1TfPmu7UyGP4rCJM3wD7Z3+3XPy4pWWiTvGhHOO0bdT9JfwaezJYObJBcfkpK
@@ -39,15 +39,15 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
-    if (!publisherTagAvailable()) {
-      tryGetFastBid();
+    if (!pubtagAvailable()) {
+      tryGetPubtag();
 
       setTimeout(() => {
-        loadExternalScript(PUBLISHER_TAG_URL, BIDDER_CODE);
+        loadExternalScript(PUBTAG_URL, BIDDER_CODE);
       }, bidderRequest.timeout);
     }
 
-    if (publisherTagAvailable()) {
+    if (pubtagAvailable()) {
       const adapter = new window.NextRoll.Adapters.Prebid(ADAPTER_VERSION);
       return adapter.buildRequests(validBidRequests, bidderRequest);
     }
@@ -61,7 +61,7 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function (serverResponse, bidRequest) {
-    if (publisherTagAvailable()) {
+    if (pubtagAvailable()) {
       return window.NextRoll.Adapters.Prebid.interpretResponse(serverResponse, bidRequest);
     }
     return _interpretResponse(serverResponse, bidRequest);
@@ -75,7 +75,7 @@ export const spec = {
    * @return {UserSync[]} The user syncs which should be dropped.
    */
   getUserSyncs: function (syncOptions, serverResponses, gdprConsent) {
-    if (publisherTagAvailable()) {
+    if (pubtagAvailable()) {
       return window.NextRoll.Adapters.Prebid.getUserSyncs(syncOptions, serverResponses, gdprConsent);
     }
     return [];
@@ -154,7 +154,7 @@ function _buildResponse(bidResponse, bid) {
   }
 }
 
-function publisherTagAvailable() {
+function pubtagAvailable() {
   let NextRoll = window.NextRoll
   return typeof NextRoll !== 'undefined' && NextRoll.Adapters && NextRoll.Adapters.Prebid;
 }
@@ -248,55 +248,55 @@ function _parseUrl(url) {
 /**
  * @return {boolean}
  */
-function tryGetFastBid() {
-  const fastBidStorageKey = 'nextroll_fast_bid';
+function tryGetPubtag() {
+  const pubtagStorageKey = 'nextroll_fast_bid';
   const dateSuffix = '_set_date';
   const hashPrefix = '// Hash: ';
 
-  let fastBidFromStorage = null;
-  let fastBidAge = null;
+  let pubtagFromStorage = null;
+  let pubtagAge = null;
 
   try {
-    fastBidFromStorage = localStorage.getItem(fastBidStorageKey);
-    fastBidAge = localStorage.getItem(fastBidStorageKey + dateSuffix);
+    pubtagFromStorage = localStorage.getItem(pubtagStorageKey);
+    pubtagAge = localStorage.getItem(pubtagStorageKey + dateSuffix);
   } catch (e) {
     return;
   }
 
-  if (fastBidStorageKey === null || fastBidAge === null || isFastBidTooOld(fastBidAge)) {
+  if (pubtagStorageKey === null || pubtagAge === null || isPubtagTooOld(pubtagAge)) {
     return;
   }
 
   // The value stored must contain the file's encrypted hash as first line
-  const firstLineEndPosition = fastBidFromStorage.indexOf('\n');
-  const firstLine = fastBidFromStorage.substr(0, firstLineEndPosition).trim();
+  const firstLineEndPosition = pubtagFromStorage.indexOf('\n');
+  const firstLine = pubtagFromStorage.substr(0, firstLineEndPosition).trim();
 
   if (firstLine.substr(0, hashPrefix.length) !== hashPrefix) {
-    utils.logWarn('No hash found in FastBid');
-    localStorage.removeItem(fastBidStorageKey);
+    utils.logWarn('No hash found in Pubtag');
+    localStorage.removeItem(pubtagStorageKey);
   } else {
     // Remove the hash part from the locally stored value
     const publisherTagHash = firstLine.substr(hashPrefix.length);
-    const publisherTag = fastBidFromStorage.substr(firstLineEndPosition + 1);
+    const publisherTag = pubtagFromStorage.substr(firstLineEndPosition + 1);
 
     var jsEncrypt = new JSEncrypt();
-    jsEncrypt.setPublicKey(FAST_BID_PUBKEY);
+    jsEncrypt.setPublicKey(PUBTAG_PUBKEY);
     if (jsEncrypt.verify(publisherTag, publisherTagHash, sha256)) {
-      utils.logInfo('Using NextRoll FastBid');
+      utils.logInfo('Using NextRoll Pubtag');
       eval(publisherTag); // eslint-disable-line no-eval
     } else {
-      utils.logWarn('Invalid NextRoll FastBid found');
-      localStorage.removeItem(fastBidStorageKey);
+      utils.logWarn('Invalid NextRoll Pubtag found');
+      localStorage.removeItem(pubtagStorageKey);
     }
   }
 }
 
-function isFastBidTooOld(fastBidAge) {
+function isPubtagTooOld(pubtagAge) {
   const currentDate = (new Date()).getTime();
-  const fbSetDate = parseInt(fastBidAge);
+  const ptSetDate = parseInt(pubtagAge);
   const maxAgeMs = MAX_PUBTAG_AGE_IN_DAYS * 1000 * 60 * 60 * 24;
 
-  if (currentDate - fbSetDate > maxAgeMs) {
+  if (currentDate - ptSetDate > maxAgeMs) {
     return true
   }
   return false
