@@ -134,7 +134,7 @@ export const spec = {
     return syncs
   },
 };
-//sync
+
 registerBidder(spec);
 
 function raiGetSizes(bid) {
