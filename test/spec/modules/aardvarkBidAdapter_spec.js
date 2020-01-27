@@ -229,6 +229,54 @@ describe('aardvarkAdapterTest', function () {
     });
   });
 
+  describe('CCPA conformity', function () {
+    const bidRequests = [{
+      bidder: 'aardvark',
+      params: {
+        ai: 'xiby',
+        sc: 'TdAx',
+      },
+      adUnitCode: 'aaa',
+      transactionId: '1b8389fe-615c-482d-9f1a-177fb8f7d5b0',
+      sizes: [300, 250],
+      bidId: '1abgs362e0x48a8',
+      bidderRequestId: '70deaff71c281d',
+      auctionId: '5c66da22-426a-4bac-b153-77360bef5337'
+    }];
+
+    it('should transmit us_privacy data', function () {
+      const usp = '1NY-';
+      const bidderRequest = {
+        gdprConsent: {
+          consentString: 'awefasdfwefasdfasd',
+          gdprApplies: true
+        },
+        refererInfo: {
+          referer: 'http://example.com'
+        },
+        uspConsent: usp
+      };
+      const requests = spec.buildRequests(bidRequests, bidderRequest);
+      expect(requests.length).to.equal(1);
+      expect(requests[0].data.gdpr).to.equal(true);
+      expect(requests[0].data.consent).to.equal('awefasdfwefasdfasd');
+      expect(requests[0].data.us_privacy).to.equal(usp);
+    });
+
+    it('should not send us_privacy', function () {
+      const bidderRequest = {
+        refererInfo: {
+          referer: 'http://example.com'
+        }
+      };
+      const requests = spec.buildRequests(bidRequests, bidderRequest);
+      expect(requests.length).to.equal(1);
+      expect(requests[0].data.gdpr).to.be.undefined;
+      expect(requests[0].data.consent).to.be.undefined;
+      expect(requests[0].data.us_privacy).to.be.undefined;
+    });
+  });
+
   describe('interpretResponse', function () {
     it('should handle bid responses', function () {
       const serverResponse = {
@@ -342,6 +390,15 @@ describe('aardvarkAdapterTest', function () {
       expect(syncs.length).to.equal(1);
       expect(syncs[0].type).to.equal('iframe');
       expect(syncs[0].url).to.equal('https://sync.rtk.io/cs?g=1&c=BOEFEAyOEFEAyAHABDENAI4AAAB9vABAASA');
+    });
+
+    it('should produce sync url with ccpa params', function () {
+      resetUserSync();
+
+      const syncs = spec.getUserSyncs(syncOptions, null, {}, '1YYN');
+      expect(syncs.length).to.equal(1);
+      expect(syncs[0].type).to.equal('iframe');
+      expect(syncs[0].url).to.equal('https://sync.rtk.io/cs?us_privacy=1YYN');
     });
   });
 
