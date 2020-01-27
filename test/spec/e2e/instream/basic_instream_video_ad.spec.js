@@ -1,7 +1,7 @@
 const expect = require('chai').expect;
 const { host, protocol } = require('../../../helpers/testing-utils');
 
-const TEST_PAGE_URL = `${protocol}://${host}:9999/test/pages/instream.html`;
+const TEST_PAGE_URL = `${protocol}://${host}:9999/test/pages/instream.html?pbjs_debug=true`;
 const CREATIVE_IFRAME_CSS_SELECTOR = 'div[class="VPAID-container"] > div > iframe';
 
 const EXPECTED_TARGETING_KEYS = {
