@@ -100,14 +100,6 @@ export const spec = {
 
     if (deepAccess(validBidRequests[0], 'params.hfa')) {
       payload.hfa = deepAccess(validBidRequests[0], 'params.hfa');
-    } else if (deepAccess(validBidRequests[0], 'userId.pubcid')) {
-      payload.hfa = `PRE-${validBidRequests[0].userId.pubcid}`;
-    } else if (deepAccess(validBidRequests[0], 'crumbs.pubcid')) {
-      payload.hfa = `PRE-${validBidRequests[0].crumbs.pubcid}`;
-    }
-
-    if (deepAccess(validBidRequests[0], 'userId.tdid')) {
-      payload.tdid = validBidRequests[0].userId.tdid;
     }
 
     if (validBidRequests[0].params.referrer) {
@@ -134,6 +126,16 @@ export const spec = {
     }
     if (deepAccess(validBidRequests[0], 'userId') && Object.keys(validBidRequests[0].userId).length > 0) {
       payload.userid = JSON.stringify(validBidRequests[0].userId);
+    }
+
+    let keywords = validBidRequests[0].params.keywords; // a CSV of keywords
+
+    if (keywords) {
+      payload.kw = keywords;
+    }
+
+    if (bidderRequest && bidderRequest.uspConsent) {
+      payload.us_privacy = bidderRequest.uspConsent;
     }
 
     // If there is no key_maker data, then don't make the request.
@@ -230,7 +232,7 @@ export const spec = {
   /**
    * Register User Sync.
    */
-  getUserSyncs: (syncOptions, serverResponses) => {
+  getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent) => {
     const syncs = [];
     try {
       if (syncOptions.pixelEnabled) {

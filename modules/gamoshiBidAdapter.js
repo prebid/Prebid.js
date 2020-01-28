@@ -42,7 +42,7 @@ export const helper = {
 
 export const spec = {
   code: 'gamoshi',
-  aliases: ['gambid', 'cleanmedia', '9MediaOnline'],
+  aliases: ['gambid', 'cleanmedia', '9MediaOnline', 'adtarget'],
   supportedMediaTypes: ['banner', 'video'],
 
   isBidRequestValid: function (bid) {
@@ -62,20 +62,24 @@ export const spec = {
       let url = config.getConfig('pageUrl') || bidderRequest.refererInfo.referer;
 
       const rtbBidRequest = {
-        'id': auctionId,
-        'site': {
-          'domain': helper.getTopWindowDomain(url),
-          'page': url,
-          'ref': bidderRequest.refererInfo.referer
+        id: auctionId,
+        site: {
+          domain: helper.getTopWindowDomain(url),
+          page: url,
+          ref: bidderRequest.refererInfo.referer
         },
-        'device': {
-          'ua': navigator.userAgent
+        device: {
+          ua: navigator.userAgent,
+          dnt: utils.getDNT() ? 1 : 0,
+          h: screen.height,
+          w: screen.width,
+          language: navigator.language
         },
-        'imp': [],
-        'ext': {},
-        'user': {
-          'ext': {}
-        }
+        imp: [],
+        ext: {},
+        user: {ext: {}},
+        source: {ext: {}},
+        regs: {ext: {}}
       };
       const gdprConsent = bidderRequest.gdprConsent;
 
@@ -84,37 +88,39 @@ export const spec = {
           consent_string: gdprConsent.consentString,
           consent_required: gdprConsent.gdprApplies
         };
-        rtbBidRequest.regs = {
-          ext: {
-            gdpr: gdprConsent.gdprApplies === true ? 1 : 0
-          }
-        };
-        rtbBidRequest.user = {
-          ext: {
-            consent: gdprConsent.consentString
-          }
-        }
+
+        utils.deepSetValue(rtbBidRequest, 'regs.ext.gdpr', gdprConsent.gdprApplies === true ? 1 : 0);
+        utils.deepSetValue(rtbBidRequest, 'user.ext.consent', gdprConsent.consentString);
       }
+
+      if (validBidRequests[0].schain) {
+        utils.deepSetValue(rtbBidRequest, 'source.ext.schain', validBidRequests[0].schain);
+      }
+
+      if (bidderRequest && bidderRequest.uspConsent) {
+        utils.deepSetValue(rtbBidRequest, 'regs.ext.us_privacy', bidderRequest.uspConsent);
+      }
+
       const imp = {
-        'id': transactionId,
-        'instl': params.instl === 1 ? 1 : 0,
-        'tagid': adUnitCode,
-        'bidfloor': params.bidfloor || 0,
-        'bidfloorcur': 'USD',
-        'secure': helper.startsWith(utils.getTopWindowUrl().toLowerCase(), 'http://') ? 0 : 1
+        id: transactionId,
+        instl: params.instl === 1 ? 1 : 0,
+        tagid: adUnitCode,
+        bidfloor: params.bidfloor || 0,
+        bidfloorcur: 'USD',
+        secure: 1
       };
 
       const hasFavoredMediaType =
         params.favoredMediaType && this.supportedMediaTypes.includes(params.favoredMediaType);
 
-      if ((!mediaTypes || mediaTypes.banner)) {
+      if (!mediaTypes || mediaTypes.banner) {
         if (!hasFavoredMediaType || params.favoredMediaType === BANNER) {
           const bannerImp = Object.assign({}, imp, {
             banner: {
               w: sizes.length ? sizes[0][0] : 300,
               h: sizes.length ? sizes[0][1] : 250,
               pos: params.pos || 0,
-              topframe: helper.getTopFrame()
+              topframe: utils.inIframe() ? 0 : 1
             }
           });
           rtbBidRequest.imp.push(bannerImp);
@@ -126,8 +132,6 @@ export const spec = {
           const playerSize = mediaTypes.video.playerSize || sizes;
           const videoImp = Object.assign({}, imp, {
             video: {
-              w: playerSize ? playerSize[0][0] : 300,
-              h: playerSize ? playerSize[0][1] : 250,
               protocols: params.protocols || [1, 2, 3, 4, 5, 6],
               pos: params.pos || 0,
               ext: {
@@ -135,6 +139,18 @@ export const spec = {
               }
             }
           });
+
+          if (utils.isArray(playerSize[0])) {
+            videoImp.video.w = playerSize[0][0];
+            videoImp.video.h = playerSize[0][1];
+          } else if (utils.isNumber(playerSize[0])) {
+            videoImp.video.w = playerSize[0];
+            videoImp.video.h = playerSize[1];
+          } else {
+            videoImp.video.w = 300;
+            videoImp.video.h = 250;
+          }
+
           rtbBidRequest.imp.push(videoImp);
         }
       }
@@ -152,7 +168,12 @@ export const spec = {
         return;
       }
 
-      return {method: 'POST', url: rtbEndpoint, data: rtbBidRequest, bidRequest};
+      return {
+        method: 'POST',
+        url: rtbEndpoint,
+        data: rtbBidRequest,
+        bidRequest
+      };
     });
   },
 
@@ -195,28 +216,52 @@ export const spec = {
     return outBids;
   },
 
-  getUserSyncs: function (syncOptions, serverResponses, gdprConsent) {
+  getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent) {
     const syncs = [];
-    const gdprApplies = gdprConsent && (typeof gdprConsent.gdprApplies === 'boolean') ? gdprConsent.gdprApplies : false;
-    const suffix = gdprApplies ? 'gc=' + encodeURIComponent(gdprConsent.consentString) : 'gc=missing';
+    let gdprApplies = false;
+    let consentString = '';
+    let uspConsentString = '';
+
+    if (gdprConsent && (typeof gdprConsent.gdprApplies === 'boolean')) {
+      gdprApplies = gdprConsent.gdprApplies;
+    }
+    let gdpr = gdprApplies ? 1 : 0;
+
+    if (gdprApplies && gdprConsent.consentString) {
+      consentString = encodeURIComponent(gdprConsent.consentString)
+    }
+
+    if (uspConsent) {
+      uspConsentString = encodeURIComponent(uspConsent);
+    }
+
+    const macroValues = {
+      gdpr: gdpr,
+      consent: consentString,
+      uspConsent: uspConsentString
+    };
+
     serverResponses.forEach(resp => {
       if (resp.body) {
         const bidResponse = resp.body;
         if (bidResponse.ext && Array.isArray(bidResponse.ext['utrk'])) {
-          bidResponse.ext['utrk'].forEach(pixel => {
-            const url = pixel.url + (pixel.url.indexOf('?') > 0 ? '&' + suffix : '?' + suffix);
-            return syncs.push({type: pixel.type, url});
-          });
+          bidResponse.ext['utrk']
+            .forEach(pixel => {
+              const url = replaceMacros(pixel.url, macroValues);
+              syncs.push({type: pixel.type, url});
+            });
         }
+
         if (Array.isArray(bidResponse.seatbid)) {
           bidResponse.seatbid.forEach(seatBid => {
             if (Array.isArray(seatBid.bid)) {
               seatBid.bid.forEach(bid => {
                 if (bid.ext && Array.isArray(bid.ext['utrk'])) {
-                  bid.ext['utrk'].forEach(pixel => {
-                    const url = pixel.url + (pixel.url.indexOf('?') > 0 ? '&' + suffix : '?' + suffix);
-                    return syncs.push({type: pixel.type, url});
-                  });
+                  bid.ext['utrk']
+                    .forEach(pixel => {
+                      const url = replaceMacros(pixel.url, macroValues);
+                      syncs.push({type: pixel.type, url});
+                    });
                 }
               });
             }
@@ -224,13 +269,14 @@ export const spec = {
         }
       }
     });
+
     return syncs;
   }
 };
 
 function newRenderer(bidRequest, bid, rendererOptions = {}) {
   const renderer = Renderer.install({
-    url: (bidRequest.params && bidRequest.params.rendererUrl) || (bid.ext && bid.ext.renderer_url) || '//s.wlplayer.com/video/latest/renderer.js',
+    url: (bidRequest.params && bidRequest.params.rendererUrl) || (bid.ext && bid.ext.renderer_url) || 'https://s.gamoshi.io/video/latest/renderer.js',
     config: rendererOptions,
     loaded: false,
   });
@@ -274,6 +320,13 @@ function addExternalUserId(eids, value, source, rtiPartner) {
       }]
     });
   }
+}
+
+function replaceMacros(url, macros) {
+  return url
+    .replace('[GDPR]', macros.gdpr)
+    .replace('[CONSENT]', macros.consent)
+    .replace('[US_PRIVACY]', macros.uspConsent);
 }
 
 registerBidder(spec);

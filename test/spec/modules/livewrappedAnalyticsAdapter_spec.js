@@ -1,6 +1,7 @@
 import livewrappedAnalyticsAdapter, { BID_WON_TIMEOUT } from 'modules/livewrappedAnalyticsAdapter';
 import CONSTANTS from 'src/constants.json';
 import { config } from 'src/config';
+import { server } from 'test/mocks/xhr';
 
 let events = require('src/events');
 let utils = require('src/utils');
@@ -208,16 +209,10 @@ function performStandardAuction() {
 
 describe('Livewrapped analytics adapter', function () {
   let sandbox;
-  let xhr;
-  let requests;
   let clock;
 
   beforeEach(function () {
     sandbox = sinon.sandbox.create();
-
-    xhr = sandbox.useFakeXMLHttpRequest();
-    requests = [];
-    xhr.onCreate = request => requests.push(request);
 
     sandbox.stub(events, 'getEvents').returns([]);
     sandbox.stub(utils, 'timestamp').returns(1519149562416);
@@ -255,10 +250,10 @@ describe('Livewrapped analytics adapter', function () {
 
       clock.tick(BID_WON_TIMEOUT + 1000);
 
-      expect(requests.length).to.equal(1);
-      let request = requests[0];
+      expect(server.requests.length).to.equal(1);
+      let request = server.requests[0];
 
-      expect(request.url).to.equal('//lwadm.com/analytics/10');
+      expect(request.url).to.equal('https://lwadm.com/analytics/10');
 
       let message = JSON.parse(request.requestBody);
 
@@ -279,14 +274,14 @@ describe('Livewrapped analytics adapter', function () {
 
       events.emit(BID_WON, MOCK.BID_WON[1]);
 
-      expect(requests.length).to.equal(2);
+      expect(server.requests.length).to.equal(2);
 
-      let message = JSON.parse(requests[0].requestBody);
+      let message = JSON.parse(server.requests[0].requestBody);
       expect(message.wins.length).to.equal(1);
       expect(message.requests).to.deep.equal(ANALYTICS_MESSAGE.requests);
       expect(message.wins[0]).to.deep.equal(ANALYTICS_MESSAGE.wins[0]);
 
-      message = JSON.parse(requests[1].requestBody);
+      message = JSON.parse(server.requests[1].requestBody);
       expect(message.wins.length).to.equal(1);
       expect(message.wins[0]).to.deep.equal(ANALYTICS_MESSAGE.wins[1]);
     });
@@ -299,9 +294,9 @@ describe('Livewrapped analytics adapter', function () {
 
       clock.tick(BID_WON_TIMEOUT + 1000);
 
-      expect(requests.length).to.equal(1);
+      expect(server.requests.length).to.equal(1);
 
-      let message = JSON.parse(requests[0].requestBody);
+      let message = JSON.parse(server.requests[0].requestBody);
       expect(message.timeouts.length).to.equal(1);
       expect(message.timeouts[0].bidder).to.equal('livewrapped');
       expect(message.timeouts[0].adUnit).to.equal('panorama_d_1');
@@ -313,8 +308,8 @@ describe('Livewrapped analytics adapter', function () {
 
       clock.tick(BID_WON_TIMEOUT + 1000);
 
-      expect(requests.length).to.equal(1);
-      let request = requests[0];
+      expect(server.requests.length).to.equal(1);
+      let request = server.requests[0];
 
       let message = JSON.parse(request.requestBody);
 
