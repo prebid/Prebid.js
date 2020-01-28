@@ -33,15 +33,12 @@
     "rubiconBidAdapter",
     "schain",
     "sekindoUMBidAdapter",
-    "serverbidBidAdapter",
     "sharethroughBidAdapter",
-    "smartyadsBidAdapter",
     "sonobiBidAdapter",
     "sovrnBidAdapter",
     "teadsBidAdapter",
     "tripleliftBidAdapter",
     "trustxBidAdapter",
     "undertoneBidAdapter",
-    "unrulyBidAdapter",
-    "yieldnexusBidAdapter"
+    "unrulyBidAdapter"
 ]
