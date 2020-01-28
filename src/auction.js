@@ -175,7 +175,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
             const bids = _bidsReceived
               .filter(utils.bind.call(adUnitsFilter, this, adUnitCodes))
               .reduce(groupByPlacement, {});
-            _callback.apply($$PREBID_GLOBAL$$, [bids, timedOut]);
+            _callback.apply($$PREBID_GLOBAL$$, [bids, timedOut, _auctionId]);
             _callback = null;
           }
         } catch (e) {
