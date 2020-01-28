@@ -2,13 +2,15 @@ import * as utils from '../src/utils';
 import { registerBidder } from '../src/adapters/bidderFactory';
 import { config } from '../src/config';
 import find from 'core-js/library/fn/array/find';
+import { BANNER, NATIVE } from '../src/mediaTypes';
 
 const BIDDER_CODE = 'livewrapped';
 export const URL = 'https://lwadm.com/ad';
-const VERSION = '1.1';
+const VERSION = '1.2';
 
 export const spec = {
   code: BIDDER_CODE,
+  supportedMediaTypes: [BANNER, NATIVE],
 
   /**
    * Determines whether or not the given bid request is valid.
@@ -92,7 +94,7 @@ export const spec = {
     const bidResponses = [];
 
     serverResponse.body.ads.forEach(function(ad) {
-      let bidResponse = {
+      var bidResponse = {
         requestId: ad.bidId,
         bidderCode: BIDDER_CODE,
         cpm: ad.cpmBid,
@@ -105,6 +107,11 @@ export const spec = {
         currency: serverResponse.body.currency,
         meta: ad.meta
       };
+
+      if (ad.native) {
+        bidResponse.native = ad.native;
+        bidResponse.mediaType = NATIVE
+      }
 
       bidResponses.push(bidResponse);
     });
@@ -177,14 +184,33 @@ function hasPubcid(bid) {
 }
 
 function bidToAdRequest(bid) {
-  return {
+  var adRequest = {
     adUnitId: bid.params.adUnitId,
     callerAdUnitId: bid.params.adUnitName || bid.adUnitCode || bid.placementCode,
     bidId: bid.bidId,
     transactionId: bid.transactionId,
-    formats: bid.sizes.map(sizeToFormat),
+    formats: getSizes(bid).map(sizeToFormat),
     options: bid.params.options
   };
+
+  if (bid.mediaTypes && bid.mediaTypes.banner && bid.mediaTypes.native) {
+    adRequest.banner = true;
+  }
+
+  if (bid.mediaTypes && bid.mediaTypes.native) {
+    adRequest.native = bid.mediaTypes.native;
+  }
+
+  return adRequest;
+}
+
+function getSizes(bid) {
+  if (typeof utils.deepAccess(bid, 'mediaTypes.banner.sizes') !== 'undefined') {
+    return bid.mediaTypes.banner.sizes;
+  } else if (Array.isArray(bid.sizes) && bid.sizes.length > 0) {
+    return bid.sizes;
+  }
+  return [];
 }
 
 function sizeToFormat(size) {
