@@ -410,6 +410,11 @@ describe('OneVideoBidAdapter', function () {
         expect(pixel[2].type).to.equal('image');
         expect(pixel[2].url).to.equal('https://sync-tm.everesttech.net/upi/pid/m7y5t93k?gdpr=1&gdpr_consent=' + GDPR_CONSENT_STRING + '&redir=https%3A%2F%2Fpixel.advertising.com%2Fups%2F55986%2Fsync%3Fuid%3D%24%7BUSER_ID%7D%26_origin%3D0&gdpr=1&gdpr_consent=' + encodeURI(GDPR_CONSENT_STRING));
       });
+
+      it('should default to gdprApplies=0 when consentData is undefined', function () {
+        let pixel = spec.getUserSyncs({pixelEnabled: true}, {}, undefined);
+        expect(pixel[2].url).to.equal('https://sync-tm.everesttech.net/upi/pid/m7y5t93k?gdpr=0&gdpr_consent=&redir=https%3A%2F%2Fpixel.advertising.com%2Fups%2F55986%2Fsync%3Fuid%3D%24%7BUSER_ID%7D%26_origin%3D0&gdpr=0&gdpr_consent=');
+      });
     });
   });
 });
