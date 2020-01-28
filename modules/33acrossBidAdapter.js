@@ -38,6 +38,7 @@ function _getViewability(element, topWin, { w, h } = {}) {
 
 function _mapAdUnitPathToElementId(adUnitCode) {
   if (utils.isGptPubadsDefined()) {
+    // eslint-disable-next-line no-undef
     const adSlots = googletag.pubads().getSlots();
     const isMatchingAdSlot = utils.isSlotMatchingAdUnitCode(adUnitCode);
 

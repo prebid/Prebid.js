@@ -132,7 +132,7 @@ function getCoordinates(id) {
   return null;
 }
 
-function extParams(params, gdpr) {
+function extParams(params, gdpr, uspConsent) {
   let ext = {
     customer_id: params.cid,
     prebid_version: $$PREBID_GLOBAL$$.version
@@ -141,10 +141,17 @@ function extParams(params, gdpr) {
   if (ext.gdpr_applies) {
     ext.gdpr_consent_string = gdpr.consentString || '';
   }
+
+  ext.usp_applies = !!(uspConsent);
+  if (ext.usp_applies) {
+    ext.usp_consent_string = uspConsent || '';
+  }
+
   let windowSize = spec.getWindowSize();
   if (windowSize.w !== -1 && windowSize.h !== -1) {
     ext.screen = windowSize;
   }
+
   return ext;
 }
 
@@ -240,7 +247,7 @@ function normalizeCoordinates(coordinates) {
 function generatePayload(bidRequests, bidderRequests) {
   return {
     site: siteDetails(bidRequests[0].params.site),
-    ext: extParams(bidRequests[0].params, bidderRequests.gdprConsent),
+    ext: extParams(bidRequests[0].params, bidderRequests.gdprConsent, bidderRequests.uspConsent),
     id: bidRequests[0].auctionId,
     imp: bidRequests.map(request => slotParams(request)),
     tmax: bidderRequests.timeout || config.getConfig('bidderTimeout')

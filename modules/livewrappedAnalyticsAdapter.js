@@ -5,7 +5,7 @@ import CONSTANTS from '../src/constants.json';
 import adapterManager from '../src/adapterManager';
 
 const ANALYTICSTYPE = 'endpoint';
-const URL = '//lwadm.com/analytics/10';
+const URL = 'https://lwadm.com/analytics/10';
 const EMPTYURL = '';
 const REQUESTSENT = 1;
 const RESPONSESENT = 2;

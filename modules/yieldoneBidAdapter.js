@@ -17,12 +17,12 @@ export const spec = {
   isBidRequestValid: function(bid) {
     return !!(bid.params.placementId);
   },
-  buildRequests: function(validBidRequests) {
+  buildRequests: function(validBidRequests, bidderRequest) {
     return validBidRequests.map(bidRequest => {
       const params = bidRequest.params;
       const placementId = params.placementId;
       const cb = Math.floor(Math.random() * 99999999999);
-      const referrer = encodeURIComponent(utils.getTopWindowUrl());
+      const referrer = encodeURIComponent(bidderRequest.refererInfo.referer);
       const bidId = bidRequest.bidId;
       const unitCode = bidRequest.adUnitCode;
       const timeout = config.getConfig('bidderTimeout');
@@ -68,7 +68,7 @@ export const spec = {
       const renderId = response.renderid || '';
       const currency = response.currency || 'JPY';
       const netRevenue = (response.netRevenue === undefined) ? true : response.netRevenue;
-      const referrer = utils.getTopWindowUrl();
+      const referrer = bidRequest.data.r || '';
       const bidResponse = {
         requestId: response.uid,
         cpm: cpm,

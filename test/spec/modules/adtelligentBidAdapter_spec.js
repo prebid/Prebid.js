@@ -2,24 +2,26 @@ import {expect} from 'chai';
 import {spec} from 'modules/adtelligentBidAdapter';
 import {newBidder} from 'src/adapters/bidderFactory';
 
-const ENDPOINT = '//hb.adtelligent.com/auction/';
+const ENDPOINT = 'https://ghb.adtelligent.com/auction/';
 
 const DISPLAY_REQUEST = {
   'bidder': 'adtelligent',
   'params': {
     'aid': 12345
   },
+  'mediaTypes': {'banner': {'sizes': [300, 250]}},
   'bidderRequestId': '7101db09af0db2',
   'auctionId': '2e41f65424c87c',
   'adUnitCode': 'adunit-code',
   'bidId': '84ab500420319d',
-  'sizes': [300, 250]
 };
 
 const VIDEO_REQUEST = {
   'bidder': 'adtelligent',
   'mediaTypes': {
-    'video': {}
+    'video': {
+      'playerSize': [[480, 360], [640, 480]]
+    }
   },
   'params': {
     'aid': 12345
@@ -27,8 +29,7 @@ const VIDEO_REQUEST = {
   'bidderRequestId': '7101db09af0db2',
   'auctionId': '2e41f65424c87c',
   'adUnitCode': 'adunit-code',
-  'bidId': '84ab500420319d',
-  'sizes': [[480, 360], [640, 480]]
+  'bidId': '84ab500420319d'
 };
 
 const SERVER_VIDEO_RESPONSE = {
@@ -73,7 +74,7 @@ const SERVER_DISPLAY_RESPONSE_WITH_MIXED_SYNCS = {
     'width': 300,
     'cpm': 0.9
   }],
-  'cookieURLs': ['link1', 'link2'],
+  'cookieURLs': ['link3', 'link4'],
   'cookieURLSTypes': ['image', 'iframe']
 };
 
@@ -122,7 +123,7 @@ const displayEqResponse = [{
   cpm: 0.9
 }];
 
-describe('adtelligentBidAdapter', function () { // todo remove only
+describe('adtelligentBidAdapter', function () {
   const adapter = newBidder(spec);
 
   describe('user syncs as image', function () {
@@ -143,25 +144,37 @@ describe('adtelligentBidAdapter', function () { // todo remove only
     })
   })
 
-  describe('user syncs with both types', function () {
-    it('should be returned if pixel and iframe enabled', function () {
+  describe('user sync', function () {
+    it('should not  be returned if passed syncs where already used', function () {
       const syncs = spec.getUserSyncs({
         iframeEnabled: true,
         pixelEnabled: true
       }, [{body: SERVER_DISPLAY_RESPONSE_WITH_MIXED_SYNCS}]);
 
-      expect(syncs.map(s => s.url)).to.deep.equal(SERVER_DISPLAY_RESPONSE_WITH_MIXED_SYNCS.cookieURLs);
-      expect(syncs.map(s => s.type)).to.deep.equal(SERVER_DISPLAY_RESPONSE_WITH_MIXED_SYNCS.cookieURLSTypes);
+      expect(syncs).to.deep.equal([]);
     })
-  })
+  });
+
+  describe('user syncs with both types', function () {
+    it('should be returned if pixel and iframe enabled', function () {
+      const mockedServerResponse = Object.assign({}, SERVER_DISPLAY_RESPONSE_WITH_MIXED_SYNCS, {'cookieURLs': ['link5', 'link6']});
+      const syncs = spec.getUserSyncs({
+        iframeEnabled: true,
+        pixelEnabled: true
+      }, [{body: mockedServerResponse}]);
+
+      expect(syncs.map(s => s.url)).to.deep.equal(mockedServerResponse.cookieURLs);
+      expect(syncs.map(s => s.type)).to.deep.equal(mockedServerResponse.cookieURLSTypes);
+    });
+  });
 
   describe('user syncs', function () {
     it('should not be returned if pixel not set', function () {
       const syncs = spec.getUserSyncs({}, [{body: SERVER_DISPLAY_RESPONSE_WITH_MIXED_SYNCS}]);
 
       expect(syncs).to.be.empty;
-    })
-  })
+    });
+  });
 
   describe('inherited functions', function () {
     it('exists and is a function', function () {
@@ -171,13 +184,13 @@ describe('adtelligentBidAdapter', function () { // todo remove only
 
   describe('isBidRequestValid', function () {
     it('should return true when required params found', function () {
-      expect(spec.isBidRequestValid(VIDEO_REQUEST)).to.equal(12345);
+      expect(spec.isBidRequestValid(VIDEO_REQUEST)).to.equal(true);
     });
 
     it('should return false when required params are not passed', function () {
       let bid = Object.assign({}, VIDEO_REQUEST);
       delete bid.params;
-      expect(spec.isBidRequestValid(bid)).to.equal(undefined);
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
   });
 

@@ -15,8 +15,6 @@ const auctionId = 'b0b39610-b941-4659-a87c-de9f62d3e13e';
 
 describe('Appier Prebid AnalyticsAdapter Testing', function () {
   describe('event tracking and message cache manager', function () {
-    let xhr;
-
     beforeEach(function () {
       const configOptions = {
         affiliateId: affiliateId,
@@ -32,12 +30,10 @@ describe('Appier Prebid AnalyticsAdapter Testing', function () {
         provider: 'appierAnalytics',
         options: configOptions
       });
-      xhr = sinon.useFakeXMLHttpRequest();
     });
 
     afterEach(function () {
       appierAnalyticsAdapter.disableAnalytics();
-      xhr.restore();
     });
 
     describe('#getCpmInUsd()', function() {

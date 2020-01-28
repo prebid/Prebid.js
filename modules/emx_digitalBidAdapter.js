@@ -3,11 +3,12 @@ import { registerBidder } from '../src/adapters/bidderFactory';
 import { BANNER, VIDEO } from '../src/mediaTypes';
 import { Renderer } from '../src/Renderer';
 import includes from 'core-js/library/fn/array/includes';
+import {parse as parseUrl} from '../src/url';
 
 const BIDDER_CODE = 'emx_digital';
 const ENDPOINT = 'hb.emxdgt.com';
-const RENDERER_URL = '//js.brealtime.com/outstream/1.30.0/bundle.js';
-const ADAPTER_VERSION = '1.41.2';
+const RENDERER_URL = 'https://js.brealtime.com/outstream/1.30.0/bundle.js';
+const ADAPTER_VERSION = '1.5.0';
 const DEFAULT_CUR = 'USD';
 
 export const emxAdapter = {
@@ -128,6 +129,14 @@ export const emxAdapter = {
       return document.referrer;
     }
   },
+  getSite: (refInfo) => {
+    let url = parseUrl(refInfo.referer);
+    return {
+      domain: url.hostname,
+      page: refInfo.referer,
+      ref: emxAdapter.getReferrer()
+    }
+  },
   getGdpr: (bidRequests, emxData) => {
     if (bidRequests.gdprConsent) {
       emxData.regs = {
@@ -188,16 +197,14 @@ export const spec = {
 
     return true;
   },
-  buildRequests: function (validBidRequests, bidRequest) {
+  buildRequests: function (validBidRequests, bidderRequest) {
     const emxImps = [];
-    const timeout = bidRequest.timeout || '';
+    const timeout = bidderRequest.timeout || '';
     const timestamp = Date.now();
-    const url = location.protocol + '//' + ENDPOINT + ('?t=' + timeout + '&ts=' + timestamp + '&src=pbjs');
+    const url = 'https://' + ENDPOINT + ('?t=' + timeout + '&ts=' + timestamp + '&src=pbjs');
     const secure = location.protocol.indexOf('https') > -1 ? 1 : 0;
-    const domain = utils.getTopWindowLocation().hostname;
-    const page = bidRequest.refererInfo.referer;
     const device = emxAdapter.getDevice();
-    const ref = emxAdapter.getReferrer();
+    const site = emxAdapter.getSite(bidderRequest.refererInfo);
 
     utils._each(validBidRequests, function (bid) {
       let tagid = utils.getBidIdParameter('tagid', bid.params);
@@ -217,30 +224,26 @@ export const spec = {
     });
 
     let emxData = {
-      id: bidRequest.auctionId,
+      id: bidderRequest.auctionId,
       imp: emxImps,
       device,
-      site: {
-        domain,
-        page,
-        ref
-      },
+      site,
       cur: DEFAULT_CUR,
       version: ADAPTER_VERSION
     };
 
-    emxData = emxAdapter.getGdpr(bidRequest, Object.assign({}, emxData));
-    if (bidRequest && bidRequest.uspConsent) {
-      emxData.us_privacy = bidRequest.uspConsent
+    emxData = emxAdapter.getGdpr(bidderRequest, Object.assign({}, emxData));
+    if (bidderRequest && bidderRequest.uspConsent) {
+      emxData.us_privacy = bidderRequest.uspConsent
     }
     return {
       method: 'POST',
-      url: url,
+      url,
       data: JSON.stringify(emxData),
       options: {
         withCredentials: true
       },
-      bidRequest
+      bidderRequest
     };
   },
   interpretResponse: function (serverResponse, bidRequest) {
@@ -278,7 +281,7 @@ export const spec = {
     if (syncOptions.iframeEnabled) {
       syncs.push({
         type: 'iframe',
-        url: '//biddr.brealtime.com/check.html'
+        url: 'https://biddr.brealtime.com/check.html'
       });
     }
     return syncs;
