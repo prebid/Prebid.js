@@ -3,7 +3,7 @@ import { spec } from 'modules/xhbBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
 import { deepClone } from 'src/utils';
 
-const ENDPOINT = '//ib.adnxs.com/ut/v3/prebid';
+const ENDPOINT = 'https://ib.adnxs.com/ut/v3/prebid';
 
 describe('xhbAdapter', function () {
   const adapter = newBidder(spec);
@@ -337,7 +337,7 @@ describe('xhbAdapter', function () {
           'tag_id': 10433394,
           'auction_id': '4534722592064951574',
           'nobid': false,
-          'no_ad_url': 'http://lax1-ib.adnxs.com/no-ad',
+          'no_ad_url': 'https://lax1-ib.adnxs.com/no-ad',
           'timeout_ms': 10000,
           'ad_profile_id': 27079,
           'ads': [
@@ -361,7 +361,7 @@ describe('xhbAdapter', function () {
                 'trackers': [
                   {
                     'impression_urls': [
-                      'http://lax1-ib.adnxs.com/impression'
+                      'https://lax1-ib.adnxs.com/impression'
                     ],
                     'video_events': {}
                   }
@@ -448,19 +448,19 @@ describe('xhbAdapter', function () {
         'icon': {
           'width': 0,
           'height': 0,
-          'url': 'http://cdn.adnxs.com/icon.png'
+          'url': 'https://cdn.adnxs.com/icon.png'
         },
         'main_img': {
           'width': 2352,
           'height': 1516,
-          'url': 'http://cdn.adnxs.com/img.png'
+          'url': 'https://cdn.adnxs.com/img.png'
         },
         'link': {
           'url': 'https://www.appnexus.com',
           'fallback_url': '',
-          'click_trackers': ['http://nym1-ib.adnxs.com/click']
+          'click_trackers': ['https://nym1-ib.adnxs.com/click']
         },
-        'impression_trackers': ['http://example.com'],
+        'impression_trackers': ['https://example.com'],
       };
       let bidderRequest;
 
@@ -468,7 +468,7 @@ describe('xhbAdapter', function () {
       expect(result[0].native.title).to.equal('Native Creative');
       expect(result[0].native.body).to.equal('Cool description great stuff');
       expect(result[0].native.cta).to.equal('Do it');
-      expect(result[0].native.image.url).to.equal('http://cdn.adnxs.com/img.png');
+      expect(result[0].native.image.url).to.equal('https://cdn.adnxs.com/img.png');
     });
 
     it('supports configuring outstream renderers', function () {

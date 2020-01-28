@@ -3,7 +3,7 @@
 ```
 Module Name: AdKernel ADN Bidder Adapter
 Module Type: Bidder Adapter
-Maintainer: denis@adkernel.com
+Maintainer: prebid-dev@adkernel.com
 ```
 
 # Description
@@ -14,32 +14,37 @@ Banner and video formats are supported.
 
 # Test Parameters
 ```
-    var adUnits = [
-      {
-        code: 'banner-ad-div',
-        sizes: [[300, 250], [300, 200]],
-        bids: [
-          {
-            bidder: 'adkernelAdn',
-            params: {
-              pubId: 50357,
-              host: 'dsp-staging.adkernel.com'
-            }
-          }
-        ]
-      }, {
-        code: 'video-ad-player',
-        sizes: [640, 480],
-        bids: [
-          {
-            bidder: 'adkernelAdn',
-            mediaType : 'video',
-            params: {
-              pubId: 50357,
-              host: 'dsp-staging.adkernel.com'
-            }
-          }
-        ]
-      }
-    ];
+var adUnits = [{
+    code: 'banner-ad-div',
+    mediaTypes: {
+        banner: {
+            sizes: [
+                [300, 250],
+                [300, 200] // banner sizes
+            ],
+        }
+    },
+    bids: [{
+        bidder: 'adkernelAdn',
+        params: {
+            pubId: 50357,
+            host: 'dsp-staging.adkernel.com'
+        }
+    }]
+}, {
+    code: 'video-ad-player',
+    mediaTypes: {
+        video: {
+            context: 'instream', // or 'outstream'
+            playerSize: [640, 480] // video player size        	
+        }
+    },
+    bids: [{
+        bidder: 'adkernelAdn',
+        params: {
+            pubId: 50357,
+            host: 'dsp-staging.adkernel.com'
+        }
+    }]
+}];
 ```

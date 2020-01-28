@@ -1,18 +1,15 @@
 import * as utils from '../src/utils';
 import { BANNER, VIDEO } from '../src/mediaTypes';
-import find from 'core-js/library/fn/array/find';
 import { config } from '../src/config';
-import isArray from 'core-js/library/fn/array/is-array';
+import find from 'core-js/library/fn/array/find';
 import isInteger from 'core-js/library/fn/number/is-integer';
 import { registerBidder } from '../src/adapters/bidderFactory';
 
 const BIDDER_CODE = 'ix';
 const SECURE_BID_URL = 'https://as-sec.casalemedia.com/cygnus';
-const INSECURE_BID_URL = 'http://as.casalemedia.com/cygnus';
 const SUPPORTED_AD_TYPES = [BANNER, VIDEO];
 const BANNER_ENDPOINT_VERSION = 7.2;
 const VIDEO_ENDPOINT_VERSION = 8.1;
-
 const CENT_TO_DOLLAR_FACTOR = 100;
 const BANNER_TIME_TO_LIVE = 35;
 const VIDEO_TIME_TO_LIVE = 3600; // 1hr
@@ -141,7 +138,7 @@ function parseBid(rawBid, currency, bidRequest) {
  * @return {boolean}      True if this is a valid size format, and false otherwise.
  */
 function isValidSize(size) {
-  return isArray(size) && size.length === 2 && isInteger(size[0]) && isInteger(size[1]);
+  return Array.isArray(size) && size.length === 2 && isInteger(size[0]) && isInteger(size[1]);
 }
 
 /**
@@ -209,10 +206,7 @@ function getBidRequest(id, impressions) {
 function buildRequest(validBidRequests, bidderRequest, impressions, version) {
   const userEids = [];
 
-  // Always start by assuming the protocol is HTTPS. This way, it will work
-  // whether the page protocol is HTTP or HTTPS. Then check if the page is
-  // actually HTTP.If we can guarantee it is, then, and only then, set protocol to
-  // HTTP.
+  // Always use secure HTTPS protocol.
   let baseUrl = SECURE_BID_URL;
 
   // RTI ids will be included in the bid request if the function getIdentityInfo() is loaded
@@ -240,6 +234,16 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
   r.site = {};
   r.ext = {};
   r.ext.source = 'prebid';
+
+  // if an schain is provided, send it along
+  if (validBidRequests[0].schain) {
+    r.source = {
+      ext: {
+        schain: validBidRequests[0].schain
+      }
+    };
+  }
+
   if (userEids.length > 0) {
     r.user = {};
     r.user.eids = userEids;
@@ -270,12 +274,12 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
       }
     }
 
+    if (bidderRequest.uspConsent) {
+      utils.deepSetValue(r, 'regs.ext.us_privacy', bidderRequest.uspConsent);
+    }
+
     if (bidderRequest.refererInfo) {
       r.site.page = bidderRequest.refererInfo.referer;
-
-      if (bidderRequest.refererInfo.referer && bidderRequest.refererInfo.referer.indexOf('https') !== 0) {
-        baseUrl = INSECURE_BID_URL;
-      }
     }
   }
 
@@ -310,7 +314,9 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
   payload.r = JSON.stringify(r);
   payload.ac = 'j';
   payload.sd = 1;
-  payload.nf = 1;
+  if (version === VIDEO_ENDPOINT_VERSION) {
+    payload.nf = 1;
+  }
 
   return {
     method: 'GET',
@@ -390,6 +396,7 @@ export const spec = {
           utils.logError('Bid size is not included in video playerSize')
         }
       }
+
       if (validBidRequest.mediaType === BANNER || utils.deepAccess(validBidRequest, 'mediaTypes.banner') ||
           (!validBidRequest.mediaType && !validBidRequest.mediaTypes)) {
         bannerImps.push(bidToBannerImp(validBidRequest));
