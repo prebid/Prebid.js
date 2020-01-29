@@ -104,6 +104,7 @@
     "express": "^4.15.4",
     "fun-hooks": "^0.9.5",
     "jsencrypt": "^3.0.0-rc.1",
-    "just-clone": "^1.0.2"
+    "just-clone": "^1.0.2",
+    "live-connect-js": "^1.0.8"
   }
 }

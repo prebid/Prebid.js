@@ -4,15 +4,63 @@
  * @module modules/liveIntentIdSystem
  * @requires module:modules/userId
  */
-import * as utils from '../src/utils'
-import {ajax} from '../src/ajax';
-import {submodule} from '../src/hook';
+import * as utils from '../src/utils';
+import { submodule } from '../src/hook';
+import * as liveConnect from 'live-connect-js/cjs/live-connect';
+import { uspDataHandler } from '../src/adapterManager';
 
 const MODULE_NAME = 'liveIntentId';
-const LIVE_CONNECT_DUID_KEY = '_li_duid';
-const DOMAIN_USER_ID_QUERY_PARAM_KEY = 'duid';
-const DEFAULT_LIVEINTENT_IDENTITY_URL = 'https://idx.liadm.com';
-const DEFAULT_PREBID_SOURCE = 'prebid';
+
+let eventFired = false;
+let lcClient = null;
+
+/**
+ * This function is used in tests
+ */
+export function reset() {
+  eventFired = false;
+  lcClient = null;
+}
+
+function initLcClient(configParams) {
+  if (lcClient) {
+    return lcClient;
+  }
+
+  const publisherId = configParams && configParams.publisherId;
+  if (!publisherId && typeof publisherId !== 'string') {
+    utils.logError(`${MODULE_NAME} - publisherId must be defined, not a '${publisherId}'`);
+    return;
+  }
+  const identityResolutionConfig = {
+    source: 'prebid',
+    publisherId: publisherId
+  };
+  if (configParams.url) {
+    identityResolutionConfig.url = configParams.url
+  }
+  if (configParams.partner) {
+    identityResolutionConfig.source = configParams.partner
+  }
+  if (configParams.storage && configParams.storage.expires) {
+    identityResolutionConfig.expirationDays = configParams.storage.expires;
+  }
+  lcClient = liveConnect.LiveConnect({
+    identifiersToResolve: configParams.identifiersToResolve || [],
+    wrapperName: 'prebid',
+    usPrivacyString: uspDataHandler.getConsentData(),
+    identityResolutionConfig: identityResolutionConfig
+  });
+
+  return lcClient;
+}
+
+function tryFireEvent() {
+  if (!eventFired && lcClient) {
+    lcClient.fire();
+    eventFired = true;
+  }
+}
 
 /** @type {Submodule} */
 export const liveIntentIdSubmodule = {
@@ -28,14 +76,21 @@ export const liveIntentIdSubmodule = {
    * `publisherId` params.
    * @function
    * @param {{unifiedId:string}} value
+   * @param {SubmoduleParams|undefined} [configParams]
    * @returns {{lipb:Object}}
    */
-  decode(value) {
+  decode(value, configParams) {
     function composeIdObject(value) {
-      const base = {'lipbid': value['unifiedId']};
+      const base = { 'lipbid': value['unifiedId'] };
       delete value.unifiedId;
-      return {'lipb': {...base, ...value}};
+      return { 'lipb': { ...base, ...value } };
     }
+
+    if (configParams) {
+      initLcClient(configParams);
+      tryFireEvent();
+    }
+
     return (value && typeof value['unifiedId'] === 'string') ? composeIdObject(value) : undefined;
   },
 
@@ -46,52 +101,12 @@ export const liveIntentIdSubmodule = {
    * @returns {IdResponse|undefined}
    */
   getId(configParams) {
-    const publisherId = configParams && configParams.publisherId;
-    if (!publisherId && typeof publisherId !== 'string') {
-      utils.logError(`${MODULE_NAME} - publisherId must be defined, not a '${publisherId}'`);
+    const lcClient = initLcClient(configParams);
+    if (!lcClient) {
       return;
     }
-    let baseUrl = DEFAULT_LIVEINTENT_IDENTITY_URL;
-    let source = DEFAULT_PREBID_SOURCE;
-    if (configParams.url) {
-      baseUrl = configParams.url
-    }
-    if (configParams.partner) {
-      source = configParams.partner
-    }
-
-    const additionalIdentifierNames = configParams.identifiersToResolve || [];
-
-    const additionalIdentifiers = additionalIdentifierNames.concat([LIVE_CONNECT_DUID_KEY]).reduce((obj, identifier) => {
-      const value = utils.getCookie(identifier) || utils.getDataFromLocalStorage(identifier);
-      const key = identifier.replace(LIVE_CONNECT_DUID_KEY, DOMAIN_USER_ID_QUERY_PARAM_KEY);
-      if (value) {
-        if (typeof value === 'object') {
-          obj[key] = JSON.stringify(value);
-        } else {
-          obj[key] = value;
-        }
-      }
-      return obj
-    }, {});
-
-    const queryString = utils.parseQueryStringParameters(additionalIdentifiers)
-    const url = `${baseUrl}/idex/${source}/${publisherId}?${queryString}`;
-
-    const result = function (callback) {
-      ajax(url, response => {
-        let responseObj = {};
-        if (response) {
-          try {
-            responseObj = JSON.parse(response);
-          } catch (error) {
-            utils.logError(error);
-          }
-        }
-        callback(responseObj);
-      }, undefined, { method: 'GET', withCredentials: true });
-    };
-    return {callback: result};
+    tryFireEvent();
+    return { callback: lcClient.resolve };
   }
 };
 

@@ -1,140 +1,212 @@
-import { liveIntentIdSubmodule } from 'modules/liveIntentIdSystem';
+import { liveIntentIdSubmodule, reset as resetLiveIntentIdSubmodule } from 'modules/liveIntentIdSystem';
 import * as utils from 'src/utils';
-import { server } from 'test/mocks/xhr';
+import * as liveConnect from 'live-connect-js/cjs/live-connect';
+import { uspDataHandler } from '../../../src/adapterManager';
+
+const assert = require('assert');
+
+const PUBLISHER_ID = '89899';
 
 describe('LiveIntentId', function() {
-  let getCookieStub;
-  let getDataFromLocalStorageStub;
   let logErrorStub;
+  let lcStub;
+  let consentDataStub;
+  const fireStub = sinon.stub();
+  const resolveStub = sinon.stub();
+  const lcClient = { fire: fireStub, resolve: resolveStub };
 
-  const defaultConfigParams = {'publisherId': '89899'};
-  const responseHeader = { 'Content-Type': 'application/json' }
+  const defaultConfigParams = { publisherId: PUBLISHER_ID };
 
-  beforeEach(function () {
-    getCookieStub = sinon.stub(utils, 'getCookie');
-    getDataFromLocalStorageStub = sinon.stub(utils, 'getDataFromLocalStorage');
+  beforeEach(function() {
     logErrorStub = sinon.stub(utils, 'logError');
+    lcStub = sinon.stub(liveConnect, 'LiveConnect');
+    lcStub.returns(lcClient);
+    consentDataStub = sinon.stub(uspDataHandler, 'getConsentData');
   });
 
-  afterEach(function () {
-    getCookieStub.restore();
-    getDataFromLocalStorageStub.restore();
+  afterEach(function() {
     logErrorStub.restore();
+    lcStub.restore();
+    consentDataStub.restore();
+    fireStub.resetHistory();
+    resolveStub.resetHistory();
+    resetLiveIntentIdSubmodule();
   });
 
-  it('should log an error if no configParams were passed', function() {
+  it('should log an error if no configParams were passed when getId', function() {
     liveIntentIdSubmodule.getId();
     expect(logErrorStub.calledOnce).to.be.true;
   });
 
-  it('should log an error if publisherId configParam was not passed', function() {
+  it('should log an error if publisherId configParam was not passed when getId', function() {
     liveIntentIdSubmodule.getId({});
     expect(logErrorStub.calledOnce).to.be.true;
   });
 
-  it('should call the Custom URL of the LiveIntent Identity Exchange endpoint', function() {
-    getCookieStub.returns(null);
-    let callBackSpy = sinon.spy();
-    let submoduleCallback = liveIntentIdSubmodule.getId({...defaultConfigParams, ...{'url': 'https://dummy.liveintent.com'}}).callback;
-    submoduleCallback(callBackSpy);
-    let request = server.requests[0];
-    expect(request.url).to.be.eq('https://dummy.liveintent.com/idex/prebid/89899?');
-    request.respond(
-      200,
-      responseHeader,
-      JSON.stringify({})
-    );
-    expect(callBackSpy.calledOnce).to.be.true;
-  });
-
-  it('should call the default url of the LiveIntent Identity Exchange endpoint, with a partner', function() {
-    getCookieStub.returns(null);
-    let callBackSpy = sinon.spy();
-    let submoduleCallback = liveIntentIdSubmodule.getId({...defaultConfigParams, ...{'url': 'https://dummy.liveintent.com', 'partner': 'rubicon'}}).callback;
-    submoduleCallback(callBackSpy);
-    let request = server.requests[0];
-    expect(request.url).to.be.eq('https://dummy.liveintent.com/idex/rubicon/89899?');
-    request.respond(
-      200,
-      responseHeader,
-      JSON.stringify({})
-    );
-    expect(callBackSpy.calledOnce).to.be.true;
-  });
-
-  it('should call the LiveIntent Identity Exchange endpoint, with no additional query params', function() {
-    getCookieStub.returns(null);
-    let callBackSpy = sinon.spy();
-    let submoduleCallback = liveIntentIdSubmodule.getId(defaultConfigParams).callback;
-    submoduleCallback(callBackSpy);
-    let request = server.requests[0];
-    expect(request.url).to.be.eq('https://idx.liadm.com/idex/prebid/89899?');
-    request.respond(
-      200,
-      responseHeader,
-      JSON.stringify({})
-    );
-    expect(callBackSpy.calledOnce).to.be.true;
-  });
-
-  it('should include the LiveConnect identifier when calling the LiveIntent Identity Exchange endpoint', function() {
-    getCookieStub.withArgs('_li_duid').returns('li-fpc');
-    let callBackSpy = sinon.spy();
-    let submoduleCallback = liveIntentIdSubmodule.getId(defaultConfigParams).callback;
-    submoduleCallback(callBackSpy);
-    let request = server.requests[0];
-    expect(request.url).to.be.eq('https://idx.liadm.com/idex/prebid/89899?duid=li-fpc&');
-    request.respond(
-      200,
-      responseHeader,
-      JSON.stringify({})
-    );
-    expect(callBackSpy.calledOnce).to.be.true;
-  });
-
-  it('should include the LiveConnect identifier and additional Identifiers to resolve', function() {
-    getCookieStub.withArgs('_li_duid').returns('li-fpc');
-    getDataFromLocalStorageStub.withArgs('_thirdPC').returns('third-pc');
-    let configParams = {
+  it('should initialize LiveConnect with the config params when getId', function() {
+    liveIntentIdSubmodule.getId({
       ...defaultConfigParams,
       ...{
-        'identifiersToResolve': ['_thirdPC']
+        identifiersToResolve: ['id1', 'id2'],
+        url: 'https://dummy.liveintent.com',
+        storage: {
+          expires: 3
+        }
       }
-    };
+    });
 
-    let callBackSpy = sinon.spy();
-    let submoduleCallback = liveIntentIdSubmodule.getId(configParams).callback;
-    submoduleCallback(callBackSpy);
-    let request = server.requests[0];
-    expect(request.url).to.be.eq('https://idx.liadm.com/idex/prebid/89899?_thirdPC=third-pc&duid=li-fpc&');
-    request.respond(
-      200,
-      responseHeader,
-      JSON.stringify({})
-    );
-    expect(callBackSpy.calledOnce).to.be.true;
+    expect(lcStub.calledOnce).to.be.true;
+    assert.deepEqual(lcStub.getCall(0).args[0], {
+      wrapperName: 'prebid',
+      identifiersToResolve: ['id1', 'id2'],
+      identityResolutionConfig: {
+        source: 'prebid',
+        publisherId: PUBLISHER_ID,
+        url: 'https://dummy.liveintent.com',
+        expirationDays: 3
+      },
+      usPrivacyString: null
+    });
   });
 
-  it('should include an additional identifier value to resolve even if it is an object', function() {
-    getCookieStub.returns(null);
-    getDataFromLocalStorageStub.withArgs('_thirdPC').returns({'key': 'value'});
-    let configParams = {
+  it('should initialize LiveConnect with a source if it is passed in params when getId', function() {
+    liveIntentIdSubmodule.getId({
       ...defaultConfigParams,
       ...{
-        'identifiersToResolve': ['_thirdPC']
+        partner: 'test-partner'
       }
-    };
+    });
 
-    let callBackSpy = sinon.spy();
-    let submoduleCallback = liveIntentIdSubmodule.getId(configParams).callback;
-    submoduleCallback(callBackSpy);
-    let request = server.requests[0];
-    expect(request.url).to.be.eq('https://idx.liadm.com/idex/prebid/89899?_thirdPC=%7B%22key%22%3A%22value%22%7D&');
-    request.respond(
-      200,
-      responseHeader,
-      JSON.stringify({})
+    expect(lcStub.calledOnce).to.be.true;
+    expect(lcStub.getCall(0).args[0].identityResolutionConfig.source).to.be.eq('test-partner');
+  });
+
+  it('should initialize LiveConnect with a us privacy string when getId', function() {
+    consentDataStub.returns('1YNY');
+
+    liveIntentIdSubmodule.getId(defaultConfigParams);
+
+    expect(lcStub.calledOnce).to.be.true;
+    expect(lcStub.getCall(0).args[0].usPrivacyString).to.be.eq('1YNY');
+  });
+
+  it('should return function that resolves an identifier when getId', function() {
+    const result = liveIntentIdSubmodule.getId(defaultConfigParams);
+
+    assert.deepEqual(result, { callback: resolveStub });
+  });
+
+  it('should fire an event when getId', function() {
+    liveIntentIdSubmodule.getId(defaultConfigParams);
+
+    expect(fireStub.calledOnce).to.be.true;
+  });
+
+  it('should log an error if publisherId configParam was not passed when decode', function() {
+    liveIntentIdSubmodule.decode({}, {});
+    expect(logErrorStub.calledOnce).to.be.true;
+  });
+
+  it('should initialize LiveConnect with the config params when decode', function() {
+    liveIntentIdSubmodule.decode({}, {
+      ...defaultConfigParams,
+      ...{
+        identifiersToResolve: ['id1', 'id2'],
+        url: 'https://dummy.liveintent.com',
+        storage: {
+          expires: 3
+        }
+      }
+    });
+
+    expect(lcStub.calledOnce).to.be.true;
+    assert.deepEqual(lcStub.getCall(0).args[0], {
+      wrapperName: 'prebid',
+      identifiersToResolve: ['id1', 'id2'],
+      identityResolutionConfig: {
+        source: 'prebid',
+        publisherId: PUBLISHER_ID,
+        url: 'https://dummy.liveintent.com',
+        expirationDays: 3
+      },
+      usPrivacyString: null
+    });
+  });
+
+  it('should initialize LiveConnect with a source if it is passed in params when decode', function() {
+    liveIntentIdSubmodule.decode({}, {
+      ...defaultConfigParams,
+      ...{
+        partner: 'test-partner'
+      }
+    });
+
+    expect(lcStub.calledOnce).to.be.true;
+    expect(lcStub.getCall(0).args[0].identityResolutionConfig.source).to.be.eq('test-partner');
+  });
+
+  it('should initialize LiveConnect with a us privacy string when decode', function() {
+    consentDataStub.returns('1YNY');
+
+    liveIntentIdSubmodule.decode({}, defaultConfigParams);
+
+    expect(lcStub.calledOnce).to.be.true;
+    expect(lcStub.getCall(0).args[0].usPrivacyString).to.be.eq('1YNY');
+  });
+
+  it('should not initialize LiveConnect when decode and the config is not set', function() {
+    liveIntentIdSubmodule.decode({});
+
+    expect(lcStub.called).to.be.false;
+  });
+
+  it('should return a decoded identifier', function() {
+    const result = liveIntentIdSubmodule.decode(
+      {
+        unifiedId: 'id123',
+        additionalData: 'data'
+      }
     );
-    expect(callBackSpy.calledOnce).to.be.true;
+
+    assert.deepEqual(result, {
+      lipb: {
+        lipbid: 'id123',
+        additionalData: 'data'
+      }
+    });
+  });
+
+  it('should not return a decoded identifier when the unifiedId is not present in the value', function() {
+    const result = liveIntentIdSubmodule.decode(
+      {
+        additionalData: 'data'
+      }
+    );
+
+    expect(result).to.be.undefined;
+  });
+
+  it('should fire an event when decode', function() {
+    liveIntentIdSubmodule.decode({}, defaultConfigParams);
+
+    expect(fireStub.calledOnce).to.be.true;
+  });
+
+  it('should fire an event only once', function() {
+    liveIntentIdSubmodule.getId(defaultConfigParams);
+    liveIntentIdSubmodule.decode({}, defaultConfigParams);
+    liveIntentIdSubmodule.getId(defaultConfigParams);
+    liveIntentIdSubmodule.decode({}, defaultConfigParams);
+
+    expect(fireStub.calledOnce).to.be.true;
+  });
+
+  it('should initialize LiveConnect only once', function() {
+    liveIntentIdSubmodule.getId(defaultConfigParams);
+    liveIntentIdSubmodule.decode({}, defaultConfigParams);
+    liveIntentIdSubmodule.getId(defaultConfigParams);
+    liveIntentIdSubmodule.decode({}, defaultConfigParams);
+
+    expect(lcStub.calledOnce).to.be.true;
   });
 });

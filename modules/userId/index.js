@@ -37,6 +37,7 @@
  * @summary decode a stored value for passing to bid requests
  * @name Submodule#decode
  * @param {Object|string} value
+ * @param {SubmoduleParams|undefined} configParams
  * @return {(Object|undefined)}
  */
 
@@ -411,7 +412,7 @@ function initSubmodules(submodules, consentData) {
 
       if (storedId) {
         // cache decoded value (this is copied to every adUnit bid)
-        submodule.idObj = submodule.submodule.decode(storedId);
+        submodule.idObj = submodule.submodule.decode(storedId, submodule.config);
       }
     } else if (submodule.config.value) {
       // cache decoded value (this is copied to every adUnit bid)
@@ -420,7 +421,7 @@ function initSubmodules(submodules, consentData) {
       const response = submodule.submodule.getId(submodule.config.params, consentData, undefined);
       if (utils.isPlainObject(response)) {
         if (typeof response.callback === 'function') { submodule.callback = response.callback; }
-        if (response.id) { submodule.idObj = submodule.submodule.decode(response.id); }
+        if (response.id) { submodule.idObj = submodule.submodule.decode(response.id, submodule.config); }
       }
     }
     carry.push(submodule);
