@@ -283,7 +283,17 @@ export const spec = {
       requestParams.loc = location;
     }
 
-    var playerSize = getBiggerSizeWithLimit(currentBidRequest.mediaTypes.banner.sizes, currentBidRequest.mediaTypes.banner.minSizeLimit, currentBidRequest.mediaTypes.banner.maxSizeLimit);
+    var playerSize = [];
+    if (currentBidRequest.mediaTypes.video && currentBidRequest.mediaTypes.video.playerSize) {
+      // If mediaTypes is video, get size from mediaTypes.video.playerSize per http://prebid.org/blog/pbjs-3
+      playerSize = currentBidRequest.mediaTypes.video.playerSize;
+    } else if (currentBidRequest.mediaTypes.banner.sizes) {
+      // If mediaTypes is banner, get size from mediaTypes.banner.sizes per http://prebid.org/blog/pbjs-3
+      playerSize = getBiggerSizeWithLimit(currentBidRequest.mediaTypes.banner.sizes, currentBidRequest.mediaTypes.banner.minSizeLimit, currentBidRequest.mediaTypes.banner.maxSizeLimit);
+    } else {
+      // Backward compatible code, in case size still pass by sizes in bid request
+      playerSize = getBiggerSize(currentBidRequest.sizes);
+    }
 
     if (playerSize[0] > 0 || playerSize[1] > 0) {
       requestParams.playerSize = playerSize[0] + 'x' + playerSize[1];
@@ -306,7 +316,17 @@ export const spec = {
   */
   interpretResponse: function(serverResponse, request) {
     var bidrequest = request.bidRequest;
-    var playerSize = getBiggerSizeWithLimit(bidrequest.mediaTypes.banner.sizes, bidrequest.mediaTypes.banner.minSizeLimit, bidrequest.mediaTypes.banner.maxSizeLimit);
+    var playerSize = [];
+    if (bidrequest.mediaTypes.video && bidrequest.mediaTypes.video.playerSize) {
+      // If mediaTypes is video, get size from mediaTypes.video.playerSize per http://prebid.org/blog/pbjs-3
+      playerSize = bidrequest.mediaTypes.video.playerSize;
+    } else if (bidrequest.mediaTypes.banner.sizes) {
+      // If mediaTypes is banner, get size from mediaTypes.banner.sizes per http://prebid.org/blog/pbjs-3
+      playerSize = getBiggerSizeWithLimit(bidrequest.mediaTypes.banner.sizes, bidrequest.mediaTypes.banner.minSizeLimit, bidrequest.mediaTypes.banner.maxSizeLimit);
+    } else {
+      // Backward compatible code, in case size still pass by sizes in bid request
+      playerSize = getBiggerSize(bidrequest.sizes);
+    }
 
     if (typeof serverResponse == 'object' && typeof serverResponse.body == 'string') {
       serverResponse = serverResponse.body;
@@ -343,18 +363,7 @@ export const spec = {
         netRevenue: true,
         ttl: 360
       };
-
-      var mediaTypes = bidrequest.mediaTypes || {};
-      if (mediaTypes.video) {
-        // bidResponse.vastXml = serverResponse;
-        bidResponse.mediaType = 'video';
-
-        var blob = new Blob([serverResponse], {type: 'application/xml'});
-        bidResponse.vastUrl = window.URL.createObjectURL(blob);
-      } else {
-        bidResponse.ad = formatAdHTML(bidrequest, playerSize);
-      }
-
+      bidResponse.ad = formatAdHTML(bidrequest, playerSize);
       bidResponses.push(bidResponse);
     }
 

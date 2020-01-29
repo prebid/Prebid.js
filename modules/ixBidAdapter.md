@@ -132,7 +132,7 @@ var adUnits = [{
 }];
 ```
 
-##### 1. Add IX to the appropriate ad units
+### 1. Add IX to the appropriate ad units
 
 For each size in an ad unit that IX will be bidding on, add one of the following
 bid objects under `adUnits[].bids`:
@@ -259,7 +259,20 @@ var adUnits = [{
 }];
 ```
 
-##### 2. Include `ixBidAdapter` in your build process
+#### Video Caching
+
+Note that the IX adapter expects a client-side Prebid Cache to be enabled for video bidding.
+
+```
+pbjs.setConfig({
+    usePrebidCache: true,
+    cache: {
+        url: 'https://prebid.adnxs.com/pbc/v1/cache'
+    }
+});
+```
+
+### 2. Include `ixBidAdapter` in your build process
 
 When running the build command, include `ixBidAdapter` as a module, as well as `dfpAdServerVideo` if you require video support.
 
