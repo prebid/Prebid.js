@@ -21,6 +21,7 @@ import {config} from '../src/config.js';
 import * as utils from '../src/utils';
 import {submodule} from '../src/hook';
 import {ajaxBuilder} from '../src/ajax';
+import {loadExternalScript} from "../src/adloader";
 
 /** @type {string} */
 const MODULE_NAME = 'realTimeData';
@@ -38,7 +39,7 @@ let _dataReadyCallback = null;
  * @param {Object} data
  */
 export function addBrowsiTag(data) {
-  let script = document.createElement('script');
+  let script = loadExternalScript(data.u, 'browsi');
   script.async = true;
   script.setAttribute('data-sitekey', _moduleParams.siteKey);
   script.setAttribute('data-pubkey', _moduleParams.pubKey);
@@ -49,7 +50,6 @@ export function addBrowsiTag(data) {
   if (_moduleParams.keyName) {
     script.prebidData.kn = _moduleParams.keyName;
   }
-  document.head.appendChild(script);
   return script;
 }
 
@@ -126,7 +126,7 @@ function sendDataToModule(adUnits, onDone) {
         if (!adUnitCode) { return rp }
         const adSlot = getSlotById(adUnitCode);
         if (!adSlot) { return rp }
-        const macroId = getMacroId(_predictionsData.plidm, adUnitCode, adSlot);
+        const macroId = getMacroId(_predictionsData.pmd, adUnitCode, adSlot);
         const predictionData = _predictions[macroId];
         if (!predictionData) { return rp }
 
@@ -202,19 +202,35 @@ function getSlotById(id) {
 function getMacroId(macro, id, slot) {
   if (macro) {
     try {
-      return macro
-        .replace(/<DIV_ID>/g, `${id}`)
-        .replace(/<AD_UNIT>/g, `${slot.getAdUnitPath()}`)
-        .replace(/<KEY_(\w+)>/g, (match, p1) => {
-          return (p1 && slot.getTargeting(p1).join('_')) || 'NA';
-        });
-    } catch (e) {
+      const macroResult = evaluate(macro, slot.getSlotElementId(), slot.getAdUnitPath(), (match, p1) => {
+        return (p1 && slot.getTargeting(p1).join('_')) || 'NA';
+      });
+      console.log(`${slot.getSlotElementId()} macro result: ${macro} => ${macroResult}`);
+      return macroResult;
+    }
+    catch (e) {
       utils.logError(`failed to evaluate: ${macro}`);
     }
   }
   return id;
 }
 
+function evaluate(macro, divId, adUnit, replacer){
+  let macroResult = macro.p
+    .replace(/['"]+/g, '')
+    .replace(/<DIV_ID>/g, divId);
+
+  if (adUnit){
+    macroResult = macroResult.replace(/<AD_UNIT>/g, adUnit);
+  }
+  if (replacer){
+    macroResult = macroResult.replace(/<KEY_(\w+)>/g, replacer);
+  }
+  if (macro.s){
+    macroResult = macroResult.substring(macro.s.s, macro.s.e);
+  }
+  return macroResult;
+}
 /**
  * XMLHttpRequest to get data form browsi server
  * @param {string} url server url with query params
@@ -229,7 +245,7 @@ function getPredictionsFromServer(url) {
           try {
             const data = JSON.parse(response);
             if (data && data.p && data.kn) {
-              setData({p: data.p, kn: data.kn, plidm: data.plidm});
+              setData({p: data.p, kn: data.kn, pmd: data.pmd});
             } else {
               setData({});
             }
