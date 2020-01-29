@@ -125,9 +125,10 @@ export const spec = {
         url: syncUrl
       });
     } else if (syncOptions.pixelEnabled && REFERER != null) {
+      typeof gdprConsent.consentString != 'undefined' ? syncUrl = `https://sync.richaudience.com/bf7c142f4339da0278e83698a02b0854/?euconsent=${gdprConsent.consentString}&referrer=${REFERER}` : syncUrl = `https://sync.richaudience.com/bf7c142f4339da0278e83698a02b0854/?referrer=${REFERER}`;
       syncs.push({
         type: 'image',
-        url: `https://sync.richaudience.com/bf7c142f4339da0278e83698a02b0854/?euconsent=${gdprConsent.consentString}&referrer=${REFERER}`
+        url: syncUrl
       });
     }
     return syncs

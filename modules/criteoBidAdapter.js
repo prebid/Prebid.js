@@ -1,13 +1,13 @@
 import { loadExternalScript } from '../src/adloader';
 import { registerBidder } from '../src/adapters/bidderFactory';
 import { config } from '../src/config';
-import { BANNER, VIDEO } from '../src/mediaTypes';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes';
 import { parse } from '../src/url';
 import * as utils from '../src/utils';
 import find from 'core-js/library/fn/array/find';
 import { verify } from 'criteo-direct-rsa-validate/build/verify';
 
-export const ADAPTER_VERSION = 25;
+export const ADAPTER_VERSION = 26;
 const BIDDER_CODE = 'criteo';
 const CDB_ENDPOINT = 'https://bidder.criteo.com/cdb';
 const CRITEO_VENDOR_ID = 91;
@@ -15,7 +15,7 @@ const PROFILE_ID_INLINE = 207;
 export const PROFILE_ID_PUBLISHERTAG = 185;
 
 // Unminified source code can be found in: https://github.com/Prebid-org/prebid-js-external-js-criteo/blob/master/dist/prod.js
-const PUBLISHER_TAG_URL = '//static.criteo.net/js/ld/publishertag.prebid.js';
+const PUBLISHER_TAG_URL = 'https://static.criteo.net/js/ld/publishertag.prebid.js';
 
 const FAST_BID_PUBKEY_E = 65537;
 const FAST_BID_PUBKEY_N = 'ztQYwCE5BU7T9CDM5he6rKoabstXRmkzx54zFPZkWbK530dwtLBDeaWBMxHBUT55CYyboR/EZ4efghPi3CoNGfGWezpjko9P6p2EwGArtHEeS4slhu/SpSIFMjG6fdrpRoNuIAMhq1Z+Pr/+HOd1pThFKeGFr2/NhtAg+TXAzaU=';
@@ -23,7 +23,7 @@ const FAST_BID_PUBKEY_N = 'ztQYwCE5BU7T9CDM5he6rKoabstXRmkzx54zFPZkWbK530dwtLBDe
 /** @type {BidderSpec} */
 export const spec = {
   code: BIDDER_CODE,
-  supportedMediaTypes: [ BANNER, VIDEO ],
+  supportedMediaTypes: [ BANNER, VIDEO, NATIVE ],
 
   /**
    * @param {object} bid
@@ -70,7 +70,12 @@ export const spec = {
     }
 
     if (publisherTagAvailable()) {
+      // eslint-disable-next-line no-undef
       const adapter = new Criteo.PubTag.Adapters.Prebid(PROFILE_ID_PUBLISHERTAG, ADAPTER_VERSION, bidRequests, bidderRequest, '$prebid.version$');
+      const enableSendAllBids = config.getConfig('enableSendAllBids');
+      if (adapter.setEnableSendAllBids && typeof adapter.setEnableSendAllBids === 'function' && typeof enableSendAllBids === 'boolean') {
+        adapter.setEnableSendAllBids(enableSendAllBids);
+      }
       url = adapter.buildCdbUrl();
       data = adapter.buildCdbRequest();
     } else {
@@ -93,6 +98,7 @@ export const spec = {
     const body = response.body || response;
 
     if (publisherTagAvailable()) {
+      // eslint-disable-next-line no-undef
       const adapter = Criteo.PubTag.Adapters.Prebid.GetAdapter(request);
       if (adapter) {
         return adapter.interpretResponse(body, request);
@@ -118,7 +124,14 @@ export const spec = {
           dealId: slot.dealCode,
         };
         if (slot.native) {
-          bid.ad = createNativeAd(bidId, slot.native, bidRequest.params.nativeCallback);
+          if (bidRequest.params.nativeCallback) {
+            bid.ad = createNativeAd(bidId, slot.native, bidRequest.params.nativeCallback);
+          } else if (config.getConfig('enableSendAllBids') === true) {
+            return;
+          } else {
+            bid.native = createPrebidNativeAd(slot.native);
+            bid.mediaType = NATIVE;
+          }
         } else if (slot.video) {
           bid.vastUrl = slot.displayurl;
           bid.mediaType = VIDEO;
@@ -137,6 +150,7 @@ export const spec = {
    */
   onTimeout: (timeoutData) => {
     if (publisherTagAvailable()) {
+      // eslint-disable-next-line no-undef
       const adapter = Criteo.PubTag.Adapters.Prebid.GetAdapter(timeoutData.auctionId);
       adapter.handleBidTimeout();
     }
@@ -147,6 +161,7 @@ export const spec = {
    */
   onBidWon: (bid) => {
     if (publisherTagAvailable()) {
+      // eslint-disable-next-line no-undef
       const adapter = Criteo.PubTag.Adapters.Prebid.GetAdapter(bid.auctionId);
       adapter.handleBidWon(bid);
     }
@@ -157,6 +172,7 @@ export const spec = {
    */
   onSetTargeting: (bid) => {
     if (publisherTagAvailable()) {
+      // eslint-disable-next-line no-undef
       const adapter = Criteo.PubTag.Adapters.Prebid.GetAdapter(bid.auctionId);
       adapter.handleSetTargeting(bid);
     }
@@ -167,13 +183,13 @@ export const spec = {
  * @return {boolean}
  */
 function publisherTagAvailable() {
+  // eslint-disable-next-line no-undef
   return typeof Criteo !== 'undefined' && Criteo.PubTag && Criteo.PubTag.Adapters && Criteo.PubTag.Adapters.Prebid;
 }
 
 /**
  * @param {BidRequest[]} bidRequests
  * @param bidderRequest
- * @return {CriteoContext}
  */
 function buildContext(bidRequests, bidderRequest) {
   let referrer = '';
@@ -247,7 +263,7 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
       if (bidRequest.params.publisherSubId) {
         slot.publishersubid = bidRequest.params.publisherSubId;
       }
-      if (bidRequest.params.nativeCallback) {
+      if (bidRequest.params.nativeCallback || utils.deepAccess(bidRequest, `mediaTypes.${NATIVE}`)) {
         slot.native = true;
       }
       if (hasVideoMediaType(bidRequest)) {
@@ -354,6 +370,27 @@ function hasValidVideoMediaType(bidRequest) {
   }
 
   return false;
+}
+
+/**
+ * Create prebid compatible native ad with native payload
+ * @param {*} payload
+ * @returns prebid native ad assets
+ */
+function createPrebidNativeAd(payload) {
+  return {
+    title: payload.products[0].title,
+    body: payload.products[0].description,
+    sponsoredBy: payload.advertiser.description,
+    icon: payload.advertiser.logo,
+    image: payload.products[0].image,
+    clickUrl: payload.products[0].click_url,
+    privacyLink: payload.privacy.optout_click_url,
+    privacyIcon: payload.privacy.optout_image_url,
+    cta: payload.products[0].call_to_action,
+    price: payload.products[0].price,
+    impressionTrackers: payload.impression_pixels.map(pix => pix.url)
+  };
 }
 
 /**
