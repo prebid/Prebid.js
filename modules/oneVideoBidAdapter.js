@@ -237,7 +237,7 @@ function getRequestData(bid, consentData, bidRequest) {
       bidData.regs.ext.gdpr = 1
     }
 
-    if (consentData.consentString) {
+    if (consentData && consentData.consentString) {
       bidData.user = {
         ext: {
           consent: consentData.consentString
