@@ -441,6 +441,12 @@ describe('UnderdogMedia adapter', function () {
       }
     }];
 
+    const responseWithEmptyUserSyncs = [{
+      body: {
+        userSyncs: []
+      }
+    }];
+
     it('user syncs should only return what is allowed', function () {
       const result = spec.getUserSyncs(syncOptionsPixelOnly, responseWithUserSyncs);
       expect(result[0].type).to.equal('image');
@@ -449,6 +455,13 @@ describe('UnderdogMedia adapter', function () {
 
     it('user syncs should only load once per user', function () {
       const result = spec.getUserSyncs(syncOptionsPixelAndIframe, responseWithUserSyncs);
+      expect(result).to.equal(undefined);
+    });
+
+    it('user syncs should return undefined when empty', function () {
+      resetUserSync();
+
+      const result = spec.getUserSyncs(syncOptionsPixelAndIframe, responseWithEmptyUserSyncs);
       expect(result).to.equal(undefined);
     });
 
