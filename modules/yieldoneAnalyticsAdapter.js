@@ -9,7 +9,7 @@ import * as utils from '../src/utils';
 const ANALYTICS_CODE = 'yieldone';
 const analyticsType = 'endpoint';
 // const VERSION = '1.0.0';
-const defaultUrl = '//pool.tsukiji.iponweb.net/hba';
+const defaultUrl = 'https://pool.tsukiji.iponweb.net/hba';
 const requestedBidders = {};
 const requestedBids = {};
 const referrers = {};
@@ -20,6 +20,7 @@ let pubId = '';
 
 function makeAdUnitNameMap() {
   if (window.googletag && window.googletag.pubads) {
+    // eslint-disable-next-line no-undef
     const p = googletag.pubads();
     if (p && p.getSlots) {
       const slots = p.getSlots();
@@ -78,12 +79,11 @@ const yieldoneAnalytics = Object.assign(adapter({analyticsType}), {
       args.forEach((bid) => {
         const reqBidId = `${bid.bidId}_${bid.auctionId}`;
         const reqBidderId = `${bid.bidder}_${bid.auctionId}`;
-        if (!eventsStorage[bid.auctionId]) eventsStorage[bid.auctionId] = [];
+        if (!eventsStorage[bid.auctionId]) eventsStorage[bid.auctionId] = {events: []};
         if ((requestedBidders[reqBidderId] || reqBidders[bid.bidder]) && requestedBids[reqBidId]) {
           if (!reqBidders[bid.bidder]) {
             reqBidders[bid.bidder] = requestedBidders[reqBidderId];
-            reqBidders[bid.bidder].pubId = pubId;
-            eventsStorage[bid.auctionId].push({eventType, params: reqBidders[bid.bidder]});
+            eventsStorage[bid.auctionId].events.push({eventType, params: reqBidders[bid.bidder]});
             delete requestedBidders[reqBidderId];
           }
           reqBidders[bid.bidder].bids.push(requestedBids[reqBidId]);
@@ -91,38 +91,46 @@ const yieldoneAnalytics = Object.assign(adapter({analyticsType}), {
         }
       });
     } else {
-      args.pubId = pubId;
       currentAuctionId = args.auctionId || currentAuctionId;
       if (currentAuctionId) {
         const eventsStorage = yieldoneAnalytics.eventsStorage;
-        if (!eventsStorage[currentAuctionId]) eventsStorage[currentAuctionId] = [];
+        if (!eventsStorage[currentAuctionId]) eventsStorage[currentAuctionId] = {events: []};
         const referrer = args.refererInfo && args.refererInfo.referer;
         if (referrer && referrers[currentAuctionId] !== referrer) {
           referrers[currentAuctionId] = referrer;
         }
-        eventsStorage[currentAuctionId].push({
-          eventType,
-          params: args
-        });
-      }
-    }
-    if (
-      eventType === CONSTANTS.EVENTS.AUCTION_END || eventType === CONSTANTS.EVENTS.BID_WON
-    ) {
-      args.adServerTargeting = targeting.getAllTargeting(
-        auctionManager.getAdUnitCodes(),
-        auctionManager.getBidsReceived()
-      );
-      if (yieldoneAnalytics.eventsStorage[args.auctionId]) {
-        yieldoneAnalytics.eventsStorage[args.auctionId].forEach((it) => {
-          it.page = {url: referrers[currentAuctionId]};
-          const adUnitNameMap = makeAdUnitNameMap();
-          if (adUnitNameMap) {
-            addAdUnitName(it.params, adUnitNameMap);
+        const params = Object.assign({}, args);
+        delete params.ad;
+        if (params.bidsReceived) {
+          params.bidsReceived = params.bidsReceived.map((bid) => {
+            const res = Object.assign({}, bid);
+            delete res.ad;
+            return res;
+          });
+        }
+        eventsStorage[currentAuctionId].events.push({eventType, params});
+
+        if (
+          eventType === CONSTANTS.EVENTS.AUCTION_END || eventType === CONSTANTS.EVENTS.BID_WON
+        ) {
+          params.adServerTargeting = targeting.getAllTargeting(
+            auctionManager.getAdUnitCodes(),
+            auctionManager.getBidsReceived()
+          );
+          if (yieldoneAnalytics.eventsStorage[currentAuctionId]) {
+            yieldoneAnalytics.eventsStorage[currentAuctionId].page = {url: referrers[currentAuctionId]};
+            yieldoneAnalytics.eventsStorage[currentAuctionId].pubId = pubId;
+            yieldoneAnalytics.eventsStorage[currentAuctionId].wrapper_version = '$prebid.version$';
+            yieldoneAnalytics.eventsStorage[currentAuctionId].events.forEach((it) => {
+              const adUnitNameMap = makeAdUnitNameMap();
+              if (adUnitNameMap) {
+                addAdUnitName(it.params, adUnitNameMap);
+              }
+            });
           }
-        });
+          yieldoneAnalytics.sendStat(yieldoneAnalytics.eventsStorage[currentAuctionId], currentAuctionId);
+        }
       }
-      yieldoneAnalytics.sendStat(yieldoneAnalytics.eventsStorage[args.auctionId], args.auctionId);
     }
   },
   sendStat(events, auctionId) {

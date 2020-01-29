@@ -3,7 +3,8 @@ import {
   requestBidsHook,
   resetConsentData,
   consentAPI,
-  consentTimeout
+  consentTimeout,
+  staticConsentData
 } from 'modules/consentManagementUsp';
 import * as utils from 'src/utils';
 import { config } from 'src/config';
@@ -82,6 +83,31 @@ describe('consentManagement', function () {
         setConsentConfig(allConfig);
         expect(consentAPI).to.be.equal('daa');
         expect(consentTimeout).to.be.equal(7500);
+      });
+    });
+
+    describe('static consent string setConsentConfig value', () => {
+      afterEach(() => {
+        config.resetConfig();
+        $$PREBID_GLOBAL$$.requestBids.removeAll();
+      });
+      it('results in user settings overriding system defaults', () => {
+        let staticConfig = {
+          usp: {
+            cmpApi: 'static',
+            timeout: 7500,
+            consentData: {
+              getUSPData: {
+                uspString: '1YYY'
+              }
+            }
+          }
+        };
+
+        setConsentConfig(staticConfig);
+        expect(consentAPI).to.be.equal('static');
+        expect(consentTimeout).to.be.equal(0); // should always return without a timeout when config is used
+        expect(staticConsentData.usPrivacy).to.be.equal(staticConfig.usp.consentData.getUSPData.uspString);
       });
     });
   });
@@ -243,6 +269,48 @@ describe('consentManagement', function () {
           }, {});
         });
       }
+    });
+
+    describe('test without iframe locater', function() {
+      let uspapiStub = sinon.stub();
+
+      beforeEach(function () {
+        didHookReturn = false;
+        sinon.stub(utils, 'logError');
+        sinon.stub(utils, 'logWarn');
+        window.__uspapi = function() {};
+      });
+
+      afterEach(function () {
+        config.resetConfig();
+        $$PREBID_GLOBAL$$.requestBids.removeAll();
+        uspapiStub.restore();
+        utils.logError.restore();
+        utils.logWarn.restore();
+        delete window.__uspapi;
+        resetConsentData();
+      });
+
+      it('Workflow for normal page withoout iframe locater', function() {
+        let testConsentData = {
+          uspString: '1NY'
+        };
+
+        uspapiStub = sinon.stub(window, '__uspapi').callsFake((...args) => {
+          args[2](testConsentData, true);
+        });
+
+        setConsentConfig(goodConfig);
+        requestBidsHook(() => { didHookReturn = true; }, {});
+
+        let consent = uspDataHandler.getConsentData();
+
+        sinon.assert.notCalled(utils.logWarn);
+        sinon.assert.notCalled(utils.logError);
+
+        expect(didHookReturn).to.be.true;
+        expect(consent).to.equal(testConsentData.uspString);
+      });
     });
 
     describe('USPAPI workflow for normal pages:', function () {

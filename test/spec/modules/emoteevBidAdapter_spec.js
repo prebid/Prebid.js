@@ -736,7 +736,7 @@ describe('emoteevBidAdapter', function () {
   });
 
   describe('side effects', function () {
-    let triggerPixelSpy;
+    let triggerPixelStub;
     let getCookieSpy;
     let getConfigSpy;
     let getParameterByNameSpy;
@@ -748,13 +748,13 @@ describe('emoteevBidAdapter', function () {
       config.resetConfig();
     });
     beforeEach(function () {
-      triggerPixelSpy = sinon.spy(utils, 'triggerPixel');
+      triggerPixelStub = sinon.stub(utils, 'triggerPixel');
       getCookieSpy = sinon.spy(utils, 'getCookie');
       getConfigSpy = sinon.spy(config, 'getConfig');
       getParameterByNameSpy = sinon.spy(utils, 'getParameterByName');
     });
     afterEach(function () {
-      triggerPixelSpy.restore();
+      triggerPixelStub.restore();
       getCookieSpy.restore();
       getConfigSpy.restore();
       getParameterByNameSpy.restore();

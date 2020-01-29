@@ -8,6 +8,7 @@ import { config } from 'src/config';
 import * as store from 'src/videoCache';
 import * as ajaxLib from 'src/ajax';
 import find from 'core-js/library/fn/array/find';
+import { server } from 'test/mocks/xhr';
 
 var assert = require('assert');
 
@@ -766,7 +767,6 @@ describe('auctionmanager.js', function () {
 
     describe('when auction timeout is 20', function () {
       let eventsEmitSpy;
-      let server;
 
       before(function () {
         bids = [mockBid(), mockBid({ bidderCode: BIDDER_CODE1 })];
@@ -776,8 +776,6 @@ describe('auctionmanager.js', function () {
       });
 
       beforeEach(function () {
-        server = sinon.createFakeServer();
-
         adUnits = [{
           code: ADUNIT_CODE,
           bids: [
@@ -789,7 +787,6 @@ describe('auctionmanager.js', function () {
         eventsEmitSpy = sinon.spy(events, 'emit');
       });
       afterEach(function () {
-        server.restore();
         events.emit.restore();
       });
 
@@ -985,6 +982,87 @@ describe('auctionmanager.js', function () {
     });
   });
 
+  describe('addBidRequests', function () {
+    let createAuctionStub;
+    let adUnits;
+    let adUnitCodes;
+    let spec;
+    let spec1;
+    let auction;
+    let ajaxStub;
+
+    let bids = TEST_BIDS;
+    let bids1 = [mockBid({ bidderCode: BIDDER_CODE1 })];
+
+    before(function () {
+      let bidRequests = [
+        mockBidRequest(bids[0]),
+        mockBidRequest(bids1[0], { adUnitCode: ADUNIT_CODE1 })
+      ];
+      let makeRequestsStub = sinon.stub(adapterManager, 'makeBidRequests');
+      makeRequestsStub.returns(bidRequests);
+
+      ajaxStub = sinon.stub(ajaxLib, 'ajaxBuilder').callsFake(mockAjaxBuilder);
+    });
+
+    after(function () {
+      ajaxStub.restore();
+      adapterManager.makeBidRequests.restore();
+    });
+
+    beforeEach(function () {
+      config.setConfig({
+        debugging: {
+          enabled: true,
+          bidRequests: [{
+            bidderCode: BIDDER_CODE,
+            adUnitCode: ADUNIT_CODE,
+            storedAuctionResponse: '11111'
+          }]
+        }
+      });
+
+      adUnits = [{
+        code: ADUNIT_CODE,
+        bids: [
+          {bidder: BIDDER_CODE, params: {placementId: 'id'}},
+        ]
+      }, {
+        code: ADUNIT_CODE1,
+        bids: [
+          {bidder: BIDDER_CODE1, params: {placementId: 'id'}},
+        ]
+      }];
+      adUnitCodes = adUnits.map(({ code }) => code);
+      auction = auctionModule.newAuction({adUnits, adUnitCodes, callback: function() {}, cbTimeout: 3000});
+      createAuctionStub = sinon.stub(auctionModule, 'newAuction');
+      createAuctionStub.returns(auction);
+
+      spec = mockBidder(BIDDER_CODE, bids);
+      spec1 = mockBidder(BIDDER_CODE1, bids1);
+
+      registerBidder(spec);
+      registerBidder(spec1);
+    });
+
+    afterEach(function () {
+      auctionModule.newAuction.restore();
+      config.resetConfig();
+    });
+
+    it('should override bidRequest properties when config debugging has a matching bidRequest defined', function () {
+      auction.callBids();
+      const auctionBidRequests = auction.getBidRequests();
+      assert.equal(auctionBidRequests.length > 0, true);
+      assert.equal(Array.isArray(auctionBidRequests[0].bids), true);
+
+      const bid = find(auctionBidRequests[0].bids, bid => bid.adUnitCode === ADUNIT_CODE);
+      assert.equal(typeof bid !== 'undefined', true);
+      assert.equal(bid.hasOwnProperty('storedAuctionResponse'), true);
+      assert.equal(bid.storedAuctionResponse, '11111');
+    });
+  });
+
   describe('getMediaTypeGranularity', function () {
     it('video', function () {
       let bidReq = {
@@ -1058,8 +1136,6 @@ describe('auctionmanager.js', function () {
   describe('auctionCallbacks', function() {
     let bids = TEST_BIDS;
     let bidRequests;
-    let xhr;
-    let requests;
     let doneSpy;
     let auction = {
       getBidRequests: () => bidRequests,
@@ -1070,9 +1146,6 @@ describe('auctionmanager.js', function () {
 
     beforeEach(() => {
       doneSpy = sinon.spy();
-      xhr = sinon.useFakeXMLHttpRequest();
-      requests = [];
-      xhr.onCreate = (request) => requests.push(request);
       config.setConfig({
         cache: {
           url: 'https://prebid.adnxs.com/pbc/v1/cache'
@@ -1082,7 +1155,6 @@ describe('auctionmanager.js', function () {
 
     afterEach(() => {
       doneSpy.resetHistory();
-      xhr.restore();
       config.resetConfig();
     });
 
@@ -1132,7 +1204,7 @@ describe('auctionmanager.js', function () {
       assert.equal(doneSpy.callCount, 0);
       const uuid = 'c488b101-af3e-4a99-b538-00423e5a3371';
       const responseBody = `{"responses":[{"uuid":"${uuid}"}]}`;
-      requests[0].respond(200, { 'Content-Type': 'application/json' }, responseBody);
+      server.requests[0].respond(200, { 'Content-Type': 'application/json' }, responseBody);
       assert.equal(doneSpy.callCount, 1);
     })
   });
