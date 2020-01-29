@@ -21,7 +21,7 @@ import {config} from '../src/config.js';
 import * as utils from '../src/utils';
 import {submodule} from '../src/hook';
 import {ajaxBuilder} from '../src/ajax';
-import {loadExternalScript} from "../src/adloader";
+import {loadExternalScript} from '../src/adloader';
 
 /** @type {string} */
 const MODULE_NAME = 'realTimeData';
@@ -207,26 +207,25 @@ function getMacroId(macro, id, slot) {
       });
       console.log(`${slot.getSlotElementId()} macro result: ${macro} => ${macroResult}`);
       return macroResult;
-    }
-    catch (e) {
+    } catch (e) {
       utils.logError(`failed to evaluate: ${macro}`);
     }
   }
   return id;
 }
 
-function evaluate(macro, divId, adUnit, replacer){
+function evaluate(macro, divId, adUnit, replacer) {
   let macroResult = macro.p
     .replace(/['"]+/g, '')
     .replace(/<DIV_ID>/g, divId);
 
-  if (adUnit){
+  if (adUnit) {
     macroResult = macroResult.replace(/<AD_UNIT>/g, adUnit);
   }
-  if (replacer){
+  if (replacer) {
     macroResult = macroResult.replace(/<KEY_(\w+)>/g, replacer);
   }
-  if (macro.s){
+  if (macro.s) {
     macroResult = macroResult.substring(macro.s.s, macro.s.e);
   }
   return macroResult;
