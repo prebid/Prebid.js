@@ -244,7 +244,8 @@ function interpretResponse (serverResponse, bidRequest) {
     ad: {
       price: cpm,
       id: creativeId,
-      markup
+      markup,
+      cur
     },
     cw: wrapper,
     pag: {
@@ -273,7 +274,7 @@ function interpretResponse (serverResponse, bidRequest) {
       ad: wrapper ? getWrapperCode(wrapper, Object.assign({}, serverResponseBody, { bidRequest })) : markup,
       cpm: isTestUnit ? 0.1 : cpm,
       creativeId,
-      currency: 'USD',
+      currency: cur || 'USD',
       height,
       netRevenue: true,
       requestId: bidRequest.id,
