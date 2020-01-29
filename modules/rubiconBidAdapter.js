@@ -277,7 +277,7 @@ export const spec = {
       }
 
       // if storedAuctionResponse has been set, pass SRID
-      if (typeof bidRequest.storedAuctionResponse === 'number') {
+      if (bidRequest.storedAuctionResponse) {
         utils.deepSetValue(data.imp[0], 'ext.prebid.storedauctionresponse.id', bidRequest.storedAuctionResponse.toString());
       }
 
