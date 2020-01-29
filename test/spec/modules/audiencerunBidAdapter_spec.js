@@ -18,10 +18,7 @@ const BID_SERVER_RESPONSE = {
         'h': 90,
         'isNet': false,
         'buying_type': 'rtb',
-        'sync': [
-          'http://linksync1',
-          'http://linksync2'
-        ],
+        'syncUrl': 'https://ac.audiencerun.com/f/sync.html',
         'adm': '<!-- test creative -->'
       }
     ]
@@ -44,7 +41,11 @@ describe('AudienceRun bid adapter tests', function() {
         'zoneId': '12345abcde'
       },
       'adUnitCode': 'adunit-code',
-      'sizes': [[300, 250], [300, 600]],
+      'mediaTypes': {
+        'banner': {
+          'sizes': [[300, 250], [300, 600]]
+        }
+      },
       'bidId': '30b31c1838de1e',
       'bidderRequestId': '22edbae2733bf6',
       'auctionId': '1d1a030790a475',
@@ -85,7 +86,11 @@ describe('AudienceRun bid adapter tests', function() {
         },
         'adUnitCode': 'div-gpt-ad-1460505748561-0',
         'transactionId': 'd7b773de-ceaa-484d-89ca-d9f51b8d61ec',
-        'sizes': [[320, 50], [300, 250], [300, 600]],
+        'mediaTypes': {
+          'banner': {
+            'sizes': [[320, 50], [300, 250], [300, 600]]
+          }
+        },
         'bidderRequestId': '418b37f85e772c',
         'auctionId': '18fd8b8b0bd757',
         'bidRequestsCount': 1
@@ -184,19 +189,17 @@ describe('AudienceRun bid adapter tests', function() {
 
   describe('getUserSyncs', function () {
     const serverResponses = [ BID_SERVER_RESPONSE ];
+    const syncOptions = { iframeEnabled: true };
 
-    it('should return no syncs when pixel syncing is disabled', function () {
-      const syncs = spec.getUserSyncs({ pixelEnabled: false }, serverResponses);
-      expect(syncs).to.deep.equal([]);
+    it('should return empty if no server responses', function() {
+      const syncs = spec.getUserSyncs(syncOptions, []);
+      expect(syncs).to.deep.equal([])
     });
 
     it('should return user syncs', function () {
-      const syncs = spec.getUserSyncs({ pixelEnabled: true }, serverResponses);
-      const expected = [
-        { type: 'image', url: 'http://linksync1' },
-        { type: 'image', url: 'http://linksync2' }
-      ];
-      expect(syncs).to.deep.equal(expected);
+      const syncs = spec.getUserSyncs(syncOptions, serverResponses);
+      expect(syncs).to.deep.equal([{type: 'iframe', url: 'https://ac.audiencerun.com/f/sync.html'}])
     });
   });
 });
+

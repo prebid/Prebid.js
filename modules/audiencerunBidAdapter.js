@@ -34,9 +34,10 @@ export const spec = {
    */
   buildRequests: function(bidRequests, bidderRequest) {
     const bids = bidRequests.map(bid => {
+      const sizes = utils.deepAccess(bid, 'mediaTypes.banner.sizes');
       return {
         zoneId: utils.getValue(bid.params, 'zoneId'),
-        sizes: bid.sizes.map(size => ({
+        sizes: sizes.map(size => ({
           w: size[0],
           h: size[1]
         })),
@@ -121,23 +122,21 @@ export const spec = {
    * @return {UserSync[]} The user syncs which should be dropped.
    */
   getUserSyncs: function(syncOptions, serverResponses) {
-    if (syncOptions.pixelEnabled) {
-      const syncs = [];
-      serverResponses.forEach(response => {
-        response.body.bid.forEach(bidObject => {
-          if (utils.isArray(bidObject.sync)) {
-            bidObject.sync.forEach(syncElement => {
-              if (syncs.indexOf(syncElement) === -1) {
-                syncs.push(syncElement);
-              }
-            });
-          }
+    if (!serverResponses || !serverResponses.length) return [];
+
+    const syncs = [];
+    serverResponses.forEach(response => {
+      response.body.bid.forEach(bidObject => {
+        syncs.push({
+          type: 'iframe',
+          url: bidObject.syncUrl
         });
       });
-      return syncs.map(sync => ({ type: 'image', url: sync }));
-    }
-    return [];
+    });
+
+    return syncs;
   }
 };
 
 registerBidder(spec);
+
