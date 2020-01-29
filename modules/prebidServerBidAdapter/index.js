@@ -494,7 +494,7 @@ const OPEN_RTB_PROTOCOL = {
       Object.assign(imp, mediaTypes);
 
       // if storedAuctionResponse has been set, pass SRID
-      const storedAuctionResponseBid = find(bidRequests[0].bids, bid => (bid.adUnitCode === adUnit.code && bid.storedAuctionResponse));
+      const storedAuctionResponseBid = find(bidRequests[0].bids, bid => (bid.adUnitCode === adUnit.code && typeof bid.storedAuctionResponse === 'number'));
       if (storedAuctionResponseBid) {
         utils.deepSetValue(imp, 'ext.prebid.storedauctionresponse.id', storedAuctionResponseBid.storedAuctionResponse.toString());
       }
