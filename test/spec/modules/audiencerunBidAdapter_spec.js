@@ -202,4 +202,3 @@ describe('AudienceRun bid adapter tests', function() {
     });
   });
 });
-
