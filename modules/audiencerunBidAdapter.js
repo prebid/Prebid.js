@@ -34,7 +34,7 @@ export const spec = {
    */
   buildRequests: function(bidRequests, bidderRequest) {
     const bids = bidRequests.map(bid => {
-      const sizes = utils.deepAccess(bid, 'mediaTypes.banner.sizes');
+      const sizes = utils.deepAccess(bid, 'mediaTypes.banner.sizes', []);
       return {
         zoneId: utils.getValue(bid.params, 'zoneId'),
         sizes: sizes.map(size => ({
