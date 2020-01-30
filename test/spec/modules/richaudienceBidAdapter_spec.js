@@ -667,5 +667,15 @@ describe('Richaudience adapter tests', function () {
     })
     expect(syncs).to.have.lengthOf(1);
     expect(syncs[0].type).to.equal('image');
+
+    syncs = spec.getUserSyncs({
+      pixelEnabled: true
+    }, [], {
+      consentString: null,
+      referer: 'http://domain.com',
+      gdprApplies: true
+    })
+    expect(syncs).to.have.lengthOf(1);
+    expect(syncs[0].type).to.equal('image');
   });
 });

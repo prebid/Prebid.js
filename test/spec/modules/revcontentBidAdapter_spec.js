@@ -74,7 +74,7 @@ describe('revcontent adapter', function () {
       assert.deepEqual(keys, data);
     });
 
-    it('should send info about device', function () {
+    it('should send info about device and unique bidfloor', function () {
       let validBidRequests = [{
         bidder: 'revcontent',
         nativeParams: {},
@@ -83,15 +83,17 @@ describe('revcontent adapter', function () {
           apiKey: '8a33fa9cf220ae685dcc3544f847cdda858d3b1c',
           userId: 673,
           domain: 'test.com',
-          endpoint: 'trends-s0.revcontent.com'
+          endpoint: 'trends-s0.revcontent.com',
+          bidfloor: 0.05
         }
       }];
       let request = spec.buildRequests(validBidRequests, {refererInfo: {referer: 'page'}});
       request = JSON.parse(request[0].data);
+      assert.equal(request.imp[0].bidfloor, 0.05);
       assert.equal(request.device.ua, navigator.userAgent);
     });
 
-    it('should send info about the site', function () {
+    it('should send info about the site and default bidfloor', function () {
       let validBidRequests = [{
         bidder: 'revcontent',
         nativeParams: {
@@ -123,7 +125,7 @@ describe('revcontent adapter', function () {
       let request = spec.buildRequests(validBidRequests, {refererInfo});
 
       request = JSON.parse(request[0].data);
-
+      assert.equal(request.imp[0].bidfloor, 0.1);
       assert.deepEqual(request.site, {
         domain: 'test.com',
         page: 'page',

@@ -225,7 +225,8 @@ describe('the rubicon adapter', function () {
         lipbid: '0000-1111-2222-3333',
         segments: ['segA', 'segB']
       }
-    }
+    };
+    bid.storedAuctionResponse = 11111;
   }
 
   function createVideoBidderRequestNoVideo() {
@@ -1721,6 +1722,22 @@ describe('the rubicon adapter', function () {
 
           const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
           expect(request.data.ext.prebid.bidderconfig).to.deep.equal(expected);
+        });
+
+        it('should include storedAuctionResponse in video bid request', function () {
+          createVideoBidderRequest();
+
+          sandbox.stub(Date, 'now').callsFake(() =>
+            bidderRequest.auctionStart + 100
+          );
+
+          const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          expect(request.data.imp).to.exist.and.to.be.a('array');
+          expect(request.data.imp).to.have.lengthOf(1);
+          expect(request.data.imp[0].ext).to.exist.and.to.be.a('object');
+          expect(request.data.imp[0].ext.prebid).to.exist.and.to.be.a('object');
+          expect(request.data.imp[0].ext.prebid.storedauctionresponse).to.exist.and.to.be.a('object');
+          expect(request.data.imp[0].ext.prebid.storedauctionresponse.id).to.equal('11111');
         });
 
         it('should include pbAdSlot in bid request', function () {

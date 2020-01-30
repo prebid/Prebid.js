@@ -1,82 +1,52 @@
 <html>
 <head>
-    <title>Simple DigiTrust Prebid - No Framework</title>
-
+    <title>CMP Simple DigiTrust Prebid - No Framework</title>
     <script>
-        (function (window, document) {
-            if (!window.__cmp) {
-                window.__cmp = (function () {
-                    var listen = window.attachEvent || window.addEventListener;
-                    listen('message', function (event) {
-                        window.__cmp.receiveMessage(event);
-                    }, false);
+        (function (window) {
+            window.__cmp = (function () {
+                window.addEventListener('message', function (event) {
+                    window.__cmp.receiveMessage(event);
+                });
 
-                    function addLocatorFrame() {
-                        if (!window.frames['__cmpLocator']) {
-                            if (document.body) {
-                                var frame = document.createElement('iframe');
-                                frame.style.display = 'none';
-                                frame.name = '__cmpLocator';
-                                document.body.appendChild(frame);
-                            } else {
-                                setTimeout(addLocatorFrame, 5);
-                            }
-                        }
+                var commandQueue = [];
+                var cmp = function (command, parameter, callback) {
+                    commandQueue.push({
+                        command: command,
+                        parameter: parameter,
+                        callback: callback
+                    });
+                };
+                cmp.commandQueue = commandQueue;
+                cmp.receiveMessage = function (event) {
+                    var data = event && event.data && event.data.__cmpCall;
+                    if (data) {
+                        commandQueue.push({
+                            callId: data.callId,
+                            command: data.command,
+                            parameter: data.parameter,
+                            event: event
+                        });
                     }
-                    addLocatorFrame();
+                };
+                cmp.config = {
+                    customPurposeListLocation: './cmp_files/purposes.json',
+                    globalVendorListLocation: 'https://vendorlist.consensu.org/vendorlist.json',
+                    globalConsentLocation: 'http://cmp-origin-release.digitru.st/1/docs/portal.html',
+                    storeConsentGlobally: false,
+                    storePublisherConsentGlobally: false,
+                    storePublisherData: true,
+                    layout: 'footer',
+                    logging: "debug",
+                    blockBrowsing: false,
+                    forceLocale: 'en',
+                    testingMode: 'always show',
+                    showFooterAfterSubmit: true,
+                };
+                return cmp;
+            }());
+        })(window);
 
-                    var commandQueue = [];
-                    var cmp = function (command, parameter, callback) {
-                        if (command === 'ping') {
-                            if (callback) {
-                                callback({
-                                    gdprAppliesGlobally: !!(window.__cmp && window.__cmp.config && window.__cmp.config.storeConsentGlobally),
-                                    cmpLoaded: false
-                                });
-                            }
-                        } else {
-                            commandQueue.push({
-                                command: command,
-                                parameter: parameter,
-                                callback: callback
-                            });
-                        }
-                    };
-                    cmp.commandQueue = commandQueue;
-                    cmp.receiveMessage = function (event) {
-                        var data = event && event.data && event.data.__cmpCall;
-                        if (data) {
-                            commandQueue.push({
-                                callId: data.callId,
-                                command: data.command,
-                                parameter: data.parameter,
-                                event: event
-                            });
-                        }
-                    };
-                    cmp.config = {
-                        //
-                        // Modify config values here
-                        //
-                        // globalVendorListLocation: 'https://vendorlist.consensu.org/vendorlist.json',
-                        // customPurposeListLocation: './purposes.json',
-                        // globalConsentLocation: './portal.html',
-                        // storeConsentGlobally: false,
-                        // storePublisherData: false,
-                        logging: 'debug'//,
-                        // localization: {},
-                        // forceLocale: 'en-us'
-                    };
-                    return cmp;
-                }());
-                var t = document.createElement('script');
-                t.async = false;
-                t.src = 'http://acdn.adnxs.com/cmp/cmp.bundle.js';
-                var tag = document.getElementsByTagName('head')[0];
-                tag.appendChild(t);
-            }
-        })(window, document);
-        // window.__cmp('showConsentTool');
+        window.__cmp('renderCmpIfNeeded');
     </script>
 
     <script>
@@ -86,7 +56,7 @@
             {
                 code: 'test-div',
                 sizes: [[300, 250], [300, 600], [728, 90]],
-                mediaTypes: { banner: { sizes: [400, 600], name: 'testAdUnit'}},
+                mediaTypes: { banner: { sizes: [400, 600], name: 'testAdUnit' } },
                 bids: [
                     {
                         bidder: 'rubicon',
@@ -207,7 +177,7 @@
     <h2>DigiTrust Prebid Sample - No Framework</h2>
 
     <p>
-        This sample shows the simplest integration path for using DigiTrust ID with Prebid.
+        This sample tests cmp behavior with simple integration path for using DigiTrust ID with Prebid.
         You can use DigiTrust ID without integrating the entire DigiTrust suite.
     </p>
     <div id="idDiv"></div>
@@ -217,5 +187,6 @@
             googletag.cmd.push(function () { googletag.display('test-div'); });
         </script>
     </div>
+    <script src="http://cmp-origin-release.digitru.st/1/cmp.bundle.js"></script>
 </body>
 </html>

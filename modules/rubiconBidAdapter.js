@@ -297,6 +297,11 @@ export const spec = {
         utils.deepSetValue(data.imp[0].ext, 'context.data.adslot', pbAdSlot);
       }
 
+      // if storedAuctionResponse has been set, pass SRID
+      if (bidRequest.storedAuctionResponse) {
+        utils.deepSetValue(data.imp[0], 'ext.prebid.storedauctionresponse.id', bidRequest.storedAuctionResponse.toString());
+      }
+
       return {
         method: 'POST',
         url: VIDEO_ENDPOINT,
