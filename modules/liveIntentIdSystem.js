@@ -32,6 +32,7 @@ function initializeLiveConnect(configParams) {
     utils.logError(`${MODULE_NAME} - publisherId must be defined, not a '${publisherId}'`);
     return;
   }
+
   const identityResolutionConfig = {
     source: 'prebid',
     publisherId: publisherId
@@ -45,13 +46,21 @@ function initializeLiveConnect(configParams) {
   if (configParams.storage && configParams.storage.expires) {
     identityResolutionConfig.expirationDays = configParams.storage.expires;
   }
-  liveConnect = LiveConnect({
+
+  const liveConnectConfig = {
     identifiersToResolve: configParams.identifiersToResolve || [],
     wrapperName: 'prebid',
-    usPrivacyString: uspDataHandler.getConsentData(),
     identityResolutionConfig: identityResolutionConfig
-  });
+  };
+  const usPrivacyString = uspDataHandler.getConsentData();
+  if (usPrivacyString) {
+    liveConnectConfig.usPrivacyString = usPrivacyString;
+  }
+  if (configParams.appId) {
+    liveConnectConfig.appId = configParams.appId;
+  }
 
+  liveConnect = LiveConnect(liveConnectConfig);
   return liveConnect;
 }
 

@@ -47,6 +47,7 @@ describe('LiveIntentId', function() {
     liveIntentIdSubmodule.getId({
       ...defaultConfigParams,
       ...{
+        appId: 'a-0001',
         identifiersToResolve: ['id1', 'id2'],
         url: 'https://dummy.liveintent.com',
         storage: {
@@ -58,14 +59,14 @@ describe('LiveIntentId', function() {
     expect(lcStub.calledOnce).to.be.true;
     assert.deepEqual(lcStub.getCall(0).args[0], {
       wrapperName: 'prebid',
+      appId: 'a-0001',
       identifiersToResolve: ['id1', 'id2'],
       identityResolutionConfig: {
         source: 'prebid',
         publisherId: PUBLISHER_ID,
         url: 'https://dummy.liveintent.com',
         expirationDays: 3
-      },
-      usPrivacyString: null
+      }
     });
   });
 
@@ -111,6 +112,7 @@ describe('LiveIntentId', function() {
     liveIntentIdSubmodule.decode({}, {
       ...defaultConfigParams,
       ...{
+        appId: 'a-0001',
         identifiersToResolve: ['id1', 'id2'],
         url: 'https://dummy.liveintent.com',
         storage: {
@@ -122,14 +124,14 @@ describe('LiveIntentId', function() {
     expect(lcStub.calledOnce).to.be.true;
     assert.deepEqual(lcStub.getCall(0).args[0], {
       wrapperName: 'prebid',
+      appId: 'a-0001',
       identifiersToResolve: ['id1', 'id2'],
       identityResolutionConfig: {
         source: 'prebid',
         publisherId: PUBLISHER_ID,
         url: 'https://dummy.liveintent.com',
         expirationDays: 3
-      },
-      usPrivacyString: null
+      }
     });
   });
 

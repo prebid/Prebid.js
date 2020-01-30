@@ -74,6 +74,7 @@
  * @property {(string|undefined)} pid - placement id url param value
  * @property {(string|undefined)} publisherId - the unique identifier of the publisher in question
  * @property {(array|undefined)} identifiersToResolve - the identifiers from either ls|cookie to be attached to the getId query
+ * @property {(string|undefined)} appId - the  unique identifier of the application in question
  */
 
 /**
