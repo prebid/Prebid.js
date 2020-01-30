@@ -6,25 +6,25 @@
  */
 import * as utils from '../src/utils';
 import { submodule } from '../src/hook';
-import * as liveConnect from 'live-connect-js/cjs/live-connect';
+import { LiveConnect } from 'live-connect-js/cjs/live-connect';
 import { uspDataHandler } from '../src/adapterManager';
 
 const MODULE_NAME = 'liveIntentId';
 
 let eventFired = false;
-let lcClient = null;
+let liveConnect = null;
 
 /**
  * This function is used in tests
  */
 export function reset() {
   eventFired = false;
-  lcClient = null;
+  liveConnect = null;
 }
 
-function initLcClient(configParams) {
-  if (lcClient) {
-    return lcClient;
+function initializeLiveConnect(configParams) {
+  if (liveConnect) {
+    return liveConnect;
   }
 
   const publisherId = configParams && configParams.publisherId;
@@ -45,19 +45,19 @@ function initLcClient(configParams) {
   if (configParams.storage && configParams.storage.expires) {
     identityResolutionConfig.expirationDays = configParams.storage.expires;
   }
-  lcClient = liveConnect.LiveConnect({
+  liveConnect = LiveConnect({
     identifiersToResolve: configParams.identifiersToResolve || [],
     wrapperName: 'prebid',
     usPrivacyString: uspDataHandler.getConsentData(),
     identityResolutionConfig: identityResolutionConfig
   });
 
-  return lcClient;
+  return liveConnect;
 }
 
 function tryFireEvent() {
-  if (!eventFired && lcClient) {
-    lcClient.fire();
+  if (!eventFired && liveConnect) {
+    liveConnect.fire();
     eventFired = true;
   }
 }
@@ -87,7 +87,7 @@ export const liveIntentIdSubmodule = {
     }
 
     if (configParams) {
-      initLcClient(configParams);
+      initializeLiveConnect(configParams);
       tryFireEvent();
     }
 
@@ -101,12 +101,12 @@ export const liveIntentIdSubmodule = {
    * @returns {IdResponse|undefined}
    */
   getId(configParams) {
-    const lcClient = initLcClient(configParams);
-    if (!lcClient) {
+    const liveConnect = initializeLiveConnect(configParams);
+    if (!liveConnect) {
       return;
     }
     tryFireEvent();
-    return { callback: lcClient.resolve };
+    return { callback: liveConnect.resolve };
   }
 };
 
