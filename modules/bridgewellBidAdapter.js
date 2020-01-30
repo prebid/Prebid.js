@@ -103,7 +103,7 @@ export const spec = {
                 if (typeof sizes[0] === 'number') { // for foramt Array[Number] check
                   valid = width === sizes[0] && height === sizes[1];
                 } else { // for format Array[Array[Number]] check
-                  valid = find(sizes, function (size) {
+                  valid = !!find(sizes, function (size) {
                     return (width === size[0] && height === size[1]);
                   });
                 }
