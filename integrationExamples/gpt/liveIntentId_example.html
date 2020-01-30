@@ -1,0 +1,69 @@
+<!--
+  This page resolves an identifier via LiveIntent Id. It can be considered a "hello world" example for using
+  Prebid with the LiveIntent Id Module.
+  The page also has an example of integration with USP privacy policy. The consent string is attached to the
+  LiveIntent's pixel requests.
+-->
+
+<html>
+<head>
+    <script async src="../../build/dev/prebid.js"></script>
+    <script>
+      var adUnits = [{
+        code: 'div-gpt-ad-1460505748561-0',
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 250], [300, 600]],
+          }
+        },
+        // Replace this object to test a new Adapter!
+        bids: [{
+          bidder: 'appnexus',
+          params: {
+            placementId: 13144370
+          }
+        }],
+      }];
+
+      var pbjs = pbjs || {};
+      pbjs.que = pbjs.que || [];
+
+    </script>
+
+    <script>
+      pbjs.que.push(function() {
+        pbjs.setConfig({
+          userSync: {
+            userIds: [{
+              name: 'liveIntentId',
+              params: {
+                publisherId: '9896876',
+                identifiersToResolve: ['my-own-cookie']
+              }
+            }]
+          },
+          consentManagement: {
+            usp: {
+              cmpApi: 'static',
+              consentData: {
+                getUSPData: {
+                  uspString: '1YYY'
+                }
+              }
+            }
+          }
+        });
+        pbjs.addAdUnits(adUnits);
+        pbjs.requestBids({
+          bidsBackHandler: function(bidResponses) {
+            console.log(bidResponses)
+          }
+        });
+      });
+    </script>
+</head>
+
+<body>
+<h2>Prebid.js LiveIntent Id Test</h2>
+</body>
+</html>
