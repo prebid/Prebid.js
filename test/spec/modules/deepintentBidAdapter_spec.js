@@ -19,6 +19,7 @@ describe('Deepintent adapter', function () {
           tagId: '100013',
           w: 728,
           h: 90,
+          pos: 1,
           user: {
             id: 'di_testuid',
             buyeruid: 'di_testbuyeruid',
@@ -122,6 +123,7 @@ describe('Deepintent adapter', function () {
       expect(data.imp[0].banner).to.be.a('object');
       expect(data.imp[0].banner.w).to.equal(300);
       expect(data.imp[0].banner.h).to.equal(250);
+      expect(data.imp[0].banner.pos).to.equal(1);
     });
     it('bid request check : custom params', function () {
       let bRequest = spec.buildRequests(request);

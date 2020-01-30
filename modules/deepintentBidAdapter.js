@@ -127,13 +127,15 @@ function buildBanner(bid) {
       if (utils.isArray(sizes) && sizes.length > 0) {
         return {
           h: sizes[0][1],
-          w: sizes[0][0]
+          w: sizes[0][0],
+          pos: bid && bid.params && bid.params.position ? bid.params.position : 0
         }
       }
     } else {
       return {
         h: bid.params.height,
-        w: bid.params.width
+        w: bid.params.width,
+        pos: bid && bid.params && bid.params.position ? bid.params.position : 0
       }
     }
   }
