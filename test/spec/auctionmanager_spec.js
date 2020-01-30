@@ -990,11 +990,19 @@ describe('auctionmanager.js', function () {
     let spec1;
     let auction;
     let ajaxStub;
+    let logMessageStub;
+    let logInfoStub;
+    let logWarnStub;
+    let logErrorStub;
 
     let bids = TEST_BIDS;
     let bids1 = [mockBid({ bidderCode: BIDDER_CODE1 })];
 
     before(function () {
+      logMessageStub = sinon.stub(utils, 'logMessage');
+      logInfoStub = sinon.stub(utils, 'logInfo');
+      logWarnStub = sinon.stub(utils, 'logWarn');
+      logErrorStub = sinon.stub(utils, 'logError');
       let bidRequests = [
         mockBidRequest(bids[0]),
         mockBidRequest(bids1[0], { adUnitCode: ADUNIT_CODE1 })
@@ -1006,6 +1014,10 @@ describe('auctionmanager.js', function () {
     });
 
     after(function () {
+      logMessageStub.restore();
+      logInfoStub.restore();
+      logWarnStub.restore();
+      logErrorStub.restore();
       ajaxStub.restore();
       adapterManager.makeBidRequests.restore();
     });
@@ -1046,6 +1058,10 @@ describe('auctionmanager.js', function () {
     });
 
     afterEach(function () {
+      logMessageStub.resetHistory();
+      logInfoStub.resetHistory();
+      logWarnStub.resetHistory();
+      logErrorStub.resetHistory();
       auctionModule.newAuction.restore();
       config.resetConfig();
     });
