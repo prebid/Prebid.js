@@ -64,7 +64,16 @@ describe('yieldoneBidAdapter', function() {
       }
     ];
 
-    const request = spec.buildRequests(bidRequests);
+    let bidderRequest = {
+      refererInfo: {
+        numIframes: 0,
+        reachedTop: true,
+        referer: 'http://example.com',
+        stack: ['http://example.com']
+      }
+    };
+
+    const request = spec.buildRequests(bidRequests, bidderRequest);
 
     it('sends bid request to our endpoint via GET', function () {
       expect(request[0].method).to.equal('GET');
@@ -85,7 +94,7 @@ describe('yieldoneBidAdapter', function() {
       const bidRequest = Object.assign({}, bidRequests[0]);
       bidRequest.mediaTypes = {};
       bidRequest.mediaTypes.video = {context: 'outstream'};
-      const request = spec.buildRequests([bidRequest]);
+      const request = spec.buildRequests([bidRequest], bidderRequest);
       expect(request[0].data.w).to.equal('300');
       expect(request[0].data.h).to.equal('250');
     });

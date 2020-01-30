@@ -99,6 +99,28 @@ function _getDigiTrustQueryParams(userId) {
 }
 
 /**
+ * Serializes the supply chain object according to IAB standards
+ * @see https://github.com/InteractiveAdvertisingBureau/openrtb/blob/master/supplychainobject.md
+ * @param {Object} schainObj supply chain object
+ * @returns {string}
+ */
+function _serializeSupplyChainObj(schainObj) {
+  let serializedSchain = `${schainObj.ver},${schainObj.complete}`;
+
+  // order of properties: asi,sid,hp,rid,name,domain
+  schainObj.nodes.map(node => {
+    serializedSchain += `!${encodeURIComponent(node['asi'] || '')},`;
+    serializedSchain += `${encodeURIComponent(node['sid'] || '')},`;
+    serializedSchain += `${encodeURIComponent(node['hp'] || '')},`;
+    serializedSchain += `${encodeURIComponent(node['rid'] || '')},`;
+    serializedSchain += `${encodeURIComponent(node['name'] || '')},`;
+    serializedSchain += `${encodeURIComponent(node['domain'] || '')}`;
+  })
+
+  return serializedSchain;
+}
+
+/**
  * Determines whether or not the given bid request is valid.
  *
  * @param {BidRequest} bid The bid params to validate.
@@ -136,11 +158,13 @@ function isBidRequestValid (bid) {
 function buildRequests (validBidRequests, bidderRequest) {
   const bids = [];
   const gdprConsent = bidderRequest && bidderRequest.gdprConsent;
+  const uspConsent = bidderRequest && bidderRequest.uspConsent;
   utils._each(validBidRequests, bidRequest => {
     const timeout = config.getConfig('bidderTimeout');
     const {
       bidId,
       params = {},
+      schain,
       transactionId,
       userId = {}
     } = bidRequest;
@@ -152,6 +176,10 @@ function buildRequests (validBidRequests, bidderRequest) {
     }
     if (params.bidfloor) {
       data.fp = params.bidfloor;
+    }
+    if (params.inScreenPubID) {
+      data.pubId = params.inScreenPubID;
+      data.pi = 2;
     }
     if (params.inScreen) {
       data.t = params.inScreen;
@@ -170,6 +198,12 @@ function buildRequests (validBidRequests, bidderRequest) {
     }
     if (data.gdprApplies) {
       data.gdprConsent = gdprConsent.consentString;
+    }
+    if (uspConsent) {
+      data.uspConsent = uspConsent;
+    }
+    if (schain && schain.nodes) {
+      data.schain = _serializeSupplyChainObj(schain);
     }
 
     bids.push({
@@ -210,7 +244,8 @@ function interpretResponse (serverResponse, bidRequest) {
     ad: {
       price: cpm,
       id: creativeId,
-      markup
+      markup,
+      cur
     },
     cw: wrapper,
     pag: {
@@ -239,7 +274,7 @@ function interpretResponse (serverResponse, bidRequest) {
       ad: wrapper ? getWrapperCode(wrapper, Object.assign({}, serverResponseBody, { bidRequest })) : markup,
       cpm: isTestUnit ? 0.1 : cpm,
       creativeId,
-      currency: 'USD',
+      currency: cur || 'USD',
       height,
       netRevenue: true,
       requestId: bidRequest.id,

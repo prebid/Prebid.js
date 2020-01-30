@@ -17,13 +17,11 @@ describe('cpmBucketManager', function () {
     let customConfig = {
       'buckets': [{
         'precision': 4,
-        'min': 0,
         'max': 3,
         'increment': 0.01,
       },
       {
         'precision': 4,
-        'min': 3,
         'max': 18,
         'increment': 0.05,
         'cap': true
@@ -40,13 +38,11 @@ describe('cpmBucketManager', function () {
     let customConfig = {
       'buckets': [{
         'precision': 4,
-        'min': 0,
         'max': 4,
         'increment': 0.01,
       },
       {
         'precision': 4,
-        'min': 4,
         'max': 18,
         'increment': 0.3,
         'cap': true
@@ -63,13 +59,11 @@ describe('cpmBucketManager', function () {
     let customConfig = {
       'buckets': [{
         'precision': 4,
-        'min': 0,
         'max': 3,
         'increment': 0.01,
       },
       {
         'precision': 4,
-        'min': 3,
         'max': 18,
         'increment': 0.05,
         'cap': true
@@ -85,7 +79,6 @@ describe('cpmBucketManager', function () {
     let customConfig = {
       'buckets': [{
         'precision': 4,
-        'min': 0,
         'max': 4,
         'increment': 0.10,
       }]
@@ -103,7 +96,6 @@ describe('cpmBucketManager', function () {
     customConfig = {
       'buckets': [{
         'precision': 3,
-        'min': 0,
         'max': 6,
         'increment': 0.08,
       }]
@@ -116,7 +108,6 @@ describe('cpmBucketManager', function () {
     customConfig = {
       'buckets': [{
         'precision': 3,
-        'min': 0,
         'max': 6,
         'increment': 0.05,
       }]
@@ -134,7 +125,6 @@ describe('cpmBucketManager', function () {
     customConfig = {
       'buckets': [{
         'precision': 2,
-        'min': 0,
         'max': 6,
         'increment': 0.01,
       }]
@@ -161,7 +151,6 @@ describe('cpmBucketManager', function () {
       'buckets': [
         {
           'precision': 0,
-          'min': 3,
           'max': 18,
           'increment': 0.05,
         }
@@ -177,7 +166,6 @@ describe('cpmBucketManager', function () {
     let customConfig = {
       'buckets': [
         {
-          'min': 3,
           'max': 18,
           'increment': 0.05,
         }
@@ -191,14 +179,12 @@ describe('cpmBucketManager', function () {
   it('checks whether custom config is valid', function () {
     let badConfig = {
       'buckets': [{
-        'min': 0,
         'max': 3,
         'increment': 0.01,
       },
       {
-        // missing min prop
         'max': 18,
-        'increment': 0.05,
+        // missing increment prop
         'cap': true
       }
       ]

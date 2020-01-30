@@ -1,23 +1,17 @@
 import adxcgAnalyticsAdapter from 'modules/adxcgAnalyticsAdapter';
 import { expect } from 'chai';
 import adapterManager from 'src/adapterManager.js';
+import { server } from 'test/mocks/xhr';
 
 let events = require('src/events');
 let constants = require('src/constants.json');
 
 describe('adxcg analytics adapter', function () {
-  let xhr;
-  let requests;
-
   beforeEach(function () {
-    xhr = sinon.useFakeXMLHttpRequest();
-    requests = [];
-    xhr.onCreate = request => requests.push(request);
     sinon.stub(events, 'getEvents').returns([]);
   });
 
   afterEach(function () {
-    xhr.restore();
     events.getEvents.restore();
   });
 
@@ -193,9 +187,9 @@ describe('adxcg analytics adapter', function () {
       // Step 5: Send auction end event
       events.emit(constants.EVENTS.AUCTION_END, {});
 
-      expect(requests.length).to.equal(1);
+      expect(server.requests.length).to.equal(1);
 
-      let realAfterBid = JSON.parse(requests[0].requestBody);
+      let realAfterBid = JSON.parse(server.requests[0].requestBody);
 
       expect(realAfterBid).to.deep.equal(expectedAfterBid);
 
@@ -204,8 +198,8 @@ describe('adxcg analytics adapter', function () {
       // Step 6: Send auction bid won event
       events.emit(constants.EVENTS.BID_WON, wonRequest);
 
-      expect(requests.length).to.equal(2);
-      let winEventData = JSON.parse(requests[1].requestBody);
+      expect(server.requests.length).to.equal(2);
+      let winEventData = JSON.parse(server.requests[1].requestBody);
 
       expect(winEventData).to.deep.equal(wonExpect);
     });

@@ -4,8 +4,8 @@ import {VIDEO, BANNER} from '../src/mediaTypes';
 import {Renderer} from '../src/Renderer';
 import findIndex from 'core-js/library/fn/array/find-index';
 
-const URL = '//hb.sync.viewdeos.com/auction/';
-const OUTSTREAM_SRC = '//player.sync.viewdeos.com/outstream-unit/2.01/outstream.min.js';
+const URL = 'https://hb.sync.viewdeos.com/auction/';
+const OUTSTREAM_SRC = 'https://player.sync.viewdeos.com/outstream-unit/2.01/outstream.min.js';
 const BIDDER_CODE = 'viewdeosDX';
 const OUTSTREAM = 'outstream';
 const DISPLAY = 'display';

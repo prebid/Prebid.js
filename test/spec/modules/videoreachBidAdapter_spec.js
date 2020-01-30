@@ -2,7 +2,7 @@ import {expect} from 'chai';
 import {spec} from 'modules/videoreachBidAdapter';
 import {newBidder} from 'src/adapters/bidderFactory';
 
-const ENDPOINT_URL = '//a.videoreach.com/hb/';
+const ENDPOINT_URL = 'https://a.videoreach.com/hb/';
 
 describe('videoreachBidAdapter', function () {
   describe('isBidRequestValid', function () {
@@ -86,7 +86,7 @@ describe('videoreachBidAdapter', function () {
             'cpm': 10.0,
             'width': '1',
             'height': '1',
-            'ad': '<script type="text/javascript" async="true" src="//a.videoreach.com/hb/js/?t=f86fb856-15d0-4591-84eb-0830b38e9cf2"></script>',
+            'ad': '<script type="text/javascript" async="true" src="https://a.videoreach.com/hb/js/?t=f86fb856-15d0-4591-84eb-0830b38e9cf2"></script>',
             'ttl': 360,
             'creativeId': '5cb5dc9375c0e',
             'netRevenue': true,

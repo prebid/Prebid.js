@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { spec } from 'modules/adponeBidAdapter';
-import {newBidder} from '../../../src/adapters/bidderFactory';
+import {newBidder} from 'src/adapters/bidderFactory';
+import * as utils from 'src/utils';
 
 const EMPTY_ARRAY = [];
 describe('adponeBidAdapter', function () {
@@ -126,11 +127,11 @@ describe('interpretResponse', function () {
                 id: '613673EF-A07C-4486-8EE9-3FC71A7DC73D',
                 impid: '2579e20c0bb89_0',
                 price: 1,
-                adm: '<html><a href="http://www.adpone.com" target="_blank"><img src ="https://placehold.it/300x250" /></a></html>',
+                adm: '<html><a href="https://www.adpone.com" target="_blank"><img src ="https://placehold.it/300x250" /></a></html>',
                 adomain: [
                   'www.addomain.com'
                 ],
-                iurl: 'http://localhost11',
+                iurl: 'https://localhost11',
                 crid: 'creative111',
                 h: 250,
                 w: 300,
@@ -157,7 +158,7 @@ describe('interpretResponse', function () {
     expect(newResponse[0].currency).to.be.equal('USD');
     expect(newResponse[0].netRevenue).to.be.equal(true);
     expect(newResponse[0].ttl).to.be.equal(300);
-    expect(newResponse[0].ad).to.be.equal('<html><a href="http://www.adpone.com" target="_blank"><img src ="https://placehold.it/300x250" /></a></html>');
+    expect(newResponse[0].ad).to.be.equal('<html><a href="https://www.adpone.com" target="_blank"><img src ="https://placehold.it/300x250" /></a></html>');
   });
 
   it('should correctly reorder the server response', function () {
@@ -173,7 +174,7 @@ describe('interpretResponse', function () {
       currency: 'USD',
       netRevenue: true,
       ttl: 300,
-      ad: '<html><a href="http://www.adpone.com" target="_blank"><img src ="https://placehold.it/300x250" /></a></html>'
+      ad: '<html><a href="https://www.adpone.com" target="_blank"><img src ="https://placehold.it/300x250" /></a></html>'
     });
   });
 
@@ -213,11 +214,18 @@ describe('getUserSyncs', function () {
 });
 
 describe('test onBidWon function', function () {
+  beforeEach(function() {
+    sinon.stub(utils, 'triggerPixel');
+  });
+  afterEach(function() {
+    utils.triggerPixel.restore();
+  });
   it('exists and is a function', () => {
     expect(spec.onBidWon).to.exist.and.to.be.a('function');
   });
   it('should return nothing', function () {
     var response = spec.onBidWon({});
     expect(response).to.be.an('undefined')
+    expect(utils.triggerPixel.called).to.equal(true);
   });
 });

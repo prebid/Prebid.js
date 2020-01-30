@@ -1,7 +1,7 @@
 import {registerBidder} from '../src/adapters/bidderFactory';
 const utils = require('../src/utils');
 const BIDDER_CODE = 'videoreach';
-const ENDPOINT_URL = '//a.videoreach.com/hb/';
+const ENDPOINT_URL = 'https://a.videoreach.com/hb/';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -12,11 +12,11 @@ export const spec = {
   },
 
   buildRequests: function(validBidRequests, bidderRequest) {
-    var data = {
-      referrer: utils.getTopWindowUrl(),
+    let data = {
       data: validBidRequests.map(function(bid) {
         return {
           TagId: utils.getValue(bid.params, 'TagId'),
+          adUnitCode: utils.getBidIdParameter('adUnitCode', bid),
           bidId: utils.getBidIdParameter('bidId', bid),
           bidderRequestId: utils.getBidIdParameter('bidderRequestId', bid),
           auctionId: utils.getBidIdParameter('auctionId', bid),
@@ -24,6 +24,10 @@ export const spec = {
         }
       })
     };
+
+    if (bidderRequest && bidderRequest.refererInfo) {
+      data.referrer = bidderRequest.refererInfo.referer;
+    }
 
     if (bidderRequest && bidderRequest.gdprConsent) {
       data.gdpr = {
@@ -65,10 +69,10 @@ export const spec = {
   getUserSyncs: function(syncOptions, responses, gdprConsent) {
     const syncs = [];
 
-    if (syncOptions.pixelEnabled && responses.length && responses[0].body.responses.length) {
-      const SyncPixels = responses[0].body.responses[0].sync;
-
+    if (responses.length && responses[0].body.responses.length) {
       let params = '';
+      var gdpr;
+
       if (gdprConsent && typeof gdprConsent.consentString === 'string') {
         if (typeof gdprConsent.gdprApplies === 'boolean') {
           params += 'gdpr=' + gdprConsent.gdprApplies + '&gdpr_consent=' + gdprConsent.consentString;
@@ -77,16 +81,34 @@ export const spec = {
         }
       }
 
-      var gdpr;
-      if (SyncPixels) {
-        SyncPixels.forEach(sync => {
-          gdpr = (params) ? ((sync.split('?')[1] ? '&' : '?') + params) : '';
+      if (syncOptions.pixelEnabled) {
+        const SyncPixels = responses[0].body.responses[0].sync;
 
-          syncs.push({
-            type: 'image',
-            url: sync + gdpr
+        if (SyncPixels) {
+          SyncPixels.forEach(sync => {
+            gdpr = (params) ? ((sync.split('?')[1] ? '&' : '?') + params) : '';
+
+            syncs.push({
+              type: 'image',
+              url: sync + gdpr
+            });
           });
-        });
+        }
+      }
+
+      if (syncOptions.iframeEnabled) {
+        const SyncFrame = responses[0].body.responses[0].syncframe;
+
+        if (SyncFrame) {
+          SyncFrame.forEach(sync => {
+            gdpr = (params) ? ((sync.split('?')[1] ? '&' : '?') + params) : '';
+
+            syncs.push({
+              type: 'iframe',
+              url: sync + gdpr
+            });
+          });
+        }
       }
     }
 

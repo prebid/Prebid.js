@@ -62,6 +62,10 @@ export const spec = {
       };
     }
 
+    if (bidderRequest && bidderRequest.uspConsent) {
+      data.ccpa = bidderRequest.uspConsent;
+    }
+
     validBidRequests.map(bid => {
       const sizes = (bid.mediaTypes && bid.mediaTypes.banner && bid.mediaTypes.banner.sizes) || bid.sizes || [];
       const placement = Object.assign({
@@ -133,7 +137,7 @@ export const spec = {
     if (syncOptions.iframeEnabled) {
       return [{
         type: 'iframe',
-        url: '//sync.serverbid.com/ss/' + siteId + '.html'
+        url: 'https://sync.serverbid.com/ss/' + siteId + '.html'
       }];
     }
 
