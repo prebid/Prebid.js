@@ -81,7 +81,7 @@ describe('onetag', function () {
         }
       });
     } catch (e) {
-      console.log('Error while parsing');
+      console.log('onetagBidAdapter tests: Error while parsing');  // eslint-disable-line
     }
     it('Returns empty data if no valid requests are passed', function () {
       serverRequest = spec.buildRequests([]);
@@ -90,7 +90,7 @@ describe('onetag', function () {
         let dataObj = JSON.parse(dataString);
         expect(dataObj.bids).to.be.an('array').that.is.empty;
       } catch (e) {
-        console.log('Error while parsing');
+        console.log('onetagBidAdapter tests: Error while parsing');  // eslint-disable-line
       }
     });
     it('should send GDPR consent data', function () {

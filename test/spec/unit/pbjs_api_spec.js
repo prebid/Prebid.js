@@ -1404,7 +1404,7 @@ describe('Unit: Prebid Module', function () {
         try {
           $$PREBID_GLOBAL$$.requestBids({});
         } catch (e) {
-          console.log(e);
+          console.log(e); // eslint-disable-line
         }
         assert.ok(logMessageSpy.calledWith('No adUnits configured. No bids requested.'), 'expected message was logged');
       });

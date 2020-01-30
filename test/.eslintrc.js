@@ -36,5 +36,6 @@ module.exports = {
     "no-use-before-define": "off",
     "no-useless-escape": "off",
     "one-var": "off",
+    "no-console": "error"
   }
 };
