@@ -171,9 +171,13 @@ export const spec = {
       };
     }
 
+    function bidSizes(bid) {
+      return utils.deepAccess(bid, 'mediaTypes.banner.sizes') || bid.sizes /* for prebid < 3 */ || [];
+    }
+
     validBidRequests.forEach(bid => {
       payload.bids.push({
-        bid: bid.bidId, sid: bid.params.sid, siz: bid.sizes, viz: elementInView(bid.adUnitCode)
+        bid: bid.bidId, sid: bid.params.sid, siz: bidSizes(bid), viz: elementInView(bid.adUnitCode)
       });
     });
 

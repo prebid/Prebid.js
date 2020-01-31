@@ -55,7 +55,11 @@ describe('stroeerCore bid adapter', function () {
       bidId: 'bid1',
       bidder: 'stroeerCore',
       adUnitCode: 'div-1',
-      sizes: [[300, 600], [160, 60]],
+      mediaTypes: {
+        banner: {
+          sizes: [[300, 600], [160, 60]]
+        }
+      },
       mediaType: '',
       params: {
         sid: 'NDA='
@@ -64,12 +68,25 @@ describe('stroeerCore bid adapter', function () {
       bidId: 'bid2',
       bidder: 'stroeerCore',
       adUnitCode: 'div-2',
-      sizes: [[728, 90]],
+      mediaTypes: {
+        banner: {
+          sizes: [[728, 90]],
+        }
+      },
       params: {
         sid: 'ODA='
       }
     }],
   });
+
+  const buildBidderRequestPreVersion3 = () => {
+    const request = buildBidderRequest();
+    request.bids.forEach((bid) => {
+      bid.sizes = bid.mediaTypes.banner.sizes;
+      delete bid.mediaTypes;
+    });
+    return request;
+  };
 
   const buildBidderResponse = () => ({
     'bids': [{
@@ -242,7 +259,11 @@ describe('stroeerCore bid adapter', function () {
           bidId: 'bid1',
           bidder: 'stroeerCore',
           adUnitCode: 'div-1-alpha',
-          sizes: [[300, 600], [160, 60]],
+          mediaTypes: {
+            banner: {
+              sizes: [[300, 600], [160, 60]],
+            }
+          },
           mediaType: '',
           params: {
             sid: 'NDA='
@@ -251,7 +272,11 @@ describe('stroeerCore bid adapter', function () {
           bidId: 'bid2',
           bidder: 'stroeerCore',
           adUnitCode: 'div-2-alpha',
-          sizes: [[728, 90]],
+          mediaTypes: {
+            banner: {
+              sizes: [[728, 90]],
+            }
+          },
           params: {
             sid: 'ODA='
           }
@@ -394,6 +419,16 @@ describe('stroeerCore bid adapter', function () {
         assert.deepEqual(serverRequestInfo.data, expectedJsonPayload);
       });
 
+      it ('should handle banner sizes for pre version 3', () => {
+        // Version 3 changes the way how banner sizes are accessed.
+        // We can support backwards compatibility with version 2.x
+        const bidReq = buildBidderRequestPreVersion3();
+        const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq);
+        assert.deepEqual(serverRequestInfo.data.bids[0].siz, [[300, 600], [160, 60]]);
+        assert.deepEqual(serverRequestInfo.data.bids[1].siz, [[728, 90]]);
+
+      });
+
       describe('optional fields', () => {
         it('should use ssat value from config', () => {
           const bidReq = buildBidderRequest();
@@ -446,7 +481,11 @@ describe('stroeerCore bid adapter', function () {
             bidId: 'bid3',
             bidder: 'stroeerCore',
             placementCode: 'div-1',
-            sizes: [[300, 600], [160, 60]],
+            mediaTypes: {
+              banner: {
+                sizes: [[300, 600], [160, 60]],
+              }
+            },
             mediaType: '',
             params: {
               sid: 'NDA=', ssat: 2
