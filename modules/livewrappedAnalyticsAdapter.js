@@ -60,6 +60,7 @@ let livewrappedAnalyticsAdapter = Object.assign(adapter({EMPTYURL, ANALYTICSTYPE
         bidResponse.cpm = args.cpm;
         bidResponse.ttr = args.timeToRespond;
         bidResponse.readyToSend = 1;
+        bidResponse.mediaType = args.mediaType == 'native' ? 2 : 1;
         if (!bidResponse.ttr) {
           bidResponse.ttr = time - bidResponse.start;
         }
@@ -178,7 +179,8 @@ function getResponses() {
           height: bid.height,
           cpm: bid.cpm,
           ttr: bid.ttr,
-          IsBid: bid.isBid
+          IsBid: bid.isBid,
+          mediaType: bid.mediaType
         });
       }
     });
@@ -204,6 +206,7 @@ function getWins() {
           width: bid.width,
           height: bid.height,
           cpm: bid.cpm,
+          mediaType: bid.mediaType
         });
       }
     });

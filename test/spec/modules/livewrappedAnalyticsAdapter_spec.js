@@ -32,6 +32,7 @@ const BID1 = {
   requestId: '2ecff0db240757',
   adId: '2ecff0db240757',
   auctionId: '25c6d7f5-699a-4bfc-87c9-996f915341fa',
+  mediaType: 'banner',
   getStatusCode() {
     return CONSTANTS.STATUS.GOOD;
   }
@@ -52,6 +53,7 @@ const BID3 = {
   requestId: '4ecff0db240757',
   adId: '4ecff0db240757',
   auctionId: '25c6d7f5-699a-4bfc-87c9-996f915341fa',
+  mediaType: 'banner',
   getStatusCode() {
     return CONSTANTS.STATUS.NO_BID;
   }
@@ -154,7 +156,8 @@ const ANALYTICS_MESSAGE = {
       height: 240,
       cpm: 1.1,
       ttr: 200,
-      IsBid: true
+      IsBid: true,
+      mediaType: 1
     },
     {
       timeStamp: 1519149562216,
@@ -164,7 +167,8 @@ const ANALYTICS_MESSAGE = {
       height: 250,
       cpm: 2.2,
       ttr: 300,
-      IsBid: true
+      IsBid: true,
+      mediaType: 1
     },
     {
       timeStamp: 1519149562216,
@@ -182,7 +186,8 @@ const ANALYTICS_MESSAGE = {
       bidder: 'livewrapped',
       width: 980,
       height: 240,
-      cpm: 1.1
+      cpm: 1.1,
+      mediaType: 1
     },
     {
       timeStamp: 1519149562216,
@@ -190,7 +195,8 @@ const ANALYTICS_MESSAGE = {
       bidder: 'livewrapped',
       width: 300,
       height: 250,
-      cpm: 2.2
+      cpm: 2.2,
+      mediaType: 1
     }
   ]
 };
