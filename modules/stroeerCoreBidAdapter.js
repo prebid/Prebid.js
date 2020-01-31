@@ -17,25 +17,13 @@ const _internalCrypter = new Crypter('1AE180CBC19A8CFEB7E1FCC000A10F5D892A887A2D
 const isSecureWindow = () => utils.getWindowSelf().location.protocol === 'https:';
 const isMainPageAccessible = () => getMostAccessibleTopWindow() === utils.getWindowTop();
 
-function makeBackwardsCompatible() {
-  // Make sure we can support v1.0.0
-
-  // introduced in v1.7.0-pre
-  if (!utils.getWindowTop) {
-    utils.getWindowTop = function () {
-      return window.top;
-    };
-  }
-
-  // introduced in v1.7.0-pre
-  if (!utils.getWindowSelf) {
-    utils.getWindowSelf = function () {
-      return window.self;
-    };
+function getTopWindowReferrer() {
+  try {
+    return utils.getWindowTop().document.referrer;
+  } catch (e) {
+    return utils.getWindowSelf().referrer;
   }
 }
-
-makeBackwardsCompatible();
 
 function getStroeerCore() {
   let win = utils.getWindowSelf();
@@ -167,7 +155,7 @@ export const spec = {
     const payload = {
       id: bidderRequest.auctionId,
       bids: [],
-      ref: utils.getTopWindowReferrer(),
+      ref: getTopWindowReferrer(),
       ssl: isSecureWindow(),
       mpa: isMainPageAccessible(),
       timeout: bidderRequest.timeout - (Date.now() - bidderRequest.auctionStart),

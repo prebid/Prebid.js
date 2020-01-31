@@ -191,7 +191,6 @@ describe('stroeerCore bid adapter', function () {
 
     sandBox.stub(utils, 'getWindowSelf').returns(win);
     sandBox.stub(utils, 'getWindowTop').returns(win);
-    sandBox.stub(utils, 'getTopWindowReferrer').returns(win.document.referrer);
 
     return win;
   }
@@ -211,7 +210,6 @@ describe('stroeerCore bid adapter', function () {
 
     sandBox.stub(utils, 'getWindowSelf').returns(win);
     sandBox.stub(utils, 'getWindowTop').returns(topWin);
-    sandBox.stub(utils, 'getTopWindowReferrer').returns(topWin.document.referrer);
 
     return {topWin, midWin, win};
   }
@@ -473,9 +471,6 @@ describe('stroeerCore bid adapter', function () {
 
         it('should skip ref field when unable to determine document referrer', () => {
           // i.e., empty if user came from bookmark, or web page using 'rel="noreferrer" on link, etc
-          utils.getTopWindowReferrer.restore();
-          sandbox.stub(utils, 'getTopWindowReferrer').returns('');
-
           buildBidderRequest();
 
           const serverRequestInfo = spec.buildRequests(bidderRequest.bids, bidderRequest);
