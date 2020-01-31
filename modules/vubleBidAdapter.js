@@ -109,9 +109,9 @@ export const spec = {
       };
 
       if (bidderRequest && bidderRequest.gdprConsent) {
-        data.gdprConsent = {
-          consentString: bidderRequest.gdprConsent.consentString,
-          gdprApplies: bidderRequest.gdprConsent.gdprApplies
+        data.gdpr_consent = {
+          consent_string: bidderRequest.gdprConsent.consentString,
+          gdpr_applies: bidderRequest.gdprConsent.gdprApplies
         }
       }
 

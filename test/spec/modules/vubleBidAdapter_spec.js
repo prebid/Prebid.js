@@ -216,9 +216,9 @@ describe('VubleAdapter', function () {
         env: 'net',
         bid_id: 'ijkl',
         adUnitCode: '',
-        gdprConsent: {
-          consentString: 'test',
-          gdprApplies: true
+        gdpr_consent: {
+          consent_string: 'test',
+          gdpr_applies: true
         }
       }
     };
