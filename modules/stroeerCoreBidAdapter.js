@@ -2,6 +2,7 @@ import {registerBidder} from '../src/adapters/bidderFactory';
 import includes from 'core-js/library/fn/array/includes';
 import find from 'core-js/library/fn/array/find';
 import {ajax} from '../src/ajax';
+import {BANNER} from '../src/mediaTypes';
 
 const utils = require('../src/utils');
 const url = require('../src/url');
@@ -117,6 +118,7 @@ function initUserConnect() {
 
 export const spec = {
   code: BIDDER_CODE,
+  supportedMediaTypes: [BANNER],
 
   isBidRequestValid: (function () {
     const validators = [];
@@ -132,6 +134,14 @@ export const spec = {
       }
     };
 
+    function isBanner(bidReq) {
+      return (!bidReq.mediaTypes && !bidReq.mediaType) ||
+        (bidReq.mediaTypes && bidReq.mediaTypes.banner) ||
+        bidReq.mediaType === BANNER;
+    }
+
+    validators.push(createValidator((bidReq) => isBanner(bidReq),
+      bidReq => `bid request ${bidReq.bidId} is not a banner`));
     validators.push(createValidator((bidReq) => typeof bidReq.params === 'object',
       bidReq => `bid request ${bidReq.bidId} does not have custom params`));
     validators.push(createValidator((bidReq) => utils.isStr(bidReq.params.sid),

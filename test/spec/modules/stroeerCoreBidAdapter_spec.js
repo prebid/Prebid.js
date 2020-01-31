@@ -1,6 +1,7 @@
 import {assert} from 'chai';
 import {spec} from 'modules/stroeerCoreBidAdapter';
 import * as utils from 'src/utils';
+import {BANNER, VIDEO} from '../../../src/mediaTypes';
 
 describe('stroeerCore bid adapter', function () {
   let sandbox;
@@ -60,7 +61,6 @@ describe('stroeerCore bid adapter', function () {
           sizes: [[300, 600], [160, 60]]
         }
       },
-      mediaType: '',
       params: {
         sid: 'NDA='
       }
@@ -84,6 +84,7 @@ describe('stroeerCore bid adapter', function () {
     request.bids.forEach((bid) => {
       bid.sizes = bid.mediaTypes.banner.sizes;
       delete bid.mediaTypes;
+      bid.mediaType = 'banner';
     });
     return request;
   };
@@ -264,7 +265,6 @@ describe('stroeerCore bid adapter', function () {
               sizes: [[300, 600], [160, 60]],
             }
           },
-          mediaType: '',
           params: {
             sid: 'NDA='
           }
@@ -288,6 +288,10 @@ describe('stroeerCore bid adapter', function () {
       assert.equal(2, queriedUnitCodes.length);
       assert.deepEqual(['div-1-alpha', 'div-2-alpha'], queriedUnitCodes);
     });
+  });
+
+  it('should only support BANNER mediaType', function () {
+    assert.deepEqual(spec.supportedMediaTypes, [BANNER]);
   });
 
   describe('bid validation entry point', () => {
@@ -327,6 +331,21 @@ describe('stroeerCore bid adapter', function () {
 
     it('should exclude bids without slot id param', () => {
       bidRequest.params.sid = undefined;
+      assert.isFalse(spec.isBidRequestValid(bidRequest));
+    });
+
+    it('should exclude non-banner bids', () => {
+      delete bidRequest.mediaTypes.banner;
+      bidRequest.mediaTypes.video = {
+        playerSize: [640, 480]
+      };
+
+      assert.isFalse(spec.isBidRequestValid(bidRequest));
+    });
+
+    it('should exclude non-banner, pre-version 3 bids', () => {
+      delete bidRequest.mediaTypes;
+      bidRequest.mediaType = VIDEO;
       assert.isFalse(spec.isBidRequestValid(bidRequest));
     });
   });
@@ -419,14 +438,13 @@ describe('stroeerCore bid adapter', function () {
         assert.deepEqual(serverRequestInfo.data, expectedJsonPayload);
       });
 
-      it ('should handle banner sizes for pre version 3', () => {
+      it('should handle banner sizes for pre version 3', () => {
         // Version 3 changes the way how banner sizes are accessed.
         // We can support backwards compatibility with version 2.x
         const bidReq = buildBidderRequestPreVersion3();
         const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq);
         assert.deepEqual(serverRequestInfo.data.bids[0].siz, [[300, 600], [160, 60]]);
         assert.deepEqual(serverRequestInfo.data.bids[1].siz, [[728, 90]]);
-
       });
 
       describe('optional fields', () => {
@@ -486,7 +504,6 @@ describe('stroeerCore bid adapter', function () {
                 sizes: [[300, 600], [160, 60]],
               }
             },
-            mediaType: '',
             params: {
               sid: 'NDA=', ssat: 2
             }
