@@ -120,7 +120,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
   let _winningBids = [];
   let _timelyBidders = new Set();
 
-  function addBidRequests(bidderRequests) { _bidderRequests = _bidderRequests.concat(bidderRequests) };
+  function addBidRequests(bidderRequests) { _bidderRequests = _bidderRequests.concat(bidderRequests); }
   function addBidReceived(bidsReceived) { _bidsReceived = _bidsReceived.concat(bidsReceived); }
   function addNoBid(noBid) { _noBids = _noBids.concat(noBid); }
 
@@ -175,7 +175,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
             const bids = _bidsReceived
               .filter(utils.bind.call(adUnitsFilter, this, adUnitCodes))
               .reduce(groupByPlacement, {});
-            _callback.apply($$PREBID_GLOBAL$$, [bids, timedOut]);
+            _callback.apply($$PREBID_GLOBAL$$, [bids, timedOut, _auctionId]);
             _callback = null;
           }
         } catch (e) {
@@ -213,62 +213,73 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
 
     let bidRequests = adapterManager.makeBidRequests(_adUnits, _auctionStart, _auctionId, _timeout, _labels);
     utils.logInfo(`Bids Requested for Auction with id: ${_auctionId}`, bidRequests);
-    bidRequests.forEach(bidRequest => {
-      addBidRequests(bidRequest);
-    });
-
-    let requests = {};
 
     if (bidRequests.length < 1) {
       utils.logWarn('No valid bid requests returned for auction');
       auctionDone();
     } else {
-      let call = {
-        bidRequests,
-        run: () => {
-          startAuctionTimer();
+      addBidderRequests.call({
+        dispatch: addBidderRequestsCallback,
+        context: this
+      }, bidRequests);
+    }
+  }
 
-          _auctionStatus = AUCTION_IN_PROGRESS;
+  /**
+   * callback executed after addBidderRequests completes
+   * @param {BidRequest[]} bidRequests
+   */
+  function addBidderRequestsCallback(bidRequests) {
+    bidRequests.forEach(bidRequest => {
+      addBidRequests(bidRequest);
+    });
 
-          events.emit(CONSTANTS.EVENTS.AUCTION_INIT, getProperties());
+    let requests = {};
+    let call = {
+      bidRequests,
+      run: () => {
+        startAuctionTimer();
 
-          let callbacks = auctionCallbacks(auctionDone, this);
-          adapterManager.callBids(_adUnits, bidRequests, function(...args) {
-            addBidResponse.apply({
-              dispatch: callbacks.addBidResponse,
-              bidderRequest: this
-            }, args)
-          }, callbacks.adapterDone, {
-            request(source, origin) {
-              increment(outstandingRequests, origin);
-              increment(requests, source);
+        _auctionStatus = AUCTION_IN_PROGRESS;
 
-              if (!sourceInfo[source]) {
-                sourceInfo[source] = {
-                  SRA: true,
-                  origin
-                };
-              }
-              if (requests[source] > 1) {
-                sourceInfo[source].SRA = false;
-              }
-            },
-            done(origin) {
-              outstandingRequests[origin]--;
-              if (queuedCalls[0]) {
-                if (runIfOriginHasCapacity(queuedCalls[0])) {
-                  queuedCalls.shift();
-                }
+        events.emit(CONSTANTS.EVENTS.AUCTION_INIT, getProperties());
+
+        let callbacks = auctionCallbacks(auctionDone, this);
+        adapterManager.callBids(_adUnits, bidRequests, function(...args) {
+          addBidResponse.apply({
+            dispatch: callbacks.addBidResponse,
+            bidderRequest: this
+          }, args)
+        }, callbacks.adapterDone, {
+          request(source, origin) {
+            increment(outstandingRequests, origin);
+            increment(requests, source);
+
+            if (!sourceInfo[source]) {
+              sourceInfo[source] = {
+                SRA: true,
+                origin
+              };
+            }
+            if (requests[source] > 1) {
+              sourceInfo[source].SRA = false;
+            }
+          },
+          done(origin) {
+            outstandingRequests[origin]--;
+            if (queuedCalls[0]) {
+              if (runIfOriginHasCapacity(queuedCalls[0])) {
+                queuedCalls.shift();
               }
             }
-          }, _timeout, onTimelyResponse);
-        }
-      };
-
-      if (!runIfOriginHasCapacity(call)) {
-        utils.logWarn('queueing auction due to limited endpoint capacity');
-        queuedCalls.push(call);
+          }
+        }, _timeout, onTimelyResponse);
       }
+    };
+
+    if (!runIfOriginHasCapacity(call)) {
+      utils.logWarn('queueing auction due to limited endpoint capacity');
+      queuedCalls.push(call);
     }
 
     function runIfOriginHasCapacity(call) {
@@ -343,6 +354,10 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
 export const addBidResponse = hook('async', function(adUnitCode, bid) {
   this.dispatch.call(this.bidderRequest, adUnitCode, bid);
 }, 'addBidResponse');
+
+export const addBidderRequests = hook('sync', function(bidderRequests) {
+  this.dispatch.call(this.context, bidderRequests);
+}, 'addBidderRequests');
 
 export const bidsBackCallback = hook('async', function (adUnits, callback) {
   if (callback) {
