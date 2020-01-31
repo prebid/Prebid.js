@@ -105,8 +105,15 @@ export const spec = {
         url: referer,
         env: bidRequest.params.env,
         bid_id: bidRequest.bidId,
-        adUnitCode: bidRequest.adUnitCode
+        adUnitCode: bidRequest.adUnitCode,
       };
+
+      if (bidderRequest && bidderRequest.gdprConsent) {
+        data.gdprConsent = {
+          consentString: bidderRequest.gdprConsent.consentString,
+          gdprApplies: bidderRequest.gdprConsent.gdprApplies
+        }
+      }
 
       return {
         method: 'POST',
