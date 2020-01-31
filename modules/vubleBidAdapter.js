@@ -105,7 +105,7 @@ export const spec = {
         url: referer,
         env: bidRequest.params.env,
         bid_id: bidRequest.bidId,
-        adUnitCode: bidRequest.adUnitCode,
+        adUnitCode: bidRequest.adUnitCode
       };
 
       if (bidderRequest && bidderRequest.gdprConsent) {
