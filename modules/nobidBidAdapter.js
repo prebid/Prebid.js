@@ -14,23 +14,11 @@ function log(msg, obj) {
 function nobidSetCookie(cname, cvalue, hours) {
   var d = new Date();
   d.setTime(d.getTime() + (hours * 60 * 60 * 1000));
-  var expires = "expires="+d.toUTCString();
-  var ccval = cname + "=" + cvalue + ";" + expires + ";path=/";
-  document.cookie = ccval;
+  var expires = 'expires=' + d.toUTCString();
+  utils.setCookie(cname, cvalue, expires);
 }
 function nobidGetCookie(cname) {
-  var name = cname + "=";
-  var ca = document.cookie.split(';');
-  for(var i = 0; i < ca.length; i++) {
-    var c = ca[i];
-    while (c.charAt(0) == ' ') {
-      c = c.substring(1);
-    }
-    if (c.indexOf(name) == 0) {
-      return c.substring(name.length, c.length);
-    }
-  }
-  return "";
+  return utils.getCookie(cname);
 }
 function nobidBuildRequests(bids, bidderRequest) {
   var serializeState = function(divIds, siteId, adunits) {
@@ -167,7 +155,9 @@ function nobidBuildRequests(bids, bidderRequest) {
   if (typeof window.nobid.refreshLimit !== 'undefined') {
     if (window.nobid.refreshLimit < window.nobid.refreshCount) return false;
   }
-  if (nobidGetCookie('_ublock') || nobidGetCookie('_ublock')!='') {
+  let ublock = nobidGetCookie('_ublock');
+  if (ublock) {
+    log('Request blocked for user. hours: ', ublock);
     return false;
   }
   /* DISCOVER SLOTS */
@@ -303,8 +293,8 @@ export const spec = {
      * @return {Bid[]} An array of bids which were nested inside the server.
      */
   interpretResponse: function(serverResponse, bidRequest) {
-    log('interpretResponse', serverResponse);
-    log('interpretResponse', bidRequest);
+    log('interpretResponse -> serverResponse', serverResponse);
+    log('interpretResponse -> bidRequest', bidRequest);
     return nobidInterpretResponse(serverResponse.body, bidRequest);
   },
 
