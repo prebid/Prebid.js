@@ -70,13 +70,11 @@ export const spec = {
     }
 
     // Digitrust Support
-    if (!digitrust) {
-      const bidRequestDigitrust = utils.deepAccess(validBidRequests[0], 'userId.digitrustid.data');
-      if (bidRequestDigitrust && (!bidRequestDigitrust.privacy || !bidRequestDigitrust.privacy.optout)) {
-        digitrust = {
-          id: bidRequestDigitrust.id,
-          keyv: bidRequestDigitrust.keyv
-        }
+    const bidRequestDigitrust = utils.deepAccess(validBidRequests[0], 'userId.digitrustid.data');
+    if (bidRequestDigitrust && (!bidRequestDigitrust.privacy || !bidRequestDigitrust.privacy.optout)) {
+      digitrust = {
+        id: bidRequestDigitrust.id,
+        keyv: bidRequestDigitrust.keyv
       }
     }
 
