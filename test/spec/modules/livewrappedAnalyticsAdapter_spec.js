@@ -322,4 +322,36 @@ describe('Livewrapped analytics adapter', function () {
       expect(message.rcv).to.equal(true);
     });
   });
+
+  describe('when given other endpoint', function () {
+    adapterManager.registerAnalyticsAdapter({
+      code: 'livewrapped',
+      adapter: livewrappedAnalyticsAdapter
+    });
+
+    beforeEach(function () {
+      adapterManager.enableAnalytics({
+        provider: 'livewrapped',
+        options: {
+          publisherId: 'CC411485-42BC-4F92-8389-42C503EE38D7',
+          endpoint: 'https://whitelabeled.com/analytics/10'
+        }
+      });
+    });
+
+    afterEach(function () {
+      livewrappedAnalyticsAdapter.disableAnalytics();
+    });
+
+    it('should call the endpoint', function () {
+      performStandardAuction();
+
+      clock.tick(BID_WON_TIMEOUT + 1000);
+
+      expect(server.requests.length).to.equal(1);
+      let request = server.requests[0];
+
+      expect(request.url).to.equal('https://whitelabeled.com/analytics/10');
+    });
+  });
 });
