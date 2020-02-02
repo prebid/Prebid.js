@@ -54,7 +54,6 @@ describe('AdGlare Adapter Tests', function () {
 
         expect(isValid).to.equal(false);
       });
-
     });
 
     describe('bid responses', function () {
@@ -94,7 +93,6 @@ describe('AdGlare Adapter Tests', function () {
 
         expect(bids).to.be.lengthOf(0);
       });
-
     });
   });
 });
