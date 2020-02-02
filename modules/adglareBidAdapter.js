@@ -7,12 +7,10 @@ const BIDDER_CODE = 'adglare';
 export const spec = {
   code: BIDDER_CODE,
   aliases: ['adglare'],
-
   isBidRequestValid: function (bid) {
     return !!(bid.params.domain && bid.params.zID && bid.params.type);
   },
-
-  buildRequests: function (validBidRequests) {
+  buildRequests: function (validBidRequests, bidderRequest) {
     let i;
     let j;
     let bidRequest;
@@ -28,14 +26,13 @@ export const spec = {
     let timeout = bidderRequest.timeout || 0;
     let referer = bidderRequest.refererInfo.referer || '';
     let reachedtop = bidderRequest.refererInfo.reachedTop || '';
-
     for (i = 0; i < validBidRequests.length; i++) {
-      bidRequest = validBidRequests[i];      
+      bidRequest = validBidRequests[i];
       zID = bidRequest.params.zID;
       domain = bidRequest.params.domain;
       keywords = bidRequest.params.keywords || '';
       type = bidRequest.params.type;
-    
+
       // Build ad unit sizes
       if (bidRequest.mediaTypes && bidRequest.mediaTypes[type]) {
         for (j in bidRequest.mediaTypes[type].sizes) {
@@ -46,7 +43,7 @@ export const spec = {
           sizes.push(bidRequest.sizes[j].join('x'));
         }
       }
-      
+
       // Build URL
       url = 'https://' + domain + '/?' + encodeURIComponent(zID) + '&pbjs&pbjs_version=1';
       url += '&sizes=' + encodeURIComponent(sizes.join(','));
@@ -59,7 +56,7 @@ export const spec = {
       if (keywords !== '') {
         url += '&keywords=' + encodeURIComponent(keywords);
       }
-      
+
       // Push server request
       serverRequests.push({
         method: 'GET',
@@ -70,13 +67,12 @@ export const spec = {
     }
     return serverRequests;
   },
-
   interpretResponse: function (serverResponse, request) {
     const bidObj = request.bidRequest;
     let bidResponses = [];
     let bidResponse = {};
-    serverResponse = serverResponse.body;    
-    
+    serverResponse = serverResponse.body;
+
     if (serverResponse && serverResponse.status == 'OK' && bidObj) {
       bidResponse.requestId = bidObj.bidId;
       bidResponse.bidderCode = bidObj.bidder;
