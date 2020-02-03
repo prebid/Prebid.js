@@ -31,7 +31,7 @@ export const spec = {
       return [];
     }
     return validBidRequests.map(bidRequest => {
-      const sizes = utils.parseSizesInput(bidRequest.sizes)[0];
+      const sizes = utils.parseSizesInput(bidRequest.params.size || bidRequest.sizes)[0];
       const width = sizes.split('x')[0];
       const height = sizes.split('x')[1];
       const payload = {

@@ -6,8 +6,8 @@ import { registerBidder } from '../src/adapters/bidderFactory';
 const constants = require('../src/constants.json');
 
 const BIDDER_CODE = 'pubmaticServer';
-const ENDPOINT = '//ow.pubmatic.com/openrtb/2.5/';
-const COOKIE_SYNC = '//ow.pubmatic.com/cookie_sync/';
+const ENDPOINT = 'https://ow.pubmatic.com/openrtb/2.5/';
+const COOKIE_SYNC = 'https://ow.pubmatic.com/cookie_sync/?sec=1'; // Set sec=1 to identify secure flag changes at server side
 const CURRENCY = 'USD';
 const AUCTION_TYPE = 1; // PubMaticServer just picking highest bidding bid from the partners configured
 const UNDEFINED = undefined;
@@ -124,7 +124,7 @@ function _createImpressionObject(bid, conf) {
     id: bid.bidId,
     tagid: bid.params.adUnitId,
     bidfloor: _parseSlotParam('kadfloor', bid.params.kadfloor),
-    secure: window.location.protocol === 'https:' ? 1 : 0,
+    secure: 1,
     banner: {
       pos: 0,
       topframe: utils.inIframe() ? 0 : 1,
@@ -321,6 +321,11 @@ export const spec = {
       };
     }
 
+    // CCPA
+    if (bidderRequest && bidderRequest.uspConsent) {
+      utils.deepSetValue(payload, 'regs.ext.us_privacy', bidderRequest.uspConsent);
+    }
+
     payload.device.geo = payload.user.geo;
     payload.site.page = conf.kadpageurl || payload.site.page;
     payload.site.domain = utils.getTopWindowHostName();
@@ -398,7 +403,8 @@ export const spec = {
                         ad: firstSummary ? bid.adm : '',
                         cpm: (parseFloat(summary.bid) || 0).toFixed(2),
                         serverSideResponseTime: partnerResponseTimeObj[summary.bidder] || 0,
-                        mi: miObj.hasOwnProperty(summary.bidder) ? miObj[summary.bidder] : UNDEFINED
+                        mi: miObj.hasOwnProperty(summary.bidder) ? miObj[summary.bidder] : UNDEFINED,
+                        regexPattern: summary.regex || undefined
                       }
                       break;
                     default:
@@ -434,7 +440,9 @@ export const spec = {
                                 - setting serverSideResponseTime as -1, in cases where errorCode is 1,2 or 6. In these cases we do not log this bid in logger
                                 - explicitly setting serverSideResponseTime = 0, where errorCode is 5, i.e. PARTNER_TIMEDOUT_ERROR
                             */
-                            mi: miObj.hasOwnProperty(summary.bidder) ? miObj[summary.bidder] : undefined
+                            mi: miObj.hasOwnProperty(summary.bidder) ? miObj[summary.bidder] : undefined,
+                            regexPattern: summary.regex || undefined
+
                           }
                         }
                       });
@@ -456,7 +464,7 @@ export const spec = {
   /**
   * Register User Sync.
   */
-  getUserSyncs: (syncOptions, serverResponses, gdprConsent) => {
+  getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent) => {
     let urls = [];
     var bidders = config.getConfig('userSync.enabledBidders');
     var UUID = utils.getUniqueIdentifierStr();
@@ -468,6 +476,10 @@ export const spec = {
     if (gdprConsent) {
       data['gdpr'] = gdprConsent.gdprApplies ? 1 : 0;
       data['gdpr_consent'] = encodeURIComponent(gdprConsent.consentString || '');
+    }
+    // CCPA
+    if (uspConsent) {
+      data['us_privacy'] = encodeURIComponent(uspConsent);
     }
 
     ajax.ajax(COOKIE_SYNC, cookieSyncCallBack, JSON.stringify(data), {

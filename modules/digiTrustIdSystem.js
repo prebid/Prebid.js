@@ -342,7 +342,9 @@ export const digiTrustIdSubmodule = {
       utils.logError('DigiTrust ID submodule decode error');
     }
   },
-  getId: getDigiTrustId,
+  getId: function (configParams) {
+    return {callback: getDigiTrustId(configParams)};
+  },
   _testInit: surfaceTestHook
 };
 

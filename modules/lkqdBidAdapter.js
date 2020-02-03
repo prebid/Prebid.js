@@ -30,7 +30,7 @@ function isBidRequestValid(bidRequest) {
   return false;
 }
 
-function buildRequests(validBidRequests) {
+function buildRequests(validBidRequests, bidderRequest) {
   let bidRequests = [];
 
   for (let i = 0; i < validBidRequests.length; i++) {
@@ -138,6 +138,8 @@ function buildRequests(validBidRequests) {
       }
       if (bidRequest.params.hasOwnProperty('pageurl') && bidRequest.params.pageurl != null) {
         sspData.pageurl = bidRequest.params.pageurl;
+      } else if (bidderRequest && bidderRequest.refererInfo) {
+        sspData.pageurl = encodeURIComponent(bidderRequest.refererInfo.referer);
       }
       if (bidRequest.params.hasOwnProperty('contentId') && bidRequest.params.contentId != null) {
         sspData.contentid = bidRequest.params.contentId;

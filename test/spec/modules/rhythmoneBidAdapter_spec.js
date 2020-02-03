@@ -702,6 +702,46 @@ describe('rhythmone adapter tests', function () {
     expect(openrtbRequest.imp[0].secure).to.equal(1);
   });
 
+  it('should pass schain', function() {
+    var schain = {
+      'ver': '1.0',
+      'complete': 1,
+      'nodes': [{
+        'asi': 'indirectseller.com',
+        'sid': '00001',
+        'hp': 1
+      }, {
+        'asi': 'indirectseller-2.com',
+        'sid': '00002',
+        'hp': 1
+      }]
+    };
+    var bidRequestList = [
+      {
+        'bidder': 'rhythmone',
+        'params': {
+          'placementId': 'myplacement',
+          'zone': 'myzone',
+          'path': 'mypath'
+        },
+        'mediaType': 'banner',
+        'adUnitCode': 'div-gpt-ad-1438287399331-0',
+        'sizes': [[300, 250]],
+        'transactionId': 'd7b773de-ceaa-484d-89ca-d9f51b8d61ec',
+        'bidderRequestId': '418b37f85e772c',
+        'auctionId': '18fd8b8b0bd757',
+        'bidRequestsCount': 1,
+        'bidId': '51ef8751f9aead',
+        'schain': schain
+      }
+    ];
+
+    var bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest);
+    const openrtbRequest = JSON.parse(bidRequest.data);
+
+    expect(openrtbRequest.source.ext.schain).to.deep.equal(schain);
+  });
+
   describe('misc interpretResponse', function () {
     it('No bid response', function() {
       var noBidResponse = r1adapter.interpretResponse({
