@@ -5,11 +5,9 @@ import * as utils from '../src/utils';
 import {ajax} from '../src/ajax';
 
 const analyticsType = 'endpoint';
-let userAgent = navigator.platform + ', ' + (browserIsFirefox() || browserIsEdge() || browserIsChrome() || browserIsSafari());
 
 let handlerRequest = [];
 let handlerResponse = [];
-let events = [];
 let host = '';
 
 function bidRequestedHandler(args) {
@@ -20,10 +18,10 @@ function bidRequestedHandler(args) {
       bidder: bid.bidder,
       bid_id: bid.bidId,
       auctionId: args.auctionId,
-      userAgent: userAgent,
+      userAgent: navigator.platform + ', ' + (browserIsFirefox() || browserIsEdge() || browserIsChrome() || browserIsSafari()),
       auctionStart: new Date(args.auctionStart).toJSON(),
       domain: args.refererInfo.referer,
-      pid: atsAnalytics.context.pid,
+      pid: atsAnalyticsAdapter.context.pid,
     };
   });
   return requests;
@@ -83,39 +81,22 @@ function callHandler(evtype, args) {
   }
   if (evtype === CONSTANTS.EVENTS.AUCTION_END) {
     if (handlerRequest.length) {
+      let events = [];
       if (handlerResponse.length) {
         events = handlerRequest.filter(request => handlerResponse.filter(function(response) {
           if (request.bid_id === response.bid_id) {
             Object.assign(request, response);
           }
         }));
-        // console.log(result);
-        /* handlerRequest.forEach(function (request) {
-          handlerResponse.forEach(function (response) {
-            if (request.bid_id === response.bid_id) {
-              let event = Object.assign(request, response);
-              events.push(event);
-            } else {
-              events.push(request);
-            }
-          })
-        }); */
       } else {
         events = handlerRequest;
       }
-      // let uniqueEvents = [...new Set(events)];
-      let dataToSend = {'Data': events};
-      console.log('Events to send: ', dataToSend);
-      // send data to ats analytic endpoint
-      try {
-        let strJSON = JSON.stringify(dataToSend);
-        ajax(atsAnalytics.context.host, function() {}, strJSON, {method: 'POST', contentType: 'application/json'});
-      } catch (err) {}
+      atsAnalyticsAdapter.context.events = events;
     }
   }
 }
 
-let atsAnalytics = Object.assign(adapter(
+let atsAnalyticsAdapter = Object.assign(adapter(
   {
     host,
     analyticsType
@@ -125,37 +106,48 @@ let atsAnalytics = Object.assign(adapter(
     if (typeof args !== 'undefined') {
       callHandler(eventType, args);
     }
+    if (eventType === CONSTANTS.EVENTS.AUCTION_END) {
+      // send data to ats analytic endpoint
+      try {
+        let dataToSend = {'Data': atsAnalyticsAdapter.context.events};
+        console.log('Events to send: ', dataToSend);
+        let strJSON = JSON.stringify(dataToSend);
+        ajax(atsAnalyticsAdapter.context.host, function () {
+        }, strJSON, {method: 'POST', contentType: 'application/json'});
+      } catch (err) {
+      }
+    }
   }
 });
 
 // save the base class function
-atsAnalytics.originEnableAnalytics = atsAnalytics.enableAnalytics;
+atsAnalyticsAdapter.originEnableAnalytics = atsAnalyticsAdapter.enableAnalytics;
 
 // override enableAnalytics so we can get access to the config passed in from the page
-atsAnalytics.enableAnalytics = function (config) {
+atsAnalyticsAdapter.enableAnalytics = function (config) {
   if (!config.options.pid) {
     utils.logError('Publisher ID (pid) option is not defined. Analytics won\'t work');
     return;
   }
 
-  if (!config.options.pid) {
+  if (!config.options.host) {
     utils.logError('Host option is not defined. Analytics won\'t work');
     return;
   }
 
   host = config.options.host;
-  atsAnalytics.context = {
-    // events : []
+  atsAnalyticsAdapter.context = {
+    events: [],
     host: config.options.host,
     pid: config.options.pid
   };
   let initOptions = config.options;
-  atsAnalytics.originEnableAnalytics(initOptions); // call the base class function
+  atsAnalyticsAdapter.originEnableAnalytics(initOptions); // call the base class function
 };
 
 adaptermanager.registerAnalyticsAdapter({
-  adapter: atsAnalytics,
+  adapter: atsAnalyticsAdapter,
   code: 'atsAnalytics'
 });
 
-export default atsAnalytics;
+export default atsAnalyticsAdapter;
