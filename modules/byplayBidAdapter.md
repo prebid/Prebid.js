@@ -25,7 +25,7 @@ ByPlay bid adapter supports Video.
       },
       bids: [
         {
-          bidder: 'byplay'
+          bidder: 'byplay',
           params: {
             sectionId: '7986',
             env: 'dev'
