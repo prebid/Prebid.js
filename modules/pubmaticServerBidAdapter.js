@@ -321,6 +321,11 @@ export const spec = {
       };
     }
 
+    // CCPA
+    if (bidderRequest && bidderRequest.uspConsent) {
+      utils.deepSetValue(payload, 'regs.ext.us_privacy', bidderRequest.uspConsent);
+    }
+
     payload.device.geo = payload.user.geo;
     payload.site.page = conf.kadpageurl || payload.site.page;
     payload.site.domain = utils.getTopWindowHostName();
@@ -459,7 +464,7 @@ export const spec = {
   /**
   * Register User Sync.
   */
-  getUserSyncs: (syncOptions, serverResponses, gdprConsent) => {
+  getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent) => {
     let urls = [];
     var bidders = config.getConfig('userSync.enabledBidders');
     var UUID = utils.getUniqueIdentifierStr();
@@ -471,6 +476,10 @@ export const spec = {
     if (gdprConsent) {
       data['gdpr'] = gdprConsent.gdprApplies ? 1 : 0;
       data['gdpr_consent'] = encodeURIComponent(gdprConsent.consentString || '');
+    }
+    // CCPA
+    if (uspConsent) {
+      data['us_privacy'] = encodeURIComponent(uspConsent);
     }
 
     ajax.ajax(COOKIE_SYNC, cookieSyncCallBack, JSON.stringify(data), {
