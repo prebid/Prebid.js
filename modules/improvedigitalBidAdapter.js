@@ -328,7 +328,7 @@ function getNormalizedNativeAd(rawNative) {
     native.javascriptTrackers = rawNative.jstracker;
   }
   if (rawNative.link) {
-    native.clickUrl = rawNative.link.url;
+    native.clickUrl = encodeURIComponent(rawNative.link.url);
     native.clickTrackers = rawNative.link.clicktrackers;
   }
   if (rawNative.privacy) {
