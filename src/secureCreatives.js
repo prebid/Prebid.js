@@ -15,7 +15,7 @@ import includes from 'core-js/library/fn/array/includes';
 const BID_WON = EVENTS.BID_WON;
 
 export function listenMessagesFromCreative() {
-  addEventListener('message', receiveMessage, false);
+  window.addEventListener('message', receiveMessage, false);
 }
 
 function receiveMessage(ev) {

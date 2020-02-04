@@ -115,7 +115,8 @@ function _buildPostBody(bidRequests) {
 
   let eids = [
     ...getUnifiedIdEids(bidRequests),
-    ...getIdentityLinkEids(bidRequests)
+    ...getIdentityLinkEids(bidRequests),
+    ...getCriteoEids(bidRequests)
   ];
 
   if (eids.length > 0) {
@@ -138,6 +139,10 @@ function getUnifiedIdEids(bidRequests) {
 
 function getIdentityLinkEids(bidRequests) {
   return getEids(bidRequests, 'idl_env', 'liveramp.com', 'idl');
+}
+
+function getCriteoEids(bidRequests) {
+  return getEids(bidRequests, 'criteoId', 'criteo.com', 'criteoId');
 }
 
 function getEids(bidRequests, type, source, rtiPartner) {
