@@ -125,6 +125,8 @@ function evaluateSizeConfig(configs) {
     ) {
       let ruleMatch = false;
 
+      // TODO: (Prebid - 4.0) Remove empty mediaQuery string check. Disallow empty mediaQuery in sizeConfig.
+      // Refer: https://github.com/prebid/Prebid.js/pull/4691, https://github.com/prebid/Prebid.js/issues/4810 for more details.
       if (config.mediaQuery === '') {
         ruleMatch = true;
       } else {
