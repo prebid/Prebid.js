@@ -1,8 +1,7 @@
-import {expect} from 'chai';
 import atsAnalyticsAdapter from '../../../modules/atsAnalyticsAdapter';
-import includes from 'core-js/library/fn/array/includes';
-import {parse as parseURL} from '../../../src/url';
-let adapterManager = require('src/adapterManager').default;
+import { expect } from 'chai';
+import adapterManager from 'src/adapterManager.js';
+import eplAnalyticsAdapter from '../../../modules/eplanningAnalyticsAdapter';
 let events = require('src/events');
 let constants = require('src/constants.json');
 
@@ -13,86 +12,122 @@ describe('ats analytics adapter', function () {
   beforeEach(function () {
     xhr = sinon.useFakeXMLHttpRequest();
     requests = [];
-    xhr.onCreate = request => { requests.push(request) };
+    xhr.onCreate = request => requests.push(request);
     sinon.stub(events, 'getEvents').returns([]);
   });
 
   afterEach(function () {
     xhr.restore();
     events.getEvents.restore();
-    atsAnalyticsAdapter.disableAnalytics();
   });
 
   describe('track', function () {
-    it('builds and sends auction data', function () { /* sinon.spy(atsAnalyticsAdapter, 'track');
+    let initOptions = {
+      pid: '10433394',
+      host: 'https://example.com/dev',
+    };
+    let auctionTimestamp = 1496510254326;
 
-      let auctionTimestamp = 1496510254313;
-      let pauctionId = '5018eb39-f900-4370-b71e-3bb5b48d324f';
-      let pbidderCode = 'adapter';
+    // prepare general auction - request
+    let bidRequest = {
+      'bidderCode': 'appnexus',
+      'auctionStart': 1580739265161,
+      'bids': [{
+        'bidder': 'appnexus',
+        'params': {
+          'placementId': '10433394'
+        },
+        'userId': {
+          'idl_env': 'AmThEbO1ssIWjrNdU4noT4ZFBILSVBBYHbipOYt_JP40e5nZdXns2g'
+        },
+        'adUnitCode': 'div-gpt-ad-1438287399331-0',
+        'transactionId': '2f481ff1-8d20-4c28-8e36-e384e9e3eec6',
+        'sizes': '300x250,300x600',
+        'bidId': '30c77d079cdf17'
+      }],
+      'refererInfo': {
+        'referer': 'https://example.com/dev'
+      },
+      'auctionId': 'a5b849e5-87d7-4205-8300-d063084fcfb7',
+    };
+    // prepare general auction - response
+    let bidResponse = {
+      'height': 250,
+      'statusMessage': 'Bid available',
+      'adId': '2eddfdc0c791dc',
+      'mediaType': 'banner',
+      'source': 'client',
+      'requestId': '30c77d079cdf17',
+      'cpm': 0.5,
+      'creativeId': 29681110,
+      'currency': 'USD',
+      'netRevenue': true,
+      'ttl': 300,
+      'auctionId': 'a5b849e5-87d7-4205-8300-d063084fcfb7',
+      'responseTimestamp': 1580739791978,
+      'requestTimestamp': 1580739265164,
+      'bidder': 'appnexus',
+      'adUnitCode': 'div-gpt-ad-1438287399331-0',
+      'timeToRespond': 2510,
+      'size': '300x250'
+    };
 
-      let initOptions = {
-        pid: '12345',
-        host: 'https://7j71m9ig80.execute-api.us-east-1.amazonaws.com/dev',
-      };
+    // what we expect after general auction
+    let expectedAfterBid = {
+      'Data': [{
+        'has_envelope': true,
+        'bidder': 'appnexus',
+        'bid_id': '30c77d079cdf17',
+        'auction_id': 'a5b849e5-87d7-4205-8300-d063084fcfb7',
+        'user_agent': 'Linux x86_64, false',
+        'auction_start': '2020-02-03T14:14:25.161Z',
+        'domain': 'https://example.com/dev',
+        'pid': '10433394',
+        'response_time_stamp': '2020-02-03T14:23:11.978Z',
+        'cpm': 0.5,
+        'currency': 'USD',
+        'net_revenue': true
+      }]
+    };
 
-      const bidRequest = {
-        bidderCode: pbidderCode,
-        auctionId: pauctionId,
-        bidderRequestId: '1a6fc81528d0f6',
-        bids: [{
-          bidder: pbidderCode,
-          placementCode: 'container-1',
-          bidId: '208750227436c1',
-          bidderRequestId: '1a6fc81528d0f6',
-          auctionId: pauctionId,
-          startTime: 1509369418389,
-          sizes: [[300, 250]],
-        }],
-        auctionStart: 1509369418387,
-        timeout: 3000,
-        start: 1509369418389
-      };
+    // lets simulate that some bidders timeout
+    let bidTimeoutArgsV1 = [
+      {
+        bidId: '2baa51527bd015',
+        bidder: 'bidderOne',
+        adUnitCode: '/19968336/header-bid-tag-0',
+        auctionId: '66529d4c-8998-47c2-ab3e-5b953490b98f'
+      },
+      {
+        bidId: '6fe3b4c2c23092',
+        bidder: 'bidderTwo',
+        adUnitCode: '/19968336/header-bid-tag-0',
+        auctionId: '66529d4c-8998-47c2-ab3e-5b953490b98f'
+      }
+    ];
 
-      const bidResponse = {
-        bidderCode: pbidderCode,
-        adId: '208750227436c1',
-        cpm: 0.015,
-        auctionId: pauctionId,
-        responseTimestamp: 1509369418832,
-        requestTimestamp: 1509369418389,
-        bidder: pbidderCode,
-        timeToRespond: 443,
-        size: '300x250',
-        width: 300,
-        height: 250,
-      };
+    adapterManager.registerAnalyticsAdapter({
+      code: 'atsAnalytics',
+      adapter: atsAnalyticsAdapter
+    });
 
-      let bidTimeout = [
-        {
-          bidId: '208750227436c1',
-          bidder: pbidderCode,
-          auctionId: pauctionId
-        }
-      ];
-
-      adapterManager.registerAnalyticsAdapter({
-        code: 'atsAnalytics',
-        adapter: atsAnalyticsAdapter
-      });
-
+    beforeEach(function () {
       adapterManager.enableAnalytics({
         provider: 'atsAnalytics',
         options: initOptions
       });
+      requests = [];
+    });
 
-      // Emit the events with the "real" arguments
+    afterEach(function () {
+      atsAnalyticsAdapter.disableAnalytics();
+    });
 
+    it('builds and sends request and response data', function () {
       // Step 1: Send auction init event
       events.emit(constants.EVENTS.AUCTION_INIT, {
-        auctionId: pauctionId,
         timestamp: auctionTimestamp
       });
-
       // Step 2: Send bid requested event
       events.emit(constants.EVENTS.BID_REQUESTED, bidRequest);
 
@@ -100,41 +135,20 @@ describe('ats analytics adapter', function () {
       events.emit(constants.EVENTS.BID_RESPONSE, bidResponse);
 
       // Step 4: Send bid time out event
-      events.emit(constants.EVENTS.BID_TIMEOUT, bidTimeout);
+      events.emit(constants.EVENTS.BID_TIMEOUT, bidTimeoutArgsV1);
 
-      // Step 5: Send auction bid won event
-      events.emit(constants.EVENTS.BID_WON, {
-        adId: 'adIdData',
-        ad: 'adContent',
-        auctionId: pauctionId,
-        width: 300,
-        height: 250
-      });
-
-      // Step 6: Send auction end event
-      events.emit(constants.EVENTS.AUCTION_END, {auctionId: pauctionId});
-
-      // Step 7: Find the request data sent (filtering other hosts)
-      requests = requests.filter(req => {
-        return req.url.indexOf(initOptions.host) > -1;
-      });
+      // Step 5: Send auction end event
+      events.emit(constants.EVENTS.AUCTION_END, {});
 
       expect(requests.length).to.equal(1);
 
-      expect(includes([initOptions.host + initOptions.pid], requests[0].url));
-      expect(includes(['https://7j71m9ig80.execute-api.us-east-1.amazonaws.com/dev'], requests[0].url));
+      let realAfterBid = JSON.parse(requests[0].requestBody);
 
-      let info = requests[0].url;
-      let purl = parseURL(info);
-      let atsData = JSON.parse(decodeURIComponent(purl.search.d));
+      expect(realAfterBid).to.deep.equal(expectedAfterBid);
 
-      // Step 8 check that 6 events were sent
-      expect(atsData.length).to.equal(6);
-
-      // Step 10 check that the host to send the ajax request is configurable via options
+      // check that the host and publisher ID is configured via options
       expect(atsAnalyticsAdapter.context.host).to.equal(initOptions.host);
-      // check that pid is define in config
-      expect(atsAnalyticsAdapter.context.pid).to.equal(initOptions.pid); */
+      expect(atsAnalyticsAdapter.context.pid).to.equal(initOptions.pid);
     })
   })
 })

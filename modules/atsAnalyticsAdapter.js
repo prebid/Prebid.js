@@ -17,9 +17,9 @@ function bidRequestedHandler(args) {
       has_envelope: bid.userId ? !!bid.userId.idl_env : false,
       bidder: bid.bidder,
       bid_id: bid.bidId,
-      auctionId: args.auctionId,
-      userAgent: navigator.platform + ', ' + (browserIsFirefox() || browserIsEdge() || browserIsChrome() || browserIsSafari()),
-      auctionStart: new Date(args.auctionStart).toJSON(),
+      auction_id: args.auctionId,
+      user_agent: navigator.platform + ', ' + (browserIsFirefox() || browserIsEdge() || browserIsChrome() || browserIsSafari()),
+      auction_start: new Date(args.auctionStart).toJSON(),
       domain: args.refererInfo.referer,
       pid: atsAnalyticsAdapter.context.pid,
     };
@@ -33,7 +33,7 @@ function bidResponseHandler(args) {
     response_time_stamp: new Date(args.responseTimestamp).toJSON(),
     currency: args.currency,
     cpm: args.cpm,
-    netRevenue: args.netRevenue
+    net_revenue: args.netRevenue
   };
 }
 
