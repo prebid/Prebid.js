@@ -44,7 +44,7 @@ describe('iasBidAdapter is an adapter that', function () {
     describe('given bid requests, returns a `ServerRequest` instance that', function () {
       let bidRequests, IAS_HOST;
       beforeEach(function () {
-        IAS_HOST = '//pixel.adsafeprotected.com/services/pub';
+        IAS_HOST = 'https://pixel.adsafeprotected.com/services/pub';
         bidRequests = [
           {
             adUnitCode: 'one-div-id',

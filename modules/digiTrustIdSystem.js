@@ -24,6 +24,7 @@ function isInitialized() {
   if (window.DigiTrust == null) {
     return false;
   }
+  // eslint-disable-next-line no-undef
   return DigiTrust.isClient; // this is set to true after init
 }
 
@@ -39,6 +40,7 @@ var noop = function () {
 
 const MAX_RETRIES = 2;
 const DT_ID_SVC = 'https://prebid.digitru.st/id/v1';
+const DT_VENDOR_ID = 64; // cmp gvlVendorId
 
 var isFunc = function (fn) {
   return typeof (fn) === 'function';
@@ -110,7 +112,7 @@ function initDigitrustFacade(config) {
       inter.callCount++;
 
       // wrap the initializer callback, if present
-      var checkCallInitializeCb = function (idResponse) {
+      var checkAndCallInitializeCb = function (idResponse) {
         if (inter.callCount <= 1 && isFunc(inter.initCallback)) {
           try {
             inter.initCallback(idResponse);
@@ -120,7 +122,7 @@ function initDigitrustFacade(config) {
         }
       }
 
-      if (!isMemberIdValid) {
+      if (!isMemberIdValid(obj.member)) {
         if (!isAsync) {
           return errResp
         } else {
@@ -130,9 +132,9 @@ function initDigitrustFacade(config) {
       }
 
       if (_savedId != null) {
-        checkCallInitializeCb(_savedId);
         if (isAsync) {
-          cb(_savedId);
+          checkAndCallInitializeCb(_savedId);
+          //          cb(_savedId);
           return;
         } else {
           return _savedId;
@@ -150,16 +152,21 @@ function initDigitrustFacade(config) {
             _savedId = idResult;
           } catch (ex) {
             idResult.success = false;
+            delete idResult.identity;
           }
-          checkCallInitializeCb(idResult);
-          cb(idResult);
+          checkAndCallInitializeCb(idResult);
         },
         fail: function (statusErr, result) {
           utils.logError('DigiTrustId API error: ' + statusErr);
         }
       }
 
-      callApi(opts);
+      // check gdpr vendor here. Full DigiTrust library has vendor check built in
+      gdprConsent.hasConsent(null, function (hasConsent) {
+        if (hasConsent) {
+          callApi(opts);
+        }
+      })
 
       if (!isAsync) {
         return errResp; // even if it will be successful later, without a callback we report a "failure in this moment"
@@ -188,6 +195,43 @@ var isMemberIdValid = function (memberId) {
     return false;
   }
 };
+
+/**
+ * DigiTrust consent handler for GDPR and __cmp.
+ * */
+var gdprConsent = {
+  hasConsent: function (options, consentCb) {
+    options = options || { consentTimeout: 1500 };
+    var stopTimer;
+    var processed = false;
+    var consentAnswer = false;
+    if (typeof (window.__cmp) !== 'undefined') {
+      stopTimer = setTimeout(function () {
+        consentAnswer = true;
+        consentCb(consentAnswer);
+        processed = true;
+      }, options.consentTimeout);
+
+      window.__cmp('ping', null, function(pingAnswer) {
+        if (pingAnswer.gdprAppliesGlobally) {
+          window.__cmp('getVendorConsents', [DT_VENDOR_ID], function (result) {
+            if (processed) { return; } // timeout before cmp answer, cancel
+            clearTimeout(stopTimer);
+            var myconsent = result.vendorConsents[DT_VENDOR_ID];
+            consentCb(myconsent);
+          });
+        } else {
+          if (processed) { return; } // timeout before cmp answer, cancel
+          clearTimeout(stopTimer);
+          consentAnswer = true;
+          consentCb(consentAnswer);
+        }
+      });
+    }
+    consentAnswer = true;
+    consentCb(consentAnswer);
+  }
+}
 
 /**
  * Encapsulation of needed info for the callback return.
@@ -240,6 +284,7 @@ var ResultWrapper = function (opts) {
   this.retryId = 0;
 
   this.executeIdRequest = function (configParams) {
+    // eslint-disable-next-line no-undef
     DigiTrust.getUser({ member: 'prebid' }, function (idResult) {
       me.idObj = idResult;
       var cb = function () {
@@ -321,6 +366,7 @@ export function surfaceTestHook() {
 }
 
 testHook.initDigitrustFacade = initDigitrustFacade; // expose for unit tests
+testHook.gdpr = gdprConsent;
 
 /** @type {Submodule} */
 export const digiTrustIdSubmodule = {

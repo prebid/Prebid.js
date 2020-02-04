@@ -38,7 +38,7 @@ describe('AdvenueAdapter', function () {
       expect(serverRequest.method).to.equal('POST');
     });
     it('Returns valid URL', function () {
-      expect(serverRequest.url).to.equal('//ssp.advenuemedia.co.uk/?c=o&m=multi');
+      expect(serverRequest.url).to.equal('https://ssp.advenuemedia.co.uk/?c=o&m=multi');
     });
     it('Returns valid data if array of bids is valid', function () {
       let data = serverRequest.data;
