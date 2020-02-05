@@ -9,6 +9,24 @@ describe('IndexexchangeAdapter', function () {
   const VIDEO_ENDPOINT_VERSION = 8.1;
   const BANNER_ENDPOINT_VERSION = 7.2;
 
+  const SAMPLE_SCHAIN = {
+    'ver': '1.0',
+    'complete': 1,
+    'nodes': [
+      {
+        'asi': 'indirectseller.com',
+        'sid': '00001',
+        'hp': 1
+      },
+
+      {
+        'asi': 'indirectseller-2.com',
+        'sid': '00002',
+        'hp': 2
+      }
+    ]
+  };
+
   const DEFAULT_BANNER_VALID_BID = [
     {
       bidder: 'ix',
@@ -26,7 +44,8 @@ describe('IndexexchangeAdapter', function () {
       transactionId: '173f49a8-7549-4218-a23c-e7ba59b47229',
       bidId: '1a2b3c4d',
       bidderRequestId: '11a22b33c44d',
-      auctionId: '1aa2bb3cc4dd'
+      auctionId: '1aa2bb3cc4dd',
+      schain: SAMPLE_SCHAIN
     }
   ];
 
@@ -56,7 +75,8 @@ describe('IndexexchangeAdapter', function () {
       transactionId: '173f49a8-7549-4218-a23c-e7ba59b47230',
       bidId: '1a2b3c4e',
       bidderRequestId: '11a22b33c44e',
-      auctionId: '1aa2bb3cc4de'
+      auctionId: '1aa2bb3cc4de',
+      schain: SAMPLE_SCHAIN
     }
   ];
 
@@ -483,6 +503,11 @@ describe('IndexexchangeAdapter', function () {
     const requestMethod = request.method;
     const query = request.data;
 
+    const bidWithoutSchain = utils.deepClone(DEFAULT_BANNER_VALID_BID);
+    delete bidWithoutSchain[0].schain;
+    const requestWithoutSchain = spec.buildRequests(bidWithoutSchain, DEFAULT_OPTION)[0];
+    const queryWithoutSchain = requestWithoutSchain.data;
+
     const bidWithoutMediaType = utils.deepClone(DEFAULT_BANNER_VALID_BID);
     delete bidWithoutMediaType[0].mediaTypes;
     bidWithoutMediaType[0].sizes = [[300, 250], [300, 600]];
@@ -505,16 +530,21 @@ describe('IndexexchangeAdapter', function () {
 
     it('payload should have correct format and value', function () {
       const payload = JSON.parse(query.r);
-
       expect(payload.id).to.equal(DEFAULT_BANNER_VALID_BID[0].bidderRequestId);
       expect(payload.site).to.exist;
       expect(payload.site.page).to.equal(DEFAULT_OPTION.refererInfo.referer);
       expect(payload.site.ref).to.equal(document.referrer);
       expect(payload.ext).to.exist;
       expect(payload.ext.source).to.equal('prebid');
+      expect(payload.source.ext.schain).to.deep.equal(SAMPLE_SCHAIN);
       expect(payload.imp).to.exist;
       expect(payload.imp).to.be.an('array');
       expect(payload.imp).to.have.lengthOf(1);
+    });
+
+    it('payload should not include schain when not provided', function () {
+      const payload = JSON.parse(queryWithoutSchain.r);
+      expect(payload.source).to.not.exist; // source object currently only written for schain
     });
 
     it('impression should have correct format and value', function () {
@@ -896,51 +926,6 @@ describe('IndexexchangeAdapter', function () {
       expect(result[0]).to.deep.equal(expectedParse[0]);
     });
 
-    it('bidrequest should have consent info if gdprApplies and consentString exist', function () {
-      const validBidWithConsent = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_OPTION);
-      const requestWithConsent = JSON.parse(validBidWithConsent[0].data.r);
-
-      expect(requestWithConsent.regs.ext.gdpr).to.equal(1);
-      expect(requestWithConsent.user.ext.consent).to.equal('3huaa11=qu3198ae');
-    });
-
-    it('bidrequest should not have consent field if consentString is undefined', function () {
-      const options = {
-        gdprConsent: {
-          gdprApplies: true,
-          vendorData: {}
-        }
-      };
-      const validBidWithConsent = spec.buildRequests(DEFAULT_BANNER_VALID_BID, options);
-      const requestWithConsent = JSON.parse(validBidWithConsent[0].data.r);
-
-      expect(requestWithConsent.regs.ext.gdpr).to.equal(1);
-      expect(requestWithConsent.user).to.be.undefined;
-    });
-
-    it('bidrequest should not have gdpr field if gdprApplies is undefined', function () {
-      const options = {
-        gdprConsent: {
-          consentString: '3huaa11=qu3198ae',
-          vendorData: {}
-        }
-      };
-      const validBidWithConsent = spec.buildRequests(DEFAULT_BANNER_VALID_BID, options);
-      const requestWithConsent = JSON.parse(validBidWithConsent[0].data.r);
-
-      expect(requestWithConsent.regs).to.be.undefined;
-      expect(requestWithConsent.user.ext.consent).to.equal('3huaa11=qu3198ae');
-    });
-
-    it('bidrequest should not have consent info if options.gdprConsent is undefined', function () {
-      const options = {};
-      const validBidWithConsent = spec.buildRequests(DEFAULT_BANNER_VALID_BID, options);
-      const requestWithConsent = JSON.parse(validBidWithConsent[0].data.r);
-
-      expect(requestWithConsent.regs).to.be.undefined;
-      expect(requestWithConsent.user).to.be.undefined;
-    });
-
     it('bidrequest should not have page if options is undefined', function () {
       const options = {};
       const validBidWithoutreferInfo = spec.buildRequests(DEFAULT_BANNER_VALID_BID, options);
@@ -972,6 +957,85 @@ describe('IndexexchangeAdapter', function () {
 
       expect(requestWithoutreferInfo.site.page).to.equal(options.refererInfo.referer);
       expect(validBidWithoutreferInfo[0].url).to.equal(IX_SECURE_ENDPOINT);
+    });
+  });
+
+  describe('bidrequest consent', function() {
+    it('should have consent info if gdprApplies and consentString exist', function () {
+      const validBidWithConsent = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_OPTION);
+      const requestWithConsent = JSON.parse(validBidWithConsent[0].data.r);
+
+      expect(requestWithConsent.regs.ext.gdpr).to.equal(1);
+      expect(requestWithConsent.user.ext.consent).to.equal('3huaa11=qu3198ae');
+    });
+
+    it('should not have consent field if consentString is undefined', function () {
+      const options = {
+        gdprConsent: {
+          gdprApplies: true,
+          vendorData: {}
+        }
+      };
+      const validBidWithConsent = spec.buildRequests(DEFAULT_BANNER_VALID_BID, options);
+      const requestWithConsent = JSON.parse(validBidWithConsent[0].data.r);
+
+      expect(requestWithConsent.regs.ext.gdpr).to.equal(1);
+      expect(requestWithConsent.user).to.be.undefined;
+    });
+
+    it('should not have gdpr field if gdprApplies is undefined', function () {
+      const options = {
+        gdprConsent: {
+          consentString: '3huaa11=qu3198ae',
+          vendorData: {}
+        }
+      };
+      const validBidWithConsent = spec.buildRequests(DEFAULT_BANNER_VALID_BID, options);
+      const requestWithConsent = JSON.parse(validBidWithConsent[0].data.r);
+
+      expect(requestWithConsent.regs).to.be.undefined;
+      expect(requestWithConsent.user.ext.consent).to.equal('3huaa11=qu3198ae');
+    });
+
+    it('should not have consent info if options.gdprConsent is undefined', function () {
+      const options = {};
+      const validBidWithConsent = spec.buildRequests(DEFAULT_BANNER_VALID_BID, options);
+      const requestWithConsent = JSON.parse(validBidWithConsent[0].data.r);
+
+      expect(requestWithConsent.regs).to.be.undefined;
+      expect(requestWithConsent.user).to.be.undefined;
+    });
+
+    it('should have us_privacy if uspConsent is defined', function() {
+      const options = {
+        uspConsent: '1YYN'
+      };
+      const validBidWithUspConsent = spec.buildRequests(DEFAULT_BANNER_VALID_BID, options);
+      const requestWithUspConsent = JSON.parse(validBidWithUspConsent[0].data.r);
+
+      expect(requestWithUspConsent.regs.ext.us_privacy).to.equal('1YYN');
+    });
+
+    it('should not have us_privacy if uspConsent undefined', function() {
+      const options = {};
+      const validBidWithUspConsent = spec.buildRequests(DEFAULT_BANNER_VALID_BID, options);
+      const requestWithUspConsent = JSON.parse(validBidWithUspConsent[0].data.r);
+
+      expect(requestWithUspConsent.regs).to.be.undefined;
+    });
+
+    it('should have both gdpr and us_privacy if both are defined', function() {
+      const options = {
+        gdprConsent: {
+          gdprApplies: true,
+          vendorData: {}
+        },
+        uspConsent: '1YYN'
+      };
+      const validBidWithConsent = spec.buildRequests(DEFAULT_BANNER_VALID_BID, options);
+      const requestWithConsent = JSON.parse(validBidWithConsent[0].data.r);
+      expect(requestWithConsent.regs.ext.gdpr).to.equal(1);
+      expect(requestWithConsent.regs.ext.us_privacy).to.equal('1YYN');
     });
   });
 });
