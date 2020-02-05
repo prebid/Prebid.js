@@ -9,7 +9,7 @@ import * as utils from '../src/utils';
 const ANALYTICS_CODE = 'yieldone';
 const analyticsType = 'endpoint';
 // const VERSION = '1.0.0';
-const defaultUrl = '//pool.tsukiji.iponweb.net/hba';
+const defaultUrl = 'https://pool.tsukiji.iponweb.net/hba';
 const requestedBidders = {};
 const requestedBids = {};
 const referrers = {};

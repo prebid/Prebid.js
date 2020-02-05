@@ -108,6 +108,13 @@ export const spec = {
         adUnitCode: bidRequest.adUnitCode
       };
 
+      if (bidderRequest && bidderRequest.gdprConsent) {
+        data.gdpr_consent = {
+          consent_string: bidderRequest.gdprConsent.consentString,
+          gdpr_applies: (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') ? bidderRequest.gdprConsent.gdprApplies : true
+        }
+      }
+
       return {
         method: 'POST',
         url: url,
