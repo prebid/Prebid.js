@@ -174,7 +174,7 @@ function requestsToBids(bid) {
   return toRet;
 }
 
-function getUserSyncs(syncOptions, serverResponses, gdprConsent, usPrivacy) {
+function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
   const syncs = [];
   if (syncOptions.iframeEnabled) {
     const rnd = new Date().getTime();
@@ -187,8 +187,8 @@ function getUserSyncs(syncOptions, serverResponses, gdprConsent, usPrivacy) {
       }
     }
 
-    if (usPrivacy && typeof usPrivacy === 'string') {
-      params += '&us_privacy=' + usPrivacy;
+    if (uspConsent && typeof uspConsent === 'string') {
+      params += '&us_privacy=' + uspConsent;
     }
 
     syncs.push({
