@@ -170,7 +170,7 @@ function requestsToBids(bid) {
   return toRet;
 }
 
-function getUserSyncs(syncOptions, serverResponses, gdprConsent) {
+function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
   const syncs = [];
   if (syncOptions.iframeEnabled) {
     const rnd = new Date().getTime();
@@ -181,6 +181,10 @@ function getUserSyncs(syncOptions, serverResponses, gdprConsent) {
       if (typeof gdprConsent.gdprApplies === 'boolean') {
         params += '&gdpr=' + (gdprConsent.gdprApplies ? 1 : 0);
       }
+    }
+
+    if (uspConsent && typeof uspConsent === 'string') {
+      params += '&us_privacy=' + uspConsent;
     }
 
     syncs.push({
