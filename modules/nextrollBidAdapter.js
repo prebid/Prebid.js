@@ -11,6 +11,9 @@ const PUBTAG_URL = 'https://s.adroll.com/prebid/pubtag.min.js';
 const MAX_PUBTAG_AGE_IN_DAYS = 3;
 const ADAPTER_VERSION = 3;
 
+const PUBTAG_STORAGE_KEY = 'nextroll_fast_bid';
+const DATE_SUFFIX = '_set_date';
+
 export const PUBTAG_PUBKEY = `-----BEGIN PUBLIC KEY-----
 MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC/TZ6Gpm7gYg0j6o8LK+sKfYsl
 +Z3vY2flsA/KFllKyXKTTtC2nJSJlSTuNToIcXnW+2L3Q2V3yM8VExfhCtVg5oZd
@@ -248,22 +251,21 @@ function _parseUrl(url) {
 /**
  * @return {boolean}
  */
-function tryGetPubtag() {
-  const pubtagStorageKey = 'nextroll_fast_bid';
-  const dateSuffix = '_set_date';
+export function tryGetPubtag() {
   const hashPrefix = '// Hash: ';
 
   let pubtagFromStorage = null;
   let pubtagAge = null;
 
   try {
-    pubtagFromStorage = localStorage.getItem(pubtagStorageKey);
-    pubtagAge = localStorage.getItem(pubtagStorageKey + dateSuffix);
+    pubtagFromStorage = localStorage.getItem(PUBTAG_STORAGE_KEY);
+    pubtagAge = localStorage.getItem(PUBTAG_STORAGE_KEY + DATE_SUFFIX);
   } catch (e) {
     return;
   }
 
-  if (pubtagStorageKey === null || pubtagAge === null || isPubtagTooOld(pubtagAge)) {
+  if (PUBTAG_STORAGE_KEY === null || pubtagAge === null || isPubtagTooOld(pubtagAge)) {
+    removePubtag();
     return;
   }
 
@@ -273,7 +275,7 @@ function tryGetPubtag() {
 
   if (firstLine.substr(0, hashPrefix.length) !== hashPrefix) {
     utils.logWarn('No hash found in Pubtag');
-    localStorage.removeItem(pubtagStorageKey);
+    removePubtag();
   } else {
     // Remove the hash part from the locally stored value
     const publisherTagHash = firstLine.substr(hashPrefix.length);
@@ -283,12 +285,24 @@ function tryGetPubtag() {
     jsEncrypt.setPublicKey(PUBTAG_PUBKEY);
     if (jsEncrypt.verify(publisherTag, publisherTagHash, sha256)) {
       utils.logInfo('Using NextRoll Pubtag');
-      eval(publisherTag); // eslint-disable-line no-eval
+      insertTag(publisherTag);
     } else {
       utils.logWarn('Invalid NextRoll Pubtag found');
-      localStorage.removeItem(pubtagStorageKey);
+      removePubtag();
     }
   }
+}
+
+function insertTag(publisherTag) {
+  const script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.text = publisherTag;
+  utils.insertElement(script);
+}
+
+function removePubtag() {
+  localStorage.removeItem(PUBTAG_STORAGE_KEY);
+  localStorage.removeItem(PUBTAG_STORAGE_KEY + DATE_SUFFIX);
 }
 
 function isPubtagTooOld(pubtagAge) {
