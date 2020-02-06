@@ -264,7 +264,7 @@ export function tryGetPubtag() {
     return;
   }
 
-  if (PUBTAG_STORAGE_KEY === null || pubtagAge === null || isPubtagTooOld(pubtagAge)) {
+  if (pubtagFromStorage === null || pubtagAge === null || isPubtagTooOld(pubtagAge)) {
     removePubtag();
     return;
   }
