@@ -3,7 +3,7 @@ import {registerBidder} from '../src/adapters/bidderFactory';
 const BIDDER_CODE = 'oneVideo';
 export const spec = {
   code: 'oneVideo',
-  VERSION: '2.1.0',
+  VERSION: '3.0.0',
   ENDPOINT: 'https://ads.adaptv.advertising.com/rtb/openrtb?ext_id=',
   SYNC_ENDPOINT1: 'https://cm.g.doubleclick.net/pixel?google_nid=adaptv_dbm&google_cm&google_sc',
   SYNC_ENDPOINT2: 'https://pr-bh.ybp.yahoo.com/sync/adaptv_ortb/{combo_uid}',
@@ -154,8 +154,8 @@ function getRequestData(bid, consentData, bidRequest) {
       bidfloor: bid.params.bidfloor,
       ext: {
         hb: 1,
-        prebidversion: '$prebid.version$',
-        adapterversion: spec.VERSION,
+        prebidver: '$prebid.version$',
+        adapterver: spec.VERSION,
       }
     }],
     site: {
