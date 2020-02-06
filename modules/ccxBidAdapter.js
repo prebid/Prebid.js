@@ -15,9 +15,9 @@ function _getDeviceObj () {
   return device
 }
 
-function _getSiteObj () {
+function _getSiteObj (bidderRequest) {
   let site = {}
-  let url = config.getConfig('pageUrl') || utils.getTopWindowUrl()
+  let url = config.getConfig('pageUrl') || utils.deepAccess(window, 'location.href');
   if (url.length > 0) {
     url = url.split('?')[0]
   }
@@ -167,10 +167,26 @@ export const spec = {
     if (validBidRequests.length > 0) {
       let requestBody = {}
       requestBody.imp = []
-      requestBody.site = _getSiteObj()
+      requestBody.site = _getSiteObj(bidderRequest)
       requestBody.device = _getDeviceObj()
       requestBody.id = bidderRequest.bids[0].auctionId
       requestBody.ext = {'ce': (utils.cookiesAreEnabled() ? 1 : 0)}
+
+      // Attaching GDPR Consent Params
+      if (bidderRequest && bidderRequest.gdprConsent) {
+        requestBody.user = {
+          ext: {
+            consent: bidderRequest.gdprConsent.consentString
+          }
+        };
+
+        requestBody.regs = {
+          ext: {
+            gdpr: (bidderRequest.gdprConsent.gdprApplies ? 1 : 0)
+          }
+        };
+      }
+
       utils._each(validBidRequests, function (bid) {
         requestBody.imp.push(_buildBid(bid))
       })

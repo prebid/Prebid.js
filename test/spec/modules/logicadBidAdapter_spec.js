@@ -8,7 +8,7 @@ describe('LogicadAdapter', function () {
     bidId: '51ef8751f9aead',
     params: {
       tid: 'PJ2P',
-      page: 'http://www.logicad.com/'
+      page: 'https://www.logicad.com/'
     },
     adUnitCode: 'div-gpt-ad-1460505748561-0',
     transactionId: 'd7b773de-ceaa-484d-89ca-d9f51b8d61ec',

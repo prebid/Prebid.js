@@ -9,6 +9,7 @@ import { config } from 'src/config';
 import { targeting } from 'src/targeting';
 import { auctionManager } from 'src/auctionManager';
 import * as adpod from 'modules/adpod';
+import { server } from 'test/mocks/xhr';
 
 const bid = {
   videoCacheKey: 'abc',
@@ -30,7 +31,7 @@ describe('The DFP video support module', function () {
     }));
 
     expect(url.protocol).to.equal('https:');
-    expect(url.host).to.equal('pubads.g.doubleclick.net');
+    expect(url.host).to.equal('securepubads.g.doubleclick.net');
 
     const queryParams = parseQS(url.query);
     expect(queryParams).to.have.property('correlator');
@@ -302,8 +303,6 @@ describe('The DFP video support module', function () {
   describe('adpod unit tests', function () {
     let amStub;
     let amGetAdUnitsStub;
-    let xhr;
-    let requests;
 
     before(function () {
       let adUnits = [{
@@ -333,10 +332,6 @@ describe('The DFP video support module', function () {
     });
 
     beforeEach(function () {
-      xhr = sinon.useFakeXMLHttpRequest();
-      requests = [];
-      xhr.onCreate = request => requests.push(request);
-
       config.setConfig({
         adpod: {
           brandCategoryExclusion: true,
@@ -347,7 +342,6 @@ describe('The DFP video support module', function () {
 
     afterEach(function() {
       config.resetConfig();
-      xhr.restore();
     });
 
     after(function () {
@@ -374,7 +368,7 @@ describe('The DFP video support module', function () {
         url = parse(masterTag);
 
         expect(url.protocol).to.equal('https:');
-        expect(url.host).to.equal('pubads.g.doubleclick.net');
+        expect(url.host).to.equal('securepubads.g.doubleclick.net');
 
         const queryParams = parseQS(url.query);
         expect(queryParams).to.have.property('correlator');
@@ -428,7 +422,7 @@ describe('The DFP video support module', function () {
         }
         url = parse(masterTag);
         expect(url.protocol).to.equal('https:');
-        expect(url.host).to.equal('pubads.g.doubleclick.net');
+        expect(url.host).to.equal('securepubads.g.doubleclick.net');
 
         const queryParams = parseQS(url.query);
         expect(queryParams).to.have.property('correlator');
@@ -466,7 +460,7 @@ describe('The DFP video support module', function () {
         }
       }));
 
-      requests[0].respond(503, {
+      server.requests[0].respond(503, {
         'Content-Type': 'plain/text',
       }, 'The server could not save anything at the moment.');
 

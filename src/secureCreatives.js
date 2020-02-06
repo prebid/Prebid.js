@@ -14,7 +14,7 @@ import { isRendererRequired, executeRenderer } from './Renderer';
 const BID_WON = EVENTS.BID_WON;
 
 export function listenMessagesFromCreative() {
-  addEventListener('message', receiveMessage, false);
+  window.addEventListener('message', receiveMessage, false);
 }
 
 function receiveMessage(ev) {
@@ -81,8 +81,9 @@ export function _sendAdToCreative(adObject, remoteDomain, source) {
 
 function resizeRemoteCreative({ adUnitCode, width, height }) {
   // resize both container div + iframe
-  ['div:last-child', 'div:last-child iframe'].forEach(elmType => {
-    let element = getElementByAdUnit(elmType);
+  ['div', 'iframe'].forEach(elmType => {
+    // not select element that gets removed after dfp render
+    let element = getElementByAdUnit(elmType + ':not([style*="display: none"])');
     if (element) {
       let elementStyle = element.style;
       elementStyle.width = width + 'px';

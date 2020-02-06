@@ -61,6 +61,7 @@ describe('33acrossBidAdapter:', function () {
       },
       ext: {
         ttx: {
+          prebidStartedAt: 1,
           caller: [{
             'name': 'prebidjs',
             'version': '$prebid.version$'
@@ -74,7 +75,7 @@ describe('33acrossBidAdapter:', function () {
       return this;
     };
 
-    this.withViewabiliuty = viewability => {
+    this.withViewability = viewability => {
       Object.assign(ttxRequest.imp[0].banner, {
         ext: {
           ttx: { viewability }
@@ -99,6 +100,14 @@ describe('33acrossBidAdapter:', function () {
 
     this.withSite = site => {
       Object.assign(ttxRequest, { site });
+      return this;
+    };
+
+    this.withPageUrl = pageUrl => {
+      Object.assign(ttxRequest.site, {
+        page: pageUrl
+      });
+
       return this;
     };
 
@@ -183,6 +192,7 @@ describe('33acrossBidAdapter:', function () {
     ];
 
     sandbox = sinon.sandbox.create();
+    sandbox.stub(Date, 'now').returns(1);
     sandbox.stub(document, 'getElementById').withArgs('div-id').returns(element);
     sandbox.stub(utils, 'getWindowTop').returns(win);
     sandbox.stub(utils, 'getWindowSelf').returns(win);
@@ -265,7 +275,7 @@ describe('33acrossBidAdapter:', function () {
     context('when element is fully in view', function() {
       it('returns 100', function() {
         const ttxRequest = new TtxRequestBuilder()
-          .withViewabiliuty({amount: 100})
+          .withViewability({amount: 100})
           .build();
         const serverRequest = new ServerRequestBuilder()
           .withData(ttxRequest)
@@ -280,7 +290,7 @@ describe('33acrossBidAdapter:', function () {
     context('when element is out of view', function() {
       it('returns 0', function() {
         const ttxRequest = new TtxRequestBuilder()
-          .withViewabiliuty({amount: 0})
+          .withViewability({amount: 0})
           .build();
         const serverRequest = new ServerRequestBuilder()
           .withData(ttxRequest)
@@ -295,7 +305,7 @@ describe('33acrossBidAdapter:', function () {
     context('when element is partially in view', function() {
       it('returns percentage', function() {
         const ttxRequest = new TtxRequestBuilder()
-          .withViewabiliuty({amount: 75})
+          .withViewability({amount: 75})
           .build();
         const serverRequest = new ServerRequestBuilder()
           .withData(ttxRequest)
@@ -311,7 +321,7 @@ describe('33acrossBidAdapter:', function () {
       it('try to use alternative values', function() {
         const ttxRequest = new TtxRequestBuilder()
           .withSizes([{ w: 800, h: 2400, ext: {} }])
-          .withViewabiliuty({amount: 25})
+          .withViewability({amount: 25})
           .build();
         const serverRequest = new ServerRequestBuilder()
           .withData(ttxRequest)
@@ -327,7 +337,7 @@ describe('33acrossBidAdapter:', function () {
     context('when nested iframes', function() {
       it('returns \'nm\'', function() {
         const ttxRequest = new TtxRequestBuilder()
-          .withViewabiliuty({amount: spec.NON_MEASURABLE})
+          .withViewability({amount: spec.NON_MEASURABLE})
           .build();
         const serverRequest = new ServerRequestBuilder()
           .withData(ttxRequest)
@@ -347,7 +357,7 @@ describe('33acrossBidAdapter:', function () {
     context('when tab is inactive', function() {
       it('returns 0', function() {
         const ttxRequest = new TtxRequestBuilder()
-          .withViewabiliuty({amount: 0})
+          .withViewability({amount: 0})
           .build();
         const serverRequest = new ServerRequestBuilder()
           .withData(ttxRequest)
@@ -443,6 +453,45 @@ describe('33acrossBidAdapter:', function () {
         expect(builtServerRequests).to.deep.equal([serverRequest]);
       });
     });
+
+    context('when referer value is available', function() {
+      it('returns corresponding server requests with site.page set', function() {
+        const bidderRequest = {
+          refererInfo: {
+            referer: 'http://foo.com/bar'
+          }
+        };
+
+        const ttxRequest = new TtxRequestBuilder()
+          .withPageUrl('http://foo.com/bar')
+          .build();
+        const serverRequest = new ServerRequestBuilder()
+          .withData(ttxRequest)
+          .build();
+
+        const builtServerRequests = spec.buildRequests(bidRequests, bidderRequest);
+
+        expect(builtServerRequests).to.deep.equal([serverRequest]);
+      });
+    });
+
+    context('when referer value is not available', function() {
+      it('returns corresponding server requests without site.page set', function() {
+        const bidderRequest = {
+          refererInfo: {}
+        };
+
+        const ttxRequest = new TtxRequestBuilder()
+          .build();
+        const serverRequest = new ServerRequestBuilder()
+          .withData(ttxRequest)
+          .build();
+
+        const builtServerRequests = spec.buildRequests(bidRequests, bidderRequest);
+
+        expect(builtServerRequests).to.deep.equal([serverRequest]);
+      });
+    });
   });
 
   describe('interpretResponse', function() {
@@ -452,11 +501,11 @@ describe('33acrossBidAdapter:', function () {
       ttxRequest = new TtxRequestBuilder()
         .withSite({
           id: SITE_ID,
-          page: 'http://test-url.com'
+          page: 'https://test-url.com'
         })
         .build();
       serverRequest = new ServerRequestBuilder()
-        .withUrl('//staging-ssc.33across.com/api/v1/hb')
+        .withUrl('https://staging-ssc.33across.com/api/v1/hb')
         .withData(ttxRequest)
         .withOptions({
           contentType: 'text/plain',
@@ -577,11 +626,11 @@ describe('33acrossBidAdapter:', function () {
       syncs = [
         {
           type: 'iframe',
-          url: 'https://de.tynt.com/deb/v2?m=xch&rt=html&id=id1'
+          url: 'https://ssc-cms.33across.com/ps/?m=xch&rt=html&ru=deb&id=id1'
         },
         {
           type: 'iframe',
-          url: 'https://de.tynt.com/deb/v2?m=xch&rt=html&id=id2'
+          url: 'https://ssc-cms.33across.com/ps/?m=xch&rt=html&ru=deb&id=id2'
         },
       ];
       bidRequests = [
