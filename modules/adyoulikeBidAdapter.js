@@ -54,6 +54,10 @@ export const spec = {
       };
     }
 
+    if (bidderRequest && bidderRequest.uspConsent) {
+      payload.uspConsent = bidderRequest.uspConsent;
+    }
+
     const data = JSON.stringify(payload);
     const options = {
       withCredentials: true
