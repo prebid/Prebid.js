@@ -3,7 +3,7 @@
 ```
 Module Name:  NextRoll Bid Adapter
 Module Type:  Bidder Adapter
-Maintainer: <mantainer email>
+Maintainer: prebid@nextroll.com
 ```
 
 # Description
