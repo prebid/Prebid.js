@@ -5,6 +5,8 @@ import { loadExternalScript } from '../src/adloader';
 import JSEncrypt from 'jsencrypt/bin/jsencrypt';
 import sha256 from 'crypto-js/sha256';
 
+import find from 'core-js/library/fn/array/find';
+
 const BIDDER_CODE = 'nextroll';
 const BIDDER_ENDPOINT = 'https://d.adroll.com/bid/prebid/';
 const PUBTAG_URL = 'https://s.adroll.com/prebid/pubtag.min.js';
@@ -211,7 +213,7 @@ function _getOs(userAgent) {
     'windows': /windows/i
   };
 
-  return Object.keys(osTable).find(os => {
+  return find(Object.keys(osTable), os => {
     if (userAgent.match(osTable[os])) {
       return os;
     }
