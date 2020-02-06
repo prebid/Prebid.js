@@ -13,7 +13,7 @@ The NextRoll bid adapter supports Banner format only.
 
 # Test Parameters
 ``` javascript
-var adunits = [
+var adUnits = [
     {
         code: 'div-1',
         mediatypes: {
@@ -23,8 +23,9 @@ var adunits = [
             bidder: 'nextroll',
             params: {
                 bidfloor: 1,
-                zoneid: 13144370,
-                publisherid: "publisherid",
+                zoneId: 13144370,
+                publisherId: "publisherid",
+                sellerId: "sellerid"
             }
         }]
     },
@@ -39,8 +40,9 @@ var adunits = [
             bidder: 'nextroll',
             params: {
                 bidfloor: 2.3,
-                zoneid: 13144370,
-                publisherid: "publisherid",
+                zoneId: 13144370,
+                publisherId: "publisherid",
+                sellerId: "sellerid"
             }
         }]
     }
