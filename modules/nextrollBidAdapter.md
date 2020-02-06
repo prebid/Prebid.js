@@ -16,21 +16,22 @@ The NextRoll bid adapter supports Banner format only.
 var adUnits = [
     {
         code: 'div-1',
-        mediaTypes: {
-            banner: {sizes: [[300, 250], [300, 600]]}
+        mediatypes: {
+            banner: {sizes: [[300, 250], [160, 600]]}
         },
         bids: [{
             bidder: 'nextroll',
             params: {
                 bidfloor: 1,
                 zoneId: 13144370,
-                publisherId: "publisherId",
+                publisherId: "publisherid",
+                sellerId: "sellerid"
             }
         }]
     },
     {
         code: 'div-2',
-        mediaTypes: {
+        mediatypes: {
             banner: {
                 sizes: [[728, 90], [970, 250]]
             }
@@ -38,11 +39,12 @@ var adUnits = [
         bids: [{
             bidder: 'nextroll',
             params: {
-                bidfloor: 2,
+                bidfloor: 2.3,
                 zoneId: 13144370,
-                publisherId: "publisherId",
+                publisherId: "publisherid",
+                sellerId: "sellerid"
             }
         }]
     }
-];
+]
 ```
