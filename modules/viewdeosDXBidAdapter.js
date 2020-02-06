@@ -112,7 +112,8 @@ function parseRTBResponse(serverResponse, bidderRequest) {
     });
 
     if (serverBid.cpm !== 0 && requestId !== -1) {
-      const bid = createBid(serverBid, getMediaType(bidderRequest.bids[requestId]));
+      const bidReq = bidderRequest.bids[requestId];
+      const bid = createBid(serverBid, getMediaType(bidReq), bidReq.params);
 
       bids.push(bid);
     }
@@ -129,6 +130,10 @@ function bidToTag(bidRequests, bidderRequest) {
   if (utils.deepAccess(bidderRequest, 'gdprConsent.gdprApplies')) {
     tag.gdpr = 1;
     tag.gdpr_consent = utils.deepAccess(bidderRequest, 'gdprConsent.consentString');
+  }
+
+  if (utils.deepAccess(bidderRequest, 'bidderRequest.uspConsent')) {
+    tag.us_privacy = bidderRequest.uspConsent;
   }
 
   for (let i = 0, length = bidRequests.length; i < length; i++) {
@@ -174,7 +179,7 @@ function getMediaType(bidderRequest) {
  * @param mediaType {Object}
  * @returns {object}
  */
-function createBid(bidResponse, mediaType) {
+function createBid(bidResponse, mediaType, bidderParams) {
   const bid = {
     requestId: bidResponse.requestId,
     creativeId: bidResponse.cmpId,
@@ -201,7 +206,7 @@ function createBid(bidResponse, mediaType) {
     Object.assign(bid, {
       mediaType: 'video',
       adResponse: bidResponse,
-      renderer: newRenderer(bidResponse.requestId)
+      renderer: newRenderer(bidResponse.requestId, bidderParams)
     });
   }
 
@@ -213,10 +218,11 @@ function createBid(bidResponse, mediaType) {
  * @param requestId
  * @returns {*}
  */
-function newRenderer(requestId) {
+function newRenderer(requestId, bidderParams) {
   const renderer = Renderer.install({
     id: requestId,
     url: OUTSTREAM_SRC,
+    config: bidderParams.outstream || {},
     loaded: false
   });
 
@@ -231,9 +237,7 @@ function newRenderer(requestId) {
  */
 function outstreamRender(bid) {
   bid.renderer.push(() => {
-    const params = utils.isArray(bid.params) ? bid.params[0] : bid.params;
-    const outstreamConfig = params.outstream ? params.outstream : {};
-    const opts = Object.assign({}, outstreamConfig, {
+    const opts = Object.assign({}, bid.renderer.getConfig(), {
       width: bid.width,
       height: bid.height,
       vastUrl: bid.vastUrl,
