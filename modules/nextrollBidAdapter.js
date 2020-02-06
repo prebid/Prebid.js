@@ -237,7 +237,7 @@ function _getOsVersion(userAgent) {
     { s: 'UNIX', r: /UNIX/ },
     { s: 'Search Bot', r: /(nuhk|Googlebot|Yammybot|Openbot|Slurp|MSNBot|Ask Jeeves\/Teoma|ia_archiver)/ }
   ];
-  let cs = clientStrings.find(cs => cs.r.test(userAgent));
+  let cs = find(clientStrings, cs => cs.r.test(userAgent));
   return cs ? cs.s : 'unknown';
 }
 
