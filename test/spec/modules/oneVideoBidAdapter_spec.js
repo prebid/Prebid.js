@@ -143,8 +143,6 @@ describe('OneVideoBidAdapter', function () {
       expect(data.imp[0].ext.rewarded).to.equal(rewarded);
       expect(data.imp[0].video.placement).to.equal(placement);
       expect(data.imp[0].ext.inventoryid).to.equal(inventoryid);
-      console.log(data.imp[0].ext.adapterver);
-      console.log(data.imp[0].ext.prebidver);
       expect(data.imp[0].ext.prebidver).to.equal('$prebid.version$');
       expect(data.imp[0].ext.adapterver).to.equal(VERSION);
     });
