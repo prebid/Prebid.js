@@ -1,7 +1,24 @@
 import { expect } from 'chai';
-import { spec } from 'modules/nextrollBidAdapter';
+import { spec, tryGetPubtag } from 'modules/nextrollBidAdapter';
+import * as utils from 'src/utils';
+
+const PUBTAG_LOCAL_STORAGE_KEY = 'nextroll_fast_bid';
+const PUBTAG_DATE_SUFFIX = '_set_date'
 
 describe('nextrollBidAdapter', function() {
+  let utilsMock;
+  beforeEach(function () {
+    // Remove to avoid side effects
+    localStorage.removeItem(PUBTAG_LOCAL_STORAGE_KEY);
+    localStorage.removeItem(PUBTAG_LOCAL_STORAGE_KEY + PUBTAG_DATE_SUFFIX);
+    utilsMock = sinon.mock(utils);
+  });
+
+  afterEach(function() {
+    global.NextRoll = undefined;
+    utilsMock.restore();
+  });
+
   let validBid = {
     bidder: 'nextroll',
     adUnitCode: 'adunit-code',
@@ -133,5 +150,84 @@ describe('nextrollBidAdapter', function() {
     it('returns an empty list', function () {
       expect(spec.getUserSyncs({}, {})).to.be.eql([]);
     })
-  })
+  });
+
+  describe('tryGetNextrollPubtag', function () {
+    const VALID_HASH = 'BPsAzXFFR0bBpo7mqjangJss12ENYlAKM9kUI5mZwJIRtcL2x6vLfwpz1pjdoyTE9FbGNrVl3iMiMmObgkuqagrzkIyoJoyG+/WGd0Pd0sqtPY43pxpgvTnI1JXFLgdUMgLwICrDCqmA6J63oWJgwTb0906AiraSm9cy89PCZ1U=';
+    const INVALID_HASH = 'invalid';
+    const VALID_PUBLISHER_TAG = 'var NextRoll="test value"';
+    const INVALID_PUBLISHER_TAG = 'test invalid';
+
+    it('should verify valid hash with valid publisher tag', function () {
+      localStorage.setItem(PUBTAG_LOCAL_STORAGE_KEY, '// Hash: ' + VALID_HASH + '\n' + VALID_PUBLISHER_TAG);
+      localStorage.setItem(PUBTAG_LOCAL_STORAGE_KEY + PUBTAG_DATE_SUFFIX, new Date().getTime())
+
+      utilsMock.expects('logInfo').withExactArgs('Using NextRoll Pubtag').once();
+      utilsMock.expects('logWarn').withExactArgs('No hash found in Pubtag').never();
+      utilsMock.expects('logWarn').withExactArgs('Invalid NextRoll Pubtag found').never();
+      utilsMock.expects('insertElement').once();
+
+      tryGetPubtag();
+
+      expect(localStorage.getItem(PUBTAG_LOCAL_STORAGE_KEY)).to.equals('// Hash: ' + VALID_HASH + '\n' + VALID_PUBLISHER_TAG);
+      utilsMock.verify();
+    });
+
+    it('should verify valid hash with invalid pubtag', function () {
+      localStorage.setItem(PUBTAG_LOCAL_STORAGE_KEY, '// Hash: ' + VALID_HASH + '\n' + INVALID_PUBLISHER_TAG);
+      localStorage.setItem(PUBTAG_LOCAL_STORAGE_KEY + PUBTAG_DATE_SUFFIX, new Date().getTime())
+
+      utilsMock.expects('logInfo').withExactArgs('Using NextRoll Pubtag').never();
+      utilsMock.expects('logWarn').withExactArgs('No hash found in Pubtag').never();
+      utilsMock.expects('logWarn').withExactArgs('Invalid NextRoll Pubtag found').once();
+
+      tryGetPubtag();
+
+      expect(localStorage.getItem(PUBTAG_LOCAL_STORAGE_KEY)).to.be.null;
+      utilsMock.verify();
+    });
+
+    it('should verify invalid hash with valid pubtag', function () {
+      localStorage.setItem(PUBTAG_LOCAL_STORAGE_KEY, '// Hash: ' + INVALID_HASH + '\n' + VALID_PUBLISHER_TAG);
+      localStorage.setItem(PUBTAG_LOCAL_STORAGE_KEY + PUBTAG_DATE_SUFFIX, new Date().getTime())
+
+      utilsMock.expects('logInfo').withExactArgs('Using NextRoll Pubtag').never();
+      utilsMock.expects('logWarn').withExactArgs('No hash found in Pubtag').never();
+      utilsMock.expects('logWarn').withExactArgs('Invalid NextRoll Pubtag found').once();
+
+      tryGetPubtag();
+
+      expect(localStorage.getItem(PUBTAG_LOCAL_STORAGE_KEY)).to.be.null;
+      utilsMock.verify();
+    });
+
+    it('should verify missing hash', function () {
+      localStorage.setItem(PUBTAG_LOCAL_STORAGE_KEY, VALID_PUBLISHER_TAG);
+      localStorage.setItem(PUBTAG_LOCAL_STORAGE_KEY + PUBTAG_DATE_SUFFIX, new Date().getTime())
+
+      utilsMock.expects('logInfo').withExactArgs('Using NextRoll Pubtag').never();
+      utilsMock.expects('logWarn').withExactArgs('No hash found in Pubtag').once();
+      utilsMock.expects('logWarn').withExactArgs('Invalid NextRoll Pubtag found').never();
+
+      tryGetPubtag();
+
+      expect(localStorage.getItem(PUBTAG_LOCAL_STORAGE_KEY)).to.be.null;
+      utilsMock.verify();
+    });
+
+    it('should verify pubtag age', function () {
+      let scriptAge = new Date().getTime() - 345600000; // 4 days old
+      localStorage.setItem(PUBTAG_LOCAL_STORAGE_KEY, VALID_PUBLISHER_TAG);
+      localStorage.setItem(PUBTAG_LOCAL_STORAGE_KEY + PUBTAG_DATE_SUFFIX, scriptAge);
+
+      utilsMock.expects('logInfo').withExactArgs('Using NextRoll Pubtag').never();
+      utilsMock.expects('logWarn').withExactArgs('No hash found in Pubtag').never();
+      utilsMock.expects('logWarn').withExactArgs('Invalid NextRoll Pubtag found').never();
+
+      tryGetPubtag();
+
+      expect(localStorage.getItem(PUBTAG_LOCAL_STORAGE_KEY)).to.be.null;
+      utilsMock.verify();
+    });
+  });
 });
