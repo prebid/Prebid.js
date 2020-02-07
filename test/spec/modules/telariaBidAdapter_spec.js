@@ -189,6 +189,14 @@ describe('TelariaAdapter', () => {
       expect(builtRequests.length).to.equal(1);
     });
 
+    it('adds adUnitCode to the request url', () => {
+      const builtRequests = spec.buildRequests(stub(), BIDDER_REQUEST);
+
+      expect(builtRequests.length).to.equal(1);
+      const parts = builtRequests[0].url.split('adCode=');
+      expect(parts.length).to.equal(2);
+    });
+
     it('adds srcPageUrl to the request url', () => {
       const builtRequests = spec.buildRequests(stub(), BIDDER_REQUEST);
 

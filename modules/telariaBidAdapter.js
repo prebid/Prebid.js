@@ -227,6 +227,7 @@ function generateUrl(bid, bidderRequest) {
     const params = Object.assign({
       srcPageUrl: getDefaultSrcPageUrl()
     }, bid.params);
+    delete params.adCode;
 
     url += `${getUrlParams(params, bid.schain)}`;
 
