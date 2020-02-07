@@ -1,6 +1,6 @@
-import {ajax} from 'src/ajax';
-import adapter from 'src/AnalyticsAdapter';
-import adaptermanager from 'src/adaptermanager';
+import {ajax} from '../src/ajax';
+import adapter from '../src/AnalyticsAdapter';
+import adapterManager from '../src/adapterManager';
 
 /****
  * Mars Media Analytics
@@ -11,7 +11,7 @@ import adaptermanager from 'src/adaptermanager';
 const MARS_BIDDER_CODE = 'marsmedia';
 const analyticsType = 'endpoint';
 const MARS_VERSION = '1.0.1';
-const MARS_ANALYTICS_URL = '//prebid_stats.mars.media/prebidjs/api/analytics.php';
+const MARS_ANALYTICS_URL = 'https://prebid_stats.mars.media/prebidjs/api/analytics.php';
 var events = {};
 
 var marsmediaAnalyticsAdapter = Object.assign(adapter(
@@ -33,7 +33,7 @@ var marsmediaAnalyticsAdapter = Object.assign(adapter(
             success: function() {},
             error: function() {}
           },
-          JSON.stringify({act: 'prebid_analytics', params: events, 'pbjs': pbjs.getBidResponses(), ver: MARS_VERSION}),
+          JSON.stringify({act: 'prebid_analytics', params: events, 'pbjs': $$PREBID_GLOBAL$$.getBidResponses(), ver: MARS_VERSION}),
           {
             method: 'POST'
           }
@@ -44,7 +44,7 @@ var marsmediaAnalyticsAdapter = Object.assign(adapter(
 }
 );
 
-adaptermanager.registerAnalyticsAdapter({
+adapterManager.registerAnalyticsAdapter({
   adapter: marsmediaAnalyticsAdapter,
   code: 'marsmedia'
 });

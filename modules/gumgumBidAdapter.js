@@ -1,8 +1,8 @@
-import * as utils from 'src/utils'
+import * as utils from '../src/utils'
 
-import { config } from 'src/config'
-import { registerBidder } from 'src/adapters/bidderFactory'
+import { config } from '../src/config'
 import includes from 'core-js/library/fn/array/includes';
+import { registerBidder } from '../src/adapters/bidderFactory'
 
 const BIDDER_CODE = 'gumgum'
 const ALIAS_BIDDER_CODE = ['gg']
@@ -13,82 +13,26 @@ const TIME_TO_LIVE = 60
 let browserParams = {};
 let pageViewId = null
 
-function hasTopAccess () {
-  var hasTopAccess = false
-  try { hasTopAccess = !!top.document } catch (e) {}
-  return hasTopAccess
-}
-
-function isInSafeFrame (windowRef) {
-  const w = windowRef || window
-  if (w.$sf) return w.$sf
-  else if (hasTopAccess() && w !== top) return isInSafeFrame(w.parent)
-  return null
-}
-
-function getGoogleTag (windowRef) {
-  try {
-    const w = windowRef || window
-    var GOOGLETAG = null
-    if ('googletag' in w) {
-      GOOGLETAG = w.googletag
-    } else if (w !== top) {
-      GOOGLETAG = getGoogleTag(w.parent)
-    }
-    return GOOGLETAG
-  } catch (error) {
-    utils.logError('Error getting googletag ', error)
-    return null
-  }
-}
-
-function getAMPContext (windowRef) {
-  const w = windowRef || window
-  var context = null
-  var nameJSON = null
-  if (utils.isPlainObject(w.context)) {
-    context = w.context
-  } else {
-    try {
-      nameJSON = JSON.parse(w.name || null)
-    } catch (error) {
-      utils.logError('Error getting w.name', error)
-    }
-    if (utils.isPlainObject(nameJSON)) {
-      context = nameJSON._context || (nameJSON.attributes ? nameJSON.attributes._context : null)
-    }
-    if (utils.isPlainObject(w.AMP_CONTEXT_DATA)) {
-      context = w.AMP_CONTEXT_DATA
-    }
-  }
-  return context
-}
-
-function getJCSI () {
-  const entrypointOffset = 7
-  const inFrame = (window.top && window.top !== window)
-  const frameType = (!inFrame ? 1 : (isInSafeFrame() ? 2 : (hasTopAccess() ? 3 : 4)))
-  const context = []
-  if (getAMPContext()) {
-    context.push(1)
-  }
-  if (getGoogleTag()) {
-    context.push(2)
-  }
-  const jcsi = {
-    ep: entrypointOffset,
-    fc: frameType,
-    ctx: context
-  }
-  return JSON.stringify(jcsi)
-}
-
 // TODO: potential 0 values for browserParams sent to ad server
-function _getBrowserParams() {
+function _getBrowserParams(topWindowUrl) {
   let topWindow
   let topScreen
   let topUrl
   let ggad
+  let ns
+  function getNetworkSpeed () {
+    const connection = window.navigator && (window.navigator.connection || window.navigator.mozConnection || window.navigator.webkitConnection)
+    const Mbps = connection && (connection.downlink || connection.bandwidth)
+    return Mbps ? Math.round(Mbps * 1024) : null // 1 megabit -> 1024 kilobits
+  }
+  function getOgURL () {
+    let ogURL = ''
+    const ogURLSelector = "meta[property='og:url']"
+    const head = document && document.getElementsByTagName('head')[0]
+    const ogURLElement = head.querySelector(ogURLSelector)
+    ogURL = ogURLElement ? ogURLElement.content : null
+    return ogURL
+  }
   if (browserParams.vw) {
     // we've already initialized browserParams, just return it.
     return browserParams
@@ -97,7 +41,7 @@ function _getBrowserParams() {
   try {
     topWindow = global.top;
     topScreen = topWindow.screen;
-    topUrl = utils.getTopWindowUrl()
+    topUrl = topWindowUrl || '';
   } catch (error) {
     utils.logError(error);
     return browserParams
@@ -111,8 +55,15 @@ function _getBrowserParams() {
     pu: topUrl,
     ce: utils.cookiesAreEnabled(),
     dpr: topWindow.devicePixelRatio || 1,
-    jcsi: getJCSI()
+    jcsi: JSON.stringify({ t: 0, rq: 8 }),
+    ogu: getOgURL()
   }
+
+  ns = getNetworkSpeed()
+  if (ns) {
+    browserParams.ns = ns
+  }
+
   ggad = (topUrl.match(/#ggad=(\w+)$/) || [0, 0])[1]
   if (ggad) {
     browserParams[isNaN(ggad) ? 'eAdBuyId' : 'adBuyId'] = ggad
@@ -124,14 +75,20 @@ function getWrapperCode(wrapper, data) {
   return wrapper.replace('AD_JSON', window.btoa(JSON.stringify(data)))
 }
 
-// TODO: use getConfig()
-function _getDigiTrustQueryParams() {
-  function getDigiTrustId () {
-    var digiTrustUser = (window.DigiTrust && window.DigiTrust.getUser) ? window.DigiTrust.getUser(DT_CREDENTIALS) : {};
-    return (digiTrustUser && digiTrustUser.success && digiTrustUser.identity) || '';
-  };
+function _getTradeDeskIDParam(userId) {
+  const unifiedIdObj = {};
+  if (userId.tdid) {
+    unifiedIdObj.tdid = userId.tdid;
+  }
+  return unifiedIdObj;
+}
 
-  let digiTrustId = getDigiTrustId();
+function _getDigiTrustQueryParams(userId) {
+  let digiTrustId = userId.digitrustid && userId.digitrustid.data;
+  if (!digiTrustId) {
+    const digiTrustUser = (window.DigiTrust && window.DigiTrust.getUser) ? window.DigiTrust.getUser(DT_CREDENTIALS) : {};
+    digiTrustId = (digiTrustUser && digiTrustUser.success && digiTrustUser.identity) || '';
+  }
   // Verify there is an ID and this user has not opted out
   if (!digiTrustId || (digiTrustId.privacy && digiTrustId.privacy.optout)) {
     return {};
@@ -139,6 +96,28 @@ function _getDigiTrustQueryParams() {
   return {
     dt: digiTrustId.id
   };
+}
+
+/**
+ * Serializes the supply chain object according to IAB standards
+ * @see https://github.com/InteractiveAdvertisingBureau/openrtb/blob/master/supplychainobject.md
+ * @param {Object} schainObj supply chain object
+ * @returns {string}
+ */
+function _serializeSupplyChainObj(schainObj) {
+  let serializedSchain = `${schainObj.ver},${schainObj.complete}`;
+
+  // order of properties: asi,sid,hp,rid,name,domain
+  schainObj.nodes.map(node => {
+    serializedSchain += `!${encodeURIComponent(node['asi'] || '')},`;
+    serializedSchain += `${encodeURIComponent(node['sid'] || '')},`;
+    serializedSchain += `${encodeURIComponent(node['hp'] || '')},`;
+    serializedSchain += `${encodeURIComponent(node['rid'] || '')},`;
+    serializedSchain += `${encodeURIComponent(node['name'] || '')},`;
+    serializedSchain += `${encodeURIComponent(node['domain'] || '')}`;
+  })
+
+  return serializedSchain;
 }
 
 /**
@@ -161,6 +140,12 @@ function isBidRequestValid (bid) {
       utils.logWarn(`[GumGum] No product selected for the placement ${adUnitCode}, please check your implementation.`);
       return false;
   }
+
+  if (params.bidfloor && !(typeof params.bidfloor === 'number' && isFinite(params.bidfloor))) {
+    utils.logWarn('[GumGum] bidfloor must be a Number');
+    return false;
+  }
+
   return true;
 }
 
@@ -172,17 +157,29 @@ function isBidRequestValid (bid) {
  */
 function buildRequests (validBidRequests, bidderRequest) {
   const bids = [];
-  const gdprConsent = Object.assign({ consentString: null, gdprApplies: true }, bidderRequest && bidderRequest.gdprConsent)
+  const gdprConsent = bidderRequest && bidderRequest.gdprConsent;
+  const uspConsent = bidderRequest && bidderRequest.uspConsent;
   utils._each(validBidRequests, bidRequest => {
     const timeout = config.getConfig('bidderTimeout');
     const {
       bidId,
       params = {},
-      transactionId
+      schain,
+      transactionId,
+      userId = {}
     } = bidRequest;
-    const data = {}
+    const data = {};
+    const sizes = bidRequest.mediaTypes && bidRequest.mediaTypes.banner && bidRequest.mediaTypes.banner.sizes;
+    const topWindowUrl = bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer;
     if (pageViewId) {
       data.pv = pageViewId
+    }
+    if (params.bidfloor) {
+      data.fp = params.bidfloor;
+    }
+    if (params.inScreenPubID) {
+      data.pubId = params.inScreenPubID;
+      data.pi = 2;
     }
     if (params.inScreen) {
       data.t = params.inScreen;
@@ -196,9 +193,17 @@ function buildRequests (validBidRequests, bidderRequest) {
       data.ni = parseInt(params.ICV, 10);
       data.pi = 5;
     }
-    data.gdprApplies = gdprConsent.gdprApplies;
-    if (gdprConsent.gdprApplies) {
+    if (gdprConsent) {
+      data.gdprApplies = gdprConsent.gdprApplies ? 1 : 0;
+    }
+    if (data.gdprApplies) {
       data.gdprConsent = gdprConsent.consentString;
+    }
+    if (uspConsent) {
+      data.uspConsent = uspConsent;
+    }
+    if (schain && schain.nodes) {
+      data.schain = _serializeSupplyChainObj(schain);
     }
 
     bids.push({
@@ -207,10 +212,10 @@ function buildRequests (validBidRequests, bidderRequest) {
       tId: transactionId,
       pi: data.pi,
       selector: params.selector,
-      sizes: bidRequest.sizes,
+      sizes: sizes || bidRequest.sizes,
       url: BID_ENDPOINT,
       method: 'GET',
-      data: Object.assign(data, _getBrowserParams(), _getDigiTrustQueryParams())
+      data: Object.assign(data, _getBrowserParams(topWindowUrl), _getDigiTrustQueryParams(userId), _getTradeDeskIDParam(userId))
     })
   });
   return bids;
@@ -239,7 +244,8 @@ function interpretResponse (serverResponse, bidRequest) {
     ad: {
       price: cpm,
       id: creativeId,
-      markup
+      markup,
+      cur
     },
     cw: wrapper,
     pag: {
@@ -268,7 +274,7 @@ function interpretResponse (serverResponse, bidRequest) {
       ad: wrapper ? getWrapperCode(wrapper, Object.assign({}, serverResponseBody, { bidRequest })) : markup,
       cpm: isTestUnit ? 0.1 : cpm,
       creativeId,
-      currency: 'USD',
+      currency: cur || 'USD',
       height,
       netRevenue: true,
       requestId: bidRequest.id,

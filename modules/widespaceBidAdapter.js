@@ -1,12 +1,10 @@
-import { version } from '../package.json';
-import { config } from 'src/config';
-import { registerBidder } from 'src/adapters/bidderFactory';
+import {config} from '../src/config';
+import {registerBidder} from '../src/adapters/bidderFactory';
 import {
   cookiesAreEnabled,
   parseQueryStringParameters,
-  parseSizesInput,
-  getTopWindowReferrer
-} from 'src/utils';
+  parseSizesInput
+} from '../src/utils';
 import includes from 'core-js/library/fn/array/includes';
 import find from 'core-js/library/fn/array/find';
 
@@ -27,14 +25,14 @@ export const spec = {
 
   supportedMediaTypes: ['banner'],
 
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     if (bid.params && bid.params.sid) {
       return true;
     }
     return false;
   },
 
-  buildRequests: function(validBidRequests, bidderRequest) {
+  buildRequests: function (validBidRequests, bidderRequest) {
     let serverRequests = [];
     const REQUEST_SERVER_URL = getEngineUrl();
     const DEMO_DATA_PARAMS = ['gender', 'country', 'region', 'postal', 'city', 'yob'];
@@ -66,7 +64,7 @@ export const spec = {
         'hb.floor': bid.bidfloor || '',
         'hb.spb': i === 0 ? pixelSyncPossibility() : -1,
         'hb.ver': WS_ADAPTER_VERSION,
-        'hb.name': `prebidjs-${version}`,
+        'hb.name': 'prebidjs-$prebid.version$',
         'hb.bidId': bid.bidId,
         'hb.sizes': parseSizesInput(bid.sizes).join(','),
         'hb.currency': bid.params.cur || bid.params.currency || ''
@@ -105,7 +103,7 @@ export const spec = {
 
       // GDPR Consent info
       if (data.gdprCmp) {
-        const { gdprApplies, consentString, vendorData } = bidderRequest.gdprConsent;
+        const {gdprApplies, consentString, vendorData} = bidderRequest.gdprConsent;
         const hasGlobalScope = vendorData && vendorData.hasGlobalScope;
         data.gdprApplies = gdprApplies ? 1 : gdprApplies === undefined ? '' : 0;
         data.gdprConsentData = consentString;
@@ -132,7 +130,7 @@ export const spec = {
     return serverRequests;
   },
 
-  interpretResponse: function(serverResponse, request) {
+  interpretResponse: function (serverResponse, request) {
     const responseTime = Date.now() - preReqTime;
     const successBids = serverResponse.body || [];
     let bidResponses = [];
@@ -161,7 +159,7 @@ export const spec = {
     return bidResponses
   },
 
-  getUserSyncs: function(syncOptions, serverResponses = []) {
+  getUserSyncs: function (syncOptions, serverResponses = []) {
     let userSyncs = [];
     userSyncs = serverResponses.reduce((allSyncPixels, response) => {
       if (response && response.body && response.body[0]) {
@@ -224,7 +222,8 @@ function visibleOnLoad(element) {
   if (element && element.getBoundingClientRect) {
     const topPos = element.getBoundingClientRect().top;
     return topPos < screen.height && topPos >= window.top.pageYOffset ? 1 : 0;
-  };
+  }
+  ;
   return '';
 }
 
@@ -246,6 +245,14 @@ function encodedParamValue(value) {
 function getEngineUrl() {
   const ENGINE_URL = 'https://engine.widespace.com/map/engine/dynadreq';
   return window.wisp && window.wisp.ENGINE_URL ? window.wisp.ENGINE_URL : ENGINE_URL;
+}
+
+function getTopWindowReferrer() {
+  try {
+    return window.top.document.referrer;
+  } catch (e) {
+    return '';
+  }
 }
 
 registerBidder(spec);

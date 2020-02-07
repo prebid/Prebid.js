@@ -52,7 +52,10 @@ var adUnits = [
                   },
                   icon: {
                     required: true
-                  }
+                  },
+                  privacyLink: {
+                    required: true
+                  },
                 },
               },
               bids: [

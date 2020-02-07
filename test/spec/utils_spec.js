@@ -1,8 +1,9 @@
 import { getAdServerTargeting } from 'test/fixtures/fixtures';
 import { expect } from 'chai';
+import CONSTANTS from 'src/constants.json';
+import * as utils from 'src/utils';
 
 var assert = require('assert');
-var utils = require('src/utils');
 
 describe('Utils', function () {
   var obj_string = 's',
@@ -101,7 +102,7 @@ describe('Utils', function () {
       var obj = getAdServerTargeting();
 
       var output = utils.transformAdServerTargetingObj(obj[Object.keys(obj)[0]]);
-      var expected = 'foobar=0x0%2C300x250%2C300x600&hb_size=300x250&hb_pb=10.00&hb_adid=233bcbee889d46d&hb_bidder=appnexus&hb_size_triplelift=0x0&hb_pb_triplelift=10.00&hb_adid_triplelift=222bb26f9e8bd&hb_bidder_triplelift=triplelift&hb_size_appnexus=300x250&hb_pb_appnexus=10.00&hb_adid_appnexus=233bcbee889d46d&hb_bidder_appnexus=appnexus&hb_size_pagescience=300x250&hb_pb_pagescience=10.00&hb_adid_pagescience=25bedd4813632d7&hb_bidder_pagescienc=pagescience&hb_size_brightcom=300x250&hb_pb_brightcom=10.00&hb_adid_brightcom=26e0795ab963896&hb_bidder_brightcom=brightcom&hb_size_brealtime=300x250&hb_pb_brealtime=10.00&hb_adid_brealtime=275bd666f5a5a5d&hb_bidder_brealtime=brealtime&hb_size_pubmatic=300x250&hb_pb_pubmatic=10.00&hb_adid_pubmatic=28f4039c636b6a7&hb_bidder_pubmatic=pubmatic&hb_size_rubicon=300x600&hb_pb_rubicon=10.00&hb_adid_rubicon=29019e2ab586a5a&hb_bidder_rubicon=rubicon';
+      var expected = 'foobar=0x0%2C300x250%2C300x600&' + CONSTANTS.TARGETING_KEYS.SIZE + '=300x250&' + CONSTANTS.TARGETING_KEYS.PRICE_BUCKET + '=10.00&' + CONSTANTS.TARGETING_KEYS.AD_ID + '=233bcbee889d46d&' + CONSTANTS.TARGETING_KEYS.BIDDER + '=appnexus&' + CONSTANTS.TARGETING_KEYS.SIZE + '_triplelift=0x0&' + CONSTANTS.TARGETING_KEYS.PRICE_BUCKET + '_triplelift=10.00&' + CONSTANTS.TARGETING_KEYS.AD_ID + '_triplelift=222bb26f9e8bd&' + CONSTANTS.TARGETING_KEYS.BIDDER + '_triplelift=triplelift&' + CONSTANTS.TARGETING_KEYS.SIZE + '_appnexus=300x250&' + CONSTANTS.TARGETING_KEYS.PRICE_BUCKET + '_appnexus=10.00&' + CONSTANTS.TARGETING_KEYS.AD_ID + '_appnexus=233bcbee889d46d&' + CONSTANTS.TARGETING_KEYS.BIDDER + '_appnexus=appnexus&' + CONSTANTS.TARGETING_KEYS.SIZE + '_pagescience=300x250&' + CONSTANTS.TARGETING_KEYS.PRICE_BUCKET + '_pagescience=10.00&' + CONSTANTS.TARGETING_KEYS.AD_ID + '_pagescience=25bedd4813632d7&' + CONSTANTS.TARGETING_KEYS.BIDDER + '_pagescienc=pagescience&' + CONSTANTS.TARGETING_KEYS.SIZE + '_brightcom=300x250&' + CONSTANTS.TARGETING_KEYS.PRICE_BUCKET + '_brightcom=10.00&' + CONSTANTS.TARGETING_KEYS.AD_ID + '_brightcom=26e0795ab963896&' + CONSTANTS.TARGETING_KEYS.BIDDER + '_brightcom=brightcom&' + CONSTANTS.TARGETING_KEYS.SIZE + '_brealtime=300x250&' + CONSTANTS.TARGETING_KEYS.PRICE_BUCKET + '_brealtime=10.00&' + CONSTANTS.TARGETING_KEYS.AD_ID + '_brealtime=275bd666f5a5a5d&' + CONSTANTS.TARGETING_KEYS.BIDDER + '_brealtime=brealtime&' + CONSTANTS.TARGETING_KEYS.SIZE + '_pubmatic=300x250&' + CONSTANTS.TARGETING_KEYS.PRICE_BUCKET + '_pubmatic=10.00&' + CONSTANTS.TARGETING_KEYS.AD_ID + '_pubmatic=28f4039c636b6a7&' + CONSTANTS.TARGETING_KEYS.BIDDER + '_pubmatic=pubmatic&' + CONSTANTS.TARGETING_KEYS.SIZE + '_rubicon=300x600&' + CONSTANTS.TARGETING_KEYS.PRICE_BUCKET + '_rubicon=10.00&' + CONSTANTS.TARGETING_KEYS.AD_ID + '_rubicon=29019e2ab586a5a&' + CONSTANTS.TARGETING_KEYS.BIDDER + '_rubicon=rubicon';
       assert.equal(output, expected);
     });
 
@@ -227,6 +228,56 @@ describe('Utils', function () {
     it('return undefined if the input is not a number 2', function () {
       var size = ['foo', 300];
       var output = utils.parseGPTSingleSizeArray(size);
+      assert.equal(output, undefined);
+    });
+  });
+
+  describe('parseGPTSingleSizeArrayToRtbSize', function () {
+    it('should return size string with input single size array', function () {
+      var size = [300, 250];
+      var output = utils.parseGPTSingleSizeArrayToRtbSize(size);
+      assert.deepEqual(output, {w: 300, h: 250});
+    });
+
+    it('should return size string with input single size array', function () {
+      var size = ['300', '250'];
+      var output = utils.parseGPTSingleSizeArrayToRtbSize(size);
+      assert.deepEqual(output, {w: 300, h: 250});
+    });
+
+    it('return undefined using string input', function () {
+      var size = '1';
+      var output = utils.parseGPTSingleSizeArrayToRtbSize(size);
+      assert.equal(output, undefined);
+    });
+
+    it('return undefined using number input', function () {
+      var size = 1;
+      var output = utils.parseGPTSingleSizeArrayToRtbSize(size);
+      assert.equal(output, undefined);
+    });
+
+    it('return undefined using one length single array', function () {
+      var size = [300];
+      var output = utils.parseGPTSingleSizeArrayToRtbSize(size);
+      assert.equal(output, undefined);
+    });
+
+    it('return undefined if the input is empty', function () {
+      var size = '';
+      var output = utils.parseGPTSingleSizeArrayToRtbSize(size);
+      assert.equal(output, undefined);
+    });
+
+    it('return undefined if the input is not a number', function () {
+      var size = ['foo', 'bar'];
+      var output = utils.parseGPTSingleSizeArrayToRtbSize(size);
+      assert.equal(output, undefined);
+    });
+
+    it('return undefined if the input is not a number 2', function () {
+      var size = [300, 'foo'];
+      var output = utils.parseGPTSingleSizeArrayToRtbSize(size);
       assert.equal(output, undefined);
     });
   });
@@ -610,7 +661,7 @@ describe('Utils', function () {
       var value2 = utils.deepAccess(obj, 'test.first');
       assert.equal(value2, 11);
 
-      var value3 = utils.deepAccess(obj, 1);
+      var value3 = utils.deepAccess(obj, '1');
       assert.equal(value3, 2);
     });
 
@@ -622,6 +673,29 @@ describe('Utils', function () {
       });
 
       assert.equal(value, undefined);
+    });
+  });
+
+  describe('deepSetValue', function() {
+    it('should set existing properties at various depths', function() {
+      const testObj = {
+        prop: 'value',
+        nestedObj: {
+          nestedProp: 'nestedValue'
+        }
+      };
+      utils.deepSetValue(testObj, 'prop', 'newValue');
+      assert.equal(testObj.prop, 'newValue');
+      utils.deepSetValue(testObj, 'nestedObj.nestedProp', 'newNestedValue');
+      assert.equal(testObj.nestedObj.nestedProp, 'newNestedValue');
+    });
+
+    it('should create object levels between top and bottom of given path if they do not exist', function() {
+      const testObj = {};
+      utils.deepSetValue(testObj, 'level1.level2', 'value');
+      assert.notEqual(testObj.level1, undefined);
+      assert.notEqual(testObj.level1.level2, undefined);
+      assert.equal(testObj.level1.level2, 'value');
     });
   });
 
@@ -719,93 +793,6 @@ describe('Utils', function () {
     });
   });
 
-  describe('getTopWindowLocation', function () {
-    let sandbox;
-
-    beforeEach(function () {
-      sandbox = sinon.sandbox.create();
-    });
-
-    afterEach(function () {
-      sandbox.restore();
-    });
-
-    it('returns window.location if not in iFrame', function () {
-      sandbox.stub(utils, 'getWindowLocation').returns({
-        href: 'https://www.google.com/',
-        ancestorOrigins: {},
-        origin: 'https://www.google.com',
-        protocol: 'https',
-        host: 'www.google.com',
-        hostname: 'www.google.com',
-        port: '',
-        pathname: '/',
-        search: '',
-        hash: ''
-      });
-      let windowSelfAndTopObject = { self: 'is same as top' };
-      sandbox.stub(utils, 'getWindowSelf').returns(
-        windowSelfAndTopObject
-      );
-      sandbox.stub(utils, 'getWindowTop').returns(
-        windowSelfAndTopObject
-      );
-      var topWindowLocation = utils.getTopWindowLocation();
-      expect(topWindowLocation).to.be.a('object');
-      expect(topWindowLocation.href).to.equal('https://www.google.com/');
-      expect(topWindowLocation.protocol).to.equal('https');
-      expect(topWindowLocation.hostname).to.equal('www.google.com');
-      expect(topWindowLocation.port).to.equal('');
-      expect(topWindowLocation.pathname).to.equal('/');
-      expect(topWindowLocation.hash).to.equal('');
-      expect(topWindowLocation.search).to.equal('');
-      expect(topWindowLocation.host).to.equal('www.google.com');
-    });
-
-    it('returns parsed dom string from ancestorOrigins if in iFrame & ancestorOrigins is populated', function () {
-      sandbox.stub(utils, 'getWindowSelf').returns(
-        { self: 'is not same as top' }
-      );
-      sandbox.stub(utils, 'getWindowTop').returns(
-        { top: 'is not same as self' }
-      );
-      sandbox.stub(utils, 'getAncestorOrigins').returns('https://www.google.com/a/umich.edu/acs');
-      var topWindowLocation = utils.getTopWindowLocation();
-      expect(topWindowLocation).to.be.a('object');
-      expect(topWindowLocation.pathname).to.equal('/a/umich.edu/acs');
-      expect(topWindowLocation.href).to.equal('https://www.google.com/a/umich.edu/acs');
-      expect(topWindowLocation.protocol).to.equal('https');
-      expect(topWindowLocation.hostname).to.equal('www.google.com');
-      expect(topWindowLocation.hash).to.equal('');
-      expect(topWindowLocation.search).to.equal('');
-      // note IE11 returns the default secure port, so we look for this alternate value as well in these tests
-      expect(topWindowLocation.port).to.be.oneOf([0, 443]);
-      expect(topWindowLocation.host).to.be.oneOf(['www.google.com', 'www.google.com:443']);
-    });
-
-    it('returns parsed referrer string if in iFrame but no ancestorOrigins', function () {
-      sandbox.stub(utils, 'getWindowSelf').returns(
-        { self: 'is not same as top' }
-      );
-      sandbox.stub(utils, 'getWindowTop').returns(
-        { top: 'is not same as self' }
-      );
-      sandbox.stub(utils, 'getAncestorOrigins').returns(null);
-      sandbox.stub(utils, 'getTopFrameReferrer').returns('https://www.example.com/');
-      var topWindowLocation = utils.getTopWindowLocation();
-      expect(topWindowLocation).to.be.a('object');
-      expect(topWindowLocation.href).to.equal('https://www.example.com/');
-      expect(topWindowLocation.protocol).to.equal('https');
-      expect(topWindowLocation.hostname).to.equal('www.example.com');
-      expect(topWindowLocation.pathname).to.equal('/');
-      expect(topWindowLocation.hash).to.equal('');
-      expect(topWindowLocation.search).to.equal('');
-      // note IE11 returns the default secure port, so we look for this alternate value as well in these tests
-      expect(topWindowLocation.port).to.be.oneOf([0, 443]);
-      expect(topWindowLocation.host).to.be.oneOf(['www.example.com', 'www.example.com:443']);
-    });
-  });
-
   describe('convertCamelToUnderscore', function () {
     it('returns converted string value using underscore syntax instead of camelCase', function () {
       let var1 = 'placementIdTest';
@@ -843,6 +830,96 @@ describe('Utils', function () {
 
       sizes = utils.getAdUnitSizes({ mediaTypes: { banner: { sizes: [[300, 250], [300, 600]] } } });
       expect(sizes).to.deep.equal([[300, 250], [300, 600]]);
+    });
+  });
+
+  describe('transformBidderParamKeywords', function () {
+    it('returns an array of objects when keyvalue is an array', function () {
+      let keywords = {
+        genre: ['rock', 'pop']
+      };
+      let result = utils.transformBidderParamKeywords(keywords);
+      expect(result).to.deep.equal([{
+        key: 'genre',
+        value: ['rock', 'pop']
+      }]);
+    });
+
+    it('returns an array of objects when keyvalue is a string', function () {
+      let keywords = {
+        genre: 'opera'
+      };
+      let result = utils.transformBidderParamKeywords(keywords);
+      expect(result).to.deep.equal([{
+        key: 'genre',
+        value: ['opera']
+      }]);
+    });
+
+    it('returns an array of objects when keyvalue is a number', function () {
+      let keywords = {
+        age: 15
+      };
+      let result = utils.transformBidderParamKeywords(keywords);
+      expect(result).to.deep.equal([{
+        key: 'age',
+        value: ['15']
+      }]);
+    });
+
+    it('returns an array of objects when using multiple keys with values of differing types', function () {
+      let keywords = {
+        genre: 'classical',
+        mix: ['1', 2, '3', 4],
+        age: 10
+      };
+      let result = utils.transformBidderParamKeywords(keywords);
+      expect(result).to.deep.equal([{
+        key: 'genre',
+        value: ['classical']
+      }, {
+        key: 'mix',
+        value: ['1', '2', '3', '4']
+      }, {
+        key: 'age',
+        value: ['10']
+      }]);
+    });
+
+    it('returns an array of objects when the keyvalue uses an empty string', function() {
+      let keywords = {
+        test: [''],
+        test2: ''
+      };
+      let result = utils.transformBidderParamKeywords(keywords);
+      expect(result).to.deep.equal([{
+        key: 'test',
+        value: ['']
+      }, {
+        key: 'test2',
+        value: ['']
+      }]);
+    });
+
+    describe('insertElement', function () {
+      it('returns a node at the top of the target by default', function () {
+        const toInsert = document.createElement('div');
+        const target = document.getElementsByTagName('body')[0];
+        const inserted = utils.insertElement(toInsert, document, 'body');
+        expect(inserted).to.equal(target.firstChild);
+      });
+      it('returns a node at bottom of target if 4th argument is true', function () {
+        const toInsert = document.createElement('div');
+        const target = document.getElementsByTagName('html')[0];
+        const inserted = utils.insertElement(toInsert, document, 'html', true);
+        expect(inserted).to.equal(target.lastChild);
+      });
+      it('returns a node at top of the head if no target is given', function () {
+        const toInsert = document.createElement('div');
+        const target = document.getElementsByTagName('head')[0];
+        const inserted = utils.insertElement(toInsert);
+        expect(inserted).to.equal(target.firstChild);
+      });
     });
   });
 });

@@ -26,6 +26,11 @@ describe('referer detection', () => {
     let mockIframe2WinObject = mocks.createFakeWindow('http://example.com/iframe1.html', 'http://example.com/iframe2.html');
     let mockIframe1WinObject = mocks.createFakeWindow('http://example.com/page.html', 'http://example.com/iframe1.html');
     let mainWinObject = mocks.createFakeWindow('http://example.com/page.html', 'http://example.com/page.html');
+    mainWinObject.document.querySelector = function() {
+      return {
+        href: 'http://prebid.org'
+      }
+    }
     mockIframe2WinObject.parent = mockIframe1WinObject;
     mockIframe2WinObject.top = mainWinObject;
     mockIframe1WinObject.parent = mainWinObject;
@@ -42,7 +47,8 @@ describe('referer detection', () => {
         'http://example.com/page.html',
         'http://example.com/iframe1.html',
         'http://example.com/iframe2.html'
-      ]
+      ],
+      canonicalUrl: 'http://prebid.org'
     };
     expect(result).to.deep.equal(expectedResult);
   });
@@ -73,7 +79,8 @@ describe('referer detection', () => {
         null,
         'http://aaa.com/iframe1.html',
         'http://bbb.com/iframe2.html'
-      ]
+      ],
+      canonicalUrl: undefined
     };
     expect(result).to.deep.equal(expectedResult);
   });

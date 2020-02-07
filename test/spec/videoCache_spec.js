@@ -1,7 +1,8 @@
-import 'mocha';
+import 'mocha/mocha';
 import chai from 'chai';
 import { getCacheUrl, store } from 'src/videoCache';
 import { config } from 'src/config';
+import { server } from 'test/mocks/xhr';
 
 const should = chai.should();
 
@@ -17,24 +18,11 @@ describe('The video cache', function () {
   }
 
   describe('when the cache server is unreachable', function () {
-    let xhr;
-    let requests;
-
-    beforeEach(function () {
-      xhr = sinon.useFakeXMLHttpRequest();
-      requests = [];
-      xhr.onCreate = (request) => requests.push(request);
-    });
-
-    afterEach(function () {
-      xhr.restore();
-    });
-
     it('should execute the callback with an error when store() is called', function () {
       const callback = sinon.spy();
-      store([ { vastUrl: 'my-mock-url.com' } ], callback);
+      store([{ vastUrl: 'my-mock-url.com' }], callback);
 
-      requests[0].respond(503, {
+      server.requests[0].respond(503, {
         'Content-Type': 'plain/text',
       }, 'The server could not save anything at the moment.');
 
@@ -44,13 +32,7 @@ describe('The video cache', function () {
   });
 
   describe('when the cache server is available', function () {
-    let xhr;
-    let requests;
-
     beforeEach(function () {
-      xhr = sinon.useFakeXMLHttpRequest();
-      requests = [];
-      xhr.onCreate = (request) => requests.push(request);
       config.setConfig({
         cache: {
           url: 'https://prebid.adnxs.com/pbc/v1/cache'
@@ -59,7 +41,6 @@ describe('The video cache', function () {
     });
 
     afterEach(function () {
-      xhr.restore();
       config.resetConfig();
     });
 
@@ -100,7 +81,7 @@ describe('The video cache', function () {
       </Wrapper>
     </Ad>
   </VAST>`;
-      assertRequestMade({ vastUrl: 'my-mock-url.com' }, expectedValue)
+      assertRequestMade({ vastUrl: 'my-mock-url.com', ttl: 25 }, expectedValue)
     });
 
     it('should make the expected request when store() is called on an ad with a vastUrl and a vastImpUrl', function () {
@@ -114,18 +95,108 @@ describe('The video cache', function () {
       </Wrapper>
     </Ad>
   </VAST>`;
-      assertRequestMade({ vastUrl: 'my-mock-url.com', vastImpUrl: 'imptracker.com' }, expectedValue)
+      assertRequestMade({ vastUrl: 'my-mock-url.com', vastImpUrl: 'imptracker.com', ttl: 25 }, expectedValue)
     });
 
     it('should make the expected request when store() is called on an ad with vastXml', function () {
       const vastXml = '<VAST version="3.0"></VAST>';
-      assertRequestMade({ vastXml: vastXml }, vastXml);
+      assertRequestMade({ vastXml: vastXml, ttl: 25 }, vastXml);
+    });
+
+    it('should make the expected request when store() is called while supplying a custom key param', function () {
+      const customKey1 = 'keyword_abc_123';
+      const customKey2 = 'other_xyz_789';
+      const vastXml1 = '<VAST version="3.0">test1</VAST>';
+      const vastXml2 = '<VAST version="3.0">test2</VAST>';
+
+      const bids = [{
+        vastXml: vastXml1,
+        ttl: 25,
+        customCacheKey: customKey1
+      }, {
+        vastXml: vastXml2,
+        ttl: 25,
+        customCacheKey: customKey2
+      }];
+
+      store(bids, function () { });
+      const request = server.requests[0];
+      request.method.should.equal('POST');
+      request.url.should.equal('https://prebid.adnxs.com/pbc/v1/cache');
+      request.requestHeaders['Content-Type'].should.equal('text/plain;charset=utf-8');
+      let payload = {
+        puts: [{
+          type: 'xml',
+          value: vastXml1,
+          ttlseconds: 25,
+          key: customKey1
+        }, {
+          type: 'xml',
+          value: vastXml2,
+          ttlseconds: 25,
+          key: customKey2
+        }]
+      };
+      JSON.parse(request.requestBody).should.deep.equal(payload);
+    });
+
+    it('should include additional params in request payload should config.cache.vasttrack be true', () => {
+      config.setConfig({
+        cache: {
+          url: 'https://prebid.adnxs.com/pbc/v1/cache',
+          vasttrack: true
+        }
+      });
+
+      const customKey1 = 'vasttrack_123';
+      const customKey2 = 'vasttrack_abc';
+      const vastXml1 = '<VAST version="3.0">testvast1</VAST>';
+      const vastXml2 = '<VAST version="3.0">testvast2</VAST>';
+
+      const bids = [{
+        vastXml: vastXml1,
+        ttl: 25,
+        customCacheKey: customKey1,
+        requestId: '12345abc',
+        bidder: 'appnexus'
+      }, {
+        vastXml: vastXml2,
+        ttl: 25,
+        customCacheKey: customKey2,
+        requestId: 'cba54321',
+        bidder: 'rubicon'
+      }];
+
+      store(bids, function () { });
+      const request = server.requests[0];
+      request.method.should.equal('POST');
+      request.url.should.equal('https://prebid.adnxs.com/pbc/v1/cache');
+      request.requestHeaders['Content-Type'].should.equal('text/plain;charset=utf-8');
+      let payload = {
+        puts: [{
+          type: 'xml',
+          value: vastXml1,
+          ttlseconds: 25,
+          key: customKey1,
+          bidid: '12345abc',
+          bidder: 'appnexus'
+        }, {
+          type: 'xml',
+          value: vastXml2,
+          ttlseconds: 25,
+          key: customKey2,
+          bidid: 'cba54321',
+          bidder: 'rubicon'
+        }]
+      };
+
+      JSON.parse(request.requestBody).should.deep.equal(payload);
     });
 
     function assertRequestMade(bid, expectedValue) {
-      store([bid], function() { });
+      store([bid], function () { });
 
-      const request = requests[0];
+      const request = server.requests[0];
       request.method.should.equal('POST');
       request.url.should.equal('https://prebid.adnxs.com/pbc/v1/cache');
       request.requestHeaders['Content-Type'].should.equal('text/plain;charset=utf-8');
@@ -134,14 +205,15 @@ describe('The video cache', function () {
         puts: [{
           type: 'xml',
           value: expectedValue,
+          ttlseconds: 25
         }],
       });
     }
 
     function fakeServerCall(bid, responseBody) {
       const callback = sinon.spy();
-      store([ bid ], callback);
-      requests[0].respond(
+      store([bid], callback);
+      server.requests[0].respond(
         200,
         {
           'Content-Type': 'application/json',

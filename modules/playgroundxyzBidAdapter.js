@@ -1,13 +1,14 @@
-import * as utils from 'src/utils';
-import { registerBidder } from 'src/adapters/bidderFactory';
-import { BANNER } from 'src/mediaTypes';
+import { registerBidder } from '../src/adapters/bidderFactory';
+import { BANNER } from '../src/mediaTypes';
+import * as utils from '../src/utils';
 
 const BIDDER_CODE = 'playgroundxyz';
-const URL = 'https://ads.playground.xyz/host-config/prebid';
+const URL = 'https://ads.playground.xyz/host-config/prebid?v=2';
+const DEFAULT_CURRENCY = 'USD';
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['playgroundxyz'],
+  aliases: ['playgroundxyz', 'pxyz'],
   supportedMediaTypes: [BANNER],
 
   /**
@@ -27,13 +28,21 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (bidRequests, bidderRequest) {
-    const topLocation = utils.getTopWindowLocation();
+    const referer = bidderRequest.refererInfo.referer;
+    const parts = referer.split('/');
+
+    let protocol, hostname;
+    if (parts.length >= 3) {
+      protocol = parts[0];
+      hostname = parts[2];
+    }
+
     const payload = {
       id: bidRequests[0].auctionId,
       site: {
-        domain: window.location.protocol + '//' + topLocation.hostname,
-        name: topLocation.hostname,
-        page: topLocation.href,
+        domain: protocol + '//' + hostname,
+        name: hostname,
+        page: referer,
       },
       device: {
         ua: navigator.userAgent,
@@ -69,8 +78,10 @@ export const spec = {
 
     if (!serverResponse || serverResponse.error) {
       let errorMessage = `in response for ${bidderRequest.bidderCode} adapter`;
-      if (serverResponse && serverResponse.error) { errorMessage += `: ${serverResponse.error}`; }
-      utils.logError(errorMessage);
+      if (serverResponse && serverResponse.error) {
+        errorMessage += `: ${serverResponse.error}`;
+        utils.logError(errorMessage);
+      }
       return bids;
     }
 
@@ -80,11 +91,16 @@ export const spec = {
       return bids;
     }
 
+    if (!serverResponse.seatbid) {
+      return bids;
+    }
+
+    const currency = serverResponse.cur || DEFAULT_CURRENCY;
     serverResponse.seatbid.forEach(sBid => {
       if (sBid.hasOwnProperty('bid')) {
         sBid.bid.forEach(iBid => {
           if (iBid.price !== 0) {
-            const bid = newBid(iBid);
+            const bid = newBid(iBid, currency);
             bids.push(bid);
           }
         });
@@ -94,22 +110,14 @@ export const spec = {
   },
 
   getUserSyncs: function (syncOptions) {
-    if (syncOptions.iframeEnabled) {
-      return [{
-        type: 'iframe',
-        url: '//acdn.adnxs.com/ib/static/usersync/v3/async_usersync.html'
-      }];
-    }
-    if (syncOptions.pixelEnabled) {
-      return [{
-        type: 'image',
-        url: '//ib.adnxs.com/getuidnb?https://ads.playground.xyz/usersync?partner=appnexus&uid=$UID'
-      }];
-    }
+    return [{
+      type: 'image',
+      url: '//ib.adnxs.com/getuidnb?https://ads.playground.xyz/usersync?partner=appnexus&uid=$UID'
+    }];
   }
 }
 
-function newBid(bid) {
+function newBid(bid, currency) {
   return {
     requestId: bid.impid,
     mediaType: BANNER,
@@ -120,7 +128,7 @@ function newBid(bid) {
     height: bid.h,
     ttl: 300,
     netRevenue: true,
-    currency: 'USD',
+    currency: currency,
   };
 }
 
@@ -131,6 +139,12 @@ function mapImpression(bid) {
     ext: {
       appnexus: {
         placement_id: parseInt(bid.params.placementId, 10)
+      },
+      pxyz: {
+        adapter: {
+          vendor: 'prebid',
+          prebid: '$prebid.version$'
+        }
       }
     }
   };
@@ -160,7 +174,7 @@ function isMobile() {
 }
 
 function isConnectedTV() {
-  return (/(smart[-]?tv|hbbtv|appletv|googletv|hdmi|netcast\.tv|viera|nettv|roku|\bdtv\b|sonydtv|inettvbrowser|\btv\b)/i).test(global.navigator.userAgent);
+  return (/(smart[-]?tv|hbbtv|appletv|googletv|hdmi|netcast\.tv|viera|nettv|roku|\bdtv\b|sonydtv|inettvbrowser|\btv\b)/i).test(navigator.userAgent);
 }
 
 registerBidder(spec);

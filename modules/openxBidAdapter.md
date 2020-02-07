@@ -15,7 +15,7 @@ Module that connects to OpenX's demand sources
 
 | Name | Scope | Type | Description | Example
 | ---- | ----- | ---- | ----------- | -------
-| `delDomain` | required | String | OpenX delivery domain provided by your OpenX representative.  | "PUBLISHER-d.openx.net"
+| `delDomain` or `platform` | required | String | OpenX delivery domain or platform id provided by your OpenX representative.  | "PUBLISHER-d.openx.net" or "555not5a-real-plat-form-id0123456789"
 | `unit` | required | String | OpenX ad unit ID provided by your OpenX representative. | "1611023122"
 | `customParams` | optional | Object | User-defined targeting key-value pairs. customParams applies to a specific unit. | `{key1: "v1", key2: ["v2","v3"]}`
 | `customFloor` | optional | Number | Minimum price in USD. customFloor applies to a specific unit. For example, use the following value to set a $1.50 floor: 1.50 <br/><br/> **WARNING:**<br/> Misuse of this parameter can impact revenue | 1.50
@@ -49,7 +49,17 @@ var adUnits = [
             key2: ['v2', 'v3']
           },
         }
-      }
+      }, {
+         bidder: 'openx',
+         params: {
+           unit: '539439964',
+           platform: 'a3aece0c-9e80-4316-8deb-faf804779bd1',
+           customParams: {
+             key1: 'v1',
+             key2: ['v2', 'v3']
+           },
+         }
+       }
     ]
   },
   {
@@ -65,12 +75,8 @@ var adUnits = [
       params: {
         unit: '1611023124',
         delDomain: 'PUBLISHER-d.openx.net',
-        openrtb: {
-          imp: [{
-            video: {
-              mimes: ['video/x-ms-wmv, video/mp4']
-            }
-          }]
+        video: {
+          mimes: ['video/x-ms-wmv, video/mp4']
         }
       }
     }]

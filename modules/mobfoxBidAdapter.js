@@ -1,6 +1,6 @@
-import {registerBidder} from 'src/adapters/bidderFactory';
+import {registerBidder} from '../src/adapters/bidderFactory';
 
-const utils = require('src/utils.js');
+const utils = require('../src/utils.js');
 const BIDDER_CODE = 'mobfox';
 const BID_REQUEST_BASE_URL = 'https://my.mobfox.com/request.php';
 const CPM_HEADER = 'X-Pricing-CPM';

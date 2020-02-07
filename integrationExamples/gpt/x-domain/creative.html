@@ -2,10 +2,11 @@
 // this script can be returned by an ad server delivering a cross domain iframe, into which the
 // creative will be rendered, e.g. DFP delivering a SafeFrame
 
+let windowLocation = window.location;
 var urlParser = document.createElement('a');
 urlParser.href = '%%PATTERN:url%%';
 var publisherDomain = urlParser.protocol + '//' + urlParser.hostname;
-var adServerDomain = urlParser.protocol + '//tpc.googlesyndication.com';
+var adServerDomain = windowLocation.protocol + '//tpc.googlesyndication.com';
 
 function renderAd(ev) {
     var key = ev.message ? 'message' : 'data';

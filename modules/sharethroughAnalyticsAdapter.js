@@ -1,6 +1,6 @@
-import adapter from 'src/AnalyticsAdapter';
-import adaptermanager from 'src/adaptermanager';
-const utils = require('src/utils');
+import adapter from '../src/AnalyticsAdapter';
+import adapterManager from '../src/adapterManager';
+const utils = require('../src/utils');
 
 const emptyUrl = '';
 const analyticsType = 'endpoint';
@@ -14,7 +14,7 @@ var sharethroughAdapter = Object.assign(adapter(
   }
 ),
 {
-  STR_BEACON_HOST: document.location.protocol + '//b.sharethrough.com/butler?',
+  STR_BEACON_HOST: 'https://b.sharethrough.com/butler?',
   placementCodeSet: {},
 
   track({ eventType, args }) {
@@ -63,7 +63,7 @@ var sharethroughAdapter = Object.assign(adapter(
   }
 });
 
-adaptermanager.registerAnalyticsAdapter({
+adapterManager.registerAnalyticsAdapter({
   adapter: sharethroughAdapter,
   code: 'sharethrough'
 });

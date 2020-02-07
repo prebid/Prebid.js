@@ -1,7 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/inskinBidAdapter';
-
-var bidFactory = require('src/bidfactory.js');
+import { createBid } from 'src/bidfactory';
 
 const ENDPOINT = 'https://mfad.inskinad.com/api/v2';
 
@@ -83,6 +82,9 @@ const RESPONSE = {
           'type': 'html',
           'body': '<html></html>',
           'data': {
+            'customData': {
+              'pubCPM': 1
+            },
             'height': 90,
             'width': 728,
             'imageUrl': 'https://static.adzerk.net/Advertisers/b0ab77db8a7848c8b78931aed022a5ef.gif',
@@ -96,6 +98,18 @@ const RESPONSE = {
         'pricing': {'price': 0.5, 'clearPrice': 0.5, 'revenue': 0.0005, 'rateType': 2, 'eCPM': 0.5}
       }
     }
+  }
+};
+
+const consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
+const bidderRequest = {
+  bidderCode: 'inskin',
+  gdprConsent: {
+    consentString: consentString,
+    gdprApplies: true
+  },
+  refererInfo: {
+    referer: 'https://www.inskinmedia.com'
   }
 };
 
@@ -168,37 +182,29 @@ describe('InSkin BidAdapter', function () {
 
   describe('buildRequests validation', function () {
     it('creates request data', function () {
-      let request = spec.buildRequests(bidRequests);
+      let request = spec.buildRequests(bidRequests, bidderRequest);
 
       expect(request).to.exist.and.to.be.a('object');
     });
 
     it('request to inskin should contain a url', function () {
-      let request = spec.buildRequests(bidRequests);
+      let request = spec.buildRequests(bidRequests, bidderRequest);
 
       expect(request.url).to.have.string('inskinad.com');
     });
 
     it('requires valid bids to make request', function () {
-      let request = spec.buildRequests([]);
+      let request = spec.buildRequests([], bidderRequest);
       expect(request.bidRequest).to.be.empty;
     });
 
     it('sends bid request to ENDPOINT via POST', function () {
-      let request = spec.buildRequests(bidRequests);
+      let request = spec.buildRequests(bidRequests, bidderRequest);
 
       expect(request.method).to.have.string('POST');
     });
 
     it('should add gdpr consent information to the request', function () {
-      let consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
-      let bidderRequest = {
-        'bidderCode': 'inskin',
-        'gdprConsent': {
-          consentString: consentString,
-          gdprApplies: true
-        }
-      };
       bidderRequest.bids = bidRequests;
 
       const request = spec.buildRequests(bidRequests, bidderRequest);
@@ -212,8 +218,8 @@ describe('InSkin BidAdapter', function () {
   });
   describe('interpretResponse validation', function () {
     it('response should have valid bidderCode', function () {
-      let bidRequest = spec.buildRequests(REQUEST.bidRequest);
-      let bid = bidFactory.createBid(1, bidRequest.bidRequest[0]);
+      let bidRequest = spec.buildRequests(REQUEST.bidRequest, bidderRequest);
+      let bid = createBid(1, bidRequest.bidRequest[0]);
 
       expect(bid.bidderCode).to.equal('inskin');
     });
@@ -238,8 +244,14 @@ describe('InSkin BidAdapter', function () {
         expect(b).to.have.property('creativeId');
         expect(b).to.have.property('ttl', 360);
         expect(b).to.have.property('netRevenue', true);
-        expect(b).to.have.property('referrer');
       });
+    });
+
+    it('cpm is correctly set', function () {
+      let bids = spec.interpretResponse(RESPONSE, REQUEST);
+
+      expect(bids[0].cpm).to.equal(0.5);
+      expect(bids[1].cpm).to.equal(1);
     });
 
     it('handles nobid responses', function () {

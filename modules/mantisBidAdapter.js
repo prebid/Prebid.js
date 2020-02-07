@@ -1,4 +1,4 @@
-import {registerBidder} from 'src/adapters/bidderFactory';
+import {registerBidder} from '../src/adapters/bidderFactory';
 
 function inIframe() {
   try {
@@ -168,7 +168,7 @@ function buildMantisUrl(path, data, domain) {
     tz: new Date().getTimezoneOffset(),
     buster: new Date().getTime(),
     secure: isSecure(),
-    version: 8
+    version: 9
   };
   if (!inIframe() || isAmp()) {
     params.mobile = !isAmp() && isDesktop(true) ? 'false' : 'true';
@@ -252,7 +252,7 @@ const spec = {
         width: ad.width,
         height: ad.height,
         ad: ad.html,
-        ttl: 86400,
+        ttl: ad.ttl || serverResponse.body.ttl || 86400,
         creativeId: ad.view,
         netRevenue: true,
         currency: 'USD'
@@ -277,7 +277,9 @@ const spec = {
 onMessage('iframe', function (data) {
   if (window.$sf) {
     var viewed = false;
+    // eslint-disable-next-line no-undef
     $sf.ext.register(data.width, data.height, function () {
+      // eslint-disable-next-line no-undef
       if ($sf.ext.inViewPercentage() < 50 || viewed) {
         return;
       }

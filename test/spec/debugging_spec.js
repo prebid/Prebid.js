@@ -1,7 +1,7 @@
 
 import { expect } from 'chai';
-import { sessionLoader, addBidResponseHook, getConfig, disableOverrides, boundHook } from 'src/debugging';
-import { addBidResponse } from 'src/auction';
+import { sessionLoader, addBidResponseHook, addBidderRequestsHook, getConfig, disableOverrides, addBidResponseBound, addBidderRequestsBound } from 'src/debugging';
+import { addBidResponse, addBidderRequests } from 'src/auction';
 import { config } from 'src/config';
 
 describe('bid overrides', function () {
@@ -13,6 +13,7 @@ describe('bid overrides', function () {
 
   afterEach(function () {
     window.sessionStorage.clear();
+    config.resetConfig();
     sandbox.restore();
   });
 
@@ -30,14 +31,16 @@ describe('bid overrides', function () {
         enabled: true
       });
 
-      expect(addBidResponse.hasHook(boundHook)).to.equal(true);
+      expect(addBidResponse.getHooks().some(hook => hook.hook === addBidResponseBound)).to.equal(true);
+      expect(addBidderRequests.getHooks().some(hook => hook.hook === addBidderRequestsBound)).to.equal(true);
     });
 
     it('should happen when configuration found in sessionStorage', function () {
       sessionLoader({
         getItem: () => ('{"enabled": true}')
       });
-      expect(addBidResponse.hasHook(boundHook)).to.equal(true);
+      expect(addBidResponse.getHooks().some(hook => hook.hook === addBidResponseBound)).to.equal(true);
+      expect(addBidderRequests.getHooks().some(hook => hook.hook === addBidderRequestsBound)).to.equal(true);
     });
 
     it('should not throw if sessionStorage is inaccessible', function () {
@@ -51,7 +54,7 @@ describe('bid overrides', function () {
     });
   });
 
-  describe('hook', function () {
+  describe('bidResponse hook', function () {
     let mockBids;
     let bids;
 
@@ -80,9 +83,10 @@ describe('bid overrides', function () {
 
     function run(overrides) {
       mockBids.forEach(bid => {
-        addBidResponseHook(overrides, bid.adUnitCode, bid, (adUnitCode, bid) => {
+        let next = (adUnitCode, bid) => {
           bids.push(bid);
-        })
+        };
+        addBidResponseHook.bind(overrides)(next, bid.adUnitCode, bid);
       });
     }
 
@@ -137,6 +141,53 @@ describe('bid overrides', function () {
       expect(bids.length).to.equal(2);
       expect(bids[0].cpm).to.equal(0.5);
       expect(bids[1].cpm).to.equal(2);
+    });
+  });
+
+  describe('bidRequests hook', function () {
+    let mockBidRequests;
+    let bidderRequests;
+
+    beforeEach(function () {
+      let baseBidderRequest = {
+        'bidderCode': 'rubicon',
+        'bids': [{
+          'width': 970,
+          'height': 250,
+          'statusMessage': 'Bid available',
+          'mediaType': 'banner',
+          'source': 'client',
+          'currency': 'USD',
+          'cpm': 0.5,
+          'ttl': 300,
+          'netRevenue': false,
+          'adUnitCode': '/19968336/header-bid-tag-0'
+        }]
+      };
+      mockBidRequests = [];
+      mockBidRequests.push(baseBidderRequest);
+      mockBidRequests.push(Object.assign({}, baseBidderRequest, {
+        bidderCode: 'appnexus'
+      }));
+
+      bidderRequests = [];
+    });
+
+    function run(overrides) {
+      let next = (b) => {
+        bidderRequests = b;
+      };
+      addBidderRequestsHook.bind(overrides)(next, mockBidRequests);
+    }
+
+    it('should allow us to exclude bidders', function () {
+      run({
+        enabled: true,
+        bidders: ['appnexus']
+      });
+
+      expect(bidderRequests.length).to.equal(1);
+      expect(bidderRequests[0].bidderCode).to.equal('appnexus');
     });
   });
 });
