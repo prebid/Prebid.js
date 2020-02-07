@@ -33,7 +33,10 @@ export const spec = {
   },
 
   buildRequests: (validBidRequests = [], bidderRequest) => {
-    const bidderConfig = pbjs.getConfig(BIDDER_CODE);
+    let bidderConfig;
+    try {
+      bidderConfig = pbjs.getConfig(BIDDER_CODE)
+    } catch(e){}
     let winTop = window;
     let location;
     try {
