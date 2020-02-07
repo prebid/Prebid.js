@@ -23,7 +23,7 @@ var adUnits = [
             bidder: 'nextroll',
             params: {
                 bidfloor: 1,
-                zoneId: 13144370,
+                zoneId: "13144370",
                 publisherId: "publisherid",
                 sellerId: "sellerid"
             }
@@ -40,7 +40,7 @@ var adUnits = [
             bidder: 'nextroll',
             params: {
                 bidfloor: 2.3,
-                zoneId: 13144370,
+                zoneId: "13144370",
                 publisherId: "publisherid",
                 sellerId: "sellerid"
             }
