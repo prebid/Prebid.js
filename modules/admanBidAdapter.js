@@ -34,11 +34,11 @@ export const spec = {
 
   buildRequests: (validBidRequests = [], bidderRequest) => {
     let bidderConfig = {};
-    try {
-      bidderConfig = pbjs.getConfig(BIDDER_CODE)
-    } catch(e){}
     let winTop = window;
     let location;
+    if(pbjs){
+      bidderConfig = pbjs.getConfig(BIDDER_CODE)
+    }
     try {
       location = new URL(bidderRequest.refererInfo.referer)
       winTop = window.top;
