@@ -1,4 +1,4 @@
-//Proxistore adapter v1.1.0
+// Proxistore adapter v1.1.0
 const { registerBidder } = require('../src/adapters/bidderFactory');
 const BIDDER_CODE = 'proxistore';
 const PROXISTORE_VENDOR_ID = 418;
