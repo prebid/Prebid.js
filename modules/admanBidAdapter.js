@@ -36,9 +36,7 @@ export const spec = {
     let bidderConfig = {};
     let winTop = window;
     let location;
-    if(pbjs){
-      bidderConfig = pbjs.getConfig(BIDDER_CODE)
-    }
+    console.log(bidderRequest)
     try {
       location = new URL(bidderRequest.refererInfo.referer)
       winTop = window.top;
