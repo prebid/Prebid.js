@@ -1,6 +1,6 @@
-import * as utils from '../src/utils';
 import { registerBidder } from '../src/adapters/bidderFactory';
 import { BANNER } from '../src/mediaTypes';
+import * as utils from '../src/utils';
 
 const BIDDER_CODE = 'playgroundxyz';
 const URL = 'https://ads.playground.xyz/host-config/prebid?v=2';
@@ -28,13 +28,21 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (bidRequests, bidderRequest) {
-    const topLocation = utils.getTopWindowLocation();
+    const referer = bidderRequest.refererInfo.referer;
+    const parts = referer.split('/');
+
+    let protocol, hostname;
+    if (parts.length >= 3) {
+      protocol = parts[0];
+      hostname = parts[2];
+    }
+
     const payload = {
       id: bidRequests[0].auctionId,
       site: {
-        domain: window.location.protocol + '//' + topLocation.hostname,
-        name: topLocation.hostname,
-        page: topLocation.href,
+        domain: protocol + '//' + hostname,
+        name: hostname,
+        page: referer,
       },
       device: {
         ua: navigator.userAgent,

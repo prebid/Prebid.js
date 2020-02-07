@@ -120,7 +120,7 @@ describe('AdkernelAdn adapter', function () {
         impid: '57d602ad1c9545',
         crid: '108_158802',
         bid: 10.0,
-        vast_url: 'http://vast.com/vast.xml'
+        vast_url: 'https://vast.com/vast.xml'
       }],
       syncpages: ['https://dsp.adkernel.com/sync']
     }, usersyncOnlyResponse = {
@@ -243,17 +243,18 @@ describe('AdkernelAdn adapter', function () {
       expect(tagRequest).to.not.have.property('user');
     });
 
-    it('shouldn\'t contain gdpr-related information for default request', function () {
+    it('shouldn\'t contain gdpr nor ccpa information for default request', function () {
       let [_, tagRequests] = buildRequest([bid1_pub1]);
       expect(tagRequests[0]).to.not.have.property('user');
     });
 
-    it('should contain gdpr-related information if consent is configured', function () {
+    it('should contain gdpr and ccpa information if consent is configured', function () {
       let [_, bidRequests] = buildRequest([bid1_pub1],
-        {gdprConsent: {gdprApplies: true, consentString: 'test-consent-string'}});
+        {gdprConsent: {gdprApplies: true, consentString: 'test-consent-string'}, uspConsent: '1YNN'});
       expect(bidRequests[0]).to.have.property('user');
       expect(bidRequests[0].user).to.have.property('gdpr', 1);
       expect(bidRequests[0].user).to.have.property('consent', 'test-consent-string');
+      expect(bidRequests[0].user).to.have.property('us_privacy', '1YNN');
     });
 
     it('should\'t contain consent string if gdpr isn\'t applied', function () {
@@ -323,8 +324,8 @@ describe('AdkernelAdn adapter', function () {
     it('should issue a request for each host', function () {
       let [pbRequests, tagRequests] = buildRequest([bid1_pub1, bid1_pub2]);
       expect(pbRequests).to.have.length(2);
-      expect(pbRequests[0].url).to.have.string('//tag.adkernel.com/tag');
-      expect(pbRequests[1].url).to.have.string(`//${bid1_pub2.params.host}/tag`);
+      expect(pbRequests[0].url).to.have.string('https://tag.adkernel.com/tag');
+      expect(pbRequests[1].url).to.have.string(`https://${bid1_pub2.params.host}/tag`);
       expect(tagRequests[0].imp).to.have.length(1);
       expect(tagRequests[1].imp).to.have.length(1);
     });
@@ -365,7 +366,7 @@ describe('AdkernelAdn adapter', function () {
       expect(resp).to.have.property('currency');
       expect(resp).to.have.property('ttl');
       expect(resp).to.have.property('mediaType', 'video');
-      expect(resp).to.have.property('vastUrl', 'http://vast.com/vast.xml');
+      expect(resp).to.have.property('vastUrl', 'https://vast.com/vast.xml');
       expect(resp).to.not.have.property('ad');
     });
 

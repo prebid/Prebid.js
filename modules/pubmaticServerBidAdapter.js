@@ -57,11 +57,17 @@ function _parseSlotParam(paramName, paramValue) {
   }
 }
 
-function _initConf() {
+function _initConf(refererInfo) {
   var conf = {};
-  conf.pageURL = utils.getTopWindowUrl().trim();
-  conf.refURL = utils.getTopWindowReferrer().trim();
+  conf.pageURL = (refererInfo && refererInfo.referer) ? refererInfo.referer : window.location.href;
+  conf.refURL = window.document.referrer;
   return conf;
+}
+
+function _getDomainFromURL(url) {
+  let anchor = document.createElement('a');
+  anchor.href = url;
+  return anchor.hostname;
 }
 
 function _handleCustomParams(params, conf) {
@@ -188,7 +194,7 @@ function cookieSyncCallBack(response, XMLReqObj) {
       } else {
         utils.logWarn(bidder.bidder + ': Please provide valid user sync type.');
       }
-      owpbjs.triggerUserSyncs();
+      window.$$PREBID_GLOBAL$$.triggerUserSyncs();
     }
   });
 }
@@ -214,7 +220,7 @@ function _getDataFromImpArray (impData, id, key) {
   }
 }
 
-function _createDummyBids (impData, bidResponses, errorCode) {
+function _createDummyBids (impData, bidResponses, errorCode, parsedReferrer) {
   let bidMap = window.PWT.bidMap;
   for (var id in bidMap) {
     for (var adapterID in bidMap[id].adapters) {
@@ -231,7 +237,7 @@ function _createDummyBids (impData, bidResponses, errorCode) {
           currency: CURRENCY,
           netRevenue: true,
           ttl: 300,
-          referrer: utils.getTopWindowUrl(),
+          referrer: parsedReferrer,
           ad: '',
           cpm: 0,
           serverSideResponseTime: (errorCode === 3) ? 0 : -1
@@ -268,7 +274,11 @@ export const spec = {
   */
   buildRequests: (validBidRequests, bidderRequest) => {
     var startTime = utils.timestamp();
-    let conf = _initConf();
+    var refererInfo;
+    if (bidderRequest && bidderRequest.refererInfo) {
+      refererInfo = bidderRequest.refererInfo;
+    }
+    let conf = _initConf(refererInfo);
     let payload = _createOrtbTemplate(conf);
     window.PWT.owLatency = window.PWT.owLatency || {};
 
@@ -328,7 +338,7 @@ export const spec = {
 
     payload.device.geo = payload.user.geo;
     payload.site.page = conf.kadpageurl || payload.site.page;
-    payload.site.domain = utils.getTopWindowHostName();
+    payload.site.domain = _getDomainFromURL(payload.site.page);
 
     if (window.PWT.owLatency.hasOwnProperty(conf.wiid)) {
       window.PWT.owLatency[conf.wiid].startTime = startTime;
@@ -368,12 +378,11 @@ export const spec = {
         logAllErrors(errors);
 
         // Supporting multiple bid responses for same adSize
-        const referrer = utils.getTopWindowUrl();
         const partnerResponseTimeObj = (response.body.ext && response.body.ext.responsetimemillis) || {};
 
         const miObj = (response.body.ext && response.body.ext.matchedimpression) || {};
         let requestData = JSON.parse(request.data);
-
+        let parsedReferrer = requestData.site && requestData.site.ref ? requestData.site.ref : '';
         response.body.seatbid.forEach(function (seatbidder) {
           seatbidder.bid && seatbidder.bid.forEach(function (bid) {
             if (/* bid.id !== null && */bid.ext.summary) {
@@ -383,7 +392,7 @@ export const spec = {
                 if (summary.errorCode === 6 || summary.errorCode === 3 || summary.errorCode === 11 || summary.errorCode === 12) {
                   // special handling for error code 6,11,12. Create all dummy bids from request data.
                   // 11: All Partners Throttled, 12 Some Partner Throttled.
-                  bidResponses.length === 0 && _createDummyBids(requestData.imp, bidResponses, summary.errorCode);
+                  bidResponses.length === 0 && _createDummyBids(requestData.imp, bidResponses, summary.errorCode, parsedReferrer);
                 } else {
                   switch (summary.errorCode) {
                     case undefined:
@@ -399,7 +408,7 @@ export const spec = {
                         currency: CURRENCY,
                         netRevenue: true,
                         ttl: 300,
-                        referrer: referrer,
+                        referrer: parsedReferrer,
                         ad: firstSummary ? bid.adm : '',
                         cpm: (parseFloat(summary.bid) || 0).toFixed(2),
                         serverSideResponseTime: partnerResponseTimeObj[summary.bidder] || 0,
@@ -422,7 +431,7 @@ export const spec = {
                             currency: CURRENCY,
                             netRevenue: true,
                             ttl: 300,
-                            referrer: referrer,
+                            referrer: parsedReferrer,
                             ad: '',
                             cpm: 0,
                             serverSideResponseTime: (summary.errorCode === 1 || summary.errorCode === 2 || summary.errorCode === 6) ? -1

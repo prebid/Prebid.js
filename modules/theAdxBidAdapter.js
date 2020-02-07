@@ -12,7 +12,7 @@ import {
 } from '../src/url';
 
 const BIDDER_CODE = 'theadx';
-const ENDPOINT_URL = '//ssp.theadx.com/request';
+const ENDPOINT_URL = 'https://ssp.theadx.com/request';
 
 const NATIVEASSETNAMES = {
   0: 'title',

@@ -37,7 +37,7 @@ describe('GetIntent Adapter Tests:', function () {
   it('Verify build request', function () {
     const serverRequests = spec.buildRequests(bidRequests);
     let serverRequest = serverRequests[0];
-    expect(serverRequest.url).to.equal('//px.adhigh.net/rtb/direct_banner');
+    expect(serverRequest.url).to.equal('https://px.adhigh.net/rtb/direct_banner');
     expect(serverRequest.method).to.equal('GET');
     expect(serverRequest.data.bid_id).to.equal('bid12345');
     expect(serverRequest.data.pid).to.equal('p1000');
@@ -51,7 +51,7 @@ describe('GetIntent Adapter Tests:', function () {
   it('Verify build video request', function () {
     const serverRequests = spec.buildRequests([videoBidRequest]);
     let serverRequest = serverRequests[0];
-    expect(serverRequest.url).to.equal('//px.adhigh.net/rtb/direct_vast');
+    expect(serverRequest.url).to.equal('https://px.adhigh.net/rtb/direct_vast');
     expect(serverRequest.method).to.equal('GET');
     expect(serverRequest.data.bid_id).to.equal('bid789');
     expect(serverRequest.data.pid).to.equal('p1001');
@@ -98,7 +98,7 @@ describe('GetIntent Adapter Tests:', function () {
         currency: 'USD',
         size: '300x250',
         creative_id: '2000',
-        vast_url: '//vast.xml/url'
+        vast_url: 'https://vast.xml/url'
       },
       headers: {
       }
@@ -113,7 +113,7 @@ describe('GetIntent Adapter Tests:', function () {
     expect(bid.height).to.equal(250);
     expect(bid.requestId).to.equal('bid789');
     expect(bid.mediaType).to.equal('video');
-    expect(bid.vastUrl).to.equal('//vast.xml/url');
+    expect(bid.vastUrl).to.equal('https://vast.xml/url');
   });
 
   it('Verify bidder code', function () {

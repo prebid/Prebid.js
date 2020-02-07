@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec } from 'modules/underdogmediaBidAdapter';
+import { spec, resetUserSync } from 'modules/underdogmediaBidAdapter';
 
 describe('UnderdogMedia adapter', function () {
   let bidRequests;
@@ -254,6 +254,19 @@ describe('UnderdogMedia adapter', function () {
         expect(request.data.sizes).to.equal('300x250,728x90');
         expect(request.data.sid).to.equal('12143');
       });
+
+      it('should have uspConsent if defined', function () {
+        const uspConsent = '1YYN'
+        bidderRequest.uspConsent = uspConsent
+        const request = spec.buildRequests(bidRequests, bidderRequest);
+        expect(request.data.uspConsent).to.equal(uspConsent);
+      });
+
+      it('should not have uspConsent if not defined', function () {
+        bidderRequest.uspConsent = undefined
+        const request = spec.buildRequests(bidRequests, bidderRequest);
+        expect(request.data.uspConsent).to.be.undefined;
+      });
     });
 
     describe('bid responses', function () {
@@ -396,6 +409,77 @@ describe('UnderdogMedia adapter', function () {
         expect(bids[0].ad).to.have.string('notification_url');
         expect(bids[0].ad).to.have.string(';style=adapter');
       });
+    });
+  });
+
+  describe('getUserSyncs', function () {
+    const syncOptionsPixelOnly = {
+      'pixelEnabled': true
+    };
+
+    const syncOptionsIframeOnly = {
+      'iframeEnabled': true
+    };
+
+    const syncOptionsPixelAndIframe = {
+      'pixelEnabled': true,
+      'iframeEnabled': true
+    };
+
+    const responseWithUserSyncs = [{
+      body: {
+        userSyncs: [
+          {
+            type: 'image',
+            url: 'https://test.url.com'
+          },
+          {
+            type: 'iframe',
+            url: 'https://test.url.com'
+          }
+        ]
+      }
+    }];
+
+    const responseWithEmptyUserSyncs = [{
+      body: {
+        userSyncs: []
+      }
+    }];
+
+    it('user syncs should only return what is allowed', function () {
+      const result = spec.getUserSyncs(syncOptionsPixelOnly, responseWithUserSyncs);
+      expect(result[0].type).to.equal('image');
+      expect(result.length).to.equal(1);
+    });
+
+    it('user syncs should only load once per user', function () {
+      const result = spec.getUserSyncs(syncOptionsPixelAndIframe, responseWithUserSyncs);
+      expect(result).to.equal(undefined);
+    });
+
+    it('user syncs should return undefined when empty', function () {
+      resetUserSync();
+
+      const result = spec.getUserSyncs(syncOptionsPixelAndIframe, responseWithEmptyUserSyncs);
+      expect(result).to.equal(undefined);
+    });
+
+    it('should reset USER_SYNCED flag, allowing another sync', function () {
+      resetUserSync();
+
+      const result = spec.getUserSyncs(syncOptionsIframeOnly, responseWithUserSyncs);
+      expect(result[0].type).to.equal('iframe');
+      expect(result.length).to.equal(1);
+    });
+
+    it('should return all enabled syncs', function () {
+      resetUserSync();
+
+      const result = spec.getUserSyncs(syncOptionsPixelAndIframe, responseWithUserSyncs);
+      expect(result[0].type).to.equal('image');
+      expect(result[1].type).to.equal('iframe');
+      expect(result.length).to.equal(2);
     });
   });
 });

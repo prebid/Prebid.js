@@ -109,7 +109,8 @@ function sendMessage(auctionId, bidWonId) {
       samplingFactor
     });
   }
-  let referrer = config.getConfig('pageUrl') || utils.getTopWindowUrl();
+  let auctionCache = cache.auctions[auctionId];
+  let referrer = config.getConfig('pageUrl') || auctionCache.referrer;
   let message = {
     eventTimeMillis: Date.now(),
     integration: config.getConfig('rubicon.int_type') || DEFAULT_INTEGRATION,
@@ -120,7 +121,6 @@ function sendMessage(auctionId, bidWonId) {
   if (wrapperName) {
     message.wrapperName = wrapperName;
   }
-  let auctionCache = cache.auctions[auctionId];
   if (auctionCache && !auctionCache.sent) {
     let adUnitMap = Object.keys(auctionCache.bids).reduce((adUnits, bidId) => {
       let bid = auctionCache.bids[bidId];
@@ -315,6 +315,7 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
         ]);
         cacheEntry.bids = {};
         cacheEntry.bidsWon = {};
+        cacheEntry.referrer = args.bidderRequests[0].refererInfo.referer;
         cache.auctions[args.auctionId] = cacheEntry;
         break;
       case BID_REQUESTED:
@@ -415,10 +416,6 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
         }
         bid.clientLatencyMillis = Date.now() - cache.auctions[args.auctionId].timestamp;
         bid.bidResponse = parseBidResponse(args, bid.bidResponse);
-        // RP server banner overwrites bidId with bid.seatBidId
-        if (utils.deepAccess(bid, 'bidResponse.seatBidId') && bid.bidder === 'rubicon' && bid.source === 'server' && ['video', 'banner'].some(i => utils.deepAccess(bid, 'bidResponse.mediaType') === i)) {
-          bid.seatBidId = bid.bidResponse.seatBidId;
-        }
         break;
       case BIDDER_DONE:
         args.bids.forEach(bid => {

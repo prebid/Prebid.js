@@ -15,7 +15,8 @@ describe('nasmediaAdmixerBidAdapter', function () {
     const bid = {
       'bidder': 'nasmediaAdmixer',
       'params': {
-        'ax_key': 'ax_key'
+        'media_key': 'media_key',
+        'adunit_id': 'adunit_id',
       },
       'adUnitCode': 'adunit-code',
       'sizes': [[300, 250]],
@@ -32,7 +33,8 @@ describe('nasmediaAdmixerBidAdapter', function () {
       const bid = Object.assign({}, bid);
       delete bid.params;
       bid.params = {
-        'ax_key': 0
+        'media_key': '',
+        'adunit_id': '',
       };
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
@@ -43,7 +45,8 @@ describe('nasmediaAdmixerBidAdapter', function () {
       {
         'bidder': 'nasmediaAdmixer',
         'params': {
-          'ax_key': 'ajj7jba3'
+          'media_key': '19038695',
+          'adunit_id': '24190632',
         },
         'adUnitCode': 'adunit-code',
         'sizes': [[300, 250]],
@@ -52,9 +55,10 @@ describe('nasmediaAdmixerBidAdapter', function () {
         'auctionId': '124cb070528662',
       }
     ];
+    const bidderRequest = {refererInfo: {referer: 'https://example.com'}};
 
     it('sends bid request to url via GET', function () {
-      const request = spec.buildRequests(bidRequests)[0];
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
       expect(request.method).to.equal('GET');
       expect(request.url).to.match(new RegExp(`https://adn.admixer.co.kr`));
     });
@@ -63,7 +67,7 @@ describe('nasmediaAdmixerBidAdapter', function () {
   describe('interpretResponse', function () {
     const response = {
       'body': {
-        'bidder': 'nasmedia_admixer',
+        'bidder': 'nasmediaAdmixer',
         'req_id': '861a8e7952c82c',
         'error_code': 0,
         'error_msg': 'OK',
@@ -85,7 +89,8 @@ describe('nasmediaAdmixerBidAdapter', function () {
     const bidRequest = {
       'bidder': 'nasmediaAdmixer',
       'params': {
-        'ax_key': 'ajj7jba3',
+        'media_key': '19038695',
+        'adunit_id': '24190632',
       },
       'adUnitCode': 'adunit-code',
       'sizes': [[300, 250], [320, 480]],
@@ -124,7 +129,7 @@ describe('nasmediaAdmixerBidAdapter', function () {
 
     it('handles nobid responses', function () {
       response.body = {
-        'bidder': 'nasmedia_admixer',
+        'bidder': 'nasmediaAdmixer',
         'req_id': '861a8e7952c82c',
         'error_code': 0,
         'error_msg': 'OK',

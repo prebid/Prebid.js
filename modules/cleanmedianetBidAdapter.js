@@ -1,11 +1,14 @@
 import * as utils from '../src/utils';
-import {parse} from '../src/url';
 import {registerBidder} from '../src/adapters/bidderFactory';
 import {config} from '../src/config';
 import {Renderer} from '../src/Renderer';
 import {BANNER, VIDEO} from '../src/mediaTypes';
 
 export const helper = {
+  getTopWindowDomain: function (url) {
+    const domainStart = url.indexOf('://') + '://'.length;
+    return url.substring(domainStart, url.indexOf('/', domainStart) < 0 ? url.length : url.indexOf('/', domainStart));
+  },
   startsWith: function (str, search) {
     return str.substr(0, search.length) === search;
   },
@@ -66,15 +69,22 @@ export const spec = {
       const rtbBidRequest = {
         id: auctionId,
         site: {
-          domain: parse(url).hostname,
+          domain: helper.getTopWindowDomain(url),
           page: url,
           ref: bidderRequest.refererInfo.referer
         },
         device: {
-          ua: navigator.userAgent
+          ua: navigator.userAgent,
+          dnt: utils.getDNT() ? 1 : 0,
+          h: screen.height,
+          w: screen.width,
+          language: navigator.language
         },
         imp: [],
-        ext: {}
+        ext: {},
+        user: {
+          ext: {}
+        }
       };
 
       if (
@@ -86,6 +96,16 @@ export const spec = {
           consent_string: bidderRequest.gdprConsent.consentString,
           consent_required: bidderRequest.gdprConsent.gdprApplies
         };
+        rtbBidRequest.regs = {
+          ext: {
+            gdpr: bidderRequest.gdprConsent.gdprApplies === true ? 1 : 0
+          }
+        };
+        rtbBidRequest.user = {
+          ext: {
+            consent: bidderRequest.gdprConsent.consentString
+          }
+        }
       }
 
       const imp = {
@@ -94,12 +114,7 @@ export const spec = {
         tagid: adUnitCode,
         bidfloor: params.bidfloor || 0,
         bidfloorcur: 'USD',
-        secure: helper.startsWith(
-          utils.getTopWindowUrl().toLowerCase(),
-          'http://'
-        )
-          ? 0
-          : 1
+        secure: 1
       };
 
       const hasFavoredMediaType =
@@ -113,7 +128,7 @@ export const spec = {
               w: sizes.length ? sizes[0][0] : 300,
               h: sizes.length ? sizes[0][1] : 250,
               pos: params.pos || 0,
-              topframe: bidderRequest.refererInfo.reachedTop
+              topframe: utils.inIframe() ? 0 : 1
             }
           });
           rtbBidRequest.imp.push(bannerImp);
@@ -179,7 +194,7 @@ export const spec = {
         cpm: bid.price,
         width: bid.w,
         height: bid.h,
-        ttl: 60 * 10,
+        ttl: 360,
         creativeId: bid.crid || bid.adid,
         netRevenue: true,
         currency: bid.cur || response.cur,
@@ -264,7 +279,7 @@ function newRenderer(bidRequest, bid, rendererOptions = {}) {
     url:
       (bidRequest.params && bidRequest.params.rendererUrl) ||
       (bid.ext && bid.ext.renderer_url) ||
-      '//s.wlplayer.com/video/latest/renderer.js',
+      'https://s.wlplayer.com/video/latest/renderer.js',
     config: rendererOptions,
     loaded: false
   });
