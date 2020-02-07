@@ -47,6 +47,7 @@ describe('piximediaAdapterTest', function() {
     it('bidRequest data', function() {
       const requests = spec.buildRequests(bidRequests);
       expect(typeof requests[0].data.timestamp).to.equal('number');
+      expect(requests[0].data.pbsizes).to.equal('["300x250"]');
       expect(requests[0].data.pver).to.equal('1.0');
       expect(requests[0].data.pbparams).to.equal(JSON.stringify(bidRequests[0].params));
       expect(requests[0].data.pbwidth).to.equal('300');

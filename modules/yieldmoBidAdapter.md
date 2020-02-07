@@ -4,7 +4,6 @@
 Module Name:  Yieldmo Bid Adapter
 Module Type:  Bidder Adapter
 Maintainer: opensource@yieldmo.com
-Note: Our ads will only render in mobile
 ```
 
 # Description
@@ -19,7 +18,11 @@ var adUnits = [
    // Banner adUnit
    {
        code: 'div-gpt-ad-1460505748561-0', 
-       sizes: [[300, 250], [300,600]],
+       mediaTypes: {
+         banner: {
+            sizes: [[300, 250], [300,600]],
+         }
+       }
        bids: [{
          bidder: 'yieldmo',
          params: {

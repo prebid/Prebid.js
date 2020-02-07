@@ -1,5 +1,6 @@
 import { criteortusIdSubmodule } from 'modules/criteortusIdSystem';
 import * as utils from 'src/utils';
+import { server } from 'test/mocks/xhr';
 
 describe('Criteo RTUS', function() {
   let xhr;
@@ -8,15 +9,11 @@ describe('Criteo RTUS', function() {
   let logErrorStub;
 
   beforeEach(function () {
-    xhr = sinon.useFakeXMLHttpRequest();
-    requests = [];
-    xhr.onCreate = request => requests.push(request);
     getCookieStub = sinon.stub(utils, 'getCookie');
     logErrorStub = sinon.stub(utils, 'logError');
   });
 
   afterEach(function () {
-    xhr.restore();
     getCookieStub.restore();
     logErrorStub.restore();
   });
@@ -36,9 +33,10 @@ describe('Criteo RTUS', function() {
 
     let response = { 'status': 'ok', 'userid': 'sample-userid' }
     let callBackSpy = sinon.spy();
-    let submoduleCallback = criteortusIdSubmodule.getId(configParams);
+    const idResp = criteortusIdSubmodule.getId(configParams);
+    const submoduleCallback = idResp.callback;
     submoduleCallback(callBackSpy);
-    requests[0].respond(
+    server.requests[0].respond(
       200,
       { 'Content-Type': 'text/plain' },
       JSON.stringify(response)
@@ -56,7 +54,7 @@ describe('Criteo RTUS', function() {
       }
     }
     let uid = criteortusIdSubmodule.getId(configParams);
-    expect(requests.length).to.equal(0);
+    expect(server.requests.length).to.equal(0);
   })
 
   it('should call criteo endpoint for multiple bidders', function() {
@@ -70,15 +68,16 @@ describe('Criteo RTUS', function() {
 
     let response = { 'status': 'ok', 'userid': 'sample-userid' }
     let callBackSpy = sinon.spy();
-    let submoduleCallback = criteortusIdSubmodule.getId(configParams);
+    const idResp = criteortusIdSubmodule.getId(configParams);
+    const submoduleCallback = idResp.callback;
     submoduleCallback(callBackSpy);
-    requests[0].respond(
+    server.requests[0].respond(
       200,
       { 'Content-Type': 'text/plain' },
       JSON.stringify(response)
     );
     expect(callBackSpy.calledOnce).to.be.false;
-    requests[1].respond(
+    server.requests[1].respond(
       200,
       { 'Content-Type': 'text/plain' },
       JSON.stringify(response)
