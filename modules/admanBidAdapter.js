@@ -33,7 +33,7 @@ export const spec = {
   },
 
   buildRequests: (validBidRequests = [], bidderRequest) => {
-    let bidderConfig;
+    let bidderConfig = {};
     try {
       bidderConfig = pbjs.getConfig(BIDDER_CODE)
     } catch(e){}
