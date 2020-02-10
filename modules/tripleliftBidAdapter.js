@@ -1,6 +1,7 @@
 import { BANNER } from '../src/mediaTypes';
 import { registerBidder } from '../src/adapters/bidderFactory';
 import * as utils from '../src/utils';
+import { config } from '../src/config';
 
 const BIDDER_CODE = 'triplelift';
 const STR_ENDPOINT = 'https://tlx.3lift.com/header/auction?';
@@ -44,6 +45,10 @@ export const tripleliftAdapterSpec = {
 
     if (bidderRequest && bidderRequest.uspConsent) {
       tlCall = utils.tryAppendQueryString(tlCall, 'us_privacy', bidderRequest.uspConsent);
+    }
+
+    if (config.getConfig('coppa') === true) {
+      tlCall = utils.tryAppendQueryString(tlCall, 'coppa', true);
     }
 
     if (tlCall.lastIndexOf('&') === tlCall.length - 1) {
