@@ -9,7 +9,7 @@ window.nobid.timeoutTotal = 0;
 window.nobid.bidWonTotal = 0;
 window.nobid.refreshCount = 0;
 function log(msg, obj) {
-  utils.logInfo('-NoBid- ' + msg, obj) 
+  utils.logInfo('-NoBid- ' + msg, obj)
 }
 function nobidSetCookie(cname, cvalue, hours) {
   var d = new Date();
