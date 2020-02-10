@@ -25,9 +25,7 @@ describe('nextrollBidAdapter', function() {
     bidId: 'bid_id',
     sizes: [[300, 200]],
     params: {
-      ip: 'ip',
       bidfloor: 1,
-      sizes: [[300, 200]],
       zoneId: 'zone1',
       publisherId: 'publisher_id'
     }
