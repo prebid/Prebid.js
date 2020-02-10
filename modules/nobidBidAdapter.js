@@ -9,7 +9,7 @@ window.nobid.timeoutTotal = 0;
 window.nobid.bidWonTotal = 0;
 window.nobid.refreshCount = 0;
 function log(msg, obj) {
-  utils.logInfo('-NoBid- ' + msg, obj)
+  utils.logInfo('-NoBid- ' + msg, obj) 
 }
 function nobidSetCookie(cname, cvalue, hours) {
   var d = new Date();
@@ -325,6 +325,13 @@ export const spec = {
         type: 'iframe',
         url: 'https://public.servenobid.com/sync.html' + params
       }];
+    } else if (syncOptions.pixelEnabled && serverResponses.length > 0) {
+      let syncs = [];
+      syncs.push({
+          type: 'image',
+          url: serverResponses[0].body.syncs.url
+      });
+      return syncs;
     } else {
       utils.logWarn('-NoBid- Please enable iframe based user sync.', syncOptions);
       return [];
