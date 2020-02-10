@@ -3,9 +3,8 @@ import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes';
 import * as utils from '../src/utils';
 
 const BIDDER_CODE = 'adman';
-const AD_URL_ALL = 'https://pub.admanmedia.com/?c=o&m=multi';
-const AD_URL_EU = 'https://eu-ams-1.admanmedia.com/?c=o&m=multi';
-const URL_SYNC = 'https://pub.admanmedia.com/?c=o&m=cookie';
+const AD_URL = 'https://pub.admanmedia.com/?c=o&m=multi';
+const URL_SYNC = 'https://pub.admanmedia.com/?c=o&m=sync';
 
 function isBidResponseValid(bid) {
   if (!bid.requestId || !bid.cpm || !bid.creativeId ||
@@ -81,7 +80,7 @@ export const spec = {
     }
     return {
       method: 'POST',
-      url: bidderConfig && bidderConfig.isEurope ? AD_URL_EU : AD_URL_ALL,
+      url: AD_URL,
       data: request
     };
   },
