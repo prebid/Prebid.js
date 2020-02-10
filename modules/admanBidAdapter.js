@@ -32,7 +32,6 @@ export const spec = {
   },
 
   buildRequests: (validBidRequests = [], bidderRequest) => {
-    let bidderConfig = {};
     let winTop = window;
     let location;
     console.log(bidderRequest)
