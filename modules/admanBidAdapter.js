@@ -34,7 +34,6 @@ export const spec = {
   buildRequests: (validBidRequests = [], bidderRequest) => {
     let winTop = window;
     let location;
-    console.log(bidderRequest)
     try {
       location = new URL(bidderRequest.refererInfo.referer)
       winTop = window.top;
