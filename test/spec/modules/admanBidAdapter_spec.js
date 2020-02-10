@@ -225,7 +225,7 @@ describe('AdmanMediaBidAdapter', function () {
       expect(userSync[0].type).to.exist;
       expect(userSync[0].url).to.exist;
       expect(userSync[0].type).to.be.equal('image');
-      expect(userSync[0].url).to.be.equal('https://pub.admanmedia.com/?c=o&m=cookie');
+      expect(userSync[0].url).to.be.equal('https://pub.admanmedia.com/?c=o&m=sync');
     });
   });
 });
