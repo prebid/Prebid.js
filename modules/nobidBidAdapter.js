@@ -327,10 +327,14 @@ export const spec = {
       }];
     } else if (syncOptions.pixelEnabled && serverResponses.length > 0) {
       let syncs = [];
-      syncs.push({
-          type: 'image',
-          url: serverResponses[0].body.syncs.url
-      });
+      if (serverResponses[0].body.syncs && serverResponses[0].body.syncs.length > 0) {
+        serverResponses[0].body.syncs.forEach(element => {
+          syncs.push({
+            type: 'image',
+            url: element
+          });
+        })
+      }
       return syncs;
     } else {
       utils.logWarn('-NoBid- Please enable iframe based user sync.', syncOptions);
