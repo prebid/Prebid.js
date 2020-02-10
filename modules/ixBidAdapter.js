@@ -1,7 +1,7 @@
 import * as utils from '../src/utils';
 import { BANNER, VIDEO } from '../src/mediaTypes';
-import find from 'core-js/library/fn/array/find';
 import { config } from '../src/config';
+import find from 'core-js/library/fn/array/find';
 import isInteger from 'core-js/library/fn/number/is-integer';
 import { registerBidder } from '../src/adapters/bidderFactory';
 
@@ -234,6 +234,16 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
   r.site = {};
   r.ext = {};
   r.ext.source = 'prebid';
+
+  // if an schain is provided, send it along
+  if (validBidRequests[0].schain) {
+    r.source = {
+      ext: {
+        schain: validBidRequests[0].schain
+      }
+    };
+  }
+
   if (userEids.length > 0) {
     r.user = {};
     r.user.eids = userEids;
