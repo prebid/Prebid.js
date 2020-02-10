@@ -4,7 +4,7 @@ import {spec} from '../../../modules/admanBidAdapter';
 describe('AdmanMediaBidAdapter', function () {
   let bid = {
     bidId: '23fhj33i987f',
-    bidder: 'smartyads',
+    bidder: 'adman',
     params: {
       placementId: 0,
       traffic: 'banner'
