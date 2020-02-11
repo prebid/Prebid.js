@@ -3,6 +3,7 @@ import { getTopWindowLocation } from 'src/utils'
 
 const BIDDER_CODE = 'justpremium'
 const ENDPOINT_URL = getTopWindowLocation().protocol + '//pre.ads.justpremium.com/v/2.0/t/xhr'
+const JP_ADAPTER_VERSION = '1.1'
 const pixels = []
 
 export const spec = {
@@ -13,7 +14,7 @@ export const spec = {
     return !!(bid && bid.params && bid.params.zone)
   },
 
-  buildRequests: (validBidRequests) => {
+  buildRequests: (validBidRequests, bidderRequest) => {
     const c = preparePubCond(validBidRequests)
     const dim = getWebsiteDim()
     const payload = {
@@ -38,6 +39,19 @@ export const spec = {
       sizes[zone] = sizes[zone] || []
       sizes[zone].push.apply(sizes[zone], b.sizes)
     })
+
+    if (bidderRequest && bidderRequest.gdprConsent) {
+      payload.gdpr_consent = {
+        consent_string: bidderRequest.gdprConsent.consentString,
+        consent_required: (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') ? bidderRequest.gdprConsent.gdprApplies : true
+      };
+    }
+
+    payload.version = {
+      prebid: '$prebid.version$',
+      jp_adapter: JP_ADAPTER_VERSION
+    }
+
     const payloadString = JSON.stringify(payload)
 
     return {
@@ -64,7 +78,8 @@ export const spec = {
           cpm: bid.price,
           netRevenue: true,
           currency: bid.currency || 'USD',
-          ttl: bid.ttl || spec.time
+          ttl: bid.ttl || spec.time,
+          format: bid.format
         }
         bidResponses.push(bidResponse)
       }
@@ -73,12 +88,16 @@ export const spec = {
     return bidResponses
   },
 
-  getUserSyncs: (syncOptions) => {
+  getUserSyncs: function getUserSyncs(syncOptions, responses, gdprConsent) {
+    let url = '//pre.ads.justpremium.com/v/1.0/t/sync'
+    if (gdprConsent && (typeof gdprConsent.gdprApplies === 'boolean')) {
+      url = url + '?consentString=' + encodeURIComponent(gdprConsent.consentString)
+    }
     if (syncOptions.iframeEnabled) {
       pixels.push({
         type: 'iframe',
-        src: '//us-u.openx.net/w/1.0/pd?plm=10&ph=26e53f82-d199-49df-9eca-7b350c0f9646'
-      })
+        url: url
+      });
     }
     return pixels
   }

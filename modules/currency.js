@@ -2,10 +2,10 @@ import bidfactory from 'src/bidfactory';
 import { STATUS } from 'src/constants';
 import { ajax } from 'src/ajax';
 import * as utils from 'src/utils';
-import bidmanager from 'src/bidmanager';
 import { config } from 'src/config';
+import { hooks } from 'src/hook.js';
 
-const DEFAULT_CURRENCY_RATE_URL = 'http://currency.prebid.org/latest.json';
+const DEFAULT_CURRENCY_RATE_URL = 'https://currency.prebid.org/latest.json';
 const CURRENCY_RATE_PRECISION = 4;
 
 var bidResponseQueue = [];
@@ -16,6 +16,7 @@ var adServerCurrency = 'USD';
 export var currencySupportEnabled = false;
 export var currencyRates = {};
 var bidderCurrencyDefault = {};
+var defaultRates;
 
 /**
  * Configuration function for currency
@@ -45,6 +46,9 @@ var bidderCurrencyDefault = {};
  *    'GBP': { 'CNY': 8.8282, 'JPY': 141.7, 'USD': 1.2824 },
  *    'USD': { 'CNY': 6.8842, 'GBP': 0.7798, 'JPY': 110.49 }
  *  }
+ *  @param {object} [config.defaultRates]
+ *  This optional currency rates definition follows the same format as config.rates, however it is only utilized if
+ *  there is an error loading the config.conversionRateFile.
  */
 export function setConfig(config) {
   let url = DEFAULT_CURRENCY_RATE_URL;
@@ -52,6 +56,10 @@ export function setConfig(config) {
   if (typeof config.rates === 'object') {
     currencyRates.conversions = config.rates;
     currencyRatesLoaded = true;
+  }
+
+  if (typeof config.defaultRates === 'object') {
+    defaultRates = config.defaultRates;
   }
 
   if (typeof config.adServerCurrency === 'string') {
@@ -74,32 +82,48 @@ export function setConfig(config) {
 }
 config.getConfig('currency', config => setConfig(config.currency));
 
+function errorSettingsRates(msg) {
+  if (defaultRates) {
+    currencyRates.conversions = defaultRates;
+    currencyRatesLoaded = true;
+    utils.logWarn(msg);
+    utils.logWarn('Currency failed loading rates, falling back to currency.defaultRates');
+  } else {
+    utils.logError(msg);
+  }
+}
+
 function initCurrency(url) {
   conversionCache = {};
   currencySupportEnabled = true;
 
   utils.logInfo('Installing addBidResponse decorator for currency module', arguments);
 
-  bidmanager.addBidResponse.addHook(addBidResponseHook, 100);
+  hooks['addBidResponse'].addHook(addBidResponseHook, 100);
 
   if (!currencyRates.conversions) {
-    ajax(url, function (response) {
-      try {
-        currencyRates = JSON.parse(response);
-        utils.logInfo('currencyRates set to ' + JSON.stringify(currencyRates));
-        currencyRatesLoaded = true;
-        processBidResponseQueue();
-      } catch (e) {
-        utils.logError('failed to parse currencyRates response: ' + response);
+    ajax(url,
+      {
+        success: function (response) {
+          try {
+            currencyRates = JSON.parse(response);
+            utils.logInfo('currencyRates set to ' + JSON.stringify(currencyRates));
+            currencyRatesLoaded = true;
+            processBidResponseQueue();
+          } catch (e) {
+            errorSettingsRates('Failed to parse currencyRates response: ' + response);
+          }
+        },
+        error: errorSettingsRates
       }
-    });
+    );
   }
 }
 
 function resetCurrency() {
   utils.logInfo('Uninstalling addBidResponse decorator for currency module', arguments);
 
-  bidmanager.addBidResponse.removeHook(addBidResponseHook);
+  hooks['addBidResponse'].removeHook(addBidResponseHook, 100);
 
   adServerCurrency = 'USD';
   conversionCache = {};
@@ -149,17 +173,21 @@ function processBidResponseQueue() {
 
 function wrapFunction(fn, context, params) {
   return function() {
-    var bid = params[1];
+    let bid = params[1];
     if (bid !== undefined && 'currency' in bid && 'cpm' in bid) {
-      var fromCurrency = bid.currency;
+      let fromCurrency = bid.currency;
       try {
-        var conversion = getCurrencyConversion(fromCurrency);
-        bid.originalCpm = bid.cpm;
+        let conversion = getCurrencyConversion(fromCurrency);
+        let cpm = bid.originalCpm = bid.cpm;
         bid.originalCurrency = bid.currency;
         if (conversion !== 1) {
           bid.cpm = (parseFloat(bid.cpm) * conversion).toFixed(4);
           bid.currency = adServerCurrency;
         }
+        // used for analytics
+        bid.getCpmInNewCurrency = function(toCurrency) {
+          return (parseFloat(cpm) * getCurrencyConversion(fromCurrency, toCurrency)).toFixed(3);
+        };
       } catch (e) {
         utils.logWarn('Returning NO_BID, getCurrencyConversion threw error: ', e);
         params[1] = bidfactory.createBid(STATUS.NO_BID, {
@@ -172,24 +200,22 @@ function wrapFunction(fn, context, params) {
   };
 }
 
-function getCurrencyConversion(fromCurrency) {
+function getCurrencyConversion(fromCurrency, toCurrency = adServerCurrency) {
   var conversionRate = null;
   var rates;
-
-  if (fromCurrency in conversionCache) {
-    conversionRate = conversionCache[fromCurrency];
-    utils.logMessage('Using conversionCache value ' + conversionRate + ' for fromCurrency ' + fromCurrency);
+  let cacheKey = `${fromCurrency}->${toCurrency}`;
+  if (cacheKey in conversionCache) {
+    conversionRate = conversionCache[cacheKey];
+    utils.logMessage('Using conversionCache value ' + conversionRate + ' for ' + cacheKey);
   } else if (currencySupportEnabled === false) {
     if (fromCurrency === 'USD') {
       conversionRate = 1;
     } else {
       throw new Error('Prebid currency support has not been enabled and fromCurrency is not USD');
     }
-  } else if (fromCurrency === adServerCurrency) {
+  } else if (fromCurrency === toCurrency) {
     conversionRate = 1;
   } else {
-    var toCurrency = adServerCurrency;
-
     if (fromCurrency in currencyRates.conversions) {
       // using direct conversion rate from fromCurrency to toCurrency
       rates = currencyRates.conversions[fromCurrency];
@@ -228,9 +254,9 @@ function getCurrencyConversion(fromCurrency) {
       utils.logInfo('getCurrencyConversion using intermediate ' + fromCurrency + ' thru ' + anyBaseCurrency + ' to ' + toCurrency + ' conversionRate ' + conversionRate);
     }
   }
-  if (!(fromCurrency in conversionCache)) {
-    utils.logMessage('Adding conversionCache value ' + conversionRate + ' for fromCurrency ' + fromCurrency);
-    conversionCache[fromCurrency] = conversionRate;
+  if (!(cacheKey in conversionCache)) {
+    utils.logMessage('Adding conversionCache value ' + conversionRate + ' for ' + cacheKey);
+    conversionCache[cacheKey] = conversionRate;
   }
   return conversionRate;
 }

@@ -60,6 +60,9 @@ export function createHook(type, fn, hookName) {
     },
     removeHook: function(removeFn) {
       _hooks = _hooks.filter(hook => hook.fn === fn || hook.fn !== removeFn);
+    },
+    hasHook: function(fn) {
+      return _hooks.some(hook => hook.fn === fn);
     }
   };
 
@@ -68,7 +71,7 @@ export function createHook(type, fn, hookName) {
   }
 
   function hookedFn(...args) {
-    if (_hooks.length === 0) {
+    if (_hooks.length === 1 && _hooks[0].fn === fn) {
       return fn.apply(this, args);
     }
     return types[type].apply(this, args);

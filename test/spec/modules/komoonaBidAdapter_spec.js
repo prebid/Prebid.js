@@ -16,7 +16,7 @@ describe('Komoona.com Adapter Tests', () => {
       ],
       bidId: '2faedf1095f815',
       bidderRequestId: '18065867f8ae39',
-      requestId: '529e1518-b872-45cf-807c-2d41dfa5bcd3'
+      auctionId: '529e1518-b872-45cf-807c-2d41dfa5bcd3'
     },
     {
       bidder: 'komoona',
@@ -32,7 +32,7 @@ describe('Komoona.com Adapter Tests', () => {
       ],
       bidId: '3c34e2367a3f59',
       bidderRequestId: '18065867f8ae39',
-      requestId: '529e1518-b872-45cf-807c-2d41dfa5bcd3'
+      auctionId: '529e1518-b872-45cf-807c-2d41dfa5bcd3'
     }];
 
   const bidsResponse = {

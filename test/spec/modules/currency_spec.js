@@ -6,16 +6,21 @@ import {
 import {
   setConfig,
   addBidResponseHook,
-
   currencySupportEnabled,
   currencyRates
 } from 'modules/currency';
+
+import { createHook } from 'src/hook';
 
 var assert = require('chai').assert;
 var expect = require('chai').expect;
 
 describe('currency', function () {
   let fakeCurrencyFileServer;
+
+  let fn = sinon.spy();
+  let hookFn = createHook('asyncSeries', fn, 'addBidResponse');
+
   beforeEach(() => {
     fakeCurrencyFileServer = sinon.fakeServer.create();
   });
@@ -89,6 +94,31 @@ describe('currency', function () {
           }
         }
       });
+
+      var bid = { cpm: 100, currency: 'JPY', bidder: 'rubicon' };
+      var innerBid;
+
+      addBidResponseHook('elementId', bid, function(adCodeId, bid) {
+      	innerBid = bid;
+      });
+
+      expect(innerBid.cpm).to.equal('1.0000');
+    });
+
+    it('uses default rates when currency file fails to load', () => {
+      setConfig({});
+
+      setConfig({
+        adServerCurrency: 'USD',
+        defaultRates: {
+          USD: {
+            JPY: 100
+          }
+        }
+      });
+
+      // default response is 404
+      fakeCurrencyFileServer.respond();
 
       var bid = { cpm: 100, currency: 'JPY', bidder: 'rubicon' };
       var innerBid;

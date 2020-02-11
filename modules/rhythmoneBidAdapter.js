@@ -11,6 +11,65 @@ function RhythmOneBidAdapter() {
     return true;
   };
 
+  this.getUserSyncs = function (syncOptions, responses, gdprConsent) {
+    let slots = [];
+    let placementIds = [];
+
+    for (let k in slotsToBids) {
+      slots.push(k);
+      placementIds.push(getFirstParam('placementId', [slotsToBids[k]]));
+    }
+
+    let data = {
+      doc_version: 1,
+      doc_type: 'Prebid Audit',
+      placement_id: placementIds.join(',').replace(/[,]+/g, ',').replace(/^,|,$/g, '')
+    };
+    let w = typeof (window) !== 'undefined' ? window : {document: {location: {href: ''}}};
+    let ao = w.document.location.ancestorOrigins;
+    let q = [];
+    let u = '//hbevents.1rx.io/audit?';
+
+    if (ao && ao.length > 0) {
+      data.ancestor_origins = ao[ao.length - 1];
+    }
+
+    data.popped = w.opener !== null ? 1 : 0;
+    data.framed = w.top === w ? 0 : 1;
+
+    try {
+      data.url = w.top.document.location.href.toString();
+    } catch (ex) {
+      data.url = w.document.location.href.toString();
+    }
+
+    try {
+      data.prebid_version = '$prebid.version$';
+      data.prebid_timeout = config.getConfig('bidderTimeout');
+    } catch (ex) { }
+
+    data.response_ms = Date.now() - loadStart;
+    data.placement_codes = slots.join(',');
+    data.bidder_version = version;
+    if (gdprConsent) {
+      data.gdpr_consent = gdprConsent.consentString;
+      data.gdpr = (typeof gdprConsent.gdprApplies === 'boolean') ? gdprConsent.gdprApplies : true;
+    }
+
+    for (let k in data) {
+      q.push(encodeURIComponent(k) + '=' + encodeURIComponent((typeof data[k] === 'object' ? JSON.stringify(data[k]) : data[k])));
+    }
+
+    q.sort();
+
+    if (syncOptions.pixelEnabled) {
+      return [{
+        type: 'image',
+        url: u + q.join('&')
+      }];
+    }
+  };
+
   function getFirstParam(key, validBidRequests) {
     for (let i = 0; i < validBidRequests.length; i++) {
       if (validBidRequests[i].params && validBidRequests[i].params[key]) {
@@ -21,21 +80,23 @@ function RhythmOneBidAdapter() {
 
   let slotsToBids = {};
   let that = this;
-  let version = '1.0.0.0';
+  let version = '1.0.1.0';
+  let loadStart = Date.now();
 
-  this.buildRequests = function (BRs) {
+  this.buildRequests = function (BRs, bidderRequest) {
     let fallbackPlacementId = getFirstParam('placementId', BRs);
     if (fallbackPlacementId === undefined || BRs.length < 1) {
       return [];
     }
 
+    loadStart = Date.now();
     slotsToBids = {};
 
     let query = [];
     let w = (typeof window !== 'undefined' ? window : {});
 
-    function p(k, v) {
-      if (v instanceof Array) { v = v.join(','); }
+    function p(k, v, d) {
+      if (v instanceof Array) { v = v.join((d || ',')); }
       if (typeof v !== 'undefined') { query.push(encodeURIComponent(k) + '=' + encodeURIComponent(v)); }
     }
 
@@ -98,8 +159,7 @@ function RhythmOneBidAdapter() {
             if ((new w.ActiveXObject('ShockwaveFlash.ShockwaveFlash'))) {
               return 1;
             }
-          } catch (e) {
-          }
+          } catch (e) { }
         }
 
         return 0;
@@ -142,7 +202,10 @@ function RhythmOneBidAdapter() {
       p('h', heights);
       p('floor', floors);
       p('t', mediaTypes);
-
+      if (bidderRequest && bidderRequest.gdprConsent) {
+        p('gdpr_consent', bidderRequest.gdprConsent.consentString);
+        p('gdpr', (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') ? bidderRequest.gdprConsent.gdprApplies : true);
+      }
       url += '&' + query.join('&') + '&';
 
       return url;
@@ -186,12 +249,14 @@ function RhythmOneBidAdapter() {
 
       if (bidRequest.mediaTypes && bidRequest.mediaTypes.video) {
         bidResponse.vastUrl = bid.nurl;
+        bidResponse.mediaType = 'video';
         bidResponse.ttl = 10000;
       } else {
         bidResponse.ad = bid.adm;
       }
       bids.push(bidResponse);
     }
+
     return bids;
   };
 }

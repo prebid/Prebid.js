@@ -11,7 +11,7 @@ const URL = '//hb.undertone.com/hb';
 export const spec = {
   code: BIDDER_CODE,
   isBidRequestValid: function(bid) {
-    if (bid && bid.params && bid.params.publisherId && bid.params.placementId) {
+    if (bid && bid.params && bid.params.publisherId) {
       bid.params.publisherId = parseInt(bid.params.publisherId);
       return true;
     }
@@ -20,8 +20,17 @@ export const spec = {
     const payload = {
       'x-ut-hb-params': []
     };
-    const host = utils.getTopWindowLocation().host;
-    const domain = /[-\w]+\.(?:[-\w]+\.xn--[-\w]+|[-\w]{3,}|[-\w]+\.[-\w]{2})$/i.exec(host);
+    const location = utils.getTopWindowLocation();
+    let domains = /[-\w]+\.([-\w]+|[-\w]{3,}|[-\w]{1,3}\.[-\w]{2})$/i.exec(location.host);
+    let domain = null;
+    if (domains != null && domains.length > 0) {
+      domain = domains[0];
+      for (let i = 1; i < domains.length; i++) {
+        if (domains[i].length > domain.length) {
+          domain = domains[i];
+        }
+      }
+    }
 
     const pubid = validBidRequests[0].params.publisherId;
     const REQ_URL = `${URL}?pid=${pubid}&domain=${domain}`;
@@ -30,8 +39,9 @@ export const spec = {
       const bid = {
         bidRequestId: bidReq.bidId,
         hbadaptor: 'prebid',
+        url: location.href,
         domain: domain,
-        placementId: bidReq.params.placementId,
+        placementId: bidReq.params.placementId != undefined ? bidReq.params.placementId : null,
         publisherId: bidReq.params.publisherId,
         sizes: bidReq.sizes,
         params: bidReq.params

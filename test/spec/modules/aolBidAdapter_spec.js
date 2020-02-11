@@ -98,6 +98,7 @@ describe('AolAdapter', () => {
     let bidRequest;
     let logWarnSpy;
     let formatPixelsStub;
+    let isOneMobileBidderStub;
 
     beforeEach(() => {
       bidderSettingsBackup = $$PREBID_GLOBAL$$.bidderSettings;
@@ -110,13 +111,15 @@ describe('AolAdapter', () => {
         body: getDefaultBidResponse()
       };
       logWarnSpy = sinon.spy(utils, 'logWarn');
-      formatPixelsStub = sinon.stub(spec, '_formatPixels');
+      formatPixelsStub = sinon.stub(spec, 'formatPixels');
+      isOneMobileBidderStub = sinon.stub(spec, 'isOneMobileBidder');
     });
 
     afterEach(() => {
       $$PREBID_GLOBAL$$.bidderSettings = bidderSettingsBackup;
       logWarnSpy.restore();
       formatPixelsStub.restore();
+      isOneMobileBidderStub.restore();
     });
 
     it('should return formatted bid response with required properties', () => {
@@ -534,10 +537,10 @@ describe('AolAdapter', () => {
     });
   });
 
-  describe('_formatPixels()', () => {
+  describe('formatPixels()', () => {
     it('should return pixels wrapped for dropping them once and within nested frames ', () => {
       let pixels = '<script>document.write(\'<pixels-dom-elements/>\');</script>';
-      let formattedPixels = spec._formatPixels(pixels);
+      let formattedPixels = spec.formatPixels(pixels);
 
       expect(formattedPixels).to.equal(
         '<script>var w=window,prebid;' +
@@ -548,5 +551,140 @@ describe('AolAdapter', () => {
         'catch(e){continue;}' +
         '}}</script>');
     });
-  })
+  });
+
+  describe('isOneMobileBidder()', () => {
+    it('should return false when when bidderCode is not present', () => {
+      expect(spec.isOneMobileBidder(null)).to.be.false;
+    });
+
+    it('should return false for unknown bidder code', () => {
+      expect(spec.isOneMobileBidder('unknownBidder')).to.be.false;
+    });
+
+    it('should return true for aol bidder code', () => {
+      expect(spec.isOneMobileBidder('aol')).to.be.true;
+    });
+
+    it('should return true for one mobile bidder code', () => {
+      expect(spec.isOneMobileBidder('onemobile')).to.be.true;
+    });
+  });
+
+  describe('isConsentRequired()', () => {
+    it('should return false when consentData object is not present', () => {
+      expect(spec.isConsentRequired(null)).to.be.false;
+    });
+
+    it('should return true when gdprApplies equals true and consentString is not present', () => {
+      let consentData = {
+        consentString: null,
+        gdprApplies: true
+      };
+
+      expect(spec.isConsentRequired(consentData)).to.be.true;
+    });
+
+    it('should return false when consentString is present and gdprApplies equals false', () => {
+      let consentData = {
+        consentString: 'consent-string',
+        gdprApplies: false
+      };
+
+      expect(spec.isConsentRequired(consentData)).to.be.false;
+    });
+
+    it('should return true when consentString is present and gdprApplies equals true', () => {
+      let consentData = {
+        consentString: 'consent-string',
+        gdprApplies: true
+      };
+
+      expect(spec.isConsentRequired(consentData)).to.be.true;
+    });
+  });
+
+  describe('formatMarketplaceDynamicParams()', () => {
+    let formatConsentDataStub;
+    let formatKeyValuesStub;
+
+    beforeEach(() => {
+      formatConsentDataStub = sinon.stub(spec, 'formatConsentData');
+      formatKeyValuesStub = sinon.stub(spec, 'formatKeyValues');
+    });
+
+    afterEach(() => {
+      formatConsentDataStub.restore();
+      formatKeyValuesStub.restore();
+    });
+
+    it('should return empty string when params are not present', () => {
+      expect(spec.formatMarketplaceDynamicParams()).to.be.equal('');
+    });
+
+    it('should return formatted params when formatConsentData returns data', () => {
+      formatConsentDataStub.returns({
+        euconsent: 'test-consent',
+        gdpr: 1
+      });
+      expect(spec.formatMarketplaceDynamicParams()).to.be.equal('euconsent=test-consent;gdpr=1;');
+    });
+
+    it('should return formatted params when formatKeyValues returns data', () => {
+      formatKeyValuesStub.returns({
+        param1: 'val1',
+        param2: 'val2',
+        param3: 'val3'
+      });
+      expect(spec.formatMarketplaceDynamicParams()).to.be.equal('param1=val1;param2=val2;param3=val3;');
+    });
+
+    it('should return formatted bid floor param when it is present', () => {
+      let params = {
+        bidFloor: 0.45
+      };
+      expect(spec.formatMarketplaceDynamicParams(params)).to.be.equal('bidfloor=0.45;');
+    });
+  });
+
+  describe('formatOneMobileDynamicParams()', () => {
+    let consentRequiredStub;
+    let secureProtocolStub;
+
+    beforeEach(() => {
+      consentRequiredStub = sinon.stub(spec, 'isConsentRequired');
+      secureProtocolStub = sinon.stub(spec, 'isSecureProtocol');
+    });
+
+    afterEach(() => {
+      consentRequiredStub.restore();
+      secureProtocolStub.restore();
+    });
+
+    it('should return empty string when params are not present', () => {
+      expect(spec.formatOneMobileDynamicParams()).to.be.equal('');
+    });
+
+    it('should return formatted params when params are present', () => {
+      let params = {
+        param1: 'val1',
+        param2: 'val2',
+        param3: 'val3'
+      };
+      expect(spec.formatOneMobileDynamicParams(params)).to.contain('&param1=val1&param2=val2&param3=val3');
+    });
+
+    it('should return formatted gdpr params when isConsentRequired returns true', () => {
+      let consentData = {
+        consentString: 'test-consent'
+      };
+      consentRequiredStub.returns(true);
+      expect(spec.formatOneMobileDynamicParams({}, consentData)).to.be.equal('&gdpr=1&euconsent=test-consent');
+    });
+
+    it('should return formatted secure param when isSecureProtocol returns true', () => {
+      secureProtocolStub.returns(true);
+      expect(spec.formatOneMobileDynamicParams()).to.be.equal('&secure=1');
+    });
+  });
 });

@@ -50,6 +50,8 @@ describe('justpremium adapter', () => {
       expect(jpxRequest.c).to.not.equal('undefined')
       expect(jpxRequest.id).to.equal(adUnits[0].params.zone)
       expect(jpxRequest.sizes).to.not.equal('undefined')
+      expect(jpxRequest.version.prebid).to.equal('$prebid.version$')
+      expect(jpxRequest.version.jp_adapter).to.equal('1.1')
     })
   })
 
@@ -83,7 +85,8 @@ describe('justpremium adapter', () => {
           cpm: 0.52,
           netRevenue: true,
           currency: 'USD',
-          ttl: 60000
+          ttl: 60000,
+          format: 'lb'
         }
       ]
 
@@ -99,6 +102,7 @@ describe('justpremium adapter', () => {
       expect(result[0].ttl).to.equal(60000)
       expect(result[0].creativeId).to.equal(3213123)
       expect(result[0].netRevenue).to.equal(true)
+      expect(result[0].format).to.equal('lb')
     })
 
     it('Verify wrong server response', () => {
@@ -121,7 +125,7 @@ describe('justpremium adapter', () => {
       const options = spec.getUserSyncs({iframeEnabled: true})
       expect(options).to.not.be.undefined
       expect(options[0].type).to.equal('iframe')
-      expect(options[0].src).to.match(/\/\/us-u.openx.net\/w\/1.0/)
+      expect(options[0].url).to.match(/\/\/pre.ads.justpremium.com\/v\/1.0\/t\/sync/)
     })
   })
 })

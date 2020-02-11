@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import { ImproveDigitalAdServerJSClient, spec } from 'modules/improvedigitalBidAdapter';
+import { config } from 'src/config';
 import { userSync } from 'src/userSync';
 
 describe('Improve Digital Adapter Tests', function () {
@@ -29,6 +30,14 @@ describe('Improve Digital Adapter Tests', function () {
       publisherId: 1032,
       placementKey: 'data_team_test_hb_smoke_test'
     }
+  };
+
+  const bidderRequest = {
+    'gdprConsent': {
+      'consentString': 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==',
+      'vendorData': {},
+      'gdprApplies': true
+    },
   };
 
   describe('isBidRequestValid', () => {
@@ -127,6 +136,22 @@ describe('Improve Digital Adapter Tests', function () {
       const request = spec.buildRequests([bidRequest])[0];
       const params = JSON.parse(request.data.substring(PARAM_PREFIX.length));
       expect(params.bid_request.imp[0].banner).to.deep.equal(size);
+    });
+
+    it('should add currency', () => {
+      const bidRequest = Object.assign({}, simpleBidRequest);
+      const getConfigStub = sinon.stub(config, 'getConfig').returns('JPY');
+      const request = spec.buildRequests([bidRequest])[0];
+      const params = JSON.parse(request.data.substring(PARAM_PREFIX.length));
+      expect(params.bid_request.imp[0].currency).to.equal('JPY');
+      getConfigStub.restore();
+    });
+
+    it('should add GDPR consent string', () => {
+      const bidRequest = Object.assign({}, simpleBidRequest);
+      const request = spec.buildRequests([bidRequest], bidderRequest)[0];
+      const params = JSON.parse(request.data.substring(PARAM_PREFIX.length));
+      expect(params.bid_request.gdpr).to.equal('BOJ/P2HOJ/P2HABABMAAAAAZ+A==');
     });
 
     it('should return 2 requests', () => {
@@ -240,6 +265,7 @@ describe('Improve Digital Adapter Tests', function () {
       const bids = spec.interpretResponse(serverResponse);
       expect(registerSyncSpy.withArgs('image', 'improvedigital', 'http://link1').calledOnce).to.equal(true);
       expect(registerSyncSpy.withArgs('image', 'improvedigital', 'http://link2').calledOnce).to.equal(true);
+      registerSyncSpy.restore();
     });
 
     it('should set dealId correctly', () => {

@@ -12,6 +12,7 @@ Module that connects to Improve Digital's demand sources
 ```
             var adUnits = [{
                 code: 'div-gpt-ad-1499748733608-0',
+                sizes: [[600, 290]],
                 bids: [
                     {
                         bidder: 'improvedigital',
@@ -22,6 +23,7 @@ Module that connects to Improve Digital's demand sources
                 ]
             }, {
                 code: 'div-gpt-ad-1499748833901-0',
+                sizes: [[250, 250]],
                 bids: [{
                     bidder: 'improvedigital',
                     params: {
@@ -33,6 +35,7 @@ Module that connects to Improve Digital's demand sources
                 }]
             }, {
                 code: 'div-gpt-ad-1499748913322-0',
+                sizes: [[300, 300]],
                 bids: [{
                     bidder: 'improvedigital',
                     params: {

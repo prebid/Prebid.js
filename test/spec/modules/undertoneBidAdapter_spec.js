@@ -11,8 +11,7 @@ const validBidReq = {
   },
   sizes: [[300, 250], [300, 600]],
   bidId: '263be71e91dd9d',
-  requestId: '9ad1fa8d-2297-4660-a018-b39945054746',
-  auctionId: '1d1a030790a475'
+  auctionId: '9ad1fa8d-2297-4660-a018-b39945054746',
 };
 
 const invalidBidReq = {
@@ -22,7 +21,7 @@ const invalidBidReq = {
   },
   sizes: [[300, 250], [300, 600]],
   bidId: '263be71e91dd9d',
-  requestId: '9ad1fa8d-2297-4660-a018-b39945054746'
+  auctionId: '9ad1fa8d-2297-4660-a018-b39945054746'
 };
 
 const bidReq = [{
@@ -33,8 +32,16 @@ const bidReq = [{
   },
   sizes: [[300, 250], [300, 600]],
   bidId: '263be71e91dd9d',
-  requestId: '9ad1fa8d-2297-4660-a018-b39945054746',
-  auctionId: '1d1a030790a475'
+  auctionId: '9ad1fa8d-2297-4660-a018-b39945054746'
+},
+{
+  bidder: BIDDER_CODE,
+  params: {
+    publisherId: 12345
+  },
+  sizes: [[1, 1]],
+  bidId: '453cf42d72bb3c',
+  auctionId: '6c22f5a5-59df-4dc6-b92c-f433bcf0a874'
 }];
 
 const validBidRes = {
@@ -99,12 +106,18 @@ describe('Undertone Adapter', () => {
     });
     it('should have all relevant fields', () => {
       const request = spec.buildRequests(bidReq);
-      const bid = JSON.parse(request.data)['x-ut-hb-params'][0];
-      expect(bid.bidRequestId).to.equal('263be71e91dd9d');
-      expect(bid.sizes.length > 0).to.equal(true);
-      expect(bid.placementId).to.equal('10433394');
-      expect(bid.publisherId).to.equal(12345);
-      expect(bid.params).to.be.an('object');
+      const bid1 = JSON.parse(request.data)['x-ut-hb-params'][0];
+      expect(bid1.bidRequestId).to.equal('263be71e91dd9d');
+      expect(bid1.sizes.length).to.equal(2);
+      expect(bid1.placementId).to.equal('10433394');
+      expect(bid1.publisherId).to.equal(12345);
+      expect(bid1.params).to.be.an('object');
+      const bid2 = JSON.parse(request.data)['x-ut-hb-params'][1];
+      expect(bid2.bidRequestId).to.equal('453cf42d72bb3c');
+      expect(bid2.sizes.length).to.equal(1);
+      expect(bid2.placementId === null).to.equal(true);
+      expect(bid2.publisherId).to.equal(12345);
+      expect(bid2.params).to.be.an('object');
     });
   });
 

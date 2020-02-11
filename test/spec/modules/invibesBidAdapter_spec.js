@@ -1,8 +1,9 @@
 import { expect } from 'chai';
-import { spec } from 'modules/invibesBidAdapter';
+import { spec, resetInvibes } from 'modules/invibesBidAdapter';
 
 describe('invibesBidAdapter:', function () {
   const BIDDER_CODE = 'invibes';
+  const PLACEMENT_ID = '12345';
   const ENDPOINT = '//bid.videostep.com/Bid/VideoAdContent';
   const SYNC_ENDPOINT = '//k.r66net.com/GetUserSync';
 
@@ -12,7 +13,7 @@ describe('invibesBidAdapter:', function () {
       bidder: BIDDER_CODE,
       bidderRequestId: 'r1',
       params: {
-        placementId: '12345'
+        placementId: PLACEMENT_ID
       },
       adUnitCode: 'test-div',
       auctionId: 'a1',
@@ -40,7 +41,7 @@ describe('invibesBidAdapter:', function () {
   ];
 
   beforeEach(function () {
-    top.window.invibes = null;
+    resetInvibes();
     document.cookie = '';
     this.cStub1 = sinon.stub(console, 'info');
   });
@@ -51,11 +52,11 @@ describe('invibesBidAdapter:', function () {
 
   describe('isBidRequestValid:', function () {
     context('valid bid request:', function () {
-      it('returns true when bidder params.placementId is set', function () {
+      it('returns true when bidder params.placementId is set', function() {
         const validBid = {
           bidder: BIDDER_CODE,
           params: {
-            placementId: '12345'
+            placementId: PLACEMENT_ID
           }
         }
 
@@ -72,7 +73,7 @@ describe('invibesBidAdapter:', function () {
         expect(spec.isBidRequestValid(invalidBid)).to.be.false;
       });
 
-      it('returns false when placementId is not set', function () {
+      it('returns false when placementId is not set', function() {
         const invalidBid = {
           bidder: BIDDER_CODE,
           params: {
@@ -119,30 +120,47 @@ describe('invibesBidAdapter:', function () {
       expect(request.data.lId).to.be.undefined;
     });
 
-    it('does not overwrite the domain id', () => {
-      top.window.invibes = window.invibes || {};
-      top.window.invibes.dom = {};
-      let request = spec.buildRequests(bidRequests);
-    });
-
     it('doesnt send the domain id if not graduated', () => {
-      global.document.cookie = 'ivbsdid={"id":"p4vauj.4ekt9w","hc":3,"temp":1}';
+      global.document.cookie = 'ivbsdid={"id":"dvdjkams6nkq","cr":1522929537626,"hc":1}';
       let request = spec.buildRequests(bidRequests);
       expect(request.data.lId).to.not.exist;
     });
 
     it('graduate and send the domain id', () => {
-      global.document.cookie = 'ivbsdid={"id":"p4rrk7.ax2i2s","hc":4,"temp":1}';
+      top.window.invibes.optIn = 1;
+      global.document.cookie = 'ivbsdid={"id":"dvdjkams6nkq","cr":1521818537626,"hc":7}';
       let request = spec.buildRequests(bidRequests);
       expect(request.data.lId).to.exist;
     });
 
     it('send the domain id if already graduated', () => {
-      global.document.cookie = 'ivbsdid={"id":"p4rrk7.ax2i2s"}';
+      top.window.invibes.optIn = 1;
+      global.document.cookie = 'ivbsdid={"id":"f8zoh044p9oi"}';
       let request = spec.buildRequests(bidRequests);
       expect(request.data.lId).to.exist;
     });
-  })
+
+    it('send the domain id after replacing it with new format', () => {
+      top.window.invibes.optIn = 1;
+      global.document.cookie = 'ivbsdid={"id":"f8zoh044p9oi.8537626"}';
+      let request = spec.buildRequests(bidRequests);
+      expect(request.data.lId).to.exist;
+    });
+
+    it('try to graduate but not enough count - doesnt send the domain id', () => {
+      top.window.invibes.optIn = 1;
+      global.document.cookie = 'ivbsdid={"id":"dvdjkams6nkq","cr":1521818537626,"hc":5}';
+      let request = spec.buildRequests(bidRequests);
+      expect(request.data.lId).to.not.exist;
+    });
+
+    it('try to graduate but not old enough - doesnt send the domain id', () => {
+      top.window.invibes.optIn = 1;
+      global.document.cookie = 'ivbsdid={"id":"dvdjkams6nkq","cr":' + Date.now() + ',"hc":5}';
+      let request = spec.buildRequests(bidRequests);
+      expect(request.data.lId).to.not.exist;
+    });
+  });
 
   describe('interpretResponse', function () {
     let response = {
@@ -207,7 +225,7 @@ describe('invibesBidAdapter:', function () {
       });
 
       it('handles response when placement Id is not present', () => {
-        let emptyResult = spec.interpretResponse({ BidModel: {}, Ads: [{ BidPrice: 1 }] }, { bidRequests });
+        let emptyResult = spec.interpretResponse({ BidModel: { }, Ads: [{ BidPrice: 1 }] }, { bidRequests });
         expect(emptyResult).to.be.empty;
       });
     });
@@ -235,9 +253,20 @@ describe('invibesBidAdapter:', function () {
 
   describe('getUserSyncs', function () {
     it('returns an iframe if enabled', () => {
+      let response = spec.getUserSyncs({iframeEnabled: true});
+      expect(response.type).to.equal('iframe');
+      expect(response.url).to.include(SYNC_ENDPOINT);
+    });
+
+    it('returns an iframe with params if enabled', () => {
+      top.window.invibes.optIn = 1;
+      global.document.cookie = 'ivvbks=17639.0,1,2';
       let response = spec.getUserSyncs({ iframeEnabled: true });
       expect(response.type).to.equal('iframe');
-      expect(response.url).to.equal(SYNC_ENDPOINT);
+      expect(response.url).to.include(SYNC_ENDPOINT);
+      expect(response.url).to.include('optIn');
+      expect(response.url).to.include('ivvbks');
+      expect(response.url).to.include('ivbsdid');
     });
 
     it('returns undefined if iframe not enabled ', () => {

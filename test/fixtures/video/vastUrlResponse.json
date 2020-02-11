@@ -1,13 +1,13 @@
 {
   "adUnitCode": "video1",
-  "bidder": "appnexusAst",
-  "bidderCode": "appnexusAst",
-  "code": "appnexusAst",
+  "bidder": "appnexus",
+  "bidderCode": "appnexus",
+  "code": "appnexus",
   "dealId": "foo",
   "cpm": 0.1,
   "height": 480,
   "mediaType": "video",
-  "requestId": "6172477f-987f-4523-a967-fa6d7a434ddf",
+  "auctionId": "6172477f-987f-4523-a967-fa6d7a434ddf",
   "vastUrl": "www.myVastUrl.com",
   "width": 640
 }

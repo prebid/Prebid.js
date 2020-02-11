@@ -1,7 +1,8 @@
-import { getSlotTargeting, getAdServerTargeting } from 'test/fixtures/fixtures';
+import { getAdServerTargeting } from 'test/fixtures/fixtures';
+import { expect } from 'chai';
 
 var assert = require('assert');
-var utils = require('../../src/utils');
+var utils = require('src/utils');
 
 describe('Utils', function () {
   var obj_string = 's',
@@ -100,7 +101,7 @@ describe('Utils', function () {
       var obj = getAdServerTargeting();
 
       var output = utils.transformAdServerTargetingObj(obj[Object.keys(obj)[0]]);
-      var expected = 'foobar=300x250&hb_size=300x250&hb_pb=10.00&hb_adid=233bcbee889d46d&hb_bidder=appnexus&hb_size_triplelift=0x0&hb_pb_triplelift=10.00&hb_adid_triplelift=222bb26f9e8bd&hb_bidder_triplelift=triplelift&hb_size_appnexus=300x250&hb_pb_appnexus=10.00&hb_adid_appnexus=233bcbee889d46d&hb_bidder_appnexus=appnexus&hb_size_pagescience=300x250&hb_pb_pagescience=10.00&hb_adid_pagescience=25bedd4813632d7&hb_bidder_pagescienc=pagescience&hb_size_brightcom=300x250&hb_pb_brightcom=10.00&hb_adid_brightcom=26e0795ab963896&hb_bidder_brightcom=brightcom&hb_size_brealtime=300x250&hb_pb_brealtime=10.00&hb_adid_brealtime=275bd666f5a5a5d&hb_bidder_brealtime=brealtime&hb_size_pubmatic=300x250&hb_pb_pubmatic=10.00&hb_adid_pubmatic=28f4039c636b6a7&hb_bidder_pubmatic=pubmatic&hb_size_rubicon=300x600&hb_pb_rubicon=10.00&hb_adid_rubicon=29019e2ab586a5a&hb_bidder_rubicon=rubicon';
+      var expected = 'foobar=0x0%2C300x250%2C300x600&hb_size=300x250&hb_pb=10.00&hb_adid=233bcbee889d46d&hb_bidder=appnexus&hb_size_triplelift=0x0&hb_pb_triplelift=10.00&hb_adid_triplelift=222bb26f9e8bd&hb_bidder_triplelift=triplelift&hb_size_appnexus=300x250&hb_pb_appnexus=10.00&hb_adid_appnexus=233bcbee889d46d&hb_bidder_appnexus=appnexus&hb_size_pagescience=300x250&hb_pb_pagescience=10.00&hb_adid_pagescience=25bedd4813632d7&hb_bidder_pagescienc=pagescience&hb_size_brightcom=300x250&hb_pb_brightcom=10.00&hb_adid_brightcom=26e0795ab963896&hb_bidder_brightcom=brightcom&hb_size_brealtime=300x250&hb_pb_brealtime=10.00&hb_adid_brealtime=275bd666f5a5a5d&hb_bidder_brealtime=brealtime&hb_size_pubmatic=300x250&hb_pb_pubmatic=10.00&hb_adid_pubmatic=28f4039c636b6a7&hb_bidder_pubmatic=pubmatic&hb_size_rubicon=300x600&hb_pb_rubicon=10.00&hb_adid_rubicon=29019e2ab586a5a&hb_bidder_rubicon=rubicon';
       assert.equal(output, expected);
     });
 
@@ -358,6 +359,33 @@ describe('Utils', function () {
     });
   });
 
+  describe('isPlainObject', function () {
+    it('should return false with input string', function () {
+      var output = utils.isPlainObject(obj_string);
+      assert.deepEqual(output, false);
+    });
+
+    it('should return false with input number', function () {
+      var output = utils.isPlainObject(obj_number);
+      assert.deepEqual(output, false);
+    });
+
+    it('should return true with input object', function () {
+      var output = utils.isPlainObject(obj_object);
+      assert.deepEqual(output, true);
+    });
+
+    it('should return false with input array', function () {
+      var output = utils.isPlainObject(obj_array);
+      assert.deepEqual(output, false);
+    });
+
+    it('should return false with input function', function () {
+      var output = utils.isPlainObject(obj_function);
+      assert.deepEqual(output, false);
+    });
+  });
+
   describe('isEmpty', function () {
     it('should return true with empty object', function () {
       var output = utils.isEmpty(obj_object);
@@ -478,11 +506,11 @@ describe('Utils', function () {
 
   describe('getHighestCpm', function () {
     it('should pick the existing highest cpm', function () {
-      var previous = {
+      let previous = {
         cpm: 2,
         timeToRespond: 100
       };
-      var current = {
+      let current = {
         cpm: 1,
         timeToRespond: 100
       };
@@ -490,11 +518,11 @@ describe('Utils', function () {
     });
 
     it('should pick the new highest cpm', function () {
-      var previous = {
+      let previous = {
         cpm: 1,
         timeToRespond: 100
       };
-      var current = {
+      let current = {
         cpm: 2,
         timeToRespond: 100
       };
@@ -502,15 +530,43 @@ describe('Utils', function () {
     });
 
     it('should pick the fastest cpm in case of tie', function () {
-      var previous = {
+      let previous = {
         cpm: 1,
         timeToRespond: 100
       };
-      var current = {
+      let current = {
         cpm: 1,
         timeToRespond: 50
       };
       assert.equal(utils.getHighestCpm(previous, current), current);
+    });
+
+    it('should pick the oldest in case of tie using responseTimeStamp', function () {
+      let previous = {
+        cpm: 1,
+        timeToRespond: 100,
+        responseTimestamp: 1000
+      };
+      let current = {
+        cpm: 1,
+        timeToRespond: 50,
+        responseTimestamp: 2000
+      };
+      assert.equal(utils.getOldestHighestCpmBid(previous, current), previous);
+    });
+
+    it('should pick the latest in case of tie using responseTimeStamp', function () {
+      let previous = {
+        cpm: 1,
+        timeToRespond: 100,
+        responseTimestamp: 1000
+      };
+      let current = {
+        cpm: 1,
+        timeToRespond: 50,
+        responseTimestamp: 2000
+      };
+      assert.equal(utils.getLatestHighestCpmBid(previous, current), current);
     });
   });
 
@@ -524,95 +580,6 @@ describe('Utils', function () {
       assert.equal(arr.length, count, 'Polyfill test fails');
     });
   });
-
-  /**
-   *  tests fail in IE10 because __lookupSetter__ and __lookupGetter__ are
-   *  not supported. See #1656. commenting out until they can be fixed.
-   *
-   *  describe('cookie support', function () {
-   *    // store original cookie getter and setter so we can reset later
-   *    var origCookieSetter = document.__lookupSetter__('cookie');
-   *    var origCookieGetter = document.__lookupGetter__('cookie');
-   *
-   *    // store original cookieEnabled getter and setter so we can reset later
-   *    var origCookieEnabledSetter = window.navigator.__lookupSetter__('cookieEnabled');
-   *    var origCookieEnabledGetter = window.navigator.__lookupGetter__('cookieEnabled');
-   *
-   *    // Replace the document cookie set function with the output of a custom function for testing
-   *    let setCookie = (v) => v;
-   *
-   *    beforeEach(() => {
-   *      // Redefine window.navigator.cookieEnabled such that you can set otherwise "read-only" values
-   *      Object.defineProperty(window.navigator, 'cookieEnabled', (function (_value) {
-   *        return {
-   *          get: function _get() {
-   *            return _value;
-   *          },
-   *          set: function _set(v) {
-   *            _value = v;
-   *          },
-   *          configurable: true
-   *        };
-   *      })(window.navigator.cookieEnabled));
-   *
-   *      // Reset the setCookie cookie function before each test
-   *      setCookie = (v) => v;
-   *      // Redefine the document.cookie object such that you can purposefully have it output nothing as if it is disabled
-   *      Object.defineProperty(window.document, 'cookie', (function (_value) {
-   *        return {
-   *          get: function _get() {
-   *            return _value;
-   *          },
-   *          set: function _set(v) {
-   *            _value = setCookie(v);
-   *          },
-   *          configurable: true
-   *        };
-   *      })(window.navigator.cookieEnabled));
-   *    });
-   *
-   *    afterEach(() => {
-   *      // redefine window.navigator.cookieEnabled to original getter and setter
-   *      Object.defineProperty(window.navigator, 'cookieEnabled', {
-   *        get: origCookieEnabledGetter,
-   *        set: origCookieEnabledSetter,
-   *        configurable: true
-   *      });
-   *      // redefine document.cookie to original getter and setter
-   *      Object.defineProperty(document, 'cookie', {
-   *        get: origCookieGetter,
-   *        set: origCookieSetter,
-   *        configurable: true
-   *      });
-   *    });
-   *
-   *    it('should be detected', function() {
-   *      assert.equal(utils.cookiesAreEnabled(), true, 'Cookies should be enabled by default');
-   *    });
-   *
-   *    it('should be not available', function() {
-   *      setCookie = () => '';
-   *      window.navigator.cookieEnabled = false;
-   *      window.document.cookie = '';
-   *      assert.equal(utils.cookiesAreEnabled(), false, 'Cookies should be disabled');
-   *    });
-   *
-   *    it('should be available', function() {
-   *      window.navigator.cookieEnabled = false;
-   *      window.document.cookie = 'key=value';
-   *      assert.equal(utils.cookiesAreEnabled(), true, 'Cookies should already be set');
-   *      window.navigator.cookieEnabled = false;
-   *      window.document.cookie = '';
-   *      assert.equal(utils.cookiesAreEnabled(), true, 'Cookies should settable');
-   *      setCookie = () => '';
-   *      window.navigator.cookieEnabled = true;
-   *      window.document.cookie = '';
-   *      assert.equal(utils.cookiesAreEnabled(), true, 'Cookies should be on via on window.navigator');
-   *      // Reset the setCookie
-   *      setCookie = (v) => v;
-   *    });
-   *  });
-  **/
 
   describe('delayExecution', function () {
     it('should execute the core function after the correct number of calls', function () {
@@ -709,6 +676,173 @@ describe('Utils', function () {
       const adUnitCopy = utils.deepClone(adUnit);
       expect(adUnitCopy[0].renderer.url).to.be.a('string');
       expect(adUnitCopy[0].renderer.render).to.be.a('function');
+    });
+  });
+
+  describe('getUserConfiguredParams', () => {
+    const adUnits = [{
+      code: 'adUnit1',
+      bids: [{
+        bidder: 'bidder1',
+        params: {
+          key1: 'value1'
+        }
+      }, {
+        bidder: 'bidder2'
+      }]
+    }];
+
+    it('should return params configured', () => {
+      const output = utils.getUserConfiguredParams(adUnits, 'adUnit1', 'bidder1');
+      const expected = [{
+        key1: 'value1'
+      }];
+      assert.deepEqual(output, expected);
+    });
+
+    it('should return array containting empty object, if bidder present and no params are configured', () => {
+      const output = utils.getUserConfiguredParams(adUnits, 'adUnit1', 'bidder2');
+      const expected = [{}];
+      assert.deepEqual(output, expected);
+    });
+
+    it('should return empty array, if bidder is not present', () => {
+      const output = utils.getUserConfiguredParams(adUnits, 'adUnit1', 'bidder3');
+      const expected = [];
+      assert.deepEqual(output, expected);
+    });
+
+    it('should return empty array, if adUnit is not present', () => {
+      const output = utils.getUserConfiguredParams(adUnits, 'adUnit2', 'bidder3');
+      const expected = [];
+      assert.deepEqual(output, expected);
+    });
+  });
+
+  describe('getTopWindowLocation', () => {
+    let sandbox;
+
+    beforeEach(() => {
+      sandbox = sinon.sandbox.create();
+    });
+
+    afterEach(() => {
+      sandbox.restore();
+    });
+
+    it('returns window.location if not in iFrame', () => {
+      sandbox.stub(utils, 'getWindowLocation').returns({
+        href: 'https://www.google.com/',
+        ancestorOrigins: {},
+        origin: 'https://www.google.com',
+        protocol: 'https',
+        host: 'www.google.com',
+        hostname: 'www.google.com',
+        port: '',
+        pathname: '/',
+        search: '',
+        hash: ''
+      });
+      let windowSelfAndTopObject = { self: 'is same as top' };
+      sandbox.stub(utils, 'getWindowSelf').returns(
+        windowSelfAndTopObject
+      );
+      sandbox.stub(utils, 'getWindowTop').returns(
+        windowSelfAndTopObject
+      );
+      var topWindowLocation = utils.getTopWindowLocation();
+      expect(topWindowLocation).to.be.a('object');
+      expect(topWindowLocation.href).to.equal('https://www.google.com/');
+      expect(topWindowLocation.protocol).to.equal('https');
+      expect(topWindowLocation.hostname).to.equal('www.google.com');
+      expect(topWindowLocation.port).to.equal('');
+      expect(topWindowLocation.pathname).to.equal('/');
+      expect(topWindowLocation.hash).to.equal('');
+      expect(topWindowLocation.search).to.equal('');
+      expect(topWindowLocation.host).to.equal('www.google.com');
+    });
+
+    it('returns parsed dom string from ancestorOrigins if in iFrame & ancestorOrigins is populated', () => {
+      sandbox.stub(utils, 'getWindowSelf').returns(
+        { self: 'is not same as top' }
+      );
+      sandbox.stub(utils, 'getWindowTop').returns(
+        { top: 'is not same as self' }
+      );
+      sandbox.stub(utils, 'getAncestorOrigins').returns('https://www.google.com/a/umich.edu/acs');
+      var topWindowLocation = utils.getTopWindowLocation();
+      expect(topWindowLocation).to.be.a('object');
+      expect(topWindowLocation.pathname).to.equal('/a/umich.edu/acs');
+      expect(topWindowLocation.href).to.equal('https://www.google.com/a/umich.edu/acs');
+      expect(topWindowLocation.protocol).to.equal('https');
+      expect(topWindowLocation.hostname).to.equal('www.google.com');
+      expect(topWindowLocation.hash).to.equal('');
+      expect(topWindowLocation.search).to.equal('');
+      // note IE11 returns the default secure port, so we look for this alternate value as well in these tests
+      expect(topWindowLocation.port).to.be.oneOf([0, 443]);
+      expect(topWindowLocation.host).to.be.oneOf(['www.google.com', 'www.google.com:443']);
+    });
+
+    it('returns parsed referrer string if in iFrame but no ancestorOrigins', () => {
+      sandbox.stub(utils, 'getWindowSelf').returns(
+        { self: 'is not same as top' }
+      );
+      sandbox.stub(utils, 'getWindowTop').returns(
+        { top: 'is not same as self' }
+      );
+      sandbox.stub(utils, 'getAncestorOrigins').returns(null);
+      sandbox.stub(utils, 'getTopFrameReferrer').returns('https://www.example.com/');
+      var topWindowLocation = utils.getTopWindowLocation();
+      expect(topWindowLocation).to.be.a('object');
+      expect(topWindowLocation.href).to.equal('https://www.example.com/');
+      expect(topWindowLocation.protocol).to.equal('https');
+      expect(topWindowLocation.hostname).to.equal('www.example.com');
+      expect(topWindowLocation.pathname).to.equal('/');
+      expect(topWindowLocation.hash).to.equal('');
+      expect(topWindowLocation.search).to.equal('');
+      // note IE11 returns the default secure port, so we look for this alternate value as well in these tests
+      expect(topWindowLocation.port).to.be.oneOf([0, 443]);
+      expect(topWindowLocation.host).to.be.oneOf(['www.example.com', 'www.example.com:443']);
+    });
+  });
+
+  describe('convertCamelToUnderscore', () => {
+    it('returns converted string value using underscore syntax instead of camelCase', () => {
+      let var1 = 'placementIdTest';
+      let test1 = utils.convertCamelToUnderscore(var1);
+      expect(test1).to.equal('placement_id_test');
+
+      let var2 = 'my_test_value';
+      let test2 = utils.convertCamelToUnderscore(var2);
+      expect(test2).to.equal(var2);
+    });
+  });
+
+  describe('getAdUnitSizes', () => {
+    it('returns an empty response when adUnits is undefined', () => {
+      let sizes = utils.getAdUnitSizes();
+      expect(sizes).to.be.undefined;
+    });
+
+    it('returns an empty array when invalid data is present in adUnit object', () => {
+      let sizes = utils.getAdUnitSizes({ sizes: 300 });
+      expect(sizes).to.deep.equal([]);
+    });
+
+    it('retuns an array of arrays when reading from adUnit.sizes', () => {
+      let sizes = utils.getAdUnitSizes({ sizes: [300, 250] });
+      expect(sizes).to.deep.equal([[300, 250]]);
+
+      sizes = utils.getAdUnitSizes({ sizes: [[300, 250], [300, 600]] });
+      expect(sizes).to.deep.equal([[300, 250], [300, 600]]);
+    });
+
+    it('returns an array of arrays when reading from adUnit.mediaTypes.banner.sizes', () => {
+      let sizes = utils.getAdUnitSizes({ mediaTypes: { banner: { sizes: [300, 250] } } });
+      expect(sizes).to.deep.equal([[300, 250]]);
+
+      sizes = utils.getAdUnitSizes({ mediaTypes: { banner: { sizes: [[300, 250], [300, 600]] } } });
+      expect(sizes).to.deep.equal([[300, 250], [300, 600]]);
     });
   });
 });

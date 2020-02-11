@@ -1,5 +1,5 @@
-/* Sigmoid Analytics Adapter for prebid.js all versions
-Updated : 2018-04-20 */
+/* Sigmoid Analytics Adapter for prebid.js v1.1.0-pre
+Updated : 2018-03-28 */
 import includes from 'core-js/library/fn/array/includes';
 import adapter from 'src/AnalyticsAdapter';
 import CONSTANTS from 'src/constants.json';
@@ -233,12 +233,12 @@ sigmoidAdapter.buildUtmTagData = function () {
 
 function send(eventType, data, sendDataType) {
   AWS.config.credentials = new AWS.Credentials({
-    accessKeyId: initOptions.accessKey, secretAccessKey: initOptions.secretKey
+    accessKeyId: 'accesskey', secretAccessKey: 'secretkey'
   });
 
   AWS.config.region = 'us-east-1';
   AWS.config.credentials.get(function(err) {
-  // attach event listener
+    // attach event listener
     if (err) {
       utils.logError(err);
       return;
@@ -254,11 +254,7 @@ function send(eventType, data, sendDataType) {
     dataList.push(jsonData);
     kinesis.putRecords({
       Records: dataList,
-      StreamName: initOptions.streamName
-    }, function(err, newdata) {
-      if (err) {
-        utils.logError(err);
-      }
+      StreamName: 'sample-stream'
     });
     if (sendDataType === 'eventStack') {
       flushEventStack();

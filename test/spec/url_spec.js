@@ -78,4 +78,17 @@ describe('helpers.url', () => {
       })).to.equal('http://example.com');
     });
   });
+
+  describe('parse(url, {decodeSearchAsString: true})', () => {
+    let parsed;
+
+    beforeEach(() => {
+      parsed = parse('http://example.com:3000/pathname/?search=test&foo=bar&bar=foo%26foo%3Dxxx#hash', {decodeSearchAsString: true});
+    });
+
+    it('extracts the search query', () => {
+      expect(parsed).to.have.property('search');
+      expect(parsed.search).to.equal('?search=test&foo=bar&bar=foo&foo=xxx');
+    });
+  });
 });

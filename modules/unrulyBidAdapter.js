@@ -6,17 +6,17 @@ import { VIDEO } from 'src/mediaTypes'
 function configureUniversalTag (exchangeRenderer) {
   parent.window.unruly = parent.window.unruly || {};
   parent.window.unruly['native'] = parent.window.unruly['native'] || {};
-  parent.window.unruly['native'].siteId = parent.window.unruly['native'].siteId || exchangeRenderer.siteId
+  parent.window.unruly['native'].siteId = parent.window.unruly['native'].siteId || exchangeRenderer.siteId;
   parent.window.unruly['native'].supplyMode = 'prebid';
 }
 
 function configureRendererQueue () {
   parent.window.unruly['native'].prebid = parent.window.unruly['native'].prebid || {};
-  parent.window.unruly['native'].prebid.uq = parent.window.unruly['native'].prebid.uq || []
+  parent.window.unruly['native'].prebid.uq = parent.window.unruly['native'].prebid.uq || [];
 }
 
 function notifyRenderer (bidResponseBid) {
-  parent.window.unruly['native'].prebid.uq.push(['render', bidResponseBid])
+  parent.window.unruly['native'].prebid.uq.push(['render', bidResponseBid]);
 }
 
 const serverResponseToBid = (bid, rendererInstance) => ({
@@ -41,7 +41,7 @@ const buildPrebidResponseAndInstallRenderer = bids =>
       configureRendererQueue();
 
       const rendererInstance = Renderer.install(Object.assign({}, exchangeRenderer, { callback: () => {} }));
-      return { rendererInstance, serverBid }
+      return { rendererInstance, serverBid };
     })
     .map(
       ({rendererInstance, serverBid}) => {
@@ -58,7 +58,7 @@ const buildPrebidResponseAndInstallRenderer = bids =>
 
         rendererInstance.setRender(() => { notifyRenderer(rendererConfig) });
 
-        return prebidBid
+        return prebidBid;
       }
     );
 
@@ -73,17 +73,20 @@ export const adapter = {
     return bid.mediaType === 'video' || context === 'outstream';
   },
 
-  buildRequests: function(validBidRequests) {
+  buildRequests: function(validBidRequests, bidderRequest) {
     const url = 'https://targeting.unrulymedia.com/prebid';
     const method = 'POST';
-    const data = { bidRequests: validBidRequests };
+    const data = {
+      bidRequests: validBidRequests,
+      bidderRequest
+    };
     const options = { contentType: 'application/json' };
 
     return {
       url,
       method,
       data,
-      options,
+      options
     };
   },
 

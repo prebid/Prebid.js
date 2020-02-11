@@ -17,7 +17,7 @@ describe('PubWise Prebid Analytics', function () {
 
   describe('enableAnalytics', function () {
     beforeEach(() => {
-      sinon.stub(events, 'getEvents', () => []);
+      sinon.stub(events, 'getEvents').returns([]);
     });
 
     afterEach(() => {

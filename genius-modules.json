@@ -1,0 +1,9 @@
+[
+  "appnexusBidAdapter",
+  "consentManagement",
+  "ixBidAdapter",
+  "prebidServerBidAdapter",
+  "tripleliftBidAdapter",
+  "rubiconBidAdapter",
+  "undertoneBidAdapter"
+]

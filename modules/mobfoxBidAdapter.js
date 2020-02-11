@@ -9,7 +9,7 @@ export const spec = {
   code: BIDDER_CODE,
   aliases: ['mf'], // short code
   isBidRequestValid: function (bid) {
-    return bid.params.s !== null && bid.params.s !== undefined && bid.requestId !== null && bid.requestId !== undefined;
+    return bid.params.s !== null && bid.params.s !== undefined;
   },
   buildRequests: function (validBidRequests) {
     if (validBidRequests.length > 1) {

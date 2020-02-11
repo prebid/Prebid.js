@@ -1,120 +1,233 @@
-import Adapter from 'modules/coxBidAdapter';
-import bidManager from 'src/bidmanager';
-import adLoader from 'src/adloader';
-import {expect} from 'chai';
+import { expect } from 'chai';
+import { spec } from 'modules/coxBidAdapter';
+import { newBidder } from 'src/adapters/bidderFactory';
+import { deepClone } from 'src/utils';
 
-describe('CoxAdapter', () => {
-  let adapter;
-  let loadScriptStub;
-  let addBidResponseSpy;
+describe('CoxBidAdapter', () => {
+  const adapter = newBidder(spec);
 
-  let emitScript = (script) => {
-    let node = document.createElement('script');
-    node.type = 'text/javascript';
-    node.appendChild(document.createTextNode(script));
-    document.getElementsByTagName('head')[0].appendChild(node);
-  };
-
-  beforeEach(() => {
-    adapter = new Adapter();
-    addBidResponseSpy = sinon.spy(bidManager, 'addBidResponse');
-  });
-
-  afterEach(() => {
-    loadScriptStub.restore();
-    addBidResponseSpy.restore();
-  });
-
-  describe('response handling', () => {
-    const normalResponse = 'cdsTag.__callback__({"zones":{"as2000005991707":{"ad" : "<h1>FOO<\/h1>","uid" : "","price" : 1.51,"floor" : 0,}},"tpCookieSync":"<h1>FOOKIE<\/h1>"})';
-    const zeroPriceResponse = 'cdsTag.__callback__({"zones":{"as2000005991707":{"ad" : "<h1>DEFAULT FOO<\/h1>","uid" : "","price" : 0,"floor" : 0,}},"tpCookieSync":"<h1>FOOKIE<\/h1>"})';
-    const incompleteResponse = 'cdsTag.__callback__({"zones":{},"tpCookieSync":"<h1>FOOKIE<\/h1>"})';
-
-    const oneBidConfig = {
-      bidderCode: 'cox',
-      bids: [{
-        bidder: 'cox',
-        placementCode: 'FOO456789',
-        sizes: [300, 250],
-        params: { size: '300x250', id: 2000005991707, siteId: 2000100948180, env: 'PROD' },
-      }]
+  describe('isBidRequestValid', () => {
+    const CONFIG = {
+      'bidder': 'cox',
+      'params': {
+        'id': '8888',
+        'siteId': '1000',
+        'size': '300x250'
+      }
     };
 
-    // ===== 1
-    it('should provide a correctly populated Bid given a valid response', () => {
-      loadScriptStub = sinon.stub(adLoader, 'loadScript', () => { emitScript(normalResponse); })
-
-      adapter.callBids(oneBidConfig);
-
-      let bid = addBidResponseSpy.args[0][1];
-      expect(bid.cpm).to.equal(1.51);
-      expect(bid.ad).to.be.a('string');
-      expect(bid.bidderCode).to.equal('cox');
+    it('should return true when required params present', () => {
+      expect(spec.isBidRequestValid(CONFIG)).to.equal(true);
     });
 
-    // ===== 2
-    it('should provide an empty Bid given a zero-price response', () => {
-      loadScriptStub = sinon.stub(adLoader, 'loadScript', () => { emitScript(zeroPriceResponse); })
+    it('should return false when id param is missing', () => {
+      let config = deepClone(CONFIG);
+      config.params.id = null;
 
-      adapter.callBids(oneBidConfig);
-
-      let bid = addBidResponseSpy.args[0][1];
-      expect(bid.cpm).to.not.be.ok
-      expect(bid.ad).to.not.be.ok;
+      expect(spec.isBidRequestValid(config)).to.equal(false);
     });
 
-    // ===== 3
-    it('should provide an empty Bid given an incomplete response', () => {
-      loadScriptStub = sinon.stub(adLoader, 'loadScript', () => { emitScript(incompleteResponse); })
+    it('should return false when size param is missing', () => {
+      let config = deepClone(CONFIG);
+      config.params.size = null;
 
-      adapter.callBids(oneBidConfig);
-
-      let bid = addBidResponseSpy.args[0][1];
-      expect(bid.cpm).to.not.be.ok
-      expect(bid.ad).to.not.be.ok;
-    });
-
-    // ===== 4
-    it('should not provide a Bid given no response', () => {
-      loadScriptStub = sinon.stub(adLoader, 'loadScript', () => { emitScript(''); });
-
-      adapter.callBids(oneBidConfig);
-
-      expect(addBidResponseSpy.callCount).to.equal(0);
+      expect(spec.isBidRequestValid(config)).to.equal(false);
     });
   });
 
-  describe('request generation', () => {
-    const missingBidsConfig = {
-      bidderCode: 'cox',
-      bids: null,
-    };
-    const missingParamsConfig = {
-      bidderCode: 'cox',
-      bids: [{
-        bidder: 'cox',
-        placementCode: 'FOO456789',
-        sizes: [300, 250],
-        params: null,
-      }]
-    };
+  describe('buildRequests', () => {
+    const PROD_DOMAIN = 'ad.afy11.net';
+    const PPE_DOMAIN = 'ppe-ad.afy11.net';
+    const STG_DOMAIN = 'staging-ad.afy11.net';
 
-    // ===== 5
-    it('should not make an ad call given missing bids in config', () => {
-      loadScriptStub = sinon.stub(adLoader, 'loadScript');
+    const BID_INFO = [{
+      'bidder': 'cox',
+      'params': {
+        'id': '8888',
+        'siteId': '1000',
+        'size': '300x250'
+      },
+      'sizes': [[300, 250]],
+      'transactionId': 'tId-foo',
+      'bidId': 'bId-bar'
+    }];
 
-      adapter.callBids(missingBidsConfig);
-
-      expect(loadScriptStub.callCount).to.equal(0);
+    it('should send bid request to PROD_DOMAIN via GET', () => {
+      let request = spec.buildRequests(BID_INFO);
+      expect(request.url).to.have.string(PROD_DOMAIN);
+      expect(request.method).to.equal('GET');
     });
 
-    // ===== 6
-    it('should not make an ad call given missing params in config', () => {
-      loadScriptStub = sinon.stub(adLoader, 'loadScript');
+    it('should send bid request to PPE_DOMAIN when configured', () => {
+      let clone = deepClone(BID_INFO);
+      clone[0].params.env = 'PPE';
 
-      adapter.callBids(missingParamsConfig);
+      let request = spec.buildRequests(clone);
+      expect(request.url).to.have.string(PPE_DOMAIN);
+    });
 
-      expect(loadScriptStub.callCount).to.equal(0);
+    it('should send bid request to STG_DOMAIN when configured', () => {
+      let clone = deepClone(BID_INFO);
+      clone[0].params.env = 'STG';
+
+      let request = spec.buildRequests(clone);
+      expect(request.url).to.have.string(STG_DOMAIN);
+    });
+
+    it('should return empty when id is invalid', () => {
+      let clone = deepClone(BID_INFO);
+      clone[0].params.id = null;
+
+      let request = spec.buildRequests(clone);
+      expect(request).to.be.an('object').that.is.empty;
+    });
+
+    it('should return empty when size is invalid', () => {
+      let clone = deepClone(BID_INFO);
+      clone[0].params.size = 'FOO';
+
+      let request = spec.buildRequests(clone);
+      expect(request).to.be.an('object').that.is.empty;
+    });
+  })
+
+  describe('interpretResponse', () => {
+    const BID_INFO_1 = [{
+      'bidder': 'cox',
+      'params': {
+        'id': '2000005657007',
+        'siteId': '2000101880180',
+        'size': '728x90'
+      },
+      'transactionId': 'foo_1',
+      'bidId': 'bar_1'
+    }];
+
+    const BID_INFO_2 = [{
+      'bidder': 'cox',
+      'params': {
+        'id': '2000005658887',
+        'siteId': '2000101880180',
+        'size': '300x250'
+      },
+      'transactionId': 'foo_2',
+      'bidId': 'bar_2'
+    }];
+
+    const RESPONSE_1 = { body: {
+      'zones': {
+        'as2000005657007': {
+          'price': 1.88,
+          'dealid': 'AA128460',
+          'ad': '<H1>2000005657007<br/>728x90</H1>',
+          'adid': '7007-728-90'
+        }}}};
+
+    const RESPONSE_2 = { body: {
+      'zones': {
+        'as2000005658887': {
+          'price': 2.88,
+          'ad': '<H1>2000005658887<br/>300x250</H1>',
+          'adid': '888-88'
+        }}}};
+
+    const PBJS_BID_1 = {
+      'requestId': 'bar_1',
+      'cpm': 1.88,
+      'width': '728',
+      'height': '90',
+      'creativeId': '7007-728-90',
+      'dealId': 'AA128460',
+      'currency': 'USD',
+      'netRevenue': true,
+      'ttl': 300,
+      'ad': '<H1>2000005657007<br/>728x90</H1>'
+    };
+
+    const PBJS_BID_2 = {
+      'requestId': 'bar_2',
+      'cpm': 2.88,
+      'width': '300',
+      'height': '250',
+      'creativeId': '888-88',
+      'dealId': undefined,
+      'currency': 'USD',
+      'netRevenue': true,
+      'ttl': 300,
+      'ad': '<H1>2000005658887<br/>300x250</H1>'
+    };
+
+    it('should return correct pbjs bid', () => {
+      let result = spec.interpretResponse(RESPONSE_2, spec.buildRequests(BID_INFO_2));
+      expect(result[0]).to.eql(PBJS_BID_2);
+    });
+
+    it('should handle multiple bid instances', () => {
+      let request1 = spec.buildRequests(BID_INFO_1);
+      let request2 = spec.buildRequests(BID_INFO_2);
+
+      let result2 = spec.interpretResponse(RESPONSE_2, request2);
+      expect(result2[0]).to.eql(PBJS_BID_2);
+
+      let result1 = spec.interpretResponse(RESPONSE_1, request1);
+      expect(result1[0]).to.eql(PBJS_BID_1);
+    });
+
+    it('should return empty when price is zero', () => {
+      let clone = deepClone(RESPONSE_1);
+      clone.body.zones.as2000005657007.price = 0;
+
+      let result = spec.interpretResponse(clone, spec.buildRequests(BID_INFO_1));
+      expect(result).to.be.an('array').that.is.empty;
+    });
+
+    it('should return empty when there is no ad', () => {
+      let clone = deepClone(RESPONSE_1);
+      clone.body.zones.as2000005657007.ad = null;
+
+      let result = spec.interpretResponse(clone, spec.buildRequests(BID_INFO_1));
+      expect(result).to.be.an('array').that.is.empty;
+    });
+
+    it('should return empty when there is no ad unit info', () => {
+      let clone = deepClone(RESPONSE_1);
+      delete (clone.body.zones.as2000005657007);
+
+      let result = spec.interpretResponse(clone, spec.buildRequests(BID_INFO_1));
+      expect(result).to.be.an('array').that.is.empty;
+    });
+  });
+
+  describe('getUserSyncs', () => {
+    const RESPONSE = [{ body: {
+      'zones': {},
+      'tpCookieSync': ['http://pixel.foo.com/', 'http://pixel.bar.com/']
+    }}];
+
+    it('should return correct pbjs syncs when pixels are enabled', () => {
+      let syncs = spec.getUserSyncs({ pixelEnabled: true }, RESPONSE);
+
+      expect(syncs.map(x => x.type)).to.eql(['image', 'image']);
+      expect(syncs.map(x => x.url)).to.have.members(['http://pixel.bar.com/', 'http://pixel.foo.com/']);
+    });
+
+    it('should return empty when pixels are not enabled', () => {
+      let syncs = spec.getUserSyncs({ pixelEnabled: false }, RESPONSE);
+
+      expect(syncs).to.be.an('array').that.is.empty;
+    });
+
+    it('should return empty when response has no sync data', () => {
+      let clone = deepClone(RESPONSE);
+      delete (clone[0].body.tpCookieSync);
+
+      let syncs = spec.getUserSyncs({ pixelEnabled: true }, clone);
+      expect(syncs).to.be.an('array').that.is.empty;
+    });
+
+    it('should return empty when response is empty', () => {
+      let syncs = spec.getUserSyncs({ pixelEnabled: true }, [{}]);
+      expect(syncs).to.be.an('array').that.is.empty;
     });
   });
 });

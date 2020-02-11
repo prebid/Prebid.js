@@ -26,10 +26,11 @@ export const spec = {
    * Make a server request from the list of BidRequests.
    *
    * @param {validBidRequests[]} - an array of bids
+   * @param {bidderRequest} - the full bidder request object
    * @return ServerRequest Info describing the request to the server.
    */
 
-  buildRequests: function(validBidRequests) {
+  buildRequests: function(validBidRequests, bidderRequest) {
     // Do we need to group by bidder? i.e. to make multiple requests for
     // different endpoints.
 
@@ -55,6 +56,14 @@ export const spec = {
       includePricingData: true,
       parallel: true
     }, validBidRequests[0].params);
+
+    if (bidderRequest && bidderRequest.gdprConsent) {
+      data.consent = {
+        gdprConsentString: bidderRequest.gdprConsent.consentString,
+        // will check if the gdprApplies field was populated with a boolean value (ie from page config).  If it's undefined, then default to true
+        gdprConsentRequired: (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') ? bidderRequest.gdprConsent.gdprApplies : true
+      };
+    }
 
     validBidRequests.map(bid => {
       let config = CONFIG[bid.bidder];

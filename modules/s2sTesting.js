@@ -1,8 +1,6 @@
 import { config } from 'src/config';
 import { setS2STestingModule } from 'src/adaptermanager';
 
-var CONSTANTS = require('src/constants.json');
-const AST = CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING;
 export const SERVER = 'server';
 export const CLIENT = 'client';
 
@@ -12,42 +10,8 @@ var bidSource = {}; // store bidder sources determined from s2sConfing bidderCon
 // load s2sConfig
 config.getConfig('s2sConfig', config => {
   testing = config.s2sConfig && config.s2sConfig.testing;
-  addBidderSourceTargeting(config.s2sConfig)
   calculateBidSources(config.s2sConfig);
 });
-
-// function to add hb_source_<bidder> adServerTargeting (AST) kvp to bidder settings
-function addBidderSourceTargeting(s2sConfig = {}) {
-  // bail if testing is not turned on
-  if (!testing) {
-    return;
-  }
-  var bidderSettings = $$PREBID_GLOBAL$$.bidderSettings || {};
-  var bidderControl = s2sConfig.bidderControl || {};
-  // for each configured bidder
-  (s2sConfig.bidders || []).forEach((bidder) => {
-    // remove any existing kvp setting
-    if (bidderSettings[bidder] && bidderSettings[bidder][AST]) {
-      bidderSettings[bidder][AST] = bidderSettings[bidder][AST].filter((kvp) => {
-        return kvp.key !== `hb_source_${bidder}`;
-      });
-    }
-    // if includeSourceKvp === true add new kvp setting
-    if (bidderControl[bidder] && bidderControl[bidder].includeSourceKvp) {
-      bidderSettings[bidder] = bidderSettings[bidder] || {};
-      bidderSettings[bidder][AST] = bidderSettings[bidder][AST] || [];
-      bidderSettings[bidder][AST].push({
-        key: `hb_source_${bidder}`,
-        val: function (bidResponse) {
-          // default to client (currently only S2S sets this)
-          return bidResponse.source || CLIENT;
-        }
-      });
-      // make sure "alwaysUseBid" is true so targeting is set
-      bidderSettings[bidder].alwaysUseBid = true;
-    }
-  });
-}
 
 export function getSourceBidderMap(adUnits = []) {
   var sourceBidders = {[SERVER]: {}, [CLIENT]: {}};

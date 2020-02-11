@@ -4,6 +4,7 @@
 import { expect } from 'chai';
 
 import { spec } from 'modules/audienceNetworkBidAdapter';
+import * as utils from 'src/utils';
 
 const {
   code,
@@ -18,6 +19,8 @@ const placementId = 'test-placement-id';
 const playerwidth = 320;
 const playerheight = 180;
 const requestId = 'test-request-id';
+const debug = 'adapterver=1.0.0&platform=241394079772386&platver=$prebid.version$';
+const pageUrl = encodeURIComponent(utils.getTopWindowUrl());
 
 describe('AudienceNetwork adapter', () => {
   describe('Public API', () => {
@@ -25,7 +28,7 @@ describe('AudienceNetwork adapter', () => {
       expect(code).to.equal(bidder);
     });
     it('supportedMediaTypes', () => {
-      expect(supportedMediaTypes).to.deep.equal(['video']);
+      expect(supportedMediaTypes).to.deep.equal(['banner', 'video']);
     });
     it('isBidRequestValid', () => {
       expect(isBidRequestValid).to.be.a('function');
@@ -73,7 +76,7 @@ describe('AudienceNetwork adapter', () => {
     it('fullwidth', () => {
       expect(isBidRequestValid({
         bidder,
-        sizes: [[300, 250]],
+        sizes: [[300, 250], [336, 280]],
         params: {
           placementId,
           format: 'fullwidth'
@@ -85,6 +88,17 @@ describe('AudienceNetwork adapter', () => {
       expect(isBidRequestValid({
         bidder,
         sizes: [[300, 250]],
+        params: {
+          placementId,
+          format: 'native'
+        }
+      })).to.equal(true);
+    });
+
+    it('native with non-IAB size', () => {
+      expect(isBidRequestValid({
+        bidder,
+        sizes: [[728, 90]],
         params: {
           placementId,
           format: 'native'
@@ -105,6 +119,15 @@ describe('AudienceNetwork adapter', () => {
   });
 
   describe('buildRequests', () => {
+    let isSafariBrowserStub;
+    before(() => {
+      isSafariBrowserStub = sinon.stub(utils, 'isSafariBrowser');
+    });
+
+    after(() => {
+      isSafariBrowserStub.restore();
+    });
+
     it('can build URL for IAB unit', () => {
       expect(buildRequests([{
         bidder,
@@ -117,7 +140,7 @@ describe('AudienceNetwork adapter', () => {
         requestIds: [requestId],
         sizes: ['300x250'],
         url: 'https://an.facebook.com/v2/placementbid.json',
-        data: 'placementids[]=test-placement-id&adformats[]=300x250&testmode=false&pageurl=&sdk[]=5.5.web'
+        data: `placementids[]=test-placement-id&adformats[]=300x250&testmode=false&pageurl=${pageUrl}&sdk[]=5.5.web&${debug}`
       }]);
     });
 
@@ -136,8 +159,56 @@ describe('AudienceNetwork adapter', () => {
         requestIds: [requestId],
         sizes: ['640x480'],
         url: 'https://an.facebook.com/v2/placementbid.json',
-        data: 'placementids[]=test-placement-id&adformats[]=video&testmode=false&pageurl=&sdk[]=&playerwidth=640&playerheight=480'
+        data: `placementids[]=test-placement-id&adformats[]=video&testmode=false&pageurl=${pageUrl}&sdk[]=&${debug}&playerwidth=640&playerheight=480`
       }]);
+    });
+
+    it('can build URL for native unit in non-IAB size', () => {
+      expect(buildRequests([{
+        bidder,
+        bidId: requestId,
+        sizes: [[728, 90]],
+        params: {
+          placementId,
+          format: 'native'
+        }
+      }])).to.deep.equal([{
+        adformats: ['native'],
+        method: 'GET',
+        requestIds: [requestId],
+        sizes: ['728x90'],
+        url: 'https://an.facebook.com/v2/placementbid.json',
+        data: `placementids[]=test-placement-id&adformats[]=native&testmode=false&pageurl=${pageUrl}&sdk[]=5.5.web&${debug}`
+      }]);
+    });
+
+    it('can build URL for fullwidth 300x250 unit', () => {
+      expect(buildRequests([{
+        bidder,
+        bidId: requestId,
+        sizes: [[300, 250]],
+        params: {
+          placementId,
+          format: 'fullwidth'
+        }
+      }])).to.deep.equal([{
+        adformats: ['fullwidth'],
+        method: 'GET',
+        requestIds: [requestId],
+        sizes: ['300x250'],
+        url: 'https://an.facebook.com/v2/placementbid.json',
+        data: `placementids[]=test-placement-id&adformats[]=fullwidth&testmode=false&pageurl=${pageUrl}&sdk[]=5.5.web&${debug}`
+      }]);
+    });
+
+    it('can build URL on Safari that includes a cachebuster param', () => {
+      isSafariBrowserStub.returns(true);
+      expect(buildRequests([{
+        bidder,
+        bidId: requestId,
+        sizes: [[300, 250]],
+        params: { placementId }
+      }])[0].data).to.contain('&cb=');
     });
   });
 
@@ -340,7 +411,7 @@ describe('AudienceNetwork adapter', () => {
       expect(bidResponse.cpm).to.equal(1.23);
       expect(bidResponse.requestId).to.equal(requestId);
       expect(bidResponse.mediaType).to.equal('video');
-      expect(bidResponse.vastUrl).to.equal(`https://an.facebook.com/v1/instream/vast.xml?placementid=${placementId}&pageurl=&playerwidth=${playerwidth}&playerheight=${playerheight}&bidid=${bidId}`);
+      expect(bidResponse.vastUrl).to.equal(`https://an.facebook.com/v1/instream/vast.xml?placementid=${placementId}&pageurl=${pageUrl}&playerwidth=${playerwidth}&playerheight=${playerheight}&bidid=${bidId}`);
       expect(bidResponse.width).to.equal(playerwidth);
       expect(bidResponse.height).to.equal(playerheight);
     });
@@ -380,7 +451,7 @@ describe('AudienceNetwork adapter', () => {
       expect(bidResponseVideo.cpm).to.equal(1.23);
       expect(bidResponseVideo.requestId).to.equal(requestId);
       expect(bidResponseVideo.mediaType).to.equal('video');
-      expect(bidResponseVideo.vastUrl).to.equal(`https://an.facebook.com/v1/instream/vast.xml?placementid=${videoPlacementId}&pageurl=&playerwidth=${playerwidth}&playerheight=${playerheight}&bidid=${videoBidId}`);
+      expect(bidResponseVideo.vastUrl).to.equal(`https://an.facebook.com/v1/instream/vast.xml?placementid=${videoPlacementId}&pageurl=${pageUrl}&playerwidth=${playerwidth}&playerheight=${playerheight}&bidid=${videoBidId}`);
       expect(bidResponseVideo.width).to.equal(playerwidth);
       expect(bidResponseVideo.height).to.equal(playerheight);
 
@@ -389,6 +460,44 @@ describe('AudienceNetwork adapter', () => {
       expect(bidResponseNative.width).to.equal(300);
       expect(bidResponseNative.height).to.equal(250);
       expect(bidResponseNative.ad).to.contain(`placementid:'${nativePlacementId}',format:'native',bidid:'${nativeBidId}'`);
+    });
+
+    it('mixture of valid native bid and error in response', () => {
+      const [bidResponse] = interpretResponse({
+        body: {
+          errors: ['test-error-message'],
+          bids: {
+            [placementId]: [{
+              placement_id: placementId,
+              bid_id: 'test-bid-id',
+              bid_price_cents: 123,
+              bid_price_currency: 'usd',
+              bid_price_model: 'cpm'
+            }]
+          }
+        }
+      }, {
+        adformats: ['native'],
+        requestIds: [requestId],
+        sizes: [[300, 250]]
+      });
+
+      expect(bidResponse.cpm).to.equal(1.23);
+      expect(bidResponse.requestId).to.equal(requestId);
+      expect(bidResponse.width).to.equal(300);
+      expect(bidResponse.height).to.equal(250);
+      expect(bidResponse.ad)
+        .to.contain(`placementid:'${placementId}',format:'native',bidid:'test-bid-id'`, 'ad missing parameters')
+        .and.to.contain('getElementsByTagName("style")', 'ad missing native styles')
+        .and.to.contain('<div class="thirdPartyRoot"><a class="fbAdLink">', 'ad missing native container');
+      expect(bidResponse.creativeId).to.equal(placementId);
+      expect(bidResponse.netRevenue).to.equal(true);
+      expect(bidResponse.currency).to.equal('USD');
+
+      expect(bidResponse.hb_bidder).to.equal('fan');
+      expect(bidResponse.fb_bidid).to.equal('test-bid-id');
+      expect(bidResponse.fb_format).to.equal('native');
+      expect(bidResponse.fb_placementid).to.equal(placementId);
     });
   });
 });
