@@ -88,12 +88,6 @@ describe('SeedingAlliance adapter', function () {
           },
           sponsoredBy: {
             required: true
-          },
-          cta: {
-            required: true
-          },
-          icon: {
-            required: true
           }
         }
       }];
@@ -104,8 +98,6 @@ describe('SeedingAlliance adapter', function () {
       assert.equal(assets[1].id, 3);
       assert.equal(assets[2].id, 0);
       assert.equal(assets[3].id, 2);
-      assert.equal(assets[4].id, 4);
-      assert.equal(assets[5].id, 5);
     });
   });
 
