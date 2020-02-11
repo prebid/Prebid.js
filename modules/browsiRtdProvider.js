@@ -205,7 +205,6 @@ function getMacroId(macro, id, slot) {
       const macroResult = evaluate(macro, slot.getSlotElementId(), slot.getAdUnitPath(), (match, p1) => {
         return (p1 && slot.getTargeting(p1).join('_')) || 'NA';
       });
-      console.log(`${slot.getSlotElementId()} macro result: ${macro} => ${macroResult}`);
       return macroResult;
     } catch (e) {
       utils.logError(`failed to evaluate: ${macro}`);
