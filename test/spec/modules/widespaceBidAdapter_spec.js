@@ -1,5 +1,5 @@
-import { expect } from 'chai';
-import { spec } from 'modules/widespaceBidAdapter';
+import {expect} from 'chai';
+import {spec} from 'modules/widespaceBidAdapter';
 import includes from 'core-js/library/fn/array/includes';
 
 describe('+widespaceAdatperTest', function () {
@@ -149,7 +149,7 @@ describe('+widespaceAdatperTest', function () {
     let lsGetStub;
     let lsRemoveStub;
 
-    beforeEach(function() {
+    beforeEach(function () {
       lsSetStub = sinon.stub(window.localStorage, 'setItem').callsFake(function (name, value) {
         fakeLocalStorage[name] = value;
       });
@@ -166,7 +166,7 @@ describe('+widespaceAdatperTest', function () {
       });
     });
 
-    afterEach(function() {
+    afterEach(function () {
       lsSetStub.restore();
       lsGetStub.restore();
       lsRemoveStub.restore();

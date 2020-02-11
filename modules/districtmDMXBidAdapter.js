@@ -88,6 +88,11 @@ export const spec = {
       dmxRequest.user.ext = {};
       dmxRequest.user.ext.consent = bidderRequest.gdprConsent.consentString;
     }
+    if (bidderRequest && bidderRequest.uspConsent) {
+      dmxRequest.regs = dmxRequest.regs || {};
+      dmxRequest.regs.ext = dmxRequest.regs.ext || {};
+      dmxRequest.regs.ext.us_privacy = bidderRequest.uspConsent;
+    }
     try {
       schain = bidRequest[0].schain;
       dmxRequest.source = {};

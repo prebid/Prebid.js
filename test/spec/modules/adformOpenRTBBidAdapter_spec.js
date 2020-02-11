@@ -39,7 +39,7 @@ describe('AdformOpenRTB adapter', function () {
       let request = spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } });
 
       assert.equal(request.method, 'POST');
-      assert.equal(request.url, '//10.8.57.207/adx/openrtb');
+      assert.equal(request.url, 'https://10.8.57.207/adx/openrtb');
       assert.deepEqual(request.options, {contentType: 'application/json'});
       assert.ok(request.data);
     });

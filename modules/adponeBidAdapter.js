@@ -1,5 +1,6 @@
 import {BANNER} from '../src/mediaTypes';
 import {registerBidder} from '../src/adapters/bidderFactory';
+import {triggerPixel} from '../src/utils';
 
 const ADPONE_CODE = 'adpone';
 const ADPONE_ENDPOINT = 'https://rtb.adpone.com/bid-request';
@@ -87,8 +88,7 @@ export const spec = {
   onBidWon: bid => {
     const bidString = JSON.stringify(bid);
     const encodedBuf = window.btoa(bidString);
-    const img = new Image(1, 1);
-    img.src = `https://rtb.adpone.com/prebid/analytics?q=${encodedBuf}`;
+    triggerPixel(`https://rtb.adpone.com/prebid/analytics?q=${encodedBuf}`);
   },
 
 };

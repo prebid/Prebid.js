@@ -3,7 +3,7 @@ import {spec} from 'modules/admixerBidAdapter';
 import {newBidder} from 'src/adapters/bidderFactory';
 
 const BIDDER_CODE = 'admixer';
-const ENDPOINT_URL = '//inv-nets.admixer.net/prebid.1.0.aspx';
+const ENDPOINT_URL = 'https://inv-nets.admixer.net/prebid.1.0.aspx';
 const ZONE_ID = '2eb6bd58-865c-47ce-af7f-a918108c3fd2';
 
 describe('AdmixerAdapter', function () {
@@ -43,7 +43,7 @@ describe('AdmixerAdapter', function () {
   });
 
   describe('buildRequests', function () {
-    let bidRequests = [
+    let validRequest = [
       {
         'bidder': BIDDER_CODE,
         'params': {
@@ -56,16 +56,21 @@ describe('AdmixerAdapter', function () {
         'auctionId': '1d1a030790a475',
       }
     ];
+    let bidderRequest = {
+      refererInfo: {
+        referer: 'https://example.com'
+      }
+    };
 
     it('should add referrer and imp to be equal bidRequest', function () {
-      const request = spec.buildRequests(bidRequests);
+      const request = spec.buildRequests(validRequest, bidderRequest);
       const payload = JSON.parse(request.data.substr(5));
       expect(payload.referrer).to.not.be.undefined;
-      expect(payload.imps[0]).to.deep.equal(bidRequests[0]);
+      expect(payload.imps[0]).to.deep.equal(validRequest[0]);
     });
 
     it('sends bid request to ENDPOINT via GET', function () {
-      const request = spec.buildRequests(bidRequests);
+      const request = spec.buildRequests(validRequest, bidderRequest);
       expect(request.url).to.equal(ENDPOINT_URL);
       expect(request.method).to.equal('GET');
     });
