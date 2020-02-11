@@ -3,11 +3,10 @@ import sortableAnalyticsAdapter, {TIMEOUT_FOR_REGISTRY, DEFAULT_PBID_TIMEOUT} fr
 import events from 'src/events';
 import CONSTANTS from 'src/constants.json';
 import * as prebidGlobal from 'src/prebidGlobal';
+import {server} from 'test/mocks/xhr';
 
 describe('Sortable Analytics Adapter', function() {
-  let requests;
   let sandbox;
-  let xhr;
   let clock;
 
   const initialConfig = {
@@ -137,8 +136,6 @@ describe('Sortable Analytics Adapter', function() {
 
   beforeEach(function() {
     sandbox = sinon.sandbox.create();
-    xhr = sandbox.useFakeXMLHttpRequest();
-    xhr.onCreate = (request) => requests.push(request);
     clock = sandbox.useFakeTimers();
     sandbox.stub(events, 'getEvents').returns([]);
     sandbox.stub(prebidGlobal, 'getGlobal').returns({
@@ -152,7 +149,6 @@ describe('Sortable Analytics Adapter', function() {
       }
     });
 
-    requests = [];
     sortableAnalyticsAdapter.enableAnalytics(initialConfig);
   });
 
@@ -190,8 +186,8 @@ describe('Sortable Analytics Adapter', function() {
 
       clock.tick(DEFAULT_PBID_TIMEOUT);
 
-      expect(requests.length).to.equal(1);
-      let result = JSON.parse(requests[0].requestBody);
+      expect(server.requests.length).to.equal(1);
+      let result = JSON.parse(server.requests[0].requestBody);
       expect(result).to.have.own.property('pbid');
       expect(result.pbid).to.deep.include({
         ai: 'fb8d579a-5c3f-4705-ab94-3cff39005d9e',
@@ -242,10 +238,10 @@ describe('Sortable Analytics Adapter', function() {
 
       clock.tick(TIMEOUT_FOR_REGISTRY);
 
-      expect(requests.length).to.equal(2);
-      const pbid_req = JSON.parse(requests[0].requestBody);
+      expect(server.requests.length).to.equal(2);
+      const pbid_req = JSON.parse(server.requests[0].requestBody);
       expect(pbid_req).to.have.own.property('pbid');
-      const pbwon_req = JSON.parse(requests[1].requestBody);
+      const pbwon_req = JSON.parse(server.requests[1].requestBody);
       expect(pbwon_req).to.have.own.property('pbrw');
       expect(pbwon_req.pbrw).to.deep.equal({
         ac: '300x250',
@@ -270,10 +266,10 @@ describe('Sortable Analytics Adapter', function() {
 
       clock.tick(TIMEOUT_FOR_REGISTRY);
 
-      expect(requests.length).to.equal(2);
-      const pbid_req = JSON.parse(requests[0].requestBody);
+      expect(server.requests.length).to.equal(2);
+      const pbid_req = JSON.parse(server.requests[0].requestBody);
       expect(pbid_req).to.have.own.property('pbid');
-      const pbto_req = JSON.parse(requests[1].requestBody);
+      const pbto_req = JSON.parse(server.requests[1].requestBody);
       expect(pbto_req).to.have.own.property('pbto');
       expect(pbto_req.pbto).to.deep.equal({
         ai: 'fb8d579a-5c3f-4705-ab94-3cff39005d9e',
@@ -291,8 +287,8 @@ describe('Sortable Analytics Adapter', function() {
 
       clock.tick(TIMEOUT_FOR_REGISTRY);
 
-      expect(requests.length).to.equal(1);
-      const err_req = JSON.parse(requests[0].requestBody);
+      expect(server.requests.length).to.equal(1);
+      const err_req = JSON.parse(server.requests[0].requestBody);
       expect(err_req).to.have.own.property('pber');
       expect(err_req.pber).to.include({
         args: '{}',

@@ -4,6 +4,7 @@ import {registerBidder} from '../src/adapters/bidderFactory';
 
 const BIDDER_CODE = 'dspx';
 const ENDPOINT_URL = 'https://buyer.dspx.tv/request/';
+const ENDPOINT_URL_DEV = 'https://dcbuyer.dspx.tv/request/';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -14,14 +15,17 @@ export const spec = {
   buildRequests: function(validBidRequests, bidderRequest) {
     return validBidRequests.map(bidRequest => {
       const params = bidRequest.params;
-      const sizes = utils.parseSizesInput(bidRequest.sizes)[0];
-      const width = sizes.split('x')[0];
-      const height = sizes.split('x')[1];
       const placementId = params.placement;
-
       const rnd = Math.floor(Math.random() * 99999999999);
-      const referrer = bidderRequest.refererInfo.referer;
+      const referrer = encodeURIComponent(bidderRequest.refererInfo.referer);
       const bidId = bidRequest.bidId;
+      const isDev = params.devMode || false;
+
+      let bannerSizes = utils.parseSizesInput(utils.deepAccess(bidRequest, 'mediaTypes.banner.sizes') || bidRequest.sizes);
+      let [width, height] = bannerSizes[0].split('x');
+
+      let endpoint = isDev ? ENDPOINT_URL_DEV : ENDPOINT_URL;
+
       const payload = {
         _f: 'html',
         alternative: 'prebid_js',
@@ -42,9 +46,12 @@ export const spec = {
       if (params.dvt !== undefined) {
         payload.dvt = params.dvt;
       }
+      if (isDev) {
+        payload.prebidDevMode = 1;
+      }
       return {
         method: 'GET',
-        url: ENDPOINT_URL,
+        url: endpoint,
         data: objectToQueryString(payload),
       }
     });
@@ -58,7 +65,6 @@ export const spec = {
       const dealId = response.dealid || '';
       const currency = response.currency || 'EUR';
       const netRevenue = (response.netRevenue === undefined) ? true : response.netRevenue;
-      const referrer = utils.getTopWindowUrl();
       const bidResponse = {
         requestId: response.bid_id,
         cpm: cpm,
@@ -69,7 +75,6 @@ export const spec = {
         currency: currency,
         netRevenue: netRevenue,
         ttl: config.getConfig('_bidderTimeout'),
-        referrer: referrer,
         ad: response.adTag
       };
       bidResponses.push(bidResponse);

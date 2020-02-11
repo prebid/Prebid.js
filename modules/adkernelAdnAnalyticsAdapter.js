@@ -5,7 +5,7 @@ import {parse} from '../src/url';
 import * as utils from '../src/utils';
 import {ajax} from '../src/ajax';
 
-const ANALYTICS_VERSION = '1.0.0';
+const ANALYTICS_VERSION = '1.0.1';
 const DEFAULT_QUEUE_TIMEOUT = 4000;
 const DEFAULT_HOST = 'tag.adkernel.com';
 
@@ -19,14 +19,12 @@ const ADK_HB_EVENTS = {
 };
 
 function buildRequestTemplate(pubId) {
-  const url = utils.getTopWindowUrl();
-  const ref = utils.getTopWindowReferrer();
-  const topLocation = utils.getTopWindowLocation();
+  const {loc, ref} = getNavigationInfo();
 
   return {
     ver: ANALYTICS_VERSION,
-    domain: topLocation.hostname,
-    path: topLocation.pathname,
+    domain: loc.hostname,
+    path: loc.pathname,
     accId: pubId,
     env: {
       screen: {
@@ -35,13 +33,13 @@ function buildRequestTemplate(pubId) {
       },
       lang: navigator.language
     },
-    src: getUmtSource(url, ref)
+    src: getUmtSource(loc.href, ref)
   }
 }
 
 let analyticsAdapter = Object.assign(adapter({analyticsType: 'endpoint'}),
   {
-    track({ eventType, args }) {
+    track({eventType, args}) {
       if (!analyticsAdapter.context) {
         return;
       }
@@ -115,7 +113,7 @@ function sendAll() {
 }
 
 analyticsAdapter.ajaxCall = function ajaxCall(data) {
-  ajax(`//${analyticsAdapter.context.host}/hb-analytics`, () => {
+  ajax(`https://${analyticsAdapter.context.host}/hb-analytics`, () => {
   }, data);
 };
 
@@ -152,7 +150,7 @@ function trackBidTimeout(args) {
 }
 
 function createHbEvent(adapter, event, tagid = undefined, value = 0, time = 0) {
-  let ev = { event: event };
+  let ev = {event: event};
   if (adapter) {
     ev.adapter = adapter
   }
@@ -297,7 +295,7 @@ export function getUmtSource(pageUrl, referrer) {
   function chooseActualUtm(prev, curr) {
     if (ord(prev) < ord(curr)) {
       return [true, curr];
-    } if (ord(prev) > ord(curr)) {
+    } else if (ord(prev) > ord(curr)) {
       return [false, prev];
     } else {
       if (prev.campaign === REFERRAL && prev.content !== curr.content) {
@@ -330,7 +328,7 @@ export function getUmtSource(pageUrl, referrer) {
 }
 
 /**
- * Expiring queue implementation. Fires callback on elapsed timeout since last last update or creation.
+ * Expiring queue implementation. Fires callback on elapsed timeout since last update or creation.
  * @param callback
  * @param ttl
  * @constructor
@@ -375,4 +373,19 @@ export function ExpiringQueue(callback, ttl) {
       }
     }, ttl);
   }
+}
+
+function getNavigationInfo() {
+  try {
+    return getLocationAndReferrer(self.top);
+  } catch (e) {
+    return getLocationAndReferrer(self);
+  }
+}
+
+function getLocationAndReferrer(win) {
+  return {
+    ref: win.document.referrer,
+    loc: win.location
+  };
 }

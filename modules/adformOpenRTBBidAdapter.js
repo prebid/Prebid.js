@@ -129,7 +129,7 @@ export const spec = {
 
     return {
       method: 'POST',
-      url: '//' + adxDomain + '/adx/openrtb',
+      url: 'https://' + adxDomain + '/adx/openrtb',
       data: JSON.stringify(request),
       options: {
         contentType: 'application/json'

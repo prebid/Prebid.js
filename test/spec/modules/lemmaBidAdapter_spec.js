@@ -151,7 +151,7 @@ describe('lemmaBidAdapter', function() {
       });
       it('Endpoint checking', function() {
         var request = spec.buildRequests(bidRequests);
-        expect(request.url).to.equal('//ads.lemmatechnologies.com/lemma/servad?pid=1001&aid=1');
+        expect(request.url).to.equal('https://ads.lemmatechnologies.com/lemma/servad?pid=1001&aid=1');
         expect(request.method).to.equal('POST');
       });
       it('Request params check', function() {
