@@ -166,6 +166,7 @@ describe('orbidderBidAdapter', () => {
     spec.bidParams['123req456'] = {'accountId': '123acc456'};
 
     let bidObjClone = deepClone(bidObj);
+    bidObjClone.v = $$PREBID_GLOBAL$$.version;
     bidObjClone.pageUrl = detectReferer(window)().referer;
     bidObjClone.params = [{'accountId': '123acc456'}];
 
