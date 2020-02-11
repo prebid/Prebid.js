@@ -96,9 +96,13 @@ describe('orbidderBidAdapter', () => {
       expect(request.url).to.equal(`${spec.orbidderHost}/bid`);
     });
 
+    it('contains prebid version parameter', () => {
+      expect(request.data.v).to.equal($$PREBID_GLOBAL$$.version);
+    });
+
     it('sends correct bid parameters', () => {
       // we add one, because we add referer information from bidderRequest object
-      expect(Object.keys(request.data).length).to.equal(Object.keys(defaultBidRequest).length + 1);
+      expect(Object.keys(request.data).length).to.equal(Object.keys(defaultBidRequest).length + 2);
       expect(request.data.pageUrl).to.equal('https://localhost:9876/');
       // expect(request.data.referrer).to.equal('');
       Object.keys(defaultBidRequest).forEach((key) => {
