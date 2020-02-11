@@ -5,7 +5,7 @@ import CONSTANTS from '../src/constants.json';
 import adapterManager from '../src/adapterManager';
 
 const ANALYTICSTYPE = 'endpoint';
-const URL = '//lwadm.com/analytics/10';
+const URL = 'https://lwadm.com/analytics/10';
 const EMPTYURL = '';
 const REQUESTSENT = 1;
 const RESPONSESENT = 2;
@@ -60,6 +60,7 @@ let livewrappedAnalyticsAdapter = Object.assign(adapter({EMPTYURL, ANALYTICSTYPE
         bidResponse.cpm = args.cpm;
         bidResponse.ttr = args.timeToRespond;
         bidResponse.readyToSend = 1;
+        bidResponse.mediaType = args.mediaType == 'native' ? 2 : 1;
         if (!bidResponse.ttr) {
           bidResponse.ttr = time - bidResponse.start;
         }
@@ -129,7 +130,7 @@ livewrappedAnalyticsAdapter.sendEvents = function() {
     return;
   }
 
-  ajax(URL, undefined, JSON.stringify(events), {method: 'POST'});
+  ajax(initOptions.endpoint || URL, undefined, JSON.stringify(events), {method: 'POST'});
 }
 
 function getAdblockerRecovered() {
@@ -178,7 +179,8 @@ function getResponses() {
           height: bid.height,
           cpm: bid.cpm,
           ttr: bid.ttr,
-          IsBid: bid.isBid
+          IsBid: bid.isBid,
+          mediaType: bid.mediaType
         });
       }
     });
@@ -204,6 +206,7 @@ function getWins() {
           width: bid.width,
           height: bid.height,
           cpm: bid.cpm,
+          mediaType: bid.mediaType
         });
       }
     });

@@ -35,7 +35,7 @@ module.exports = {
     "eqeqeq": "off",
     "no-return-assign": "off",
     "no-throw-literal": "off",
-    "no-undef": "off",
+    "no-undef": 2,
     "no-useless-escape": "off",
   },
   "overrides": Object.keys(allowedModules).map((key) => ({

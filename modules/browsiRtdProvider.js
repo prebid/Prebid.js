@@ -20,6 +20,7 @@ import {config} from '../src/config.js';
 import * as utils from '../src/utils';
 import {submodule} from '../src/hook';
 import {ajax} from '../src/ajax';
+import {loadExternalScript} from '../src/adloader';
 
 /** @type {string} */
 const MODULE_NAME = 'realTimeData';
@@ -35,14 +36,11 @@ let _dataReadyCallback = null;
  * @param {string} bptUrl
  */
 export function addBrowsiTag(bptUrl) {
-  let script = document.createElement('script');
-  script.async = true;
+  let script = loadExternalScript(bptUrl, 'browsi');
   script.setAttribute('data-sitekey', _moduleParams.siteKey);
   script.setAttribute('data-pubkey', _moduleParams.pubKey);
   script.setAttribute('prebidbpt', 'true');
   script.setAttribute('id', 'browsi-tag');
-  script.setAttribute('src', bptUrl);
-  document.head.appendChild(script);
   return script;
 }
 

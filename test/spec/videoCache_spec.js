@@ -2,6 +2,7 @@ import 'mocha/mocha';
 import chai from 'chai';
 import { getCacheUrl, store } from 'src/videoCache';
 import { config } from 'src/config';
+import { server } from 'test/mocks/xhr';
 
 const should = chai.should();
 
@@ -17,24 +18,11 @@ describe('The video cache', function () {
   }
 
   describe('when the cache server is unreachable', function () {
-    let xhr;
-    let requests;
-
-    beforeEach(function () {
-      xhr = sinon.useFakeXMLHttpRequest();
-      requests = [];
-      xhr.onCreate = (request) => requests.push(request);
-    });
-
-    afterEach(function () {
-      xhr.restore();
-    });
-
     it('should execute the callback with an error when store() is called', function () {
       const callback = sinon.spy();
       store([{ vastUrl: 'my-mock-url.com' }], callback);
 
-      requests[0].respond(503, {
+      server.requests[0].respond(503, {
         'Content-Type': 'plain/text',
       }, 'The server could not save anything at the moment.');
 
@@ -44,13 +32,7 @@ describe('The video cache', function () {
   });
 
   describe('when the cache server is available', function () {
-    let xhr;
-    let requests;
-
     beforeEach(function () {
-      xhr = sinon.useFakeXMLHttpRequest();
-      requests = [];
-      xhr.onCreate = (request) => requests.push(request);
       config.setConfig({
         cache: {
           url: 'https://prebid.adnxs.com/pbc/v1/cache'
@@ -59,7 +41,6 @@ describe('The video cache', function () {
     });
 
     afterEach(function () {
-      xhr.restore();
       config.resetConfig();
     });
 
@@ -139,7 +120,7 @@ describe('The video cache', function () {
       }];
 
       store(bids, function () { });
-      const request = requests[0];
+      const request = server.requests[0];
       request.method.should.equal('POST');
       request.url.should.equal('https://prebid.adnxs.com/pbc/v1/cache');
       request.requestHeaders['Content-Type'].should.equal('text/plain;charset=utf-8');
@@ -187,7 +168,7 @@ describe('The video cache', function () {
       }];
 
       store(bids, function () { });
-      const request = requests[0];
+      const request = server.requests[0];
       request.method.should.equal('POST');
       request.url.should.equal('https://prebid.adnxs.com/pbc/v1/cache');
       request.requestHeaders['Content-Type'].should.equal('text/plain;charset=utf-8');
@@ -215,7 +196,7 @@ describe('The video cache', function () {
     function assertRequestMade(bid, expectedValue) {
       store([bid], function () { });
 
-      const request = requests[0];
+      const request = server.requests[0];
       request.method.should.equal('POST');
       request.url.should.equal('https://prebid.adnxs.com/pbc/v1/cache');
       request.requestHeaders['Content-Type'].should.equal('text/plain;charset=utf-8');
@@ -232,7 +213,7 @@ describe('The video cache', function () {
     function fakeServerCall(bid, responseBody) {
       const callback = sinon.spy();
       store([bid], callback);
-      requests[0].respond(
+      server.requests[0].respond(
         200,
         {
           'Content-Type': 'application/json',

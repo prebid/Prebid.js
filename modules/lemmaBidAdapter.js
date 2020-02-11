@@ -4,7 +4,7 @@ import { BANNER, VIDEO } from '../src/mediaTypes';
 
 var BIDDER_CODE = 'lemma';
 var LOG_WARN_PREFIX = 'LEMMA: ';
-var ENDPOINT = '//ads.lemmatechnologies.com/lemma/servad';
+var ENDPOINT = 'https://ads.lemmatechnologies.com/lemma/servad';
 var DEFAULT_CURRENCY = 'USD';
 var AUCTION_TYPE = 2;
 var DEFAULT_TMAX = 300;
@@ -61,7 +61,7 @@ export var spec = {
 
 function _initConf(refererInfo) {
   var conf = {};
-  conf.pageURL = utils.getTopWindowUrl();
+  conf.pageURL = (refererInfo && refererInfo.referer) ? refererInfo.referer : window.location.href;
   if (refererInfo && refererInfo.referer) {
     conf.refURL = refererInfo.referer;
   } else {
