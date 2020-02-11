@@ -1513,7 +1513,6 @@ describe('Unit: Prebid Module', function () {
             $$PREBID_GLOBAL$$.requestBids({
               adUnits: fullAdUnit
             });
-            expect(auctionArgs.adUnits[0].sizes).to.deep.equal([[640, 480]]);
             expect(auctionArgs.adUnits[0].mediaTypes.video.playerSize).to.deep.equal([[640, 480]]);
             expect(auctionArgs.adUnits[0].mediaTypes.native.image.sizes).to.deep.equal([150, 150]);
             expect(auctionArgs.adUnits[0].mediaTypes.native.icon.sizes).to.deep.equal([75, 75]);
@@ -1543,7 +1542,6 @@ describe('Unit: Prebid Module', function () {
             $$PREBID_GLOBAL$$.requestBids({
               adUnits: noOptnlFieldAdUnit
             });
-            expect(auctionArgs.adUnits[0].sizes).to.deep.equal([[300, 250]]);
             expect(auctionArgs.adUnits[0].mediaTypes.video).to.exist;
 
             let mixedAdUnit = [{
@@ -1566,7 +1564,6 @@ describe('Unit: Prebid Module', function () {
             $$PREBID_GLOBAL$$.requestBids({
               adUnits: mixedAdUnit
             });
-            expect(auctionArgs.adUnits[0].sizes).to.deep.equal([[400, 350]]);
             expect(auctionArgs.adUnits[0].mediaTypes.video).to.exist;
 
             let altVideoPlayerSize = [{
@@ -1582,7 +1579,6 @@ describe('Unit: Prebid Module', function () {
             $$PREBID_GLOBAL$$.requestBids({
               adUnits: altVideoPlayerSize
             });
-            expect(auctionArgs.adUnits[0].sizes).to.deep.equal([[640, 480]]);
             expect(auctionArgs.adUnits[0].mediaTypes.video.playerSize).to.deep.equal([[640, 480]]);
             expect(auctionArgs.adUnits[0].mediaTypes.video).to.exist;
           });
@@ -1601,7 +1597,6 @@ describe('Unit: Prebid Module', function () {
             $$PREBID_GLOBAL$$.requestBids({
               adUnits: normalizeAdUnit
             });
-            expect(auctionArgs.adUnits[0].sizes).to.deep.equal([[300, 250]]);
             expect(auctionArgs.adUnits[0].mediaTypes.banner.sizes).to.deep.equal([[300, 250]]);
           });
         });
