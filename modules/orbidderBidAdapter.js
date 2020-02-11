@@ -1,6 +1,7 @@
 import {detectReferer} from '../src/refererDetection';
 import {ajax} from '../src/ajax';
 import {registerBidder} from '../src/adapters/bidderFactory';
+import $$PREBID_GLOBAL$$ from '../src/prebid';
 
 export const spec = {
   code: 'orbidder',
@@ -34,6 +35,7 @@ export const spec = {
         method: 'POST',
         options: { withCredentials: true },
         data: {
+          v: $$PREBID_GLOBAL$$.version,
           pageUrl: referer,
           bidId: bidRequest.bidId,
           auctionId: bidRequest.auctionId,
