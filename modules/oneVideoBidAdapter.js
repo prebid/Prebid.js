@@ -3,6 +3,7 @@ import {registerBidder} from '../src/adapters/bidderFactory';
 const BIDDER_CODE = 'oneVideo';
 export const spec = {
   code: 'oneVideo',
+  VERSION: '3.0.0',
   ENDPOINT: 'https://ads.adaptv.advertising.com/rtb/openrtb?ext_id=',
   SYNC_ENDPOINT1: 'https://cm.g.doubleclick.net/pixel?google_nid=adaptv_dbm&google_cm&google_sc',
   SYNC_ENDPOINT2: 'https://pr-bh.ybp.yahoo.com/sync/adaptv_ortb/{combo_uid}',
@@ -153,6 +154,8 @@ function getRequestData(bid, consentData, bidRequest) {
       bidfloor: bid.params.bidfloor,
       ext: {
         hb: 1,
+        prebidver: '$prebid.version$',
+        adapterver: spec.VERSION,
       }
     }],
     site: {
@@ -199,6 +202,8 @@ function getRequestData(bid, consentData, bidRequest) {
     if (bid.params.video.rewarded) {
       bidData.imp[0].ext.rewarded = bid.params.video.rewarded
     }
+    bidData.imp[0].video.linearity = 1;
+    bidData.imp[0].video.protocols = bid.params.video.protocols || [2, 5];
   } else if (bid.params.video.display == 1) {
     bidData.imp[0].banner = {
       mimes: bid.params.video.mimes,
@@ -244,6 +249,7 @@ function getRequestData(bid, consentData, bidRequest) {
         }
       };
     }
+    // ccpa support
     if (bidRequest && bidRequest.uspConsent) {
       bidData.regs.ext.us_privacy = bidRequest.uspConsent
     }

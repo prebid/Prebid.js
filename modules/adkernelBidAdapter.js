@@ -36,11 +36,11 @@ export const spec = {
   },
   buildRequests: function(bidRequests, bidderRequest) {
     let impDispatch = dispatchImps(bidRequests, bidderRequest.refererInfo);
-    const {gdprConsent, auctionId, refererInfo, timeout} = bidderRequest;
+    const {gdprConsent, auctionId, refererInfo, timeout, uspConsent} = bidderRequest;
     const requests = [];
     Object.keys(impDispatch).forEach(host => {
       Object.keys(impDispatch[host]).forEach(zoneId => {
-        const request = buildRtbRequest(impDispatch[host][zoneId], auctionId, gdprConsent, refererInfo, timeout);
+        const request = buildRtbRequest(impDispatch[host][zoneId], auctionId, gdprConsent, uspConsent, refererInfo, timeout);
         requests.push({
           method: 'POST',
           url: `https://${host}/hb?zone=${zoneId}&v=${VERSION}`,
@@ -149,12 +149,13 @@ function buildImp(bidRequest, secure) {
  * Builds complete rtb request
  * @param imps collection of impressions
  * @param auctionId
- * @param gdprConsent
+ * @param gdprConsent {string=}
+ * @param uspConsent {string=}
  * @param refInfo
  * @param timeout
  * @return Object complete rtb request
  */
-function buildRtbRequest(imps, auctionId, gdprConsent, refInfo, timeout) {
+function buildRtbRequest(imps, auctionId, gdprConsent, uspConsent, refInfo, timeout) {
   let req = {
     'id': auctionId,
     'imp': imps,
@@ -174,11 +175,16 @@ function buildRtbRequest(imps, auctionId, gdprConsent, refInfo, timeout) {
   if (utils.getDNT()) {
     req.device.dnt = 1;
   }
-  if (gdprConsent && gdprConsent.gdprApplies !== undefined) {
-    req.regs = {ext: {gdpr: Number(gdprConsent.gdprApplies)}};
+  if (gdprConsent) {
+    if (gdprConsent.gdprApplies !== undefined) {
+      utils.deepSetValue(req, 'regs.ext.gdpr', ~~gdprConsent.gdprApplies);
+    }
+    if (gdprConsent.consentString !== undefined) {
+      utils.deepSetValue(req, 'user.ext.consent', gdprConsent.consentString);
+    }
   }
-  if (gdprConsent && gdprConsent.consentString !== undefined) {
-    req.user = {ext: {consent: gdprConsent.consentString}};
+  if (uspConsent) {
+    utils.deepSetValue(req, 'regs.ext.us_privacy', uspConsent);
   }
   return req;
 }
@@ -195,7 +201,7 @@ function createSite(refInfo) {
   let url = parseUrl(refInfo.referer);
   let site = {
     'domain': url.hostname,
-    'page': url.protocol + '://' + url.hostname + url.pathname
+    'page': `${url.protocol}://${url.hostname}${url.pathname}`
   };
   if (self === top && document.referrer) {
     site.ref = document.referrer;
