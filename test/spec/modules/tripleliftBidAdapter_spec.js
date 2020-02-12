@@ -286,7 +286,7 @@ describe('triplelift adapter', function () {
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
       config.getConfig.restore();
       const url = request.url;
-      expect(url).not.to.match(/(\?|&)coppa=true/);
+      expect(url).not.to.match(/(\?|&)coppa=/);
     });
     it('should return schain when present', function() {
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
