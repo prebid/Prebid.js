@@ -56,7 +56,7 @@ describe('AdGlare Adapter Tests', function () {
 
         expect(isValid).to.equal(false);
       });
-      
+
       it('should build a valid endpoint URL', function () {
         let bidRequests = [
           {
@@ -77,7 +77,7 @@ describe('AdGlare Adapter Tests', function () {
             bidderRequestId: '1c56ad30b9b8ca8',
             transactionId: '92489f71-1bf2-49a0-adf9-000cea934729'
           }
-        ];
+        ],
         requests = spec.buildRequests(bidRequests),
         requestURL = requests[0].url;
 
