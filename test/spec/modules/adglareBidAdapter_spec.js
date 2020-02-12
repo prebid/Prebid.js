@@ -59,27 +59,27 @@ describe('AdGlare Adapter Tests', function () {
 
       it('should build a valid endpoint URL', function () {
         let bidRequests = [
-          {
-            bidder: 'adglare',
-            params: {
-              domain: 'try.engine.adglare.net',
-              zID: '475579334',
-              type: 'banner'
-            },
-            mediaTypes: {
-              banner: {
-                sizes: [[300, 250], [300, 600]],
+            {
+              bidder: 'adglare',
+              params: {
+                domain: 'try.engine.adglare.net',
+                zID: '475579334',
+                type: 'banner'
               },
-            },
-            sizes: [[300, 250], [300, 600]],
-            bidId: '23acc48ad47af5',
-            auctionId: '0fb4905b-9456-4152-86be-c6f6d259ba99',
-            bidderRequestId: '1c56ad30b9b8ca8',
-            transactionId: '92489f71-1bf2-49a0-adf9-000cea934729'
-          }
-        ],
-        requests = spec.buildRequests(bidRequests),
-        requestURL = requests[0].url;
+              mediaTypes: {
+                banner: {
+                  sizes: [[300, 250], [300, 600]],
+                },
+              },
+              sizes: [[300, 250], [300, 600]],
+              bidId: '23acc48ad47af5',
+              auctionId: '0fb4905b-9456-4152-86be-c6f6d259ba99',
+              bidderRequestId: '1c56ad30b9b8ca8',
+              transactionId: '92489f71-1bf2-49a0-adf9-000cea934729'
+            }
+          ],
+          requests = spec.buildRequests(bidRequests),
+          requestURL = requests[0].url;
 
         expect(requestURL).to.have.string('https://try.engine.adglare.net');
         expect(requestURL).to.have.string('?475579334');
