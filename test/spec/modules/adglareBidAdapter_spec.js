@@ -85,7 +85,7 @@ describe('AdGlare Adapter Tests', function () {
             refererInfo: {
               referer: 'https://www.somedomain.com',
               reachedTop: true,
-              numFrames:0
+              numFrames: 0
             },
             start: 1581497568254
           },
