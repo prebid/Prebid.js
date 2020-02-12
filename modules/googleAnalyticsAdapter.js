@@ -31,15 +31,29 @@ let adapter = {};
  * @param  {object} options use to configure adapter;
  * @return {[type]}    [description]
  */
-adapter.enableAnalytics = function ({ provider, options }) {
+adapter.enableAnalytics = function ({ provider, options, trackingId }) {
   _gaGlobal = provider || 'ga';
-  _trackerSend = options && options.trackerName ? options.trackerName + '.send' : 'send';
-  _sampled = typeof options === 'undefined' || typeof options.sampling === 'undefined' ||
-             Math.random() < parseFloat(options.sampling);
 
   if (options && typeof options.global !== 'undefined') {
     _gaGlobal = options.global;
   }
+
+  if (typeof trackingId !== 'string') {
+    utils.logWarn(`GA tracking ID missing in call to 'pbjs.enableAnalytics()'. Events won't be sent to GA.`);
+  } else {
+    if (options && options.trackerName) {
+      _analyticsQueue.push(function () {
+        window[_gaGlobal]('create', trackingId, 'auto', options.trackerName);
+      });
+      _trackerSend = `${options.trackerName}.send`;
+    } else {
+      _trackerSend = `gtag_${trackingId.replace(/-/gi, '_')}.send`;
+    }
+  }
+
+  _sampled = typeof options === 'undefined' || typeof options.sampling === 'undefined' ||
+    Math.random() < parseFloat(options.sampling);
+
   if (options && typeof options.enableDistribution !== 'undefined') {
     _enableDistribution = options.enableDistribution;
   }

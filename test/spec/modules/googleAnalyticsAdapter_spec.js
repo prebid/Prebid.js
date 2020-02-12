@@ -7,7 +7,7 @@ describe('Ga', function () {
     var cpmDistribution = function(cpm) {
       return cpm <= 1 ? '<= 1$' : '> 1$';
     }
-    var config = { options: { trackerName: 'foo', enableDistribution: true, cpmDistribution: cpmDistribution } };
+    var config = { trackingId: 'U-3434-3434', options: { trackerName: 'foo', enableDistribution: true, cpmDistribution: cpmDistribution } };
 
     // enableAnalytics can only be called once
     ga.enableAnalytics(config);
