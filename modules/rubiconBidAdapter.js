@@ -97,6 +97,7 @@ var sizeMap = {
   257: '400x600',
   264: '970x1000',
   265: '1920x1080',
+  274: '1800x200',
   278: '320x500',
   288: '640x380'
 };
@@ -274,6 +275,11 @@ export const spec = {
       const pbAdSlot = utils.deepAccess(bidRequest, 'fpd.context.pbAdSlot');
       if (typeof pbAdSlot === 'string' && pbAdSlot) {
         utils.deepSetValue(data.imp[0].ext, 'context.data.adslot', pbAdSlot);
+      }
+
+      // if storedAuctionResponse has been set, pass SRID
+      if (bidRequest.storedAuctionResponse) {
+        utils.deepSetValue(data.imp[0], 'ext.prebid.storedauctionresponse.id', bidRequest.storedAuctionResponse.toString());
       }
 
       return {
