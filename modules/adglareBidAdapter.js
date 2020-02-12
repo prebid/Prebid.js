@@ -8,7 +8,8 @@ export const spec = {
   code: BIDDER_CODE,
   isBidRequestValid: function (bid) {
     let p = bid.params;
-    return (p && p.domain && p.zID && !isNaN(p.zID) && p.domain.substr(-12) == '.adglare.net' && p.type == 'banner') ? true : false;
+    if(p.domain && p.zID && !isNaN(p.zID) && p.domain.substr(-12) == '.adglare.net' && p.type == 'banner') return true;
+    return false;
   },
   buildRequests: function (validBidRequests, bidderRequest) {
     let i;
