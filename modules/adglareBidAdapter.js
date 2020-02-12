@@ -25,7 +25,6 @@ export const spec = {
     let screen = (pixelRatio * window.screen.width) + 'x' + (pixelRatio * window.screen.height);
     let sizes = [];
     let serverRequests = [];
-    let timeout = bidderRequest.timeout || 0;
     let referer = bidderRequest.refererInfo.referer || '';
     let reachedtop = bidderRequest.refererInfo.reachedTop || '';
     for (i = 0; i < validBidRequests.length; i++) {
@@ -45,7 +44,6 @@ export const spec = {
       // Build URL
       url = 'https://' + domain + '/?' + encodeURIComponent(zID) + '&pbjs&pbjs_version=1';
       url += '&pbjs_type=' + encodeURIComponent(type);
-      url += '&pbjs_timeout=' + encodeURIComponent(timeout);
       url += '&pbjs_reachedtop=' + encodeURIComponent(reachedtop);
       url += '&sizes=' + encodeURIComponent(sizes.join(','));
       url += '&screen=' + encodeURIComponent(screen);
