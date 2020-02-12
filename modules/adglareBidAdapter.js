@@ -6,9 +6,9 @@ const BIDDER_CODE = 'adglare';
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['adglare'],
   isBidRequestValid: function (bid) {
-    return !!(bid.params.domain && bid.params.zID && bid.params.type);
+    let p = bid.params;
+    return (p && p.domain && p.zID && !isNaN(p.zID) && p.domain.substr(-12) == '.adglare.net' && p.type == 'banner') ? true : false;
   },
   buildRequests: function (validBidRequests, bidderRequest) {
     let i;
@@ -20,7 +20,8 @@ export const spec = {
     let url;
     let type;
     let availscreen = window.innerWidth + 'x' + window.innerHeight;
-    let screen = ((window.devicePixelRatio || 1) * window.screen.width) + 'x' + ((window.devicePixelRatio || 1) * window.screen.height);
+    let pixelRatio = window.devicePixelRatio || 1;
+    let screen = (pixelRatio * window.screen.width) + 'x' + (pixelRatio * window.screen.height);
     let sizes = [];
     let serverRequests = [];
     let timeout = bidderRequest.timeout || 0;
@@ -38,20 +39,16 @@ export const spec = {
         for (j in bidRequest.mediaTypes[type].sizes) {
           sizes.push(bidRequest.mediaTypes[type].sizes[j].join('x'));
         }
-      } else {
-        for (j in bidRequest.sizes) {
-          sizes.push(bidRequest.sizes[j].join('x'));
-        }
       }
 
       // Build URL
       url = 'https://' + domain + '/?' + encodeURIComponent(zID) + '&pbjs&pbjs_version=1';
-      url += '&sizes=' + encodeURIComponent(sizes.join(','));
-      url += '&screen=' + encodeURIComponent(screen);
-      url += '&availscreen=' + encodeURIComponent(availscreen);
       url += '&pbjs_type=' + encodeURIComponent(type);
       url += '&pbjs_timeout=' + encodeURIComponent(timeout);
       url += '&pbjs_reachedtop=' + encodeURIComponent(reachedtop);
+      url += '&sizes=' + encodeURIComponent(sizes.join(','));
+      url += '&screen=' + encodeURIComponent(screen);
+      url += '&availscreen=' + encodeURIComponent(availscreen);
       url += '&referer=' + encodeURIComponent(referer);
       if (keywords !== '') {
         url += '&keywords=' + encodeURIComponent(keywords);
