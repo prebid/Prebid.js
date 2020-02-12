@@ -148,7 +148,7 @@ describe('gumgumAdapter', function () {
         linearity: 1,
         startdelay: 1,
         placement: 123456,
-        protocols: [1,2]
+        protocols: [1, 2]
       };
       const request = Object.assign({}, bidRequests[0]);
       delete request.params;
