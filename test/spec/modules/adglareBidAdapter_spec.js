@@ -18,7 +18,6 @@ describe('AdGlare Adapter Tests', function () {
             sizes: [[300, 250], [300, 600]],
           },
         },
-        sizes: [[300, 250], [300, 600]],
         bidId: '23acc48ad47af5',
         auctionId: '0fb4905b-9456-4152-86be-c6f6d259ba99',
         bidderRequestId: '1c56ad30b9b8ca8',
@@ -71,14 +70,26 @@ describe('AdGlare Adapter Tests', function () {
                   sizes: [[300, 250], [300, 600]],
                 },
               },
-              sizes: [[300, 250], [300, 600]],
               bidId: '23acc48ad47af5',
               auctionId: '0fb4905b-9456-4152-86be-c6f6d259ba99',
               bidderRequestId: '1c56ad30b9b8ca8',
               transactionId: '92489f71-1bf2-49a0-adf9-000cea934729'
             }
           ],
-          requests = spec.buildRequests(bidRequests),
+          bidderRequest = {
+            bidderCode: 'adglare',
+            auctionID: '0fb4905b-9456-4152-86be-c6f6d259ba99',
+            bidderRequestId: '1c56ad30b9b8ca8',
+            auctionStart: 1581497568252,
+            timeout: 5000,
+            refererInfo: {
+              referer: 'https://www.somedomain.com',
+              reachedTop: true,
+              numFrames:0
+            },
+            start: 1581497568254
+          },
+          requests = spec.buildRequests(bidRequests, bidderRequest),
           requestURL = requests[0].url;
 
         expect(requestURL).to.have.string('https://try.engine.adglare.net');
