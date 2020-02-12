@@ -46,7 +46,7 @@ describe('AdGlare Adapter Tests', function () {
         let invalidBid = {
             bidder: 'adglare',
             params: {
-              domain: 'try.engine.adglare.net',
+              domain: 'somedomain.com',
               zID: 'not an integer',
               type: 'unsupported'
             }
