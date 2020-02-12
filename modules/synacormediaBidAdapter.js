@@ -45,7 +45,7 @@ export const spec = {
       imp: []
     };
 
-    if (bidderRequest.bids && bidderRequest.bids[0]) {
+    if (bidderRequest.bids != undefined && bidderRequest.bids[0] != undefined) {
       const schain = bidderRequest.bids[0].schain;
       if (schain) {
         openRtbBidRequest.source = {};
