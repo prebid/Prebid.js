@@ -7,9 +7,9 @@ describe('PubMaticServer adapter', () => {
   let bidRequests;
   let bidResponses;
   let errorCodeBidResponses;
-  window.PWT = {};
 
   beforeEach(() => {
+    window.PWT = {};
     window.PWT.bidMap = {
       '/19968336/header-bid-tag-1': {
         name: '/19968336/header-bid-tag-1',
@@ -135,6 +135,10 @@ describe('PubMaticServer adapter', () => {
         }]
       }
     };
+  });
+
+  afterEach(() => {
+    delete window.PWT;
   });
 
   describe('implementation', () => {
