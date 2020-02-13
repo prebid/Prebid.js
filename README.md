@@ -37,6 +37,9 @@ With Babel 7:
 let path = require('path');
 module.exports = {
   mode: 'production',
+  resolve: {
+    extensions: ['.js', '.json']
+  },
   module: {
     rules: [
       
