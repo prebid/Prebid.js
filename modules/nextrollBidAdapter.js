@@ -89,9 +89,13 @@ export const spec = {
 
 function _buildRequests(validBidRequests, bidderRequest) {
   let topLocation = _parseUrl(utils.deepAccess(bidderRequest, 'refererInfo.referer'));
+  let consent = hasCCPAConsent(bidderRequest);
   return validBidRequests.map((bidRequest, index) => {
     return {
       method: 'POST',
+      options: {
+        withCredentials: consent,
+      },
       url: BIDDER_ENDPOINT,
       data: {
         id: bidRequest.bidId,
@@ -250,9 +254,27 @@ function _parseUrl(url) {
   };
 }
 
-/**
- * @return {boolean}
- */
+export function hasCCPAConsent(bidderRequest) {
+  if (typeof bidderRequest.uspConsent !== 'string') {
+    return true;
+  }
+  const usps = bidderRequest.uspConsent;
+  const version = usps[0];
+
+  // If we don't support the consent string, assume no-consent.
+  if (version !== '1' || usps.length < 3) {
+    return false;
+  }
+
+  const notice = usps[1];
+  const optOut = usps[2];
+
+  if (notice === 'N' || optOut === 'Y') {
+    return false;
+  }
+  return true;
+}
+
 export function tryGetPubtag() {
   const hashPrefix = '// Hash: ';
 

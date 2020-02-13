@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec, tryGetPubtag } from 'modules/nextrollBidAdapter';
+import { spec, tryGetPubtag, hasCCPAConsent } from 'modules/nextrollBidAdapter';
 import * as utils from 'src/utils';
 
 const PUBTAG_LOCAL_STORAGE_KEY = 'nextroll_fast_bid';
@@ -55,6 +55,10 @@ describe('nextrollBidAdapter', function() {
 
     it('builds a request with POST method', function () {
       expect(spec.buildRequests([validBid], {})[0].method).to.equal('POST');
+    });
+
+    it('builds a request with cookies method', function () {
+      expect(spec.buildRequests([validBid], {})[0].options.withCredentials).to.be.true;
     });
 
     it('builds a request with id, url and imp object', function () {
@@ -226,6 +230,45 @@ describe('nextrollBidAdapter', function() {
 
       expect(localStorage.getItem(PUBTAG_LOCAL_STORAGE_KEY)).to.be.null;
       utilsMock.verify();
+    });
+  });
+
+  describe('hasCCPAConsent', function() {
+    function ccpaRequest(consentString) {
+      return {
+        bidderCode: 'bidderX',
+        auctionId: 'e3a336ad-2222-4a1c-bbbb-ecc7c5554a34',
+        uspConsent: consentString
+      };
+    }
+
+    const noNoticeCases = ['1NYY', '1NNN', '1N--'];
+    noNoticeCases.forEach((ccpaString, index) => {
+      it(`No notice should indicate no consent (case ${index})`, function () {
+        const req = ccpaRequest(ccpaString);
+        expect(hasCCPAConsent(req)).to.be.false;
+      });
+    });
+
+    const noConsentCases = ['1YYY', '1YYN', '1YY-'];
+    noConsentCases.forEach((ccpaString, index) => {
+      it(`Opt-Out should indicate no consent (case ${index})`, function () {
+        const req = ccpaRequest(ccpaString);
+        expect(hasCCPAConsent(req)).to.be.false;
+      });
+    });
+
+    const consentCases = [undefined, '1YNY', '1YN-', '1Y--', '1---'];
+    consentCases.forEach((ccpaString, index) => {
+      it(`should indicate consent (case ${index})`, function() {
+        const req = ccpaRequest(ccpaString);
+        expect(hasCCPAConsent(req)).to.be.true;
+      })
+    });
+
+    it('builds a request with no credentials', function () {
+      const noConsent = ccpaRequest('1YYY');
+      expect(spec.buildRequests([validBid], noConsent)[0].options.withCredentials).to.be.false;
     });
   });
 });
