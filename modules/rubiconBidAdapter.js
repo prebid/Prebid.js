@@ -97,6 +97,7 @@ var sizeMap = {
   257: '400x600',
   264: '970x1000',
   265: '1920x1080',
+  274: '1800x200',
   278: '320x500',
   288: '640x380'
 };
@@ -265,6 +266,20 @@ export const spec = {
 
       if (bidRequest.schain && hasValidSupplyChainParams(bidRequest.schain)) {
         utils.deepSetValue(data, 'source.ext.schain', bidRequest.schain);
+      }
+
+      /**
+       * Prebid AdSlot
+       * @type {(string|undefined)}
+       */
+      const pbAdSlot = utils.deepAccess(bidRequest, 'fpd.context.pbAdSlot');
+      if (typeof pbAdSlot === 'string' && pbAdSlot) {
+        utils.deepSetValue(data.imp[0].ext, 'context.data.adslot', pbAdSlot);
+      }
+
+      // if storedAuctionResponse has been set, pass SRID
+      if (bidRequest.storedAuctionResponse) {
+        utils.deepSetValue(data.imp[0], 'ext.prebid.storedauctionresponse.id', bidRequest.storedAuctionResponse.toString());
       }
 
       return {
@@ -487,6 +502,15 @@ export const spec = {
           data[`tg_i.${key}`] = params.inventory[key].toString();
         }
       });
+    }
+
+    /**
+     * Prebid AdSlot
+     * @type {(string|undefined)}
+     */
+    const pbAdSlot = utils.deepAccess(bidRequest, 'fpd.context.pbAdSlot');
+    if (typeof pbAdSlot === 'string' && pbAdSlot) {
+      data['tg_i.dfp_ad_unit_code'] = pbAdSlot.replace(/^\/+/, '');
     }
 
     // digitrust properties

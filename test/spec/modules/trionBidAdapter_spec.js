@@ -27,6 +27,13 @@ const TRION_BID = {
 
 const TRION_BID_REQUEST = [TRION_BID];
 
+const TRION_BIDDER_REQUEST = {
+  'bidderCode': 'trion',
+  'auctionId': '12345',
+  'bidderRequestId': 'abc1234',
+  'bids': TRION_BID_REQUEST
+};
+
 const TRION_BID_RESPONSE = {
   bidId: 'test-bid-id',
   sizes: [[300, 250], [300, 600]],
@@ -130,17 +137,13 @@ describe('Trion adapter tests', function () {
       expect(bidUrlParams).to.include('pubId=1');
       expect(bidUrlParams).to.include('sectionId=2');
       expect(bidUrlParams).to.include('sizes=300x250,300x600');
+      expect(bidUrlParams).to.include('vers=$prebid.version$');
     });
 
     it('should call buildRequests with the correct optional params', function () {
-      let params = TRION_BID_REQUEST[0].params;
-      params.re = 1;
       let bidRequests = spec.buildRequests(TRION_BID_REQUEST);
-
       let bidUrlParams = bidRequests[0].data;
-      expect(bidUrlParams).to.include('re=1');
       expect(bidUrlParams).to.include(getPublisherUrl());
-      delete params.re;
     });
 
     describe('webdriver', function () {
@@ -148,9 +151,6 @@ describe('Trion adapter tests', function () {
 
       beforeEach(function () {
         originalWD = window.navigator.webdriver;
-        window.navigator['__defineGetter__']('webdriver', function () {
-          return 1;
-        });
       });
 
       afterEach(function () {
@@ -159,26 +159,42 @@ describe('Trion adapter tests', function () {
         });
       });
 
-      it('should send the correct state when there is non human traffic', function () {
-        let bidRequests = spec.buildRequests(TRION_BID_REQUEST);
-        let bidUrlParams = bidRequests[0].data;
-        expect(bidUrlParams).to.include('tr_wd=1');
+      describe('is present', function () {
+        beforeEach(function () {
+          window.navigator['__defineGetter__']('webdriver', function () {
+            return 1;
+          });
+        });
+
+        it('when there is non human traffic', function () {
+          let bidRequests = spec.buildRequests(TRION_BID_REQUEST);
+          let bidUrlParams = bidRequests[0].data;
+          expect(bidUrlParams).to.include('tr_wd=1');
+        });
+      });
+
+      describe('is not present', function () {
+        beforeEach(function () {
+          window.navigator['__defineGetter__']('webdriver', function () {
+            return 0;
+          });
+        });
+
+        it('when there is not non human traffic', function () {
+          let bidRequests = spec.buildRequests(TRION_BID_REQUEST);
+          let bidUrlParams = bidRequests[0].data;
+          expect(bidUrlParams).to.include('tr_wd=0');
+        });
       });
     });
 
-    describe('visibility', function () {
+    describe('document', function () {
       let originalHD;
       let originalVS;
 
       beforeEach(function () {
         originalHD = document.hidden;
         originalVS = document.visibilityState;
-        document['__defineGetter__']('hidden', function () {
-          return 1;
-        });
-        document['__defineGetter__']('visibilityState', function () {
-          return 'hidden';
-        });
       });
 
       afterEach(function () {
@@ -190,11 +206,64 @@ describe('Trion adapter tests', function () {
         });
       });
 
-      it('should send the correct states when the document is not visible', function () {
-        let bidRequests = spec.buildRequests(TRION_BID_REQUEST);
+      describe('is visible', function () {
+        beforeEach(function () {
+          document['__defineGetter__']('hidden', function () {
+            return 1;
+          });
+          document['__defineGetter__']('visibilityState', function () {
+            return 'visible';
+          });
+        });
+
+        it('should detect and send the document is visible', function () {
+          let bidRequests = spec.buildRequests(TRION_BID_REQUEST);
+          let bidUrlParams = bidRequests[0].data;
+          expect(bidUrlParams).to.include('tr_hd=1');
+          expect(bidUrlParams).to.include('tr_vs=visible');
+        });
+      });
+
+      describe('is hidden', function () {
+        beforeEach(function () {
+          document['__defineGetter__']('hidden', function () {
+            return 1;
+          });
+          document['__defineGetter__']('visibilityState', function () {
+            return 'hidden';
+          });
+        });
+
+        it('should detect and send the document is hidden', function () {
+          let bidRequests = spec.buildRequests(TRION_BID_REQUEST);
+          let bidUrlParams = bidRequests[0].data;
+          expect(bidUrlParams).to.include('tr_hd=1');
+          expect(bidUrlParams).to.include('tr_vs=hidden');
+        });
+      });
+    });
+
+    describe('should call buildRequests with correct consent params', function () {
+      it('when gdpr is present', function () {
+        TRION_BIDDER_REQUEST.gdprConsent = {
+          consentString: 'test_gdpr_str',
+          gdprApplies: true
+        };
+        let bidRequests = spec.buildRequests(TRION_BID_REQUEST, TRION_BIDDER_REQUEST);
         let bidUrlParams = bidRequests[0].data;
-        expect(bidUrlParams).to.include('tr_hd=1');
-        expect(bidUrlParams).to.include('tr_vs=hidden');
+        let gcEncoded = encodeURIComponent(TRION_BIDDER_REQUEST.gdprConsent.consentString);
+        expect(bidUrlParams).to.include('gdprc=' + gcEncoded);
+        expect(bidUrlParams).to.include('gdpr=1');
+        delete TRION_BIDDER_REQUEST.gdprConsent;
+      });
+
+      it('when us privacy is present', function () {
+        TRION_BIDDER_REQUEST.uspConsent = '1YYY';
+        let bidRequests = spec.buildRequests(TRION_BID_REQUEST, TRION_BIDDER_REQUEST);
+        let bidUrlParams = bidRequests[0].data;
+        let uspEncoded = encodeURIComponent(TRION_BIDDER_REQUEST.uspConsent);
+        expect(bidUrlParams).to.include('usp=' + uspEncoded);
+        delete TRION_BIDDER_REQUEST.uspConsent;
       });
     });
   });
@@ -272,6 +341,31 @@ describe('Trion adapter tests', function () {
       let pubId = 1;
       let sectionId = 2;
       let syncString = `?p=${pubId}&s=${sectionId}&u=${pageUrl}`;
+      expect(syncs[0]).to.deep.equal({type: 'iframe', url: USER_SYNC_URL + syncString});
+    });
+
+    it('should register trion user script with gdpr params', function () {
+      let gdprConsent = {
+        consentString: 'test_gdpr_str',
+        gdprApplies: true
+      };
+      let syncs = spec.getUserSyncs({iframeEnabled: true}, null, gdprConsent);
+      let pageUrl = getPublisherUrl();
+      let pubId = 1;
+      let sectionId = 2;
+      let gcEncoded = encodeURIComponent(gdprConsent.consentString);
+      let syncString = `?p=${pubId}&s=${sectionId}&gc=${gcEncoded}&g=1&u=${pageUrl}`;
+      expect(syncs[0]).to.deep.equal({type: 'iframe', url: USER_SYNC_URL + syncString});
+    });
+
+    it('should register trion user script with us privacy params', function () {
+      let uspConsent = '1YYY';
+      let syncs = spec.getUserSyncs({iframeEnabled: true}, null, null, uspConsent);
+      let pageUrl = getPublisherUrl();
+      let pubId = 1;
+      let sectionId = 2;
+      let uspEncoded = encodeURIComponent(uspConsent);
+      let syncString = `?p=${pubId}&s=${sectionId}&up=${uspEncoded}&u=${pageUrl}`;
       expect(syncs[0]).to.deep.equal({type: 'iframe', url: USER_SYNC_URL + syncString});
     });
 
