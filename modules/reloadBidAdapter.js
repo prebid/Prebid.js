@@ -1,18 +1,13 @@
 import {
-  BANNER
-}
-  from 'src/mediaTypes';
-import {
   registerBidder
 }
-  from 'src/adapters/bidderFactory';
-
+  from '../src/adapters/bidderFactory';
+import * as utils from '../src/utils';
 const BIDDER_CODE = 'reload';
-
-const VERSION_ADAPTER = '1.0';
-
+const VERSION_ADAPTER = '1.10';
 export const spec = {
   code: BIDDER_CODE,
+  png: {},
   /**
    * Determines whether or not the given bid request is valid.
    *
@@ -31,31 +26,31 @@ export const spec = {
    */
   buildRequests: function (validBidRequests, bidderRequest) {
     let vRequests = [];
-
     let bidReq = {
       id: Math.random().toString(10).substring(2),
       imp: []
     };
-
+    let vgdprConsent = null;
+    if (utils.deepAccess(bidderRequest, 'gdprConsent')) {
+      vgdprConsent = bidderRequest.gdprConsent;
+    }
     let vPrxClientTool = null;
+    let vSrvUrl = null;
     for (let vIdx = 0; vIdx < validBidRequests.length; vIdx++) {
       let bidRequest = validBidRequests[vIdx];
-
-      if (BANNER in bidRequest.mediaTypes !== true) continue;
-      if (bidRequest.mediaTypes.banner.sizes.length <= 0) continue;
-
-      let vDim = bidRequest.mediaTypes.banner.sizes[0];
-
       vPrxClientTool = new ReloadClientTool({
         prxVer: VERSION_ADAPTER,
         prxType: 'bd',
-
         plcmID: bidRequest.params.plcmID,
         partID: bidRequest.params.partID,
         opdomID: bidRequest.params.opdomID,
-        bsrvID: bidRequest.params.bsrvID
+        bsrvID: bidRequest.params.bsrvID,
+        gdprObj: vgdprConsent,
+        mediaObj: bidRequest.mediaTypes,
+        wnd: utils.getWindowTop(),
+        rtop: utils.deepAccess(bidderRequest, 'refererInfo.reachedTop') || false
       });
-
+      if (vSrvUrl === null) vSrvUrl = vPrxClientTool.getSrvUrl();
       let vImpression = {
         id: bidRequest.bidId,
         bidId: bidRequest.bidId,
@@ -63,10 +58,7 @@ export const spec = {
         transactionId: bidRequest.transactionId,
         bidderRequestId: bidRequest.bidderRequestId,
         auctionId: bidRequest.auctionId,
-
         banner: {
-          h: vDim[1],
-          w: vDim[0],
           ext: {
             type: bidRequest.params.type || 'pcm',
             pcmdata: vPrxClientTool.getPCMObj()
@@ -75,12 +67,11 @@ export const spec = {
       };
       bidReq.imp.push(vImpression);
     }
-
     if (bidReq.imp.length > 0) {
       const payloadString = JSON.stringify(bidReq);
       vRequests.push({
         method: 'POST',
-        url: vPrxClientTool.getSrvUrl(),
+        url: vSrvUrl,
         data: payloadString
       });
     }
@@ -94,64 +85,57 @@ export const spec = {
    */
   interpretResponse: function (serverResponse, bidRequest) {
     const serverBody = serverResponse.body;
-
     const bidResponses = [];
-
     for (let vIdx = 0; vIdx < serverBody.seatbid.length; vIdx++) {
       let vSeatBid = serverBody.seatbid[vIdx];
-
       for (let vIdxBid = 0; vIdxBid < vSeatBid.bid.length; vIdxBid++) {
         let vBid = vSeatBid.bid[vIdxBid];
-
         let vPrxClientTool = new ReloadClientTool({
           plcmID: vBid.ext.plcmID,
           partID: vBid.ext.partID,
           opdomID: vBid.ext.opdomID,
           bsrvID: vBid.ext.bsrvID
         });
-
         vPrxClientTool.setPCMObj(vBid.ext.pcmdata);
-
         if (vPrxClientTool.getBP() > 0) {
           let bidResponse = {
             requestId: vBid.impid,
             ad: vPrxClientTool.getAM(),
             cpm: vPrxClientTool.getBP() / 100,
-            width: vBid.ext.banner.w,
-            height: vBid.ext.banner.h,
+            width: vPrxClientTool.getW(),
+            height: vPrxClientTool.getH(),
             creativeId: vBid.id,
             currency: vPrxClientTool.getBC(),
             ttl: 300,
             netRevenue: true
           };
           bidResponses.push(bidResponse);
+          this.png[vBid.ext.adUnitCode] = vPrxClientTool.getPingUrl('bidwon');
         }
       }
     }
-
     return bidResponses;
+  },
+  /**
+     * Register bidder specific code, which will execute if a bid from this bidder won the auction
+     * @param {Bid} The bid that won the auction
+     */
+  onBidWon: function (bid) {
+    if (typeof this.png[bid.adUnitCode] !== 'string' || this.png[bid.adUnitCode] === '') return;
+    (new Image()).src = this.png[bid.adUnitCode];
   }
 };
 
-/**
- * Reload Client Tool
- * @param {json} args
- */
-
 function ReloadClientTool(args) {
   var that = this;
-
   var _pcmClientVersion = '120';
   var _pcmFilePref = 'prx_root_';
   var _resFilePref = 'prx_pnws_';
-
-  var _pcmInputObjVers = '100';
-
+  var _pcmInputObjVers = '120';
   var _instObj = null;
   var _status = 'NA';
   var _message = '';
   var _log = '';
-
   var _memFile = _getMemFile();
 
   if (_memFile.status !== 'ok') {
@@ -161,12 +145,12 @@ function ReloadClientTool(args) {
   that.getPCMObj = function () {
     return {
       thisVer: _pcmInputObjVers,
-
       statStr: _memFile.statStr,
       plcmData: _getPlcmData(),
-      clntData: _getClientData(),
+      clntData: _getClientData(args.wnd, args.rtop),
       resultData: _getRD(),
-
+      gdprObj: _getGdpr(),
+      mediaObj: _getMediaObj(),
       proxetString: null,
       dboData: null,
       plcmSett: null,
@@ -198,7 +182,7 @@ function ReloadClientTool(args) {
 
     if (typeof _memFile.srvUrl === 'string' && _memFile.srvUrl !== '') effSrvUrl = _memFile.srvUrl;
 
-    return _getProtocolString() + effSrvUrl + '/bid';
+    return 'https://' + effSrvUrl + '/bid';
 
     function getBidServerUrl (idx) {
       return 'bidsrv' + getTwoDigitString(idx) + '.reload.net';
@@ -210,32 +194,34 @@ function ReloadClientTool(args) {
     }
   };
 
+  that.getMT = function () {
+    return _checkInstProp('mtype', 'dsp');
+  };
+
+  that.getW = function () {
+    return _checkInstProp('width', 0);
+  };
+
+  that.getH = function () {
+    return _checkInstProp('height', 0);
+  };
+
   that.getBP = function () {
-    if (_instObj === null) return 0;
-    if (typeof _instObj === 'undefined') return 0;
-    if (_instObj.go !== true) return 0;
-    return _instObj.prc;
+    return _checkInstProp('prc', 0);
   };
 
   that.getBC = function () {
-    if (_instObj === null) return 0;
-    if (typeof _instObj === 'undefined') return 0;
-    if (_instObj.go !== true) return 0;
-    return _instObj.cur;
+    return _checkInstProp('cur', 'USD');
   };
 
   that.getAM = function () {
-    if (_instObj === null) return null;
-    if (typeof _instObj === 'undefined') return null;
-    if (_instObj.go !== true) return null;
-    return _instObj.am;
+    return _checkInstProp('am', null);
   };
 
-  that.getPM = function () {
-    if (_instObj === null) return null;
-    if (typeof _instObj === 'undefined') return null;
-    if (_instObj.go === true) return null;
-    return _instObj.pbm;
+  that.getPingUrl = function (pingName) {
+    var pingData = _checkInstProp('pingdata', {});
+    if (pingData[pingName] !== 'undefined') return pingData[pingName];
+    return '';
   };
 
   that.setRD = function (data) {
@@ -254,6 +240,14 @@ function ReloadClientTool(args) {
     return _log;
   };
 
+  function _checkInstProp (key, def) {
+    if (_instObj === null) return def;
+    if (typeof _instObj === 'undefined') return def;
+    if (_instObj.go !== true) return def;
+    if (typeof _instObj[key] === 'undefined') return def;
+    return _instObj[key];
+  }
+
   function _getPlcmData () {
     return {
       prxVer: args.prxVer,
@@ -268,33 +262,37 @@ function ReloadClientTool(args) {
     };
   }
 
-  function _getClientData () {
+  function _getClientData (wnd, rtop) {
     return {
-      version: 100,
+      version: 200,
       locTime: Date.now(),
-
-      winInfo: _genWinInfo(),
+      winInfo: _winInf(wnd),
       envInfo: getEnvInfo(),
-      confined: detectConfined(),
-      protStr: _getProtocolString(),
-
-      hostDomain: decodeURIComponent(window.location.host),
-      hostPagePath: decodeURIComponent(window.location.pathname),
-      hostPageUrl: decodeURIComponent(window.location.href),
-      hostPageTitle: document.title,
+      topw: rtop === true,
+      prot: wnd.document.location.protocol,
+      host: wnd.document.location.host,
+      title: wnd.document.title,
     };
 
-    function _genWinInfo () {
-      var winInfo = {
-        physicalWidth: window.screen.width,
-        physicalHeight: window.screen.height,
-        screenWidth: window.screen.availWidth,
-        screenHeight: window.screen.availHeight,
-        windowWidth: window.innerWidth,
-        windowHeight: window.innerHeight,
-        bodyHeight: document.body.clientHeight
+    function _winInf (wnd) {
+      return {
+        phs: {
+          w: wnd.screen.width,
+          h: wnd.screen.height
+        },
+        avl: {
+          w: wnd.screen.availWidth,
+          h: wnd.screen.availHeight
+        },
+        inr: {
+          w: wnd.innerWidth,
+          h: wnd.innerHeight
+        },
+        bdy: {
+          w: wnd.document.body.clientWidth,
+          h: wnd.document.body.clientHeight
+        }
       };
-      return winInfo;
     }
 
     function getEnvInfo() {
@@ -303,12 +301,6 @@ function ReloadClientTool(args) {
         appName: navigator.appName,
         appVersion: navigator.appVersion
       };
-    }
-
-    function detectConfined () {
-      var confined = true;
-      try { if (window.top === window.self) confined = false; } catch (err) {}
-      return confined;
     }
   }
 
@@ -369,8 +361,17 @@ function ReloadClientTool(args) {
     }
   }
 
+  function _getGdpr() {
+    return args.gdprObj;
+  }
+
+  function _getMediaObj() {
+    return args.mediaObj;
+  }
+
   function _getResltStatusFileName () {
-    return _resFilePref + args.plcmID + '_' + args.partID;
+    if (args.lmod === true) return _resFilePref + args.lplcmID + '_' + args.partID;
+    else return _resFilePref + args.plcmID + '_' + args.partID;
   }
 
   function _setItem (name, data) {
@@ -408,14 +409,6 @@ function ReloadClientTool(args) {
     } catch (err) {
       return null;
     }
-  }
-
-  function _getProtocolString () {
-    var wnd = null;
-    try { wnd = top; } catch (err) { wnd = window; }
-
-    if (wnd.location.protocol.toLowerCase().indexOf('http:') >= 0) return 'http://';
-    else return 'https://';
   }
 };
 

@@ -2,11 +2,13 @@ import * as utils from '../src/utils'
 import { registerBidder } from '../src/adapters/bidderFactory'
 import find from 'core-js/library/fn/array/find'
 import { VIDEO, BANNER } from '../src/mediaTypes'
+import { Renderer } from '../src/Renderer'
 
 const ENDPOINT = 'https://ad.yieldlab.net'
 const BIDDER_CODE = 'yieldlab'
 const BID_RESPONSE_TTL_SEC = 300
 const CURRENCY_CODE = 'EUR'
+const OUTSTREAMPLAYER_URL = 'https://ad2.movad.net/dynamic.ad?a=o193092&ma_loadEvent=ma-start-event'
 
 export const spec = {
   code: BIDDER_CODE,
@@ -93,8 +95,23 @@ export const spec = {
         }
 
         if (isVideo(bidRequest)) {
+          const playersize = getPlayerSize(bidRequest)
+          if (playersize) {
+            bidResponse.width = playersize[0]
+            bidResponse.height = playersize[1]
+          }
           bidResponse.mediaType = VIDEO
           bidResponse.vastUrl = `${ENDPOINT}/d/${matchedBid.id}/${bidRequest.params.supplyId}/${customsize[0]}x${customsize[1]}?ts=${timestamp}${extId}`
+
+          if (isOutstream(bidRequest)) {
+            const renderer = Renderer.install({
+              id: bidRequest.bidId,
+              url: OUTSTREAMPLAYER_URL,
+              loaded: false
+            })
+            renderer.setRender(outstreamRender)
+            bidResponse.renderer = renderer
+          }
         }
 
         bidResponses.push(bidResponse)
@@ -106,11 +123,31 @@ export const spec = {
 
 /**
  * Is this a video format?
- * @param {String} format
+ * @param {Object} format
  * @returns {Boolean}
  */
 function isVideo (format) {
   return utils.deepAccess(format, 'mediaTypes.video')
+}
+
+/**
+ * Is this an outstream context?
+ * @param {Object} format
+ * @returns {Boolean}
+ */
+function isOutstream (format) {
+  let context = utils.deepAccess(format, 'mediaTypes.video.context')
+  return (context === 'outstream')
+}
+
+/**
+ * Gets optional player size
+ * @param {Object} format
+ * @returns {Array}
+ */
+function getPlayerSize (format) {
+  let playerSize = utils.deepAccess(format, 'mediaTypes.video.playerSize')
+  return (playerSize && utils.isArray(playerSize[0])) ? playerSize[0] : playerSize
 }
 
 /**
@@ -135,6 +172,20 @@ function createQueryString (obj) {
     }
   }
   return str.join('&')
+}
+
+/**
+ * Handles an outstream response after the library is loaded
+ * @param {Object} bid
+ */
+function outstreamRender(bid) {
+  bid.renderer.push(() => {
+    window.ma_width = bid.width
+    window.ma_height = bid.height
+    window.ma_vastUrl = bid.vastUrl
+    window.ma_container = bid.adUnitCode
+    window.document.dispatchEvent(new Event('ma-start-event'))
+  });
 }
 
 registerBidder(spec)

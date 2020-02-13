@@ -1,22 +1,18 @@
 import yuktamediaAnalyticsAdapter from 'modules/yuktamediaAnalyticsAdapter';
 import { expect } from 'chai';
-let adapterManager = require('src/adapterManager').default;
+import adapterManager from 'src/adapterManager.js';
+import * as utils from 'src/utils';
+import { server } from 'test/mocks/xhr';
+
 let events = require('src/events');
 let constants = require('src/constants.json');
 
-describe('YuktaMedia analytics adapter', function () {
-  let xhr;
-  let requests;
-
+describe('yuktamedia analytics adapter', function () {
   beforeEach(function () {
-    xhr = sinon.useFakeXMLHttpRequest();
-    requests = [];
-    xhr.onCreate = request => requests.push(request);
     sinon.stub(events, 'getEvents').returns([]);
   });
 
   afterEach(function () {
-    xhr.restore();
     events.getEvents.restore();
   });
 
@@ -25,6 +21,721 @@ describe('YuktaMedia analytics adapter', function () {
       pubId: '1',
       pubKey: 'ZXlKaGJHY2lPaUpJVXpJMU5pSjkuT=='
     };
+
+    let prebidEvent = {
+      'addAdUnits': {},
+      'requestBids': {},
+      'auctionInit': {
+        'auctionId': 'db377024-d866-4a24-98ac-5e430f881313',
+        'timestamp': 1576823893836,
+        'auctionStatus': 'inProgress',
+        'adUnits': [
+          {
+            'code': 'div-gpt-ad-1460505748561-0',
+            'mediaTypes': {
+              'banner': {
+                'sizes': [
+                  [
+                    300,
+                    250
+                  ],
+                  [
+                    300,
+                    600
+                  ]
+                ]
+              }
+            },
+            'bids': [
+              {
+                'bidder': 'appnexus',
+                'params': {
+                  'placementId': 13144370
+                },
+                'crumbs': {
+                  'pubcid': 'ff4002c4-ce05-4a61-b4ef-45a3cd93991a'
+                }
+              }
+            ],
+            'sizes': [
+              [
+                300,
+                250
+              ],
+              [
+                300,
+                600
+              ]
+            ],
+            'transactionId': '6d275806-1943-4f3e-9cd5-624cbd05ad98'
+          }
+        ],
+        'adUnitCodes': [
+          'div-gpt-ad-1460505748561-0'
+        ],
+        'bidderRequests': [
+          {
+            'bidderCode': 'appnexus',
+            'auctionId': 'db377024-d866-4a24-98ac-5e430f881313',
+            'bidderRequestId': '155975c76e13b1',
+            'bids': [
+              {
+                'bidder': 'appnexus',
+                'params': {
+                  'placementId': 13144370
+                },
+                'crumbs': {
+                  'pubcid': 'ff4002c4-ce05-4a61-b4ef-45a3cd93991a'
+                },
+                'mediaTypes': {
+                  'banner': {
+                    'sizes': [
+                      [
+                        300,
+                        250
+                      ],
+                      [
+                        300,
+                        600
+                      ]
+                    ]
+                  }
+                },
+                'adUnitCode': 'div-gpt-ad-1460505748561-0',
+                'transactionId': '6d275806-1943-4f3e-9cd5-624cbd05ad98',
+                'sizes': [
+                  [
+                    300,
+                    250
+                  ],
+                  [
+                    300,
+                    600
+                  ]
+                ],
+                'bidId': '263efc09896d0c',
+                'bidderRequestId': '155975c76e13b1',
+                'auctionId': 'db377024-d866-4a24-98ac-5e430f881313',
+                'src': 'client',
+                'bidRequestsCount': 1,
+                'bidderRequestsCount': 1,
+                'bidderWinsCount': 0
+              }
+            ],
+            'auctionStart': 1576823893836,
+            'timeout': 1000,
+            'refererInfo': {
+              'referer': 'http://observer.com/integrationExamples/gpt/hello_world.html',
+              'reachedTop': true,
+              'numIframes': 0,
+              'stack': [
+                'http://observer.com/integrationExamples/gpt/hello_world.html'
+              ]
+            },
+            'start': 1576823893838
+          }
+        ],
+        'noBids': [],
+        'bidsReceived': [],
+        'winningBids': [],
+        'timeout': 1000
+      },
+      'bidRequested': {
+        'bidderCode': 'appnexus',
+        'auctionId': 'db377024-d866-4a24-98ac-5e430f881313',
+        'bidderRequestId': '155975c76e13b1',
+        'bids': [
+          {
+            'bidder': 'appnexus',
+            'params': {
+              'placementId': 13144370
+            },
+            'crumbs': {
+              'pubcid': 'ff4002c4-ce05-4a61-b4ef-45a3cd93991a'
+            },
+            'mediaTypes': {
+              'banner': {
+                'sizes': [
+                  [
+                    300,
+                    250
+                  ],
+                  [
+                    300,
+                    600
+                  ]
+                ]
+              }
+            },
+            'adUnitCode': 'div-gpt-ad-1460505748561-0',
+            'transactionId': '6d275806-1943-4f3e-9cd5-624cbd05ad98',
+            'sizes': [
+              [
+                300,
+                250
+              ],
+              [
+                300,
+                600
+              ]
+            ],
+            'bidId': '263efc09896d0c',
+            'bidderRequestId': '155975c76e13b1',
+            'auctionId': 'db377024-d866-4a24-98ac-5e430f881313',
+            'src': 'client',
+            'bidRequestsCount': 1,
+            'bidderRequestsCount': 1,
+            'bidderWinsCount': 0
+          }
+        ],
+        'auctionStart': 1576823893836,
+        'timeout': 1000,
+        'refererInfo': {
+          'referer': 'http://observer.com/integrationExamples/gpt/hello_world.html',
+          'reachedTop': true,
+          'numIframes': 0,
+          'stack': [
+            'http://observer.com/integrationExamples/gpt/hello_world.html'
+          ]
+        },
+        'start': 1576823893838
+      },
+      'bidAdjustment': {
+        'bidderCode': 'appnexus',
+        'width': 300,
+        'height': 250,
+        'statusMessage': 'Bid available',
+        'adId': '393976d8770041',
+        'requestId': '263efc09896d0c',
+        'mediaType': 'banner',
+        'source': 'client',
+        'cpm': 0.5,
+        'creativeId': 96846035,
+        'currency': 'USD',
+        'netRevenue': true,
+        'ttl': 300,
+        'adUnitCode': 'div-gpt-ad-1460505748561-0',
+        'appnexus': {
+          'buyerMemberId': 9325
+        },
+        'meta': {
+          'advertiserId': 2529885
+        },
+        'ad': '<!-- Creative 96846035 served by Member 9325 via AppNexus -->',
+        'originalCpm': 0.5,
+        'originalCurrency': 'USD',
+        'auctionId': 'db377024-d866-4a24-98ac-5e430f881313',
+        'responseTimestamp': 1576823894050,
+        'requestTimestamp': 1576823893838,
+        'bidder': 'appnexus',
+        'timeToRespond': 212
+      },
+      'bidTimeout': [
+      ],
+      'bidResponse': {
+        'bidderCode': 'appnexus',
+        'width': 300,
+        'height': 250,
+        'statusMessage': 'Bid available',
+        'adId': '393976d8770041',
+        'requestId': '263efc09896d0c',
+        'mediaType': 'banner',
+        'source': 'client',
+        'cpm': 0.5,
+        'creativeId': 96846035,
+        'currency': 'USD',
+        'netRevenue': true,
+        'ttl': 300,
+        'adUnitCode': 'div-gpt-ad-1460505748561-0',
+        'appnexus': {
+          'buyerMemberId': 9325
+        },
+        'meta': {
+          'advertiserId': 2529885
+        },
+        'ad': '<!-- Creative 96846035 served by Member 9325 via AppNexus -->',
+        'originalCpm': 0.5,
+        'originalCurrency': 'USD',
+        'auctionId': 'db377024-d866-4a24-98ac-5e430f881313',
+        'responseTimestamp': 1576823894050,
+        'requestTimestamp': 1576823893838,
+        'bidder': 'appnexus',
+        'timeToRespond': 212,
+        'pbLg': '0.50',
+        'pbMg': '0.50',
+        'pbHg': '0.50',
+        'pbAg': '0.50',
+        'pbDg': '0.50',
+        'pbCg': '',
+        'size': '300x250',
+        'adserverTargeting': {
+          'hb_bidder': 'appnexus',
+          'hb_adid': '393976d8770041',
+          'hb_pb': '0.50',
+          'hb_size': '300x250',
+          'hb_source': 'client',
+          'hb_format': 'banner'
+        }
+      },
+      'auctionEnd': {
+        'auctionId': 'db377024-d866-4a24-98ac-5e430f881313',
+        'timestamp': 1576823893836,
+        'auctionEnd': 1576823894054,
+        'auctionStatus': 'completed',
+        'adUnits': [
+          {
+            'code': 'div-gpt-ad-1460505748561-0',
+            'mediaTypes': {
+              'banner': {
+                'sizes': [
+                  [
+                    300,
+                    250
+                  ],
+                  [
+                    300,
+                    600
+                  ]
+                ]
+              }
+            },
+            'bids': [
+              {
+                'bidder': 'appnexus',
+                'params': {
+                  'placementId': 13144370
+                },
+                'crumbs': {
+                  'pubcid': 'ff4002c4-ce05-4a61-b4ef-45a3cd93991a'
+                }
+              }
+            ],
+            'sizes': [
+              [
+                300,
+                250
+              ],
+              [
+                300,
+                600
+              ]
+            ],
+            'transactionId': '6d275806-1943-4f3e-9cd5-624cbd05ad98'
+          }
+        ],
+        'adUnitCodes': [
+          'div-gpt-ad-1460505748561-0'
+        ],
+        'bidderRequests': [
+          {
+            'bidderCode': 'appnexus',
+            'auctionId': 'db377024-d866-4a24-98ac-5e430f881313',
+            'bidderRequestId': '155975c76e13b1',
+            'bids': [
+              {
+                'bidder': 'appnexus',
+                'params': {
+                  'placementId': 13144370
+                },
+                'crumbs': {
+                  'pubcid': 'ff4002c4-ce05-4a61-b4ef-45a3cd93991a'
+                },
+                'mediaTypes': {
+                  'banner': {
+                    'sizes': [
+                      [
+                        300,
+                        250
+                      ],
+                      [
+                        300,
+                        600
+                      ]
+                    ]
+                  }
+                },
+                'adUnitCode': 'div-gpt-ad-1460505748561-0',
+                'transactionId': '6d275806-1943-4f3e-9cd5-624cbd05ad98',
+                'sizes': [
+                  [
+                    300,
+                    250
+                  ],
+                  [
+                    300,
+                    600
+                  ]
+                ],
+                'bidId': '263efc09896d0c',
+                'bidderRequestId': '155975c76e13b1',
+                'auctionId': 'db377024-d866-4a24-98ac-5e430f881313',
+                'src': 'client',
+                'bidRequestsCount': 1,
+                'bidderRequestsCount': 1,
+                'bidderWinsCount': 0
+              }
+            ],
+            'auctionStart': 1576823893836,
+            'timeout': 1000,
+            'refererInfo': {
+              'referer': 'http://observer.com/integrationExamples/gpt/hello_world.html',
+              'reachedTop': true,
+              'numIframes': 0,
+              'stack': [
+                'http://observer.com/integrationExamples/gpt/hello_world.html'
+              ]
+            },
+            'start': 1576823893838
+          }
+        ],
+        'noBids': [],
+        'bidsReceived': [
+          {
+            'bidderCode': 'appnexus',
+            'width': 300,
+            'height': 250,
+            'statusMessage': 'Bid available',
+            'adId': '393976d8770041',
+            'requestId': '263efc09896d0c',
+            'mediaType': 'banner',
+            'source': 'client',
+            'cpm': 0.5,
+            'creativeId': 96846035,
+            'currency': 'USD',
+            'netRevenue': true,
+            'ttl': 300,
+            'adUnitCode': 'div-gpt-ad-1460505748561-0',
+            'appnexus': {
+              'buyerMemberId': 9325
+            },
+            'meta': {
+              'advertiserId': 2529885
+            },
+            'ad': '<!-- Creative 96846035 served by Member 9325 via AppNexus -->',
+            'originalCpm': 0.5,
+            'originalCurrency': 'USD',
+            'auctionId': 'db377024-d866-4a24-98ac-5e430f881313',
+            'responseTimestamp': 1576823894050,
+            'requestTimestamp': 1576823893838,
+            'bidder': 'appnexus',
+            'timeToRespond': 212,
+            'pbLg': '0.50',
+            'pbMg': '0.50',
+            'pbHg': '0.50',
+            'pbAg': '0.50',
+            'pbDg': '0.50',
+            'pbCg': '',
+            'size': '300x250',
+            'adserverTargeting': {
+              'hb_bidder': 'appnexus',
+              'hb_adid': '393976d8770041',
+              'hb_pb': '0.50',
+              'hb_size': '300x250',
+              'hb_source': 'client',
+              'hb_format': 'banner'
+            }
+          }
+        ],
+        'winningBids': [],
+        'timeout': 1000
+      },
+      'setTargeting': {
+        'div-gpt-ad-1460505748561-0': {
+          'hb_format': 'banner',
+          'hb_source': 'client',
+          'hb_size': '300x250',
+          'hb_pb': '0.50',
+          'hb_adid': '393976d8770041',
+          'hb_bidder': 'appnexus',
+          'hb_format_appnexus': 'banner',
+          'hb_source_appnexus': 'client',
+          'hb_size_appnexus': '300x250',
+          'hb_pb_appnexus': '0.50',
+          'hb_adid_appnexus': '393976d8770041',
+          'hb_bidder_appnexus': 'appnexus'
+        }
+      },
+      'bidderDone': {
+        'bidderCode': 'appnexus',
+        'auctionId': 'db377024-d866-4a24-98ac-5e430f881313',
+        'bidderRequestId': '155975c76e13b1',
+        'bids': [
+          {
+            'bidder': 'appnexus',
+            'params': {
+              'placementId': 13144370
+            },
+            'crumbs': {
+              'pubcid': 'ff4002c4-ce05-4a61-b4ef-45a3cd93991a'
+            },
+            'mediaTypes': {
+              'banner': {
+                'sizes': [
+                  [
+                    300,
+                    250
+                  ],
+                  [
+                    300,
+                    600
+                  ]
+                ]
+              }
+            },
+            'adUnitCode': 'div-gpt-ad-1460505748561-0',
+            'transactionId': '6d275806-1943-4f3e-9cd5-624cbd05ad98',
+            'sizes': [
+              [
+                300,
+                250
+              ],
+              [
+                300,
+                600
+              ]
+            ],
+            'bidId': '263efc09896d0c',
+            'bidderRequestId': '155975c76e13b1',
+            'auctionId': 'db377024-d866-4a24-98ac-5e430f881313',
+            'src': 'client',
+            'bidRequestsCount': 1,
+            'bidderRequestsCount': 1,
+            'bidderWinsCount': 0
+          }
+        ],
+        'auctionStart': 1576823893836,
+        'timeout': 1000,
+        'refererInfo': {
+          'referer': 'http://observer.com/integrationExamples/gpt/hello_world.html',
+          'reachedTop': true,
+          'numIframes': 0,
+          'stack': [
+            'http://observer.com/integrationExamples/gpt/hello_world.html'
+          ]
+        },
+        'start': 1576823893838
+      },
+      'bidWon': {
+        'bidderCode': 'appnexus',
+        'width': 300,
+        'height': 250,
+        'statusMessage': 'Bid available',
+        'adId': '393976d8770041',
+        'requestId': '263efc09896d0c',
+        'mediaType': 'banner',
+        'source': 'client',
+        'cpm': 0.5,
+        'creativeId': 96846035,
+        'currency': 'USD',
+        'netRevenue': true,
+        'ttl': 300,
+        'adUnitCode': 'div-gpt-ad-1460505748561-0',
+        'appnexus': {
+          'buyerMemberId': 9325
+        },
+        'meta': {
+          'advertiserId': 2529885
+        },
+        'ad': '<!-- Creative 96846035 served by Member 9325 via AppNexus -->',
+        'originalCpm': 0.5,
+        'originalCurrency': 'USD',
+        'auctionId': 'db377024-d866-4a24-98ac-5e430f881313',
+        'responseTimestamp': 1576823894050,
+        'requestTimestamp': 1576823893838,
+        'bidder': 'appnexus',
+        'timeToRespond': 212,
+        'pbLg': '0.50',
+        'pbMg': '0.50',
+        'pbHg': '0.50',
+        'pbAg': '0.50',
+        'pbDg': '0.50',
+        'pbCg': '',
+        'size': '300x250',
+        'adserverTargeting': {
+          'hb_bidder': 'appnexus',
+          'hb_adid': '393976d8770041',
+          'hb_pb': '0.50',
+          'hb_size': '300x250',
+          'hb_source': 'client',
+          'hb_format': 'banner'
+        },
+        'status': 'rendered',
+        'params': [
+          {
+            'placementId': 13144370
+          }
+        ]
+      }
+    };
+    let location = utils.getWindowLocation();
+
+    let expectedAfterBid = {
+      'bids': [
+        {
+          'adUnitCode': 'div-gpt-ad-1460505748561-0',
+          'auctionId': 'db377024-d866-4a24-98ac-5e430f881313',
+          'bidId': '263efc09896d0c',
+          'bidderCode': 'appnexus',
+          'cpm': 0.5,
+          'creativeId': 96846035,
+          'currency': 'USD',
+          'mediaType': 'banner',
+          'netRevenue': true,
+          'renderStatus': 2,
+          'requestId': '155975c76e13b1',
+          'requestTimestamp': 1576823893838,
+          'responseTimestamp': 1576823894050,
+          'sizes': '300x250,300x600',
+          'statusMessage': 'Bid available',
+          'timeToRespond': 212
+        }
+      ],
+      'auctionInit': {
+        'host': location.host,
+        'path': location.pathname,
+        'search': location.search,
+        'auctionId': 'db377024-d866-4a24-98ac-5e430f881313',
+        'timestamp': 1576823893836,
+        'auctionStatus': 'inProgress',
+        'adUnits': [
+          {
+            'code': 'div-gpt-ad-1460505748561-0',
+            'mediaTypes': {
+              'banner': {
+                'sizes': [
+                  [
+                    300,
+                    250
+                  ],
+                  [
+                    300,
+                    600
+                  ]
+                ]
+              }
+            },
+            'bids': [
+              {
+                'bidder': 'appnexus',
+                'params': {
+                  'placementId': 13144370
+                },
+                'crumbs': {
+                  'pubcid': 'ff4002c4-ce05-4a61-b4ef-45a3cd93991a'
+                }
+              }
+            ],
+            'sizes': [
+              [
+                300,
+                250
+              ],
+              [
+                300,
+                600
+              ]
+            ],
+            'transactionId': '6d275806-1943-4f3e-9cd5-624cbd05ad98'
+          }
+        ],
+        'adUnitCodes': [
+          'div-gpt-ad-1460505748561-0'
+        ],
+        'bidderRequests': [
+          {
+            'bidderCode': 'appnexus',
+            'auctionId': 'db377024-d866-4a24-98ac-5e430f881313',
+            'bidderRequestId': '155975c76e13b1',
+            'bids': [
+              {
+                'bidder': 'appnexus',
+                'params': {
+                  'placementId': 13144370
+                },
+                'crumbs': {
+                  'pubcid': 'ff4002c4-ce05-4a61-b4ef-45a3cd93991a'
+                },
+                'mediaTypes': {
+                  'banner': {
+                    'sizes': [
+                      [
+                        300,
+                        250
+                      ],
+                      [
+                        300,
+                        600
+                      ]
+                    ]
+                  }
+                },
+                'adUnitCode': 'div-gpt-ad-1460505748561-0',
+                'transactionId': '6d275806-1943-4f3e-9cd5-624cbd05ad98',
+                'sizes': [
+                  [
+                    300,
+                    250
+                  ],
+                  [
+                    300,
+                    600
+                  ]
+                ],
+                'bidId': '263efc09896d0c',
+                'bidderRequestId': '155975c76e13b1',
+                'auctionId': 'db377024-d866-4a24-98ac-5e430f881313',
+                'src': 'client',
+                'bidRequestsCount': 1,
+                'bidderRequestsCount': 1,
+                'bidderWinsCount': 0
+              }
+            ],
+            'auctionStart': 1576823893836,
+            'timeout': 1000,
+            'refererInfo': {
+              'referer': 'http://observer.com/integrationExamples/gpt/hello_world.html',
+              'reachedTop': true,
+              'numIframes': 0,
+              'stack': [
+                'http://observer.com/integrationExamples/gpt/hello_world.html'
+              ]
+            },
+            'start': 1576823893838
+          }
+        ],
+        'noBids': [],
+        'bidsReceived': [],
+        'winningBids': [],
+        'timeout': 1000,
+        'config': initOptions
+      },
+      'initOptions': initOptions
+    };
+
+    let expectedAfterBidWon = {
+      'bidWon': {
+        'bidderCode': 'appnexus',
+        'bidId': '263efc09896d0c',
+        'adUnitCode': 'div-gpt-ad-1460505748561-0',
+        'auctionId': 'db377024-d866-4a24-98ac-5e430f881313',
+        'creativeId': 96846035,
+        'currency': 'USD',
+        'cpm': 0.5,
+        'netRevenue': true,
+        'renderedSize': '300x250',
+        'mediaType': 'banner',
+        'statusMessage': 'Bid available',
+        'status': 'rendered',
+        'renderStatus': 4,
+        'timeToRespond': 212,
+        'requestTimestamp': 1576823893838,
+        'responseTimestamp': 1576823894050
+      },
+      'initOptions': {
+        'pubId': '1',
+        'pubKey': 'ZXlKaGJHY2lPaUpJVXpJMU5pSjkuT=='
+      }
+    }
 
     adapterManager.registerAnalyticsAdapter({
       code: 'yuktamedia',
@@ -43,135 +754,35 @@ describe('YuktaMedia analytics adapter', function () {
     });
 
     it('builds and sends auction data', function () {
-      let auctionTimestamp = 1496510254313;
-      let bidRequest = {
-        'bidderCode': 'appnexus',
-        'auctionId': 'a5b849e5-87d7-4205-8300-d063084fcfb7',
-        'bidderRequestId': '173209942f8bdd',
-        'bids': [{
-          'bidder': 'appnexus',
-          'params': {
-            'placementId': '10433394'
-          },
-          'crumbs': {
-            'pubcid': '9a2a4e71-f39b-405f-aecc-19efc22b618d'
-          },
-          'adUnitCode': 'div-gpt-ad-1438287399331-0',
-          'transactionId': '2f481ff1-8d20-4c28-8e36-e384e9e3eec6',
-          'sizes': [
-            [300, 250],
-            [300, 600]
-          ],
-          'bidId': '2eddfdc0c791dc',
-          'bidderRequestId': '173209942f8bdd',
-          'auctionId': 'a5b849e5-87d7-4205-8300-d063084fcfb7'
-        }
-        ],
-        'auctionStart': 1522265863591,
-        'timeout': 3000,
-        'start': 1522265863600,
-        'doneCbCallCount': 1
-      };
-      let bidResponse = {
-        'height': 250,
-        'statusMessage': 'Bid available',
-        'adId': '2eddfdc0c791dc',
-        'mediaType': 'banner',
-        'source': 'client',
-        'requestId': '2eddfdc0c791dc',
-        'cpm': 0.5,
-        'creativeId': 29681110,
-        'currency': 'USD',
-        'netRevenue': true,
-        'ttl': 300,
-        'auctionId': 'a5b849e5-87d7-4205-8300-d063084fcfb7',
-        'responseTimestamp': 1522265866110,
-        'requestTimestamp': 1522265863600,
-        'bidder': 'appnexus',
-        'adUnitCode': 'div-gpt-ad-1438287399331-0',
-        'timeToRespond': 2510,
-        'size': '300x250'
-      };
-      let bidTimeoutArgsV1 = [
-        {
-          bidId: '2baa51527bd015',
-          bidder: 'bidderOne',
-          adUnitCode: '/19968336/header-bid-tag-0',
-          auctionId: '66529d4c-8998-47c2-ab3e-5b953490b98f'
-        },
-        {
-          bidId: '6fe3b4c2c23092',
-          bidder: 'bidderTwo',
-          adUnitCode: '/19968336/header-bid-tag-0',
-          auctionId: '66529d4c-8998-47c2-ab3e-5b953490b98f'
-        }
-      ];
-      let bid = {
-        'bidderCode': 'appnexus',
-        'bidId': '2eddfdc0c791dc',
-        'adUnitCode': 'div-gpt-ad-1438287399331-0',
-        'requestId': '173209942f8bdd',
-        'auctionId': 'a5b849e5-87d7-4205-8300-d063084fcfb7',
-        'renderStatus': 2,
-        'cpm': 0.5,
-        'creativeId': 29681110,
-        'currency': 'USD',
-        'mediaType': 'banner',
-        'netRevenue': true,
-        'requestTimestamp': 1522265863600,
-        'responseTimestamp': 1522265866110,
-        'sizes': '300x250,300x600',
-        'statusMessage': 'Bid available',
-        'timeToRespond': 2510
-      }
-
       // Step 1: Send auction init event
-      events.emit(constants.EVENTS.AUCTION_INIT, {
-        timestamp: auctionTimestamp
-      });
+      events.emit(constants.EVENTS.AUCTION_INIT, prebidEvent['auctionInit']);
 
       // Step 2: Send bid requested event
-      events.emit(constants.EVENTS.BID_REQUESTED, bidRequest);
+      events.emit(constants.EVENTS.BID_REQUESTED, prebidEvent['bidRequested']);
 
       // Step 3: Send bid response event
-      events.emit(constants.EVENTS.BID_RESPONSE, bidResponse);
+      events.emit(constants.EVENTS.BID_RESPONSE, prebidEvent['bidResponse']);
 
       // Step 4: Send bid time out event
-      events.emit(constants.EVENTS.BID_TIMEOUT, bidTimeoutArgsV1);
+      events.emit(constants.EVENTS.BID_TIMEOUT, prebidEvent['bidTimeout']);
 
       // Step 5: Send auction end event
-      events.emit(constants.EVENTS.AUCTION_END, {}, 'auctionEnd');
+      events.emit(constants.EVENTS.AUCTION_END, prebidEvent['auctionEnd']);
 
-      expect(requests.length).to.equal(1);
+      expect(server.requests.length).to.equal(1);
 
-      let auctionEventData = JSON.parse(requests[0].requestBody);
+      let realAfterBid = JSON.parse(server.requests[0].requestBody);
 
-      expect(auctionEventData.bids.length).to.equal(1);
-      expect(auctionEventData.bids[0]).to.deep.equal(bid);
-
-      expect(auctionEventData.initOptions).to.deep.equal(initOptions);
+      expect(realAfterBid).to.deep.equal(expectedAfterBid);
 
       // Step 6: Send auction bid won event
-      events.emit(constants.EVENTS.BID_WON, {
-        'bidderCode': 'appnexus',
-        'statusMessage': 'Bid available',
-        'adId': '108abedd106b669',
-        'auctionId': '6355d610-7cdc-4009-a866-f91997fd24bb',
-        'responseTimestamp': 1522144433058,
-        'requestTimestamp': 1522144432923,
-        'bidder': 'appnexus',
-        'adUnitCode': 'div-gpt-ad-1438287399331-0',
-        'timeToRespond': 135,
-        'size': '300x250',
-        'status': 'rendered'
-      }, 'won');
+      events.emit(constants.EVENTS.BID_WON, prebidEvent['bidWon']);
 
-      expect(requests.length).to.equal(2);
+      expect(server.requests.length).to.equal(2);
 
-      let winEventData = JSON.parse(requests[1].requestBody);
+      let winEventData = JSON.parse(server.requests[1].requestBody);
 
-      expect(winEventData.bidWon.status).to.equal('rendered');
-      expect(winEventData.initOptions).to.deep.equal(initOptions);
+      expect(winEventData).to.deep.equal(expectedAfterBidWon);
     });
   });
 });

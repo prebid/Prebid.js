@@ -232,6 +232,56 @@ describe('Utils', function () {
     });
   });
 
+  describe('parseGPTSingleSizeArrayToRtbSize', function () {
+    it('should return size string with input single size array', function () {
+      var size = [300, 250];
+      var output = utils.parseGPTSingleSizeArrayToRtbSize(size);
+      assert.deepEqual(output, {w: 300, h: 250});
+    });
+
+    it('should return size string with input single size array', function () {
+      var size = ['300', '250'];
+      var output = utils.parseGPTSingleSizeArrayToRtbSize(size);
+      assert.deepEqual(output, {w: 300, h: 250});
+    });
+
+    it('return undefined using string input', function () {
+      var size = '1';
+      var output = utils.parseGPTSingleSizeArrayToRtbSize(size);
+      assert.equal(output, undefined);
+    });
+
+    it('return undefined using number input', function () {
+      var size = 1;
+      var output = utils.parseGPTSingleSizeArrayToRtbSize(size);
+      assert.equal(output, undefined);
+    });
+
+    it('return undefined using one length single array', function () {
+      var size = [300];
+      var output = utils.parseGPTSingleSizeArrayToRtbSize(size);
+      assert.equal(output, undefined);
+    });
+
+    it('return undefined if the input is empty', function () {
+      var size = '';
+      var output = utils.parseGPTSingleSizeArrayToRtbSize(size);
+      assert.equal(output, undefined);
+    });
+
+    it('return undefined if the input is not a number', function () {
+      var size = ['foo', 'bar'];
+      var output = utils.parseGPTSingleSizeArrayToRtbSize(size);
+      assert.equal(output, undefined);
+    });
+
+    it('return undefined if the input is not a number 2', function () {
+      var size = [300, 'foo'];
+      var output = utils.parseGPTSingleSizeArrayToRtbSize(size);
+      assert.equal(output, undefined);
+    });
+  });
+
   describe('isA', function () {
     it('should return true with string object', function () {
       var output = utils.isA(obj_string, type_string);
@@ -611,7 +661,7 @@ describe('Utils', function () {
       var value2 = utils.deepAccess(obj, 'test.first');
       assert.equal(value2, 11);
 
-      var value3 = utils.deepAccess(obj, 1);
+      var value3 = utils.deepAccess(obj, '1');
       assert.equal(value3, 2);
     });
 
@@ -623,6 +673,29 @@ describe('Utils', function () {
       });
 
       assert.equal(value, undefined);
+    });
+  });
+
+  describe('deepSetValue', function() {
+    it('should set existing properties at various depths', function() {
+      const testObj = {
+        prop: 'value',
+        nestedObj: {
+          nestedProp: 'nestedValue'
+        }
+      };
+      utils.deepSetValue(testObj, 'prop', 'newValue');
+      assert.equal(testObj.prop, 'newValue');
+      utils.deepSetValue(testObj, 'nestedObj.nestedProp', 'newNestedValue');
+      assert.equal(testObj.nestedObj.nestedProp, 'newNestedValue');
+    });
+
+    it('should create object levels between top and bottom of given path if they do not exist', function() {
+      const testObj = {};
+      utils.deepSetValue(testObj, 'level1.level2', 'value');
+      assert.notEqual(testObj.level1, undefined);
+      assert.notEqual(testObj.level1.level2, undefined);
+      assert.equal(testObj.level1.level2, 'value');
     });
   });
 
@@ -717,93 +790,6 @@ describe('Utils', function () {
       const output = utils.getUserConfiguredParams(adUnits, 'adUnit2', 'bidder3');
       const expected = [];
       assert.deepEqual(output, expected);
-    });
-  });
-
-  describe('getTopWindowLocation', function () {
-    let sandbox;
-
-    beforeEach(function () {
-      sandbox = sinon.sandbox.create();
-    });
-
-    afterEach(function () {
-      sandbox.restore();
-    });
-
-    it('returns window.location if not in iFrame', function () {
-      sandbox.stub(utils.internal, 'getWindowLocation').returns({
-        href: 'https://www.google.com/',
-        ancestorOrigins: {},
-        origin: 'https://www.google.com',
-        protocol: 'https',
-        host: 'www.google.com',
-        hostname: 'www.google.com',
-        port: '',
-        pathname: '/',
-        search: '',
-        hash: ''
-      });
-      let windowSelfAndTopObject = { self: 'is same as top' };
-      sandbox.stub(utils.internal, 'getWindowSelf').returns(
-        windowSelfAndTopObject
-      );
-      sandbox.stub(utils.internal, 'getWindowTop').returns(
-        windowSelfAndTopObject
-      );
-      var topWindowLocation = utils.getTopWindowLocation();
-      expect(topWindowLocation).to.be.a('object');
-      expect(topWindowLocation.href).to.equal('https://www.google.com/');
-      expect(topWindowLocation.protocol).to.equal('https');
-      expect(topWindowLocation.hostname).to.equal('www.google.com');
-      expect(topWindowLocation.port).to.equal('');
-      expect(topWindowLocation.pathname).to.equal('/');
-      expect(topWindowLocation.hash).to.equal('');
-      expect(topWindowLocation.search).to.equal('');
-      expect(topWindowLocation.host).to.equal('www.google.com');
-    });
-
-    it('returns parsed dom string from ancestorOrigins if in iFrame & ancestorOrigins is populated', function () {
-      sandbox.stub(utils.internal, 'getWindowSelf').returns(
-        { self: 'is not same as top' }
-      );
-      sandbox.stub(utils.internal, 'getWindowTop').returns(
-        { top: 'is not same as self' }
-      );
-      sandbox.stub(utils.internal, 'getAncestorOrigins').returns('https://www.google.com/a/umich.edu/acs');
-      var topWindowLocation = utils.getTopWindowLocation();
-      expect(topWindowLocation).to.be.a('object');
-      expect(topWindowLocation.pathname).to.equal('/a/umich.edu/acs');
-      expect(topWindowLocation.href).to.equal('https://www.google.com/a/umich.edu/acs');
-      expect(topWindowLocation.protocol).to.equal('https');
-      expect(topWindowLocation.hostname).to.equal('www.google.com');
-      expect(topWindowLocation.hash).to.equal('');
-      expect(topWindowLocation.search).to.equal('');
-      // note IE11 returns the default secure port, so we look for this alternate value as well in these tests
-      expect(topWindowLocation.port).to.be.oneOf([0, 443]);
-      expect(topWindowLocation.host).to.be.oneOf(['www.google.com', 'www.google.com:443']);
-    });
-
-    it('returns parsed referrer string if in iFrame but no ancestorOrigins', function () {
-      sandbox.stub(utils.internal, 'getWindowSelf').returns(
-        { self: 'is not same as top' }
-      );
-      sandbox.stub(utils.internal, 'getWindowTop').returns(
-        { top: 'is not same as self' }
-      );
-      sandbox.stub(utils.internal, 'getAncestorOrigins').returns(null);
-      sandbox.stub(utils.internal, 'getTopFrameReferrer').returns('https://www.example.com/');
-      var topWindowLocation = utils.getTopWindowLocation();
-      expect(topWindowLocation).to.be.a('object');
-      expect(topWindowLocation.href).to.equal('https://www.example.com/');
-      expect(topWindowLocation.protocol).to.equal('https');
-      expect(topWindowLocation.hostname).to.equal('www.example.com');
-      expect(topWindowLocation.pathname).to.equal('/');
-      expect(topWindowLocation.hash).to.equal('');
-      expect(topWindowLocation.search).to.equal('');
-      // note IE11 returns the default secure port, so we look for this alternate value as well in these tests
-      expect(topWindowLocation.port).to.be.oneOf([0, 443]);
-      expect(topWindowLocation.host).to.be.oneOf(['www.example.com', 'www.example.com:443']);
     });
   });
 

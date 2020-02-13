@@ -1,11 +1,9 @@
 import * as utils from '../src/utils';
 import {registerBidder} from '../src/adapters/bidderFactory';
 import {BANNER, VIDEO} from '../src/mediaTypes';
-import includes from 'core-js/library/fn/array/includes';
 import {parse as parseUrl} from '../src/url';
 
 const DEFAULT_ADKERNEL_DSP_DOMAIN = 'tag.adkernel.com';
-const VIDEO_TARGETING = ['mimes', 'protocols', 'api'];
 const DEFAULT_MIMES = ['video/mp4', 'video/webm', 'application/x-shockwave-flash', 'application/javascript'];
 const DEFAULT_PROTOCOLS = [2, 3, 5, 6];
 const DEFAULT_APIS = [1, 2];
@@ -19,25 +17,22 @@ function buildImp(bidRequest) {
     id: bidRequest.bidId,
     tagid: bidRequest.adUnitCode
   };
-  if (utils.deepAccess(bidRequest, `mediaTypes.banner`)) {
-    let sizes = canonicalizeSizesArray(bidRequest.mediaTypes.banner.sizes);
+  let bannerReq = utils.deepAccess(bidRequest, `mediaTypes.banner`);
+  let videoReq = utils.deepAccess(bidRequest, `mediaTypes.video`);
+  if (bannerReq) {
+    let sizes = canonicalizeSizesArray(bannerReq.sizes);
     imp.banner = {
       format: utils.parseSizesInput(sizes)
     }
-  } else if (utils.deepAccess(bidRequest, `mediaTypes.video`)) {
-    let size = canonicalizeSizesArray(bidRequest.mediaTypes.video.playerSize)[0];
+  } else if (videoReq) {
+    let size = canonicalizeSizesArray(videoReq.playerSize)[0];
     imp.video = {
       w: size[0],
       h: size[1],
-      mimes: DEFAULT_MIMES,
-      protocols: DEFAULT_PROTOCOLS,
-      api: DEFAULT_APIS
+      mimes: videoReq.mimes || DEFAULT_MIMES,
+      protocols: videoReq.protocols || DEFAULT_PROTOCOLS,
+      api: videoReq.api || DEFAULT_APIS
     };
-    if (bidRequest.params.video) {
-      Object.keys(bidRequest.params.video)
-        .filter(param => includes(VIDEO_TARGETING, param))
-        .forEach(param => imp.video[param] = bidRequest.params.video[param]);
-    }
   }
   return imp;
 }
@@ -54,22 +49,23 @@ function canonicalizeSizesArray(sizes) {
   return sizes;
 }
 
-function buildRequestParams(tags, auctionId, transactionId, gdprConsent, refInfo) {
+function buildRequestParams(tags, auctionId, transactionId, gdprConsent, uspConsent, refInfo) {
   let req = {
     id: auctionId,
     tid: transactionId,
     site: buildSite(refInfo),
     imp: tags
   };
-
-  if (gdprConsent && (gdprConsent.gdprApplies !== undefined || gdprConsent.consentString !== undefined)) {
-    req.user = {};
+  if (gdprConsent) {
     if (gdprConsent.gdprApplies !== undefined) {
-      req.user.gdpr = ~~(gdprConsent.gdprApplies);
+      utils.deepSetValue(req, 'user.gdpr', ~~gdprConsent.gdprApplies);
     }
     if (gdprConsent.consentString !== undefined) {
-      req.user.consent = gdprConsent.consentString;
+      utils.deepSetValue(req, 'user.consent', gdprConsent.consentString);
     }
+  }
+  if (uspConsent) {
+    utils.deepSetValue(req, 'user.us_privacy', uspConsent);
   }
   return req;
 }
@@ -118,8 +114,11 @@ export const spec = {
   aliases: ['engagesimply'],
 
   isBidRequestValid: function(bidRequest) {
-    return 'params' in bidRequest && (typeof bidRequest.params.host === 'undefined' || typeof bidRequest.params.host === 'string') &&
-      typeof bidRequest.params.pubId === 'number' && 'mediaTypes' in bidRequest && ('banner' in bidRequest.mediaTypes || 'video' in bidRequest.mediaTypes);
+    return 'params' in bidRequest &&
+      (typeof bidRequest.params.host === 'undefined' || typeof bidRequest.params.host === 'string') &&
+      typeof bidRequest.params.pubId === 'number' &&
+      'mediaTypes' in bidRequest &&
+      ('banner' in bidRequest.mediaTypes || 'video' in bidRequest.mediaTypes);
   },
 
   buildRequests: function(bidRequests, bidderRequest) {
@@ -133,17 +132,15 @@ export const spec = {
         acc[host][pubId].push(curr);
         return acc;
       }, {});
-    let auctionId = bidderRequest.auctionId;
-    let gdprConsent = bidderRequest.gdprConsent;
-    let transactionId = bidderRequest.transactionId;
-    let refererInfo = bidderRequest.refererInfo;
+
+    let {auctionId, gdprConsent, uspConsent, transactionId, refererInfo} = bidderRequest;
     let requests = [];
     Object.keys(dispatch).forEach(host => {
       Object.keys(dispatch[host]).forEach(pubId => {
-        let request = buildRequestParams(dispatch[host][pubId], auctionId, transactionId, gdprConsent, refererInfo);
+        let request = buildRequestParams(dispatch[host][pubId], auctionId, transactionId, gdprConsent, uspConsent, refererInfo);
         requests.push({
           method: 'POST',
-          url: `//${host}/tag?account=${pubId}&pb=1${isRtbDebugEnabled(refererInfo) ? '&debug=1' : ''}`,
+          url: `https://${host}/tag?account=${pubId}&pb=1${isRtbDebugEnabled(refererInfo) ? '&debug=1' : ''}`,
           data: JSON.stringify(request)
         })
       });

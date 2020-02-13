@@ -57,7 +57,7 @@ export const spec = {
     };
     return {
       method: 'GET',
-      url: '//' + rtbServerDomain + '/hb?' + '&zoneid=' + zoneid + '&br=' + encodeURIComponent(JSON.stringify(ebdrBidReq)),
+      url: 'https://' + rtbServerDomain + '/hb?' + '&zoneid=' + zoneid + '&br=' + encodeURIComponent(JSON.stringify(ebdrBidReq)),
       bids: ebdrReq
     };
   },

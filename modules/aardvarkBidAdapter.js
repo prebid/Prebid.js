@@ -15,10 +15,11 @@ export function resetUserSync() {
 
 export const spec = {
   code: BIDDER_CODE,
+  aliases: ['adsparc', 'safereach'],
 
   isBidRequestValid: function(bid) {
     return ((typeof bid.params.ai === 'string') && !!bid.params.ai.length &&
-        (typeof bid.params.sc === 'string') && !!bid.params.sc.length);
+      (typeof bid.params.sc === 'string') && !!bid.params.sc.length);
   },
 
   buildRequests: function(validBidRequests, bidderRequest) {
@@ -28,17 +29,25 @@ export const spec = {
     var referer = bidderRequest.refererInfo.referer;
     var pageCategories = [];
     var tdId = '';
+    var width = window.innerWidth;
+    var height = window.innerHeight;
+    var schain = '';
 
     // This reference to window.top can cause issues when loaded in an iframe if not protected with a try/catch.
     try {
-      if (window.top.rtkcategories && Array.isArray(window.top.rtkcategories)) {
-        pageCategories = window.top.rtkcategories;
+      var topWin = utils.getWindowTop();
+      if (topWin.rtkcategories && Array.isArray(topWin.rtkcategories)) {
+        pageCategories = topWin.rtkcategories;
       }
+      width = topWin.innerWidth;
+      height = topWin.innerHeight;
     } catch (e) {}
 
     if (utils.isStr(utils.deepAccess(validBidRequests, '0.userId.tdid'))) {
       tdId = validBidRequests[0].userId.tdid;
     }
+
+    schain = spec.serializeSupplyChain(utils.deepAccess(validBidRequests, '0.schain'));
 
     utils._each(validBidRequests, function(b) {
       var rMap = requestsMap[b.params.ai];
@@ -48,13 +57,18 @@ export const spec = {
           payload: {
             version: 1,
             jsonp: false,
-            rtkreferer: referer
+            rtkreferer: referer,
+            w: width,
+            h: height
           },
           endpoint: DEFAULT_ENDPOINT
         };
 
         if (tdId) {
           rMap.payload.tdid = tdId;
+        }
+        if (schain) {
+          rMap.payload.schain = schain;
         }
 
         if (pageCategories && pageCategories.length) {
@@ -68,7 +82,7 @@ export const spec = {
           });
         }
 
-        if (bidderRequest && bidderRequest.gdprConsent) {
+        if (bidderRequest.gdprConsent) {
           rMap.payload.gdpr = false;
           if (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') {
             rMap.payload.gdpr = bidderRequest.gdprConsent.gdprApplies;
@@ -82,11 +96,15 @@ export const spec = {
         auctionCodes.push(b.params.ai);
       }
 
+      if (bidderRequest.uspConsent) {
+        rMap.payload.us_privacy = bidderRequest.uspConsent
+      }
+
       rMap.shortCodes.push(b.params.sc);
       rMap.payload[b.params.sc] = b.bidId;
 
       if ((typeof b.params.host === 'string') && b.params.host.length &&
-          (b.params.host !== rMap.endpoint)) {
+        (b.params.host !== rMap.endpoint)) {
         rMap.endpoint = b.params.host;
       }
     });
@@ -95,7 +113,7 @@ export const spec = {
       var req = requestsMap[auctionId];
       requests.push({
         method: 'GET',
-        url: `//${req.endpoint}/${auctionId}/${req.shortCodes.join('_')}/aardvark`,
+        url: `https://${req.endpoint}/${auctionId}/${req.shortCodes.join('_')}/aardvark`,
         data: req.payload,
         bidderRequest
       });
@@ -152,30 +170,92 @@ export const spec = {
     return bidResponses;
   },
 
-  getUserSyncs: function(syncOptions, serverResponses, gdprConsent) {
+  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
     const syncs = [];
-    var url = '//' + SYNC_ENDPOINT + '/cs';
+    const params = [];
     var gdprApplies = false;
     if (gdprConsent && (typeof gdprConsent.gdprApplies === 'boolean')) {
       gdprApplies = gdprConsent.gdprApplies;
     }
 
-    if (syncOptions.iframeEnabled) {
-      if (!hasSynced) {
-        hasSynced = true;
-        if (gdprApplies) {
-          url = url + '?g=1&c=' + encodeURIComponent(gdprConsent.consentString);
-        }
-        syncs.push({
-          type: 'iframe',
-          url: url
-        });
-      }
-    } else {
+    if (!syncOptions.iframeEnabled) {
       utils.logWarn('Aardvark: Please enable iframe based user sync.');
+      return syncs;
     }
+
+    if (hasSynced) {
+      return syncs;
+    }
+
+    hasSynced = true;
+    if (gdprApplies) {
+      params.push(['g', '1']);
+      params.push(['c', gdprConsent.consentString]);
+    }
+
+    if (uspConsent) {
+      params.push(['us_privacy', uspConsent]);
+    }
+
+    var queryStr = '';
+    if (params.length) {
+      queryStr = '?' + params.map(p => p[0] + '=' + encodeURIComponent(p[1])).join('&')
+    }
+
+    syncs.push({
+      type: 'iframe',
+      url: `https://${SYNC_ENDPOINT}/cs${queryStr}`
+    });
     return syncs;
-  }
+  },
+
+  /**
+   * Serializes schain params according to OpenRTB requirements
+   * @param {Object} supplyChain
+   * @returns {String}
+   */
+  serializeSupplyChain: function (supplyChain) {
+    if (!hasValidSupplyChainParams(supplyChain)) {
+      return '';
+    }
+
+    return `${supplyChain.ver},${supplyChain.complete}!${spec.serializeSupplyChainNodes(supplyChain.nodes)}`;
+  },
+
+  /**
+   * Properly sorts schain object params
+   * @param {Array} nodes
+   * @returns {String}
+   */
+  serializeSupplyChainNodes: function (nodes) {
+    const nodePropOrder = ['asi', 'sid', 'hp', 'rid', 'name', 'domain'];
+    return nodes.map(node => {
+      return nodePropOrder.map(prop => encodeURIComponent(node[prop] || '')).join(',');
+    }).join('!');
+  },
 };
+
+/**
+ * Make sure the required params are present
+ * @param {Object} schain
+ * @param {Bool}
+ */
+export function hasValidSupplyChainParams(schain) {
+  if (!schain || !schain.nodes) {
+    return false;
+  }
+  const requiredFields = ['asi', 'sid', 'hp'];
+
+  let isValid = schain.nodes.reduce((status, node) => {
+    if (!status) {
+      return status;
+    }
+    return requiredFields.every(field => node[field]);
+  }, true);
+  if (!isValid) {
+    utils.logError('Aardvark: required schain params missing');
+  }
+  return isValid;
+}
 
 registerBidder(spec);

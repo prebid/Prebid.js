@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec } from 'modules/underdogmediaBidAdapter';
+import { spec, resetUserSync } from 'modules/underdogmediaBidAdapter';
 
 describe('UnderdogMedia adapter', function () {
   let bidRequests;
@@ -13,7 +13,11 @@ describe('UnderdogMedia adapter', function () {
           siteId: 12143
         },
         adUnitCode: '/19968336/header-bid-tag-1',
-        sizes: [[300, 250], [300, 600], [728, 90], [160, 600], [320, 50]],
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 250], [300, 600], [728, 90], [160, 600], [320, 50]],
+          }
+        },
         bidId: '23acc48ad47af5',
         auctionId: '0fb4905b-9456-4152-86be-c6f6d259ba99',
         bidderRequestId: '1c56ad30b9b8ca8',
@@ -43,7 +47,11 @@ describe('UnderdogMedia adapter', function () {
           params: {
             siteId: '12143'
           },
-          sizes: [[300, 250], [300, 600]]
+          mediaTypes: {
+            banner: {
+              sizes: [[300, 250], [300, 600]]
+            }
+          }
         };
         const isValid = spec.isBidRequestValid(validBid);
 
@@ -66,7 +74,11 @@ describe('UnderdogMedia adapter', function () {
         let invalidBid = {
           bidder: 'underdogmedia',
           params: {},
-          sizes: [[300, 250], [300, 600]]
+          mediaTypes: {
+            banner: {
+              sizes: [[300, 250], [300, 600]]
+            }
+          }
         };
         const isValid = spec.isBidRequestValid(invalidBid);
 
@@ -77,8 +89,12 @@ describe('UnderdogMedia adapter', function () {
         let bidRequests = [
           {
             bidId: '3c9408cdbf2f68',
-            sizes: [[300, 250]],
             bidder: 'underdogmedia',
+            mediaTypes: {
+              banner: {
+                sizes: [[300, 250]]
+              }
+            },
             params: {
               siteId: '12143'
             },
@@ -95,7 +111,11 @@ describe('UnderdogMedia adapter', function () {
         let bidRequests = [
           {
             bidId: '3c9408cdbf2f68',
-            sizes: [[300, 250], [728, 90]],
+            mediaTypes: {
+              banner: {
+                sizes: [[300, 250], [728, 90]]
+              }
+            },
             bidder: 'underdogmedia',
             params: {
               siteId: '12143'
@@ -113,7 +133,11 @@ describe('UnderdogMedia adapter', function () {
         let bidRequests = [
           {
             bidId: '3c9408cdbf2f68',
-            sizes: [[300, 250], [728, 90]],
+            mediaTypes: {
+              banner: {
+                sizes: [[300, 250], [728, 90]]
+              }
+            },
             bidder: 'underdogmedia',
             params: {
               siteId: '12143'
@@ -133,7 +157,11 @@ describe('UnderdogMedia adapter', function () {
         let bidRequests = [
           {
             bidId: '3c9408cdbf2f68',
-            sizes: [[300, 250], [728, 90]],
+            mediaTypes: {
+              banner: {
+                sizes: [[300, 250], [728, 90]]
+              }
+            },
             bidder: 'underdogmedia',
             params: {
               siteId: '12143'
@@ -164,7 +192,11 @@ describe('UnderdogMedia adapter', function () {
         let bidRequests = [
           {
             bidId: '3c9408cdbf2f68',
-            sizes: [[300, 250], [728, 90]],
+            mediaTypes: {
+              banner: {
+                sizes: [[300, 250], [728, 90]]
+              }
+            },
             bidder: 'underdogmedia',
             params: {
               siteId: '12143'
@@ -199,7 +231,11 @@ describe('UnderdogMedia adapter', function () {
         let bidRequests = [
           {
             bidId: '3c9408cdbf2f68',
-            sizes: [[300, 250], [728, 90]],
+            mediaTypes: {
+              banner: {
+                sizes: [[300, 250], [728, 90]]
+              }
+            },
             bidder: 'underdogmedia',
             params: {
               siteId: '12143'
@@ -217,6 +253,19 @@ describe('UnderdogMedia adapter', function () {
 
         expect(request.data.sizes).to.equal('300x250,728x90');
         expect(request.data.sid).to.equal('12143');
+      });
+
+      it('should have uspConsent if defined', function () {
+        const uspConsent = '1YYN'
+        bidderRequest.uspConsent = uspConsent
+        const request = spec.buildRequests(bidRequests, bidderRequest);
+        expect(request.data.uspConsent).to.equal(uspConsent);
+      });
+
+      it('should not have uspConsent if not defined', function () {
+        bidderRequest.uspConsent = undefined
+        const request = spec.buildRequests(bidRequests, bidderRequest);
+        expect(request.data.uspConsent).to.be.undefined;
       });
     });
 
@@ -360,6 +409,77 @@ describe('UnderdogMedia adapter', function () {
         expect(bids[0].ad).to.have.string('notification_url');
         expect(bids[0].ad).to.have.string(';style=adapter');
       });
+    });
+  });
+
+  describe('getUserSyncs', function () {
+    const syncOptionsPixelOnly = {
+      'pixelEnabled': true
+    };
+
+    const syncOptionsIframeOnly = {
+      'iframeEnabled': true
+    };
+
+    const syncOptionsPixelAndIframe = {
+      'pixelEnabled': true,
+      'iframeEnabled': true
+    };
+
+    const responseWithUserSyncs = [{
+      body: {
+        userSyncs: [
+          {
+            type: 'image',
+            url: 'https://test.url.com'
+          },
+          {
+            type: 'iframe',
+            url: 'https://test.url.com'
+          }
+        ]
+      }
+    }];
+
+    const responseWithEmptyUserSyncs = [{
+      body: {
+        userSyncs: []
+      }
+    }];
+
+    it('user syncs should only return what is allowed', function () {
+      const result = spec.getUserSyncs(syncOptionsPixelOnly, responseWithUserSyncs);
+      expect(result[0].type).to.equal('image');
+      expect(result.length).to.equal(1);
+    });
+
+    it('user syncs should only load once per user', function () {
+      const result = spec.getUserSyncs(syncOptionsPixelAndIframe, responseWithUserSyncs);
+      expect(result).to.equal(undefined);
+    });
+
+    it('user syncs should return undefined when empty', function () {
+      resetUserSync();
+
+      const result = spec.getUserSyncs(syncOptionsPixelAndIframe, responseWithEmptyUserSyncs);
+      expect(result).to.equal(undefined);
+    });
+
+    it('should reset USER_SYNCED flag, allowing another sync', function () {
+      resetUserSync();
+
+      const result = spec.getUserSyncs(syncOptionsIframeOnly, responseWithUserSyncs);
+      expect(result[0].type).to.equal('iframe');
+      expect(result.length).to.equal(1);
+    });
+
+    it('should return all enabled syncs', function () {
+      resetUserSync();
+
+      const result = spec.getUserSyncs(syncOptionsPixelAndIframe, responseWithUserSyncs);
+      expect(result[0].type).to.equal('image');
+      expect(result[1].type).to.equal('iframe');
+      expect(result.length).to.equal(2);
     });
   });
 });

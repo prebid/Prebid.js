@@ -1,6 +1,6 @@
-import * as utils from '../src/utils';
 import { registerBidder } from '../src/adapters/bidderFactory';
 import { BANNER } from '../src/mediaTypes';
+import * as utils from '../src/utils';
 
 const BIDDER_CODE = 'playgroundxyz';
 const URL = 'https://ads.playground.xyz/host-config/prebid?v=2';
@@ -28,26 +28,45 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (bidRequests, bidderRequest) {
-    const topLocation = utils.getTopWindowLocation();
+    const referer = bidderRequest.refererInfo.referer;
+    const parts = referer.split('/');
+
+    let protocol, hostname;
+    if (parts.length >= 3) {
+      protocol = parts[0];
+      hostname = parts[2];
+    }
+
     const payload = {
       id: bidRequests[0].auctionId,
       site: {
-        domain: window.location.protocol + '//' + topLocation.hostname,
-        name: topLocation.hostname,
-        page: topLocation.href,
+        domain: protocol + '//' + hostname,
+        name: hostname,
+        page: referer,
       },
       device: {
         ua: navigator.userAgent,
         language: navigator.language,
         devicetype: isMobile() ? 1 : isConnectedTV() ? 3 : 2,
       },
-      imp: bidRequests.map(mapImpression)
+      imp: bidRequests.map(mapImpression),
+      Regs: { ext: {} }
     };
 
+    // GDPR
     if (bidderRequest && bidderRequest.gdprConsent) {
-      payload.user = {ext: {consent: bidderRequest.gdprConsent.consentString}};
       const gdpr = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
-      payload.regs = {ext: {gdpr: gdpr}};
+      const consentString = bidderRequest.gdprConsent.consentString;
+      utils.logInfo(`PXYZ: GDPR applies ${gdpr}`);
+      utils.logInfo(`PXYZ: GDPR consent string ${consentString}`);
+      payload.Regs.ext.gdpr = gdpr;
+      payload.User = { ext: { consent: consentString } };
+    }
+
+    // CCPA
+    if (bidderRequest && bidderRequest.uspConsent) {
+      utils.logInfo(`PXYZ: USP Consent ${bidderRequest.uspConsent}`);
+      payload.Regs.ext['us_privacy'] = bidderRequest.uspConsent;
     }
 
     return {
@@ -102,18 +121,10 @@ export const spec = {
   },
 
   getUserSyncs: function (syncOptions) {
-    if (syncOptions.iframeEnabled) {
-      return [{
-        type: 'iframe',
-        url: '//acdn.adnxs.com/ib/static/usersync/v3/async_usersync.html'
-      }];
-    }
-    if (syncOptions.pixelEnabled) {
-      return [{
-        type: 'image',
-        url: '//ib.adnxs.com/getuidnb?https://ads.playground.xyz/usersync?partner=appnexus&uid=$UID'
-      }];
-    }
+    return [{
+      type: 'image',
+      url: '//ib.adnxs.com/getuidnb?https://ads.playground.xyz/usersync?partner=appnexus&uid=$UID'
+    }];
   }
 }
 
@@ -174,7 +185,7 @@ function isMobile() {
 }
 
 function isConnectedTV() {
-  return (/(smart[-]?tv|hbbtv|appletv|googletv|hdmi|netcast\.tv|viera|nettv|roku|\bdtv\b|sonydtv|inettvbrowser|\btv\b)/i).test(global.navigator.userAgent);
+  return (/(smart[-]?tv|hbbtv|appletv|googletv|hdmi|netcast\.tv|viera|nettv|roku|\bdtv\b|sonydtv|inettvbrowser|\btv\b)/i).test(navigator.userAgent);
 }
 
 registerBidder(spec);

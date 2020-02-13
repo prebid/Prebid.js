@@ -6,6 +6,12 @@ import { deepClone } from 'src/utils';
 const URL = 'https://ads.playground.xyz/host-config/prebid?v=2';
 const GDPR_CONSENT = 'XYZ-CONSENT';
 
+const BIDDER_REQUEST = {
+  refererInfo: {
+    referer: 'https://example.com'
+  }
+};
+
 describe('playgroundxyzBidAdapter', function () {
   const adapter = newBidder(spec);
 
@@ -58,9 +64,7 @@ describe('playgroundxyzBidAdapter', function () {
     ];
 
     it('sends bid request to ENDPOINT via POST', function () {
-      let bidRequest = Object.assign([], bidRequests);
-
-      const request = spec.buildRequests(bidRequest);
+      const request = spec.buildRequests(bidRequests, BIDDER_REQUEST);
       const data = JSON.parse(request.data);
       const banner = data.imp[0].banner;
 
@@ -69,6 +73,72 @@ describe('playgroundxyzBidAdapter', function () {
       expect(banner.format).to.deep.equal([{w: 300, h: 250}, {w: 300, h: 600}]);
       expect(request.url).to.equal(URL);
       expect(request.method).to.equal('POST');
+    });
+
+    describe('CCPA', function () {
+      describe('when USP consent object is NOT present in bidder request', function () {
+        const request = spec.buildRequests(bidRequests, BIDDER_REQUEST);
+        const data = JSON.parse(request.data);
+        it('should not populate ext.gdpr or ext.consent', function () {
+          expect(data).to.not.have.property('Regs.ext.us_privacy');
+        });
+      });
+
+      describe('when USP consent object is present in bidder request', function () {
+        describe('when GDPR is applicable', function () {
+          const request = spec.buildRequests(
+            bidRequests,
+            Object.assign({}, BIDDER_REQUEST, { uspConsent: '1YYY' })
+          );
+          const data = JSON.parse(request.data);
+          it('should set Regs.ext.us_privacy with the correct value', function () {
+            expect(data.Regs.ext['us_privacy']).to.equal('1YYY');
+          });
+        });
+      });
+    });
+
+    describe('GDPR', function () {
+      describe('when no GDPR consent object is present in bidder request', function () {
+        const request = spec.buildRequests(bidRequests, BIDDER_REQUEST);
+        const data = JSON.parse(request.data);
+        it('should not populate ext.gdpr or ext.consent', function () {
+          expect(data).to.not.have.property('Regs.ext.consent');
+        });
+      });
+
+      describe('when GDPR consent object is present in bidder request', function () {
+        describe('when GDPR is applicable', function () {
+          const request = spec.buildRequests(
+            bidRequests,
+            Object.assign({}, BIDDER_REQUEST, {
+              gdprConsent: { gdprApplies: true, consentString: GDPR_CONSENT }
+            })
+          );
+          const data = JSON.parse(request.data);
+          it('should set ext.gdpr with 1', function () {
+            expect(data.Regs.ext.gdpr).to.equal(1);
+          });
+          it('should set ext.consent', function () {
+            expect(data.User.ext.consent).to.equal('XYZ-CONSENT');
+          });
+        });
+        describe('when GDPR is NOT applicable', function () {
+          const request = spec.buildRequests(
+            bidRequests,
+            Object.assign({}, BIDDER_REQUEST, {
+              gdprConsent: { gdprApplies: false, consentString: GDPR_CONSENT }
+            })
+          );
+          const data = JSON.parse(request.data);
+          it('should set ext.gdpr to 0', function () {
+            expect(data.Regs.ext.gdpr).to.equal(0);
+          });
+          it('should populate ext.consent', function () {
+            expect(data.User.ext.consent).to.equal('XYZ-CONSENT');
+          });
+        });
+      });
     });
   })
 
@@ -135,51 +205,31 @@ describe('playgroundxyzBidAdapter', function () {
     });
   });
 
-  describe('buildRequests', function () {
-    let bidRequests = [
-      {
-        'bidder': 'playgroundxyz',
-        'params': {
-          'publisherId': 'PUB_FAKE'
-        },
-        'adUnitCode': 'adunit-code',
-        'sizes': [[300, 250]],
-        'bidId': '321db112312as',
-        'bidderRequestId': '23edabce2731sd6',
-        'auctionId': '12as040790a475'
+  describe('getUserSyncs', function () {
+    const syncUrl = '//ib.adnxs.com/getuidnb?https://ads.playground.xyz/usersync?partner=appnexus&uid=$UID';
+
+    describe('when iframeEnabled is true', function () {
+      const syncOptions = {
+        'iframeEnabled': true
       }
-    ];
-
-    it('should not populate GDPR', function () {
-      let bidRequest = Object.assign([], bidRequests);
-      const request = spec.buildRequests(bidRequest);
-      let data = JSON.parse(request.data);
-      expect(data).to.not.have.property('user');
-      expect(data).to.not.have.property('regs');
+      it('should return one image type user sync pixel', function () {
+        let result = spec.getUserSyncs(syncOptions);
+        expect(result.length).to.equal(1);
+        expect(result[0].type).to.equal('image')
+        expect(result[0].url).to.equal(syncUrl);
+      });
     });
 
-    it('should populate GDPR and consent string when consetString is presented but not gdpApplies', function () {
-      let bidRequest = Object.assign([], bidRequests);
-      const request = spec.buildRequests(bidRequest, {gdprConsent: {consentString: GDPR_CONSENT}});
-      let data = JSON.parse(request.data);
-      expect(data.regs.ext.gdpr).to.equal(0);
-      expect(data.user.ext.consent).to.equal('XYZ-CONSENT');
+    describe('when iframeEnabled is false', function () {
+      const syncOptions = {
+        'iframeEnabled': false
+      }
+      it('should return one image type user sync pixel', function () {
+        let result = spec.getUserSyncs(syncOptions);
+        expect(result.length).to.equal(1);
+        expect(result[0].type).to.equal('image')
+        expect(result[0].url).to.equal(syncUrl);
+      });
     });
-
-    it('should populate GDPR and consent string when gdpr is set to true', function () {
-      let bidRequest = Object.assign([], bidRequests);
-      const request = spec.buildRequests(bidRequest, {gdprConsent: {gdprApplies: true, consentString: GDPR_CONSENT}});
-      let data = JSON.parse(request.data);
-      expect(data.regs.ext.gdpr).to.equal(1);
-      expect(data.user.ext.consent).to.equal('XYZ-CONSENT');
-    });
-
-    it('should populate GDPR and consent string when gdpr is set to false', function () {
-      let bidRequest = Object.assign([], bidRequests);
-      const request = spec.buildRequests(bidRequest, {gdprConsent: {gdprApplies: false, consentString: GDPR_CONSENT}});
-      let data = JSON.parse(request.data);
-      expect(data.regs.ext.gdpr).to.equal(0);
-      expect(data.user.ext.consent).to.equal('XYZ-CONSENT');
-    });
-  });
+  })
 });

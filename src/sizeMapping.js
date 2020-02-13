@@ -88,9 +88,9 @@ export function resolveStatus({labels = [], labelAll = false, activeLabels = []}
 
   let results = {
     active: (
-      allMediaTypes.length > 1 || (allMediaTypes.length === 1 && allMediaTypes[0] !== 'banner')
+      allMediaTypes.every(type => type !== 'banner')
     ) || (
-      allMediaTypes[0] === 'banner' && deepAccess(mediaTypes, 'banner.sizes.length') > 0 && (
+      allMediaTypes.some(type => type === 'banner') && deepAccess(mediaTypes, 'banner.sizes.length') > 0 && (
         labels.length === 0 || (
           (!labelAll && (
             labels.some(label => maps.labels[label]) ||
@@ -125,12 +125,18 @@ function evaluateSizeConfig(configs) {
     ) {
       let ruleMatch = false;
 
-      try {
-        ruleMatch = getWindowTop().matchMedia(config.mediaQuery).matches;
-      } catch (e) {
-        logWarn('Unfriendly iFrame blocks sizeConfig from being correctly evaluated');
+      // TODO: (Prebid - 4.0) Remove empty mediaQuery string check. Disallow empty mediaQuery in sizeConfig.
+      // Refer: https://github.com/prebid/Prebid.js/pull/4691, https://github.com/prebid/Prebid.js/issues/4810 for more details.
+      if (config.mediaQuery === '') {
+        ruleMatch = true;
+      } else {
+        try {
+          ruleMatch = getWindowTop().matchMedia(config.mediaQuery).matches;
+        } catch (e) {
+          logWarn('Unfriendly iFrame blocks sizeConfig from being correctly evaluated');
 
-        ruleMatch = matchMedia(config.mediaQuery).matches;
+          ruleMatch = matchMedia(config.mediaQuery).matches;
+        }
       }
 
       if (ruleMatch) {

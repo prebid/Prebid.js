@@ -1,10 +1,10 @@
-import adapter from 'src/AnalyticsAdapter';
-import CONSTANTS from 'src/constants.json';
-import adapterManager from 'src/adapterManager';
-import * as utils from 'src/utils';
-import {ajax} from 'src/ajax';
-import {getGlobal} from 'src/prebidGlobal';
-import { config } from 'src/config';
+import adapter from '../src/AnalyticsAdapter';
+import CONSTANTS from '../src/constants.json';
+import adapterManager from '../src/adapterManager';
+import * as utils from '../src/utils';
+import {ajax} from '../src/ajax';
+import {getGlobal} from '../src/prebidGlobal';
+import { config } from '../src/config';
 
 const DEFAULT_PROTOCOL = 'https';
 const DEFAULT_HOST = 'pa.deployads.com';

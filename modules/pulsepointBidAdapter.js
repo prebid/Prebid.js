@@ -1,6 +1,7 @@
 /* eslint dot-notation:0, quote-props:0 */
 import * as utils from '../src/utils';
 import { registerBidder } from '../src/adapters/bidderFactory';
+import { Renderer } from '../src/Renderer';
 
 const NATIVE_DEFAULTS = {
   TITLE_LEN: 100,
@@ -13,13 +14,14 @@ const NATIVE_DEFAULTS = {
 const DEFAULT_BID_TTL = 20;
 const DEFAULT_CURRENCY = 'USD';
 const DEFAULT_NET_REVENUE = true;
+const KNOWN_PARAMS = ['cp', 'ct', 'cf', 'video', 'battr', 'bcat', 'badv', 'bidfloor'];
 
 /**
  * PulsePoint Bid Adapter.
  * Contact: ExchangeTeam@pulsepoint.com
  *
  * Aliases - pulseLite and pulsepointLite are supported for backwards compatibility.
- * Formats - Display/Native/Outstream formats supported.
+ * Formats - Display/Native/Video formats supported.
  *
  */
 export const spec = {
@@ -28,7 +30,7 @@ export const spec = {
 
   aliases: ['pulseLite', 'pulsepointLite'],
 
-  supportedMediaTypes: ['banner', 'native'],
+  supportedMediaTypes: ['banner', 'native', 'video'],
 
   isBidRequestValid: bid => (
     !!(bid && bid.params && bid.params.cp && bid.params.ct)
@@ -38,15 +40,20 @@ export const spec = {
     const request = {
       id: bidRequests[0].bidderRequestId,
       imp: bidRequests.map(slot => impression(slot)),
-      site: site(bidRequests),
+      site: site(bidRequests, bidderRequest),
       app: app(bidRequests),
       device: device(),
+      bcat: bidRequests[0].params.bcat,
+      badv: bidRequests[0].params.badv,
+      user: user(bidRequests[0], bidderRequest),
+      regs: regs(bidderRequest),
+      source: source(bidRequests[0].schain),
     };
-    applyGdpr(bidderRequest, request);
     return {
       method: 'POST',
-      url: '//bid.contextweb.com/header/ortb',
-      data: JSON.stringify(request),
+      url: 'https://bid.contextweb.com/header/ortb?src=prebid',
+      data: request,
+      bidderRequest
     };
   },
 
@@ -58,12 +65,12 @@ export const spec = {
     if (syncOptions.iframeEnabled) {
       return [{
         type: 'iframe',
-        url: '//bh.contextweb.com/visitormatch'
+        url: 'https://bh.contextweb.com/visitormatch'
       }];
     } else if (syncOptions.pixelEnabled) {
       return [{
         type: 'image',
-        url: '//bh.contextweb.com/visitormatch/prebid'
+        url: 'https://bh.contextweb.com/visitormatch/prebid'
       }];
     }
   },
@@ -79,12 +86,13 @@ export const spec = {
 /**
  * Callback for bids, after the call to PulsePoint completes.
  */
-function bidResponseAvailable(bidRequest, bidResponse) {
+function bidResponseAvailable(request, response) {
   const idToImpMap = {};
   const idToBidMap = {};
-  bidResponse = bidResponse.body
+  const idToSlotConfig = {};
+  const bidResponse = response.body
   // extract the request bids and the response bids, keyed by impr-id
-  const ortbRequest = parse(bidRequest.data);
+  const ortbRequest = request.data;
   ortbRequest.imp.forEach(imp => {
     idToImpMap[imp.id] = imp;
   });
@@ -92,6 +100,11 @@ function bidResponseAvailable(bidRequest, bidResponse) {
     bidResponse.seatbid.forEach(seatBid => seatBid.bid.forEach(bid => {
       idToBidMap[bid.impid] = bid;
     }));
+  }
+  if (request.bidderRequest && request.bidderRequest.bids) {
+    request.bidderRequest.bids.forEach(bid => {
+      idToSlotConfig[bid.bidId] = bid;
+    });
   }
   const bids = [];
   Object.keys(idToImpMap).forEach(id => {
@@ -102,31 +115,31 @@ function bidResponseAvailable(bidRequest, bidResponse) {
         creative_id: idToBidMap[id].crid,
         creativeId: idToBidMap[id].crid,
         adId: id,
-        ttl: DEFAULT_BID_TTL,
+        ttl: idToBidMap[id].exp || DEFAULT_BID_TTL,
         netRevenue: DEFAULT_NET_REVENUE,
-        currency: DEFAULT_CURRENCY
+        currency: bidResponse.cur || DEFAULT_CURRENCY
       };
       if (idToImpMap[id]['native']) {
         bid['native'] = nativeResponse(idToImpMap[id], idToBidMap[id]);
         bid.mediaType = 'native';
+      } else if (idToImpMap[id].video) {
+        // for outstream, a renderer is specified
+        if (idToSlotConfig[id] && utils.deepAccess(idToSlotConfig[id], 'mediaTypes.video.context') === 'outstream') {
+          bid.renderer = outstreamRenderer(utils.deepAccess(idToSlotConfig[id], 'renderer.options'), utils.deepAccess(idToBidMap[id], 'ext.outstream'));
+        }
+        bid.vastXml = idToBidMap[id].adm;
+        bid.mediaType = 'video';
+        bid.width = idToBidMap[id].w;
+        bid.height = idToBidMap[id].h;
       } else {
         bid.ad = idToBidMap[id].adm;
         bid.width = idToImpMap[id].banner.w;
         bid.height = idToImpMap[id].banner.h;
       }
-      applyExt(bid, idToBidMap[id])
       bids.push(bid);
     }
   });
   return bids;
-}
-
-function applyExt(bid, ortbBid) {
-  if (ortbBid && ortbBid.ext) {
-    bid.ttl = ortbBid.ext.ttl || bid.ttl;
-    bid.currency = ortbBid.ext.currency || bid.currency;
-    bid.netRevenue = ortbBid.ext.netRevenue != null ? ortbBid.ext.netRevenue : bid.netRevenue;
-  }
 }
 
 /**
@@ -138,6 +151,9 @@ function impression(slot) {
     banner: banner(slot),
     'native': nativeImpression(slot),
     tagid: slot.params.ct.toString(),
+    video: video(slot),
+    bidfloor: slot.params.bidfloor,
+    ext: ext(slot),
   };
 }
 
@@ -146,10 +162,64 @@ function impression(slot) {
  */
 function banner(slot) {
   const size = adSize(slot);
-  return slot.nativeParams ? null : {
+  return (slot.nativeParams || slot.params.video) ? null : {
     w: size[0],
     h: size[1],
+    battr: slot.params.battr,
   };
+}
+
+/**
+ * Produces an OpenRTB Video object for the slot given
+ */
+function video(slot) {
+  if (slot.params.video) {
+    return Object.assign({}, slot.params.video, {battr: slot.params.battr});
+  }
+  return null;
+}
+
+/**
+ * Unknown params are captured and sent on ext
+ */
+function ext(slot) {
+  const ext = {};
+  const knownParamsMap = {};
+  KNOWN_PARAMS.forEach(value => knownParamsMap[value] = 1);
+  Object.keys(slot.params).forEach(key => {
+    if (!knownParamsMap[key]) {
+      ext[key] = slot.params[key];
+    }
+  });
+  return Object.keys(ext).length > 0 ? { prebid: ext } : null;
+}
+
+/**
+ * Sets up the renderer on the bid, for outstream bid responses.
+ */
+function outstreamRenderer(rendererOptions, outstreamExtOptions) {
+  const renderer = Renderer.install({
+    url: outstreamExtOptions.rendererUrl,
+    config: {
+      defaultOptions: outstreamExtOptions.config,
+      rendererOptions,
+      type: outstreamExtOptions.type
+    },
+    loaded: false,
+  });
+  renderer.setRender((bid) => {
+    bid.renderer.push(() => {
+      const config = bid.renderer.getConfig();
+      new window.PulsePointOutstreamRenderer().render({
+        adUnitCode: bid.adUnitCode,
+        vastXml: bid.vastXml,
+        type: config.type,
+        defaultOptions: config.defaultOptions,
+        rendererOptions
+      });
+    });
+  });
+  return renderer;
 }
 
 /**
@@ -166,6 +236,7 @@ function nativeImpression(slot) {
     return {
       request: JSON.stringify({ assets }),
       ver: '1.1',
+      battr: slot.params.battr,
     };
   }
   return null;
@@ -228,16 +299,16 @@ function dataAsset(id, params, type, defaultLen) {
 /**
  * Produces an OpenRTB site object.
  */
-function site(bidderRequest) {
-  const pubId = bidderRequest && bidderRequest.length > 0 ? bidderRequest[0].params.cp : '0';
-  const appParams = bidderRequest[0].params.app;
+function site(bidRequests, bidderRequest) {
+  const pubId = bidRequests && bidRequests.length > 0 ? bidRequests[0].params.cp : '0';
+  const appParams = bidRequests[0].params.app;
   if (!appParams) {
     return {
       publisher: {
         id: pubId.toString(),
       },
       ref: referrer(),
-      page: utils.getTopWindowLocation().href,
+      page: bidderRequest && bidderRequest.refererInfo ? bidderRequest.refererInfo.referer : '',
     }
   }
   return null;
@@ -312,13 +383,95 @@ function adSize(slot) {
 }
 
 /**
- * Applies GDPR parameters to request.
+ * Handles the user level attributes and produces
+ * an openrtb User object.
  */
-function applyGdpr(bidderRequest, ortbRequest) {
-  if (bidderRequest && bidderRequest.gdprConsent) {
-    ortbRequest.regs = { ext: { gdpr: bidderRequest.gdprConsent.gdprApplies ? 1 : 0 } };
-    ortbRequest.user = { ext: { consent: bidderRequest.gdprConsent.consentString } };
+function user(bidRequest, bidderRequest) {
+  var ext = {};
+  if (bidderRequest) {
+    if (bidderRequest.gdprConsent) {
+      ext.consent = bidderRequest.gdprConsent.consentString;
+    }
   }
+  if (bidRequest) {
+    if (bidRequest.userId) {
+      ext.eids = [];
+      addExternalUserId(ext.eids, bidRequest.userId.pubcid, 'pubcommon');
+      addExternalUserId(ext.eids, bidRequest.userId.britepoolid, 'britepool.com');
+      addExternalUserId(ext.eids, bidRequest.userId.criteoId, 'criteo');
+      addExternalUserId(ext.eids, bidRequest.userId.idl_env, 'identityLink');
+      addExternalUserId(ext.eids, bidRequest.userId.id5id, 'id5-sync.com');
+      addExternalUserId(ext.eids, bidRequest.userId.parrableid, 'parrable.com');
+      // liveintent
+      if (bidRequest.userId.lipb && bidRequest.userId.lipb.lipbid) {
+        addExternalUserId(ext.eids, bidRequest.userId.lipb.lipbid, 'liveintent.com');
+      }
+      // TTD
+      addExternalUserId(ext.eids, bidRequest.userId.tdid, 'adserver.org', {
+        rtiPartner: 'TDID'
+      });
+      // digitrust
+      const digitrustResponse = bidRequest.userId.digitrustid;
+      if (digitrustResponse && digitrustResponse.data) {
+        var digitrust = {};
+        if (digitrustResponse.data.id) {
+          digitrust.id = digitrustResponse.data.id;
+        }
+        if (digitrustResponse.data.keyv) {
+          digitrust.keyv = digitrustResponse.data.keyv;
+        }
+        ext.digitrust = digitrust;
+      }
+    }
+  }
+  return { ext };
+}
+
+/**
+ * Produces external userid object in ortb 3.0 model.
+ */
+function addExternalUserId(eids, id, source, uidExt) {
+  if (id) {
+    var uid = { id };
+    if (uidExt) {
+      uid.ext = uidExt;
+    }
+    eids.push({
+      source,
+      uids: [ uid ]
+    });
+  }
+}
+
+/**
+ * Produces the regulations ortb object
+ */
+function regs(bidderRequest) {
+  if (bidderRequest.gdprConsent || bidderRequest.uspConsent) {
+    var ext = {};
+    // GDPR applies attribute (actual consent value is in user object)
+    if (bidderRequest.gdprConsent) {
+      ext.gdpr = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
+    }
+    // CCPA
+    if (bidderRequest.uspConsent) {
+      ext.us_privacy = bidderRequest.uspConsent;
+    }
+    return { ext };
+  }
+  return null;
+}
+
+/**
+ * Creates source object with supply chain
+ */
+function source(schain) {
+  if (schain) {
+    return {
+      ext: { schain }
+    };
+  }
+  return null;
 }
 
 /**
