@@ -681,11 +681,7 @@ describe('AppNexusAdapter', function () {
     it('should populate tpids array when userId is available', function () {
       const bidRequest = Object.assign({}, bidRequests[0], {
         userId: {
-          criteortus: {
-            appnexus: {
-              userid: 'sample-userid'
-            }
-          }
+          criteoId: 'sample-userid'
         }
       });
 
