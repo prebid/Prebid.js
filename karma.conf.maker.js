@@ -92,7 +92,8 @@ function setBrowsers(karmaConf, browserstack) {
       karmaConf.browserStack.startTunnel = false;
       karmaConf.browserStack.tunnelIdentifier = process.env.BROWSERSTACK_LOCAL_IDENTIFIER;
     }
-    karmaConf.customLaunchers = require('./browsers.json')
+    karmaConf.customLaunchers = require('./browsers.json');
+    console.log('karmaConf.customLaunchers', karmaConf.customLaunchers);
     karmaConf.browsers = Object.keys(karmaConf.customLaunchers);
   } else {
     var isDocker = require('is-docker')();
@@ -165,10 +166,10 @@ module.exports = function(codeCoverage, browserstack, watchMode, file) {
     // Continuous Integration mode
     // if true, Karma captures browsers, runs the tests and exits
     singleRun: !watchMode,
-    browserDisconnectTimeout: 10000, // default 2000
-    browserDisconnectTolerance: 1, // default 0
-    browserNoActivityTimeout: 4 * 60 * 1000, // default 10000
-    captureTimeout: 4 * 60 * 1000, // default 60000
+    browserDisconnectTimeout: 30000, // default 2000
+    browserDisconnectTolerance: 0, // default 0
+    browserNoActivityTimeout: 40000, // default 10000
+    captureTimeout: 120000, // default 60000
 
     plugins: plugins
   }
