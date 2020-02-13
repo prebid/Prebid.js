@@ -168,11 +168,22 @@ function mandatoryParamCheck(paramName, paramValue) {
 
 function cookieSyncCallBack(response, XMLReqObj) {
   response = JSON.parse(response);
-  let serverResponse;
+  // var userSyncConfig = config.getConfig('userSync.filterSettings');
   let syncOptions = {
-    iframeEnabled: config.getConfig('userSync.iframeEnabled'),
-    pixelEnabled: config.getConfig('userSync.pixelEnabled')
-  };
+    iframeEnabled: true,
+    pixelEnabled: true
+  }
+  let serverResponse;
+  // By default we should sync all bidders irrespective of iframe of image type
+  // as OpenWrap doesn't have any feature to disable iframe of image based syncups
+  // TODO : In future if we require to have it condition uncomment below code
+  // and add condition to check partner if it needs to be synced.
+  // if (userSyncConfig) {
+  //   syncOptions = {
+  //     iframeEnabled: config.getConfig('userSync.filterSettings.iframe') ? config.getConfig('userSync.filterSettings.iframe.filter') == 'include' : false,
+  //     pixelEnabled: config.getConfig('userSync.filterSettings.image') ? (config.getConfig('userSync.filterSettings.image.filter') == 'include') : true,
+  //   };
+  // }
   // Todo: Can fire multiple usersync calls if multiple responses for same adsize found
   if (response.hasOwnProperty('bidder_status')) {
     serverResponse = response.bidder_status;
