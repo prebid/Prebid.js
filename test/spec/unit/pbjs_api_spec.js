@@ -79,7 +79,8 @@ var Slot = function Slot(elementId, pathId) {
     },
 
     clearTargeting: function clearTargeting() {
-      return googletag.pubads().getSlots();
+      this.targeting = {};
+      return this;
     }
   };
   slot.spySetTargeting = sinon.spy(slot, 'setTargeting');
@@ -121,11 +122,15 @@ window.googletag = {
       },
 
       setTargeting: function(key, arrayOfValues) {
-        self._targeting[key] = arrayOfValues;
+        self._targeting[key] = Array.isArray(arrayOfValues) ? arrayOfValues : [arrayOfValues];
       },
 
-      getTargeting: function() {
-        return self._targeting;
+      getTargeting: function(key) {
+        return self._targeting[key] || [];
+      },
+
+      getTargetingKeys: function() {
+        return Object.getOwnPropertyNames(self._targeting);
       },
 
       clearTargeting: function() {
@@ -856,17 +861,31 @@ describe('Unit: Prebid Module', function () {
     it('should set googletag targeting keys after calling setTargetingForGPTAsync function', function () {
       var slots = createSlotArrayScenario2();
       window.googletag.pubads().setSlots(slots);
-      $$PREBID_GLOBAL$$.setTargetingForGPTAsync();
+      $$PREBID_GLOBAL$$.setTargetingForGPTAsync([config.adUnitCodes[0]]);
 
-      var targeting = [];
-      slots[1].getTargeting().map(function (value) {
-        var temp = [];
-        temp.push(Object.keys(value).toString());
-        temp.push(value[Object.keys(value)]);
-        targeting.push(temp);
+      // we need to transform the spySetTargeting into something that looks like
+      // googletag's targeting structure
+      // googletag setTargeting will override old value if invoked with same key
+
+      const targeting = [];
+      slots[1].getTargetingKeys().map(function (key) {
+        const value = slots[1].getTargeting(key);
+        targeting.push([key, value]);
       });
 
-      assert.deepEqual(slots[1].spySetTargeting.args, targeting, 'google tag targeting options not matching');
+      var invokedTargetingMap = {};
+      slots[1].spySetTargeting.args.map(function (entry) {
+        invokedTargetingMap[entry[0]] = entry[1];
+      });
+
+      var invokedTargeting = [];
+
+      console.log(invokedTargetingMap);
+      Object.getOwnPropertyNames(invokedTargetingMap).map(function (key) {
+        const value = Array.isArray(invokedTargetingMap[key]) ? invokedTargetingMap[key] : [invokedTargetingMap[key]]; // values are always returned as array in googletag
+        invokedTargeting.push([key, value]);
+      });
+      assert.deepEqual(targeting, invokedTargeting, 'google tag targeting options not matching');
     });
 
     it('should set googletag targeting keys to specific slot with customSlotMatching', function () {
