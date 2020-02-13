@@ -93,7 +93,6 @@ describe('AdGlare Adapter Tests', function () {
           requestURL = requests[0].url;
 
         expect(requestURL).to.have.string('https://try.engine.adglare.net/?475579334');
-        expect(requestURL).to.have.string('&pbjs');
       });
     });
 
