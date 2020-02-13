@@ -93,7 +93,6 @@ function setBrowsers(karmaConf, browserstack) {
       karmaConf.browserStack.tunnelIdentifier = process.env.BROWSERSTACK_LOCAL_IDENTIFIER;
     }
     karmaConf.customLaunchers = require('./browsers.json');
-    console.log('karmaConf.customLaunchers', karmaConf.customLaunchers);
     karmaConf.browsers = Object.keys(karmaConf.customLaunchers);
   } else {
     var isDocker = require('is-docker')();
