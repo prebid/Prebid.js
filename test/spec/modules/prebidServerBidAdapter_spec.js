@@ -1341,10 +1341,10 @@ describe('S2S Adapter', function () {
       };
       const allowedBidders = [ 'rubicon', 'appnexus' ];
 
-      const expected = [{
-        bidders: allowedBidders,
+      const expected = allowedBidders.map(bidder => ({
+        bidders: [ bidder ],
         config: { fpd: { site: context, user } }
-      }];
+      }));
 
       config.setConfig({ fpd: { context: commonContext, user: commonUser } });
       config.setBidderConfig({ bidders: allowedBidders, config: { fpd: { context, user } } });

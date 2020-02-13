@@ -300,16 +300,10 @@ function addBidderFirstPartyDataToRequest(request) {
         fpd.user = currBidderConfig.fpd.user;
       }
 
-      const matchingFpd = find(acc, addedFpd =>
-        JSON.stringify(addedFpd.config.fpd) === JSON.stringify(fpd));
-      if (matchingFpd) {
-        matchingFpd.bidders.push(bidder);
-      } else {
-        acc.push({
-          bidders: [ bidder ],
-          config: { fpd }
-        });
-      }
+      acc.push({
+        bidders: [ bidder ],
+        config: { fpd }
+      });
     }
     return acc;
   }, []);
