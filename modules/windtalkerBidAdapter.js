@@ -272,7 +272,7 @@ function parse(rawResponse) {
       return JSON.parse(rawResponse);
     }
   } catch (ex) {
-    logError('windtalker.parse', 'ERROR', ex);
+    utils.logError('windtalker.parse', 'ERROR', ex);
   }
   return null;
 }
