@@ -6,7 +6,7 @@ import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes';
 const BIDDER_CODE = 'improvedigital';
 
 export const spec = {
-  version: '6.0.1',
+  version: '6.1.0',
   code: BIDDER_CODE,
   aliases: ['id'],
   supportedMediaTypes: [BANNER, NATIVE, VIDEO],
@@ -41,6 +41,10 @@ export const spec = {
 
     if (bidderRequest && bidderRequest.gdprConsent && bidderRequest.gdprConsent.consentString) {
       requestParameters.gdpr = bidderRequest.gdprConsent.consentString;
+    }
+
+    if (bidderRequest && bidderRequest.uspConsent) {
+      requestParameters.usPrivacy = bidderRequest.uspConsent;
     }
 
     if (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer) {
@@ -343,7 +347,7 @@ export function ImproveDigitalAdServerJSClient(endPoint) {
     AD_SERVER_BASE_URL: 'ice.360yield.com',
     END_POINT: endPoint || 'hb',
     AD_SERVER_URL_PARAM: 'jsonp=',
-    CLIENT_VERSION: 'JS-6.2.0',
+    CLIENT_VERSION: 'JS-6.3.0',
     MAX_URL_LENGTH: 2083,
     ERROR_CODES: {
       MISSING_PLACEMENT_PARAMS: 2,
@@ -496,6 +500,9 @@ export function ImproveDigitalAdServerJSClient(endPoint) {
     }
     if (requestParameters.gdpr || requestParameters.gdpr === 0) {
       impressionBidRequestObject.gdpr = requestParameters.gdpr;
+    }
+    if (requestParameters.usPrivacy) {
+      impressionBidRequestObject.us_privacy = requestParameters.usPrivacy;
     }
     if (requestParameters.schain) {
       impressionBidRequestObject.schain = requestParameters.schain;
