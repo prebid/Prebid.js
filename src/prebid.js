@@ -93,6 +93,8 @@ export const checkAdUnitSetup = hook('sync', function (adUnits) {
       const bannerSizes = validateSizes(mediaTypes.banner.sizes);
       if (bannerSizes.length > 0) {
         mediaTypes.banner.sizes = bannerSizes;
+        // TODO eventually remove this internal copy once we're ready to deprecate bidders from reading this adUnit.sizes property
+        adUnit.sizes = bannerSizes;
       } else {
         utils.logError('Detected a mediaTypes.banner object without a proper sizes field.  Please ensure the sizes are listed like: [[300, 250], ...].  Removing invalid mediaTypes.banner object from request.');
         delete adUnit.mediaTypes.banner;
@@ -105,7 +107,7 @@ export const checkAdUnitSetup = hook('sync', function (adUnits) {
         let tarPlayerSizeLen = (typeof video.playerSize[0] === 'number') ? 2 : 1;
         const videoSizes = validateSizes(video.playerSize, tarPlayerSizeLen);
         if (videoSizes.length > 0) {
-          video.playerSize = videoSizes;
+          adUnit.sizes = video.playerSize = videoSizes;
         } else {
           utils.logError('Detected incorrect configuration of mediaTypes.video.playerSize.  Please specify only one set of dimensions in a format like: [[640, 480]]. Removing invalid mediaTypes.video.playerSize property from request.');
           delete adUnit.mediaTypes.video.playerSize;
