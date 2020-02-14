@@ -47,27 +47,40 @@ describe('LiveIntentId', function() {
     liveIntentIdSubmodule.getId({
       ...defaultConfigParams,
       ...{
-        appId: 'a-0001',
         identifiersToResolve: ['id1', 'id2'],
+        providedIdentifierName: 'cookie_name',
         url: 'https://dummy.liveintent.com',
+        ajaxTimeout: 999,
         storage: {
           expires: 3
+        },
+        liCollectConfig: {
+          fpiStorageStrategy: 'ls',
+          fpiExpirationDays: 729,
+          appId: 'a-0001',
+          collectorUrl: 'https://collector.liveintent.com'
         }
       }
     });
 
     expect(lcStub.calledOnce).to.be.true;
-    assert.deepEqual(lcStub.getCall(0).args[0], {
+    const expected = {
       wrapperName: 'prebid',
       appId: 'a-0001',
       identifiersToResolve: ['id1', 'id2'],
+      providedIdentifierName: 'cookie_name',
+      collectorUrl: 'https://collector.liveintent.com',
+      storageStrategy: 'ls',
+      expirationDays: 729,
       identityResolutionConfig: {
         source: 'prebid',
         publisherId: PUBLISHER_ID,
         url: 'https://dummy.liveintent.com',
-        expirationDays: 3
+        expirationDays: 3,
+        ajaxTimeout: 999
       }
-    });
+    };
+    assert.deepEqual(lcStub.getCall(0).args[0], expected);
   });
 
   it('should initialize LiveConnect with a source if it is passed in params when getId', function() {
@@ -112,11 +125,18 @@ describe('LiveIntentId', function() {
     liveIntentIdSubmodule.decode({}, {
       ...defaultConfigParams,
       ...{
-        appId: 'a-0001',
         identifiersToResolve: ['id1', 'id2'],
+        providedIdentifierName: 'cookie_name',
         url: 'https://dummy.liveintent.com',
+        ajaxTimeout: 999,
         storage: {
           expires: 3
+        },
+        liCollectConfig: {
+          fpiStorageStrategy: 'ls',
+          fpiExpirationDays: 729,
+          appId: 'a-0001',
+          collectorUrl: 'https://collector.liveintent.com'
         }
       }
     });
@@ -126,11 +146,16 @@ describe('LiveIntentId', function() {
       wrapperName: 'prebid',
       appId: 'a-0001',
       identifiersToResolve: ['id1', 'id2'],
+      providedIdentifierName: 'cookie_name',
+      collectorUrl: 'https://collector.liveintent.com',
+      storageStrategy: 'ls',
+      expirationDays: 729,
       identityResolutionConfig: {
         source: 'prebid',
         publisherId: PUBLISHER_ID,
         url: 'https://dummy.liveintent.com',
-        expirationDays: 3
+        expirationDays: 3,
+        ajaxTimeout: 999
       }
     });
   });

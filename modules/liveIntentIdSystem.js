@@ -22,6 +22,25 @@ export function reset() {
   liveConnect = null;
 }
 
+function parseLiveIntentCollectorConfig(collectConfig) {
+  const config = {};
+  if (collectConfig) {
+    if (collectConfig.appId) {
+      config.appId = collectConfig.appId;
+    }
+    if (collectConfig.fpiStorageStrategy) {
+      config.storageStrategy = collectConfig.fpiStorageStrategy;
+    }
+    if (collectConfig.fpiExpirationDays) {
+      config.expirationDays = collectConfig.fpiExpirationDays;
+    }
+    if (collectConfig.collectorUrl) {
+      config.collectorUrl = collectConfig.collectorUrl;
+    }
+  }
+  return config;
+}
+
 function initializeLiveConnect(configParams) {
   if (liveConnect) {
     return liveConnect;
@@ -46,18 +65,20 @@ function initializeLiveConnect(configParams) {
   if (configParams.storage && configParams.storage.expires) {
     identityResolutionConfig.expirationDays = configParams.storage.expires;
   }
+  if (configParams.ajaxTimeout) {
+    identityResolutionConfig.ajaxTimeout = configParams.ajaxTimeout;
+  }
 
-  const liveConnectConfig = {
-    identifiersToResolve: configParams.identifiersToResolve || [],
-    wrapperName: 'prebid',
-    identityResolutionConfig: identityResolutionConfig
-  };
+  const liveConnectConfig = parseLiveIntentCollectorConfig(configParams.liCollectConfig);
+  liveConnectConfig.wrapperName = 'prebid';
+  liveConnectConfig.identityResolutionConfig = identityResolutionConfig;
+  liveConnectConfig.identifiersToResolve = configParams.identifiersToResolve || [];
+  if (configParams.providedIdentifierName) {
+    liveConnectConfig.providedIdentifierName = configParams.providedIdentifierName;
+  }
   const usPrivacyString = uspDataHandler.getConsentData();
   if (usPrivacyString) {
     liveConnectConfig.usPrivacyString = usPrivacyString;
-  }
-  if (configParams.appId) {
-    liveConnectConfig.appId = configParams.appId;
   }
 
   liveConnect = LiveConnect(liveConnectConfig);
