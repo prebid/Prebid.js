@@ -58,7 +58,9 @@ export const customIdSubmodule = {
           dta = this.getDataFromCookieName(data.cookieName);
         }
       } catch (e) {}
-      return dta;
+      return {
+        id: dta
+      }
     }
     utils.logError('User ID - FirstPartyId submodule requires either data or cookie name to be defined');
   }
