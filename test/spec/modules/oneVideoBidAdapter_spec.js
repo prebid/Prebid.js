@@ -401,6 +401,8 @@ describe('OneVideoBidAdapter', function () {
       expect(data.imp[0].video.h).to.equal(height);
       expect(data.imp[0].video.pos).to.equal(position);
       expect(data.imp[0].video.mimes).to.equal(bidRequest.params.video.mimes);
+      expect(data.imp[0].video.protocols).to.equal(bidRequest.params.video.protocols);
+      expect(data.imp[0].video.linearity).to.equal(1);
     });
     describe('getUserSyncs', function () {
       const GDPR_CONSENT_STRING = 'GDPR_CONSENT_STRING';
