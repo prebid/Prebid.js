@@ -8,7 +8,7 @@ export const spec = {
   code: BIDDER_CODE,
   isBidRequestValid: function (bid) {
     let p = bid.params;
-    if (p.domain && p.zID && !isNaN(p.zID) && p.type == 'banner') return true;
+    if (typeof p.domain === 'string' && !!p.domain.length && p.zID && !isNaN(p.zID) && p.type == 'banner') return true;
     return false;
   },
   buildRequests: function (validBidRequests, bidderRequest) {
