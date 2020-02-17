@@ -1,20 +1,12 @@
 import * as utils from '../src/utils';
 import { registerBidder } from '../src/adapters/bidderFactory';
 import { BANNER } from '../src/mediaTypes';
-import { loadExternalScript } from '../src/adloader';
-import JSEncrypt from 'jsencrypt/bin/jsencrypt';
-import sha256 from 'crypto-js/sha256';
 
 import find from 'core-js/library/fn/array/find';
 
 const BIDDER_CODE = 'nextroll';
 const BIDDER_ENDPOINT = 'https://d.adroll.com/bid/prebid/';
-const PUBTAG_URL = 'https://s.adroll.com/prebid/pubtag.min.js';
-const MAX_PUBTAG_AGE_IN_DAYS = 3;
-const ADAPTER_VERSION = 3;
-
-const PUBTAG_STORAGE_KEY = 'nextroll_fast_bid';
-const DATE_SUFFIX = '_set_date';
+const ADAPTER_VERSION = 4;
 
 export const PUBTAG_PUBKEY = `-----BEGIN PUBLIC KEY-----
 MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC/TZ6Gpm7gYg0j6o8LK+sKfYsl
@@ -44,19 +36,40 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
-    if (!pubtagAvailable()) {
-      tryGetPubtag();
+    let topLocation = _parseUrl(utils.deepAccess(bidderRequest, 'refererInfo.referer'));
+    let consent = hasCCPAConsent(bidderRequest);
+    return validBidRequests.map((bidRequest, index) => {
+      return {
+        method: 'POST',
+        options: {
+          withCredentials: consent,
+        },
+        url: BIDDER_ENDPOINT,
+        data: {
+          id: bidRequest.bidId,
+          imp: {
+            id: bidRequest.bidId,
+            bidfloor: utils.getBidIdParameter('bidfloor', bidRequest.params),
+            banner: {
+              format: _getSizes(bidRequest)
+            },
+            ext: {
+              zone: {
+                id: utils.getBidIdParameter('zoneId', bidRequest.params)
+              },
+              nextroll: {
+                adapter_version: ADAPTER_VERSION
+              }
+            }
+          },
 
-      setTimeout(() => {
-        loadExternalScript(PUBTAG_URL, BIDDER_CODE);
-      }, bidderRequest.timeout);
-    }
-
-    if (pubtagAvailable()) {
-      const adapter = new window.NextRoll.Adapters.Prebid(ADAPTER_VERSION);
-      return adapter.buildRequests(validBidRequests, bidderRequest);
-    }
-    return _buildRequests(validBidRequests, bidderRequest);
+          user: _getUser(validBidRequests),
+          site: _getSite(bidRequest, topLocation),
+          seller: _getSeller(bidRequest),
+          device: _getDevice(bidRequest),
+        }
+      }
+    })
   },
 
   /**
@@ -66,10 +79,13 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function (serverResponse, bidRequest) {
-    if (pubtagAvailable()) {
-      return window.NextRoll.Adapters.Prebid.interpretResponse(serverResponse, bidRequest);
+    if (!serverResponse.body) {
+      return [];
+    } else {
+      let response = serverResponse.body
+      let bids = response.seatbid.reduce((acc, seatbid) => acc.concat(seatbid.bid), []);
+      return bids.map((bid) => _buildResponse(response, bid));
     }
-    return _interpretResponse(serverResponse, bidRequest);
   },
 
   /**
@@ -80,45 +96,8 @@ export const spec = {
    * @return {UserSync[]} The user syncs which should be dropped.
    */
   getUserSyncs: function (syncOptions, serverResponses, gdprConsent) {
-    if (pubtagAvailable()) {
-      return window.NextRoll.Adapters.Prebid.getUserSyncs(syncOptions, serverResponses, gdprConsent);
-    }
     return [];
   }
-}
-
-function _buildRequests(validBidRequests, bidderRequest) {
-  let topLocation = _parseUrl(utils.deepAccess(bidderRequest, 'refererInfo.referer'));
-  let consent = hasCCPAConsent(bidderRequest);
-  return validBidRequests.map((bidRequest, index) => {
-    return {
-      method: 'POST',
-      options: {
-        withCredentials: consent,
-      },
-      url: BIDDER_ENDPOINT,
-      data: {
-        id: bidRequest.bidId,
-        imp: {
-          id: bidRequest.bidId,
-          bidfloor: utils.getBidIdParameter('bidfloor', bidRequest.params),
-          banner: {
-            format: _getSizes(bidRequest)
-          },
-          ext: {
-            zone: {
-              id: utils.getBidIdParameter('zoneId', bidRequest.params)
-            }
-          }
-        },
-
-        user: _getUser(validBidRequests),
-        site: _getSite(bidRequest, topLocation),
-        seller: _getSeller(bidRequest),
-        device: _getDevice(bidRequest),
-      }
-    }
-  })
 }
 
 function _getUser(requests) {
@@ -137,16 +116,6 @@ function _getUser(requests) {
   }
 }
 
-function _interpretResponse(serverResponse, _bidRequest) {
-  if (!serverResponse.body) {
-    return [];
-  } else {
-    let response = serverResponse.body
-    let bids = response.seatbid.reduce((acc, seatbid) => acc.concat(seatbid.bid), []);
-    return bids.map((bid) => _buildResponse(response, bid));
-  }
-}
-
 function _buildResponse(bidResponse, bid) {
   const adm = utils.replaceAuctionPrice(bid.adm, bid.price);
   return {
@@ -161,11 +130,6 @@ function _buildResponse(bidResponse, bid) {
     ttl: 300,
     ad: adm
   }
-}
-
-function pubtagAvailable() {
-  let NextRoll = window.NextRoll
-  return typeof NextRoll !== 'undefined' && NextRoll.Adapters && NextRoll.Adapters.Prebid;
 }
 
 function _getSite(bidRequest, topLocation) {
@@ -273,71 +237,6 @@ export function hasCCPAConsent(bidderRequest) {
     return false;
   }
   return true;
-}
-
-export function tryGetPubtag() {
-  const hashPrefix = '// Hash: ';
-
-  let pubtagFromStorage = null;
-  let pubtagAge = null;
-
-  try {
-    pubtagFromStorage = localStorage.getItem(PUBTAG_STORAGE_KEY);
-    pubtagAge = localStorage.getItem(PUBTAG_STORAGE_KEY + DATE_SUFFIX);
-  } catch (e) {
-    return;
-  }
-
-  if (pubtagFromStorage === null || pubtagAge === null || isPubtagTooOld(pubtagAge)) {
-    removePubtag();
-    return;
-  }
-
-  // The value stored must contain the file's encrypted hash as first line
-  const firstLineEndPosition = pubtagFromStorage.indexOf('\n');
-  const firstLine = pubtagFromStorage.substr(0, firstLineEndPosition).trim();
-
-  if (firstLine.substr(0, hashPrefix.length) !== hashPrefix) {
-    utils.logWarn('No hash found in Pubtag');
-    removePubtag();
-  } else {
-    // Remove the hash part from the locally stored value
-    const publisherTagHash = firstLine.substr(hashPrefix.length);
-    const publisherTag = pubtagFromStorage.substr(firstLineEndPosition + 1);
-
-    var jsEncrypt = new JSEncrypt();
-    jsEncrypt.setPublicKey(PUBTAG_PUBKEY);
-    if (jsEncrypt.verify(publisherTag, publisherTagHash, sha256)) {
-      utils.logInfo('Using NextRoll Pubtag');
-      insertTag(publisherTag);
-    } else {
-      utils.logWarn('Invalid NextRoll Pubtag found');
-      removePubtag();
-    }
-  }
-}
-
-function insertTag(publisherTag) {
-  const script = document.createElement('script');
-  script.type = 'text/javascript';
-  script.text = publisherTag;
-  utils.insertElement(script);
-}
-
-function removePubtag() {
-  localStorage.removeItem(PUBTAG_STORAGE_KEY);
-  localStorage.removeItem(PUBTAG_STORAGE_KEY + DATE_SUFFIX);
-}
-
-function isPubtagTooOld(pubtagAge) {
-  const currentDate = (new Date()).getTime();
-  const ptSetDate = parseInt(pubtagAge);
-  const maxAgeMs = MAX_PUBTAG_AGE_IN_DAYS * 1000 * 60 * 60 * 24;
-
-  if (currentDate - ptSetDate > maxAgeMs) {
-    return true
-  }
-  return false
 }
 
 registerBidder(spec);

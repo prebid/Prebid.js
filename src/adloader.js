@@ -7,8 +7,7 @@ const _approvedLoadExternalJSList = [
   'criteo',
   'outstream',
   'adagio',
-  'browsi',
-  'nextroll'
+  'browsi'
 ]
 
 /**
