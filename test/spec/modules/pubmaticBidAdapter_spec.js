@@ -2317,7 +2317,7 @@ describe('PubMatic adapter', function () {
             profId: '100',
             verId: '200',
             currency: 'AUD',
-            deals: ['deal-id-1', 'deal-id-2']
+            deals: ['deal-id-1', 'deal-id-2', 'dea'] // "dea" will not be passed as more than 3 characters needed
           },
           placementCode: '/19968336/header-bid-tag-1',
           sizes: [[300, 250], [300, 600]],
