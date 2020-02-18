@@ -135,7 +135,7 @@ pbjs.setConfig({
         },
         {
             name: "netId",
-            value: { "netId": "netId-1234" }
+            value: { "netId": "fH5A3n2O8_CZZyPoJVD-eabc6ECb7jhxCicsds7qSg" }
         }],
         syncDelay: 5000
     }
