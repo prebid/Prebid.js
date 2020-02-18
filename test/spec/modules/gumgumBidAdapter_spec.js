@@ -21,7 +21,11 @@ describe('gumgumAdapter', function () {
         'bidfloor': 0.05
       },
       'adUnitCode': 'adunit-code',
-      'sizes': [[300, 250], [300, 600], [1, 1]],
+      'mediaTypes': {
+        'banner': {
+          sizes: [[300, 250], [300, 600], [1, 1]]
+        }
+      },
       'bidId': '30b31c1838de1e',
       'bidderRequestId': '22edbae2733bf6',
       'auctionId': '1d1a030790a475',
@@ -70,7 +74,29 @@ describe('gumgumAdapter', function () {
         },
         'adUnitCode': 'adunit-code',
         'sizes': [[300, 250], [300, 600]],
-        'bidId': '30b31c1838de1e'
+        'bidId': '30b31c1838de1e',
+        'schain': {
+          'ver': '1.0',
+          'complete': 1,
+          'nodes': [
+            {
+              'asi': 'exchange1.com',
+              'sid': '1234',
+              'hp': 1,
+              'rid': 'bid-request-1',
+              'name': 'publisher',
+              'domain': 'publisher.com'
+            },
+            {
+              'asi': 'exchange2.com',
+              'sid': 'abcd',
+              'hp': 1,
+              'rid': 'bid-request-2',
+              'name': 'intermediary',
+              'domain': 'intermediary.com'
+            }
+          ]
+        }
       }
     ];
 
@@ -80,7 +106,7 @@ describe('gumgumAdapter', function () {
       expect(request.method).to.equal('GET');
       expect(request.id).to.equal('30b31c1838de1e');
     });
-    it('should correctly set the request paramters depending on params field', function () {
+    it('should set t and fp parameters in bid request if inScreen request param is found', function () {
       const request = Object.assign({}, bidRequests[0]);
       delete request.params;
       request.params = {
@@ -92,7 +118,18 @@ describe('gumgumAdapter', function () {
       expect(bidRequest.data).to.include.any.keys('t');
       expect(bidRequest.data).to.include.any.keys('fp');
     });
-    it('should correctly set the request paramters depending on params field', function () {
+    it('should send pubId if inScreenPubID param is specified', function () {
+      const request = Object.assign({}, bidRequests[0]);
+      delete request.params;
+      request.params = {
+        'inScreenPubID': 123
+      };
+      const bidRequest = spec.buildRequests([request])[0];
+      expect(bidRequest.data).to.include.any.keys('pubId');
+      expect(bidRequest.data.pubId).to.equal(request.params.inScreenPubID);
+      expect(bidRequest.data).to.not.include.any.keys('t');
+    });
+    it('should set a ni parameter in bid request if ICV request param is found', function () {
       const request = Object.assign({}, bidRequests[0]);
       delete request.params;
       request.params = {
@@ -102,6 +139,36 @@ describe('gumgumAdapter', function () {
       expect(bidRequest.data.pi).to.equal(5);
       expect(bidRequest.data).to.include.any.keys('ni');
     });
+    it('should add parameters associated with video if video request param is found', function () {
+      const videoVals = {
+        playerSize: [640, 480],
+        context: 'instream',
+        minduration: 1,
+        maxduration: 2,
+        linearity: 1,
+        startdelay: 1,
+        placement: 123456,
+        protocols: [1, 2]
+      };
+      const request = Object.assign({}, bidRequests[0]);
+      delete request.params;
+      request.mediaTypes = {
+        video: videoVals
+      };
+      request.params = {
+        'video': '10433395'
+      };
+      const bidRequest = spec.buildRequests([request])[0];
+      expect(bidRequest.data.pi).to.eq(7);
+      expect(bidRequest.data.mind).to.eq(videoVals.minduration);
+      expect(bidRequest.data.maxd).to.eq(videoVals.maxduration);
+      expect(bidRequest.data.li).to.eq(videoVals.linearity);
+      expect(bidRequest.data.sd).to.eq(videoVals.startdelay);
+      expect(bidRequest.data.pt).to.eq(videoVals.placement);
+      expect(bidRequest.data.pr).to.eq(videoVals.protocols.join(','));
+      expect(bidRequest.data.viw).to.eq(videoVals.playerSize[0].toString());
+      expect(bidRequest.data.vih).to.eq(videoVals.playerSize[1].toString());
+    });
     it('should not add additional parameters depending on params field', function () {
       const request = spec.buildRequests(bidRequests)[0];
       expect(request.data).to.not.include.any.keys('ni');
@@ -109,7 +176,7 @@ describe('gumgumAdapter', function () {
       expect(request.data).to.not.include.any.keys('eAdBuyId');
       expect(request.data).to.not.include.any.keys('adBuyId');
     });
-    it('should add consent parameters if gdprConsent is present', function () {
+    it('should add gdpr consent parameters if gdprConsent is present', function () {
       const gdprConsent = { consentString: 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==', gdprApplies: true };
       const fakeBidRequest = { gdprConsent: gdprConsent };
       const bidRequest = spec.buildRequests(bidRequests, fakeBidRequest)[0];
@@ -121,6 +188,14 @@ describe('gumgumAdapter', function () {
       const fakeBidRequest = { gdprConsent: gdprConsent };
       const bidRequest = spec.buildRequests(bidRequests, fakeBidRequest)[0];
       expect(bidRequest.data).to.not.include.any.keys('gdprConsent')
+    });
+    it('should add uspConsent parameter if it is present in the bidderRequest', function () {
+      const noUspBidRequest = spec.buildRequests(bidRequests)[0];
+      const uspConsentObj = { uspConsent: '1YYY' };
+      const bidRequest = spec.buildRequests(bidRequests, uspConsentObj)[0];
+      expect(noUspBidRequest.data).to.not.include.any.keys('uspConsent');
+      expect(bidRequest.data).to.include.any.keys('uspConsent');
+      expect(bidRequest.data.uspConsent).to.eq(uspConsentObj.uspConsent);
     });
     it('should add a tdid parameter if request contains unified id from TradeDesk', function () {
       const unifiedId = {
@@ -135,6 +210,12 @@ describe('gumgumAdapter', function () {
     it('should not add a tdid parameter if unified id is not found', function () {
       const request = spec.buildRequests(bidRequests)[0];
       expect(request.data).to.not.include.any.keys('tdid');
+    });
+    it('should send schain parameter in serialized form', function () {
+      const serializedForm = '1.0,1!exchange1.com,1234,1,bid-request-1,publisher,publisher.com!exchange2.com,abcd,1,bid-request-2,intermediary,intermediary.com'
+      const request = spec.buildRequests(bidRequests)[0];
+      expect(request.data).to.include.any.keys('schain');
+      expect(request.data.schain).to.eq(serializedForm);
     });
     it('should send ns parameter if browser contains navigator.connection property', function () {
       const bidRequest = spec.buildRequests(bidRequests)[0];
@@ -179,22 +260,31 @@ describe('gumgumAdapter', function () {
       method: 'GET',
       pi: 3
     }
+    let expectedResponse = {
+      'ad': '<html><h3>I am an ad</h3></html>',
+      'cpm': 0,
+      'creativeId': 29593,
+      'currency': 'USD',
+      'height': '250',
+      'netRevenue': true,
+      'requestId': 12345,
+      'width': '300',
+      // dealId: DEAL_ID,
+      // referrer: REFERER,
+      ttl: 60
+    };
 
     it('should get correct bid response', function () {
-      let expectedResponse = {
-        'ad': '<html><h3>I am an ad</h3></html>',
-        'cpm': 0,
-        'creativeId': 29593,
-        'currency': 'USD',
-        'height': '250',
-        'netRevenue': true,
-        'requestId': 12345,
-        'width': '300',
-        // dealId: DEAL_ID,
-        // referrer: REFERER,
-        ttl: 60
-      };
       expect(spec.interpretResponse({ body: serverResponse }, bidRequest)).to.deep.equal([expectedResponse]);
+    });
+
+    it('should pass correct currency if found in bid response', function () {
+      const cur = 'EURO';
+      let response = Object.assign({}, serverResponse);
+      let expected = Object.assign({}, expectedResponse);
+      response.ad.cur = cur;
+      expected.currency = cur;
+      expect(spec.interpretResponse({ body: response }, bidRequest)).to.deep.equal([expected]);
     });
 
     it('handles nobid responses', function () {
@@ -245,8 +335,8 @@ describe('gumgumAdapter', function () {
         'thms': 10000
       }
       let result = spec.interpretResponse({ body: inscreenServerResponse }, inscreenBidRequest);
-      expect(result[0].width).to.equal(inscreenBidRequest.sizes[0][0].toString());
-      expect(result[0].height).to.equal(inscreenBidRequest.sizes[0][1].toString());
+      expect(result[0].width).to.equal('1');
+      expect(result[0].height).to.equal('1');
     })
   })
   describe('getUserSyncs', function () {

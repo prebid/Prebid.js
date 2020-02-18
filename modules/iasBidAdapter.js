@@ -47,7 +47,7 @@ function stringifyScreenSize() {
 }
 
 function buildRequests(bidRequests) {
-  const IAS_HOST = '//pixel.adsafeprotected.com/services/pub';
+  const IAS_HOST = 'https://pixel.adsafeprotected.com/services/pub';
   const anId = bidRequests[0].params.pubId;
 
   let queries = [];

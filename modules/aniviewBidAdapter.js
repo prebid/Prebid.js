@@ -1,5 +1,4 @@
 import { VIDEO } from '../src/mediaTypes';
-import * as utils from '../src/utils';
 import { registerBidder } from '../src/adapters/bidderFactory';
 import { Renderer } from '../src/Renderer';
 
@@ -50,19 +49,21 @@ function buildRequests(validBidRequests, bidderRequest) {
 
   for (let i = 0; i < validBidRequests.length; i++) {
     let bidRequest = validBidRequests[i];
+    var sizes = [[640, 480]];
 
-    if (!bidRequest.sizes || !bidRequest.sizes.length) {
-      bidRequest.sizes = [[640, 480]];
+    if (bidRequest.mediaTypes && bidRequest.mediaTypes.video && bidRequest.mediaTypes.video.playerSize) {
+      sizes = bidRequest.mediaTypes.video.playerSize;
+    } else {
+      if (bidRequest.sizes) {
+        sizes = bidRequest.sizes;
+      }
+    }
+    if (sizes.length === 2 && typeof sizes[0] === 'number') {
+      sizes = [[sizes[0], sizes[1]]];
     }
 
-    if (bidRequest.sizes.length === 2 && typeof bidRequest.sizes[0] === 'number' && typeof bidRequest.sizes[1] === 'number') {
-      let adWidth = bidRequest.sizes[0];
-      let adHeight = bidRequest.sizes[1];
-      bidRequest.sizes = [[adWidth, adHeight]];
-    }
-
-    for (let j = 0; j < bidRequest.sizes.length; j++) {
-      let size = bidRequest.sizes[j];
+    for (let j = 0; j < sizes.length; j++) {
+      let size = sizes[j];
       let playerWidth;
       let playerHeight;
       if (size && size.length == 2) {
@@ -82,32 +83,42 @@ function buildRequests(validBidRequests, bidderRequest) {
       };
 
       if (s2sParams.AV_APPPKGNAME && !s2sParams.AV_URL) { s2sParams.AV_URL = s2sParams.AV_APPPKGNAME; }
-      if (!s2sParams.AV_IDFA && !s2sParams.AV_URL) { s2sParams.AV_URL = utils.getTopWindowUrl(); }
+      if (!s2sParams.AV_IDFA && !s2sParams.AV_URL) {
+        if (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer) {
+          s2sParams.AV_URL = bidderRequest.refererInfo.referer;
+        } else {
+          s2sParams.AV_URL = window.location.href;
+        }
+      }
       if (s2sParams.AV_IDFA && !s2sParams.AV_AID) { s2sParams.AV_AID = s2sParams.AV_IDFA; }
       if (s2sParams.AV_AID && !s2sParams.AV_IDFA) { s2sParams.AV_IDFA = s2sParams.AV_AID; }
 
-      s2sParams.pbjs = 1;
       s2sParams.cb = Math.floor(Math.random() * 999999999);
       s2sParams.AV_WIDTH = playerWidth;
       s2sParams.AV_HEIGHT = playerHeight;
-      s2sParams.s2s = '1';
-      s2sParams.bidId = bidRequest.bidId;
       s2sParams.bidWidth = playerWidth;
       s2sParams.bidHeight = playerHeight;
+      s2sParams.bidId = bidRequest.bidId;
+      s2sParams.pbjs = 1;
+      s2sParams.tgt = 10;
+      s2sParams.s2s = '1';
 
       if (bidderRequest && bidderRequest.gdprConsent) {
         if (bidderRequest.gdprConsent.gdprApplies) {
           s2sParams.AV_GDPR = 1;
-          s2sParams.AV_CONSENT = bidderRequest.gdprConsent.consentString
+          s2sParams.AV_CONSENT = bidderRequest.gdprConsent.consentString;
         }
+      }
+      if (bidderRequest && bidderRequest.uspConsent) {
+        s2sParams.AV_CCPA = bidderRequest.uspConsent;
       }
 
       let serverDomain = bidRequest.params && bidRequest.params.serverDomain ? bidRequest.params.serverDomain : 'gov.aniview.com';
-      let serverUrl = 'https://' + serverDomain + '/api/adserver/vast3/';
+      let servingUrl = 'https://' + serverDomain + '/api/adserver/vast3/';
 
       bidRequests.push({
         method: 'GET',
-        url: serverUrl,
+        url: servingUrl,
         data: s2sParams,
         bidRequest
       });

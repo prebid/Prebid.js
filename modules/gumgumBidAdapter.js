@@ -1,6 +1,7 @@
 import * as utils from '../src/utils'
 
 import { config } from '../src/config'
+import { BANNER, VIDEO } from '../src/mediaTypes';
 import includes from 'core-js/library/fn/array/includes';
 import { registerBidder } from '../src/adapters/bidderFactory'
 
@@ -8,6 +9,7 @@ const BIDDER_CODE = 'gumgum'
 const ALIAS_BIDDER_CODE = ['gg']
 const BID_ENDPOINT = `https://g2.gumgum.com/hbid/imp`
 const DT_CREDENTIALS = { member: 'YcXr87z2lpbB' }
+const SUPPORTED_MEDIA_TYPES = [BANNER, VIDEO]
 const TIME_TO_LIVE = 60
 
 let browserParams = {};
@@ -23,7 +25,7 @@ function _getBrowserParams(topWindowUrl) {
   function getNetworkSpeed () {
     const connection = window.navigator && (window.navigator.connection || window.navigator.mozConnection || window.navigator.webkitConnection)
     const Mbps = connection && (connection.downlink || connection.bandwidth)
-    return Mbps ? Math.round(Mbps * 1024) : null // 1 megabit -> 1024 kilobits
+    return Mbps ? Math.round(Mbps * 1024) : null
   }
   function getOgURL () {
     let ogURL = ''
@@ -41,7 +43,7 @@ function _getBrowserParams(topWindowUrl) {
   try {
     topWindow = global.top;
     topScreen = topWindow.screen;
-    topUrl = topWindowUrl || utils.getTopWindowUrl();
+    topUrl = topWindowUrl || '';
   } catch (error) {
     utils.logError(error);
     return browserParams
@@ -99,6 +101,28 @@ function _getDigiTrustQueryParams(userId) {
 }
 
 /**
+ * Serializes the supply chain object according to IAB standards
+ * @see https://github.com/InteractiveAdvertisingBureau/openrtb/blob/master/supplychainobject.md
+ * @param {Object} schainObj supply chain object
+ * @returns {string}
+ */
+function _serializeSupplyChainObj(schainObj) {
+  let serializedSchain = `${schainObj.ver},${schainObj.complete}`;
+
+  // order of properties: asi,sid,hp,rid,name,domain
+  schainObj.nodes.map(node => {
+    serializedSchain += `!${encodeURIComponent(node['asi'] || '')},`;
+    serializedSchain += `${encodeURIComponent(node['sid'] || '')},`;
+    serializedSchain += `${encodeURIComponent(node['hp'] || '')},`;
+    serializedSchain += `${encodeURIComponent(node['rid'] || '')},`;
+    serializedSchain += `${encodeURIComponent(node['name'] || '')},`;
+    serializedSchain += `${encodeURIComponent(node['domain'] || '')}`;
+  })
+
+  return serializedSchain;
+}
+
+/**
  * Determines whether or not the given bid request is valid.
  *
  * @param {BidRequest} bid The bid params to validate.
@@ -114,6 +138,7 @@ function isBidRequestValid (bid) {
     case !!(params.inScreen): break;
     case !!(params.inSlot): break;
     case !!(params.ICV): break;
+    case !!(params.video): break;
     default:
       utils.logWarn(`[GumGum] No product selected for the placement ${adUnitCode}, please check your implementation.`);
       return false;
@@ -128,6 +153,41 @@ function isBidRequestValid (bid) {
 }
 
 /**
+ * Renames vid params from mediatypes.video keys
+ * @param {Object} attributes
+ * @returns {Object}
+ */
+function _getVidParams (attributes) {
+  const {
+    minduration: mind,
+    maxduration: maxd,
+    linearity: li,
+    startdelay: sd,
+    placement: pt,
+    protocols = [],
+    playerSize = []
+  } = attributes;
+  const sizes = utils.parseSizesInput(playerSize);
+  const [viw, vih] = sizes[0] && sizes[0].split('x');
+  let pr = '';
+
+  if (protocols.length) {
+    pr = protocols.join(',');
+  }
+
+  return {
+    mind,
+    maxd,
+    li,
+    sd,
+    pt,
+    pr,
+    viw,
+    vih
+  };
+}
+
+/**
  * Make a server request from the list of BidRequests.
  *
  * @param {validBidRequests[]} - an array of bids
@@ -136,21 +196,30 @@ function isBidRequestValid (bid) {
 function buildRequests (validBidRequests, bidderRequest) {
   const bids = [];
   const gdprConsent = bidderRequest && bidderRequest.gdprConsent;
+  const uspConsent = bidderRequest && bidderRequest.uspConsent;
+  const timeout = config.getConfig('bidderTimeout');
+  const topWindowUrl = bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer;
   utils._each(validBidRequests, bidRequest => {
-    const timeout = config.getConfig('bidderTimeout');
     const {
       bidId,
+      mediaTypes = {},
       params = {},
+      schain,
       transactionId,
       userId = {}
     } = bidRequest;
-    const data = {};
-    const topWindowUrl = bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer;
+    const bannerSizes = mediaTypes.banner && mediaTypes.banner.sizes;
+    let data = {};
+
     if (pageViewId) {
-      data.pv = pageViewId
+      data.pv = pageViewId;
     }
     if (params.bidfloor) {
       data.fp = params.bidfloor;
+    }
+    if (params.inScreenPubID) {
+      data.pubId = params.inScreenPubID;
+      data.pi = 2;
     }
     if (params.inScreen) {
       data.t = params.inScreen;
@@ -164,11 +233,23 @@ function buildRequests (validBidRequests, bidderRequest) {
       data.ni = parseInt(params.ICV, 10);
       data.pi = 5;
     }
+    if (params.video) {
+      data = Object.assign(data, _getVidParams(mediaTypes.video));
+      data.t = params.video;
+      data.pi = 7;
+    }
+
     if (gdprConsent) {
       data.gdprApplies = gdprConsent.gdprApplies ? 1 : 0;
     }
     if (data.gdprApplies) {
       data.gdprConsent = gdprConsent.consentString;
+    }
+    if (uspConsent) {
+      data.uspConsent = uspConsent;
+    }
+    if (schain && schain.nodes) {
+      data.schain = _serializeSupplyChainObj(schain);
     }
 
     bids.push({
@@ -177,7 +258,7 @@ function buildRequests (validBidRequests, bidderRequest) {
       tId: transactionId,
       pi: data.pi,
       selector: params.selector,
-      sizes: bidRequest.sizes || bidRequest.mediatype[banner].sizes,
+      sizes: bannerSizes || bidRequest.sizes,
       url: BID_ENDPOINT,
       method: 'GET',
       data: Object.assign(data, _getBrowserParams(topWindowUrl), _getDigiTrustQueryParams(userId), _getTradeDeskIDParam(userId))
@@ -209,7 +290,8 @@ function interpretResponse (serverResponse, bidRequest) {
     ad: {
       price: cpm,
       id: creativeId,
-      markup
+      markup,
+      cur
     },
     cw: wrapper,
     pag: {
@@ -223,7 +305,7 @@ function interpretResponse (serverResponse, bidRequest) {
   let [width, height] = sizes[0].split('x')
 
   // return 1x1 when breakout expected
-  if (product === 5 && includes(sizes, '1x1')) {
+  if ((product === 2 || product === 5) && includes(sizes, '1x1')) {
     width = '1'
     height = '1'
   }
@@ -235,10 +317,11 @@ function interpretResponse (serverResponse, bidRequest) {
     bidResponses.push({
       // dealId: DEAL_ID,
       // referrer: REFERER,
+      ...(product === 7 && { vastXml: markup }),
       ad: wrapper ? getWrapperCode(wrapper, Object.assign({}, serverResponseBody, { bidRequest })) : markup,
       cpm: isTestUnit ? 0.1 : cpm,
       creativeId,
-      currency: 'USD',
+      currency: cur || 'USD',
       height,
       netRevenue: true,
       requestId: bidRequest.id,
@@ -278,6 +361,7 @@ export const spec = {
   isBidRequestValid,
   buildRequests,
   interpretResponse,
-  getUserSyncs
+  getUserSyncs,
+  supportedMediaTypes: SUPPORTED_MEDIA_TYPES
 }
 registerBidder(spec)

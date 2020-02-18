@@ -2,12 +2,9 @@ import { registerBidder } from '../src/adapters/bidderFactory'
 import { deepAccess } from '../src/utils';
 
 const BIDDER_CODE = 'justpremium'
-const ENDPOINT_URL = '//pre.ads.justpremium.com/v/2.0/t/xhr'
-const JP_ADAPTER_VERSION = '1.4'
+const ENDPOINT_URL = 'https://pre.ads.justpremium.com/v/2.0/t/xhr'
+const JP_ADAPTER_VERSION = '1.7'
 const pixels = []
-const TRACK_START_TIME = Date.now()
-let LAST_PAYLOAD = {}
-let AD_UNIT_IDS = []
 
 export const spec = {
   code: BIDDER_CODE,
@@ -20,11 +17,6 @@ export const spec = {
   buildRequests: (validBidRequests, bidderRequest) => {
     const c = preparePubCond(validBidRequests)
     const dim = getWebsiteDim()
-    AD_UNIT_IDS = validBidRequests.map(b => {
-      return b.adUnitCode
-    }).filter((value, index, self) => {
-      return self.indexOf(value) === index
-    })
     const payload = {
       zone: validBidRequests.map(b => {
         return parseInt(b.params.zone)
@@ -44,7 +36,7 @@ export const spec = {
       const zone = b.params.zone
       const sizes = payload.sizes
       sizes[zone] = sizes[zone] || []
-      sizes[zone].push.apply(sizes[zone], b.sizes)
+      sizes[zone].push.apply(sizes[zone], b.mediaTypes && b.mediaTypes.banner && b.mediaTypes.banner.sizes)
     })
 
     if (deepAccess(validBidRequests[0], 'userId.pubcid')) {
@@ -62,14 +54,16 @@ export const spec = {
       }
     }
 
+    if (bidderRequest && bidderRequest.uspConsent) {
+      payload.us_privacy = bidderRequest.uspConsent
+    }
+
     payload.version = {
       prebid: '$prebid.version$',
       jp_adapter: JP_ADAPTER_VERSION
     }
 
     const payloadString = JSON.stringify(payload)
-
-    LAST_PAYLOAD = payload
 
     return {
       method: 'POST',
@@ -85,7 +79,7 @@ export const spec = {
     bidRequests.bids.forEach(adUnit => {
       let bid = findBid(adUnit.params, body.bid)
       if (bid) {
-        let size = (adUnit.sizes && adUnit.sizes.length && adUnit.sizes[0]) || []
+        let size = (adUnit.mediaTypes && adUnit.mediaTypes.banner && adUnit.mediaTypes.banner.sizes && adUnit.mediaTypes.banner.sizes.length && adUnit.mediaTypes.banner.sizes[0]) || []
         let bidResponse = {
           requestId: adUnit.bidId,
           creativeId: bid.id,
@@ -101,14 +95,16 @@ export const spec = {
         bidResponses.push(bidResponse)
       }
     })
-
     return bidResponses
   },
 
-  getUserSyncs: function getUserSyncs(syncOptions, responses, gdprConsent) {
-    let url = '//pre.ads.justpremium.com/v/1.0/t/sync' + '?_c=' + 'a' + Math.random().toString(36).substring(7) + Date.now();
+  getUserSyncs: function getUserSyncs(syncOptions, responses, gdprConsent, uspConsent) {
+    let url = 'https://pre.ads.justpremium.com/v/1.0/t/sync' + '?_c=' + 'a' + Math.random().toString(36).substring(7) + Date.now();
     if (gdprConsent && (typeof gdprConsent.gdprApplies === 'boolean')) {
       url = url + '&consentString=' + encodeURIComponent(gdprConsent.consentString)
+    }
+    if (uspConsent) {
+      url = url + '&usPrivacy=' + encodeURIComponent(uspConsent)
     }
     if (syncOptions.iframeEnabled) {
       pixels.push({
@@ -118,53 +114,6 @@ export const spec = {
     }
     return pixels
   },
-
-  onTimeout: (timeoutData) => {
-    timeoutData.forEach((data) => {
-      if (AD_UNIT_IDS.indexOf(data.adUnitCode) != -1) {
-        track(data, LAST_PAYLOAD, 'btm')
-      }
-    })
-  },
-
-}
-
-export let pixel = {
-  fire(url) {
-    let img = document.createElement('img')
-    img.src = url
-    img.id = 'jp-pixel-track'
-    img.style.cssText = 'display:none !important;'
-    document.body.appendChild(img)
-  }
-};
-
-function track (data, payload, type) {
-  let pubUrl = ''
-
-  let jp = {
-    auc: data.adUnitCode,
-    to: data.timeout
-  }
-
-  if (window.top == window) {
-    pubUrl = window.location.href
-  } else {
-    try {
-      pubUrl = window.top.location.href
-    } catch (e) {
-      pubUrl = document.referrer
-    }
-  }
-
-  let duration = Date.now() - TRACK_START_TIME
-
-  const pixelUrl = `//emea-v3.tracking.justpremium.com/tracking.gif?rid=&sid=&uid=&vr=&
-ru=${encodeURIComponent(pubUrl)}&tt=&siw=&sh=${payload.sh}&sw=${payload.sw}&wh=${payload.wh}&ww=${payload.ww}&an=&vn=&
-sd=&_c=&et=&aid=&said=&ei=&fc=&sp=&at=bidder&cid=&ist=&mg=&dl=&dlt=&ev=&vt=&zid=${payload.id}&dr=${duration}&di=&pr=&
-cw=&ch=&nt=&st=&jp=${encodeURIComponent(JSON.stringify(jp))}&ty=${type}`
-
-  pixel.fire(pixelUrl);
 }
 
 function findBid (params, bids) {

@@ -19,7 +19,11 @@ describe('RTBHouseAdapter', () => {
         'region': 'prebid-eu'
       },
       'adUnitCode': 'adunit-code',
-      'sizes': [[300, 250], [300, 600]],
+      'mediaTypes': {
+        'banner': {
+          'sizes': [[300, 250], [300, 600]],
+        }
+      },
       'bidId': '30b31c1838de1e',
       'bidderRequestId': '22edbae2733bf6',
       'auctionId': '1d1a030790a475'
@@ -27,6 +31,13 @@ describe('RTBHouseAdapter', () => {
 
     it('should return true when required params found', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
+    });
+
+    it('Checking backward compatibility. should return true', function () {
+      let bid2 = Object.assign({}, bid);
+      delete bid2.mediaTypes;
+      bid2.sizes = [[300, 250], [300, 600]];
+      expect(spec.isBidRequestValid(bid2)).to.equal(true);
     });
 
     it('should return false when required params are not passed', function () {
@@ -49,7 +60,11 @@ describe('RTBHouseAdapter', () => {
           'test': 1
         },
         'adUnitCode': 'adunit-code',
-        'sizes': [[300, 250], [300, 600]],
+        'mediaTypes': {
+          'banner': {
+            'sizes': [[300, 250], [300, 600]],
+          }
+        },
         'bidId': '30b31c1838de1e',
         'bidderRequestId': '22edbae2733bf6',
         'auctionId': '1d1a030790a475',
@@ -60,8 +75,8 @@ describe('RTBHouseAdapter', () => {
       'refererInfo': {
         'numIframes': 0,
         'reachedTop': true,
-        'referer': 'http://example.com',
-        'stack': ['http://example.com']
+        'referer': 'https://example.com',
+        'stack': ['https://example.com']
       }
     };
 
@@ -387,10 +402,10 @@ describe('RTBHouseAdapter', () => {
         native: {
           ver: 1.1,
           link: {
-            url: 'http://example.com'
+            url: 'https://example.com'
           },
           imptrackers: [
-            'http://example.com/imptracker'
+            'https://example.com/imptracker'
           ],
           assets: [{
             id: OPENRTB.NATIVE.ASSET_ID.TITLE,
@@ -402,7 +417,7 @@ describe('RTBHouseAdapter', () => {
             id: OPENRTB.NATIVE.ASSET_ID.IMAGE,
             required: 1,
             img: {
-              url: 'http://example.com/image.jpg',
+              url: 'https://example.com/image.jpg',
               w: 150,
               h: 50
             }
@@ -431,10 +446,10 @@ describe('RTBHouseAdapter', () => {
         const bids = spec.interpretResponse({body: response}, {});
         expect(bids[0].native).to.deep.equal({
           title: 'Title text',
-          clickUrl: encodeURIComponent('http://example.com'),
-          impressionTrackers: ['http://example.com/imptracker'],
+          clickUrl: encodeURIComponent('https://example.com'),
+          impressionTrackers: ['https://example.com/imptracker'],
           image: {
-            url: encodeURIComponent('http://example.com/image.jpg'),
+            url: encodeURIComponent('https://example.com/image.jpg'),
             width: 150,
             height: 50
           },

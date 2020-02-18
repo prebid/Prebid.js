@@ -331,6 +331,58 @@ describe('targeting tests', function () {
       expect(logErrorStub.calledOnce).to.be.true;
     });
 
+    describe('when bidLimit is present in setConfig', function () {
+      let bid4;
+
+      beforeEach(function() {
+        bid4 = utils.deepClone(bid1);
+        bid4.adserverTargeting['hb_bidder'] = bid4.bidder = bid4.bidderCode = 'appnexus';
+        bid4.cpm = 2.25;
+        enableSendAllBids = true;
+
+        bidsReceived.push(bid4);
+      });
+
+      it('selects the top n number of bids when enableSendAllBids is true and and bitLimit is set', function () {
+        config.setConfig({
+          sendBidsControl: {
+            bidLimit: 1
+          }
+        });
+
+        const targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0']);
+        let limitedBids = Object.keys(targeting['/123456/header-bid-tag-0']).filter(key => key.indexOf(CONSTANTS.TARGETING_KEYS.PRICE_BUCKET + '_') != -1)
+
+        expect(limitedBids.length).to.equal(1);
+      });
+
+      it('sends all bids when enableSendAllBids is true and and bitLimit is above total number of bids received', function () {
+        config.setConfig({
+          sendBidsControl: {
+            bidLimit: 50
+          }
+        });
+
+        const targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0']);
+        let limitedBids = Object.keys(targeting['/123456/header-bid-tag-0']).filter(key => key.indexOf(CONSTANTS.TARGETING_KEYS.PRICE_BUCKET + '_') != -1)
+
+        expect(limitedBids.length).to.equal(2);
+      });
+
+      it('Sends all bids when enableSendAllBids is true and and bitLimit is set to 0', function () {
+        config.setConfig({
+          sendBidsControl: {
+            bidLimit: 0
+          }
+        });
+
+        const targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0']);
+        let limitedBids = Object.keys(targeting['/123456/header-bid-tag-0']).filter(key => key.indexOf(CONSTANTS.TARGETING_KEYS.PRICE_BUCKET + '_') != -1)
+
+        expect(limitedBids.length).to.equal(2);
+      });
+    });
+
     describe('targetingControls.alwaysIncludeDeals', function () {
       let bid4;
 

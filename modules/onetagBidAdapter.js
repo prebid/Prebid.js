@@ -3,6 +3,7 @@
 const { registerBidder } = require('../src/adapters/bidderFactory');
 
 const ENDPOINT = 'https://onetag-sys.com/prebid-request';
+const USER_SYNC_ENDPOINT = 'https://onetag-sys.com/usync/';
 const BIDDER_CODE = 'onetag';
 const BANNER = 'banner';
 
@@ -52,6 +53,10 @@ function buildRequests(validBidRequests, bidderRequest) {
     };
   }
 
+  if (bidderRequest && bidderRequest.uspConsent) {
+    payload.usPrivacy = bidderRequest.uspConsent;
+  }
+
   const payloadString = JSON.stringify(payload);
 
   return {
@@ -62,7 +67,7 @@ function buildRequests(validBidRequests, bidderRequest) {
 }
 
 function interpretResponse(serverResponse, request) {
-  var body = serverResponse.body;
+  let body = serverResponse.body;
   const bids = [];
 
   if (typeof serverResponse === 'string') {
@@ -103,7 +108,7 @@ function interpretResponse(serverResponse, request) {
  * @returns {{location: *, referrer: (*|string), masked: *, wWidth: (*|Number), wHeight: (*|Number), sWidth, sHeight, date: string, timeOffset: number}}
  */
 function getPageInfo() {
-  var w, d, l, r, m, p, e, t, s;
+  let w, d, l, r, m, p, e, t, s;
   for (w = window, d = w.document, l = d.location.href, r = d.referrer, m = 0, e = encodeURIComponent, t = new Date(), s = screen; w !== w.parent;) {
     try {
       p = w.parent; l = p.location.href; r = p.document.referrer; w = p;
@@ -120,8 +125,15 @@ function getPageInfo() {
     masked: m,
     wWidth: w.innerWidth,
     wHeight: w.innerHeight,
+    oWidth: w.outerWidth,
+    oHeight: w.outerHeight,
     sWidth: s.width,
     sHeight: s.height,
+    aWidth: s.availWidth,
+    aHeight: s.availHeight,
+    sLeft: 'screenLeft' in w ? w.screenLeft : w.screenX,
+    sTop: 'screenTop' in w ? w.screenTop : w.screenY,
+    hLength: history.length,
     date: t.toUTCString(),
     timeOffset: t.getTimezoneOffset()
   };
@@ -162,6 +174,31 @@ function requestsToBids(bid) {
   return toRet;
 }
 
+function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
+  const syncs = [];
+  if (syncOptions.iframeEnabled) {
+    const rnd = new Date().getTime();
+    let params = '?cb=' + rnd;
+
+    if (gdprConsent && typeof gdprConsent.consentString === 'string') {
+      params += '&gdpr_consent=' + gdprConsent.consentString;
+      if (typeof gdprConsent.gdprApplies === 'boolean') {
+        params += '&gdpr=' + (gdprConsent.gdprApplies ? 1 : 0);
+      }
+    }
+
+    if (uspConsent && typeof uspConsent === 'string') {
+      params += '&us_privacy=' + uspConsent;
+    }
+
+    syncs.push({
+      type: 'iframe',
+      url: USER_SYNC_ENDPOINT + params
+    });
+  }
+  return syncs;
+}
+
 export const spec = {
 
   code: BIDDER_CODE,
@@ -170,6 +207,7 @@ export const spec = {
   isBidRequestValid: isBidRequestValid,
   buildRequests: buildRequests,
   interpretResponse: interpretResponse,
+  getUserSyncs: getUserSyncs
 
 };
 

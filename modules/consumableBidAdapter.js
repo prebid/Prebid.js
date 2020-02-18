@@ -47,7 +47,7 @@ export const spec = {
     const data = Object.assign({
       placements: [],
       time: Date.now(),
-      url: utils.getTopWindowUrl(),
+      url: bidderRequest.refererInfo.referer,
       referrer: document.referrer,
       source: [{
         'name': 'prebidjs',
@@ -62,10 +62,15 @@ export const spec = {
       };
     }
 
+    if (bidderRequest && bidderRequest.uspConsent) {
+      data.ccpa = bidderRequest.uspConsent;
+    }
+
     validBidRequests.map(bid => {
+      const sizes = (bid.mediaTypes && bid.mediaTypes.banner && bid.mediaTypes.banner.sizes) || bid.sizes || [];
       const placement = Object.assign({
         divName: bid.bidId,
-        adTypes: bid.adTypes || getSize(bid.sizes)
+        adTypes: bid.adTypes || getSize(sizes)
       }, bid.params);
 
       if (placement.networkId && placement.siteId && placement.unitId && placement.unitName) {
@@ -75,6 +80,7 @@ export const spec = {
 
     ret.data = JSON.stringify(data);
     ret.bidRequest = validBidRequests;
+    ret.bidderRequest = bidderRequest;
     ret.url = BASE_URI;
 
     return ret;
@@ -117,7 +123,7 @@ export const spec = {
           bid.creativeId = decision.adId;
           bid.ttl = 30;
           bid.netRevenue = true;
-          bid.referrer = utils.getTopWindowUrl();
+          bid.referrer = bidRequest.bidderRequest.refererInfo.referer;
 
           bidResponses.push(bid);
         }
@@ -131,7 +137,7 @@ export const spec = {
     if (syncOptions.iframeEnabled) {
       return [{
         type: 'iframe',
-        url: '//sync.serverbid.com/ss/' + siteId + '.html'
+        url: 'https://sync.serverbid.com/ss/' + siteId + '.html'
       }];
     }
 

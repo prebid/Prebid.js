@@ -1,12 +1,10 @@
 import prebidmanagerAnalytics from 'modules/prebidmanagerAnalyticsAdapter';
 import {expect} from 'chai';
+import {server} from 'test/mocks/xhr';
 let events = require('src/events');
 let constants = require('src/constants.json');
 
 describe('Prebid Manager Analytics Adapter', function () {
-  let xhr;
-  let requests;
-
   let bidWonEvent = {
     'bidderCode': 'appnexus',
     'width': 300,
@@ -33,18 +31,8 @@ describe('Prebid Manager Analytics Adapter', function () {
     'adUrl': 'ad url'
   };
 
-  before(function () {
-    xhr = sinon.useFakeXMLHttpRequest();
-    xhr.onCreate = request => requests.push(request);
-  });
-
-  after(function () {
-    xhr.restore();
-  });
-
   describe('Prebid Manager Analytic tests', function () {
     beforeEach(function () {
-      requests = [];
       sinon.stub(events, 'getEvents').returns([]);
     });
 
@@ -67,7 +55,6 @@ describe('Prebid Manager Analytics Adapter', function () {
     });
 
     it('bid won event', function() {
-      xhr.onCreate = request => requests.push(request);
       let bundleId = 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx';
       prebidmanagerAnalytics.enableAnalytics({
         provider: 'prebidmanager',
@@ -79,11 +66,11 @@ describe('Prebid Manager Analytics Adapter', function () {
       events.emit(constants.EVENTS.BID_WON, bidWonEvent);
       prebidmanagerAnalytics.flush();
 
-      expect(requests.length).to.equal(1);
-      expect(requests[0].url).to.equal('https://endpoint.prebidmanager.com/endpoint');
-      expect(requests[0].requestBody.substring(0, 2)).to.equal('1:');
+      expect(server.requests.length).to.equal(1);
+      expect(server.requests[0].url).to.equal('https://endpoint.prebidmanager.com/endpoint');
+      expect(server.requests[0].requestBody.substring(0, 2)).to.equal('1:');
 
-      const pmEvents = JSON.parse(requests[0].requestBody.substring(2));
+      const pmEvents = JSON.parse(server.requests[0].requestBody.substring(2));
       expect(pmEvents.pageViewId).to.exist;
       expect(pmEvents.bundleId).to.equal(bundleId);
       expect(pmEvents.ver).to.equal(1);
