@@ -45,12 +45,9 @@ export const spec = {
       imp: []
     };
 
-    if (bidderRequest !== undefined && bidderRequest.bids !== undefined && bidderRequest.bids[0] !== undefined) {
-      const schain = bidderRequest.bids[0].schain;
-      if (schain !== undefined) {
-        openRtbBidRequest.source = {};
-        openRtbBidRequest.source.ext = { schain };
-      }
+    const schain = validBidReqs[0].schain;
+    if (schain) {
+      openRtbBidRequest.source = { ext: { schain } };
     }
 
     let seatId = null;
@@ -67,7 +64,7 @@ export const spec = {
       if (isNaN(bidFloor)) {
         logWarn(`Synacormedia: there is an invalid bid floor: ${bid.params.bidfloor}`);
       }
-      let pos = parseInt(bid.params.pos);
+      let pos = parseInt(bid.params.pos, 10);
       if (isNaN(pos)) {
         logWarn(`Synacormedia: there is an invalid POS: ${bid.params.pos}`);
         pos = 0;
