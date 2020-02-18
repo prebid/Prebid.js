@@ -166,7 +166,6 @@ function _getDevice(_bidRequest) {
   return {
     ua: navigator.userAgent,
     language: navigator['language'],
-    ip: '',
     os: _getOs(navigator.userAgent.toLowerCase()),
     osv: _getOsVersion(navigator.userAgent)
   }
