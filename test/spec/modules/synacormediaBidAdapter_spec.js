@@ -562,7 +562,18 @@ describe('synacormediaBidAdapter ', function () {
       src: 'client',
       bidRequestsCount: 1,
       bidderRequestsCount: 1,
-      bidderWinsCount: 0
+      bidderWinsCount: 0,
+      schain: {
+        ver: '1.0',
+        complete: 1,
+        nodes: [
+          {
+            asi: 'indirectseller.com',
+            sid: '00001',
+            hp: 1
+          }
+        ]
+      }
     };
     let bidderRequest = {
       refererInfo: {
