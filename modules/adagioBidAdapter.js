@@ -1,6 +1,6 @@
 import find from 'core-js/library/fn/array/find';
 import * as utils from '../src/utils';
-import {registerBidder} from '../src/adapters/bidderFactory';
+import { registerBidder } from '../src/adapters/bidderFactory';
 import { loadExternalScript } from '../src/adloader'
 import JSEncrypt from 'jsencrypt/bin/jsencrypt';
 import sha256 from 'crypto-js/sha256';
@@ -84,12 +84,12 @@ if (canAccessTopWindow()) {
 }
 
 const _features = {
-  getPrintNumber: function(adUnitCode) {
+  getPrintNumber: function (adUnitCode) {
     const adagioAdUnit = _getOrAddAdagioAdUnit(adUnitCode);
     return adagioAdUnit.printNumber || 1;
   },
 
-  getPageDimensions: function() {
+  getPageDimensions: function () {
     const viewportDims = _features.getViewPortDimensions().split('x');
     const w = utils.getWindowTop();
     const body = w.document.body;
@@ -102,7 +102,7 @@ const _features = {
     return viewportDims[0] + 'x' + pageHeight;
   },
 
-  getViewPortDimensions: function() {
+  getViewPortDimensions: function () {
     let viewPortWidth;
     let viewPortHeight;
     const w = utils.getWindowTop();
@@ -119,7 +119,7 @@ const _features = {
     return viewPortWidth + 'x' + viewPortHeight;
   },
 
-  isDomLoading: function() {
+  isDomLoading: function () {
     const w = utils.getWindowTop();
     let performance = w.performance || w.msPerformance || w.webkitPerformance || w.mozPerformance;
     let domLoading = -1;
@@ -131,7 +131,7 @@ const _features = {
     return domLoading;
   },
 
-  getSlotPosition: function(element) {
+  getSlotPosition: function (element) {
     if (!element) return '';
 
     const w = utils.getWindowTop();
@@ -165,11 +165,11 @@ const _features = {
     return position.x + 'x' + position.y;
   },
 
-  getTimestamp: function() {
+  getTimestamp: function () {
     return Math.floor(new Date().getTime() / 1000) - new Date().getTimezoneOffset() * 60;
   },
 
-  getDevice: function() {
+  getDevice: function () {
     if (!canAccessTopWindow()) return false;
     const w = utils.getWindowTop();
     const ua = w.navigator.userAgent;
@@ -183,14 +183,14 @@ const _features = {
     return 2; // personal computers
   },
 
-  getBrowser: function() {
+  getBrowser: function () {
     const w = utils.getWindowTop();
     const ua = w.navigator.userAgent;
     const uaLowerCase = ua.toLowerCase();
     return /Edge\/\d./i.test(ua) ? 'edge' : uaLowerCase.indexOf('chrome') > 0 ? 'chrome' : uaLowerCase.indexOf('firefox') > 0 ? 'firefox' : uaLowerCase.indexOf('safari') > 0 ? 'safari' : uaLowerCase.indexOf('opera') > 0 ? 'opera' : uaLowerCase.indexOf('msie') > 0 || w.MSStream ? 'ie' : 'unknow';
   },
 
-  getOS: function() {
+  getOS: function () {
     const w = window.top;
     const ua = w.navigator.userAgent;
     const uaLowerCase = ua.toLowerCase();
@@ -199,9 +199,11 @@ const _features = {
 }
 
 function _pushInAdagioQueue(ob) {
-  if (!canAccessTopWindow()) return;
-  const w = utils.getWindowTop();
-  w.ADAGIO.queue.push(ob);
+  try {
+    if (!canAccessTopWindow()) return;
+    const w = utils.getWindowTop();
+    w.ADAGIO.queue.push(ob);
+  } catch (e) {}
 };
 
 function _getOrAddAdagioAdUnit(adUnitCode) {
@@ -343,42 +345,45 @@ export const spec = {
 
   supportedMediaType: SUPPORTED_MEDIA_TYPES,
 
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     const { adUnitCode, auctionId, sizes, bidder, params, mediaTypes } = bid;
     const { organizationId, site, placement, adUnitElementId } = bid.params;
     let isValid = false;
 
-    if (canAccessTopWindow()) {
-      const w = utils.getWindowTop();
-      w.ADAGIO = w.ADAGIO || {};
-      w.ADAGIO.adUnits = w.ADAGIO.adUnits || {};
-      w.ADAGIO.pbjsAdUnits = w.ADAGIO.pbjsAdUnits || [];
-      isValid = !!(organizationId && site && placement && adUnitElementId);
-      const tempAdUnits = w.ADAGIO.pbjsAdUnits.filter((adUnit) => adUnit.code !== adUnitCode);
-      tempAdUnits.push({
-        code: adUnitCode,
-        sizes: (mediaTypes && mediaTypes.banner && Array.isArray(mediaTypes.banner.sizes)) ? mediaTypes.banner.sizes : sizes,
-        bids: [{
-          bidder,
-          params
-        }]
-      });
-      w.ADAGIO.pbjsAdUnits = tempAdUnits;
+    try {
+      if (canAccessTopWindow()) {
+        const w = utils.getWindowTop();
+        w.ADAGIO = w.ADAGIO || {};
+        w.ADAGIO.adUnits = w.ADAGIO.adUnits || {};
+        w.ADAGIO.pbjsAdUnits = w.ADAGIO.pbjsAdUnits || [];
+        isValid = !!(organizationId && site && placement && adUnitElementId);
+        const tempAdUnits = w.ADAGIO.pbjsAdUnits.filter((adUnit) => adUnit.code !== adUnitCode);
+        tempAdUnits.push({
+          code: adUnitCode,
+          sizes: (mediaTypes && mediaTypes.banner && Array.isArray(mediaTypes.banner.sizes)) ? mediaTypes.banner.sizes : sizes,
+          bids: [{
+            bidder,
+            params
+          }]
+        });
+        w.ADAGIO.pbjsAdUnits = tempAdUnits;
 
-      if (isValid === true) {
-        let printNumber = _computePrintNumber(adUnitCode);
-        w.ADAGIO.adUnits[adUnitCode] = {
-          auctionId: auctionId,
-          pageviewId: _getPageviewId(),
-          printNumber
-        };
+        if (isValid === true) {
+          let printNumber = _computePrintNumber(adUnitCode);
+          w.ADAGIO.adUnits[adUnitCode] = {
+            auctionId: auctionId,
+            pageviewId: _getPageviewId(),
+            printNumber
+          };
+        }
       }
+    } catch (e) {
+      return isValid;
     }
-
     return isValid;
   },
 
-  buildRequests: function(validBidRequests, bidderRequest) {
+  buildRequests: function (validBidRequests, bidderRequest) {
     // AdagioBidAdapter works when window.top can be reached only
     if (!bidderRequest.refererInfo.reachedTop) return [];
 
@@ -428,7 +433,7 @@ export const spec = {
     return requests;
   },
 
-  interpretResponse: function(serverResponse, bidRequest) {
+  interpretResponse: function (serverResponse, bidRequest) {
     let bidResponses = [];
     try {
       const response = serverResponse.body;
@@ -461,7 +466,7 @@ export const spec = {
     return bidResponses;
   },
 
-  getUserSyncs: function(syncOptions, serverResponses) {
+  getUserSyncs: function (syncOptions, serverResponses) {
     if (!serverResponses.length || serverResponses[0].body === '' || !serverResponses[0].body.userSyncs) {
       return false;
     }

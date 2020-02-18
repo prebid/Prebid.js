@@ -165,11 +165,11 @@ module.exports = function(codeCoverage, browserstack, watchMode, file) {
     // Continuous Integration mode
     // if true, Karma captures browsers, runs the tests and exits
     singleRun: !watchMode,
-    browserDisconnectTimeout: 30000, // default 2000
-    browserDisconnectTolerance: 0, // default 0
-    browserNoActivityTimeout: 40000, // default 10000
-    captureTimeout: 120000, // default 60000
-
+    browserDisconnectTimeout: 7000, // default 2000
+    browserDisconnectTolerance: 1, // default 0
+    browserNoActivityTimeout: 30000, // default 10000
+    captureTimeout: 60000, // default 60000,
+    browserSocketTimeout: 10000,
     plugins: plugins
   }
   setReporters(config, codeCoverage, browserstack);
