@@ -47,6 +47,13 @@
  * @type {Object}
  */
 
+/**
+ * @property
+ * @summary timeout (if no auction dealy)
+ * @name ModuleConfig#timeout
+ * @type {number}
+ */
+
 import {getGlobal} from '../../src/prebidGlobal';
 import {config} from '../../src/config.js';
 import {targeting} from '../../src/targeting';
@@ -55,6 +62,8 @@ import * as utils from '../../src/utils';
 
 /** @type {string} */
 const MODULE_NAME = 'realTimeData';
+/** @type {number} */
+const DEF_TIMEOUT = 1000;
 /** @type {RtdSubmodule[]} */
 let subModules = [];
 /** @type {ModuleConfig} */
@@ -100,7 +109,7 @@ function getProviderData(adUnits, callback) {
   const dataWaitTimeout = setTimeout(() => {
     processDone = true;
     callback(dataReceived);
-  }, _moduleConfig.auctionDelay);
+  }, _moduleConfig.auctionDelay || _moduleConfig.timeout || DEF_TIMEOUT);
 
   subModules.forEach(sm => {
     sm.getData(adUnits, onDataReceived);

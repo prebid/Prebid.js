@@ -10,7 +10,7 @@ const BIDDER_CODE = 'seedingAlliance';
 const DEFAULT_CUR = 'EUR';
 const ENDPOINT_URL = 'https://b.nativendo.de/cds/rtb/bid?format=openrtb2.5&ssp=nativendo';
 
-const NATIVE_ASSET_IDS = {0: 'title', 1: 'body', 2: 'sponsoredBy', 3: 'image'};
+const NATIVE_ASSET_IDS = {0: 'title', 1: 'body', 2: 'sponsoredBy', 3: 'image', 4: 'cta', 5: 'icon'};
 
 const NATIVE_PARAMS = {
   title: {
@@ -33,6 +33,18 @@ const NATIVE_PARAMS = {
   image: {
     id: 3,
     type: 3,
+    name: 'img'
+  },
+
+  cta: {
+    id: 4,
+    type: 12,
+    name: 'data'
+  },
+
+  icon: {
+    id: 5,
+    type: 1,
     name: 'img'
   }
 };

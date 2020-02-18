@@ -44,6 +44,15 @@ export const spec = {
       },
       imp: []
     };
+
+    if (bidderRequest.bids != undefined && bidderRequest.bids[0] != undefined) {
+      const schain = bidderRequest.bids[0].schain;
+      if (schain) {
+        openRtbBidRequest.source = {};
+        openRtbBidRequest.source.ext = { schain };
+      }
+    }
+
     let seatId = null;
 
     validBidReqs.forEach((bid, i) => {

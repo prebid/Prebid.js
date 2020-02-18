@@ -193,19 +193,17 @@ function bidToAdRequest(bid) {
     options: bid.params.options
   };
 
-  if (bid.mediaTypes && bid.mediaTypes.banner && bid.mediaTypes.native) {
-    adRequest.banner = true;
-  }
+  adRequest.native = utils.deepAccess(bid, 'mediaTypes.native');
 
-  if (bid.mediaTypes && bid.mediaTypes.native) {
-    adRequest.native = bid.mediaTypes.native;
+  if (adRequest.native && utils.deepAccess(bid, 'mediaTypes.banner')) {
+    adRequest.banner = true;
   }
 
   return adRequest;
 }
 
 function getSizes(bid) {
-  if (typeof utils.deepAccess(bid, 'mediaTypes.banner.sizes') !== 'undefined') {
+  if (utils.deepAccess(bid, 'mediaTypes.banner.sizes')) {
     return bid.mediaTypes.banner.sizes;
   } else if (Array.isArray(bid.sizes) && bid.sizes.length > 0) {
     return bid.sizes;
