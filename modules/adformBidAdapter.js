@@ -11,6 +11,7 @@ const OUTSTREAM_RENDERER_URL = 'https://s2.adform.net/banners/scripts/video/outs
 const BIDDER_CODE = 'adform';
 export const spec = {
   code: BIDDER_CODE,
+  aliases: ['adform2'],
   supportedMediaTypes: [ BANNER, VIDEO ],
   isBidRequestValid: function (bid) {
     return !!(bid.params.mid);
