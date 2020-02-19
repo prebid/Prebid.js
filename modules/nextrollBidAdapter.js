@@ -8,13 +8,6 @@ const BIDDER_CODE = 'nextroll';
 const BIDDER_ENDPOINT = 'https://d.adroll.com/bid/prebid/';
 const ADAPTER_VERSION = 4;
 
-export const PUBTAG_PUBKEY = `-----BEGIN PUBLIC KEY-----
-MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC/TZ6Gpm7gYg0j6o8LK+sKfYsl
-+Z3vY2flsA/KFllKyXKTTtC2nJSJlSTuNToIcXnW+2L3Q2V3yM8VExfhCtVg5oZd
-YEe1TfPmu7UyGP4rCJM3wD7Z3+3XPy4pWWiTvGhHOO0bdT9JfwaezJYObJBcfkpK
-PX0z1E1oDVf6nJT7rwIDAQAB
------END PUBLIC KEY-----`;
-
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER],
