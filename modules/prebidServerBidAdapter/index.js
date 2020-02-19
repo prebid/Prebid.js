@@ -287,6 +287,32 @@ function _appendSiteAppDevice(request, pageUrl) {
   }
 }
 
+function addBidderFirstPartyDataToRequest(request) {
+  const bidderConfig = config.getBidderConfig();
+  const fpdConfigs = Object.keys(bidderConfig).reduce((acc, bidder) => {
+    const currBidderConfig = bidderConfig[bidder];
+    if (currBidderConfig.fpd) {
+      const fpd = {};
+      if (currBidderConfig.fpd.context) {
+        fpd.site = currBidderConfig.fpd.context;
+      }
+      if (currBidderConfig.fpd.user) {
+        fpd.user = currBidderConfig.fpd.user;
+      }
+
+      acc.push({
+        bidders: [ bidder ],
+        config: { fpd }
+      });
+    }
+    return acc;
+  }, []);
+
+  if (fpdConfigs.length) {
+    utils.deepSetValue(request, 'ext.prebid.bidderconfig', fpdConfigs);
+  }
+}
+
 // https://iabtechlab.com/wp-content/uploads/2016/07/OpenRTB-Native-Ads-Specification-Final-1.2.pdf#page=40
 let nativeDataIdMap = {
   sponsoredBy: 1, // sponsored
@@ -660,6 +686,15 @@ const OPEN_RTB_PROTOCOL = {
     if (getConfig('coppa') === true) {
       utils.deepSetValue(request, 'regs.coppa', 1);
     }
+
+    const commonFpd = getConfig('fpd') || {};
+    if (commonFpd.context) {
+      utils.deepSetValue(request, 'site.ext.data', commonFpd.context);
+    }
+    if (commonFpd.user) {
+      utils.deepSetValue(request, 'user.ext.data', commonFpd.user);
+    }
+    addBidderFirstPartyDataToRequest(request);
 
     return request;
   },

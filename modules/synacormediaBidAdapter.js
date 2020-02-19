@@ -44,6 +44,12 @@ export const spec = {
       },
       imp: []
     };
+
+    const schain = validBidReqs[0].schain;
+    if (schain) {
+      openRtbBidRequest.source = { ext: { schain } };
+    }
+
     let seatId = null;
 
     validBidReqs.forEach((bid, i) => {
@@ -58,7 +64,7 @@ export const spec = {
       if (isNaN(bidFloor)) {
         logWarn(`Synacormedia: there is an invalid bid floor: ${bid.params.bidfloor}`);
       }
-      let pos = parseInt(bid.params.pos);
+      let pos = parseInt(bid.params.pos, 10);
       if (isNaN(pos)) {
         logWarn(`Synacormedia: there is an invalid POS: ${bid.params.pos}`);
         pos = 0;

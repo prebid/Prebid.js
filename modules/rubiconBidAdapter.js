@@ -268,6 +268,27 @@ export const spec = {
         utils.deepSetValue(data, 'source.ext.schain', bidRequest.schain);
       }
 
+      const siteData = Object.assign({}, bidRequest.params.inventory, config.getConfig('fpd.context'));
+      const userData = Object.assign({}, bidRequest.params.visitor, config.getConfig('fpd.user'));
+      if (!utils.isEmpty(siteData) || !utils.isEmpty(userData)) {
+        const bidderData = {
+          bidders: [ bidderRequest.bidderCode ],
+          config: {
+            fpd: {}
+          }
+        };
+
+        if (!utils.isEmpty(siteData)) {
+          bidderData.config.fpd.site = siteData;
+        }
+
+        if (!utils.isEmpty(userData)) {
+          bidderData.config.fpd.user = userData;
+        }
+
+        utils.deepSetValue(data, 'ext.prebid.bidderconfig.0', bidderData);
+      }
+
       /**
        * Prebid AdSlot
        * @type {(string|undefined)}
@@ -448,7 +469,6 @@ export const spec = {
       'x_source.tid': bidRequest.transactionId,
       'x_source.pchain': params.pchain,
       'p_screen_res': _getScreenResolution(),
-      'kw': Array.isArray(params.keywords) ? params.keywords.join(',') : '',
       'tk_user_key': params.userId,
       'p_geo.latitude': isNaN(parseFloat(latitude)) ? undefined : parseFloat(latitude).toFixed(4),
       'p_geo.longitude': isNaN(parseFloat(longitude)) ? undefined : parseFloat(longitude).toFixed(4),
@@ -487,22 +507,30 @@ export const spec = {
     }
 
     // visitor properties
-    if (params.visitor !== null && typeof params.visitor === 'object') {
-      Object.keys(params.visitor).forEach((key) => {
-        if (params.visitor[key] != null) {
-          data[`tg_v.${key}`] = params.visitor[key].toString(); // initialize array;
-        }
-      });
-    }
+    const visitorData = Object.assign({}, params.visitor, config.getConfig('fpd.user'));
+    Object.keys(visitorData).forEach((key) => {
+      if (visitorData[key] != null && key !== 'keywords') {
+        data[`tg_v.${key}`] = typeof visitorData[key] === 'object' && !Array.isArray(visitorData[key])
+          ? JSON.stringify(visitorData[key])
+          : visitorData[key].toString(); // initialize array;
+      }
+    });
 
     // inventory properties
-    if (params.inventory !== null && typeof params.inventory === 'object') {
-      Object.keys(params.inventory).forEach((key) => {
-        if (params.inventory[key] != null) {
-          data[`tg_i.${key}`] = params.inventory[key].toString();
-        }
-      });
-    }
+    const inventoryData = Object.assign({}, params.inventory, config.getConfig('fpd.context'));
+    Object.keys(inventoryData).forEach((key) => {
+      if (inventoryData[key] != null && key !== 'keywords') {
+        data[`tg_i.${key}`] = typeof inventoryData[key] === 'object' && !Array.isArray(inventoryData[key])
+          ? JSON.stringify(inventoryData[key])
+          : inventoryData[key].toString();
+      }
+    });
+
+    // keywords
+    const keywords = (params.keywords || []).concat(
+      utils.deepAccess(config.getConfig('fpd.user'), 'keywords') || [],
+      utils.deepAccess(config.getConfig('fpd.context'), 'keywords') || []);
+    data.kw = keywords.length ? keywords.join(',') : '';
 
     /**
      * Prebid AdSlot
