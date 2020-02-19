@@ -1,14 +1,14 @@
-import * as utils from '../src/utils';
+import * as utils from '../src/utils.js';
 import {
   BANNER,
   VIDEO
-} from '../src/mediaTypes';
+} from '../src/mediaTypes.js';
 import {
   config
-} from '../src/config';
+} from '../src/config.js';
 import {
   registerBidder
-} from '../src/adapters/bidderFactory';
+} from '../src/adapters/bidderFactory.js';
 const BIDDER_CODE = 'smartadserver';
 export const spec = {
   code: BIDDER_CODE,

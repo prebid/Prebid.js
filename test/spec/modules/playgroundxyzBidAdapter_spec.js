@@ -1,7 +1,7 @@
 import { expect } from 'chai';
-import { spec } from 'modules/playgroundxyzBidAdapter';
-import { newBidder } from 'src/adapters/bidderFactory';
-import { deepClone } from 'src/utils';
+import { spec } from 'modules/playgroundxyzBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
+import { deepClone } from 'src/utils.js';
 
 const URL = 'https://ads.playground.xyz/host-config/prebid?v=2';
 const GDPR_CONSENT = 'XYZ-CONSENT';

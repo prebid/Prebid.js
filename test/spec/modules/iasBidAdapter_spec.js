@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec } from 'modules/iasBidAdapter';
+import { spec } from 'modules/iasBidAdapter.js';
 
 describe('iasBidAdapter is an adapter that', function () {
   it('has the correct bidder code', function () {

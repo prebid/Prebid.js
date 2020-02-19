@@ -1,8 +1,8 @@
-import eplAnalyticsAdapter from 'modules/eplanningAnalyticsAdapter';
-import includes from 'core-js/library/fn/array/includes';
+import eplAnalyticsAdapter from 'modules/eplanningAnalyticsAdapter.js';
+import includes from 'core-js/library/fn/array/includes.js';
 import { expect } from 'chai';
-import {parse as parseURL} from 'src/url';
-import { server } from 'test/mocks/xhr';
+import {parse as parseURL} from 'src/url.js';
+import { server } from 'test/mocks/xhr.js';
 let adapterManager = require('src/adapterManager').default;
 let events = require('src/events');
 let constants = require('src/constants.json');

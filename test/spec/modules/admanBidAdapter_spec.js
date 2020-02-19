@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import {spec} from '../../../modules/admanBidAdapter';
+import {spec} from '../../../modules/admanBidAdapter.js';
 
 describe('AdmanMediaBidAdapter', function () {
   let bid = {

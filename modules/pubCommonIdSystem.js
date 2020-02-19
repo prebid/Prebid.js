@@ -5,9 +5,9 @@
  * @requires module:modules/userId
  */
 
-import * as utils from '../src/utils';
-import * as url from '../src/url';
-import {submodule} from '../src/hook';
+import * as utils from '../src/utils.js';
+import * as url from '../src/url.js';
+import {submodule} from '../src/hook.js';
 
 const PUB_COMMON_ID = 'PublisherCommonId';
 

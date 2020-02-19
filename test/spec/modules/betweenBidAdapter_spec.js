@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec } from 'modules/betweenBidAdapter';
+import { spec } from 'modules/betweenBidAdapter.js';
 
 describe('betweenBidAdapterTests', function () {
   it('validate_pub_params', function () {

@@ -1,7 +1,7 @@
-import * as utils from '../src/utils';
-import {registerBidder} from '../src/adapters/bidderFactory';
-import {config} from '../src/config';
-import {BANNER, VIDEO} from '../src/mediaTypes';
+import * as utils from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {config} from '../src/config.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
 
 const DEFAULT_INTEGRATION = 'pbjs_lite';
 
@@ -638,7 +638,7 @@ export const spec = {
               bidObject.adserverTargeting = extPrebidTargeting;
             }
 
-            // try to get cache values from 'response.ext.prebid.cache'
+            // try to get cache values from 'response.ext.prebid.cache.js'
             // else try 'bid.ext.prebid.targeting' as fallback
             if (bid.ext.prebid.cache && typeof bid.ext.prebid.cache.vastXml === 'object' && bid.ext.prebid.cache.vastXml.cacheId && bid.ext.prebid.cache.vastXml.url) {
               bidObject.videoCacheKey = bid.ext.prebid.cache.vastXml.cacheId;

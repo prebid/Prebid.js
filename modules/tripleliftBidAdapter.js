@@ -1,7 +1,7 @@
-import { BANNER } from '../src/mediaTypes';
-import { registerBidder } from '../src/adapters/bidderFactory';
-import * as utils from '../src/utils';
-import { config } from '../src/config';
+import { BANNER } from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import * as utils from '../src/utils.js';
+import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'triplelift';
 const STR_ENDPOINT = 'https://tlx.3lift.com/header/auction?';

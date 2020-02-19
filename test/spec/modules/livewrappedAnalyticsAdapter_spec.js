@@ -1,7 +1,7 @@
-import livewrappedAnalyticsAdapter, { BID_WON_TIMEOUT } from 'modules/livewrappedAnalyticsAdapter';
+import livewrappedAnalyticsAdapter, { BID_WON_TIMEOUT } from 'modules/livewrappedAnalyticsAdapter.js';
 import CONSTANTS from 'src/constants.json';
-import { config } from 'src/config';
-import { server } from 'test/mocks/xhr';
+import { config } from 'src/config.js';
+import { server } from 'test/mocks/xhr.js';
 
 let events = require('src/events');
 let utils = require('src/utils');

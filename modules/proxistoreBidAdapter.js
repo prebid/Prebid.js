@@ -1,4 +1,4 @@
-const { registerBidder } = require('../src/adapters/bidderFactory');
+const { registerBidder } = require('../src/adapters/bidderFactory.js');
 const BIDDER_CODE = 'proxistore';
 const PROXISTORE_VENDOR_ID = 418;
 

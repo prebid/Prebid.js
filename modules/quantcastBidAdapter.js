@@ -1,7 +1,7 @@
-import * as utils from '../src/utils';
-import { ajax } from '../src/ajax';
-import { config } from '../src/config';
-import { registerBidder } from '../src/adapters/bidderFactory';
+import * as utils from '../src/utils.js';
+import { ajax } from '../src/ajax.js';
+import { config } from '../src/config.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'quantcast';
 const DEFAULT_BID_FLOOR = 0.0000000001;

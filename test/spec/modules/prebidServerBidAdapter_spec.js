@@ -1,12 +1,12 @@
 import { expect } from 'chai';
 import { PrebidServer as Adapter, resetSyncedStatus } from 'modules/prebidServerBidAdapter/index.js';
-import adapterManager from 'src/adapterManager';
-import * as utils from 'src/utils';
-import { ajax } from 'src/ajax';
-import { config } from 'src/config';
-import events from 'src/events';
-import CONSTANTS from 'src/constants';
-import { server } from 'test/mocks/xhr';
+import adapterManager from 'src/adapterManager.js';
+import * as utils from 'src/utils.js';
+import { ajax } from 'src/ajax.js';
+import { config } from 'src/config.js';
+import events from 'src/events.js';
+import CONSTANTS from 'src/constants.json';
+import { server } from 'test/mocks/xhr.js';
 
 let CONFIG = {
   accountId: '1',

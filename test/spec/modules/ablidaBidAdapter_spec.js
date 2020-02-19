@@ -1,6 +1,6 @@
 import {assert, expect} from 'chai';
-import {spec} from 'modules/ablidaBidAdapter';
-import {newBidder} from 'src/adapters/bidderFactory';
+import {spec} from 'modules/ablidaBidAdapter.js';
+import {newBidder} from 'src/adapters/bidderFactory.js';
 
 const ENDPOINT_URL = 'https://bidder.ablida.net/prebid';
 
