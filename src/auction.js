@@ -72,7 +72,7 @@ import { VIDEO } from './mediaTypes.js';
 
 const { syncUsers } = userSync;
 const utils = require('./utils.js');
-const adapterManager = require('./adapterManager').default;
+const adapterManager = require('./adapterManager.js').default;
 const events = require('./events.js');
 const CONSTANTS = require('./constants.json');
 
