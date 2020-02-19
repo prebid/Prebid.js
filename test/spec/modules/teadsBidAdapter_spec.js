@@ -2,7 +2,7 @@ import {expect} from 'chai';
 import {spec} from 'modules/teadsBidAdapter';
 import {newBidder} from 'src/adapters/bidderFactory';
 
-const ENDPOINT = '//a.teads.tv/hb/bid-request';
+const ENDPOINT = 'https://a.teads.tv/hb/bid-request';
 const AD_SCRIPT = '<script type="text/javascript" class="teads" async="true" src="http://a.teads.tv/hb/getAdSettings"></script>"';
 
 describe('teadsBidAdapter', () => {
@@ -396,7 +396,7 @@ describe('teadsBidAdapter', () => {
       }
     };
     let hb_version = '$prebid.version$'
-    let finalUrl = `//sync.teads.tv/iframe?hb_provider=prebid&hb_version=${hb_version}&gdprIab={"status":12,"consent":"${consentString}"}&placementId=34&`;
+    let finalUrl = `https://sync.teads.tv/iframe?hb_provider=prebid&hb_version=${hb_version}&gdprIab={"status":12,"consent":"${consentString}"}&placementId=34&`;
     const userSync = spec.getUserSyncs(syncOptions, bids, gdprConsent);
 
     expect(userSync[0].type).to.equal('iframe');
@@ -429,7 +429,7 @@ describe('teadsBidAdapter', () => {
       }
     };
     let hb_version = '$prebid.version$'
-    let finalUrl = `//sync.teads.tv/iframe?hb_provider=prebid&hb_version=${hb_version}&gdprIab={"status":12,"consent":"${consentString}"}&`;
+    let finalUrl = `https://sync.teads.tv/iframe?hb_provider=prebid&hb_version=${hb_version}&gdprIab={"status":12,"consent":"${consentString}"}&`;
     const userSync = spec.getUserSyncs(syncOptions, bids, gdprConsent);
 
     expect(userSync[0].type).to.equal('iframe');

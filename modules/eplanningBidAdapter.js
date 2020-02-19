@@ -231,8 +231,14 @@ function waitForElementsPresent(elements) {
       });
     }
   });
-  const config = {childList: true, subtree: true, characterData: true, attributes: true, attributeOldValue: true};
-  observer.observe(document.body, config);
+  document.addEventListener('DOMContentLoaded', function (event) {
+    var config = {
+      childList: true,
+      subtree: true,
+      characterData: true
+    };
+    observer.observe(document.body, config);
+  });
 }
 
 function registerViewability(div) {
