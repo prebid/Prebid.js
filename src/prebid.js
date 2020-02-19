@@ -17,8 +17,8 @@ import { createBid } from './bidfactory.js';
 const $$PREBID_GLOBAL$$ = getGlobal();
 const CONSTANTS = require('./constants.json');
 const utils = require('./utils.js');
-const adapterManager = require('./adapterManager').default;
-const events = require('./events');
+const adapterManager = require('./adapterManager.js').default;
+const events = require('./events.js');
 const { triggerUserSyncs } = userSync;
 
 /* private variables */

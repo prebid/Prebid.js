@@ -14,7 +14,7 @@ import { getRefererInfo } from './refererDetection.js';
 
 var utils = require('./utils.js');
 var CONSTANTS = require('./constants.json');
-var events = require('./events');
+var events = require('./events.js');
 let s2sTestingModule; // store s2sTesting module if it's loaded
 
 let adapterManager = {};

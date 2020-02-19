@@ -5,7 +5,7 @@ import adapter from '../src/AnalyticsAdapter.js';
 import CONSTANTS from '../src/constants.json';
 import adapterManager from '../src/adapterManager.js';
 
-const utils = require('../src/utils');
+const utils = require('../src/utils.js');
 
 const url = 'https://kinesis.us-east-1.amazonaws.com/';
 const analyticsType = 'endpoint';

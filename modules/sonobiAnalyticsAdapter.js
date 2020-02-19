@@ -3,7 +3,7 @@ import CONSTANTS from '../src/constants.json';
 import adapterManager from '../src/adapterManager.js';
 import {ajaxBuilder} from '../src/ajax.js';
 
-const utils = require('../src/utils');
+const utils = require('../src/utils.js');
 let ajax = ajaxBuilder(0);
 
 const DEFAULT_EVENT_URL = 'apex.go.sonobi.com/keymaker';

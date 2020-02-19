@@ -71,9 +71,9 @@ import { OUTSTREAM } from './video.js';
 import { VIDEO } from './mediaTypes.js';
 
 const { syncUsers } = userSync;
-const utils = require('./utils');
+const utils = require('./utils.js');
 const adapterManager = require('./adapterManager').default;
-const events = require('./events');
+const events = require('./events.js');
 const CONSTANTS = require('./constants.json');
 
 export const AUCTION_STARTED = 'started';
