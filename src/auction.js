@@ -57,18 +57,18 @@
  * @property {function(): void} callBids - sends requests to all adapters for bids
  */
 
-import {flatten, timestamp, adUnitsFilter, deepAccess, getBidRequest, getValue} from './utils';
-import { parse as parseURL } from './url';
-import { getPriceBucketString } from './cpmBucketManager';
-import { getNativeTargeting } from './native';
-import { getCacheUrl, store } from './videoCache';
-import { Renderer } from './Renderer';
-import { config } from './config';
-import { userSync } from './userSync';
-import { hook } from './hook';
-import find from 'core-js/library/fn/array/find';
-import { OUTSTREAM } from './video';
-import { VIDEO } from './mediaTypes';
+import {flatten, timestamp, adUnitsFilter, deepAccess, getBidRequest, getValue} from './utils.js';
+import { parse as parseURL } from './url.js';
+import { getPriceBucketString } from './cpmBucketManager.js';
+import { getNativeTargeting } from './native.js';
+import { getCacheUrl, store } from './videoCache.js';
+import { Renderer } from './Renderer.js';
+import { config } from './config.js';
+import { userSync } from './userSync.js';
+import { hook } from './hook.js';
+import find from 'core-js/library/fn/array/find.js';
+import { OUTSTREAM } from './video.js';
+import { VIDEO } from './mediaTypes.js';
 
 const { syncUsers } = userSync;
 const utils = require('./utils');

@@ -1,6 +1,6 @@
 import { assert, expect } from 'chai';
-import { BANNER } from 'src/mediaTypes';
-import { spec } from 'modules/synacormediaBidAdapter';
+import { BANNER } from 'src/mediaTypes.js';
+import { spec } from 'modules/synacormediaBidAdapter.js';
 
 describe('synacormediaBidAdapter ', function () {
   describe('isBidRequestValid', function () {

@@ -1,5 +1,5 @@
-import CONSTANTS from './constants';
-import { ajax } from './ajax';
+import CONSTANTS from './constants.json';
+import { ajax } from './ajax.js';
 
 const events = require('./events');
 const utils = require('./utils');

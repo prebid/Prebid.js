@@ -1,8 +1,8 @@
 import { expect } from 'chai';
-import {config} from 'src/config';
-import * as utils from 'src/utils';
+import {config} from 'src/config.js';
+import * as utils from 'src/utils.js';
 import { init, requestBidsHook, setSubmoduleRegistry } from 'modules/userId/index.js';
-import { parrableIdSubmodule } from 'modules/parrableIdSystem';
+import { parrableIdSubmodule } from 'modules/parrableIdSystem.js';
 
 const EXPIRED_COOKIE_DATE = 'Thu, 01 Jan 1970 00:00:01 GMT';
 const P_COOKIE_NAME = '_parrable_eid';

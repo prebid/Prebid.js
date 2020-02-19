@@ -1,6 +1,6 @@
-import {ajaxBuilder} from '../src/ajax';
-import adapter from '../src/AnalyticsAdapter';
-import adapterManager from '../src/adapterManager';
+import {ajaxBuilder} from '../src/ajax.js';
+import adapter from '../src/AnalyticsAdapter.js';
+import adapterManager from '../src/adapterManager.js';
 
 /**
  * prebidmanagerAnalyticsAdapter.js - analytics adapter for prebidmanager

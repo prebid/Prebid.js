@@ -1,4 +1,4 @@
-import {registerBidder} from '../src/adapters/bidderFactory';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
 const utils = require('../src/utils');
 const BIDDER_CODE = 'videoreach';
 const ENDPOINT_URL = 'https://a.videoreach.com/hb/';

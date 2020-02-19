@@ -1,6 +1,6 @@
-import { VIDEO } from '../src/mediaTypes';
-import { registerBidder } from '../src/adapters/bidderFactory';
-import { Renderer } from '../src/Renderer';
+import { VIDEO } from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { Renderer } from '../src/Renderer.js';
 
 const BIDDER_CODE = 'aniview';
 const TTL = 600;

@@ -1,17 +1,17 @@
-import Adapter from '../../src/adapter';
-import { createBid } from '../../src/bidfactory';
-import * as utils from '../../src/utils';
-import { STATUS, S2S, EVENTS } from '../../src/constants';
-import adapterManager from '../../src/adapterManager';
-import { config } from '../../src/config';
-import { VIDEO, NATIVE } from '../../src/mediaTypes';
-import { processNativeAdUnitParams } from '../../src/native';
-import { isValid } from '../../src/adapters/bidderFactory';
-import events from '../../src/events';
-import includes from 'core-js/library/fn/array/includes';
+import Adapter from '../../src/adapter.js';
+import { createBid } from '../../src/bidfactory.js';
+import * as utils from '../../src/utils.js';
+import { STATUS, S2S, EVENTS } from '../../src/constants.json';
+import adapterManager from '../../src/adapterManager.js';
+import { config } from '../../src/config.js';
+import { VIDEO, NATIVE } from '../../src/mediaTypes.js';
+import { processNativeAdUnitParams } from '../../src/native.js';
+import { isValid } from '../../src/adapters/bidderFactory.js';
+import events from '../../src/events.js';
+import includes from 'core-js/library/fn/array/includes.js';
 import { S2S_VENDORS } from './config.js';
-import { ajax } from '../../src/ajax';
-import find from 'core-js/library/fn/array/find';
+import { ajax } from '../../src/ajax.js';
+import find from 'core-js/library/fn/array/find.js';
 
 const getConfig = config.getConfig;
 
@@ -744,7 +744,7 @@ const OPEN_RTB_PROTOCOL = {
             bidObject.playerHeight = sizes[0];
             bidObject.playerWidth = sizes[1];
 
-            // try to get cache values from 'response.ext.prebid.cache'
+            // try to get cache values from 'response.ext.prebid.cache.js'
             // else try 'bid.ext.prebid.targeting' as fallback
             if (bid.ext.prebid.cache && typeof bid.ext.prebid.cache.vastXml === 'object' && bid.ext.prebid.cache.vastXml.cacheId && bid.ext.prebid.cache.vastXml.url) {
               bidObject.videoCacheKey = bid.ext.prebid.cache.vastXml.cacheId;

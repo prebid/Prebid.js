@@ -12,11 +12,11 @@
  * @property {(string|Object)} [video-outstream]
  */
 
-import { isValidPriceConfig } from './cpmBucketManager';
-import find from 'core-js/library/fn/array/find';
-import includes from 'core-js/library/fn/array/includes';
-import Set from 'core-js/library/fn/set';
-import { parseQS } from './url';
+import { isValidPriceConfig } from './cpmBucketManager.js';
+import find from 'core-js/library/fn/array/find.js';
+import includes from 'core-js/library/fn/array/includes.js';
+import Set from 'core-js/library/fn/set.js';
+import { parseQS } from './url.js';
 
 const from = require('core-js/library/fn/array/from');
 const utils = require('./utils');

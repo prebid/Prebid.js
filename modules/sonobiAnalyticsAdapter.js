@@ -1,7 +1,7 @@
-import adapter from '../src/AnalyticsAdapter';
+import adapter from '../src/AnalyticsAdapter.js';
 import CONSTANTS from '../src/constants.json';
-import adapterManager from '../src/adapterManager';
-import {ajaxBuilder} from '../src/ajax';
+import adapterManager from '../src/adapterManager.js';
+import {ajaxBuilder} from '../src/ajax.js';
 
 const utils = require('../src/utils');
 let ajax = ajaxBuilder(0);

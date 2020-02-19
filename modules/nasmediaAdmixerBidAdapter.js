@@ -1,6 +1,6 @@
 
-import {registerBidder} from '../src/adapters/bidderFactory';
-import {BANNER} from '../src/mediaTypes';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER} from '../src/mediaTypes.js';
 
 const ADMIXER_ENDPOINT = 'https://adn.admixer.co.kr:10443/prebid/ad_req';
 const BIDDER_CODE = 'nasmediaAdmixer';

@@ -1,9 +1,9 @@
-import * as utils from '../src/utils'
+import * as utils from '../src/utils.js'
 
-import { config } from '../src/config'
-import { BANNER, VIDEO } from '../src/mediaTypes';
-import includes from 'core-js/library/fn/array/includes';
-import { registerBidder } from '../src/adapters/bidderFactory'
+import { config } from '../src/config.js'
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import includes from 'core-js/library/fn/array/includes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js'
 
 const BIDDER_CODE = 'gumgum'
 const ALIAS_BIDDER_CODE = ['gg']

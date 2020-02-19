@@ -1,4 +1,4 @@
-import { BANNER, NATIVE } from '../src/mediaTypes';
+import { BANNER, NATIVE } from '../src/mediaTypes.js';
 
 const {registerBidder} = require('../src/adapters/bidderFactory');
 const BIDDER_CODE = 'my6sense';

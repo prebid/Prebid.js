@@ -1,18 +1,18 @@
 /** @module pbjs */
 
-import { getGlobal } from './prebidGlobal';
-import { flatten, uniques, isGptPubadsDefined, adUnitsFilter, isArrayOfNums } from './utils';
-import { listenMessagesFromCreative } from './secureCreatives';
+import { getGlobal } from './prebidGlobal.js';
+import { flatten, uniques, isGptPubadsDefined, adUnitsFilter, isArrayOfNums } from './utils.js';
+import { listenMessagesFromCreative } from './secureCreatives.js';
 import { userSync } from './userSync.js';
-import { config } from './config';
-import { auctionManager } from './auctionManager';
-import { targeting } from './targeting';
-import { hook } from './hook';
-import { sessionLoader } from './debugging';
-import includes from 'core-js/library/fn/array/includes';
-import { adunitCounter } from './adUnits';
-import { isRendererRequired, executeRenderer } from './Renderer';
-import { createBid } from './bidfactory';
+import { config } from './config.js';
+import { auctionManager } from './auctionManager.js';
+import { targeting } from './targeting.js';
+import { hook } from './hook.js';
+import { sessionLoader } from './debugging.js';
+import includes from 'core-js/library/fn/array/includes.js';
+import { adunitCounter } from './adUnits.js';
+import { isRendererRequired, executeRenderer } from './Renderer.js';
+import { createBid } from './bidfactory.js';
 
 const $$PREBID_GLOBAL$$ = getGlobal();
 const CONSTANTS = require('./constants.json');

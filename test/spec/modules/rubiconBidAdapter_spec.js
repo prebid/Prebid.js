@@ -1,12 +1,12 @@
 import {expect} from 'chai';
-import adapterManager from 'src/adapterManager';
-import {spec, getPriceGranularity, masSizeOrdering, resetUserSync, hasVideoMediaType, FASTLANE_ENDPOINT} from 'modules/rubiconBidAdapter';
+import adapterManager from 'src/adapterManager.js';
+import {spec, getPriceGranularity, masSizeOrdering, resetUserSync, hasVideoMediaType, FASTLANE_ENDPOINT} from 'modules/rubiconBidAdapter.js';
 import {parse as parseQuery} from 'querystring';
-import {newBidder} from 'src/adapters/bidderFactory';
-import {userSync} from 'src/userSync';
-import {config} from 'src/config';
-import * as utils from 'src/utils';
-import find from 'core-js/library/fn/array/find';
+import {newBidder} from 'src/adapters/bidderFactory.js';
+import {userSync} from 'src/userSync.js';
+import {config} from 'src/config.js';
+import * as utils from 'src/utils.js';
+import find from 'core-js/library/fn/array/find.js';
 
 var CONSTANTS = require('src/constants.json');
 
