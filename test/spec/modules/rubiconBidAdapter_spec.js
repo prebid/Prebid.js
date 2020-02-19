@@ -980,6 +980,51 @@ describe('the rubicon adapter', function () {
               expect(data[key]).to.equal(value);
             });
           });
+
+          it('should use first party data from getConfig over the bid params, if present', () => {
+            const context = {
+              keywords: ['e', 'f'],
+              rating: '4-star'
+            };
+            const user = {
+              keywords: ['d'],
+              gender: 'M',
+              yob: '1984',
+              geo: { country: 'ca' }
+            };
+
+            sandbox.stub(config, 'getConfig').callsFake(key => {
+              const config = {
+                fpd: {
+                  context,
+                  user
+                }
+              };
+              return utils.deepAccess(config, key);
+            });
+
+            const expectedQuery = {
+              'kw': 'a,b,c,d,e,f',
+              'tg_v.ucat': 'new',
+              'tg_v.lastsearch': 'iphone',
+              'tg_v.likes': 'sports,video games',
+              'tg_v.gender': 'M',
+              'tg_v.yob': '1984',
+              'tg_v.geo': '{"country":"ca"}',
+              'tg_i.rating': '4-star',
+              'tg_i.prodtype': 'tech,mobile',
+            };
+
+            // get the built request
+            let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+            let data = parseQuery(request.data);
+
+            // make sure that tg_v, tg_i, and kw values are correct
+            Object.keys(expectedQuery).forEach(key => {
+              let value = expectedQuery[key];
+              expect(data[key]).to.deep.equal(value);
+            });
+          });
         });
 
         describe('singleRequest config', function () {
@@ -1639,6 +1684,44 @@ describe('the rubicon adapter', function () {
 
           const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
           expect(request.data.regs.coppa).to.equal(1);
+        });
+
+        it('should include first party data', () => {
+          createVideoBidderRequest();
+
+          const context = {
+            keywords: ['e', 'f'],
+            rating: '4-star'
+          };
+          const user = {
+            keywords: ['d'],
+            gender: 'M',
+            yob: '1984',
+            geo: { country: 'ca' }
+          };
+
+          sandbox.stub(config, 'getConfig').callsFake(key => {
+            const config = {
+              fpd: {
+                context,
+                user
+              }
+            };
+            return utils.deepAccess(config, key);
+          });
+
+          const expected = [{
+            bidders: [ 'rubicon' ],
+            config: {
+              fpd: {
+                site: Object.assign({}, bidderRequest.bids[0].params.inventory, context),
+                user: Object.assign({}, bidderRequest.bids[0].params.visitor, user)
+              }
+            }
+          }];
+
+          const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          expect(request.data.ext.prebid.bidderconfig).to.deep.equal(expected);
         });
 
         it('should include storedAuctionResponse in video bid request', function () {
