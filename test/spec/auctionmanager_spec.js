@@ -1,14 +1,14 @@
-import { getKeyValueTargetingPairs, auctionCallbacks, AUCTION_COMPLETED } from 'src/auction';
+import { getKeyValueTargetingPairs, auctionCallbacks, AUCTION_COMPLETED } from 'src/auction.js';
 import CONSTANTS from 'src/constants.json';
-import { adjustBids, getMediaTypeGranularity } from 'src/auction';
-import * as auctionModule from 'src/auction';
-import { registerBidder } from 'src/adapters/bidderFactory';
-import { createBid } from 'src/bidfactory';
-import { config } from 'src/config';
-import * as store from 'src/videoCache';
-import * as ajaxLib from 'src/ajax';
-import find from 'core-js/library/fn/array/find';
-import { server } from 'test/mocks/xhr';
+import { adjustBids, getMediaTypeGranularity } from 'src/auction.js';
+import * as auctionModule from 'src/auction.js';
+import { registerBidder } from 'src/adapters/bidderFactory.js';
+import { createBid } from 'src/bidfactory.js';
+import { config } from 'src/config.js';
+import * as store from 'src/videoCache.js';
+import * as ajaxLib from 'src/ajax.js';
+import find from 'core-js/library/fn/array/find.js';
+import { server } from 'test/mocks/xhr.js';
 
 var assert = require('assert');
 

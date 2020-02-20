@@ -1,15 +1,15 @@
 /**
  * invisiblyAdapterAdapter.js - analytics adapter for Invisibly
  */
-import { ajaxBuilder } from '../src/ajax';
-import adapter from '../src/AnalyticsAdapter';
-import adapterManager from '../src/adapterManager';
+import { ajaxBuilder } from '../src/ajax.js';
+import adapter from '../src/AnalyticsAdapter.js';
+import adapterManager from '../src/adapterManager.js';
 
 const DEFAULT_EVENT_URL = 'https://api.pymx5.com/v1/' + 'sites/events';
 const analyticsType = 'endpoint';
 const analyticsName = 'Invisibly Analytics Adapter:';
 
-const utils = require('../src/utils');
+const utils = require('../src/utils.js');
 const CONSTANTS = require('../src/constants.json');
 const ajax = ajaxBuilder(0);
 

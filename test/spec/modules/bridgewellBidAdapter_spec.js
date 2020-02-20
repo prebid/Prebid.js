@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { spec } from 'modules/bridgewellBidAdapter';
-import { newBidder } from 'src/adapters/bidderFactory';
+import { spec } from 'modules/bridgewellBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 
 describe('bridgewellBidAdapter', function () {
   const adapter = newBidder(spec);

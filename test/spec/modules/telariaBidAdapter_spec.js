@@ -1,7 +1,7 @@
 import {expect} from 'chai';
-import {newBidder} from 'src/adapters/bidderFactory';
-import {spec, getTimeoutUrl} from 'modules/telariaBidAdapter';
-import * as utils from 'src/utils';
+import {newBidder} from 'src/adapters/bidderFactory.js';
+import {spec, getTimeoutUrl} from 'modules/telariaBidAdapter.js';
+import * as utils from 'src/utils.js';
 
 const ENDPOINT = '.ads.tremorhub.com/ad/tag';
 const AD_CODE = 'ssp-!demo!-lufip';

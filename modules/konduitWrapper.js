@@ -1,8 +1,8 @@
-import { registerVideoSupport } from '../src/adServerManager';
-import { targeting } from '../src/targeting';
-import { format as buildUrl } from '../src/url';
-import * as utils from '../src/utils';
-import { config } from '../src/config';
+import { registerVideoSupport } from '../src/adServerManager.js';
+import { targeting } from '../src/targeting.js';
+import { format as buildUrl } from '../src/url.js';
+import * as utils from '../src/utils.js';
+import { config } from '../src/config.js';
 
 const MODULE_NAME = 'Konduit';
 

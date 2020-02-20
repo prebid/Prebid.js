@@ -1,8 +1,8 @@
-import { ajax } from '../src/ajax';
-import adapter from '../src/AnalyticsAdapter';
-import adapterManager from '../src/adapterManager';
+import { ajax } from '../src/ajax.js';
+import adapter from '../src/AnalyticsAdapter.js';
+import adapterManager from '../src/adapterManager.js';
 import CONSTANTS from '../src/constants.json';
-import * as utils from '../src/utils';
+import * as utils from '../src/utils.js';
 
 const analyticsType = 'endpoint';
 const url = 'https://adxpremium.services/graphql';

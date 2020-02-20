@@ -1,6 +1,6 @@
 import {expect} from 'chai';
-import {spec} from 'modules/deepintentBidAdapter';
-import * as utils from '../../../src/utils';
+import {spec} from 'modules/deepintentBidAdapter.js';
+import * as utils from '../../../src/utils.js';
 
 describe('Deepintent adapter', function () {
   let request;

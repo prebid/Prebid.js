@@ -1,7 +1,7 @@
 import { expect } from 'chai';
-import { spec } from 'modules/xhbBidAdapter';
-import { newBidder } from 'src/adapters/bidderFactory';
-import { deepClone } from 'src/utils';
+import { spec } from 'modules/xhbBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
+import { deepClone } from 'src/utils.js';
 
 const ENDPOINT = 'https://ib.adnxs.com/ut/v3/prebid';
 
