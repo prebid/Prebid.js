@@ -224,7 +224,8 @@ describe('the rubicon adapter', function () {
       lipb: {
         lipbid: '0000-1111-2222-3333',
         segments: ['segA', 'segB']
-      }
+      },
+      idl_env: '1111-2222-3333-4444'
     };
     bid.storedAuctionResponse = 11111;
   }
@@ -1305,6 +1306,19 @@ describe('the rubicon adapter', function () {
               expect(unescapedData.indexOf('&tg_v.LIseg=segD,segE&') !== -1).to.equal(true);
             });
           });
+
+          describe('LiveRamp support', function () {
+            it('should send tpid_liveramp.com when userId defines idl_env', function () {
+              const clonedBid = utils.deepClone(bidderRequest.bids[0]);
+              clonedBid.userId = {
+                idl_env: '1111-2222-3333-4444'
+              };
+              let [request] = spec.buildRequests([clonedBid], bidderRequest);
+              let data = parseQuery(request.data);
+
+              expect(data['tpid_liveramp.com']).to.equal('1111-2222-3333-4444');
+            });
+          });
         })
 
         describe('Prebid AdSlot', function () {
@@ -1418,6 +1432,9 @@ describe('the rubicon adapter', function () {
           expect(post.user.ext.tpid).that.is.an('object');
           expect(post.user.ext.tpid.source).to.equal('liveintent.com');
           expect(post.user.ext.tpid.uid).to.equal('0000-1111-2222-3333');
+          // LiveRamp should exist
+          expect(post.user.ext.eids[1].source).to.equal('liveramp.com');
+          expect(post.user.ext.eids[1].uids[0].id).to.equal('1111-2222-3333-4444');
           expect(post.rp).that.is.an('object');
           expect(post.rp.target).that.is.an('object');
           expect(post.rp.target.LIseg).that.is.an('array');
