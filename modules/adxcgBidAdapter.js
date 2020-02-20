@@ -1,9 +1,9 @@
-import { config } from '../src/config'
-import * as utils from '../src/utils'
-import * as url from '../src/url'
-import { registerBidder } from '../src/adapters/bidderFactory'
-import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes'
-import includes from 'core-js/library/fn/array/includes'
+import { config } from '../src/config.js'
+import * as utils from '../src/utils.js'
+import * as url from '../src/url.js'
+import { registerBidder } from '../src/adapters/bidderFactory.js'
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js'
+import includes from 'core-js/library/fn/array/includes.js'
 
 /**
  * Adapter for requesting bids from adxcg.net

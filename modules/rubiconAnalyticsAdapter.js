@@ -1,9 +1,9 @@
-import adapter from '../src/AnalyticsAdapter';
-import adapterManager from '../src/adapterManager';
+import adapter from '../src/AnalyticsAdapter.js';
+import adapterManager from '../src/adapterManager.js';
 import CONSTANTS from '../src/constants.json';
-import { ajax } from '../src/ajax';
-import { config } from '../src/config';
-import * as utils from '../src/utils';
+import { ajax } from '../src/ajax.js';
+import { config } from '../src/config.js';
+import * as utils from '../src/utils.js';
 
 const {
   EVENTS: {
@@ -416,10 +416,6 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
         }
         bid.clientLatencyMillis = Date.now() - cache.auctions[args.auctionId].timestamp;
         bid.bidResponse = parseBidResponse(args, bid.bidResponse);
-        // RP server banner overwrites bidId with bid.seatBidId
-        if (utils.deepAccess(bid, 'bidResponse.seatBidId') && bid.bidder === 'rubicon' && bid.source === 'server' && ['video', 'banner'].some(i => utils.deepAccess(bid, 'bidResponse.mediaType') === i)) {
-          bid.seatBidId = bid.bidResponse.seatBidId;
-        }
         break;
       case BIDDER_DONE:
         args.bids.forEach(bid => {
