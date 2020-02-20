@@ -1,7 +1,7 @@
 import { expect } from 'chai';
-import { spec } from 'modules/eplanningBidAdapter';
-import { newBidder } from 'src/adapters/bidderFactory';
-import * as utils from 'src/utils';
+import { spec } from 'modules/eplanningBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
+import * as utils from 'src/utils.js';
 
 describe('E-Planning Adapter', function () {
   const adapter = newBidder('spec');
