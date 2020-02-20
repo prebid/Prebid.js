@@ -34,6 +34,7 @@ export let filters = {
 // If adUnitBidLimit is set above 0 return top N number of bids
 export function getHighestCpmBidsFromBidPool(bidsReceived, highestCpmCallback, adUnitBidLimit = 0) {
   const bids = [];
+  const dealPrioritization = config.getConfig('sendBidsControl.dealPrioritization');
   // bucket by adUnitcode
   let buckets = groupBy(bidsReceived, 'adUnitCode');
   // filter top bid for each bucket by bidder
@@ -44,6 +45,7 @@ export function getHighestCpmBidsFromBidPool(bidsReceived, highestCpmCallback, a
     // if adUnitBidLimit is set, pass top N number bids
     if (adUnitBidLimit > 0) {
       bucketBids.sort((a, b) => b.cpm - a.cpm);
+      bucketBids = dealPrioritization ? bucketBids(sortByDealAndPriceBucketOrCpm(true)) : bucketBids.sort((a, b) => b.cpm - a.cpm);
       bids.push(...bucketBids.slice(0, adUnitBidLimit));
     } else {
       bids.push(...bucketBids);
@@ -73,17 +75,23 @@ export function getHighestCpmBidsFromBidPool(bidsReceived, highestCpmCallback, a
 *    "hb_pb": "2"
 *  }]
 */
-export function sortByDealAndPriceBucket(a, b) {
-  if (a.adUnitTargeting.hb_deal !== undefined && b.adUnitTargeting.hb_deal === undefined) {
-    return -1;
-  }
+export function sortByDealAndPriceBucketOrCpm(useCpm = false) {
+  return function(a, b) {
+    if (a.adUnitTargeting.hb_deal !== undefined && b.adUnitTargeting.hb_deal === undefined) {
+      return -1;
+    }
 
-  if ((a.adUnitTargeting.hb_deal === undefined && b.adUnitTargeting.hb_deal !== undefined)) {
-    return 1;
-  }
+    if ((a.adUnitTargeting.hb_deal === undefined && b.adUnitTargeting.hb_deal !== undefined)) {
+      return 1;
+    }
 
-  // assuming both values either have a deal or don't have a deal - sort by the hb_pb param
-  return b.adUnitTargeting.hb_pb - a.adUnitTargeting.hb_pb;
+    // assuming both values either have a deal or don't have a deal - sort by the hb_pb param
+    if (useCpm) {
+      return b.cpm - a.cpm;
+    }
+
+    return b.adUnitTargeting.hb_pb - a.adUnitTargeting.hb_pb;
+  }
 }
 
 /**
@@ -233,7 +241,7 @@ export function newTargeting(auctionManager) {
         adUnitCode,
         adUnitTargeting: targetingCopy[adUnitCode]
       };
-    }).sort(sortByDealAndPriceBucket);
+    }).sort(sortByDealAndPriceBucketOrCpm());
 
     // iterate through the targeting based on above list and transform the keys into the query-equivalent and count characters
     return targetingMap.reduce(function (accMap, currMap, index, arr) {
