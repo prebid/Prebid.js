@@ -1,4 +1,5 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+import * as utils from '../src/utils.js';
 
 const VERSION = '3.2.0';
 const BIDDER_CODE = 'sharethrough';
@@ -181,7 +182,7 @@ function handleIframe () {
       window.document.getElementsByTagName('body')[0].appendChild(sfpIframeBusterJs);
       iframeBusterLoaded = true;
     } catch (e) {
-      console.error(e);
+      utils.logError('Trouble writing frame buster script, error details:', e);
     }
   }
 
@@ -199,7 +200,7 @@ function handleIframe () {
         window.document.getElementsByTagName('body')[0].appendChild(sfpJs);
       }
     } catch (e) {
-      console.error(e);
+      utils.logError('Trouble writing sfp script, error details:', e);
     }
   }
 }

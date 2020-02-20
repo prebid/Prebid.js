@@ -83,7 +83,7 @@ function nobidBuildRequests(bids, bidderRequest) {
         var height = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
         return `${width}x${height}`;
       } catch (e) {
-        console.error(e);
+        utils.logWarn('Could not parse screen dimensions, error details:', e);
       }
     }
     var state = {};

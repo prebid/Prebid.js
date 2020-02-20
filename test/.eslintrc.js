@@ -35,7 +35,6 @@ module.exports = {
     "no-unused-vars": "off",
     "no-use-before-define": "off",
     "no-useless-escape": "off",
-    "one-var": "off",
-    "no-console": "error"
+    "one-var": "off"
   }
 };
