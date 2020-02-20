@@ -62,6 +62,10 @@ export const spec = {
       };
     }
 
+    if (bidderRequest && bidderRequest.uspConsent) {
+      data.ccpa = bidderRequest.uspConsent;
+    }
+
     validBidRequests.map(bid => {
       const sizes = (bid.mediaTypes && bid.mediaTypes.banner && bid.mediaTypes.banner.sizes) || bid.sizes || [];
       const placement = Object.assign({
