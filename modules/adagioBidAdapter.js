@@ -1,9 +1,9 @@
-import find from 'core-js/library/fn/array/find';
-import * as utils from '../src/utils';
-import {registerBidder} from '../src/adapters/bidderFactory';
-import { loadExternalScript } from '../src/adloader'
-import JSEncrypt from 'jsencrypt/bin/jsencrypt';
-import sha256 from 'crypto-js/sha256';
+import find from 'core-js/library/fn/array/find.js';
+import * as utils from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { loadExternalScript } from '../src/adloader.js'
+import JSEncrypt from 'jsencrypt/bin/jsencrypt.js';
+import sha256 from 'crypto-js/sha256.js';
 
 const BIDDER_CODE = 'adagio';
 const VERSION = '2.1.0';

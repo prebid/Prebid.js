@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec, resetInvibes, stubDomainOptions } from 'modules/invibesBidAdapter';
+import { spec, resetInvibes, stubDomainOptions } from 'modules/invibesBidAdapter.js';
 
 describe('invibesBidAdapter:', function () {
   const BIDDER_CODE = 'invibes';

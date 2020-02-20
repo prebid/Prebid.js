@@ -1,10 +1,10 @@
 import { expect } from 'chai';
-import { targeting as targetingInstance, filters, sortByDealAndPriceBucket } from 'src/targeting';
-import { config } from 'src/config';
-import { getAdUnits, createBidReceived } from 'test/fixtures/fixtures';
+import { targeting as targetingInstance, filters, sortByDealAndPriceBucket } from 'src/targeting.js';
+import { config } from 'src/config.js';
+import { getAdUnits, createBidReceived } from 'test/fixtures/fixtures.js';
 import CONSTANTS from 'src/constants.json';
-import { auctionManager } from 'src/auctionManager';
-import * as utils from 'src/utils';
+import { auctionManager } from 'src/auctionManager.js';
+import * as utils from 'src/utils.js';
 
 const bid1 = {
   'bidderCode': 'rubicon',

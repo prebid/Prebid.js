@@ -1,7 +1,7 @@
 import { expect } from 'chai'
-import { spec, _getPlatform } from 'modules/sonobiBidAdapter'
-import { newBidder } from 'src/adapters/bidderFactory'
-import {userSync} from '../../../src/userSync';
+import { spec, _getPlatform } from 'modules/sonobiBidAdapter.js'
+import { newBidder } from 'src/adapters/bidderFactory.js'
+import {userSync} from '../../../src/userSync.js';
 
 describe('SonobiBidAdapter', function () {
   const adapter = newBidder(spec)

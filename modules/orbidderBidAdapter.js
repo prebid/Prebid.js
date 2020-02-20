@@ -1,6 +1,6 @@
-import {detectReferer} from '../src/refererDetection';
-import {ajax} from '../src/ajax';
-import {registerBidder} from '../src/adapters/bidderFactory';
+import {detectReferer} from '../src/refererDetection.js';
+import {ajax} from '../src/ajax.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
 
 export const spec = {
   code: 'orbidder',

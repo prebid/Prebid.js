@@ -1,6 +1,6 @@
 import {expect} from 'chai';
 import * as _ from 'lodash';
-import {spec, matchRequest, checkDeepArray, defaultSize, upto5, cleanSizes, shuffle} from '../../../modules/districtmDMXBidAdapter';
+import {spec, matchRequest, checkDeepArray, defaultSize, upto5, cleanSizes, shuffle} from '../../../modules/districtmDMXBidAdapter.js';
 
 const supportedSize = [
   {

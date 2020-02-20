@@ -1,4 +1,4 @@
-const { registerBidder } = require('../src/adapters/bidderFactory');
+const { registerBidder } = require('../src/adapters/bidderFactory.js');
 const BIDDER_CODE = 'proxistore';
 const PROXISTORE_VENDOR_ID = 418;
 
@@ -9,7 +9,7 @@ function _mapSizes(sizes) {
 
 function _createServerRequest(bidRequests, bidderRequest) {
   const payload = {
-    bidId: bidRequests.map(req => req.bidId)[0],
+    bidId: bidRequests.map(req => req.bidId),
     auctionId: bidRequests[0].auctionId,
     transactionId: bidRequests[0].transactionId,
     sizes: _mapSizes(bidRequests.map(x => x.sizes)),

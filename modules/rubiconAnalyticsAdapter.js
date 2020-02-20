@@ -1,9 +1,9 @@
-import adapter from '../src/AnalyticsAdapter';
-import adapterManager from '../src/adapterManager';
+import adapter from '../src/AnalyticsAdapter.js';
+import adapterManager from '../src/adapterManager.js';
 import CONSTANTS from '../src/constants.json';
-import { ajax } from '../src/ajax';
-import { config } from '../src/config';
-import * as utils from '../src/utils';
+import { ajax } from '../src/ajax.js';
+import { config } from '../src/config.js';
+import * as utils from '../src/utils.js';
 
 const {
   EVENTS: {

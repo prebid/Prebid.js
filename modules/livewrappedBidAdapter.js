@@ -1,8 +1,8 @@
-import * as utils from '../src/utils';
-import { registerBidder } from '../src/adapters/bidderFactory';
-import { config } from '../src/config';
-import find from 'core-js/library/fn/array/find';
-import { BANNER, NATIVE } from '../src/mediaTypes';
+import * as utils from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
+import find from 'core-js/library/fn/array/find.js';
+import { BANNER, NATIVE } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'livewrapped';
 export const URL = 'https://lwadm.com/ad';
