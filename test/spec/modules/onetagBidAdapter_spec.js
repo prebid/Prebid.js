@@ -1,4 +1,4 @@
-import { spec } from 'modules/onetagBidAdapter';
+import { spec } from 'modules/onetagBidAdapter.js';
 import { expect } from 'chai';
 
 describe('onetag', function () {

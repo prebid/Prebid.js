@@ -1,6 +1,6 @@
 import {expect} from 'chai';
-import {spec} from 'modules/conversantBidAdapter';
-import * as utils from 'src/utils';
+import {spec} from 'modules/conversantBidAdapter.js';
+import * as utils from 'src/utils.js';
 
 describe('Conversant adapter tests', function() {
   const siteId = '108060';

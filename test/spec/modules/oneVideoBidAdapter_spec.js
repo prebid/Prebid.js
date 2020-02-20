@@ -1,7 +1,7 @@
 import { expect } from 'chai';
-import { spec } from 'modules/oneVideoBidAdapter';
-import * as utils from 'src/utils';
-import {config} from 'src/config';
+import { spec } from 'modules/oneVideoBidAdapter.js';
+import * as utils from 'src/utils.js';
+import {config} from 'src/config.js';
 
 describe('OneVideoBidAdapter', function () {
   let bidRequest;

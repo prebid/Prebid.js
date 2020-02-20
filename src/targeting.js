@@ -1,10 +1,10 @@
-import { uniques, isGptPubadsDefined, getHighestCpm, getOldestHighestCpmBid, groupBy, isAdUnitCodeMatchingSlot, timestamp, deepAccess, deepClone, logError, logWarn, logInfo } from './utils';
-import { config } from './config';
-import { NATIVE_TARGETING_KEYS } from './native';
-import { auctionManager } from './auctionManager';
-import { sizeSupported } from './sizeMapping';
-import { ADPOD } from './mediaTypes';
-import includes from 'core-js/library/fn/array/includes';
+import { uniques, isGptPubadsDefined, getHighestCpm, getOldestHighestCpmBid, groupBy, isAdUnitCodeMatchingSlot, timestamp, deepAccess, deepClone, logError, logWarn, logInfo } from './utils.js';
+import { config } from './config.js';
+import { NATIVE_TARGETING_KEYS } from './native.js';
+import { auctionManager } from './auctionManager.js';
+import { sizeSupported } from './sizeMapping.js';
+import { ADPOD } from './mediaTypes.js';
+import includes from 'core-js/library/fn/array/includes.js';
 
 const utils = require('./utils.js');
 var CONSTANTS = require('./constants.json');

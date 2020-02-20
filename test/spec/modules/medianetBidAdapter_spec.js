@@ -1,6 +1,6 @@
 import {expect} from 'chai';
-import {spec} from 'modules/medianetBidAdapter';
-import { config } from 'src/config';
+import {spec} from 'modules/medianetBidAdapter.js';
+import { config } from 'src/config.js';
 
 let VALID_BID_REQUEST = [{
     'bidder': 'medianet',

@@ -1,8 +1,8 @@
-import * as utils from '../src/utils'
-import { registerBidder } from '../src/adapters/bidderFactory'
-import find from 'core-js/library/fn/array/find'
-import { VIDEO, BANNER } from '../src/mediaTypes'
-import { Renderer } from '../src/Renderer'
+import * as utils from '../src/utils.js'
+import { registerBidder } from '../src/adapters/bidderFactory.js'
+import find from 'core-js/library/fn/array/find.js'
+import { VIDEO, BANNER } from '../src/mediaTypes.js'
+import { Renderer } from '../src/Renderer.js'
 
 const ENDPOINT = 'https://ad.yieldlab.net'
 const BIDDER_CODE = 'yieldlab'

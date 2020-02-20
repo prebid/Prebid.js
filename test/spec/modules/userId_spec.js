@@ -6,9 +6,9 @@ import {
   setSubmoduleRegistry,
   syncDelay
 } from 'modules/userId/index.js';
-import {config} from 'src/config';
-import * as utils from 'src/utils';
-import events from 'src/events';
+import {config} from 'src/config.js';
+import * as utils from 'src/utils.js';
+import events from 'src/events.js';
 import CONSTANTS from 'src/constants.json';
 import {unifiedIdSubmodule} from 'modules/unifiedIdSystem';
 import {pubCommonIdSubmodule} from 'modules/pubCommonIdSystem';

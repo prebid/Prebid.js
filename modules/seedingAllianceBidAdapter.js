@@ -1,10 +1,10 @@
 // jshint esversion: 6, es3: false, node: true
 'use strict';
 
-import { registerBidder } from '../src/adapters/bidderFactory';
-import { NATIVE } from '../src/mediaTypes';
-import * as utils from '../src/utils';
-import { config } from '../src/config';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { NATIVE } from '../src/mediaTypes.js';
+import * as utils from '../src/utils.js';
+import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'seedingAlliance';
 const DEFAULT_CUR = 'EUR';
