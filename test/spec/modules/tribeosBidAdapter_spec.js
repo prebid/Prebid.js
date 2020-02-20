@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec } from 'modules/tribeosBidAdapter';
+import { spec } from 'modules/tribeosBidAdapter.js';
 
 describe('tribeosBidAdapter', function() {
   describe('isBidRequestValid', function() {

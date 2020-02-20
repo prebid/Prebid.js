@@ -2,9 +2,9 @@
 import {expect} from 'chai'; // may prefer 'assert' in place of 'expect'
 import {
   spec
-} from 'modules/richaudienceBidAdapter';
-import {config} from 'src/config';
-import * as utils from 'src/utils';
+} from 'modules/richaudienceBidAdapter.js';
+import {config} from 'src/config.js';
+import * as utils from 'src/utils.js';
 
 describe('Richaudience adapter tests', function () {
   var DEFAULT_PARAMS = [{

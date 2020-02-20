@@ -1,9 +1,9 @@
 import { expect } from 'chai';
-import { spec, getWidthAndHeightFromVideoObject, playerSizeIsNestedArray, defaultSize } from 'modules/ozoneBidAdapter';
-import { config } from 'src/config';
-import {Renderer} from '../../../src/Renderer';
-import {getGranularityKeyName, getGranularityObject} from '../../../modules/ozoneBidAdapter';
-import * as utils from '../../../src/utils';
+import { spec, getWidthAndHeightFromVideoObject, playerSizeIsNestedArray, defaultSize } from 'modules/ozoneBidAdapter.js';
+import { config } from 'src/config.js';
+import {Renderer} from '../../../src/Renderer.js';
+import {getGranularityKeyName, getGranularityObject} from '../../../modules/ozoneBidAdapter.js';
+import * as utils from '../../../src/utils.js';
 const OZONEURI = 'https://elb.the-ozone-project.com/openrtb2/auction';
 const BIDDER_CODE = 'ozone';
 /*

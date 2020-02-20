@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec } from 'modules/dailyhuntBidAdapter';
+import { spec } from 'modules/dailyhuntBidAdapter.js';
 
 const PROD_PREBID_ENDPOINT_URL = 'https://money.dailyhunt.in/openrtb2/auction';
 

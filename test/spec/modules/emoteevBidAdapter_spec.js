@@ -47,10 +47,10 @@ import {
   validateExternalId,
   VENDOR_ID,
   WALLPAPER,
-} from 'modules/emoteevBidAdapter';
-import * as url from '../../../src/url';
-import * as utils from '../../../src/utils';
-import {config} from '../../../src/config';
+} from 'modules/emoteevBidAdapter.js';
+import * as url from '../../../src/url.js';
+import * as utils from '../../../src/utils.js';
+import {config} from '../../../src/config.js';
 
 const cannedValidBidRequests = [{
   adUnitCode: '/19968336/header-bid-tag-1',
