@@ -179,12 +179,13 @@ export const spec = {
 
     const response = serverResponse['body'];
 
-    if (
-      response === undefined ||
-      !response.hasOwnProperty('bids') ||
-      utils.isEmpty(response.bids)
-    ) {
+    if (response === undefined || !response.hasOwnProperty('bids')) {
       utils.logError('Sub-optimal JSON received from Quantcast server');
+      return [];
+    }
+
+    if (utils.isEmpty(response.bids)) {
+      // Shortcut response handling if no bids are present
       return [];
     }
 
