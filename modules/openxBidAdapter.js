@@ -12,7 +12,8 @@ const BIDDER_VERSION = '3.0.1';
 const USER_ID_CODE_TO_QUERY_ARG = {
   idl_env: 'lre', // liveramp
   pubcid: 'pubcid', // publisher common id
-  tdid: 'ttduuid' // the trade desk
+  tdid: 'ttduuid', // the trade desk
+  criteoId: 'criteoid' // criteo id
 };
 
 export const spec = {
