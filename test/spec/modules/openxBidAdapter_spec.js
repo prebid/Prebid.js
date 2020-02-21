@@ -1142,7 +1142,7 @@ describe('OpenxAdapter', function () {
           expect(request[0].data.lre).to.equal('00000000-aaaa-1111-bbbb-222222222222');
         });
       });
-      
+
       describe('with the criteo id for exchanges', function () {
         it('should not send a criteoid query param when there is no userId.criteoId defined in the bid requests', function () {
           const request = spec.buildRequests(bidRequestsWithMediaTypes, mockBidderRequest);
