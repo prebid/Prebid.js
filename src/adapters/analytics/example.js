@@ -2,7 +2,7 @@
  * example.js - analytics adapter for Example Analytics Library example
  */
 
-import adapter from '../../AnalyticsAdapter';
+import adapter from '../../AnalyticsAdapter.js';
 
 export default adapter(
   {

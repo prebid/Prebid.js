@@ -1,5 +1,5 @@
-import * as utils from '../src/utils';
-import {registerBidder} from '../src/adapters/bidderFactory';
+import * as utils from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
 const BIDDER_CODE = 'oneVideo';
 export const spec = {
   code: 'oneVideo',
@@ -103,7 +103,7 @@ export const spec = {
    * @param {ServerResponse[]} serverResponses List of server's responses.
    * @return {UserSync[]} The user syncs which should be dropped.
    */
-  getUserSyncs: function(syncOptions, responses, consentData) {
+  getUserSyncs: function(syncOptions, responses, consentData = {}) {
     let { gdprApplies, consentString = '' } = consentData;
 
     if (syncOptions.pixelEnabled) {
@@ -242,7 +242,7 @@ function getRequestData(bid, consentData, bidRequest) {
       bidData.regs.ext.gdpr = 1
     }
 
-    if (consentData.consentString) {
+    if (consentData && consentData.consentString) {
       bidData.user = {
         ext: {
           consent: consentData.consentString

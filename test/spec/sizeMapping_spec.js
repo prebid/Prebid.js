@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { resolveStatus, setSizeConfig, sizeSupported } from 'src/sizeMapping';
-import includes from 'core-js/library/fn/array/includes';
+import { resolveStatus, setSizeConfig, sizeSupported } from 'src/sizeMapping.js';
+import includes from 'core-js/library/fn/array/includes.js';
 
 let utils = require('src/utils');
 let deepClone = utils.deepClone;

@@ -1,5 +1,5 @@
-import includes from 'core-js/library/fn/array/includes';
-import * as utils from './utils';
+import includes from 'core-js/library/fn/array/includes.js';
+import * as utils from './utils.js';
 
 const _requestCache = {};
 // The below list contains modules or vendors whom Prebid allows to load external JS.

@@ -1,4 +1,4 @@
-import {format, parse} from '../../src/url';
+import {format, parse} from '../../src/url.js';
 import { expect } from 'chai';
 
 describe('helpers.url', function () {

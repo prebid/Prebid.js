@@ -1,7 +1,7 @@
-import * as utils from '../src/utils';
-import {registerBidder} from '../src/adapters/bidderFactory';
-import * as bidfactory from '../src/bidfactory';
-import {BANNER} from '../src/mediaTypes';
+import * as utils from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import * as bidfactory from '../src/bidfactory.js';
+import {BANNER} from '../src/mediaTypes.js';
 var CONSTANTS = require('../src/constants.json');
 
 const BIDDER_CODE = 'tribeos';
