@@ -1150,7 +1150,7 @@ describe('OpenxAdapter', function () {
         });
 
         it('should send a criteoid query param when userId.criteoId is defined in the bid requests', function () {
-          const bidRequestsWithLiveRampEnvelope = [{
+          const bidRequestsWithCriteo = [{
             bidder: 'openx',
             params: {
               unit: '11',
@@ -1169,7 +1169,7 @@ describe('OpenxAdapter', function () {
             bidderRequestId: 'test-bid-request-1',
             auctionId: 'test-auction-1'
           }];
-          const request = spec.buildRequests(bidRequestsWithLiveRampEnvelope, mockBidderRequest);
+          const request = spec.buildRequests(bidRequestsWithCriteo, mockBidderRequest);
           expect(request[0].data.criteoid).to.equal('00000000-aaaa-1111-bbbb-222222222222');
         });
       });
