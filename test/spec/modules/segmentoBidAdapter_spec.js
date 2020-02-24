@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec } from '../../../modules/segmentoBidAdapter';
+import { spec } from '../../../modules/segmentoBidAdapter.js';
 
 const BIDDER_CODE = 'segmento';
 const URL = 'https://prebid-bidder.rutarget.ru/bid';

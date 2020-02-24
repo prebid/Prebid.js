@@ -14,8 +14,8 @@
  * @author Emoteev Engineering <engineering@emoteev.io>.
  */
 
-import {registerBidder} from '../src/adapters/bidderFactory';
-import {BANNER} from '../src/mediaTypes';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER} from '../src/mediaTypes.js';
 import {
   triggerPixel,
   getUniqueIdentifierStr,
@@ -25,9 +25,9 @@ import {
   isInteger,
   getParameterByName,
   getCookie
-} from '../src/utils';
-import {config} from '../src/config';
-import * as url from '../src/url';
+} from '../src/utils.js';
+import {config} from '../src/config.js';
+import * as url from '../src/url.js';
 
 export const BIDDER_CODE = 'emoteev';
 

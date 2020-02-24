@@ -1,7 +1,7 @@
 import {expect} from 'chai'
-import {spec} from 'modules/showheroes-bsBidAdapter'
-import {newBidder} from 'src/adapters/bidderFactory'
-import {VIDEO, BANNER} from 'src/mediaTypes'
+import {spec} from 'modules/showheroes-bsBidAdapter.js'
+import {newBidder} from 'src/adapters/bidderFactory.js'
+import {VIDEO, BANNER} from 'src/mediaTypes.js'
 
 const bidderRequest = {
   refererInfo: {

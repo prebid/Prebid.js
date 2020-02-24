@@ -1,9 +1,9 @@
-import * as utils from '../src/utils';
-import { BANNER, VIDEO } from '../src/mediaTypes';
-import {registerBidder} from '../src/adapters/bidderFactory';
-import find from 'core-js/library/fn/array/find';
-import includes from 'core-js/library/fn/array/includes';
-import {parse as parseUrl} from '../src/url';
+import * as utils from '../src/utils.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import find from 'core-js/library/fn/array/find.js';
+import includes from 'core-js/library/fn/array/includes.js';
+import {parse as parseUrl} from '../src/url.js';
 
 /*
  * In case you're AdKernel whitelable platform's client who needs branded adapter to

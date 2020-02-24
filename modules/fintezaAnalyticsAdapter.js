@@ -1,8 +1,8 @@
-import { ajax } from '../src/ajax';
-import adapter from '../src/AnalyticsAdapter';
-import adapterManager from '../src/adapterManager';
-import * as utils from '../src/utils';
-import { parse as parseURL } from '../src/url';
+import { ajax } from '../src/ajax.js';
+import adapter from '../src/AnalyticsAdapter.js';
+import adapterManager from '../src/adapterManager.js';
+import * as utils from '../src/utils.js';
+import { parse as parseURL } from '../src/url.js';
 
 const CONSTANTS = require('../src/constants.json');
 

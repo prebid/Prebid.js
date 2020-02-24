@@ -96,14 +96,14 @@
  * @property {(function|undefined)} callback - function that will return an id
  */
 
-import find from 'core-js/library/fn/array/find';
-import {config} from '../../src/config';
-import events from '../../src/events';
-import * as utils from '../../src/utils';
-import {getGlobal} from '../../src/prebidGlobal';
-import {gdprDataHandler} from '../../src/adapterManager';
+import find from 'core-js/library/fn/array/find.js';
+import {config} from '../../src/config.js';
+import events from '../../src/events.js';
+import * as utils from '../../src/utils.js';
+import {getGlobal} from '../../src/prebidGlobal.js';
+import {gdprDataHandler} from '../../src/adapterManager.js';
 import CONSTANTS from '../../src/constants.json';
-import {module} from '../../src/hook';
+import {module} from '../../src/hook.js';
 
 const MODULE_NAME = 'User ID';
 const COOKIE = 'cookie';

@@ -1,11 +1,11 @@
-import { config } from './config';
+import { config } from './config.js';
 import clone from 'just-clone';
-import find from 'core-js/library/fn/array/find';
-import includes from 'core-js/library/fn/array/includes';
+import find from 'core-js/library/fn/array/find.js';
+import includes from 'core-js/library/fn/array/includes.js';
 
-const CONSTANTS = require('./constants');
+const CONSTANTS = require('./constants.json');
 
-export { default as deepAccess } from 'dlv/index';
+export { default as deepAccess } from 'dlv';
 export { default as deepSetValue } from 'dset';
 
 var tArr = 'Array';

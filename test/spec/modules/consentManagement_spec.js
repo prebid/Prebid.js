@@ -1,7 +1,7 @@
-import {setConsentConfig, requestBidsHook, resetConsentData, userCMP, consentTimeout, allowAuction, staticConsentData} from 'modules/consentManagement';
-import {gdprDataHandler} from 'src/adapterManager';
-import * as utils from 'src/utils';
-import { config } from 'src/config';
+import {setConsentConfig, requestBidsHook, resetConsentData, userCMP, consentTimeout, allowAuction, staticConsentData} from 'modules/consentManagement.js';
+import {gdprDataHandler} from 'src/adapterManager.js';
+import * as utils from 'src/utils.js';
+import { config } from 'src/config.js';
 
 let assert = require('chai').assert;
 let expect = require('chai').expect;

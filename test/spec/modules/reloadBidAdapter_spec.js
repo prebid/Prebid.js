@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec } from 'modules/reloadBidAdapter';
+import { spec } from 'modules/reloadBidAdapter.js';
 
 let getParams = () => {
   return JSON.parse(JSON.stringify({

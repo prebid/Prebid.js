@@ -1,7 +1,7 @@
 import {assert, expect} from 'chai';
-import {spec} from 'modules/mgidBidAdapter';
-import * as utils from '../../../src/utils';
-import * as urlUtils from '../../../src/url';
+import {spec} from 'modules/mgidBidAdapter.js';
+import * as utils from '../../../src/utils.js';
+import * as urlUtils from '../../../src/url.js';
 
 describe('Mgid bid adapter', function () {
   let sandbox;

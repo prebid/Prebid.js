@@ -1,9 +1,9 @@
 import {expect} from 'chai';
-import {spec, resetBoPixel} from 'modules/openxBidAdapter';
-import {newBidder} from 'src/adapters/bidderFactory';
-import {userSync} from 'src/userSync';
-import {config} from 'src/config';
-import * as utils from 'src/utils';
+import {spec, resetBoPixel} from 'modules/openxBidAdapter.js';
+import {newBidder} from 'src/adapters/bidderFactory.js';
+import {userSync} from 'src/userSync.js';
+import {config} from 'src/config.js';
+import * as utils from 'src/utils.js';
 
 const URLBASE = '/w/1.0/arj';
 const URLBASEVIDEO = '/v/1.0/avjp';

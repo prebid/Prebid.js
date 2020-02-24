@@ -1,7 +1,7 @@
-import * as utils from '../src/utils';
-import { ajax } from '../src/ajax';
-import { config } from '../src/config';
-import { registerBidder } from '../src/adapters/bidderFactory';
+import * as utils from '../src/utils.js';
+import { ajax } from '../src/ajax.js';
+import { config } from '../src/config.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'quantcast';
 const DEFAULT_BID_FLOOR = 0.0000000001;
@@ -179,12 +179,13 @@ export const spec = {
 
     const response = serverResponse['body'];
 
-    if (
-      response === undefined ||
-      !response.hasOwnProperty('bids') ||
-      utils.isEmpty(response.bids)
-    ) {
+    if (response === undefined || !response.hasOwnProperty('bids')) {
       utils.logError('Sub-optimal JSON received from Quantcast server');
+      return [];
+    }
+
+    if (utils.isEmpty(response.bids)) {
+      // Shortcut response handling if no bids are present
       return [];
     }
 

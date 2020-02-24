@@ -1,9 +1,9 @@
 // jshint esversion: 6, es3: false, node: true
 'use strict';
 
-import {registerBidder} from '../src/adapters/bidderFactory';
-import * as utils from '../src/utils';
-import {ajax} from '../src/ajax';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import * as utils from '../src/utils.js';
+import {ajax} from '../src/ajax.js';
 
 const BIDDER_CODE = 'revcontent';
 const NATIVE_PARAMS = {
