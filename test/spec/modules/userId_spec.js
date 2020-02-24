@@ -6,17 +6,17 @@ import {
   setSubmoduleRegistry,
   syncDelay
 } from 'modules/userId/index.js';
-import {config} from 'src/config';
-import * as utils from 'src/utils';
-import events from 'src/events';
+import {config} from 'src/config.js';
+import * as utils from 'src/utils.js';
+import events from 'src/events.js';
 import CONSTANTS from 'src/constants.json';
-import {unifiedIdSubmodule} from 'modules/unifiedIdSystem';
-import {pubCommonIdSubmodule} from 'modules/pubCommonIdSystem';
-import {britepoolIdSubmodule} from 'modules/britepoolIdSystem';
-import {id5IdSubmodule} from 'modules/id5IdSystem';
-import {identityLinkSubmodule} from 'modules/identityLinkIdSystem';
-import {liveIntentIdSubmodule} from 'modules/liveIntentIdSystem';
-import {server} from 'test/mocks/xhr';
+import {unifiedIdSubmodule} from 'modules/unifiedIdSystem.js';
+import {pubCommonIdSubmodule} from 'modules/pubCommonIdSystem.js';
+import {britepoolIdSubmodule} from 'modules/britepoolIdSystem.js';
+import {id5IdSubmodule} from 'modules/id5IdSystem.js';
+import {identityLinkSubmodule} from 'modules/identityLinkIdSystem.js';
+import {liveIntentIdSubmodule} from 'modules/liveIntentIdSystem.js';
+import {server} from 'test/mocks/xhr.js';
 
 let assert = require('chai').assert;
 let expect = require('chai').expect;

@@ -1,10 +1,10 @@
 import { expect } from 'chai';
-import openxAdapter from 'modules/openxAnalyticsAdapter';
-import { config } from 'src/config';
-import events from 'src/events';
+import openxAdapter from 'modules/openxAnalyticsAdapter.js';
+import { config } from 'src/config.js';
+import events from 'src/events.js';
 import CONSTANTS from 'src/constants.json';
-import * as utils from 'src/utils';
-import { server } from 'test/mocks/xhr';
+import * as utils from 'src/utils.js';
+import { server } from 'test/mocks/xhr.js';
 
 const {
   EVENTS: { AUCTION_INIT, BID_REQUESTED, BID_RESPONSE, BID_TIMEOUT, BID_WON }

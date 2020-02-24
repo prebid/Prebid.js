@@ -1,4 +1,4 @@
-import { spec } from 'modules/onetagBidAdapter';
+import { spec } from 'modules/onetagBidAdapter.js';
 import { expect } from 'chai';
 
 describe('onetag', function () {
@@ -113,6 +113,21 @@ describe('onetag', function () {
       expect(payload.gdprConsent.consentString).to.exist.and.to.equal(consentString);
       expect(payload.gdprConsent.consentRequired).to.exist.and.to.be.true;
     });
+    it('should send us privacy string', function () {
+      let consentString = 'us_foo';
+      let bidderRequest = {
+        'bidderCode': 'onetag',
+        'auctionId': '1d1a030790a475',
+        'bidderRequestId': '22edbae2733bf6',
+        'timeout': 3000,
+        'uspConsent': consentString
+      };
+      let serverRequest = spec.buildRequests([bid], bidderRequest);
+      const payload = JSON.parse(serverRequest.data);
+
+      expect(payload.usPrivacy).to.exist;
+      expect(payload.usPrivacy).to.exist.and.to.equal(consentString);
+    });
   });
   describe('interpretResponse', function () {
     const resObject = {
@@ -203,6 +218,13 @@ describe('onetag', function () {
       expect(syncs[0].type).to.equal('iframe');
       expect(syncs[0].url).to.include(sync_endpoint);
       expect(syncs[0].url).to.not.match(/(?:[?&](?:gdpr_consent=([^&]*)|gdpr=([^&]*)))+$/);
+    });
+    it('Should send us privacy string', function () {
+      let usConsentString = 'us_foo';
+      const syncs = spec.getUserSyncs({ iframeEnabled: true }, {}, {}, usConsentString);
+      expect(syncs[0].type).to.equal('iframe');
+      expect(syncs[0].url).to.include(sync_endpoint);
+      expect(syncs[0].url).to.match(/(?:[?&](?:us_privacy=us_foo(?:[&][^&]*)*))+$/);
     });
   });
 });

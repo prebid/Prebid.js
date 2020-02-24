@@ -4,9 +4,9 @@
  * information and make it available for any USP (CCPA) supported adapters to
  * read/pass this information to their system.
  */
-import * as utils from '../src/utils';
-import { config } from '../src/config';
-import { uspDataHandler } from '../src/adapterManager';
+import * as utils from '../src/utils.js';
+import { config } from '../src/config.js';
+import { uspDataHandler } from '../src/adapterManager.js';
 
 const DEFAULT_CONSENT_API = 'iab';
 const DEFAULT_CONSENT_TIMEOUT = 50;

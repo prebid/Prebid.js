@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { spec } from 'modules/audiencerunBidAdapter';
-import { newBidder } from 'src/adapters/bidderFactory';
+import { spec } from 'modules/audiencerunBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 
 const ENDPOINT = 'https://d.audiencerun.com/prebid';
 

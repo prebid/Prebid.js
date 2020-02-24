@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import * as utils from 'src/utils';
-import { spec, resetUserSync } from 'modules/aardvarkBidAdapter';
+import * as utils from 'src/utils.js';
+import { spec, resetUserSync } from 'modules/aardvarkBidAdapter.js';
 
 describe('aardvarkAdapterTest', function () {
   describe('forming valid bidRequests', function () {

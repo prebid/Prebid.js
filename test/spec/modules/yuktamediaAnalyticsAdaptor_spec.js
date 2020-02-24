@@ -1,8 +1,8 @@
-import yuktamediaAnalyticsAdapter from 'modules/yuktamediaAnalyticsAdapter';
+import yuktamediaAnalyticsAdapter from 'modules/yuktamediaAnalyticsAdapter.js';
 import { expect } from 'chai';
 import adapterManager from 'src/adapterManager.js';
-import * as utils from 'src/utils';
-import { server } from 'test/mocks/xhr';
+import * as utils from 'src/utils.js';
+import { server } from 'test/mocks/xhr.js';
 
 let events = require('src/events');
 let constants = require('src/constants.json');

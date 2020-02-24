@@ -1,7 +1,7 @@
 import { expect } from 'chai';
-import { spec } from 'modules/eplanningBidAdapter';
-import { newBidder } from 'src/adapters/bidderFactory';
-import * as utils from 'src/utils';
+import { spec } from 'modules/eplanningBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
+import * as utils from 'src/utils.js';
 
 describe('E-Planning Adapter', function () {
   const adapter = newBidder('spec');
@@ -13,6 +13,7 @@ describe('E-Planning Adapter', function () {
   const ADUNIT_CODE_VIEW3 = 'adunit-code-view3';
   const CLEAN_ADUNIT_CODE2 = '300x250_1';
   const CLEAN_ADUNIT_CODE = '300x250_0';
+  const CLEAN_ADUNIT_CODE_ML = 'adunitco_de';
   const BID_ID = '123456789';
   const BID_ID2 = '987654321';
   const BID_ID3 = '998877665';
@@ -28,6 +29,17 @@ describe('E-Planning Adapter', function () {
     'bidId': BID_ID,
     'params': {
       'ci': CI,
+    },
+    'adUnitCode': ADUNIT_CODE,
+    'sizes': [[300, 250], [300, 600]],
+  };
+  const ML = '1';
+  const validBidMappingLinear = {
+    'bidder': 'eplanning',
+    'bidId': BID_ID,
+    'params': {
+      'ci': CI,
+      'ml': ML,
     },
     'adUnitCode': ADUNIT_CODE,
     'sizes': [[300, 250], [300, 600]],
@@ -261,6 +273,12 @@ describe('E-Planning Adapter', function () {
       expect(e).to.equal('300x250_0:300x250,300x600');
     });
 
+    it('should return e parameter with linear mapping attribute with value according to the adunit sizes', function () {
+      let bidRequestsML = [validBidMappingLinear];
+      const e = spec.buildRequests(bidRequestsML, bidderRequest).data.e;
+      expect(e).to.equal(CLEAN_ADUNIT_CODE_ML + ':300x250,300x600');
+    });
+
     it('should return correct e parameter with more than one adunit', function () {
       const NEW_CODE = ADUNIT_CODE + '2';
       const CLEAN_NEW_CODE = CLEAN_ADUNIT_CODE + '2';
@@ -278,6 +296,25 @@ describe('E-Planning Adapter', function () {
       expect(e).to.equal('300x250_0:300x250,300x600+100x100_0:100x100');
     });
 
+    it('should return correct e parameter with linear mapping attribute with more than one adunit', function () {
+      let bidRequestsML = [validBidMappingLinear];
+      const NEW_CODE = ADUNIT_CODE + '2';
+      const CLEAN_NEW_CODE = CLEAN_ADUNIT_CODE_ML + '2';
+      const anotherBid = {
+        'bidder': 'eplanning',
+        'params': {
+          'ci': CI,
+          'ml': ML,
+        },
+        'adUnitCode': NEW_CODE,
+        'sizes': [[100, 100]],
+      };
+      bidRequestsML.push(anotherBid);
+
+      const e = spec.buildRequests(bidRequestsML, bidderRequest).data.e;
+      expect(e).to.equal(CLEAN_ADUNIT_CODE_ML + ':300x250,300x600+' + CLEAN_NEW_CODE + ':100x100');
+    });
+
     it('should return correct e parameter when the adunit has no size', function () {
       const noSizeBid = {
         'bidder': 'eplanning',
@@ -289,6 +326,20 @@ describe('E-Planning Adapter', function () {
 
       const e = spec.buildRequests([noSizeBid], bidderRequest).data.e;
       expect(e).to.equal('1x1_0:1x1');
+    });
+
+    it('should return correct e parameter with linear mapping attribute when the adunit has no size', function () {
+      const noSizeBid = {
+        'bidder': 'eplanning',
+        'params': {
+          'ci': CI,
+          'ml': ML,
+        },
+        'adUnitCode': ADUNIT_CODE,
+      };
+
+      const e = spec.buildRequests([noSizeBid], bidderRequest).data.e;
+      expect(e).to.equal(CLEAN_ADUNIT_CODE_ML + ':1x1');
     });
 
     it('should return ur parameter with current window url', function () {
