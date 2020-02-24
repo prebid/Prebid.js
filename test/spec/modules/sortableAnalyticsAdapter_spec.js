@@ -1,9 +1,9 @@
 import {expect} from 'chai';
-import sortableAnalyticsAdapter, {TIMEOUT_FOR_REGISTRY, DEFAULT_PBID_TIMEOUT} from 'modules/sortableAnalyticsAdapter';
-import events from 'src/events';
+import sortableAnalyticsAdapter, {TIMEOUT_FOR_REGISTRY, DEFAULT_PBID_TIMEOUT} from 'modules/sortableAnalyticsAdapter.js';
+import events from 'src/events.js';
 import CONSTANTS from 'src/constants.json';
-import * as prebidGlobal from 'src/prebidGlobal';
-import {server} from 'test/mocks/xhr';
+import * as prebidGlobal from 'src/prebidGlobal.js';
+import {server} from 'test/mocks/xhr.js';
 
 describe('Sortable Analytics Adapter', function() {
   let sandbox;

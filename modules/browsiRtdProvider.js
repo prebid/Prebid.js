@@ -18,10 +18,10 @@
  */
 
 import {config} from '../src/config.js';
-import * as utils from '../src/utils';
-import {submodule} from '../src/hook';
-import {ajaxBuilder} from '../src/ajax';
-import {loadExternalScript} from '../src/adloader';
+import * as utils from '../src/utils.js';
+import {submodule} from '../src/hook.js';
+import {ajaxBuilder} from '../src/ajax.js';
+import {loadExternalScript} from '../src/adloader.js';
 
 /** @type {string} */
 const MODULE_NAME = 'realTimeData';

@@ -1,9 +1,9 @@
-import { registerBidder } from '../src/adapters/bidderFactory';
-import * as utils from '../src/utils';
-import { config } from '../src/config';
-import * as url from '../src/url';
-import { BANNER, NATIVE } from '../src/mediaTypes';
-import { getRefererInfo } from '../src/refererDetection';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import * as utils from '../src/utils.js';
+import { config } from '../src/config.js';
+import * as url from '../src/url.js';
+import { BANNER, NATIVE } from '../src/mediaTypes.js';
+import { getRefererInfo } from '../src/refererDetection.js';
 
 const BIDDER_CODE = 'medianet';
 const BID_URL = 'https://prebid.media.net/rtb/prebid';

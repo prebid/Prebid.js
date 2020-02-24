@@ -3,15 +3,15 @@ import {
 } from 'chai';
 import {
   spec
-} from 'modules/smartadserverBidAdapter';
+} from 'modules/smartadserverBidAdapter.js';
 import {
   newBidder
-} from 'src/adapters/bidderFactory';
+} from 'src/adapters/bidderFactory.js';
 import {
   config
-} from 'src/config';
-import * as utils from 'src/utils';
-import { requestBidsHook } from 'modules/consentManagement';
+} from 'src/config.js';
+import * as utils from 'src/utils.js';
+import { requestBidsHook } from 'modules/consentManagement.js';
 
 // Default params with optional ones
 describe('Smart bid adapter tests', function () {

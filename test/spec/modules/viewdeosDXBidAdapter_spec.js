@@ -1,6 +1,6 @@
 import {expect} from 'chai';
-import {spec} from 'modules/viewdeosDXBidAdapter';
-import {newBidder} from 'src/adapters/bidderFactory';
+import {spec} from 'modules/viewdeosDXBidAdapter.js';
+import {newBidder} from 'src/adapters/bidderFactory.js';
 
 const ENDPOINT = 'https://ghb.sync.viewdeos.com/auction/';
 
