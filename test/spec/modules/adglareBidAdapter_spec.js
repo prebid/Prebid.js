@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import {spec} from 'modules/adglareBidAdapter';
+import {spec} from 'modules/adglareBidAdapter.js';
 
 describe('AdGlare Adapter Tests', function () {
   let bidRequests;
