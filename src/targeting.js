@@ -44,7 +44,6 @@ export function getHighestCpmBidsFromBidPool(bidsReceived, highestCpmCallback, a
     Object.keys(bidsByBidder).forEach(key => bucketBids.push(bidsByBidder[key].reduce(highestCpmCallback)));
     // if adUnitBidLimit is set, pass top N number bids
     if (adUnitBidLimit > 0) {
-      bucketBids.sort((a, b) => b.cpm - a.cpm);
       bucketBids = dealPrioritization ? bucketBids(sortByDealAndPriceBucketOrCpm(true)) : bucketBids.sort((a, b) => b.cpm - a.cpm);
       bids.push(...bucketBids.slice(0, adUnitBidLimit));
     } else {
