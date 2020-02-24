@@ -1,11 +1,11 @@
-import * as utils from '../src/utils';
-import { registerBidder } from '../src/adapters/bidderFactory';
+import * as utils from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'eplanning';
 const rnd = Math.random();
 const DEFAULT_SV = 'ads.us.e-planning.net';
 const DEFAULT_ISV = 'i.e-planning.net';
-const PARAMS = ['ci', 'sv', 't'];
+const PARAMS = ['ci', 'sv', 't', 'ml'];
 const DOLLARS = 'USD';
 const NET_REVENUE = true;
 const TTL = 120;
@@ -29,7 +29,7 @@ export const spec = {
     let params;
     const urlConfig = getUrlConfig(bidRequests);
     const pcrs = getCharset();
-    const spaces = getSpaces(bidRequests);
+    const spaces = getSpaces(bidRequests, urlConfig.ml);
     const pageUrl = bidderRequest.refererInfo.referer;
     const getDomain = (url) => {
       let anchor = document.createElement('a');
@@ -185,12 +185,16 @@ function getSpacesStruct(bids) {
   return e;
 }
 
-function getSpaces(bidRequests) {
+function cleanName(name) {
+  return name.replace(/_|\.|-|\//g, '').replace(/\)\(|\(|\)|:/g, '_').replace(/^_+|_+$/g, '');
+}
+
+function getSpaces(bidRequests, ml) {
   let spacesStruct = getSpacesStruct(bidRequests);
   let es = {str: '', vs: '', map: {}};
   es.str = Object.keys(spacesStruct).map(size => spacesStruct[size].map((bid, i) => {
     es.vs += getVs(bid);
-    let name = getSize(bid, true) + '_' + i;
+    let name = ml ? cleanName(bid.adUnitCode) : getSize(bid, true) + '_' + i;
     es.map[name] = bid.bidId;
     return name + ':' + getSize(bid);
   }).join('+')).join('+');

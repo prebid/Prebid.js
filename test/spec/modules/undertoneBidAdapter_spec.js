@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec } from 'modules/undertoneBidAdapter';
+import { spec } from 'modules/undertoneBidAdapter.js';
 
 const URL = 'https://hb.undertone.com/hb';
 const BIDDER_CODE = 'undertone';

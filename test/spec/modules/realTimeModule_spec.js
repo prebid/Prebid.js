@@ -3,15 +3,15 @@ import {
   requestBidsHook,
   setTargetsAfterRequestBids,
   deepMerge
-} from 'modules/rtdModule/index';
+} from 'modules/rtdModule/index.js';
 import {
   init as browsiInit,
   addBrowsiTag,
   isIdMatchingAdUnit,
   setData
-} from 'modules/browsiRtdProvider';
-import {config} from 'src/config';
-import {makeSlot} from '../integration/faker/googletag';
+} from 'modules/browsiRtdProvider.js';
+import {config} from 'src/config.js';
+import {makeSlot} from '../integration/faker/googletag.js';
 
 let expect = require('chai').expect;
 

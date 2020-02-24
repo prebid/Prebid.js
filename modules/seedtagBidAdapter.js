@@ -1,6 +1,6 @@
-import * as utils from '../src/utils'
-import { registerBidder } from '../src/adapters/bidderFactory'
-import { VIDEO, BANNER } from '../src/mediaTypes'
+import * as utils from '../src/utils.js'
+import { registerBidder } from '../src/adapters/bidderFactory.js'
+import { VIDEO, BANNER } from '../src/mediaTypes.js'
 
 const BIDDER_CODE = 'seedtag';
 const SEEDTAG_ALIAS = 'st';

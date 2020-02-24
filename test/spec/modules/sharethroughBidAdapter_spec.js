@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { sharethroughAdapterSpec, sharethroughInternal } from 'modules/sharethroughBidAdapter';
-import { newBidder } from 'src/adapters/bidderFactory';
+import { sharethroughAdapterSpec, sharethroughInternal } from 'modules/sharethroughBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 
 const spec = newBidder(sharethroughAdapterSpec).getSpec();
 const bidRequests = [

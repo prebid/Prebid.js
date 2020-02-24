@@ -1,8 +1,8 @@
 import {expect} from 'chai';
-import {spec} from 'modules/livewrappedBidAdapter';
-import {config} from 'src/config';
-import * as utils from 'src/utils';
-import { BANNER, NATIVE } from 'src/mediaTypes';
+import {spec} from 'modules/livewrappedBidAdapter.js';
+import {config} from 'src/config.js';
+import * as utils from 'src/utils.js';
+import { BANNER, NATIVE } from 'src/mediaTypes.js';
 
 describe('Livewrapped adapter tests', function () {
   let sandbox,

@@ -1,7 +1,7 @@
-import { getAdServerTargeting } from 'test/fixtures/fixtures';
+import { getAdServerTargeting } from 'test/fixtures/fixtures.js';
 import { expect } from 'chai';
 import CONSTANTS from 'src/constants.json';
-import * as utils from 'src/utils';
+import * as utils from 'src/utils.js';
 
 var assert = require('assert');
 

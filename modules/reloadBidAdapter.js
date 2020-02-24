@@ -1,8 +1,8 @@
 import {
   registerBidder
 }
-  from '../src/adapters/bidderFactory';
-import * as utils from '../src/utils';
+  from '../src/adapters/bidderFactory.js';
+import * as utils from '../src/utils.js';
 const BIDDER_CODE = 'reload';
 const VERSION_ADAPTER = '1.10';
 export const spec = {

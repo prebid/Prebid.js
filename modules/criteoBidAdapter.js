@@ -1,11 +1,11 @@
-import { loadExternalScript } from '../src/adloader';
-import { registerBidder } from '../src/adapters/bidderFactory';
-import { config } from '../src/config';
-import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes';
-import { parse } from '../src/url';
-import * as utils from '../src/utils';
-import find from 'core-js/library/fn/array/find';
-import { verify } from 'criteo-direct-rsa-validate/build/verify';
+import { loadExternalScript } from '../src/adloader.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { parse } from '../src/url.js';
+import * as utils from '../src/utils.js';
+import find from 'core-js/library/fn/array/find.js';
+import { verify } from 'criteo-direct-rsa-validate/build/verify.js';
 
 export const ADAPTER_VERSION = 26;
 const BIDDER_CODE = 'criteo';

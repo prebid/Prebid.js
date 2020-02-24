@@ -1,8 +1,8 @@
-import * as utils from '../src/utils';
-import {ajax} from '../src/ajax';
-import adapter from '../src/AnalyticsAdapter';
+import * as utils from '../src/utils.js';
+import {ajax} from '../src/ajax.js';
+import adapter from '../src/AnalyticsAdapter.js';
 import CONSTANTS from '../src/constants.json';
-import adapterManager from '../src/adapterManager';
+import adapterManager from '../src/adapterManager.js';
 
 const ANALYTICSTYPE = 'endpoint';
 const URL = 'https://lwadm.com/analytics/10';

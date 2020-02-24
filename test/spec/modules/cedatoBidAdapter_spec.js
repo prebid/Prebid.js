@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import {spec} from 'modules/cedatoBidAdapter';
+import {spec} from 'modules/cedatoBidAdapter.js';
 
 describe('the cedato adapter', function () {
   function getValidBidObject() {
