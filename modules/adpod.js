@@ -12,20 +12,20 @@
  * module that designed to support adpod video type ads.  This import process allows this module to effectively act as a sub-module.
  */
 
-import * as utils from '../src/utils';
-import { addBidToAuction, doCallbacksIfTimedout, AUCTION_IN_PROGRESS, callPrebidCache, getPriceByGranularity, getPriceGranularity } from '../src/auction';
-import { checkAdUnitSetup } from '../src/prebid';
-import { checkVideoBidSetup } from '../src/video';
-import { setupBeforeHookFnOnce, module } from '../src/hook';
-import { store } from '../src/videoCache';
-import { config } from '../src/config';
-import { ADPOD } from '../src/mediaTypes';
-import Set from 'core-js/library/fn/set';
-import find from 'core-js/library/fn/array/find';
-import { auctionManager } from '../src/auctionManager';
+import * as utils from '../src/utils.js';
+import { addBidToAuction, doCallbacksIfTimedout, AUCTION_IN_PROGRESS, callPrebidCache, getPriceByGranularity, getPriceGranularity } from '../src/auction.js';
+import { checkAdUnitSetup } from '../src/prebid.js';
+import { checkVideoBidSetup } from '../src/video.js';
+import { setupBeforeHookFnOnce, module } from '../src/hook.js';
+import { store } from '../src/videoCache.js';
+import { config } from '../src/config.js';
+import { ADPOD } from '../src/mediaTypes.js';
+import Set from 'core-js/library/fn/set.js';
+import find from 'core-js/library/fn/array/find.js';
+import { auctionManager } from '../src/auctionManager.js';
 import CONSTANTS from '../src/constants.json';
 
-const from = require('core-js/library/fn/array/from');
+const from = require('core-js/library/fn/array/from.js');
 
 const TARGETING_KEY_PB_CAT_DUR = 'hb_pb_cat_dur';
 const TARGETING_KEY_CACHE_ID = 'hb_cache_id';

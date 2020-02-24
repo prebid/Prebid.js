@@ -1,14 +1,14 @@
 
 import {
   getCurrencyRates
-} from 'test/fixtures/fixtures';
+} from 'test/fixtures/fixtures.js';
 
 import {
   setConfig,
   addBidResponseHook,
   currencySupportEnabled,
   currencyRates
-} from 'modules/currency';
+} from 'modules/currency.js';
 
 var assert = require('chai').assert;
 var expect = require('chai').expect;

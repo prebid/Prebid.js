@@ -1,15 +1,15 @@
 import { expect } from 'chai';
 
 import parse from 'url-parse';
-import { buildDfpVideoUrl, buildAdpodVideoUrl } from 'modules/dfpAdServerVideo';
-import { parseQS } from 'src/url';
-import adUnit from 'test/fixtures/video/adUnit';
-import * as utils from 'src/utils';
-import { config } from 'src/config';
-import { targeting } from 'src/targeting';
-import { auctionManager } from 'src/auctionManager';
-import * as adpod from 'modules/adpod';
-import { server } from 'test/mocks/xhr';
+import { buildDfpVideoUrl, buildAdpodVideoUrl } from 'modules/dfpAdServerVideo.js';
+import { parseQS } from 'src/url.js';
+import adUnit from 'test/fixtures/video/adUnit.json';
+import * as utils from 'src/utils.js';
+import { config } from 'src/config.js';
+import { targeting } from 'src/targeting.js';
+import { auctionManager } from 'src/auctionManager.js';
+import * as adpod from 'modules/adpod.js';
+import { server } from 'test/mocks/xhr.js';
 
 const bid = {
   videoCacheKey: 'abc',

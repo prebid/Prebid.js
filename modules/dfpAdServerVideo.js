@@ -2,13 +2,13 @@
  * This module adds [DFP support]{@link https://www.doubleclickbygoogle.com/} for Video to Prebid.
  */
 
-import { registerVideoSupport } from '../src/adServerManager';
-import { targeting } from '../src/targeting';
-import { formatQS, format as buildUrl, parse } from '../src/url';
-import { deepAccess, isEmpty, logError, parseSizesInput } from '../src/utils';
-import { config } from '../src/config';
-import { getHook, submodule } from '../src/hook';
-import { auctionManager } from '../src/auctionManager';
+import { registerVideoSupport } from '../src/adServerManager.js';
+import { targeting } from '../src/targeting.js';
+import { formatQS, format as buildUrl, parse } from '../src/url.js';
+import { deepAccess, isEmpty, logError, parseSizesInput } from '../src/utils.js';
+import { config } from '../src/config.js';
+import { getHook, submodule } from '../src/hook.js';
+import { auctionManager } from '../src/auctionManager.js';
 
 /**
  * @typedef {Object} DfpVideoParams
