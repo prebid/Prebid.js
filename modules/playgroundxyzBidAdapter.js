@@ -8,7 +8,7 @@ const DEFAULT_CURRENCY = 'USD';
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['playgroundxyz', 'pxyz'],
+  aliases: ['pxyz'],
   supportedMediaTypes: [BANNER],
 
   /**
