@@ -139,7 +139,6 @@ describe('adagioAdapter', () => {
     it('should expose ADAGIO.pbjsAdUnits in window', () => {
       spec.isBidRequestValid(bidWithMediaTypes);
       spec.isBidRequestValid(bid);
-      console.log('window.top.ADAGIO.pbjsAdUnits', window.top.ADAGIO.pbjsAdUnits);
       expect(window.top.ADAGIO.pbjsAdUnits).ok;
       expect(window.top.ADAGIO.pbjsAdUnits).to.have.lengthOf(2);
       const adUnitWithMediaTypeSizes = window.top.ADAGIO.pbjsAdUnits.filter((aU) => aU.code === 'adunit-code-2')[0];
