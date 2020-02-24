@@ -28,6 +28,7 @@ const DEFAULT_PUBLISHER_DOMAIN = window.location.origin;
 const DEFAULT_ENABLE_SEND_ALL_BIDS = true;
 const DEFAULT_DISABLE_AJAX_TIMEOUT = false;
 const DEFAULT_BID_CACHE = false;
+const DEFAULT_DEVICE_ACCESS = true;
 
 const DEFAULT_TIMEOUTBUFFER = 400;
 
@@ -158,6 +159,19 @@ export function newConfig() {
         this._useBidCache = val;
       },
 
+      /**
+       * deviceAccess allows publisher to disable setCookie, getCookie, hasLocalStorage
+       * @type {boolean}
+       */
+      _deviceAccess: DEFAULT_DEVICE_ACCESS,
+      get deviceAccess() {
+        return this._deviceAccess;
+      },
+      set deviceAccess(val) {
+        this._deviceAccess = val;
+      },
+
+
       _bidderSequence: DEFAULT_BIDDER_SEQUENCE,
       get bidderSequence() {
         return this._bidderSequence;
@@ -186,7 +200,6 @@ export function newConfig() {
       set disableAjaxTimeout(val) {
         this._disableAjaxTimeout = val;
       },
-
     };
 
     if (config) {

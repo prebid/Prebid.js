@@ -296,6 +296,10 @@ export function debugTurnedOn() {
   return !!config.getConfig('debug');
 }
 
+export function deviceAccess() {
+  config.getConfig('deviceAccess');
+}
+
 export function createInvisibleIframe() {
   var f = document.createElement('iframe');
   f.id = getUniqueIdentifierStr();
@@ -840,12 +844,16 @@ export function cookiesAreEnabled() {
 }
 
 export function getCookie(name) {
-  let m = window.document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]*)\\s*(;|$)');
-  return m ? decodeURIComponent(m[2]) : null;
+  if (deviceAccess()) {
+    let m = window.document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]*)\\s*(;|$)');
+    return m ? decodeURIComponent(m[2]) : null;
+  }
 }
 
 export function setCookie(key, value, expires, sameSite) {
-  document.cookie = `${key}=${encodeURIComponent(value)}${(expires !== '') ? `; expires=${expires}` : ''}; path=/${sameSite ? `; SameSite=${sameSite}` : ''}`;
+  if (deviceAccess()) {
+    document.cookie = `${key}=${encodeURIComponent(value)}${(expires !== '') ? `; expires=${expires}` : ''}; path=/${sameSite ? `; SameSite=${sameSite}` : ''}`;
+  }
 }
 
 /**
@@ -1197,6 +1205,9 @@ export function removeDataFromLocalStorage(key) {
 }
 
 export function hasLocalStorage() {
+  if (!deviceAccess()) {
+    return false;
+  }
   try {
     return !!window.localStorage;
   } catch (e) {
