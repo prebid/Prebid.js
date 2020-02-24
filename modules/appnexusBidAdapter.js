@@ -182,12 +182,12 @@ export const spec = {
       });
     }
 
-    const rtusId = utils.deepAccess(bidRequests[0], `userId.criteortus.${BIDDER_CODE}.userid`);
-    if (rtusId) {
+    const criteoId = utils.deepAccess(bidRequests[0], `userId.criteoId`);
+    if (criteoId) {
       let tpuids = [];
       tpuids.push({
         'provider': 'criteo',
-        'user_id': rtusId
+        'user_id': criteoId
       });
       payload.tpuids = tpuids;
     }
