@@ -1,7 +1,6 @@
 import atsAnalyticsAdapter from '../../../modules/atsAnalyticsAdapter';
 import { expect } from 'chai';
 import adapterManager from 'src/adapterManager.js';
-import eplAnalyticsAdapter from '../../../modules/eplanningAnalyticsAdapter';
 let events = require('src/events');
 let constants = require('src/constants.json');
 
@@ -79,7 +78,8 @@ describe('ats analytics adapter', function () {
         'bidder': 'appnexus',
         'bid_id': '30c77d079cdf17',
         'auction_id': 'a5b849e5-87d7-4205-8300-d063084fcfb7',
-        'user_agent': 'Linux x86_64, false',
+        'user_browser': false,
+        'user_platform': 'Linux x86_64',
         'auction_start': '2020-02-03T14:14:25.161Z',
         'domain': 'https://example.com/dev',
         'pid': '10433394',
