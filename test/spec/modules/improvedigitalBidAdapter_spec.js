@@ -1,7 +1,7 @@
 import { expect } from 'chai';
-import { ImproveDigitalAdServerJSClient, spec } from 'modules/improvedigitalBidAdapter';
-import { config } from 'src/config';
-import { userSync } from 'src/userSync';
+import { ImproveDigitalAdServerJSClient, spec } from 'modules/improvedigitalBidAdapter.js';
+import { config } from 'src/config.js';
+import { userSync } from 'src/userSync.js';
 
 describe('Improve Digital Adapter Tests', function () {
   let idClient = new ImproveDigitalAdServerJSClient('hb');
@@ -103,6 +103,8 @@ describe('Improve Digital Adapter Tests', function () {
       expect(params.bid_request).to.be.an('object');
       expect(params.bid_request.id).to.be.a('string');
       expect(params.bid_request.version).to.equal(`${spec.version}-${idClient.CONSTANTS.CLIENT_VERSION}`);
+      expect(params.bid_request.gdpr).to.not.exist;
+      expect(params.bid_request.us_privacy).to.not.exist;
       expect(params.bid_request.imp).to.deep.equal([
         {
           id: '33e9500b21129f',
@@ -184,6 +186,13 @@ describe('Improve Digital Adapter Tests', function () {
       const request = spec.buildRequests([bidRequest], bidderRequestGdpr)[0];
       const params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
       expect(params.bid_request.gdpr).to.equal('BOJ/P2HOJ/P2HABABMAAAAAZ+A==');
+    });
+
+    it('should add CCPA consent string', function () {
+      const bidRequest = Object.assign({}, simpleBidRequest);
+      const request = spec.buildRequests([bidRequest], { uspConsent: '1YYY' })[0];
+      const params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
+      expect(params.bid_request.us_privacy).to.equal('1YYY');
     });
 
     it('should add referrer', function () {

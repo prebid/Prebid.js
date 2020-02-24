@@ -2,10 +2,10 @@
  * ga.js - analytics adapter for google analytics
  */
 
-var events = require('../src/events');
-var utils = require('../src/utils');
+var events = require('../src/events.js');
+var utils = require('../src/utils.js');
 var CONSTANTS = require('../src/constants.json');
-var adapterManager = require('../src/adapterManager').default;
+var adapterManager = require('../src/adapterManager.js').default;
 
 var BID_REQUESTED = CONSTANTS.EVENTS.BID_REQUESTED;
 var BID_TIMEOUT = CONSTANTS.EVENTS.BID_TIMEOUT;

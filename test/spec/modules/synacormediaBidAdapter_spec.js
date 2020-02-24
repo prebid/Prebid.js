@@ -1,6 +1,6 @@
 import { assert, expect } from 'chai';
-import { BANNER } from 'src/mediaTypes';
-import { spec } from 'modules/synacormediaBidAdapter';
+import { BANNER } from 'src/mediaTypes.js';
+import { spec } from 'modules/synacormediaBidAdapter.js';
 
 describe('synacormediaBidAdapter ', function () {
   describe('isBidRequestValid', function () {
@@ -532,6 +532,109 @@ describe('synacormediaBidAdapter ', function () {
           tagid: '1234',
         }
       ]);
+    });
+  });
+
+  describe('Bid Requests with schain object ', function() {
+    let validBidReq = {
+      bidder: 'synacormedia',
+      params: {
+        seatId: 'prebid',
+        placementId: 'demo1',
+        pos: 1,
+        video: {}
+      },
+      renderer: {
+        url: '../syncOutstreamPlayer.js'
+      },
+      mediaTypes: {
+        video: {
+          playerSize: [[300, 250]],
+          context: 'outstream'
+        }
+      },
+      adUnitCode: 'div-1',
+      transactionId: '0869f34e-090b-4b20-84ee-46ff41405a39',
+      sizes: [[300, 250]],
+      bidId: '22b3a2268d9f0e',
+      bidderRequestId: '1d195910597e13',
+      auctionId: '3375d336-2aea-4ee7-804c-6d26b621ad20',
+      src: 'client',
+      bidRequestsCount: 1,
+      bidderRequestsCount: 1,
+      bidderWinsCount: 0,
+      schain: {
+        ver: '1.0',
+        complete: 1,
+        nodes: [
+          {
+            asi: 'indirectseller.com',
+            sid: '00001',
+            hp: 1
+          }
+        ]
+      }
+    };
+    let bidderRequest = {
+      refererInfo: {
+        referer: 'http://localhost:9999/'
+      },
+      bidderCode: 'synacormedia',
+      auctionId: 'f8a75621-d672-4cbb-9275-3db7d74fb110',
+      bidderRequestId: '16d438671bfbec',
+      bids: [
+        {
+          bidder: 'synacormedia',
+          params: {
+            seatId: 'prebid',
+            placementId: 'demo1',
+            pos: 1,
+            video: {}
+          },
+          renderer: {
+            url: '../syncOutstreamPlayer.js'
+          },
+          mediaTypes: {
+            video: {
+              playerSize: [[300, 250]],
+              context: 'outstream'
+            }
+          },
+          adUnitCode: 'div-1',
+          sizes: [[300, 250]],
+          bidId: '211c0236bb8f4e',
+          bidderRequestId: '16d438671bfbec',
+          auctionId: 'f8a75621-d672-4cbb-9275-3db7d74fb110',
+          src: 'client',
+          bidRequestsCount: 1,
+          bidderRequestsCount: 1,
+          bidderWinsCount: 0,
+          schain: {
+            ver: '1.0',
+            complete: 1,
+            nodes: [
+              {
+                asi: 'indirectseller.com',
+                sid: '00001',
+                hp: 1
+              }
+            ]
+          }
+        }
+      ],
+      auctionStart: 1580310345205,
+      timeout: 1000,
+      start: 1580310345211
+    };
+
+    it('should return valid bid request with schain object', function () {
+      let req = spec.buildRequests([validBidReq], bidderRequest);
+      expect(req).to.have.property('method', 'POST');
+      expect(req).to.have.property('url');
+      expect(req.url).to.contain('//prebid.technoratimedia.com/openrtb/bids/prebid?src=$$REPO_AND_VERSION$$');
+      expect(req.data).to.have.property('source');
+      expect(req.data.source).to.have.property('ext');
+      expect(req.data.source.ext).to.have.property('schain');
     });
   });
 
