@@ -1,8 +1,8 @@
-import adapter from '../src/AnalyticsAdapter';
+import adapter from '../src/AnalyticsAdapter.js';
 import CONSTANTS from '../src/constants.json';
-import adaptermanager from '../src/adapterManager';
-import * as utils from '../src/utils';
-import {ajax} from '../src/ajax';
+import adaptermanager from '../src/adapterManager.js';
+import * as utils from '../src/utils.js';
+import {ajax} from '../src/ajax.js';
 
 const analyticsType = 'endpoint';
 
@@ -111,7 +111,6 @@ let atsAnalyticsAdapter = Object.assign(adapter(
       // send data to ats analytic endpoint
       try {
         let dataToSend = {'Data': atsAnalyticsAdapter.context.events};
-        console.log('Events to send: ', dataToSend);
         let strJSON = JSON.stringify(dataToSend);
         ajax(atsAnalyticsAdapter.context.host, function () {
         }, strJSON, {method: 'POST', contentType: 'application/json'});

@@ -1,4 +1,4 @@
-import atsAnalyticsAdapter from '../../../modules/atsAnalyticsAdapter';
+import atsAnalyticsAdapter from '../../../modules/atsAnalyticsAdapter.js';
 import { expect } from 'chai';
 import adapterManager from 'src/adapterManager.js';
 let events = require('src/events');
