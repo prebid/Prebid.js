@@ -163,7 +163,7 @@ function RhythmOneBidAdapter() {
   }
 
   function frameBid(BRs, bidderRequest) {
-    return {
+    let bid = {
       id: BRs[0].bidderRequestId,
       imp: frameImp(BRs, bidderRequest),
       site: frameSite(bidderRequest),
@@ -181,6 +181,14 @@ function RhythmOneBidAdapter() {
         }
       }
     };
+    if (BRs[0].schain) {
+      bid.source = {
+        'ext': {
+          'schain': BRs[0].schain
+        }
+      }
+    }
+    return bid;
   }
 
   function getFirstParam(key, validBidRequests) {

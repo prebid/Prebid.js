@@ -1,4 +1,5 @@
 import { expect } from 'chai';
+import { config } from 'src/config';
 import { spec } from 'modules/mytargetBidAdapter';
 
 describe('MyTarget Adapter', function() {
@@ -113,6 +114,35 @@ describe('MyTarget Adapter', function() {
       expect(settings.windowSize).to.be.an('object');
       expect(settings.windowSize.width).to.equal(window.screen.width);
       expect(settings.windowSize.height).to.equal(window.screen.height);
+    });
+
+    it('should pass currency from currency.adServerCurrency', function() {
+      const configStub = sinon.stub(config, 'getConfig').callsFake(
+        key => key === 'currency.adServerCurrency' ? 'USD' : '');
+
+      let bidRequest = spec.buildRequests(bidRequests, bidderRequest);
+      let settings = bidRequest.data.settings;
+
+      expect(settings).to.be.an('object');
+      expect(settings.currency).to.equal('USD');
+      expect(settings.windowSize).to.be.an('object');
+      expect(settings.windowSize.width).to.equal(window.screen.width);
+      expect(settings.windowSize.height).to.equal(window.screen.height);
+
+      configStub.restore();
+    });
+
+    it('should ignore currency other than "RUB" or "USD"', function() {
+      const configStub = sinon.stub(config, 'getConfig').callsFake(
+        key => key === 'currency.adServerCurrency' ? 'EUR' : '');
+
+      let bidRequest = spec.buildRequests(bidRequests, bidderRequest);
+      let settings = bidRequest.data.settings;
+
+      expect(settings).to.be.an('object');
+      expect(settings.currency).to.equal('RUB');
+
+      configStub.restore();
     });
   });
 

@@ -84,6 +84,9 @@ function buildTrionUrlParams(bid) {
   var re = utils.getBidIdParameter('re', bid.params);
   var url = utils.getTopWindowUrl();
   var sizes = utils.parseSizesInput(bid.sizes).join(',');
+  var isAutomated = (navigator && navigator.webdriver) ? 1 : 0;
+  var isHidden = (document.hidden) ? 1 : 0;
+  var visibilityState = encodeURIComponent(document.visibilityState);
 
   var intT = window.TR_INT_T && window.TR_INT_T != -1 ? window.TR_INT_T : null;
   if (!intT) {
@@ -108,6 +111,9 @@ function buildTrionUrlParams(bid) {
   if (intT) {
     trionUrl = utils.tryAppendQueryString(trionUrl, 'int_t', encodeURIComponent(intT));
   }
+  trionUrl = utils.tryAppendQueryString(trionUrl, 'tr_wd', isAutomated);
+  trionUrl = utils.tryAppendQueryString(trionUrl, 'tr_hd', isHidden);
+  trionUrl = utils.tryAppendQueryString(trionUrl, 'tr_vs', visibilityState);
 
   // remove the trailing "&"
   if (trionUrl.lastIndexOf('&') === trionUrl.length - 1) {

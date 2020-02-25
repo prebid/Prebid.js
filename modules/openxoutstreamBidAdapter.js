@@ -6,7 +6,7 @@ import { BANNER } from '../src/mediaTypes';
 const SUPPORTED_AD_TYPES = [BANNER];
 const BIDDER_CODE = 'openxoutstream';
 const BIDDER_CONFIG = 'hb_pb_ym';
-const BIDDER_VERSION = '1.0.0';
+const BIDDER_VERSION = '1.0.1';
 const CURRENCY = 'USD';
 const NET_REVENUE = true;
 const TIME_TO_LIVE = 300;
@@ -70,8 +70,7 @@ function buildCommonQueryParamsFromBids(bid, bidderRequest) {
   const width = '414';
   const aus = '304x184%7C412x184%7C375x184%7C414x184';
   defaultParams = {
-    ju: config.getConfig('pageUrl') || utils.getTopWindowUrl(),
-    jr: utils.getTopWindowReferrer(),
+    ju: config.getConfig('pageUrl') || bidderRequest.refererInfo.referer,
     ch: document.charSet || document.characterSet,
     res: `${screen.width}x${screen.height}x${screen.colorDepth}`,
     ifr: isInIframe,
@@ -118,7 +117,7 @@ function buildOXBannerRequest(bid, bidderRequest) {
     queryParams.tfcd = 1;
   }
 
-  let url = `https://${bid.params.delDomain}/v/1.0/avjp`
+  let url = `https://${bid.params.delDomain}/v/1.0/avjp`;
   return {
     method: 'GET',
     url: url,

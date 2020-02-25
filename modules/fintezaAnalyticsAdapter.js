@@ -19,6 +19,7 @@ const SESSION_ID = '_fz_ssn';
 const SESSION_DURATION = 30 * 60 * 1000;
 const SESSION_RAND_PART = 9;
 const TRACK_TIME_KEY = '_fz_tr';
+const UNIQ_ID_KEY = '_fz_uniq';
 
 function getPageInfo() {
   const pageInfo = {
@@ -30,6 +31,42 @@ function getPageInfo() {
   }
 
   return pageInfo;
+}
+
+function getUniqId() {
+  let cookies;
+
+  try {
+    cookies = parseCookies(document.cookie);
+  } catch (a) {
+    cookies = {};
+  }
+
+  let isUniqFromLS;
+  let uniq = cookies[ UNIQ_ID_KEY ];
+  if (!uniq) {
+    try {
+      if (window.localStorage) {
+        uniq = window.localStorage.getItem(UNIQ_ID_KEY) || '';
+        isUniqFromLS = true;
+      }
+    } catch (b) {}
+  }
+
+  if (uniq && isNaN(uniq)) {
+    uniq = null;
+  }
+
+  if (uniq && isUniqFromLS) {
+    let expires = new Date();
+    expires.setFullYear(expires.getFullYear() + 10);
+
+    try {
+      document.cookie = UNIQ_ID_KEY + '=' + uniq + '; path=/; expires=' + expires.toUTCString();
+    } catch (e) {}
+  }
+
+  return uniq;
 }
 
 function initFirstVisit() {
@@ -330,6 +367,10 @@ function prepareTrackData(evtype, args) {
       ac: getAntiCacheParam(),
     })
 
+    if (fntzAnalyticsAdapter.context.uniqId) {
+      trackData.fz_uniq = fntzAnalyticsAdapter.context.uniqId;
+    }
+
     if (session.id) {
       trackData.ssn = session.id;
     }
@@ -347,12 +388,12 @@ function sendTrackRequest(trackData) {
   try {
     ajax(
       fntzAnalyticsAdapter.context.host,
-      null, // Callback
+      null,
       trackData,
       {
         method: 'GET',
-        contentType: 'application/x-www-form-urlencoded',
-        // preflight: true,
+        withCredentials: true,
+        contentType: 'application/x-www-form-urlencoded'
       },
     );
     saveTrackRequestTime();
@@ -396,6 +437,7 @@ fntzAnalyticsAdapter.enableAnalytics = function (config) {
     bidWonTrack: config.options.bidWonTrack || BID_WON_TRACK,
     firstVisit: initFirstVisit(),
     screenResolution: `${window.screen.width}x${window.screen.height}`,
+    uniqId: getUniqId(),
     pageInfo: getPageInfo(),
   };
 
