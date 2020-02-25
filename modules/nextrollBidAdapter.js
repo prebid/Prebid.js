@@ -1,8 +1,9 @@
-import * as utils from '../src/utils';
-import { registerBidder } from '../src/adapters/bidderFactory';
-import { BANNER } from '../src/mediaTypes';
+import * as utils from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
+import { parse as parseUrl } from '../src/url.js';
 
-import find from 'core-js/library/fn/array/find';
+import find from 'core-js/library/fn/array/find.js';
 
 const BIDDER_CODE = 'nextroll';
 const BIDDER_ENDPOINT = 'https://d.adroll.com/bid/prebid/';
@@ -29,7 +30,7 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
-    let topLocation = _parseUrl(utils.deepAccess(bidderRequest, 'refererInfo.referer'));
+    let topLocation = parseUrl(utils.deepAccess(bidderRequest, 'refererInfo.referer'));
     let consent = hasCCPAConsent(bidderRequest);
     return validBidRequests.map((bidRequest, index) => {
       return {
@@ -79,17 +80,6 @@ export const spec = {
       let bids = response.seatbid.reduce((acc, seatbid) => acc.concat(seatbid.bid), []);
       return bids.map((bid) => _buildResponse(response, bid));
     }
-  },
-
-  /**
-   * Register the user sync pixels which should be dropped after the auction.
-   *
-   * @param {SyncOptions} syncOptions Which user syncs are allowed?
-   * @param {ServerResponse[]} serverResponses List of server's responses.
-   * @return {UserSync[]} The user syncs which should be dropped.
-   */
-  getUserSyncs: function (syncOptions, serverResponses, gdprConsent) {
-    return [];
   }
 }
 
@@ -199,15 +189,6 @@ function _getOsVersion(userAgent) {
   ];
   let cs = find(clientStrings, cs => cs.r.test(userAgent));
   return cs ? cs.s : 'unknown';
-}
-
-function _parseUrl(url) {
-  let parsed = document.createElement('a');
-  parsed.href = url;
-  return {
-    href: parsed.href,
-    hostname: parsed.hostname
-  };
 }
 
 export function hasCCPAConsent(bidderRequest) {
