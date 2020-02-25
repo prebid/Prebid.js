@@ -1002,7 +1002,7 @@ describe('ozone Adapter', function () {
     });
 
     it('should pick up the value of pubcid when built using the pubCommonId module (not userId)', function () {
-      console.log(validBidRequests[0].crumbs);
+      // console.log(validBidRequests[0].crumbs);
       let bidRequests = validBidRequests;
       // values from http://prebid.org/dev-docs/modules/userId.html#pubcommon-id
       bidRequests[0]['userId'] = {
