@@ -1,8 +1,8 @@
-import * as utils from '../src/utils'
-import { registerBidder } from '../src/adapters/bidderFactory'
-import { auctionManager } from '../src/auctionManager'
-import { BANNER, VIDEO } from '../src/mediaTypes'
-import {Renderer} from '../src/Renderer';
+import * as utils from '../src/utils.js'
+import { registerBidder } from '../src/adapters/bidderFactory.js'
+import { auctionManager } from '../src/auctionManager.js'
+import { BANNER, VIDEO } from '../src/mediaTypes.js'
+import {Renderer} from '../src/Renderer.js';
 import find from 'core-js/library/fn/array/find';
 
 const BIDDER_CODE = 'hybrid';
@@ -11,7 +11,7 @@ const TRAFFIC_TYPE_WEB = 1;
 const PLACEMENT_TYPE_BANNER = 1;
 const PLACEMENT_TYPE_VIDEO = 2;
 const TTL = 60;
-const RENDERER_URL = '//acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
+const RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
 
 const placemenTypes = {
   'banner': PLACEMENT_TYPE_BANNER,
