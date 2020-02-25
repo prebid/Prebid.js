@@ -1,6 +1,5 @@
 import { expect } from 'chai';
 import { spec } from 'modules/tribeosBidAdapter.js';
-import { logInfo } from 'src/utils.js'
 
 describe('tribeosBidAdapter', function() {
   describe('isBidRequestValid', function() {
@@ -76,7 +75,7 @@ describe('tribeosBidAdapter', function() {
     expect(bids).to.have.lengthOf(1);
     let bid = bids[0];
 
-    logInfo(JSON.stringify(bid));
+    console.error(JSON.stringify(bid));
 
     expect(bid.cpm).to.equal(1.1);
     expect(bid.currency).to.equal('USD');
