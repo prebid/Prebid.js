@@ -25,7 +25,7 @@ let currentBatch = [],
     verbose = false;
 
 
-let hummingbirdAnalytics = Object.assign(adapter({hummingbirdUrl, analyticsType}), {
+let mavenAnalytics = Object.assign(adapter({hummingbirdUrl, analyticsType}), {
     
     track({ eventType, args }) {
         try {
@@ -185,24 +185,24 @@ const logMsg = (...args) => {
 }
 
 // save the base class function
-hummingbirdAnalytics.originEnableAnalytics = hummingbirdAnalytics.enableAnalytics;
+mavenAnalytics.originEnableAnalytics = mavenAnalytics.enableAnalytics;
 
 // override enableAnalytics so we can get access to the config passed in from the page
-hummingbirdAnalytics.enableAnalytics = function (config) {
+mavenAnalytics.enableAnalytics = function (config) {
     if (initialized) {
         return;
     }
     options = config.options;
-    hummingbirdAnalytics.originEnableAnalytics(config); // call the base class function
+    mavenAnalytics.originEnableAnalytics(config); // call the base class function
     initialized = true;
     hummingbirdUrl = options.url; 
     verbose = !!options.verbose;
 };
 
 adaptermanager.registerAnalyticsAdapter({
-    adapter: hummingbirdAnalytics,
-    code: 'hummingbird'
+    adapter: mavenAnalytics,
+    code: 'maven'
 });
 
-export default hummingbirdAnalytics;
+export default mavenAnalytics;
 
