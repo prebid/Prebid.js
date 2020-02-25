@@ -1,16 +1,10 @@
 import { expect } from 'chai';
-import { spec, tryGetPubtag, hasCCPAConsent } from 'modules/nextrollBidAdapter';
-import * as utils from 'src/utils';
-
-const PUBTAG_LOCAL_STORAGE_KEY = 'nextroll_fast_bid';
-const PUBTAG_DATE_SUFFIX = '_set_date'
+import { spec, tryGetPubtag, hasCCPAConsent } from 'modules/nextrollBidAdapter.js';
+import * as utils from 'src/utils.js';
 
 describe('nextrollBidAdapter', function() {
   let utilsMock;
   beforeEach(function () {
-    // Remove to avoid side effects
-    localStorage.removeItem(PUBTAG_LOCAL_STORAGE_KEY);
-    localStorage.removeItem(PUBTAG_LOCAL_STORAGE_KEY + PUBTAG_DATE_SUFFIX);
     utilsMock = sinon.mock(utils);
   });
 
@@ -146,12 +140,6 @@ describe('nextrollBidAdapter', function() {
       expect(response.ttl).to.be.equal(300);
       expect(response.ad).to.be.equal('adm1');
     });
-  });
-
-  describe('getUserSyncs', function () {
-    it('returns an empty list', function () {
-      expect(spec.getUserSyncs({}, {})).to.be.eql([]);
-    })
   });
 
   describe('hasCCPAConsent', function() {
