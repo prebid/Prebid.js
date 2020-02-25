@@ -1,5 +1,5 @@
-import find from 'core-js/library/fn/array/find';
-const utils = require('./utils');
+import find from 'core-js/library/fn/array/find.js';
+const utils = require('./utils.js');
 
 const _defaultPrecision = 2;
 const _lgPriceConfig = {

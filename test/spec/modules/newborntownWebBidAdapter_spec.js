@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import {spec} from 'modules/newborntownWebBidAdapter';
+import {spec} from 'modules/newborntownWebBidAdapter.js';
 describe('NewborntownWebAdapter', function() {
   describe('isBidRequestValid', function () {
     let bid = {

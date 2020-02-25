@@ -1,9 +1,9 @@
-import * as utils from '../src/utils';
-import { config } from '../src/config';
-import { Renderer } from '../src/Renderer';
-import { registerBidder } from '../src/adapters/bidderFactory';
-import { VIDEO, BANNER } from '../src/mediaTypes';
-import { loadExternalScript } from '../src/adloader';
+import * as utils from '../src/utils.js';
+import { config } from '../src/config.js';
+import { Renderer } from '../src/Renderer.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { VIDEO, BANNER } from '../src/mediaTypes.js';
+import { loadExternalScript } from '../src/adloader.js';
 
 const PROD_ENDPOINT = 'https://bs1.showheroes.com/api/v1/bid';
 const STAGE_ENDPOINT = 'https://bid-service.stage.showheroes.com/api/v1/bid';

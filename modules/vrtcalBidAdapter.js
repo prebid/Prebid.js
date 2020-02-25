@@ -1,6 +1,6 @@
-import {registerBidder} from '../src/adapters/bidderFactory';
-import { BANNER } from '../src/mediaTypes';
-import {ajax} from '../src/ajax';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
+import {ajax} from '../src/ajax.js';
 
 export const spec = {
   code: 'vrtcal',

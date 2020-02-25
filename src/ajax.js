@@ -1,7 +1,7 @@
-import {parse as parseURL, format as formatURL} from './url';
-import { config } from './config';
+import {parse as parseURL, format as formatURL} from './url.js';
+import { config } from './config.js';
 
-var utils = require('./utils');
+var utils = require('./utils.js');
 
 const XHR_DONE = 4;
 

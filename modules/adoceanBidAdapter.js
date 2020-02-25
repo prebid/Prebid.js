@@ -1,5 +1,5 @@
-import * as utils from '../src/utils';
-import { registerBidder } from '../src/adapters/bidderFactory';
+import * as utils from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'adocean';
 
@@ -12,7 +12,8 @@ function buildEndpointUrl(emiter, payload) {
     payloadString += k + '=' + encodeURIComponent(v);
   });
 
-  return 'https://' + emiter + '/ad.json?' + payloadString;
+  const randomizedPart = Math.random().toString().slice(2);
+  return 'https://' + emiter + '/_' + randomizedPart + '/ad.json?' + payloadString;
 }
 
 function buildRequest(masterBidRequests, masterId, gdprConsent) {
@@ -57,7 +58,8 @@ function assignToMaster(bidRequest, bidRequestsByMaster) {
 }
 
 function interpretResponse(placementResponse, bidRequest, bids) {
-  if (!placementResponse.error) {
+  const requestId = bidRequest.bidIdMap[placementResponse.id];
+  if (!placementResponse.error && requestId) {
     let adCode = '<script type="application/javascript">(function(){var wu="' + (placementResponse.winUrl || '') + '",su="' + (placementResponse.statsUrl || '') + '".replace(/\\[TIMESTAMP\\]/,(new Date()).getTime());';
     adCode += 'if(navigator.sendBeacon){if(wu){navigator.sendBeacon(wu)||((new Image(1,1)).src=wu)};if(su){navigator.sendBeacon(su)||((new Image(1,1)).src=su)}}';
     adCode += 'else{if(wu){(new Image(1,1)).src=wu;}if(su){(new Image(1,1)).src=su;}}';
@@ -69,7 +71,7 @@ function interpretResponse(placementResponse, bidRequest, bids) {
       cpm: parseFloat(placementResponse.price),
       currency: placementResponse.currency,
       height: parseInt(placementResponse.height, 10),
-      requestId: bidRequest.bidIdMap[placementResponse.id],
+      requestId: requestId,
       width: parseInt(placementResponse.width, 10),
       netRevenue: false,
       ttl: parseInt(placementResponse.ttl),
