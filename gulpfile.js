@@ -84,7 +84,7 @@ function viewCoverage(done) {
 
   connect.server({
     port: coveragePort,
-    root: 'build/coverage/karma_html',
+    root: 'build/coverage/karma-html',
     livereload: false
   });
   opens('http://' + mylocalhost + ':' + coveragePort);

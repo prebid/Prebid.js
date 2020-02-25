@@ -33,7 +33,7 @@ function newWebpackConfig(codeCoverage) {
 function newPluginsArray(browserstack) {
   var plugins = [
     'karma-chrome-launcher',
-    'karma-coverage-istanbul-reporter',
+    'karma-coverage',
     'karma-es5-shim',
     'karma-mocha',
     'karma-chai',
@@ -54,7 +54,7 @@ function newPluginsArray(browserstack) {
   return plugins;
 }
 
-function setReporters(karmaConf, codeCoverage, browserstack) {
+function setReporters(karmaConf, browserstack) {
   // In browserstack, the default 'progress' reporter floods the logs.
   // The karma-spec-reporter reports failures more concisely
   if (browserstack) {
@@ -65,19 +65,6 @@ function setReporters(karmaConf, codeCoverage, browserstack) {
       suppressSkipped: false,
       suppressPassed: true
     };
-  }
-  if (codeCoverage) {
-    karmaConf.reporters.push('coverage-istanbul');
-    karmaConf.coverageIstanbulReporter = {
-      reports: ['html', 'lcovonly', 'text-summary'],
-      dir: path.join(__dirname, 'build', 'coverage'),
-      'report-config': {
-        html: {
-          subdir: 'karma_html',
-          urlFriendlyName: true, // simply replaces spaces with _ for files/dirs
-        }
-      }
-    }
   }
 }
 
@@ -156,10 +143,18 @@ module.exports = function(codeCoverage, browserstack, watchMode, file) {
     // enable / disable watching file and executing tests whenever any file changes
     autoWatch: true,
 
-    reporters: ['mocha'],
+    reporters: ['mocha', 'coverage'],
+
     mochaReporter: {
       showDiff: true,
       output: 'minimal'
+    },
+
+    coverageReporter: {
+      dir: 'build/coverage',
+      reporters: [
+        { type: 'html', subdir: 'karma-html' }
+      ]
     },
 
     // Continuous Integration mode
@@ -172,7 +167,7 @@ module.exports = function(codeCoverage, browserstack, watchMode, file) {
 
     plugins: plugins
   }
-  setReporters(config, codeCoverage, browserstack);
+  setReporters(config, browserstack);
   setBrowsers(config, browserstack);
   return config;
 }
