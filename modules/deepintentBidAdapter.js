@@ -37,7 +37,7 @@ export const spec = {
       imp: validBidRequests.map(bid => buildImpression(bid)),
       site: buildSite(bidderRequest),
       device: buildDevice(),
-      user: user && user.length == 1 ? user[0] : {},
+      user: user && user.length === 1 ? user[0] : {}
     };
 
     if (bidderRequest && bidderRequest.uspConsent) {
