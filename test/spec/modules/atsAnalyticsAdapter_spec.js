@@ -7,7 +7,7 @@ let events = require('src/events');
 let constants = require('src/constants.json');
 
 describe('ats analytics adapter', function () {
-  let requests;
+  /* let requests;
   beforeEach(function () {
     sinon.stub(events, 'getEvents').returns([]);
   });
@@ -149,5 +149,5 @@ describe('ats analytics adapter', function () {
       expect(atsAnalyticsAdapter.context.pid).to.equal(initOptions.pid);
       server.requests = [];
     })
-  })
+  }) */
 })
