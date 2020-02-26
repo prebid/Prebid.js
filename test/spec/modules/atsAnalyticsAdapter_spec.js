@@ -141,6 +141,7 @@ describe('ats analytics adapter', function () {
 
       let realAfterBid = JSON.parse(requests[0].requestBody);
 
+      // Step 6: assert real data after bid and expected data
       expect(realAfterBid['Data']).to.deep.equal(expectedAfterBid['Data']);
 
       // check that the host and publisher ID is configured via options
