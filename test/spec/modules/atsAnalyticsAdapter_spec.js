@@ -7,7 +7,6 @@ let events = require('src/events');
 let constants = require('src/constants.json');
 
 describe('ats analytics adapter', function () {
-  /* let requests;
   beforeEach(function () {
     sinon.stub(events, 'getEvents').returns([]);
   });
@@ -15,7 +14,6 @@ describe('ats analytics adapter', function () {
   afterEach(function () {
     events.getEvents.restore();
     atsAnalyticsAdapter.disableAnalytics();
-    requests = [];
   });
 
   describe('track', function () {
@@ -133,7 +131,7 @@ describe('ats analytics adapter', function () {
       // Step 5: Send auction end event
       events.emit(constants.EVENTS.AUCTION_END, {});
 
-      requests = server.requests.filter(req => {
+      let requests = server.requests.filter(req => {
         return req.url.indexOf(initOptions.host) > -1;
       });
 
@@ -147,7 +145,6 @@ describe('ats analytics adapter', function () {
       // check that the host and publisher ID is configured via options
       expect(atsAnalyticsAdapter.context.host).to.equal(initOptions.host);
       expect(atsAnalyticsAdapter.context.pid).to.equal(initOptions.pid);
-      server.requests = [];
     })
-  }) */
+  })
 })
