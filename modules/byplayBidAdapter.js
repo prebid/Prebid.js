@@ -57,7 +57,7 @@ function createRenderer() {
 
   renderer.setRender(bid => {
     bid.renderer.push(() => {
-      window.adtagRender(bid.vastXml);
+      window.adtagRender(bid);
     });
   });
 
