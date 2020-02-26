@@ -146,6 +146,7 @@ describe('ats analytics adapter', function () {
       // check that the host and publisher ID is configured via options
       expect(atsAnalyticsAdapter.context.host).to.equal(initOptions.host);
       expect(atsAnalyticsAdapter.context.pid).to.equal(initOptions.pid);
+      server.requests.pop();
     })
   })
 })
