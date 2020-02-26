@@ -296,8 +296,12 @@ export function debugTurnedOn() {
   return !!config.getConfig('debug');
 }
 
-export function deviceAccess() {
-  config.getConfig('deviceAccess');
+/**
+ * When the deviceAccess flag config option is false, no cookies should be read or set
+ * @returns {boolean}
+ */
+export function hasDeviceAccess() {
+  return config.getConfig('deviceAccess') !== false;
 }
 
 export function createInvisibleIframe() {
@@ -844,14 +848,15 @@ export function cookiesAreEnabled() {
 }
 
 export function getCookie(name) {
-  if (deviceAccess()) {
+  if (hasDeviceAccess()) {
     let m = window.document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]*)\\s*(;|$)');
     return m ? decodeURIComponent(m[2]) : null;
   }
+  return null;
 }
 
 export function setCookie(key, value, expires, sameSite) {
-  if (deviceAccess()) {
+  if (hasDeviceAccess()) {
     document.cookie = `${key}=${encodeURIComponent(value)}${(expires !== '') ? `; expires=${expires}` : ''}; path=/${sameSite ? `; SameSite=${sameSite}` : ''}`;
   }
 }
@@ -860,12 +865,13 @@ export function setCookie(key, value, expires, sameSite) {
  * @returns {boolean}
  */
 export function localStorageIsEnabled () {
-  try {
-    localStorage.setItem('prebid.cookieTest', '1');
-    return localStorage.getItem('prebid.cookieTest') === '1';
-  } catch (error) {
-    return false;
+  if (hasDeviceAccess()) {
+    try {
+      localStorage.setItem('prebid.cookieTest', '1');
+      return localStorage.getItem('prebid.cookieTest') === '1';
+    } catch (error) {}
   }
+  return false;
 }
 
 /**
@@ -1205,7 +1211,7 @@ export function removeDataFromLocalStorage(key) {
 }
 
 export function hasLocalStorage() {
-  if (!deviceAccess()) {
+  if (!hasDeviceAccess()) {
     return false;
   }
   try {

@@ -160,7 +160,7 @@ export function newConfig() {
       },
 
       /**
-       * deviceAccess allows publisher to disable setCookie, getCookie, hasLocalStorage
+       * deviceAccess set to false will disable setCookie, getCookie, hasLocalStorage
        * @type {boolean}
        */
       _deviceAccess: DEFAULT_DEVICE_ACCESS,
@@ -170,7 +170,6 @@ export function newConfig() {
       set deviceAccess(val) {
         this._deviceAccess = val;
       },
-
 
       _bidderSequence: DEFAULT_BIDDER_SEQUENCE,
       get bidderSequence() {
