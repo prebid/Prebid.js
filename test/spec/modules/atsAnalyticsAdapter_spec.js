@@ -138,10 +138,7 @@ describe('ats analytics adapter', function () {
       expect(requests.length).to.equal(1);
 
       let realAfterBid = JSON.parse(requests[0].requestBody);
-      console.log('realAfterBid: ', JSON.stringify(realAfterBid, null, 2));
-      console.log('expectedAfterBid: ', JSON.stringify(expectedAfterBid, null, 2));
-      console.log('realAfterBid[Data]: ', JSON.stringify(realAfterBid['Data'], null, 2));
-      console.log('expectedAfterBid[Data]: ', JSON.stringify(expectedAfterBid['Data'], null, 2));
+
       expect(realAfterBid['Data']).to.deep.equal(expectedAfterBid['Data']);
 
       // check that the host and publisher ID is configured via options
