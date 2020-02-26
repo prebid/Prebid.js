@@ -1011,7 +1011,7 @@ describe('bridgewellBidAdapter', function () {
       expect(result).to.deep.equal([]);
     });
 
-    it('should return different creative id when two requests with same sizes are given', function () {
+    it('should contain every request bid id in responses', function () {
       const request = {
         validBidRequests: [
           {
@@ -1056,7 +1056,16 @@ describe('bridgewellBidAdapter', function () {
         'currency': 'NTD'
       }];
       const result = spec.interpretResponse({ 'body': response }, request);
-      expect(result[0].creativeId !== result[1].creativeId).to.be.true;
+      let requestBidIdInResponse = {};
+      let bidIds = [];
+
+      for (let prop in result) {
+        requestBidIdInResponse[result[prop].requestId] = 'exist';
+      }
+      for (let prop in request.validBidRequests) {
+        bidIds.push(request.validBidRequests[prop].bidId);
+      }
+      expect(requestBidIdInResponse).to.contain.all.keys(bidIds);
     });
 
     it('should have 2 consumed responses when two requests with same sizes are given', function () {
