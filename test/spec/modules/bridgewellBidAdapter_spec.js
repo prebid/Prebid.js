@@ -1056,16 +1056,11 @@ describe('bridgewellBidAdapter', function () {
         'currency': 'NTD'
       }];
       const result = spec.interpretResponse({ 'body': response }, request);
-      let requestBidIdInResponse = {};
-      let bidIds = [];
+      let actualBidId = result.map(obj => obj.requestId);
+      let expectedBidId = ['3150ccb55da321', '3150ccb55da322'];
 
-      for (let prop in result) {
-        requestBidIdInResponse[result[prop].requestId] = 'exist';
-      }
-      for (let prop in request.validBidRequests) {
-        bidIds.push(request.validBidRequests[prop].bidId);
-      }
-      expect(requestBidIdInResponse).to.contain.all.keys(bidIds);
+      assert.include(actualBidId, expectedBidId[0]);
+      assert.include(actualBidId, expectedBidId[1]);
     });
 
     it('should have 2 consumed responses when two requests with same sizes are given', function () {
