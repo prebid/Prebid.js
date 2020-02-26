@@ -82,8 +82,8 @@ describe('ats analytics adapter', function () {
           'domain': 'https://example.com/dev',
           'pid': '10433394',
           'response_time_stamp': '2020-02-03T14:23:11.978Z',
-          'cpm': 0.5,
           'currency': 'USD',
+          'cpm': 0.5,
           'net_revenue': true
         }]
       };
@@ -137,8 +137,11 @@ describe('ats analytics adapter', function () {
       expect(requests.length).to.equal(1);
 
       let realAfterBid = JSON.parse(requests[0].requestBody);
-
-      expect(realAfterBid).to.deep.equal(expectedAfterBid);
+      console.log('realAfterBid: ', JSON.stringify(realAfterBid, null, 2));
+      console.log('expectedAfterBid: ', JSON.stringify(expectedAfterBid, null, 2));
+      console.log('realAfterBid[Data]: ', JSON.stringify(realAfterBid['Data'], null, 2));
+      console.log('expectedAfterBid[Data]: ', JSON.stringify(expectedAfterBid['Data'], null, 2));
+      expect(realAfterBid['Data']).to.deep.equal(expectedAfterBid['Data']);
 
       // check that the host and publisher ID is configured via options
       expect(atsAnalyticsAdapter.context.host).to.equal(initOptions.host);
