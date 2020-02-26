@@ -89,7 +89,7 @@ export const spec = {
       let matchedResponse = find(serverResponse.body, function (res) {
         let valid = false;
 
-        if (res) {
+        if (res && !res.consumed) {
           let mediaTypes = req.mediaTypes;
           if (res.width && res.height && mediaTypes) {
             if (mediaTypes.native) { // dont care native sizes
@@ -116,6 +116,8 @@ export const spec = {
       });
 
       if (matchedResponse) {
+        matchedResponse.consumed = true;
+
         // check required parameters
         if (typeof matchedResponse.cpm !== 'number') {
           return;

@@ -1010,5 +1010,106 @@ describe('bridgewellBidAdapter', function () {
       const result = spec.interpretResponse({ 'body': response }, nativeBidRequests);
       expect(result).to.deep.equal([]);
     });
+
+    it('should return different creative id when two requests with same sizes are given', function () {
+      const request = {
+        validBidRequests: [
+          {
+            'mediaTypes': {
+              'banner': {
+                'sizes': [300, 250]
+              }
+            },
+            'bidId': '3150ccb55da321',
+          },
+          {
+            'mediaTypes': {
+              'banner': {
+                'sizes': [300, 250]
+              }
+            },
+            'bidId': '3150ccb55da322',
+          }
+        ],
+      };
+      const response = [{
+        'id': '0cd250f4-f40e-4a78-90f5-5168eb0a97e9',
+        'bidder_code': 'bridgewell',
+        'cpm': 7.0,
+        'width': 300,
+        'height': 250,
+        'mediaType': 'banner',
+        'ad': '<div>test 300x250</div>',
+        'ttl': 400,
+        'netRevenue': true,
+        'currency': 'NTD'
+      }, {
+        'id': '8a740063-6820-45e4-b01f-34ce9b38e858',
+        'bidder_code': 'bridgewell',
+        'cpm': 7.0,
+        'width': 300,
+        'height': 250,
+        'mediaType': 'banner',
+        'ad': '<div>test 300x250</div>',
+        'ttl': 400,
+        'netRevenue': true,
+        'currency': 'NTD'
+      }];
+      const result = spec.interpretResponse({ 'body': response }, request);
+      expect(result[0].creativeId !== result[1].creativeId).to.be.true;
+    });
+
+    it('should have 2 consumed responses when two requests with same sizes are given', function () {
+      const request = {
+        validBidRequests: [
+          {
+            'mediaTypes': {
+              'banner': {
+                'sizes': [300, 250]
+              }
+            },
+            'bidId': '3150ccb55da321',
+          },
+          {
+            'mediaTypes': {
+              'banner': {
+                'sizes': [300, 250]
+              }
+            },
+            'bidId': '3150ccb55da322',
+          }
+        ],
+      };
+      const response = [{
+        'id': '0cd250f4-f40e-4a78-90f5-5168eb0a97e9',
+        'bidder_code': 'bridgewell',
+        'cpm': 7.0,
+        'width': 300,
+        'height': 250,
+        'mediaType': 'banner',
+        'ad': '<div>test 300x250</div>',
+        'ttl': 400,
+        'netRevenue': true,
+        'currency': 'NTD'
+      }, {
+        'id': '8a740063-6820-45e4-b01f-34ce9b38e858',
+        'bidder_code': 'bridgewell',
+        'cpm': 7.0,
+        'width': 300,
+        'height': 250,
+        'mediaType': 'banner',
+        'ad': '<div>test 300x250</div>',
+        'ttl': 400,
+        'netRevenue': true,
+        'currency': 'NTD'
+      }];
+      const reducer = function(accumulator, currentValue) {
+        if (currentValue.consumed) accumulator++;
+        return accumulator;
+      };
+
+      spec.interpretResponse({ 'body': response }, request);
+      expect(response.reduce(reducer, 0)).to.equal(2);
+    });
   });
 });
