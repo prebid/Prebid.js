@@ -7,6 +7,7 @@ let events = require('src/events');
 let constants = require('src/constants.json');
 
 describe('ats analytics adapter', function () {
+  let requests;
   beforeEach(function () {
     sinon.stub(events, 'getEvents').returns([]);
   });
@@ -14,6 +15,7 @@ describe('ats analytics adapter', function () {
   afterEach(function () {
     events.getEvents.restore();
     atsAnalyticsAdapter.disableAnalytics();
+    requests = [];
   });
 
   describe('track', function () {
@@ -131,7 +133,7 @@ describe('ats analytics adapter', function () {
       // Step 5: Send auction end event
       events.emit(constants.EVENTS.AUCTION_END, {});
 
-      let requests = server.requests.filter(req => {
+      requests = server.requests.filter(req => {
         return req.url.indexOf(initOptions.host) > -1;
       });
 
