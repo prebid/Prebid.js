@@ -840,11 +840,14 @@ export function checkCookieSupport() {
   }
 }
 export function cookiesAreEnabled() {
-  if (internal.checkCookieSupport()) {
-    return true;
+  if (hasDeviceAccess()) {
+    if (internal.checkCookieSupport()) {
+      return true;
+    }
+    window.document.cookie = 'prebid.cookieTest';
+    return window.document.cookie.indexOf('prebid.cookieTest') !== -1;
   }
-  window.document.cookie = 'prebid.cookieTest';
-  return window.document.cookie.indexOf('prebid.cookieTest') != -1;
+  return false;
 }
 
 export function getCookie(name) {
