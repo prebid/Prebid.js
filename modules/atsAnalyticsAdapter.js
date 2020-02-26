@@ -47,7 +47,7 @@ export function browserIsFirefox() {
 }
 
 export function browserIsIE() {
-  return /* @cc_on!@ */false || !!document.documentMode;
+  return !!document.documentMode;
 }
 
 export function browserIsEdge() {
