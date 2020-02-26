@@ -13,7 +13,7 @@ const PLACEMENT_TYPE_VIDEO = 2;
 const TTL = 60;
 const RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
 
-const placemenTypes = {
+const placementTypes = {
   'banner': PLACEMENT_TYPE_BANNER,
   'video': PLACEMENT_TYPE_VIDEO
 };
@@ -25,7 +25,7 @@ function buildBidRequests(validBidRequests) {
       bidId: validBidRequest.bidId,
       transactionId: validBidRequest.transactionId,
       sizes: validBidRequest.sizes,
-      placement: placemenTypes[params.placement],
+      placement: placementTypes[params.placement],
       placeId: params.placeId
     };
 
@@ -119,7 +119,7 @@ function hasVideoMandatoryParams(mediaTypes) {
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO],
-  placemenTypes: placemenTypes,
+  placementTypes: placementTypes,
 
   /**
    * Determines whether or not the given bid request is valid.

@@ -185,11 +185,11 @@ describe('Hybrid.ai Adapter', function() {
       const bidRequests = data.bidRequests
       it('should request a Banner', function() {
         const bannerBid = bidRequests[0]
-        expect(bannerBid.placement).to.equal(spec.placemenTypes[bannerMandatoryParams.placement])
+        expect(bannerBid.placement).to.equal(spec.placementTypes[bannerMandatoryParams.placement])
       })
       it('should request a Video', function() {
         const bannerBid = bidRequests[1]
-        expect(bannerBid.placement).to.equal(spec.placemenTypes[videoMandatoryParams.placement])
+        expect(bannerBid.placement).to.equal(spec.placementTypes[videoMandatoryParams.placement])
       })
     })
   })
