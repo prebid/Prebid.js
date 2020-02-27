@@ -1,6 +1,6 @@
 // RealVu Analytics Adapter
-import adapter from '../src/AnalyticsAdapter';
-import adapterManager from '../src/adapterManager';
+import adapter from '../src/AnalyticsAdapter.js';
+import adapterManager from '../src/adapterManager.js';
 import CONSTANTS from '../src/constants.json';
 
 const utils = require('../src/utils.js');
@@ -70,7 +70,7 @@ export let lib = {
     });
     z.doLog = (window.top1.location.search.match(/boost_log/) || document.referrer.match(/boost_log/)) ? 1 : 0;
     if (z.doLog) {
-      window.setTimeout(z.scr(window.top1.location.protocol + '//ac.realvu.net/realvu_aa_viz.js'), 500);
+      window.setTimeout(z.scr('https://ac.realvu.net/realvu_aa_viz.js'), 500);
     }
   },
 
@@ -177,7 +177,7 @@ export let lib = {
 
   tru: function (a, f) {
     let pin = a.pins[0];
-    let s2 = '//ac.realvu.net/flip/3/c=' + pin.partner_id +
+    let s2 = 'https://ac.realvu.net/flip/3/c=' + pin.partner_id +
       '_f=' + f + '_r=' + a.riff +
       '_s=' + a.w + 'x' + a.h;
     if (a.p) s2 += '_p=' + a.p;

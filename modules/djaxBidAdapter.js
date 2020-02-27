@@ -1,14 +1,14 @@
-import { registerBidder } from '../src/adapters/bidderFactory';
-import { config } from '../src/config';
-import * as utils from '../src/utils';
-import {BANNER, VIDEO} from '../src/mediaTypes';
-import { ajax } from '../src/ajax';
-import {Renderer} from '../src/Renderer';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
+import * as utils from '../src/utils.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import { ajax } from '../src/ajax.js';
+import {Renderer} from '../src/Renderer.js';
 
 const SUPPORTED_AD_TYPES = [BANNER, VIDEO];
 const BIDDER_CODE = 'djax';
 const DOMAIN = 'https://demo.reviveadservermod.com/headerbidding_adminshare/';
-const RENDERER_URL = '//acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
+const RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
 
 function isBidRequestValid(bid) {
   return (typeof bid.params !== 'undefined' && parseInt(utils.getValue(bid.params, 'publisherId')) > 0);

@@ -1,18 +1,18 @@
-import * as utils from '../src/utils';
+import * as utils from '../src/utils.js';
 import {
   BANNER,
   NATIVE,
   VIDEO
-} from '../src/mediaTypes';
+} from '../src/mediaTypes.js';
 import {
   registerBidder
-} from '../src/adapters/bidderFactory';
+} from '../src/adapters/bidderFactory.js';
 import {
   parse as parseUrl
-} from '../src/url';
+} from '../src/url.js';
 
 const BIDDER_CODE = 'theadx';
-const ENDPOINT_URL = '//ssp.theadx.com/request';
+const ENDPOINT_URL = 'https://ssp.theadx.com/request';
 
 const NATIVEASSETNAMES = {
   0: 'title',

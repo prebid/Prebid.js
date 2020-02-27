@@ -1,10 +1,10 @@
-import * as utils from '../src/utils';
-import * as url from '../src/url';
-import { config } from '../src/config';
-import { registerBidder } from '../src/adapters/bidderFactory';
+import * as utils from '../src/utils.js';
+import * as url from '../src/url.js';
+import { config } from '../src/config.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'mytarget';
-const BIDDER_URL = '//ad.mail.ru/hbid_prebid/';
+const BIDDER_URL = 'https://ad.mail.ru/hbid_prebid/';
 const DEFAULT_CURRENCY = 'RUB';
 const DEFAULT_TTL = 180;
 

@@ -1,19 +1,20 @@
 /** @module adaptermanger */
 
-import { flatten, getBidderCodes, getDefinedParams, shuffle, timestamp, getBidderRequest } from './utils';
-import { getLabels, resolveStatus } from './sizeMapping';
-import { processNativeAdUnitParams, nativeAdapters } from './native';
-import { newBidder } from './adapters/bidderFactory';
-import { ajaxBuilder } from './ajax';
-import { config, RANDOM } from './config';
-import includes from 'core-js/library/fn/array/includes';
-import find from 'core-js/library/fn/array/find';
-import { adunitCounter } from './adUnits';
-import { getRefererInfo } from './refererDetection';
+import { flatten, getBidderCodes, getDefinedParams, shuffle, timestamp, getBidderRequest, bind } from './utils.js';
+import { getLabels, resolveStatus } from './sizeMapping.js';
+import { processNativeAdUnitParams, nativeAdapters } from './native.js';
+import { newBidder } from './adapters/bidderFactory.js';
+import { ajaxBuilder } from './ajax.js';
+import { config, RANDOM } from './config.js';
+import { hook } from './hook.js';
+import includes from 'core-js/library/fn/array/includes.js';
+import find from 'core-js/library/fn/array/find.js';
+import { adunitCounter } from './adUnits.js';
+import { getRefererInfo } from './refererDetection.js';
 
 var utils = require('./utils.js');
 var CONSTANTS = require('./constants.json');
-var events = require('./events');
+var events = require('./events.js');
 let s2sTestingModule; // store s2sTesting module if it's loaded
 
 let adapterManager = {};
@@ -65,8 +66,10 @@ function getBids({bidderCode, auctionId, bidderRequestId, adUnits, labels, src})
           }
 
           bid = Object.assign({}, bid, getDefinedParams(adUnit, [
+            'fpd',
             'mediaType',
-            'renderer'
+            'renderer',
+            'storedAuctionResponse'
           ]));
 
           let {
@@ -100,7 +103,9 @@ function getBids({bidderCode, auctionId, bidderRequestId, adUnits, labels, src})
               bidderRequestId,
               auctionId,
               src,
-              bidRequestsCount: adunitCounter.getCounter(adUnit.code),
+              bidRequestsCount: adunitCounter.getRequestsCounter(adUnit.code),
+              bidderRequestsCount: adunitCounter.getBidderRequestsCounter(adUnit.code, bid.bidder),
+              bidderWinsCount: adunitCounter.getBidderWinsCounter(adUnit.code, bid.bidder),
             }));
           }
           return bids;
@@ -160,7 +165,23 @@ export let gdprDataHandler = {
   }
 };
 
-adapterManager.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTimeout, labels) {
+export let uspDataHandler = {
+  consentData: null,
+  setConsentData: function(consentInfo) {
+    uspDataHandler.consentData = consentInfo;
+  },
+  getConsentData: function() {
+    return uspDataHandler.consentData;
+  }
+};
+
+adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, auctionId, cbTimeout, labels) {
+  /**
+   * emit and pass adunits for external modification
+   * @see {@link https://github.com/prebid/Prebid.js/issues/4149|Issue}
+   */
+  events.emit(CONSTANTS.EVENTS.BEFORE_REQUEST_BIDS, adUnits);
+
   let bidRequests = [];
 
   let bidderCodes = getBidderCodes(adUnits);
@@ -263,8 +284,14 @@ adapterManager.makeBidRequests = function(adUnits, auctionStart, auctionId, cbTi
       bidRequest['gdprConsent'] = gdprDataHandler.getConsentData();
     });
   }
+
+  if (uspDataHandler.getConsentData()) {
+    bidRequests.forEach(bidRequest => {
+      bidRequest['uspConsent'] = uspDataHandler.getConsentData();
+    });
+  }
   return bidRequests;
-};
+}, 'makeBidRequests');
 
 adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, requestCallbacks, requestBidsTimeout, onTimelyResponse) => {
   if (!bidRequests.length) {
@@ -323,6 +350,8 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
           s2sAjax
         );
       }
+    } else {
+      utils.logError('missing ' + _s2sConfig.adapter);
     }
   }
 
@@ -337,9 +366,21 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
       request: requestCallbacks.request.bind(null, bidRequest.bidderCode),
       done: requestCallbacks.done
     } : undefined);
-    adapter.callBids(bidRequest, addBidResponse.bind(bidRequest), doneCb.bind(bidRequest), ajax, onTimelyResponse);
+    config.runWithBidder(
+      bidRequest.bidderCode,
+      bind.call(
+        adapter.callBids,
+        adapter,
+        bidRequest,
+        addBidResponse.bind(bidRequest),
+        doneCb.bind(bidRequest),
+        ajax,
+        onTimelyResponse,
+        config.callbackWithBidder(bidRequest.bidderCode)
+      )
+    );
   });
-}
+};
 
 function doingS2STesting() {
   return _s2sConfig && _s2sConfig.enabled && _s2sConfig.testing && s2sTestingModule;
@@ -464,7 +505,7 @@ function tryCallBidderMethod(bidder, method, param) {
     const spec = adapter.getSpec();
     if (spec && spec[method] && typeof spec[method] === 'function') {
       utils.logInfo(`Invoking ${bidder}.${method}`);
-      spec[method](param);
+      config.runWithBidder(bidder, bind.call(spec[method], spec, param));
     }
   } catch (e) {
     utils.logWarn(`Error calling ${method} of ${bidder}`);
@@ -488,6 +529,7 @@ adapterManager.callTimedOutBidders = function(adUnits, timedOutBidders, cbTimeou
 adapterManager.callBidWonBidder = function(bidder, bid, adUnits) {
   // Adding user configured params to bidWon event data
   bid.params = utils.getUserConfiguredParams(adUnits, bid.adUnitCode, bid.bidder);
+  adunitCounter.incrementBidderWinsCounter(bid.adUnitCode, bid.bidder);
   tryCallBidderMethod(bidder, 'onBidWon', bid);
 };
 

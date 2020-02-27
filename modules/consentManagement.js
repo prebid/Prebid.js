@@ -4,11 +4,11 @@
  * and make it available for any GDPR supported adapters to read/pass this information to
  * their system.
  */
-import * as utils from '../src/utils';
-import { config } from '../src/config';
-import { gdprDataHandler } from '../src/adapterManager';
-import includes from 'core-js/library/fn/array/includes';
-import strIncludes from 'core-js/library/fn/string/includes';
+import * as utils from '../src/utils.js';
+import { config } from '../src/config.js';
+import { gdprDataHandler } from '../src/adapterManager.js';
+import includes from 'core-js/library/fn/array/includes.js';
+import strIncludes from 'core-js/library/fn/string/includes.js';
 
 const DEFAULT_CMP = 'iab';
 const DEFAULT_CONSENT_TIMEOUT = 10000;
@@ -335,6 +335,7 @@ function exitModule(errMsg, hookConfig, extraArgs) {
  */
 export function resetConsentData() {
   consentData = undefined;
+  userCMP = undefined;
   gdprDataHandler.setConsentData(null);
 }
 
@@ -343,6 +344,13 @@ export function resetConsentData() {
  * @param {object} config required; consentManagement module config settings; cmp (string), timeout (int), allowAuctionWithoutConsent (boolean)
  */
 export function setConsentConfig(config) {
+  // if `config.gdpr` or `config.usp` exist, assume new config format.
+  // else for backward compatability, just use `config`
+  config = config.gdpr || config.usp ? config.gdpr : config;
+  if (!config || typeof config !== 'object') {
+    utils.logWarn('consentManagement config not defined, exiting consent manager');
+    return;
+  }
   if (utils.isStr(config.cmpApi)) {
     userCMP = config.cmpApi;
   } else {

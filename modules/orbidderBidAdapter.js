@@ -1,6 +1,6 @@
-import {detectReferer} from '../src/refererDetection';
-import {ajax} from '../src/ajax';
-import {registerBidder} from '../src/adapters/bidderFactory';
+import {detectReferer} from '../src/refererDetection.js';
+import {ajax} from '../src/ajax.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
 
 export const spec = {
   code: 'orbidder',
@@ -28,9 +28,11 @@ export const spec = {
       if (bidderRequest && bidderRequest.refererInfo) {
         referer = bidderRequest.refererInfo.referer || '';
       }
+
       const ret = {
         url: `${spec.orbidderHost}/bid`,
         method: 'POST',
+        options: { withCredentials: true },
         data: {
           pageUrl: referer,
           bidId: bidRequest.bidId,
@@ -86,7 +88,7 @@ export const spec = {
   },
 
   ajaxCall(endpoint, data) {
-    ajax(endpoint, null, data);
+    ajax(endpoint, null, data, { withCredentials: true });
   }
 };
 

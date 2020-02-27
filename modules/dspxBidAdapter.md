@@ -8,7 +8,7 @@ Maintainer: prebid@dspx.tv
 
 # Description
 
-Dspx adapter for Prebid.js 1.0
+Dspx adapter for Prebid.js 3.0
 
 # Test Parameters
 ```
@@ -28,6 +28,7 @@ Dspx adapter for Prebid.js 1.0
                     bidder: "dspx",
                     params: {
                         placement: '101',
+                        devMode: true,   // if true: library uses dev server for tests
                         pfilter: {
                             floorprice: 1000000, // EUR * 1,000,000
                             private_auction: 1, // Is private auction?  0  - no, 1 - yes

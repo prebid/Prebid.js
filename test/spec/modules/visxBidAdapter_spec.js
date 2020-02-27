@@ -1,7 +1,7 @@
 import { expect } from 'chai';
-import { spec } from 'modules/visxBidAdapter';
-import { config } from 'src/config';
-import { newBidder } from 'src/adapters/bidderFactory';
+import { spec } from 'modules/visxBidAdapter.js';
+import { config } from 'src/config.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 
 describe('VisxAdapter', function () {
   const adapter = newBidder(spec);
@@ -42,7 +42,7 @@ describe('VisxAdapter', function () {
   describe('buildRequests', function () {
     const bidderRequest = {
       refererInfo: {
-        referer: 'http://example.com'
+        referer: 'https://example.com'
       }
     };
     const referrer = bidderRequest.refererInfo.referer;

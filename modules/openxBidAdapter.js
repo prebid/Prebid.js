@@ -1,26 +1,20 @@
-import {config} from '../src/config';
-import {registerBidder} from '../src/adapters/bidderFactory';
-import * as utils from '../src/utils';
-import {userSync} from '../src/userSync';
-import {BANNER, VIDEO} from '../src/mediaTypes';
-import {parse} from '../src/url';
+import {config} from '../src/config.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import * as utils from '../src/utils.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {parse} from '../src/url.js';
 
 const SUPPORTED_AD_TYPES = [BANNER, VIDEO];
 const BIDDER_CODE = 'openx';
 const BIDDER_CONFIG = 'hb_pb';
-const BIDDER_VERSION = '2.1.9';
+const BIDDER_VERSION = '3.0.1';
 
 const USER_ID_CODE_TO_QUERY_ARG = {
   idl_env: 'lre', // liveramp
   pubcid: 'pubcid', // publisher common id
-  tdid: 'ttduuid' // the trade desk
+  tdid: 'ttduuid', // the trade desk
+  criteoId: 'criteoid' // criteo id
 };
-
-let shouldSendBoPixel = true;
-
-export function resetBoPixel() {
-  shouldSendBoPixel = true;
-}
 
 export const spec = {
   code: BIDDER_CODE,
@@ -60,12 +54,13 @@ export const spec = {
     return mediaType === VIDEO ? createVideoBidResponses(oxResponseObj, serverRequest.payload)
       : createBannerBidResponses(oxResponseObj, serverRequest.payload);
   },
-  getUserSyncs: function (syncOptions, responses) {
+  getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent) {
     if (syncOptions.iframeEnabled || syncOptions.pixelEnabled) {
       let pixelType = syncOptions.iframeEnabled ? 'iframe' : 'image';
       let url = utils.deepAccess(responses, '0.body.ads.pixels') ||
         utils.deepAccess(responses, '0.body.pixels') ||
-        'https://u.openx.net/w/1.0/pd';
+        generateDefaultSyncUrl(gdprConsent, uspConsent);
+
       return [{
         type: pixelType,
         url: url
@@ -79,6 +74,23 @@ export const spec = {
     }, params);
   }
 };
+
+function generateDefaultSyncUrl(gdprConsent, uspConsent) {
+  let url = 'https://u.openx.net/w/1.0/pd';
+  let queryParamStrings = [];
+
+  if (gdprConsent) {
+    queryParamStrings.push('gdpr=' + (gdprConsent.gdprApplies ? 1 : 0));
+    queryParamStrings.push('gdpr_consent=' + encodeURIComponent(gdprConsent.consentString || ''));
+  }
+
+  // CCPA
+  if (uspConsent) {
+    queryParamStrings.push('us_privacy=' + encodeURIComponent(uspConsent));
+  }
+
+  return `${url}${queryParamStrings.length > 0 ? '?' + queryParamStrings.join('&') : ''}`;
+}
 
 function isVideoRequest(bidRequest) {
   return (utils.deepAccess(bidRequest, 'mediaTypes.video') && !utils.deepAccess(bidRequest, 'mediaTypes.banner')) || bidRequest.mediaType === VIDEO;
@@ -132,22 +144,8 @@ function createBannerBidResponses(oxResponseObj, {bids, startTime}) {
     }
 
     bidResponses.push(bidResponse);
-
-    registerBeacon(BANNER, adUnit, startTime);
   }
   return bidResponses;
-}
-
-function buildQueryStringFromParams(params) {
-  for (let key in params) {
-    if (params.hasOwnProperty(key)) {
-      if (!params[key]) {
-        delete params[key];
-      }
-    }
-  }
-  return utils._map(Object.keys(params), key => `${key}=${params[key]}`)
-    .join('&');
 }
 
 function getViewportDimensions(isIfr) {
@@ -210,8 +208,7 @@ function buildCommonQueryParamsFromBids(bids, bidderRequest) {
   let defaultParams;
 
   defaultParams = {
-    ju: config.getConfig('pageUrl') || utils.getTopWindowUrl(),
-    jr: utils.getTopWindowReferrer(),
+    ju: config.getConfig('pageUrl') || bidderRequest.refererInfo.referer,
     ch: document.charSet || document.characterSet,
     res: `${screen.width}x${screen.height}x${screen.colorDepth}`,
     ifr: isInIframe,
@@ -227,7 +224,7 @@ function buildCommonQueryParamsFromBids(bids, bidderRequest) {
     defaultParams.ph = bids[0].params.platform;
   }
 
-  if (utils.deepAccess(bidderRequest, 'gdprConsent')) {
+  if (bidderRequest.gdprConsent) {
     let gdprConsentConfig = bidderRequest.gdprConsent;
 
     if (gdprConsentConfig.consentString !== undefined) {
@@ -241,6 +238,10 @@ function buildCommonQueryParamsFromBids(bids, bidderRequest) {
     if (config.getConfig('consentManagement.cmpApi') === 'iab') {
       defaultParams.x_gdpr_f = 1;
     }
+  }
+
+  if (bidderRequest && bidderRequest.uspConsent) {
+    defaultParams.us_privacy = bidderRequest.uspConsent;
   }
 
   // normalize publisher common id
@@ -285,7 +286,8 @@ function buildOXBannerRequest(bids, bidderRequest) {
   let hasCustomParam = false;
   let queryParams = buildCommonQueryParamsFromBids(bids, bidderRequest);
   let auids = utils._map(bids, bid => bid.params.unit);
-  queryParams.aus = utils._map(bids, bid => utils.parseSizesInput(bid.sizes).join(',')).join('|');
+
+  queryParams.aus = utils._map(bids, bid => utils.parseSizesInput(bid.mediaTypes.banner.sizes).join(',')).join('|');
   queryParams.divIds = utils._map(bids, bid => encodeURIComponent(bid.adUnitCode)).join(',');
 
   if (auids.some(auid => auid)) {
@@ -425,53 +427,9 @@ function createVideoBidResponses(response, {bid, startTime}) {
     response.ts = vastQueryParams.ts;
 
     bidResponses.push(bidResponse);
-
-    registerBeacon(VIDEO, response, startTime)
   }
 
   return bidResponses;
-}
-
-function registerBeacon(mediaType, adUnit, startTime) {
-  // only register beacon once
-  if (!shouldSendBoPixel) {
-    return;
-  }
-  shouldSendBoPixel = false;
-
-  let bt = config.getConfig('bidderTimeout');
-  let beaconUrl;
-  if (window.PREBID_TIMEOUT) {
-    bt = Math.min(window.PREBID_TIMEOUT, bt);
-  }
-
-  let beaconParams = {
-    bd: +(new Date()) - startTime,
-    bp: adUnit.pub_rev,
-    br: '0', // may be 0, t, or p
-    bs: utils.getTopWindowLocation().hostname,
-    bt: bt,
-    ts: adUnit.ts
-  };
-
-  beaconParams.br = beaconParams.bt < beaconParams.bd ? 't' : 'p';
-
-  if (mediaType === VIDEO) {
-    let url = parse(adUnit.colo);
-    beaconParams.ph = adUnit.ph;
-    beaconUrl = `https://${url.hostname}/w/1.0/bo?${buildQueryStringFromParams(beaconParams)}`
-  } else {
-    let recordPixel = utils.deepAccess(adUnit, 'creative.0.tracking.impression');
-    let boBase = recordPixel.match(/([^?]+\/)ri\?/);
-
-    if (boBase && boBase.length > 1) {
-      beaconUrl = `${boBase[1]}bo?${buildQueryStringFromParams(beaconParams)}`;
-    }
-  }
-
-  if (beaconUrl) {
-    userSync.registerSync('image', BIDDER_CODE, beaconUrl);
-  }
 }
 
 registerBidder(spec);
