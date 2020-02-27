@@ -1160,5 +1160,60 @@ describe('bridgewellBidAdapter', function () {
 
       expect(actualBidId).to.include(expectedBidId[0]).and.to.include(expectedBidId[1]);
     });
+
+    it('should use size to match when adUnitCode is empty string in server response', function () {
+      const request = {
+        validBidRequests: [
+          {
+            'mediaTypes': {
+              'banner': {
+                'sizes': [300, 250]
+              }
+            },
+            'adUnitCode': 'div-gpt-ad-1564632520056-0',
+            'bidId': '3150ccb55da321',
+          },
+          {
+            'mediaTypes': {
+              'banner': {
+                'sizes': [300, 250]
+              }
+            },
+            'adUnitCode': 'div-gpt-ad-1564632520056-1',
+            'bidId': '3150ccb55da322',
+          }
+        ],
+      };
+      const response = [{
+        'id': '0cd250f4-f40e-4a78-90f5-5168eb0a97e9',
+        'bidder_code': 'bridgewell',
+        'adUnitCode': '',
+        'cpm': 7.0,
+        'width': 300,
+        'height': 250,
+        'mediaType': 'banner',
+        'ad': '<div>test 300x250</div>',
+        'ttl': 400,
+        'netRevenue': true,
+        'currency': 'NTD'
+      }, {
+        'id': '8a740063-6820-45e4-b01f-34ce9b38e858',
+        'bidder_code': 'bridgewell',
+        'adUnitCode': '',
+        'cpm': 7.0,
+        'width': 300,
+        'height': 250,
+        'mediaType': 'banner',
+        'ad': '<div>test 300x250</div>',
+        'ttl': 400,
+        'netRevenue': true,
+        'currency': 'NTD'
+      }];
+      const result = spec.interpretResponse({ 'body': response }, request);
+      let actualBidId = result.map(obj => obj.requestId);
+      let expectedBidId = ['3150ccb55da321', '3150ccb55da322'];
+
+      expect(actualBidId).to.include(expectedBidId[0]).and.to.include(expectedBidId[1]);
+    });
   });
 });
