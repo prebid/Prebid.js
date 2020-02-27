@@ -38,6 +38,7 @@ export const spec = {
     utils._each(validBidRequests, function (bid) {
       adUnits.push({
         ChannelID: bid.params.ChannelID,
+        adUnitCode: bid.adUnitCode,
         mediaTypes: bid.mediaTypes || {
           banner: {
             sizes: bid.sizes
@@ -91,7 +92,10 @@ export const spec = {
 
         if (res && !res.consumed) {
           let mediaTypes = req.mediaTypes;
-          if (res.width && res.height && mediaTypes) {
+          let adUnitCode = req.adUnitCode;
+          if (res.adUnitCode) {
+            return res.adUnitCode === adUnitCode;
+          } else if (res.width && res.height && mediaTypes) {
             if (mediaTypes.native) { // dont care native sizes
               valid = true;
             } else if (mediaTypes.banner) {
