@@ -259,6 +259,7 @@ export const spec = {
     if (bidderRequest.uspConsent) {
       sortableBidReq.regs.ext.us_privacy = bidderRequest.uspConsent;
     }
+
     return {
       method: 'POST',
       url: `//${SERVER_URL}/openrtb2/auction?src=$$REPO_AND_VERSION$$&host=${loc.hostname}`,
