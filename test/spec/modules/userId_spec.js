@@ -108,6 +108,10 @@ describe('User ID', function() {
         unit.bids.forEach(bid => {
           expect(bid).to.have.deep.nested.property('userId.pubcid');
           expect(bid.userId.pubcid).to.equal(pubcid);
+          expect(bid.userIdAsEids[0]).to.deep.equal({
+            source: 'pubcid.org',
+            uids: [{id: pubcid, atype: 1}]
+          });
         });
       });
 
@@ -134,6 +138,10 @@ describe('User ID', function() {
         unit.bids.forEach((bid) => {
           expect(bid).to.have.deep.nested.property('userId.pubcid');
           expect(bid.userId.pubcid).to.equal(pubcid1);
+          expect(bid.userIdAsEids[0]).to.deep.equal({
+            source: 'pubcid.org',
+            uids: [{id: pubcid1, atype: 1}]
+          });
         });
       });
 
@@ -148,6 +156,10 @@ describe('User ID', function() {
         unit.bids.forEach((bid) => {
           expect(bid).to.have.deep.nested.property('userId.pubcid');
           expect(bid.userId.pubcid).to.equal(pubcid2);
+          expect(bid.userIdAsEids[0]).to.deep.equal({
+            source: 'pubcid.org',
+            uids: [{id: pubcid2, atype: 1}]
+          });
         });
       });
 
@@ -166,6 +178,10 @@ describe('User ID', function() {
         unit.bids.forEach((bid) => {
           expect(bid).to.have.deep.nested.property('userId.pubcid');
           expect(bid.userId.pubcid).to.equal('altpubcid200000');
+          expect(bid.userIdAsEids[0]).to.deep.equal({
+            source: 'pubcid.org',
+            uids: [{id: 'altpubcid200000', atype: 1}]
+          });
         });
       });
       // Because the cookie exists already, there should be no setCookie call by default
@@ -186,6 +202,10 @@ describe('User ID', function() {
         unit.bids.forEach((bid) => {
           expect(bid).to.have.deep.nested.property('userId.pubcid');
           expect(bid.userId.pubcid).to.equal('altpubcid200000');
+          expect(bid.userIdAsEids[0]).to.deep.equal({
+            source: 'pubcid.org',
+            uids: [{id: 'altpubcid200000', atype: 1}]
+          });
         });
       });
       // Because extend is true, the cookie will be updated even if it exists already
@@ -205,6 +225,7 @@ describe('User ID', function() {
       innerAdUnits.forEach((unit) => {
         unit.bids.forEach((bid) => {
           expect(bid).to.not.have.deep.nested.property('userId.pubcid');
+          expect(bid).to.not.have.deep.nested.property('userIdAsEids');
         });
       });
       expect(utils.setCookie.callCount).to.equal(0);
@@ -493,6 +514,7 @@ describe('User ID', function() {
         unit.bids.forEach(bid => {
           expect(bid).to.have.deep.nested.property('userId.mid');
           expect(bid.userId.mid).to.equal('1234');
+          expect(bid.userIdAsEids.length).to.equal(0);// "mid" is an un-known submodule for USER_IDS_CONFIG in eids.js
         });
         done();
       });
@@ -609,6 +631,10 @@ describe('User ID', function() {
           unit.bids.forEach(bid => {
             expect(bid).to.have.deep.nested.property('userId.pubcid');
             expect(bid.userId.pubcid).to.equal('testpubcid');
+            expect(bid.userIdAsEids[0]).to.deep.equal({
+              source: 'pubcid.org',
+              uids: [{id: 'testpubcid', atype: 1}]
+            });
           });
         });
         utils.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
@@ -626,6 +652,7 @@ describe('User ID', function() {
           unit.bids.forEach(bid => {
             expect(bid).to.have.deep.nested.property('userId.pubcidvalue');
             expect(bid.userId.pubcidvalue).to.equal('testpubcidvalue');
+            expect(bid.userIdAsEids.length).to.equal(0);// "pubcidvalue" is an un-known submodule for USER_IDS_CONFIG in eids.js
           });
         });
         done();
@@ -646,6 +673,10 @@ describe('User ID', function() {
           unit.bids.forEach(bid => {
             expect(bid).to.have.deep.nested.property('userId.tdid');
             expect(bid.userId.tdid).to.equal('testunifiedid_alt');
+            expect(bid.userIdAsEids[0]).to.deep.equal({
+              source: 'adserver.org',
+              uids: [{id: 'testunifiedid_alt', atype: 1, ext: { rtiPartner: 'TDID' }}]
+            });
           });
         });
         localStorage.removeItem('unifiedid_alt');
@@ -667,6 +698,10 @@ describe('User ID', function() {
           unit.bids.forEach(bid => {
             expect(bid).to.have.deep.nested.property('userId.idl_env');
             expect(bid.userId.idl_env).to.equal('AiGNC8Z5ONyZKSpIPf');
+            expect(bid.userIdAsEids[0]).to.deep.equal({
+              source: 'liveramp.com',
+              uids: [{id: 'AiGNC8Z5ONyZKSpIPf', atype: 1}]
+            });
           });
         });
         localStorage.removeItem('idl_env');
@@ -687,6 +722,10 @@ describe('User ID', function() {
           unit.bids.forEach(bid => {
             expect(bid).to.have.deep.nested.property('userId.idl_env');
             expect(bid.userId.idl_env).to.equal('AiGNC8Z5ONyZKSpIPf');
+            expect(bid.userIdAsEids[0]).to.deep.equal({
+              source: 'liveramp.com',
+              uids: [{id: 'AiGNC8Z5ONyZKSpIPf', atype: 1}]
+            });
           });
         });
         utils.setCookie('idl_env', '', EXPIRED_COOKIE_DATE);
@@ -707,6 +746,10 @@ describe('User ID', function() {
           unit.bids.forEach(bid => {
             expect(bid).to.have.deep.nested.property('userId.lipb');
             expect(bid.userId.lipb.lipbid).to.equal('random-ls-identifier');
+            expect(bid.userIdAsEids[0]).to.deep.equal({
+              source: 'liveintent.com',
+              uids: [{id: 'random-ls-identifier', atype: 1}]
+            });
           });
         });
         localStorage.removeItem('_li_pbid');
@@ -727,6 +770,10 @@ describe('User ID', function() {
           unit.bids.forEach(bid => {
             expect(bid).to.have.deep.nested.property('userId.lipb');
             expect(bid.userId.lipb.lipbid).to.equal('random-cookie-identifier');
+            expect(bid.userIdAsEids[0]).to.deep.equal({
+              source: 'liveintent.com',
+              uids: [{id: 'random-cookie-identifier', atype: 1}]
+            });
           });
         });
         utils.setCookie('_li_pbid', '', EXPIRED_COOKIE_DATE);
@@ -750,6 +797,10 @@ describe('User ID', function() {
           unit.bids.forEach(bid => {
             expect(bid).to.have.deep.nested.property('userId.id5id');
             expect(bid.userId.id5id).to.equal('testid5id');
+            expect(bid.userIdAsEids[0]).to.deep.equal({
+              source: 'id5-sync.com',
+              uids: [{id: 'testid5id', atype: 1}]
+            });
           });
         });
         sinon.assert.calledOnce(utils.logError);
@@ -769,6 +820,10 @@ describe('User ID', function() {
           unit.bids.forEach(bid => {
             expect(bid).to.have.deep.nested.property('userId.id5id');
             expect(bid.userId.id5id).to.equal('testid5id');
+            expect(bid.userIdAsEids[0]).to.deep.equal({
+              source: 'id5-sync.com',
+              uids: [{id: 'testid5id', atype: 1}]
+            });
           });
         });
         done();
@@ -789,6 +844,10 @@ describe('User ID', function() {
             expect(bid).to.have.deep.nested.property('userId.lipb');
             expect(bid.userId.lipb.lipbid).to.equal('random-ls-identifier');
             expect(bid.userId.lipb.segments).to.include('123');
+            expect(bid.userIdAsEids[0]).to.deep.equal({
+              source: 'liveintent.com',
+              uids: [{id: 'random-ls-identifier', atype: 1, ext: {segments: ['123']}}]
+            });
           });
         });
         localStorage.removeItem('_li_pbid');
@@ -810,6 +869,10 @@ describe('User ID', function() {
             expect(bid).to.have.deep.nested.property('userId.lipb');
             expect(bid.userId.lipb.lipbid).to.equal('random-cookie-identifier');
             expect(bid.userId.lipb.segments).to.include('123');
+            expect(bid.userIdAsEids[0]).to.deep.equal({
+              source: 'liveintent.com',
+              uids: [{id: 'random-cookie-identifier', atype: 1, ext: {segments: ['123']}}]
+            });
           });
         });
         utils.setCookie('_li_pbid', '', EXPIRED_COOKIE_DATE);
@@ -830,6 +893,10 @@ describe('User ID', function() {
           unit.bids.forEach(bid => {
             expect(bid).to.have.deep.nested.property('userId.britepoolid');
             expect(bid.userId.britepoolid).to.equal('279c0161-5152-487f-809e-05d7f7e653fd');
+            expect(bid.userIdAsEids[0]).to.deep.equal({
+              source: 'britepool.com',
+              uids: [{id: '279c0161-5152-487f-809e-05d7f7e653fd', atype: 1}]
+            });
           });
         });
         utils.setCookie('britepoolid', '', EXPIRED_COOKIE_DATE);
@@ -870,6 +937,7 @@ describe('User ID', function() {
             // also check that britepoolId id data was copied to bid
             expect(bid).to.have.deep.nested.property('userId.britepoolid');
             expect(bid.userId.britepoolid).to.equal('testbritepoolid');
+            expect(bid.userIdAsEids.length).to.equal(5);
           });
         });
         utils.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
@@ -925,6 +993,7 @@ describe('User ID', function() {
             // also check that britepoolId id data was copied to bid
             expect(bid).to.have.deep.nested.property('userId.britepoolid');
             expect(bid.userId.britepoolid).to.equal('testbritepoolid');
+            expect(bid.userIdAsEids.length).to.equal(5);
           });
         });
         utils.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
@@ -1001,6 +1070,7 @@ describe('User ID', function() {
             // check MockId data was copied to bid
             expect(bid).to.have.deep.nested.property('userId.mid');
             expect(bid.userId.mid).to.equal('123456778');
+            expect(bid.userIdAsEids.length).to.equal(5);// mid is unknown for eids.js
           });
         });
         utils.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
@@ -1124,6 +1194,10 @@ describe('User ID', function() {
         unit.bids.forEach(bid => {
           expect(bid).to.have.deep.nested.property('userId.parrableid');
           expect(bid.userId.parrableid).to.equal(parrableStoredId);
+          expect(bid.userIdAsEids[0]).to.deep.equal({
+            source: 'parrable.com',
+            uids: [{id: parrableStoredId, atype: 1}]
+          });
         });
       });
 
@@ -1136,6 +1210,10 @@ describe('User ID', function() {
             unit.bids.forEach(bid => {
               expect(bid).to.have.deep.nested.property('userId.parrableid');
               expect(bid.userId.parrableid).to.equal(parrableRefreshedId);
+              expect(bid.userIdAsEids[0]).to.deep.equal({
+                source: 'parrable.com',
+                uids: [{id: parrableRefreshedId, atype: 1}]
+              });
             });
           });
           events.off(CONSTANTS.EVENTS.AUCTION_END, handler);
