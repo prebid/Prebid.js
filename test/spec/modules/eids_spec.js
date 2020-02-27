@@ -65,7 +65,7 @@ describe('eids array generation for known sub-modules', function() {
     });
   });
 
-  it('liveIntentId; getValue call', function() {
+  it('liveIntentId; getValue call and ext', function() {
     const userId = {
       lipb: {
         lipbid: 'some-random-id-value',
@@ -77,6 +77,20 @@ describe('eids array generation for known sub-modules', function() {
     expect(newEids[0]).to.deep.equal({
       source: 'liveintent.com',
       uids: [{id: 'some-random-id-value', atype: 1, ext: {segments: ['s1', 's2']}}]
+    });
+  });
+
+  it('liveIntentId; getValue call and NO ext', function() {
+    const userId = {
+      lipb: {
+        lipbid: 'some-random-id-value'
+      }
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'liveintent.com',
+      uids: [{id: 'some-random-id-value', atype: 1}]
     });
   });
 
