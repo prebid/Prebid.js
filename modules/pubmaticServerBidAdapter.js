@@ -326,6 +326,7 @@ function _handleEids(payload, validBidRequests) {
     _addExternalUserId(eids, utils.deepAccess(bidRequest, `userId.firstpartyid`), 'firstpartyid', 1);
   }
   if (eids.length > 0) {
+    payload.user.ext = {};
     payload.user.ext.eids = eids;
   }
 }
