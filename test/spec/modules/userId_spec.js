@@ -921,6 +921,10 @@ describe('User ID', function() {
           unit.bids.forEach(bid => {
             expect(bid).to.have.deep.nested.property('userId.netId');
             expect(bid.userId.netId).to.equal('fH5A3n2O8_CZZyPoJVD-eabc6ECb7jhxCicsds7qSg');
+            expect(bid.userIdAsEids[0]).to.deep.equal({
+              source: 'netid.de',
+              uids: [{id: 'fH5A3n2O8_CZZyPoJVD-eabc6ECb7jhxCicsds7qSg', atype: 1}]
+            });
           });
         });
         utils.setCookie('netId', '', EXPIRED_COOKIE_DATE);
@@ -1113,7 +1117,7 @@ describe('User ID', function() {
             // check MockId data was copied to bid
             expect(bid).to.have.deep.nested.property('userId.mid');
             expect(bid.userId.mid).to.equal('123456778');
-            expect(bid.userIdAsEids.length).to.equal(5);// mid is unknown for eids.js
+            expect(bid.userIdAsEids.length).to.equal(6);// mid is unknown for eids.js
           });
         });
         utils.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);

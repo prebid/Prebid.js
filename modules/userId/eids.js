@@ -75,6 +75,12 @@ const USER_IDS_CONFIG = {
   'criteoId': {
     source: 'criteo.com',
     atype: 1
+  },
+
+  // NetId
+  'netId': {
+    source: 'netid.de',
+    atype: 1
   }
 };
 
