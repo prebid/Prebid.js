@@ -850,6 +850,10 @@ export function cookiesAreEnabled() {
   return false;
 }
 
+/**
+ * @param {string} name
+ * @returns {string|null}
+ */
 export function getCookie(name) {
   if (hasDeviceAccess()) {
     let m = window.document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]*)\\s*(;|$)');
@@ -858,6 +862,12 @@ export function getCookie(name) {
   return null;
 }
 
+/**
+ * @param {string} key
+ * @param {string} value
+ * @param {string} [expires='']
+ * @param {string} [sameSite='']
+ */
 export function setCookie(key, value, expires, sameSite) {
   if (hasDeviceAccess()) {
     document.cookie = `${key}=${encodeURIComponent(value)}${(expires !== '') ? `; expires=${expires}` : ''}; path=/${sameSite ? `; SameSite=${sameSite}` : ''}`;
@@ -1195,33 +1205,47 @@ export function convertTypes(types, params) {
   return params;
 }
 
+/**
+ * @param {string} key
+ * @param {string} value
+ */
 export function setDataInLocalStorage(key, value) {
   if (hasLocalStorage()) {
     window.localStorage.setItem(key, value);
   }
 }
 
+/**
+ * @param {string} key
+ * @returns {(string|null|undefined)}
+ */
 export function getDataFromLocalStorage(key) {
   if (hasLocalStorage()) {
     return window.localStorage.getItem(key);
   }
 }
 
+/**
+ * @param {string} key
+ */
 export function removeDataFromLocalStorage(key) {
   if (hasLocalStorage()) {
     window.localStorage.removeItem(key);
   }
 }
 
+/**
+ * @returns {boolean}
+ */
 export function hasLocalStorage() {
-  if (!hasDeviceAccess()) {
-    return false;
+  if (hasDeviceAccess()) {
+    try {
+      return !!window.localStorage;
+    } catch (e) {
+      logError('Local storage api disabled');
+    }
   }
-  try {
-    return !!window.localStorage;
-  } catch (e) {
-    logError('Local storage api disabled');
-  }
+  return false;
 }
 
 export function isArrayOfNums(val, size) {
