@@ -1,14 +1,7 @@
 import {createEidsArray} from 'modules/userId/eids.js';
 import {expect} from 'chai';
 
-// cases
-// Known user id sub-modules
-//		here tdid ext case will be handled
-//		here liveIntentId ext case will be handled
-// 		here custom digitrust case will be handled
-// unknown user id sub module not passed in array
-
-// 	Note: 	In unit tets cases for bidders, call the createEidsArray function over userId object that is used for calling fetchBids
+// 	Note: In unit tets cases for bidders, call the createEidsArray function over userId object that is used for calling fetchBids
 //			this way the request will stay consistent and unit test cases will not need lots of changes.
 
 describe('eids array generation for known sub-modules', function() {
@@ -85,5 +78,65 @@ describe('eids array generation for known sub-modules', function() {
       source: 'liveintent.com',
       uids: [{id: 'some-random-id-value', atype: 1, ext: {segments: ['s1', 's2']}}]
     });
+  });
+
+  it('britepoolId', function() {
+    const userId = {
+      britepoolid: 'some-random-id-value'
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'britepool.com',
+      uids: [{id: 'some-random-id-value', atype: 1}]
+    });
+  });
+
+  it('DigiTrust; getValue call', function() {
+    const userId = {
+      digitrustid: {
+        data: {
+          id: 'some-random-id-value'
+        }
+      }
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'digitru.st',
+      uids: [{id: 'some-random-id-value', atype: 1}]
+    });
+  });
+
+  it('criteo', function() {
+    const userId = {
+      criteoId: 'some-random-id-value'
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'criteo.com',
+      uids: [{id: 'some-random-id-value', atype: 1}]
+    });
+  });
+});
+
+describe('Negative case', function() {
+  it('eids array generation for UN-known sub-module', function() {
+    // UnknownCommonId
+    const userId = {
+      unknowncid: 'some-random-id-value'
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(0);
+  });
+
+  it('eids array generation for known sub-module with undefined value', function() {
+    // pubCommonId
+    const userId = {
+      pubcid: undefined
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(0);
   });
 });
