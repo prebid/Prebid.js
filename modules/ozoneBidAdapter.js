@@ -1,12 +1,14 @@
 import * as utils from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
 import {getPriceBucketString} from '../src/cpmBucketManager.js';
-import {Renderer} from '../src/Renderer.js';
+import { Renderer } from '../src/Renderer.js';
+
 
 const BIDDER_CODE = 'ozone';
 const ALLOWED_LOTAME_PARAMS = ['oz_lotameid', 'oz_lotamepid', 'oz_lotametpid'];
+
 const OZONEURI = 'https://elb.the-ozone-project.com/openrtb2/auction';
 const OZONECOOKIESYNC = 'https://elb.the-ozone-project.com/static/load-cookie.html';
 const OZONE_RENDERER_URL = 'https://prebid.the-ozone-project.com/ozone-renderer.js';
@@ -678,8 +680,7 @@ export const spec = {
       if (typeof vendorConsentsObject.purposeConsents != 'object') {
         return true;
       }
-      let acceptedPurposeConsents = Object.values(vendorConsentsObject.purposeConsents).slice(0, 5);
-      if (acceptedPurposeConsents.toString() !== [true, true, true, true, true].toString()) {
+      if (!this.purposeConsentsAreOk((vendorConsentsObject.purposeConsents))) {
         utils.logError('OZONE: gdpr test failed - missing Purposes consent');
         return true;
       }
@@ -689,6 +690,18 @@ export const spec = {
       }
     }
     return false;
+  },
+  /**
+   * Test that vendor purpose consents 1,2,3,4 and 5 are true
+   * This is because we can't use Object.values(vendorConsentsObject.purposeConsents).slice(0, 5)
+   * @param obj
+   * @return {boolean}
+   */
+  purposeConsentsAreOk(obj) {
+    for (let i = 1; i <= 5; i++) {
+      if (!obj.hasOwnProperty(i) || !obj[i]) return false;
+    }
+    return true;
   }
 }
 
