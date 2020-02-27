@@ -86,7 +86,10 @@ function createEidObject(userIdData, subModuleKey) {
     if (value) {
       const uid = { id: value, atype: conf['atype'] };
       if (utils.isFn(conf['ext'])) {
-        uid.ext = conf['ext'](userIdData);
+        const ext = conf['ext'](userIdData);
+        if (ext) {
+          uid.ext = ext;
+        }
       }
       return { source: conf['source'], uids: [uid] };
     }
@@ -107,6 +110,5 @@ export function createEidsArray(bidRequestUserId) {
       }
     }
   }
-  // console.log('eids: ', eids);
   return eids;
 }
