@@ -261,7 +261,7 @@ export const spec = {
     }
     return {
       method: 'POST',
-      url: `//${SERVER_URL}/openrtb2/auction?src=$$REPO_AND_VERSION$$&host=${loc.host}`,
+      url: `//${SERVER_URL}/openrtb2/auction?src=$$REPO_AND_VERSION$$&host=${loc.hostname}`,
       data: JSON.stringify(sortableBidReq),
       options: {contentType: 'text/plain'}
     };
