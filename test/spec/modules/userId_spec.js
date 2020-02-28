@@ -11,7 +11,7 @@ import * as utils from 'src/utils';
 import events from 'src/events';
 import CONSTANTS from 'src/constants.json';
 import {unifiedIdSubmodule} from 'modules/unifiedIdSystem';
-import {pubCommonIdSubmodule} from 'modules/userId/pubCommonIdSystem';
+import {pubCommonIdSubmodule} from 'modules/pubCommonIdSystem';
 import {britepoolIdSubmodule} from 'modules/britepoolIdSystem';
 import {id5IdSubmodule} from 'modules/id5IdSystem';
 import {identityLinkSubmodule} from 'modules/identityLinkIdSystem';
