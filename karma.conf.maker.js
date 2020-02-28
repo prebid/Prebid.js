@@ -86,9 +86,7 @@ function setBrowsers(karmaConf, browserstack) {
     karmaConf.browserStack = {
       username: process.env.BROWSERSTACK_USERNAME,
       accessKey: process.env.BROWSERSTACK_ACCESS_KEY,
-      build: 'Prebidjs Unit Tests ' + new Date().toLocaleString(),
-      timeout: 300,
-      retryLimit: 0
+      build: 'Prebidjs Unit Tests ' + new Date().toLocaleString()
     }
     if (process.env.TRAVIS) {
       karmaConf.browserStack.startTunnel = false;
@@ -168,9 +166,12 @@ module.exports = function(codeCoverage, browserstack, watchMode, file) {
     // if true, Karma captures browsers, runs the tests and exits
     singleRun: !watchMode,
     browserDisconnectTimeout: 120000, // default 2000
-    browserDisconnectTolerance: 0, // default 0
     browserNoActivityTimeout: 100000, // default 10000
-    captureTimeout: 120000, // default 60000,
+    captureTimeout: 60000, // default 60000,
+    client: {
+      userIframe: false,
+      runInParent: true
+    },
     browserSocketTimeout: 10000,
     concurrency: 5,
     retryLimit: 0,
