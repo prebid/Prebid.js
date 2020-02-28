@@ -41,5 +41,7 @@
     "trustxBidAdapter",
     "undertoneBidAdapter",
     "unrulyBidAdapter",
-    "yieldoneBidAdapter"
+    "yieldmoBidAdapter",
+    "yieldoneBidAdapter",
+    "synacormediaBidAdapter"
 ]
