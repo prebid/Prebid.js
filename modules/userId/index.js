@@ -207,7 +207,10 @@ function hasGDPRConsent(consentData) {
     if (!consentData.consentString) {
       return false;
     }
-    if (consentData.vendorData && consentData.vendorData.purposeConsents && consentData.vendorData.purposeConsents['1'] === false) {
+    if (consentData.apiVersion === 1 && utils.deepAccess(consentData, 'vendorData.purposeConsents.1') === false) {
+      return false;
+    }
+    if (consentData.apiVersion === 2 && utils.deepAccess(consentData, 'vendorData.purpose.consents.1') === false) {
       return false;
     }
   }
