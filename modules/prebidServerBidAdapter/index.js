@@ -589,7 +589,7 @@ const OPEN_RTB_PROTOCOL = {
     }
 
     const bidUserId = utils.deepAccess(bidRequests, '0.bids.0.userId');
-    if (bidUserId && typeof bidUserId === 'object' && (bidUserId.tdid || bidUserId.pubcid || bidUserId.parrableid || bidUserId.lipb || bidUserId.id5id || bidUserId.criteoId || bidUserId.britepoolid)) {
+    if (bidUserId && typeof bidUserId === 'object' && (bidUserId.tdid || bidUserId.pubcid || bidUserId.parrableid || bidUserId.lipb || bidUserId.id5id || bidUserId.criteoId || bidUserId.britepoolid || bidUserId.idl_env)) {
       utils.deepSetValue(request, 'user.ext.eids', []);
 
       if (bidUserId.tdid) {
@@ -663,6 +663,24 @@ const OPEN_RTB_PROTOCOL = {
             id: bidUserId.britepoolid
           }]
         });
+      }
+
+      if (bidUserId.idl_env) {
+        request.user.ext.eids.push({
+          source: 'liveramp.com',
+          uids: [{
+            id: bidUserId.idl_env
+          }]
+        })
+      }
+
+      if (bidUserId.netId) {
+        request.user.ext.eids.push({
+          source: 'netid.de',
+          uids: [{
+            id: bidUserId.netId
+          }]
+        })
       }
     }
 

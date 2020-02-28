@@ -99,6 +99,7 @@ var sizeMap = {
   265: '1920x1080',
   274: '1800x200',
   278: '320x500',
+  282: '320x400',
   288: '640x380'
 };
 utils._each(sizeMap, (item, key) => sizeMap[item] = key);
@@ -216,7 +217,7 @@ export const spec = {
       }
 
       if (bidRequest.userId && typeof bidRequest.userId === 'object' &&
-        (bidRequest.userId.tdid || bidRequest.userId.pubcid || bidRequest.userId.lipb)) {
+        (bidRequest.userId.tdid || bidRequest.userId.pubcid || bidRequest.userId.lipb || bidRequest.userId.idl_env)) {
         utils.deepSetValue(data, 'user.ext.eids', []);
 
         if (bidRequest.userId.tdid) {
@@ -257,6 +258,16 @@ export const spec = {
           if (Array.isArray(bidRequest.userId.lipb.segments) && bidRequest.userId.lipb.segments.length) {
             utils.deepSetValue(data, 'rp.target.LIseg', bidRequest.userId.lipb.segments);
           }
+        }
+
+        // support identityLink (aka LiveRamp)
+        if (bidRequest.userId.idl_env) {
+          data.user.ext.eids.push({
+            source: 'liveramp.com',
+            uids: [{
+              id: bidRequest.userId.idl_env
+            }]
+          });
         }
       }
 
@@ -491,6 +502,11 @@ export const spec = {
         if (Array.isArray(bidRequest.userId.lipb.segments) && bidRequest.userId.lipb.segments.length) {
           data['tg_v.LIseg'] = bidRequest.userId.lipb.segments.join(',');
         }
+      }
+
+      // support identityLink (aka LiveRamp)
+      if (bidRequest.userId.idl_env) {
+        data['tpid_liveramp.com'] = bidRequest.userId.idl_env;
       }
     }
 
