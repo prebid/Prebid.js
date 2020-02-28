@@ -73,7 +73,8 @@ export const spec = {
       'secure': location.protocol === 'https:' ? 1 : 0,
       'host': location.host,
       'page': location.pathname,
-      'placements': placements
+      'placements': placements,
+      'ortb_user_ext': {}
     };
 
     if (bidderRequest) {
@@ -81,10 +82,10 @@ export const spec = {
         request.ccpa = bidderRequest.uspConsent;
       }
       if (bidRequest.userId) {
-        ext.eids = [];
-        getUserId(ext.eids, bidRequest.userId.britepoolid, 'britepool.com');
-        getUserId(ext.eids, bidRequest.userId.idl_env, 'identityLink');
-        getUserId(ext.eids, bidRequest.userId.tdid, 'adserver.org', {
+        request.ortb_user_ext.eids = [];
+        getUserId(request.ortb_user_ext.eids, bidRequest.userId.britepoolid, 'britepool.com');
+        getUserId(request.ortb_user_ext.eids, bidRequest.userId.idl_env, 'identityLink');
+        getUserId(request.ortb_user_ext.eids, bidRequest.userId.tdid, 'adserver.org', {
           rtiPartner: 'TDID'
         });
       }
@@ -104,6 +105,7 @@ export const spec = {
       }
       placements.push(placement);
     }
+    console.log(JSON.stringify(request))
     return {
       method: 'POST',
       url: G_URL,
