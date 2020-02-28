@@ -296,14 +296,6 @@ export function debugTurnedOn() {
   return !!config.getConfig('debug');
 }
 
-/**
- * When the deviceAccess flag config option is false, no cookies should be read or set
- * @returns {boolean}
- */
-export function hasDeviceAccess() {
-  return config.getConfig('deviceAccess') !== false;
-}
-
 export function createInvisibleIframe() {
   var f = document.createElement('iframe');
   f.id = getUniqueIdentifierStr();
@@ -834,11 +826,26 @@ export function timestamp() {
   return new Date().getTime();
 }
 
+/**
+ * When the deviceAccess flag config option is false, no cookies should be read or set
+ * @returns {boolean}
+ */
+export function hasDeviceAccess() {
+  return config.getConfig('deviceAccess') !== false;
+}
+
+/**
+ * @returns {(boolean|undefined)}
+ */
 export function checkCookieSupport() {
   if (window.navigator.cookieEnabled || !!document.cookie.length) {
     return true;
   }
 }
+
+/**
+ * @returns {boolean}
+ */
 export function cookiesAreEnabled() {
   if (hasDeviceAccess()) {
     if (internal.checkCookieSupport()) {
