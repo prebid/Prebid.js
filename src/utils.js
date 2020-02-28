@@ -859,7 +859,7 @@ export function cookiesAreEnabled() {
 
 /**
  * @param {string} name
- * @returns {string|null}
+ * @returns {(string|null)}
  */
 export function getCookie(name) {
   if (hasDeviceAccess()) {
