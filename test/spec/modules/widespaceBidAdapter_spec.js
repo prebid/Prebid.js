@@ -1,6 +1,6 @@
-import { expect } from 'chai';
-import { spec } from 'modules/widespaceBidAdapter';
-import includes from 'core-js/library/fn/array/includes';
+import {expect} from 'chai';
+import {spec} from 'modules/widespaceBidAdapter.js';
+import includes from 'core-js/library/fn/array/includes.js';
 
 describe('+widespaceAdatperTest', function () {
   // Dummy bid request
@@ -149,7 +149,7 @@ describe('+widespaceAdatperTest', function () {
     let lsGetStub;
     let lsRemoveStub;
 
-    beforeEach(function() {
+    beforeEach(function () {
       lsSetStub = sinon.stub(window.localStorage, 'setItem').callsFake(function (name, value) {
         fakeLocalStorage[name] = value;
       });
@@ -166,7 +166,7 @@ describe('+widespaceAdatperTest', function () {
       });
     });
 
-    afterEach(function() {
+    afterEach(function () {
       lsSetStub.restore();
       lsGetStub.restore();
       lsRemoveStub.restore();

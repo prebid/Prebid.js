@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec } from '../../../modules/outconBidAdapter';
+import { spec } from '../../../modules/outconBidAdapter.js';
 
 describe('outconBidAdapter', function () {
   describe('bidRequestValidity', function () {

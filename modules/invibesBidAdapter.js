@@ -1,10 +1,10 @@
-import * as utils from '../src/utils';
-import { registerBidder } from '../src/adapters/bidderFactory';
+import * as utils from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const CONSTANTS = {
   BIDDER_CODE: 'invibes',
-  BID_ENDPOINT: '//bid.videostep.com/Bid/VideoAdContent',
-  SYNC_ENDPOINT: '//k.r66net.com/GetUserSync',
+  BID_ENDPOINT: 'https://bid.videostep.com/Bid/VideoAdContent',
+  SYNC_ENDPOINT: 'https://k.r66net.com/GetUserSync',
   TIME_TO_LIVE: 300,
   DEFAULT_CURRENCY: 'EUR',
   PREBID_VERSION: 2,

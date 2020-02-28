@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import realvuAnalyticsAdapter, { lib } from 'modules/realvuAnalyticsAdapter';
+import realvuAnalyticsAdapter, { lib } from 'modules/realvuAnalyticsAdapter.js';
 import CONSTANTS from 'src/constants.json';
 
 function addDiv(id) {

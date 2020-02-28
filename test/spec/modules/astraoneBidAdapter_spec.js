@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import { spec } from 'modules/astraoneBidAdapter'
+import { spec } from 'modules/astraoneBidAdapter.js'
 
 function getSlotConfigs(mediaTypes, params) {
   return {

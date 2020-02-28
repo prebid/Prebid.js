@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { spec } from 'modules/sublimeBidAdapter';
-import { newBidder } from 'src/adapters/bidderFactory';
+import { spec } from 'modules/sublimeBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 
 describe('Sublime Adapter', function() {
   const adapter = newBidder(spec);

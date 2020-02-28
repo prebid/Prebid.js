@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { spec } from 'modules/ccxBidAdapter';
-import * as utils from 'src/utils';
+import { spec } from 'modules/ccxBidAdapter.js';
+import * as utils from 'src/utils.js';
 
 describe('ccxAdapter', function () {
   let bids = [
@@ -245,6 +245,31 @@ describe('ccxAdapter', function () {
       let data = JSON.parse(response.data);
 
       expect(data.imp).to.deep.have.same.members(imps);
+    });
+  });
+
+  describe('GDPR conformity', function () {
+    it('should transmit correct data', function () {
+      let bidsClone = utils.deepClone(bids);
+      let gdprConsent = {
+        consentString: 'awefasdfwefasdfasd',
+        gdprApplies: true
+      };
+      let response = spec.buildRequests(bidsClone, {'bids': bidsClone, 'gdprConsent': gdprConsent});
+      let data = JSON.parse(response.data);
+
+      expect(data.regs.ext.gdpr).to.equal(1);
+      expect(data.user.ext.consent).to.equal('awefasdfwefasdfasd');
+    });
+  });
+
+  describe('GDPR absence conformity', function () {
+    it('should transmit correct data', function () {
+      let response = spec.buildRequests(bids, {bids});
+      let data = JSON.parse(response.data);
+
+      expect(data.regs).to.be.undefined;
+      expect(data.user).to.be.undefined;
     });
   });
 
