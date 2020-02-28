@@ -673,6 +673,15 @@ const OPEN_RTB_PROTOCOL = {
           }]
         })
       }
+
+      if (bidUserId.netId) {
+        request.user.ext.eids.push({
+          source: 'netid.de',
+          uids: [{
+            id: bidUserId.netId
+          }]
+        })
+      }
     }
 
     if (bidRequests) {
