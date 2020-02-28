@@ -480,6 +480,40 @@ describe('adagioAdapter', () => {
       });
       expect(requests).to.be.empty;
     });
+
+    it('Should add the schain if available at bidder level', () => {
+      const bidRequest = Object.assign({}, bidRequests[0], {
+        schain: {
+          ver: '1.0',
+          complete: 1,
+          nodes: [{
+            asi: 'ssp.test',
+            sid: '00001',
+            hp: 1
+          }]
+        }
+      });
+
+      const requests = spec.buildRequests([bidRequest], bidderRequest);
+      const request = requests[0];
+
+      expect(request.data.schain).to.exist;
+      expect(request.data.schain).to.deep.equal({
+        ver: '1.0',
+        complete: 1,
+        nodes: [{
+          asi: 'ssp.test',
+          sid: '00001',
+          hp: 1
+        }]
+      });
+    });
+
+    it('Schain should not be added to the request', () => {
+      const requests = spec.buildRequests([bidRequests[0]], bidderRequest);
+      const request = requests[0];
+      expect(request.data.schain).to.not.exist;
+    });
   });
 
   describe('interpretResponse', () => {
