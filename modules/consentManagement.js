@@ -329,7 +329,7 @@ function processCmpData(consentObject, hookConfig) {
       exitModule(null, hookConfig);
     }
   } else {
-    cmpFailed('Unable to derive CMP version to process data.  Consent object does not conform to TCF v1 or 2 specs.', hookConfig, consentObject);
+    cmpFailed('Unable to derive CMP version to process data.  Consent object does not conform to TCF v1 or v2 specs.', hookConfig, consentObject);
   }
 }
 
