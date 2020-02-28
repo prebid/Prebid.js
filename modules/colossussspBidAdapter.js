@@ -23,6 +23,19 @@ function isBidResponseValid(bid) {
   }
 }
 
+function getUserId(eids, id, source, uidExt) {
+  if (id) {
+    var uid = { id };
+    if (uidExt) {
+      uid.ext = uidExt;
+    }
+    eids.push({
+      source,
+      uids: [ uid ]
+    });
+  }
+}
+
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
@@ -66,6 +79,14 @@ export const spec = {
     if (bidderRequest) {
       if (bidderRequest.uspConsent) {
         request.ccpa = bidderRequest.uspConsent;
+      }
+      if (bidRequest.userId) {
+        ext.eids = [];
+        getUserId(ext.eids, bidRequest.userId.britepoolid, 'britepool.com');
+        getUserId(ext.eids, bidRequest.userId.idl_env, 'identityLink');
+        getUserId(ext.eids, bidRequest.userId.tdid, 'adserver.org', {
+          rtiPartner: 'TDID'
+        });
       }
     }
 
