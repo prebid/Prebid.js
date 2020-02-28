@@ -384,6 +384,7 @@ invibes.Uid = {
 
 let cookieDomain;
 invibes.getCookie = function (name) {
+  if (!utils.cookiesAreEnabled()) { return; }
   let i, x, y;
   let cookies = document.cookie.split(';');
   for (i = 0; i < cookies.length; i++) {
@@ -397,6 +398,7 @@ invibes.getCookie = function (name) {
 };
 
 invibes.setCookie = function (name, value, exdays, domain) {
+  if (!utils.cookiesAreEnabled()) { return; }
   let whiteListed = name == 'ivNoCookie' || name == 'IvbsCampIdsLocal';
   if (invibes.noCookies && !whiteListed && (exdays || 0) >= 0) { return; }
   if (exdays > 365) { exdays = 365; }
@@ -404,7 +406,9 @@ invibes.setCookie = function (name, value, exdays, domain) {
   let exdate = new Date();
   let exms = exdays * 24 * 60 * 60 * 1000;
   exdate.setTime(exdate.getTime() + exms);
-  utils.setCookie(name, value, (~exdays) ? '' : exdate.toUTCString(), '/', domain);
+  let cookieValue = value + ((!exdays) ? '' : '; expires=' + exdate.toUTCString());
+  cookieValue += ';domain=' + domain + ';path=/';
+  document.cookie = name + '=' + cookieValue;
 };
 
 let detectTopmostCookieDomain = function () {

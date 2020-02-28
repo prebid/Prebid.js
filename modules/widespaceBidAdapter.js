@@ -2,12 +2,7 @@ import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {
   cookiesAreEnabled,
-  getCookie,
-  setCookie,
   hasLocalStorage,
-  getDataFromLocalStorage,
-  setDataInLocalStorage,
-  removeDataFromLocalStorage,
   parseQueryStringParameters,
   parseSizesInput
 } from '../src/utils.js';
@@ -182,12 +177,12 @@ export const spec = {
 function storeData(data, name, stringify = true) {
   const value = stringify ? JSON.stringify(data) : data;
   if (LOCAL_STORAGE_AVAILABLE) {
-    setDataInLocalStorage(name, value);
+    localStorage.setItem(name, value);
     return true;
   } else if (COOKIE_ENABLED) {
     const theDate = new Date();
     const expDate = new Date(theDate.setMonth(theDate.getMonth() + 12)).toGMTString();
-    setCookie(name, value, expDate, '/');
+    window.document.cookie = `${name}=${value};path=/;expires=${expDate}`;
     return true;
   }
 }
@@ -197,13 +192,9 @@ function getData(name, remove = true) {
   if (LOCAL_STORAGE_AVAILABLE) {
     Object.keys(localStorage).filter((key) => {
       if (key.indexOf(name) > -1) {
-        // The value can be undefined, so verify the value type is string before using
-        const value = getDataFromLocalStorage(key);
-        if (typeof value === 'string') {
-          data.push(value);
-        }
+        data.push(localStorage.getItem(key));
         if (remove) {
-          removeDataFromLocalStorage(key);
+          localStorage.removeItem(key);
         }
       }
     });
@@ -211,15 +202,11 @@ function getData(name, remove = true) {
 
   if (COOKIE_ENABLED) {
     document.cookie.split(';').forEach((item) => {
-      let kvp = item.split('=');
-      if (kvp[0].indexOf(name) > -1) {
-        // The value can be undefined, so verify the value type is string before using
-        const value = getCookie(kvp[0]);
-        if (typeof value === 'string') {
-          data.push(value);
-          if (remove) {
-            setCookie(kvp[0], '', 'Thu, 01 Jan 1970 00:00:01 GMT', '/');
-          }
+      let value = item.split('=');
+      if (value[0].indexOf(name) > -1) {
+        data.push(value[1]);
+        if (remove) {
+          document.cookie = `${value[0]}=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;`;
         }
       }
     });
