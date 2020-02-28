@@ -338,6 +338,12 @@ function _getGdprConsent(bidderRequest) {
   return consent;
 }
 
+function _getSchain(bidRequest) {
+  if (utils.deepAccess(bidRequest, 'schain')) {
+    return bidRequest.schain;
+  }
+}
+
 export const spec = {
   code: BIDDER_CODE,
 
@@ -387,6 +393,7 @@ export const spec = {
     const site = _getSite();
     const pageviewId = _getPageviewId();
     const gdprConsent = _getGdprConsent(bidderRequest);
+    const schain = _getSchain(validBidRequests[0]);
     const adUnits = utils._map(validBidRequests, (bidRequest) => {
       bidRequest.features = _getFeatures(bidRequest);
       return bidRequest;
@@ -415,6 +422,7 @@ export const spec = {
           pageviewId: pageviewId,
           adUnits: groupedAdUnits[organizationId],
           gdpr: gdprConsent,
+          schain: schain,
           prebidVersion: '$prebid.version$',
           adapterVersion: VERSION,
           featuresVersion: FEATURES_VERSION
