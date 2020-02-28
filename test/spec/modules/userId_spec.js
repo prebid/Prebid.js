@@ -1120,7 +1120,7 @@ describe('User ID', function() {
 
       expect(server.requests).to.be.empty;
       events.emit(CONSTANTS.EVENTS.AUCTION_END, {});
-      expect(server.requests[0].url).to.equal('//match.adsrvr.org/track/rid?ttd_pid=rubicon&fmt=json');
+      expect(server.requests[0].url).to.equal('https://match.adsrvr.org/track/rid?ttd_pid=rubicon&fmt=json');
     });
 
     it('callback for submodules that always need to refresh stored id', function(done) {
