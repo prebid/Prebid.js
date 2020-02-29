@@ -878,7 +878,7 @@ export function getCookie(name) {
  */
 export function setCookie(key, value, expires, sameSite, domain) {
   if (hasDeviceAccess()) {
-    document.cookie = `${key}=${encodeURIComponent(value)}${(expires !== '') ? `; expires=${expires}` : ''}; path=/${sameSite ? `; SameSite=${sameSite}` : ''}${domain ? `; Domain=${domain}` : ''}`;
+    document.cookie = `${key}=${encodeURIComponent(value)}${(expires !== '') ? `; expires=${expires}` : ''}; path=/${sameSite ? `; SameSite=${sameSite}` : ''}${domain ? `; domain=${domain}` : ''}`;
   }
 }
 

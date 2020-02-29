@@ -406,9 +406,7 @@ invibes.setCookie = function (name, value, exdays, domain) {
   let exdate = new Date();
   let exms = exdays * 24 * 60 * 60 * 1000;
   exdate.setTime(exdate.getTime() + exms);
-  let cookieValue = value + ((!exdays) ? '' : '; expires=' + exdate.toUTCString());
-  cookieValue += ';domain=' + domain + ';path=/';
-  document.cookie = name + '=' + cookieValue;
+  utils.setCookie(name, value, exdate.toUTCString(), undefined, domain);
 };
 
 let detectTopmostCookieDomain = function () {
