@@ -83,8 +83,7 @@ function writeDigiId(id) {
   var key = 'DigiTrust.v1.identity';
   var date = new Date();
   date.setTime(date.getTime() + 604800000);
-  var exp = 'expires=' + date.toUTCString();
-  utils.setCookie(key, encId(id), exp, 'none');
+  utils.setCookie(key, encId(id), date.toUTCString(), 'none');
 }
 
 /**

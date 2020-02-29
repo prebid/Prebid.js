@@ -5,6 +5,7 @@
   "main": "src/prebid.js",
   "scripts": {
     "test": "gulp test",
+    "testf": "gulp test --nolint",
     "lint": "gulp lint"
   },
   "repository": {
