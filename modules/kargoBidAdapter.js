@@ -165,11 +165,8 @@ export const spec = {
   },
 
   _getLocalStorageSafely(key) {
-    if (!utils.hasLocalStorage()) {
-      return null;
-    }
     try {
-      return localStorage.getItem(key);
+      return utils.getDataFromLocalStorage(key);
     } catch (e) {
       return null;
     }

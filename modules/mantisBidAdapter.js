@@ -1,4 +1,5 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
+import * as utils from '../src/utils.js';
 
 function inIframe() {
   try {
@@ -92,9 +93,9 @@ function storeUuid(uuid) {
     return false;
   }
   window.mantis_uuid = uuid;
-  if (window.localStorage) {
+  if (utils.hasLocalStorage()) {
     try {
-      window.localStorage.setItem('mantis:uuid', uuid);
+      utils.setDataInLocalStorage('mantis:uuid', uuid);
     } catch (ex) {
     }
   }
@@ -175,8 +176,8 @@ function buildMantisUrl(path, data, domain) {
   }
   if (window.mantis_uuid) {
     params.uuid = window.mantis_uuid;
-  } else if (window.localStorage) {
-    var localUuid = window.localStorage.getItem('mantis:uuid');
+  } else if (utils.hasLocalStorage()) {
+    var localUuid = utils.getDataFromLocalStorage('mantis:uuid');
     if (localUuid) {
       params.uuid = localUuid;
     }

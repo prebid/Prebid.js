@@ -23,7 +23,7 @@ pV6EP3MTLosuUEpLaQIDAQAB
 export function getAdagioScript() {
   try {
     const w = utils.getWindowTop();
-    const ls = w.localStorage.getItem(ADAGIO_LOCALSTORAGE_KEY);
+    const ls = (utils.hasLocalStorage()) ? w.localStorage.getItem(ADAGIO_LOCALSTORAGE_KEY) : null;
 
     if (!ls) {
       utils.logWarn('Adagio Script not found');

@@ -276,14 +276,14 @@ function getCappedCampaignsAsString() {
 
   let loadData = function () {
     try {
-      return JSON.parse(localStorage.getItem(key)) || {};
+      return JSON.parse(utils.getDataFromLocalStorage(key)) || {};
     } catch (e) {
       return {};
     }
   };
 
   let saveData = function (data) {
-    localStorage.setItem(key, JSON.stringify(data));
+    utils.setDataInLocalStorage(key, JSON.stringify(data));
   };
 
   let clearExpired = function () {
@@ -319,7 +319,7 @@ function getCappedCampaignsAsString() {
 const noop = function () { };
 
 function initLogger() {
-  if (localStorage && localStorage.InvibesDEBUG) {
+  if (utils.hasLocalStorage() && localStorage.InvibesDEBUG) {
     return window.console;
   }
 

@@ -177,7 +177,7 @@ export function getStorageData(key) {
   var item = null;
   try {
     if (utils.hasLocalStorage()) {
-      item = window.localStorage.getItem(key);
+      item = utils.getDataFromLocalStorage(key);
     }
   } catch (e) {
   }
@@ -187,7 +187,7 @@ export function getStorageData(key) {
 export function setStorageData(key, item) {
   try {
     if (utils.hasLocalStorage()) {
-      window.localStorage.setItem(key, item);
+      utils.setDataInLocalStorage(key, item);
     }
   } catch (e) {
   }

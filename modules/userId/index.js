@@ -154,10 +154,10 @@ function setStoredValue(storage, value) {
         utils.setCookie(`${storage.name}_last`, new Date().toUTCString(), expiresStr);
       }
     } else if (storage.type === LOCAL_STORAGE) {
-      localStorage.setItem(`${storage.name}_exp`, expiresStr);
-      localStorage.setItem(storage.name, encodeURIComponent(valueStr));
+      utils.setDataInLocalStorage(`${storage.name}_exp`, expiresStr);
+      utils.setDataInLocalStorage(storage.name, encodeURIComponent(valueStr));
       if (typeof storage.refreshInSeconds === 'number') {
-        localStorage.setItem(`${storage.name}_last`, new Date().toUTCString());
+        utils.setDataInLocalStorage(`${storage.name}_last`, new Date().toUTCString());
       }
     }
   } catch (error) {
@@ -177,13 +177,13 @@ function getStoredValue(storage, key = undefined) {
     if (storage.type === COOKIE) {
       storedValue = utils.getCookie(storedKey);
     } else if (storage.type === LOCAL_STORAGE) {
-      const storedValueExp = localStorage.getItem(`${storage.name}_exp`);
+      const storedValueExp = utils.getDataFromLocalStorage(`${storage.name}_exp`);
       // empty string means no expiration set
       if (storedValueExp === '') {
-        storedValue = localStorage.getItem(storedKey);
+        storedValue = utils.getDataFromLocalStorage(storedKey);
       } else if (storedValueExp) {
         if ((new Date(storedValueExp)).getTime() - Date.now() > 0) {
-          storedValue = decodeURIComponent(localStorage.getItem(storedKey));
+          storedValue = decodeURIComponent(utils.getDataFromLocalStorage(storedKey));
         }
       }
     }
@@ -526,7 +526,7 @@ export function init(config) {
     return;
   }
   // _pubcid_optout is checked for compatiblility with pubCommonId
-  if (validStorageTypes.indexOf(LOCAL_STORAGE) !== -1 && (localStorage.getItem('_pbjs_id_optout') || localStorage.getItem('_pubcid_optout'))) {
+  if (validStorageTypes.indexOf(LOCAL_STORAGE) !== -1 && (utils.getDataFromLocalStorage('_pbjs_id_optout') || utils.getDataFromLocalStorage('_pubcid_optout'))) {
     utils.logInfo(`${MODULE_NAME} - opt-out localStorage found, exit module`);
     return;
   }

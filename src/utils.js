@@ -873,8 +873,8 @@ export function getCookie(name) {
  * @param {string} key
  * @param {string} value
  * @param {string} [expires='']
- * @param {string} [sameSite='']
- * @param {(string|undefined)} [domain=undefined]
+ * @param {string} [sameSite='/']
+ * @param {(string|undefined)} [domain='']
  */
 export function setCookie(key, value, expires, sameSite, domain) {
   if (hasDeviceAccess()) {
@@ -1225,12 +1225,13 @@ export function setDataInLocalStorage(key, value) {
 
 /**
  * @param {string} key
- * @returns {(string|null|undefined)}
+ * @returns {(string|null)}
  */
 export function getDataFromLocalStorage(key) {
   if (hasLocalStorage()) {
     return window.localStorage.getItem(key);
   }
+  return null;
 }
 
 /**
