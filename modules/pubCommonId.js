@@ -120,7 +120,9 @@ function readValue(name, type) {
 function writeValue(name, value, expInterval) {
   if (name && value) {
     if (pubcidConfig.typeEnabled === COOKIE) {
-      setCookie(name, value, expInterval, 'Lax');
+      let expTime = new Date();
+      expTime.setTime(expTime.getTime() + expInterval * 1000 * 60);
+      utils.setCookie(name, value, expTime.toGMTString(), 'Lax');
     } else if (pubcidConfig.typeEnabled === LOCAL_STORAGE) {
       setStorageItem(name, value, expInterval);
     }
@@ -217,18 +219,6 @@ export function requestBidHook(next, config) {
   }
 
   return next.call(this, config);
-}
-
-// Helper to set a cookie
-export function setCookie(name, value, expires, sameSite) {
-  let expTime = new Date();
-  expTime.setTime(expTime.getTime() + expires * 1000 * 60);
-  utils.setCookie(name, value, expTime.toGMTString(), sameSite);
-}
-
-// Helper to read a cookie
-export function getCookie(name) {
-  return utils.getCookie(name);
 }
 
 /**

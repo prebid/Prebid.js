@@ -207,7 +207,7 @@ function getData(name, remove = true) {
       if (value[0].indexOf(name) > -1) {
         data.push(value[1]);
         if (remove) {
-          utils.setCookie(value[0], '', 'Thu, 01 Jan 1970 00:00:01 GMT',);
+          utils.setCookie(value[0], '', 'Thu, 01 Jan 1970 00:00:01 GMT');
         }
       }
     });
